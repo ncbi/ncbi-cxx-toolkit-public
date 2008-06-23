@@ -4,7 +4,7 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE
+ *                            PUBLIC DOMAIN NTOICE
  *               National Center for Biotechnology Information
  *
  *  This software/database is a "United States Government Work" under the
@@ -67,6 +67,81 @@ struct SSafeCP {};
 struct SRunTimeCP {};
 
 ////////////////////////////////////////////////////////////////////////////////
+// Range checking ...
+template <bool x_is_signed, bool y_is_signed>
+struct SLessThanTypeMin
+{
+    template <class X, class Y>
+    static bool check(X x, Y y_min)
+    { 
+        return x < y_min; 
+    }
+}; 
+
+template <>
+struct SLessThanTypeMin<false, true>
+{
+    template <class X, class Y>
+    static bool check(X, Y)
+    { 
+        return false; 
+    }
+}; 
+
+template <>
+struct SLessThanTypeMin<true, false>
+{
+    template <class X, class Y>
+    static bool check(X x, Y)
+    { 
+        return x < 0; 
+    }
+}; 
+
+template <bool same_sign, bool x_is_signed> struct SGreaterThanTypeMax; 
+
+template <>
+struct SGreaterThanTypeMax<true, true>
+{
+    template <class X, class Y>
+    static inline bool check(X x, Y y_max)
+    { 
+        return x > y_max; 
+    }
+}; 
+
+template <>
+struct SGreaterThanTypeMax<false, true>
+{
+    template <class X, class Y>
+    static inline bool check(X x, Y)
+    { 
+        return x >= 0 && static_cast<X>(static_cast<Y>(x)) != x; 
+    } 
+};
+
+template<>
+struct SGreaterThanTypeMax<true, false>
+{
+    template <class X, class Y>
+    static inline bool check(X x, Y y_max)
+    { 
+        return x > y_max; 
+    }
+}; 
+
+template <>
+struct SGreaterThanTypeMax<false, false>
+{
+    template <class X, class Y>
+    static inline bool check(X x, Y)
+    { 
+        const Y y = static_cast<Y>(x);
+        return y < 0 || static_cast<X>(y) != x;
+    }
+}; 
+
+////////////////////////////////////////////////////////////////////////////////
 // Forward declaration.
 //
 template <typename CP, typename FROM> class CConvPolicy;
@@ -79,6 +154,28 @@ void ReportConversionError(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+template <typename TO, typename FROM> 
+inline
+TO ConvertUsingRunTimeCP(const FROM& value)
+{
+    const bool from_is_signed = numeric_limits<FROM>::is_signed;
+    const bool to_is_signed = numeric_limits<TO>::is_signed;
+    const bool same_sign = from_is_signed == to_is_signed; 
+
+    if (SLessThanTypeMin<from_is_signed, to_is_signed>::check(value, numeric_limits<TO>::min())
+        || SGreaterThanTypeMax<same_sign, from_is_signed>::check(value, numeric_limits<TO>::max())
+        ) 
+    {
+        ReportConversionError();
+    }
+
+    return static_cast<TO>(value);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// We are trying to avoid partial specialization.
+//
 template <>
 class CConvPolicy<SRunTimeCP, bool>
 {
@@ -97,34 +194,38 @@ public:
         return m_Value;
     }
 
-    // Unsigned to signed ...
-
+    operator Int1(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
     operator Int2(void) const
     {
-        return m_Value;
+        return m_Value ? 1 : 0;
     }
     operator Int4(void) const
     {
-        return m_Value;
+        return m_Value ? 1 : 0;
     }
     operator Int8(void) const
     {
-        return m_Value;
+        return m_Value ? 1 : 0;
     }
 
-    // Unsigned to unsigned ...
-
+    operator Uint1(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
     operator Uint2(void) const
     {
-        return m_Value;
+        return m_Value ? 1 : 0;
     }
     operator Uint4(void) const
     {
-        return m_Value;
+        return m_Value ? 1 : 0;
     }
     operator Uint8(void) const
     {
-        return m_Value;
+        return m_Value ? 1 : 0;
     }
 
 
@@ -144,14 +245,10 @@ public:
     }
 
 public:
-    template <typename OT>
-    operator OT(void) const
+    template <typename TO>
+    operator TO(void) const
     {
-        if (m_Value > numeric_limits<OT>::max() || m_Value < numeric_limits<OT>::min()) {
-            ReportConversionError();
-        }
-
-        return static_cast<OT>(m_Value);
+        return ConvertUsingRunTimeCP<TO>(m_Value);
     }
 
 private:
@@ -170,14 +267,10 @@ public:
     }
 
 public:
-    template <typename OT>
-    operator OT(void) const
+    template <typename TO>
+    operator TO(void) const
     {
-        if (m_Value > numeric_limits<OT>::max() || m_Value < numeric_limits<OT>::min()) {
-            ReportConversionError();
-        }
-
-        return static_cast<OT>(m_Value);
+        return ConvertUsingRunTimeCP<TO>(m_Value);
     }
 
 private:
@@ -196,14 +289,10 @@ public:
     }
 
 public:
-    template <typename OT>
-    operator OT(void) const
+    template <typename TO>
+    operator TO(void) const
     {
-        if (m_Value > numeric_limits<OT>::max() || m_Value < numeric_limits<OT>::min()) {
-            ReportConversionError();
-        }
-
-        return static_cast<OT>(m_Value);
+        return ConvertUsingRunTimeCP<TO>(m_Value);
     }
 
 private:
@@ -222,14 +311,10 @@ public:
     }
 
 public:
-    template <typename OT>
-    operator OT(void) const
+    template <typename TO>
+    operator TO(void) const
     {
-        if (m_Value > numeric_limits<OT>::max() || m_Value < numeric_limits<OT>::min()) {
-            ReportConversionError();
-        }
-
-        return static_cast<OT>(m_Value);
+        return ConvertUsingRunTimeCP<TO>(m_Value);
     }
 
 private:
@@ -248,14 +333,10 @@ public:
     }
 
 public:
-    template <typename OT>
-    operator OT(void) const
+    template <typename TO>
+    operator TO(void) const
     {
-        if (m_Value > numeric_limits<OT>::max() || m_Value < numeric_limits<OT>::min()) {
-            ReportConversionError();
-        }
-
-        return static_cast<OT>(m_Value);
+        return ConvertUsingRunTimeCP<TO>(m_Value);
     }
 
 private:
@@ -274,14 +355,10 @@ public:
     }
 
 public:
-    template <typename OT>
-    operator OT(void) const
+    template <typename TO>
+    operator TO(void) const
     {
-        if (m_Value > numeric_limits<OT>::max() || m_Value < numeric_limits<OT>::min()) {
-            ReportConversionError();
-        }
-
-        return static_cast<OT>(m_Value);
+        return ConvertUsingRunTimeCP<TO>(m_Value);
     }
 
 private:
@@ -300,14 +377,10 @@ public:
     }
 
 public:
-    template <typename OT>
-    operator OT(void) const
+    template <typename TO>
+    operator TO(void) const
     {
-        if (m_Value > numeric_limits<OT>::max() || m_Value < numeric_limits<OT>::min()) {
-            ReportConversionError();
-        }
-
-        return static_cast<OT>(m_Value);
+        return ConvertUsingRunTimeCP<TO>(m_Value);
     }
 
 private:
@@ -326,14 +399,10 @@ public:
     }
 
 public:
-    template <typename OT>
-    operator OT(void) const
+    template <typename TO>
+    operator TO(void) const
     {
-        if (m_Value > numeric_limits<OT>::max() || m_Value < numeric_limits<OT>::min()) {
-            ReportConversionError();
-        }
-
-        return static_cast<OT>(m_Value);
+        return ConvertUsingRunTimeCP<TO>(m_Value);
     }
 
 private:
@@ -466,32 +535,40 @@ public:
 
     // Unsigned to signed ...
 
+    operator Int1(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
     operator Int2(void) const
     {
-        return m_Value;
+        return m_Value ? 1 : 0;
     }
     operator Int4(void) const
     {
-        return m_Value;
+        return m_Value ? 1 : 0;
     }
     operator Int8(void) const
     {
-        return m_Value;
+        return m_Value ? 1 : 0;
     }
 
     // Unsigned to unsigned ...
 
+    operator Uint1(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
     operator Uint2(void) const
     {
-        return m_Value;
+        return m_Value ? 1 : 0;
     }
     operator Uint4(void) const
     {
-        return m_Value;
+        return m_Value ? 1 : 0;
     }
     operator Uint8(void) const
     {
-        return m_Value;
+        return m_Value ? 1 : 0;
     }
 
 
@@ -535,7 +612,7 @@ public:
     //
     operator bool(void) const
     {
-        return m_Value;
+        return m_Value != 0;
     }
     operator float(void) const
     {
@@ -601,7 +678,7 @@ public:
     //
     operator bool(void) const
     {
-        return m_Value;
+        return m_Value != 0;
     }
     operator float(void) const
     {
@@ -648,7 +725,7 @@ public:
     //
     operator bool(void) const
     {
-        return m_Value;
+        return m_Value != 0;
     }
     operator float(void) const
     {
@@ -706,7 +783,7 @@ public:
     //
     operator bool(void) const
     {
-        return m_Value;
+        return m_Value != 0;
     }
     operator float(void) const
     {
@@ -749,7 +826,7 @@ public:
     //
     operator bool(void) const
     {
-        return m_Value;
+        return m_Value != 0;
     }
     operator float(void) const
     {
@@ -799,7 +876,7 @@ public:
     //
     operator bool(void) const
     {
-        return m_Value;
+        return m_Value != 0;
     }
     operator float(void) const
     {
@@ -835,7 +912,7 @@ public:
     //
     operator bool(void) const
     {
-        return m_Value;
+        return m_Value != 0;
     }
     operator float(void) const
     {
@@ -871,7 +948,7 @@ public:
     //
     operator bool(void) const
     {
-        return m_Value;
+        return m_Value != 0;
     }
     operator float(void) const
     {
@@ -982,6 +1059,21 @@ public:
     operator const obj_type&(void) const
     {
         return *m_Value;
+    }
+
+    operator bool(void) const
+    {
+        return !m_Value->IsEmpty();
+    }
+
+private:
+    operator Int1(void) const
+    {
+        return 0;
+    }
+    operator Uint1(void) const
+    {
+        return 0;
     }
 
 private:

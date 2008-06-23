@@ -62,8 +62,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
     const Int4 value_Int4 = -2147483648;
     const Uint8 value_Uint8 = 9223372036854775808ULL;
     const Int8 value_Int8 = -9223372036854775807LL;
-    // const float value_float = float(21.4);
-    // const double value_double = 42.8;
+    const float value_float = float(21.4);
+    const double value_double = 42.8;
     const bool value_bool = true;
     const string value_string = "test string 0987654321";
     const char* value_char = "test char* 1234567890";
@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
     const string str_Int4("-2147483648");
     const string str_Uint8("9223372036854775808");
     const string str_Int8("-9223372036854775807");
-    const string str_bool("yes");
+    const string str_bool("true");
     const string str_float("21.4");
     const string str_double("42.8");
 
@@ -609,7 +609,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             // Won't convert at run-time ...
             // String cannot be converted to bool.
             BOOST_CHECK_THROW(value = ConvertSafe(str_double), CException);
-        }
+        } 
 
         // Boolean expressions ...
         {
@@ -647,6 +647,274 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             }
         }
 
+        // string
+        {
+            string value;
+
+            //////////
+            {
+                string value = ConvertSafe(value_Int8);
+                BOOST_CHECK_EQUAL(value, str_Int8);
+            }
+
+            {
+                string value;
+                value += ConvertSafe(value_Int8);
+                BOOST_CHECK_EQUAL(value, str_Int8);
+            }
+
+            {
+                string value = "Test 1." + ConvertSafe(value_Int8);
+                value = ConvertSafe(value_Int8) + "Test 2.";
+                value = value + ConvertSafe(value_Int8);
+                value = ConvertSafe(value_Int8) + value;
+            }
+
+            value = ConvertSafe(value_Int8).operator string();
+            BOOST_CHECK_EQUAL(value, str_Int8);
+
+            //////////
+            {
+                string value = ConvertSafe(value_Uint8);
+                BOOST_CHECK_EQUAL(value, str_Uint8);
+            }
+
+            {
+                string value;
+                value += ConvertSafe(value_Uint8);
+                BOOST_CHECK_EQUAL(value, str_Uint8);
+            }
+
+            {
+                string value = "Test 1." + ConvertSafe(value_Uint8);
+                value = ConvertSafe(value_Uint8) + "Test 2.";
+                value = value + ConvertSafe(value_Uint8);
+                value = ConvertSafe(value_Uint8) + value;
+            }
+
+            value = ConvertSafe(value_Uint8).operator string();
+            BOOST_CHECK_EQUAL(value, str_Uint8);
+
+            //////////
+            {
+                string value = ConvertSafe(value_Int4);
+                BOOST_CHECK_EQUAL(value, str_Int4);
+            }
+
+            {
+                string value;
+                value += ConvertSafe(value_Int4);
+                BOOST_CHECK_EQUAL(value, str_Int4);
+            }
+
+            {
+                string value = "Test 1." + ConvertSafe(value_Int4);
+                value = ConvertSafe(value_Int4) + "Test 2.";
+                value = value + ConvertSafe(value_Int4);
+                value = ConvertSafe(value_Int4) + value;
+            }
+
+            value = ConvertSafe(value_Int4).operator string();
+            BOOST_CHECK_EQUAL(value, str_Int4);
+
+            //////////
+            {
+                string value = ConvertSafe(value_Uint4);
+                BOOST_CHECK_EQUAL(value, str_Uint4);
+            }
+
+            {
+                string value;
+                value += ConvertSafe(value_Uint4);
+                BOOST_CHECK_EQUAL(value, str_Uint4);
+            }
+
+            {
+                string value = "Test 1." + ConvertSafe(value_Uint4);
+                value = ConvertSafe(value_Uint4) + "Test 2.";
+                value = value + ConvertSafe(value_Uint4);
+                value = ConvertSafe(value_Uint4) + value;
+            }
+
+            value = ConvertSafe(value_Uint4).operator string();
+            BOOST_CHECK_EQUAL(value, str_Uint4);
+
+            //////////
+            {
+                string value = ConvertSafe(value_Int2);
+                BOOST_CHECK_EQUAL(value, str_Int2);
+            }
+
+            {
+                string value;
+                value += ConvertSafe(value_Int2);
+                BOOST_CHECK_EQUAL(value, str_Int2);
+            }
+
+            {
+                string value = "Test 1." + ConvertSafe(value_Int2);
+                value = ConvertSafe(value_Int2) + "Test 2.";
+                value = value + ConvertSafe(value_Int2);
+                value = ConvertSafe(value_Int2) + value;
+            }
+
+            value = ConvertSafe(value_Int2).operator string();
+            BOOST_CHECK_EQUAL(value, str_Int2);
+
+            //////////
+            {
+                string value = ConvertSafe(value_Uint2);
+                BOOST_CHECK_EQUAL(value, str_Uint2);
+            }
+
+            {
+                string value;
+                value += ConvertSafe(value_Uint2);
+                BOOST_CHECK_EQUAL(value, str_Uint2);
+            }
+
+            {
+                string value = "Test 1." + ConvertSafe(value_Uint2);
+                value = ConvertSafe(value_Uint2) + "Test 2.";
+                value = value + ConvertSafe(value_Uint2);
+                value = ConvertSafe(value_Uint2) + value;
+            }
+
+            value = ConvertSafe(value_Uint2).operator string();
+            BOOST_CHECK_EQUAL(value, str_Uint2);
+
+            //////////
+            {
+                string value = ConvertSafe(value_Int1);
+                BOOST_CHECK_EQUAL(value, str_Int1);
+            }
+
+            {
+                string value;
+                value += ConvertSafe(value_Int1);
+                BOOST_CHECK_EQUAL(value, str_Int1);
+            }
+
+            {
+                string value = "Test 1." + ConvertSafe(value_Int1);
+                value = ConvertSafe(value_Int1) + "Test 2.";
+                value = value + ConvertSafe(value_Int1);
+                value = ConvertSafe(value_Int1) + value;
+            }
+
+            value = ConvertSafe(value_Int1).operator string();
+            BOOST_CHECK_EQUAL(value, str_Int1);
+
+            //////////
+            {
+                string value = ConvertSafe(value_Uint1);
+                BOOST_CHECK_EQUAL(value, str_Uint1);
+            }
+
+            {
+                string value;
+                value += ConvertSafe(value_Uint1);
+                BOOST_CHECK_EQUAL(value, str_Uint1);
+            }
+
+            {
+                string value = "Test 1." + ConvertSafe(value_Uint1);
+                value = ConvertSafe(value_Uint1) + "Test 2.";
+                value = value + ConvertSafe(value_Uint1);
+                value = ConvertSafe(value_Uint1) + value;
+            }
+
+            value = ConvertSafe(value_Uint1).operator string();
+            BOOST_CHECK_EQUAL(value, str_Uint1);
+
+            //////////
+            {
+                string value = ConvertSafe(value_bool);
+                BOOST_CHECK_EQUAL(value, str_bool);
+            }
+
+            {
+                string value;
+                value += ConvertSafe(value_bool);
+                BOOST_CHECK_EQUAL(value, str_bool);
+            }
+
+            {
+                string value = "Test 1." + ConvertSafe(value_bool);
+                value = ConvertSafe(value_bool) + "Test 2.";
+                value = value + ConvertSafe(value_bool);
+                value = ConvertSafe(value_bool) + value;
+            }
+
+            value = ConvertSafe(value_bool).operator string();
+            BOOST_CHECK_EQUAL(value, str_bool);
+
+            //////////
+            {
+                string value = ConvertSafe(value_float);
+                BOOST_CHECK_EQUAL(value, str_float);
+            }
+
+            {
+                string value;
+                value += ConvertSafe(value_float);
+                BOOST_CHECK_EQUAL(value, str_float);
+            }
+
+            {
+                string value = "Test 1." + ConvertSafe(value_float);
+                value = ConvertSafe(value_float) + "Test 2.";
+                value = value + ConvertSafe(value_float);
+                value = ConvertSafe(value_float) + value;
+            }
+
+            value = ConvertSafe(value_float).operator string();
+            BOOST_CHECK_EQUAL(value, str_float);
+
+            //////////
+            {
+                string value = ConvertSafe(value_double);
+                BOOST_CHECK_EQUAL(value, str_double);
+            }
+
+            {
+                string value;
+                value += ConvertSafe(value_double);
+                BOOST_CHECK_EQUAL(value, str_double);
+            }
+
+            {
+                string value = "Test 1." + ConvertSafe(value_double);
+                value = ConvertSafe(value_double) + "Test 2.";
+                value = value + ConvertSafe(value_double);
+                value = ConvertSafe(value_double) + value;
+            }
+
+            value = ConvertSafe(value_double).operator string();
+            BOOST_CHECK_EQUAL(value, str_double);
+
+            //////////
+            {
+                string value = ConvertSafe(value_CTime);
+                BOOST_CHECK_EQUAL(value, value_CTime.AsString());
+            }
+
+            {
+                string value;
+                value += ConvertSafe(value_CTime);
+                BOOST_CHECK_EQUAL(value, value_CTime.AsString());
+            }
+
+            {
+                string value = "Test 1." + ConvertSafe(value_CTime);
+                value = ConvertSafe(value_CTime) + "Test 2.";
+                value = value + ConvertSafe(value_CTime);
+                value = ConvertSafe(value_CTime) + value;
+            }
+
+            value = ConvertSafe(value_CTime).operator string();;
+            BOOST_CHECK_EQUAL(value, value_CTime.AsString());
+        }
     }
     catch(const CException& ex) {
         BOOST_FAIL(ex.what());
@@ -662,10 +930,10 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
     const Int2 value_Int2 = -32768;
     const Uint4 value_Uint4 = 4000000000;
     const Int4 value_Int4 = -2147483648;
-    const Uint8 value_Uint8 = 9223372036854775808ULL;
+    const Uint8 value_Uint8 = 9223372036854775809ULL;
     const Int8 value_Int8 = -9223372036854775807LL;
-    // const float value_float = float(21.4);
-    // const double value_double = 42.8;
+    const float value_float = float(21.4);
+    const double value_double = 42.8;
     const bool value_bool = true;
     const string value_string = "test string 0987654321";
     const char* value_char = "test char* 1234567890";
@@ -678,9 +946,9 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
     const string str_Int2("-32768");
     const string str_Uint4("4000000000");
     const string str_Int4("-2147483648");
-    const string str_Uint8("9223372036854775808");
+    const string str_Uint8("9223372036854775809");
     const string str_Int8("-9223372036854775807");
-    const string str_bool("yes");
+    const string str_bool("true");
     const string str_float("21.4");
     const string str_double("42.8");
 
@@ -691,6 +959,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             value = Convert(value_Int8);
             BOOST_CHECK_EQUAL(value, value_Int8);
+            
+            BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
 
             value = Convert(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
@@ -762,15 +1032,19 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             value = Convert(value_Uint8);
             BOOST_CHECK_EQUAL(value, value_Uint8);
+            BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
 
             value = Convert(value_Uint4);
             BOOST_CHECK_EQUAL(value, value_Uint4);
+            BOOST_CHECK_THROW(value = Convert(value_Int4), CInvalidConversionException);
 
             value = Convert(value_Uint2);
             BOOST_CHECK_EQUAL(value, value_Uint2);
+            BOOST_CHECK_THROW(value = Convert(value_Int2), CInvalidConversionException);
 
             value = Convert(value_Uint1);
             BOOST_CHECK_EQUAL(value, value_Uint1);
+            BOOST_CHECK_THROW(value = Convert(value_Int1), CInvalidConversionException);
 
             value = Convert(value_bool);
             BOOST_CHECK_EQUAL(value, value_bool);
@@ -813,8 +1087,12 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
         {
             Int4 value = 0;
 
+            BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
+            BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
+
             value = Convert(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
+            BOOST_CHECK_THROW(value = Convert(value_Uint4), CInvalidConversionException);
 
             value = Convert(value_Int2);
             BOOST_CHECK_EQUAL(value, value_Int2);
@@ -876,14 +1154,20 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
         {
             Uint4 value = 0;
 
+            BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
+            BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
+
             value = Convert(value_Uint4);
             BOOST_CHECK_EQUAL(value, value_Uint4);
+            BOOST_CHECK_THROW(value = Convert(value_Int4), CInvalidConversionException);
 
             value = Convert(value_Uint2);
             BOOST_CHECK_EQUAL(value, value_Uint2);
+            BOOST_CHECK_THROW(value = Convert(value_Int2), CInvalidConversionException);
 
             value = Convert(value_Uint1);
             BOOST_CHECK_EQUAL(value, value_Uint1);
+            BOOST_CHECK_THROW(value = Convert(value_Int1), CInvalidConversionException);
 
             value = Convert(value_bool);
             BOOST_CHECK_EQUAL(value, value_bool);
@@ -927,8 +1211,15 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
         {
             Int2 value = 0;
 
+            BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
+            BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
+
+            BOOST_CHECK_THROW(value = Convert(value_Uint4), CInvalidConversionException);
+            BOOST_CHECK_THROW(value = Convert(value_Int4), CInvalidConversionException);
+
             value = Convert(value_Int2);
             BOOST_CHECK_EQUAL(value, value_Int2);
+            BOOST_CHECK_THROW(value = Convert(value_Uint2), CInvalidConversionException);
 
             value = Convert(value_Int1);
             BOOST_CHECK_EQUAL(value, value_Int1);
@@ -980,11 +1271,19 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
         {
             Uint2 value = 0;
 
+            BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
+            BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
+
+            BOOST_CHECK_THROW(value = Convert(value_Uint4), CInvalidConversionException);
+            BOOST_CHECK_THROW(value = Convert(value_Int4), CInvalidConversionException);
+
             value = Convert(value_Uint2);
             BOOST_CHECK_EQUAL(value, value_Uint2);
+            BOOST_CHECK_THROW(value = Convert(value_Int2), CInvalidConversionException);
 
             value = Convert(value_Uint1);
             BOOST_CHECK_EQUAL(value, value_Uint1);
+            BOOST_CHECK_THROW(value = Convert(value_Int1), CInvalidConversionException);
 
             value = Convert(value_bool);
             BOOST_CHECK_EQUAL(value, value_bool);
@@ -1027,8 +1326,18 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
         {
             Int1 value = 0;
 
+            BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
+            BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
+
+            BOOST_CHECK_THROW(value = Convert(value_Uint4), CInvalidConversionException);
+            BOOST_CHECK_THROW(value = Convert(value_Int4), CInvalidConversionException);
+
+            BOOST_CHECK_THROW(value = Convert(value_Uint2), CInvalidConversionException);
+            BOOST_CHECK_THROW(value = Convert(value_Int2), CInvalidConversionException);
+
             value = Convert(value_Int1);
             BOOST_CHECK_EQUAL(value, value_Int1);
+            BOOST_CHECK_THROW(value = Convert(value_Uint1), CInvalidConversionException);
 
             value = Convert(value_bool);
             BOOST_CHECK_EQUAL(value, value_bool);
@@ -1071,8 +1380,18 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
         {
             Uint1 value = 0;
 
+            BOOST_CHECK_THROW(value = Convert(value_Uint8), CInvalidConversionException);
+            BOOST_CHECK_THROW(value = Convert(value_Int8), CInvalidConversionException);
+
+            BOOST_CHECK_THROW(value = Convert(value_Uint4), CInvalidConversionException);
+            BOOST_CHECK_THROW(value = Convert(value_Int4), CInvalidConversionException);
+
+            BOOST_CHECK_THROW(value = Convert(value_Uint2), CInvalidConversionException);
+            BOOST_CHECK_THROW(value = Convert(value_Int2), CInvalidConversionException);
+
             value = Convert(value_Uint1);
             BOOST_CHECK_EQUAL(value, value_Uint1);
+            BOOST_CHECK_THROW(value = Convert(value_Int1), CInvalidConversionException);
 
             value = Convert(value_bool);
             BOOST_CHECK_EQUAL(value, value_bool);
@@ -1123,6 +1442,9 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             bool value = false;
 
             value = Convert(value_Int8);
+            BOOST_CHECK_EQUAL(value, true);
+
+            value = Convert(value_Uint8);
             BOOST_CHECK_EQUAL(value, true);
 
             value = Convert(value_Int4);
@@ -1181,6 +1503,191 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             // Won't Convert at run-time ...
             BOOST_CHECK_THROW(value = Convert(str_double), CException);
+        }
+
+        // string
+        {
+            string value;
+
+            //////////
+            {
+                string value = Convert(value_Int8);
+                BOOST_CHECK_EQUAL(value, str_Int8);
+            }
+
+            {
+                string value;
+                value += Convert(value_Int8);
+                BOOST_CHECK_EQUAL(value, str_Int8);
+            }
+
+            value = Convert(value_Int8).operator string();
+            BOOST_CHECK_EQUAL(value, str_Int8);
+
+            //////////
+            {
+                string value = Convert(value_Uint8);
+                BOOST_CHECK_EQUAL(value, str_Uint8);
+            }
+
+            {
+                string value;
+                value += Convert(value_Uint8);
+                BOOST_CHECK_EQUAL(value, str_Uint8);
+            }
+
+            value = Convert(value_Uint8).operator string();
+            BOOST_CHECK_EQUAL(value, str_Uint8);
+
+            //////////
+            {
+                string value = Convert(value_Int4);
+                BOOST_CHECK_EQUAL(value, str_Int4);
+            }
+
+            {
+                string value;
+                value += Convert(value_Int4);
+                BOOST_CHECK_EQUAL(value, str_Int4);
+            }
+
+            value = Convert(value_Int4).operator string();
+            BOOST_CHECK_EQUAL(value, str_Int4);
+
+            //////////
+            {
+                string value = Convert(value_Uint4);
+                BOOST_CHECK_EQUAL(value, str_Uint4);
+            }
+
+            {
+                string value;
+                value += Convert(value_Uint4);
+                BOOST_CHECK_EQUAL(value, str_Uint4);
+            }
+
+            value = Convert(value_Uint4).operator string();
+            BOOST_CHECK_EQUAL(value, str_Uint4);
+
+            //////////
+            {
+                string value = Convert(value_Int2);
+                BOOST_CHECK_EQUAL(value, str_Int2);
+            }
+
+            {
+                string value;
+                value += Convert(value_Int2);
+                BOOST_CHECK_EQUAL(value, str_Int2);
+            }
+
+            value = Convert(value_Int2).operator string();
+            BOOST_CHECK_EQUAL(value, str_Int2);
+
+            //////////
+            {
+                string value = Convert(value_Uint2);
+                BOOST_CHECK_EQUAL(value, str_Uint2);
+            }
+
+            {
+                string value;
+                value += Convert(value_Uint2);
+                BOOST_CHECK_EQUAL(value, str_Uint2);
+            }
+
+            value = Convert(value_Uint2).operator string();
+            BOOST_CHECK_EQUAL(value, str_Uint2);
+
+            //////////
+            {
+                string value = Convert(value_Int1);
+                BOOST_CHECK_EQUAL(value, str_Int1);
+            }
+
+            {
+                string value;
+                value += Convert(value_Int1);
+                BOOST_CHECK_EQUAL(value, str_Int1);
+            }
+
+            value = Convert(value_Int1).operator string();
+            BOOST_CHECK_EQUAL(value, str_Int1);
+
+            //////////
+            {
+                string value = Convert(value_Uint1);
+                BOOST_CHECK_EQUAL(value, str_Uint1);
+            }
+
+            {
+                string value;
+                value += Convert(value_Uint1);
+                BOOST_CHECK_EQUAL(value, str_Uint1);
+            }
+
+            value = Convert(value_Uint1).operator string();
+            BOOST_CHECK_EQUAL(value, str_Uint1);
+
+            //////////
+            {
+                string value = Convert(value_bool);
+                BOOST_CHECK_EQUAL(value, str_bool);
+            }
+
+            {
+                string value;
+                value += Convert(value_bool);
+                BOOST_CHECK_EQUAL(value, str_bool);
+            }
+
+            value = Convert(value_bool).operator string();
+            BOOST_CHECK_EQUAL(value, str_bool);
+
+            //////////
+            {
+                string value = Convert(value_float);
+                BOOST_CHECK_EQUAL(value, str_float);
+            }
+
+            {
+                string value;
+                value += Convert(value_float);
+                BOOST_CHECK_EQUAL(value, str_float);
+            }
+
+            value = Convert(value_float).operator string();
+            BOOST_CHECK_EQUAL(value, str_float);
+
+            //////////
+            {
+                string value = Convert(value_double);
+                BOOST_CHECK_EQUAL(value, str_double);
+            }
+
+            {
+                string value;
+                value += Convert(value_double);
+                BOOST_CHECK_EQUAL(value, str_double);
+            }
+
+            value = Convert(value_double).operator string();
+            BOOST_CHECK_EQUAL(value, str_double);
+
+            //////////
+            {
+                string value = Convert(value_CTime);
+                BOOST_CHECK_EQUAL(value, value_CTime.AsString());
+            }
+
+            {
+                string value;
+                value += Convert(value_CTime);
+                BOOST_CHECK_EQUAL(value, value_CTime.AsString());
+            }
+
+            value = Convert(value_CTime).operator string();;
+            BOOST_CHECK_EQUAL(value, value_CTime.AsString());
         }
 
     }

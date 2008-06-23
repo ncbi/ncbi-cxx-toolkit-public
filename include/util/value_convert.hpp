@@ -43,6 +43,7 @@ BEGIN_NCBI_SCOPE
 namespace value_slice
 {
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declaration.
 //
@@ -1067,15 +1068,63 @@ public:
     }
 
 public:
+#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
+    operator bool(void) const
+    { 
+        return !m_Value->IsEmpty();
+    }
+    operator Uint1(void) const
+    {
+        return MakeCP<CP>(*m_Value);
+    }
+    operator Int1(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Uint2(void) const
+    {
+        return MakeCP<CP>(*m_Value);
+    }
+    operator Int2(void) const
+    {
+        return MakeCP<CP>(*m_Value);
+    }
+    operator Uint4(void) const
+    {
+        return MakeCP<CP>(*m_Value);
+    }
+    operator Int4(void) const
+    {
+        return MakeCP<CP>(*m_Value);
+    }
+    operator Uint8(void) const
+    {
+        return MakeCP<CP>(*m_Value);
+    }
+    operator Int8(void) const
+    {
+        return MakeCP<CP>(*m_Value);
+    }
+    operator float(void) const
+    {
+        return MakeCP<CP>(*m_Value);
+    }
+    operator double(void) const
+    {
+        return MakeCP<CP>(*m_Value);
+    }
+#else
+    template <typename TO>
+    operator TO(void) const
+    {
+        return MakeCP<CP>(*m_Value);
+    }
+#endif
+
     // Convert to itself.
     operator const obj_type&(void) const
     {
         return MakeCP<CP>(*m_Value);
-    }
-    // CTime has "empty" value semantic.
-    operator bool(void) const
-    {
-        return !m_Value->IsEmpty();
     }
     operator string(void) const
     {
@@ -1199,6 +1248,14 @@ inline
 CValueConvert<SRunTimeCP, Int8>::operator bool(void) const
 {   
         return m_Value != 0;
+}
+
+// CTime has "empty" value semantic.
+template <> template <>
+inline
+CValueConvert<SRunTimeCP, CTime>::operator bool(void) const
+{   
+		return !m_Value->IsEmpty();
 }
 
 #endif
@@ -1329,6 +1386,63 @@ bool operator ||(STypeProxy<CP, FROM> const& l, bool r)
 } // namespace value_slice
 
 ////////////////////////////////////////////////////////////////////////////////
+template <typename CP, typename FROM>
+inline
+string operator+(const string& s, const value_slice::STypeProxy<CP, FROM>& value)
+{
+    string str_value(s);
+
+    str_value += value.operator string();
+    return str_value;
+}
+
+template <typename CP, typename FROM>
+inline
+string operator+(const value_slice::STypeProxy<CP, FROM>& value, const string& s)
+{
+    string str_value = value;
+
+    str_value += s;
+    return str_value;
+}
+
+template <typename CP, typename FROM>
+inline
+string operator+(const char* s, const value_slice::STypeProxy<CP, FROM>& value)
+{
+    string str_value;
+
+    if (s) {
+        str_value += s;
+    }
+
+    str_value += value.operator string();
+    
+    return str_value;
+}
+
+template <typename CP, typename FROM>
+inline
+string operator+(const value_slice::STypeProxy<CP, FROM>& value, const char* s)
+{
+    string str_value = value;
+
+    if (s) {
+        str_value += s;
+    }
+
+    return str_value;
+}
+
+template <typename CP, typename FROM>
+inline
+string& operator+=(string& s, const value_slice::STypeProxy<CP, FROM>& value)
+{
+    s += value.operator string();
+    return s;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // A limited case ...
 template <typename FROM>
 inline
@@ -1439,6 +1553,63 @@ bool operator ||(CValueConvert<CP, FROM> const& l, bool r)
 }
 
 #endif
+
+////////////////////////////////////////////////////////////////////////////////
+template <typename CP, typename FROM>
+inline
+string operator+(const string& s, const value_slice::CValueConvert<CP, FROM>& value)
+{
+    string str_value(s);
+
+    str_value += value.operator string();
+    return str_value;
+}
+
+template <typename CP, typename FROM>
+inline
+string operator+(const value_slice::CValueConvert<CP, FROM>& value, const string& s)
+{
+    string str_value = value;
+
+    str_value += s;
+    return str_value;
+}
+
+template <typename CP, typename FROM>
+inline
+string operator+(const char* s, const value_slice::CValueConvert<CP, FROM>& value)
+{
+    string str_value;
+
+    if (s) {
+        str_value += s;
+    }
+
+    str_value += value.operator string();
+    
+    return str_value;
+}
+
+template <typename CP, typename FROM>
+inline
+string operator+(const value_slice::CValueConvert<CP, FROM>& value, const char* s)
+{
+    string str_value = value;
+
+    if (s) {
+        str_value += s;
+    }
+
+    return str_value;
+}
+
+template <typename CP, typename FROM>
+inline
+string& operator+=(string& s, const value_slice::CValueConvert<CP, FROM>& value)
+{
+    s += value.operator string();
+    return s;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // A limited case ...
