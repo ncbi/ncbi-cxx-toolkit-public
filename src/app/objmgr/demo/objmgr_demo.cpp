@@ -81,10 +81,6 @@
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
-#include <objtools/alnmgr/aln_converters.hpp>
-#include <objtools/alnmgr/aln_seqid.hpp>
-#include <objtools/alnmgr/pairwise_aln.hpp>
-
 #ifdef HAVE_BDB
 #  define HAVE_LDS 1
 #elif defined(HAVE_LDS)
@@ -313,117 +309,6 @@ typename C::E_Choice GetVariant(const CArgValue& value)
 }
 
 
-int test1()
-{
-    CRef<CObjectManager> om = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*om);
-    CScope scope(*om);
-    scope.AddDefaults();
-    ifstream gi_in("prot_gis.txt");
-    int gi;
-    int seq_count = 0;
-    int prot_count = 0;
-    int gene_count = 0;
-    int cdr_count = 0;
-    vector<int> gis;
-    vector<CSeq_id_Handle> ids;
-    while ( gi_in >> gi ) {
-        gis.push_back(gi);
-        ids.push_back(CSeq_id_Handle::GetGiHandle(gi));
-    }
-
-    CRef<CPrefetchManager> prefetch_manager;
-    //prefetch_manager = new CPrefetchManager();
-    CRef<CPrefetchSequence> prefetch;
-    if ( prefetch_manager ) {
-        // Initialize prefetch token;
-        prefetch = new CPrefetchSequence
-            (*prefetch_manager,
-             new CPrefetchBioseqActionSource(CScopeSource(scope), ids));
-    }
-
-    ITERATE ( vector<CSeq_id_Handle>, id, ids ) {
-        gi = id->GetGi();
-        NcbiCout << "Loading gi "<<gi << NcbiEndl;
-        CBioseq_Handle bh;
-        if ( prefetch ) {
-            bh = CStdPrefetch::GetBioseqHandle(prefetch->GetNextToken());
-        }
-        else {
-            bh = scope.GetBioseqHandle(*id);
-        }
-        if ( !bh ) {
-            ERR_POST("Cannot load gi "<<gi);
-            continue;
-        }
-        CConstRef<CSeq_entry> core = bh.GetTSE_Handle().GetTSECore();
-        if ( core->IsSeq() ) {
-            NcbiCout << gi << " seq" << NcbiEndl;
-        }
-        else if ( !core->GetSet().IsSetId() ) {
-            NcbiCout << gi << " set" << NcbiEndl;
-        }
-        else {
-            NcbiCout << gi << " split" << NcbiEndl;
-        }
-        ++seq_count;
-        if ( 0 ) {
-            for ( CFeat_CI it(bh, CSeqFeatData::e_Prot); it; ++it ) {
-                ++prot_count;
-            }
-            for ( CFeat_CI it(bh, SAnnotSelector(CSeqFeatData::e_Cdregion, true));
-                  it; ++it ) {
-                ++cdr_count;
-                for ( CFeat_CI it2(scope, it->GetLocation(), CSeqFeatData::e_Gene);
-                      it2; ++it2 ) {
-                    ++gene_count;
-                }
-            }
-        }
-    }
-    NcbiCout << "Total sequences: "<<seq_count
-             << " prot: "<<prot_count
-             << " gene: "<<gene_count
-             << " cdr: "<<cdr_count
-             << NcbiEndl;
-    return 0;
-}
-
-
-int test2()
-{
-    CRef<CObjectManager> om = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*om);
-    CScope scope(*om);
-    scope.AddDefaults();
-    CSeq_id id("NT_029998.7");
-    CBioseq_Handle bh = scope.GetBioseqHandle(id);
-    CSeqMap& sm = bh.GetEditHandle().SetSeqMap();
-    CSeqMap_CI it = sm.FindSegment(72470, &scope);
-    for ( int i = 0; i < 5; ++i ) {
-        NcbiCout << "Old seg: " << it.GetPosition() << " "<<it.GetLength()
-                 << NcbiEndl;
-        NcbiCout << "Old len: " << bh.GetBioseqLength() << " "
-                 << sm.GetLength(&scope)
-                 << NcbiEndl;
-        if ( i%3 == 2 ) {
-            it = sm.InsertSegmentGap(it, 123);
-        }
-        else {
-            it = sm.RemoveSegment(it);
-        }
-        NcbiCout << "New seg: " << it.GetPosition() << " "<<it.GetLength()
-                 << NcbiEndl;
-        NcbiCout << "New len: " << bh.GetBioseqLength() << " "
-                 << sm.GetLength(&scope)
-                 << NcbiEndl;
-        NcbiCout << MSerial_AsnText << *bh.GetCompleteObject()
-                 << NcbiEndl;
-    }
-    return 0;
-}
-
-
 CNcbiOstream& operator<<(CNcbiOstream& out, const vector<char>& v)
 {
     out << '\'';
@@ -465,7 +350,6 @@ int CDemoApp::Run(void)
         ss >> MSerial_AsnText >> *id;
     }
     else {
-        return test2();
         ERR_POST(Fatal << "One of -gi, -id or -asn_id arguments is required");
     }
 
@@ -495,6 +379,9 @@ int CDemoApp::Run(void)
     bool get_types = args["get_types"];
     bool get_names = args["get_names"];
     if ( get_types || get_names ) {
+        only_features = true;
+    }
+    if ( count_types || count_subtypes ) {
         only_features = true;
     }
     bool print_tse = args["print_tse"];
@@ -637,35 +524,6 @@ int CDemoApp::Run(void)
     // Add default loaders (GB loader in this demo) to the scope.
     scope.AddDefaults();
 
-    if ( 0 ) {
-        CBioseq_Handle::TId id_handles;
-        id_handles.push_back(CSeq_id_Handle::GetGiHandle(71516264));
-        id_handles.push_back(CSeq_id_Handle::GetGiHandle(61139581));  
-        id_handles.push_back(CSeq_id_Handle::GetGiHandle(156148258)); 
-        id_handles.push_back(CSeq_id_Handle::GetGiHandle(47776295));  
-        id_handles.push_back(CSeq_id_Handle::GetGiHandle(47776317));  
-        CScope::TBioseqHandles handles = scope.GetBioseqHandles(id_handles);
-    }
-    
-    if ( 0 ) {
-        CNcbiIfstream in("sparse_test.asn");
-        CSeq_loc loc1, loc2;
-        CSeq_align aln;
-        in >> MSerial_AsnText >> loc1;
-        in >> MSerial_AsnText >> loc2;
-        in >> MSerial_AsnText >> aln;
-        //CSeq_loc_Mapper mapper1(aln, 0, &scope, CSeq_loc_Mapper::fAlign_Sparse_ToFirst);
-        //CSeq_loc_Mapper mapper2(aln, 0, &scope, CSeq_loc_Mapper::fAlign_Sparse_ToSecond);
-        //CRef<CSeq_loc> loc1m = mapper1.Map(loc1);
-        //CRef<CSeq_loc> loc2m = mapper2.Map(loc2);
-        //cout << MSerial_AsnText << *loc1m;
-        //cout << MSerial_AsnText << *loc2m;
-        CSeq_loc_Mapper mapper(loc1, loc2, &scope);
-        CRef<CSeq_align> aln2 = mapper.Map(aln);
-        cout << MSerial_AsnText << *aln2;
-        return 0;
-    }
-
     CSeq_entry_Handle added_entry;
     CSeq_annot_Handle added_annot;
     if ( args["file"] ) {
@@ -741,29 +599,11 @@ int CDemoApp::Run(void)
     if ( print_tse ) {
         CConstRef<CSeq_entry> entry =
             handle.GetTopLevelEntry().GetCompleteSeq_entry();
-        //CConstRef<CBioseq> entry =
-        //    handle.GetEditHandle().GetCompleteObject();
         NcbiCout << "-------------------- TSE --------------------\n";
         NcbiCout << MSerial_AsnText << *entry << '\n';
         NcbiCout << "-------------------- END --------------------\n";
     }
     if ( print_seq ) {
-        if ( 0 ) {
-            CBioseq_Handle prot_bh = handle;
-            NcbiCout << MSerial_AsnText
-                     << *prot_bh.GetCompleteBioseq() << "\n";
-            CRef<CSeq_id> new_prot_id(new CSeq_id());
-            new_prot_id->Assign(*prot_bh.GetSeqId());
-            ((CTextseq_id*)new_prot_id->GetTextseq_Id())->SetAccession() += "_prot";
-            CBioseq_EditHandle prot_eh = prot_bh.GetEditHandle();
-            CSeq_id_Handle seq_hdl = sequence::GetId(prot_eh);
-            bool removed = prot_eh.RemoveId(seq_hdl);
-            CSeq_id_Handle new_hdl = CSeq_id_Handle::GetHandle(*new_prot_id);
-            bool added = prot_eh.AddId(new_hdl);
-            NcbiCout << "removed: "<<removed<<" added: "<<added << '\n';
-            NcbiCout << MSerial_AsnText
-                     << *prot_eh.GetCompleteBioseq() << "\n";
-        }
         NcbiCout << "-------------------- SEQ --------------------\n";
         NcbiCout << MSerial_AsnText << *handle.GetCompleteObject() << '\n';
         NcbiCout << "-------------------- END --------------------\n";
@@ -859,13 +699,6 @@ int CDemoApp::Run(void)
                     NcbiCout << "    "<<bit->GetSeqId()->DumpAsFasta()<<
                         NcbiEndl;
                 }
-            }
-            else if ( 0 ) {
-                count = 0;
-                for ( CBioseq_CI bit(handle.GetTopLevelEntry()); bit; ++bit) {
-                    ++count;
-                }
-                NcbiCout << "TSE sequences:\t" << count << NcbiEndl;
             }
 
             // Get the bioseq
@@ -1066,42 +899,8 @@ int CDemoApp::Run(void)
             }
             CRef<CSeq_loc_Mapper> mapper;
             if ( print_features && print_mapper ) {
-                if ( 0 ) {
-                    CRef<CBioseq> seq(new CBioseq);
-                    CRef<CSeq_id> id(new CSeq_id);
-                    id->SetGi(1);
-                    seq->SetId().push_back(id);
-                    TSeqPos len = handle.GetBioseqLength();
-                    seq->SetInst().SetLength(len);
-                    seq->SetInst().SetMol(handle.GetSequenceType());
-                    scope.AddBioseq(*seq);
-
-                    CRef<CSeq_loc> from_loc(new CSeq_loc);
-                    from_loc->SetInt().SetFrom(0);
-                    from_loc->SetInt().SetTo  (len-1);
-                    //from_loc->SetId(*handle.GetSeqId());
-                    ITERATE ( CBioseq_Handle::TId, it, handle.GetId() ) {
-                        if ( *it != idh ) {
-                            from_loc->SetId(*it->GetSeqId());
-                            break;
-                        }
-                    }
-                
-                    CRef<CSeq_loc> to_loc(new CSeq_loc);
-                    to_loc->SetInt().SetFrom(0);
-                    to_loc->SetInt().SetTo(len-1);
-                    to_loc->SetId(*id);
-
-                    NcbiCout << "Mapping from " << MSerial_AsnText << *from_loc <<
-                        " to " << MSerial_AsnText << *to_loc;
-                    mapper.Reset(new CSeq_loc_Mapper(*from_loc,
-                                                     *to_loc,
-                                                     &scope));
-                }
-                else {
-                    mapper.Reset(new CSeq_loc_Mapper(handle,
-                                                     CSeq_loc_Mapper::eSeqMap_Up));
-                }
+                mapper.Reset(new CSeq_loc_Mapper(handle,
+                                                 CSeq_loc_Mapper::eSeqMap_Up));
             }
             if ( args["feat_id"] ) {
                 int feat_id = args["feat_id"].AsInteger();
@@ -1266,30 +1065,8 @@ int CDemoApp::Run(void)
                     }
                     NcbiCout << NcbiEndl;
                 }
-                if ( 0 && it->IsSetXref() ) {
-                    ITERATE ( CSeq_feat::TXref, xit, it->GetXref() ) {
-                        const CSeqFeatXref& xref = **xit;
-                        if ( !xref.IsSetId() )
-                            continue;
-                        int id = xref.GetId().GetLocal().GetId();
-                        NcbiCout << " xref: " << id << NcbiEndl;
-                        CTSE_Handle tse = it->GetAnnot().GetTSE_Handle();
-                        vector<CSeq_feat_Handle> ff =
-                            tse.GetFeaturesWithId(CSeqFeatData::e_not_set, id);
-                        ITERATE ( vector<CSeq_feat_Handle>, it, ff ) {
-                            NcbiCout << MSerial_AsnText
-                                     << *it->GetSeq_feat() << NcbiEndl;
-                        }
-                    }
-                }
 
                 CSeq_annot_Handle annot = it.GetAnnot();
-                /*
-                  const CSeq_id* mapped_id = 0;
-                  it->GetLocation().CheckId(mapped_id);
-                  _ASSERT(mapped_id);
-                  _ASSERT(CSeq_id_Handle::GetHandle(*mapped_id) == idh);
-                */
             }
             NcbiCout << "Feat count (loc range, " << sel_msg << "):\t"
                      << count << NcbiEndl;
@@ -1346,11 +1123,6 @@ int CDemoApp::Run(void)
                     }
                     else {
                         ++no_product_count;
-                        /*
-                          ERR_POST("Cdregion with no product");
-                          NcbiCout << "Original location: " << MSerial_AsnText <<
-                          it->GetOriginalFeature().GetLocation();
-                        */
                         continue;
                     }
                 }
