@@ -750,6 +750,10 @@ void SQueueDbBlock::Truncate()
     runs_db.Truncate();
     job_info_db.Truncate();
     job_db.Truncate();
+    CBDB_Env& env = *job_db.GetEnv();
+    env.ForceTransactionCheckpoint();
+    env.CleanLog();
+
 }
 
 //////////////////////////////////////////////////////////////////////////
