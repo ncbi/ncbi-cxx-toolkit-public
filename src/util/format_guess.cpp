@@ -966,6 +966,12 @@ static bool x_IsInputTable(const char* byte_buf, size_t byte_count)
     return ( nlines >= 2 );
 }
 
+static bool s_IsSnpMarkers(const char* byte_buf, size_t byte_count)
+{
+    int rsid, chr, pos, numMatched;
+    numMatched = sscanf(byte_buf, "rs%d\t%d\t%d", &rsid, &chr, &pos);
+    return (numMatched == 3);
+}
 
 CFormatGuess::ESequenceType 
 CFormatGuess::SequenceType(const char* str, unsigned length)
@@ -1320,6 +1326,9 @@ CFormatGuess::GuessFormat(
     if ( TestFormatFiveColFeatureTable( mode ) ) {
         return eFiveColFeatureTable;
     }
+    if ( TestFormatSnpMarkers( mode ) ) {
+        return eSnpMarkers;
+    }
     if ( TestFormatTable( mode ) ) {
         return eTable;
     }
@@ -1640,6 +1649,18 @@ CFormatGuess::TestFormatTable(
     }
     return x_IsInputTable( m_pTestBuffer, m_iTestDataSize );
 }
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatSnpMarkers(
+    EMode /* not used */ )
+{
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
+    return s_IsSnpMarkers( m_pTestBuffer, m_iTestDataSize );
+}
+
 
 //  -----------------------------------------------------------------------------
 bool

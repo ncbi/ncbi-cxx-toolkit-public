@@ -95,7 +95,10 @@ public:
         eAlignment,
 
         //< GenBank/GenPept/DDBJ/EMBL flat-file sequence portion
-        eFlatFileSequence
+        eFlatFileSequence,
+
+        //< SNP Marker flat file
+        eSnpMarkers
     };
 
     enum ESequenceType {
@@ -195,6 +198,8 @@ protected:
     bool TestFormatFasta(
         EMode );
     bool TestFormatTextAsn(
+        EMode );
+    bool TestFormatSnpMarkers(
         EMode );
 
     // data:
