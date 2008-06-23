@@ -68,7 +68,7 @@ private:
     char ConvertAA(char in);
     CRef<CModification_info> ConvertModifications(CRef<CMSHits> msHits, CRef<CMSModSpecSet> Modset);
     void ConvertModSetting(CRef<CSearch_summary> sSum, CRef<CMSModSpecSet> Modset, int modnum, bool fixed);
-    string ParseScan(string SpecID, int field, string def);
+    void ConvertScanID(CRef<CSpectrum_query> sQuery, string SpecID, int query, int charge);
     string GetProteinName(CRef<CMSPepHit> pHit);
 
     typedef pair<char, double> TAminoAcidMassPair;

@@ -189,20 +189,41 @@ void CPepXML::ConvertModSetting(CRef<CSearch_summary> sSum, CRef<CMSModSpecSet> 
 // Parses a spectrum identifier string
 // SpecID: the string to parse
 // field:  0 = whole string
-//         1 = start scan
-//         2 = end scan
-//         3 = charge state
-//         4 = file extension (.dta)
-// def:    string to return if SpecID is not a dta filename
-string CPepXML::ParseScan(string SpecID, int field, string def) {
-	CRegexp RxpLocus("^locus", CRegexp::fCompile_ignore_case | CRegexp::fCompile_newline );
-	if (RxpLocus.IsMatch(SpecID)) return def;
+//         1 = dta file name
+//         2 = start scan
+//         3 = end scan
+//         4 = charge state
+//         5 = file extension (.dta)
+// query:  string to return if SpecID is not a dta filename
+void CPepXML::ConvertScanID(CRef<CSpectrum_query> sQuery, string SpecID, int query, int charge) {
+    string specFile, startScan, stopScan, dtaCharge;
 
-	CRegexp RxpParse(".*\\.(\\d+)\\.(\\d+)\\.(\\d+)(\\.dta)?", CRegexp::fCompile_ignore_case);
-	string match = RxpParse.GetMatch(SpecID, 0, field);
-	if (match == "") return def;
-	
-	return match;
+    dtaCharge = NStr::IntToString(charge);
+    
+	CRegexp RxpLocus("^locus", CRegexp::fCompile_ignore_case | CRegexp::fCompile_newline );
+	if (RxpLocus.IsMatch(SpecID)) {
+        specFile = SpecID;
+        startScan = NStr::IntToString(query);
+        stopScan = startScan;
+    } else {
+        CRegexp RxpParse("(.*)\\.(\\d+)\\.(\\d+)\\.(\\d+)(\\.dta)?", CRegexp::fCompile_ignore_case);
+        specFile = RxpParse.GetMatch(SpecID, 0, 1);
+
+        startScan= RxpParse.GetMatch(SpecID, 0, 2);
+        if (startScan == "") {
+            startScan = NStr::IntToString(query);
+            stopScan = startScan;
+        } else {
+            stopScan = RxpParse.GetMatch(SpecID, 0, 3);
+            if (stopScan == "") {
+                stopScan = startScan;
+            }
+        }
+    }
+    
+    sQuery->SetAttlist().SetSpectrum(specFile + "." + startScan + "." + stopScan + "." + dtaCharge);
+    sQuery->SetAttlist().SetStart_scan(startScan);
+    sQuery->SetAttlist().SetEnd_scan(stopScan);
 }
 
 string CPepXML::GetProteinName(CRef<CMSPepHit> pHit) {
@@ -296,10 +317,13 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
             iHit = HitSet->GetHits().begin();
             CRef<CSpectrum_query> sQuery(new CSpectrum_query);
             string spectrumID = HitSet->GetIds().front();
-            string query = NStr::IntToString(HitSet->GetNumber());
-            sQuery->SetAttlist().SetSpectrum(spectrumID);
-            sQuery->SetAttlist().SetStart_scan(ParseScan(spectrumID, 1, query));
-            sQuery->SetAttlist().SetEnd_scan(ParseScan(spectrumID, 2, query));
+            //string query = NStr::IntToString(HitSet->GetNumber());
+
+            ConvertScanID(sQuery, spectrumID, HitSet->GetNumber(), (*iHit)->GetCharge());
+            //sQuery->SetAttlist().SetSpectrum(spectrumID);
+            //sQuery->SetAttlist().SetStart_scan(ParseScan(spectrumID, 1, query));
+            //sQuery->SetAttlist().SetEnd_scan(ParseScan(spectrumID, 2, query));
+
             sQuery->SetAttlist().SetPrecursor_neutral_mass(NStr::DoubleToString((*iHit)->GetMass()/scale));
             sQuery->SetAttlist().SetAssumed_charge(NStr::IntToString((*iHit)->GetCharge()));
             sQuery->SetAttlist().SetIndex(NStr::IntToString(index++));
@@ -309,14 +333,15 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
 
             CMSHits::TPephits::const_iterator iPephit;
             int hitRank = 1;
-            double prevEValue = (*iHit)->GetEvalue();
+            //double prevEValue = (*iHit)->GetEvalue();
             for( ; iHit != HitSet->GetHits().end(); iHit++) {
                 // First protein is associated with search_hit, the rest go into alternative_proteins
                 iPephit = (*iHit)->GetPephits().begin();
                 // Each set of MSHits is a search_hit
                 CRef<CSearch_hit> sHit(new CSearch_hit);
-                if (prevEValue < (*iHit)->GetEvalue()) hitRank++; 
+                //if (prevEValue < (*iHit)->GetEvalue()) hitRank++; // This sets those hits with the same score to have the same rank 
                 sHit->SetAttlist().SetHit_rank(NStr::IntToString(hitRank));
+                hitRank++; // Arbitrarily advances the rank, ever if the scores are the same
                 sHit->SetAttlist().SetPeptide((*iHit)->GetPepstring());
                 if((*iHit)->CanGetPepstart())
                     sHit->SetAttlist().SetPeptide_prev_aa((*iHit)->GetPepstart());
