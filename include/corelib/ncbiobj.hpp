@@ -2039,19 +2039,26 @@ class CWeakObjectExLocker : public CObjectCounterLocker
 {
 public:
     /// Type working as proxy storage for pointer to object
-    typedef CPtrToObjectExProxy  TPtrProxyType;
+    typedef CPtrToObjectExProxy     TPtrProxyType;
+    /// Alias for this type
+    typedef CWeakObjectExLocker<C>  TThisType;
 
     /// Get proxy storage for pointer to object
-    TPtrProxyType* GetPtrProxy(C* object)
+    TPtrProxyType* GetPtrProxy(C* object) const
     {
         return object->GetPtrProxy();
     }
 
     /// Lock the object and return pointer to it stored in the proxy.
-    /// If object is already destroyed then return NULL.
-    C* GetLockedObject(TPtrProxyType* proxy)
+    /// If object is already destroyed then return NULL CRef.
+    CRef<C, TThisType> GetLockedObject(TPtrProxyType* proxy) const
     {
-        return static_cast<C*>(proxy->GetLockedObject());
+        CRef<C, TThisType> ref(
+                        static_cast<C*>(proxy->GetLockedObject()), *this);
+        if (ref.NotNull()) {
+            Unlock(ref.GetPointer());
+        }
+        return ref;
     }
 };
 
@@ -2067,10 +2074,12 @@ class CWeakInterfaceLocker : public CInterfaceObjectLocker<Interface>
 {
 public:
     /// Type working as proxy storage for pointer to object
-    typedef CPtrToObjectExProxy  TPtrProxyType;
+    typedef CPtrToObjectExProxy              TPtrProxyType;
+    /// Alias for this type
+    typedef CWeakInterfaceLocker<Interface>  TThisType;
 
     /// Get proxy storage for pointer to object
-    TPtrProxyType* GetPtrProxy(Interface* ptr)
+    TPtrProxyType* GetPtrProxy(Interface* ptr) const
     {
         CObjectEx* object = dynamic_cast<CObjectEx*>(ptr);
         if (!object) {
@@ -2081,13 +2090,18 @@ public:
 
     /// Lock the object and return pointer to it stored in the proxy.
     /// If object is already destroyed then return NULL.
-    Interface* GetLockedObject(TPtrProxyType* proxy)
+    CIRef<Interface, TThisType> GetLockedObject(TPtrProxyType* proxy) const
     {
         // We are not checking that result of dynamic_cast is not null
         // because type compatibility is already checked in GetPtrProxy()
         // which always called first. Now we can be sure that this
         // cast will not return null.
-        return dynamic_cast<Interface*>(proxy->GetLockedObject());
+        CIRef<Interface, TThisType> ref(
+                   dynamic_cast<Interface*>(proxy->GetLockedObject()), *this);
+        if (ref.NotNull()) {
+            Unlock(ref.GetPointer());
+        }
+        return ref;
     }
 };
 
@@ -2174,7 +2188,7 @@ public:
         if (!m_Proxy)
             return null;
 
-        return TRefType(m_Locker.GetLockedObject(m_Proxy), m_Locker);
+        return m_Locker.GetLockedObject(m_Proxy.GetNCPointer());
     }
 
     /// Reset the containing pointer to null
