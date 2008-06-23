@@ -71,6 +71,7 @@ void CSeq_entry::Parentize(void)
         SetSeq().SetParentEntry(this);
         break;
     case e_Set:
+        SetSet().SetParentEntry(this);
         NON_CONST_ITERATE ( CBioseq_set::TSeq_set, si, SetSet().SetSeq_set() ) {
             (*si)->SetParentEntry(this);
             (*si)->Parentize();
@@ -88,6 +89,7 @@ void CSeq_entry::ParentizeOneLevel(void)
         SetSeq().SetParentEntry(this);
         break;
     case e_Set:
+        SetSet().SetParentEntry(this);
         NON_CONST_ITERATE ( CBioseq_set::TSeq_set, si, SetSet().SetSeq_set() ) {
             (*si)->SetParentEntry(this);
         }
