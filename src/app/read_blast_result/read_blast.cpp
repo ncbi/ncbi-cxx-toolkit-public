@@ -532,8 +532,10 @@ int CReadBlastApp::ProcessCDD(map<string, blastStr>& blastMap)
                << thisHitStr.sbjstart << "\t"
                << thisHitStr.sbjend << NcbiEndl;
         string debug_test = buffer.str();
+/*
         strstream misc_feat;
         misc_feat << buffer.str() << '\0';
+*/
         problemStr problem = { ePartial, buffer.str(), "","", "", -1, -1, eNa_strand_unknown};
         problems.push_back(problem);
         if(PrintDetails())

@@ -242,10 +242,44 @@ string GetStringDescr(const CBioseq& bioseq)
   return result;
 }
 
+string printed_range(const CSeq_feat& feat)
+{
+   return printed_range(feat.GetLocation());
+}
+
+string printed_range(const CSeq_loc& seq_interval)
+{
+   TSeqPos from2, to2;
+   from2 = seq_interval.GetStart(eExtreme_Positional);
+   to2   = seq_interval.GetStop (eExtreme_Positional);
+   strstream rstr;
+   rstr << from2 << "..." << to2 << '\0';
+   string r  = rstr.str();
+   return r;
+}
+
+string printed_range(const CBioseq& seq)
+{
+   return printed_range(CReadBlastApp::getGenomicLocation(seq));
+}
+
 string printed_range(const TSimpleSeqs::iterator& ext_rna)
 {
+  return printed_range(*ext_rna);
+/*
    int from = ext_rna->exons[0].from;
    int to   = ext_rna->exons[ext_rna->exons.size()-1].to;
+   strstream ext_rna_range_stream; ext_rna_range_stream << from << "..." << to << '\0';
+   string ext_rna_range = ext_rna_range_stream.str();
+   return ext_rna_range;
+*/
+}
+
+
+string printed_range(const TSimpleSeq& ext_rna)
+{
+   int from = ext_rna.exons[0].from;
+   int to   = ext_rna.exons[ext_rna.exons.size()-1].to;
    strstream ext_rna_range_stream; ext_rna_range_stream << from << "..." << to << '\0';
    string ext_rna_range = ext_rna_range_stream.str();
    return ext_rna_range;

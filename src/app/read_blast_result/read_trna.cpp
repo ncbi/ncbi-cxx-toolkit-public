@@ -47,6 +47,7 @@ int CReadBlastApp::ReadTRNA(const string& file)
     is.getline(line, 0xFF); 
     if(PrintDetails()) NcbiCerr << "ReadTRNA(" << file << "): line: " << line << NcbiEndl;
     if(!is.good()) break;
+    if(line[0] == '#') continue;
 // gnl|uianeuro|1003       1       19274   19345   Glu     TTC     0       0       0.00
     char *token = strtok(line, " \t");
     int icol=1;

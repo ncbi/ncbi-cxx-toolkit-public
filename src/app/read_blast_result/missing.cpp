@@ -216,7 +216,8 @@ int CReadBlastApp::simple_overlaps()
             first_ext_in_range, first_ext_non_in_range, bufferstr);
          }
        strstream misc_feat;
-       misc_feat << "RNA does not match strand for " << seq->locus_tag << NcbiEndl;
+       string seq_range = printed_range(seq);
+       misc_feat << "RNA does not match strand for feature located at " << seq_range << NcbiEndl;
        misc_feat << '\0';
        problemStr problem = {eTRNABadStrand, "", misc_feat.str(), "", "", from, to, strand};
        m_diag[diag_name].problems.push_back(problem);
@@ -239,7 +240,7 @@ int CReadBlastApp::simple_overlaps()
              first_ext_in_range, first_ext_non_in_range, bufferstr);
          }
        strstream misc_feat;
-       misc_feat << "NO RNA in the input this type: " <<type2 << "[" << ext_rna_range << "]" << NcbiEndl;
+       misc_feat << "no RNA in the input this type: " <<type2 << "[" << ext_rna_range << "]" << NcbiEndl;
        misc_feat << '\0';
        problemStr problem = {eTRNAAbsent , "", misc_feat.str(), "", "", from, to, strand};
        m_diag[diag_name].problems.push_back(problem);

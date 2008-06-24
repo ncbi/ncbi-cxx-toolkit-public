@@ -88,7 +88,7 @@ void CReadBlastApp::erase_problems(const string& qname, diagMap& diag, const EPr
              continue;
              }
         if(PrintDetails()) NcbiCerr << "it is that problem for erazing"  << NcbiEndl;
-        diag[qname].problems.erase(problem++);
+        problem=diag[qname].problems.erase(problem);
         if(PrintDetails()) NcbiCerr << "erased"  << NcbiEndl;
         if(PrintDetails()) NcbiCerr << "next current problem: " << problem->type << NcbiEndl;
         }
@@ -172,54 +172,50 @@ void CReadBlastApp::reportProblemMessage(const string& message, ostream& out)
 {
    out << message.c_str() << NcbiEndl;
 }
+
+string CReadBlastApp::ProblemType(const EProblem type)
+{
+   strstream strres;
+   strres << "unknown_problem_type=" << type << '\0';
+   string result=strres.str();
+   if(type == eOverlap)
+      result = "Potential overlap found";
+   else if(type == eRnaOverlap)
+      result =  "Potential RNA overlap found";
+   else if(type == eCompleteOverlap)
+      result =  "Complete overlap found";
+   else if(type == eRemoveOverlap)
+      result =  "overlap marked for removal";
+   else if(type == eFrameShift)
+      result =  "Potential frame shift evidence found";
+   else if(type == eMayBeNotFrameShift)
+      result =  "Evidence absolving from the frame shift accusation found";
+   else if(type == ePartial)
+      result =  "Potential partial protein annotation found";
+   else if(type == eTRNAMissing)
+      result =  "tRNA is missing in the list of independently annotated tRNAs";
+   else if(type == eTRNAAbsent)
+      result =  "RNA is missing in the list of annotated RNAs in the input";
+   else if(type == eTRNABadStrand)
+      result =  "RNA is present at the wrong strand";
+   else if(type == eTRNAComMismatch)
+      result =  "tRNA is a complete mismatch";
+   else if(type == eTRNAMismatch)
+      result =  "tRNA has mismatched ends";
+
+   return result;
+
+}
+
 void CReadBlastApp::reportProblemType(const EProblem type, ostream& out)
 {
    out
       << "---"
       << " ";
-   if(type == eOverlap)
+   string stype = ProblemType(type);
+   if(!stype.empty())
       {
-      out << "Potential overlap found";
-      }
-   else if(type == eRnaOverlap)
-      {
-      out << "Potential RNA overlap found";
-      }
-   else if(type == eCompleteOverlap)
-      {
-      out << "Complete overlap found";
-      }
-   else if(type == eFrameShift)
-      {
-      out << "Potential frame shift evidence found";
-      }
-   else if(type == eMayBeNotFrameShift)
-      {
-      out << "Evidence absolving from the frame shift accusation found";
-      }
-   else if(type == ePartial)
-      {
-      out << "Potential partial protein annotation found";
-      }
-   else if(type == eTRNAMissing)
-      {
-      out << "tRNA is missing in the list of independently annotated tRNAs";
-      }
-   else if(type == eTRNAAbsent)
-      {
-      out << "RNA is missing in the list of annotated RNAs in the input";
-      }
-   else if(type == eTRNABadStrand)
-      {
-      out << "RNA is present at the wrong strand";
-      }
-   else if(type == eTRNAComMismatch)
-      {
-      out << "tRNA is a complete mismatch";
-      }
-   else if(type == eTRNAMismatch)
-      {
-      out << "tRNA has mismatched ends";
+      out << stype;
       }
    else
       {
@@ -243,127 +239,282 @@ void CReadBlastApp::reportProblemSequenceName(const string& name, ostream& out)
       << "====="
       << NcbiEndl;
 }
+
 int CReadBlastApp::RemoveProblems(void)
 {
-
    if(PrintDetails()) NcbiCerr << "RemoveProblems: start " << NcbiEndl;
-   map<string,bool> problem_names;
+
+   map<string,string> problem_names;
    PushVerbosity();
    CollectFrameshiftedSeqs(problem_names);
    if(IsSubmit())
      { 
-     if (
-           m_Submit.GetData().IsEntrys()
-            &&
-           (*m_Submit.GetData().GetEntrys().begin())->IsSet()
-        ) 
+     if ( m_Submit.GetData().IsEntrys()) 
        {
-// annotations for a sequence set, separate from the sequence
-       if ( (*m_Submit.SetData().SetEntrys().begin())->SetSet().CanGetAnnot() )
+       for(CSeq_submit::C_Data::TEntrys::iterator entry = m_Submit.SetData().SetEntrys().begin();
+           entry != m_Submit.SetData().SetEntrys().end();)
+       // NON_CONST_ITERATE(CSeq_submit::C_Data::TEntrys, entry, m_Submit.SetData().SetEntrys())
          {
-         RemoveProblems( (*m_Submit.SetData().SetEntrys().begin())->SetSet().SetAnnot(),
-           problem_names); 
+         int removeme = RemoveProblems(**entry, problem_names);
+         if(PrintDetails())
+            NcbiCerr
+                 << "RemoveProblems(void): doing entry: removeme =  "
+                 << removeme
+                 << NcbiEndl;
+         if(removeme) 
+           {
+           NcbiCerr << "RemoveProblems(): WARNING: "
+                    << "CSeq_entry deleted, loss of annotation might occur"
+                    << NcbiEndl;
+           entry=m_Submit.SetData().SetEntrys().erase(entry);
+           }
+         else entry++;
          }
-       RemoveProblems((*m_Submit.SetData().SetEntrys().begin())->SetSet().SetSeq_set(), problem_names);
        }
      else
        {
-       NcbiCerr << "ERROR: submit file does not have proper seqset"<< NcbiCerr;
+       NcbiCerr << "ERROR: submit file does not have proper seqset"<< NcbiEndl;
        }
      }
-   else
-     {
-       if(m_Entry.SetSet().CanGetAnnot())
-         RemoveProblems(m_Entry.SetSet().SetAnnot(), problem_names);
-       RemoveProblems(m_Entry.SetSet().SetSeq_set(), problem_names);
+   else 
+     { 
+     if(PrintDetails())
+         NcbiCerr
+                 << "RemoveProblems(void): case is single entry "
+                 << NcbiEndl;
+     RemoveProblems(m_Entry, problem_names);
      }
+
    PopVerbosity();
    if(PrintDetails()) NcbiCerr << "RemoveProblems: end" << NcbiEndl;
-   return -1;
+   return 1;
 }
 
-int CReadBlastApp::RemoveProblems(CBioseq_set::TSeq_set& seqs, const map<string, bool>& problem_seqs)
+int CReadBlastApp::RemoveProblems(CSeq_entry& entry, const map<string, string>& problem_seqs)
 {
-   CArgs args = GetArgs();
-   IncreaseVerbosity();
-   for(CBioseq_set::TSeq_set::iterator left_end = seqs.end(),
-       left=seqs.begin(); left != left_end; )
+   int removeme=0;
+   if(entry.IsSeq()) 
      {
-     if((*left)->IsSet())
-       {
-       if(PrintDetails())
-           NcbiCerr << "RemoveProblems: going down: "
-                    << NcbiEndl;
-       CBioseq_set::TSeq_set& seqs2 = (*left)->SetSet().SetSeq_set();
-       PushVerbosity();
-       RemoveProblems(seqs2, problem_seqs);
-       PopVerbosity();
-       }
-     else
-/*
-this probably does not work. Silently
-*/
-       {
-// remove sequence with all its innotations
-       string thisName = GetStringDescr((*left)->GetSeq());
-       string::size_type ipos = thisName.rfind('|'); if(ipos!=string::npos) thisName.erase(0, ipos+1);
-       ipos = thisName.rfind('_'); if(ipos!=string::npos) ipos= thisName.rfind('_', ipos-1);
+     removeme=RemoveProblems(entry.SetSeq(), problem_seqs);
+     if(PrintDetails())
+         NcbiCerr
+                 << "RemoveProblems(CSeq_entry)(seq case): removeme = "
+                 << removeme
+                 << NcbiEndl;
 
-       if(problem_seqs.find(thisName) != problem_seqs.end()) // whack the sequence
-           {
-           seqs.erase(left++);
-           }
-       else if((*left)->GetSeq().IsNa())
-         {
-         RemoveProblems((*left)->SetSeq().SetAnnot(), problem_seqs);
-         }
-       }
-     left++;
      }
-
-  return 1;
+   else //several seqs
+     {
+     CBioseq_set& bioset = entry.SetSet();
+     removeme=RemoveProblems(bioset, problem_seqs);
+     CBioseq_set::TSeq_set& entries =  bioset.SetSeq_set();
+     int size=0;
+     for (CTypeConstIterator<CBioseq> seq = ::ConstBegin(entry);  seq;  ++seq, size++);
+     if(PrintDetails())
+         NcbiCerr
+                 << "RemoveProblems(CSeq_entry)(set case): removeme = "
+                 << removeme
+                 << ", entries.size = "
+                 << entries.size()
+                 << ", total seqs = "
+                 << size
+                 << NcbiEndl;
+     if (size<=1) NormalizeSeqentry(entry);
+     } // entry.IsSet()
+   return removeme;
 }
 
-int CReadBlastApp::RemoveProblems(CBioseq::TAnnot& annots, const map<string, bool>& problem_seqs)
+void CReadBlastApp::NormalizeSeqentry(CSeq_entry& entry)
 {
-  NON_CONST_ITERATE(CBioseq::TAnnot, annot, annots)
+  if(!entry.IsSet()) return;
+  CBioseq_set& bioset = entry.SetSet();
+  CBioseq_set::TSeq_set& entries =  bioset.SetSeq_set();
+  if(entries.size()!=1) return;
+// 1. merge descriptions
+  CBioseq& seq = (*entries.begin())->SetSeq();
+  if(bioset.IsSetDescr())
     {
-    if( !(*annot)->GetData().IsFtable()) continue;
-    RemoveProblems((*annot)->SetData().SetFtable(), problem_seqs);
-    }
-
-  return 1;
+    CSeq_descr::Tdata& descs = bioset.SetDescr().Set();
+    for(CSeq_descr::Tdata::iterator desc = descs.begin(); desc!=descs.end(); )
+      {
+      seq.SetDescr().Set().push_back(*desc);
+      desc=descs.erase(desc);
+      }
+    } // if(entry.SetSet().IsSetDescr())
+// 2.  move CBioseq under the CSeq_entr
+  CRef<CBioseq> pseq (&seq);
+  entry.SetSeq(*pseq);
+  NcbiCerr << "RemoveProblems(CSeq_entry...): "
+           << "WARNING: "
+           << "converted sequence set to sequence"
+           << NcbiEndl;
+  return;
 }
 
-int CReadBlastApp::RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<string, bool>& problem_seqs)
+int CReadBlastApp::RemoveProblems(CBioseq_set& setseq, const map<string, string>& problem_seqs)
 {
+   bool noseqs=false;
+   bool noannot=false;
+   int removeme=0;
+   if(setseq.IsSetSeq_set())
+     {
+     int all_entries_removed = RemoveProblems(setseq.SetSeq_set(), problem_seqs);
+     if(all_entries_removed > 0) {/* mandatory, no deletion */; noseqs=true;}
+     }
+   if(setseq.IsSetAnnot())
+     {
+     int all_annot_removed = RemoveProblems(setseq.SetAnnot(), problem_seqs);
+     if(all_annot_removed > 0) {setseq.ResetAnnot(); noannot=true;}
+     }
+   if(noseqs ) removeme = 1;
+   if(PrintDetails())
+         NcbiCerr
+                 << "RemoveProblems(CBioseq_set): noseqs = "
+                 << noseqs
+                 << ", noannot = "
+                 << noannot
+                 << ", removeme (return) = "
+                 << removeme
+                 << NcbiEndl;
+
+   return removeme;
+}
+
+int CReadBlastApp::RemoveProblems(CBioseq& seq, const map<string, string>& problem_seqs)
+{      
+   int remove=0;
+   if(!seq.IsAa())  // nucleotide sequnce
+     {           
+     if(seq.IsSetAnnot())
+       {
+       int annotations_removed = RemoveProblems(seq.SetAnnot(), problem_seqs);
+       if(annotations_removed) seq.ResetAnnot();
+       }
+     }           
+   else // aminoacid sequence
+// checkif needed to kill it
+     {
+     string thisName = GetStringDescr(seq);
+     string origName = thisName;
+     string::size_type ipos = thisName.rfind('|'); if(ipos!=string::npos) thisName.erase(0, ipos+1);
+     ipos = thisName.rfind('_'); if(ipos!=string::npos) ipos= thisName.rfind('_', ipos-1);
+     if(PrintDetails())
+         NcbiCerr
+                 << "RemoveProblems(CBioseq): remove? sequence "
+                 << "[" << origName << "]"
+                 << " looking for "
+                 << "[" << thisName << "]"
+                 << NcbiEndl;
+
+     if(problem_seqs.find(thisName) != problem_seqs.end()) 
+       {
+       NcbiCerr
+                 << "RemoveProblems(CBioseq): sequence "
+                 << "[" << origName << "]"
+                 << " is marked for removal, because of a match to " 
+                 << "[" << thisName << "]"
+                 << NcbiEndl;
+       remove=1; // whack the sequence
+       }
+     }
+     if(PrintDetails())
+         NcbiCerr
+                 << "RemoveProblems(CBioseq): remove =  "
+                 << remove 
+                 << NcbiEndl;
+
+
+   return remove;
+}          
+
+
+int CReadBlastApp::RemoveProblems(CBioseq_set::TSeq_set& entries, const map<string, string>& problem_seqs)
+{
+   IncreaseVerbosity();
+   int remove=0;
+   for(CBioseq_set::TSeq_set::iterator entries_end = entries.end(), entry=entries.begin(); entry != entries_end; )
+     {
+     int removeseq=RemoveProblems(**entry, problem_seqs);
+     if(PrintDetails())
+         NcbiCerr
+                 << "RemoveProblems(CBioseq_set::TSeq_set): removeseq = "
+                 << removeseq
+                 << NcbiEndl;
+
+     if(removeseq) entry=entries.erase(entry);
+     else entry++;
+     } // each seqs
+   if(entries.size()==0) remove=1;
+   if(PrintDetails())
+         NcbiCerr
+                 << "RemoveProblems(CBioseq_set::TSeq_set): nentries = "
+                 << entries.size()
+                 << NcbiEndl;
+
+   DecreaseVerbosity();
+   return remove;
+}
+
+int CReadBlastApp::RemoveProblems(CBioseq::TAnnot& annots, const map<string, string>& problem_seqs)
+{
+  int remove=0;
+  for(CBioseq::TAnnot::iterator annot=annots.begin(); annot!=annots.end(); )
+    {
+    int removeme=0;
+    if( (*annot)->GetData().IsFtable()) removeme=RemoveProblems((*annot)->SetData().SetFtable(), problem_seqs);
+    if(removeme) 
+      {
+      NcbiCerr << "RemoveProblems(annots, problem_seqs): "
+                 << "INFO: "
+                 << "annotation has empty feature table and it will be removed"
+                 << NcbiEndl;
+      annot=annots.erase(annot);
+      }
+    else annot++;
+    }
+  if(annots.size()==0) remove=1;
+
+  return remove;
+}
+
+int CReadBlastApp::RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<string, string>& problem_seqs)
+// this one needs cleaning
+{
+  int removeme=0;
   LocMap loc_map;
   GetLocMap(loc_map, table);
-  for(CSeq_annot::C_Data::TFtable::iterator feat_end = table.end(),
-      feat     = table.begin();
-      feat != feat_end;)
+  for(CSeq_annot::C_Data::TFtable::iterator feat_end = table.end(), feat = table.begin(); feat != feat_end;)
     {
     bool gene, cdregion;
     gene = (*feat)->GetData().IsGene();
     cdregion = (*feat)->GetData().IsCdregion();
     bool del_feature=false;
-/*
-    string loc_string = GetLocationString(**feat);
-    if(problem_seqs.find(loc_string) != problem_seqs.end()) del_feature=true;
-*/
     string loc_string = GetLocusTag(**feat, loc_map); // more general, returns location string
+//
+// case *: matching locus tag
+//
     if(problem_seqs.find(loc_string) != problem_seqs.end()) del_feature=true;
 
     if ( PrintDetails() )
       {
       NcbiCerr << "RemoveProblems: feature " << loc_string << ": ";
-      if(del_feature)
-           NcbiCerr << "WILL BE REMOVED";
-      else
-           NcbiCerr << "stays until further analysis for it";
+      if(del_feature) NcbiCerr << "WILL BE REMOVED";
+      else            NcbiCerr << "stays until further analysis for it";
       NcbiCerr << NcbiEndl;
       }
+    if(del_feature)
+        {
+        NcbiCerr << "RemoveProblems: WARNING: feature " 
+                 << "{" << (*feat)->GetData().SelectionName((*feat)->GetData().Which()) << "} "
+                 << loc_string << ": ";
+        NcbiCerr << "will be removed because of a problem: ";
+        NcbiCerr << problem_seqs.find(loc_string)->second;
+        NcbiCerr << NcbiEndl;
+        }
     if(!del_feature && gene  && (*feat)->GetData().GetGene().CanGetLocus_tag() )
+//
+// case *: gene
+//
       {
       string locus_tag = (*feat)->GetData().GetGene().GetLocus_tag();
       if(problem_seqs.find(locus_tag) != problem_seqs.end()) del_feature=true;
@@ -376,9 +527,19 @@ int CReadBlastApp::RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<
            NcbiCerr << "stays";
         NcbiCerr << NcbiEndl;
         }
+      if(del_feature)
+        {
+        NcbiCerr << "RemoveProblems: WARNING: gene " << locus_tag << ": ";
+        NcbiCerr << "will be removed because of a problem: ";
+        NcbiCerr << problem_seqs.find(locus_tag)->second;
+        NcbiCerr << NcbiEndl;
+        }
       }
     if(!del_feature && cdregion && (*feat)->CanGetProduct() )
       {
+//
+// case *: cdregion
+//
       string productName;
       if( (*feat)->CanGetProduct() &&
           (*feat)->GetProduct().IsWhole() &&
@@ -388,11 +549,27 @@ int CReadBlastApp::RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<
         {
         productName = (*feat)->GetProduct().GetWhole().GetGeneral().GetTag().GetStr();
         }
+      else if ( 
+           (*feat)->CanGetProduct() &&
+          (*feat)->GetProduct().IsWhole())
+        {
+        productName = (*feat)->GetProduct().GetWhole().AsFastaString();
+        }
 // strip leading contig ID if any
       string::size_type ipos=productName.rfind('_', productName.size());
-      if(ipos != string::npos) ipos=productName.rfind('_', ipos-1);
-      if(ipos != string::npos) productName.erase(0, ipos+1);
+      if(ipos != string::npos) 
+        {
+        string::size_type ipos2;
+        ipos2=productName.rfind('_', ipos-1);
+        if(ipos2 != string::npos) productName.erase(0, ipos2+1);
       // "1103032000567_RAZWK3B_00550" -> "RAZWK3B_00550";
+        else 
+          {
+          ipos2=productName.rfind('|', ipos-1); 
+          if(ipos2 != string::npos) productName.erase(0, ipos2+1);
+          }
+// lcl|Xoryp_00025 -> Xoryp_00025
+        }
       if(productName.length() && problem_seqs.find(productName) != problem_seqs.end()) del_feature=true;
       if ( PrintDetails() )
         {
@@ -404,10 +581,11 @@ int CReadBlastApp::RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<
         NcbiCerr << NcbiEndl;
         }
       }
-    if(del_feature) table.erase(feat++);
+    if(del_feature) feat=table.erase(feat);
     else feat++;
     }
-  return 1;
+  if(table.size()==0) removeme=1; 
+  return removeme;
 }
 
 // RemoveInterim
@@ -419,72 +597,14 @@ int CReadBlastApp::RemoveInterim(void)
 
    if(PrintDetails()) NcbiCerr << "RemoveInterim: start " << NcbiEndl;
    PushVerbosity();
-   if(IsSubmit())
+   for(CTypeIterator<CBioseq> seq=Begin(); seq; ++seq)
      {
-     if (
-           m_Submit.GetData().IsEntrys()
-            &&
-           (*m_Submit.GetData().GetEntrys().begin())->IsSet()
-        )
-       {
-       RemoveInterim((*m_Submit.SetData().SetEntrys().begin())->SetSet().SetSeq_set());
-       }
-     else
-       {
-       NcbiCerr << "ERROR: submit file does not have proper seqset"<< NcbiCerr;
-       }
-     }
-   else
-     {
-     nremoved = RemoveInterim(m_Entry.SetSet().SetSeq_set());
-     if(PrintDetails()) NcbiCerr << "RemoveInterim: nremoved = " << nremoved << NcbiEndl;
-     int nremoved2 = RemoveInterim(m_Entry.SetSet().SetSeq_set());
-     if(nremoved2)
-       {
-       if(PrintDetails())
-         NcbiCerr << "RemoveInterim: ERROR: second take on set still gives removed"  << NcbiEndl;
-       }
+     if(seq->IsSetAnnot() && seq->IsAa()) nremoved+= RemoveInterim(seq->SetAnnot());
      }
 
    PopVerbosity();
    if(PrintDetails()) NcbiCerr << "RemoveInterim: end" << NcbiEndl;
    return nremoved;
-}
-
-int CReadBlastApp::RemoveInterim(CBioseq_set::TSeq_set& seqs)
-{
-   int nremoved_this=0;
-   // CArgs args = GetArgs();
-   IncreaseVerbosity();
-   NON_CONST_ITERATE(CBioseq_set::TSeq_set, left, seqs)
-     {
-     if((*left)->IsSet())
-       {
-       if(PrintDetails())
-           NcbiCerr << "RemoveInterim: going down: "
-                    << NcbiEndl;
-
-       CBioseq_set::TSeq_set& seqs2 = (*left)->SetSet().SetSeq_set();
-       PushVerbosity();
-       RemoveInterim(seqs2);
-       PopVerbosity();
-       }
-     else
-       {
-       if(! (*left)->GetSeq().IsAa()) continue;
-       int nremoved = RemoveInterim((*left)->SetSeq().SetAnnot());
-       nremoved_this+=nremoved;
-       if(PrintDetails()) NcbiCerr << "RemoveInterim: " << GetStringDescr ((*left)->GetSeq()) << ": removed: " << nremoved << NcbiEndl;
-       int nremoved2 = RemoveInterim((*left)->SetSeq().SetAnnot());
-       if(PrintDetails()) NcbiCerr << "RemoveInterim: " << GetStringDescr ((*left)->GetSeq()) << ": removed2: " << nremoved2 << NcbiEndl;
-       if(nremoved2)
-         {
-         if(PrintDetails()) NcbiCerr << "RemoveInterim: ERROR: second take on annots still has removes" << NcbiEndl;
-         }
-       }
-     }
-
-  return nremoved_this;
 }
 
 int CReadBlastApp::RemoveInterim(CBioseq::TAnnot& annots)
@@ -493,15 +613,17 @@ int CReadBlastApp::RemoveInterim(CBioseq::TAnnot& annots)
 
    for(CBioseq::TAnnot::iterator annot=annots.begin(), annot_end = annots.end(); annot != annot_end; )
      {
+     bool erased = false;
      if((*annot)->GetData().IsAlign())
        {
-       annots.erase(annot++);
-       nremoved++;
-       continue;
+       nremoved++; erased = true;
        }
      if ( (*annot)->GetData().IsFtable())
        {
        int dremoved=0;
+/* 
+  this is really crappy way of doing it!
+*/
        while( (*annot)->GetData().GetFtable().size()>1 )
          {
          (*annot)->SetData().SetFtable().pop_back();
@@ -512,8 +634,14 @@ int CReadBlastApp::RemoveInterim(CBioseq::TAnnot& annots)
         << dremoved
         << ", left=" << (*annot)->GetData().GetFtable().size()
         << NcbiEndl;
+       if((*annot)->SetData().SetFtable().size() == 0) 
+         {
+         nremoved++;
+         erased = true;
+         }
        }
-     annot++;
+     if(erased) annot=annots.erase(annot);
+     else annot++;
      }
 
   return nremoved;
@@ -534,21 +662,24 @@ int addProblems(list<problemStr>& dest, const list<problemStr>& src)
   return n;
 }
 
-int CReadBlastApp::CollectFrameshiftedSeqs(map<string,bool>& problem_names)
+int CReadBlastApp::CollectFrameshiftedSeqs(map<string,string>& problem_names)
 {
   ITERATE( diagMap, feat, m_diag)
     {
     ITERATE(list<problemStr>, problem, feat->second.problems)
       {
+      bool added = false;
       string name = feat->first;
       string::size_type ipos = name.rfind('|'); if(ipos!=string::npos) name.erase(0, ipos+1);
       ipos = name.rfind('_'); if(ipos!=string::npos) ipos= name.rfind('_', ipos-1);
       if(ipos!=string::npos) name.erase(0, ipos+1);
-      if(problem->type == eFrameShift || problem->type == eRemoveOverlap) problem_names[name]=true;
-      if(PrintDetails()) NcbiCerr << "CollectFrameshiftedSeqs: " << feat->first
+      if(problem->type == eFrameShift || problem->type == eRemoveOverlap) 
+        { problem_names[name]=ProblemType(problem->type); added=true; }
+      if(PrintDetails()) 
+        NcbiCerr << "CollectFrameshiftedSeqs: " << feat->first
         << ": "
         << "(" << name << ")"
-        << (problem->type == eFrameShift ? "added" : "skipped" ) << NcbiEndl;
+        << (added ? "added" : "skipped")  << NcbiEndl;
       }
     }
   return problem_names.size();

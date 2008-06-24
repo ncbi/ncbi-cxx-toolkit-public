@@ -262,6 +262,7 @@ class CReadBlastApp : public CNcbiApplication
     virtual int  Run(void);
 public: 
     static string getLocusTag(const CBioseq& seq);
+    static const CSeq_loc& getGenomicLocation(const CBioseq& seq);
 
 private:
 
@@ -309,14 +310,20 @@ private:
 
 
 
-    int CollectFrameshiftedSeqs(map<string,bool>& problem_names);
+    int CollectFrameshiftedSeqs(map<string,string>& problem_names);
     int RemoveProblems(void);
-    int RemoveProblems(CBioseq_set::TSeq_set& seqs, const map<string, bool>& problem_seqs);
-    int RemoveProblems(CBioseq::TAnnot& annots, const map<string, bool>& problem_seqs);
-    int RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<string, bool>& problem_seqs);
+    int RemoveProblems(CSeq_entry& entry, const map<string, string>& problem_seqs);
+    int RemoveProblems(CBioseq_set& setseq, const map<string, string>& problem_seqs);
+    int RemoveProblems(CBioseq& seq, const map<string, string>& problem_seqs);
+    int RemoveProblems(CBioseq_set::TSeq_set& seqs, const map<string, string>& problem_seqs);
+    int RemoveProblems(CBioseq::TAnnot& annots, const map<string, string>& problem_seqs);
+    int RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<string, string>& problem_seqs);
+
+// reshuffles seq entry, when it has only one sequence
+    void NormalizeSeqentry(CSeq_entry& entry);
+
 
     int RemoveInterim(void);
-    int RemoveInterim(CBioseq_set::TSeq_set& seqs);
     int RemoveInterim(CBioseq::TAnnot& annots);
 
 
@@ -346,7 +353,6 @@ private:
                             const CBioseq_set::TSeq_set& seqs);
     static bool skip_toprot(CBioseq_set::TSeq_set::iterator& seq,
                             CBioseq_set::TSeq_set& seqs);
-    static const CSeq_loc& getGenomicLocation(const CBioseq& seq);
     static bool                 hasGenomicLocation(const CBioseq& seq);
 
     static const CSeq_interval& getGenomicInterval(const CBioseq& seq);
@@ -421,6 +427,8 @@ private:
     void reportProblems(const string& qname, diagMap& diag, ostream& out, const EProblem type);
     void reportProblems(const bool report_and_forget, diagMap& diag, ostream& out=NcbiCout, const EProblem type=eAllProblems);
     void reportProblemMessage(const string& message, ostream& out=NcbiCout);
+    string ProblemType(const EProblem type);
+
     void reportProblemType(const EProblem type, ostream& out=NcbiCout);
     void reportProblemSequenceName(const string& name, ostream& out=NcbiCout);
 
@@ -560,9 +568,15 @@ string GetStringDescr(const CBioseq& bioseq);
 string Get3type(const CRNA_ref& rna);
 string GetRRNAtype(const CRNA_ref& rna);
 
+string printed_range(const CSeq_feat& feat);
+string printed_range(const CSeq_loc& seq_interval);
+string printed_range(const CBioseq& seq);
 string printed_range(const TSimpleSeqs::iterator& ext_rna);
+string printed_range(const TSimpleSeq& ext_rna);
 string printed_range(const TSimpleSeqs::iterator& ext_rna, const TSimpleSeqs::iterator& end);
 string printed_range(const TSimpleSeqs::iterator& ext_rna, TSimpleSeqs& seqs);
+
+
 
 
 

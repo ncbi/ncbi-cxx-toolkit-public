@@ -79,7 +79,7 @@ int CReadBlastApp::ReadRRNA2(const string& file)
       token = strtok(0, " \t");
       icol++;
       }
-    if(method != "ideal" && type3 == "5S") continue;
+    // if(method != "ideal" && type3 == "5S") continue;
     bool new_rrna =  tmp_rrna.find(hash) == tmp_rrna.end();
     ENa_strand strand = strand1 == "-" ? eNa_strand_minus : eNa_strand_plus;
 // last for type
@@ -113,6 +113,9 @@ int CReadBlastApp::ReadRRNA2(const string& file)
   for(map<string,TSimpleSeq>::const_iterator seq = tmp_rrna.begin(); seq!=tmp_rrna.end(); seq++)
     {
     m_extRNAtable2.push_back(seq->second);
+    string ext_rna_range = printed_range(seq->second);
+    if(PrintDetails()) NcbiCerr << "ReadRRNA2(" << file << "): adding "
+       << ext_rna_range << NcbiEndl;
     n++;
     }
 

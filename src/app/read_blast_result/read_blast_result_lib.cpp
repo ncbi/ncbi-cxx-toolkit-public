@@ -528,12 +528,14 @@ bool CReadBlastApp::less_seq(const CRef<CSeq_entry>& first,
   if(PrintDetails()) NcbiCerr << "less_seq both seqs" << NcbiEndl;
   if (!hasGenomicLocation(first->GetSeq())) 
     {
-    NcbiCerr << "less_seq first does not have genomic location or is nucleotide seq" << NcbiEndl;
+    if(first->GetSeq().IsAa()) 
+      NcbiCerr << "less_seq first does not have genomic location or is nucleotide seq" << NcbiEndl;
     return true; // to take care of nucleotide sequence
     }
   if (!hasGenomicLocation(second->GetSeq())) 
     {
-    NcbiCerr << "less_seq second does not have genomic location or is nucleotide seq" << NcbiEndl;
+    if(second->GetSeq().IsAa()) 
+      NcbiCerr << "less_seq second does not have genomic location or is nucleotide seq" << NcbiEndl;
     return false;
     }
   if(PrintDetails()) NcbiCerr << "less_seq both have genomic locations" << NcbiEndl;

@@ -91,7 +91,7 @@ bool CReadBlastApp::match_na
   if(absent)
     {
     strstream buffer;
-    buffer << "NO external tRNA for this aminoacid: " <<type1 << "[" << input_range << "]" << NcbiEndl;
+    buffer << "no external tRNA for this aminoacid: " <<type1 << "[" << input_range << "]" << NcbiEndl;
     buffer << "start bp: " << gabs_left << NcbiEndl;
     buffer << '\0';
     if(PrintDetails()) NcbiCerr << "match_na[f1,type1]: " << buffer.str() << NcbiEndl;
@@ -119,7 +119,7 @@ bool CReadBlastApp::match_na
     if(!goverlap)
       {
       strstream buffer;
-      buffer << "Closest tRNA for (" <<type1 << "[" << input_range << "]" << ") does not even overlap" << NcbiEndl;
+      buffer << "closest tRNA for (" <<type1 << "[" << input_range << "]" << ") does not even overlap" << NcbiEndl;
       buffer << "start bp: " << gabs_left << NcbiEndl;
       buffer << '\0';
       strstream misc_feat;
@@ -131,7 +131,7 @@ bool CReadBlastApp::match_na
     else
       {
       strstream buffer;
-      buffer << "Closest tRNA for this aminoacid: " <<type1 << "[" << input_range << "]" << " have mismatched ends:" << NcbiEndl;
+      buffer << "closest tRNA for this aminoacid: " <<type1 << "[" << input_range << "]" << " have mismatched ends:" << NcbiEndl;
       buffer << "start bp: " << gabs_left << NcbiEndl;
       buffer << "left: " << gleft << ", right: " << gright << " bp shifted relative to the calculated ends" << NcbiEndl;
       buffer << "overlap: " << goverlap << NcbiEndl;

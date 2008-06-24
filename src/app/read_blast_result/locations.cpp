@@ -110,7 +110,8 @@ bool CReadBlastApp::hasGenomicLocation(const CBioseq& seq)
        return true;
        }
      }
-   NcbiCerr << "hasGenomicLocation: WARNING: sequence "  // warning, not error, because sometimes it's nucleotide sequence
+   if(seq.IsAa())
+     NcbiCerr << "hasGenomicLocation: ERROR : sequence "  
                                << GetStringDescr (seq)
                                << " does not have genomic location "
                                << NcbiEndl;

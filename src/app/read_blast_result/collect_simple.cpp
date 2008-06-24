@@ -132,7 +132,7 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
     if(seq_to==gene_to && seq_from==gene_from) 
       { 
       seq->locus_tag = gene->locus_tag; 
-      genes.erase(gene++); 
+      gene=genes.erase(gene); 
       }
     else gene++;
     }
@@ -211,7 +211,7 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
       gene_used = true;
       }
 // go to next gene
-    if(gene_used) genes.erase(gene++);
+    if(gene_used) gene=genes.erase(gene);
     else gene++;
     }
 

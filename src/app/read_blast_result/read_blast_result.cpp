@@ -283,7 +283,7 @@ int CReadBlastApp::Run(void)
     // m_verbosity_threshold=-1;
     PopVerbosity();
     // Write the entry
-    if( args["out"].HasValue() )
+    if( args["out"].HasValue() && false)
     {  {
         auto_ptr<CObjectOStream> out
             (CObjectOStream::Open(s_GetFormat(args["outfmt"].AsString()),
