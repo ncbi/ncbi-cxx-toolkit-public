@@ -1559,6 +1559,7 @@ enum EPostNumberIncrement {
 
 struct SRequestCtxWrapper;
 class CRequestContext;
+class CRequestRateControl;
 
 
 /// Thread local context data stored in TLS
@@ -1910,6 +1911,21 @@ public:
     /// Return process post number (incrementing depends on the flag).
     static int GetProcessPostNumber(EPostNumberIncrement inc);
 
+    /// Type of logging rate limit
+    enum ELogRate_Type {
+        eLogRate_App,   ///< Application log
+        eLogRate_Err,   ///< Error log
+        eLogRate_Trace  ///< Trace log
+    };
+
+    /// Logging rate control - max number of messages per period.
+    unsigned int GetLogRate_Limit(ELogRate_Type type) const;
+    void         SetLogRate_Limit(ELogRate_Type type, unsigned int limit);
+
+    /// Logging rate control - the messages control period, seconds.
+    unsigned int GetLogRate_Period(ELogRate_Type type) const;
+    void SetLogRate_Period(ELogRate_Type type, unsigned int period);
+
     /// Internal function, should be used only by CNcbiApplication.
     static void x_FinalizeSetupDiag(void);
 
@@ -1927,6 +1943,14 @@ private:
     friend void ThreadDataTlsCleanup(CDiagContextThreadData* value,
                                      void* cleanup_data);
     friend class CDiagContext_Extra;
+
+    // Reset logging rates to the values stored in CParam-s
+    void ResetLogRates(void);
+
+    // Check message logging rate
+    bool ApproveMessage(SDiagMessage& msg);
+
+    friend class CDiagBuffer;
 
     // Saved messages to be flushed after setting up log files
     typedef list<SDiagMessage> TMessages;
@@ -1947,6 +1971,11 @@ private:
     auto_ptr<TMessages>    m_Messages;
     size_t                 m_MaxMessages;
     static CDiagContext*   sm_Instance;
+
+    // Rate control
+    auto_ptr<CRequestRateControl> m_AppLogRC;
+    auto_ptr<CRequestRateControl> m_ErrLogRC;
+    auto_ptr<CRequestRateControl> m_TraceLogRC;
 };
 
 

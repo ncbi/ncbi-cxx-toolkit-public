@@ -47,6 +47,7 @@
 #include <corelib/syslog.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/request_ctx.hpp>
+#include <corelib/request_control.hpp>
 #include "ncbidiag_p.hpp"
 #include <stdio.h>
 #include <stdlib.h>
@@ -113,6 +114,46 @@ NCBI_PARAM_DECL(bool, Diag, Print_System_TID);
 NCBI_PARAM_DEF_EX(bool, Diag, Print_System_TID, false, eParam_NoThread,
                   DIAG_PRINT_SYSTEM_TID);
 typedef NCBI_PARAM_TYPE(Diag, Print_System_TID) TPrintSystemTID;
+
+
+///////////////////////////////////////////////////////
+//  Output rate control parameters
+
+// AppLog limit per period
+NCBI_PARAM_DECL(unsigned int, Diag, AppLog_Rate_Limit);
+NCBI_PARAM_DEF_EX(unsigned int, Diag, AppLog_Rate_Limit, 50000,
+                  eParam_NoThread, DIAG_APPLOG_RATE_LIMIT);
+typedef NCBI_PARAM_TYPE(Diag, AppLog_Rate_Limit) TAppLogRateLimitParam;
+
+// AppLog period, sec
+NCBI_PARAM_DECL(unsigned int, Diag, AppLog_Rate_Period);
+NCBI_PARAM_DEF_EX(unsigned int, Diag, AppLog_Rate_Period, 10, eParam_NoThread,
+                  DIAG_APPLOG_RATE_PERIOD);
+typedef NCBI_PARAM_TYPE(Diag, AppLog_Rate_Period) TAppLogRatePeriodParam;
+
+// ErrLog limit per period
+NCBI_PARAM_DECL(unsigned int, Diag, ErrLog_Rate_Limit);
+NCBI_PARAM_DEF_EX(unsigned int, Diag, ErrLog_Rate_Limit, 5000,
+                  eParam_NoThread, DIAG_ERRLOG_RATE_LIMIT);
+typedef NCBI_PARAM_TYPE(Diag, ErrLog_Rate_Limit) TErrLogRateLimitParam;
+
+// ErrLog period, sec
+NCBI_PARAM_DECL(unsigned int, Diag, ErrLog_Rate_Period);
+NCBI_PARAM_DEF_EX(unsigned int, Diag, ErrLog_Rate_Period, 1, eParam_NoThread,
+                  DIAG_ERRLOG_RATE_PERIOD);
+typedef NCBI_PARAM_TYPE(Diag, ErrLog_Rate_Period) TErrLogRatePeriodParam;
+
+// TraceLog limit per period
+NCBI_PARAM_DECL(unsigned int, Diag, TraceLog_Rate_Limit);
+NCBI_PARAM_DEF_EX(unsigned int, Diag, TraceLog_Rate_Limit, 5000,
+                  eParam_NoThread, DIAG_TRACELOG_RATE_LIMIT);
+typedef NCBI_PARAM_TYPE(Diag, TraceLog_Rate_Limit) TTraceLogRateLimitParam;
+
+// TraceLog period, sec
+NCBI_PARAM_DECL(unsigned int, Diag, TraceLog_Rate_Period);
+NCBI_PARAM_DEF_EX(unsigned int, Diag, TraceLog_Rate_Period, 1, eParam_NoThread,
+                  DIAG_TRACELOG_RATE_PERIOD);
+typedef NCBI_PARAM_TYPE(Diag, TraceLog_Rate_Period) TTraceLogRatePeriodParam;
 
 
 CDiagCollectGuard::CDiagCollectGuard(void)
@@ -748,7 +789,22 @@ CDiagContext::CDiagContext(void)
       m_ExitSig(0),
       m_AppState(eDiagAppState_AppBegin),
       m_StopWatch(new CStopWatch(CStopWatch::eStart)),
-      m_MaxMessages(100) // limit number of collected messages to 100
+      m_MaxMessages(100), // limit number of collected messages to 100
+      m_AppLogRC(new CRequestRateControl(
+          GetLogRate_Limit(eLogRate_App),
+          CTimeSpan((long)GetLogRate_Period(eLogRate_App)),
+          CTimeSpan((long)0),
+          CRequestRateControl::eErrCode)),
+      m_ErrLogRC(new CRequestRateControl(
+          GetLogRate_Limit(eLogRate_Err),
+          CTimeSpan((long)GetLogRate_Period(eLogRate_Err)),
+          CTimeSpan((long)0),
+          CRequestRateControl::eErrCode)),
+      m_TraceLogRC(new CRequestRateControl(
+          GetLogRate_Limit(eLogRate_Trace),
+          CTimeSpan((long)GetLogRate_Period(eLogRate_Trace)),
+          CTimeSpan((long)0),
+          CRequestRateControl::eErrCode))
 {
     sm_Instance = this;
 }
@@ -757,6 +813,135 @@ CDiagContext::CDiagContext(void)
 CDiagContext::~CDiagContext(void)
 {
     sm_Instance = NULL;
+}
+
+
+void CDiagContext::ResetLogRates(void)
+{
+    m_AppLogRC->Reset(GetLogRate_Limit(eLogRate_App),
+        CTimeSpan((long)GetLogRate_Period(eLogRate_App)),
+        CTimeSpan((long)0),
+        CRequestRateControl::eErrCode);
+    m_ErrLogRC->Reset(GetLogRate_Limit(eLogRate_Err),
+        CTimeSpan((long)GetLogRate_Period(eLogRate_Err)),
+        CTimeSpan((long)0),
+        CRequestRateControl::eErrCode);
+    m_TraceLogRC->Reset(GetLogRate_Limit(eLogRate_Trace),
+        CTimeSpan((long)GetLogRate_Period(eLogRate_Trace)),
+        CTimeSpan((long)0),
+        CRequestRateControl::eErrCode);
+}
+
+
+unsigned int CDiagContext::GetLogRate_Limit(ELogRate_Type type) const
+{
+    switch ( type ) {
+    case eLogRate_App:
+        return TAppLogRateLimitParam::GetDefault();
+    case eLogRate_Err:
+        return TErrLogRateLimitParam::GetDefault();
+    case eLogRate_Trace:
+    default:
+        return TTraceLogRateLimitParam::GetDefault();
+    }
+}
+
+void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
+{
+    switch ( type ) {
+    case eLogRate_App:
+        TAppLogRateLimitParam::SetDefault(limit);
+        if ( m_AppLogRC.get() ) {
+            m_AppLogRC->Reset(limit,
+                CTimeSpan((long)GetLogRate_Period(type)),
+                CTimeSpan((long)0),
+                CRequestRateControl::eErrCode);
+        }
+        break;
+    case eLogRate_Err:
+        TErrLogRateLimitParam::SetDefault(limit);
+        if ( m_ErrLogRC.get() ) {
+            m_ErrLogRC->Reset(limit,
+                CTimeSpan((long)GetLogRate_Period(type)),
+                CTimeSpan((long)0),
+                CRequestRateControl::eErrCode);
+        }
+        break;
+    case eLogRate_Trace:
+    default:
+        TTraceLogRateLimitParam::SetDefault(limit);
+        if ( m_TraceLogRC.get() ) {
+            m_TraceLogRC->Reset(limit,
+                CTimeSpan((long)GetLogRate_Period(type)),
+                CTimeSpan((long)0),
+                CRequestRateControl::eErrCode);
+        }
+        break;
+    }
+}
+
+unsigned int CDiagContext::GetLogRate_Period(ELogRate_Type type) const
+{
+    switch ( type ) {
+    case eLogRate_App:
+        return TAppLogRatePeriodParam::GetDefault();
+    case eLogRate_Err:
+        return TErrLogRatePeriodParam::GetDefault();
+    case eLogRate_Trace:
+    default:
+        return TTraceLogRatePeriodParam::GetDefault();
+    }
+}
+
+void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
+{
+    switch ( type ) {
+    case eLogRate_App:
+        TAppLogRatePeriodParam::SetDefault(period);
+        if ( m_AppLogRC.get() ) {
+            m_AppLogRC->Reset(GetLogRate_Limit(type),
+                CTimeSpan((long)period),
+                CTimeSpan((long)0),
+                CRequestRateControl::eErrCode);
+        }
+        break;
+    case eLogRate_Err:
+        TErrLogRatePeriodParam::SetDefault(period);
+        if ( m_ErrLogRC.get() ) {
+            m_ErrLogRC->Reset(GetLogRate_Limit(type),
+                CTimeSpan((long)period),
+                CTimeSpan((long)0),
+                CRequestRateControl::eErrCode);
+        }
+        break;
+    case eLogRate_Trace:
+    default:
+        TTraceLogRatePeriodParam::SetDefault(period);
+        if ( m_TraceLogRC.get() ) {
+            m_TraceLogRC->Reset(GetLogRate_Limit(type),
+                CTimeSpan((long)period),
+                CTimeSpan((long)0),
+                CRequestRateControl::eErrCode);
+        }
+        break;
+    }
+}
+
+
+bool CDiagContext::ApproveMessage(SDiagMessage& msg)
+{
+    if ( IsSetDiagPostFlag(eDPF_AppLog, msg.m_Flags) ) {
+        return m_AppLogRC->Approve();
+    }
+    else {
+        switch ( msg.m_Severity ) {
+        case eDiag_Info:
+        case eDiag_Trace:
+            return m_TraceLogRC->Approve();
+        default:
+            return m_ErrLogRC->Approve();
+        }
+    }
 }
 
 
@@ -1840,6 +2025,9 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     if (collect == eDCM_Discard) {
         GetDiagContext().DiscardMessages();
     }
+
+    // Refresh rate controls
+    GetDiagContext().ResetLogRates();
 }
 
 
@@ -1981,6 +2169,10 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
     if ( CDiagBuffer::sm_Handler ) {
         CMutexGuard LOCK(s_DiagMutex);
         if ( CDiagBuffer::sm_Handler ) {
+            // The mutex must be locked before approving.
+            if ( !GetDiagContext().ApproveMessage(mess) ) {
+                return;
+            }
             CDiagBuffer& diag_buf = GetDiagBuffer();
             mess.m_Prefix = diag_buf.m_PostPrefix.empty() ?
                 0 : diag_buf.m_PostPrefix.c_str();
