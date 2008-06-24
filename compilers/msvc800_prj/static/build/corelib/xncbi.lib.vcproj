@@ -1000,6 +1000,28 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\request_control.cpp"
+				>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"
+					/>
+				</FileConfiguration>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
