@@ -33,7 +33,6 @@
  */
 
 
-#include <corelib/ncbidbg.hpp>
 #include <corelib/ncbistr.hpp>
 
 #include "value_convert_policy.hpp"
@@ -115,6 +114,10 @@ public:
         return MakeCP<CP>(NStr::StringToDouble(m_Value));
     }
     operator double(void) const
+    {
+        return MakeCP<CP>(NStr::StringToDouble(m_Value));
+    }
+    operator long double(void) const
     {
         return MakeCP<CP>(NStr::StringToDouble(m_Value));
     }
@@ -216,6 +219,10 @@ public:
         return MakeCP<CP>(NStr::StringToDouble(m_Value));
     }
     operator double(void) const
+    {
+        return MakeCP<CP>(NStr::StringToDouble(m_Value));
+    }
+    operator long double(void) const
     {
         return MakeCP<CP>(NStr::StringToDouble(m_Value));
     }
@@ -345,6 +352,10 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+    operator long double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
 #else
     template <typename TO>
     operator TO(void) const
@@ -419,6 +430,10 @@ public:
         return MakeCP<CP>(m_Value);
     }
     operator double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator long double(void) const
     {
         return MakeCP<CP>(m_Value);
     }
@@ -499,6 +514,10 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+    operator long double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
 #else
     template <typename TO>
     operator TO(void) const
@@ -573,6 +592,10 @@ public:
         return MakeCP<CP>(m_Value);
     }
     operator double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator long double(void) const
     {
         return MakeCP<CP>(m_Value);
     }
@@ -653,6 +676,10 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+    operator long double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
 #else
     template <typename TO>
     operator TO(void) const
@@ -727,6 +754,10 @@ public:
         return MakeCP<CP>(m_Value);
     }
     operator double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator long double(void) const
     {
         return MakeCP<CP>(m_Value);
     }
@@ -807,6 +838,10 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+    operator long double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
 #else
     template <typename TO>
     operator TO(void) const
@@ -884,6 +919,10 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+    operator long double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
 #else
     template <typename TO>
     operator TO(void) const
@@ -917,10 +956,6 @@ public:
 
 public:
 #if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0;
-    }
     operator Uint1(void) const
     {
         return MakeCP<CP>(m_Value);
@@ -958,6 +993,10 @@ public:
         return MakeCP<CP>(m_Value);
     }
     operator double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator long double(void) const
     {
         return MakeCP<CP>(m_Value);
     }
@@ -993,10 +1032,6 @@ public:
 
 public:
 #if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0;
-    }
     operator Uint1(void) const
     {
         return MakeCP<CP>(m_Value);
@@ -1037,6 +1072,10 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+    operator long double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
 #else
     template <typename TO>
     operator TO(void) const
@@ -1051,6 +1090,75 @@ public:
 
         return value;
     }
+
+private:
+    const obj_type  m_Value;
+};
+
+template <typename CP>
+class CValueConvert<CP, long double>
+{
+public:
+    typedef long double obj_type;
+
+    CValueConvert(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
+    operator Uint1(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Int1(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Uint2(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Int2(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Uint4(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Int4(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Uint8(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Int8(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator float(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator long double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+#else
+    template <typename TO>
+    operator TO(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+#endif
 
 private:
     const obj_type  m_Value;

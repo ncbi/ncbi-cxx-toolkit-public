@@ -72,7 +72,7 @@ template <bool x_is_signed, bool y_is_signed>
 struct SLessThanTypeMin
 {
     template <class X, class Y>
-    static bool check(X x, Y y_min)
+    static bool Check(X x, Y y_min)
     { 
         return x < y_min; 
     }
@@ -82,7 +82,7 @@ template <>
 struct SLessThanTypeMin<false, true>
 {
     template <class X, class Y>
-    static bool check(X, Y)
+    static bool Check(X, Y)
     { 
         return false; 
     }
@@ -92,7 +92,7 @@ template <>
 struct SLessThanTypeMin<true, false>
 {
     template <class X, class Y>
-    static bool check(X x, Y)
+    static bool Check(X x, Y)
     { 
         return x < 0; 
     }
@@ -104,7 +104,7 @@ template <>
 struct SGreaterThanTypeMax<true, true>
 {
     template <class X, class Y>
-    static inline bool check(X x, Y y_max)
+    static bool Check(X x, Y y_max)
     { 
         return x > y_max; 
     }
@@ -114,7 +114,7 @@ template <>
 struct SGreaterThanTypeMax<false, true>
 {
     template <class X, class Y>
-    static inline bool check(X x, Y)
+    static bool Check(X x, Y)
     { 
         return x >= 0 && static_cast<X>(static_cast<Y>(x)) != x; 
     } 
@@ -124,7 +124,7 @@ template<>
 struct SGreaterThanTypeMax<true, false>
 {
     template <class X, class Y>
-    static inline bool check(X x, Y y_max)
+    static bool Check(X x, Y y_max)
     { 
         return x > y_max; 
     }
@@ -134,7 +134,7 @@ template <>
 struct SGreaterThanTypeMax<false, false>
 {
     template <class X, class Y>
-    static inline bool check(X x, Y)
+    static bool Check(X x, Y)
     { 
         const Y y = static_cast<Y>(x);
         return y < 0 || static_cast<X>(y) != x;
@@ -154,24 +154,69 @@ void ReportConversionError(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+template <class T>
+struct SNumericLimits : public std::numeric_limits<T>
+{
+    static T min(void)
+    {
+        return std::numeric_limits<T>::is_signed && (std::numeric_limits<T>::min)() > 0
+            ? T(-(std::numeric_limits<T>::max)()) : (std::numeric_limits<T>::min)();
+    }
+}; 
+
+////////////////////////////////////////////////////////////////////////////////
+template <bool to_is_integer, bool from_is_integer>
+struct SConvertUsingRunTimeCP
+{
+    template <typename TO, typename FROM> 
+    static 
+    TO Convert(const FROM& value)
+    {
+        if (value < SNumericLimits<TO>::min() || value > SNumericLimits<TO>::max()) 
+        {
+            ReportConversionError();
+        }
+
+        return static_cast<TO>(value);
+    }
+};
+
+
+template <>
+struct SConvertUsingRunTimeCP<true, true>
+{
+    template <typename TO, typename FROM> 
+    static 
+    TO Convert(const FROM& value)
+    {
+        const bool from_is_signed = SNumericLimits<FROM>::is_signed;
+        const bool to_is_signed = SNumericLimits<TO>::is_signed;
+        const bool same_sign = from_is_signed == to_is_signed; 
+
+        if (SLessThanTypeMin<from_is_signed, to_is_signed>::Check(value, SNumericLimits<TO>::min())
+            || SGreaterThanTypeMax<same_sign, from_is_signed>::Check(value, SNumericLimits<TO>::max())
+           ) 
+        {
+            ReportConversionError();
+        }
+
+        return static_cast<TO>(value);
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
 template <typename TO, typename FROM> 
 inline
 TO ConvertUsingRunTimeCP(const FROM& value)
 {
-    const bool from_is_signed = numeric_limits<FROM>::is_signed;
-    const bool to_is_signed = numeric_limits<TO>::is_signed;
-    const bool same_sign = from_is_signed == to_is_signed; 
+    const bool to_is_integer = SNumericLimits<TO>::is_integer;
+    const bool from_is_integer = SNumericLimits<FROM>::is_integer;
 
-    if (SLessThanTypeMin<from_is_signed, to_is_signed>::check(value, numeric_limits<TO>::min())
-        || SGreaterThanTypeMax<same_sign, from_is_signed>::check(value, numeric_limits<TO>::max())
-        ) 
-    {
-        ReportConversionError();
-    }
-
-    return static_cast<TO>(value);
+    return SConvertUsingRunTimeCP<
+        to_is_integer, 
+        from_is_integer
+        >::template Convert<TO, FROM>(value);
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // We are trying to avoid partial specialization.
@@ -432,6 +477,37 @@ private:
 };
 
 template <>
+class CConvPolicy<SRunTimeCP, float>
+{
+public:
+    typedef float obj_type;
+
+    CConvPolicy(const obj_type& value)
+    : m_Value(value)
+    {
+    }
+
+public:
+    // Convert only to itself.
+    operator obj_type(void) const
+    {
+        return m_Value;
+    }
+
+    operator double(void) const
+    {
+        return m_Value;
+    }
+    operator long double(void) const
+    {
+        return m_Value;
+    }
+
+private:
+    const obj_type& m_Value;
+};
+
+template <>
 class CConvPolicy<SRunTimeCP, double>
 { 
 public:
@@ -461,10 +537,10 @@ private:
 };
 
 template <>
-class CConvPolicy<SRunTimeCP, float>
-{
+class CConvPolicy<SRunTimeCP, long double>
+{ 
 public:
-    typedef float obj_type;
+    typedef long double obj_type;
 
     CConvPolicy(const obj_type& value)
     : m_Value(value)
@@ -474,15 +550,6 @@ public:
 public:
     // Convert only to itself.
     operator obj_type(void) const
-    {
-        return m_Value;
-    }
-
-    operator double(void) const
-    {
-        return m_Value;
-    }
-    operator long double(void) const
     {
         return m_Value;
     }
@@ -622,6 +689,10 @@ public:
     {
         return m_Value;
     }
+    operator long double(void) const
+    {
+        return m_Value;
+    }
 
 private:
     obj_type m_Value;
@@ -688,6 +759,10 @@ public:
     {
         return m_Value;
     }
+    operator long double(void) const
+    {
+        return m_Value;
+    }
 
 private:
     obj_type m_Value;
@@ -732,6 +807,10 @@ public:
         return m_Value;
     }
     operator double(void) const
+    {
+        return m_Value;
+    }
+    operator long double(void) const
     {
         return m_Value;
     }
@@ -793,6 +872,10 @@ public:
     {
         return m_Value;
     }
+    operator long double(void) const
+    {
+        return m_Value;
+    }
 
 private:
     obj_type m_Value;
@@ -833,6 +916,10 @@ public:
         return static_cast<float>(m_Value);
     }
     operator double(void) const
+    {
+        return m_Value;
+    }
+    operator long double(void) const
     {
         return m_Value;
     }
@@ -886,6 +973,10 @@ public:
     {
         return m_Value;
     }
+    operator long double(void) const
+    {
+        return m_Value;
+    }
 
 private:
     obj_type m_Value;
@@ -921,6 +1012,10 @@ public:
     operator double(void) const
     {
         return static_cast<double>(m_Value);
+    }
+    operator long double(void) const
+    {
+        return static_cast<long double>(m_Value);
     }
 
 private:
@@ -958,6 +1053,10 @@ public:
     {
         return static_cast<double>(m_Value);
     }
+    operator long double(void) const
+    {
+        return static_cast<long double>(m_Value);
+    }
 
 private:
     obj_type m_Value;
@@ -977,33 +1076,6 @@ public:
 public:
     // Convert only to itself.
     operator obj_type(void) const
-    {
-        return m_Value;
-    }
-
-private:
-    const obj_type& m_Value;
-};
-
-template <>
-class CConvPolicy<SSafeCP, double>
-{ 
-public:
-    typedef double obj_type;
-
-    CConvPolicy(const obj_type& value)
-    : m_Value(value)
-    {
-    }
-
-public:
-    // Convert only to itself.
-    operator obj_type(void) const
-    {
-        return m_Value;
-    }
-
-    operator long double(void) const
     {
         return m_Value;
     }
@@ -1034,6 +1106,33 @@ public:
     {
         return m_Value;
     }
+    operator long double(void) const
+    {
+        return m_Value;
+    }
+
+private:
+    const obj_type& m_Value;
+};
+
+template <>
+class CConvPolicy<SSafeCP, double>
+{ 
+public:
+    typedef double obj_type;
+
+    CConvPolicy(const obj_type& value)
+    : m_Value(value)
+    {
+    }
+
+public:
+    // Convert only to itself.
+    operator obj_type(void) const
+    {
+        return m_Value;
+    }
+
     operator long double(void) const
     {
         return m_Value;

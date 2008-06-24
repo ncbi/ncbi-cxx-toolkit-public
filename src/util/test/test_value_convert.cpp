@@ -915,6 +915,224 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             value = ConvertSafe(value_CTime).operator string();;
             BOOST_CHECK_EQUAL(value, value_CTime.AsString());
         }
+
+        // float
+        {
+            float value = 0.0;
+
+            value = ConvertSafe(value_Int8);
+            // Won't pass on 32-bit platforms.
+            // BOOST_CHECK_EQUAL(value, value_Int8);
+
+            value = ConvertSafe(value_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = ConvertSafe(value_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = ConvertSafe(value_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = ConvertSafe(value_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = ConvertSafe(value_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = ConvertSafe(value_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            value = ConvertSafe(value_bool);
+            BOOST_CHECK_EQUAL(value, value_bool);
+
+            value = ConvertSafe(value_float);
+            BOOST_CHECK_EQUAL(value, value_float);
+
+            // Won't compile.
+            // value = ConvertSafe(value_double);
+            // BOOST_CHECK_EQUAL(value, Uint8(value_double));
+
+            // Won't compile.
+            // value = ConvertSafe(value_CTime);
+            // BOOST_CHECK_EQUAL(value, value_CTime);
+
+            // Won't compile.
+            // value = ConvertSafe(str_Int8);
+            // BOOST_CHECK_EQUAL(value, value_Int8);
+
+            // Won't compile.
+            // value = ConvertSafe(str_Int4);
+            // BOOST_CHECK_EQUAL(value, value_Int4);
+
+            // Won't compile.
+            // value = ConvertSafe(str_Uint4);
+            // BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            // Won't compile.
+            // value = ConvertSafe(str_Int2);
+            // BOOST_CHECK_EQUAL(value, value_Int2);
+
+            // Won't compile.
+            // value = ConvertSafe(str_Uint2);
+            // BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            // Won't compile.
+            // value = ConvertSafe(str_Int1);
+            // BOOST_CHECK_EQUAL(value, value_Int1);
+
+            // Won't compile.
+            // value = ConvertSafe(str_Uint1);
+            // BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            // Won't compile.
+            // value = ConvertSafe(str_bool);
+
+            // Won't compile.
+            // value = ConvertSafe(str_float);
+
+            // Won't compile.
+            // value = ConvertSafe(str_double);
+        }
+
+        // double
+        {
+            double value = 0.0;
+
+            value = ConvertSafe(value_Int8);
+            // Won't pass on 32-bit platforms.
+            // BOOST_CHECK_EQUAL(value, value_Int8);
+
+            value = ConvertSafe(value_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = ConvertSafe(value_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = ConvertSafe(value_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = ConvertSafe(value_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = ConvertSafe(value_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = ConvertSafe(value_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            value = ConvertSafe(value_bool);
+            BOOST_CHECK_EQUAL(value, value_bool);
+
+            value = ConvertSafe(value_float);
+            BOOST_CHECK_EQUAL(value, value_float);
+
+            value = ConvertSafe(value_double);
+            BOOST_CHECK_EQUAL(value, value_double);
+
+            // Won't compile.
+            // value = ConvertSafe(value_CTime);
+            // BOOST_CHECK_EQUAL(value, value_CTime);
+
+            value = ConvertSafe(str_Int8);
+            // Won't pass on 32-bit platforms.
+            // BOOST_CHECK_EQUAL(value, value_Int8);
+
+            value = ConvertSafe(str_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = ConvertSafe(str_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = ConvertSafe(str_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = ConvertSafe(str_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = ConvertSafe(str_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = ConvertSafe(str_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            // Won't compile.
+            // value = ConvertSafe(str_bool);
+
+            value = ConvertSafe(str_float);
+            // BOOST_CHECK_EQUAL(value, value_float);
+
+            value = ConvertSafe(str_double);
+            BOOST_CHECK_EQUAL(value, value_double);
+        }
+
+        // long double
+        {
+            long double value = 0.0;
+
+            value = ConvertSafe(value_Int8);
+            BOOST_CHECK_EQUAL(value, value_Int8);
+
+            value = ConvertSafe(value_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = ConvertSafe(value_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = ConvertSafe(value_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = ConvertSafe(value_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = ConvertSafe(value_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = ConvertSafe(value_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            value = ConvertSafe(value_bool);
+            BOOST_CHECK_EQUAL(value, value_bool);
+
+            value = ConvertSafe(value_float);
+            BOOST_CHECK_EQUAL(value, value_float);
+
+            value = ConvertSafe(value_double);
+            BOOST_CHECK_EQUAL(value, value_double);
+
+            // Won't compile.
+            // value = ConvertSafe(value_CTime);
+            // BOOST_CHECK_EQUAL(value, value_CTime);
+
+            value = ConvertSafe(str_Int8);
+            // BOOST_CHECK_EQUAL(value, value_Int8);
+
+            value = ConvertSafe(str_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = ConvertSafe(str_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = ConvertSafe(str_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = ConvertSafe(str_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = ConvertSafe(str_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = ConvertSafe(str_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            // Won't compile.
+            // value = ConvertSafe(str_bool);
+
+            value = ConvertSafe(str_float);
+            // BOOST_CHECK_EQUAL(value, value_float);
+
+            value = ConvertSafe(str_double);
+            // BOOST_CHECK_EQUAL(value, value_double);
+        }
     }
     catch(const CException& ex) {
         BOOST_FAIL(ex.what());
@@ -1690,6 +1908,237 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_EQUAL(value, value_CTime.AsString());
         }
 
+        // float
+        {
+            float value = 0.0;
+
+            value = Convert(value_Int8);
+            // Won't pass on 32-bit platforms.
+            // BOOST_CHECK_EQUAL(value, value_Int8);
+            
+            value = Convert(value_Uint8);
+            // Won't pass on 32-bit platforms.
+            // BOOST_CHECK_EQUAL(value, value_Uint8);
+
+            value = Convert(value_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = Convert(value_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = Convert(value_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = Convert(value_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = Convert(value_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = Convert(value_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            value = Convert(value_bool);
+            BOOST_CHECK_EQUAL(value, value_bool);
+
+            value = Convert(value_float);
+            BOOST_CHECK_EQUAL(value, value_float);
+
+            value = Convert(value_double);
+            // BOOST_CHECK_EQUAL(value, value_double);
+
+            // Won't compile ...
+            // value = Convert(value_CTime);
+            // BOOST_CHECK_EQUAL(value, value_CTime);
+
+            value = Convert(str_Int8);
+            // Won't pass on 32-bit platforms.
+            // BOOST_CHECK_EQUAL(value, value_Int8);
+
+            value = Convert(str_Uint8);
+            // Won't pass on 32-bit platforms.
+            // BOOST_CHECK_EQUAL(value, value_Uint8);
+
+            value = Convert(str_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = Convert(str_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = Convert(str_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = Convert(str_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = Convert(str_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = Convert(str_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            // Won't Convert at run-time ...
+            // value = Convert(str_bool);
+
+            value = Convert(str_float);
+            BOOST_CHECK_EQUAL(value, value_float);
+
+            value = Convert(str_double);
+            // BOOST_CHECK_EQUAL(value, value_double);
+        }
+
+        // double
+        {
+            double value = 0.0;
+
+            value = Convert(value_Int8);
+            // Won't pass on 32-bit platforms.
+            // BOOST_CHECK_EQUAL(value, value_Int8);
+            
+            value = Convert(value_Uint8);
+            // Won't pass on 32-bit platforms.
+            // BOOST_CHECK_EQUAL(value, value_Uint8);
+
+            value = Convert(value_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = Convert(value_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = Convert(value_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = Convert(value_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = Convert(value_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = Convert(value_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            value = Convert(value_bool);
+            BOOST_CHECK_EQUAL(value, value_bool);
+
+            value = Convert(value_float);
+            BOOST_CHECK_EQUAL(value, value_float);
+
+            value = Convert(value_double);
+            BOOST_CHECK_EQUAL(value, value_double);
+
+            // Won't compile ...
+            // value = Convert(value_CTime);
+            // BOOST_CHECK_EQUAL(value, value_CTime);
+
+            value = Convert(str_Int8);
+            // Won't pass on 32-bit platforms.
+            // BOOST_CHECK_EQUAL(value, value_Int8);
+
+            value = Convert(str_Uint8);
+            // Won't pass on 32-bit platforms.
+            // BOOST_CHECK_EQUAL(value, value_Uint8);
+
+            value = Convert(str_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = Convert(str_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = Convert(str_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = Convert(str_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = Convert(str_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = Convert(str_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            // Won't Convert at run-time ...
+            // value = Convert(str_bool);
+
+            value = Convert(str_float);
+            // BOOST_CHECK_EQUAL(value, value_float);
+
+            value = Convert(str_double);
+            BOOST_CHECK_EQUAL(value, value_double);
+        }
+
+        // long double
+        {
+            long double value = 0.0;
+
+            value = Convert(value_Int8);
+            BOOST_CHECK_EQUAL(value, value_Int8);
+            
+            value = Convert(value_Uint8);
+            BOOST_CHECK_EQUAL(value, value_Uint8);
+
+            value = Convert(value_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = Convert(value_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = Convert(value_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = Convert(value_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = Convert(value_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            value = Convert(value_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = Convert(value_bool);
+            BOOST_CHECK_EQUAL(value, value_bool);
+
+            value = Convert(value_float);
+            BOOST_CHECK_EQUAL(value, value_float);
+
+            value = Convert(value_double);
+            BOOST_CHECK_EQUAL(value, value_double);
+
+            // Won't Convert ...
+            // value = Convert(value_CTime);
+            // BOOST_CHECK_EQUAL(value, value_CTime);
+
+            value = Convert(str_Int8);
+            // Rounding issue. Differ in last digit.
+            // BOOST_CHECK_EQUAL(value, value_Int8);
+
+            value = Convert(str_Int4);
+            // Rounding issue. Differ in last digit.
+            // BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = Convert(str_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = Convert(str_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = Convert(str_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = Convert(str_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = Convert(str_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            // Won't Convert at run-time ...
+            // value = Convert(str_bool);
+
+            value = Convert(str_float);
+            // BOOST_CHECK_EQUAL(value, value_float);
+
+            value = Convert(str_double);
+            BOOST_CHECK_EQUAL(value, value_double);
+        }
     }
     catch(const CException& ex) {
         BOOST_FAIL(ex.what());
