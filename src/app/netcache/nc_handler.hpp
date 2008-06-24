@@ -54,7 +54,8 @@ typedef enum {
     eIsLock,
     eGetBlobOwner,
     eDropStat,
-    eHasBlob
+    eHasBlob,
+    eGetSize
 } ENC_RequestType;
 
 
@@ -91,10 +92,11 @@ public:
     virtual
     bool ProcessWrite();
 
-    bool ProcessWriteAndReport(unsigned blob_size);
+    bool ProcessWriteAndReport(unsigned blob_size, const string* req_id = 0);
 
     // NetCache request processing
 
+private:
     /// Process "PUT" request
     void ProcessPut(CSocket&              sock, 
                     SNC_Request&          req,
@@ -152,10 +154,15 @@ public:
 
     /// Process "ISLK" request
     void ProcessIsLock(CSocket& sock, const SNC_Request& req);
+
+    /// Process "GSIZ" request
+    void ProcessGetSize(CSocket& sock, const SNC_Request& req);
+
 private:
-    bool x_CheckBlobId(CSocket&       sock,
-                       CNetCache_Key* blob_id, 
-                       const string&  blob_key);
+    bool x_CheckBlobId(CSocket&       sock, CNetCache_Key* blob_id);
+    void x_ParseGetArgs(const char* s, SNC_Request* req);
+    void x_ParsePutArgs(const char* s, SNC_Request* req);
+    void x_ParseBlobId(const char* s, SNC_Request* req);
     bool m_PutOK;
     auto_ptr<IWriter> m_Writer;
     auto_ptr<IReader> m_Reader;

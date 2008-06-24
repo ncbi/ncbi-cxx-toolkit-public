@@ -124,15 +124,7 @@ void CICacheHandler::ParseRequest(const string& reqstr, SIC_Request* req)
         NC_SKIPSPACE(s)
         req->i0 = (unsigned) atoi(s);  // ttl
         NC_SKIPNUM(s)
-        NC_SKIPSPACE(s)
-    get_kvs:
-        NC_GETVAR(s, req->key)
-        NC_SKIPSPACE(s)
-        NC_CHECK_END(s)
-        req->version = (unsigned) atoi(s);
-        NC_SKIPNUM(s)
-        NC_SKIPSPACE(s)
-        NC_GETVAR(s, req->subkey)
+        x_GetKeyVersionSubkey(s, req);
         return;
     } // STOR
 
@@ -145,36 +137,36 @@ void CICacheHandler::ParseRequest(const string& reqstr, SIC_Request* req)
         NC_SKIPSPACE(s)
         req->i1 = (unsigned) atoi(s);  // blob size
         NC_SKIPNUM(s)
-        NC_SKIPSPACE(s)
-        goto get_kvs;
+        x_GetKeyVersionSubkey(s, req);
+        return;
     }
 
     if (CmpCmd4(s, "GSIZ")) { // GetSize
         req->req_type = eIC_GetSize;
         s += 4;
-        NC_SKIPSPACE(s)
-        goto get_kvs;
+        x_GetKeyVersionSubkey(s, req);
+        return;
     }
 
     if (CmpCmd4(s, "GBLW")) { // GetBlobOwner
         req->req_type = eIC_GetBlobOwner;
         s += 4;
-        NC_SKIPSPACE(s)
-        goto get_kvs;
+        x_GetKeyVersionSubkey(s, req);
+        return;
     }
 
     if (CmpCmd4(s, "READ")) { // Read
         req->req_type = eIC_Read;
         s += 4;
-        NC_SKIPSPACE(s)
-        goto get_kvs;
+        x_GetKeyVersionSubkey(s, req);
+        return;
     }
 
     if (CmpCmd4(s, "REMO")) { // Remove
         req->req_type = eIC_Remove;
         s += 4;
-        NC_SKIPSPACE(s)
-        goto get_kvs;
+        x_GetKeyVersionSubkey(s, req);
+        return;
     }
 
     if (CmpCmd4(s, "REMK")) { // RemoveKey
@@ -189,15 +181,15 @@ void CICacheHandler::ParseRequest(const string& reqstr, SIC_Request* req)
     if (CmpCmd4(s, "GACT")) { // GetAccessTime
         req->req_type = eIC_GetAccessTime;
         s += 4;
-        NC_SKIPSPACE(s)
-        goto get_kvs;
+        x_GetKeyVersionSubkey(s, req);
+        return;
     }
 
     if (CmpCmd4(s, "HASB")) { // HasBlobs
         req->req_type = eIC_HasBlobs;
         s += 4;
-        NC_SKIPSPACE(s)
-        goto get_kvs;
+        x_GetKeyVersionSubkey(s, req);
+        return;
     }
 
 
@@ -635,6 +627,19 @@ void CICacheHandler::Process_IC_Purge1(ICache&              ic,
     ICache::EKeepVersions keep_versions = (ICache::EKeepVersions) req.i1;
     ic.Purge(req.i0, keep_versions);
     WriteMsg(sock, "OK:", "");
+}
+
+
+void CICacheHandler::x_GetKeyVersionSubkey(const char* s, SIC_Request* req)
+{
+    NC_SKIPSPACE(s)
+    NC_GETVAR(s, req->key)
+    NC_SKIPSPACE(s)
+    NC_CHECK_END(s)
+    req->version = (unsigned) atoi(s);
+    NC_SKIPNUM(s)
+    NC_SKIPSPACE(s)
+    NC_GETVAR(s, req->subkey)
 }
 
 

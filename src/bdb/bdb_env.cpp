@@ -639,6 +639,13 @@ bool CBDB_Env::IsTransactional() const
     return m_Transactional; 
 }
 
+
+void CBDB_Env::LogFlush()
+{
+    BDB_CHECK(m_Env->log_flush(m_Env, 0), "DB_ENV::log_flush");
+}
+
+
 void CBDB_Env::CleanLog()
 {
     char **nm_list = 0;

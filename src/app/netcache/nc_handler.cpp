@@ -54,9 +54,9 @@ void CNetCacheHandler::ParseRequest(const string& reqstr, SNC_Request* req)
             req->req_id.erase();
 
             s += 4;
-            goto put_args_parse;
-
-        } // PUT2
+            x_ParsePutArgs(s, req);
+            return;
+        } // PUT3
 
         if (strncmp(s, "PUT2", 4) == 0) {
             req->req_type = ePut2;
@@ -64,8 +64,8 @@ void CNetCacheHandler::ParseRequest(const string& reqstr, SNC_Request* req)
             req->req_id.erase();
 
             s += 4;
-            goto put_args_parse;
-
+            x_ParsePutArgs(s, req);
+            return;
         } // PUT2
 
         if (strncmp(s, "PUT", 3) == 0) {
@@ -74,78 +74,26 @@ void CNetCacheHandler::ParseRequest(const string& reqstr, SNC_Request* req)
             req->req_id.erase();
 
             s += 3;
-    put_args_parse:
-            while (*s && isspace((unsigned char)(*s))) {
-                ++s;
-            }
-
-            if (*s) {  // timeout value
-                int time_out = atoi(s);
-                if (time_out > 0) {
-                    req->timeout = time_out;
-                }
-            }
-            while (*s && isdigit((unsigned char)(*s))) {
-                ++s;
-            }
-            while (*s && isspace((unsigned char)(*s))) {
-                ++s;
-            }
-            req->req_id = s;
-
+            x_ParsePutArgs(s, req);
             return;
         } // PUT
-
-
         break;
-
 
     case 'G':
 
         if (strncmp(s, "GET2", 4) == 0) {
             req->req_type = eGet;
             s += 4;
-            goto parse_get;
+            x_ParseGetArgs(s, req);
+            return;
         }
-
 
         if (strncmp(s, "GET", 3) == 0) {
             req->req_type = eGet;
             s += 3;
 
-        parse_get:
-
             if (isspace((unsigned char)(*s))) { // "GET"
-                while (*s && isspace((unsigned char)(*s))) {
-                    ++s;
-                }
-
-                req->req_id.erase();
-
-                while (*s && !isspace((unsigned char)(*s))) {
-                    char ch = *s;
-                    req->req_id.append(1, ch);
-                    ++s;
-                }
-
-                if (!*s) {
-                    return;
-                }
-
-                // skip whitespace
-                while (*s && isspace((unsigned char)(*s))) {
-                    ++s;
-                }
-
-                if (!*s) {
-                    return;
-                }
-
-                // NW modificator (no wait request)
-                if (s[0] == 'N' && s[1] == 'W') {
-                    req->no_lock = true;
-                }
-
+                x_ParseGetArgs(s, req);
                 return;
 
             } else { // GET...
@@ -163,11 +111,18 @@ void CNetCacheHandler::ParseRequest(const string& reqstr, SNC_Request* req)
             }
         } // GET*
 
+        if (strncmp(s, "GSIZ", 4) == 0) {
+            req->req_type = eGetSize;
+            s += 4;
+            x_ParseBlobId(s, req);
+            return;
+        }
 
         if (strncmp(s, "GBOW", 4) == 0) {  // get blob owner
             req->req_type = eGetBlobOwner;
             s += 4;
-            goto parse_blob_id;
+            x_ParseBlobId(s, req);
+            return;
         } // GBOW
 
         break;
@@ -176,7 +131,8 @@ void CNetCacheHandler::ParseRequest(const string& reqstr, SNC_Request* req)
         if (strncmp(s, "HASB", 4) == 0) {  // has blob
             req->req_type = eHasBlob;
             s += 4;
-            goto parse_blob_id;
+            x_ParseBlobId(s, req);
+            return;
         } // HASB
 
         break;
@@ -186,14 +142,7 @@ void CNetCacheHandler::ParseRequest(const string& reqstr, SNC_Request* req)
         if (strncmp(s, "ISLK", 4) == 0) {
             req->req_type = eIsLock;
             s += 4;
-
-    parse_blob_id:
-            req->req_id.erase();
-            while (*s && isspace((unsigned char)(*s))) {
-                ++s;
-            }
-
-            req->req_id = s;
+            x_ParseBlobId(s, req);
             return;
         }
 
@@ -204,13 +153,15 @@ void CNetCacheHandler::ParseRequest(const string& reqstr, SNC_Request* req)
         if (strncmp(s, "RMV2", 4) == 0) {
             req->req_type = eRemove2;
             s += 4;
-            goto parse_blob_id;
+            x_ParseBlobId(s, req);
+            return;
         } // REMOVE
 
         if (strncmp(s, "REMOVE", 3) == 0) {
             req->req_type = eRemove;
             s += 6;
-            goto parse_blob_id;
+            x_ParseBlobId(s, req);
+            return;
         } // REMOVE
 
         break;
@@ -248,7 +199,9 @@ void CNetCacheHandler::ParseRequest(const string& reqstr, SNC_Request* req)
         if (strncmp(s, "LOG", 3) == 0) {
             req->req_type = eLogging;
             s += 3;
-            goto parse_blob_id;  // "ON/OFF" instead of blob_id in this case
+            // "ON/OFF" instead of blob_id in this case
+            x_ParseBlobId(s, req);
+            return;
         } // LOG
 
         break;
@@ -341,6 +294,10 @@ void CNetCacheHandler::ProcessRequest(string&                request,
         stat.req_code = 'K';
         ProcessIsLock(socket, req);
         break;
+    case eGetSize:
+        stat.req_code = 'G';
+        ProcessGetSize(socket, req);
+        break;
     case eError:
         WriteMsg(socket, "ERR:", req.err_msg);
         m_Server->RegisterProtocolErr(
@@ -425,7 +382,7 @@ void CNetCacheHandler::ProcessRemove(CSocket& sock, const SNC_Request& req)
     }
 
     CNetCache_Key blob_id(req_id);
-    if (!x_CheckBlobId(sock, &blob_id, req_id))
+    if (!x_CheckBlobId(sock, &blob_id))
         return;
 
     m_Server->GetCache()->Remove(req_id);
@@ -471,7 +428,8 @@ bool CNetCacheHandler::ProcessWrite()
 }
 
 
-bool CNetCacheHandler::ProcessWriteAndReport(unsigned blob_size)
+bool CNetCacheHandler::ProcessWriteAndReport(unsigned blob_size,
+                                             const string* req_id)
 {
     char buf[kNetworkBufferSize];
     size_t bytes_read;
@@ -483,7 +441,7 @@ bool CNetCacheHandler::ProcessWriteAndReport(unsigned blob_size)
     if (res != eRW_Success || !bytes_read) {
         if (blob_size) {
             string msg("BLOB not found. ");
-            //msg += req_id;
+            if (req_id) msg += *req_id;
             WriteMsg(GetSocket(), "ERR:", msg);
         }
         m_Reader.reset(0);
@@ -514,7 +472,7 @@ bool CNetCacheHandler::ProcessWriteAndReport(unsigned blob_size)
 
 void CNetCacheHandler::ProcessGet(CSocket&               sock, 
                                   const SNC_Request&     req,
-                                  SNetCache_RequestStat&  stat)
+                                  SNetCache_RequestStat& stat)
 {
     const string& req_id = req.req_id;
 
@@ -560,9 +518,7 @@ void CNetCacheHandler::ProcessGet(CSocket&               sock,
 
                 }
             }}
-            string msg = "BLOB not found. ";
-            msg += req_id;
-            WriteMsg(sock, "ERR:", msg);
+            WriteMsg(sock, "ERR:", string("BLOB not found. ") + req_id);
             return;
         } else {
             break;
@@ -577,33 +533,30 @@ void CNetCacheHandler::ProcessGet(CSocket&               sock,
     stat.blob_size = ba_descr.blob_size;
 
     // re-translate reader to the network
-
     m_Reader.reset(ba_descr.reader.release());
     if (!m_Reader.get()) {
-        string msg = "BLOB not found. ";
-        msg += req_id;
-        WriteMsg(sock, "ERR:", msg);
+        WriteMsg(sock, "ERR:", string("BLOB not found. ") + req_id);
         return;
     }
 
     // Write first chunk right here
-    if (!ProcessWriteAndReport(ba_descr.blob_size))
+    if (!ProcessWriteAndReport(ba_descr.blob_size, &req_id))
         return;
 
     m_Host->BeginDelayedWrite();
 }
 
 
-void CNetCacheHandler::ProcessPut(CSocket&              sock, 
-                                  SNC_Request&          req,
+void CNetCacheHandler::ProcessPut(CSocket&               sock, 
+                                  SNC_Request&           req,
                                   SNetCache_RequestStat& stat)
 {
     WriteMsg(sock, "ERR:", "Obsolete");
 }
 
 
-void CNetCacheHandler::ProcessPut2(CSocket&              sock, 
-                                   SNC_Request&          req,
+void CNetCacheHandler::ProcessPut2(CSocket&               sock, 
+                                   SNC_Request&           req,
                                    SNetCache_RequestStat& stat)
 {
     string& rid = req.req_id;
@@ -688,8 +641,8 @@ bool CNetCacheHandler::ProcessTransmission(
 }
 
 
-void CNetCacheHandler::ProcessPut3(CSocket&              sock, 
-                                   SNC_Request&          req,
+void CNetCacheHandler::ProcessPut3(CSocket&               sock, 
+                                   SNC_Request&           req,
                                    SNetCache_RequestStat& stat)
 {
     m_PutOK = true;
@@ -708,7 +661,7 @@ void CNetCacheHandler::ProcessHasBlob(CSocket&           sock,
     }
     CNetCache_Key blob_id(req_id);
     _TRACE("Checking blob " << req_id);
-    if (!x_CheckBlobId(sock, &blob_id, req_id))
+    if (!x_CheckBlobId(sock, &blob_id))
         return;
 
     bool hb = m_Server->GetCache()->HasBlobs(req_id, kEmptyStr);
@@ -728,7 +681,7 @@ void CNetCacheHandler::ProcessGetBlobOwner(CSocket&           sock,
         return;
     }
     CNetCache_Key blob_id(req_id);
-    if (!x_CheckBlobId(sock, &blob_id, req_id))
+    if (!x_CheckBlobId(sock, &blob_id))
         return;
 
     string owner;
@@ -741,13 +694,13 @@ void CNetCacheHandler::ProcessGetBlobOwner(CSocket&           sock,
 void CNetCacheHandler::ProcessIsLock(CSocket& sock, const SNC_Request& req)
 {
     const string& req_id = req.req_id;
-
     if (req_id.empty()) {
         WriteMsg(sock, "ERR:", "BLOB id is empty.");
         return;
     }
+
     CNetCache_Key blob_id(req_id);
-    if (!x_CheckBlobId(sock, &blob_id, req_id))
+    if (!x_CheckBlobId(sock, &blob_id))
         return;
 
     if (m_Server->GetCache()->IsLocked(blob_id.id)) {
@@ -759,9 +712,23 @@ void CNetCacheHandler::ProcessIsLock(CSocket& sock, const SNC_Request& req)
 }
 
 
-bool CNetCacheHandler::x_CheckBlobId(CSocket&       sock,
-                                    CNetCache_Key* blob_id, 
-                                    const string&  blob_key)
+void CNetCacheHandler::ProcessGetSize(CSocket& sock, const SNC_Request& req)
+{
+    const string& req_id = req.req_id;
+    if (req_id.empty()) {
+        WriteMsg(sock, "ERR:", "BLOB id is empty.");
+        return;
+    }
+    size_t size;
+    if (!m_Server->GetCache()->GetSizeEx(req_id, 0, kEmptyStr, &size)) {
+        WriteMsg(sock, "ERR:", string("BLOB not found. ") + req_id);
+    } else {
+        WriteMsg(sock, "OK:", NStr::UIntToString(size));
+    }
+}
+
+
+bool CNetCacheHandler::x_CheckBlobId(CSocket& sock, CNetCache_Key* blob_id)
 {
     if (blob_id->version != 1     ||
         blob_id->hostname.empty() ||
@@ -772,6 +739,54 @@ bool CNetCacheHandler::x_CheckBlobId(CSocket&       sock,
         return false;
     }
     return true;
+}
+
+
+void CNetCacheHandler::x_ParseGetArgs(const char* s, SNC_Request* req)
+{
+    while (*s && isspace((unsigned char)(*s))) ++s;
+
+    req->req_id.erase();
+
+    while (*s && !isspace((unsigned char)(*s))) {
+        char ch = *s;
+        req->req_id.append(1, ch);
+        ++s;
+    }
+    if (!*s) return;
+
+    // skip whitespace
+    while (*s && isspace((unsigned char)(*s))) ++s;
+    if (!*s) return;
+
+    // NW modifier (no wait request)
+    if (s[0] == 'N' && s[1] == 'W') {
+        req->no_lock = true;
+    }
+}
+
+
+void CNetCacheHandler::x_ParsePutArgs(const char* s, SNC_Request* req)
+{
+    while (*s && isspace((unsigned char)(*s))) ++s;
+
+    if (*s) {  // timeout value
+        int time_out = atoi(s);
+        if (time_out > 0) {
+            req->timeout = time_out;
+        }
+    }
+    while (*s && isdigit((unsigned char)(*s))) ++s;
+    while (*s && isspace((unsigned char)(*s))) ++s;
+    req->req_id = s;
+}
+
+
+void CNetCacheHandler::x_ParseBlobId(const char* s, SNC_Request* req)
+{
+    req->req_id.erase();
+    while (*s && isspace((unsigned char)(*s))) ++s;
+    req->req_id = s;
 }
 
 

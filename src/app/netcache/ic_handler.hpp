@@ -100,8 +100,7 @@ public:
     virtual
     bool ProcessWrite();
 
-
-
+private:
     // ICache request processing
     void Process_IC_SetTimeStampPolicy(ICache&               ic,
                                        CSocket&              sock, 
@@ -165,7 +164,9 @@ public:
     void Process_IC_Purge1(ICache&              ic,
                             CSocket&            sock, 
                             SIC_Request&        req);
+
 private:
+    void x_GetKeyVersionSubkey(const char* s, SIC_Request* req);
     bool              m_SizeKnown;
     size_t            m_BlobSize;
     auto_ptr<IWriter> m_Writer;

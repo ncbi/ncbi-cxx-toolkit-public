@@ -1288,6 +1288,7 @@ void CBDB_Cache::Open(const string& cache_path,
         }
         m_Env->SetCheckPointKB(checkpoint_KB);
 
+        m_Env->SetLogAutoRemove(true);
 
         x_PidLock(lm);
         switch (use_trans)
@@ -1309,8 +1310,6 @@ void CBDB_Cache::Open(const string& cache_path,
         default:
             _ASSERT(0);
         } // switch
-
-        m_Env->SetLogAutoRemove(true);
 
         m_Env->SetLockTimeout(30 * 1000000); // 30 sec
         if (m_Env->IsTransactional()) {
@@ -2137,6 +2136,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
     }
 }
 
+
 void CBDB_Cache::Store(unsigned       blob_id_ext,
                        const string&  key,
                        int            version,
@@ -2150,7 +2150,6 @@ void CBDB_Cache::Store(unsigned       blob_id_ext,
             true // do blob is locking
             );
 }
-
 
 
 void CBDB_Cache::Store(const string&  key,
@@ -2167,15 +2166,17 @@ void CBDB_Cache::Store(const string&  key,
 }
 
 
-size_t CBDB_Cache::GetSize(const string&  key,
+bool CBDB_Cache::GetSizeEx(const string&  key,
                            int            version,
-                           const string&  subkey)
+                           const string&  subkey,
+                           size_t*        size)
 {
+    size_t blob_size = 0;
 	int overflow;
     unsigned int ttl, blob_id, volume_id, split_id;
 
     blob_id = GetBlobId(key, version, subkey);
-    if (!blob_id) return 0;
+    if (!blob_id) return false;
     TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout); 
 
     {{
@@ -2184,17 +2185,16 @@ size_t CBDB_Cache::GetSize(const string&  key,
 
 	    bool rec_exists =
             x_RetrieveBlobAttributes(key, version, subkey, 
-                                    &overflow, &ttl, 
-                                    &blob_id, &volume_id, &split_id);
-	    if (!rec_exists) {
-		    return 0;
-	    }
+                                    overflow, ttl, 
+                                    blob_id, volume_id, split_id);
+	    if (!rec_exists) return false;
 
         // check expiration here
+        // joukovv 2006-06-24: expiration of WHAT? Apparently, not of a given
+        // BLOB - no BLOB-specific parameters passed. Should we bother?
         if (m_TimeStampFlag & fCheckExpirationAlways) {
-            if (x_CheckTimestampExpired(*m_CacheAttrDB, time(0))) {
-                return 0;
-            }
+            if (x_CheckTimeStampExpired(*m_CacheAttrDB, time(0)))
+                return false;
         }
         overflow = m_CacheAttrDB->overflow;
     }}
@@ -2204,30 +2204,36 @@ size_t CBDB_Cache::GetSize(const string&  key,
         s_MakeOverflowFileName(path, m_Path, GetName(), key, version, subkey);
         CFile entry(path);
 
-        if (entry.Exists()) {
-            return (size_t) entry.GetLength();
-        } else {
-            return 0;
-        }
-    }
-    // Regular inline BLOB
-    if (blob_id == 0) {
-        return 0;
-    }
-    unsigned coords[2];
-    coords[0] = volume_id;
-    coords[1] = split_id;
+        if (!entry.Exists())
+            return false;
+        blob_size = entry.GetLength();
+    } else {
+        // Regular inline BLOB
+        if (blob_id == 0) return false;
 
-    m_BLOB_SplitStore->SetTransaction(0);
+        unsigned coords[2];
+        coords[0] = volume_id;
+        coords[1] = split_id;
 
-    size_t blob_size;
-    EBDB_ErrCode ret = 
-        m_BLOB_SplitStore->BlobSize(blob_id, coords, &blob_size);
-    if (ret == eBDB_Ok) {
-        return blob_size;
+        m_BLOB_SplitStore->SetTransaction(0);
+
+        EBDB_ErrCode ret = 
+            m_BLOB_SplitStore->BlobSize(blob_id, coords, &blob_size);
+        if (ret != eBDB_Ok) return false;
     }
-    return 0;
+    if (size) *size = blob_size;
+    return true;
 }
+
+
+size_t CBDB_Cache::GetSize(const string&  key,
+                           int            version,
+                           const string&  subkey)
+{
+    size_t size;
+    return GetSizeEx(key, version, subkey, &size) ? size : 0;
+}
+
 
 void CBDB_Cache::GetBlobOwner(const string&  key,
                               int            version,
@@ -2263,7 +2269,7 @@ bool CBDB_Cache::HasBlobs(const string&  key,
         cur.SetCondition(CBDB_FileCursor::eEQ);
         cur.From << key;
         return cur.FetchFirst() == eBDB_Ok &&
-               !x_CheckTimestampExpired(*m_CacheAttrDB, curr);
+               !x_CheckTimeStampExpired(*m_CacheAttrDB, curr);
     }
 
     // More complicated case with subkey
@@ -2282,7 +2288,7 @@ bool CBDB_Cache::HasBlobs(const string&  key,
         cur.From << version;
         cur.From << subkey;
         if (cur.FetchFirst() == eBDB_Ok &&
-            !x_CheckTimestampExpired(*m_CacheAttrDB, curr))
+            !x_CheckTimeStampExpired(*m_CacheAttrDB, curr))
             return true;
         ++version;
     }
@@ -2331,41 +2337,38 @@ bool CBDB_Cache::Read(const string& key,
 
     {{
         CFastMutexGuard guard(m_DB_Lock);
-        {{ // TODO: nested scope here is nonsensical
-            m_CacheAttrDB->SetTransaction(&trans);
-            CBDB_FileCursor cur(*m_CacheAttrDB, trans,
-                                CBDB_FileCursor::eReadModifyUpdate);
-            cur.SetCondition(CBDB_FileCursor::eEQ);
-            cur.From << key << version << subkey;
-            ret = cur.Fetch();
-            if (ret == eBDB_Ok) {
-                if (m_TimeStampFlag & fCheckExpirationAlways) {
-                    if (x_CheckTimestampExpired(*m_CacheAttrDB, curr)) {
-                        return false;
-                    }
+        m_CacheAttrDB->SetTransaction(&trans);
+        CBDB_FileCursor cur(*m_CacheAttrDB, trans,
+                            CBDB_FileCursor::eReadModifyUpdate);
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+        cur.From << key << version << subkey;
+        ret = cur.Fetch();
+        if (ret == eBDB_Ok) {
+            if (m_TimeStampFlag & fCheckExpirationAlways) {
+                if (x_CheckTimeStampExpired(*m_CacheAttrDB, curr)) {
+                    return false;
                 }
-                unsigned read_count = m_CacheAttrDB->read_count;
-                m_CacheAttrDB->read_count = read_count + 1;
-
-                unsigned max_time = m_CacheAttrDB->max_time;
-                if (max_time == 0 || max_time >= (unsigned)curr) {
-                    if ( m_TimeStampFlag & fTimeStampOnRead ) {
-                        m_CacheAttrDB->time_stamp = (unsigned)curr;
-                    }
-                }
-
-                blob_id = m_CacheAttrDB->blob_id;
-                overflow = m_CacheAttrDB->overflow;
-                volume_id = m_CacheAttrDB->volume_id;
-                split_id = m_CacheAttrDB->split_id;
-
-                ret = cur.Update();
-
-            } else {
-                return false;
             }
-        }} // cursor
+            unsigned read_count = m_CacheAttrDB->read_count;
+            m_CacheAttrDB->read_count = read_count + 1;
 
+            unsigned max_time = m_CacheAttrDB->max_time;
+            if (max_time == 0 || max_time >= (unsigned)curr) {
+                if ( m_TimeStampFlag & fTimeStampOnRead ) {
+                    m_CacheAttrDB->time_stamp = (unsigned)curr;
+                }
+            }
+
+            blob_id = m_CacheAttrDB->blob_id;
+            overflow = m_CacheAttrDB->overflow;
+            volume_id = m_CacheAttrDB->volume_id;
+            split_id = m_CacheAttrDB->split_id;
+
+            ret = cur.Update();
+
+        } else {
+            return false;
+        }
     }} // m_DB_Lock
 
     if (ret != eBDB_Ok) {
@@ -2442,15 +2445,15 @@ bool CBDB_Cache::Read(const string& key,
         unsigned int ttl, blob_id, volume_id, split_id;
 	    bool rec_exists =
             x_RetrieveBlobAttributes(key, version, subkey, 
-                                    &overflow, &ttl, 
-                                    &blob_id, &volume_id, &split_id);
+                                    overflow, ttl, 
+                                    blob_id, volume_id, split_id);
 	    if (!rec_exists) {
 		    return false;
 	    }
 
         // check expiration
         if (m_TimeStampFlag & fCheckExpirationAlways) {
-            if (x_CheckTimestampExpired()) {
+            if (x_CheckTimeStampExpired()) {
                 return false;
             }
         }
@@ -2581,7 +2584,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
             ret = cur.Fetch();
             if (ret == eBDB_Ok) {
                 if (m_TimeStampFlag & fCheckExpirationAlways) {
-                    if (x_CheckTimestampExpired(*m_CacheAttrDB, curr)) {
+                    if (x_CheckTimeStampExpired(*m_CacheAttrDB, curr)) {
                         return false;
                     }
                 }
@@ -2637,7 +2640,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     if (ret == eBDB_Ok) {
         if (coords[0] != volume_id || 
             coords[1] != split_id) {
-            // TO DO: restore de-mux mapping
+            // TODO: restore de-mux mapping
         }
     } else {
         // TODO: restore de-mux mapping
@@ -2663,14 +2666,14 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 
 	    bool rec_exists =
             x_RetrieveBlobAttributes(key, version, subkey, 
-                                    &overflow, &ttl, 
-                                    &blob_id, &volume_id, &split_id);
+                                    overflow, ttl, 
+                                    blob_id, volume_id, split_id);
 	    if (!rec_exists) {
 		    return 0;
 	    }
         // check expiration
         if (m_TimeStampFlag & fCheckExpirationAlways) {
-            if (x_CheckTimestampExpired()) {
+            if (x_CheckTimeStampExpired()) {
                 return 0;
             }
         }
@@ -2785,7 +2788,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
             ret = cur.Fetch();
             if (ret == eBDB_Ok) {
                 if (m_TimeStampFlag & fCheckExpirationAlways) {
-                    if (x_CheckTimestampExpired(*m_CacheAttrDB, curr)) {
+                    if (x_CheckTimeStampExpired(*m_CacheAttrDB, curr)) {
                         return;
                     }
                 }
@@ -2914,14 +2917,14 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
 
 	    bool rec_exists =
             x_RetrieveBlobAttributes(key, version, subkey, 
-                                    &overflow, &ttl, 
-                                    &blob_id, &volume_id, &split_id);
+                                    overflow, ttl, 
+                                    blob_id, volume_id, split_id);
 	    if (!rec_exists) {
 		    return;
 	    }
         // check expiration
         if (m_TimeStampFlag & fCheckExpirationAlways) {
-            if (x_CheckTimestampExpired()) {
+            if (x_CheckTimeStampExpired()) {
                 return;
             }
         }
@@ -3519,7 +3522,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
                     _ASSERT(blob_descr.blob_id == m_CacheAttrDB_RO2->blob_id);
                     blob_descr.blob_id = m_CacheAttrDB_RO2->blob_id;
                     time_t exp_time;
-                    if (x_CheckTimestampExpired(
+                    if (x_CheckTimeStampExpired(
                         *m_CacheAttrDB_RO2, curr, &exp_time)) {
                         
                          blob_exp_vect.push_back(blob_descr);
@@ -3835,7 +3838,7 @@ purge_start:
                 unsigned blob_id = m_CacheAttrDB_RO2->blob_id;
 
                 time_t exp_time;
-                if (x_CheckTimestampExpired(*m_CacheAttrDB_RO2, curr, &exp_time)) {
+                if (x_CheckTimeStampExpired(*m_CacheAttrDB_RO2, curr, &exp_time)) {
 
                     m_CacheAttrDB_RO2->owner_name.ToString(m_TmpOwnerName);
                     
@@ -4233,7 +4236,7 @@ CBDB_Cache::x_ComputeExpTime(int time_stamp, unsigned ttl, int timeout)
     return exp_time;
 }
 
-bool CBDB_Cache::x_CheckTimestampExpired(SCache_AttrDB& attr_db, 
+bool CBDB_Cache::x_CheckTimeStampExpired(SCache_AttrDB& attr_db, 
                                          time_t  curr, 
                                          time_t* exp_time)
 {
@@ -4375,26 +4378,19 @@ void CBDB_Cache::x_TruncateDB()
 bool CBDB_Cache::x_RetrieveBlobAttributes(const string&  key,
                                           int            version,
                                           const string&  subkey,
-										  int*           overflow,
-                                          unsigned int*  ttl,
-                                          unsigned int*  blob_id,
-                                          unsigned int*  volume_id,
-                                          unsigned int*  split_id)
+										  int&           overflow,
+                                          unsigned int&  ttl,
+                                          unsigned int&  blob_id,
+                                          unsigned int&  volume_id,
+                                          unsigned int&  split_id)
 {
-    _ASSERT(blob_id);
-    _ASSERT(volume_id);
-    _ASSERT(split_id);
+    if (!x_FetchBlobAttributes(key, version, subkey)) return false;
 
-    bool ret = x_FetchBlobAttributes(key, version, subkey);
-    if (ret == false) {
-        return ret;
-    }
-
-	*overflow  = m_CacheAttrDB->overflow;
-    *ttl       = m_CacheAttrDB->ttl;
-    *blob_id   = m_CacheAttrDB->blob_id;
-    *volume_id = m_CacheAttrDB->volume_id;
-    *split_id  = m_CacheAttrDB->split_id;
+	overflow  = m_CacheAttrDB->overflow;
+    ttl       = m_CacheAttrDB->ttl;
+    blob_id   = m_CacheAttrDB->blob_id;
+    volume_id = m_CacheAttrDB->volume_id;
+    split_id  = m_CacheAttrDB->split_id;
 
 /*
 	if (!(m_TimeStampFlag & fTrackSubKey)) {
@@ -4527,7 +4523,7 @@ bool CBDB_Cache::DropBlobWithExpCheck(const string&      key,
             return false;
         }
 
-        if (x_CheckTimestampExpired(*m_CacheAttrDB_RO2, curr, &exp_time)) {
+        if (x_CheckTimeStampExpired(*m_CacheAttrDB_RO2, curr, &exp_time)) {
             blob_expired = true;
             overflow  = m_CacheAttrDB_RO2->overflow;
             coords[0] = m_CacheAttrDB_RO2->volume_id;

@@ -530,13 +530,13 @@ public:
     virtual void SetTimeStampPolicy(TTimeStampFlags policy,
                                     unsigned int    timeout,
                                     unsigned int     max_timeout = 0);
-    virtual bool IsOpen() const { return m_BLOB_SplitStore != 0; }
-
     virtual TTimeStampFlags GetTimeStampPolicy() const;
     virtual int GetTimeout() const;
+    virtual bool IsOpen() const { return m_BLOB_SplitStore != 0; }
     virtual void SetVersionRetention(EKeepVersions policy);
     virtual EKeepVersions GetVersionRetention() const;
 
+    // NB: Extension of ICache
     void Store(unsigned blob_id_ext,
                const string&  key,
                int            version,
@@ -553,6 +553,14 @@ public:
                        size_t         size,
                        unsigned int   time_to_live = 0,
                        const string&  owner = kEmptyStr);
+
+    // Extension of ICache, specific for CBDB_Cache - check blob
+    // presence, and if it is there, get size.
+    // Returns true if BLOB exists, and puts size into 'size' param
+    bool GetSizeEx(const string&  key,
+                   int            version,
+                   const string&  subkey,
+                   size_t*        size);
 
     virtual size_t GetSize(const string&  key,
                            int            version,
@@ -577,6 +585,7 @@ public:
                                const string&     subkey,
                                SBlobAccessDescr* blob_descr);
 
+    // NB: Extension of ICache
     IWriter* GetWriteStream(unsigned         blob_id_ext,
                             const string&    key,
                             int              version,
@@ -591,9 +600,6 @@ public:
                                     unsigned int     time_to_live = 0,
                                     const string&    owner = kEmptyStr);
 
-    virtual bool HasBlobs(const string&  key,
-                          const string&  subkey);
-
     virtual void Remove(const string& key);
 
     virtual void Remove(const string&    key,
@@ -604,6 +610,9 @@ public:
                                  int            version,
                                  const string&  subkey);
 
+    virtual bool HasBlobs(const string&  key,
+                          const string&  subkey);
+
     virtual void Purge(time_t           access_timeout,
                        EKeepVersions    keep_last_version = eDropAll);
 
@@ -612,6 +621,11 @@ public:
                        time_t           access_timeout,
                        EKeepVersions    keep_last_version = eDropAll);
 
+    virtual bool SameCacheParams(const TCacheParams* params) const;
+    virtual string GetCacheName(void) const
+    {
+        return m_Path + "<" + m_Name + ">";
+    }
     ///@}
 
     /// Delete BLOB
@@ -628,11 +642,6 @@ public:
                   unsigned*      blob_id,
                   unsigned*      coord);
 
-    virtual bool SameCacheParams(const TCacheParams* params) const;
-    virtual string GetCacheName(void) const
-    {
-        return m_Path + "<" + m_Name + ">";
-    }
     const string& GetName() const { return m_Name; }
 
     /// Get next BLOB id out from the atomic couter
@@ -701,7 +710,7 @@ private:
 
 private:
     time_t x_ComputeExpTime(int time_stamp, unsigned ttl, int timeout);
-    bool x_CheckTimestampExpired(SCache_AttrDB& attr_db, 
+    bool x_CheckTimeStampExpired(SCache_AttrDB& attr_db, 
                                  time_t         curr, 
                                  time_t*        exp_time=0);
 
@@ -737,11 +746,11 @@ private:
 	bool x_RetrieveBlobAttributes(const string&  key,
                                   int            version,
                                   const string&  subkey,
-	 							  int*           overflow,
-                                  unsigned int*  ttl,
-                                  unsigned int*  blob_id,
-                                  unsigned int*  volume_id,
-                                  unsigned int*  split_id);
+	 							  int&           overflow,
+                                  unsigned int&  ttl,
+                                  unsigned int&  blob_id,
+                                  unsigned int&  volume_id,
+                                  unsigned int&  split_id);
 
 	bool x_FetchBlobAttributes(const string&  key,
                                int            version,

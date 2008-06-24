@@ -214,6 +214,9 @@ public:
     /// Set the maximum number of locking entities supported by the Berkeley DB environment.
     void SetMaxLockers(unsigned max_lockers);
 
+    /// Flush all pending log records
+    void LogFlush();
+
     /// Remove all non-active log files
     void CleanLog();
 

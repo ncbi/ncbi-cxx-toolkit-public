@@ -306,29 +306,24 @@ void CNetCache_MessageHandler::ProcessSM(CSocket& socket, string& req)
         WriteMsg("ERR:", "Server does not support sessions ");
         return;
     }
-
-    if (req[0] == 'S' && req[1] == 'M') {
+    do {
         bool reg;
-        if (req[2] == 'R') {
+        if (req.compare(0, 3, "SMR") == 0)
             reg = true;
-        } else
-        if (req[2] == 'U') {
+        else if (req.compare(0, 3, "SMU") == 0)
             reg = false;
-        } else {
-            goto err;
-        }
+        else
+            break;
         req.erase(0, 3);
         NStr::TruncateSpacesInPlace(req, NStr::eTrunc_Begin);
         string host, port_str;
         bool split = NStr::SplitInTwo(req, " ", host, port_str);
-        if (!split) {
-            goto err;
-        }
+        if (!split)
+            break;
         unsigned port = NStr::StringToUInt(port_str);
 
-        if (!port || host.empty()) {
-            goto err;
-        }
+        if (!port || host.empty())
+            break;
 
         if (reg) {
             m_Server->RegisterSession(host, port);
@@ -336,10 +331,9 @@ void CNetCache_MessageHandler::ProcessSM(CSocket& socket, string& req)
             m_Server->UnRegisterSession(host, port);
         }
         WriteMsg("OK:", "");
-    } else {
-        err:
-        WriteMsg("ERR:", "Invalid request ");
-    }
+        return;
+    } while (0);
+    WriteMsg("ERR:", "Invalid request ");
 }
 
 
