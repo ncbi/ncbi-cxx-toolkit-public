@@ -617,8 +617,6 @@ int CGridWorkerApp_Impl::Run()
 
     control_thread->Run();
     //worker_thread->Run();
-    // give sometime the thread to run
-    SleepMilliSec(500);
     if (CGridGlobals::GetInstance().
         GetShutdownLevel() == CNetScheduleAdmin::eNoShutdown) {
         LOG_POST_X(54, "\n=================== NEW RUN : "
