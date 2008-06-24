@@ -1807,7 +1807,10 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                 }
                 return x_ParsePAXHeader(buffer);
             }
-            m_Current.m_Name.swap(buffer);
+            if (m_Current.GetType() == CTarEntryInfo::eGNULongName)
+                m_Current.m_Name.swap(buffer);
+            else
+                m_Current.m_LinkName.swap(buffer);
             return eContinue;
         }
         /*FALLTHRU*/
@@ -2104,7 +2107,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         m_Current = CTarEntryInfo(pos);
         m_Current.m_Name = xinfo.GetName();
         EStatus status = x_ReadEntryInfo
-            (action == eTest &&  (m_Flags & fDumpBlockHeaders),
+            (action == eTest  &&  (m_Flags & fDumpBlockHeaders),
              xinfo.GetType() == CTarEntryInfo::ePAXHeader);
         switch (status) {
         case eFailure:
@@ -2178,7 +2181,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 }
                 // Latch next long link here then just skip
                 xinfo.m_Type = CTarEntryInfo::eGNULongLink;
-                xinfo.m_LinkName.swap(m_Current.m_Name);
+                xinfo.m_LinkName.swap(m_Current.m_LinkName);
                 break;
 
             default:
@@ -3002,8 +3005,9 @@ protected:
 
 CTarReader::~CTarReader()
 {
-    if (m_Own)
+    if (m_Own) {
         delete m_Tar;
+    }
 }
 
 
