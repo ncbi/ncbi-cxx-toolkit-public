@@ -146,12 +146,9 @@ err_throw:
         NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
     }
 
-    // prefix
-    int prsum = (ch[0] - 'N') +
-                (ch[1] - 'C') +
-                (ch[2] - 'I') +
-                (ch[3] - 'D');
-    if (prsum != 0) {
+    static const char prefix[4] = {'N', 'C', 'I', 'D'};
+
+    if (*((const Int4*) ch) != *((const Int4*) prefix)) {
         goto err_throw;
     }
     ch += 4;
