@@ -130,5 +130,14 @@ echo
 
 test_tar -X -v -f $test_base.tar "*test_tar${exe}" | cmp -l - "./test_tar${exe}"  ||  exit 1
 
+echo "*** Testing multiple entry streaming feature"
+echo
+
+test_tar -X -v -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > "$test_base.out.1"  ||  exit 1
+head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                           ||  exit 1
+cat "./test_tar${exe}" "$test_base.out.temp" "$test_base.2/newdir/datefile" > "$test_base.out.2"         ||  exit 1
+cmp -l "$test_base.out.1" "$test_base.out.2"                                      ||  exit 1
+
+echo
 echo "*** TEST COMPLETE"
 exit 0

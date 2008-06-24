@@ -201,6 +201,8 @@ public:
     Uint8         GetPosition(EPos what)    const
     { return what == ePos_Header ? m_Pos : m_Pos + m_HeaderSize; }
 
+    bool operator==(const CTarEntryInfo& info) const;
+
 private:
     EType        m_Type;       ///< Type
     string       m_Name;       ///< Entry name
@@ -208,7 +210,7 @@ private:
     string       m_UserName;   ///< User name
     string       m_GroupName;  ///< Group name (empty string for MSWin)
     streamsize   m_HeaderSize; ///< Total size of all headers for this entry
-    struct stat  m_Stat;       ///< Dir-entry compatible info (as applicable)
+    struct stat  m_Stat;       ///< Direntry-compatible info (as applicable)
     Uint8        m_Pos;        ///< Entry (not data!) position within archive
 
     friend class CTar;
@@ -466,6 +468,9 @@ public:
     ///   CTarEntryInfo::GetPosition, Extract, SetFlags, IReader, CRStream
     static IReader* Extract(istream& is, const string& name, TFlags flags = 0);
 
+    const CTarEntryInfo* GetNextEntryInfo(void);
+    IReader*             GetNextEntryData(void);
+
 protected:
     /// Archive action
     enum EOpenMode {
@@ -482,7 +487,7 @@ protected:
         eExtract   = (1 << 4) | eRO,
         eTest      = eList | eExtract,
         eCreate    = (1 << 5) | eWO,
-        eInternal  = (1 << 6)
+        eInternal  = (1 << 6) | eRO
     };
     /// IO completion code
     enum EStatus {
@@ -506,31 +511,29 @@ protected:
     // Backspace the archive.
     void x_Backspace(EAction action, size_t blocks);
 
-    // Parse in extended entry information (POSIX) for the next entry.
-    EStatus x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer);
+    // Parse in extended entry information (POSIX) for the current entry.
+    EStatus x_ParsePAXHeader(const string& buffer);
 
-    // Read information about next entry in the archive.
-    EStatus x_ReadEntryInfo(CTarEntryInfo& info,
-                            bool dump = false, bool pax = false);
+    // Read information about current entry in the archive.
+    EStatus x_ReadEntryInfo(bool dump, bool pax);
 
     // Pack either name or linkname into archive entry header.
     bool x_PackName(SHeader* header, const CTarEntryInfo& info, bool link);
 
-    // Write information about entry into the archive.
-    void x_WriteEntryInfo(const string& name, const CTarEntryInfo& info);
+    // Write information about current entry into the archive.
+    void x_WriteEntryInfo(const string& name);
 
-    // Read the archive and do the requested "action".
+    // Read the archive and do the requested "action" on current entry.
     auto_ptr<TEntries> x_ReadAndProcess(EAction action);
 
-    // Process next entry from the archive.
+    // Process current entry from the archive.
     // If extract == FALSE, then just skip the entry without any processing.
-    bool x_ProcessEntry(const CTarEntryInfo& info, bool extract = false,
-                        const TEntries* done = 0);
+    bool x_ProcessEntry(bool extract, const TEntries* done);
 
-    // Extract an entry from the archive into the file system,
+    // Extract current entry from the archive into the file system,
     // and return the entry size (if any) still remaining in the archive.
-    bool x_ExtractEntry(const CTarEntryInfo& info, Uint8& size,
-                        const CDirEntry* dst, const CDirEntry* src = 0);
+    bool x_ExtractEntry(Uint8& size,
+                        const CDirEntry* dst, const CDirEntry* src);
 
     // Restore attributes of an entry on the file system.
     // If 'dst' not specified, then the destination path will be constructed
@@ -540,8 +543,9 @@ protected:
                         const CDirEntry* dst = 0) const;
 
     // Read/write specified number of bytes from/to the archive.
-    const char* x_ReadArchive(size_t& n);
-    void        x_WriteArchive(size_t n, const char* buffer = 0);
+    const char* x_ReadArchive (size_t& n);
+    void        x_SkipArchive (size_t  n);  // Can do either skip or read
+    void        x_WriteArchive(size_t  n, const char* buffer = 0);
 
     // Check path and convert it to an archive name.
     string x_ToArchiveName(const string& path) const;
@@ -552,8 +556,8 @@ protected:
     // Append an entry to the archive.
     auto_ptr<TEntries> x_Append(const string&   name,
                                 const TEntries* toc = 0);
-    // Append a regular file to the archive and set size of the entry header.
-    void x_AppendFile(const string& file, CTarEntryInfo& info);
+    // Append a regular file (current entry) to the archive.
+    void x_AppendFile(const string& file);
 
 protected:
     string         m_FileName;     ///< Tar archive file name.
@@ -569,13 +573,16 @@ protected:
     CMask*         m_Mask;         ///< Masks for list/test/extract.
     EOwnership     m_MaskOwned;    ///< Flag of m_Mask's ownership.
     bool           m_IsModified;   ///< True after at least one write.
+    bool           m_ReadToSkip;   ///< True if stream cannot do skips.
     string         m_BaseDir;      ///< Base directory for relative paths.
-    const string*  m_Current;      ///< Current entry name being processed.
+    CTarEntryInfo  m_Current;      ///< Current entry being processed.
 
 private:
     // Prohibit assignment and copy
     CTar& operator=(const CTar&);
     CTar(const CTar&);
+
+    friend class CTarReader;
 };
 
 

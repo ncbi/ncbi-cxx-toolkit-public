@@ -463,6 +463,19 @@ unsigned int CTarEntryInfo::GetMinor(void) const
 }
 
 
+bool CTarEntryInfo::operator==(const CTarEntryInfo& info) const
+{
+    return (m_Type       == info.m_Type                        &&
+            m_Name       == info.m_Name                        &&
+            m_LinkName   == info.m_LinkName                    &&
+            m_UserName   == info.m_UserName                    &&
+            m_GroupName  == info.m_GroupName                   &&
+            m_HeaderSize == info.m_HeaderSize                  &&
+            memcmp(&m_Stat,&info.m_Stat, sizeof(m_Stat)) == 0  &&
+            m_Pos        == info.m_Pos ? true : false);
+}
+
+
 static string s_ModeAsString(TTarMode mode)
 {
     string usr("---");
@@ -593,7 +606,7 @@ static string s_OSReason(int x_errno)
 
 
 static string s_PositionAsString(const string& file, Uint8 pos, size_t recsize,
-                                 const string* entry)
+                                 const string& entryname)
 {
     _ASSERT(!OFFSET_OF(pos));
     _ASSERT(!OFFSET_OF(recsize));
@@ -610,8 +623,8 @@ static string s_PositionAsString(const string& file, Uint8 pos, size_t recsize,
             " [thru #" + NStr::UInt8ToString(BLOCK_OF(pos),
                                              NStr::fWithCommas) + ']';
     }
-    if (entry  &&  !entry->empty()) {
-        result += ", while in '" + *entry + '\'';
+    if (!entryname.empty()) {
+        result += ", while in '" + entryname + '\'';
     }
     return result + ":\n";
 }
@@ -945,7 +958,8 @@ CTar::CTar(const string& filename, size_t blocking_factor)
       m_Flags(fDefault),
       m_Mask(0),
       m_MaskOwned(eNoOwnership),
-      m_IsModified(false)
+      m_IsModified(false),
+      m_ReadToSkip(false)
 {
     x_Init();
 }
@@ -964,7 +978,8 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
       m_Flags(fDefault),
       m_Mask(0),
       m_MaskOwned(eNoOwnership),
-      m_IsModified(false)
+      m_IsModified(false),
+      m_ReadToSkip(false)
 {
     x_Init();
 }
@@ -984,21 +999,22 @@ CTar::~CTar()
 }
 
 
-#define TAR_THROW(errcode, message)                                     \
+#define TAR_THROW(who, errcode, message)                                \
     NCBI_THROW(CTarException, errcode,                                  \
-               s_PositionAsString(m_FileName, m_StreamPos,              \
-                                  m_BufferSize, m_Current) + (message))
+               s_PositionAsString(who->m_FileName, who->m_StreamPos,    \
+                                  who->m_BufferSize,                    \
+                                  who->m_Current.GetName()) + (message))
 
-#define TAR_THROW_EX(errcode, message, h, fmt)                          \
-    TAR_THROW(errcode,                                                  \
-              m_Flags & fDumpBlockHeaders                               \
+#define TAR_THROW_EX(who, errcode, message, h, fmt)                     \
+    TAR_THROW(who, errcode,                                             \
+              who->m_Flags & fDumpBlockHeaders                          \
               ? string(message) + ":\n" + s_DumpHeader(h, fmt, true)    \
               : string(message))
 
 #define TAR_POST(subcode, severity, message)                            \
     ERR_POST_X(subcode, severity <<                                     \
-               s_PositionAsString(m_FileName, m_StreamPos,              \
-                                  m_BufferSize, m_Current) + (message))
+               s_PositionAsString(m_FileName, m_StreamPos, m_BufferSize,\
+                                  m_Current.GetName()) + (message))
 
 
 void CTar::x_Init(void)
@@ -1019,7 +1035,7 @@ void CTar::x_Init(void)
 
 void CTar::x_Flush(void)
 {
-    m_Current = 0;
+    m_Current.m_Name.erase();
     if (!m_Stream  ||  !m_OpenMode  ||  !m_IsModified) {
         return;
     }
@@ -1042,7 +1058,8 @@ void CTar::x_Flush(void)
     }
     if (m_Stream->rdbuf()->PUBSYNC() != 0) {
         int x_errno = errno; 
-        TAR_THROW(eWrite, "Archive flush failed" + s_OSReason(x_errno));
+        TAR_THROW(this, eWrite,
+                  "Archive flush failed" + s_OSReason(x_errno));
     }
     m_IsModified = false;
 }
@@ -1064,7 +1081,6 @@ void CTar::x_Close(void)
 
 auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
 {
-    m_Current = 0;
     _ASSERT(action);
     // We can only open a named file here, and if an external stream
     // is being used as an archive, it must be explicitly repositioned by
@@ -1075,12 +1091,16 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
                      "Pending changes may be discarded"
                      " upon reopen of in-stream archive");
             m_IsModified = false;
+        }
+        if (action != eInternal) {
             m_BufferPos = 0;
             m_StreamPos = 0;
         }
+        m_Current.m_Name.erase();
         if (!m_Stream  ||  !m_Stream->good()  ||  !m_Stream->rdbuf()) {
             m_OpenMode = eNone;
-            TAR_THROW(eOpen, "Bad IO stream provided for archive");
+            TAR_THROW(this, eOpen,
+                      "Bad IO stream provided for archive");
         } else {
             m_OpenMode = EOpenMode(int(action) & eRW);
         }
@@ -1089,6 +1109,8 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
         _ASSERT(mode != eNone);
         if (mode != eWO  &&  action != eAppend) {
             x_Flush();
+        } else {
+            m_Current.m_Name.erase();
         }
         if (mode == eWO  ||  m_OpenMode < mode) {
             x_Close();
@@ -1117,7 +1139,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
             }
             if (!m_FileStream->good()) {
                 int x_errno = errno;
-                TAR_THROW(eOpen,
+                TAR_THROW(this, eOpen,
                           "Cannot open archive '" + m_FileName + '\''
                           + s_OSReason(x_errno));
             }
@@ -1126,7 +1148,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
 
         if (m_OpenMode) {
             _ASSERT(action != eCreate);
-            if (action != eAppend) {
+            if (action != eAppend  &&  action != eInternal) {
                 m_BufferPos = 0;
                 m_StreamPos = 0;
                 m_FileStream->seekg(0, IOS_BASE::beg);
@@ -1155,7 +1177,6 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
 
 auto_ptr<CTar::TEntries> CTar::Extract(void)
 {
-    // Extract
     auto_ptr<TEntries> done = x_Open(eExtract);
 
     // Restore attributes of "postponed" directory entries
@@ -1168,6 +1189,25 @@ auto_ptr<CTar::TEntries> CTar::Extract(void)
     }
 
     return done;
+}
+
+
+const CTarEntryInfo* CTar::GetNextEntryInfo(void)
+{
+    if (m_OpenMode) {
+        size_t skip = (m_Current.GetPosition(CTarEntryInfo::ePos_Data)
+                       + ALIGN_SIZE(m_Current.GetSize()) - m_StreamPos);
+        x_SkipArchive(skip);
+    }
+
+    auto_ptr<TEntries> temp = x_Open(eInternal);
+    _ASSERT(temp.get()  &&  temp->size() < 2);
+    if (temp->size() < 1) {
+        return 0;
+    }
+
+    _ASSERT(m_Current == *temp->begin());
+    return &m_Current;
 }
 
 
@@ -1283,7 +1323,7 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
                                                     m_BufferSize - nwritten);
                 if (xwritten <= 0) {
                     int x_errno = errno;
-                    TAR_THROW(eWrite,
+                    TAR_THROW(this, eWrite,
                               "Archive write failed" + s_OSReason(x_errno));
                 }
                 nwritten += xwritten;
@@ -1348,7 +1388,7 @@ static bool s_AllLowerCase(const char* str, size_t len)
 }
 
 
-CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
+CTar::EStatus CTar::x_ParsePAXHeader(const string& buffer)
 {
     Uint8 mtime = 0, atime = 0, ctime = 0, size = 0, uid = 0, gid = 0;
     string path, linkpath, uname, gname;
@@ -1418,28 +1458,28 @@ CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
         str = ++e;
     } while (*str);
 
-    info.m_Name.swap(path);
-    info.m_LinkName.swap(linkpath);
-    info.m_UserName.swap(uname);
-    info.m_GroupName.swap(gname);
-    info.m_Stat.st_mtime = (time_t) mtime;
-    info.m_Stat.st_atime = (time_t) atime;
-    info.m_Stat.st_ctime = (time_t) ctime;
-    info.m_Stat.st_size  = /*(?)*/  size;
-    info.m_Stat.st_uid   = (uid_t)  uid;
-    info.m_Stat.st_gid   = (gid_t)  gid;
-    info.m_Pos = parsed;
+    m_Current.m_Name.swap(path);
+    m_Current.m_LinkName.swap(linkpath);
+    m_Current.m_UserName.swap(uname);
+    m_Current.m_GroupName.swap(gname);
+    m_Current.m_Stat.st_mtime = (time_t) mtime;
+    m_Current.m_Stat.st_atime = (time_t) atime;
+    m_Current.m_Stat.st_ctime = (time_t) ctime;
+    m_Current.m_Stat.st_size  = /*(?)*/  size;
+    m_Current.m_Stat.st_uid   = (uid_t)  uid;
+    m_Current.m_Stat.st_gid   = (gid_t)  gid;
+    m_Current.m_Pos = parsed;
 
     return eContinue;
 }
 
 
 static void s_Dump(const string& file, Uint8 pos, size_t recsize,
-                   const string* entry, const SHeader* h, ETar_Format fmt,
+                   const string& entryname, const SHeader* h, ETar_Format fmt,
                    Uint8 datasize)
 {
     unsigned long blocks = (unsigned long) BLOCK_OF(datasize + (kBlockSize-1));
-    LOG_POST_X(2, s_PositionAsString(file, pos, recsize, entry)
+    LOG_POST_X(2, s_PositionAsString(file, pos, recsize, entryname)
              + s_DumpHeader(h, fmt)
              + (blocks
                 ? "Blocks of data: " + NStr::UIntToString(blocks) + '\n'
@@ -1447,7 +1487,7 @@ static void s_Dump(const string& file, Uint8 pos, size_t recsize,
 }
 
 
-CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
+CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
 {
     // Read block
     const TBlock* block;
@@ -1456,7 +1496,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
         return eEOF;
     }
     if (nread != kBlockSize) {
-        TAR_THROW(eRead, "Unexpected EOF in archive");
+        TAR_THROW(this, eRead,
+                  "Unexpected EOF in archive");
     }
     const SHeader* h = &block->header;
 
@@ -1470,7 +1511,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
     } else if (memcmp(h->magic, "\0\0\0\0\0", 6) == 0) {
         fmt = eTar_Legacy;
     } else {
-        TAR_THROW_EX(eUnsupportedTarFormat, "Unrecognized format", h, fmt);
+        TAR_THROW_EX(this, eUnsupportedTarFormat,
+                     "Unrecognized format", h, fmt);
     }
 
     unsigned long value;
@@ -1479,7 +1521,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
         // We must allow all zero bytes here in case of pad/zero blocks
         for (size_t i = 0;  i < sizeof(block->buffer);  i++) {
             if (block->buffer[i]) {
-                TAR_THROW_EX(eUnsupportedTarFormat, "Bad checksum", h, fmt);
+                TAR_THROW_EX(this, eUnsupportedTarFormat,
+                             "Bad checksum", h, fmt);
             }
         }
         return eZeroBlock;
@@ -1516,67 +1559,74 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
                     NStr::UIntToString((unsigned int) ssum, 0, 8);
             }
         }
-        TAR_THROW_EX(eChecksum, message, h, fmt);
+        TAR_THROW_EX(this, eChecksum,
+                     message, h, fmt);
     }
 
     // Set all info members now (thus, validating the header block)
 
-    info.m_HeaderSize = kBlockSize;
+    m_Current.m_HeaderSize = kBlockSize;
 
     // Name
-    if ((fmt & eTar_Ustar)  &&  h->prefix[0]
-        &&  tolower((unsigned char) h->typeflag[0]) != 'x') {
-        info.m_Name =
-            CDirEntry::ConcatPath(string(h->prefix,
-                                         s_Length(h->prefix,
-                                                  sizeof(h->prefix))),
-                                  string(h->name,
-                                         s_Length(h->name,
-                                                  sizeof(h->name))));
-    } else {
-        info.m_Name.assign(h->name, s_Length(h->name, sizeof(h->name)));
-    }
-    if (!m_Current) {
-        m_Current = &info.GetName();
+    if (m_Current.GetName().empty()) {
+        if ((fmt & eTar_Ustar)  &&  h->prefix[0]
+            &&  tolower((unsigned char) h->typeflag[0]) != 'x') {
+            m_Current.m_Name =
+                CDirEntry::ConcatPath(string(h->prefix,
+                                             s_Length(h->prefix,
+                                                      sizeof(h->prefix))),
+                                      string(h->name,
+                                             s_Length(h->name,
+                                                      sizeof(h->name))));
+        } else {
+            m_Current.m_Name.assign(h->name,
+                                    s_Length(h->name, sizeof(h->name)));
+        }
     }
 
     // Mode
     if (!s_OctalToNum(value, h->mode, sizeof(h->mode))) {
-        TAR_THROW_EX(eUnsupportedTarFormat, "Bad entry mode", h, fmt);
+        TAR_THROW_EX(this, eUnsupportedTarFormat,
+                     "Bad entry mode", h, fmt);
     }
-    info.m_Stat.st_mode = (mode_t) value;
+    m_Current.m_Stat.st_mode = (mode_t) value;
 
     // User Id
     if (!s_OctalToNum(value, h->uid, sizeof(h->uid))) {
-        TAR_THROW_EX(eUnsupportedTarFormat, "Bad user ID", h, fmt);
+        TAR_THROW_EX(this, eUnsupportedTarFormat,
+                     "Bad user ID", h, fmt);
     }
-    info.m_Stat.st_uid = (uid_t) value;
+    m_Current.m_Stat.st_uid = (uid_t) value;
 
     // Group Id
     if (!s_OctalToNum(value, h->gid, sizeof(h->gid))) {
-        TAR_THROW_EX(eUnsupportedTarFormat, "Bad group ID", h, fmt);
+        TAR_THROW_EX(this, eUnsupportedTarFormat,
+                     "Bad group ID", h, fmt);
     }
-    info.m_Stat.st_gid = (gid_t) value;
+    m_Current.m_Stat.st_gid = (gid_t) value;
 
     // Size
     Uint8 size;
     if (!s_DecodeSize(size, h->size, sizeof(h->size))) {
-        TAR_THROW_EX(eUnsupportedTarFormat, "Bad entry size", h, fmt);
+        TAR_THROW_EX(this, eUnsupportedTarFormat,
+                     "Bad entry size", h, fmt);
     }
-    info.m_Stat.st_size = size;
+    m_Current.m_Stat.st_size = size;
 
     // Modification time
     if (!s_OctalToNum(value, h->mtime, sizeof(h->mtime))) {
-        TAR_THROW_EX(eUnsupportedTarFormat, "Bad modification time", h, fmt);
+        TAR_THROW_EX(this, eUnsupportedTarFormat,
+                     "Bad modification time", h, fmt);
     }
-    info.m_Stat.st_mtime = value;
+    m_Current.m_Stat.st_mtime = value;
 
     if (fmt == eTar_OldGNU  ||  (fmt & eTar_Ustar)) {
         // User name
-        info.m_UserName.assign(h->uname, s_Length(h->uname, sizeof(h->uname)));
-
+        m_Current.m_UserName.assign(h->uname,
+                                    s_Length(h->uname, sizeof(h->uname)));
         // Group name
-        info.m_GroupName.assign(h->gname, s_Length(h->gname,sizeof(h->gname)));
+        m_Current.m_GroupName.assign(h->gname,
+                                     s_Length(h->gname,sizeof(h->gname)));
     }
 
     if (fmt == eTar_OldGNU) {
@@ -1584,18 +1634,18 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
         // NB: times are valid for incremental archive only, so checks relaxed
         if (!s_OctalToNum(value, h->gt.atime, sizeof(h->gt.atime))) {
             if (memcchr(h->gt.atime, '\0', sizeof(h->gt.atime))) {
-                TAR_THROW_EX(eUnsupportedTarFormat,
+                TAR_THROW_EX(this, eUnsupportedTarFormat,
                              "Bad last access time", h, fmt);
             }
         } else
-            info.m_Stat.st_atime = value;
+            m_Current.m_Stat.st_atime = value;
         if (!s_OctalToNum(value, h->gt.ctime, sizeof(h->gt.ctime))) {
             if (memcchr(h->gt.ctime, '\0', sizeof(h->gt.ctime))) {
-                TAR_THROW_EX(eUnsupportedTarFormat,
+                TAR_THROW_EX(this, eUnsupportedTarFormat,
                              "Bad creation time", h, fmt);
             }
         } else
-            info.m_Stat.st_ctime = value;
+            m_Current.m_Stat.st_ctime = value;
     }
 
     // Entry type
@@ -1605,62 +1655,63 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
         if (!(fmt & eTar_Ustar)  &&  fmt != eTar_OldGNU) {
             size_t namelen = s_Length(h->name, sizeof(h->name));
             if (namelen  &&  h->name[namelen - 1] == '/') {
-                info.m_Type = CTarEntryInfo::eDir;
-                info.m_Stat.st_size = 0;
+                m_Current.m_Type = CTarEntryInfo::eDir;
+                m_Current.m_Stat.st_size = 0;
                 break;
             }
         }
-        info.m_Type = CTarEntryInfo::eFile;
+        m_Current.m_Type = CTarEntryInfo::eFile;
         break;
     case '1':
     case '2':
-        info.m_Type = (h->typeflag[0] == '1'
-                       ? CTarEntryInfo::eHardLink
-                       : CTarEntryInfo::eSymLink);
-        info.m_LinkName.assign(h->linkname,
-                               s_Length(h->linkname, sizeof(h->linkname)));
-        if (!info.GetSize())
+        m_Current.m_Type = (h->typeflag[0] == '1'
+                            ? CTarEntryInfo::eHardLink
+                            : CTarEntryInfo::eSymLink);
+        m_Current.m_LinkName.assign(h->linkname,
+                                    s_Length(h->linkname,sizeof(h->linkname)));
+        if (!m_Current.GetSize())
             break;
         if (h->typeflag[0] != '1')
-            info.m_Stat.st_size = 0;
+            m_Current.m_Stat.st_size = 0;
         else if (fmt != eTar_Posix) {
             TAR_POST(77, Warning,
                      "Non-zero hard-link size ("
-                     + NStr::UInt8ToString(info.GetSize())
+                     + NStr::UInt8ToString(m_Current.GetSize())
                      + ") is ignored (non-PAX)");
-            info.m_Stat.st_size = 0;
+            m_Current.m_Stat.st_size = 0;
         }
         break;
     case '3':
     case '4':
-        info.m_Type = (h->typeflag[0] == '3'
-                       ? CTarEntryInfo::eCharDev : CTarEntryInfo::eBlockDev);
+        m_Current.m_Type = (h->typeflag[0] == '3'
+                            ? CTarEntryInfo::eCharDev
+                            : CTarEntryInfo::eBlockDev);
         if (!s_OctalToNum(value, h->devminor, sizeof(h->devminor))) {
-            TAR_THROW_EX(eUnsupportedTarFormat,
+            TAR_THROW_EX(this, eUnsupportedTarFormat,
                          "Bad device minor number", h, fmt);
         }
         usum = value; // set aside
         if (!s_OctalToNum(value, h->devmajor, sizeof(h->devmajor))) {
-            TAR_THROW_EX(eUnsupportedTarFormat,
+            TAR_THROW_EX(this, eUnsupportedTarFormat,
                          "Bad device major number", h, fmt);            
         }
 #ifdef makedev
-        info.m_Stat.st_rdev = makedev((unsigned int) value, usum);
+        m_Current.m_Stat.st_rdev = makedev((unsigned int) value, usum);
 #else
-        if (sizeof(int) >= 4  &&  sizeof(info.m_Stat.st_rdev) >= 4) {
-            *((unsigned int*) &info.m_Stat.st_rdev) =
+        if (sizeof(int) >= 4  &&  sizeof(m_Current.m_Stat.st_rdev) >= 4) {
+            *((unsigned int*) &m_Current.m_Stat.st_rdev) =
                 (unsigned int)((value << 16) | usum);
         }
 #endif // makedev
-        info.m_Stat.st_size = 0;
+        m_Current.m_Stat.st_size = 0;
         break;
     case '5':
-        info.m_Type = CTarEntryInfo::eDir;
-        info.m_Stat.st_size = 0;
+        m_Current.m_Type = CTarEntryInfo::eDir;
+        m_Current.m_Stat.st_size = 0;
         break;
     case '6':
-        info.m_Type = CTarEntryInfo::ePipe;
-        info.m_Stat.st_size = 0;
+        m_Current.m_Type = CTarEntryInfo::ePipe;
+        m_Current.m_Stat.st_size = 0;
         break;
     case 'x':
     case 'X':
@@ -1680,20 +1731,20 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
                              " archive may be corrupted");
                 }
                 fmt = eTar_Posix;  // upgrade
-                info.m_Type = CTarEntryInfo::ePAXHeader;
+                m_Current.m_Type = CTarEntryInfo::ePAXHeader;
                 break;
             case 'K':
-                info.m_Type = CTarEntryInfo::eGNULongLink;
+                m_Current.m_Type = CTarEntryInfo::eGNULongLink;
                 break;
             case 'L':
-                info.m_Type = CTarEntryInfo::eGNULongName;
+                m_Current.m_Type = CTarEntryInfo::eGNULongName;
                 break;
             }
             // Dump header
-            size_t hsize = (size_t) info.GetSize();
+            size_t hsize = (size_t) m_Current.GetSize();
             if (dump) {
-                s_Dump(m_FileName, m_StreamPos, m_BufferSize, m_Current,
-                       h, fmt, hsize);
+                s_Dump(m_FileName, m_StreamPos, m_BufferSize,
+                       m_Current.GetName(), h, fmt, hsize);
             }
             m_StreamPos += kBlockSize;  // NB: nread
             // Read in the extended information
@@ -1702,11 +1753,13 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
                 nread = hsize;
                 const char* xbuf = x_ReadArchive(nread);
                 if (!xbuf) {
-                    TAR_THROW(eRead,
+                    TAR_THROW(this, eRead,
                               string("Unexpected EOF in ") +
-                              (info.GetType() == CTarEntryInfo::ePAXHeader
+                              (m_Current.GetType()
+                               == CTarEntryInfo::ePAXHeader
                                ? "PAX header" :
-                               info.GetType() == CTarEntryInfo::eGNULongName
+                               m_Current.GetType()
+                               == CTarEntryInfo::eGNULongName
                                ? "long name"
                                : "long link"));
                 }
@@ -1717,33 +1770,33 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
             // Make sure there's no embedded '\0'(s)
             buffer.resize(strlen(buffer.c_str()));
             if (dump) {
-                string what(info.GetType() == CTarEntryInfo::ePAXHeader
+                string what(m_Current.GetType() == CTarEntryInfo::ePAXHeader
                             ? "PAX header:\n" :
-                            info.GetType() == CTarEntryInfo::eGNULongName
+                            m_Current.GetType() == CTarEntryInfo::eGNULongName
                             ? "Long name:      \""
                             : "Long link name: \"");
                 LOG_POST_X(3, what +
                            NStr::PrintableString(buffer,
-                                                 info.GetType()
+                                                 m_Current.GetType()
                                                  == CTarEntryInfo::ePAXHeader
                                                  ? NStr::fNewLine_Passthru
                                                  : NStr::fNewLine_Quote) +
-                           (info.GetType() == CTarEntryInfo::ePAXHeader ?
+                           (m_Current.GetType() == CTarEntryInfo::ePAXHeader ?
                             buffer.size()  &&  buffer[buffer.size()-1] == '\n'
                             ? kEmptyStr : "\n"
                             : "\"\n"));
             }
             // Reset size because the data blocks have been all read
-            hsize = (size_t) info.GetSize();
-            info.m_HeaderSize += ALIGN_SIZE(hsize);
-            info.m_Stat.st_size = 0;
+            hsize = (size_t) m_Current.GetSize();
+            m_Current.m_HeaderSize += ALIGN_SIZE(hsize);
+            m_Current.m_Stat.st_size = 0;
             if (!hsize  ||  !buffer.size()) {
                 TAR_POST(79, Error,
                          "Skipping " + string(hsize ? "empty" : "zero-sized")
                          + " extended header");
                 return eFailure;
             }
-            if (info.GetType() == CTarEntryInfo::ePAXHeader) {
+            if (m_Current.GetType() == CTarEntryInfo::ePAXHeader) {
                 if (hsize != buffer.size()) {
                     TAR_POST(80, Error,
                              "Skipping truncated ("
@@ -1752,20 +1805,20 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
                              + ") PAX header");
                     return eFailure;
                 }
-                return x_ParsePAXHeader(info, buffer);
+                return x_ParsePAXHeader(buffer);
             }
-            info.m_Name.swap(buffer);
+            m_Current.m_Name.swap(buffer);
             return eContinue;
         }
         /*FALLTHRU*/
     default:
-        info.m_Type = CTarEntryInfo::eUnknown;
+        m_Current.m_Type = CTarEntryInfo::eUnknown;
         break;
     }
 
     if (dump) {
-        s_Dump(m_FileName, m_StreamPos, m_BufferSize, m_Current,
-               h, fmt, info.GetSize());
+        s_Dump(m_FileName, m_StreamPos, m_BufferSize,
+               m_Current.GetName(), h, fmt, m_Current.GetSize());
     }
     m_StreamPos += kBlockSize;  // NB: nread
 
@@ -1773,7 +1826,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
 }
 
 
-void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
+void CTar::x_WriteEntryInfo(const string& name)
 {
     // Prepare block info
     TBlock block;
@@ -1781,17 +1834,17 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
     memset(block.buffer, 0, sizeof(block.buffer));
     SHeader* h = &block.header;
 
-    CTarEntryInfo::EType type = info.GetType();
+    CTarEntryInfo::EType type = m_Current.GetType();
 
     // Name(s) ('\0'-terminated if fit entirely, otherwise not)
-    if (!x_PackName(h, info, false)) {
-        TAR_THROW(eNameTooLong,
-                  "Name '" + info.GetName() + "' too long in"
+    if (!x_PackName(h, m_Current, false)) {
+        TAR_THROW(this, eNameTooLong,
+                  "Name '" + m_Current.GetName() + "' too long in"
                   " entry '" + name + '\'');
     }
-    if (type == CTarEntryInfo::eSymLink  &&  !x_PackName(h, info, true)) {
-        TAR_THROW(eNameTooLong,
-                  "Link '" + info.GetLinkName() + "' too long in"
+    if (type == CTarEntryInfo::eSymLink  &&  !x_PackName(h, m_Current, true)) {
+        TAR_THROW(this, eNameTooLong,
+                  "Link '" + m_Current.GetLinkName() + "' too long in"
                   " entry '" + name + '\'');
     }
 
@@ -1807,34 +1860,40 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
      */
 
     // Mode
-    if (!s_NumToOctal(info.GetMode(), h->mode, sizeof(h->mode) - 1)) {
-        TAR_THROW(eMemory, "Cannot store file mode");
+    if (!s_NumToOctal(m_Current.GetMode(), h->mode, sizeof(h->mode) - 1)) {
+        TAR_THROW(this, eMemory,
+                  "Cannot store file mode");
     }
 
     // User ID
-    if (!s_NumToOctal(info.GetUserId(), h->uid, sizeof(h->uid) - 1)) {
-        TAR_THROW(eMemory, "Cannot store user ID");
+    if (!s_NumToOctal(m_Current.GetUserId(), h->uid, sizeof(h->uid) - 1)) {
+        TAR_THROW(this, eMemory,
+                  "Cannot store user ID");
     }
 
     // Group ID
-    if (!s_NumToOctal(info.GetGroupId(), h->gid, sizeof(h->gid) - 1)) {
-        TAR_THROW(eMemory, "Cannot store group ID");
+    if (!s_NumToOctal(m_Current.GetGroupId(), h->gid, sizeof(h->gid) - 1)) {
+        TAR_THROW(this, eMemory,
+                  "Cannot store group ID");
     }
 
     // Size
-    int enc = s_EncodeSize(type == CTarEntryInfo::eFile ? info.GetSize() : 0,
+    int enc = s_EncodeSize(type == CTarEntryInfo::eFile
+                           ? m_Current.GetSize() : 0,
                            h->size, sizeof(h->size) - 1);
     if (!enc) {
-        TAR_THROW(eMemory, "Cannot store file size");
+        TAR_THROW(this, eMemory,
+                  "Cannot store file size");
     }
     if (enc < 0  &&  !h->prefix[0]) {
         fmt = eTar_OldGNU;  // downgrade (if possible) to reflect size encoding
     }
 
     // Modification time
-    if (!s_NumToOctal((unsigned long) info.GetModificationTime(),
+    if (!s_NumToOctal((unsigned long) m_Current.GetModificationTime(),
                       h->mtime, sizeof(h->mtime) - 1)) {
-        TAR_THROW(eMemory, "Cannot store modification time");
+        TAR_THROW(this, eMemory,
+                  "Cannot store modification time");
     }
 
     bool device = false;
@@ -1849,13 +1908,15 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
     case CTarEntryInfo::eCharDev:
     case CTarEntryInfo::eBlockDev:
         h->typeflag[0] = type == CTarEntryInfo::eCharDev ? '3' : '4';
-        if (!s_NumToOctal(info.GetMajor(),
+        if (!s_NumToOctal(m_Current.GetMajor(),
                           h->devmajor, sizeof(h->devmajor) - 1)) {
-            TAR_THROW(eMemory, "Cannot store major number");
+            TAR_THROW(this, eMemory,
+                      "Cannot store major number");
         }
-        if (!s_NumToOctal(info.GetMinor(),
+        if (!s_NumToOctal(m_Current.GetMinor(),
                           h->devminor, sizeof(h->devminor) - 1)) {
-            TAR_THROW(eMemory, "Cannot store minor number");
+            TAR_THROW(this, eMemory,
+                      "Cannot store minor number");
         }
         device = true;
         break;
@@ -1866,19 +1927,19 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
         h->typeflag[0] = '6';
         break;
     default:
-        TAR_THROW(eUnsupportedEntryType,
+        TAR_THROW(this, eUnsupportedEntryType,
                   "Don't know how to store entry '" + name + "' w/type #" +
                   NStr::IntToString(int(type)) + " into archive: "
                   "Internal error, please report!");
     }
 
     // User and group
-    const string& usr = info.GetUserName();
+    const string& usr = m_Current.GetUserName();
     size_t len = usr.length();
     if (len < sizeof(h->uname)) {
         memcpy(h->uname, usr.c_str(), len);
     }
-    const string& grp = info.GetGroupName();
+    const string& grp = m_Current.GetGroupName();
     len = grp.length();
     if (len < sizeof(h->gname)) {
         memcpy(h->gname, grp.c_str(), len);
@@ -1901,7 +1962,8 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
     }
 
     if (!s_TarChecksum(&block, fmt == eTar_OldGNU ? true : false)) {
-        TAR_THROW(eMemory, "Cannot store checksum");
+        TAR_THROW(this, eMemory,
+                  "Cannot store checksum");
     }
 
     // Write header
@@ -1980,7 +2042,7 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
 
 void CTar::x_Backspace(EAction action, size_t blocks)
 {
-    m_Current = 0;
+    m_Current.m_Name.erase();
     if (!blocks  ||  (action != eAppend  &&  action != eUpdate)) {
         return;
     }
@@ -1993,7 +2055,8 @@ void CTar::x_Backspace(EAction action, size_t blocks)
     CT_POS_TYPE pos = m_FileStream->tellg();  // Current read position
     if (pos == (CT_POS_TYPE)(-1)) {
         int x_errno = errno;
-        TAR_THROW(eRead, "Archive backspace failed" + s_OSReason(x_errno));
+        TAR_THROW(this, eRead,
+                  "Archive backspace failed" + s_OSReason(x_errno));
     }
     size_t      gap = SIZE_OF(blocks);        // Size of zero-filled area read
     CT_POS_TYPE rec = 0;                      // Record number (0-based)
@@ -2036,13 +2099,12 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
     Uint8 pos = m_StreamPos;
     CTarEntryInfo xinfo;
 
-    xinfo.m_Type = CTarEntryInfo::eUnknown;
     for (;;) {
         // Next block is supposed to be a header
-        CTarEntryInfo info(pos);
-        m_Current = xinfo.GetName().empty() ? 0 : &xinfo.GetName();
+        m_Current = CTarEntryInfo(pos);
+        m_Current.m_Name = xinfo.GetName();
         EStatus status = x_ReadEntryInfo
-            (info, action == eTest &&  (m_Flags & fDumpBlockHeaders),
+            (action == eTest &&  (m_Flags & fDumpBlockHeaders),
              xinfo.GetType() == CTarEntryInfo::ePAXHeader);
         switch (status) {
         case eFailure:
@@ -2057,11 +2119,8 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             zeroblock_count++;
             if ((m_Flags & fIgnoreZeroBlocks)  ||  zeroblock_count < 2) {
                 if (xinfo.GetType() == CTarEntryInfo::eUnknown) {
-                    // Reading an entry -- advance
+                    // Not yet reading an entry -- advance
                     pos += kBlockSize;
-                    m_Current = 0;
-                } else {
-                    xinfo.m_HeaderSize += kBlockSize;
                 }
                 continue;
             }
@@ -2081,20 +2140,21 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         // Process entry
         //
         if (status == eContinue) {
-            // Extended header information has been read
-            xinfo.m_HeaderSize += info.m_HeaderSize;
-            switch (info.GetType()) {
+            // Extended header information has just been read in
+            xinfo.m_HeaderSize += m_Current.m_HeaderSize;
+
+            switch (m_Current.GetType()) {
             case CTarEntryInfo::ePAXHeader:
                 if (xinfo.GetType() != CTarEntryInfo::eUnknown) {
                     TAR_POST(7, Error, "Unused extended header replaced");
                 }
                 xinfo.m_Type = CTarEntryInfo::ePAXHeader;
-                xinfo.m_Name.swap(info.m_Name);
-                xinfo.m_LinkName.swap(info.m_LinkName);
-                xinfo.m_UserName.swap(info.m_UserName);
-                xinfo.m_GroupName.swap(info.m_GroupName);
-                xinfo.m_Stat = info.m_Stat;
-                xinfo.m_Pos = info.m_Pos;  // NB: Parsed mask, not pos!
+                xinfo.m_Name.swap(m_Current.m_Name);
+                xinfo.m_LinkName.swap(m_Current.m_LinkName);
+                xinfo.m_UserName.swap(m_Current.m_UserName);
+                xinfo.m_GroupName.swap(m_Current.m_GroupName);
+                xinfo.m_Stat = m_Current.m_Stat;
+                xinfo.m_Pos  = m_Current.m_Pos;  // NB: Parsed mask, not pos!
                 break;
 
             case CTarEntryInfo::eGNULongName:
@@ -2106,7 +2166,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 }
                 // Latch next long name here then just skip
                 xinfo.m_Type = CTarEntryInfo::eGNULongName;
-                xinfo.m_Name.swap(info.m_Name);
+                xinfo.m_Name.swap(m_Current.m_Name);
                 break;
 
             case CTarEntryInfo::eGNULongLink:
@@ -2118,7 +2178,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 }
                 // Latch next long link here then just skip
                 xinfo.m_Type = CTarEntryInfo::eGNULongLink;
-                xinfo.m_LinkName.swap(info.m_Name);
+                xinfo.m_LinkName.swap(m_Current.m_Name);
                 break;
 
             default:
@@ -2128,43 +2188,43 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         }
 
         // Fixup current 'info' with extended information obtained previously
-        info.m_HeaderSize += xinfo.m_HeaderSize;
+        m_Current.m_HeaderSize += xinfo.m_HeaderSize;
         xinfo.m_HeaderSize = 0;
         if (!xinfo.GetName().empty()) {
-            xinfo.m_Name.swap(info.m_Name);
+            xinfo.m_Name.swap(m_Current.m_Name);
             xinfo.m_Name.erase();
         }
         if (!xinfo.GetLinkName().empty()) {
-            xinfo.m_LinkName.swap(info.m_LinkName);
+            xinfo.m_LinkName.swap(m_Current.m_LinkName);
             xinfo.m_LinkName.erase();
         }
         if (xinfo.GetType() == CTarEntryInfo::ePAXHeader) {
             TPAXBits parsed = (TPAXBits) xinfo.m_Pos;
             if (!xinfo.GetUserName().empty()) {
-                xinfo.m_UserName.swap(info.m_UserName);
+                xinfo.m_UserName.swap(m_Current.m_UserName);
                 xinfo.m_UserName.erase();
             }
             if (!xinfo.GetGroupName().empty()) {
-                xinfo.m_GroupName.swap(info.m_GroupName);
+                xinfo.m_GroupName.swap(m_Current.m_GroupName);
                 xinfo.m_GroupName.erase();
             }
             if (parsed & fPAXMtime) {
-                info.m_Stat.st_mtime = xinfo.m_Stat.st_mtime;
+                m_Current.m_Stat.st_mtime = xinfo.m_Stat.st_mtime;
             }
             if (parsed & fPAXAtime) {
-                info.m_Stat.st_atime = xinfo.m_Stat.st_atime;
+                m_Current.m_Stat.st_atime = xinfo.m_Stat.st_atime;
             }
             if (parsed & fPAXCtime) {
-                info.m_Stat.st_ctime = xinfo.m_Stat.st_ctime;
+                m_Current.m_Stat.st_ctime = xinfo.m_Stat.st_ctime;
             }
             if (parsed & fPAXSize) {
-                info.m_Stat.st_size = xinfo.m_Stat.st_size;
+                m_Current.m_Stat.st_size = xinfo.m_Stat.st_size;
             }
             if (parsed & fPAXUid) {
-                info.m_Stat.st_uid = xinfo.m_Stat.st_uid;
+                m_Current.m_Stat.st_uid = xinfo.m_Stat.st_uid;
             }
             if (parsed & fPAXGid) {
-                info.m_Stat.st_gid = xinfo.m_Stat.st_gid;
+                m_Current.m_Stat.st_gid = xinfo.m_Stat.st_gid;
             }
         }
         xinfo.m_Type = CTarEntryInfo::eUnknown;
@@ -2175,7 +2235,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                       m_Mask  &&  (action == eList     ||
                                    action == eExtract  ||
                                    action == eInternal)
-                      ? m_Mask->Match(info.GetName(),
+                      ? m_Mask->Match(m_Current.GetName(),
                                       m_Flags & fMaskNocase
                                       ? NStr::eNocase
                                       : NStr::eCase)
@@ -2183,10 +2243,10 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 
         // NB: match is 'false' when processing a failing entry
         if ((match  &&  action == eInternal)
-            ||  x_ProcessEntry(info, match  &&  action == eExtract, done.get())
+            ||  x_ProcessEntry(match  &&  action == eExtract, done.get())
             ||  (match  &&  !(int(action) & ((eExtract | eInternal) & ~eRW)))){
             _ASSERT(status == eSuccess);
-            done->push_back(info);
+            done->push_back(m_Current);
             if (action == eInternal) {
                 break;
             }
@@ -2195,16 +2255,14 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         pos = m_StreamPos;
     }
 
-    m_Current = 0;
     return done;
 }
 
 
-bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
-                          const CTar::TEntries* done)
+bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
 {
-    Uint8                size = info.GetSize();
-    CTarEntryInfo::EType type = info.GetType();
+    Uint8                size = m_Current.GetSize();
+    CTarEntryInfo::EType type = m_Current.GetType();
 
     if (extract) {
         // Destination for extraction
@@ -2212,7 +2270,7 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
             (CDirEntry::CreateObject(CDirEntry::EType(type),
                                      CDirEntry::NormalizePath
                                      (CDirEntry::ConcatPath
-                                      (m_BaseDir, info.GetName()))));
+                                      (m_BaseDir, m_Current.GetName()))));
         // Source for extraction
         auto_ptr<CDirEntry> src;
         // Direntry pending removal
@@ -2232,8 +2290,8 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
             bool found = false;  // check if ours (prev. revision extracted)
             if (done) {
                 ITERATE(TEntries, i, *done) {
-                    if (i->GetName() == info.GetName()  &&
-                        i->GetType() == info.GetType()) {
+                    if (i->GetName() == m_Current.GetName()  &&
+                        i->GetType() == m_Current.GetType()) {
                         found = true;
                         break;
                     }
@@ -2253,17 +2311,18 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
                         time_t dst_time;
                         // Make sure that dst is not older than the entry
                         if (dst->GetTimeT(&dst_time)
-                            &&  dst_time >= info.GetModificationTime()) {
+                            &&  dst_time >= m_Current.GetModificationTime()) {
                             extract = false;
                         }
                     }
                     // Have equal types?
                     if (extract  &&  (m_Flags & fEqualTypes)) {
                         if (type == CTarEntryInfo::eHardLink) {
-                            src.reset(new CDirEntry(CDirEntry::NormalizePath
-                                                    (CDirEntry::ConcatPath
-                                                     (m_BaseDir,
-                                                      info.GetLinkName()))));
+                            src.reset
+                                (new CDirEntry(CDirEntry::NormalizePath
+                                               (CDirEntry::ConcatPath
+                                                (m_BaseDir,
+                                                 m_Current.GetLinkName()))));
                             if (dst_type != src->GetType())
                                 extract = false;
                         } else if (dst_type != CDirEntry::EType(type)) {
@@ -2273,16 +2332,15 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
                 }
             }
             if (extract) {
-                // Need to backup the existing destination?
                 if (!found  &&  (m_Flags & fBackup) == fBackup) {
+                    // Need to backup the existing destination?
                     CDirEntry tmp(*dst);
                     if (!tmp.Backup(kEmptyStr, CDirEntry::eBackup_Rename)) {
-                        TAR_THROW(eBackup,
+                        TAR_THROW(this, eBackup,
                                   "Failed to backup '" + dst->GetPath() +'\'');
                     }
-                } else if (type != CTarEntryInfo::eDir
-                           ||  (!found  &&  (m_Flags & fUpdate) != fUpdate)) {
-                    // Do removal safely -- until extraction has confirmed
+                } else if (type != CTarEntryInfo::eDir) {
+                    // Do removal safely -- until extraction is confirmed
                     CDirEntry tmp(*dst);
                     pending.reset(new CDirEntry(CDirEntry::GetTmpNameEx
                                                 (dst->GetDir(), "XtArX")));
@@ -2292,7 +2350,7 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
                         // into special files etc., which can harm system).
                         string reason = s_OSReason(errno ? errno : EEXIST);
                         pending->Remove();
-                        TAR_THROW(eWrite,
+                        TAR_THROW(this, eWrite,
                                   "Cannot extract '" + dst->GetPath() + '\''
                                   + reason);
                     }
@@ -2306,7 +2364,7 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
             umask(u & 077);
             try {
 #endif // NCBI_OS_UNIX
-                extract = x_ExtractEntry(info, size, dst.get(), src.get());
+                extract = x_ExtractEntry(size, dst.get(), src.get());
 #ifdef NCBI_OS_UNIX
             } catch (...) {
                 umask(u);
@@ -2322,7 +2380,7 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
                     if (!tmp.Rename(dst->GetPath())) {
                         int x_errno = errno;
                         pending->Remove();
-                        TAR_THROW(eWrite,
+                        TAR_THROW(this, eWrite,
                                   "Cannot restore '" + dst->GetPath()
                                   + "' back in place" + s_OSReason(x_errno));
                     }
@@ -2332,25 +2390,47 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
         }
     }
 
-    while (size) {
-        size_t nskip = size < m_BufferSize
-            ? (size_t) size : m_BufferSize;
-        if (!x_ReadArchive(nskip)) {
-            int x_errno = errno;
-            TAR_THROW(eRead, "Archive read failed" + s_OSReason(x_errno));
-        }
-        m_StreamPos += ALIGN_SIZE(nskip);
-        size -= nskip;
-    }
+    x_SkipArchive(size);
 
     return extract;
 }
 
 
-bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
-                          const CDirEntry*     dst,  const CDirEntry* src)
+void CTar::x_SkipArchive(size_t size)
 {
-    CTarEntryInfo::EType type = info.GetType();
+    while (size) {
+        if (!m_ReadToSkip  &&  !m_BufferPos  &&  size >= m_BufferSize) {
+            CT_OFF_TYPE fskip =
+                CT_OFF_TYPE((size / m_BufferSize) * m_BufferSize);
+            if (m_Stream->rdbuf()->PUBSEEKOFF(fskip, IOS_BASE::cur)
+                != (CT_POS_TYPE)((CT_OFF_TYPE)(-1))) {
+                m_StreamPos += fskip;
+                size        -= fskip;
+                continue;
+            }
+            if (m_FileStream) {
+                TAR_POST(84, Warning,
+                         "Cannot fast skip in file archive '" +
+                         m_FileName + "', reverting to slow skip");
+            }
+            m_ReadToSkip = true;
+        }
+        size_t nskip = size < m_BufferSize ? (size_t) size : m_BufferSize;
+        if (!x_ReadArchive(nskip)) {
+            int x_errno = errno;
+            TAR_THROW(this, eRead,
+                      "Archive read failed" + s_OSReason(x_errno));
+        }
+        m_StreamPos += ALIGN_SIZE(nskip);
+        size        -=            nskip;
+    }
+}
+
+
+bool CTar::x_ExtractEntry(Uint8& size,
+                          const CDirEntry* dst, const CDirEntry* src)
+{
+    CTarEntryInfo::EType type = m_Current.GetType();
     auto_ptr<CDirEntry> src_ptr;  // deleter
     bool result = true;  // assume best
 
@@ -2366,7 +2446,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
             CDir dir(dst->GetDir());
             if (!dir.CreatePath()) {
                 int x_errno = errno;
-                TAR_THROW(eCreate,
+                TAR_THROW(this, eCreate,
                           "Cannot create directory '" + dir.GetPath() + '\''
                           + s_OSReason(x_errno));
             }
@@ -2376,7 +2456,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
                     src_ptr.reset(new CDirEntry(CDirEntry::NormalizePath
                                                 (CDirEntry::ConcatPath
                                                  (m_BaseDir,
-                                                  info.GetLinkName()))));
+                                                  m_Current.GetLinkName()))));
                     src = src_ptr.get();
                 }
                 if (src->GetType() == CDirEntry::eUnknown  &&  size) {
@@ -2394,7 +2474,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
                              IOS_BASE::trunc);
                 if (!ofs) {
                     int x_errno = errno;
-                    TAR_THROW(eCreate,
+                    TAR_THROW(this, eCreate,
                               "Cannot create file '" + dst->GetPath() + '\''
                               + s_OSReason(x_errno));
                 }
@@ -2405,12 +2485,13 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
                         ? (size_t) size : m_BufferSize;
                     const char* xbuf = x_ReadArchive(nread);
                     if (!xbuf) {
-                        TAR_THROW(eRead, "Unexpected EOF");
+                        TAR_THROW(this, eRead,
+                                  "Unexpected EOF");
                     }
                     // Write file to disk
                     if (!ofs.write(xbuf, nread)) {
                         int x_errno = errno;
-                        TAR_THROW(eWrite,
+                        TAR_THROW(this, eWrite,
                                   "Error writing file '" +dst->GetPath()+ '\''
                                   + s_OSReason(x_errno));
                     }
@@ -2426,7 +2507,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
                 if (link(src->GetPath().c_str(),
                          dst->GetPath().c_str()) == 0) {
                     if (m_Flags & fPreserveAll) {
-                        x_RestoreAttrs(info, dst);
+                        x_RestoreAttrs(m_Current, dst);
                     }
                     break;
                 }
@@ -2449,7 +2530,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
 
             // Restore attributes
             if (m_Flags & fPreserveAll) {
-                x_RestoreAttrs(info, dst);
+                x_RestoreAttrs(m_Current, dst);
             }
         }}
         break;
@@ -2457,7 +2538,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
     case CTarEntryInfo::eDir:
         if (!CDir(dst->GetPath()).CreatePath()) {
             int x_errno = errno;
-            TAR_THROW(eCreate,
+            TAR_THROW(this, eCreate,
                       "Cannot create directory '" + dst->GetPath() + '\''
                       + s_OSReason(x_errno));
         }
@@ -2469,11 +2550,11 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
     case CTarEntryInfo::eSymLink:
         {{
             CSymLink symlink(dst->GetPath());
-            if (!symlink.Create(info.GetLinkName())) {
+            if (!symlink.Create(m_Current.GetLinkName())) {
                 int x_errno = errno;
                 TAR_POST(12, Error,
                          "Cannot create symlink '" + dst->GetPath()
-                         + "' -> '" + info.GetLinkName() + '\''
+                         + "' -> '" + m_Current.GetLinkName() + '\''
                          + s_OSReason(x_errno));
                 result = false;
             }
@@ -2493,7 +2574,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
             _ASSERT(size == 0);
 #ifdef NCBI_OS_UNIX
             mode_t u = umask(0);
-            if (mkfifo(dst->GetPath().c_str(), info.GetMode()) != 0)
+            if (mkfifo(dst->GetPath().c_str(), m_Current.GetMode()) != 0)
                 result = false;
             umask(u);  // NB: always succeeds and does not change errno
             if (result)
@@ -2514,9 +2595,9 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
             _ASSERT(size == 0);
 #ifdef NCBI_OS_UNIX
             mode_t u = umask(0);
-            mode_t m = (info.GetMode() |
+            mode_t m = (m_Current.GetMode() |
                         (type == CTarEntryInfo::eCharDev ? S_IFCHR : S_IFBLK));
-            if (mknod(dst->GetPath().c_str(), m, info.m_Stat.st_rdev) != 0)
+            if (mknod(dst->GetPath().c_str(), m, m_Current.m_Stat.st_rdev))
                 result = false;
             umask(u);  // NB: always succeeds and does not clobber errno
             if (result)
@@ -2536,7 +2617,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
 
     default:
         TAR_POST(13, Warning,
-                 "Skipping unsupported entry '" + info.GetName()
+                 "Skipping unsupported entry '" + m_Current.GetName()
                  + "' w/type #" + NStr::IntToString(int(type)));
         result = false;
         break;
@@ -2568,7 +2649,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
         time_t creation(info.GetCreationTime());
         if (!dst->SetTimeT(&modification, &last_access, &creation)) {
             int x_errno = errno;
-            TAR_THROW(eRestoreAttrs,
+            TAR_THROW(this, eRestoreAttrs,
                       "Cannot restore date/time for '" + dst->GetPath() + '\''
                       + s_OSReason(x_errno));
         }
@@ -2618,7 +2699,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
 #endif // NCBI_OS_UNIX
         if (failed) {
             int x_errno = errno;
-            TAR_THROW(eRestoreAttrs,
+            TAR_THROW(this, eRestoreAttrs,
                       "Cannot restore mode bits for '" + dst->GetPath() + '\''
                       + s_OSReason(x_errno));
         }
@@ -2688,7 +2769,7 @@ string CTar::x_ToArchiveName(const string& path) const
     // Check on '..'
     if (retval == ".."  ||  NStr::StartsWith(retval, "../")  ||
         NStr::EndsWith(retval, "/..")  ||  retval.find("/../") != NPOS) {
-        TAR_THROW(eBadName,
+        TAR_THROW(this, eBadName,
                   "Name '" + retval + "' embeds parent directory ('..')");
     }
 
@@ -2715,33 +2796,34 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     CDirEntry::SStat st;
     if (!entry.Stat(&st, follow_links)) {
         int x_errno = errno;
-        TAR_THROW(eOpen,
+        TAR_THROW(this, eOpen,
                   "Cannot get status of '" + path + '\''+ s_OSReason(x_errno));
     }
     CDirEntry::EType type = CDirEntry::GetType(st.orig);
 
     // Create the entry info
-    CTarEntryInfo info(m_StreamPos);
-    info.m_Name = x_ToArchiveName(path);
-    if (type == CDirEntry::eDir  &&  info.m_Name != "/") {
-        info.m_Name += '/';
+    m_Current = CTarEntryInfo(m_StreamPos);
+    m_Current.m_Name = x_ToArchiveName(path);
+    if (type == CDirEntry::eDir  &&  m_Current.m_Name != "/") {
+        m_Current.m_Name += '/';
     }
-    if (info.GetName().empty()) {
-        TAR_THROW(eBadName, "Empty entry name not allowed");
+    if (m_Current.GetName().empty()) {
+        TAR_THROW(this, eBadName,
+                  "Empty entry name not allowed");
     }
-    m_Current = &info.GetName();
-    info.m_Type = CTarEntryInfo::EType(type);
-    if (info.GetType() == CTarEntryInfo::eSymLink) {
+    m_Current.m_Type = CTarEntryInfo::EType(type);
+    if (m_Current.GetType() == CTarEntryInfo::eSymLink) {
         _ASSERT(!follow_links);
-        info.m_LinkName = entry.LookupLink();
-        if (info.GetLinkName().empty()) {
-            TAR_THROW(eBadName, "Empty link name not allowed");
+        m_Current.m_LinkName = entry.LookupLink();
+        if (m_Current.GetLinkName().empty()) {
+            TAR_THROW(this, eBadName,
+                      "Empty link name not allowed");
         }
     }
-    entry.GetOwner(&info.m_UserName, &info.m_GroupName);
-    info.m_Stat = st.orig;
+    entry.GetOwner(&m_Current.m_UserName, &m_Current.m_GroupName);
+    m_Current.m_Stat = st.orig;
     // Fixup for mode bits
-    info.m_Stat.st_mode = (mode_t) s_ModeToTar(st.orig.st_mode);
+    m_Current.m_Stat.st_mode = (mode_t) s_ModeToTar(st.orig.st_mode);
 
     // Check if we need to update this entry in the archive
     bool update = true;
@@ -2766,14 +2848,15 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                     }
                 } else
                     continue;
-                if (info.GetType() != i->GetType()) {
+                if (m_Current.GetType() != i->GetType()) {
                     if (m_Flags & fEqualTypes)
                         goto out;
-                } else if (info.GetType() == CTarEntryInfo::eSymLink
-                           &&  info.GetLinkName() == i->GetLinkName()) {
+                } else if (m_Current.GetType() == CTarEntryInfo::eSymLink
+                           &&  m_Current.GetLinkName() == i->GetLinkName()) {
                     goto out;
                 }
-                if (info.GetModificationTime() <= i->GetModificationTime()) {
+                if (m_Current.GetModificationTime() <=
+                    i->GetModificationTime()) {
                     update = false; // same(or older), no update
                 }
                 break;
@@ -2793,8 +2876,8 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     switch (type) {
     case CDirEntry::eFile:
         _ASSERT(update);
-        x_AppendFile(path, info);
-        entries->push_back(info);
+        x_AppendFile(path);
+        entries->push_back(m_Current);
         break;
 
     case CDirEntry::eBlockSpecial:
@@ -2806,12 +2889,12 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     case CDirEntry::eDir:
         // NB: x_WriteEntryInfo() takes care of setting size(0) for non-files
         if (update) {
-            x_WriteEntryInfo(path, info);
-            info.m_HeaderSize = (streamsize)(m_StreamPos - info.m_Pos);
-            entries->push_back(info);
+            x_WriteEntryInfo(path);
+            m_Current.m_HeaderSize =
+                (streamsize)(m_StreamPos - m_Current.m_Pos);
+            entries->push_back(m_Current);
         }
         if (type == CDirEntry::eDir) {
-            m_Current = 0;
             // Append/Update all files from that directory
             CDir::TEntries dir = CDir(path).GetEntries("*",
                                                        CDir::eIgnoreRecursive);
@@ -2832,7 +2915,8 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         break;
 
     case CDirEntry::eUnknown:
-        TAR_THROW(eBadName, "Unable to handle '" + path + '\'');
+        TAR_THROW(this, eBadName,
+                  "Unable to handle '" + path + '\'');
         /*FALLTHRU*/
 
     default:
@@ -2843,31 +2927,30 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     }
 
  out:
-    m_Current = 0;
     return entries;
 }
 
 
 // Regular files only!
-void CTar::x_AppendFile(const string& file, CTarEntryInfo& info)
+void CTar::x_AppendFile(const string& file)
 {
     CNcbiIfstream ifs;
 
-    _ASSERT(info.GetType() == CTarEntryInfo::eFile);
+    _ASSERT(m_Current.GetType() == CTarEntryInfo::eFile);
 
     // Open file
     ifs.open(file.c_str(), IOS_BASE::binary | IOS_BASE::in);
     if (!ifs) {
         int x_errno = errno;
-        TAR_THROW(eOpen,
+        TAR_THROW(this, eOpen,
                   "Cannot open file '" + file + '\''+ s_OSReason(x_errno));
     }
 
     // Write file header
-    x_WriteEntryInfo(file, info);
-    info.m_HeaderSize = (streamsize)(m_StreamPos - info.m_Pos);
+    x_WriteEntryInfo(file);
+    m_Current.m_HeaderSize = (streamsize)(m_StreamPos - m_Current.m_Pos);
 
-    Uint8 size = info.GetSize();
+    Uint8 size = m_Current.GetSize();
     while (size) {
         // Write file contents
         size_t avail = m_BufferSize - m_BufferPos;
@@ -2877,7 +2960,7 @@ void CTar::x_AppendFile(const string& file, CTarEntryInfo& info)
         // Read file
         if (!ifs.read(m_Buffer + m_BufferPos, avail)) {
             int x_errno = errno;
-            TAR_THROW(eRead,
+            TAR_THROW(this, eRead,
                       "Error reading file '" +file+ '\''+ s_OSReason(x_errno));
         }
         avail = (size_t) ifs.gcount();
@@ -2894,71 +2977,92 @@ void CTar::x_AppendFile(const string& file, CTarEntryInfo& info)
 }
 
 
-class CTarReader : public IReader,
-                   protected CTar
+class CTarReader : public IReader
 {
     friend class CTar;
 
 protected:
-    CTarReader(istream& is, size_t blocking_factor);
+    CTarReader(CTar* tar, bool own = false)
+        : m_Read(0), m_Eof(false), m_Bad(false), m_Own(own), m_Tar(tar)
+    { }
+    ~CTarReader();
 
 public:
     virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
     virtual ERW_Result PendingCount(size_t* count);
 
 protected:
-    CTarEntryInfo m_Info;
-    Uint8         m_Read;
-    bool          m_Eof;
-    bool          m_Bad;
+    Uint8  m_Read;
+    bool   m_Eof;
+    bool   m_Bad;
+    bool   m_Own;
+    CTar*  m_Tar;
 };
 
 
-CTarReader::CTarReader(istream&is, size_t blocking_factor)
-    : CTar(is, blocking_factor), m_Read(0), m_Eof(false), m_Bad(false)
+CTarReader::~CTarReader()
 {
+    if (m_Own)
+        delete m_Tar;
 }
 
 
 ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
 {
-    _ASSERT(m_BufferSize == kBlockSize);
-
     if (m_Bad  ||  !count) {
-        if (bytes_read)
+        if (bytes_read) {
             *bytes_read = 0;
-        return m_Bad ? eRW_Error :
-            (m_Read < m_Info.GetSize()  ||  !m_Eof) ? eRW_Success : eRW_Eof;
+        }
+        return m_Bad ? eRW_Error
+            : (m_Read < m_Tar->m_Current.GetSize()  ||  !m_Eof) ? eRW_Success
+            : eRW_Eof;
     }
 
     size_t read;
-    if (m_Read >= m_Info.GetSize()) {
+    if (m_Read >= m_Tar->m_Current.GetSize()) {
         m_Eof = true;
         read = 0;
     } else {
-        if (count > (size_t)(m_Info.GetSize() - m_Read)) {
-            count = (size_t)(m_Info.GetSize() - m_Read);
+        size_t left = (size_t)(m_Tar->m_Current.GetSize() - m_Read);
+        if (count > left) {
+            count = left;
         }
-        size_t left = (size_t) OFFSET_OF(m_Read);
-        if (left) {
-            read = kBlockSize - left;
-            if (read > count) {
-                read = count;
+
+        size_t off = OFFSET_OF(m_Read);
+        if (off) {
+            read = kBlockSize - off;
+            if (m_Tar->m_BufferPos) {
+                off += m_Tar->m_BufferPos  - kBlockSize;
+            } else {
+                off += m_Tar->m_BufferSize - kBlockSize;
             }
-        } else if (!x_ReadArchive(count)) {
-            read = 0;
-            m_Bad = true;
-            TAR_THROW(eRead, "Unexpected EOF while streaming");
-        } else {
-            read = count;
-            m_StreamPos += ALIGN_SIZE(read);
-        }
-        if (!m_Bad) {
-            memcpy(buf, m_Buffer + left, read);
+            if (read > count)
+                read = count;
+            memcpy(buf, m_Tar->m_Buffer + off, read);
             m_Read += read;
+            count  -= read;
+            if (!count) {
+                goto out;
+            }
+            buf = (char*) buf + read;
+        } else {
+            read = 0;
+        }
+
+        off = m_Tar->m_BufferPos;
+        if (m_Tar->x_ReadArchive(count)) {
+            m_Tar->m_StreamPos += ALIGN_SIZE(count);
+            memcpy(buf, m_Tar->m_Buffer + off, count);
+            m_Read += count;
+            read   += count;
+        } else {
+            m_Bad = true;
+            TAR_THROW(m_Tar, eRead,
+                      "Read error while streaming");
         }
     }
 
+ out:
     if (bytes_read) {
         *bytes_read = read;
     }
@@ -2968,9 +3072,10 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
 
 ERW_Result CTarReader::PendingCount(size_t* count)
 {
-    if (m_Bad)
+    if (m_Bad) {
         return eRW_Error;
-    Uint8 left = m_Info.GetSize() - m_Read;
+    }
+    Uint8 left = m_Tar->m_Current.GetSize() - m_Read;
     if (!left  &&  m_Eof) {
         return eRW_Eof;
     }
@@ -2981,28 +3086,35 @@ ERW_Result CTarReader::PendingCount(size_t* count)
 
 IReader* CTar::Extract(istream& is, const string& name, CTar::TFlags flags)
 {
-    auto_ptr<CTarReader> retval(new CTarReader(is, 1));
-
-    retval->SetFlags(flags);
+    auto_ptr<CTar> tar(new CTar(is, 1/*blocking factor*/));
+    tar->SetFlags(flags);
 
     auto_ptr<CMaskFileName> mask(new CMaskFileName);
     mask->Add(name);
-    retval->SetMask(mask.release(), eTakeOwnership);
-
-    auto_ptr<TEntries> toc = retval->x_Open(eInternal);
-    _ASSERT(toc->size() < 2);
-    if (toc->size() < 1) {
+    tar->SetMask(mask.get(), eTakeOwnership);
+    mask.release();
+   
+    auto_ptr<TEntries> temp = tar->x_Open(eInternal);
+    _ASSERT(temp.get()  &&  temp->size() < 2);
+    if (temp->size() < 1) {
         return 0;
     }
 
-    const CTarEntryInfo& info = *toc->begin();
-    if (info.GetType() != CTarEntryInfo::eFile) {
+    _ASSERT(tar->m_Current == *temp->begin());
+    if (tar->m_Current.GetType() != CTarEntryInfo::eFile) {
         return 0;
     }
-    retval->m_Info    = info;
-    retval->m_Current = &retval->m_Info.GetName();
 
-    return retval.release();
+    IReader* ir = new CTarReader(tar.get(), true);
+    tar.release();
+    return ir;
+}
+
+
+IReader* CTar::GetNextEntryData(void)
+{
+    return
+        m_Current.GetType() != CTarEntryInfo::eFile ? 0 : new CTarReader(this);
 }
 
 

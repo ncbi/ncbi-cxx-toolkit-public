@@ -195,7 +195,7 @@ int CTarTest::Run(void)
 
     auto_ptr<CTar> tar;
 
-    if (action != eStream) {
+    if (action != eStream  ||  args.GetNExtra() != 1) {
         if (file.empty()) {
             CNcbiIos* io = 0;
             if (action == eList  ||  action == eExtract ||  action == eTest) {
@@ -210,9 +210,10 @@ int CTarTest::Run(void)
         } else {
             tar.reset(new CTar(file, blocking_factor));
         }
+        m_Flags = tar->GetFlags();
+    } else {
+        m_Flags = 0;
     }
-
-    m_Flags = action != eStream ? tar->GetFlags() : 0;
 
     if (args["i"].HasValue()) {
         m_Flags |=  CTar::fIgnoreZeroBlocks;
@@ -251,7 +252,7 @@ int CTarTest::Run(void)
         m_Flags |=  fVerbose;
     }
 
-    if (action != eStream) {
+    if (tar.get()) {
         tar->SetFlags(m_Flags);
 
         if (args["C"].HasValue()) {
@@ -294,11 +295,7 @@ int CTarTest::Run(void)
         cerr << "Done." << endl;
     } else {
         size_t n = args.GetNExtra();
-        if (action == eStream) {
-            if (n != 1) {
-                NCBI_THROW(CArgException, eInvalidArg,
-                           "Must specify a single entry");
-            }
+        if (action == eStream  &&  n == 1) {
             ifstream ifs;
             istream& is = file.empty() ? cin : dynamic_cast<istream&>(ifs);
             if (!file.empty()) {
@@ -323,7 +320,19 @@ int CTarTest::Run(void)
                 }
                 tar->SetMask(mask.release(), eTakeOwnership);
             }
-            if (action == eList) {
+            if (action == eStream) {
+                const CTarEntryInfo* info;
+                while ((info = tar->GetNextEntryInfo()) != 0) {
+                    if (info->GetType() != CTarEntryInfo::eFile)
+                        continue;
+                    LOG_POST("X " << info->GetName() + x_Pos(*info));
+                    IReader* ir = tar->GetNextEntryData();
+                    _ASSERT(ir);
+                    CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
+                                           CRWStreambuf::fLogExceptions));
+                    NcbiStreamCopy(cout, rs);
+                }
+            } else if (action == eList) {
                 entries.reset(tar->List().release());
                 ITERATE(CTar::TEntries, it, *entries.get()) {
                     LOG_POST(*it << x_Pos(*it));
