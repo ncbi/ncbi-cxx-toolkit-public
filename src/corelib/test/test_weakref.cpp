@@ -53,15 +53,24 @@ BOOST_AUTO_TEST_CASE(RefMainUsage)
 {
     CRef<CTestObject> ref(new CTestObject());
     CWeakRef<CTestObject> weak(ref);
+    CRef<CTestObject> ref2;
 
-    CRef<CTestObject> ref2(weak.Lock());
-    BOOST_CHECK(ref2.NotNull());
-    BOOST_CHECK_EQUAL(ref, ref2);
+    // These blocks are for the sake of conformance with C++ standard:
+    // temporary object returned from Lock() is not mandatory to be destroyed
+    // at the end of the statement, but at the end of the block. If we
+    // remove these blocks test can fail on some compilers, e.g. WorkShop 5.5.
+    {{
+        ref2 = weak.Lock();
+        BOOST_CHECK(ref2.NotNull());
+        BOOST_CHECK_EQUAL(ref, ref2);
+    }}
 
-    ref.Reset();
-    ref = weak.Lock().GetPointer();
-    BOOST_CHECK(ref.NotNull());
-    BOOST_CHECK_EQUAL(ref, ref2);
+    {{
+        ref.Reset();
+        ref = weak.Lock();
+        BOOST_CHECK(ref.NotNull());
+        BOOST_CHECK_EQUAL(ref, ref2);
+    }}
 
     ref.Reset();
     ref2.Reset();
@@ -73,15 +82,24 @@ BOOST_AUTO_TEST_CASE(IRefMainUsage)
 {
     CIRef<CTestInterface> ref(new CTestObject());
     CWeakIRef<CTestInterface> weak(ref);
+    CIRef<CTestInterface> ref2;
 
-    CIRef<CTestInterface> ref2(weak.Lock());
-    BOOST_CHECK(ref2.NotNull());
-    BOOST_CHECK_EQUAL(ref, ref2);
+    // These blocks are for the sake of conformance with C++ standard:
+    // temporary object returned from Lock() is not mandatory to be destroyed
+    // at the end of the statement, but at the end of the block. If we
+    // remove these blocks test can fail on some compilers, e.g. WorkShop 5.5.
+    {{
+        ref2 = weak.Lock();
+        BOOST_CHECK(ref2.NotNull());
+        BOOST_CHECK_EQUAL(ref, ref2);
+    }}
 
-    ref.Reset();
-    ref = weak.Lock().GetPointer();
-    BOOST_CHECK(ref.NotNull());
-    BOOST_CHECK_EQUAL(ref, ref2);
+    {{
+        ref.Reset();
+        ref = weak.Lock();
+        BOOST_CHECK(ref.NotNull());
+        BOOST_CHECK_EQUAL(ref, ref2);
+    }}
 
     ref.Reset();
     ref2.Reset();
