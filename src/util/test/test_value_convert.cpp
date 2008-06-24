@@ -943,7 +943,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = ConvertSafe(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             value = ConvertSafe(value_float);
             BOOST_CHECK_EQUAL(value, value_float);
@@ -1021,7 +1021,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = ConvertSafe(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             value = ConvertSafe(value_float);
             BOOST_CHECK_EQUAL(value, value_float);
@@ -1092,7 +1092,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = ConvertSafe(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             value = ConvertSafe(value_float);
             BOOST_CHECK_EQUAL(value, value_float);
@@ -1940,7 +1940,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = Convert(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             value = Convert(value_float);
             BOOST_CHECK_EQUAL(value, value_float);
@@ -2019,7 +2019,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = Convert(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             value = Convert(value_float);
             BOOST_CHECK_EQUAL(value, value_float);
@@ -2097,7 +2097,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_EQUAL(value, value_Int1);
 
             value = Convert(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             value = Convert(value_float);
             BOOST_CHECK_EQUAL(value, value_float);
