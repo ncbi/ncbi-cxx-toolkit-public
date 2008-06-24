@@ -386,13 +386,13 @@ AC_DEFUN(NCBI_LOCAL_FTDS,
       if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
          test "$with_ftds" = $1  &&  FTDS_PATH="<$d>"
          FTDS$1[_CTLIB_LIB]="ct_ftds$1${STATIC} tds_ftds$1${STATIC}"
-         FTDS$1[_CTLIB_LIBS]='$(TLS_LIBS) $(ICONV_LIBS)'
+         FTDS$1[_CTLIB_LIBS]='$(ICONV_LIBS)'
          FTDS$1[_CTLIB_INCLUDE]="-I\$(includedir)/$d -I\$(includedir0)/$d"
          FTDS$1[_DBLIB_LIB]="sybdb_ftds$1${STATIC} tds_ftds$1${STATIC}"
-         FTDS$1[_DBLIB_LIBS]='$(TLS_LIBS) $(ICONV_LIBS)'
+         FTDS$1[_DBLIB_LIBS]='$(ICONV_LIBS)'
          FTDS$1[_DBLIB_INCLUDE]="-I\$(includedir)/$d -I\$(includedir0)/$d"
          FTDS$1[_ODBC_LIB]="odbc_ftds$1${STATIC} tds_ftds$1${STATIC}"
-         FTDS$1[_ODBC_LIBS]='$(TLS_LIBS) $(ICONV_LIBS)'
+         FTDS$1[_ODBC_LIBS]='$(ICONV_LIBS)'
          FTDS$1[_ODBC_INCLUDE]="-I\$(includedir)/$d -I\$(includedir0)/$d"
          freetds=freetds
       elif test -d "$FTDS_PATH" ; then
