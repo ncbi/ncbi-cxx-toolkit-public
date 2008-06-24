@@ -2422,7 +2422,7 @@ void CTar::x_SkipArchive(size_t size)
         if (!x_ReadArchive(nskip)) {
             int x_errno = errno;
             TAR_THROW(this, eRead,
-                      "Archive read failed" + s_OSReason(x_errno));
+                      "Archive skip failed" + s_OSReason(x_errno));
         }
         m_StreamPos += ALIGN_SIZE(nskip);
         size        -=            nskip;

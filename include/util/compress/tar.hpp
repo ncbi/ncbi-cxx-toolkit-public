@@ -201,7 +201,8 @@ public:
     Uint8         GetPosition(EPos what)    const
     { return what == ePos_Header ? m_Pos : m_Pos + m_HeaderSize; }
 
-    bool operator==(const CTarEntryInfo& info) const;
+    // Comparison operator
+    bool operator == (const CTarEntryInfo& info) const;
 
 private:
     EType        m_Type;       ///< Type
@@ -213,10 +214,11 @@ private:
     struct stat  m_Stat;       ///< Direntry-compatible info (as applicable)
     Uint8        m_Pos;        ///< Entry (not data!) position within archive
 
-    friend class CTar;
+    friend class CTar;         // Setter
 };
 
 
+/// Nice TOC(table of contents) printout
 NCBI_XUTIL_EXPORT ostream& operator << (ostream&, const CTarEntryInfo&);
 
 
@@ -229,12 +231,12 @@ struct SHeader;
 /// CTar class
 ///
 /// (Throws exceptions on most errors.)
-/// Note that if a stream constructor was used then CTar can only perform
+/// Note that if a stream constructor is used then CTar can only perform
 /// one pass over the archive.  This means that only one full action will
 /// succeed (and it the action was to update (e.g. append) the archive, it
 /// has to be explicitly followed by Close().  Before next action, you should
 /// explicitly reset the stream position to the beginning of the archive
-/// for read/update operations or to end of archive for append operations.
+/// for read/update operations or to the end of the archive for append ops.
 
 class NCBI_XUTIL_EXPORT CTar
 {
@@ -243,7 +245,7 @@ public:
     enum EFlags {
         // --- Extract/List/Test ---
         /// Ignore blocks of zeros in archive.
-        /// Generally, 2 or more consecutive zero blocks indicate EOF.
+        //  Generally, 2 or more consecutive zero blocks indicate EOF.
         fIgnoreZeroBlocks   = (1<<1),
 
         // --- Extract/Append/Update ---
@@ -454,6 +456,44 @@ public:
     ///   GetBaseDir
     void SetBaseDir(const string& dirname);
 
+
+    //------------------------------------------------------------------------
+    // Streaming
+    //------------------------------------------------------------------------
+
+    /// Iterate over the archive and return first (or next) entry.
+    ///
+    /// When using this call (possibly along with GetNextEntryData), the
+    /// tar archive stream (if any) must not be accessed outside the CTar API,
+    /// since otherwise, inconsistency in data may result.
+    /// The user can call GetNextEntryData to stream out some or all of data
+    /// out of this entry, or may call GetNextEntryData again to skip to
+    /// the next archive entry, etc.
+    /// Note that the archive may contain multiple versions of the same
+    /// entry (in case an update was done on it), all of which but the last
+    /// one are to be ignored.  This call traverses through all those entry
+    /// versions, and sequentially exposes them to the user level.
+    /// See test suite (in test/test_tar.cpp> for a usage example.
+    /// @return
+    ///   Pointer to next entry info in the archive or 0 if EOF encountered.
+    /// @sa
+    ///   CTarEntryInfo, GetNextEntryData
+    const CTarEntryInfo* GetNextEntryInfo(void);
+
+    /// Create and return an IReader, which can extract the current archive
+    /// entry that has been previously returned via GetNextEntryInfo.
+    ///
+    /// The returned pointer is non-zero only if the current entry is a file
+    /// (even of size 0). The ownership of the pointer is passed to the caller.
+    /// The IReader may be used to read all or part data of the entry without
+    /// affecting how next GetNextEntryInfo call will find the following entry.
+    /// See test suite (in test/test_tar.cpp> for a usage example.
+    /// @return
+    ///   Pointer to IReader, or 0 if the current entry is not a file.
+    /// @sa
+    ///   GetNextEntryData, IReader, CRStream
+    IReader*             GetNextEntryData(void);
+
     /// Create and return an IReader, which can extract contents
     /// of one named file (which can also be given as a mask).
     ///
@@ -469,35 +509,6 @@ public:
     ///   CTarEntryInfo::GetPosition, Extract, SetMask, SetFlags,
     ///   GetNextEntryInfo, GetNextEntryData, IReader, CRStream
     static IReader* Extract(istream& is, const string& name, TFlags flags = 0);
-
-    /// Iterate over the archive and return first (or next) entry.
-    ///
-    /// When using this call (possibly along with GetNextEntryData), the
-    /// open tar archive stream must not be accessed outside the CTar API,
-    /// since otherwise, inconsistency in data may result.
-    /// The user can call GetNextEntryData to stream out some or all of data
-    /// out of this entry, or may call GetNextEntryData again to skip to
-    /// the next archive entry (if any), etc.
-    /// See test suite (in test/test_tar.cpp> for a usage example.
-    /// @return
-    ///   Pointer to next entry info in the archive or 0 if EOF encountered.
-    /// @sa
-    ///   CTarEntryInfo, GetNextEntryData
-    const CTarEntryInfo* GetNextEntryInfo(void);
-
-    /// Create and return an IReader, which can extract the current archive
-    /// entry that has been previously returned via GetNextEntryInfo.
-    ///
-    /// See test suite (in test/test_tar.cpp> for a usage example.
-    /// The returned pointer is non-zero only if the current entry is a file
-    /// (even of size 0). The ownership of the pointer is passed to the caller.
-    /// The IReader may be used to read all or part data of the entry without
-    /// affecting how next GetNextEntryInfo call will find the following entry.
-    /// @return
-    ///   Pointer to IReader, or 0 if the current entry is not a file.
-    /// @sa
-    ///   GetNextEntryData, IReader, CRStream
-    IReader*             GetNextEntryData(void);
 
 protected:
     /// Archive action
