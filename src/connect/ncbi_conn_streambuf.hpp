@@ -72,7 +72,7 @@ protected:
     // this method is declared here to be disabled (exception) at run-time
     virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
-    // only seekoff(0, IOS_BASE::cur, IOS_BASE::out) is permitted
+    // only seekoff(0, IOS_BASE::cur) is permitted (to obtain current position)
     virtual CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                                 IOS_BASE::openmode which =
                                 IOS_BASE::in | IOS_BASE::out);
