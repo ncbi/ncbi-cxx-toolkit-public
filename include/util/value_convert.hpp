@@ -282,10 +282,63 @@ public:
     }
 
 public:
-    operator obj_type(void) const
-    {
-        return m_Value;
+#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
+    operator bool(void) const
+    { 
+        return m_Value ? 1 : 0;
     }
+    operator Uint1(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+    operator Int1(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+    operator Uint2(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+    operator Int2(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+    operator Uint4(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+    operator Int4(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+    operator Uint8(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+    operator Int8(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+    operator float(void) const
+    {
+        return m_Value ? 1.0 : 0.0;
+    }
+    operator double(void) const
+    {
+        return m_Value ? 1.0 : 0.0;
+    }
+    operator long double(void) const
+    {
+        return m_Value ? 1.0 : 0.0;
+    }
+#else
+    template <typename TO>
+    operator TO(void) const
+    {
+        return m_Value ? static_cast<TO>(1) : static_cast<TO>(0);
+    }
+#endif
+
     operator string(void) const
     {
         return NStr::BoolToString(m_Value);
@@ -1402,6 +1455,7 @@ struct STypeProxy
         typedef STypeMap<TO>::type type;
 
         return static_cast<type>(CValueConvert<CP, FROM>(*m_Value));
+        // return CValueConvert<CP, FROM>(*m_Value).operator type();
     }
 
 private:

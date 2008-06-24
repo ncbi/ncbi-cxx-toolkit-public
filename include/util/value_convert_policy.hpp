@@ -154,15 +154,21 @@ void ReportConversionError(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-template <class T>
+template <class T, bool is_signed = std::numeric_limits<T>::is_signed>
 struct SNumericLimits : public std::numeric_limits<T>
 {
     static T min(void)
     {
-        return std::numeric_limits<T>::is_signed && (std::numeric_limits<T>::min)() > 0
-            ? T(-(std::numeric_limits<T>::max)()) : (std::numeric_limits<T>::min)();
+        return std::numeric_limits<T>::min() > 0
+            ? T(-std::numeric_limits<T>::max()) : std::numeric_limits<T>::min();
     }
 }; 
+
+template <class T>
+struct SNumericLimits<T, false> : public std::numeric_limits<T>
+{
+}; 
+
 
 ////////////////////////////////////////////////////////////////////////////////
 template <bool to_is_integer, bool from_is_integer>
@@ -273,6 +279,18 @@ public:
         return m_Value ? 1 : 0;
     }
 
+    operator float(void) const
+    {
+        return m_Value ? static_cast<float>(1) : static_cast<float>(0);
+    }
+    operator double(void) const
+    {
+        return m_Value ? static_cast<double>(1) : static_cast<double>(0);
+    }
+    operator long double(void) const
+    {
+        return m_Value ? static_cast<long double>(1) : static_cast<long double>(0);
+    }
 
 private:
     const obj_type m_Value;
@@ -488,19 +506,10 @@ public:
     }
 
 public:
-    // Convert only to itself.
-    operator obj_type(void) const
+    template <typename TO>
+    operator TO(void) const
     {
-        return m_Value;
-    }
-
-    operator double(void) const
-    {
-        return m_Value;
-    }
-    operator long double(void) const
-    {
-        return m_Value;
+        return ConvertUsingRunTimeCP<TO>(m_Value);
     }
 
 private:
@@ -519,18 +528,11 @@ public:
     }
 
 public:
-    // Convert only to itself.
-    operator obj_type(void) const
+    template <typename TO>
+    operator TO(void) const
     {
-        return m_Value;
+        return ConvertUsingRunTimeCP<TO>(m_Value);
     }
-
-    /*
-    operator long double(void) const
-    {
-        return m_Value;
-    }
-    */
 
 private:
     const obj_type& m_Value;
@@ -548,10 +550,10 @@ public:
     }
 
 public:
-    // Convert only to itself.
-    operator obj_type(void) const
+    template <typename TO>
+    operator TO(void) const
     {
-        return m_Value;
+        return ConvertUsingRunTimeCP<TO>(m_Value);
     }
 
 private:
