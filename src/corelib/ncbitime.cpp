@@ -616,7 +616,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
     ptcache += (is_day_present   ? 20 : 10);
     ptcache += (is_time_present  ? 2 : 1);
 
-    // Use current time to set some fields
+    // Use empty or current time to set missed time components
     CTime current;
     if ( !adjust_needed ) {
         switch (ptcache) {
@@ -668,6 +668,8 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
 #if !defined(TIMEZONE_IS_UNDEFINED)
     // Adjust time for current timezone
     if ( adjust_needed  &&  adjust_tz != -TimeZone() ) {
+        // MT-Safe protect for TimeZone()
+        CFastMutexGuard LOCK(s_TimeMutex);
         AddSecond(-TimeZone() - adjust_tz);
     }
 #endif
@@ -994,6 +996,8 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
     if ( IsEmpty() ) {
         return kEmptyStr;
     }
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_TimeMutex);
 
     const CTime* t = this;
     CTime* t_out = 0;
@@ -1319,7 +1323,6 @@ CTime& CTime::x_SetTime(const time_t* value)
     m_Data.nanosec     = (Int4)ns;
     return *this;
 }
-
 
 CTime& CTime::AddMonth(int months, EDaylight adl)
 {
@@ -2303,6 +2306,8 @@ CFastLocalTime::CFastLocalTime(unsigned int sec_after_hour)
       m_Timezone(0), m_Daylight(-1), m_IsTuneup(false)
 {
 #if !defined(TIMEZONE_IS_UNDEFINED)
+    // MT-Safe protect: use CTime locking mutex
+    CFastMutexGuard LOCK(s_TimeMutex);
     m_Timezone = (int)TimeZone();
     m_Daylight = Daylight();
 #endif
@@ -2360,11 +2365,22 @@ CTime CFastLocalTime::GetLocalTime(void)
     // Avoid to make time tune up in first m_SecAfterHour for each hour
     // Otherwise do this at each hours/timezone change.
     if ( !m_IsTuneup ) {
+#if !defined(TIMEZONE_IS_UNDEFINED)
+        // Get current timezone
+        TSeconds x_timezone = TimeZone();
+        int x_daylight = Daylight();
+        {{
+            // MT-Safe protect: use CTime locking mutex
+            CFastMutexGuard LOCK(s_TimeMutex);
+            x_timezone = TimeZone();
+            x_daylight = Daylight();
+        }}
+#endif
         if ( !m_LastTuneupTime  ||
             ((timer / 3600 != m_LastTuneupTime / 3600)  &&
              (timer % 3600 >  (time_t)m_SecAfterHour))
 #if !defined(TIMEZONE_IS_UNDEFINED)
-            ||  (TimeZone() != m_Timezone  ||  Daylight() != m_Daylight)
+            ||  (x_timezone != m_Timezone  ||  x_daylight != m_Daylight)
 #endif
         ) {
             x_Tuneup(timer, ns);
@@ -2413,12 +2429,19 @@ int CFastLocalTime::GetLocalTimezone(void)
     // Avoid to make time tune up in first m_SecAfterHour for each hour
     // Otherwise do this at each hours/timezone change.
     if ( !m_IsTuneup ) {
+        // Get current timezone
+        TSeconds x_timezone = TimeZone();
+        int x_daylight = Daylight();
+        {{
+            // MT-Safe protect: use CTime locking mutex
+            CFastMutexGuard LOCK(s_TimeMutex);
+            x_timezone = TimeZone();
+            x_daylight = Daylight();
+        }}
         if ( !m_LastTuneupTime  ||
             ((timer / 3600 != m_LastTuneupTime / 3600)  &&
              (timer % 3600 >  (time_t)m_SecAfterHour))
-#if !defined(TIMEZONE_IS_UNDEFINED)
-            ||  (TimeZone() != m_Timezone  ||  Daylight() != m_Daylight)
-#endif
+            ||  (x_timezone != m_Timezone  ||  x_daylight != m_Daylight)
         ) {
             x_Tuneup(timer, ns);
             // MT-Safe protect: copy tuned time to cached local time
