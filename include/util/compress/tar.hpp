@@ -454,7 +454,8 @@ public:
     ///   GetBaseDir
     void SetBaseDir(const string& dirname);
 
-    /// Create an IReader, which can extract contents of one named file.
+    /// Create and return an IReader, which can extract contents
+    /// of one named file (which can also be given as a mask).
     ///
     /// Tar archive is deemed to be in the specified stream "is", properly
     /// positioned (either at the beginning of the archive, or at any
@@ -465,10 +466,37 @@ public:
     /// @return
     ///   IReader interface to read the file contents with;  0 on error.
     /// @sa
-    ///   CTarEntryInfo::GetPosition, Extract, SetFlags, IReader, CRStream
+    ///   CTarEntryInfo::GetPosition, Extract, SetMask, SetFlags,
+    ///   GetNextEntryInfo, GetNextEntryData, IReader, CRStream
     static IReader* Extract(istream& is, const string& name, TFlags flags = 0);
 
+    /// Iterate over the archive and return first (or next) entry.
+    ///
+    /// When using this call (possibly along with GetNextEntryData), the
+    /// open tar archive stream must not be accessed outside the CTar API,
+    /// since otherwise, inconsistency in data may result.
+    /// The user can call GetNextEntryData to stream out some or all of data
+    /// out of this entry, or may call GetNextEntryData again to skip to
+    /// the next archive entry (if any), etc.
+    /// See test suite (in test/test_tar.cpp> for a usage example.
+    /// @return
+    ///   Pointer to next entry info in the archive or 0 if EOF encountered.
+    /// @sa
+    ///   CTarEntryInfo, GetNextEntryData
     const CTarEntryInfo* GetNextEntryInfo(void);
+
+    /// Create and return an IReader, which can extract the current archive
+    /// entry that has been previously returned via GetNextEntryInfo.
+    ///
+    /// See test suite (in test/test_tar.cpp> for a usage example.
+    /// The returned pointer is non-zero only if the current entry is a file
+    /// (even of size 0). The ownership of the pointer is passed to the caller.
+    /// The IReader may be used to read all or part data of the entry without
+    /// affecting how next GetNextEntryInfo call will find the following entry.
+    /// @return
+    ///   Pointer to IReader, or 0 if the current entry is not a file.
+    /// @sa
+    ///   GetNextEntryData, IReader, CRStream
     IReader*             GetNextEntryData(void);
 
 protected:

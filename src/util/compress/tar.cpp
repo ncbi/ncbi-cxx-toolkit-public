@@ -2982,7 +2982,7 @@ class CTarReader : public IReader
     friend class CTar;
 
 protected:
-    CTarReader(CTar* tar, bool own = false)
+    CTarReader(CTar* tar, EOwnership own = eNoOwnership)
         : m_Read(0), m_Eof(false), m_Bad(false), m_Own(own), m_Tar(tar)
     { }
     ~CTarReader();
@@ -2992,11 +2992,11 @@ public:
     virtual ERW_Result PendingCount(size_t* count);
 
 protected:
-    Uint8  m_Read;
-    bool   m_Eof;
-    bool   m_Bad;
-    bool   m_Own;
-    CTar*  m_Tar;
+    Uint8       m_Read;
+    bool        m_Eof;
+    bool        m_Bad;
+    EOwnership  m_Own;
+    CTar*       m_Tar;
 };
 
 
@@ -3105,7 +3105,7 @@ IReader* CTar::Extract(istream& is, const string& name, CTar::TFlags flags)
         return 0;
     }
 
-    IReader* ir = new CTarReader(tar.get(), true);
+    IReader* ir = new CTarReader(tar.get(), eTakeOwnership);
     tar.release();
     return ir;
 }
