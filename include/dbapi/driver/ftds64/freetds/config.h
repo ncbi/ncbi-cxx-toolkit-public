@@ -10,7 +10,11 @@
  */
 
 #define NCBI_FTDS 8
-#define TDS80     1
+#ifdef NCBI_FTDS_ALLOW_TDS_80
+#  define TDS80     1
+#else
+#  define TDS70     1
+#endif
 #define VERSION   "0.64"
 #define UNIXODBC  1
 

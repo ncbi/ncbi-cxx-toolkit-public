@@ -313,13 +313,14 @@ string CODBC_Connection::x_MakeFreeTDSVersion(int version)
     case 70:
         str_version += "7.0";
         break;
-    case 80:
-        str_version += "8.0";
-        break;
+    //case 80:
+    //    str_version += "8.0";
+    //    break;
     default:
         // DATABASE_DRIVER_ERROR( "Invalid TDS version with the FreeTDS driver.", 100000 );
-        str_version += "8.0";
-        break;
+        //str_version += "8.0";
+        //break;
+        return string();
     }
 
     return str_version;
