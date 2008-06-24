@@ -498,34 +498,26 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
         }
 
         if (!x_GetJobGetterSemaphore().TryWait(m_NSTimeout)) {
-            ///cerr << "Exclusive Job is still running" <<  endl;
             return false;
         }
-        ///cerr << "Get/Wait 1" <<  endl;
         job_exists =
                 GetNSExecuter().WaitJob(job, m_NSTimeout, m_UdpPort,
                                         CNetScheduleExecuter::eNoWaitNotification);
         if (!job_exists) {
-            ///cerr << "Post (WAIT)  : " << endl;
             x_GetJobGetterSemaphore().Post();
 
             job_exists = CNetScheduleExecuter::WaitNotification(GetQueueName(),
                                                                 m_NSTimeout,m_UdpPort);
 
-            ///cerr << "Before try 2 Get/Wait" <<  endl;
             if (!x_GetJobGetterSemaphore().TryWait()) {
-                ///cerr << "Exclusive is already executed" << endl;
                 return false;
             }
-            ///cerr << "Get/Wait 2" <<  endl;
             if (job_exists) {
                 job_exists = GetNSExecuter().GetJob(job, m_UdpPort);
             }
         }
         if (job_exists && (job.mask & CNetScheduleAPI::eExclusiveJob)) {
-                ///cerr << "Get Exclusive job (GET/WAIT): " << job.job_id << endl;
         } else {
-            ///cerr << "Post (GET/WAIT): " << job.job_id << endl;
             x_GetJobGetterSemaphore().Post();
         }
     }

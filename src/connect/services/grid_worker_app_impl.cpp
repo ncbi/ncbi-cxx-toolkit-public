@@ -91,65 +91,6 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//    CLogWatcher
-/// @internal
-/*
-class CLogWatcher : public IWorkerNodeJobWatcher
-{
-public:
-    CLogWatcher(CNcbiOstream* os) : m_Os(os) {}
-    virtual ~CLogWatcher() {};
-    virtual void Notify(const CWorkerNodeJobContext& job, EEvent event)
-    {
-        if (event == eJobStopped) {
-            if (m_Os) {
-                if (!IsDiagStream(m_Os)) {
-                    *m_Os << "The Diag Stream was hijacked (probably by job : " <<
-                        job.GetJobKey() << ")" << endl;
-                    m_Os->flush();
-                    m_Os = NULL;
-                }
-            }
-        }
-    }
-
-private:
-    CNcbiOstream* m_Os;
-};
-*/
-/////////////////////////////////////////////////////////////////////////////
-//
-//     CGridWorkerNodeThread
-/// @internal
-/*
-class CGridWorkerNodeThread : public CThread
-{
-public:
-    CGridWorkerNodeThread(CGridWorkerNode& worker_node)
-        : m_WorkerNode(worker_node) {}
-
-    ~CGridWorkerNodeThread() {}
-protected:
-
-    virtual void* Main(void)
-    {
-        m_WorkerNode.Start();
-        return NULL;
-    }
-    virtual void OnExit(void)
-    {
-        CThread::OnExit();
-        CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
-        LOG_POST_X(45, CTime(CTime::eCurrent).AsString() << " Worker Node Thread exited.");
-    }
-
-private:
-    CGridWorkerNode& m_WorkerNode;
-};
-*/
-
-/////////////////////////////////////////////////////////////////////////////
-//
 //     CGridControleThread
 /// @internal
 class CGridControlThread : public CThread
@@ -191,7 +132,6 @@ public:
     CWorkerNodeIdleThread(IWorkerNodeIdleTask*,
                           CGridWorkerNode& worker_node,
                           unsigned run_delay,
-                          //bool exclusive_mode,
                           unsigned int auto_shutdown);
 
     void RequestShutdown()
@@ -257,7 +197,6 @@ private:
     volatile bool       m_StopFlag;
     volatile bool       m_ShutdownFlag;
     unsigned int        m_RunInterval;
-    //bool                m_ExclusiveMode;
     unsigned int        m_AutoShutdown;
     CStopWatch          m_AutoShutdownSW;
     mutable CFastMutex  m_Mutext;
@@ -269,12 +208,11 @@ private:
 CWorkerNodeIdleThread::CWorkerNodeIdleThread(IWorkerNodeIdleTask* task,
                                              CGridWorkerNode& worker_node,
                                              unsigned run_delay,
-                                             //bool exclusive_mode,
                                              unsigned int auto_shutdown)
     : m_Task(task), m_WorkerNode(worker_node),
       m_Wait1(0,100000), m_Wait2(0,1000000),
       m_StopFlag(false), m_ShutdownFlag(false),
-      m_RunInterval(run_delay), //m_ExclusiveMode(exclusive_mode),
+      m_RunInterval(run_delay),
       m_AutoShutdown(auto_shutdown), m_AutoShutdownSW(CStopWatch::eStart)
 {
 }
@@ -297,8 +235,6 @@ void* CWorkerNodeIdleThread::Main()
             }
         }
         if (m_Task && !x_GetStopFlag()) {
-            //if (m_ExclusiveMode)
-            //    m_WorkerNode.PutOnHold(true);
             try {
                 do {
                     if ( x_IsAutoShutdownTime() ) {
@@ -312,8 +248,6 @@ void* CWorkerNodeIdleThread::Main()
                     m_Task->Run(GetContext());
                 } while( GetContext().NeedRunAgain() && !m_ShutdownFlag);
             } NCBI_CATCH_ALL_X(58, "CWorkerNodeIdleThread::Main: Idle Task failed");
-            //if (m_ExclusiveMode)
-            //    m_WorkerNode.PutOnHold(false);
         }
     }
     return 0;
@@ -409,8 +343,6 @@ CGridWorkerApp_Impl::~CGridWorkerApp_Impl()
 
 void CGridWorkerApp_Impl::Init()
 {
-    //    SetDiagPostLevel(eDiag_Info);
-    //    SetDiagPostFlag(eDPF_DateTime);
     SetDiagPostFlag(eDPF_PreMergeLines);
     SetDiagPostFlag(eDPF_MergeLines);
 
@@ -439,8 +371,7 @@ int CGridWorkerApp_Impl::Run()
     LOG_POST_X(50, GetJobFactory().GetJobVersion() << WN_BUILD_DATE);
 
     const IRegistry& reg = m_App.GetConfig();
-    //unsigned int udp_port =
-    //    reg.GetInt(kServerSec, "notify_udp_port", 0/*9111*/,0,IRegistry::eReturn);
+
     unsigned int max_threads = 1;
     unsigned int init_threads = 1;
     if (!m_SingleThreadForced) {
@@ -494,11 +425,6 @@ int CGridWorkerApp_Impl::Run()
         infinit_loop_time = reg.GetInt(kServerSec,"infinite_loop_time",0,0,IRegistry::eReturn);
     else
         infinit_loop_time = reg.GetInt(kServerSec,"infinit_loop_time",0,0,IRegistry::eReturn);
-
-    //bool idle_exclusive =
-    //    reg.GetBool(kServerSec, "idle_exclusive", true, 0,
-    //                CNcbiRegistry::eReturn);
-
 
     bool reuse_job_object =
         reg.GetBool(kServerSec, "reuse_job_object", false, 0,
@@ -600,7 +526,6 @@ int CGridWorkerApp_Impl::Run()
     if (task || auto_shutdown > 0 ) {
         m_IdleThread.Reset(new CWorkerNodeIdleThread(task, *m_WorkerNode,
                                                      task ? idle_run_delay : auto_shutdown,
-                                                     //idle_exclusive,
                                                      auto_shutdown));
         m_IdleThread->Run();
         AttachJobWatcher(*(new CIdleWatcher(*m_IdleThread)), eTakeOwnership);
@@ -609,14 +534,11 @@ int CGridWorkerApp_Impl::Run()
     {{
     CRef<CGridControlThread> control_thread(new CGridControlThread(start_port, end_port, *m_WorkerNode));
 
-    //CRef<CGridWorkerNodeThread> worker_thread(
-    //                            new CGridWorkerNodeThread(*m_WorkerNode));
-
     control_thread->Prepare();
     m_WorkerNode->SetListeningPort(control_thread->GetControlPort());
 
     control_thread->Run();
-    //worker_thread->Run();
+
     if (CGridGlobals::GetInstance().
         GetShutdownLevel() == CNetScheduleAdmin::eNoShutdown) {
         LOG_POST_X(54, "\n=================== NEW RUN : "
@@ -641,7 +563,7 @@ int CGridWorkerApp_Impl::Run()
         LOG_POST_X(56, string(CNcbiOstrstreamToString(os)));
     }
     control_thread->Join();
-    //    worker_thread->Join();
+
     if (m_IdleThread) {
         if (!m_IdleThread->IsShutdownRequested()) {
             LOG_POST_X(57, CTime(CTime::eCurrent).AsString() << " Stopping Idle thread...");
@@ -652,8 +574,7 @@ int CGridWorkerApp_Impl::Run()
     }}
 
     m_WorkerNode.reset(0);
-    // give sometime the thread to shutdown
-    //SleepMilliSec(500);
+
     return 0;
 }
 
