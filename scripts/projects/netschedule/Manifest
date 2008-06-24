@@ -32,5 +32,5 @@ Linux64 : Bdb4520 : GCC.sh 4.0.1 --with-debug    --with-mt --with-flat-makefile 
 Win32   : Bdb4520 : msvc710_prj  static  32  DebugDLL
 Win32   : Bdb4520 : msvc710_prj  static  32  ReleaseDLL
 Win32   : Bdb4520 : msvc710_prj  dll     32  ReleaseDLL
-Win64   : Bdb4520 : msvc800_prj  static  64  ReleaseDLL
+# Win64   : Bdb4520 : msvc800_prj  static  64  ReleaseDLL
 Win64   : Bdb4520 : msvc800_prj  dll     64  ReleaseDLL
