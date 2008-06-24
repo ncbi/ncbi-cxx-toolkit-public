@@ -39,7 +39,7 @@
 
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/netschedule_client.hpp>
-#include <connect/services/grid_worker_app_impl.hpp>
+#include <connect/services/grid_worker_app.hpp>
 #include <connect/services/grid_debug_context.hpp>
 #include <connect/services/grid_control_thread.hpp>
 #include <connect/services/grid_globals.hpp>
@@ -390,15 +390,17 @@ CGridWorkerApp_Impl::CGridWorkerApp_Impl(
                                CNcbiApplication&          app,
                                IWorkerNodeJobFactory*     job_factory,
                                IBlobStorageFactory*       storage_factory,
-                               INetScheduleClientFactory* client_factory)
-: m_JobFactory(job_factory), m_StorageFactory(storage_factory),
-  m_ClientFactory(client_factory),
-  m_App(app), m_SingleThreadForced(false)
+                               INetScheduleClientFactory* client_factory) :
+    m_JobFactory(job_factory),
+    m_StorageFactory(storage_factory),
+    m_ClientFactory(client_factory),
+    m_Listener(new CGridWorkerNodeApp_Listener()),
+    m_App(app),
+    m_SingleThreadForced(false)
 {
     if (!m_JobFactory.get())
         NCBI_THROW(CGridWorkerAppException,
                  eJobFactoryIsNotSet, "The JobFactory is not set.");
-
 }
 
 CGridWorkerApp_Impl::~CGridWorkerApp_Impl()
@@ -628,7 +630,11 @@ int CGridWorkerApp_Impl::Run()
                    << "Queue name: " << m_WorkerNode->GetQueueName() << "\n"
                    << "Maximum job threads: " << max_threads << "\n");
 
+        m_Listener->OnGridWorkerStart();
+
         m_WorkerNode->Run();
+
+        m_Listener->OnGridWorkerStop();
 
         LOG_POST_X(55, CTime(CTime::eCurrent).AsString() << " Stopping Control thread...");
         control_thread->Stop();
@@ -667,5 +673,10 @@ void CGridWorkerApp_Impl::AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher,
         m_JobWatchers.reset(new CWorkerNodeJobWatchers);
     m_JobWatchers->AttachJobWatcher(job_watcher, owner);
 };
+
+void CGridWorkerApp_Impl::SetListener(IGridWorkerNodeApp_Listener* listener)
+{
+    m_Listener.reset(listener ? listener : new CGridWorkerNodeApp_Listener());
+}
 
 END_NCBI_SCOPE

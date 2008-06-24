@@ -54,6 +54,8 @@ BEGIN_NCBI_SCOPE
 
 class CWorkerNodeJobWatchers;
 class CWorkerNodeIdleThread;
+class IGridWorkerNodeApp_Listener;
+
 /// Main Worker Node application
 ///
 /// @note
@@ -80,6 +82,7 @@ public:
     void AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher,
                           EOwnership owner = eNoOwnership);
 
+    void SetListener(IGridWorkerNodeApp_Listener* listener);
 
     IWorkerNodeJobFactory&      GetJobFactory() { return *m_JobFactory; }
     IBlobStorageFactory& GetStorageFactory()    { return *m_StorageFactory; }
@@ -97,6 +100,8 @@ private:
 
     CRef<CWorkerNodeIdleThread>  m_IdleThread;
 
+    auto_ptr<IGridWorkerNodeApp_Listener> m_Listener;
+
     CNcbiApplication& m_App;
     bool m_SingleThreadForced;
 
@@ -105,7 +110,6 @@ private:
     CGridWorkerApp_Impl(const CGridWorkerApp_Impl&);
     CGridWorkerApp_Impl& operator=(const CGridWorkerApp_Impl&);
 };
-
 
 class NCBI_XCONNECT_EXPORT CGridWorkerAppException : public CException
 {
