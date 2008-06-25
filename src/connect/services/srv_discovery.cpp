@@ -36,10 +36,40 @@
 #include <connect/services/srv_discovery.hpp>
 #include <connect/services/srv_connections_expt.hpp>
 
+#include <connect/ncbi_connutil.h>
+#include <connect/ncbi_service.h>
+
 #include <corelib/ncbi_config.hpp>
 
 BEGIN_NCBI_SCOPE
 
+void QueryLoadBalancer(
+    const std::string& service,
+    TDiscoveredServers& servers,
+    bool include_suppressed)
+{
+    SConnNetInfo* net_info =
+        ConnNetInfo_Create(service.c_str());
+
+    SERV_ITER srv_it = SERV_Open(service.c_str(),
+        include_suppressed ? fSERV_Any | fSERV_IncludeSuppressed : fSERV_Any,
+            0, net_info);
+
+    ConnNetInfo_Destroy(net_info);
+
+    if (srv_it == 0) {
+        NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
+            "Load balancer cannot find service name " + service + ".");
+    }
+
+    const SSERV_Info* sinfo;
+
+    while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0)
+        servers.push_back(TServerAddress(
+            CSocketAPI::ntoa(sinfo->host), sinfo->port));
+
+    SERV_Close(srv_it);
+}
 
 class CSimpleRebalanceStrategy : public IRebalanceStrategy
 {

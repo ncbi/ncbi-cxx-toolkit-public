@@ -48,10 +48,9 @@ BEGIN_NCBI_SCOPE
 /****************************************************************/
 
 static bool s_FallbackServer_Initialized = false;
-static CSafeStaticPtr<
-    auto_ptr<CNetServiceAPI_Base::TServerAddress> > s_FallbackServer;
+static CSafeStaticPtr<auto_ptr<TServerAddress> > s_FallbackServer;
 
-static CNetServiceAPI_Base::TServerAddress* s_GetFallbackServer()
+static TServerAddress* s_GetFallbackServer()
 {
     if (s_FallbackServer_Initialized)
         return s_FallbackServer->get();
@@ -61,8 +60,7 @@ static CNetServiceAPI_Base::TServerAddress* s_GetFallbackServer()
        if ( NStr::SplitInTwo(hostport, ":", host, sport) ) {
           unsigned int port = NStr::StringToInt(sport);
           host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
-          s_FallbackServer->reset(
-              new CNetServiceAPI_Base::TServerAddress(host, port));
+          s_FallbackServer->reset(new TServerAddress(host, port));
        }
     } catch (...) {
     }

@@ -36,9 +36,6 @@
 #include <connect/services/netservice_api_expt.hpp>
 #include <connect/services/netservice_params.hpp>
 
-#include <connect/ncbi_connutil.h>
-#include <connect/ncbi_service.h>
-
 #include <corelib/ncbi_system.hpp>
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Connection
@@ -368,29 +365,8 @@ void CNetServiceAPI_Base::DiscoverServers(TDiscoveredServers& servers)
         int try_count = 0;
         for (;;) {
             try {
-                SConnNetInfo* net_info =
-                    ConnNetInfo_Create(m_ServiceName.c_str());
-
-                SERV_ITER srv_it = SERV_Open(m_ServiceName.c_str(),
-                    m_DiscoverLowPriorityServers == eOn ?
-                        fSERV_Any | fSERV_IncludeSuppressed : fSERV_Any,
-                            0, net_info);
-
-                ConnNetInfo_Destroy(net_info);
-
-                if (srv_it == 0) {
-                    NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
-                        "Load balancer cannot find service name " +
-                            m_ServiceName + ".");
-                }
-
-                const SSERV_Info* sinfo;
-
-                while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0)
-                    m_Servers.push_back(TServerAddress(
-                        CSocketAPI::ntoa(sinfo->host), sinfo->port));
-
-                SERV_Close(srv_it);
+                QueryLoadBalancer(m_ServiceName, m_Servers,
+                    m_DiscoverLowPriorityServers == eOn);
                 break;
             } catch (CNetSrvConnException& ex) {
                 if (ex.GetErrCode() != CNetSrvConnException::eLBNameNotFound)

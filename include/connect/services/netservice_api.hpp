@@ -45,10 +45,8 @@ public:
     CNetServiceAPI_Base(const string& service_name, const string& client_name);
     virtual ~CNetServiceAPI_Base();
 
-    typedef pair<string, unsigned short> TServerAddress;
     typedef map<TServerAddress,
         CNetServerConnectionPool*> TServerAddressToConnectionPool;
-    typedef vector<TServerAddress> TDiscoveredServers;
 
     CNetServerConnection GetBest(const TServerAddress* backup = NULL,
         const string& hit = "");

@@ -38,6 +38,14 @@
 
 BEGIN_NCBI_SCOPE
 
+typedef std::pair<std::string, unsigned short> TServerAddress;
+typedef std::vector<TServerAddress> TDiscoveredServers;
+
+void QueryLoadBalancer(
+    const std::string& service,
+    TDiscoveredServers& servers,
+    bool include_suppressed);
+
 ///////////////////////////////////////////////////////////////////////////
 //
 class IRebalanceStrategy
