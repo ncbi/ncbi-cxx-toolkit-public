@@ -1269,13 +1269,14 @@ const char* CTar::x_ReadArchive(size_t& n)
             // Work around a bug in MIPSPro 7.3's streambuf::xsgetn()
             istream* is = dynamic_cast<istream*>(m_Stream);
             _ASSERT(is);
-            is->read(m_Buffer + nread, m_BufferSize - nread);
-            long xread = (long) is->gcount();
+            is->read(             m_Buffer     + nread,
+                     (streamsize)(m_BufferSize - nread));
+            streamsize xread = is->gcount();
             is->clear();
 #else
-            long xread =
-                (long) m_Stream->rdbuf()->sgetn(m_Buffer     + nread,
-                                                m_BufferSize - nread);
+            streamsize xread = m_Stream->rdbuf()
+                ->sgetn(             m_Buffer     + nread,
+                        (streamsize)(m_BufferSize - nread));
 #endif // NCBI_COMPILER_MIPSPRO
             if (xread <= 0) {
                 break;
@@ -1324,9 +1325,9 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
         if (m_BufferPos == m_BufferSize) {
             size_t nwritten = 0;
             do {
-                long xwritten =
-                    (long) m_Stream->rdbuf()->sputn(m_Buffer     + nwritten,
-                                                    m_BufferSize - nwritten);
+                streamsize xwritten = m_Stream->rdbuf()
+                    ->sputn(             m_Buffer     + nwritten,
+                            (streamsize)(m_BufferSize - nwritten));
                 if (xwritten <= 0) {
                     int x_errno = errno;
                     TAR_THROW(this, eWrite,
