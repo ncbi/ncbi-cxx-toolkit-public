@@ -76,8 +76,8 @@ CRef<CModification_info> CPepXML::ConvertModifications(CRef<CMSHits> msHits, CRe
         double mdiff = MSSCALE2DBL(Modset->GetModMass(num));
         char aa = pep[pos];
         double aaMass = aaMassMap.find(aa)->second;
-        double mass = aaMass - mdiff;
-        string sMass = NStr::DoubleToString(mass);
+        double mass = aaMass + mdiff;
+        string sMass = NStr::DoubleToString(mass, 6);
         string iMass = "[" + NStr::IntToString(static_cast<int>(mass)) + "]";
         
         modMap.insert(TAAModPair(pos,iMass));
