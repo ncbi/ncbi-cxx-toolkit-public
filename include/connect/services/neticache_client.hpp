@@ -56,11 +56,9 @@ BEGIN_NCBI_SCOPE
 ///
 /// @note This implementation is thread safe and syncronized
 ///
-class NCBI_NET_CACHE_EXPORT CNetICacheClient : public CNetCacheClientBase,
+class NCBI_NET_CACHE_EXPORT CNetICacheClient : public CNetServiceClient,
                                                public ICache
 {
-public:
-    typedef CNetCacheClientBase TParent;
 public:
     CNetICacheClient();
     CNetICacheClient(const string&  host,
@@ -74,10 +72,12 @@ public:
                              const string&  cache_name,
                              const string&  client_name);
 
-	virtual
+    virtual
     void ReturnSocket(CSocket* sock, const string& blob_comments);
 
+    /// Send session registration command
     void RegisterSession(unsigned pid);
+    /// Send session unregistration command
     void UnRegisterSession(unsigned pid);
 
     // ICache interface implementation

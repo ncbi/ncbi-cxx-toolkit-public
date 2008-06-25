@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 
 CNetICacheClient::CNetICacheClient()
-  : TParent("localhost", 9000, "netcache_client"),
+  : CNetServiceClient("localhost", 9000, "netcache_client"),
     m_CacheName("default_cache"),
     m_Throttler(5000, CTimeSpan(60,0))
 {
@@ -59,7 +59,7 @@ CNetICacheClient::CNetICacheClient(const string&  host,
                                    unsigned short port,
                                    const string&  cache_name,
                                    const string&  client_name)
-  : TParent(host, port, client_name),
+  : CNetServiceClient(host, port, client_name),
     m_CacheName(cache_name),
     m_Throttler(5000, CTimeSpan(60,0))
 {
@@ -241,7 +241,27 @@ void CNetICacheClient::RegisterSession(unsigned pid)
         }
         WriteStr(auth.c_str(), auth.length() + 1);
     }
-    TParent::RegisterSession(pid);
+
+    _ASSERT(m_Sock);
+
+    char hostname[256];
+    string host;
+    int status = SOCK_gethostname(hostname, sizeof(hostname));
+    if (status != 0) {
+        NCBI_THROW(CNetServiceException, eCommunicationError,
+                   "Cannot get host name");
+    }
+    string cmd = "SMR ";
+    cmd.append(hostname);
+    cmd.push_back(' ');
+    cmd.append(NStr::UIntToString(pid));
+    WriteStr(cmd.c_str(), cmd.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError,
+                   "Communication error");
+    }
+    CheckOK(&m_Tmp);
 }
 
 
@@ -259,7 +279,27 @@ void CNetICacheClient::UnRegisterSession(unsigned pid)
         }
         WriteStr(auth.c_str(), auth.length() + 1);
     }
-    TParent::UnRegisterSession(pid);
+
+    _ASSERT(m_Sock);
+
+    char hostname[256];
+    string host;
+    int status = SOCK_gethostname(hostname, sizeof(hostname));
+    if (status != 0) {
+        NCBI_THROW(CNetServiceException, eCommunicationError,
+                   "Cannot get host name");
+    }
+    string cmd = "SMU ";
+    cmd.append(hostname);
+    cmd.push_back(' ');
+    cmd.append(NStr::UIntToString(pid));
+    WriteStr(cmd.c_str(), cmd.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError,
+                   "Communication error");
+    }
+    CheckOK(&m_Tmp);
 }
 
 

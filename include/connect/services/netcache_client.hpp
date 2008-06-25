@@ -53,28 +53,6 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
-class NCBI_XCONNECT_EXPORT CNetCacheClientBase : public CNetServiceClient
-{
-public:
-    CNetCacheClientBase(const string& client_name);
-
-    CNetCacheClientBase(const string&  host,
-                        unsigned short port,
-                        const string&  client_name);
-
-protected:
-    /// Send session registration command
-    void RegisterSession(unsigned pid);
-    /// Send session unregistration command
-    void UnRegisterSession(unsigned pid);
-    bool CheckAlive();
-
-    virtual
-    void CheckOK(string* str) const;
-    virtual
-    void TrimPrefix(string* str) const;
-};
-
 /// Client API for NetCache server
 ///
 /// After any Put, Get transactions connection socket
