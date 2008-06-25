@@ -34,7 +34,7 @@
  *
  */
 
-#include <connect/services/srv_connections.hpp>
+#include <connect/connect_export.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -52,7 +52,7 @@ class IRebalanceStrategy
 {
 public:
     virtual bool NeedRebalance() = 0;
-    virtual void OnResourceRequested(const CNetServerConnectionPool&) = 0;
+    virtual void OnResourceRequested() = 0;
     virtual void Reset() = 0;
 
     virtual ~IRebalanceStrategy() {}

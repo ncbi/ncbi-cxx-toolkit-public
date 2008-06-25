@@ -38,6 +38,7 @@
 
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_service.h>
+#include <connect/ncbi_socket.hpp>
 
 #include <corelib/ncbi_config.hpp>
 
@@ -90,7 +91,7 @@ public:
         }
         return false;
     }
-    virtual void OnResourceRequested( const CNetServerConnectionPool& ) {
+    virtual void OnResourceRequested() {
         CFastMutexGuard g(m_Mutex);
         ++m_RequestCounter;
     }

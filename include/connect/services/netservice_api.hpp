@@ -34,6 +34,7 @@
  */
 
 #include <connect/services/srv_discovery.hpp>
+#include <connect/services/srv_connections.hpp>
 
 BEGIN_NCBI_SCOPE
 

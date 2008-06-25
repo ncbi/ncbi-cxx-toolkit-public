@@ -352,7 +352,7 @@ CNetServerConnection
     }
     g.Release();
     if (m_RebalanceStrategy)
-        m_RebalanceStrategy->OnResourceRequested(*pool);
+        m_RebalanceStrategy->OnResourceRequested();
     return pool->GetConnection();
 }
 
