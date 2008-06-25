@@ -9346,8 +9346,8 @@ CDBAPIUnitTest::Test_Procedure3(void)
 
             int result_num = 0;
 
-            while(auto_stmt->HasMoreResults()) {
-                if( auto_stmt->HasRows() ) {
+            while (auto_stmt->HasMoreResults()) {
+                if ( auto_stmt->HasRows() ) {
                     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                     while (rs->Next()) {
@@ -9372,8 +9372,8 @@ CDBAPIUnitTest::Test_Procedure3(void)
             int result_num = 0;
 
             auto_stmt->SendSql("exec sp_helpdb 'master'");
-            while(auto_stmt->HasMoreResults()) {
-                if( auto_stmt->HasRows() ) {
+            while (auto_stmt->HasMoreResults()) {
+                if ( auto_stmt->HasRows() ) {
                     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                     while (rs->Next()) {
@@ -9389,6 +9389,31 @@ CDBAPIUnitTest::Test_Procedure3(void)
             } else {
                 BOOST_CHECK_EQUAL(result_num, 3);
             }
+        }
+
+        // Multiple results plus column names with spaces.
+        if (GetArgs().GetServerType() == CDBConnParams::eMSSqlServer) {
+
+            auto_ptr<ICallableStatement> auto_stmt(
+                    GetConnection().GetCallableStatement("sp_spaceused")
+                    );
+
+            auto_stmt->Execute();
+
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+
+            string unallocSpace;
+
+            if ( auto_stmt->HasRows() ) {
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                while (rs->Next()) {
+                    unallocSpace = rs->GetVariant("unallocated space").GetString();
+                }
+            }
+
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasMoreResults());
         }
     }
     catch(const CException& ex) {
