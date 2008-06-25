@@ -166,7 +166,7 @@ public:
     /// Position type.
     enum EPos {
         ePos_Header,
-        ePos_Data,
+        ePos_Data
     };
 
     // Constructor
