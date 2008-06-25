@@ -1467,3 +1467,86 @@ BOOST_AUTO_TEST_CASE(s_StringUTF8)
     OK;
 }
 
+BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
+{
+    const char* szEmpty     = "";
+    const char* szSpaces    = "  \t\n  \t\n  \t\n";
+    const char* szTrunc     = "some long\tmultiline\nstring";
+    const char* szBegSpace  = "  \t\nsome long\tmultiline\nstring";
+    const char* szEndSpace  = "some long\tmultiline\nstring  \t\n";
+    const char* szBothSpace = "  \t\nsome long\tmultiline\nstring  \t\n";
+
+    const string sEmpty     = szEmpty;
+    const string sSpaces    = szSpaces;
+    const string sTrunc     = szTrunc;
+    const string sBegSpace  = szBegSpace;
+    const string sEndSpace  = szEndSpace;
+    const string sBothSpace = szBothSpace;
+
+    const CTempString tsEmpty    (szEmpty    );
+    const CTempString tsSpaces   (szSpaces   );
+    const CTempString tsTrunc    (szTrunc    );
+    const CTempString tsBegSpace (szBegSpace );
+    const CTempString tsEndSpace (szEndSpace );
+    const CTempString tsBothSpace(szBothSpace);
+
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szEmpty,     NStr::eTrunc_Begin), tsEmpty    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szEmpty,     NStr::eTrunc_End  ), tsEmpty    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szEmpty,     NStr::eTrunc_Both ), tsEmpty    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsEmpty,     NStr::eTrunc_Begin), tsEmpty    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsEmpty,     NStr::eTrunc_End  ), tsEmpty    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsEmpty,     NStr::eTrunc_Both ), tsEmpty    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEmpty,      NStr::eTrunc_Begin), sEmpty     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEmpty,      NStr::eTrunc_End  ), sEmpty     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEmpty,      NStr::eTrunc_Both ), sEmpty     );
+
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szSpaces,    NStr::eTrunc_Begin), tsEmpty    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szSpaces,    NStr::eTrunc_End  ), tsEmpty    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szSpaces,    NStr::eTrunc_Both ), tsEmpty    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsSpaces,    NStr::eTrunc_Begin), tsEmpty    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsSpaces,    NStr::eTrunc_End  ), tsEmpty    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsSpaces,    NStr::eTrunc_Both ), tsEmpty    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sSpaces,     NStr::eTrunc_Begin), sEmpty     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sSpaces,     NStr::eTrunc_End  ), sEmpty     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sSpaces,     NStr::eTrunc_Both ), sEmpty     );
+
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szTrunc,     NStr::eTrunc_Begin), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szTrunc,     NStr::eTrunc_End  ), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szTrunc,     NStr::eTrunc_Both ), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsTrunc,     NStr::eTrunc_Begin), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsTrunc,     NStr::eTrunc_End  ), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsTrunc,     NStr::eTrunc_Both ), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sTrunc,      NStr::eTrunc_Begin), sTrunc     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sTrunc,      NStr::eTrunc_End  ), sTrunc     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sTrunc,      NStr::eTrunc_Both ), sTrunc     );
+
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szBegSpace,  NStr::eTrunc_Begin), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szBegSpace,  NStr::eTrunc_End  ), tsBegSpace );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szBegSpace,  NStr::eTrunc_Both ), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsBegSpace,  NStr::eTrunc_Begin), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsBegSpace,  NStr::eTrunc_End  ), tsBegSpace );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsBegSpace,  NStr::eTrunc_Both ), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBegSpace,   NStr::eTrunc_Begin), sTrunc     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBegSpace,   NStr::eTrunc_End  ), sBegSpace  );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBegSpace,   NStr::eTrunc_Both ), sTrunc     );
+
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szEndSpace,  NStr::eTrunc_Begin), tsEndSpace );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szEndSpace,  NStr::eTrunc_End  ), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szEndSpace,  NStr::eTrunc_Both ), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsEndSpace,  NStr::eTrunc_Begin), tsEndSpace );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsEndSpace,  NStr::eTrunc_End  ), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsEndSpace,  NStr::eTrunc_Both ), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEndSpace,   NStr::eTrunc_Begin), sEndSpace  );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEndSpace,   NStr::eTrunc_End  ), sTrunc     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEndSpace,   NStr::eTrunc_Both ), sTrunc     );
+
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szBothSpace, NStr::eTrunc_Begin), tsEndSpace );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szBothSpace, NStr::eTrunc_End  ), tsBegSpace );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(szBothSpace, NStr::eTrunc_Both ), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsBothSpace, NStr::eTrunc_Begin), tsEndSpace );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsBothSpace, NStr::eTrunc_End  ), tsBegSpace );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(tsBothSpace, NStr::eTrunc_Both ), tsTrunc    );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,  NStr::eTrunc_Begin), sEndSpace  );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,  NStr::eTrunc_End  ), sBegSpace  );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,  NStr::eTrunc_Both ), sTrunc     );
+}

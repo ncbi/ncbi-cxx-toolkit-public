@@ -1381,7 +1381,10 @@ TStr s_TruncateSpaces(const TStr& str, NStr::ETrunc where,
     SIZE_TYPE end = length;
     if ( where == NStr::eTrunc_End  ||  where == NStr::eTrunc_Both ) {
         _ASSERT(end > beg);
-        for (--end;  end > beg  &&  isspace((unsigned char)str[end]);  --end) {
+        for (--end;  isspace((unsigned char)str[end]);  --end) {
+            if (end == beg) {
+                return empty_str;
+            }
         }
         _ASSERT(end >= beg && !isspace((unsigned char) str[end]));
         ++end;
