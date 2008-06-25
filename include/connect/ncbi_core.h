@@ -156,6 +156,13 @@ extern NCBI_XCONNECT_EXPORT const char* IO_StatusStr(EIO_Status status);
 
 
 /** Lock handle -- keeps all data needed for the locking and for the cleanup.
+ * The following are the minimal requirements for the lock:
+ * - if lock for read is available, then the lock must allow one nested lock
+ * for read when it has been already locked for write (naturally, by the
+ * same thread);
+ * - if lock for read is not available (i.e. the read lock is implemented
+ * as a write lock), the lock must allow recursive locking (by the same
+ * thread) of the depth of 2.
  */
 struct MT_LOCK_tag;
 typedef struct MT_LOCK_tag* MT_LOCK;
@@ -176,7 +183,7 @@ typedef enum {
 } EMT_Lock;
 
 
-/** MT locking callback (operates like a mutex or RW-lock).
+/** MT locking callback (operates like a [recursive] mutex or RW-lock).
  * @param user_data
  *  See "user_data" in MT_LOCK_Create()
  * @param how
