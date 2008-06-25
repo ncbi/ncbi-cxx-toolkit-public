@@ -996,8 +996,10 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
     if ( IsEmpty() ) {
         return kEmptyStr;
     }
+#if !defined(TIMEZONE_IS_UNDEFINED)
     // MT-Safe protect
     CFastMutexGuard LOCK(s_TimeMutex);
+#endif
 
     const CTime* t = this;
     CTime* t_out = 0;
