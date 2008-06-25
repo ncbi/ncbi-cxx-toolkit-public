@@ -1532,6 +1532,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                              "Bad checksum", h, fmt);
             }
         }
+        m_StreamPos += kBlockSize;  // NB: nread
         return eZeroBlock;
     }
     int checksum = int(value);
@@ -2052,6 +2053,7 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
 
 void CTar::x_Backspace(EAction action, size_t blocks)
 {
+    _ASSERT((Uint8) SIZE_OF(blocks) <= m_StreamPos);
     m_Current.m_Name.erase();
     if (!blocks  ||  (action != eAppend  &&  action != eUpdate)) {
         return;
@@ -2499,7 +2501,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
                                   "Unexpected EOF");
                     }
                     // Write file to disk
-                    if (!ofs.write(xbuf, nread)) {
+                    if (!ofs.write(xbuf, (streamsize) nread)) {
                         int x_errno = errno;
                         TAR_THROW(this, eWrite,
                                   "Error writing file '" +dst->GetPath()+ '\''
@@ -2968,7 +2970,7 @@ void CTar::x_AppendFile(const string& file)
             avail = (size_t) size;
         }
         // Read file
-        if (!ifs.read(m_Buffer + m_BufferPos, avail)) {
+        if (!ifs.read(m_Buffer + m_BufferPos, (streamsize) avail)) {
             int x_errno = errno;
             TAR_THROW(this, eRead,
                       "Error reading file '" +file+ '\''+ s_OSReason(x_errno));
