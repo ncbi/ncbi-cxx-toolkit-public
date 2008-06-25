@@ -308,8 +308,10 @@
         // Copy project template from CVS/SVN
         function CopyProjectTemplate(oShell, oTree, oTask)
         {
-            var src = "/src/" + oTask.ProjectTemplate + "/*.*";
-            GetFileFromTree(oShell, oTree, oTask, src, oTree.SrcProjectBranch)
+//            var src = "/src/" + oTask.ProjectTemplate + "/*.*";
+//            GetFileFromTree(oShell, oTree, oTask, src, oTree.SrcProjectBranch)
+            GetSubtreeFromTree(oShell, oTree, oTask, "src/" + oTask.ProjectTemplate, oTree.SrcProjectBranch);
+
             var cmd = "if exist " + oTree.SrcProjectBranch + "\\*.files" +
                           " del " + oTree.SrcProjectBranch + "\\*.files";
             execute(oShell,cmd);
@@ -323,6 +325,7 @@
             var filename = oTree.SrcProjectBranch + "\\Makefile.in";
             var modelname = filename + ".old";
             var samplename = "";
+            var sourcename = "";
 
             // Makefile.in
             VerboseEcho("Modifying      " + filename);
@@ -332,8 +335,18 @@
             while( !old_file.AtEndOfStream ) {
                 var old_line = old_file.ReadLine();
                 if (old_line.indexOf("APP_PROJ") == 0) {
-                    new_file.WriteLine("APP_PROJ = " + oTask.ProjectName);
-//                    new_file.WriteLine("REQUIRES = CXX_Toolkit");
+//                    new_file.WriteLine("APP_PROJ = " + oTask.ProjectName);
+                    var subproj = old_line.split(" ");
+                    var new_line = "";
+                    for (var i = 0; i < subproj.length; i++) {
+                        if (i == 2) {
+                            sourcename = subproj[2];
+                            new_line += oTask.ProjectName + " ";
+                        } else {
+                            new_line += subproj[i] + " ";
+                        }
+                    }
+                    new_file.WriteLine(new_line);
                 } else {
                     new_file.WriteLine(old_line);
                 }
@@ -342,45 +355,49 @@
             new_file.Close();
             oFso.DeleteFile(modelname, true);
             
-            // Makefile.*.app
-            // lookup file name
-            var type = oTask.ProjectType;
-            type = type.replace(/[/]/g, ".");
-            type = oFso.GetExtensionName(type);
-            if (type == "") {
-                type = "basic";
-            }
-            var src_folder = oFso.GetFolder(oTree.SrcProjectBranch);
-            var src_folder_contents = new Enumerator(src_folder.files);
-            modelname = "";
-            for( ; !src_folder_contents.atEnd() && modelname == ""; src_folder_contents.moveNext()) {
-                var src_file = src_folder_contents.item();
-                if (oFso.GetExtensionName(src_file) == "app") {
-                    var t1 = oFso.GetFileName(src_file).replace(/_/g, ".");
-                    var t2 = oFso.GetBaseName(t1);
-                    while ( t1 != t2 ) {
-                        if ( oFso.GetExtensionName( t1 ) == type) {
+            modelname = oTree.SrcProjectBranch + "\\" + "Makefile." + sourcename + ".app";
+            if (sourcename == "" || !oFso.FileExists(modelname)) {
+                // Makefile.*.app
+                // lookup file name
+                var type = oTask.ProjectType;
+                type = type.replace(/[/]/g, ".");
+                type = oFso.GetExtensionName(type);
+                if (type == "") {
+                    type = "basic";
+                }
+                var src_folder = oFso.GetFolder(oTree.SrcProjectBranch);
+                var src_folder_contents = new Enumerator(src_folder.files);
+                modelname = "";
+                for( ; !src_folder_contents.atEnd() && modelname == ""; src_folder_contents.moveNext()) {
+                    var src_file = src_folder_contents.item();
+                    if (oFso.GetExtensionName(src_file) == "app") {
+                        var t1 = oFso.GetFileName(src_file).replace(/_/g, ".");
+                        var t2 = oFso.GetBaseName(t1);
+                        while ( t1 != t2 ) {
+                            if ( oFso.GetExtensionName( t1 ) == type) {
+                                modelname = src_file;
+                                break;
+                            }
+                            t1 = t2;
+                            t2 = oFso.GetBaseName(t1);
+                        }
+                    }
+                }
+                if ( modelname == "") {
+                    src_folder_contents.moveFirst();
+                    for( ; !src_folder_contents.atEnd(); src_folder_contents.moveNext()) {
+                        var src_file = src_folder_contents.item();
+                        if (oFso.GetExtensionName(src_file) == "app") {
                             modelname = src_file;
                             break;
                         }
-                        t1 = t2;
-                        t2 = oFso.GetBaseName(t1);
                     }
                 }
             }
-            if ( modelname == "") {
-                src_folder_contents.moveFirst();
-                for( ; !src_folder_contents.atEnd(); src_folder_contents.moveNext()) {
-                    var src_file = src_folder_contents.item();
-                    if (oFso.GetExtensionName(src_file) == "app") {
-                        modelname = src_file;
-                        break;
-                    }
-                }
-            }
+
             samplename = oFso.GetExtensionName( oFso.GetBaseName(modelname) );
             filename = oTree.SrcProjectBranch + "\\Makefile." + oTask.ProjectName + ".app";
-            VerboseEcho("Converting model file " + modelname + " to " + filename);
+            VerboseEcho("Converting model file " + modelname + " into " + filename);
             // open for reading
             var old_makefile = oFso.OpenTextFile(modelname, 1);
             // Create new makefile with new project name
@@ -388,10 +405,44 @@
             while( !old_makefile.AtEndOfStream ) {
                 var old_line = old_makefile.ReadLine();
                 if (old_line.indexOf("APP") == 0) {
-                    new_makefile.WriteLine("APP = " + oTask.ProjectName);
-                } else {
+                    if (sourcename != "") {
+                        if (old_line.indexOf(sourcename) >= 0) {
+                            var tt = old_line.replace(sourcename,oTask.ProjectName);
+                            old_line = tt;
+                        }
+                        new_makefile.WriteLine(old_line);
+                    } else {
+                        new_makefile.WriteLine("APP = " + oTask.ProjectName);
+                    }
+                }
+/*
+// rename source file ?
+                else if (old_line.indexOf("SRC") == 0) {
+                    var subproj = old_line.split(" ");
+                    var new_line = "";
+                    for (var i = 0; i < subproj.length; i++) {
+                        if (i == 2) {
+                            filename = oTree.SrcProjectBranch + "\\" + subproj[2] + ".cpp";
+                            if (oFso.FileExists(filename)) {
+                                oFso.MoveFile(filename, oTree.SrcProjectBranch + "\\" + oTask.ProjectName + ".cpp");
+                                new_line += oTask.ProjectName + " ";
+                            } else {
+                                new_line += subproj[i] + " ";
+                            }
+                        } else {
+                            new_line += subproj[i] + " ";
+                        }
+                    }
+                    new_makefile.WriteLine(new_line);
+                }
+*/
+                else {
                     if (old_line.indexOf(oTask.ProjectTemplate) >= 0) {
                         var tt = old_line.replace(oTask.ProjectTemplate,oTask.ProjectName);
+                        old_line = tt;
+                    }
+                    if (old_line.indexOf("#") == 0 && old_line.indexOf(sourcename) > 0) {
+                        var tt = old_line.replace(sourcename,oTask.ProjectName);
                         old_line = tt;
                     }
                     new_makefile.WriteLine(old_line);
@@ -401,6 +452,12 @@
             new_makefile.Close();
             oFso.DeleteFile(modelname, true);
 
+// MSVC customizization
+            modelname += ".msvc";
+            filename += ".msvc";
+            if (oFso.FileExists(modelname)) {
+                oFso.MoveFile(modelname, filename);
+            }
         }
         // Run project tree builder
         function RunPtb(oShell, oTree, oTask)
