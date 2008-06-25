@@ -36,6 +36,8 @@
 
 #include <connect/connect_export.h>
 
+#include <corelib/ncbimtx.hpp>
+
 BEGIN_NCBI_SCOPE
 
 typedef std::pair<std::string, unsigned short> TServerAddress;
