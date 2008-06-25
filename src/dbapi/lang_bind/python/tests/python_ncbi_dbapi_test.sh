@@ -2,7 +2,7 @@
 # $Id$
 
 # Declare drivers and servers
-driver_list="ctlib dblib ftds odbc odbcw ftds_odbc ftds8" # mysql
+driver_list="ctlib dblib ftds odbc ftds_odbc ftds8" # mysql
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
 	server_list="MSDEV1 SCHUMANN"
