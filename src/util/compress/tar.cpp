@@ -57,6 +57,12 @@
 
 #if   defined(NCBI_OS_UNIX)
 #  include <unistd.h>
+#  ifdef NCBI_OS_IRIX
+#    include <sys/mkdev.h>
+#    if !defined(major)  ||  !defined(minor)  ||  !defined(makedev)
+#      error "Device macros undefined in this UNIX build!"
+#    endif
+#  endif
 #elif defined(NCBI_OS_MSWIN)
 #  include <io.h>
 typedef unsigned int mode_t;
