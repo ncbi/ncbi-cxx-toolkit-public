@@ -79,10 +79,11 @@ extern "C" {
 
 extern void CORE_SetLOCK(MT_LOCK lk)
 {
-    if (g_CORE_MT_Lock  &&  lk != g_CORE_MT_Lock) {
-        MT_LOCK_Delete(g_CORE_MT_Lock);
-    }
+    MT_LOCK old_lk = g_CORE_MT_Lock;
     g_CORE_MT_Lock = lk;
+    if (old_lk  &&  old_lk != lk) {
+        MT_LOCK_Delete(old_lk);
+    }
 }
 
 
@@ -100,12 +101,14 @@ extern MT_LOCK CORE_GetLOCK(void)
 
 extern void CORE_SetLOG(LOG lg)
 {
+    LOG old_lg;
     CORE_LOCK_WRITE;
-    if (g_CORE_Log  &&  lg != g_CORE_Log) {
-        LOG_Delete(g_CORE_Log);
-    }
+    old_lg = g_CORE_Log;
     g_CORE_Log = lg;
     CORE_UNLOCK;
+    if (old_lg  &&  old_lg != lg) {
+        LOG_Delete(old_lg);
+    }
 }
 
 
@@ -584,12 +587,14 @@ extern const char* MessagePlusErrno
 
 extern void CORE_SetREG(REG rg)
 {
+    REG old_rg;
     CORE_LOCK_WRITE;
-    if (g_CORE_Registry  &&  rg != g_CORE_Registry) {
-        REG_Delete(g_CORE_Registry);
-    }
+    old_rg = g_CORE_Registry;
     g_CORE_Registry = rg;
     CORE_UNLOCK;
+    if (old_rg  &&  old_rg != rg) {
+        REG_Delete(old_rg);
+    }
 }
 
 
