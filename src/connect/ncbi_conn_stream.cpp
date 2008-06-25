@@ -278,8 +278,10 @@ static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
     } else if (!timeout)
         net_info->timeout = 0;
     CONNECTOR c = SERVICE_CreateConnectorEx(service, types, net_info, params);
-    if (!c)
-        ERR_POST_X(1, Error << "Cannot connect to service \"" << service << '\"');
+    if (!c) {
+        ERR_POST_X(1,
+                   Error << "Cannot connect to service \"" << service << '\"');
+    }
     ConnNetInfo_Destroy(net_info);
     return c;
 }
