@@ -125,11 +125,25 @@ string CDBParamVariant::MakeName(const char* name, CDBParamVariant::ENameFormat&
         char ch = *c;
         if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
             if (begin_str == NULL) {
-                // Remove whitespaces ...
+                // Remove whitespace ...
                 continue;
             } else {
-                // Remove trailing whaitspaces ...
-                break;
+                // Look forward for non-space characters.
+                bool space_chars_only = true;
+                for (const char* tc = c; tc != NULL && *tc != '\0'; ++tc) {
+                    char tch = *tc;
+                    if (tch == ' ' || tch == '\t' || tch == '\n' || tch == '\r') {
+                        continue;
+                    } else {
+                        space_chars_only = false;
+                        break;
+                    }
+                }
+
+                if (space_chars_only) {
+                    // Remove trailing whitespace ...
+                    break;
+                }
             }
         }
         // Check for leading symbol ...
@@ -188,8 +202,22 @@ string CDBParamVariant::MakePlainName(const char* name)
                 // Remove whitespaces ...
                 continue;
             } else {
-                // Remove trailing whaitspaces ...
-                break;
+                // Look forward for non-space characters.
+                bool space_chars_only = true;
+                for (const char* tc = c; tc != NULL && *tc != '\0'; ++tc) {
+                    char tch = *tc;
+                    if (tch == ' ' || tch == '\t' || tch == '\n' || tch == '\r') {
+                        continue;
+                    } else {
+                        space_chars_only = false;
+                        break;
+                    }
+                }
+
+                if (space_chars_only) {
+                    // Remove trailing whitespace ...
+                    break;
+                }
             }
         }
         // Check for leading symbol ...
