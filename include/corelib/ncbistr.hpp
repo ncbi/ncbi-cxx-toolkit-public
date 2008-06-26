@@ -1662,6 +1662,9 @@ public:
     /// Replace relevant characters by predefined entities.
     static string XmlEncode(const string& str);
 
+    /// Encode a string for JSON.
+    static string JsonEncode(const string& str);
+
     /// URL-encode flags
     enum EUrlEncode {
         eUrlEnc_SkipMarkChars,    ///< Do not convert chars like '!', '(' etc.

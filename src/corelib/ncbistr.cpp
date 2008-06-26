@@ -1966,6 +1966,38 @@ string NStr::XmlEncode(const string& str)
     return result;
 }
 
+string NStr::JsonEncode(const string& str)
+// http://www.json.org/
+{
+    string result;
+    SIZE_TYPE i;
+    for (i = 0;  i < str.size();  i++) {
+        char c = str[i];
+        switch ( c ) {
+        case '"':
+            result.append("\\\"");
+            break;
+        case '\\':
+            result.append("\\\\");
+            break;
+        default:
+            if ((unsigned int)c < 0x20 || (unsigned int)c >= 0x80) {
+                const char* charmap = "0123456789abcdef";
+                result.append("\\u00");
+                Uint1 ch = c;
+                unsigned hi = ch >> 4;
+                unsigned lo = ch & 0xF;
+                result.append(1, charmap[hi]);
+                result.append(1, charmap[lo]);
+            } else {
+                result.append(1, c);
+            }
+            break;
+        }
+    }
+    return result;
+}
+
 
 string NStr::ParseEscapes(const string& str)
 {
