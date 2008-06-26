@@ -202,7 +202,7 @@ static void s_AgpWrite(CNcbiOstream& os,
             {{
                 CSeq_id_Handle idh =
                     sequence::GetId(*iter.GetRefSeqid().GetSeqId(), scope,
-                                    sequence::eGetId_Best);
+                                    sequence::eGetId_ForceAcc);
                 string id_str;
                 idh.GetSeqId()->GetLabel(&id_str, CSeq_id::eContent);
                 os << id_str;
