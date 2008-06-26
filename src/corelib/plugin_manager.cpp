@@ -329,7 +329,8 @@ CDllResolver* CPluginManager_DllResolver::GetCreateDllResolver()
     return m_DllResolver;
 }
 
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_DLL_BUILD)
+
+#if defined(NCBI_PLUGIN_AUTO_LOAD)  ||  defined(NCBI_DLL_BUILD)
 #  define LOAD_PLUGINS_FROM_DLLS_BY_DEFAULT true
 #else
 #  define LOAD_PLUGINS_FROM_DLLS_BY_DEFAULT false
