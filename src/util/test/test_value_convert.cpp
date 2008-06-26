@@ -211,6 +211,9 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
         {
             Int4 value = 0;
 
+            // Doesn't compile ...
+            // value = ConvertSafe(value_Uint8);
+
             value = ConvertSafe(value_Int4);
             BOOST_CHECK_EQUAL(value, value_Int4);
 
