@@ -32,7 +32,6 @@
  *
  */
 
-#include <corelib/ncbistl.hpp>
 #include <corelib/ncbistre.hpp>
 #include <list>
 #include <memory>

@@ -32,15 +32,11 @@
  *
  */
 
-#include <corelib/ncbimisc.hpp>
-#include <corelib/ncbiobj.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/ncbistre.hpp>
-
-#include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
-
 #include <connect/services/remote_app_sb.hpp>
+#include <corelib/ncbimisc.hpp>
+#include <corelib/ncbiexpt.hpp>
+
 
 
 BEGIN_NCBI_SCOPE

@@ -33,12 +33,7 @@
 *   Base class for (Fast-)CGI applications
 */
 
-#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
-#include <corelib/ncbitime.hpp>
-#include <corelib/ncbi_param.hpp>
-#include <cgi/ncbicgi.hpp>
-#include <cgi/ncbicgir.hpp>
 #include <cgi/ncbires.hpp>
 #include <cgi/caf.hpp>
 

@@ -33,7 +33,6 @@
  */
 
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbistre.hpp>
 #include <corelib/blob_storage.hpp>
 #include <connect/services/remote_app.hpp>
 

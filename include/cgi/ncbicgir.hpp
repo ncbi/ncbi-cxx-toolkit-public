@@ -34,9 +34,7 @@
  */
 
 #include <cgi/ncbicgi.hpp>
-#include <cgi/cgi_util.hpp>
 #include <corelib/ncbitime.hpp>
-#include <corelib/ncbi_param.hpp>
 #include <map>
 
 

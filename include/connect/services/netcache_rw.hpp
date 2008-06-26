@@ -38,11 +38,9 @@
 ///
 
 #include <connect/connect_export.h>
-#include <corelib/ncbistl.hpp>
-#include <corelib/reader_writer.hpp>
-#include <util/transmissionrw.hpp>
 #include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netcache_api.hpp>
+#include <util/transmissionrw.hpp>
 
 
 BEGIN_NCBI_SCOPE

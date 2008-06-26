@@ -37,8 +37,6 @@
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/plugin_manager.hpp>
 
-#include <string>
-
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////

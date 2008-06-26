@@ -37,9 +37,7 @@
 /// Any implementation must always keep its current line in memory so
 /// that callers may harvest data from it in place.
 
-#include <corelib/ncbiobj.hpp>
 #include <corelib/ncbifile.hpp>
-#include <corelib/reader_writer.hpp>
 
 #include <memory>
 

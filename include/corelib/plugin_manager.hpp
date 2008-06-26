@@ -70,15 +70,11 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/version.hpp>
 #include <corelib/ncbidll.hpp>
-#include <corelib/ncbi_tree.hpp>
-#include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbidiag.hpp>
 #include <corelib/error_codes.hpp>
 
 #include <set>
-#include <map>
 #include <string>
 
 

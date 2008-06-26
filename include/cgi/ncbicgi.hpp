@@ -39,7 +39,6 @@
 #include <corelib/stream_utils.hpp>
 #include <cgi/cgi_util.hpp>
 #include <set>
-#include <time.h>
 
 
 /** @addtogroup CGIReqRes

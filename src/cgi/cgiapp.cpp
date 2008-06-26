@@ -30,11 +30,8 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
-#include <corelib/ncbireg.hpp>
 #include <corelib/rwstream.hpp>
-#include <corelib/ncbi_param.hpp>
 #include <corelib/stream_utils.hpp>
 #include <corelib/ncbi_system.hpp> // for SuppressSystemMessageBox
 #include <corelib/rwstream.hpp>
@@ -42,10 +39,8 @@
 #include <corelib/request_ctx.hpp>
 
 #include <util/multi_writer.hpp>
-#include <util/cache/icache.hpp>
 #include <util/cache/cache_ref.hpp>
 
-#include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <cgi/cgi_serial.hpp>

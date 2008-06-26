@@ -33,10 +33,7 @@
 *   Basic CGI Application class
 */
 
-#include <corelib/ncbistd.hpp>
 #include <cgi/cgiapp.hpp>
-#include <cgi/ncbicgi.hpp>
-#include <cgi/ncbicgir.hpp>
 #include <cgi/cgi_session.hpp>
 #include <connect/ncbi_types.h>
 
