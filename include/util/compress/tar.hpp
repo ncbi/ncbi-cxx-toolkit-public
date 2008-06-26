@@ -30,21 +30,23 @@
  *           Anton Lavrentiev
  *
  * File Description:
- *   @file
- *   Tar archive API.
- *
- *   Supports subsets of POSIX.1-1988 (ustar), POSIX 1003.1-2001 (posix),
- *   old GNU (POSIX 1003.1), and V7 formats (all partially but reasonably).
- *   New archives are created using POSIX (genuine ustar) format, using
- *   GNU extensions for long names/links only when unavoidable.
- *   Can handle no exotics like sparse / contiguous files,
- *   multivolume / incremental archives, etc, but just regular files,
- *   devices (character or block), FIFOs, directories, and limited links:
- *   can extract both hard- and symlinks, but can store symlinks only.
- *   This version is only minimally PAX (Partable Archive Interchange) aware
- *   for file extractions (but cannot use PAX extensions to store files).
- *
+ *   Tar archive API
  */
+
+///  @file
+///  Tar archive API.
+///
+///  Supports subsets of POSIX.1-1988 (ustar), POSIX 1003.1-2001 (posix),
+///  old GNU (POSIX 1003.1), and V7 formats (all partially but reasonably).
+///  New archives are created using POSIX (genuine ustar) format, using
+///  GNU extensions for long names/links only when unavoidable.
+///  Can handle no exotics like sparse / contiguous files,
+///  multivolume / incremental archives, etc, but just regular files,
+///  devices (character or block), FIFOs, directories, and limited links:
+///  can extract both hard- and symlinks, but can store symlinks only.
+///  This version is only minimally PAX (Partable Archive Interchange) aware
+///  for file extractions (but cannot use PAX extensions to store files).
+///
 
 #include <corelib/ncbifile.hpp>
 #include <list>
