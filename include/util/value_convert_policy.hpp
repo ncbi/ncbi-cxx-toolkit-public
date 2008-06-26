@@ -679,10 +679,6 @@ public:
     }
 
     //
-    operator bool(void) const
-    {
-        return m_Value != 0;
-    }
     operator float(void) const
     {
         return m_Value;
@@ -749,10 +745,6 @@ public:
     }
 
     //
-    operator bool(void) const
-    {
-        return m_Value != 0;
-    }
     operator float(void) const
     {
         return m_Value;
@@ -800,10 +792,6 @@ public:
     }
 
     //
-    operator bool(void) const
-    {
-        return m_Value != 0;
-    }
     operator float(void) const
     {
         return m_Value;
@@ -862,10 +850,6 @@ public:
     }
 
     //
-    operator bool(void) const
-    {
-        return m_Value != 0;
-    }
     operator float(void) const
     {
         return m_Value;
@@ -909,10 +893,6 @@ public:
     }
 
     //
-    operator bool(void) const
-    {
-        return m_Value != 0;
-    }
     operator float(void) const
     {
         return static_cast<float>(m_Value);
@@ -963,10 +943,6 @@ public:
     }
 
     //
-    operator bool(void) const
-    {
-        return m_Value != 0;
-    }
     operator float(void) const
     {
         return static_cast<float>(m_Value);
@@ -1003,10 +979,6 @@ public:
     }
 
     //
-    operator bool(void) const
-    {
-        return m_Value != 0;
-    }
     operator float(void) const
     {
         return static_cast<float>(m_Value);
@@ -1043,10 +1015,6 @@ public:
     }
 
     //
-    operator bool(void) const
-    {
-        return m_Value != 0;
-    }
     operator float(void) const
     {
         return static_cast<float>(m_Value);
