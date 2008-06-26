@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <util/thread_pool.hpp>
 #include <util/thread_pool_ctrl.hpp>
+#include <util/sync_queue.hpp>
 #include <util/error_codes.hpp>
 
 #define NCBI_USE_ERRCODE_X  Util_Thread

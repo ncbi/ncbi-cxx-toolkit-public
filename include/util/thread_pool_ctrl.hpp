@@ -38,8 +38,9 @@
 ///     of requests waiting for execution per thread in pool
 
 
-#include <corelib/ncbistd.hpp>
 #include <util/thread_pool.hpp>
+
+#include <deque>
 
 
 /** @addtogroup ThreadedPools

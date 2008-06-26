@@ -42,9 +42,6 @@
 ///                         in pool of threads
 
 
-#include <util/sync_queue.hpp>
-
-
 // Old interfaces and classes
 #include <util/thread_pool_old.hpp>
 
