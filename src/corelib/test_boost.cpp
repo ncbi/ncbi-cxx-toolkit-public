@@ -159,7 +159,7 @@ void
 CNcbiBoostReporter::results_report_finish(std::ostream& ostr)
 {
     m_Upper->results_report_finish(ostr);
-    if (m_IsXML == true) {
+    if (m_IsXML) {
         ostr << endl;
     }
 }
