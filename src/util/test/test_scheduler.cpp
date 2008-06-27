@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(SimpleAdd)
     CTime t(CTime::eCurrent);
 
     CRef<CTestSchedTask> task(new CTestSchedTask());
-    TScheduler_SeriesID id = sch->AddTask(task.GetPointer(), t);
+    TScheduler_SeriesID id = sch->AddTask(task, t);
 
     CTime t_prev = t - CTimeSpan(1, 0);
     CTime t_next = t + CTimeSpan(1, 0);
@@ -105,27 +105,46 @@ BOOST_AUTO_TEST_CASE(SimpleAdd)
     sch->TaskExecuted(id, t);
 }
 
-/// Test RemoveSeries() method
+/// Test RemoveSeries(), RemoveTask() and RemoveAllSeries() method
 BOOST_AUTO_TEST_CASE(RemoveAdded)
 {
     IScheduler* sch = s_GetScheduler();
     CTime t(CTime::eCurrent);
+    CTimeSpan period(10, 0);
+    vector<SScheduler_SeriesInfo> ret_tasks;
 
     CRef<CTestSchedTask> task(new CTestSchedTask());
-    TScheduler_SeriesID id = sch->AddTask(task.GetPointer(), t);
+    TScheduler_SeriesID id = sch->AddTask(task, t);
+    sch->AddTask(task, t + period);
+    sch->AddTask(task, t + period + period);
 
     BOOST_CHECK(!sch->IsEmpty());
-    BOOST_CHECK( sch->HasTasksToExecute(t) );
+    sch->GetScheduledSeries(&ret_tasks);
+    BOOST_CHECK_EQUAL(ret_tasks.size(), size_t(3));
 
-    sch->RemoveSeries(id + 1);
+    sch->RemoveSeries(id - 1);
 
     BOOST_CHECK(!sch->IsEmpty());
-    BOOST_CHECK( sch->HasTasksToExecute(t) );
+    sch->GetScheduledSeries(&ret_tasks);
+    BOOST_CHECK_EQUAL(ret_tasks.size(), size_t(3));
 
     sch->RemoveSeries(id);
 
+    BOOST_CHECK(!sch->IsEmpty());
+    sch->GetScheduledSeries(&ret_tasks);
+    BOOST_CHECK_EQUAL(ret_tasks.size(), size_t(2));
+
+    sch->RemoveTask(task);
+
     BOOST_CHECK(sch->IsEmpty());
-    BOOST_CHECK( ! sch->HasTasksToExecute(t) );
+
+    sch->AddTask(task, t);
+    sch->AddTask(task, t + period);
+    sch->AddTask(task, t + period + period);
+
+    sch->RemoveAllSeries();
+
+    BOOST_CHECK(sch->IsEmpty());
 }
 
 /// Test AddRepetitiveTask() for task executing with rate
@@ -136,8 +155,8 @@ BOOST_AUTO_TEST_CASE(AddWithRate)
     CTimeSpan period(10, 0);
 
     CRef<CTestSchedTask> task(new CTestSchedTask());
-    TScheduler_SeriesID id = sch->AddRepetitiveTask(task.GetPointer(), t,
-                                               period, IScheduler::eWithRate);
+    TScheduler_SeriesID id = sch->AddRepetitiveTask(task, t, period,
+                                                    IScheduler::eWithRate);
     BOOST_CHECK(!sch->IsEmpty());
 
     CTime t_prev = t - CTimeSpan(1, 0);
@@ -202,8 +221,8 @@ BOOST_AUTO_TEST_CASE(AddWithDelay)
     CTimeSpan period(10, 0);
 
     CRef<CTestSchedTask> task(new CTestSchedTask());
-    TScheduler_SeriesID id = sch->AddRepetitiveTask(task.GetPointer(), t,
-                                              period, IScheduler::eWithDelay);
+    TScheduler_SeriesID id = sch->AddRepetitiveTask(task, t, period,
+                                                    IScheduler::eWithDelay);
     BOOST_CHECK(!sch->IsEmpty());
 
     CTime t_prev = t - CTimeSpan(1, 0);
@@ -262,7 +281,7 @@ BOOST_AUTO_TEST_CASE(GetSeries)
     CRef<CTestSchedTask> tasks[num_tasks];
     for (size_t i = 0; i < num_tasks; ++i, t += period) {
         tasks[i] = new CTestSchedTask();
-        sch->AddTask(tasks[i].GetPointer(), t);
+        sch->AddTask(tasks[i], t);
     }
 
     vector<SScheduler_SeriesInfo> ret_tasks;
@@ -324,15 +343,15 @@ BOOST_AUTO_TEST_CASE(Listening)
     sch->RegisterListener(&lstn1);
     sch->RegisterListener(&lstn2);
 
-    TScheduler_SeriesID id1 = sch->AddTask(task.GetPointer(), t);
+    TScheduler_SeriesID id1 = sch->AddTask(task, t);
     BOOST_CHECK(lstn1.GetEventFired());
     BOOST_CHECK(lstn2.GetEventFired());
 
-    TScheduler_SeriesID id2 = sch->AddTask(task.GetPointer(), t - period);
+    TScheduler_SeriesID id2 = sch->AddTask(task, t - period);
     BOOST_CHECK(lstn1.GetEventFired());
     BOOST_CHECK(lstn2.GetEventFired());
 
-    TScheduler_SeriesID id3 = sch->AddTask(task.GetPointer(), t + period);
+    TScheduler_SeriesID id3 = sch->AddTask(task, t + period);
     BOOST_CHECK(! lstn1.GetEventFired());
     BOOST_CHECK(! lstn2.GetEventFired());
 
@@ -349,8 +368,7 @@ BOOST_AUTO_TEST_CASE(Listening)
     BOOST_CHECK(lstn2.GetEventFired());
 
 
-    id1 = sch->AddRepetitiveTask(task.GetPointer(), t,
-                                 period, IScheduler::eWithRate);
+    id1 = sch->AddRepetitiveTask(task, t, period, IScheduler::eWithRate);
     BOOST_CHECK(lstn1.GetEventFired());
     BOOST_CHECK(lstn2.GetEventFired());
 
@@ -367,8 +385,7 @@ BOOST_AUTO_TEST_CASE(Listening)
     BOOST_CHECK(lstn2.GetEventFired());
 
 
-    id1 = sch->AddRepetitiveTask(task.GetPointer(), t,
-                                 period, IScheduler::eWithDelay);
+    id1 = sch->AddRepetitiveTask(task, t, period, IScheduler::eWithDelay);
     BOOST_CHECK(lstn1.GetEventFired());
     BOOST_CHECK(lstn2.GetEventFired());
 
