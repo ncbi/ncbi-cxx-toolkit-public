@@ -35,7 +35,6 @@
 
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <connect/connect_export.h>
 #include <connect/services/grid_client.hpp>
 #include <connect/services/netschedule_client.hpp>
 #include <connect/services/netschedule_storage.hpp>

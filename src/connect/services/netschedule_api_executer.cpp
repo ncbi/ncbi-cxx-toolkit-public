@@ -31,10 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <connect/services/netschedule_api.hpp>
-#include <connect/services/error_codes.hpp>
 #include <connect/ncbi_conn_exception.hpp>
-
 #include "netschedule_api_details.hpp"
 
 

@@ -39,9 +39,6 @@
 ///
 
 
-#include <corelib/ncbimisc.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <connect/connect_export.h>
 #include <connect/services/grid_worker_app_impl.hpp>
 #include <connect/services/blob_storage_netcache.hpp>
 

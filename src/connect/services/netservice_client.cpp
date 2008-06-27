@@ -31,7 +31,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <connect/ncbi_conn_exception.hpp>

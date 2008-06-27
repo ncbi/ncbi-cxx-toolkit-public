@@ -34,11 +34,8 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/ncbi_safe_static.hpp>
-
 #include <connect/ncbi_conn_exception.hpp>
-#include <connect/services/netcache_api.hpp>
 #include <connect/services/netcache_rw.hpp>
-#include <connect/services/netcache_key.hpp>
 #include <connect/services/netservice_params.hpp>
 #include <memory>
 

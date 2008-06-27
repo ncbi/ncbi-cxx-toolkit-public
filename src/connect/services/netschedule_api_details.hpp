@@ -34,7 +34,6 @@
 
 #include <connect/ncbi_socket.hpp>
 #include <connect/services/netschedule_api.hpp>
-#include <connect/services/netschedule_api_expt.hpp>
 #include <connect/services/error_codes.hpp>
 
 

@@ -33,7 +33,6 @@
  */
 
 
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
 
 #if defined(NCBI_OS_MSWIN)

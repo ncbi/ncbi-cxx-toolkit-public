@@ -30,14 +30,10 @@
  */
 
 #include <ncbi_pch.hpp>
-
 #include <connect/services/srv_connections_expt.hpp>
 #include <connect/services/srv_connections.hpp>
 #include <connect/services/netservice_params.hpp>
-
-#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
-
 #include <corelib/ncbi_system.hpp>
 
 

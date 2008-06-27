@@ -32,7 +32,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
-#include <corelib/plugin_manager_impl.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/error_codes.hpp>
