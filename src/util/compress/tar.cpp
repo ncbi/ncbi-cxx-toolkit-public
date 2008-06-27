@@ -961,11 +961,10 @@ CTar::CTar(const string& filename, size_t blocking_factor)
       m_StreamPos(0),
       m_BufPtr(0),
       m_Buffer(0),
-      m_Flags(fDefault),
       m_Mask(0),
       m_MaskOwned(eNoOwnership),
-      m_IsModified(false),
-      m_ReadToSkip(false)
+      m_Modified(false),
+      m_Flags(fDefault)
 {
     x_Init();
 }
@@ -981,11 +980,10 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
       m_StreamPos(0),
       m_BufPtr(0),
       m_Buffer(0),
-      m_Flags(fDefault),
       m_Mask(0),
       m_MaskOwned(eNoOwnership),
-      m_IsModified(false),
-      m_ReadToSkip(false)
+      m_Modified(false),
+      m_Flags(fDefault)
 {
     x_Init();
 }
@@ -1042,7 +1040,7 @@ void CTar::x_Init(void)
 void CTar::x_Flush(void)
 {
     m_Current.m_Name.erase();
-    if (!m_Stream  ||  !m_OpenMode  ||  !m_IsModified) {
+    if (!m_Stream  ||  !m_OpenMode  ||  !m_Modified) {
         return;
     }
     _ASSERT(m_OpenMode == eRW);
@@ -1054,7 +1052,7 @@ void CTar::x_Flush(void)
     _ASSERT(m_BufferPos == 0);
     if (pad < kBlockSize  ||  pad - OFFSET_OF(pad) < (kBlockSize << 1)) {
         // Write EOT (two zero blocks), if have not already done so by padding
-        memset(m_Buffer, 0, m_BufferSize);
+        memset(m_Buffer, 0, m_BufferSize - pad);
         x_WriteArchive(m_BufferSize);
         _ASSERT(m_BufferPos == 0);
         if (m_BufferSize == kBlockSize) {
@@ -1067,7 +1065,7 @@ void CTar::x_Flush(void)
         TAR_THROW(this, eWrite,
                   "Archive flush failed" + s_OSReason(x_errno));
     }
-    m_IsModified = false;
+    m_Modified = false;
 }
 
 
@@ -1092,11 +1090,11 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
     // is being used as an archive, it must be explicitly repositioned by
     // user's code (outside of this class) before each archive operation.
     if (!m_FileStream) {
-        if (m_IsModified  &&  action != eAppend) {
+        if (m_Modified  &&  action != eAppend) {
             TAR_POST(1, Warning,
                      "Pending changes may be discarded"
                      " upon reopen of in-stream archive");
-            m_IsModified = false;
+            m_Modified = false;
         }
         if (action != eInternal) {
             m_BufferPos = 0;
@@ -1160,7 +1158,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
                 m_FileStream->seekg(0, IOS_BASE::beg);
             }
         } else {
-            if (action == eAppend  &&  !m_IsModified) {
+            if (action == eAppend  &&  !m_Modified) {
                 // There may be an extra and unnecessary archive scanning
                 // if Append() follows Update() that caused no modifications;
                 // but there is no way to distinguish this, currently :-/
@@ -1340,7 +1338,7 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
         m_StreamPos += advance;
         nwrite -= avail;
     } while (nwrite);
-    m_IsModified = true;
+    m_Modified = true;
 }
 
 
@@ -2411,7 +2409,8 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
 void CTar::x_SkipArchive(size_t size)
 {
     while (size) {
-        if (!m_ReadToSkip  &&  !m_BufferPos  &&  size >= m_BufferSize) {
+        if (!(m_Flags & fSlowSkipWithRead)
+            &&  !m_BufferPos  &&  size >= m_BufferSize) {
             CT_OFF_TYPE fskip =
                 CT_OFF_TYPE((size / m_BufferSize) * m_BufferSize);
             if (m_Stream->rdbuf()->PUBSEEKOFF(fskip, IOS_BASE::cur)
@@ -2425,7 +2424,7 @@ void CTar::x_SkipArchive(size_t size)
                          "Cannot fast skip in file archive '" +
                          m_FileName + "', reverting to slow skip");
             }
-            m_ReadToSkip = true;
+            m_Flags |= fSlowSkipWithRead;
         }
         size_t nskip = size < m_BufferSize ? (size_t) size : m_BufferSize;
         if (!x_ReadArchive(nskip)) {

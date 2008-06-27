@@ -275,11 +275,12 @@ public:
         // --- Extract/List ---
         fMaskNocase         = (1<<10),
         /// Skip unsupported entries rather than doing files out of them
-        /// when extracting (the latter is the default POSIX behavior).
+        /// when extracting (the latter is the default POSIX requirement).
         fSkipUnsupported    = (1<<15),
 
         // --- Debugging ---
         fDumpBlockHeaders   = (1<<20),
+        fSlowSkipWithRead   = (1<<21),
 
         /// Default flags
         fDefault            = fOverwrite | fPreserveAll
@@ -302,7 +303,9 @@ public:
     /// Define a list of entries.
     typedef list< CTarEntryInfo > TEntries;
 
-    /// Define a list of files with sizes.
+    /// Define a list of files with sizes (directories and specials, such as
+    /// devices, must be given with sizes of 0;  symlinks -- with the sizes
+    /// of the names they are linking to).
     typedef list< pair<string, Uint8> > TFiles;
 
 
@@ -432,11 +435,11 @@ public:
     /// fMaskNocase flag set.
     /// @param mask
     ///   Set of masks.
-    /// @param if_to_own
+    /// @param own
     ///   Flag to take ownership on the masks (delete upon CTar destruction).
     /// @sa
     //    SetFlags, UnsetMask
-    void SetMask(CMask* mask, EOwnership if_to_own = eNoOwnership);
+    void SetMask(CMask* mask, EOwnership own = eNoOwnership);
 
     /// Unset name mask.
     ///
@@ -610,11 +613,10 @@ protected:
     Uint8          m_StreamPos;    ///< Position in stream (0-based).
     char*          m_BufPtr;       ///< Page unaligned buffer pointer.
     char*          m_Buffer;       ///< I/O buffer (page-aligned).
-    TFlags         m_Flags;        ///< Bitwise OR of flags.
     CMask*         m_Mask;         ///< Masks for list/test/extract.
     EOwnership     m_MaskOwned;    ///< Flag of m_Mask's ownership.
-    bool           m_IsModified;   ///< True after at least one write.
-    bool           m_ReadToSkip;   ///< True if stream cannot do skips.
+    bool           m_Modified;     ///< True after at least one write.
+    TFlags         m_Flags;        ///< Bitwise OR of flags.
     string         m_BaseDir;      ///< Base directory for relative paths.
     CTarEntryInfo  m_Current;      ///< Current entry being processed.
 
@@ -684,11 +686,11 @@ void CTar::SetFlags(TFlags flags)
 }
 
 inline
-void CTar::SetMask(CMask *mask, EOwnership if_to_own)
+void CTar::SetMask(CMask *mask, EOwnership own)
 {
     UnsetMask();
     m_Mask      = mask;
-    m_MaskOwned = if_to_own;
+    m_MaskOwned = own;
 }
 
 inline
