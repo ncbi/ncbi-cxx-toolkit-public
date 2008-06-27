@@ -33,18 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <util/scheduler.hpp>
 
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
-
-#include <common/test_assert.h>  /* This header must go last */
+#include <corelib/test_boost.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -82,6 +71,7 @@ BOOST_AUTO_TEST_CASE(SimpleAdd)
     CTime t_next = t + CTimeSpan(1, 0);
 
     BOOST_CHECK_EQUAL(sch->GetNextExecutionTime(), t);
+    BOOST_CHECK(!sch->IsEmpty());
 
 
     BOOST_CHECK(! sch->HasTasksToExecute(t_prev));
@@ -95,16 +85,19 @@ BOOST_AUTO_TEST_CASE(SimpleAdd)
     BOOST_CHECK( sch->HasTasksToExecute(t) );
 
     task_info = sch->GetNextTaskToExecute(t);
+    BOOST_CHECK(sch->IsEmpty());
 
     BOOST_CHECK_EQUAL(task_info.id, id);
     BOOST_CHECK_EQUAL(task_info.task.GetPointer(), task.GetPointer());
 
     sch->TaskExecuted(id, t);
     id = sch->AddTask(task.GetPointer(), t);
+    BOOST_CHECK(!sch->IsEmpty());
 
     BOOST_CHECK( sch->HasTasksToExecute(t_next) );
 
     task_info = sch->GetNextTaskToExecute(t_next);
+    BOOST_CHECK(sch->IsEmpty());
 
     BOOST_CHECK_EQUAL(task_info.id, id);
     BOOST_CHECK_EQUAL(task_info.task.GetPointer(), task.GetPointer());
@@ -121,14 +114,17 @@ BOOST_AUTO_TEST_CASE(RemoveAdded)
     CRef<CTestSchedTask> task(new CTestSchedTask());
     TScheduler_SeriesID id = sch->AddTask(task.GetPointer(), t);
 
+    BOOST_CHECK(!sch->IsEmpty());
     BOOST_CHECK( sch->HasTasksToExecute(t) );
 
     sch->RemoveSeries(id + 1);
 
+    BOOST_CHECK(!sch->IsEmpty());
     BOOST_CHECK( sch->HasTasksToExecute(t) );
 
     sch->RemoveSeries(id);
 
+    BOOST_CHECK(sch->IsEmpty());
     BOOST_CHECK( ! sch->HasTasksToExecute(t) );
 }
 
@@ -142,6 +138,7 @@ BOOST_AUTO_TEST_CASE(AddWithRate)
     CRef<CTestSchedTask> task(new CTestSchedTask());
     TScheduler_SeriesID id = sch->AddRepetitiveTask(task.GetPointer(), t,
                                                period, IScheduler::eWithRate);
+    BOOST_CHECK(!sch->IsEmpty());
 
     CTime t_prev = t - CTimeSpan(1, 0);
     CTime t_prev_next = t + period - CTimeSpan(1, 0);
@@ -158,14 +155,17 @@ BOOST_AUTO_TEST_CASE(AddWithRate)
     BOOST_CHECK(task_info.task.IsNull());
 
 
+    BOOST_CHECK(!sch->IsEmpty());
     BOOST_CHECK( sch->HasTasksToExecute(t) );
 
     task_info = sch->GetNextTaskToExecute(t);
+    BOOST_CHECK(!sch->IsEmpty());
 
     BOOST_CHECK_EQUAL(task_info.id, id);
     BOOST_CHECK_EQUAL(task_info.task.GetPointer(), task.GetPointer());
 
     sch->TaskExecuted(id, t_next);
+    BOOST_CHECK(!sch->IsEmpty());
 
 
     BOOST_CHECK_EQUAL(sch->GetNextExecutionTime(), t_next);
@@ -177,9 +177,11 @@ BOOST_AUTO_TEST_CASE(AddWithRate)
     BOOST_CHECK(task_info.task.IsNull());
 
 
+    BOOST_CHECK(!sch->IsEmpty());
     BOOST_CHECK( sch->HasTasksToExecute(t_next) );
 
     task_info = sch->GetNextTaskToExecute(t_next);
+    BOOST_CHECK(!sch->IsEmpty());
 
     BOOST_CHECK_EQUAL(task_info.id, id);
     BOOST_CHECK_EQUAL(task_info.task.GetPointer(), task.GetPointer());
@@ -189,6 +191,7 @@ BOOST_AUTO_TEST_CASE(AddWithRate)
 
     sch->TaskExecuted(id, t_next);
     sch->RemoveSeries(id);
+    BOOST_CHECK(sch->IsEmpty());
 }
 
 /// Test AddRepetitiveTask() for task executing with delay
@@ -201,6 +204,7 @@ BOOST_AUTO_TEST_CASE(AddWithDelay)
     CRef<CTestSchedTask> task(new CTestSchedTask());
     TScheduler_SeriesID id = sch->AddRepetitiveTask(task.GetPointer(), t,
                                               period, IScheduler::eWithDelay);
+    BOOST_CHECK(!sch->IsEmpty());
 
     CTime t_prev = t - CTimeSpan(1, 0);
     CTime t_prev_next = t + period;
@@ -213,6 +217,7 @@ BOOST_AUTO_TEST_CASE(AddWithDelay)
     BOOST_CHECK(! sch->HasTasksToExecute(t_prev));
 
     SScheduler_SeriesInfo task_info = sch->GetNextTaskToExecute(t_prev);
+    BOOST_CHECK(!sch->IsEmpty());
 
     BOOST_CHECK_EQUAL(task_info.id, TScheduler_SeriesID(0));
     BOOST_CHECK(task_info.task.IsNull());
@@ -221,18 +226,21 @@ BOOST_AUTO_TEST_CASE(AddWithDelay)
     BOOST_CHECK( sch->HasTasksToExecute(t) );
 
     task_info = sch->GetNextTaskToExecute(t);
+    BOOST_CHECK(!sch->IsEmpty());
 
     BOOST_CHECK_EQUAL(task_info.id, id);
     BOOST_CHECK_EQUAL(task_info.task.GetPointer(), task.GetPointer());
     BOOST_CHECK(! sch->HasTasksToExecute(t_prev_next));
 
     sch->TaskExecuted(id, t_fin);
+    BOOST_CHECK(!sch->IsEmpty());
 
 
     BOOST_CHECK_EQUAL(sch->GetNextExecutionTime(), t_next);
     BOOST_CHECK( sch->HasTasksToExecute(t_next) );
 
     task_info = sch->GetNextTaskToExecute(t_next);
+    BOOST_CHECK(!sch->IsEmpty());
 
     BOOST_CHECK_EQUAL(task_info.id, id);
     BOOST_CHECK_EQUAL(task_info.task.GetPointer(), task.GetPointer());
@@ -240,10 +248,11 @@ BOOST_AUTO_TEST_CASE(AddWithDelay)
 
     sch->TaskExecuted(id, t_next);
     sch->RemoveSeries(id);
+    BOOST_CHECK(sch->IsEmpty());
 }
 
 /// Test correctness of GetScheduledTasks() method
-BOOST_AUTO_TEST_CASE(GetTasks)
+BOOST_AUTO_TEST_CASE(GetSeries)
 {
     IScheduler* sch = s_GetScheduler();
     CTime t(CTime::eCurrent);

@@ -468,13 +468,13 @@ CScheduler_MT::IsEmpty(void) const
 {
     CMutexGuard guard(m_MainMutex);
 
-    bool result = !m_ScheduledTasks.empty();
+    bool result = m_ScheduledTasks.empty();
 
-    if (!result) {
+    if (result) {
         ITERATE(TExecList, it, m_ExecutingTasks) {
             if ((*it)->repeat_pattern != CScheduler_QueueEvent::eNoRepeat)
             {
-                result = true;
+                result = false;
                 break;
             }
         }
