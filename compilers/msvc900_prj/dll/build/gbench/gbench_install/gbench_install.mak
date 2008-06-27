@@ -59,7 +59,6 @@ GBENCH        = $(DLLBIN)\gbench
 INSTALL_BINPATH          = $(GBENCH)\bin
 THIRDPARTY_MAKEFILES_DIR = ..\..\..
 STAMP_SUFFIX             = _gbench
-#!include $(THIRDPARTY_MAKEFILES_DIR)\Makefile.mk
 !include $(THIRDPARTY_MAKEFILES_DIR)\..\third_party_install.meta.mk
 
 
@@ -191,7 +190,7 @@ RESOURCES = \
 THIRD_PARTY_LIBS = \
         install_fltk       \
         install_berkeleydb \
-        install_sqlite     \
+        install_openssl        \
         install_msvc
 
 #

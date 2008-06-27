@@ -17,6 +17,7 @@ META_MAKE = $(THIRDPARTY_MAKEFILES_DIR)\..\third_party_install.meta.mk
 THIRD_PARTY_LIBS = \
 	install_fltk       \
 	install_berkeleydb \
+	install_openssl     \
 	install_sqlite     \
 	install_sqlite3    \
 	install_wxwindows  \
