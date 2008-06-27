@@ -33,11 +33,11 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <corelib/request_control.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_service.h>
 #include <connect/services/netschedule_client.hpp>
 #include <connect/services/error_codes.hpp>
-#include <util/request_control.hpp>
 #include <stdlib.h>
 #include <memory>
 
