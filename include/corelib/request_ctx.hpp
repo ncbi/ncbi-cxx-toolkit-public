@@ -143,6 +143,20 @@ private:
     CRequestContext(const CRequestContext&);
     CRequestContext& operator=(const CRequestContext&);
 
+    // Start/Stop methods must be visible in CDiagContext
+    friend class CDiagContext;
+
+    // Mark the current request as running.
+    // Reset request status, bytes rd/wr, restart timer.
+    void StartRequest(void);
+
+    // Mark the current request as finished.
+    // Reset all values (call Reset()).
+    void StopRequest(void);
+
+    // Check if the request is running.
+    bool IsRunning(void) const { return m_IsRunning; }
+
     enum EProperty {
         eProp_RequestID  = 1 << 0,
         eProp_ClientIP   = 1 << 1,
@@ -167,6 +181,7 @@ private:
     Int8          m_BytesWr;
     TProperties   m_Properties;
     TPropSet      m_PropSet;
+    bool          m_IsRunning;
 };
 
 

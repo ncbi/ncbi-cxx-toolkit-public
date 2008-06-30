@@ -655,7 +655,7 @@ void CDiagContextThreadData::RemoveCollectGuard(CDiagCollectGuard* guard)
             }
             size_t discarded = m_DiagCollectionSize - m_DiagCollection.size();
             if (discarded > 0) {
-                ERR_POST(Warning << "Discarded " << discarded <<
+                ERR_POST_X(18, Warning << "Discarded " << discarded <<
                     " messages due to collection limit. Set "
                     "DIAG_COLLECT_LIMIT to increase the limit.");
             }
@@ -1593,10 +1593,13 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
         {
             // Reset properties
             CRequestContext& ctx = GetRequestContext();
-            ctx.UnsetRequestStatus();
-            ctx.SetBytesRd(0);
-            ctx.SetBytesWr(0);
-            ctx.GetRequestTimer().Restart();
+            if ( ctx.IsRunning() ) {
+                // The request is already running -
+                // duplicate request start or missing request stop
+                ERR_POST_ONCE(
+                    "Duplicate request-start or missing request-stop");
+            }
+            ctx.StartRequest();
             break;
         }
     case SDiagMessage::eEvent_Stop:
@@ -1610,6 +1613,12 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     case SDiagMessage::eEvent_RequestStop:
         {
             CRequestContext& ctx = GetRequestContext();
+            if ( !ctx.IsRunning() ) {
+                // The request is not running -
+                // duplicate request stop or missing request start
+                ERR_POST_ONCE(
+                    "Duplicate request-stop or missing request-start");
+            }
             ostr << ctx.GetRequestStatus() << " "
                 << ctx.GetRequestTimer().AsString() << " "
                 << ctx.GetBytesRd() << " "
@@ -1637,7 +1646,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     ostr.rdbuf()->freeze(false);
     // Now it's safe to reset the request context
     if (event == SDiagMessage::eEvent_RequestStop) {
-        GetRequestContext().Reset();
+        GetRequestContext().StopRequest();
     }
 }
 
@@ -3138,11 +3147,12 @@ void SDiagMessage::ParseDiagStream(CNcbiIstream& in,
             last_msg_str += "\n" + msg_str;
             last_msg.reset(new SDiagMessage(last_msg_str, &res));
             if ( !res ) {
-                ERR_POST(Error << "Failed to parse message: " << last_msg_str);
+                ERR_POST_X(19,
+                    Error << "Failed to parse message: " << last_msg_str);
             }
         }
         else {
-            ERR_POST(Error << "Failed to parse message: " << msg_str);
+            ERR_POST_X(20, Error << "Failed to parse message: " << msg_str);
         }
         msg_str = line;
     }
@@ -3161,11 +3171,13 @@ void SDiagMessage::ParseDiagStream(CNcbiIstream& in,
                 func(*msg);
             }
             else {
-                ERR_POST(Error << "Failed to parse message: " << last_msg_str);
+                ERR_POST_X(21,
+                    Error << "Failed to parse message: " << last_msg_str);
             }
         }
         else {
-            ERR_POST(Error << "Failed to parse message: " << msg_str);
+            ERR_POST_X(22,
+                Error << "Failed to parse message: " << msg_str);
         }
     }
 }

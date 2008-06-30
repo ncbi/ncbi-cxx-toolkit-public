@@ -45,7 +45,8 @@ CRequestContext::CRequestContext(void)
       m_ReqTimer(CStopWatch::eStop),
       m_BytesRd(0),
       m_BytesWr(0),
-      m_PropSet(0)
+      m_PropSet(0),
+      m_IsRunning(false)
 {
 }
 
@@ -129,6 +130,23 @@ bool CRequestContext::IsSetProperty(const string& name) const
 void CRequestContext::UnsetProperty(const string& name)
 {
     m_Properties.erase(name);
+}
+
+
+void CRequestContext::StartRequest(void)
+{
+    UnsetRequestStatus();
+    SetBytesRd(0);
+    SetBytesWr(0);
+    GetRequestTimer().Restart();
+    m_IsRunning = true;
+}
+
+
+void CRequestContext::StopRequest(void)
+{
+    Reset();
+    m_IsRunning = false;
 }
 
 
