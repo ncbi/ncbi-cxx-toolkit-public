@@ -44,6 +44,10 @@
 #include "dbapi_unit_test.hpp"
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 
+#ifdef HAVE_LIBCONNEXT
+#  include <connect/ext/ncbi_crypt.h>
+#endif
+
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -1244,6 +1248,11 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
             stmt->SendSql( "SELECT name FROM sysobjects" );
             DumpResults(stmt);
         }
+
+
+        ///////////////////////////
+        // Close connection several times ...
+        ///////////////////////////
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -12896,6 +12905,8 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
 }
 
 
+#ifdef HAVE_LIBCONNEXT
+
 void
 CDBAPIUnitTest::Test_Authentication(void)
 {
@@ -12918,13 +12929,15 @@ CDBAPIUnitTest::Test_Authentication(void)
     //         BOOST_CHECK( rs->Next() );
     //     }
 
+        char* password = NcbiDecrypt("08QJLFmVZfA716", "anyone");
+
         // No SSL certificate.
         if (true) {
             auto_ptr<IConnection> auto_conn( GetDS().CreateConnection() );
 
             auto_conn->Connect(
                 "NCBI_NT\\anyone",
-                "Perm1tted",
+                password,
                 "MSDEV2"
                 );
 
@@ -12934,11 +12947,15 @@ CDBAPIUnitTest::Test_Authentication(void)
             BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
         }
+
+        free(password);
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
     }
 }
+
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -14635,6 +14652,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
     }
 
 
+#ifdef HAVE_LIBCONNEXT
     if (args->GetTestConfiguration() != CTestArguments::eFast) {
         if (args->GetServerType() == CDBConnParams::eMSSqlServer &&
             (args->GetDriverName() == ftds_odbc_driver
@@ -14649,6 +14667,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
             args->PutMsgDisabled("Test_Authentication");
         }
     }
+#endif
 
     //
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Object, DBAPIInstance));
