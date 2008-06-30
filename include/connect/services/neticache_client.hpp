@@ -39,7 +39,7 @@
 
 #include <corelib/plugin_manager_store.hpp>
 #include <connect/services/netcache_client.hpp>
-#include <util/request_control.hpp>
+#include <corelib/request_control.hpp>
 #include <util/cache/icache.hpp>
 
 
