@@ -66,6 +66,11 @@ public:
     // or CSeq_entry::Parentize() was never called.
     CSeq_entry* GetParentEntry(void) const;
 
+    // Convenience function to directly get reference to parent Bioseq-set.
+    // 0 means that either there is no parent Seq-entry or Bioseq-set,
+    // or CSeq_entry::Parentize() was never called.
+    CConstRef<CBioseq_set> GetParentSet(void) const;
+
     enum ELabelType {
         eType,
         eContent,
