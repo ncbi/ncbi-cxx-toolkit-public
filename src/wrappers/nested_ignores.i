@@ -30,6 +30,8 @@
  */
 
 
+%ignore *::CGuiRegistry_CReadWriteView::Set;
+
 %ignore *::CRemoteBlastDataLoader_CCachedSeqData::BuildDataChunk;
 %ignore *::CRemoteBlastDataLoader_CCachedSeqData::RegisterIds;
 %ignore *::CRemoteBlastDataLoader_SBlastDbParam
