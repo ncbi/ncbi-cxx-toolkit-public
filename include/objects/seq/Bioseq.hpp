@@ -50,6 +50,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CSeq_entry;
+class CBioseq_set;
 class CSeq_loc;
 class CDelta_ext;
 class CSeq_id;
@@ -68,6 +69,11 @@ public:
     // NULL means that either there is no parent Seq-entry,
     // or CSeq_entry::Parentize() was never called.
     CSeq_entry* GetParentEntry(void) const;
+
+    // Convenience function to directly get reference to parent Bioseq-set.
+    // 0 means that either there is no parent Seq-entry or Bioseq-set,
+    // or CSeq_entry::Parentize() was never called.
+    CConstRef<CBioseq_set> GetParentSet(void) const;
 
     // see GetTitle in util/sequence.hpp
     //   string GetTitle(const CBioseq_Handle&, TGetTitleFlags);
