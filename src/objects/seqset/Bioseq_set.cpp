@@ -262,5 +262,41 @@ const CBioseq& CBioseq_set::GetMasterFromSegSet(void) const
         segset set doesn't contain the master bioseq");
 }
 
+CConstRef<CBioseq_set> CBioseq_set::GetParentSet(void) const
+{
+    CSeq_entry* se;
+
+    se = GetParentEntry();
+    if ( se ) {
+        se = se->GetParentEntry();
+        if ( se ) {
+            if ( se->IsSet() ) {
+                return CConstRef<CBioseq_set> (&se->GetSet());
+            }
+        }
+    }
+
+    return CConstRef<CBioseq_set> ();
+}
+
+// Implemented here to prevent CBioseq dependency on Bioseq_set
+CConstRef<CBioseq_set> CBioseq::GetParentSet(void) const
+{
+    CSeq_entry* se;
+
+    se = GetParentEntry();
+    if ( se ) {
+        se = se->GetParentEntry();
+        if ( se ) {
+            if ( se->IsSet() ) {
+                return CConstRef<CBioseq_set> (&se->GetSet());
+            }
+        }
+    }
+
+    return CConstRef<CBioseq_set> ();
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
