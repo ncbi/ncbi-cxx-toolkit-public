@@ -1590,37 +1590,79 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
     return GetType(st);
 }
 
+/// Test macro for file types
+#define NCBI_IS_TYPE(mode, mask)  (((mode) & S_IFMT) == (mask))
 
 CDirEntry::EType CDirEntry::GetType(const struct stat& st)
 {
-    unsigned int mode = (unsigned int)st.st_mode & S_IFMT;
-    switch (mode) {
-    case S_IFDIR:
+    unsigned int mode = (unsigned int)st.st_mode;;
+#ifdef S_ISDIR
+    if (S_ISDIR(mode))
+#else
+    if (NCBI_IS_TYPE(mode, S_IFDIR))
+#endif
         return eDir;
-    case S_IFCHR:
+
+#ifdef S_ISCHR
+    if (S_ISCHR(mode))
+#else
+    if (NCBI_IS_TYPE(mode, S_IFCHR))
+#endif
         return eCharSpecial;
+
 #ifdef NCBI_OS_MSWIN
-    case _S_IFIFO:
+    if (NCBI_IS_TYPE(mode, _S_IFIFO))
         return ePipe;
-#else // NCBI_OS_UNIX
-    case S_IFIFO:
+#else
+    // NCBI_OS_UNIX
+#  ifdef S_ISFIFO
+    if (S_ISFIFO(mode))
+#  else
+    if (NCBI_IS_TYPE(mode, S_IFIFO))
+#  endif
         return ePipe;
-    case S_IFLNK:
+
+#  ifdef S_ISLNK
+    if (S_ISLNK(mode))
+#  else
+    if (NCBI_IS_TYPE(mode, S_IFLNK))
+#  endif
         return eLink;
-    case S_IFSOCK:
+
+#  ifdef S_ISSOCK
+    if (S_ISSOCK(mode))
+#  else
+    if (NCBI_IS_TYPE(mode, S_IFSOCK))
+#  endif
         return eSocket;
-    case S_IFBLK:
+
+#  ifdef S_ISBLK
+    if (S_ISBLK(mode))
+#  else
+    if (NCBI_IS_TYPE(mode, S_IFBLK))
+#  endif
         return eBlockSpecial;
-#  ifdef S_IFDOOR /* only Solaris seems to have this one */
-    case S_IFDOOR:
+
+#  ifdef S_IFDOOR 
+    // only Solaris seems to have this one
+#    ifdef S_ISDOOR
+    if (S_ISDOOR(mode))
+#    else
+    if (NCBI_IS_TYPE(mode, S_IFDOOR))
+#    endif
         return eDoor;
 #  endif
+
+#endif //NCBI_OS_MSWIN
+
+    // Check on regular file last
+#ifdef S_ISREG
+    if (S_ISREG(mode))
+#else
+    if (NCBI_IS_TYPE(mode, S_IFREG))
 #endif
-    }
-    // Check regular file bit last
-    if ( (mode & S_IFREG) == S_IFREG ) {
         return eFile;
-    }
+
     return eUnknown;
 }
 
