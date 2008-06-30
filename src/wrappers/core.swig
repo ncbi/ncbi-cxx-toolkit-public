@@ -191,6 +191,7 @@ corelib/plugin_manager.hpp
 corelib/plugin_manager_impl.hpp
 //corelib/plugin_manager_store.hpp  // nested struct in template class
 corelib/reader_writer.hpp
+corelib/request_control.hpp
 corelib/rwstream.hpp
 corelib/stream_utils.hpp
 corelib/syslog.hpp
@@ -244,7 +245,6 @@ util/range_coll.hpp
 util/rangemap.hpp
 util/reader_writer.hpp
 util/regexp.hpp
-util/request_control.hpp
 util/resize_iter.hpp
 util/resource_pool.hpp
 util/scheduler.hpp
