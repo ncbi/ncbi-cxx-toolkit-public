@@ -1297,7 +1297,7 @@ void CId2ReaderBase::x_ProcessGetBlobId(
         }
     }}
     SId2BlobInfo& blob_info = ids.second[blob_id];
-    if ( reply.IsSetAnnot_info() ) {
+    if ( reply.IsSetAnnot_info() && mask == fBlobHasExtAnnot ) {
         mask = fBlobHasNamedFeat;
         blob_info.m_AnnotInfo = reply.GetAnnot_info();
     }
