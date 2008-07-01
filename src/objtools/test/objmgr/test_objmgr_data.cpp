@@ -128,6 +128,9 @@ protected:
     bool m_selective_reset;
     bool m_edit_handles;
     bool m_release_all_memory;
+    bool m_get_acc;
+    bool m_get_gi;
+    bool m_get_ids;
 };
 
 
@@ -327,6 +330,22 @@ bool CTestOM::Thread_Run(int idx)
         TFeats feats;
         for ( size_t i = 0; i < ids.size(); ++i ) {
             CSeq_id_Handle sih = m_Ids[i];
+
+            if ( m_get_acc ) {
+                scope.GetAccVer(sih);
+                continue;
+            }
+
+            if ( m_get_gi ) {
+                scope.GetGi(sih);
+                continue;
+            }
+
+            if ( m_get_ids ) {
+                scope.GetIds(sih);
+                continue;
+            }
+
             if ( i != 0 && pause ) {
                 SleepSec(pause);
             }
@@ -477,7 +496,7 @@ bool CTestOM::Thread_Run(int idx)
                         CAnnot_CI annot_it(handle, sel);
                         if ( m_verbose ) {
                             NcbiCout
-                                << " Seq-annots: " << annot_it.size()
+                                << " Seq-annots: " << annot_it.size() << "/" << annots.size()
                                 << " features: " << feats.size() << NcbiEndl;
                             if ( 0 ) {
                                 for ( ; annot_it; ++annot_it ) {
@@ -639,6 +658,9 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
     args.AddFlag("no_external", "Exclude all external annotations");
     args.AddFlag("adaptive", "Use adaptive depth for feature iteration");
     args.AddFlag("verbose", "Print each Seq-id before processing");
+    args.AddFlag("get_acc", "Get accession.version only");
+    args.AddFlag("get_gi", "Get gi only");
+    args.AddFlag("get_ids", "Get all seq-ids only");
     args.AddDefaultKey("thread_index", "ThreadIndex",
                        "Thread index, affects test mode",
                        CArgDescriptions::eInteger, "0");
@@ -746,6 +768,9 @@ bool CTestOM::TestApp_Init(void)
     m_keep_handles = args["keep_handles"];
     m_idx = args["thread_index"].AsInteger();
     m_release_all_memory = args["release_all_memory"];
+    m_get_acc = args["get_acc"];
+    m_get_gi = args["get_gi"];
+    m_get_ids = args["get_ids"];
 
     m_ObjMgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
