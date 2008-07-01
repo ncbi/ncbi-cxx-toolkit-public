@@ -208,7 +208,9 @@ void CPepXML::ConvertScanID(CRef<CSpectrum_query> sQuery, string SpecID, int que
     } else {
         CRegexp RxpParse("(.*)\\.(\\d+)\\.(\\d+)\\.(\\d+)(\\.dta)?", CRegexp::fCompile_ignore_case);
         specFile = RxpParse.GetMatch(SpecID, 0, 1);
-
+        if (specFile == "") {
+            specFile = SpecID;
+        }
         startScan= RxpParse.GetMatch(SpecID, 0, 2);
         if (startScan == "") {
             startScan = NStr::IntToString(query);
@@ -372,6 +374,14 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
                 eValue->SetAttlist().SetValue(NStr::DoubleToString((*iHit)->GetEvalue()));
                 sHit->SetSearch_score().push_back(pValue);
                 sHit->SetSearch_score().push_back(eValue);
+                if ((*iHit)->CanGetScores()) {
+                    ITERATE(CMSHits::TScores, iScore, (*iHit)->GetScores()) {
+                        CRef<CSearch_score> score(new CSearch_score);
+                        score->SetAttlist().SetName((*iScore)->GetName());
+                        score->SetAttlist().SetValue(NStr::DoubleToString((*iScore)->GetValue()));
+                        sHit->SetSearch_score().push_back(score);
+                    }
+                }
                 // Generate alternative_proteins
                 for (iPephit++ ; iPephit != (*iHit)->GetPephits().end(); iPephit++) {
                     CRef<CAlternative_protein> altPro(new CAlternative_protein);
