@@ -41,6 +41,9 @@ BEGIN_SCOPE(objects)
 // Forward declarations
 class CSeq_feat;
 class CScope;
+class CFeat_CI;
+class CTSE_Handle;
+class CFeat_id;
 
 BEGIN_SCOPE(feature)
 
@@ -69,6 +72,27 @@ void GetLabel (const CSeq_feat&    feat,
                string*             label, 
                feature::ELabelType label_type,
                CScope*             scope = 0);
+
+
+class CFeatIdRemapper : public CObject
+{
+public:
+
+    void Reset(void);
+    size_t GetFeatIdsCount(void) const;
+
+    int RemapId(int old_id, const CTSE_Handle& tse);
+    bool RemapId(CFeat_id& id, const CTSE_Handle& tse);
+    bool RemapId(CFeat_id& id, const CFeat_CI& feat_it);
+    bool RemapIds(CSeq_feat& feat, const CTSE_Handle& tse);
+    CRef<CSeq_feat> RemapIds(const CFeat_CI& feat_it);
+    
+private:
+    typedef pair<int, CTSE_Handle> TFullId;
+    typedef map<TFullId, int> TIdMap;
+    TIdMap m_IdMap;
+};
+
 
 /* @} */
 

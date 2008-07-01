@@ -39,6 +39,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/feat_ci.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
@@ -53,6 +54,7 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -655,6 +657,103 @@ void GetLabel
     if (label->size() == label_len  &&  label_type == eContent) {
         *label += type_label;
     }
+}
+
+
+void CFeatIdRemapper::Reset(void)
+{
+    m_IdMap.clear();
+}
+
+
+size_t CFeatIdRemapper::GetFeatIdsCount(void) const
+{
+    return m_IdMap.size();
+}
+
+
+int CFeatIdRemapper::RemapId(int old_id, const CTSE_Handle& tse)
+{
+    TFullId key(old_id, tse);
+    int& new_id = m_IdMap[key];
+    if ( !new_id ) {
+        new_id = m_IdMap.size();
+    }
+    return new_id;
+}
+
+
+bool CFeatIdRemapper::RemapId(CFeat_id& id, const CTSE_Handle& tse)
+{
+    bool mapped = false;
+    if ( id.IsLocal() ) {
+        CObject_id& local = id.SetLocal();
+        if ( local.IsId() ) {
+            int old_id = local.GetId();
+            int new_id = RemapId(old_id, tse);
+            if ( new_id != old_id ) {
+                mapped = true;
+                local.SetId(new_id);
+            }
+        }
+    }
+    return mapped;
+}
+
+
+bool CFeatIdRemapper::RemapId(CFeat_id& id, const CFeat_CI& feat_it)
+{
+    bool mapped = false;
+    if ( id.IsLocal() ) {
+        CObject_id& local = id.SetLocal();
+        if ( local.IsId() ) {
+            int old_id = local.GetId();
+            int new_id = RemapId(old_id, feat_it.GetAnnot().GetTSE_Handle());
+            if ( new_id != old_id ) {
+                mapped = true;
+                local.SetId(new_id);
+            }
+        }
+    }
+    return mapped;
+}
+
+
+bool CFeatIdRemapper::RemapIds(CSeq_feat& feat, const CTSE_Handle& tse)
+{
+    bool mapped = false;
+    if ( feat.IsSetId() ) {
+        if ( RemapId(feat.SetId(), tse) ) {
+            mapped = true;
+        }
+    }
+    if ( feat.IsSetXref() ) {
+        NON_CONST_ITERATE ( CSeq_feat::TXref, it, feat.SetXref() ) {
+            CSeqFeatXref& xref = **it;
+            if ( xref.IsSetId() && RemapId(xref.SetId(), tse) ) {
+                mapped = true;
+            }
+        }
+    }
+    return mapped;
+}
+
+
+CRef<CSeq_feat> CFeatIdRemapper::RemapIds(const CFeat_CI& feat_it)
+{
+    CRef<CSeq_feat> feat(SerialClone(feat_it->GetMappedFeature()));
+    if ( feat->IsSetId() ) {
+        RemapId(feat->SetId(), feat_it);
+    }
+    if ( feat->IsSetXref() ) {
+        NON_CONST_ITERATE ( CSeq_feat::TXref, it, feat->SetXref() ) {
+            CSeqFeatXref& xref = **it;
+            if ( xref.IsSetId() ) {
+                RemapId(xref.SetId(), feat_it);
+            }
+        }
+    }
+    return feat;
 }
 
 
