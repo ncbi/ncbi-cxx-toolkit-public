@@ -135,7 +135,7 @@ void CScope_Impl::AddDefaults(TPriority priority)
     TConfWriteLockGuard guard(m_ConfLock);
     NON_CONST_ITERATE( CObjectManager::TDataSourcesLock, it, ds_set ) {
         m_setDataSrc.Insert(*x_GetDSInfo(const_cast<CDataSource&>(**it)),
-                            (priority == CScope::kPriority_NotSet) ?
+                            (priority == CScope::kPriority_Default) ?
                             (*it)->GetDefaultPriority() : priority);
     }
     x_ClearCacheOnNewDS();
@@ -148,7 +148,7 @@ void CScope_Impl::AddDataLoader(const string& loader_name, TPriority priority)
 
     TConfWriteLockGuard guard(m_ConfLock);
     m_setDataSrc.Insert(*x_GetDSInfo(*ds),
-                        (priority == CScope::kPriority_NotSet) ?
+                        (priority == CScope::kPriority_Default) ?
                         ds->GetDefaultPriority() : priority);
     x_ClearCacheOnNewDS();
 }
@@ -162,7 +162,7 @@ void CScope_Impl::AddScope(CScope_Impl& scope, TPriority priority)
     
     TConfWriteLockGuard guard(m_ConfLock);
     m_setDataSrc.Insert(tree,
-                        (priority == CScope::kPriority_NotSet) ? 9 : priority);
+                        (priority == CScope::kPriority_Default) ? 9 : priority);
     x_ClearCacheOnNewDS();
 }
 
@@ -1083,7 +1083,7 @@ CRef<CDataSource_ScopeInfo> CScope_Impl::AddDS(CRef<CDataSource> ds,
     TConfWriteLockGuard guard(m_ConfLock);
     CRef<CDataSource_ScopeInfo> ds_info = x_GetDSInfo(*ds);
     m_setDataSrc.Insert(*ds_info,
-                        (priority == CScope::kPriority_NotSet) ?
+                        (priority == CScope::kPriority_Default) ?
                         ds->GetDefaultPriority() : priority);
     CTSE_Lock tse_lock = ds->GetSharedTSE();
     if ( tse_lock ) {

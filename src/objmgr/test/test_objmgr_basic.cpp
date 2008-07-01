@@ -58,7 +58,7 @@ public:
         CObjectManager& om,
         const string& loader_name,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+        CObjectManager::TPriority priority = CObjectManager::kPriority_Default);
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& /*id*/,
                                     EChoice /*choice*/)
         {

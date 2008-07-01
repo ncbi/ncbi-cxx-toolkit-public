@@ -87,10 +87,11 @@ public:
     explicit CScope(CObjectManager& objmgr);
     virtual ~CScope(void);
 
-    // priority type and special value for added objects
+    /// priority type and special value for added objects
     typedef int TPriority;
     enum EPriority {
-        kPriority_NotSet = -1
+        kPriority_Default = -1, ///< Use default priority for added data
+        kPriority_NotSet = -1   ///< Deprecated: use kPriority_Default instead
     };
 
     /// Get object manager controlling this scope
@@ -193,16 +194,16 @@ public:
     // CScope contents modification methods
 
     /// Add default data loaders from object manager
-    void AddDefaults(TPriority pri = kPriority_NotSet);
+    void AddDefaults(TPriority pri = kPriority_Default);
 
     /// Add data loader by name.
     /// The loader (or its factory) must be known to Object Manager.
     void AddDataLoader(const string& loader_name,
-                       TPriority pri = kPriority_NotSet);
+                       TPriority pri = kPriority_Default);
 
     /// Add the scope's datasources as a single group with the given priority
     void AddScope(CScope& scope,
-                  TPriority pri = kPriority_NotSet);
+                  TPriority pri = kPriority_Default);
 
 
     /// AddXxx() control values
@@ -217,7 +218,7 @@ public:
     /// throw an exception or return handle to existent object depending
     /// on the action argument.
     CSeq_entry_Handle AddTopLevelSeqEntry(CSeq_entry& top_entry,
-                                          TPriority pri = kPriority_NotSet,
+                                          TPriority pri = kPriority_Default,
                                           EExist action = eExist_Default);
     /// Add shared Seq-entry, scope will not modify it.
     /// If edit handle is requested, scope will create a copy object.
@@ -225,7 +226,7 @@ public:
     /// throw an exception or return handle to existent object depending
     /// on the action argument.
     CSeq_entry_Handle AddTopLevelSeqEntry(const CSeq_entry& top_entry,
-                                          TPriority pri = kPriority_NotSet,
+                                          TPriority pri = kPriority_Default,
                                           EExist action = eExist_Throw);
 
 
@@ -237,7 +238,7 @@ public:
     /// throw an exception or return handle to existent object depending
     /// on the action argument.
     CBioseq_Handle AddBioseq(CBioseq& bioseq,
-                             TPriority pri = kPriority_NotSet,
+                             TPriority pri = kPriority_Default,
                              EExist action = eExist_Throw);
 
     /// Add shared Bioseq, scope will not modify it.
@@ -246,7 +247,7 @@ public:
     /// throw an exception or return handle to existent object depending
     /// on the action argument.
     CBioseq_Handle AddBioseq(const CBioseq& bioseq,
-                             TPriority pri = kPriority_NotSet,
+                             TPriority pri = kPriority_Default,
                              EExist action = eExist_Throw);
 
     /// Add Seq-annot, return its CSeq_annot_Handle.
@@ -255,7 +256,7 @@ public:
     /// throw an exception or return handle to existent object depending
     /// on the action argument.
     CSeq_annot_Handle AddSeq_annot(CSeq_annot& annot,
-                                   TPriority pri = kPriority_NotSet,
+                                   TPriority pri = kPriority_Default,
                                    EExist action = eExist_Throw);
     /// Add shared Seq-annot, scope will not modify it.
     /// If edit handle is requested, scope will create a copy object.
@@ -263,7 +264,7 @@ public:
     /// throw an exception or return handle to existent object depending
     /// on the action argument.
     CSeq_annot_Handle AddSeq_annot(const CSeq_annot& annot,
-                                   TPriority pri = kPriority_NotSet,
+                                   TPriority pri = kPriority_Default,
                                    EExist action = eExist_Throw);
 
     /// Get editable Biosec handle by regular one

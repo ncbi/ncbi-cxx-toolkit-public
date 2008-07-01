@@ -103,7 +103,7 @@ CObjectManager::TPriority CDataLoaderFactory::GetPriority(
 {
     string priority_str =
         GetParam(m_DriverName, params, kCFParam_DataLoader_Priority, false,
-        NStr::IntToString(CObjectManager::kPriority_NotSet));
+        NStr::IntToString(CObjectManager::kPriority_Default));
     return NStr::StringToInt(priority_str);
 }
 

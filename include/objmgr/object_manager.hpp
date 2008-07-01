@@ -151,7 +151,8 @@ public:
     typedef int TPriority;
     /// Default data source priority.
     enum EPriority {
-        kPriority_NotSet = -1
+        kPriority_Default = -1, ///< Use default priority for added data
+        kPriority_NotSet = -1   ///< Deprecated: use kPriority_Default instead
     };
 
     /// Add data loader using plugin manager.
@@ -176,7 +177,7 @@ public:
     /// Update loader's default-ness and priority.
     void SetLoaderOptions(const string& loader_name,
                           EIsDefault    is_default,
-                          TPriority     priority = kPriority_NotSet);
+                          TPriority     priority = kPriority_Default);
 
     /// Revoke previously registered data loader.
     /// Return FALSE if the loader is still in use (by some scope).
@@ -194,7 +195,7 @@ protected:
     // NOTE:  data loader must be created in the heap (ie using operator new).
     void RegisterDataLoader(CLoaderMaker_Base& loader_maker,
                             EIsDefault         is_default = eNonDefault,
-                            TPriority          priority = kPriority_NotSet);
+                            TPriority          priority = kPriority_Default);
 
     // functions for scopes
     void RegisterScope(CScope_Impl& scope);

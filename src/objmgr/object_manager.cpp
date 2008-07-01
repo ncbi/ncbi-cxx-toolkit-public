@@ -249,7 +249,7 @@ void CObjectManager::SetLoaderOptions(const string& loader_name,
     else if (is_default == eNonDefault && def_it != m_setDefaultSource.end()) {
         m_setDefaultSource.erase(def_it);
     }
-    if (priority != kPriority_NotSet  &&
+    if (priority != kPriority_Default  &&
         data_source->second->GetDefaultPriority() != priority) {
         data_source->second->SetDefaultPriority(priority);
     }
@@ -288,7 +288,7 @@ CObjectManager::AcquireDataLoader(CDataLoader& loader)
     if ( !lock ) {
         guard.Release();
         TWriteLockGuard wguard(m_OM_Lock);
-        lock = x_RegisterLoader(loader, kPriority_NotSet, eNonDefault, true);
+        lock = x_RegisterLoader(loader, kPriority_Default, eNonDefault, true);
     }
     return lock;
 }
@@ -419,7 +419,7 @@ CObjectManager::x_RegisterLoader(CDataLoader& loader,
     // create data source
     TDataSourceLock source(new CDataSource(loader));
     source->DoDeleteThisObject();
-    if (priority != kPriority_NotSet) {
+    if (priority != kPriority_Default) {
         source->SetDefaultPriority(priority);
     }
     _VERIFY(m_mapToSource.insert(TMapToSource::value_type(&loader,
