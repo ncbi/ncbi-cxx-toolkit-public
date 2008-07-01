@@ -123,6 +123,7 @@ protected:
     bool m_release_all_memory;
 
     CRef<CPrefetchManager> m_prefetch_manager;
+    CRef<CScope> m_single_scope;
 
     bool failed;
 };
@@ -134,7 +135,7 @@ protected:
 void CTestOM::SetValue(TBlobIdMap& vm, const TMapKey& key,
                        const CBlobIdKey& value)
 {
-    if ( m_release_all_memory ) return;
+    if ( m_release_all_memory || m_single_scope ) return;
     const CBlobIdKey* old_value;
     {{
         CFastMutexGuard guard(s_GlobalLock);
@@ -157,7 +158,7 @@ void CTestOM::SetValue(TBlobIdMap& vm, const TMapKey& key,
 
 void CTestOM::SetValue(TIntMap& vm, const TMapKey& key, int value)
 {
-    if ( m_release_all_memory ) return;
+    if ( m_release_all_memory || m_single_scope ) return;
     int old_value;
     {{
         CFastMutexGuard guard(s_GlobalLock);
@@ -176,7 +177,7 @@ void CTestOM::SetValue(TIntMap& vm, const TMapKey& key, int value)
 
 void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
 {
-    if ( m_release_all_memory ) return;
+    if ( m_release_all_memory || m_single_scope ) return;
     CNcbiOstrstream str;
     {{
         CObjectOStreamAsnBinary out(str);
@@ -226,7 +227,11 @@ bool CTestOM::Thread_Run(int idx)
 {
     // initialize scope
     CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
-    CScope scope(*CObjectManager::GetInstance());
+    CRef<CScope> scope_ref = m_single_scope;
+    if ( !scope_ref ) {
+        scope_ref = new CScope(*CObjectManager::GetInstance());
+    }
+    CScope& scope = *scope_ref;
     scope.AddDefaults();
 
     vector<CSeq_id_Handle> ids = m_Ids;
@@ -516,6 +521,8 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
     args.AddFlag("prefetch", "Use prefetching");
     args.AddFlag("release_all_memory",
                  "Do not keep any objects to check memory leaks");
+    args.AddFlag("single_scope",
+                 "Use single CScope obeject for all threads");
     return true;
 }
 
@@ -589,6 +596,12 @@ bool CTestOM::TestApp_Init(void)
     m_verbose = args["verbose"];
     m_release_all_memory = args["release_all_memory"];
 
+    if ( args["single_scope"] ) {
+        CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
+        m_single_scope = new CScope(*CObjectManager::GetInstance());
+        m_single_scope->AddDefaults();
+    }
+    
     if ( args["prefetch"] ) {
         LOG_POST("Using prefetch");
         m_prefetch_manager = new CPrefetchManager();
