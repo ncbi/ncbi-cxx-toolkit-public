@@ -391,6 +391,7 @@ private:
     void ProcessReading();
     void ProcessConfirm();
     void ProcessReadFailed();
+    void ProcessGetAffinityList();
 
     // Delayed output handlers
     void WriteProjection();
@@ -2298,6 +2299,11 @@ void CNetScheduleHandler::ProcessReadFailed()
 }
 
 
+void CNetScheduleHandler::ProcessGetAffinityList()
+{
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 
 /// NetSchedule command parser
@@ -2453,6 +2459,9 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { eNSA_Required, eNST_Int, eNSRF_Count },
           { eNSA_Required, eNST_Str, eNSRF_Output },
           { eNSA_Optional, eNST_Str, eNSRF_ErrMsg }, sm_End } },
+    // AFLS
+    { "AFLS",     &CNetScheduleHandler::ProcessGetAffinityList(), eNSCR_Worker,
+        NO_ARGS },
     { 0,          &CNetScheduleHandler::ProcessError },
 };
 

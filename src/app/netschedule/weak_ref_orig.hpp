@@ -139,7 +139,7 @@ public:
             // otherwise if no more weakrefs point to the object it will trigger
             // deleting proxy with mutex locked and lead to exception in
             // destructor. We can safely release lock here because weak proxy
-            // does not have pinter to us anymore.
+            // does not have pointer to us anymore.
         }}
         if (delete_this) {
             delete this;
