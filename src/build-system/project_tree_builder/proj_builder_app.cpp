@@ -364,7 +364,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,4,9) );
+    SetVersion( CVersionInfo(1,5,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -692,6 +692,8 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
     sln_gen.SaveSolution(m_Solution);
 
+    CreateCheckList(configurations, projects_tree);
+    
     list<string> enabled, disabled;
     CreateFeaturesAndPackagesFiles(configurations, enabled, disabled);
 
@@ -838,6 +840,7 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
     const list<SConfigInfo>* configs,
     list<string>& list_enabled, list<string>& list_disabled)
 {
+    PTB_INFO("Generating Features_And_Packages files...");
     // Create makefile path
     string base_path = GetProjectTreeInfo().m_Compilers;
     base_path = CDirEntry::ConcatPath(base_path, 
@@ -899,6 +902,40 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
     list_enabled.unique();
     list_disabled.sort();
     list_disabled.unique();
+}
+
+void CProjBulderApp::CreateCheckList(const list<SConfigInfo>* configs,
+    CProjectItemsTree& projects_tree)
+{
+    PTB_INFO("Generating check.sh.list files...");
+    string output_dir(m_Solution);
+    string::size_type n = output_dir.find_last_of('.');
+    if (n != string::npos) {
+        output_dir = output_dir.substr(0,n);
+    }
+    output_dir += ".check";
+    ITERATE(list<SConfigInfo>, c , *configs) {
+        string cfg(c->GetConfigFullName());
+        string file_path = CDirEntry::ConcatPath(output_dir, cfg);
+        CDir dir(file_path);
+        if (!dir.Exists()) {
+            dir.CreatePath();
+        }
+        file_path = CDirEntry::ConcatPath(file_path, "check.sh.list");
+        CNcbiOfstream ofs(file_path.c_str(), IOS_BASE::out | IOS_BASE::trunc );
+        if ( !ofs )
+            NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
+        ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+            const CProjItem& project = p->second;
+            if (project.m_CheckConfigs.find(cfg) != project.m_CheckConfigs.end()) {
+                ITERATE( list<string>, cmd, project.m_CheckInfo) {
+                    ofs << *cmd << endl;
+                }
+            } else if (!project.m_CheckInfo.empty()) {
+                PTB_INFO("Project: " << p->first.Id() << ": CHECK_CMD disabled in " << cfg);
+            }
+        }
+    }
 }
 
 

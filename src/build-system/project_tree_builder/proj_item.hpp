@@ -35,6 +35,8 @@
 #include "file_contents.hpp"
 
 #include <corelib/ncbienv.hpp>
+#include <set>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -161,6 +163,8 @@ public:
     string m_ExportHeadersDest;
     list<string> m_ExportHeaders;
 
+    list<string> m_CheckInfo;
+    set<string> m_CheckConfigs;
 private:
     void Clear(void);
     void SetFrom(const CProjItem& item);

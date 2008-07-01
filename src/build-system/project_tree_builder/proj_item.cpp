@@ -192,6 +192,8 @@ void CProjItem::SetFrom(const CProjItem& item)
 
     m_ExportHeadersDest = item.m_ExportHeadersDest;
     m_ExportHeaders     = item.m_ExportHeaders;
+    m_CheckInfo         = item.m_CheckInfo;
+    m_CheckConfigs      = item.m_CheckConfigs;
 }
 
 

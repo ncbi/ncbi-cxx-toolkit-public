@@ -295,7 +295,11 @@ void CSimpleMakeFileContents::AddReadyKV(const SKeyValue& kv)
     list<string> values;
     NStr::Split(kv.m_Value, LIST_SEPARATOR, values);
 
-    m_Contents[kv.m_Key] = values;
+    if (kv.m_Key == "CHECK_CMD") {
+        m_Contents[kv.m_Key].push_back( kv.m_Value);
+    } else {
+        m_Contents[kv.m_Key] = values;
+    }
 }
 
 

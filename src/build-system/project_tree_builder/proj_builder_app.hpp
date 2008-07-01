@@ -171,6 +171,8 @@ private:
     void    GenerateUnixProjects(CProjectItemsTree& projects_tree);
     void    CreateFeaturesAndPackagesFiles(const list<SConfigInfo>* configs,
                 list<string>& enabled, list<string>& disabled);
+    void    CreateCheckList(const list<SConfigInfo>* configs,
+                            CProjectItemsTree& projects_tree);
     bool    ConfirmConfiguration(void);
 };
 

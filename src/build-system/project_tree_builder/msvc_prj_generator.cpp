@@ -59,6 +59,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         if ( !project_context.IsConfigEnabled(cfg_info, &unmet, &unmet_req) ) {
             str_log += " " + cfg_info.GetConfigFullName() + "(because of " + unmet + ")";
         } else {
+            prj.m_CheckConfigs.insert(cfg_info.GetConfigFullName());
             if (!unmet_req.empty()) {
                 ++failed;
                 req_log += " " + cfg_info.GetConfigFullName() + "(because of " + unmet_req + ")";
