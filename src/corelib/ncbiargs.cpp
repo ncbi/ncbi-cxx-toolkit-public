@@ -2516,6 +2516,12 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
         }
         s_PrintCommentBody(arr, neg_comment, width);
     }
+    if (s_IsFlag(arg)) {
+        const CArgDesc_Flag* fl = dynamic_cast<const CArgDesc_Flag*>(&arg);
+        if (fl && !fl->GetSetValue()) {
+            s_PrintCommentBody(arr, "When the flag is present, its value is FALSE", width);
+        }
+    }
 }
 
 
