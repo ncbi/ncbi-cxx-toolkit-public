@@ -11,8 +11,8 @@ util/math$
 util/demo$
 util/test$
 connect$
-connect/services$
-connect/test$
+connect/services
+connect/test
 cgi$
 cgi/impl$
 html$
