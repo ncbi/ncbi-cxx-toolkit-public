@@ -43,6 +43,8 @@ x_delim=" ____ "
 x_delim_internal="~"
 x_tmp="/var/tmp"
 
+x_date_format="%m/%d/%Y %H:%M:%S"
+
 x_list=$1
 x_signature=$2
 x_build_dir=$3
@@ -160,6 +162,7 @@ res_concat_err="\$script.out_err"
 # Define both senses to accommodate shells lacking !
 is_report_err=false
 no_report_err=true
+is_db_load=false
 signature="$x_signature"
 sendmail=''
 domain='@ncbi.nlm.nih.gov'
@@ -187,8 +190,9 @@ USAGE:  $x_script_name {run | clean | concat | concat_err}
 
 ERROR:  \$1
 EOF_usage
-# Undocumented command:
+# Undocumented commands:
 #     report_err  Report failed tests directly to developers.
+#     load_to_db  Load data about test to database keeping all statistics.
 
     exit 1
 }
@@ -273,6 +277,11 @@ case "\$method" in
       # See RunTest() below
       ;;
 #----------------------------------------------------------
+   load_to_db )
+      is_db_load=true
+      # See RunTest() below
+      ;;
+#----------------------------------------------------------
    * )
       Usage "Invalid method name."
       ;;
@@ -348,210 +357,245 @@ ulimit -v 2000000
 
 RunTest()
 {
-   # Parameters
-   x_work_dir_tail="\$1"
-   x_work_dir="\$compile_dir/\$x_work_dir_tail"
-   x_test="\$2"
-   x_app="\$3"
-   x_run="\${4:-\$x_app}"
-   x_name="\${5:-\$x_run}"
-   x_ext="\$6"
-   x_timeout="\$7"
-   x_authors="\$8"
+    # Parameters
+    x_work_dir_tail="\$1"
+    x_work_dir="\$compile_dir/\$x_work_dir_tail"
+    x_test="\$2"
+    x_app="\$3"
+    x_run="\${4:-\$x_app}"
+    x_real_name="\$5"
+    x_name="\${5:-\$x_run}"
+    x_ext="\$6"
+    x_timeout="\$7"
+    x_authors="\$8"
 
-   if \$is_report_err; then
-      # Authors are not defined for this test
-      test -z "\$x_authors"  &&  return 0
-   fi
+    if \$is_report_err; then
+        # Authors are not defined for this test
+        test -z "\$x_authors"  &&  return 0
+    fi
 
-   count_total=\`expr \$count_total + 1\`
-   x_log="$x_tmp/\$\$.out\$count_total"
+    count_total=\`expr \$count_total + 1\`
+    x_log="$x_tmp/\$\$.out\$count_total"
 
-   # Check existence of the test's application directory
-   if [ -d "\$x_work_dir" ]; then
+    x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext"
+    x_test_rep="\$x_work_dir/\$x_test.test_rep\$x_ext"
 
-      # Goto the test's directory 
-      cd "\$x_work_dir"
-      x_cmd="[\$x_work_dir_tail] \$x_name"
+    if \$is_db_load; then
+        test_stat_load "\$x_test_rep" "\$x_test_out" >> "$x_build_dir/test_stat_load.log" 2>&1
+    else
+        if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+            echo "\$signature" > "\$x_test_rep"
+            echo "\$x_work_dir_tail" >> "\$x_test_rep"
+            echo "\$x_run" >> "\$x_test_rep"
+            echo "\$x_real_name" >> "\$x_test_rep"
+        fi
 
-      # Run test if it exist
-      if [ -f "\$x_app" ]; then
+        # Check existence of the test's application directory
+        if [ -d "\$x_work_dir" ]; then
 
-         CHECK_TIMEOUT="\$x_timeout"
-         export CHECK_TIMEOUT
-         _RLD_ARGS="-log \$x_log"
-         export _RLD_ARGS
+            # Goto the test's directory 
+            cd "\$x_work_dir"
+            x_cmd="[\$x_work_dir_tail] \$x_name"
 
-         # Fix empty parameters (replace "" to \"\", '' to \'\')
-         x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
+            # Run test if it exist
+            if [ -f "\$x_app" ]; then
 
-         # Run test under all specified check tools   
-         for tool in \$NCBI_CHECK_TOOLS; do
+                CHECK_TIMEOUT="\$x_timeout"
+                export CHECK_TIMEOUT
+                _RLD_ARGS="-log \$x_log"
+                export _RLD_ARGS
 
-            tool_lo=\`echo \$tool | tr '[A-Z]' '[a-z]'\`
-            tool_up=\`echo \$tool | tr '[a-z]' '[A-Z]'\`
-            NCBI_CHECK_TOOL=\`eval echo "\$"NCBI_CHECK_\${tool_up}""\`
+                # Fix empty parameters (replace "" to \"\", '' to \'\')
+                x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
+
+                # Run test under all specified check tools   
+                for tool in \$NCBI_CHECK_TOOLS; do
+
+                    tool_lo=\`echo \$tool | tr '[A-Z]' '[a-z]'\`
+                    tool_up=\`echo \$tool | tr '[a-z]' '[A-Z]'\`
+                    NCBI_CHECK_TOOL=\`eval echo "\$"NCBI_CHECK_\${tool_up}""\`
       
-            if [ \$tool_lo = "regular" ] ; then
-               x_cmd="[\$x_work_dir_tail] \$x_name"
-               x_test_out="\$x_work_dir/\$x_test.\$x_ext"
-            else
-               x_cmd="[\$x_work_dir_tail] \$tool_up \$x_name"
-               x_test_out="\$x_work_dir/\$x_test.\$x_ext.\$tool_lo"
-            fi
-            case "\$tool_lo" in
-               regular  ) ;;
-               valgrind ) NCBI_CHECK_TOOL="\$NCBI_CHECK_TOOL \$VALGRIND_CMD" ;;
-                      * ) NCBI_CHECK_TOOL="?" ;;
-            esac
+                    if [ \$tool_lo = "regular" ] ; then
+                        x_cmd="[\$x_work_dir_tail] \$x_name"
+                        x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext"
+                    else
+                        x_cmd="[\$x_work_dir_tail] \$tool_up \$x_name"
+                        x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext.\$tool_lo"
+                    fi
+                    case "\$tool_lo" in
+                    regular  ) ;;
+                    valgrind ) NCBI_CHECK_TOOL="\$NCBI_CHECK_TOOL \$VALGRIND_CMD" ;;
+                           * ) NCBI_CHECK_TOOL="?" ;;
+                    esac
 
-            # Just need to report errors to authors?
-            if \$is_report_err; then
-               test -f "\$x_test_out" || continue
-               x_code=\`cat \$x_test_out | grep -c '@@@ EXIT CODE:'\`
-               test \$x_code -ne 0 || continue
-               x_good=\`cat \$x_test_out | grep -c '@@@ EXIT CODE: 0'\`
-               if [ \$x_good -eq 1 ]; then
-                  continue
-               fi
-               MailToAuthors "\$x_authors" "\$x_test_out"
-               continue
-            fi
+                    # Just need to report errors to authors?
+                    if \$is_report_err; then
+                        test -f "\$x_test_out" || continue
+                        x_code=\`cat \$x_test_out | grep -c '@@@ EXIT CODE:'\`
+                        test \$x_code -ne 0 || continue
+                        x_good=\`cat \$x_test_out | grep -c '@@@ EXIT CODE: 0'\`
+                        if [ \$x_good -eq 1 ]; then
+                            continue
+                        fi
+                        MailToAuthors "\$x_authors" "\$x_test_out"
+                        continue
+                    fi
          
-            if [ ".\$NCBI_CHECK_TOOL" = ".?" ] ; then
-               result=255;
-               exec_time="Unknown check tool \$tool_up"
-            else
-               export NCBI_CHECK_TOOL
+                    if [ ".\$NCBI_CHECK_TOOL" = ".?" ] ; then
+                        result=255;
+                        exec_time="Unknown check tool \$tool_up"
+                    else
+                        export NCBI_CHECK_TOOL
          
-               echo \$x_run | grep '.sh' > /dev/null 2>&1 
-               if [ \$? -eq 0 ] ;  then
-                  # Run script without any check tools.
-                  # It will be applied inside script using $CHECK_EXEC.
-                  xx_run="\$x_run_fix"
-               else
-                  # Run under check tool
-                  xx_run="\$NCBI_CHECK_TOOL \$x_run_fix"
-               fi
+                        echo \$x_run | grep '.sh' > /dev/null 2>&1 
+                        if [ \$? -eq 0 ] ;  then
+                            # Run script without any check tools.
+                            # It will be applied inside script using $CHECK_EXEC.
+                            xx_run="\$x_run_fix"
+                        else
+                            # Run under check tool
+                            xx_run="\$NCBI_CHECK_TOOL \$x_run_fix"
+                        fi
 
-               # Write header to output file 
-               echo "\$x_test_out" >> \$res_journal
-               (
-                 echo "======================================================================"
-                 echo "\$x_name"
-                 echo "======================================================================"
-                 echo 
-               ) > \$x_test_out 2>&1
+                        # Write header to output file 
+                        echo "\$x_test_out" >> \$res_journal
+                        (
+                            echo "======================================================================"
+                            echo "\$x_name"
+                            echo "======================================================================"
+                            echo 
+                        ) > \$x_test_out 2>&1
 
-               # Remove old core file if it exist (for clarity of the test)
-               corefile="\$x_work_dir/core"
-               rm -f "\$corefile"  > /dev/null 2>&1
+                        # Remove old core file if it exist (for clarity of the test)
+                        corefile="\$x_work_dir/core"
+                        rm -f "\$corefile"  > /dev/null 2>&1
 
-               # Run check
-               start_time="\`date\`"
-               if [ \$CHECK_TIMEOUT -gt 200 ] ; then
-                   # For heavy apps we would like to know execution time also
-                   # for the case of exceeding of the maximum execution time.
-                   launch_sh="/var/tmp/launch.\$\$.sh"
+                        # Run check
+                        start_time="\`date +'$x_date_format'\`"
+                        if [ \$CHECK_TIMEOUT -gt 200 ] ; then
+                            # For heavy apps we would like to know execution time also
+                            # for the case of exceeding of the maximum execution time.
+                            launch_sh="/var/tmp/launch.\$\$.sh"
 cat > \$launch_sh <<EOF_launch
 #! /bin/sh
 exec time -p \$check_exec \`eval echo \$xx_run\`
 EOF_launch
-                   chmod a+x \$launch_sh
-                   \$launch_sh >\$x_log 2>&1
-                   result=\$?
-                   rm \$launch_sh
-               else
-                   \$check_exec time -p \`eval echo \$xx_run\` >\$x_log 2>&1
-                   result=\$?
-               fi
-               stop_time="\`date\`"
+                            chmod a+x \$launch_sh
+                            \$launch_sh >\$x_log 2>&1
+                            result=\$?
+                            rm \$launch_sh
+                        else
+                            \$check_exec time -p \`eval echo \$xx_run\` >\$x_log 2>&1
+                            result=\$?
+                        fi
+                        stop_time="\`date +'$x_date_format'\`"
 
-               sed -e '/ ["][$][@]["].*\$/ {
-                  s/^.*: //
-                  s/ ["][$][@]["].*$//
-               }' \$x_log >> \$x_test_out
+                        sed -e '/ ["][$][@]["].*\$/ {
+                                s/^.*: //
+                                s/ ["][$][@]["].*$//
+                        }' \$x_log >> \$x_test_out
 
-               # Get application execution time
-               exec_time=\`\$build_dir/sysdep.sh tl 7 \$x_log | tr '\n\r' '??'\`
-               echo \$exec_time | egrep 'real [0-9]|Maximum execution .* is exceeded' > /dev/null 2>&1 
-               if [ \$? -eq 0 ] ;  then
-                   exec_time=\`echo \$exec_time |  \\
-                              sed -e 's/??/?/g'    \\
-                                  -e 's/?$//'      \\
-                                  -e 's/?/, /g'    \\
-                                  -e 's/[ ] */ /g' \\
-                                  -e 's/.*\(Maximum execution .* is exceeded\).*$/\1/' \\
-                                  -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
-                                  -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]*\).*/\1/'\`
-               else
-                   exec_time='unparsable timing stats'
-               fi
+                        # Get application execution time
+                        exec_time=\`\$build_dir/sysdep.sh tl 7 \$x_log | tr '\n\r' '??'\`
+                        echo \$exec_time | egrep 'real [0-9]|Maximum execution .* is exceeded' > /dev/null 2>&1 
+                        if [ \$? -eq 0 ] ;  then
+                            exec_time=\`echo \$exec_time |  \\
+                                        sed -e 's/??/?/g'    \\
+                                            -e 's/?$//'      \\
+                                            -e 's/?/, /g'    \\
+                                            -e 's/[ ] */ /g' \\
+                                            -e 's/.*\(Maximum execution .* is exceeded\).*$/\1/' \\
+                                            -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
+                                            -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]*\).*/\1/'\`
+                        else
+                            exec_time='unparsable timing stats'
+                        fi
                
-               rm -f \$x_log
+                        rm -f \$x_log
 
-               # Analize check tool output
-               case "\$tool_lo" in
-                  valgrind ) summary_all=\`grep -c 'ERROR SUMMARY:' \$x_test_out\`
-                             summary_ok=\`grep -c 'ERROR SUMMARY: 0 ' \$x_test_out\`
-                             # The number of given lines can be zero.
-                             # In some cases we can lost valgrind's summary.
-                             if [ \$summary_all -ne \$summary_ok ]; then
-                                result=254
-                             fi
-                             ;;
-               esac
+                        # Analize check tool output
+                        case "\$tool_lo" in
+                            valgrind ) summary_all=\`grep -c 'ERROR SUMMARY:' \$x_test_out\`
+                                       summary_ok=\`grep -c 'ERROR SUMMARY: 0 ' \$x_test_out\`
+                                       # The number of given lines can be zero.
+                                       # In some cases we can lost valgrind's summary.
+                                       if [ \$summary_all -ne \$summary_ok ]; then
+                                           result=254
+                                       fi
+                                       ;;
+                        esac
 
-               # Get build tree checkout date
-               checkout=''
-               if [ -f "\$root_dir/checkout.date" ] ; then
-                  checkout=\`cat \$root_dir/checkout.date\`
-               fi
+                        # Get build tree checkout date
+                        checkout=''
+                        if [ -f "\$root_dir/checkout.date" ] ; then
+                            checkout=\`cat \$root_dir/checkout.date\`
+                        fi
 
-               # Write result of the test into the his output file
-               echo "Start time   : \$start_time"   >> \$x_test_out
-               echo "Stop time    : \$stop_time"    >> \$x_test_out
-               echo "Checkout date: \$checkout"     >> \$x_test_out
-               echo >> \$x_test_out
-               echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
-               echo "@@@ EXIT CODE: \$result" >> \$x_test_out
+                        # Write result of the test into the his output file
+                        echo "Start time   : \$start_time"   >> \$x_test_out
+                        echo "Stop time    : \$stop_time"    >> \$x_test_out
+                        echo "Checkout date: \$checkout"     >> \$x_test_out
+                        echo >> \$x_test_out
+                        echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
+                        echo "@@@ EXIT CODE: \$result" >> \$x_test_out
 
-               if [ -f "\$corefile" ]; then
-                  echo "@@@ CORE DUMPED" >> \$x_test_out
-                  if [ -d "\$bin_dir" -a -f "\$bin_dir/\$x_test" ]; then
-                     mv "\$corefile" "\$bin_dir/\$x_test.core"
-                  else
-                     rm -f "\$corefile"
-                  fi
-               fi
-            fi
+                        if [ -f "\$corefile" ]; then
+                            echo "@@@ CORE DUMPED" >> \$x_test_out
+                            if [ -d "\$bin_dir" -a -f "\$bin_dir/\$x_test" ]; then
+                                mv "\$corefile" "\$bin_dir/\$x_test.core"
+                            else
+                                rm -f "\$corefile"
+                            fi
+                        fi
+                    fi
 
-            # Write result also on the screen and into the log
-            if [ \$result -eq 0 ]; then
-               echo "OK  --  \$x_cmd     (\$exec_time)"
-               echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
-               count_ok=\`expr \$count_ok + 1\`
+                    # Write result also on the screen and into the log
+                    if [ \$result -eq 0 ]; then
+                        echo "OK  --  \$x_cmd     (\$exec_time)"
+                        echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
+                        count_ok=\`expr \$count_ok + 1\`
+
+                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "OK" >> "\$x_test_rep"
+                    else
+                        echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
+                        echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
+                        count_err=\`expr \$count_err + 1\`
+
+                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "ERR" >> "\$x_test_rep"
+                    fi
+
+                    if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+                        echo "\$start_time" >> "\$x_test_rep"
+                        echo "\$result"     >> "\$x_test_rep"
+                        echo "\$exec_time"  >> "\$x_test_rep"
+                    fi
+                done
             else
-               echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
-               echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
-               count_err=\`expr \$count_err + 1\`
+                if \$no_report_err; then
+                    echo "ABS --  \$x_cmd"
+                    echo "ABS --  \$x_cmd" >> \$res_log
+                    count_absent=\`expr \$count_absent + 1\`
+
+                    if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+                        echo "ABS"      >> "\$x_test_rep"
+                        echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
+                    fi
+                fi
             fi
-         done
-      else
-         if \$no_report_err; then
-            echo "ABS --  \$x_cmd"
-            echo "ABS --  \$x_cmd" >> \$res_log
-            count_absent=\`expr \$count_absent + 1\`
-         fi
-      fi
-  else
-      if \$no_report_err; then
-         # Test application is absent
-         echo "ABS -- \$x_work_dir - \$x_test"
-         echo "ABS -- \$x_work_dir - \$x_test" >> \$res_log
-         count_absent=\`expr \$count_absent + 1\`
-      fi
-  fi
+        else
+            if \$no_report_err; then
+                # Test application is absent
+                echo "ABS -- \$x_work_dir - \$x_test"
+                echo "ABS -- \$x_work_dir - \$x_test" >> \$res_log
+                count_absent=\`expr \$count_absent + 1\`
+
+                if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+                    echo "ABS"      >> "\$x_test_rep"
+                    echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
+                fi
+            fi
+        fi
+    fi
 }
 
 MailToAuthors()
@@ -646,10 +690,10 @@ for x_row in $x_tests; do
    # Generate extension for tests output file
    if [ "$x_test" != "$x_test_prev" ]; then 
       x_cnt=1
-      x_test_out="test_out"
+      x_test_ext=""
    else
       x_cnt=`expr $x_cnt + 1`
-      x_test_out="test_out$x_cnt"
+      x_test_ext="$x_cnt"
    fi
    x_test_prev="$x_test"
 
@@ -663,7 +707,7 @@ RunTest "$x_work_dir_tail" \\
         "$x_app" \\
         "$x_cmd" \\
         "$x_name" \\
-        "$x_test_out" \\
+        "$x_test_ext" \\
         "$x_timeout" \\
         "$x_authors"
 EOF

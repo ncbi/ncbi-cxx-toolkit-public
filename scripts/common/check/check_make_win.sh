@@ -40,6 +40,8 @@ x_delim=" ____ "
 x_delim_internal="~"
 x_tmp="/tmp"
 
+x_date_format="%m/%d/%Y %H:%M:%S"
+
 x_list=$1
 x_out=$2
 x_build_dir=$3
@@ -111,6 +113,7 @@ build_dir="$x_build_dir"
 src_dir="\$root_dir/src"
 build_trees="$x_build_trees" 
 
+is_db_load=false
 res_script="$x_out"
 res_journal="\$res_script.journal"
 res_log="\$res_script.log"
@@ -142,6 +145,8 @@ USAGE:  $x_script_name {run | clean | concat | concat_err}
 
 ERROR:  \$1
 EOF_usage
+# Undocumented command:
+#     load_to_db  Load data about test to database keeping all statistics.
 
     exit 1
 }
@@ -161,6 +166,7 @@ method="\$1"
 case "\$method" in
 #----------------------------------------------------------
    run )
+      # See RunTest() below
       ;;
 #----------------------------------------------------------
    clean )
@@ -235,7 +241,11 @@ case "\$method" in
       done
       exit 0
       ;;
-
+#----------------------------------------------------------
+   load_to_db )
+      is_db_load=true
+      # See RunTest() below
+      ;;
 #----------------------------------------------------------
    * )
       Usage "Invalid method name."
@@ -275,6 +285,7 @@ RunTest() {
    x_app="\$3"
    x_run="\${4:-\$x_app}"
    x_name="\${5:-\$x_run}"  
+   x_real_name="\$5"
    x_ext="\$6"
    x_timeout="\$7"
    x_requires="\$8"
@@ -308,75 +319,117 @@ RunTest() {
    fi
 
    # Generate name of the output file
-   x_test_out="\$x_work_dir/\$x_app.\$x_ext"
+   x_test_out="\$x_work_dir/\$x_app.out\$x_ext"
+   x_test_rep="\$x_work_dir/\$x_app.rep\$x_ext"
 
-   # Write header to output file 
-   echo "\$x_test_out" >> \$res_journal
-   (
-      echo "======================================================================"
-      echo "\${build_tree}\$x_conf - \$x_name"
-      echo "======================================================================"
-      echo 
-   ) > \$x_test_out 2>&1
-
-   # Goto the work directory 
-   cd "\$x_work_dir"
-
-   # Fix empty parameters (replace "" to \"\", '' to \'\')
-   x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
-   # Fix empty parameters (put each in '' or "")
-   x_run_fix=\`echo "\$x_run" | sed -e 's/""/'"'&'/g" -e "s/''/\\\\'\\\\'/g"\`
-
-   # Run check
-   CHECK_TIMEOUT="\$x_timeout"
-   export CHECK_TIMEOUT
-   start_time="\`date\`"
-   check_exec="\$root_dir/scripts/common/check/check_exec.sh"
-   \$check_exec time.exe -p \`eval echo \$x_run_fix\` > \$x_test_out.\$\$ 2>&1
-   result=\$?
-   stop_time="\`date\`"
-
-   sed -e '/ ["][$][@]["].*\$/ {
-      s/^.*: //
-      s/ ["][$][@]["].*$//
-      }' \$x_test_out.\$\$ >> \$x_test_out
-
-   # Get application execution time
-   exec_time=\`tail -3 \$x_test_out.\$\$\ | tr '\r' ' '\`
-   exec_time=\`echo \$exec_time | tr '\n' '?'\`
-   echo \$exec_time | grep 'real [0-9]\|Maximum execution .* is exceeded' > /dev/null 2>&1 
-   if [ \$? -eq 0 ] ;  then
-       exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
+   if \$is_db_load; then
+      test_stat_load "\$x_test_rep" "\$x_test_out" >> "$x_build_dir/test_stat_load.log" 2>&1
    else
-       exec_time='unparsable timing stats'
-   fi
-   rm -f $x_tmp/\$\$.out
-   rm -f \$x_test_out.\$\$
+      # Write header to output file 
+      echo "\$x_test_out" >> \$res_journal
+      (
+          echo "======================================================================"
+          echo "\${build_tree}\$x_conf - \$x_name"
+          echo "======================================================================"
+          echo 
+      ) > \$x_test_out 2>&1
 
-   # Get build tree checkout date
-   checkout=''
-   if [ -f "\$root_dir/checkout_info" ] ; then
-      checkout=\`grep "Sources date" \$root_dir/checkout_info | sed 's/^.* : //'\`
-   fi
+      if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+              case "\$COMPILER" in
+                  msvc7 )
+                      echo -n "MSVC_710" > "\$x_test_rep"
+                      ;;
+                  msvc8 )
+                      echo -n "MSVC_800" > "\$x_test_rep"
+                      ;;
+                  gcc )
+                      echo -n "GCC_344" > "\$x_test_rep"
+                      ;;
+              esac
+              echo -n "\$x_conf" >> "\$x_test_rep"
+              case "\$x_conf" in
+                  *DLL )
+                      echo -n "MT" >> "\$x_test_rep"
+                      ;;
+                  * )
+                      echo -n "ST" >> "\$x_test_rep"
+                      ;;
+              esac
+              echo "\${build_tree}\${ARCH}--i386-pc-win\${ARCH}-\${SRV_NAME}" >> "\$x_test_rep"
+              echo "\$x_wdir" >> "\$x_test_rep"
+              echo "\$x_run" >> "\$x_test_rep"
+              echo "\$x_real_name" >> "\$x_test_rep"
+      fi
 
-   # Write result of the test into the his output file
-   echo "Start time   : \$start_time"   >> \$x_test_out
-   echo "Stop time    : \$stop_time"    >> \$x_test_out
-   echo "Checkout date: \$checkout"     >> \$x_test_out
-   echo >> \$x_test_out
-   echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
-   echo "@@@ EXIT CODE: \$result" >> \$x_test_out
+      # Goto the work directory 
+      cd "\$x_work_dir"
 
-   # And write result also on the screen and into the log
-   x_cmd="\$x_cmd \$x_name"
-   if test \$result -eq 0; then
-      echo "OK  --  \$x_cmd     (\$exec_time)"
-      echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
-      count_ok=\`expr \$count_ok + 1\`
-   else
-      echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
-      echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
-      count_err=\`expr \$count_err + 1\`
+      # Fix empty parameters (replace "" to \"\", '' to \'\')
+      x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
+      # Fix empty parameters (put each in '' or "")
+      x_run_fix=\`echo "\$x_run" | sed -e 's/""/'"'&'/g" -e "s/''/\\\\'\\\\'/g"\`
+
+      # Run check
+      CHECK_TIMEOUT="\$x_timeout"
+      export CHECK_TIMEOUT
+      start_time="\`date +'$x_date_format'\`"
+      check_exec="\$root_dir/scripts/common/check/check_exec.sh"
+      \$check_exec time.exe -p \`eval echo \$x_run_fix\` > \$x_test_out.\$\$ 2>&1
+      result=\$?
+      stop_time="\`date +'$x_date_format'\`"
+
+      sed -e '/ ["][$][@]["].*\$/ {
+          s/^.*: //
+          s/ ["][$][@]["].*$//
+          }' \$x_test_out.\$\$ >> \$x_test_out
+
+      # Get application execution time
+      exec_time=\`tail -3 \$x_test_out.\$\$\ | tr '\r' ' '\`
+      exec_time=\`echo \$exec_time | tr '\n' '?'\`
+      echo \$exec_time | grep 'real [0-9]\|Maximum execution .* is exceeded' > /dev/null 2>&1 
+      if [ \$? -eq 0 ] ;  then
+          exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
+      else
+          exec_time='unparsable timing stats'
+      fi
+      rm -f $x_tmp/\$\$.out
+      rm -f \$x_test_out.\$\$
+
+      # Get build tree checkout date
+      checkout=''
+      if [ -f "\$root_dir/checkout_info" ] ; then
+          checkout=\`grep "Sources date" \$root_dir/checkout_info | sed 's/^.* : //'\`
+      fi
+
+      # Write result of the test into the his output file
+      echo "Start time   : \$start_time"   >> \$x_test_out
+      echo "Stop time    : \$stop_time"    >> \$x_test_out
+      echo "Checkout date: \$checkout"     >> \$x_test_out
+      echo >> \$x_test_out
+      echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
+      echo "@@@ EXIT CODE: \$result" >> \$x_test_out
+
+      # And write result also on the screen and into the log
+      x_cmd="\$x_cmd \$x_name"
+      if test \$result -eq 0; then
+          echo "OK  --  \$x_cmd     (\$exec_time)"
+          echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
+          count_ok=\`expr \$count_ok + 1\`
+
+          [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "OK" >> "\$x_test_rep"
+      else
+          echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
+          echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
+          count_err=\`expr \$count_err + 1\`
+
+          [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "ERR" >> "\$x_test_rep"
+      fi
+
+      if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+          echo "\$start_time" >> "\$x_test_rep"
+          echo "\$result"     >> "\$x_test_rep"
+          echo "\$exec_time"  >> "\$x_test_rep"
+      fi
    fi
 }
 
@@ -469,10 +522,10 @@ for x_row in $x_tests; do
    # Generate extension for tests output file
    if test "$x_test" != "$x_test_prev" ; then 
       x_cnt=1
-      x_test_out="out"
+      x_test_ext=""
    else
       x_cnt=`expr $x_cnt + 1`
-      x_test_out="out$x_cnt"
+      x_test_ext="$x_cnt"
    fi
    x_test_prev="$x_test"
 
@@ -486,7 +539,7 @@ for x_row in $x_tests; do
            "$x_app" \\
            "$x_cmd" \\
            "$x_name" \\
-           "$x_test_out" \\
+           "$x_test_ext" \\
            "$x_timeout" \\
            "$x_requires" \\
            "\$x_conf"
