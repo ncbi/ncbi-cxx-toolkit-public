@@ -279,6 +279,7 @@ case "\$method" in
 #----------------------------------------------------------
    load_to_db )
       is_db_load=true
+      rm -f "$x_build_dir/test_stat_load.log"
       # See RunTest() below
       ;;
 #----------------------------------------------------------
