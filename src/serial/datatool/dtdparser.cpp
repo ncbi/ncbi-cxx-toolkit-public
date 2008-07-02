@@ -917,9 +917,10 @@ CDataType* DTDParser::x_Type(
             if (refNode.IsEmbedded() && !refNode.IsNamed() &&
                 (node.GetOccurrence(refName) == DTDElement::eOne) &&
                 refNode.GetType() != DTDElement::eAny) {
-                type = x_Type(refNode,
-                              fromInside ? occ : refNode.GetOccurrence(),
-                              fromInside);
+                DTDElement::EOccurrence ref_occ = refNode.GetOccurrence();
+                DTDElement::EOccurrence new_occ =
+                    (fromInside || ref_occ == DTDElement::eOne) ? occ : ref_occ;
+                type = x_Type(refNode, new_occ, fromInside);
                 if (node.IsEmbedded()) {
                     DTDElement& emb = const_cast<DTDElement&>(node);
                     emb.SetName(refNode.GetName());
