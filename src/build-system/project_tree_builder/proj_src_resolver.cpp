@@ -155,6 +155,7 @@ void CProjSRCResolver::PrepereResolver(void)
         CDirEntry::SplitPath(makefile_path, &dir);
         m_MakefileDirs.push_back(dir);
     }
+    m_Resolver += GetApp().GetSite().GetMacros();
 }
 
 END_NCBI_SCOPE
