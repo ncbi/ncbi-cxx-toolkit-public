@@ -1966,7 +1966,15 @@ EIO_Status CNetScheduleClient::Connect(unsigned int   addr,
                                        unsigned short port)
 {
     m_AuthenticationSent = false;
-    return TParent::Connect(addr, port);
+    if (m_Sock) {
+
+        m_Host = CSocketAPI::gethostbyaddr(addr);
+        m_Port = port;
+        m_Sock->Connect(m_Host, m_Port);
+    } else {
+        SetSocket(new CSocket(addr, port), eTakeOwnership);
+    }
+    return m_Sock->GetStatus(eIO_Open);
 }
 
 

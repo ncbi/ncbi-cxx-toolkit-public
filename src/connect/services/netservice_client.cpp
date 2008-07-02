@@ -196,20 +196,6 @@ void CNetServiceClient::SetSocket(CSocket* sock, EOwnership own)
 }
 
 
-EIO_Status CNetServiceClient::Connect(unsigned int addr, unsigned short port)
-{
-    if (m_Sock) {
-
-        m_Host = CSocketAPI::gethostbyaddr(addr);
-        m_Port = port;
-        m_Sock->Connect(m_Host, m_Port);
-    } else {
-        SetSocket(new CSocket(addr, port), eTakeOwnership);
-    }
-    return m_Sock->GetStatus(eIO_Open);
-}
-
-
 CSocket* CNetServiceClient::DetachSocket()
 {
     CSocket* s = m_Sock; m_Sock = 0; return s;

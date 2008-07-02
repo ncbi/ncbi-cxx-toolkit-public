@@ -90,8 +90,6 @@ private:
 class NCBI_XCONNECT_EXPORT CNetScheduleClient : public CNetServiceClient
 {
 public:
-    typedef CNetServiceClient TParent;
-
     /// Connection management options
     enum EConnectionMode {
         /// Close connection after each call (default).

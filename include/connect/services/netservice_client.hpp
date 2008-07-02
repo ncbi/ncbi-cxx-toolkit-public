@@ -127,9 +127,6 @@ public:
     ///
     void SetSocket(CSocket* sock, EOwnership own = eTakeOwnership);
 
-    /// Connect using specified address (addr - network bo, port - host bo)
-    EIO_Status Connect(unsigned int addr, unsigned short port);
-
     /// Detach and return current socket.
     /// Caller is responsible for deletion.
     CSocket* DetachSocket();
