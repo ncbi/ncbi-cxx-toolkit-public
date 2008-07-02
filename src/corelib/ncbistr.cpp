@@ -3113,4 +3113,22 @@ string CStringDecoder_Url::Decode(const string& src,
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+//  CTempString (deprecated constructors, defined out of line to cut down
+//  on spurious warnings when building with compilers that warn on
+//  definition rather than merely, and arguably more sensibly, on usage).
+
+
+CTempString::CTempString(const char* str, size_type pos, size_type len)
+    : m_String(str+pos), m_Length(len)
+{
+}
+
+
+CTempString::CTempString(const string& str, size_type len)
+    : m_String(str.data()), m_Length(min(len, str.size()))
+{
+}
+
+
 END_NCBI_SCOPE

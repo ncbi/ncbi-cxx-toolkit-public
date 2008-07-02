@@ -346,22 +346,8 @@ CTempString::CTempString(const char* str, size_type len)
 
 
 inline
-CTempString::CTempString(const char* str, size_type pos, size_type len)
-    : m_String(str+pos), m_Length(len)
-{
-}
-
-
-inline
 CTempString::CTempString(const string& str)
     : m_String(str.data()), m_Length(str.size())
-{
-}
-
-
-inline
-CTempString::CTempString(const string& str, size_type len)
-    : m_String(str.data()), m_Length(min(len, str.size()))
 {
 }
 
