@@ -66,7 +66,7 @@ private:
     CPepXML& operator=(const CPepXML& value);
 
     char ConvertAA(char in);
-    CRef<CModification_info> ConvertModifications(CRef<CMSHits> msHits, CRef<CMSModSpecSet> Modset);
+    CRef<CModification_info> ConvertModifications(CRef<CMSHits> msHits, CRef<CMSModSpecSet> Modset, set<int>& vModSet);
     void ConvertModSetting(CRef<CSearch_summary> sSum, CRef<CMSModSpecSet> Modset, int modnum, bool fixed);
     void ConvertScanID(CRef<CSpectrum_query> sQuery, string SpecID, int query, int charge);
     string GetProteinName(CRef<CMSPepHit> pHit);

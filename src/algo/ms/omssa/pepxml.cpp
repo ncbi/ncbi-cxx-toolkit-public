@@ -60,7 +60,7 @@ char CPepXML::ConvertAA(char in) {
 typedef pair<int, string> TAAModPair;
 typedef map<int, string> TAAModMap;
 
-CRef<CModification_info> CPepXML::ConvertModifications(CRef<CMSHits> msHits, CRef<CMSModSpecSet> Modset) {
+CRef<CModification_info> CPepXML::ConvertModifications(CRef<CMSHits> msHits, CRef<CMSModSpecSet> Modset, set<int>& vModSet) {
     if (msHits->GetMods().empty()) {
         return null;
     }
@@ -71,7 +71,8 @@ CRef<CModification_info> CPepXML::ConvertModifications(CRef<CMSHits> msHits, CRe
 
     ITERATE(CMSHits::TMods, iMod, msHits->GetMods()) {
         int pos = (*iMod)->GetSite();
-        int num = (*iMod)->GetModtype();  // poorly named in OMSSA, is actually MSMod, not MSModType 
+        int num = (*iMod)->GetModtype();  // poorly named in OMSSA, is actually MSMod, not MSModType
+        vModSet.insert(num);
         EMSModType type = Modset->GetModType(num);
         double mdiff = MSSCALE2DBL(Modset->GetModMass(num));
         char aa = pep[pos];
@@ -301,12 +302,15 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
     }
 
     // Variable mods
+    // Delay processing until all hits are examined, in case the spectral library search 
+    // adds extra mods not seen here.
+    set<int> variableMods;
     CMSSearchSettings::TVariable::const_iterator iterV;
     for (iterV = inOMSSA.GetRequest().front()->GetSettings().GetVariable().begin();
          iterV != inOMSSA.GetRequest().front()->GetSettings().GetVariable().end(); ++iterV) {
-        ConvertModSetting(sSum, Modset, *iterV, false);
+        //ConvertModSetting(sSum, Modset, *iterV, false);
+        variableMods.insert(*iterV);
     }
-    rSum->SetSearch_summary().push_back(sSum);
     
     // Now for the Spectrum Queries
     CMSResponse::THitsets::const_iterator iHits;
@@ -391,7 +395,7 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
 	                //altPro->SetAlternative_protein().SetAttlist().SetProtein_mw();  //skip
                     sHit->SetAlternative_protein().push_back(altPro);
                 }
-                CRef<CModification_info> modInfo = ConvertModifications(*iHit, Modset);
+                CRef<CModification_info> modInfo = ConvertModifications(*iHit, Modset, variableMods);
                 if (modInfo) sHit->SetModification_info(*modInfo);
                 
                 sResult->SetSearch_hit().push_back(sHit);
@@ -400,6 +404,12 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
             rSum->SetSpectrum_query().push_back(sQuery);
         }
     }
+    
+    ITERATE(set<int>, iVMod, variableMods) {
+        ConvertModSetting(sSum, Modset, *iVMod, false);
+    }
+
+    rSum->SetSearch_summary().push_back(sSum);
     this->SetMsms_run_summary().push_back(rSum);
 
 }
