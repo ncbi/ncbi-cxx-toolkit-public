@@ -82,7 +82,7 @@ AutoPtr<CFileModules> DTDParser::Modules(const string& fileName)
         CDirEntry entry(fileName);
         m_StackPath.push(entry.GetDir());
         m_StackLexerName.push_back(fileName);
-        modules->AddModule(Module(entry.GetBase()));
+        modules->AddModule( Module( NStr::Replace( entry.GetBase(), ".", "_")));
         m_StackLexerName.pop_back();
         m_StackPath.pop();
     }
