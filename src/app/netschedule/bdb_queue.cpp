@@ -571,7 +571,6 @@ void CQueueDataBase::MountQueue(const string& qname,
     _ASSERT(m_Env);
 
     auto_ptr<SLockedQueue> q(new SLockedQueue(qname, qclass, kind));
-//    q->Open(*m_Env, m_Path);
     q->Attach(queue_db_block);
     q->SetParameters(params);
 
@@ -1925,6 +1924,20 @@ void CQueue::FailReadingJobs(unsigned read_id, TNSBitVector& jobs)
 }
 
 
+void CQueue::InitNode(unsigned       host,
+                      unsigned short port,
+                      const string&  node_id)
+{
+    // Do something here
+}
+
+
+void CQueue::ClearJobsForNode(const string&  node_id)
+{
+    // Do something here
+}
+
+
 void CQueue::PutResult(unsigned      job_id,
                        int           ret_code,
                        const string* output)
@@ -2159,8 +2172,8 @@ CQueue::PutResultGetJob(// PutResult parameters
 }
 
 
-bool CQueue::PutProgressMessage(unsigned    job_id,
-                                const char* msg)
+bool CQueue::PutProgressMessage(unsigned      job_id,
+                                const string& msg)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 

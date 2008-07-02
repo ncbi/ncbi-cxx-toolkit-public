@@ -83,7 +83,8 @@ public:
         eQuerySyntaxError,
         eCommandIsNotAllowed,
         eObsoleteCommand,
-        eInvalidParameter
+        eInvalidParameter,
+        eNoJobsWithAffinity
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -106,6 +107,7 @@ public:
         case eCommandIsNotAllowed: return "eCommandIsNotAllowed";
         case eObsoleteCommand:     return "eObsoleteCommand";
         case eInvalidParameter:    return "eInvalidParameter";
+        case eNoJobsWithAffinity:  return "eNoJobsWithAffinity";
         default:                   return CNetServiceException::GetErrCodeString();
         }
     }

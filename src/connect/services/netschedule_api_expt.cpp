@@ -54,6 +54,7 @@ CNetScheduleExceptionMap::CNetScheduleExceptionMap()
     m_Map["eCommandIsNotAllowed"] = CNetScheduleException::eCommandIsNotAllowed;
     m_Map["eObsoleteCommand"]     = CNetScheduleException::eObsoleteCommand;
     m_Map["eInvalidParameter"]    = CNetScheduleException::eInvalidParameter;
+    m_Map["eNoJobsWithAffinity"]  = CNetScheduleException::eNoJobsWithAffinity;
 }
 
 CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)

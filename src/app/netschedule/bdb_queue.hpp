@@ -141,8 +141,8 @@ public:
                          const list<string>* aff_list,
                          CJob*          new_job);
 
-    bool PutProgressMessage(unsigned    job_id,
-                            const char* msg);
+    bool PutProgressMessage(unsigned      job_id,
+                            const string& msg);
 
     void JobFailed(unsigned      job_id,
                    const string& err_msg,
@@ -212,6 +212,15 @@ public:
     void ConfirmJobs(unsigned read_id, TNSBitVector& jobs);
     /// Fail (negative acknoledge) reading of these jobs
     void FailReadingJobs(unsigned read_id, TNSBitVector& jobs);
+
+    // Make new worker node record with id, host and port
+    // Also check that old nodes with same (host, port) are cleared
+    void InitNode(unsigned       host,
+                  unsigned short port,
+                  const string&  node_id);
+    /// Clear all jobs, still running for node.
+    /// Fails all such jobs, called by external node watcher
+    void ClearJobsForNode(const string&  node_id);
 
     /// @param host_addr
     ///    host address in network BO

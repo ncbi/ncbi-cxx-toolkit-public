@@ -123,6 +123,7 @@ enum ENSRequestField {
     eNSRF_QueueComment,
     eNSRF_Tags,
     eNSRF_AffinityPrev,
+    eNSRF_Guid,
     // for Query
     eNSRF_Select,
     eNSRF_Where,
@@ -133,7 +134,6 @@ struct SJS_Request
 {
     string    input;
     string    output;
-    char      progress_msg[kNetScheduleMaxDBDataSize];
     char      affinity_token[kNetScheduleMaxDBDataSize];
     string    job_key;
     int       job_return_code;
@@ -149,7 +149,8 @@ struct SJS_Request
 
     void Init()
     {
-        input[0] = output[0] = progress_msg[0] = affinity_token[0] = 0;
+        affinity_token[0] = 0;
+        input.erase(); output.erase();
         job_key.erase(); err_msg.erase();
         param1.erase(); param2.erase(); param3.erase();
         job_return_code = port = timeout = job_mask = 0;
@@ -171,10 +172,6 @@ struct SJS_Request
             break;
         case eNSRF_Output:
             output.erase(); output.append(val, size);
-            break;
-        case eNSRF_ProgressMsg:
-            strncpy(progress_msg, val, eff_size);
-            progress_msg[eff_size] = 0;
             break;
         case eNSRF_AffinityToken:
             strncpy(affinity_token, val, eff_size);
@@ -201,10 +198,12 @@ struct SJS_Request
         case eNSRF_ErrMsg:
             err_msg.erase(); err_msg.append(val, eff_size);
             break;
+        case eNSRF_ProgressMsg:
         case eNSRF_Option:
         case eNSRF_Status:
         case eNSRF_QueueName:
         case eNSRF_AffinityPrev:
+        case eNSRF_Guid:
             param1.erase(); param1.append(val, eff_size);
             break;
         case eNSRF_QueueClass:
@@ -391,6 +390,9 @@ private:
     void ProcessReading();
     void ProcessConfirm();
     void ProcessReadFailed();
+    void ProcessGetAffinityList();
+    void ProcessInitNode();
+    void ProcessClearJobs();
 
     // Delayed output handlers
     void WriteProjection();
@@ -1227,7 +1229,7 @@ void CNetScheduleHandler::ProcessSubmit()
     job.SetSubmAddr(m_PeerAddr);
     job.SetSubmPort(m_JobReq.port);
     job.SetSubmTimeout(m_JobReq.timeout);
-    job.SetProgressMsg(m_JobReq.progress_msg);
+    job.SetProgressMsg(m_JobReq.param1);
 
     unsigned job_id = m_Queue->Submit(job);
                         
@@ -1536,7 +1538,7 @@ void CNetScheduleHandler::ProcessPutMessage()
 {
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
 
-    if(m_Queue->PutProgressMessage(job_id, m_JobReq.progress_msg))
+    if(m_Queue->PutProgressMessage(job_id, m_JobReq.param1))
         WriteOK();
     else
         WriteErr("Job not found");
@@ -2298,6 +2300,26 @@ void CNetScheduleHandler::ProcessReadFailed()
 }
 
 
+void CNetScheduleHandler::ProcessGetAffinityList()
+{
+    WriteOK("Affinity preference placeholder");
+}
+
+
+void CNetScheduleHandler::ProcessInitNode()
+{
+    m_Queue->InitNode(m_PeerAddr, m_JobReq.port, m_JobReq.param1);
+    WriteOK();
+}
+
+
+void CNetScheduleHandler::ProcessClearJobs()
+{
+    m_Queue->ClearJobsForNode(m_JobReq.param1);
+    WriteOK();
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 
 /// NetSchedule command parser
@@ -2453,6 +2475,16 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { eNSA_Required, eNST_Int, eNSRF_Count },
           { eNSA_Required, eNST_Str, eNSRF_Output },
           { eNSA_Optional, eNST_Str, eNSRF_ErrMsg }, sm_End } },
+    // AFLS
+    { "AFLS",     &CNetScheduleHandler::ProcessGetAffinityList, eNSCR_Worker,
+        NO_ARGS },
+    // INIT port : uint id : string
+    { "INIT",     &CNetScheduleHandler::ProcessInitNode, eNSCR_Worker,
+        { { eNSA_Required, eNST_Int, eNSRF_Port },
+          { eNSA_Required, eNST_Str, eNSRF_Guid }, sm_End } },
+    // CLRJ id : string
+    { "CLRJ",     &CNetScheduleHandler::ProcessClearJobs, eNSCR_Worker,
+        { { eNSA_Required, eNST_Str, eNSRF_Guid }, sm_End } },
     { 0,          &CNetScheduleHandler::ProcessError },
 };
 
