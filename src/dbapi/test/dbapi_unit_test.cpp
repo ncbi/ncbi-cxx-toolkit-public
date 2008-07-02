@@ -14653,20 +14653,25 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
 
 
 #ifdef HAVE_LIBCONNEXT
-    if (args->GetTestConfiguration() != CTestArguments::eFast) {
-        if (args->GetServerType() == CDBConnParams::eMSSqlServer &&
-            (args->GetDriverName() == ftds_odbc_driver
-            || args->GetDriverName() == ftds64_driver)
-            ) 
-        {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Authentication,
-                                    DBAPIInstance);
-            tc->depends_on(tc_init);
-            add(tc);
-        } else {
-            args->PutMsgDisabled("Test_Authentication");
-        }
-    }
+	// In case of CRYPT_Version(0) == -1 we have a stub.
+	if (CRYPT_Version(-1) != -1) 
+	{
+		if (args->GetTestConfiguration() != CTestArguments::eFast) 
+		{
+			if (args->GetServerType() == CDBConnParams::eMSSqlServer &&
+				(args->GetDriverName() == ftds_odbc_driver
+				|| args->GetDriverName() == ftds64_driver)
+				) 
+			{
+				tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Authentication,
+										DBAPIInstance);
+				tc->depends_on(tc_init);
+				add(tc);
+			} else {
+				args->PutMsgDisabled("Test_Authentication");
+			}
+		}
+	}
 #endif
 
     //
