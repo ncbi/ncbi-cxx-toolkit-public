@@ -275,7 +275,9 @@ public:
     
     void Test_Iskhakov(void);
     void Test_NCBI_LS(void);
+#ifdef HAVE_LIBCONNEXT
     void Test_Authentication(void);
+#endif
     void Test_DriverContext_One(void);
     void Test_DriverContext_Many(void);
     void Test_Decimal(void);
