@@ -32,7 +32,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/test_mt.hpp>
-
 #include <connect/ncbi_util.h>
 
 #include <objects/seqloc/Seq_id.hpp>
@@ -49,6 +48,7 @@
 #include <objmgr/prefetch_manager.hpp>
 #include <objmgr/prefetch_actions.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 #include <serial/serial.hpp>
@@ -121,7 +121,10 @@ protected:
     bool m_keep_handles;
     bool m_verbose;
     bool m_release_all_memory;
-
+    bool m_blastdb;
+    
+    CRef<CScope> CreateScope(void);
+    
     CRef<CPrefetchManager> m_prefetch_manager;
     CRef<CScope> m_single_scope;
 
@@ -223,13 +226,27 @@ void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
 }
 
 
+CRef<CScope> CTestOM::CreateScope(void)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    if ( m_blastdb ) {
+        CBlastDbDataLoader::RegisterInObjectManager
+            (*om, "nr", CBlastDbDataLoader::eProtein,
+             CObjectManager::eDefault, 88);
+    }
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    return scope;
+}
+
+
 bool CTestOM::Thread_Run(int idx)
 {
     // initialize scope
-    CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
     CRef<CScope> scope_ref = m_single_scope;
     if ( !scope_ref ) {
-        scope_ref = new CScope(*CObjectManager::GetInstance());
+        scope_ref = CreateScope();
     }
     CScope& scope = *scope_ref;
     scope.AddDefaults();
@@ -523,6 +540,8 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
                  "Do not keep any objects to check memory leaks");
     args.AddFlag("single_scope",
                  "Use single CScope obeject for all threads");
+    args.AddFlag("blastdb",
+                 "Use BLAST data loader");
     return true;
 }
 
@@ -595,11 +614,10 @@ bool CTestOM::TestApp_Init(void)
     m_keep_handles = args["keep_handles"];
     m_verbose = args["verbose"];
     m_release_all_memory = args["release_all_memory"];
+    m_blastdb = args["blastdb"];
 
     if ( args["single_scope"] ) {
-        CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
-        m_single_scope = new CScope(*CObjectManager::GetInstance());
-        m_single_scope->AddDefaults();
+        m_single_scope = CreateScope();
     }
     
     if ( args["prefetch"] ) {

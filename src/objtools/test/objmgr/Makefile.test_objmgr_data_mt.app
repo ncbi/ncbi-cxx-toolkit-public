@@ -5,7 +5,7 @@
 
 APP = test_objmgr_data_mt
 SRC = test_objmgr_data_mt
-LIB = test_mt $(OBJMGR_LIBS)
+LIB = test_mt ncbi_xloader_blastdb seqdb blastdb $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
