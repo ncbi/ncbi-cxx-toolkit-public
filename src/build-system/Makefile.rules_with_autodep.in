@@ -18,7 +18,7 @@ include $(builddir)/Makefile.rules
 # configured --without-autodep; at any rate, this issue should mainly
 # affect out-of-tree builds, so that shouldn't matter in practice.)
 ifneq (,$(filter -isysroot,$(CONF_CC)))
- ifeq (,$(filter 8.%,$(shell uname -r))
+ ifeq (,$(filter 8.%,$(shell uname -r)))
   CONF_CC   := $(subst -isysroot /Developer/SDKs/MacOSX10.4u.sdk,,$(CONF_CC))
   CONF_CXX  := $(subst -isysroot /Developer/SDKs/MacOSX10.4u.sdk,,$(CONF_CXX))
   CONF_CPP  := $(subst -isysroot /Developer/SDKs/MacOSX10.4u.sdk,,$(CONF_CPP))
