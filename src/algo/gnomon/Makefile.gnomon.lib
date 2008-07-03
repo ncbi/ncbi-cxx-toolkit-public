@@ -2,9 +2,10 @@
 
 ASN_DEP = seq
 ASN = gnomon
-SRC = $(ASN:%=%__) $(ASN:%=%___) gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq asn1
+SRC = $(ASN:%=%__) $(ASN:%=%___) \
+    gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq asn1
 LIB = xalgognomon
-LIB_OR_DLL = lib
+DLL_LIB = xobjutil $(SOBJMGR_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
