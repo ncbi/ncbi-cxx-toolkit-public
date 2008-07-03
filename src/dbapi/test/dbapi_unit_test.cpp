@@ -15415,6 +15415,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
     {
         if (args->GetDriverName() != ftds8_driver
             && args->GetDriverName() != ftds_dblib_driver
+            && args->GetDriverName() != dblib_driver // 07/03/2008 dblib driver stopped to connect to LINK_OS.
            ) 
         {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Iskhakov,
