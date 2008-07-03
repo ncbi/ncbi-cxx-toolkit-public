@@ -163,6 +163,7 @@ res_concat_err="\$script.out_err"
 is_report_err=false
 no_report_err=true
 is_db_load=false
+no_db_load=true
 signature="$x_signature"
 sendmail=''
 domain='@ncbi.nlm.nih.gov'
@@ -279,6 +280,7 @@ case "\$method" in
 #----------------------------------------------------------
    load_to_db )
       is_db_load=true
+      no_db_load=false
       rm -f "$x_build_dir/test_stat_load.log"
       # See RunTest() below
       ;;
@@ -345,7 +347,7 @@ count_err=0
 count_absent=0
 count_total=0
 
-if \$no_report_err; then
+if \$no_report_err && \$no_db_load; then
    rm -f "\$res_journal"
    rm -f "\$res_log"
 fi
