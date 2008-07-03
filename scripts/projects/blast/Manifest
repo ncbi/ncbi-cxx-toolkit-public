@@ -24,8 +24,11 @@ APP: legacy_blast.pl makembindex makeblastdb blastdbcmd blastdb_aliastool
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux32     : plain : GCC.sh            --without-debug --with-mt --with-flat-makefile
-Linux64     : plain : GCC.sh            --without-debug --with-mt --with-flat-makefile
+
+# ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
+# that
+Linux32     : plain : ICC.sh            --without-debug --with-mt --with-flat-makefile
+Linux64     : plain : ICC.sh            --without-debug --with-mt --with-flat-makefile
 
 Win32       : plain : msvc800_prj   static  32  ReleaseDLL
 Win64       : plain : msvc800_prj   static  64  ReleaseDLL
@@ -34,3 +37,4 @@ SunOSx86    : plain : WorkShop59.sh 64  --without-debug --with-mt --with-flat-ma
 SunOSSparc  : plain : WorkShop59.sh 64  --without-debug --with-mt --with-flat-makefile
 
 PowerMAC    : plain : GCC.sh            --without-debug --with-mt --with-flat-makefile
+PowerMAC    : universal : GCC.sh        --without-debug --with-mt --with-flat-makefile --with-universal
