@@ -273,8 +273,10 @@ count_err=0
 count_absent=0
 configurations="$x_confs"
 
-rm -f "\$res_journal"
-rm -f "\$res_log"
+if ! is_db_load; then
+    rm -f "\$res_journal"
+    rm -f "\$res_log"
+fi
 
 ##  Run one test
 
