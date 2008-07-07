@@ -92,8 +92,8 @@ PssmMakerOptions::PssmMakerOptions()
 //consensus is not in profiles
 //row 0 if profiles is the master
 CdPssmInput::CdPssmInput(ResidueProfiles& profiles, PssmMakerOptions& config, bool useConsensus)
-: m_profiles(profiles),m_options(0), m_useConsensus(useConsensus), m_currentCol(0),
-	m_diagRequest()
+  : m_profiles(profiles),m_options(0), m_useConsensus(useConsensus), m_diagRequest(),
+    m_currentCol(0)
 {
 	PSIBlastOptionsNew(&m_options);
 	if (m_useConsensus)
@@ -309,8 +309,8 @@ const PSIDiagnosticsRequest* CdPssmInput::GetDiagnosticsRequest()
 
 //------------------------- PssmMaker ---------------------
 PssmMaker::PssmMaker(CCdCore* cd, bool useConsensus, bool addQueryToPssm) 
-	: m_conMaker(0), m_useConsensus(useConsensus), m_trunctMaster(),
-	m_masterSeqEntry(), m_addQuery(addQueryToPssm), m_cd(cd), m_pssmInput(0)
+	: m_conMaker(0), m_useConsensus(useConsensus), m_addQuery(addQueryToPssm), 
+	m_masterSeqEntry(), m_trunctMaster(), m_cd(cd), m_pssmInput(0)
 	//m_identityFilterThreshold(0.94)
 {
 	CRef< CSeq_id > seqId;

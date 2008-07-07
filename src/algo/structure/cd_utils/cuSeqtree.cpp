@@ -58,12 +58,12 @@ void SeqItem::init()
 }
 
 
-SeqItem::SeqItem() :selections(), name()
+SeqItem::SeqItem() :name(), selections()
 {
 	init();
 }
 
-SeqItem::SeqItem(int rowid, double dist) : selections(), name()
+SeqItem::SeqItem(int rowid, double dist) : name(), selections()
 {
 	init();
 	distance = dist;
@@ -72,11 +72,11 @@ SeqItem::SeqItem(int rowid, double dist) : selections(), name()
 
 SeqItem::SeqItem(const SeqItem& rhs): name(rhs.name), id(rhs.id), distance(rhs.distance), 
 	distanceToRoot(rhs.distanceToRoot),x(rhs.x), y(rhs.y), rowID(rhs.rowID),	
-	selected(rhs.selected), membership(rhs.membership), 
-	collapsed(rhs.collapsed),interesting(rhs.interesting), selections(rhs.selections), seqId(rhs.seqId) {}
+	selections(rhs.selections), selected(rhs.selected), 
+	collapsed(rhs.collapsed),interesting(rhs.interesting), membership(rhs.membership), seqId(rhs.seqId) {}
 
 //The format of nameDist is "rowID_gi:distance"
-SeqItem::SeqItem(const std::string nameDist) : selections(), name()
+SeqItem::SeqItem(const std::string nameDist) : name(), selections()
 {
 	init();
 
@@ -104,7 +104,7 @@ SeqItem::SeqItem(const std::string nameDist) : selections(), name()
 }
 
 //To give any old name plus a rowid (for testing)
-SeqItem::SeqItem(const std::string nameDist, int row, double dist) : selections(), name()
+SeqItem::SeqItem(const std::string nameDist, int row, double dist) : name(), selections()
 {
 	init();
     name     = nameDist;
@@ -150,8 +150,8 @@ int SeqItem::getAllSelectedInstances()
 
 //////////////// SeqTree ////////////////////
 
-SeqTree::SeqTree() : m_prepared(false), m_numLeaf(0), m_maxDist(0), 
-	m_longestName(), m_leafNodes(), m_collapsedNodes(),  SeqTreeBase()
+SeqTree::SeqTree() : SeqTreeBase(), m_prepared(false), m_numLeaf(0), m_maxDist(0), 
+	m_longestName(), m_leafNodes(), m_collapsedNodes()
 {
 }
 

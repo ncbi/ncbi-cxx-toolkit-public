@@ -48,7 +48,7 @@ DMAlignedOptimalScore::~DMAlignedOptimalScore()
 }
 
 DMAlignedOptimalScore::DMAlignedOptimalScore(EScoreMatrixType type) : 
-	m_blockExtender(0), AlignedDM() 
+	AlignedDM(), m_blockExtender(0)
 {
     initDMAlignedScore(type, 0,0);
 }

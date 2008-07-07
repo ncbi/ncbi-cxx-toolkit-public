@@ -9,7 +9,7 @@ BEGIN_SCOPE(cd_utils)
 //AlignmentCollection--------------------------------------------------
 
 AlignmentCollection::AlignmentCollection(CCdCore* cd, CCdCore::AlignmentUsage alignUse, bool uniqueSeqId,bool scoped)
- : m_firstCd(0), m_seqAligns(), m_rowSources(), m_seqTable()
+ : m_seqAligns(), m_rowSources(), m_firstCd(0), m_seqTable()
 {
 	AddAlignment(cd,alignUse, uniqueSeqId, scoped);
     m_numFamilies = 1;
@@ -17,7 +17,7 @@ AlignmentCollection::AlignmentCollection(CCdCore* cd, CCdCore::AlignmentUsage al
 }
 
 AlignmentCollection::AlignmentCollection()
-: m_firstCd(0), m_seqAligns(), m_rowSources(), m_seqTable()
+: m_seqAligns(), m_rowSources(), m_firstCd(0), m_seqTable()
 {
     m_numFamilies = 1;
 }

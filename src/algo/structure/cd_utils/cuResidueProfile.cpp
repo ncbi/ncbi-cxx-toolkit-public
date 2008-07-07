@@ -43,7 +43,7 @@ unsigned char ColumnResidueProfile::getNcbiStdCode(char eaa)
 }
 
 ColumnResidueProfile::ColumnResidueProfile()
-: m_residueTypeCount(0), m_residueRowsMap(), m_masterIn(false), m_indexByConsensus(-1)
+:m_residueRowsMap(), m_masterIn(false), m_residueTypeCount(0), m_indexByConsensus(-1)
  //m_backgroundResFreq()
 {
 }
@@ -358,10 +358,10 @@ bool ColumnAddress::operator<(const ColumnAddress& rhs) const
 //-------------------------ResidueProfiles----------------------------------------
 
 ResidueProfiles::ResidueProfiles()
-: m_profiles(), m_rowWeights(),
-	m_consensus(), m_guideAlignment(),
-	m_totalRows(1), //starting at 1 because 0 is reserved for master
-	m_frequencyThreshold(0.5)
+: m_frequencyThreshold(0.5), 
+  m_totalRows(1), //starting at 1 because 0 is reserved for master
+  m_profiles(), m_rowWeights(),
+  m_consensus(), m_guideAlignment()
 {
 }
 

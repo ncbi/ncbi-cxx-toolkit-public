@@ -34,21 +34,21 @@ BEGIN_SCOPE(cd_utils)
 //Block //////////////////////////////////
 
 Block::Block (int start, int len, int id)
-	:m_start(start), m_len(len), m_id(id)
+	:m_len(len), m_start(start), m_id(id)
 {
 }
 
 Block::Block (int start, int len)
-	:m_start(start), m_len(len), m_id(-1)
+	:m_len(len), m_start(start), m_id(-1)
 {
 }
 
 Block::Block ()
-: m_start(-1), m_len(-1), m_id(-1)
+    :m_len(-1), m_start(-1), m_id(-1)
 {}
 
 Block::Block(const Block& rhs)
-:m_start(rhs.m_start), m_len(rhs.m_len), m_id(rhs.m_id)
+:m_len(rhs.m_len), m_start(rhs.m_start), m_id(rhs.m_id)
 {
 }
 

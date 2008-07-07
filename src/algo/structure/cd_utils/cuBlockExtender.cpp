@@ -39,8 +39,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
 BlockExtender::BlockExtender():
-	m_src(0), m_scoringMatrix(0), m_cExt(0), m_nExt(0), m_numRows(0),
-	m_extensionScores(0), m_extendedBlocks(0), m_extensibilities(0)
+	m_src(0), m_numRows(0), m_extensibilities(0), m_extendedBlocks(0), m_scoringMatrix(0), 
+	m_nExt(0), m_cExt(0), m_extensionScores(0) 
 {
 }
 

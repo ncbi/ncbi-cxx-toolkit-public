@@ -49,7 +49,7 @@ CDFamily::CDFamily(CCdCore* rootCD) :
 
 
 CDFamily::CDFamily() : 
-	m_rootCD(0), CDFamilyBase()
+	CDFamilyBase(), m_rootCD(0)
 {
 }
 

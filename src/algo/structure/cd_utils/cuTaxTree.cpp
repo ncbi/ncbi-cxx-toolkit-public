@@ -43,9 +43,9 @@ TaxNode::TaxNode()
 	init();
 }
 
-TaxNode::TaxNode(const TaxNode& rhs): seqName(rhs.seqName),numLeaves(rhs.numLeaves),
-	orgName(rhs.orgName), rowId(rhs.rowId), taxId(rhs.taxId), rankId(rhs.rankId),
-	selectedLeaves(rhs.selectedLeaves), cd(rhs.cd)
+TaxNode::TaxNode(const TaxNode& rhs): taxId(rhs.taxId), 
+	orgName(rhs.orgName), rankId(rhs.rankId), rowId(rhs.rowId), cd(rhs.cd), seqName(rhs.seqName), 
+	numLeaves(rhs.numLeaves),selectedLeaves(rhs.selectedLeaves)
 {
 }
 
@@ -102,8 +102,8 @@ bool TaxNode::isSubSeqLeaf(const TaxNode& node)
 }
 
 TaxTreeData :: TaxTreeData(const AlignmentCollection& ac)
-				: TaxonomyTree(), m_rankNameToId(), 
-				m_rowToTaxNode(), m_ac(ac), m_failedRows()
+				: TaxonomyTree(), m_ac(ac), 
+				m_rowToTaxNode(), m_rankNameToId(), m_failedRows()
 {
 	m_taxDataSource = new TaxClient();
 	if (m_taxDataSource->init())

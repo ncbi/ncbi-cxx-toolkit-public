@@ -38,7 +38,7 @@ ConsensusMaker::ConsensusMaker(CRef<CSeq_align_set> seqAlign, CCdCore* cd) :
 }*/
 
 ConsensusMaker::ConsensusMaker(CCdCore* cd, double incl) :
-	m_cd(cd), m_consensus(), m_rp(), m_seqAligns(cd->GetSeqAligns()), m_made(false), m_inclusionRule(incl)
+	m_consensus(), m_cd(cd), m_seqAligns(cd->GetSeqAligns()), m_made(false), m_inclusionRule(incl), m_rp()
 {
 	addRows();
 	CRef< CSeq_id > seqId;
