@@ -20,6 +20,7 @@ util/regexp$
 util/sequtil$
 util/bitset$
 util/math$
+util/cache$
 objtools/alnmgr$
 objtools/readers$
 objtools/seqmasks_io$
