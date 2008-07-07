@@ -365,6 +365,8 @@ void CBlastDbDataLoader::x_AddSplitSeqChunk(TChunks&              chunks,
     chunks.push_back(chunk);
 }
 
+DEFINE_STATIC_FAST_MUTEX(s_Oid_Mutex);
+
 void CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh,
                                     int oid,
                                     CTSE_LoadLock& lock)
@@ -375,7 +377,10 @@ void CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh,
 
     CRef<CCachedSeqData> cached(new CCachedSeqData(*m_SeqDB, idh, oid));
     
-    cached->RegisterIds(m_Ids);
+    {
+        CFastMutexGuard guard(s_Oid_Mutex);
+        cached->RegisterIds(m_Ids);
+    }
     
     TChunks chunks;
     
@@ -418,9 +423,12 @@ void CBlastDbDataLoader::GetChunk(TChunk chunk)
 
 int CBlastDbDataLoader::GetOid(const CSeq_id_Handle& idh)
 {
-    TIds::iterator iter = m_Ids.find(idh);
-    if ( iter != m_Ids.end() ) {
-        return iter->second;
+    {
+        CFastMutexGuard guard(s_Oid_Mutex);
+        TIds::iterator iter = m_Ids.find(idh);
+        if ( iter != m_Ids.end() ) {
+            return iter->second;
+        }
     }
     
     CConstRef<CSeq_id> seqid = idh.GetSeqId();
@@ -453,8 +461,10 @@ int CBlastDbDataLoader::GetOid(const CSeq_id_Handle& idh)
         }
     }
     
-    m_Ids.insert(TIds::value_type(idh, oid));
-    
+    {
+        CFastMutexGuard guard(s_Oid_Mutex);
+        m_Ids.insert(TIds::value_type(idh, oid));
+    }
     return oid;
 }
 
