@@ -19,6 +19,7 @@ util/compress$
 util/regexp$
 util/sequtil$
 util/bitset$
+util/math$
 objtools/alnmgr$
 objtools/readers$
 objtools/seqmasks_io$
