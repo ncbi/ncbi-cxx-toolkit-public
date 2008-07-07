@@ -9,6 +9,7 @@ algo/winmask$
 -algo/blast/blastinput/demo
 objects
 cgi$
+cgi/impl$
 html$
 connect$
 connect/ext$
