@@ -516,7 +516,7 @@ unsigned int  CAlignmentRefiner::GetBlocksToAlign(unsigned int nBlocks, vector<u
         if (args["l"]) {
             last  = (unsigned) args["l"].AsInteger() - 1;
         }
-        if (first < 0 || first >= nBlocks) {
+        if (first >= nBlocks) {
             first = 0;
         }
         if (last < first || last >= nBlocks) {

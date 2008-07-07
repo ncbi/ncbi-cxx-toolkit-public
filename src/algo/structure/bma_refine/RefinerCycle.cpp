@@ -85,7 +85,7 @@ TScoreType CBMARefinerCycle::GetInitialScore() const {
 
 TScoreType CBMARefinerCycle::GetFinalScore() const {
     TScoreType score = REFINER_INVALID_SCORE;
-    unsigned int phaseNum = m_phases.size() - 1;
+    int phaseNum = (int) m_phases.size() - 1;
     while (phaseNum >= 0 && m_phases[phaseNum] && m_phases[phaseNum]->PhaseSkipped()) {
         --phaseNum;
     }

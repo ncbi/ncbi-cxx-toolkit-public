@@ -56,9 +56,7 @@ CRowSelector::CRowSelector(unsigned int nRows, unsigned int nTotal, bool unique)
 
 
 void CRowSelector::Init(unsigned int nRows, unsigned int nSelections) {
-    if (nRows >= 0) {
-        m_nRows = nRows;
-    }
+    m_nRows = nRows;
     m_nSelections = nSelections;
     m_origNSelections = nSelections;
 }
@@ -89,8 +87,8 @@ string CRowSelector::PrintSequence(unsigned int first, unsigned int last, bool s
     --first;
     --last;
 
-    if (first < 0 || first >= n) first = 0;
-    if (last   < 0 || last   >= n) last   = n-1;
+    if (first >= n) first  = 0;
+    if (last  >= n) last   = n-1;
     if (first > last) last = n;
 
     if (sorted) {
