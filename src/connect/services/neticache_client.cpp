@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anatoliy Kuznetsov
+ * Author:  Anatoliy Kuznetsov, Dmitry Kazimirov
  *
  * File Description:
  *   Implementation of netcache ICache client.
@@ -31,12 +31,17 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbitime.hpp>
-#include <corelib/plugin_manager_impl.hpp>
-#include <connect/ncbi_conn_exception.hpp>
+
 #include <connect/services/neticache_client.hpp>
 #include <connect/services/error_codes.hpp>
+
+#include <connect/ncbi_conn_exception.hpp>
+
 #include <util/cache/icache_cf.hpp>
+
+#include <corelib/ncbitime.hpp>
+#include <corelib/plugin_manager_impl.hpp>
+
 #include <memory>
 
 
@@ -66,6 +71,18 @@ CNetICacheClient::CNetICacheClient(const string&  host,
     m_Timeout.sec = 180000;
 }
 
+CNetICacheClient::CNetICacheClient(
+    const string& lb_service_name,
+    const string& cache_name,
+    const string& client_name) :
+        CNetServiceClient(client_name),
+        m_LBServiceName(lb_service_name),
+        m_RebalanceStrategy(CreateDefaultRebalanceStrategy()),
+        m_CacheName(cache_name),
+        m_Throttler(5000, CTimeSpan(60,0))
+{
+}
+
 void CNetICacheClient::SetConnectionParams(const string&  host,
                                            unsigned short port,
                                            const string&  cache_name,
@@ -73,10 +90,22 @@ void CNetICacheClient::SetConnectionParams(const string&  host,
 {
     m_Host = host;
     m_Port = port;
+    m_LBServiceName.erase();
     m_CacheName = cache_name;
     m_ClientName = client_name;
 }
 
+void CNetICacheClient::SetConnectionParams(
+    const string& lb_service_name,
+    IRebalanceStrategy* rebalance_strategy,
+    const string& cache_name,
+    const string& client_name)
+{
+    m_LBServiceName = lb_service_name;
+    m_RebalanceStrategy.reset(rebalance_strategy);
+    m_CacheName = cache_name;
+    m_ClientName = client_name;
+}
 
 CNetICacheClient::~CNetICacheClient()
 {
@@ -92,20 +121,21 @@ void CNetICacheClient::ReturnSocket(CSocket* sock, const string& blob_comments)
         string line;
         if (io_st == eIO_Success) {
             sock->ReadLine(line);
-            ERR_POST_X(7, "ReturnSocket detected unread input " << blob_comments << " :" << line);
+            ERR_POST_X(7, "ReturnSocket detected unread input " <<
+                blob_comments << " :" << line);
             delete sock;
             return;
         }
     }}
 
-	{{
+    {{
     CFastMutexGuard guard(m_Lock);
     if (m_Sock == 0) {
         m_Sock = sock;
         return;
     }
-	}}
-	CNetServiceClient::ReturnSocket(sock, blob_comments);
+    }}
+    CNetServiceClient::ReturnSocket(sock, blob_comments);
 }
 
 
@@ -116,28 +146,41 @@ bool CNetICacheClient::CheckConnect()
     }
 
     if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
-		// check if netcache session is in OK state
-		// we have to do that, because if client program failed to
-		// read the whole BLOB (deserialization error?) the network protocol
-		// stucks in an incorrect state (needs to be closed)
-		try {
-			WriteStr("A?", 3);
+        // check if netcache session is in OK state
+        // we have to do that, because if client program failed to
+        // read the whole BLOB (deserialization error?) the network protocol
+        // stucks in an incorrect state (needs to be closed)
+        try {
+            WriteStr("A?", 3);
             WaitForServer();
-    		if (!ReadStr(*m_Sock, &m_Tmp)) {
-				delete m_Sock;m_Sock = 0;
-				return CheckConnect();
-    		}
-			if (m_Tmp[0] != 'O' || m_Tmp[1] != 'K') {
-				delete m_Sock; m_Sock = 0;
-				return CheckConnect();
-			}
-		}
-		catch (exception& ) {
-			delete m_Sock; m_Sock = 0;
-			return CheckConnect();
-		}
+            if (!ReadStr(*m_Sock, &m_Tmp)) {
+                delete m_Sock;m_Sock = 0;
+                return CheckConnect();
+            }
+            if (m_Tmp[0] != 'O' || m_Tmp[1] != 'K') {
+                delete m_Sock; m_Sock = 0;
+                return CheckConnect();
+            }
+        }
+        catch (exception& ) {
+            delete m_Sock; m_Sock = 0;
+            return CheckConnect();
+        }
 
         return false; // we are connected, nothing to do
+    }
+    if (!m_LBServiceName.empty()) {
+        m_RebalanceStrategy->OnResourceRequested();
+        if (m_RebalanceStrategy->NeedRebalance() || m_Host.empty()) {
+            TDiscoveredServers servers;
+            QueryLoadBalancer(m_LBServiceName, servers, false);
+            if (servers.empty())
+                m_Host.erase();
+            else {
+                m_Host = servers.front().first;
+                m_Port = servers.front().second;
+            }
+        }
     }
     if (!m_Host.empty()) { // we can restore connection
 //        m_Throttler.Approve(CRequestRateControl::eSleep);
@@ -208,23 +251,6 @@ void CNetICacheClient::CheckOK(string* str) const
         NCBI_THROW(CNetServiceException, eCommunicationError, msg);
     }
 }
-
-
-/*
-struct CStackGuard
-{
-   CStackGuard(const string& name_) : name(name_)
-   {
-	   ERR_POST_X(8, "->" << name);
-   }
-   ~CStackGuard()
-   {
-	   ERR_POST_X(9, "  " << name << "->");
-   }
-
-	string name;
-};
-*/
 
 
 void CNetICacheClient::RegisterSession(unsigned pid)
@@ -622,7 +648,7 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
     }}
     if (blob_descr->reader.get()) {
         blob_descr->blob_size = blob_size;
-		blob_descr->blob_found = true;
+        blob_descr->blob_found = true;
 
         if (blob_descr->buf && blob_descr->buf_size > blob_size) {
             // read to buffer
@@ -644,7 +670,7 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
         }
     } else {
         blob_descr->blob_size = 0;
-		blob_descr->blob_found = false;
+        blob_descr->blob_found = false;
     }
 }
 
@@ -796,7 +822,7 @@ void CNetICacheClient::Purge(time_t           access_timeout,
     bool reconnected = CheckConnect();
     string& cmd = m_Tmp;
     MakeCommandPacket(&cmd, "PRG1 ", reconnected);
-    cmd.append(NStr::IntToString(access_timeout));
+    cmd.append(NStr::IntToString((long) access_timeout));
     cmd.append(" ");
     cmd.append(NStr::IntToString((int)keep_last_version));
     WriteStr(cmd.c_str(), cmd.length() + 1);
@@ -947,6 +973,7 @@ public:
 };
 
 
+static const char* kCFParam_service         = "service";
 static const char* kCFParam_server          = "server";
 static const char* kCFParam_host            = "host";
 static const char* kCFParam_port            = "port";
@@ -974,19 +1001,6 @@ ICache* CNetICacheCF::CreateInstance(
         return drv.release();
 
     // cache client configuration
-
-    string host;
-    try {
-        host =
-            GetParam(params, kCFParam_server, true);
-    }
-    catch (exception&)
-    {
-        host =
-            GetParam(params, kCFParam_host, true);
-    }
-    int port =
-        GetParamInt(params,kCFParam_port, true, 9000);
     string cache_name;
     try {
         cache_name =
@@ -1001,7 +1015,28 @@ ICache* CNetICacheCF::CreateInstance(
     const string& client_name =
         GetParam(params, kCFParam_client, true);
 
-    drv->SetConnectionParams(host, port, cache_name, client_name);
+    string service_name = GetParam(params, kCFParam_service, false);
+
+    if (!service_name.empty()) {
+        CConfig conf(params);
+
+        drv->SetConnectionParams(service_name,
+            CreateSimpleRebalanceStrategy(conf, driver),
+                cache_name, client_name);
+    } else {
+        string host;
+        try {
+            host = GetParam(params, kCFParam_server, true);
+        }
+        catch (exception&)
+        {
+            host = GetParam(params, kCFParam_host, true);
+        }
+
+        int port = GetParamInt(params, kCFParam_port, true, 9000);
+
+        drv->SetConnectionParams(host, port, cache_name, client_name);
+    }
 
     return drv.release();
 }

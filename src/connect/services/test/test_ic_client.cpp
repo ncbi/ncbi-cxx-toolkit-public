@@ -73,24 +73,23 @@ void CTestICClient::Init(void)
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Network ICache client test");
+        "Network ICache client test");
 
-    arg_desc->AddPositional("hostname",
-                            "NetCache host name.", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("service", "Service",
+        "NetCache service name.", CArgDescriptions::eString);
 
-    arg_desc->AddPositional("port",
-                            "Port number.",
-                            CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("hostname", "Host",
+        "NetCache host name.", CArgDescriptions::eString);
 
-    arg_desc->AddPositional("cache",
-                            "Cache name.",
-                            CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("port", "Port",
+        "Port number.", CArgDescriptions::eInteger);
+
+    arg_desc->AddPositional("cache", "Cache name.",
+        CArgDescriptions::eString);
 
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
-
-//    CONNECT_Init(&GetConfig());
 
     SetDiagPostLevel(eDiag_Info);
     SetDiagTrace(eDT_Enable);
@@ -104,29 +103,39 @@ void CTestICClient::Init(void)
 int CTestICClient::Run(void)
 {
     CArgs args = GetArgs();
-    const string& host  = args["hostname"].AsString();
-    unsigned short port = args["port"].AsInteger();
+
     const string& cache_name  = args["cache"].AsString();
 
+    std::auto_ptr<CNetICacheClient> cl;
+
+    if (args["service"].HasValue()) {
+        cl.reset(new CNetICacheClient(args["service"].AsString(),
+            cache_name, "test_icache"));
+    } else if (args["hostname"].HasValue()) {
+        cl.reset(new CNetICacheClient(args["hostname"].AsString(),
+            args["port"].AsInteger(),
+            cache_name, "test_icache"));
+    } else {
+        NcbiCerr << "Either -service or -hostname argument must be specified.";
+        return 1;
+    }
 
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
     string key;
 
-    CNetICacheClient cl(host, port, cache_name, "test_icache");
-
     ICache::TTimeStampFlags flags =
         ICache::fTimeStampOnRead | ICache::fTrackSubKey;
-    cl.SetTimeStampPolicy(flags, 1800, 0);
+    cl->SetTimeStampPolicy(flags, 1800, 0);
 
-    ICache::TTimeStampFlags fl = cl.GetTimeStampPolicy();
+    ICache::TTimeStampFlags fl = cl->GetTimeStampPolicy();
     assert(flags == fl);
 
     ICache::EKeepVersions vers = ICache::eDropOlder;
-    cl.SetVersionRetention(vers);
-    ICache::EKeepVersions v = cl.GetVersionRetention();
+    cl->SetVersionRetention(vers);
+    ICache::EKeepVersions v = cl->GetVersionRetention();
     assert(vers == v);
 
-    bool b = cl.IsOpen();
+    bool b = cl->IsOpen();
     assert(b == true);
 
     {{
@@ -136,32 +145,32 @@ int CTestICClient::Run(void)
 
     size_t data_size = strlen(test_data) + 1;
 
-    cl.Store(key, version, subkey, test_data, data_size);
+    cl->Store(key, version, subkey, test_data, data_size);
     SleepMilliSec(700);
 
-    bool hb = cl.HasBlobs(key, subkey);
+    bool hb = cl->HasBlobs(key, subkey);
     assert(hb);
 
-    size_t sz = cl.GetSize(key, version, subkey);
+    size_t sz = cl->GetSize(key, version, subkey);
     assert(sz == data_size);
 
     string owner;
-    cl.GetBlobOwner(key, version, subkey, &owner);
+    cl->GetBlobOwner(key, version, subkey, &owner);
 
     char buf[1024] = {0,};
-    cl.Read(key, version, subkey, buf, sizeof(buf));
+    cl->Read(key, version, subkey, buf, sizeof(buf));
 
     assert(strcmp(buf, test_data) == 0);
 
     memset(buf, 0, sizeof(buf));
-    cl.Read(key, version, subkey, buf, sizeof(buf));
+    cl->Read(key, version, subkey, buf, sizeof(buf));
 
     assert(strcmp(buf, test_data) == 0);
 
 
-    sz = cl.GetSize(key, version, subkey);
+    sz = cl->GetSize(key, version, subkey);
     assert(sz == data_size);
-    hb = cl.HasBlobs(key, subkey);
+    hb = cl->HasBlobs(key, subkey);
     assert(hb);
 
 
@@ -178,18 +187,18 @@ int CTestICClient::Run(void)
         test_buf[i] = 127;
     }
 
-    cl.Store(key, version, subkey, test_buf, test_size);
+    cl->Store(key, version, subkey, test_buf, test_size);
 
     for (size_t i = 0; i < test_size; ++i) {
         test_buf[i] = 0;
     }
     SleepMilliSec(700);
 
-    size_t sz = cl.GetSize(key, version, subkey);
+    size_t sz = cl->GetSize(key, version, subkey);
     assert(sz == test_size);
 
 
-    cl.Read(key, version, subkey, test_buf, test_size);
+    cl->Read(key, version, subkey, test_buf, test_size);
 
     for (size_t i = 0; i < test_size; ++i) {
         if (test_buf[i] != 127) {
@@ -197,7 +206,7 @@ int CTestICClient::Run(void)
         }
     }
 
-    sz = cl.GetSize(key, version, subkey);
+    sz = cl->GetSize(key, version, subkey);
     assert(sz == test_size);
 
     }}
@@ -212,7 +221,7 @@ int CTestICClient::Run(void)
     size_t test_size = sizeof(test_buf);
     for (int i = 0; i < 100; ++i) {
         key = NStr::IntToString(i);
-        cl.Store(key, 0, subkey, test_buf, test_size);
+        cl->Store(key, 0, subkey, test_buf, test_size);
     }
     }}
 
@@ -223,9 +232,9 @@ int CTestICClient::Run(void)
         string key2 = "key_2", subkey2 = "subkey_2";
 
         {
-        auto_ptr<IWriter> writer1(cl.GetWriteStream(key1,version,subkey1));
+        auto_ptr<IWriter> writer1(cl->GetWriteStream(key1,version,subkey1));
         //        CWStream ostr1(writer1.get());
-        //auto_ptr<IWriter> writer2(cl.GetWriteStream(key2,version,subkey2));
+        //auto_ptr<IWriter> writer2(cl->GetWriteStream(key2,version,subkey2));
         //CWStream ostr2(writer2.get());
 
         //ostr1 << 1234 << " ";
@@ -235,16 +244,16 @@ int CTestICClient::Run(void)
         //ostr2 << "ytrewq";
         string str = "qwerty";
                writer1->Write(str.c_str(), str.size());
-               //                cl.Store(key1, version, subkey1, str.c_str(), str.size());
+               //                cl->Store(key1, version, subkey1, str.c_str(), str.size());
         }
-               int size = cl.GetSize(key1,version, subkey1);
+               int size = cl->GetSize(key1,version, subkey1);
                vector<unsigned char> test_buf(1000);
-               cl.Read(key1, version, subkey1, &test_buf[0], test_buf.size());
+               cl->Read(key1, version, subkey1, &test_buf[0], test_buf.size());
                cout << size << endl << string((char*)&test_buf[0], test_buf.size()) << endl;
         {
-            //        auto_ptr<IReader> reader1(cl.GetReadStream(key1,version,subkey1));
+            //        auto_ptr<IReader> reader1(cl->GetReadStream(key1,version,subkey1));
             //        CRStream istr1(reader1.get());
-        //auto_ptr<IReader> reader2(cl.GetReadStream(key2,version,subkey2));
+        //auto_ptr<IReader> reader2(cl->GetReadStream(key2,version,subkey2));
         //CRStream istr2(reader2.get());
 
         //int res = 0;
@@ -263,11 +272,11 @@ int CTestICClient::Run(void)
 
     }}
 
-    cl.Purge(0, ICache::eDropAll);
+    cl->Purge(0, ICache::eDropAll);
 
     NcbiCout << "Session management test" << endl;
-    cl.RegisterSession(10);
-    cl.UnRegisterSession(10);
+    cl->RegisterSession(10);
+    cl->UnRegisterSession(10);
 
     return 0;
 }

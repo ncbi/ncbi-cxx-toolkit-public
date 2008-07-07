@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Dmitry Kazimirov
  *
  * File Description:
  *   Network client for ICache (NetCache).
@@ -37,11 +37,13 @@
 /// NetCache ICache client specs.
 ///
 
-#include <corelib/plugin_manager_store.hpp>
 #include <connect/services/netcache_client.hpp>
-#include <corelib/request_control.hpp>
+#include <connect/services/srv_discovery.hpp>
+
 #include <util/cache/icache.hpp>
 
+#include <corelib/request_control.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -61,16 +63,27 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public CNetServiceClient,
 {
 public:
     CNetICacheClient();
+
     CNetICacheClient(const string&  host,
                      unsigned short port,
                      const string&  cache_name,
                      const string&  client_name);
+
+    CNetICacheClient(const string&  lb_service_name,
+                     const string&  cache_name,
+                     const string&  client_name);
+
     virtual ~CNetICacheClient();
 
     void SetConnectionParams(const string&  host,
                              unsigned short port,
                              const string&  cache_name,
                              const string&  client_name);
+
+    void SetConnectionParams(const string& lb_service_name,
+                             IRebalanceStrategy* rebalance_strategy,
+                             const string& cache_name,
+                             const string& client_name);
 
     virtual
     void ReturnSocket(CSocket* sock, const string& blob_comments);
@@ -171,12 +184,14 @@ private:
     CNetICacheClient& operator=(const CNetICacheClient&);
 
 protected:
+    std::string m_LBServiceName;
+    std::auto_ptr<IRebalanceStrategy> m_RebalanceStrategy;
+
     string              m_CacheName;
     size_t              m_BlobSize;
     CRequestRateControl m_Throttler;
     mutable CFastMutex  m_Lock;     ///< Client access lock
 };
-
 
 extern NCBI_NET_CACHE_EXPORT const char* kNetICacheDriverName;
 
