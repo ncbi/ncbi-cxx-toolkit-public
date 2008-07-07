@@ -167,6 +167,38 @@ void CSeq_annot::AddUserObject(CUser_object& obj)
 }
 
 
+bool CSeq_annot::IsFtable(void) const
+{
+    return IsSetData () && GetData ().IsFtable ();
+}
+
+bool CSeq_annot::IsAlign(void) const
+{
+    return IsSetData () && GetData ().IsAlign ();
+}
+
+bool CSeq_annot::IsGraph(void) const
+{
+    return IsSetData () && GetData ().IsGraph ();
+}
+
+bool CSeq_annot::IsIds(void) const
+{
+    return IsSetData () && GetData ().IsIds ();
+}
+
+bool CSeq_annot::IsLocs(void) const
+{
+    return IsSetData () && GetData ().IsLocs ();
+}
+
+bool CSeq_annot::IsSeq_table(void) const
+{
+    return IsSetData () && GetData ().IsSeq_table ();
+}
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
