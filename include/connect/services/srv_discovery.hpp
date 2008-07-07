@@ -65,6 +65,9 @@ class CConfig;
 NCBI_XCONNECT_EXPORT IRebalanceStrategy* CreateSimpleRebalanceStrategy(
     CConfig& conf, const string& driver_name);
 
+NCBI_XCONNECT_EXPORT IRebalanceStrategy* CreateSimpleRebalanceStrategy(
+    int rebalance_requests, int rebalance_time);
+
 NCBI_XCONNECT_EXPORT IRebalanceStrategy* CreateDefaultRebalanceStrategy();
 
 END_NCBI_SCOPE

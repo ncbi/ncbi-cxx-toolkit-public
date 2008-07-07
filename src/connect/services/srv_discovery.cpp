@@ -120,6 +120,12 @@ IRebalanceStrategy*
             CConfig::eErr_NoThrow, 10));
 }
 
+IRebalanceStrategy*
+    CreateSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time)
+{
+    return new CSimpleRebalanceStrategy(rebalance_requests, rebalance_time);
+}
+
 IRebalanceStrategy* CreateDefaultRebalanceStrategy()
 {
     return new CSimpleRebalanceStrategy(50, 10);
