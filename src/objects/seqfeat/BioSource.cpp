@@ -177,6 +177,24 @@ string CBioSource::GetOrganelleByGenome (unsigned int genome)
     return organelle;
 }
 
+
+bool CBioSource::IsSetTaxname(void) const
+{
+    return IsSetOrg () && GetOrg ().IsSetTaxname ();
+}
+
+bool CBioSource::IsSetCommon(void) const
+{
+    return IsSetOrg () && GetOrg ().IsSetCommon ();
+}
+
+bool CBioSource::IsSetOrgname(void) const
+{
+    return IsSetOrg () && GetOrg ().IsSetOrgname ();
+}
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
