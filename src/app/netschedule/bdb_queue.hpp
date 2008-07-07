@@ -173,12 +173,6 @@ public:
     bool CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
                      const char*                           affinity_token);
 
-
-    /// Set job run-expiration timeout
-    /// @param tm
-    ///    Time worker node needs to execute the job (in seconds)
-    void SetJobRunTimeout(unsigned job_id, unsigned tm);
-
     /// Prolong job expiration timeout
     /// @param tm
     ///    Time worker node needs to execute the job (in seconds)
@@ -219,8 +213,9 @@ public:
                   unsigned short port,
                   const string&  node_id);
     /// Clear all jobs, still running for node.
-    /// Fails all such jobs, called by external node watcher
-    void ClearJobsForNode(const string&  node_id);
+    /// Fails all such jobs, called by external node watcher, can safely
+    /// clean out node's record
+    void ClearNode(const string&  node_id);
 
     /// @param host_addr
     ///    host address in network BO

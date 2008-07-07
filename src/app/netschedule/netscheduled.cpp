@@ -353,7 +353,7 @@ private:
     void ProcessSubmitBatch();
     void ProcessCancel();
     void ProcessStatus();
-    void ProcessGet();
+    void ProcessGetJob();
     void ProcessWaitGet();
     void ProcessPut();
     void ProcessJobExchange();
@@ -392,7 +392,7 @@ private:
     void ProcessReadFailed();
     void ProcessGetAffinityList();
     void ProcessInitNode();
-    void ProcessClearJobs();
+    void ProcessClearNode();
 
     // Delayed output handlers
     void WriteProjection();
@@ -1447,8 +1447,17 @@ void CNetScheduleHandler::ProcessDropJob()
 void CNetScheduleHandler::ProcessJobRunTimeout()
 {
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
-    m_Queue->SetJobRunTimeout(job_id, m_JobReq.timeout);
-    WriteOK();
+    if (IsMonitoring()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " OBSOLETE CQueue::SetJobRunTimeout: Job id=";
+        msg += NStr::IntToString(job_id);
+
+        MonitorPost(msg);
+    }
+    LOG_POST(Warning << "Obsolete API SetRunTimeout called");
+    NCBI_THROW(CNetScheduleException,
+        eObsoleteCommand, "Use API JobDelayExpiration (cmd JDEX) instead");
 }
 
 
@@ -1545,7 +1554,7 @@ void CNetScheduleHandler::ProcessPutMessage()
 }
 
 
-void CNetScheduleHandler::ProcessGet()
+void CNetScheduleHandler::ProcessGetJob()
 {
     list<string> aff_list;
     NStr::Split(m_JobReq.affinity_token, "\t,",
@@ -1566,7 +1575,7 @@ void CNetScheduleHandler::ProcessGet()
 
     if (job_id && IsMonitoring()) {
         CSocket& socket = GetSocket();
-        string msg = "::ProcessGet ";
+        string msg = "::ProcessGetJob ";
         msg += m_LocalTimer.GetLocalTime().AsString();
         msg += m_Answer;
         msg += " ==> ";
@@ -2313,9 +2322,9 @@ void CNetScheduleHandler::ProcessInitNode()
 }
 
 
-void CNetScheduleHandler::ProcessClearJobs()
+void CNetScheduleHandler::ProcessClearNode()
 {
-    m_Queue->ClearJobsForNode(m_JobReq.param1);
+    m_Queue->ClearNode(m_JobReq.param1);
     WriteOK();
 }
 
@@ -2354,7 +2363,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "STATUS",   &CNetScheduleHandler::ProcessStatus, eNSCR_Queue,
         { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
     // GET [ port : int ] [affinity_list : keystr(aff) ]
-    { "GET",      &CNetScheduleHandler::ProcessGet, eNSCR_Worker,
+    { "GET",      &CNetScheduleHandler::ProcessGetJob, eNSCR_Worker,
         { { eNSA_Optional, eNST_Int, eNSRF_Port },
           { eNSA_Optional, eNST_KeyStr, eNSRF_AffinityToken, "", "aff" },
           sm_End } },
@@ -2386,7 +2395,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { eNSA_Required, eNST_Int, eNSRF_Timeout },
           { eNSA_Optional, eNST_KeyStr, eNSRF_AffinityToken, "", "aff" },
           sm_End} },
-    // JRTO job_key : id  timeout : uint
+    // JRTO job_key : id  timeout : uint     OBSOLETE, throws exception
     { "JRTO",     &CNetScheduleHandler::ProcessJobRunTimeout, eNSCR_Worker,
         { { eNSA_Required, eNST_Id,  eNSRF_JobKey },
           { eNSA_Required, eNST_Int, eNSRF_Timeout }, sm_End} },
@@ -2482,8 +2491,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "INIT",     &CNetScheduleHandler::ProcessInitNode, eNSCR_Worker,
         { { eNSA_Required, eNST_Int, eNSRF_Port },
           { eNSA_Required, eNST_Str, eNSRF_Guid }, sm_End } },
-    // CLRJ id : string
-    { "CLRJ",     &CNetScheduleHandler::ProcessClearJobs, eNSCR_Worker,
+    // CLRN id : string
+    { "CLRN",     &CNetScheduleHandler::ProcessClearNode, eNSCR_Worker,
         { { eNSA_Required, eNST_Str, eNSRF_Guid }, sm_End } },
     { 0,          &CNetScheduleHandler::ProcessError },
 };

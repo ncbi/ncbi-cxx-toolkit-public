@@ -652,7 +652,7 @@ CNetSchedule_JSGroupGuard::CNetSchedule_JSGroupGuard(
         CJobStatusTracker::TStatusStorage sstor = m_Tracker.m_StatusStor;
         for (size_t i = 0; i < sstor.size(); ++i) {
             TNSBitVector& bv = *sstor[i];
-            if ((int) new_status == i)
+            if ((size_t) new_status == i)
                 bv |= m_Jobs;
             else
                 bv -= m_Jobs;
@@ -667,7 +667,7 @@ CNetSchedule_JSGroupGuard::~CNetSchedule_JSGroupGuard()
     CJobStatusTracker::TStatusStorage sstor = m_Tracker.m_StatusStor;
     for (size_t i = 0; i < sstor.size(); ++i) {
         TNSBitVector& bv = *sstor[i];
-        if ((int) m_OldStatus == i)
+        if ((size_t) m_OldStatus == i)
             bv |= m_Jobs;
         else
             bv -= m_Jobs;

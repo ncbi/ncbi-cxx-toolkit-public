@@ -909,7 +909,7 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     m_QueueDbBlock(0),
 
     m_BecameEmpty(-1),
-    last_notif(0),
+    m_LastNotifyTime(0),
     q_notif("NCBI_JSQ_"),
     run_time_line(NULL),
     delete_database(false),
@@ -949,82 +949,6 @@ SLockedQueue::~SLockedQueue()
     m_StatThread->RequestStop();
     m_StatThread->Join(NULL);
 }
-
-/*
-void SLockedQueue::Open(CBDB_Env& env, const string& path)
-{
-    string prefix = string("jsq_") + m_QueueName;
-
-    try {
-        string fname = prefix + ".db";
-        if (!CDirEntry(path+fname).Exists())
-            delete_database = true;
-        m_JobDB.SetEnv(env);
-        // TODO: RevSplitOff make sense only for long living queues,
-        // for dynamic ones it slows down the process, but because queue
-        // if eventually is disposed of, it does not make sense to save
-        // space here
-        m_JobDB.RevSplitOff();
-        m_JobDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-        files.push_back(path + fname);
-
-        fname = prefix + "_jobinfo.db";
-        m_JobInfoDB.SetEnv(env);
-        m_JobInfoDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-        files.push_back(path + fname);
-
-        fname = prefix + "_runs.db";
-        m_RunsDB.SetEnv(env);
-        m_RunsDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-        files.push_back(path + fname);
-
-        fname = prefix + "_deleted.db";
-        m_DeletedJobsDB.SetEnv(env);
-        m_DeletedJobsDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-        files.push_back(path + fname);
-
-        fname = prefix + "_affid.idx";
-        m_AffinityIdx.SetEnv(env);
-        m_AffinityIdx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-        files.push_back(path + fname);
-
-        m_AffinityDict.Open(env, m_QueueName);
-        files.push_back(path + prefix + "_affdict.db");
-        files.push_back(path + prefix + "_affdict_token.idx");
-
-        fname = prefix + "_tag.idx";
-        m_TagDB.SetEnv(env);
-        m_TagDB.SetPageSize(32*1024);
-        m_TagDB.RevSplitOff();
-        m_TagDB.Open(fname, CBDB_RawFile::eReadWriteCreate);
-        files.push_back(path + fname);
-
-        last_notif = time(0);
-    } catch (CBDB_ErrnoException& ex) {
-        Close();
-        throw;
-    }
-    delete_database = false;
-}
-
-
-void SLockedQueue::Close()
-{
-    m_TagDB.Close();
-    m_AffinityDict.Close();
-    m_AffinityIdx.Close();
-    m_DeletedJobsDB.Close();
-    m_RunsDB.Close();
-    m_JobInfoDB.Close();
-    m_JobDB.Close();
-    if (delete_database) {
-        ITERATE(vector<string>, it, files) {
-            // NcbiCout << "Wiping out " << *it << NcbiEndl;
-            CFile(*it).Remove();
-        }
-    }
-}
-*/
 
 
 void SLockedQueue::Attach(SQueueDbBlock* block)
@@ -1591,13 +1515,13 @@ void SLockedQueue::NotifyListeners(bool unconditional, unsigned aff_id)
     if (!unconditional &&
         (notif_timeout == 0 ||
          !status_tracker.AnyPending() ||
-         last_notif + notif_timeout > curr))
+         m_LastNotifyTime + notif_timeout > curr))
         return;
 
     // Get worker node list to notify
     list<TWorkerNodeHostPort> notify_list;
     {{
-        CWriteLockGuard guard(wn_lock);
+        CWriteLockGuard guard(m_WNodeLock);
         bool has_notify = false;
         ITERATE(TWorkerNodes, it, m_WorkerNodes) {
             if (!unconditional && it->second.notify_time < curr)
@@ -1609,7 +1533,7 @@ void SLockedQueue::NotifyListeners(bool unconditional, unsigned aff_id)
             notify_list.push_back(it->first);
         }
         if (!has_notify) return;
-        last_notif = curr;
+        m_LastNotifyTime = curr;
     }}
 
     const char* msg = q_notif.c_str();
@@ -1871,7 +1795,7 @@ void SLockedQueue::PrintWorkerNodeStat(CNcbiOstream& out) const
 {
     int run_timeout = CQueueParamAccessor(*this).GetRunTimeout();
     time_t curr = time(0);
-    CReadLockGuard guard(wn_lock);
+    CReadLockGuard guard(m_WNodeLock);
 
     ITERATE(TWorkerNodes, it, m_WorkerNodes) {
         unsigned host = it->first.first;
@@ -1895,7 +1819,7 @@ void SLockedQueue::RegisterNotificationListener(unsigned        host,
                                                 unsigned        timeout,
                                                 const string&   auth)
 {
-    CWriteLockGuard guard(wn_lock);
+    CWriteLockGuard guard(m_WNodeLock);
     TWorkerNodes::iterator it =
         m_WorkerNodes.find(TWorkerNodeHostPort(host, port));
     time_t curr = time(0);
@@ -1911,7 +1835,7 @@ void SLockedQueue::RegisterNotificationListener(unsigned        host,
 void SLockedQueue::UnRegisterNotificationListener(unsigned       host,
                                                   unsigned short port)
 {
-    CWriteLockGuard guard(wn_lock);
+    CWriteLockGuard guard(m_WNodeLock);
     m_WorkerNodes.erase(TWorkerNodeHostPort(host, port));
 }
 
@@ -1920,7 +1844,7 @@ void SLockedQueue::RegisterWorkerNodeVisit(unsigned       host,
                                            unsigned short port,
                                            unsigned       timeout)
 {
-    CWriteLockGuard guard(wn_lock);
+    CWriteLockGuard guard(m_WNodeLock);
     TWorkerNodes::iterator it =
         m_WorkerNodes.find(TWorkerNodeHostPort(host, port));
     if (it == m_WorkerNodes.end()) return;

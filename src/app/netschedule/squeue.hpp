@@ -496,8 +496,8 @@ private:
 
     // List of active worker node listeners waiting for pending jobs
     TWorkerNodes                 m_WorkerNodes; ///< worker nodes
-    time_t                       last_notif;    ///< last notification time
-    mutable CRWLock              wn_lock;       ///< wnodes locker
+    time_t                       m_LastNotifyTime; ///< last notification time
+    mutable CRWLock              m_WNodeLock;   ///< wnodes locker
     string                       q_notif;       ///< Queue notification message
 
 public:
@@ -522,9 +522,6 @@ public:
     SLockedQueue(const string& queue_name,
         const string& qclass_name, TQueueKind queue_kind);
     ~SLockedQueue();
-
-//    void Open(CBDB_Env& env, const string& path);
-//    void Close();
 
     void Attach(SQueueDbBlock* block);
     void Detach();

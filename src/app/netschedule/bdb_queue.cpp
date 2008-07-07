@@ -1928,13 +1928,14 @@ void CQueue::InitNode(unsigned       host,
                       unsigned short port,
                       const string&  node_id)
 {
-    // Do something here
+    CRef<SLockedQueue> q(x_GetLQueue());
 }
 
 
-void CQueue::ClearJobsForNode(const string&  node_id)
+void CQueue::ClearNode(const string&  node_id)
 {
-    // Do something here
+    CRef<SLockedQueue> q(x_GetLQueue());
+
 }
 
 
@@ -2307,26 +2308,6 @@ void CQueue::JobFailed(unsigned      job_id,
     }
 }
 
-
-void CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
-{
-    if (IsMonitoring()) {
-        CRef<SLockedQueue> q(x_GetLQueue());
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
-        msg += " OBSOLETE CQueue::SetJobRunTimeout: Job id=";
-        msg += NStr::IntToString(job_id);
-        msg += " job_timeout(sec)=";
-        msg += NStr::IntToString(tm);
-        msg += " job_timeout(minutes)=";
-        msg += NStr::IntToString(tm/60);
-
-        MonitorPost(msg);
-    }
-    LOG_POST(Warning << "Obsolete API SetRunTimeout called");
-    NCBI_THROW(CNetScheduleException,
-        eObsoleteCommand, "Use API JobDelayExpiration (cmd JDEX) instead");
-}
 
 void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
 {

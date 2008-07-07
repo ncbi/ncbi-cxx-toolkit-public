@@ -80,11 +80,16 @@ void CTestNetScheduleClient::Init(void)
                               "NetSchedule client");
     
     arg_desc->AddPositional("service", 
-                            "NetSchedule lb_service or host:name.", 
+                            "NetSchedule lb_service or host:name",
                             CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("input",
+                             "input",
+                             "Input string",
+                             CArgDescriptions::eString);
+
     arg_desc->AddPositional("queue", 
-                            "NetSchedule queue name (like: noname).",
+                            "NetSchedule queue name",
                             CArgDescriptions::eString);
 
 
@@ -115,15 +120,24 @@ int CTestNetScheduleClient::Run(void)
     cl.SetConnMode(CNetScheduleAPI::eKeepConnection);
 
     CNetScheduleSubmitter submitter = cl.GetSubmitter();
+    CNetScheduleAdmin admin = cl.GetAdmin();
 
-    const string input = "Hello " + queue_name;
+    string input;
+    if (args["input"]) {
+        input = args["input"].AsString();
+    } else {
+        input = "Hello " + queue_name;
+    }
 
+    /*
     CNetScheduleJob job(input);
     submitter.SubmitJob(job);
     NcbiCout << job.job_id << NcbiEndl;
 
     vector<string> jobs;
+    */
 
+    if (0)
     {{
 
     NcbiCout << "SubmitAndWait..." << NcbiEndl;
@@ -142,19 +156,21 @@ int CTestNetScheduleClient::Run(void)
 
     {{
     CStopWatch sw(CStopWatch::eStart);
-    NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
+    NcbiCout << "Batch submit " << jcount << " jobs..." << NcbiEndl;
 
-    for (unsigned i = 0; i < jcount; ++i) {
-        CNetScheduleJob j1(input);
-        submitter.SubmitJob(j1);
-        jobs.push_back(j1.job_id);
-        if (i % 1000 == 0) {
-            NcbiCout << "." << flush;
+    for (unsigned i = 0; i < jcount; i += 1000) {
+        vector<CNetScheduleJob> jobs;
+        unsigned batch_size = jcount - i < 1000 ? jcount - i : 1000;
+        for (unsigned j = 0; j < batch_size; ++j) {
+            CNetScheduleJob job(input);
+            job.tags.push_back(CNetScheduleAPI::TJobTag("test", ""));
+            jobs.push_back(job);
         }
+        submitter.SubmitJobBatch(jobs);
+        NcbiCout << "." << flush;
     }
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
     double elapsed = sw.Elapsed();
-    double avg = elapsed / jcount;
 
     NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
     NcbiCout << "Avg time: " << (elapsed / jcount) << " sec, "
@@ -164,81 +180,14 @@ int CTestNetScheduleClient::Run(void)
 
     // Waiting for jobs to be done
 
-    NcbiCout << "Waiting for jobs..." << jobs.size() << NcbiEndl;
-    unsigned cnt = 0;
-    SleepMilliSec(5500);
-    
-    unsigned last_jobs = 0;
-    unsigned no_jobs_executes_cnt = 0;
+    NcbiCout << "Waiting for " << jcount << " jobs..." << NcbiEndl;
 
-    while (jobs.size()) {
-        NON_CONST_ITERATE(vector<string>, it, jobs) {
-            const string& jk = *it;
-            status = submitter.GetJobStatus(jk);
-
-            if (status == CNetScheduleAPI::eDone) {
-                CNetScheduleJob job;
-                job.job_id = *it;
-                status = submitter.GetJobDetails(job);
-                int last_char_index = job.output.length() - 1;
-                if (last_char_index < 0 ||
-                    memcmp(job.output.c_str(), output_buffer,
-                    last_char_index) != 0 ||
-                    job.output[last_char_index] != '\n') {
-                    ERR_POST("Unexpected job output:\n" + job.output +
-                        "\nVS\n" + string(output_buffer, job.output.length() - 1) +
-                        "\n");
-                }
-                if (job.ret_code != 0) {
-                    ERR_POST("Unexpected job return code:" << job.ret_code);
-                }
-                jobs.erase(it);
-                ++cnt;
-                break;
-            } else 
-            if (status != CNetScheduleAPI::ePending) {
-                if (status == CNetScheduleAPI::eJobNotFound) {
-                    NcbiCerr << "Job lost:" << jk << NcbiEndl;
-                }
-                jobs.erase(it);
-                ++cnt;
-                break;
-            }
-
-            ++cnt;
-            if (cnt % 1000 == 0) {
-                NcbiCout << "Waiting for " 
-                         << jobs.size() 
-                         << " jobs."
-                         << NcbiEndl;
-                // it is necessary to give system a rest periodically
-                SleepMilliSec(2000);
-                // check status of only first 1000 jobs
-                // since the JS queue execution priority is FIFO
-                break;
-            }
-        }
-        
-        // check if worker node picks up jobs, otherwise stop
-        // trying after 10 attempts.        
-        
-        if (jobs.size() == last_jobs) {
-            ++no_jobs_executes_cnt;
-            if (no_jobs_executes_cnt == 3) {
-                NcbiCout << "No progress in job execution. Stopping..."
-                         << NcbiEndl;
-                break;
-            } else {
-                last_jobs = jobs.size();
-            }
-        }
-        
-    } // while
-
-    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
-    if (jobs.size()) {
-        NcbiCout << "Unfinished job count = " << jobs.size() << NcbiEndl;
+    unsigned long job_cnt;
+    while ((job_cnt = admin.Count("status=Pending")) != 0) {
+        NcbiCout << job_cnt << " jobs to go" << NcbiEndl;
+        SleepMilliSec(2000);
     }
+
     return 0;
 }
 

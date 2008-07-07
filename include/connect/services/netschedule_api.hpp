@@ -666,7 +666,7 @@ public:
 
     void ReloadServerConfig() const;
 
-    ///////////////////////////////////???????????????///////////////////
+    //////////////////////////////////////////////////////
     /// Print version string
     void GetServerVersion(CNetServiceAPI_Base::ISink& sink) const;
 
@@ -686,7 +686,7 @@ public:
 
     /// ";" delimited list of server queues
     void GetQueueList(CNetServiceAPI_Base::ISink& sink) const;
-    ///////////////////////////////////???????????????///////////////////
+    //////////////////////////////////////////////////////
 
     /// Query by tags
     unsigned long Count(const string& query) const;
