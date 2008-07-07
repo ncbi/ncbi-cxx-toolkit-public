@@ -86,6 +86,14 @@ public:
     // add a user-object descriptor
     void AddUserObject(CUser_object& obj);
 
+    // check annot type
+    bool IsFtable(void) const;
+    bool IsAlign(void) const;
+    bool IsGraph(void) const;
+    bool IsIds(void) const;
+    bool IsLocs(void) const;
+    bool IsSeq_table(void) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_annot(const CSeq_annot& value);
