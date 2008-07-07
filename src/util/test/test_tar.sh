@@ -13,9 +13,9 @@ test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
 
 test_base="${TMPDIR:-/tmp}/test_tar.$$"
 mkdir $test_base.1  ||  exit 1
-trap 'rm -rf $test_base* &' 0 1 2 15
+trap 'rm -rf $test_base* &; echo "`date` DONE."' 0 1 2 15
 
-echo "*** Preparing file staging area"
+echo "`date` *** Preparing file staging area"
 echo
 
 cp -rp . $test_base.1/ 2>/dev/null
@@ -40,7 +40,7 @@ touch $test_base.1/1234567890123456789012345678901234567890123456789012345678901
 
 ln -s $test_base.1/12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 $test_base.1/LINK12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 2>/dev/null
 
-echo "*** Creating test archive using native tar utility"
+echo "`date` *** Creating test archive using native tar utility"
 echo
 
 (cd $test_base.1  &&  $tar cvf $test_base.tar .)
@@ -49,12 +49,12 @@ rm -rf $test_base.1
 mkdir  $test_base.1                                                   ||  exit 1
 
 echo
-echo "*** Sanitizing test archive from unsupported features"
+echo "`date` *** Sanitizing test archive from unsupported features"
 echo
 
 (cd $test_base.1  &&  $tar xf  $test_base.tar)
 
-echo "*** Testing the archive"
+echo "`date` *** Testing the archive"
 echo
 
 test_tar -T -f $test_base.tar                                         ||  exit 1
@@ -65,7 +65,7 @@ date 2>/dev/null | tee -a $test_base.1/testdir.$$/datefile $test_base.1/newdir/d
 cp -fp $test_base.1/newdir/datefile $test_base.1/newdir/dummyfile 2>/dev/null
 
 echo
-echo "*** Testing simple update"
+echo "`date` *** Testing simple update"
 echo
 
 test_tar -C $test_base.1 -u -v -f $test_base.tar ./datefile ./newdir  ||  exit 1
@@ -77,7 +77,7 @@ sleep 1
 date >>$test_base.1/newdir/datefile 2>/dev/null
 
 echo
-echo "*** Testing incremental update"
+echo "`date` *** Testing incremental update"
 echo
 
 test_tar -C $test_base.1 -u -U -v -E -f $test_base.tar ./newdir ./datefile ./phonyfile  ||  exit 1
@@ -88,7 +88,7 @@ mv -f $test_base.1/phonyfile $test_base.1/datefile 2>/dev/null
 mkdir $test_base.2                                                    ||  exit 1
 
 echo
-echo "*** Testing piping in and extraction"
+echo "`date` *** Testing piping in and extraction"
 echo
 
 cat $test_base.tar | test_tar -C $test_base.2 -v -x -f -              ||  exit 1
@@ -96,19 +96,19 @@ rm -f $test_base.1/.testfifo $test_base.2/.testfifo
 diff -r $test_base.1 $test_base.2 2>/dev/null                         ||  exit 1
 
 echo
-echo "*** Testing piping out and compatibility with native tar utility"
+echo "`date` *** Testing piping out and compatibility with native tar utility"
 echo
 
 mkfifo -m 0567 $test_base.2/.testfifo >/dev/null 2>&1
 test_tar -C $test_base.2 -c -f - . 2>/dev/null | $tar tBvf -          ||  exit 1
 
 echo
-echo "*** Testing safe extraction implementation"
+echo "`date` *** Testing safe extraction implementation"
 echo
 
 test_tar -C $test_base.2 -x    -f $test_base.tar                      ||  exit 1
 
-echo "*** Testing backup feature"
+echo "`date` *** Testing backup feature"
 echo
 
 test_tar -C $test_base.2 -x -B -f $test_base.tar '*testdir/?*'        ||  exit 1
@@ -125,12 +125,12 @@ echo "+++ Files: $files --- Backups: $bkups"
 test _"$files" = _"$bkups"                                            ||  exit 1
 
 echo
-echo "*** Testing singe entry streaming feature"
+echo "`date` *** Testing singe entry streaming feature"
 echo
 
 test_tar -X -v -f $test_base.tar "*test_tar${exe}" | cmp -l - "./test_tar${exe}"  ||  exit 1
 
-echo "*** Testing multiple entry streaming feature"
+echo "`date` *** Testing multiple entry streaming feature"
 echo
 
 test_tar -X -v -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > "$test_base.out.1"  ||  exit 1
@@ -139,5 +139,6 @@ cat "./test_tar${exe}" "$test_base.out.temp" "$test_base.2/newdir/datefile" > "$
 cmp -l "$test_base.out.1" "$test_base.out.2"                                      ||  exit 1
 
 echo
-echo "*** TEST COMPLETE"
+echo "`date` *** TEST COMPLETE"
+
 exit 0
