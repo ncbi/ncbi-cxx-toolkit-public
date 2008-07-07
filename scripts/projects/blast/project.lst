@@ -27,7 +27,7 @@ objtools/readers$
 objtools/seqmasks_io$
 objtools/readers/seqdb$
 objtools/readers/gene_info$
-objtools/readers/cleanup$
+objtools/cleanup$
 objtools/writers/writedb$
 objtools/blast_format$
 dbapi
