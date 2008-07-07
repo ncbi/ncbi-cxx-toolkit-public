@@ -18,6 +18,7 @@ util/tables$
 util/compress$
 util/regexp$
 util/sequtil$
+util/bitset$
 objtools/alnmgr$
 objtools/readers$
 objtools/seqmasks_io$
