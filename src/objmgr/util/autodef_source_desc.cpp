@@ -54,11 +54,11 @@ CAutoDefSourceDescription::CAutoDefSourceDescription(const CBioSource& bs) : m_B
     }
     if (bs.CanGetOrg() && bs.GetOrg().CanGetOrgname() && bs.GetOrg().GetOrgname().CanGetMod()) {
         ITERATE (COrgName::TMod, modI, bs.GetOrg().GetOrgname().GetMod()) {
-            m_Modifiers.push_back (CAutoDefSourceModifierInfo(TRUE, (*modI)->GetSubtype(), (*modI)->GetSubname()));
+            m_Modifiers.push_back (CAutoDefSourceModifierInfo(true, (*modI)->GetSubtype(), (*modI)->GetSubname()));
         }
     }
     ITERATE (CBioSource::TSubtype, subSrcI, bs.GetSubtype()) {
-        m_Modifiers.push_back (CAutoDefSourceModifierInfo(FALSE, (*subSrcI)->GetSubtype(), (*subSrcI)->GetName()));
+        m_Modifiers.push_back (CAutoDefSourceModifierInfo(false, (*subSrcI)->GetSubtype(), (*subSrcI)->GetName()));
     }
     std::sort (m_Modifiers.begin(), m_Modifiers.end());
 }
@@ -89,7 +89,7 @@ const CBioSource& CAutoDefSourceDescription::GetBioSource() const
 
 bool CAutoDefSourceDescription::AddQual (bool isOrgMod, int subtype)
 {
-    bool rval = FALSE;
+    bool rval = false;
     TModifierVector::iterator it;
 
     it = m_Modifiers.begin();
@@ -98,7 +98,7 @@ bool CAutoDefSourceDescription::AddQual (bool isOrgMod, int subtype)
             if (it->IsOrgMod() && it->GetSubtype() == subtype) {
                 m_DescStrings.push_back (it->GetValue());
                 it = m_Modifiers.erase(it);
-                rval = TRUE;
+                rval = true;
             } else {
                 ++it;
             }
@@ -106,7 +106,7 @@ bool CAutoDefSourceDescription::AddQual (bool isOrgMod, int subtype)
             if (!it->IsOrgMod() && it->GetSubtype() == subtype) {
                 m_DescStrings.push_back (it->GetValue());
                 it = m_Modifiers.erase(it);
-                rval = TRUE;
+                rval = true;
             } else {
                 ++it;
             }
@@ -118,7 +118,7 @@ bool CAutoDefSourceDescription::AddQual (bool isOrgMod, int subtype)
 
 bool CAutoDefSourceDescription::RemoveQual (bool isOrgMod, int subtype)
 {
-    bool rval = FALSE;
+    bool rval = false;
     TModifierVector::iterator it;
 
     it = m_Modifiers.begin();
@@ -126,14 +126,14 @@ bool CAutoDefSourceDescription::RemoveQual (bool isOrgMod, int subtype)
         if (isOrgMod) {
             if (it->IsOrgMod() && it->GetSubtype() == subtype) {
                 it = m_Modifiers.erase(it);
-                rval = TRUE;
+                rval = true;
             } else {
                 ++it;
             }
         } else {
             if (!it->IsOrgMod() && it->GetSubtype() == subtype) {
                 it = m_Modifiers.erase(it);
-                rval = TRUE;
+                rval = true;
             } else {
                 ++it;
             }

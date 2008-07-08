@@ -86,7 +86,7 @@ void CAutoDefSourceGroup::AddSource (CAutoDefSourceDescription *src)
 
 bool CAutoDefSourceGroup::AddQual (bool IsOrgMod, int subtype)
 {
-    bool rval = FALSE;
+    bool rval = false;
 
     NON_CONST_ITERATE (TSourceDescriptionVector, it, m_SourceList) {
         rval |= (*it)->AddQual (IsOrgMod, subtype);
@@ -98,7 +98,7 @@ bool CAutoDefSourceGroup::AddQual (bool IsOrgMod, int subtype)
 
 bool CAutoDefSourceGroup::RemoveQual (bool IsOrgMod, int subtype)
 {
-    bool rval = FALSE;
+    bool rval = false;
 
     NON_CONST_ITERATE (TSourceDescriptionVector, it, m_SourceList) {
         rval |= (*it)->RemoveQual (IsOrgMod, subtype);
