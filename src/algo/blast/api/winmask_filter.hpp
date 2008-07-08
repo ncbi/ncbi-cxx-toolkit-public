@@ -38,7 +38,7 @@
 #ifndef ALGO_BLAST_API___WINMASK_FILTER_HPP 
 #define ALGO_BLAST_API___WINMASK_FILTER_HPP 
 
-#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/sseqloc.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -48,6 +48,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
+class CBlastOptions;
+class CBlastOptionsHandle;
 
 /// Find Window Masker filtered locations by database name.
 /// @param query These queries will be masked. [in|out]
