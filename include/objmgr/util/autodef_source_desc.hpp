@@ -50,6 +50,59 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+class NCBI_XOBJUTIL_EXPORT CAutoDefSourceModifierInfo
+{
+public:
+    CAutoDefSourceModifierInfo(bool isOrgMod, int subtype, string value);
+    CAutoDefSourceModifierInfo(const CAutoDefSourceModifierInfo &other);
+    ~CAutoDefSourceModifierInfo();
+
+    bool AddQual (bool isOrgMod, int subtype);
+    bool RemoveQual (bool isOrgMod, int subtype);
+
+    unsigned int CAutoDefSourceModifierInfo::GetRank() const;
+    int Compare(const CAutoDefSourceModifierInfo& mod) const;
+    bool IsOrgMod () const;
+    int  GetSubtype () const; 
+    string GetValue () const;
+
+    bool operator>(const CAutoDefSourceModifierInfo& mod) const
+    {
+        return Compare (mod) > 0;
+    }
+
+    bool operator<(const CAutoDefSourceModifierInfo& mod) const
+    {
+        return Compare (mod) < 0;
+    }
+
+
+private:
+    bool m_IsOrgMod;
+    int  m_Subtype;
+    string m_Value;
+};
+
+
+inline bool CAutoDefSourceModifierInfo::IsOrgMod() const
+{
+    return m_IsOrgMod;
+}
+
+
+inline int CAutoDefSourceModifierInfo::GetSubtype() const
+{
+    return m_Subtype;
+}
+
+
+inline string CAutoDefSourceModifierInfo::GetValue() const
+{
+    return m_Value;
+}
+
+
 class IAutoDefCombo
 {
 public:
@@ -68,16 +121,36 @@ public:
     typedef vector<string> TStringVector;
     typedef vector<CAutoDefAvailableModifier> TAvailableModifierVector;
         
-    const CBioSource& GetBioSource();
+    const CBioSource& GetBioSource() const;
     
     void GetAvailableModifiers (TAvailableModifierVector &modifier_list);
     
     bool IsTrickyHIV();
     
     string GetComboDescription(IAutoDefCombo *mod_combo);
-    
+
+    bool AddQual (bool isOrgMod, int subtype);
+    bool RemoveQual (bool isOrgMod, int subtype);
+    int Compare(const CAutoDefSourceDescription& s) const;
+    bool operator>(const CAutoDefSourceDescription& src) const
+    {
+        return Compare (src) > 0;
+    }
+
+    bool operator<(const CAutoDefSourceDescription& src) const
+    {
+        return Compare (src) < 0;
+    }
+
+    typedef vector<CAutoDefSourceModifierInfo> TModifierVector;
+    const TModifierVector& GetModifiers() const { return m_Modifiers; }
+    typedef list<string> TDescString;
+    const TDescString& GetStrings() const { return m_DescStrings; }
+
 private:
     const CBioSource& m_BS;
+    TModifierVector m_Modifiers;
+    TDescString m_DescStrings;
 
 };
 

@@ -31,7 +31,6 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objmgr/util/autodef.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -44,6 +43,8 @@
 
 #include <serial/iterator.hpp>
 
+#include <objmgr/util/autodef_mod_combo.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -54,24 +55,32 @@ CAutoDefModifierCombo::CAutoDefModifierCombo() : m_UseModifierLabels(false),
                                                  m_HIVCloneIsolateRule(ePreferClone)
 
 {
-    m_GroupList.clear();
     m_SubSources.clear();
     m_OrgMods.clear();
+
+    m_GroupList.clear();
+    m_Modifiers.clear();
 }
 
 
 CAutoDefModifierCombo::CAutoDefModifierCombo(CAutoDefModifierCombo *orig) 
 {
     _ASSERT (orig);
-    m_GroupList.clear();
     m_SubSources.clear();
     m_OrgMods.clear();
     
-    unsigned int k;
-    for (k = 0; k < orig->GetNumGroups(); k++) {
-        m_GroupList.push_back(new CAutoDefSourceGroup(orig->GetSourceGroup(k)));
+    m_GroupList.clear();
+    m_Modifiers.clear();
+
+    ITERATE (TGroupListVector, it, orig->GetGroupList()) {
+        CAutoDefSourceGroup * g = new CAutoDefSourceGroup(*it);
+        m_GroupList.push_back (g);
+    }
+    ITERATE (CAutoDefSourceDescription::TModifierVector, it, orig->GetModifiers()) {
+        m_Modifiers.push_back (CAutoDefSourceModifierInfo(*it));
     }
     
+    unsigned int k;
     for (k = 0; k < orig->GetNumSubSources(); k++) {
         m_SubSources.push_back(orig->GetSubSource(k));
     }
@@ -90,20 +99,15 @@ CAutoDefModifierCombo::CAutoDefModifierCombo(CAutoDefModifierCombo *orig)
 
 CAutoDefModifierCombo::~CAutoDefModifierCombo()
 {
+    for (unsigned int k = 0; k < m_GroupList.size(); k++) {
+        delete m_GroupList[k];
+    }
 }
 
 
 unsigned int CAutoDefModifierCombo::GetNumGroups()
 {
     return m_GroupList.size();
-}
-
-
-CAutoDefSourceGroup *CAutoDefModifierCombo::GetSourceGroup (unsigned int index) 
-{
-    _ASSERT (index < m_GroupList.size());
-    
-    return m_GroupList[index];
 }
 
 
@@ -159,87 +163,33 @@ bool CAutoDefModifierCombo::HasOrgMod(COrgMod::ESubtype st)
 
 void CAutoDefModifierCombo::AddSource(const CBioSource& bs) 
 {
-    CAutoDefSourceDescription *new_org;
-    unsigned int k;
-    bool         found = false;
-    
-    new_org = new CAutoDefSourceDescription(bs);
-    for (k = 0; k < m_GroupList.size() && ! found; k++) {
-        if (m_GroupList[k]->SourceDescBelongsHere(new_org, this)) {
-            m_GroupList[k]->AddSourceDescription(new_org);
+    CAutoDefSourceDescription src(bs);
+    bool found = false;
+
+    NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
+        if ((*it)->GetSrcList().size() > 0
+            && src.Compare (*((*it)->GetSrcList().begin())) == 0) {
+            (*it)->AddSource (&src);
             found = true;
         }
     }
     if (!found) {
-        CAutoDefSourceGroup *new_grp = new CAutoDefSourceGroup();
-        new_grp->AddSourceDescription(new_org);
-        m_GroupList.push_back(new_grp);
+        CAutoDefSourceGroup * g = new CAutoDefSourceGroup();
+        g->AddSource (&src);
+        m_GroupList.push_back (g);
     }
 }
 
 
 void CAutoDefModifierCombo::AddSubsource(CSubSource::ESubtype st)
 {
-    unsigned int k, orig_group_num;
-    CAutoDefSourceGroup *new_grp;
-    
-    orig_group_num = m_GroupList.size();
-    m_SubSources.push_back(st);
-    
-    for (k = 0; k < orig_group_num; k++) {
-        
-        new_grp = m_GroupList[k]->RemoveNonMatchingDescriptions (this);
-        while (new_grp != NULL) {
-            m_GroupList.push_back(new_grp);
-            new_grp = new_grp->RemoveNonMatchingDescriptions(this);
-        }
-    }
+    AddQual(false, st);
 }
 
 
 void CAutoDefModifierCombo::AddOrgMod(COrgMod::ESubtype st)
 {
-    unsigned int k, orig_group_num;
-    CAutoDefSourceGroup *new_grp;
-    
-    orig_group_num = m_GroupList.size();
-    m_OrgMods.push_back(st);
-   
-    for (k = 0; k < orig_group_num; k++) {
-        
-        new_grp = m_GroupList[k]->RemoveNonMatchingDescriptions (this);
-        while (new_grp != NULL) {
-            m_GroupList.push_back(new_grp);
-            new_grp = new_grp->RemoveNonMatchingDescriptions(this);
-        }
-    }
-}
-
-
-unsigned int CAutoDefModifierCombo::GetNumUniqueDescriptions()
-{
-    unsigned int num_unique = 0, k;
- 
-    for (k = 0; k < m_GroupList.size(); k++) {
-        if (m_GroupList[k]->GetNumDescriptions() == 1) {
-            num_unique++;
-        }
-    }
-    return num_unique;
-}
-
-
-bool CAutoDefModifierCombo::AllUnique()
-{
-    bool all_unique = true;
-    unsigned int k;
-    
-    for (k = 0; k < m_GroupList.size() && all_unique; k++) {
-        if (m_GroupList[k]->GetNumDescriptions() > 1) {
-            all_unique = false;
-        }
-    }
-    return all_unique;
+    AddQual (true, st);
 }
 
 
@@ -385,6 +335,7 @@ void CAutoDefModifierCombo::x_CleanUpTaxName (string &tax_name)
 }
 
 
+
 bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, const CBioSource& bsrc, CSubSource::ESubtype st)
 {
     bool         used = false;
@@ -444,7 +395,7 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
                  || st == COrgMod::eSubtype_forma_specialis
                  || st == COrgMod::eSubtype_pathovar
                  || st == COrgMod::eSubtype_specimen_voucher)
-                && NStr::Find (bsrc.GetOrg().GetTaxname(), val) != NCBI_NS_STD::string::npos) {
+                && NStr::Find (bsrc.GetOrg().GetTaxname(), " " + val) != NCBI_NS_STD::string::npos) {
                 // can't use this
             } else {
                 source_description += x_GetOrgModLabel(st);
@@ -462,12 +413,13 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
 bool CAutoDefModifierCombo::HasTrickyHIV()
 {
     bool has_tricky = false;
-    
+
     for (unsigned int k = 0; k < m_GroupList.size() && !has_tricky; k++) {
         has_tricky = m_GroupList[k]->HasTrickyHIV();
     }
     return has_tricky;
 }
+
 
 
 unsigned int CAutoDefModifierCombo::x_AddHIVModifiers (string &source_description, const CBioSource& bsrc)
@@ -516,22 +468,10 @@ unsigned int CAutoDefModifierCombo::x_AddHIVModifiers (string &source_descriptio
 }
 
 
-bool IsSpName (string taxname)
-{
-    bool is_sp_name = false;
-    string::size_type pos = NStr::Find(taxname, " sp. ");
-    if (pos != NCBI_NS_STD::string::npos
-        && (pos < 2 || !NStr::StartsWith(taxname.substr(pos - 2), "f."))) {
-        is_sp_name = true;
-    }
-    return is_sp_name;
-}
-
-
 bool CAutoDefModifierCombo::GetDefaultExcludeSp ()
 {
     bool default_exclude = true;
-    
+
     for (unsigned int k = 0; k < m_GroupList.size() && default_exclude; k++) {
         default_exclude = m_GroupList[k]->GetDefaultExcludeSp ();
     }
@@ -580,6 +520,155 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
     }
     
     return source_description;
+}
+
+
+unsigned int CAutoDefModifierCombo::GetNumUnique () const
+{
+    unsigned int num = 0;
+
+    ITERATE (TGroupListVector, it, m_GroupList) {
+        if ((*it)->GetSrcList().size() == 1) {
+            num++;
+        }
+    }
+    return num;
+}
+
+
+unsigned int CAutoDefModifierCombo::GetMaxInGroup () const
+{
+    unsigned int num = 0;
+
+    ITERATE (TGroupListVector, it, m_GroupList) {
+        if ((*it)->GetSrcList().size() > num) {
+            num = (*it)->GetSrcList().size();
+        }
+    }
+    return num;
+}
+
+
+/* NOTE - we want to sort combos from most unique organisms to least unique organisms */
+/* secondary sort - most groups to least groups */
+/* tertiary sort - fewer max orgs in group to most max orgs in group */
+/* fourth sort - least mods to most mods */
+int CAutoDefModifierCombo::Compare(const CAutoDefModifierCombo& other) const
+{
+    int rval = 0;
+    unsigned int num_this, num_other;
+
+    num_this = GetNumUnique();
+    num_other = other.GetNumUnique();
+    if (num_this > num_other) {
+        rval = -1;
+    } else if (num_this < num_other) {
+        rval = 1;
+    } else {
+        num_this = m_GroupList.size();
+        num_other = other.GetGroupList().size();
+        if (num_this > num_other) {
+            rval = -1;
+        } else if (num_this < num_other) {
+            rval = 1;
+        } else {
+            num_this = GetMaxInGroup ();
+            num_other = other.GetMaxInGroup();
+            if (num_this < num_other) {
+                rval = -1;
+            } else if (num_this > num_other) {
+                rval = 1;
+            } else {
+                num_this = m_Modifiers.size();
+                num_other = other.GetModifiers().size();
+                if (num_this < num_other) {
+                    rval = -1;
+                } else if (num_this > num_other) {
+                    rval = 1;
+                }
+            }
+        }
+    }
+    return rval;
+}
+
+
+
+bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype)
+{
+    bool added = false, rval = false;
+    vector <CAutoDefSourceGroup *> new_groups;
+
+    new_groups.clear();
+    NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
+        added |= (*it)->AddQual (IsOrgMod, subtype);
+    }
+
+    if (added) {
+        NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
+            vector <CAutoDefSourceGroup *> tmp = (*it)->RemoveNonMatchingDescriptions();
+            while (!tmp.empty()) {
+                new_groups.push_back (tmp[tmp.size() - 1]);
+                tmp.pop_back();
+                rval = true;
+            }
+        }
+    }
+    // NOTE - need to put groups from non-matching descriptions and put them in a new_groups list
+    // in order to avoid processing them twice
+    while (!new_groups.empty()) {
+        m_GroupList.push_back (new_groups[new_groups.size() - 1]);
+        new_groups.pop_back();
+    }
+
+    if (rval) {
+        m_Modifiers.push_back (CAutoDefSourceModifierInfo (IsOrgMod, subtype, ""));
+        std::sort (m_GroupList.begin(), m_GroupList.end());
+        if (IsOrgMod) {
+            m_OrgMods.push_back ((COrgMod_Base::ESubtype)subtype);
+        } else {
+            m_SubSources.push_back ((CSubSource_Base::ESubtype)subtype);
+        }
+    }
+    return rval;
+}
+
+
+
+bool CAutoDefModifierCombo::RemoveQual (bool IsOrgMod, int subtype)
+{
+    bool rval = false;
+
+    NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
+        rval |= (*it)->RemoveQual (IsOrgMod, subtype);
+    }
+    return rval;
+}
+
+
+vector<CAutoDefModifierCombo *> CAutoDefModifierCombo::ExpandByAllPresent()
+{
+    CAutoDefSourceDescription::TModifierVector mods;
+    vector<CAutoDefModifierCombo *> expanded;
+
+    expanded.clear();
+    NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
+        if ((*it)->GetSrcList().size() == 1) {
+            break;
+        }
+        mods = (*it)->GetModifiersPresentForAll();
+        ITERATE (CAutoDefSourceDescription::TModifierVector, mod_it, mods) {
+            expanded.push_back (new CAutoDefModifierCombo (this));
+            if (!expanded[expanded.size() - 1]->AddQual (mod_it->IsOrgMod(), mod_it->GetSubtype())) {
+                expanded.pop_back ();
+                RemoveQual(mod_it->IsOrgMod(), mod_it->GetSubtype());
+            }
+        }
+        if (!expanded.empty()) {
+            break;
+        }
+    }
+    return expanded;
 }
 
 

@@ -31,7 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objmgr/util/autodef.hpp>
+//#include <objmgr/util/autodef.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -44,13 +44,16 @@
 
 #include <serial/iterator.hpp>
 
+#include <objmgr/util/autodef_source_group.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-            
+
+
 CAutoDefSourceGroup::CAutoDefSourceGroup()
 {
-    m_SourceList.clear();
+    //m_SourceList.clear();
 }
 
 
@@ -58,7 +61,6 @@ CAutoDefSourceGroup::CAutoDefSourceGroup(CAutoDefSourceGroup *other)
 {
     _ASSERT (other);
     unsigned int index;
-    
     m_SourceList.clear();
     
     for (index = 0; index < other->GetNumDescriptions(); index++) {
@@ -69,7 +71,160 @@ CAutoDefSourceGroup::CAutoDefSourceGroup(CAutoDefSourceGroup *other)
 
 CAutoDefSourceGroup::~CAutoDefSourceGroup()
 {
+    unsigned int k;
+    for (k = 0; k < m_SourceList.size(); k++) {
+        delete (m_SourceList[k]);
+    }
 }
+
+
+void CAutoDefSourceGroup::AddSource (CAutoDefSourceDescription *src)
+{
+    m_SourceList.push_back (new CAutoDefSourceDescription(src));
+}
+
+
+bool CAutoDefSourceGroup::AddQual (bool IsOrgMod, int subtype)
+{
+    bool rval = FALSE;
+
+    NON_CONST_ITERATE (TSourceDescriptionVector, it, m_SourceList) {
+        rval |= (*it)->AddQual (IsOrgMod, subtype);
+    }
+
+    return rval;
+}
+
+
+bool CAutoDefSourceGroup::RemoveQual (bool IsOrgMod, int subtype)
+{
+    bool rval = FALSE;
+
+    NON_CONST_ITERATE (TSourceDescriptionVector, it, m_SourceList) {
+        rval |= (*it)->RemoveQual (IsOrgMod, subtype);
+    }
+
+    return rval;
+}
+
+
+vector<CAutoDefSourceGroup *> CAutoDefSourceGroup::RemoveNonMatchingDescriptions ()
+{
+    vector<CAutoDefSourceGroup *> group_list;
+    TSourceDescriptionVector::iterator it;
+
+    group_list.clear();
+
+    if (m_SourceList.size() < 2) {
+        return group_list;
+    }
+    std::sort (m_SourceList.begin(), m_SourceList.end());
+    it = m_SourceList.begin();
+    it++;
+    while (it != m_SourceList.end() && (*it)->Compare (*m_SourceList[0]) == 0) {
+        it++;
+    }
+    while (it != m_SourceList.end()) {
+        CAutoDefSourceGroup *g = new CAutoDefSourceGroup();
+        g->AddSource (*it);
+        it = m_SourceList.erase(it);
+        while (it != m_SourceList.end() 
+            && (*it)->Compare (*(g->GetSrcList()[0])) == 0) {
+            g->AddSource (*it);
+            it = m_SourceList.erase(it);
+        }        
+        group_list.push_back (g);
+    }
+    return group_list;
+}
+
+
+CAutoDefSourceDescription::TModifierVector CAutoDefSourceGroup::GetModifiersPresentForAll()
+{
+    CAutoDefSourceDescription::TModifierVector mods;
+    CAutoDefSourceDescription::TModifierVector::const_iterator mod_it, mod_it_other;
+    CAutoDefSourceDescription::TModifierVector::iterator mod_list_it;
+    TSourceDescriptionVector::iterator it;
+    bool found_mod;
+
+    mods.clear();
+    if (m_SourceList.size() > 0) {
+        it = m_SourceList.begin();
+        mod_it = (*it)->GetModifiers().begin();
+        while (mod_it != (*it)->GetModifiers().end()) {
+            mods.push_back (*mod_it);
+            ++mod_it;
+        }
+        it++;
+        while (it != m_SourceList.end() && mods.size() > 0) {
+            mod_list_it = mods.begin();
+            while (mod_list_it != mods.end()) {
+                mod_it_other = (*it)->GetModifiers().begin();
+                found_mod = false;
+                while (mod_it_other != (*it)->GetModifiers().end() && !found_mod) {
+                    if (mod_list_it->Compare (*mod_it_other) == 0) {
+                        found_mod = true;
+                    }
+                    mod_it_other++;
+                }
+                if (found_mod) {
+                    mod_list_it++;
+                } else {
+                    mod_list_it = mods.erase (mod_list_it);
+                }
+            }
+            it++;
+        }
+    }
+
+    return mods;
+}
+
+
+CAutoDefSourceDescription::TModifierVector CAutoDefSourceGroup::GetModifiersPresentForAny()
+{
+    CAutoDefSourceDescription::TModifierVector mods;
+    CAutoDefSourceDescription::TModifierVector::iterator mod_it_other;
+    bool found_mod;
+
+    mods.clear();
+    ITERATE (TSourceDescriptionVector, it, m_SourceList) {
+        ITERATE (CAutoDefSourceDescription::TModifierVector, mod_it, (*it)->GetModifiers()) {
+            found_mod = false;
+            mod_it_other = mods.begin();
+            while (mod_it_other != mods.end() && !found_mod) {
+                if (mod_it->Compare (*mod_it_other) == 0) {
+                    found_mod = true;
+                }
+                mod_it_other++;
+            }
+            if (!found_mod) {
+                mods.push_back (*mod_it);
+            }
+        }
+    }
+
+    return mods;
+}
+
+
+// want to sort in descending number of sources
+int CAutoDefSourceGroup::Compare(const CAutoDefSourceGroup& s) const
+{
+    unsigned int num_other, num_this;
+    int rval = 0;
+
+    num_other = s.GetSrcList().size();
+    num_this = m_SourceList.size();
+
+    if (num_other < num_this) {
+        rval = -1;
+    } else if (num_other > num_this) {
+        rval = 1;
+    }
+    return rval;
+}
+
 
 unsigned int CAutoDefSourceGroup::GetNumDescriptions()
 {
@@ -113,50 +268,6 @@ void CAutoDefSourceGroup::x_SortDescriptions(IAutoDefCombo *mod_combo)
 }
 
 
-CAutoDefSourceGroup *CAutoDefSourceGroup::RemoveNonMatchingDescriptions (IAutoDefCombo *mod_combo)
-{
-    x_SortDescriptions(mod_combo);
-
-    if (m_SourceList.size() < 2) { 
-        return NULL;
-    }
-    
-    string first_desc = m_SourceList[0]->GetComboDescription(mod_combo);
-    string last_desc = m_SourceList[m_SourceList.size() - 1]->GetComboDescription(mod_combo);
-    if (NStr::Equal(first_desc, last_desc)) {
-        return NULL;
-    }
-    
-    CAutoDefSourceGroup *new_grp = new CAutoDefSourceGroup();
-    unsigned int start_index = 1;
-    while (start_index < m_SourceList.size() 
-           && NStr::Equal(first_desc, m_SourceList[start_index]->GetComboDescription(mod_combo))) {
-        start_index++;
-    }
-    for (unsigned int k = start_index; k < m_SourceList.size(); k++) {
-        new_grp->AddSourceDescription(m_SourceList[k]);
-        m_SourceList[k] = NULL;
-    }
-    while (m_SourceList.size() > start_index) {
-        m_SourceList.pop_back();
-    }
-    return new_grp;
-}
-
-
-bool CAutoDefSourceGroup::SourceDescBelongsHere(CAutoDefSourceDescription *source_desc, IAutoDefCombo *mod_combo)
-{
-    string this_desc, other_desc;
-    if (source_desc == NULL) {
-        return false;
-    }
-    
-    this_desc = m_SourceList[0]->GetComboDescription(mod_combo);
-    other_desc = source_desc->GetComboDescription(mod_combo);
-    return NStr::Equal(this_desc, other_desc);
-}
-
-
 void CAutoDefSourceGroup::GetAvailableModifiers (CAutoDefSourceDescription::TAvailableModifierVector &modifier_list)
 {
     unsigned int k;
@@ -175,6 +286,18 @@ bool CAutoDefSourceGroup::HasTrickyHIV ()
         has_tricky = m_SourceList[k]->IsTrickyHIV();
     }
     return has_tricky;
+}
+
+
+bool IsSpName (string taxname)
+{
+    bool is_sp_name = false;
+    string::size_type pos = NStr::Find(taxname, " sp. ");
+    if (pos != NCBI_NS_STD::string::npos
+        && (pos < 2 || !NStr::StartsWith(taxname.substr(pos - 2), "f."))) {
+        is_sp_name = true;
+    }
+    return is_sp_name;
 }
 
 

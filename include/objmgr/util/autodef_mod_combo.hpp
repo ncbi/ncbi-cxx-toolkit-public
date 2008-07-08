@@ -51,7 +51,8 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-    
+
+
 class NCBI_XOBJUTIL_EXPORT CAutoDefModifierCombo : public CObject, 
                                                    public IAutoDefCombo
 {
@@ -67,7 +68,6 @@ public:
     ~CAutoDefModifierCombo();
     
     unsigned int GetNumGroups();
-    CAutoDefSourceGroup *GetSourceGroup(unsigned int index);
     
     unsigned int GetNumSubSources();
     CSubSource::ESubtype GetSubSource(unsigned int index);
@@ -102,15 +102,38 @@ public:
 
     string GetSourceDescriptionString(const CBioSource& bsrc);
 
-    typedef vector<CAutoDefSourceGroup *> TSourceGroupVector;
     typedef vector<CSubSource::ESubtype> TSubSourceTypeVector;
     typedef vector<COrgMod::ESubtype> TOrgModTypeVector;
-    
+    typedef vector<CAutoDefSourceGroup *> TGroupListVector;
+
+    const TGroupListVector& GetGroupList() const { return m_GroupList; }
+    const CAutoDefSourceDescription::TModifierVector& GetModifiers() const { return m_Modifiers; }
+
+    unsigned int GetNumUnique () const;
+    unsigned int GetMaxInGroup () const;
+
+    int Compare(const CAutoDefModifierCombo& other) const;
+    bool operator>(const CAutoDefModifierCombo& src) const
+    {
+        return Compare (src) > 0;
+    }
+
+    bool operator<(const CAutoDefModifierCombo& src) const
+    {
+        return Compare (src) < 0;
+    }
+
+    bool AddQual (bool IsOrgMod, int subtype);
+    bool RemoveQual (bool IsOrgMod, int subtype);
+
+    vector<CAutoDefModifierCombo *> ExpandByAllPresent();
+
 private:
-    TSourceGroupVector   m_GroupList;
     TSubSourceTypeVector m_SubSources;
     TOrgModTypeVector    m_OrgMods;
-    
+    TGroupListVector     m_GroupList;
+    CAutoDefSourceDescription::TModifierVector m_Modifiers;
+   
     bool         m_UseModifierLabels;
     unsigned int m_MaxModifiers;
     bool         m_KeepCountryText;
@@ -124,7 +147,6 @@ private:
     bool x_AddSubsourceString (string &source_description, const CBioSource& bsrc, CSubSource::ESubtype st);
     bool x_AddOrgModString (string &source_description, const CBioSource& bsrc, COrgMod::ESubtype st);
     unsigned int x_AddHIVModifiers (string &source_description, const CBioSource& bsrc);
-
 
 };
 

@@ -31,7 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objmgr/util/autodef.hpp>
+#include <objmgr/util/autodef_source_desc.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -49,11 +49,31 @@ BEGIN_SCOPE(objects)
 
 CAutoDefSourceDescription::CAutoDefSourceDescription(const CBioSource& bs) : m_BS(bs)
 {
+    if (bs.CanGetOrg() && bs.GetOrg().CanGetTaxname()) {
+        m_DescStrings.push_back (bs.GetOrg().GetTaxname());
+    }
+    if (bs.CanGetOrg() && bs.GetOrg().CanGetOrgname() && bs.GetOrg().GetOrgname().CanGetMod()) {
+        ITERATE (COrgName::TMod, modI, bs.GetOrg().GetOrgname().GetMod()) {
+            m_Modifiers.push_back (CAutoDefSourceModifierInfo(TRUE, (*modI)->GetSubtype(), (*modI)->GetSubname()));
+        }
+    }
+    ITERATE (CBioSource::TSubtype, subSrcI, bs.GetSubtype()) {
+        m_Modifiers.push_back (CAutoDefSourceModifierInfo(FALSE, (*subSrcI)->GetSubtype(), (*subSrcI)->GetName()));
+    }
+    std::sort (m_Modifiers.begin(), m_Modifiers.end());
 }
 
 
-CAutoDefSourceDescription::CAutoDefSourceDescription(CAutoDefSourceDescription * value) : m_BS(value->GetBioSource())
+CAutoDefSourceDescription::CAutoDefSourceDescription(CAutoDefSourceDescription *other) : m_BS(other->GetBioSource())
 {
+    // copy strings
+    ITERATE (TDescString, string_it, other->GetStrings()) {
+        m_DescStrings.push_back (*string_it);
+    }
+    // copy remaining modifier list
+    ITERATE (TModifierVector, it, other->GetModifiers()) {
+        m_Modifiers.push_back (CAutoDefSourceModifierInfo(*it));
+    }
 }
 
 
@@ -61,9 +81,92 @@ CAutoDefSourceDescription::~CAutoDefSourceDescription()
 {
 }
 
-const CBioSource& CAutoDefSourceDescription::GetBioSource()
+const CBioSource& CAutoDefSourceDescription::GetBioSource() const
 {
     return m_BS;
+}
+
+
+bool CAutoDefSourceDescription::AddQual (bool isOrgMod, int subtype)
+{
+    bool rval = FALSE;
+    TModifierVector::iterator it;
+
+    it = m_Modifiers.begin();
+    while (it != m_Modifiers.end()) {
+        if (isOrgMod) {
+            if (it->IsOrgMod() && it->GetSubtype() == subtype) {
+                m_DescStrings.push_back (it->GetValue());
+                it = m_Modifiers.erase(it);
+                rval = TRUE;
+            } else {
+                ++it;
+            }
+        } else {
+            if (!it->IsOrgMod() && it->GetSubtype() == subtype) {
+                m_DescStrings.push_back (it->GetValue());
+                it = m_Modifiers.erase(it);
+                rval = TRUE;
+            } else {
+                ++it;
+            }
+        }
+    }
+    return rval;
+}
+
+
+bool CAutoDefSourceDescription::RemoveQual (bool isOrgMod, int subtype)
+{
+    bool rval = FALSE;
+    TModifierVector::iterator it;
+
+    it = m_Modifiers.begin();
+    while (it != m_Modifiers.end()) {
+        if (isOrgMod) {
+            if (it->IsOrgMod() && it->GetSubtype() == subtype) {
+                it = m_Modifiers.erase(it);
+                rval = TRUE;
+            } else {
+                ++it;
+            }
+        } else {
+            if (!it->IsOrgMod() && it->GetSubtype() == subtype) {
+                it = m_Modifiers.erase(it);
+                rval = TRUE;
+            } else {
+                ++it;
+            }
+        }
+    }
+    return rval;
+}
+
+
+int CAutoDefSourceDescription::Compare(const CAutoDefSourceDescription& s) const
+{
+    unsigned int k = 0;
+    int rval = 0;
+    TDescString::const_iterator s_it, this_it;
+
+    s_it = s.GetStrings().begin();
+    this_it = GetStrings().begin();
+    while (s_it != s.GetStrings().end()
+           && this_it != GetStrings().end()
+           && rval == 0) { 
+        rval = NStr::Compare (*this_it, *s_it);
+        k++;
+        ++s_it;
+        ++this_it;
+    }
+    if (rval == 0) {
+        if (k < s.GetStrings().size()) {
+            rval = -1;
+        } else if (k < m_DescStrings.size()) {
+            rval = 1;
+        }
+    }
+    return rval;
 }
 
 
@@ -140,6 +243,98 @@ bool CAutoDefSourceDescription::IsTrickyHIV()
         }
     }
     return found;
+}
+
+
+CAutoDefSourceModifierInfo::CAutoDefSourceModifierInfo(bool isOrgMod, int subtype, string value)
+{
+    m_IsOrgMod = isOrgMod;
+    m_Subtype = subtype;
+    m_Value = value;
+}
+
+
+CAutoDefSourceModifierInfo::CAutoDefSourceModifierInfo(const CAutoDefSourceModifierInfo &other)
+{
+    m_IsOrgMod = other.IsOrgMod();
+    m_Subtype = other.GetSubtype();
+    m_Value = other.GetValue();
+}
+
+
+CAutoDefSourceModifierInfo::~CAutoDefSourceModifierInfo()
+{
+}
+
+
+unsigned int CAutoDefSourceModifierInfo::GetRank() const
+{
+    if (m_IsOrgMod) {
+        if (m_Subtype == COrgMod::eSubtype_strain) {
+            return 3;
+        } else if (m_Subtype == COrgMod::eSubtype_isolate) {
+            return 5;
+        } else if (m_Subtype == COrgMod::eSubtype_cultivar) {
+            return 7;
+        } else if (m_Subtype == COrgMod::eSubtype_specimen_voucher) {
+            return 8;
+        } else if (m_Subtype == COrgMod::eSubtype_ecotype) {
+            return 9;
+        } else if (m_Subtype == COrgMod::eSubtype_type) {
+            return 10;
+        } else if (m_Subtype == COrgMod::eSubtype_serotype) {
+            return 11;
+        } else if (m_Subtype == COrgMod::eSubtype_authority) {
+            return 12;
+        } else if (m_Subtype == COrgMod::eSubtype_breed) {
+            return 13;
+        }
+    } else {
+        if (m_Subtype == CSubSource::eSubtype_transgenic) {
+            return 0;
+        } else if (m_Subtype == CSubSource::eSubtype_plasmid_name) {
+            return 1;
+         } else if (m_Subtype == CSubSource::eSubtype_endogenous_virus_name)  {
+            return 2;
+        } else if (m_Subtype == CSubSource::eSubtype_clone) {
+            return 4;
+        } else if (m_Subtype == CSubSource::eSubtype_haplotype) {
+            return 6;
+        }
+    }
+    return 50;
+}
+
+
+int CAutoDefSourceModifierInfo::Compare(const CAutoDefSourceModifierInfo& mod) const
+{
+    int rank1, rank2;
+
+    rank1 = GetRank();
+    rank2 = mod.GetRank();
+ 
+    if (rank1 < rank2) {
+        return -1;
+    } else if (rank1 > rank2) {
+        return 1;
+    } else if (IsOrgMod() && !mod.IsOrgMod()) {
+        // prefer subsource to orgmod qualifiers 
+        return -1;
+    } else if (!IsOrgMod() && mod.IsOrgMod()) {
+        return 1;
+    } else if (IsOrgMod() && mod.IsOrgMod()) {
+        if (GetSubtype() == mod.GetSubtype()) {
+            return 0;
+        } else {
+            return (GetSubtype() < mod.GetSubtype() ? -1 : 1);
+        }
+    } else {
+        if (GetSubtype() == mod.GetSubtype()) {
+            return 0;
+        } else {
+            return (GetSubtype() < mod.GetSubtype() ? -1 : 1);
+        }
+    }
 }
 
 

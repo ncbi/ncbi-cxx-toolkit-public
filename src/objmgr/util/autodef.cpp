@@ -68,7 +68,6 @@ CAutoDef::CAutoDef()
       m_Keep5UTRs(false),
       m_Cancelled(false)
 {
-    m_ComboList.clear();
     m_SuppressedFeatures.clear();
 }
 
@@ -79,26 +78,18 @@ CAutoDef::~CAutoDef()
 
 void CAutoDef::AddSources (CSeq_entry_Handle se)
 {
-
-    if (m_ComboList.size() == 0) {
-        m_ComboList.push_back(new CAutoDefModifierCombo());
-    }
     
     // add sources to modifier combination groups
     CBioseq_CI seq_iter(se, CSeq_inst::eMol_na);
     for ( ; seq_iter; ++seq_iter ) {
         for (CSeqdesc_CI dit((*seq_iter), CSeqdesc::e_Source); dit;  ++dit) {
             const CBioSource& bsrc = dit->GetSource();
-            for (unsigned int k = 0; k < m_ComboList.size(); k++) {
-                m_ComboList[k]->AddSource(bsrc);
-           }
+            m_OrigModCombo.AddSource(bsrc);
         }
     }
 
     // set default exclude_sp values
-    for (unsigned int k = 0; k < m_ComboList.size(); k++) {
-        m_ComboList[k]->SetExcludeSpOrgs(m_ComboList[k]->GetDefaultExcludeSp());
-    }
+    m_OrigModCombo.SetExcludeSpOrgs (m_OrigModCombo.GetDefaultExcludeSp());
 }
 
 
@@ -106,15 +97,11 @@ void CAutoDef::AddSources (CBioseq_Handle bh)
 {
     for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
         const CBioSource& bsrc = dit->GetSource();
-        for (unsigned int k = 0; k < m_ComboList.size(); k++) {
-             m_ComboList[k]->AddSource(bsrc);
-        }
+        m_OrigModCombo.AddSource (bsrc);
     }
 
     // set default exclude_sp values
-    for (unsigned int k = 0; k < m_ComboList.size(); k++) {
-        m_ComboList[k]->SetExcludeSpOrgs(m_ComboList[k]->GetDefaultExcludeSp());
-    }
+    m_OrigModCombo.SetExcludeSpOrgs(m_OrigModCombo.GetDefaultExcludeSp());
 }
 
 
@@ -183,12 +170,10 @@ bool CAutoDef::x_IsSubSrcRequired(unsigned int mod_type)
 
 unsigned int CAutoDef::GetNumAvailableModifiers()
 {
-    if (m_ComboList.size() == 0) {
-        return 0;
-    }
     CAutoDefSourceDescription::TAvailableModifierVector modifier_list;
     modifier_list.clear();
-    m_ComboList[0]->GetAvailableModifiers (modifier_list);
+    m_OrigModCombo.GetAvailableModifiers (modifier_list);
+
     unsigned int num_present = 0;
     for (unsigned int k = 0; k < modifier_list.size(); k++) {
         if (modifier_list[k].AnyPresent()) {
@@ -201,121 +186,69 @@ unsigned int CAutoDef::GetNumAvailableModifiers()
 
 CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
 {
-    _ASSERT(m_ComboList.size() > 0);
-    CAutoDefSourceDescription::TAvailableModifierVector modifier_list;
     CAutoDefModifierCombo *best = NULL;
-    
-    // first, get the list of modifiers that are available
-    modifier_list.clear();
-    m_ComboList[0]->GetAvailableModifiers (modifier_list);
-    
-    // later, need to find a way to specify required modifiers
-    // these should be added first to the master combo
-    // add required modifiers
-    for (unsigned int k = 0; k < modifier_list.size(); k++) {
-        if (modifier_list[k].AnyPresent()) {
-            if (modifier_list[k].IsOrgMod()) {
-                COrgMod::ESubtype subtype = modifier_list[k].GetOrgModType();
-                if (x_IsOrgModRequired(subtype)) {
-                    m_ComboList[0]->AddOrgMod(subtype);
+    TModifierComboVector  combo_list;
+
+    combo_list.clear();
+    combo_list.push_back (new CAutoDefModifierCombo(&m_OrigModCombo));
+
+
+    TModifierComboVector tmp, add_list;
+    TModifierComboVector::iterator it;
+    CAutoDefSourceDescription::TModifierVector mod_list, mods_to_try;
+    bool stop = false;
+    unsigned int  k;
+
+    mod_list.clear();
+
+    if (combo_list[0]->GetMaxInGroup() == 1) {
+        stop = true;
+    }
+
+    while (!stop) {
+        stop = true;
+        it = combo_list.begin();
+        add_list.clear();
+        while (it != combo_list.end()) {
+            tmp = (*it)->ExpandByAllPresent ();
+            if (!tmp.empty()) {
+                stop = false;
+                for (k = 0; k < tmp.size(); k++) {
+                    add_list.push_back (new CAutoDefModifierCombo(tmp[k]));
                 }
+                it = combo_list.erase (it);
             } else {
-                CSubSource::ESubtype subtype = modifier_list[k].GetSubSourceType();
-                if (x_IsSubSrcRequired(subtype)) {
-                    m_ComboList[0]->AddSubsource(subtype);
-                }
+                it++;
             }
+            tmp.clear();
+        }
+        for (k = 0; k < add_list.size(); k++) {
+            combo_list.push_back (new CAutoDefModifierCombo(add_list[k]));
+        }
+        add_list.clear();
+        std::sort (combo_list.begin(), combo_list.end());
+        if (combo_list[0]->GetMaxInGroup() == 1) {
+            stop = true;
         }
     }
-    
-    if (m_ComboList[0]->AllUnique()) {
-        return m_ComboList[0];
+
+    ITERATE (CAutoDefSourceDescription::TModifierVector, it, combo_list[0]->GetModifiers()) {
+        mod_list.push_back (CAutoDefSourceModifierInfo(*it));
     }
-    
-    // find the order in which we should try the modifiers
-    TModifierIndexVector index_list;
-    index_list.clear();
-    x_GetModifierIndexList(index_list, modifier_list);
-    
-    // copy the original combo and add a modifier
-    unsigned int start_index = 0;
-    unsigned int num_to_expand = 1;
-    unsigned int next_num_to_expand = 0;
-    while (best == NULL && num_to_expand + start_index <= m_ComboList.size() && num_to_expand > 0) {
-        next_num_to_expand = 0;
-        for (unsigned int j = start_index; j < start_index + num_to_expand && best == NULL; j++) {
-            for (unsigned int k = 0; k < index_list.size() && best == NULL; k++) {
-                // if the modifier isn't present anywhere, skip it
-                if (!modifier_list[index_list[k]].AnyPresent()) {
-                    continue;
-                }
-                // if the modifier is already in the combo, skip it
-                if (modifier_list[index_list[k]].IsOrgMod()) {
-                    if (m_ComboList[j]->HasOrgMod(modifier_list[index_list[k]].GetOrgModType())) {
-                        continue;
-                    }
-                } else if (m_ComboList[j]->HasSubSource(modifier_list[index_list[k]].GetSubSourceType())) {
-                    continue;
-                }
-                // if the modifier was already tried because it's required, skip it
-                bool required = false;
-                if (modifier_list[index_list[k]].IsOrgMod()) {
-                    required = x_IsOrgModRequired(modifier_list[index_list[k]].GetOrgModType());
-                } else {
-                    required = x_IsSubSrcRequired(modifier_list[index_list[k]].GetSubSourceType());
-                }
-                if (required) {
-                    continue;
-                }
-                CAutoDefModifierCombo *newm = new CAutoDefModifierCombo(m_ComboList[j]);
-                if (modifier_list[index_list[k]].IsOrgMod()) {
-                    newm->AddOrgMod(modifier_list[index_list[k]].GetOrgModType());
-                } else {
-                    newm->AddSubsource(modifier_list[index_list[k]].GetSubSourceType());
-                }
-                if (newm->AllUnique()) {
-                    best = newm;
-                } else if (newm->GetNumGroups() > m_ComboList[j]->GetNumGroups()) {
-                    m_ComboList.push_back(newm);
-                    next_num_to_expand ++;
-                } else {
-                    delete newm;
-                }
-            }
-        }
-        start_index += num_to_expand;
-        num_to_expand = next_num_to_expand;
+
+    best = combo_list[0];
+    combo_list[0] = NULL;
+    for (k = 1; k < combo_list.size(); k++) {
+       delete combo_list[k];
+       combo_list[k] = NULL;
     }
-    if (best == NULL) {
-        best = m_ComboList[0];
-        unsigned int best_uniq_desc = best->GetNumUniqueDescriptions();
-        unsigned int best_num_groups = best->GetNumGroups();
-        unsigned int best_num_mods = best->GetNumOrgMods() + best->GetNumSubSources();
-        
-        for (unsigned int j = 1; j < m_ComboList.size(); j++) {
-            unsigned int uniq_desc = m_ComboList[j]->GetNumUniqueDescriptions();
-            unsigned int num_groups = m_ComboList[j]->GetNumGroups();
-            unsigned int num_mods = m_ComboList[j]->GetNumOrgMods() + m_ComboList[j]->GetNumSubSources();
-            if (uniq_desc > best_uniq_desc
-                || (uniq_desc == best_uniq_desc && num_groups > best_num_groups)
-                || (uniq_desc == best_uniq_desc && num_groups == best_num_groups && num_mods < best_num_mods)) {
-                best = m_ComboList[j];
-                best_uniq_desc = uniq_desc;
-                best_num_groups = num_groups;
-                best_num_mods = num_mods;
-            }
-        }
-    }
-    
     return best;
 }
 
 
 CAutoDefModifierCombo* CAutoDef::GetAllModifierCombo()
 {
-    _ASSERT(m_ComboList.size() > 0);
-
-    CAutoDefModifierCombo *newm = new CAutoDefModifierCombo(m_ComboList[0]);
+    CAutoDefModifierCombo *newm = new CAutoDefModifierCombo(&m_OrigModCombo);
         
     // set all modifiers in combo
     CAutoDefSourceDescription::TAvailableModifierVector modifier_list;
@@ -340,6 +273,14 @@ CAutoDefModifierCombo* CAutoDef::GetAllModifierCombo()
             }
         }
     }
+    return newm;
+}
+
+
+CAutoDefModifierCombo* CAutoDef::GetEmptyCombo()
+{
+    CAutoDefModifierCombo *newm = new CAutoDefModifierCombo(&m_OrigModCombo);
+        
     return newm;
 }
 
@@ -890,93 +831,6 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     
     main_clause.Label();
 
-#if 0
-  if (feature_requests->feature_list_type == DEFLINE_USE_FEATURES
-      && (! isSegment || (seg_feature_list != NULL && *seg_feature_list != NULL)))
-  {
-    /* remove features that indexer has chosen to suppress before they are grouped
-     * with other features or used to determine loneliness etc.
-     */
-    RemoveSuppressedFeatures (feature_list, feature_requests->suppressed_feature_list);
-  
-    GroupmRNAs (feature_list, bsp, feature_requests->suppress_locus_tags);
-
-    /* genes are added to other clauses */
-    GroupGenes (feature_list, feature_requests->suppress_locus_tags);
-
-    if (! feature_requests->suppress_alt_splice_phrase)
-    {
-      /* find alt-spliced CDSs */
-      FindAltSplices (*feature_list, bsp, feature_requests->suppress_locus_tags);
-    }
-
-    GroupAltSplicedExons (feature_list, bsp, TRUE);
-    
-    if (!isSegment)
-    {
-       /* group CDSs that have the same name and are under the same gene together */
-      GroupSegmentedCDSs (feature_list, bsp, TRUE, feature_requests->suppress_locus_tags);
-    }
-
-    /* now group clauses */
-    GroupAllClauses ( feature_list, gene_cluster_opp_strand, bsp );
-
-    ExpandAltSplicedExons (*feature_list, bsp, feature_requests->suppress_locus_tags);
-
-    FindGeneProducts (*feature_list, bsp, feature_requests->suppress_locus_tags);
-
-    if (seg_feature_list != NULL && *seg_feature_list != NULL)
-    {
-      tmp_feat_list = NULL; 
-      ExtractSegmentClauses ( *seg_feature_list, *feature_list, &tmp_feat_list);
-      FreeListElement (*feature_list);
-      *feature_list = tmp_feat_list;
-    }
-   
-    /* remove exons and other unwanted features */
-    RemoveUnwantedFeatures (feature_list, bsp, isSegment, feature_requests);
-
-    RemoveGenesMentionedElsewhere (feature_list, *feature_list, TRUE,
-                                   feature_requests->suppress_locus_tags);
-
-    if (feature_requests->remove_subfeatures)
-    {
-      DeleteSubfeatures (feature_list, TRUE);
-    }
-
-    DeleteOperonAndGeneClusterSubfeatures (feature_list, TRUE);
-
-    CountUnknownGenes (feature_list, bsp, feature_requests->suppress_locus_tags);
-
-    if (feature_requests->misc_feat_parse_rule == 1)
-    {
-      RenameMiscFeats (*feature_list, molecule_type);
-    }
-    else
-    {
-      RemoveUnwantedMiscFeats (feature_list, TRUE);
-    }
-
-    ReplaceRNAClauses (feature_list, bsp, feature_requests->suppress_locus_tags);
-
-    /* take any exons on the minus strand */
-    /* and reverse their order within the clause */
-    ReverseClauses (feature_list, IsExon);
-
-    RenameExonSequences ( feature_list, bsp, TRUE);
-
-    LabelClauses (*feature_list, molecule_type, bsp, 
-                  feature_requests->suppress_locus_tags);
-
-    /* parse lists of tRNA and intergenic spacer clauses in misc_feat notes */
-    /* need to do this after LabelClauses, since LabelClauses labels intergenic
-     * spacers with more relaxed restrictions.  The labels from LabelClauses
-     * for intergenic spacers are the default values.
-     */
-    ReplaceIntergenicSpacerClauses (feature_list, bsp, feature_requests->suppress_locus_tags);
-
-#endif    
-    
     return main_clause.ListClauses(true, false);
 }
 
@@ -1136,13 +990,11 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle 
 void CAutoDef::GetAvailableModifiers(CAutoDef::TAvailableModifierSet &mod_set)
 {    
     mod_set.clear();
-    if (m_ComboList.size() > 0) {
-        CAutoDefSourceDescription::TAvailableModifierVector modifier_list;
-        modifier_list.clear();
-        m_ComboList[0]->GetAvailableModifiers (modifier_list);
-        for (unsigned int k = 0; k < modifier_list.size(); k++) {
-            mod_set.insert(CAutoDefAvailableModifier(modifier_list[k]));
-        }
+    CAutoDefSourceDescription::TAvailableModifierVector modifier_list;
+    modifier_list.clear();
+    m_OrigModCombo.GetAvailableModifiers (modifier_list);
+    for (unsigned int k = 0; k < modifier_list.size(); k++) {
+        mod_set.insert(CAutoDefAvailableModifier(modifier_list[k]));
     }
 }
 

@@ -46,6 +46,7 @@
 #include <objmgr/seq_entry_handle.hpp>
 
 #include <objmgr/util/autodef_available_modifier.hpp>
+#include <objmgr/util/autodef_source_desc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -56,28 +57,46 @@ public:
     CAutoDefSourceGroup();
     CAutoDefSourceGroup(CAutoDefSourceGroup *value);
     ~CAutoDefSourceGroup();
-    
-    unsigned int GetNumDescriptions();
-    CAutoDefSourceDescription *GetSourceDescription(unsigned int index);
-    void AddSourceDescription(CAutoDefSourceDescription *tmp);
 
-    bool SourceDescBelongsHere(CAutoDefSourceDescription *source_desc, IAutoDefCombo *mod_combo);
-    
-    CAutoDefSourceGroup *RemoveNonMatchingDescriptions (IAutoDefCombo *mod_combo);
-    
+    typedef vector<CAutoDefSourceDescription *> TSourceDescriptionVector;
+    unsigned int GetNumDescriptions();
+
+    void AddSourceDescription(CAutoDefSourceDescription *tmp);
+    CAutoDefSourceDescription *GetSourceDescription(unsigned int index);
+        
     void GetAvailableModifiers
         (CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
 
-    typedef vector<CAutoDefSourceDescription *> TSourceDescriptionVector;
     bool HasTrickyHIV();
     bool GetDefaultExcludeSp();
 
-private:
-    TSourceDescriptionVector m_SourceList;
-    
-    void x_SortDescriptions(IAutoDefCombo *mod_combo);
 
+    void AddSource (CAutoDefSourceDescription *src);
+    bool AddQual (bool IsOrgMod, int subtype);
+    bool RemoveQual (bool IsOrgMod, int subtype);
+    TSourceDescriptionVector GetSrcList() const { return m_SourceList; }
+    vector<CAutoDefSourceGroup *> RemoveNonMatchingDescriptions ();
+
+    CAutoDefSourceDescription::TModifierVector GetModifiersPresentForAll();
+    CAutoDefSourceDescription::TModifierVector GetModifiersPresentForAny();
+
+    int Compare(const CAutoDefSourceGroup& s) const;
+    bool operator>(const CAutoDefSourceGroup& src) const
+    {
+        return Compare (src) > 0;
+    }
+
+    bool operator<(const CAutoDefSourceGroup& src) const
+    {
+        return Compare (src) < 0;
+    }
+
+private:
+    void x_SortDescriptions(IAutoDefCombo *mod_combo);
+    TSourceDescriptionVector m_SourceList;   
 };
+
+
     
 END_SCOPE(objects)
 END_NCBI_SCOPE

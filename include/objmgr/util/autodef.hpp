@@ -79,6 +79,8 @@ public:
     void AddSources(CBioseq_Handle bh);
     CAutoDefModifierCombo* FindBestModifierCombo();
     CAutoDefModifierCombo* GetAllModifierCombo();
+    CAutoDefModifierCombo* GetEmptyCombo();
+    CAutoDefSourceDescription::TModifierVector GetBestModifierList(CSeq_entry_Handle se);
     unsigned int GetNumAvailableModifiers();
     string GetOneSourceDescription(CBioseq_Handle bh);
     void DoAutoDef();
@@ -113,8 +115,8 @@ private:
     typedef vector<unsigned int> TModifierIndexVector;
     typedef vector<CSeq_entry_Handle> TSeqEntryHandleVector;
 
-    TModifierComboVector  m_ComboList;
-    
+    CAutoDefModifierCombo m_OrigModCombo;
+
     TFeatTypeItemSet m_SuppressedFeatures;
     
     // feature clause specifications
@@ -274,8 +276,6 @@ void CAutoDef::SetKeep5UTRs(bool keep)
     m_Keep5UTRs = keep;
 }
 
-
-bool IsSpName (string taxname);
 
 
 END_SCOPE(objects)
