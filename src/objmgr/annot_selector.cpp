@@ -372,6 +372,22 @@ SAnnotSelector& SAnnotSelector::SetDataSource(const string& source)
 }
 
 
+SAnnotSelector& SAnnotSelector::SetAdaptiveDepth(bool value)
+{
+    m_AdaptiveDepthFlags = value? kAdaptive_DefaultBits: kAdaptive_None;
+    return *this;
+}
+
+
+SAnnotSelector&
+SAnnotSelector::SetAdaptiveDepthFlags(TAdaptiveDepthFlags flags)
+{
+    m_AdaptiveDepthFlags =
+        flags & fAdaptive_Default? kAdaptive_DefaultBits: flags;
+    return *this;
+}
+
+
 SAnnotSelector&
 SAnnotSelector::SetAdaptiveTrigger(const SAnnotTypeSelector& sel)
 {

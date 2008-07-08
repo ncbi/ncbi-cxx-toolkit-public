@@ -294,11 +294,13 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
 
     typedef vector<SAnnotTypeSelector> TAdaptiveTriggers;
     enum EAdaptiveDepthFlags {
-        fAdaptive_ByTriggers = 1<<0,
-        fAdaptive_BySubtypes = 1<<1,
         kAdaptive_None       = 0,
+        fAdaptive_Default    = 1,
+        kAdaptive_Default    = fAdaptive_Default,
+        fAdaptive_ByTriggers = 1<<1,
+        fAdaptive_BySubtypes = 1<<2,
         kAdaptive_All        = fAdaptive_ByTriggers | fAdaptive_BySubtypes,
-        kAdaptive_Default    = kAdaptive_All
+        kAdaptive_DefaultBits= fAdaptive_ByTriggers
     };
     typedef Uint1 TAdaptiveDepthFlags;
     /// GetAdaptiveDepth() returns current value of 'adaptive depth' flag.
@@ -340,21 +342,14 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     ///
     ///  @sa
     ///    SetResolveDepth(), SetExactDepth(), SetAdaptiveTrigger(), GetAdaptiveDepth()
-    SAnnotSelector& SetAdaptiveDepth(bool value = true)
-        {
-            m_AdaptiveDepthFlags = value? kAdaptive_Default: 0;
-            return *this;
-        }
+    SAnnotSelector& SetAdaptiveDepth(bool value = true);
 
     /// SetAdaptiveDepthFlags() sets flags for adaptive depth heuristics
     ///
     ///  @sa
     ///    SetAdaptiveDepth(), SetAdaptiveTrigger(), GetAdaptiveDepthFlags()
-    SAnnotSelector& SetAdaptiveDepthFlags(TAdaptiveDepthFlags flags)
-        {
-            m_AdaptiveDepthFlags = flags;
-            return *this;
-        }
+    SAnnotSelector& SetAdaptiveDepthFlags(TAdaptiveDepthFlags flags);
+
     /// GetAdaptiveDepthFlags() returns current set of adaptive depth
     /// heuristics flags
     ///
