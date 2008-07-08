@@ -40,6 +40,7 @@ static char const rcsid[] = "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
+#include "winmask_filter.hpp"
 #include <sstream>
 #include <serial/iterator.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
