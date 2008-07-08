@@ -503,6 +503,7 @@ private:
     int                        m_ExitCode;    ///< Exit code to force
     EExitMode                  m_ExitCodeCond; ///< When to force it (if ever)
     bool                       m_DryRun;       ///< Dry run
+    string                     m_DefaultConfig; ///< conf parameter to AppMain
 };
 
 

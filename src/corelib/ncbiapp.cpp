@@ -258,6 +258,9 @@ int CNcbiApplication::AppMain
  const char*        conf,
  const string&      name)
 {
+    if (conf) {
+        m_DefaultConfig = conf;
+    }
     x_SetupStdio();
 
     // Get program executable's name & path.
@@ -656,10 +659,18 @@ void CNcbiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
             }
             if ((m_HideArgs & fHideConffile) == 0  &&
                 !m_ArgDesc->Exist(s_ArgCfgFile + 1) ) {
-                m_ArgDesc->AddOptionalKey
-                    (s_ArgCfgFile + 1, "File_Name",
-                        "Program's configuration (registry) data file",
-                        CArgDescriptions::eInputFile);
+                if (m_DefaultConfig.empty()) {
+                    m_ArgDesc->AddOptionalKey
+                        (s_ArgCfgFile + 1, "File_Name",
+                            "Program's configuration (registry) data file",
+                            CArgDescriptions::eInputFile);
+                } else {
+                    m_ArgDesc->AddDefaultKey
+                        (s_ArgCfgFile + 1, "File_Name",
+                            "Program's configuration (registry) data file",
+                            CArgDescriptions::eInputFile,
+                            m_DefaultConfig);
+                }
             }
         }
         m_Args.reset(arg_desc->CreateArgs(GetArguments()));
@@ -700,6 +711,7 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
             entry = CMetaRegistry::Load(basename2, CMetaRegistry::eName_Ini, 0,
                                         reg_flags, &reg);
         }
+        m_DefaultConfig = CDirEntry(entry.actual_name).GetName();
     } else {
         entry = CMetaRegistry::Load(*conf, CMetaRegistry::eName_AsIs, 0,
                                     reg_flags, &reg);
