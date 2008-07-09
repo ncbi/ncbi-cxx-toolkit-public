@@ -2062,43 +2062,25 @@ void CTar::x_Backspace(EAction action, size_t blocks)
         return;
     }
 
-    CT_POS_TYPE pos = m_FileStream->tellg();  // Current read position
-    if (pos == (CT_POS_TYPE)(-1)) {
-        int x_errno = errno;
-        TAR_THROW(this, eRead,
-                  "Archive backspace failed" + s_OSReason(x_errno));
-    }
-    size_t      gap = SIZE_OF(blocks);        // Size of zero-filled area read
-    CT_POS_TYPE rec = 0;                      // Record number (0-based)
-
-    if (pos > (CT_POS_TYPE) gap) {
-        pos -= 1;                             // NB: pos > 0 here
-        rec = pos / m_BufferSize;
-        if (!m_BufferPos)
-            m_BufferPos = m_BufferSize;
-        if (gap > m_BufferPos) {
-            gap -= m_BufferPos;
-            size_t n = gap / m_BufferSize;
-            rec -= (CT_OFF_TYPE) n;           // Backup this many records
-            gap %= m_BufferSize;              // Gap size remaining
-            m_BufferPos = 0;
-            if (gap) {
-                rec -= 1;                     // Compensation for partial rec.
-                m_FileStream->seekg(rec * m_BufferSize);
-                m_StreamPos = (Uint8) rec * m_BufferSize;
-                n = kBlockSize;
-                x_ReadArchive(n);             // Refetch the record
-                m_BufferPos = m_BufferSize - gap;
-            }
-        } else {
-            m_BufferPos -= gap;               // Entirely within this buffer
-        }
-    } else {
-        m_BufferPos = 0;                      // File had nothing but the gap
-    }
+    // Assertion:  there's data (perhaps 0's) in the file, backup is possible.
+    _ASSERT(!OFFSET_OF(m_StreamPos));
+    size_t gap = SIZE_OF(blocks);
+    m_StreamPos -= gap;
+    if (m_BufferPos == 0)
+        m_BufferPos += m_BufferSize;
+    CT_POS_TYPE rec = (CT_OFF_TYPE)(m_StreamPos / m_BufferSize);
+    size_t      off = (size_t)     (m_StreamPos % m_BufferSize);
+    if (gap > m_BufferPos) {
+        // Refetch the block
+        m_FileStream->seekg(rec * m_BufferSize);
+        blocks = kBlockSize;                  // temp
+        m_BufferPos  = 0;
+        x_ReadArchive(blocks);                // Refetch the record
+        m_BufferPos  = off;
+    } else
+        m_BufferPos -= gap;
 
     m_FileStream->seekp(rec * m_BufferSize);  // Always set put position here
-    m_StreamPos = (Uint8) rec * m_BufferSize + m_BufferPos;
 }
 
 
