@@ -312,21 +312,54 @@ RunTest() {
       fi
    fi
 
-   x_cmd="[\${build_tree}\$x_conf/\$x_wdir]"
-   if test \$result -eq 0; then
-      echo "ABS --  \$x_cmd - \$x_test"
-      echo "ABS --  \$x_cmd - \$x_test" >> \$res_log
-      count_absent=\`expr \$count_absent + 1\`
-      return 0
-   fi
-
    # Generate name of the output file
    x_test_out="\$x_work_dir/\$x_app.out\$x_ext"
    x_test_rep="\$x_work_dir/\$x_app.rep\$x_ext"
 
    if \$is_db_load; then
-      test_stat_load "\$x_test_rep" "\$x_test_out" >> "$x_build_dir/test_stat_load.log" 2>&1
+      test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" >> "$x_build_dir/test_stat_load.log" 2>&1
    else
+      if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+         case "\$COMPILER" in
+         msvc7 )
+             echo -n "MSVC_710" > "\$x_test_rep"
+             ;;
+         msvc8 )
+             echo -n "MSVC_800" > "\$x_test_rep"
+             ;;
+         gcc )
+             echo -n "GCC_344" > "\$x_test_rep"
+             ;;
+         esac
+         echo -n "-\$x_conf" >> "\$x_test_rep"
+         case "\$x_conf" in
+         *DLL | *MT )
+             echo -n "MT" >> "\$x_test_rep"
+             ;;
+         * )
+             echo -n "ST" >> "\$x_test_rep"
+             ;;
+         esac
+         echo "\${build_tree}\${ARCH:-32}--i386-pc-win\${ARCH:-32}-\${SRV_NAME}" >> "\$x_test_rep"
+         echo "\$x_wdir" >> "\$x_test_rep"
+         echo "\$x_run" >> "\$x_test_rep"
+         echo "\$x_real_name" >> "\$x_test_rep"
+      fi
+
+      x_cmd="[\${build_tree}\$x_conf/\$x_wdir]"
+      if test \$result -eq 0; then
+         echo "ABS --  \$x_cmd - \$x_test"
+         echo "ABS --  \$x_cmd - \$x_test" >> \$res_log
+         count_absent=\`expr \$count_absent + 1\`
+
+         if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+            echo "ABS" >> "\$x_test_rep"
+            echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
+         fi
+
+         return 0
+      fi
+
       # Write header to output file 
       echo "\$x_test_out" >> \$res_journal
       (
@@ -335,33 +368,6 @@ RunTest() {
           echo "======================================================================"
           echo 
       ) > \$x_test_out 2>&1
-
-      if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
-              case "\$COMPILER" in
-                  msvc7 )
-                      echo -n "MSVC_710" > "\$x_test_rep"
-                      ;;
-                  msvc8 )
-                      echo -n "MSVC_800" > "\$x_test_rep"
-                      ;;
-                  gcc )
-                      echo -n "GCC_344" > "\$x_test_rep"
-                      ;;
-              esac
-              echo -n "\$x_conf" >> "\$x_test_rep"
-              case "\$x_conf" in
-                  *DLL )
-                      echo -n "MT" >> "\$x_test_rep"
-                      ;;
-                  * )
-                      echo -n "ST" >> "\$x_test_rep"
-                      ;;
-              esac
-              echo "\${build_tree}\${ARCH}--i386-pc-win\${ARCH}-\${SRV_NAME}" >> "\$x_test_rep"
-              echo "\$x_wdir" >> "\$x_test_rep"
-              echo "\$x_run" >> "\$x_test_rep"
-              echo "\$x_real_name" >> "\$x_test_rep"
-      fi
 
       # Goto the work directory 
       cd "\$x_work_dir"
@@ -387,7 +393,7 @@ RunTest() {
 
       # Get application execution time
       exec_time=\`tail -3 \$x_test_out.\$\$\ | tr '\r' ' '\`
-      exec_time=\`echo \$exec_time | tr '\n' '?'\`
+      exec_time=\`echo "\$exec_time" | tr '\n' '?'\`
       echo \$exec_time | grep 'real [0-9]\|Maximum execution .* is exceeded' > /dev/null 2>&1 
       if [ \$? -eq 0 ] ;  then
           exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
