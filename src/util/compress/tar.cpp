@@ -711,7 +711,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     Uint8 size;
     ok = s_DecodeSize(size, h->size, sizeof(h->size));
     dump += TAR_PRINTABLE(size, ok <= 0);
-    if (ok < 0  ||  val > 7) {
+    if (ok < 0  ||  size > 7) {
         dump += " [" + NStr::UInt8ToString(size) + ']';
         if (ok < 0) {
             dump += " (base-256)";
@@ -765,9 +765,15 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 #endif // NCBI_OS_UNIX
         break;
     case '3':
+#ifdef NCBI_OS_UNIX
+        ok = true;
+#endif // NCBI_OS_UNIX
         tname = "character device";
         break;
     case '4':
+#ifdef NCBI_OS_UNIX
+        ok = true;
+#endif // NCBI_OS_UNIX
         tname = "block device";
         break;
     case '5':
@@ -775,6 +781,9 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         tname = "directory";
         break;
     case '6':
+#ifdef NCBI_OS_UNIX
+        ok = true;
+#endif // NCBI_OS_UNIX
         tname = "FIFO";
         break;
     case '7':
