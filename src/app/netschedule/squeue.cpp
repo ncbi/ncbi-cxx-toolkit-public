@@ -909,7 +909,6 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     m_QueueDbBlock(0),
 
     m_BecameEmpty(-1),
-    m_LastNotifyTime(0),
     q_notif("NCBI_JSQ_"),
     run_time_line(NULL),
     delete_database(false),
@@ -919,7 +918,7 @@ SLockedQueue::SLockedQueue(const string& queue_name,
 
     m_ParamLock(CRWLock::fFavorWriters),
     m_Timeout(3600),
-    m_NotifTimeout(7),
+    m_NotifyTimeout(7),
     m_DeleteDone(false),
     m_RunTimeout(3600),
     m_RunTimeoutPrecision(-1),
@@ -977,7 +976,7 @@ void SLockedQueue::SetParameters(const SQueueParameters& params)
     // When modifying this, modify all places marked with PARAMETERS
     CWriteLockGuard guard(m_ParamLock);
     m_Timeout = params.timeout;
-    m_NotifTimeout = params.notif_timeout;
+    m_NotifyTimeout = params.notif_timeout;
     m_DeleteDone = params.delete_done;
 
     m_RunTimeout = params.run_timeout;
@@ -1503,59 +1502,6 @@ void SLockedQueue::ClearAffinityIdx()
 }
 
 
-void SLockedQueue::NotifyListeners(bool unconditional, unsigned aff_id)
-{
-    // TODO: if affinity valency is full for this aff_id, notify only nodes
-    // with this aff_id, otherwise notify all nodes in the hope that some
-    // of them will pick up the task with this aff_id
-    int notif_timeout = CQueueParamAccessor(*this).GetNotifTimeout();
-
-    time_t curr = time(0);
-
-    if (!unconditional &&
-        (notif_timeout == 0 ||
-         !status_tracker.AnyPending() ||
-         m_LastNotifyTime + notif_timeout > curr))
-        return;
-
-    // Get worker node list to notify
-    list<TWorkerNodeHostPort> notify_list;
-    {{
-        CWriteLockGuard guard(m_WNodeLock);
-        bool has_notify = false;
-        ITERATE(TWorkerNodes, it, m_WorkerNodes) {
-            if (!unconditional && it->second.notify_time < curr)
-                continue;
-            // Check that notification port is OK
-            if (!it->first.second)
-                continue;
-            has_notify = true;
-            notify_list.push_back(it->first);
-        }
-        if (!has_notify) return;
-        m_LastNotifyTime = curr;
-    }}
-
-    const char* msg = q_notif.c_str();
-    size_t msg_len = q_notif.length()+1;
-
-    unsigned i = 0;
-    ITERATE(list<TWorkerNodeHostPort>, it, notify_list) {
-        unsigned host = it->first;
-        unsigned short port = it->second;
-        {{
-            CFastMutexGuard guard(us_lock);
-            //EIO_Status status =
-                udp_socket.Send(msg, msg_len,
-                                   CSocketAPI::ntoa(host), port);
-        }}
-        // periodically check if we have no more jobs left
-        if ((++i % 10 == 0) && !status_tracker.AnyPending())
-            break;
-    }
-}
-
-
 void SLockedQueue::Notify(unsigned addr, unsigned short port, unsigned job_id)
 {
     char msg[1024];
@@ -1791,25 +1737,50 @@ SLockedQueue::x_ReadAffIdx_NoLock(unsigned      aff_id,
 }
 
 
+void SLockedQueue::NotifyListeners(bool unconditional, unsigned aff_id)
+{
+    // TODO: if affinity valency is full for this aff_id, notify only nodes
+    // with this aff_id, otherwise notify all nodes in the hope that some
+    // of them will pick up the task with this aff_id
+    
+    int notify_timeout = CQueueParamAccessor(*this).GetNotifyTimeout();
+
+    time_t curr = time(0);
+
+    list<TWorkerNodeHostPort> notify_list;
+    if ((unconditional || status_tracker.AnyPending()) &&
+        m_WorkerNodes.GetNotifyList(unconditional, curr, notify_timeout, notify_list)) {
+
+        const char* msg = q_notif.c_str();
+        size_t msg_len = q_notif.length()+1;
+
+        unsigned i = 0;
+        ITERATE(list<TWorkerNodeHostPort>, it, notify_list) {
+            unsigned host = it->first;
+            unsigned short port = it->second;
+            {{
+                CFastMutexGuard guard(us_lock);
+                //EIO_Status status =
+                    udp_socket.Send(msg, msg_len,
+                                       CSocketAPI::ntoa(host), port);
+            }}
+            // periodically check if we have no more jobs left
+            if ((++i % 10 == 0) && !status_tracker.AnyPending())
+                break;
+        }
+    }
+}
+
+
 void SLockedQueue::PrintWorkerNodeStat(CNcbiOstream& out) const
 {
     int run_timeout = CQueueParamAccessor(*this).GetRunTimeout();
     time_t curr = time(0);
-    CReadLockGuard guard(m_WNodeLock);
 
-    ITERATE(TWorkerNodes, it, m_WorkerNodes) {
-        unsigned host = it->first.first;
-        unsigned short port = it->first.second;
-        const SWorkerNodeInfo& wn_info = it->second;
-        int visit_timeout = (wn_info.visit_timeout ?
-            wn_info.visit_timeout : run_timeout) + 20 ;
-        if (wn_info.last_visit + visit_timeout < curr)
-            continue;
-
-        CTime lv_time(wn_info.last_visit);
-        lv_time.ToLocalTime();
-        out << wn_info.auth << " @ " << CSocketAPI::gethostbyaddr(host)
-            << "  UDP:" << port << "  " << lv_time.AsString() << "\n";
+    list<string> nodes_info;
+    m_WorkerNodes.GetNodesInfo(curr, run_timeout, nodes_info);
+    ITERATE(list<string>, it, nodes_info) {
+        out << *it << "\n";
     }
 }
 
@@ -1819,24 +1790,14 @@ void SLockedQueue::RegisterNotificationListener(unsigned        host,
                                                 unsigned        timeout,
                                                 const string&   auth)
 {
-    CWriteLockGuard guard(m_WNodeLock);
-    TWorkerNodes::iterator it =
-        m_WorkerNodes.find(TWorkerNodeHostPort(host, port));
-    time_t curr = time(0);
-    if (it != m_WorkerNodes.end()) {  // update registration timestamp
-        it->second.Set(curr, timeout, auth);
-    } else {
-        m_WorkerNodes[TWorkerNodeHostPort(host, port)] =
-            SWorkerNodeInfo(curr, timeout, auth);
-    }
+    m_WorkerNodes.RegisterNotificationListener(host, port, timeout, auth);
 }
 
 
 void SLockedQueue::UnRegisterNotificationListener(unsigned       host,
                                                   unsigned short port)
 {
-    CWriteLockGuard guard(m_WNodeLock);
-    m_WorkerNodes.erase(TWorkerNodeHostPort(host, port));
+    m_WorkerNodes.UnRegisterNotificationListener(host, port);
 }
 
 
@@ -1844,12 +1805,7 @@ void SLockedQueue::RegisterWorkerNodeVisit(unsigned       host,
                                            unsigned short port,
                                            unsigned       timeout)
 {
-    CWriteLockGuard guard(m_WNodeLock);
-    TWorkerNodes::iterator it =
-        m_WorkerNodes.find(TWorkerNodeHostPort(host, port));
-    if (it == m_WorkerNodes.end()) return;
-    it->second.last_visit = time(0);
-    it->second.visit_timeout = timeout;
+    m_WorkerNodes.RegisterWorkerNodeVisit(host, port, timeout);
 }
 
 

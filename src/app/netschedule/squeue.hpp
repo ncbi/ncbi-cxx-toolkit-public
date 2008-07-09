@@ -44,6 +44,7 @@
 
 #include "ns_types.hpp"
 #include "ns_db.hpp"
+#include "worker_node.hpp"
 #include "job_status.hpp"
 #include "queue_vc.hpp"
 #include "access_list.hpp"
@@ -342,40 +343,6 @@ struct SQueueParameters
     void Read(const IRegistry& reg, const string& sname);
 };
 
-// Notification and worker node management
-// (host, port) key into TWorkerNodes map
-typedef pair<unsigned, unsigned short> TWorkerNodeHostPort;
-// value for TWorkerNodes map
-struct SWorkerNodeInfo
-{
-    SWorkerNodeInfo() :
-        last_visit(0), visit_timeout(0), notify_time(0)
-    { } 
-    SWorkerNodeInfo(time_t curr, unsigned timeout, const string& auth_) :
-        last_visit(curr), visit_timeout(3600),
-        auth(auth_), notify_time(curr + timeout)
-    { }
-    void Set(time_t curr, unsigned timeout, const string& auth_)
-    {
-        last_visit = curr;
-        notify_time = curr + timeout;
-        auth = auth_;
-    }
-    void Set(time_t curr, unsigned timeout)
-    {
-        last_visit = curr;
-        notify_time = curr + timeout;
-    }
-
-    // Session management
-    time_t last_visit;      ///< Last time client executed worker node command
-    unsigned visit_timeout; ///< When last visit should be expired
-    string auth;            ///< Authentication string
-    // Notification management
-    time_t notify_time;     ///< Up to what time client expects notifications
-};
-typedef map<TWorkerNodeHostPort, SWorkerNodeInfo> TWorkerNodes;
-
 
 // key, value -> bitvector of job ids
 // typedef TNSBitVector TNSShortIntSet;
@@ -391,23 +358,6 @@ public:
 private:
     TNSTagMap m_TagMap;
 };
-
-
-/* TODO: remove obsolete
-// another representation key -> value, bitvector
-typedef pair<string, TNSBitVector*> TNSTagValue;
-typedef vector<TNSTagValue> TNSTagDetails;
-// Safe container for tag details
-class CNSTagDetails
-{
-public:
-    CNSTagDetails(SLockedQueue& queue);
-    ~CNSTagDetails();
-    TNSTagDetails& operator*() { return m_TagDetails; }
-private:
-    TNSTagDetails m_TagDetails;
-};
-*/
 
 
 class SLockedQueue;
@@ -495,9 +445,7 @@ private:
     time_t                       m_BecameEmpty;
 
     // List of active worker node listeners waiting for pending jobs
-    TWorkerNodes                 m_WorkerNodes; ///< worker nodes
-    time_t                       m_LastNotifyTime; ///< last notification time
-    mutable CRWLock              m_WNodeLock;   ///< wnodes locker
+    CQueueWorkerNodes            m_WorkerNodes; ///< worker nodes
     string                       q_notif;       ///< Queue notification message
 
 public:
@@ -591,7 +539,6 @@ public:
     /// Clear part of affinity index, called from periodic Purge
     void ClearAffinityIdx();
 
-    void NotifyListeners(bool unconditional, unsigned aff_id);
     void Notify(unsigned addr, unsigned short port, unsigned job_id);
 
     // Optimize bitvectors
@@ -645,6 +592,7 @@ public:
                            const vector<CJob>& batch);
 
     // Worker node methods
+    void NotifyListeners(bool unconditional, unsigned aff_id);
     void PrintWorkerNodeStat(CNcbiOstream& out) const;
     void RegisterNotificationListener(unsigned        host,
                                       unsigned short  port,
@@ -786,7 +734,7 @@ private:
     friend class CQueueParamAccessor;
     mutable CRWLock              m_ParamLock;
     int                          m_Timeout;         ///< Result exp. timeout
-    int                          m_NotifTimeout;    ///< Notification interval
+    int                          m_NotifyTimeout;   ///< Notification interval
     bool                         m_DeleteDone;      ///< Delete done jobs
     int                          m_RunTimeout;      ///< Execution timeout
     /// Its precision, set at startup only, not reconfigurable
@@ -827,7 +775,7 @@ public:
     CQueueParamAccessor(const SLockedQueue& queue) :
         m_Queue(queue), m_Guard(queue.m_ParamLock) { }
     int GetTimeout() { return m_Queue.m_Timeout; }
-    int GetNotifTimeout() { return m_Queue.m_NotifTimeout; }
+    int GetNotifyTimeout() { return m_Queue.m_NotifyTimeout; }
     bool GetDeleteDone() { return m_Queue.m_DeleteDone; }
     int GetRunTimeout() { return m_Queue.m_RunTimeout; }
     int GetRunTimeoutPrecision() { return m_Queue.m_RunTimeoutPrecision; }
@@ -871,7 +819,7 @@ public:
     string GetParamValue(unsigned n) const {
         switch (n) {
         case 0:  return NStr::IntToString(m_Queue.m_Timeout);
-        case 1:  return NStr::IntToString(m_Queue.m_NotifTimeout);
+        case 1:  return NStr::IntToString(m_Queue.m_NotifyTimeout);
         case 2:  return m_Queue.m_DeleteDone ? "true" : "false";
         case 3:  return NStr::IntToString(m_Queue.m_RunTimeout);
         case 4:  return NStr::IntToString(m_Queue.m_RunTimeoutPrecision);
