@@ -61,7 +61,7 @@ public:
     bool AddQual (bool isOrgMod, int subtype);
     bool RemoveQual (bool isOrgMod, int subtype);
 
-    unsigned int CAutoDefSourceModifierInfo::GetRank() const;
+    unsigned int GetRank() const;
     int Compare(const CAutoDefSourceModifierInfo& mod) const;
     bool IsOrgMod () const;
     int  GetSubtype () const; 
