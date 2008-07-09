@@ -1022,7 +1022,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     }
     string dll_host;
     if (!lib_or_dll.empty() ||
-        CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvcNone) {
+        CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
         if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
             list<string> dll_depends;
             k = m->second.m_Contents.find("DLL_LIB");
@@ -1041,7 +1041,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
             if (NStr::CompareNocase(lib_or_dll,"dll") == 0 ||
                 NStr::CompareNocase(lib_or_dll,"both") == 0) {
 #if 0
-                if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
+                if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
                     dll_host = proj_id;
                 } else {
                     dll_host =  proj_name;
@@ -1643,7 +1643,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         return;
     }
     if (!is_root &&
-        CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvcNone) {
+        CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
         // on UNIX the build tree is already configured,
         // we check if this particular subtree is enabled (ie, exists) there
         string subtree =

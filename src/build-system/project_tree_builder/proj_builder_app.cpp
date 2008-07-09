@@ -379,7 +379,7 @@ CProjBulderApp::CProjBulderApp(void)
 void CProjBulderApp::Init(void)
 {
     string logfile = GetLogFile();
-    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         if (logfile != "STDERR") {
             SetDiagHandler(new CWindowsCmdErrorHandler);
         }
@@ -389,10 +389,10 @@ void CProjBulderApp::Init(void)
 
     // Specify USAGE context
     string context;
-    string msvc_ver = CMsvc7RegSettings::GetProjectFileFormatVersion();
-    if (!msvc_ver.empty()) {
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         context = "MSVC ";
-        context += msvc_ver + " (" + CMsvc7RegSettings::GetMsvcPlatformName() + ")";
+        context += CMsvc7RegSettings::GetProjectFileFormatVersion() +
+            " (" + CMsvc7RegSettings::GetMsvcPlatformName() + ")";
     } else {
         context = CMsvc7RegSettings::GetMsvcPlatformName();
     }
@@ -567,7 +567,7 @@ int CProjBulderApp::Run(void)
     s_ReportDependenciesStatus(cycles,projects_tree.m_Projects);
 
     PTB_INFO("Creating projects...");
-    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         GenerateMsvcProjects(prj_tree);
     } else {
         GenerateUnixProjects(prj_tree);
@@ -1268,7 +1268,7 @@ CDllSrcFilesDistr& CProjBulderApp::GetDllFilesDistr(void)
 string CProjBulderApp::GetDatatoolId(void) const
 {
     return GetConfig().GetString("Datatool", "datatool",
-        CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvcNone ? "datatool" : "");
+        CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix ? "datatool" : "");
 }
 
 
