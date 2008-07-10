@@ -218,7 +218,7 @@ BlockModel::BlockModel(CRef< CSeq_id > seqId, bool withOneBlock)
 }
 
 BlockModel::BlockModel(const BlockModel& rhs)
-	: m_seqId(rhs.m_seqId), m_blocks(rhs.m_blocks)
+	: m_blocks(rhs.m_blocks), m_seqId(rhs.m_seqId) 
 {
 }
 
@@ -539,7 +539,7 @@ bool BlockModel::minusOneBlock(const Block& aBlock, DeltaBlockModel& delta) cons
 	findIntersectingBlocks(aBlock, blockIds);
 	if (blockIds.size() <= 0)
 		return false;
-	for (int j = 0; j < blockIds.size(); j++)
+	for (unsigned int j = 0; j < blockIds.size(); j++)
 	{
 		delta.insert(m_blocks[blockIds[j]] - aBlock);
 	}
@@ -554,7 +554,7 @@ bool BlockModel::intersectOneBlock(const Block& aBlock, DeltaBlockModel& delta) 
 	findIntersectingBlocks(aBlock, blockIds);
 	if (blockIds.size() <= 0)
 		return false;
-	for (int j = 0; j < blockIds.size(); j++)
+	for (unsigned int j = 0; j < blockIds.size(); j++)
 	{
 		Block intersectedBlock(aBlock);
 		if (m_blocks[blockIds[j]].intersect(intersectedBlock))

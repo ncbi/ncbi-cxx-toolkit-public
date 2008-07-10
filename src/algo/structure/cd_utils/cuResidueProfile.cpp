@@ -43,7 +43,7 @@ unsigned char ColumnResidueProfile::getNcbiStdCode(char eaa)
 }
 
 ColumnResidueProfile::ColumnResidueProfile()
-:m_residueRowsMap(), m_masterIn(false), m_residueTypeCount(0), m_indexByConsensus(-1)
+:m_masterIn(false), m_residueRowsMap(), m_residueTypeCount(0), m_indexByConsensus(-1)
  //m_backgroundResFreq()
 {
 }

@@ -66,8 +66,8 @@ void BlockExtender::setAlignments(MultipleAlignment* ma)
 }
 
 BlockExtender::BlockExtender(MultipleAlignment* ma, ScoreMatrix* sm):
-	m_src(ma), m_scoringMatrix(sm), m_cExt(0), m_nExt(0), m_numRows(0),
-	m_extensionScores(0), m_extendedBlocks(0)
+	m_src(ma), m_numRows(0), m_extendedBlocks(0), m_scoringMatrix(sm), m_nExt(0), m_cExt(0), 
+	m_extensionScores(0) 
 {
 	setAlignments(ma);
 }
