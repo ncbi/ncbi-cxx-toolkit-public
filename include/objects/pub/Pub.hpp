@@ -69,7 +69,11 @@ public:
                   ELabelType       type   = eContent, 
                   bool             unique = false) const;
 
-    // Convenience function for several publication types
+    // convenience functions to get author list from underlying pub
+    bool IsSetAuthors(void) const;
+    const CAuth_list& GetAuthors(void) const;
+  
+  // Convenience function for several publication types
     CConstRef<CAuth_list> GetAuthList (void) const;
   
 	private:
