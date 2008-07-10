@@ -73,9 +73,6 @@ public:
     bool IsSetAuthors(void) const;
     const CAuth_list& GetAuthors(void) const;
   
-  // Convenience function for several publication types
-    CConstRef<CAuth_list> GetAuthList (void) const;
-  
 	private:
     // Prohibit copy constructor and assignment operator
     CPub(const CPub& value);
