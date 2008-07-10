@@ -47,6 +47,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CAuth_list;
+
 class NCBI_PUB_EXPORT CPub : public CPub_Base
 {
     typedef CPub_Base Tparent;
@@ -66,7 +68,10 @@ public:
     void GetLabel(string*          label, 
                   ELabelType       type   = eContent, 
                   bool             unique = false) const;
-    
+
+    // Convenience function for several publication types
+    CConstRef<CAuth_list> GetAuthList (void) const;
+  
 	private:
     // Prohibit copy constructor and assignment operator
     CPub(const CPub& value);
