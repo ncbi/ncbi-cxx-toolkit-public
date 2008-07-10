@@ -30,12 +30,12 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_os_unix.hpp>
 #include <corelib/error_codes.hpp>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_Unix
@@ -99,7 +99,7 @@ bool Daemonize(const char* logfile, TDaemonFlags flags)
                 }
             }
         }
-        pid_t pid = fork();
+        pid_t pid = ::fork();
         if (pid == (pid_t)(-1)) {
             int x_errno = errno;
             ::dup2(fdin,  STDIN_FILENO);
@@ -122,6 +122,18 @@ bool Daemonize(const char* logfile, TDaemonFlags flags)
             ::fclose(stderr);
         ::close(fderr);
         ::setsid();
+        if (flags & fDaemon_ImmuneTTY) {
+            pid = ::fork();
+            if (pid == (pid_t)(-1)) {
+                const char* error = strerror(errno);
+                ERR_POST_X(2,
+                           string("[Daemonize]  Second fork() failed to "
+                                  "immune from TTY accruals (") + error +
+                           string("), continue anyways"));
+            } else if (pid) {
+                ::_exit(0);
+            }
+        }
         return true;
     }
     catch (const char* what) {
