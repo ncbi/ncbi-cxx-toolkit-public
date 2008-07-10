@@ -303,16 +303,16 @@ void CDataSource_ScopeInfo::UpdateTSELock(CTSE_ScopeInfo& tse, CTSE_Lock lock)
 // Called by destructor of CTSE_ScopeUserLock when lock counter goes to 0
 void CDataSource_ScopeInfo::ReleaseTSELock(CTSE_ScopeInfo& tse)
 {
-    if ( tse.m_TSE_LockCounter.Get() > 0 ) {
-        // relocked already
-        return;
-    }
-    if ( !tse.GetTSE_Lock() ) {
-        // already unlocked
-        return;
-    }
     {{
         TTSE_LockSetMutex::TWriteLockGuard guard(m_TSE_UnlockQueueMutex);
+        if ( tse.m_TSE_LockCounter.Get() > 0 ) {
+            // relocked already
+            return;
+        }
+        if ( !tse.GetTSE_Lock() ) {
+            // already unlocked
+            return;
+        }
         m_TSE_UnlockQueue.Put(&tse, CTSE_ScopeInternalLock(&tse));
     }}
 }
