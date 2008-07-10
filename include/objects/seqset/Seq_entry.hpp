@@ -48,6 +48,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CSeq_loc;
+class CSeq_descr;
 
 class NCBI_SEQSET_EXPORT CSeq_entry : public CSeq_entry_Base, public CSerialUserOp
 {
@@ -70,6 +71,10 @@ public:
     // NULL means that either this is top level Seq-entry,
     // or Parentize() was never called.
     CSeq_entry* GetParentEntry(void) const;
+
+    // convenience functions to get descriptor chain from underlying Bioseq or Bioseq-set
+    bool IsSetDescr(void) const;
+    const CSeq_descr& GetDescr(void) const;
 
     enum ELabelType {
         eType,
