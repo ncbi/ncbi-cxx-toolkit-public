@@ -134,7 +134,6 @@ CConstRef<CSeqdesc> CBioseq::GetClosestDescriptor (CSeqdesc::E_Choice choice) co
   CSeq_entry* se;
   
   for (se = GetParentEntry(); se; se = se->GetParentEntry()) {
-    const CSeq_entry& entry = *se;
     if (se->IsSetDescr()) {
       ITERATE (CSeq_descr::Tdata, sd_itr, se->GetDescr().Get()) {
         const CSeqdesc& desc = **sd_itr;
