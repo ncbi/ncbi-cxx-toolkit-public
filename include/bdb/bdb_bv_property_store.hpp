@@ -177,6 +177,7 @@ Uint4 CBDB_PropertyDictionary<PropKey, PropValue>::PutKey(const TKey& key)
 {
     Uint4 uid = GetKey(key);
     if (uid) {
+        _ASSERT(uid <= m_MaxUid);
         return uid;
     }
 
@@ -198,6 +199,7 @@ CBDB_PropertyDictionary<PropKey, PropValue>::Read(TKeyId* key_idx)
     EBDB_ErrCode err = Fetch();
     if (err == eBDB_Ok  &&  key_idx) {
         *key_idx = m_Uid;
+        m_MaxUid = max(m_MaxUid, *key_idx);
     }
     return err;
 }
@@ -234,6 +236,7 @@ CBDB_PropertyDictionary<PropKey, PropValue>::Write(const TKey& key,
     m_PropKey = key.first;
     m_PropVal = key.second;
     m_Uid     = key_idx;
+    m_MaxUid = max(m_MaxUid, key_idx);
     return UpdateInsert();
 }
 
@@ -247,6 +250,7 @@ CBDB_PropertyDictionary<PropKey, PropValue>::Write(const PropKey& prop,
     m_PropKey = prop;
     m_PropVal = value;
     m_Uid     = key_idx;
+    m_MaxUid = max(m_MaxUid, key_idx);
     return UpdateInsert();
 }
 
