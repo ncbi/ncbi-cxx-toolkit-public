@@ -95,11 +95,14 @@ public:
         static const unsigned size_split[] = {
             256, 512, 2048, 4096, 8192, 16384, 32768
         };
-        for(unsigned i = 0; i < sizeof(size_split)/sizeof(*size_split); ++i) {
-            if (blob_size < size_split[i])  
+        const unsigned kMaxSize = sizeof(size_split) / sizeof(*size_split);
+
+        for (unsigned i = 0; i < kMaxSize;  ++i) {
+            if (blob_size < size_split[i]) {
                 return i;
+            }
         }
-        return 7;
+        return kMaxSize;
     }
 
     /// Returns total number of splits (horizontal projection)
@@ -303,14 +306,15 @@ private:
 ///
 ///
 /// Problem.
-/// Berkeley DB shows measurable difference in behavior and performance depending on 
-/// the combination of record size and database page size. 
+/// Berkeley DB shows measurable difference in behavior and performance
+/// depending on the combination of record size and database page size. 
 /// Differences include amount of disk traffic, locking granularity, 
 /// number of overflow pages, etc.
 ///
 /// The most critical here is overflow pages. 
-/// If DB page cannot accommodate 2(sometimes more) records BDB creates overflow pages. 
-/// This is found to be expensive. The typical fix is to increase the page size. 
+/// If DB page cannot accommodate 2(sometimes more) records BDB creates
+/// overflow pages.  This is found to be expensive. The typical fix is to
+/// increase the page size. 
 /// Large page size is inefficient for dealing with small record 
 /// (you have to load/store 64K (full page) to load small object. 
 /// In transaction environment page access are also locks a lot of records. 
@@ -339,10 +343,11 @@ private:
 ///
 /// Matrix coordinates picking is implemented using concept called DeMux. 
 /// It maintains BLOB_ID <-> coordinates association. 
-/// Demux implementation(s) use bit-vectors to do the job. BLOB ID must be unique 
-/// across the store. In general DeMux can work with N-dimensional coordinates 
-/// to address  host, partition, volume, slice  (distributed store). 
-/// But current practical implementation uses 2D matrix (volume, slice).
+/// Demux implementation(s) use bit-vectors to do the job. BLOB ID must be
+/// unique across the store. In general DeMux can work with N-dimensional
+/// coordinates to address  host, partition, volume, slice  (distributed
+/// store).  But current practical implementation uses 2D matrix (volume,
+/// slice).
 ///
 
 template<class TBV, class TObjDeMux=CBDB_BlobDeMux, class TL=CFastMutex>
@@ -360,7 +365,7 @@ public:
     /// One database is opened twice, one regular mode, 
     /// another - dedicated read-only instance to improve concurrency
     ///
-    struct SLockedDb 
+    struct SLockedDb : public CObject
     {
         AutoPtr<TBlobFile>      db;       ///< database file
         AutoPtr<TLock>          lock;     ///< db lock
@@ -371,7 +376,7 @@ public:
     /// Volume split on optimal page size
     struct SVolume 
     {
-        vector<AutoPtr<SLockedDb> >  db_vect;
+        vector< CRef<SLockedDb> >  db_vect;
     };
 
     typedef vector<SVolume*>  TVolumeVect;
@@ -1436,7 +1441,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned     vol,
         _ASSERT((m_Volumes[vol])->db_vect.size() > slice);
 
         SVolume& volume = *(m_Volumes[vol]);
-        lp = volume.db_vect[slice].get();
+        lp = &*volume.db_vect[slice];
 
         _ASSERT(lp->db.get());
         _ASSERT(lp->lock.get());
@@ -1449,7 +1454,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned     vol,
         if ((m_Volumes.size() > vol) && 
             ((m_Volumes[vol])->db_vect.size() > slice)) {
             SVolume& volume = *(m_Volumes[vol]);
-            lp = volume.db_vect[slice].get();
+            lp = &*volume.db_vect[slice];
             if (lp->db.get()) {
                 return *lp;
             }
@@ -1462,7 +1467,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned     vol,
             auto_ptr<SVolume> v(new SVolume);
             v->db_vect.resize(slice+1);
             for (size_t i = 0; i < v->db_vect.size(); ++i) {
-                if (v->db_vect[i].get() == 0) {
+                if ( !v->db_vect[i] ) {
                     v->db_vect[i] = new SLockedDb;
                 }
             } // for
@@ -1473,13 +1478,13 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned     vol,
         if (volume.db_vect.size() <= slice) {
             volume.db_vect.resize(slice+1);
             for (size_t i = 0; i < volume.db_vect.size(); ++i) {
-                if (volume.db_vect[i].get() == 0) {
+                if ( !volume.db_vect[i] ) {
                     volume.db_vect[i] = new SLockedDb;
                 }
             } // for
 
         }
-        lp = volume.db_vect[slice].get();
+        lp = &*volume.db_vect[slice];
     }
 
     bool needs_save = false;
