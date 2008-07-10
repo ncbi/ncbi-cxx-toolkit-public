@@ -99,6 +99,35 @@ void CSeq_entry::ParentizeOneLevel(void)
     }
 }
 
+bool CSeq_entry::IsSetDescr(void) const
+{
+    switch ( Which() ) {
+    case e_Seq:
+        return (GetSeq().IsSetDescr());
+    case e_Set:
+        return (GetSet().IsSetDescr());
+    default:
+        break;
+    }
+
+    return false;
+}
+
+const CSeq_descr& CSeq_entry::GetDescr(void) const
+{
+    switch ( Which() ) {
+    case e_Seq:
+        return (GetSeq().GetDescr());
+    case e_Set:
+        return (GetSet().GetDescr());
+    default:
+      NCBI_THROW(CSerialException, eNotImplemented,
+                 "CSeq_entry::GetDescr: unsupported entry type "
+                 + SelectionName(Which()));
+    }
+}
+
+
 void CSeq_entry::UserOp_Assign(const CSerialUserOp& /* source */)
 {
     m_ParentEntry = 0;
