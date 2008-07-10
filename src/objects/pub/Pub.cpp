@@ -35,10 +35,12 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objects/pub/Pub.hpp>
 
+#include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 
+#include <objects/biblio/Author.hpp>
+#include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/PubMedId.hpp>
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Cit_jour.hpp>
@@ -149,6 +151,66 @@ void CPub::GetLabel(string*    label,
     default:
         break;
     }
+}
+
+
+ CConstRef<CAuth_list> CPub::GetAuthList (void) const
+{
+  switch (Which()) {
+    case CPub::e_Gen :
+    {
+      if (GetGen().IsSetAuthors()) {
+        return CConstRef<CAuth_list> (&GetGen().GetAuthors());
+      }
+    }
+      break;
+    case CPub::e_Sub :
+    {
+      if (GetSub().IsSetAuthors()) {
+        return CConstRef<CAuth_list> (&GetSub().GetAuthors());
+      }
+    }
+      break;
+    case CPub::e_Article :
+    {
+      if (GetArticle().IsSetAuthors()) {
+        return CConstRef<CAuth_list> (&GetArticle().GetAuthors());
+      }
+    }
+      break;
+    case CPub::e_Book :
+    {
+      if (GetBook().IsSetAuthors()) {
+        return CConstRef<CAuth_list> (&GetBook().GetAuthors());
+      }
+    }
+      break;
+    case CPub::e_Proc :
+    {
+      if (GetProc().IsSetBook() && GetProc().GetBook().IsSetAuthors()) {
+        return CConstRef<CAuth_list> (&GetProc().GetBook().GetAuthors());
+      }
+    }
+      break;
+    case CPub::e_Patent :
+    {
+      if (GetPatent().IsSetAuthors()) {
+        return CConstRef<CAuth_list> (&GetPatent().GetAuthors());
+      }
+    }
+      break;
+    case CPub::e_Man :
+    {
+      if (GetMan().IsSetCit() && GetMan().GetCit().IsSetAuthors()) {
+        return CConstRef<CAuth_list> (&GetMan().GetCit().GetAuthors());
+      }
+    }
+      break;
+    default :
+      break;
+  }
+  
+  return CConstRef<CAuth_list> ();
 }
 
 
