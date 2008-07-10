@@ -5,7 +5,7 @@
 driver_list="ctlib dblib ftds odbc ftds_odbc ftds8" # mysql
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
-	server_list="MSDEV1 SCHUMANN"
+	server_list="MSDEV1 CLEMENTI"
 	server_mssql="MSDEV1"
 else
 	server_list="MS_TEST SYB_TEST"

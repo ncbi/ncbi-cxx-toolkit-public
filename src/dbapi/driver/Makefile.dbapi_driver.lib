@@ -11,7 +11,7 @@ LIB      = dbapi_driver
 
 LIB_OR_DLL = both
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS)
 
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 

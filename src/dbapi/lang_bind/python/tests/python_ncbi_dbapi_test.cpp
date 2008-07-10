@@ -976,6 +976,7 @@ CTestArguments::GetServerType(void) const
          || NStr::CompareNocase(GetServerName(), "TAPER") == 0
          || NStr::CompareNocase(GetServerName(), "THALBERG") == 0
          || NStr::CompareNocase(GetServerName(), "SCHUMANN") == 0
+         || NStr::CompareNocase(GetServerName(), "CLEMENTI") == 0
          || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
          || NStr::CompareNocase(GetServerName(), "SYB_TEST") == 0
 	 || NStr::StartsWith(GetServerName(), "DBAPI_DEV")

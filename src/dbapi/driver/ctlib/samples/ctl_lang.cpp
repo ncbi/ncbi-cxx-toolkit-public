@@ -122,6 +122,6 @@ CDemoApp::RunSample(void)
 
 int main(int argc, const char* argv[])
 {
-    return CDemoApp("SCHUMANN").AppMain(argc, argv);
+    return CDemoApp("CLEMENTI").AppMain(argc, argv);
 }
 

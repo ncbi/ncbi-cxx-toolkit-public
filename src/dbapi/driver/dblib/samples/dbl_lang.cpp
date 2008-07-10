@@ -57,7 +57,7 @@ CDemoApp::Run(void)
 
         CDBLibContext my_context;
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("SCHUMANN",
+        auto_ptr<CDB_Connection> con(my_context.Connect("CLEMENTI",
                                                         "anyone",
                                                         "allowed",
                                                         0));

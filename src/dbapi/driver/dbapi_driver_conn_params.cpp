@@ -757,6 +757,7 @@ CCPPToolkitConnParams::GetServerType(void) const
     } else if ( NStr::CompareNocase(server_name, "TAPER") == 0
         || NStr::CompareNocase(server_name, "THALBERG") == 0
         || NStr::CompareNocase(server_name, 0, 8, "SCHUMANN") == 0
+        || NStr::CompareNocase(server_name, 0, 8, "CLEMENTI") == 0
         || NStr::CompareNocase(server_name, 0, 6, "BARTOK") == 0
         || NStr::CompareNocase(server_name, 0, 8, "SCHUBERT") == 0
         || NStr::CompareNocase(server_name, 0, 8, "SYB_TEST") == 0

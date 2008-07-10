@@ -15599,7 +15599,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
                       ftds_dblib_driver, ftds_odbc_driver, ftds8_driver
 
 #elif defined(HAVE_LIBSYBASE)
-#define DEF_SERVER    "SCHUMANN"
+#define DEF_SERVER    "CLEMENTI"
 #define DEF_DRIVER    ctlib_driver
 #define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, ftds_dblib_driver, \
                       ftds_odbc_driver, ftds8_driver
