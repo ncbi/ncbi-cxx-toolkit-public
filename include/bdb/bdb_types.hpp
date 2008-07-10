@@ -658,13 +658,13 @@ public:
 class NCBI_BDB_EXPORT CBDB_FieldInt8 : public CBDB_FieldSimpleInt<Int8>
 {
 public:
-    const CBDB_FieldInt8& operator= (Int8 val)
+    CBDB_FieldInt8& operator= (Int8 val)
     {
         Set(val);
         return *this;
     }
 
-    const CBDB_FieldInt8& operator= (const CBDB_FieldInt8& val)
+    CBDB_FieldInt8& operator= (const CBDB_FieldInt8& val)
     {
         Set(val);
         return *this;
@@ -742,13 +742,13 @@ public:
 class NCBI_BDB_EXPORT CBDB_FieldUint8 : public CBDB_FieldSimpleInt<Uint8>
 {
 public:
-    const CBDB_FieldUint8& operator= (Uint8 val)
+    CBDB_FieldUint8& operator= (Uint8 val)
     {
         Set(val);
         return *this;
     }
 
-    const CBDB_FieldUint8& operator= (const CBDB_FieldUint8& val)
+    CBDB_FieldUint8& operator= (const CBDB_FieldUint8& val)
     {
         Set(val);
         return *this;
@@ -826,13 +826,13 @@ public:
 class NCBI_BDB_EXPORT CBDB_FieldInt4 : public CBDB_FieldSimpleInt<Int4>
 {
 public:
-    const CBDB_FieldInt4& operator= (Int4 val)
+    CBDB_FieldInt4& operator= (Int4 val)
     {
         Set(val);
         return *this;
     }
 
-    const CBDB_FieldInt4& operator= (const CBDB_FieldInt4& val)
+    CBDB_FieldInt4& operator= (const CBDB_FieldInt4& val)
     {
         Set(val);
         return *this;
@@ -910,13 +910,13 @@ public:
 class NCBI_BDB_EXPORT CBDB_FieldInt2 : public CBDB_FieldSimpleInt<Int2>
 {
 public:
-    const CBDB_FieldInt2& operator= (Int2 val)
+    CBDB_FieldInt2& operator= (Int2 val)
     {
         Set(val);
         return *this;
     }
 
-    const CBDB_FieldInt2& operator= (const CBDB_FieldInt2& val)
+    CBDB_FieldInt2& operator= (const CBDB_FieldInt2& val)
     {
         Set(val);
         return *this;
@@ -994,13 +994,13 @@ public:
 class NCBI_BDB_EXPORT CBDB_FieldUint2 : public CBDB_FieldSimpleInt<Uint2>
 {
 public:
-    const CBDB_FieldUint2& operator= (Uint2 val)
+    CBDB_FieldUint2& operator= (Uint2 val)
     {
         Set(val);
         return *this;
     }
 
-    const CBDB_FieldUint2& operator= (const CBDB_FieldUint2& val)
+    CBDB_FieldUint2& operator= (const CBDB_FieldUint2& val)
     {
         Set(val);
         return *this;
@@ -1077,13 +1077,13 @@ public:
 class CBDB_FieldUChar : public CBDB_FieldSimpleInt<unsigned char>
 {
 public:
-    const CBDB_FieldUChar& operator = (unsigned char val) 
+    CBDB_FieldUChar& operator = (unsigned char val) 
     { 
         Set(val); 
         return *this; 
     }
 
-    const CBDB_FieldUChar& operator = (const CBDB_FieldUChar& val) 
+    CBDB_FieldUChar& operator = (const CBDB_FieldUChar& val) 
     { 
         Set(val); 
         return *this; 
@@ -1135,13 +1135,13 @@ public:
 class CBDB_FieldChar : public CBDB_FieldSimpleInt<char>
 {
 public:
-    const CBDB_FieldChar& operator = (char val) 
+    CBDB_FieldChar& operator = (char val) 
     { 
         Set(val); 
         return *this; 
     }
 
-    const CBDB_FieldChar& operator = (const CBDB_FieldChar& val) 
+    CBDB_FieldChar& operator = (const CBDB_FieldChar& val) 
     { 
         Set(val); 
         return *this; 
@@ -1196,13 +1196,13 @@ public:
 class CBDB_FieldInt1 : public CBDB_FieldChar
 {
 public:
-    const CBDB_FieldChar& operator=(Int1 val) 
+    CBDB_FieldInt1& operator=(Int1 val) 
     { 
         Set(val); 
         return *this; 
     }
 
-    const CBDB_FieldChar& operator=(const CBDB_FieldChar& val) 
+    CBDB_FieldInt1& operator=(const CBDB_FieldChar& val) 
     { 
         Set(val); 
         return *this; 
@@ -1228,16 +1228,16 @@ public:
 /// Uint1 field type
 ///
 
-class CBDB_FieldUint1:public CBDB_FieldUChar
+class CBDB_FieldUint1 : public CBDB_FieldUChar
 {
 public:
-    const CBDB_FieldUChar& operator = (unsigned char val) 
+    CBDB_FieldUint1& operator= (unsigned char val) 
     { 
         Set(val); 
         return *this; 
     }
 
-    const CBDB_FieldUChar& operator = (const CBDB_FieldUChar& val) 
+    CBDB_FieldUint1& operator= (const CBDB_FieldUChar& val) 
     { 
         Set(val); 
         return *this; 
@@ -1266,13 +1266,13 @@ public:
 class NCBI_BDB_EXPORT CBDB_FieldUint4 : public CBDB_FieldSimpleInt<Uint4>
 {
 public:
-    const CBDB_FieldUint4& operator= (Uint4 val)
+    CBDB_FieldUint4& operator= (Uint4 val)
     {
         Set(val);
         return *this;
     }
 
-    const CBDB_FieldUint4& operator= (const CBDB_FieldUint4& val)
+    CBDB_FieldUint4& operator= (const CBDB_FieldUint4& val)
     {
         Set(val);
         return *this;
@@ -1351,13 +1351,13 @@ public:
 class NCBI_BDB_EXPORT CBDB_FieldFloat : public CBDB_FieldSimpleFloat<float>
 {
 public:
-    const CBDB_FieldFloat& operator= (float val)
+    CBDB_FieldFloat& operator= (float val)
     {
         Set(val);
         return *this;
     }
 
-    const CBDB_FieldFloat& operator= (const CBDB_FieldFloat& val)
+    CBDB_FieldFloat& operator= (const CBDB_FieldFloat& val)
     {
         Set(val);
         return *this;
@@ -1435,13 +1435,13 @@ public:
 class NCBI_BDB_EXPORT CBDB_FieldDouble : public CBDB_FieldSimpleFloat<double>
 {
 public:
-    const CBDB_FieldDouble& operator= (double val)
+    CBDB_FieldDouble& operator= (double val)
     {
         Set(val);
         return *this;
     }
 
-    const CBDB_FieldDouble& operator= (const CBDB_FieldDouble& val)
+    CBDB_FieldDouble& operator= (const CBDB_FieldDouble& val)
     {
         Set(val);
         return *this;
@@ -1527,7 +1527,7 @@ public:
         return fld;
     }
     operator const char* () const;
-    const CBDB_FieldFixedByteString& operator=
+    CBDB_FieldFixedByteString& operator=
                     (const CBDB_FieldFixedByteString& str);
 
     void Set(const char* str);
@@ -1601,9 +1601,9 @@ public:
     }
 
     operator const char* () const;
-    const CBDB_FieldString& operator= (const CBDB_FieldString& str);
-    const CBDB_FieldString& operator= (const char*             str);
-    const CBDB_FieldString& operator= (const string&           str);
+    CBDB_FieldString& operator= (const CBDB_FieldString& str);
+    CBDB_FieldString& operator= (const char*             str);
+    CBDB_FieldString& operator= (const string&           str);
 
     void Set(const char* str, EOverflowAction if_overflow = eThrowOnOverflow);
     string Get() const { return string((const char*)GetBuffer()); }
@@ -1663,22 +1663,22 @@ public:
     // Accessors
     operator const char* () const { return (const char*) GetBuffer(); }
 	
-    const CBDB_FieldStringCase& operator= (const CBDB_FieldString& str)
+    CBDB_FieldStringCase& operator= (const CBDB_FieldString& str)
     {
         Set(str);
         return *this;
     }
-    const CBDB_FieldStringCase& operator= (const CBDB_FieldStringCase& str)
+    CBDB_FieldStringCase& operator= (const CBDB_FieldStringCase& str)
     {
         Set(str);
         return *this;
     }
-    const CBDB_FieldStringCase& operator= (const char* str) 
+    CBDB_FieldStringCase& operator= (const char* str) 
     { 
         Set(str);
         return *this;
     }
-    const CBDB_FieldStringCase& operator= (const string& str) 
+    CBDB_FieldStringCase& operator= (const string& str) 
     { 
         Set(str.c_str());
         return *this;
@@ -1715,9 +1715,9 @@ public:
     virtual CBDB_Field* Construct(size_t buf_size) const;
 
     operator string() const { return GetString(); }
-    const CBDB_FieldLString& operator= (const CBDB_FieldLString& str);
-    const CBDB_FieldLString& operator= (const char*             str);
-    const CBDB_FieldLString& operator= (const string&           str);
+    CBDB_FieldLString& operator= (const CBDB_FieldLString& str);
+    CBDB_FieldLString& operator= (const char*             str);
+    CBDB_FieldLString& operator= (const string&           str);
 
     void Set(const char* str, EOverflowAction if_overflow = eThrowOnOverflow);
     void Set(const char* str, size_t size, 
@@ -2378,7 +2378,7 @@ inline CBDB_FieldString::operator const char* () const
 
 
 inline 
-const CBDB_FieldString&
+CBDB_FieldString&
 CBDB_FieldString::operator= (const CBDB_FieldString& str)
 {
     if (this == &str)
@@ -2496,13 +2496,13 @@ inline size_t CBDB_FieldString::GetDataLength(const void* buf) const
 }
 
 
-inline const CBDB_FieldString& CBDB_FieldString::operator= (const char* str)
+inline CBDB_FieldString& CBDB_FieldString::operator= (const char* str)
 { 
     Set(str, eThrowOnOverflow); 
     return *this;
 }
 
-inline const CBDB_FieldString& CBDB_FieldString::operator= (const string& str)
+inline CBDB_FieldString& CBDB_FieldString::operator= (const string& str)
 {
     return this->operator=(str.c_str());
 }

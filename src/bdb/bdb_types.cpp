@@ -819,7 +819,7 @@ CBDB_FieldFixedByteString::CBDB_FieldFixedByteString()
     SetBufferSize(256 + 4);
 }
 
-const CBDB_FieldFixedByteString& 
+CBDB_FieldFixedByteString& 
 CBDB_FieldFixedByteString::operator=(const CBDB_FieldFixedByteString& str)
 {
     void* buf = GetBuffer();
@@ -906,7 +906,7 @@ CBDB_FieldLString::operator const char* () const
 }
 */
 
-const CBDB_FieldLString& 
+CBDB_FieldLString& 
 CBDB_FieldLString::operator=(const CBDB_FieldLString& str)
 {
     void* buf = GetBuffer();
@@ -1074,13 +1074,13 @@ size_t CBDB_FieldLString::GetDataLength(const void* buf) const
     return str_len + 1;
 }
 
-const CBDB_FieldLString& CBDB_FieldLString::operator= (const char* str)
+CBDB_FieldLString& CBDB_FieldLString::operator= (const char* str)
 { 
     Set(str, eThrowOnOverflow); 
     return *this;
 }
 
-const CBDB_FieldLString& CBDB_FieldLString::operator= (const string& str)
+CBDB_FieldLString& CBDB_FieldLString::operator= (const string& str)
 {
     SetStdString(str);
     return *this;
