@@ -154,63 +154,52 @@ void CPub::GetLabel(string*    label,
 }
 
 
- CConstRef<CAuth_list> CPub::GetAuthList (void) const
+bool CPub::IsSetAuthors(void) const
 {
-  switch (Which()) {
+    switch (Which()) {
     case CPub::e_Gen :
-    {
-      if (GetGen().IsSetAuthors()) {
-        return CConstRef<CAuth_list> (&GetGen().GetAuthors());
-      }
-    }
-      break;
+        return (GetGen().IsSetAuthors());
     case CPub::e_Sub :
-    {
-      if (GetSub().IsSetAuthors()) {
-        return CConstRef<CAuth_list> (&GetSub().GetAuthors());
-      }
-    }
-      break;
+        return (GetSub().IsSetAuthors());
     case CPub::e_Article :
-    {
-      if (GetArticle().IsSetAuthors()) {
-        return CConstRef<CAuth_list> (&GetArticle().GetAuthors());
-      }
-    }
-      break;
+        return (GetArticle().IsSetAuthors());
     case CPub::e_Book :
-    {
-      if (GetBook().IsSetAuthors()) {
-        return CConstRef<CAuth_list> (&GetBook().GetAuthors());
-      }
-    }
-      break;
+        return (GetBook().IsSetAuthors());
     case CPub::e_Proc :
-    {
-      if (GetProc().IsSetBook() && GetProc().GetBook().IsSetAuthors()) {
-        return CConstRef<CAuth_list> (&GetProc().GetBook().GetAuthors());
-      }
-    }
-      break;
+        return (GetProc().IsSetBook() && GetProc().GetBook().IsSetAuthors());
     case CPub::e_Patent :
-    {
-      if (GetPatent().IsSetAuthors()) {
-        return CConstRef<CAuth_list> (&GetPatent().GetAuthors());
-      }
-    }
-      break;
+        return (GetPatent().IsSetAuthors());
     case CPub::e_Man :
-    {
-      if (GetMan().IsSetCit() && GetMan().GetCit().IsSetAuthors()) {
-        return CConstRef<CAuth_list> (&GetMan().GetCit().GetAuthors());
-      }
-    }
-      break;
+        return (GetMan().IsSetCit() && GetMan().GetCit().IsSetAuthors());
     default :
       break;
   }
   
-  return CConstRef<CAuth_list> ();
+  return false;
+}
+
+const CAuth_list& CPub::GetAuthors (void) const
+{
+  switch (Which()) {
+    case CPub::e_Gen :
+        return (GetGen().GetAuthors());
+    case CPub::e_Sub :
+        return (GetSub().GetAuthors());
+    case CPub::e_Article :
+        return (GetArticle().GetAuthors());
+    case CPub::e_Book :
+        return (GetBook().GetAuthors());
+    case CPub::e_Proc :
+        return (GetProc().GetBook().GetAuthors());
+    case CPub::e_Patent :
+        return (GetPatent().GetAuthors());
+    case CPub::e_Man :
+        return (GetMan().GetCit().GetAuthors());
+    default :
+        NCBI_THROW(CSerialException, eNotImplemented,
+                   "CPub::GetAuthors: unsupported entry type "
+                   + SelectionName(Which()));
+  }
 }
 
 
