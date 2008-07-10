@@ -311,8 +311,7 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
         ret = scope.GetAccVer(idh);
     }
     else {
-        CScope::TIds ids = scope.GetIds(idh);
-        x_GetId(ids, type);
+        ret = x_GetId(scope.GetIds(idh), type);
     }
     return ret ? ret : idh;
 }
@@ -1495,8 +1494,8 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
         }
         break;
 
-	case CSeqFeatData::eSubtype_variation:
-		return GetBestOverlapForSNP(feat, subtype, scope, true);
+    case CSeqFeatData::eSubtype_variation:
+        return GetBestOverlapForSNP(feat, subtype, scope, true);
 
     default:
         break;
