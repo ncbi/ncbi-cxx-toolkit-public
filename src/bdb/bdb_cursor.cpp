@@ -159,17 +159,18 @@ CBDB_ConditionHandle::~CBDB_ConditionHandle()
 
 
 CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf, ECursorUpdateType utype)
-: m_Dbf(dbf),
-  From( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this))  ),
-  To( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this)) ),
-  m_DBC(0),
-  m_CondFrom(eFirst),
-  m_CondTo(eLast),
-  m_FetchDirection(eForward),
-  m_FirstFetched(false),
-  m_FetchFlags(0),
-  m_MultiRowBuf(0),
-  m_MultiFetchMode(eFetchAll)
+    : m_Dbf(dbf),
+      From( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this))  ),
+      To( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this)) ),
+      m_DBC(0),
+      m_CondFrom(eFirst),
+      m_CondTo(eLast),
+      m_FetchDirection(eForward),
+      m_FirstFetched(false),
+      m_FetchFlags(0),
+      m_MultiRowBuf(0),
+      m_MultiFetchMode(eFetchAll),
+      m_LastMultiFetchSuccess(false)
 {
     CBDB_Env* env = m_Dbf.GetEnv();
     CBDB_Transaction* trans = dbf.GetBDBTransaction();
@@ -182,17 +183,18 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf, ECursorUpdateType utype)
 CBDB_FileCursor::CBDB_FileCursor(CBDB_File&         dbf,
                                  CBDB_Transaction&  trans,
                                  ECursorUpdateType  utype)
-: m_Dbf(dbf),
-  From( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this))  ),
-  To( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this)) ),
-  m_DBC(0),
-  m_CondFrom(eFirst),
-  m_CondTo(eLast),
-  m_FetchDirection(eForward),
-  m_FirstFetched(false),
-  m_FetchFlags(0),
-  m_MultiRowBuf(0),
-  m_MultiFetchMode(eFetchAll)
+    : m_Dbf(dbf),
+      From( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this))  ),
+      To( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this)) ),
+      m_DBC(0),
+      m_CondFrom(eFirst),
+      m_CondTo(eLast),
+      m_FetchDirection(eForward),
+      m_FirstFetched(false),
+      m_FetchFlags(0),
+      m_MultiRowBuf(0),
+      m_MultiFetchMode(eFetchAll),
+      m_LastMultiFetchSuccess(false)
 {
     CBDB_Env* env = m_Dbf.GetEnv();
     if (env && env->IsTransactional() && utype == eReadModifyUpdate) {
