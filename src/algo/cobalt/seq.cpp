@@ -157,6 +157,69 @@ CSequence::PropagateGaps(const CNWAligner::TTranscript& transcript,
     m_Freqs.Swap(new_freq);
 }
 
+void 
+CSequence::InsertGaps(const vector<Uint4>& gap_locations, bool consider_gaps)
+{
+    Uint4 new_size = (Uint4)(GetLength() + gap_locations.size());
+    bool is_freqs_set = m_Freqs.GetRows() > 0;
+
+    // no gaps means nothing needs updating
+
+    if (new_size == (Uint4)GetLength()) {
+        return;
+    }
+
+    vector<unsigned char> new_seq(new_size);
+    TFreqMatrix new_freq;
+    if (is_freqs_set) {
+        new_freq.Resize(new_size, kAlphabetSize, 0.0);
+    }
+
+    // expand the sequence data and the profile columns
+    // to incorporate new gaps
+
+    Uint4 location = 0, gap_ind = 0;
+    for (size_t i = 0, j = 0; i < new_size; i++) {
+        if (gap_ind < gap_locations.size() 
+            && location == gap_locations[gap_ind]) {
+            new_seq[i] = kGapChar;
+            gap_ind++;
+
+            if (consider_gaps) {
+                location++;
+            }
+        }
+        else if (j < m_Sequence.size()) {
+            new_seq[i] = m_Sequence[j];
+            if (is_freqs_set) {
+                for (int k = 0; k < kAlphabetSize; k++)
+                    new_freq(i, k) = m_Freqs(j, k);
+            }
+
+            if (m_Sequence[j] != kGapChar || consider_gaps) {
+                location++;
+            }
+
+            j++;
+        }
+        else {
+            // Gaps at the end of the sequence
+            new_seq[i] = kGapChar;
+            gap_ind++;
+        }
+
+    }
+    _ASSERT(gap_ind == gap_locations.size());
+
+    // replace class data
+
+    m_Sequence.swap(new_seq);
+    if (is_freqs_set) {
+        m_Freqs.Swap(new_freq);
+    }
+}
+
+
 void CSequence::CompressSequences(vector<CSequence>& seq,
                                   vector<int> index_list)
 {

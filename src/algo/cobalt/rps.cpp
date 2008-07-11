@@ -86,6 +86,10 @@ CMultiAligner::x_LoadBlockBoundaries(string blockfile,
 
     while (!blockstream.eof()) {
         blockstream >> buf;
+        // This allows for new line at the end of block file
+         if (blockstream.eof()) { 
+            break;
+        }
         blockstream >> block_idx;
         blockstream >> start;
         blockstream >> end;
@@ -559,7 +563,7 @@ CMultiAligner::x_AssignDefaultResFreqs()
     for (size_t i = 0; i < m_QueryData.size(); i++) {
         CSequence& query = m_QueryData[i];
         CSequence::TFreqMatrix& matrix = query.GetFreqs();
-
+        
         for (int j = 0; j < query.GetLength(); j++) {
             for (int k = 0; k < kAlphabetSize; k++) {
                 matrix(j, k) = (1 - m_LocalResFreqBoost) * 
@@ -567,6 +571,22 @@ CMultiAligner::x_AssignDefaultResFreqs()
             }
             matrix(j, query.GetLetter(j)) += m_LocalResFreqBoost;
         }
+    }
+
+    if (m_UseClusters) {
+        for (size_t i = 0; i < m_AllQueryData.size(); i++) {
+            CSequence& query = m_AllQueryData[i];
+            CSequence::TFreqMatrix& matrix = query.GetFreqs();
+            for (int j = 0; j < query.GetLength(); j++) {
+                for (int k = 0; k < kAlphabetSize; k++) {
+                    matrix(j, k) = (1 - m_LocalResFreqBoost) * 
+                        std_freqs->prob[k];
+                }
+                matrix(j, query.GetLetter(j)) += m_LocalResFreqBoost;
+            }
+        }
+
+        MakeClusterResidueFrequencies();
     }
 
     Blast_ResFreqFree(std_freqs);

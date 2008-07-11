@@ -144,6 +144,32 @@ void CMultiApplication::Init(void)
                      "neighbor joining",
                      CArgDescriptions::eBoolean, "F");
 
+    arg_desc->AddDefaultKey("clusters", "clusters", 
+                     "Use query clustering to minimize number of"
+                     "RPSBlast searches",
+                     CArgDescriptions::eBoolean, "F");
+
+    arg_desc->AddDefaultKey("kmer_len", "length", 
+                     "Kmer length for query clustering",
+                     CArgDescriptions::eInteger, "4");
+
+    arg_desc->AddDefaultKey("max_dist", "distance",
+                     "Maximum distance between sequences in a cluster",
+                     CArgDescriptions::eDouble, "0.5");
+
+    arg_desc->AddDefaultKey("similarity", "measure",
+                     "Similarity measure to be used for clustering"
+                     "k-mer counts vectors",
+                     CArgDescriptions::eString, "kfraction_global");
+    arg_desc->SetConstraint("similarity", &(*new CArgAllow_Strings,
+                     "kfraction_local", "kfraction_global"));
+
+    arg_desc->AddOptionalKey("comp_alph", "name",
+                     "Compressed alphabet for kmer counting",
+                     CArgDescriptions::eString);
+    arg_desc->SetConstraint("comp_alph", &(*new CArgAllow_Strings, "se-v10", 
+                       "se-b15"));
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -239,12 +265,37 @@ int CMultiApplication::Run(void)
                           args["ffb"].AsDouble(),
                           args["pseudo"].AsDouble());
 
+    CMultiAligner::TKMethods::EDistMeasures dist_measure 
+               = CMultiAligner::TKMethods::eFractionCommonKmersGlobal;
+
+    if (args["similarity"]) {
+        string dist_arg = args["similarity"].AsString();
+        if (dist_arg == "kfraction_local") {
+            dist_measure = CMultiAligner::TKMethods::eFractionCommonKmersLocal;
+        }
+    }
+
+    CMultiAligner::TKMethods::ECompressedAlphabet alph 
+                                 = CMultiAligner::TKMethods::eRegular;
+    if (args["comp_alph"]) {
+        if (args["comp_alph"].AsString() == "se-v10") {
+            alph = CMultiAligner::TKMethods::eSE_V10;
+        } else if (args["comp_alph"].AsString() == "se-b15") {
+            alph = CMultiAligner::TKMethods::eSE_B15;
+        }
+    }
+    aligner.SetQueryClustersInfo(args["clusters"].AsBoolean(), 
+                                 (unsigned)args["kmer_len"].AsInteger(),
+                                 alph,
+                                 dist_measure,
+                                 args["max_dist"].AsDouble());
+
     blast::TSeqLocVector queries = x_GetSeqLocFromStream(
                                               args["i"].AsInputFile(), 
                                               *m_ObjMgr);
 
     aligner.SetQueries(queries);
-
+    
     if (args["norps"].AsBoolean() == false) {
         if (!args["db"] || !args["b"]) {
             printf("RPS database and block file must be specified "

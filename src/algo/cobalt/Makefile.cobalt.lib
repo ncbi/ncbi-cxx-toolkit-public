@@ -1,7 +1,7 @@
 # $Id$
 
 SRC_CXX = blast cobalt dist hit hitlist phi prog \
-	    resfreq rps seg seq seqalign traceback tree
+	    resfreq rps seg seq seqalign traceback tree kmercounts clusterer
     
 SRC   = $(SRC_CXX)
 
