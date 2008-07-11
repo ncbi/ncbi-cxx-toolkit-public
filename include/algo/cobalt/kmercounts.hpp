@@ -45,7 +45,7 @@ Contents: Interface for k-mer counting
 
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(cobalt);
+BEGIN_SCOPE(cobalt)
 
 
 // TODO: Implement binary k-mer counts vector
@@ -408,7 +408,7 @@ public:
 
 
 
-END_SCOPE(cobalt);
+END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
 #endif /* ALGO_COBALT___KMERCOUNTS__HPP */

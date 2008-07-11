@@ -42,7 +42,7 @@ Contents: Interface for CClusterer class
 #include <vector>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(cobalt);
+BEGIN_SCOPE(cobalt)
 
 /// Interface for CClusterer class used for clustering any type of data based
 /// on distance matrix. The class operates on ideces in the distance matrix.
@@ -171,7 +171,7 @@ protected:
 };
 
 
-END_SCOPE(cobalt);
+END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
 #endif /* ALGO_COBALT___CLUSTER_METHODS__HPP */
