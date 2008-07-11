@@ -140,18 +140,20 @@ NCBI_PARAM_DEF (string, NCBI, TmpDir, kEmptyStr);
 CDirEntry::CDirEntry(const string& name)
 {
     Reset(name);
-    m_DefaultMode[eUser]  = m_DefaultModeGlobal[eFile][eUser];
-    m_DefaultMode[eGroup] = m_DefaultModeGlobal[eFile][eGroup];
-    m_DefaultMode[eOther] = m_DefaultModeGlobal[eFile][eOther];
+    m_DefaultMode[eUser]    = m_DefaultModeGlobal[eFile][eUser];
+    m_DefaultMode[eGroup]   = m_DefaultModeGlobal[eFile][eGroup];
+    m_DefaultMode[eOther]   = m_DefaultModeGlobal[eFile][eOther];
+    m_DefaultMode[eSpecial] = m_DefaultModeGlobal[eFile][eSpecial];
 }
 
 
 CDirEntry::CDirEntry(const CDirEntry& other)
     : m_Path(other.m_Path)
 {
-    m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
-    m_DefaultMode[eGroup] = other.m_DefaultMode[eGroup];
-    m_DefaultMode[eOther] = other.m_DefaultMode[eOther];
+    m_DefaultMode[eUser]    = other.m_DefaultMode[eUser];
+    m_DefaultMode[eGroup]   = other.m_DefaultMode[eGroup];
+    m_DefaultMode[eOther]   = other.m_DefaultMode[eOther];
+    m_DefaultMode[eSpecial] = other.m_DefaultMode[eSpecial];
 }
 
 
@@ -236,10 +238,11 @@ const char* CDirEntry::m_BackupSuffix = ".bak";
 CDirEntry& CDirEntry::operator= (const CDirEntry& other)
 {
     if (this != &other) {
-        m_Path                = other.m_Path;
-        m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
-        m_DefaultMode[eGroup] = other.m_DefaultMode[eGroup];
-        m_DefaultMode[eOther] = other.m_DefaultMode[eOther];
+        m_Path                  = other.m_Path;
+        m_DefaultMode[eUser]    = other.m_DefaultMode[eUser];
+        m_DefaultMode[eGroup]   = other.m_DefaultMode[eGroup];
+        m_DefaultMode[eOther]   = other.m_DefaultMode[eOther];
+        m_DefaultMode[eSpecial] = other.m_DefaultMode[eSpecial];
     }
     return *this;
 }
@@ -872,6 +875,9 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode,
     }
     if (other_mode == fDefault) {
         other_mode = m_DefaultMode[eOther];
+    }
+    if (special == 0) {
+        special = m_DefaultMode[eSpecial];
     }
     mode_t mode = MakeModeT(user_mode, group_mode, other_mode, special);
 
