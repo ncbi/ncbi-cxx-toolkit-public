@@ -50,6 +50,8 @@ Contents: Interface for CMultiAligner
 #include <algo/cobalt/dist.hpp>
 #include <algo/cobalt/tree.hpp>
 #include <algo/cobalt/exception.hpp>
+#include <algo/cobalt/kmercounts.hpp>
+#include <algo/cobalt/clusterer.hpp>
 
 /// @file cobalt.hpp
 /// Interface for CMultiAligner
@@ -60,6 +62,12 @@ BEGIN_SCOPE(cobalt)
 /// Simultaneously align multiple protein sequences
 class NCBI_COBALT_EXPORT CMultiAligner : public CObject
 {
+public:
+
+    typedef CSparseKmerCounts TKmerCounts;
+    typedef TKmerMethods<TKmerCounts> TKMethods;
+
+
 public:
 
     /// Default gap open penalty
@@ -343,6 +351,30 @@ public:
     ///
     void SetFastmeTree(bool fastme) { m_FastMeTree = fastme; }
 
+    /// Set query clustering parameters
+    /// @param use_clusters Should query clustering be used
+    /// @param kmer_len K-mer length for calculation of distances between 
+    /// queries
+    /// @param alph Selection of regular or compressed alphabet for calculation
+    /// of distances between queries
+    /// @param dist Measure of distance between queries
+    /// @param max_dist Maximum cluster diameter
+    ///
+    void SetQueryClustersInfo(bool use_clusters, 
+                    unsigned kmer_len = 4,
+                    TKMethods::ECompressedAlphabet alph 
+                    = TKMethods::eRegular,
+                    TKMethods::EDistMeasures dist 
+                    = TKMethods::eFractionCommonKmersGlobal,
+                    double max_dist = 0.1)
+    {
+        m_UseClusters = use_clusters;
+        m_KmerLength = kmer_len;
+        m_ClustDistMeasure = dist;
+        m_MaxClusterDist = max_dist;
+        m_KmerAlphabet = alph;
+    }
+
     // ---------------- Running the aligner -----------------------
 
     /// Clear out the state left by the previous alignment operation
@@ -389,6 +421,32 @@ public:
     ///
     void BuildAlignment();
 
+
+    // ---------------- Clustering queries -----------------------
+
+    /// Find clusters of similar queries, select cluster representative 
+    /// sequences, and prepare input to multiple alignement composed of 
+    /// only representatives
+    /// @return True if at least one cluster was found, false otherwise
+    ///
+    bool FindQueryClusters();
+
+    /// Pair-wise align each cluster sequence to cluster representative
+    ///
+    void AlignInClusters();
+
+    /// Compute profile residue frequencies for clusters. Frequencies are not
+    /// normalized.
+    ///
+    void MakeClusterResidueFrequencies();
+
+    /// Combine pair-wise in-cluster alignements with multiple alignments of
+    /// cluster prototypes
+    ///
+    void MultiAlignClusters();
+
+
+
     typedef struct SSegmentLoc {
         int seq_index;
         TRange range;
@@ -402,6 +460,7 @@ public:
         TOffset GetFrom() const { return range.GetFrom(); }
         TOffset GetTo() const { return range.GetTo(); }
     } SSegmentLoc;
+
     
 private:
     static const int kRpsScaleFactor = 100;
@@ -432,6 +491,17 @@ private:
     blast::TSeqLocVector m_tQueries;
     vector<CSequence> m_QueryData;
     vector<CSequence> m_Results;
+
+    
+    bool m_UseClusters;
+    TKMethods::ECompressedAlphabet m_KmerAlphabet;
+
+    unsigned int m_KmerLength;
+    double m_MaxClusterDist;
+    TKMethods::EDistMeasures m_ClustDistMeasure;
+    vector<CSequence> m_AllQueryData;
+    CClusterer m_Clusterer;
+    vector< vector<Uint4> > m_ClusterGapPositions;
 
     CHitList m_DomainHits;
     string m_RPSdb;
@@ -469,6 +539,7 @@ private:
     void x_LoadBlockBoundaries(string blockfile,
                       vector<SSegmentLoc>& blocklist);
     void x_FindRPSHits(CHitList& rps_hits);
+
     void x_RealignBlocks(CHitList& rps_hits,
                          vector<SSegmentLoc>& blocklist,
                          CProfileData& profile_data);

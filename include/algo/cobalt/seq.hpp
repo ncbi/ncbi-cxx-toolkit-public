@@ -115,6 +115,18 @@ public:
     void PropagateGaps(const CNWAligner::TTranscript& transcript,
                        CNWAligner::ETranscriptSymbol gap_choice);
 
+    /// Insert gaps into a sequence. Gap is inserted before each given 
+    /// location. The profile of the sequence is adjusted automatically, 
+    /// and new gaps are assigned a column of all zero profile frequencies.
+    /// @param gap_locations Locations of single gaps
+    /// @param consider_gaps If false location n denotes before n-th letter,
+    /// otherwise simple position in a string, each location considers gaps
+    /// with smaller locations already added
+    ///
+    void InsertGaps(const vector<Uint4>& gap_locations, 
+                    bool consider_gaps = false);
+
+
     /// Given a collection of sequences, remove all sequence positions
     /// where a subset of the sequences all contain a gap 
     /// @param seq The list of sequences [in]
