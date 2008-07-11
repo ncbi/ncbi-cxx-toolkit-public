@@ -127,7 +127,7 @@ void CSparseKmerCounts::Reset(const blast::SSeqLoc& seq)
         _ASSERT(pow((double)alphabet_size, (double)kmer_len) < numeric_limits<Uint4>::max());
 
 
-        double base[kmer_len];
+        AutoArray<double> base(kmer_len);
         for (Uint4 i=0;i < kmer_len;i++) {
             base[i] = pow((double)alphabet_size, (double)i);
         }
