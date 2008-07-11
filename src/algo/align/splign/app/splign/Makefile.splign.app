@@ -8,7 +8,7 @@ SRC = splign_app
 
 LIB = xalgoalignsplign xalgoalignutil xalgoalignnw xalgoseq \
       ncbi_xloader_blastdb ncbi_xloader_lds lds bdb \
-      xalnmgr xregexp taxon1 \
+      xalnmgr xregexp $(PCRE_LIB) taxon1 \
       $(BLAST_LIBS:%=%$(STATIC)) \
       $(OBJMGR_LIBS:%=%$(STATIC))
 
