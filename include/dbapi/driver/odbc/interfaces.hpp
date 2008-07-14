@@ -432,10 +432,10 @@ protected:
     virtual CDB_Result* Result(void);
     virtual bool HasMoreResults(void) const;
     virtual int  RowCount(void) const;
+    virtual bool CloseCursor(void);
 
 protected:
     void SetCursorName(const string& name) const;
-    void CloseCursor(void) const;
 
 private:
     bool x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* indicator);

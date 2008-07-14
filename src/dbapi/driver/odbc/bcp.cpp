@@ -153,6 +153,8 @@ CODBC_BCPInCmd::x_GetBCPDataType(EDB_Type type)
     case eDB_Image:
         bcp_datatype = SQLIMAGE;
         break;
+	default:
+		break;
     }
 
     return bcp_datatype;

@@ -364,7 +364,7 @@ int CTL_CursorCmd::RowCount() const
 }
 
 
-bool CTL_CursorCmd::CloseCursor()
+bool CTL_CursorCmd::CloseCursor(void)
 {
     if (!CursorIsOpen()) {
         return false;

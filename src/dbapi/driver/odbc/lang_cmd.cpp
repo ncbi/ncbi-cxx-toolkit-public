@@ -321,11 +321,21 @@ void CODBC_LangCmd::SetCursorName(const string& name) const
 }
 
 
-void
-CODBC_LangCmd::CloseCursor(void) const
+bool
+CODBC_LangCmd::CloseCursor(void)
 {
-    CheckSIE(SQLCloseCursor(GetHandle()),
-             "SQLCloseCursor failed", 420017);
+	bool result = true;
+
+	try {
+		CheckSIE(SQLCloseCursor(GetHandle()),
+				 "SQLCloseCursor failed", 420017);
+	}
+	catch (...)
+	{
+		result = false;
+	}
+
+	return result;
 }
 
 END_NCBI_SCOPE
