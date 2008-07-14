@@ -210,4 +210,20 @@ class CTypeIterator : public CTypeIteratorBase<CTreeIterator>
     //    }'''
     s = ReplaceIf(s, orig_ctors, '', new_ctors, 'serial/iterator.hpp')
 
+    # Nested struct in template class CBDB_BlobSplitStore
+    trouble = '''
+    /// BDB Database together with the locker
+    /// One database is opened twice, one regular mode, 
+    /// another - dedicated read-only instance to improve concurrency
+    ///
+    struct SLockedDb : public CObject
+    {
+        AutoPtr<TBlobFile>      db;       ///< database file
+        AutoPtr<TLock>          lock;     ///< db lock
+        AutoPtr<TBlobFile>      db_ro;    ///< database file for reads
+        AutoPtr<TLock>          lock_ro;  ///< db lock for reads
+    };'''
+    s = ReplaceIf(s, trouble, '', '    // nested struct SLockedDb deleted\n',
+                  'bdb/bdb_split_blob.hpp')
+
     return s
