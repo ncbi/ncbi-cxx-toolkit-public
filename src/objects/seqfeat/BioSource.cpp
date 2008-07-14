@@ -243,6 +243,11 @@ bool CBioSource::IsSetOrgname(void) const
     return IsSetOrg () && GetOrg ().IsSetOrgname ();
 }
 
+const COrgName& CBioSource::GetOrgname(void) const
+{
+    return GetOrg ().GetOrgname ();
+}
+
 bool CBioSource::IsSetOrgMod(void) const
 {
   return IsSetOrg () && GetOrg ().IsSetOrgMod ();

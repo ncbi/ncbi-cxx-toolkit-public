@@ -48,6 +48,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class COrgName;
+
 class NCBI_SEQFEAT_EXPORT CBioSource : public CBioSource_Base
 {
     typedef CBioSource_Base Tparent;
@@ -86,6 +88,7 @@ public:
     const string& GetDivision(void) const;
 
     bool IsSetOrgname(void) const;
+    const COrgName& GetOrgname(void) const;
 
     bool IsSetOrgMod(void) const;
     
