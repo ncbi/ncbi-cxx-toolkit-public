@@ -80,25 +80,10 @@ public:
 
     /// Make language command
     virtual CDB_LangCmd*     LangCmd(const string& lang_query);
-    NCBI_DEPRECATED 
-    CDB_LangCmd* LangCmd(const string& lang_query, unsigned int)
-    {
-        return LangCmd(lang_query);
-    }
     /// Make remote procedure call command
     virtual CDB_RPCCmd*      RPC(const string& rpc_name);
-    NCBI_DEPRECATED 
-    CDB_RPCCmd* RPC(const string& rpc_name, unsigned int)
-    {
-        return RPC(rpc_name);
-    }
     /// Make "bulk copy in" command
     virtual CDB_BCPInCmd*    BCPIn(const string& table_name);
-    NCBI_DEPRECATED 
-    CDB_BCPInCmd* BCPIn(const string& table_name, unsigned int)
-    {
-        return BCPIn(table_name);
-    }
     /// Make cursor command
     virtual CDB_CursorCmd*   Cursor(const string& cursor_name,
                                     const string& query,
@@ -107,14 +92,6 @@ public:
                           const string& query)
     {
         return Cursor(cursor_name, query, 1);
-    }
-    NCBI_DEPRECATED 
-    CDB_CursorCmd* Cursor(const string& cursor_name,
-                          const string& query,
-                          unsigned int,
-                          unsigned int  batch_size)
-    {
-        return Cursor(cursor_name, query, batch_size);
     }
 
     /// Make "send-data" command
@@ -282,6 +259,37 @@ public:
     ///   Number of seconds.  If "nof_secs" is zero or is "too big" 
     ///   (depends on the underlying DB API), then set the timeout to infinite.
     virtual void SetTimeout(size_t nof_secs);
+
+public:
+    // Deprecated legacy methods.
+
+    /// @deprecated
+    NCBI_DEPRECATED
+    CDB_LangCmd* LangCmd(const string& lang_query, unsigned int /*unused*/)
+    {
+        return LangCmd(lang_query);
+    }
+    /// @deprecated
+    NCBI_DEPRECATED
+    CDB_RPCCmd* RPC(const string& rpc_name, unsigned int /*unused*/)
+    {
+        return RPC(rpc_name);
+    }
+    /// @deprecated
+    NCBI_DEPRECATED
+    CDB_BCPInCmd* BCPIn(const string& table_name, unsigned int /*unused*/)
+    {
+        return BCPIn(table_name);
+    }
+    /// @deprecated
+    NCBI_DEPRECATED
+    CDB_CursorCmd* Cursor(const string& cursor_name,
+                          const string& query,
+                          unsigned int /*unused*/,
+                          unsigned int  batch_size)
+    {
+        return Cursor(cursor_name, query, batch_size);
+    }
 
 private:
     impl::CConnection* m_ConnImpl;
@@ -483,6 +491,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_LangCmd : public I_LangCmd
 {
 public:
     /// Add more text to the language command
+    /// @deprecated
     NCBI_DEPRECATED
     virtual bool More(const string& query_text);
 
@@ -507,11 +516,13 @@ public:
     /// Send command to the server
     virtual bool Send();
     /// Implementation-specific.
+    /// @deprecated
     NCBI_DEPRECATED virtual bool WasSent() const;
 
     /// Cancel the command execution
     virtual bool Cancel();
     /// Implementation-specific.
+    /// @deprecated
     NCBI_DEPRECATED virtual bool WasCanceled() const;
 
     /// Get result set
@@ -588,11 +599,13 @@ public:
     /// Send command to the server
     virtual bool Send();
     /// Implementation-specific.
+    /// @deprecated
     NCBI_DEPRECATED virtual bool WasSent() const;
 
     /// Cancel the command execution
     virtual bool Cancel();
     /// Implementation-specific.
+    /// @deprecated
     NCBI_DEPRECATED virtual bool WasCanceled() const;
 
     /// Get result set.
@@ -618,6 +631,7 @@ public:
 
     /// Set the "recompile before execute" flag for the stored proc
     /// Implementation-specific.
+    /// @deprecated
     NCBI_DEPRECATED virtual void SetRecompile(bool recompile = true);
 
     /// Get a name of the procedure.

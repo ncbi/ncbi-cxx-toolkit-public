@@ -366,11 +366,13 @@ public:
     /// Send command to the server
     virtual bool Send(void) = 0;
     /// Implementation-specific.
+    /// @deprecated
     virtual bool WasSent(void) const = 0;
 
     /// Cancel the command execution
     virtual bool Cancel(void) = 0;
     /// Implementation-specific.
+    /// @deprecated
     virtual bool WasCanceled(void) const = 0;
 
     /// Get result set
@@ -412,7 +414,7 @@ public:
 
 protected:
     /// Add more text to the language command
-    NCBI_DEPRECATED
+    /// @deprecated
     virtual bool More(const string& query_text) = 0;
 };
 
@@ -1053,25 +1055,10 @@ protected:
 
     /// Language command
     virtual CDB_LangCmd* LangCmd(const string& lang_query) = 0;
-    NCBI_DEPRECATED 
-    CDB_LangCmd* LangCmd(const string& lang_query, unsigned int)
-    {
-        return LangCmd(lang_query);
-    }
     /// Remote procedure call
     virtual CDB_RPCCmd* RPC(const string& rpc_name) = 0;
-    NCBI_DEPRECATED 
-    CDB_RPCCmd* RPC(const string& rpc_name, unsigned int)
-    {
-        return RPC(rpc_name);
-    }
     /// "Bulk copy in" command
     virtual CDB_BCPInCmd* BCPIn(const string& table_name) = 0;
-    NCBI_DEPRECATED 
-    CDB_BCPInCmd* BCPIn(const string& table_name, unsigned int)
-    {
-        return BCPIn(table_name);
-    }
     /// Cursor
     virtual CDB_CursorCmd* Cursor(const string& cursor_name,
                                   const string& query,
@@ -1080,14 +1067,6 @@ protected:
                           const string& query)
     {
         return Cursor(cursor_name, query, 1);
-    }
-    NCBI_DEPRECATED 
-    CDB_CursorCmd* Cursor(const string& cursor_name,
-                                  const string& query,
-                                  unsigned int,
-                                  unsigned int  batch_size)
-    {
-        return Cursor(cursor_name, query, batch_size);
     }
     /// @brief 
     ///   Create send-data command.
@@ -1250,6 +1229,34 @@ protected:
     ///   Number of seconds.  If "nof_secs" is zero or is "too big" 
     ///   (depends on the underlying DB API), then set the timeout to infinite.
     virtual void SetTimeout(size_t nof_secs) = 0;
+
+public:
+    // Deprecated legacy methods.
+
+    /// @deprecated 
+    CDB_LangCmd* LangCmd(const string& lang_query, unsigned int /*unused*/)
+    {
+        return LangCmd(lang_query);
+    }
+    /// @deprecated 
+    CDB_RPCCmd* RPC(const string& rpc_name, unsigned int /*unused*/)
+    {
+        return RPC(rpc_name);
+    }
+    /// @deprecated 
+    CDB_BCPInCmd* BCPIn(const string& table_name, unsigned int /*unused*/)
+    {
+        return BCPIn(table_name);
+    }
+    /// @deprecated 
+    CDB_CursorCmd* Cursor(const string& cursor_name,
+                                  const string& query,
+                                  unsigned int /*unused*/,
+                                  unsigned int  batch_size)
+    {
+        return Cursor(cursor_name, query, batch_size);
+    }
+
 };
 
 
