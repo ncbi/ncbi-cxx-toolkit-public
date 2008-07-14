@@ -113,14 +113,14 @@ COrg_ref::SetTaxId( int tax_id )
     return old_id;
 }
 
-bool COrg_ref::IsSetOrgMod(void) const
-{
-    return IsSetOrgname () && GetOrgname ().IsSetMod ();
-}
-
 bool COrg_ref::IsSetLineage(void) const
 {
     return IsSetOrgname () && GetOrgname ().IsSetLineage ();
+}
+
+const string& COrg_ref::GetLineage(void) const
+{
+    return GetOrgname ().GetLineage ();
 }
 
 bool COrg_ref::IsSetGcode(void) const
@@ -128,14 +128,34 @@ bool COrg_ref::IsSetGcode(void) const
     return IsSetOrgname () && GetOrgname ().IsSetGcode ();
 }
 
+int COrg_ref::GetGcode(void) const
+{
+    return GetOrgname ().GetGcode ();
+}
+
 bool COrg_ref::IsSetMgcode(void) const
 {
     return IsSetOrgname () && GetOrgname ().IsSetMgcode ();
 }
 
+int COrg_ref::GetMgcode(void) const
+{
+    return GetOrgname ().GetMgcode ();
+}
+
 bool COrg_ref::IsSetDivision(void) const
 {
     return IsSetOrgname () && GetOrgname ().IsSetDiv ();
+}
+
+const string& COrg_ref::GetDivision(void) const
+{
+    return GetOrgname ().GetDiv ();
+}
+
+bool COrg_ref::IsSetOrgMod(void) const
+{
+    return IsSetOrgname () && GetOrgname ().IsSetMod ();
 }
 
 

@@ -183,9 +183,59 @@ bool CBioSource::IsSetTaxname(void) const
     return IsSetOrg () && GetOrg ().IsSetTaxname ();
 }
 
+const string& CBioSource::GetTaxname(void) const
+{
+    return GetOrg ().GetTaxname ();
+}
+
 bool CBioSource::IsSetCommon(void) const
 {
     return IsSetOrg () && GetOrg ().IsSetCommon ();
+}
+
+const string& CBioSource::GetCommon(void) const
+{
+    return GetOrg ().GetCommon ();
+}
+
+bool CBioSource::IsSetLineage(void) const
+{
+    return IsSetOrg () && GetOrg ().IsSetLineage ();
+}
+
+const string& CBioSource::GetLineage(void) const
+{
+    return GetOrg ().GetLineage ();
+}
+
+bool CBioSource::IsSetGcode(void) const
+{
+    return IsSetOrg () && GetOrg ().IsSetGcode ();
+}
+
+int CBioSource::GetGcode(void) const
+{
+    return GetOrg ().GetGcode ();
+}
+
+bool CBioSource::IsSetMgcode(void) const
+{
+    return IsSetOrg () && GetOrg ().IsSetMgcode ();
+}
+
+int CBioSource::GetMgcode(void) const
+{
+    return GetOrg ().GetMgcode ();
+}
+
+bool CBioSource::IsSetDivision(void) const
+{
+    return IsSetOrg () && GetOrg ().IsSetDivision ();
+}
+
+const string& CBioSource::GetDivision(void) const
+{
+    return GetOrg ().GetDivision ();
 }
 
 bool CBioSource::IsSetOrgname(void) const
@@ -196,26 +246,6 @@ bool CBioSource::IsSetOrgname(void) const
 bool CBioSource::IsSetOrgMod(void) const
 {
   return IsSetOrg () && GetOrg ().IsSetOrgMod ();
-}
-
-bool CBioSource::IsSetLineage(void) const
-{
-    return IsSetOrg () && GetOrg ().IsSetLineage ();
-}
-
-bool CBioSource::IsSetGcode(void) const
-{
-    return IsSetOrg () && GetOrg ().IsSetGcode ();
-}
-
-bool CBioSource::IsSetMgcode(void) const
-{
-    return IsSetOrg () && GetOrg ().IsSetMgcode ();
-}
-
-bool CBioSource::IsSetDivision(void) const
-{
-    return IsSetOrg () && GetOrg ().IsSetDivision ();
 }
 
 
