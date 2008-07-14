@@ -29,11 +29,12 @@
 
 #include <ncbi_pch.hpp>
 
+#include <util/value_convert.hpp>
+
 #include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
-#include "dbapi_value_convert.hpp"
 
 #include <dbapi/error_codes.hpp>
 
@@ -125,7 +126,7 @@ void CConnection::CheckCanOpen(void)
 
     // Check for maximum number of connections
     if (!CDbapiConnMgr::Instance().AddConnect()) {
-		const string conn_num = convert(CDbapiConnMgr::Instance().GetMaxConnect());
+		const string conn_num = ConvertSafe(CDbapiConnMgr::Instance().GetMaxConnect());
 		const string msg = 
 			string("Cannot create new connection: maximum connections amount (")
 			+ conn_num
