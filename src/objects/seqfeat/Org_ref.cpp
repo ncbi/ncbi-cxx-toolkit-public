@@ -113,6 +113,31 @@ COrg_ref::SetTaxId( int tax_id )
     return old_id;
 }
 
+bool COrg_ref::IsSetOrgMod(void) const
+{
+    return IsSetOrgname () && GetOrgname ().IsSetMod ();
+}
+
+bool COrg_ref::IsSetLineage(void) const
+{
+    return IsSetOrgname () && GetOrgname ().IsSetLineage ();
+}
+
+bool COrg_ref::IsSetGcode(void) const
+{
+    return IsSetOrgname () && GetOrgname ().IsSetGcode ();
+}
+
+bool COrg_ref::IsSetMgcode(void) const
+{
+    return IsSetOrgname () && GetOrgname ().IsSetMgcode ();
+}
+
+bool COrg_ref::IsSetDivision(void) const
+{
+    return IsSetOrgname () && GetOrgname ().IsSetDiv ();
+}
+
 
 
 

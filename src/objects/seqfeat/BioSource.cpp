@@ -193,6 +193,31 @@ bool CBioSource::IsSetOrgname(void) const
     return IsSetOrg () && GetOrg ().IsSetOrgname ();
 }
 
+bool CBioSource::IsSetOrgMod(void) const
+{
+  return IsSetOrg () && GetOrg ().IsSetOrgMod ();
+}
+
+bool CBioSource::IsSetLineage(void) const
+{
+    return IsSetOrg () && GetOrg ().IsSetLineage ();
+}
+
+bool CBioSource::IsSetGcode(void) const
+{
+    return IsSetOrg () && GetOrg ().IsSetGcode ();
+}
+
+bool CBioSource::IsSetMgcode(void) const
+{
+    return IsSetOrg () && GetOrg ().IsSetMgcode ();
+}
+
+bool CBioSource::IsSetDivision(void) const
+{
+    return IsSetOrg () && GetOrg ().IsSetDivision ();
+}
+
 
 
 END_objects_SCOPE // namespace ncbi::objects::
