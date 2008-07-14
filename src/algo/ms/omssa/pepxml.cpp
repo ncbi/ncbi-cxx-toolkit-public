@@ -137,9 +137,9 @@ void CPepXML::ConvertModSetting(CRef<CSearch_summary> sSum, CRef<CMSModSpecSet> 
             aaMod->SetAttlist().SetAminoacid(aaStr);
             double mdiff = MSSCALE2DBL(Modset->GetModMass(modnum));
             double aaMass = MonoMass[modchar];
-            aaMassMap.insert(TAminoAcidMassPair(aa, aaMass));
-            string mass = NStr::DoubleToString(aaMass - mdiff);
-            aaMod->SetAttlist().SetMassdiff(NStr::DoubleToString(mdiff));
+            //aaMassMap.insert(TAminoAcidMassPair(aa, aaMass));
+            string mass = NStr::DoubleToString(aaMass + mdiff, 6);
+            aaMod->SetAttlist().SetMassdiff(NStr::DoubleToString(mdiff, 6));
             aaMod->SetAttlist().SetMass(mass);
             if (fixed) {
                 aaMod->SetAttlist().SetVariable("N");
@@ -245,6 +245,13 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
     float scale = static_cast<float>(inOMSSA.GetRequest().front()->GetSettings().GetScale());
 
     CTime datetime(CTime::eCurrent);
+
+    // set up aaMassMap for modifications
+    for (int modchar=0; modchar < 29; modchar++) {
+        char aa = ConvertAA(modchar);
+        double aaMass = MonoMass[modchar];
+        aaMassMap.insert(TAminoAcidMassPair(aa, aaMass));
+    }
 
     this->SetAttlist().SetDate(datetime.AsString());
     this->SetAttlist().SetSummary_xml(newname);
