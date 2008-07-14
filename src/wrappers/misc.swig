@@ -43,13 +43,13 @@ objects/docsum/BaseURL.hpp
 objects/docsum/BaseURL_.hpp
 objects/docsum/Component.hpp
 objects/docsum/Component_.hpp
+objects/docsum/Docsum_3_0_module.hpp
 objects/docsum/ExchangeSet.hpp
 objects/docsum/ExchangeSet_.hpp
 objects/docsum/FxnSet.hpp
 objects/docsum/FxnSet_.hpp
 objects/docsum/MapLoc.hpp
 objects/docsum/MapLoc_.hpp
-objects/docsum/NSE_module.hpp
 objects/docsum/PrimarySequence.hpp
 objects/docsum/PrimarySequence_.hpp
 objects/docsum/Rs.hpp
