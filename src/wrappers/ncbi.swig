@@ -39,6 +39,8 @@
 %feature("compactdefaultargs");
 %feature("compactdefaultargs", "0") ncbi::CSymDustMasker::CSymDustMasker;
 %feature("compactdefaultargs", "0") ncbi::CPairwiseAln::CPairwiseAln;
+%feature("compactdefaultargs", "0")
+    ncbi::cobalt::CMultiAligner::SetQueryClustersInfo;
 
 %include typemap_fixes.i
 
