@@ -67,12 +67,20 @@ public:
     int SetTaxId( int tax_id );
 
     // shortcut access to selected OrgName methods
-    bool IsSetOrgMod(void) const;
     bool IsSetLineage(void) const;
+    const string& GetLineage(void) const;
+    
     bool IsSetGcode(void) const;
+    int GetGcode(void) const;
+    
     bool IsSetMgcode(void) const;
+    int GetMgcode(void) const;
+    
     bool IsSetDivision(void) const;
-
+    const string& GetDivision(void) const;
+    
+    bool IsSetOrgMod(void) const;
+    
 private:
     // Prohibit copy constructor and assignment operator
     COrg_ref(const COrg_ref& value);

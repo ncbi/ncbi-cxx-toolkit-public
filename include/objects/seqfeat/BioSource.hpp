@@ -41,6 +41,7 @@
 // generated includes
 #include <objects/seqfeat/BioSource_.hpp>
 
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -67,13 +68,26 @@ public:
 
     // shortcut access to selected Org-ref and OrgName methods
     bool IsSetTaxname(void) const;
+    const string& GetTaxname(void) const;
+
     bool IsSetCommon(void) const;
-    bool IsSetOrgname(void) const;
-    bool IsSetOrgMod(void) const;
+    const string& GetCommon(void) const;
+
     bool IsSetLineage(void) const;
+    const string& GetLineage(void) const;
+
     bool IsSetGcode(void) const;
+    int GetGcode(void) const;
+
     bool IsSetMgcode(void) const;
+    int GetMgcode(void) const;
+
     bool IsSetDivision(void) const;
+    const string& GetDivision(void) const;
+
+    bool IsSetOrgname(void) const;
+
+    bool IsSetOrgMod(void) const;
     
 private:
     // Prohibit copy constructor and assignment operator
