@@ -212,7 +212,7 @@ class NCBI_DBAPIDRIVER_EXPORT CRowInfo_SP_SQL_Server : public CCachedRowInfo
 {
 public:
     CRowInfo_SP_SQL_Server(
-            const string& name,
+            const string& sp_name,
             impl::CConnection& conn, 
             impl::CDB_Params& bindings
             );
@@ -220,9 +220,9 @@ public:
 
 protected:
     virtual void Initialize(void) const;
-    const string& GetName(void) const
+    const string& GetSPName(void) const
     {
-        return m_Name;
+        return m_SPName;
     }
     impl::CConnection& GetCConnection(void) const
     {
@@ -230,7 +230,7 @@ protected:
     }
 
 private:
-    const string& m_Name;
+    const string& m_SPName;
     mutable impl::CConnection& m_Conn;
 };
 

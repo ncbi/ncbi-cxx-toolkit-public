@@ -347,12 +347,12 @@ CCachedRowInfo::GetDirection(const CDBParamVariant& param) const
 
 ////////////////////////////////////////////////////////////////////////////////
 CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
-        const string& name,
+        const string& sp_name,
         impl::CConnection& conn, 
         impl::CDB_Params& bindings
         )
 : CCachedRowInfo(bindings)
-, m_Name(name)
+, m_SPName(sp_name)
 , m_Conn(conn)
 {
 }
@@ -379,7 +379,7 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
         {
             vector<string> arr_param;
 
-            NStr::Tokenize(GetName(), ".", arr_param);
+            NStr::Tokenize(GetSPName(), ".", arr_param);
             size_t pos = 0;
 
             switch (arr_param.size()) {
@@ -391,7 +391,7 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
                     sp_name = arr_param[pos++];
                     break;
                 default:
-                    DATABASE_DRIVER_ERROR("Invalid format of stored procedure's name: " + GetName(), 1);
+                    DATABASE_DRIVER_ERROR("Invalid format of stored procedure's name: " + GetSPName(), 1);
             }
         }
 
