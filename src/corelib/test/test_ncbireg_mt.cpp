@@ -60,6 +60,16 @@ private:
 
 bool CTestRegApp::Thread_Run(int /*idx*/)
 {
+    // Check if CNcbiEnvironment is thread safe
+    {{
+    CNcbiEnvironment env;
+    for (unsigned i = 0; i < s_NumThreads*100; i++) {
+        string e = "TESTENV" + NStr::IntToString(i);
+        assert(!env.Get(e).empty());
+    }
+    env.Reset();
+    }}
+
     list<string> sections;
     list<string> entries;
 
@@ -284,6 +294,11 @@ bool CTestRegApp::TestApp_Init(void)
     m_Registry.EnumerateEntries(NcbiEmptyString, &entries);
     assert( entries.empty() );
 
+    // Put some variables to test CNcbiEnvironment
+    for (unsigned i = 0; i < s_NumThreads*100; i++) {
+        string e = "TESTENV" + NStr::IntToString(i) + "=value";
+        putenv(strdup(e.c_str()));
+    }
     return true;
 }
 

@@ -148,6 +148,7 @@ private:
     };
     typedef map<string, SEnvValue> TCache;
     mutable TCache m_Cache;
+    mutable CFastMutex m_CacheMutex;
 };
 
 

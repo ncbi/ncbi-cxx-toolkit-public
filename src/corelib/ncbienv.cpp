@@ -83,6 +83,7 @@ CNcbiEnvironment::~CNcbiEnvironment(void)
 
 void CNcbiEnvironment::Reset(const char* const* envp)
 {
+    CFastMutexGuard LOCK(m_CacheMutex);
     // delete old environment values
     m_Cache.clear();
 
@@ -105,6 +106,7 @@ void CNcbiEnvironment::Reset(const char* const* envp)
 
 const string& CNcbiEnvironment::Get(const string& name) const
 {
+    CFastMutexGuard LOCK(m_CacheMutex);
     TCache::const_iterator i = m_Cache.find(name);
     if ( i != m_Cache.end() )
         return i->second.value;
@@ -116,6 +118,7 @@ void CNcbiEnvironment::Enumerate(list<string>& names, const string& prefix)
     const
 {
     names.clear();
+    CFastMutexGuard LOCK(m_CacheMutex);
     for (TCache::const_iterator it = m_Cache.lower_bound(prefix);
          it != m_Cache.end()  &&  NStr::StartsWith(it->first, prefix);  ++it) {
         if ( !it->second.value.empty() ) { // missing/empty values cached too...
@@ -142,6 +145,7 @@ void CNcbiEnvironment::Set(const string& name, const string& value)
                    "failed to set environment variable " + name);
     }
 
+    CFastMutexGuard LOCK(m_CacheMutex);
     TCache::const_iterator i = m_Cache.find(name);
     if ( i != m_Cache.end()  &&  i->second.ptr ) {
         free(i->second.ptr);
