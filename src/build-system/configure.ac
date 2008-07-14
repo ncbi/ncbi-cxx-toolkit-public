@@ -1044,7 +1044,10 @@ if test "${with_universal-no}" != "no" ; then
        p*pc*-*-darwin8.*)
          # Must specify -isysroot ..., but only once; anyway, the preprocessor
          # needs to see it, and naturally can't cope with multiple -arch flags.
-         SYSROOT="-isysroot /Developer/SDKs/MacOSX10.4u.sdk"
+         # The -mmacosx-version-min flag avoids link errors under OS 10.5
+         # (Darwin 9), which otherwise tries to use crt1.10.5.o despite the
+         # request for a sysroot lacking that file.
+         SYSROOT="-isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4"
          #ARCH_CFLAGS="$SYSROOT $ARCH_CFLAGS"
          CC="$CC $SYSROOT"
          CXX="$CXX $SYSROOT"
