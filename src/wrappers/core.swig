@@ -139,6 +139,8 @@ static bool IsSameTypeInfo( const CSerialObject& obj1,
 
 %%
 
+common/ncbi_source_ver.h
+
 corelib/ncbicfg.h
 corelib/ncbi_limits.h
 
