@@ -340,7 +340,7 @@ RunTest() {
              echo -n "ST" >> "\$x_test_rep"
              ;;
          esac
-         echo "\${build_tree%%/*}\${ARCH:-32}--i386-pc-win\${ARCH:-32}-\${SRV_NAME}" >> "\$x_test_rep"
+         echo "\${build_tree%%/*}\${ARCH}--i386-pc-win\${ARCH:-32}-\${SRV_NAME}" >> "\$x_test_rep"
          echo "\$x_wdir" >> "\$x_test_rep"
          echo "\$x_run" >> "\$x_test_rep"
          echo "\$x_real_name" >> "\$x_test_rep"
