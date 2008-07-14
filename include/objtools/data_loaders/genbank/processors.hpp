@@ -227,6 +227,7 @@ public:
 
     void ProcessData(CReaderRequestResult& result,
                      const TBlobId& blob_id,
+                     TBlobState blob_state,
                      TChunkId chunk_id,
                      const CID2_Reply_Data& data,
                      TSplitVersion split_version = 0,
@@ -234,8 +235,12 @@ public:
 
     void SaveData(CReaderRequestResult& result,
                   const TBlobId& blob_id,
+                  TBlobState blob_state,
                   TChunkId chunk_id,
                   CWriter* writer,
+                  const CID2_Reply_Data& data) const;
+    void SaveData(CObjectOStream& obj_stream,
+                  TBlobState blob_state,
                   const CID2_Reply_Data& data) const;
 
     static void x_FixDataFormat(CID2_Reply_Data& data);
@@ -266,12 +271,14 @@ public:
 
     void SaveDataAndSkel(CReaderRequestResult& result,
                          const TBlobId& blob_id,
+                         TBlobState blob_state,
                          TChunkId chunk_id,
                          CWriter* writer,
                          TSplitVersion split_version,
                          const CID2_Reply_Data& split_data,
                          const CID2_Reply_Data& skel_data) const;
     void SaveDataAndSkel(CObjectOStream& obj_stream,
+                         TBlobState blob_state,
                          TSplitVersion split_version,
                          const CID2_Reply_Data& split_data,
                          const CID2_Reply_Data& skel_data) const;

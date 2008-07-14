@@ -1076,6 +1076,7 @@ CProcessor_St_SE::ReadBlobState(CObjectIStream& obj_stream) const
 void CProcessor_St_SE::WriteBlobState(CObjectOStream& obj_stream,
                                       TBlobState blob_state) const
 {
+    obj_stream.SetFlags(CObjectOStream::fFlagNoAutoFlush);
     obj_stream.WriteInt4(blob_state);
 }
 
@@ -1292,7 +1293,7 @@ CProcessor::EType CProcessor_ID2::GetType(void) const
 
 CProcessor::TMagic CProcessor_ID2::GetMagic(void) const
 {
-    static TMagic kMagic = s_GetMagic("ID2x");
+    static TMagic kMagic = s_GetMagic("ID2s");
     return kMagic;
 }
 
@@ -1302,14 +1303,16 @@ void CProcessor_ID2::ProcessObjStream(CReaderRequestResult& result,
                                       TChunkId chunk_id,
                                       CObjectIStream& obj_stream) const
 {
+    TBlobState blob_state = obj_stream.ReadInt4();
     CID2_Reply_Data data;
     obj_stream >> data;
-    ProcessData(result, blob_id, chunk_id, data);
+    ProcessData(result, blob_id, blob_state, chunk_id, data);
 }
 
 
 void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                                  const TBlobId& blob_id,
+                                 TBlobState blob_state,
                                  TChunkId chunk_id,
                                  const CID2_Reply_Data& data,
                                  int split_version,
@@ -1347,6 +1350,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                       s_Stat_Main_Read,
                       data_size);
 
+        blob->SetBlobState(blob_state);
         SetSeq_entry(result, blob_id, chunk_id, blob, entry);
         CWriter* writer = GetWriter(result);
         if ( writer ) {
@@ -1363,7 +1367,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                 }
             }
             else {
-                SaveData(result, blob_id, chunk_id, writer, data);
+                SaveData(result, blob_id, blob_state, chunk_id, writer, data);
             }
         }
         break;
@@ -1400,14 +1404,14 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         CWriter* writer = GetWriter(result);
         if ( writer ) {
             if ( with_skeleton ) {
-                SaveData(result, blob_id, chunk_id, writer, data);
+                SaveData(result, blob_id, blob_state, chunk_id, writer, data);
             }
             else if ( skel ) {
                 const CProcessor_ID2AndSkel* prc =
                     dynamic_cast<const CProcessor_ID2AndSkel*>
                     (&m_Dispatcher->GetProcessor(eType_ID2AndSkel));
                 if ( prc ) {
-                    prc->SaveDataAndSkel(result, blob_id, chunk_id,
+                    prc->SaveDataAndSkel(result, blob_id, blob_state, chunk_id,
                                          writer, split_version,
                                          data, *skel);
                 }
@@ -1439,7 +1443,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         
         CWriter* writer = GetWriter(result);
         if ( writer ) {
-            SaveData(result, blob_id, chunk_id, writer, data);
+            SaveData(result, blob_id, blob_state, chunk_id, writer, data);
         }
         break;
     }
@@ -1454,6 +1458,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
 
 void CProcessor_ID2::SaveData(CReaderRequestResult& result,
                               const TBlobId& blob_id,
+                              TBlobState blob_state,
                               TChunkId chunk_id,
                               CWriter* writer,
                               const CID2_Reply_Data& data) const
@@ -1469,9 +1474,19 @@ void CProcessor_ID2::SaveData(CReaderRequestResult& result,
     }
     {{
         CObjectOStreamAsnBinary obj_stream(**stream);
-        obj_stream << data;
+        SaveData(obj_stream, blob_state, data);
     }}
     stream->Close();
+}
+
+
+void CProcessor_ID2::SaveData(CObjectOStream& obj_stream,
+                              TBlobState blob_state,
+                              const CID2_Reply_Data& data) const
+{
+    obj_stream.SetFlags(CObjectOStream::fFlagNoAutoFlush);
+    obj_stream.WriteInt4(blob_state);
+    obj_stream << data;
 }
 
 
@@ -1643,7 +1658,7 @@ CProcessor::EType CProcessor_ID2AndSkel::GetType(void) const
 
 CProcessor::TMagic CProcessor_ID2AndSkel::GetMagic(void) const
 {
-    static TMagic kMagic = s_GetMagic("I2sk");
+    static TMagic kMagic = s_GetMagic("I2ss");
     return kMagic;
 }
 
@@ -1653,11 +1668,13 @@ void CProcessor_ID2AndSkel::ProcessObjStream(CReaderRequestResult& result,
                                              TChunkId chunk_id,
                                              CObjectIStream& obj_stream) const
 {
+    TBlobState blob_state;
     TSplitVersion split_version;
     CID2_Reply_Data split_data, skel_data;
 
     GB_STATS_START();
 
+    blob_state = obj_stream.ReadInt4();
     split_version = obj_stream.ReadInt4();
     obj_stream >> split_data;
     obj_stream >> skel_data;
@@ -1666,13 +1683,14 @@ void CProcessor_ID2AndSkel::ProcessObjStream(CReaderRequestResult& result,
                   s_Stat_Main_Read,
                   obj_stream.GetStreamPos());
 
-    ProcessData(result, blob_id, chunk_id,
+    ProcessData(result, blob_id, blob_state, chunk_id,
                 split_data, split_version, ConstRef(&skel_data));
 }
 
 
 void CProcessor_ID2AndSkel::SaveDataAndSkel(CReaderRequestResult& result,
                                             const TBlobId& blob_id,
+                                            TBlobState blob_state,
                                             TChunkId chunk_id,
                                             CWriter* writer,
                                             TSplitVersion split_version,
@@ -1691,18 +1709,20 @@ void CProcessor_ID2AndSkel::SaveDataAndSkel(CReaderRequestResult& result,
     }
     {{
         CObjectOStreamAsnBinary obj_stream(**stream);
-        SaveDataAndSkel(obj_stream, split_version, split, skel);
+        SaveDataAndSkel(obj_stream, blob_state, split_version, split, skel);
     }}
     stream->Close();
 }
 
 
 void CProcessor_ID2AndSkel::SaveDataAndSkel(CObjectOStream& obj_stream,
+                                            TBlobState blob_state,
                                             TSplitVersion split_version,
                                             const CID2_Reply_Data& split,
                                             const CID2_Reply_Data& skel) const
 {
     obj_stream.SetFlags(CObjectOStream::fFlagNoAutoFlush);
+    obj_stream.WriteInt4(blob_state);
     obj_stream.WriteInt4(split_version);
     obj_stream << split;
     obj_stream << skel;

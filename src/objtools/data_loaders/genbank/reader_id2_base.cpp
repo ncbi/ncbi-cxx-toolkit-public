@@ -1388,19 +1388,24 @@ void CId2ReaderBase::x_ProcessGetBlob(
         return;
     }
 
+    TBlobState blob_state = 0;
+    if ( errors & fError_warning_dead ) {
+        //ERR_POST_X(7, "blob.SetBlobState(CBioseq_Handle::fState_dead)");
+        blob_state = CBioseq_Handle::fState_dead;
+    }
+    if ( errors & fError_warning_suppressed ) {
+        //ERR_POST_X(8, "blob.SetBlobState(CBioseq_Handle::fState_suppress_perm)");
+        blob_state = CBioseq_Handle::fState_suppress_perm;
+    }
+    if ( blob_state ) {
+        m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
+    }
+
     if ( reply.GetSplit_version() != 0 ) {
         // split info will follow
         // postpone parsing this blob
         loaded_set.m_Skeletons[blob_id] = &reply.GetData();
         return;
-    }
-    if ( errors & fError_warning_dead ) {
-        //ERR_POST_X(7, "blob.SetBlobState(CBioseq_Handle::fState_dead)");
-        blob.SetBlobState(CBioseq_Handle::fState_dead);
-    }
-    if ( errors & fError_warning_suppressed ) {
-        //ERR_POST_X(8, "blob.SetBlobState(CBioseq_Handle::fState_suppress_perm)");
-        blob.SetBlobState(CBioseq_Handle::fState_suppress_perm);
     }
     if ( reply.GetBlob_id().GetSub_sat() == CID2_Blob_Id::eSub_sat_snp ) {
         m_Dispatcher->GetProcessor(CProcessor::eType_Seq_entry_SNP)
@@ -1410,7 +1415,8 @@ void CId2ReaderBase::x_ProcessGetBlob(
     else {
         dynamic_cast<const CProcessor_ID2&>
             (m_Dispatcher->GetProcessor(CProcessor::eType_ID2))
-            .ProcessData(result, blob_id, chunk_id, reply.GetData());
+            .ProcessData(result, blob_id, blob_state, chunk_id,
+                         reply.GetData());
     }
     _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
 }
@@ -1452,7 +1458,7 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
 
     dynamic_cast<const CProcessor_ID2&>
         (m_Dispatcher->GetProcessor(CProcessor::eType_ID2))
-        .ProcessData(result, blob_id, chunk_id,
+        .ProcessData(result, blob_id, blob->GetBlobState(), chunk_id,
                      reply.GetData(), reply.GetSplit_version(), skel);
 
     _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
@@ -1486,7 +1492,7 @@ void CId2ReaderBase::x_ProcessGetChunk(
     
     dynamic_cast<const CProcessor_ID2&>
         (m_Dispatcher->GetProcessor(CProcessor::eType_ID2))
-        .ProcessData(result, blob_id, reply.GetChunk_id(), reply.GetData());
+        .ProcessData(result, blob_id, 0, reply.GetChunk_id(), reply.GetData());
 }
 
 
