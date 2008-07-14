@@ -31,6 +31,12 @@
  */
 
 
+%ignore ncbi::objects::CAutoDefSourceModifierInfo::AddQual;
+%ignore ncbi::objects::CAutoDefSourceModifierInfo::RemoveQual;
+%ignore ncbi::objects::CAutoDefModifierCombo::GetNumUniqueDescriptions;
+%ignore ncbi::objects::CAutoDefModifierCombo::AllUnique;
+%ignore ncbi::objects::CAutoDef::GetBestModifierList;
+
 %ignore *::CRemoteBlastDataLoader_CCachedSeqData::AddDelta;
 
 %ignore ncbi::objects::CAutoDef::DoAutoDef;
