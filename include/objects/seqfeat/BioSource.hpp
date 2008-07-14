@@ -65,11 +65,16 @@ public:
     // function for getting organelle name from genome value
     static string GetOrganelleByGenome (unsigned int genome);
 
-    // shortcut access to selected Org-ref methods
+    // shortcut access to selected Org-ref and OrgName methods
     bool IsSetTaxname(void) const;
     bool IsSetCommon(void) const;
     bool IsSetOrgname(void) const;
-
+    bool IsSetOrgMod(void) const;
+    bool IsSetLineage(void) const;
+    bool IsSetGcode(void) const;
+    bool IsSetMgcode(void) const;
+    bool IsSetDivision(void) const;
+    
 private:
     // Prohibit copy constructor and assignment operator
     CBioSource(const CBioSource& value);

@@ -66,6 +66,13 @@ public:
     // Returns old value of tax id or 0 if it was not found
     int SetTaxId( int tax_id );
 
+    // shortcut access to selected OrgName methods
+    bool IsSetOrgMod(void) const;
+    bool IsSetLineage(void) const;
+    bool IsSetGcode(void) const;
+    bool IsSetMgcode(void) const;
+    bool IsSetDivision(void) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     COrg_ref(const COrg_ref& value);
