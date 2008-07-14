@@ -9,6 +9,4 @@ SRC = ncbicgi cgiapp cgictx ncbicgir ncbires ref_args cgi_util cgi_serial \
       cgi_entry_reader
 LIB = xfcgi
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
-
-REQUIRES = unix
+CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE) -DNCBI_XFCGI_EXPORTS

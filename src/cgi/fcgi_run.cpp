@@ -69,7 +69,11 @@ bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 #include <util/cache/icache.hpp>
 
 # include <fcgiapp.h>
-# include <unistd.h>
+# if defined(NCBI_OS_UNIX)
+#   include <unistd.h>
+#else
+#   include <io.h>
+# endif
 # include <fcntl.h>
 
 // Normal FCGX_Accept ignores interrupts, so alarm() won't do much good
@@ -230,6 +234,12 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     // Registry
     const CNcbiRegistry& reg = GetConfig();
 
+# ifdef HAVE_FCGX_ACCEPT_R
+    // FCGX_Init() started to appear in the Fast-CGI API
+    // simultaneously with FCGX_Accept_r()
+    FCGX_Init();
+# endif
+
     // If to run as a standalone server on local port or named socket
     {{
         string path;
@@ -242,7 +252,11 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             }
         }}
         if ( !path.empty() ) {
+#ifdef NCBI_COMPILER_MSVC
+            _close(0);
+#else
             close(0);
+#endif
 # ifdef HAVE_FCGX_ACCEPT_R
             // FCGX_OpenSocket() started to appear in the Fast-CGI API
             // simultaneously with FCGX_Accept_r()
@@ -340,13 +354,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     }
 
     // Diag.prefix related preparations
-    const string prefix_pid(NStr::IntToString(getpid()) + "-");
+    const string prefix_pid(NStr::IntToString(CProcess::GetCurrentPid()) + "-");
 
-# ifdef HAVE_FCGX_ACCEPT_R
-    // FCGX_Init() started to appear in the Fast-CGI API
-    // simultaneously with FCGX_Accept_r()
-    FCGX_Init();
-# endif
 
     // Main Fast-CGI loop
     CTime mtime = s_GetModTime(GetArguments().GetProgramName());
@@ -388,12 +397,14 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         }
 #   endif
         accept_errcode = FCGX_Accept_r(&request);
+#     if defined(NCBI_OS_UNIX)
         if (request.ipcFd >= 0) {
             // Hide it from any children we spawn, which have no use
             // for it and shouldn't be able to tie it open.
             fcntl(request.ipcFd, F_SETFD,
                   fcntl(request.ipcFd, F_GETFD) | FD_CLOEXEC);
         }
+#     endif
 #   ifdef USE_ALARM
         if ( watch_timeout ) {
             if ( !s_AcceptTimedOut ) {
@@ -492,7 +503,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 m_Context->PutMsg
                     ("FastCGI: "      + NStr::IntToString(m_Iteration) +
                      " iteration of " + NStr::IntToString(max_iterations) +
-                     ", pid "         + NStr::IntToString(getpid()));
+                     ", pid "         + NStr::IntToString(CProcess::GetCurrentPid()));
             }
 
             ConfigureDiagnostics(*m_Context);

@@ -919,7 +919,7 @@
 
 /* Export specifier for library xcgi
  */
-#ifdef NCBI_XCGI_EXPORTS
+#if defined(NCBI_XCGI_EXPORTS) || defined(NCBI_XFCGI_EXPORTS)
 #  define NCBI_XCGI_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_XCGI_EXPORT __declspec(dllimport)
