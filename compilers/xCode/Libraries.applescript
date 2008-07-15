@@ -372,6 +372,8 @@ property id1_fetch_simple : {name:"id1_fetch_simple", path:"app:id1_fetch", inc:
 property objmgr_demo : {name:"objmgr_demo", path:"app:objmgr:demo", dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb", req:false}
 property blast_client : {name:"blast_client", path:"app:blast_client", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_algo ncbi_lds ncbi_xloader_genbank", req:false}
 
+property streamtest : {name:"streamtest", path:"app:streamtest", dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:false}
+
 property datatool : {name:"datatool", path:"serial:datatool", dep:"ncbi_core", req:true}
 
 
@@ -416,7 +418,7 @@ property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_xcache_
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
-property allCTools : {datatool, gbench_plugin_scan, gbench_feedback_agent, gbench_monitor, gbench_cache_agent, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, test_validator, test_basic_cleanup, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo, ini2reg, omssacl, omssamerge}
+property allCTools : {datatool, gbench_plugin_scan, gbench_feedback_agent, gbench_monitor, gbench_cache_agent, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, test_validator, test_basic_cleanup, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo, ini2reg, omssacl, omssamerge, streamtest}
 --property allCTools : {tests}
 
 
