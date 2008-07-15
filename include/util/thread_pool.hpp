@@ -225,11 +225,15 @@ public:
     /// @param min_threads
     ///   Minimum number of threads that have to be launched even
     ///   if there are no tasks added.
+    /// @param threads_mode
+    ///   Running mode of all threads in thread pool. Values fRunDetached and
+    ///   fRunAllowST are ignored.
     ///
     /// @sa AddTask()
-    CThreadPool(unsigned int queue_size,
-                unsigned int max_threads,
-                unsigned int min_threads = 2);
+    CThreadPool(unsigned int      queue_size,
+                unsigned int      max_threads,
+                unsigned int      min_threads = 2,
+                CThread::TRunMode threads_mode = CThread::fRunDefault);
 
     /// Destructor
     virtual ~CThreadPool(void);
@@ -275,8 +279,12 @@ public:
     ///   old and unused threads have to be finished. Default controller
     ///   implementation (set for the pool in case of using other
     ///   constructor) is CThreadPool_Controller_PID class.
+    /// @param threads_mode
+    ///   Running mode of all threads in thread pool. Values fRunDetached and
+    ///   fRunAllowST are ignored.
     CThreadPool(unsigned int            queue_size,
-                CThreadPool_Controller* controller);
+                CThreadPool_Controller* controller,
+                CThread::TRunMode       threads_mode = CThread::fRunDefault);
 
     /// Set timeout to wait for all threads to finish before the pool
     /// should be able to destroy.

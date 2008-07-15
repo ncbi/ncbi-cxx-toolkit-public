@@ -86,19 +86,21 @@ public:
     ///   ThreadPool interface object attached to this implementation
     ///
     /// @sa CThreadPool::CThreadPool()
-    CThreadPool_Impl(CThreadPool* pool_intf,
-                     unsigned int queue_size,
-                     unsigned int max_threads,
-                     unsigned int min_threads);
+    CThreadPool_Impl(CThreadPool*      pool_intf,
+                     unsigned int      queue_size,
+                     unsigned int      max_threads,
+                     unsigned int      min_threads,
+                     CThread::TRunMode threads_mode = CThread::fRunDefault);
 
     /// Constructor with explicitly given controller
     /// @param pool_intf
     ///   ThreadPool interface object attached to this implementation
     ///
     /// @sa CThreadPool::CThreadPool()
-    CThreadPool_Impl(CThreadPool*            pool_intf,
-                     unsigned int            queue_size,
-                     CThreadPool_Controller* controller);
+    CThreadPool_Impl(CThreadPool*        pool_intf,
+                     unsigned int        queue_size,
+                     CThreadPool_Controller* controller,
+                     CThread::TRunMode   threads_mode = CThread::fRunDefault);
 
     /// Get pointer to ThreadPool interface object
     CThreadPool* GetPoolInterface(void) const;
@@ -270,7 +272,9 @@ private:
     ///   ThreadPool interface object attached to this implementation
     /// @param controller
     ///   Controller for the pool
-    void x_Init(CThreadPool* pool_intf, CThreadPool_Controller* controller);
+    void x_Init(CThreadPool*            pool_intf,
+                CThreadPool_Controller* controller,
+                CThread::TRunMode       threads_mode);
 
     /// Destructor. Will be called from CRef
     ~CThreadPool_Impl(void);
@@ -341,6 +345,8 @@ private:
     TThreadsList                     m_IdleThreads;
     /// List of all threads currently executing some tasks
     TThreadsList                     m_WorkingThreads;
+    /// Running mode of all threads
+    CThread::TRunMode                m_ThreadsMode;
     /// Total number of threads
     /// Introduced for more adequate and fast reflecting to threads starting
     /// and stopping events
@@ -1330,32 +1336,36 @@ CThreadPool_Impl::x_GetQueueSize(unsigned int queue_size)
 }
 
 inline
-CThreadPool_Impl::CThreadPool_Impl(CThreadPool* pool_intf,
-                                   unsigned int queue_size,
-                                   unsigned int max_threads,
-                                   unsigned int min_threads)
+CThreadPool_Impl::CThreadPool_Impl(CThreadPool*      pool_intf,
+                                   unsigned int      queue_size,
+                                   unsigned int      max_threads,
+                                   unsigned int      min_threads,
+                                   CThread::TRunMode threads_mode)
     : m_Queue(x_GetQueueSize(queue_size)),
       m_RoomWait(0, kMax_Int),
       m_AbortWait(0, kMax_Int)
 {
     x_Init(pool_intf,
-           new CThreadPool_Controller_PID(max_threads, min_threads));
+           new CThreadPool_Controller_PID(max_threads, min_threads),
+           threads_mode);
 }
 
 inline
 CThreadPool_Impl::CThreadPool_Impl(CThreadPool*            pool_intf,
                                    unsigned int            queue_size,
-                                   CThreadPool_Controller* controller)
+                                   CThreadPool_Controller* controller,
+                                   CThread::TRunMode       threads_mode)
     : m_Queue(x_GetQueueSize(queue_size)),
       m_RoomWait(0, kMax_Int),
       m_AbortWait(0, kMax_Int)
 {
-    x_Init(pool_intf, controller);
+    x_Init(pool_intf, controller, threads_mode);
 }
 
 void
 CThreadPool_Impl::x_Init(CThreadPool*             pool_intf,
-                         CThreadPool_Controller*  controller)
+                         CThreadPool_Controller*  controller,
+                         CThread::TRunMode        threads_mode)
 {
     m_Interface = pool_intf;
     m_SelfRef = this;
@@ -1365,6 +1375,8 @@ CThreadPool_Impl::x_Init(CThreadPool*             pool_intf,
     m_TotalTasks.Set(0);
     m_Aborted = false;
     m_Suspended = false;
+    m_ThreadsMode = (threads_mode | CThread::fRunDetached)
+                     & ~CThread::fRunAllowST;
 
     controller->x_AttachToPool(this);
     m_Controller = controller;
@@ -1411,7 +1423,7 @@ CThreadPool_Impl::LaunchThreads(unsigned int count)
         CRef<CThreadPool_Thread> thread(m_Interface->CreateThread());
         m_IdleThreads.insert(
                         CThreadPool_ThreadImpl::s_GetImplPointer(thread));
-        thread->Run(CThread::fRunDetached);
+        thread->Run(m_ThreadsMode);
     }
 
     m_ThreadsCount.Add(count);
@@ -2022,18 +2034,21 @@ CThreadPool_Thread::OnExit(void)
 
 
 
-CThreadPool::CThreadPool(unsigned int queue_size,
-                         unsigned int max_threads,
-                         unsigned int min_threads)
+CThreadPool::CThreadPool(unsigned int      queue_size,
+                         unsigned int      max_threads,
+                         unsigned int      min_threads,
+                         CThread::TRunMode threads_mode)
 {
-    m_Impl = new CThreadPool_Impl(this, queue_size, max_threads, min_threads);
+    m_Impl = new CThreadPool_Impl(this, queue_size, max_threads, min_threads,
+                                  threads_mode);
     m_Impl->SetInterfaceStarted();
 }
 
 CThreadPool::CThreadPool(unsigned int            queue_size,
-                         CThreadPool_Controller* controller)
+                         CThreadPool_Controller* controller,
+                         CThread::TRunMode       threads_mode)
 {
-    m_Impl = new CThreadPool_Impl(this, queue_size, controller);
+    m_Impl = new CThreadPool_Impl(this, queue_size, controller, threads_mode);
     m_Impl->SetInterfaceStarted();
 }
 
