@@ -138,8 +138,9 @@ CPrefetchRequest::EStatus CPrefetchRequest::Execute(void)
 }
 
 
-CPrefetchManager_Impl::CPrefetchManager_Impl(void)
-    : CThreadPool(kMax_Int, 3),
+CPrefetchManager_Impl::CPrefetchManager_Impl(unsigned max_threads,
+                                             CThread::TRunMode threads_mode)
+    : CThreadPool(kMax_Int, max_threads, 2, threads_mode),
       m_StateMutex(new CObjectFor<CMutex>())
 {
 }

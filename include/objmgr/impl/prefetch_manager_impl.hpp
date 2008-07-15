@@ -59,7 +59,8 @@ class NCBI_XOBJMGR_EXPORT CPrefetchManager_Impl
       public SPrefetchTypes
 {
 public:
-    CPrefetchManager_Impl(void);
+    CPrefetchManager_Impl(unsigned max_threads,
+                          CThread::TRunMode threads_mode);
     ~CPrefetchManager_Impl(void);
 
     typedef unsigned int TPriority;

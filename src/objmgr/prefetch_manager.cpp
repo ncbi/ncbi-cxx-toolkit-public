@@ -58,7 +58,14 @@ IPrefetchListener::~IPrefetchListener(void)
 
 
 CPrefetchManager::CPrefetchManager(void)
-    : m_Impl(new CPrefetchManager_Impl())
+    : m_Impl(new CPrefetchManager_Impl(3, CThread::fRunDefault))
+{
+}
+
+
+CPrefetchManager::CPrefetchManager(unsigned max_threads,
+                                   CThread::TRunMode threads_mode)
+    : m_Impl(new CPrefetchManager_Impl(max_threads, threads_mode))
 {
 }
 

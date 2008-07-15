@@ -104,6 +104,8 @@ class NCBI_XOBJMGR_EXPORT CPrefetchManager :
 {
 public:
     CPrefetchManager(void);
+    explicit CPrefetchManager(unsigned max_threads,
+                              CThread::TRunMode threads_mode = CThread::fRunDefault);
     ~CPrefetchManager(void);
 
     CRef<CPrefetchRequest> AddAction(TPriority priority,
