@@ -93,22 +93,22 @@ typedef CPub::E_Choice TPUB_CHOICE;
 /////////////////////////////////////////////////////////////////////////////
 
 
-/// IF_GET_CLOSEST_MOLINFO
+/// IF_TRY_GET_CLOSEST_MOLINFO
 // Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
 // Dereference with const CMolInfo& molinf = (*cref).GetMolinfo();
-#define IF_GET_CLOSEST_MOLINFO(Cref, Bsq) \
+#define IF_TRY_GET_CLOSEST_MOLINFO(Cref, Bsq) \
 if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Molinfo))
 
-/// IF_GET_CLOSEST_BIOSOURCE
+/// IF_TRY_GET_CLOSEST_BIOSOURCE
 // Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
 // Dereference with const CBioSource& source = (*cref).GetSource();
-#define IF_GET_CLOSEST_BIOSOURCE(Cref, Bsq) \
+#define IF_TRY_GET_CLOSEST_BIOSOURCE(Cref, Bsq) \
 if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Source))
 
-/// IF_GET_CLOSEST_TITLE
+/// IF_TRY_GET_CLOSEST_TITLE
 // Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
 // Dereference with const string& title = (*cref).GetTitle();
-#define IF_GET_CLOSEST_TITLE(Cref, Bsq) \
+#define IF_TRY_GET_CLOSEST_TITLE(Cref, Bsq) \
 if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Title))
 
 
@@ -170,7 +170,7 @@ if (! (Test)) {} else ITERATE(Type, Var, Cont)
 // Takes const CSeq_submit& as input and makes iterator to const CSeq_entry&
 // Dereference with const CSeq_entry& se = **iter;
 #define FOR_EACH_SEQENTRY_ON_SEQSUBMIT(Iter, Ss) \
-NCBI_TEST_ITERATE((Ss).IsSetData() && (Ss).GetData().IsEntrys(), \
+NCBI_TEST_ITERATE((Ss).IsEntrys(), \
              CSeq_submit::TData::TEntrys, \
              Iter, \
              (Ss).GetData().GetEntrys())
@@ -305,10 +305,10 @@ NCBI_TEST_ITERATE((Bsrc).IsSetSubtype(), \
 // Takes const CBioSource& as input and makes iterator to const COrgMod&
 // Dereference with const COrgMod& omd = **iter
 #define FOR_EACH_ORGMOD_ON_BIOSOURCE(Iter, Bsrc) \
-NCBI_TEST_ITERATE((Bsrc).IsSetOrgname() && (Bsrc).GetOrg().GetOrgname().IsSetMod(), \
+NCBI_TEST_ITERATE((Bsrc).IsSetOrgMod(), \
              COrgName::TMod, \
              Iter, \
-             (Bsrc).GetOrg().GetOrgname().GetMod())
+             (Bsrc).GetOrgname().GetMod())
 
 
 /// COrgRef iterators
@@ -317,7 +317,7 @@ NCBI_TEST_ITERATE((Bsrc).IsSetOrgname() && (Bsrc).GetOrg().GetOrgname().IsSetMod
 // Takes const COrgRef& as input and makes iterator to const COrgMod&
 // Dereference with const COrgMod& omd = **iter
 #define FOR_EACH_ORGMOD_ON_ORGREF(Iter, Org) \
-NCBI_TEST_ITERATE((Org).IsSetOrgname() && (Org).GetOrgname().IsSetMod(), \
+NCBI_TEST_ITERATE((Org).IsSetOrgMod(), \
              COrgName::TMod, \
              Iter, \
              (Org).GetOrgname().GetMod())
