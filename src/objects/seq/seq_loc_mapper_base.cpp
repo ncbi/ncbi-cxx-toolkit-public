@@ -37,7 +37,7 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
-#include <objects/error_codes.hpp>
+#include <objects/misc/error_codes.hpp>
 #include <algorithm>
 
 
@@ -269,7 +269,7 @@ void CMappingRanges::AddConversion(CSeq_id_Handle    src_id,
     AddConversion(cvt);
 }
 
-    
+
 CMappingRanges::TRangeIterator
 CMappingRanges::BeginMappingRanges(CSeq_id_Handle id,
                                    TSeqPos        from,

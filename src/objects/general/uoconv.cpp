@@ -37,7 +37,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/error_codes.hpp>
+#include <objects/misc/error_codes.hpp>
 
 #include <serial/objectiter.hpp>
 
@@ -106,7 +106,7 @@ static void s_SetFieldsFromAnyContent(CUser_field& parent,
     parent.AddField("value",     obj.GetValue());
     parent.AddField("ns_name",   obj.GetNamespaceName());
     parent.AddField("ns_prefix", obj.GetNamespacePrefix());
-    
+
     ITERATE (vector<CSerialAttribInfoItem>, it, obj.GetAttributes()) {
         parent.AddField(it->GetNamespaceName() + ":" + it->GetName(),
                         it->GetValue());

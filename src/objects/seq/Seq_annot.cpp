@@ -41,7 +41,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/error_codes.hpp>
+#include <objects/misc/error_codes.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Objects_SeqAnnot

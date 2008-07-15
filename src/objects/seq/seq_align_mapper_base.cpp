@@ -35,7 +35,7 @@
 #include <objects/seq/seq_loc_mapper_base.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
-#include <objects/error_codes.hpp>
+#include <objects/misc/error_codes.hpp>
 #include <algorithm>
 
 

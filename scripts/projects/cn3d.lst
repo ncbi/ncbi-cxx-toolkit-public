@@ -8,6 +8,7 @@ util/tables$
 serial$
 serial/datatool$
 objects$
+objects/misc$
 objects/biblio$
 objects/blast$
 objects/blastdb$

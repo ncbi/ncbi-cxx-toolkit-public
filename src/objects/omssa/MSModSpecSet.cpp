@@ -36,7 +36,7 @@
 
 // standard includes
 #include <ncbi_pch.hpp>
-#include <objects/error_codes.hpp>
+#include <objects/misc/error_codes.hpp>
 
 // generated includes
 #include <objects/omssa/MSModSpecSet.hpp>
@@ -87,8 +87,8 @@ void CMSModSpecSet::CreateArrays(void)
         if ((*iMods)->CanGetPsi_ms()) {
             strncpy(UnimodNames[ModNum], (*iMods)->GetPsi_ms().c_str(), kMaxNameSize - 1);
         } else {
-            strncpy(ModNames[ModNum], (*iMods)->GetName().c_str(), kMaxNameSize - 1);    
-        }        
+            strncpy(ModNames[ModNum], (*iMods)->GetName().c_str(), kMaxNameSize - 1);
+        }
         // make sure name is null terminated
         UnimodNames[ModNum][kMaxNameSize-1] = '\0';
 

@@ -46,7 +46,7 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
-#include <objects/error_codes.hpp>
+#include <objects/misc/error_codes.hpp>
 #include <util/range_coll.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <algorithm>

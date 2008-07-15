@@ -59,7 +59,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
-#include <objects/error_codes.hpp>
+#include <objects/misc/error_codes.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Objects_SeqId

@@ -61,7 +61,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
-#include <objects/error_codes.hpp>
+#include <objects/misc/error_codes.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Objects_Bioseq

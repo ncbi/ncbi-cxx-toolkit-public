@@ -31,7 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objects/error_codes.hpp>
+#include <objects/misc/error_codes.hpp>
 #include "seq_id_tree.hpp"
 
 
