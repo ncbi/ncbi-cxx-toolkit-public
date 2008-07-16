@@ -857,6 +857,7 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
             skel_data << blob.GetMainBlob();
             proc_skel.SaveDataAndSkel(result,
                                       blob_id,
+                                      0,
                                       CProcessor::kMain_ChunkId,
                                       disp.GetWriter(result,
                                                      CWriter::eBlobWriter),
@@ -872,10 +873,11 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
                     CID2_Reply_Data::eData_type_id2s_chunk);
                 data << *it->second;
                 proc.SaveData(result,
-                            blob_id,
-                            it->first,
-                            disp.GetWriter(result, CWriter::eBlobWriter),
-                            data.GetData());
+                              blob_id,
+                              0,
+                              it->first,
+                              disp.GetWriter(result, CWriter::eBlobWriter),
+                              data.GetData());
             }
         }}
     }}
