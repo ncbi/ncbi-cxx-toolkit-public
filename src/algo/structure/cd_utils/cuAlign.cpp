@@ -498,7 +498,7 @@ void SetAlignedResiduesOnSequence(const CRef< CSeq_align >& align, const string&
     }
 
     length = GetNumAlignedResidues(align);
-    if (length < 1 || sequenceString.size() < length) {
+    if (length < 1 || (int) sequenceString.size() < length) {
         return;
     } else {
         //  Allocate space for pAlignedRes if not already done
@@ -520,7 +520,7 @@ void SetAlignedResiduesOnSequence(const CRef< CSeq_align >& align, const string&
     const TDendiag* pDenDiagSet;  // = new TDendiag;
     if (GetDDSetFromSeqAlign(*align, pDenDiagSet)) {
 //        if (start >=0 && start < length && stop >=0 && stop < length) {
-        if (start >=0 && start <= stop && stop < sequenceString.size()) {
+        if (start >=0 && start <= stop && stop < (int) sequenceString.size()) {
             for (int i = start; i <= stop; ++i) {
                 if (IsPositionAligned(pDenDiagSet, i, isMaster) && alignedResCtr < length) {
                     //ASSERT(alignedResCtr < length);
@@ -1434,6 +1434,19 @@ int ExtractScoreFromScoreList(const CSeq_align::TScore& scores, int flags, vecto
 //  Functions to manipulate Dense_segs
 //===========================================
 
+CRef<CSeq_align> Denseg2DenseDiagList(const CRef<CSeq_align>& denseSegSeqAlign)
+{
+    CRef<CSeq_align> newSa(new CSeq_align);
+    newSa->Assign(*denseSegSeqAlign);
+
+    if (denseSegSeqAlign.NotEmpty() && denseSegSeqAlign->GetSegs().IsDenseg()) {
+        TDendiag ddList;
+        Denseg2DenseDiagList(denseSegSeqAlign->GetSegs().GetDenseg(), ddList);
+        newSa->SetSegs().SetDendiag() = ddList;
+    }
+
+    return newSa;
+}
 
 //  Function written by:  Kamen Todorov, NCBI
 //  Part of the objtools/alnmgr project; forked to here to avoid
@@ -1453,8 +1466,8 @@ void Denseg2DenseDiagList(const CDense_seg& ds, TDendiag& ddl)
 
     int                         rows_per_seg;
 
-    bool strands_exist = strands.size() == total;
-    bool scores_exist = scores.size() == total;
+    bool strands_exist = ((int) strands.size() == total);
+    bool scores_exist = ((int) scores.size() == total);
     
     for (CDense_seg::TNumseg seg = 0; seg < numsegs; seg++) {
         rows_per_seg = 0;

@@ -218,6 +218,12 @@ int  ExtractScoreFromScoreList(const CSeq_align::TScore& scores, int flags, vect
 
 //  Functions that manipulate or assume Dense_segs
 
+//  Given a CSeq_align with a denseg alignment, return a new CSeq_align with an
+//  equivalent dense-diag list.  If the input doesn't have a denseg, or if the
+//  conversion fails, the returned CRef will be a copy of the input CRef.
+NCBI_CDUTILS_EXPORT 
+CRef<CSeq_align> Denseg2DenseDiagList(const CRef<CSeq_align>& denseSegSeqAlign);
+
 //  Get DD list from a Dense_seg.
 //  Function written by:  Kamen Todorov, NCBI
 //  Part of the objtools/alnmgr project forked to avoid
