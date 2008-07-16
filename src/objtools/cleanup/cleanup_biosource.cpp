@@ -2209,7 +2209,16 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh)
                 // create new descriptor to hold source feature source
                 CRef<CSeqdesc> desc(new CSeqdesc);             
                 desc->Select(CSeqdesc::e_Source);
-                desc->SetSource(const_cast< CBioSource& >(cf.GetData().GetBiosrc()));            
+                desc->SetSource(const_cast< CBioSource& >(cf.GetData().GetBiosrc()));
+                /* copy any dbxrefs on the feature to the BioSource */
+                if (cf.CanGetDbxref() && cf.IsSetDbxref()) {
+                    if (!desc->GetSource().IsSetOrg()) {
+                        desc->SetSource().SetOrg();
+                    }
+                    ITERATE (CSeq_feat::TDbxref, it, cf.GetDbxref()) {
+                        desc->SetSource().SetOrg().SetDb().push_back (*it);
+                    }
+                }
                 CBioseq_EditHandle eh = bh.GetEditHandle();
                 eh.AddSeqdesc(*desc);
                 // remove feature
