@@ -80,7 +80,6 @@ public:
     CAutoDefModifierCombo* FindBestModifierCombo();
     CAutoDefModifierCombo* GetAllModifierCombo();
     CAutoDefModifierCombo* GetEmptyCombo();
-    CAutoDefSourceDescription::TModifierVector GetBestModifierList(CSeq_entry_Handle se);
     unsigned int GetNumAvailableModifiers();
     string GetOneSourceDescription(CBioseq_Handle bh);
     void DoAutoDef();

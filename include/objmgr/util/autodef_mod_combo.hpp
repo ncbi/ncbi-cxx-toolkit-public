@@ -81,8 +81,6 @@ public:
     
     void AddSubsource(CSubSource::ESubtype st);
     void AddOrgMod(COrgMod::ESubtype st);
-    unsigned int GetNumUniqueDescriptions();
-    bool AllUnique();
     void GetAvailableModifiers (CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
     bool HasTrickyHIV();
     bool GetDefaultExcludeSp();

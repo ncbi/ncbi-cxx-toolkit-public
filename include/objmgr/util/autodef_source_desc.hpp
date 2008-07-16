@@ -58,9 +58,6 @@ public:
     CAutoDefSourceModifierInfo(const CAutoDefSourceModifierInfo &other);
     ~CAutoDefSourceModifierInfo();
 
-    bool AddQual (bool isOrgMod, int subtype);
-    bool RemoveQual (bool isOrgMod, int subtype);
-
     unsigned int GetRank() const;
     int Compare(const CAutoDefSourceModifierInfo& mod) const;
     bool IsOrgMod () const;
