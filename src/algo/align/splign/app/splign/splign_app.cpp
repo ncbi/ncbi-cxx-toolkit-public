@@ -667,7 +667,7 @@ void CSplignApp::x_DoIncremental(void)
     const string dbname (args["subjdb"].AsString());
 
     CBlastDbDataLoader::RegisterInObjectManager(
-        *m_ObjMgr, dbname, CBlastDbDataLoader::eNucleotide, 
+        *m_ObjMgr, dbname, CBlastDbDataLoader::eNucleotide, true,
         CObjectManager::eDefault);
 
     CRef<ILineReader> line_reader;
@@ -734,7 +734,7 @@ void CSplignApp::x_DoBatch3(void)
     const size_t W      (args["W"].AsInteger());
     
     CBlastDbDataLoader::RegisterInObjectManager(
-        *m_ObjMgr, dbname, CBlastDbDataLoader::eNucleotide, 
+        *m_ObjMgr, dbname, CBlastDbDataLoader::eNucleotide, true,
         CObjectManager::eDefault);
 
     CRef<ILineReader> line_reader;

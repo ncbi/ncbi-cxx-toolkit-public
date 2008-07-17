@@ -505,7 +505,7 @@ int CDemoApp::Run(void)
             }
         }
         CBlastDbDataLoader::RegisterInObjectManager
-            (*pOm, db, type, CObjectManager::eDefault, 88);
+            (*pOm, db, type, true, CObjectManager::eDefault, 88);
         other_loaders = true;
     }
 
