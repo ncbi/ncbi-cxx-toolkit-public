@@ -166,14 +166,26 @@ void CClusterer::ComputeClusters(double max_diam)
     while (true) {
 
         // Find first used dist matrix entries
-        size_t min_i = 0;
-        while (!used_entry[min_i]) {
-            min_i++;
-        }
-        size_t min_j = min_i + 1;
-        while (!used_entry[min_j]) {
-            min_j++;
-        }
+	size_t min_i = 0;
+	size_t min_j;
+	do {
+	    while (!used_entry[min_i] && min_i < num_elements) {
+		min_i++;
+	    }
+	
+	    min_j = min_i + 1;
+	    while (!used_entry[min_j] && min_j < num_elements) {
+		min_j++;
+	    }
+
+	    if (min_j >= num_elements) {
+		min_i++;
+	    }
+	} while (min_j >= num_elements && min_i < num_elements);
+
+	// A distance larger than max_diam exists in the dist matrix,
+	// then there always should be at least two used entires in dist matrix
+	_ASSERT(min_i < num_elements && min_j < num_elements);
 
         // Find smallest distance entry
         for (size_t i=0;i < num_elements - 1;i++) {
@@ -211,7 +223,7 @@ void CClusterer::ComputeClusters(double max_diam)
         
         // Updating distance matrix
         // Distance between clusters is the largest pairwise distance
-        for (size_t i=0;i < min_i - 1 && min_i > 0;i++) {
+        for (size_t i=0;i < min_i && min_i > 0;i++) {
             if (!used_entry[i]) {
                 continue;
             }
