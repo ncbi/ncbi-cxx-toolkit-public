@@ -15,8 +15,8 @@
 # The ETC: statement describes configuration files
 # It is allowed to have more than one of each statements
 APP: blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn 
-APP: makembindex 
-#APP: makeblastdb blastdbcmd blastdb_aliastool
+APP: makembindex segmasker dustmasker windowmasker
+APP: makeblastdb blastdbcmd blastdb_aliastool
 APP: ../../src/app/blast/legacy_blast.pl
 
 # Each line describes a single configuration
