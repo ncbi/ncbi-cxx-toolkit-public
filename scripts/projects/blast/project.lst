@@ -37,6 +37,7 @@ dbapi/driver$
 dbapi/cache$
 dbapi/driver/impl$
 dbapi/driver/odbc/unix_odbc$
+dbapi/driver/util$ update-only
 objmgr
 -objmgr/test
 objtools/data_loaders/genbank
