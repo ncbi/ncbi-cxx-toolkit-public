@@ -1540,7 +1540,7 @@ BOOST_AUTO_TEST_CASE(FilterStringFalse)
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetMaskAtHash());
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetDustFiltering());
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetWindowMaskerTaxId());
-    BOOST_REQUIRE_EQUAL((char*)0, nucl_handle.GetWindowMaskerDatabase());
+    BOOST_REQUIRE(nucl_handle.GetWindowMaskerDatabase() == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(MergeOptionHandle) {
@@ -1566,7 +1566,7 @@ BOOST_AUTO_TEST_CASE(OptionsHandleClear) {
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetDustFiltering());
     BOOST_REQUIRE_EQUAL(true, nucl_handle.GetRepeatFiltering());
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetWindowMaskerTaxId());
-    BOOST_REQUIRE_EQUAL((char*)0, nucl_handle.GetWindowMaskerDatabase());
+    BOOST_REQUIRE(nucl_handle.GetWindowMaskerDatabase() == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(GetSeqLocInfoVector_EmptyQueryIdVector) {
