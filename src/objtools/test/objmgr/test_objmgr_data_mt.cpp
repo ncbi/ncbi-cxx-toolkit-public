@@ -231,7 +231,7 @@ CRef<CScope> CTestOM::CreateScope(void)
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     if ( m_blastdb ) {
         CBlastDbDataLoader::RegisterInObjectManager
-            (*om, "nr", CBlastDbDataLoader::eProtein,
+            (*om, "nr", CBlastDbDataLoader::eProtein, true,
              CObjectManager::eDefault, 88);
     }
     CGBDataLoader::RegisterInObjectManager(*om);
