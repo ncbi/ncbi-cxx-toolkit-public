@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbimisc.hpp>
 
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
@@ -53,8 +54,10 @@
 #define NCBI_USE_ERRCODE_X  Corelib_TestBoost
 
 
+namespace but = boost::unit_test;
+
 /// Prototype of global user-defined initialization function
-extern boost::unit_test::test_suite*
+extern but::test_suite*
 NcbiInitUnitTestSuite( int argc, char* argv[] );
 
 
@@ -75,8 +78,8 @@ RegisterNcbiBoostInit(TNcbiBoostInitFunc func)
 
 
 // Some shortening typedefs
-typedef boost::unit_test::results_reporter::format  TBoostFormatter;
-typedef boost::unit_test::test_unit                 TBoostTestUnit;
+typedef but::results_reporter::format  TBoostFormatter;
+typedef but::test_unit                 TBoostTestUnit;
 
 
 /// Reporter for embedding in Boost framework and adding non-standard
@@ -88,7 +91,7 @@ public:
     ///
     /// @param format
     ///   Format of the report
-    CNcbiBoostReporter(boost::unit_test::output_format format);
+    CNcbiBoostReporter(but::output_format format);
     virtual ~CNcbiBoostReporter(void);
 
     /// Add new test marked as disabled
@@ -125,16 +128,16 @@ private:
 };
 
 
-CNcbiBoostReporter::CNcbiBoostReporter(boost::unit_test::output_format format)
+CNcbiBoostReporter::CNcbiBoostReporter(but::output_format format)
     : m_DisabledPrinted(false)
 {
     if (format == boost::unit_test::XML) {
         m_IsXML = true;
-        m_Upper.reset(new boost::unit_test::output::xml_report_formatter());
+        m_Upper.reset(new but::output::xml_report_formatter());
     }
     else {
         m_IsXML = false;
-        m_Upper.reset(new boost::unit_test::output::plain_report_formatter());
+        m_Upper.reset(new but::output::plain_report_formatter());
     }
 }
 
@@ -171,7 +174,8 @@ CNcbiBoostReporter::test_unit_report_start(TBoostTestUnit const&  tu,
     if (! m_DisabledPrinted) {
         ITERATE(TDisabledList, it, m_DisabledList) {
             if (m_IsXML) {
-                ostr << "<TestCase name=\"" << it->first << "\" result=\"disabled\"";
+                ostr << "<TestCase name=\"" << it->first
+                     << "\" result=\"disabled\"";
                 if (! it->second.empty()) {
                     ostr << " reason=\"" << it->second << "\"";
                 }
@@ -225,29 +229,40 @@ NcbiBoostTestDisable(CTempString test_name, CTempString reason)
 END_NCBI_SCOPE
 
 
+NCBI_NS_NCBI::AutoPtr<std::ostream> s_ReportOut;
+
 // Global initialization function called from Boost framework
-boost::unit_test::test_suite*
+but::test_suite*
 init_unit_test_suite( int argc, char* argv[] )
 {
     // This function should not be called yet
     assert(! NCBI_NS_NCBI::s_NcbiReporter);
 
-    boost::unit_test::output_format
-                format = boost::unit_test::runtime_config::report_format();
+    but::output_format format = but::runtime_config::report_format();
 
     NCBI_NS_NCBI::CNcbiEnvironment env;
     std::string is_autobuild = env.Get("NCBI_AUTOMATED_BUILD");
     if (! is_autobuild.empty()) {
-        format = boost::unit_test::XML;
-        boost::unit_test::results_reporter::set_level(
-                                           boost::unit_test::DETAILED_REPORT);
+        format = but::XML;
+        but::results_reporter::set_level(but::DETAILED_REPORT);
+
+        std::string boost_rep = env.Get("NCBI_BOOST_REPORT_FILE");
+        if (! boost_rep.empty()) {
+            s_ReportOut = new std::ofstream(boost_rep.c_str());
+            if (s_ReportOut->good()) {
+                but::results_reporter::set_stream(*s_ReportOut);
+            }
+            else {
+                ERR_POST("Error opening Boost.Test report file '"
+                         + boost_rep + "'");
+            }
+        }
     }
 
     NCBI_NS_NCBI::s_NcbiReporter =
                                 new NCBI_NS_NCBI::CNcbiBoostReporter(format);
 
-    boost::unit_test::results_reporter
-                            ::set_format(NCBI_NS_NCBI::s_NcbiReporter);
+    but::results_reporter::set_format(NCBI_NS_NCBI::s_NcbiReporter);
 
 
     if (NCBI_NS_NCBI::s_BoostInitFuncs) {

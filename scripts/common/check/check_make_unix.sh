@@ -382,15 +382,19 @@ RunTest()
 
     x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext"
     x_test_rep="\$x_work_dir/\$x_test.test_rep\$x_ext"
+    x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext"
 
     if \$is_db_load; then
-        $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" >> "$x_build_dir/test_stat_load.log" 2>&1
+        $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" >> "$x_build_dir/test_stat_load.log" 2>&1
     else
         if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
             echo "\$signature" > "\$x_test_rep"
             echo "\$x_work_dir_tail" >> "\$x_test_rep"
             echo "\$x_run" >> "\$x_test_rep"
             echo "\$x_real_name" >> "\$x_test_rep"
+
+            NCBI_BOOST_REPORT_FILE="\$x_boost_rep"
+            export NCBI_BOOST_REPORT_FILE
         fi
 
         # Check existence of the test's application directory

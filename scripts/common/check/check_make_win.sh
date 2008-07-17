@@ -315,9 +315,10 @@ RunTest() {
    # Generate name of the output file
    x_test_out="\$x_work_dir/\$x_app.out\$x_ext"
    x_test_rep="\$x_work_dir/\$x_app.rep\$x_ext"
+   x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext"
 
    if \$is_db_load; then
-      test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" >> "$x_build_dir/test_stat_load.log" 2>&1
+      test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" >> "$x_build_dir/test_stat_load.log" 2>&1
    else
       if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
          case "\$COMPILER" in
@@ -344,6 +345,8 @@ RunTest() {
          echo "\$x_wdir" >> "\$x_test_rep"
          echo "\$x_run" >> "\$x_test_rep"
          echo "\$x_real_name" >> "\$x_test_rep"
+
+         export NCBI_BOOST_REPORT_FILE="\$(cygpath -w "\$x_boost_rep")"
       fi
 
       x_cmd="[\${build_tree}\$x_conf/\$x_wdir]"
