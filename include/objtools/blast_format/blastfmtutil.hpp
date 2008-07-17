@@ -705,8 +705,8 @@ public:
     /// int query number ,starts from 1, 0 means return all queries    
     ///@return
     /// CRef<CSeq_align_set> - seq align set for queryNumber, if invalid queryNumber return empty  CSeq_align_set
-    static CRef<CSeq_align_set> CBlastFormatUtil::ExtractQuerySeqAlign(CRef<CSeq_align_set>& source_aln,
-                                                                       int queryNumber);
+    static CRef<CSeq_align_set> ExtractQuerySeqAlign(CRef<CSeq_align_set>& source_aln,
+                                                     int queryNumber);
     
     static void BuildFormatQueryString (CCgiContext& ctx, 
                                        string& cgi_query);
