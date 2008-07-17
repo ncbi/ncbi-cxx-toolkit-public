@@ -15390,10 +15390,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
     // !!! There are still problems ...
     if (args->IsBCPAvailable()) 
     {
-        if (!(args->GetDriverName() == ftds_dblib_driver
-                 &&  args->GetServerType() == CDBConnParams::eSybaseSQLServer)
-            && !(args->GetDriverName() == dblib_driver
-                 &&  args->GetServerType() != CDBConnParams::eSybaseSQLServer)
+        if (!(args->GetDriverName() == ftds_dblib_driver &&  args->GetServerType() == CDBConnParams::eSybaseSQLServer)
+            && !(args->GetDriverName() == dblib_driver &&  args->GetServerType() != CDBConnParams::eSybaseSQLServer)
+            && !(args->GetDriverName() == ctlib_driver && os_type == eOsSolaris && compiler_type == eCompilerWorkShop) // 07/17/08 "blk_done failed"
            )
         {
             if ( !( args->GetTestConfiguration() == CTestArguments::eWithoutExceptions
