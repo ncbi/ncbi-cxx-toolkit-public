@@ -58,14 +58,16 @@ BEGIN_SCOPE(blast)
 NCBI_XBLAST_EXPORT
 BlastSeqSrc* 
 SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot, 
-                     Uint4 first_seq = 0, Uint4 last_seq = 0);
+                     Uint4 first_seq = 0, Uint4 last_seq = 0,
+                     const vector<int>& filtering_algorithms = vector<int>());
 
 /** Initialize the sequence source structure using an existing SeqDB object.
  * @param seqdb CSeqDB object [in]
  */
 NCBI_XBLAST_EXPORT
 BlastSeqSrc*
-SeqDbBlastSeqSrcInit(CSeqDB * seqdb);
+SeqDbBlastSeqSrcInit(CSeqDB * seqdb,
+                     const vector<int>& filtering_algorithms = vector<int>());
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

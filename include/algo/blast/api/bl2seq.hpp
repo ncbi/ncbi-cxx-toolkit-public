@@ -145,11 +145,16 @@ public:
     /// Retrieves regions filtered on the query/queries
     TSeqLocInfoVector GetFilteredQueryRegions() const;
 
+    /// Retrieves regions filtered on the subject sequence(s)
+    /// @param retval the return value of this method [in|out]
+    void GetFilteredSubjectRegions(vector<TSeqLocInfoVector>& retval) const;
+
     /// Retrieves the diagnostics information returned from the engine
     BlastDiagnostics* GetDiagnostics() const;
 
     /// Get the ancillary results for a BLAST search (to be used with the Run()
     /// method)
+    /// @param retval the return value of this method [in|out]
     void GetAncillaryResults(CSearchResultSet::TAncillaryVector& retval) const;
 
     /// Returns error messages/warnings.
@@ -232,6 +237,8 @@ private:
     CSBlastProgress                     m_ProgressMonitor;
     /// Ancillary BLAST data
     CSearchResultSet::TAncillaryVector  m_AncillaryData;
+    /// Subject masks for those which intersect hits
+    vector<TSeqLocInfoVector>           m_SubjectMasks;
 
     /// Resets query data structures
     void x_ResetQueryDs();
@@ -338,6 +345,12 @@ inline void
 CBl2Seq::GetAncillaryResults(CSearchResultSet::TAncillaryVector& retval) const
 {
     retval = m_AncillaryData;
+}
+
+inline void
+CBl2Seq::GetFilteredSubjectRegions(vector<TSeqLocInfoVector>& retval) const
+{
+    retval = m_SubjectMasks;
 }
 
 END_SCOPE(blast)

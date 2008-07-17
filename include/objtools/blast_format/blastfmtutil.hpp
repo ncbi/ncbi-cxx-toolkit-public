@@ -116,7 +116,7 @@ src=\"images/G.gif\" alt=\"Gene info\"></a>";
 ///Bioassay for proteins
 // .ncbirc alias: BIOASSAY_PROT
 const string kBioAssayProtURL = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez\
-?db=pcassay&term=%d[ProteinTargetGI]&RID=%s&log$=pcassay%s&blast_rank=%d\"><img border=0 height=16 width=16 \
+?db=pcassay&term=%d[PigGI]&RID=%s&log$=pcassay%s&blast_rank=%d\"><img border=0 height=16 width=16 \
 src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info\"></a>";
 
 ///Bioassay for nucleotides
@@ -267,6 +267,8 @@ public:
         Int8   total_length;
         int    number_seqs;
         bool   subset;	
+        string algorithm_names;
+        string detailed_masking_info;
 
         /// Default constructor
         SDbInfo() {
@@ -358,7 +360,7 @@ public:
     ///@param gapped: gapped alignment?
     ///@param c
     ///
-    static void PrintKAParameters(float lambda, float k, float h,
+    static void PrintKAParameters(double lambda, double k, double h,
                                   size_t line_len, CNcbiOstream& out, 
                                   bool gapped, float c = 0.0);
 
@@ -563,14 +565,7 @@ public:
                                string database, bool db_is_na, string rid,
                                int query_number, bool for_alignment);
     
-    ///transforms a string so that it becomes safe to be used as part of URL
-    ///the function converts characters with special meaning (such as
-    ///semicolon -- protocol separator) to escaped hexadecimal (%xx)
-    ///@param src: the input url
-    ///@return: the safe url
-    ///
-    static string MakeURLSafe(char* src);
-
+ 
     ///calculate the percent identity for a seqalign
     ///@param aln" the seqalign
     ///@param scope: scope to fetch sequences
@@ -701,7 +696,17 @@ public:
     /// CRef<CSeq_align_set> - filtered seq align
     static CRef<CSeq_align_set> LimitSeqalignByHsps(CSeq_align_set& source_aln,
                                                     int maxAligns,
-                                                    int maxHsps);                                                    
+                                                    int maxHsps); 
+
+    ///function for extracting seqalign for the query
+    ///@param source_aln
+    /// CSeq_align_set original seqalign
+    ///@param queryNumber 
+    /// int query number ,starts from 1, 0 means return all queries    
+    ///@return
+    /// CRef<CSeq_align_set> - seq align set for queryNumber, if invalid queryNumber return empty  CSeq_align_set
+    static CRef<CSeq_align_set> CBlastFormatUtil::ExtractQuerySeqAlign(CRef<CSeq_align_set>& source_aln,
+                                                                       int queryNumber);
     
     static void BuildFormatQueryString (CCgiContext& ctx, 
                                        string& cgi_query);
@@ -714,11 +719,11 @@ public:
                                 CScope& scope); 
 
     static list<string> GetLinkoutUrl(int linkout, const CBioseq::TId& ids, 
-                                      const string& rid, const string& db_name, 
-                                      const int query_number, const int taxid,
-                                      const string& cdd_rid, const string& entrez_term,
-                                      bool is_na, string& user_url,
-                                      const bool db_is_na, int first_gi,
+                                      const string& rid, 
+                                      const string& cdd_rid, 
+                                      const string& entrez_term,
+                                      bool is_na, 
+                                      int first_gi,
                                       bool structure_linkout_as_group,
                                       bool for_alignment, int cur_align);
 

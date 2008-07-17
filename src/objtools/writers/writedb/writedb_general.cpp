@@ -77,5 +77,15 @@ void CWriteDB_PackedSemiTree::Insert(const char * x, int L)
     m_Size++;
 }
 
+int WriteDB_FindSequenceLength(bool protein, const string & seq)
+{
+    if (protein) {
+        return seq.size();
+    }
+    
+    int wholebytes = (int) seq.size() - 1;
+    return (wholebytes << 2) + (seq[wholebytes] & 0x3);
+}
+
 END_NCBI_SCOPE
 

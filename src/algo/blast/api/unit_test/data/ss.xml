@@ -51,7 +51,8 @@
                       <name>UngappedMode</name>
                       <value>
                         <Blast4-value>
-                          <boolean value="false"/>
+                          <!-- <boolean value="false"/> -->
+                          <boolean>false</boolean>
                         </Blast4-value>
                       </value>
                     </Blast4-parameter>
@@ -107,7 +108,8 @@
                       <name>Culling</name>
                       <value>
                         <Blast4-value>
-                          <boolean value="false"/>
+                          <!-- <boolean value="false"/> -->
+                          <boolean>false</boolean>
                         </Blast4-value>
                       </value>
                     </Blast4-parameter>

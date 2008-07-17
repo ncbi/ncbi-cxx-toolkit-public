@@ -289,6 +289,7 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
                           EBlastProgramType program,
                           const TSeqAlignVector& alignments,
                           TSearchMessages& messages,
+                          const vector<TSeqLocInfoVector>& subj_masks,
                           const TSeqLocInfoVector* query_masks,
                           const EResultType result_type)
 {
@@ -297,7 +298,6 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
     // Collect query Seq-locs
     
     vector< CConstRef<CSeq_id> > qlocs;
-
     
     if (is_phi) {
         qlocs.assign(alignments.size(), query_ids.front());
@@ -350,11 +350,19 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
         messages.resize(alignments.size());
     }
     
-    return CRef<CSearchResultSet>(new CSearchResultSet(qlocs, alignments, 
+    const SPHIQueryInfo* phi_query_info = is_phi ? qinfo->pattern_info : NULL;
+    CRef<CSearchResultSet> retval(new CSearchResultSet(qlocs, alignments, 
                                                        messages, 
                                                        ancillary_data, 
                                                        query_masks, 
-                                                       result_type));
+                                                       result_type,
+                                                       phi_query_info));
+    if (subj_masks.size() == retval->size()) {
+        for (CSearchResultSet::size_type i = 0; i < retval->size(); i++) {
+            (*retval)[i].SetSubjectMasks(subj_masks[i]);
+        }
+    }
+    return retval;
 }
 
 TMaskedQueryRegions

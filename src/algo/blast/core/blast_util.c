@@ -49,28 +49,95 @@ __sfree(void **x)
     return;
 }
 
+SSeqRange SSeqRangeNew(Int4 start, Int4 stop)
+{
+    SSeqRange retval;
+    retval.left = start;
+    retval.right = stop;
+    return retval;
+}
+
+Boolean SSeqRangeIntersectsWith(const SSeqRange* a, const SSeqRange* b)
+{
+    if ( !a || !b ) {
+        return FALSE;
+    }
+
+    if ((a->left <= b->right && a->right >= b->right) || 
+        (a->left <= b->left  && a->right >= b->left)) {
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/** Auxiliary function to free the BLAST_SequenceBlk::seq_ranges field if
+ * applicable
+ * @param seq_blk The sequence block structure to manipulate [in|out]
+ */
+static void 
+s_BlastSequenceBlkFreeSeqRanges(BLAST_SequenceBlk* seq_blk)
+{
+    ASSERT(seq_blk);
+    if (seq_blk->seq_ranges_allocated) {
+        sfree(seq_blk->seq_ranges);
+        seq_blk->num_seq_ranges = 0;
+        seq_blk->seq_ranges_allocated = FALSE;
+    }
+}
+
+/** Allocate and populate the seq_ranges field of the BLAST_SequenceBlk with
+ * default values as to indicate that the entire sequence should be searched 
+ * @note assumes the BLAST_SequenceBlk::length has been initialized
+ * @param seq_blk the data structure to populate [in|out]
+ * @return 0 on success, BLASTERR_MEMORY if memory allocation fails
+ */
+static Int2
+s_BlastSeqBlkSetLookupTableRangesToIndex(BLAST_SequenceBlk* seq_blk)
+{
+    static const Uint4 kDfltSize = 1;
+    s_BlastSequenceBlkFreeSeqRanges(seq_blk);
+    seq_blk->seq_ranges = (SSeqRange*) calloc(kDfltSize, 
+                                              sizeof(*seq_blk->seq_ranges));
+    if ( !seq_blk->seq_ranges ) {
+        return BLASTERR_MEMORY;
+    }
+    seq_blk->seq_ranges[0].left = 0;
+    seq_blk->seq_ranges[0].right = seq_blk->length;
+    seq_blk->num_seq_ranges = kDfltSize;
+    seq_blk->seq_ranges_allocated = TRUE;
+
+    return 0;
+}
+
 Int2
 BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length,
    BLAST_SequenceBlk* *seq_blk, Boolean buffer_allocated)
 {
-   /* Check if BLAST_SequenceBlk itself needs to be allocated here or not */
-   if (*seq_blk == NULL) {
-      *seq_blk = calloc(1, sizeof(BLAST_SequenceBlk));
-   }
+    /* Check if BLAST_SequenceBlk itself needs to be allocated here or not */
+    if (*seq_blk == NULL) {
+        if (BlastSeqBlkNew(seq_blk) != 0) {
+            return -1;
+        }
+    }
+    ASSERT(seq_blk && *seq_blk);
 
-   if (buffer_allocated) {
-      (*seq_blk)->sequence_start_allocated = TRUE;
-      (*seq_blk)->sequence_start = (Uint1 *) buffer;
-      /* The first byte is a sentinel byte. */
-      (*seq_blk)->sequence = (*seq_blk)->sequence_start+1;
-   } else {
-      (*seq_blk)->sequence = (Uint1 *) buffer;
-      (*seq_blk)->sequence_start = NULL;
-   }
+    if (buffer_allocated) {
+        (*seq_blk)->sequence_start_allocated = TRUE;
+        (*seq_blk)->sequence_start = (Uint1 *) buffer;
+        /* The first byte is a sentinel byte. */
+        (*seq_blk)->sequence = (*seq_blk)->sequence_start+1;
+    } else {
+        (*seq_blk)->sequence = (Uint1 *) buffer;
+        (*seq_blk)->sequence_start = NULL;
+    }
+    
+    (*seq_blk)->length = length;
+
+    if (s_BlastSeqBlkSetLookupTableRangesToIndex(*seq_blk) != 0) {
+        return -1;
+    }
    
-   (*seq_blk)->length = length;
-   
-   return 0;
+    return 0;
 }
 
 Int2 BlastSeqBlkNew(BLAST_SequenceBlk** retval)
@@ -100,6 +167,9 @@ Int2 BlastSeqBlkSetSequence(BLAST_SequenceBlk* seq_blk,
     seq_blk->sequence = (Uint1*) sequence + 1;
     seq_blk->length = seqlen;
     seq_blk->oof_sequence = NULL;
+    if (s_BlastSeqBlkSetLookupTableRangesToIndex(seq_blk) != 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -115,6 +185,43 @@ Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
     seq_blk->sequence = (Uint1*) sequence;
     seq_blk->oof_sequence = NULL;
 
+    if (s_BlastSeqBlkSetLookupTableRangesToIndex(seq_blk) != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+Int2
+BlastSeqBlkSetSeqRanges(BLAST_SequenceBlk* seq_blk,
+                        SSeqRange* seq_ranges,
+                        Uint4 num_seq_ranges,
+                        Boolean copy_seq_ranges)
+{
+    if ( !seq_blk || !seq_ranges ) {
+        return -1;
+    }
+    ASSERT(num_seq_ranges >= 1);
+
+    if (copy_seq_ranges) {
+        SSeqRange* tmp = (SSeqRange*) calloc(num_seq_ranges,
+                                             sizeof(*seq_ranges));
+        if ( !tmp ) {
+            return -1;
+        }
+        s_BlastSequenceBlkFreeSeqRanges(seq_blk);
+        seq_blk->seq_ranges = tmp;
+        memcpy((void*) seq_blk->seq_ranges,
+               (void*) seq_ranges,
+               num_seq_ranges * sizeof(*seq_ranges));
+        seq_blk->num_seq_ranges = num_seq_ranges;
+        seq_blk->seq_ranges_allocated = TRUE;
+    } else {
+        s_BlastSequenceBlkFreeSeqRanges(seq_blk);
+        seq_blk->seq_ranges = seq_ranges;
+        seq_blk->seq_ranges_allocated = FALSE;
+        seq_blk->num_seq_ranges = num_seq_ranges;
+    }
     return 0;
 }
 
@@ -135,7 +242,7 @@ void BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk)
        sfree(seq_blk->oof_sequence);
        seq_blk->oof_sequence_allocated = FALSE;
    }
-
+   s_BlastSequenceBlkFreeSeqRanges(seq_blk);
    return;
 }
 
@@ -156,18 +263,20 @@ BLAST_SequenceBlk* BlastSequenceBlkFree(BLAST_SequenceBlk* seq_blk)
 void BlastSequenceBlkCopy(BLAST_SequenceBlk** copy, 
                           BLAST_SequenceBlk* src) 
 {
-   ASSERT(copy);
-   ASSERT(src);
-   
-   if (*copy)
-      memcpy(*copy, src, sizeof(BLAST_SequenceBlk));
-   else 
-      *copy = BlastMemDup(src, sizeof(BLAST_SequenceBlk));
+    ASSERT(copy);
+    ASSERT(src);
+    
+    if (*copy) {
+        memcpy(*copy, src, sizeof(BLAST_SequenceBlk));
+    } else {
+        *copy = BlastMemDup(src, sizeof(BLAST_SequenceBlk));
+    }
 
-   (*copy)->sequence_allocated = FALSE;
-   (*copy)->sequence_start_allocated = FALSE;
-   (*copy)->oof_sequence_allocated = FALSE;
-   (*copy)->lcase_mask_allocated = FALSE;
+    (*copy)->sequence_allocated = FALSE;
+    (*copy)->sequence_start_allocated = FALSE;
+    (*copy)->oof_sequence_allocated = FALSE;
+    (*copy)->lcase_mask_allocated = FALSE;
+    (*copy)->seq_ranges_allocated = FALSE;
 }
 
 Int2 BlastProgram2Number(const char *program, EBlastProgramType *number)
@@ -806,7 +915,7 @@ size_t
 BLAST_GetTranslatedProteinLength(size_t nucleotide_length, unsigned int context)
 {
     ASSERT((int)context >= 0 && context < NUM_FRAMES);
-    if (nucleotide_length == 0) {
+    if (nucleotide_length == 0 || nucleotide_length <= context) {
         return 0;
     }
     return (nucleotide_length - context % CODON_LENGTH) / CODON_LENGTH;

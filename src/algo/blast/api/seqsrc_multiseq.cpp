@@ -120,8 +120,7 @@ inline BLAST_SequenceBlk* CMultiSeqInfo::GetSeqBlk(int index)
 CMultiSeqInfo::CMultiSeqInfo(TSeqLocVector& seq_vector, 
                              EBlastProgramType program)
 {
-    m_ibIsProt = (program == eBlastTypeBlastp || program == eBlastTypeBlastx || 
-                  program == eBlastTypePsiBlast || program == eBlastTypeRpsBlast);
+	m_ibIsProt = Blast_SubjectIsProtein(program) ? true : false;
     
     SetupSubjects(seq_vector, program, &m_ivSeqBlkVec, &m_iMaxLength);
 
@@ -247,47 +246,45 @@ s_MultiSeqGetIsProt(void* multiseq_handle, void*)
 ///             encoding. [in]
 /// @return return codes defined in blast_seqsrc.h
 static Int2 
-s_MultiSeqGetSequence(void* multiseq_handle, void* args)
+s_MultiSeqGetSequence(void* multiseq_handle, BlastSeqSrcGetSeqArg* args)
 {
     CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
-    BlastSeqSrcGetSeqArg* seq_args = (BlastSeqSrcGetSeqArg*) args;
     Int4 index;
 
     _ASSERT(seq_info);
     _ASSERT(args);
 
-    if (seq_info->GetNumSeqs() == 0 || !seq_args)
+    if (seq_info->GetNumSeqs() == 0 || !args)
         return BLAST_SEQSRC_ERROR;
 
-    index = seq_args->oid;
+    index = args->oid;
 
     if (index >= (Int4) seq_info->GetNumSeqs())
         return BLAST_SEQSRC_EOF;
 
-    BlastSequenceBlkCopy(&seq_args->seq, seq_info->GetSeqBlk(index));
+    BlastSequenceBlkCopy(&args->seq, seq_info->GetSeqBlk(index));
     /* If this is a nucleotide sequence, and it is the traceback stage, 
        we need the uncompressed buffer, stored in the 'sequence_start' 
        pointer. That buffer has an extra sentinel byte for blastn, but
        no sentinel byte for translated programs. */
-    if (seq_args->encoding == eBlastEncodingNucleotide) {
-        seq_args->seq->sequence = seq_args->seq->sequence_start + 1;
-    } else if (seq_args->encoding == eBlastEncodingNcbi4na) {
-        seq_args->seq->sequence = seq_args->seq->sequence_start;
+    if (args->encoding == eBlastEncodingNucleotide) {
+        args->seq->sequence = args->seq->sequence_start + 1;
+    } else if (args->encoding == eBlastEncodingNcbi4na) {
+        args->seq->sequence = args->seq->sequence_start;
     }
 
-    seq_args->seq->oid = index;
+    args->seq->oid = index;
     return BLAST_SEQSRC_SUCCESS;
 }
 
 /// Deallocates the uncompressed sequence buffer if necessary.
 /// @param args Pointer to BlastSeqSrcGetSeqArg structure [in]
 static void
-s_MultiSeqReleaseSequence(void* /*multiseq_handle*/, void* args)
+s_MultiSeqReleaseSequence(void* /*multiseq_handle*/, BlastSeqSrcGetSeqArg* args)
 {
-    BlastSeqSrcGetSeqArg* seq_args = (BlastSeqSrcGetSeqArg*) args;
-    _ASSERT(seq_args);
-    if (seq_args->seq->sequence_start_allocated)
-        sfree(seq_args->seq->sequence_start);
+    _ASSERT(args);
+    if (args->seq->sequence_start_allocated)
+        sfree(args->seq->sequence_start);
 }
 
 /// Retrieve length of a given sequence.

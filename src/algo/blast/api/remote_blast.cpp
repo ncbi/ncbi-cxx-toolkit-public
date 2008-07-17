@@ -287,6 +287,38 @@ bool CRemoteBlast::Submit(void)
     return m_Errs.empty();
 }
 
+//
+// The following table summarizes how to determine the status of a given
+// RID/search submission:
+//
+//                           | CheckDone()   |  CheckDone()
+//                           | returns true  |  returns false
+// ------------------------------------------------------------
+// GetErrors() == kEmptyStr  |    DONE       |   PENDING
+// ------------------------------------------------------------
+// GetErrors() != kEmptyStr  |    FAILED     |   UNKNOWN RID
+// ------------------------------------------------------------
+//
+CRemoteBlast::ESearchStatus
+CRemoteBlast::CheckStatus()
+{
+    ESearchStatus retval = eStatus_Unknown;
+
+    bool done = CheckDone();
+    string errors = GetErrors();
+
+    if (done && errors == kEmptyStr) {
+        retval = eStatus_Done;
+    } else if (!done && errors == kEmptyStr) {
+        retval = eStatus_Pending;
+    } else if (!done && errors.find("bad_request_id") != NPOS) {
+        retval = eStatus_Unknown;
+    } else if (done && errors != kEmptyStr) {
+        retval = eStatus_Failed;
+    } 
+    return retval;
+}
+
 // Pre:  start, wait or done
 // Post: wait or done
 
@@ -836,10 +868,10 @@ void CRemoteBlast::SetQueries(CRef<objects::CBioseq_set> bioseqs)
                    "Empty reference for query.");
     }
     
-    CRef<CBlast4_queries> queries_p(new CBlast4_queries);
-    queries_p->SetBioseq_set(*bioseqs);
+    m_Queries.Reset(new CBlast4_queries);
+    m_Queries->SetBioseq_set(*bioseqs);
     
-    m_QSR->SetQueries(*queries_p);
+    m_QSR->SetQueries(*m_Queries);
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
 }
 
@@ -867,10 +899,10 @@ void CRemoteBlast::SetQueries(CRemoteBlast::TSeqLocList& seqlocs)
                    "Empty list for query.");
     }
     
-    CRef<CBlast4_queries> queries_p(new CBlast4_queries);
-    queries_p->SetSeq_loc_list() = seqlocs;
+    m_Queries.Reset(new CBlast4_queries);
+    m_Queries->SetSeq_loc_list() = seqlocs;
     
-    m_QSR->SetQueries(*queries_p);
+    m_QSR->SetQueries(*m_Queries);
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
 }
 
@@ -932,6 +964,30 @@ s_CreateBlastMask(const CPacked_seqint& packed_int, EBlastProgramType program)
     return retval;
 }
 
+CBlast4_get_search_results_reply::TMasks
+CRemoteBlast::ConvertToRemoteMasks(const TSeqLocInfoVector& masking_locations,
+                                   EBlastProgramType program,
+                                   vector<string>* warnings /* = NULL */)
+{
+    CBlast4_get_search_results_reply::TMasks retval;
+
+    ITERATE(TSeqLocInfoVector, query_masks, masking_locations) {
+
+        if (query_masks->empty()) {
+            continue;
+        }
+
+        CRef<CPacked_seqint> packed_int = 
+            query_masks->ConvertToCPacked_seqint(warnings);
+        _ASSERT(packed_int.NotEmpty());
+        CRef<CBlast4_mask> network_mask = 
+            s_CreateBlastMask(*packed_int, program);
+        _ASSERT(network_mask.NotEmpty());
+        retval.push_back(network_mask);
+    }
+    return retval;
+}
+
 // Puts in each Blast4-mask all the masks that correspond to the same query 
 // and the same frame.
 void
@@ -946,36 +1002,11 @@ CRemoteBlast::x_QueryMaskingLocationsToNetwork()
     EBlastProgramType program = NetworkProgram2BlastProgramType(m_Program,
                                                                 m_Service);
 
-    ITERATE(TSeqLocInfoVector, query_masks, m_QueryMaskingLocations) {
-
-        if (query_masks->empty()) {
-            continue;
-        }
-
-        // auxiliary to avoid adding the same warning if there are multiple
-        // masked locations on the negative strand for a single query
-        bool negative_strand_found = false;
-
-        CRef<CPacked_seqint> packed_int(new CPacked_seqint);
-        ITERATE(TMaskedQueryRegions, mask, *query_masks) {
-            if ((*mask)->GetFrame() == CSeqLocInfo::eFramePlus1 ||
-                (*mask)->GetFrame() == CSeqLocInfo::eFrameNotSet) {
-                packed_int->AddInterval((*mask)->GetInterval());
-            } else {
-                if ( !negative_strand_found) {
-                    const CSeq_interval& seqint = (*mask)->GetInterval();
-                    string warning("Ignoring masked locations on negative ");
-                    warning += string("strand for query '");
-                    warning += seqint.GetId().AsFastaString() + string("'");
-                    m_Warn.push_back(warning);
-                    negative_strand_found = true;
-                }
-            }
-        }
-
-        CRef<CBlast4_mask> network_mask = 
-            s_CreateBlastMask(*packed_int, program);
-        x_SetOneParam(B4Param_LCaseMask, network_mask);
+    const CBlast4_get_search_results_reply::TMasks& network_masks = 
+        CRemoteBlast::ConvertToRemoteMasks(m_QueryMaskingLocations,
+                                           program, &m_Warn);
+    ITERATE(CBlast4_get_search_results_reply::TMasks, itr, network_masks) {
+        x_SetOneParam(B4Param_LCaseMask, *itr);
     }
 
 }
@@ -1237,6 +1268,17 @@ void CRemoteBlast::x_Init(CRef<CBlastOptionsHandle>   opts_handle,
             SetNegativeGIList(gilist);
         }
     }}
+
+    // Set the filtering algorithms
+    {{
+        const CSearchDatabase::TFilteringAlgorithms& tmplist = 
+            db.GetFilteringAlgorithms();
+        if ( !tmplist.empty() ) {
+            list<Int4> filt_algs;
+            copy(tmplist.begin(), tmplist.end(), back_inserter(filt_algs));
+            SetDbFilteringAlgorithmIds(filt_algs);
+        }
+    }}
 }
 
 CRemoteBlast::~CRemoteBlast()
@@ -1252,6 +1294,18 @@ void CRemoteBlast::SetGIList(const list<Int4> & gi_list)
     
     m_GiList.clear();
     copy(gi_list.begin(), gi_list.end(), back_inserter(m_GiList));
+}
+
+void CRemoteBlast::SetDbFilteringAlgorithmIds(const list<Int4> & algo_ids)
+{
+    if (algo_ids.empty()) {
+        return;
+    }
+    x_SetOneParam(B4Param_DbFilteringAlgorithmIds, & algo_ids);
+    
+    m_DbFilteringAlgorithmIds.clear();
+    copy(algo_ids.begin(), algo_ids.end(),
+         back_inserter(m_DbFilteringAlgorithmIds));
 }
 
 void CRemoteBlast::SetNegativeGIList(const list<Int4> & gi_list)
@@ -1928,10 +1982,13 @@ NetworkFrame2FrameNumber(objects::EBlast4_frame_type frame,
         _TROUBLE;
     }
     
-    if (Blast_QueryIsNucleotide(program)) {
-        _ASSERT(frame == eBlast4_frame_type_plus1);
-        return CSeqLocInfo::eFramePlus1;
-    }
+    // The BLAST formatter expects nucleotide masks to have a 'not-set' strand,
+    // which implies that they're on the plus strand. If they're set to
+    // anything else, it won't display them.
+    //if (Blast_QueryIsNucleotide(program)) {
+    //    _ASSERT(frame == eBlast4_frame_type_plus1);
+    //    return CSeqLocInfo::eFramePlus1;
+    //}
     
     return CSeqLocInfo::eFrameNotSet;
 }
@@ -1961,6 +2018,10 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
         
         if (bob.HaveGiList()) {
             m_GiList = bob.GetGiList();
+        }
+
+        if (bob.HaveDbFilteringAlgorithmIds()) {
+            m_DbFilteringAlgorithmIds = bob.GetDbFilteringAlgorithmIds();
         }
 
         if (bob.HaveNegativeGiList()) {
@@ -2133,8 +2194,9 @@ CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
                              ancillary_data);
     }
     
+    TSeqLocInfoVector masks = GetMasks();
     retval.Reset(new CSearchResultSet(query_ids, alignments, search_messages,
-                                      ancill_vector));
+                                      ancill_vector, &masks));
     retval->SetRID(GetRID());
     return retval;
 }

@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 
 #include "seqdbatlas.hpp"
+#include "seqdbgeneral.hpp"
 #include <memory>
 #include <algorithm>
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
@@ -495,7 +496,7 @@ void CRegionMap::x_Roundup(TIndx       & begin,
     }
     
     _ASSERT(begin <  end);
-    _ASSERT(end   <= file_size);
+    SEQDB_FILE_ASSERT(end <= file_size);
     
     penalty = 0;
     
@@ -1409,6 +1410,7 @@ void CSeqDBAtlas::UnregisterExternal(CSeqDBMemReg & memreg)
     }
 }
 
+
 // 16 GB should be enough
 
 const Int8 CSeqDBMapStrategy::e_MaxMemory64 = Int8(16) << 30;
@@ -1645,8 +1647,9 @@ void CSeqDBMapStrategy::SetDefaultMemoryBound(Uint8 bytes)
     m_AdjustedBound = true;
 }
 
-CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool            use_mmap,
-                                     CSeqDBFlushCB * flush)
+CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool             use_mmap,
+                                     CSeqDBFlushCB  * flush,
+                                     CSeqDBLockHold * lockedp)
     : m_FlushCB(0)
 {
     CFastMutexGuard guard(m_Lock);
@@ -1655,9 +1658,14 @@ CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool            use_mmap,
         m_Atlas = new CSeqDBAtlas(use_mmap);
     }
     
+    CSeqDBLockHold locked2(*m_Atlas);
+    
+    if (lockedp == NULL) {
+        lockedp = & locked2;
+    }
+    
     if (flush) {
-        CSeqDBLockHold locked(*m_Atlas);
-        m_Atlas->AddRegionFlusher(flush, & m_FlushCB, locked);
+        m_Atlas->AddRegionFlusher(flush, & m_FlushCB, *lockedp);
     }
     
     m_Count ++;
@@ -1733,6 +1741,50 @@ void CSeqDBMapStrategy::x_CheckAdjusted()
     if (m_GlobalMaxBound && m_AdjustedBound) {
         x_SetBounds(m_GlobalMaxBound);
     }
+}
+
+CSeqDB_AtlasRegionHolder::
+CSeqDB_AtlasRegionHolder(CSeqDBAtlas & atlas, const char * ptr)
+    : m_Atlas(atlas), m_Ptr(ptr)
+{
+}
+
+CSeqDB_AtlasRegionHolder::~CSeqDB_AtlasRegionHolder()
+{
+    if (m_Ptr) {
+        CSeqDBLockHold locked(m_Atlas);
+        m_Atlas.Lock(locked);
+        
+        m_Atlas.RetRegion(m_Ptr);
+        m_Ptr = NULL;
+    }
+}
+
+void CSeqDBSpinLock::Lock()
+{
+    NCBI_SCHED_INIT();
+    
+    bool done = false;
+    
+    while(! done) {
+        while(m_L)
+            ;
+        
+        void * NewL = (void *) 1;
+        void * OldL = SwapPointers(& m_L, NewL);
+        
+        if (OldL == (void*) 0) {
+            done = true;
+        } else {
+            NCBI_SCHED_YIELD();
+        }
+    }
+}
+
+void CSeqDBSpinLock::Unlock()
+{
+    // If we hold the lock, atomicity shouldn't be an issue here.
+    m_L = (void*)0;
 }
 
 

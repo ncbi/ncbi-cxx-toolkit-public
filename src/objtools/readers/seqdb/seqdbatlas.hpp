@@ -37,9 +37,14 @@
 ///     CSeqDBFlushCB
 ///     CSeqDBSpinLock
 ///     CSeqDBLockHold
+///     CSeqDBMemReg
 ///     CRegionMap
 ///     CSeqDBMemLease
+///     CSeqDBMovingAverage
+///     CSeqDBMapStrategy
+///     CSeqDB_AtlasRegionHolder
 ///     CSeqDBAtlas
+///     CSeqDBAtlasHolder
 /// 
 /// Implemented for: UNIX, MS-Windows
 
@@ -220,35 +225,12 @@ public:
     ///
     /// Runs in a loop, trying to acquired the lock.  Does not return
     /// until it succeeds.
-    void Lock()
-    {
-        NCBI_SCHED_INIT();
-        
-        bool done = false;
-        
-        while(! done) {
-            while(m_L)
-                ;
-            
-            void * NewL = (void *) 1;
-            void * OldL = SwapPointers(& m_L, NewL);
-            
-            if (OldL == (void*) 0) {
-                done = true;
-            } else {
-                NCBI_SCHED_YIELD();
-            }
-        }
-    }
+    void Lock();
     
     /// Unlock
     ///
     /// Sets the lock to an unlock state.
-    void Unlock()
-    {
-        // If we hold the lock, atomicity shouldn't be an issue here.
-	m_L = (void*)0;
-    }
+    void Unlock();
     
 private:
     /// The underlying data - if this is a 1, cast to a void pointer,
@@ -1190,6 +1172,34 @@ private:
 };
 
 
+/// Hold a memory region refcount, return to atlas when destroyed.
+///
+/// This object `owns' a reference to a region of atlas owned memory,
+/// releasing that reference when destructed.  This can be used to
+/// return a hold on a region of memory to the user.  Care should be
+/// taken when managing these objects.  In particular there should
+/// never be a case where a "live" object of this type could be
+/// destroyed in a thread that already holds the atlas lock.  A simple
+/// technique is to keep an extra CRef<> to this object until the
+/// thread releasees the lock.
+
+class CSeqDB_AtlasRegionHolder : public CObject {
+public:
+    /// Constructor.
+    CSeqDB_AtlasRegionHolder(CSeqDBAtlas & atlas, const char * ptr);
+    
+    /// Destructor.
+    ~CSeqDB_AtlasRegionHolder();
+    
+private:
+    /// Reference to the memory management layer.
+    CSeqDBAtlas & m_Atlas;
+    
+    /// Pointer to this object.
+    const char  * m_Ptr;
+};
+
+
 /// CSeqDBAtlas class
 /// 
 /// This object manages a collection of (memory) maps.  It mmaps or
@@ -2121,14 +2131,19 @@ inline void CSeqDBMemLease::IncrementRefCnt()
 /// given time, and only if a CSeqDB object exists.  This object
 /// implements that policy.  When no CSeqDBAtlas object exists, the
 /// first CSeqDB object to be created will decide whether memory
-/// mapping is enabled.  One of these objects is owned by every
-/// CSeqDBImpl object (and the frames of a few static functions.)
+/// mapping is enabled.  One of these objects exists in every
+/// CSeqDBImpl and CSeqDBColumn object, and in the frames of a few
+/// static functions.
+
 class CSeqDBAtlasHolder {
 public:
     /// Constructor.
     /// @param use_mmap If true, memory mapping will be used.
     /// @param flusher The garbage collection callback.
-    CSeqDBAtlasHolder(bool use_mmap, CSeqDBFlushCB * flusher = NULL);
+    /// @param locked The lock hold object for this thread (or NULL).
+    CSeqDBAtlasHolder(bool             use_mmap,
+                      CSeqDBFlushCB  * flusher,
+                      CSeqDBLockHold * lockedp);
     
     /// Destructor.
     ~CSeqDBAtlasHolder();

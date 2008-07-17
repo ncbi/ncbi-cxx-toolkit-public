@@ -329,7 +329,7 @@ CObjMgr_RemoteQueryData::GetSeqLocs()
 /////////////////////////////////////////////////////////////////////////////
 
 CObjMgr_QueryFactory::CObjMgr_QueryFactory(TSeqLocVector& queries)
-    : m_SSeqLocVector(&queries)
+    : m_SSeqLocVector(queries)
 {
     if (queries.empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, "Empty TSeqLocVector");
@@ -337,7 +337,7 @@ CObjMgr_QueryFactory::CObjMgr_QueryFactory(TSeqLocVector& queries)
 }
 
 CObjMgr_QueryFactory::CObjMgr_QueryFactory(CBlastQueryVector & queries)
-    : m_SSeqLocVector(0), m_QueryVector(& queries)
+    : m_QueryVector(& queries)
 {
     if (queries.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, "Empty CBlastQueryVector");
@@ -348,9 +348,8 @@ vector< CRef<CScope> >
 CObjMgr_QueryFactory::ExtractScopes()
 {
     vector< CRef<CScope> > retval;
-    if (m_SSeqLocVector) {
-        _ASSERT( !m_SSeqLocVector->empty() );
-        NON_CONST_ITERATE(TSeqLocVector, itr, *m_SSeqLocVector)
+    if ( !m_SSeqLocVector.empty() ) {
+        NON_CONST_ITERATE(TSeqLocVector, itr, m_SSeqLocVector)
             retval.push_back(itr->scope);
     } else if (m_QueryVector.NotEmpty()) {
         for (CBlastQueryVector::size_type i = 0; i < m_QueryVector->Size(); i++)
@@ -382,11 +381,10 @@ TSeqLocInfoVector
 CObjMgr_QueryFactory::ExtractUserSpecifiedMasks()
 {
     TSeqLocInfoVector retval;
-    if (m_SSeqLocVector) {
-        _ASSERT( !m_SSeqLocVector->empty() );
+    if ( !m_SSeqLocVector.empty() ) {
         const EBlastProgramType kProgram = 
-            s_GuessProgram(m_SSeqLocVector->front().mask);
-        NON_CONST_ITERATE(TSeqLocVector, itr, *m_SSeqLocVector) {
+            s_GuessProgram(m_SSeqLocVector.front().mask);
+        NON_CONST_ITERATE(TSeqLocVector, itr, m_SSeqLocVector) {
             TMaskedQueryRegions mqr = 
                 PackedSeqLocToMaskedQueryRegions(itr->mask, kProgram,
                                                  itr->ignore_strand_in_mask);
@@ -406,8 +404,8 @@ CObjMgr_QueryFactory::x_MakeLocalQueryData(const CBlastOptions* opts)
 {
     CRef<ILocalQueryData> retval;
     
-    if (m_SSeqLocVector) {
-        retval.Reset(new CObjMgr_LocalQueryData(m_SSeqLocVector, opts));
+    if ( !m_SSeqLocVector.empty() ) {
+        retval.Reset(new CObjMgr_LocalQueryData(&m_SSeqLocVector, opts));
     } else if (m_QueryVector.NotEmpty()) {
         retval.Reset(new CObjMgr_LocalQueryData(*m_QueryVector, opts));
     } else {
@@ -422,8 +420,8 @@ CObjMgr_QueryFactory::x_MakeRemoteQueryData()
 {
     CRef<IRemoteQueryData> retval;
 
-    if (m_SSeqLocVector) {
-        retval.Reset(new CObjMgr_RemoteQueryData(m_SSeqLocVector));
+    if ( !m_SSeqLocVector.empty() ) {
+        retval.Reset(new CObjMgr_RemoteQueryData(&m_SSeqLocVector));
     } else if (m_QueryVector.NotEmpty()) {
         retval.Reset(new CObjMgr_RemoteQueryData(*m_QueryVector));
     } else {

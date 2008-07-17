@@ -265,14 +265,11 @@ s_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp,
 {
    double paramC;
    double Lambda;
-   Int8 pattern_space;
   
    ASSERT(query_info && hsp && sbp && pattern_blk);
 
    paramC = sbp->kbp[0]->paramC;
    Lambda = sbp->kbp[0]->Lambda;
-
-   pattern_space = query_info->contexts[0].eff_searchsp;
 
    /* We have the actual number of occurrences of pattern in db. */
    hsp->evalue = paramC*(1+Lambda*hsp->score)*
@@ -1962,9 +1959,9 @@ Blast_HSPListReevaluateWithAmbiguitiesUngapped(EBlastProgramType program,
          (kTranslateSubject ? eBlastEncodingNcbi4na : eBlastEncodingNucleotide);
       seq_arg.seq = subject_blk;
       /* Return the packed sequence to the database */
-      BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
+      BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
       /* Get the unpacked sequence */
-      if ((status=BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg)))
+      if ((status=BlastSeqSrcGetSequence(seq_src, &seq_arg)))
           return status;
    }
 

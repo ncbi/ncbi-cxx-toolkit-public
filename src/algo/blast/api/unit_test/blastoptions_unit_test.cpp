@@ -1191,4 +1191,43 @@ BOOST_AUTO_TEST_CASE( testInitialWordParamNewSomeInvalidKbp )
     sbp = BlastScoreBlkFree(sbp);
 }
 
+BOOST_AUTO_TEST_CASE( testRemoteFilterString)
+{
+       typedef ncbi::objects::CBlast4_parameters TBlast4Opts;
+       CBlastOptions opts(CBlastOptions::eRemote);
+
+       opts.SetProgram(eBlastn);
+       opts.SetFilterString("F", true);
+       // cerr << "dust filter" << (int) blast4_opts->GetParamByName("DustFiltering")->GetValue().GetBoolean() << '\n';
+       BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("DustFiltering")->GetValue().GetBoolean());
+       BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("RepeatFiltering")->GetValue().GetBoolean());
+       opts.SetFilterString("T", true);
+       BOOST_CHECK_EQUAL(true, opts.GetBlast4AlgoOpts()->GetParamByName("DustFiltering")->GetValue().GetBoolean());
+       BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("RepeatFiltering")->GetValue().GetBoolean());
+
+       opts.SetProgram(eBlastp);
+       opts.SetFilterString("F", true);
+       BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
+       opts.SetFilterString("T", true);
+       BOOST_CHECK_EQUAL(true, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
+
+       opts.SetProgram(eBlastx);
+       opts.SetFilterString("F", true);
+       BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
+       opts.SetFilterString("T", true);
+       BOOST_CHECK_EQUAL(true, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
+
+       opts.SetProgram(eTblastn);
+       opts.SetFilterString("F", true);
+       BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
+       opts.SetFilterString("T", true);
+       BOOST_CHECK_EQUAL(true, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
+
+       opts.SetProgram(eTblastx);
+       opts.SetFilterString("F", true);
+       BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
+       opts.SetFilterString("T", true);
+       BOOST_CHECK_EQUAL(true, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
+}
+
 #endif /* SKIP_DOXYGEN_PROCESSING */

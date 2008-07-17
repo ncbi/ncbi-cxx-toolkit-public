@@ -39,7 +39,6 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
-#include <objmgr/object_manager.hpp>
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/seqsrc_seqdb.hpp>
@@ -64,7 +63,9 @@ class CPsiBlastApp : public CNcbiApplication
 public:
     /** @inheritDoc */
     CPsiBlastApp() {
-        SetVersion(blast::Version);
+        CRef<CVersion> version(new CVersion());
+        version->SetVersionInfo(new CBlastVersion());
+        SetFullVersion(version);
     }
 private:
     /** @inheritDoc */
@@ -85,8 +86,6 @@ private:
                                 CRef<CScope> scope,
                                 CRef<CBlastAncillaryData> ancillary_data);
 
-    /// The object manager
-    CRef<CObjectManager> m_ObjMgr;
     /// This application's command line args
     CRef<CPsiBlastAppArgs> m_CmdLineArgs;
     /// Ancillary results for the previously executed PSI-BLAST iteration
@@ -95,19 +94,13 @@ private:
 
 void CPsiBlastApp::Init()
 {
-    // get the object manager instance
-    m_ObjMgr = CObjectManager::GetInstance();
-    if (!m_ObjMgr) {
-        throw std::runtime_error("Could not initialize object manager");
-    }
-
     // formulate command line arguments
 
     m_CmdLineArgs.Reset(new CPsiBlastAppArgs());
 
     // read the command line
 
-    HideStdArgs(fHideLogfile | fHideConffile | fHideDryRun);
+    HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
     SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
 }
 
@@ -130,6 +123,7 @@ s_GetQueryBioseq(CConstRef<CBlastQueryVector> query, CRef<CScope> scope,
     } else {
         _ASSERT(query.NotEmpty());
         CBioseq_Handle bh = scope->GetBioseqHandle(*query->GetQuerySeqLoc(0));
+        _ASSERT(bh);
         retval.Reset(bh.GetBioseqCore());
     }
     return retval;
@@ -196,10 +190,7 @@ int CPsiBlastApp::Run(void)
             m_CmdLineArgs->GetQueryOptionsArgs();
 
         CRef<CBlastOptionsHandle> opts_hndl(m_CmdLineArgs->SetOptions(args));
-        CRef<CPSIBlastOptionsHandle> opts;
-        opts.Reset(dynamic_cast<CPSIBlastOptionsHandle*>(&*opts_hndl));
-        _ASSERT(opts.NotEmpty());
-        CBlastOptions& opt = opts->SetOptions();
+        const CBlastOptions& opt = opts_hndl->GetOptions();
         const size_t kNumIterations = m_CmdLineArgs->GetNumberOfIterations();
 
         /*** Get the query sequence(s) or PSSM (these two options are mutually
@@ -208,14 +199,15 @@ int CPsiBlastApp::Run(void)
         CRef<CBlastQueryVector> query;
         CRef<CBlastFastaInputSource> fasta;
         CRef<CBlastInput> input;
-        const SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
-        CRef<CScope> scope(new CScope(*m_ObjMgr));
+        SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
+        dlconfig.OptimizeForWholeLargeSequenceRetrieval();
+        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
         CRef<IQueryFactory> query_factory;  /* populated if no PSSM is given */
 
         if (pssm.Empty()) {
             CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                          query_opts->UseLowercaseMasks(),
-                                         query_opts->BelieveQueryDefline(),
+                                         query_opts->GetParseDeflines(),
                                          query_opts->GetRange(),
                                          !m_CmdLineArgs->ExecuteRemotely());
             fasta.Reset(new CBlastFastaInputSource(
@@ -246,19 +238,10 @@ int CPsiBlastApp::Run(void)
 
         /*** Initialize the database ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
-        CRef<CLocalDbAdapter> db_adapter;   /* needed for local searches */
-        CRef<CSearchDatabase> search_db;    /* needed for remote searches and
-                                               for exporting the search
-                                               strategy */
-        search_db = db_args->GetSearchDatabase();
-        if ( !m_CmdLineArgs->ExecuteRemotely() ) {
-            CRef<CSeqDB> seqdb = GetSeqDB(db_args);
-            db_adapter.Reset(new CLocalDbAdapter(seqdb));
-            scope->AddDataLoader(RegisterOMDataLoader(m_ObjMgr, seqdb));
-        } else {
-            // needed to fetch sequences remotely for formatting
-            scope->AddScope(*CBlastScopeSource(dlconfig).NewScope());
-        }
+        CRef<CLocalDbAdapter> db_adapter;
+        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
+                         db_adapter, scope);
+        _ASSERT(db_adapter && scope);
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
@@ -267,7 +250,7 @@ int CPsiBlastApp::Run(void)
                                db_args->GetDatabaseName(),
                                fmt_args->GetFormattedOutputChoice(),
                                db_args->IsProtein(),
-                               query_opts->BelieveQueryDefline(),
+                               query_opts->GetParseDeflines(),
                                out_stream,
                                fmt_args->GetNumDescriptions(),
                                fmt_args->GetNumAlignments(),
@@ -278,24 +261,19 @@ int CPsiBlastApp::Run(void)
                                opt.GetQueryGeneticCode(),
                                opt.GetDbGeneticCode(),
                                opt.GetSumStatisticsMode(),
-                               m_CmdLineArgs->ExecuteRemotely());
-        //if (kNumIterations > 1) {
-        //    // don't restrict the # of hits so that the number of hits sent to
-        //    // the PSSM engine is the same as in the C toolkit
-        //    opt.SetHitlistSize(max(fmt_args->GetNumDescriptions(),
-        //                           fmt_args->GetNumAlignments()));
-        //}
-
+                               m_CmdLineArgs->ExecuteRemotely(),
+                               db_adapter->GetFilteringAlgorithms());
         formatter.PrintProlog();
 
-        SaveSearchStrategy(args, m_CmdLineArgs, query_factory, opts_hndl, 
-                           search_db, pssm.GetPointer());
+        SaveSearchStrategy(args, m_CmdLineArgs, query_factory, opts_hndl, pssm);
 
         if (m_CmdLineArgs->ExecuteRemotely()) {
 
             CRef<CRemoteBlast> rmt_psiblast = 
                 InitializeRemoteBlast(query_factory, db_args, opts_hndl, scope,
                       m_CmdLineArgs->ProduceDebugRemoteOutput(), pssm);
+            // FIXME: determine if errors ocurred, if so, return appropriate
+            // exit code
 
             CRef<CSearchResultSet> results = rmt_psiblast->GetResultSet();
             ITERATE(CSearchResultSet, result, *results) {
@@ -308,24 +286,64 @@ int CPsiBlastApp::Run(void)
 
             CPsiBlastIterationState itr(kNumIterations);
 
-            CRef<CPsiBlast> psiblast;
-            if (query_factory.NotEmpty()) {
-                psiblast.Reset(new CPsiBlast(query_factory, db_adapter, opts));
-            } else {
-                _ASSERT(pssm.NotEmpty());
-                psiblast.Reset(new CPsiBlast(pssm, db_adapter, opts));
+            CRef<CPHIBlastProtOptionsHandle> phi_opts;
+            CRef<CPSIBlastOptionsHandle> psi_opts;
+            int run_token = 0; // 1 means phi-blast, 2 means psi-blast, 3 means both
+            if (opt.GetPHIPattern() != NULL)
+               run_token += 1;
+            if (kNumIterations != 1 || opt.GetPHIPattern() == NULL)
+               run_token += 2;
+
+            if (run_token & 1)
+            {
+               phi_opts.Reset(dynamic_cast<CPHIBlastProtOptionsHandle*>(&*opts_hndl));
+               if (run_token & 2)
+               {
+                  // m_CmdLineArgs->ForcePSIBlast();
+                  ((CArgs&)args).Remove(kArgPHIPatternFile);
+                  CRef<CBlastOptionsHandle> opts_hndl_2(m_CmdLineArgs->SetOptions(args));
+                  CBlastOptions& options = opts_hndl_2->SetOptions();
+                  options.SetPHIPattern(NULL, false);
+                  options.SetLookupTableType(eAaLookupTable);
+                  psi_opts.Reset(dynamic_cast<CPSIBlastOptionsHandle*>(&*opts_hndl_2));
+               }
             }
-            psiblast->SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
+            else if (run_token == 2)  // This branch means only psi-blast, NO phi-blast.
+                psi_opts.Reset(dynamic_cast<CPSIBlastOptionsHandle*>(&*opts_hndl));
+
+            CRef<CPsiBlast> psiblast;
+            if (run_token & 2)
+            {
+                _ASSERT(psi_opts.NotEmpty());
+                if (query_factory.NotEmpty()) {
+                    psiblast.Reset(new CPsiBlast(query_factory, db_adapter, psi_opts));
+                } else {
+                    _ASSERT(pssm.NotEmpty());
+                    psiblast.Reset(new CPsiBlast(pssm, db_adapter, psi_opts));
+                }
+            	psiblast->SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
+            }
 
             while (itr) {
 
                 SavePssmToFile(pssm, &itr);
 
-                CRef<CSearchResultSet> results = psiblast->Run();
-                ITERATE(CSearchResultSet, result, *results) {
-                    formatter.PrintOneResultSet(**result, query,
+                CRef<CSearchResultSet> results;
+                if (run_token & 1 && itr.GetIterationNumber() == 1)
+                {
+                   CLocalBlast lcl_blast(query_factory, CRef<CBlastOptionsHandle>(phi_opts), db_adapter);
+                   lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
+                   results = lcl_blast.Run();
+                   formatter.PrintPhiResult(*results, query, itr.GetIterationNumber(),  itr.GetPreviouslyFoundSeqIds());
+                }
+                else
+                {
+                   results = psiblast->Run();
+                   ITERATE(CSearchResultSet, result, *results) {
+                       formatter.PrintOneResultSet(**result, query,
                                                 itr.GetIterationNumber(),
                                                 itr.GetPreviouslyFoundSeqIds());
+                   }
                 }
                 // FIXME: what if there are no results!?!
 
@@ -334,20 +352,25 @@ int CPsiBlastApp::Run(void)
                     break;
                 }
 
-                CConstRef<CSeq_align_set> aln(results_1st_query.GetSeqAlign());
-                CPsiBlastIterationState::TSeqIds ids;
-                CPsiBlastIterationState::GetSeqIds(aln, opts, ids);
+                if (run_token & 2)
+                {
+                	CConstRef<CSeq_align_set> aln(results_1st_query.GetSeqAlign());
+                	CPsiBlastIterationState::TSeqIds ids;
+                	CPsiBlastIterationState::GetSeqIds(aln, psi_opts, ids);
 
-                itr.Advance(ids);
+                	itr.Advance(ids);
 
-                if (itr) {
-                    CConstRef<CBioseq> seq =
-                        s_GetQueryBioseq(query, scope, pssm);
-                    pssm = 
-                        ComputePssmForNextIteration(*seq, aln, opts, scope,
+                	if (itr) {
+                    		CConstRef<CBioseq> seq =
+                       		 s_GetQueryBioseq(query, scope, pssm);
+                    		pssm = 
+                       		 ComputePssmForNextIteration(*seq, aln, psi_opts, scope,
                                           results_1st_query.GetAncillaryData());
-                    psiblast->SetPssm(pssm);
+                    		psiblast->SetPssm(pssm);
+                	}
                 }
+                else
+                  break;
             }
 
             if (itr.HasConverged() && !fmt_args->HasStructuredOutputFormat()) {
@@ -365,7 +388,6 @@ int CPsiBlastApp::Run(void)
     } CATCH_ALL(status)
     return status;
 }
-
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)

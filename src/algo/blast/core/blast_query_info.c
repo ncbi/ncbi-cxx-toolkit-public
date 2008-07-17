@@ -183,7 +183,7 @@ BlastQueryInfoGetEffSearchSpace(const BlastQueryInfo* qinfo,
 {
     Int8 retval = 0;
     Int4 i = 0;
-    const Uint4 kNumContexts = BLAST_GetNumberOfContexts(program);
+    const Int4 kNumContexts = (Int4)BLAST_GetNumberOfContexts(program);
     ASSERT(query_index < qinfo->num_queries);
 
     for (i = query_index*kNumContexts; i < (query_index+1)*kNumContexts; i++) {
@@ -201,7 +201,7 @@ BlastQueryInfoSetEffSearchSpace(BlastQueryInfo* qinfo,
                                 Int8 eff_searchsp)
 {
     Int4 i = 0;
-    const Uint4 kNumContexts = BLAST_GetNumberOfContexts(program);
+    const Int4 kNumContexts = (Int4)BLAST_GetNumberOfContexts(program);
     ASSERT(query_index < qinfo->num_queries);
 
     for (i = query_index*kNumContexts; i < (query_index+1)*kNumContexts; i++) {

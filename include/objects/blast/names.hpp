@@ -66,37 +66,37 @@ public:
     CBlast4_value::E_Choice GetType() const;
     
     /// Match field name and type to parameter.
-    bool Match(CBlast4_parameter& p) const;
+    bool Match(const CBlast4_parameter& p) const;
     
     /// Verify parameter name and type, and get boolean value.
-    bool GetBoolean(CBlast4_parameter& p) const;
+    bool GetBoolean(const CBlast4_parameter& p) const;
     
     /// Verify parameter name and type, and get big integer value.
-    Int8 GetBig_integer(CBlast4_parameter& p) const;
+    Int8 GetBig_integer(const CBlast4_parameter& p) const;
     
     /// Verify parameter name and type, and get cutoff value.
-    CRef<CBlast4_cutoff> GetCutoff(CBlast4_parameter& p) const;
+    CConstRef<CBlast4_cutoff> GetCutoff(const CBlast4_parameter& p) const;
     
     /// Verify parameter name and type, and get integer value.
-    int GetInteger(CBlast4_parameter& p) const;
+    int GetInteger(const CBlast4_parameter& p) const;
     
     /// Verify parameter name and type, and get integer list value.
-    list<int> GetIntegerList(CBlast4_parameter& p) const;
+    list<int> GetIntegerList(const CBlast4_parameter& p) const;
     
     /// Verify parameter name and type, and get matrix (pssm) value.
-    CRef<CPssmWithParameters> GetMatrix(CBlast4_parameter& p) const;
+    CConstRef<CPssmWithParameters> GetMatrix(const CBlast4_parameter& p) const;
     
     /// Verify parameter name and type, and get query mask value.
-    CRef<CBlast4_mask> GetQueryMask(CBlast4_parameter& p) const;
+    CConstRef<CBlast4_mask> GetQueryMask(const CBlast4_parameter& p) const;
     
     /// Verify parameter name and type, and get real value.
-    double GetReal(CBlast4_parameter & p) const;
+    double GetReal(const CBlast4_parameter & p) const;
     
     /// Verify parameter name and type, and get strand_type value.
-    EBlast4_strand_type GetStrandType(CBlast4_parameter& p) const;
+    EBlast4_strand_type GetStrandType(const CBlast4_parameter& p) const;
     
     /// Verify parameter name and type, and get string value.
-    string GetString(CBlast4_parameter& p) const;
+    string GetString(const CBlast4_parameter& p) const;
     
     /// Check whether a field of the given name exists.
     static bool KnownField(const string& name);
@@ -136,6 +136,7 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapExtnAlgorithm;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapOpeningCost;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapTracebackAlgorithm;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GiList;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DbFilteringAlgorithmIds;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_NegativeGiList;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_HitlistSize;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_HspRangeMax;
@@ -177,23 +178,15 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_UnifiedP;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowMaskerDatabase;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowMaskerTaxId;
 
-// List of formatting-related options
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_Alignments;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_AlignView;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_BlastSpecialPage;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_Client;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_Descriptions;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_EntrezQuery;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_Html;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_JobTitle;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_NewWindow;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_OrganismName;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_RunPsiBlast;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_ShortQueryAdjust;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_ShowGi;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_ShowOverview;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_StepNumber;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_User;
+// List of web-related options
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_BlastSpecialPage;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_EntrezQuery;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_JobTitle;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_NewWindow;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_OrganismName;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_RunPsiBlast;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_ShortQueryAdjust;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_StepNumber;
 
 END_objects_SCOPE // namespace ncbi::objects::
 

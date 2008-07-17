@@ -32,6 +32,9 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/seqdb/seqdbexpert.hpp>
+#include <objtools/readers/seqdb/column_reader.hpp>
+#include <objtools/readers/seqdb/seqdbcommon.hpp>
+#include <objects/blastdb/defline_extra.hpp>
 #include <serial/serialbase.hpp>
 #include <objects/seq/seq__.hpp>
 #include <corelib/ncbifile.hpp>
@@ -1533,6 +1536,43 @@ BOOST_AUTO_TEST_CASE(Offset2OidMonotony)
     }
 }
 
+class CTmpEnvironmentSetter {
+public:
+    CTmpEnvironmentSetter(const char* name, const char* value = NULL) {
+        m_Name.assign(name);
+        m_PrevValue = m_Env.Get(m_Name);
+		m_Env.Set(m_Name, (value == NULL ? kEmptyStr : string(value)));
+    }
+    ~CTmpEnvironmentSetter() {
+        if ( !m_PrevValue.empty() ) {
+			m_Env.Set(m_Name, m_PrevValue);
+        }
+    }
+private:
+	CNcbiEnvironment m_Env;
+    string m_Name;
+    string m_PrevValue;
+};
+
+BOOST_AUTO_TEST_CASE(OpenWithBLASTDBEnv)
+{
+    START;
+    CTmpEnvironmentSetter tmpenv("BLASTDB", "/blast/db/blast");
+    CSeqDB db1("nr", CSeqDB::eProtein);
+    CSeqDB db2("genomes/rice", CSeqDB::eProtein);
+    CSeqDB db3("genomes/rice", CSeqDB::eNucleotide);
+}
+
+BOOST_AUTO_TEST_CASE(OpenWithoutBLASTDBEnv)
+{
+    START;
+    CTmpEnvironmentSetter tmpenv("BLASTDB");
+    CSeqDB db1("nr", CSeqDB::eProtein);
+    CSeqDB db2("genomes/rice", CSeqDB::eNucleotide);
+    // When the line below is removed, things work (06/02/08 2:53PM EST) ?
+    CSeqDB db3("genomes/rice", CSeqDB::eProtein);
+}
+
 BOOST_AUTO_TEST_CASE(GiLists)
 {
     START;
@@ -1775,6 +1815,28 @@ BOOST_AUTO_TEST_CASE(EmptyDBList)
     if (! caught_exception) {
         BOOST_ERROR("EmptyDBList() did not throw an exception of type  CSeqDBException.");
     }
+}
+
+BOOST_AUTO_TEST_CASE(IsBinaryGiList_True)
+{
+    BOOST_REQUIRE_EQUAL(true, SeqDB_IsBinaryGiList("data/prot345b.gil"));
+}
+
+BOOST_AUTO_TEST_CASE(IsBinaryGiList_False)
+{
+    BOOST_REQUIRE_EQUAL(false, SeqDB_IsBinaryGiList("data/prot345t.gil"));
+}
+
+BOOST_AUTO_TEST_CASE(IsBinaryGiList_EmptyFile)
+{
+    BOOST_REQUIRE_THROW(SeqDB_IsBinaryGiList("data/broken-mask-data-db.paa"),
+                        CSeqDBException);
+}
+
+BOOST_AUTO_TEST_CASE(IsBinaryGiList_InvalidFile)
+{
+    BOOST_REQUIRE_THROW(SeqDB_IsBinaryGiList("data/totals.nal"),
+                        CSeqDBException);
 }
 
 BOOST_AUTO_TEST_CASE(BinaryUserGiList)
@@ -3339,6 +3401,66 @@ BOOST_AUTO_TEST_CASE(HashToOid)
     }
 }
 
+#if 0
+BOOST_AUTO_TEST_CASE(TraceIdLookup)
+{
+    START;
+    
+    vector<string> ids;
+    NStr::Tokenize("1234 2468 4936 9872 19744 1234000 "
+                   "1234000000 1234000000000 1234000000000000",
+                   " ", ids);
+    
+    string sides("B44448888");
+    
+    CSeqDB db4("data/short-tis", CSeqDB::eNucleotide);
+    CSeqDB db8("data/long-tis", CSeqDB::eNucleotide);
+    
+    CHECK_EQUAL(sides.size(), ids.size());
+    
+    for(size_t i = 0; i < ids.size(); i++) {
+        bool is4(false), is8(false);
+        
+        switch(sides[i]) {
+        case 'B':
+            is4 = true;
+            is8 = true;
+            break;
+            
+        case '4':
+            is4 = true;
+            break;
+            
+        case '8':
+            is8 = true;
+            break;
+        }
+        
+        string idstr = ids[i];
+        Int8 idnum = NStr::StringToInt8(idstr);
+        
+        int oid = -2;
+        
+        bool have = db4.TiToOid(idnum, oid);
+        CHECK_EQUAL(is4, have);
+        CHECK_EQUAL(is4, (oid >= 0));
+        
+        have = db8.TiToOid(idnum, oid);
+        CHECK_EQUAL(is8, have);
+        CHECK_EQUAL(is8, (oid >= 0));
+        
+        CSeq_id seqid(string("gnl|ti|") + idstr);
+        vector<int> oids;
+        
+        db4.SeqidToOids(seqid, oids);
+        CHECK_EQUAL(is4, (oids.size() == 1));
+        
+        db8.SeqidToOids(seqid, oids);
+        CHECK_EQUAL(is8, (oids.size() == 1));
+    }
+}
+#endif
+
 BOOST_AUTO_TEST_CASE(FilteredHeaders)
 {
     START;
@@ -3523,6 +3645,97 @@ BOOST_AUTO_TEST_CASE(PdbIdWithChain)
     CHECK(oids.size());
 }
 
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+BOOST_AUTO_TEST_CASE(UserDefinedColumns)
+{
+    START;
+    
+    string fname("data/user-column");
+    string vname("data/user-column-db");
+    const string title("comedy");
+    
+    CSeqDBExpert db(vname, CSeqDB::eProtein);
+    CSeqDB_ColumnReader CR(fname, 'a');
+    
+    CHECK_EQUAL(CR.GetTitle(), title);
+    
+    // Meta Data
+    
+    vector<string> columns;
+    db.ListColumns(columns);
+    
+    CHECK_EQUAL((int)columns.size(), 1);
+    CHECK_EQUAL(title, columns[0]);
+    
+    int comedy_column = db.GetColumnId(title);
+    CHECK(comedy_column >= 0);
+    
+    const map<string, string> & metadata_db =
+        db.GetColumnMetaData(comedy_column);
+    
+    const map<string, string> & metadata_user =
+        CR.GetMetaData();
+    
+    CHECK_EQUAL((int)metadata_db.size(), 3);
+    CHECK_EQUAL(metadata_db.find("created-by")->second, string("unit test"));
+    CHECK_EQUAL(metadata_db.find("purpose")->second,    string("none"));
+    CHECK_EQUAL(metadata_db.find("format")->second,     string("text"));
+    
+    // Meta data for both should be identical.
+    CHECK(metadata_db == metadata_user);
+    
+    // You can also just find the value for a given key.  This method
+    // does not determine if the requested key has different values in
+    // different columns, nor does it distinguish between keys which
+    // are not specified versus keys which exist but have an empty
+    // string as their value.
+    
+    CHECK(db.GetColumnValue(comedy_column, "format") == "text");
+    CHECK(db.GetColumnValue(comedy_column, "duck soup") == "");
+    CHECK(CR.GetValue("format") == "text");
+    CHECK(CR.GetValue("who's on first") == "");
+    
+    // This code gets a more list of data, namely a map from the
+    // volume name to the set of properties found in each volume.
+    
+    vector<string> volumes;
+    db.FindVolumePaths(volumes);
+    
+    const map<string, string> & meta_vol0 =
+        db.GetColumnMetaData(comedy_column, volumes[0]);
+    
+    CHECK(meta_vol0.find("format") != meta_vol0.end());
+    CHECK(meta_vol0.find("format")->second == "text");
+    
+    // Column data.
+    
+    vector<string> column_data;
+    column_data.push_back("Groucho Marx");
+    column_data.push_back("Charlie Chaplain");
+    column_data.push_back("");
+    column_data.push_back("Abbott and Costello");
+    column_data.push_back("Jackie Gleason");
+    column_data.push_back("Jerry Seinfeld");
+    column_data.back()[5] = (char) 0;
+    
+    CBlastDbBlob db_blob, cr_blob;
+    
+    CHECK_EQUAL((int) column_data.size(), db.GetNumOIDs());
+    CHECK_EQUAL((int) column_data.size(), CR.GetNumOIDs());
+    
+    int count = std::min((int)column_data.size(), db.GetNumOIDs());
+    
+    for(int oid = 0; oid < count; oid++) {
+        db.GetColumnBlob(comedy_column, oid, db_blob);
+        CR.GetBlob(oid, cr_blob);
+        
+        CHECK(db_blob.Str() == column_data[oid]);
+        CHECK(cr_blob.Str() == column_data[oid]);
+    }
+}
+#endif
+
 BOOST_AUTO_TEST_CASE(VersionedSparseId)
 {
     START;
@@ -3542,6 +3755,167 @@ BOOST_AUTO_TEST_CASE(VersionedSparseId)
     CHECK(o2.size() == 0);
     CHECK(o3.size() == 1);
 }
+
+typedef vector< pair<TSeqPos, TSeqPos> > TRangeVector;
+
+vector< pair<TSeqPos, TSeqPos> >
+s_CombineInvertRanges(const TRangeVector & a, int length, bool invert)
+{
+    TRangeVector rv;
+    vector<int> bytes(length);
+    
+    for(size_t i = 0; i < a.size(); i++) {
+        int b = a[i].first;
+        int e = a[i].second;
+        
+        for(int j = b; j < e; j++) {
+            CHECK(j < length);
+            
+            if (j < length) {
+                bytes[j] = 1;
+            }
+        }
+    }
+    
+    int value = invert ? 0 : 1;
+    
+    // Slow, simple, but reliable way to build ranges.
+    
+    for(size_t j = 0; j < bytes.size(); j++) {
+        if (bytes[j] == value) {
+            if ((rv.size() == 0) || (rv[rv.size()-1].second != j)) {
+                rv.push_back(pair<TSeqPos, TSeqPos>(j,j+1));
+            } else {
+                rv[rv.size()-1].second = j+1;
+            }
+        }
+    }
+    
+    return rv;
+}
+
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+BOOST_AUTO_TEST_CASE(MaskDataColumn)
+{
+    START;
+    
+    CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
+    
+    vector<int> algos;
+    db.GetAvailableMaskAlgorithms(algos);
+    
+    // Check each algorithm definition.
+    
+    CHECK_EQUAL((int)algos.size(), 2);
+    CHECK_EQUAL((int)(eBlast_filter_program_seg), algos[0]);
+    CHECK_EQUAL((int)(eBlast_filter_program_repeat), algos[1]);
+    
+    objects::EBlast_filter_program filtering_algo;
+    string algo_opts, algo_name;
+    
+    db.GetMaskAlgorithmDetails(algos.front(), 
+                               filtering_algo, algo_name, algo_opts);
+    CHECK_EQUAL(filtering_algo, objects::eBlast_filter_program_seg);
+    //CHECK_EQUAL(algo_opts, string("-use-defaults"));
+    CHECK_EQUAL(algo_opts, kEmptyStr);
+    
+    db.GetMaskAlgorithmDetails(algos.back(), 
+                               filtering_algo, algo_name, algo_opts);
+    CHECK_EQUAL(filtering_algo, objects::eBlast_filter_program_repeat);
+    CHECK_EQUAL(algo_opts, string("-species Desmodus_rotundus"));
+    
+    const int kCount = 10;
+    
+    CHECK_EQUAL(db.GetNumOIDs(), kCount);
+    
+    // Check each subset.
+    
+    for(int oid = 0; oid < kCount; oid++) {
+        CSeqDB::TSequenceRanges ranges1, ranges2, ranges3;
+        CSeqDB::TSequenceRanges iranges1, iranges2, iranges3;
+        
+        if (oid & 1) {
+            for(int j = 0; j < (oid+5); j++) {
+                pair<TSeqPos, TSeqPos> rng;
+                rng.first = oid * 13 + j * 7 + 2;
+                rng.second = rng.first + 3 + (oid+j) % 11;
+                
+                ranges1.push_back(rng);
+                ranges3.push_back(rng);
+            }
+        }
+        
+        if (oid & 2) {
+            for(int j = 0; j < (oid+5); j++) {
+                pair<TSeqPos, TSeqPos> rng;
+                rng.first = oid * 10 + j * 5 + 2;
+                rng.second = rng.first + 20;
+                
+                ranges2.push_back(rng);
+                ranges3.push_back(rng);
+            }
+        }
+        
+        int seq_len = db.GetSeqLength(oid);
+        
+        CSeqDB::TSequenceRanges r1, r2, r3;
+        CSeqDB::TSequenceRanges ir1, ir2, ir3;
+        
+        if (oid == 5) {
+            // Verify that GetMaskData resets ranges to size 0 rather
+            // than just appending data to it.
+            r2.resize(19);
+        }
+        
+        vector<int> get_algos;
+        
+        get_algos.push_back((int)eBlast_filter_program_seg);
+        db.GetMaskData(oid, get_algos, false, r1);
+        db.GetMaskData(oid, get_algos, true, ir1);
+        
+        get_algos[0] = (int)eBlast_filter_program_repeat;
+        db.GetMaskData(oid, get_algos, false, r2);
+        db.GetMaskData(oid, get_algos, true, ir2);
+        
+        get_algos[0] = (int)eBlast_filter_program_seg;
+        get_algos.push_back((int)eBlast_filter_program_repeat);
+        db.GetMaskData(oid, get_algos, false, r3);
+        db.GetMaskData(oid, get_algos, true, ir3);
+        
+        ranges1 = s_CombineInvertRanges(ranges1, seq_len, false);
+        ranges2 = s_CombineInvertRanges(ranges2, seq_len, false);
+        ranges3 = s_CombineInvertRanges(ranges3, seq_len, false);
+        
+        iranges1 = s_CombineInvertRanges(ranges1, seq_len, true);
+        iranges2 = s_CombineInvertRanges(ranges2, seq_len, true);
+        iranges3 = s_CombineInvertRanges(ranges3, seq_len, true);
+        
+        CHECK(r1 == ranges1);
+        CHECK(r2 == ranges2);
+        CHECK(r3 == ranges3);
+        
+        CHECK(ir1 == iranges1);
+        CHECK(ir2 == iranges2);
+        CHECK(ir3 == iranges3);
+        
+        if (r1.size() || r2.size()) {
+            CHECK(r1 != ranges2);
+            CHECK(r2 != ranges1);
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(CheckColumnFailureCleanup)
+{
+    START;
+    
+    CSeqDB db("data/broken-mask-data-db", CSeqDB::eProtein);
+    
+    vector<int> lst;
+    CHECK_THROW(db.GetAvailableMaskAlgorithms(lst), CSeqDBException);
+}
+#endif
 
 struct SDbSumInfo {
 public:

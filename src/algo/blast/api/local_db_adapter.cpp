@@ -52,13 +52,16 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 CLocalDbAdapter::CLocalDbAdapter(const CSearchDatabase& dbinfo)
-    : m_SeqSrc(0), m_SeqInfoSrc(0)
+    : m_SeqSrc(0), m_SeqInfoSrc(0), 
+    m_FilteringAlgs(dbinfo.GetFilteringAlgorithms())
 {
     m_DbInfo.Reset(new CSearchDatabase(dbinfo));
 }
 
-CLocalDbAdapter::CLocalDbAdapter(CRef<CSeqDB> seqdb)
-    : m_SeqSrc(0), m_SeqInfoSrc(0), m_SeqDb(seqdb)
+CLocalDbAdapter::CLocalDbAdapter(CRef<CSeqDB> seqdb,
+                                 const CSearchDatabase::TFilteringAlgorithms&
+                                 filt_algs)
+    : m_SeqSrc(0), m_SeqInfoSrc(0), m_SeqDb(seqdb), m_FilteringAlgs(filt_algs)
 {
     if (m_SeqDb.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, "NULL CSeqDB");
@@ -119,11 +122,12 @@ BlastSeqSrc*
 CLocalDbAdapter::MakeSeqSrc()
 {
     if ( ! m_SeqSrc ) {
-        if (m_DbInfo.NotEmpty()) {
-            x_InitSeqDB();
-            m_SeqSrc = SeqDbBlastSeqSrcInit(m_SeqDb.GetNonNullPointer());
-        } else if (m_SeqDb.NotEmpty()) {
-            m_SeqSrc = SeqDbBlastSeqSrcInit(m_SeqDb.GetNonNullPointer());
+        if (m_DbInfo.NotEmpty() || m_SeqDb.NotEmpty()) {
+            if (m_SeqDb.Empty()) {
+                m_SeqDb = x_InitSeqDB(m_DbInfo);
+            }
+            m_SeqSrc = SeqDbBlastSeqSrcInit(m_SeqDb.GetNonNullPointer(),
+                                            m_FilteringAlgs);
         } else if (m_QueryFactory.NotEmpty() && m_OptsHandle.NotEmpty()) {
             m_SeqSrc = QueryFactoryBlastSeqSrcInit(m_QueryFactory,
                            m_OptsHandle->GetOptions().GetProgramType());
@@ -136,45 +140,57 @@ CLocalDbAdapter::MakeSeqSrc()
     return m_SeqSrc;
 }
 
-void
-CLocalDbAdapter::x_InitSeqDB()
+CRef<CSeqDB>
+CLocalDbAdapter::x_InitSeqDB(CConstRef<CSearchDatabase> dbinfo)
 {
-    _ASSERT(m_DbInfo.NotEmpty());
-    if (m_SeqDb) {
-        return;
-    }
+    _ASSERT(dbinfo.NotEmpty());
 
-    const CSeqDB::ESeqType type = m_DbInfo->IsProtein()
+    const CSeqDB::ESeqType type = dbinfo->IsProtein()
         ? CSeqDB::eProtein
         : CSeqDB::eNucleotide;
 
+    CRef<CSeqDBGiList> gi_list;
+    if ( !dbinfo->GetGiListLimitation().empty() ) {
+        CSeqDBIdSet idset(dbinfo->GetGiListLimitation(), CSeqDBIdSet::eGi);
+        gi_list = idset.GetPositiveList();
+    }
+
     // FIXME: refactor code in SplitDB/LibEntrezCacheEx.cpp ?
-    if ( !m_DbInfo->GetEntrezQueryLimitation().empty() ) {
-        NCBI_THROW(CException, eUnknown, "Unimplemented");
-    }
-    if ( !m_DbInfo->GetGiListLimitation().empty() ) {
+    // Also, the results of this entrez query should be intersected with
+    // gi_list above
+    if ( !dbinfo->GetEntrezQueryLimitation().empty() ) {
         NCBI_THROW(CException, eUnknown, "Unimplemented");
     }
 
-    /*
-    CRef<CMySeqDbGiList> g(new
-        CMySeqDbGiList(m_DbInfo->GetEntrezQueryLimitation(),
-        m_DbInfo->GetGiListLimitation()));
+    return CRef<CSeqDB>(new CSeqDB(dbinfo->GetDatabaseName(), type, gi_list));
+}
 
-    m_DbHandle.Reset(new CSeqDB(m_DbInfo->GetDatabaseName(), type, &*g));
-    */
-    m_SeqDb.Reset(new CSeqDB(m_DbInfo->GetDatabaseName(), type));
+/*** Auxiliary function to initialize CSeqDB with the filtering algorithms used
+ * for the database
+ * @param dbhandle CSeqDB instance [in]
+ * @param filtering_algorithms filtering algorithm IDs used for this search
+ * [in]
+ * @return CSeqDbSeqInfoSrc initialized accordingly
+ */
+static CRef<CSeqDbSeqInfoSrc>
+s_InitCSeqDbSeqInfoSrc(CRef<CSeqDB> dbhandle, 
+                      const vector<int>& filtering_algorithms)
+{
+    _ASSERT(dbhandle.NotEmpty());
+    CRef<CSeqDbSeqInfoSrc> retval(new CSeqDbSeqInfoSrc(dbhandle));
+    retval->SetFilteringAlgorithmIds(filtering_algorithms);
+    return retval;
 }
 
 IBlastSeqInfoSrc*
 CLocalDbAdapter::MakeSeqInfoSrc()
 {
     if ( !m_SeqInfoSrc ) {
-        if (m_DbInfo.NotEmpty()) {
-            x_InitSeqDB();
-            m_SeqInfoSrc = new CSeqDbSeqInfoSrc(m_SeqDb);
-        } else if (m_SeqDb.NotEmpty()) {
-            m_SeqInfoSrc = new CSeqDbSeqInfoSrc(m_SeqDb);
+        if (m_SeqDb.NotEmpty()) {
+            m_SeqInfoSrc = &*s_InitCSeqDbSeqInfoSrc(m_SeqDb, m_FilteringAlgs);
+        } else if (m_DbInfo.NotEmpty()) {
+            m_SeqDb = x_InitSeqDB(m_DbInfo);
+            m_SeqInfoSrc = &*s_InitCSeqDbSeqInfoSrc(m_SeqDb, m_FilteringAlgs);
         } else if (m_QueryFactory.NotEmpty() && m_OptsHandle.NotEmpty()) {
             CRef<IRemoteQueryData> subj_data
                 (m_QueryFactory->MakeRemoteQueryData());

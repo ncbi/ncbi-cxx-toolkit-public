@@ -343,7 +343,7 @@ enum {
     SCRIPT_OP_MASK       = 0x07, /**< Mask for edit script operations */
 
     SCRIPT_EXTEND_GAP_A  = 0x10, /**< continue a gap in A */
-    SCRIPT_EXTEND_GAP_B  = 0x40, /**< continue a gap in B */
+    SCRIPT_EXTEND_GAP_B  = 0x40  /**< continue a gap in B */
 };
 
 Int4

@@ -125,10 +125,8 @@ typedef Boolean (*GetBoolFnPtr)
  * defines @sa BlastSeqSrcGetSeqArg */
 typedef Int2 (*GetSeqBlkFnPtr)
     (void* seqsrc_impl, /**< BlastSeqSrc implementation's data structure */
-     void* arg /**< place holder argument to pass arguments to the
-                 client-defined BlastSeqSrc implementation, index-based
-                 implementations are encouraged to use the 
-                 BlastSeqSrcGetSeqArg structure.*/
+     BlastSeqSrcGetSeqArg* arg /**< arguments to fetch sequence data from a 
+                 client-defined BlastSeqSrc implementation */
     );
 
 /** Function pointer typedef to release sequences obtained from the data 
@@ -136,10 +134,8 @@ typedef Int2 (*GetSeqBlkFnPtr)
  * @sa BlastSeqSrcGetSeqArg */
 typedef void (*ReleaseSeqBlkFnPtr)
     (void* seqsrc_impl, /**< BlastSeqSrc implementation's data structure */
-     void* arg /**< place holder argument to pass arguments to the
-                 client-defined BlastSeqSrc implementation, index-based
-                 implementations are encouraged to use the 
-                 BlastSeqSrcGetSeqArg structure.*/
+     BlastSeqSrcGetSeqArg* arg /**< arguments to fetch sequence data from a 
+                 client-defined BlastSeqSrc implementation */
     );
 
 #ifdef KAPPA_PRINT_DIAGNOSTICS
@@ -321,11 +317,11 @@ DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(char*, InitErrorStr);
  *  // required signature: GetBoolFnPtr
  *  Boolean MyDatabaseFormatGetIsProt(void*, void*);
  *  // required signature: GetSeqBlkFnPtr
- *  Int2 MyDatabaseFormatGetSequence(void*, void*);
+ *  Int2 MyDatabaseFormatGetSequence(void*, BlastSeqSrcGetSeqArg*);
  *  // required signature: GetInt4FnPtr
  *  Int4 MyDatabaseFormatGetSeqLen(void*, void*);
  *  // required signature: ReleaseSeqBlkFnPtr
- *  void MyDatabaseFormatReleaseSequence(void*, void*);
+ *  void MyDatabaseFormatReleaseSequence(void*, BlastSeqSrcGetSeqArg*);
  *  // required signature: AdvanceIteratorFnPtr
  *  Int4 MyDatabaseFormatItrNext(void*, BlastSeqSrcIterator* itr);
  *  // required signature: ResetChunkIteratorFnPtr
@@ -337,7 +333,7 @@ DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(char*, InitErrorStr);
  *  called by the BlastSeqSrc framework (BlastSeqSrc* functions declared in
  *  blast_seqsrc.h), no exceptions should be thrown in C++ implementations.
  *  When not obvious, please see the required signature's documentation for
- *  determining what to implement (@sa blast_seqsrc_impl.h).
+ *  determining what to implement (see blast_seqsrc_impl.h).
  *   
  *  For ease of maintenance, please follow the following conventions:
  *  - Client implementations' initialization function should be called 

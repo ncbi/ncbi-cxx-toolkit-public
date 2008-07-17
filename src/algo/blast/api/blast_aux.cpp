@@ -956,8 +956,8 @@ TSearchMessages::RemoveDuplicates()
     }
 }
 
-void TSearchMessages::AddMessageAllQueries(EBlastSeverity   severity,
-                                           int              error_id,
+void TSearchMessages::AddMessageAllQueries(EBlastSeverity   /*severity*/,
+                                           int              /*error_id*/,
                                            const string   & message)
 {
     CRef<CSearchMessage> sm(new CSearchMessage(eBlastSevWarning,
@@ -998,6 +998,37 @@ TMaskedQueryRegions::RestrictToSeqInt(const objects::CSeq_interval& location) co
         }
     }
 
+    return retval;
+}
+
+
+CRef<objects::CPacked_seqint> 
+TMaskedQueryRegions::ConvertToCPacked_seqint(vector<string>* warnings) const
+{
+    // auxiliary to avoid adding the same warning if there are multiple
+    // masked locations on the negative strand for a single query
+    bool negative_strand_found = false;
+
+    CRef<CPacked_seqint> retval(new CPacked_seqint);
+    ITERATE(TMaskedQueryRegions, mask, *this) {
+        if ((*mask)->GetFrame() == CSeqLocInfo::eFramePlus1 ||
+            (*mask)->GetFrame() == CSeqLocInfo::eFrameNotSet) {
+            retval->AddInterval((*mask)->GetInterval());
+        } else {
+            if (warnings && !negative_strand_found) {
+                const CSeq_interval& seqint = (*mask)->GetInterval();
+                string warning("Ignoring masked locations on negative ");
+                warning += string("strand for query '");
+                warning += seqint.GetId().AsFastaString() + string("'");
+                warnings->push_back(warning);
+                negative_strand_found = true;
+            }
+        }
+    }
+    if (retval->CanGet() && !retval->Get().empty()) {
+        return retval;
+    }
+    retval.Reset();
     return retval;
 }
 

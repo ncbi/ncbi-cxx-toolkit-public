@@ -43,6 +43,7 @@
 #include "seqdbvolset.hpp"
 #include "seqdbalias.hpp"
 #include "seqdboidlist.hpp"
+#include "seqdbcol.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -96,6 +97,81 @@ public:
 private:
     /// A pointer to the SeqDB implementation layer.
     CSeqDBImpl * m_Impl;
+};
+
+
+/// Map user algorithm IDs to volume algorithm IDs.
+///
+/// Each volume has a mapping of algorithm IDs to descriptions.  This
+/// class builds a global list of algorithm IDs for all algorithm
+/// descriptions in all volumes.
+
+class CSeqDB_IdRemapper {
+public:
+    /// Constructor.
+    CSeqDB_IdRemapper();
+    
+    /// Register a volume's algorithm definition.
+    void AddMapping(int vol_id, int id, const string & desc);
+    
+    /// Get a list of user (real) IDs available here.
+    void GetIdList(vector<int> & algorithms);
+    
+    /// Is this object populated?
+    bool Empty()
+    {
+        return m_Empty && m_IdToDesc.empty();
+    }
+    
+    /// Is this object populated?
+    void GetDesc(int algorithm_id, string & desc);
+    
+    /// Is this object populated?
+    void SetNotEmpty()
+    {
+        m_Empty = false;
+    }
+    
+    /// Build a list of volume algorithm IDs.
+    ///
+    /// This method takes a list of algorithm IDs and translates them
+    /// to volume IDs.  The translation is cached.  The Atlas lock
+    /// should be held while calling this method and kept until the
+    /// the returned data is no longer needed.
+    ///
+    /// @param vol_idx The index of the database volume.
+    /// @param algo_ids A list of (global) algorithms IDs.
+    /// @return The volume specific algorithm IDs.
+    const vector<int> &
+    GetVolAlgos(int vol_idx, const vector<int> & algo_ids);
+    
+    /// Translate a real algorithm ID to a volume algorithm ID.
+    int RealToVol(int vol_idx, int algo_id);
+    
+private:
+    /// Next unassigned synthetic ID.
+    int m_NextId;
+    
+    /// Map of real IDs to descriptions.
+    map<int, string> m_IdToDesc;
+    
+    /// Map of descriptions to real IDs.
+    map<string, int> m_DescToId;
+    
+    /// Map of volume# to map of real id to volume-based id.
+    map<int, map<int, int> > m_RealIdToVolumeId;
+    
+    /// Is this object initialized?
+    bool m_Empty;
+    
+    /// Cached list of real algorithms for BuildVolAlgos.
+    vector<int> m_CacheRealAlgos;
+    
+    /// Cached volume index for BuildVolAlgos.
+    int m_CacheVolIndex;
+    
+    /// Cached list of volume algorithms for BuildVolAlgos.
+    vector<int> m_CacheVolAlgos;
 };
 
 
@@ -772,6 +848,139 @@ public:
     /// @param oids OIDs of sequences with this hash. [out]
     void HashToOids(unsigned hash, vector<int> & oids);
     
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    /// List columns titles found in this database.
+    ///
+    /// This returns a list of the column titles of all user created
+    /// (and system generated) columns found in any of this database's
+    /// volumes.  Column titles appearing in more than one volume are
+    /// only listed here once.
+    ///
+    /// @param titles Column titles are returned here. [out]
+    void ListColumns(vector<string> & titles);
+    
+    /// Get an ID number for a given column title.
+    ///
+    /// For a given column title, this returns an ID that can be used
+    /// to access that column in the future.  The returned ID number
+    /// is specific to this instance of SeqDB.  If the database does
+    /// not have a column with this name, -1 will be returned.
+    ///
+    /// @param title Column title to search for. [in]
+    /// @return Column ID number for this column, or -1. [in]
+    int GetColumnId(const string & title);
+    
+    /// Get all metadata for the specified column.
+    ///
+    /// Columns may contain user-defined metadata as a list of
+    /// key-value pairs.  For the specified column, this returns that
+    /// column's metadata in the provided map.  If multiple volumes
+    /// are present, and they define contradictory meta data (this is
+    /// more common when multiple databases are opened at once), this
+    /// method returns the first value it finds for each metadata key.
+    /// If this is unsatisfactory, the two-argument version of this
+    /// method may be used to get more precise values for specific
+    /// volumes.
+    /// 
+    /// @param column_id The column id from GetColumnId. [in]
+    /// @return The map of metadata for this column. [out]
+    const map<string,string> & GetColumnMetaData(int column_id);
+    
+    /// Get all metadata for the specified column.
+    ///
+    /// Columns may contain user-defined metadata as a list of
+    /// key-value pairs.  For the specified database volume and column
+    /// id, this returns that column's metadata (as defined for that
+    /// volume) in the provided map.  The volume name should match
+    /// the string returned by FindVolumePaths(vector<string>&).
+    /// 
+    /// @param column_id The column id from GetColumnId. [in]
+    /// @param volname   The volume to get metadata for. [in]
+    /// @return The map of metadata for this column + volume. [out]
+    const map<string,string> &
+    GetColumnMetaData(int            column_id,
+                      const string & volname);
+    
+    /// Get all metadata for the specified column.
+    ///
+    /// Columns can contain user-defined metadata as a list of
+    /// key-value pairs.  For the specified column, this returns all
+    /// of that column's metadata in the provided map.  If there are
+    /// multiple volumes, and those volumes define contradictory meta
+    /// data (this is more common if multiple databases are opened at
+    /// once), this method will return the first value it finds for
+    /// each metadata key.  In these cases, GetVolumeColumnProperties
+    /// may be used instead.
+    ///
+    /// @param column_id The column id from GetColumnId. [in]
+    /// @return The value corresponding to the specified key. [out]
+    string GetColumnValue(int column_id, const string & key);
+    
+    /// Fetch the data blob for the given column and oid.
+    /// @param col_id The column to fetch data from. [in]
+    /// @param oid    The OID of the blob. [in]
+    /// @param keep   Whether to add a hold on this blob's memory. [in]
+    /// @param blob   The data will be returned here. [out]
+    void GetColumnBlob(int col_id, int oid, bool keep, CBlastDbBlob & blob);
+    
+    // Mask data support.
+    
+    /// Get a list of algorithm IDs for which mask data exists.
+    ///
+    /// Multiple sources of masking data may be used when building
+    /// blast databases.  This method retrieves a list of the IDs used
+    /// to identify those types of filtering data to SeqDB.  If the
+    /// blast database volumes used by this instance of SeqDB were
+    /// built with conflicting algorithm ID definitions, SeqDB will
+    /// resolve the conflicts by renumbering some of the conflicting
+    /// descriptions.  For this reason, the IDs reported here may not
+    /// match what was given to WriteDB when the database was created.
+    ///
+    /// @param algorithms List of algorithm ids. [out]
+    void GetAvailableMaskAlgorithms(vector<int> & algorithms);
+    
+    /// Get information about one type of masking available here.
+    ///
+    /// For a given algorithm_id, this method fetches information
+    /// describing the basic algorithm used, as well as options passed
+    /// to that algorithm to generate the data stored here.  Each
+    /// sequence in the database can provide sequence masking data
+    /// from one or more sources.  There can also be multiple types of
+    /// masking data from the same algorithm (such as DUST), but
+    /// generated with different sets of input parameters.
+    /// 
+    /// @param algorithm_id The ID as from GetAvailableMaskAlgorithms. [in]
+    /// @param program Program used to produce this masking data (SEG, DUST,
+    /// etc) [out]
+    /// @param program_name string representation of program argument [out]
+    /// @param algo_opts Describes options passed to `program'. [out]
+    void GetMaskAlgorithmDetails(int                 algorithm_id,
+                                 EBlast_filter_program & program,
+                                 string            & program_name,
+                                 string            & algo_opts);
+    
+    /// List of sequence offset ranges.
+    typedef vector< pair<TSeqPos, TSeqPos> > TSequenceRanges;
+    
+    /// Get masked ranges of a sequence.
+    ///
+    /// For the provided OID and list of algorithm IDs, this method
+    /// gets a list of masked areas of those sequences.  The list of
+    /// masked areas is returned via the ranges parameter.  If the
+    /// `inverted' parameter is true, the list of ranges returned is
+    /// actually the list of non-maksed (rather than masked) ranges.
+    ///
+    /// @param oid The ordinal ID of the sequence. [in]
+    /// @param algo_ids The algorithm IDs to get data for. [in]
+    /// @param inverted If true, return a list of included ranges. [in]
+    /// @param ranges The list of sequence offset ranges. [out]
+    void GetMaskData(int                 oid,
+                     const vector<int> & algo_ids,
+                     bool                inverted,
+                     TSequenceRanges   & ranges);
+#endif
+    
 private:
     CLASS_MARKER_FIELD("IMPL")
     
@@ -886,6 +1095,45 @@ private:
                       Uint8          * base_count, 
                       CSeqDBLockHold & locked);
     
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    /// Get the Column ID for the column with the specified title.
+    /// @param title  The column title.
+    /// @param locked The lock hold object for this thread. [in]
+    /// @return A positive ID (if found), a negative code otherwise.
+    int x_GetColumnId(const string   & title,
+                      CSeqDBLockHold & locked);
+    
+    /// Open the mask data column (if necessary) and return its id.
+    /// @param locked The lock hold object for this thread. [in]
+    /// @return The column id of the mask data column.
+    int x_GetMaskDataColumn(CSeqDBLockHold & locked);
+    
+    /// Get a list of algorithm IDs for which mask data exists.
+    ///
+    /// Multiple sources of masking data may be used when building
+    /// blast databases.  This method retrieves a list of the IDs used
+    /// to identify those types of filtering data to SeqDB.  If the
+    /// blast database volumes used by this instance of SeqDB were
+    /// built with conflicting algorithm ID definitions, SeqDB will
+    /// resolve the conflicts by renumbering some of the conflicting
+    /// descriptions.  For this reason, the IDs reported here may not
+    /// match what was given to WriteDB when the database was created.
+    ///
+    /// @param locked The lock hold object for this thread. [in]
+    void x_BuildMaskAlgorithmList(CSeqDBLockHold & locked);
+#endif
+    
+    /// Get the sequence length.
+    ///
+    /// This computes and returns the exact sequence length for the
+    /// indicated sequence.
+    ///
+    /// @param oid The ordinal id of the sequence. [in]
+    /// @param locked The lock holder object for this thread. [in]
+    /// @return The length of the sequence in bases.
+    int x_GetSeqLength(int oid, CSeqDBLockHold & locked) const;
+    
     /// Get oid list filtering info struct.
     ///
     /// This method returns a struct describing the OID list and
@@ -972,6 +1220,30 @@ private:
     
     /// Cached most recent date string for GetDate().
     mutable string m_Date;
+    
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    /// Map assigned global column IDs to column information.
+    vector< CRef<CSeqDB_ColumnEntry> > m_ColumnInfo;
+#endif
+    
+    /// Map string column titles to global column IDs.
+    map<string, int> m_ColumnTitleMap;
+    
+    /// Status of a database column title.
+    enum EColumnStatus {
+        /// This column is not heard of yet.
+        kUnknownTitle = -1,
+        
+        /// This column does not exist (we checked).
+        kColumnNotFound = -2
+    };
+    
+    /// Column ID for mask data column.
+    int m_MaskDataColumn;
+    
+    /// Algorithm ID mapping.
+    CSeqDB_IdRemapper m_AlgorithmIds;
     
     /// Cached membership bit info.
     CSeqDBFiltInfo m_FiltInfo;

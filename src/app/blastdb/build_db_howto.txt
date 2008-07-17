@@ -1,0 +1,120 @@
+
+
+The CWriteDB library is a tool for building BlastDB databases, given
+sequence data and meta-data.  The normal way for a user to build a
+BlastDB database is to use a command line tool.  CBuildDatabase is a
+wrapper around CWriteDB that provides an interface similar to that of
+a command line tool.
+
+
+Some of the functionality found here:
+
+
+1. Copying of sequences from local sources (existing dbs).
+
+2. Copying of sequences from remote sources (data loaders).
+
+3. Automatically configuring metadata for sequences as they are added:
+   A. Taxids.
+   B. Linkout bits.
+   C. Membership bits.
+   D. Masking data.
+
+4. Adding sequences from FASTA sources.
+
+5. Adding sequences from other sources; raw (IRawSequenceSource) and
+   Bioseq-based (IBioseqSource).
+
+
+The CWriteDB interface is "procedural" -- it includes methods to
+accept sequence data and metadata for one sequence, then for the next
+sequence, and so on.  Client code gathers all data for each sequence
+and then applies it to the library, repeatedly.
+
+CBuildDatabase uses a different style of API -- each type of metadata
+(and data) is viewed as a "service".  The user configures all of these
+services, then proceeds to add sequences to the system.  As each
+sequence is added, these services are consulted to modify, augment, or
+construct the meta data (and in some cases the sequence data itself).
+
+The reason I designed the API in this way is that it echos the user
+interface of a command line binary.  In a command line binary, the
+user would expect to provide lists of taxid <-> Seq-id mappings,
+linkout bit <-> Seq-id mappings, and so on.  This allows each kind of
+data to be dealt with separately.
+
+(Oddly enough, in some ways this approach is reminiscent of that of a
+"logic programming" language such as Prolog; a set of relationships is
+provided, then a batch of queries is run against those relationships.)
+
+
+In any case, the basic (expected) usage pattern for this code is as
+follows.  Most of these steps are optional; see also the doxygen info
+for each of these methods.
+
+1. Construct the object and configure the database:
+
+    - The constructor takes database name and configuration info, and
+      a logfile to which to write status information.
+    - SetMaskLetters
+    - SetVerbosity (does not affect output, only logging)
+    - SetMaxFileSize
+    - RegisterMaskingAlgorithm
+
+2. Configure sources of meta-data using these methods:
+
+    - SetTaxids
+    - SetLinkouts
+    - SetMembBits
+    - SetMaskDataSource
+
+3. Configure local/remote sequence data "sources"; these will be
+   searched for sequences mentioned by AddIds (see step 6).
+
+    - SetSourceDb
+    - SetUseRemote
+
+4. Do all processing from a list of Ids and a FASTA data source;
+   if this choice is used, do not use steps 5-8.
+
+    - Build
+
+5. Alternative to 4:  Start the processing
+
+    - StartBuild
+
+(Steps 6 and 7 may be done in any order.)
+
+6. Add sequences using a list of ids; sequence data will come from
+   remote and/or local source databases.
+
+    - AddIds
+
+7. Add sequences by copying all sequences found in specific sources:
+
+    - AddFasta
+    - AddSequences (2 variations)
+
+8. Finish processing (finalize the constructed database).
+
+    - End Build
+
+
+The Build method combines StartBuild, AddIds, AddFasta, and EndBuild,
+and does a little extra logging and timing.  It cannot be used
+together with the other methods mentioned in steps 5-8.
+
+The only methods that are mandatory are the constructor and either the
+Build method, or a combination of StartBuild and one of the methods
+from 6 or 7.  (EndBuild closes the database; if it is not called you
+should still get a working database, but less summary logging
+information.)  However, the testing of CBuildDatabase has strictly
+been via testing of the applications which use it, so some usage
+patterns are better tested than others, depending on the order in
+which the existing applications do each task.
+
+
+Kevin Bealer
+May 2008
+
+

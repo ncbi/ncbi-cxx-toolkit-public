@@ -207,7 +207,7 @@ CSeqDBGiListSet::GetNodeIdList(const CSeqDB_Path & filename,
     
     m_Atlas.Lock(locked);
     
-    // Seperate indexes are used for TIs and GIs.  (Attempting to use
+    // Seperate indices are used for TIs and GIs.  (Attempting to use
     // the same file for both should also produce an error when the
     // binary file is read, as the magic number is different.)
 

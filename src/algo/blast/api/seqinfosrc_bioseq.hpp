@@ -70,12 +70,15 @@ public:
     CBioseqSeqInfoSrc(const objects::CBioseq_set& bss, bool is_prot);
 
     /// Retrieve a sequence identifier given its index in the vector.
+    /// @param index the ordinal number to retrieve [in]
     virtual list< CRef<objects::CSeq_id> > GetId(Uint4 index) const;
 
     /// Retrieve a sequence identifier given its index in the vector.
+    /// @param index the ordinal number to retrieve [in]
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(Uint4 index) const;
 
     /// Retrieve sequence length given its index in the vector.
+    /// @param index the ordinal number to retrieve [in]
     virtual Uint4 GetLength(Uint4 index) const;
 
     /// Returns the size of the underlying container of sequences
@@ -84,6 +87,16 @@ public:
     /// Is the subject restricted by a GI list?  (Always returns false).
     virtual bool HasGiList() const;
     
+    /// Retrieves the subject masks for the corresponding index
+    /// @param index the ordinal number to retrieve [in]
+    /// @param target_range range for which to return masks for. Empty ranges
+    /// indicate that no masks should be retrieved, whole ranges mean that
+    /// masks for the whole sequence should be retrieved [in]
+    /// @param retval the masks will be returned through this parameter [out]
+    /// @return true if there were masks returned in retval, otherwise false.
+    virtual bool GetMasks(Uint4 index, 
+                          const TSeqRange& target_range,
+                          TMaskedSubjRegions& retval) const;
 private:
     CBlastQuerySourceBioseqSet m_DataSource;
 };

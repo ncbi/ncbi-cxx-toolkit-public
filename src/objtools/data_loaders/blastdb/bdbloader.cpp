@@ -51,10 +51,11 @@ CBlastDbDataLoader::RegisterInObjectManager(
     CObjectManager& om,
     const string& dbname,
     const EDbType dbtype,
+    bool use_fixed_size_slices,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    SBlastDbParam param(dbname, dbtype);
+    SBlastDbParam param(dbname, dbtype, use_fixed_size_slices);
     TMaker maker(param);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
@@ -64,12 +65,14 @@ CBlastDbDataLoader::TRegisterLoaderInfo
 CBlastDbDataLoader::RegisterInObjectManager(
     CObjectManager& om,
     CRef<CSeqDB> db_handle,
+    bool use_fixed_size_slices,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    TRecycler recycler(db_handle);
-    CDataLoader::RegisterInObjectManager(om, recycler, is_default, priority);
-    return recycler.GetRegisterInfo();
+    SBlastDbParam param(db_handle, use_fixed_size_slices);
+    TMaker maker(param);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
 }
 
 inline
@@ -118,42 +121,45 @@ string CBlastDbDataLoader::GetLoaderNameFromArgs(CConstRef<CSeqDB> db_handle)
 
 CBlastDbDataLoader::CBlastDbDataLoader(const string        & loader_name,
                                        const SBlastDbParam & param)
-    : CDataLoader    (loader_name),
-      m_DBName       (param.m_DbName),
-      m_DBType       (param.m_DbType)
+    : CDataLoader           (loader_name),
+      m_DBName              (param.m_DbName),
+      m_DBType              (param.m_DbType),
+      m_SeqDB               (param.m_BlastDbHandle),
+      m_UseFixedSizeSlices  (param.m_UseFixedSizeSlices)
 {
-    m_SeqDB.Reset(new CSeqDB(m_DBName, DbTypeToSeqType(m_DBType)));
-}
-
-CBlastDbDataLoader::CBlastDbDataLoader(const string        & loader_name,
-                                       CRef<CSeqDB>        db_handle)
-    : CDataLoader    (loader_name)
-{
-    if (db_handle.Empty()) {
+    if (m_SeqDB.Empty() && m_DBName.empty()) {
         NCBI_THROW(CSeqDBException, eArgErr, "Empty BLAST database handle");
     }
-    m_SeqDB = db_handle;
+    if (m_SeqDB.Empty() && !m_DBName.empty()) {
+        m_SeqDB.Reset(new CSeqDB(m_DBName, DbTypeToSeqType(m_DBType)));
+    }
+    _ASSERT(m_SeqDB.NotEmpty());
 }
 
 CBlastDbDataLoader::~CBlastDbDataLoader(void)
 {
 }
 
+/// A BLAST DB (blob) ID
+typedef pair<int, CSeq_id_Handle> TBlastDbId;
 
-/// Template converting blob IDs to human readable strings.
-typedef pair<int, CSeq_id_Handle> TBlob_id;
+/// Template specialization to convert BLAST DB (blob) IDs to human readable
+/// strings.
 template<>
-struct PConvertToString<TBlob_id>
-    : public unary_function<TBlob_id, string>
+struct PConvertToString<TBlastDbId>
+    : public unary_function<TBlastDbId, string>
 {
-    /// Convert blob IDs (a `pair' type) to human readable strings.
-    /// @param v The blob-ID to convert. [in]
-    /// @return A string version of the blob ID.
-    string operator()(const TBlob_id& v) const
+    /// Convert TBlastDbId (blob IDs) to human readable strings.
+    /// @param v The value to convert. [in]
+    /// @return A string version of the value passed in.
+    string operator()(const TBlastDbId& v) const
     {
         return NStr::IntToString(v.first) + ':' + v.second.AsString();
     }
 };
+
+/// Type definition consistent with those defined in objmgr/blob_id.hpp
+typedef CBlobIdFor<TBlastDbId> CBlobIdBlastDb;
 
 
 CBlastDbDataLoader::TTSE_LockSet
@@ -279,6 +285,7 @@ void CBlastDbDataLoader::CSeqChunkData::BuildLiteral()
 void CBlastDbDataLoader::CCachedSeqData::AddSeq_data()
 {
     CSeq_data& seq_data = GetTSE()->SetSeq().SetInst().SetSeq_data();
+    _ASSERT(GetTSE()->GetSeq().GetInst().GetRepr() == CSeq_inst::eRepr_raw);
     if (m_SeqDB->GetSequenceType() == CSeqDB::eProtein) {
         const char * buffer(0);
         TSeqPos      length = m_SeqDB->GetSequence(m_OID, &buffer);
@@ -330,15 +337,21 @@ void CBlastDbDataLoader::x_SplitSeqData(TChunks        & chunks,
         // multiple Seq-data, we'll have to use Delta
         inst.SetRepr(CSeq_inst::eRepr_delta);
         CDelta_ext::Tdata& delta = inst.SetExt().SetDelta().Set();
-        for( TSeqPos pos = 0; pos < length; pos += kSequenceSliceSize) {
+        TSeqPos slice_size = kSequenceSliceSize, pos = 0;
+        while (pos < length) {
             TSeqPos end = length;
-            if ((end - pos) > kSequenceSliceSize) {
-                end = pos + kSequenceSliceSize;
+            if ((end - pos) > slice_size) {
+                end = pos + slice_size;
             }
             x_AddSplitSeqChunk(chunks, seqdata.GetSeqIdHandle(), pos, end);
             CRef<CDelta_seq> dseq(new CDelta_seq);
             dseq->SetLiteral().SetLength(end - pos);
             delta.push_back(dseq);
+
+            pos += slice_size;
+            if ( !m_UseFixedSizeSlices ) {
+                slice_size *= 2;
+            }
         }
     }
 }
@@ -471,8 +484,8 @@ int CBlastDbDataLoader::GetOid(const CSeq_id_Handle& idh)
 
 int CBlastDbDataLoader::GetOid(const TBlobId& blob_id) const
 {
-    const TBlob_id& id =
-        dynamic_cast<const CBlobIdFor<TBlob_id>&>(*blob_id).GetValue();
+    const TBlastDbId& id =
+        dynamic_cast<const CBlobIdBlastDb&>(*blob_id).GetValue();
     return id.first;
 }
 
@@ -489,7 +502,7 @@ CBlastDbDataLoader::GetBlobId(const CSeq_id_Handle& idh)
     TBlobId blob_id;
     int oid = GetOid(idh);
     if ( oid != -1 ) {
-        blob_id = new CBlobIdFor<TBlob_id>(TBlob_id(oid, idh));
+        blob_id = new CBlobIdBlastDb(TBlastDbId(oid, idh));
     }
     return blob_id;
 }
@@ -500,8 +513,8 @@ CBlastDbDataLoader::GetBlobById(const TBlobId& blob_id)
 {
     CTSE_LoadLock lock = GetDataSource()->GetTSE_LoadLock(blob_id);
     if ( !lock.IsLoaded() ) {
-        const TBlob_id& id =
-            dynamic_cast<const CBlobIdFor<TBlob_id>&>(*blob_id).GetValue();
+        const TBlastDbId& id =
+            dynamic_cast<const CBlobIdBlastDb&>(*blob_id).GetValue();
         x_LoadData(id.second, id.first, lock);
     }
     return lock;
@@ -598,6 +611,7 @@ CDataLoader* CBlastDb_DataLoaderCF::CreateAndRegister(
             om,
             dbname,
             dbtype,
+            true,   // use_fixed_size_slices
             GetIsDefault(params),
             GetPriority(params)).GetLoader();
     }

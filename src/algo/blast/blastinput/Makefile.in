@@ -5,8 +5,8 @@
 
 
 LIB_PROJ = blastinput
-SUB_PROJ = unit_test
-EXPENDABLE_SUB_PROJ = demo
+SUB_PROJ = unit_test demo
+#EXPENDABLE_SUB_PROJ = demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

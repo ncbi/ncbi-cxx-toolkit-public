@@ -91,6 +91,42 @@ bool CSeqDbSeqInfoSrc::HasGiList() const
     return !! m_iSeqDb->GetGiList();
 }
 
+void CSeqDbSeqInfoSrc::SetFilteringAlgorithmIds(const vector<int>& algo_ids)
+{
+    m_FilteringAlgoIds.clear();
+    copy(algo_ids.begin(), algo_ids.end(), back_inserter(m_FilteringAlgoIds));
+}
+
+bool CSeqDbSeqInfoSrc::GetMasks(Uint4 index,
+                                const TSeqRange& target,
+                                TMaskedSubjRegions& retval) const
+{
+    if (m_FilteringAlgoIds.empty() || target == TSeqRange::GetEmpty()) {
+        return false;
+    }
+
+    CRef<CSeq_id> id(GetId(index).front());
+    const CSeqLocInfo::ETranslationFrame kFrame = CSeqLocInfo::eFrameNotSet;
+
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    CSeqDB::TSequenceRanges ranges;
+    m_iSeqDb->GetMaskData(index, m_FilteringAlgoIds, false, ranges);
+    ITERATE(CSeqDB::TSequenceRanges, itr, ranges) {
+        // N.B.: the Seq_intervals returned are 0-based for the formatter's
+        // sake
+        if (target.IntersectingWith(TSeqRange(itr->first, itr->second-1))) {
+            CRef<CSeq_interval> si
+                (new CSeq_interval(*id, itr->first, itr->second-1));
+            CRef<CSeqLocInfo> sli(new CSeqLocInfo(si, kFrame));
+            retval.push_back(sli);
+        }
+    }
+#endif
+
+    return (retval.empty() ? false : true);
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

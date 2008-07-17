@@ -150,6 +150,19 @@ typedef struct SSeqRange {
    Int4 right;  /**< right endpoint of range (zero based) */
 } SSeqRange;
 
+/** Create a new SSeqRange structure with both fields initialized
+ * @param start the start of the range [in]
+ * @param stop the end of the range [in]
+ */
+SSeqRange SSeqRangeNew(Int4 start, Int4 stop);
+
+/** Determine if two ranges intersect
+ * @param a first range to compare [in]
+ * @param a second range to compare [in]
+ * @return TRUE if they intersect, otherwise FALSE 
+ */
+Boolean SSeqRangeIntersectsWith(const SSeqRange* a, const SSeqRange* b);
+
 /** Used to hold a set of positions, mostly used for filtering. 
  * oid holds the index of the query sequence.
 */
@@ -215,6 +228,12 @@ typedef struct BLAST_SequenceBlk {
                               owned by the genetic code singleton. 
                               @sa gencode_singleton.h
                               */
+   /* BEGIN: Data members needed for masking subjects from a BLAST database */
+   SSeqRange* seq_ranges;   /**< Ranges of the sequence to search */
+   Uint4 num_seq_ranges;    /**< Number of elements in seq_ranges */
+   Boolean seq_ranges_allocated;   /**< TRUE if memory has been allocated for
+                                      seq_ranges */
+   /* END: Data members needed for masking subjects from a BLAST database */
 } BLAST_SequenceBlk;
 
 /** Information about a single pattern occurence in the query. */
@@ -232,6 +251,7 @@ typedef struct SPHIQueryInfo {
                                         structures. */
     Int4 allocated_size; /**< Allocated size of the occurrences array. */
     double probability; /**< Estimated probability of the pattern */
+    char* pattern;   /**< Pattern used, saved here for formatting purposes. */
 } SPHIQueryInfo;
 
 /************************* Progress monitoring/interruptible API *************/

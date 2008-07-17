@@ -134,12 +134,14 @@ void CBlastTabularInfo::x_SetFieldDelimiter(EFieldDelimiter delim)
 }
 
 CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr, const string& format,
-                                     EFieldDelimiter delim)
+                                     EFieldDelimiter delim, 
+                                     bool parse_local_ids)
     : m_Ostream(ostr) 
 {
     x_SetFieldsToShow(format);
     x_ResetFields();
     x_SetFieldDelimiter(delim);
+    SetParseLocalIds(parse_local_ids);
 }
 
 CBlastTabularInfo::~CBlastTabularInfo()
@@ -243,8 +245,8 @@ void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
 
         string id_token;
         // Local ids are usually fake. If a title exists, use the first token
-        // of the title instead of the local id. If no title, use the local
-        // id, but without the "lcl|" prefix.
+        // of the title instead of the local id. If no title or if the local id
+        // should be parsed, use the local id, but without the "lcl|" prefix.
         if (itr->GetSeqId()->IsLocal()) {
             vector<string> title_tokens;
             title_tokens = 
@@ -255,7 +257,7 @@ void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
                 id_token = title_tokens[0];
             }
             
-            if (id_token == NcbiEmptyString) {
+            if (id_token == NcbiEmptyString || m_ParseLocalIds) {
                 const CObject_id& obj_id = itr->GetSeqId()->GetLocal();
                 if (obj_id.IsStr())
                     id_token = obj_id.GetStr();
@@ -573,6 +575,11 @@ CBlastTabularInfo::PrintHeader(const string& program_in,
        int num_hits = align_set->Get().size();
        m_Ostream << "# " << num_hits << " hits found" << "\n";
     }
+}
+
+void CBlastTabularInfo::PrintNumProcessed(int num_queries)
+{
+    m_Ostream << "# BLAST processed " << num_queries << " queries\n";
 }
 
 

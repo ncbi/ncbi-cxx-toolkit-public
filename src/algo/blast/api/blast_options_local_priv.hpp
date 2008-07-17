@@ -1235,15 +1235,15 @@ CBlastOptionsLocal::SetPseudoCount(int pc)
 inline void 
 CBlastOptionsLocal::SetPHIPattern(const char* pattern, bool is_dna)
 {
-    if (!pattern)
-        return;
-
     if (is_dna)
        m_LutOpts->lut_type = ePhiNaLookupTable;
     else
        m_LutOpts->lut_type = ePhiLookupTable;
 
-    m_LutOpts->phi_pattern = strdup(pattern);
+    if (pattern)
+        m_LutOpts->phi_pattern = strdup(pattern);
+    else if (m_LutOpts->phi_pattern)
+        sfree(m_LutOpts->phi_pattern);
 }
 
 /******************** Megablast Database Index *******************/

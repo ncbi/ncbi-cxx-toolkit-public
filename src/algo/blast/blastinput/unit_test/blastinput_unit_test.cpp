@@ -522,48 +522,6 @@ BOOST_AUTO_TEST_CASE(RawFastaNoSpaces)
     CHECK(!ssl.mask);
 }
 
-BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN)
-{
-    // this has length 682 and contains an 'N' which without the
-    // CFastaReader::fNoSplit flag, produces a delta sequence
-    CNcbiIfstream infile("data/nucl_w_n.fsa");
-    const bool is_protein(false);
-    CBlastInputSourceConfig iconfig(is_protein);
-    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
-
-    CScope scope(*CObjectManager::GetInstance());
-    CHECK(source->End() == false);
-    TSeqLocVector seqs = source->GetAllSeqLocs(scope);
-    blast::SSeqLoc ssl = seqs.front();
-    CHECK(source->End() == true);
-
-    CHECK(ssl.seqloc->IsInt() == true);
-    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
-
-    CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
-    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
-
-    CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
-    CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
-
-    CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
-    const TSeqPos length(682);
-    CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
-
-    CHECK(ssl.seqloc->GetInt().IsSetId() == true);
-    CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
-    CHECK(!ssl.mask);
-
-    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
-    CHECK(bioseqs->CanGetSeq_set());
-    CHECK(bioseqs->GetSeq_set().front()->IsSeq());
-    CHECK(bioseqs->GetSeq_set().front()->GetSeq().CanGetInst());
-    CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().CanGetRepr());
-    CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().GetRepr() 
-          == CSeq_inst::eRepr_raw);
-
-}
-
 class CAutoEnvironmentVariable
 {
 public:
@@ -854,6 +812,141 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession)
     CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
     CHECK_EQUAL(length, b.GetInst().GetLength());
+}
+
+BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
+{
+    CNcbiIfstream infile("data/accession.txt");
+    const bool is_protein(false);
+    const int kGi = 89161185;
+    const TSeqPos kStart = 0;
+    const TSeqPos kStop(247249718);
+    SDataLoaderConfig dlconfig("chromosome", is_protein);
+    dlconfig.OptimizeForWholeLargeSequenceRetrieval(true);
+
+    CBlastInputSourceConfig iconfig(dlconfig);
+    iconfig.SetRetrieveSeqData(true);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+
+    CRef<CScope> scope(CBlastScopeSource(dlconfig).NewScope());
+    CHECK(source->End() == false);
+    const time_t kTimeMax = getenv("UNIT_TEST_TIMEOUT")
+        ? atoi(getenv("UNIT_TEST_TIMEOUT")) : 15;
+    time_t start_time = CTime(CTime::eCurrent).GetTimeT();
+
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(*scope);
+    blast::SSeqLoc ssl = seqs.front();
+    CHECK(source->End() == true);
+
+    CHECK(ssl.seqloc->IsInt() == true);
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
+
+    CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
+    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+
+    CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
+    CHECK_EQUAL(kStart, ssl.seqloc->GetInt().GetFrom());
+
+    CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
+    CHECK_EQUAL(kStop, ssl.seqloc->GetInt().GetTo());
+
+    CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+    CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
+    CHECK_EQUAL(kGi, ssl.seqloc->GetInt().GetId().GetGi());
+
+    CHECK(!ssl.mask);
+
+    /// Validate the data that would be retrieved by a BLAST command line
+    /// binary
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
+    CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
+    CHECK(bioseqs->GetSeq_set().front()->IsSeq());
+    const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
+    CHECK(b.IsNa());
+    CHECK_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
+    CHECK_EQUAL(kGi, b.GetId().front()->GetGi());
+    // the BLAST database data loader will fetch this as a delta sequence
+    CHECK_EQUAL(CSeq_inst::eRepr_delta, b.GetInst().GetRepr());
+    BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
+    CHECK_EQUAL(kStop+1, b.GetInst().GetLength());
+
+    time_t end_time = CTime(CTime::eCurrent).GetTimeT();
+
+    const string accession("NC_000001");
+    ostringstream os;
+    os << "Fetching accession " << accession << " took " 
+       << end_time-start_time << " seconds, i.e.: more than the "
+       << kTimeMax << " second timeout";
+    BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
+}
+
+BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequenceWithRange)
+{
+    CNcbiIfstream infile("data/accession.txt");
+    const bool is_protein(false);
+    CBlastInputSourceConfig iconfig(is_protein);
+    const TSeqPos kStart = 1;
+    const TSeqPos kStop = 1000;
+    iconfig.SetRange().SetFrom(kStart);
+    iconfig.SetRange().SetToOpen(kStop);
+    // comment the line below to fetch the sequence data
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+
+    SDataLoaderConfig dlconfig(is_protein);
+    CRef<CScope> scope(CBlastScopeSource(dlconfig).NewScope());
+    CHECK(source->End() == false);
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(*scope);
+    blast::SSeqLoc ssl = seqs.front();
+    CHECK(source->End() == true);
+
+    CHECK(ssl.seqloc->IsInt() == true);
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
+
+    CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
+    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+
+    CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
+    CHECK_EQUAL(kStart, ssl.seqloc->GetInt().GetFrom());
+
+    CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
+    CHECK_EQUAL(kStop, ssl.seqloc->GetInt().GetTo());
+
+    CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+    CHECK_EQUAL(CSeq_id::e_Other, ssl.seqloc->GetInt().GetId().Which());
+    const string accession("NC_000001");
+    CHECK_EQUAL(accession,
+                ssl.seqloc->GetInt().GetId().GetOther().GetAccession());
+    const int version(9);
+    CHECK_EQUAL(version, ssl.seqloc->GetInt().GetId().GetOther().GetVersion());
+
+    CHECK(!ssl.mask);
+
+    const time_t kTimeMax = getenv("UNIT_TEST_TIMEOUT")
+        ? atoi(getenv("UNIT_TEST_TIMEOUT")) : 15;
+    time_t start_time = CTime(CTime::eCurrent).GetTimeT();
+
+    /// Validate the data that would be retrieved by blast.cgi
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
+    CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
+    CHECK(bioseqs->GetSeq_set().front()->IsSeq());
+    const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
+    CHECK(b.IsNa());
+    CHECK_EQUAL(CSeq_id::e_Other, b.GetId().front()->Which());
+    CHECK_EQUAL(accession, b.GetId().front()->GetOther().GetAccession());
+    CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
+    BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
+    const TSeqPos length(247249719);
+    CHECK_EQUAL(length, b.GetInst().GetLength());
+
+    time_t end_time = CTime(CTime::eCurrent).GetTimeT();
+
+    ostringstream os;
+    os << "Fetching parts of accession " << accession << " without sequence "
+       << "datatook " << end_time-start_time 
+       << " seconds, i.e.: more than the "
+       << kTimeMax << " second timeout";
+    BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
 }
 
 BOOST_AUTO_TEST_CASE(ReadMultipleAccessions)
@@ -1403,7 +1496,7 @@ BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
 
 BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
 {
-    auto_ptr<string> user_input(new string("    u93236 "));
+    auto_ptr<string> user_input(new string("  X65215.1   "));
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CBlastInputSourceConfig iconfig(false);
@@ -1426,15 +1519,14 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
     CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
 
     CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
-    const TSeqPos length(2772);
+    const TSeqPos length(624);
     CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 
     CHECK(ssl.seqloc->GetInt().IsSetId() == true);
     BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
-    CHECK_EQUAL(CSeq_id::e_Genbank, ssl.seqloc->GetInt().GetId().Which());
-    const string accession("u93236");
-    CHECK_EQUAL(NStr::CompareNocase(accession,
-                ssl.seqloc->GetInt().GetId().GetGenbank().GetAccession()), 0);
+    CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
+    const string accession("X65215.1");
+    CHECK_EQUAL(555, ssl.seqloc->GetInt().GetId().GetGi());
 
     CHECK(!ssl.mask);
 
@@ -1444,9 +1536,8 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
     CHECK(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
     CHECK(b.IsNa());
-    CHECK_EQUAL(CSeq_id::e_Genbank, b.GetId().front()->Which());
-    CHECK_EQUAL(NStr::CompareNocase(accession,
-                b.GetId().front()->GetGenbank().GetAccession()), 0);
+    CHECK_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
+    CHECK_EQUAL(555, b.GetId().front()->GetGi());
     CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
     CHECK_EQUAL(length, b.GetInst().GetLength());
@@ -2179,6 +2270,49 @@ BOOST_AUTO_TEST_CASE(ReadSinglePdb_InDifferentFormats)
         BOOST_CHECK(! CSeq_inst::IsNa(b.GetInst().GetMol()));
         CHECK_EQUAL(length, b.GetInst().GetLength());
     }
+}
+
+BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN)
+{
+    CNcbiEnvironment().Set("BLASTINPUT_GEN_DELTA_SEQ", kEmptyStr);
+    // this has length 682 and contains an 'N' which without the
+    // CFastaReader::fNoSplit flag, produces a delta sequence
+    CNcbiIfstream infile("data/nucl_w_n.fsa");
+    const bool is_protein(false);
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+
+    CScope scope(*CObjectManager::GetInstance());
+    CHECK(source->End() == false);
+    TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs.front();
+    CHECK(source->End() == true);
+
+    CHECK(ssl.seqloc->IsInt() == true);
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
+
+    CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
+    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+
+    CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
+    CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
+
+    CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
+    const TSeqPos length(682);
+    CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+
+    CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+    CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
+    CHECK(!ssl.mask);
+
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
+    CHECK(bioseqs->CanGetSeq_set());
+    CHECK(bioseqs->GetSeq_set().front()->IsSeq());
+    CHECK(bioseqs->GetSeq_set().front()->GetSeq().CanGetInst());
+    CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().CanGetRepr());
+    CHECK_EQUAL(CSeq_inst::eRepr_raw,
+                bioseqs->GetSeq_set().front()->GetSeq().GetInst().GetRepr());
+
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

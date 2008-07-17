@@ -678,7 +678,10 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
       and the optimal templates for one combination of word size
       and template length. */
    if (kTwoTemplates) {
-      second_template_type = mb_lt->second_template_type = template_type + 1;
+      /* Use the temporaray to avoid annoying ICC warning. */
+      int temp_int = template_type + 1;
+      second_template_type = 
+           mb_lt->second_template_type = (EDiscTemplateType) temp_int;
 
       mb_lt->hashtable2 = (Int4*)calloc(mb_lt->hashsize, sizeof(Int4));
       mb_lt->next_pos2 = (Int4*)calloc(query->length + 1, sizeof(Int4));
@@ -793,15 +796,13 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
  * @param query the query sequence [in]
  * @param location locations on the query to be indexed in table [in]
  * @param mb_lt the (already allocated) megablast lookup table structure [in|out]
- * @param lookup_options specifies the word_size [in]
  * @return zero on success, negative number on failure. 
  */
 
 static Int2 
 s_FillContigMBTable(BLAST_SequenceBlk* query, 
         BlastSeqLoc* location,
-        BlastMBLookupTable* mb_lt, 
-        const LookupTableOptions* lookup_options)
+        BlastMBLookupTable* mb_lt) 
 
 {
    BlastSeqLoc* loc;
@@ -979,7 +980,7 @@ Int2 BlastMBLookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    else {
         /* contiguous megablast */
         mb_lt->scan_step = mb_lt->word_length - mb_lt->lut_word_length + 1;
-        status = s_FillContigMBTable(query, location, mb_lt, lookup_options);
+        status = s_FillContigMBTable(query, location, mb_lt);
    }
 
    if (status > 0) {

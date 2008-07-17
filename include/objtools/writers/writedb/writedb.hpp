@@ -39,8 +39,10 @@
 /// Implemented for: UNIX, MS-Windows
 
 #include <objtools/writers/writedb/writedb_error.hpp>
+#include <objtools/readers/seqdb/seqdbblob.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
+#include <objects/blastdb/defline_extra.hpp>
 #include <objects/seq/seq__.hpp>
 
 #include <objmgr/bioseq_handle.hpp>
@@ -70,10 +72,10 @@ public:
     /// Sequence types.
     enum ESeqType {
         /// Protein database.
-        eProtein,
+        eProtein = 0,
         
         /// Nucleotide database.
-        eNucleotide
+        eNucleotide = 1
     };
     
     /// Whether and what kind of indices to build.
@@ -93,6 +95,8 @@ public:
         /// Like eFullIndex but also build a numeric Trace ID index.
         eFullWithTrace = eFullIndex | eAddTrace,
         
+        /// Like eFullIndex but also build a numeric Trace ID index.
+        eDefault = eFullIndex | eAddTrace,
         
         // Specialized ISAMs; these can be ORred into the above.
         
@@ -119,7 +123,7 @@ public:
     CWriteDB(const string & dbname,
              ESeqType       seqtype,
              const string & title,
-             int            itype = eFullWithTrace);
+             int            itype = eDefault);
     
     /// Destructor.
     ///
@@ -207,24 +211,28 @@ public:
     /// @param deflines Deflines to use for this sequence. [in]
     void SetDeflines(const CBlast_def_line_set & deflines);
     
-    /// Adds defline record for this sequence.
+    /// Register a type of filtering data found in this database.
+    ///
+    /// @return algorithm ID for the filtering data.
+    /// @param program Program used to produce this masking data. [in]
+    /// @param options Algorithm options provided to the program. [in]
+    int RegisterMaskAlgorithm(EBlast_filter_program program, 
+                              const string & options = string());
+    
+    /// Type storing masking data for a sequence.
+    typedef vector<SBlastDbMaskData> TMaskedRanges;
+    
+    /// Set filtering data for a sequence.
     /// 
-    /// The specified meta-data is used to build and append a blast
-    /// defline.  This should be called once per defline, but may be
-    /// called more than once per sequence.  If this method is used
-    /// with the CBioseq version of AddSequence, the deflines provided
-    /// with this method replace the deflines found in the CBioseq.
+    /// This method specifies filtered regions for this sequence.  A
+    /// sequence may have filtering data from one or more algorithms.
+    /// For each algorithm_id value specified in ranges, a description
+    /// should be added to the database using RegisterMaskAlgorithm().
+    /// This must be done before the first call to SetMaskData() that
+    /// uses the algorithm id for a non-empty offset range list.
     /// 
-    /// @param ids   One or more sequence identifiers. [in]
-    /// @param title The defline title. [in]
-    /// @param taxid The taxonomic id, or zero for none. [in]
-    /// @param membs Sets the memberships for this defline. [in]
-    /// @param links Sets linkouts for this defline. [in]
-    void AddDefline(const vector< CRef<CSeq_id> > & ids,
-                    const CTempString             & title,
-                    int                             taxid,
-                    const vector<int>             & membs,
-                    const vector<int>             & links);
+    /// @param ranges Filtered ranges for this sequence and algorithm.
+    void SetMaskData(const TMaskedRanges & ranges);
     
     //
     // Output
@@ -314,6 +322,66 @@ public:
     /// @param masked Letters to disinclude. [in]
     void SetMaskedLetters(const string & masked);
     
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    /// Find an existing column.
+    ///
+    /// This looks for an existing column with the specified title and
+    /// returns the column ID if found.
+    ///
+    /// @param title The column title to look for.
+    /// @return The column ID if this title is defined, otherwise -1.
+    int FindColumn(const string & title) const;
+    
+    /// Set up a user-defined CWriteDB column.
+    ///
+    /// This method creates a user-defined column associated with this
+    /// database.  The column is indexed by OID and contains arbitrary
+    /// binary data, which is applied using the SetBlobData method
+    /// below.  The `title' parameter identifies the column and must
+    /// be unique within this database.  Because tables are accessed
+    /// by title, it is not necessary to permanently associate file
+    /// extensions with specific purposes or data types.  The return
+    /// value of this method is an integer that identifies this column
+    /// for the purpose of inserting blob data.  (The number of columns
+    /// allowed is currently limited due to the file naming scheme,
+    /// but some columns are used for built-in purposes.)
+    ///
+    /// @param title Name identifying this column.
+    /// @return Column identifier (a positive integer).
+    int CreateUserColumn(const string & title);
+    
+    /// Add meta data to a user-defined column.
+    ///
+    /// In addition to normal blob data, database columns can store a
+    /// `dictionary' of user-defined metadata in key/value form.  This
+    /// method adds one such key/value pair to the column.  Specifying
+    /// a key a second time causes replacement of the previous value.
+    /// Using this mechanism to store large amounts of data may have a
+    /// negative impact on performance.
+    ///
+    /// @param col_id Specifies the column to add this metadata to.
+    /// @param key    A unique key string.
+    /// @param value  A value string.
+    void AddColumnMetaData(int            col_id,
+                           const string & key,
+                           const string & value);
+    
+    /// Add blob data to a user-defined column.
+    ///
+    /// To add data to a user-defined blob column, call this method,
+    /// providing the column handle.  A blob object will be returned;
+    /// the user data should be stored in this object.  The data can
+    /// be stored any time up to the next call to an `AddSequence'
+    /// method (just as with any other per-sequence data) but access
+    /// to the returned object after that point results is incorrect
+    /// and will have undefined consequences.
+    ///
+    /// @param column_id Identifier for a user-defined column.
+    /// @return Blob data should be written to this object.
+    CBlastDbBlob & SetBlobData(int column_id);
+#endif
+    
 protected:
     /// Implementation object.
     CWriteDB_Impl * m_Impl;
@@ -327,6 +395,12 @@ protected:
 class NCBI_XOBJWRITE_EXPORT CBinaryListBuilder
 {
 public:
+    /// Type definition of the container that stores the IDs for this class
+    typedef vector<Int8> TContainerType;
+
+    /// Standard size_type definition
+    typedef TContainerType::size_type size_type;
+
     /// Identifier types.
     enum EIdType {
         /// Genomic id.
@@ -340,9 +414,13 @@ public:
     CBinaryListBuilder(EIdType id_type);
     
     /// Write the list to a file.
-    /// @param fname Filename of the file to write.
+    /// @param fname Filename of the file to write the object to.
     void Write(const string & fname);
     
+    /// Write the list to a stream
+    /// @param stream Stream to write the object to.
+    void Write(CNcbiOstream& stream);
+
     /// Add an identifier to the list.
     void AppendId(const Int8 & id)
     {
@@ -367,9 +445,14 @@ public:
         }
     }
     
+    /// Returns the number of IDs stored in an instance of this class
+    size_type Size() const {
+        return m_Ids.size();
+    }
+
 private:
     /// List of identifiers to use.
-    vector<Int8> m_Ids;
+    TContainerType m_Ids;
     
     /// Whether to use GIs or TIs.
     EIdType m_IdType;
@@ -381,6 +464,103 @@ private:
     CBinaryListBuilder& operator=(CBinaryListBuilder &);
 };
 
+
+/// Builder for BlastDb format column files.
+///
+/// This class supports construction of BlastDb format column files
+/// outside of BlastDb volumes.  To build column files as part of a
+/// volume, use CWriteDB's column related methods.  This class is an
+/// interface to the column file construction functionality, but is
+/// intended for data not associated with specific BlastDb volumes.
+/// Columns built with CWriteDB::CreateColumn participate in WriteDB's
+/// other volume-oriented policies such as volume breaking to enforce
+/// file size limits, and compatibility with component file naming
+/// conventions for CWriteDB and CSeqDB.
+
+class NCBI_XOBJWRITE_EXPORT CWriteDB_ColumnBuilder : public CObject {
+public:
+    /// Construct a BlastDb format column.
+    ///
+    /// The `title' string names this column, and can be used to
+    /// uniquely identify it in cases where the file name must be
+    /// chosen arbitrarily.  This version chooses file extensions
+    /// using a basic pattern (<name>.x?[ab]) designed to not conflict
+    /// with columns created by WriteDB as part of a volume.  The
+    /// file_id character must be alphanumeric.
+    ///
+    /// @param title      Internal name of this column.
+    /// @param basename   Column filename (minus extension).
+    /// @param file_id    Identifier for this column.
+    CWriteDB_ColumnBuilder(const string & title,
+                           const string & basename,
+                           char           file_id = 'a');
+    
+    /// Add meta data to the column.
+    ///
+    /// In addition to normal blob data, database columns can store a
+    /// `dictionary' of user-defined metadata in key/value form.  This
+    /// method adds one such key/value pair to the column.  Specifying
+    /// a key a second time causes replacement of the previous value.
+    /// Using this mechanism to store large amounts of data may have a
+    /// negative impact on performance.
+    ///
+    /// @param key   Key string.
+    /// @param value Value string.
+    void AddMetaData(const string & key, const string & value);
+    
+    /// Destructor.
+    ~CWriteDB_ColumnBuilder();
+    
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    /// Add a blob to the column.
+    ///
+    /// The data described by `blob' is added to the column.  If the
+    /// blob is empty, no data is stored but the OID is incremented.
+    ///
+    /// @param blob The blob to add to the column.
+    void AddBlob(const CBlastDbBlob & blob);
+#endif
+    
+    /// Complete and close the column files.
+    void Close();
+    
+    /// List Filenames
+    ///
+    /// Returns a list of the files constructed by this class; the
+    /// returned list may not be complete until Close() has been
+    /// called.
+    ///
+    /// @param files The list of files created for this column.
+    void ListFiles(vector<string> & files) const;
+    
+private:
+    /// Prevent the copy constructor.
+    CWriteDB_ColumnBuilder(const CWriteDB_ColumnBuilder&);
+    
+    /// Prevent copy assignment.
+    CWriteDB_ColumnBuilder & operator= (CWriteDB_ColumnBuilder&);
+    
+    /// Implementation object.
+    class CWriteDB_Column * m_Impl;
+};
+
+/** 
+ * @brief Writes an alias file that restricts a database with a gi list. 
+ * 
+ * @param file_name alias file name to create, it will overwrite any existing
+ * files of that name [in]
+ * @param db_name database name to restrict [in]
+ * @param seq_type type of sequences stored in the database [in]
+ * @param gi_file_name name of the file containing gis [in]
+ * @param title title to use in this alias file [in]
+ */
+NCBI_XOBJWRITE_EXPORT 
+void CWriteDB_CreateAliasFile(const string& file_name,
+                              const string& db_name,
+                              CWriteDB::ESeqType seq_type,
+                              const string& gi_file_name,
+                              const string& title = string());
 
 END_NCBI_SCOPE
 

@@ -66,7 +66,8 @@ public:
     /// Constructor
     /// @param seqdb 
     ///     CSeqDB object for an already opened BLAST database
-    CLocalDbAdapter(CRef<CSeqDB> seqdb);
+    CLocalDbAdapter(CRef<CSeqDB> seqdb, 
+                    const CSearchDatabase::TFilteringAlgorithms& filt_algs);
     
     /// Constructor
     /// @param subject_sequences
@@ -98,15 +99,12 @@ public:
     /// @note ownership of the constructed object is handled by this class
     IBlastSeqInfoSrc* MakeSeqInfoSrc();
 
+    /// Retrieve the database filtering algorithms
+    const CSearchDatabase::TFilteringAlgorithms& GetFilteringAlgorithms() const;
+
 private:
-    /// True if the BlastSeqSrc object below is owned by this class
-    //bool m_OwnSeqSrc;
-
-    /// Pointer to the BlastSeqSrc
+    /// Pointer to the BlastSeqSrc this object owns and manages
     BlastSeqSrc* m_SeqSrc;
-
-    /// True if the IBlastSeqInfoSrc object below is owned by this class
-    //bool m_OwnSeqInfoSrc;
 
     /// Pointer to the IBlastSeqInfoSrc
     CRef<IBlastSeqInfoSrc> m_SeqInfoSrc;
@@ -123,8 +121,12 @@ private:
     /// Options to be used when instantiating the subject sequences
     CConstRef<CBlastOptionsHandle> m_OptsHandle;
     
-    /// Initialize the internal CSeqDB object from a CSearchDatabase object
-    void x_InitSeqDB();
+    /// Initialize a CSeqDB object from a CSearchDatabase object
+    CRef<CSeqDB> x_InitSeqDB(CConstRef<CSearchDatabase> dbinfo);
+
+    /// List of filtering algorithms to apply to sequences extracted from the
+    /// BlastSeqSrc
+    CSearchDatabase::TFilteringAlgorithms m_FilteringAlgs;
 
     /// Prohibit copy-constructor
     CLocalDbAdapter(const CLocalDbAdapter&);
@@ -132,6 +134,11 @@ private:
     CLocalDbAdapter & operator=(const CLocalDbAdapter&);
 };
 
+inline const CSearchDatabase::TFilteringAlgorithms&
+CLocalDbAdapter::GetFilteringAlgorithms() const
+{
+    return m_FilteringAlgs;
+}
 
 END_SCOPE(BLAST)
 END_NCBI_SCOPE

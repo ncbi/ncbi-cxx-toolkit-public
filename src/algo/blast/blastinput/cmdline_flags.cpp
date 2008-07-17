@@ -58,6 +58,7 @@ const string kArgDbType("dbtype");
 
 const string kArgGiList("gilist");
 const string kArgNegativeGiList("negative_gilist");
+const string kArgMaskSubjects("mask_subjects");
 
 const string kTask("task");
 
@@ -75,12 +76,16 @@ const string kArgMinRawGappedScore("min_raw_gapped_score");
 const string kArgOutputFormat("outfmt");
 const int kDfltArgOutputFormat = 0;
 const string kArgShowGIs("show_gis");
+const bool kDfltArgShowGIs = false;
 const string kArgNumDescriptions("num_descriptions");
 const size_t kDfltArgNumDescriptions = 500;
 const string kArgNumAlignments("num_alignments");
 const size_t kDfltArgNumAlignments = 250;
 const string kArgProduceHtml("html");
+const bool kDfltArgProduceHtml = false;
 
+const string kArgMaxTargetSequences("max_target_seqs");
+const TSeqPos kDfltArgMaxTargetSequences = 100;
 
 const string kArgGapOpen("gapopen");
 const string kArgGapExtend("gapextend");
@@ -103,11 +108,13 @@ const string kArgEffSearchSpace("searchsp");
 const string kArgUseSWTraceback("use_sw_tback");
 
 const string kArgUseLCaseMasking("lcase_masking");
+const bool kDfltArgUseLCaseMasking = false;
 const string kArgStrand("strand");
 const string kDfltArgStrand("both");
 const string kArgQueryLocation("query_loc");
 const string kArgSubjectLocation("subject_loc");
-const string kArgParseQueryDefline("parse_query_defline");
+const string kArgParseDeflines("parse_deflines");
+const bool kDfltArgParseDeflines = false;
 
 const string kArgMaxIntronLength("max_intron_length");
 const int kDfltArgMaxIntronLength = 0;

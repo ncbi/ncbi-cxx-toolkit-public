@@ -35,6 +35,7 @@
 
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/api/query_data.hpp>
+#include <algo/blast/api/sseqloc.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -52,6 +53,13 @@ NCBI_XBLAST_EXPORT BlastSeqSrc*
 QueryFactoryBlastSeqSrcInit(CRef<IQueryFactory> query_factory, 
                             EBlastProgramType program);
 
+/** Initialize the sequence source structure from a query factory.
+ * @param query_factory Factory from which the queries will be manufactured [in]
+ * @param program Type of BLAST to be performed [in]
+ */
+NCBI_XBLAST_EXPORT BlastSeqSrc* 
+QueryFactoryBlastSeqSrcInit(const TSeqLocVector& subj_seqs,
+                            EBlastProgramType program);
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

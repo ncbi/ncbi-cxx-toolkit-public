@@ -95,6 +95,12 @@ bool CBioseqSeqInfoSrc::HasGiList() const
     return false;
 }
 
+bool CBioseqSeqInfoSrc::GetMasks(Uint4 /* index */, 
+                                 const TSeqRange& /* target_range */,
+                                 TMaskedSubjRegions& /* retval */) const
+{
+    return false;
+}
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

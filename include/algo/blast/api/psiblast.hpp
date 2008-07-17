@@ -36,6 +36,7 @@
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
+#include <algo/blast/api/phiblast_prot_options.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <objmgr/scope.hpp>
 

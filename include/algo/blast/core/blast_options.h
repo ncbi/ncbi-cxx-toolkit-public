@@ -430,7 +430,7 @@ typedef struct PSIBlastOptions {
  *  to a subset.
  */
 typedef struct BlastDatabaseOptions {
-   Int4 genetic_code;  /**< Genetic code to use for translation, 
+   Int4 genetic_code;   /**< Genetic code to use for translation, 
                              tblast[nx] only */
 } BlastDatabaseOptions;
 

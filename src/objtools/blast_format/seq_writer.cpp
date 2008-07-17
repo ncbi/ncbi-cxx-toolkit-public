@@ -47,8 +47,10 @@ USING_SCOPE(blast);
 USING_SCOPE(objects);
 
 CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
-                             CNcbiOstream& out)
-    : m_Out(out), m_FmtSpec(format_spec), m_BlastDb(blastdb)
+                 CNcbiOstream& out, 
+                 CSeqFormatterConfig config /* = CSeqFormatterConfig() */)
+    : m_Out(out), m_FmtSpec(format_spec), m_BlastDb(blastdb),
+      m_FastaRequestedAtEOL(false)
 {
     vector<char> repl_types;    // replacement types
 
@@ -66,19 +68,29 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
         }
     }
 
-    if (repl_types.size() != m_ReplOffsets.size()) {
+    if (m_ReplOffsets.empty() || repl_types.size() != m_ReplOffsets.size()) {
         NCBI_THROW(CInputException, eInvalidInput,
                    "Invalid format specification");
     }
 
     ITERATE(vector<char>, fmt, repl_types) {
         switch (*fmt) {
+        case 'f':
+            m_DataExtractors.push_back(new CFastaExtractor(config.m_LineWidth, 
+                                                           config.m_SeqRange,
+                                                           config.m_Strand, 
+                                                           config.m_TargetOnly, 
+                                                           config.m_UseCtrlA));
+            break;
+
         case 's':
-            m_DataExtractors.push_back(new CSeqDataExtractor());
+            m_DataExtractors.push_back(new CSeqDataExtractor(config.m_SeqRange,
+                                                             config.m_Strand));
             break;
 
         case 'a':
-            m_DataExtractors.push_back(new CAccessionExtractor());
+            m_DataExtractors.push_back
+                (new CAccessionExtractor(config.m_TargetOnly));
             break;
 
         case 'g':
@@ -90,7 +102,7 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
             break;
 
         case 't':
-            m_DataExtractors.push_back(new CTitleExtractor());
+            m_DataExtractors.push_back(new CTitleExtractor(config.m_TargetOnly));
             break;
 
         case 'l':
@@ -105,12 +117,25 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
             m_DataExtractors.push_back(new CPigExtractor());
             break;
 
+        case 'L':
+            m_DataExtractors.push_back(new CCommonTaxonomicNameExtractor());
+            break;
+
+        case 'S':
+            m_DataExtractors.push_back(new CScientificNameExtractor());
+            break;
+
         default:
             CNcbiOstrstream os;
             os << "Unrecognized format specification: '%" << *fmt << "'";
             NCBI_THROW(CInputException, eInvalidInput, 
                        CNcbiOstrstreamToString(os));
         }
+    }
+
+    // This is needed for pretty formatting purposes
+    if (dynamic_cast<CFastaExtractor*>(m_DataExtractors.back())) {
+        m_FastaRequestedAtEOL = true;
     }
 }
 
@@ -121,21 +146,19 @@ CSeqFormatter::~CSeqFormatter()
     };
 }
 
-bool
-CSeqFormatter::Write(const CBlastDBSeqId& id)
+void
+CSeqFormatter::Write(CBlastDBSeqId& id)
 {
-    bool retval = false;
-    try {
-        vector<string> data2write;
-        x_Transform(id, data2write);
-        m_Out << x_Replacer(data2write) << "\n";
-        retval = true;
-    } catch (...) { throw; }
-    return retval;
+    vector<string> data2write;
+    x_Transform(id, data2write);
+    m_Out << x_Replacer(data2write);
+    if ( !m_FastaRequestedAtEOL ) {
+        m_Out << "\n";
+    }
 }
 
 void
-CSeqFormatter::x_Transform(const CBlastDBSeqId& id, vector<string>& retval)
+CSeqFormatter::x_Transform(CBlastDBSeqId& id, vector<string>& retval)
 {
     retval.clear();
     retval.reserve(m_DataExtractors.size());

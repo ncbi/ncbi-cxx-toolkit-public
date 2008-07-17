@@ -44,6 +44,7 @@ static char const rcsid[] =
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <algo/blast/api/remote_blast.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>     // for CObjMgr_QueryFactory
 #include <algo/blast/api/blast_options_builder.hpp>
 #include <objtools/readers/seqdb/seqdbcommon.hpp>   // for CSeqDBException
 #include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
@@ -148,38 +149,61 @@ CRef<CSeqDB> GetSeqDB(CRef<blast::CBlastDatabaseArgs> db_args)
     return retval;
 }
 
-string RegisterOMDataLoader(CRef<objects::CObjectManager> objmgr, 
-                            CRef<CSeqDB> db_handle)
+void
+InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args, 
+                  CRef<blast::CBlastOptionsHandle> opts_hndl,
+                  bool is_remote_search,
+                  CRef<blast::CLocalDbAdapter>& db_adapter, 
+                  CRef<objects::CScope>& scope)
+{
+    db_adapter.Reset();
+
+    _ASSERT(db_args.NotEmpty());
+
+    // Initialize the scope... 
+    if (is_remote_search) {
+        const bool is_protein = 
+            Blast_SubjectIsProtein(opts_hndl->GetOptions().GetProgramType())
+			? true : false;
+        SDataLoaderConfig config(is_protein);
+        CBlastScopeSource scope_src(config);
+        // configure scope to fetch sequences remotely for formatting
+        if (scope.NotEmpty()) {
+            scope_src.AddDataLoaders(scope);
+        } else {
+            scope = scope_src.NewScope();
+        }
+    } else {
+        if (scope.Empty()) {
+            scope.Reset(new CScope(*CObjectManager::GetInstance()));
+        }
+    }
+    _ASSERT(scope.NotEmpty());
+
+    // ... and then the subjects
+    CRef<CSearchDatabase> search_db = db_args->GetSearchDatabase();
+    CRef<IQueryFactory> subjects;
+    if ( (subjects = db_args->GetSubjects(scope)) ) {
+        _ASSERT(search_db.Empty());
+        db_adapter.Reset(new CLocalDbAdapter(subjects, opts_hndl));
+    } else {
+        _ASSERT(search_db.NotEmpty());
+        CRef<CSeqDB> seqdb = GetSeqDB(db_args);
+        db_adapter.Reset(new CLocalDbAdapter(seqdb,
+                             search_db->GetFilteringAlgorithms()));
+        scope->AddDataLoader(RegisterOMDataLoader(seqdb));
+    }
+}
+
+string RegisterOMDataLoader(CRef<CSeqDB> db_handle)
 {
     // the blast formatter requires that the database coexist in
     // the same scope with the query sequences
-    
-    CBlastDbDataLoader::RegisterInObjectManager(*objmgr, db_handle,
-                                                CObjectManager::eDefault);
-
-    return CBlastDbDataLoader::GetLoaderNameFromArgs(db_handle);
-}
-
-/// Auxiliary function to obtain a Blast4-request, i.e.: a search strategy
-static CRef<objects::CBlast4_request>
-s_GetSearchStrategy(CRef<IQueryFactory> queries,
-                  CRef<CBlastOptionsHandle> options_handle,
-                  CRef<CSearchDatabase> search_db,
-                  objects::CPssmWithParameters* pssm)
-{
-    _ASSERT(search_db);
-    _ASSERT(options_handle);
-
-    CRef<CRemoteBlast> rmt_blast;
-    if (queries.NotEmpty()) {
-        rmt_blast.Reset(new CRemoteBlast(queries, options_handle, *search_db));
-    } else {
-        _ASSERT(pssm);
-        CRef<CPssmWithParameters> p(pssm);
-        rmt_blast.Reset(new CRemoteBlast(p, options_handle, *search_db));
-    }
-
-    return rmt_blast->GetSearchStrategy();
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CBlastDbDataLoader::RegisterInObjectManager(*om, db_handle);/*, true,
+                                                CObjectManager::eDefault);*/
+    CBlastDbDataLoader::SBlastDbParam param(db_handle);
+    return CBlastDbDataLoader::GetLoaderNameFromArgs(param);
 }
 
 /// Real implementation of search strategy extraction
@@ -188,17 +212,173 @@ static void
 s_ExportSearchStrategy(CNcbiOstream* out,
                      CRef<blast::IQueryFactory> queries,
                      CRef<blast::CBlastOptionsHandle> options_handle,
-                     CRef<blast::CSearchDatabase> search_db,
-                     objects::CPssmWithParameters* pssm)
+                     CRef<blast::CBlastDatabaseArgs> db_args,
+                     CRef<objects::CPssmWithParameters> pssm 
+                       /* = CRef<objects::CPssmWithParameters>() */)
 {
     if ( !out ) {
         return;
     }
+    _ASSERT(db_args);
+    _ASSERT(options_handle);
 
-    CRef<CBlast4_request> req = 
-        s_GetSearchStrategy(queries, options_handle, search_db, pssm);
+    CRef<CScope> null_scope;
+    CRef<CRemoteBlast> rmt_blast =
+        InitializeRemoteBlast(queries, db_args, options_handle, null_scope, 
+                              false, pssm);
+    CRef<CBlast4_request> req = rmt_blast->GetSearchStrategy();
     // N.B.: If writing XML, be sure to call SetEnforcedStdXml on the stream!
     *out << MSerial_AsnText << *req;
+}
+
+/// Converts a list of Bioseqs into a TSeqLocVector. All Bioseqs are added to
+/// the same CScope object
+/// @param subjects Bioseqs to convert
+static TSeqLocVector
+s_ConvertBioseqs2TSeqLocVector(const CBlast4_subject::TSequences& subjects)
+{
+    TSeqLocVector retval;
+    CRef<CScope> subj_scope(new CScope(*CObjectManager::GetInstance()));
+    ITERATE(CBlast4_subject::TSequences, bioseq, subjects) {
+        subj_scope->AddBioseq(**bioseq);
+        CRef<CSeq_id> seqid = FindBestChoice((*bioseq)->GetId(),
+                                             CSeq_id::BestRank);
+        const TSeqPos length = (*bioseq)->GetInst().GetLength();
+        CRef<CSeq_loc> sl(new CSeq_loc(*seqid, 0, length));
+        retval.push_back(SSeqLoc(sl, subj_scope));
+    }
+    return retval;
+}
+
+/// Import PSSM into the command line arguments object
+static void 
+s_ImportPssm(const CBlast4_queries& queries,
+             CRef<blast::CBlastOptionsHandle> opts_hndl,
+             blast::CBlastAppArgs* cmdline_args)
+{
+    CRef<CPssmWithParameters> pssm
+        (const_cast<CPssmWithParameters*>(&queries.GetPssm()));
+    CPsiBlastAppArgs* psi_args = NULL;
+    CTblastnAppArgs* tbn_args = NULL;
+
+    if ( (psi_args = dynamic_cast<CPsiBlastAppArgs*>(cmdline_args)) ) {
+        psi_args->SetInputPssm(pssm);
+    } else if ( (tbn_args = 
+                 dynamic_cast<CTblastnAppArgs*>(cmdline_args))) {
+        tbn_args->SetInputPssm(pssm);
+    } else {
+        EBlastProgramType p = opts_hndl->GetOptions().GetProgramType();
+        string msg("PSSM found in saved strategy, but not supported ");
+        msg += "for " + Blast_ProgramNameFromType(p);
+        NCBI_THROW(CBlastException, eNotSupported, msg);
+    }
+}
+
+/// Import queries into command line arguments object
+static void 
+s_ImportQueries(const CBlast4_queries& queries,
+                CRef<blast::CBlastOptionsHandle> opts_hndl,
+                blast::CBlastAppArgs* cmdline_args)
+{
+    CRef<CTmpFile> tmpfile(new CTmpFile(CTmpFile::eNoRemove));
+
+    // Stuff the query bioseq or seqloc list in the input stream of the
+    // cmdline_args
+    if (queries.IsSeq_loc_list()) {
+        const CBlast4_queries::TSeq_loc_list& seqlocs =
+            queries.GetSeq_loc_list();
+        CFastaOstream out(tmpfile->AsOutputFile(CTmpFile::eIfExists_Throw));
+        out.SetFlag(CFastaOstream::eAssembleParts);
+        
+        EBlastProgramType prog = opts_hndl->GetOptions().GetProgramType();
+        SDataLoaderConfig dlconfig(!!Blast_QueryIsProtein(prog));
+        dlconfig.OptimizeForWholeLargeSequenceRetrieval();
+        CBlastScopeSource scope_src(dlconfig);
+        CRef<CScope> scope(scope_src.NewScope());
+
+        ITERATE(CBlast4_queries::TSeq_loc_list, itr, seqlocs) {
+            CBioseq_Handle bh = scope->GetBioseqHandle(**itr);
+            CConstRef<CBioseq> bioseq = bh.GetCompleteBioseq();
+            out.Write(*bioseq);
+        }
+        scope.Reset();
+        scope_src.RevokeBlastDbDataLoader();
+
+    } else {
+        _ASSERT(queries.IsBioseq_set());
+        const CBlast4_queries::TBioseq_set& bioseqs =
+            queries.GetBioseq_set();
+        CFastaOstream out(tmpfile->AsOutputFile(CTmpFile::eIfExists_Throw));
+        out.SetFlag(CFastaOstream::eAssembleParts);
+
+        ITERATE(CBioseq_set::TSeq_set, seq_entry, bioseqs.GetSeq_set()){
+            out.Write(**seq_entry);
+        }
+    }
+
+    const string& fname = tmpfile->GetFileName();
+    tmpfile.Reset(new CTmpFile(fname));
+    cmdline_args->SetInputStream(tmpfile);
+}
+
+/// Import the database and return it in a CBlastDatabaseArgs object
+static CRef<blast::CBlastDatabaseArgs>
+s_ImportDatabase(const CBlast4_subject& subj, 
+                 CBlastOptionsBuilder& opts_builder,
+                 bool subject_is_protein,
+                 bool is_remote_search)
+{
+    _ASSERT(subj.IsDatabase());
+    CRef<CBlastDatabaseArgs> db_args(new CBlastDatabaseArgs);
+    const CSearchDatabase::EMoleculeType mol = subject_is_protein
+        ? CSearchDatabase::eBlastDbIsProtein
+        : CSearchDatabase::eBlastDbIsNucleotide;
+    const string dbname(subj.GetDatabase());
+    CRef<CSearchDatabase> search_db(new CSearchDatabase(dbname, mol));
+
+    if (opts_builder.HaveEntrezQuery()) {
+        string limit(opts_builder.GetEntrezQuery());
+        search_db->SetEntrezQueryLimitation(limit);
+        if ( !is_remote_search ) {
+            string msg("Entrez query '");
+            msg += limit + string("' will not be processed locally.\n");
+            msg += string("Please use the -remote option.");
+            throw runtime_error(msg);
+        }
+    }
+
+    if (opts_builder.HaveGiList()) {
+        CSearchDatabase::TGiList limit;
+        const list<int>& gilist = opts_builder.GetGiList();
+        copy(gilist.begin(), gilist.end(), back_inserter(limit));
+        search_db->SetGiListLimitation(limit);
+    }
+
+    if (opts_builder.HaveDbFilteringAlgorithmIds()) {
+        CSearchDatabase::TFilteringAlgorithms algo_ids;
+        const list<int>& algo_id_list = 
+            opts_builder.GetDbFilteringAlgorithmIds();
+        copy(algo_id_list.begin(), algo_id_list.end(),
+             back_inserter(algo_ids));
+        search_db->SetFilteringAlgorithms(algo_ids);
+    }
+
+    db_args->SetSearchDatabase(search_db);
+    return db_args;
+}
+
+/// Import the subject sequences into a CBlastDatabaseArgs object
+static CRef<blast::CBlastDatabaseArgs>
+s_ImportSubjects(const CBlast4_subject& subj, bool subject_is_protein)
+{
+    _ASSERT(subj.IsSequences());
+    CRef<CBlastDatabaseArgs> db_args(new CBlastDatabaseArgs);
+    TSeqLocVector subjects = 
+        s_ConvertBioseqs2TSeqLocVector(subj.GetSequences());
+    CRef<CScope> subj_scope = subjects.front().scope;
+    CRef<IQueryFactory> subject_factory(new CObjMgr_QueryFactory(subjects));
+    db_args->SetSubjects(subject_factory, subj_scope, subject_is_protein);
+    return db_args;
 }
 
 /// Real implementation of search strategy import
@@ -259,40 +439,14 @@ s_ImportSearchStrategy(CNcbiIstream* in,
     } else {
         CRef<blast::CBlastDatabaseArgs> db_args;
         const CBlast4_subject& subj = req.GetSubject();
-
-        db_args.Reset(new CBlastDatabaseArgs());
+		const bool subject_is_protein = Blast_SubjectIsProtein(prog) 
+			? true : false;
 
         if (subj.IsDatabase()) {
-
-            const CSearchDatabase::EMoleculeType mol =
-                Blast_SubjectIsProtein(prog)
-                ? CSearchDatabase::eBlastDbIsProtein
-                : CSearchDatabase::eBlastDbIsNucleotide;
-            const string dbname(subj.GetDatabase());
-            CRef<CSearchDatabase> search_db(new CSearchDatabase(dbname, mol));
-
-            if (opts_builder.HaveEntrezQuery()) {
-                string limit(opts_builder.GetEntrezQuery());
-                search_db->SetEntrezQueryLimitation(limit);
-                if ( !is_remote_search ) {
-                    string msg("Entrez query '");
-                    msg += limit + string("' will not be processed locally.\n");
-                    msg += string("Please use the -remote option.");
-                    throw runtime_error(msg);
-                }
-            }
-
-            if (opts_builder.HaveGiList()) {
-                CSearchDatabase::TGiList limit;
-                const list<int>& gilist = opts_builder.GetGiList();
-                copy(gilist.begin(), gilist.end(), back_inserter(limit));
-                search_db->SetGiListLimitation(limit);
-            }
-
-            db_args->SetSearchDatabase(search_db);
-
+            db_args = s_ImportDatabase(subj, opts_builder, subject_is_protein,
+                                       is_remote_search);
         } else {
-            throw runtime_error("Recovering from bl2seq is not implemented");
+            db_args = s_ImportSubjects(subj, subject_is_protein);
         }
         _ASSERT(db_args.NotEmpty());
         cmdline_args->SetBlastDatabaseArgs(db_args);
@@ -303,66 +457,11 @@ s_ImportSearchStrategy(CNcbiIstream* in,
         ERR_POST(Warning << "Overriding query in saved strategy");
     } else {
         const CBlast4_queries& queries = req.GetQueries();
-
         if (queries.IsPssm()) {
-
-            CRef<CPssmWithParameters> pssm
-                (const_cast<CPssmWithParameters*>(&queries.GetPssm()));
-            CPsiBlastAppArgs* psi_args = NULL;
-            CTblastnAppArgs* tbn_args = NULL;
-
-            if ( (psi_args = dynamic_cast<CPsiBlastAppArgs*>(cmdline_args)) ) {
-                psi_args->SetInputPssm(pssm);
-            } else if ( (tbn_args = 
-                         dynamic_cast<CTblastnAppArgs*>(cmdline_args))) {
-                tbn_args->SetInputPssm(pssm);
-            } else {
-                EBlastProgramType p = opts_hndl->GetOptions().GetProgramType();
-                string msg("PSSM found in saved strategy, but not supported ");
-                msg += "for " + Blast_ProgramNameFromType(p);
-                NCBI_THROW(CBlastException, eNotSupported, msg);
-            }
-
+            s_ImportPssm(queries, opts_hndl, cmdline_args);
         } else {
-
-            CRef<CTmpFile> tmpfile(new CTmpFile(CTmpFile::eNoRemove));
-
-            // Stuff the query bioseq or seqloc list in the input stream of the
-            // cmdline_args
-            if (queries.IsSeq_loc_list()) {
-                const CBlast4_queries::TSeq_loc_list& seqlocs =
-                    queries.GetSeq_loc_list();
-                CFastaOstream out(tmpfile->AsOutputFile
-                                  (CTmpFile::eIfExists_Throw));
-                out.SetFlag(CFastaOstream::fAssembleParts);
-                
-                CBlastScopeSource scope_src(!!Blast_QueryIsProtein(prog));
-                CRef<CScope> scope(scope_src.NewScope());
-
-                ITERATE(CBlast4_queries::TSeq_loc_list, itr, seqlocs) {
-                    CBioseq_Handle bh = scope->GetBioseqHandle(**itr);
-                    CConstRef<CBioseq> bioseq = bh.GetCompleteBioseq();
-                    out.Write(*bioseq);
-                }
-
-            } else {
-                _ASSERT(queries.IsBioseq_set());
-                const CBlast4_queries::TBioseq_set& bioseqs =
-                    queries.GetBioseq_set();
-                CFastaOstream out(tmpfile->AsOutputFile
-                                  (CTmpFile::eIfExists_Throw));
-                out.SetFlag(CFastaOstream::fAssembleParts);
-
-                ITERATE(CBioseq_set::TSeq_set, seq_entry, bioseqs.GetSeq_set()){
-                    out.Write(**seq_entry);
-                }
-            }
-
-            const string& fname = tmpfile->GetFileName();
-            tmpfile.Reset(new CTmpFile(fname));
-            cmdline_args->SetInputStream(tmpfile);
+            s_ImportQueries(queries, opts_hndl, cmdline_args);
         }
-
         // Set the range restriction for the query, if applicable
         const TSeqRange query_range = opts_builder.GetRestrictedQueryRange();
         if (query_range != TSeqRange::GetEmpty()) {
@@ -376,12 +475,13 @@ void
 RecoverSearchStrategy(const CArgs& args, blast::CBlastAppArgs* cmdline_args)
 {
     CNcbiIstream* in = cmdline_args->GetImportSearchStrategyStream(args);
-    s_ImportSearchStrategy(in, cmdline_args,
-                           (args[kArgRemote].HasValue() &&
-                            args[kArgRemote].AsBoolean()),
-                           (args[kArgQuery].HasValue() && 
-                            args[kArgQuery].AsString() != kDfltArgQuery),
-                            CBlastDatabaseArgs::HasBeenSet(args));
+    const bool is_remote_search = 
+        (args[kArgRemote].HasValue() && args[kArgRemote].AsBoolean());
+    const bool override_query = (args[kArgQuery].HasValue() && 
+                                 args[kArgQuery].AsString() != kDfltArgQuery);
+    const bool override_subject = CBlastDatabaseArgs::HasBeenSet(args);
+    s_ImportSearchStrategy(in, cmdline_args, is_remote_search, override_query,
+                           override_subject);
 }
 
 // Process search strategies
@@ -393,11 +493,17 @@ SaveSearchStrategy(const CArgs& args,
                    blast::CBlastAppArgs* cmdline_args,
                    CRef<blast::IQueryFactory> queries,
                    CRef<blast::CBlastOptionsHandle> opts_hndl,
-                   CRef<blast::CSearchDatabase> search_db,
-                   objects::CPssmWithParameters* pssm /* = NULL */)
+                   CRef<objects::CPssmWithParameters> pssm 
+                     /* = CRef<objects::CPssmWithParameters>() */)
 {
     CNcbiOstream* out = cmdline_args->GetExportSearchStrategyStream(args);
-    s_ExportSearchStrategy(out, queries, opts_hndl, search_db, pssm);
+    if ( !out ) {
+        return;
+    }
+
+    s_ExportSearchStrategy(out, queries, opts_hndl, 
+                           cmdline_args->GetBlastDatabaseArgs(), 
+                           pssm);
 }
 
 END_NCBI_SCOPE

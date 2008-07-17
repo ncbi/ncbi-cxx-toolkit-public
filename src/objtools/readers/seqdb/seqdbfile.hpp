@@ -86,10 +86,10 @@ public:
     ///
     /// @param name
     ///   The filename to open.
-    /// @return
-    ///   true if the file was opened successfully.
     /// @param locked
     ///   The lock holder object for this thread.
+    /// @return
+    ///   true if the file was opened successfully.
     bool Open(const CSeqDB_Path & name, CSeqDBLockHold & locked)
     {
         _ASSERT(name.Valid());
@@ -126,8 +126,8 @@ public:
                            CSeqDBLockHold & locked) const
     {
         _ASSERT(! m_FileName.empty());
-        _ASSERT(start    <  end);
-        _ASSERT(m_Length >= end);
+        SEQDB_FILE_ASSERT(start    <  end);
+        SEQDB_FILE_ASSERT(m_Length >= end);
         
         m_Atlas.Lock(locked);
         
@@ -157,8 +157,8 @@ public:
                            CSeqDBLockHold & locked) const
     {
         _ASSERT(! m_FileName.empty());
-        _ASSERT(start    <  end);
-        _ASSERT(m_Length >= end);
+        SEQDB_FILE_ASSERT(start    <  end);
+        SEQDB_FILE_ASSERT(m_Length >= end);
         
         return m_Atlas.GetRegion(m_FileName, start, end, locked);
     }
@@ -483,10 +483,11 @@ public:
     /// This builds an object which provides access to the index file
     /// for a volume.  The index file contains metadata about the
     /// volume, such as the title and construction date.  The index
-    /// file also contains indexes into the header and sequence data
+    /// file also contains indices into the header and sequence data
     /// files.  Because these offsets are four byte integers, all
     /// volumes have a size of no more than 2^32 bytes, but in
     /// practice, they are usually kept under 2^30 bytes.
+    ///
     /// @param atlas
     ///   The memory management layer object.
     /// @param dbname

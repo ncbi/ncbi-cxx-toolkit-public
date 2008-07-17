@@ -1656,7 +1656,7 @@ s_BlastUnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
                                         query offset */
    BlastLinkedHSPSet* head_hsp;
    Int4 hspcnt, index, index1;
-   Int4 overlap_size, gap_size;
+   Int4 gap_size;
    Blast_KarlinBlk ** kbp_array;
    Int4* qend_index_array = NULL;
 
@@ -1674,8 +1674,6 @@ s_BlastUnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
        kbp_array = sbp->kbp;
    }
 
-   overlap_size = link_hsp_params->overlap_size; /* Maximal overlap size in
-                                                    query or subject */
    gap_size = link_hsp_params->gap_size; /* Maximal gap size in query */
 
    hspcnt = hsp_list->hspcnt;

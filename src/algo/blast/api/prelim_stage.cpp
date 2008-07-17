@@ -36,7 +36,6 @@ static char const rcsid[] =
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbithr.hpp>                  // for CThread
 
 #include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase

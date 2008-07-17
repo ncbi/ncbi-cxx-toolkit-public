@@ -62,7 +62,8 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
       m_TaxCache     (256),
       m_VolStart     (vol_start),
       m_VolEnd       (0),
-      m_DeflineCache (256)
+      m_DeflineCache (256),
+      m_HaveColumns  (false)
 {
     if (user_list) {
         m_UserGiList.Reset(user_list);
@@ -2432,15 +2433,23 @@ void CSeqDBVol::AccessionToOids(const string         & acc,
         
     case CSeqDBIsam::eTiId:
         // Uncomment when 8 byte version is written.
-        //needs_four = false;
+        // Converted to TI type.
         
-        // Converted to GI type.
-        if (! m_IsamTi.Empty()) {
+        if (m_IsamTi.NotEmpty()) {
             int oid(-1);
             
             if (m_IsamTi->IdToOid(ident, oid, locked)) {
                 oids.push_back(oid);
             }
+        } else {
+            // Not every database with TIs has a TI index, so fall
+            // back to a string comparison if the first attempt fails.
+            // 
+            // 1. TI's don't have versions.
+            // 2. Specify "adjusted" as true, because lookup of
+            //    "gb|.." and similar tricks are not needed for TIs.
+            
+            m_IsamStr->StringToOids(acc, oids, true, vcheck, locked);
         }
         break;
         
@@ -2583,6 +2592,15 @@ void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
             if (m_IsamTi->IdToOid(ident, oid, locked)) {
                 oids.push_back(oid);
             }
+        } else {
+            // Not every database with TIs has a TI index, so fall
+            // back to a string comparison if the first attempt fails.
+            // 
+            // 1. TI's don't have versions.
+            // 2. Specify "adjusted" as true, because lookup of
+            //    "gb|.." and similar tricks are not needed for TIs.
+            
+            m_IsamStr->StringToOids(seqid.AsFastaString(), oids, true, vcheck, locked);
         }
         break;
         
@@ -2767,7 +2785,8 @@ CSeqDBVol::GetSeqData(int              oid,
         vector<char> v4;
         v4.reserve((length+1)/2);
         
-        TSeqPos length_whole = TSeqPos(length & (0-2));
+        // (this is an attempt to stop a warning message.)
+        TSeqPos length_whole = TSeqPos(length & (TSeqPos(0)-TSeqPos(2)));
         
         for(TSeqPos i = 0; i < length_whole; i += 2) {
             v4.push_back((buffer[i] << 4) | buffer[i+1]);
@@ -2858,9 +2877,7 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
         }
     } else {
         if (((buffer && *buffer) || a_len) && (! *seq_length)) {
-            NCBI_THROW(CSeqDBException,
-                       eArgErr,
-                       "OID not in valid range.");
+            NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
         }
     }
 }
@@ -3050,6 +3067,141 @@ void CSeqDBVol::HashToOids(unsigned         hash,
     
     m_IsamHash->HashToOids(hash, oids, locked);
 }
+
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+void CSeqDBVol::GetColumnBlob(int              col_id,
+                              int              oid,
+                              CBlastDbBlob   & blob,
+                              bool             keep,
+                              CSeqDBLockHold & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    if (! m_HaveColumns) {
+        x_OpenAllColumns(locked);
+    }
+    
+    _ASSERT(col_id >= 0);
+    _ASSERT(col_id < (int)m_Columns.size());
+    _ASSERT(m_Columns[col_id].NotEmpty());
+    
+    m_Columns[col_id]->GetBlob(oid, blob, keep, & locked);
+}
+
+const map<string,string> &
+CSeqDBVol::GetColumnMetaData(int              col_id,
+                             CSeqDBLockHold & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    if (! m_HaveColumns) {
+        x_OpenAllColumns(locked);
+    }
+    
+    _ASSERT(col_id >= 0);
+    _ASSERT(col_id < (int)m_Columns.size());
+    _ASSERT(m_Columns[col_id].NotEmpty());
+    
+    return m_Columns[col_id]->GetMetaData();
+}
+
+void CSeqDBVol::ListColumns(set<string>    & titles,
+                            CSeqDBLockHold & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    if (! m_HaveColumns) {
+        x_OpenAllColumns(locked);
+    }
+    
+    ITERATE(vector< CRef<CSeqDBColumn> >, iter, m_Columns) {
+        titles.insert((**iter).GetTitle());
+    }
+}
+
+void CSeqDBVol::x_OpenAllColumns(CSeqDBLockHold & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    if (m_HaveColumns) {
+        return;
+    }
+    
+    string alpha("abcdefghijklmnopqrstuvwxyz");
+    string ei("??a"), ed("??b");
+    
+    ei[0] = ed[0] = (m_IsAA ? 'p' : 'n');
+    
+    map<string,int> unique_titles;
+    
+    for(size_t i = 0; i < alpha.size(); i++) {
+        ei[1] = ed[1] = alpha[i];
+        
+        if (CSeqDBColumn::ColumnExists(m_VolName,
+                                       ei,
+                                       ed,
+                                       m_Atlas,
+                                       locked)) {
+            
+            CRef<CSeqDBColumn> col;
+            col.Reset(new CSeqDBColumn(m_VolName, ei, ed, & locked));
+            
+            string errmsg, errarg;
+            
+            string title = col->GetTitle();
+            
+            if (unique_titles[title]) {
+                errmsg = "duplicate column title";
+                errarg = title;
+            } else {
+                unique_titles[title] = 1;
+            }
+            
+            int noidc(col->GetNumOIDs()), noidv(m_Idx->GetNumOIDs());
+            
+            if (noidc != noidv) {
+                errmsg = "column has wrong #oids";
+                errarg = NStr::IntToString(noidc) + " vs "
+                    + NStr::IntToString(noidv);
+            }
+            
+            if (errmsg.size()) {
+                if (errarg.size()) {
+                    errmsg += string(" [") + errarg + "].";
+                }
+                NCBI_THROW(CSeqDBException, eFileErr,
+                           string("Error: ") + errmsg);
+            }
+            
+            m_Columns.push_back(col);
+        } else {
+            // Should this be done?
+            // break;
+        }
+    }
+    
+    m_HaveColumns = true;
+}
+
+int CSeqDBVol::GetColumnId(const string   & title,
+                           CSeqDBLockHold & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    if (! m_HaveColumns) {
+        x_OpenAllColumns(locked);
+    }
+    
+    for(size_t i = 0; i < m_Columns.size(); i++) {
+        if (m_Columns[i]->GetTitle() == title) {
+            return i;
+        }
+    }
+    
+    return -1;
+}
+#endif
 
 
 END_NCBI_SCOPE

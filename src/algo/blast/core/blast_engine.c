@@ -201,6 +201,120 @@ s_RPSOffsetArrayToContextOffsets(BlastQueryInfo    * info,
    OffsetArrayToContextOffsets(info, new_offsets, kProgram);
 }
 
+/** 
+ * @brief Adjust the data that is relevant to processing  the subject chunks
+ * 
+ * @param chunk_num number of chunk being processed [in]
+ * @param total_subject_length total 'unchunked' length of subject [in]
+ * @param is_nucleotide whether the sequence is nucleotide or not [in]
+ * @param offset offset at which the subject is being examined [in|out]
+ * @param subject subject sequence block to be modified [in|out]
+ * @param seq_ranges_backup Backup of BLAST_SequenceBlk::seq_ranges
+ * (initialized on first call) as this data can be modified if multiple chunks
+ * are present [in|out]
+ * @param num_seq_ranges_backup number of elements in the seq_ranges_backup
+ * array [in|out]
+ */
+static void
+s_AdjustSubjectChunks(Int4 total_subject_length, 
+                      Boolean is_nucleotide, Int4* offset, 
+                      BLAST_SequenceBlk* subject,
+                      SSeqRange** seq_ranges_backup,
+                      Int4* num_seq_ranges_backup)
+{
+    ASSERT(offset);
+    ASSERT(subject);
+    if (subject->chunk > 0) {
+        *offset += subject->length - DBSEQ_CHUNK_OVERLAP;
+        if (is_nucleotide) {
+           subject->sequence += 
+              (subject->length - DBSEQ_CHUNK_OVERLAP)/COMPRESSION_RATIO;
+        } else {
+           subject->sequence += (subject->length - DBSEQ_CHUNK_OVERLAP);
+        }
+    }
+    subject->length = MIN(total_subject_length - *offset, MAX_DBSEQ_LEN);
+
+    if (total_subject_length <= MAX_DBSEQ_LEN) {
+        ASSERT(subject->chunk == 0);
+        return;
+    }
+
+    /* Save a copy of the BLAST_SequenceBlk::seq_ranges */
+    if (*seq_ranges_backup == NULL) {
+        size_t num_bytes = sizeof(*subject->seq_ranges)*subject->num_seq_ranges;
+        *num_seq_ranges_backup = subject->num_seq_ranges;
+        *seq_ranges_backup = (SSeqRange*)malloc(num_bytes);
+        ASSERT(*seq_ranges_backup);
+        memcpy((void*)*seq_ranges_backup, (void*)subject->seq_ranges,
+               num_bytes);
+    }
+
+    /* Adjust BLAST_SequenceBlk::seq_ranges so that they correspond to the
+     * subject chunk being processed */
+    {
+        const Int4 start = subject->chunk * MAX_DBSEQ_LEN - 
+            subject->chunk * DBSEQ_CHUNK_OVERLAP;
+        const Int4 stop = start + subject->length;
+        /* This is the chunk_range in the context of the full subject sequence*/
+        const SSeqRange chunk_range = SSeqRangeNew(start, stop);
+        Int4 i = 0;
+
+        ASSERT(start < stop);
+        ASSERT(*num_seq_ranges_backup >= 1);
+
+        subject->num_seq_ranges = 0;
+
+        /* copy the relevant ranges ... */
+        for (i = 0; i < *num_seq_ranges_backup; i++) {
+            if (SSeqRangeIntersectsWith(&(*seq_ranges_backup)[i], 
+                                        &chunk_range)) {
+                subject->seq_ranges[subject->num_seq_ranges++] = 
+                    (*seq_ranges_backup)[i];
+            }
+        }
+
+        if (subject->num_seq_ranges == 0) {
+            subject->seq_ranges[subject->num_seq_ranges++] = chunk_range;
+        }
+
+        /* ... and adjust so that they are in chunk's coordinates */
+        for (i = 0; i < (Int4)subject->num_seq_ranges; i++) {
+            subject->seq_ranges[i].left = 
+                MAX(subject->seq_ranges[i].left - start, 0);
+            subject->seq_ranges[i].right = 
+                MIN(subject->seq_ranges[i].right - start, subject->length);
+
+            ASSERT(subject->seq_ranges[i].left >= 0);
+            ASSERT(subject->seq_ranges[i].left <= MAX_DBSEQ_LEN);
+            ASSERT(subject->seq_ranges[i].right >= 0);
+            ASSERT(subject->seq_ranges[i].right <= MAX_DBSEQ_LEN);
+        }
+    }
+}
+
+/** 
+ * @brief Restore the BLAST_SequenceBlk::{seq_ranges,num_seq_ranges} fields
+ * 
+ * @param subject subject sequence block to be modified [in|out]
+ * @param seq_ranges_backup original data in BLAST_SequenceBlk::seq_ranges [in]
+ * @param num_seq_ranges_backup original data in
+ * BLAST_SequenceBlk::num_seq_ranges [in]
+ */
+static void
+s_RestoreSeqRanges(BLAST_SequenceBlk* subject, 
+                   SSeqRange** seq_ranges_backup, 
+                   Int4 num_seq_ranges_backup)
+{
+    if (*seq_ranges_backup != NULL) {
+        ASSERT(num_seq_ranges_backup >= 1);
+        subject->num_seq_ranges = num_seq_ranges_backup;
+        memcpy((void*)subject->seq_ranges, (void*)*seq_ranges_backup,
+               sizeof(*subject->seq_ranges) * subject->num_seq_ranges);
+        sfree(*seq_ranges_backup);
+    }
+}
+
 /** Searches only one context of a database sequence, but does all chunks if it is split.
  * @param program_number BLAST program type [in]
  * @param query Query sequence structure [in]
@@ -240,7 +354,6 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
    SBlastProgress* progress_info)
 {
       Int2 status = 0; /* return value */
-      Int4 chunk; /* loop variable below. */
       Int4 num_chunks; /* loop variable below. */
       Int4 offset = 0; /* Used as offset into subject sequence (if chunked) */
       Int4 total_subject_length; /* Length of subject sequence used when split. */
@@ -251,6 +364,8 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
       BlastUngappedStats* ungapped_stats = NULL;
       BlastGappedStats* gapped_stats = NULL;
       Int4 **matrix;
+      SSeqRange* seq_ranges_backup = NULL;
+      Int4 num_seq_ranges_backup = 0;
       const Boolean kTranslatedSubject = 
         (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
       const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
@@ -273,25 +388,16 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
          (MAX_DBSEQ_LEN - DBSEQ_CHUNK_OVERLAP) + 1;
       total_subject_length = subject->length;
       
-      for (chunk = 0; chunk < num_chunks; ++chunk) {
+      for (subject->chunk = 0; subject->chunk < num_chunks; subject->chunk++) {
          /* Delete if not done in last loop iteration to prevent memory leak. */
          hsp_list = Blast_HSPListFree(hsp_list);  /* In case this was not freed in above loop. */
-         if (chunk > 0) {
-            offset += subject->length - DBSEQ_CHUNK_OVERLAP;
-            if (kNucleotide) {
-               subject->sequence += 
-                  (subject->length - DBSEQ_CHUNK_OVERLAP)/COMPRESSION_RATIO;
-            } else {
-               subject->sequence += (subject->length - DBSEQ_CHUNK_OVERLAP);
-            }
-         }
-         subject->length = MIN(total_subject_length - offset, 
-                               MAX_DBSEQ_LEN);
+         s_AdjustSubjectChunks(total_subject_length, kNucleotide,
+                               &offset, subject, &seq_ranges_backup,
+                               &num_seq_ranges_backup);
          
          BlastInitHitListReset(init_hitlist);
          
          if (aux_struct->WordFinder) {
-            subject->chunk = chunk;
             aux_struct->WordFinder(subject, query, query_info, lookup, matrix, 
                                    word_params, aux_struct->ewp, 
                                    aux_struct->offset_pairs, 
@@ -361,6 +467,8 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
                                       DBSEQ_CHUNK_OVERLAP);
       } /* End loop on chunks of subject sequence */
 
+      s_RestoreSeqRanges(subject, &seq_ranges_backup, num_seq_ranges_backup);
+
       hsp_list = Blast_HSPListFree(hsp_list);  /* In case this was not freed in above loop. */
 
       *hsp_list_out_ptr = combined_hsp_list;
@@ -428,9 +536,12 @@ s_BlastSearchEngineCoreCleanUp(EBlastProgramType program_number,
  *                   BLAST search [in|out]
  */
 static Int2
-s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* query, 
-   BlastQueryInfo* query_info_in, BLAST_SequenceBlk* subject, 
-   LookupTableWrap* lookup, BlastGapAlignStruct* gap_align, 
+s_BlastSearchEngineCore(EBlastProgramType program_number, 
+   BLAST_SequenceBlk* query, 
+   BlastQueryInfo* query_info_in, 
+   BLAST_SequenceBlk* subject, 
+   LookupTableWrap* lookup, 
+   BlastGapAlignStruct* gap_align, 
    const BlastScoringParameters* score_params, 
    const BlastInitialWordParameters* word_params, 
    const BlastExtensionParameters* ext_params, 
@@ -833,6 +944,10 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
    return status;
 }
 
+/** Converts nucleotide coordinates to protein */
+#define CONV_NUCL2PROT_COORDINATES(length) \
+    ((length) == 0 ? 0 : (length) / CODON_LENGTH)
+
 Int4 
 BLAST_PreliminarySearchEngine(EBlastProgramType program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
@@ -907,7 +1022,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
            != BLAST_SEQSRC_EOF) {
       if (seq_arg.oid == BLAST_SEQSRC_ERROR)
          break;
-      if (BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
+      if (BlastSeqSrcGetSequence(seq_src, &seq_arg) < 0)
           continue;
       if (db_length == 0) {
          /* This is not a database search, hence need to recalculate and save
@@ -932,13 +1047,23 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
       }
 
 
-      /* If the subject is translated and the BlastSeqSrc implementation
-       * doesn't provide a genetic code string, use the default genetic
-       * code for all subjects (as in the C toolkit) */
-      if (Blast_SubjectIsTranslated(program_number) && 
-          seq_arg.seq->gen_code_string == NULL) {
-          seq_arg.seq->gen_code_string = 
-              GenCodeSingletonFind(db_options->genetic_code);
+      if (Blast_SubjectIsTranslated(program_number)) {
+          /* Convert the subject sequence ranges to protein coordinates */
+          Uint4 i;
+          for (i = 0; i < seq_arg.seq->num_seq_ranges; i++) {
+              seq_arg.seq->seq_ranges[i].left = 
+                  CONV_NUCL2PROT_COORDINATES(seq_arg.seq->seq_ranges[i].left);
+              seq_arg.seq->seq_ranges[i].right = 
+                  CONV_NUCL2PROT_COORDINATES(seq_arg.seq->seq_ranges[i].right);
+          }
+
+          /* If the subject is translated and the BlastSeqSrc implementation
+           * doesn't provide a genetic code string, use the default genetic
+           * code for all subjects (as in the C toolkit) */
+          if (seq_arg.seq->gen_code_string == NULL) {
+              seq_arg.seq->gen_code_string = 
+                  GenCodeSingletonFind(db_options->genetic_code);
+          }
           ASSERT(seq_arg.seq->gen_code_string);
       }
       status = 
@@ -962,7 +1087,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                             query_info, sbp, score_params, seq_src, 
                             seq_arg.seq->gen_code_string);
                if (status) {
-                  BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
+                  BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
                   return status;
                }
                /* Relink HSPs if sum statistics is used, because scores might
@@ -996,7 +1121,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
             break;
       }
       
-      BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
+      BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
 
       /* check for interrupt */
       if (interrupt_search && (*interrupt_search)(progress_info) == TRUE) {
@@ -1005,6 +1130,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
       }
    }
    
+   hsp_list = Blast_HSPListFree(hsp_list);  /* in case we were interrupted */
    BlastSequenceBlkFree(seq_arg.seq);
    itr = BlastSeqSrcIteratorFree(itr);
 

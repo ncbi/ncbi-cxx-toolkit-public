@@ -781,6 +781,48 @@ void SeqDB_ReadMemoryTiList(const char                   * fbeginp,
                             vector<CSeqDBGiList::STiOid> & tis,
                             bool                         * in_order = 0);
 
+/// Combine and quote a list of database names.
+///
+/// SeqDB permits multiple databases to be opened by a single CSeqDB
+/// instance, by passing the database names as a space-delimited list
+/// to the CSeqDB constructor.  To support paths and filenames with
+/// embedded spaces, surround any space-containing names with double
+/// quotes ('"').  Filenames not containing spaces may be quoted
+/// safely with no effect.  (This solution prevents the use of names
+/// containing embedded double quotes.)
+///
+/// This method combines a list of database names into a string
+/// encoded in this way.
+///
+/// @param dbname Combined database name.
+/// @param dbs Database names to combine.
+
+NCBI_XOBJREAD_EXPORT
+void SeqDB_CombineAndQuote(const vector<string> & dbs,
+                           string               & dbname);
+
+/// Split a (possibly) quoted list of database names into pieces.
+///
+/// SeqDB permits multiple databases to be opened by a single CSeqDB
+/// instance, by passing the database names as a space-delimited list
+/// to the CSeqDB constructor.  To support paths and filenames with
+/// embedded spaces, surround any space-containing names with double
+/// quotes ('"').  Filenames not containing spaces may be quoted
+/// safely with no effect.  (This solution prevents the use of names
+/// containing embedded double quotes.)
+///
+/// This method splits a string encoded in this way into individual
+/// database names.  Note that the resulting vector's objects are
+/// CTempString "slice" objects, and are only valid while the original
+/// (encoded) string is unchanged.
+///
+/// @param dbname Combined database name.
+/// @param dbs Database names to combine.
+
+NCBI_XOBJREAD_EXPORT
+void SeqDB_SplitQuoted(const string        & dbname,
+                       vector<CTempString> & dbs);
+
 /// Read a text or binary GI list from a file.
 ///
 /// The GIs in a file are read into the provided SGiOid vector.  The
@@ -831,6 +873,12 @@ void SeqDB_ReadGiList(const string  & fname,
                       vector<int>   & gis,
                       bool          * in_order = 0);
 
+/// Returns true if the file name passed contains a binary gi list
+///
+/// @param fname    The name of the GI list file. [in]
+/// @throws CSeqDBException if file is invalid or empty
+NCBI_XOBJREAD_EXPORT
+bool SeqDB_IsBinaryGiList(const string  & fname);
 
 /// CSeqDBFileGiList
 /// 

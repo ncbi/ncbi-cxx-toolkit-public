@@ -50,7 +50,7 @@ public:
     /// Default value for an invalid entry
     static const int kInvalid = -1;
 
-    /// Default constructor
+    /// Default constructor, creates an invalid object
     CBlastDBSeqId() : m_OID(kInvalid), m_EntryChoice(eNone) {}
 
     /// Constructor which takes a string as input, can be a GI, accession,
@@ -69,7 +69,7 @@ public:
 
     /// Constructor which takes a PIG as input
     /// @param pig PIG [in]
-    CBlastDBSeqId(int pig) {
+    CBlastDBSeqId(int pig) : m_OID(kInvalid) {
         m_EntrySpecified.m_PIG = pig;
         m_EntryChoice = ePig;
     }
@@ -92,6 +92,32 @@ public:
         if (IsStringId()) {
             delete m_EntrySpecified.m_SequenceId;
         }
+    }
+
+    /// Convert this object to a string
+    string AsString() const {
+        string retval;
+        switch (m_EntryChoice) {
+        case ePig:      retval = "PIG " + GetPig(); break;
+        case eGi:       retval = "GI " + GetGi(); break;
+        case eSeqId:    retval = "'" + GetStringId() + "'"; break;
+        case eNone:
+                        if (GetOID() != CBlastDBSeqId::kInvalid) {
+                            retval = "OID " + NStr::IntToString(GetOID());
+                        }
+                        break;
+        default:
+            abort();
+        }
+        return retval;
+    }
+
+    /// Stream insertion operator
+    /// @param out stream to write to [in|out]
+    /// @param id object to write [in]
+    friend ostream& operator<<(ostream& out, const CBlastDBSeqId& id) {
+        out << id.AsString();
+        return out;
     }
 
     /// Does this object contain a GI?
@@ -122,12 +148,12 @@ private:
 
     /// Enumeration to distinguish the types of entries stored by this object
     enum EEntryChoices {
-        /// This should be used when 'all' is specified
-        eNone,          
+        eNone,  ///< Invalid
         ePig,   ///< PIG
         eGi,    ///< GI
         eSeqId  ///< Sequence identifier as string
     };
+    /// Choice of entry set, only valid if 
     EEntryChoices m_EntryChoice;
 
     /// Union to hold the memory of the data stored

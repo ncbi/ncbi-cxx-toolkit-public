@@ -43,7 +43,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-/// Class to build BlastOptionsHandle from blast4 ASN objects.
+/// Class to build CBlastOptionsHandle from blast4 ASN objects.
 ///
 /// This class takes a program, service, and lists of name/value
 /// inputs in the form of the blast4 ASN objects, and builds a
@@ -54,7 +54,7 @@ BEGIN_SCOPE(blast)
 class NCBI_XBLAST_EXPORT CBlastOptionsBuilder {
 public:
     /// List of name/value pairs.
-    typedef list< CRef<objects::CBlast4_parameter> > TValueList;
+    typedef objects::CBlast4_parameters::Tdata TValueList;
 
     /// List of Blast4 masks.
     typedef list< CRef<objects::CBlast4_mask> > TMaskList;
@@ -85,7 +85,7 @@ public:
     GetSearchOptions(const objects::CBlast4_parameters * aopts,
                      const objects::CBlast4_parameters * popts,
                      string *task_name=NULL);
-    
+
     /// Check whether an Entrez query is specified.
     bool HaveEntrezQuery();
     
@@ -115,6 +115,12 @@ public:
     
     /// Get the negative GI list.
     list<int> GetNegativeGiList();
+
+    /// Check whether a GI list is specified.
+    bool HaveDbFilteringAlgorithmIds();
+    
+    /// Get the GI list.
+    list<int> GetDbFilteringAlgorithmIds();
 
     /// Check whether query masks are specified.
     bool HaveQueryMasks();
@@ -265,6 +271,9 @@ private:
     
     /// The negative GI list (or none).
     SOptional< list<int> > m_NegativeGiList;
+
+    /// The GI list (or none).
+    SOptional< list<int> > m_DbFilteringAlgorithmIds;
 
     /// The query masking locations
     SOptional< TMaskList > m_QueryMasks;

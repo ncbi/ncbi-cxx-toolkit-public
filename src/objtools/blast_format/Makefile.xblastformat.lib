@@ -6,4 +6,6 @@ LIB = xblastformat
 SRC = blastfmtutil showdefline showalign tabular vectorscreen blastxml_format \
 	seqalignfilter seq_writer blastdb_dataextract
 
+CPPFLAGS = $(ORIG_CPPFLAGS)
+
 DLL_LIB = blastxml xhtml xcgi

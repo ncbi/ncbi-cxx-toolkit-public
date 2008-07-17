@@ -39,27 +39,43 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <algo/blast/api/version.hpp>
+#include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include <objtools/writers/writedb/writedb.hpp>
 #include <objtools/writers/writedb/writedb_error.hpp>
+
+#include <algo/blast/blastinput/blast_input.hpp>
+#include "../blast/blast_app_util.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 #endif
 
+/// The main application class
 class CBlastDBAliasApp : public CNcbiApplication
 {
 public:
+    /** @inheritDoc */
     CBlastDBAliasApp() {
-        SetVersion(blast::Version);
+        CRef<CVersion> version(new CVersion());
+        version->SetVersionInfo(new CBlastVersion());
+        SetFullVersion(version);
     }
 private:
+    /** @inheritDoc */
     virtual void Init();
+    /** @inheritDoc */
     virtual int Run();
 
     /// Converts gi files from binary to text format
+    /// @param input Input stream with text file [in]
+    /// @param output Output stream where converted binary gi list will be
+    /// written [out]
     /// @return 0 on success
-    int ConvertGiFile() const;
+    int ConvertGiFile(CNcbiIstream& input, CNcbiOstream& output) const;
+    /// Invokes function to create an alias file with the arguments provided on
+    /// the command line
+    void CreateAliasFile() const;
 
     /// Documentation for this program
     static const char * const DOCUMENTATION;
@@ -94,17 +110,18 @@ const char * const CBlastDBAliasApp::DOCUMENTATION = "\n\n"
 "   search appear as if one were searching a regular BLAST database rather\n"
 "   than the subset of one.\n";
 
+static const string kOutput("out");
+
 void CBlastDBAliasApp::Init()
 {
-    HideStdArgs(fHideConffile | fHideDryRun);
+    HideStdArgs(fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), 
                   "Application to create BLAST database aliases, version " 
-                  + blast::Version.Print() + DOCUMENTATION);
+                  + CBlastVersion().Print() + DOCUMENTATION);
 
-    const string kOutput("out");
     string dflt("Default = input file name provided to -gi_file_in argument");
     dflt += " with the .bgl extension";
 
@@ -136,9 +153,9 @@ void CBlastDBAliasApp::Init()
 
     arg_desc->AddDefaultKey("dbtype", "molecule_type",
                             "Molecule type stored in BLAST database",
-                            CArgDescriptions::eString, "guess");
+                            CArgDescriptions::eString, "prot");
     arg_desc->SetConstraint("dbtype", &(*new CArgAllow_Strings,
-                                        "nucl", "prot", "guess"));
+                                        "nucl", "prot"));
 
     arg_desc->AddOptionalKey("title", "database_title",
                      "Title for BLAST database\n"
@@ -167,12 +184,9 @@ void CBlastDBAliasApp::Init()
     SetupArgDescriptions(arg_desc.release());
 }
 
-int CBlastDBAliasApp::ConvertGiFile() const
+int CBlastDBAliasApp::ConvertGiFile(CNcbiIstream& input,
+                                    CNcbiOstream& output) const
 {
-    const CArgs& args = GetArgs();
-    CNcbiIstream& input = args["gi_file_in"].AsInputFile();
-    CNcbiOstream& output = args["gi_file_out"].AsOutputFile();
-
     CBinaryListBuilder builder(CBinaryListBuilder::eGi);
 
     unsigned int line_ctr = 0;
@@ -194,28 +208,51 @@ int CBlastDBAliasApp::ConvertGiFile() const
     return 0;
 }
 
+void
+CBlastDBAliasApp::CreateAliasFile() const
+{
+    const CArgs& args = GetArgs();
+    const string kTitle = args["title"].HasValue()
+        ? args["title"].AsString()
+        : args["db"].AsString() + " limited by " + 
+            args["gilist"].AsString();
+    const CWriteDB::ESeqType seq_type = 
+        args["dbtype"].AsString() == "prot"
+        ? CWriteDB::eProtein
+        : CWriteDB::eNucleotide;
+    string gilist = args["gilist"].AsString();
+    if ( !SeqDB_IsBinaryGiList(gilist) ) {
+        const char mol_type = args["dbtype"].AsString()[0];
+        _ASSERT(mol_type == 'p' || mol_type == 'n');
+        CNcbiOstrstream oss;
+        oss << args[kOutput].AsString() << "." << mol_type << ".gil";
+        gilist.assign(CNcbiOstrstreamToString(oss));
+        ifstream input(args["gilist"].AsString().c_str());
+        ofstream output(gilist.c_str());
+        ConvertGiFile(input, output);
+    }
+    CWriteDB_CreateAliasFile(args[kOutput].AsString(),
+                             args["db"].AsString(),
+                             seq_type, gilist,
+                             kTitle);
+}
+
 int CBlastDBAliasApp::Run(void)
 {
+    const CArgs& args = GetArgs();
     int status = 0;
 
     try {
 
         if (x_GetOperationMode() == eConvertGiFile) {
-            status = ConvertGiFile();
+            CNcbiIstream& input = args["gi_file_in"].AsInputFile();
+            CNcbiOstream& output = args["gi_file_out"].AsOutputFile();
+            status = ConvertGiFile(input, output);
         } else {
-            throw runtime_error("Unimplemented functionality");
+            CreateAliasFile();
         }
 
-    } catch (const CException& exptn) {
-        cerr << "Error: " << exptn.GetMsg() << endl;
-        status = exptn.GetErrCode();
-    } catch (const exception& e) {
-        cerr << "Error: " << e.what() << endl;
-        status = -1;
-    } catch (...) {
-        cerr << "Unknown exception" << endl;
-        status = -1;
-    }
+    } CATCH_ALL(status)
     return status;
 }
 

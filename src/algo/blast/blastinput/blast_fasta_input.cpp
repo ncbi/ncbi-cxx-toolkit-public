@@ -346,7 +346,8 @@ CBlastFastaInputSource::x_InitInputReader()
     flags += (m_ReadProteins
               ? CFastaReader::fAssumeProt 
               : CFastaReader::fAssumeNuc);
-    if (getenv("BLASTINPUT_GEN_DELTA_SEQ") == NULL) {
+    const char* env_var = getenv("BLASTINPUT_GEN_DELTA_SEQ");
+    if (env_var == NULL || (env_var && string(env_var) == kEmptyStr)) {
         flags += CFastaReader::fNoSplit;
     }
     // This is necessary to enable the ignoring of gaps in classes derived from

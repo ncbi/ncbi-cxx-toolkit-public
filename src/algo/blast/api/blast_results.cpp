@@ -63,6 +63,7 @@ s_InitializeKarlinBlk(Blast_KarlinBlk* src, Blast_KarlinBlk** dest)
     }
 }
 
+
 CBlastAncillaryData::CBlastAncillaryData(EBlastProgramType program_type,
                     int query_number,
                     const BlastScoreBlk *sbp,
@@ -166,12 +167,15 @@ CSearchResults::CSearchResults(CConstRef<objects::CSeq_id> query,
                                const TQueryMessages& errs,
                                CRef<CBlastAncillaryData> ancillary_data,
                                const TMaskedQueryRegions* query_masks,
-                               const string& rid /* = kEmptyStr */)
+                               const string& rid /* = kEmptyStr */,
+                               const SPHIQueryInfo *phi_query_info /* = NULL */)
 : m_QueryId(query), m_Alignment(align), m_Errors(errs), 
-  m_AncillaryData(ancillary_data)
+  m_AncillaryData(ancillary_data) 
 {
     if (query_masks)
         SetMaskedQueryRegions(*query_masks);
+    if (phi_query_info)
+        m_PhiQueryInfo = SPHIQueryInfoCopy(phi_query_info);
 }
 
 void
@@ -281,6 +285,19 @@ CSearchResults::GetSeqId() const
     return m_QueryId;
 }
 
+void
+CSearchResults::GetSubjectMasks(TSeqLocInfoVector& subj_masks) const
+{
+    subj_masks = m_SubjectMasks;
+}
+
+void
+CSearchResults::SetSubjectMasks(const TSeqLocInfoVector& subj_masks)
+{
+    m_SubjectMasks.clear();
+    copy(subj_masks.begin(), subj_masks.end(), back_inserter(m_SubjectMasks));
+}
+
 CSearchResults&
 CSearchResultSet::GetResults(size_type qi, size_type si)
 {
@@ -372,13 +389,14 @@ CSearchResultSet::CSearchResultSet(
     TSearchMessages              msg_vec,
     TAncillaryVector             ancillary_data /* = TAncillaryVector() */,
     const TSeqLocInfoVector*     query_masks /* = NULL */,
-    EResultType                  res_type /* = eDatabaseSearch */)
+    EResultType                  res_type /* = eDatabaseSearch */,
+    const SPHIQueryInfo*         phi_query_info /* = NULL */)
 : m_ResultType(res_type)
 {
     if (ancillary_data.empty()) {
         ancillary_data.resize(aligns.size());
     }
-    x_Init(queries, aligns, msg_vec, ancillary_data, query_masks);
+    x_Init(queries, aligns, msg_vec, ancillary_data, query_masks, phi_query_info);
 }
 
 CSearchResultSet::CSearchResultSet(TSeqAlignVector aligns,
@@ -400,7 +418,8 @@ void CSearchResultSet::x_Init(TQueryIdVector&                    queries,
                               TSeqAlignVector                    aligns,
                               TSearchMessages                    msg_vec,
                               TAncillaryVector                   ancillary_data,
-                              const TSeqLocInfoVector*           query_masks)
+                              const TSeqLocInfoVector*           query_masks,
+                              const SPHIQueryInfo*               phi_query_info)
 {
     _ASSERT(queries.size() == aligns.size());
     _ASSERT(aligns.size() == msg_vec.size());
@@ -431,17 +450,22 @@ void CSearchResultSet::x_Init(TQueryIdVector&                    queries,
     m_Results.resize(aligns.size());
     
     for(size_t i = 0; i < aligns.size(); i++) {
-        if (query_masks) {
+        if (query_masks && !query_masks->empty()) {
             m_Results[i].Reset(new CSearchResults(queries[i],
                                                   aligns[i],
                                                   msg_vec[i],
                                                   ancillary_data[i],
-                                                  &(*query_masks)[i]));
+                                                  &(*query_masks)[i],
+                                                  kEmptyStr,
+                                                  phi_query_info));
         } else {
             m_Results[i].Reset(new CSearchResults(queries[i],
                                                   aligns[i],
                                                   msg_vec[i],
-                                                  ancillary_data[i]));
+                                                  ancillary_data[i],
+                                                  NULL,
+                                                  kEmptyStr,
+                                                  phi_query_info));
         }
     }
 }

@@ -39,6 +39,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/metareg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <util/range.hpp>       // For TSeqRange
 
@@ -149,6 +150,11 @@ public:
         retval.SetToOpen(m_Interval->GetTo());
         return retval;
     }
+    friend ostream& operator<<(ostream& out, const CSeqLocInfo& rhs) {
+        out << "CSeqLocInfo = { " << MSerial_AsnText << *rhs.m_Interval 
+            << "ETranslationFrame = " << rhs.m_Frame << "\n}";
+        return out;
+    }
 private:
     CRef<objects::CSeq_interval> m_Interval; 
     ETranslationFrame m_Frame;         // For translated nucleotide sequence
@@ -179,7 +185,17 @@ public:
     /// the intersection of location and this object
     TMaskedQueryRegions 
     RestrictToSeqInt(const objects::CSeq_interval& location) const;
+
+    /// Converts this object to a CPacked_seqint (this is the convention used
+    /// to encode masking locations in the network BLAST 4 protocol)
+    /// @param warnings optional argument in which warnings are returned 
+    /// [in|out]
+    CRef<objects::CPacked_seqint> 
+    ConvertToCPacked_seqint(vector<string>* warnings = NULL) const;
 };
+
+/// TMaskedSubjRegions defined as synonym to TMaskedQueryRegions
+typedef TMaskedQueryRegions TMaskedSubjRegions;
 
 
 /// Collection of masked regions for all queries in a BLAST search
@@ -360,6 +376,21 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastSeqLoc, BlastSeqLocFree);
 DECLARE_AUTO_CLASS_WRAPPER(SBlastProgress, SBlastProgressFree);
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
+
+/// Auxiliary type to embed a CConstRef<CSeq_id> in STL containers that require
+/// operator< to be defined
+struct SSeqIdKey {
+    /// Constructor
+    SSeqIdKey(const objects::CSeq_id& id) : m_Id(&id) {}
+    /// Operator< to comply with STL container requirements
+    bool operator<(const SSeqIdKey& other) const {
+        return *m_Id < *other.m_Id;
+    }
+    /// Retrieve the object contained in this structure
+    operator const objects::CSeq_id& () const { return *m_Id; }
+private:
+    CConstRef<objects::CSeq_id> m_Id;    ///< The wrapped object
+};
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

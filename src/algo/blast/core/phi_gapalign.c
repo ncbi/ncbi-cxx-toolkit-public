@@ -288,7 +288,6 @@ s_BandedAlign(Uint1 *seq1, Uint1 *seq2,Int4 start1, Int4 start2,
 { 
 	Int4 score; /*score to return*/
         Int4 i; /*index over sequences*/
-	Int4 band; /*width of band*/
     
 	lowDiag = MIN(MAX(-start1, lowDiag),MIN(start2-start1,0));
 	highDiag = MAX(MIN(start2, highDiag),MAX(start2-start1,0));
@@ -303,7 +302,7 @@ s_BandedAlign(Uint1 *seq1, Uint1 *seq2,Int4 start1, Int4 start2,
         return -s_GapCost(gapOpen, gapExtend, start2);
 	}
 
-	if ((band = highDiag-lowDiag+1) <= 1) {
+	if ((highDiag-lowDiag+1) <= 1) {
         score = 0;
         for (i = 1; i <= start1; i++) {
             GapPrelimEditBlockAdd(alignScript, eGapAlignSub, 1);

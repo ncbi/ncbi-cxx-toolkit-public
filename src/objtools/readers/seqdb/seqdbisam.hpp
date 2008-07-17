@@ -78,7 +78,8 @@ public:
         eNumericNoData   = 1, /// This type is not supported.
         eString          = 2, /// String database type used here.
         eStringDatabase  = 3, /// This type is not supported.
-        eStringBin       = 4  /// This type is not supported.
+        eStringBin       = 4, /// This type is not supported.
+        eNumericLongId   = 5  /// Like eNumeric but with 8 bytes of Key data per record.
     };
     
     /// Type which is large enough to span the bytes of an ISAM file.
@@ -916,9 +917,9 @@ private:
     
     /// Map a page into memory
     /// 
-    /// Given two indexes, this method maps into memory the area
+    /// Given two indices, this method maps into memory the area
     /// starting at the beginning of the first index and extending to
-    /// the end of the other.  (If the indexes are equal, only one
+    /// the end of the other.  (If the indices are equal, only one
     /// page would be mapped.)
     /// 
     /// @param SampleNum1

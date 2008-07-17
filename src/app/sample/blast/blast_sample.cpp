@@ -92,7 +92,7 @@ CBlastSampleApplication::x_CreateSSeqLoc(CBlastSampleApplication::ESeqType st)
 
 void CBlastSampleApplication::Init(void)
 {
-    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
+    HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideVersion);
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);

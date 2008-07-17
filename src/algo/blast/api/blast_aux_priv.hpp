@@ -164,6 +164,8 @@ BuildBlastAncillaryData(EBlastProgramType program,
                         CSearchResultSet::TAncillaryVector& retval);
 
 /// Build a CSearchResultSet from internal BLAST data structures
+/// @param query_masks Masks for query sequences [in]
+/// @param subj_masks Masks for subject sequences [in]
 CRef<CSearchResultSet>
 BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
                           const BlastScoreBlk* sbp,
@@ -171,6 +173,7 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
                           EBlastProgramType program,
                           const TSeqAlignVector& alignments,
                           TSearchMessages& messages,
+                          const vector<TSeqLocInfoVector>& subj_masks,
                           const TSeqLocInfoVector* query_masks = NULL,
           const EResultType result_type = ncbi::blast::eDatabaseSearch);
 

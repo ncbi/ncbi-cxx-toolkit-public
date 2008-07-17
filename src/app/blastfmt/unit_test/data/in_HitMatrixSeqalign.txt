@@ -1,0 +1,112 @@
+Seq-align-set ::= {
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 553 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 212724246, 10, -69 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 217623597, 10, -6 } } ,
+          {
+            id
+              str "comp_adjustment_method" ,
+            value
+              int 2 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              gi 129295 ,
+              gi 119916471 } ,
+            starts {
+              0 ,
+              157 ,
+              -1 ,
+              311 ,
+              154 ,
+              312 } ,
+            lens {
+              154 ,
+              1 ,
+              78 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 36 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 211105895, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 18475417, 10, -6 } } ,
+          {
+            id
+              str "comp_adjustment_method" ,
+            value
+              int 2 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 5 ,
+            ids {
+              gi 129295 ,
+              gi 119916471 } ,
+            starts {
+              68 ,
+              21 ,
+              -1 ,
+              33 ,
+              80 ,
+              34 ,
+              98 ,
+              -1 ,
+              99 ,
+              52 } ,
+            lens {
+              12 ,
+              1 ,
+              18 ,
+              1 ,
+              12 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } }
+
+
+

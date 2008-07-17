@@ -41,14 +41,17 @@
 
 
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
+#include <objtools/readers/seqdb/seqdbblob.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
+#include <objects/blastdb/defline_extra.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <util/sequtil/sequtil.hpp>
+#include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -181,14 +184,18 @@ public:
         eFilteredRange
     };
     
-    /// Sequence type accepted and returned for OID indexes.
+    /// Sequence type accepted and returned for OID indices.
     typedef int TOID;
     
-    /// Sequence type accepted and returned for PIG indexes.
+    /// Sequence type accepted and returned for PIG indices.
     typedef int TPIG;
     
-    /// Sequence type accepted and returned for GI indexes.
+    /// Sequence type accepted and returned for GI indices.
     typedef int TGI;
+
+    /// String containing the error message in exceptions thrown when a given
+    /// OID cannot be found
+    static const string kOidNotFound;
     
     /// Short Constructor
     /// 
@@ -961,9 +968,12 @@ public:
     /// @param oid The OID of the sequence to fetch.
     /// @param coding The encoding to use for the data.
     /// @param output The returned sequence data as a string.
+    /// @param range The range of the sequence to retrieve, if empty, the
+    /// entire sequence will be retrived [in]
     void GetSequenceAsString(int                 oid,
                              CSeqUtil::ECoding   coding,
-                             string            & output) const;
+                             string            & output,
+                             TSeqRange           range = TSeqRange()) const;
     
     /// Get a sequence in a readable text encoding.
     ///
@@ -975,7 +985,137 @@ public:
     ///
     /// @param oid The OID of the sequence to fetch.
     /// @param output The returned sequence data as a string.
-    void GetSequenceAsString(int oid, string & output) const;
+    /// @param range The range of the sequence to retrieve, if empty, the
+    /// entire sequence will be retrived [in]
+    void GetSequenceAsString(int oid, 
+                             string & output,
+                             TSeqRange range = TSeqRange()) const;
+    
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    /// List columns titles found in this database.
+    ///
+    /// This returns a list of the column titles of all user created
+    /// (and system generated) columns found in any of this database's
+    /// volumes.  Column titles appearing in more than one volume are
+    /// only listed here once.
+    ///
+    /// @param titles Column titles are returned here. [out]
+    void ListColumns(vector<string> & titles);
+    
+    /// Get an ID number for a given column title.
+    ///
+    /// For a given column title, this returns an ID that can be used
+    /// to access that column in the future.  The returned ID number
+    /// is specific to this instance of SeqDB.  If the database does
+    /// not have a column with this name, -1 will be returned.
+    ///
+    /// @param title Column title to search for. [in]
+    /// @return Column ID number for this column, or -1. [in]
+    int GetColumnId(const string & title);
+    
+    /// Get all metadata for the specified column.
+    ///
+    /// Columns may contain user-defined metadata as a list of
+    /// key-value pairs.  For the specified column, this returns that
+    /// column's metadata in the provided map.  If multiple volumes
+    /// are present, and they define contradictory meta data (this is
+    /// more common when multiple databases are opened at once), this
+    /// method returns the first value it finds for each metadata key.
+    /// If this is unsatisfactory, the two-argument version of this
+    /// method may be used to get more precise values for specific
+    /// volumes.
+    /// 
+    /// @param column_id The column id from GetColumnId. [in]
+    /// @return The map of metadata for this column. [out]
+    const map<string,string> & GetColumnMetaData(int column_id);
+    
+    /// Look up the value for a specific column metadata key.
+    ///
+    /// Columns can contain user-defined metadata as a list of
+    /// key-value pairs.  For the specified column, this returns the
+    /// value associated with one particular key.
+    ///
+    /// @param column_id The column id from GetColumnId. [in]
+    /// @return The value corresponding to the specified key. [out]
+    const string & GetColumnValue(int column_id, const string & key);
+    
+    /// Get all metadata for the specified column.
+    ///
+    /// Columns may contain user-defined metadata as a list of
+    /// key-value pairs.  For the specified database volume and column
+    /// id, this returns that column's metadata (as defined for that
+    /// volume) in the provided map.  The volume name should match
+    /// the string returned by FindVolumePaths(vector<string>&).
+    /// 
+    /// @param column_id The column id from GetColumnId. [in]
+    /// @param volname   The volume to get metadata for. [in]
+    /// @return The map of metadata for this column + volume. [out]
+    const map<string,string> &
+    GetColumnMetaData(int            column_id,
+                      const string & volname);
+    
+    /// Fetch the data blob for the given column and oid.
+    /// @param col_id The column to fetch data from. [in]
+    /// @param oid    The OID of the blob. [in]
+    /// @param blob   The data will be returned here. [out]
+    void GetColumnBlob(int col_id, int oid, CBlastDbBlob & blob);
+    
+    // Mask data support.
+    
+    /// Get a list of algorithm IDs for which mask data exists.
+    ///
+    /// Multiple sources of masking data may be used when building
+    /// blast databases.  This method retrieves a list of the IDs used
+    /// to identify those types of filtering data to SeqDB.  If the
+    /// blast database volumes used by this instance of SeqDB were
+    /// built with conflicting algorithm ID definitions, SeqDB will
+    /// resolve the conflicts by renumbering some of the conflicting
+    /// descriptions.  For this reason, the IDs reported here may not
+    /// match what was given to WriteDB when the database was created.
+    ///
+    /// @param algorithms List of algorithm ids. [out]
+    void GetAvailableMaskAlgorithms(vector<int> & algorithms);
+    
+    /// Get information about one type of masking available here.
+    ///
+    /// For a given algorithm_id, this method fetches information
+    /// describing the basic algorithm used, as well as options passed
+    /// to that algorithm to generate the data stored here.  Each
+    /// sequence in the database can provide sequence masking data
+    /// from one or more sources.  There can also be multiple types of
+    /// masking data from the same algorithm (such as DUST), but
+    /// generated with different sets of input parameters.
+    /// 
+    /// @param algorithm_id The ID as from GetAvailableMaskAlgorithms [in]
+    /// @param program The filtering program used (DUST, SEG, etc.) [out]
+    /// @param program_name string representation of program [out]
+    /// @param algo_opts Describes options passed to `program'. [out]
+    void GetMaskAlgorithmDetails(int                 algorithm_id,
+                                 EBlast_filter_program & program,
+                                 string            & program_name,
+                                 string            & algo_opts);
+    
+    /// List of sequence offset ranges.
+    typedef vector< pair<TSeqPos, TSeqPos> > TSequenceRanges;
+    
+    /// Get masked ranges of a sequence.
+    ///
+    /// For the provided OID and list of algorithm IDs, this method
+    /// gets a list of masked areas of those sequences.  The list of
+    /// masked areas is returned via the ranges parameter.  If the
+    /// 'inverted' flag is set, the list of ranges will be inverted,
+    /// so that a list of non-masked areas is returned.
+    ///
+    /// @param oid The ordinal ID of the sequence. [in]
+    /// @param algo_ids The algorithm IDs to get data for. [in]
+    /// @param inverted If true, return a list of included ranges. [in]
+    /// @param ranges The list of sequence offset ranges. [out]
+    void GetMaskData(int                 oid,
+                     const vector<int> & algo_ids,
+                     bool                inverted,
+                     TSequenceRanges   & ranges);
+#endif
     
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).

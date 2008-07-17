@@ -37,7 +37,8 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
-#include "blast_input_aux.hpp"
+#include <algo/blast/blastinput/blast_input_aux.hpp>
+#include <algo/blast/api/blast_exception.hpp>
 /* for CBlastFastaInputSource */
 #include <algo/blast/blastinput/blast_fasta_input.hpp>  
 #include <algo/blast/blastinput/psiblast_args.hpp>
@@ -115,15 +116,38 @@ GetQueryBatchSize(EProgram program)
     return retval;
 }
 
+TSeqRange
+ParseSequenceRange(const string& range_str,
+                   const char* error_msg /* = NULL */)
+{
+    static const char* kDfltError = "Failed to parse sequence range";
+    static const string kDelimiters("-");
+
+    vector<string> tokens;
+    NStr::Tokenize(range_str, kDelimiters, tokens);
+    if (tokens.size() != 2) {
+        string msg(error_msg ? error_msg : kDfltError);
+        NCBI_THROW(CBlastException, eInvalidArgument, msg);
+    }
+    TSeqRange retval;
+    retval.SetFrom(NStr::StringToInt(tokens.front()));
+    retval.SetToOpen(NStr::StringToInt(tokens.back()));
+    return retval;
+}
+
 CRef<CScope>
 ReadSequencesToBlast(CNcbiIstream& in, 
                      bool read_proteins, 
                      const TSeqRange& range, 
+                     bool parse_deflines,
                      CRef<CBlastQueryVector>& sequences)
 {
-    const SDataLoaderConfig dlconfig(read_proteins);
+    SDataLoaderConfig dlconfig(read_proteins);
+    dlconfig.OptimizeForWholeLargeSequenceRetrieval();
+
     CBlastInputSourceConfig iconfig(dlconfig);
     iconfig.SetRange(range);
+    iconfig.SetBelieveDeflines(parse_deflines);
     iconfig.SetLocalIdCounterInitValue(1<<16);
 
     CRef<CBlastFastaInputSource> fasta(new CBlastFastaInputSource(in, iconfig));
@@ -131,6 +155,38 @@ ReadSequencesToBlast(CNcbiIstream& in,
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     sequences = input->GetAllSeqs(*scope);
     return scope;
+}
+
+void
+CalculateFormattingParams(TSeqPos max_target_seqs, 
+                          TSeqPos* num_descriptions, 
+                          TSeqPos* num_alignments, 
+                          TSeqPos* num_overview /* = NULL */)
+{
+    const TSeqPos kResetSeqNumMax = 1000; 
+    const TSeqPos kResetSeqNum250 = 250;  
+    _ASSERT(max_target_seqs > 0);
+    if (num_descriptions) {
+        *num_descriptions = max_target_seqs;
+    }
+    if (num_overview) {
+        *num_overview = min(max_target_seqs, kDfltArgMaxTargetSequences);
+    }
+    if (num_alignments) {
+        TSeqPos halfHits = max_target_seqs/2;    
+        if(max_target_seqs <= kDfltArgMaxTargetSequences) { 
+            *num_alignments = max_target_seqs;
+        }
+        else if(halfHits < kResetSeqNum250) { 
+            *num_alignments = kDfltArgMaxTargetSequences;
+        }    
+        else if(halfHits <= kResetSeqNumMax) { 
+            *num_alignments = halfHits;
+        }
+        else {
+            *num_alignments = kResetSeqNumMax;
+        }
+    }
 }
 
 END_SCOPE(blast)

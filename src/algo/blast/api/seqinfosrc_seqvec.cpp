@@ -110,6 +110,47 @@ bool CSeqVecSeqInfoSrc::HasGiList() const
     return false;
 }
 
+static void 
+s_SeqIntervalToSeqLocInfo(CRef<CSeq_interval> interval,
+                          const TSeqRange& target_range,
+                          const CSeqLocInfo::ETranslationFrame frame,
+                          TMaskedSubjRegions& retval)
+{
+    TSeqRange loc(interval->GetFrom(), 0);
+    loc.SetToOpen(interval->GetTo());
+
+    if (loc.IntersectingWith(target_range)) {
+        CRef<CSeqLocInfo> sli(new CSeqLocInfo(interval, frame));
+        retval.push_back(sli);
+    }
+}
+
+bool CSeqVecSeqInfoSrc::GetMasks(Uint4 index,
+                                 const TSeqRange& target_range,
+                                 TMaskedSubjRegions& retval) const
+{
+    const CSeqLocInfo::ETranslationFrame kFrame = CSeqLocInfo::eFrameNotSet;
+
+    CRef<CSeq_loc> mask = m_SeqVec[index].mask;
+    if (mask.Empty() || target_range == TSeqRange::GetEmpty()) {
+        return false;
+    }
+
+    if (mask->IsInt()) {
+        s_SeqIntervalToSeqLocInfo(CRef<CSeq_interval>(&mask->SetInt()),
+                                  target_range, kFrame, retval);
+    } else if (mask->IsPacked_int()) {
+        ITERATE(CPacked_seqint::Tdata, itr, mask->GetPacked_int().Get()) {
+            s_SeqIntervalToSeqLocInfo(*itr, target_range, kFrame, retval);
+        }
+    } else {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "Type of mask not supported");
+    }
+
+    return (retval.empty() ? false : true);
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

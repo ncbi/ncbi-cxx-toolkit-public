@@ -169,7 +169,7 @@ static Int4 s_BlastNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
     Int4 scan_step;
     Int4 mask;
     Int4 lut_word_length;
-    Int4 last_offset;
+    Int4 last_offset = *end_offset;
 
     ASSERT(lookup_wrap->lut_type == eNaLookupTable);
     lookup = (BlastNaLookupTable *) lookup_wrap->lut;
@@ -178,7 +178,6 @@ static Int4 s_BlastNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
     mask = lookup->mask;
     scan_step = lookup->scan_step;
     lut_word_length = lookup->lut_word_length;
-    last_offset = subject->length - lut_word_length;
 
     ASSERT(lookup->scan_step > 0);
 
@@ -417,7 +416,7 @@ static Int4 s_BlastSmallNaScanSubject_8_4(const LookupTableWrap * lookup_wrap,
     const Int4 kLutWordLength = 8;
     const Int4 kLutWordMask = (1 << (2 * kLutWordLength)) - 1;
     Int4 s_off = start_offset;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int4 num_words = (last_offset - start_offset) / 4 + 1;
     Uint1 *s = subject->sequence + start_offset / COMPRESSION_RATIO;
     Int4 total_hits = 0;
@@ -510,7 +509,7 @@ static Int4 s_BlastSmallNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
     Int4 scan_step = lookup->scan_step;
     Int4 mask = lookup->mask;
     Int4 lut_word_length = lookup->lut_word_length;
-    Int4 last_offset = subject->length - lut_word_length;
+    Int4 last_offset = *end_offset;
     Int2 *backbone = lookup->final_backbone;
     Int2 *overflow = lookup->overflow;
 
@@ -660,7 +659,7 @@ static Int4 s_BlastSmallNaScanSubject_4_1(
     Int4 s_off = start_offset;
     Uint1 *s = subject->sequence + (s_off / COMPRESSION_RATIO);
     Int4 total_hits = 0;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int2 *backbone = lookup->final_backbone;
     Int2 *overflow = lookup->overflow;
     Int4 index; 
@@ -746,7 +745,7 @@ static Int4 s_BlastSmallNaScanSubject_5_1(
     Int4 s_off = start_offset;
     Uint1 *s = subject->sequence + (s_off / COMPRESSION_RATIO);
     Int4 total_hits = 0;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int2 *backbone = lookup->final_backbone;
     Int2 *overflow = lookup->overflow;
     Int4 index; 
@@ -831,7 +830,7 @@ static Int4 s_BlastSmallNaScanSubject_6_1(
     Int4 s_off = start_offset;
     Uint1 *s = subject->sequence + (s_off / COMPRESSION_RATIO);
     Int4 total_hits = 0;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int2 *backbone = lookup->final_backbone;
     Int2 *overflow = lookup->overflow;
     Int4 index; 
@@ -917,7 +916,7 @@ static Int4 s_BlastSmallNaScanSubject_6_2(
     Int4 s_off = start_offset;
     Uint1 *s = subject->sequence + (s_off / COMPRESSION_RATIO);
     Int4 total_hits = 0;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int2 *backbone = lookup->final_backbone;
     Int2 *overflow = lookup->overflow;
     Int4 index; 
@@ -979,7 +978,7 @@ static Int4 s_BlastSmallNaScanSubject_7_1(
     Int4 s_off = start_offset;
     Uint1 *s = subject->sequence + (s_off / COMPRESSION_RATIO);
     Int4 total_hits = 0;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int2 *backbone = lookup->final_backbone;
     Int2 *overflow = lookup->overflow;
     Int4 index; 
@@ -1065,7 +1064,7 @@ static Int4 s_BlastSmallNaScanSubject_7_2(
     Int4 s_off = start_offset;
     Uint1 *s = subject->sequence + (s_off / COMPRESSION_RATIO);
     Int4 total_hits = 0;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int2 *backbone = lookup->final_backbone;
     Int2 *overflow = lookup->overflow;
     Int4 index; 
@@ -1128,7 +1127,7 @@ static Int4 s_BlastSmallNaScanSubject_7_3(
     Int4 s_off = start_offset;
     Uint1 *s = subject->sequence + (s_off / COMPRESSION_RATIO);
     Int4 total_hits = 0;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int2 *backbone = lookup->final_backbone;
     Int2 *overflow = lookup->overflow;
     Int4 index; 
@@ -1220,7 +1219,7 @@ static Int4 s_BlastSmallNaScanSubject_8_1Mod4(
     Int4 scan_step_byte = scan_step / COMPRESSION_RATIO;
     Uint1 *s = subject->sequence + s_off / COMPRESSION_RATIO;
     Int4 total_hits = 0;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int2 *backbone = lookup->final_backbone;
     Int2 *overflow = lookup->overflow;
     Int4 index; 
@@ -1307,7 +1306,7 @@ static Int4 s_BlastSmallNaScanSubject_8_2Mod4(
     Int4 scan_step_byte = scan_step / COMPRESSION_RATIO;
     Uint1 *s = subject->sequence + s_off / COMPRESSION_RATIO;
     Int4 total_hits = 0;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int2 *backbone = lookup->final_backbone;
     Int2 *overflow = lookup->overflow;
     Int4 index; 
@@ -1371,7 +1370,7 @@ static Int4 s_BlastSmallNaScanSubject_8_3Mod4(
     Int4 scan_step_byte = scan_step / COMPRESSION_RATIO;
     Uint1 *s = subject->sequence + s_off / COMPRESSION_RATIO;
     Int4 total_hits = 0;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int2 *backbone = lookup->final_backbone;
     Int2 *overflow = lookup->overflow;
     Int4 index; 
@@ -1636,7 +1635,7 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
    Int4 mask = mb_lt->hashsize - 1;
    Int4 total_hits = 0;
    Int4 lut_word_length = mb_lt->lut_word_length;
-   Int4 last_offset = subject->length - lut_word_length;
+   Int4 last_offset = *end_offset;
    Int4 scan_step = mb_lt->scan_step;
    
    ASSERT(lookup_wrap->lut_type == eMBLookupTable);
@@ -1786,7 +1785,7 @@ static Int4 s_MBScanSubject_9_1(const LookupTableWrap* lookup_wrap,
     Int4 total_hits = 0;
     Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
     Int4 s_off = start_offset;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     
     max_hits -= mb_lt->longest_chain;
     ASSERT(lookup_wrap->lut_type == eMBLookupTable);
@@ -1866,7 +1865,7 @@ static Int4 s_MBScanSubject_9_2(const LookupTableWrap* lookup_wrap,
     Int4 total_hits = 0;
     Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
     Int4 s_off = start_offset;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     
     max_hits -= mb_lt->longest_chain;
     ASSERT(lookup_wrap->lut_type == eMBLookupTable);
@@ -1923,7 +1922,7 @@ static Int4 s_MBScanSubject_10_1(const LookupTableWrap* lookup_wrap,
     Int4 total_hits = 0;
     Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
     Int4 s_off = start_offset;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     
     max_hits -= mb_lt->longest_chain;
     ASSERT(lookup_wrap->lut_type == eMBLookupTable);
@@ -2004,7 +2003,7 @@ static Int4 s_MBScanSubject_10_2(const LookupTableWrap* lookup_wrap,
     Int4 total_hits = 0;
     Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
     Int4 s_off = start_offset;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     
     max_hits -= mb_lt->longest_chain;
     ASSERT(lookup_wrap->lut_type == eMBLookupTable);
@@ -2061,7 +2060,7 @@ static Int4 s_MBScanSubject_10_3(const LookupTableWrap* lookup_wrap,
     Int4 total_hits = 0;
     Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
     Int4 s_off = start_offset;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     
     max_hits -= mb_lt->longest_chain;
     ASSERT(lookup_wrap->lut_type == eMBLookupTable);
@@ -2144,7 +2143,7 @@ static Int4 s_MBScanSubject_11_1Mod4(const LookupTableWrap* lookup_wrap,
     Int4 total_hits = 0;
     Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
     Int4 s_off = start_offset;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int4 scan_step = mb_lt->scan_step;
     Int4 scan_step_byte = scan_step / COMPRESSION_RATIO;
     
@@ -2225,7 +2224,7 @@ static Int4 s_MBScanSubject_11_2Mod4(const LookupTableWrap* lookup_wrap,
     Int4 total_hits = 0;
     Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
     Int4 s_off = start_offset;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int4 scan_step = mb_lt->scan_step;
     Int4 scan_step_byte = scan_step / COMPRESSION_RATIO;
     
@@ -2283,7 +2282,7 @@ static Int4 s_MBScanSubject_11_3Mod4(const LookupTableWrap* lookup_wrap,
     Int4 total_hits = 0;
     Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
     Int4 s_off = start_offset;
-    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 last_offset = *end_offset;
     Int4 scan_step = mb_lt->scan_step;
     Int4 scan_step_byte = scan_step / COMPRESSION_RATIO;
     
@@ -2370,7 +2369,7 @@ static Int4 s_MB_DiscWordScanSubject_1(const LookupTableWrap* lookup_wrap,
    Uint8 accum = 0;
    EDiscTemplateType template_type = mb_lt->template_type;
    Int4 template_length = mb_lt->template_length;
-   Int4 last_offset = subject->length - template_length;
+   Int4 last_offset = *end_offset;
 
    ASSERT(lookup_wrap->lut_type == eMBLookupTable);
    max_hits -= mb_lt->longest_chain;
@@ -2463,8 +2462,8 @@ static Int4 s_MB_DiscWordScanSubject_TwoTemplates_1(
    EDiscTemplateType template_type = mb_lt->template_type;
    EDiscTemplateType second_template_type = mb_lt->second_template_type;
    Int4 template_length = mb_lt->template_length;
-   Int4 last_offset = subject->length - template_length;
-
+   Int4 last_offset = *end_offset;
+  
    ASSERT(lookup_wrap->lut_type == eMBLookupTable);
    max_hits -= mb_lt->longest_chain;
 
@@ -2556,7 +2555,7 @@ static Int4 s_MB_DiscWordScanSubject_11_18_1(
    Int4 s_off = start_offset;
    Int4 index;
    const Int4 kTemplateLength = 18;
-   Int4 last_offset = subject->length - kTemplateLength;
+   Int4 last_offset = *end_offset;
    Uint4 lo = 0; 
    Uint4 hi = 0;
 
@@ -2673,7 +2672,7 @@ static Int4 s_MB_DiscWordScanSubject_11_21_1(
    Int4 s_off = start_offset;
    Int4 index;
    const Int4 kTemplateLength = 21;
-   Int4 last_offset = subject->length - kTemplateLength;
+   Int4 last_offset = *end_offset;
    Uint4 lo = 0; 
    Uint4 hi = 0;
 

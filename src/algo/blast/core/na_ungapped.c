@@ -60,7 +60,7 @@ s_NuclUngappedExtendExact(BLAST_SequenceBlk * query,
     Uint1 *q;
     Int4 sum, score;
     Uint1 ch;
-    Uint1 *subject0, *sf, *q_beg, *q_end, *s_end, *s, *start;
+    Uint1 *subject0, *sf, *q_beg, *q_end, *s, *start;
     Int2 remainder, base;
     Int4 q_avail, s_avail;
 
@@ -71,7 +71,7 @@ s_NuclUngappedExtendExact(BLAST_SequenceBlk * query,
     s_avail = subject->length - s_off;
 
     q = q_beg = q_end = query->sequence + q_off;
-    s = s_end = subject0 + s_off / COMPRESSION_RATIO;
+    s = subject0 + s_off / COMPRESSION_RATIO;
     if (q_off < s_off) {
         start = subject0 + (s_off - q_off) / COMPRESSION_RATIO;
         remainder = 3 - ((s_off - q_off) % COMPRESSION_RATIO);
@@ -1327,7 +1327,68 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     return hits_extended;
 }
 
+/**
+ * @brief Determines the scanner's offsets taking the database masking
+ * restrictions into account (if any). This function should be called from the
+ * WordFinder routines only.
+ *
+ * @param subject The subject sequence [in]
+ * @param word_length the lookup table word length [in]
+ * @param s_first starting offset to scan [out]
+ * @param s_last ending offset to scan
+ *
+ * @return TRUE if the scanning should proceed, FALSE otherwise (caller must
+ * return 0)
+ */
+static NCBI_INLINE Boolean
+s_DetermineNaScanningOffsets(const BLAST_SequenceBlk* subject,
+                           Int4  word_length,
+                           Int4* s_first,
+                           Int4* s_last)
+{
+    Uint4 index;
+
+    ASSERT(subject->num_seq_ranges >= 1);
+
+    for (index = 0; index < subject->num_seq_ranges; index++) {
+        /* if offset is after the end of the segment, go to the next
+         * segment. */
+        if (*s_first > subject->seq_ranges[index].right) {
+            continue;
+        }
+
+        /* if offset is before the beginning of the segment, advance it. */
+        if (*s_first < subject->seq_ranges[index].left) {
+            *s_first = subject->seq_ranges[index].left;
+        }
+
+        *s_last  = subject->seq_ranges[index].right - word_length;
+
+        /* if we fell off the end of the last segment, try the next one. */
+        if (*s_first > *s_last) {
+            continue;
+        }
+        /* otherwise, we've found a valid region to scan; break out. */
+        else {
+            break;
+        }
+
+    } /* end for */
+    /* if we didn't find any more valid ranges to scan, set the
+       expected exit conditions and return. */
+    if (index == subject->num_seq_ranges) {
+        *s_first = subject->length - word_length + 1;
+        return FALSE;
+    }
+
+    ASSERT(index < subject->num_seq_ranges);
+    ASSERT(subject->seq_ranges[index].left <= subject->seq_ranges[index].right);
+    ASSERT(*s_first <= *s_last);
+    return TRUE;
+}
+
 /* Description in na_ungapped.h */
+
 Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
                        BLAST_SequenceBlk * query,
                        BlastQueryInfo * query_info,
@@ -1343,13 +1404,15 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
     Int4 hitsfound, total_hits = 0;
     Int4 hits_extended = 0;
     Int4 start_offset = 0;
-    TNaScanSubjectFunction scansub;
-    TNaExtendFunction extend;
+    TNaScanSubjectFunction scansub = NULL;
+    TNaExtendFunction extend = NULL;
     Int4 last_start;
+    Int4 word_length;
 
     if (lookup_wrap->lut_type == eSmallNaLookupTable) {
         BlastSmallNaLookupTable *lookup = 
                                 (BlastSmallNaLookupTable *) lookup_wrap->lut;
+        word_length = lookup->lut_word_length;
         last_start = subject->length - lookup->lut_word_length;
         scansub = (TNaScanSubjectFunction)lookup->scansub_callback;
         extend = (TNaExtendFunction)lookup->extend_callback;
@@ -1357,25 +1420,40 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
     else if (lookup_wrap->lut_type == eMBLookupTable) {
         BlastMBLookupTable *lookup = 
                                 (BlastMBLookupTable *) lookup_wrap->lut;
-        if (lookup->discontiguous)
+        if (lookup->discontiguous) {
             last_start = subject->length - lookup->template_length;
-        else
+            word_length = lookup->template_length;
+        }
+        else {
             last_start = subject->length - lookup->lut_word_length;
+            word_length = lookup->lut_word_length;
+        }
         scansub = (TNaScanSubjectFunction)lookup->scansub_callback;
         extend = (TNaExtendFunction)lookup->extend_callback;
     }
     else {
         BlastNaLookupTable *lookup = 
                                 (BlastNaLookupTable *) lookup_wrap->lut;
+        word_length = lookup->lut_word_length;
         last_start = subject->length - lookup->lut_word_length;
         scansub = (TNaScanSubjectFunction)lookup->scansub_callback;
         extend = (TNaExtendFunction)lookup->extend_callback;
     }
+    ASSERT(scansub);
+    ASSERT(extend);
+
     start_offset = 0;
 
     while (start_offset <= last_start) {
+        Int4 next_start;
+
+        if (!s_DetermineNaScanningOffsets(subject, word_length,
+                                          &start_offset, &last_start)) {
+            return 0;
+        }
+
         /* Pass the last word ending offset */
-        Int4 next_start = last_start;
+        next_start = last_start;
 
         hitsfound = scansub(lookup_wrap, subject, start_offset, 
                             offset_pairs, max_hits, &next_start);

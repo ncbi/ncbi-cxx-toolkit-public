@@ -132,12 +132,13 @@ CWriteDB_Volume::~CWriteDB_Volume()
     }
 }
 
-bool CWriteDB_Volume::WriteSequence(const string  & seq,
-                                    const string  & ambig,
-                                    const string  & binhdr,
-                                    const TIdList & idlist,
-                                    int             pig,
-                                    int             hash)
+bool CWriteDB_Volume::WriteSequence(const string    & seq,
+                                    const string    & ambig,
+                                    const string    & binhdr,
+                                    const TIdList   & idlist,
+                                    int               pig,
+                                    int               hash,
+                                    const TBlobList & blobs)
 {
     // Zero is a legal hash value, but we should not be computing the
     // hash value if there is no corresponding ISAM file.
@@ -182,7 +183,22 @@ bool CWriteDB_Volume::WriteSequence(const string  & seq,
         }
     }
     
-    // Exception - if volume has no data, ignore limits.
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    for(int blob_i = 0; blob_i < (int) blobs.size(); blob_i++) {
+        _ASSERT(blob_i < (int) m_Columns.size());
+        
+        if (! m_Columns[blob_i]->CanFit(blobs[blob_i]->Size())) {
+            overfull = true;
+            break;
+        }
+    }
+#endif
+    
+    // Exception - if volume has no data, ignore the file size limits;
+    // otherwise there would be either a hard failure or an infinite
+    // recursion of building empty volumes.  Building a volume that's
+    // too big is considered preferable to either of these outcomes.
     
     if (m_OID && overfull) {
         return false;
@@ -217,6 +233,14 @@ bool CWriteDB_Volume::WriteSequence(const string  & seq,
         }
     }
     
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    for(int col_i = 0; col_i < (int)m_Columns.size(); col_i++) {
+        _ASSERT(col_i < (int) blobs.size());
+        m_Columns[col_i]->AddBlob(*blobs[col_i]);
+    }
+#endif
+    
     m_OID ++;
     
     return true;
@@ -227,8 +251,7 @@ int CWriteDB_Volume::x_FindNuclLength(const string & seq)
     _ASSERT(! m_Protein);
     _ASSERT(seq.size());
     
-    int wholebytes = (int) seq.size() - 1;
-    return (wholebytes << 2) + (seq[wholebytes] & 0x3);
+    return WriteDB_FindSequenceLength(m_Protein, seq);
 }
 
 void CWriteDB_Volume::Close()
@@ -257,6 +280,13 @@ void CWriteDB_Volume::Close()
             }
         }
     }
+    
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    NON_CONST_ITERATE(vector< CRef<CWriteDB_Column> >, iter, m_Columns) {
+        (**iter).Close();
+    }
+#endif
 }
 
 void CWriteDB_Volume::RenameSingle()
@@ -284,6 +314,13 @@ void CWriteDB_Volume::RenameSingle()
             m_HashIsam->RenameSingle();
         }
     }
+    
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    NON_CONST_ITERATE(vector< CRef<CWriteDB_Column> >, iter, m_Columns) {
+        (**iter).RenameSingle();
+    }
+#endif
 }
 
 void CWriteDB_Volume::ListFiles(vector<string> & files) const
@@ -311,7 +348,72 @@ void CWriteDB_Volume::ListFiles(vector<string> & files) const
     if (m_HashIsam.NotEmpty()) {
         m_HashIsam->ListFiles(files);
     }
+    
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    ITERATE(vector< CRef<CWriteDB_Column> >, iter, m_Columns) {
+        (**iter).ListFiles(files, true);
+    }
+#endif
 }
+
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+int CWriteDB_Volume::CreateColumn(const string      & title,
+                                  const TColumnMeta & meta)
+{
+    int col_id = m_Columns.size();
+    
+    string extn(m_Protein ? "p??" : "n??");
+    
+    if (col_id >= 36) {
+        NCBI_THROW(CWriteDBException,
+                   eArgErr,
+                   "Error: Cannot have more than 36 columns.");
+    }
+    
+    extn[1] = "abcdefghijklmnopqrstuvwxyz0123456789"[col_id];
+    
+    string extn2 = extn;
+    
+    extn[2] = 'a';
+    extn2[2] = 'b';
+    
+    CRef<CWriteDB_Column> new_col
+        (new CWriteDB_Column(m_DbName,
+                             extn,
+                             extn2,
+                             m_Index,
+                             title,
+                             meta,
+                             m_MaxFileSize));
+    
+    // If the OID is not zero, then add all the blank records for the
+    // prior OIDs to the new column.
+    
+    CBlastDbBlob blank;
+    
+    for(int j = 0; j < m_OID; j++) {
+        new_col->AddBlob(blank);
+    }
+    
+    m_Columns.push_back(new_col);
+    
+    return col_id;
+}
+
+void CWriteDB_Volume::AddColumnMetaData(int            col_id,
+                                        const string & key,
+                                        const string & value)
+{
+    if ((col_id < 0) || (col_id >= (int) m_Columns.size())) {
+        NCBI_THROW(CWriteDBException, eArgErr,
+                   "Error: provided column ID is not valid");
+    }
+    
+    m_Columns[col_id]->AddMetaData(key, value);
+}
+#endif
 
 END_NCBI_SCOPE
 

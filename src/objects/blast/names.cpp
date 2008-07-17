@@ -64,7 +64,7 @@ CBlast4_value::E_Choice CBlast4Field::GetType() const
     return m_Type;
 }
 
-bool CBlast4Field::Match(CBlast4_parameter & p) const
+bool CBlast4Field::Match(const CBlast4_parameter & p) const
 {
     return (p.CanGetName()        &&
             p.CanGetValue()       &&
@@ -72,61 +72,65 @@ bool CBlast4Field::Match(CBlast4_parameter & p) const
             p.GetName() == m_Name);
 }
 
-string CBlast4Field::GetString(CBlast4_parameter & p) const
+string CBlast4Field::GetString(const CBlast4_parameter & p) const
 {
     _ASSERT(Match(p));
     return p.GetValue().GetString();
 }
 
-bool CBlast4Field::GetBoolean(CBlast4_parameter & p) const
+bool CBlast4Field::GetBoolean(const CBlast4_parameter & p) const
 {
     _ASSERT(Match(p));
     return p.GetValue().GetBoolean();
 }
 
-Int8 CBlast4Field::GetBig_integer(CBlast4_parameter & p) const
+Int8 CBlast4Field::GetBig_integer(const CBlast4_parameter & p) const
 {
     _ASSERT(Match(p));
     return p.GetValue().GetBig_integer();
 }
 
-CRef<CBlast4_cutoff> CBlast4Field::GetCutoff(CBlast4_parameter & p) const
+CConstRef<CBlast4_cutoff> 
+CBlast4Field::GetCutoff(const CBlast4_parameter & p) const
 {
     _ASSERT(Match(p));
-    return CRef<CBlast4_cutoff>(& p.SetValue().SetCutoff());
+    return CConstRef<CBlast4_cutoff>(& p.GetValue().GetCutoff());
 }
 
-int CBlast4Field::GetInteger(CBlast4_parameter & p) const
+int CBlast4Field::GetInteger(const CBlast4_parameter & p) const
 {
     _ASSERT(Match(p));
     return p.GetValue().GetInteger();
 }
 
-list<int> CBlast4Field::GetIntegerList (CBlast4_parameter & p) const
+list<int> CBlast4Field::GetIntegerList (const CBlast4_parameter & p) const
 {
     _ASSERT(Match(p));
     return p.GetValue().GetInteger_list();
 }
 
-CRef<CPssmWithParameters> CBlast4Field::GetMatrix(CBlast4_parameter & p) const
+CConstRef<CPssmWithParameters> 
+CBlast4Field::GetMatrix(const CBlast4_parameter & p) const
 {
     _ASSERT(Match(p));
-    return CRef<CPssmWithParameters>(& p.SetValue().SetMatrix());
+    return CConstRef<CPssmWithParameters>(& p.GetValue().GetMatrix());
 }
 
-CRef<CBlast4_mask> CBlast4Field::GetQueryMask(CBlast4_parameter & p) const
+CConstRef<CBlast4_mask> 
+CBlast4Field::GetQueryMask(const CBlast4_parameter & p) const
 {
     _ASSERT(Match(p));
-    return CRef<CBlast4_mask>(& p.SetValue().SetQuery_mask());
+    return CConstRef<CBlast4_mask>(& p.GetValue().GetQuery_mask());
 }
 
-double CBlast4Field::GetReal(CBlast4_parameter & p) const
+double CBlast4Field::GetReal(const CBlast4_parameter & p) const
 {
     _ASSERT(Match(p));
     return p.GetValue().GetReal();
 }
 
-EBlast4_strand_type CBlast4Field::GetStrandType(CBlast4_parameter & p) const
+EBlast4_strand_type 
+CBlast4Field::GetStrandType(const CBlast4_parameter & p) const
 {
     _ASSERT(Match(p));
     return p.GetValue().GetStrand_type();
@@ -162,6 +166,7 @@ TField B4Param_GapExtnAlgorithm      ("GapExtnAlgorithm",      CBlast4_value::e_
 TField B4Param_GapOpeningCost        ("GapOpeningCost",        CBlast4_value::e_Integer);
 TField B4Param_GapTracebackAlgorithm ("GapTracebackAlgorithm", CBlast4_value::e_Integer);
 TField B4Param_GiList                ("GiList",                CBlast4_value::e_Integer_list);
+TField B4Param_DbFilteringAlgorithmIds("DbFilteringAlgorithmIds",CBlast4_value::e_Integer_list);
 TField B4Param_HitlistSize           ("HitlistSize",           CBlast4_value::e_Integer);
 TField B4Param_HspRangeMax           ("HspRangeMax",           CBlast4_value::e_Integer);
 TField B4Param_InclusionThreshold    ("InclusionThreshold",    CBlast4_value::e_Real);
@@ -203,22 +208,14 @@ TField B4Param_GapXDropoffFinal      ("GapXDropoffFinal",      CBlast4_value::e_
 TField B4Param_SmithWatermanMode     ("SmithWatermanMode",     CBlast4_value::e_Boolean);
 TField B4Param_UnifiedP              ("UnifiedP",              CBlast4_value::e_Integer);
 
-TField B4Param_Format_AlignView         ("Format_AlignView",        CBlast4_value::e_Integer);
-TField B4Param_Format_Alignments        ("Format_Alignments",       CBlast4_value::e_Integer);
-TField B4Param_Format_BlastSpecialPage  ("Format_BlastSpecialPage", CBlast4_value::e_String);
-TField B4Param_Format_Client            ("Format_Client",           CBlast4_value::e_String);
-TField B4Param_Format_Descriptions      ("Format_Descriptions",     CBlast4_value::e_Integer);
-TField B4Param_Format_EntrezQuery       ("Format_EntrezQuery",      CBlast4_value::e_String);
-TField B4Param_Format_Html              ("Format_Html",             CBlast4_value::e_Boolean);
-TField B4Param_Format_JobTitle          ("Format_JobTitle",         CBlast4_value::e_String);
-TField B4Param_Format_NewWindow         ("Format_NewWindow",        CBlast4_value::e_Boolean);
-TField B4Param_Format_OrganismName      ("Format_OrganismName",     CBlast4_value::e_String);
-TField B4Param_Format_RunPsiBlast       ("Format_RunPsiBlast",      CBlast4_value::e_Boolean);
-TField B4Param_Format_ShortQueryAdjust  ("Format_ShortQueryAdjust", CBlast4_value::e_Boolean);
-TField B4Param_Format_ShowGi            ("Format_ShowGi",           CBlast4_value::e_Boolean);
-TField B4Param_Format_ShowOverview      ("Format_ShowOverview",     CBlast4_value::e_Boolean);
-TField B4Param_Format_StepNumber        ("Format_StepNumber",       CBlast4_value::e_Integer);
-TField B4Param_Format_User              ("Format_User",             CBlast4_value::e_String);
+TField B4Param_Web_BlastSpecialPage  ("Web_BlastSpecialPage", CBlast4_value::e_String);
+TField B4Param_Web_EntrezQuery       ("Web_EntrezQuery",      CBlast4_value::e_String);
+TField B4Param_Web_JobTitle          ("Web_JobTitle",         CBlast4_value::e_String);
+TField B4Param_Web_NewWindow         ("Web_NewWindow",        CBlast4_value::e_Boolean);
+TField B4Param_Web_OrganismName      ("Web_OrganismName",     CBlast4_value::e_String);
+TField B4Param_Web_RunPsiBlast       ("Web_RunPsiBlast",      CBlast4_value::e_Boolean);
+TField B4Param_Web_ShortQueryAdjust  ("Web_ShortQueryAdjust", CBlast4_value::e_Boolean);
+TField B4Param_Web_StepNumber        ("Web_StepNumber",       CBlast4_value::e_Integer);
 
 END_objects_SCOPE // namespace ncbi::objects::
 

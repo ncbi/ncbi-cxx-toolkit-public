@@ -172,6 +172,7 @@ CBl2Seq::x_ResetSubjectDs()
     mi_pResults = Blast_HSPResultsFree(mi_pResults);
     mi_pDiagnostics = Blast_DiagnosticsFree(mi_pDiagnostics);
     m_AncillaryData.clear();
+    m_SubjectMasks.clear();
 }
 
 TSeqAlignVector
@@ -212,7 +213,7 @@ CRef<CSearchResultSet>
 CBl2Seq::RunEx()
 {
     TSeqAlignVector alignments = Run();
-    TSeqLocInfoVector masks = GetFilteredQueryRegions();
+    TSeqLocInfoVector query_masks = GetFilteredQueryRegions();
 
     vector< CConstRef<CSeq_id> > query_ids;
     x_SimplifyTSeqLocVector(m_tQueries, query_ids);
@@ -221,7 +222,8 @@ CBl2Seq::RunEx()
         BlastBuildSearchResultSet(query_ids, mi_pScoreBlock,
                                   mi_clsQueryInfo,
                                   m_OptsHandle->GetOptions().GetProgramType(),
-                                  alignments, m_Messages, &masks,
+                                  alignments, m_Messages, m_SubjectMasks,
+                                  &query_masks,
                                   ncbi::blast::eSequenceComparison);
 
     m_AncillaryData.reserve(retval->size());
@@ -395,7 +397,7 @@ CBl2Seq::x_Results2SeqAlign()
     return x_TransposeSeqAlignVector(
             LocalBlastResults2SeqAlign(mi_pResults, *query_data, seqinfo_src,
                                       program, gappedMode, outOfFrameMode,
-                                      eSequenceComparison));
+                                      m_SubjectMasks, eSequenceComparison));
 }
 
 TSeqLocInfoVector

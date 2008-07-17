@@ -5,6 +5,9 @@
 
 
 LIB_PROJ = xblast
+SUB_PROJ = unit_test
+
+
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

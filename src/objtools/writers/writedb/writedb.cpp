@@ -52,7 +52,7 @@ CWriteDB::CWriteDB(const string       & dbname,
     : m_Impl(0)
 {
     m_Impl = new CWriteDB_Impl(dbname,
-                               seqtype == CWriteDB::eProtein,
+                               seqtype == eProtein,
                                title,
                                (EIndexType)indices);
 }
@@ -132,6 +132,41 @@ void CWriteDB::ListFiles(vector<string> & files)
     m_Impl->ListFiles(files);
 }
 
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+int CWriteDB::
+RegisterMaskAlgorithm(EBlast_filter_program   program, 
+                      const string                & options)
+{
+    return m_Impl->RegisterMaskAlgorithm(program, options);
+}
+
+void CWriteDB::SetMaskData(const TMaskedRanges & ranges)
+{
+    m_Impl->SetMaskData(ranges);
+}
+
+int CWriteDB::FindColumn(const string & title) const
+{
+    return m_Impl->FindColumn(title);
+}
+
+int CWriteDB::CreateUserColumn(const string & title)
+{
+    return m_Impl->CreateColumn(title);
+}
+
+void CWriteDB::AddColumnMetaData(int col_id, const string & key, const string & value)
+{
+    m_Impl->AddColumnMetaData(col_id, key, value);
+}
+
+CBlastDbBlob & CWriteDB::SetBlobData(int col_id)
+{
+    return m_Impl->SetBlobData(col_id);
+}
+#endif
+
 CBinaryListBuilder::CBinaryListBuilder(EIdType id_type)
     : m_IdType(id_type)
 {
@@ -140,9 +175,12 @@ CBinaryListBuilder::CBinaryListBuilder(EIdType id_type)
 void CBinaryListBuilder::Write(const string & fname)
 {
     // Create a binary stream.
-    
     ofstream outp(fname.c_str(), ios::binary);
-    
+    Write(outp);
+}
+
+void CBinaryListBuilder::Write(CNcbiOstream& outp)
+{ 
     // Header; first check for 8 byte ids.
     
     bool eight = false;
@@ -188,6 +226,27 @@ void CBinaryListBuilder::Write(const string & fname)
             s_WriteInt4(outp, (int)*iter);
         }
     }
+}
+
+void CWriteDB_CreateAliasFile(const string& file_name,
+                              const string& db_name,
+                              CWriteDB::ESeqType seq_type,
+                              const string& gi_file_name,
+                              const string& title /* = string() */)
+{
+    CNcbiOstrstream fname;
+    fname << file_name << (seq_type == CWriteDB::eProtein ? ".pal" : ".nal");
+
+    ofstream out(((string)CNcbiOstrstreamToString(fname)).c_str());
+    out << "#\n# Alias file created " << CTime(CTime::eCurrent).AsString() 
+        << "\n#\n";
+
+    if ( !title.empty() ) {
+        out << "TITLE " << title << "\n";
+    }
+    out << "DBLIST " << db_name << "\n";
+    out << "GILIST " << gi_file_name << "\n";
+    out.close();
 }
 
 END_NCBI_SCOPE

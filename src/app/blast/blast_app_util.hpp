@@ -41,6 +41,7 @@
 #include <objects/blast/Blast4_request.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/remote_blast.hpp>
+#include <algo/blast/api/local_db_adapter.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -66,6 +67,19 @@ InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
                       CRef<objects::CPssmWithParameters> pssm = 
                         CRef<objects::CPssmWithParameters>());
 
+/// Initializes the subject/database as well as its scope
+/// @param db_args database/subject arguments [in]
+/// @param opts_hndl BLAST options handle [in]
+/// @param is_remote_search true if it's a remote search, otherwise false [in]
+/// @param db_adapter Database/subject adapter [out]
+/// @param scope subject scope [out]
+void
+InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args, 
+                  CRef<blast::CBlastOptionsHandle> opts_hndl,
+                  bool is_remote_search,
+                  CRef<blast::CLocalDbAdapter>& db_adapter, 
+                  CRef<objects::CScope>& scope);
+
 /// Create a CSeqDB object from the command line arguments provided
 /// @param db_args BLAST database arguments [in]
 /// @throw CSeqDBException in case of not being able to properly build a CSeqDB
@@ -74,12 +88,10 @@ CRef<CSeqDB> GetSeqDB(CRef<blast::CBlastDatabaseArgs> db_args);
 
 /// Register the BLAST database data loader using the already initialized
 /// CSeqDB object
-/// @param objmgr the object manager [in]
 /// @param db_handle properly initialized CSeqDB instance [in]
 /// @return name of the BLAST data data loader (to be added to the CScope 
 /// object)
-string RegisterOMDataLoader(CRef<objects::CObjectManager> objmgr, 
-                            CRef<CSeqDB> db_handle);
+string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
 
 /// Command line binary exit code: success
 #define BLAST_EXIT_SUCCESS          0
@@ -95,7 +107,7 @@ string RegisterOMDataLoader(CRef<objects::CObjectManager> objmgr,
 /// Standard catch statement for all BLAST command line programs
 /// @param exit_code exit code to be returned from main function
 #define CATCH_ALL(exit_code)                                                \
-    catch (const CInputException& e) {                                      \
+    catch (const blast::CInputException& e) {                               \
         cerr << "BLAST query/options error: " << e.GetMsg() << endl;        \
         exit_code = BLAST_INPUT_ERROR;                                      \
     }                                                                       \
@@ -107,7 +119,7 @@ string RegisterOMDataLoader(CRef<objects::CObjectManager> objmgr,
         cerr << "BLAST Database error: " << e.GetMsg() << endl;             \
         exit_code = BLAST_DATABASE_ERROR;                                   \
     }                                                                       \
-    catch (const CBlastException& e) {                                      \
+    catch (const blast::CBlastException& e) {                               \
         cerr << "BLAST engine error: " << e.GetMsg() << endl;               \
         exit_code = BLAST_ENGINE_ERROR;                                     \
     }                                                                       \
@@ -137,8 +149,8 @@ SaveSearchStrategy(const CArgs& args,
                    blast::CBlastAppArgs* cmdline_args,
                    CRef<blast::IQueryFactory> queries,
                    CRef<blast::CBlastOptionsHandle> opts_hndl,
-                   CRef<blast::CSearchDatabase> search_db,
-                   objects::CPssmWithParameters* pssm = NULL);
+                   CRef<objects::CPssmWithParameters> pssm 
+                     = CRef<objects::CPssmWithParameters>());
 
 END_NCBI_SCOPE
 

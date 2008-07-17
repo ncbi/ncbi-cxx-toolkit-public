@@ -34,7 +34,9 @@
 #include <ncbi_pch.hpp>
 #include "seqdbimpl.hpp"
 #include <iostream>
+#include <sstream>
 #include <algorithm>
+#include <serial/enumvalues.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -46,7 +48,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
                        CSeqDBGiList       * gi_list,
                        CSeqDBNegativeList * neg_list,
                        CSeqDBIdSet          idset)
-    : m_AtlasHolder     (use_mmap, & m_FlushCB),
+    : m_AtlasHolder     (use_mmap, & m_FlushCB, NULL),
       m_Atlas           (m_AtlasHolder.Get()),
       m_DBNames         (db_name_list),
       m_Aliases         (m_Atlas, db_name_list, prot_nucl),
@@ -69,7 +71,8 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
       m_UserGiList      (gi_list),
       m_NegativeList    (neg_list),
       m_IdSet           (idset),
-      m_NeedTotalsScan  (false)
+      m_NeedTotalsScan  (false),
+      m_MaskDataColumn  (kUnknownTitle)
 {
     INIT_CLASS_MARK();
     
@@ -141,7 +144,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
 }
 
 CSeqDBImpl::CSeqDBImpl()
-    : m_AtlasHolder     (false, & m_FlushCB),
+    : m_AtlasHolder     (false, & m_FlushCB, NULL),
       m_Atlas           (m_AtlasHolder.Get()),
       m_Aliases         (m_Atlas, "", '-'),
       m_RestrictBegin   (0),
@@ -153,7 +156,8 @@ CSeqDBImpl::CSeqDBImpl()
       m_VolumeLength    (0),
       m_SeqType         ('-'),
       m_OidListSetup    (true),
-      m_NeedTotalsScan  (false)
+      m_NeedTotalsScan  (false),
+      m_MaskDataColumn  (kUnknownTitle)
 {
     INIT_CLASS_MARK();
     
@@ -364,6 +368,13 @@ int CSeqDBImpl::GetSeqLength(int oid) const
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.MentionOid(oid, m_NumOIDs, locked);
     
+    return x_GetSeqLength(oid, locked);
+}
+
+int CSeqDBImpl::x_GetSeqLength(int oid, CSeqDBLockHold & locked) const
+{
+    m_Atlas.Lock(locked);
+    
     int vol_oid = 0;
     
     if ('p' == m_SeqType) {
@@ -376,9 +387,7 @@ int CSeqDBImpl::GetSeqLength(int oid) const
         }
     }
     
-    NCBI_THROW(CSeqDBException,
-               eArgErr,
-               "OID not in valid range.");
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
 int CSeqDBImpl::GetSeqLengthApprox(int oid) const
@@ -399,9 +408,7 @@ int CSeqDBImpl::GetSeqLengthApprox(int oid) const
         }
     }
     
-    NCBI_THROW(CSeqDBException,
-               eArgErr,
-               "OID not in valid range.");
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
 void CSeqDBImpl::GetTaxIDs(int             oid,
@@ -485,9 +492,7 @@ CSeqDBImpl::GetBioseq(int oid, int target_gi, bool seqdata)
                               locked);
     }
     
-    NCBI_THROW(CSeqDBException,
-               eArgErr,
-               "OID not in valid range.");
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
 void CSeqDBImpl::RetSequence(const char ** buffer) const
@@ -517,9 +522,7 @@ int CSeqDBImpl::GetSequence(int oid, const char ** buffer) const
         return vol->GetSequence(vol_oid, buffer, locked);
     }
     
-    NCBI_THROW(CSeqDBException,
-               eArgErr,
-               "OID not in valid range.");
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
 CRef<CSeq_data> CSeqDBImpl::GetSeqData(int     oid,
@@ -537,9 +540,7 @@ CRef<CSeq_data> CSeqDBImpl::GetSeqData(int     oid,
         return vol->GetSeqData(vol_oid, begin, end, locked);
     }
     
-    NCBI_THROW(CSeqDBException,
-               eArgErr,
-               "OID not in valid range.");
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
 int CSeqDBImpl::GetAmbigSeq(int               oid,
@@ -564,9 +565,7 @@ int CSeqDBImpl::GetAmbigSeq(int               oid,
                                 locked);
     }
     
-    NCBI_THROW(CSeqDBException,
-               eArgErr,
-               "OID not in valid range.");
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
 list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid)
@@ -582,9 +581,7 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid)
         return vol->GetSeqIDs(vol_oid, & x_GetFiltInfo(locked), locked);
     }
     
-    NCBI_THROW(CSeqDBException,
-               eArgErr,
-               "OID not in valid range.");
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
 int CSeqDBImpl::GetNumSeqs() const
@@ -767,9 +764,7 @@ CSeqDBImpl::x_GetHdr(int oid, CSeqDBLockHold & locked)
                                       locked);
     }
     
-    NCBI_THROW(CSeqDBException,
-               eArgErr,
-               "OID not in valid range.");
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
 int CSeqDBImpl::GetMaxLength() const
@@ -851,9 +846,7 @@ bool CSeqDBImpl::OidToPig(int oid, int & pig) const
         return vol->GetPig(vol_oid, pig, locked);
     }
     
-    NCBI_THROW(CSeqDBException,
-               eArgErr,
-               "OID not in valid range.");
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
 bool CSeqDBImpl::TiToOid(Int8 ti, int & oid)
@@ -916,9 +909,7 @@ bool CSeqDBImpl::OidToGi(int oid, int & gi)
         return vol->GetGi(vol_oid, x_GetFiltInfo(locked), gi, locked);
     }
     
-    NCBI_THROW(CSeqDBException,
-               eArgErr,
-               "OID not in valid range.");
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
 void CSeqDBImpl::AccessionToOids(const string & acc,
@@ -1076,7 +1067,7 @@ CSeqDBImpl::FindVolumePaths(const string   & dbname,
                             char             prot_nucl,
                             vector<string> & paths)
 {
-    CSeqDBAtlasHolder AH(true, 0);
+    CSeqDBAtlasHolder AH(true, NULL, NULL);
     CSeqDBAtlas & atlas(AH.Get());
     
     // This constructor handles its own locking.
@@ -1224,7 +1215,7 @@ void CSeqDBImpl::GetRawSeqAndAmbig(int           oid,
         return;
     }
     
-    NCBI_THROW(CSeqDBException, eArgErr, "OID not in valid range.");
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
 /// Accumulate optional min, max, and count.
@@ -1389,9 +1380,7 @@ void CSeqDBImpl::SetOffsetRanges(int                oid,
                              cache_data,
                              locked);
     } else {
-        NCBI_THROW(CSeqDBException,
-                   eArgErr,
-                   "OID not in valid range.");
+        NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
     }
 }
 
@@ -1488,6 +1477,650 @@ CSeqDBIdSet CSeqDBImpl::GetIdSet()
     
     return m_IdSet;
 }
+
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+void CSeqDBImpl::ListColumns(vector<string> & titles)
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
+    set<string> all;
+    
+    for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+        m_VolSet.GetVolNonConst(vol_idx)->ListColumns(all, locked);
+    }
+    
+    titles.resize(SeqDB_VectorAssign(all, titles));
+}
+
+int CSeqDBImpl::GetColumnId(const string & title)
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    
+    return x_GetColumnId(title, locked);
+}
+
+int CSeqDBImpl::x_GetColumnId(const string   & title,
+                              CSeqDBLockHold & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    int col_id = SeqDB_MapFind(m_ColumnTitleMap, title, (int) kUnknownTitle);
+    
+    if (col_id == kUnknownTitle) {
+        vector<int> vol_ids;
+        
+        bool found = false;
+        
+        for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+            CSeqDBVol * volp = m_VolSet.GetVolNonConst(vol_idx);
+            int id = volp->GetColumnId(title, locked);
+            
+            vol_ids.push_back(id);
+            
+            if (id >= 0) {
+                found = true;
+            }
+        }
+        
+        if (found) {
+            CRef<CSeqDB_ColumnEntry> obj(new CSeqDB_ColumnEntry(vol_ids));
+            
+            col_id = m_ColumnInfo.size();
+            m_ColumnInfo.push_back(obj);
+        } else {
+            col_id = kColumnNotFound;
+        }
+        
+        // Cache this lookup even if it failed (-1).
+        
+        m_ColumnTitleMap[title] = col_id;
+    }
+    
+    return col_id;
+}
+
+const map<string,string> &
+CSeqDBImpl::GetColumnMetaData(int column_id)
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
+    _ASSERT(column_id >= 0);
+    _ASSERT(column_id < (int)m_ColumnInfo.size());
+    CSeqDB_ColumnEntry & entry = *m_ColumnInfo[column_id];
+    
+    if (! entry.HaveMap()) {
+        typedef map<string,string> TStringMap;
+        
+        for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+            int vol_col_id = entry.GetVolumeIndex(vol_idx);
+            
+            if (vol_col_id < 0)
+                continue;
+            
+            CSeqDBVol * volp = m_VolSet.GetVolNonConst(vol_idx);
+            const TStringMap & volmap =
+                volp->GetColumnMetaData(vol_col_id, locked);
+            
+            ITERATE(TStringMap, iter, volmap) {
+                entry.SetMapValue(iter->first, iter->second);
+            }
+        }
+        
+        entry.SetHaveMap();
+    }
+    
+    return entry.GetMap();
+}
+
+const map<string,string> &
+CSeqDBImpl::GetColumnMetaData(int column_id, const string & volname)
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
+    _ASSERT(column_id >= 0);
+    _ASSERT(column_id < (int)m_ColumnInfo.size());
+    CSeqDB_ColumnEntry & entry = *m_ColumnInfo[column_id];
+    
+    for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+        CSeqDBVol * volp = m_VolSet.GetVolNonConst(vol_idx);
+        
+        if (volname != volp->GetVolName()) {
+            continue;
+        }
+        
+        // Found it.
+        
+        int vol_col_id = entry.GetVolumeIndex(vol_idx);
+        return volp->GetColumnMetaData(vol_col_id, locked);
+    }
+    
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "This column ID was not found.");
+}
+
+void CSeqDBImpl::GetColumnBlob(int            col_id,
+                               int            oid,
+                               bool           keep,
+                               CBlastDbBlob & blob)
+{
+    CHECK_MARKER();
+    
+    // This Clear() must be done outside of the Lock()ed section below
+    // to avoid possible self-deadlock.  In general, do not clear or
+    // allow the destruction of a blob that may have an attached
+    // 'lifetime' object while the atlas lock is held.
+    
+    blob.Clear();
+    
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
+    _ASSERT(col_id >= 0);
+    _ASSERT(col_id < (int)m_ColumnInfo.size());
+    CSeqDB_ColumnEntry & entry = *m_ColumnInfo[col_id];
+    
+    // Find the volume for this OID.
+    
+    int vol_idx = -1, vol_oid = -1;
+    
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid, vol_idx)) {
+        int vol_col_id = entry.GetVolumeIndex(vol_idx);
+        
+        if (vol_col_id >= 0) {
+            const_cast<CSeqDBVol *>(vol)->
+                GetColumnBlob(vol_col_id, vol_oid, blob, keep, locked);
+        }
+    }
+}
+
+int CSeqDBImpl::x_GetMaskDataColumn(CSeqDBLockHold & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    if (m_MaskDataColumn == kUnknownTitle) {
+        m_MaskDataColumn = x_GetColumnId("BlastDb/MaskData", locked);
+    }
+    
+    _ASSERT(m_MaskDataColumn != kUnknownTitle);
+    
+    return m_MaskDataColumn;
+}
+#endif
+
+
+template<class K, class C>
+bool s_Contains(const C & c, const K & k)
+{
+    return c.find(k) != c.end();
+}
+
+
+static const string* s_CheckUniqueValues(const map<string, string> & m)
+{
+    typedef map<string, string> TStringMap;
+    
+    set<string> seen;
+    
+    ITERATE(TStringMap, iter, m) {
+        const string & v = iter->second;
+        
+        if (s_Contains(seen, v)) {
+            return & iter->second;
+        }
+        
+        seen.insert(v);
+    }
+    
+    return NULL;
+}
+
+CSeqDB_IdRemapper::CSeqDB_IdRemapper()
+    : m_NextId(100), m_Empty(true)
+{
+}
+
+void CSeqDB_IdRemapper::GetIdList(vector<int> & algorithms)
+{
+    typedef map<int,string> TIdMap;
+    
+    ITERATE(TIdMap, iter, m_IdToDesc) {
+        algorithms.push_back(iter->first);
+    }
+}
+
+void CSeqDB_IdRemapper::AddMapping(int vol_id, int id, const string & desc)
+{
+    bool found_desc = s_Contains(m_DescToId, desc);
+    bool found_id   = s_Contains(m_IdToDesc, id);
+    
+    int real_id = id;
+    
+    if (found_desc) {
+        if ((! found_id) || (m_DescToId[desc] != id)) {
+            // This description is mapped to a different ID.
+            real_id = m_DescToId[desc];
+        }
+    } else {
+        // New description.
+        
+        if (found_id) {
+            // Pick a 'synthetic' ID for this description,
+            // i.e. one that is not actually used by any of
+            // the existing volumes so far.
+            
+            while(s_Contains(m_IdToDesc, m_NextId)) {
+                m_NextId++;
+            }
+            
+            real_id = m_NextId;
+        }
+        
+        // Add the new description.
+        
+        m_IdToDesc[real_id] = desc;
+        m_DescToId[desc] = real_id;
+    }
+    
+    m_RealIdToVolumeId[vol_id][real_id] = id;
+}
+
+void CSeqDB_IdRemapper::GetDesc(int algorithm_id, string & desc)
+{
+    if (! s_Contains(m_IdToDesc, algorithm_id)) {
+        NCBI_THROW(CSeqDBException, eArgErr,
+                   "Error in stored mask algorithm description data.");
+    }
+    
+    desc = m_IdToDesc[algorithm_id];
+}
+
+const vector<int> &
+CSeqDB_IdRemapper::GetVolAlgos(int vol_idx, const vector<int> & algo_ids)
+{
+    if (algo_ids != m_CacheRealAlgos || vol_idx != m_CacheVolIndex) {
+        m_CacheVolAlgos.resize(0);
+        
+        ITERATE(vector<int>, iter, algo_ids) {
+            int volid = RealToVol(vol_idx, *iter);
+            m_CacheVolAlgos.push_back(volid);
+        }
+        
+        m_CacheVolIndex = vol_idx;
+        m_CacheRealAlgos = algo_ids;
+    }
+    return m_CacheVolAlgos;
+}
+
+int CSeqDB_IdRemapper::RealToVol(int vol_idx, int algo_id)
+{
+    if (! s_Contains(m_RealIdToVolumeId, vol_idx)) {
+        NCBI_THROW(CSeqDBException, eArgErr,
+                   "Cannot find volume in algorithm map.");
+    }
+    
+    map<int,int> & trans = m_RealIdToVolumeId[vol_idx];
+    
+    if (! s_Contains(trans, algo_id)) {
+        NCBI_THROW(CSeqDBException, eArgErr,
+                   "Cannot find volume algorithm in algorithm map.");
+    }
+    
+    return trans[algo_id];
+}
+
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+void CSeqDBImpl::GetAvailableMaskAlgorithms(vector<int> & algorithms)
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
+    if (m_AlgorithmIds.Empty()) {
+        x_BuildMaskAlgorithmList(locked);
+    }
+    
+    algorithms.resize(0);
+    m_AlgorithmIds.GetIdList(algorithms);
+}
+
+void CSeqDBImpl::GetMaskAlgorithmDetails(int                 algorithm_id,
+                         EBlast_filter_program & program,
+                         string            & program_name,
+                         string            & algo_opts)
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
+    if (m_AlgorithmIds.Empty()) {
+        x_BuildMaskAlgorithmList(locked);
+    }
+    
+    string s;
+    m_AlgorithmIds.GetDesc(algorithm_id, s);
+    static const CEnumeratedTypeValues* enum_type_vals = NULL;
+    if (enum_type_vals == NULL) {
+        enum_type_vals = GetTypeInfo_enum_EBlast_filter_program();
+    }
+    _ASSERT(enum_type_vals);
+    
+    size_t p = s.find(':');
+    
+    if (p == string::npos) {
+        NCBI_THROW(CSeqDBException, eArgErr,
+                   "Error in stored mask algorithm description data.");
+    }
+    
+    program = 
+        (EBlast_filter_program) NStr::StringToInt(string(s, 0, p));
+    program_name.assign(enum_type_vals->FindName(program, false));
+    algo_opts.assign(s, p + 1, s.size() - (p + 1));
+}
+
+void CSeqDBImpl::x_BuildMaskAlgorithmList(CSeqDBLockHold & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    if (! m_AlgorithmIds.Empty()) {
+        return;
+    }
+    
+    int col_id = x_GetMaskDataColumn(locked);
+    
+    if (col_id < 0) {
+        // No mask data column exists, therefore, the algorithms list
+        // is empty, and we are done.
+        return;
+    }
+    
+    CSeqDB_ColumnEntry & entry = *m_ColumnInfo[col_id];
+    
+    typedef map<string,string> TStringMap;
+    
+    // Results needed:
+    // 1. Map global ids to desc.
+    // 2. Map local id+vol -> global id
+    
+    for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+        // Get volume column #.
+        int vol_col_id = entry.GetVolumeIndex(vol_idx);
+        
+        if (vol_col_id < 0) {
+            continue;
+        }
+        
+        CSeqDBVol * volp = m_VolSet.GetVolNonConst(vol_idx);
+        const TStringMap & volmap =
+            volp->GetColumnMetaData(vol_col_id, locked);
+        
+        // Check for identical algorithm descriptions (should not happen.)
+        
+        const string * dup = s_CheckUniqueValues(volmap);
+        
+        if (dup != NULL) {
+            ostringstream oss;
+            oss << "Error: volume (" << volp->GetVolName()
+                << ") mask data has duplicates value (" << *dup <<  ")";
+            
+            NCBI_THROW(CSeqDBException, eArgErr, oss.str());
+        }
+        
+        ITERATE(TStringMap, iter, volmap) {
+            int id1 = NStr::StringToInt(iter->first);
+            const string & desc1 = iter->second;
+            
+            m_AlgorithmIds.AddMapping(vol_idx, id1, desc1);
+        }
+    }
+    
+    m_AlgorithmIds.SetNotEmpty();
+}
+
+struct SReadInt1 {
+    enum { numeric_size = 1 };
+    
+    static int Read(CBlastDbBlob & blob)
+    {
+        return blob.ReadInt1();
+    }
+};
+
+struct SReadInt2 {
+    enum { numeric_size = 2 };
+    
+    static int Read(CBlastDbBlob & blob)
+    {
+        return blob.ReadInt2();
+    }
+};
+
+struct SReadInt4 {
+    enum { numeric_size = 4 };
+    
+    static int Read(CBlastDbBlob & blob)
+    {
+        return blob.ReadInt4();
+    }
+};
+
+template<class TRead>
+void s_ReadRanges(const vector<int>           & vol_algos,
+                  CSeqDBImpl::TSequenceRanges & ranges,
+                  CBlastDbBlob                & blob)
+{
+    typedef pair<TSeqPos, TSeqPos> TOffsetPair;
+    
+    int num_ranges = TRead::Read(blob);
+    
+    for(int rng = 0; rng < num_ranges; rng++) {
+        int vol_algo = TRead::Read(blob);
+        int num_pairs = TRead::Read(blob);
+        bool need = false;
+        
+        ITERATE(vector<int>, iter, vol_algos) {
+            if (*iter == vol_algo) {
+                need = true;
+                break;
+            }
+        }
+        
+        _ASSERT(vol_algo >= 0);
+        //_ASSERT(num_pairs > 0);
+        
+        if (need) {
+            for(int j = 0; j < num_pairs; j++) {
+                TOffsetPair p;
+                p.first = TRead::Read(blob);
+                p.second = TRead::Read(blob);
+                
+                _ASSERT(p.first >= 0);
+                _ASSERT(p.second >= p.first);
+                ranges.push_back(p);
+            }
+        } else {
+            int skip_amt = num_pairs * 2 * TRead::numeric_size;
+            blob.SeekRead(blob.GetReadOffset() + skip_amt);
+        }
+    }
+}
+
+static void s_CombineConnectedRanges(CSeqDBImpl::TSequenceRanges & ranges)
+{
+    if (! ranges.size())
+        return;
+    
+    // The input ranges must be sorted before calling this function.
+    // This function iterates over some sorted ranges, combining any
+    // that overlap (or abut), in-place.
+    
+    size_t w=0, r=1; // The 'write' pointer.
+    
+    for(r = 1; r < ranges.size(); ++r) {
+        if (ranges[r].first <= ranges[w].second) {
+            if (ranges[r].second > ranges[w].second) {
+                ranges[w].second = ranges[r].second;
+            }
+        } else {
+            ++w;
+            if (w != r) {
+                ranges[w] = ranges[r];
+            }
+        }
+    }
+    ++w;
+    if (w < r) {
+        ranges.resize(w);
+    }
+}
+
+static void s_InvertRanges(CSeqDBImpl::TSequenceRanges & ranges, int seq_length)
+{
+    if (ranges.size() == 0) {
+        pair<TSeqPos,TSeqPos> rng(0, seq_length);
+        ranges.push_back(rng);
+    } else {
+        // The inverse of a range list is a range from 0 to the
+        // first offset of the first range (the 'pre'), then from
+        // the last offset of each range to the first offset of
+        // the next, then from the last offset of the last range
+        // to the end (the 'post').
+        
+        int last_off = ranges[ranges.size()-1].second;
+        
+        if (last_off > seq_length) {
+            NCBI_THROW(CSeqDBException,
+                       eFileErr,
+                       "Mask data range exceeds sequence length.");
+        }
+        
+        if (ranges[0].first == 0) {
+            // If the first range starts at zero, the 'pre' range
+            // would be empty.  We avoid creating it, and iterate
+            // in an ascending direction.
+            
+            int LAST = ranges.size()-1;
+            
+            for(int q = 0; q < LAST; q++) {
+                ranges[q].first = ranges[q].second;
+                ranges[q].second = ranges[q+1].first;
+            }
+            
+            if (last_off == seq_length) {
+                ranges.pop_back();
+            } else {
+                ranges[LAST].first = ranges[LAST].second;
+                ranges[LAST].second = seq_length;
+            }
+        } else {
+            // To insert the `pre' range without an extra vector
+            // copy, iterate over the elements backwards.
+            
+            if (last_off != seq_length) {
+                pair<TSeqPos, TSeqPos> post(seq_length, 0);
+                ranges.push_back(post);
+            }
+            
+            for(int q = ranges.size()-1; q > 0; q--) {
+                ranges[q].second = ranges[q].first;
+                ranges[q].first = ranges[q-1].second;
+            }
+            
+            ranges[0].second = ranges[0].first;
+            ranges[0].first = 0;
+        }
+    }
+}
+
+void CSeqDBImpl::GetMaskData(int                 oid,
+                             const vector<int> & algo_ids,
+                             bool                invert,
+                             TSequenceRanges   & ranges)
+{
+    CHECK_MARKER();
+    
+    // This reads the data written by CWriteDB_Impl::SetMaskData
+    
+    ranges.resize(0);
+    
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
+    if (m_AlgorithmIds.Empty()) {
+        x_BuildMaskAlgorithmList(locked);
+    }
+    
+    int vol_oid = 0, vol_idx = -1;
+    
+    CSeqDBVol * vol = const_cast<CSeqDBVol*>
+        (m_VolSet.FindVol(oid, vol_oid, vol_idx));
+    
+    if (! vol) {
+        NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
+    }
+    
+    // Get the data.
+    
+    CBlastDbBlob blob;
+    vol->GetColumnBlob(x_GetMaskDataColumn(locked), vol_oid, blob, false, locked);
+    
+    if (blob.Size() != 0) {
+        // If there actually is mask data, then we need to do the
+        // algorithm translation.
+        
+        const vector<int> & vol_algos =
+            m_AlgorithmIds.GetVolAlgos(vol_idx, algo_ids);
+        
+        int intsize = blob.ReadInt1();
+        
+        if (intsize != 1) {
+            blob.SkipPadBytes(intsize, CBlastDbBlob::eSimple);
+        }
+        
+        switch(intsize) {
+        case 1:
+            s_ReadRanges<SReadInt1>(vol_algos, ranges, blob);
+            break;
+            
+        case 2:
+            s_ReadRanges<SReadInt2>(vol_algos, ranges, blob);
+            break;
+            
+        case 4:
+            s_ReadRanges<SReadInt4>(vol_algos, ranges, blob);
+            break;
+            
+        default:
+            _ASSERT(0);
+        }
+    }
+    
+    int seq_length = 0;
+    
+    if (invert) {
+        seq_length = x_GetSeqLength(oid, locked);
+    }
+    
+    m_Atlas.Unlock(locked);
+    
+    sort(ranges.begin(), ranges.end());
+    
+    s_CombineConnectedRanges(ranges);
+    
+    if (invert) {
+        s_InvertRanges(ranges, seq_length);
+    }
+}
+#endif
 
 const CSeqDBFiltInfo & CSeqDBImpl::x_GetFiltInfo(CSeqDBLockHold & locked)
 {

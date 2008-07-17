@@ -38,7 +38,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
 #include <objtools/readers/fasta.hpp>
-
+#include "../mask_info_registry.hpp"
 #include <sstream>
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
@@ -389,11 +389,16 @@ s_TestDatabase(CSeqDBExpert & src,
 
 // Remove the specified files.
 
+void s_RemoveFile(const string & f)
+{
+    CDirEntry de(f);
+    de.Remove(CDirEntry::eOnlyEmpty);
+}
+
 void s_RemoveFiles(const vector<string> & files)
 {
     for(unsigned i = 0; i < files.size(); i++) {
-        CDirEntry de(files[i]);
-        de.Remove(CDirEntry::eOnlyEmpty);
+        s_RemoveFile(files[i]);
     }
 }
 
@@ -650,7 +655,7 @@ static void s_NuclBioseqDupSwitch(int cutpoint)
     START;
     
     int gis[] = {
-        78883515, 78883517, 71143095, 24431485, 19110479, 15054463,
+        78883515, 78883517, /*71143095,*/ 24431485, 19110479, 15054463,
         15054465, 15054467, 15054469, 15054471, 19570808, 18916476,
         1669608,  1669610,  1669612,  1669614,  1669616,  10944307,
         10944309, 10944311, 19909844, 19909846, 19909860, 19911180,
@@ -1223,6 +1228,25 @@ BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVector)
 {
     START;
     
+    CRef<CScope> scope = s_GetScope();
+    
+    // Bioseq + CSeqVector.
+    
+    CRef<CSeq_id> id2(new CSeq_id("gi|129296"));
+    CBioseq_Handle bsh2 = scope->GetBioseqHandle(*id2);
+    CConstRef<CBioseq> bs1c = bsh2.GetCompleteBioseq();
+    
+    CRef<CBioseq> bs1 = s_Duplicate(*bs1c);
+    CSeqVector sv(bsh2);
+    
+    string bytes;
+    sv.GetSeqData(0, sv.size(), bytes);
+}
+
+BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVectorWriteDB)
+{
+    START;
+    
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
                 "title",
@@ -1677,6 +1701,444 @@ BOOST_AUTO_TEST_CASE(FourAndEightByteTis)
     
     CHECK(data4 == d4);
     CHECK(data8 == d8);
+}
+
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+void s_WrapUpColumn(CWriteDB_ColumnBuilder & cb)
+{
+    vector<string> files;
+    cb.ListFiles(files);
+    s_WrapUpFiles(files);
+}
+
+BOOST_AUTO_TEST_CASE(UserDefinedColumns)
+{
+    START;
+    
+    // Create and open the DBs and columns.
+    
+    typedef map<string,string> TMeta;
+    TMeta meta_data;
+    meta_data["created-by"] = "unit test";
+    meta_data["purpose"] = "none";
+    meta_data["format"] = "text";
+    
+    vector<string> column_data;
+    column_data.push_back("Groucho Marx");
+    column_data.push_back("Charlie Chaplain");
+    column_data.push_back("");
+    column_data.push_back("Abbott and Costello");
+    column_data.push_back("Jackie Gleason");
+    column_data.push_back("Jerry Seinfeld");
+    column_data.back()[5] = (char) 0;
+    
+    string fname("user-column");
+    string vname("user-column-db");
+    string title("comedy");
+    
+    CSeqDB R("nr", CSeqDB::eProtein);
+    CWriteDB W(vname,
+               CWriteDB::eProtein,
+               "User defined column");
+    
+    CWriteDB_ColumnBuilder CB(title, fname);
+    
+    int col_id = W.CreateUserColumn(title);
+    
+    ITERATE(TMeta, iter, meta_data) {
+        CB.AddMetaData(iter->first, iter->second);
+        W.AddColumnMetaData(col_id, iter->first, iter->second);
+    }
+    
+    // Build database and column.
+    
+    int i = 0;
+    
+    ITERATE(vector<string>, iter, column_data) {
+        W.AddSequence(*R.GetBioseq(i++));
+        
+        CBlastDbBlob & b1 = W.SetBlobData(col_id);
+        b1.WriteString(*iter, CBlastDbBlob::eNone);
+        
+        CBlastDbBlob b2(*iter, false);
+        CB.AddBlob(b2);
+    }
+    
+    // Close the DB and the column.
+    
+    W.Close();
+    CB.Close();
+    
+    // Test the resulting files.
+    
+    // (Currently, the files created here are not tested.  Instead,
+    // the SeqDB test uses copies of these files and tests the data
+    // integrity via the SeqDB functionality.)
+    
+    // Clean up.
+    
+    s_WrapUpColumn(CB);
+    s_WrapUpDb(W);
+}
+
+// Register standard masking algorithms with default/sensible options
+BOOST_AUTO_TEST_CASE(RegisterMaskingAlgorithms)
+{
+    CMaskInfoRegistry registry;
+
+    vector<int> algo_ids;
+    algo_ids.push_back(registry.Add(eBlast_filter_program_seg));
+    algo_ids.push_back(registry.Add(eBlast_filter_program_dust));
+    algo_ids.push_back(registry.Add(eBlast_filter_program_windowmasker));
+    algo_ids.push_back(registry.Add(eBlast_filter_program_repeat, "9606"));
+    algo_ids.push_back(registry.Add(eBlast_filter_program_other, "dummy"));
+
+    ITERATE(vector<int>, id, algo_ids) {
+        CHECK_EQUAL(true, registry.IsRegistered(*id));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(RegisterVariantsOfSameMaskingAlgorithm)
+{
+    CMaskInfoRegistry registry;
+
+    int id1 = registry.Add(eBlast_filter_program_seg);
+    int id2 = registry.Add(eBlast_filter_program_seg, "dummy");
+    CHECK_EQUAL(id1+1, id2);
+}
+
+void 
+RegisterTooManyVariantsOfSameMaskingAlgorithm
+    (EBlast_filter_program masking_algo,
+     size_t kMaxNumSupportedAlgorithmVariants)
+{
+    CMaskInfoRegistry registry;
+
+    vector<int> algo_ids;
+    for (size_t i = 0; i < kMaxNumSupportedAlgorithmVariants*2; i++) {
+        string options;
+        // for repeat and other masking algorithms, there must be options,
+        // otherwise the actual masking algorithm value becomes the algorithm
+        // id when no options are provided
+        if (i == 0 && masking_algo < eBlast_filter_program_repeat) {
+            options.assign("");
+        } else {
+            options.assign(NStr::IntToString(i));
+        }
+    
+        int algo_id = -1;
+        if (i >= kMaxNumSupportedAlgorithmVariants) {
+            CHECK_THROW(algo_id = registry.Add(masking_algo, options), 
+                        CWriteDBException);
+        } else {
+            algo_id = registry.Add(masking_algo, options);
+        }
+        if (algo_id != -1) {
+            //cerr << "Inserted id  " << algo_id << endl;
+            algo_ids.push_back(algo_id);
+        }
+    }
+
+    // Ensure that the IDs were assigned in increasing order
+    CHECK_EQUAL(kMaxNumSupportedAlgorithmVariants, algo_ids.size());
+    for (size_t i = 0; i < algo_ids.size(); i++) {
+        CHECK_EQUAL((int)(masking_algo + i), algo_ids[i]);
+    }
+
+    // Ensure that only valid IDs were assigned
+    for (size_t i = 0; i < kMaxNumSupportedAlgorithmVariants*2; i++) {
+        int algo_id = masking_algo + i;
+        if (i >= kMaxNumSupportedAlgorithmVariants) {
+            CHECK_EQUAL(false, registry.IsRegistered(algo_id));
+        } else {
+            CHECK_EQUAL(true, registry.IsRegistered(algo_id));
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(RegisterTooManyVariantsOfDust)
+{
+    const EBlast_filter_program self = eBlast_filter_program_dust;
+    const size_t max_algo_variants = eBlast_filter_program_seg - self;
+    RegisterTooManyVariantsOfSameMaskingAlgorithm(self, max_algo_variants);
+}
+
+BOOST_AUTO_TEST_CASE(RegisterTooManyVariantsOfSeg)
+{
+    const EBlast_filter_program self = eBlast_filter_program_seg;
+    const size_t max_algo_variants = eBlast_filter_program_windowmasker - self;
+    RegisterTooManyVariantsOfSameMaskingAlgorithm(self, max_algo_variants);
+}
+
+BOOST_AUTO_TEST_CASE(RegisterTooManyVariantsOfWindowMasker)
+{
+    const EBlast_filter_program self = eBlast_filter_program_windowmasker;
+    const size_t max_algo_variants = eBlast_filter_program_repeat - self;
+    RegisterTooManyVariantsOfSameMaskingAlgorithm(self, max_algo_variants);
+}
+
+BOOST_AUTO_TEST_CASE(RegisterTooManyVariantsOfRepeats)
+{
+    const EBlast_filter_program self = eBlast_filter_program_repeat;
+    const size_t max_algo_variants = eBlast_filter_program_other - self;
+    RegisterTooManyVariantsOfSameMaskingAlgorithm(self, max_algo_variants);
+}
+
+BOOST_AUTO_TEST_CASE(RegisterTooManyVariantsOfOther)
+{
+    const EBlast_filter_program self = eBlast_filter_program_other;
+    const size_t max_algo_variants = eBlast_filter_program_max - self;
+    RegisterTooManyVariantsOfSameMaskingAlgorithm(self, max_algo_variants);
+}
+
+BOOST_AUTO_TEST_CASE(MaskDataColumn)
+{
+    START;
+    
+    CSeqDB R("nr", CSeqDB::eProtein);
+    CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
+    const int kNumSeqs = 10;
+    
+    vector<int> oids;
+    int next_oid = 0;
+    
+    // Get kNumSeqs sequences with length less than 1024
+    for(int i = 0; i < kNumSeqs; i++) {
+        int L = R.GetSeqLength(next_oid);
+        
+        while(L < 1024) {
+            ++next_oid;
+            L = R.GetSeqLength(next_oid);
+        }
+        
+        oids.push_back(next_oid++);
+    }
+    
+    int seg_id = W.RegisterMaskAlgorithm(eBlast_filter_program_seg);
+    
+    int repeat_id = W.RegisterMaskAlgorithm(eBlast_filter_program_repeat, 
+                                            "-species Desmodus_rotundus");
+    
+    // Populate it.
+    
+    for(int i = 0; i < kNumSeqs; i++) {
+        int oid = oids[i];
+        W.AddSequence(*R.GetBioseq(oid));
+        
+        CWriteDB::TMaskedRanges ranges;
+        
+        if (i & 1) {
+            ranges.push_back(SBlastDbMaskData());
+            ranges.back().algorithm_id = seg_id;
+            
+            for(int j = 0; j < (i+5); j++) {
+                pair<TSeqPos, TSeqPos> rng;
+                rng.first = i * 13 + j * 7 + 2;
+                rng.second = rng.first + 3 + (i+j) % 11;
+                
+                ranges.back().offsets.push_back(rng);
+            }
+        }
+        
+        if (i & 2) {
+            ranges.push_back(SBlastDbMaskData());
+            ranges.back().algorithm_id = repeat_id;
+            
+            for(int j = 0; j < (i+5); j++) {
+                pair<TSeqPos, TSeqPos> rng;
+                rng.first = i * 10 + j * 5 + 2;
+                rng.second = rng.first + 20;
+                
+                ranges.back().offsets.push_back(rng);
+            }
+        }
+        
+        // Set the mask data if either list above was used, or in some
+        // cases when neither is.  (Calling SetMaskData() with an
+        // empty array should be the same as not calling it at all;
+        // this code tests that equivalence.)
+        
+        if (i & 7) {
+            W.SetMaskData(ranges);
+        }
+    }
+    
+    // Close the DB.
+    
+    W.Close();
+    
+    // Test the resulting files.
+    
+    // (Currently, the files created here are not tested.  Instead,
+    // the SeqDB test uses copies of these files and tests the data
+    // integrity via the SeqDB functionality.)
+    
+    // Clean up.
+    
+    s_WrapUpDb(W);
+}
+
+BOOST_AUTO_TEST_CASE(DuplicateAlgoId)
+{
+    START;
+    
+    CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
+    
+    (void)W.RegisterMaskAlgorithm(eBlast_filter_program_seg);
+    int seg_repeated_id;
+    CHECK_THROW( seg_repeated_id =
+                 W.RegisterMaskAlgorithm(eBlast_filter_program_seg),
+                 CWriteDBException );
+}
+
+BOOST_AUTO_TEST_CASE(TooManyAlgoId)
+{
+    START;
+    
+    CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
+    
+    EBlast_filter_program masking_algorithm = eBlast_filter_program_seg;
+    vector<int> algo_ids;
+
+    // Ensure that the last one fails
+    const size_t kMaxNumSupportedAlgorithmVariants =
+        eBlast_filter_program_windowmasker - masking_algorithm;
+    for (size_t i = 0; i < kMaxNumSupportedAlgorithmVariants*2; i++) {
+        string options( i == 0 ? "" : NStr::IntToString(i));
+        int algo_id = -1;
+        if (i >= kMaxNumSupportedAlgorithmVariants) {
+            CHECK_THROW( 
+                algo_id = W.RegisterMaskAlgorithm(masking_algorithm, options),
+                CWriteDBException);
+        } else {
+            algo_id = W.RegisterMaskAlgorithm(masking_algorithm, options);
+        }
+        if (algo_id != -1) {
+            algo_ids.push_back(algo_id);
+        }
+    }
+
+    // Ensure that the IDs were assigned in increasing order
+    CHECK_EQUAL(kMaxNumSupportedAlgorithmVariants, algo_ids.size());
+    for (size_t i = 0; i < algo_ids.size(); i++) {
+        CHECK_EQUAL((masking_algorithm + i), algo_ids[i]);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(UndefinedAlgoID)
+{
+    START;
+    
+    CSeqDB R("nr", CSeqDB::eProtein);
+    CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
+    
+    W.RegisterMaskAlgorithm(eBlast_filter_program_seg);
+    
+    W.RegisterMaskAlgorithm(eBlast_filter_program_seg, 
+                                                 "-species Aotus_vociferans");
+    
+    W.RegisterMaskAlgorithm(eBlast_filter_program_repeat, 
+                                            "-species Desmodus_rotundus");
+    
+    // Populate it.
+    
+    int oid = 0;
+    
+    int L = R.GetSeqLength(oid);
+    W.AddSequence(*R.GetBioseq(oid));
+    
+    CWriteDB::TMaskedRanges ranges;
+    
+    ranges.push_back(SBlastDbMaskData());
+    ranges.back().algorithm_id = (int)eBlast_filter_program_dust;
+    
+    pair<TSeqPos, TSeqPos> rng;
+    rng.first = L/3;
+    rng.second = L;
+    
+    ranges.back().offsets.push_back(rng);
+    
+    CHECK_THROW(W.SetMaskData(ranges), CWriteDBException);
+    
+    W.Close();
+    s_WrapUpDb(W);
+}
+
+BOOST_AUTO_TEST_CASE(MaskDataBoundsError)
+{
+    START;
+    
+    CSeqDB R("nr", CSeqDB::eProtein);
+    CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
+    
+    W.RegisterMaskAlgorithm(eBlast_filter_program_seg);
+    
+    W.RegisterMaskAlgorithm(eBlast_filter_program_seg, 
+                                                 "-species Aotus_vociferans");
+    
+    W.RegisterMaskAlgorithm(eBlast_filter_program_repeat, 
+                                            "-species Desmodus_rotundus");
+    
+    // Populate it.
+    
+    int oid = 0;
+    
+    int L = R.GetSeqLength(oid);
+    W.AddSequence(*R.GetBioseq(oid));
+    
+    CWriteDB::TMaskedRanges ranges;
+    
+    ranges.push_back(SBlastDbMaskData());
+    ranges.back().algorithm_id = (int)eBlast_filter_program_dust;
+    
+    pair<TSeqPos, TSeqPos> rng;
+    rng.first = L/3;
+    rng.second = L+1;
+    
+    ranges.back().offsets.push_back(rng);
+    CHECK_THROW(W.SetMaskData(ranges), CWriteDBException);
+    
+    W.Close();
+    s_WrapUpDb(W);
+}
+#endif
+
+BOOST_AUTO_TEST_CASE(AliasFileGeneration)
+{
+    CTmpFile tmpfile;
+    const string kDbName("nr");
+    const string kGiFileName("gifiles.txt");
+    const string kTitle("My alias file");
+    string kAliasFileName(tmpfile.GetFileName());
+
+    CWriteDB_CreateAliasFile(kAliasFileName, kDbName, CWriteDB::eProtein,
+                             kGiFileName, kTitle);
+    kAliasFileName += ".pal";
+    CFileDeleteAtExit delete_at_exit;
+    delete_at_exit.Add(kAliasFileName);
+
+    BOOST_REQUIRE(CFile(kAliasFileName).Exists());
+    ifstream alias_file(kAliasFileName.c_str());
+
+    string line;
+    while (getline(alias_file, line)) {
+        if (NStr::Find(line, "TITLE") != NPOS) {
+            BOOST_REQUIRE(NStr::Find(line, kTitle) != NPOS);
+        }
+        if (NStr::Find(line, "DBLIST") != NPOS) {
+            BOOST_REQUIRE(NStr::Find(line, kDbName) != NPOS);
+        }
+        if (NStr::Find(line, "GILIST") != NPOS) {
+            BOOST_REQUIRE(NStr::Find(line, kGiFileName) != NPOS);
+        }
+        if (NStr::Find(line, "Alias file created") != NPOS) {
+            // this should be enough granularity
+            const string kCurrentYear = 
+                NStr::IntToString(CTime(CTime::eCurrent).Year());
+            BOOST_REQUIRE(NStr::Find(line, kCurrentYear) != NPOS);
+        }
+    }
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

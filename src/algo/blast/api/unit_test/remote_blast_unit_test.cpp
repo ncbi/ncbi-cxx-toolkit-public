@@ -99,6 +99,7 @@ string x_Stringify(TOBJ & obj)
 }
 
 BOOST_AUTO_TEST_CASE(MaskedQueryRegions) {
+    const EBlastProgramType prog = eBlastTypeBlastn;
     CRef<CBlastOptionsHandle> oh(
         CBlastOptionsFactory::Create(eBlastn, CBlastOptions::eRemote));
     oh->SetDbLength(5000000);
@@ -106,6 +107,7 @@ BOOST_AUTO_TEST_CASE(MaskedQueryRegions) {
     oh->SetFilterString("F");
 
     CRemoteBlast rmt_blast(oh);
+    //rmt_blast.SetVerbose();
     rmt_blast.SetDatabase("month.nt");
 
     const size_t kNumQueries(2);
@@ -144,6 +146,7 @@ BOOST_AUTO_TEST_CASE(MaskedQueryRegions) {
     rmt_blast.SetQueries(query_seqlocs,
                          query_masks);
     BOOST_REQUIRE_EQUAL(true, rmt_blast.Submit());
+    BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Pending, rmt_blast.CheckStatus());
     BOOST_REQUIRE_EQUAL(false, rmt_blast.GetRID().empty());
 
     BOOST_REQUIRE(rmt_blast.GetErrors().empty());
@@ -151,26 +154,33 @@ BOOST_AUTO_TEST_CASE(MaskedQueryRegions) {
     BOOST_REQUIRE(rmt_blast.GetWarnings().find("negative strand") !=
                    string::npos);
 
-#if 0
-    // Ideally we'd run this code after calling SubmitSync(), but this 
-    // takes too long to be run from a unit test
-    TSeqLocInfoVector masks = rmt_blast.GetMasks();
-    BOOST_REQUIRE(!masks.empty());
-    BOOST_REQUIRE_EQUAL(kNumQueries, masks.size());
+    vector<string> warnings;
+    const CBlast4_get_search_results_reply::TMasks& network_masks =
+        CRemoteBlast::ConvertToRemoteMasks(query_masks, prog, &warnings);
+    BOOST_REQUIRE_EQUAL(kNumQueries, network_masks.size());
+    BOOST_REQUIRE( !warnings.empty() );
+    BOOST_REQUIRE(warnings.front().find("Ignoring masked locations on negative")
+                                        != NPOS);
 
-    TMaskedQueryRegions mqr = masks.front();
-    BOOST_REQUIRE_EQUAL((size_t)1, mqr.size());
-    CRef<CSeqLocInfo> sli = mqr.front();
-    BOOST_REQUIRE(sli.NotEmpty());
-    BOOST_REQUIRE_EQUAL((TSeqPos) 50, sli->GetInterval().GetFrom());
-    BOOST_REQUIRE_EQUAL((TSeqPos) 100, sli->GetInterval().GetTo());
+    CRef<CBlast4_mask> mask = network_masks.front();
+    BOOST_REQUIRE_EQUAL((size_t)1, mask->GetLocations().size());
+    CRef<CSeq_loc> sl = mask->GetLocations().front();
+    BOOST_REQUIRE(sl->IsPacked_int());
+    BOOST_REQUIRE(sl->GetPacked_int().Get().size() == 1);
 
-    mqr  = masks.back();
-    BOOST_REQUIRE_EQUAL((size_t)1, mqr.size());
-    sli = mqr.front();
-    BOOST_REQUIRE_EQUAL((TSeqPos) 200, sli->GetInterval().GetFrom());
-    BOOST_REQUIRE_EQUAL((TSeqPos) 300, sli->GetInterval().GetTo());
-#endif
+    CRef<CSeq_interval> si = sl->GetPacked_int().Get().front();
+    BOOST_REQUIRE_EQUAL((TSeqPos) 50, si->GetFrom());
+    BOOST_REQUIRE_EQUAL((TSeqPos) 100, si->GetTo());
+
+    mask  = network_masks.back();
+    BOOST_REQUIRE_EQUAL((size_t)1, mask->GetLocations().size());
+    sl = mask->GetLocations().front();
+    BOOST_REQUIRE(sl->IsPacked_int());
+    BOOST_REQUIRE(sl->GetPacked_int().Get().size() == 1);
+
+    si = sl->GetPacked_int().Get().front();
+    BOOST_REQUIRE_EQUAL((TSeqPos) 200, si->GetFrom());
+    BOOST_REQUIRE_EQUAL((TSeqPos) 300, si->GetTo());
 }
 
 // Note that no CRemoteBlast constructor takes a CBlastRPSOptionsHandle, so
@@ -195,12 +205,22 @@ BOOST_AUTO_TEST_CASE(CheckBlastnMasks) {
 
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
-    BOOST_REQUIRE_EQUAL(string(""), rmt_blaster.GetErrors());
+    BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetErrors());
+
+    const EBlastProgramType prog = 
+        NetworkProgram2BlastProgramType(rmt_blaster.GetProgram(),
+                                        rmt_blaster.GetService());
 
     TSeqLocInfoVector masks = rmt_blaster.GetMasks();
+    vector<string> warnings;
+    const CBlast4_get_search_results_reply::TMasks& network_masks =
+        CRemoteBlast::ConvertToRemoteMasks(masks, prog, &warnings);
     BOOST_REQUIRE(!masks.empty());
+    BOOST_REQUIRE(!network_masks.empty());
+    BOOST_REQUIRE(warnings.empty());
     const size_t kNumQueries = 2;
     BOOST_REQUIRE_EQUAL(kNumQueries, masks.size());
+    BOOST_REQUIRE_EQUAL(kNumQueries, network_masks.size());
 
     size_t index = 0;
     vector<TSeqRange> expected_masks;
@@ -216,8 +236,22 @@ BOOST_AUTO_TEST_CASE(CheckBlastnMasks) {
                              (*seqlocinfo)->GetInterval().GetFrom());
         BOOST_REQUIRE_EQUAL(expected_masks[index].GetTo(),
                              (*seqlocinfo)->GetInterval().GetTo());
-        BOOST_REQUIRE_EQUAL((int)CSeqLocInfo::eFramePlus1,
+        BOOST_REQUIRE_EQUAL((int)CSeqLocInfo::eFrameNotSet,
                              (*seqlocinfo)->GetFrame());
+        index++;
+    }
+    index = 0;
+    BOOST_REQUIRE_EQUAL(eBlast4_frame_type_plus1,
+                        network_masks.front()->GetFrame());
+    CBlast4_mask::TLocations const* net_masks =
+        &network_masks.front()->GetLocations();
+    BOOST_REQUIRE_EQUAL((size_t)1, net_masks->size());
+    ITERATE(CPacked_seqint::Tdata, seqint, 
+            net_masks->front()->GetPacked_int().Get()) {
+        BOOST_REQUIRE_EQUAL(expected_masks[index].GetFrom(),
+                            (*seqint)->GetFrom());
+        BOOST_REQUIRE_EQUAL(expected_masks[index].GetTo(),
+                             (*seqint)->GetTo());
         index++;
     }
 
@@ -233,8 +267,22 @@ BOOST_AUTO_TEST_CASE(CheckBlastnMasks) {
                              (*seqlocinfo)->GetInterval().GetFrom());
         BOOST_REQUIRE_EQUAL(expected_masks[index].GetTo(),
                              (*seqlocinfo)->GetInterval().GetTo());
-        BOOST_REQUIRE_EQUAL((int)CSeqLocInfo::eFramePlus1,
+        BOOST_REQUIRE_EQUAL((int)CSeqLocInfo::eFrameNotSet,
                              (*seqlocinfo)->GetFrame());
+        index++;
+    }
+
+    index = 0;
+    BOOST_REQUIRE_EQUAL(eBlast4_frame_type_plus1,
+                        network_masks.back()->GetFrame());
+    net_masks = &network_masks.back()->GetLocations();
+    BOOST_REQUIRE_EQUAL((size_t)1, net_masks->size());
+    ITERATE(CPacked_seqint::Tdata, seqint, 
+            net_masks->front()->GetPacked_int().Get()) {
+        BOOST_REQUIRE_EQUAL(expected_masks[index].GetFrom(),
+                            (*seqint)->GetFrom());
+        BOOST_REQUIRE_EQUAL(expected_masks[index].GetTo(),
+                             (*seqint)->GetTo());
         index++;
     }
 }
@@ -245,12 +293,22 @@ BOOST_AUTO_TEST_CASE(CheckBlastpMasks) {
 
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
-    BOOST_REQUIRE_EQUAL(string(""), rmt_blaster.GetErrors());
+    BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetErrors());
+
+    const EBlastProgramType prog = 
+        NetworkProgram2BlastProgramType(rmt_blaster.GetProgram(),
+                                        rmt_blaster.GetService());
 
     TSeqLocInfoVector masks = rmt_blaster.GetMasks();
+    vector<string> warnings;
+    const CBlast4_get_search_results_reply::TMasks& network_masks =
+        CRemoteBlast::ConvertToRemoteMasks(masks, prog, &warnings);
     BOOST_REQUIRE(!masks.empty());
+    BOOST_REQUIRE(!network_masks.empty());
+    BOOST_REQUIRE(warnings.empty());
     const size_t kNumQueries = 2;
     BOOST_REQUIRE_EQUAL(kNumQueries, masks.size());
+    BOOST_REQUIRE_EQUAL(kNumQueries, network_masks.size());
 
     size_t index = 0;
     vector<TSeqRange> expected_masks;
@@ -266,6 +324,20 @@ BOOST_AUTO_TEST_CASE(CheckBlastpMasks) {
                              (*seqlocinfo)->GetInterval().GetTo());
         BOOST_REQUIRE_EQUAL((int)CSeqLocInfo::eFrameNotSet,
                              (*seqlocinfo)->GetFrame());
+        index++;
+    }
+    index = 0;
+    BOOST_REQUIRE_EQUAL(eBlast4_frame_type_notset,
+                        network_masks.front()->GetFrame());
+    CBlast4_mask::TLocations const* net_masks =
+        &network_masks.front()->GetLocations();
+    BOOST_REQUIRE_EQUAL((size_t)1, net_masks->size());
+    ITERATE(CPacked_seqint::Tdata, seqint, 
+            net_masks->front()->GetPacked_int().Get()) {
+        BOOST_REQUIRE_EQUAL(expected_masks[index].GetFrom(),
+                            (*seqint)->GetFrom());
+        BOOST_REQUIRE_EQUAL(expected_masks[index].GetTo(),
+                             (*seqint)->GetTo());
         index++;
     }
 
@@ -284,6 +356,19 @@ BOOST_AUTO_TEST_CASE(CheckBlastpMasks) {
                              (*seqlocinfo)->GetFrame());
         index++;
     }
+    index = 0;
+    BOOST_REQUIRE_EQUAL(eBlast4_frame_type_notset,
+                        network_masks.back()->GetFrame());
+    net_masks = &network_masks.back()->GetLocations();
+    BOOST_REQUIRE_EQUAL((size_t)1, net_masks->size());
+    ITERATE(CPacked_seqint::Tdata, seqint, 
+            net_masks->front()->GetPacked_int().Get()) {
+        BOOST_REQUIRE_EQUAL(expected_masks[index].GetFrom(),
+                            (*seqint)->GetFrom());
+        BOOST_REQUIRE_EQUAL(expected_masks[index].GetTo(),
+                             (*seqint)->GetTo());
+        index++;
+    }
 }
 
 BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
@@ -292,12 +377,22 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
 
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
-    BOOST_REQUIRE_EQUAL(string(""), rmt_blaster.GetErrors());
+    BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetErrors());
+
+    const EBlastProgramType prog = 
+        NetworkProgram2BlastProgramType(rmt_blaster.GetProgram(),
+                                        rmt_blaster.GetService());
 
     TSeqLocInfoVector masks = rmt_blaster.GetMasks();
+    vector<string> warnings;
+    const CBlast4_get_search_results_reply::TMasks& network_masks =
+        CRemoteBlast::ConvertToRemoteMasks(masks, prog, &warnings);
     BOOST_REQUIRE(!masks.empty());
+    BOOST_REQUIRE(!network_masks.empty());
+    BOOST_REQUIRE(!warnings.empty());
     const size_t kNumQueries = 2;
     BOOST_REQUIRE_EQUAL(kNumQueries, masks.size());
+    BOOST_REQUIRE_EQUAL(kNumQueries, network_masks.size());
 
     TMaskedQueryRegions query1_masks = masks.front();
     size_t index = 0;
@@ -328,6 +423,20 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
         BOOST_REQUIRE_EQUAL(mask.first.GetTo(),
                              (*seqlocinfo)->GetInterval().GetTo());
         BOOST_REQUIRE_EQUAL((int)mask.second, (*seqlocinfo)->GetFrame());
+    }
+    index = 0;
+    BOOST_REQUIRE_EQUAL(eBlast4_frame_type_plus1,
+                        network_masks.front()->GetFrame());
+    CBlast4_mask::TLocations const* net_masks =
+        &network_masks.front()->GetLocations();
+    BOOST_REQUIRE_EQUAL((size_t)1, net_masks->size());
+    ITERATE(CPacked_seqint::Tdata, seqint, 
+            net_masks->front()->GetPacked_int().Get()) {
+        const TMask& mask = expected_masks[index++];
+        BOOST_REQUIRE_EQUAL(mask.first.GetFrom(),
+                            (*seqint)->GetFrom());
+        BOOST_REQUIRE_EQUAL(mask.first.GetTo(),
+                             (*seqint)->GetTo());
     }
 
     TMaskedQueryRegions query2_masks = masks.back();
@@ -367,6 +476,20 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
                              (*seqlocinfo)->GetInterval().GetTo());
         BOOST_REQUIRE_EQUAL((int)mask.second, (*seqlocinfo)->GetFrame());
     }
+    index = 0;
+    BOOST_REQUIRE_EQUAL(eBlast4_frame_type_plus1,
+                        network_masks.back()->GetFrame());
+    net_masks = &network_masks.back()->GetLocations();
+    BOOST_REQUIRE_EQUAL((size_t)1, net_masks->size());
+    ITERATE(CPacked_seqint::Tdata, seqint, 
+            net_masks->front()->GetPacked_int().Get()) {
+        const TMask& mask = expected_masks[index++];
+        BOOST_REQUIRE_EQUAL(mask.first.GetFrom(),
+                            (*seqint)->GetFrom());
+        BOOST_REQUIRE_EQUAL(mask.first.GetTo(),
+                             (*seqint)->GetTo());
+    }
+
 }
 
 // This tests some of the functionality in get_filter_options.[hc]pp
@@ -415,7 +538,8 @@ BOOST_AUTO_TEST_CASE(CheckRID) {
     
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
-    BOOST_REQUIRE_EQUAL(string(""), rmt_blaster.GetErrors());
+    BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetErrors());
+    BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Done, rmt_blaster.CheckStatus());
     
     CRef<CSeq_align_set> sas = rmt_blaster.GetAlignments();
     BOOST_REQUIRE(sas.GetPointer() != NULL);
@@ -425,10 +549,11 @@ BOOST_AUTO_TEST_CASE(CheckColoRID) {
     // Colo RID that is preserved permanently
     const string rid("953V6EF901N");
     CRemoteBlast rmt_blaster(rid);
+    //rmt_blaster.SetVerbose();
     
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
-    BOOST_REQUIRE_EQUAL(string(""), rmt_blaster.GetErrors());
+    BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetErrors());
 
     CRef<CSeq_align_set> sas = rmt_blaster.GetAlignments();
     BOOST_REQUIRE(sas.GetPointer() != NULL);
@@ -438,6 +563,26 @@ BOOST_AUTO_TEST_CASE(CheckColoRID) {
     BOOST_REQUIRE(sav[0].NotEmpty());
 }
 
+#if 0 
+// Temporarily disabled until changes in SplitDB are done
+BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
+    const string rid("1214512158-10611-186074495131.BLASTQ23"); // Permanent RID
+    CRemoteBlast rmt_blaster(rid);
+    //rmt_blaster.SetVerbose();
+    
+    CRef<CSeq_align_set> sas = rmt_blaster.GetAlignments();
+    BOOST_REQUIRE(sas.GetPointer() == NULL);
+
+    BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
+    BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
+    BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetWarnings());
+    const string error("Substitution scores 2 and -1 are not supported");
+    BOOST_REQUIRE(NStr::FindNoCase(rmt_blaster.GetErrors(), error) != NPOS);
+    BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Failed, 
+                        rmt_blaster.CheckStatus());
+}
+#endif
+
 BOOST_AUTO_TEST_CASE(CheckMissingRID) {
     const string non_existent_rid("1068741992-11111-263425.BLASTQ3");
     CRemoteBlast rmt_blaster(non_existent_rid);
@@ -445,7 +590,9 @@ BOOST_AUTO_TEST_CASE(CheckMissingRID) {
     BOOST_REQUIRE_EQUAL(non_existent_rid, rmt_blaster.GetRID());
     BOOST_REQUIRE_EQUAL(false, rmt_blaster.CheckDone());
     // make sure error is something like: RID not found
-    BOOST_REQUIRE(rmt_blaster.GetErrors() != string(""));
+    BOOST_REQUIRE(rmt_blaster.GetErrors() != kEmptyStr);
+    BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Unknown,
+                        rmt_blaster.CheckStatus());
 }
 
 //     BOOST_AUTO_TEST_CASE(SubmitNonExistentDatabase) {

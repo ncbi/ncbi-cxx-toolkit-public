@@ -138,7 +138,20 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory> qf,
       m_OwnSeqInfoSrc(false),
       m_ResultType(eDatabaseSearch),
       m_DBscanInfo(0)
-{}
+{
+      if (Blast_ProgramIsPhiBlast(opts.GetProgramType())) {
+           if (m_InternalData)
+           {
+              BlastDiagnostics* diag = m_InternalData->m_Diagnostics->GetPointer();
+              if (diag && diag->ungapped_stat)
+              {
+                 CRef<SDatabaseScanData> dbscan_info(new SDatabaseScanData);;
+                 dbscan_info->m_NumPatOccurInDB = (int) diag->ungapped_stat->lookup_hits;
+                 SetDBScanInfo(dbscan_info);
+              }
+           }
+     }
+}
 
 CBlastTracebackSearch::~CBlastTracebackSearch()
 {
@@ -243,7 +256,8 @@ CBlastTracebackSearch::Run()
     
     if (is_phi) {
         _ASSERT(m_InternalData->m_LookupTable);
-        _ASSERT(m_DBscanInfo && m_DBscanInfo->m_NumPatOccurInDB != m_DBscanInfo->kNoPhiBlastPattern);
+        _ASSERT(m_DBscanInfo && m_DBscanInfo->m_NumPatOccurInDB !=
+                m_DBscanInfo->kNoPhiBlastPattern);
         phi_lookup_table = (SPHIPatternSearchBlk*) 
             m_InternalData->m_LookupTable->GetPointer()->lut;
         phi_lookup_table->num_patterns_db = m_DBscanInfo->m_NumPatOccurInDB;
@@ -293,6 +307,7 @@ CBlastTracebackSearch::Run()
     
     CRef<ILocalQueryData> qdata = m_QueryFactory->MakeLocalQueryData(m_Options);
     
+    vector<TSeqLocInfoVector> subj_masks;
     TSeqAlignVector aligns =
         LocalBlastResults2SeqAlign(hsp_results,
                                    *qdata,
@@ -300,6 +315,7 @@ CBlastTracebackSearch::Run()
                                    m_OptsMemento->m_ProgramType,
                                    m_Options->GetGappedMode(),
                                    m_Options->GetOutOfFrameMode(),
+                                   subj_masks,
                                    m_ResultType);
 
     vector< CConstRef<CSeq_id> > query_ids;
@@ -314,6 +330,7 @@ CBlastTracebackSearch::Run()
                                      m_OptsMemento->m_ProgramType, 
                                      aligns, 
                                      m_Messages,
+                                     subj_masks,
                                      NULL,
                                      m_ResultType);
 }

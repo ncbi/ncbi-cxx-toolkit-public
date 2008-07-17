@@ -45,84 +45,35 @@
 
 BEGIN_NCBI_SCOPE
 
-#if 0
-/// Subclass of CFastaOstream whose purpose is to override virtual functions in
-/// its parent class with no-ops
-class CLazyFastaOstream : public CFastaOstream
-{
-public:
-    virtual void Write(const CSeq_entry_Handle& /* handle */,
-                       const CSeq_loc* location = 0) {}
-    virtual void Write(const CBioseq_Handle& /* handle */,
-                       const CSeq_loc* location = 0) {}
-    virtual void WriteTitle(const CBioseq_Handle& /* handle */,
-                       const CSeq_loc* location = 0) {}
-    virtual void WriteSequence(const CBioseq_Handle& /* handle */,
-                       const CSeq_loc* location = 0) {}
-};
-
-/// Class that overrides CFastaOstream's Write methods to print an integer.
-/// This is achived by hijacking the m_Flags field of CFastaOstream
-class CIntStream : public CLazyFastaOstream
-{
-public:
-    virtual void Write(const CSeq_entry_Handle& /* handle */,
-                       const CSeq_loc* location = 0) { Write(); }
-    virtual void Write(const CBioseq_Handle& /* handle */,
-                       const CSeq_loc* location = 0) { Write(); }
-
-private:
-    /// @note m_Flags must be 'hijacked' and set by calling SetAllFlags
-    inline void Write() {
-        m_Out << m_Flags;
+/// Configuration object for CSeqFormatter
+struct CSeqFormatterConfig {
+    /// Default constructor
+    CSeqFormatterConfig() {
+        m_LineWidth = 80;
+        m_SeqRange = TSeqRange();
+        m_Strand = objects::eNa_strand_other;
+        m_TargetOnly = false;
+        m_UseCtrlA = false;
     }
+
+    /// length of the line of output (applicable only to FASTA output)
+    TSeqPos m_LineWidth;
+    /// The range of the sequence to retrieve, if empty, the
+    /// entire sequence will be retrived
+    TSeqRange m_SeqRange;
+    /// All SeqLoc types will have this strand assigned; If set to 'other', the
+    /// strand will be set to 'unknown' for protein sequences and 'both' for
+    /// nucleotide
+    objects::ENa_strand m_Strand;
+    /// Determines whether only the GI indicated as 'target' is retrieved when
+    /// multiple GIs are associated with a given OID
+    bool m_TargetOnly;
+    /// Determines whether Ctrl-A characters should be used as defline
+    /// separators
+    bool m_UseCtrlA;
 };
 
-class CCustomFastaOstream : public CFastaOstream
-{
-public:
-    CCustomFastaOstream(const string& specification);
-
-    virtual void Write();
-};
-
-/// Class to create a CFastaOstream instance (or a subclass of it). The
-/// default implementation of the factory method creates a CFastaOstream,
-/// subclasses of this object should create the appropriate CFastaOstream
-/// subclasses
-/// This is the Creator object in the factory method design pattern
-class CCustomFastaOstreamCreator : public CFastaOstreamCreator
-{
-public:
-    CCustomFastaOstreamCreator(CNcbiOstream& out, 
-                         CSeqDB& blastdb_handle,
-                         const string& specification,
-                         // FIXME: use a config object, as this won't scale?
-                         size_t line_length = 80, 
-                         bool use_ctrl_A = false);
-
-    virtual ~CFastaOstreamCreator() {}
-
-    /// Factory method of this class
-    virtual objects::CFastaOstream* Create();
-
-private:
-    /// Handle to a BLAST database
-    CSeqDB& m_BlastDb;
-    /// specification of how to customize the output
-    string m_OutputSpec;
-};
-
-class CConvertor : public unary_function<const CWritable&, string>
-{
-public:
-    string operator() (const CWritable& datum) const {
-        return datum.AsString();
-    }
-};
-
-#endif
-
+/// Customizable sequence writer interface
 class CSeqFormatter 
 {
 public:
@@ -130,7 +81,8 @@ public:
     /// @param fmt_spec format specification [in]
     /// @param blastdb BLAST database from which to retrieve the data [in]
     /// @param out output stream to write the data [in]
-    CSeqFormatter(const string& fmt_spec, CSeqDB& blastdb, CNcbiOstream& out);
+    CSeqFormatter(const string& fmt_spec, CSeqDB& blastdb, CNcbiOstream& out,
+                  CSeqFormatterConfig config = CSeqFormatterConfig());
 
     /// Destructor
     ~CSeqFormatter();
@@ -138,9 +90,8 @@ public:
     /// Write the sequence data associated with the requested ID in the format
     /// specified in the constructor
     /// @param id identifier for a sequence in the BLAST database
-    /// @return true if the operation succeeded, false otherwise (e.g.:
-    /// sequence not found)
-    bool Write(const CBlastDBSeqId& id);
+    /// @throws CException derived classes on error
+    void Write(CBlastDBSeqId& id);
 
 private:
     /// Stream to write output
@@ -153,13 +104,14 @@ private:
     vector<SIZE_TYPE> m_ReplOffsets;
     /// Vector of convertor objects
     vector<IBlastDBExtract*> m_DataExtractors;
-
+    /// Was FASTA requested at the end of format specifier string?
+    bool m_FastaRequestedAtEOL;
 
     /// Transform the sequence id into the strings specified by the format
     /// specification
     /// @param id identifier for data to retrieve [in]
     /// @param retval string representations of the datum object [out]
-    void x_Transform(const CBlastDBSeqId& id, vector<string>& retval);
+    void x_Transform(CBlastDBSeqId& id, vector<string>& retval);
 
     /// Replace format specifiers for the data contained in data2write
     /// @param data2write data to replace in the output string [in]

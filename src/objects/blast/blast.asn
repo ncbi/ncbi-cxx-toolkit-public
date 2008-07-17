@@ -578,32 +578,22 @@ Blast4-simple-alignment ::= SEQUENCE {
     
     -- Number of identities
     num-identities      INTEGER OPTIONAL,
+
+    -- Number of insertions/deletions
+    num-indels          INTEGER OPTIONAL,
     
     -- Full query range covered by this HSP
     full-query-range    Blast4-range,
     
     -- Full subject range covered by this HSP
-    full-subject-range  Blast4-range,
-    
-    -- Alignment segments taken from the original Seq-align
-    -- (including gaps)
-    segments            SEQUENCE OF Blast4-segment OPTIONAL
+    full-subject-range  Blast4-range 
 }
 
--- Range on a sequence
+-- Range on a sequence - zero offset
 Blast4-range ::= SEQUENCE {
-    is-gap              BOOLEAN,
     start               INTEGER OPTIONAL,
     end                 INTEGER OPTIONAL,
     strand              INTEGER OPTIONAL
-}
-
--- Segment of an alignment
---
-Blast4-segment ::= SEQUENCE {
-    length              INTEGER,
-    query-range         Blast4-range,
-    subject-range       Blast4-range    
 }
 
 END

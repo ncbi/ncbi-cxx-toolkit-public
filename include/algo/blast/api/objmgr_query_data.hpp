@@ -55,7 +55,7 @@ public:
     CObjMgr_QueryFactory(TSeqLocVector& queries);
     /// ctor that takes a CBlastQueryVector (preferred)
     /// @param queries for search [in]
-    CObjMgr_QueryFactory(CBlastQueryVector & queries);
+    CObjMgr_QueryFactory(CBlastQueryVector& queries);
 
     /// Retrieve the CScope objects associated with the query sequences
     /// associated with this object. In the case when CSeq_loc or TSeqLocs are
@@ -72,7 +72,7 @@ protected:
     CRef<IRemoteQueryData> x_MakeRemoteQueryData();
 
 private:
-    TSeqLocVector* m_SSeqLocVector;
+    TSeqLocVector m_SSeqLocVector;
     CRef<CBlastQueryVector> m_QueryVector;
 };
 

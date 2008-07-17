@@ -166,7 +166,8 @@ name=\"tree%s%d\" target=\"trv%s\"> \
 #endif
 
 
-
+static const int k_MaxDeflinesToShow = 8;
+static const int k_MinDeflinesToShow = 3;
 
 
 CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, 
@@ -1082,6 +1083,14 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
     return urlLink;
 }
 
+void
+CDisplaySeqalign::SetSubjectMasks(const blast::TSeqLocInfoVector& masks)
+{
+    ITERATE(blast::TSeqLocInfoVector, sequence_masks, masks) {
+        const CSeq_id& id = sequence_masks->front()->GetSeqId();
+        m_SubjectMasks[id] = *sequence_masks;
+    }
+}
 
 void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
 { 
@@ -1099,20 +1108,25 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     CAlnMap::TSeqPosList* insertStart = new CAlnMap::TSeqPosList[rowNum];
     CAlnMap::TSeqPosList* insertAlnStart = new CAlnMap::TSeqPosList[rowNum];
     CAlnMap::TSeqPosList* insertLength = new CAlnMap::TSeqPosList[rowNum];
-    string* seqidArray=new string[rowNum];
+    vector<string> seqidArray(rowNum);
     string middleLine;
     CAlnMap::TSignedRange* rowRng = new CAlnMap::TSignedRange[rowNum];
-    int* frame = new int[rowNum];
-    int* taxid = new int[rowNum];
+    vector<int> frame(rowNum);
+    vector<int> taxid(rowNum);
     int max_feature_num = 0;
     string master_feat_str = NcbiEmptyString;
     
     //Add external query feature info such as phi blast pattern
     list<SAlnFeatureInfo*>* bioseqFeature= x_GetQueryFeatureList(rowNum,
                                                                 (int)aln_stop);
-    //conver to aln coordinates for mask seqloc
-    list<SAlnSeqlocInfo*> alnLocList;
-    x_FillLocList(alnLocList);   
+    // Mask locations for queries (first elem) and subjects (all other rows)
+    vector<TSAlnSeqlocInfoList> masked_regions(rowNum);
+    x_FillLocList(masked_regions[0], m_Seqloc);
+
+    for (int row = 1; row < rowNum; row++) {
+        const CSeq_id& id = m_AV->GetSeqId(row);
+        x_FillLocList(masked_regions[row], &m_SubjectMasks[id]);
+    }
     
     //prepare data for each row 
     list<list<CRange<TSeqPos> > > feat_seq_range;
@@ -1178,9 +1192,8 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     }
     for(int i = 0; i < rowNum; i ++){//adjust max id length for feature id 
         int num_feature = 0;
-        for (list<SAlnFeatureInfo*>::iterator iter=bioseqFeature[i].begin();
-             iter != bioseqFeature[i].end(); iter++){
-            maxIdLen=max<size_t>((*iter)->feature->feature_id.size(), maxIdLen );
+        ITERATE(list<SAlnFeatureInfo*>, iter, bioseqFeature[i]) {
+            maxIdLen=max<size_t>((*iter)->feature->feature_id.size(), maxIdLen);
             num_feature ++;
             if(num_feature > max_feature_num){
                 max_feature_num = num_feature;
@@ -1344,7 +1357,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 x_OutputSeq(sequence[row], m_AV->GetSeqId(row), j, 
                             (int)actualLineLen, frame[row], row,
                             (row > 0 && colorMismatch)?true:false,  
-                            alnLocList, out);
+                            masked_regions[row], out);
                 CBlastFormatUtil::AddSpace(out, k_SeqStopMargin);
                 out << end;
                 out<<"\n";
@@ -1400,8 +1413,8 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     CBlastFormatUtil::
                         AddSpace(out, maxIdLen + k_IdStartMargin
                                  + maxStartLen + k_StartSequenceMargin);
-                    x_OutputSeq(middleLine, no_id, j, (int)actualLineLen, 0, row, 
-                                false,  alnLocList, out);
+                    x_OutputSeq(middleLine, no_id, j, (int)actualLineLen, 0,
+                                row, false, masked_regions[row], out);
                     out<<"\n";
                 }
             }
@@ -1421,19 +1434,13 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
             delete (*iter);
         }
     } 
-    ITERATE(list<SAlnSeqlocInfo*>, iter, alnLocList){
-        delete (*iter);
-    }
     delete [] bioseqFeature;
-    delete [] seqidArray;
     delete [] rowRng;
     delete [] seqStarts;
     delete [] seqStops;
-    delete [] frame;
     delete [] insertStart;
     delete [] insertAlnStart;
     delete [] insertLength;
-    delete [] taxid;
 }
 
 CRef<CAlnVec> CDisplaySeqalign::x_GetAlnVecForSeqalign(const CSeq_align& align)
@@ -1890,8 +1897,11 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
             
         } else {
             //print each defline 
+            bool bMultipleDeflines = false;
+            int numBdl = 0;
             for(list< CRef< CBlast_def_line > >::const_iterator 
                     iter = bdl.begin(); iter != bdl.end(); iter++){
+                numBdl++;
                 string urlLink;
                 int gi =  s_GetGiForSeqIdList((*iter)->GetSeqid());
                 int gi_in_use_this_gi = 0;
@@ -1905,10 +1915,19 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                 if(use_this_gi.empty() || gi_in_use_this_gi > 0) {
                 
                     if(isFirst){
-                        out << ">";
-                        
+                        out << ">";                  
                     } else{
                         out << " ";
+                        if (m_AlignOption&eHtml && (int)(bdl.size()) > k_MaxDeflinesToShow && numBdl == k_MinDeflinesToShow + 1){ 
+                            //Show first 3 deflines out of 8 or more, hide the rest
+                            string mdlTag = id_label;
+                            //string mdlTag = id_label  + "_" + NStr::IntToString(m_cur_align);                        
+                            out << "<a href=\"#\" title=\"Other sequence titles\"  onmouseover=\"showInfo(this)\" class=\"resArrowLinkW mdl hiding\" id=\"" <<
+                                mdlTag << "\">" << bdl.size() - k_MinDeflinesToShow << " more sequence titles" << "</a>\n";
+                        
+                            out << " <div id=\"" << "info_" << mdlTag << "\" class=\"helpbox mdlbox hidden\">";
+                            bMultipleDeflines = true;
+                        }
                     }
                     const CRef<CSeq_id> wid2
                         = FindBestChoice((*iter)->GetSeqid(),
@@ -1968,11 +1987,10 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                                                          "TOOL_URL");
                             list<string> linkout_url =  CBlastFormatUtil::
                                 GetLinkoutUrl(linkout, (*iter)->GetSeqid(),
-                                              m_Rid, m_DbName, m_QueryNumber,
-                                              taxid, m_CddRid, m_EntrezTerm,
-                                              bsp_handle.
-                                              GetBioseqCore()->IsNa(), 
-                                              user_url, m_IsDbNa, firstGi,
+                                              m_Rid,
+                                              m_CddRid, m_EntrezTerm,
+                                              bsp_handle.GetBioseqCore()->IsNa(), 
+                                              firstGi,
                                               false, true, m_cur_align);
                             out <<" ";
                             ITERATE(list<string>, iter_linkout, linkout_url){
@@ -2003,61 +2021,60 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                     isFirst = false;
                 }
             }
+            if(m_AlignOption&eHtml && bMultipleDeflines) {
+                out << "</div>";
+            }                      
         }
-    }
+    }      
 }
 
 
 void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id, 
                                    int start, int len, int frame, int row,
                                    bool color_mismatch,
-                                   list<SAlnSeqlocInfo*> loc_list, 
+                                   const TSAlnSeqlocInfoList& loc_list, 
                                    CNcbiOstream& out) const 
 {
     _ASSERT((int)sequence.size() > start);
     list<CRange<int> > actualSeqloc;
     string actualSeq = sequence.substr(start, len);
     
-    if(id.Which() != CSeq_id::e_not_set){ 
+    if(id.Which() != CSeq_id::e_not_set){
         /*only do this for sequence but not for others like middle line,
           features*/
-        //go through seqloc containing mask info.  Only for master sequence
-        if(row == 0){
-            for (list<SAlnSeqlocInfo*>::const_iterator iter = loc_list.begin();  
-                 iter != loc_list.end(); iter++){
-                int from=(*iter)->aln_range.GetFrom();
-                int to=(*iter)->aln_range.GetTo();
-                int locFrame = (*iter)->seqloc->GetFrame();
-                if(id.Match((*iter)->seqloc->GetInterval().GetId()) 
-                   && locFrame == frame){
-                    bool isFirstChar = true;
-                    CRange<int> eachSeqloc(0, 0);
-                    //go through each residule and mask it
-                    for (int i=max<int>(from, start); 
-                         i<=min<int>(to, start+len); i++){
-                        //store seqloc start for font tag below
-                        if ((m_AlignOption & eHtml) && isFirstChar){         
-                            isFirstChar = false;
-                            eachSeqloc.Set(i, eachSeqloc.GetTo());
-                        }
-                        if (m_SeqLocChar==eX){
-                            if(isalpha((unsigned char) actualSeq[i-start])){
-                                actualSeq[i-start]='X';
-                            }
-                        } else if (m_SeqLocChar==eN){
-                            actualSeq[i-start]='n';
-                        } else if (m_SeqLocChar==eLowerCase){
-                            actualSeq[i-start]=tolower((unsigned char) actualSeq[i-start]);
-                        }
-                        //store seqloc start for font tag below
-                        if ((m_AlignOption & eHtml) 
-                            && i == min<int>(to, start+len)){ 
-                            eachSeqloc.Set(eachSeqloc.GetFrom(), i);
-                        }
+        ITERATE(TSAlnSeqlocInfoList, iter, loc_list) {
+            int from=(*iter)->aln_range.GetFrom();
+            int to=(*iter)->aln_range.GetTo();
+            int locFrame = (*iter)->seqloc->GetFrame();
+            if(id.Match((*iter)->seqloc->GetInterval().GetId()) 
+               && locFrame == frame){
+                bool isFirstChar = true;
+                CRange<int> eachSeqloc(0, 0);
+                //go through each residule and mask it
+                for (int i=max<int>(from, start); 
+                     i<=min<int>(to, start+len); i++){
+                    //store seqloc start for font tag below
+                    if ((m_AlignOption & eHtml) && isFirstChar){         
+                        isFirstChar = false;
+                        eachSeqloc.Set(i, eachSeqloc.GetTo());
                     }
-                    if(!(eachSeqloc.GetFrom()==0&&eachSeqloc.GetTo()==0)){
-                        actualSeqloc.push_back(eachSeqloc);
+                    if (m_SeqLocChar==eX){
+                        if(isalpha((unsigned char) actualSeq[i-start])){
+                            actualSeq[i-start]='X';
+                        }
+                    } else if (m_SeqLocChar==eN){
+                        actualSeq[i-start]='n';
+                    } else if (m_SeqLocChar==eLowerCase){
+                        actualSeq[i-start]=tolower((unsigned char) actualSeq[i-start]);
                     }
+                    //store seqloc start for font tag below
+                    if ((m_AlignOption & eHtml) 
+                        && i == min<int>(to, start+len)){ 
+                        eachSeqloc.Set(eachSeqloc.GetFrom(), i);
+                    }
+                }
+                if(!(eachSeqloc.GetFrom()==0&&eachSeqloc.GetTo()==0)){
+                    actualSeqloc.push_back(eachSeqloc);
                 }
             }
         }
@@ -3109,14 +3126,16 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out)
 }
 
 
-void CDisplaySeqalign::x_FillLocList(list<SAlnSeqlocInfo*>& loc_list) const 
+void 
+CDisplaySeqalign::x_FillLocList(TSAlnSeqlocInfoList& loc_list, 
+                        const list< CRef<blast::CSeqLocInfo> >* masks) const
 {
-    if(!m_Seqloc){
+    if ( !masks ) {
         return;
     }
-    for (list<CRef<blast::CSeqLocInfo> >::iterator iter=m_Seqloc->begin(); 
-         iter!=m_Seqloc->end(); iter++){
-        SAlnSeqlocInfo* alnloc = new SAlnSeqlocInfo;    
+
+    ITERATE(blast::TMaskedQueryRegions, iter, *masks) {
+        CRef<SAlnSeqlocInfo> alnloc(new SAlnSeqlocInfo);
         for (int i=0; i<m_AV->GetNumRows(); i++){
             if((*iter)->GetInterval().GetId().Match(m_AV->GetSeqId(i))){
                 int actualAlnStart = 0, actualAlnStop = 0;

@@ -36,12 +36,10 @@
 
 #include <corelib/ncbistd.hpp>
 
-#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_hits.h>
-#include <algo/blast/api/blast_seqinfosrc.hpp>
 #include <algo/blast/api/blast_seqinfosrc_aux.hpp>
 #include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqalign/Seq_align_set.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -113,6 +111,9 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
 ///   True if this was a gapped search. [in]
 /// @param oof_mode
 ///   True if out-of-frame matches are allowed. [in]
+/// @param subj_masks
+///   If applicable, it'll be populated with subject masks that intersect the
+///   HSPs (each element corresponds to a query) [in|out]
 /// @param result_type
 ///   Specify how to arrange the results in the return value. [in]
 
@@ -123,6 +124,7 @@ LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
                            EBlastProgramType   program,
                            bool                gapped,
                            bool                oof_mode,
+                           vector<TSeqLocInfoVector>& subj_masks,
                            EResultType         result_type = eDatabaseSearch);
 
 END_SCOPE(blast)

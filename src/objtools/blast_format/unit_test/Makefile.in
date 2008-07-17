@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = seqalignfilter_unit_test
+APP_PROJ = blast_format_unit_test
 
 REQUIRES = Boost.Test
 

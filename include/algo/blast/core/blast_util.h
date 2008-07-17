@@ -118,15 +118,6 @@ Int2 BlastSeqBlkSetSequence(BLAST_SequenceBlk* seq_blk,
                             const Uint1* sequence,
                             Int4 seqlen);
 
-/** Adds a specialized representation of sequence data to a sequence
- * block. In the specialized representation, the byte at offset i 
- * packs together nucleotide bases i to i+3
- * @param seq_blk structure containing sequence data. Data is assumed
- *          to be in blastna format [in][out]
- */
-NCBI_XBLAST_EXPORT
-Int2 BlastCompressBlastnaSequence(BLAST_SequenceBlk *seq_blk);
-
 /** Stores the compressed nucleotide sequence in the sequence block structure
  * for the subject sequence when BLASTing 2 sequences. This sequence should be
  * encoded in eBlastEncodingNcbi2na and NOT have sentinel bytes (as this 
@@ -137,7 +128,36 @@ Int2 BlastCompressBlastnaSequence(BLAST_SequenceBlk *seq_blk);
 NCBI_XBLAST_EXPORT
 Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
                                       const Uint1* sequence);
+
+/** Sets the seq_range and related fields appropriately in the
+ * BLAST_SequenceBlk structure
+ * @param seq_blk The sequence block structure to modify [in/out]
+ * @param seq_ranges sequence ranges to copy [in]
+ * @param num_seq_ranges number of elements in array above [in]
+ * @param copy_seq_ranges set to TRUE if seq_ranges should be copied to the
+ * BLAST_SequenceBlk and assume its ownership, set to FALSE if the pointer
+ * should be copied and the ownership of the seq_ranges remains in the caller's
+ * possession.
+ * @note this function will free the memory previously allocated to
+ * BLAST_SequenceBlk::seq_ranges (if applicable) and overwrite it with the
+ * seq_ranges argument. This might invalidate BLAST_SequenceBlk structures that
+ * were copied off of this one.
+ */
+NCBI_XBLAST_EXPORT
+Int2 BlastSeqBlkSetSeqRanges(BLAST_SequenceBlk* seq_blk,
+                             SSeqRange* seq_ranges,
+                             Uint4 num_seq_ranges,
+                             Boolean copy_seq_ranges);
                             
+/** Adds a specialized representation of sequence data to a sequence
+ * block. In the specialized representation, the byte at offset i 
+ * packs together nucleotide bases i to i+3
+ * @param seq_blk structure containing sequence data. Data is assumed
+ *          to be in blastna format [in][out]
+ */
+NCBI_XBLAST_EXPORT
+Int2 BlastCompressBlastnaSequence(BLAST_SequenceBlk *seq_blk);
+
 
 /** GetTranslation to get the translation of the nucl. sequence in the
  * appropriate frame and with the appropriate GeneticCode.

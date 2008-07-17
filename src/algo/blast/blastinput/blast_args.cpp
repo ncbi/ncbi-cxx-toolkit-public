@@ -51,112 +51,12 @@ static char const rcsid[] = "$Id$";
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <util/format_guess.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
-#include "blast_input_aux.hpp"
+#include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
-
-/// Class to constrain the values of an argument to those greater than or equal
-/// to the value specified in the constructor
-class CArgAllowValuesGreaterThanOrEqual : public CArgAllow
-{
-public:
-    /// Constructor taking an integer
-    CArgAllowValuesGreaterThanOrEqual(int min) : m_MinValue(min) {}
-    /// Constructor taking a double
-    CArgAllowValuesGreaterThanOrEqual(double min) : m_MinValue(min) {}
-
-protected:
-    /// Overloaded method from CArgAllow
-    virtual bool Verify(const string& value) const {
-        return NStr::StringToDouble(value) >= m_MinValue;
-    }
-
-    /// Overloaded method from CArgAllow
-    virtual string GetUsage(void) const {
-        return ">=" + NStr::DoubleToString(m_MinValue);
-    }
-    
-private:
-    double m_MinValue;  /**< Minimum value for this object */
-};
-
-/// Class to constrain the values of an argument to those less than or equal
-/// to the value specified in the constructor
-class CArgAllowValuesLessThanOrEqual : public CArgAllow
-{
-public:
-    /// Constructor taking an integer
-    CArgAllowValuesLessThanOrEqual(int max) : m_MaxValue(max) {}
-    /// Constructor taking a double
-    CArgAllowValuesLessThanOrEqual(double max) : m_MaxValue(max) {}
-
-protected:
-    /// Overloaded method from CArgAllow
-    virtual bool Verify(const string& value) const {
-        return NStr::StringToDouble(value) <= m_MaxValue;
-    }
-
-    /// Overloaded method from CArgAllow
-    virtual string GetUsage(void) const {
-        return "<=" + NStr::DoubleToString(m_MaxValue);
-    }
-    
-private:
-    double m_MaxValue;  /**< Maximum value for this object */
-};
-
-/** 
- * @brief Macro to create a subclass of CArgAllow that allows the specification
- * of sets of data
- * 
- * @param ClassName Name of the class to be created [in]
- * @param DataType data type of the allowed arguments [in]
- * @param String2DataTypeFn Conversion function from a string to DataType [in]
- */
-#define DEFINE_CARGALLOW_SET_CLASS(ClassName, DataType, String2DataTypeFn)  \
-class ClassName : public CArgAllow                                          \
-{                                                                           \
-public:                                                                     \
-    ClassName(const set<DataType>& values)                                  \
-        : m_AllowedValues(values)                                           \
-    {                                                                       \
-        if (values.empty()) {                                               \
-            throw runtime_error("Allowed values set must not be empty");    \
-        }                                                                   \
-    }                                                                       \
-                                                                            \
-protected:                                                                  \
-    virtual bool Verify(const string& value) const {                        \
-        DataType value2check = String2DataTypeFn(value);                    \
-        ITERATE(set<DataType>, itr, m_AllowedValues) {                      \
-            if (*itr == value2check) {                                      \
-                return true;                                                \
-            }                                                               \
-        }                                                                   \
-        return false;                                                       \
-    }                                                                       \
-                                                                            \
-    virtual string GetUsage(void) const {                                   \
-        ostringstream os;                                                   \
-        os << "Permissible values: ";                                       \
-        ITERATE(set<DataType>, itr, m_AllowedValues) {                      \
-            os << "'" << *itr << "' ";                                      \
-        }                                                                   \
-        return os.str();                                                    \
-    }                                                                       \
-                                                                            \
-private:                                                                    \
-    /* Set containing the permissible values */                             \
-    set<DataType> m_AllowedValues;                                          \
-}
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-DEFINE_CARGALLOW_SET_CLASS(CArgAllowIntegerSet, int, NStr::StringToInt);
-DEFINE_CARGALLOW_SET_CLASS(CArgAllowStringSet, string, string);
-#endif /* SKIP_DOXYGEN_PROCESSING */
 
 void
 IBlastCmdLineArgs::ExtractAlgorithmOptions(const CArgs& /* cmd_line_args */,
@@ -173,7 +73,7 @@ CProgramDescriptionArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     // program description
     arg_desc.SetUsageContext(m_ProgName, m_ProgDesc + " " + 
-                             blast::Version.Print());
+                             CBlastVersion().Print());
 }
 
 CTaskCmdLineArgs::CTaskCmdLineArgs(const set<string>& supported_tasks,
@@ -258,7 +158,7 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     // ungapped X-drop
     // Default values: blastn=20, megablast=10, others=7
     arg_desc.AddOptionalKey(kArgUngappedXDropoff, "float_value", 
-                            "X dropoff value (in bits) for ungapped extensions",
+                            "X-dropoff value (in bits) for ungapped extensions",
                             CArgDescriptions::eDouble);
 
     // initial gapped X-drop
@@ -270,7 +170,7 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     // final gapped X-drop
     // Default values: blastn/megablast=50, tblastx=0, others=25
     arg_desc.AddOptionalKey(kArgFinalGappedXDropoff, "float_value", 
-                         "X dropoff value (in bits) for final gapped alignment",
+                         "X-dropoff value (in bits) for final gapped alignment",
                          CArgDescriptions::eDouble);
 
     arg_desc.SetCurrentGroup("Statistical options");
@@ -882,7 +782,8 @@ CGeneticCodeArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.SetCurrentGroup("General search options");
         // DB genetic code
         arg_desc.AddDefaultKey(kArgDbGeneticCode, "int_value", 
-                               "Genetic code to use to translate database",
+                               "Genetic code to use to translate "
+                               "database/subjects",
                                CArgDescriptions::eInteger,
                                NStr::IntToString(BLAST_GENETIC_CODE));
     }
@@ -1080,12 +981,27 @@ CPhiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
                                        CBlastOptions& opt)
 {
     if (args.Exist(kArgPHIPatternFile) && args[kArgPHIPatternFile]) {
-        //CNcbiIstream& in = args[kArgPHIPatternFile].AsInputFile();
-        string pattern("FIXME - NOT VALID");
-        // FIXME: need to port code from pssed3.c get_pat function
-        opt.SetPHIPattern(pattern.c_str(), 
-              !!Blast_QueryIsNucleotide(opt.GetProgramType()));
-        throw runtime_error("Reading of pattern file not implemented");
+        CNcbiIstream& in = args[kArgPHIPatternFile].AsInputFile();
+        in.clear();
+        in.seekg(0);
+        char buffer[4096];
+        string line;
+        string pattern;
+        string name;
+        while (in.getline(buffer, 4096)) {
+           line = buffer;
+           string ltype = line.substr(0, 2);
+           if (ltype == "ID") 
+             name = line.substr(5);
+           else if (ltype == "PA")
+             pattern = line.substr(5);
+        }
+        if (!pattern.empty())
+            opt.SetPHIPattern(pattern.c_str(), 
+               Blast_QueryIsNucleotide(opt.GetProgramType()));
+        else
+            NCBI_THROW(CBlastException, eInvalidArgument, 
+                       "PHI pattern not read");
     }
 }
 
@@ -1105,41 +1021,21 @@ CQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "(Format: start-stop)",
                             CArgDescriptions::eString);
 
-    // believe query ID
-    arg_desc.AddFlag(kArgParseQueryDefline,
-                     "Should the query defline(s) be parsed?", true);
+    arg_desc.SetCurrentGroup("Miscellaneous options");
+    arg_desc.AddFlag(kArgParseDeflines,
+                 "Should the query and subject defline(s) be parsed?", true);
+    arg_desc.SetCurrentGroup("");
 
     if ( !m_QueryCannotBeNucl ) {
         // search strands
         arg_desc.AddDefaultKey(kArgStrand, "strand", 
-                         "Query strand(s) to search against database",
+                         "Query strand(s) to search against database/subject",
                          CArgDescriptions::eString, kDfltArgStrand);
         arg_desc.SetConstraint(kArgStrand, &(*new CArgAllow_Strings, 
                                              kDfltArgStrand, "plus", "minus"));
     }
 
     arg_desc.SetCurrentGroup("");
-}
-
-/** 
- * @brief Break up the locations string into an actual range
- * 
- * @param locations String to parse and tokenize [in]
- * @param range range to output [out]
- * @param msg message to add to exception in case of error [in]
- */
-static void s_TokenizeSequenceRange(const string& locations, 
-                                    TSeqRange& range,
-                                    const string& msg)
-{
-    static const string delimiters("-");
-    vector<string> tokens;
-    NStr::Tokenize(locations, delimiters, tokens);
-    if (tokens.size() != 2) {
-        NCBI_THROW(CBlastException, eInvalidArgument, msg);
-    }
-    range.SetFrom(NStr::StringToInt(tokens.front()));
-    range.SetToOpen(NStr::StringToInt(tokens.back()));
 }
 
 void
@@ -1166,12 +1062,12 @@ CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     // set the sequence range
     if (args[kArgQueryLocation]) {
-        s_TokenizeSequenceRange(args[kArgQueryLocation].AsString(), m_Range, 
-                                "Invalid specification of query location");
+        m_Range = ParseSequenceRange(args[kArgQueryLocation].AsString(), 
+                                     "Invalid specification of query location");
     }
 
     m_UseLCaseMask = static_cast<bool>(args[kArgUseLCaseMasking]);
-    m_BelieveQueryDefline = static_cast<bool>(args[kArgParseQueryDefline]);
+    m_ParseDeflines = static_cast<bool>(args[kArgParseDeflines]);
 }
 
 CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
@@ -1208,7 +1104,7 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
 
     const string* kDatabaseArgs[] =  
-        { &kArgDb, &kArgGiList, &kArgNegativeGiList, NULL };
+        { &kArgDb, &kArgGiList, &kArgNegativeGiList, &kArgMaskSubjects, NULL };
 
     // DB size
     arg_desc.SetCurrentGroup("Statistical options");
@@ -1216,26 +1112,37 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "Effective length of the database ",
                             CArgDescriptions::eInt8);
 
-    if ( !m_IsRpsBlast) {
+    arg_desc.SetCurrentGroup("Restrict search or results");
+    // GI list
+    arg_desc.AddOptionalKey(kArgGiList, "filename", 
+                            "Restrict search of database to list of GI's",
+                            CArgDescriptions::eString);
+    // Negative GI list
+    arg_desc.AddOptionalKey(kArgNegativeGiList, "filename", 
+        "Restrict search of database to everything except the listed GIs",
+        CArgDescriptions::eString);
+    arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+                           kArgNegativeGiList);
 
-        arg_desc.SetCurrentGroup("Restrict search or results");
-        // GI list
-        arg_desc.AddOptionalKey(kArgGiList, "filename", 
-                                "Restrict search of database to list of GIs",
-                                CArgDescriptions::eString);
-        arg_desc.AddOptionalKey(kArgNegativeGiList, "filename", 
-            "Restrict search of database to everything except the listed GIs",
+    // For now, disable pairing -remote with either -gilist or
+    // -negative_gilist as this is not implemented in the BLAST server
+    arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+                           kArgRemote);
+    arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes, 
+                           kArgRemote);
+
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    // Masking of database
+    arg_desc.AddOptionalKey(kArgMaskSubjects, 
+            "filtering_algorithms",
+            "Filtering algorithms IDs to apply from the database specified "
+            "as soft masking for subjects (Format: N,M,...)",
             CArgDescriptions::eString);
-        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
-                               kArgNegativeGiList);
+#endif
 
-        // For now, disable pairing -remote with either -gilist or
-        // -negative_gilist as this is not implemented in the BLAST server
-        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
-                               kArgRemote);
-        arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes, 
-                               kArgRemote);
-
+    // There is no RPS-BLAST 2 sequences
+    if ( !m_IsRpsBlast ) {
         arg_desc.SetCurrentGroup("BLAST-2-Sequences options");
         // subject sequence input (for bl2seq)
         arg_desc.AddOptionalKey(kArgSubject, "subject_input_file",
@@ -1314,19 +1221,35 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         if ( !gis.empty() ) 
             m_SearchDb->SetNegativeGiListLimitation(gis);
 
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+        if (args[kArgMaskSubjects]) {
+            const string kDelims(",");
+            vector<string> tokens;
+            NStr::Tokenize(args[kArgMaskSubjects].AsString(), kDelims, tokens);
+            CSearchDatabase::TFilteringAlgorithms flist;
+            ITERATE(vector<string>, token, tokens) {
+                flist.push_back(NStr::StringToInt(*token));
+            }
+            m_SearchDb->SetFilteringAlgorithms(flist);
+        }
+#endif
     } else if (args.Exist(kArgSubject) && args[kArgSubject]) {
 
         CNcbiIstream& subj_input_stream = args[kArgSubject].AsInputFile();
         TSeqRange subj_range;
         if (args.Exist(kArgSubjectLocation) && args[kArgSubjectLocation]) {
-            s_TokenizeSequenceRange(args[kArgSubjectLocation].AsString(), 
-                            subj_range,
+            subj_range = 
+                ParseSequenceRange(args[kArgSubjectLocation].AsString(), 
                             "Invalid specification of subject location");
         }
 
+        const bool parse_deflines = args.Exist(kArgParseDeflines) 
+            ? args[kArgParseDeflines]
+            : kDfltArgParseDeflines;
         CRef<blast::CBlastQueryVector> subjects;
         m_Scope = ReadSequencesToBlast(subj_input_stream, IsProtein(),
-                                       subj_range, subjects);
+                                       subj_range, parse_deflines, subjects);
         m_Subjects.Reset(new blast::CObjMgr_QueryFactory(*subjects));
 
     } else {
@@ -1365,7 +1288,9 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                     "  9 = Binary ASN.1\n",
                    CArgDescriptions::eInteger,
                    NStr::IntToString(kDfltArgOutputFormat));
-    arg_desc.SetConstraint(kArgOutputFormat, new CArgAllow_Integers(0, 9));
+    arg_desc.SetConstraint(kArgOutputFormat, 
+                           new CArgAllow_Integers((int)ePairwise, 
+                                                  ((int)eEndValue-1)));
 
     // show GIs in deflines
     arg_desc.AddFlag(kArgShowGIs, "Show NCBI GIs in deflines?", true);
@@ -1389,6 +1314,14 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     // Produce HTML?
     arg_desc.AddFlag(kArgProduceHtml, "Produce HTML output?", true);
+
+    /// Hit list size, listed here for convenience only
+    arg_desc.SetCurrentGroup("Restrict search or results");
+    arg_desc.AddOptionalKey(kArgMaxTargetSequences, "num_sequences",
+                            "Maximum number of aligned sequences to keep",
+                            CArgDescriptions::eInteger);
+    arg_desc.SetConstraint(kArgMaxTargetSequences,
+                           new CArgAllowValuesGreaterThanOrEqual(1));
 
     arg_desc.SetCurrentGroup("");
 }
@@ -1416,14 +1349,31 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         m_NumAlignments = args[kArgNumAlignments].AsInteger();
     }
 
-    if (m_NumDescriptions == 0 && m_NumAlignments == 0) {
+    TSeqPos hitlist_size = 0;
+    if (args[kArgMaxTargetSequences]) {
+        hitlist_size = args[kArgMaxTargetSequences].AsInteger();
+        if (hitlist_size > 0) {
+            /* Only non-default values will be overriden */
+            CalculateFormattingParams(hitlist_size,
+                      m_NumDescriptions == kDfltArgNumDescriptions 
+                      ? &m_NumDescriptions : 0,
+                      m_NumAlignments == kDfltArgNumAlignments 
+                      ? &m_NumAlignments : 0);
+        }
+    }
+
+    if (m_NumDescriptions == 0 && m_NumAlignments == 0 && hitlist_size == 0) {
         string msg("Either -");
-        msg += kArgNumDescriptions + " or -" + kArgNumAlignments + " must ";
+        msg += kArgMaxTargetSequences + ", -";
+        msg += kArgNumDescriptions + ", or -" + kArgNumAlignments + " must ";
         msg += "be non-zero";
         NCBI_THROW(CBlastException, eInvalidArgument, msg);
     }
-    else
+    else if (hitlist_size != 0) {
+        opt.SetHitlistSize(hitlist_size);
+    } else {
         opt.SetHitlistSize(MAX(m_NumDescriptions, m_NumAlignments));
+    }
 
     m_Html = static_cast<bool>(args[kArgProduceHtml]);
 }
@@ -1436,8 +1386,8 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     // number of threads
     arg_desc.SetCurrentGroup("Miscellaneous options");
     arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
-                           "Number of threads to use in preliminary stage "
-                           "of the search", CArgDescriptions::eInteger, 
+                           "Number of threads to use in the BLAST search",
+                           CArgDescriptions::eInteger, 
                            NStr::IntToString(kMinValue));
     arg_desc.SetConstraint(kArgNumThreads, 
                            new CArgAllowValuesGreaterThanOrEqual(kMinValue));
@@ -1478,10 +1428,10 @@ CDebugArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
 #if _DEBUG
     arg_desc.SetCurrentGroup("Miscellaneous options");
-    arg_desc.AddFlag("verbose", "Produce verbose output (show BLAST options)?",
+    arg_desc.AddFlag("verbose", "Produce verbose output (show BLAST options)",
                      true);
     arg_desc.AddFlag("remote_verbose", 
-                     "Produce verbose output for remote searches?", true);
+                     "Produce verbose output for remote searches", true);
     arg_desc.SetCurrentGroup("");
 #endif /* DEBUG */
 }
@@ -1699,11 +1649,11 @@ CBlastAppArgs::SetOptions(const CArgs& args)
     if (m_OptsHandle.NotEmpty()) {
         CBlastOptions& opts = m_OptsHandle->SetOptions();
         // invoke ExtractAlgorithmOptions on certain argument classes
-        m_FormattingArgs->ExtractAlgorithmOptions(args, opts);
         m_QueryOptsArgs->ExtractAlgorithmOptions(args, opts);
         m_StdCmdLineArgs->ExtractAlgorithmOptions(args, opts);
         m_RemoteArgs->ExtractAlgorithmOptions(args, opts);
         m_DebugArgs->ExtractAlgorithmOptions(args, opts);
+        m_FormattingArgs->ExtractAlgorithmOptions(args, opts);
         if (CBlastDatabaseArgs::HasBeenSet(args)) {
             m_BlastDbArgs->ExtractAlgorithmOptions(args, opts);
         }

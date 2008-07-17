@@ -859,7 +859,7 @@ s_MatchingSequenceRelease(BlastCompo_MatchingSequence * self)
     if (self != NULL) {
         BlastKappa_SequenceInfo * local_data = self->local_data;
         BlastSeqSrcReleaseSequence(local_data->seq_src,
-                                   (void*)&local_data->seq_arg);
+                                   &local_data->seq_arg);
         BlastSequenceBlkFree(local_data->seq_arg.seq);
         free(self->local_data);
         self->local_data = NULL;
@@ -950,7 +950,7 @@ s_MatchingSequenceInitialize(BlastCompo_MatchingSequence * self,
         } else {
             seq_info->seq_arg.encoding = eBlastEncodingProtein;
         }
-        if (BlastSeqSrcGetSequence(seqSrc, (void*) &seq_info->seq_arg) >= 0) {
+        if (BlastSeqSrcGetSequence(seqSrc, &seq_info->seq_arg) >= 0) {
             self->length =
                 BlastSeqSrcGetSeqLen(seqSrc, (void*) &seq_info->seq_arg);
 

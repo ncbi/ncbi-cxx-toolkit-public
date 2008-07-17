@@ -209,8 +209,6 @@ CBlastBioseqMaker::CBlastBioseqMaker(const SDataLoaderConfig& dlconfig)
     m_scope = CBlastScopeSource(dlconfig).NewScope();
 }
 
-CBlastBioseqMaker::~CBlastBioseqMaker() {}
-
 CRef<CBioseq> CBlastBioseqMaker::
         CreateBioseqFromId(CConstRef<CSeq_id> id, bool retrieve_seq_data)
 {
@@ -256,6 +254,20 @@ bool CBlastBioseqMaker::IsProtein(CConstRef<CSeq_id> id)
                     id->AsFastaString() + "'");
     }
     return bh.IsProtein();
+}
+
+bool
+CBlastBioseqMaker::IsEmptyBioseq(const CBioseq& bioseq)
+{
+    if (bioseq.CanGetInst()) {
+        const CSeq_inst& inst = bioseq.GetInst();
+        return (inst.GetRepr() == CSeq_inst::eRepr_raw &&
+                inst.CanGetMol() &&
+                inst.CanGetLength() &&
+                inst.CanGetSeq_data() == false);
+    }
+    return false;
+
 }
 
 END_SCOPE(blast)

@@ -46,12 +46,12 @@ BEGIN_SCOPE(blast)
 /// References for the various BLAST publications
 static const string kReferences[(int)CReference::eMaxPublications+1] = {
     // eGappedBlast
-    "Altschul, Stephen F., Thomas L. Madden, \
-Alejandro A. Schäffer, Jinghui Zhang, Zheng Zhang, Webb Miller, and David J. \
+    "Stephen F. Altschul, Thomas L. Madden, \
+Alejandro A. Sch&auml;ffer, Jinghui Zhang, Zheng Zhang, Webb Miller, and David J. \
 Lipman (1997), \"Gapped BLAST and PSI-BLAST: a new generation of protein \
 database search programs\", Nucleic Acids Res. 25:3389-3402.",
     // ePhiBlast
-    "Zhang, Zheng, Alejandro A. Schäffer, Webb Miller, \
+    "Zheng Zhang, Alejandro A. Sch&auml;ffer, Webb Miller, \
 Thomas L. Madden, David J. Lipman, Eugene V. Koonin, and Stephen F. \
 Altschul (1998), \"Protein sequence similarity searches using patterns \
 as seeds\", Nucleic Acids Res. 26:3986-3990.",
@@ -60,16 +60,21 @@ as seeds\", Nucleic Acids Res. 26:3986-3990.",
 \"A greedy algorithm for aligning DNA sequences\", \
 J Comput Biol 2000; 7(1-2):203-14.", 
     // eCompBasedStats
-    "Schäffer, Alejandro A., L. Aravind, Thomas L. Madden, Sergei Shavirin, \
+    "Alejandro A. Sch&auml;ffer, L. Aravind, Thomas L. Madden, Sergei Shavirin, \
 John L. Spouge, Yuri I. Wolf, Eugene V. Koonin, and Stephen F. Altschul \
 (2001), \"Improving the accuracy of PSI-BLAST protein database searches \
 with composition-based statistics and other refinements\", Nucleic Acids \
 Res. 29:2994-3005.",
     // eCompAdjustedMatrices
-    "Altschul, Stephen F., John C. Wootton, E. Michael Gertz, Richa Agarwala, \
-Aleksandr Morgulis, Alejandro A. Schäffer, and Yi-Kuo Yu (2005) \"Protein \
+    "Stephen F. Altschul, John C. Wootton, E. Michael Gertz, Richa Agarwala, \
+Aleksandr Morgulis, Alejandro A. Sch&auml;ffer, and Yi-Kuo Yu (2005) \"Protein \
 database searches using compositionally adjusted substitution matrices\", \
 FEBS J. 272:5101-5109.",
+    // eIndexedMegablast
+    "Aleksandr Morgulis, George Coulouris, Yan Raytselis, \
+Thomas L. Madden, Richa Agarwala, Alejandro A. Sch&auml;ffer \
+(2008), \"Database Indexing for Production MegaBLAST Searches\", \
+Bioinformatics; doi: 10.1093/bioinformatics/btn322.",
     // eMaxPublications
     kEmptyStr
 };
@@ -91,6 +96,8 @@ entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=11452024&dopt=Citation",
     // eCompAdjustedMatrices
     "http://www.ncbi.nlm.nih.gov/\
 entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=16218944&dopt=Citation",
+    // eIndexedMegablast
+    "http://www.ncbi.nlm.nih.gov/pubmed/18567917?dopt=Citation",
     // eMaxPublications
     kEmptyStr
 };
@@ -99,6 +106,17 @@ string
 CReference::GetString(EPublication pub)
 {
     return kReferences[(int) pub];
+}
+
+string 
+CReference::GetHTMLFreeString(EPublication pub)
+{
+    string pub_string = GetString(pub);
+    string::size_type offset = pub_string.find("&auml;");
+    if (offset != string::npos)
+        pub_string.replace(offset, 6, "a");
+
+    return pub_string;
 }
 
 string

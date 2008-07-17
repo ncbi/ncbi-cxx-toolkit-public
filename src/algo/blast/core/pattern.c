@@ -502,6 +502,7 @@ SPHIQueryInfoFree(SPHIQueryInfo* pat_info)
 {
     if (pat_info) {
         sfree(pat_info->occurrences);
+        sfree(pat_info->pattern);
         sfree(pat_info);
     }
     return NULL;
@@ -517,6 +518,8 @@ SPHIQueryInfoCopy(const SPHIQueryInfo* pat_info)
 
     retval = 
         (SPHIQueryInfo*) BlastMemDup(pat_info, sizeof(SPHIQueryInfo));
+    retval->pattern = 
+        (char *) BlastMemDup(pat_info->pattern, 1+strlen(pat_info->pattern));
     retval->occurrences = (SPHIPatternInfo*)
         BlastMemDup(pat_info->occurrences, 
                     pat_info->num_patterns*sizeof(SPHIPatternInfo));

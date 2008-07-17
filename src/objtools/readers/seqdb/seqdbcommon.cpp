@@ -797,14 +797,18 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
     }
 }
 
-
-void SeqDB_ReadMemoryGiList(const char * fbeginp,
-                            const char * fendp,
-                            vector<CSeqDBGiList::SGiOid> & gis,
-                            bool * in_order)
+/// This function determines whether a file is a valid binary gi file.
+/// @param fbeginp pointer to start of file [in]
+/// @param fendp pointer to end of file [in]
+/// @param has_long_ids will be set to true if the gi file contains long IDs
+/// [out]
+/// @returns true if file is binary
+/// @throws CSeqDBException if file is empty or invalid gi file
+static bool s_SeqDB_IsBinaryGiList(const char* fbeginp, const char* fendp, 
+                                   bool& has_long_ids)
 {
-    bool is_binary = false;
-    
+    bool retval = false;
+    has_long_ids = false;
     Int8 file_size = fendp - fbeginp;
     
     if (file_size == 0) {
@@ -812,16 +816,34 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
                    eFileErr,
                    "Specified file is empty.");
     } else if (isdigit((unsigned char)(*((char*) fbeginp)))) {
-        is_binary = false;
+        retval = false;
     } else if ((file_size >= 8) && ((*fbeginp & 0xFF) == 0xFF)) {
-        is_binary = true;
+        retval = true;
+
+        int marker = fbeginp[3] & 0xFF;
+        
+        if (marker == 0xFE || marker == 0xFC) {
+            has_long_ids = true;
+        }
     } else {
         NCBI_THROW(CSeqDBException,
                    eFileErr,
                    "Specified file is not a valid GI/TI list.");
     }
+    return retval;
+}
+
+
+void SeqDB_ReadMemoryGiList(const char * fbeginp,
+                            const char * fendp,
+                            vector<CSeqDBGiList::SGiOid> & gis,
+                            bool * in_order)
+{
+    bool long_ids = false;
+    Int8 file_size = fendp - fbeginp;
     
-    if (is_binary) {
+    if (s_SeqDB_IsBinaryGiList(fbeginp, fendp, long_ids)) {
+        _ASSERT(long_ids == false);
         Int4 * bbeginp = (Int4*) fbeginp;
         Int4 * bendp = (Int4*) fendp;
         
@@ -867,6 +889,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
             }
         }
     } else {
+        _ASSERT(long_ids == false);
         // We would prefer to do only one allocation, so assume
         // average gi is 6 digits plus newline.  A few extra will be
         // allocated, but this is preferable to letting the vector
@@ -976,32 +999,10 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
                             vector<CSeqDBGiList::STiOid> & tis,
                             bool * in_order)
 {
-    bool is_binary = false;
     bool long_ids = false;
-    
     Int8 file_size = fendp - fbeginp;
     
-    if (file_size == 0) {
-        NCBI_THROW(CSeqDBException,
-                   eFileErr,
-                   "Specified file is empty.");
-    } else if (isdigit((unsigned char)(*((char*) fbeginp)))) {
-        is_binary = false;
-    } else if ((file_size >= 8) && ((*fbeginp & 0xFF) == 0xFF)) {
-        is_binary = true;
-        
-        int marker = fbeginp[3] & 0xFF;
-        
-        if (marker == 0xFE || marker == 0xFC) {
-            long_ids = true;
-        }
-    } else {
-        NCBI_THROW(CSeqDBException,
-                   eFileErr,
-                   "Specified file is not a valid GI/TI list.");
-    }
-    
-    if (is_binary) {
+    if (s_SeqDB_IsBinaryGiList(fbeginp, fendp, long_ids)) {
         Int4 * bbeginp = (Int4*) fbeginp;
         Int4 * bendp = (Int4*) fendp;
         Int4 * bdatap = bbeginp + 2;
@@ -1181,6 +1182,17 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
     }
 }
 
+bool SeqDB_IsBinaryGiList(const string  & fname)
+{
+    CMemoryFile mfile(SeqDB_MakeOSPath(fname));
+
+    Int8 file_size = mfile.GetSize();
+    const char * fbeginp = (char*) mfile.GetPtr();
+    const char * fendp   = fbeginp + (int)file_size;
+    
+    bool ignore = false;
+    return s_SeqDB_IsBinaryGiList(fbeginp, fendp, ignore);
+}
 
 void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, bool * in_order)
 {
@@ -1349,6 +1361,23 @@ void SeqDB_CombineAndQuote(const vector<string> & dbs,
         } else {
             dbname.append(dbs[i]);
         }
+    }
+}
+
+
+void SeqDB_SplitQuoted(const string        & dbname,
+                       vector<CTempString> & dbs)
+{
+    vector<CSeqDB_Substring> subs;
+    
+    SeqDB_SplitQuoted(dbname, subs);
+    
+    dbs.resize(0);
+    dbs.reserve(subs.size());
+    
+    ITERATE(vector<CSeqDB_Substring>, iter, subs) {
+        CTempString tmp(iter->GetBegin(), iter->Size());
+        dbs.push_back(tmp);
     }
 }
 
@@ -1746,6 +1775,14 @@ bool CSeqDBIdSet::Blank() const
     return (! m_Positive) && (0 == m_Ids->Size());
 }
 
+void SeqDB_FileIntegrityAssert(const string & file,
+                               int            line,
+                               const string & text)
+{
+    string msg = "Validation failed: [" + text + "] at ";
+    msg += file + ":" + NStr::IntToString(line);
+    SeqDB_ThrowException(CSeqDBException::eFileErr, msg);
+}
 
 END_NCBI_SCOPE
 

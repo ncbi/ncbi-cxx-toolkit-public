@@ -135,6 +135,11 @@ public:
     /// @param gi_list list of GIs to exclude [in]
     void SetNegativeGIList(const list<Int4> & gi_list);
     
+    /// Sets the filtering algorithm IDs to be applied to the BLAST database
+    /// (not supported by server yet)
+    /// @param algo_ids algorithm IDs to use
+    void SetDbFilteringAlgorithmIds(const list<Int4> & algo_ids);
+
     /// Set the name of the database to search against.
     void SetDatabase(const string & x);
     
@@ -149,6 +154,16 @@ public:
     
     /// Set the query as a Bioseq_set.
     void SetQueries(CRef<objects::CBioseq_set> bioseqs);
+
+    /// Convert a TSeqLocInfoVector to a list< CRef<CBlast4_mask> > objects
+    /// @param masking_locations Masks to convert [in]
+    /// @param program CORE BLAST program type [in]
+    /// @param warnings optional argument where warnings will be returned
+    /// [in|out]
+    static objects::CBlast4_get_search_results_reply::TMasks
+    ConvertToRemoteMasks(const TSeqLocInfoVector& masking_locations,
+                         EBlastProgramType program,
+                         vector<string>* warnings = NULL);
     
     /// Set the query as a Bioseq_set along with the corresponding masking
     /// locations.
@@ -218,6 +233,21 @@ public:
     ///
     /// @return true if the search was submitted, otherwise false.
     bool Submit(void);
+
+    /// Represents the status of previously submitted search/RID
+    enum ESearchStatus {
+        /// Never submitted or purged from the system
+        eStatus_Unknown,   
+        /// Completed successfully
+        eStatus_Done,      
+        /// Not completed yet
+        eStatus_Pending,   
+        /// Completed but failed, call GetErrors/GetErrorVector()
+        eStatus_Failed     
+    };
+
+    /// Returns the status of a previously submitted search/RID
+    ESearchStatus CheckStatus();
     
     /// Check whether the search has completed.
     ///
@@ -230,7 +260,6 @@ public:
     /// available will perform the CPU, network, and memory intensive
     /// processing, and the GetAlignments() (for example) call will
     /// simply return a pointer to part of this data.
-    ///
     /// @return true If search is not still running.
     bool CheckDone(void);
     
@@ -796,6 +825,9 @@ private:
 
     /// Negative GI list.
     list<Int4> m_NegativeGiList;
+
+    /// List of filtering algorithms to use in the database
+    list<Int4> m_DbFilteringAlgorithmIds;
 };
 
 /** Converts the return value of CSeqLocInfo::GetFrame into the

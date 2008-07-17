@@ -41,7 +41,6 @@
 #  undef numeric_limits
 #endif
 
-#define BOOST_AUTO_TEST_MAIN    // this should only be defined here!
 #include <boost/test/auto_unit_test.hpp>
 
 #ifndef BOOST_AUTO_TEST_CASE

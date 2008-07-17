@@ -364,7 +364,7 @@ static void s_VersionNumberTransform(const string & a, vector<int> & b)
     
     for(size_t i = 0; i < a.size(); i++) {
         int ch = a[i];
-        bool dig = isdigit(ch);
+		bool dig = isdigit(ch) ? true : false;
         
         if (dig) {
             int v = (ch - '0');

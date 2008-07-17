@@ -41,6 +41,7 @@
 #include "seqdbatlas.hpp"
 #include "seqdbgeneral.hpp"
 #include "seqdbtax.hpp"
+#include "seqdbcol.hpp"
 #include <objects/seq/seq__.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -803,6 +804,71 @@ public:
                     vector<int>    & oids,
                     CSeqDBLockHold & locked) const;
     
+    /// List the titles of all columns for this volume.
+    void ListColumns(set<string>    & titles,
+                     CSeqDBLockHold & locked);
+    
+    /// Get an ID number for a given column title.
+    ///
+    /// For a given column title, this returns an ID that can be used
+    /// to access that column in the future.  The returned ID number
+    /// is specific to this instance of SeqDB.  If the database does
+    /// not have a column with this name, -1 will be returned.
+    ///
+    /// @param title Column title to search for. [in]
+    /// @param locked The lock holder object for this thread. [in]
+    /// @return Column ID number for this column, or -1. [in]
+    int GetColumnId(const string   & title,
+                    CSeqDBLockHold & locked);
+    
+    /// Get all metadata for the specified column.
+    ///
+    /// Columns may contain user-defined metadata as a list of
+    /// key-value pairs.  For the specified column, this returns that
+    /// column's metadata in the provided map.  If multiple volumes
+    /// are present, and they define contradictory meta data (this is
+    /// more common when multiple databases are opened at once), this
+    /// method returns the first value it finds for each metadata key.
+    /// If this is unsatisfactory, the two-argument version of this
+    /// method may be used to get more precise values for specific
+    /// volumes.
+    /// 
+    /// @param col_id The column id from GetColumnId. [in]
+    /// @param locked The lock holder object for this thread. [in]
+    /// @return The map of metadata for this column. [out]
+    const map<string,string> &
+    GetColumnMetaData(int              col_id,
+                      CSeqDBLockHold & locked);
+    
+    /// Fetch the data blob for the given column and oid.
+    ///
+    /// This method finds the blob data for this OID and column, and
+    /// stores a reference to in the provided blob.  If `keep' is
+    /// true, a `lifetime' object is attached to the blob to insure
+    /// the memory is not unmapped when the atlas lock is released.
+    ///
+    /// It is important to specify `keep' correctly to avoid memory
+    /// faults and/or deadlocks.  If `keep' is false, the blob must
+    /// not be returned to the user or accessed after the atlas lock
+    /// is released, since the memory it references may no longer be
+    /// mmapped.  On the other hand, if `keep' is true, the blob may
+    /// be safely returned to the user, but must not be reassigned or
+    /// destructed until the atlas lock is released (or a deadlock
+    /// will occur).  This includes destruction due `stack unwinding'.
+    ///
+    /// For similar reasons, the blob should be empty on input.
+    ///
+    /// @param col_id The column to fetch data from. [in]
+    /// @param oid    The OID of the blob. [in]
+    /// @param blob   The data will be returned here. [out]
+    /// @param keep   If true, increment the memory region. [in]
+    /// @param locked The lock holder object for this thread. [in]
+    void GetColumnBlob(int              col_id,
+                       int              oid,
+                       CBlastDbBlob   & blob,
+                       bool             keep,
+                       CSeqDBLockHold & locked);
+    
 private:
     /// A set of GI lists.
     typedef vector< CRef<CSeqDBGiList> > TGiLists;
@@ -1221,6 +1287,15 @@ private:
     ///     The offset in the volume of that sequence in bytes.
     Uint8 x_GetSeqResidueOffset(int oid, CSeqDBLockHold & locked) const;
     
+    /// Find all columns for this volume.
+    ///
+    /// This method looks for and opens any columns that might be
+    /// associated with this database volume.
+    ///
+    /// @param locked
+    ///     The lock holder object for this thread. [in]
+    void x_OpenAllColumns(CSeqDBLockHold & locked);
+    
     /// Check Seq-id versions for special sparse-id support case.
     ///
     /// The BlastDB `sparse indexing' feature omits versions when
@@ -1255,7 +1330,7 @@ private:
     /// The name of this volume.
     string m_VolName;
     
-    /// Indexes the sequence, header, and ambiguity data.
+    /// Metadata plus offsets into the sequence, header, and ambiguity data.
     CRef<CSeqDBIdxFile> m_Idx;
     
     /// Contains sequence data for this volume.
@@ -1310,6 +1385,15 @@ private:
     
     /// Cache of filtered deflines.
     mutable CSeqDBIntCache<TDeflineCacheItem> m_DeflineCache;
+    
+    /// True if we have opened the columns for this volume.
+    bool m_HaveColumns;
+    
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    /// Set of columns defined for this volume.
+    vector< CRef<CSeqDBColumn> > m_Columns;
+#endif
 };
 
 END_NCBI_SCOPE

@@ -1,0 +1,208 @@
+
+Author:  Kevin Bealer
+Updated: May 2008
+
+----- Mask Data Column -----
+
+Column Title:  BlastDb/MaskData
+Encoding:      binary
+Style:         integer fields and nested arrays with prefixed lengths
+
+  The "Mask Data" or "Subject Masking" column is a BlastDB column
+  implemented via the normal SeqDB / WriteDB column code, but also
+  with some special support within the SeqDB and WriteDB design.
+
+  This file focuses on the format itself, but I'll also make a few
+  comments on the design and implementation of the Mask Data support
+  in SeqDB and WriteDB with respect to how it impacts the user.
+
+  When designing a new application of the column API, three decisions
+  must be made.  First, a column title is selected.  This will be used
+  by SeqDB or users of SeqDB to find the desired column.  Secondly, if
+  this application needs any key/value column metadata, the designer
+  needs to determine the format and usage of these strings.  Finally,
+  the format of the per-OID binary "blob" data must be defined.
+
+
+--- Column Title ---
+
+  For the Subject Masking Data feature, the title "BlastDb/MaskData"
+  was selected.
+
+  My intention was for "BlastDb/" to be the prefix for columns closely
+  tied to NCBI's BLAST group and the SeqDB and WriteDB formats.  I'd
+  recommend that each group select its own prefix, to avoid any future
+  naming conflicts.
+
+  (To SeqDB and WriteDB code, the column title is just a string.)
+
+
+--- Key/Value Meta-data ---
+
+  The key/value metadata maps a "key" string to a "value" string; the
+  data stored here is expected to be meta-data, carrying information
+  potentially applicable to any sequence or blob in the database.
+
+  The Mask Data column can store multiple types of masking data for
+  each column.  Each type of masking data is given a unique ID number.
+  For each ID number, there is a "masking program" number, indicating
+  a masking program such as DUST or SEG, and a text description of the
+  configuration of that program, such as "Repeats for 9606 and 10090"
+  or "defaults".
+
+  The key string for the meta data section is the algorithm ID number
+  (as a string in base 10).  The value string is the masking program
+  as a numerical value from the EBlast_filter_program enumeration,
+  followed by the ":" character, followed by the options string.  If
+  the ID# is 5, the program is DUST (enumeration 10), and the options
+  string is "The Mask Data of Zorro", then the key/value pair is:
+
+      "5" -> "10:The Mask of Zorro"
+
+  Each key is unique; however, this can creates a problem for SeqDB,
+  because it is possible for there to be multiple volumes using the
+  same key for a different combinations of progam + options string.
+
+  To safely combine volumes, SeqDB will detect and "repair" conflicts.
+  The algorithm leaves all numbers as they are unless there are
+  conflicts, but in the case of conflicts, SeqDB will redefine some of
+  the ID#s so that every unique program + options string is assigned a
+  unique ID#.
+
+  One consequence of this is that a combined program + options string
+  should exactly match another such string /if and only if/ the two
+  sets of data are, from the user's point of view, the same.  It is a
+  bad idea to use two different encodings of the program+options
+  string for two sets of data that are conceptually the same.  It is
+  also a bad idea to use one such encoding of the program + options
+  string for two sets of data that are conceptually distinct.
+
+  This is something of a user-interface question, because it is more
+  related to whether the user would tend to consider the two types of
+  masking data to be the same "in principle", in the context of
+  deciding which types of masking data to include.  Having two
+  enumerations for the "same" kind of data is confusing, but having
+  only one enumeration that is not specific enough, will result in
+  reduced options for database users.
+
+
+--- Blobs ---
+
+  The data in the per-OID ("blob") section of the column needs to be
+  compact and to perform well.  The Mask-Data column actually uses
+  several blob formats, differing by "integer size".  There are three
+  such formats.  In the first, the integers are 1 byte in length; in
+  the second, the integers are two bytes in length.  The final format
+  uses 4-byte integers.
+
+  When encoding a blob, WriteDB selects the smallest format that can
+  represent all masking data for that OID without truncating any
+  integers.  Note that the size of the largest integer stored in the
+  blob determines the size of representation for all integers -- for
+  simplicity and test coverage reasons, no attempt is made to mix
+  different integer sizes to save space.
+
+  One consequence of this design is that selecting a large value for
+  an integer such as the blast program enumeration can cause all blobs
+  storing that enumeration to potentially be larger than necessary.
+  (In practice, the ID values will tend to fit in the 1-byte format.)
+
+  The integer size is stored at the top of the blob as a single byte,
+  followed by enough `#' to pad to a multiple of that many bytes.
+  Since all further data is integers of this size, this padding aligns
+  the offset of all of these integers to multiples of this size (from
+  the offset of the beginning of the blob).  To make sure that all
+  blobs are also properly aligned in terms of file offset, the overall
+  Blob will be padded with `#' bytes until it is a multiple of the
+  largest size (4).
+
+  For the MaskData column, all per-OID data is parsed and generated
+  using the interface of the CBlastDbBlob class.
+
+
+--- Notation ---
+
+ The "Notes" column uses symbols in curly brackets, like this "{X}" to
+ define short variable names for a field's value.  Future use of the
+ symbol X will indicate the value of that field.
+
+ The suffix "[]" added to a type (e.g. Int4[]) indicates an array of
+ that type.
+
+ Note that the Column support uses the Blob objects to parse all
+ formats, so all of the following types of data can easily be parsed
+ using the Blob API.
+
+Int4:
+  Four byte integer, always in big-endian order.  Aligned to a 4 byte
+  multiple offset.
+
+Int2:
+  A two byte integer, always in big-endian order.  Aligned to a 2 byte
+  multiple offset.
+
+Int1:
+  A single byte integer.
+
+FILL(n):
+
+  This is not field-data but rather a series of `#' bytes used to pad
+  the buffer out to a multiple of alignment to a multiple of "n".
+
+
+--- Blob Format ---
+
+The symbol E represents the size of all integers stored here and IntE
+is the type of an integer of that size.  E is given by the value of
+the first byte (which must be 1, 2, or 4.)
+
+
+Offset   Type       Fieldname       Notes
+------   ----       ---------       -----
+0        Int1       integer-size    integer size (1, 2, 4). {E}
+1        FILL(E)    pad1            Align to size E, by inserting 0-3 `#'s.
+E        IntE       num-ranges      Number of sets of offset data. {Q}
+E*2      IntE       algorithm-id-0  Algorithm ID ("key" of the k/v data.)
+E*3      IntE       num-pairs       Number of offset-pairs. {P}
+E*4      IntE[P]    offset-start-0  First starting offset.
+E*5      IntE[P]    offset-end-0    First ending offset.
+...                                 Repetition of previous two fields
+                                    until P offset pairs have been emitted,
+E*(5+2P) IntE       algorithm-id-1  Repetition of last 4 fields until there
+                                    are Q sets of offset data.
+???      FILL(4)    pad2            This contains from 0-3 `#' bytes to pad
+                                    the object out to a four-byte multiple.
+
+
+The fixed size header (the first 32 bytes) is designed as a section that
+can be mapped or read to get an overview of the file's contents.  The
+variable length resources of the file can then be accessed sequentially
+(for the metadata) or in a random-access fashion (for the OID array) as
+needed.
+
+Notes on specific fields:
+
+num-ranges:
+
+  Should always be >= 1, and <= the number of key/value pairs in the
+  meta data section.  Only the types of masking data applied to this
+  sequence should be present here.  However, this *cannot be zero*.
+  In that case, the blob should be empty instead.
+
+number-of-offset-pairs:
+
+  This should be >= 1, otherwise do not include this algorithm in the
+  emitted list.  By prefixing the length (as opposed to using a "0/0"
+  offset pair or some other termination technique), I can skip over
+  arrays that are not important to this user.  This allows a "random
+  access" rather than "sequential" access pattern.
+
+offset-start-#:
+offset-end-#:
+
+  These are zero-based.  The range should not be empty.  The end field
+  should always be greater than start, the start should be zero or
+  positive, and the end should be less than or equal to the sequence
+  length.  These ranges represent the "masked" (e.g. low complexity or
+  non-searched) area.
+

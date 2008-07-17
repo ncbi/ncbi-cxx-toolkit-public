@@ -506,6 +506,11 @@ private:
     CWriteDB_PackedBuffer<BLOCK> m_Buffer;
 };
 
+/// Compute length of sequence from raw packing.
+/// @param protein Specify true for protein formats, false for nucleotide.
+/// @param seq Sequence data (in na2 format for nucletide).
+int WriteDB_FindSequenceLength(bool protein, const string & seq);
+
 END_NCBI_SCOPE
 
 

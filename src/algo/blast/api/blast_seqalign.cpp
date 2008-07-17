@@ -1255,6 +1255,33 @@ s_RemapToSubjectLoc(CRef<CSeq_align> & subj_aligns, const CSeq_loc& subj_loc)
 */
 }
 
+/// Retrieve the minimum and maximum subject offsets that span all HSPs in the
+/// hitlist.
+/// @param hsp_list HSP list to examine [in]
+/// @return empty TSeqRange if hsp_list is NULL, otherwise the advertised
+/// return value
+static TSeqRange s_GetSubjRanges(const BlastHSPList* hsp_list)
+{
+    TSeqRange retval;
+
+    if ( ! hsp_list ) {
+        return retval;
+    }
+
+    TSeqPos min = numeric_limits<TSeqPos>::max();
+    TSeqPos max = numeric_limits<TSeqPos>::min();
+
+    for (int i = 0; i < hsp_list->hspcnt; i++) {
+        const BlastHSP* hsp = hsp_list->hsp_array[i];
+        min = MIN(min, static_cast<TSeqPos>(hsp->subject.offset));
+        max = MAX(max, static_cast<TSeqPos>(hsp->subject.end));
+    }
+
+    retval.SetFrom(min);
+    retval.SetTo(max);
+    return retval;
+}
+
 CSeq_align_set*
 BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
                           EBlastProgramType        prog,
@@ -1262,7 +1289,8 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
                           TSeqPos                  query_length,
                           const IBlastSeqInfoSrc * seqinfo_src,
                           bool                     is_gapped,
-                          bool                     is_ooframe)
+                          bool                     is_ooframe,
+                          TSeqLocInfoVector      & subj_masks)
 {
     CSeq_align_set* seq_aligns = new CSeq_align_set();
     
@@ -1271,17 +1299,8 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
     }
     
     CConstRef<CSeq_id> query_id(& CSeq_loc_CI(query_loc).GetSeq_id());
-    
     _ASSERT(query_id);
     
-    TSeqPos subj_length = 0;
-    CConstRef<CSeq_id> subject_id;
-    
-    vector<int> gi_list;
-    
-    // stores a CSeq_align for each matching sequence
-    vector<CRef<CSeq_align > > hit_align;
-
     for (int index = 0; index < hit_list->hsplist_count; index++) {
         BlastHSPList* hsp_list = hit_list->hsplist_array[index];
         if (!hsp_list)
@@ -1292,14 +1311,23 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         // in Seq-aligns.
         Blast_HSPListSortByEvalue(hsp_list);
         
-        GetSequenceLengthAndId(seqinfo_src, hsp_list->oid,
-                               subject_id, &subj_length);
+        const Uint4 kOid = hsp_list->oid;
+        TSeqPos subj_length = 0;
+        CConstRef<CSeq_id> subject_id;
+        GetSequenceLengthAndId(seqinfo_src, kOid, subject_id, &subj_length);
         
-        
+        // Extract subject masks
+        TMaskedSubjRegions masks;
+        if (seqinfo_src->GetMasks(kOid, s_GetSubjRanges(hsp_list), masks)) {
+            subj_masks.push_back(masks);
+        }
+
         // Get GIs for entrez query restriction.
+        vector<int> gi_list;
         GetFilteredRedundantGis(*seqinfo_src, hsp_list->oid, gi_list);
         
-        hit_align.clear();
+        // stores a CSeq_align for each matching sequence
+        vector<CRef<CSeq_align > > hit_align;
         if (is_gapped) {
                 BLASTHspListToSeqAlign(prog,
                                        hsp_list,
@@ -1334,7 +1362,8 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                              EBlastProgramType        prog,
                              class ILocalQueryData  & query,
                              const IBlastSeqInfoSrc * seqinfo_src,
-                             const SPHIQueryInfo    * pattern_info)
+                             const SPHIQueryInfo    * pattern_info,
+                             vector<TSeqLocInfoVector>&    subj_masks)
 {
     TSeqAlignVector retval;
 
@@ -1342,6 +1371,9 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
        to different pattern occurrences. */
     BlastHSPResults* *phi_results = 
         PHIBlast_HSPResultsSplit(results, pattern_info);
+
+    subj_masks.clear();
+    subj_masks.resize(pattern_info->num_patterns);
 
     if (phi_results) {
         for (int pattern_index = 0; pattern_index < pattern_info->num_patterns;
@@ -1363,7 +1395,8 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                                               query.GetSeqLength(0),
                                               seqinfo_src,
                                               true,
-                                              false));
+                                              false,
+                                              subj_masks[pattern_index]));
                 
                 retval.push_back(seq_aligns);
 
@@ -1377,7 +1410,8 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                                               query.GetSeqLength(0),
                                               seqinfo_src,
                                               true,
-                                              false));
+                                              false,
+                                              subj_masks[pattern_index]));
                 retval.push_back(seq_aligns);
                 
             }
@@ -1409,7 +1443,8 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                                     EBlastProgramType prog, 
                                     Uint4 subj_index, 
                                     bool is_gapped, 
-                                    bool is_ooframe)
+                                    bool is_ooframe,
+                                    vector<TSeqLocInfoVector>& subj_masks)
 {
     _ASSERT(results->num_queries == (int)query_data.GetNumQueries());
 
@@ -1453,6 +1488,12 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             
             vector<int> gi_list;
             GetFilteredRedundantGis(seqinfo_src, hsp_list->oid, gi_list);
+
+            TMaskedSubjRegions masks;
+            if (seqinfo_src.GetMasks(subj_index, 
+                                      s_GetSubjRanges(hsp_list), masks)) {
+                subj_masks[qindex].push_back(masks);
+            }
             
             hit_align.clear();
             if (is_gapped) {
@@ -1498,18 +1539,24 @@ s_BlastResults2SeqAlignSequenceCmp_OMF(const BlastHSPResults* results,
                                        class ILocalQueryData& query_data,
                                        const IBlastSeqInfoSrc* seqinfo_src,
                                        bool is_gapped,
-                                       bool is_ooframe)
+                                       bool is_ooframe,
+                                       vector<TSeqLocInfoVector>& subj_masks)
 {
     TSeqAlignVector retval;
     retval.reserve(query_data.GetNumQueries() * seqinfo_src->Size());
 
     _ASSERT(results->num_queries == (int)query_data.GetNumQueries());
 
+    // Compute the subject masks
+    subj_masks.clear();
+    subj_masks.resize(results->num_queries);
+
     for (Uint4 index = 0; index < seqinfo_src->Size(); index++) {
         TSeqAlignVector seqalign =
             s_BLAST_OneSubjectResults2CSeqAlign(results, query_data, 
                                                 *seqinfo_src, prog, index, 
-                                                is_gapped, is_ooframe);
+                                                is_gapped, is_ooframe, 
+                                                subj_masks);
 
         /* Merge the new vector with the current. Assume that both vectors
            contain CSeq_align_sets for all queries, i.e. have the same 
@@ -1538,13 +1585,17 @@ s_BlastResults2SeqAlignDatabaseSearch_OMF(const BlastHSPResults  * results,
                                           class ILocalQueryData  & query,
                                           const IBlastSeqInfoSrc * seqinfo_src,
                                           bool                     is_gapped,
-                                          bool                     is_ooframe)
+                                          bool                     is_ooframe,
+                                          vector<TSeqLocInfoVector>&  subj_masks)
 {
     _ASSERT(results->num_queries == (int)query.GetNumQueries());
     
     TSeqAlignVector retval;
     CConstRef<CSeq_id> query_id;
     
+    subj_masks.clear();
+    subj_masks.resize(results->num_queries);
+
     // Process each query's hit list
     for (int index = 0; index < results->num_queries; index++) {
        BlastHitList* hit_list = results->hitlist_array[index];
@@ -1556,7 +1607,8 @@ s_BlastResults2SeqAlignDatabaseSearch_OMF(const BlastHSPResults  * results,
                                                 query.GetSeqLength(index),
                                                 seqinfo_src,
                                                 is_gapped,
-                                                is_ooframe));
+                                                is_ooframe,
+                                                subj_masks[index]));
        
        retval.push_back(seq_aligns);
        _TRACE("Query " << index << ": " << seq_aligns->Get().size()
@@ -1574,6 +1626,7 @@ LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
                    EBlastProgramType   program,
                    bool                gapped,
                    bool                oof_mode,
+                   vector<TSeqLocInfoVector>& subj_masks,
                    EResultType         result_type /* = eDatabaseSearch*/)
 {
     TSeqAlignVector retval;
@@ -1593,19 +1646,21 @@ LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
                                               program,
                                               local_data,
                                               & seqinfo_src,
-                                              query_info->pattern_info);
+                                              query_info->pattern_info,
+                                              subj_masks);
     } else {
         if (result_type == eSequenceComparison) {
             retval = 
                 s_BlastResults2SeqAlignSequenceCmp_OMF(hsp_results, program, 
                                                        local_data, &seqinfo_src,
-                                                       gapped, oof_mode);
+                                                       gapped, oof_mode,
+                                                       subj_masks);
         } else {
             retval = 
                 s_BlastResults2SeqAlignDatabaseSearch_OMF(hsp_results, program, 
                                                           local_data, 
                                                           &seqinfo_src, gapped,
-                                                          oof_mode);
+                                                          oof_mode, subj_masks);
         }
     }
     

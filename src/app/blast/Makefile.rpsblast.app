@@ -1,6 +1,6 @@
 APP = rpsblast
 SRC = rpsblast_app blast_format data4xmlformat blast_app_util
-LIB_ = $(BLAST_FORMATTER_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS) xalgowinmask
+LIB_ = $(BLAST_FORMATTER_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 CFLAGS   = $(FAST_CFLAGS)

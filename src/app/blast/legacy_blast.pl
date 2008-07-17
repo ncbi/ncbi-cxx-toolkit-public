@@ -38,13 +38,17 @@ use warnings;
 use Getopt::Long qw(:config no_ignore_case bundling no_auto_abbrev);
 use Pod::Usage;
 
-use constant VERSION => 1.0;
-use constant DEBUG => 1;
+use constant DEBUG => 0;
+# Default PATH where binaries will be found
+use constant DEFAULT_PATH => "/opt/ncbi/blast/bin";
 
 pod2usage({-exitval => 1, -verbose => 2}) if (@ARGV == 0);
 
 my $application = shift;
 my $print_only = "0"; # Determines whether script prints or runs the command
+# This array will contain file names to delete that are created with bl2seq's
+# -A option
+my @files2delete;
 
 my $cmd;
 if ($application eq "blastall") {
@@ -57,6 +61,15 @@ if ($application eq "blastall") {
     $cmd = &handle_bl2seq(\$print_only);
 } elsif ($application eq "rpsblast") {
     $cmd = &handle_rpsblast(\$print_only);
+} elsif ($application eq "fastacmd") {
+    $cmd = &handle_fastacmd(\$print_only);
+} elsif ($application eq "formatdb") {
+    $cmd = &handle_formatdb(\$print_only);
+} elsif ($application =~ /version/) {
+    my $revision = '$Revision$';
+    $revision =~ s/\$Revision: | \$//g;
+    print "$0 version $revision\n";
+    goto CLEAN_UP;
 } else {
     die "Application: '$application' is not supported\n";
 }
@@ -68,6 +81,9 @@ if ($print_only) {
     system($cmd);
 }
 
+CLEAN_UP:
+unlink foreach (@files2delete);
+
 sub convert_sequence_locations($$)
 {
     my $arg = shift;
@@ -76,6 +92,8 @@ sub convert_sequence_locations($$)
     if (defined $arg) {
         if ($target eq "query") {
             $retval .= "-query_loc ";
+        } elsif ($target eq "range") {
+            $retval .= "-range ";
         } else {
             $retval .= "-subject_loc ";
         }
@@ -149,6 +167,7 @@ sub convert_strand($)
 sub handle_blastall($)
 {
     my $print_only = shift;
+    my $path = DEFAULT_PATH;
     my ($opt_A, $opt_B, $opt_C, $opt_D, $opt_E, $opt_F, $opt_G, $opt_I, $opt_J, 
         $opt_K, $opt_L, $opt_M, $opt_O, $opt_P, $opt_Q, $opt_R, $opt_S, $opt_T, 
         $opt_U, $opt_V, $opt_W, $opt_X, $opt_Y, $opt_Z, $opt_a, $opt_b, $opt_d, 
@@ -157,6 +176,7 @@ sub handle_blastall($)
 
     GetOptions("<>"             => sub { $application = shift; },
                "print_only!"    => $print_only,
+               "path=s"         => \$path,
                "A=i"            => \$opt_A,
                "B=i"            => \$opt_B, # not handled, not applicable
                "C=s"            => \$opt_C,
@@ -207,14 +227,19 @@ sub handle_blastall($)
         die "-p must be provided\n";
     }
 
-    my $retval;
+    my $retval = $path;
     if (defined $opt_p) {
         if (defined $opt_R) {
-            $retval .= "./tblastn -in_pssm $opt_R ";
+            $retval .= "/tblastn";
+            $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+            $retval .= "-in_pssm $opt_R ";
         } elsif (defined $opt_n and $opt_n =~ /t/i) {
-            $retval .= "./blastn -task megablast ";
+            $retval .= "/blastn";
+            $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+            $retval .= "-task megablast ";
         } else {
-            $retval .= "./$opt_p ";                 
+            $retval .= "/$opt_p";
+            $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
             $retval .= "-task blastn " if ($opt_p eq "blastn");
         }
     }
@@ -309,6 +334,7 @@ sub handle_blastall($)
 sub handle_megablast($)
 {
     my $print_only = shift;
+    my $path = DEFAULT_PATH;
     my ($opt_A, $opt_D, $opt_E, $opt_F, $opt_G, $opt_H, $opt_I, $opt_J, 
         $opt_L, $opt_M, $opt_N, $opt_O, $opt_P, $opt_Q, $opt_R, $opt_S, 
         $opt_T, $opt_U, $opt_V, $opt_W, $opt_X, $opt_Y, $opt_Z, $opt_a, 
@@ -318,6 +344,7 @@ sub handle_megablast($)
 
     GetOptions("<>"             => sub { $application = shift; },
                "print_only!"    => $print_only,
+               "path=s"         => \$path,
                "A=i"            => \$opt_A,
                "D=i"            => \$opt_D,
                "E=i"            => \$opt_E,
@@ -361,9 +388,10 @@ sub handle_megablast($)
                "y=i"            => \$opt_y,
                "z=f"            => \$opt_z
                );
-    my $retval;
+    my $retval = $path;
 
-    $retval = "./blastn ";
+    $retval .= "/blastn";
+    $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
     $retval .= "-query $opt_i "             if (defined $opt_i);
     $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
     $retval .= "-evalue $opt_e "            if (defined $opt_e);
@@ -466,6 +494,7 @@ sub handle_megablast($)
 sub handle_blastpgp($)
 {
     my $print_only = shift;
+    my $path = DEFAULT_PATH;
     my ($opt_A, $opt_B, $opt_C, $opt_E, $opt_F, $opt_G, $opt_H, $opt_I, 
         $opt_J, $opt_K, $opt_L, $opt_M, $opt_N, $opt_O, $opt_P, $opt_Q, 
         $opt_R, $opt_S, $opt_T, $opt_U, $opt_W, $opt_X, $opt_Y, $opt_Z, 
@@ -475,6 +504,7 @@ sub handle_blastpgp($)
 
     GetOptions("<>"             => sub { $application = shift; },
                "print_only!"    => $print_only,
+               "path=s"         => \$path,
                "A=i"            => \$opt_A,
                "B=s"            => \$opt_B,
                "C=s"            => \$opt_C,
@@ -521,8 +551,8 @@ sub handle_blastpgp($)
                "y=f"            => \$opt_y,
                "z=f"            => \$opt_z
                );
-    #FIXME: should this binary be renamed to something like: iterated_blast
-    my $retval = "./psiblast ";
+    my $retval = $path . "/psiblast";
+    $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
 
     my $query_is_protein = "1";
 
@@ -650,6 +680,7 @@ sub handle_bl2seq
     use File::Temp qw(:POSIX);  # for tmpnam
 
     my $print_only = shift;
+    my $path = DEFAULT_PATH;
     my ($opt_A, $opt_D, $opt_E, $opt_F, $opt_G, $opt_I, $opt_J, $opt_M, 
         $opt_S, $opt_T, $opt_U, $opt_V, $opt_W, $opt_X, $opt_Y, $opt_a, 
         $opt_d, $opt_e, $opt_g, $opt_i, $opt_j, $opt_m, $opt_o, $opt_p, 
@@ -657,6 +688,7 @@ sub handle_bl2seq
 
     GetOptions("<>"             => sub { $application = shift; },
                "print_only!"    => $print_only,
+               "path=s"         => \$path,
                "A:s"            => \$opt_A,
                "D=i"            => \$opt_D,
                "E=i"            => \$opt_E,
@@ -685,26 +717,39 @@ sub handle_bl2seq
                "r=i"            => \$opt_r,
                "t=i"            => \$opt_t
                );
-    my $retval;
-    my $cmd_prefix = "";
-    my $cmd_suffix = "";
+    my $retval = $path;
 
     unless (defined $opt_i and defined $opt_j) {
         die "-i and -j are required in bl2seq\n";
     }
 
-    $retval .= "./$opt_p "                  if (defined $opt_p);
+    $retval .= "/$opt_p"                  if (defined $opt_p);
+    $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
     unless (defined $opt_A) {
         $retval .= "-query $opt_i "             if (defined $opt_i);
         $retval .= "-subject $opt_j "           if (defined $opt_j);
     } else {
         # The -A option is not supported, so we create temporary files to
-        # simulate it
+        # simulate it (example input: bl2seq -i129295 -j104501 -pblastp -A)
         my $query_fname = tmpnam();
+        open(Q, ">$query_fname") or die "Failed to open $query_fname: $!\n";
+        print Q "$opt_i" and close(Q);
+        push @files2delete, $query_fname;
+
         my $subj_fname = tmpnam();
-        $cmd_prefix = "echo $opt_i > $query_fname; echo $opt_j > $subj_fname; ";
-        $cmd_suffix = " ; rm $query_fname $subj_fname;";
+        open(S, ">$subj_fname") or die "Failed to open $subj_fname: $!\n";
+        print S "$opt_j" and close(S);
+        push @files2delete, $subj_fname;
+        if (DEBUG) {
+            print STDERR "Created temp. files $query_fname and $subj_fname\n";
+        }
+
         $retval .= "-query $query_fname -subject $subj_fname ";
+        if ($$print_only) {
+            print STDERR "Warning: arguments to -query and -subject must be ";
+            print STDERR "files containing the\narguments to bl2seq's -i and ";
+            print STDERR "-j arguments respectively.\n";
+        }
     }
     $retval .= "-out $opt_o "               if (defined $opt_o);
     if (defined $opt_a) {
@@ -751,12 +796,13 @@ sub handle_bl2seq
         die "Tabular is not handled yet in new C++ binaries!\n";
     }
 
-    return $cmd_prefix . $retval . $cmd_suffix;
+    return $retval;
 }
 
 sub handle_rpsblast
 {
     my $print_only = shift;
+    my $path = DEFAULT_PATH;
     my ($opt_F, $opt_I, $opt_J, $opt_L, $opt_N, $opt_O, $opt_P, $opt_T, 
         $opt_U, $opt_V, $opt_X, $opt_Y, $opt_Z, $opt_a, $opt_b, $opt_d, 
         $opt_e, $opt_i, $opt_l, $opt_m, $opt_o, $opt_p, $opt_v, $opt_y, 
@@ -764,6 +810,7 @@ sub handle_rpsblast
 
     GetOptions("<>"             => sub { $application = shift; },
                "print_only!"    => $print_only,
+               "path=s"         => \$path,
                "F=s"            => \$opt_F,
                "I:s"            => \$opt_I,
                "J:s"            => \$opt_J,
@@ -790,13 +837,14 @@ sub handle_rpsblast
                "y=f"            => \$opt_y,
                "z=f"            => \$opt_z
                );
-    my $retval;
+    my $retval = $path;
 
     if (defined $opt_p and $opt_p =~ /f/i) {
-        $retval = "./rpstblastn ";
+        $retval .= "/rpstblastn";
     } else {
-        $retval = "./rpsblast ";
+        $retval .= "/rpsblast";
     }
+    $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
 
     $retval .= "-query $opt_i "             if (defined $opt_i);
     $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
@@ -852,6 +900,186 @@ sub handle_rpsblast
     return $retval;
 }
 
+sub handle_fastacmd
+{
+    my $print_only = shift;
+    my $path = DEFAULT_PATH;
+    my ($opt_d, $opt_p, $opt_s, $opt_i, $opt_a, $opt_l, $opt_t, $opt_o,
+        $opt_c, $opt_D, $opt_L, $opt_S, $opt_T, $opt_I, $opt_P);
+
+    GetOptions("<>"             => sub { $application = shift; },
+               "print_only!"    => $print_only,
+               "path=s"         => \$path,
+               "D=i"            => \$opt_D,
+               "I:s"            => \$opt_I,
+               "L=s"            => \$opt_L,
+               "P=i"            => \$opt_P,
+               "S=i"            => \$opt_S,
+               "T:s"            => \$opt_T,
+               "a:s"            => \$opt_a,
+               "c:s"            => \$opt_c,
+               "d=s"            => \$opt_d,
+               "i=s"            => \$opt_i,
+               "l=i"            => \$opt_l,
+               "o=s"            => \$opt_o,
+               "p=s"            => \$opt_p,
+               "s=s"            => \$opt_s,
+               "t:s"            => \$opt_t
+               );
+
+    my $retval = $path . "/blastdbcmd";
+    $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+    $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
+    if (defined $opt_p) {
+        $retval .= "-dbtype ";
+        if ($opt_p =~ /p/i) {
+            $retval .= "prot ";
+        } elsif ($opt_p =~ /f/i) {
+            $retval .= "nucl ";
+        } else {
+            $retval .= "guess ";
+        }
+    }
+    $retval .= "-entry $opt_s "             if (defined $opt_s);
+    $retval .= "-entry_batch $opt_i "       if (defined $opt_i);
+    $retval .= "-line_length $opt_l "       if (defined $opt_l);
+    $retval .= "-out $opt_o "               if (defined $opt_o);
+    $retval .= "-pig $opt_P "               if (defined $opt_P);
+    if (defined $opt_D) {
+        $retval .= "-entry all -outfmt ";
+        if ($opt_D eq '1') {
+            $retval .= "\%f ";
+        } elsif ($opt_D eq '2') {
+            $retval .= "\%g ";
+        } elsif ($opt_D eq '3') {
+            $retval .= "\%a ";
+        } else {
+            die "Invalid argument to -D\n";
+        }
+    }
+    $retval .= &convert_sequence_locations($opt_L, "range") if ($opt_L);
+    $retval .= &convert_strand($opt_S) if (defined $opt_S);
+    if (defined $opt_T) {
+        #print STDERR "Warning: -T option is not supported, please use " .
+        #    "the -outfmt option to blastdbcmd with \%T, \%L, or \%S as an " .
+        #    "argument\n";
+        $retval .= "-outfmt \"NCBI Taxonomy id: \%T; Common name: \%L; ";
+        $retval .= "Scientific name: \%S\" ";
+    }
+    if (defined $opt_I and (length($opt_I) == 0 or $opt_I =~ /t/i)) {
+        $retval .= "-info ";
+    }
+    if (defined $opt_a and (length($opt_a) == 0 or $opt_a =~ /t/i)) {
+        $retval .= "-get_dups T ";
+    }
+    if (defined $opt_t and (length($opt_t) == 0 or $opt_t =~ /t/i)) {
+        $retval .= "-target_only T ";
+    }
+    if (defined $opt_c and (length($opt_c) == 0 or $opt_c =~ /t/i)) {
+        $retval .= "-ctrl_a T ";
+    }
+    return $retval;
+}
+
+sub handle_formatdb
+{
+    my $print_only = shift;
+    my $path = DEFAULT_PATH;
+    my ($opt_B, $opt_F, $opt_L, $opt_T, $opt_V, $opt_a, $opt_b, $opt_e, $opt_i,
+        $opt_l, $opt_n, $opt_o, $opt_p, $opt_s, $opt_t, $opt_v);
+
+    GetOptions("<>"             => sub { $application = shift; },
+               "print_only!"    => $print_only,
+               "path=s"         => \$path,
+               "B=s"            => \$opt_B,
+               "F=s"            => \$opt_F,
+               "L=s"            => \$opt_L,
+               "T=s"            => \$opt_T,
+               "V:s"            => \$opt_V,
+               "a:s"            => \$opt_a,
+               "b:s"            => \$opt_b,
+               "e:s"            => \$opt_e,
+               "i=s"            => \$opt_i,
+               "l=s"            => \$opt_l,
+               "n=s"            => \$opt_n,
+               "o:s"            => \$opt_o,
+               "p:s"            => \$opt_p,
+               "s:s"            => \$opt_s,
+               "t=s"            => \$opt_t,
+               "v=i"            => \$opt_v
+               );
+
+    my $retval = $path;
+    if (defined $opt_L) {
+        $retval .= "/blastdb_aliastool";
+        die "-i is required\n" unless (defined $opt_i);
+        die "-F is required\n" unless (defined $opt_F);
+    } else {
+        $retval .= "/makeblastdb";
+    }
+    $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+
+    if (defined $opt_B) {
+        die "-F option must be specified with -B\n" unless (defined $opt_F);
+        $retval = $path . "/blastdb_aliastool";
+        $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+        $retval .= "-gi_file_in $opt_F -gi_file_out $opt_B";
+        return $retval;
+    }
+
+    $retval .= "-title \"$opt_t\" "         if (defined $opt_t);
+    if (defined $opt_p) {
+        $retval .= "-dbtype ";
+        if ((length($opt_p) == 0 or $opt_p =~ /t/i)) {
+            $retval .= "prot ";
+        } else {
+            $retval .= "nucl ";
+        }
+    }
+    if ($retval =~ /blastdb_aliastool/) {
+        $retval .= "-out $opt_L "               if (defined $opt_L);
+        if (defined $opt_i and not defined $opt_n) {
+            $retval .= "-db $opt_i ";
+        }
+        # there's no -n in blastdb_aliastool, as we copy the argument value
+        # verbatim into the DBLIST field of the alias file, so we make
+        # formatdb's -n option tool override -i
+        $retval .= "-db $opt_n "                if (defined $opt_n);
+    } else {
+        $retval .= "-out $opt_n "               if (defined $opt_n);
+        $retval .= "-in $opt_i "                if (defined $opt_i);
+    }
+    $retval .= "-gilist $opt_F "            if (defined $opt_F);
+    $retval .= "-logfile $opt_l "           if (defined $opt_l);
+
+    if (defined $opt_o and (length($opt_o) == 0 or $opt_o =~ /t/i)) {
+        $retval .= "-parse_seqids ";
+    }
+    if (defined $opt_a) {
+        print STDERR "Warning: -a option is not supported\n";
+    }
+    if (defined $opt_b) {
+        print STDERR "Warning: -b option is not supported\n";
+    }
+    if (defined $opt_e) {
+        print STDERR "Warning: -e option is not supported\n";
+    }
+    if (defined $opt_s) {
+        print STDERR "Warning: -s option is not supported\n";
+    }
+    if (defined $opt_V) {
+        print STDERR "Warning: -V option is not supported\n";
+    }
+    if (defined $opt_T) {
+        print STDERR "Warning: -T option is not supported, please use " .
+            "the -taxid-map option to multisource\n";
+    }
+    if (defined $opt_v) {
+        print STDERR "Warning: -v option is not supported, please use " .
+            "the -max_file_sz option to makeblastdb\n";
+    }
+    return $retval;
+}
 __END__
 
 =head1 NAME
@@ -862,21 +1090,37 @@ toolkit's implementation to NCBI C++ toolkit's implementation.
 =head1 SYNOPSIS
 
 legacy_blast.pl <C toolkit command line program and arguments> [--print_only] 
+[--path /path/to/binaries] 
+legacy_blast.pl [--version]
 
 =head1 OPTIONS
 
 =over 2
 
+=item B<--path>
+
+Use the provided path as the location of the BLAST binaries to execute/print
+(default: /opt/ncbi/blast/bin).
+
 =item B<--print_only>
 
 Print the equivalent command line option instead of running the command
-(default: false). This option MUST be the last argument to the script.
+(default: false).
+
+=item B<--version>
+
+Prints this script's version. Must be invoked as the first and only argument to
+this script.
+
+=back
 
 =head1 DESCRIPTION
 
 This script converts and runs the equivalent NCBI C toolkit command line BLAST 
 program and arguments provided to it (whenever possible) to NCBI C++ tookit 
-BLAST programs.
+BLAST programs. Note that to specify options to this script they B<MUST> use 2
+dashes to prefix the options B<AND> be listed at the end of the command line
+invocation to convert.
 
 =head1 EXIT CODES
 

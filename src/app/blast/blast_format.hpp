@@ -91,6 +91,10 @@ public:
     /// @param use_sum_statistics Were sum statistics used in this search? [in]
     /// @param is_remote_search is this formatting the results of a remote
     /// search [in]
+    /// @param dbfilt_algorithms BLAST database filtering algorithm IDs (if
+    /// applicable) [in]
+    /// @param is_megablast true if megablast [in]
+    /// @param is_indexed true if indexed search [in]
     CBlastFormat(const blast::CBlastOptions& opts, const string& dbname, 
                  blast::CFormattingArgs::EOutputFormat format_type, 
                  bool db_is_aa, bool believe_query, CNcbiOstream& outfile,
@@ -103,7 +107,10 @@ public:
                  int qgencode = BLAST_GENETIC_CODE,
                  int dbgencode = BLAST_GENETIC_CODE,
                  bool use_sum_statistics = false,
-                 bool is_remote_search = false);
+                 bool is_remote_search = false,
+                 const vector<int>& dbfilt_algorithms = vector<int>(),
+                 bool is_megablast = false,
+                 bool is_indexed = false);
 
     /// Print the header of the blast report
     void PrintProlog();
@@ -118,6 +125,22 @@ public:
     /// @param prev_seqids list of previously found Seq-ids, if applicable,
     /// otherwise it should be an empty list [in]
     void PrintOneResultSet(const blast::CSearchResults& results,
+                           CConstRef<blast::CBlastQueryVector> queries,
+                           unsigned int itr_num =
+                           numeric_limits<unsigned int>::max(),
+                           blast::CPsiBlastIterationState::TSeqIds prev_seqids =
+                           blast::CPsiBlastIterationState::TSeqIds());
+
+    /// Print all alignment information for aa PHI-BLAST run.
+    /// any errors or warnings (errors are deemed fatal)
+    /// @param result_set Object containing alignments, mask regions, and
+    ///                ancillary data to be output [in]
+    /// @param queries Query sequences (cached for XML formatting) [in]
+    /// @param itr_num iteration number, if applicable, otherwise it should be
+    /// numeric_limits<unsigned int>::max() [in]
+    /// @param prev_seqids list of previously found Seq-ids, if applicable,
+    /// otherwise it should be an empty list [in]
+    void PrintPhiResult(const blast::CSearchResultSet& result_set,
                            CConstRef<blast::CBlastQueryVector> queries,
                            unsigned int itr_num =
                            numeric_limits<unsigned int>::max(),
@@ -165,7 +188,12 @@ private:
     bool m_IsBl2Seq;            
     /// True if this object is formatting the results of a remote search
     bool m_IsRemoteSearch;
+    /// Used to count number of searches formatted. 
+    int m_QueriesFormatted;
     
+    bool m_Megablast;           ///< true if megablast was used.
+    bool m_IndexedMegablast;    ///< true if indexed megablast was used.
+
     /// internal representation of database information
     vector<CBlastFormatUtil::SDbInfo> m_DbInfo;
 
@@ -178,8 +206,10 @@ private:
     /// @param summary The ancillary data to report [in]
     void x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary);
 
-    /// Initialize database statistics
-    void x_FillDbInfo();
+    /// Initialize database information
+    /// @param dbfilt_algorithms filtering algorithm IDs used for this search
+    /// [in]
+    void x_FillDbInfo(const vector<int>& dbfilt_algorithms);
 
     /// Initialize database statistics with data from BLAST servers
     /// @param dbname name of a single BLAST database [in]
@@ -193,10 +223,13 @@ private:
     /// databases
     /// @param dbname name of a single BLAST database [in]
     /// @param info structure to fill [in|out]
+    /// @param dbfilt_algorithms filtering algorithm IDs used for this search
+    /// [in]
     /// @return true if successfully filled, false otherwise (and a warning is
     /// printed out)
     bool x_FillDbInfoLocally(const string& dbname, 
-                             CBlastFormatUtil::SDbInfo& info) const;
+                             CBlastFormatUtil::SDbInfo& info,
+                             const vector<int>& dbfilt_algorithms) const;
 
     /// Display the BLAST deflines in the traditional BLAST report
     /// @param aln_set alignments to display [in]
@@ -225,6 +258,17 @@ private:
     /// Configure the CShowBlastDefline instance passed to it
     /// @param showdef CShowBlastDefline object to configure [in|out]
     void x_ConfigCShowBlastDefline(CShowBlastDefline& showdef);
+
+    /// Prints XML and both species of ASN.1
+    /// @param results Results for one query or Phi-blast iteration [in]
+    /// @param queries Bioseqs to be formatted (for XML) [in]
+    void CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
+         CConstRef<blast::CBlastQueryVector> queries);
+
+   /// Prints Tabular report for one query
+   /// @param results Results for one query or Phi-blast iteration [in]
+   /// @param itr_num Iteration number for PSI-BLAST [in]
+   void CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results, unsigned int itr_num);
 };
 
 END_NCBI_SCOPE

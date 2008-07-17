@@ -132,6 +132,7 @@ private:
     Blast_KarlinBlk *m_PsiGappedKarlinBlk;
 
     /// Search space used when calculating e-values for one query
+
     Int8 m_SearchSpace;
 
     /// Workhorse for copy constructor and assignment operator
@@ -160,7 +161,8 @@ public:
                    const TQueryMessages          & errs,
                    CRef<CBlastAncillaryData>       ancillary_data,
                    const TMaskedQueryRegions     * query_masks = NULL,
-                   const string                  & rid = kEmptyStr);
+                   const string                  & rid = kEmptyStr,
+                   const SPHIQueryInfo           * phi_query_info = NULL);
         
     /// Sets the RID for these results
     /// @param rid RID to set [in]
@@ -213,6 +215,21 @@ public:
     /// @param flt_query_regions the input value [in]
     void SetMaskedQueryRegions(const TMaskedQueryRegions& flt_query_regions);
     
+    /// Retrieve the masked locations for the subject sequences in the
+    /// contained alignment
+    /// @param subj_masks masked locations [out]
+    void GetSubjectMasks(TSeqLocInfoVector& subj_masks) const;
+
+    /// Set the masked locations for the subject sequences in the
+    /// contained alignment
+    /// @param subj_masks masked locations [in]
+    void SetSubjectMasks(const TSeqLocInfoVector& subj_masks);
+
+    /// Retrieves PHI-BLAST information about pattern on query.
+    const SPHIQueryInfo * GetPhiQueryInfo() const {
+         return m_PhiQueryInfo;
+    }
+
 private:
     /// this query's id
     CConstRef<objects::CSeq_id> m_QueryId;
@@ -226,11 +243,18 @@ private:
     /// this query's masked regions
     TMaskedQueryRegions m_Masks;
 
+    /// the matching subjects masks
+    TSeqLocInfoVector m_SubjectMasks;
+
     /// non-alignment ancillary data for this query
     CRef<CBlastAncillaryData> m_AncillaryData;
 
     /// The RID, if applicable (otherwise it's empty)
     string m_RID;
+
+    /// PHI-BLAST information.
+    SPHIQueryInfo *m_PhiQueryInfo;
+
 };
 
 
@@ -256,6 +280,9 @@ public:
     /// const_iterator type definition
     typedef vector<value_type>::const_iterator const_iterator;
 
+    /// iterator type definition
+    typedef vector<value_type>::iterator iterator;
+
     /// Simplest constructor
     CSearchResultSet(EResultType res_type = eDatabaseSearch);
 
@@ -280,7 +307,8 @@ public:
                      TAncillaryVector  ancillary_data = 
                      TAncillaryVector(),
                      const TSeqLocInfoVector* masks = NULL,
-                     EResultType res_type = eDatabaseSearch);
+                     EResultType res_type = eDatabaseSearch,
+                     const SPHIQueryInfo* phi_query_info = NULL);
 
     /// Allow array-like access with integer indices to CSearchResults 
     /// contained by this object
@@ -350,6 +378,14 @@ public:
     /// facilitate STL-style iteration
     const_iterator end() const { return m_Results.end(); }
 
+    /// Returns iterator to beginning of container, provided to
+    /// facilitate STL-style iteration
+    iterator begin() { return m_Results.begin(); }
+
+    /// Returns iterator to end of container, provided to
+    /// facilitate STL-style iteration
+    iterator end() { return m_Results.end(); }
+
     /// Clears the contents of this object
     void clear() {
         m_NumQueries = 0;
@@ -373,7 +409,8 @@ private:
                 TSeqAlignVector                       aligns,
                 TSearchMessages                       msg_vec,
                 TAncillaryVector                      ancillary_data,
-                const TSeqLocInfoVector*              query_masks);
+                const TSeqLocInfoVector*              query_masks,
+                const SPHIQueryInfo*                  phi_query_info = NULL);
     
     /// Type of results stored in this object
     EResultType m_ResultType;

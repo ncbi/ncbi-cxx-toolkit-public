@@ -40,8 +40,11 @@
 
 #include <objects/seq/seq__.hpp>
 #include <objects/blastdb/blastdb__.hpp>
+#include <objects/blastdb/defline_extra.hpp>
 #include <objtools/writers/writedb/writedb.hpp>
+#include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include "writedb_volume.hpp"
+#include "mask_info_registry.hpp"
 
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -67,10 +70,10 @@ public:
     /// @param protein True for protein, false for nucleotide.
     /// @param title Title string for volumes and alias file.
     /// @param indices Type of indexing to do for string IDs.
-    CWriteDB_Impl(const string & dbname,
-                  bool           protein,
-                  const string & title,
-                  EIndexType     indices);
+    CWriteDB_Impl(const string     & dbname,
+                  bool               protein,
+                  const string     & title,
+                  EIndexType         indices);
     
     /// Destructor.
     ~CWriteDB_Impl();
@@ -241,21 +244,118 @@ public:
     ///   The set of resolved database path names.
     void ListFiles(vector<string> & files);
     
+    /// Identifies the algorithm that produced the filtering data.
+    typedef vector<SBlastDbMaskData> TRanges;
+    
+    /// Register a type of filtering data found in this database.
+    ///
+    /// The BlastDb format supports storage of masking data (lists of
+    /// masked ranges) for each database sequence, as well as an
+    /// indication of the source (or sources) of this masking data (e.g.:
+    /// masking algorithm used to create them).
+    /// This method stores a description of one of these masking data
+    /// sources in this database, including which basic algorithm was
+    /// used, as well as the options passed to that algorithm.  Each
+    /// description is associated with a numeric `algorithm id' (return value
+    /// of this method), which identifies that data source when adding data
+    /// with SetMaskData.
+    ///
+    /// @return algorithm ID for the filtering data.
+    /// @param program Program used to produce this masking data. [in]
+    /// @param options Algorithm options provided to the program. [in]
+    int RegisterMaskAlgorithm(EBlast_filter_program   program,
+                             const string      & options);
+    
+    /// Set filtering data for a sequence.
+    /// 
+    /// This method specifies filtered regions for the sequence.  Each
+    /// sequence can have filtering data from various algorithms.
+    /// 
+    /// @param ranges Filtered ranges for this sequence and algorithm.
+    void SetMaskData(const TRanges & ranges);
+    
+    /// Set up a generic CWriteDB metadata column.
+    ///
+    /// This method creates a column with the specified name (title).
+    /// The name must be unique among names provided to this database.
+    /// An integer column descriptor is returned, which must be used
+    /// to identify this column when applying blob data.  This call
+    /// will fail with an exception if too many user defined columns
+    /// have already been created for this database (this limit is due
+    /// to BlastDb file naming conventions).  The title identifies
+    /// this column and is also used to access the column with SeqDB.
+    ///
+    /// @param title   Name identifying this column.
+    /// @return Column identifier (a positive integer).
+    int CreateColumn(const string & title);
+    
+    /// Find an existing column.
+    ///
+    /// This looks for an existing column with the specified title and
+    /// returns the column ID if found.
+    ///
+    /// @param title The column title to look for.
+    /// @return The column ID if this column title is already defined.
+    int FindColumn(const string & title) const;
+    
+    /// Add meta data to a column.
+    ///
+    /// In addition to normal blob data, database columns can store a
+    /// `dictionary' of user-defined metadata in key/value form.  This
+    /// method adds one such key/value pair to the column.  Specifying
+    /// a key a second time causes replacement of the previous value.
+    /// Using this mechanism to store large amounts of data may have a
+    /// negative impact on performance.
+    ///
+    /// @param col_id Specifies the column to add this metadata to.
+    /// @param key    A unique key string.
+    /// @param value  A value string.
+    void AddColumnMetaData(int            col_id,
+                           const string & key,
+                           const string & value);
+    
+    /// Get a blob to use for a given column letter.
+    ///
+    /// To add data for a `blob' type column, this method should be
+    /// called to get a reference to a CBlastDbBlob object.  Add the
+    /// user-defined blob data to this object.  It is not correct to
+    /// call this more than once for the same sequence and column.
+    /// Reading, writing, or otherwise using this object after the
+    /// current sequence is published is an error and has undefined
+    /// consequences.  ('Publishing' of a sequence usually occurs
+    /// during the following AddSequence(*) call or during Close().)
+    ///
+    /// @param col_id Indicates the column receiving the blob data.
+    /// @return The user data should be stored in this blob.
+    CBlastDbBlob & SetBlobData(int col_id);
+    
 private:
     // Configuration
     
-    string       m_Dbname;           ///< Database base name.
-    bool         m_Protein;          ///< True if DB is protein.
-    string       m_Title;            ///< Title field of database.
-    string       m_Date;             ///< Time stamp (for all volumes.)
-    Uint8        m_MaxFileSize;      ///< Maximum size of any file.
-    Uint8        m_MaxVolumeLetters; ///< Max letters per volume.
-    EIndexType   m_Indices;          ///< Indexing mode.
-    bool         m_Closed;           ///< True if database has been closed.
-    string       m_MaskedLetters;    ///< Masked protein letters (IUPAC).
-    string       m_MaskByte;         ///< Byte that replaced masked letters.
-    vector<char> m_MaskLookup;       ///< Maps (blast-aa) byte to maskedness.
-    bool         m_TraceIndex;       ///< Produce trace ID index.
+    string        m_Dbname;           ///< Database base name.
+    bool          m_Protein;          ///< True if DB is protein.
+    string        m_Title;            ///< Title field of database.
+    string        m_Date;             ///< Time stamp (for all volumes.)
+    Uint8         m_MaxFileSize;      ///< Maximum size of any file.
+    Uint8         m_MaxVolumeLetters; ///< Max letters per volume.
+    EIndexType    m_Indices;          ///< Indexing mode.
+    bool          m_Closed;           ///< True if database has been closed.
+    string        m_MaskedLetters;    ///< Masked protein letters (IUPAC).
+    string        m_MaskByte;         ///< Byte that replaced masked letters.
+    vector<char>  m_MaskLookup;       ///< Is (blast-aa) byte masked?
+    int           m_MaskDataColumn;   ///< Column ID for masking data column.
+    
+    /// Column titles.
+    vector<string> m_ColumnTitles;
+    
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    /// Per-column metadata.
+    typedef CWriteDB_Column::TColumnMeta TColumnMeta;
+    
+    /// Meta data for all columns.
+    vector< TColumnMeta > m_ColumnMetas;
+#endif
     
     // Functions
     
@@ -280,8 +380,14 @@ private:
     /// Collect ids for ISAM files.
     void x_CookIds();
     
+    /// Compute the length of the current sequence.
+    int x_ComputeSeqLength();
+    
     /// Convert sequence data into usable forms.
     void x_CookSequence();
+    
+    /// Prepare column data to be appended to disk.
+    void x_CookColumns();
     
     /// Replace masked input letters with m_MaskByte value.
     void x_MaskSequence();
@@ -399,6 +505,14 @@ private:
     /// @param sequence The sequence as a CBioseq. [in]
     void x_ComputeHash(const CBioseq & sequence);
     
+    /// Get the mask data column id.
+    ///
+    /// The mask data column is created if it does not exist, and its
+    /// column ID number is returned.
+    ///
+    /// @return The column ID for the mask data column.
+    int x_GetMaskDataColumnId();
+    
     //
     // Accumulated sequence data.
     //
@@ -427,6 +541,9 @@ private:
     /// Sequence hash for this sequence.
     int m_Hash;
     
+    /// When a sequence is added, this will be populated with the length of that sequence.
+    int m_SeqLength;
+    
     /// True if we have a sequence to write.
     bool m_HaveSequence;
     
@@ -448,6 +565,15 @@ private:
     
     /// List of all volumes so far, up to and including m_Volume.
     vector< CRef<CWriteDB_Volume> > m_VolumeList;
+    
+    /// Blob data for the current sequence, indexed by letter.
+    vector< CRef<CBlastDbBlob> > m_Blobs;
+    
+    /// List of blob columns that are active for this sequence.
+    vector<int> m_HaveBlob;
+    
+    /// Registry for masking algorithms in this database.
+    CMaskInfoRegistry m_MaskAlgoRegistry;
 };
 
 END_NCBI_SCOPE

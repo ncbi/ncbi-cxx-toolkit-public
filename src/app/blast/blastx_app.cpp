@@ -57,7 +57,9 @@ class CBlastxApp : public CNcbiApplication
 public:
     /** @inheritDoc */
     CBlastxApp() {
-        SetVersion(blast::Version);
+        CRef<CVersion> version(new CVersion());
+        version->SetVersionInfo(new CBlastVersion());
+        SetFullVersion(version);
     }
 private:
     /** @inheritDoc */
@@ -65,27 +67,19 @@ private:
     /** @inheritDoc */
     virtual int Run();
 
-    /// The object manager
-    CRef<CObjectManager> m_ObjMgr;
     /// This application's command line args
     CRef<CBlastxAppArgs> m_CmdLineArgs;
 };
 
 void CBlastxApp::Init()
 {
-    // get the object manager instance
-    m_ObjMgr = CObjectManager::GetInstance();
-    if (!m_ObjMgr) {
-        throw std::runtime_error("Could not initialize object manager");
-    }
-
     // formulate command line arguments
 
     m_CmdLineArgs.Reset(new CBlastxAppArgs());
 
     // read the command line
 
-    HideStdArgs(fHideLogfile | fHideConffile | fHideDryRun);
+    HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
     SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
 }
 
@@ -107,10 +101,11 @@ int CBlastxApp::Run(void)
         /*** Get the query sequence(s) ***/
         CRef<CQueryOptionsArgs> query_opts = 
             m_CmdLineArgs->GetQueryOptionsArgs();
-        const SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
+        SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
+        dlconfig.OptimizeForWholeLargeSequenceRetrieval();
         CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                      query_opts->UseLowercaseMasks(),
-                                     query_opts->BelieveQueryDefline(),
+                                     query_opts->GetParseDeflines(),
                                      query_opts->GetRange(),
                                      !m_CmdLineArgs->ExecuteRemotely());
         CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
@@ -118,26 +113,11 @@ int CBlastxApp::Run(void)
 
         /*** Initialize the database/subject ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
-        CRef<CLocalDbAdapter> db_adapter;   /* needed for local searches */
-        CRef<CSearchDatabase> search_db;    /* needed for remote searches and
-                                               for exporting the search
-                                               strategy */
-        search_db = db_args->GetSearchDatabase();
-        CRef<CScope> scope(new CScope(*m_ObjMgr));
-        if ( !m_CmdLineArgs->ExecuteRemotely() ) {
-            CRef<IQueryFactory> subjects;
-            if ( (subjects = db_args->GetSubjects(scope)) ) {
-                _ASSERT(search_db.Empty());
-                db_adapter.Reset(new CLocalDbAdapter(subjects, opts_hndl));
-            } else {
-                CRef<CSeqDB> seqdb = GetSeqDB(db_args);
-                db_adapter.Reset(new CLocalDbAdapter(seqdb));
-                scope->AddDataLoader(RegisterOMDataLoader(m_ObjMgr, seqdb));
-            }
-        } else {
-            // needed to fetch sequences remotely for formatting
-            scope = CBlastScopeSource(dlconfig).NewScope();
-        }
+        CRef<CLocalDbAdapter> db_adapter;
+        CRef<CScope> scope;
+        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
+                         db_adapter, scope);
+        _ASSERT(db_adapter && scope);
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
@@ -145,7 +125,7 @@ int CBlastxApp::Run(void)
                                db_args->GetDatabaseName(),
                                fmt_args->GetFormattedOutputChoice(),
                                db_args->IsProtein(),
-                               query_opts->BelieveQueryDefline(),
+                               query_opts->GetParseDeflines(),
                                m_CmdLineArgs->GetOutputStream(),
                                fmt_args->GetNumDescriptions(),
                                fmt_args->GetNumAlignments(),
@@ -156,7 +136,8 @@ int CBlastxApp::Run(void)
                                opt.GetQueryGeneticCode(),
                                opt.GetDbGeneticCode(),
                                opt.GetSumStatisticsMode(),
-                               m_CmdLineArgs->ExecuteRemotely());
+                               m_CmdLineArgs->ExecuteRemotely(),
+                               db_adapter->GetFilteringAlgorithms());
         
         formatter.PrintProlog();
 
@@ -166,8 +147,7 @@ int CBlastxApp::Run(void)
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));
 
-            SaveSearchStrategy(args, m_CmdLineArgs, queries, opts_hndl, 
-                               search_db);
+            SaveSearchStrategy(args, m_CmdLineArgs, queries, opts_hndl);
 
             CRef<CSearchResultSet> results;
 

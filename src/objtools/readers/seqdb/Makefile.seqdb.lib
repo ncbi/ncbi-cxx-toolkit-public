@@ -17,6 +17,8 @@ seqdbisam \
 seqdbtax \
 seqdbgilistset \
 seqdbexpert \
+seqdbblob \
+seqdbcol \
 seqdbobj
 
 LIB = seqdb

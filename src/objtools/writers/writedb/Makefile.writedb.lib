@@ -3,7 +3,8 @@
 ASN_DEP = seq seqset blastdb
 
 SRC = writedb writedb_impl writedb_volume writedb_files writedb_isam \
-      writedb_convert writedb_general
+      writedb_convert writedb_general writedb_column mask_info_registry \
+	  taxid_set build_db multisource_util
 
 LIB = writedb
 

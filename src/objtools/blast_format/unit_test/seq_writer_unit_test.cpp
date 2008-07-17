@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <boost/test/auto_unit_test.hpp>
 #include <objtools/blast_format/seq_writer.hpp>
+#include <algo/blast/blastinput/blast_input.hpp>
 #include <corelib/ncbifile.hpp>
 
 USING_NCBI_SCOPE;
@@ -43,12 +44,20 @@ static const int kConvFlags =
     NStr::fAllowLeadingSymbols | 
     NStr::fAllowTrailingSymbols;
 
+BOOST_AUTO_TEST_CASE(TestNoFormatSpecifier)
+{
+    CSeqDB db("data/seqp", CSeqDB::eProtein);
+    const string format_spec("hello world!");
+    BOOST_REQUIRE_THROW(CSeqFormatter f(format_spec, db, std::cout),
+                        blast::CInputException);
+}
+
 BOOST_AUTO_TEST_CASE(TestValidFormatSpecifiers)
 {
     CSeqDB db("data/seqp", CSeqDB::eProtein);
 
     vector<string> format_specs;
-    format_specs.push_back("print %% sign");   // escape '%'
+    format_specs.push_back("%o print %% sign");   // escape '%'
     format_specs.push_back("%s");
     format_specs.push_back("%a");
     format_specs.push_back("%g");
@@ -73,9 +82,8 @@ BOOST_AUTO_TEST_CASE(TestRequestGiOidLength)
     ofstream out(fname.c_str());
     CSeqFormatter f(format_spec, db, out);
     CBlastDBSeqId id(NStr::IntToString(kGi));
-    bool rv = f.Write(id);
+    f.Write(id);
     out.close();
-    BOOST_REQUIRE(rv);
 
     ifstream in(fname.c_str());
     char buffer[256] = { '\0' };
@@ -91,7 +99,7 @@ BOOST_AUTO_TEST_CASE(TestRequestGiOidLength)
     BOOST_REQUIRE_EQUAL(gi, kGi);
     BOOST_REQUIRE_EQUAL(oid, 99);
     BOOST_REQUIRE_EQUAL(length, 99);
-    BOOST_REQUIRE_EQUAL(perc, "10%");
+    BOOST_REQUIRE_EQUAL(perc, string("10%"));
 }
 
 BOOST_AUTO_TEST_CASE(TestRequestAccessionPIGTaxidTitle)
@@ -105,9 +113,8 @@ BOOST_AUTO_TEST_CASE(TestRequestAccessionPIGTaxidTitle)
     ofstream out(fname.c_str());
     CSeqFormatter f(format_spec, db, out);
     CBlastDBSeqId id(NStr::IntToString(kGi));
-    bool rv = f.Write(id);
+    f.Write(id);
     out.close();
-    BOOST_REQUIRE(rv);
 
     ifstream in(fname.c_str());
     char buffer[256] = { '\0' };
@@ -126,6 +133,28 @@ BOOST_AUTO_TEST_CASE(TestRequestAccessionPIGTaxidTitle)
     BOOST_REQUIRE_EQUAL(taxid, 0);
 }
 
+BOOST_AUTO_TEST_CASE(TestRequestGiGivenPIG)
+{
+    const int kPig(1067150);
+    const int kGi(129295);
+    CTmpFile tmpfile;
+    const string& fname = tmpfile.GetFileName();
+    CSeqDB db("nr", CSeqDB::eProtein);
+    const string format_spec("%g");
+    ofstream out(fname.c_str());
+    CSeqFormatter f(format_spec, db, out);
+    CBlastDBSeqId id(kPig);
+    f.Write(id);
+    out.close();
+
+    ifstream in(fname.c_str());
+    char buffer[256] = { '\0' };
+    in.getline(buffer, sizeof(buffer));
+
+    const int gi_read = NStr::StringToInt(buffer, kConvFlags);
+    BOOST_REQUIRE_EQUAL(kGi, gi_read);
+}
+
 BOOST_AUTO_TEST_CASE(TestRequestSequenceDataLength)
 {
     const int kGi(43167137);
@@ -140,9 +169,8 @@ BOOST_AUTO_TEST_CASE(TestRequestSequenceDataLength)
     ofstream out(fname.c_str());
     CSeqFormatter f(format_spec, db, out);
     CBlastDBSeqId id(NStr::IntToString(kGi));
-    bool rv = f.Write(id);
+    f.Write(id);
     out.close();
-    BOOST_REQUIRE(rv);
 
     ifstream in(fname.c_str());
     char buffer[256] = { '\0' };

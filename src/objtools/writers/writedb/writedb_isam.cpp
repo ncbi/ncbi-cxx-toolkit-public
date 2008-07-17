@@ -28,8 +28,7 @@
  */
 
 /// @file writedb_isam.cpp
-/// Implementation for the CWriteDB_Isam class.
-/// class for WriteDB.
+/// Implementation for the CWriteDB_Isam and related classes.
 
 #include <ncbi_pch.hpp>
 #include <corelib/tempstr.hpp>
@@ -144,7 +143,10 @@ void CWriteDB_Isam::AddHash(int oid, int hash)
 
 void CWriteDB_Isam::Close()
 {
-    // Index must be closed first.
+    // Index must be closed first, because ISAM indices are built in
+    // memory until the volume is closed, and only then is anything
+    // written to disk.
+    
     m_IFile->Close();
     m_DFile->Close();
 }
@@ -380,6 +382,17 @@ void CWriteDB_IsamIndex::x_FlushNumericIndex()
     int count = (int) m_NumberTable.size();
     
     const SIdOid * prevp = 0;
+
+    // Note: could strip out code for 8/4 detection; then reorder this
+    // to sort the table first.  At that point, 8 byte detection could
+    // be done simply by looking at the last (highest) element.  This
+    // would have the effect of making ISAM file size overflow less
+    // accurate (since 8 byte detection is what triggers recomputation
+    // of ISAM data size for 12 byte entries rather than 8).  It is
+    // not likely that this would have any impact since ISAM files (or
+    // at least TIs) are probably guaranteed not to exceed the limit;
+    // in any case a conservative estimate of 12 bytes per ID could be
+    // used for numeric or just for TI indices.
     
     if (m_UseInt8) {
         for(int i = 0; i < count; i++) {

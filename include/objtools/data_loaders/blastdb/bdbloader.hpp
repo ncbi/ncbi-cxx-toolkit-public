@@ -59,7 +59,7 @@ const string kCFParam_BlastDb_DbType = "DbType"; // = EDbType (e.g. "Protein")
 
 class NCBI_XLOADER_BLASTDB_EXPORT CBlastDbDataLoader : public CDataLoader
 {
-    /// The sequence data will sliced into pieces of this size.
+    /// The sequence data will sliced into pieces of this size by default
     enum {
         kFastSequenceLoadSize = 1024,
         kSequenceSliceSize    = 65536
@@ -77,10 +77,21 @@ public:
     struct SBlastDbParam
     {
         SBlastDbParam(const string& db_name = "nr",
-                      EDbType       dbtype = eUnknown)
-            : m_DbName(db_name), m_DbType(dbtype) {}
-        string  m_DbName;
-        EDbType m_DbType;
+                      EDbType       dbtype = eUnknown,
+                      bool          use_fixed_size_slices = true)
+            : m_DbName(db_name), m_DbType(dbtype),
+              m_UseFixedSizeSlices(use_fixed_size_slices), m_BlastDbHandle(0) {}
+
+        SBlastDbParam(CRef<CSeqDB> db_handle,
+                      bool          use_fixed_size_slices = true)
+            : m_DbName(kEmptyStr), m_DbType(eUnknown),
+              m_UseFixedSizeSlices(use_fixed_size_slices), 
+              m_BlastDbHandle(db_handle) {}
+
+        string          m_DbName;
+        EDbType         m_DbType;
+        bool            m_UseFixedSizeSlices;
+        CRef<CSeqDB>    m_BlastDbHandle;
     };
 
     typedef SRegisterLoaderInfo<CBlastDbDataLoader> TRegisterLoaderInfo;
@@ -88,11 +99,13 @@ public:
         CObjectManager& om,
         const string& dbname = "nr",
         const EDbType dbtype = eUnknown,
+        bool use_fixed_size_slices = true,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         CRef<CSeqDB> db_handle,
+        bool use_fixed_size_slices = true,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(CConstRef<CSeqDB> db_handle);
@@ -159,13 +172,8 @@ private:
     typedef CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam> TMaker;
     friend class CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam>;
 
-    typedef CParamLoaderMaker<CBlastDbDataLoader, CRef<CSeqDB> > TRecycler;
-    friend class CParamLoaderMaker<CBlastDbDataLoader, CRef<CSeqDB> >;
-    
     CBlastDbDataLoader(const string&        loader_name,
                        const SBlastDbParam& param);
-    CBlastDbDataLoader(const string&        loader_name,
-                       CRef<CSeqDB>         db_handle);
     
     /// Prevent automatic copy constructor generation
     CBlastDbDataLoader(const CBlastDbDataLoader &);
@@ -318,7 +326,8 @@ public:
         ///   An object representing the specified range of sequence data.
         CSeqChunkData BuildDataChunk(int id, TSeqPos begin, TSeqPos end);
 
-        /// Add an empty CDelta_seq to the Seq-entry in m_TSE.
+        /// Add an the entire sequence data to this object's TSE as raw data in 
+        /// its Seq-data field
         void AddSeq_data(void);
 
         /// Add this sequence's identifiers to a lookup table.
@@ -393,6 +402,12 @@ private:
     CRef<CSeqDB>    m_SeqDB;       ///< The sequence database
 
     TIds            m_Ids;         ///< ID to OID translation
+
+    /// Determines whether sequences should be fetched in fixed size slices or
+    /// in incrementally larger sizes. The latter improves performance on
+    /// full sequence retrieval of large sequences, but degrades the
+    /// performance of retrieval of small sequence segments of large sequences
+    bool            m_UseFixedSizeSlices;
 };
 
 END_SCOPE(objects)

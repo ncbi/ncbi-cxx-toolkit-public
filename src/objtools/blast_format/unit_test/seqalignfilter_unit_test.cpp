@@ -290,9 +290,9 @@ BOOST_AUTO_TEST_CASE(s_TestSimpleFiltering)
 {
     START;
     
-    string fname_in = "./in_test.txt";
-    string fname_out = "./out_test.txt";
-    string fname_gis = "./gilist_test.txt";
+    string fname_in = "data/in_test.txt";
+    string fname_out = "data/out_test.txt";
+    string fname_gis = "data/gilist_test.txt";
 
 	CSeq_align_set aln_all;
     s_LoadSeqAlignsFromFile(aln_all, fname_in);
@@ -330,9 +330,9 @@ BOOST_AUTO_TEST_CASE(s_TestDBBasedFiltering)
 {
     START;
 
-    string fname_in = "./in_test.txt";
-    string fname_out = "./out_test.txt";
-    string fname_gis = "./gilist_test.txt";
+    string fname_in = "data/in_test.txt";
+    string fname_out = "data/out_test.txt";
+    string fname_gis = "data/gilist_test.txt";
 
     string db_name = "nr";
     bool use_prot = true;

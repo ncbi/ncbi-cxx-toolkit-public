@@ -33,7 +33,7 @@
 /// @file defline_extra.hpp
 /// Blast defline related defines
 #include <corelib/ncbistd.hpp>
-
+#include <objects/blastdb/Blast_filter_program.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -51,6 +51,26 @@ enum LinkoutTypes {
   eAnnotatedInMapviewer   = (1<<6),
   eGenomicSeq             = (1<<7),
   eBioAssay               = (1<<8)
+};
+
+/// Structure describing filtered regions created using a particular sequence
+/// filtering algorithm
+///
+/// Sequence offsets are inclusive, one-based, positive values.  The
+/// algorithm_id field can be one of the pre-defined ones or a user-defined
+/// combination of algorithm and options.  See WriteDB and SeqDB for
+/// more information about how to work with user defined types.
+
+struct SBlastDbMaskData {
+
+    /// Construct and clear this object.
+    SBlastDbMaskData() : algorithm_id((int)eBlast_filter_program_not_set) {}
+    
+    /// Identifies the algorithm used.
+    int algorithm_id;
+    
+    /// Start and end offsets of the filtered area.
+    vector< pair<TSeqPos, TSeqPos> > offsets;
 };
 
 END_objects_SCOPE

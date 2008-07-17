@@ -61,15 +61,23 @@ public:
     /// @param seqdb Pointer to the CSeqDB object to use.
     CSeqDbSeqInfoSrc(ncbi::CSeqDB* seqdb);
 
+    /// Our destructor
     virtual ~CSeqDbSeqInfoSrc();
 
+    /// Sets the filtering algorithm IDs used in the search
+    /// @param algo_ids filtering algorithm IDs [in]
+    void SetFilteringAlgorithmIds(const vector<int>& algo_ids);
+
     /// Retrieve a sequence identifier given its ordinal number.
+    /// @param index the ordinal number to retrieve [in]
     virtual list< CRef<objects::CSeq_id> > GetId(Uint4 oid) const;
 
     /// Method to retrieve the sequence location given its ordinal number.
+    /// @param index the ordinal number to retrieve [in]
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(Uint4 oid) const;
 
     /// Retrieve sequence length given its ordinal number.
+    /// @param index the ordinal number to retrieve [in]
     virtual Uint4 GetLength(Uint4 oid) const;
 
     /// Returns the size of the underlying container of sequences
@@ -78,8 +86,20 @@ public:
     /// Returns true if the subject is restricted by a GI list.
     virtual bool HasGiList() const;
     
+    /// Retrieves the subject masks for the corresponding index
+    /// @param index the ordinal number to retrieve [in]
+    /// @param target_range range for which to return masks for. Empty ranges
+    /// indicate that no masks should be retrieved, whole ranges mean that masks
+    /// for the whole sequence should be retrieved [in]
+    /// @param retval the masks will be returned through this parameter [out]
+    /// @return true if there were masks returned in retval, otherwise false.
+    virtual bool GetMasks(Uint4 index, 
+                          const TSeqRange& target_range,
+                          TMaskedSubjRegions& retval) const;
 private:
-    CRef<CSeqDB> m_iSeqDb; ///< BLAST database object
+    mutable CRef<CSeqDB> m_iSeqDb; ///< BLAST database object
+    /// Algorithm IDs for filtering algorithms used with these subjects
+    vector<int> m_FilteringAlgoIds;
 };
 
 END_SCOPE(blast)

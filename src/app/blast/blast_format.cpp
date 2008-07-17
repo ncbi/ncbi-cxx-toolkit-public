@@ -68,7 +68,10 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
                  int qgencode /* = BLAST_GENETIC_CODE */, 
                  int dbgencode /* = BLAST_GENETIC_CODE */,
                  bool use_sum_statistics /* = false */,
-                 bool is_remote_search /* = false */)
+                 bool is_remote_search /* = false */,
+                 const vector<int>& dbfilt_algorithms /* = vector<int>() */,
+                 bool is_megablast /* = false */,
+                 bool is_indexed /* = false */)
         : m_FormatType(format_type), m_IsHTML(is_html), 
           m_DbIsAA(db_is_aa), m_BelieveQuery(believe_query),
           m_Outfile(outfile), m_NumSummary(num_summary),
@@ -81,11 +84,14 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
           m_MatrixName(matrix_name),
           m_Scope(& scope),
           m_IsBl2Seq(false),
-          m_IsRemoteSearch(is_remote_search)
+          m_IsRemoteSearch(is_remote_search),
+          m_QueriesFormatted(0),
+          m_Megablast(is_megablast),
+          m_IndexedMegablast(is_indexed)
 {
     m_IsBl2Seq = static_cast<bool>(dbname == kEmptyStr);
     if ( !m_IsBl2Seq ) {
-        x_FillDbInfo();
+        x_FillDbInfo(dbfilt_algorithms);
     }
     if (m_FormatType == CFormattingArgs::eXml) {
         m_AccumulatedQueries.Reset(new CBlastQueryVector());
@@ -108,8 +114,6 @@ CBlastFormat::x_FillDbInfoRemotely(const string& dbname,
 
     info.name = dbname;
     if ( !dbinfo ) {
-        ERR_POST(Warning << "BLAST database '" << dbname 
-                 << "' not found on server.");
         return false;
     }
     info.definition = dbinfo->GetDescription();
@@ -117,18 +121,18 @@ CBlastFormat::x_FillDbInfoRemotely(const string& dbname,
         info.definition = info.name;
     info.date = dbinfo->GetLast_updated();
     info.total_length = dbinfo->GetTotal_length();
-    info.number_seqs = dbinfo->GetNum_sequences();
+    info.number_seqs = static_cast<int>(dbinfo->GetNum_sequences());
     return true;
 }
 
 bool
 CBlastFormat::x_FillDbInfoLocally(const string& dbname,
-                                  CBlastFormatUtil::SDbInfo& info) const
+                                  CBlastFormatUtil::SDbInfo& info, 
+                                  const vector<int>& dbfilt_algorithms) const
 {
     CRef<CSeqDB> seqdb(new CSeqDB(dbname, m_DbIsAA 
                           ? CSeqDB::eProtein : CSeqDB::eNucleotide));
     if ( !seqdb ) {
-        ERR_POST(Warning << "BLAST database '" << dbname << "' not found.");
         return false;
     }
     info.name = seqdb->GetDBNameList();
@@ -138,11 +142,40 @@ CBlastFormat::x_FillDbInfoLocally(const string& dbname,
     info.date = seqdb->GetDate();
     info.total_length = seqdb->GetTotalLength();
     info.number_seqs = seqdb->GetNumSeqs();
+
+    // Process the filtering algorithm IDs
+    info.algorithm_names.clear();
+    info.detailed_masking_info.clear();
+    if (dbfilt_algorithms.empty()) {
+        return true;
+    }
+
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    EBlast_filter_program filtering_algorithm;
+    string opts, filt_algo_name;
+    seqdb->GetMaskAlgorithmDetails(dbfilt_algorithms.front(), 
+                                   filtering_algorithm, filt_algo_name, opts);
+    info.algorithm_names += filt_algo_name;
+    size_t index = 1;
+    info.detailed_masking_info += 
+        NStr::IntToString(index) + ". " + filt_algo_name + ". Options: '" 
+        + opts + "'\n";
+    for (; index < dbfilt_algorithms.size(); index++) {
+        seqdb->GetMaskAlgorithmDetails(dbfilt_algorithms[index],
+                                       filtering_algorithm, filt_algo_name,
+                                       opts);
+        info.algorithm_names += ", " + filt_algo_name;
+        info.detailed_masking_info += "     " +
+            NStr::IntToString(index+1) + ". " + filt_algo_name + 
+            ". Options: '" + opts + "\n";
+    }
+#endif
     return true;
 }
 
 void
-CBlastFormat::x_FillDbInfo()
+CBlastFormat::x_FillDbInfo(const vector<int>& dbfilt_algorithms)
 {
     vector<string> dbnames;
     NStr::Tokenize(m_DbName, " ", dbnames);
@@ -151,17 +184,27 @@ CBlastFormat::x_FillDbInfo()
     ITERATE(vector<string>, dbname, dbnames) {
         CBlastFormatUtil::SDbInfo info;
         info.is_protein = m_DbIsAA;
-
         bool success = false;
+
         if (m_IsRemoteSearch) {
             success = x_FillDbInfoRemotely(*dbname, info);
         } else {
-            success = x_FillDbInfoLocally(*dbname, info);
+            success = x_FillDbInfoLocally(*dbname, info, dbfilt_algorithms);
         }
         if (success) {
             m_DbInfo.push_back(info);
+        } else {
+            string msg;
+            msg += *dbname;
+            if (m_IsRemoteSearch)
+                msg += string("' not found on server.\n");
+            else
+                msg += string("' not found.\n");
+            NCBI_THROW(CSeqDBException, eFileErr, msg);
         }
     }
+
+    return;
 }
 
 static const string kHTML_Prefix =
@@ -193,8 +236,19 @@ CBlastFormat::PrintProlog()
     }
 
     m_Outfile << "\n\n";
-    CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
+    if (m_Megablast)
+        CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
+                                          m_Outfile, CReference::eMegaBlast);
+    else
+        CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
                                           m_Outfile);
+
+    if (m_Megablast && m_IndexedMegablast)
+    {
+        m_Outfile << "\n\n";
+        CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
+                              m_Outfile, CReference::eIndexedMegablast);
+    }
 
     if (m_Program == "psiblast") {
         m_Outfile << "\n\n";
@@ -368,6 +422,102 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
     m_Outfile << "\n";
 }
 
+int
+s_SetFlags(string& program, 
+    blast::CFormattingArgs::EOutputFormat format_type,
+    bool html, bool showgi)
+{
+   // set the alignment flags
+    int flags = CDisplaySeqalign::eShowBlastInfo;
+    
+    if (html)
+        flags |= CDisplaySeqalign::eHtml;
+    if (showgi)
+        flags |= CDisplaySeqalign::eShowGi;
+
+    if (format_type >= CFormattingArgs::eQueryAnchoredIdentities &&
+        format_type <= CFormattingArgs::eFlatQueryAnchoredNoIdentities) {
+        flags |= CDisplaySeqalign::eMergeAlign;
+    }
+    else {
+        flags |= CDisplaySeqalign::eShowBlastStyleId |
+                 CDisplaySeqalign::eShowMiddleLine;
+    }
+
+    if (format_type == CFormattingArgs::eQueryAnchoredIdentities ||
+        format_type == CFormattingArgs::eFlatQueryAnchoredIdentities) {
+        flags |= CDisplaySeqalign::eShowIdentity;
+    }
+    if (format_type == CFormattingArgs::eQueryAnchoredIdentities ||
+        format_type == CFormattingArgs::eQueryAnchoredNoIdentities) {
+        flags |= CDisplaySeqalign::eMasterAnchored;
+    }
+    if (program == "tblastx") {
+        flags |= CDisplaySeqalign::eTranslateNucToNucAlignment;
+    }
+    return flags;
+}
+
+void 
+CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
+              CConstRef<blast::CBlastQueryVector> queries)
+{
+   CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
+
+    // ASN.1 formatting is straightforward
+    if (m_FormatType == CFormattingArgs::eAsnText) {
+        if (results.HasAlignments()) {
+            m_Outfile << MSerial_AsnText << *aln_set;
+        }
+        return;
+    } else if (m_FormatType == CFormattingArgs::eAsnBinary) {
+        if (results.HasAlignments()) {
+            m_Outfile << MSerial_AsnBinary << *aln_set;
+        }
+        return;
+    } else if (m_FormatType == CFormattingArgs::eXml) {
+        // Prepare for XML formatting
+        if (results.HasAlignments()) {
+            CRef<CSearchResults> res(const_cast<CSearchResults*>(&results));
+            m_AccumulatedResults.push_back(res);
+        }
+        ITERATE(CBlastQueryVector, itr, *queries) {
+            m_AccumulatedQueries->push_back(*itr);
+        }
+        return;
+    }
+}
+
+void
+CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results, unsigned int itr_num)
+{
+    CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
+    // other output types will need a bioseq handle
+    CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*results.GetSeqId(),
+                                                      CScope::eGetBioseq_All);
+
+    // tabular formatting just prints each alignment in turn
+    // (plus a header)
+    if (m_FormatType == CFormattingArgs::eTabular ||
+        m_FormatType == CFormattingArgs::eTabularWithComments) {
+        CBlastTabularInfo tabinfo(m_Outfile);
+        tabinfo.SetParseLocalIds(m_BelieveQuery);
+
+        if (m_FormatType == CFormattingArgs::eTabularWithComments)
+             tabinfo.PrintHeader(m_Program, *(bhandle.GetBioseqCore()),
+                                 m_DbName, results.GetRID(), itr_num, aln_set);
+
+        if (results.HasAlignments()) {
+            ITERATE(CSeq_align_set::Tdata, itr, aln_set->Get()) {
+                    const CSeq_align& s = **itr;
+                    tabinfo.SetFields(s, *m_Scope);
+                    tabinfo.Print();
+            }
+        }
+        return;
+    }
+}
+
 void
 CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
                         CConstRef<blast::CBlastQueryVector> queries,
@@ -386,60 +536,28 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
         ResetScopeHistory();
     }
 
-    CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
+    // Used with tabular output to print number of searches formatted at end.
+    m_QueriesFormatted++;
 
-    // ASN.1 formatting is straightforward
-    if (m_FormatType == CFormattingArgs::eAsnText) {
-        if (results.HasAlignments()) {
-            m_Outfile << MSerial_AsnText << *aln_set;
-        }
-        return;
-    } else if (m_FormatType == CFormattingArgs::eAsnBinary) {
-        if (results.HasAlignments()) {
-            m_Outfile << MSerial_AsnBinary << *aln_set;
-        }
-        return;
-    } else if (m_FormatType == CFormattingArgs::eXml) { 
-        // Prepare for XML formatting
-        if (results.HasAlignments()) {
-            CRef<CSearchResults> res(const_cast<CSearchResults*>(&results));
-            m_AccumulatedResults.push_back(res);
-        }
-        ITERATE(CBlastQueryVector, itr, *queries) {
-            m_AccumulatedQueries->push_back(*itr);
-        }
+    if (m_FormatType == CFormattingArgs::eAsnText 
+      || m_FormatType == CFormattingArgs::eAsnBinary 
+      || m_FormatType == CFormattingArgs::eXml )
+    {
+        x_PrintStructuredReport(results, queries);
         return;
     }
 
     if (results.HasErrors()) {
-        m_Outfile << "\n" << results.GetErrorStrings() << "\n";
-        return; // errors are deemed fatal
+            m_Outfile << "\n" << results.GetErrorStrings() << "\n";
+            return; // errors are deemed fatal
     }
     if (results.HasWarnings()) {
-        m_Outfile << "\n" << results.GetWarningStrings() << "\n";
+            m_Outfile << "\n" << results.GetWarningStrings() << "\n";
     }
 
-    // other output types will need a bioseq handle
-    CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*results.GetSeqId(),
-                                                      CScope::eGetBioseq_All);
-
-    // tabular formatting just prints each alignment in turn
-    // (plus a header)
-    if (m_FormatType == CFormattingArgs::eTabular || 
+    if (m_FormatType == CFormattingArgs::eTabular ||
         m_FormatType == CFormattingArgs::eTabularWithComments) {
-        CBlastTabularInfo tabinfo(m_Outfile);
-
-        if (m_FormatType == CFormattingArgs::eTabularWithComments)
-             tabinfo.PrintHeader(m_Program, *(bhandle.GetBioseqCore()),
-                                 m_DbName, results.GetRID(), itr_num, aln_set);
-                                 
-        if (results.HasAlignments()) {
-            ITERATE(CSeq_align_set::Tdata, itr, aln_set->Get()) {
-                    const CSeq_align& s = **itr;
-                    tabinfo.SetFields(s, *m_Scope);
-                    tabinfo.Print();
-            }
-        }
+        x_PrintTabularReport(results, itr_num);
         return;
     }
 
@@ -447,6 +565,12 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
         m_Outfile << "Results from round " << itr_num << "\n";
     }
 
+    // other output types will need a bioseq handle
+    CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*results.GetSeqId(),
+                                                      CScope::eGetBioseq_All);
+    // If this assertion fails, we're not able to get the query, most likely a
+    // bug
+    _ASSERT(bhandle);
     CConstRef<CBioseq> bioseq = bhandle.GetBioseqCore();
 
     // print the preamble for this query
@@ -466,6 +590,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
         return;
     }
 
+    CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
     _ASSERT(results.HasAlignments());
     if (m_IsUngappedSearch) {
         aln_set.Reset(CDisplaySeqalign::PrepareBlastUngappedSeqalign(*aln_set));
@@ -487,53 +612,30 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     CSeq_align_set copy_aln_set;
     CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_NumAlignments);
 
-    CDisplaySeqalign display(copy_aln_set, *m_Scope, &masklocs, NULL,
-                             m_MatrixName);
+    int flags = s_SetFlags(m_Program, m_FormatType, m_IsHTML, m_ShowGi);
+
+    CDisplaySeqalign display(copy_aln_set, *m_Scope, &masklocs, NULL, m_MatrixName);
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);
 
     // set the alignment flags
-    int flags = CDisplaySeqalign::eShowBlastInfo;
-
-    if (m_IsHTML)
-        flags |= CDisplaySeqalign::eHtml;
-    if (m_ShowGi)
-        flags |= CDisplaySeqalign::eShowGi;
-
-    if (m_FormatType >= CFormattingArgs::eQueryAnchoredIdentities && 
-        m_FormatType <= CFormattingArgs::eFlatQueryAnchoredNoIdentities) {
-        flags |= CDisplaySeqalign::eMergeAlign;
-    }
-    else {
-        flags |= CDisplaySeqalign::eShowBlastStyleId |
-                 CDisplaySeqalign::eShowMiddleLine;
-    }
-
-    if (m_FormatType == CFormattingArgs::eQueryAnchoredIdentities || 
-        m_FormatType == CFormattingArgs::eFlatQueryAnchoredIdentities) {
-        flags |= CDisplaySeqalign::eShowIdentity;
-    }
-    if (m_FormatType == CFormattingArgs::eQueryAnchoredIdentities || 
-        m_FormatType == CFormattingArgs::eQueryAnchoredNoIdentities) {
-        flags |= CDisplaySeqalign::eMasterAnchored;
-    }
-    if (m_Program == "tblastx") {
-        flags |= CDisplaySeqalign::eTranslateNucToNucAlignment;
-    }
     display.SetAlignOption(flags);
 
     if (m_Program == "blastn" || m_Program == "megablast") {
-        display.SetMiddleLineStyle(CDisplaySeqalign::eBar);
-        display.SetAlignType(CDisplaySeqalign::eNuc);
+            display.SetMiddleLineStyle(CDisplaySeqalign::eBar);
+            display.SetAlignType(CDisplaySeqalign::eNuc);
     }
     else {
-        display.SetMiddleLineStyle(CDisplaySeqalign::eChar);
-        display.SetAlignType(CDisplaySeqalign::eProt);
+            display.SetMiddleLineStyle(CDisplaySeqalign::eChar);
+            display.SetAlignType(CDisplaySeqalign::eProt);
     }
 
     display.SetMasterGeneticCode(m_QueryGenCode);
     display.SetSlaveGeneticCode(m_DbGenCode);
     display.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
+    TSeqLocInfoVector subj_masks;
+    results.GetSubjectMasks(subj_masks);
+    display.SetSubjectMasks(subj_masks);
     display.DisplaySeqalign(m_Outfile);
 
     // print the ancillary data for this query
@@ -541,12 +643,177 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     x_PrintOneQueryFooter(*results.GetAncillaryData());
 }
 
+void
+CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
+                        CConstRef<blast::CBlastQueryVector> queries,
+                        unsigned int itr_num
+                        /* = numeric_limits<unsigned int>::max() */,
+                        blast::CPsiBlastIterationState::TSeqIds prev_seqids
+                        /* = CPsiBlastIterationState::TSeqIds() */)
+{
+    // For remote searches, we don't retrieve the sequence data for the query
+    // sequence when initially sending the request to the BLAST server (if it's
+    // a GI/accession/TI), so we flush the scope so that it can be retrieved
+    // (needed if a self-hit is found) again. This is not applicable if the
+    // query sequence(s) are specified as FASTA (will be identified by local
+    // IDs).
+    if (m_IsRemoteSearch && !s_HasLocalIDs(queries)) {
+        ResetScopeHistory();
+    }
+
+    if (m_FormatType == CFormattingArgs::eAsnText 
+      || m_FormatType == CFormattingArgs::eAsnBinary 
+      || m_FormatType == CFormattingArgs::eXml )
+    {
+        ITERATE(CSearchResultSet, result, result_set) {
+           x_PrintStructuredReport(**result, queries);
+        }
+        return;
+    }
+
+    ITERATE(CSearchResultSet, result, result_set) {
+        if ((**result).HasErrors()) {
+            m_Outfile << "\n" << (**result).GetErrorStrings() << "\n";
+            return; // errors are deemed fatal
+        }
+        if ((**result).HasWarnings()) {
+            m_Outfile << "\n" << (**result).GetWarningStrings() << "\n";
+        }
+    }
+
+    if (m_FormatType == CFormattingArgs::eTabular ||
+        m_FormatType == CFormattingArgs::eTabularWithComments) {
+        ITERATE(CSearchResultSet, result, result_set) {
+           x_PrintTabularReport(**result, itr_num);
+        }
+        return;
+    }
+
+    const CSearchResults& first_results = result_set[0];
+
+    if (itr_num != numeric_limits<unsigned int>::max()) {
+        m_Outfile << "Results from round " << itr_num << "\n";
+    }
+
+    CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*first_results.GetSeqId(),
+                                                      CScope::eGetBioseq_All);
+    CConstRef<CBioseq> bioseq = bhandle.GetBioseqCore();
+
+    // print the preamble for this query
+
+    m_Outfile << "\n\n";
+    CBlastFormatUtil::AcknowledgeBlastQuery(*bioseq, kFormatLineLength,
+                                            m_Outfile, m_BelieveQuery,
+                                            m_IsHTML, false,
+                                            first_results.GetRID());
+
+    const SPHIQueryInfo *phi_query_info = first_results.GetPhiQueryInfo();
+
+    if (phi_query_info)
+    {
+        vector<int> offsets;
+        for (int index=0; index<phi_query_info->num_patterns; index++)
+            offsets.push_back(phi_query_info->occurrences[index].offset);
+
+        CBlastFormatUtil::PrintPhiInfo(phi_query_info->num_patterns,
+                                   string(phi_query_info->pattern), 
+                                   phi_query_info->probability,
+                                   offsets, m_Outfile);
+    }
+
+    // quit early if there are no hits
+    if ( !first_results.HasAlignments() ) {
+        m_Outfile << "\n\n" 
+                  << "***** " << kNoHitsFound << " *****" << "\n" 
+                  << "\n\n";
+        x_PrintOneQueryFooter(*first_results.GetAncillaryData());
+        return;
+    }
+
+    _ASSERT(first_results.HasAlignments());
+    //-------------------------------------------------
+
+    ITERATE(CSearchResultSet, result, result_set)
+    {
+        CConstRef<CSeq_align_set> aln_set = (**result).GetSeqAlign();
+        x_DisplayDeflines(aln_set, itr_num, prev_seqids);
+    }
+
+    //-------------------------------------------------
+    // print the alignments
+    m_Outfile << "\n";
+
+
+    int flags = s_SetFlags(m_Program, m_FormatType, m_IsHTML, m_ShowGi);
+
+    if (phi_query_info)
+    {
+        SPHIPatternInfo *occurrences = phi_query_info->occurrences;
+        int index;
+        for (index=0; index<phi_query_info->num_patterns; index++)
+        {
+           list <CDisplaySeqalign::FeatureInfo*> phiblast_pattern;
+           CSeq_id* id = new CSeq_id;
+           id->Assign(*(result_set[index]).GetSeqId());
+           CDisplaySeqalign::FeatureInfo*  feature_info = new CDisplaySeqalign::FeatureInfo;
+           feature_info->seqloc = new CSeq_loc(*id, (TSeqPos) occurrences[index].offset,
+                  (TSeqPos) (occurrences[index].offset + occurrences[index].length - 1));
+           feature_info->feature_char = '*';
+           feature_info->feature_id = "pattern";
+           phiblast_pattern.push_back(feature_info);
+
+           m_Outfile << "\nSignificant alignments for pattern occurrence " << index+1
+                 << " at position " << 1+occurrences[index].offset << "\n\n";
+
+           TMaskedQueryRegions masklocs;
+           result_set[index].GetMaskedQueryRegions(masklocs);
+           CConstRef<CSeq_align_set> aln_set = result_set[index].GetSeqAlign();
+           CSeq_align_set copy_aln_set;
+           CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_NumAlignments);
+
+           CDisplaySeqalign display(copy_aln_set, *m_Scope, &masklocs, &phiblast_pattern,
+                             m_MatrixName);
+
+           display.SetDbName(m_DbName);
+           display.SetDbType(!m_DbIsAA);
+
+           // set the alignment flags
+           display.SetAlignOption(flags);
+
+           if (m_Program == "blastn" || m_Program == "megablast") {
+               display.SetMiddleLineStyle(CDisplaySeqalign::eBar);
+               display.SetAlignType(CDisplaySeqalign::eNuc);
+           }
+           else {
+               display.SetMiddleLineStyle(CDisplaySeqalign::eChar);
+               display.SetAlignType(CDisplaySeqalign::eProt);
+           }
+
+           display.SetMasterGeneticCode(m_QueryGenCode);
+           display.SetSlaveGeneticCode(m_DbGenCode);
+           display.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
+           display.DisplaySeqalign(m_Outfile);
+           m_Outfile << "\n";
+
+           NON_CONST_ITERATE(list<CDisplaySeqalign::FeatureInfo*>, itr, phiblast_pattern) {
+               delete *itr;
+           }
+        }
+    }
+
+    // print the ancillary data for this query
+
+    x_PrintOneQueryFooter(*first_results.GetAncillaryData());
+}
 void 
 CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
 {
-    // some output types don't have a footer
-    if (m_FormatType >= CFormattingArgs::eTabular)
+    if (m_FormatType == CFormattingArgs::eTabularWithComments) {
+        CBlastTabularInfo tabinfo(m_Outfile);
+        tabinfo.PrintNumProcessed(m_QueriesFormatted);
         return;
+    } else if (m_FormatType >= CFormattingArgs::eTabular) 
+        return;  // No footer for these.
 
     // XML can only be printed once (i.e.: not in batches), so we print it as
     // the epilog of the report

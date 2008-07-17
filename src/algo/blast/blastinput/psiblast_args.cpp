@@ -38,7 +38,8 @@ static char const rcsid[] = "$Id$";
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/psiblast_args.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
-#include "blast_input_aux.hpp"
+#include <algo/blast/blastinput/blast_input_aux.hpp>
+#include <algo/blast/api/phiblast_prot_options.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -121,9 +122,12 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
 
 CRef<CBlastOptionsHandle>
 CPsiBlastAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
-                                        const CArgs& /*args*/)
+                                        const CArgs& args)
 {
-    return CRef<CBlastOptionsHandle>(new CPSIBlastOptionsHandle(locality));
+    if (args.Exist(kArgPHIPatternFile) && args[kArgPHIPatternFile])
+       return CRef<CBlastOptionsHandle>(new CPHIBlastProtOptionsHandle(locality));
+    else
+       return CRef<CBlastOptionsHandle>(new CPSIBlastOptionsHandle(locality));
 }
 
 size_t

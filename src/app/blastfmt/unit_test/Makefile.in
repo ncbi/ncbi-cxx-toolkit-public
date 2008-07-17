@@ -1,0 +1,8 @@
+# $Id$
+
+APP_PROJ = blastfmt_unit_test
+
+REQUIRES = algo Boost.Test MESA
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

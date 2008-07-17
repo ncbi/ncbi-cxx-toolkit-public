@@ -638,6 +638,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
         x_SetParam(B4Param_WindowMaskerDatabase, v);
         return;
         
+    case eBlastOpt_PHIPattern:
+        x_SetParam(B4Param_PHIPattern, v);
+        return;
+        
     default:
         break;
     }
@@ -982,7 +986,8 @@ CBlastOptions::SetFilterString(const char* f, bool clear)
         
         bool do_dust(false), do_seg(false), do_rep(false);
         
-        if (Blast_QueryIsProtein(GetProgramType())) {
+        if (Blast_QueryIsProtein(GetProgramType()) ||
+            Blast_QueryIsTranslated(GetProgramType())) {
             do_seg = m_Local->GetSegFiltering();
             m_Remote->SetValue(eBlastOpt_SegFiltering, do_seg);
         } else {
@@ -992,7 +997,8 @@ CBlastOptions::SetFilterString(const char* f, bool clear)
             m_Remote->ResetValue(B4Param_SegFilteringHicut);
         }
         
-        if (Blast_QueryIsNucleotide(GetProgramType())) {
+        if (Blast_QueryIsNucleotide(GetProgramType()) &&
+            !Blast_QueryIsTranslated(GetProgramType())) {
             do_dust = m_Local->GetDustFiltering();
             do_rep  = m_Local->GetRepeatFiltering();
             

@@ -55,6 +55,7 @@ SDataLoaderConfig::x_Init(SDataLoaderConfig::EConfigOpts options,
                           const string& dbname,
                           bool load_proteins)
 {
+    m_UseFixedSizeSlices = true;
     m_UseBlastDbs = (options & eUseBlastDbDataLoader) ? true : false;
     m_UseGenbank = (options & eUseGenbankDataLoader) ? true : false;
     m_BlastDbName.assign(dbname);
@@ -122,7 +123,7 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(const string& dbname,
     try {
 
         m_BlastDbLoaderName = CBlastDbDataLoader::RegisterInObjectManager
-                (*m_ObjMgr, dbname, dbtype,
+                (*m_ObjMgr, dbname, dbtype, m_Config.m_UseFixedSizeSlices,
                  CObjectManager::eNonDefault).GetLoader()->GetName();
 
     } catch (const CSeqDBException& e) {
@@ -151,7 +152,7 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(CRef<CSeqDB> db_handle)
         try {
 
             m_BlastDbLoaderName = CBlastDbDataLoader::RegisterInObjectManager
-                    (*m_ObjMgr, db_handle,
+                    (*m_ObjMgr, db_handle, m_Config.m_UseFixedSizeSlices,
                      CObjectManager::eNonDefault).GetLoader()->GetName();
 
         } catch (const exception& e) {
@@ -185,19 +186,66 @@ CBlastScopeSource::x_InitGenbankDataLoader()
     }
 }
 
-CRef<CScope> CBlastScopeSource::NewScope()
+void 
+CBlastScopeSource::AddDataLoaders(CRef<objects::CScope> scope)
 {
-    CRef<CScope> retval(new CScope(*m_ObjMgr));
+    int blastdb_loader_priority = 0;
+    if (m_Config.m_IsLoadingProteins) {
+        blastdb_loader_priority = kProtBlastDbLoaderPriority;
+    } else {
+        blastdb_loader_priority = kNuclBlastDbLoaderPriority;
+    }
 
     // Note that these priorities are needed so that the CScope::AddXXX methods
     // don't need a specific priority (the default will be fine).
     if (!m_BlastDbLoaderName.empty()) {
-        retval->AddDataLoader(m_BlastDbLoaderName, kBlastDbLoaderPriority);
+        scope->AddDataLoader(m_BlastDbLoaderName, blastdb_loader_priority);
     } 
     if (!m_GbLoaderName.empty()) {
-        retval->AddDataLoader(m_GbLoaderName, kGenbankLoaderPriority);
+        scope->AddDataLoader(m_GbLoaderName, kGenbankLoaderPriority);
     }
+}
+
+CRef<CScope> CBlastScopeSource::NewScope()
+{
+    CRef<CScope> retval(new CScope(*m_ObjMgr));
+    AddDataLoaders(retval);
     return retval;
+}
+
+void
+CBlastScopeSource::RevokeBlastDbDataLoader()
+{
+    if (!m_BlastDbLoaderName.empty()) {
+        CObjectManager::GetInstance()->RevokeDataLoader(m_BlastDbLoaderName);
+    }
+}
+
+bool
+SDataLoaderConfig::operator==(const SDataLoaderConfig& rhs) const
+{
+    if (this == &rhs) {
+        return true;
+    }
+    if (m_UseGenbank != rhs.m_UseGenbank) {
+        return false;
+    }
+    if (m_UseBlastDbs != rhs.m_UseBlastDbs) {
+        return false;
+    }
+    if (m_IsLoadingProteins != rhs.m_IsLoadingProteins) {
+        return false;
+    }
+    if (m_BlastDbName != rhs.m_BlastDbName) {
+        return false;
+    }
+    return true;
+}
+
+bool
+SDataLoaderConfig::operator!=(const SDataLoaderConfig& rhs) const
+{
+    return !(*this == rhs);
 }
 
 END_SCOPE(blast)

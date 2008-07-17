@@ -41,57 +41,35 @@ static char const rcsid[] =
 #include <corelib/ncbiapp.hpp>
 #include <algo/blast/api/version.hpp>
 #include <objtools/readers/seqdb/seqdbexpert.hpp>
+#include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
+#include <objtools/blast_format/seq_writer.hpp>
+#include <objtools/blast_format/blastdb_seqid.hpp>
+#include "blastdb_aux.hpp"
+
+#include <algo/blast/blastinput/blast_input.hpp>
+#include "../blast/blast_app_util.hpp"
+#include <iomanip>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 #endif
 
-/// Encapsulates identifier to retrieve from BLAST database
-class CData2Retrieve 
-{
-public:
-    CData2Retrieve() : m_PIG(kInvalid), m_GI(kInvalid) {}
-
-    CData2Retrieve(string entry) {
-        m_PIG = kInvalid;
-        try { 
-            m_GI = NStr::StringToInt(entry); 
-            return; 
-        } catch (...) {}
-        m_SequenceId = entry;
-    }
-
-    CData2Retrieve(int pig) {
-        m_PIG = pig;
-        m_GI = kInvalid;
-    }
-
-    bool IsGi() const { return m_GI != kInvalid; }
-    bool IsPig() const { return m_PIG != kInvalid; }
-    bool IsStringId() const { return !m_SequenceId.empty(); }
-
-    int GetGi() const { return m_GI; }
-    int GetPig() const { return m_PIG; }
-    string GetStringId() const { return m_SequenceId; }
-
-private:
-    static const int kInvalid = -1;
-    int m_PIG;
-    int m_GI;
-    string m_SequenceId;
-};
-
 /// The application class
 class CBlastDBCmdApp : public CNcbiApplication
 {
 public:
+    /** @inheritDoc */
     CBlastDBCmdApp() {
-        SetVersion(blast::Version);
+        CRef<CVersion> version(new CVersion());
+        version->SetVersionInfo(new CBlastVersion());
+        SetFullVersion(version);
     }
 private:
+    /** @inheritDoc */
     virtual void Init();
+    /** @inheritDoc */
     virtual int Run();
     
     /// Handle to BLAST database
@@ -103,14 +81,23 @@ private:
     /// Strand to retrieve
     ENa_strand m_Strand;
 
+    /// Initializes the application's data members
     void x_InitApplicationData();
-    void x_PrintBlastDatabaseInformation();
-    void x_ProcessSearchRequest() const;
 
-    typedef vector<CData2Retrieve> TQueries;
-    /// Return the queries for the BLAST database
-    /// @queries queries to retrieve, will be empty if all the database should
-    /// be returned, or else, the specific entries contained in it [in|out]
+    /// Prints the BLAST database information (e.g.: handles -info command line
+    /// option)
+    void x_PrintBlastDatabaseInformation();
+
+    /// Processes all requests except printing the BLAST database information
+    /// @return 0 on success; 1 if some sequences were not retrieved
+    int x_ProcessSearchRequest();
+
+    /// Vector of sequence identifiers in a BLAST database
+    typedef vector< CRef<CBlastDBSeqId> > TQueries;
+
+    /// Extract the queries for the BLAST database from the command line
+    /// options
+    /// @param queries queries to retrieve [in|out]
     void x_GetQueries(TQueries& queries) const;
 };
 
@@ -118,38 +105,84 @@ void
 CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
 {
     const CArgs& args = GetArgs();
+    const bool kGetDuplicates = args["get_dups"];
     retval.clear();
+
+    _ASSERT(m_BlastDb.NotEmpty());
 
     if (args["pig"].HasValue()) {
 
         retval.reserve(1);
-        retval.push_back(CData2Retrieve(args["pig"].AsInteger()));
+        retval.push_back(CRef<CBlastDBSeqId>
+                         (new CBlastDBSeqId(args["pig"].AsInteger())));
 
     } else if (args["entry"].HasValue()) {
 
         static const string kDelim(",");
         const string& entry = args["entry"].AsString();
+        CRef<CBlastDBSeqId> blastdb_seqid;
         if (entry.find(kDelim[0]) != string::npos) {
             vector<string> tokens;
             NStr::Tokenize(entry, kDelim, tokens);
             retval.reserve(tokens.size());
             ITERATE(vector<string>, itr, tokens) {
-                retval.push_back(CData2Retrieve(*itr));
+                if (kGetDuplicates) {
+                    vector<int> oids;
+                    m_BlastDb->AccessionToOids(*itr, oids);
+                    ITERATE(vector<int>, oid, oids) {
+                        blastdb_seqid.Reset(new CBlastDBSeqId());
+                        blastdb_seqid->SetOID(*oid);
+                        retval.push_back(blastdb_seqid);
+                    }
+                } else {
+                    blastdb_seqid.Reset(new CBlastDBSeqId(*itr));
+                    retval.push_back(blastdb_seqid);
+                }
+            }
+        } else if (entry == "all") {
+            // dump all OIDs in this database
+            for (int i = 0; m_BlastDb->CheckOrFindOID(i); i++) {
+                blastdb_seqid.Reset(new CBlastDBSeqId());
+                blastdb_seqid->SetOID(i);
+                retval.push_back(blastdb_seqid);
             }
         } else {
             retval.reserve(1);
-            retval.push_back(CData2Retrieve(entry));
+            if (kGetDuplicates) {
+                vector<int> oids;
+                m_BlastDb->AccessionToOids(entry, oids);
+                ITERATE(vector<int>, oid, oids) {
+                    blastdb_seqid.Reset(new CBlastDBSeqId());
+                    blastdb_seqid->SetOID(*oid);
+                    retval.push_back(blastdb_seqid);
+                }
+            } else {
+                blastdb_seqid.Reset(new CBlastDBSeqId(entry));
+                retval.push_back(blastdb_seqid);
+            }
         }
 
     } else if (args["entry_batch"].HasValue()) {
 
         CNcbiIstream& input = args["entry_batch"].AsInputFile();
         retval.reserve(256); // arbitrary value
+        CRef<CBlastDBSeqId> blastdb_seqid;
         while (input) {
             string line;
             NcbiGetlineEOL(input, line);
             if ( !line.empty() ) {
-                retval.push_back(CData2Retrieve(line));
+                if (kGetDuplicates) {
+                    vector<int> oids;
+                    m_BlastDb->AccessionToOids(line, oids);
+                    ITERATE(vector<int>, oid, oids) {
+                        blastdb_seqid.Reset(new CBlastDBSeqId());
+                        blastdb_seqid->SetOID(*oid);
+                        retval.push_back(blastdb_seqid);
+                    }
+                } else {
+                    blastdb_seqid.Reset(new CBlastDBSeqId(line));
+                    retval.push_back(blastdb_seqid);
+                }
             }
         }
 
@@ -163,17 +196,7 @@ void
 CBlastDBCmdApp::x_InitApplicationData()
 {
     const CArgs& args = GetArgs();
-    CSeqDB::ESeqType seqtype;
-    const string& dbtype = args["dbtype"].AsString();
-    if (dbtype == "guess") {
-        seqtype = CSeqDB::eUnknown;
-    } else if (dbtype == "prot") {
-        seqtype = CSeqDB::eProtein;
-    } else if (dbtype == "nucl") {
-        seqtype = CSeqDB::eNucleotide;
-    } else {
-        _ASSERT("Unknown molecule for BLAST DB" != 0);
-    }
+    CSeqDB::ESeqType seqtype = ParseTypeString(args["dbtype"].AsString());;
     m_BlastDb.Reset(new CSeqDBExpert(args["db"].AsString(), seqtype));
     m_DbIsProtein = 
         static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
@@ -187,37 +210,12 @@ CBlastDBCmdApp::x_InitApplicationData()
     if (args["strand"].HasValue() && !m_DbIsProtein) {
         if (args["strand"].AsString() == "plus") {
             m_Strand = eNa_strand_plus;
-        } else {
+        } else if (args["strand"].AsString() == "minus") {
             m_Strand = eNa_strand_minus;
+        } else {
+            abort();    // both strands not supported
         }
     } 
-}
-
-// FIXME: this should be moved as a member function of SBlastDbMaskData
-static string
-s_EMaskingAlgorithmToString(SBlastDbMaskData::EMaskingAlgorithm algorithm)
-{
-    string retval;
-    switch (algorithm) {
-    case SBlastDbMaskData::eNotSet: 
-        retval.assign("Not set"); 
-        break;
-    case SBlastDbMaskData::eDUST:
-        retval.assign("DUST");
-        break;
-    case SBlastDbMaskData::eSEG:
-        retval.assign("SEG");
-        break;
-    case SBlastDbMaskData::eRepeat:
-        retval.assign("Repeats");
-        break;
-    case SBlastDbMaskData::eOther:
-        retval.assign("Other");
-        break;
-    default:
-        _ASSERT("Unknown masking algorithm" != 0);
-    }
-    return retval;
 }
 
 void
@@ -241,23 +239,30 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
         << NStr::IntToString(m_BlastDb->GetMaxLength(), kFlags) << " " 
         << kLetters << endl;
 
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Print filtering algorithms supported
     vector<int> algorithms;
     m_BlastDb->GetAvailableMaskAlgorithms(algorithms);
     if ( !algorithms.empty() ) {
         out << endl
             << "Available filtering algorithms applied to database sequences:"
-            << endl;
-        int counter = 0;
+            << endl << endl;
+        
+        out << setw(14) << left << "Algorithm ID" 
+            << setw(20) << left << "Algorithm name"
+            << setw(40) << left << "Algorithm options" << endl;
         ITERATE(vector<int>, algo_id, algorithms) {
-            CSeqDB::TMaskingAlgorithm algo;
-            string algo_opts;
-            m_BlastDb->GetMaskAlgorithmDetails(*algo_id, algo, algo_opts);
-            out << "\t" << ++counter << ". " 
-                << s_EMaskingAlgorithmToString(algo) << " (options: '" 
-                << algo_opts << "')" << endl;
+            objects::EBlast_filter_program algo;
+            string algo_opts, algo_name;
+            m_BlastDb->GetMaskAlgorithmDetails(*algo_id, algo, algo_name,
+                                               algo_opts);
+            out << "    " << setw(10) << left << (*algo_id) 
+                << setw(20) << left << algo_name
+                << setw(40) << left << algo_opts << endl;
         }
     }
+#endif
 
     // Print volume names
     vector<string> volumes;
@@ -268,76 +273,83 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
     }
 }
 
-class CFormatProcessor {
-public:
-    CFormatProcessor(CNcbiOstream& out, const string& format)
-        : m_Out(out), m_Format(format) {}
+/// Auxiliary function to pretty-format a CBlastDBSeqId
+/// @param id the id to format [in]
+/// @param blastdb BLAST database handle [in]
+static string s_FormatCBlastDBSeqID(CRef<CBlastDBSeqId> id, CSeqDB& blastdb)
+{
+    static const string kInvalid(NStr::IntToString(CBlastDBSeqId::kInvalid));
+    _ASSERT(id.NotEmpty());
+    string retval = id->AsString();
+    if (NStr::StartsWith(retval, "OID")) {
+        // First try the GI...
+        retval = CGiExtractor().Extract(*id, blastdb);
+        if (retval != kInvalid) {
+            return "GI " + retval;
+        }
 
-    void operator()(CSeqDB::TOID oid) const {
-        m_Out << "Print " << oid << " in " << m_Format << endl;
+        // ... then the accession...
+        retval = CAccessionExtractor().Extract(*id, blastdb);
+        if (retval != kInvalid && !isalnum(retval[0])) {
+            // identify as accession if not invalid or just a number (bound to
+            // occur when BLAST database wasn't created with parsing of
+            // Seq-ids)
+            return "Accession " + retval;
+        }
+
+        // ... and finally the sequence title.
+        retval = CTitleExtractor().Extract(*id, blastdb);
+        if (retval != kInvalid) {
+            return "Sequence " + retval;
+        }
     }
+    return retval;
+}
 
-private:
-    CNcbiOstream& m_Out;
-    string m_Format;
-};
-
-void
-CBlastDBCmdApp::x_ProcessSearchRequest() const
+int
+CBlastDBCmdApp::x_ProcessSearchRequest()
 {
     TQueries queries;
     x_GetQueries(queries);
-    CNcbiOstream& out = GetArgs()["out"].AsOutputFile();
-    const string kOutFmt = GetArgs()["outfmt"].AsString();
+    _ASSERT( !queries.empty() );
 
-    // Convert the entries into OIDs
-    vector<CSeqDB::TOID> oids2fetch;
-    oids2fetch.reserve(queries.size());
-    ITERATE(TQueries, itr, queries) {
-        CSeqDB::TOID oid = -1;
-        if (itr->IsGi() && m_BlastDb->GiToOid(itr->GetGi(), oid)) {
-            oids2fetch.push_back(oid);
-        } else if (itr->IsPig() && m_BlastDb->PigToOid(itr->GetPig(), oid)) {
-            oids2fetch.push_back(oid);
-        } else if (itr->IsStringId()) {
-            const string& kStringId = itr->GetStringId();
-            if (kStringId == "all") {
-                // dump the entire database
-                const vector<CSeqDB::TOID>::size_type kMax = 
-                    m_BlastDb->GetNumOIDs();
-                oids2fetch.clear();
-                oids2fetch.reserve(kMax);
-                for (vector<CSeqDB::TOID>::size_type i = 0; i < kMax; i++) {
-                    oids2fetch.push_back(i);
-                }
-                break;
-            } else {
-                vector<int> oids;
-                m_BlastDb->AccessionToOids(kStringId, oids);
-                if (oids.empty()) {
-                    ERR_POST(Warning << "Did not find '" << kStringId << "'");
-                } else {
-                    copy(oids.begin(), oids.end(), back_inserter(oids2fetch));
-                }
-            }
+    const CArgs& args = GetArgs();
+    CNcbiOstream& out = args["out"].AsOutputFile();
+    const string kOutFmt = args["outfmt"].AsString();
+    CSeqFormatterConfig conf;
+    conf.m_LineWidth = args["line_length"].AsInteger();
+    conf.m_SeqRange = m_SeqRange;
+    conf.m_Strand = m_Strand;
+    conf.m_TargetOnly = args["target_only"];
+    conf.m_UseCtrlA = args["ctrl_a"];
+
+    bool errors_found = false;
+    CSeqFormatter seq_fmt(kOutFmt, *m_BlastDb, out, conf);
+    NON_CONST_ITERATE(TQueries, itr, queries) {
+        try { 
+            seq_fmt.Write(**itr); 
+        } catch (const CException& e) {
+            ERR_POST(Error << s_FormatCBlastDBSeqID(*itr, *m_BlastDb) 
+                     << ": " << e.GetMsg());
+            errors_found = true;
+        } catch (...) {
+            ERR_POST(Error << "Failed to retrieve " << 
+                     s_FormatCBlastDBSeqID(*itr, *m_BlastDb));
+            errors_found = true;
         }
     }
-
-    CFormatProcessor fmt_proc(out, kOutFmt);
-    ITERATE(vector<CSeqDB::TOID>, itr, oids2fetch) {
-        fmt_proc(*itr);
-    }
+    return errors_found ? 1 : 0;
 }
 
 void CBlastDBCmdApp::Init()
 {
-    HideStdArgs(fHideLogfile | fHideConffile | fHideDryRun);
+    HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), 
-                  "BLAST database client, version " + blast::Version.Print());
+                  "BLAST database client, version " + CBlastVersion().Print());
 
     arg_desc->SetCurrentGroup("BLAST database options");
     arg_desc->AddDefaultKey("db", "dbname", "BLAST database name", 
@@ -369,6 +381,7 @@ void CBlastDBCmdApp::Init()
     arg_desc->SetDependency("pig", CArgDescriptions::eExcludes, "entry_batch");
 
     arg_desc->AddFlag("info", "Print BLAST database information", true);
+    // All other options to this program should be here
     const char* exclusions[]  = { "entry", "entry_batch", "outfmt", "strand",
         "target_only", "ctrl_a", "get_dups", "pig", "range" };
     for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++) {
@@ -392,37 +405,42 @@ void CBlastDBCmdApp::Init()
                             CArgDescriptions::eOutputFile, "-");
 
     arg_desc->AddDefaultKey("outfmt", "format",
-            "Output format, available formats are:\n"
-            "\t'fasta', 'taxid', 'gi', 'accession', or 'custom'\n"
-            "\twhere custom is a quoted string containing the following "
-            "directives:\n"
-            "\t\t%s means sequence id (identifier + title)\n"
+            "Output format, where the available format specifiers are:\n"
+            "\t\t%f means sequence in FASTA format\n"
+            "\t\t%s means sequence data (without defline)\n"
             "\t\t%a means accession\n"
             "\t\t%g means gi\n"
+            "\t\t%o means ordinal id (OID)\n"
             "\t\t%t means sequence title\n"
-            "\t\t%f means sequence data in FASTA\n"
             "\t\t%l means sequence length\n"
             "\t\t%T means taxid\n"
-            "\t\t%P means PIG\n",
-            CArgDescriptions::eString, "fasta");
+            "\t\t%L means common taxonomic name\n"
+            "\t\t%S means scientific name\n"
+            "\t\t%P means PIG\n"
+            "\tFor every format except '%f', each line of output will "
+            "correspond to\n\ta sequence.\n",
+            CArgDescriptions::eString, "%f");
 
+    //arg_desc->AddDefaultKey("target_only", "value",
+    //                        "Definition line should contain target gi only",
+    //                        CArgDescriptions::eBoolean, "false");
+    arg_desc->AddFlag("target_only", 
+                      "Definition line should contain target gi only", true);
+    
+    //arg_desc->AddDefaultKey("get_dups", "value",
+    //                        "Retrieve duplicate accessions",
+    //                        CArgDescriptions::eBoolean, "false");
+    arg_desc->AddFlag("get_dups", "Retrieve duplicate accessions", true);
+
+    arg_desc->SetCurrentGroup("Output configuration options for FASTA format");
     arg_desc->AddDefaultKey("line_length", "number",
                             "Line length for output",
                             CArgDescriptions::eInteger, "80");
     arg_desc->SetConstraint("line_length", 
                             new CArgAllowValuesGreaterThanOrEqual(1));
 
-    arg_desc->AddDefaultKey("ctrl_a", "value",
-                            "Use Ctrl-A's as non-redundant defline separator",
-                            CArgDescriptions::eBoolean, "false");
-
-    arg_desc->AddDefaultKey("target_only", "value",
-                            "Definition line should contain target gi only",
-                            CArgDescriptions::eBoolean, "false");
-    
-    arg_desc->AddDefaultKey("get_dups", "value",
-                            "Retrieve duplicate accessions",
-                            CArgDescriptions::eBoolean, "false");
+    arg_desc->AddFlag("ctrl_a", 
+                      "Use Ctrl-A as the non-redundant defline separator",true);
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -438,19 +456,10 @@ int CBlastDBCmdApp::Run(void)
         if (args["info"]) {
             x_PrintBlastDatabaseInformation();
         } else {
-            x_ProcessSearchRequest();
+            status = x_ProcessSearchRequest();
         }
 
-    } catch (const CException& exptn) {
-        cerr << "Error: " << exptn.GetMsg() << endl;
-        status = exptn.GetErrCode();
-    } catch (const exception& e) {
-        cerr << "Error: " << e.what() << endl;
-        status = -1;
-    } catch (...) {
-        cerr << "Unknown exception" << endl;
-        status = -1;
-    }
+    } CATCH_ALL(status)
     return status;
 }
 

@@ -144,7 +144,7 @@ public:
     /// Get the current filename for this file.
     ///
     /// The filename is returned.  The data returned by this method
-    /// will reflect the change made by RenameSingle, so it probably
+    /// reflects changes made by RenameSingle(), so it is probably
     /// best to call it after that method has been called (if it will
     /// be called).
     ///

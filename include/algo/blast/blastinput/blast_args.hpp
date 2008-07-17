@@ -527,7 +527,8 @@ public:
      */
     CQueryOptionsArgs(bool query_cannot_be_nucl = false)
         : m_Strand(objects::eNa_strand_unknown), m_Range(),
-        m_UseLCaseMask(false), m_BelieveQueryDefline(false),
+        m_UseLCaseMask(kDfltArgUseLCaseMasking), 
+        m_ParseDeflines(kDfltArgParseDeflines),
         m_QueryCannotBeNucl(query_cannot_be_nucl)
     {};
 
@@ -546,7 +547,7 @@ public:
     /// Use lowercase masking in FASTA input?
     bool UseLowercaseMasks() const { return m_UseLCaseMask; }
     /// Should the defline be parsed?
-    bool BelieveQueryDefline() const { return m_BelieveQueryDefline; }
+    bool GetParseDeflines() const { return m_ParseDeflines; }
 
     /// Is the query sequence protein?
     bool QueryIsProtein() const { return m_QueryCannotBeNucl; }
@@ -557,8 +558,8 @@ private:
     TSeqRange m_Range;
     /// use lowercase masking in FASTA input
     bool m_UseLCaseMask;
-    /// Should the defline be parsed?
-    bool m_BelieveQueryDefline;
+    /// Should the deflines be parsed?
+    bool m_ParseDeflines;
 
     /// only false for blast[xn], and tblastx
     /// true in case of PSI-BLAST
@@ -612,18 +613,29 @@ public:
 
     /// Retrieve the search database information
     CRef<CSearchDatabase> GetSearchDatabase() const { return m_SearchDb; }
-    /// Set the search database information
+    /// Set the search database information.
+    /// use case: recovering from search strategy
     void SetSearchDatabase(CRef<CSearchDatabase> search_db) {
         m_SearchDb = search_db;
         m_IsProtein = search_db->IsProtein();
     }
 
+    /// Sets the subject sequences.
+    /// use case: recovering from search strategy
+    void SetSubjects(CRef<IQueryFactory> subjects, CRef<CScope> scope,
+                     bool is_protein) {
+        m_Subjects = subjects;
+        m_Scope = scope;
+        m_IsProtein = is_protein;
+    }
+
     /// Retrieve subject sequences, if provided
-    /// @param scope scope to which to sequence read will be added [in]
+    /// @param scope scope to which to sequence read will be added (if
+    /// non-NULL) [in]
     /// @return empty CRef<> if no subjects were provided, otherwise a properly
     /// initialized IQueryFactory object
-    CRef<IQueryFactory> GetSubjects(CRef<objects::CScope> scope) {
-        if (m_Subjects) {
+    CRef<IQueryFactory> GetSubjects(objects::CScope* scope = NULL) {
+        if (m_Subjects && scope) {
             scope->AddScope(*m_Scope);
         }
         return m_Subjects; 
@@ -709,11 +721,11 @@ public:
         return m_ShowGis;
     }
     /// Number of one-line descriptions to show in traditional BLAST output
-    size_t GetNumDescriptions() const {
+    TSeqPos GetNumDescriptions() const {
         return m_NumDescriptions;
     }
     /// Number of alignments to show in traditional BLAST output
-    size_t GetNumAlignments() const {
+    TSeqPos GetNumAlignments() const {
         return m_NumAlignments;
     }
     /// Display HTML output?
@@ -724,8 +736,8 @@ public:
 private:
     EOutputFormat m_OutputFormat;   ///< Choice of formatting output
     bool m_ShowGis;                 ///< Display NCBI GIs?
-    size_t m_NumDescriptions;       ///< Number of 1-line descr. to show
-    size_t m_NumAlignments;         ///< Number of alignments to show
+    TSeqPos m_NumDescriptions;       ///< Number of 1-line descr. to show
+    TSeqPos m_NumAlignments;         ///< Number of alignments to show
     bool m_Html;                    ///< Display HTML output?
 };
 

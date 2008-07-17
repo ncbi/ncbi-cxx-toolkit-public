@@ -50,10 +50,17 @@ BEGIN_SCOPE(blast)
 /// Used to perform run-time version checks
 ///
 /// For reference, please refer to http://apr.apache.org/versioning.html
-static const CVersionInfo Version(kBlastMajorVersion, 
-                                  kBlastMinorVersion, 
-                                  kBlastPatchVersion, 
-                                  kBlastReleaseDate);
+class CBlastVersion : public CVersionInfo {
+public:
+    CBlastVersion()
+        : CVersionInfo(kBlastMajorVersion, 
+                       kBlastMinorVersion, 
+                       kBlastPatchVersion) {}
+    virtual string Print(void) const {
+        return CVersionInfo::Print() + "+";
+    }
+};
+
 
 /// Class to keep track of the various BLAST references
 class NCBI_XBLAST_EXPORT CReference
@@ -66,11 +73,14 @@ public:
         eMegaBlast,                 ///< 2000 J Compt Biol paper
         eCompBasedStats,            ///< 2001 NAR paper
         eCompAdjustedMatrices,      ///< submitted for publication
+        eIndexedMegablast,          ///< 2008 Bioinformatics on indexed megablast
         eMaxPublications            ///< Used as sentinel value
     };
 
     /// Reference for requested publication
     static string GetString(EPublication pub);
+    /// Reference for requested publication without umlaut
+    static string GetHTMLFreeString(EPublication pub);
     /// Get Pubmed url for requested publication
     static string GetPubmedUrl(EPublication pub);
 

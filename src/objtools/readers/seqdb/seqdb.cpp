@@ -34,8 +34,13 @@
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include "seqdbimpl.hpp"
+#include "seqdbgeneral.hpp"
+#include <map>
+#include <string>
 
 BEGIN_NCBI_SCOPE
+
+const string CSeqDB::kOidNotFound("OID not found");
 
 /// Helper function to translate enumerated type to character.
 ///
@@ -931,26 +936,34 @@ void CSeqDB::SetDefaultMemoryBound(Uint8 bytes)
 }
 
 void CSeqDB::GetSequenceAsString(int      oid,
-                                 string & output) const
+                                 string & output,
+                                 TSeqRange range /* = TSeqRange() */) const
 {
     CSeqUtil::ECoding code_to = ((GetSequenceType() == CSeqDB::eProtein)
                                  ? CSeqUtil::e_Iupacaa
                                  : CSeqUtil::e_Iupacna);
     
-    GetSequenceAsString(oid, code_to, output);
+    GetSequenceAsString(oid, code_to, output, range);
 }
 
 void CSeqDB::GetSequenceAsString(int                 oid,
                                  CSeqUtil::ECoding   coding,
-                                 string            & output) const
+                                 string            & output,
+                                 TSeqRange range /* = TSeqRange() */) const
 {
     output.erase();
 
     string raw;
     const char * buffer = 0;
+    int length = 0;
 
     // Protein dbs ignore encodings, always returning ncbistdaa.
-    int length = GetAmbigSeq(oid, & buffer, kSeqDBNuclNcbiNA8);
+    if (range.NotEmpty()) {
+        length = GetAmbigSeq(oid, & buffer, kSeqDBNuclNcbiNA8,
+                             range.GetFrom(), range.GetToOpen());
+    } else {
+        length = GetAmbigSeq(oid, & buffer, kSeqDBNuclNcbiNA8);
+    }
 
     try {
         raw.assign(buffer, length);
@@ -980,6 +993,67 @@ void CSeqDB::GetSequenceAsString(int                 oid,
     
     output.swap(result);
 }
+
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+void CSeqDB::ListColumns(vector<string> & titles)
+{
+    m_Impl->ListColumns(titles);
+}
+
+int CSeqDB::GetColumnId(const string & title)
+{
+    return m_Impl->GetColumnId(title);
+}
+
+const map<string,string> &
+CSeqDB::GetColumnMetaData(int column_id)
+{
+    return m_Impl->GetColumnMetaData(column_id);
+}
+
+const string & CSeqDB::GetColumnValue(int column_id, const string & key)
+{
+    static string mt;
+    return SeqDB_MapFind(GetColumnMetaData(column_id), key, mt);
+}
+
+const map<string,string> &
+CSeqDB::GetColumnMetaData(int            column_id,
+                          const string & volname)
+{
+    return m_Impl->GetColumnMetaData(column_id, volname);
+}
+
+void CSeqDB::GetColumnBlob(int            col_id,
+                           int            oid,
+                           CBlastDbBlob & blob)
+{
+    m_Impl->GetColumnBlob(col_id, oid, true, blob);
+}
+
+void CSeqDB::GetAvailableMaskAlgorithms(vector<int> & algorithms)
+{
+    m_Impl->GetAvailableMaskAlgorithms(algorithms);
+}
+
+void CSeqDB::GetMaskAlgorithmDetails(int                 algorithm_id,
+                                     objects::EBlast_filter_program & program,
+                                     string            & program_name,
+                                     string            & algo_opts)
+{
+    m_Impl->GetMaskAlgorithmDetails(algorithm_id, program, program_name,
+                                    algo_opts);
+}
+
+void CSeqDB::GetMaskData(int                 oid,
+                         const vector<int> & algo_ids,
+                         bool                invert,
+                         TSequenceRanges   & ranges)
+{
+    m_Impl->GetMaskData(oid, algo_ids, invert, ranges);
+}
+#endif
 
 END_NCBI_SCOPE
 

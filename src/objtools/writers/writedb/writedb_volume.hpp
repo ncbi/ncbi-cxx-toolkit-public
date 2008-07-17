@@ -42,6 +42,7 @@
 #include <objects/seq/seq__.hpp>
 #include "writedb_files.hpp"
 #include "writedb_isam.hpp"
+#include "writedb_column.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -60,6 +61,9 @@ public:
     /// Type used for lists of identifiers.
     typedef vector< CRef<CSeq_id> > TIdList;
     
+    /// Type used for lists of identifiers.
+    typedef vector< CRef<CBlastDbBlob> > TBlobList;
+    
     // Setup and control
     
     /// Build a database volume.
@@ -72,14 +76,14 @@ public:
     /// @param max_file_size Maximum file size for this volume.
     /// @param max_letters Maximum number of letters for this volume.
     /// @param indices Type of indices to build.
-    CWriteDB_Volume(const string & dbname,
-                    bool           protein,
-                    const string & title,
-                    const string & date,
-                    int            index,
-                    Uint8          max_file_size,
-                    Uint8          max_letters,
-                    EIndexType     indices);
+    CWriteDB_Volume(const string     & dbname,
+                    bool               protein,
+                    const string     & title,
+                    const string     & date,
+                    int                index,
+                    Uint8              max_file_size,
+                    Uint8              max_letters,
+                    EIndexType         indices);
     
     /// Destructor.
     ///
@@ -97,12 +101,13 @@ public:
     /// @param ids List of identifiers for ISAM construction.
     /// @param pig PIG protein identifier (zero if not available.)
     /// @param hash Sequence Hash (zero if not available.)
-    bool WriteSequence(const string  & seq,
-                       const string  & ambig,
-                       const string  & binhdr,
-                       const TIdList & ids,
-                       int             pig,
-                       int             hash);
+    bool WriteSequence(const string    & seq,
+                       const string    & ambig,
+                       const string    & binhdr,
+                       const TIdList   & ids,
+                       int               pig,
+                       int               hash,
+                       const TBlobList & blobs);
     
     /// Rename all volumes files to single-volume names.
     /// 
@@ -139,16 +144,47 @@ public:
     /// @param files The filenames will be appended to this vector.
     void ListFiles(vector<string> & files) const;
     
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    /// Type used for database column meta-data.
+    typedef CWriteDB_Column::TColumnMeta TColumnMeta;
+    
+    /// Create a new database column.
+    ///
+    /// @param title The title of the new column.
+    /// @param meta Metadata to store in the new column.
+    /// @return The numeric column ID.
+    int CreateColumn(const string      & title,
+                     const TColumnMeta & meta);
+    
+    /// Add meta data to a column.
+    ///
+    /// In addition to normal blob data, database columns can store a
+    /// `dictionary' of user-defined metadata in key/value form.  This
+    /// method adds one such key/value pair to the column.  Specifying
+    /// a key a second time causes replacement of the previous value.
+    /// Using this mechanism to store large amounts of data may have a
+    /// negative impact on performance.
+    ///
+    /// @param col_id Specifies the column to add this metadata to.
+    /// @param key    A unique key string.
+    /// @param value  A value string.
+    void AddColumnMetaData(int            col_id,
+                           const string & key,
+                           const string & value);
+#endif
+    
 private:
     // Configuration.
     
-    string     m_DbName;     ///< Base name of the database.
-    string     m_VolName;    ///< Database name plus version (if used).
-    bool       m_Protein;    ///< True for protein; false for nucleotide.
-    string     m_Title;      ///< Database title (same for all volumes).
-    string     m_Date;       ///< Construct time (same for all volumes).
-    int        m_Index;      ///< Index of this volume (1 based).
-    EIndexType m_Indices;    ///< Indices are sparse, full, or disabled.
+    string           m_DbName;      ///< Base name of the database.
+    string           m_VolName;     ///< Database name plus version (if used).
+    bool             m_Protein;     ///< True for protein; false for nucleotide.
+    string           m_Title;       ///< Database title (same for all volumes).
+    string           m_Date;        ///< Construct time (same for all volumes).
+    int              m_Index;       ///< Index of this volume (1 based).
+    EIndexType       m_Indices;     ///< Indices are sparse, full, or disabled.
+    Uint8            m_MaxFileSize; ///< Maximum size for any component file.
     
     // Status.
     
@@ -166,6 +202,12 @@ private:
     CRef<CWriteDB_Isam> m_PigIsam;   ///< PIG index (ppi+ppd, protein only).
     CRef<CWriteDB_Isam> m_TraceIsam; ///< Trace ID index (pti+ptd or nti+ntd).
     CRef<CWriteDB_Isam> m_HashIsam;  ///< Hash index (phi+phd or nhi+nhd).
+    
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    /// Database columns.
+    vector< CRef<CWriteDB_Column> > m_Columns;
+#endif
     
     // Functions
     

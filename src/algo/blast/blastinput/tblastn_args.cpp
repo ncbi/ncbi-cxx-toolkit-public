@@ -39,7 +39,7 @@ static char const rcsid[]
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/tblastn_args.hpp>
 #include <algo/blast/api/tblastn_options.hpp>
-#include "blast_input_aux.hpp"
+#include <algo/blast/blastinput/blast_input_aux.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)

@@ -4,6 +4,7 @@
 ##################################
 
 LIB_PROJ = ncbi_xloader_blastdb ncbi_xloader_remoteblast
+SUB_PROJ = unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

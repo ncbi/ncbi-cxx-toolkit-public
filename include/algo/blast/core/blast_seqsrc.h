@@ -187,7 +187,7 @@ Boolean
 BlastSeqSrcGetIsProt(const BlastSeqSrc* seq_src);
 
 /** Structure used as the second argument to functions satisfying the 
-  GetSeqBlkFnPtr signature, usually associated with index-based 
+  GetSeqBlkFnPtr signature, associated with index-based 
   implementations of the BlastSeqSrc interface. Index-based implementations
   include BLAST databases or an array/vector of sequences. */
 typedef struct BlastSeqSrcGetSeqArg {
@@ -225,13 +225,14 @@ typedef struct BlastSeqSrcGetSeqArg {
 
 /** Retrieve an individual sequence.
  * @param seq_src the BLAST sequence source [in]
- * @param sequence should be of type BlastSeqSrcGetSeqArg [in|out]
+ * @param getseq_arg arguments to aid retrieval of sequence data from the
+ * BlastSeqSrc [in|out]
  * @return one of the BLAST_SEQSRC_* defined in blast_seqsrc.h
  */
 NCBI_XBLAST_EXPORT
 Int2
 BlastSeqSrcGetSequence(const BlastSeqSrc* seq_src, 
-                       void* sequence);
+                       BlastSeqSrcGetSeqArg* getseq_arg);
 
 /** Retrieve sequence length (number of residues/bases)
  * @param seq_src the BLAST sequence source [in]
@@ -243,12 +244,12 @@ BlastSeqSrcGetSeqLen(const BlastSeqSrc* seq_src, void* oid);
 
 /** Deallocate individual sequence.
  * @param seq_src the BLAST sequence source [in]
- * @param sequence should be of type BlastSeqSrcGetSeqArg [in|out]
+ * @param getseq_arg contains sequence to deallocate [in|out]
  */
 NCBI_XBLAST_EXPORT
 void
 BlastSeqSrcReleaseSequence(const BlastSeqSrc* seq_src,
-                           void* sequence);
+                           BlastSeqSrcGetSeqArg* getseq_arg);
 
 /** Function to retrieve NULL terminated string containing the description 
  * of an initialization error or NULL. This function MUST ALWAYS be called 

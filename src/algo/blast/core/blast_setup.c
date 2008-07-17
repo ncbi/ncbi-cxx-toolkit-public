@@ -874,6 +874,10 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
        formatting stage, where lookup table will not be available. */
     query_info->pattern_info->probability = pattern_blk->patternProbability;
 
+   /* Also needed for formatting. */
+    query_info->pattern_info->pattern = 
+        (char*) (char *) BlastMemDup(pattern_blk->pattern, 1+strlen(pattern_blk->pattern));
+
     /* Save minimal pattern length in the length adjustment field, because 
        that is essentially its meaning. */
     query_info->contexts[0].length_adjustment = 

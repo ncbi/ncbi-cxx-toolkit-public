@@ -252,26 +252,34 @@ public:
     ///Indicates if 'Related structures' link should show
     ///@return: true if show
     bool HasStructureLinkout(void){return m_StructureLinkout;}
-private:
+
+protected:
   
     ///Internal data Representing each defline
     struct SDeflineInfo {
         CConstRef<CSeq_id> id;         //best accession type id
         int gi;                        //gi 
         string defline;                //defline
-        string bit_string;             //bit score
-        string total_bit_string;       //total bit score for this hit
-        int match;                     //number of matches for the top hsp with the hit
-        int align_length;              //lenght of alignment
-        string evalue_string;          //e value
-        int sum_n;                     //sum_n in score block
         list<string> linkout_list;     //linkout urls
         int linkout;                   //linkout membership
         string id_url;                 //seqid url
         string score_url;              //score url (quick jump to alignment)
         bool is_new;                   //is this sequence new (for psiblast)?
         bool was_checked;              //was this sequence checked before?
-        int master_covered_lenghth;    //total length covered by alignment
+    };
+
+    /// Internal data with score information for each defline.
+    struct SScoreInfo {
+        list<int> use_this_gi;         // Limit formatting by these GI's.
+        string bit_string;             //bit score
+        string evalue_string;          //e value
+        int sum_n;                     //sum_n in score block
+        string total_bit_string;       //total bit score for this hit
+        int match;                     //number of matches for the top hsp with the hit
+        int master_covered_length;     //total length covered by alignment
+        int align_length;              //length of alignment
+        CConstRef<CSeq_id> id;
+        int blast_rank;                // "Rank" of defline.
     };
 
     ///Seqalign 
@@ -292,8 +300,8 @@ private:
     ///Display options
     int m_Option;
 
-    ///List containing defline info for all seqalign
-    list<SDeflineInfo*> m_DeflineList;      
+    ///List containing score info for all seqalign
+    list<SScoreInfo*> m_ScoreList;      
 
     ///Blast type
     string m_BlastType;
@@ -342,23 +350,40 @@ private:
     ///Indicates if 'Related structures' link should show
     bool m_StructureLinkout;
 
-    /// Current alignment index (added to the linkout and entrez URL's)
-    int m_cur_align;
-    
     ///blast sub-sequnce query
     CRange<TSeqPos>* m_MasterRange;
     
     CCgiContext* m_Ctx;
 
+    ///Internal function to return score info
+    ///@param aln seq-align we are working with [in]
+    ///@param blast_rank ordinal nubmer of defline [in]
+    ///@return score info
+    SScoreInfo* x_GetScoreInfo(const CSeq_align& aln, int blast_rank);
+
+    ///Internal function to return score info
+    ///@param aln seq-align-set we are working with [in]
+    ///@param blast_rank ordinal nubmer of defline [in]
+    ///@return score info
+    SScoreInfo* x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_rank);
+
     ///Internal function to return defline info
-    ///@param aln: seqalign we are working on
+    ///@param id: seq-id we are working with [in]
+    ///@param use_this_gi: list of GI's to limit formatting by [in]
     ///@return defline info
-    SDeflineInfo* x_GetDeflineInfo(const CSeq_align& aln);
+    SDeflineInfo* x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_gi, int blast_rank);
 
     ///Internal function to return defline info
     ///@param aln: seqalign we are working on
     ///@return defline info
     SDeflineInfo* x_GetHitDeflineInfo(const CSeq_align_set& aln);
+
+    /// Checks the first X deflines (currently X is 200) for a structure link.
+    /// If one is not found there it is assumed one is not in the results.
+    /// If one is found we exit right away.
+    /// We do this so we can fetch most of the Bioseqs for large results as we format.
+    /// @return true if structure link present, false if not.
+    bool x_CheckForStructureLink();
 
     ///Internal function to fill defline info
     ///@param handle: sequence handle for current seqalign
@@ -368,18 +393,9 @@ private:
     void x_FillDeflineAndId(const CBioseq_Handle& handle,
                             const CSeq_id& aln_id,
                             list<int>& use_this_gi,
-                            SDeflineInfo* sdl);
+                            SDeflineInfo* sdl,
+                            int blast_rank);
     
-    ///Internal function to fill defline info
-    ///@param handle: sequence handle for current seqalign
-    ///@param aln_id: seqid from current seqalign
-    ///@param use_this_gi: gi from use_this_gi in seqalign
-    ///@param sdl: this is where is info is filled to
-    void x_FillDeflineAndIdNew(const CBioseq_Handle& handle,
-                            const CSeq_id& aln_id,
-                            list<int>& use_this_gi,
-                            SDeflineInfo* sdl);
-
     ///Initialize defline params for regular output
     ///
     void x_InitDefline(void);
@@ -395,8 +411,7 @@ private:
     ///Display defline for table output
     ///
     void x_DisplayDeflineTable(CNcbiOstream & out);
-
-    //For internal test 
+    //For internal test
     friend class ::CShowBlastDeflineTest;
 };
 

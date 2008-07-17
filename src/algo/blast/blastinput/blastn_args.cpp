@@ -40,7 +40,7 @@ static char const rcsid[]
 #include <algo/blast/blastinput/blastn_args.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>
 #include <algo/blast/api/blast_exception.hpp>
-#include "blast_input_aux.hpp"
+#include <algo/blast/blastinput/blast_input_aux.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)

@@ -46,7 +46,7 @@ const int kBlastMessageNoContext = -1;
  * @return newly allocated structure or NULL in case of memory allocation
  * failure.
  */
-SMessageOrigin* SMessageOriginNew(char* filename, unsigned int lineno)
+SMessageOrigin* SMessageOriginNew(const char* filename, unsigned int lineno)
 {
     SMessageOrigin* retval = NULL;
 
@@ -218,7 +218,7 @@ Blast_PerrorEx(Blast_Message* *msg,
     }
 
     if (file_name && lineno > 0) {
-        new_msg->origin = SMessageOriginNew((char*) file_name, 
+        new_msg->origin = SMessageOriginNew(file_name, 
                                            (unsigned int) lineno);
     }
 

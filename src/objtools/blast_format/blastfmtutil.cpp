@@ -146,23 +146,15 @@ s_GetBlastScore(const container&  scoreList,
 void static WrapOutputLine(string str, size_t line_len, 
                                       CNcbiOstream& out) 
 {
-    bool do_wrap = false;
-    size_t length = str.size();
-    if (length > line_len) {
-        for (size_t i = 0; i < length; i ++) {
-            if (i > 0 && i % line_len == 0) {
-                do_wrap = true;
-            }   
-            out << str[i];
-            if (do_wrap && isspace((unsigned char) str[i])) {
-                out << "\n";
-                do_wrap = false;
-            }
-        }
-    } else {
-        out << str;
+    list<string> string_l;
+    NStr::Wrap(str, line_len, string_l, NStr::fWrap_HTMLPre);
+    list<string>::iterator iter = string_l.begin();
+    while(iter != string_l.end())
+    {
+       out << *iter;
+       out << "\n";
+       iter++;
     }
-
 }
     
 void CBlastFormatUtil::BlastPrintError(list<SBlastError>& 
@@ -197,7 +189,7 @@ void CBlastFormatUtil::BlastPrintError(list<SBlastError>&
 string CBlastFormatUtil::BlastGetVersion(const string program)
 {
     string program_uc = program;
-    return NStr::ToUpper(program_uc) + " " + blast::Version.Print();
+    return NStr::ToUpper(program_uc) + " " + blast::CBlastVersion().Print();
 }
 
 void CBlastFormatUtil::BlastPrintVersionInfo(const string program, bool html, 
@@ -223,19 +215,27 @@ CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len,
         if (is_psiblast) { 
             reference += " starting in round 2";
         }
+    } else if (pub == blast::CReference::eIndexedMegablast) {
+        reference += " for database indexing";
     }
 
     ostringstream str;
     if(html)
+    {
         str << "<b><a href=\""
             << blast::CReference::GetPubmedUrl(pub)
             << "\">" << reference << "</a>:</b>"
             << "\n";
-    else
-        str << reference << ": ";
-
-    WrapOutputLine(str.str() + blast::CReference::GetString(pub), 
+        WrapOutputLine(str.str() + blast::CReference::GetString(pub), 
                    line_len, out);
+    }
+    else
+    {
+        str << reference << ": ";
+        WrapOutputLine(str.str() + blast::CReference::GetHTMLFreeString(pub), 
+                   line_len, out);
+    }
+
     out << "\n";
 }
 
@@ -246,7 +246,6 @@ void  CBlastFormatUtil::PrintTildeSepLines(string str, size_t line_len,
     NStr::Split(str, "~", split_line);
     ITERATE(list<string>, iter, split_line) {
         WrapOutputLine(*iter,  line_len, out);
-        out << "\n";
     }
 }
 
@@ -255,7 +254,6 @@ void CBlastFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
                                      CNcbiOstream& out,
                                      bool top) 
 {
-
     if (top) {
         const CBlastFormatUtil::SDbInfo* dbinfo = &(dbinfo_list.front());
         out << "Database: ";
@@ -271,7 +269,9 @@ void CBlastFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
         }
 
         WrapOutputLine(db_titles, line_length, out);
-        out << "\n";
+        if ( !dbinfo->algorithm_names.empty() ) {
+            out << "Masked using: " << dbinfo->algorithm_names << endl;
+        }
         CBlastFormatUtil::AddSpace(out, 11);
         out << NStr::Int8ToString(tot_num_seqs, NStr::fWithCommas) << 
             " sequences; " <<
@@ -284,7 +284,6 @@ void CBlastFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
         if (dbinfo->subset == false) {
             out << "  Database: ";
             WrapOutputLine(dbinfo->definition, line_length, out);
-            out << "\n";
 
             out << "    Posted date:  ";
             out << dbinfo->date << "\n";
@@ -310,7 +309,7 @@ void CBlastFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
 
 }
 
-void CBlastFormatUtil::PrintKAParameters(float lambda, float k, float h, 
+void CBlastFormatUtil::PrintKAParameters(double lambda, double k, double h, 
                                          size_t line_len, 
                                          CNcbiOstream& out, bool gapped, 
                                          float c) 
@@ -411,7 +410,6 @@ void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs,
         out << all_id_str;
     } else {
         WrapOutputLine(all_id_str, line_len, out);
-        out << "\n";
         if(cbs.IsSetInst() && cbs.GetInst().CanGetLength()){
             out << "Length=";
             out << cbs.GetInst().GetLength() <<"\n";
@@ -1370,53 +1368,6 @@ CBlastFormatUtil::HitListToHspList(list< CRef<CSeq_align_set> >& source)
 }
 
 
-string CBlastFormatUtil::MakeURLSafe(char* src) {
-    static char HEXDIGS[] = "0123456789ABCDEF";
-    char* buf;
-    size_t len;
-    char* p;
-    char c;
-    string url = NcbiEmptyString;
-    
-    if (src){
-        /* first pass to calculate required buffer size */
-        for (p = src, len = 0; (c = *(p++)) != '\0'; ) {
-            switch (c) {
-            default:
-                if (c < '0' || (c > '9' && c < 'A') ||
-                    (c > 'Z' && c < 'a') || c > 'z') {
-                    len += 3;
-                    break;
-                }
-            case '-': case '_': case '.': case '!': case '~':
-            case '*': case '\'': case '(': case ')':
-                ++len;
-            }
-        }
-        buf = new char[len + 1];
-        /* second pass -- conversion */
-        for (p = buf; (c = *(src++)) != '\0'; ) {
-            switch (c) {
-            default:
-                if (c < '0' || (c > '9' && c < 'A') ||
-                    (c > 'Z' && c < 'a') || c > 'z') {
-                    *(p++) = '%';
-                    *(p++) = HEXDIGS[(c >> 4) & 0xf];
-                    *(p++) = HEXDIGS[c & 0xf];
-                    break;
-                }
-            case '-': case '_': case '.': case '!': case '~':
-            case '*': case '\'': case '(': case ')':
-                *(p++) = c;
-            }
-        }
-        *p = '\0';
-        url = buf;
-        delete [] buf;
-    }
-    return url;
-}
-
 
 string CBlastFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid, 
                                       string user_url, string database,
@@ -1494,7 +1445,7 @@ string CBlastFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid,
         gnl[0] = '\0';
     }
     
-    str = MakeURLSafe(dbtmp == NULL ? (char*) "nr" : dbtmp);
+    str = URL_EncodeString(dbtmp == NULL ? (char*) "nr" : dbtmp);
 
     if (user_url.find("?") == string::npos){
         link += user_url + "?" + "db=" + str + "&na=" + (db_is_na? "1" : "0");
@@ -1506,13 +1457,13 @@ string CBlastFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid,
     }
     
     if (gnl[0] != '\0'){
-        str = MakeURLSafe(gnl);
+        str = URL_EncodeString(gnl);
         link += "&gnl=";
         link += str;
     }
     if (gi > 0){
         link += "&gi=" + NStr::IntToString(gi);
-        link += "&term=" + NStr::IntToString(gi) + MakeURLSafe("[gi]");
+        link += "&term=" + NStr::IntToString(gi) + URL_EncodeString("[gi]");
     }
     if(taxid > 0){
         link += "&taxid=" + NStr::IntToString(taxid);
@@ -1717,12 +1668,11 @@ bool CBlastFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset,
 ///@param is_na: is this sequence nucleotide or not
 ///
 list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& ids, 
-                                             const string& rid, const string& db_name, 
-                                             const int query_number, const int taxid,
+                                             const string& rid,
                                              const string& cdd_rid, 
                                              const string& entrez_term,
-                                             bool is_na, string& user_url,
-                                             const bool db_is_na, int first_gi,
+                                             bool is_na, 
+                                             int first_gi,
                                              bool structure_linkout_as_group,
                                              bool for_alignment, int cur_align)
 {
@@ -1952,6 +1902,38 @@ CRef<CSeq_align_set> CBlastFormatUtil::LimitSeqalignByHsps(CSeq_align_set& sourc
             ++hspCount;                        
         }
         new_aln->Set().push_back(*iter);
+    }
+    return new_aln;
+}
+
+
+CRef<CSeq_align_set> CBlastFormatUtil::ExtractQuerySeqAlign(CRef<CSeq_align_set> &source_aln,
+                                                            int queryNumber) 
+{
+    if(queryNumber == 0) {
+        return source_aln;
+    }
+    CRef<CSeq_align_set> new_aln;    
+    
+    CConstRef<CSeq_id> prevQueryId;    
+    int currQueryNum = 0;
+
+    ITERATE(CSeq_align_set::Tdata, iter, source_aln->Get()){
+        const CSeq_id& newQueryId = (*iter)->GetSeq_id(0);
+        if(prevQueryId.Empty() || !newQueryId.Match(*prevQueryId)){
+            currQueryNum++;
+            prevQueryId = &newQueryId;
+        }         
+        //Record seq aligns corresponding to queryNumber
+        if(currQueryNum == queryNumber) {
+            if(new_aln.Empty()) {
+                new_aln.Reset(new CSeq_align_set);    
+            }
+            new_aln->Set().push_back(*iter);        
+        }        
+        else if(currQueryNum > queryNumber) {
+            break;
+        }        
     }
     return new_aln;
 }
@@ -2187,7 +2169,7 @@ CBlastFormatUtil::PrintAsciiPssm
             // Print the weighted observed
             for (SIZE_TYPE c = 0; c < DIM(RESIDUE_ORDER); c++) {
                 if ((*pssm)(RESIDUE_ORDER[c], i) != BLAST_SCORE_MIN) {
-                    float value = 100;
+                    double value = 100;
                     value *= (*weighted_res_freqs)(RESIDUE_ORDER[c], i);
                     // round to the nearest integer
                     value = (int)(value + (value > 0. ? 0.5 : -0.5));
@@ -2200,7 +2182,7 @@ CBlastFormatUtil::PrintAsciiPssm
 
             // print the relative weight of gapless real matches to pseudocounts
             if ((num_matching_seqs[i] > 1) && (query_seq[i] != kXResidue)) {
-                float val = gapless_col_weights[i]/kPseudoCount;
+                double val = gapless_col_weights[i]/kPseudoCount;
                 val *= (sigma[i] / interval_sizes[i] - 1);
                 out << setprecision(2) << val;
             } else {

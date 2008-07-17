@@ -40,6 +40,7 @@
  * @{
  */
 
+#include <corelib/ncbithr.hpp>                  // for CThread
 #include <algo/blast/api/setup_factory.hpp>
 #include "blast_memento_priv.hpp"
 
@@ -123,7 +124,7 @@ protected:
     }
 
 private:
-    SInternalData& m_InternalData;
+    SInternalData m_InternalData;
     const CBlastOptionsMemento* m_OptsMemento;
 };
 

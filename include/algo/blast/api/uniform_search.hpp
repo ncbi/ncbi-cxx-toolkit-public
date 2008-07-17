@@ -108,6 +108,8 @@ class NCBI_XBLAST_EXPORT CSearchDatabase : public CObject {
 public:
     /// Define a list of gis
     typedef vector<int> TGiList;
+    /// Define a list of filtering algorithms to apply to the database
+    typedef vector<int> TFilteringAlgorithms;
 
     /// Molecule of the BLAST database
     enum EMoleculeType {
@@ -170,6 +172,12 @@ public:
     /// Accessor for the gi list
     const TGiList& GetGiListLimitation() const;
 
+    /// Mutator for the list of filtering algorithms
+    /// @param flist list of filtering algorithms [in]
+    void SetFilteringAlgorithms(const TFilteringAlgorithms& flist);
+    /// Accessor for the list of filtering algorithms
+    const TFilteringAlgorithms& GetFilteringAlgorithms() const;
+
     /// Mutator for the negative gi list
     /// @param gilist list of gis [in]
     void SetNegativeGiListLimitation(const TGiList& gilist);
@@ -183,6 +191,8 @@ private:
     // N.B.: only one of the 2 below should be specified
     TGiList         m_GiListLimitation;         ///< gi list
     TGiList         m_NegativeGiListLimitation; ///< negative gi list
+    /// filtering to apply to database sequences
+    TFilteringAlgorithms m_FilteringAlgs;       
 };
 
 

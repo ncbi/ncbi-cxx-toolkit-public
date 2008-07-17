@@ -74,7 +74,8 @@ public:
     /// @param format Output format - what fields to include in the output [in]
     /// @param delim Delimiter to use between tabular fields [in]
     CBlastTabularInfo(CNcbiOstream& ostr, const string& format=NcbiEmptyString,
-                      EFieldDelimiter delim=eTab);
+                      EFieldDelimiter delim=eTab,
+                      bool parse_local_ids=false);
     /// Destructor
     ~CBlastTabularInfo();
     /// Set query id from a CSeq_id
@@ -137,6 +138,11 @@ public:
                              unsigned int iteration = 
                                 numeric_limits<unsigned int>::max(),
                              const CSeq_align_set* align_set=0); 
+
+     /// Prints number of queries processed.
+     /// @param num_queries number of queries processed [in]
+     void PrintNumProcessed(int num_queries);
+
     /// Enumeration for all fields that are supported in the tabular output
     enum ETabularField {
         eQuerySeqId = 0,       ///< Query Seq-id(s)
@@ -174,6 +180,10 @@ public:
 
     /// Return all field names supported in the format string.
     list<string> GetAllFieldNames(void);
+
+    /// Should local IDs be parsed or not?
+    /// @param val value to set [in]
+    void SetParseLocalIds(bool val) { m_ParseLocalIds = val; }
 
 protected:
     /// Add a field to the list of fields to show, if it is not yet present in
@@ -281,6 +291,8 @@ private:
     map<string, ETabularField> m_FieldMap; 
     list<ETabularField> m_FieldsToShow; ///< Which fields to show?
     char m_FieldDelimiter;   ///< Delimiter character for tabular fields.
+    /// Should the query deflines be parsed for local IDs?
+    bool m_ParseLocalIds;
 };
 
 inline void 
@@ -359,8 +371,8 @@ CBlastTabularInfo::x_DeleteFieldToShow(ETabularField field)
 inline void 
 CBlastTabularInfo::x_AddDefaultFieldsToShow()
 {
-    x_AddFieldToShow(eQueryAccession);
-    x_AddFieldToShow(eSubjectAllAccessions);
+    x_AddFieldToShow(eQuerySeqId);
+    x_AddFieldToShow(eSubjectAllSeqIds);
     x_AddFieldToShow(ePercentIdentical);
     x_AddFieldToShow(eAlignmentLength);
     x_AddFieldToShow(eMismatches);

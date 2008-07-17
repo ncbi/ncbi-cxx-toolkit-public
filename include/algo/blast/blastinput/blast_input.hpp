@@ -338,10 +338,6 @@ public:
     ///
     CBlastBioseqMaker(const SDataLoaderConfig& dlconfig);
 
-    /// Destructor
-    ///
-    ~CBlastBioseqMaker();
-
     /// Creates a Bioseq given a SeqId
     /// @param id Reference to the SeqId object identifying the sequence [in]
     /// @param retrieve_seq_data When gis/accessions are provided in the input,
@@ -356,6 +352,11 @@ public:
     /// @return True if the molecule type is protein
     ///
     bool IsProtein(CConstRef<CSeq_id> id);
+
+    /// Returns true if the Bioseq contained in the seq_entry is empty (i.e.:
+    /// it was created by this class)
+    /// @param bioseq Bioseq object to inspect [in]
+    static bool IsEmptyBioseq(const CBioseq& bioseq);
 
 private:
     /// Scope object used to retrieve the bioseqs

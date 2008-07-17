@@ -210,7 +210,42 @@ public:
     ///   The returned OID within the relevant volume.
     /// @return
     ///   A pointer to the volume containing the oid, or NULL.
-    const CSeqDBVol * FindVol(int oid, int & vol_oid) const
+    CSeqDBVol * FindVol(int oid, int & vol_oid) const
+    {
+        // The 'const' usage here should be cleaned up, i.e. const
+        // should be removed from most of SeqDB's methods.  Since the
+        // atlas often remaps the actual file data due to seemingly
+        // read-only user requests, there are very few parts of this
+        // code that can really be considered const.  "Conceptual"
+        // const is not worth the trouble, particularly for internal
+        // methods.
+        
+        // A good technique would be to remove all or nearly all of
+        // the 'mutable' keywords, then remove the word 'const' from
+        // almost everything the compiler complains about.
+        
+        int vol_idx(0);
+        return const_cast<CSeqDBVol*>(FindVol(oid, vol_oid, vol_idx));
+    }
+    
+    /// Find a volume by OID.
+    /// 
+    /// Many of the CSeqDB methods identify which sequence to use by
+    /// OID.  That OID applies to all sequences in all volumes of the
+    /// opened database(s).  This method is used to find the volume
+    /// (if any) that contains this OID, and to return a pointer to
+    /// that volume, the OID within that volume that corresponds to
+    /// the global input OID, and the volume index.
+    ///
+    /// @param oid
+    ///   The global OID to search for.
+    /// @param vol_oid
+    ///   The returned OID within the relevant volume.
+    /// @param vol_idx
+    ///   The returned index of the relevant volume.
+    /// @return
+    ///   A pointer to the volume containing the oid, or NULL.
+    const CSeqDBVol * FindVol(int oid, int & vol_oid, int & vol_idx) const
     {
         int rec_indx = m_RecentVol;
         
@@ -221,6 +256,7 @@ public:
                 (rvol.OIDEnd()   >  oid)) {
                 
                 vol_oid = oid - rvol.OIDStart();
+                vol_idx = rec_indx;
                 
                 return rvol.Vol();
             }
@@ -233,12 +269,13 @@ public:
                 m_RecentVol = index;
                 
                 vol_oid = oid - m_VolList[index].OIDStart();
+                vol_idx = index;
                 
                 return m_VolList[index].Vol();
             }
         }
         
-        return 0;
+        return NULL;
     }
     
     /// Find a volume by OID.
@@ -297,6 +334,30 @@ public:
     /// @return
     ///   A pointer to the indicated volume, or NULL.
     const CSeqDBVol * GetVol(int i) const
+    {
+        if (m_VolList.empty()) {
+            return 0;
+        }
+        
+        if (i >= (int) m_VolList.size()) {
+            return 0;
+        }
+        
+        m_RecentVol = i;
+        
+        return m_VolList[i].Vol();
+    }
+    
+    /// Find a volume by index.
+    /// 
+    /// This method returns a volume by index, so that 0 is the first
+    /// volume, and N-1 is the last volume of a set of N.
+    ///
+    /// @param i
+    ///   The index of the volume to return.
+    /// @return
+    ///   A pointer to the indicated volume, or NULL.
+    CSeqDBVol * GetVolNonConst(int i)
     {
         if (m_VolList.empty()) {
             return 0;

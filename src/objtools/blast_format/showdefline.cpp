@@ -126,68 +126,6 @@ static const string  kPsiblastCheckbox =  "<INPUT TYPE=\"checkbox\" NAME=\"ch\
 ecked_GI\" VALUE=\"%d\">  ";
 
 
-///Get the url for linkout
-///@param linkout: the membership value
-///@param gi: the actual gi or 0
-///@param rid: RID
-///@param cdd_rid: CDD RID
-///@param entrez_term: entrez query term
-///@param is_na: is this sequence nucleotide or not
-///@param cur_align: index of the current alignment
-///
-static list<string> s_GetLinkoutString(int linkout, int gi, string& rid, 
-                                       string& cdd_rid, string& entrez_term,
-                                       bool is_na, int cur_align)
-{
-    list<string> linkout_list;
-    char molType[8]={""};
-    if(!is_na){
-        sprintf(molType, "[pgi]");
-    }
-    else {
-        sprintf(molType, "[ngi]");
-    }
-    
-    char buf[1024];
-    
-    if (linkout & eUnigene) {
-      string l_UnigeneUrl = CBlastFormatUtil::GetURLFromRegistry("UNIGEN");
-        sprintf(buf, l_UnigeneUrl.c_str(), is_na ? "nucleotide" : "protein", 
-                is_na ? "nucleotide" : "protein", gi, rid.c_str(),
-                "top", cur_align);
-        linkout_list.push_back(buf);
-    }
-    if (linkout & eStructure){
-        sprintf(buf, kStructureUrl.c_str(), rid.c_str(), gi, gi, 
-                cdd_rid.c_str(), "onegroup", 
-                (entrez_term == NcbiEmptyString) ? 
-                "none":((char*) entrez_term.c_str()),
-                "top", cur_align);
-        linkout_list.push_back(buf);
-    }
-    if (linkout & eGeo){
-      string l_GeoUrl = CBlastFormatUtil::GetURLFromRegistry("GEO");
-        sprintf(buf, l_GeoUrl.c_str(), gi, rid.c_str(), "top", cur_align);
-        linkout_list.push_back(buf);
-    }
-    if(linkout & eGene){
-      string l_GeneUrl = CBlastFormatUtil::GetURLFromRegistry("GENE");
-        sprintf(buf, l_GeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID",
-                rid.c_str(), "top", cur_align);
-        linkout_list.push_back(buf);
-    }
-    if((linkout & eBioAssay) && is_na){
-      string l_BioAssayUrl = CBlastFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");
-        sprintf(buf, l_BioAssayUrl.c_str(), gi, rid.c_str(), "top", cur_align);
-        linkout_list.push_back(buf);
-    } else if ((linkout & eBioAssay) && !is_na) {
-      string l_BioAssayUrl = CBlastFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");
-        sprintf(buf, l_BioAssayUrl.c_str(), gi, rid.c_str(), "top", cur_align);
-        linkout_list.push_back(buf);
-    }
-    return linkout_list;
-}
-
 ///Return url for seqid
 ///@param ids: input seqid list
 ///@param gi: gi to use
@@ -200,77 +138,6 @@ static list<string> s_GetLinkoutString(int linkout, int gi, string& rid,
 ///@param cur_align: index of the current alignment
 ///
 static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
-                         bool is_db_na, string& db_name, bool open_new_window, 
-                         string& rid, int query_number, int taxid, int cur_align)
-{
-    string url_link = NcbiEmptyString;
-    CConstRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
-    char dopt[32], db[32];
-    char logstr_moltype[32], logstr_location[32];
-    if(user_url == NcbiEmptyString ||
-       (gi > 0 && user_url.find("dumpgnl.cgi") != string::npos)){ 
-        //use entrez or dbtag specified
-        if(is_db_na) {
-            strcpy(dopt, "GenBank");
-            strcpy(db, "Nucleotide");
-            strcpy(logstr_moltype, "nucl");
-        } else {
-            strcpy(dopt, "GenPept");
-            strcpy(db, "Protein");
-            strcpy(logstr_moltype, "prot");
-        }    
-        
-        strcpy(logstr_location, "top");
-
-        char url_buf[2048];
-        if (gi > 0) {
-	        string l_EntrezUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ");
-            sprintf(url_buf, l_EntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
-                    logstr_moltype, logstr_location, cur_align,
-                    open_new_window ? "TARGET=\"EntrezView\"" : "");
-            url_link = url_buf;
-        } else {//seqid general, dbtag specified
-            if(wid->Which() == CSeq_id::e_General){
-                const CDbtag& dtg = wid->GetGeneral();
-                const string& dbname = dtg.GetDb();
-                if(NStr::CompareNocase(dbname, "TI") == 0){
-                    string actual_id;
-                    wid->GetLabel(&actual_id, CSeq_id::eContent);
-                    sprintf(url_buf, kTraceUrl.c_str(), "", actual_id.c_str(),
-                            rid.c_str());
-                    url_link = url_buf;
-                }
-            }
-        }
-    } else { //need to use user_url 
-
-        string url_with_parameters = CBlastFormatUtil::BuildUserUrl(ids, taxid, user_url,
-                                                                    db_name,
-                                                                    is_db_na, rid,
-                                                                    query_number,
-                                                                    false);
-        if (url_with_parameters != NcbiEmptyString) {
-            url_link += "<a href=\"";
-            url_link += url_with_parameters;
-            url_link += "\">";
-        }
-    }
-    return url_link;
-}
-
-
-///Return url for seqid
-///@param ids: input seqid list
-///@param gi: gi to use
-///@param user_url: use this user specified url if it's non-empty
-///@param is_db_na: is the database nucleotide or not
-///@param db_name: name of the database
-///@param open_new_window: click the url to open a new window?
-///@param rid: RID
-///@param query_number: the query number
-///@param cur_align: index of the current alignment
-///
-static string s_GetIdUrlNew(const CBioseq::TId& ids, int gi, string& user_url,
                          bool is_db_na, string& db_name, bool open_new_window, 
                          string& rid, int query_number, int taxid, int linkout,
                          int cur_align)
@@ -455,8 +322,10 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
 void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            const CSeq_id& aln_id,
                                            list<int>& use_this_gi,
-                                           SDeflineInfo* sdl)
+                                           SDeflineInfo* sdl,
+                                           int blast_rank)
 {
+
     const CRef<CBlast_def_line_set> bdlRef = CBlastFormatUtil::GetBlastDefline(handle);
     const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
     const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
@@ -539,12 +408,13 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                 if(sdl->gi == cur_gi){                 
 					sdl->linkout = CBlastFormatUtil::GetLinkout((**iter));
                     sdl->linkout_list =
-                        s_GetLinkoutString(sdl->linkout,
-                                           sdl->gi, m_Rid, 
+                        CBlastFormatUtil::GetLinkoutUrl(sdl->linkout,
+                                           cur_id, m_Rid, 
                                            m_CddRid, 
                                            m_EntrezTerm, 
                                            handle.GetBioseqCore()->IsNa(),
-                                           m_cur_align);
+                                           0, true, false,
+                                           blast_rank);
                     break;
                 }
             } else {
@@ -552,12 +422,13 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                     if(cur_gi == *iter_gi){                     
                         sdl->linkout = CBlastFormatUtil::GetLinkout((**iter));
                         sdl->linkout_list = 
-                            s_GetLinkoutString(sdl->linkout, 
-                                               cur_gi, m_Rid,
-                                               m_CddRid,
-                                               m_EntrezTerm,
-                                               handle.GetBioseqCore()->IsNa(),
-                                               m_cur_align);
+                           CBlastFormatUtil::GetLinkoutUrl(sdl->linkout,
+                                           cur_id, m_Rid, 
+                                           m_CddRid, 
+                                           m_EntrezTerm, 
+                                           handle.GetBioseqCore()->IsNa(),
+                                           0, true, false,
+                                           blast_rank);
                         linkout_not_found = false;
                         break;
                     }
@@ -591,212 +462,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         sdl->id_url = s_GetIdUrl(*ids, sdl->gi, user_url,
                                  m_IsDbNa, m_Database, 
                                  (m_Option & eNewTargetWindow) ? true : false,
-                                 m_Rid, m_QueryNumber, taxid,
-                                 m_cur_align);
-    }
-
-  
-    sdl->defline = GetTitle(m_ScopeRef->GetBioseqHandle(*(sdl->id)));
-    if (!(bdl.empty())) { 
-        for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
-            iter != bdl.end(); iter++){
-            const CBioseq::TId& cur_id = (*iter)->GetSeqid();
-            int cur_gi =  FindGi(cur_id);
-            int gi_in_use_this_gi = 0;
-            ITERATE(list<int>, iter_gi, use_this_gi){
-                if(cur_gi == *iter_gi){
-                    gi_in_use_this_gi = *iter_gi;                 
-                    break;
-                }
-            }
-            if(use_this_gi.empty() || gi_in_use_this_gi > 0) {
-                
-                if((*iter)->IsSetTitle()){
-                    bool id_used_already = false;
-                    ITERATE(CBioseq::TId, iter_id, cur_id) {
-                        if ((*iter_id)->Match(*(sdl->id))) {
-                            id_used_already = true;
-                            break;
-                        }
-                    }
-                    if (!id_used_already) {
-                        string concat_acc;
-                        wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
-                        wid->GetLabel(&concat_acc, CSeq_id::eFasta, 0);
-                        if( (m_Option & eShowGi) && cur_gi > 0){
-                            sdl->defline =  sdl->defline + " >" + "gi|" + 
-                                NStr::IntToString(cur_gi) + "|" + 
-                                concat_acc + " " + (*iter)->GetTitle();
-                        } else {
-                            sdl->defline = sdl->defline + " >" + concat_acc +
-                                " " + 
-                                (*iter)->GetTitle();
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-void CShowBlastDefline::x_FillDeflineAndIdNew(const CBioseq_Handle& handle,
-                                           const CSeq_id& aln_id,
-                                           list<int>& use_this_gi,
-                                           SDeflineInfo* sdl)
-{
-    const CRef<CBlast_def_line_set> bdlRef = CBlastFormatUtil::GetBlastDefline(handle);
-    const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
-    const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
-    CRef<CSeq_id> wid;
-    sdl->defline = NcbiEmptyString;
- 
-    sdl->gi = 0;
-    sdl->id_url = NcbiEmptyString;
-    sdl->score_url = NcbiEmptyString;
-    sdl->linkout = 0;
-    sdl->is_new = false;
-    sdl->was_checked = false;
-
-    int taxid = 0;
-    string type_temp = m_BlastType;
-    type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
- 
-    if (type_temp == "mapview" || type_temp == "mapview_prev" || 
-        type_temp == "gsfasta") {
-        taxid = 
-            CBlastFormatUtil::GetTaxidForSeqid(aln_id, *m_ScopeRef);
-    }
-    string user_url;
-    if(m_Option & eHtml){
-        user_url = m_Reg->Get(m_BlastType, "TOOL_URL");  
-    }  
-
-    //get psiblast stuff
-    
-    if(m_SeqStatus){
-        string aln_id_str;
-        aln_id.GetLabel(&aln_id_str, CSeq_id::eContent);
-        PsiblastSeqStatus seq_status = eUnknown;
-        
-        TIdString2SeqStatus::const_iterator itr = m_SeqStatus->find(aln_id_str);
-        if ( itr != m_SeqStatus->end() ){
-            seq_status = itr->second;
-        }
-        if((m_PsiblastStatus == eFirstPass) ||
-           ((m_PsiblastStatus == eRepeatPass) && (seq_status & eRepeatSeq))
-           || ((m_PsiblastStatus == eNewPass) && (seq_status & eRepeatSeq))){
-            if(!(seq_status & eGoodSeq)){
-                sdl->is_new = true;
-            }
-            if(seq_status & eCheckedSeq){
-                sdl->was_checked = true;
-            }   
-        }
-    }
-        
-    //get id
-    if(bdl.empty()){
-        wid = FindBestChoice(*ids, CSeq_id::WorstRank);
-        sdl->id = wid;
-        sdl->gi = FindGi(*ids);    
-    } else {        
-        bool found = false;
-        for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
-            iter != bdl.end(); iter++){
-            const CBioseq::TId* cur_id = &((*iter)->GetSeqid());
-            int cur_gi =  FindGi(*cur_id);
-            wid = FindBestChoice(*cur_id, CSeq_id::WorstRank);
-            if (!use_this_gi.empty()) {
-                ITERATE(list<int>, iter_gi, use_this_gi){
-                    if(cur_gi == *iter_gi){
-                        found = true;
-                        break;
-                    }
-                }
-            } else {
-                ITERATE(CBioseq::TId, iter_id, *cur_id) {
-                    if ((*iter_id)->Match(aln_id)) {
-                        found = true;
-                    }
-                }
-            }
-            if(found){
-                sdl->id = wid;
-                sdl->gi = cur_gi;
-                ids = cur_id;
-                break;
-            }
-        }
-    }
-
-    //get linkout
-  
-    bool linkout_not_found = true;
-    for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
-        iter != bdl.end(); iter++){
-        const CBioseq::TId& cur_id = (*iter)->GetSeqid();
-        int cur_gi =  FindGi(cur_id);            
-        if(use_this_gi.empty()){
-            if(sdl->gi == cur_gi){                 
-                sdl->linkout = CBlastFormatUtil::GetLinkout((**iter));
-                if((m_Option & eLinkout)){
-                    sdl->linkout_list =
-                        CBlastFormatUtil::
-                        GetLinkoutUrl(sdl->linkout,
-                                      cur_id, m_Rid, m_Database, m_QueryNumber,
-                                      taxid, m_CddRid, 
-                                      m_EntrezTerm, 
-                                      handle.GetBioseqCore()->IsNa(), user_url,
-                                      m_IsDbNa, 0, true, false, m_cur_align);
-                }
-                break;
-            }
-        } else {
-            ITERATE(list<int>, iter_gi, use_this_gi){
-                if(cur_gi == *iter_gi){                     
-                    sdl->linkout = CBlastFormatUtil::GetLinkout((**iter));
-                    if((m_Option & eLinkout)){
-                        sdl->linkout_list = 
-                            CBlastFormatUtil::
-                            GetLinkoutUrl(sdl->linkout, 
-                                          cur_id, m_Rid, m_Database, m_QueryNumber,
-                                          taxid, m_CddRid, 
-                                          m_EntrezTerm,
-                                          handle.GetBioseqCore()->IsNa(), user_url,
-                                          m_IsDbNa, 0, true, false, m_cur_align);
-                    }
-                    linkout_not_found = false;
-                    break;
-                }
-            }
-            if(!linkout_not_found){
-                break;
-            } 
-        }   
-    }
-    
-    //get score and id url
-    if(m_Option & eHtml){
-        string accession;
-        sdl->id->GetLabel(&accession, CSeq_id::eContent);
-        sdl->score_url = "<a href=#";
-        sdl->score_url += sdl->gi == 0 ? accession : 
-            NStr::IntToString(sdl->gi);
-        sdl->score_url += ">";
-        string tool_url = m_Reg->Get(m_BlastType, "TOOL_URL");
-        string type = m_BlastType;
-        type = NStr::TruncateSpaces(NStr::ToLower(type));
-        int tax_id = 0;
-        if (type == "mapview" || type == "mapview_prev" || type == "gsfasta") {
-            tax_id = CBlastFormatUtil::GetTaxidForSeqid(aln_id, *m_ScopeRef);
-        }
-       
-        sdl->id_url = s_GetIdUrlNew(*ids, sdl->gi, tool_url,
-                                 m_IsDbNa, m_Database, 
-                                 (m_Option & eNewTargetWindow) ? true : false,
-                                 m_Rid, m_QueryNumber, tax_id, sdl->linkout,
-                                 m_cur_align);
+                                 m_Rid, m_QueryNumber, taxid, sdl->linkout,
+                                 blast_rank);
     }
 
   
@@ -880,7 +547,7 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
 CShowBlastDefline::~CShowBlastDefline()
 {
    
-    ITERATE(list<SDeflineInfo*>, iter, m_DeflineList){
+    ITERATE(list<SScoreInfo*>, iter, m_ScoreList){
         delete *iter;
     }
 }
@@ -913,6 +580,37 @@ void CShowBlastDefline::Display(CNcbiOstream & out)
     }
 }
 
+bool CShowBlastDefline::x_CheckForStructureLink()
+{
+      bool struct_linkout = false;
+      int count = 0;
+      const int k_CountMax = 200; // Max sequences to check.
+
+      ITERATE(list<SScoreInfo*>, iter, m_ScoreList) {
+          const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(*(*iter)->id);
+          const CRef<CBlast_def_line_set> bdlRef = CBlastFormatUtil::GetBlastDefline(handle);
+          const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
+          for(list< CRef< CBlast_def_line > >::const_iterator bdl_iter = bdl.begin();
+              bdl_iter != bdl.end() & struct_linkout == false; bdl_iter++){
+              if ((*bdl_iter)->IsSetLinks())
+              {
+                 for (list< int >::const_iterator link_iter = (*bdl_iter)->GetLinks().begin();
+                      link_iter != (*bdl_iter)->GetLinks().end(); link_iter++)
+                 {
+                      if (*link_iter & eStructure) {
+                         struct_linkout = true;
+                         break;
+                      }
+                 }
+              }
+          }
+          if (struct_linkout == true || count > k_CountMax)
+            break;
+          count++;
+      }
+      return struct_linkout;
+}
+
 //size_t max_score_len = kBits.size(), max_evalue_len = kValue.size();
 //size_t max_sum_n_len =1;
 //size_t m_MaxScoreLen , m_MaxEvalueLen,m_MaxSumNLen;
@@ -937,33 +635,29 @@ void CShowBlastDefline::x_InitDefline(void)
     }
     bool master_is_na = false;
     //prepare defline
-    CSeq_align_set actual_aln_list;
-    CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
-                                                     *m_AlnSetRef);
 
     for (CSeq_align_set::Tdata::const_iterator 
-             iter = actual_aln_list.Get().begin(); 
-         iter != actual_aln_list.Get().end() && num_align < m_NumToShow; 
+             iter = m_AlnSetRef->Get().begin(); 
+         iter != m_AlnSetRef->Get().end() && num_align < m_NumToShow; 
          iter++){
-        m_cur_align = num_align + 1;
         if (is_first_aln) {
             master_is_na = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).
                 GetBioseqCore()->IsNa();
         }
         subid = &((*iter)->GetSeq_id(1));
         if(is_first_aln || (!is_first_aln && !subid->Match(*previous_id))) {
-            SDeflineInfo* sdl = x_GetDeflineInfo(**iter);
-            if(sdl){
-                m_DeflineList.push_back(sdl);
-                if(m_MaxScoreLen < sdl->bit_string.size()){
-                    m_MaxScoreLen = sdl->bit_string.size();
+            SScoreInfo* sci = x_GetScoreInfo(**iter, num_align);
+            if(sci){
+                m_ScoreList.push_back(sci);
+                if(m_MaxScoreLen < sci->bit_string.size()){
+                    m_MaxScoreLen = sci->bit_string.size();
                 }
-                if(m_MaxEvalueLen < sdl->evalue_string.size()){
-                    m_MaxEvalueLen = sdl->evalue_string.size();
+                if(m_MaxEvalueLen < sci->evalue_string.size()){
+                    m_MaxEvalueLen = sci->evalue_string.size();
                 }
 
-                if( m_MaxSumNLen < NStr::IntToString(sdl->sum_n).size()){
-                    m_MaxSumNLen = NStr::IntToString(sdl->sum_n).size();
+                if( m_MaxSumNLen < NStr::IntToString(sci->sum_n).size()){
+                    m_MaxSumNLen = NStr::IntToString(sci->sum_n).size();
                 }
             }
             num_align++;
@@ -972,15 +666,10 @@ void CShowBlastDefline::x_InitDefline(void)
         previous_id = subid;
       
     }
-    //actual output
-    if((m_Option & eLinkout) && (m_Option & eHtml) && !m_IsDbNa && !master_is_na){
-        ITERATE(list<SDeflineInfo*>, iter, m_DeflineList){
-            if((*iter)->linkout & eStructure){
-                m_StructureLinkout = true;                
-                break;
-            }
-        }
-    }
+
+    
+    if((m_Option & eLinkout) && (m_Option & eHtml) && !m_IsDbNa && !master_is_na)
+        m_StructureLinkout = x_CheckForStructureLink();
 }
 
 
@@ -1042,12 +731,13 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
     }
     
     bool first_new =true;
-    ITERATE(list<SDeflineInfo*>, iter, m_DeflineList){
+    ITERATE(list<SScoreInfo*>, iter, m_ScoreList){
+        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
         size_t line_length = 0;
         string line_component;
-        if ((m_Option & eHtml) && ((*iter)->gi > 0)){
+        if ((m_Option & eHtml) && (sdl->gi > 0)){
             if((m_Option & eShowNewSeqGif)) { 
-                if ((*iter)->is_new) {
+                if (sdl->is_new) {
                     if (first_new) {
                         first_new = false;
                         out << kPsiblastEvalueLink;
@@ -1057,7 +747,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
                 } else {
                     out << kPsiblastNewSeqBackgroundGif;
                 }
-                if ((*iter)->was_checked) {
+                if (sdl->was_checked) {
                     out << kPsiblastCheckedGif;
                     
                 } else {
@@ -1066,37 +756,37 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             }
             char buf[256];
             if((m_Option & eCheckboxChecked)){
-                sprintf(buf, kPsiblastCheckboxChecked.c_str(), (*iter)->gi, 
-                        (*iter)->gi);
+                sprintf(buf, kPsiblastCheckboxChecked.c_str(), sdl->gi, 
+                        sdl->gi);
                 out << buf;
             } else if (m_Option & eCheckbox) {
-                sprintf(buf, kPsiblastCheckbox.c_str(), (*iter)->gi);
+                sprintf(buf, kPsiblastCheckbox.c_str(), sdl->gi);
                 out << buf;
             }
         }
         
         
-        if((m_Option & eHtml) && ((*iter)->id_url != NcbiEmptyString)) {
-            out << (*iter)->id_url;
+        if((m_Option & eHtml) && (sdl->id_url != NcbiEmptyString)) {
+            out << sdl->id_url;
         }
         if(m_Option & eShowGi){
-            if((*iter)->gi > 0){
-                line_component = "gi|" + NStr::IntToString((*iter)->gi) + "|";
+            if(sdl->gi > 0){
+                line_component = "gi|" + NStr::IntToString(sdl->gi) + "|";
                 out << line_component;
                 line_length += line_component.size();
             }
         }
-        if(!(*iter)->id.Empty()){
-            if(!((*iter)->id->AsFastaString().find("gnl|BL_ORD_ID") 
+        if(!sdl->id.Empty()){
+            if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") 
                  != string::npos)){
-                out << (*iter)->id->AsFastaString();
-                line_length += (*iter)->id->AsFastaString().size();
+                out << sdl->id->AsFastaString();
+                line_length += sdl->id->AsFastaString().size();
             }
         }
-        if((m_Option & eHtml) && ((*iter)->id_url != NcbiEmptyString)) {
+        if((m_Option & eHtml) && (sdl->id_url != NcbiEmptyString)) {
             out << "</a>";
         }        
-        line_component = "  " + (*iter)->defline; 
+        line_component = "  " + sdl->defline; 
         string actual_line_component;
         if(line_component.size()+line_length > m_LineLen){
             actual_line_component = line_component.substr(0, m_LineLen - 
@@ -1116,11 +806,11 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
         CBlastFormatUtil::AddSpace(out, m_LineLen - line_length);
         out << kTwoSpaceMargin;
        
-        if((m_Option & eHtml) && ((*iter)->score_url != NcbiEmptyString)) {
-            out << (*iter)->score_url;
+        if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
+            out << sdl->score_url;
         }
         out << (*iter)->bit_string;
-        if((m_Option & eHtml) && ((*iter)->score_url != NcbiEmptyString)) {
+        if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
             out << "</a>";
         }   
         CBlastFormatUtil::AddSpace(out, m_MaxScoreLen - (*iter)->bit_string.size());
@@ -1133,7 +823,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
         }
         if((m_Option & eLinkout) && (m_Option & eHtml)){
             bool is_first = true;
-            ITERATE(list<string>, iter_linkout, (*iter)->linkout_list){
+            ITERATE(list<string>, iter_linkout, sdl->linkout_list){
                 if(is_first){
                     out << kOneSpaceMargin;
                     is_first = false;
@@ -1142,6 +832,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             }
         }
         out <<"\n";
+        delete sdl;
     }
 }
 
@@ -1221,53 +912,49 @@ void CShowBlastDefline::x_InitDeflineTable(void)
     m_QueryLength = 1;
     bool master_is_na = false;
     //prepare defline
-    CSeq_align_set actual_aln_list;
-    CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
-                                                     *m_AlnSetRef);
 
     for (CSeq_align_set::Tdata::const_iterator 
-             iter = actual_aln_list.Get().begin(); 
-         iter != actual_aln_list.Get().end() && num_align < m_NumToShow; 
+             iter = m_AlnSetRef->Get().begin(); 
+         iter != m_AlnSetRef->Get().end() && num_align < m_NumToShow; 
          iter++){
-
-        m_cur_align = num_align + 1;
 
         if (is_first_aln) {
             m_QueryLength = m_MasterRange ? 
-                                m_MasterRange->GetTo() - m_MasterRange->GetFrom() :
-                                    m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).GetBioseqLength();
+                m_MasterRange->GetLength() :
+                m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).GetBioseqLength();
             master_is_na = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).
                 GetBioseqCore()->IsNa();
         }
 
         subid = &((*iter)->GetSeq_id(1));
       
+        // This if statement is working on the last CSeq_align_set, stored in "hit"
+        // This is confusing and the loop should probably be restructured at some point.
         if(!is_first_aln && !(subid->Match(*previous_id))) {
-            SDeflineInfo* sdl = x_GetHitDeflineInfo(hit);
-            if(sdl){
-                m_DeflineList.push_back(sdl);
-                if(m_MaxScoreLen < sdl->bit_string.size()){
-                    m_MaxScoreLen = sdl->bit_string.size();
+            SScoreInfo* sci = x_GetScoreInfoForTable(hit, num_align);
+            if(sci){
+                m_ScoreList.push_back(sci);
+                if(m_MaxScoreLen < sci->bit_string.size()){
+                    m_MaxScoreLen = sci->bit_string.size();
                 }
-                if(m_MaxTotalScoreLen < sdl->total_bit_string.size()){
-                    m_MaxTotalScoreLen = sdl->total_bit_string.size();
+                if(m_MaxTotalScoreLen < sci->total_bit_string.size()){
+                    m_MaxTotalScoreLen = sci->total_bit_string.size();
                 }
-                percent_identity = 100*sdl->match/sdl->align_length;
+                percent_identity = 100*sci->match/sci->align_length;
                 if(m_MaxPercentIdentityLen < NStr::IntToString(percent_identity).size()) {
                     m_MaxPercentIdentityLen = NStr::IntToString(percent_identity).size();
                 }
-                if(m_MaxEvalueLen < sdl->evalue_string.size()){
-                    m_MaxEvalueLen = sdl->evalue_string.size();
+                if(m_MaxEvalueLen < sci->evalue_string.size()){
+                    m_MaxEvalueLen = sci->evalue_string.size();
                 }
                 
-                if( m_MaxSumNLen < NStr::IntToString(sdl->sum_n).size()){
-                    m_MaxSumNLen = NStr::IntToString(sdl->sum_n).size();
+                if( m_MaxSumNLen < NStr::IntToString(sci->sum_n).size()){
+                    m_MaxSumNLen = NStr::IntToString(sci->sum_n).size();
                 }
                 hit.Set().clear();
             }
           
-            num_align++;
-      
+            num_align++; // Only increment if new subject ID found.
         }
         if (num_align < m_NumToShow) { //no adding if number to show already reached
             hit.Set().push_back(*iter);
@@ -1277,38 +964,32 @@ void CShowBlastDefline::x_InitDeflineTable(void)
     }
 
     //the last hit
-    SDeflineInfo* sdl = x_GetHitDeflineInfo(hit);
-    if(sdl){
-        m_DeflineList.push_back(sdl);
-        if(m_MaxScoreLen < sdl->bit_string.size()){
-            m_MaxScoreLen = sdl->bit_string.size();
+    SScoreInfo* sci = x_GetScoreInfoForTable(hit, num_align);
+    if(sci){
+         m_ScoreList.push_back(sci);
+        if(m_MaxScoreLen < sci->bit_string.size()){
+            m_MaxScoreLen = sci->bit_string.size();
         }
-        if(m_MaxTotalScoreLen < sdl->total_bit_string.size()){
-            m_MaxScoreLen = sdl->total_bit_string.size();
+        if(m_MaxTotalScoreLen < sci->total_bit_string.size()){
+            m_MaxScoreLen = sci->total_bit_string.size();
         }
-        percent_identity = 100*sdl->match/sdl->align_length;
+        percent_identity = 100*sci->match/sci->align_length;
         if(m_MaxPercentIdentityLen < NStr::IntToString(percent_identity).size()) {
             m_MaxPercentIdentityLen =  NStr::IntToString(percent_identity).size();
         }
-        if(m_MaxEvalueLen < sdl->evalue_string.size()){
-            m_MaxEvalueLen = sdl->evalue_string.size();
+        if(m_MaxEvalueLen < sci->evalue_string.size()){
+            m_MaxEvalueLen = sci->evalue_string.size();
         }
         
-        if( m_MaxSumNLen < NStr::IntToString(sdl->sum_n).size()){
-            m_MaxSumNLen = NStr::IntToString(sdl->sum_n).size();
+        if( m_MaxSumNLen < NStr::IntToString(sci->sum_n).size()){
+            m_MaxSumNLen = NStr::IntToString(sci->sum_n).size();
         }
         hit.Set().clear();
     }
-             
-    //actual output
-    if((m_Option & eLinkout) && (m_Option & eHtml) && !m_IsDbNa && !master_is_na){
-        ITERATE(list<SDeflineInfo*>, iter, m_DeflineList){
-            if((*iter)->linkout & eStructure){                
-                m_StructureLinkout = true;
-                break;
-            }
-        }
-    }
+
+    if((m_Option & eLinkout) && (m_Option & eHtml) && !m_IsDbNa && !master_is_na)
+        m_StructureLinkout = x_CheckForStructureLink();
+ 
 }
 
 void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
@@ -1417,8 +1098,10 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
     bool first_new =true;
     int prev_database_type = 0, cur_database_type = 0;
     bool is_first = true;
-    bool is_mixed_database = CBlastFormatUtil::
-        IsMixedDatabase(*m_AlnSetRef, *m_ScopeRef);
+    // Mixed db is genomic + transcript and this does not apply to proteins.
+    bool is_mixed_database = false;
+    if (m_IsDbNa == true)
+       is_mixed_database = CBlastFormatUtil::IsMixedDatabase(*m_AlnSetRef, *m_ScopeRef);
 
     map< string, string> parameters_to_change;
     string query_buf;
@@ -1432,10 +1115,11 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
 	if (m_Option & eHtml) {
 		out << "<tbody>\n";
 	}
-    ITERATE(list<SDeflineInfo*>, iter, m_DeflineList){
+    ITERATE(list<SScoreInfo*>, iter, m_ScoreList){
+        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
         size_t line_length = 0;
         string line_component;
-        cur_database_type = ((*iter)->linkout & eGenomicSeq);
+        cur_database_type = (sdl->linkout & eGenomicSeq);
         if (is_mixed_database) {
 			if (is_first) {
                 if (m_Option & eHtml) {
@@ -1487,9 +1171,9 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
 			out << "<tr>\n";
 			out << "<td class=\"l\">\n";
 		}
-        if ((m_Option & eHtml) && ((*iter)->gi > 0)){
+        if ((m_Option & eHtml) && (sdl->gi > 0)){
             if((m_Option & eShowNewSeqGif)) { 
-                if ((*iter)->is_new) {
+                if (sdl->is_new) {
                     if (first_new) {
                         first_new = false;
                         out << kPsiblastEvalueLink;
@@ -1499,7 +1183,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                 } else {
                     out << kPsiblastNewSeqBackgroundGif;
                 }
-                if ((*iter)->was_checked) {
+                if (sdl->was_checked) {
                     out << kPsiblastCheckedGif;
                     
                 } else {
@@ -1508,42 +1192,42 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
             }
             char buf[256];
             if((m_Option & eCheckboxChecked)){
-                sprintf(buf, kPsiblastCheckboxChecked.c_str(), (*iter)->gi, 
-                        (*iter)->gi);
+                sprintf(buf, kPsiblastCheckboxChecked.c_str(), sdl->gi, 
+                        sdl->gi);
                 out << buf;
             } else if (m_Option & eCheckbox) {
-                sprintf(buf, kPsiblastCheckbox.c_str(), (*iter)->gi);
+                sprintf(buf, kPsiblastCheckbox.c_str(), sdl->gi);
                 out << buf;
             }
         }
         
         
-        if((m_Option & eHtml) && ((*iter)->id_url != NcbiEmptyString)) {
-            out << (*iter)->id_url;
+        if((m_Option & eHtml) && (sdl->id_url != NcbiEmptyString)) {
+            out << sdl->id_url;
         }
         if(m_Option & eShowGi){
-            if((*iter)->gi > 0){
-                line_component = "gi|" + NStr::IntToString((*iter)->gi) + "|";
+            if(sdl->gi > 0){
+                line_component = "gi|" + NStr::IntToString(sdl->gi) + "|";
                 out << line_component;
                 line_length += line_component.size();
             }
         }
-        if(!(*iter)->id.Empty()){
-            if(!((*iter)->id->AsFastaString().find("gnl|BL_ORD_ID") 
+        if(!sdl->id.Empty()){
+            if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") 
                  != string::npos)){
                 string id_str;
-                (*iter)->id->GetLabel(&id_str, CSeq_id::eContent);
+                sdl->id->GetLabel(&id_str, CSeq_id::eContent);
                 out << id_str;
                 line_length += id_str.size();
             }
         }
-        if((m_Option & eHtml) && ((*iter)->id_url != NcbiEmptyString)) {
+        if((m_Option & eHtml) && (sdl->id_url != NcbiEmptyString)) {
             out << "</a>";
         }
 		if (m_Option & eHtml) {
 			out << "</td><td class=\"lim l\"><div class=\"lim\">";
 		}
-        line_component = "  " + (*iter)->defline; 
+        line_component = "  " + sdl->defline; 
         string actual_line_component;
         actual_line_component = line_component;
         /*
@@ -1570,11 +1254,11 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
 			out << kTwoSpaceMargin;
 		}
 		*/
-        if((m_Option & eHtml) && ((*iter)->score_url != NcbiEmptyString)) {
-            out << (*iter)->score_url;
+        if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
+            out << sdl->score_url;
         }
         out << (*iter)->bit_string;
-        if((m_Option & eHtml) && ((*iter)->score_url != NcbiEmptyString)) {
+        if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
             out << "</a>";
         }   
 		if(m_Option & eHtml) {
@@ -1589,7 +1273,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                                    (*iter)->total_bit_string.size());
 		}
 		
-        int percent_coverage = 100*(*iter)->master_covered_lenghth/m_QueryLength;
+                int percent_coverage = 100*(*iter)->master_covered_length/m_QueryLength;
 		if (m_Option & eHtml) {
 			out << "<td>" << percent_coverage << "%</td>";
 		}
@@ -1638,7 +1322,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                
             out << "<td>";
             bool first_time = true;
-            ITERATE(list<string>, iter_linkout, (*iter)->linkout_list){
+            ITERATE(list<string>, iter_linkout, sdl->linkout_list){
                 if(first_time){
                     out << kOneSpaceMargin;
                     first_time = false;
@@ -1653,10 +1337,11 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
         if (!(m_Option & eHtml)) {        
             out <<"\n";
         }
+        delete sdl;
     }
-	if (m_Option & eHtml) {
-		out << "</tbody>\n</table></div>\n";
-	}
+    if (m_Option & eHtml) {
+	out << "</tbody>\n</table></div>\n";
+    }
 }
 
 void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
@@ -1673,177 +1358,130 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
     x_DisplayDeflineTable(out);
 }
 
-
-CShowBlastDefline::SDeflineInfo* 
-CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
+CShowBlastDefline::SScoreInfo* 
+CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
 {
-    SDeflineInfo* sdl = NULL;
-    const CSeq_id& id = aln.GetSeq_id(1); 
     string evalue_buf, bit_score_buf, total_bit_score_buf;
     int score = 0;
     double bits = 0;
     double evalue = 0;
     int sum_n = 0;
     int num_ident = 0;
-    list<int> use_this_gi;       
-      
-    try{
-        const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(id);
-      
-        CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, 
-                                       num_ident, use_this_gi);
-        CBlastFormatUtil::GetScoreString(evalue, bits, 0, evalue_buf, 
-                                         bit_score_buf, total_bit_score_buf);
-        sdl = new SDeflineInfo;
+    list<int> use_this_gi; 
 
-        x_FillDeflineAndId(handle, id, use_this_gi, sdl);
-        sdl->sum_n = sum_n == -1 ? 1:sum_n ;
-        sdl->bit_string = bit_score_buf;
-        sdl->evalue_string = evalue_buf;
-    } catch (const CException&){
-        sdl = new SDeflineInfo;
-        CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n,
+    use_this_gi.clear();
+
+    CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, 
                                        num_ident, use_this_gi);
-        CBlastFormatUtil::GetScoreString(evalue, bits, 0, evalue_buf, 
-                                         bit_score_buf, total_bit_score_buf);
-        sdl->sum_n = sum_n == -1 ? 1:sum_n;
-        sdl->bit_string = bit_score_buf;
-        sdl->evalue_string = evalue_buf;
-        sdl->defline = "Unknown";
-        sdl->is_new = false;
-        sdl->was_checked = false;
-        sdl->linkout = 0;
-        
-        if(id.Which() == CSeq_id::e_Gi){
-            sdl->gi = id.GetGi();
-        } else {            
-            sdl->id = &id;
-            sdl->gi = 0;
-        }
-        if(m_Option & eHtml){
-            string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
-            CBioseq::TId ids;
-            CRef<CSeq_id> id_ref;
-            id_ref = &(const_cast<CSeq_id&>(id));
-            ids.push_back(id_ref);
-            sdl->id_url = s_GetIdUrl(ids, sdl->gi, user_url,
-                                     m_IsDbNa, m_Database, 
-                                     (m_Option & eNewTargetWindow) ? 
-                                     true : false, m_Rid, m_QueryNumber, 0,
-                                     m_cur_align);
-            sdl->score_url = NcbiEmptyString;
-        }
-    }
-    
-    return sdl;
+
+    CBlastFormatUtil::GetScoreString(evalue, bits, 0, 
+                              evalue_buf, bit_score_buf, total_bit_score_buf);
+
+    SScoreInfo* score_info = new SScoreInfo;
+    score_info->sum_n = sum_n == -1 ? 1:sum_n ;
+    score_info->id = &(aln.GetSeq_id(1));
+
+    score_info->use_this_gi = use_this_gi;
+
+    score_info->bit_string = bit_score_buf;
+    score_info->evalue_string = evalue_buf;
+    score_info->id = &(aln.GetSeq_id(1));
+    score_info->blast_rank = blast_rank+1;
+
+    return score_info;
 }
 
-CShowBlastDefline::SDeflineInfo* 
-CShowBlastDefline::x_GetHitDeflineInfo(const CSeq_align_set& aln)
+CShowBlastDefline::SScoreInfo* 
+CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_rank)
 {
-  
-    SDeflineInfo* sdl = NULL;
-
-    if(aln.Get().empty()){
-        return sdl;
-    }
-        
-    const CSeq_id& id = aln.Get().front()->GetSeq_id(1); 
     string evalue_buf, bit_score_buf, total_bit_score_buf;
-
     int score = 0;
     double bits = 0;
-    double total_bits = 0;
     double evalue = 0;
-    double highest_bits = 0;
-    double lowest_evalue = 0;
     int sum_n = 0;
     int num_ident = 0;
-    list<int> use_this_gi;       
-    int align_length = 0;
-    int highest_identity = 0;
-    int highest_ident = 0;
-    int highest_length = 1;
-    
-    int master_covered_lenghth = CBlastFormatUtil::GetMasterCoverage(aln);
-    
+    SScoreInfo* score_info = NULL;
 
+    if(aln.Get().empty())
+        return score_info;
+
+    score_info = x_GetScoreInfo(*(aln.Get().front()), blast_rank); 
+
+    double total_bits = 0;
+    double highest_bits = 0;
+    double lowest_evalue = 0;
+    int highest_length = 1;
+    int highest_ident = 0;
+    int highest_identity = 0;
+    list<int> use_this_gi;   // Not used here, but needed for GetAlnScores.
+    score_info->master_covered_length =  CBlastFormatUtil::GetMasterCoverage(aln);
     ITERATE(CSeq_align_set::Tdata, iter, aln.Get()) {
-        align_length = CBlastFormatUtil::GetAlignmentLength(**iter, 
-                                                            m_TranslatedNucAlignment);
+        int align_length = CBlastFormatUtil::GetAlignmentLength(**iter, 
+                                                        m_TranslatedNucAlignment);
         CBlastFormatUtil::GetAlnScores(**iter, score, bits, evalue, sum_n, 
-                                       num_ident, use_this_gi);  
-        
+                                   num_ident, use_this_gi);  
+        use_this_gi.clear();
+    
         total_bits += bits;
-        
+    
         if (100*num_ident/align_length > highest_identity) {
             highest_length = align_length;
             highest_ident = num_ident;
             highest_identity = 100*num_ident/align_length;
         }
-        
+    
         if (bits > highest_bits) {
             highest_bits = bits;
             lowest_evalue = evalue;
         }       
     }
-    use_this_gi.clear();
+    score_info->match = highest_ident;      
+    score_info->align_length = highest_length;
+
+    // Really need to call this twice??
+    CBlastFormatUtil::GetScoreString(lowest_evalue, highest_bits, total_bits, 
+                                     evalue_buf, bit_score_buf, total_bit_score_buf);
+
+    score_info->total_bit_string = total_bit_score_buf; 
+    score_info->bit_string = bit_score_buf;
+    score_info->evalue_string = evalue_buf;
+
+    return score_info;
+}
+
+CShowBlastDefline::SDeflineInfo* 
+CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_gi, int blast_rank)
+{
+    SDeflineInfo* sdl = NULL;
+      
     try{
-        const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(id);
-
-        CBlastFormatUtil::GetAlnScores(*(aln.Get().front()), score, bits, evalue, sum_n, 
-                                       num_ident, use_this_gi);
-
-        CBlastFormatUtil::GetScoreString(lowest_evalue, highest_bits, total_bits, 
-                                         evalue_buf, bit_score_buf, total_bit_score_buf);
-
+        const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(*id);
         sdl = new SDeflineInfo;
-
-        x_FillDeflineAndIdNew(handle, id, use_this_gi, sdl);
-        sdl->sum_n = sum_n == -1 ? 1:sum_n ;
-        sdl->bit_string = bit_score_buf;
-        sdl->evalue_string = evalue_buf;
-        sdl->total_bit_string = total_bit_score_buf;
-        
-        sdl->match = highest_ident;      
-        sdl->align_length = highest_length;
-        sdl->master_covered_lenghth = master_covered_lenghth;
-    } catch (CException& ){
+        x_FillDeflineAndId(handle, *id, use_this_gi, sdl, blast_rank);
+    } catch (const CException&){
         sdl = new SDeflineInfo;
-        CBlastFormatUtil::GetAlnScores(*(aln.Get().front()), score, bits, evalue, sum_n,
-                                       num_ident, use_this_gi);
-
-        CBlastFormatUtil::GetScoreString(lowest_evalue, highest_bits, total_bits, 
-                                         evalue_buf,
-                                         bit_score_buf, total_bit_score_buf);
-
-        sdl->sum_n = sum_n == -1 ? 1:sum_n;
-        sdl->bit_string = bit_score_buf;
-        sdl->evalue_string = evalue_buf;
         sdl->defline = "Unknown";
         sdl->is_new = false;
         sdl->was_checked = false;
         sdl->linkout = 0;
-        sdl->total_bit_string = total_bit_score_buf;
-        sdl->master_covered_lenghth = master_covered_lenghth;
-        sdl->match = highest_ident;      
-        sdl->align_length = highest_length; 
-        if(id.Which() == CSeq_id::e_Gi){
-            sdl->gi = id.GetGi();
+        
+        if((*id).Which() == CSeq_id::e_Gi){
+            sdl->gi = (*id).GetGi();
         } else {            
-            sdl->id = &id;
+            sdl->id = id;
             sdl->gi = 0;
         }
         if(m_Option & eHtml){
             string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
             CBioseq::TId ids;
             CRef<CSeq_id> id_ref;
-            id_ref = &(const_cast<CSeq_id&>(id));
+            id_ref = &(const_cast<CSeq_id&>(*id));
             ids.push_back(id_ref);
-            sdl->id_url = s_GetIdUrlNew(ids, sdl->gi, user_url,
+            sdl->id_url = s_GetIdUrl(ids, sdl->gi, user_url,
                                      m_IsDbNa, m_Database, 
                                      (m_Option & eNewTargetWindow) ? 
-                                     true : false, m_Rid, m_QueryNumber, 0, sdl->linkout, m_cur_align);
+                                     true : false, m_Rid, m_QueryNumber, 0,
+                                     0, blast_rank);
             sdl->score_url = NcbiEmptyString;
         }
     }

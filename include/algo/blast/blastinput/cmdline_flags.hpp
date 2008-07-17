@@ -66,6 +66,9 @@ NCBI_XBLAST_EXPORT extern const string kArgGiList;
 /// argument for gi list to exclude from a BLAST database search
 NCBI_XBLAST_EXPORT extern const string kArgNegativeGiList;
 
+/// List of filtering algorithms to apply to subjects
+extern const string kArgMaskSubjects;
+
 /// Task to perform
 NCBI_XBLAST_EXPORT extern const string kTask;
 
@@ -98,6 +101,8 @@ NCBI_XBLAST_EXPORT extern const int kDfltArgOutputFormat;
 /// Argument to specify whether the GIs should be shown in the deflines in the
 /// traditional BLAST report
 NCBI_XBLAST_EXPORT extern const string kArgShowGIs;
+/// Default value for the "show GIs" formatter option
+NCBI_XBLAST_EXPORT extern const bool kDfltArgShowGIs;
 /// Argument to specify the number of one-line descriptions to show in the
 /// traditional BLAST report
 NCBI_XBLAST_EXPORT extern const string kArgNumDescriptions;
@@ -111,6 +116,16 @@ NCBI_XBLAST_EXPORT extern const string kArgNumAlignments;
 NCBI_XBLAST_EXPORT extern const size_t kDfltArgNumAlignments;
 /// Argument to specify whether to create output as HTML or not
 NCBI_XBLAST_EXPORT extern const string kArgProduceHtml;
+/// Default value which specifies whether to create output as HTML or not
+NCBI_XBLAST_EXPORT extern const bool kDfltArgProduceHtml;
+
+/// Argument to specify the maximum number of target sequences to keep (a.k.a.:
+/// hitlist size) 
+/// If not set in the command line, this value is the maximum of the number of
+/// alignments/descriptions to show in the traditional BLAST report
+NCBI_XBLAST_EXPORT extern const string kArgMaxTargetSequences;
+/// Default maximum number of target sequences, to be used only on the web
+NCBI_XBLAST_EXPORT extern const TSeqPos kDfltArgMaxTargetSequences;
 
 
 /// Argument to select the gap opening penalty
@@ -150,6 +165,8 @@ NCBI_XBLAST_EXPORT extern const string kArgUseSWTraceback;
 /// Argument to specify whether lowercase masking in the query sequence(s)
 /// should be interpreted as masking
 NCBI_XBLAST_EXPORT extern const string kArgUseLCaseMasking;
+/// Default argument to specify whether lowercase masking should be used
+NCBI_XBLAST_EXPORT extern const bool kDfltArgUseLCaseMasking;
 /// Argument to select the query strand(s) to search
 NCBI_XBLAST_EXPORT extern const string kArgStrand;
 /// Default value for strand selection
@@ -158,8 +175,11 @@ NCBI_XBLAST_EXPORT extern const string kDfltArgStrand;
 NCBI_XBLAST_EXPORT extern const string kArgQueryLocation;
 /// Argument to specify a location to restrict the subject sequence(s)
 NCBI_XBLAST_EXPORT extern const string kArgSubjectLocation;
-/// Argument to specify if the query sequence(s) defline should be parsed
-NCBI_XBLAST_EXPORT extern const string kArgParseQueryDefline;
+/// Argument to specify if the query and subject sequences defline should be
+/// parsed
+NCBI_XBLAST_EXPORT extern const string kArgParseDeflines;
+/// Default argument to specify whether sequences deflines should be parsed
+NCBI_XBLAST_EXPORT extern const bool kDfltArgParseDeflines;
 
 /// Argument to specify the maximum length of an intron when linking multiple
 /// distinct alignments (applicable to translated queries only)

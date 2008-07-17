@@ -37,8 +37,11 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
+#include <util/sequtil/sequtil_manip.hpp>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(blast);
 USING_SCOPE(objects);
 
 /** @addtogroup BlastFormatting
@@ -46,7 +49,7 @@ USING_SCOPE(objects);
  * @{
  */
 
-string CGiExtractor::Extract(const CBlastDBSeqId& id, CSeqDB& blastdb)
+string CGiExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
     int gi = CBlastDBSeqId::kInvalid;
     if (id.IsGi()) {
@@ -57,7 +60,7 @@ string CGiExtractor::Extract(const CBlastDBSeqId& id, CSeqDB& blastdb)
     return NStr::IntToString(gi);
 }
 
-string CPigExtractor::Extract(const CBlastDBSeqId& id, CSeqDB& blastdb)
+string CPigExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
     int pig = CBlastDBSeqId::kInvalid;
     if (id.IsPig()) {
@@ -68,12 +71,12 @@ string CPigExtractor::Extract(const CBlastDBSeqId& id, CSeqDB& blastdb)
     return NStr::IntToString(pig);
 }
 
-string COidExtractor::Extract(const CBlastDBSeqId& id, CSeqDB& blastdb)
+string COidExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
     return NStr::IntToString(ExtractOID(id, blastdb));
 }
 
-int COidExtractor::ExtractOID(const CBlastDBSeqId& id, CSeqDB& blastdb)
+int COidExtractor::ExtractOID(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
     int retval = CBlastDBSeqId::kInvalid;
     if (id.IsOID()) {
@@ -89,22 +92,32 @@ int COidExtractor::ExtractOID(const CBlastDBSeqId& id, CSeqDB& blastdb)
             retval = oids.front();
         }
     }
+    if (retval == CBlastDBSeqId::kInvalid) {
+        NCBI_THROW(CSeqDBException, eArgErr, 
+                   "Entry not found in BLAST database");
+    }
+    id.SetOID(retval);
 
     return retval;
 }
 
-string CSeqLenExtractor::Extract(const CBlastDBSeqId& id, CSeqDB& blastdb)
+TSeqPos
+CSeqLenExtractor::ExtractLength(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
-    const int kOid = COidExtractor().ExtractOID(id, blastdb);
-    return NStr::IntToString(blastdb.GetSeqLengthApprox(kOid));
+    return blastdb.GetSeqLength(COidExtractor().ExtractOID(id, blastdb));
 }
 
-string CTaxIdExtractor::Extract(const CBlastDBSeqId& id, CSeqDB& blastdb)
+string CSeqLenExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
+{
+    return NStr::IntToString(ExtractLength(id, blastdb));
+}
+
+string CTaxIdExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
     return NStr::IntToString(ExtractTaxID(id, blastdb));
 }
 
-int CTaxIdExtractor::ExtractTaxID(const CBlastDBSeqId& id, CSeqDB& blastdb)
+int CTaxIdExtractor::ExtractTaxID(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
     const int kOid = COidExtractor().ExtractOID(id, blastdb);
     int retval = CBlastDBSeqId::kInvalid;
@@ -119,26 +132,48 @@ int CTaxIdExtractor::ExtractTaxID(const CBlastDBSeqId& id, CSeqDB& blastdb)
     return retval;
 }
 
-string CSeqDataExtractor::Extract(const CBlastDBSeqId& id, CSeqDB& blastdb)
+string CSeqDataExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
     string retval;
     const int kOid = COidExtractor().ExtractOID(id, blastdb);
-    blastdb.GetSequenceAsString(kOid, retval);
+    try {
+        blastdb.GetSequenceAsString(kOid, retval, m_SeqRange);
+        if (m_Strand == eNa_strand_minus) {
+            CSeqManip::ReverseComplement(retval, CSeqUtil::e_Iupacna, 
+                                         0, retval.size());
+        }
+    } catch (CSeqDBException& e) {
+        //FIXME: change the enumeration when it's availble
+        if (e.GetErrCode() == CSeqDBException::eArgErr ||
+            e.GetErrCode() == CSeqDBException::eFileErr/*eOutOfRange*/) {
+            NCBI_THROW(CInputException, eInvalidRange, e.GetMsg());
+        }
+        throw;
+    }
     return retval;
 }
 
+/// Auxiliary function to retrieve a Bioseq from the BLAST database
+/// @param id BLAST DB sequence identifier [in]
+/// @param blastdb BLAST database to fetch data from [in]
+/// @param get_sequence should the sequence data be retrieved?
 static CRef<CBioseq>
-s_GetBioseq(const CBlastDBSeqId& id, CSeqDB& blastdb)
+s_GetBioseq(CBlastDBSeqId& id, CSeqDB& blastdb, bool get_sequence = false,
+            bool get_target_gi_only = false)
 {
     const int kOid = COidExtractor().ExtractOID(id, blastdb);
-    const int kTargetGi = id.IsGi() ? id.GetGi() : 0;
-    return blastdb.GetBioseqNoData(kOid, kTargetGi);
+    const int kTargetGi = get_target_gi_only
+        ? (id.IsGi() ? id.GetGi() : 0)
+        : 0;
+    return get_sequence 
+        ? blastdb.GetBioseq(kOid, kTargetGi) 
+        : blastdb.GetBioseqNoData(kOid, kTargetGi);
 }
 
-string CTitleExtractor::Extract(const CBlastDBSeqId& id, CSeqDB& blastdb)
+string CTitleExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
     string retval;
-    CRef<CBioseq> bioseq = s_GetBioseq(id, blastdb);
+    CRef<CBioseq> bioseq = s_GetBioseq(id, blastdb, false, m_ShowTargetOnly);
     if (bioseq->CanGetDescr()) {
         ITERATE(CSeq_descr::Tdata, seq_desc, bioseq->GetDescr().Get()) {
             if ((*seq_desc)->IsTitle()) {
@@ -150,31 +185,102 @@ string CTitleExtractor::Extract(const CBlastDBSeqId& id, CSeqDB& blastdb)
 
     if (retval.empty()) { 
         // Get the Bioseq's ID
-        retval = CSeq_id::GetStringDescr(*bioseq, 
-                                         CSeq_id::eFormat_BestWithVersion);
+        retval = CSeq_id::GetStringDescr(*bioseq, CSeq_id::eFormat_FastA);
     }
 
     return retval;
 }
 
-string CAccessionExtractor::Extract(const CBlastDBSeqId& id, CSeqDB& blastdb)
+string CAccessionExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
-    CRef<CBioseq> bioseq = s_GetBioseq(id, blastdb);
+    CRef<CBioseq> bioseq = s_GetBioseq(id, blastdb, false, m_ShowTargetOnly);
     _ASSERT(bioseq->CanGetId());
-    CRef<CSeq_id> best_id = FindBestChoice(bioseq->GetId(), CSeq_id::BestRank);
+    CRef<CSeq_id> theId = FindBestChoice(bioseq->GetId(), CSeq_id::WorstRank);
 
     string retval;
-    best_id->GetLabel(&retval, CSeq_id::eContent);    
+    const CTextseq_id* tsid = theId->GetTextseq_Id();
+    if (tsid) {
+        retval = tsid->GetAccession();
+    } else {
+        theId->GetLabel(&retval, CSeq_id::eContent);
+    } 
     return retval;
 }
 
-string CLineageExtractor::Extract(const CBlastDBSeqId& id, CSeqDB& blastdb)
+string 
+CCommonTaxonomicNameExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
     const int kTaxID = CTaxIdExtractor().ExtractTaxID(id, blastdb);
     SSeqDBTaxInfo tax_info;
     blastdb.GetTaxInfo(kTaxID, tax_info);
     _ASSERT(kTaxID == tax_info.taxid);
     return tax_info.common_name;
+}
+
+string 
+CScientificNameExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
+{
+    const int kTaxID = CTaxIdExtractor().ExtractTaxID(id, blastdb);
+    SSeqDBTaxInfo tax_info;
+    blastdb.GetTaxInfo(kTaxID, tax_info);
+    _ASSERT(kTaxID == tax_info.taxid);
+    return tax_info.scientific_name;
+}
+
+CFastaExtractor::CFastaExtractor(TSeqPos line_width, 
+             TSeqRange range /* = TSeqRange() */,
+             objects::ENa_strand strand /* = objects::eNa_strand_other */,
+             bool target_only /* = false */,
+             bool ctrl_a /* = false */)
+    : CSeqDataExtractor(range, strand), m_FastaOstream(m_OutputStream),
+    m_ShowTargetOnly(target_only), m_UseCtrlA(ctrl_a)
+{
+    m_FastaOstream.SetWidth(line_width);
+    m_FastaOstream.SetAllFlags(CFastaOstream::fKeepGTSigns);
+}
+
+/// Hacky function to replace ' >' for Ctrl-A's in the Bioseq's title
+static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)
+{
+    static const string kTarget(" >");
+    static const string kCtrlA(1, '\001');
+    NON_CONST_ITERATE(CSeq_descr::Tdata, desc, bioseq->SetDescr().Set()) {
+        if ((*desc)->Which() == CSeqdesc::e_Title) {
+            NStr::ReplaceInPlace((*desc)->SetTitle(), kTarget, kCtrlA);
+            break;
+        }
+    }
+}
+
+string CFastaExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
+{
+    CRef<CBioseq> bioseq = s_GetBioseq(id, blastdb, true, m_ShowTargetOnly);
+    if (m_UseCtrlA) {
+        s_ReplaceCtrlAsInTitle(bioseq);
+    }
+    CRef<CSeq_loc> range;
+    if (m_SeqRange.NotEmpty() || m_Strand != eNa_strand_other) {
+        CRef<CSeq_id> seqid = FindBestChoice(bioseq->GetId(), 
+                                             CSeq_id::BestRank);
+        if (m_SeqRange.NotEmpty()) {
+            range.Reset(new CSeq_loc(*seqid, m_SeqRange.GetFrom(),
+                                     m_SeqRange.GetTo(), m_Strand));
+            m_FastaOstream.ResetFlag(CFastaOstream::fSuppressRange);
+        } else {
+            TSeqPos length = CSeqLenExtractor().ExtractLength(id, blastdb);
+            range.Reset(new CSeq_loc(*seqid, 0, length-1, m_Strand));
+            m_FastaOstream.SetFlag(CFastaOstream::fSuppressRange);
+        }
+    }
+    m_OutputStream.str(""); // clean the buffer
+    try { m_FastaOstream.Write(*bioseq, range); }
+    catch (const CObjmgrUtilException& e) {
+        if (e.GetErrCode() == CObjmgrUtilException::eBadLocation) {
+            NCBI_THROW(CInputException, eInvalidRange, 
+                       "Invalid sequence range");
+        }
+    }
+    return m_OutputStream.str();
 }
 
 END_NCBI_SCOPE

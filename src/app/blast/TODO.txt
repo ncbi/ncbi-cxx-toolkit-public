@@ -1,6 +1,3 @@
-* bl2seq handling (locally and remotely - only blastn is implemented)
-* QA for bl2seq
-* phiblast (add to PSI-BLAST): reading of pattern file
 * psi-tblastn implementation (see tblastn_app.cpp)
 
 * Alignment results: Dense-seg vs. disc (fails for remote blast)

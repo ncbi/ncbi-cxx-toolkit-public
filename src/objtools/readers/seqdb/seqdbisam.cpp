@@ -1837,6 +1837,16 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
                     result = ePigId;
                     break;
                 }
+                
+                if (dbt.GetDb() == "ti") {
+                    simpler = true;
+                    num_id = (dbt.GetTag().IsStr()
+                              ? NStr::StringToInt8(dbt.GetTag().GetStr())
+                              : dbt.GetTag().GetId());
+                    
+                    result = eTiId;
+                    break;
+                }
             }
             
             if (dbt.CanGetTag() && dbt.GetTag().IsStr()) {

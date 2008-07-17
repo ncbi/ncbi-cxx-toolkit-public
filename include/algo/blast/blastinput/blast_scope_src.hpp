@@ -90,6 +90,17 @@ struct NCBI_XBLAST_EXPORT SDataLoaderConfig {
         x_Init(options, dbname, protein_data);
     }
 
+    /// Configures the BLAST database data loader to optimize the retrieval of
+    /// *entire* large sequences.
+    /// @note This option only has effect upon a BLAST database data loader's
+    /// first initialization. If this setting should change on the same BLAST
+    /// database, the data loader must be revoked from the object manager (this
+    /// can be achieved with CBlastScopeSource::RevokeBlastDbDataLoader()).
+    /// @param value TRUE to turn on, FALSE to turn off
+    void OptimizeForWholeLargeSequenceRetrieval(bool value = true) {
+        m_UseFixedSizeSlices = !value;
+    }
+
     /// Determine whether either of the data loaders should be used
     bool UseDataLoaders() const { return m_UseBlastDbs || m_UseGenbank; }
 
@@ -104,6 +115,13 @@ struct NCBI_XBLAST_EXPORT SDataLoaderConfig {
     /// Use the Genbank data loader
     bool m_UseGenbank;
 
+    /// Equality operator
+    bool operator==(const SDataLoaderConfig& rhs) const;
+    /// Inequality operator
+    bool operator!=(const SDataLoaderConfig& rhs) const;
+
+    /// Argument to configure BLAST database data loader
+    bool m_UseFixedSizeSlices;
 private:
     /// Initialization method
     /// @param options configuration options [in]
@@ -146,6 +164,15 @@ public:
     /// Create a new, properly configured CScope
     CRef<objects::CScope> NewScope();
 
+    /// Add the data loader configured in the object to the provided scope.
+    /// Use when the scope already has some sequences loaded in it
+    /// @param scope scope to add the data loaders to [in|out]
+    /// @throw Null pointer exception if scope is NULL
+    void AddDataLoaders(CRef<objects::CScope> scope);
+
+    /// Removes the BLAST database data loader from the object manager.
+    void RevokeBlastDbDataLoader();
+
 private:
     /// Our reference to the object manager
     CRef<objects::CObjectManager> m_ObjMgr;
@@ -166,8 +193,10 @@ private:
     /// Initialize the Genbank data loader
     void x_InitGenbankDataLoader();
 
-    /// Data loader priority for BLAST database data loader
-    static const int kBlastDbLoaderPriority = 80;
+    /// Data loader priority for protein BLAST database data loader
+    static const int kProtBlastDbLoaderPriority = 80;
+    /// Data loader priority for nucleotide BLAST database data loader
+    static const int kNuclBlastDbLoaderPriority = 85;
     /// Data loader priority for Genbank data loader
     static const int kGenbankLoaderPriority = 99;
 };

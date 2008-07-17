@@ -5,7 +5,15 @@
 
 REQUIRES = objects algo
 
-APP_PROJ = psiblast blastp blastn blastx rpsblast rpstblastn tblastn tblastx multisource
+APP_PROJ = \
+blastp \
+blastn \
+blastx \
+tblastn \
+tblastx \
+psiblast \
+rpsblast \
+rpstblastn
 
 USR_PROJ = legacy_blast
 

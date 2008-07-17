@@ -912,17 +912,16 @@ static Boolean s_IDbGetIsProt( void * handle, void * x )
 
 //------------------------------------------------------------------------------
 /** Forwards the call to CIndexedDb::db_. */
-static Int2 s_IDbGetSequence( void * handle, void * x )
+static Int2 s_IDbGetSequence( void * handle, BlastSeqSrcGetSeqArg * seq_arg )
 {
     CIndexedDb::TThreadLocal * idb_handle = (CIndexedDb::TThreadLocal *)handle;
     CRef< CIndexedDb > idb = idb_handle->idb_;
-    BlastSeqSrcGetSeqArg * seq_arg = (BlastSeqSrcGetSeqArg *)x;
-
 
     if( !idb->SeqFromIndex() || seq_arg->encoding != 0 ) {
         BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
         void * fw_handle = s_GetForwardSeqDb( handle );
-        return _BlastSeqSrcImpl_GetGetSequence( fw_seqsrc )( fw_handle, x );
+        return _BlastSeqSrcImpl_GetGetSequence( fw_seqsrc )( fw_handle, 
+                                                             seq_arg );
     }
     else {
         if( seq_arg->seq == 0 ) {
@@ -969,13 +968,13 @@ static Int4 s_IDbIteratorNext( void * handle, BlastSeqSrcIterator * itr )
 
 //------------------------------------------------------------------------------
 /** Forwards the call to CIndexedDb::db_. */
-static void s_IDbReleaseSequence( void * handle, void * x )
+static void s_IDbReleaseSequence( void * handle, BlastSeqSrcGetSeqArg * getseq_arg )
 {
     CIndexedDb::TThreadLocal * idb_handle = (CIndexedDb::TThreadLocal *)handle;
     CRef< CIndexedDb > idb = idb_handle->idb_;
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
     void * fw_handle = s_GetForwardSeqDb( handle );
-    _BlastSeqSrcImpl_GetReleaseSequence( fw_seqsrc )( fw_handle, x );
+    _BlastSeqSrcImpl_GetReleaseSequence( fw_seqsrc )( fw_handle, getseq_arg );
 }
 
 //------------------------------------------------------------------------------

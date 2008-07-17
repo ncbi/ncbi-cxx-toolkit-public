@@ -663,7 +663,7 @@ Int2 BLAST_SmithWatermanGetGappedScore (EBlastProgramType program_number,
       rpsblast_pssms = gap_align->sbp->psi_matrix->pssm->data;
       if (program_number == eBlastTypeRpsTblastn) {
          rps_context = rps_context * NUM_FRAMES +
-                      BLAST_FrameToContext(program_number, subject->frame);
+                      BLAST_FrameToContext(subject->frame, program_number);
       }
       /* only one cutoff applies to an RPS search */
       cutoff_score = hit_params->cutoffs[rps_context].cutoff_score;

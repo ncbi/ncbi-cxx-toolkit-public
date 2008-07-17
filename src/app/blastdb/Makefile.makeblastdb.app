@@ -1,6 +1,7 @@
 APP = makeblastdb
-SRC = makeblastdb
-LIB_ = $(BLAST_LIBS) $(OBJMGR_LIBS)
+SRC = makeblastdb masked_range_set
+REGEX_LIBS = xregexp $(PCRE_LIB)
+LIB_ = $(REGEX_LIBS) writedb $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 CFLAGS   = $(FAST_CFLAGS)

@@ -169,7 +169,7 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
     /// Constructors
     ///@param seqalign: seqalign to display. 
     ///@param mask_seqloc: seqloc to be displayed with different characters
-    ///and colors such as masked sequence.  Must be seqloc-int
+    ///and colors such as masked sequence.
     ///@param external_feature:  Feature to display such as phiblast pattern.
     ///Must be seqloc-int 
     ///@param matrix_name: scoring matrix name [in]
@@ -310,6 +310,10 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
     void SetBlastType(string type) {
         m_BlastType = type;
     }
+
+    /// Sets the masks and the masking algorithm used for the subject sequences
+    /// @param masks subject masks [in]
+    void SetSubjectMasks(const blast::TSeqLocInfoVector& masks);
     
     void SetCgiContext (CCgiContext& ctx) {
         m_Ctx = &ctx;
@@ -355,10 +359,18 @@ private:
     };
     
     ///store seqloc info
-    struct SAlnSeqlocInfo {
+    struct SAlnSeqlocInfo : public CObject {
         CRef<blast::CSeqLocInfo> seqloc;
         CRange < TSignedSeqPos > aln_range;
     };
+
+    /// List of SAlnSeqlocInfo structures
+    typedef list< CRef<SAlnSeqlocInfo> > TSAlnSeqlocInfoList;
+
+    /// Definition of std::map of CSeq_ids to masks
+    typedef map< blast::SSeqIdKey, blast::TMaskedQueryRegions > TSubjectMaskMap;
+    /// Map of subject masks
+    TSubjectMaskMap m_SubjectMasks;
 
     /// reference to seqalign set
     CConstRef < CSeq_align_set > m_SeqalignSetRef; 
@@ -432,7 +444,7 @@ private:
     ///
     void x_OutputSeq(string& sequence, const CSeq_id& id, int start, 
                      int len, int frame, int row, bool color_mismatch, 
-                     list<SAlnSeqlocInfo*> loc_list, 
+                     const TSAlnSeqlocInfoList& loc_list, 
                      CNcbiOstream& out) const;
     
     /// Count number of total gaps
@@ -573,10 +585,11 @@ private:
     ///
     void x_PrintDynamicFeatures(CNcbiOstream& out);
 
-    ///convert the internal seqloc list info using alnment coordinates
+    ///convert the passed seqloc list info using alnment coordinates
     ///@param loc_list: fill the list with seqloc info using aln coordinates
-    ///
-    void x_FillLocList(list<SAlnSeqlocInfo*>& loc_list) const;
+    ///@param masks: the masked regions 
+    void x_FillLocList(TSAlnSeqlocInfoList& loc_list, 
+                       const list< CRef<blast::CSeqLocInfo> >* masks) const;
 
     ///get external query feature info such as phi blast pattern
     ///@param row_num: row number

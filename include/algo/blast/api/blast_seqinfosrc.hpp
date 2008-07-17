@@ -35,6 +35,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_export.h>
 #include <list>
 
@@ -60,12 +61,15 @@ public:
     virtual ~IBlastSeqInfoSrc() {}
     
     /// Method to retrieve a sequence identifier given its ordinal number.
+    /// @param index the ordinal number to retrieve [in]
     virtual list< CRef<objects::CSeq_id> > GetId(Uint4 index) const = 0;
 
     /// Method to retrieve the sequence location given its ordinal number.
+    /// @param index the ordinal number to retrieve [in]
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(Uint4 index) const = 0;
 
     /// Method to retrieve a sequence length given its ordinal number.
+    /// @param index the ordinal number to retrieve [in]
     virtual Uint4 GetLength(Uint4 index) const = 0;
 
     /// Returns the size of the underlying container of sequences
@@ -73,6 +77,17 @@ public:
     
     /// Returns true if the subject is restricted by a GI list.
     virtual bool HasGiList() const = 0;
+
+    /// Retrieves the subject masks for the corresponding index
+    /// @param index the ordinal number to retrieve [in]
+    /// @param target_range range for which to return masks for. Empty ranges
+    /// indicate that no masks should be retrieved, whole ranges mean that
+    /// masks for the whole sequence should be retrieved [in]
+    /// @param retval the masks will be returned through this parameter [out]
+    /// @return true if there were masks returned in retval, otherwise false.
+    virtual bool GetMasks(Uint4 index, 
+                          const TSeqRange& target_range,
+                          TMaskedSubjRegions& retval) const = 0;
 };
 
 END_SCOPE(blast)

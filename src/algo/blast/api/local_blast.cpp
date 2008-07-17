@@ -121,6 +121,14 @@ CLocalBlast::Run()
                                                   search_msgs));
     CRef<CSearchResultSet> retval = m_TbackSearch->Run();
 
+    bool phi_blast = false;
+    if (retval->GetNumResults() > 0)
+    {
+       CSearchResults& results = (*retval)[0];
+       if (results.GetPhiQueryInfo() != NULL)
+           phi_blast = true;
+    }
+
     // Add the filtered query regions, if any
     TSeqLocInfoVector masks = m_PrelimSearch->GetFilteredQueryRegions();
     if ( !masks.empty() ) {
@@ -128,7 +136,12 @@ CLocalBlast::Run()
         for (size_t i = 0; i < retval->GetNumResults(); i++) {
             (*retval)[i].SetMaskedQueryRegions(masks[i]);
         }
+    } else if (phi_blast) {
+        for (size_t i = 0; i < retval->GetNumResults(); i++) {
+            (*retval)[i].SetMaskedQueryRegions(masks[0]);
+        }
     }
+    
     return retval;
 }
 

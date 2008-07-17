@@ -125,6 +125,18 @@ CSearchDatabase::GetGiListLimitation() const
 }
 
 void 
+CSearchDatabase::SetFilteringAlgorithms(const TFilteringAlgorithms& flist) 
+{
+    m_FilteringAlgs = flist; 
+}
+
+const CSearchDatabase::TFilteringAlgorithms& 
+CSearchDatabase::GetFilteringAlgorithms() const 
+{ 
+    return m_FilteringAlgs; 
+}
+
+void 
 CSearchDatabase::SetNegativeGiListLimitation(const TGiList& gilist) 
 {
     if ( !m_GiListLimitation.empty() ) {

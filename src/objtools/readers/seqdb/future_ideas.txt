@@ -1,5 +1,5 @@
 Author:  Kevin Bealer
-Updated: April 2008
+Updated: May 2008
 
 --- Some assorted ideas ---
 
@@ -166,4 +166,12 @@ Hash rather than Map for byte range lookup.
 
     However, it's not clear that this kind of optimization would be
     worth the time needed to implement and test it.
+
+
+Detection of global memory allocation issues...
+
+  It might be possible to configure the C++ new and delete handlers to
+  call a SeqDB method in the case of memory allocation failure, which
+  could then call the atlas to do a SeqDB garbage collection.
+
 

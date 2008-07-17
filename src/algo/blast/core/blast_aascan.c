@@ -36,6 +36,72 @@ static char const rcsid[] =
     "$Id$";
 #endif                          /* SKIP_DOXYGEN_PROCESSING */
 
+/** 
+ * @brief Determines the scanner's offsets taking the database masking
+ * restrictions into account (if any). This function should be called from the
+ * ScanSubject routines only.
+ * 
+ * @param subject The subject sequence [in]
+ * @param offset offset into the subject sequence about to be scanned [in]
+ * @param word_length the lookup table word length [in]
+ * @param s_first starting offset to scan [out]
+ * @param s_last ending offset to scan
+ * 
+ * @return TRUE if the scanning should proceed, FALSE otherwise (caller must
+ * return 0)
+ */
+static NCBI_INLINE Boolean
+s_DetermineScanningOffsets(const BLAST_SequenceBlk* subject,
+                           Int4* offset,
+                           Int4 word_length,
+                           Uint1** s_first,
+                           Uint1** s_last)
+{
+    Uint4 index;
+
+    ASSERT(subject->num_seq_ranges >= 1);
+
+    for (index = 0; index < subject->num_seq_ranges; index++) {
+        /* if offset is after the end of the segment, go to the next
+         * segment. */
+        if (*offset > subject->seq_ranges[index].right) {
+            continue;
+        }
+
+        /* if offset is before the beginning of the segment, advance it. */
+        if (*offset < subject->seq_ranges[index].left) {
+            *offset = subject->seq_ranges[index].left;
+        }
+
+        *s_first = subject->sequence + *offset;
+        *s_last  = subject->sequence + 
+            subject->seq_ranges[index].right - 
+            word_length;
+
+        /* if we fell off the end of the last segment, try the next one. */
+        if (*s_first > *s_last) {
+            continue;
+        }
+        /* otherwise, we've found a valid region to scan; break out. */
+        else {
+            break;
+        }
+
+    } /* end for */
+
+    /* if we didn't find any more valid ranges to scan, set the
+       expected exit conditions and return. */
+    if (index == subject->num_seq_ranges) {
+        *offset = subject->length - word_length + 1;
+        return FALSE;
+    }
+
+    ASSERT(index < subject->num_seq_ranges);
+    ASSERT(subject->seq_ranges[index].left <= subject->seq_ranges[index].right);
+    ASSERT(*s_first <= *s_last);
+    return TRUE;
+}
+
 /**
  * Scans the subject sequence from "offset" to the end of the sequence.
  * Copies at most array_size hits.
@@ -68,10 +134,12 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
 
     ASSERT(lookup_wrap->lut_type == eAaLookupTable);
     lookup = (BlastAaLookupTable *) lookup_wrap->lut;
-
-    s_first = subject->sequence + *offset;
-    s_last = subject->sequence + subject->length - lookup->word_length;
     pv = lookup->pv;
+
+    if (!s_DetermineScanningOffsets(subject, offset, lookup->word_length,
+                                    &s_first, &s_last)) {
+        return 0;
+    }
 
     /* prime the index */
     index = ComputeTableIndex(lookup->word_length - 1,
@@ -174,11 +242,15 @@ static Int4 s_BlastCompressedAaScanSubject(
     ASSERT(lookup_wrap->lut_type == eCompressedAaLookupTable);
     lookup = (BlastCompressedAaLookupTable *) lookup_wrap->lut;
     word_length = lookup->word_length;
+
+    if (!s_DetermineScanningOffsets(subject, offset, word_length, &s_first,
+                                    &s_last)) {
+        return 0;
+    }
+
     compressed_alphabet_size = lookup->compressed_alphabet_size;
     scaled_compress_table = lookup->scaled_compress_table;
     recip = lookup->reciprocal_alphabet_size;
-    s_first = subject->sequence + *offset;
-    s_last = subject->sequence + subject->length - word_length;
     pv = lookup->pv;
     pv_array_bts = lookup->pv_array_bts;
 

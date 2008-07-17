@@ -1094,6 +1094,33 @@ void SeqDB_JoinDelim(string & a, const string & b, const string & delim);
 void SeqDB_ThrowException(CSeqDBException::EErrCode code, const string & msg);
 
 
+/// Report file corruption by throwing an eFile CSeqDBException.
+///
+/// This function is only called in the case of validation failure,
+/// and is used in code paths where the validation failure may be
+/// related to file corruption or filesystem problems.  File data is
+/// considered a user input, so checks for corrupt file are treated as
+/// input validation.  This means that (1) checks that may be caused
+/// by file corruption scenarios are not disabled in debug mode, and
+/// (2) an exception (rather than an abort) is used.  Note that this
+/// function does not check the assert, so it should only be called in
+/// case of failure.
+///
+/// @param file Name of the file containing the assert.
+/// @param line The line the assert in on.
+/// @param text The text version of the asserted condition.
+void SeqDB_FileIntegrityAssert(const string & file,
+                               int            line,
+                               const string & text);
+
+#define SEQDB_FILE_ASSERT(YESNO)                                        \
+    do {                                                                \
+        if (! (YESNO)) {                                                \
+            SeqDB_FileIntegrityAssert(__FILE__, __LINE__, (#YESNO));    \
+        }                                                               \
+    } while(0)
+
+
 /// OID-Range type to simplify interfaces.
 struct SSeqDBSlice {
     /// Default constructor
@@ -1189,6 +1216,60 @@ void SeqDB_SplitQuoted(const string             & dbname,
 /// applies to CSeqDBExpert objects, where SetOffsetRanges() has been
 /// called.
 #define FENCE_SENTRY 201
+
+
+/// Find a map value or return a default.
+///
+/// This is similar to operator[], except that it works for constant
+/// maps, and takes an arbitrary default value when the value is not
+/// found (for std::map, the default value is always TValue()).
+///
+/// @param m The map from which to read values.
+/// @param k The key for which to search.
+/// @param dflt The value to return if the key was not found.
+/// @return The value corresponding to k or a reference to dflt.
+template<class T, class U>
+const U & SeqDB_MapFind(const std::map<T,U> & m, const T & k, const U & dflt)
+{
+    typename map<T,U>::const_iterator iter = m.find(k);
+    
+    if (iter == m.end()) {
+        return dflt;
+    }
+    
+    return iter->second;
+}
+
+/// Copy into a vector efficiently.
+///
+/// This copies data into a vector which may not be empty beforehand.
+/// It is more efficient than freeing the vector for cases like
+/// vector<string>, where the existing string buffers may be large
+/// enough to hold the new elements.  The vector is NOT resized
+/// downward but the caller may do a resize() if needed.  This design
+/// was chosen because for some types (such as vector<string>), more
+/// efficient code can be written if element destruction/construction
+/// is avoided.  The number of elements assigned is returned.
+///
+/// @param data Data source usable by ITERATE and *iter.
+/// @param v Vector to copy the data into.
+/// @return The number of elements copied.
+template<class T, class U>
+int SeqDB_VectorAssign(const T & data, vector<U> & v)
+{
+    size_t i = 0;
+    
+    ITERATE(typename T, iter, data) {
+        if (i < v.size()) {
+            v[i] = (*iter);
+        } else {
+            v.push_back(*iter);
+        }
+        i++;
+    }
+    
+    return i;
+}
 
 END_NCBI_SCOPE
 
