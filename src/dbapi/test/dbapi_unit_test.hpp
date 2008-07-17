@@ -246,6 +246,7 @@ public:
     void Test_LOB(void);
     void Test_LOB2(void);
     void Test_LOB3(void);
+    void Test_LOB4(void);
     void Test_LOB_Multiple(void);
     void Test_LOB_LowLevel(void);
     void Test_LOB_Multiple_LowLevel(void);

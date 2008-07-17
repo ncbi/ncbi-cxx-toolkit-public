@@ -2628,6 +2628,70 @@ CDBAPIUnitTest::Test_LOB3(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 void
+CDBAPIUnitTest::Test_LOB4(void)
+{
+    const string table_name = "#test_lob4";
+    const string clob_value = "hello";
+    string sql;
+
+    try {
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+
+        // Prepare data ...
+        {
+            // Create table ...
+            if (table_name[0] =='#') {
+                sql =
+                    "CREATE TABLE " + table_name + " ( \n"
+                    "   id NUMERIC IDENTITY NOT NULL, \n"
+                    "   text01  TEXT NULL \n" 
+                    ") \n";
+
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+            // Insert data ...
+            sql = "INSERT INTO " + table_name + "(text01) VALUES ('abcdef')";
+            auto_stmt->ExecuteUpdate( sql );
+
+            // Update data ...
+            sql = 
+                "DECLARE @p binary(16) \n"
+                "SELECT @p = textptr(text01) FROM " + table_name + " WHERE id = 1 \n"
+                "WRITETEXT " + table_name + ".text01 @p '" + clob_value + "'"
+                ;
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        // Retrieve data ...
+        {
+            sql = "SELECT text01 FROM "+ table_name;
+
+            auto_stmt->SendSql( sql );
+            while( auto_stmt->HasMoreResults() ) {
+                if ( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    rs->BindBlobToVariant(true);
+
+                    while ( rs->Next() ) {
+                        const CVariant& value = rs->GetVariant(1);
+
+                        BOOST_CHECK( !value.IsNull() );
+
+                        BOOST_CHECK_EQUAL(value.GetString(), clob_value);
+                    }
+                }
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
 CDBAPIUnitTest::Test_LOB_Multiple(void)
 {
     const string table_name = "#test_lob_multiple";
@@ -14932,8 +14996,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
     if (tc_cursor) 
     {
         // Does not work with all databases and drivers currently ...
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB, 
-            DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB, DBAPIInstance);
         tc->depends_on(tc_init);
         _ASSERT(tc_cursor);
         tc->depends_on(tc_cursor);
@@ -14944,8 +15007,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
 
     if (tc_cursor) 
     {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB2, 
-            DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB2, DBAPIInstance);
         tc->depends_on(tc_init);
         _ASSERT(tc_cursor);
         tc->depends_on(tc_cursor);
@@ -14957,12 +15019,21 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
     if (!(args->GetDriverName() == ftds_driver && args->GetServerType() == CDBConnParams::eMSSqlServer) // 06/06/08
         && !(args->GetDriverName() == odbc_driver) // 06/10/08
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB3, 
-            DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB3, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     } else {
         args->PutMsgDisabled("Test_LOB3");
+    }
+
+    if (!(args->GetDriverName() == ftds_dblib_driver && args->GetServerType() == CDBConnParams::eSybaseSQLServer)
+        ) 
+    {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB4, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    } else {
+        args->PutMsgDisabled("Test_LOB4");
     }
 
     if (tc_cursor
