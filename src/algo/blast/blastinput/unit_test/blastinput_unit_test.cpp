@@ -831,7 +831,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
     CRef<CScope> scope(CBlastScopeSource(dlconfig).NewScope());
     CHECK(source->End() == false);
     const time_t kTimeMax = getenv("UNIT_TEST_TIMEOUT")
-        ? atoi(getenv("UNIT_TEST_TIMEOUT")) : 15;
+        ? atoi(getenv("UNIT_TEST_TIMEOUT")) : 20;
     time_t start_time = CTime(CTime::eCurrent).GetTimeT();
 
     blast::TSeqLocVector seqs = source->GetAllSeqLocs(*scope);
