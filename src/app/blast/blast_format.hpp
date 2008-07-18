@@ -262,13 +262,14 @@ private:
     /// Prints XML and both species of ASN.1
     /// @param results Results for one query or Phi-blast iteration [in]
     /// @param queries Bioseqs to be formatted (for XML) [in]
-    void CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
-         CConstRef<blast::CBlastQueryVector> queries);
+    void x_PrintStructuredReport(const blast::CSearchResults& results,
+                                 CConstRef<blast::CBlastQueryVector> queries);
 
    /// Prints Tabular report for one query
    /// @param results Results for one query or Phi-blast iteration [in]
    /// @param itr_num Iteration number for PSI-BLAST [in]
-   void CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results, unsigned int itr_num);
+   void x_PrintTabularReport(const blast::CSearchResults& results,
+                             unsigned int itr_num);
 };
 
 END_NCBI_SCOPE
