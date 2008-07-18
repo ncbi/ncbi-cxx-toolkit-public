@@ -17,7 +17,7 @@
 APP: blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn 
 APP: makembindex segmasker dustmasker windowmasker
 APP: makeblastdb blastdbcmd blastdb_aliastool
-APP: ../../src/app/blast/legacy_blast.pl
+APP: $top_srcdir/src/app/blast/legacy_blast.pl
 
 # Each line describes a single configuration
 # The format is as follows:
