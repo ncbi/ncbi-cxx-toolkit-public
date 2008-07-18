@@ -23,4 +23,4 @@ REQUIRES = objects
 CHECK_CMD = blast_unit_test
 CHECK_COPY = data
 CHECK_AUTHORS = blastsoft
-
+CHECK_TIMEOUT = 300
