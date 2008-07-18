@@ -7,7 +7,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I../
 
 #LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) xobjsimple $(OBJMGR_LIBS) xalgowinmask
 #LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
-LIB_ = ncbi_xloader_blastdb blastdb seqdb xobjutil $(OBJMGR_LIBS)
+LIB_ = ncbi_xloader_blastdb seqdb blastdb xobjutil $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(NETWORK_LIBS) \
