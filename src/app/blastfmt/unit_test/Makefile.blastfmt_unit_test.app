@@ -1,7 +1,7 @@
 # $Id$
 
 APP = blastfmt_unit_test
-SRC = ../blast_hitmatrix hitmatrix_unit_test
+SRC = blast_hitmatrix_wrapper hitmatrix_unit_test
 
 CPPFLAGS = $(OSMESA_INCLUDE) $(FLTK_INCLUDE) $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
