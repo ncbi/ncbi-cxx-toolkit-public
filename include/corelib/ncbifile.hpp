@@ -60,6 +60,10 @@
 #if defined(NCBI_OS_UNIX)
 #  include <sys/param.h>
 #endif
+#if defined(NCBI_OS_MSWIN)
+#  include <stdio.h>       // for FILENAME_MAX
+#endif
+
 
 /** @addtogroup Files
  *
@@ -79,9 +83,9 @@ BEGIN_NCBI_SCOPE
 // FILENAME_MAX
 #if !defined(FILENAME_MAX)
 #  if defined(MAXNAMELEN)
-#    define FILENAME MAXNAMELEN    /* in <sys/param.h> on some systems */
+#    define FILENAME_MAX MAXNAMELEN    /* in <sys/param.h> on some systems */
 #  elif defined(_MAX_FNAME)
-#    define FILENAME _MAX_FNAME    /* MS Windows */
+#    define FILENAME_MAX _MAX_FNAME    /* MS Windows */
 #  else
 #    define FILENAME_MAX 256
 #  endif
@@ -90,9 +94,9 @@ BEGIN_NCBI_SCOPE
 // PATH_MAX
 #if !defined(PATH_MAX)
 #  if defined(MAXPATHLEN)
-#    define PATH_MAX MAXPATHLEN    /* in <sys/param.h> on some systems */
+#    define PATH_MAX MAXPATHLEN        /* in <sys/param.h> on some systems */
 #  elif defined(_MAX_PATH)
-#    define PATH_MAX _MAX_PATH     /* MS Windows */
+#    define PATH_MAX _MAX_PATH         /* MS Windows */
 #  else
 #    if FILENAME_MAX > 255
 #      define PATH_MAX FILENAME_MAX
