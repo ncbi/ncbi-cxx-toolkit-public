@@ -15463,7 +15463,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
     {
         if (!(args->GetDriverName() == ftds_dblib_driver &&  args->GetServerType() == CDBConnParams::eSybaseSQLServer)
             && !(args->GetDriverName() == dblib_driver &&  args->GetServerType() != CDBConnParams::eSybaseSQLServer)
-            && !(args->GetDriverName() == ctlib_driver && os_type == eOsSolaris && compiler_type == eCompilerWorkShop) // 07/17/08 "blk_done failed"
+            && !(args->GetDriverName() == ctlib_driver && os_type == eOsSolaris && compiler_type == eCompilerWorkShop && sybase_client_v120_solaris) // 07/18/08 "blk_done failed"
            )
         {
             if ( !( args->GetTestConfiguration() == CTestArguments::eWithoutExceptions
