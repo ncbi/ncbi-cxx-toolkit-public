@@ -144,6 +144,7 @@ BOOST_AUTO_TEST_CASE(RetrieveLargeChromosomeWithTimeOut)
     BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
 }
 
+#ifdef NCBI_THREADS
 class CGiFinderThread : public CThread
 {
 public:
@@ -207,5 +208,6 @@ BOOST_AUTO_TEST_CASE(MultiThreadedAccess)
         BOOST_REQUIRE_EQUAL(0L, result);
     }
 }
+#endif
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
