@@ -33,7 +33,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <util/request_control.hpp>
+#include <corelib/request_control.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
