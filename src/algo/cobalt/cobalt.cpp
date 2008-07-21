@@ -519,6 +519,14 @@ static void s_CorrectLocations(vector<Uint4>& pos, const CSequence& seq)
             }
             j++;
         }
+	// For a single gap at the end the above loop exits too early
+	// position needs to be shited by one
+	int len = seq.GetLength();
+	if (seq.GetLetter(len - 1) == CSequence::kGapChar 
+	    && seq.GetLetter(len - 2) != CSequence::kGapChar) {
+	    j++;
+	}
+
         pos[i] = j - 2;
     }
 
@@ -659,7 +667,7 @@ void CMultiAligner::MultiAlignClusters(void)
                 j++;
                 multi_aln_gaps_corrected[cluster_idx][j] += offset;
             }
-            if (j == multi_aln_gaps[cluster_idx].size() - 1
+            if (j > 0 && j == multi_aln_gaps[cluster_idx].size() - 1
                 && multi_aln_gaps[cluster_idx][j - 1] + 1
                 == multi_aln_gaps[cluster_idx][j]) {
                 multi_aln_gaps_corrected[cluster_idx][j] += offset;
