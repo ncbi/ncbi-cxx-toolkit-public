@@ -1177,8 +1177,8 @@ void CPluginManager<TClass>::ResolveFile(const string&       driver,
     NON_CONST_ITERATE(vector<CDllResolver*>, it, resolvers) {
         CDllResolver::TEntries& entry_points = (*it)->GetResolvedEntries();
 
-        NON_CONST_ITERATE(CDllResolver::TEntries, ite, entry_points) {
-            CDllResolver::SResolvedEntry& entry = *ite;
+        ITERATE(CDllResolver::TEntries, ite, entry_points) {
+            const CDllResolver::SResolvedEntry& entry = *ite;
 
             if (entry.entry_points.empty()) {
                 continue;
@@ -1186,7 +1186,7 @@ void CPluginManager<TClass>::ResolveFile(const string&       driver,
 
             // We register factories from one entry point only because others
             // are just aliases (point to the same set of factories).
-            CDllResolver::SNamedEntryPoint& epoint = entry.entry_points.front();
+            const CDllResolver::SNamedEntryPoint& epoint = entry.entry_points.front();
 
             if (epoint.entry_point.func) {
                 FNCBI_EntryPoint ep =
