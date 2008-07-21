@@ -83,8 +83,8 @@ protected:
     // band width
     size_t   m_band;
 
-    // band shift along the first sequences (can be negative)
-    int      m_Shift;
+    // band shift along the first sequence (can be negative)
+    long     m_Shift;
 
     // backtrace helpers
     size_t   m_TermK;
@@ -100,7 +100,7 @@ protected:
 
     // other
     void x_CheckParameters(const SAlignInOut* data) const;
-    virtual bool   x_CheckMemoryLimit(void);
+    virtual bool x_CheckMemoryLimit(void);
 };
 
 

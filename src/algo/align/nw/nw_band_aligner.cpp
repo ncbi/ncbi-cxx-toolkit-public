@@ -138,8 +138,8 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     TScore E (kInfMinus), V2 (kInfMinus), G, n0;
     Uint1 tracer (0);
 
-    const int ibeg ((m_Shift >= 0 && m_Shift > int(m_band))? 
-		    (m_Shift - m_band): 0);
+    const size_t ibeg ((m_Shift >= 0 && m_Shift > long(m_band))?
+                       (m_Shift - m_band): 0);
 
     const TScore wgleft1 (data->m_esf_L1? 0: m_Wg);
     const TScore wsleft1 (data->m_esf_L1? 0: m_Ws);
@@ -149,22 +149,21 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     TScore wg1 (m_Wg), ws1 (m_Ws);
     TScore V1 (wgleft2 + wsleft2 * ibeg);
 
-    int lendif (int(N2) - (int(N1) - (m_Shift + int(m_band))));
-    const int iend ((lendif >= 0)? N1: (N1 - abs(lendif)));
+    const long d1 (N2 + m_band + m_Shift);
+    const size_t iend (d1 <= 0? 0: (d1 < long(N1)? d1: N1));
 
     m_LastCoordSeq1 = m_LastCoordSeq2 = m_TermK = kMax_size_t;
 
-    int jbeg0 (ibeg - m_Shift - int(m_band));
     size_t jendcnt (0);
-    for(int i (ibeg); i < iend && !m_terminate; ++i, ++jbeg0) {
+    for(size_t i (ibeg); i < iend && !m_terminate; ++i) {
 
         TScore wg2 (m_Wg), ws2 (m_Ws);
 
-        int jbeg (i - m_Shift - int(m_band)), jend (i - m_Shift + int(m_band) + 1);
-
-        if(jbeg < 0) jbeg = 0;
-        if(jend > int(N2)) jend = N2;
-        if(jend == int(N2)) ++jendcnt;
+        const long   d2   (i - m_Shift - m_band);
+        const size_t jbeg (d2 < 0? 0: d2);
+        const long   d3   (i - m_Shift + m_band + 1);
+        const size_t jend (d3 < long(N2)? d3: N2);
+        if(jend == N2) ++jendcnt;
 
         const Uint1 ci (seq1[i]);
         
@@ -177,12 +176,16 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
             }
         }
 
-        if(i + 1 == int(N1) && data->m_esf_R1) {
+        if(i + 1 == N1 && data->m_esf_R1) {
             wg1 = ws1 = 0;
         }
         
-        int j;
-        int k (fullrow * (i - ibeg) + jbeg - jbeg0);
+        size_t j;
+        size_t k (fullrow * (i - ibeg));
+        const long jbeg0 (i - m_Shift - m_band);
+        if(jbeg0 < 0) {
+            k += jbeg - jbeg0;
+        }
         if(size_t(k - 1) > m_TermK && (k & 1)) {
             backtrace_matrix.SetAt(k - 1, 0);
         }
@@ -209,7 +212,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
                     tracer = 0;
                 }
             }
-            else if(j == 0 && i < m_Shift + int(m_band)) {
+            else if(j == 0 && i < m_Shift + m_band) {
                 V1 += wsleft2;
                 E = V1 + wg1 + ws1;
                 tracer = 0;
@@ -219,7 +222,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
                 tracer = 0; // to fire during the backtrace
             }
 
-            if(j + 1 == int(N2) && data->m_esf_R2) {
+            if(j + 1 == N2 && data->m_esf_R2) {
                 wg2 = ws2 = 0;
             }
 
@@ -306,12 +309,12 @@ void CBandAligner::x_CheckParameters(const SAlignInOut* data) const
                    "Input sequence interval too small.");        
     }
 
-    if(m_Shift > 0 && m_Shift > int(data->m_len1 + m_band)) {
+    if(m_Shift > 0 && m_Shift > long(data->m_len1 + m_band)) {
         NCBI_THROW(CAlgoAlignException, eBadParameter,
                    "Shift is greater than the first sequence's length.");
     }
 
-    if(m_Shift < 0 && -m_Shift > int(data->m_len2 + m_band)) {
+    if(m_Shift < 0 && -m_Shift > long(data->m_len2 + m_band)) {
         NCBI_THROW(CAlgoAlignException, eBadParameter,
                    "Shift is greater than the second sequence's length.");
     }
@@ -325,22 +328,23 @@ void CBandAligner::x_CheckParameters(const SAlignInOut* data) const
     string msg_head;
 
     // seq 1, left
-    if(m_Shift >= 0 && int(m_band) < m_Shift && !data->m_esf_L2) {
+    if(m_Shift >= 0 && m_band < size_t(m_Shift) && !data->m_esf_L2) {
         msg_head = "Left end of first sequence ";
     }
 
     // seq 1,2, right
-    if(m_Shift + int(data->m_len2) + int(m_band) 
-           < int(data->m_len1) && !data->m_esf_R2) {
+    if(m_Shift + long(data->m_len2 + m_band) < long(data->m_len1) && !data->m_esf_R2)
+    {
         msg_head = "Right end of first sequence ";
     }
-    else if(int(data->m_len1) - m_Shift + int(m_band) 
-               < int(data->m_len2) && !data->m_esf_R1){
+    else if(long(data->m_len1 + m_band) - m_Shift < long(data->m_len2)
+            && !data->m_esf_R1)
+    {
         msg_head = "Right end of second sequence ";
     }
 
     // seq 2, left
-    if(m_Shift < 0 && int(m_band) < - m_Shift && !data->m_esf_L1) {
+    if(m_Shift < 0 && m_band < size_t(-m_Shift) && !data->m_esf_L1) {
         msg_head = "Left end of second sequence ";
     }
 
@@ -355,13 +359,13 @@ void CBandAligner::x_CheckParameters(const SAlignInOut* data) const
 void CBandAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
                                  CNWAligner::SAlignInOut* data)
 {
-    const size_t N1 = data->m_len1;
-    const size_t N2 = 2*m_band + 1;
+    const size_t N1 (data->m_len1);
+    const size_t N2 (2*m_band + 1);
 
     data->m_transcript.clear();
     data->m_transcript.reserve(N1 + N2);
 
-    size_t k = m_TermK;
+    size_t k (m_TermK);
 
     size_t i1 (m_LastCoordSeq1);
     size_t i2 (m_LastCoordSeq2);
@@ -384,7 +388,7 @@ void CBandAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
 
         const bool invalid_backtrace_data (
             (i1 > kOverflow && i1 != kMax || i2 > kOverflow && i2 != kMax) ||
-            (abs(m_Shift - int(i1) + int(i2)) > m_band) );
+            ((size_t)abs(m_Shift - long(i1) + long(i2))) > m_band );
 
         if(invalid_backtrace_data) {
             NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidBacktraceData);
