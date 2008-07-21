@@ -17,9 +17,9 @@
 APP: blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn 
 APP: makembindex segmasker dustmasker windowmasker
 APP: makeblastdb blastdbcmd blastdb_aliastool
-APP: $top_srcdir/src/app/blast/legacy_blast.pl
+APP: $srcdir/src/app/blast/legacy_blast.pl
 
-POSTBUILD: $top_srcdir/scripts/projects/blast/post_build/macosx/ncbi-blast.sh $install_dir PowerMAC
+POSTBUILD: $srcdir/scripts/projects/blast/post_build/macosx/ncbi-blast.sh $installdir $platform
 
 # Each line describes a single configuration
 # The format is as follows:
