@@ -19,7 +19,8 @@ APP: makembindex segmasker dustmasker windowmasker
 APP: makeblastdb blastdbcmd blastdb_aliastool
 APP: $srcdir/src/app/blast/legacy_blast.pl
 
-POSTBUILD: $srcdir/scripts/projects/blast/post_build/macosx/ncbi-blast.sh $installdir $platform
+#POSTBUILD: $srcdir/scripts/projects/blast/post_build/macosx/ncbi-blast.sh $installdir $platform
+
 
 # Each line describes a single configuration
 # The format is as follows:
