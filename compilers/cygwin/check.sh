@@ -76,6 +76,9 @@ for cfg in $cfgs ; do
           make check_r RUN_CHECK=Y
           cat check.sh.log | sed "$x_sed" >> "$res_log"
           ;;
+       load_to_db )
+          ./check.sh load_to_db
+          ;;
        clean )
           ./check.sh clean
           ;;

@@ -385,7 +385,16 @@ RunTest()
     x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext"
 
     if \$is_db_load; then
-        $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" >> "$x_build_dir/test_stat_load.log" 2>&1
+        case \`uname -s\` in
+
+          CYGWIN* )
+            test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" >> "$x_build_dir/test_stat_load.log" 2>&1
+            ;;
+          * )
+            $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" >> "$x_build_dir/test_stat_load.log" 2>&1
+            ;;
+
+        esac
     else
         if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
             echo "\$signature" > "\$x_test_rep"
