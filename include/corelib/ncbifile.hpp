@@ -47,6 +47,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_mask.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <corelib/reader_writer.hpp>
 #include <memory>
 
@@ -3488,6 +3489,22 @@ bool CMemoryFile::MemMapAdvise(EMemMapAdvise advise) const
     return CMemoryFileMap::MemMapAdvise(m_Ptr, advise);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Global settings related to the file API.
+///
+///
+
+class NCBI_XNCBI_EXPORT CFileAPI
+{
+public:
+    /// Enable or disable logging of errors.
+    ///
+    /// @param on_off_default
+    ///   Switch between logging enabled (eOn), disabled (eOff),
+    ///   or reset to the default state (currently disabled).
+    static void SetLogging(ESwitch on_off_default);
+};
 
 END_NCBI_SCOPE
 

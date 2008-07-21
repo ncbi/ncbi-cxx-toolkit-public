@@ -132,6 +132,31 @@ NCBI_PARAM_DECL(string, NCBI, TmpDir);
 NCBI_PARAM_DEF (string, NCBI, TmpDir, kEmptyStr);
 
 
+// Declare the parameter to turn on logging from CFile,
+// CDirEntry, etc. classes.
+// Registry file:
+//     [NCBI]
+//     FileAPILogging = true/false
+// Environment variable:
+//     NCBI_CONFIG__FileAPILogging
+//
+#define DEFAULT_LOGGING_VALUE false
+
+NCBI_PARAM_DECL(bool, NCBI, FileAPILogging);
+NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
+    eParam_NoThread, NCBI_CONFIG__FileAPILogging);
+
+#define LOG_IF_ERROR_AND_RETURN(call, log_message) \
+    if ((call) == 0) \
+        return true; \
+    else { \
+        if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
+            int saved_error = errno; \
+            ERR_POST(log_message << ": " << strerror(saved_error)); \
+        } \
+        return false; \
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // CDirEntry
@@ -1833,7 +1858,8 @@ bool CDirEntry::Remove(EDirRemoveMode mode) const
         return dir.Remove(mode);
     }
     // Other entries
-    return remove(GetPath().c_str()) == 0;
+    LOG_IF_ERROR_AND_RETURN(remove(GetPath().c_str()),
+        "Could not remove " << GetPath());
 }
 
 
@@ -3148,7 +3174,8 @@ bool CDir::Remove(EDirRemoveMode mode) const
 {
     // Remove directory as empty
     if ( mode == eOnlyEmpty ) {
-        return rmdir(GetPath().c_str()) == 0;
+        LOG_IF_ERROR_AND_RETURN(rmdir(GetPath().c_str()),
+            "Could not remove (by implication empty) directory " << GetPath());
     }
     // Read all entries in directory
     auto_ptr<TEntries> contents(GetEntriesPtr());
@@ -3179,7 +3206,8 @@ bool CDir::Remove(EDirRemoveMode mode) const
     }
 
     // Remove main directory
-    return rmdir(GetPath().c_str()) == 0;
+    LOG_IF_ERROR_AND_RETURN(rmdir(GetPath().c_str()),
+        "Could not remove directory " << GetPath());
 }
 
 
@@ -5338,5 +5366,11 @@ void CFileLock::Unlock(void)
     return;
 }
 
+void CFileAPI::SetLogging(ESwitch on_off_default)
+{
+    NCBI_PARAM_TYPE(NCBI, FileAPILogging)::SetDefault(
+        on_off_default != eDefault ?
+            on_off_default != eOff : DEFAULT_LOGGING_VALUE);
+}
 
 END_NCBI_SCOPE
