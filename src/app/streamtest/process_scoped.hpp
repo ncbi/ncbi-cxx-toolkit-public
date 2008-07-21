@@ -73,8 +73,8 @@ public:
     virtual void SeqEntryFinalize()
     //  ------------------------------------------------------------------------
     {
-        m_scope.Release();
-        m_objmgr.Release();
+        m_scope.Reset();
+        CSeqEntryProcess::SeqEntryFinalize();
     };
 
 protected:
