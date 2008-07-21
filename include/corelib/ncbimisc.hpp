@@ -57,6 +57,35 @@
  * @{
  */
 
+#ifndef NCBI_ESWITCH_DEFINED
+#define NCBI_ESWITCH_DEFINED
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * ATTENTION!   Do not change this enumeration!
+ *
+ * It must always be kept in sync with its plain C counterpart defined in
+ * "connect/ncbi_types.h". If you absolutely(sic!) need to alter this
+ * type, please apply equivalent changes to both definitions.
+ */
+
+/** Aux. enum to set/unset/default various features
+ */
+typedef enum {
+    eOff = 0,
+    eOn,
+    eDefault
+} ESwitch;
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
+
+#endif  /* !defined(NCBI_ESWITCH_DEFINED) */
+
 
 BEGIN_NCBI_SCOPE
 

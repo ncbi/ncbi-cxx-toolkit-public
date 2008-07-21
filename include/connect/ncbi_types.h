@@ -84,6 +84,17 @@ extern NCBI_XCONNECT_EXPORT STimeout*     NcbiMsToTimeout
  );
 
 
+#ifndef NCBI_ESWITCH_DEFINED
+#define NCBI_ESWITCH_DEFINED
+
+/*
+ * ATTENTION!   Do not change this enumeration!
+ *
+ * It must always be kept in sync with its C++ counterpart defined in
+ * "corelib/ncbimisc.hpp". If you absolutely(sic!) need to alter this
+ * type, please apply equivalent changes to both definitions.
+ */
+
 /** Aux. enum to set/unset/default various features
  */
 typedef enum {
@@ -91,6 +102,8 @@ typedef enum {
     eOn,
     eDefault
 } ESwitch;
+
+#endif  /* !defined(NCBI_ESWITCH_DEFINED) */
 
 
 /** Fixed size analogs of size_t and time_t (mainly for IPC)
