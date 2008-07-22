@@ -56,10 +56,43 @@ unsigned int CSparseKmerCounts::sm_AlphabetSize = kAlphabetSize;
 vector<Uint1> CSparseKmerCounts::sm_TransTable;
 bool CSparseKmerCounts::sm_UseCompressed = false;
 
+static const Uint1 kXaa = 21;
+
 
 CSparseKmerCounts::CSparseKmerCounts(const blast::SSeqLoc& seq)
 {
     Reset(seq);
+}
+
+// Initializes position bit vector for k-mer counting
+// modifies index
+bool CSparseKmerCounts::InitPosBits(const objects::CSeqVector& sv, Uint4& pos,
+                                     unsigned int& index,
+                                     Uint4 num_bits, Uint4 kmer_len)
+
+{
+    pos = 0;
+    unsigned i = 0;
+    while (index + kmer_len - 1 < sv.size() && i < kmer_len) {
+
+        // Skip kmers that contain X (unspecified aa)
+        if (sv[index + i] == kXaa) {
+            index += i + 1;
+            
+            pos = 0;
+            i = 0;
+            continue;
+        }
+        pos |= GetAALetter(sv[index + i]) << (num_bits * (kmer_len - i - 1));
+        i++;
+    }
+    
+    if (i < kmer_len) {
+        return false;
+    }
+
+    index += i;
+    return true;
 }
 
 void CSparseKmerCounts::Reset(const blast::SSeqLoc& seq)
@@ -100,14 +133,24 @@ void CSparseKmerCounts::Reset(const blast::SSeqLoc& seq)
         memset(counts, 0, num_elements * sizeof(TCount));
 
         //first k-mer
-        Uint4 pos = 0;
-        for (unsigned i=0;i < kmer_len;i++) {
-            pos |= GetAALetter(sv[i]) << (kNumBits * (kmer_len - i - 1));
-        }
+        Uint4 i = 0;
+        Uint4 pos;
+        bool is_pos = InitPosBits(sv, pos, i, kNumBits, kmer_len);
         counts[pos]++;
 
         //for each next kmer
-        for (Uint4 i=kmer_len;i < seq_len;i++) {
+        for (;i < seq_len && is_pos;i++) {
+
+            // Kmers that contain unspecified amino acid X are not considered
+            if (sv[i] == kXaa) {
+                i++;
+                is_pos = InitPosBits(sv, pos, i, kNumBits, kmer_len);
+
+                if (i >= seq_len || !is_pos) {
+                    break;
+                }
+            }
+
             pos <<= kNumBits;
             pos &= kMask;
             pos |= GetAALetter(sv[i]);
@@ -124,7 +167,8 @@ void CSparseKmerCounts::Reset(const blast::SSeqLoc& seq)
 
     }
     else {
-        _ASSERT(pow((double)alphabet_size, (double)kmer_len) < numeric_limits<Uint4>::max());
+        _ASSERT(pow((double)alphabet_size, (double)kmer_len) 
+                < numeric_limits<Uint4>::max());
 
 
         AutoArray<double> base(kmer_len);
@@ -138,6 +182,13 @@ void CSparseKmerCounts::Reset(const blast::SSeqLoc& seq)
         memset(counts, 0, num_elements * sizeof(TCount));
 
         for (unsigned i=0;i < seq_len - kmer_len + 1;i++) {
+
+            // Kmers that contain unspecified amino acid X are not considered
+            if (sv[i + kmer_len - 1] == kXaa) {
+                i += kmer_len - 1;
+                continue;
+            }
+
             Uint4 pos = GetAALetter(sv[i]) - 1;
             _ASSERT(pos >= 0);
             _ASSERT(GetAALetter(sv[i]) <= alphabet_size);
