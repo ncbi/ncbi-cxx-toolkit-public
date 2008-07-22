@@ -131,8 +131,8 @@ CExprSymbol::CExprSymbol(const char* name, bool value)
 template <> 
 CExprSymbol::CExprSymbol(const char* name, Int8 (*value)(Int8))
 : m_Tag(eIFUNC1)
-, m_Funct(reinterpret_cast<void *>(value))
-, m_Val(0L)
+, m_Funct((void *)value)
+, m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
 {
@@ -141,8 +141,8 @@ CExprSymbol::CExprSymbol(const char* name, Int8 (*value)(Int8))
 template <> 
 CExprSymbol::CExprSymbol(const char* name, Int8 (*value)(Int8, Int8))
 : m_Tag(eIFUNC2)
-, m_Funct(reinterpret_cast<void *>(value))
-, m_Val(0L)
+, m_Funct((void *)value)
+, m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
 {
@@ -151,8 +151,8 @@ CExprSymbol::CExprSymbol(const char* name, Int8 (*value)(Int8, Int8))
 template <> 
 CExprSymbol::CExprSymbol(const char* name, double (*value)(double))
 : m_Tag(eFFUNC1)
-, m_Funct(reinterpret_cast<void *>(value))
-, m_Val(0L)
+, m_Funct((void *)value)
+, m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
 {
@@ -161,8 +161,8 @@ CExprSymbol::CExprSymbol(const char* name, double (*value)(double))
 template <> 
 CExprSymbol::CExprSymbol(const char* name, double (*value)(double, double))
 : m_Tag(eFFUNC2)
-, m_Funct(reinterpret_cast<void *>(value))
-, m_Val(0L)
+, m_Funct((void *)value)
+, m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
 {
@@ -171,8 +171,8 @@ CExprSymbol::CExprSymbol(const char* name, double (*value)(double, double))
 template <> 
 CExprSymbol::CExprSymbol(const char* name, bool (*value)(bool))
 : m_Tag(eBFUNC1)
-, m_Funct(reinterpret_cast<void *>(value))
-, m_Val(0L)
+, m_Funct((void *)value)
+, m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
 {
@@ -181,8 +181,8 @@ CExprSymbol::CExprSymbol(const char* name, bool (*value)(bool))
 template <> 
 CExprSymbol::CExprSymbol(const char* name, bool (*value)(bool, bool))
 : m_Tag(eBFUNC2)
-, m_Funct(reinterpret_cast<void *>(value))
-, m_Val(0L)
+, m_Funct((void *)value)
+, m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
 {
@@ -545,7 +545,7 @@ CExprParser::Scan(bool operand)
             return eOPERAND;
         }
 
-        CExprSymbol* sym = AddSymbol(sym_name, 0L);
+        CExprSymbol* sym = AddSymbol(sym_name, (Int8)0);
 
         if (m_v_sp == max_stack_size) { 
             ReportError("stack overflow");
