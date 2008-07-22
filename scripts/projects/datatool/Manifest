@@ -22,6 +22,20 @@ APP: datatool
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
+
+
+COPY: $srcdir/include/ncbi_pch.hpp $installdir/SingleFile/
+COPY: $srcdir/include/ncbi_pch.hpp $installdir/SingleFile/new_file_name.hpp
+COPY: $srcdir/include/common       $installdir/Recursive/
+COPY: $srcdir/include/common/      $installdir/Recursive/
+COPY: $bindir/datatool$exe         $installdir/NewExeName
+COPY: $bindir/datatool$exe         $installdir/NewFolder/
+
+POSTBUILD: echo postbuild steps
+POSTBUILD: echo Content of the binary directory: $bindir
+POSTBUILD: ls -la $bindir
+
+
 Linux32    : plain : ICC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
 Linux32    : plain : GCC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
 
