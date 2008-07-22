@@ -1,15 +1,12 @@
 #!/bin/sh
 
-SRC=$1
-PLATFORM=$2
+INSTALLDIR=$1
+SRCDIR=$2
+
 
 if [ $# -ne 2 ] ; then
-    echo "Usage: ncbi-blast.sh [source_directory_for_binaries] PowerMAC";
+    echo "Usage: ncbi-blast.sh [installation directory] [source_directory_for_binaries]";
     exit 1;
-fi
-
-if [ "PowerMAC" != "$PLATFORM" ] ; then
-    exit 0;
 fi
 
 BLAST_BINS="blastn blastp blastx tblastn tblastx psiblast rpsblast rpstblastn legacy_blast.pl"
@@ -41,3 +38,5 @@ hdiutil create BLAST.dmg -srcfolder BLAST
 echo done
 rm -rf _stage
 rm -rf BLAST
+rm -fr $INSTALLDIR/installer
+mv BLAST.dmg $INSTALLDIR/installer
