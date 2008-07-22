@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # $Id$
-# Script to create a source RPM (in progress)
+# Script to create a source/binary RPM
 
 import sys, os, shutil;
+from optparse import OptionParser
 
 verbose = False
 
@@ -10,7 +11,7 @@ verbose = False
 BLAST_VERSION = "2.2.18"
 # Name of the temporary rpmbuild directory
 RPMBUILD_HOME = "rpmbuild"
-PACKAGE_NAME = "ncbi-blast-" + blast_version + "+"
+PACKAGE_NAME = "ncbi-blast-" + BLAST_VERSION + "+"
 # Name of the source TARBALL to create
 TARBALL = PACKAGE_NAME + ".tgz"
 RPM_SPEC = "ncbi-blast.spec"
@@ -18,10 +19,11 @@ RPM_SPEC = "ncbi-blast.spec"
 def setup_rpmbuild():
     """ Prepare local rpmbuild directory. """
     cleanup_rpm()
+    os.mkdir(RPMBUILD_HOME)
     for d in [ 'BUILD', 'SOURCES', 'SPECS', 'SRPMS', 'tmp', 'RPMS' ]:
-        os.mkdir(d)
+        os.mkdir(os.path.join(RPMBUILD_HOME, d))
     cwd = os.getcwd()
-    os.chdir('RPMS')
+    os.chdir(os.path.join(RPMBUILD_HOME, 'RPMS'))
     for d in [ 'i386', 'i586', 'i686', 'noarch', 'x86_64' ]:
         os.mkdir(d)
     os.chdir(cwd)
@@ -40,17 +42,21 @@ def setup_rpmbuild():
 
 def cleanup_rpm():
     """ Delete rpm files """
-    shutil.rmtree(RPMBUILD_HOME)
-    os.remove(os.path.join(os.path.expanduser("~"), ".rpmmacros"))
+    if os.path.exists(RPMBUILD_HOME):
+        shutil.rmtree(RPMBUILD_HOME)
+
+    rpmmacros = os.path.join(os.path.expanduser("~"), ".rpmmacros")
+    if os.path.exists(rpmmacros):
+        os.remove(rpmmacros)
 
 def safe_exec(cmd):
     """ Executes a command and checks its return value, throwing an
         exception if it fails.
     """
-    from subprocess import *
+    import subprocess
     if verbose: print cmd
     try:
-        retcode = call(cmd, shell=True)
+        retcode = subprocess.call(cmd, shell=True)
         if retcode < 0:
             raise RuntimeError("Child was terminated by signal " + -retcode)
     except OSError, e:
@@ -61,8 +67,8 @@ def svn_checkout():
     SVN_NCBI = "https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit"
 
     # Check out the sources
-    cmd = "svn co --username svnread --password allowed " + SVN_NCBI
-    cmd += "/release/blast/" + BLAST_VERSION + PACKAGE_NAME
+    cmd = "svn -q co --username svnread --password allowed " + SVN_NCBI
+    cmd += "/release/blast/" + BLAST_VERSION + " " + PACKAGE_NAME
     if os.path.exists(PACKAGE_NAME):
         shutil.rmtree(PACKAGE_NAME)
     safe_exec(cmd)
@@ -81,8 +87,10 @@ def compress_sources():
 
 def cleanup():
     """ Remove all files created. """
-    os.remove(TARBALL)
-    shutil.rmtree(PACKAGE_NAME)
+    if os.path.exists(TARBALL):
+        os.remove(TARBALL)
+    if os.path.exists(PACKAGE_NAME):
+        shutil.rmtree(PACKAGE_NAME)
 
 def run_rpm():
     shutil.rmtree(PACKAGE_NAME)
@@ -109,6 +117,9 @@ def main():
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output")
     options, args = parser.parse_args()
+    if len(args) != 1:
+        parser.error("Incorrect number of arguments")
+        return 1
     installdir = args
     global verbose
     verbose = options.verbose

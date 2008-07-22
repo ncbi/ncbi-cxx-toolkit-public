@@ -1,4 +1,8 @@
 #! /usr/bin/env python
+# $Id$
+# Script to create the Windows installer for BLAST command line applications
+#
+# Author: Christiam camacho
 
 import os, sys
 from shutil import copyfile
