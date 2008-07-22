@@ -304,23 +304,26 @@ CExprParser::CExprParser(void)
 , m_Pos(0)
 , m_TmpVarCount(0)
 {
+    typedef double (*FUnaryMathFunc)(double);
+    typedef double (*FBinaryMathFunc)(double, double);
+
     memset(hash_table, 0, sizeof(hash_table));
 
-    AddSymbol("abs",    fabs);
-    AddSymbol("acos",   acos);
-    AddSymbol("asin",   asin);
-    AddSymbol("atan",   atan);
-    AddSymbol("atan2",  atan2);
-    AddSymbol("cos",    cos);
-    AddSymbol("cosh",   cosh);
-    AddSymbol("exp",    exp);
-    AddSymbol("log",    log);
-    AddSymbol("log10",  log10);
-    AddSymbol("sin",    sin);
-    AddSymbol("sinh",   sinh);
-    AddSymbol("tan",    tan);
-    AddSymbol("tanh",   tanh);
-    AddSymbol("sqrt",   sqrt);
+    AddSymbol("abs",    (FUnaryMathFunc)fabs);
+    AddSymbol("acos",   (FUnaryMathFunc)acos);
+    AddSymbol("asin",   (FUnaryMathFunc)asin);
+    AddSymbol("atan",   (FUnaryMathFunc)atan);
+    AddSymbol("atan2",  (FBinaryMathFunc)atan2);
+    AddSymbol("cos",    (FUnaryMathFunc)cos);
+    AddSymbol("cosh",   (FUnaryMathFunc)cosh);
+    AddSymbol("exp",    (FUnaryMathFunc)exp);
+    AddSymbol("log",    (FUnaryMathFunc)log);
+    AddSymbol("log10",  (FUnaryMathFunc)log10);
+    AddSymbol("sin",    (FUnaryMathFunc)sin);
+    AddSymbol("sinh",   (FUnaryMathFunc)sinh);
+    AddSymbol("tan",    (FUnaryMathFunc)tan);
+    AddSymbol("tanh",   (FUnaryMathFunc)tanh);
+    AddSymbol("sqrt",   (FUnaryMathFunc)sqrt);
 
     AddSymbol("float",  to_float);
     AddSymbol("int",    to_int);
