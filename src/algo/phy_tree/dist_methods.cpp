@@ -31,6 +31,7 @@
 
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_limits.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
 
 #include <math.h>
@@ -169,7 +170,7 @@ CDistMethods::TTree *CDistMethods::NjTree(const TMatrix& dist_mat,
         }
 
         // find where M_{i, j} is minimal
-        double min_m = 0;
+        double min_m = numeric_limits<double>::max();
         for (TTree::TNodeList_I it1 = tree->SubNodeBegin();
              it1 != tree->SubNodeEnd();  ++it1) {
             TTree::TNodeList_I it2 = it1;
