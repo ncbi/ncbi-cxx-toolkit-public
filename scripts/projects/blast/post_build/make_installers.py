@@ -52,7 +52,7 @@ def main():
 
 def Win32PostBuild(installdir, srcdir):
     if verbose: print "Packaging for Win32..."
-    cmd = os.path.join("win", "make_win.py") + " " + installdir + " " + srcdir
+    cmd = "python " + os.path.join("win", "make_win.py") + " " + installdir + " " + srcdir
     safe_exec(cmd)
     return 0
 

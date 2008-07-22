@@ -68,8 +68,8 @@ def svn_checkout():
     safe_exec(cmd)
 
     # Remove unneeded directories
-    shutil.rmtree(os.path.join(PACKAGE_NAME, "builds")
-    shutil.rmtree(os.path.join(PACKAGE_NAME, "scripts")
+    shutil.rmtree(os.path.join(PACKAGE_NAME, "builds"))
+    shutil.rmtree(os.path.join(PACKAGE_NAME, "scripts"))
     cmd = "find " + PACKAGE_NAME + " -type d -name .svn | xargs rm -fr "
     safe_exec(cmd)
 
@@ -92,13 +92,16 @@ def run_rpm():
     cmd = "rpmbuild -ba " + dest_spec
     safe_exec(cmd)
 
-def move_rpms_to_installdir(installdir)
-
+def move_rpms_to_installdir(installdir):
     installer_dir = os.path.join(installdir, "installer")
     if not os.path.exists(installer_dir):
         os.makedirs(installer_dir)
+        
+    args = [ "find", RPMBUILD_HOME, "-name", "*.rpm" ]
+    output = Popen(args, stdout=PIPE).communicate()[0];
+    for rpm in output.split():
+        move(rpm, installer_dir)
 
-    cmd = "find " + RPMBUILD_HOME + " -name \"*.rpm\" | xargs 
 
 def main():
     """ Creates RPMs for linux. """
@@ -116,6 +119,7 @@ def main():
     run_rpm()
     move_rpms_to_installdir(installdir)
     cleanup_rpm()
+    cleanup()
     
 if __name__ == "__main__":
     sys.exit(main())
