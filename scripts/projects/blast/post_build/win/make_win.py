@@ -12,9 +12,9 @@ def safe_exec(cmd):
     """ Executes a command and checks its return value, throwing an
         exception if it fails.
     """
-    from subprocess import *
+    import subprocess
     try:
-        retcode = call(cmd, shell=True)
+        retcode = subprocess.call(cmd, shell=True)
         if retcode < 0:
             raise RuntimeError("Child was terminated by signal " + -retcode)
     except OSError, e:
