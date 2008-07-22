@@ -34,7 +34,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
-#include <stack>
 
 
 /** @addtogroup ObjStreamSupport
@@ -440,7 +439,7 @@ private:
     string m_CurrNsPrefix;
     map<string,string> m_NsNameToPrefix;
     map<string,string> m_NsPrefixToName;
-    stack<string> m_NsPrefixes;
+    vector<string> m_NsPrefixes;
     bool m_SkipIndent;
 };
 

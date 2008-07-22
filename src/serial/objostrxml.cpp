@@ -327,11 +327,11 @@ bool CObjectOStreamXml::x_BeginNamespace(const string& ns_name,
         m_CurrNsPrefix = nsPrefix;
         m_NsNameToPrefix[ns_name] = nsPrefix;
         m_NsPrefixToName[nsPrefix] = ns_name;
-        m_NsPrefixes.push(nsPrefix);
+        m_NsPrefixes.push_back(nsPrefix);
         return true;
     } else {
         m_CurrNsPrefix = m_NsNameToPrefix[ns_name];
-        m_NsPrefixes.push(m_CurrNsPrefix);
+        m_NsPrefixes.push_back(m_CurrNsPrefix);
     }
     return false;
 }
@@ -342,12 +342,15 @@ void CObjectOStreamXml::x_EndNamespace(const string& ns_name)
         return;
     }
     string nsPrefix = m_NsNameToPrefix[ns_name];
-// we should erase then according to Namespace Scoping rules
+// we should erase them according to Namespace Scoping rules
 // http://www.w3.org/TR/REC-xml-names/#scoping 
-    m_NsNameToPrefix.erase(ns_name);
-    m_NsPrefixToName.erase(nsPrefix);
-    m_NsPrefixes.pop();
-    m_CurrNsPrefix = m_NsPrefixes.empty() ? kEmptyStr : m_NsPrefixes.top();
+    m_NsPrefixes.pop_back();
+    if (find(m_NsPrefixes.begin(), m_NsPrefixes.end(), nsPrefix)
+        == m_NsPrefixes.end()) {
+        m_NsNameToPrefix.erase(ns_name);
+        m_NsPrefixToName.erase(nsPrefix);
+    }
+    m_CurrNsPrefix = m_NsPrefixes.empty() ? kEmptyStr : m_NsPrefixes.back();
     if (!m_Attlist && GetStackDepth() <= 2) {
         m_NsNameToPrefix.clear();
         m_NsPrefixToName.clear();
