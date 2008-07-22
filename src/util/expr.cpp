@@ -466,13 +466,13 @@ CExprParser::Scan(bool operand)
             Int8 ival;
             double fval;            
             int ierr, ferr;
-            const char *ipos;
+            char *ipos;
             char *fpos;
 
 #ifdef NCBI_OS_MSWIN
             int n = 0;
             ierr = sscanf(m_Buf+m_Pos-1, "%" INT_FORMAT "i%n", &ival, &n) != 1;
-            ipos = m_Buf+m_Pos-1+n;
+            ipos = const_cast<char*>(m_Buf+m_Pos-1+n);
 #else
             errno = 0;             
 #if SIZEOF_LONG == 8
