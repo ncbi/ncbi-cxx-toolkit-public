@@ -466,7 +466,8 @@ CExprParser::Scan(bool operand)
             Int8 ival;
             double fval;            
             int ierr, ferr;
-            char *ipos, *fpos;
+            const char *ipos;
+            char *fpos;
 
 #ifdef NCBI_OS_MSWIN
             int n = 0;
