@@ -33,7 +33,7 @@ def extract_installer():
 def main():
     """ Creates NSIS installer for BLAST command line binaries """
     global nsis_config
-    parser = OptionParser("Usage: " + sys.argv[0] + 
+    parser = OptionParser(sys.argv[0] + 
                           " <installation directory> <source directory>")
     options, args = parser.parse_args()
     if len(args) != 2:
@@ -67,8 +67,12 @@ def main():
     cmd = "\\snowman\win-coremake\App\ThirdParty\NSIS\makensis " + nsis_config
     safe_exec(cmd)
 
+    installer_dir = os.path.join(installdir, "installer")
+    if not os.path.exists(installer_dir):
+        os.makedirs(installer_dir)
+
     installer = extract_installer()
-    copyfile(installer, installdir)
+    copyfile(installer, installer_dir)
 
 if __name__ == "__main__":
     sys.exit(main())
