@@ -190,6 +190,21 @@ private:
     static Uint4 GetAALetter(Uint1 letter)
     {return (Uint4)(sm_UseCompressed ? sm_TransTable[(int)letter] : letter);}
 
+    /// Initializes element index as bit vector for first k letters, 
+    /// skipping Xaa
+    /// @param sv Sequence [in]
+    /// @param pos Element index in sparse vector [out]
+    /// @param index Index of letter in the sequence where k-mer counting
+    /// starts. At exit index points to the next letter after first 
+    /// k-mer [in|out]
+    /// @param num_bits Number of bits in pos per letter [in]
+    /// @param kmer_len K-mer length [in]
+    /// @return True if pos was initialized, false otherwise (if no k-mer
+    /// without X was found)
+    static bool InitPosBits(const objects::CSeqVector& sv, Uint4& pos,
+                            unsigned int& index,  Uint4 num_bits,
+                            Uint4 kmer_len);
+
 
 protected:
     vector<SVectorElement> m_Counts;
