@@ -1,6 +1,6 @@
 corelib$
 serial$
--serial/datatool$
+serial/datatool$
 algo/blast
 algo/dustmask$
 algo/winmask$
