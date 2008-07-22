@@ -218,6 +218,8 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     TSeqPos worst_exon_length = 0;                // compiler warnings
     int indel_count = 0;
     int cds_indel_count = 0;
+    TSeqPos exon_length_3p = 0;
+    TSeqPos exon_length_5p = 0;
 
     // These will be used for counting genomic ambiguities
     CSeq_data genomic_seq_data;
@@ -233,6 +235,12 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         const CSeq_align& exon = **iter;
         CRange<TSeqPos> r = exon.GetSeqRange(0);
         exon_length = r.GetLength();
+
+        if(exon_index == 0) {
+            exon_length_5p = exon_length;
+        }
+        exon_length_3p = exon_length;
+
         if (exon_index == 0 || exon_length > max_exon_length) {
             max_exon_length = exon_length;
         }
@@ -454,10 +462,17 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         ++exon_index;
     }
 
+
     result->SetOutput_data()
         .AddField("max_exon_length", (int) max_exon_length);
     result->SetOutput_data()
         .AddField("min_exon_length", (int) min_exon_length);
+
+    result->SetOutput_data()
+        .AddField("5p_terminal_exon_length", (int) exon_length_5p);
+    result->SetOutput_data()
+        .AddField("3p_terminal_exon_length", (int) exon_length_3p);
+
     if (disc.size() > 1) {
         result->SetOutput_data()
             .AddField("max_intron_length", (int) max_intron_length);
