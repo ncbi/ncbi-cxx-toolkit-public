@@ -124,7 +124,7 @@ typedef struct Blast_CompositionWorkspace {
 /** Create a new Blast_CompositionWorkspace object, allocating memory
  * for all its component arrays. */
 NCBI_XBLAST_EXPORT
-Blast_CompositionWorkspace * Blast_CompositionWorkspaceNew();
+Blast_CompositionWorkspace * Blast_CompositionWorkspaceNew(void);
 
 
 /** Initialize the fields of a Blast_CompositionWorkspace for a specific

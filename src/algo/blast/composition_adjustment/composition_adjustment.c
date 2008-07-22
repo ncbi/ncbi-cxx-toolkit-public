@@ -1258,7 +1258,7 @@ Blast_CompositionWorkspaceFree(Blast_CompositionWorkspace ** pNRrecord)
 
 
 /* Documented in composition_adjustment.h. */
-Blast_CompositionWorkspace * Blast_CompositionWorkspaceNew()
+Blast_CompositionWorkspace * Blast_CompositionWorkspaceNew(void)
 {
     Blast_CompositionWorkspace * NRrecord;        /* record to allocate
                                                     and return */
