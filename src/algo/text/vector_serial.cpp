@@ -42,7 +42,7 @@
 
 #include <util/compress/zlib.hpp>
 #include <connect/ncbi_conn_stream.hpp>
-#include <util/rwstream.hpp>
+#include <corelib/rwstream.hpp>
 
 
 BEGIN_NCBI_SCOPE
