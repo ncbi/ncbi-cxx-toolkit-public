@@ -46,6 +46,7 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/gb_release_file.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/misc/sequence_macros.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/objistr.hpp>
@@ -62,6 +63,7 @@ USING_SCOPE(objects);
 #include "process_scoped.hpp"
 #include "process_defline.hpp"
 #include "process_gene_overlap.hpp"
+#include "process_macrotest.hpp"
 #include "presenter.hpp"
 #include "presenter_releasefile.hpp"
 #include "presenter_seqset.hpp"
@@ -193,6 +195,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "gene-overlap" ) {
         pProcess = new CGeneOverlapProcess;
+    }
+    if ( testcase == "macrotest" ) {
+        pProcess = new CMacroTestProcess;
     }
     return pProcess;
 }
