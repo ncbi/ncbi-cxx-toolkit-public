@@ -116,6 +116,8 @@ BOOST_AUTO_TEST_CASE(RetrieveGi555WithTimeOut)
     BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
 }
 
+#ifndef _DEBUG
+/* Only execute this in release mode as debug might be too slow */
 BOOST_AUTO_TEST_CASE(RetrieveLargeChromosomeWithTimeOut)
 {
     const time_t kTimeMax = 15;
@@ -143,6 +145,7 @@ BOOST_AUTO_TEST_CASE(RetrieveLargeChromosomeWithTimeOut)
        << kTimeMax << " second timeout";
     BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
 }
+#endif /* _DEBUG */
 
 #ifdef NCBI_THREADS
 class CGiFinderThread : public CThread
