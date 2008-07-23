@@ -36,6 +36,7 @@
 #include <map>
 #include <list>
 
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
@@ -826,7 +827,9 @@ void CXcompareAnnotsApplication::Init(void)
     arg_desc->AddFlag("spliced", 
             "If using spliced alignments, this option must be specified such that"
             "a spliced query location is not collapsed to single range as it would by default");
-    
+    arg_desc->AddFlag("adaptive_depth",
+            "Use adaptive depth in SAnnotSelector (e.g. when dealing with chromosome locations)",
+            "Default is false, because normally we don't want to dig down to find features");
     
     arg_desc->AddFlag("allow_ID", 
             "Use ID when explicitly provided scope is lacking necessary info"
@@ -868,7 +871,7 @@ void CXcompareAnnotsApplication::x_ProcessMappingRanges()
 {
     if(!m_q_id_prev) return;
 
-    if(m_q_loc.IsNull() || m_t_loc.IsNull()) {
+    if(m_q_loc.IsNull() || m_t_loc.IsNull() || m_q_loc->IsNull() || m_t_loc->IsNull()) {
         return;
     }
     
@@ -1316,8 +1319,10 @@ void CXcompareAnnotsApplication::x_ProcessComparison(
     
     for(; comparator.NextComparisonGroup(v); groupNumber++) {
         int comparisonNumber = 1; 
+        
+        _TRACE("Next comparison group");
         ITERATE(vector<CRef<CCompareFeats> >, it, v) {
-            
+            _TRACE("Next feat");
             CRef<CCompareFeats> cf = *it; 
 
             if(cf->GetMappedIdentity() <= 0) {continue;}
@@ -1431,7 +1436,11 @@ int CXcompareAnnotsApplication::Run(void)
     }
 
     m_sel.SetSearchUnresolved(); //need for manually supplied far-reference annots with no seq-entries for scaffolds
-    m_sel.SetExactDepth(true);
+    if(args["adaptive_depth"]) {
+        m_sel.SetAdaptiveDepth();
+    } else {
+        m_sel.SetExactDepth();
+    }
     m_sel.SetResolveAll(); //not sure
 
     m_sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_exon);
@@ -1630,7 +1639,10 @@ int CXcompareAnnotsApplication::Run(void)
                         t_start,
                         t_stop);
             } catch(CException& e) {
-               NCBI_REPORT_EXCEPTION("Cannot process mapping ranges at line\n" + line, e);   
+                NCBI_REPORT_EXCEPTION("Cannot process mapping ranges at line\n" + line, e);   
+                
+                m_q_loc.Reset(new CSeq_loc); m_q_loc->SetNull();
+                m_t_loc.Reset(new CSeq_loc); m_t_loc->SetNull();
             }  
 
         } else if(tokens.size() == 3) {
