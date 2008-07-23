@@ -348,6 +348,27 @@ bool CCdFromFasta::AddComment(const string& comment)
     return result;
 }
 
+bool CCdFromFasta::AddOthername(const string& othername)
+{
+    bool result = (othername.length() > 0);
+
+    //  Don't add an identical othername.
+    if (result && IsSetDescription()) {
+        for (TDescription::Tdata::const_iterator cit = GetDescription().Get().begin(); result && cit != GetDescription().Get().end(); ++cit) {
+            if ((*cit)->IsOthername() && (*cit)->GetOthername() == othername) {
+                result = false;
+            }
+        }
+    }
+
+    if (result) {
+        CRef<CCdd_descr> descr(new CCdd_descr);
+        descr->SetOthername(othername);
+        result = AddCddDescr(descr);
+    }
+    return result;
+}
+
 bool CCdFromFasta::AddPmidReference(unsigned int pmid)
 {
     //  Don't add a duplicate PMID.

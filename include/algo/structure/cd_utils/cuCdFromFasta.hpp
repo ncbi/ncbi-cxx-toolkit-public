@@ -83,6 +83,7 @@ public:
 
     //  These add a specific type of Cdd-descr to the CD
     bool AddComment(const string& comment);
+    bool AddOthername(const string& othername);
     bool AddPmidReference(unsigned int pmid);
     bool AddSource(const string& source, bool removeExistingSources = true);
     bool AddCreateDate();  //  uses the current time
