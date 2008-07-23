@@ -6,9 +6,9 @@ SRC = dbapi_unit_test
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB  = dbapi dbapi_driver dbapi_util_blobstore$(STATIC) \
-       $(COMPRESS_LIBS) $(XCONNEXT) xconnect xutil xncbi
-LIBS = $(BOOST_LIBS) \
-       $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+       $(COMPRESS_LIBS) $(XCONNEXT) test_boost$(STATIC) xconnect xutil xncbi
+PRE_LIBS = $(BOOST_LIBS)
+LIBS =  $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test
 

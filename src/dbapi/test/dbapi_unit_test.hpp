@@ -41,12 +41,8 @@
 
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#include <boost/test/unit_test.hpp>
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 
 using boost::unit_test_framework::test_suite;
 

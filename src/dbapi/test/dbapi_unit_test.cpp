@@ -14515,6 +14515,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
     boost::shared_ptr<CDBAPIUnitTest> DBAPIInstance(new CDBAPIUnitTest(args));
     boost::unit_test::test_case* tc = NULL;
 
+    /******/
     if (args->GetTestConfiguration() != CTestArguments::eFast) {
         if (args->DriverAllowsMultipleContexts()) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many,
@@ -14526,7 +14527,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
             add(tc);
         }
     }
-
 
     boost::unit_test::test_case* tc_init =
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
@@ -15229,15 +15229,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
         args->PutMsgDisabled("Test_MsgToEx");
     }
 
-    /*
-    if (args->GetServerType() == CDBConnParams::eSybaseSQLServer
-        && args->GetDriverName() != dblib_driver) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_MsgToEx2,
-                DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
-    */
+    // if (args->GetServerType() == CDBConnParams::eSybaseSQLServer
+    //     && args->GetDriverName() != dblib_driver) {
+    //     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_MsgToEx2,
+    //             DBAPIInstance);
+    //     tc->depends_on(tc_init);
+    //     add(tc);
+    // }
 
     boost::unit_test::test_case* except_safety_tc = NULL;
 
@@ -15619,26 +15617,25 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
     } else {
         args->PutMsgDisabled("Test_NTEXT");
     }
-/*
-    It's not supposed to be included in DBAPI unit tests.
-    It's just example of code that will force replication of updated blob.
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_Replication,
-                               DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
-*/
-/*
-    This is not supposed to be included in DBAPI unit tests.
-    This is just example of heavy-load test.
+    // It's not supposed to be included in DBAPI unit tests.
+    // It's just example of code that will force replication of updated blob.
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Heavy_Load,
-                               DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
-*/
+    // tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_Replication,
+    //                            DBAPIInstance);
+    // tc->depends_on(tc_init);
+    // add(tc);
+
+    // This is not supposed to be included in DBAPI unit tests.
+    // This is just example of heavy-load test.
+
+    // tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Heavy_Load,
+    //                            DBAPIInstance);
+    // tc->depends_on(tc_init);
+    // add(tc);
 
     cout << args->GetNumOfDisabledTests() << " tests are disabled..." << endl;
+    /********/
 }
 
 CDBAPITestSuite::~CDBAPITestSuite(void)
