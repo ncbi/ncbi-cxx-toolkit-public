@@ -11,7 +11,7 @@ verbose = False
 
 def main():
     """ Creates installers for selected platforms. """
-    parser = OptionParser(sys.argv[0] + " <platform> " +
+    parser = OptionParser("%prog <platform> " +
                           "<installation directory> <source directory>")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output")

@@ -115,16 +115,17 @@ def move_rpms_to_installdir(installdir):
 
 def main():
     """ Creates RPMs for linux. """
-    parser = OptionParser(sys.argv[0] + " <installation directory>")
+    parser = OptionParser("%prog <installation directory>")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output")
     options, args = parser.parse_args()
     if len(args) != 1:
         parser.error("Incorrect number of arguments")
         return 1
-    installdir = args
+    installdir = args[0]
     global verbose
     verbose = options.verbose
+    if verbose: print "Installing to", installdir
     setup_rpmbuild()
     cleanup()
     svn_checkout()
