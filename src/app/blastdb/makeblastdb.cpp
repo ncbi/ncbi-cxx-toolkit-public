@@ -51,6 +51,7 @@ static char const rcsid[] =
 #include <util/regexp.hpp>
 #include <util/util_exception.hpp>
 #include <objtools/writers/writedb/build_db.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <algo/blast/blastinput/blast_input.hpp>
 #include "../blast/blast_app_util.hpp"
@@ -102,6 +103,8 @@ private:
     
     CNcbiOstream * m_LogFile;
     
+    CRef<CObjectManager> m_ObjMgr;
+
     CRef<CBuildDatabase> m_DB;
     
     CRef<CMaskedRangeSet> m_Ranges;
@@ -584,7 +587,20 @@ void CMakeBlastDBApp::x_BuildDatabase()
     
     CWriteDB::EIndexType indexing = (CWriteDB::EIndexType)
         (CWriteDB::eDefault | (hash_index ? CWriteDB::eAddHash : 0));
-    
+
+    if (m_ObjMgr.Empty()) {
+        m_ObjMgr.Reset(CObjectManager::GetInstance());
+        try {
+            CGBLoaderParams params("id2");
+            params.SetPreopenConnection(CGBLoaderParams::ePreopenNever);
+            CGBDataLoader::RegisterInObjectManager(*m_ObjMgr,
+                                                params,
+                                                CObjectManager::eDefault);
+        } catch (const CException& e) {
+            ERR_POST(Warning << e.GetMsg());
+        }
+    }
+        
     m_DB.Reset(new CBuildDatabase(dbname,
                                   title,
                                   is_protein,

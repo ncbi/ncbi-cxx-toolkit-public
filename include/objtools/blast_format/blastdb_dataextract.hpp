@@ -48,7 +48,7 @@ USING_SCOPE(objects);
  */
 
 /// Interface to extract data from a BLAST database given an identifier
-class IBlastDBExtract {
+class NCBI_XBLASTFORMAT_EXPORT IBlastDBExtract {
 public:
     /// Our mandatory destructor
     virtual ~IBlastDBExtract() {}
@@ -61,7 +61,7 @@ public:
 
 /// Extracts the GI for a given sequence id
 /// (CSeqFormatter associates this with %g)
-class CGiExtractor : public IBlastDBExtract {
+class NCBI_XBLASTFORMAT_EXPORT CGiExtractor : public IBlastDBExtract {
 public:
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
@@ -69,7 +69,7 @@ public:
 
 /// Extracts the PIG for a given sequence id
 /// (CSeqFormatter associates this with %P)
-class CPigExtractor : public IBlastDBExtract {
+class NCBI_XBLASTFORMAT_EXPORT CPigExtractor : public IBlastDBExtract {
 public:
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
@@ -77,7 +77,7 @@ public:
 
 /// Extracts the OID for a given sequence id
 /// (CSeqFormatter associates this with %o)
-class COidExtractor : public IBlastDBExtract {
+class NCBI_XBLASTFORMAT_EXPORT COidExtractor : public IBlastDBExtract {
 public:
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
@@ -91,7 +91,7 @@ public:
 
 /// Extracts the sequence length for a given sequence id
 /// (CSeqFormatter associates this with %l)
-class CSeqLenExtractor : public IBlastDBExtract {
+class NCBI_XBLASTFORMAT_EXPORT CSeqLenExtractor : public IBlastDBExtract {
 public:
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
@@ -106,7 +106,7 @@ public:
 
 /// Extracts the taxonomy ID for a given sequence id
 /// (CSeqFormatter associates this with %T)
-class CTaxIdExtractor : public IBlastDBExtract {
+class NCBI_XBLASTFORMAT_EXPORT CTaxIdExtractor : public IBlastDBExtract {
 public:
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
@@ -120,7 +120,7 @@ public:
 
 /// Extracts the sequence data for a given sequence id in IUPAC{AA,NA} format
 /// (CSeqFormatter associates this with %s)
-class CSeqDataExtractor : public IBlastDBExtract {
+class NCBI_XBLASTFORMAT_EXPORT CSeqDataExtractor : public IBlastDBExtract {
 public:
     /// Constructor
     /// @param range sequence range to extract, if empty, gets the entire
@@ -143,7 +143,7 @@ protected:
 
 /// Extracts the FASTA for a given sequence id
 /// (CSeqFormatter associates this with %f)
-class CFastaExtractor : public CSeqDataExtractor {
+class NCBI_XBLASTFORMAT_EXPORT CFastaExtractor : public CSeqDataExtractor {
 public:
     /// Constructor
     /// @param line_width length of the line of output [in]
@@ -169,7 +169,7 @@ private:
 
 /// Extracts the sequence title for a given sequence id
 /// (CSeqFormatter associates this with %t)
-class CTitleExtractor : public IBlastDBExtract {
+class NCBI_XBLASTFORMAT_EXPORT CTitleExtractor : public IBlastDBExtract {
 public:
     CTitleExtractor(bool target_only = false) : m_ShowTargetOnly(target_only) {}
     /** @inheritDoc */
@@ -180,7 +180,7 @@ private:
 
 /// Extracts the accession for a given sequence id
 /// (CSeqFormatter associates this with %a)
-class CAccessionExtractor : public IBlastDBExtract {
+class NCBI_XBLASTFORMAT_EXPORT CAccessionExtractor : public IBlastDBExtract {
 public:
     CAccessionExtractor(bool target_only = false)
         : m_ShowTargetOnly(target_only) {}
@@ -192,7 +192,7 @@ private:
 
 /// Extracts the common taxonomy name for a given sequence id
 /// (CSeqFormatter associates this with %L)
-class CCommonTaxonomicNameExtractor : public IBlastDBExtract {
+class NCBI_XBLASTFORMAT_EXPORT CCommonTaxonomicNameExtractor : public IBlastDBExtract {
 public:
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
@@ -200,7 +200,7 @@ public:
 
 /// Extracts the scientific name for a given sequence id
 /// (CSeqFormatter associates this with %S)
-class CScientificNameExtractor : public IBlastDBExtract {
+class NCBI_XBLASTFORMAT_EXPORT CScientificNameExtractor : public IBlastDBExtract {
 public:
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);

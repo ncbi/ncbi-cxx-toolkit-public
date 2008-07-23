@@ -74,7 +74,7 @@ struct CSeqFormatterConfig {
 };
 
 /// Customizable sequence writer interface
-class CSeqFormatter 
+class NCBI_XBLASTFORMAT_EXPORT CSeqFormatter 
 {
 public:
     /// Constructor

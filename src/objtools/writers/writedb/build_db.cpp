@@ -42,8 +42,6 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
 #include <objmgr/seq_vector.hpp>
 
 // Other utilities
@@ -969,17 +967,6 @@ CScope & CBuildDatabase::x_GetScope()
     if (m_Scope.Empty()) {
         if (m_ObjMgr.Empty()) {
             m_ObjMgr.Reset(CObjectManager::GetInstance());
-        }
-        
-        try {
-            CRef<CReader> reader(new CId2Reader);
-            reader->SetPreopenConnection(false);
-            
-            CGBDataLoader::RegisterInObjectManager(*m_ObjMgr,
-                                                   reader,
-                                                   CObjectManager::eDefault);
-        } catch (const CException& e) {
-            ERR_POST(Warning << e.GetMsg());
         }
         
         m_Scope.Reset(new CScope(*m_ObjMgr));

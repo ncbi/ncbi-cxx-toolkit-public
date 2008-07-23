@@ -43,6 +43,7 @@
 BEGIN_NCBI_SCOPE
 
 /// Get all keys for a defline.
+NCBI_XOBJWRITE_EXPORT
 void GetDeflineKeys(const objects::CBlast_def_line & defline,
                     vector<string>        & keys);
 
@@ -51,7 +52,7 @@ void GetDeflineKeys(const objects::CBlast_def_line & defline,
 /// This exception class is thrown for errors occurring during
 /// traceback.
 
-class CMultisourceException : public CException {
+class NCBI_XOBJWRITE_EXPORT CMultisourceException : public CException {
 public:
     /// Errors are classified into several types.
     enum EErrCode {
@@ -79,7 +80,7 @@ public:
 /// SeqDB GI list, database filtering can be done using SeqDB's
 /// internal processing machinery.
 
-class CInputGiList : public CSeqDBGiList {
+class NCBI_XOBJWRITE_EXPORT CInputGiList : public CSeqDBGiList {
 public:
     /// Construct an empty GI list.
     CInputGiList(int capacity = 1024)
@@ -134,10 +135,11 @@ private:
 };
 
 
+NCBI_XOBJWRITE_EXPORT
 void ReadTextFile(CNcbiIstream   & f,
                   vector<string> & lines);
 
-class CSequenceReturn {
+class NCBI_XOBJWRITE_EXPORT CSequenceReturn {
 public:
     CSequenceReturn(CSeqDB & seqdb, const char * buffer)
         : m_SeqDB(seqdb), m_Buffer(buffer)
@@ -162,15 +164,19 @@ typedef map< string, int > TIdToBits;
 /// Map from linkout bit number to list of ids.
 typedef map<int, vector<string> > TLinkoutMap;
 
+NCBI_XOBJWRITE_EXPORT
 void MapToLMBits(const TLinkoutMap & gilist, TIdToBits & gi2links);
 
+NCBI_XOBJWRITE_EXPORT
 bool CheckAccession(const string  & acc,
                     int           & gi,
                     CRef<objects::CSeq_id> & seqid,
                     bool          & specific);
 
+NCBI_XOBJWRITE_EXPORT
 void GetSeqIdKey(const objects::CSeq_id & id, string & key);
 
+NCBI_XOBJWRITE_EXPORT
 string AccessionToKey(const string & acc);
 
 END_NCBI_SCOPE

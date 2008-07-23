@@ -44,7 +44,7 @@ USING_SCOPE(objects);
 /// Registry class for the sequence masking/filtering algorithms used to create
 /// masks to be added to a CWriteDB object. Encapsulates the logic of assigning
 /// IDs to identify masking information for CWriteDB's internal use
-class CMaskInfoRegistry
+class NCBI_XOBJWRITE_EXPORT CMaskInfoRegistry
 {
 public:
     /// Attempt to register the information about a masking algorithm 

@@ -61,7 +61,7 @@ BEGIN_SCOPE(objects)
 /// alignments by a list of gi's. Supports different I/O options. Filtering can
 /// take into account the equivalence of gi's in a database.
 
-class CSeqAlignFilter
+class NCBI_XBLASTFORMAT_EXPORT CSeqAlignFilter
 {
 public:
     //--- Types ---//

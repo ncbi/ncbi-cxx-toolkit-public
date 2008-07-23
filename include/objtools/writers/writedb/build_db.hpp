@@ -51,7 +51,7 @@
 BEGIN_NCBI_SCOPE
 
 /// Interface to a source of Bioseq objects.
-class IBioseqSource : public CObject {
+class NCBI_XOBJWRITE_EXPORT IBioseqSource : public CObject {
 public:
     /// Get a Bioseq object if there are any more to get.
     ///
@@ -67,7 +67,7 @@ public:
 /// This interface provides raw data, including column data, from a
 /// BlastDB-like data source.
 
-class IRawSequenceSource : public CObject {
+class NCBI_XOBJWRITE_EXPORT IRawSequenceSource : public CObject {
 public:
     /// Get a raw sequence.
     ///
@@ -116,7 +116,7 @@ public:
 };
 
 /// An interface providing lookups of mask-data by Seq-id.
-class IMaskDataSource : public CObject {
+class NCBI_XOBJWRITE_EXPORT IMaskDataSource : public CObject {
 public:
     /// Type of masking data produced here.
     typedef vector<SBlastDbMaskData> TMaskedRanges;
@@ -134,7 +134,7 @@ public:
 /// database; the functionality provided by this class helps to bridge
 /// the gap between the WriteDB API and the needs of a command line
 /// database construction tool.
-class CBuildDatabase : public CObject {
+class NCBI_XOBJWRITE_EXPORT CBuildDatabase : public CObject {
 public:
     /// Constructor.
     ///

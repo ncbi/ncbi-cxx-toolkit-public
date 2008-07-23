@@ -42,7 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CTaxIdSet : public CObject {
+class NCBI_XOBJWRITE_EXPORT CTaxIdSet : public CObject {
 public:
     static const int kTaxIdNotSet = 0;
 
