@@ -115,6 +115,12 @@ string CFileCode::GetUserCPPName(void) const
 string CFileCode::GetDefineBase(void) const
 {
     string s;
+    if (!m_CodeGenerator->GetNamespace().InNCBI()) {
+        string t(m_CodeGenerator->GetNamespace());
+        ITERATE ( string, i, t ) {
+            s += (isalnum((unsigned char)*i) ? (*i) : '_');
+        }
+    }
     ITERATE ( string, i, GetFileBaseName() ) {
         char c = *i;
         if ( c >= 'a' && c <= 'z' )
