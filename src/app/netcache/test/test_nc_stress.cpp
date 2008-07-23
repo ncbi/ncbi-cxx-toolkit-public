@@ -37,13 +37,12 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/rwstream.hpp>
 
 #include <connect/services/netcache_api.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
 #include <connect/ncbi_core_cxx.hpp>
-
-#include <util/rwstream.hpp>
 
 #include <deque>
 
