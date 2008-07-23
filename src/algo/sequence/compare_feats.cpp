@@ -690,7 +690,8 @@ bool CCompareSeqRegions::NextComparisonGroup(vector<CRef<CCompareFeats> >& vComp
         vComparisons.insert(vComparisons.end(), feat_matches.begin(), feat_matches.end());
         
         //update group locs
-        group_loc_q = sequence::Seq_loc_Add(*group_loc_q, feat1->GetLocation(), CSeq_loc::fMerge_SingleRange, m_scope_q);
+        CConstRef<CSeq_loc> feat1_self_range_loc = x_GetSelfLoc(feat1->GetLocation(), m_scope_q, true);
+        group_loc_q = sequence::Seq_loc_Add(*group_loc_q, *feat1_self_range_loc, CSeq_loc::fMerge_SingleRange, m_scope_q);
         group_loc_t = sequence::Seq_loc_Add(*group_loc_t, aggregate_match_loc_t, CSeq_loc::fMerge_SingleRange, m_scope_t);
         
         
@@ -724,6 +725,7 @@ bool CCompareSeqRegions::NextComparisonGroup(vector<CRef<CCompareFeats> >& vComp
     double dummy(0.0f);
     CConstRef<CSeq_loc> tgt_loc = m_mapper->Map(*this->m_loc_q, &dummy);
     
+    _TRACE("Processing unmatched targets");
     SAnnotSelector sel = m_selector_t; //because original is const
     sel.SetOverlapIntervals();
     for(CFeat_CI it2(*m_scope_t, *tgt_loc, sel); it2; ++it2) {
@@ -761,6 +763,7 @@ bool CCompareSeqRegions::NextComparisonGroup(vector<CRef<CCompareFeats> >& vComp
     }
     m_already_processed_unmatched_targets = true;
     
+    _TRACE("Finished processing this group");
     return !vComparisons.empty();
 }
 
@@ -893,17 +896,22 @@ public:
             return false;
         }
 
-        int res = f1->Compare(*f2);
-        
-        if(res < 0) {
-            return true;
+        try {
+            int res = f1->Compare(*f2);
+            
+            if(res < 0) {
+                return true;
+            }
+            
+            if(res > 0) {
+                return false;
+            }
+        } catch (...) {
+            //Compare fails on multi-seq-id features
         }
         
-        if(res > 0) {
-            return false;
-        }
-        
-        //Compare does not always go all the way, so here we manually try to distinguish by labels
+        //Compare does not always go all the way (or throws), so here we manually try to distinguish by labels
+        //Potential problem: may not be transitive?
         string s1 = "";
         feature::GetLabel(*f1, &s1, feature::eBoth);
         
