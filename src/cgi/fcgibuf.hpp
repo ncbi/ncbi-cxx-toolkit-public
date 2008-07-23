@@ -36,7 +36,7 @@
 #include <corelib/ncbistd.hpp>
 
 
-class FCGX_Stream;
+struct FCGX_Stream;
 
 
 BEGIN_NCBI_SCOPE
