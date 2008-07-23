@@ -72,8 +72,7 @@ CSplignSimple::CSplignSimple(const CSeq_loc &transcript,
     m_TranscriptId(&sequence::GetId(transcript, &scope)),
     m_GenomicId   (&sequence::GetId(genomic, &scope))
 {    
-    CRef<CSplicedAligner> aligner(new CSplicedAligner16);
-    m_Splign->SetAligner() = aligner;
+    m_Splign->SetAligner() = CSplign::s_CreateDefaultAligner(true);
     m_Splign->SetScope().Reset(&scope);
     m_Splign->PreserveScope();
 }
