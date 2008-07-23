@@ -32,8 +32,8 @@ def setup_rpmbuild():
     fname = os.path.join(os.path.expanduser("~"), ".rpmmacros");
     try:
         f = open(fname, "w")
-        print >> f, "%_topdir %( echo", RPMBUILD_HOME, ")"
-        print >> f, "%_tmppath %{_topdir}/tmp"
+        print >> f, "%_topdir %( echo", os.path.join(cwd, RPMBUILD_HOME), ")"
+        print >> f, "%_tmppath %( echo", os.path.join(cwd, RPMBUILD_HOME, "tmp"), ")"
         print >> f
         print >> f, "%packager Christiam E. Camacho (camacho@ncbi.nlm.nih.gov)"
     finally:
@@ -74,14 +74,16 @@ def svn_checkout():
     safe_exec(cmd)
 
     # Remove unneeded directories
-    shutil.rmtree(os.path.join(PACKAGE_NAME, "builds"))
-    shutil.rmtree(os.path.join(PACKAGE_NAME, "scripts"))
+    for path in ["builds", "scripts"]:
+        path = os.path.join(PACKAGE_NAME, path);
+        if os.path.exists(path):
+            shutil.rmtree(path)
     cmd = "find " + PACKAGE_NAME + " -type d -name .svn | xargs rm -fr "
     safe_exec(cmd)
 
 def compress_sources():
     import tarfile
-    tar = TarFile(TARBALL, "w:bz2")
+    tar = tarfile.open(TARBALL, "w:bz2")
     tar.add(PACKAGE_NAME)
     tar.close()
 
@@ -96,7 +98,7 @@ def run_rpm():
     shutil.rmtree(PACKAGE_NAME)
     shutil.move(TARBALL, os.path.join(RPMBUILD_HOME, "SOURCES"))
     dest_spec = os.path.join(RPMBUILD_HOME, "SPECS", RPM_SPEC)
-    shutil.move(RPM_SPEC, dest_spec)
+    shutil.copyfile(RPM_SPEC, dest_spec)
     cmd = "rpmbuild -ba " + dest_spec
     safe_exec(cmd)
 
