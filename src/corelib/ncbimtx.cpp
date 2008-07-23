@@ -664,15 +664,14 @@ void CRWLock::ReadLock(void)
             // (due to be) W-locked by another thread
 #if defined(NCBI_WIN32_THREADS)
             HANDLE obj[3];
-            DWORD  wait_res;
             obj[0] = m_RW->m_Mutex.GetHandle();
             obj[1] = m_RW->m_Rsema;
             obj[2] = m_RW->m_Rsema2;
             xncbi_Validate(ReleaseMutex(m_RW->m_Mutex.GetHandle()),
                            "CRWLock::ReadLock() - release mutex error");
-            wait_res = WaitForMultipleObjects(3, obj, TRUE, INFINITE);
-            xncbi_Validate(wait_res >= WAIT_OBJECT_0  &&
-                           wait_res < WAIT_OBJECT_0 + 3,
+            DWORD wait_res =
+                WaitForMultipleObjects(3, obj, TRUE, INFINITE)-WAIT_OBJECT_0;
+            xncbi_Validate(wait_res < 3,
                            "CRWLock::ReadLock() - R-lock waiting error");
             // Success, check the semaphore
             xncbi_Validate(m_RW->m_Rsema.Release() == 0
@@ -799,12 +798,11 @@ void CRWLock::WriteLock(void)
         obj[0] = m_RW->m_Rsema;
         obj[1] = m_RW->m_Wsema;
         obj[2] = m_RW->m_Mutex.GetHandle();
-        DWORD wait_res;
         if (m_Count == 0) {
             // Unlocked - lock both semaphores
-            wait_res = WaitForMultipleObjects(2, obj, TRUE, 0);
-            xncbi_Validate(wait_res >= WAIT_OBJECT_0  &&
-                           wait_res < WAIT_OBJECT_0+2,
+            DWORD wait_res =
+                WaitForMultipleObjects(2, obj, TRUE, 0)-WAIT_OBJECT_0;
+            xncbi_Validate(wait_res < 2,
                            "CRWLock::WriteLock() - "
                            "error locking R&W-semaphores");
         }
@@ -821,9 +819,9 @@ void CRWLock::WriteLock(void)
             }
             xncbi_Validate(ReleaseMutex(m_RW->m_Mutex.GetHandle()),
                            "CRWLock::WriteLock() - release mutex error");
-            wait_res = WaitForMultipleObjects(3, obj, TRUE, INFINITE);
-            xncbi_Validate(wait_res >= WAIT_OBJECT_0  &&
-                           wait_res < WAIT_OBJECT_0+3,
+            DWORD wait_res =
+                WaitForMultipleObjects(3, obj, TRUE, INFINITE)-WAIT_OBJECT_0;
+            xncbi_Validate(wait_res < 3,
                            "CRWLock::WriteLock() - "
                            "error locking R&W-semaphores");
             if (m_Flags & fFavorWriters) {
@@ -895,10 +893,9 @@ bool CRWLock::TryWriteLock(void)
         HANDLE obj[2];
         obj[0] = m_RW->m_Rsema;
         obj[1] = m_RW->m_Wsema;
-        DWORD wait_res;
-        wait_res = WaitForMultipleObjects(2, obj, TRUE, 0);
-        xncbi_Validate(wait_res >= WAIT_OBJECT_0  &&
-                       wait_res < WAIT_OBJECT_0 + 2,
+        DWORD wait_res =
+            WaitForMultipleObjects(2, obj, TRUE, 0)-WAIT_OBJECT_0;
+        xncbi_Validate(wait_res < 2,
                        "CRWLock::TryWriteLock() - "
                        "error locking R&W-semaphores");
 #endif
