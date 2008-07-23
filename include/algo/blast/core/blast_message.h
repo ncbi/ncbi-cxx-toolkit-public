@@ -35,6 +35,7 @@
 #define ALGO_BLAST_CORE__BLAST_MESSAGE__H
 
 #include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
 
 #ifdef __cplusplus
 extern "C" {
