@@ -305,7 +305,7 @@ public:
         switch (alph) {
         case eSE_V10:
             len = 28;
-            compressed_len = 10;
+            compressed_len = 11; //including gap
             BuildCompressedTranslation(kAlphabet10, 
                                        TKmerCounts::SetTransTable(), 
                                        len);
@@ -315,7 +315,7 @@ public:
             
         case eSE_B15:
             len = 28;
-            compressed_len = 15;
+            compressed_len = 16; //including gap
             BuildCompressedTranslation(kAlphabet15,
                                        TKmerCounts::SetTransTable(),
                                        len);
