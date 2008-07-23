@@ -247,6 +247,7 @@ public:
 /// @param ambiguities Sequence ambiguities packed in blastdb format. [in]
 /// @param result Unpacked sequence in Ncbi NA8 format. [out]
 
+NCBI_XOBJREAD_EXPORT
 void SeqDB_UnpackAmbiguities(const CTempString & sequence,
                              const CTempString & ambiguities,
                              string            & result);

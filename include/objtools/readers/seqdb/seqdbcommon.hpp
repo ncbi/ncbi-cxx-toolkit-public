@@ -60,7 +60,7 @@ USING_SCOPE(objects);
 /// most error scenarios.  SeqDB still uses assertions in cases where
 /// memory corruption is suspected, or cleanup may not be possible.
 
-class CSeqDBException : public CException {
+class NCBI_XOBJREAD_EXPORT CSeqDBException : public CException {
 public:
     /// Errors are classified into one of two types.
     enum EErrCode {

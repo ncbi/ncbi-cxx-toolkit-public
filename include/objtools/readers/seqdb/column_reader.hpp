@@ -56,7 +56,7 @@ USING_SCOPE(objects);
 /// methods.  This class is intended for column data not associated
 /// with specific BlastDb volumes.
 
-class CSeqDB_ColumnReader : public CObject {
+class NCBI_XOBJREAD_EXPORT CSeqDB_ColumnReader : public CObject {
 public:
     /// Read a BlastDb format column.
     ///
