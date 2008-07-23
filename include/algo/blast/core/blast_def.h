@@ -154,6 +154,7 @@ typedef struct SSeqRange {
  * @param start the start of the range [in]
  * @param stop the end of the range [in]
  */
+NCBI_XBLAST_EXPORT
 SSeqRange SSeqRangeNew(Int4 start, Int4 stop);
 
 /** Determine if two ranges intersect
@@ -161,6 +162,7 @@ SSeqRange SSeqRangeNew(Int4 start, Int4 stop);
  * @param a second range to compare [in]
  * @return TRUE if they intersect, otherwise FALSE 
  */
+NCBI_XBLAST_EXPORT
 Boolean SSeqRangeIntersectsWith(const SSeqRange* a, const SSeqRange* b);
 
 /** Used to hold a set of positions, mostly used for filtering. 
@@ -288,14 +290,17 @@ typedef Boolean (*TInterruptFnPtr) (SBlastProgress* progress_info);
  * [in]
  * Implemented in blast_util.c 
  */
+NCBI_XBLAST_EXPORT
 SBlastProgress* SBlastProgressNew(void* user_data);
 
 /** Deallocates a SBlastProgress structure.
  * Implemented in blast_util.c */
+NCBI_XBLAST_EXPORT
 SBlastProgress* SBlastProgressFree(SBlastProgress* progress_info);
 
 /** Resets the progress structure to its original state (as if newly allocated)
  * for a fresh start without touching the user_data field */
+NCBI_XBLAST_EXPORT
 void SBlastProgressReset(SBlastProgress* progress_info);
 
 #ifdef __cplusplus

@@ -52,6 +52,7 @@ typedef Int4 (*TAaScanSubjectFunction)(const LookupTableWrap* lookup_wrap,
  * protein subject sequences
  * @param lookup_wrap Structure containing lookup table [in][out]
  */
+NCBI_XBLAST_EXPORT
 void BlastChooseProteinScanSubject(LookupTableWrap *lookup_wrap);
 
 /**
@@ -66,6 +67,7 @@ void BlastChooseProteinScanSubject(LookupTableWrap *lookup_wrap);
  * @param offset the offset in the subject at which to begin scanning [in/out]
  * @return The number of hits found.
  */
+NCBI_XBLAST_EXPORT
 Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk *sequence,
                         Int4* offset);

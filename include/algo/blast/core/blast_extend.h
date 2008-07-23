@@ -114,11 +114,13 @@ typedef struct Blast_ExtendWord {
  * @param word_params Parameters for initial word extension [in]
  * @param ewp_ptr Pointer to the word extension structure [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastExtendWordNew(Uint4 query_length,
                         const BlastInitialWordParameters* word_params,
                         Blast_ExtendWord** ewp_ptr);
 
 /** Deallocate memory for the word extension structure */
+NCBI_XBLAST_EXPORT
 Blast_ExtendWord* BlastExtendWordFree(Blast_ExtendWord* ewp);
 
 /** Update the word extension structure after scanning of each subject sequence
@@ -126,6 +128,7 @@ Blast_ExtendWord* BlastExtendWordFree(Blast_ExtendWord* ewp);
  * @param subject_length The length of the subject sequence that has just been
  *        processed [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 Blast_ExtendWordExit(Blast_ExtendWord * ewp, Int4 subject_length);
 
 /****************** Ungapped Alignments ********************************/
@@ -159,19 +162,23 @@ typedef struct BlastInitHitList {
 } BlastInitHitList;
 
 /** Allocate memory for the BlastInitHitList structure */
+NCBI_XBLAST_EXPORT
 BlastInitHitList* BLAST_InitHitListNew(void);
 
 /** Move the contents of a BlastInitHitList structure. 
  * @param dst Destination hitlist [in][out]
  * @param src Source hitlist (gets emptied of hits) [in][out]
  */
+NCBI_XBLAST_EXPORT
 void BlastInitHitListMove(BlastInitHitList * dst, 
                           BlastInitHitList * src);
 
 /** Free the ungapped data substructures and reset initial HSP count to 0 */
+NCBI_XBLAST_EXPORT
 void BlastInitHitListReset(BlastInitHitList* init_hitlist);
 
 /** Free memory for the BlastInitList structure */
+NCBI_XBLAST_EXPORT
 BlastInitHitList* BLAST_InitHitListFree(BlastInitHitList* init_hitlist);
 
 /** Save the initial hit data into the initial hit list structure.
@@ -182,6 +189,7 @@ BlastInitHitList* BLAST_InitHitListFree(BlastInitHitList* init_hitlist);
  * @param ungapped_data The information about the ungapped extension of this 
  *        hit [in]
  */
+NCBI_XBLAST_EXPORT
 Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist, 
            Int4 q_off, Int4 s_off, BlastUngappedData* ungapped_data); 
 
@@ -194,6 +202,7 @@ Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist,
  * @param len Length of the ungapped match [in]
  * @param score Score of the ungapped match [in]
  */
+NCBI_XBLAST_EXPORT
 void 
 BlastSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, 
                  Int4 q_off, Int4 s_off, Int4 len, Int4 score);
@@ -201,6 +210,7 @@ BlastSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start,
 /** Sort array of initial HSPs by score. 
  * @param init_hitlist Initial hit list structure to check. [in]
  */
+NCBI_XBLAST_EXPORT
 void 
 Blast_InitHitListSortByScore(BlastInitHitList* init_hitlist);
 
@@ -208,6 +218,7 @@ Blast_InitHitListSortByScore(BlastInitHitList* init_hitlist);
  * @param init_hitlist Initial hit list structure to check. [in]
  * @return TRUE if sorted, FALSE otherwise.
 */
+NCBI_XBLAST_EXPORT
 Boolean Blast_InitHitListIsSortedByScore(BlastInitHitList* init_hitlist);
 
 

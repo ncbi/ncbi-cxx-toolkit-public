@@ -74,6 +74,7 @@ typedef Int4 (*TNaExtendFunction)(const BlastOffsetPair* offset_pairs,
  *        allocated up front [out]
  * @param ungapped_stats Various hit counts. Not filled if NULL [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastNaWordFinder(BLAST_SequenceBlk* subject, 
                        BLAST_SequenceBlk* query,
                        BlastQueryInfo* query_info,
@@ -90,6 +91,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk* subject,
 /** Choose the best routine to use for creating ungapped alignments
  * @param lookup_wrap Lookup table that influences routine choice [in][out]
  */
+NCBI_XBLAST_EXPORT
 void BlastChooseNaExtend(LookupTableWrap *lookup_wrap);
 
 #ifdef __cplusplus

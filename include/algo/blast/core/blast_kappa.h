@@ -72,6 +72,7 @@ extern "C" {
  * @return 0 on success, otherwise failure.
 */
 
+NCBI_XBLAST_EXPORT
 Int2
 Blast_RedoAlignmentCore(EBlastProgramType program_number,
                   BLAST_SequenceBlk * queryBlk,
