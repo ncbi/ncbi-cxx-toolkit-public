@@ -58,8 +58,44 @@ def safe_exec(cmd):
         retcode = subprocess.call(cmd, shell=True)
         if retcode < 0:
             raise RuntimeError("Child was terminated by signal " + -retcode)
+        elif retcode != 0:
+            raise RuntimeError("Command failed with exit code " + retcode)
     except OSError, e:
         raise RuntimeError("Execution failed: " + e)
+
+def cleanup_svn_co():
+    """ Remove unnecessary directories/files from svn checkout """
+    import dircache, fnmatch
+           
+    cmd = "find " + PACKAGE_NAME + " -type d -name .svn | xargs rm -fr "
+    safe_exec(cmd) 
+        
+    for path in ["builds", "scripts"]:
+        path = os.path.join(PACKAGE_NAME, path)
+        if os.path.exists(path):
+            shutil.rmtree(path)
+            if verbose: print "Deleting", path
+    
+#    compilers_path = os.path.join(PACKAGE_NAME, "c++", "compilers")    
+#    for d in dircache.listdir(compilers_path):
+#        if not fnmatch.fnmatch(d, "unix"):
+#            d = os.path.join(compilers_path, d)
+#            shutil.rmtree(d)
+#            if verbose: print "Deleting", d
+               
+    projects_path = os.path.join(PACKAGE_NAME, "c++", "scripts", "projects")
+    for root, dirs, files in os.walk(projects_path): 
+        for name in files:
+            name = os.path.join(root, name)
+            if fnmatch.fnmatch(name, "*blast/project.lst"): continue
+            os.remove(name)
+            if verbose: print "Deleting file", name
+            
+        for d in dirs:
+            if not fnmatch.fnmatch(d, "blast"):
+                d = os.path.join(root, d)
+                shutil.rmtree(d)
+                if verbose: print "Deleting directory", d
 
 def svn_checkout():
     # NCBI SVN repository
@@ -72,13 +108,7 @@ def svn_checkout():
         shutil.rmtree(PACKAGE_NAME)
     safe_exec(cmd)
 
-    # Remove unneeded directories
-    for path in ["builds", "scripts"]:
-        path = os.path.join(PACKAGE_NAME, path);
-        if os.path.exists(path):
-            shutil.rmtree(path)
-    cmd = "find " + PACKAGE_NAME + " -type d -name .svn | xargs rm -fr "
-    safe_exec(cmd)
+    cleanup_svn_co()
 
 def compress_sources():
     import tarfile
@@ -96,10 +126,11 @@ def cleanup():
 def run_rpm(scripts_dir):
     shutil.rmtree(PACKAGE_NAME)
     shutil.move(TARBALL, os.path.join(RPMBUILD_HOME, "SOURCES"))
-    dest_spec = os.path.join(RPMBUILD_HOME, "SPECS")
-    rpm_spec = os.path.join(scripts_dir, "rpm", "ncbi-blast.spec")
-    shutil.copyfile(rpm_spec, dest_spec)
-    cmd = "rpmbuild -ba " + dest_spec
+    rpm_spec = "ncbi-blast.spec"
+    src = os.path.join(scripts_dir, "rpm", rpm_spec)
+    dest = os.path.join(RPMBUILD_HOME, "SPECS", rpm_spec)
+    shutil.copyfile(src, dest)
+    cmd = "rpmbuild -ba " + dest
     safe_exec(cmd)
 
 def move_rpms_to_installdir(installdir):

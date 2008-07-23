@@ -100,6 +100,8 @@ def safe_exec(cmd):
         retcode = subprocess.call(cmd, shell=True)
         if retcode < 0:
             raise RuntimeError("Child was terminated by signal " + -retcode)
+        elif retcode != 0:
+            raise RuntimeError("Command failed with exit code " + retcode)
     except OSError, e:
         raise RuntimeError("Execution failed: " + e)
 
