@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
+#include <deque>
 
 
 /** @addtogroup ObjStreamSupport
@@ -439,7 +440,7 @@ private:
     string m_CurrNsPrefix;
     map<string,string> m_NsNameToPrefix;
     map<string,string> m_NsPrefixToName;
-    vector<string> m_NsPrefixes;
+    deque<string> m_NsPrefixes;
     bool m_SkipIndent;
 };
 
