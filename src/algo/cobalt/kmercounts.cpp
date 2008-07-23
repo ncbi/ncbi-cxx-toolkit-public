@@ -95,6 +95,16 @@ bool CSparseKmerCounts::InitPosBits(const objects::CSeqVector& sv, Uint4& pos,
     return true;
 }
 
+
+static void MarkUsed(Uint4 pos, vector<Uint4>& entries, int chunk)
+{
+    int index = pos / chunk;
+    int offset = pos - index * chunk;
+    Uint4 mask = 0x80000000 >> offset;
+    entries[index] |= mask;
+}
+
+
 void CSparseKmerCounts::Reset(const blast::SSeqLoc& seq)
 {
     unsigned int kmer_len = sm_KmerLength;
@@ -118,25 +128,39 @@ void CSparseKmerCounts::Reset(const blast::SSeqLoc& seq)
     m_SeqLength = sv.size();
 
     m_Counts.clear();
-    m_Counts.resize(seq_len - kmer_len + 1);
 
-    // TODO: kNumBits should be computed (4 bits is enough for 10 and 15 letter
-    // alphabet)
-    if (kmer_len < 7) {
-        _ASSERT(alphabet_size < 32);
+    // Compute number of bits needed to represent all letters
+    unsigned int mask = 1;
+    int num = 0;
+    while (alphabet_size > mask) {
+        mask <<= 1;
+        num++;
+    }
+    const int kNumBits = num;
 
-        const Uint4 kNumBits = 5;
+    // Vecotr of counts is first computed using regular vector that is later
+    // converted to the sparse vector (list of position-value pairs).
+    // Positions are calculated as binary representations of k-mers, if they
+    // fit in 32 bits.
+    if (kmer_len * kNumBits < 32) {
+
         num_elements = 1 << (kNumBits * kmer_len);
         const Uint4 kMask = num_elements - (1 << kNumBits);
         counts = new TCount[num_elements];
         _ASSERT(counts);
         memset(counts, 0, num_elements * sizeof(TCount));
 
+        const int kBitChunk = sizeof(Uint4) * 8;
+
+        // Vector indicating non-zero elements
+        vector<Uint4> used_entries(num_elements / kBitChunk + 1);
+
         //first k-mer
         Uint4 i = 0;
         Uint4 pos;
         bool is_pos = InitPosBits(sv, pos, i, kNumBits, kmer_len);
         counts[pos]++;
+        MarkUsed(pos, used_entries, kBitChunk);
 
         //for each next kmer
         for (;i < seq_len && is_pos;i++) {
@@ -155,15 +179,31 @@ void CSparseKmerCounts::Reset(const blast::SSeqLoc& seq)
             pos &= kMask;
             pos |= GetAALetter(sv[i]);
             counts[pos]++;
+            MarkUsed(pos, used_entries, kBitChunk);
         }
 
-        unsigned int ind = 0;
-        for (Uint4 i=0;i < num_elements;i++) {
-            if (counts[i] > 0) {
-                m_Counts[ind++] = SVectorElement(i, counts[i]);
+        // Convert to sparse vector
+        int ind = 0;
+        while (ind < (int)(num_elements / kBitChunk + 1)) {
+            while (ind < (int)(num_elements / kBitChunk + 1)
+                   && used_entries[ind] == 0) {
+                ind++;
             }
+
+            for (Uint4 mask=0x80000000,j=0;used_entries[ind] != 0;
+                 j++, mask>>=1) {
+                _ASSERT(j < 32);
+                if ((used_entries[ind] & mask) != 0) {
+                    pos = ind * kBitChunk + j;
+
+                    _ASSERT(counts[pos] > 0);
+                    m_Counts.push_back(SVectorElement(pos, counts[pos]));
+
+                    used_entries[ind] ^= mask;
+                }
+            }
+            ind++;
         }
-        m_Counts.resize(ind);
 
     }
     else {
@@ -203,7 +243,7 @@ void CSparseKmerCounts::Reset(const blast::SSeqLoc& seq)
         unsigned int ind = 0;
         for (Uint4 i=0;i < num_elements;i++) {
             if (counts[i] > 0) {
-                m_Counts[ind++] = SVectorElement(i, counts[i]);
+                m_Counts.push_back(SVectorElement(i, counts[i]));
             }
         }
         m_Counts.resize(ind);
