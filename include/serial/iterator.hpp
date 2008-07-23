@@ -439,7 +439,7 @@ private:
     string m_ContextFilter;
 
     friend class CTreeIterator;
-};
+}; /* NCBI_FAKE_WARNING */
 
 typedef CTreeIteratorTmpl<CConstTreeLevelIterator> CTreeConstIterator;
 
