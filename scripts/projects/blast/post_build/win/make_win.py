@@ -9,14 +9,17 @@ from shutil import copyfile
 from subprocess import call
 from optparse import OptionParser
 
+verbose = False
+    
 # NSIS Configuration file
-nsis_config = "ncbi-blast.nsi"
+nsis_config = os.path.join(os.getcwd(), "ncbi-blast.nsi")
 
 def safe_exec(cmd):
     """ Executes a command and checks its return value, throwing an
         exception if it fails.
     """
     import subprocess
+    if verbose: print cmd
     try:
         retcode = subprocess.call(cmd, shell=True)
         if retcode < 0:
@@ -25,8 +28,8 @@ def safe_exec(cmd):
         raise RuntimeError("Execution failed: " + e)
 
 def extract_installer():
-    global nsis_config
     from fileinput import FileInput
+
     retval = "unknown"
     f = FileInput(nsis_config)
     for line in f:
@@ -37,14 +40,18 @@ def extract_installer():
 def main():
     """ Creates NSIS installer for BLAST command line binaries """
     global nsis_config
-    parser = OptionParser(sys.argv[0] + 
-                          " <installation directory> <source directory>")
+    parser = OptionParser("%prog <installation directory> <source directory>")
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
+                      help="Show verbose output")
     options, args = parser.parse_args()
     if len(args) != 2:
         parser.error("Incorrect number of arguments")
         return 1
     
     installdir, srcdir = args
+    global verbose
+    verbose = options.verbose
+    
     apps = [ "blastn.exe", 
              "blastp.exe",
              "blastx.exe",

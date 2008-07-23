@@ -8,6 +8,7 @@ import os, sys, os.path
 from optparse import OptionParser
 
 verbose = False
+scripts_dir = ""
 
 def main():
     """ Creates installers for selected platforms. """
@@ -21,6 +22,9 @@ def main():
         return 1
 
     platform, installdir, srcdir = args;
+    global scripts_dir
+    scripts_dir = os.path.join(srcdir, "scripts", "projects", "blast", 
+                               "post_build")
 
     global verbose
     verbose = options.verbose
@@ -28,23 +32,24 @@ def main():
         print "Platform:", platform
         print "Installation directory:", installdir
         print "Source directory:", srcdir
+        print "Scripts directory:", scripts_dir
 
     if platform == "Win32":
         return Win32PostBuild(installdir, srcdir)
     if platform == "Win64":
-        return Win64PostBuild(installdir, srcdir)
+        return do_nothing(platform)
     if platform == "Linux32":
-        return Linux32PostBuild(installdir, srcdir)
+        return Linux32PostBuild(installdir, scripts_dir)
     if platform == "Linux64":
-        return Linux64PostBuild(installdir, srcdir)
+        return Linux64PostBuild(installdir, scripts_dir)
     if platform == "FreeBSD32":
-        return FreeBSD32PostBuild(installdir, srcdir)
+        return do_nothing(platform)
     if platform == "PowerMAC":
         return PowerMACPostBuild(installdir, srcdir)
     if platform == "SunOSSparc":
-        return SunOSSparcPostBuild(installdir, srcdir)
+        return do_nothing(platform)
     if platform == "SunOSx86":
-        return SunOSx86PostBuild(installdir, srcdir)
+        return do_nothing(platform)
     
     print >> sys.stderr, "Unknown OS identifier: " + platform
     print >> sys.stderr, "Exiting post build script."
@@ -52,43 +57,37 @@ def main():
 
 def Win32PostBuild(installdir, srcdir):
     if verbose: print "Packaging for Win32..."
-    cmd = "python " + os.path.join("win", "make_win.py") + " " + installdir + " " + srcdir
+    cmd = "python.exe " + os.path.join(scripts_dir, "win", "make_win.py") + " "
+    cmd += installdir + " " + srcdir
+    if verbose: cmd += " -v"
     safe_exec(cmd)
     return 0
 
-def Win64PostBuild(installdir, srcdir):
-    if verbose: print "No packaging necessary for Win64."
-    return 0
-
-def Linux32PostBuild(installdir, srcdir):
+def Linux32PostBuild(installdir, scripts_dir):
     if verbose: print "Packing linux 32 bit RPM..."
-    cmd = os.path.join("rpm", "make_rpm.py") + " " + installdir + " " + srcdir
+    cmd = "python " + os.path.join(scripts_dir, "rpm", "make_rpm.py") + " "
+    cmd += installdir + " " + scripts_dir
+    if verbose: cmd += " -v"
     safe_exec(cmd)
     return 0
 
-def Linux64PostBuild(installdir, srcdir):
+def Linux64PostBuild(installdir, scripts_dir):
     if verbose: print "Packing linux 64 bit RPM..."
-    cmd = os.path.join("rpm", "make_rpm.py") + " " + installdir + " " + srcdir
+    cmd = "python " + os.path.join(scripts_dir, "rpm", "make_rpm.py") + " "
+    cmd += installdir + " " + scripts_dir
+    if verbose: cmd += " -v"
     safe_exec(cmd)
-    return 0
-
-def FreeBSD32PostBuild(installdir, srcdir):
-    print "Post build packaging is not required on Free BSD 32"
     return 0
 
 def PowerMACPostBuild(installdir, srcdir):
     if verbose: print "Packaging for MacOSX..."
-    cmd = os.path.join("macosx", "ncbi-blast.sh") + " " + installdir + " "
-    cmd += srcdir
+    cmd = os.path.join(scripts_dir, "macosx", "ncbi-blast.sh") + " "
+    cmd += installdir + " " + srcdir
     safe_exec(cmd)
     return 0
 
-def SunOSSparcPostBuild(installdir, srcdir):
-    print "Post build packaging is not required on SUN OS Sparc"
-    return 0
-
-def SunOSx86PostBuild(installdir, srcdir):
-    print "Post build packaging is not required on SUN OS x86"
+def do_nothing(platform):
+    if verbose: print "No post-build step necessary for platform."
     return 0
 
 def safe_exec(cmd):
@@ -96,6 +95,7 @@ def safe_exec(cmd):
         exception if it fails.
     """
     import subprocess
+    if verbose: print cmd
     try:
         retcode = subprocess.call(cmd, shell=True)
         if retcode < 0:

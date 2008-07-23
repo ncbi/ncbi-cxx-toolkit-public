@@ -14,7 +14,6 @@ RPMBUILD_HOME = "rpmbuild"
 PACKAGE_NAME = "ncbi-blast-" + BLAST_VERSION + "+"
 # Name of the source TARBALL to create
 TARBALL = PACKAGE_NAME + ".tgz"
-RPM_SPEC = "ncbi-blast.spec"
 
 def setup_rpmbuild():
     """ Prepare local rpmbuild directory. """
@@ -94,11 +93,12 @@ def cleanup():
     if os.path.exists(PACKAGE_NAME):
         shutil.rmtree(PACKAGE_NAME)
 
-def run_rpm():
+def run_rpm(scripts_dir):
     shutil.rmtree(PACKAGE_NAME)
     shutil.move(TARBALL, os.path.join(RPMBUILD_HOME, "SOURCES"))
-    dest_spec = os.path.join(RPMBUILD_HOME, "SPECS", RPM_SPEC)
-    shutil.copyfile(RPM_SPEC, dest_spec)
+    dest_spec = os.path.join(RPMBUILD_HOME, "SPECS")
+    rpm_spec = os.path.join(scripts_dir, "rpm", "ncbi-blast.spec")
+    shutil.copyfile(rpm_spec, dest_spec)
     cmd = "rpmbuild -ba " + dest_spec
     safe_exec(cmd)
 
@@ -115,22 +115,26 @@ def move_rpms_to_installdir(installdir):
 
 def main():
     """ Creates RPMs for linux. """
-    parser = OptionParser("%prog <installation directory>")
+    parser = OptionParser("%prog <installation directory> <scripts directory>")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output")
     options, args = parser.parse_args()
-    if len(args) != 1:
+    if len(args) != 2:
         parser.error("Incorrect number of arguments")
         return 1
-    installdir = args[0]
+    
+    installdir, scripts_dir = args
     global verbose
     verbose = options.verbose
-    if verbose: print "Installing to", installdir
+    if verbose: 
+        print "Installing RPM to", installdir
+        print "Scripts directory:", scripts_dir
+    
     setup_rpmbuild()
     cleanup()
     svn_checkout()
     compress_sources()
-    run_rpm()
+    run_rpm(scripts_dir)
     move_rpms_to_installdir(installdir)
     cleanup_rpm()
     cleanup()
