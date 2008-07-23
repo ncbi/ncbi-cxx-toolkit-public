@@ -87,7 +87,7 @@ CExprValue::CExprValue(bool value)
 ////////////////////////////////////////////////////////////////////////////////
 CExprSymbol::CExprSymbol(void)
 : m_Tag()
-, m_Funct(NULL)
+, m_IntFunc1(NULL)
 , m_Val()
 , m_Next(NULL)
 {
@@ -101,7 +101,7 @@ CExprSymbol::~CExprSymbol(void)
 template <> 
 CExprSymbol::CExprSymbol(const char* name, Int8 value)
 : m_Tag(eVARIABLE)
-, m_Funct(NULL)
+, m_IntFunc1(NULL)
 , m_Val(value)
 , m_Name(name)
 , m_Next(NULL)
@@ -111,7 +111,7 @@ CExprSymbol::CExprSymbol(const char* name, Int8 value)
 template <> 
 CExprSymbol::CExprSymbol(const char* name, double value)
 : m_Tag(eVARIABLE)
-, m_Funct(NULL)
+, m_IntFunc1(NULL)
 , m_Val(value)
 , m_Name(name)
 , m_Next(NULL)
@@ -121,7 +121,7 @@ CExprSymbol::CExprSymbol(const char* name, double value)
 template <> 
 CExprSymbol::CExprSymbol(const char* name, bool value)
 : m_Tag(eVARIABLE)
-, m_Funct(NULL)
+, m_IntFunc1(NULL)
 , m_Val(value)
 , m_Name(name)
 , m_Next(NULL)
@@ -129,9 +129,9 @@ CExprSymbol::CExprSymbol(const char* name, bool value)
 }
 
 template <> 
-CExprSymbol::CExprSymbol(const char* name, Int8 (*value)(Int8))
+CExprSymbol::CExprSymbol(const char* name, FIntFunc1 value)
 : m_Tag(eIFUNC1)
-, m_Funct((void *)value)
+, m_IntFunc1(value)
 , m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
@@ -139,9 +139,9 @@ CExprSymbol::CExprSymbol(const char* name, Int8 (*value)(Int8))
 }
 
 template <> 
-CExprSymbol::CExprSymbol(const char* name, Int8 (*value)(Int8, Int8))
+CExprSymbol::CExprSymbol(const char* name, FIntFunc2 value)
 : m_Tag(eIFUNC2)
-, m_Funct((void *)value)
+, m_IntFunc2(value)
 , m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
@@ -149,9 +149,9 @@ CExprSymbol::CExprSymbol(const char* name, Int8 (*value)(Int8, Int8))
 }
 
 template <> 
-CExprSymbol::CExprSymbol(const char* name, double (*value)(double))
+CExprSymbol::CExprSymbol(const char* name, FFloatFunc1 value)
 : m_Tag(eFFUNC1)
-, m_Funct((void *)value)
+, m_FloatFunc1(value)
 , m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
@@ -159,9 +159,9 @@ CExprSymbol::CExprSymbol(const char* name, double (*value)(double))
 }
 
 template <> 
-CExprSymbol::CExprSymbol(const char* name, double (*value)(double, double))
+CExprSymbol::CExprSymbol(const char* name, FFloatFunc2 value)
 : m_Tag(eFFUNC2)
-, m_Funct((void *)value)
+, m_FloatFunc2(value)
 , m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
@@ -169,9 +169,9 @@ CExprSymbol::CExprSymbol(const char* name, double (*value)(double, double))
 }
 
 template <> 
-CExprSymbol::CExprSymbol(const char* name, bool (*value)(bool))
+CExprSymbol::CExprSymbol(const char* name, FBoolFunc1 value)
 : m_Tag(eBFUNC1)
-, m_Funct((void *)value)
+, m_BoolFunc1(value)
 , m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
@@ -179,9 +179,9 @@ CExprSymbol::CExprSymbol(const char* name, bool (*value)(bool))
 }
 
 template <> 
-CExprSymbol::CExprSymbol(const char* name, bool (*value)(bool, bool))
+CExprSymbol::CExprSymbol(const char* name, FBoolFunc2 value)
 : m_Tag(eBFUNC2)
-, m_Funct((void *)value)
+, m_BoolFunc2(value)
 , m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
@@ -299,31 +299,47 @@ unsigned string_hash_function(const char* p)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+const char* CExprParserException::GetErrCodeString(void) const
+{
+    return "Expression parser error."; 
+}
+
+void CExprParserException::ReportExtra(ostream& out) const
+{
+    out << "pos: " << m_Pos;
+}
+
+void CExprParserException::x_Assign(const CException& src)
+{
+    CException::x_Assign(src);
+
+    const CExprParserException& other = dynamic_cast<const CExprParserException&>(src);
+    m_Pos = other.m_Pos;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 CExprParser::CExprParser(void)
 : m_Buf(NULL)
 , m_Pos(0)
 , m_TmpVarCount(0)
 {
-    typedef double (*FUnaryMathFunc)(double);
-    typedef double (*FBinaryMathFunc)(double, double);
-
     memset(hash_table, 0, sizeof(hash_table));
 
-    AddSymbol("abs",    (FUnaryMathFunc)fabs);
-    AddSymbol("acos",   (FUnaryMathFunc)acos);
-    AddSymbol("asin",   (FUnaryMathFunc)asin);
-    AddSymbol("atan",   (FUnaryMathFunc)atan);
-    AddSymbol("atan2",  (FBinaryMathFunc)atan2);
-    AddSymbol("cos",    (FUnaryMathFunc)cos);
-    AddSymbol("cosh",   (FUnaryMathFunc)cosh);
-    AddSymbol("exp",    (FUnaryMathFunc)exp);
-    AddSymbol("log",    (FUnaryMathFunc)log);
-    AddSymbol("log10",  (FUnaryMathFunc)log10);
-    AddSymbol("sin",    (FUnaryMathFunc)sin);
-    AddSymbol("sinh",   (FUnaryMathFunc)sinh);
-    AddSymbol("tan",    (FUnaryMathFunc)tan);
-    AddSymbol("tanh",   (FUnaryMathFunc)tanh);
-    AddSymbol("sqrt",   (FUnaryMathFunc)sqrt);
+    AddSymbol("abs",    (CExprSymbol::FFloatFunc1)fabs);
+    AddSymbol("acos",   (CExprSymbol::FFloatFunc1)acos);
+    AddSymbol("asin",   (CExprSymbol::FFloatFunc1)asin);
+    AddSymbol("atan",   (CExprSymbol::FFloatFunc1)atan);
+    AddSymbol("atan2",  (CExprSymbol::FFloatFunc2)atan2);
+    AddSymbol("cos",    (CExprSymbol::FFloatFunc1)cos);
+    AddSymbol("cosh",   (CExprSymbol::FFloatFunc1)cosh);
+    AddSymbol("exp",    (CExprSymbol::FFloatFunc1)exp);
+    AddSymbol("log",    (CExprSymbol::FFloatFunc1)log);
+    AddSymbol("log10",  (CExprSymbol::FFloatFunc1)log10);
+    AddSymbol("sin",    (CExprSymbol::FFloatFunc1)sin);
+    AddSymbol("sinh",   (CExprSymbol::FFloatFunc1)sinh);
+    AddSymbol("tan",    (CExprSymbol::FFloatFunc1)tan);
+    AddSymbol("tanh",   (CExprSymbol::FFloatFunc1)tanh);
+    AddSymbol("sqrt",   (CExprSymbol::FFloatFunc1)sqrt);
 
     AddSymbol("float",  to_float);
     AddSymbol("int",    to_int);
@@ -1066,7 +1082,7 @@ void CExprParser::Parse(const char* str)
                             return;
                         }
                         m_VStack[m_v_sp-2].ival = 
-                        (*(TIFunc1)sym->m_Funct)(m_VStack[m_v_sp-1].GetInt());
+                        (*sym->m_IntFunc1)(m_VStack[m_v_sp-1].GetInt());
                         m_VStack[m_v_sp-2].SetType(CExprValue::eINT);
                         m_v_sp -= 1;
                         break;
@@ -1077,7 +1093,7 @@ void CExprParser::Parse(const char* str)
                             return;
                         }
                         m_VStack[m_v_sp-3].ival =
-                        (*(TIFunc2)sym->m_Funct)
+                        (*sym->m_IntFunc2)
                         (m_VStack[m_v_sp-2].GetInt(), m_VStack[m_v_sp-1].GetInt());
                         m_VStack[m_v_sp-3].SetType(CExprValue::eINT);
                         m_v_sp -= 2;
@@ -1089,7 +1105,7 @@ void CExprParser::Parse(const char* str)
                             return;
                         }
                         m_VStack[m_v_sp-2].fval = 
-                        (*(TFFunc1)sym->m_Funct)(m_VStack[m_v_sp-1].GetDouble());
+                        (*sym->m_FloatFunc1)(m_VStack[m_v_sp-1].GetDouble());
                         m_VStack[m_v_sp-2].SetType(CExprValue::eFLOAT);
                         m_v_sp -= 1;
                         break;
@@ -1100,7 +1116,7 @@ void CExprParser::Parse(const char* str)
                             return;
                         }
                         m_VStack[m_v_sp-3].fval = 
-                            (*(TFFunc2)sym->m_Funct)
+                            (*sym->m_FloatFunc2)
                             (m_VStack[m_v_sp-2].GetDouble(), m_VStack[m_v_sp-1].GetDouble());
                         m_VStack[m_v_sp-3].SetType(CExprValue::eFLOAT);
                         m_v_sp -= 2;
@@ -1112,7 +1128,7 @@ void CExprParser::Parse(const char* str)
                             return;
                         }
                         m_VStack[m_v_sp-2].bval = 
-                        (*(TBFunc1)sym->m_Funct)(m_VStack[m_v_sp-1].GetBool());
+                        (*sym->m_BoolFunc1)(m_VStack[m_v_sp-1].GetBool());
                         m_VStack[m_v_sp-2].SetType(CExprValue::eBOOL);
                         m_v_sp -= 1;
                         break;
@@ -1123,7 +1139,7 @@ void CExprParser::Parse(const char* str)
                             return;
                         }
                         m_VStack[m_v_sp-3].bval = 
-                            (*(TBFunc2)sym->m_Funct)
+                            (*sym->m_BoolFunc2)
                             (m_VStack[m_v_sp-2].GetBool(), m_VStack[m_v_sp-1].GetBool());
                         m_VStack[m_v_sp-3].SetType(CExprValue::eBOOL);
                         m_v_sp -= 2;

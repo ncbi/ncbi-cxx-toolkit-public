@@ -138,6 +138,11 @@ template <> CExprValue::CExprValue(bool value);
 class NCBI_XUTIL_EXPORT CExprSymbol 
 { 
 public:
+    CExprSymbol(void);
+    template <typename VT> CExprSymbol(const char* name, VT value);
+    ~CExprSymbol(void);
+
+public:
     enum ESymbol { 
         eVARIABLE, 
         eIFUNC1, 
@@ -148,14 +153,23 @@ public:
         eBFUNC2 
     };
 
-public:
-    CExprSymbol(void);
-    template <typename VT> CExprSymbol(const char* name, VT value);
-    ~CExprSymbol(void);
+    typedef Int8    (*FIntFunc1)    (Int8);
+    typedef Int8    (*FIntFunc2)    (Int8,Int8);
+    typedef double  (*FFloatFunc1)  (double);
+    typedef double  (*FFloatFunc2)  (double, double);
+    typedef bool    (*FBoolFunc1)   (bool);
+    typedef bool    (*FBoolFunc2)   (bool, bool);
 
 public:
     ESymbol         m_Tag;
-    void*           m_Funct;
+    union { 
+        FIntFunc1   m_IntFunc1;
+        FIntFunc2   m_IntFunc2;
+        FFloatFunc1 m_FloatFunc1;
+        FFloatFunc2 m_FloatFunc2;
+        FBoolFunc1  m_BoolFunc1;
+        FBoolFunc2  m_BoolFunc2;
+    };
     CExprValue      m_Val;
     string          m_Name;
     CExprSymbol*    m_Next;
@@ -164,13 +178,48 @@ public:
 template <> CExprSymbol::CExprSymbol(const char* name, Int8 value);
 template <> CExprSymbol::CExprSymbol(const char* name, double value);
 template <> CExprSymbol::CExprSymbol(const char* name, bool value);
-template <> CExprSymbol::CExprSymbol(const char* name, Int8 (*value)(Int8));
-template <> CExprSymbol::CExprSymbol(const char* name, Int8 (*value)(Int8, Int8));
-template <> CExprSymbol::CExprSymbol(const char* name, double (*value)(double));
-template <> CExprSymbol::CExprSymbol(const char* name, double (*value)(double, double));
-template <> CExprSymbol::CExprSymbol(const char* name, bool (*value)(bool));
-template <> CExprSymbol::CExprSymbol(const char* name, bool (*value)(bool, bool));
+template <> CExprSymbol::CExprSymbol(const char* name, FIntFunc1 value);
+template <> CExprSymbol::CExprSymbol(const char* name, FIntFunc2 value);
+template <> CExprSymbol::CExprSymbol(const char* name, FFloatFunc1 value);
+template <> CExprSymbol::CExprSymbol(const char* name, FFloatFunc2 value);
+template <> CExprSymbol::CExprSymbol(const char* name, FBoolFunc1 value);
+template <> CExprSymbol::CExprSymbol(const char* name, FBoolFunc2 value);
 
+
+////////////////////////////////////////////////////////////////////////////////
+class NCBI_XUTIL_EXPORT CExprParserException : EXCEPTION_VIRTUAL_BASE public CException
+{
+public:
+    enum EErrCode {
+        eParseError
+    };
+
+
+    CExprParserException(
+        const CDiagCompileInfo& info,
+        const CException* prev_exception, EErrCode err_code,
+        const string& message, int pos, 
+        EDiagSev severity = eDiag_Error)
+    : CException(info, prev_exception, CException::eInvalid, message)
+    , m_Pos(pos)
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CExprParserException, CException);
+
+    virtual const char* GetErrCodeString(void) const;
+
+    virtual void ReportExtra(ostream& out) const;
+
+public:
+    int GetPos(void) const
+    {
+        return m_Pos;
+    }
+
+protected:
+    virtual void x_Assign(const CException& src);
+
+private:
+    int    m_Pos;
+}; 
 
 ////////////////////////////////////////////////////////////////////////////////
 class NCBI_XUTIL_EXPORT CExprParser
@@ -214,18 +263,14 @@ private:
         eTERMINALS
     };
 
-    typedef Int8    (*TIFunc1)(Int8);
-    typedef Int8    (*TIFunc2)(Int8,Int8);
-    typedef double  (*TFFunc1)(double);
-    typedef double  (*TFFunc2)(double, double);
-    typedef bool    (*TBFunc1)(bool);
-    typedef bool    (*TBFunc2)(bool, bool);
-
 private:
     EOperator Scan(bool operand);
     bool Assign(void);
 
-    static void ReportError(int pos, char* msg) {printf("pos: %u, msg: %s\n", pos, msg);}
+    static void ReportError(int pos, char* msg) 
+    {
+        NCBI_THROW2(CExprParserException, eParseError, msg, pos);
+    }
     void ReportError(char* msg) const { ReportError(m_Pos-1, msg); }
 
     EOperator IfChar(
