@@ -501,7 +501,7 @@ SubSource ::= SEQUENCE {
         mating-type (38) ,
         linkage-group (39) ,
         haplogroup (40) ,
-        placed (41) ,
+        placement (41) ,
         other (255) } ,
     name VisibleString ,
     attrib VisibleString OPTIONAL }    -- attribution/source of this name
