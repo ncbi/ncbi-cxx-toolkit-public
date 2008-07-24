@@ -159,7 +159,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     }}
 
 
-    CS_RETCODE ret_code = CS_FAIL;
+    CS_RETCODE ret_code;
 
     // We HAVE to pass correct data type even in case of NULL value.
     switch ( param.GetType() ) {
@@ -409,7 +409,11 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
                          );
         break;
     }
-    default:
+	case eDB_Text:
+	case eDB_Image:
+	case eDB_Numeric:
+	case eDB_UnsupportedType:
+		ret_code = CS_FAIL;
         return false;
     }
 
