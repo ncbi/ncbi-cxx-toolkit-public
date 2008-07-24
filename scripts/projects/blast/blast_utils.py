@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """ Various utilities/tools for BLAST """
 
+__all__ = [ "safe_exec" ]
+
 from subprocess import call 
 
 def safe_exec(cmd):
