@@ -267,11 +267,11 @@ private:
     EOperator Scan(bool operand);
     bool Assign(void);
 
-    static void ReportError(int pos, char* msg) 
+    static void ReportError(int pos, const char* msg) 
     {
         NCBI_THROW2(CExprParserException, eParseError, msg, pos);
     }
-    void ReportError(char* msg) const { ReportError(m_Pos-1, msg); }
+    void ReportError(const char* msg) const { ReportError(m_Pos-1, msg); }
 
     EOperator IfChar(
             char c, EOperator val, 
