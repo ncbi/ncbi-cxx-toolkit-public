@@ -64,11 +64,6 @@
 #undef BOOST_CHECK_THROW_IMPL
 #undef BOOST_CHECK_NO_THROW_IMPL
 
-#ifndef BOOST_TEST_PASSPOINT
-// Compatibility with Boost 1.33.1
-#  define BOOST_TEST_PASSPOINT()  0
-#endif
-
 #define BOOST_CHECK_THROW_IMPL( S, E, P, prefix, TL )                    \
 try {                                                                    \
     BOOST_TEST_PASSPOINT();                                              \
@@ -142,17 +137,26 @@ struct SNcbiBoostIniter
     }
 };
 
-/// Define some test as disabled in current configuration
-/// This function should be called for every existing test which is not added
-/// to Boost's test suite for execution. Such tests will be included in
-/// detailed report given by Boost after execution.
+/// Mark test case/suite as dependent on another test case/suite.
+/// If dependency test case didn't executed successfully for any reason then
+/// dependent test will not be executed. This rule has one exception: if test
+/// is requested to execute in command line via parameter "--run_test" and
+/// dependency was not requested to execute, requested test will be executed
+/// anyways.
 ///
-/// @param test_name
-///   Name of the disabled test
-/// @param reason
-///   Reason of test disabling. It will be printed in the report.
-extern void NcbiBoostTestDisable(CTempString  test_name,
-                                 CTempString  reason = "");
+/// @param tu
+///   Test case/suite that should be marked as dependent
+/// @param dep_tu
+///   Test case/suite that will be "parent" for tu
+void NcbiTestDependsOn(boost::unit_test::test_unit* tu,
+                       boost::unit_test::test_unit* dep_tu);
+
+/// Disable test unit.
+/// Disabled test unit will not be executed (as if p_enabled is set to false)
+/// but it will be reported in final Boost.Test report as disabled (as opposed
+/// to setting p_enabled to false when test does not appear in final
+/// Boost.Test report).
+void NcbiTestDisable(boost::unit_test::test_unit* tu);
 
 
 END_NCBI_SCOPE

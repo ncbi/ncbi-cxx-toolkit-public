@@ -40,12 +40,18 @@
 #include <corelib/test_boost.hpp>
 #undef init_unit_test_suite
 
+#include <boost/test/results_collector.hpp>
 #include <boost/test/results_reporter.hpp>
+#include <boost/test/test_observer.hpp>
+#include <boost/test/framework.hpp>
 #include <boost/test/output/plain_report_formatter.hpp>
 #include <boost/test/output/xml_report_formatter.hpp>
+#include <boost/test/utils/xml_printer.hpp>
+#include <boost/test/detail/global_typedef.hpp>
 #include <boost/test/detail/unit_test_parameters.hpp>
 
 #include <list>
+#include <set>
 #include <string>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -63,7 +69,18 @@ NcbiInitUnitTestSuite( int argc, char* argv[] );
 
 BEGIN_NCBI_SCOPE
 
-static list<TNcbiBoostInitFunc>* s_BoostInitFuncs = NULL;
+
+// Some shortening typedefs
+typedef but::results_reporter::format  TBoostFormatter;
+typedef but::test_unit                 TBoostTestUnit;
+
+
+static list<TNcbiBoostInitFunc>*        s_BoostInitFuncs = NULL;
+
+typedef set<TBoostTestUnit*>            TUnitsSet;
+typedef map<TBoostTestUnit*, TUnitsSet> TUnitToManyMap;
+static  TUnitsSet                       s_DisabledTests;
+static  TUnitToManyMap                  s_TestDeps;
 
 
 void
@@ -75,11 +92,49 @@ RegisterNcbiBoostInit(TNcbiBoostInitFunc func)
     s_BoostInitFuncs->push_back(func);
 }
 
+void
+NcbiTestDependsOn(TBoostTestUnit* tu, TBoostTestUnit* dep_tu)
+{
+    s_TestDeps[tu].insert(dep_tu);
+}
+
+void
+NcbiTestDisable(TBoostTestUnit* tu)
+{
+    tu->p_enabled.set(false);
+    s_DisabledTests.insert(tu);
+}
 
 
-// Some shortening typedefs
-typedef but::results_reporter::format  TBoostFormatter;
-typedef but::test_unit                 TBoostTestUnit;
+/// Special observer to embed in Boost.Test framework to initialize test
+/// dependencies before they started execution.
+class CNcbiTestsInitializer : public but::test_observer
+{
+public:
+    /// Method called before execution of all tests
+    virtual void test_start(but::counter_t /* test_cases_amount */);
+};
+
+
+void
+CNcbiTestsInitializer::test_start(but::counter_t /* test_cases_amount */)
+{
+    ITERATE(TUnitToManyMap, it, s_TestDeps) {
+        TBoostTestUnit* test = it->first;
+        if (!s_DisabledTests.count(test) && !test->p_enabled) {
+            continue;
+        }
+
+        ITERATE(TUnitsSet, dep_it, it->second) {
+            TBoostTestUnit* dep_test = *dep_it;
+            if (!s_DisabledTests.count(dep_test) && !dep_test->p_enabled) {
+                continue;
+            }
+
+            test->depends_on(dep_test);
+        }
+    }
+}
 
 
 /// Reporter for embedding in Boost framework and adding non-standard
@@ -94,14 +149,6 @@ public:
     CNcbiBoostReporter(but::output_format format);
     virtual ~CNcbiBoostReporter(void);
 
-    /// Add new test marked as disabled
-    ///
-    /// @param test_name
-    ///   Name of the disabled test
-    /// @param reason
-    ///   Reason of test disabling. It will be printed in the report.
-    void AddDisabledTest(const string& test_name, const string& reason);
-
     // TBoostFormatter interface
     virtual
     void results_report_start(std::ostream& ostr);
@@ -110,28 +157,23 @@ public:
     virtual
     void test_unit_report_start(TBoostTestUnit const& tu, std::ostream& ostr);
     virtual
-    void test_unit_report_finish(TBoostTestUnit const& tu, std::ostream& ostr);
+    void test_unit_report_finish(TBoostTestUnit const& tu,std::ostream& ostr);
     virtual
     void do_confirmation_report(TBoostTestUnit const& tu, std::ostream& ostr);
 
 private:
-    typedef list< pair<string, string> >  TDisabledList;
-
-    /// If reporter already printed info about disabled tests or not
-    bool                       m_DisabledPrinted;
     /// Standard reporter from Boost for particular report format
     auto_ptr<TBoostFormatter>  m_Upper;
     /// If report is XML or not
     bool                       m_IsXML;
-    /// List of disabled tests
-    TDisabledList              m_DisabledList;
+    /// Current indentation level in plain text report
+    int                        m_Indent;
 };
 
 
 CNcbiBoostReporter::CNcbiBoostReporter(but::output_format format)
-    : m_DisabledPrinted(false)
 {
-    if (format == boost::unit_test::XML) {
+    if (format == but::XML) {
         m_IsXML = true;
         m_Upper.reset(new but::output::xml_report_formatter());
     }
@@ -146,15 +188,13 @@ CNcbiBoostReporter::~CNcbiBoostReporter(void)
 }
 
 void
-CNcbiBoostReporter::AddDisabledTest(const string&  test_name,
-                                    const string&  reason)
-{
-    m_DisabledList.push_back(make_pair(test_name, reason));
-}
-
-void
 CNcbiBoostReporter::results_report_start(std::ostream& ostr)
 {
+    m_Indent = 0;
+    ITERATE(TUnitsSet, it, s_DisabledTests) {
+        (*it)->p_enabled.set(true);
+    }
+
     m_Upper->results_report_start(ostr);
 }
 
@@ -171,35 +211,45 @@ void
 CNcbiBoostReporter::test_unit_report_start(TBoostTestUnit const&  tu,
                                            std::ostream&          ostr)
 {
-    if (! m_DisabledPrinted) {
-        ITERATE(TDisabledList, it, m_DisabledList) {
-            if (m_IsXML) {
-                ostr << "<TestCase name=\"" << it->first
-                     << "\" result=\"disabled\"";
-                if (! it->second.empty()) {
-                    ostr << " reason=\"" << it->second << "\"";
-                }
-                ostr << "/>";
-            }
-            else {
-                ostr << "Test case \"" << it->first << "\" disabled";
-                if (! it->second.empty()) {
-                    ostr << " because " << it->second;
-                }
-                ostr << '\n';
-            }
-        }
+    but::test_results const& tr = but::results_collector.results( tu.p_id );
 
-        m_DisabledPrinted = true;
+    string descr;
+
+    if( tr.passed() )
+        descr = "passed";
+    else if( tr.p_skipped ) {
+        if (s_DisabledTests.count(const_cast<TBoostTestUnit*>(&tu)) != 0)
+            descr = "disabled";
+        else
+            descr = "skipped";
     }
+    else if( tr.p_aborted )
+        descr = "aborted";
+    else
+        descr = "failed";
 
-    m_Upper->test_unit_report_start(tu, ostr);
+    if (m_IsXML) {
+        ostr << '<' << (tu.p_type == but::tut_case ? "TestCase" : "TestSuite") 
+             << " name"     << but::attr_value() << tu.p_name.get()
+             << " result"   << but::attr_value() << descr;
+
+        ostr << '>';
+    }
+    else {
+        ostr << std::setw( m_Indent ) << ""
+            << "Test " << (tu.p_type == but::tut_case ? "case " : "suite " )
+            << "\"" << tu.p_name << "\" " << descr;
+
+        ostr << '\n';
+        m_Indent += 2;
+    }
 }
 
 void
 CNcbiBoostReporter::test_unit_report_finish(TBoostTestUnit const&  tu,
                                             std::ostream&          ostr)
 {
+    m_Indent -= 2;
     m_Upper->test_unit_report_finish(tu, ostr);
 }
 
@@ -213,17 +263,8 @@ CNcbiBoostReporter::do_confirmation_report(TBoostTestUnit const&  tu,
 
 
 /// The singleton object for reporter
-CNcbiBoostReporter* s_NcbiReporter = NULL;
-
-
-void
-NcbiBoostTestDisable(CTempString test_name, CTempString reason)
-{
-    // reporter must be already created by init_unit_test_suite()
-    assert(s_NcbiReporter);
-
-    s_NcbiReporter->AddDisabledTest(test_name, reason);
-}
+static CNcbiBoostReporter*   s_NcbiReporter = NULL;
+static CNcbiTestsInitializer s_NcbiInitializer;
 
 
 END_NCBI_SCOPE
@@ -259,10 +300,12 @@ init_unit_test_suite( int argc, char* argv[] )
         }
     }
 
-    NCBI_NS_NCBI::s_NcbiReporter =
-                                new NCBI_NS_NCBI::CNcbiBoostReporter(format);
+    NCBI_NS_NCBI::s_NcbiReporter
+                               = new NCBI_NS_NCBI::CNcbiBoostReporter(format);
 
     but::results_reporter::set_format(NCBI_NS_NCBI::s_NcbiReporter);
+
+    but::framework::register_observer(NCBI_NS_NCBI::s_NcbiInitializer);
 
 
     if (NCBI_NS_NCBI::s_BoostInitFuncs) {
