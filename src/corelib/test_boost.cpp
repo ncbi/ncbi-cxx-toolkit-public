@@ -71,10 +71,11 @@ BEGIN_NCBI_SCOPE
 
 
 // Some shortening typedefs
-typedef but::results_reporter::format  TBoostFormatter;
-typedef but::test_unit                 TBoostTestUnit;
+typedef but::results_reporter::format   TBoostFormatter;
+typedef but::test_unit                  TBoostTestUnit;
 
 
+static bool                             s_TestListMode = false;
 static list<TNcbiBoostInitFunc>*        s_BoostInitFuncs = NULL;
 
 typedef set<TBoostTestUnit*>            TUnitsSet;
@@ -116,22 +117,56 @@ public:
 };
 
 
+/// Class which will disable all tests if it will be passed to
+/// but::traverse_test_tree() function and enable all tests after that
+class CNcbiTestDisabler : public but::test_tree_visitor
+{
+public:
+    virtual void visit(but::test_case const& test)
+    {
+        m_AllTests.push_back(const_cast<but::test_case*>(&test));
+        test.p_enabled.set(false);
+    }
+
+    /// Enable all tests that were traversed previously in
+    /// but::traverse_test_tree()
+    void ReEnableAll(void)
+    {
+        ITERATE(list<but::test_case*>, it, m_AllTests) {
+            (*it)->p_enabled.set(true);
+        }
+    }
+
+private:
+    list<but::test_case*> m_AllTests;
+};
+
+
+static CNcbiTestDisabler s_TestDisabler;
+
+
 void
 CNcbiTestsInitializer::test_start(but::counter_t /* test_cases_amount */)
 {
-    ITERATE(TUnitToManyMap, it, s_TestDeps) {
-        TBoostTestUnit* test = it->first;
-        if (!s_DisabledTests.count(test) && !test->p_enabled) {
-            continue;
-        }
-
-        ITERATE(TUnitsSet, dep_it, it->second) {
-            TBoostTestUnit* dep_test = *dep_it;
-            if (!s_DisabledTests.count(dep_test) && !dep_test->p_enabled) {
+    if (s_TestListMode) {
+        but::traverse_test_tree(but::framework::master_test_suite(),
+                                s_TestDisabler);
+    }
+    else {
+        ITERATE(TUnitToManyMap, it, s_TestDeps) {
+            TBoostTestUnit* test = it->first;
+            if (!s_DisabledTests.count(test) && !test->p_enabled) {
                 continue;
             }
 
-            test->depends_on(dep_test);
+            ITERATE(TUnitsSet, dep_it, it->second) {
+                TBoostTestUnit* dep_test = *dep_it;
+                if (!s_DisabledTests.count(dep_test) && !dep_test->p_enabled) {
+                    continue;
+                }
+
+                test->depends_on(dep_test);
+            }
         }
     }
 }
@@ -191,6 +226,9 @@ void
 CNcbiBoostReporter::results_report_start(std::ostream& ostr)
 {
     m_Indent = 0;
+
+    s_TestDisabler.ReEnableAll();
+
     ITERATE(TUnitsSet, it, s_DisabledTests) {
         (*it)->p_enabled.set(true);
     }
@@ -269,19 +307,21 @@ static CNcbiTestsInitializer s_NcbiInitializer;
 
 END_NCBI_SCOPE
 
+namespace NCBI = NCBI_NS_NCBI;
 
-NCBI_NS_NCBI::AutoPtr<std::ostream> s_ReportOut;
+
+NCBI::AutoPtr<std::ostream> s_ReportOut;
 
 // Global initialization function called from Boost framework
 but::test_suite*
 init_unit_test_suite( int argc, char* argv[] )
 {
     // This function should not be called yet
-    assert(! NCBI_NS_NCBI::s_NcbiReporter);
+    assert(! NCBI::s_NcbiReporter);
 
     but::output_format format = but::runtime_config::report_format();
 
-    NCBI_NS_NCBI::CNcbiEnvironment env;
+    NCBI::CNcbiEnvironment env;
     std::string is_autobuild = env.Get("NCBI_AUTOMATED_BUILD");
     if (! is_autobuild.empty()) {
         format = but::XML;
@@ -300,17 +340,16 @@ init_unit_test_suite( int argc, char* argv[] )
         }
     }
 
-    NCBI_NS_NCBI::s_NcbiReporter
-                               = new NCBI_NS_NCBI::CNcbiBoostReporter(format);
+    NCBI::s_NcbiReporter = new NCBI::CNcbiBoostReporter(format);
 
-    but::results_reporter::set_format(NCBI_NS_NCBI::s_NcbiReporter);
+    but::results_reporter::set_format(NCBI::s_NcbiReporter);
 
-    but::framework::register_observer(NCBI_NS_NCBI::s_NcbiInitializer);
+    but::framework::register_observer(NCBI::s_NcbiInitializer);
 
 
-    if (NCBI_NS_NCBI::s_BoostInitFuncs) {
-        ITERATE(std::list<NCBI_NS_NCBI::TNcbiBoostInitFunc>, it,
-                                            (*NCBI_NS_NCBI::s_BoostInitFuncs))
+    if (NCBI::s_BoostInitFuncs) {
+        ITERATE(std::list<NCBI::TNcbiBoostInitFunc>, it,
+                                            (*NCBI::s_BoostInitFuncs))
         {
             try {
                 (*it)();
@@ -322,8 +361,20 @@ init_unit_test_suite( int argc, char* argv[] )
             }
         }
 
-        delete NCBI_NS_NCBI::s_BoostInitFuncs;
-        NCBI_NS_NCBI::s_BoostInitFuncs = NULL;
+        delete NCBI::s_BoostInitFuncs;
+        NCBI::s_BoostInitFuncs = NULL;
+    }
+
+    for (int i = 0; i < argc; ++i) {
+        if (NCBI::NStr::CompareCase(argv[i], "--do_not_run") == 0) {
+            NCBI::s_TestListMode = true;
+            but::results_reporter::set_level(but::DETAILED_REPORT);
+
+            for (int j = i + 1; j < argc; ++j) {
+                argv[j - 1] = argv[j];
+            }
+            --argc;
+        }
     }
 
     return NcbiInitUnitTestSuite(argc, argv);
