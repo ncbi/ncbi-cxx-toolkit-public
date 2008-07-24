@@ -50,7 +50,7 @@
 USING_NCBI_SCOPE;
 using namespace blast;
 
-
+#ifndef _DEBUG  // Don't run this in debug mode
 BOOST_AUTO_TEST_CASE(TestPerformance)
 {
     string seqAlignFileName_in = "data/in_showalign_aln";
@@ -77,3 +77,4 @@ BOOST_AUTO_TEST_CASE(TestPerformance)
     BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
 
 }
+#endif
