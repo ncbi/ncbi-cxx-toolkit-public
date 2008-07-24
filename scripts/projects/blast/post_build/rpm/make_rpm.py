@@ -130,7 +130,7 @@ def main():
     """ Creates RPMs for linux. """
     parser = OptionParser("%prog <installation directory>")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
-                      help="Show verbose output", dest="verbose")
+                      help="Show verbose output", dest="VERBOSE")
     options, args = parser.parse_args()
     if len(args) != 1:
         parser.error("Incorrect number of arguments")
