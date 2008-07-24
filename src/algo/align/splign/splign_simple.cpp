@@ -62,8 +62,9 @@ USING_SCOPE(objects);
 // PRE : transcript location, genomic location (maximum span), scope in
 // which transcript & genomic sequence can be resolved
 // POST: blast & splign initialized
-CSplignSimple::CSplignSimple(const CSeq_loc &transcript,
-                             const CSeq_loc &genomic,
+CSplignSimple::CSplignSimple(const CSeq_loc& transcript,
+                             ETranscriptQuality tq,
+                             const CSeq_loc& genomic,
                              CScope& scope) :
     m_Splign(new CSplign),
     m_Blast(new blast::CBl2Seq(blast::SSeqLoc(transcript, scope),
@@ -72,7 +73,7 @@ CSplignSimple::CSplignSimple(const CSeq_loc &transcript,
     m_TranscriptId(&sequence::GetId(transcript, &scope)),
     m_GenomicId   (&sequence::GetId(genomic, &scope))
 {    
-    m_Splign->SetAligner() = CSplign::s_CreateDefaultAligner(true);
+    m_Splign->SetAligner() = CSplign::s_CreateDefaultAligner(tq == eTQ_Low);
     m_Splign->SetScope().Reset(&scope);
     m_Splign->PreserveScope();
 }

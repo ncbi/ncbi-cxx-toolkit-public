@@ -49,9 +49,15 @@ END_SCOPE(objects)
 class NCBI_XALGOALIGN_EXPORT CSplignSimple {
 public:
 
-    CSplignSimple(const objects::CSeq_loc &transcript,
-                  const objects::CSeq_loc &genomic,
-                  objects::CScope&);
+    enum ETranscriptQuality {
+        eTQ_High,
+        eTQ_Low
+    };
+
+    CSplignSimple(const objects::CSeq_loc& transcript,
+                  ETranscriptQuality tq,
+                  const objects::CSeq_loc& genomic,
+                  objects::CScope& scope);
 
     // Setters/Getters
     CRef<CSplign>&            SetSplign(void);
