@@ -1,7 +1,8 @@
 APP = blastdb_aliastool
 SRC = blastdb_aliastool
 LIB_ = writedb seqdb xblast xnetblast xnetblastcli composition_adjustment \
-	blastdb tables $(OBJMGR_LIBS)
+	xalgoblastdbindex xalgowinmask scoremat blastdb tables xobjread \
+	$(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 CFLAGS   = $(FAST_CFLAGS)

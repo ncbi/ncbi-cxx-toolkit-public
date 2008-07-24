@@ -1,7 +1,8 @@
 APP = blastdbcheck
 SRC = blastdbcheck blastdb_aux
 REGEX_LIBS = xregexp $(PCRE_LIB)
-LIB_ = blastinput $(BLAST_LIBS) $(REGEX_LIBS) $(OBJMGR_LIBS)
+LIB_ = blastinput ncbi_xloader_blastdb $(BLAST_LIBS) $(REGEX_LIBS) \
+	$(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 CFLAGS   = $(FAST_CFLAGS)
