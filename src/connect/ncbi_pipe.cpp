@@ -229,6 +229,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                              "child's stdin handle");
             }
             ::CloseHandle(child_stdin_write);
+            child_stdin_write = INVALID_HANDLE_VALUE;
             x_SetNonBlockingMode(m_ChildStdIn);
         }
 
@@ -250,6 +251,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                              "child's stdout handle");
             }
             ::CloseHandle(child_stdout_read);
+            child_stdout_read = INVALID_HANDLE_VALUE;
             x_SetNonBlockingMode(m_ChildStdOut);
         }
 
@@ -271,6 +273,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                              "child's stderr handle");
             }
             ::CloseHandle(child_stderr_read);
+            child_stderr_read = INVALID_HANDLE_VALUE;
             x_SetNonBlockingMode(m_ChildStdErr);
         }
 
