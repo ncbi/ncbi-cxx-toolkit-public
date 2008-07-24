@@ -7,8 +7,6 @@
 
 import os, sys, os.path
 from optparse import OptionParser
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 
-                             ".."))
 from blast_utils import safe_exec
 
 VERBOSE = False

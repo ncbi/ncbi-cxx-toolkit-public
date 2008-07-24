@@ -7,13 +7,14 @@
 import os, sys, os.path
 from shutil import copy
 from optparse import OptionParser
+SCRIPT_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
+sys.path.append(os.path.join(SCRIPT_DIR, ".."))
 from blast_utils import safe_exec
 
 VERBOSE = False
     
 # NSIS Configuration file
-NSIS_CONFIG = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), \
-                           "ncbi-blast.nsi")
+NSIS_CONFIG = os.path.join(SCRIPT_DIR, "ncbi-blast.nsi")
 
 def extract_installer():
     """Extract name of the installer file from NSIS configuration file"""
@@ -60,8 +61,7 @@ def main():
         app = os.path.join(installdir, "bin", app)
         copy(app, cwd)
     
-    license_file = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
-                                "..", "LICENSE")
+    license_file = os.path.join(SCRIPT_DIR, "..", "LICENSE")
     copy(license_file, cwd)
     copy(NSIS_CONFIG, cwd)
     # makensis is in the path of the script courtesy of the release framework

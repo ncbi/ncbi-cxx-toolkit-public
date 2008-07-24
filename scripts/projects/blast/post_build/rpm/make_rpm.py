@@ -5,6 +5,8 @@
 import sys, os, shutil
 from optparse import OptionParser
 from subprocess import Popen, PIPE
+SCRIPT_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
+sys.path.append(os.path.join(SCRIPT_DIR, ".."))
 from blast_utils import safe_exec
 
 VERBOSE = False
@@ -108,7 +110,7 @@ def run_rpm():
     shutil.rmtree(PACKAGE_NAME)
     shutil.move(TARBALL, os.path.join(RPMBUILD_HOME, "SOURCES"))
     rpm_spec = "ncbi-blast.spec"
-    src = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), rpm_spec)
+    src = os.path.join(SCRIPT_DIR, rpm_spec)
     dest = os.path.join(RPMBUILD_HOME, "SPECS", rpm_spec)
     shutil.copyfile(src, dest)
     cmd = "rpmbuild -ba " + dest
