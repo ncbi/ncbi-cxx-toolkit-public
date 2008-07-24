@@ -401,6 +401,7 @@ private:
 
 //////////////////////////////////////////////////////////////////////////
 template<size_t N>
+inline
 void resize(vector<SMethodDef>& container)
 {
 	if (container.size() < N) {
@@ -409,6 +410,7 @@ void resize(vector<SMethodDef>& container)
 }
 
 template<>
+inline
 void resize<0>(vector<SMethodDef>& /*container*/)
 {
 	;
