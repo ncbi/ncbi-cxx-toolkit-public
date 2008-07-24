@@ -16,7 +16,7 @@ def main():
     parser = OptionParser("%prog <platform> " +
                           "<installation directory> <source directory>")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
-                      help="Show verbose output")
+                      help="Show verbose output", dest="verbose")
     options, args = parser.parse_args()
     if len(args) != 3:
         parser.error("Incorrect number of arguments")
@@ -35,10 +35,13 @@ def main():
         print "Source directory:", srcdir
         print "Scripts directory:", SCRIPTS_DIR
 
+# TODO: Try building installer on win64
     if platform == "Win32":
-        return win32_post_build(installdir, srcdir)
-    if platform == "Win64":
+        #return win32_post_build(installdir, srcdir)
         return do_nothing(platform)
+    if platform == "Win64":
+        return win32_post_build(installdir, srcdir)
+        #return do_nothing(platform)
     if platform == "Linux32":
         return linux32_post_build(installdir)
     if platform == "Linux64":

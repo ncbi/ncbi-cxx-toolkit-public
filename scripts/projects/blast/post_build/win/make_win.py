@@ -43,7 +43,7 @@ def main():
     global VERBOSE
     parser = OptionParser("%prog <installation directory> <source directory>")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
-                      help="Show verbose output")
+                      help="Show verbose output", dest="VERBOSE")
     options, args = parser.parse_args()
     if len(args) != 2:
         parser.error("Incorrect number of arguments")
@@ -76,7 +76,7 @@ def main():
     license_file = os.path.join(srcdir, "scripts", "projects", "blast",
                                 "LICENSE")
     copy(license_file, cwd)
-    copy(NSIS_CONFIG, cwd);
+    copy(NSIS_CONFIG, cwd)
     # makensis is in the path of the script courtesy of the release framework
     cmd = "makensis " + os.path.basename(NSIS_CONFIG)
     safe_exec(cmd)
