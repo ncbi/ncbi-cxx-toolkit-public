@@ -400,6 +400,21 @@ private:
 }
 
 //////////////////////////////////////////////////////////////////////////
+template<size_t N>
+void resize(vector<SMethodDef>& container)
+{
+	if (container.size() < N) {
+		container.resize(N);
+	}
+}
+
+template<>
+void resize<0>(vector<SMethodDef>& /*container*/)
+{
+	;
+}
+
+//////////////////////////////////////////////////////////////////////////
 template <class T>
 class CExtObject : public PyObject
 {
@@ -449,9 +464,7 @@ public:
             TMethodHndlList& hndl_list = GetMethodHndlList();
 
             // Prepare data for python ...
-            if (hndl_list.size() < ePosition) {
-                hndl_list.resize(ePosition);
-            }
+			resize<N>(hndl_list);
             hndl_list[ePosition] = SMethodDef(name, HandleMethodVarArgs, METH_VARARGS, doc);
 
             // Prepare data for our handler ...

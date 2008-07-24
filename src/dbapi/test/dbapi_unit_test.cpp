@@ -3045,7 +3045,7 @@ CDBAPIUnitTest::Test_LOB_Multiple_LowLevel(void)
                     continue;
                 }
 
-                CDB_Stream* obj_lob;
+                CDB_Stream* obj_lob = NULL;
                 CDB_Text    obj_text;
                 CDB_Image   obj_image;
                 char        buffer[128];
@@ -3067,6 +3067,7 @@ CDBAPIUnitTest::Test_LOB_Multiple_LowLevel(void)
                         // rs->GetItem(obj_lob);
                         // or
                         // rs->GetItem(obj_lob, I_Result::eAssignLOB);
+                        BOOST_CHECK(obj_lob);
                         rs->GetItem(obj_lob, I_Result::eAssignLOB);
 
                         BOOST_CHECK( !obj_lob->IsNULL() );
