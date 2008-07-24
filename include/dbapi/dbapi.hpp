@@ -337,12 +337,14 @@ public:
     ///   SQL statement to execute.
     virtual void SendSql(const string& sql) = 0;
 
-    /// Sends one or more SQL statements to the SQL server (replaced by the SendSql())
+    /// Sends one or more SQL statements to the SQL server (NOTE: replaced by
+    /// the SendSql())
     ///
     /// @param sql
     ///   SQL statement to execute.
     /// @deprecated
-    NCBI_DEPRECATED virtual void Execute(const string& sql) = 0;
+    ///   Use SendSql() instead
+    virtual void Execute(const string& sql) = 0;
 
     /// Executes SQL statement with no results returned.
     ///
