@@ -51,6 +51,9 @@ BEGIN_SCOPE(objects)
 CAutoDefModifierCombo::CAutoDefModifierCombo() : m_UseModifierLabels(false),
                                                  m_KeepCountryText(false),
                                                  m_ExcludeSpOrgs(false),
+                                                 m_ExcludeCfOrgs(false),
+                                                 m_ExcludeNrOrgs(false),
+                                                 m_ExcludeAffOrgs(false),
                                                  m_KeepParen(false),
                                                  m_HIVCloneIsolateRule(ePreferClone)
 
@@ -92,6 +95,9 @@ CAutoDefModifierCombo::CAutoDefModifierCombo(CAutoDefModifierCombo *orig)
     m_UseModifierLabels = orig->GetUseModifierLabels();
     m_KeepCountryText = orig->GetKeepCountryText();
     m_ExcludeSpOrgs = orig->GetExcludeSpOrgs();
+    m_ExcludeCfOrgs = orig->GetExcludeCfOrgs();
+    m_ExcludeNrOrgs = orig->GetExcludeNrOrgs();
+    m_ExcludeAffOrgs = orig->GetExcludeAffOrgs();
     m_KeepParen = orig->GetKeepParen();
     m_HIVCloneIsolateRule = orig->GetHIVCloneIsolateRule();
 }
@@ -488,11 +494,30 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
     /* start with tax name */
     source_description += bsrc.GetOrg().GetTaxname();
     x_CleanUpTaxName(source_description);
-    
+
+    /* should this organism be excluded? */
     if (m_ExcludeSpOrgs) {
         string::size_type pos = NStr::Find(source_description, " sp. ");
         if (pos != NCBI_NS_STD::string::npos
             && (pos < 2 || !NStr::StartsWith(source_description.substr(pos - 2), "f."))) {
+            return source_description;
+        }
+    }
+    if (m_ExcludeCfOrgs) {
+        string::size_type pos = NStr::Find(source_description, " cf. ");
+        if (pos != NCBI_NS_STD::string::npos) {
+            return source_description;
+        }
+    }
+    if (m_ExcludeNrOrgs) {
+        string::size_type pos = NStr::Find(source_description, " nr. ");
+        if (pos != NCBI_NS_STD::string::npos) {
+            return source_description;
+        }
+    }
+    if (m_ExcludeAffOrgs) {
+        string::size_type pos = NStr::Find(source_description, " aff. ");
+        if (pos != NCBI_NS_STD::string::npos) {
             return source_description;
         }
     }

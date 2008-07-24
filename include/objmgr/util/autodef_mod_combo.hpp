@@ -93,6 +93,12 @@ public:
     bool GetKeepCountryText();
     void SetExcludeSpOrgs(bool exclude);
     bool GetExcludeSpOrgs ();
+    void SetExcludeCfOrgs(bool exclude);
+    bool GetExcludeCfOrgs ();
+    void SetExcludeNrOrgs(bool exclude);
+    bool GetExcludeNrOrgs ();
+    void SetExcludeAffOrgs(bool exclude);
+    bool GetExcludeAffOrgs ();
     void SetKeepParen(bool keep);
     bool GetKeepParen();
     void SetHIVCloneIsolateRule(unsigned int rule_num);
@@ -136,6 +142,12 @@ private:
     unsigned int m_MaxModifiers;
     bool         m_KeepCountryText;
     bool         m_ExcludeSpOrgs;
+    // NOTE - after the wxWidgets conversion is complete, need to add controls for the following three
+    // values to the autodef configuration dialog 
+    bool         m_ExcludeCfOrgs;
+    bool         m_ExcludeNrOrgs;
+    bool         m_ExcludeAffOrgs;
+
     bool         m_KeepParen;
     unsigned int m_HIVCloneIsolateRule;
     
@@ -202,6 +214,48 @@ inline
 bool CAutoDefModifierCombo::GetExcludeSpOrgs()
 {
     return m_ExcludeSpOrgs;
+}
+
+
+inline
+void CAutoDefModifierCombo::SetExcludeCfOrgs(bool exclude)
+{
+    m_ExcludeCfOrgs = exclude;
+}
+
+
+inline
+bool CAutoDefModifierCombo::GetExcludeCfOrgs()
+{
+    return m_ExcludeCfOrgs;
+}
+
+
+inline
+void CAutoDefModifierCombo::SetExcludeNrOrgs(bool exclude)
+{
+    m_ExcludeNrOrgs = exclude;
+}
+
+
+inline
+bool CAutoDefModifierCombo::GetExcludeNrOrgs()
+{
+    return m_ExcludeNrOrgs;
+}
+
+
+inline
+void CAutoDefModifierCombo::SetExcludeAffOrgs(bool exclude)
+{
+    m_ExcludeAffOrgs = exclude;
+}
+
+
+inline
+bool CAutoDefModifierCombo::GetExcludeAffOrgs()
+{
+    return m_ExcludeAffOrgs;
 }
 
 

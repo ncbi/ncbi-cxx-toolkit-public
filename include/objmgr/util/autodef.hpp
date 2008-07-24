@@ -154,8 +154,9 @@ private:
     CAutoDefParsedtRNAClause* x_tRNAClauseFromNote(CBioseq_Handle bh,
                                                    const CSeq_feat& cf,
                                                    const CSeq_loc& mapped_loc,
-                                                   string &comment,
-                                                   bool is_first);
+                                                   string comment,
+                                                   bool is_first,
+                                                   bool is_last);
     bool x_AddMiscRNAFeatures(CBioseq_Handle bh,
                               const CSeq_feat& cf,
                               const CSeq_loc& mapped_loc,
