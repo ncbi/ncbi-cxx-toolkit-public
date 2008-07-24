@@ -166,7 +166,7 @@ void* single_alloc(size_t size)
 
 static CObject::EAllocFillMode sm_AllocFillMode;
 static bool sm_AllocFillMode_IsSet;
-#ifdef _DEBUG
+#if defined(_DEBUG) && !defined(NCBI_COMPILER_MSVC)
 # define ALLOC_FILL_MODE_INIT        CObject::eAllocFillPattern
 # define ALLOC_FILL_MODE_DEFAULT     CObject::eAllocFillPattern
 #else
