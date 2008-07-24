@@ -12,7 +12,7 @@ fi
 BLAST_BINS="blastn blastp blastx tblastn tblastx psiblast rpsblast rpstblastn legacy_blast.pl"
 MASKING_BINS="windowmasker dustmasker segmasker"
 DB_BINS="blastdbcmd makeblastdb makembindex"
-ALL_BINS=$(BLAST_BINS) $(MASKING_BINS) $(DB_BINS)
+ALL_BINS="$BLAST_BINS $MASKING_BINS $DB_BINS"
 
 rm -rf BLAST.dmg
 
@@ -35,8 +35,10 @@ mkdir BLAST
 echo creating disk image
 hdiutil create BLAST.dmg -srcfolder BLAST
 
+echo moving disk image
+mkdir $INSTALLDIR/installer
+mv BLAST.dmg $INSTALLDIR/installer
+
 echo done
 rm -rf _stage
 rm -rf BLAST
-rm -fr $INSTALLDIR/installer
-mv BLAST.dmg $INSTALLDIR/installer

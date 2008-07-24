@@ -1,11 +1,12 @@
 #!/usr/bin/env python
+"""Script to create a source/binary RPM"""
 # $Id$
-# Script to create a source/binary RPM
 
-import sys, os, shutil;
+import sys, os, shutil
 from optparse import OptionParser
+from subprocess import *
 
-verbose = False
+VERBOSE = False
 
 # Current version of BLAST
 BLAST_VERSION = "2.2.18"
@@ -23,21 +24,22 @@ def setup_rpmbuild():
         os.mkdir(os.path.join(RPMBUILD_HOME, d))
     cwd = os.getcwd()
     os.chdir(os.path.join(RPMBUILD_HOME, 'RPMS'))
-    for d in [ 'i386', 'i586', 'i686', 'noarch', 'x86_64' ]:
-        os.mkdir(d)
+    for subdir in [ 'i386', 'i586', 'i686', 'noarch', 'x86_64' ]:
+        os.mkdir(subdir)
     os.chdir(cwd)
 
     # Create ~/.rpmmacros
-    fname = os.path.join(os.path.expanduser("~"), ".rpmmacros");
+    fname = os.path.join(os.path.expanduser("~"), ".rpmmacros")
     try:
         f = open(fname, "w")
         print >> f, "%_topdir %( echo", os.path.join(cwd, RPMBUILD_HOME), ")"
-        print >> f, "%_tmppath %( echo", os.path.join(cwd, RPMBUILD_HOME, "tmp"), ")"
+        print >> f, "%_tmppath %( echo", 
+        print >> f, os.path.join(cwd, RPMBUILD_HOME, "tmp"), ")"
         print >> f
         print >> f, "%packager Christiam E. Camacho (camacho@ncbi.nlm.nih.gov)"
     finally:
         f.close()
-    if verbose: print "Created ~/.rpmmacros"
+    if VERBOSE: print "Created ~/.rpmmacros"
 
 def cleanup_rpm():
     """ Delete rpm files """
@@ -53,19 +55,19 @@ def safe_exec(cmd):
         exception if it fails.
     """
     import subprocess
-    if verbose: print cmd
+    if VERBOSE: print cmd
     try:
         retcode = subprocess.call(cmd, shell=True)
         if retcode < 0:
             raise RuntimeError("Child was terminated by signal " + -retcode)
         elif retcode != 0:
             raise RuntimeError("Command failed with exit code " + retcode)
-    except OSError, e:
-        raise RuntimeError("Execution failed: " + e)
+    except OSError, err:
+        raise RuntimeError("Execution failed: " + err)
 
 def cleanup_svn_co():
     """ Remove unnecessary directories/files from svn checkout """
-    import dircache, fnmatch
+    import fnmatch
            
     cmd = "find " + PACKAGE_NAME + " -type d -name .svn | xargs rm -fr "
     safe_exec(cmd) 
@@ -74,14 +76,14 @@ def cleanup_svn_co():
         path = os.path.join(PACKAGE_NAME, path)
         if os.path.exists(path):
             shutil.rmtree(path)
-            if verbose: print "Deleting", path
+            if VERBOSE: print "Deleting", path
     
 #    compilers_path = os.path.join(PACKAGE_NAME, "c++", "compilers")    
 #    for d in dircache.listdir(compilers_path):
 #        if not fnmatch.fnmatch(d, "unix"):
 #            d = os.path.join(compilers_path, d)
 #            shutil.rmtree(d)
-#            if verbose: print "Deleting", d
+#            if VERBOSE: print "Deleting", d
                
     projects_path = os.path.join(PACKAGE_NAME, "c++", "scripts", "projects")
     for root, dirs, files in os.walk(projects_path): 
@@ -89,20 +91,20 @@ def cleanup_svn_co():
             name = os.path.join(root, name)
             if fnmatch.fnmatch(name, "*blast/project.lst"): continue
             os.remove(name)
-            if verbose: print "Deleting file", name
+            if VERBOSE: print "Deleting file", name
             
-        for d in dirs:
-            if not fnmatch.fnmatch(d, "blast"):
-                d = os.path.join(root, d)
-                shutil.rmtree(d)
-                if verbose: print "Deleting directory", d
+        for name in dirs:
+            if not fnmatch.fnmatch(name, "blast"):
+                name = os.path.join(root, name)
+                shutil.rmtree(name)
+                if VERBOSE: print "Deleting nameectory", name
 
 def svn_checkout():
     # NCBI SVN repository
-    SVN_NCBI = "https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit"
+    svn_ncbi = "https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit"
 
     # Check out the sources
-    cmd = "svn -q co --username svnread --password allowed " + SVN_NCBI
+    cmd = "svn -q co --username svnread --password allowed " + svn_ncbi
     cmd += "/release/blast/" + BLAST_VERSION + " " + PACKAGE_NAME
     if os.path.exists(PACKAGE_NAME):
         shutil.rmtree(PACKAGE_NAME)
@@ -139,9 +141,10 @@ def move_rpms_to_installdir(installdir):
         os.makedirs(installer_dir)
         
     args = [ "find", RPMBUILD_HOME, "-name", "*.rpm" ]
-    output = Popen(args, stdout=PIPE).communicate()[0];
+    output = Popen(args, stdout=PIPE).communicate()[0]
     for rpm in output.split():
-        move(rpm, installer_dir)
+        if VERBOSE: print "mv", rpm, installer_dir
+        shutil.move(rpm, installer_dir)
 
 
 def main():
@@ -155,9 +158,9 @@ def main():
         return 1
     
     installdir, scripts_dir = args
-    global verbose
-    verbose = options.verbose
-    if verbose: 
+    global VERBOSE
+    VERBOSE = options.VERBOSE
+    if VERBOSE: 
         print "Installing RPM to", installdir
         print "Scripts directory:", scripts_dir
     

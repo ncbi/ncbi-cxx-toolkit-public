@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Driver program for post-build processing"""
 # $Id$
 #
 # Author: Christiam Camacho
@@ -7,8 +8,8 @@
 import os, sys, os.path
 from optparse import OptionParser
 
-verbose = False
-scripts_dir = ""
+VERBOSE = False
+SCRIPTS_DIR = ""
 
 def main():
     """ Creates installers for selected platforms. """
@@ -21,31 +22,31 @@ def main():
         parser.error("Incorrect number of arguments")
         return 1
 
-    platform, installdir, srcdir = args;
-    global scripts_dir
-    scripts_dir = os.path.join(srcdir, "scripts", "projects", "blast", 
+    platform, installdir, srcdir = args
+    global SCRIPTS_DIR
+    SCRIPTS_DIR = os.path.join(srcdir, "scripts", "projects", "blast", 
                                "post_build")
 
-    global verbose
-    verbose = options.verbose
-    if verbose:
+    global VERBOSE
+    VERBOSE = options.VERBOSE
+    if VERBOSE:
         print "Platform:", platform
         print "Installation directory:", installdir
         print "Source directory:", srcdir
-        print "Scripts directory:", scripts_dir
+        print "Scripts directory:", SCRIPTS_DIR
 
     if platform == "Win32":
-        return Win32PostBuild(installdir, srcdir)
+        return win32_post_build(installdir, srcdir)
     if platform == "Win64":
         return do_nothing(platform)
     if platform == "Linux32":
-        return Linux32PostBuild(installdir, scripts_dir)
+        return linux32_post_build(installdir)
     if platform == "Linux64":
-        return Linux64PostBuild(installdir, scripts_dir)
+        return linux64_post_build(installdir)
     if platform == "FreeBSD32":
         return do_nothing(platform)
     if platform == "PowerMAC":
-        return PowerMACPostBuild(installdir, srcdir)
+        return mac_post_build(installdir, srcdir)
     if platform == "SunOSSparc":
         return do_nothing(platform)
     if platform == "SunOSx86":
@@ -55,39 +56,44 @@ def main():
     print >> sys.stderr, "Exiting post build script."
     return 2
 
-def Win32PostBuild(installdir, srcdir):
-    if verbose: print "Packaging for Win32..."
-    cmd = "python.exe " + os.path.join(scripts_dir, "win", "make_win.py") + " "
+def win32_post_build(installdir, srcdir):
+    '''Win32 post-build: create installer'''
+    if VERBOSE: print "Packaging for Win32..."
+    cmd = "python.exe " + os.path.join(SCRIPTS_DIR, "win", "make_win.py") + " "
     cmd += installdir + " " + srcdir
-    if verbose: cmd += " -v"
+    if VERBOSE: cmd += " -v"
     safe_exec(cmd)
     return 0
 
-def Linux32PostBuild(installdir, scripts_dir):
-    if verbose: print "Packing linux 32 bit RPM..."
-    cmd = "python " + os.path.join(scripts_dir, "rpm", "make_rpm.py") + " "
-    cmd += installdir + " " + scripts_dir
-    if verbose: cmd += " -v"
+def linux32_post_build(installdir):
+    '''Linux32 post-build: create RPM'''
+    if VERBOSE: print "Packing linux 32 bit RPM..."
+    cmd = "python " + os.path.join(SCRIPTS_DIR, "rpm", "make_rpm.py") + " "
+    cmd += installdir + " " + SCRIPTS_DIR
+    if VERBOSE: cmd += " -v"
     safe_exec(cmd)
     return 0
 
-def Linux64PostBuild(installdir, scripts_dir):
-    if verbose: print "Packing linux 64 bit RPM..."
-    cmd = "python " + os.path.join(scripts_dir, "rpm", "make_rpm.py") + " "
-    cmd += installdir + " " + scripts_dir
-    if verbose: cmd += " -v"
+def linux64_post_build(installdir):
+    '''Linux64 post-build: create RPM'''
+    if VERBOSE: print "Packing linux 64 bit RPM..."
+    cmd = "python " + os.path.join(SCRIPTS_DIR, "rpm", "make_rpm.py") + " "
+    cmd += installdir + " " + SCRIPTS_DIR
+    if VERBOSE: cmd += " -v"
     safe_exec(cmd)
     return 0
 
-def PowerMACPostBuild(installdir, srcdir):
-    if verbose: print "Packaging for MacOSX..."
-    cmd = os.path.join(scripts_dir, "macosx", "ncbi-blast.sh") + " "
+def mac_post_build(installdir, srcdir):
+    '''MacOSX post-build: create installer'''
+    if VERBOSE: print "Packaging for MacOSX..."
+    cmd = os.path.join(SCRIPTS_DIR, "macosx", "ncbi-blast.sh") + " "
     cmd += installdir + " " + srcdir
     safe_exec(cmd)
     return 0
 
 def do_nothing(platform):
-    if verbose: print "No post-build step necessary for platform."
+    '''No op function'''
+    if VERBOSE: print "No post-build step necessary for", platform
     return 0
 
 def safe_exec(cmd):
@@ -95,15 +101,15 @@ def safe_exec(cmd):
         exception if it fails.
     """
     import subprocess
-    if verbose: print cmd
+    if VERBOSE: print cmd
     try:
         retcode = subprocess.call(cmd, shell=True)
         if retcode < 0:
             raise RuntimeError("Child was terminated by signal " + -retcode)
         elif retcode != 0:
             raise RuntimeError("Command failed with exit code " + retcode)
-    except OSError, e:
-        raise RuntimeError("Execution failed: " + e)
+    except OSError, err:
+        raise RuntimeError("Execution failed: " + err)
 
 
 # The script execution entry point
