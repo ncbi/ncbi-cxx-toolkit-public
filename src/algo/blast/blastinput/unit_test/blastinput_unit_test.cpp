@@ -814,6 +814,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession)
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
 
+#ifndef _DEBUG  // run this only on non-debug builds
 BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
 {
     CNcbiIfstream infile("data/accession.txt");
@@ -948,6 +949,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequenceWithRange)
        << kTimeMax << " second timeout";
     BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(ReadMultipleAccessions)
 {
