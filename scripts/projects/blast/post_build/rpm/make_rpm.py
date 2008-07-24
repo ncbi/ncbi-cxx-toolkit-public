@@ -4,7 +4,8 @@
 
 import sys, os, shutil
 from optparse import OptionParser
-from subprocess import *
+from subprocess import Popen, PIPE
+from blast_utils import safe_exec
 
 VERBOSE = False
 
@@ -50,21 +51,6 @@ def cleanup_rpm():
     if os.path.exists(rpmmacros):
         os.remove(rpmmacros)
 
-def safe_exec(cmd):
-    """ Executes a command and checks its return value, throwing an
-        exception if it fails.
-    """
-    import subprocess
-    if VERBOSE: print cmd
-    try:
-        retcode = subprocess.call(cmd, shell=True)
-        if retcode < 0:
-            raise RuntimeError("Child was terminated by signal " + -retcode)
-        elif retcode != 0:
-            raise RuntimeError("Command failed with exit code " + retcode)
-    except OSError, err:
-        raise RuntimeError("Execution failed: " + err)
-
 def cleanup_svn_co():
     """ Remove unnecessary directories/files from svn checkout """
     import fnmatch
@@ -77,13 +63,6 @@ def cleanup_svn_co():
         if os.path.exists(path):
             shutil.rmtree(path)
             if VERBOSE: print "Deleting", path
-    
-#    compilers_path = os.path.join(PACKAGE_NAME, "c++", "compilers")    
-#    for d in dircache.listdir(compilers_path):
-#        if not fnmatch.fnmatch(d, "unix"):
-#            d = os.path.join(compilers_path, d)
-#            shutil.rmtree(d)
-#            if VERBOSE: print "Deleting", d
                
     projects_path = os.path.join(PACKAGE_NAME, "c++", "scripts", "projects")
     for root, dirs, files in os.walk(projects_path): 
@@ -97,7 +76,7 @@ def cleanup_svn_co():
             if not fnmatch.fnmatch(name, "blast"):
                 name = os.path.join(root, name)
                 shutil.rmtree(name)
-                if VERBOSE: print "Deleting nameectory", name
+                if VERBOSE: print "Deleting directory", name
 
 def svn_checkout():
     # NCBI SVN repository
@@ -125,11 +104,11 @@ def cleanup():
     if os.path.exists(PACKAGE_NAME):
         shutil.rmtree(PACKAGE_NAME)
 
-def run_rpm(scripts_dir):
+def run_rpm():
     shutil.rmtree(PACKAGE_NAME)
     shutil.move(TARBALL, os.path.join(RPMBUILD_HOME, "SOURCES"))
     rpm_spec = "ncbi-blast.spec"
-    src = os.path.join(scripts_dir, "rpm", rpm_spec)
+    src = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), rpm_spec)
     dest = os.path.join(RPMBUILD_HOME, "SPECS", rpm_spec)
     shutil.copyfile(src, dest)
     cmd = "rpmbuild -ba " + dest
@@ -149,26 +128,25 @@ def move_rpms_to_installdir(installdir):
 
 def main():
     """ Creates RPMs for linux. """
-    parser = OptionParser("%prog <installation directory> <scripts directory>")
+    parser = OptionParser("%prog <installation directory>")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output", dest="verbose")
     options, args = parser.parse_args()
-    if len(args) != 2:
+    if len(args) != 1:
         parser.error("Incorrect number of arguments")
         return 1
     
-    installdir, scripts_dir = args
-    global VERBOSE
+    installdir = args
+    global VERBOSE #IGNORE:W0603
     VERBOSE = options.VERBOSE
     if VERBOSE: 
         print "Installing RPM to", installdir
-        print "Scripts directory:", scripts_dir
     
     setup_rpmbuild()
     cleanup()
     svn_checkout()
     compress_sources()
-    run_rpm(scripts_dir)
+    run_rpm()
     move_rpms_to_installdir(installdir)
     cleanup_rpm()
     cleanup()

@@ -7,9 +7,10 @@
 
 import os, sys, os.path
 from optparse import OptionParser
+from blast_utils import safe_exec
 
 VERBOSE = False
-SCRIPTS_DIR = ""
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 def main():
     """ Creates installers for selected platforms. """
@@ -23,24 +24,20 @@ def main():
         return 1
 
     platform, installdir, srcdir = args
-    global SCRIPTS_DIR
-    SCRIPTS_DIR = os.path.join(srcdir, "scripts", "projects", "blast", 
-                               "post_build")
 
-    global VERBOSE
+    global VERBOSE #IGNORE:W0603
     VERBOSE = options.VERBOSE
     if VERBOSE:
         print "Platform:", platform
         print "Installation directory:", installdir
-        print "Source directory:", srcdir
-        print "Scripts directory:", SCRIPTS_DIR
+        print "Source directory:", srcdir 
 
 # TODO: Try building installer on win64
     if platform == "Win32":
-        #return win32_post_build(installdir, srcdir)
+        #return win32_post_build(installdir)
         return do_nothing(platform)
     if platform == "Win64":
-        return win32_post_build(installdir, srcdir)
+        return win32_post_build(installdir)
         #return do_nothing(platform)
     if platform == "Linux32":
         return linux32_post_build(installdir)
@@ -59,11 +56,11 @@ def main():
     print >> sys.stderr, "Exiting post build script."
     return 2
 
-def win32_post_build(installdir, srcdir):
+def win32_post_build(installdir):
     '''Win32 post-build: create installer'''
     if VERBOSE: print "Packaging for Win32..."
     cmd = "python.exe " + os.path.join(SCRIPTS_DIR, "win", "make_win.py") + " "
-    cmd += installdir + " " + srcdir
+    cmd += installdir
     if VERBOSE: cmd += " -v"
     safe_exec(cmd)
     return 0
@@ -72,7 +69,7 @@ def linux32_post_build(installdir):
     '''Linux32 post-build: create RPM'''
     if VERBOSE: print "Packing linux 32 bit RPM..."
     cmd = "python " + os.path.join(SCRIPTS_DIR, "rpm", "make_rpm.py") + " "
-    cmd += installdir + " " + SCRIPTS_DIR
+    cmd += installdir
     if VERBOSE: cmd += " -v"
     safe_exec(cmd)
     return 0
@@ -81,7 +78,7 @@ def linux64_post_build(installdir):
     '''Linux64 post-build: create RPM'''
     if VERBOSE: print "Packing linux 64 bit RPM..."
     cmd = "python " + os.path.join(SCRIPTS_DIR, "rpm", "make_rpm.py") + " "
-    cmd += installdir + " " + SCRIPTS_DIR
+    cmd += installdir
     if VERBOSE: cmd += " -v"
     safe_exec(cmd)
     return 0
@@ -99,20 +96,6 @@ def do_nothing(platform):
     if VERBOSE: print "No post-build step necessary for", platform
     return 0
 
-def safe_exec(cmd):
-    """ Executes a command and checks its return value, throwing an
-        exception if it fails.
-    """
-    import subprocess
-    if VERBOSE: print cmd
-    try:
-        retcode = subprocess.call(cmd, shell=True)
-        if retcode < 0:
-            raise RuntimeError("Child was terminated by signal " + -retcode)
-        elif retcode != 0:
-            raise RuntimeError("Command failed with exit code " + retcode)
-    except OSError, err:
-        raise RuntimeError("Execution failed: " + err)
 
 
 # The script execution entry point

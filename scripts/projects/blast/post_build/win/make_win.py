@@ -7,6 +7,7 @@
 import os, sys, os.path
 from shutil import copy
 from optparse import OptionParser
+from blast_utils import safe_exec
 
 VERBOSE = False
     
@@ -14,22 +15,8 @@ VERBOSE = False
 NSIS_CONFIG = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), \
                            "ncbi-blast.nsi")
 
-def safe_exec(cmd):
-    """ Executes a command and checks its return value, throwing an
-        exception if it fails.
-    """
-    import subprocess
-    if VERBOSE: print cmd
-    try:
-        retcode = subprocess.call(cmd, shell=True)
-        if retcode < 0:
-            raise RuntimeError("Child was terminated by signal " + str(-retcode))
-        elif retcode != 0:
-            raise RuntimeError("Command failed with exit code " + str(retcode))
-    except OSError, err:
-        raise RuntimeError("Execution failed: " + err)
-
 def extract_installer():
+    """Extract name of the installer file from NSIS configuration file"""
     from fileinput import FileInput
 
     retval = "unknown"
@@ -40,16 +27,16 @@ def extract_installer():
 
 def main():
     """ Creates NSIS installer for BLAST command line binaries """
-    global VERBOSE
-    parser = OptionParser("%prog <installation directory> <source directory>")
+    global VERBOSE #IGNORE:W0603
+    parser = OptionParser("%prog <installation directory>")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output", dest="VERBOSE")
     options, args = parser.parse_args()
-    if len(args) != 2:
+    if len(args) != 1:
         parser.error("Incorrect number of arguments")
         return 1
     
-    installdir, srcdir = args
+    installdir = args
     VERBOSE = options.VERBOSE
     
     apps = [ "blastn.exe", 
@@ -73,8 +60,8 @@ def main():
         app = os.path.join(installdir, "bin", app)
         copy(app, cwd)
     
-    license_file = os.path.join(srcdir, "scripts", "projects", "blast",
-                                "LICENSE")
+    license_file = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
+                                "..", "LICENSE")
     copy(license_file, cwd)
     copy(NSIS_CONFIG, cwd)
     # makensis is in the path of the script courtesy of the release framework
