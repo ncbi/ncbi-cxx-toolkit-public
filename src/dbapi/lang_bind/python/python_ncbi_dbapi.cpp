@@ -3363,18 +3363,18 @@ CDBAPIModule::Declare(const char* name, PyMethodDef* methods)
 }
 
 static struct PyMethodDef python_ncbi_dbapi_methods[] = {
-    {"connect", (PyCFunction) python::Connect, METH_VARARGS,
+    {(char*)"connect", (PyCFunction) python::Connect, METH_VARARGS, (char*)
         "connect(driver_name, db_type, server_name, database_name, userid, password) "
         "-- connect to the "
         "driver_name; db_type; server_name; database_name; userid; password;"
     },
-    {"Date", (PyCFunction) python::Date, METH_VARARGS, "Date"},
-    {"Time", (PyCFunction) python::Time, METH_VARARGS, "Time"},
-    {"Timestamp", (PyCFunction) python::Timestamp, METH_VARARGS, "Timestamp"},
-    {"DateFromTicks", (PyCFunction) python::DateFromTicks, METH_VARARGS, "DateFromTicks"},
-    {"TimeFromTicks", (PyCFunction) python::TimeFromTicks, METH_VARARGS, "TimeFromTicks"},
-    {"TimestampFromTicks", (PyCFunction) python::TimestampFromTicks, METH_VARARGS, "TimestampFromTicks"},
-    {"Binary", (PyCFunction) python::Binary, METH_VARARGS, "Binary"},
+    {(char*)"Date", (PyCFunction) python::Date, METH_VARARGS, (char*)"Date"},
+    {(char*)"Time", (PyCFunction) python::Time, METH_VARARGS, (char*)"Time"},
+    {(char*)"Timestamp", (PyCFunction) python::Timestamp, METH_VARARGS, (char*)"Timestamp"},
+    {(char*)"DateFromTicks", (PyCFunction) python::DateFromTicks, METH_VARARGS, (char*)"DateFromTicks"},
+    {(char*)"TimeFromTicks", (PyCFunction) python::TimeFromTicks, METH_VARARGS, (char*)"TimeFromTicks"},
+    {(char*)"TimestampFromTicks", (PyCFunction) python::TimestampFromTicks, METH_VARARGS, (char*)"TimestampFromTicks"},
+    {(char*)"Binary", (PyCFunction) python::Binary, METH_VARARGS, (char*)"Binary"},
     { NULL, NULL }
 };
 
@@ -3383,7 +3383,7 @@ void init_common(const string& module_name)
 {
     DBLB_INSTALL_DEFAULT();
 
-    char* rev_str = "$Revision$";
+    const char* rev_str = "$Revision$";
     PyObject *module;
 
     // Fix plugin manager ...
@@ -3457,7 +3457,7 @@ void init_common(const string& module_name)
     if ( PyType_Ready(&python::CBinary::GetType()) == -1 ) {
         return;
     }
-    if ( PyModule_AddObject(module, "BINARY", (PyObject*)&python::CBinary::GetType() ) == -1 ) {
+    if ( PyModule_AddObject(module, const_cast<char*>("BINARY"), (PyObject*)&python::CBinary::GetType() ) == -1 ) {
         return;
     }
 
@@ -3465,7 +3465,7 @@ void init_common(const string& module_name)
     if ( PyType_Ready(&python::CNumber::GetType()) == -1 ) {
         return;
     }
-    if ( PyModule_AddObject(module, "NUMBER", (PyObject*)&python::CNumber::GetType() ) == -1 ) {
+    if ( PyModule_AddObject(module, const_cast<char*>("NUMBER"), (PyObject*)&python::CNumber::GetType() ) == -1 ) {
         return;
     }
 
@@ -3473,7 +3473,7 @@ void init_common(const string& module_name)
     if ( PyType_Ready(&python::CRowID::GetType()) == -1 ) {
         return;
     }
-    if ( PyModule_AddObject(module, "ROWID", (PyObject*)&python::CRowID::GetType() ) == -1 ) {
+    if ( PyModule_AddObject(module, const_cast<char*>("ROWID"), (PyObject*)&python::CRowID::GetType() ) == -1 ) {
         return;
     }
 
