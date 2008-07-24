@@ -34,7 +34,7 @@
 #include "test_objmgr.hpp"
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>

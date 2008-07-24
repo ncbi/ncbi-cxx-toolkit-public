@@ -42,8 +42,8 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/bioseq_handle.hpp>
-#include <objmgr/gbloader.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
 #include <objmgr/util/sequence.hpp>
