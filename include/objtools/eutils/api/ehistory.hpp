@@ -59,6 +59,8 @@ class NCBI_EUTILS_EXPORT CEHistory_Request : public CEUtils_Request
 {
 public:
     /// Create EHistory request for the given database.
+    /// If db is an empty string, the request will return histories
+    /// for all databases.
     CEHistory_Request(const string& db, CRef<CEUtils_ConnContext>& ctx);
     virtual ~CEHistory_Request(void);
 

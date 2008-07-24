@@ -114,28 +114,46 @@ const string& CEUtils_Request::GetArgument(const string& name) const
 
 string CEUtils_Request::GetQueryString(void) const
 {
-    string args = "db=" + m_Database;
+    string args;
+    if ( !m_Database.empty() ) {
+        args = "db=" + m_Database;
+    }
     const string& webenv = GetConnContext()->GetWebEnv();
     if ( !webenv.empty() ) {
-        args += "&WebEnv=" +
+        if ( !args.empty() ) {
+            args += "&";
+        }
+        args += "WebEnv=" +
             URL_EncodeString(webenv, eUrlEncode_ProcessMarkChars);
     }
     string qk = GetQueryKey();
     if ( !qk.empty() ) {
-        args += "&query_key=" + qk;
+        if ( !args.empty() ) {
+            args += "&";
+        }
+        args += "query_key=" + qk;
     }
     const string& tool = GetConnContext()->GetTool();
     if ( !tool.empty() ) {
-        args += "&tool=" +
+        if ( !args.empty() ) {
+            args += "&";
+        }
+        args += "tool=" +
             URL_EncodeString(tool, eUrlEncode_ProcessMarkChars);
     }
     const string& email = GetConnContext()->GetEmail();
     if ( !email.empty() ) {
-        args += "&email=" +
+        if ( !args.empty() ) {
+            args += "&";
+        }
+        args += "email=" +
             URL_EncodeString(email, eUrlEncode_ProcessMarkChars);
     }
     ITERATE(TRequestArgs, it, m_Args) {
-        args += "&" + it->first + "=" +
+        if ( !args.empty() ) {
+            args += "&";
+        }
+        args += it->first + "=" +
             URL_EncodeString(it->second, eUrlEncode_ProcessMarkChars);
     }
     return args;

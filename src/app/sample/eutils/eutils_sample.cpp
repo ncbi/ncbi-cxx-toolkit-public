@@ -201,8 +201,6 @@ void CEUtilsApp::Init(void)
     // ESpell
     arg_desc->SetDependency("espell", CArgDescriptions::eRequires, "db");
     arg_desc->SetDependency("espell", CArgDescriptions::eRequires, "term");
-    // EHistory
-    arg_desc->SetDependency("ehistory", CArgDescriptions::eRequires, "db");
 
     // elink arguments
     // dbfrom
@@ -491,7 +489,11 @@ void CEUtilsApp::CallESpell(const CArgs& args)
 void CEUtilsApp::CallEHistory(const CArgs& args)
 {
     // Prepare request
-    CEHistory_Request req(args["db"].AsString(), x_GetCtx());
+    string db;
+    if ( args["db"] ) {
+        db = args["db"].AsString();
+    }
+    CEHistory_Request req(db, x_GetCtx());
     x_SetHttpMethod(req, args);
 
     // Print query string
