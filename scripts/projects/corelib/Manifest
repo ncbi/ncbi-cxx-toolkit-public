@@ -44,7 +44,6 @@ PowerMAC   : plain     : GCC.sh           --without-debug --without-mt --with-st
 PowerMAC   : universal : GCC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile --with-universal
 
 Win32      : plain32   : msvc710_prj  static  32  ReleaseDLL
-Win32      :           : msvc710_prj  dll     32  ReleaseDLL         
 
 Win64      : plain64   : msvc800_prj  static  64  ReleaseDLL
 Win64      : plain32   : msvc710_prj  static  32  ReleaseDLL
