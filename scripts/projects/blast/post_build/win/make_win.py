@@ -37,7 +37,7 @@ def main():
         parser.error("Incorrect number of arguments")
         return 1
     
-    installdir = args
+    installdir = args[0]
     VERBOSE = options.VERBOSE
     
     apps = [ "blastn.exe", 
@@ -62,7 +62,7 @@ def main():
         if VERBOSE: print "Copying", app, "to", cwd
         copy(app, cwd)
     
-    license_file = os.path.join(SCRIPT_DIR, "..", "LICENSE")
+    license_file = os.path.join(SCRIPT_DIR, "..", "..", "LICENSE")
     copy(license_file, cwd)
     update_blast_version(NSIS_CONFIG)
     copy(NSIS_CONFIG, cwd)
