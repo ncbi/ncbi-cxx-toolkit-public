@@ -10,11 +10,14 @@ def safe_exec(cmd):
         exception if it fails.
     """   
     try:
+        msg = "Command: '" + cmd + "' "
         retcode = call(cmd, shell=True)
         if retcode < 0:
-            raise RuntimeError("Child was terminated by signal " + 
-                               str(-retcode))
+            msg += "Termined by signal " + str(-retcode)
+            raise RuntimeError(msg)
         elif retcode != 0:
-            raise RuntimeError("Command failed with exit code " + str(retcode))
+            msg += "Failed with exit code " + str(retcode)
+            raise RuntimeError(msg)
     except OSError, err:
-        raise RuntimeError("Execution failed: " + err)
+        msg += "Execution failed: " + err
+        raise RuntimeError(msg)
