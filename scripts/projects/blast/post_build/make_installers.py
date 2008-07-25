@@ -31,6 +31,7 @@ def main():
         print "Platform:", platform
         print "Installation directory:", installdir
         print "Source directory:", srcdir 
+        print "Python version:", sys.version
 
 # TODO: Try building installer on win64
     if platform == "Win32":
