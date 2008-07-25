@@ -72,16 +72,18 @@ def cleanup_svn_co():
             name = os.path.join(root, name)
             if fnmatch.fnmatch(name, "*blast/*"): 
                 continue
-            os.remove(name)
             if VERBOSE:
                 print "Deleting file", name
+            os.remove(name)
             
         for name in dirs:
-            if not fnmatch.fnmatch(name, "blast"):
-                name = os.path.join(root, name)
-                shutil.rmtree(name)
-                if VERBOSE: 
-                    print "Deleting directory", name
+            name = os.path.join(root, name)
+            if fnmatch.fnmatch(name, "*blast*"):
+                continue
+            if VERBOSE: 
+                print "Deleting directory", name
+            shutil.rmtree(name)
+            
 
 def svn_checkout():
     """Checkout BLAST sources for this release from SVN"""
