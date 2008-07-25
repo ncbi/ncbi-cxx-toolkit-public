@@ -59,7 +59,8 @@ def main():
     cwd = os.getcwd()
     for app in apps:
         app = os.path.join(installdir, "bin", app)
-        if VERBOSE: print "Copying", app, "to", cwd
+        if VERBOSE: 
+            print "Copying", app, "to", cwd
         copy(app, cwd)
     
     license_file = os.path.join(SCRIPT_DIR, "..", "..", "LICENSE")

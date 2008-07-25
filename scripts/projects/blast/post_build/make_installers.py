@@ -12,7 +12,7 @@ from blast_utils import safe_exec, BLAST_VERSION
 VERBOSE = False
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 
-def main():
+def main(): #IGNORE:R0911
     """ Creates installers for selected platforms. """
     parser = OptionParser("%prog <platform> " +
                           "<installation directory> <source directory>")
@@ -33,9 +33,9 @@ def main():
         print "Source directory:", srcdir
 
     if platform == "Win32":        
-        return do_nothing(platform)
-    if platform == "Win64":
         return win32_post_build(installdir)
+    if platform == "Win64":
+        return do_nothing(platform)
     if platform == "Linux32":
         return linux32_post_build(installdir)
     if platform == "Linux64":
@@ -55,34 +55,41 @@ def main():
 
 def win32_post_build(installdir):
     '''Win32 post-build: create installer'''
-    if VERBOSE: print "Packaging for Win32..."
-    cmd = "python.exe " + os.path.join(SCRIPTS_DIR, "win", "make_win.py") + " "
+    if VERBOSE: 
+        print "Packaging for Win32..."
+    cmd = "python " + os.path.join(SCRIPTS_DIR, "win", "make_win.py") + " "
     cmd += installdir
-    if VERBOSE: cmd += " -v"
+    if VERBOSE: 
+        cmd += " -v"
     safe_exec(cmd)
     return 0
 
 def linux32_post_build(installdir):
     '''Linux32 post-build: create RPM'''
-    if VERBOSE: print "Packing linux 32 bit RPM..."
+    if VERBOSE: 
+        print "Packing linux 32 bit RPM..."
     cmd = "python " + os.path.join(SCRIPTS_DIR, "rpm", "make_rpm.py") + " "
     cmd += installdir
-    if VERBOSE: cmd += " -v"
+    if VERBOSE: 
+        cmd += " -v"
     safe_exec(cmd)
     return 0
 
 def linux64_post_build(installdir):
     '''Linux64 post-build: create RPM'''
-    if VERBOSE: print "Packing linux 64 bit RPM..."
+    if VERBOSE: 
+        print "Packing linux 64 bit RPM..."
     cmd = "python " + os.path.join(SCRIPTS_DIR, "rpm", "make_rpm.py") + " "
     cmd += installdir
-    if VERBOSE: cmd += " -v"
+    if VERBOSE: 
+        cmd += " -v"
     safe_exec(cmd)
     return 0
 
 def mac_post_build(installdir, srcdir):
     '''MacOSX post-build: create installer'''
-    if VERBOSE: print "Packaging for MacOSX..."
+    if VERBOSE:
+        print "Packaging for MacOSX..."
     cmd = os.path.join(SCRIPTS_DIR, "macosx", "ncbi-blast.sh") + " "
     cmd += installdir + " " + srcdir + " " + BLAST_VERSION
     safe_exec(cmd)
@@ -90,7 +97,7 @@ def mac_post_build(installdir, srcdir):
 
 def do_nothing(platform):
     '''No op function'''
-    if VERBOSE: print "No post-build step necessary for", platform
+    print "No post-build step necessary for", platform
     return 0
 
 # The script execution entry point

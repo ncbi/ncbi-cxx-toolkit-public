@@ -16,13 +16,15 @@ RPMBUILD_HOME = "rpmbuild"
 PACKAGE_NAME = "ncbi-blast-" + BLAST_VERSION + "+"
 # Name of the source TARBALL to create
 TARBALL = PACKAGE_NAME + ".tgz"
+# Local RPM configuration file
+RPMMACROS = os.path.join(os.path.expanduser("~"), ".rpmmacros")
 
 def setup_rpmbuild():
     """ Prepare local rpmbuild directory. """
     cleanup_rpm()
     os.mkdir(RPMBUILD_HOME)
-    for d in [ 'BUILD', 'SOURCES', 'SPECS', 'SRPMS', 'tmp', 'RPMS' ]:
-        os.mkdir(os.path.join(RPMBUILD_HOME, d))
+    for directory in [ 'BUILD', 'SOURCES', 'SPECS', 'SRPMS', 'tmp', 'RPMS' ]:
+        os.mkdir(os.path.join(RPMBUILD_HOME, directory))
     cwd = os.getcwd()
     os.chdir(os.path.join(RPMBUILD_HOME, 'RPMS'))
     for subdir in [ 'i386', 'i586', 'i686', 'noarch', 'x86_64' ]:
@@ -30,26 +32,25 @@ def setup_rpmbuild():
     os.chdir(cwd)
 
     # Create ~/.rpmmacros
-    fname = os.path.join(os.path.expanduser("~"), ".rpmmacros")
     try:
-        f = open(fname, "w")
-        print >> f, "%_topdir %( echo", os.path.join(cwd, RPMBUILD_HOME), ")"
-        print >> f, "%_tmppath %( echo", 
-        print >> f, os.path.join(cwd, RPMBUILD_HOME, "tmp"), ")"
-        print >> f
-        print >> f, "%packager Christiam E. Camacho (camacho@ncbi.nlm.nih.gov)"
+        out = open(RPMMACROS, "w")
+        print >> out, "%_topdir %( echo", os.path.join(cwd, RPMBUILD_HOME), ")"
+        print >> out, "%_tmppath %( echo", 
+        print >> out, os.path.join(cwd, RPMBUILD_HOME, "tmp"), ")"
+        print >> out
+        print >> out, "%packager Christiam E. Camacho (camacho@ncbi.nlm.nih.gov)"
     finally:
-        f.close()
-    if VERBOSE: print "Created ~/.rpmmacros"
+        out.close()
+    if VERBOSE: 
+        print "Created", RPMMACROS
 
 def cleanup_rpm():
     """ Delete rpm files """
     if os.path.exists(RPMBUILD_HOME):
         shutil.rmtree(RPMBUILD_HOME)
 
-    rpmmacros = os.path.join(os.path.expanduser("~"), ".rpmmacros")
-    if os.path.exists(rpmmacros):
-        os.remove(rpmmacros)
+    if os.path.exists(RPMMACROS):
+        os.remove(RPMMACROS)
 
 def cleanup_svn_co():
     """ Remove unnecessary directories/files from svn checkout """
@@ -62,23 +63,28 @@ def cleanup_svn_co():
         path = os.path.join(PACKAGE_NAME, path)
         if os.path.exists(path):
             shutil.rmtree(path)
-            if VERBOSE: print "Deleting", path
+            if VERBOSE: 
+                print "Deleting", path
                
     projects_path = os.path.join(PACKAGE_NAME, "c++", "scripts", "projects")
     for root, dirs, files in os.walk(projects_path): 
         for name in files:
             name = os.path.join(root, name)
-            if fnmatch.fnmatch(name, "*blast/*"): continue
+            if fnmatch.fnmatch(name, "*blast/*"): 
+                continue
             os.remove(name)
-            if VERBOSE: print "Deleting file", name
+            if VERBOSE:
+                print "Deleting file", name
             
         for name in dirs:
             if not fnmatch.fnmatch(name, "blast"):
                 name = os.path.join(root, name)
                 shutil.rmtree(name)
-                if VERBOSE: print "Deleting directory", name
+                if VERBOSE: 
+                    print "Deleting directory", name
 
 def svn_checkout():
+    """Checkout BLAST sources for this release from SVN"""
     # NCBI SVN repository
     svn_ncbi = "https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit"
 
@@ -92,6 +98,7 @@ def svn_checkout():
     cleanup_svn_co()
 
 def compress_sources():
+    """Compress sources to be included in source RPM"""
     import tarfile
     tar = tarfile.open(TARBALL, "w:bz2")
     tar.add(PACKAGE_NAME)
@@ -105,6 +112,7 @@ def cleanup():
         shutil.rmtree(PACKAGE_NAME)
 
 def run_rpm():
+    """Run the rpmbuild command"""
     shutil.rmtree(PACKAGE_NAME)
     shutil.move(TARBALL, os.path.join(RPMBUILD_HOME, "SOURCES"))
     rpm_spec = "ncbi-blast.spec"
@@ -116,6 +124,7 @@ def run_rpm():
     safe_exec(cmd)
 
 def move_rpms_to_installdir(installdir):
+    """Copy the resulting RPM files into the installation directory"""
     installer_dir = os.path.join(installdir, "installer")
     if not os.path.exists(installer_dir):
         os.makedirs(installer_dir)
@@ -123,7 +132,8 @@ def move_rpms_to_installdir(installdir):
     args = [ "find", RPMBUILD_HOME, "-name", "*.rpm" ]
     output = Popen(args, stdout=PIPE).communicate()[0]
     for rpm in output.split():
-        if VERBOSE: print "mv", rpm, installer_dir
+        if VERBOSE: 
+            print "mv", rpm, installer_dir
         shutil.move(rpm, installer_dir)
 
 
