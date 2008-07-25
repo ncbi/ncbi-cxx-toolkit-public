@@ -22,6 +22,8 @@ APP:
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
+Test       : plain     : msvc710_prj  static  32  ReleaseDLL
+
 Linux32    : plain     : ICC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
 Linux32    : plain     : GCC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
 
