@@ -32,10 +32,10 @@ def main():
         print "Installation directory:", installdir
         print "Source directory:", srcdir
 
-    if platform == "Win32":
-        return win32_post_build(installdir)
-    if platform == "Win64":
+    if platform == "Win32":        
         return do_nothing(platform)
+    if platform == "Win64":
+        return win32_post_build(installdir)
     if platform == "Linux32":
         return linux32_post_build(installdir)
     if platform == "Linux64":
