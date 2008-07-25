@@ -372,7 +372,7 @@ property id1_fetch_simple : {name:"id1_fetch_simple", path:"app:id1_fetch", inc:
 property objmgr_demo : {name:"objmgr_demo", path:"app:objmgr:demo", dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb", req:false}
 property blast_client : {name:"blast_client", path:"app:blast_client", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_algo ncbi_lds ncbi_xloader_genbank", req:false}
 
-property streamtest : {name:"streamtest", path:"app:streamtest", dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:false}
+property streamtest : {name:"streamtest", path:"app:streamtest", dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_algo ncbi_xloader_genbank", req:false}
 
 property datatool : {name:"datatool", path:"serial:datatool", dep:"ncbi_core", req:true}
 
