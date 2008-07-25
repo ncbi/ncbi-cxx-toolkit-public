@@ -6,7 +6,6 @@
 #
 
 import os, sys, os.path
-print "Python version:", sys.version    # Temporary to debug in Linux32
 from optparse import OptionParser
 from blast_utils import safe_exec, BLAST_VERSION
 
@@ -33,13 +32,10 @@ def main():
         print "Installation directory:", installdir
         print "Source directory:", srcdir
 
-# TODO: Try building installer on win64
     if platform == "Win32":
-        #return win32_post_build(installdir)
-        return do_nothing(platform)
-    if platform == "Win64":
         return win32_post_build(installdir)
-        #return do_nothing(platform)
+    if platform == "Win64":
+        return do_nothing(platform)
     if platform == "Linux32":
         return linux32_post_build(installdir)
     if platform == "Linux64":
