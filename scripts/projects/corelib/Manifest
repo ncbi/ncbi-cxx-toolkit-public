@@ -9,7 +9,7 @@
 #          It is used by release configurator.
 #
 
-APP: 
+APP: test_diag_parser test_hash test_tempstr
 
 # The -t key prevents inclusion of the tree builder into the release
 # SVN_TAG_RELEASE_ADD_FLAGS: -t
@@ -21,6 +21,11 @@ APP:
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
+
+COPY: $libdir/xncbi.lib  $installdir/lib/
+POSTBUILD: echo FAKE postbuild COMMAND for $platform
+
+
 
 Test       : plain     : msvc710_prj  static  32  ReleaseDLL
 
