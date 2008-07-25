@@ -9,7 +9,7 @@ from shutil import copy
 from optparse import OptionParser
 SCRIPT_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(SCRIPT_DIR, ".."))
-from blast_utils import safe_exec
+from blast_utils import safe_exec, update_blast_version
 
 VERBOSE = False
     
@@ -59,10 +59,12 @@ def main():
     cwd = os.getcwd()
     for app in apps:
         app = os.path.join(installdir, "bin", app)
+        if VERBOSE: print "Copying", app, "to", cwd
         copy(app, cwd)
     
     license_file = os.path.join(SCRIPT_DIR, "..", "LICENSE")
     copy(license_file, cwd)
+    update_blast_version(NSIS_CONFIG)
     copy(NSIS_CONFIG, cwd)
     # makensis is in the path of the script courtesy of the release framework
     cmd = "makensis " + os.path.basename(NSIS_CONFIG)

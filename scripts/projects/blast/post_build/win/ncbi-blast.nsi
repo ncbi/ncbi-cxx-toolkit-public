@@ -9,14 +9,14 @@
 ;General
 
   ;Name and file
-  Name "NCBI BLAST 2.2.18+"
-  OutFile "ncbi-blast-2.2.18+.exe"
+  Name "NCBI BLAST BLAST_VERSION+"
+  OutFile "ncbi-blast-BLAST_VERSION+.exe"
 
   ;Default installation folder
-  InstallDir "$PROGRAMFILES\NCBI\blast-2.2.18+"
+  InstallDir "$PROGRAMFILES\NCBI\blast-BLAST_VERSION+"
   
   ;Get installation folder from registry if available
-  InstallDirRegKey HKCU "Software\NCBI\blast-2.2.18+" ""
+  InstallDirRegKey HKCU "Software\NCBI\blast-BLAST_VERSION+" ""
 
 ;--------------------------------
 ;Interface Settings
@@ -63,7 +63,7 @@ Section "DefaultSection" SecDflt
   File "windowmasker.exe"
   
   ;Store installation folder
-  WriteRegStr HKCU "Software\NCBI\blast-2.2.18+" "" $INSTDIR
+  WriteRegStr HKCU "Software\NCBI\blast-BLAST_VERSION+" "" $INSTDIR
   
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -94,6 +94,6 @@ Section "Uninstall"
   RmDir "$INSTDIR\bin"
   RMDir "$INSTDIR"
 
-  DeleteRegKey /ifempty HKCU "Software\NCBI\blast-2.2.18+"
+  DeleteRegKey /ifempty HKCU "Software\NCBI\blast-BLAST_VERSION+"
 
 SectionEnd

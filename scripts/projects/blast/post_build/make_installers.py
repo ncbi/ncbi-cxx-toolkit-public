@@ -6,8 +6,9 @@
 #
 
 import os, sys, os.path
+print "Python version:", sys.version    # Temporary to debug in Linux32
 from optparse import OptionParser
-from blast_utils import safe_exec
+from blast_utils import safe_exec, BLAST_VERSION
 
 VERBOSE = False
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -30,8 +31,7 @@ def main():
     if VERBOSE:
         print "Platform:", platform
         print "Installation directory:", installdir
-        print "Source directory:", srcdir 
-        print "Python version:", sys.version
+        print "Source directory:", srcdir
 
 # TODO: Try building installer on win64
     if platform == "Win32":
@@ -88,7 +88,7 @@ def mac_post_build(installdir, srcdir):
     '''MacOSX post-build: create installer'''
     if VERBOSE: print "Packaging for MacOSX..."
     cmd = os.path.join(SCRIPTS_DIR, "macosx", "ncbi-blast.sh") + " "
-    cmd += installdir + " " + srcdir
+    cmd += installdir + " " + srcdir + " " + BLAST_VERSION
     safe_exec(cmd)
     return 0
 
@@ -96,8 +96,6 @@ def do_nothing(platform):
     '''No op function'''
     if VERBOSE: print "No post-build step necessary for", platform
     return 0
-
-
 
 # The script execution entry point
 if __name__ == "__main__":

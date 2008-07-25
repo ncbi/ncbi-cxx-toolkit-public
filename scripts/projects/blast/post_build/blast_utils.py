@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 """ Various utilities/tools for BLAST """
 
-__all__ = [ "safe_exec" ]
+__all__ = [ "safe_exec", "BLAST_VERSION", "update_blast_version" ]
 
-from subprocess import call 
+from subprocess import call
+
+BLAST_VERSION = "2.2.18" 
 
 def safe_exec(cmd):
     """ Executes a command and checks its return value, throwing an
@@ -21,3 +23,10 @@ def safe_exec(cmd):
     except OSError, err:
         msg += "Execution failed: " + err
         raise RuntimeError(msg)
+
+# TODO: Must be posted to windows
+def update_blast_version(config_file):
+    """Updates the BLAST version in the specified file"""
+    cmd = "/usr/bin/perl -pi -e 's/BLAST_VERSION/" + BLAST_VERSION + "/' "
+    cmd += config_file
+    safe_exec(cmd)

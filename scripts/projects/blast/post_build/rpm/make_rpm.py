@@ -5,14 +5,12 @@
 import sys, os, shutil
 from optparse import OptionParser
 from subprocess import Popen, PIPE
+from blast_utils import *   #IGNORE:W0401
 SCRIPT_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(SCRIPT_DIR, ".."))
-from blast_utils import safe_exec
 
 VERBOSE = False
 
-# Current version of BLAST
-BLAST_VERSION = "2.2.18"
 # Name of the temporary rpmbuild directory
 RPMBUILD_HOME = "rpmbuild"
 PACKAGE_NAME = "ncbi-blast-" + BLAST_VERSION + "+"
@@ -70,7 +68,7 @@ def cleanup_svn_co():
     for root, dirs, files in os.walk(projects_path): 
         for name in files:
             name = os.path.join(root, name)
-            if fnmatch.fnmatch(name, "*blast/project.lst"): continue
+            if fnmatch.fnmatch(name, "*blast/*"): continue
             os.remove(name)
             if VERBOSE: print "Deleting file", name
             
@@ -113,6 +111,7 @@ def run_rpm():
     src = os.path.join(SCRIPT_DIR, rpm_spec)
     dest = os.path.join(RPMBUILD_HOME, "SPECS", rpm_spec)
     shutil.copyfile(src, dest)
+    update_blast_version(dest)
     cmd = "rpmbuild -ba " + dest
     safe_exec(cmd)
 
