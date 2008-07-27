@@ -42,7 +42,8 @@ public:
     //  ------------------------------------------------------------------------
     CDeflineProcess()
     //  ------------------------------------------------------------------------
-        : m_out( 0 )
+        : CSeqEntryProcess()
+        , m_out( 0 )
     {};
 
     //  ------------------------------------------------------------------------
@@ -79,8 +80,9 @@ public:
     //  ------------------------------------------------------------------------
     {
         try {
-            for (CTypeConstIterator<CBioseq> bit (*m_entry); bit; ++bit) {
-                m_out->WriteTitle( *bit, 0, true );
+            FOR_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
+                const CBioseq& bioseq = *bit;
+                m_out->WriteTitle( bioseq, 0, true );
                 ++m_objectcount;
             }
         }

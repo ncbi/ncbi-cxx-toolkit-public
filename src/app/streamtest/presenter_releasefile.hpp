@@ -43,6 +43,7 @@ public:
     //  ------------------------------------------------------------------------
     CReleaseFilePresenter()
     //  ------------------------------------------------------------------------
+        : CSeqEntryPresenter()
     {
     };
 
@@ -77,27 +78,7 @@ public:
     //  ------------------------------------------------------------------------
     bool HandleSeqEntry( CRef<CSeq_entry>& se ) {
     //  ------------------------------------------------------------------------
-        if ( m_process ) {
-            m_process->SeqEntryInitialize( se );
-
-            m_stopwatch.Restart();
-
-            m_process->SeqEntryProcess();
-
-            if ( m_stopwatch.IsRunning() ) {
-                double elapsed = m_stopwatch.Elapsed();
-                m_stopwatch.Stop();
-                m_total_time += elapsed;
-                m_diff_time += elapsed;
-            }
-
-            if ( m_report_interval && 
-                ! (m_process->GetObjectCount() % m_report_interval) ) 
-            {
-                ProgressReport();
-            }
-            m_process->SeqEntryFinalize();
-        }
+        Process( se );
         return true;
     };
 

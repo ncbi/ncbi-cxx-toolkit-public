@@ -46,6 +46,7 @@ public:
         , m_diff_time( 0 )
         , m_report_final( true )
         , m_report_interval( 1000 )
+        , m_repeatitions( 1 )
     {};
 
     //  ------------------------------------------------------------------------
@@ -60,6 +61,7 @@ public:
     {
         m_report_final = args["rf"];
         m_report_interval = args["ri"].AsInteger();
+        m_repeatitions = args["count"].AsInteger();
     };
 
     //  ------------------------------------------------------------------------
@@ -82,6 +84,41 @@ public:
     //  ------------------------------------------------------------------------
     {
         return m_total_time;
+    };
+
+    //  ------------------------------------------------------------------------
+    virtual void Process(
+        CRef< CSeq_entry >& se )
+    //  ------------------------------------------------------------------------
+    {
+        try {
+            if ( m_process ) {
+                m_process->SeqEntryInitialize( se );
+
+                m_stopwatch.Restart();
+
+                for ( int i=0; i < m_repeatitions; ++i ) {
+                    m_process->SeqEntryProcess();
+                }
+                
+                if ( m_stopwatch.IsRunning() ) {
+                    double elapsed = m_stopwatch.Elapsed();
+                    m_stopwatch.Stop();
+                    m_total_time += elapsed;
+                    m_diff_time += elapsed;
+                }
+
+                m_process->SeqEntryFinalize();
+            }
+        }
+        catch (CException& e) {
+            LOG_POST(Error << "error processing seqentry: " << e.what());
+        }
+        if ( m_report_interval && 
+            ! (m_process->GetObjectCount() % m_report_interval) ) 
+        {
+            ProgressReport();
+        }
     };
 
 protected:
@@ -116,6 +153,7 @@ protected:
     double m_diff_time;
     bool m_report_final;
     int m_report_interval;
+    int m_repeatitions;
 };
 
 #endif /* __presenter_hpp__ */

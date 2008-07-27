@@ -43,9 +43,9 @@ class CSeqSetPresenter
 {
 public:
     //  ------------------------------------------------------------------------
-    CSeqSetPresenter()
+  CSeqSetPresenter()
     //  ------------------------------------------------------------------------
-        : m_repititions( 0 )
+        : CSeqEntryPresenter()
     {
     };
 
@@ -59,7 +59,6 @@ public:
             CObjectIStream::Open(
                 (args["binary"] ? eSerial_AsnBinary : eSerial_AsnText), 
                 args["i"].AsInputFile() ) );
-        m_repititions = args["count"].AsInteger();
     };
 
     //  ------------------------------------------------------------------------
@@ -74,45 +73,10 @@ public:
         if ( ! se ) {
             return;
         }
-        for ( int i=0; i < m_repititions; ++i ) {
-            Process( se );
-        }
+        Process( se );
 
         if (m_report_final) {
             FinalReport();
-        }
-    };
-
-    //  ------------------------------------------------------------------------
-    virtual void Process(
-        CRef< CSeq_entry > se )
-    //  ------------------------------------------------------------------------
-    {
-        try {
-            if ( m_process ) {
-                m_process->SeqEntryInitialize( se );
-
-                m_stopwatch.Restart();
-
-                m_process->SeqEntryProcess();
-                
-                if ( m_stopwatch.IsRunning() ) {
-                    double elapsed = m_stopwatch.Elapsed();
-                    m_stopwatch.Stop();
-                    m_total_time += elapsed;
-                    m_diff_time += elapsed;
-                }
-
-            m_process->SeqEntryFinalize();
-            }
-        }
-        catch (CException& e) {
-            LOG_POST(Error << "error processing seqentry: " << e.what());
-        }
-        if ( m_report_interval && 
-            ! (m_process->GetObjectCount() % m_report_interval) ) 
-        {
-            ProgressReport();
         }
     };
 
@@ -141,8 +105,8 @@ protected:
             m_is->SetStreamPos( 0 );
         }
         try {
-		    CRef<CBioseq> bs( new CBioseq );
-	        *m_is >> *bs;
+            CRef<CBioseq> bs( new CBioseq );
+            *m_is >> *bs;
             se->SetSeq( bs.GetObject() );
             return;
         }
@@ -150,8 +114,8 @@ protected:
             m_is->SetStreamPos( 0 );
         }
         try {
-		    CRef<CBioseq_set> bss( new CBioseq_set );
-	        *m_is >> *bss;
+            CRef<CBioseq_set> bss( new CBioseq_set );
+            *m_is >> *bss;
             se->SetSet( bss.GetObject() );
             return;
         }
@@ -162,7 +126,6 @@ protected:
 
 protected:       
     auto_ptr<CObjectIStream> m_is;
-    int m_repititions;
 };
 
 #endif

@@ -42,7 +42,8 @@ public:
     //  ------------------------------------------------------------------------
     CGeneOverlapProcess()
     //  ------------------------------------------------------------------------
-        : m_out( 0 )
+        : CScopedProcess()
+        , m_out( 0 )
     {};
 
     //  ------------------------------------------------------------------------
@@ -78,8 +79,9 @@ public:
     //  ------------------------------------------------------------------------
     {
         try {
-            for (CTypeConstIterator<CSeq_feat> fit (*m_entry); fit; ++fit) {
-                TestFeatureGeneOverlap( *fit );
+            FOR_ALL_FEATURES_WITHIN_SEQENTRY (fit, *m_entry) {
+                const CSeq_feat& feat = *fit;
+                TestFeatureGeneOverlap( feat );
                 ++m_objectcount;
             }
         }
