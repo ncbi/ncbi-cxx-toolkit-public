@@ -35,12 +35,11 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
 
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/bioseq_handle.hpp>
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/util/sequence.hpp>
+#include <serial/iterator.hpp>
+#include <serial/objistr.hpp>
+#include <serial/typeinfo.hpp>
+#include <serial/objectiter.hpp>
+#include <serial/objectio.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/submit/Seq_submit.hpp>
@@ -48,22 +47,28 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/misc/sequence_macros.hpp>
 
-#include <serial/iterator.hpp>
-#include <serial/objistr.hpp>
-#include <serial/typeinfo.hpp>
-#include <serial/objectiter.hpp>
-#include <serial/objectio.hpp>
-
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+
+#include <objtools/cleanup/cleanup.hpp>
+
+#include <algo/align/prosplign/prosplign.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 #include "process.hpp"
 #include "process_scoped.hpp"
+#include "process_null.hpp"
+#include "process_cleanup.hpp"
 #include "process_defline.hpp"
 #include "process_gene_overlap.hpp"
 #include "process_macrotest.hpp"
+#include "process_prosplign.hpp"
 #include "presenter.hpp"
 #include "presenter_releasefile.hpp"
 #include "presenter_seqset.hpp"
@@ -122,7 +127,14 @@ void CStreamTestApp::Init()
         "TestCase",
         "Mode for generation",
         CArgDescriptions::eString );
-
+     arg_desc->SetConstraint( "test", &(*new CArgAllow_Strings,
+                                       "null",
+                                       "cleanup",
+                                       "defline",
+                                       "gene-overlap",
+                                       "macrotest",
+                                       "prosplign"));
+    
     arg_desc->AddFlag( "batch",
         "Process genbank release file" );
 
@@ -187,8 +199,11 @@ CStreamTestApp::GetProcess(
     string testcase = args["test"].AsString();
 
     CSeqEntryProcess* pProcess = 0;
-    if ( testcase == "null"  ) {
-        pProcess = new CSeqEntryProcess;
+    if ( testcase == "null" ) {
+        pProcess = new CNullProcess;
+    }
+    if ( testcase == "cleanup" ) {
+        pProcess = new CCleanupProcess;
     }
     if ( testcase == "defline" ) {
         pProcess = new CDeflineProcess;
@@ -198,6 +213,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "macrotest" ) {
         pProcess = new CMacroTestProcess;
+    }
+    if ( testcase == "prosplign" ) {
+        pProcess = new CProsplignProcess;
     }
     return pProcess;
 }
