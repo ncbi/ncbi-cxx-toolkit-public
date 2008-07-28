@@ -1,10 +1,10 @@
 /*
 * ===========================================================================
- *
- *                            PUBLIC DOMAIN NOTICE
- *               National Center for Biotechnology Information
- *
- *  This software/database is a "United States Government Work" under the
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
 *  terms of the United States Copyright Act.  It was written as part of
 *  the author's official duties as a United States Government employee and
 *  thus cannot be copyrighted.  This software/database is freely available
@@ -60,11 +60,48 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 
 
+/// CSeq_id definitions
+
+#define NCBI_SEQID(Type) CSeq_id::e_##Type
+
+typedef CSeq_id::E_Choice TSEQID_CHOICE;
+    
+#define NCBI_ACCN(Type) CSeq_id::eAcc_##Type
+
+typedef CSeq_id::EAccessionInfo TACCN_CHOICE;
+    
+    
 /// CSeqdesc definitions
 
 #define NCBI_SEQDESC(Type) CSeqdesc::e_##Type
 
 typedef CSeqdesc::E_Choice TSEQDESC_CHOICE;
+
+
+/// CMolInfo definitions
+
+#define NCBI_BIOMOL(Type) CMolInfo::eBiomol_##Type
+
+typedef CMolInfo::TBiomol TMOLINFO_BIOMOL;
+
+#define NCBI_TECH(Type) CMolInfo::eTech_##Type
+
+typedef CMolInfo::TTech TMOLINFO_TECH;
+
+#define NCBI_COMPLETENESS(Type) CMolInfo::eCompleteness_##Type
+
+typedef CMolInfo::TCompleteness TMOLINFO_COMPLETENESS;
+
+
+/// CBioSource definitions
+
+#define NCBI_GENOME(Type) CBioSource::eGenome_##Type
+
+typedef CBioSource::TGenome TBIOSOURCE_GENOME;
+
+#define NCBI_ORIGIN(Type) CBioSource::eOrigin_##Type
+
+typedef CBioSource::TOrigin TBIOSOURCE_ORIGIN;
 
 
 /// CSubSource definitions
@@ -429,6 +466,30 @@ NCBI_TEST_ITERATE((Cdr).IsSetCode_break(), \
     CCdregion::TCode_break, \
     Iter, \
     (Cdr).GetCode_break())
+    
+    
+/// CGB_block iterators
+
+/// FOR_EACH_KEYWORD_ON_GENBANKBLOCK
+// Takes const CGB_block& as input and makes iterator to const string&
+// Dereference with const string& str = **iter;
+#define FOR_EACH_KEYWORD_ON_GENBANKBLOCK(Iter, Gbk) \
+NCBI_TEST_ITERATE((Gbk).IsSetKeywords(), \
+    CGB_block::TKeywords, \
+    Iter, \
+    (Gbk).GetKeywords())
+    
+    
+/// CEMBL_block iterators
+
+/// FOR_EACH_KEYWORD_ON_EMBLBLOCK
+// Takes const CEMBL_block& as input and makes iterator to const string&
+// Dereference with const string& str = **iter;
+#define FOR_EACH_KEYWORD_ON_EMBLBLOCK(Iter, Ebk) \
+NCBI_TEST_ITERATE((Ebk).IsSetKeywords(), \
+    CEMBL_block::TKeywords, \
+    Iter, \
+    (Ebk).GetKeywords())
 
 
 /// @}
