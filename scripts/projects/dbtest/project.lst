@@ -1,0 +1,16 @@
+corelib$
+util/cache$
+util/bitset$
+util/compress$
+serial$
+serial/datatool$
+cgi/impl$
+connect$
+dbapi/driver$
+dbapi/driver/util$
+dbapi/driver/odbc/unix_odbc$
+dbapi/driver/ctlib$
+dbapi/driver/ftds
+dbapi/driver/ftds64/freetds
+dbapi/driver/ftds64/ctlib$
+internal/cppcore/test_stat_ext

@@ -1,0 +1,39 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Pavel Ivanov
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+APP: test_stat_load
+# APP: test_stat_ext.cgi -- it is built not on all platforms, so will be copied by script
+
+
+POSTBUILD: $srcdir/scripts/projects/dbtest/post_build/copy_cgi.sh $bindir $srcdir $installdir
+
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+Linux32    : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
+
+Linux64    : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
+
+FreeBSD32  : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
+
+SunOSx86   : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static --with-flat-makefile
+
+SunOSSparc : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static --with-flat-makefile
+
+PowerMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
+
+Win32      : plain : msvc800_prj  static  32  ReleaseDLL

@@ -1,0 +1,2 @@
+DBTEST - tool for loading results of testing during automatic builds into
+database and CGI-interface for showing testing results statistics
