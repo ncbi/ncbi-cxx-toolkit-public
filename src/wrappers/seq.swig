@@ -506,8 +506,6 @@ objects/blast/Blast4_request_body.hpp
 objects/blast/Blast4_request_body_.hpp
 objects/blast/Blast4_residue_type.hpp
 objects/blast/Blast4_residue_type_.hpp
-objects/blast/Blast4_segment.hpp
-objects/blast/Blast4_segment_.hpp
 objects/blast/Blast4_seqtech.hpp
 objects/blast/Blast4_seqtech_.hpp
 objects/blast/Blast4_simple_alignment.hpp
