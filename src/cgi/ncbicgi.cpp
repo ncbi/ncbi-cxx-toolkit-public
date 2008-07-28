@@ -812,6 +812,9 @@ CCgiRequest::CCgiRequest
     : m_Env(0),
       m_Entries(PNocase_Conditional((flags & fCaseInsensitiveArgs) ? 
                                     NStr::eNocase : NStr::eCase)),
+      m_Input(0),
+      m_InputFD(0),
+      m_OwnInput(false),
       m_ErrBufSize(errbuf_size),
       m_QueryStringParsed(false),
       m_TrackingEnvHolder(NULL), 
@@ -834,6 +837,9 @@ CCgiRequest::CCgiRequest
       m_Entries(PNocase_Conditional(
            (flags & fCaseInsensitiveArgs) ? 
                     NStr::eNocase : NStr::eCase)),
+      m_Input(0),
+      m_InputFD(0),
+      m_OwnInput(false),
       m_ErrBufSize(errbuf_size),
       m_QueryStringParsed(false),
       m_TrackingEnvHolder(NULL),
