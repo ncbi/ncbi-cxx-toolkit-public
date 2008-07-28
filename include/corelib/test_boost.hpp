@@ -109,6 +109,19 @@ catch( ... ) {                                                               \
 
 BEGIN_NCBI_SCOPE
 
+/// Define global user-defined function for preparing command line
+/// arguments description only if user do not have his own one.
+#ifndef NCBI_NO_TEST_PREPARE_ARG_DESCRS
+
+class CArgDescriptions;
+
+CArgDescriptions* NcbiTestPrepareArgDescrs(void)
+{
+    return NULL;
+}
+
+#endif
+
 
 /// Type of function with unit tests initialization code
 typedef void (*TNcbiBoostInitFunc)(void);
