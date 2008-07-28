@@ -7,6 +7,7 @@ serial/datatool$
 cgi/impl$
 connect$
 dbapi/driver$
+dbapi/driver/impl$
 dbapi/driver/util$
 dbapi/driver/odbc/unix_odbc$
 dbapi/driver/ctlib$
