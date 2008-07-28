@@ -25,7 +25,7 @@ mkdir _stage/doc
 for bin in $ALL_BINS
 do
 echo copying $bin
-cp -p $SRC/$bin _stage/bin
+cp -p $SRCDIR/$bin _stage/bin
 done
 
 echo building package
