@@ -1,3 +1,0 @@
-LIB_PROJ = ncbi_swig
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

@@ -1,6 +1,0 @@
-SRC = ncbi_wrap
-LIB = _ncbi
-LIB_OR_DLL = dll
-CPPFLAGS = $(ORIG_CPPFLAGS) $(PYTHON_INCLUDE) $(FLTK_INCLUDE)
-LIBS = $(FLTK_LIBS_ALL) $(ORIG_LIBS)
-DLL_LIB  = ncbi_swig
