@@ -66,6 +66,7 @@ USING_SCOPE(objects);
 #include "process_null.hpp"
 #include "process_cleanup.hpp"
 #include "process_defline.hpp"
+#include "process_fasta.hpp"
 #include "process_gene_overlap.hpp"
 #include "process_macrotest.hpp"
 #include "process_prosplign.hpp"
@@ -98,11 +99,13 @@ void CStreamTestApp::Init()
     arg_desc->SetUsageContext( GetArguments().GetProgramBasename(),
         "Object Manager Stream Test" );
 
-    arg_desc->AddFlag( "id-handle",
+    /*
+     arg_desc->AddFlag( "id-handle",
         "Cache seq-ids using CSeq_id_Handle (applies to mode=raw only)" );
 
     arg_desc->AddFlag( "fresh-scope",
         "Use a fresh scope each time (for mode={get-title|seqdesc-ci} only)" );
+    */
 
     //  ------------------------------------------------------------------------
     //  New set of parameters:
@@ -128,12 +131,13 @@ void CStreamTestApp::Init()
         "Mode for generation",
         CArgDescriptions::eString );
      arg_desc->SetConstraint( "test", &(*new CArgAllow_Strings,
-                                       "null",
-                                       "cleanup",
-                                       "defline",
-                                       "gene-overlap",
-                                       "macrotest",
-                                       "prosplign"));
+                                        "null",
+                                        "cleanup",
+                                        "defline",
+                                        "fasta",
+                                        "gene-overlap",
+                                        "macrotest",
+                                        "prosplign"));
     
     arg_desc->AddFlag( "batch",
         "Process genbank release file" );
@@ -207,6 +211,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "defline" ) {
         pProcess = new CDeflineProcess;
+    }
+    if ( testcase == "fasta" ) {
+        pProcess = new CFastaProcess;
     }
     if ( testcase == "gene-overlap" ) {
         pProcess = new CGeneOverlapProcess;
