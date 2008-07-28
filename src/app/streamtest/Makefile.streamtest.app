@@ -8,7 +8,7 @@
 
 APP = streamtest
 SRC = streamtest
-LIB = xobjutil submit $(SOBJMGR_LIBS)
+LIB = xobjutil xcleanup prosplign submit $(SOBJMGR_LIBS)
 
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
