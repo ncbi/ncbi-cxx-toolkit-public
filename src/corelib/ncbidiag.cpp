@@ -804,7 +804,10 @@ CDiagContext::CDiagContext(void)
           GetLogRate_Limit(eLogRate_Trace),
           CTimeSpan((long)GetLogRate_Period(eLogRate_Trace)),
           CTimeSpan((long)0),
-          CRequestRateControl::eErrCode))
+          CRequestRateControl::eErrCode)),
+      m_AppLogSuspended(false),
+      m_ErrLogSuspended(false),
+      m_TraceLogSuspended(false)
 {
     sm_Instance = this;
 }
@@ -830,6 +833,9 @@ void CDiagContext::ResetLogRates(void)
         CTimeSpan((long)GetLogRate_Period(eLogRate_Trace)),
         CTimeSpan((long)0),
         CRequestRateControl::eErrCode);
+    m_AppLogSuspended = false;
+    m_ErrLogSuspended = false;
+    m_TraceLogSuspended = false;
 }
 
 
@@ -857,6 +863,7 @@ void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
                 CTimeSpan((long)0),
                 CRequestRateControl::eErrCode);
         }
+        m_AppLogSuspended = false;
         break;
     case eLogRate_Err:
         TErrLogRateLimitParam::SetDefault(limit);
@@ -866,6 +873,7 @@ void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
                 CTimeSpan((long)0),
                 CRequestRateControl::eErrCode);
         }
+        m_ErrLogSuspended = false;
         break;
     case eLogRate_Trace:
     default:
@@ -876,6 +884,7 @@ void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
                 CTimeSpan((long)0),
                 CRequestRateControl::eErrCode);
         }
+        m_TraceLogSuspended = false;
         break;
     }
 }
@@ -904,6 +913,7 @@ void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
                 CTimeSpan((long)0),
                 CRequestRateControl::eErrCode);
         }
+        m_AppLogSuspended = false;
         break;
     case eLogRate_Err:
         TErrLogRatePeriodParam::SetDefault(period);
@@ -913,6 +923,7 @@ void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
                 CTimeSpan((long)0),
                 CRequestRateControl::eErrCode);
         }
+        m_ErrLogSuspended = false;
         break;
     case eLogRate_Trace:
     default:
@@ -923,25 +934,50 @@ void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
                 CTimeSpan((long)0),
                 CRequestRateControl::eErrCode);
         }
+        m_TraceLogSuspended = false;
         break;
     }
 }
 
 
-bool CDiagContext::ApproveMessage(SDiagMessage& msg)
+bool CDiagContext::ApproveMessage(SDiagMessage& msg,
+                                  bool*         show_warning)
 {
+    bool approved = true;
     if ( IsSetDiagPostFlag(eDPF_AppLog, msg.m_Flags) ) {
-        return m_AppLogRC->Approve();
+        approved = m_AppLogRC->Approve();
+        if ( approved ) {
+            m_AppLogSuspended = false;
+        }
+        else {
+            *show_warning = !m_AppLogSuspended;
+            m_AppLogSuspended = true;
+        }
     }
     else {
         switch ( msg.m_Severity ) {
         case eDiag_Info:
         case eDiag_Trace:
-            return m_TraceLogRC->Approve();
+            approved = m_TraceLogRC->Approve();
+            if ( approved ) {
+                m_TraceLogSuspended = false;
+            }
+            else {
+                *show_warning = !m_TraceLogSuspended;
+                m_TraceLogSuspended = true;
+            }
         default:
-            return m_ErrLogRC->Approve();
+            approved = m_ErrLogRC->Approve();
+            if ( approved ) {
+                m_ErrLogSuspended = false;
+            }
+            else {
+                *show_warning = !m_ErrLogSuspended;
+                m_ErrLogSuspended = true;
+            }
         }
     }
+    return approved;
 }
 
 
@@ -2179,13 +2215,35 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
         CMutexGuard LOCK(s_DiagMutex);
         if ( CDiagBuffer::sm_Handler ) {
             // The mutex must be locked before approving.
-            if ( !GetDiagContext().ApproveMessage(mess) ) {
+            CDiagBuffer& diag_buf = GetDiagBuffer();
+            bool show_warning = false;
+            if ( GetDiagContext().ApproveMessage(mess, &show_warning) ) {
+                mess.m_Prefix = diag_buf.m_PostPrefix.empty() ?
+                    0 : diag_buf.m_PostPrefix.c_str();
+                CDiagBuffer::sm_Handler->Post(mess);
+            }
+            else if ( show_warning ) {
+                // Substitute the original message with the error.
+                // ERR_POST can not be used here since nested posts
+                // are blocked. Have to create the message manually.
+                string txt = "Exceeded maximum logging rate, "
+                    "suspending the output.";
+                const CNcbiDiag diag(DIAG_COMPILE_INFO);
+                SDiagMessage err_msg(eDiag_Error,
+                    txt.c_str(), txt.length(),
+                    diag.GetFile(),
+                    diag.GetLine(),
+                    diag.GetPostFlags(),
+                    NULL,
+                    err_code_x::eErrCodeX_Corelib_Diag, // Error code
+                    23,                                 // Err subcode
+                    NULL,
+                    diag.GetModule(),
+                    diag.GetClass(),
+                    diag.GetFunction());
+                CDiagBuffer::sm_Handler->Post(err_msg);
                 return;
             }
-            CDiagBuffer& diag_buf = GetDiagBuffer();
-            mess.m_Prefix = diag_buf.m_PostPrefix.empty() ?
-                0 : diag_buf.m_PostPrefix.c_str();
-            CDiagBuffer::sm_Handler->Post(mess);
         }
     }
     GetDiagContext().PushMessage(mess);

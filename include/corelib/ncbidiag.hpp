@@ -1948,7 +1948,7 @@ private:
     void ResetLogRates(void);
 
     // Check message logging rate
-    bool ApproveMessage(SDiagMessage& msg);
+    bool ApproveMessage(SDiagMessage& msg, bool* show_warning);
 
     friend class CDiagBuffer;
 
@@ -1976,6 +1976,9 @@ private:
     auto_ptr<CRequestRateControl> m_AppLogRC;
     auto_ptr<CRequestRateControl> m_ErrLogRC;
     auto_ptr<CRequestRateControl> m_TraceLogRC;
+    bool                          m_AppLogSuspended;
+    bool                          m_ErrLogSuspended;
+    bool                          m_TraceLogSuspended;
 };
 
 
