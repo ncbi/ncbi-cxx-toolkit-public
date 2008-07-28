@@ -2914,7 +2914,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
         return GetEntriesPtr("", flags);
     }
     TEntries* contents = new(TEntries);
-    string base_path = AddTrailingPathSeparator(GetPath());
+    string base_path = AddTrailingPathSeparator(GetPath().empty() ? DIR_CURRENT : GetPath());
     NStr::ECase use_case = (flags & fNoCase) ? NStr::eNocase : NStr::eCase;
 
 #if defined(NCBI_OS_MSWIN)
@@ -2946,7 +2946,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
     }
 
 #elif defined(NCBI_OS_UNIX)
-    DIR* dir = opendir(GetPath().c_str());
+    DIR* dir = opendir(base_path.c_str());
     if ( dir ) {
         while (struct dirent* entry = readdir(dir)) {
             if (IS_RECURSIVE_ENTRY) {
@@ -2980,7 +2980,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
                                     TGetEntriesFlags flags) const
 {
     TEntries* contents = new(TEntries);
-    string base_path = AddTrailingPathSeparator(GetPath());
+    string base_path = AddTrailingPathSeparator(GetPath().empty() ? DIR_CURRENT : GetPath());
     NStr::ECase use_case = (flags & fNoCase) ? NStr::eNocase : NStr::eCase;
 
 #if defined(NCBI_OS_MSWIN)
@@ -3004,7 +3004,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
     }
 
 #elif defined(NCBI_OS_UNIX)
-    DIR* dir = opendir(GetPath().c_str());
+    DIR* dir = opendir(base_path.c_str());
     if ( dir ) {
         while (struct dirent* entry = readdir(dir)) {
             if ( !IS_RECURSIVE_ENTRY  &&
