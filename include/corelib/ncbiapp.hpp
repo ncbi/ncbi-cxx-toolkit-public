@@ -297,12 +297,11 @@ public:
 protected:
     /// Disable argument descriptions.
     ///
-    /// Call with a bit flag set for those cmd.line args (std and/or user's)
-    /// which you do not want to be parsed.
-    /// Note that by default all cmd.line args are enabled.
+    /// Call with a bit flag set if you do not want std AND user
+    /// cmd.line args to be parsed.
+    /// Note that by default the parsing of cmd.line args are enabled.
     enum EDisableArgDesc {
         fDisableStdArgs     = 0x01   ///<  (-logfile, -conffile, -version etc)
-        // TODO: fDisableUserArgs    = 0x02   ///<  user-defined cmd.line args
     };
     typedef int TDisableArgDesc;  ///< Binary OR of "EDisableArgDesc"
     void DisableArgDescriptions(TDisableArgDesc disable = fDisableStdArgs);

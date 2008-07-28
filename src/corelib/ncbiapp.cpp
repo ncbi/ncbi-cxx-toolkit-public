@@ -93,7 +93,7 @@ CNcbiApplication::CNcbiApplication(void)
     GetDiagContext().InitMessages(size_t(-1));
     GetDiagContext().SetGlobalAppState(eDiagAppState_AppBegin);
 
-    m_DisableArgDesc = false;
+    m_DisableArgDesc = 0;
     m_HideArgs = 0;
     m_StdioFlags = 0;
     m_CinBuffer = 0;
