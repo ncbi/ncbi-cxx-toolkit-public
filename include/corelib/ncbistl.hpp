@@ -134,8 +134,8 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 #define NCBI_AS_STRING2(value)   #value
 
 
-#if defined(NCBI_OS_MSWIN) && !defined(for)
-/// Fix nonstandard 'for' statement behaviour on MSVC.
+#if defined(NCBI_COMPILER_MSVC) && _MSC_VER < 1400 && !defined(for)
+/// Fix nonstandard 'for' statement behaviour on MSVC 7.1.
 # define for if(0);else for
 #endif
 
