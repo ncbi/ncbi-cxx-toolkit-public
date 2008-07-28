@@ -92,7 +92,6 @@
 #include <objmgr/impl/seq_annot_info.hpp>
 
 // cache
-// #include <objtools/data_loaders/genbank/readers/cache/reader_cache.hpp>
 #include <bdb/bdb_blobcache.hpp>
 
 #include <objmgr/split/blob_splitter.hpp>
