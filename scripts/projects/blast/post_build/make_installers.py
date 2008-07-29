@@ -23,14 +23,13 @@ def main(): #IGNORE:R0911
         parser.error("Incorrect number of arguments")
         return 1
 
-    platform, installdir, srcdir = args
+    platform, installdir = args
 
     global VERBOSE #IGNORE:W0603
     VERBOSE = options.VERBOSE
     if VERBOSE:
         print "Platform:", platform
         print "Installation directory:", installdir
-        print "Source directory:", srcdir
 
     if platform == "Win32":        
         return win32_post_build(installdir)
@@ -43,7 +42,7 @@ def main(): #IGNORE:R0911
     if platform == "FreeBSD32":
         return do_nothing(platform)
     if platform == "PowerMAC":
-        return mac_post_build(installdir, srcdir)
+        return mac_post_build(installdir)
     if platform == "SunOSSparc":
         return do_nothing(platform)
     if platform == "SunOSx86":
@@ -86,12 +85,13 @@ def linux64_post_build(installdir):
     safe_exec(cmd)
     return 0
 
-def mac_post_build(installdir, srcdir):
+def mac_post_build(installdir):
     '''MacOSX post-build: create installer'''
     if VERBOSE:
         print "Packaging for MacOSX..."
-    cmd = os.path.join(SCRIPTS_DIR, "macosx", "ncbi-blast.sh") + " "
-    cmd += installdir + " " + srcdir + " " + BLAST_VERSION
+    script_dir = os.path.join(SCRIPTS_DIR, "macosx")
+    cmd = os.path.join(script_dir, "ncbi-blast.sh") + " "
+    cmd += installdir + " " + script_dir + " " + BLAST_VERSION
     safe_exec(cmd)
     return 0
 
