@@ -318,10 +318,11 @@ void CExprParserException::x_Assign(const CException& src)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-CExprParser::CExprParser(void)
+CExprParser::CExprParser(bool auto_var)
 : m_Buf(NULL)
 , m_Pos(0)
 , m_TmpVarCount(0)
+, m_AutoCreateVariable(auto_var)
 {
     memset(hash_table, 0, sizeof(hash_table));
 
@@ -397,6 +398,20 @@ int CExprParser::sm_rpr[eTERMINALS] = {
     25, 25, 25, 25, 25, 25, // eSETASL, eSETASR, eSETLSR, eSETAND, eSETXOR, eSETOR,
     15               // eCOMMA
 };
+
+CExprSymbol* CExprParser::GetSymbol(const char* name) const
+{
+    unsigned h = string_hash_function(name) % hash_table_size;
+    CExprSymbol* sp = NULL;
+
+    for (sp = hash_table[h]; sp != NULL; sp = sp->m_Next) { 
+        if (sp->m_Name.compare(name) == 0) { 
+            return sp;
+        }
+    }
+
+    return sp;
+}
 
 CExprParser::EOperator 
 CExprParser::Scan(bool operand)
@@ -565,7 +580,17 @@ CExprParser::Scan(bool operand)
             return eOPERAND;
         }
 
-        CExprSymbol* sym = AddSymbol(sym_name, (Int8)0);
+        CExprSymbol* sym = NULL;
+
+        if (AutoCreateVariable()) {
+            sym = AddSymbol(sym_name, Int8(0));
+        } else {
+            sym = GetSymbol(sym_name);
+            if (!sym) {
+                ReportError(string("Invalid symbol name: ") + sym_name);
+                return eERROR;
+            }
+        }
 
         if (m_v_sp == max_stack_size) { 
             ReportError("stack overflow");

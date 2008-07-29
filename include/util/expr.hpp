@@ -225,7 +225,9 @@ private:
 class NCBI_XUTIL_EXPORT CExprParser
 {
 public:
-    CExprParser(void);
+    // auto_var == true means "create variables without previous declaration".
+    // auto_var == false means "call AddSymbol() to register a variable".
+    CExprParser(bool auto_var = true);
     ~CExprParser(void);
 
 public:
@@ -266,12 +268,13 @@ private:
 private:
     EOperator Scan(bool operand);
     bool Assign(void);
+    CExprSymbol* GetSymbol(const char* name) const;
 
-    static void ReportError(int pos, const char* msg) 
+    static void ReportError(int pos, const string& msg) 
     {
         NCBI_THROW2(CExprParserException, eParseError, msg, pos);
     }
-    void ReportError(const char* msg) const { ReportError(m_Pos-1, msg); }
+    void ReportError(const string& msg) const { ReportError(m_Pos - 1, msg); }
 
     EOperator IfChar(
             char c, EOperator val, 
@@ -286,6 +289,11 @@ private:
             EOperator val_true, 
             EOperator val_false, 
             EOperator val_def);
+
+    bool AutoCreateVariable(void) const
+    {
+        return m_AutoCreateVariable;
+    }
 
 private:
     enum {hash_table_size = 1013};
@@ -304,6 +312,7 @@ private:
     const char* m_Buf;
     int         m_Pos;
     int         m_TmpVarCount;
+    bool        m_AutoCreateVariable;
 };
 
 
@@ -318,19 +327,16 @@ template <typename VT>
 inline
 CExprSymbol* CExprParser::AddSymbol(const char* name, VT value)
 {
-    unsigned h = string_hash_function(name) % hash_table_size;
-    CExprSymbol* sp = NULL;
+    CExprSymbol* sp = GetSymbol(name);
 
-    for (sp = hash_table[h]; sp != NULL; sp = sp->m_Next) { 
-        if (sp->m_Name.compare(name) == 0) { 
-            return sp;
-        }
+    if (!sp) {
+        // Add ...
+        sp = new CExprSymbol(name, value);
+
+        unsigned h = string_hash_function(name) % hash_table_size;
+        sp->m_Next = hash_table[h];
+        hash_table[h] = sp;
     }
-
-    sp = new CExprSymbol(name, value);
-
-    sp->m_Next = hash_table[h];
-    hash_table[h] = sp;
 
     return sp;
 }
