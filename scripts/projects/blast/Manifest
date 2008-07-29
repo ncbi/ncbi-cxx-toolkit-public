@@ -19,7 +19,7 @@ APP: makembindex segmasker dustmasker windowmasker
 APP: makeblastdb blastdbcmd blastdb_aliastool
 APP: $srcdir/src/app/blast/legacy_blast.pl
 
-POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $platform $installdir $srcdir
+POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $platform $installdir
 
 
 # Each line describes a single configuration
