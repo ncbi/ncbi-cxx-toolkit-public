@@ -14,12 +14,11 @@ SCRIPTS_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 def main(): #IGNORE:R0911
     """ Creates installers for selected platforms. """
-    parser = OptionParser("%prog <platform> " +
-                          "<installation directory> <source directory>")
+    parser = OptionParser("%prog <platform> <installation directory>")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output", dest="VERBOSE")
     options, args = parser.parse_args()
-    if len(args) != 3:
+    if len(args) != 2:
         parser.error("Incorrect number of arguments")
         return 1
 
@@ -31,10 +30,10 @@ def main(): #IGNORE:R0911
         print "Platform:", platform
         print "Installation directory:", installdir
 
-    if platform == "Win32":        
-        return win32_post_build(installdir)
+    if platform == "Win32":
+        return do_nothing(platform)                
     if platform == "Win64":
-        return do_nothing(platform)
+        return win32_post_build(installdir)        
     if platform == "Linux32":
         return linux32_post_build(installdir)
     if platform == "Linux64":
