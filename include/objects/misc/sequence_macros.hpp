@@ -63,65 +63,54 @@ BEGIN_SCOPE(objects)
 /// CSeq_id definitions
 
 #define NCBI_SEQID(Type) CSeq_id::e_##Type
-
 typedef CSeq_id::E_Choice TSEQID_CHOICE;
-    
-#define NCBI_ACCN(Type) CSeq_id::eAcc_##Type
 
+#define NCBI_ACCN(Type) CSeq_id::eAcc_##Type
 typedef CSeq_id::EAccessionInfo TACCN_CHOICE;
-    
-    
+
+
 /// CSeqdesc definitions
 
 #define NCBI_SEQDESC(Type) CSeqdesc::e_##Type
-
 typedef CSeqdesc::E_Choice TSEQDESC_CHOICE;
 
 
 /// CMolInfo definitions
 
 #define NCBI_BIOMOL(Type) CMolInfo::eBiomol_##Type
-
 typedef CMolInfo::TBiomol TMOLINFO_BIOMOL;
 
 #define NCBI_TECH(Type) CMolInfo::eTech_##Type
-
 typedef CMolInfo::TTech TMOLINFO_TECH;
 
 #define NCBI_COMPLETENESS(Type) CMolInfo::eCompleteness_##Type
-
 typedef CMolInfo::TCompleteness TMOLINFO_COMPLETENESS;
 
 
 /// CBioSource definitions
 
 #define NCBI_GENOME(Type) CBioSource::eGenome_##Type
-
 typedef CBioSource::TGenome TBIOSOURCE_GENOME;
 
 #define NCBI_ORIGIN(Type) CBioSource::eOrigin_##Type
-
 typedef CBioSource::TOrigin TBIOSOURCE_ORIGIN;
 
 
 /// CSubSource definitions
 
 #define NCBI_SUBSRC(Type) CSubSource::eSubtype_##Type
-
 typedef CSubSource::TSubtype TSUBSRC_SUBTYPE;
 
 
 /// COrgMod definitions
 
 #define NCBI_ORGMOD(Type) COrgMod::eSubtype_##Type
-
 typedef COrgMod::TSubtype TORGMOD_SUBTYPE;
 
 
 /// CPub definitions
 
 #define NCBI_PUB(Type) CPub::e_##Type
-
 typedef CPub::E_Choice TPUB_CHOICE;
 
 
@@ -133,20 +122,23 @@ typedef CPub::E_Choice TPUB_CHOICE;
 /// IF_EXISTS_CLOSEST_MOLINFO
 // Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
 // Dereference with const CMolInfo& molinf = (*cref).GetMolinfo();
-#define IF_EXISTS_CLOSEST_MOLINFO(Cref, Bsq) \
-if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Molinfo))
+// If Lvl is not NULL, it must be a pointer to an int
+#define IF_EXISTS_CLOSEST_MOLINFO(Cref, Bsq, Lvl) \
+if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Molinfo, Lvl))
 
 /// IF_EXISTS_CLOSEST_BIOSOURCE
 // Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
 // Dereference with const CBioSource& source = (*cref).GetSource();
-#define IF_EXISTS_CLOSEST_BIOSOURCE(Cref, Bsq) \
-if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Source))
+// If Lvl is not NULL, it must be a pointer to an int
+#define IF_EXISTS_CLOSEST_BIOSOURCE(Cref, Bsq, Lvl) \
+if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Source, Lvl))
 
 /// IF_EXISTS_CLOSEST_TITLE
 // Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
 // Dereference with const string& title = (*cref).GetTitle();
-#define IF_EXISTS_CLOSEST_TITLE(Cref, Bsq) \
-if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Title))
+// If Lvl is not NULL, it must be a pointer to an int
+#define IF_EXISTS_CLOSEST_TITLE(Cref, Bsq, Lvl) \
+if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Title, Lvl))
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -161,6 +153,15 @@ if (! (Test)) {} else for (CTypeConstIterator<Type> Var (Cont); Var; ++Var)
 
 
 /// CSeq_entry explorers
+
+/// FOR_ALL_SEQENTRYS_WITHIN_SEQENTRYT
+// Takes const CSeq_entry& as input and makes iterator to const CSeq_entry&
+// Dereference with const CSeq_entry& seqentry = *iter;
+#define FOR_ALL_SEQENTRYS_WITHIN_SEQENTRYT(Iter, Seq) \
+NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
+    CSeq_entry, \
+    Iter, \
+    (Seq))
 
 /// FOR_ALL_BIOSEQS_WITHIN_SEQENTRY
 // Takes const CSeq_entry& as input and makes iterator to const CBioseq&
@@ -180,6 +181,54 @@ NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     Iter, \
     (Seq))
 
+/// FOR_ALL_DESCRIPTORS_WITHIN_SEQENTRY
+// Takes const CSeq_entry& as input and makes iterator to const CSeqdesc&
+// Dereference with const CSeqdesc& desc = *iter;
+#define FOR_ALL_DESCRIPTORS_WITHIN_SEQENTRY(Iter, Seq) \
+NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
+    CSeqdesc, \
+    Iter, \
+    (Seq))
+
+/// FOR_ALL_ANNOTS_WITHIN_SEQENTRY
+// Takes const CSeq_entry& as input and makes iterator to const CSeq_annot&
+// Dereference with const CSeq_annot& annot = *iter;
+#define FOR_ALL_ANNOTS_WITHIN_SEQENTRY(Iter, Seq) \
+NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
+    CSeq_annot, \
+    Iter, \
+    (Seq))
+
+/// FOR_ALL_FEATURES_WITHIN_SEQENTRY
+// Takes const CSeq_entry& as input and makes iterator to const CSeq_feat&
+// Dereference with const CSeq_feat& feat = *iter;
+#define FOR_ALL_FEATURES_WITHIN_SEQENTRY(Iter, Seq) \
+NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
+    CSeq_feat, \
+    Iter, \
+    (Seq))
+
+/// FOR_ALL_ALIGNS_WITHIN_SEQENTRY
+// Takes const CSeq_entry& as input and makes iterator to const CSeq_feat&
+// Dereference with const CSeq_align& align = *iter;
+#define FOR_ALL_ALIGNS_WITHIN_SEQENTRY(Iter, Seq) \
+NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
+    CSeq_align, \
+    Iter, \
+    (Seq))
+
+/// FOR_ALL_GRAPHS_WITHIN_SEQENTRY
+// Takes const CSeq_entry& as input and makes iterator to const CSeq_feat&
+// Dereference with const CSeq_graph& graph = *iter;
+#define FOR_ALL_GRAPHS_WITHIN_SEQENTRY(Iter, Seq) \
+NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
+    CSeq_graph, \
+    Iter, \
+    (Seq))
+
+
+/// CBioseq_set explorers
+
 /// FOR_ALL_SEQENTRYS_WITHIN_SEQSET
 // Takes const CBioseq_set& as input and makes iterator to const CSeq_entry&
 // Dereference with const CSeq_entry& seqentry = *iter;
@@ -189,52 +238,16 @@ NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
     Iter, \
     (Bss))
 
-/// FOR_ALL_DESCRIPTORS_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeqdesc&
-// Dereference with const CSeqdesc& desc = *iter;
-#define FOR_ALL_DESCRIPTORS_WITHIN_SEQENTRY(Iter, Seq) \
-NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
-    CSeqdesc, \
+/// FOR_ALL_BIOSEQS_WITHIN_SEQSET
+// Takes const CBioseq_set& as input and makes iterator to const CBioseq&
+// Dereference with const CBioseq& bioseq = *iter;
+#define FOR_ALL_BIOSEQS_WITHIN_SEQSET(Iter, Bss) \
+NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
+    CBioseq, \
     Iter, \
-    (Seq))
-    
-/// FOR_ALL_ANNOTS_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeq_annot&
-// Dereference with const CSeq_annot& annot = *iter;
-#define FOR_ALL_ANNOTS_WITHIN_SEQENTRY(Iter, Seq) \
-NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
-    CSeq_annot, \
-    Iter, \
-    (Seq))
-    
-/// FOR_ALL_FEATURES_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeq_feat&
-// Dereference with const CSeq_feat& feat = *iter;
-#define FOR_ALL_FEATURES_WITHIN_SEQENTRY(Iter, Seq) \
-NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
-    CSeq_feat, \
-    Iter, \
-    (Seq))
-    
-/// FOR_ALL_ALIGNS_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeq_feat&
-// Dereference with const CSeq_align& align = *iter;
-#define FOR_ALL_ALIGNS_WITHIN_SEQENTRY(Iter, Seq) \
-NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
-    CSeq_align, \
-    Iter, \
-    (Seq))
-    
-/// FOR_ALL_GRAPHS_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeq_feat&
-// Dereference with const CSeq_graph& graph = *iter;
-#define FOR_ALL_GRAPHS_WITHIN_SEQENTRY(Iter, Seq) \
-NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
-    CSeq_graph, \
-    Iter, \
-    (Seq))
-    
-    
+    (Bss))
+
+
 /////////////////////////////////////////////////////////////////////////////
 /// Macros to iterate over standard template containers (non-recursive)
 /////////////////////////////////////////////////////////////////////////////
@@ -466,8 +479,8 @@ NCBI_TEST_ITERATE((Cdr).IsSetCode_break(), \
     CCdregion::TCode_break, \
     Iter, \
     (Cdr).GetCode_break())
-    
-    
+
+
 /// CGB_block iterators
 
 /// FOR_EACH_KEYWORD_ON_GENBANKBLOCK
@@ -478,8 +491,8 @@ NCBI_TEST_ITERATE((Gbk).IsSetKeywords(), \
     CGB_block::TKeywords, \
     Iter, \
     (Gbk).GetKeywords())
-    
-    
+
+
 /// CEMBL_block iterators
 
 /// FOR_EACH_KEYWORD_ON_EMBLBLOCK
@@ -490,6 +503,18 @@ NCBI_TEST_ITERATE((Ebk).IsSetKeywords(), \
     CEMBL_block::TKeywords, \
     Iter, \
     (Ebk).GetKeywords())
+
+
+/// list <string> iterators
+
+/// FOR_EACH_STRING_IN_LIST
+// Takes const list <string>& as input and makes iterator to const string&
+// Dereference with const string& str = **iter;
+#define FOR_EACH_STRING_IN_LIST(Iter, Lst) \
+NCBI_TEST_ITERATE(! (Lst).empty(), \
+    list <string>, \
+    Iter, \
+    (Lst))
 
 
 /// @}
