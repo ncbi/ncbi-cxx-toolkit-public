@@ -1413,19 +1413,19 @@ CTar::EStatus CTar::x_ParsePAXHeader(const string& buffer)
         string*     str;  // null for check only (numeric: non-null for no '.')
         EPAXBit     bit;  // for numerics only (NB: ePAXNone if check only)
     } parser[] = {
-        { "mtime",    &mtime, 0,         fPAXMtime},   // numeric w/dot: assign
-        { "atime",    &atime, 0,         fPAXAtime},
-        { "ctime",    &ctime, 0,         fPAXCtime},
-        { "size",     &size,  nodot,     fPAXSize},    // num.-no-dot: assign
-        { "uid",      &uid,   nodot,     fPAXUid},
-        { "gid",      &gid,   nodot,     fPAXGid},
-     /* { "dummy",    &dummy, nodot,     fPAXNone}, */ // num.-no-dot: ck.only
-        { "path",     0,      &path,     fPAXNone},    // string: assign
-        { "linkpath", 0,      &linkpath, fPAXNone},
-        { "uname",    0,      &uname,    fPAXNone},
-        { "gname",    0,      &gname,    fPAXNone},
-        { "comment",  0,      0,         fPAXNone},    // string: check only
-        { "charset",  0,      0,         fPAXNone}     // string: check only
+        { "mtime",    &mtime, 0,         fPAXMtime },  // numeric w/dot: assign
+        { "atime",    &atime, 0,         fPAXAtime },
+        { "ctime",    &ctime, 0,         fPAXCtime },
+        { "size",     &size,  nodot,     fPAXSize  },  // num.-no-dot: assign
+        { "uid",      &uid,   nodot,     fPAXUid   },
+        { "gid",      &gid,   nodot,     fPAXGid   },
+      /*{ "dummy",    &dummy, nodot,     fPAXNone  },*/// num.-no-dot: ck.only
+        { "path",     0,      &path,     fPAXNone  },  // string: assign
+        { "linkpath", 0,      &linkpath, fPAXNone  },
+        { "uname",    0,      &uname,    fPAXNone  },
+        { "gname",    0,      &gname,    fPAXNone  },
+        { "comment",  0,      0,         fPAXNone  },  // string: check only
+        { "charset",  0,      0,         fPAXNone  }   // string: check only
     };
     const char* str = buffer.c_str();
     TPAXBits parsed = fPAXNone;
