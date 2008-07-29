@@ -12,6 +12,7 @@
 APP: test_stat_load
 # APP: test_stat_ext.cgi -- it is built not on all platforms, so will be copied by script
 
+COPY: $srcdir/internal/cppcore/test_stat_ext/db_structure.sql
 
 POSTBUILD: $srcdir/scripts/projects/dbtest/post_build/copy_cgi.sh $bindir $srcdir $installdir
 

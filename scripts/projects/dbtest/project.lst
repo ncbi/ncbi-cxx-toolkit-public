@@ -1,14 +1,13 @@
 corelib$
 util/cache$
 util/bitset$
-util/compress$
 serial$
 serial/datatool$
 cgi/impl$
 connect$
 dbapi/driver/impl$
-dbapi/driver/util$
-dbapi/driver/odbc/unix_odbc$
+dbapi/driver/util$ update-only
+dbapi/driver/odbc/unix_odbc$ update-only
 dbapi/driver/ctlib$
 dbapi/driver/ftds
 dbapi/driver/ftds64/freetds
