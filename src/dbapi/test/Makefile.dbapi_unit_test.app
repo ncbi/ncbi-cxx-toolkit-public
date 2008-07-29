@@ -12,8 +12,8 @@ LIBS =  $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test
 
-# CHECK_COPY = dbapi_unit_test.sh dbapi_unit_test.ini
-CHECK_COPY = dbapi_unit_test.sh
+CHECK_COPY = dbapi_unit_test.sh dbapi_unit_test.ini
+# CHECK_COPY = dbapi_unit_test.sh
 CHECK_CMD = dbapi_unit_test.sh
 CHECK_TIMEOUT = 600
 

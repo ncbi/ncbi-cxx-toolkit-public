@@ -42,6 +42,7 @@
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#define NCBI_NO_TEST_PREPARE_ARG_DESCRS
 #include <corelib/test_boost.hpp>
 
 using boost::unit_test_framework::test_suite;
@@ -80,7 +81,7 @@ private:
 class CTestArguments : public CObject
 {
 public:
-    CTestArguments(int argc, char * argv[]);
+    CTestArguments(void);
 
 public:
     typedef map<string, string> TDatabaseParameters;
@@ -155,8 +156,6 @@ private:
     void SetDatabaseParameters(void);
 
 private:
-    CNcbiArguments m_Arguments;
-
     string m_GatewayHost;
     string m_GatewayPort;
 
@@ -369,7 +368,7 @@ private:
 ///////////////////////////////////////////////////////////////////////////
 struct CDBAPITestSuite : public test_suite
 {
-    CDBAPITestSuite(const CRef<const CTestArguments>& args);
+    CDBAPITestSuite(void);
     ~CDBAPITestSuite(void);
 };
 
