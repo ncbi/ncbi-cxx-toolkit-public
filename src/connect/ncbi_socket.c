@@ -4276,9 +4276,11 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
 #endif /*HAVE_SIN_LEN*/
     if (bind(sock->sock, (struct sockaddr*) &addr, sizeof(addr)) != 0) {
         int x_errno = SOCK_ERRNO;
-        CORE_LOGF_ERRNO_EXX(80, eLOG_Error,
+        CORE_LOGF_ERRNO_EXX(80, x_errno == SOCK_EADDRINUSE
+                            ? eLOG_Trace : eLOG_Error,
                             x_errno, SOCK_STRERROR(x_errno),
-                           ("%s[DSOCK::Bind]  Failed bind()", s_ID(sock,_id)));
+                            ("%s[DSOCK::Bind]  Failed bind(:%hu)",
+                             s_ID(sock,_id), port));
         return x_errno == SOCK_EADDRINUSE ? eIO_Closed : eIO_Unknown;
     }
 
