@@ -149,7 +149,7 @@ def main():
         parser.error("Incorrect number of arguments")
         return 1
     
-    installdir = args
+    installdir = args[0]
     global VERBOSE #IGNORE:W0603
     VERBOSE = options.VERBOSE
     if VERBOSE: 
