@@ -129,22 +129,29 @@ const CSeq_descr& CSeq_entry::GetDescr(void) const
 
 
 // Implemented here to prevent CBioseq dependency on CSeq_entry
-CConstRef<CSeqdesc> CBioseq::GetClosestDescriptor (CSeqdesc::E_Choice choice) const
+CConstRef<CSeqdesc> CBioseq::GetClosestDescriptor (CSeqdesc::E_Choice choice, int* level) const
 {
-  CSeq_entry* se;
+    CSeq_entry* se;
+    int lvl = 0;
   
-  for (se = GetParentEntry(); se; se = se->GetParentEntry()) {
-    if (se->IsSetDescr()) {
-      ITERATE (CSeq_descr::Tdata, sd_itr, se->GetDescr().Get()) {
-        const CSeqdesc& desc = **sd_itr;
-        if ( desc.Which() == choice ) {
-          return *sd_itr;
+    for (se = GetParentEntry(); se; se = se->GetParentEntry(), lvl++) {
+        if (se->IsSetDescr()) {
+            ITERATE (CSeq_descr::Tdata, sd_itr, se->GetDescr().Get()) {
+                const CSeqdesc& desc = **sd_itr;
+                if ( desc.Which() == choice ) {
+                    if (level != NULL) {
+                        *level = lvl;
+                    }
+                    return *sd_itr;
+                }
+            }
         }
-      }
     }
-  }
   
-  return CConstRef<CSeqdesc> ();
+    if (level != NULL) {
+        *level = lvl;
+    }
+    return CConstRef<CSeqdesc> ();
 }
 
 

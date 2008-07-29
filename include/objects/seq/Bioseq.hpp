@@ -82,8 +82,9 @@ public:
     // Convenience function that looks for the closest descriptor, first on
     // the Bioseq, then on its parent Bioseq-set, then on its grandparent, etc.
     // 0 means that either there is no parent Seq-entry or Bioseq-set,
-    // or CSeq_entry::Parentize() was never called.
-    CConstRef<CSeqdesc> GetClosestDescriptor (CSeqdesc::E_Choice choice) const;
+    // or CSeq_entry::Parentize() was never called.  Optional level argument
+    // is 0 if packaged on Bioseq, 1 if on parent, 2 if on grandparent, etc.
+    CConstRef<CSeqdesc> GetClosestDescriptor (CSeqdesc::E_Choice choice, int* level = NULL) const;
     
     // see GetTitle in util/sequence.hpp
     //   string GetTitle(const CBioseq_Handle&, TGetTitleFlags);
