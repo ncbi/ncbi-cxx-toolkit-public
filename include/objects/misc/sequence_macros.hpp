@@ -140,6 +140,20 @@ if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Source, L
 #define IF_EXISTS_CLOSEST_TITLE(Cref, Bsq, Lvl) \
 if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Title, Lvl))
 
+/// IF_EXISTS_CLOSEST_GENBANKBLOCK
+// Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
+// Dereference with const CGB_block& gbk = (*cref).GetGenbank();
+// If Lvl is not NULL, it must be a pointer to an int
+#define IF_EXISTS_CLOSEST_GENBANKBLOCK(Cref, Bsq, Lvl) \
+if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Genbank, Lvl))
+
+/// IF_EXISTS_CLOSEST_EMBLBLOCK
+// Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
+// Dereference with const CEMBL_block& ebk = (*cref).GetEmbl();
+// If Lvl is not NULL, it must be a pointer to an int
+#define IF_EXISTS_CLOSEST_EMBLBLOCK(Cref, Bsq, Lvl) \
+if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Embl, Lvl))
+
 
 /////////////////////////////////////////////////////////////////////////////
 /// Macros to recursively explore within NCBI data model objects
@@ -509,7 +523,7 @@ NCBI_TEST_ITERATE((Ebk).IsSetKeywords(), \
 
 /// FOR_EACH_STRING_IN_LIST
 // Takes const list <string>& as input and makes iterator to const string&
-// Dereference with const string& str = **iter;
+// Dereference with const string& str = *iter;
 #define FOR_EACH_STRING_IN_LIST(Iter, Lst) \
 NCBI_TEST_ITERATE(! (Lst).empty(), \
     list <string>, \
