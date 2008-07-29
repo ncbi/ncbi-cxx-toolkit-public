@@ -352,8 +352,10 @@ if \$no_report_err && \$no_db_load; then
    rm -f "\$res_log"
 fi
 
-ulimit -c 1000000
-ulimit -v 2000000
+if [ "\$NCBI_CHECK_SETLIMITS" != "0" ] ; then
+   ulimit -c 1000000
+   ulimit -v 2000000
+fi
 
 
 ##  Run one test
