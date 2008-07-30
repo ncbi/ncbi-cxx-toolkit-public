@@ -37,6 +37,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 
+#include <dbapi/dbapi.hpp>
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
 
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
@@ -47,6 +48,14 @@
 
 using boost::unit_test_framework::test_suite;
 
+// #define DBAPI_BOOST_FAIL(ex)
+//     ERR_POST(ex);
+//     BOOST_FAIL(ex.GetMsg())
+
+#define DBAPI_BOOST_FAIL(ex) \
+    BOOST_FAIL(ex.what())
+
+#define CONN_OWNERSHIP  eTakeOwnership
 
 BEGIN_NCBI_SCOPE
 
@@ -58,6 +67,7 @@ class IStatement;
 class IDBConnectionFactory;
 
 enum ETransBehavior { eNoTrans, eTransCommit, eTransRollback };
+enum { max_text_size = 8000 };
 
 class CTestTransaction
 {
@@ -371,6 +381,53 @@ struct CDBAPITestSuite : public test_suite
     CDBAPITestSuite(void);
     ~CDBAPITestSuite(void);
 };
+
+
+///////////////////////////////////////////////////////////////////////////
+class CDBSetConnParams : public CDBConnParamsDelegate
+{
+public:
+    CDBSetConnParams(
+        const string& server_name,
+        const string& user_name,
+        const string& password,
+        Uint4 tds_version,
+        const CDBConnParams& other);
+    virtual ~CDBSetConnParams(void);
+
+public:
+    virtual Uint4  GetProtocolVersion(void) const;
+
+    virtual string GetServerName(void) const;
+    virtual string GetUserName(void) const;
+    virtual string GetPassword(void) const;
+
+private:
+    // Non-copyable.
+    CDBSetConnParams(const CDBSetConnParams& other);
+    CDBSetConnParams& operator =(const CDBSetConnParams& other);
+
+private:
+    const Uint4     m_ProtocolVersion;
+    const string    m_ServerName;
+    const string    m_UserName;
+    const string    m_Password;
+};
+
+
+///////////////////////////////////////////////////////////////////////////
+extern const char* ftds8_driver;
+extern const char* ftds64_driver;
+extern const char* ftds_driver;
+
+extern const char* ftds_odbc_driver;
+extern const char* ftds_dblib_driver;
+
+extern const char* odbc_driver;
+extern const char* ctlib_driver;
+extern const char* dblib_driver;
+
+extern const char* msg_record_expected;
 
 END_NCBI_SCOPE
 

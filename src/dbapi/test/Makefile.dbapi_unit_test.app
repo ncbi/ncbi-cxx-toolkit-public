@@ -1,7 +1,10 @@
 # $Id$
 
 APP = dbapi_unit_test
-SRC = dbapi_unit_test
+SRC = dbapi_unit_test dbapi_unit_test_object dbapi_unit_test_lob dbapi_unit_test_bcp \
+	  dbapi_unit_test_proc dbapi_unit_test_cursor dbapi_unit_test_stmt \
+	  dbapi_unit_test_connection dbapi_unit_test_timeout dbapi_unit_test_context \
+	  dbapi_unit_test_msg
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
