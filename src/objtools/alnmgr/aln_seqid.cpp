@@ -53,7 +53,7 @@ bool IAlnSeqId::IsNucleotide(void) const {
 
 
 const CSeq_id& CAlnSeqId::GetSeqId(void) const {
-    return *CSeq_id_Handle::GetSeqId();
+    return m_Seq_id;
 }
 
 
