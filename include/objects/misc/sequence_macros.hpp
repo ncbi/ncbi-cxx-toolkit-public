@@ -154,6 +154,13 @@ if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Genbank, 
 #define IF_EXISTS_CLOSEST_EMBLBLOCK(Cref, Bsq, Lvl) \
 if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Embl, Lvl))
 
+/// IF_EXISTS_CLOSEST_PDBBLOCK
+// Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
+// Dereference with const CPDB_block& pbk = (*cref).GetPdb();
+// If Lvl is not NULL, it must be a pointer to an int
+#define IF_EXISTS_CLOSEST_PDBBLOCK(Cref, Bsq, Lvl) \
+if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Pdb, Lvl))
+
 
 /////////////////////////////////////////////////////////////////////////////
 /// Macros to recursively explore within NCBI data model objects
@@ -471,6 +478,69 @@ NCBI_TEST_ITERATE((Pub).IsSetAuthors() && \
     (Pub).GetAuthors().GetNames().GetStd())
 
 
+/// CGB_block iterators
+
+/// FOR_EACH_EXTRAACCN_ON_GENBANKBLOCK
+// Takes const CGB_block& as input and makes iterator to const string&
+// Dereference with const string& str = *iter;
+#define FOR_EACH_EXTRAACCN_ON_GENBANKBLOCK(Iter, Gbk) \
+NCBI_TEST_ITERATE((Gbk).IsSetExtra_accessions(), \
+    CGB_block::TExtra_accessions, \
+    Iter, \
+    (Gbk).GetExtra_accessions())
+
+/// FOR_EACH_KEYWORD_ON_GENBANKBLOCK
+// Takes const CGB_block& as input and makes iterator to const string&
+// Dereference with const string& str = *iter;
+#define FOR_EACH_KEYWORD_ON_GENBANKBLOCK(Iter, Gbk) \
+NCBI_TEST_ITERATE((Gbk).IsSetKeywords(), \
+    CGB_block::TKeywords, \
+    Iter, \
+    (Gbk).GetKeywords())
+
+
+/// CEMBL_block iterators
+
+/// FOR_EACH_EXTRAACCN_ON_EMBLBLOCK
+// Takes const CEMBL_block& as input and makes iterator to const string&
+// Dereference with const string& str = *iter;
+#define FOR_EACH_EXTRAACCN_ON_EMBLBLOCK(Iter, Ebk) \
+NCBI_TEST_ITERATE((Ebk).IsSetExtra_acc(), \
+    CEMBL_block::TExtra_acc, \
+    Iter, \
+    (Ebk).GetExtra_acc())
+
+/// FOR_EACH_KEYWORD_ON_EMBLBLOCK
+// Takes const CEMBL_block& as input and makes iterator to const string&
+// Dereference with const string& str = *iter;
+#define FOR_EACH_KEYWORD_ON_EMBLBLOCK(Iter, Ebk) \
+NCBI_TEST_ITERATE((Ebk).IsSetKeywords(), \
+    CEMBL_block::TKeywords, \
+    Iter, \
+    (Ebk).GetKeywords())
+
+
+/// CPDB_block iterators
+
+/// FOR_EACH_COMPOUND_ON_PDBBLOCK
+// Takes const CPDB_block& as input and makes iterator to const string&
+// Dereference with const string& str = *iter;
+#define FOR_EACH_COMPOUND_ON_PDBBLOCK(Iter, Pbk) \
+NCBI_TEST_ITERATE((Pbk).IsSetCompound(), \
+    CPDB_block::TCompound, \
+    Iter, \
+    (Pbk).GetCompound())
+
+/// FOR_EACH_SOURCE_ON_PDBBLOCK
+// Takes const CPDB_block& as input and makes iterator to const string&
+// Dereference with const string& str = *iter;
+#define FOR_EACH_SOURCE_ON_PDBBLOCK(Iter, Pbk) \
+NCBI_TEST_ITERATE((Pbk).IsSetSource(), \
+    CPDB_block::TSource, \
+    Iter, \
+    (Pbk).GetSource())
+
+
 /// CSeq_feat iterators
 
 /// FOR_EACH_GBQUAL_ON_FEATURE
@@ -481,6 +551,18 @@ NCBI_TEST_ITERATE((Sft).IsSetQual(), \
     CSeq_feat::TQual, \
     Iter, \
     (Sft).GetQual())
+
+
+/// CGene_ref iterators
+
+/// FOR_EACH_SYNONYM_ON_GENE
+// Takes const CGene_ref& as input and makes iterator to const string&
+// Dereference with const string& str = *iter;
+#define FOR_EACH_SYNONYM_ON_GENE(Iter, Grf) \
+NCBI_TEST_ITERATE((Grf).IsSetSyn(), \
+    CGene_ref::TSyn, \
+    Iter, \
+    (Grf).GetSyn())
 
 
 /// CCdregion iterators
@@ -495,28 +577,16 @@ NCBI_TEST_ITERATE((Cdr).IsSetCode_break(), \
     (Cdr).GetCode_break())
 
 
-/// CGB_block iterators
+/// CProt_ref iterators
 
-/// FOR_EACH_KEYWORD_ON_GENBANKBLOCK
-// Takes const CGB_block& as input and makes iterator to const string&
-// Dereference with const string& str = **iter;
-#define FOR_EACH_KEYWORD_ON_GENBANKBLOCK(Iter, Gbk) \
-NCBI_TEST_ITERATE((Gbk).IsSetKeywords(), \
-    CGB_block::TKeywords, \
+/// FOR_EACH_NAME_ON_PROT
+// Takes const CProt_ref& as input and makes iterator to const string&
+// Dereference with const string& str = *iter;
+#define FOR_EACH_NAME_ON_PROT(Iter, Prf) \
+NCBI_TEST_ITERATE((Prf).IsSetName(), \
+    CProt_ref::TName, \
     Iter, \
-    (Gbk).GetKeywords())
-
-
-/// CEMBL_block iterators
-
-/// FOR_EACH_KEYWORD_ON_EMBLBLOCK
-// Takes const CEMBL_block& as input and makes iterator to const string&
-// Dereference with const string& str = **iter;
-#define FOR_EACH_KEYWORD_ON_EMBLBLOCK(Iter, Ebk) \
-NCBI_TEST_ITERATE((Ebk).IsSetKeywords(), \
-    CEMBL_block::TKeywords, \
-    Iter, \
-    (Ebk).GetKeywords())
+    (Prf).GetName())
 
 
 /// list <string> iterators
