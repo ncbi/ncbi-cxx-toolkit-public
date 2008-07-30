@@ -81,7 +81,7 @@ public:
 		}
 		_ASSERT( free_obj_count == m_Chunks.size()*m_ChunkSize );
 #endif
-		ITERATE( vector<C*>, i, m_Chunks ) {
+		ITERATE( typename vector<C*>, i, m_Chunks ) {
 			delete[] (*i);
 		}
 	}
