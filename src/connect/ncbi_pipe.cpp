@@ -358,12 +358,18 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             SetStdHandle(STD_OUTPUT_HANDLE, stdout_handle);
             SetStdHandle(STD_ERROR_HANDLE,  stderr_handle);
 
-            ::CloseHandle(child_stdin_read);
-            ::CloseHandle(child_stdin_write);
-            ::CloseHandle(child_stdout_read);
-            ::CloseHandle(child_stdout_write);
-            ::CloseHandle(child_stderr_read);
-            ::CloseHandle(child_stderr_write);
+            if (child_stdin_read   != INVALID_HANDLE_VALUE)
+                ::CloseHandle(child_stdin_read);
+            if (child_stdin_write  != INVALID_HANDLE_VALUE)
+                ::CloseHandle(child_stdin_write);
+            if (child_stdout_read  != INVALID_HANDLE_VALUE)
+                ::CloseHandle(child_stdout_read);
+            if (child_stdout_write != INVALID_HANDLE_VALUE)
+                ::CloseHandle(child_stdout_write);
+            if (child_stderr_read  != INVALID_HANDLE_VALUE)
+                ::CloseHandle(child_stderr_read);
+            if (child_stderr_write != INVALID_HANDLE_VALUE)
+                ::CloseHandle(child_stderr_write);
         }
         const STimeout kZeroZimeout = {0,0};
         Close(0, &kZeroZimeout);
