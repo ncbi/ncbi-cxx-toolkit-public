@@ -308,8 +308,6 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
     // for plus strand create using the actual sequence data;
     // use the plus strand table to init the minus strand table
 
-    const time_t t0 (time(0));
-
     if(strand) {
 
         // create repeat filtering table (genome);
@@ -386,6 +384,7 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
         subjdb.Reset(0);
 
         cerr << "Ok" << endl;
+        cerr << " Constructing FV ... ";
 
         string filename_temp_01;
         auto_ptr<vector<Uint4> > pNrCounts2 (new vector<Uint4>);
@@ -407,8 +406,6 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
                                           total_mers * (1 - kRepeatsPercentile)));
         nth_element(NrCounts.begin(), NrCounts.begin() + percentile, NrCounts.end());
         const Uint4 max_repeat_count (NrCounts[percentile]);
-
-        cerr << "MAX REP COUNT = " << max_repeat_count << endl;
 
         if(filename_temp_01.empty()) {
             NrCounts = NrCounts2;
@@ -445,6 +442,8 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
     }
     else {
 
+        cerr << " Reading/transforming FV ... ";
+
         // read the plus strand vector and trasnform
         const string masked_filename (m_lbn_s + kFileExt_Masked);
 
@@ -457,13 +456,14 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
 
         for(size_t i(0); i < kNrMersTotal; ++i) {
             if(nrmers_plus.get_at(i)) {
+                // todo: optimize using tables
                 const size_t irc (g_RC(Uint4(i) << 4) & kUI4_Lo28);
                 m_Mers.set_at(irc);
             }
         }
     }
 
-    cerr << " FV built in: " << (time(0) - t0) << 's' << endl;
+    cerr << "Ok" << endl;
 }
 
 
@@ -514,9 +514,6 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
     // sort all adjacent genomic N-mers and their positions
     // except for those marked in the Nr-mer bit vector
 
-    const time_t t0 (time(0));
-    size_t time_index_file_writing (0);
-
     cerr << " Scanning " << db << " for N-mers and their positions." << endl;
 
     if(m_Mers.get_at(0)) {
@@ -565,8 +562,7 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
 
         if(mcidx > 1000 && mcidx + max_new_elems >= mcidx_max) {
             MersAndCoords.resize(mcidx);
-            time_index_file_writing +=
-                x_WriteIndexFile(++volume, mode, strand, MersAndCoords);
+            x_WriteIndexFile(++volume, mode, strand, MersAndCoords);
             MersAndCoords.assign(mcidx_max, 0);
             mcidx = 0;
         }
@@ -786,18 +782,11 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
 
     if(mcidx > 0) {
         MersAndCoords.resize(mcidx);
-        time_index_file_writing +=
-            x_WriteIndexFile(++volume, mode, strand, MersAndCoords);
+        x_WriteIndexFile(++volume, mode, strand, MersAndCoords);
         mcidx = 0;
     }
 
     m_Mers.Clear();
-
-    const size_t time_full (time(0) - t0);
-    const size_t time_sequence_parsing (time_full - time_index_file_writing);
-    cerr << " Index created (" << time_full  << 's'
-         << " = " << time_sequence_parsing << " + " << time_index_file_writing
-         << ")" << endl;
 }
 
 
@@ -884,10 +873,8 @@ void CElementaryMatching::x_Search(bool strand)
 {
     m_Mers.Clear();
 
-    cerr << " Matching (strand = " << (strand? "plus": "minus") << ") ..." << endl;
+    cerr << " Matching (strand = " << (strand? "plus": "minus") << ") ... ";
     m_CurGenomicStrand = strand;
-
-    CStopWatch sw (CStopWatch::eStart);
 
     CDir dir (CDir::GetCwd());
 
@@ -916,9 +903,6 @@ void CElementaryMatching::x_Search(bool strand)
             Uint8 hit_index_dim (0), elem_hits_this_pair (0);
             string filename_hit_index;
 
-            time_t t0 (time(0));
-
-            cerr << "\tCollecting hits ... ";
             {{
 
             // map offset files
@@ -1053,9 +1037,6 @@ void CElementaryMatching::x_Search(bool strand)
                 NCBI_THROW(CException, eUnknown, str);
             }
 
-            cerr << "Ok (" << (elem_hits_this_pair/1024/1024*8) 
-                 << "MB) in: " << (time(0) - t0) << 's' << endl;
-
             // remove the hit index file
             CFile(filename_hit_index).Remove();
 
@@ -1065,7 +1046,7 @@ void CElementaryMatching::x_Search(bool strand)
         } // query vols
     } // subj vols
 
-    cerr << " Done in: " << size_t(sw.Elapsed()) << "s" << endl;
+    cerr << "Ok" << endl;
 }
 
 #undef CHECK_MEMMAP
@@ -1123,10 +1104,6 @@ void CElementaryMatching::x_CompartVolume(vector<Uint8>* phits)
     if(phits->size() == 0) {
         return;
     }
-
-    const size_t t0 (time(0));
-
-    cerr << "\tLooking for compartments ... ";
 
     // sort by the global genomic corrdinate
     sort(phits->begin(), phits->end());
@@ -1255,8 +1232,6 @@ void CElementaryMatching::x_CompartVolume(vector<Uint8>* phits)
         seqdb_genomic.RetSequence(&m_CurSeq_Genomic);
         m_CurSeq_Genomic = 0;
     }
-
-    cerr << "Ok in: " << (time(0) - t0) << 's' << endl;
 }
 
 

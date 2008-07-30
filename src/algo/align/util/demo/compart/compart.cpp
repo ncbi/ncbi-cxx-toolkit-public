@@ -50,7 +50,7 @@ void CCompartApp::Init()
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "Compart v.1.31. Unless -qdb and -sdb are specified, "
+                              "Compart v.1.32. Unless -qdb and -sdb are specified, "
                               "the tool expects tabular blast hits at stdin collated "
                               "by query and subject, e.g. with 'sort -k 1,1 -k 2,2'");
 
