@@ -62,6 +62,9 @@ public:
     bool operator==(const CBlast4_database& rhs) const;
     bool operator!=(const CBlast4_database& rhs) const;
 
+    /// Returns true if the database is protein
+    bool IsProtein() const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CBlast4_database(const CBlast4_database& value);
@@ -98,6 +101,12 @@ inline bool
 CBlast4_database::operator!=(const CBlast4_database& rhs) const
 {
     return !(*this == rhs);
+}
+
+inline bool
+CBlast4_database::IsProtein() const
+{
+    return (GetType() == objects::eBlast4_residue_type_protein) ? true : false;
 }
 
 /////////////////// end of CBlast4_database inline methods
