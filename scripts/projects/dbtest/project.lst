@@ -1,6 +1,7 @@
 corelib$
 util/cache$
 util/bitset$
+util/regexp$ update-only
 serial$
 serial/datatool$
 cgi/impl$
