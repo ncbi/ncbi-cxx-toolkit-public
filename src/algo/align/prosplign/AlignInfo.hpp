@@ -45,7 +45,7 @@ BEGIN_SCOPE(prosplign)
 class CAlignInfo
 {
 public:
-    CAlignInfo(int length);
+    CAlignInfo(int length, CIgapIntronPool& pool);
     ~CAlignInfo();
     size_t size() const { return m_length; }
     void ClearIIC(void);
@@ -85,7 +85,7 @@ private:
 class CFindGapIntronRow : public CAlignRow
 {
 public:
-    CFindGapIntronRow(int length, const CProSplignScaledScoring& scoring);
+    CFindGapIntronRow(int length, const CProSplignScaledScoring& scoring, CIgapIntronPool& pool);
     ~CFindGapIntronRow();
     size_t size() const { return m_length; }
     void ClearIIC(void);

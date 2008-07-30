@@ -285,13 +285,15 @@ int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*ga
 
 int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, bool& left_gap, bool& right_gap, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
 {
+	CIgapIntronPool pool;
+
   left_gap = false;
   right_gap = false;
   if(nseq.size() < 1) return 0;
    // in matrices letters starts at [1]
   int ilen = (int)pseq.size() + 1;
   int jlen = nseq.size() + 1;
-  CFindGapIntronRow row1(jlen, scoring), row2(jlen, scoring);
+  CFindGapIntronRow row1(jlen, scoring, pool), row2(jlen, scoring, pool);
   CFindGapIntronRow *crow = &row1, *prow = &row2;
 
   int i, j;
@@ -299,6 +301,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
   int imax = 0;//row number for wmax
   int jmax = jlen - 1;//column number for wmax
   CIgapIntronChain lsb; //last column best, corresponds to wmax
+  lsb.SetPool(pool);
   lsb.Creat(0, jmax);
 
   CFastIScore fiscore;
@@ -531,10 +534,12 @@ int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/
                     int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
 {
     // in matrices letters starts at [1]
+
+	CIgapIntronPool pool;
  
   int ilen = (int)pseq.size() + 1;
   int jlen = nseq.size() + 1;
-  CAlignInfo row1(jlen), row2(jlen);
+  CAlignInfo row1(jlen, pool), row2(jlen, pool);
   CAlignInfo *crow = &row1, *prow = &row2;
 
   int i, j;

@@ -39,18 +39,25 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
 
-CAlignInfo::CAlignInfo(int length) : m_length(length)
+CAlignInfo::CAlignInfo(int length, CIgapIntronPool& pool) : m_length(length)
 {
     w.resize(length);
     h.resize(length);
     v.resize(length);
     fh.resize(length);
     fv.resize(length);
-    wis = new CIgapIntronChain[m_length];
+	wis = new CIgapIntronChain[m_length];
     his = new CIgapIntronChain[m_length];
     vis = new CIgapIntronChain[m_length];
     fhis = new CIgapIntronChain[m_length];
     fvis = new CIgapIntronChain[m_length];
+	for (size_t i = 0; i < m_length; ++i) {
+		wis[i].SetPool(pool);
+		his[i].SetPool(pool);
+		vis[i].SetPool(pool);
+		fhis[i].SetPool(pool);
+		fvis[i].SetPool(pool);
+	}
 }
 
 CAlignInfo::~CAlignInfo()
@@ -80,13 +87,21 @@ void CAlignInfo::ClearIIC(void)
     }
 }
 
-CFindGapIntronRow::CFindGapIntronRow(int length, const CProSplignScaledScoring& scoring): CAlignRow(length, scoring), m_length(length)
+CFindGapIntronRow::CFindGapIntronRow(int length, const CProSplignScaledScoring& scoring, CIgapIntronPool& pool) :
+	CAlignRow(length, scoring), m_length(length)
 {
-        wis = new CIgapIntronChain[m_length];
-        vis = new CIgapIntronChain[m_length];
-        h1is = new CIgapIntronChain[m_length];
-        h2is = new CIgapIntronChain[m_length];
-        h3is = new CIgapIntronChain[m_length];
+    wis = new CIgapIntronChain[m_length];
+    vis = new CIgapIntronChain[m_length];
+    h1is = new CIgapIntronChain[m_length];
+    h2is = new CIgapIntronChain[m_length];
+    h3is = new CIgapIntronChain[m_length];
+	for (size_t i = 0; i < m_length; ++i) {
+		wis[i].SetPool(pool);
+		vis[i].SetPool(pool);
+		h1is[i].SetPool(pool);
+		h2is[i].SetPool(pool);
+		h3is[i].SetPool(pool);
+	}
 }
 
 CFindGapIntronRow::~CFindGapIntronRow()

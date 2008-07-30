@@ -45,28 +45,103 @@ BEGIN_SCOPE(prosplign)
 class CIgapIntron
 {
 public:
-    CIgapIntron(int beg,int len) : m_Beg(beg), m_Len(len), ref_counter(1) {}
+    CIgapIntron() : m_Beg(0), m_Len(0), ref_counter(1) {}
+
+	void Init(int beg, int len)
+	{
+		m_Beg = beg;
+		m_Len = len;
+		ref_counter = 1;
+	}
+
     int m_Beg;//coord of the beginning, 0 - based
     int m_Len;
     CIgapIntron* m_Prev;//previous in chain
+
+private:
     int ref_counter;
+
+	friend class CIgapIntronChain;
 };
+
+template <class C>
+class CObjectPool {
+public:
+	CObjectPool(size_t chunk_size=10000) : m_ChunkSize(chunk_size), m_Free(NULL)
+	{
+	}
+	~CObjectPool()
+	{
+#ifdef _DEBUG
+		LOG_POST( Info << "pool size = " << m_Chunks.size()*m_ChunkSize );
+		size_t free_obj_count = 0;
+		while (m_Free) {
+			++free_obj_count;
+			m_Free = m_Free->m_Prev;
+		}
+		_ASSERT( free_obj_count == m_Chunks.size()*m_ChunkSize );
+#endif
+		ITERATE( vector<C*>, i, m_Chunks ) {
+			delete[] (*i);
+		}
+	}
+
+	C* GetObject()
+	{
+		if (m_Free == NULL)
+			GetNewChunk();
+		
+		C* res = m_Free;
+		m_Free = res->m_Prev;
+
+		return res;
+	}
+	void PutObject(C* object)
+	{
+		object->m_Prev = m_Free;
+		m_Free = object;
+	}
+
+private:
+	void GetNewChunk()
+	{
+		C* next = new C[m_ChunkSize];
+		m_Chunks.push_back(next);
+		for (size_t i = 0; i < m_ChunkSize; ++i) {
+			next->m_Prev = m_Free;
+			m_Free = next;
+			++next;
+		}
+	}
+
+	size_t m_ChunkSize;
+	vector<C*> m_Chunks;
+	C* m_Free;
+
+};
+
+typedef CObjectPool<CIgapIntron> CIgapIntronPool;
 
 class CIgapIntronChain
 {
 public:
-    inline CIgapIntronChain() : m_Top(NULL) {}
+    inline CIgapIntronChain() : m_Top(NULL), m_Pool(NULL) {}
     ~CIgapIntronChain() { Clear(); }
+	void SetPool(CIgapIntronPool& pool) {
+		m_Pool = &pool;
+	}
     inline void Creat(int beg, int len) 
     {
-        m_Top = new CIgapIntron(beg,len); //m_IntrHolder.Get();
+        m_Top = m_Pool->GetObject();
+		m_Top->Init(beg,len);
         m_Top->m_Prev = NULL;
     }
     inline void Expand(CIgapIntronChain& source, int beg, int len)
     {
         Copy(source);
         CIgapIntron* tmp = m_Top;
-        m_Top = new CIgapIntron(beg,len);
+        m_Top = m_Pool->GetObject();
+		m_Top->Init(beg,len);
         m_Top->m_Prev = tmp;
     }
     inline void Copy(CIgapIntronChain& source) {
@@ -78,13 +153,21 @@ public:
     inline void Clear() {
         while (m_Top && --m_Top->ref_counter < 1) {
             CIgapIntron *prev = m_Top->m_Prev;
-            delete m_Top;
+            m_Pool->PutObject(m_Top);
             m_Top = prev;
         }
         m_Top = NULL;
     }
 
-//just to make sure
+    CIgapIntron* m_Top;//top of the chain, i.e. last intron
+
+private:
+	CIgapIntronPool* m_Pool;
+
+private:
+	CIgapIntronChain(const CIgapIntronChain& source);
+	CIgapIntronChain& operator=(const CIgapIntronChain& source);
+/*
     inline CIgapIntronChain& operator=(const CIgapIntronChain& source) 
     {
         if(source.m_Top) throw runtime_error("Copying of non-empty intron chain");
@@ -96,8 +179,8 @@ public:
         if(source.m_Top) throw runtime_error("Copying of non-empty intron chain");
         m_Top = source.m_Top;
     }
+*/
 
-    CIgapIntron* m_Top;//top of the chain, i.e. last intron
 };
 
 
