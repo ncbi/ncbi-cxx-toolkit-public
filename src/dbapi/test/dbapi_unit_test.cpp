@@ -14593,7 +14593,9 @@ CDBAPITestSuite::CDBAPITestSuite(void)
     CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Timeout,         CDBAPIUnitTest::TestInit);
     CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Timeout2,        CDBAPIUnitTest::TestInit);
     CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Query_Cancelation,   CDBAPIUnitTest::TestInit);
+#ifdef HAVE_LIBCONNEXT
     CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Authentication,  CDBAPIUnitTest::TestInit);
+#endif
     CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Object);
     CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant);
     CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception);
