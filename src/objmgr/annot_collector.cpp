@@ -937,7 +937,7 @@ void CAnnot_Collector::x_Clear(void)
 bool CAnnot_Collector::CanResolveId(const CSeq_id_Handle& idh,
                                     const CBioseq_Handle& bh)
 {
-    switch ( m_Selector->m_ResolveMethod ) {
+    switch ( m_Selector->GetResolveMethod() ) {
     case SAnnotSelector::eResolve_All:
         return true;
     case SAnnotSelector::eResolve_TSE:
@@ -957,8 +957,13 @@ void CAnnot_Collector::x_Initialize0(const SAnnotSelector& selector)
 {
     m_Selector = &selector;
     m_TriggerTypes.reset();
-    if ( m_Selector->m_AdaptiveDepthFlags & selector.fAdaptive_ByTriggers ) {
-        if ( m_Selector->m_AdaptiveTriggers.empty() ) {
+    SAnnotSelector::TAdaptiveDepthFlags adaptive_flags = 0;
+    if ( !selector.GetExactDepth() ||
+         selector.GetResolveDepth() == kMax_Int ) {
+        adaptive_flags = selector.GetAdaptiveDepthFlags();
+    }
+    if ( adaptive_flags & selector.fAdaptive_ByTriggers ) {
+        if ( selector.m_AdaptiveTriggers.empty() ) {
             const size_t count =
                 sizeof(s_DefaultAdaptiveTriggers)/
                 sizeof(s_DefaultAdaptiveTriggers[0]);
@@ -972,7 +977,7 @@ void CAnnot_Collector::x_Initialize0(const SAnnotSelector& selector)
         }
         else {
             ITERATE ( SAnnotSelector::TAdaptiveTriggers, it,
-                      m_Selector->m_AdaptiveTriggers ) {
+                      selector.m_AdaptiveTriggers ) {
                 pair<size_t, size_t> idxs =
                     CAnnotType_Index::GetIndexRange(*it);
                 for ( size_t i = idxs.first; i < idxs.second; ++i ) {
@@ -982,19 +987,19 @@ void CAnnot_Collector::x_Initialize0(const SAnnotSelector& selector)
         }
     }
     m_UnseenAnnotTypes.set();
-    m_CollectAnnotTypes = m_Selector->m_AnnotTypesBitset;
+    m_CollectAnnotTypes = selector.m_AnnotTypesBitset;
     if ( !m_CollectAnnotTypes.any() ) {
         pair<size_t, size_t> range =
-            CAnnotType_Index::GetIndexRange(*m_Selector);
+            CAnnotType_Index::GetIndexRange(selector);
         for ( size_t index = range.first; index < range.second; ++index ) {
             m_CollectAnnotTypes.set(index);
         }
     }
-    if ( m_Selector->m_CollectNames ) {
+    if ( selector.m_CollectNames ) {
         m_AnnotNames.reset(new TAnnotNames());
     }
-    m_Selector->CheckLimitObjectType();
-    if ( m_Selector->m_LimitObjectType != SAnnotSelector::eLimit_None ) {
+    selector.CheckLimitObjectType();
+    if ( selector.m_LimitObjectType != SAnnotSelector::eLimit_None ) {
         x_GetTSE_Info();
     }
 }
@@ -1016,10 +1021,10 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         CHandleRange master_range;
         master_range.AddRange(range, strand);
 
-        int adaptive_flags = m_Selector->GetAdaptiveDepthFlags();
-        int depth = m_Selector->m_ResolveDepth;
+        int depth = selector.GetResolveDepth();
         bool depth_is_set = depth >= 0 && depth < kMax_Int;
-        bool exact_depth = m_Selector->GetExactDepth() && depth_is_set;
+        bool exact_depth = selector.GetExactDepth() && depth_is_set;
+        int adaptive_flags = exact_depth? 0: selector.GetAdaptiveDepthFlags();
 
         // main sequence
         bool deeper = true;
@@ -1029,7 +1034,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         }
         if ( deeper ) {
             deeper = depth > 0 &&
-                m_Selector->m_ResolveMethod != m_Selector->eResolve_None;
+                selector.GetResolveMethod() != selector.eResolve_None;
         }
         if ( deeper && adaptive_flags ) {
             m_CollectAnnotTypes &= m_UnseenAnnotTypes;
@@ -1080,10 +1085,10 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
         x_Initialize0(selector);
 
-        int adaptive_flags = m_Selector->GetAdaptiveDepthFlags();
-        int depth = m_Selector->m_ResolveDepth;
+        int depth = selector.GetResolveDepth();
         bool depth_is_set = depth >= 0 && depth < kMax_Int;
-        bool exact_depth = m_Selector->GetExactDepth() && depth_is_set;
+        bool exact_depth = selector.GetExactDepth() && depth_is_set;
+        int adaptive_flags = exact_depth? 0: selector.GetAdaptiveDepthFlags();
 
         // main sequence
         bool deeper = true;
@@ -1093,7 +1098,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         }
         if ( deeper ) {
             deeper = depth > 0 &&
-                m_Selector->m_ResolveMethod != m_Selector->eResolve_None;
+                selector.GetResolveMethod() != selector.eResolve_None;
         }
         if ( deeper && adaptive_flags ) {
             m_CollectAnnotTypes &= m_UnseenAnnotTypes;
@@ -1598,7 +1603,12 @@ bool CAnnot_Collector::x_SearchTSE(const CTSE_Handle&    tseh,
     //continue;
     //}
 
-    if ( (m_Selector->m_AdaptiveDepthFlags&m_Selector->fAdaptive_ByTriggers) &&
+    SAnnotSelector::TAdaptiveDepthFlags adaptive_flags = 0;
+    if ( !m_Selector->GetExactDepth() ||
+         m_Selector->GetResolveDepth() == kMax_Int ) {
+        adaptive_flags = m_Selector->GetAdaptiveDepthFlags();
+    }
+    if ( (adaptive_flags & SAnnotSelector::fAdaptive_ByTriggers) &&
          m_TriggerTypes.any() &&
          tse.ContainsMatchingBioseq(id) ) {
         // first check triggers
@@ -1617,7 +1627,7 @@ bool CAnnot_Collector::x_SearchTSE(const CTSE_Handle&    tseh,
             }
         }
     }
-    if ( (m_Selector->m_AdaptiveDepthFlags&m_Selector->fAdaptive_BySubtypes) &&
+    if ( (adaptive_flags & SAnnotSelector::fAdaptive_BySubtypes) &&
          m_UnseenAnnotTypes.any() ) {
         ITERATE (CTSE_Info::TNamedAnnotObjs, iter, tse.m_NamedAnnotObjs) {
             const SIdAnnotObjs* objs =
