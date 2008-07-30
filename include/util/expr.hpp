@@ -130,9 +130,9 @@ private:
     EValue          m_Tag;
 };
 
-template <> CExprValue::CExprValue(Int8 value);
-template <> CExprValue::CExprValue(double value);
-template <> CExprValue::CExprValue(bool value);
+template <> NCBI_XUTIL_EXPORT CExprValue::CExprValue(Int8 value);
+template <> NCBI_XUTIL_EXPORT CExprValue::CExprValue(double value);
+template <> NCBI_XUTIL_EXPORT CExprValue::CExprValue(bool value);
 
 ////////////////////////////////////////////////////////////////////////////////
 class NCBI_XUTIL_EXPORT CExprSymbol 
@@ -141,6 +141,13 @@ public:
     CExprSymbol(void);
     template <typename VT> CExprSymbol(const char* name, VT value);
     ~CExprSymbol(void);
+
+#if defined(_MSC_VER) && _MSC_VER < 1400
+    // We need that to prevent internal compiler error with MSVC 7.1.
+    CExprSymbol(const char* name, Int8 value);
+    CExprSymbol(const char* name, bool value);
+    CExprSymbol(const char* name, double value);
+#endif
 
 public:
     enum ESymbol { 
@@ -175,15 +182,15 @@ public:
     CExprSymbol*    m_Next;
 };
 	       
-template <> CExprSymbol::CExprSymbol(const char* name, Int8 value);
-template <> CExprSymbol::CExprSymbol(const char* name, double value);
-template <> CExprSymbol::CExprSymbol(const char* name, bool value);
-template <> CExprSymbol::CExprSymbol(const char* name, FIntFunc1 value);
-template <> CExprSymbol::CExprSymbol(const char* name, FIntFunc2 value);
-template <> CExprSymbol::CExprSymbol(const char* name, FFloatFunc1 value);
-template <> CExprSymbol::CExprSymbol(const char* name, FFloatFunc2 value);
-template <> CExprSymbol::CExprSymbol(const char* name, FBoolFunc1 value);
-template <> CExprSymbol::CExprSymbol(const char* name, FBoolFunc2 value);
+template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, Int8 value);
+template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, double value);
+template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, bool value);
+template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, FIntFunc1 value);
+template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, FIntFunc2 value);
+template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, FFloatFunc1 value);
+template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, FFloatFunc2 value);
+template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, FBoolFunc1 value);
+template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, FBoolFunc2 value);
 
 
 ////////////////////////////////////////////////////////////////////////////////

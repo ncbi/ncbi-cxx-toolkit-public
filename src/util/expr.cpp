@@ -128,6 +128,38 @@ CExprSymbol::CExprSymbol(const char* name, bool value)
 {
 }
 
+#if defined(_MSC_VER) && _MSC_VER < 1400
+// We need that to prevent internal compiler error with MSVC 7.1.
+
+CExprSymbol::CExprSymbol(const char* name, Int8 value)
+: m_Tag(eVARIABLE)
+, m_IntFunc1(NULL)
+, m_Val(value)
+, m_Name(name)
+, m_Next(NULL)
+{
+}
+
+CExprSymbol::CExprSymbol(const char* name, bool value)
+: m_Tag(eVARIABLE)
+, m_IntFunc1(NULL)
+, m_Val(value)
+, m_Name(name)
+, m_Next(NULL)
+{
+}
+
+CExprSymbol::CExprSymbol(const char* name, double value)
+: m_Tag(eVARIABLE)
+, m_IntFunc1(NULL)
+, m_Val(value)
+, m_Name(name)
+, m_Next(NULL)
+{
+}
+
+#endif
+
 template <> 
 CExprSymbol::CExprSymbol(const char* name, FIntFunc1 value)
 : m_Tag(eIFUNC1)
