@@ -1234,6 +1234,7 @@ void SplitChunk(TAliChunkCollection& chunks, TAliChunkIterator iter, TSeqPos sta
 void DropExon(CSpliced_seg::TExons& exons, CSpliced_seg::TExons::iterator& exon_iter)
 {
     exons.erase(exon_iter);
+	exon_iter = exons.end();
 }
 
 void DropExonHead(TAliChunkIterator chunk_iter, bool genomic_plus)
