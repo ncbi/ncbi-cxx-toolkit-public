@@ -31,7 +31,7 @@ Seq-id ::= CHOICE {
     pir Textseq-id ,
     swissprot Textseq-id ,
     patent Patent-seq-id ,
-    other Textseq-id ,       -- catch all
+    other Textseq-id ,       -- for historical reasons, 'other' = 'refseq'
     general Dbtag ,          -- for other databases
     gi INTEGER ,             -- GenInfo Integrated Database
     ddbj Textseq-id ,        -- DDBJ
