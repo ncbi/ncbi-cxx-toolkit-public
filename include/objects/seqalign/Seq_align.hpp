@@ -70,8 +70,10 @@ public:
         eScore_IdentityCount,
 
         //< percent identity (0.0-100.0) (pct_identity)
-        eScore_PercentIdentity
+        eScore_PercentIdentity,
 
+        //< blast-style 'sum_e'
+        eScore_SumEValue
     };
 
     /// constructor
