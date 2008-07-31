@@ -11,5 +11,5 @@ CPPFLAGS = $(SYBASE_INCLUDE) $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 # CHECK_CMD = run_sybase_app.sh dbapi_driver_test_ctlib
 
-REQUIRES = Sybase
+REQUIRES = Sybase Boost.Test
 
