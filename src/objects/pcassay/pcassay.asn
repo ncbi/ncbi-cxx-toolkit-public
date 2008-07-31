@@ -50,7 +50,8 @@ PC-AssaySubmit ::= SEQUENCE {
                           aid           INTEGER,             --   Assay Identifier
                           aid-source    PC-Source,           --   External Assay Identifier
                           descr         PC-AssayDescription, --   Assay Description (new or updated)
-                          aidver        PC-ID                --   Assay Identifier/Version (for internal use)
+                          aidver        PC-ID,               --   Assay Identifier/Version (for internal use)
+                          aidpal        PC-AssayPanelDescription              --   Assay Panel Description(new or updated)
                       },
     data              SEQUENCE OF PC-AssayResults  OPTIONAL, -- Assay Data Deposition (vector)
     revoke            SEQUENCE OF INTEGER          OPTIONAL  -- List of SID's whose data is to be suppressed
@@ -58,7 +59,7 @@ PC-AssaySubmit ::= SEQUENCE {
 
 
 -- Container for multiple Assay Result Sets
-PC-AssayResultsSet ::= SEQUENCE OF PC-AssayResults
+-- PC-AssayResultsSet ::= SEQUENCE OF PC-AssayResults
 
 
 -- Assay Results provided for a given Substance tested, with respect to the results types defined in the 
@@ -89,7 +90,10 @@ PC-AssayResults ::= SEQUENCE {
                                                              --   Note: Larger numbers are more active
     data              SEQUENCE OF PC-AssayData     OPTIONAL, -- Assay Data Reported for this SID (vector)
     url               VisibleString                OPTIONAL, -- Depositor provided URL for this Result
-    xref              SEQUENCE OF PC-AnnotatedXRef OPTIONAL, -- Annotated Cross-Reference Information
+    xref              SEQUENCE OF PC-AnnotatedXRef OPTIONAL, -- annotated Cross-Reference Information
+                                                             -- to be removed, 
+                                                             -- instead regulard TID will be generated
+                                                             -- which are then annotated by xref type
     date              Date                         OPTIONAL  -- Pubchem Release Date
 
 }
@@ -113,10 +117,10 @@ PC-AssayData ::= SEQUENCE {
 --   define as many Result Definitions as needed and they need not be used by all Substances tested.
 -- Assay Descriptions can be modified on both description text and Result Definitions after initial submission
 -- as desired, and such udpates will be tracked in PubChem
- 
+
 PC-AssayDescription ::= SEQUENCE {
     -- Internal/External Tracking Information
-    aid               PC-ID,                                 -- Assay Description ID/Version  [Either valid ID 
+    aid               PC-ID,                                 -- Assay Description ID/Version  [Either valid ID
                                                              --   or, if "aid-source" is used, a "0" dummy value]
                                                              --   Note: Version is for internal use (only?)
                                                              --   Note: A valid ID is greater than "0"
@@ -142,13 +146,96 @@ PC-AssayDescription ::= SEQUENCE {
                                other              (0),          --   All Other Type
                                screening          (1),          --   Primary Screen Assay
                                confirmatory       (2),          --   Confirmatory Assay
+                               summary            (3)          --   Probe Summary Assay
+    }                                                 OPTIONAL,
+
+    dr                SEQUENCE OF PC-AssayDRAttr      OPTIONAL, -- Dose-Response Attribution
+    substance-type    INTEGER{
+                         small-molecule                (1),
+                         nucleotide                    (2),
+                         other                         (255)
+                      }   OPTIONAL,                             -- to distinguish the type of substance used in the screening
+    -- Grant and project category information
+    grant-number      SEQUENCE OF VisibleString     OPTIONAL,               -- grant proposal number
+                                                                -- required for 'MLSCN' & 'MLPCN' projects
+    project-category  INTEGER{
+                        mlscn    (1),
+                        mlpcn    (2),
+                        other    (255)
+                      }                 OPTIONAL                -- to distinguish projects funded through MLSCN, MLPCN or other
+                                                                -- required for 'MLSCN' & 'MLPCN' projects
+}
+ 
+-- Description for Panel Assay
+-- Describe general information about the panel, and link to information for each panel member 
+--   A panel assay can be one assay reporting readouts for
+--   many targets, or reporting readouts for different
+--   cell lines, or different organisms
+--   examples such as bioassay containing kinase profiling data
+--   or bioassay containing cytoxicity data for multiple cell lines
+--   or bioassay containing screening data from different stages, such as primary screening, follow ups
+PC-AssayPanelDescription ::= SEQUENCE {
+    -- Internal/External Tracking Information
+    aid               PC-ID,                                 -- Assay Description ID/Version  [Either valid ID 
+                                                             --   or, if "aid-source" is used, a "0" dummy value]
+                                                             --   Note: Version is for internal use (only?)
+                                                             --   Note: A valid ID is greater than "0"
+    aid-source        PC-Source                    OPTIONAL, -- External Identifier for this Assay Description
+                                                             --   Note: May be used in-lieu of "aid"
+                                                             --   Note: This is non-optional if "aid" ID is "0"
+
+    -- Assay Description Information
+    name              VisibleString,                         -- Short Assay Name (for display purposes)
+    description       SEQUENCE OF VisibleString    OPTIONAL, -- Description of Assay
+    protocol          SEQUENCE OF VisibleString    OPTIONAL, -- Procedure used to generate results
+    comment           SEQUENCE OF VisibleString    OPTIONAL, -- Comments or additional information
+    xref              SEQUENCE OF PC-AnnotatedXRef OPTIONAL, -- Annotated Cross-Reference Information
+
+    -- Allowed Assay Result Types
+    results           SEQUENCE OF PC-ResultType,             -- Result Definitions (vector)
+
+    -- Additional Information
+    pub               SEQUENCE OF Pub              OPTIONAL, -- Depositor provided publications for this assay
+    revision          INTEGER                      OPTIONAL, -- Revision identifier for textual description
+    substance-type    INTEGER{
+                         small-molecule (1),
+                         nucleotide     (2),
+                         other          (255)
+                      }                            OPTIONAL, -- to distinguish the type of substance used in the screening
+    -- Grant and project category information
+    grant-number      SEQUENCE OF VisibleString     OPTIONAL,               -- grant proposal number
+                                                                -- required for 'MLSCN' & 'MLPCN' projects
+    project-category  INTEGER{
+                        mlscn    (1),
+                        mlpcn    (2),
+                        other    (255)
+                      }                             OPTIONAL,   -- to distinguish projects funded through MLSCN, MLPCN or other
+                                                                -- required for 'MLSCN' & 'MLPCN' projects
+    -- Panel member information
+    member    SEQUENCE OF PC-AssayPanelMember       OPTIONAL    -- store panel member information
+ 
+}
+
+-- Specific information about each panel member(or component), such as target, cell line name, cross-reference ... 
+PC-AssayPanelMember ::= SEQUENCE {   
+    mid        INTEGER,                                         -- ID for panel member 
+                                                                -- if a kinase panel with 300 kinases, ID will range from 1 to 300  
+                                                                -- TIDs of the same panel member to be grouped based on panel member ID
+    name           VisibleString  OPTIONAL,                          -- short name for this panel member 
+    descrption     VisibleString  OPTIONAL,                     -- description about specifics of this panel member
+                                                                -- such as about cell line, or target information 
+    protocol       SEQUENCE OF VisibleString    OPTIONAL,       -- Specific procedure used to generate results for the panel member
+    comment        SEQUENCE OF VisibleString    OPTIONAL,       -- Comments or additional information
+    target         SEQUENCE OF PC-AssayTargetInfo  OPTIONAL,    -- often provided for profiling assays across protein families
+    xref           SEQUENCE OF PC-AnnotatedXRef    OPTIONAL,    -- annotated Cross-Reference Information
+    activity-outcome-method  INTEGER  {                         -- Assay Outcome Qualifier
+                               other              (0),          --   All Other Type
+                               screening          (1),          --   Primary Screen Assay
+                               confirmatory       (2),          --   Confirmatory Assay
                                summary            (3)           --   Probe Summary Assay
                              }                        OPTIONAL,
-    dr                SEQUENCE OF PC-AssayDRAttr      OPTIONAL, -- Dose-Response Attribution
-  
-    data-xref         SEQUENCE OF PC-XRefDataType     OPTIONAL  -- xref types used per SID result,
-                                                                -- see xref in PC-AssayResults.
- }
+    dr                SEQUENCE OF PC-AssayDRAttr      OPTIONAL  -- Dose-Response Attribution within the panel member
+} 
 
 
 --  Assay Dose-response attribute information used to define a set of readouts
@@ -183,45 +270,6 @@ PC-AnnotatedXRef ::= SEQUENCE {
     xref              PC-XRefData,                    -- Cross-Reference Information
     comment           VisibleString         OPTIONAL  -- Annotation qualifier describing Cross-Reference meaning
 }
-
-
--- Note: This type should match PC-XRefData in pcsubstance.asn.
---
--- Types for depositor Provided X-Ref and LinkOut data for Entrez
-PC-XRefDataType ::= INTEGER {
-        regid            (1),           -- External Database Registry ID
-        rn               (2),           -- Registry Number (e.g., EC Number, CAS Number)
-        mesh             (3),           -- MESH Index Term
-        pmid             (4),           -- PubMed ID
-                                        --   Note: Must be greater than "0" or, if invalid, "0"
-        gi               (5),           -- GenBank General ID
-                                        --   Note: Please use protein-gi or nucleotide-gi, if possible
-                                        --   Note: Must be greater than "0" or, if invalid, "0"
-        mmdb             (6),           -- MMDB ID
-                                        --   Note: Must be greater than "0" or, if invalid, "0"
-        sid              (7),           -- PubChem Substance ID
-                                        --   Note: Must be greater than "0" or, if invalid, "0"
-        cid              (8),           -- PubChem Compound ID
-                                        --   Note: Must be greater than "0" or, if invalid, "0"
-        dburl            (9),           -- Depositor Source Database Homepage
-        sburl            (10),           -- Depositor Homepage for a Substance
-        asurl            (11),          -- Depositor Homepage for an Assay
-        protein-gi       (12),          -- GenBank General ID for a Protein
-                                        --   Note: Must be greater than "0" or, if invalid, "0"
-        nucleotide-gi    (13),          -- GenBank General ID for a Nucleotide
-                                        --   Note: Must be greater than "0" or, if invalid, "0"
-        taxonomy         (14),          -- Taxonomy ID for an Organism
-                                        --   Note: Must be greater than "0" or, if invalid, "0"
-        aid              (15),          -- PubChem BioAssay ID
-                                        --   Note: Must be greater than "0" or, if invalid, "0"
-        mim              (16),          -- MIM, Mendelian Inheritance in Man, Number 
-                                        --   Note: Must be greater than "0" or, if invalid, "0"
-        gene             (17),          -- Entrez Gene ID
-                                        --   Note: Must be greater than "0" or, if invalid, "0"
-        probe            (18)           -- Probe ID
-                                        --   Note: Must be greater than "0" or, if invalid, "0"
-}
-
 
 -- Definition of Allowed Result Types for a given Assay
 PC-ResultType ::= SEQUENCE {
@@ -317,13 +365,56 @@ PC-ResultType ::= SEQUENCE {
   
   
     tc               PC-ConcentrationAttr        OPTIONAL,  -- Tested concentration attribute
-    ac               BOOLEAN                     OPTIONAL   -- if true, indicates that this TID field 
+    ac               BOOLEAN                     OPTIONAL,   -- if true, indicates that this TID field 
                                                             -- provides active concentration summary by 
                                                             -- reporting the concentration which produces 
                                                             -- 50% of the maximum possible biological response
                                                             -- such as IC50, EC50, AC50, GI50 etc. 
                                                             -- or by reporting constant parameters such as Ki, 
                                                             -- that based on which the activity outcome in this assay is called   
+    panel-info       PC-AssayPanelTestResult     OPTIONAL,  -- needed for panel assay only
+                                                            -- each panel member may have a number of TID columns reported
+                                                            -- such TIDs are grouped by panel member ID, see PC-AssayPanelMemberInfo
+    annot            INTEGER {
+                           pmid  (1),                       -- PubMed ID
+                           mmdb  (2),                       -- MMDB ID
+                           url   (3),                       -- indicate  TID data is a url that provides supplementary information
+                           protein-gi (4),                  -- GenBank General ID for a Protein
+                           nucleotide-gi (5),               -- GenBank General ID for a Nucleotide 
+                           taxonomy (6),                    -- Taxonomy ID for an Organism
+                           mim(7),                          -- MIM, Mendelian Inheritance in Man, ID 
+                           gene(8),                         -- Entrez Gene ID
+                           probe(9),                        -- Entrez Probe ID
+                           aid (10),                        -- PubChem BioAssay ID, may be used in 'Summary' assay
+                           sid (11),                        -- PubChem Substance ID, may be used in 'Summary' assay 
+                           cid (12),                        -- PubChem Compound ID 
+                           protein-target-gi (13),          -- GenBank General ID for a Protein target
+                           nucleotide-target-gi (14),       -- GenBank General ID for a Nucleotide target 
+                           target-name (15),                -- target name
+                           target-descr (16),               -- brief target description 
+                           target-tax-id (17)               -- NCBI Taxonomy ID for target molecule 
+                     }   OPTIONAL                           -- treat substance associated cross-reference as regular TID
+                                                            -- web servers would make a link 
+                                                            -- to the corresponding record in Entrez databases
+                                                            -- treat substance associated target information as regular TID
+                                                            -- for example, for RNAi screening data, each 'substance' may
+                                                            -- correspond to a specific gene target
+}
+
+PC-AssayPanelTestResult ::= SEQUENCE {
+    mid               INTEGER,                              -- panel member ID, see PC-AssayPanelMemberInfo
+                                                            -- track association between a group of TIDs and panel member
+    readout-annot    INTEGER {
+                       regular  (1),                        -- to indicate this TID column is a regular readout
+                       outcome  (2),                        -- to indicate this TID column is  "outcome" of the particular panel member
+                       score(3),                            -- to indicate this TID column reports activity score of the particular panel member
+                                                            -- to be used for neighboring assays
+                       ac       (4)                         -- to indicate this TID column is "active concentration"   
+                                                            -- 'outcome' and 'ac' type of TID are to be used for data analysis 
+                                                            -- across members of panel
+                                                            -- or across multiple assays including other panel assays
+                    }  DEFAULT regular
+
 }
 
 --The concentration attribute is to indicate that the readout under this test result field is biological concentration-response data, the attribute provides the value and unit of the tested concentration
