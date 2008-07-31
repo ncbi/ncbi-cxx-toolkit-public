@@ -128,7 +128,7 @@ void CSplignApp::Init()
     
     argdescr->AddOptionalKey
         ("subj", "subj",
-         "[Pairwise mode] FASTA file with the genomic sequence(s).",
+         "[Pairwise mode] FASTA file with the genomic sequence.",
          CArgDescriptions::eInputFile);
     
     argdescr->AddFlag
