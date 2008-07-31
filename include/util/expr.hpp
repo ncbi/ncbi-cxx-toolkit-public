@@ -232,9 +232,11 @@ private:
 class NCBI_XUTIL_EXPORT CExprParser
 {
 public:
-    // auto_var == true means "create variables without previous declaration".
-    // auto_var == false means "call AddSymbol() to register a variable".
-    CExprParser(bool auto_var = true);
+    /// eAllowAutoVar - means "create variables without previous declaration".
+    /// eDenyAutoVar - means "call AddSymbol() to register a variable".
+    enum EAutoVar {eAllowAutoVar, eDenyAutoVar};
+
+    CExprParser(EAutoVar auto_var = eAllowAutoVar);
     ~CExprParser(void);
 
 public:
@@ -297,7 +299,7 @@ private:
             EOperator val_false, 
             EOperator val_def);
 
-    bool AutoCreateVariable(void) const
+    EAutoVar AutoCreateVariable(void) const
     {
         return m_AutoCreateVariable;
     }
@@ -319,7 +321,7 @@ private:
     const char* m_Buf;
     int         m_Pos;
     int         m_TmpVarCount;
-    bool        m_AutoCreateVariable;
+    EAutoVar    m_AutoCreateVariable;
 };
 
 

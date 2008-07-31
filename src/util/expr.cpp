@@ -350,7 +350,7 @@ void CExprParserException::x_Assign(const CException& src)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-CExprParser::CExprParser(bool auto_var)
+CExprParser::CExprParser(CExprParser::EAutoVar auto_var)
 : m_Buf(NULL)
 , m_Pos(0)
 , m_TmpVarCount(0)
@@ -614,7 +614,7 @@ CExprParser::Scan(bool operand)
 
         CExprSymbol* sym = NULL;
 
-        if (AutoCreateVariable()) {
+        if (AutoCreateVariable() == eAllowAutoVar) {
             sym = AddSymbol(sym_name, Int8(0));
         } else {
             sym = GetSymbol(sym_name);
