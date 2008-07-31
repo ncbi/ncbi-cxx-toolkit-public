@@ -429,6 +429,8 @@ extern const char* dblib_driver;
 
 extern const char* msg_record_expected;
 
+string GetSybaseClientVersion(void);
+
 END_NCBI_SCOPE
 
 #endif  // DBAPI_UNIT_TEST_H
