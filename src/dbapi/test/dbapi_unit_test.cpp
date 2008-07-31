@@ -1817,6 +1817,7 @@ CExprTestSuite::CExprTestSuite(void)
 : CExprTestSuiteBase("DBAPI Test Suite")
 , m_Args(new CTestArguments)
 {
+    Init();
 }
 
 CExprTestSuite::~CExprTestSuite(void)
@@ -2161,9 +2162,7 @@ init_unit_test_suite( int argc, char * argv[] )
 
     test_suite* test = BOOST_TEST_SUITE("DBAPI Unit Test.");
 
-    std::auto_ptr<ncbi::CExprTestSuite> ts(new ncbi::CExprTestSuite());
-    ts->Init();
-    test->add(ts.release());
+    test->add(new ncbi::CExprTestSuite());
 
     return test;
 }
