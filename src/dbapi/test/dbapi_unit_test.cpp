@@ -1639,30 +1639,49 @@ string GetSybaseClientVersion(void)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-#define CLASS_TEST_CASE(name) \
-    tu = BOOST_CLASS_TEST_CASE( name, DBAPIInstance ); \
-    add(tu); \
-    test_case[tu->p_name.get()] = tu; 
-
-#define CLASS_TEST_CASE2(name, parent) \
-    tu = BOOST_CLASS_TEST_CASE( name, DBAPIInstance ); \
-    add(tu); \
-    test_case[tu->p_name.get()] = tu; \
-    { \
-        boost::unit_test::const_string cparent = BOOST_TEST_STRINGIZE(parent); \
-        string parent_name; \
-        boost::unit_test::assign_op(parent_name, cparent, 0); \
-        test_parent[tu->p_name.get()] = parent_name; \
-    } 
-
-////////////////////////////////////////////////////////////////////////////////
-CDBAPITestSuite::CDBAPITestSuite(void)
-    : test_suite("DBAPI Test Suite")
+class CExprTestSuiteBase : public boost::unit_test::test_suite
 {
-    const CRef<const CTestArguments> args(new CTestArguments);
+public:
+    CExprTestSuiteBase(const string& name);
+    virtual ~CExprTestSuiteBase(void);
+
+public:
+    typedef map<string, boost::unit_test::test_unit*> TTestCase;
+    typedef map<string, string> TTestParent;
+
+    // Pure virtual methods ...
+    virtual void DefineSymbols(CExprParser& parser) = 0;
+    virtual void RegisterTests(TTestCase& test_case, TTestParent& test_parent) = 0;
+
+public:
+    void Init(void);
+
+private:
+    void InitInternalStructures(void);
+
+private:
+    CExprParser m_Parser;
+
+    TTestCase   m_TestCase;
+    TTestParent m_TestParent;
+};
+
+CExprTestSuiteBase::CExprTestSuiteBase(const string& name)
+: boost::unit_test::test_suite(name)
+, m_Parser(CExprParser::eDenyAutoVar)
+{
+}
+
+CExprTestSuiteBase::~CExprTestSuiteBase(void)
+{
+}
+
+void CExprTestSuiteBase::Init(void)
+{
     enum EOsType {eOsUnknown, eOsSolaris, eOsWindows, eOsIrix};
     enum ECompilerType {eCompilerUnknown, eCompilerWorkShop, eCompilerGCC};
-    
+
+    // Register predefined symbols ...
     EOsType os_type = eOsUnknown;
     ECompilerType compiler_type = eCompilerUnknown;
     
@@ -1686,147 +1705,33 @@ CDBAPITestSuite::CDBAPITestSuite(void)
     os_type = eOsWindows;
 #endif
 
-    typedef map<string, boost::unit_test::test_unit*> TTestCase;
-    typedef map<string, string> TTestParent;
+    m_Parser.AddSymbol("OS_Windows", os_type == eOsWindows);
+    m_Parser.AddSymbol("OS_Irix", os_type == eOsIrix);
+    m_Parser.AddSymbol("OS_Solaris", os_type == eOsSolaris);
 
-    TTestCase   test_case;
-    TTestParent test_parent;
-    boost::unit_test::test_unit* tu = NULL;
+    m_Parser.AddSymbol("COMPILER_WorkShop", compiler_type == eCompilerWorkShop);
+    m_Parser.AddSymbol("COMPILER_GCC", compiler_type == eCompilerGCC);
 
-    CPluginManager_DllResolver::EnableGlobally(true);
-
-    // add member function test cases to a test suite
-    boost::shared_ptr<CDBAPIUnitTest> DBAPIInstance(new CDBAPIUnitTest(args));
-
-    CExprParser parser(false);
-
-    // Register variables ...
-    parser.AddSymbol("DRIVER_AllowsMultipleContexts", args->DriverAllowsMultipleContexts());
-
-    parser.AddSymbol("OS_Windows", os_type == eOsWindows);
-    parser.AddSymbol("OS_Irix", os_type == eOsIrix);
-    parser.AddSymbol("OS_Solaris", os_type == eOsSolaris);
-
-    parser.AddSymbol("COMPILER_WorkShop", compiler_type == eCompilerWorkShop);
-    parser.AddSymbol("COMPILER_GCC", compiler_type == eCompilerGCC);
-
-    parser.AddSymbol("SERVER_MySQL", args->GetServerType() == CDBConnParams::eMySQL);
-    parser.AddSymbol("SERVER_SybaseOS", args->GetServerType() == CDBConnParams::eSybaseOpenServer);
-    parser.AddSymbol("SERVER_SybaseSQL", args->GetServerType() == CDBConnParams::eSybaseSQLServer);
-    parser.AddSymbol("SERVER_MicrosoftSQL", args->GetServerType() == CDBConnParams::eMSSqlServer);
-    parser.AddSymbol("SERVER_SQLite", args->GetServerType() == CDBConnParams::eSqlite);
-
-    parser.AddSymbol("DRIVER_ftds", args->GetDriverName() == ftds_driver);
-    parser.AddSymbol("DRIVER_ftds8", args->GetDriverName() == ftds8_driver);
-    parser.AddSymbol("DRIVER_ftds64", args->GetDriverName() == ftds64_driver);
-    parser.AddSymbol("DRIVER_ftds_odbc", args->GetDriverName() == ftds_odbc_driver);
-    parser.AddSymbol("DRIVER_ftds_dblib", args->GetDriverName() == ftds_dblib_driver);
-    parser.AddSymbol("DRIVER_odbc", args->GetDriverName() == odbc_driver);
-    parser.AddSymbol("DRIVER_ctlib", args->GetDriverName() == ctlib_driver);
-    parser.AddSymbol("DRIVER_dblib", args->GetDriverName() == dblib_driver);
-
-    parser.AddSymbol("DRIVER_IsBcpAvailable", args->IsBCPAvailable());
-    parser.AddSymbol("DRIVER_IsOdbcBased", args->GetDriverName() == ftds_odbc_driver ||
-            args->GetDriverName() == odbc_driver);
-
-    parser.AddSymbol("SYBASE_ClientVersion", NStr::StringToDouble(
+    m_Parser.AddSymbol("SYBASE_ClientVersion", NStr::StringToDouble(
         GetSybaseClientVersion().substr(0, 4))
     );
 
 #ifdef HAVE_LIBCONNEXT
-    parser.AddSymbol("HAVE_LibConnExt", CRYPT_Version(-1) != -1);
+    m_Parser.AddSymbol("HAVE_LibConnExt", CRYPT_Version(-1) != -1);
 #else
-    parser.AddSymbol("HAVE_LibConnExt", false);
+    m_Parser.AddSymbol("HAVE_LibConnExt", false);
 #endif
 
-    // Register tests ...
-    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many);
-    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_One);
-    CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_VARCHAR_MAX,     CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_VARCHAR_MAX_BCP, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_CHAR,            CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Truncation,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ConnParams,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ConnFactory,     CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ConnPool,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_DropConnection,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BlobStore,       CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Timeout,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Timeout2,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Query_Cancelation,   CDBAPIUnitTest::TestInit);
-#ifdef HAVE_LIBCONNEXT
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Authentication,  CDBAPIUnitTest::TestInit);
-#endif
-    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Object);
-    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant);
-    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Numeric,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Create_Destroy,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Multiple_Close,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing2,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing3,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing4,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing5,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Late_Bind,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing6,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_StatementParameters, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_GetRowCount,     CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB_LowLevel,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Cursor,          CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Cursor2,         CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Cursor_Param,    CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Cursor_Multiple, CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB,             CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB2,            CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB3,            CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB4,            CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB_Multiple,    CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB_Multiple_LowLevel,   CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BlobStream,      CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_UnicodeNB,       CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Unicode,         CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StmtMetaData);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ClearParamList,  CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_SelectStmt2,     CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_NULL,            CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BulkInsertBlob,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_MsgToEx,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_MsgToEx2,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Exception_Safety,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_UserErrorHandler,    CDBAPIUnitTest::Test_Exception_Safety);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_SelectStmt,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Recordset,       CDBAPIUnitTest::Test_SelectStmt);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ResultsetMetaData,   CDBAPIUnitTest::Test_SelectStmt);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_SelectStmtXML,   CDBAPIUnitTest::Test_SelectStmt);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Unicode_Simple,  CDBAPIUnitTest::Test_SelectStmtXML);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Insert,          CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Procedure,       CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Variant2,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_GetTotalColumns, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Procedure2,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Procedure3,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_UNIQUE,          CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_DateTimeBCP,     CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Overflow,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Iskhakov,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_DateTime,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Decimal,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_SetLogStream,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Identity,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_UserErrorHandler_LT, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_N_Connections,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_NCBI_LS,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_HasMoreResults,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BCP_Cancel,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_NTEXT,           CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_NVARCHAR,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB_Replication, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Heavy_Load,      CDBAPIUnitTest::TestInit);
+    // Register user-defined symbols ...
+    DefineSymbols(m_Parser);
 
+    RegisterTests(m_TestCase, m_TestParent);
+
+    InitInternalStructures();
+}
+
+void CExprTestSuiteBase::InitInternalStructures(void)
+{
     const string section_name("UNIT_TEST");
     const CNcbiApplication* app = CNcbiApplication::Instance();
 
@@ -1842,10 +1747,10 @@ CDBAPITestSuite::CDBAPITestSuite(void)
     // Disable tests ...
     ITERATE(list<string>, cit, entries) {
         const string test_case_name = *cit;
-        TTestCase::iterator it = test_case.find("CDBAPIUnitTest::" + test_case_name);
-        if (it != test_case.end()) {
-            parser.Parse(registry.Get(section_name, test_case_name).c_str());
-            const CExprValue& p_result = parser.GetResult();
+        TTestCase::iterator it = m_TestCase.find("CDBAPIUnitTest::" + test_case_name);
+        if (it != m_TestCase.end()) {
+            m_Parser.Parse(registry.Get(section_name, test_case_name).c_str());
+            const CExprValue& p_result = m_Parser.GetResult();
 
             if (p_result.GetType() == CExprValue::eBOOL && !p_result.GetBool()) {
                 NcbiTestDisable(it->second);
@@ -1857,29 +1762,185 @@ CDBAPITestSuite::CDBAPITestSuite(void)
     }
     
     // Dependencies ...
-    ITERATE(TTestParent, cit, test_parent) {
-        const TTestCase::const_iterator it = test_case.find(cit->first);
-        const TTestCase::const_iterator parent_it = test_case.find(cit->second);
+    ITERATE(TTestParent, cit, m_TestParent) {
+        const TTestCase::const_iterator it = m_TestCase.find(cit->first);
+        const TTestCase::const_iterator parent_it = m_TestCase.find(cit->second);
 
-        if (it == test_case.end()) {
+        if (it == m_TestCase.end()) {
             cerr << "Unknown test case: " << cit->first << endl;
             continue;
         }
 
-        if (parent_it == test_case.end()) {
+        if (parent_it == m_TestCase.end()) {
             cerr << "Unknown test case: " << cit->second << endl;
             continue;
         }
 
         NcbiTestDependsOn(it->second, parent_it->second);
     }
-
 }
 
-CDBAPITestSuite::~CDBAPITestSuite(void)
+
+////////////////////////////////////////////////////////////////////////////////
+#define CLASS_TEST_CASE(name) \
+    tu = BOOST_CLASS_TEST_CASE( &name, DBAPIInstance ); \
+    add(tu); \
+    test_case[tu->p_name.get()] = tu; 
+
+#define CLASS_TEST_CASE2(name, parent) \
+    tu = BOOST_CLASS_TEST_CASE( &name, DBAPIInstance ); \
+    add(tu); \
+    test_case[tu->p_name.get()] = tu; \
+    { \
+        boost::unit_test::const_string cparent = BOOST_TEST_STRINGIZE(parent); \
+        string parent_name; \
+        boost::unit_test::assign_op(parent_name, cparent, 0); \
+        test_parent[tu->p_name.get()] = parent_name; \
+    } 
+
+////////////////////////////////////////////////////////////////////////////////
+class CExprTestSuite : public CExprTestSuiteBase
+{
+public:
+    CExprTestSuite(void);
+    ~CExprTestSuite(void);
+
+public:
+    virtual void DefineSymbols(CExprParser& parser);
+    virtual void RegisterTests(TTestCase& test_case, TTestParent& test_parent);
+
+private:
+    const CRef<const CTestArguments> m_Args;
+};
+
+CExprTestSuite::CExprTestSuite(void)
+: CExprTestSuiteBase("DBAPI Test Suite")
+, m_Args(new CTestArguments)
 {
 }
 
+CExprTestSuite::~CExprTestSuite(void)
+{
+}
+
+void CExprTestSuite::DefineSymbols(CExprParser& parser)
+{
+    parser.AddSymbol("DRIVER_AllowsMultipleContexts", m_Args->DriverAllowsMultipleContexts());
+
+    parser.AddSymbol("SERVER_MySQL", m_Args->GetServerType() == CDBConnParams::eMySQL);
+    parser.AddSymbol("SERVER_SybaseOS", m_Args->GetServerType() == CDBConnParams::eSybaseOpenServer);
+    parser.AddSymbol("SERVER_SybaseSQL", m_Args->GetServerType() == CDBConnParams::eSybaseSQLServer);
+    parser.AddSymbol("SERVER_MicrosoftSQL", m_Args->GetServerType() == CDBConnParams::eMSSqlServer);
+    parser.AddSymbol("SERVER_SQLite", m_Args->GetServerType() == CDBConnParams::eSqlite);
+
+    parser.AddSymbol("DRIVER_ftds", m_Args->GetDriverName() == ftds_driver);
+    parser.AddSymbol("DRIVER_ftds8", m_Args->GetDriverName() == ftds8_driver);
+    parser.AddSymbol("DRIVER_ftds64", m_Args->GetDriverName() == ftds64_driver);
+    parser.AddSymbol("DRIVER_ftds_odbc", m_Args->GetDriverName() == ftds_odbc_driver);
+    parser.AddSymbol("DRIVER_ftds_dblib", m_Args->GetDriverName() == ftds_dblib_driver);
+    parser.AddSymbol("DRIVER_odbc", m_Args->GetDriverName() == odbc_driver);
+    parser.AddSymbol("DRIVER_ctlib", m_Args->GetDriverName() == ctlib_driver);
+    parser.AddSymbol("DRIVER_dblib", m_Args->GetDriverName() == dblib_driver);
+
+    parser.AddSymbol("DRIVER_IsBcpAvailable", m_Args->IsBCPAvailable());
+    parser.AddSymbol("DRIVER_IsOdbcBased", m_Args->GetDriverName() == ftds_odbc_driver ||
+            m_Args->GetDriverName() == odbc_driver);
+}
+
+void CExprTestSuite::RegisterTests(TTestCase& test_case, TTestParent& test_parent)
+{
+    boost::shared_ptr<CDBAPIUnitTest> DBAPIInstance(new CDBAPIUnitTest(m_Args));
+
+    boost::unit_test::test_unit* tu = NULL;
+
+    // Register tests ...
+    CLASS_TEST_CASE(CDBAPIUnitTest::Test_DriverContext_Many);
+    CLASS_TEST_CASE(CDBAPIUnitTest::Test_DriverContext_One);
+    CLASS_TEST_CASE(CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_VARCHAR_MAX,     CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_VARCHAR_MAX_BCP, CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_CHAR,            CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Truncation,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_ConnParams,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_ConnFactory,     CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_ConnPool,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_DropConnection,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BlobStore,       CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Timeout,         CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Timeout2,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Query_Cancelation,   CDBAPIUnitTest::TestInit);
+#ifdef HAVE_LIBCONNEXT
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Authentication,  CDBAPIUnitTest::TestInit);
+#endif
+    CLASS_TEST_CASE(CDBAPIUnitTest::Test_CDB_Object);
+    CLASS_TEST_CASE(CDBAPIUnitTest::Test_Variant);
+    CLASS_TEST_CASE(CDBAPIUnitTest::Test_CDB_Exception);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Numeric,         CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Create_Destroy,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Multiple_Close,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Writing,    CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Writing2,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Writing3,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Writing4,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Writing5,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Late_Bind,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Writing6,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_StatementParameters, CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_GetRowCount,     CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB_LowLevel,    CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Cursor,          CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Cursor2,         CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Cursor_Param,    CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Cursor_Multiple, CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB,             CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB2,            CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB3,            CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB4,            CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB_Multiple,    CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB_Multiple_LowLevel,   CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BlobStream,      CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_UnicodeNB,       CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Unicode,         CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE(CDBAPIUnitTest::Test_StmtMetaData);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_ClearParamList,  CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_SelectStmt2,     CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_NULL,            CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BulkInsertBlob,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel, CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2,    CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_MsgToEx,         CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_MsgToEx2,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Exception_Safety,    CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_UserErrorHandler,    CDBAPIUnitTest::Test_Exception_Safety);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_SelectStmt,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Recordset,       CDBAPIUnitTest::Test_SelectStmt);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_ResultsetMetaData,   CDBAPIUnitTest::Test_SelectStmt);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_SelectStmtXML,   CDBAPIUnitTest::Test_SelectStmt);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Unicode_Simple,  CDBAPIUnitTest::Test_SelectStmtXML);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Insert,          CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Procedure,       CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Variant2,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_GetTotalColumns, CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Procedure2,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Procedure3,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_UNIQUE,          CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_DateTimeBCP,     CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Overflow,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Iskhakov,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_DateTime,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Decimal,         CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_SetLogStream,    CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Identity,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_UserErrorHandler_LT, CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_N_Connections,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_NCBI_LS,         CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_HasMoreResults,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BCP_Cancel,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_NTEXT,           CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_NVARCHAR,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB_Replication, CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Heavy_Load,      CDBAPIUnitTest::TestInit);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 CTestArguments::CTestArguments(void)
@@ -1898,8 +1959,6 @@ CTestArguments::CTestArguments(void)
     const CArgs& args = app->GetArgs();
 
     // Get command-line arguments ...
-    m_ReportDisabled = args["report_disabled"].AsBoolean();
-
     m_ParamBase.SetServerName(args["S"].AsString());
     m_ParamBase.SetUserName(args["U"].AsString());
     m_ParamBase.SetPassword(args["P"].AsString());
@@ -2068,16 +2127,6 @@ CArgDescriptions* NcbiTestPrepareArgDescrs(void)
                             CArgDescriptions::eInteger,
                             "65534");
 
-    arg_desc->AddDefaultKey("report_disabled", "report_disabled",
-                            "Report disabled tests",
-                            CArgDescriptions::eBoolean,
-                            "false");
-
-    arg_desc->AddDefaultKey("report_expected", "report_expected",
-                            "Report expected tests",
-                            CArgDescriptions::eBoolean,
-                            "false");
-
     arg_desc->AddDefaultKey("conf", "configuration",
                             "Configuration for testing",
                             CArgDescriptions::eString, "with-exceptions");
@@ -2112,7 +2161,9 @@ init_unit_test_suite( int argc, char * argv[] )
 
     test_suite* test = BOOST_TEST_SUITE("DBAPI Unit Test.");
 
-    test->add(new ncbi::CDBAPITestSuite());
+    std::auto_ptr<ncbi::CExprTestSuite> ts(new ncbi::CExprTestSuite());
+    ts->Init();
+    test->add(ts.release());
 
     return test;
 }

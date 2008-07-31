@@ -32,8 +32,9 @@
 
 #include <ncbi_pch.hpp>
 
-#include <dbapi/driver/util/blobstore.hpp>
 #include "dbapi_unit_test.hpp"
+
+#include <dbapi/driver/util/blobstore.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 

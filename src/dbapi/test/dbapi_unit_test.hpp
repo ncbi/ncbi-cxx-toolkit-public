@@ -152,11 +152,6 @@ public:
     void PutMsgDisabled(const char* msg) const;
     void PutMsgExpected(const char* msg, const char* replacement) const;
 
-    unsigned int GetNumOfDisabledTests(void) const
-    {
-        return m_NumOfDisabled;
-    }
-
     const CDBConnParams& GetConnParams(void) const
     {
         return m_ConnParams;
@@ -374,14 +369,6 @@ private:
     const string                m_TableName;
     unsigned int                m_max_varchar_size;
 };
-
-///////////////////////////////////////////////////////////////////////////
-struct CDBAPITestSuite : public test_suite
-{
-    CDBAPITestSuite(void);
-    ~CDBAPITestSuite(void);
-};
-
 
 ///////////////////////////////////////////////////////////////////////////
 class CDBSetConnParams : public CDBConnParamsDelegate
