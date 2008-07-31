@@ -38,11 +38,7 @@
 #include <dbapi/driver/driver_mgr.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
-#define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
+#include <corelib/test_boost.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 

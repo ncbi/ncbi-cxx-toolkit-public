@@ -3,7 +3,7 @@
 APP = dbapi_driver_test_ctlib
 SRC = dbapi_driver_test_ctlib
 
-LIB  = ncbi_xdbapi_ctlib$(STATIC) dbapi_driver$(STATIC) xncbi
+LIB  = ncbi_xdbapi_ctlib$(STATIC) dbapi_driver$(STATIC) test_boost$(STATIC) xncbi
 PRE_LIBS = $(BOOST_LIBS)
 LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(NETWORK_LIBS) $(ORIG_LIBS) $(DL_LIBS)
 
