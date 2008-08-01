@@ -33,7 +33,7 @@ def main(): #IGNORE:R0911
     if platform == "Win32":
         return launch_win_installer_build(installdir)                
     if platform == "Win64":
-        return launch_win_installer_build(platform)        
+        return launch_win_installer_build(installdir)        
     if platform == "Linux32":
         return launch_rpm_build(installdir)
     if platform == "Linux64":
