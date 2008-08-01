@@ -1670,6 +1670,7 @@ CExprTestSuiteBase::CExprTestSuiteBase(const string& name)
 : boost::unit_test::test_suite(name)
 , m_Parser(CExprParser::eDenyAutoVar)
 {
+    CPluginManager_DllResolver::EnableGlobally(true);
 }
 
 CExprTestSuiteBase::~CExprTestSuiteBase(void)
@@ -1783,12 +1784,12 @@ void CExprTestSuiteBase::InitInternalStructures(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLASS_TEST_CASE(name) \
-    tu = BOOST_CLASS_TEST_CASE( &name, DBAPIInstance ); \
+    tu = BOOST_CLASS_TEST_CASE( name, DBAPIInstance ); \
     add(tu); \
     test_case[tu->p_name.get()] = tu; 
 
 #define CLASS_TEST_CASE2(name, parent) \
-    tu = BOOST_CLASS_TEST_CASE( &name, DBAPIInstance ); \
+    tu = BOOST_CLASS_TEST_CASE( name, DBAPIInstance ); \
     add(tu); \
     test_case[tu->p_name.get()] = tu; \
     { \
@@ -1855,92 +1856,92 @@ void CExprTestSuite::RegisterTests(TTestCase& test_case, TTestParent& test_paren
     boost::unit_test::test_unit* tu = NULL;
 
     // Register tests ...
-    CLASS_TEST_CASE(CDBAPIUnitTest::Test_DriverContext_Many);
-    CLASS_TEST_CASE(CDBAPIUnitTest::Test_DriverContext_One);
-    CLASS_TEST_CASE(CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_VARCHAR_MAX,     CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_VARCHAR_MAX_BCP, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_CHAR,            CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Truncation,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_ConnParams,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_ConnFactory,     CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_ConnPool,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_DropConnection,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BlobStore,       CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Timeout,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Timeout2,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Query_Cancelation,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many);
+    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_One);
+    CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_VARCHAR_MAX,     CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_VARCHAR_MAX_BCP, CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_CHAR,            CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Truncation,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ConnParams,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ConnFactory,     CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ConnPool,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_DropConnection,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BlobStore,       CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Timeout,         CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Timeout2,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Query_Cancelation,   CDBAPIUnitTest::TestInit);
 #ifdef HAVE_LIBCONNEXT
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Authentication,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Authentication,  CDBAPIUnitTest::TestInit);
 #endif
-    CLASS_TEST_CASE(CDBAPIUnitTest::Test_CDB_Object);
-    CLASS_TEST_CASE(CDBAPIUnitTest::Test_Variant);
-    CLASS_TEST_CASE(CDBAPIUnitTest::Test_CDB_Exception);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Numeric,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Create_Destroy,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Multiple_Close,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Writing,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Writing2,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Writing3,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Writing4,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Writing5,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Late_Bind,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Writing6,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_StatementParameters, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_GetRowCount,     CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB_LowLevel,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Cursor,          CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Cursor2,         CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Cursor_Param,    CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Cursor_Multiple, CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB,             CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB2,            CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB3,            CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB4,            CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB_Multiple,    CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB_Multiple_LowLevel,   CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BlobStream,      CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_UnicodeNB,       CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Unicode,         CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_StmtMetaData,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_ClearParamList,  CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_SelectStmt2,     CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_NULL,            CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BulkInsertBlob,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_MsgToEx,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_MsgToEx2,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Exception_Safety,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_UserErrorHandler,    CDBAPIUnitTest::Test_Exception_Safety);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_SelectStmt,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Recordset,       CDBAPIUnitTest::Test_SelectStmt);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_ResultsetMetaData,   CDBAPIUnitTest::Test_SelectStmt);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_SelectStmtXML,   CDBAPIUnitTest::Test_SelectStmt);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Unicode_Simple,  CDBAPIUnitTest::Test_SelectStmtXML);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Insert,          CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Procedure,       CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Variant2,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_GetTotalColumns, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Procedure2,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Procedure3,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_UNIQUE,          CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_DateTimeBCP,     CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Bulk_Overflow,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Iskhakov,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_DateTime,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Decimal,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_SetLogStream,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Identity,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_UserErrorHandler_LT, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_N_Connections,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_NCBI_LS,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_HasMoreResults,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BCP_Cancel,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_NTEXT,           CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_NVARCHAR,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_LOB_Replication, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Heavy_Load,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Object);
+    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant);
+    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Numeric,         CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Create_Destroy,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Multiple_Close,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing,    CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing2,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing3,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing4,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing5,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Late_Bind,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing6,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_StatementParameters, CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_GetRowCount,     CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB_LowLevel,    CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Cursor,          CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Cursor2,         CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Cursor_Param,    CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Cursor_Multiple, CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB,             CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB2,            CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB3,            CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB4,            CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB_Multiple,    CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB_Multiple_LowLevel,   CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BlobStream,      CDBAPIUnitTest::Test_Cursor);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_UnicodeNB,       CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Unicode,         CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_StmtMetaData,    CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ClearParamList,  CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_SelectStmt2,     CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_NULL,            CDBAPIUnitTest::Test_StatementParameters);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BulkInsertBlob,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel, CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2,    CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_MsgToEx,         CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_MsgToEx2,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Exception_Safety,    CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_UserErrorHandler,    CDBAPIUnitTest::Test_Exception_Safety);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_SelectStmt,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Recordset,       CDBAPIUnitTest::Test_SelectStmt);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ResultsetMetaData,   CDBAPIUnitTest::Test_SelectStmt);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_SelectStmtXML,   CDBAPIUnitTest::Test_SelectStmt);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Unicode_Simple,  CDBAPIUnitTest::Test_SelectStmtXML);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Insert,          CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Procedure,       CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Variant2,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_GetTotalColumns, CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Procedure2,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Procedure3,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_UNIQUE,          CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_DateTimeBCP,     CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Overflow,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Iskhakov,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_DateTime,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Decimal,         CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_SetLogStream,    CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Identity,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_UserErrorHandler_LT, CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_N_Connections,   CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_NCBI_LS,         CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_HasMoreResults,  CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BCP_Cancel,      CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_NTEXT,           CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_NVARCHAR,        CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB_Replication, CDBAPIUnitTest::TestInit);
+    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Heavy_Load,      CDBAPIUnitTest::TestInit);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
