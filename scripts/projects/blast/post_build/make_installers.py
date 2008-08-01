@@ -31,13 +31,13 @@ def main(): #IGNORE:R0911
         print "Installation directory:", installdir
 
     if platform == "Win32":
-        return do_nothing(platform)                
+        return launch_win_installer_build(installdir)                
     if platform == "Win64":
-        return win32_post_build(installdir)        
+        return launch_win_installer_build(platform)        
     if platform == "Linux32":
-        return linux32_post_build(installdir)
+        return launch_rpm_build(installdir)
     if platform == "Linux64":
-        return linux64_post_build(installdir)
+        return launch_rpm_build(installdir)
     if platform == "FreeBSD32":
         return do_nothing(platform)
     if platform == "PowerMAC":
@@ -51,10 +51,10 @@ def main(): #IGNORE:R0911
     print >> sys.stderr, "Exiting post build script."
     return 2
 
-def win32_post_build(installdir):
-    '''Win32 post-build: create installer'''
+def launch_win_installer_build(installdir):
+    '''Windows post-build: create installer'''
     if VERBOSE: 
-        print "Packaging for Win32..."
+        print "Packaging for Windows..."
     cmd = "python " + os.path.join(SCRIPTS_DIR, "win", "make_win.py") + " "
     cmd += installdir
     if VERBOSE: 
@@ -62,21 +62,10 @@ def win32_post_build(installdir):
     safe_exec(cmd)
     return 0
 
-def linux32_post_build(installdir):
-    '''Linux32 post-build: create RPM'''
+def launch_rpm_build(installdir):
+    '''Linux post-build: create RPM'''
     if VERBOSE: 
-        print "Packing linux 32 bit RPM..."
-    cmd = "python " + os.path.join(SCRIPTS_DIR, "rpm", "make_rpm.py") + " "
-    cmd += installdir
-    if VERBOSE: 
-        cmd += " -v"
-    safe_exec(cmd)
-    return 0
-
-def linux64_post_build(installdir):
-    '''Linux64 post-build: create RPM'''
-    if VERBOSE: 
-        print "Packing linux 64 bit RPM..."
+        print "Packing linux RPM..."
     cmd = "python " + os.path.join(SCRIPTS_DIR, "rpm", "make_rpm.py") + " "
     cmd += installdir
     if VERBOSE: 

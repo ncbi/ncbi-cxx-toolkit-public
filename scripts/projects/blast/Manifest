@@ -35,9 +35,7 @@ POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $plat
 Linux32     : plain : ICC.sh            --without-debug --with-mt --with-flat-makefile
 Linux64     : plain : ICC.sh            --without-debug --with-mt --with-flat-makefile
 
-# Apparently Win32 host is unavailable :(
-#Win32       : plain : msvc800_prj   static  32  ReleaseDLL
-Win64       : plain : msvc800_prj   static  32  ReleaseDLL
+Win32       : plain : msvc800_prj   static  32  ReleaseDLL
 Win64       : plain : msvc800_prj   static  64  ReleaseDLL
 
 SunOSx86    : plain : WorkShop59.sh 64  --without-debug --with-mt --with-flat-makefile
