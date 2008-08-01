@@ -1902,7 +1902,7 @@ void CExprTestSuite::RegisterTests(TTestCase& test_case, TTestParent& test_paren
     CLASS_TEST_CASE2(CDBAPIUnitTest::Test_BlobStream,      CDBAPIUnitTest::Test_Cursor);
     CLASS_TEST_CASE2(CDBAPIUnitTest::Test_UnicodeNB,       CDBAPIUnitTest::Test_StatementParameters);
     CLASS_TEST_CASE2(CDBAPIUnitTest::Test_Unicode,         CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE(CDBAPIUnitTest::Test_StmtMetaData);
+    CLASS_TEST_CASE2(CDBAPIUnitTest::Test_StmtMetaData,    CDBAPIUnitTest::TestInit);
     CLASS_TEST_CASE2(CDBAPIUnitTest::Test_ClearParamList,  CDBAPIUnitTest::Test_StatementParameters);
     CLASS_TEST_CASE2(CDBAPIUnitTest::Test_SelectStmt2,     CDBAPIUnitTest::Test_StatementParameters);
     CLASS_TEST_CASE2(CDBAPIUnitTest::Test_NULL,            CDBAPIUnitTest::Test_StatementParameters);
