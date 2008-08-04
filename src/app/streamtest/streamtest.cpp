@@ -142,6 +142,12 @@ void CStreamTestApp::Init()
                                         "prosplign",
                                         "title"));
     
+    arg_desc->AddDefaultKey( "options", 
+        "Options",
+        "Test-specific options",
+        CArgDescriptions::eString,
+        "" );
+
     arg_desc->AddFlag( "batch",
         "Process genbank release file" );
 
@@ -180,9 +186,13 @@ int CStreamTestApp::Run(void)
         return 1;
     }
 
+    pPresenter->Initialize( args );
+
     pProcess->ProcessInitialize( args );
     pPresenter->Run( pProcess );
     pProcess->ProcessFinalize();
+
+    pPresenter->Finalize( args );
 
     delete pPresenter;
     delete pProcess;
@@ -245,9 +255,6 @@ CStreamTestApp::GetPresenter(
     }
     else {
         pPresenter = new CSeqSetPresenter;
-    }
-    if ( pPresenter ) {
-        pPresenter->Initialize( args );
     }
     return pPresenter;
 }
