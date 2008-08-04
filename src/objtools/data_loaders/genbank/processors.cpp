@@ -1220,7 +1220,7 @@ void CProcessor_St_SE_SNPT::ProcessStream(CReaderRequestResult& result,
         LogStat(result, r, blob_id,
                 CGBRequestStatistics::eStat_LoadSNPBlob,
                 "CProcessor_St_SE_SNPT: read SNP table",
-                size);
+                double(size));
     }}
     
     CWriter* writer = GetWriter(result);
