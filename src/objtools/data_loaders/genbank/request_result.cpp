@@ -474,8 +474,8 @@ CTSE_LoadLock CReaderRequestResult::GetBlobLoadLock(const CBlob_id& blob_id)
 }
 
 
-void CReaderRequestResult::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
-                                             TLoadedBlob_ids& blob_ids) const
+void CReaderRequestResult::GetLoadedBlob_ids(const CSeq_id_Handle& /*idh*/,
+                                             TLoadedBlob_ids& /*blob_ids*/) const
 {
     return;
 }
