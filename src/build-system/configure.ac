@@ -3935,6 +3935,19 @@ if test "$with_boost" != "no"; then
    : ${BOOST_INCLUDE=-I$BOOST_PATH/include}
    BOOST_LIBPATH_=$BOOST_PATH/lib
    NCBI_RPATHIFY_COND(BOOST_LIBPATH, $BOOST_LIBPATH_)
+   boost_path_digits=`basename $BOOST_PATH | sed -e 's/.0$//' | tr -cd 0123456789`
+   if test -n "$boost_path_digits"; then
+      boost_version_digits=`echo $ncbi_cv_lib_boost_version | sed -e 's/.0$//' | tr -cd 0123456789`
+      if test $boost_path_digits != "$boost_version_digits"; then
+         # presumably stale, particularly if boost_version WASN'T cached;
+         # uncache all relevant settings
+         AS_UNSET(ncbi_cv_lib_boost_version)
+         AS_UNSET(ncbi_cv_lib_boost_regex)
+         AS_UNSET(ncbi_cv_lib_boost_spirit)
+         AS_UNSET(ncbi_cv_lib_boost_test)
+         AS_UNSET(ncbi_cv_lib_boost_thread)
+      fi
+   fi
       AC_CACHE_CHECK([Boost version],
          ncbi_cv_lib_boost_version,
          [AC_LANG_CONFTEST([AC_LANG_SOURCE([[
@@ -3964,10 +3977,23 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
    AC_MSG_CHECKING([for Boost library name tag])
    case "$ncbi_cv_lib_boost_version" in
       0_* | 1_[[0-9]] | 1_[[0-9]]_* | 1_[[0-2]][[0-9]] | 1_[[0-2]][[0-9]]_* ) ;;
-      1_3[[0-3]] | 1_3[[0-3]]_* ) ;;
-      * ) boost_compiler_version=`echo $compiler_version | cut -c1-2`
-          boost134=yes ;;
+      1_3[[0-3]] | 1_3[[0-4]]_* )
+         AC_MSG_WARN(
+            [Your Boost version is too old to use.  (Needed >= 1.35.)])
+         if test -n "$with_boost"; then
+            AC_MSG_ERROR([--with-boost:  Boost library is too old])
+         fi
+         with_boost=no
+         ;;
+      1_35 | 1_35_* ) ;;
+      * )
+         AC_MSG_WARN(
+            [Untested Boost version; may prove incompatible.])
+         AC_MSG_WARN(
+            [If so, please re-run this script with the flag --without-boost.])
+         ;;
    esac
+   boost_compiler_version=`echo $compiler_version | cut -c1-2`
    case "$with_boost_tag" in
       yes | "" )
          case "$host_os:$ncbi_compiler" in
@@ -4052,11 +4078,9 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
        BOOST_TEST_UTF_STATIC_LIBS=$BOOST_TEST_UTF_LIBS
    fi
 
-   if test "$boost134" = "yes"; then
-       BOOST_TEST_PEM_LIBS=$BOOST_TEST_PEM_STATIC_LIBS
-       BOOST_TEST_TEM_LIBS=$BOOST_TEST_TEM_STATIC_LIBS
-       BOOST_TEST_UTF_LIBS=$BOOST_TEST_UTF_STATIC_LIBS
-   fi
+   BOOST_TEST_PEM_LIBS=$BOOST_TEST_PEM_STATIC_LIBS
+   BOOST_TEST_TEM_LIBS=$BOOST_TEST_TEM_STATIC_LIBS
+   BOOST_TEST_UTF_LIBS=$BOOST_TEST_UTF_STATIC_LIBS
       
    AC_CACHE_CHECK([for Boost.Test in $BOOST_PATH], ncbi_cv_lib_boost_test,
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"

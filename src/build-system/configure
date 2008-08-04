@@ -22910,6 +22910,20 @@ if test "$with_boost" != "no"; then
     BOOST_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
  fi
+   boost_path_digits=`basename $BOOST_PATH | sed -e 's/.0$//' | tr -cd 0123456789`
+   if test -n "$boost_path_digits"; then
+      boost_version_digits=`echo $ncbi_cv_lib_boost_version | sed -e 's/.0$//' | tr -cd 0123456789`
+      if test $boost_path_digits != "$boost_version_digits"; then
+         echo "$boost_path_digits != $boost_version_digits"
+         # presumably stale, particularly if boost_version WASN'T cached;
+         # uncache all relevant settings
+         $as_unset ncbi_cv_lib_boost_version || test "${ncbi_cv_lib_boost_version+set}" != set || { ncbi_cv_lib_boost_version=; export ncbi_cv_lib_boost_version; }
+         $as_unset ncbi_cv_lib_boost_regex || test "${ncbi_cv_lib_boost_regex+set}" != set || { ncbi_cv_lib_boost_regex=; export ncbi_cv_lib_boost_regex; }
+         $as_unset ncbi_cv_lib_boost_spirit || test "${ncbi_cv_lib_boost_spirit+set}" != set || { ncbi_cv_lib_boost_spirit=; export ncbi_cv_lib_boost_spirit; }
+         $as_unset ncbi_cv_lib_boost_test || test "${ncbi_cv_lib_boost_test+set}" != set || { ncbi_cv_lib_boost_test=; export ncbi_cv_lib_boost_test; }
+         $as_unset ncbi_cv_lib_boost_thread || test "${ncbi_cv_lib_boost_thread+set}" != set || { ncbi_cv_lib_boost_thread=; export ncbi_cv_lib_boost_thread; }
+      fi
+   fi
       echo "$as_me:$LINENO: checking Boost version" >&5
 echo $ECHO_N "checking Boost version... $ECHO_C" >&6
 if test "${ncbi_cv_lib_boost_version+set}" = set; then
@@ -22953,10 +22967,25 @@ echo "${ECHO_T}$ncbi_cv_lib_boost_version" >&6
 echo $ECHO_N "checking for Boost library name tag... $ECHO_C" >&6
    case "$ncbi_cv_lib_boost_version" in
       0_* | 1_[0-9] | 1_[0-9]_* | 1_[0-2][0-9] | 1_[0-2][0-9]_* ) ;;
-      1_3[0-3] | 1_3[0-3]_* ) ;;
-      * ) boost_compiler_version=`echo $compiler_version | cut -c1-2`
-          boost134=yes ;;
+      1_3[0-3] | 1_3[0-4]_* )
+         { echo "$as_me:$LINENO: WARNING: Your Boost version is too old to use.  (Needed >= 1.35.)" >&5
+echo "$as_me: WARNING: Your Boost version is too old to use.  (Needed >= 1.35.)" >&2;}
+         if test -n "$with_boost"; then
+            { { echo "$as_me:$LINENO: error: --with-boost:  Boost library is too old" >&5
+echo "$as_me: error: --with-boost:  Boost library is too old" >&2;}
+   { (exit 1); exit 1; }; }
+         fi
+         with_boost=no
+         ;;
+      1_35 | 1_35_* ) ;;
+      * )
+         { echo "$as_me:$LINENO: WARNING: Untested Boost version; may prove incompatible." >&5
+echo "$as_me: WARNING: Untested Boost version; may prove incompatible." >&2;}
+         { echo "$as_me:$LINENO: WARNING: If so, please re-run this script with the flag --without-boost." >&5
+echo "$as_me: WARNING: If so, please re-run this script with the flag --without-boost." >&2;}
+         ;;
    esac
+   boost_compiler_version=`echo $compiler_version | cut -c1-2`
    case "$with_boost_tag" in
       yes | "" )
          case "$host_os:$ncbi_compiler" in
@@ -23142,11 +23171,9 @@ echo "${ECHO_T}$ncbi_cv_lib_boost_spirit" >&6
        BOOST_TEST_UTF_STATIC_LIBS=$BOOST_TEST_UTF_LIBS
    fi
 
-   if test "$boost134" = "yes"; then
-       BOOST_TEST_PEM_LIBS=$BOOST_TEST_PEM_STATIC_LIBS
-       BOOST_TEST_TEM_LIBS=$BOOST_TEST_TEM_STATIC_LIBS
-       BOOST_TEST_UTF_LIBS=$BOOST_TEST_UTF_STATIC_LIBS
-   fi
+   BOOST_TEST_PEM_LIBS=$BOOST_TEST_PEM_STATIC_LIBS
+   BOOST_TEST_TEM_LIBS=$BOOST_TEST_TEM_STATIC_LIBS
+   BOOST_TEST_UTF_LIBS=$BOOST_TEST_UTF_STATIC_LIBS
 
    echo "$as_me:$LINENO: checking for Boost.Test in $BOOST_PATH" >&5
 echo $ECHO_N "checking for Boost.Test in $BOOST_PATH... $ECHO_C" >&6
