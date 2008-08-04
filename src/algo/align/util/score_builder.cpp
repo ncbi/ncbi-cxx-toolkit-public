@@ -477,7 +477,7 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
             }
         }
     }
-    else if (mol1 == CSeq_inst::eMol_na && mol2 == CSeq_inst::eMol_na) {
+    else if (CSeq_inst::IsNa(mol1) && CSeq_inst::IsNa(mol2)) {
 
         int match = m_ScoreBlk->reward;
         int mismatch = m_ScoreBlk->penalty; // assumed negative

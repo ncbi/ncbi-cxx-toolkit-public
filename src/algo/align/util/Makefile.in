@@ -5,7 +5,7 @@
 
 
 LIB_PROJ = xalgoalignutil
-SUB_PROJ = demo
+SUB_PROJ = demo unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
