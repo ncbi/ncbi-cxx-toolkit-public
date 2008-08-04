@@ -135,9 +135,9 @@ _PSICopyMatrix_double(double** dest, double** src,
 
 /** Compact version of the PSIMsaCell structure */
 typedef struct _PSIPackedMsaCell {
-    unsigned char letter:7;     /**< Preferred letter at this position, in
+    unsigned int letter:7;      /**< Preferred letter at this position, in
                                   ncbistdaa encoding */
-    unsigned char is_aligned:1; /**< Is this letter part of the alignment? */
+    unsigned int is_aligned:1;  /**< Is this letter part of the alignment? */
 } _PSIPackedMsaCell;
 
 /** Compact version of PSIMsa structure */
@@ -180,9 +180,9 @@ _PSIPackedMsaGetNumberOfAlignedSeqs(const _PSIPackedMsa* msa);
 /** Internal data structure to represent a position in the multiple sequence
  * alignment data structure @sa _PSIMsa */
 typedef struct _PSIMsaCell {
-    Uint1       letter:7;         /**< Preferred letter at this position */
-    Boolean     is_aligned:1;     /**< Is this letter part of the alignment? */
-    SSeqRange   extents;          /**< Extents of this aligned position */
+    unsigned int letter:7;        /**< Preferred letter at this position */
+    unsigned int is_aligned:1;    /**< Is this letter part of the alignment? */
+    SSeqRange    extents;         /**< Extents of this aligned position */
 } _PSIMsaCell;
 
 /** Internal multiple alignment data structure used by the PSSM engine */
