@@ -87,6 +87,8 @@ typedef map<but::test_unit*, TUnitsSet> TUnitToManyMap;
 class CNcbiTestsInitializer : public but::test_observer
 {
 public:
+    virtual ~CNcbiTestsInitializer(void) {}
+
     /// Method called before execution of all tests
     virtual void test_start(but::counter_t /* test_cases_amount */);
 };
@@ -132,6 +134,8 @@ private:
 class CNcbiTestDisabler : public but::test_tree_visitor
 {
 public:
+    virtual void ~CNcbiTestDisabler(void) {}
+
     virtual void visit(but::test_case const& test);
 
     /// Enable all tests that were traversed previously in
