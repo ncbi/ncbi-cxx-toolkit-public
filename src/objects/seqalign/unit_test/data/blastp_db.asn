@@ -1,0 +1,492 @@
+Seq-align-set ::= {
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 1237
+      },
+      {
+        id str "e_value",
+        value real { 16362805611734, 10, -148 }
+      },
+      {
+        id str "bit_score",
+        value real { 48110010768981, 10, -11 }
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        gi 129295,
+        gi 129295
+      },
+      starts {
+        0,
+        0
+      },
+      lens {
+        232
+      },
+      strands {
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 985
+      },
+      {
+        id str "e_value",
+        value real { 263289241333066, 10, -120 }
+      },
+      {
+        id str "bit_score",
+        value real { 384029814558637, 10, -12 }
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        gi 129295,
+        gi 129296
+      },
+      starts {
+        0,
+        156
+      },
+      lens {
+        232
+      },
+      strands {
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 778
+      },
+      {
+        id str "e_value",
+        value real { 278738334603028, 10, -96 }
+      },
+      {
+        id str "bit_score",
+        value real { 304293502343745, 10, -12 }
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 3,
+      ids {
+        gi 129295,
+        gi 129293
+      },
+      starts {
+        1,
+        157,
+        192,
+        -1,
+        194,
+        348
+      },
+      lens {
+        191,
+        2,
+        38
+      },
+      strands {
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 759
+      },
+      {
+        id str "e_value",
+        value real { 423282915713766, 10, -94 }
+      },
+      {
+        id str "bit_score",
+        value real { 296974710401315, 10, -12 }
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 3,
+      ids {
+        gi 129295,
+        gi 82190473
+      },
+      starts {
+        1,
+        157,
+        195,
+        -1,
+        197,
+        351
+      },
+      lens {
+        194,
+        2,
+        35
+      },
+      strands {
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 753
+      },
+      {
+        id str "e_value",
+        value real { 220857609720198, 10, -93 }
+      },
+      {
+        id str "bit_score",
+        value real { 294663512945811, 10, -12 }
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 3,
+      ids {
+        gi 129295,
+        gi 82204122
+      },
+      starts {
+        1,
+        157,
+        195,
+        -1,
+        200,
+        351
+      },
+      lens {
+        194,
+        5,
+        32
+      },
+      strands {
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 749
+      },
+      {
+        id str "e_value",
+        value real { 606140582785016, 10, -93 }
+      },
+      {
+        id str "bit_score",
+        value real { 293122714642142, 10, -12 }
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 3,
+      ids {
+        gi 129295,
+        gi 129294
+      },
+      starts {
+        1,
+        157,
+        195,
+        -1,
+        200,
+        351
+      },
+      lens {
+        194,
+        5,
+        32
+      },
+      strands {
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 541
+      },
+      {
+        id str "e_value",
+        value real { 866539082584076, 10, -69 }
+      },
+      {
+        id str "bit_score",
+        value real { 213001202851332, 10, -12 }
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 5,
+      ids {
+        gi 129295,
+        gi 1709896
+      },
+      starts {
+        0,
+        142,
+        -1,
+        296,
+        154,
+        297,
+        -1,
+        346,
+        203,
+        347
+      },
+      lens {
+        154,
+        1,
+        49,
+        1,
+        29
+      },
+      strands {
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 536
+      },
+      {
+        id str "e_value",
+        value real { 297911695601375, 10, -68 }
+      },
+      {
+        id str "bit_score",
+        value real { 211075204971745, 10, -12 }
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 3,
+      ids {
+        gi 129295,
+        gi 1345616
+      },
+      starts {
+        0,
+        164,
+        -1,
+        318,
+        154,
+        319
+      },
+      lens {
+        154,
+        1,
+        78
+      },
+      strands {
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 524
+      },
+      {
+        id str "e_value",
+        value real { 703799332253235, 10, -67 }
+      },
+      {
+        id str "bit_score",
+        value real { 206452810060737, 10, -12 }
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 3,
+      ids {
+        gi 129295,
+        gi 12643252
+      },
+      starts {
+        0,
+        158,
+        -1,
+        311,
+        153,
+        312
+      },
+      lens {
+        153,
+        1,
+        79
+      },
+      strands {
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 523
+      },
+      {
+        id str "e_value",
+        value real { 104174193252235, 10, -66 }
+      },
+      {
+        id str "bit_score",
+        value real { 20606761048482, 10, -11 }
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        gi 129295,
+        gi 20139444
+      },
+      starts {
+        0,
+        146
+      },
+      lens {
+        232
+      },
+      strands {
+        unknown,
+        unknown
+      }
+    }
+  }
+}

@@ -93,6 +93,15 @@ public:
     TSeqPos         GetSeqStart(TDim row) const;
     TSeqPos         GetSeqStop (TDim row) const;
 
+    /// Retrieves the total number of gaps in an alignment
+    /// @throws CSeqalignException if alignment type is not supported
+    TSeqPos         GetTotalGapCount() const;
+
+    /// Retrieves the number of gap openings in an alignment (ignoring how many
+    /// gaps are in the gapped region)
+    /// @throws CSeqalignException if alignment type is not supported
+    TSeqPos         GetNumGapOpenings() const;
+
     /// Get strand (the first one if segments have different strands).
     ENa_strand      GetSeqStrand(TDim row) const;
 

@@ -1,0 +1,104 @@
+Seq-align-set ::= {
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 40
+      },
+      {
+        id str "e_value",
+        value real { 374047376978759, 10, -14 }
+      },
+      {
+        id str "bit_score",
+        value real { 200162153167381, 10, -13 }
+      },
+      {
+        id str "num_ident",
+        value int 6
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 7450545,
+          general {
+            db "alu",
+            tag str "M17262_HSAL003089"
+          }
+        },
+        loc {
+          int {
+            from 67,
+            to 78,
+            strand unknown,
+            id gi 7450545
+          },
+          int {
+            from 99,
+            to 134,
+            strand minus,
+            id general {
+              db "alu",
+              tag str "M17262_HSAL003089"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 40
+      },
+      {
+        id str "e_value",
+        value real { 374047376978759, 10, -14 }
+      },
+      {
+        id str "bit_score",
+        value real { 200162153167381, 10, -13 }
+      },
+      {
+        id str "num_ident",
+        value int 12
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 7450545,
+          general {
+            db "alu",
+            tag str "M63796_HSAL002433"
+          }
+        },
+        loc {
+          int {
+            from 119,
+            to 150,
+            strand unknown,
+            id gi 7450545
+          },
+          int {
+            from 206,
+            to 301,
+            strand minus,
+            id general {
+              db "alu",
+              tag str "M63796_HSAL002433"
+            }
+          }
+        }
+      }
+    }
+  }
+}

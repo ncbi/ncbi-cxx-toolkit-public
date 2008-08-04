@@ -1,0 +1,8 @@
+# $Id$
+
+APP_PROJ = seqalign_unit_test
+
+REQUIRES = objects Boost.Test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

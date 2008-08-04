@@ -1089,6 +1089,64 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
     return mapper.Map(align, row);
 }
 
+/// Retrieves the number of gaps in an alignment
+/// @param align Alignment to examine [in]
+/// @param get_total_count if true, the total number of gaps is retrived,
+/// otherwise only the number of gap openings is retrieved
+/// @throws CSeqalignException if alignment type is not supported
+static TSeqPos 
+s_GetGapCount(const CSeq_align& align, bool get_total_count)
+{
+    TSeqPos retval = 0;
+    switch (align.GetSegs().Which()) {
+    case CSeq_align::TSegs::e_Denseg:
+        {{
+            const CDense_seg& ds = align.GetSegs().GetDenseg();
+            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
+                bool is_gapped = false;
+                for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
+                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
+                        is_gapped = true;
+                        break;
+                    }
+                }
+                if (is_gapped) {
+                    retval += (get_total_count ? ds.GetLens()[i] : 1);
+                }
+            }
+        }}
+        break;
+
+    case CSeq_align::TSegs::e_Disc:
+        {{
+            ITERATE(CSeq_align::TSegs::TDisc::Tdata, iter, 
+                    align.GetSegs().GetDisc().Get()) {
+                retval += s_GetGapCount(**iter, get_total_count);
+            }
+        }}
+        break;
+
+    case CSeq_align::TSegs::e_Std:
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::GetGapCount() currently does not handle "
+                   "this type of alignment.");
+    }
+
+    return retval;
+}
+
+TSeqPos
+CSeq_align::GetTotalGapCount() const
+{
+    return s_GetGapCount(*this, true);
+}
+
+TSeqPos
+CSeq_align::GetNumGapOpenings() const
+{
+    return s_GetGapCount(*this, false);
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
