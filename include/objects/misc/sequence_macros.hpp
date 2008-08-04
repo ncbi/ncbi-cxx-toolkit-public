@@ -662,6 +662,26 @@ NCBI_TEST_ITERATE((Prf).IsSetName(), \
     (Prf).GetName())
 
 
+/// FOR_EACH_ECNUMBER_ON_PROT
+// Takes const CProt_ref& as input and makes iterator to const string&
+// Dereference with const string& str = *iter;
+#define FOR_EACH_ECNUMBER_ON_PROT(Iter, Prf) \
+NCBI_TEST_ITERATE((Prf).IsSetEc(), \
+    CProt_ref::TEc, \
+    Iter, \
+    (Prf).GetEc())
+
+
+/// FOR_EACH_ACTIVITY_ON_PROT
+// Takes const CProt_ref& as input and makes iterator to const string&
+// Dereference with const string& str = *iter;
+#define FOR_EACH_ACTIVITY_ON_PROT(Iter, Prf) \
+NCBI_TEST_ITERATE((Prf).IsSetActivity(), \
+    CProt_ref::TActivity, \
+    Iter, \
+    (Prf).GetActivity())
+
+
 /// list <string> iterators
 
 /// FOR_EACH_STRING_IN_LIST
