@@ -90,6 +90,17 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
 #endif
 
     m_CustomBuildCommand += "set PTB_PATH="  + ptb_path_par  + "\n";
+
+    string def_ptb = "\\\\snowman\\win-coremake\\App\\Ncbi\\cppcore\\ptb\\";
+    def_ptb += GetApp().GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "msvc_3rd");
+    def_ptb += "\\project_tree_builder.exe";
+    m_CustomBuildCommand +=
+        "if \"%PREBUILT_PTB_EXE%\"==\"\" (set PREBUILT_PTB_EXE=";
+    m_CustomBuildCommand += def_ptb;
+    m_CustomBuildCommand += ") else (if not exist \"%PREBUILT_PTB_EXE%\"";
+    m_CustomBuildCommand += " (if not \"%PREBUILT_PTB_EXE%\"==\"bootstrap\"";
+    m_CustomBuildCommand += " (echo ERROR: \"%PREBUILT_PTB_EXE%\" not found & exit 1)))\n";
+
     m_CustomBuildCommand +=
         "if exist \"%PREBUILT_PTB_EXE%\" (set PTB_EXE=%PREBUILT_PTB_EXE%)";
     m_CustomBuildCommand +=
