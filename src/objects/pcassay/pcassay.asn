@@ -222,7 +222,7 @@ PC-AssayPanelMember ::= SEQUENCE {
                                                                 -- if a kinase panel with 300 kinases, ID will range from 1 to 300  
                                                                 -- TIDs of the same panel member to be grouped based on panel member ID
     name           VisibleString  OPTIONAL,                          -- short name for this panel member 
-    descrption     VisibleString  OPTIONAL,                     -- description about specifics of this panel member
+    description     VisibleString  OPTIONAL,                     -- description about specifics of this panel member
                                                                 -- such as about cell line, or target information 
     protocol       SEQUENCE OF VisibleString    OPTIONAL,       -- Specific procedure used to generate results for the panel member
     comment        SEQUENCE OF VisibleString    OPTIONAL,       -- Comments or additional information
