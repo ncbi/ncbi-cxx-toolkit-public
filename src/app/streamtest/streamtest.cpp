@@ -60,6 +60,7 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+USING_SCOPE(sequence);
 
 #include "process.hpp"
 #include "process_scoped.hpp"
@@ -70,6 +71,7 @@ USING_SCOPE(objects);
 #include "process_gene_overlap.hpp"
 #include "process_macrotest.hpp"
 #include "process_prosplign.hpp"
+#include "process_title.hpp"
 #include "presenter.hpp"
 #include "presenter_releasefile.hpp"
 #include "presenter_seqset.hpp"
@@ -137,7 +139,8 @@ void CStreamTestApp::Init()
                                         "fasta",
                                         "gene-overlap",
                                         "macrotest",
-                                        "prosplign"));
+                                        "prosplign",
+                                        "title"));
     
     arg_desc->AddFlag( "batch",
         "Process genbank release file" );
@@ -223,6 +226,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "prosplign" ) {
         pProcess = new CProsplignProcess;
+    }
+    if ( testcase == "title" ) {
+        pProcess = new CTitleProcess;
     }
     return pProcess;
 }
