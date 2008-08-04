@@ -42,6 +42,7 @@ public:
     CSeqEntryPresenter()
     //  ------------------------------------------------------------------------
         : m_process( 0 )
+        , m_complete_time( 0 )
         , m_total_time( 0 )
         , m_diff_time( 0 )
         , m_report_final( true )
@@ -62,6 +63,8 @@ public:
         m_report_final = args["rf"];
         m_report_interval = args["ri"].AsInteger();
         m_repeatitions = args["count"].AsInteger();
+
+        m_meter.Restart();
     };
 
     //  ------------------------------------------------------------------------
@@ -70,6 +73,19 @@ public:
     //  ------------------------------------------------------------------------
     {
         m_process = process;
+    };
+
+    //  ------------------------------------------------------------------------
+    virtual void Finalize(
+        const CArgs& args )
+    //  ------------------------------------------------------------------------
+    {
+        m_complete_time = m_meter.Elapsed();
+        m_meter.Stop();
+
+        if (m_report_final) {
+            FinalReport();
+        }
     };
 
     //  ------------------------------------------------------------------------
@@ -84,6 +100,13 @@ public:
     //  ------------------------------------------------------------------------
     {
         return m_total_time;
+    };
+
+    //  ------------------------------------------------------------------------
+    double GetCompleteTime() const
+    //  ------------------------------------------------------------------------
+    {
+        return m_complete_time;
     };
 
     //  ------------------------------------------------------------------------
@@ -143,12 +166,16 @@ protected:
              << endl;
         cerr << "Total processing time  : " << GetTotalTime() 
              << " secs" << endl;
+        cerr << "Complete run time  : " << GetCompleteTime() 
+             << " secs" << endl;
         cerr << "=====================================================" << endl;
     };
 
 protected:
     CSeqEntryProcess* m_process;
     CStopWatch m_stopwatch;
+    CStopWatch m_meter;
+    double m_complete_time;
     double m_total_time;
     double m_diff_time;
     bool m_report_final;

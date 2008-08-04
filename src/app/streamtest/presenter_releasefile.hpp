@@ -69,10 +69,14 @@ public:
         CGBReleaseFile in(*m_is.release());
         in.RegisterHandler( this );
         in.Read();  // HandleSeqEntry will be called from this function
+    };
 
-        if (m_report_final) {
-            FinalReport();
-        }
+    //  ------------------------------------------------------------------------
+    virtual void Finalize(
+        const CArgs& args )
+    //  ------------------------------------------------------------------------
+    {
+        CSeqEntryPresenter::Finalize( args );  
     };
 
     //  ------------------------------------------------------------------------

@@ -74,10 +74,14 @@ public:
             return;
         }
         Process( se );
+    };
 
-        if (m_report_final) {
-            FinalReport();
-        }
+    //  ------------------------------------------------------------------------
+    virtual void Finalize(
+        const CArgs& args )
+    //  ------------------------------------------------------------------------
+    {
+        CSeqEntryPresenter::Finalize( args );  
     };
 
 protected:    
