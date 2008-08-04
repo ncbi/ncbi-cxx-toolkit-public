@@ -118,32 +118,10 @@ EOF
                 export SYBASE
             fi
 
-            if test $driver = "ctlib" -a \( $server = $server_mssql -o $server = $server_mssql2005 \) ; then
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_unit_test -d $driver -S $server (skipped)"
-                continue
-            fi
-
-            if test $driver = "ftds_dblib" -a $server = $server_mssql2005 ; then
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_unit_test -d $driver -S $server (skipped)"
-                continue
-            fi
-
-            if test \( $driver = "ftds_odbc" -o $driver = "odbc" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_unit_test -d $driver -S $server (skipped)"
-                continue
-            fi
-
 			if echo $FEATURES | grep "\-DLL.enabled" > /dev/null && `uname -s | sed -e 's/-.*//'` = "CYGWIN_NT" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_unit_test -d $driver -S $server (skipped because of problems with static builds on Windows)"
                 continue
 			fi
-
-            ## Do not test odbc driver on FreeBSD 4.x. 
-            if test \( $driver = "ftds_odbc" -o $driver = "odbc" \) -a $SYSTEM_NAME = "FreeBSD" -a $SYSTEM_MAJOR_RELEASE = 4 ; then
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_unit_test -d $driver -S $server (skipped because of problems with a host name to IP resolution)"
-                continue
-            fi
-
 
             cat <<EOF
 
