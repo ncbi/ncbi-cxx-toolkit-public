@@ -35,8 +35,6 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 
-#include <corelib/test_boost.hpp>
-
 #include <objects/biblio/Id_pat.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -49,11 +47,12 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
+#include <corelib/test_boost.hpp>
+
 #include <boost/test/parameterized_test.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-using boost::unit_test::test_suite;
 
 #define NCBI_CHECK_THROW_SEQID(s) BOOST_CHECK_THROW(s, CSeqIdException)
 
