@@ -470,7 +470,9 @@ special  CAM33512-CAM33520  embl_tpa_prot
 special  CAM91227           embl_tpa_prot
 special  CAN88845-CAN88848  embl_tpa_prot
 special  CAO03085-CAO03089  embl_tpa_prot
+special  CAP49313-CAP49318  embl_tpa_prot
+special  CAP49321-CAP49327  embl_tpa_prot
 special  CAP64321-CAP64334  embl_tpa_prot # '22 unassigned
 ## Err on the side of caution on as yet unassigned IDs, and hope that
 ## there's not *too* much more backfilling.
-#special CAQ68521-CZZ99999  unreserved_prot
+#special CAR47811-CZZ99999  unreserved_prot
