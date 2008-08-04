@@ -42,8 +42,8 @@ public:
     CSeqEntryPresenter()
     //  ------------------------------------------------------------------------
         : m_process( 0 )
-        , m_complete_time( 0 )
-        , m_total_time( 0 )
+        , m_run_time( 0 )
+        , m_process_time( 0 )
         , m_diff_time( 0 )
         , m_report_final( true )
         , m_report_interval( 1000 )
@@ -80,7 +80,7 @@ public:
         const CArgs& args )
     //  ------------------------------------------------------------------------
     {
-        m_complete_time = m_meter.Elapsed();
+        m_run_time = m_meter.Elapsed();
         m_meter.Stop();
 
         if (m_report_final) {
@@ -96,17 +96,17 @@ public:
     };
 
     //  ------------------------------------------------------------------------
-    double GetTotalTime() const
+    double GetProcessTime() const
     //  ------------------------------------------------------------------------
     {
-        return m_total_time;
+        return m_process_time;
     };
 
     //  ------------------------------------------------------------------------
-    double GetCompleteTime() const
+    double GetRunTime() const
     //  ------------------------------------------------------------------------
     {
-        return m_complete_time;
+        return m_run_time;
     };
 
     //  ------------------------------------------------------------------------
@@ -127,7 +127,7 @@ public:
                 if ( m_stopwatch.IsRunning() ) {
                     double elapsed = m_stopwatch.Elapsed();
                     m_stopwatch.Stop();
-                    m_total_time += elapsed;
+                    m_process_time += elapsed;
                     m_diff_time += elapsed;
                 }
 
@@ -164,9 +164,9 @@ protected:
         cerr << "=====================================================" << endl;
         cerr << "Final object count     : " << m_process->GetObjectCount() 
              << endl;
-        cerr << "Total processing time  : " << GetTotalTime() 
+        cerr << "Internal process time  : " << GetProcessTime() 
              << " secs" << endl;
-        cerr << "Complete run time  : " << GetCompleteTime() 
+        cerr << "Total running time     : " << GetRunTime() 
              << " secs" << endl;
         cerr << "=====================================================" << endl;
     };
@@ -175,8 +175,8 @@ protected:
     CSeqEntryProcess* m_process;
     CStopWatch m_stopwatch;
     CStopWatch m_meter;
-    double m_complete_time;
-    double m_total_time;
+    double m_run_time;
+    double m_process_time;
     double m_diff_time;
     bool m_report_final;
     int m_report_interval;
