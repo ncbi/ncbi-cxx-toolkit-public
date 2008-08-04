@@ -407,7 +407,8 @@ void CProjBulderApp::Init(void)
                             CArgDescriptions::eString);
 
     arg_desc->AddPositional("subtree",
-                            "Subtree to build. Example: src/corelib/ .",
+                            "Subtree, or a file with a list of subtrees to build."\
+                            " Examples: src/corelib/ scripts/projects/ncbi_cpp.lst",
                             CArgDescriptions::eString);
 
     arg_desc->AddPositional("solution", 
