@@ -488,7 +488,7 @@ public:
 			/* CException is not defined here. We must translate all CException
 			 * to CError in user's code.
 			catch (const CException& e) {
-				CError::SetString(e.GetMsg());
+				CError::SetString(e.what());
 			}
 			*/
 			catch(const CError&) {
