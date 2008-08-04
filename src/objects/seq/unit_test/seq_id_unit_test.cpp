@@ -49,12 +49,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
-#ifndef BOOST_PARAM_TEST_CASE
-#  include <boost/test/parameterized_test.hpp>
-#endif
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
+#include <boost/test/parameterized_test.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -635,14 +630,7 @@ static void s_TestFastaRoundTrip(const char* s)
     }
 }
 
-#ifdef BOOST_AUTO_TU_REGISTRAR
 BOOST_AUTO_TU_REGISTRAR(s_FastaRoundTrip)
-#elif defined(BOOST_AUTO_TC_REGISTRAR)
-BOOST_AUTO_TC_REGISTRAR(s_FastaRoundTrip)
-#else
-static boost::unit_test::ut_detail::auto_unit_test_registrar
-s_FastaRoundTripRegistrar
-#endif
 (BOOST_PARAM_TEST_CASE(s_TestFastaRoundTrip, kTestFastaStrings + 0,
                        kTestFastaStrings + kNumFastaStrings));
 
