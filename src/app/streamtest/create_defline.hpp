@@ -488,6 +488,7 @@ bool CDeflineGenerator::s_EndsWithStrain (void)
     // (at least in theory) lead to false negatives.
     pos = NStr::FindNoCase (m_taxname, m_strain, pos + 1, NPOS, NStr::eLast);
     if (pos == m_taxname.size() - m_strain.size()) {
+        // check for space to avoid fortuitous match to end of taxname
         if (m_taxname[pos - 1] == ' ') {
             return true;
         }
@@ -557,14 +558,27 @@ string CDeflineGenerator::s_TitleFromNR (void)
 string CDeflineGenerator::s_TitleFromPatent (void)
 
 {
-    return "pat";
+    string result;
+
+    result = "Sequence " + m_patent_sequence +
+             " from Patent " + m_patent_country +
+             " " + m_patent_number;
+
+    return result;
 }
 
 // generate title for PDB
 string CDeflineGenerator::s_TitleFromPDB (void)
 
 {
-    return "pdb";
+    string result;
+
+    if (isprint ((unsigned char) m_pdb_chain)) {
+        result = string("Chain ") + (char) m_pdb_chain + ", ";
+    }
+    result += m_pdb_compound;
+
+    return result;
 }
 
 #include <objmgr/util/seq_loc_util.hpp>
@@ -610,43 +624,63 @@ string CDeflineGenerator::s_TitleFromProtein (void)
         }
     }
 
-    if (prot.NotEmpty()  &&  prot->IsSetName()  &&  !prot->GetName().empty()) {
-        bool first = true;
-        ITERATE (CProt_ref::TName, it, prot->GetName()) {
-            if ( !first ) {
-                result += "; ";
+    if (prot) {
+        const CProt_ref& prp = *prot;
+        string prefix = "";
+        FOR_EACH_NAME_ON_PROT (prp_itr, prp) {
+            const string& str = *prp_itr;
+            result += prefix;
+            result += str;
+            if (! m_allprotnames) {
+                BREAK(prp_itr);
             }
-            result += *it;
-            first = false;
-            if ( ! m_allprotnames ) {
-                break; // just give the first
+            prefix = "; ";
+        }
+        if (! result.empty()) {
+            if (NStr::CompareNocase(result, "hypothetical protein") == 0) {
+                // XXX - gene_feat might not always be exactly what we want
+                if (gene && gene->IsSetLocus_tag()) {
+                    result += " " + gene->GetLocus_tag();
+                }
             }
         }
-        if (NStr::CompareNocase(result, "hypothetical protein") == 0) {
-            // XXX - gene_feat might not always be exactly what we want
-            if (gene && gene->IsSetLocus_tag()) {
-                result += ' ' + gene->GetLocus_tag();
+        if (result.empty()) {
+            if (prp.IsSetDesc()) {
+                result = prp.GetDesc();
             }
         }
-    } else if (prot.NotEmpty()  &&  prot->IsSetDesc()
-               &&  !prot->GetDesc().empty()) {
-        result = prot->GetDesc();
-    } else if (prot.NotEmpty() && prot->IsSetActivity() && 
-               !prot->GetActivity().empty()) {
-        result = prot->GetActivity().front();
-    } else if (gene) {
-        string gene_name;
-        if (gene->IsSetLocus() && !gene->GetLocus().empty()) {
-            gene_name = gene->GetLocus();
-        } else if (gene->IsSetSyn() && !gene->GetSyn().empty()) {
-            gene_name = *gene->GetSyn().begin();
-        } else if (gene->IsSetDesc() && !gene->GetDesc().empty()) {
-            gene_name = gene->GetDesc();
+        if (result.empty()) {
+            FOR_EACH_ACTIVITY_ON_PROT (act_itr, prp) {
+                const string& str = *act_itr;
+                result = str;
+                BREAK(act_itr);
+            }
         }
-        if ( !gene_name.empty() ) {
-            result = gene_name + " gene product";
+    }
+
+    if (result.empty() && gene) {
+        const CGene_ref& grp = *gene;
+        if (grp.IsSetLocus()) {
+            result = grp.GetLocus();
         }
-    } else {
+        if (result.empty()) {
+            FOR_EACH_SYNONYM_ON_GENE (syn_itr, grp) {
+                const string& str = *syn_itr;
+                result = str;
+                BREAK(syn_itr);
+            }
+        }
+        if (result.empty()) {
+            if (grp.IsSetDesc()) {
+                result = grp.GetDesc();
+            }
+        }
+        if (! result.empty()) {
+            result += " gene product";
+        }
+    }
+
+    if (result.empty()) {
         result = "unnamed protein product";
     }
 
@@ -912,6 +946,13 @@ string CDeflineGenerator::GenerateDefline (
             // for non-PDB proteins, title must be packaged on Bioseq
             if (m_is_na || m_is_pdb || level == 0) {
                 title = str;
+
+                // strip trailing periods, commas, and spaces
+                while (NStr::EndsWith (title, ".") ||
+                           NStr::EndsWith (title, ",") ||
+                           NStr::EndsWith (title, " ")) {
+                    title.erase (title.end() - 1);
+                }
             }
         }
     }
