@@ -35,6 +35,8 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 
+#include <corelib/test_boost.hpp>
+
 #include <objects/biblio/Id_pat.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -47,13 +49,6 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
 #ifndef BOOST_PARAM_TEST_CASE
 #  include <boost/test/parameterized_test.hpp>
 #endif
@@ -65,345 +60,319 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 using boost::unit_test::test_suite;
 
-// Use macros rather than inline functions to get accurate line number reports
-
-// #define CHECK_NO_THROW(statement) BOOST_CHECK_NO_THROW(statement)
-#define CHECK_NO_THROW(statement)                                       \
-    try {                                                               \
-        statement;                                                      \
-        BOOST_CHECK_MESSAGE(true, "no exceptions were thrown by "#statement); \
-    } catch (std::exception& e) {                                       \
-        BOOST_ERROR("an exception was thrown by "#statement": " << e.what()); \
-    } catch (...) {                                                     \
-        BOOST_ERROR("a nonstandard exception was thrown by "#statement); \
-    }
-
-#define CHECK(expr)       CHECK_NO_THROW(BOOST_CHECK(expr))
-#define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
-#define CHECK_THROW(s, x) BOOST_CHECK_THROW(s, x)
-
-#define CHECK_THROW_STD_(statement, xtype)                              \
-    try {                                                               \
-        statement;                                                      \
-        BOOST_ERROR(#statement" failed to throw "#xtype);               \
-    } catch (xtype& e) {                                                \
-        BOOST_MESSAGE(#statement" properly threw "#xtype": " << e.what()); \
-    }
-#define CHECK_THROW_STD(s, x) CHECK_NO_THROW(CHECK_THROW_STD_(s, x))
-
-#define CHECK_THROW_SEQID(s) CHECK_THROW_STD(s, CSeqIdException)
+#define NCBI_CHECK_THROW_SEQID(s) BOOST_CHECK_THROW(s, CSeqIdException)
 
 BOOST_AUTO_TEST_CASE(s_TestDefaultInit)
 {
     CSeq_id id;
-    CHECK_EQUAL(id.Which(), CSeq_id::e_not_set);
-    CHECK_THROW(id.GetGi(), CInvalidChoiceSelection);
+    BOOST_CHECK_EQUAL(id.Which(), CSeq_id::e_not_set);
+    BOOST_CHECK_THROW(id.GetGi(), CInvalidChoiceSelection);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromJunk)
 {
     CRef<CSeq_id> id;
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id(kEmptyStr)));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("JUNK")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("?!?!")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(kEmptyStr)));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("JUNK")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("?!?!")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromGIString)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("  1234 ")));
-    CHECK(id->IsGi());
-    CHECK(id->GetGi() == 1234);
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("  1234 ")));
+    BOOST_CHECK(id->IsGi());
+    BOOST_CHECK(id->GetGi() == 1234);
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("1234.5")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("-1234")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("0")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("9876543210")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1234.5")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("-1234")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("0")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("9876543210")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromNAcc)
 {
     CRef<CSeq_id> id;
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("N00001")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N00001")));
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("N0068")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("N00068")));
-    CHECK(id->IsDdbj());
-    CHECK_EQUAL(id->GetDdbj().GetAccession(), string("N00068"));
-    CHECK( !id->GetDdbj().IsSetName() );
-    CHECK( !id->GetDdbj().IsSetVersion() );
-    CHECK( !id->GetDdbj().IsSetRelease() );
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("N000068")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N0068")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("N00068")));
+    BOOST_CHECK(id->IsDdbj());
+    BOOST_CHECK_EQUAL(id->GetDdbj().GetAccession(), string("N00068"));
+    BOOST_CHECK( !id->GetDdbj().IsSetName() );
+    BOOST_CHECK( !id->GetDdbj().IsSetVersion() );
+    BOOST_CHECK( !id->GetDdbj().IsSetRelease() );
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N000068")));
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("N19999")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N19999")));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("N20001.1")));
-    CHECK(id->IsGenbank());
-    CHECK_EQUAL(id->GetGenbank().GetAccession(), string("N20001"));
-    CHECK( !id->GetGenbank().IsSetName() );
-    CHECK_EQUAL(id->GetGenbank().GetVersion(), 1);
-    CHECK( !id->GetGenbank().IsSetRelease() );
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("N20001.1")));
+    BOOST_CHECK(id->IsGenbank());
+    BOOST_CHECK_EQUAL(id->GetGenbank().GetAccession(), string("N20001"));
+    BOOST_CHECK( !id->GetGenbank().IsSetName() );
+    BOOST_CHECK_EQUAL(id->GetGenbank().GetVersion(), 1);
+    BOOST_CHECK( !id->GetGenbank().IsSetRelease() );
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.1.1")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.1a")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.-1")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.x")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.9876543210")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.1.1")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.1a")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.-1")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.x")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.9876543210")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
 {
     CRef<CSeq_id> id;
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN00123")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("bn000123")));
-    CHECK(id->IsTpe());
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN00012B")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN0000123")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN00123")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("bn000123")));
+    BOOST_CHECK(id->IsTpe());
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN00012B")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN0000123")));
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("FAA0017")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("FAA00017")));
-    CHECK(id->IsTpd());
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("FAA000017")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("FAA0017")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("FAA00017")));
+    BOOST_CHECK(id->IsTpd());
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("FAA000017")));
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("ABCD1234567")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("CAAA01020304")));
-    CHECK(id->IsEmbl());
-    CHECK_NO_THROW(id.Reset(new CSeq_id("AACN011056789")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("ABCD1234567890")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("ABCD12345678901")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("ABCD1234567")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("CAAA01020304")));
+    BOOST_CHECK(id->IsEmbl());
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("AACN011056789")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("ABCD1234567890")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("ABCD12345678901")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromPRFAcc)
 {
     CRef<CSeq_id> id;
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("806162C")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("0806162C")));
-    CHECK(id->IsPrf());
-    CHECK(!id->GetPrf().IsSetAccession());
-    CHECK_EQUAL(id->GetPrf().GetName(), string("0806162C"));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("080616AC")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("080616C2")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("00806162C")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("0806162C3")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("0806162CD")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("806162C")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("0806162C")));
+    BOOST_CHECK(id->IsPrf());
+    BOOST_CHECK(!id->GetPrf().IsSetAccession());
+    BOOST_CHECK_EQUAL(id->GetPrf().GetName(), string("0806162C"));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("080616AC")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("080616C2")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("00806162C")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("0806162C3")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("0806162CD")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromPDBAcc)
 {
     CRef<CSeq_id> id;
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GA")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV")));
-    CHECK(id->IsPdb());
-    CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
-    CHECK_EQUAL(id->GetPdb().GetChain(), ' ');
-    // CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV2")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV.2")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GA")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV")));
+    BOOST_CHECK(id->IsPdb());
+    BOOST_CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), ' ');
+    // NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV2")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV.2")));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("1GAVX")));
-    CHECK(id->IsPdb());
-    CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
-    CHECK_EQUAL(id->GetPdb().GetChain(), 'X');
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAVX")));
+    BOOST_CHECK(id->IsPdb());
+    BOOST_CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), 'X');
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|X")));
-    CHECK(id->IsPdb());
-    CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
-    CHECK_EQUAL(id->GetPdb().GetChain(), 'X');
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|X")));
+    BOOST_CHECK(id->IsPdb());
+    BOOST_CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), 'X');
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV|XY")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|XX")));
-    CHECK_EQUAL(id->GetPdb().GetChain(), 'x');
-    CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV_!")));
-    CHECK_EQUAL(id->GetPdb().GetChain(), '!');
-    CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|VB")));
-    CHECK_EQUAL(id->GetPdb().GetChain(), '|');
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV|AAA")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV|XY")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|XX")));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), 'x');
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV_!")));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '!');
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|VB")));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '|');
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV|AAA")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromSPAcc)
 {
     CRef<CSeq_id> id;
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJ")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("q7cqj0")));
-    CHECK(id->IsSwissprot());
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJO")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJ01")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("07CQJ0")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("A2ASS6.1")));
-    CHECK(id->IsSwissprot());
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("A29SS6.1")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJ")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("q7cqj0")));
+    BOOST_CHECK(id->IsSwissprot());
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJO")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJ01")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("07CQJ0")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A2ASS6.1")));
+    BOOST_CHECK(id->IsSwissprot());
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A29SS6.1")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromRefSeqAcc)
 {
     CRef<CSeq_id> id;
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("NM_00017")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("NM_000170.1")));
-    CHECK(id->IsOther());
-    CHECK_NO_THROW(id.Reset(new CSeq_id("NM_001000170")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("NM_0001000170")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("NM_00017")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("NM_000170.1")));
+    BOOST_CHECK(id->IsOther());
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("NM_001000170")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("NM_0001000170")));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("ZP_00345678")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("ZP_00345678")));
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("NZ_AABC0300051")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("NZ_AABC03000051")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("NZ_AABC030000051")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("NZ_AABC0300051")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("NZ_AABC03000051")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("NZ_AABC030000051")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromGpipeAcc)
 {
     CRef<CSeq_id> id;
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_12345")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_123456.1")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("GPC_123456789.1")));
-    CHECK(id->IsGpipe());
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_1234567890")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_12345")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_123456.1")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("GPC_123456789.1")));
+    BOOST_CHECK(id->IsGpipe());
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_1234567890")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaLocal)
 {
     CRef<CSeq_id> id;
     
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("asd|fgh|jkl")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("asd|fgh|jkl")));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|123")));
-    CHECK(id->IsLocal());
-    CHECK(id->GetLocal().IsId());
-    CHECK_EQUAL(id->GetLocal().GetId(), 123);
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|123")));
+    BOOST_CHECK(id->IsLocal());
+    BOOST_CHECK(id->GetLocal().IsId());
+    BOOST_CHECK_EQUAL(id->GetLocal().GetId(), 123);
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|asdf")));
-    CHECK(id->IsLocal());
-    CHECK(id->GetLocal().IsStr());
-    CHECK_EQUAL(id->GetLocal().GetStr(), string("asdf"));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|asdf")));
+    BOOST_CHECK(id->IsLocal());
+    BOOST_CHECK(id->GetLocal().IsStr());
+    BOOST_CHECK_EQUAL(id->GetLocal().GetStr(), string("asdf"));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|NM_002020|")));
-    CHECK(id->IsLocal());
-    CHECK(id->GetLocal().IsStr());
-    CHECK_EQUAL(id->GetLocal().GetStr(), string("NM_002020"));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("lcl|NM_002020|junk")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|NM_002020|")));
+    BOOST_CHECK(id->IsLocal());
+    BOOST_CHECK(id->GetLocal().IsStr());
+    BOOST_CHECK_EQUAL(id->GetLocal().GetStr(), string("NM_002020"));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("lcl|NM_002020|junk")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaObsolete)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("bbs|123")));
-    CHECK(id->IsGibbsq());
-    CHECK_EQUAL(id->GetGibbsq(), 123);
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|0")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|123.4")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|123Z")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|xyz")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|9876543210")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("bbs|123")));
+    BOOST_CHECK(id->IsGibbsq());
+    BOOST_CHECK_EQUAL(id->GetGibbsq(), 123);
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|0")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|123.4")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|123Z")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|xyz")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|9876543210")));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("bbm|123")));
-    CHECK(id->IsGibbmt());
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("bbm|123")));
+    BOOST_CHECK(id->IsGibbmt());
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("gim|123")));
-    CHECK(id->IsGiim());
-    CHECK_EQUAL(id->GetGiim().GetId(), 123);
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("gim|123")));
+    BOOST_CHECK(id->IsGiim());
+    BOOST_CHECK_EQUAL(id->GetGiim().GetId(), 123);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGenbank)
 {
     CRef<CSeq_id> id;
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("gb|")))
-    CHECK_NO_THROW(id.Reset(new CSeq_id("gb|U12345.1|AMU12345")));
-    CHECK(id->IsGenbank());
-    CHECK_EQUAL(id->GetGenbank().GetAccession(), string("U12345"));
-    CHECK_EQUAL(id->GetGenbank().GetName(), string("AMU12345"));
-    CHECK_EQUAL(id->GetGenbank().GetVersion(), 1);
-    CHECK( !id->GetGenbank().IsSetRelease() );
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("gb|")))
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("gb|U12345.1|AMU12345")));
+    BOOST_CHECK(id->IsGenbank());
+    BOOST_CHECK_EQUAL(id->GetGenbank().GetAccession(), string("U12345"));
+    BOOST_CHECK_EQUAL(id->GetGenbank().GetName(), string("AMU12345"));
+    BOOST_CHECK_EQUAL(id->GetGenbank().GetVersion(), 1);
+    BOOST_CHECK( !id->GetGenbank().IsSetRelease() );
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaEmbl)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("emb|AL123456|MTBH37RV")));
-    CHECK(id->IsEmbl());
-    CHECK_EQUAL(id->GetEmbl().GetAccession(), string("AL123456"));
-    CHECK_EQUAL(id->GetEmbl().GetName(), string("MTBH37RV"));
-    CHECK( !id->GetEmbl().IsSetVersion() );
-    CHECK( !id->GetEmbl().IsSetRelease() );
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("emb|AL123456|MTBH37RV")));
+    BOOST_CHECK(id->IsEmbl());
+    BOOST_CHECK_EQUAL(id->GetEmbl().GetAccession(), string("AL123456"));
+    BOOST_CHECK_EQUAL(id->GetEmbl().GetName(), string("MTBH37RV"));
+    BOOST_CHECK( !id->GetEmbl().IsSetVersion() );
+    BOOST_CHECK( !id->GetEmbl().IsSetRelease() );
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaPir)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("pir||S16356")));
-    CHECK(id->IsPir());
-    CHECK( !id->GetPir().IsSetAccession() );
-    CHECK_EQUAL(id->GetPir().GetName(), string("S16356"));
-    CHECK( !id->GetPir().IsSetVersion() );
-    CHECK( !id->GetPir().IsSetRelease() );
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pir||S16356")));
+    BOOST_CHECK(id->IsPir());
+    BOOST_CHECK( !id->GetPir().IsSetAccession() );
+    BOOST_CHECK_EQUAL(id->GetPir().GetName(), string("S16356"));
+    BOOST_CHECK( !id->GetPir().IsSetVersion() );
+    BOOST_CHECK( !id->GetPir().IsSetRelease() );
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaSwissprot)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("sp|Q7CQJ0|RS22_SALTY")));
-    CHECK(id->IsSwissprot());
-    CHECK_EQUAL(id->GetSwissprot().GetAccession(), string("Q7CQJ0"));
-    CHECK_EQUAL(id->GetSwissprot().GetName(), string("RS22_SALTY"));
-    CHECK( !id->GetSwissprot().IsSetVersion() );
-    CHECK_EQUAL(id->GetSwissprot().GetRelease(), string("reviewed"));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("sp|Q7CQJ0|RS22_SALTY")));
+    BOOST_CHECK(id->IsSwissprot());
+    BOOST_CHECK_EQUAL(id->GetSwissprot().GetAccession(), string("Q7CQJ0"));
+    BOOST_CHECK_EQUAL(id->GetSwissprot().GetName(), string("RS22_SALTY"));
+    BOOST_CHECK( !id->GetSwissprot().IsSetVersion() );
+    BOOST_CHECK_EQUAL(id->GetSwissprot().GetRelease(), string("reviewed"));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("tr|Q90RT2|Q90RT2_9HIV1")));
-    CHECK_EQUAL(id->GetSwissprot().GetRelease(), string("unreviewed"));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("tr|Q90RT2|Q90RT2_9HIV1")));
+    BOOST_CHECK_EQUAL(id->GetSwissprot().GetRelease(), string("unreviewed"));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("sp|Q7CQJ0.1")));
-    CHECK(id->IsSwissprot());
-    CHECK_EQUAL(id->GetSwissprot().GetAccession(), string("Q7CQJ0"));
-    CHECK_EQUAL(id->GetSwissprot().GetVersion(), 1);
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("sp|Q7CQJ0.1")));
+    BOOST_CHECK(id->IsSwissprot());
+    BOOST_CHECK_EQUAL(id->GetSwissprot().GetAccession(), string("Q7CQJ0"));
+    BOOST_CHECK_EQUAL(id->GetSwissprot().GetVersion(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromPatent)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("pat|US|RE33188|1")));
-    CHECK(id->IsPatent());
-    CHECK_EQUAL(id->GetPatent().GetSeqid(), 1);
-    CHECK_EQUAL(id->GetPatent().GetCit().GetCountry(), string("US"));
-    CHECK(id->GetPatent().GetCit().GetId().IsNumber());
-    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(),
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pat|US|RE33188|1")));
+    BOOST_CHECK(id->IsPatent());
+    BOOST_CHECK_EQUAL(id->GetPatent().GetSeqid(), 1);
+    BOOST_CHECK_EQUAL(id->GetPatent().GetCit().GetCountry(), string("US"));
+    BOOST_CHECK(id->GetPatent().GetCit().GetId().IsNumber());
+    BOOST_CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(),
                 string("RE33188"));
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|1.5")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|1b")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|9876543210")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|-1")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|Z")));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|1.5")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|1b")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|9876543210")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|-1")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|Z")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188")));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("pgp|EP|0238993|7")));
-    CHECK(id->IsPatent());
-    CHECK_EQUAL(id->GetPatent().GetSeqid(), 7);
-    CHECK_EQUAL(id->GetPatent().GetCit().GetCountry(), string("EP"));
-    CHECK(id->GetPatent().GetCit().GetId().IsApp_number());
-    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetApp_number(),
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pgp|EP|0238993|7")));
+    BOOST_CHECK(id->IsPatent());
+    BOOST_CHECK_EQUAL(id->GetPatent().GetSeqid(), 7);
+    BOOST_CHECK_EQUAL(id->GetPatent().GetCit().GetCountry(), string("EP"));
+    BOOST_CHECK(id->GetPatent().GetCit().GetId().IsApp_number());
+    BOOST_CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetApp_number(),
                 string("0238993"));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Patent,
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Patent,
                                         "US", "RE33188", 1)));
-    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(),
+    BOOST_CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(),
                 string("RE33188"));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Patent,
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Patent,
                                         "EP", "0238993", 7, "PGP")));
-    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetApp_number(),
+    BOOST_CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetApp_number(),
                 string("0238993"));
 }
 
@@ -411,14 +380,14 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaRefseq)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("ref|NM_000170.1")));
-    CHECK(id->IsOther());
-    CHECK_EQUAL(id->GetOther().GetAccession(), string("NM_000170"));
-    // CHECK_EQUAL(id->GetOther().GetVersion(), 1);
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("ref|NM_000170.1")));
+    BOOST_CHECK(id->IsOther());
+    BOOST_CHECK_EQUAL(id->GetOther().GetAccession(), string("NM_000170"));
+    // BOOST_CHECK_EQUAL(id->GetOther().GetVersion(), 1);
     // Split up to avoid mysterious WorkShop 5.5 11381x-19 errors:
     int version;
-    CHECK_NO_THROW(version = id->GetOther().GetVersion());
-    CHECK_EQUAL(version, 1);
+    BOOST_CHECK_NO_THROW(version = id->GetOther().GetVersion());
+    BOOST_CHECK_EQUAL(version, 1);
     // Don't try to do anything with the release field, which is no longer
     // supported.
 }
@@ -427,91 +396,91 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGeneral)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW
+    BOOST_CHECK_NO_THROW
         (id.Reset(new CSeq_id
                   ("gnl|dbSNP|rs31251_allelePos=201totallen=401|taxid=9606"
                    "|snpClass=1|alleles=?|mol=?|build=?")));
-    CHECK(id->IsGeneral());
-    CHECK_EQUAL(id->GetGeneral().GetDb(), string("dbSNP"));
-    CHECK(id->GetGeneral().GetTag().IsStr());
-    CHECK_EQUAL(id->GetGeneral().GetTag().GetStr(),
+    BOOST_CHECK(id->IsGeneral());
+    BOOST_CHECK_EQUAL(id->GetGeneral().GetDb(), string("dbSNP"));
+    BOOST_CHECK(id->GetGeneral().GetTag().IsStr());
+    BOOST_CHECK_EQUAL(id->GetGeneral().GetTag().GetStr(),
                 string("rs31251_allelePos=201totallen=401|taxid=9606"
                        "|snpClass=1|alleles=?|mol=?|build=?"));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("gnl|taxon|9606")));
-    CHECK(id->IsGeneral());
-    CHECK_EQUAL(id->GetGeneral().GetDb(), string("taxon"));
-    CHECK(id->GetGeneral().GetTag().IsId());
-    CHECK_EQUAL(id->GetGeneral().GetTag().GetId(), 9606);
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("gnl|taxon|9606")));
+    BOOST_CHECK(id->IsGeneral());
+    BOOST_CHECK_EQUAL(id->GetGeneral().GetDb(), string("taxon"));
+    BOOST_CHECK(id->GetGeneral().GetTag().IsId());
+    BOOST_CHECK_EQUAL(id->GetGeneral().GetTag().GetId(), 9606);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGI)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("gi|1234")));
-    CHECK(id->IsGi());
-    CHECK_EQUAL(id->GetGi(), 1234);
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("gi|1234")));
+    BOOST_CHECK(id->IsGi());
+    BOOST_CHECK_EQUAL(id->GetGi(), 1234);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaDdbj)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("dbj|N00068")));
-    CHECK(id->IsDdbj());
-    CHECK_EQUAL(id->GetDdbj().GetAccession(), string("N00068"));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("dbj|N00068")));
+    BOOST_CHECK(id->IsDdbj());
+    BOOST_CHECK_EQUAL(id->GetDdbj().GetAccession(), string("N00068"));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaPrf)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("prf|0806162C")));
-    CHECK(id->IsPrf());
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("prf|0806162C")));
+    BOOST_CHECK(id->IsPrf());
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaPdb)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV")));
-    CHECK(id->IsPdb());
-    CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
-    CHECK_EQUAL(id->GetPdb().GetChain(), ' ');
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV")));
+    BOOST_CHECK(id->IsPdb());
+    BOOST_CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), ' ');
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|X")));
-    CHECK(id->IsPdb());
-    CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
-    CHECK_EQUAL(id->GetPdb().GetChain(), 'X');
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|X")));
+    BOOST_CHECK(id->IsPdb());
+    BOOST_CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), 'X');
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb|1GAV|XY")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|XX")));
-    CHECK_EQUAL(id->GetPdb().GetChain(), 'x');
-    CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|!")));
-    CHECK_EQUAL(id->GetPdb().GetChain(), '!');
-    CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|VB")));
-    CHECK_EQUAL(id->GetPdb().GetChain(), '|');
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb|1GAV|AAA")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb|1GAV|XY")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|XX")));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), 'x');
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|!")));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '!');
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|VB")));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '|');
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb|1GAV|AAA")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaTpa)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("tpg|BK003456")));
-    CHECK(id->IsTpg());
-    CHECK_NO_THROW(id.Reset(new CSeq_id("tpe|BN000123")));
-    CHECK(id->IsTpe());
-    CHECK_NO_THROW(id.Reset(new CSeq_id("tpd|FAA00017")));
-    CHECK(id->IsTpd());
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("tpg|BK003456")));
+    BOOST_CHECK(id->IsTpg());
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("tpe|BN000123")));
+    BOOST_CHECK(id->IsTpe());
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("tpd|FAA00017")));
+    BOOST_CHECK(id->IsTpd());
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGpipe)
 {
     CRef<CSeq_id> id;
-    CHECK_NO_THROW(id.Reset(new CSeq_id("gpp|GPC_123456789")));
-    CHECK(id->IsGpipe());
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("gpp|GPC_123456789")));
+    BOOST_CHECK(id->IsGpipe());
 }
 
 
@@ -538,77 +507,77 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromDbtag)
     CRef<CSeq_id> id;
     CDbtag        dbtag;
     
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id(dbtag)));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(dbtag)));
 
-    CHECK_NO_THROW(id.Reset(s_NewDbtagId("GenBank", "N20001.1")));
-    CHECK(id->IsGenbank());
-    CHECK_EQUAL(id->GetGenbank().GetAccession(), string("N20001"));
-    CHECK( !id->GetGenbank().IsSetName() );
-    CHECK_EQUAL(id->GetGenbank().GetVersion(), 1);
-    CHECK( !id->GetGenbank().IsSetRelease() );
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GenBank", "N20001.1")));
+    BOOST_CHECK(id->IsGenbank());
+    BOOST_CHECK_EQUAL(id->GetGenbank().GetAccession(), string("N20001"));
+    BOOST_CHECK( !id->GetGenbank().IsSetName() );
+    BOOST_CHECK_EQUAL(id->GetGenbank().GetVersion(), 1);
+    BOOST_CHECK( !id->GetGenbank().IsSetRelease() );
 
-    CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.1.1")));
-    CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.1b")));
-    CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.-1")));
-    CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.z")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.1.1")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.1b")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.-1")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.z")));
 
-    CHECK_NO_THROW(id.Reset(s_NewDbtagId("GenBank", "12345")));
-    CHECK(id->IsGi());
-    CHECK_EQUAL(id->GetGi(), 12345);
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GenBank", "12345")));
+    BOOST_CHECK(id->IsGi());
+    BOOST_CHECK_EQUAL(id->GetGi(), 12345);
 
-    CHECK_NO_THROW(id.Reset(s_NewDbtagId("GenBank", 12345)));
-    CHECK(id->IsGi());
-    CHECK_EQUAL(id->GetGi(), 12345);
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GenBank", 12345)));
+    BOOST_CHECK(id->IsGi());
+    BOOST_CHECK_EQUAL(id->GetGi(), 12345);
 
-    CHECK_NO_THROW(id.Reset(s_NewDbtagId("EMBL", "AL123456")));
-    CHECK(id->IsEmbl());
-    CHECK_EQUAL(id->GetEmbl().GetAccession(), string("AL123456"));
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("EMBL", "AL123456")));
+    BOOST_CHECK(id->IsEmbl());
+    BOOST_CHECK_EQUAL(id->GetEmbl().GetAccession(), string("AL123456"));
 
-    CHECK_NO_THROW(id.Reset(s_NewDbtagId("DDBJ", "N00068")));
-    CHECK(id->IsDdbj());
-    CHECK_EQUAL(id->GetDdbj().GetAccession(), string("N00068"));
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("DDBJ", "N00068")));
+    BOOST_CHECK(id->IsDdbj());
+    BOOST_CHECK_EQUAL(id->GetDdbj().GetAccession(), string("N00068"));
 
-    CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GI", "12345X")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GI", "12345X")));
 
-    CHECK_NO_THROW(id.Reset(s_NewDbtagId("GI", "12345")));
-    CHECK(id->IsGi());
-    CHECK_EQUAL(id->GetGi(), 12345);
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GI", "12345")));
+    BOOST_CHECK(id->IsGi());
+    BOOST_CHECK_EQUAL(id->GetGi(), 12345);
 
-    CHECK_NO_THROW(id.Reset(s_NewDbtagId("GI", 12345)));
-    CHECK(id->IsGi());
-    CHECK_EQUAL(id->GetGi(), 12345);
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GI", 12345)));
+    BOOST_CHECK(id->IsGi());
+    BOOST_CHECK_EQUAL(id->GetGi(), 12345);
 
-    CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("taxon", 9606)));
-    CHECK_NO_THROW(id.Reset(s_NewDbtagId("taxon", 9606, true)));
-    CHECK(id->IsGeneral());
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("taxon", 9606)));
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("taxon", 9606, true)));
+    BOOST_CHECK(id->IsGeneral());
 
-    CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("asdf", "jkl")));
-    CHECK_NO_THROW(id.Reset(s_NewDbtagId("asdf", "jkl", true)));
-    CHECK(id->IsGeneral());
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("asdf", "jkl")));
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("asdf", "jkl", true)));
+    BOOST_CHECK(id->IsGeneral());
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromInt)
 {
     CRef<CSeq_id> id;
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Gi, 1234)));
-    CHECK(id->IsGi());
-    CHECK_EQUAL(id->GetGi(), 1234);
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Gi, 1234)));
+    BOOST_CHECK(id->IsGi());
+    BOOST_CHECK_EQUAL(id->GetGi(), 1234);
 
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Gi, 0)));
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Pdb, 1234)));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Gi, 0)));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Pdb, 1234)));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Local, 1234)));
-    CHECK(id->IsLocal());
-    CHECK(id->GetLocal().IsId());
-    CHECK_EQUAL(id->GetLocal().GetId(), 1234);
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Local, 1234)));
+    BOOST_CHECK(id->IsLocal());
+    BOOST_CHECK(id->GetLocal().IsId());
+    BOOST_CHECK_EQUAL(id->GetLocal().GetId(), 1234);
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Gibbsq, 1234)));
-    CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Gibbmt, 1234)));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Gibbsq, 1234)));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Gibbmt, 1234)));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Giim, 1234)));
-    CHECK(id->IsGiim());
-    CHECK_EQUAL(id->GetGiim().GetId(), 1234);
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Giim, 1234)));
+    BOOST_CHECK(id->IsGiim());
+    BOOST_CHECK_EQUAL(id->GetGiim().GetId(), 1234);
 }
 
 static const char* kTestFastaStrings[] = {
@@ -651,18 +620,18 @@ static void s_TestFastaRoundTrip(const char* s)
 {
     CRef<CSeq_id> id;
     BOOST_MESSAGE("Testing round trip for " << s);
-    CHECK_NO_THROW(id.Reset(new CSeq_id(s)));
-    CHECK_EQUAL(id->AsFastaString(), s);
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(s)));
+    BOOST_CHECK_EQUAL(id->AsFastaString(), s);
     for (SIZE_TYPE pos = strlen(s) - 1;
          pos != NPOS  &&  (s[pos] == '|'  ||  s[pos] == ' ');
          --pos) {
         CRef<CSeq_id> id2;
         string ss(s, pos);
         BOOST_MESSAGE("Testing equality with " << ss);
-        CHECK_NO_THROW(id2.Reset(new CSeq_id(ss)));
-        CHECK_EQUAL(id2->AsFastaString(), s);
-        CHECK(id->Match(*id2));
-        CHECK_EQUAL(id->Compare(*id2), CSeq_id::e_YES);
+        BOOST_CHECK_NO_THROW(id2.Reset(new CSeq_id(ss)));
+        BOOST_CHECK_EQUAL(id2->AsFastaString(), s);
+        BOOST_CHECK(id->Match(*id2));
+        BOOST_CHECK_EQUAL(id->Compare(*id2), CSeq_id::e_YES);
     }
 }
 
@@ -680,36 +649,36 @@ s_FastaRoundTripRegistrar
 BOOST_AUTO_TEST_CASE(s_TestNoStrays)
 {
     CSeq_id id;
-    CHECK_NO_THROW(id.SetGiim().SetDb("foo"));
-    CHECK_NO_THROW(id.SetGiim().SetRelease("2.0"));
-    CHECK(id.IsGiim());
-    CHECK(id.GetGiim().IsSetDb());
-    CHECK(id.GetGiim().IsSetRelease());
-    CHECK_NO_THROW(id.Set("gim|123"));
-    CHECK(id.IsGiim());
-    CHECK( !id.GetGiim().IsSetDb() );
-    CHECK( !id.GetGiim().IsSetRelease() );
+    BOOST_CHECK_NO_THROW(id.SetGiim().SetDb("foo"));
+    BOOST_CHECK_NO_THROW(id.SetGiim().SetRelease("2.0"));
+    BOOST_CHECK(id.IsGiim());
+    BOOST_CHECK(id.GetGiim().IsSetDb());
+    BOOST_CHECK(id.GetGiim().IsSetRelease());
+    BOOST_CHECK_NO_THROW(id.Set("gim|123"));
+    BOOST_CHECK(id.IsGiim());
+    BOOST_CHECK( !id.GetGiim().IsSetDb() );
+    BOOST_CHECK( !id.GetGiim().IsSetRelease() );
 
-    CHECK_NO_THROW(id.SetGenbank().SetRelease("135"));
-    CHECK(id.IsGenbank());
-    CHECK(id.GetGenbank().IsSetRelease());
-    CHECK_NO_THROW(id.Set("gb|U12345.1|AMU12345"));
-    CHECK(id.IsGenbank());
-    CHECK( !id.GetGenbank().IsSetRelease() );
+    BOOST_CHECK_NO_THROW(id.SetGenbank().SetRelease("135"));
+    BOOST_CHECK(id.IsGenbank());
+    BOOST_CHECK(id.GetGenbank().IsSetRelease());
+    BOOST_CHECK_NO_THROW(id.Set("gb|U12345.1|AMU12345"));
+    BOOST_CHECK(id.IsGenbank());
+    BOOST_CHECK( !id.GetGenbank().IsSetRelease() );
 
-    CHECK_NO_THROW(id.SetPatent().SetCit().SetDoc_type("app"));
-    CHECK(id.IsPatent());
-    CHECK(id.GetPatent().GetCit().IsSetDoc_type());
-    CHECK_NO_THROW(id.Set("pat|US|RE33188|1"));
-    CHECK(id.IsPatent());
-    CHECK( !id.GetPatent().GetCit().IsSetDoc_type() );
+    BOOST_CHECK_NO_THROW(id.SetPatent().SetCit().SetDoc_type("app"));
+    BOOST_CHECK(id.IsPatent());
+    BOOST_CHECK(id.GetPatent().GetCit().IsSetDoc_type());
+    BOOST_CHECK_NO_THROW(id.Set("pat|US|RE33188|1"));
+    BOOST_CHECK(id.IsPatent());
+    BOOST_CHECK( !id.GetPatent().GetCit().IsSetDoc_type() );
 
-    CHECK_NO_THROW(id.SetPdb().SetRel().SetToTime(GetFastLocalTime()));
-    CHECK(id.IsPdb());
-    CHECK(id.GetPdb().IsSetRel());
-    CHECK_NO_THROW(id.Set("pdb|1GAV|X"));
-    CHECK(id.IsPdb());
-    CHECK( !id.GetPdb().IsSetRel() );
+    BOOST_CHECK_NO_THROW(id.SetPdb().SetRel().SetToTime(GetFastLocalTime()));
+    BOOST_CHECK(id.IsPdb());
+    BOOST_CHECK(id.GetPdb().IsSetRel());
+    BOOST_CHECK_NO_THROW(id.Set("pdb|1GAV|X"));
+    BOOST_CHECK(id.IsPdb());
+    BOOST_CHECK( !id.GetPdb().IsSetRel() );
 }
 
 BOOST_AUTO_TEST_CASE(s_TestListOps)
@@ -725,20 +694,24 @@ BOOST_AUTO_TEST_CASE(s_TestListOps)
     bs.SetInst().SetRepr(CSeq_inst::eRepr_virtual);
     bs.SetInst().SetMol(CSeq_inst::eMol_other);
     CBioseq::TId& ids = bs.SetId();
-    CHECK_EQUAL(CSeq_id::ParseFastaIds(ids, merged, true), kNumFastaStrings);
-    CHECK_EQUAL(ids.size(), kNumFastaStrings);
-    CHECK_EQUAL(CSeq_id::GetStringDescr(bs, CSeq_id::eFormat_FastA),
-                string("gi|1234|ref|NM_000170.1|"));
-    CHECK_EQUAL(CSeq_id::GetStringDescr(bs, CSeq_id::eFormat_ForceGI),
-                string("gi|1234"));
-    CHECK_EQUAL(CSeq_id::GetStringDescr(bs, CSeq_id::eFormat_BestWithVersion),
-                string("ref|NM_000170.1"));
-    CHECK_EQUAL(CSeq_id::GetStringDescr(bs,
-                                        CSeq_id::eFormat_BestWithoutVersion),
-                string("ref|NM_000170"));
-    CHECK_EQUAL(CSeq_id::ParseFastaIds(ids, "gi|1234|junk|pdb|1GAV", true),
-                size_t(2));
-    CHECK_THROW_SEQID(CSeq_id::ParseFastaIds(ids, "gi|1234|junk|pdb|1GAV"));
+    BOOST_CHECK_EQUAL(CSeq_id::ParseFastaIds(ids, merged, true),
+                      kNumFastaStrings);
+    BOOST_CHECK_EQUAL(ids.size(), kNumFastaStrings);
+    BOOST_CHECK_EQUAL(CSeq_id::GetStringDescr(bs, CSeq_id::eFormat_FastA),
+                      string("gi|1234|ref|NM_000170.1|"));
+    BOOST_CHECK_EQUAL(CSeq_id::GetStringDescr(bs, CSeq_id::eFormat_ForceGI),
+                      string("gi|1234"));
+    BOOST_CHECK_EQUAL
+        (CSeq_id::GetStringDescr(bs, CSeq_id::eFormat_BestWithVersion),
+         string("ref|NM_000170.1"));
+    BOOST_CHECK_EQUAL
+        (CSeq_id::GetStringDescr(bs, CSeq_id::eFormat_BestWithoutVersion),
+         string("ref|NM_000170"));
+    BOOST_CHECK_EQUAL
+        (CSeq_id::ParseFastaIds(ids, "gi|1234|junk|pdb|1GAV", true),
+         size_t(2));
+    NCBI_CHECK_THROW_SEQID
+        (CSeq_id::ParseFastaIds(ids, "gi|1234|junk|pdb|1GAV"));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
@@ -756,42 +729,42 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
         CRef<CSeq_loc> mix2(new CSeq_loc);
         mix2->SetMix().Set().push_back(loc2);
 
-        CHECK(loc1->IsWhole());
-        CHECK(loc1->GetWhole().IsGi());
-        CHECK_EQUAL(loc1->GetWhole().GetGi(), 1);
+        BOOST_CHECK(loc1->IsWhole());
+        BOOST_CHECK(loc1->GetWhole().IsGi());
+        BOOST_CHECK_EQUAL(loc1->GetWhole().GetGi(), 1);
 
-        CHECK(loc2->IsEmpty());
-        CHECK(loc2->GetEmpty().IsGi());
-        CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
+        BOOST_CHECK(loc2->IsEmpty());
+        BOOST_CHECK(loc2->GetEmpty().IsGi());
+        BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
 
-        CHECK(loc1->GetId());
-        CHECK(loc1->GetId()->IsGi());
-        CHECK_EQUAL(loc1->GetId()->GetGi(), 1);
+        BOOST_CHECK(loc1->GetId());
+        BOOST_CHECK(loc1->GetId()->IsGi());
+        BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), 1);
 
-        CHECK(loc2->GetId());
-        CHECK(loc2->GetId()->IsGi());
-        CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
+        BOOST_CHECK(loc2->GetId());
+        BOOST_CHECK(loc2->GetId()->IsGi());
+        BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
 
         loc1->Assign(*loc2);
 
         id1.Reset();
         id2.Reset();
 
-        CHECK(loc1->IsEmpty());
-        CHECK(loc1->GetEmpty().IsGi());
-        CHECK_EQUAL(loc1->GetEmpty().GetGi(), 2);
+        BOOST_CHECK(loc1->IsEmpty());
+        BOOST_CHECK(loc1->GetEmpty().IsGi());
+        BOOST_CHECK_EQUAL(loc1->GetEmpty().GetGi(), 2);
 
-        CHECK(loc2->IsEmpty());
-        CHECK(loc2->GetEmpty().IsGi());
-        CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
+        BOOST_CHECK(loc2->IsEmpty());
+        BOOST_CHECK(loc2->GetEmpty().IsGi());
+        BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
     
-        CHECK(loc1->GetId());
-        CHECK(loc1->GetId()->IsGi());
-        CHECK_EQUAL(loc1->GetId()->GetGi(), 2);
+        BOOST_CHECK(loc1->GetId());
+        BOOST_CHECK(loc1->GetId()->IsGi());
+        BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), 2);
 
-        CHECK(loc2->GetId());
-        CHECK(loc2->GetId()->IsGi());
-        CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
+        BOOST_CHECK(loc2->GetId());
+        BOOST_CHECK(loc2->GetId()->IsGi());
+        BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
     }
     {
         CRef<CSeq_id> id1(new CSeq_id("gi|1"));
@@ -808,44 +781,44 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
         feat2->SetData().SetRegion("2");
         feat2->SetLocation(*loc2);
 
-        CHECK(loc1->IsWhole());
-        CHECK(loc1->GetWhole().IsGi());
-        CHECK_EQUAL(loc1->GetWhole().GetGi(), 1);
+        BOOST_CHECK(loc1->IsWhole());
+        BOOST_CHECK(loc1->GetWhole().IsGi());
+        BOOST_CHECK_EQUAL(loc1->GetWhole().GetGi(), 1);
 
-        CHECK(loc2->IsEmpty());
-        CHECK(loc2->GetEmpty().IsGi());
-        CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
+        BOOST_CHECK(loc2->IsEmpty());
+        BOOST_CHECK(loc2->GetEmpty().IsGi());
+        BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
 
-        CHECK(loc1->GetId());
-        CHECK(loc1->GetId()->IsGi());
-        CHECK_EQUAL(loc1->GetId()->GetGi(), 1);
+        BOOST_CHECK(loc1->GetId());
+        BOOST_CHECK(loc1->GetId()->IsGi());
+        BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), 1);
 
-        CHECK(loc2->GetId());
-        CHECK(loc2->GetId()->IsGi());
-        CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
+        BOOST_CHECK(loc2->GetId());
+        BOOST_CHECK(loc2->GetId()->IsGi());
+        BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
 
         feat1->Assign(*feat2);
 
         id1.Reset();
         id2.Reset();
 
-        CHECK_EQUAL(feat1->GetData().GetRegion(), string("2"));
+        BOOST_CHECK_EQUAL(feat1->GetData().GetRegion(), string("2"));
         loc1 = &feat1->SetLocation();
 
-        CHECK(loc1->IsEmpty());
-        CHECK(loc1->GetEmpty().IsGi());
-        CHECK_EQUAL(loc1->GetEmpty().GetGi(), 2);
+        BOOST_CHECK(loc1->IsEmpty());
+        BOOST_CHECK(loc1->GetEmpty().IsGi());
+        BOOST_CHECK_EQUAL(loc1->GetEmpty().GetGi(), 2);
 
-        CHECK(loc2->IsEmpty());
-        CHECK(loc2->GetEmpty().IsGi());
-        CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
+        BOOST_CHECK(loc2->IsEmpty());
+        BOOST_CHECK(loc2->GetEmpty().IsGi());
+        BOOST_CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
     
-        CHECK(loc1->GetId());
-        CHECK(loc1->GetId()->IsGi());
-        CHECK_EQUAL(loc1->GetId()->GetGi(), 2);
+        BOOST_CHECK(loc1->GetId());
+        BOOST_CHECK(loc1->GetId()->IsGi());
+        BOOST_CHECK_EQUAL(loc1->GetId()->GetGi(), 2);
 
-        CHECK(loc2->GetId());
-        CHECK(loc2->GetId()->IsGi());
-        CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
+        BOOST_CHECK(loc2->GetId());
+        BOOST_CHECK(loc2->GetId()->IsGi());
+        BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
     }
 }
