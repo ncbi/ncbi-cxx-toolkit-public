@@ -69,6 +69,18 @@ typedef CSeq_id::E_Choice TSEQID_CHOICE;
 typedef CSeq_id::EAccessionInfo TACCN_CHOICE;
 
 
+/// CSeq_inst definitions
+
+#define NCBI_SEQREPR(Type) CSeq_inst::eRepr_##Type
+typedef CSeq_inst::TRepr TSEQ_REPR;
+
+#define NCBI_SEQMOL(Type) CSeq_inst::eMol_##Type
+typedef CSeq_inst::TMol TSEQ_MOL;
+
+#define NCBI_SEQTOPOLOGY(Type) CSeq_inst::eTopology_##Type
+typedef CSeq_inst::TTopology TSEQ_TOPOLOGY;
+
+
 /// CSeqdesc definitions
 
 #define NCBI_SEQDESC(Type) CSeqdesc::e_##Type
@@ -173,75 +185,78 @@ if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Pdb, Lvl)
 if (! (Test)) {} else for (CTypeConstIterator<Type> Var (Cont); Var; ++Var)
 
 
+// "VISIT_ALL_XXX_WITHIN_YYY" does a recursive exploration of NCBI objects
+
+
 /// CSeq_entry explorers
 
-/// FOR_ALL_SEQENTRYS_WITHIN_SEQENTRYT
+/// VISIT_ALL_SEQENTRYS_WITHIN_SEQENTRY
 // Takes const CSeq_entry& as input and makes iterator to const CSeq_entry&
 // Dereference with const CSeq_entry& seqentry = *iter;
-#define FOR_ALL_SEQENTRYS_WITHIN_SEQENTRYT(Iter, Seq) \
-NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
+#define VISIT_ALL_SEQENTRYS_WITHIN_SEQENTRY(Iter, Seq) \
+NCBI_SERIAL_TEST_EXPLORE((Seq).IsSetSeq_set(), \
     CSeq_entry, \
     Iter, \
     (Seq))
 
-/// FOR_ALL_BIOSEQS_WITHIN_SEQENTRY
+/// VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY
 // Takes const CSeq_entry& as input and makes iterator to const CBioseq&
 // Dereference with const CBioseq& bioseq = *iter;
-#define FOR_ALL_BIOSEQS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY(Iter, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CBioseq, \
     Iter, \
     (Seq))
 
-/// FOR_ALL_SEQSETS_WITHIN_SEQENTRY
+/// VISIT_ALL_SEQSETS_WITHIN_SEQENTRY
 // Takes const CSeq_entry& as input and makes iterator to const CBioseq_set&
 // Dereference with const CBioseq_set& bss = *iter;
-#define FOR_ALL_SEQSETS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_SEQSETS_WITHIN_SEQENTRY(Iter, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CBioseq_set, \
     Iter, \
     (Seq))
 
-/// FOR_ALL_DESCRIPTORS_WITHIN_SEQENTRY
+/// VISIT_ALL_DESCRIPTORS_WITHIN_SEQENTRY
 // Takes const CSeq_entry& as input and makes iterator to const CSeqdesc&
 // Dereference with const CSeqdesc& desc = *iter;
-#define FOR_ALL_DESCRIPTORS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_DESCRIPTORS_WITHIN_SEQENTRY(Iter, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CSeqdesc, \
     Iter, \
     (Seq))
 
-/// FOR_ALL_ANNOTS_WITHIN_SEQENTRY
+/// VISIT_ALL_ANNOTS_WITHIN_SEQENTRY
 // Takes const CSeq_entry& as input and makes iterator to const CSeq_annot&
 // Dereference with const CSeq_annot& annot = *iter;
-#define FOR_ALL_ANNOTS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_ANNOTS_WITHIN_SEQENTRY(Iter, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CSeq_annot, \
     Iter, \
     (Seq))
 
-/// FOR_ALL_FEATURES_WITHIN_SEQENTRY
+/// VISIT_ALL_FEATURES_WITHIN_SEQENTRY
 // Takes const CSeq_entry& as input and makes iterator to const CSeq_feat&
 // Dereference with const CSeq_feat& feat = *iter;
-#define FOR_ALL_FEATURES_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_FEATURES_WITHIN_SEQENTRY(Iter, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CSeq_feat, \
     Iter, \
     (Seq))
 
-/// FOR_ALL_ALIGNS_WITHIN_SEQENTRY
+/// VISIT_ALL_ALIGNS_WITHIN_SEQENTRY
 // Takes const CSeq_entry& as input and makes iterator to const CSeq_feat&
 // Dereference with const CSeq_align& align = *iter;
-#define FOR_ALL_ALIGNS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_ALIGNS_WITHIN_SEQENTRY(Iter, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CSeq_align, \
     Iter, \
     (Seq))
 
-/// FOR_ALL_GRAPHS_WITHIN_SEQENTRY
+/// VISIT_ALL_GRAPHS_WITHIN_SEQENTRY
 // Takes const CSeq_entry& as input and makes iterator to const CSeq_feat&
 // Dereference with const CSeq_graph& graph = *iter;
-#define FOR_ALL_GRAPHS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_GRAPHS_WITHIN_SEQENTRY(Iter, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CSeq_graph, \
     Iter, \
@@ -250,23 +265,78 @@ NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
 
 /// CBioseq_set explorers
 
-/// FOR_ALL_SEQENTRYS_WITHIN_SEQSET
+/// VISIT_ALL_SEQENTRYS_WITHIN_SEQSET
 // Takes const CBioseq_set& as input and makes iterator to const CSeq_entry&
 // Dereference with const CSeq_entry& seqentry = *iter;
-#define FOR_ALL_SEQENTRYS_WITHIN_SEQSET(Iter, Bss) \
+#define VISIT_ALL_SEQENTRYS_WITHIN_SEQSET(Iter, Bss) \
 NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
     CSeq_entry, \
     Iter, \
     (Bss))
 
-/// FOR_ALL_BIOSEQS_WITHIN_SEQSET
+/// VISIT_ALL_BIOSEQS_WITHIN_SEQSET
 // Takes const CBioseq_set& as input and makes iterator to const CBioseq&
 // Dereference with const CBioseq& bioseq = *iter;
-#define FOR_ALL_BIOSEQS_WITHIN_SEQSET(Iter, Bss) \
+#define VISIT_ALL_BIOSEQS_WITHIN_SEQSET(Iter, Bss) \
 NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
     CBioseq, \
     Iter, \
     (Bss))
+
+/// VISIT_ALL_SEQSETS_WITHIN_SEQSET
+// Takes const CBioseq_set& as input and makes iterator to const CBioseq_set&
+// Dereference with const CBioseq_set& bss = *iter;
+#define VISIT_ALL_SEQSETS_WITHIN_SEQSET(Iter, Bss) \
+NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
+    CBioseq_set, \
+    Iter, \
+    (Bss))
+
+/// VISIT_ALL_DESCRIPTORS_WITHIN_SEQSET
+// Takes const CBioseq_set& as input and makes iterator to const CSeqdesc&
+// Dereference with const CSeqdesc& desc = *iter;
+#define VISIT_ALL_DESCRIPTORS_WITHIN_SEQSET(Iter, Bss) \
+NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
+    CSeqdesc, \
+    Iter, \
+    (Bss))
+
+/// VISIT_ALL_ANNOTS_WITHIN_SEQSET
+// Takes const CBioseq_set& as input and makes iterator to const CSeq_annot&
+// Dereference with const CSeq_annot& annot = *iter;
+#define VISIT_ALL_ANNOTS_WITHIN_SEQSET(Iter, Bss) \
+NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
+    CSeq_annot, \
+    Iter, \
+    (Bss))
+
+/// VISIT_ALL_FEATURES_WITHIN_SEQSET
+// Takes const CBioseq_set& as input and makes iterator to const CSeq_feat&
+// Dereference with const CSeq_feat& feat = *iter;
+#define VISIT_ALL_FEATURES_WITHIN_SEQSET(Iter, Bss) \
+NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
+    CSeq_feat, \
+    Iter, \
+    (Bss))
+
+/// VISIT_ALL_ALIGNS_WITHIN_SEQSET
+// Takes const CBioseq_set& as input and makes iterator to const CSeq_feat&
+// Dereference with const CSeq_align& align = *iter;
+#define VISIT_ALL_ALIGNS_WITHIN_SEQSET(Iter, Bss) \
+NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
+    CSeq_align, \
+    Iter, \
+    (Bss))
+
+/// VISIT_ALL_GRAPHS_WITHIN_SEQSET
+// Takes const CBioseq_set& as input and makes iterator to const CSeq_feat&
+// Dereference with const CSeq_graph& graph = *iter;
+#define VISIT_ALL_GRAPHS_WITHIN_SEQSET(Iter, Bss) \
+NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
+    CSeq_graph, \
+    Iter, \
+    (Bss))
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -278,6 +348,9 @@ NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
 // If okay, calls ITERATE for linear STL iteration
 #define NCBI_TEST_ITERATE(Test, Type, Var, Cont) \
 if (! (Test)) {} else ITERATE(Type, Var, Cont)
+
+
+// "FOR_EACH_XXX_ON_YYY" does a linear traversal of STL containers
 
 
 /// CSeq_submit iterators
