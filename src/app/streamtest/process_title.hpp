@@ -46,6 +46,7 @@ public:
     //  ------------------------------------------------------------------------
         : CScopedProcess()
         , m_out( 0 )
+        , m_ignore_existing( false )
     {};
 
     //  ------------------------------------------------------------------------
@@ -60,6 +61,11 @@ public:
     //  ------------------------------------------------------------------------
     {
         m_out = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
+
+        string options = args["options"].AsString();
+        if ( options == "ignore_existing" ) {
+            m_ignore_existing = true;
+        }
     };
 
     //  ------------------------------------------------------------------------
@@ -83,7 +89,9 @@ public:
         try {
             VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                 const CBioseq& bioseq = *bit;
-                const string& title = CreateDefLine (bioseq, *m_scope, false, false, m_out);
+                const string& title = CreateDefLine (bioseq, *m_scope,
+                                                     m_ignore_existing, false,
+                                                     m_out);
                 *m_out << ">";
                 CSeq_id::WriteAsFasta (*m_out, bioseq);
                 *m_out << " ";
@@ -98,6 +106,7 @@ public:
 
 protected:
     CNcbiOstream* m_out;
+    bool m_ignore_existing;
 };
 
 #endif
