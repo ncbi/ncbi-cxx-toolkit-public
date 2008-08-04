@@ -134,7 +134,7 @@ private:
 class CNcbiTestDisabler : public but::test_tree_visitor
 {
 public:
-    virtual void ~CNcbiTestDisabler(void) {}
+    virtual ~CNcbiTestDisabler(void) {}
 
     virtual void visit(but::test_case const& test);
 
