@@ -508,26 +508,27 @@ static Uint4 s_CorrectLocation(Uint4 pos, const CSequence& seq)
 // pos [in|out]
 static void s_CorrectLocations(vector<Uint4>& pos, const CSequence& seq)
 {
-    // Translate 'before letter' coordinate to position in the sequence
-    int j = 0;
-    Uint4 letters = 0;
+    // Translate 'before letter' coordinate to absolute position in the sequence
+    int j = -1;
+    Int4 letters = -1;
     size_t i = 0;
-    for (i=0;i < pos.size();i++) {
-        while (j < seq.GetLength() && letters < pos[i] + 1) {
-            if (seq.GetLetter(j) != CSequence::kGapChar) {
-                letters++;
-            }
-            j++;
-        }
-	// For a single gap at the end the above loop exits too early
-	// position needs to be shited by one
-	int len = seq.GetLength();
-	if (seq.GetLetter(len - 1) == CSequence::kGapChar 
-	    && seq.GetLetter(len - 2) != CSequence::kGapChar) {
-	    j++;
-	}
 
-        pos[i] = j - 2;
+    // For each i-th position find i-th letter
+    for (i=0;i < pos.size();i++) {
+
+        while (j < seq.GetLength() && letters < (Int4)pos[i]) {
+
+            j++;
+
+            // skip gaps
+            while (j < seq.GetLength()
+                   && seq.GetLetter(j) == CSequence::kGapChar) {
+                j++;
+            }
+            letters++;
+        }
+
+        pos[i] = j - 1;
     }
 
     // For a series of gaps before the same letter find position of each gap
@@ -588,20 +589,20 @@ void CMultiAligner::MultiAlignClusters(void)
             }
             if (!multi_aln_gaps[cluster_idx].empty()) {
                 printf("%3d: ", cluster_idx);
-                size_t i;
-                for (i=0;i < multi_aln_gaps[cluster_idx].size() - 1;i++) {
+                int i;
+                for (i=0;i < multi_aln_gaps[cluster_idx].size();i++) {
                     printf("%4d-", multi_aln_gaps[cluster_idx][i]);
                     while (i < multi_aln_gaps[cluster_idx].size()
                            && multi_aln_gaps[cluster_idx][i] + 1 
                            == multi_aln_gaps[cluster_idx][i + 1]) {
                         i++;
                     }                     
-                    if (i == multi_aln_gaps[cluster_idx].size() - 1
-                        && multi_aln_gaps[cluster_idx][i - 1] + 1
-                        == multi_aln_gaps[cluster_idx][i]) {
-                        i++;
+                    if (i == (int)multi_aln_gaps.size()) {
+                        printf("%4d", multi_aln_gaps[cluster_idx][i - 1]);
                     }
-                    printf("%4d", multi_aln_gaps[cluster_idx][i]);
+                    else {
+                        printf("%4d", multi_aln_gaps[cluster_idx][i]);
+                    }
                 }
                 printf("\n");
             }
@@ -667,12 +668,6 @@ void CMultiAligner::MultiAlignClusters(void)
                 j++;
                 multi_aln_gaps_corrected[cluster_idx][j] += offset;
             }
-            if (j > 0 && j == multi_aln_gaps[cluster_idx].size() - 1
-                && multi_aln_gaps[cluster_idx][j - 1] + 1
-                == multi_aln_gaps[cluster_idx][j]) {
-                multi_aln_gaps_corrected[cluster_idx][j] += offset;
-            }
-
         
         }
         //--------------------------------------------------------------------
@@ -680,21 +675,23 @@ void CMultiAligner::MultiAlignClusters(void)
             printf("\nCorrected multiple alignment gaps for clusters:\n"); 
             if (!multi_aln_gaps_corrected[cluster_idx].empty()) {
                 printf("%3d: ", cluster_idx);
-                 size_t i;
-                for (i=0;i < multi_aln_gaps_corrected[cluster_idx].size() - 1
+                int i;
+                for (i=0;i < multi_aln_gaps_corrected[cluster_idx].size()
                          ;i++) {
                     printf("%4d-", multi_aln_gaps_corrected[cluster_idx][i]);
-                    while (i < multi_aln_gaps_corrected[cluster_idx].size() - 1
+                    while (i < multi_aln_gaps_corrected[cluster_idx].size()
                            && multi_aln_gaps_corrected[cluster_idx][i] + 1
                            == multi_aln_gaps_corrected[cluster_idx][i + 1]) {
                         i++;
                     }
-                    if (i == multi_aln_gaps_corrected[cluster_idx].size() - 1
-                        && multi_aln_gaps_corrected[cluster_idx][i - 1] + 1
-                        == multi_aln_gaps_corrected[cluster_idx][i]) {
-                        i++;
+                    if (i == multi_aln_gaps_corrected.size()) {
+                        printf("%4d ",
+                               multi_aln_gaps_corrected[cluster_idx][i - 1]);
                     }
-                    printf("%4d ", multi_aln_gaps_corrected[cluster_idx][i]);
+                    else {
+                        printf("%4d ",
+                               multi_aln_gaps_corrected[cluster_idx][i]);
+                    }
                 }
                 printf("\n");
             }
@@ -855,7 +852,6 @@ void CMultiAligner::MultiAlignClusters(void)
     
     m_Results.swap(results);
 }
-
 
 // Frequencies are not normalized
 void CMultiAligner::MakeClusterResidueFrequencies(void) 
