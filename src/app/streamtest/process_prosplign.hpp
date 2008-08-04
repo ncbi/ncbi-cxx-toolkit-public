@@ -81,7 +81,7 @@ public:
         try {
             CRef<CSeq_loc> nucloc;
 
-            FOR_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
+            VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                 const CBioseq& bioseq = *bit;
                 if (bioseq.IsNa()) {
                     const CBioseq_Handle& bs = (*m_scope).GetBioseqHandle (bioseq);
@@ -89,7 +89,7 @@ public:
                 }
             }
 
-            FOR_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
+            VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                 const CBioseq& bioseq = *bit;
                 if (bioseq.IsAa()) {
                     FOR_EACH_SEQID_ON_BIOSEQ (sit, bioseq) {

@@ -79,7 +79,7 @@ public:
     //  ------------------------------------------------------------------------
     {
         try {
-            FOR_ALL_FEATURES_WITHIN_SEQENTRY (fit, *m_entry) {
+            VISIT_ALL_FEATURES_WITHIN_SEQENTRY (fit, *m_entry) {
                 const CSeq_feat& feat = *fit;
                 TestFeatureGeneOverlap( feat );
                 ++m_objectcount;
