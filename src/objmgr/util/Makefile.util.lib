@@ -5,8 +5,5 @@
 
 ASN_DEP = seqset
 
-SRC = weight sequence feature seqtitle obj_sniff seq_loc_util \
-      autodef autodef_feature_clause autodef_feature_clause_base \
-      autodef_source_desc autodef_source_group autodef_available_modifier \
-      autodef_mod_combo seq_align_util
+SRC = weight sequence feature seqtitle obj_sniff seq_loc_util seq_align_util
 LIB = xobjutil

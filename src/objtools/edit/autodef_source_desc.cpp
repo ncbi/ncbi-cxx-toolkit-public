@@ -31,7 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objmgr/util/autodef_source_desc.hpp>
+#include <objtools/edit/autodef_source_desc.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>

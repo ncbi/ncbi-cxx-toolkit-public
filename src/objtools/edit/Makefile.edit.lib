@@ -3,7 +3,9 @@
 # Build library "xobjedit"
 ###############################
 
-SRC = seq_entry_edit promote
+SRC = seq_entry_edit promote autodef_available_modifier autodef \
+      autodef_feature_clause_base autodef_feature_clause autodef_mod_combo \
+      autodef_source_desc autodef_source_group
 LIB    = xobjedit
 
 ASN_DEP = seqset

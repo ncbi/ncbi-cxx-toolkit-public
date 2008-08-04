@@ -43,7 +43,7 @@
 
 #include <serial/iterator.hpp>
 
-#include <objmgr/util/autodef_mod_combo.hpp>
+#include <objtools/edit/autodef_mod_combo.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
