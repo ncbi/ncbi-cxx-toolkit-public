@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <util/expr.hpp>
+#include <corelib/expr.hpp>
 
 #include <math.h>
 

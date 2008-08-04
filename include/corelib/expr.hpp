@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 ////////////////////////////////////////////////////////////////////////////////
 class CExprSymbol;
 
-class NCBI_XUTIL_EXPORT CExprValue 
+class NCBI_XNCBI_EXPORT CExprValue 
 { 
 public:
     CExprValue(void);
@@ -130,12 +130,12 @@ private:
     EValue          m_Tag;
 };
 
-template <> NCBI_XUTIL_EXPORT CExprValue::CExprValue(Int8 value);
-template <> NCBI_XUTIL_EXPORT CExprValue::CExprValue(double value);
-template <> NCBI_XUTIL_EXPORT CExprValue::CExprValue(bool value);
+template <> NCBI_XNCBI_EXPORT CExprValue::CExprValue(Int8 value);
+template <> NCBI_XNCBI_EXPORT CExprValue::CExprValue(double value);
+template <> NCBI_XNCBI_EXPORT CExprValue::CExprValue(bool value);
 
 ////////////////////////////////////////////////////////////////////////////////
-class NCBI_XUTIL_EXPORT CExprSymbol 
+class NCBI_XNCBI_EXPORT CExprSymbol 
 { 
 public:
     CExprSymbol(void);
@@ -182,19 +182,19 @@ public:
     CExprSymbol*    m_Next;
 };
 	       
-template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, Int8 value);
-template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, double value);
-template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, bool value);
-template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, FIntFunc1 value);
-template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, FIntFunc2 value);
-template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, FFloatFunc1 value);
-template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, FFloatFunc2 value);
-template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, FBoolFunc1 value);
-template <> NCBI_XUTIL_EXPORT CExprSymbol::CExprSymbol(const char* name, FBoolFunc2 value);
+template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, Int8 value);
+template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, double value);
+template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, bool value);
+template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, FIntFunc1 value);
+template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, FIntFunc2 value);
+template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, FFloatFunc1 value);
+template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, FFloatFunc2 value);
+template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, FBoolFunc1 value);
+template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, FBoolFunc2 value);
 
 
 ////////////////////////////////////////////////////////////////////////////////
-class NCBI_XUTIL_EXPORT CExprParserException : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_XNCBI_EXPORT CExprParserException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -229,7 +229,7 @@ private:
 }; 
 
 ////////////////////////////////////////////////////////////////////////////////
-class NCBI_XUTIL_EXPORT CExprParser
+class NCBI_XNCBI_EXPORT CExprParser
 {
 public:
     /// eAllowAutoVar - means "create variables without previous declaration".
@@ -329,7 +329,7 @@ private:
 // Inline methods.
 //
 
-NCBI_XUTIL_EXPORT
+NCBI_XNCBI_EXPORT
 unsigned string_hash_function(const char* p);
 
 template <typename VT> 

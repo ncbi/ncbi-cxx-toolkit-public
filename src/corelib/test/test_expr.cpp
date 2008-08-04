@@ -33,18 +33,9 @@
 
 #include <ncbi_pch.hpp>
 
-#include <util/expr.hpp>
+#include <corelib/expr.hpp>
 
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
+#include <corelib/test_boost.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
