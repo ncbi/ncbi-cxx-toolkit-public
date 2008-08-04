@@ -133,16 +133,14 @@ public:
     void Process(CReadDispatcherCommand& command);
     void ResetCaches(void);
 
-private:
     static int CollectStatistics(void); // 0 - no stats, >1 - verbose
-    void PrintStatistics(void) const;
 
-    static void PrintStat(const char* type,
-                          const char* what,
-                          const STimeStatistics& stat);
     static void LogStat(CReadDispatcherCommand& command,
                         CStopWatch& sw);
+    static void LogStat(CReadDispatcherCommand& command,
+                        CStopWatch& sw, double size);
 
+private:
     typedef map< TLevel,       CRef<CReader> >    TReaders;
     typedef map< TLevel,       CRef<CWriter> >    TWriters;
     typedef map< CProcessor::EType, CRef<CProcessor> > TProcessors;
@@ -150,6 +148,32 @@ private:
     TReaders    m_Readers;
     TWriters    m_Writers;
     TProcessors m_Processors;
+};
+
+
+class NCBI_XREADER_EXPORT CReadDispatcherCommand
+{
+public:
+    CReadDispatcherCommand(CReaderRequestResult& result);
+    virtual ~CReadDispatcherCommand(void);
+    
+    virtual bool IsDone(void) = 0;
+
+    // return false if it doesn't make sense to retry
+    virtual bool Execute(CReader& reader) = 0;
+
+    virtual string GetErrMsg(void) const = 0;
+
+    CReaderRequestResult& GetResult(void) const
+        {
+            return m_Result;
+        }
+    
+    virtual CGBRequestStatistics::EStatType GetStatistics(void) const = 0;
+    virtual string GetStatisticsDescription(void) const = 0;
+    
+private:
+    CReaderRequestResult& m_Result;
 };
 
 

@@ -34,6 +34,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbi_param.hpp>
+#include <objtools/data_loaders/genbank/statistics.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -132,17 +133,19 @@ protected:
     CWriter* GetWriter(const CReaderRequestResult& result) const;
 
     static int CollectStatistics(void); // 0 - no stats, >1 - verbose
-    static void LogStat(const char* type,
-                        const string& blob_id,
-                        STimeSizeStatistics& stat,
+    static void LogStat(CReaderRequestResult& result,
                         CStopWatch& sw,
-                        size_t size,
-                        CReaderRequestResult& result);
-
-private:
-    void PrintStatistics(void) const;
-    static void PrintStat(const char* type,
-                          STimeSizeStatistics& stat);
+                        const CBlob_id& blob_id,
+                        CGBRequestStatistics::EStatType stat_type,
+                        const char* descr,
+                        double size);
+    static void LogStat(CReaderRequestResult& result,
+                        CStopWatch& sw,
+                        const CBlob_id& blob_id,
+                        int chunk_id,
+                        CGBRequestStatistics::EStatType stat_type,
+                        const char* descr,
+                        double size);
 };
 
 

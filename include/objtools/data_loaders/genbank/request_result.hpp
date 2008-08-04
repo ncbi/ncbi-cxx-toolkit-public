@@ -36,6 +36,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbitime.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
 #include <util/mutex_pool.hpp>
@@ -581,11 +582,13 @@ public:
     double StartRecursion(void);
     void EndRecursion(double saved_time);
     friend class CRecurse;
-    class CRecurse
+    class CRecurse : public CStopWatch
     {
     public:
         CRecurse(CReaderRequestResult& result)
-            : m_Result(result), m_SaveTime(result.StartRecursion())
+            : CStopWatch(eStart),
+              m_Result(result),
+              m_SaveTime(result.StartRecursion())
             {
             }
         ~CRecurse(void)

@@ -30,47 +30,78 @@
 *
 */
 
-#define GB_COLLECT_STATS 1
-#ifdef GB_COLLECT_STATS
-
 #include <corelib/ncbitime.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-struct STimeStatistics
+class NCBI_XREADER_EXPORT CGBRequestStatistics
 {
-    STimeStatistics(void) : count(0), time(0) {}
-    
-    void add(double t)
-        {
-            count += 1;
-            time += t;
-        }
+public:
+    enum EStatType {
+        eStat_First,
 
-    size_t count;
-    double time;
-};
+        eStat_StringSeq_ids = 0,
+        eStat_Seq_idSeq_ids,
+        eStat_Seq_idGi,
+        eStat_Seq_idAcc,
+        eStat_Seq_idLabel,
+        eStat_Seq_idBlob_ids,
+        eStat_BlobVersion,
+        eStat_LoadBlob,
+        eStat_LoadSNPBlob,
+        eStat_ParseBlob,
+        eStat_ParseSNPBlob,
 
+        eStats_Count,
+        eStat_Last = eStats_Count-1
+    };
 
-struct STimeSizeStatistics : public STimeStatistics
-{
-    STimeSizeStatistics(void) : size(0) {}
+    CGBRequestStatistics(const char* action, const char* entity);
+
+    const string& GetAction(void) const {
+        return m_Action;
+    }
+    const string& GetEntity(void) const {
+        return m_Entity;
+    }
+    size_t GetCount(void) const {
+        return m_Count;
+    }
+    double GetTime(void) const {
+        return m_Time;
+    }
+    double GetSize(void) const {
+        return m_Size;
+    }
+
+    static const CGBRequestStatistics& GetStatistics(EStatType type);
+
+    void PrintStat(void) const;
+    static void PrintStatistics(void);
     
-    void add(double t, size_t bytes)
-        {
-            STimeStatistics::add(t);
-            size += bytes;
-        }
-    
-    double size;
+    void AddTime(double time) {
+        m_Count += 1;
+        m_Time += time;
+    }
+
+    void AddTimeSize(double time, double size) {
+        m_Count += 1;
+        m_Time += time;
+        m_Size += size;
+    }
+
+private:
+    string m_Action;
+    string m_Entity;
+    size_t m_Count;
+    double m_Time;
+    double m_Size;
 };
 
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-#endif
 
 #endif //GENBANK__STATISTICS__HPP_INCLUDED

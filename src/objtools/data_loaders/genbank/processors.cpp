@@ -210,66 +210,26 @@ namespace {
 /////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef GB_COLLECT_STATS
-
-static STimeSizeStatistics s_Stat_Main_Read;
-static STimeSizeStatistics s_Stat_SNP_Read;
-//static STimeSizeStatistics s_Stat_SNP_Parse;
-
-#define GB_STATS_START()                                \
-    bool collect_stat = CollectStatistics() > 0;        \
-    CReaderRequestResult::CRecurse r(result);           \
-    CStopWatch sw;                                      \
-    do {                                                \
-        if ( collect_stat ) {                           \
-            sw.Start();                                 \
-        }                                               \
-    } while ( 0 )
-
 #define GB_STATS_STOP(action, stat, size)               \
-    do {                                                \
-        if ( collect_stat ) {                           \
-            LogStat(action, blob_id.ToString(), stat,   \
-                    sw, size, result);                  \
-        }                                               \
-    } while ( 0 )
-
-#else
-
-#define GB_STATS_START()  ((void)0)
-#define GB_STATS_STOP(action, stat, size)  ((void)0)
-
-#endif
+    LogStat(action, blob_id, stat, r, size, result)
 
 
 inline
 int CProcessor::CollectStatistics(void)
 {
-#ifdef GB_COLLECT_STATS
     static NCBI_PARAM_TYPE(GENBANK, READER_STATS) s_Value;
     return s_Value.Get();
-#else
-    return 0;
-#endif
 }
 
 
 CProcessor::CProcessor(CReadDispatcher& dispatcher)
     : m_Dispatcher(&dispatcher)
 {
-#ifdef GB_COLLECT_STATS
-    CollectStatistics();
-#endif
 }
 
 
 CProcessor::~CProcessor(void)
 {
-#ifdef GB_COLLECT_STATS
-    if ( CollectStatistics() ) {
-        PrintStatistics();
-    }
-#endif
 }
 
 
@@ -278,11 +238,13 @@ void CProcessor::ProcessStream(CReaderRequestResult& result,
                                TChunkId chunk_id,
                                CNcbiIstream& stream) const
 {
-    //GB_STATS_START();
+    //CReaderRequestResult::CRecurse r(result);
     CObjectIStreamAsnBinary obj_stream(stream);
     ProcessObjStream(result, blob_id, chunk_id, obj_stream);
-    //GB_STATS_STOP("CProcessor: process stream", s_Stat_Main_Read,
-    //              obj_stream.GetStreamPos());
+    //LogStat(result, r, blob_id,
+    //        CGBRequestStatistics::eStat_LoadBlob,
+    //        "CProcessor: process stream",
+    //        obj_stream.GetStreamPos());
 }
 
 
@@ -569,13 +531,16 @@ void CProcessor_ID1::ProcessObjStream(CReaderRequestResult& result,
         }
         SetSeqEntryReadHooks(obj_stream);
 
-        GB_STATS_START();
-
-        obj_stream >> reply;
-
-        GB_STATS_STOP("CProcessor_ID1: read data",
-                      s_Stat_Main_Read,
-                      obj_stream.GetStreamPos());
+        {{
+            CReaderRequestResult::CRecurse r(result);
+                
+            obj_stream >> reply;
+            
+            LogStat(result, r, blob_id,
+                    CGBRequestStatistics::eStat_LoadBlob,
+                    "CProcessor_ID1: read data",
+                    obj_stream.GetStreamPos());
+        }}
 
         TBlobVersion version = GetVersion(reply);
         if ( version >= 0 ) {
@@ -771,15 +736,18 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
     CID1server_back reply;
     CRef<CSeq_entry> seq_entry;
     {{
-        GB_STATS_START();
-
-        CSeq_annot_SNP_Info_Reader::Parse(obj_stream,
-                                          Begin(reply),
-                                          set_info);
-
-        GB_STATS_STOP("CProcessor_ID1_SNP: read Set_Info",
-                      s_Stat_SNP_Read,
-                      obj_stream.GetStreamPos());
+        {{
+            CReaderRequestResult::CRecurse r(result);
+            
+            CSeq_annot_SNP_Info_Reader::Parse(obj_stream,
+                                              Begin(reply),
+                                              set_info);
+            
+            LogStat(result, r, blob_id,
+                    CGBRequestStatistics::eStat_LoadSNPBlob,
+                    "CProcessor_ID1: read SNP data",
+                    obj_stream.GetStreamPos());
+        }}
 
         TBlobVersion version = GetVersion(reply);
         if ( version >= 0 ) {
@@ -875,13 +843,16 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
 
         SetSeqEntryReadHooks(obj_stream);
 
-        GB_STATS_START();
+        {{
+            CReaderRequestResult::CRecurse r(result);
+            
+            obj_stream >> *seq_entry;
 
-        obj_stream >> *seq_entry;
-
-        GB_STATS_STOP("CProcessor_SE: read seq-entry",
-                      s_Stat_Main_Read,
-                      obj_stream.GetStreamPos());
+            LogStat(result, r, blob_id,
+                    CGBRequestStatistics::eStat_LoadBlob,
+                    "CProcessor_SE: read seq-entry",
+                    obj_stream.GetStreamPos());
+        }}
 
         if ( writer ) {
             const CProcessor_St_SE* prc =
@@ -955,15 +926,18 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
             writer = GetWriter(result);
         }
 
-        GB_STATS_START();
-
-        CSeq_annot_SNP_Info_Reader::Parse(obj_stream,
-                                          Begin(*seq_entry),
-                                          set_info);
-
-        GB_STATS_STOP("CProcessor_SE_SNP: read Set_Info",
-                      s_Stat_SNP_Read,
-                      obj_stream.GetStreamPos());
+        {{
+            CReaderRequestResult::CRecurse r(result);
+            
+            CSeq_annot_SNP_Info_Reader::Parse(obj_stream,
+                                              Begin(*seq_entry),
+                                              set_info);
+            
+            LogStat(result, r, blob_id,
+                    CGBRequestStatistics::eStat_ParseSNPBlob,
+                    "CProcessor_SE_SNP: parse SNP data",
+                    obj_stream.GetStreamPos());
+        }}
 
         if ( writer ) {
             if ( set_info.m_Seq_annot_InfoMap.empty() || !seq_entry ) {
@@ -1039,13 +1013,16 @@ void CProcessor_St_SE::ProcessObjStream(CReaderRequestResult& result,
 
     TBlobState blob_state;
 
-    GB_STATS_START();
-
-    blob_state = ReadBlobState(obj_stream);
-
-    GB_STATS_STOP("CProcessor_St_SE: read state",
-                  s_Stat_Main_Read,
-                  obj_stream.GetStreamPos());
+    {{
+        CReaderRequestResult::CRecurse r(result);
+        
+        blob_state = ReadBlobState(obj_stream);
+        
+        LogStat(result, r, blob_id,
+                CGBRequestStatistics::eStat_LoadBlob,
+                "CProcessor_St_SE: read state",
+                obj_stream.GetStreamPos());
+    }}
 
     m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
@@ -1227,20 +1204,25 @@ void CProcessor_St_SE_SNPT::ProcessStream(CReaderRequestResult& result,
                        "double load of "<<blob_id<<'/'<<chunk_id);
     }
 
-    TBlobState blob_state;
-
-    GB_STATS_START();
-
-    blob_state = ReadBlobState(stream);
-
-    GB_STATS_STOP("CProcessor_St_SE_SNPT: read Set_Info state",
-                  s_Stat_SNP_Read,
-                  stream.tellg());
-
+    TBlobState blob_state = ReadBlobState(stream);
     m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
+
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
     CTSE_SetObjectInfo set_info;
-    CSeq_annot_SNP_Info_Reader::Read(stream, Begin(*seq_entry), set_info);
+
+    {{
+        CReaderRequestResult::CRecurse r(result);
+        Int8 size = NcbiStreamposToInt8(stream.tellg());
+        
+        CSeq_annot_SNP_Info_Reader::Read(stream, Begin(*seq_entry), set_info);
+
+        size = NcbiStreamposToInt8(stream.tellg()) - size;
+        LogStat(result, r, blob_id,
+                CGBRequestStatistics::eStat_LoadSNPBlob,
+                "CProcessor_St_SE_SNPT: read SNP table",
+                size);
+    }}
+    
     CWriter* writer = GetWriter(result);
     if ( writer ) {
         SaveSNPBlob(result, blob_id, chunk_id, blob, writer, *seq_entry, set_info);
@@ -1303,9 +1285,21 @@ void CProcessor_ID2::ProcessObjStream(CReaderRequestResult& result,
                                       TChunkId chunk_id,
                                       CObjectIStream& obj_stream) const
 {
-    TBlobState blob_state = obj_stream.ReadInt4();
+    TBlobState blob_state;
     CID2_Reply_Data data;
-    obj_stream >> data;
+
+    {{
+        CReaderRequestResult::CRecurse r(result);
+        
+        blob_state = obj_stream.ReadInt4();
+        obj_stream >> data;
+        
+        LogStat(result, r, blob_id,
+                CGBRequestStatistics::eStat_LoadBlob,
+                "CProcessor_ID2: read data",
+                obj_stream.GetStreamPos());
+    }}
+
     ProcessData(result, blob_id, blob_state, chunk_id, data);
 }
 
@@ -1342,16 +1336,21 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         }
         CRef<CSeq_entry> entry(new CSeq_entry);
 
-        GB_STATS_START();
-
-        x_ReadData(data, Begin(*entry), data_size);
-
-        GB_STATS_STOP("CProcessor_ID2: read seq-entry",
-                      s_Stat_Main_Read,
-                      data_size);
+        {{
+            CReaderRequestResult::CRecurse r(result);
+            
+            x_ReadData(data, Begin(*entry), data_size);
+            
+            LogStat(result, r, blob_id,
+                    CGBRequestStatistics::eStat_ParseBlob,
+                    "CProcessor_ID2: parsed Seq-entry",
+                    data_size);
+        }}
 
         blob->SetBlobState(blob_state);
+
         SetSeq_entry(result, blob_id, chunk_id, blob, entry);
+        
         CWriter* writer = GetWriter(result);
         if ( writer ) {
             if ( data.GetData_format() == data.eData_format_asn_binary &&
@@ -1381,13 +1380,16 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         }
         CRef<CID2S_Split_Info> split_info(new CID2S_Split_Info);
 
-        GB_STATS_START();
-
-        x_ReadData(data, Begin(*split_info), data_size);
-
-        GB_STATS_STOP("CProcessor_ID2: read split info",
-                      s_Stat_Main_Read,
-                      data_size);
+        {{
+            CReaderRequestResult::CRecurse r(result);
+            
+            x_ReadData(data, Begin(*split_info), data_size);
+            
+            LogStat(result, r, blob_id,
+                    CGBRequestStatistics::eStat_ParseBlob,
+                    "CProcessor_ID2: parsed split info",
+                    data_size);
+        }}
 
         bool with_skeleton = split_info->IsSetSkeleton();
         if ( !with_skeleton ) {
@@ -1397,10 +1399,22 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                            "CProcessor_ID2: "
                            "ID2S-Split-Info without skeleton Seq-entry");
             }
-            x_ReadData(*skel, Begin(split_info->SetSkeleton()), data_size);
+
+            {{
+                CReaderRequestResult::CRecurse r(result);
+                
+                x_ReadData(*skel, Begin(split_info->SetSkeleton()), data_size);
+                
+                LogStat(result, r, blob_id,
+                        CGBRequestStatistics::eStat_ParseBlob,
+                        "CProcessor_ID2: parsed Seq-entry",
+                        data_size);
+            }}
         }
+
         CSplitParser::Attach(*blob, *split_info);
         blob->GetSplitInfo().SetSplitVersion(split_version);
+        
         CWriter* writer = GetWriter(result);
         if ( writer ) {
             if ( with_skeleton ) {
@@ -1432,14 +1446,17 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         }
         CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
         
-        GB_STATS_START();
-
-        x_ReadData(data, Begin(*chunk), data_size);
-        CSplitParser::Load(chunk_info, *chunk);
-
-        GB_STATS_STOP("CProcessor_ID2: read chunk",
-                      s_Stat_Main_Read,
-                      data_size);
+        {{
+            CReaderRequestResult::CRecurse r(result);
+            
+            x_ReadData(data, Begin(*chunk), data_size);
+            CSplitParser::Load(chunk_info, *chunk);
+            
+            LogStat(result, r, blob_id, chunk_info.GetChunkId(),
+                    CGBRequestStatistics::eStat_ParseBlob,
+                    "CProcessor_ID2: parsed split chunk",
+                    data_size);
+        }}
         
         CWriter* writer = GetWriter(result);
         if ( writer ) {
@@ -1672,16 +1689,19 @@ void CProcessor_ID2AndSkel::ProcessObjStream(CReaderRequestResult& result,
     TSplitVersion split_version;
     CID2_Reply_Data split_data, skel_data;
 
-    GB_STATS_START();
-
-    blob_state = obj_stream.ReadInt4();
-    split_version = obj_stream.ReadInt4();
-    obj_stream >> split_data;
-    obj_stream >> skel_data;
-
-    GB_STATS_STOP("CProcessor_ID2AndSkel: read skel",
-                  s_Stat_Main_Read,
-                  obj_stream.GetStreamPos());
+    {{
+        CReaderRequestResult::CRecurse r(result);
+        
+        blob_state = obj_stream.ReadInt4();
+        split_version = obj_stream.ReadInt4();
+        obj_stream >> split_data;
+        obj_stream >> skel_data;
+        
+        LogStat(result, r, blob_id,
+                CGBRequestStatistics::eStat_LoadBlob,
+                "CProcessor_ID2AndSkel: read skel",
+                obj_stream.GetStreamPos());
+    }}
 
     ProcessData(result, blob_id, blob_state, chunk_id,
                 split_data, split_version, ConstRef(&skel_data));
@@ -1905,59 +1925,72 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
 }
 
 
-void CProcessor::PrintStat(const char* type,
-                           STimeSizeStatistics& stat)
-{
-#ifdef GB_COLLECT_STATS
-    if ( !stat.count ) {
-        return;
-    }
-    LOG_POST_X(6, type << ' ' << stat.count << " blobs " <<
-                  setiosflags(ios::fixed) <<
-                  setprecision(2) <<
-                  (stat.size/1024.0) << " kB in " <<
-                  setprecision(3) <<
-                  (stat.time) << " s (" <<
-                  setprecision(2) <<
-                  (stat.size/stat.time/1024) << " kB/s)");
-    stat.count = 0; // Print just once
-#endif
+namespace {
+    class CCommandParseBlob : public CReadDispatcherCommand
+    {
+    public:
+        CCommandParseBlob(CReaderRequestResult& result,
+                          CGBRequestStatistics::EStatType stat_type,
+                          const char* descr,
+                          const CBlob_id& blob_id,
+                          int chunk_id = -1)
+            : CReadDispatcherCommand(result),
+              m_StatType(stat_type), m_Descr(descr),
+              m_Blob_id(blob_id), m_ChunkId(chunk_id)
+            {
+            }
+        bool IsDone(void) {
+            return true;
+        }
+        bool Execute(CReader& reader) {
+            return true;
+        }
+        string GetErrMsg(void) const {
+            return string();
+        }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return m_StatType;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                CNcbiOstrstream str;
+                str << m_Descr << ' ' << m_Blob_id;
+                if ( m_ChunkId >= 0 && m_ChunkId < kMax_Int )
+                    str << '.' << m_ChunkId;
+                return CNcbiOstrstreamToString(str);
+            }
+    private:
+        CGBRequestStatistics::EStatType m_StatType;
+        const string m_Descr;
+        const CBlob_id& m_Blob_id;
+        int m_ChunkId;
+    };
 }
 
 
-void CProcessor::LogStat(const char* type,
-                         const string& blob_id,
-                         STimeSizeStatistics& stat,
+void CProcessor::LogStat(CReaderRequestResult& result,
                          CStopWatch& sw,
-                         size_t size,
-                         CReaderRequestResult& result)
+                         const CBlob_id& blob_id,
+                         CGBRequestStatistics::EStatType stat_type,
+                         const char* descr,
+                         double size)
 {
-#ifdef GB_COLLECT_STATS
-    double time = result.GetCurrentRequestTime(sw.Elapsed());
-    stat.add(time, size);
-    if ( CollectStatistics() <= 1 ) {
-        return;
-    }
-    LOG_POST_X(7, setw(result.GetRecursionLevel()) << "" <<
-                  type << " for " << blob_id << ' ' <<
-                  setiosflags(ios::fixed) <<
-                  setprecision(2) <<
-                  (size/1024.0) << " kB in " <<
-                  setprecision(3) <<
-                  (time*1000) << " ms (" <<
-                  setprecision(2) <<
-                  (size/time/1024) << " kB/s)");
-#endif
+    CCommandParseBlob cmd(result, stat_type, descr, blob_id);
+    CReadDispatcher::LogStat(cmd, sw, size);
 }
 
 
-void CProcessor::PrintStatistics(void) const
+void CProcessor::LogStat(CReaderRequestResult& result,
+                         CStopWatch& sw,
+                         const CBlob_id& blob_id,
+                         int chunk_id,
+                         CGBRequestStatistics::EStatType stat_type,
+                         const char* descr,
+                         double size)
 {
-#ifdef GB_COLLECT_STATS
-    PrintStat("Processor: non-SNP loaded", s_Stat_Main_Read);
-    PrintStat("Processor: SNP loaded", s_Stat_SNP_Read);
-    // PrintStat("Processor: SNP parsed", s_Stat_SNP_Parse);
-#endif
+    CCommandParseBlob cmd(result, stat_type, descr, blob_id, chunk_id);
+    CReadDispatcher::LogStat(cmd, sw, size);
 }
 
 
