@@ -43,7 +43,7 @@
 
 #include "dbapi_unit_test.hpp"
 
-#include <util/expr.hpp>
+#include <corelib/expr.hpp>
 
 #ifdef HAVE_LIBCONNEXT
 #  include <connect/ext/ncbi_crypt.h>
