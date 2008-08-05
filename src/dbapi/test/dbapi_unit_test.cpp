@@ -1679,44 +1679,141 @@ CExprTestSuiteBase::~CExprTestSuiteBase(void)
 
 void CExprTestSuiteBase::Init(void)
 {
-    enum EOsType {eOsUnknown, eOsSolaris, eOsWindows, eOsIrix};
-    enum ECompilerType {eCompilerUnknown, eCompilerWorkShop, eCompilerGCC};
-
-    // Register predefined symbols ...
-    EOsType os_type = eOsUnknown;
-    ECompilerType compiler_type = eCompilerUnknown;
-    
-#if defined(NCBI_OS_SOLARIS)
-    os_type = eOsSolaris;
+    ///////////////////
+    // OS
+#if defined(NCBI_OS_AIX)
+    m_Parser.AddSymbol("OS_Aix", true);
+#else
+    m_Parser.AddSymbol("OS_Aix", false);
 #endif
 
-#if defined(NCBI_COMPILER_WORKSHOP)
-    compiler_type = eCompilerWorkShop;
+#if defined(NCBI_OS_BSD)
+    m_Parser.AddSymbol("OS_BSD", true);
+#else
+    m_Parser.AddSymbol("OS_BSD", false);
 #endif
 
-#if defined(NCBI_COMPILER_GCC)
-    compiler_type = eCompilerGCC;
+#if defined(NCBI_OS_CYGWIN)
+    m_Parser.AddSymbol("OS_Cygwin", true);
+#else
+    m_Parser.AddSymbol("OS_Cygwin", false);
+#endif
+
+#if defined(NCBI_OS_DARWIN)
+    m_Parser.AddSymbol("OS_MacOSX", true);
+#else
+    m_Parser.AddSymbol("OS_MacOSX", false);
 #endif
 
 #if defined(NCBI_OS_IRIX)
-    os_type = eOsIrix;
+    m_Parser.AddSymbol("OS_Irix", true);
+#else
+    m_Parser.AddSymbol("OS_Irix", false);
+#endif
+
+#if defined(NCBI_OS_LINUX)
+    m_Parser.AddSymbol("OS_Linux", true);
+#else
+    m_Parser.AddSymbol("OS_Linux", false);
+#endif
+
+#if defined(NCBI_OS_MAC)
+    m_Parser.AddSymbol("OS_MacOS", true);
+#else
+    m_Parser.AddSymbol("OS_MacOS", false);
 #endif
 
 #if defined(NCBI_OS_MSWIN)
-    os_type = eOsWindows;
+    m_Parser.AddSymbol("OS_Windows", true);
+#else
+    m_Parser.AddSymbol("OS_Windows", false);
 #endif
 
-    m_Parser.AddSymbol("OS_Windows", os_type == eOsWindows);
-    m_Parser.AddSymbol("OS_Irix", os_type == eOsIrix);
-    m_Parser.AddSymbol("OS_Solaris", os_type == eOsSolaris);
+#if defined(NCBI_OS_OSF1)
+    m_Parser.AddSymbol("OS_Tru64", true);
+#else
+    m_Parser.AddSymbol("OS_Tru64", false);
+#endif
 
-    m_Parser.AddSymbol("COMPILER_WorkShop", compiler_type == eCompilerWorkShop);
-    m_Parser.AddSymbol("COMPILER_GCC", compiler_type == eCompilerGCC);
+#if defined(NCBI_OS_SOLARIS)
+    m_Parser.AddSymbol("OS_Solaris", true);
+#else
+    m_Parser.AddSymbol("OS_Solaris", false);
+#endif
 
+#if defined(NCBI_OS_UNIX)
+    m_Parser.AddSymbol("OS_Unix", true);
+#else
+    m_Parser.AddSymbol("OS_Unix", false);
+#endif
+
+    //////////////////////
+    // Compiler
+#if defined(NCBI_COMPILER_COMPAQ)
+    m_Parser.AddSymbol("COMPILER_Compaq", true);
+#else
+    m_Parser.AddSymbol("COMPILER_Compaq", false);
+#endif
+
+#if defined(NCBI_COMPILER_GCC)
+    m_Parser.AddSymbol("COMPILER_GCC", true);
+#else
+    m_Parser.AddSymbol("COMPILER_GCC", false);
+#endif
+
+#if defined(NCBI_COMPILER_ICC)
+    m_Parser.AddSymbol("COMPILER_ICC", true);
+#else
+    m_Parser.AddSymbol("COMPILER_ICC", false);
+#endif
+
+#if defined(NCBI_COMPILER_KCC)
+    m_Parser.AddSymbol("COMPILER_KCC", true);
+#else
+    m_Parser.AddSymbol("COMPILER_KCC", false);
+#endif
+
+#if defined(NCBI_COMPILER_MIPSPRO)
+    m_Parser.AddSymbol("COMPILER_MipsPro", true);
+#else
+    m_Parser.AddSymbol("COMPILER_MipsPro", false);
+#endif
+
+#if defined(NCBI_COMPILER_MSVC)
+    m_Parser.AddSymbol("COMPILER_MSVC", true);
+#else
+    m_Parser.AddSymbol("COMPILER_MSVC", false);
+#endif
+
+#if defined(NCBI_COMPILER_VISUALAGE)
+    m_Parser.AddSymbol("COMPILER_VisualAge", true);
+#else
+    m_Parser.AddSymbol("COMPILER_VisualAge", false);
+#endif
+
+#if defined(NCBI_COMPILER_WORKSHOP)
+    m_Parser.AddSymbol("COMPILER_WorkShop", true);
+#else
+    m_Parser.AddSymbol("COMPILER_WorkShop", false);
+#endif
+
+
+    ////////////////////////
+    // Sybase ...
     m_Parser.AddSymbol("SYBASE_ClientVersion", NStr::StringToDouble(
         GetSybaseClientVersion().substr(0, 4))
     );
 
+    ///////////////////////
+    // Build-related ...
+#if defined(NCBI_DLL_BUILD)
+    m_Parser.AddSymbol("BUILD_Dll", true);
+#else
+    m_Parser.AddSymbol("BUILD_Dll", false);
+#endif
+
+    ///////////////////////
+    // Configuration-related ...
 #ifdef HAVE_LIBCONNEXT
     m_Parser.AddSymbol("HAVE_LibConnExt", CRYPT_Version(-1) != -1);
 #else
