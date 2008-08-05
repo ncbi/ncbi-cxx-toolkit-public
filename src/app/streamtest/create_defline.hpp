@@ -43,7 +43,6 @@ public:
     CDeflineGenerator (
         const CBioseq& bioseq,
         CScope& scope
-        , CNcbiOstream* ostr // temporary file argument for debugging
     );
 
     // destructor
@@ -80,8 +79,6 @@ private:
     );
 
 private:
-    CNcbiOstream* m_out; // temporary instance variable for debugging
-
     // instance variables
     const CBioseq& m_bioseq;
     CScope& m_scope;
@@ -157,11 +154,9 @@ private:
 CDeflineGenerator::CDeflineGenerator (
     const CBioseq& bioseq,
     CScope& scope
-    , CNcbiOstream* ostr // temporary file argument for debugging
 )
     : m_bioseq (bioseq)
     , m_scope (scope)
-    , m_out (ostr) // temporary file argument for debugging
 
 {
     m_reconstruct = false;
@@ -1037,11 +1032,10 @@ static string CreateDefLine (
     CScope& scope,
     bool ignoreExisting = false,
     bool allProteinNames = false
-    , CNcbiOstream* ostr = NULL // temporary file argument for debugging
 )
 
 {
-    CDeflineGenerator def (bioseq, scope, ostr);
+    CDeflineGenerator def (bioseq, scope);
 
     return def.GenerateDefline (ignoreExisting, allProteinNames);
 }
@@ -1051,7 +1045,6 @@ static string CreateDefLine (
     const CBioseq_Handle& hnd,
     bool ignoreExisting = false,
     bool allProteinNames = false
-    , CNcbiOstream* ostr = NULL // temporary file argument for debugging
 )
 
 {
@@ -1060,7 +1053,7 @@ static string CreateDefLine (
     CConstRef<CBioseq> bs_ref = hnd.GetCompleteBioseq();
     if (bs_ref) {
         CScope& scope = hnd.GetScope();
-        result = CreateDefLine (*bs_ref, scope, ignoreExisting, allProteinNames, NULL);
+        result = CreateDefLine (*bs_ref, scope, ignoreExisting, allProteinNames);
     }
 
     return result;

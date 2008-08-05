@@ -90,8 +90,7 @@ public:
             VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                 const CBioseq& bioseq = *bit;
                 const string& title = CreateDefLine (bioseq, *m_scope,
-                                                     m_ignore_existing, false,
-                                                     m_out);
+                                                     m_ignore_existing, false);
                 *m_out << ">";
                 CSeq_id::WriteAsFasta (*m_out, bioseq);
                 *m_out << " ";
