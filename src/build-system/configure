@@ -22914,7 +22914,6 @@ if test "$with_boost" != "no"; then
    if test -n "$boost_path_digits"; then
       boost_version_digits=`echo $ncbi_cv_lib_boost_version | sed -e 's/.0$//' | tr -cd 0123456789`
       if test $boost_path_digits != "$boost_version_digits"; then
-         echo "$boost_path_digits != $boost_version_digits"
          # presumably stale, particularly if boost_version WASN'T cached;
          # uncache all relevant settings
          $as_unset ncbi_cv_lib_boost_version || test "${ncbi_cv_lib_boost_version+set}" != set || { ncbi_cv_lib_boost_version=; export ncbi_cv_lib_boost_version; }
