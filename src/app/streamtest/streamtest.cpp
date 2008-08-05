@@ -128,6 +128,9 @@ void CStreamTestApp::Init()
     arg_desc->AddFlag( "binary",
         "Input is binary ASN" );
 
+    arg_desc->AddFlag( "compressed",
+        "Input is compressed" );
+
     arg_desc->AddKey( "test", 
         "TestCase",
         "Mode for generation",
