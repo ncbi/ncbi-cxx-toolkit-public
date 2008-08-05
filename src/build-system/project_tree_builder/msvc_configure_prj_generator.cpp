@@ -108,6 +108,10 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     m_CustomBuildCommand += "set TREE_ROOT=" + tree_root_par + "\n";
     m_CustomBuildCommand += "set SLN_PATH="  + sln_path_par  + "\n";
     m_CustomBuildCommand += "set PTB_PLATFORM=$(PlatformName)\n";
+    m_CustomBuildCommand +=
+        "if \"%PTB_PROJECT%\"==\"\" set PTB_PROJECT=";
+    m_CustomBuildCommand += m_SubtreeToBuild;
+    m_CustomBuildCommand += "\n";
     if (m_BuildPtb) {
         m_CustomBuildOutput   = ptb_path_par  + "\\project_tree_builder.exe";
     }
@@ -317,7 +321,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
 
     ofs << " -logfile \"%SLN_PATH%_configuration_log.txt\""
         << " -conffile \"%PTB_PATH%\\..\\..\\..\\project_tree_builder.ini\" "
-        << "\"%TREE_ROOT%\"" << " " << m_SubtreeToBuild << " " << "\"%SLN_PATH%\"" << endl;
+        << "\"%TREE_ROOT%\"" << " " << "%PTB_PROJECT%" << " " << "\"%SLN_PATH%\"" << endl;
     ofs << "@echo off" << endl
         << "if errorlevel 1 goto report_error" << endl
         << endl
