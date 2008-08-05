@@ -1,3 +1,7 @@
+#ifndef CORELIB___EXPR__HPP
+#define CORELIB___EXPR__HPP
+
+
 /*  $Id$
  * ===========================================================================
  *
@@ -404,4 +408,5 @@ CExprParser::IfLongest2ElseChar(
 
 END_NCBI_SCOPE
 
+#endif  /* CORELIB___EXPR__HPP */
 
