@@ -460,57 +460,7 @@ int CNcbiApplication::AppMain
             }
         }
         catch (CArgHelpException& e) {
-            if ( !m_DisableArgDesc ) {
-                if (m_ArgDesc->IsAutoHelpEnabled()) {
-                    if ((m_HideArgs & fHideHelp) != 0) {
-                        if (m_ArgDesc->Exist("h")) {
-                            m_ArgDesc->Delete("h");
-                        }
-                    }
-                }
-                if ((m_HideArgs & fHideFullHelp) != 0) {
-                    if (m_ArgDesc->Exist("help")) {
-                        m_ArgDesc->Delete("help");
-                    }
-                }
-                if ((m_HideArgs & fHideXmlHelp) != 0) {
-                    if (m_ArgDesc->Exist("xmlhelp")) {
-                        m_ArgDesc->Delete("xmlhelp");
-                    }
-                }
-                if ((m_HideArgs & fHideLogfile) == 0  &&
-                    !m_ArgDesc->Exist(s_ArgLogFile + 1)) {
-                    m_ArgDesc->AddOptionalKey
-                        (s_ArgLogFile+1, "File_Name",
-                         "File to which the program log should be redirected",
-                         CArgDescriptions::eOutputFile);
-                }
-                if ((m_HideArgs & fHideConffile) == 0  &&
-                    !m_ArgDesc->Exist(s_ArgCfgFile + 1)) {
-                    m_ArgDesc->AddOptionalKey
-                        (s_ArgCfgFile + 1, "File_Name",
-                         "Program's configuration (registry) data file",
-                         CArgDescriptions::eInputFile);
-                }
-                if ((m_HideArgs & fHideVersion) == 0  &&
-                    !m_ArgDesc->Exist(s_ArgVersion + 1)) {
-                    m_ArgDesc->AddFlag
-                        (s_ArgVersion + 1,
-                         "Print version number;  ignore other arguments");
-                }
-                if ((m_HideArgs & fHideFullVersion) == 0  &&
-                    !m_ArgDesc->Exist(s_ArgFullVersion + 1)) {
-                    m_ArgDesc->AddFlag
-                        (s_ArgFullVersion + 1,
-                         "Print extended version data;  ignore other arguments");
-                }
-                if ((m_HideArgs & fHideDryRun) == 0  &&
-                    !m_ArgDesc->Exist(s_ArgDryRun + 1)) {
-                    m_ArgDesc->AddFlag
-                        (s_ArgDryRun + 1,
-                         "Dry run the application: do nothing, only test all preconditions");
-                }
-            }
+            x_AddDefaultArgs();
             // Print USAGE
             if (e.GetErrCode() == CArgHelpException::eHelpXml) {
                 m_ArgDesc->PrintUsageXml(cout);
@@ -580,6 +530,7 @@ int CNcbiApplication::AppMain
     catch (CArgException& e) {
         // Print USAGE and the exception error message
         if ( m_ArgDesc.get() ) {
+            x_AddDefaultArgs();
             string str;
             LOG_POST_X(9, m_ArgDesc->PrintUsage(str) << string(72, '='));
         }
@@ -812,6 +763,60 @@ void CNcbiApplication::x_SetupStdio(void)
 #endif
 }
 
+void CNcbiApplication::x_AddDefaultArgs(void)
+{
+    if ( !m_DisableArgDesc ) {
+        if (m_ArgDesc->IsAutoHelpEnabled()) {
+            if ((m_HideArgs & fHideHelp) != 0) {
+                if (m_ArgDesc->Exist("h")) {
+                    m_ArgDesc->Delete("h");
+                }
+            }
+        }
+        if ((m_HideArgs & fHideFullHelp) != 0) {
+            if (m_ArgDesc->Exist("help")) {
+                m_ArgDesc->Delete("help");
+            }
+        }
+        if ((m_HideArgs & fHideXmlHelp) != 0) {
+            if (m_ArgDesc->Exist("xmlhelp")) {
+                m_ArgDesc->Delete("xmlhelp");
+            }
+        }
+        if ((m_HideArgs & fHideLogfile) == 0  &&
+            !m_ArgDesc->Exist(s_ArgLogFile + 1)) {
+            m_ArgDesc->AddOptionalKey
+                (s_ArgLogFile+1, "File_Name",
+                    "File to which the program log should be redirected",
+                    CArgDescriptions::eOutputFile);
+        }
+        if ((m_HideArgs & fHideConffile) == 0  &&
+            !m_ArgDesc->Exist(s_ArgCfgFile + 1)) {
+            m_ArgDesc->AddOptionalKey
+                (s_ArgCfgFile + 1, "File_Name",
+                    "Program's configuration (registry) data file",
+                    CArgDescriptions::eInputFile);
+        }
+        if ((m_HideArgs & fHideVersion) == 0  &&
+            !m_ArgDesc->Exist(s_ArgVersion + 1)) {
+            m_ArgDesc->AddFlag
+                (s_ArgVersion + 1,
+                    "Print version number;  ignore other arguments");
+        }
+        if ((m_HideArgs & fHideFullVersion) == 0  &&
+            !m_ArgDesc->Exist(s_ArgFullVersion + 1)) {
+            m_ArgDesc->AddFlag
+                (s_ArgFullVersion + 1,
+                    "Print extended version data;  ignore other arguments");
+        }
+        if ((m_HideArgs & fHideDryRun) == 0  &&
+            !m_ArgDesc->Exist(s_ArgDryRun + 1)) {
+            m_ArgDesc->AddFlag
+                (s_ArgDryRun + 1,
+                    "Dry run the application: do nothing, only test all preconditions");
+        }
+    }
+}
 
 void CNcbiApplication::SetProgramDisplayName(const string& app_name)
 {

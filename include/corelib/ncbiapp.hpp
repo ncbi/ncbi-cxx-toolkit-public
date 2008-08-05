@@ -481,6 +481,8 @@ private:
     /// than 3.00 we forcibly set cin stream buffer size to 4096 bytes -- which
     /// boosts the performance dramatically.
     void x_SetupStdio(void);
+    
+    void x_AddDefaultArgs(void);
 
     static CNcbiApplication*   m_Instance;   ///< Current app. instance
     CRef<CVersion>             m_Version;    ///< Program version
