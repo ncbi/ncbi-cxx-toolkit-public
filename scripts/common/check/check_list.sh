@@ -42,9 +42,9 @@ if [ "$svn_tree" == "--local" ]; then
 else
   flags="--without-gui --unix"
   if [ -n "$date_time" ]; then
-    $svn_core "$src_dir" $flags "$date_time" $svn_tree ||  exit 1
+    $svn_core "$src_dir" core $flags "$date_time" ||  exit 1
   else
-    $svn_core "$src_dir" $flags $svn_tree ||  exit 1
+    $svn_core "$src_dir" core $flags ||  exit 1
   fi
 fi
 
