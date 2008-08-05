@@ -226,13 +226,6 @@ const string& CRequestContext::GetClientIP(void) const
 }
 
 inline
-void CRequestContext::SetClientIP(const string& client)
-{
-    x_SetProp(eProp_ClientIP);
-    m_ClientIP = client;
-}
-
-inline
 bool CRequestContext::IsSetCleintIP(void) const
 {
     return x_IsSetProp(eProp_ClientIP);

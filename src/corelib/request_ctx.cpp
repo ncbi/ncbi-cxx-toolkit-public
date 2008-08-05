@@ -133,6 +133,52 @@ void CRequestContext::UnsetProperty(const string& name)
 }
 
 
+bool IsValidIP(const char* ip)
+{
+    const char* c = ip;
+    unsigned long val;
+    int dots = 0;
+
+    for (;;) {
+        char* e;
+        if ( !isdigit((unsigned char)(*c)) )
+            return false;
+        errno = 0;
+        val = strtoul(c, &e, 10);
+        if (c == e  ||  errno)
+            return false;
+        c = e;
+        if (*c != '.')
+            break;
+        if (++dots > 3)
+            return false;
+        if (val > 255)
+            return false;
+        c++;
+    }
+
+    return !*c  &&  dots == 3  &&  val < 256;
+}
+
+
+static const char* kBadIP = "0.0.0.0";
+
+
+void CRequestContext::SetClientIP(const string& client)
+{
+    x_SetProp(eProp_ClientIP);
+
+    // Verify IP
+    if ( !IsValidIP(client.c_str()) ) {
+        m_ClientIP = kBadIP;
+        ERR_POST("Bad client IP value: " << client);
+        return;
+    }
+
+    m_ClientIP = client;
+}
+
+
 void CRequestContext::StartRequest(void)
 {
     UnsetRequestStatus();

@@ -1859,7 +1859,7 @@ public:
     /// Get application name
     const string& GetAppName(void) const { return m_AppName; }
     /// Set application name
-    void SetAppName(const string& app_name) { m_AppName = app_name; }
+    void SetAppName(const string& app_name);
 
     /// Get exit code
     int GetExitCode(void) const { return m_ExitCode; }

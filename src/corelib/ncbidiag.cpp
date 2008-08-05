@@ -1100,12 +1100,16 @@ void CDiagContext::x_CreateUID(void) const
     Int8 pid = GetPID();
     time_t t = time(0);
     const string& host = GetHost();
-    TUID h = 201;
+    TUID h = 212;
     ITERATE(string, s, host) {
-        h = (h*15 + *s) & 0xFFFF;
+        h = h*1265 + *s;
     }
+    h &= 0xFFFF;
     // The low 4 bits are reserved as GUID generator version number.
-    m_UID = (h << 48) + ((pid & 0xFFFF) << 32) + ((t & 0xFFFFFFF) << 4);
+    m_UID = (TUID(h) << 48) |
+        ((TUID(pid) & 0xFFFF) << 32) |
+        ((TUID(t) & 0xFFFFFFF) << 4) |
+        1; // version #1 - fixed type conversion bug
 }
 
 
@@ -1328,6 +1332,20 @@ void CDiagContext::DeleteProperty(const string& name,
     if (gprop != m_Properties.end()) {
         m_Properties.erase(gprop);
     }
+}
+
+
+void CDiagContext::SetAppName(const string& app_name)
+{
+    for (size_t i = 0; i < app_name.size(); i++) {
+        if ( !(app_name[i])  ||  isspace(app_name[i]) ) {
+            m_AppName = NStr::URLEncode(app_name);
+            ERR_POST("Illegal characters in application name, "
+                "using URL-encode");
+            return;
+        }
+    }
+    m_AppName = app_name;
 }
 
 
