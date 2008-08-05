@@ -42,4 +42,5 @@ def update_blast_version(config_file):
             print >> out, re.sub("BLAST_VERSION", BLAST_VERSION, line),
     finally:
         out.close()
+        infile.close()
         os.unlink(temp_fname)
