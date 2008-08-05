@@ -33,6 +33,9 @@
 #ifndef __presenter_releasefile_hpp__
 #define __presenter_releasefile_hpp__
 
+#include <util/compress/zlib.hpp>
+#include <util/compress/stream.hpp>
+
 //  ============================================================================
 class CReleaseFilePresenter
 //  ============================================================================
@@ -53,10 +56,20 @@ public:
     //  ------------------------------------------------------------------------
     {
         CSeqEntryPresenter::Initialize( args );  
-        m_is.reset( 
-            CObjectIStream::Open(
-                (args["binary"] ? eSerial_AsnBinary : eSerial_AsnText), 
-                args["i"].AsInputFile() ) );
+
+        if (args["compressed"]) {
+            CNcbiIstream* pInputStream = new CNcbiIfstream( args["i"].AsString().c_str(), ios::binary  );
+            CZipStreamDecompressor* pDecompressor = new CZipStreamDecompressor(
+                512, 512, kZlibDefaultWbits, CZipCompression::fCheckFileHeader );
+            CCompressionIStream* pUnzipStream = new CCompressionIStream(
+                *pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor );
+            m_is.reset(CObjectIStream::Open( args["binary"] ? eSerial_AsnBinary : eSerial_AsnText, *pUnzipStream, true ));
+        } else {
+            m_is.reset( 
+                CObjectIStream::Open(
+                    (args["binary"] ? eSerial_AsnBinary : eSerial_AsnText), 
+                    args["i"].AsInputFile() ) );
+        }
     };
 
     //  ------------------------------------------------------------------------
