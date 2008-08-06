@@ -109,18 +109,20 @@ public:
             const CSeq_id& sid = **sid_itr;
             TSEQID_CHOICE chs = sid.Which();
             switch (chs) {
-                case NCBI_SEQID(not_set):
-                case NCBI_SEQID(Gi):
-                case NCBI_SEQID(Gibbsq):
-                case NCBI_SEQID(Gibbmt):
-                case NCBI_SEQID(Giim):
-                    break;
-                default:
+                case NCBI_SEQID(Other):
+                case NCBI_SEQID(Genbank):
+                case NCBI_SEQID(Embl):
+                case NCBI_SEQID(Ddbj):
+                case NCBI_SEQID(Tpg):
+                case NCBI_SEQID(Tpe):
+                case NCBI_SEQID(Tpd):
                 {
                     const string str = sid.AsFastaString();
                     accn_string = str;
                     BREAK(sid_itr);
                 }
+                 default:
+                   break;
             }
         }
 
