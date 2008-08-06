@@ -50,7 +50,7 @@ void CCompartApp::Init()
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "Compart v.1.32. Unless -qdb and -sdb are specified, "
+                              "Compart v.1.33. Unless -qdb and -sdb are specified, "
                               "the tool expects tabular blast hits at stdin collated "
                               "by query and subject, e.g. with 'sort -k 1,1 -k 2,2'");
 
@@ -95,7 +95,7 @@ void CCompartApp::Init()
     argdescr->AddOptionalKey("seqlens", "seqlens", 
                              "Two-column file with sequence IDs and their lengths. "
                              "If none supplied, the program will attempt fetching "
-                             "the lengths from GenBank.",
+                             "the lengths from GenBank. Cannot be used with -qdb.",
                              CArgDescriptions::eInputFile);
 
     CArgAllow* constrain01 = new CArgAllow_Doubles(0.0, 1.0);
@@ -114,13 +114,15 @@ void CCompartApp::Init()
 void CCompartApp::x_ReadSeqLens(CNcbiIstream& istr)
 {
     m_id2len.clear();
-
     while(istr) {
         string id;
-        size_t len = 0;
-        istr >> id >> len;
-        if(len != 0) {
-            m_id2len[id] = len;
+        istr >> id;
+        if(id.size() && id[0] != '#') {
+            size_t len (0);
+            istr >> len;
+            if(len != 0) {
+                m_id2len[id] = len;
+            }
         }
     }
 }
@@ -136,7 +138,7 @@ size_t CCompartApp::x_GetSeqLength(const string& id)
         USING_SCOPE(objects);
 
         CRef<CSeq_id> seqid;
-        try {seqid.Reset(new CSeq_id(id));}
+        try { seqid.Reset(new CSeq_id(id)); }
         catch(CSeqIdException& e) {
             return 0;
         }
