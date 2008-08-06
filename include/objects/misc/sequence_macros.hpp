@@ -625,6 +625,24 @@ NCBI_TEST_ITERATE((Sft).IsSetQual(), \
     Iter, \
     (Sft).GetQual())
 
+/// FOR_EACH_SEQFEATXREF_ON_FEATURE
+// Takes const CSeq_feat& as input and makes iterator to const CSeqFeatXref&
+// Dereference with const CSeqFeatXref& sfx = **iter;
+#define FOR_EACH_SEQFEATXREF_ON_FEATURE(Iter, Sft) \
+NCBI_TEST_ITERATE((Sft).IsSetXref(), \
+    CSeq_feat::TXref, \
+    Iter, \
+    (Sft).GetXref())
+
+/// FOR_EACH_DBXREF_ON_FEATURE
+// Takes const CSeq_feat& as input and makes iterator to const CDbtag&
+// Dereference with const CDbtag& dbt = **iter;
+#define FOR_EACH_DBXREF_ON_FEATURE(Iter, Sft) \
+NCBI_TEST_ITERATE((Sft).IsSetDbxref(), \
+    CSeq_feat::TDbxref, \
+    Iter, \
+    (Sft).GetDbxref())
+
 
 /// CGene_ref iterators
 
