@@ -362,64 +362,73 @@ static inline bool operator <(const STimeout& to1, const STimeout& to2)
 
 void CServer::Run(void)
 {
+    StartListening(); // detect unavailable ports ASAP
+
     CStdPoolOfThreads threadPool(m_Parameters->max_threads,
                                  kMax_UInt,
                                  m_Parameters->spawn_threshold);
-    threadPool.Spawn(m_Parameters->init_threads);
+    try {
+        threadPool.Spawn(m_Parameters->init_threads);
 
-    StartListening();
-    Init();
+        Init();
 
-    vector<CSocketAPI::SPoll> polls;
-    size_t                    count;
-    vector<IServer_ConnectionBase*> timer_requests;
-    STimeout timer_timeout;
-    const STimeout* timeout;
+        vector<CSocketAPI::SPoll>       polls;
+        size_t                          count;
+        vector<IServer_ConnectionBase*> timer_requests;
+        STimeout                        timer_timeout;
+        const STimeout*                 timeout;
+        int                             request_id = 0;
 
-    int request_id = 0;
-    while (!ShutdownRequested()) {
-//        _TRACE("Cleaning connection pool");
-        m_ConnectionPool->Clean();
+        while (!ShutdownRequested()) {
+//            _TRACE("Cleaning connection pool");
+            m_ConnectionPool->Clean();
 
-        timeout = m_Parameters->accept_timeout;
+            timeout = m_Parameters->accept_timeout;
 
-//        _TRACE("Getting poll vector");
-        if (m_ConnectionPool->GetPollAndTimerVec(polls,
-            timer_requests, &timer_timeout) &&
-            (timeout == kDefaultTimeout ||
-            timeout == kInfiniteTimeout ||
-            timer_timeout < *timeout))
-            timeout = &timer_timeout;
+//            _TRACE("Getting poll vector");
+            if (m_ConnectionPool->GetPollAndTimerVec
+                (polls, timer_requests, &timer_timeout) &&
+                (timeout == kDefaultTimeout ||
+                 timeout == kInfiniteTimeout ||
+                 timer_timeout < *timeout))
+                timeout = &timer_timeout;
 
-//        _TRACE("Poll with vector of length " << NStr::IntToString(polls.size()));
-        CSocketAPI::Poll(polls, timeout, &count);
-//        _TRACE("Poll returned");
+//            _TRACE("Poll with vector of length " << NStr::IntToString(polls.size()));
+            CSocketAPI::Poll(polls, timeout, &count);
+//            _TRACE("Poll returned");
 
-        if (count == 0) {
-            if (timeout != &timer_timeout) {
-//                _TRACE("Processing timeout BEGIN");
-                ProcessTimeout();
-//                _TRACE("Processing timeout END");
-            } else {
-//                _TRACE("Inserting timer requests");
-                ITERATE (vector<IServer_ConnectionBase*>, it, timer_requests) {
-                    ++request_id;
-                    CreateRequest(threadPool, *it, (EIO_Event) -1,
-                        timeout, request_id);
+            if (count == 0) {
+                if (timeout != &timer_timeout) {
+//                    _TRACE("Processing timeout BEGIN");
+                    ProcessTimeout();
+//                    _TRACE("Processing timeout END");
+                } else {
+//                    _TRACE("Inserting timer requests");
+                    ITERATE (vector<IServer_ConnectionBase*>, it,
+                             timer_requests) {
+                        ++request_id;
+                        CreateRequest(threadPool, *it, (EIO_Event) -1,
+                                      timeout, request_id);
+                    }
                 }
+                continue;
             }
-            continue;
-        }
 
-//        _TRACE("Inserting selected requests");
-        ITERATE (vector<CSocketAPI::SPoll>, it, polls) {
-            if (!it->m_REvent) continue;
-            TConnBase* conn_base = dynamic_cast<TConnBase*>(it->m_Pollable);
-            _ASSERT(conn_base);
-            ++request_id;
-            CreateRequest(threadPool, conn_base, it->m_REvent,
-                m_Parameters->idle_timeout, request_id);
+//            _TRACE("Inserting selected requests");
+            ITERATE (vector<CSocketAPI::SPoll>, it, polls) {
+                if (!it->m_REvent) continue;
+                TConnBase* conn_base = dynamic_cast<TConnBase*>(it->m_Pollable);
+                _ASSERT(conn_base);
+                ++request_id;
+                CreateRequest(threadPool, conn_base, it->m_REvent,
+                              m_Parameters->idle_timeout, request_id);
+            }
         }
+    } catch (...) {
+        // Avoid collateral damage from destroying the thread pool
+        // while worker threads are active (or, worse, initializing).
+        threadPool.KillAllThreads(true);
+        throw;
     }
 
     // We need to kill all processing threads first, so that there
