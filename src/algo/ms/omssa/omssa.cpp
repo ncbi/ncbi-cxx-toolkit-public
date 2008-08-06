@@ -297,9 +297,8 @@ CSearchHelper::SaveAnyFile(CMSSearch& MySearch,
         case eMSSerialDataFormat_pepxml:
         {
             CPepXML outPepXML;
-            string newname = Filename + ".pep.xml";
-            outPepXML.ConvertFromOMSSA(MySearch, Modset, Filename);
-            auto_ptr<CObjectOStream> file_out(CObjectOStream::Open(newname, eSerial_Xml));
+            outPepXML.ConvertFromOMSSA(MySearch, Modset, Filename, Filename);
+            auto_ptr<CObjectOStream> file_out(CObjectOStream::Open(Filename, eSerial_Xml));
             *file_out << outPepXML;
         }
         break;

@@ -136,13 +136,15 @@ void CPepXML::ConvertModSetting(CRef<CSearch_summary> sSum, CRef<CMSModSpecSet> 
             string aaStr(1, aa);
             aaMod->SetAttlist().SetAminoacid(aaStr);
             double mdiff = MSSCALE2DBL(Modset->GetModMass(modnum));
-            double aaMass = MonoMass[modchar];
-            //aaMassMap.insert(TAminoAcidMassPair(aa, aaMass));
+            //double aaMass = MonoMass[modchar];
+            double aaMass = aaMassMap.find(aa)->second;
             string mass = NStr::DoubleToString(aaMass + mdiff, 6);
             aaMod->SetAttlist().SetMassdiff(NStr::DoubleToString(mdiff, 6));
             aaMod->SetAttlist().SetMass(mass);
             if (fixed) {
                 aaMod->SetAttlist().SetVariable("N");
+                aaMassMap.erase(aa);
+                aaMassMap.insert(TAminoAcidMassPair(aa, aaMass + mdiff));
             } else {
                 aaMod->SetAttlist().SetVariable("Y");
             }
@@ -239,8 +241,7 @@ string CPepXML::GetProteinName(CRef<CMSPepHit> pHit) {
 }
 
 
-void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, string basename) {
-    string newname = basename + ".pep.xml";
+void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, string basename, string newname) {
 
     float scale = static_cast<float>(inOMSSA.GetRequest().front()->GetSettings().GetScale());
 
@@ -253,8 +254,12 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
         aaMassMap.insert(TAminoAcidMassPair(aa, aaMass));
     }
 
+    datetime.SetFormat("Y-M-DTh:m:s");
     this->SetAttlist().SetDate(datetime.AsString());
     this->SetAttlist().SetSummary_xml(newname);
+    this->SetAttlist().SetXmlns("http://regis-web.systemsbiology.net/pepXML");
+    this->SetAttlist().SetXmlnsxsi("http://www.w3.org/2001/XMLSchema-instance");
+    this->SetAttlist().SetXsischemaLocation("http://regis-web.systemsbiology.net/pepXML pepXML_v111.xsd");
 
     // Create the Run Summary (need to generalize)
     CRef<CMsms_run_summary> rSum(new CMsms_run_summary);
@@ -276,8 +281,11 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
 
     // Create the Search Summary
     CRef<CSearch_summary> sSum(new CSearch_summary);
+    //sSum->SetAttlist().SetBase_name(baseFile.GetName());
     sSum->SetAttlist().SetBase_name(basename);
     sSum->SetAttlist().SetSearch_engine("OMSSA");
+    sSum->SetAttlist().SetOut_data_type("n/a");
+    sSum->SetAttlist().SetOut_data("n/a");
 
     EMSSearchType searchType = static_cast <EMSSearchType>(inOMSSA.GetRequest().front()->GetSettings().GetPrecursorsearchtype());
     string searchTypeName = kSearchType[searchType];

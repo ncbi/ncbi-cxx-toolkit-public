@@ -139,7 +139,7 @@ int COmssa2pepxmlApplication::Run ( void )
 	if (args["o"].HasValue()) {
 		newname = args["o"].AsString();
 	} else {
-		newname = base + ".pep.xml";
+		newname = basename + ".pep.xml";
 	}
 
 	// figure out input file type
@@ -166,9 +166,15 @@ int COmssa2pepxmlApplication::Run ( void )
 	}
 	cout << "Reading " << filename << " as ";
 	switch (format) {
-		case eSerial_AsnBinary: cout << "ASN" << endl; break;
-		case eSerial_Xml:       cout << "XML" << endl; break;
-		case eSerial_AsnText:   cout << "ASN text" << endl; break;
+    case eSerial_AsnBinary:
+        cout << "ASN" << endl; break;
+    case eSerial_Xml:
+        cout << "XML" << endl; break;
+    case eSerial_AsnText:
+        cout << "ASN text" << endl; break;
+    default:
+        cout << "Unable to determine type of file" << endl; 
+        return 0;
 	}
 
     auto_ptr<CObjectIStream> file_in(CObjectIStream::Open(filename, format));
@@ -186,7 +192,7 @@ int COmssa2pepxmlApplication::Run ( void )
     Modset->CreateArrays();
     //PrintModInfo(Modset);
 
-    outPepXML.ConvertFromOMSSA(inOMSSA, Modset, basename);
+    outPepXML.ConvertFromOMSSA(inOMSSA, Modset, basename, newname);
 
     auto_ptr<CObjectOStream> file_out(CObjectOStream::Open(newname, eSerial_Xml));
     *file_out << outPepXML;

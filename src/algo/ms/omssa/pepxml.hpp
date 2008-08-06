@@ -58,7 +58,7 @@ public:
      * 
      * @param inOMSSA the ASN.1 structure to search to be copied
      */
-    void ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, string basename);
+    void ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, string basename, string newname);
 
 private:
     // Prohibit copy constructor and assignment operator
