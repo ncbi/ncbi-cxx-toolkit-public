@@ -96,8 +96,7 @@ void CObjectOStreamJson::WriteFileHeader(TTypeInfo type)
 {
     StartBlock();
     m_Output.PutEol();
-    x_WriteString(type->GetName());
-    NameSeparator();
+    WriteKey(type->GetName());
 }
 
 void CObjectOStreamJson::EndOfWrite(void)
@@ -222,8 +221,7 @@ void CObjectOStreamJson::WriteAnyContentObject(const CAnyContentObject& obj)
         }
     } else {
         NextElement();
-        x_WriteString(obj.GetName());
-        NameSeparator();
+        WriteKey(obj.GetName());
     }
     const vector<CSerialAttribInfoItem>& attlist = obj.GetAttributes();
     if (attlist.empty()) {
@@ -234,8 +232,7 @@ void CObjectOStreamJson::WriteAnyContentObject(const CAnyContentObject& obj)
     vector<CSerialAttribInfoItem>::const_iterator it;
     for ( it = attlist.begin(); it != attlist.end(); ++it) {
         NextElement();
-        x_WriteString(it->GetName());
-        NameSeparator();
+        WriteKey(it->GetName());
         WriteValue(it->GetValue());
     }
     m_SkippedMemberId = obj_name;
@@ -429,10 +426,7 @@ void CObjectOStreamJson::WriteSeparator(void)
 
 void CObjectOStreamJson::WriteMemberId(const CMemberId& id)
 {
-    string name = id.GetName();
-    NStr::ReplaceInPlace(name,"-","_");
-    x_WriteString(name);
-    NameSeparator();
+    WriteKey(id.GetName());
     m_SkippedMemberId.erase();
 }
 
@@ -441,8 +435,7 @@ void CObjectOStreamJson::WriteSkippedMember(void)
     string name("#");
     name += m_SkippedMemberId;
     NextElement();
-    x_WriteString(name);
-    NameSeparator();
+    WriteKey(name);
     m_SkippedMemberId.erase();
 }
 
@@ -494,6 +487,14 @@ void CObjectOStreamJson::x_WriteString(const string& value, EStringType type)
         WriteEncodedChar(src,type);
     }
     m_Output.PutChar('\"');
+}
+
+void CObjectOStreamJson::WriteKey(const string& key)
+{
+    string s(key);
+    NStr::ReplaceInPlace(s,"-","_");
+    x_WriteString(s);
+    NameSeparator();
 }
 
 void CObjectOStreamJson::WriteValue(const string& value, EStringType type)

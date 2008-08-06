@@ -166,6 +166,7 @@ private:
     void WriteEncodedChar(const char*& src, EStringType type);
     void x_WriteString(const string& value,
                        EStringType type = eStringTypeVisible);
+    void WriteKey(const string& key);
     void WriteValue(const string& value,
                     EStringType type = eStringTypeVisible);
     void WriteKeywordValue(const string& value);
