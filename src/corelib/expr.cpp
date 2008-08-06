@@ -57,7 +57,6 @@ CExprValue::CExprValue(const CExprValue& value)
 {
 }
 
-template <> 
 CExprValue::CExprValue(Int8 value)
 : ival(value)
 , m_Var(NULL)
@@ -66,7 +65,6 @@ CExprValue::CExprValue(Int8 value)
 {
 }
 
-template <> 
 CExprValue::CExprValue(double value)
 : fval(value)
 , m_Var(NULL)
@@ -75,7 +73,6 @@ CExprValue::CExprValue(double value)
 {
 }
 
-template <> 
 CExprValue::CExprValue(bool value)
 : bval(value)
 , m_Var(NULL)
@@ -98,39 +95,6 @@ CExprSymbol::~CExprSymbol(void)
     delete m_Next;
 }
 
-template <> 
-CExprSymbol::CExprSymbol(const char* name, Int8 value)
-: m_Tag(eVARIABLE)
-, m_IntFunc1(NULL)
-, m_Val(value)
-, m_Name(name)
-, m_Next(NULL)
-{
-}
-
-template <> 
-CExprSymbol::CExprSymbol(const char* name, double value)
-: m_Tag(eVARIABLE)
-, m_IntFunc1(NULL)
-, m_Val(value)
-, m_Name(name)
-, m_Next(NULL)
-{
-}
-
-template <> 
-CExprSymbol::CExprSymbol(const char* name, bool value)
-: m_Tag(eVARIABLE)
-, m_IntFunc1(NULL)
-, m_Val(value)
-, m_Name(name)
-, m_Next(NULL)
-{
-}
-
-#if defined(_MSC_VER) && _MSC_VER < 1400
-// We need that to prevent internal compiler error with MSVC 7.1.
-
 CExprSymbol::CExprSymbol(const char* name, Int8 value)
 : m_Tag(eVARIABLE)
 , m_IntFunc1(NULL)
@@ -158,9 +122,6 @@ CExprSymbol::CExprSymbol(const char* name, double value)
 {
 }
 
-#endif
-
-template <> 
 CExprSymbol::CExprSymbol(const char* name, FIntFunc1 value)
 : m_Tag(eIFUNC1)
 , m_IntFunc1(value)
@@ -170,7 +131,6 @@ CExprSymbol::CExprSymbol(const char* name, FIntFunc1 value)
 {
 }
 
-template <> 
 CExprSymbol::CExprSymbol(const char* name, FIntFunc2 value)
 : m_Tag(eIFUNC2)
 , m_IntFunc2(value)
@@ -180,7 +140,6 @@ CExprSymbol::CExprSymbol(const char* name, FIntFunc2 value)
 {
 }
 
-template <> 
 CExprSymbol::CExprSymbol(const char* name, FFloatFunc1 value)
 : m_Tag(eFFUNC1)
 , m_FloatFunc1(value)
@@ -190,7 +149,6 @@ CExprSymbol::CExprSymbol(const char* name, FFloatFunc1 value)
 {
 }
 
-template <> 
 CExprSymbol::CExprSymbol(const char* name, FFloatFunc2 value)
 : m_Tag(eFFUNC2)
 , m_FloatFunc2(value)
@@ -200,7 +158,6 @@ CExprSymbol::CExprSymbol(const char* name, FFloatFunc2 value)
 {
 }
 
-template <> 
 CExprSymbol::CExprSymbol(const char* name, FBoolFunc1 value)
 : m_Tag(eBFUNC1)
 , m_BoolFunc1(value)
@@ -210,7 +167,6 @@ CExprSymbol::CExprSymbol(const char* name, FBoolFunc1 value)
 {
 }
 
-template <> 
 CExprSymbol::CExprSymbol(const char* name, FBoolFunc2 value)
 : m_Tag(eBFUNC2)
 , m_BoolFunc2(value)

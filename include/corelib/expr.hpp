@@ -58,7 +58,9 @@ class NCBI_XNCBI_EXPORT CExprValue
 { 
 public:
     CExprValue(void);
-    template <typename VT> CExprValue(VT value);
+	CExprValue(Int8 value);
+	CExprValue(double value);
+	CExprValue(bool value);
     CExprValue(const CExprValue& value);
 
 public:
@@ -134,24 +136,29 @@ private:
     EValue          m_Tag;
 };
 
-template <> NCBI_XNCBI_EXPORT CExprValue::CExprValue(Int8 value);
-template <> NCBI_XNCBI_EXPORT CExprValue::CExprValue(double value);
-template <> NCBI_XNCBI_EXPORT CExprValue::CExprValue(bool value);
-
 ////////////////////////////////////////////////////////////////////////////////
 class NCBI_XNCBI_EXPORT CExprSymbol 
 { 
 public:
-    CExprSymbol(void);
-    template <typename VT> CExprSymbol(const char* name, VT value);
-    ~CExprSymbol(void);
+    typedef Int8    (*FIntFunc1)    (Int8);
+    typedef Int8    (*FIntFunc2)    (Int8,Int8);
+    typedef double  (*FFloatFunc1)  (double);
+    typedef double  (*FFloatFunc2)  (double, double);
+    typedef bool    (*FBoolFunc1)   (bool);
+    typedef bool    (*FBoolFunc2)   (bool, bool);
 
-#if defined(_MSC_VER) && _MSC_VER < 1400
-    // We need that to prevent internal compiler error with MSVC 7.1.
+    CExprSymbol(void);
     CExprSymbol(const char* name, Int8 value);
     CExprSymbol(const char* name, bool value);
     CExprSymbol(const char* name, double value);
-#endif
+	CExprSymbol(const char* name, FIntFunc1 value);
+	CExprSymbol(const char* name, FIntFunc2 value);
+	CExprSymbol(const char* name, FFloatFunc1 value);
+	CExprSymbol(const char* name, FFloatFunc2 value);
+	CExprSymbol(const char* name, FBoolFunc1 value);
+	CExprSymbol(const char* name, FBoolFunc2 value);
+    ~CExprSymbol(void);
+
 
 public:
     enum ESymbol { 
@@ -163,13 +170,6 @@ public:
         eBFUNC1, 
         eBFUNC2 
     };
-
-    typedef Int8    (*FIntFunc1)    (Int8);
-    typedef Int8    (*FIntFunc2)    (Int8,Int8);
-    typedef double  (*FFloatFunc1)  (double);
-    typedef double  (*FFloatFunc2)  (double, double);
-    typedef bool    (*FBoolFunc1)   (bool);
-    typedef bool    (*FBoolFunc2)   (bool, bool);
 
 public:
     ESymbol         m_Tag;
@@ -186,17 +186,6 @@ public:
     CExprSymbol*    m_Next;
 };
 	       
-template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, Int8 value);
-template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, double value);
-template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, bool value);
-template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, FIntFunc1 value);
-template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, FIntFunc2 value);
-template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, FFloatFunc1 value);
-template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, FFloatFunc2 value);
-template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, FBoolFunc1 value);
-template <> NCBI_XNCBI_EXPORT CExprSymbol::CExprSymbol(const char* name, FBoolFunc2 value);
-
-
 ////////////////////////////////////////////////////////////////////////////////
 class NCBI_XNCBI_EXPORT CExprParserException : EXCEPTION_VIRTUAL_BASE public CException
 {
