@@ -56,11 +56,13 @@
 #define tds_des_set_odd_parity          tds_des_set_odd_parity_ver64
 #define tds_dstr_copy                   tds_dstr_copy_ver64
 #define tds_dstr_copyn                  tds_dstr_copyn_ver64
-#define tds_dstr_cstr                   tds_dstr_cstr_ver64
 #define tds_dstr_free                   tds_dstr_free_ver64
-#define tds_dstr_init                   tds_dstr_init_ver64
-#define tds_dstr_isempty                tds_dstr_isempty_ver64
-#define tds_dstr_len                    tds_dstr_len_ver64
+#if ENABLE_EXTRA_CHECKS
+#  define tds_dstr_cstr                   tds_dstr_cstr_ver64
+#  define tds_dstr_init                   tds_dstr_init_ver64
+#  define tds_dstr_isempty                tds_dstr_isempty_ver64
+#  define tds_dstr_len                    tds_dstr_len_ver64
+#endif
 #define tds_dstr_set                    tds_dstr_set_ver64
 #define tds_dstr_zero                   tds_dstr_zero_ver64
 #define tds_fix_connection              tds_fix_connection_ver64

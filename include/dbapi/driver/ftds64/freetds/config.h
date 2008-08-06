@@ -24,15 +24,15 @@
 #  define NCBI_FTDS_RENAME_SYBDB
 #endif
 
-#include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
-#include <dbapi/driver/ftds64/freetds/rename_freetds64.h>
-#include <dbapi/driver/ftds64/freetds/rename_ftds64_odbc.h>
-
 #ifdef _DEBUG
 #define DEBUG 1
 /* Should we leave the extra checks off? */
 #define ENABLE_EXTRA_CHECKS 1
 #endif
+
+#include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
+#include <dbapi/driver/ftds64/freetds/rename_freetds64.h>
+#include <dbapi/driver/ftds64/freetds/rename_ftds64_odbc.h>
 
 #if defined(HAVE_GETHOSTBYADDR_R)
 #  if   HAVE_GETHOSTBYADDR_R == 5
