@@ -3,6 +3,9 @@
 	name CDATA #IMPLIED
 	date NMTOKEN #REQUIRED
 	summary_xml CDATA #REQUIRED
+	xmlns CDATA #IMPLIED
+	xmlns:xsi CDATA #IMPLIED
+	xsi:schemaLocation CDATA #IMPLIED
 >
 <!--Summary of analysis subjected to run(s)-->
 <!ELEMENT analysis_summary (#PCDATA)>
