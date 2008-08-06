@@ -57,24 +57,27 @@ public:
 private:
     // internal methods
 
-    void s_SetFlags (void);
-    void s_SetBioSrc (void);
+    void x_SetFlags (void);
+    void x_SetBioSrc (void);
 
-    string s_DescribeClones (void);
-    bool s_EndsWithStrain (void);
+    string x_DescribeClones (void);
+    bool x_EndsWithStrain (void);
+    void x_FlyCG_PtoR (
+        string& s
+    );
 
-    string s_TitleFromBioSrc (void);
-    string s_TitleFromNC (void);
-    string s_TitleFromNM (void);
-    string s_TitleFromNR (void);
-    string s_TitleFromPatent (void);
-    string s_TitleFromPDB (void);
-    string s_TitleFromProtein (void);
-    string s_TitleFromSegSeq (void);
-    string s_TitleFromWGS (void);
+    string x_TitleFromBioSrc (void);
+    string x_TitleFromNC (void);
+    string x_TitleFromNM (void);
+    string x_TitleFromNR (void);
+    string x_TitleFromPatent (void);
+    string x_TitleFromPDB (void);
+    string x_TitleFromProtein (void);
+    string x_TitleFromSegSeq (void);
+    string x_TitleFromWGS (void);
 
-    string s_SetPrefix (void);
-    string s_SetSuffix (
+    string x_SetPrefix (void);
+    string x_SetSuffix (
         const string& title
     );
 
@@ -150,6 +153,11 @@ private:
 
 // IMPLEMENTATION
 
+#include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature.hpp>
+#include <objmgr/feat_ci.hpp>
+
 // constructor
 CDeflineGenerator::CDeflineGenerator (
     const CBioseq& bioseq,
@@ -204,7 +212,7 @@ CDeflineGenerator::~CDeflineGenerator (void)
 }
 
 // set instance variables from Seq-inst, Seq-ids, MolInfo, etc., but not BioSource
-void CDeflineGenerator::s_SetFlags (void)
+void CDeflineGenerator::x_SetFlags (void)
 
 {
     m_is_na = m_bioseq.IsNa();
@@ -381,7 +389,7 @@ void CDeflineGenerator::s_SetFlags (void)
 }
 
 // set instance variables from BioSource
-void CDeflineGenerator::s_SetBioSrc (void)
+void CDeflineGenerator::x_SetBioSrc (void)
 
 {
     IF_EXISTS_CLOSEST_BIOSOURCE (bs_ref, m_bioseq, NULL) {
@@ -449,10 +457,10 @@ void CDeflineGenerator::s_SetBioSrc (void)
 }
 
 // generate title from BioSource fields
-string CDeflineGenerator::s_DescribeClones (void)
+string CDeflineGenerator::x_DescribeClones (void)
 {
     SIZE_TYPE count = 1;
-    for (SIZE_TYPE pos = m_clone.find(';');  pos != NPOS;
+    for (SIZE_TYPE pos = m_clone.find(';'); pos != NPOS;
          pos = m_clone.find(';', pos + 1)) {
         ++count;
     }
@@ -465,7 +473,7 @@ string CDeflineGenerator::s_DescribeClones (void)
     }
 }
 
-bool CDeflineGenerator::s_EndsWithStrain (void)
+bool CDeflineGenerator::x_EndsWithStrain (void)
 {
     // return NStr::EndsWith(m_taxname, m_strain, NStr::eNocase);
     if (m_strain.size() >= m_taxname.size()) {
@@ -494,7 +502,7 @@ bool CDeflineGenerator::s_EndsWithStrain (void)
     return false;
 }
 
-string CDeflineGenerator::s_TitleFromBioSrc (void)
+string CDeflineGenerator::x_TitleFromBioSrc (void)
 
 {
     string chr, cln, mp, pls, stn, sfx;
@@ -503,7 +511,7 @@ string CDeflineGenerator::s_TitleFromBioSrc (void)
         chr = " chromosome " + m_chromosome;
     }
     if (! m_clone.empty()) {
-        cln = s_DescribeClones ();
+        cln = x_DescribeClones ();
     }
     if (! m_map.empty()) {
         mp = " map " + m_map;
@@ -514,7 +522,7 @@ string CDeflineGenerator::s_TitleFromBioSrc (void)
         }
     }
     if (! m_strain.empty()) {
-        if (! s_EndsWithStrain ()) {
+        if (! x_EndsWithStrain ()) {
             stn = " strain " + m_strain.substr (0, m_strain.find(';'));
         }
     }
@@ -529,28 +537,153 @@ string CDeflineGenerator::s_TitleFromBioSrc (void)
 }
 
 // generate title for NC
-string CDeflineGenerator::s_TitleFromNC (void)
+string CDeflineGenerator::x_TitleFromNC (void)
 
 {
+    string result;
+
+    // require taxname to be set
+    if (m_taxname.empty()) return result;
+
     return "nc";
 }
 
 // generate title for NM
-string CDeflineGenerator::s_TitleFromNM (void)
+void CDeflineGenerator::x_FlyCG_PtoR (
+    string& s
+)
 
 {
-    return "nm";
+    // s =~ s/\b(CG\d*-)P([[:alpha:]])\b/$1R$2/g, more or less.
+    SIZE_TYPE pos = 0, len = s.size();
+    while ((pos = NStr::FindCase(s, "CG", pos)) != NPOS) {
+        if (pos > 0  &&  !isspace((unsigned char)s[pos - 1]) ) {
+            continue;
+        }
+        pos += 2;
+        while (pos + 3 < len && isdigit((unsigned char)s[pos])) {
+            ++pos;
+        }
+        if (s[pos] == '-'  &&  s[pos + 1] == 'P' &&
+            isalpha((unsigned char)s[pos + 2]) &&
+            (pos + 3 == len  ||  strchr(" ,;", s[pos + 3])) ) {
+            s[pos + 1] = 'R';
+        }
+    }
+}
+
+string CDeflineGenerator::x_TitleFromNM (void)
+
+{
+    unsigned int         genes = 0, cdregions = 0, prots = 0;
+    CConstRef<CSeq_feat> gene(0);
+    CConstRef<CSeq_feat> cdregion(0);
+    string result;
+
+    // require taxname to be set
+    if (m_taxname.empty()) return result;
+
+    // !!! NOTE CALL TO OBJECT MANAGER !!!
+    const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
+
+    for (CFeat_CI it(hnd); it; ++it) {
+        switch (it->GetData().Which()) {
+            case CSeqFeatData::e_Gene:
+                ++genes;
+                gene.Reset(&it->GetMappedFeature());
+                break;
+            case CSeqFeatData::e_Cdregion:
+                ++cdregions;
+                cdregion.Reset(&it->GetMappedFeature());
+                break;
+            case CSeqFeatData::e_Prot:
+                ++prots;
+                break;
+            default:
+                break;
+        }
+    }
+
+    if (genes == 1 && cdregions == 1 && (! m_taxname.empty())) {
+        result = m_taxname + " ";
+        string cds_label;
+        feature::GetLabel (*cdregion, &cds_label, feature::eContent, &m_scope);
+        if (NStr::EqualNocase (m_taxname, "Drosophila melanogaster")) {
+            x_FlyCG_PtoR (cds_label);
+        }
+        result += NStr::Replace (cds_label, "isoform ", "transcript variant ");
+        result += " (";
+        feature::GetLabel (*gene, &result, feature::eContent, &m_scope);
+        result += "), mRNA";
+    }
+
+    return result;
 }
 
 // generate title for NR
-string CDeflineGenerator::s_TitleFromNR (void)
+string CDeflineGenerator::x_TitleFromNR (void)
 
 {
-    return "nr";
+    string result;
+
+    // require taxname to be set
+    if (m_taxname.empty()) return result;
+
+    // !!! NOTE CALL TO OBJECT MANAGER !!!
+    const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
+
+    for (CTypeConstIterator<CSeq_feat> it(
+          *hnd.GetTopLevelEntry().GetCompleteSeq_entry()); it; ++it) {
+        if (it->GetData().IsGene()) {
+            result = m_taxname + " ";
+            feature::GetLabel(*it, &result, feature::eContent);
+            result += ", ";
+            switch (m_mi_biomol) {
+                case NCBI_BIOMOL(pre_RNA):
+                    result += "precursorRNA";
+                    break;
+                case NCBI_BIOMOL(mRNA):
+                    result += "mRNA";
+                    break;
+                case NCBI_BIOMOL(rRNA):
+                    result += "rRNA";
+                    break;
+                case NCBI_BIOMOL(tRNA):
+                    result += "tRNA";
+                    break;
+                case NCBI_BIOMOL(snRNA):
+                    result += "snRNA";
+                    break;
+                case NCBI_BIOMOL(scRNA):
+                    result += "scRNA";
+                    break;
+                case NCBI_BIOMOL(cRNA):
+                    result += "cRNA";
+                    break;
+                case NCBI_BIOMOL(snoRNA):
+                    result += "snoRNA";
+                    break;
+                case NCBI_BIOMOL(transcribed_RNA):
+                    result+="miscRNA";
+                    break;
+                case NCBI_BIOMOL(ncRNA):
+                    result += "ncRNA";
+                    break;
+                case NCBI_BIOMOL(tmRNA):
+                    result += "tmRNA";
+                    break;
+                default:
+                    break;
+            }
+            BREAK(it);
+        }
+    }
+    
+    return result;
 }
 
 // generate title for Patent
-string CDeflineGenerator::s_TitleFromPatent (void)
+string CDeflineGenerator::x_TitleFromPatent (void)
 
 {
     string result;
@@ -563,7 +696,7 @@ string CDeflineGenerator::s_TitleFromPatent (void)
 }
 
 // generate title for PDB
-string CDeflineGenerator::s_TitleFromPDB (void)
+string CDeflineGenerator::x_TitleFromPDB (void)
 
 {
     string result;
@@ -576,13 +709,8 @@ string CDeflineGenerator::s_TitleFromPDB (void)
     return result;
 }
 
-#include <objmgr/util/seq_loc_util.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <objmgr/util/feature.hpp>
-#include <objmgr/feat_ci.hpp>
-
 // generate title for protein
-string CDeflineGenerator::s_TitleFromProtein (void)
+string CDeflineGenerator::x_TitleFromProtein (void)
 
 {
     CConstRef<CProt_ref> prot;
@@ -598,22 +726,22 @@ string CDeflineGenerator::s_TitleFromProtein (void)
 
     {{
         CConstRef<CSeq_feat> prot_feat
-            = GetBestOverlappingFeat(everywhere, CSeqFeatData::e_Prot,
-                                     eOverlap_Contained, m_scope);
+            = GetBestOverlappingFeat (everywhere, CSeqFeatData::e_Prot,
+                                      eOverlap_Contained, m_scope);
         if (prot_feat) {
             prot = &prot_feat->GetData().GetProt();
         }
     }}
 
     {{
-        CConstRef<CSeq_feat> cds_feat(GetCDSForProduct(hnd));
+        CConstRef<CSeq_feat> cds_feat (GetCDSForProduct (hnd));
         if (cds_feat) {
             cds_loc = &cds_feat->GetLocation();
         }
     }}
 
     if (cds_loc) {
-        CConstRef<CSeq_feat> gene_feat = GetOverlappingGene(*cds_loc, m_scope);
+        CConstRef<CSeq_feat> gene_feat = GetOverlappingGene (*cds_loc, m_scope);
         if (gene_feat) {
             gene = &gene_feat->GetData().GetGene();
         }
@@ -632,7 +760,7 @@ string CDeflineGenerator::s_TitleFromProtein (void)
             prefix = "; ";
         }
         if (! result.empty()) {
-            if (NStr::CompareNocase(result, "hypothetical protein") == 0) {
+            if (NStr::CompareNocase (result, "hypothetical protein") == 0) {
                 // XXX - gene_feat might not always be exactly what we want
                 if (gene && gene->IsSetLocus_tag()) {
                     result += " " + gene->GetLocus_tag();
@@ -686,15 +814,42 @@ string CDeflineGenerator::s_TitleFromProtein (void)
         result.erase (result.end() - 1);
     }
 
-    if (! m_taxname.empty() && result.find(m_taxname) == NPOS) {
-        result += " [" + m_taxname + "]";
+    string taxname;
+    taxname = m_taxname;
+
+    // check for special taxname, go to overlapping source feature
+    if (taxname.empty() ||
+         NStr::EqualNocase (taxname, "synthetic construct") ||
+         NStr::EqualNocase (taxname, "artificial sequence") ||
+         NStr::EqualNocase (taxname, "vector") ||
+         NStr::EqualNocase (taxname, "Vector")) {
+        if (cds_loc) {
+            CConstRef<CSeq_feat> src_feat = GetOverlappingSource (*cds_loc, m_scope);
+            if (src_feat) {
+                const CSeq_feat& feat = (*src_feat);
+                if (feat.IsSetData()) {
+                    const CSeqFeatData& fdata = feat.GetData();
+                    if (fdata.IsBiosrc()) {
+                        const CBioSource& source = fdata.GetBiosrc();
+                        if (source.IsSetTaxname()) {
+                            const string& str = source.GetTaxname();
+                            taxname = str;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (! taxname.empty() && result.find(taxname) == NPOS) {
+        result += " [" + taxname + "]";
     }
 
     return result;
 }
 
 // generate title for segmented sequence
-string CDeflineGenerator::s_TitleFromSegSeq (void)
+string CDeflineGenerator::x_TitleFromSegSeq (void)
 
 {
     string completeness = "complete";
@@ -712,7 +867,7 @@ string CDeflineGenerator::s_TitleFromSegSeq (void)
     everywhere.SetMix().Set() = hnd.GetInst_Ext().GetSeg();
 
     CFeat_CI it(m_scope, everywhere, CSeqFeatData::e_Cdregion);
-    for (; it;  ++it) {
+    for (; it; ++it) {
         cds_found = true;
         if ( !it->IsSetProduct() ) {
             continue;
@@ -747,10 +902,10 @@ string CDeflineGenerator::s_TitleFromSegSeq (void)
     result = m_taxname;
 
     if ( !cds_found) {
-        if ( (! m_strain.empty()) && (! s_EndsWithStrain ())) {
+        if ( (! m_strain.empty()) && (! x_EndsWithStrain ())) {
             result += " strain " + m_strain;
         } else if (! m_clone.empty() && m_clone.find(" clone ") != NPOS) {
-            result += s_DescribeClones ();
+            result += x_DescribeClones ();
         } else if (! m_isolate.empty() ) {
             result += " isolate " + m_isolate;
         }
@@ -768,7 +923,7 @@ string CDeflineGenerator::s_TitleFromSegSeq (void)
 }
 
 // generate title for TSA or non-master WGS
-string CDeflineGenerator::s_TitleFromWGS (void)
+string CDeflineGenerator::x_TitleFromWGS (void)
 
 {
     string chr, cln, mp, pls, stn, sfx;
@@ -777,7 +932,7 @@ string CDeflineGenerator::s_TitleFromWGS (void)
         chr = " chromosome " + m_chromosome;
     }
     if (! m_clone.empty()) {
-        cln = s_DescribeClones ();
+        cln = x_DescribeClones ();
     }
     if (! m_map.empty()) {
         mp = " map " + m_map;
@@ -788,7 +943,7 @@ string CDeflineGenerator::s_TitleFromWGS (void)
         }
     }
     if (! m_strain.empty()) {
-        if (! s_EndsWithStrain ()) {
+        if (! x_EndsWithStrain ()) {
             stn = " strain " + m_strain.substr (0, m_strain.find(';'));
         }
     }
@@ -806,7 +961,7 @@ string CDeflineGenerator::s_TitleFromWGS (void)
 }
 
 // generate TPA or TSA prefix
-string CDeflineGenerator::s_SetPrefix (void)
+string CDeflineGenerator::x_SetPrefix (void)
 
 {
     string prefix;
@@ -827,7 +982,7 @@ string CDeflineGenerator::s_SetPrefix (void)
 }
 
 // generate suffix if not already present
-string CDeflineGenerator::s_SetSuffix (
+string CDeflineGenerator::x_SetSuffix (
     const string& title
 )
 
@@ -858,7 +1013,7 @@ string CDeflineGenerator::s_SetSuffix (
                 unsigned int pieces = 1;
                 // !!! NOTE CALL TO OBJECT MANAGER !!!
                 const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
-                for (CSeqMap_CI it (hnd, CSeqMap::fFindGap); it;  ++it) {
+                for (CSeqMap_CI it (hnd, CSeqMap::fFindGap); it; ++it) {
                     ++pieces;
                 }
                 if (pieces == 1) {
@@ -901,7 +1056,7 @@ string CDeflineGenerator::s_SetSuffix (
                 if (! m_taxname.empty()) {
                     // !!! NEED TO IMPLEMENT !!!
                     /*
-                    const char* orgnl = s_OrganelleName (m_genome, fON_wgs);
+                    const char* orgnl = x_OrganelleName (m_genome, fON_wgs);
                     if (orgnl [0]) {
                         suffix = string (1, ' ') + orgnl;
                     }
@@ -931,7 +1086,7 @@ string CDeflineGenerator::GenerateDefline (
     m_allprotnames = allProteinNames;
 
     // set flags from record components
-    s_SetFlags ();
+    x_SetFlags ();
 
     if (! m_reconstruct) {
         // look for existing instantiated title
@@ -942,9 +1097,10 @@ string CDeflineGenerator::GenerateDefline (
             if (m_is_na || m_is_pdb || level == 0) {
                 title = str;
 
-                // strip trailing periods, commas, and spaces
+                // strip trailing periods, commas, semicolons, and spaces
                 while (NStr::EndsWith (title, ".") ||
                            NStr::EndsWith (title, ",") ||
+                           NStr::EndsWith (title, ";") ||
                            NStr::EndsWith (title, " ")) {
                     title.erase (title.end() - 1);
                 }
@@ -956,34 +1112,34 @@ string CDeflineGenerator::GenerateDefline (
     if (title.empty()) {
         // PDB and patent records do not normally need source data
         if (m_is_pdb) {
-            title = s_TitleFromPDB ();
+            title = x_TitleFromPDB ();
         } else if (m_is_patent) {
-            title = s_TitleFromPatent ();
+            title = x_TitleFromPatent ();
         }
 
         if (title.empty()) {
             // set fields from source information
-            s_SetBioSrc ();
+            x_SetBioSrc ();
 
             // several record types have specific methods
             if (m_is_nc) {
-                title = s_TitleFromNC ();
+                title = x_TitleFromNC ();
             } else if (m_is_nm) {
-                title = s_TitleFromNM ();
+                title = x_TitleFromNM ();
             } else if (m_is_nr) {
-                title = s_TitleFromNR ();
+                title = x_TitleFromNR ();
             } else if (m_is_aa) {
-                title = s_TitleFromProtein ();
+                title = x_TitleFromProtein ();
             } else if (m_is_seg) {
-                title = s_TitleFromSegSeq ();
+                title = x_TitleFromSegSeq ();
             } else if (m_is_tsa || (m_is_wgs && (! m_wgs_master))) {
-                title = s_TitleFromWGS ();
+                title = x_TitleFromWGS ();
             }
         }
 
         if (title.empty()) {
             // default title using source fields
-            title = s_TitleFromBioSrc ();
+            title = x_TitleFromBioSrc ();
         }
 
         if (title.empty()) {
@@ -1008,17 +1164,18 @@ string CDeflineGenerator::GenerateDefline (
         title.erase (0, 1);
     }
 
-    // strip trailing commas and spaces (period may be an sp. species)
+    // strip trailing commas, semicolons, and spaces (period may be an sp. species)
     while (NStr::EndsWith (title, ",") ||
+               NStr::EndsWith (title, ";") ||
                NStr::EndsWith (title, " ")) {
         title.erase (title.end() - 1);
     }
 
     // calculate prefix
-    prefix = s_SetPrefix ();
+    prefix = x_SetPrefix ();
 
     // calculate suffix
-    suffix = s_SetSuffix (title);
+    suffix = x_SetSuffix (title);
 
     return prefix + title + suffix;
 }
