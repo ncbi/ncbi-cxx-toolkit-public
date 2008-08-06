@@ -33,7 +33,7 @@
  *    NetSchedule Worker Node implementation
  */
 
-#include <util/request_control.hpp>
+#include <corelib/request_control.hpp>
 
 #include <connect/services/grid_worker.hpp>
 
