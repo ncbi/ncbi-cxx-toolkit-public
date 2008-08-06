@@ -9,8 +9,8 @@
 
 # Cmd.-line args  -- source and destination
 script="$0"
-builddir="${1:-//u/coremake/cxx}"
-target="${2:-//u/coremake/public/cxx.last}"
+builddir="$1"
+target="$2"
 compiler="${3:-msvc710}"
 compiler="${compiler}_prj"
 
@@ -161,8 +161,8 @@ cp -p "$builddir"/compilers/$compiler/static/* "$cldir"/$compiler/static
 cp -p "$builddir"/compilers/$compiler/dll/*    "$cldir"/$compiler/dll
 
 
-# Checkout info file
-cp -p "$builddir"/checkout_info "$target"
+# Copy info files
+cp -p "$builddir"/*_info "$target"
 
 
 exit 0
