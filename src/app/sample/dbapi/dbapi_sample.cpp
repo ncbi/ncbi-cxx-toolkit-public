@@ -359,7 +359,7 @@ end";
         try {
             //Initialize table using bulk insert
             NcbiCout << "Initializing BulkSample table..." << endl;
-            IBulkInsert *bi = conn->GetBulkInsert("BulkSample", 4);
+            IBulkInsert *bi = conn->GetBulkInsert("BulkSample");
             CVariant b1(eDB_Int);
             CVariant b2(eDB_Int);
             CVariant b3(eDB_TinyInt);
@@ -448,7 +448,7 @@ end";
         // call stored procedure
         NcbiCout << endl << "Calling stored procedure..." << endl;
         
-        ICallableStatement *cstmt = conn->GetCallableStatement("SampleProc", 3);
+        ICallableStatement *cstmt = conn->GetCallableStatement("SampleProc");
         cstmt->SetParam(CVariant(5), "@id");
         cstmt->SetParam(CVariant::Float(&f), "@f");
         cstmt->SetOutputParam(CVariant(eDB_Int), "@o");
@@ -505,7 +505,7 @@ end";
 
         cstmt->Close();
         delete cstmt;
-        cstmt = conn->GetCallableStatement("SampleProc", 3);
+        cstmt = conn->GetCallableStatement("SampleProc");
 
         // call stored procedure using language call
         NcbiCout << endl << "Calling stored procedure using language call..." << endl;
@@ -653,7 +653,7 @@ end";
 
         //Initialize table using bulk insert
         NcbiCout << "Initializing BlobSample table..." << endl;
-        IBulkInsert *bi = conn->CreateBulkInsert("BlobSample", 3);
+        IBulkInsert *bi = conn->CreateBulkInsert("BlobSample");
         CVariant col1 = CVariant(eDB_Int);
         CVariant col2 = CVariant(eDB_Text);
         CVariant col3 = CVariant(eDB_Text);
