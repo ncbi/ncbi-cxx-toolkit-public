@@ -36,7 +36,7 @@ mkdir $PRODUCT
 /Developer/Tools/packagemaker -build -proj ncbi-blast.pmproj -p $PRODUCT/$PRODUCT.pkg
 
 echo creating disk image
-hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT
+/usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT
 
 echo moving disk image
 mkdir $INSTALLDIR/installer
