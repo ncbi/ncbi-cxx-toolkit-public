@@ -714,8 +714,10 @@ string CDeflineGenerator::x_TitleFromProtein (void)
 
 {
     CConstRef<CProt_ref> prot;
+    CConstRef<CSeq_feat> cds_feat;
     CConstRef<CSeq_loc>  cds_loc;
     CConstRef<CGene_ref> gene;
+    string               locus_tag;
     string               result;
 
     // !!! NOTE CALL TO OBJECT MANAGER !!!
@@ -734,7 +736,7 @@ string CDeflineGenerator::x_TitleFromProtein (void)
     }}
 
     {{
-        CConstRef<CSeq_feat> cds_feat (GetCDSForProduct (hnd));
+        cds_feat = GetCDSForProduct (hnd);
         if (cds_feat) {
             cds_loc = &cds_feat->GetLocation();
         }
@@ -761,9 +763,32 @@ string CDeflineGenerator::x_TitleFromProtein (void)
         }
         if (! result.empty()) {
             if (NStr::CompareNocase (result, "hypothetical protein") == 0) {
-                // XXX - gene_feat might not always be exactly what we want
-                if (gene && gene->IsSetLocus_tag()) {
-                    result += " " + gene->GetLocus_tag();
+                bool check_gene_feat = true;
+                // first look for gene xref on CDS for locus_tag
+                if (cds_feat) {
+                    const CSeq_feat& feat = (*cds_feat);
+                    FOR_EACH_SEQFEATXREF_ON_FEATURE (xf_itr, feat) {
+                        const CSeqFeatXref& sfx = **xf_itr;
+                        if (sfx.IsSetData()) {
+                            const CSeqFeatData& sfd = sfx.GetData();
+                            if (sfd.IsGene()) {
+                                check_gene_feat = false;
+                                const CGene_ref& grp = sfd.GetGene();
+                                if (grp.IsSetLocus_tag()) {
+                                    locus_tag = grp.GetLocus_tag();
+                                }
+                            }
+                        }
+                    }
+                }
+                // otherwise check overlapping gene feature for locus_tag
+                if (check_gene_feat) {
+                    if (gene && gene->IsSetLocus_tag()) {
+                        locus_tag = gene->GetLocus_tag();
+                    }
+                }
+                if (! locus_tag.empty()) {
+                    result += " " + locus_tag;
                 }
             }
         }
@@ -826,7 +851,7 @@ string CDeflineGenerator::x_TitleFromProtein (void)
         if (cds_loc) {
             CConstRef<CSeq_feat> src_feat = GetOverlappingSource (*cds_loc, m_scope);
             if (src_feat) {
-                const CSeq_feat& feat = (*src_feat);
+                const CSeq_feat& feat = *src_feat;
                 if (feat.IsSetData()) {
                     const CSeqFeatData& fdata = feat.GetData();
                     if (fdata.IsBiosrc()) {
