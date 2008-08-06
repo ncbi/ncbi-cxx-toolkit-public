@@ -737,7 +737,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
 #if ENABLE_EXTRA_CHECKS
             assert(!bindcol->bcp_column_data->null_column);
             assert(bindcol->column_varint_size == 4);
-#endif;
+#endif
             /* This is not NULL */
 
             if (buffer == NULL || *buffer == 0 || buflen == 0) {
