@@ -83,6 +83,55 @@ public:
     };
 
     //  ------------------------------------------------------------------------
+    void x_FastaSeqIdWrite(const CBioseq& bioseq)
+    //  ------------------------------------------------------------------------
+    {
+        string gi_string;
+        string accn_string;
+
+        bool has_gi = false;
+        bool has_accn = false;
+
+        FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bioseq) {
+            const CSeq_id& sid = **sid_itr;
+            TSEQID_CHOICE chs = sid.Which();
+            switch (chs) {
+                case NCBI_SEQID(Gi):
+                {
+                    const string str = sid.AsFastaString();
+                    gi_string = str;
+                    BREAK(sid_itr);
+                }
+            }
+        }
+
+        FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bioseq) {
+            const CSeq_id& sid = **sid_itr;
+            TSEQID_CHOICE chs = sid.Which();
+            switch (chs) {
+                case NCBI_SEQID(not_set):
+                case NCBI_SEQID(Gi):
+                case NCBI_SEQID(Gibbsq):
+                case NCBI_SEQID(Gibbmt):
+                case NCBI_SEQID(Giim):
+                    break;
+                default:
+                {
+                    const string str = sid.AsFastaString();
+                    accn_string = str;
+                    BREAK(sid_itr);
+                }
+            }
+        }
+
+        if (gi_string.empty() || accn_string.empty()) {
+            CSeq_id::WriteAsFasta (*m_out, bioseq);
+        } else {
+            *m_out << gi_string << "|" << accn_string;
+        }
+    }
+
+    //  ------------------------------------------------------------------------
     void SeqEntryProcess()
     //  ------------------------------------------------------------------------
     {
@@ -92,7 +141,7 @@ public:
                 const string& title = CreateDefLine (bioseq, *m_scope,
                                                      m_ignore_existing, false);
                 *m_out << ">";
-                CSeq_id::WriteAsFasta (*m_out, bioseq);
+                x_FastaSeqIdWrite (bioseq);
                 *m_out << " ";
                 *m_out << title << endl;
                 ++m_objectcount;
