@@ -81,7 +81,7 @@ namespace t4
 
 int main (void)
 {
-    const Uint4 value_Uint4 = 4000000000;
+    const Uint4 value_Uint4 = 4000000000U;
     const Uint8 value_Uint8 = 9223372036854775800ULL;
 
     const string str_Uint4("4000000000");
