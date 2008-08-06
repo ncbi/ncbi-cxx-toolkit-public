@@ -52,9 +52,9 @@ USING_NCBI_SCOPE;
       << NCBI_NS_NCBI::Endm )
 
 
-const int kTasksPerThread = 120;
-const int kQueueSize      = 20;
-const int kMaxThreads     = 20;
+const int kTasksPerThread     = 120;
+const unsigned int kQueueSize = 20;
+const int kMaxThreads         = 20;
 
 enum EActionType {
     eAddTask,
