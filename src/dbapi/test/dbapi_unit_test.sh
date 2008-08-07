@@ -118,11 +118,6 @@ EOF
                 export SYBASE
             fi
 
-			if echo $FEATURES | grep "\-DLL.enabled" > /dev/null && `uname -s | sed -e 's/-.*//'` = "CYGWIN_NT" ; then
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_unit_test -d $driver -S $server (skipped because of problems with static builds on Windows)"
-                continue
-			fi
-
             cat <<EOF
 
 ~~~~~~ SERVER:  $server ~~~~~~~~~~~~~~~~~~~~~~~~
