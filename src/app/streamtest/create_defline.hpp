@@ -449,10 +449,14 @@ void CDeflineGenerator::x_SetBioSrc (void)
                     const string& str = omd.GetSubname();
                     switch (omt) {
                         case NCBI_ORGMOD(strain):
-                            m_strain = str;
+                            if (m_strain.empty()) {
+                                m_strain = str;
+                            }
                             break;
                         case NCBI_ORGMOD(isolate):
-                            m_isolate = str;
+                            if (m_isolate.empty()) {
+                                m_isolate = str;
+                            }
                             break;
                         default:
                             break;
@@ -474,7 +478,7 @@ string CDeflineGenerator::x_DescribeClones (void)
     if (m_htgs_unfinished && m_htgs_pooled) {
         return ", pooled multiple clones";
     } else if (count > 3) {
-        return ", " + NStr::IntToString(count) + " clones,";
+        return ", " + NStr::IntToString(count) + " clones";
     } else {
         return " clone " + m_clone;
     }
@@ -1041,10 +1045,10 @@ string CDeflineGenerator::x_TitleFromProtein (void)
 
     // check for special taxname, go to overlapping source feature
     if (taxname.empty() ||
-         NStr::EqualNocase (taxname, "synthetic construct") ||
-         NStr::EqualNocase (taxname, "artificial sequence") ||
-         NStr::EqualNocase (taxname, "vector") ||
-         NStr::EqualNocase (taxname, "Vector")) {
+        (NStr::CompareNocase (taxname, "synthetic construct") != 0 &&
+         NStr::CompareNocase (taxname, "artificial sequence") != 0 &&
+         NStr::CompareNocase (taxname, "vector") != 0 &&
+         NStr::CompareNocase (taxname, "Vector") != 0)) {
         if (cds_loc) {
             CConstRef<CSeq_feat> src_feat = GetOverlappingSource (*cds_loc, m_scope);
             if (src_feat) {
