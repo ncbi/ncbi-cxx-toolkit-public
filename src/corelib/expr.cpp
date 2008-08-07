@@ -81,10 +81,13 @@ CExprValue::CExprValue(Uint8 value)
 , m_Tag(eINT)
 {
     if (static_cast<Uint8>(numeric_limits<Int8>::max()) < value) {
-        NCBI_THROW2(CExprParserException, eTypeConversionError, "Cannot convert value to Int8.", m_Pos);
+        NCBI_THROW2(CExprParserException, 
+                eTypeConversionError, 
+                "Value too big to fit in the 8-byte signed integer type", 
+                m_Pos);
     }
 
-    ival = value;
+    ival = static_cast<Int8>(value);
 }
 
 
@@ -347,7 +350,14 @@ unsigned string_hash_function(const char* p)
 ////////////////////////////////////////////////////////////////////////////////
 const char* CExprParserException::GetErrCodeString(void) const
 {
-    return "Expression parser error."; 
+    switch (GetErrCode()) {
+        case eParseError: return "eParseError";
+        case eTypeConversionError: return "eTypeConversionError";
+        default:
+            break;
+    }
+
+    return CException::GetErrCodeString();
 }
 
 void CExprParserException::ReportExtra(ostream& out) const
