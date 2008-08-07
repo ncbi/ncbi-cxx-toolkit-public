@@ -503,7 +503,8 @@ bool CDeflineGenerator::x_EndsWithStrain (void)
     pos = NStr::FindNoCase (m_taxname, m_strain, pos + 1, NPOS, NStr::eLast);
     if (pos == m_taxname.size() - m_strain.size()) {
         // check for space to avoid fortuitous match to end of taxname
-        if (m_taxname[pos - 1] == ' ') {
+        char ch = m_taxname[pos - 1];
+        if (ispunct (ch) || isspace (ch)) {
             return true;
         }
     } else if (pos == m_taxname.size() - m_strain.size() - 1 &&
