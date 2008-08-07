@@ -63,6 +63,9 @@ public:
 		// If you got here, you are using wrong data type.
 		value->please_use_Int8_double_bool_instead();
 	}
+	CExprValue(Uint4 value);
+	CExprValue(Int4 value);
+	CExprValue(Uint8 value);
 	CExprValue(Int8 value);
 	CExprValue(double value);
 	CExprValue(bool value);
@@ -158,6 +161,9 @@ public:
 		// If you got here, you are using wrong data type.
 		value->please_use_Int8_double_bool_instead();
 	}
+    CExprSymbol(const char* name, Uint4 value);
+    CExprSymbol(const char* name, Int4 value);
+    CExprSymbol(const char* name, Uint8 value);
     CExprSymbol(const char* name, Int8 value);
     CExprSymbol(const char* name, bool value);
     CExprSymbol(const char* name, double value);
@@ -201,7 +207,8 @@ class NCBI_XNCBI_EXPORT CExprParserException : EXCEPTION_VIRTUAL_BASE public CEx
 {
 public:
     enum EErrCode {
-        eParseError
+        eParseError,
+        eTypeConversionError
     };
 
 

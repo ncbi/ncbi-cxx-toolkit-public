@@ -36,6 +36,7 @@
 #include <corelib/expr.hpp>
 
 #include <math.h>
+#include <limits>
 
 
 BEGIN_NCBI_SCOPE
@@ -56,6 +57,36 @@ CExprValue::CExprValue(const CExprValue& value)
 , m_Tag(value.m_Tag)
 {
 }
+
+CExprValue::CExprValue(Uint4 value)
+: ival(value)
+, m_Var(NULL)
+, m_Pos(0)
+, m_Tag(eINT)
+{
+}
+
+CExprValue::CExprValue(Int4 value)
+: ival(value)
+, m_Var(NULL)
+, m_Pos(0)
+, m_Tag(eINT)
+{
+}
+
+CExprValue::CExprValue(Uint8 value)
+: ival(0)
+, m_Var(NULL)
+, m_Pos(0)
+, m_Tag(eINT)
+{
+    if (static_cast<Uint8>(numeric_limits<Int8>::max()) < value) {
+        NCBI_THROW2(CExprParserException, eTypeConversionError, "Cannot convert value to Int8.", m_Pos);
+    }
+
+    ival = value;
+}
+
 
 CExprValue::CExprValue(Int8 value)
 : ival(value)
@@ -93,6 +124,33 @@ CExprSymbol::CExprSymbol(void)
 CExprSymbol::~CExprSymbol(void)
 {
     delete m_Next;
+}
+
+CExprSymbol::CExprSymbol(const char* name, Uint4 value)
+: m_Tag(eVARIABLE)
+, m_IntFunc1(NULL)
+, m_Val(value)
+, m_Name(name)
+, m_Next(NULL)
+{
+}
+
+CExprSymbol::CExprSymbol(const char* name, Int4 value)
+: m_Tag(eVARIABLE)
+, m_IntFunc1(NULL)
+, m_Val(value)
+, m_Name(name)
+, m_Next(NULL)
+{
+}
+
+CExprSymbol::CExprSymbol(const char* name, Uint8 value)
+: m_Tag(eVARIABLE)
+, m_IntFunc1(NULL)
+, m_Val(value)
+, m_Name(name)
+, m_Next(NULL)
+{
 }
 
 CExprSymbol::CExprSymbol(const char* name, Int8 value)
