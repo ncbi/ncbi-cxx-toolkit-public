@@ -108,7 +108,7 @@ unlink-dll:
 
 clean: clean-common clean-dll
 
-clean-dll:
+clean-dll: unlink-dll
 	-$(RM) $(XDLLOBJ)
 
 purge: clean purge-headers deactivate
