@@ -678,6 +678,8 @@ string CDeflineGenerator::x_TitleFromNC (void)
         if (lc_plasmid.find("plasmid") == NPOS &&
             lc_plasmid.find("element") == NPOS) {
             pls = "plasmid " + m_plasmid;
+        } else {
+            pls = m_plasmid;
         }
     }
 
