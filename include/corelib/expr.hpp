@@ -58,6 +58,11 @@ class NCBI_XNCBI_EXPORT CExprValue
 { 
 public:
     CExprValue(void);
+	template <typename VT> CExprValue(VT* value)
+	{
+		// If you got here, you are using wrong data type.
+		value->please_use_Int8_double_bool_instead();
+	}
 	CExprValue(Int8 value);
 	CExprValue(double value);
 	CExprValue(bool value);
@@ -148,6 +153,11 @@ public:
     typedef bool    (*FBoolFunc2)   (bool, bool);
 
     CExprSymbol(void);
+	template <typename VT> CExprSymbol(const char* name, VT* value)
+	{
+		// If you got here, you are using wrong data type.
+		value->please_use_Int8_double_bool_instead();
+	}
     CExprSymbol(const char* name, Int8 value);
     CExprSymbol(const char* name, bool value);
     CExprSymbol(const char* name, double value);
