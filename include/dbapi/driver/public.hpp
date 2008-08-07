@@ -262,27 +262,36 @@ public:
 
 public:
     // Deprecated legacy methods.
+    // CXX-601
 
     /// @deprecated
+#ifndef NCBI_UNDEPRECATE__DBAPI_OLD_CONNECTION
     NCBI_DEPRECATED
+#endif
     CDB_LangCmd* LangCmd(const string& lang_query, unsigned int /*unused*/)
     {
         return LangCmd(lang_query);
     }
     /// @deprecated
+#ifndef NCBI_UNDEPRECATE__DBAPI_OLD_CONNECTION
     NCBI_DEPRECATED
+#endif
     CDB_RPCCmd* RPC(const string& rpc_name, unsigned int /*unused*/)
     {
         return RPC(rpc_name);
     }
     /// @deprecated
+#ifndef NCBI_UNDEPRECATE__DBAPI_OLD_CONNECTION
     NCBI_DEPRECATED
+#endif
     CDB_BCPInCmd* BCPIn(const string& table_name, unsigned int /*unused*/)
     {
         return BCPIn(table_name);
     }
     /// @deprecated
+#ifndef NCBI_UNDEPRECATE__DBAPI_OLD_CONNECTION
     NCBI_DEPRECATED
+#endif
     CDB_CursorCmd* Cursor(const string& cursor_name,
                           const string& query,
                           unsigned int /*unused*/,
@@ -492,7 +501,10 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_LangCmd : public I_LangCmd
 public:
     /// Add more text to the language command
     /// @deprecated
+    // CXX-601
+#ifndef NCBI_UNDEPRECATE__DBAPI_OLD_LANGCMD
     NCBI_DEPRECATED
+#endif
     virtual bool More(const string& query_text);
 
     /// Get meta-information about parameters. 
