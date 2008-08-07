@@ -581,8 +581,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             if (x_result != 0)
                 (*result)++;
             FCGX_SetExitStatus(x_result, pfout);
-            GetDiagContext().GetRequestContext().SetBytesRd(ibuf.GetCount());
-            GetDiagContext().GetRequestContext().SetBytesWr(obuf.GetCount());
+            CDiagContext::GetRequestContext().SetBytesRd(ibuf.GetCount());
+            CDiagContext::GetRequestContext().SetBytesWr(obuf.GetCount());
             x_OnEvent(x_result == 0 ? eSuccess : eError, x_result);
 
         }
