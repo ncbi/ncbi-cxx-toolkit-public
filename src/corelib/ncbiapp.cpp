@@ -822,7 +822,9 @@ void CNcbiApplication::SetProgramDisplayName(const string& app_name)
 {
     m_ProgramDisplayName = app_name;
     // Also set app_name in the diag context
-    GetDiagContext().SetAppName(app_name);
+    if ( GetDiagContext().GetAppName().empty() ) {
+        GetDiagContext().SetAppName(app_name);
+    }
 }
 
 
