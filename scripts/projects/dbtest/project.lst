@@ -3,6 +3,7 @@ util/cache$
 util/bitset$
 util/regexp$
 serial$
+serial/impl$
 serial/datatool$
 cgi/impl$
 connect$
