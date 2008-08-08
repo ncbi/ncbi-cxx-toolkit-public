@@ -22,7 +22,8 @@ SVN_TAG_RELEASE_ADD_FLAGS: -t
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-COPY: $libdir/xncbi.lib  $installdir/lib/
+# COPY: $libdir/xncbi.lib  $installdir/lib/
+COPY: $libdir/libxncbi.a  $installdir/lib/
 POSTBUILD: echo FAKE postbuild COMMAND for $platform
 
 
