@@ -49,6 +49,9 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/blastdb/defline_extra.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
+
 using namespace ncbi;
 using namespace ncbi::objects;
 
