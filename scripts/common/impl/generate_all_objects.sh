@@ -49,8 +49,8 @@ splitdb_dir=src/internal/blast/SplitDB/asn
 if [ -f $splitdb_dir/Makefile.asntool ]; then
     if $force || [ ! -f $splitdb_dir/objPSSM.c ]; then
         top_srcdir=`pwd`
-        subsubdir=$top_srcdir/src/internal
-        (cd $splitdb_dir && ${MAKE-make} -f Makefile.asntool sources top_srcdir=$top_srcdir builddir=$subsubdir) || exit $?
+        builddir=`ls -dt $top_srcdir/*/build $top_srcdir/.??*/build | head -1`
+        (cd $splitdb_dir && ${MAKE-make} -f Makefile.asntool sources top_srcdir=$top_srcdir builddir=$builddir) || exit $?
     fi
 fi
 
