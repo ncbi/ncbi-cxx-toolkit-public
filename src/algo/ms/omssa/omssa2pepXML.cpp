@@ -39,6 +39,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <objects/omssa/omssa__.hpp>
+#include <util/compress/bzip2.hpp> 
 
 #include "omssa.hpp"
 #include "pepxml.hpp"
@@ -78,7 +79,7 @@ private:
 
 
 COmssa2pepxmlApplication::COmssa2pepxmlApplication() {
-    SetVersion(CVersionInfo(1, 0, 0));
+    SetVersion(CVersionInfo(2, 1, 4));
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -95,7 +96,8 @@ void COmssa2pepxmlApplication::Init(void)
 
     // Describe the expected command-line arguments
 	arg_desc->AddFlag("xml", "Input file is XML");
-	arg_desc->AddFlag("asn", "Input file is ASN.1");
+    arg_desc->AddFlag("bz2", "Input file is bzipped XML");
+    arg_desc->AddFlag("asn", "Input file is ASN.1");
 	arg_desc->AddFlag("asntext", "Input file is ASN.1 text");
 
 	arg_desc->AddOptionalKey("o", "outfile", 
@@ -144,7 +146,7 @@ int COmssa2pepxmlApplication::Run ( void )
 
 	// figure out input file type
 	bool notSet = true;
-	if (args["xml"]) {
+	if (args["xml"] || args["bz2"]) {
 		format = eSerial_Xml;
 		notSet = false;
 	} else if (args["asn"]) {
@@ -177,10 +179,9 @@ int COmssa2pepxmlApplication::Run ( void )
         return 0;
 	}
 
-    auto_ptr<CObjectIStream> file_in(CObjectIStream::Open(filename, format));
-    *file_in >> inOMSSA;
+    CSearchHelper::ReadCompleteSearch(filename, format, args["bz2"], inOMSSA);
 
-	if (!inOMSSA.CanGetRequest()) {
+    if (!inOMSSA.CanGetRequest()) {
 		cout << "Sorry, this file cannot be converted." << endl;
 		cout << "The original search needs to have been executed with the '-w' flag set." << endl;
 		cout << "The search settings are not availiable in this file. Aborting" << endl;

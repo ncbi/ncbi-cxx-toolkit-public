@@ -59,7 +59,7 @@ USING_SCOPE(omssa);
 
 COMSSABase::COMSSABase()
 {
-    SetVersion(CVersionInfo(2, 1, 3));
+    SetVersion(CVersionInfo(2, 1, 4));
 }
 
 
@@ -131,6 +131,8 @@ void COMSSABase::Init()
                  CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("fomx", "omxinfile", "omssa omx file",
                   CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("fbz2", "bz2infile", "omssa omx file compressed by bzip2",
+                   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("fxml", "omxinfile", "omssa xml search request file",
                    CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("o", "textasnoutfile", "filename for text asn.1 formatted search results",
@@ -139,6 +141,8 @@ void COMSSABase::Init()
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("ox", "xmloutfile", "filename for xml formatted search results",
 			   CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("obz2", "bz2outfile", "filename for bzip2 compressed xml formatted search results",
+                CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("op", "pepxmloutfile", "filename for pepXML formatted search results",
                CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("oc", "csvfile", "filename for csv formatted search summary",
@@ -385,6 +389,10 @@ void COMSSABase::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings
         Infile->SetInfile(args["fomx"].AsString());
         Infile->SetInfiletype(eMSSpectrumFileType_omx);
     }
+    else if (args["fbz2"].AsString().size() != 0) {
+         Infile->SetInfile(args["fbz2"].AsString());
+         Infile->SetInfiletype(eMSSpectrumFileType_omxbz2);
+     }
     else if (args["foms"].AsString().size() != 0) {
         Infile->SetInfile(args["foms"].AsString());
         Infile->SetInfiletype(eMSSpectrumFileType_oms);
@@ -410,6 +418,9 @@ void COMSSABase::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings
     if (args["ox"].AsString() != "") {
         SetOutFile(IncludeSpectra, eMSSerialDataFormat_xml, args["ox"].AsString(), Settings);
     }
+    if (args["obz2"].AsString() != "") {
+         SetOutFile(IncludeSpectra, eMSSerialDataFormat_xmlbz2, args["obz2"].AsString(), Settings);
+     }
     if (args["op"].AsString() != "") {
         SetOutFile(IncludeSpectra, eMSSerialDataFormat_pepxml, args["op"].AsString(), Settings);
     }

@@ -102,6 +102,7 @@ int CSpectrumSet::LoadFile(const EMSSpectrumFileType FileType, CNcbiIstream& DTA
     case eMSSpectrumFileType_unknown:
     case eMSSpectrumFileType_oms:
     case eMSSpectrumFileType_omx:
+    case eMSSpectrumFileType_omxbz2:
     default:
         break;
     }

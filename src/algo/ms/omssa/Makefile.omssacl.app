@@ -4,7 +4,7 @@
 # Build application "omssacl"
 #################################
 
-CXXFLAGS = $(FAST_CXXFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS) $(CMPRS_INCLUDE)
 
 LDFLAGS  = $(FAST_LDFLAGS)
 
@@ -13,7 +13,7 @@ APP = omssacl
 SRC = omssacl
 
 LIB = xomssa omssa pepXML blast composition_adjustment tables seqdb blastdb \
-      xregexp $(PCRE_LIB) xconnect $(SOBJMGR_LIBS)
+      xregexp $(PCRE_LIB) xconnect $(COMPRESS_LIBS) $(SOBJMGR_LIBS) 
 
-LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 

@@ -85,23 +85,6 @@ const string COMSSASearch::FileEnding(const ESerialDataFormat FileType) const
 }
 
 
-const int COMSSASearch::ReadCompleteSearch(const string& Filename,
-                                           const ESerialDataFormat DataFormat)
-{
-    auto_ptr<CObjectIStream> 
-        in(CObjectIStream::Open(Filename.c_str(), DataFormat));
-    in->Open(Filename.c_str(), DataFormat);
-    if(in->fail()) {	    
-        ERR_POST(Warning << "unable to read search file" << 
-                 Filename);
-        return 1;
-    }
-    in->Read(ObjectInfo(*this));
-    in->Close();
-    return 0;
-}
-
-
 void 
 COMSSASearch::FindMinMaxForOneSetting(
     const CMSSearchSettings& SearchSettings,

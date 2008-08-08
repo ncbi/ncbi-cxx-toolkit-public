@@ -901,7 +901,8 @@ public:
     static void SaveOneFile(CMSSearch &MySearch, 
                             const string Filename, 
                             ESerialDataFormat FileFormat, 
-                            bool IncludeRequest);
+                            bool IncludeRequest,
+                            bool bz2);
 
     /**
      * read in modification files.  probably should be in some helper class
@@ -910,6 +911,7 @@ public:
      * @param UserModFileName usermods.xml
      * @param Path program path
      * @param Modset the data structure containing the mods
+     * @param bz2 use bzip2 compression
      * @return 1 on error
      */
     static int ReadModFiles(const string& ModFileName,
@@ -974,11 +976,13 @@ public:
      * Read in a complete search (typically for an iterative search)
      * @param Filename name of file
      * @param Dataformat xml or asn.1
+     * @param bz2 is the file bzip2 compressed?
      * @param MySearch the search
      * @return 0 if OK
      */
     static int ReadCompleteSearch(const string& Filename,
                                   const ESerialDataFormat DataFormat,
+                                  bool bz2,
                                   CMSSearch& MySearch);
 
     /**

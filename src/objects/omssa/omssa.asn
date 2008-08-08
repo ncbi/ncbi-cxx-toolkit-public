@@ -484,7 +484,8 @@ MSSerialDataFormat ::= INTEGER {
         asnbinary (2),    -- open ASN.1 binary format
         xml (3),          -- open XML format
         csv (4),          -- csv (excel)
-        pepxml (5)        -- pepXML format
+        pepxml (5),       -- pepXML format
+	xmlbz2 (6)        -- bzip2 XML format
         }
 
 MSOutFile ::= SEQUENCE {
@@ -505,7 +506,8 @@ MSSpectrumFileType ::= INTEGER {
         unknown(8),
         oms(9),    -- asn.1 binary for iterative search
         omx(10),   -- xml for iterative search
-        xml(11)    -- xml MSRequest
+        xml(11),   -- xml MSRequest
+	omxbz2 (12) -- bzip2 omx file
         }
 
 MSInFile ::= SEQUENCE {

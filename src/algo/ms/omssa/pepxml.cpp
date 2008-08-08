@@ -337,7 +337,10 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
             CMSHitSet::THits::const_iterator iHit;
             iHit = HitSet->GetHits().begin();
             CRef<CSpectrum_query> sQuery(new CSpectrum_query);
-            string spectrumID = HitSet->GetIds().front();
+            string spectrumID;
+            if(!(HitSet->GetIds().empty())) {
+                spectrumID = *(HitSet->GetIds().begin());
+            }
             //string query = NStr::IntToString(HitSet->GetNumber());
 
             ConvertScanID(sQuery, spectrumID, HitSet->GetNumber(), (*iHit)->GetCharge());

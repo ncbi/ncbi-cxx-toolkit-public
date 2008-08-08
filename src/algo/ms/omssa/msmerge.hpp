@@ -101,16 +101,6 @@ public:
     const string FileEnding(const ESerialDataFormat FileType) const;
 
     /**
-     * read in the search from a file
-     * 
-     * @param Filename path to file
-     * @param DataFormat format of file
-     * @return 0 if OK
-     */
-    const int ReadCompleteSearch(const string& Filename,
-                                 const ESerialDataFormat DataFormat);
-
-    /**
      * find the maximum and minimum search setting id in this search
      *
      * @param Min minimum

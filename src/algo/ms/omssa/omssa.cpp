@@ -35,6 +35,8 @@
 
 #include <util/miscmath.h>
 #include <algo/blast/core/ncbi_math.h>
+#include <util/compress/bzip2.hpp> 
+
 
 
 #include "SpectrumSet.hpp"
@@ -190,11 +192,23 @@ CSearchHelper::ReadSearchRequest(const string& Filename,
 int 
 CSearchHelper::ReadCompleteSearch(const string& Filename,
                                const ESerialDataFormat DataFormat,
+                               bool bz2,
                                CMSSearch& MySearch)
 {
-    auto_ptr<CObjectIStream> 
-        in(CObjectIStream::Open(Filename.c_str(), DataFormat));
-    in->Open(Filename.c_str(), DataFormat);
+    auto_ptr <CNcbiIfstream> raw_in;
+    auto_ptr <CCompressionIStream> compress_in;
+    auto_ptr <CObjectIStream> in;
+
+    if( bz2 ) {
+        raw_in.reset(new CNcbiIfstream(Filename.c_str()));
+        compress_in.reset( new CCompressionIStream (*raw_in, 
+                                                    new CBZip2StreamDecompressor(), 
+                                                    CCompressionStream::fOwnProcessor)); 
+        in.reset(CObjectIStream::Open(DataFormat, *compress_in)); 
+    }
+    else {
+        in.reset(CObjectIStream::Open(Filename.c_str(), DataFormat));
+    }
     if(in->fail()) {	    
         ERR_POST(Warning << "omssacl: unable to search file" << 
                  Filename);
@@ -225,14 +239,17 @@ CSearchHelper::LoadAnyFile(CMSSearch& MySearch,
     break;
     case eMSSpectrumFileType_oms:
     if(SearchEngineIterative) *SearchEngineIterative = true;
-    return CSearchHelper::ReadCompleteSearch(Filename, eSerial_AsnBinary, MySearch);
+    return CSearchHelper::ReadCompleteSearch(Filename, eSerial_AsnBinary, false, MySearch);
     break;
     case eMSSpectrumFileType_omx:
     if(SearchEngineIterative) *SearchEngineIterative = true;
-    return CSearchHelper::ReadCompleteSearch(Filename, eSerial_Xml, MySearch);
+    return CSearchHelper::ReadCompleteSearch(Filename, eSerial_Xml, false, MySearch);
     break;
     case eMSSpectrumFileType_xml:
     return CSearchHelper::ReadSearchRequest(Filename, eSerial_Xml, MySearch);
+    break;
+    case eMSSpectrumFileType_omxbz2 :
+    return CSearchHelper::ReadCompleteSearch(Filename, eSerial_Xml, true, MySearch);
     break;
     case eMSSpectrumFileType_asc:
     case eMSSpectrumFileType_pks:
@@ -248,20 +265,32 @@ CSearchHelper::LoadAnyFile(CMSSearch& MySearch,
 void CSearchHelper::SaveOneFile(CMSSearch &MySearch,
                                 const string Filename, 
                                 ESerialDataFormat FileFormat,
-                                bool IncludeRequest) 
+                                bool IncludeRequest,
+                                bool bz2) 
 {
-    {
-        auto_ptr <CObjectOStream> txt_out(CObjectOStream::Open(Filename,
-                                                               FileFormat));
-        if(FileFormat == eSerial_Xml) {
-            CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (txt_out.get());
-            CSearchHelper::ConditionXMLStream(xml_out);
-        }
-        if(IncludeRequest)
-            txt_out->Write(ObjectInfo(MySearch));
-        else
-            txt_out->Write(ObjectInfo(**MySearch.SetResponse().begin()));
+    auto_ptr <CNcbiOfstream> raw_out;
+    auto_ptr <CCompressionOStream> compress_out;
+    auto_ptr <CObjectOStream> txt_out;
+
+    if( bz2 ) {
+        raw_out.reset(new CNcbiOfstream(Filename.c_str()));
+        compress_out.reset( new CCompressionOStream (*raw_out, 
+                                                    new CBZip2StreamCompressor(), 
+                                                    CCompressionStream::fOwnProcessor)); 
+        txt_out.reset(CObjectOStream::Open(FileFormat, *compress_out)); 
     }
+    else {
+        txt_out.reset(CObjectOStream::Open(Filename.c_str(), FileFormat));
+    }
+
+    if(FileFormat == eSerial_Xml) {
+        CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (txt_out.get());
+        CSearchHelper::ConditionXMLStream(xml_out);
+    }
+    if(IncludeRequest)
+        txt_out->Write(ObjectInfo(MySearch));
+    else
+        txt_out->Write(ObjectInfo(**MySearch.SetResponse().begin()));
 }   
 
 
@@ -285,6 +314,8 @@ CSearchHelper::SaveAnyFile(CMSSearch& MySearch,
               FileFormat = eSerial_AsnBinary;
         if(DataFormat == eMSSerialDataFormat_xml)
                FileFormat = eSerial_Xml;
+        if(DataFormat == eMSSerialDataFormat_xmlbz2)
+                FileFormat = eSerial_Xml;
 
         switch (DataFormat) {
         case eMSSerialDataFormat_asntext:
@@ -292,7 +323,16 @@ CSearchHelper::SaveAnyFile(CMSSearch& MySearch,
         case eMSSerialDataFormat_xml:
         CSearchHelper::SaveOneFile(MySearch,
                                    Filename, 
-                                   FileFormat, (*iOutFile)->GetIncluderequest());
+                                   FileFormat, 
+                                   (*iOutFile)->GetIncluderequest(),
+                                   false);
+        break;
+        case eMSSerialDataFormat_xmlbz2:
+        CSearchHelper::SaveOneFile(MySearch,
+                                   Filename, 
+                                   FileFormat, 
+                                   (*iOutFile)->GetIncluderequest(),
+                                   true);
         break;
         case eMSSerialDataFormat_pepxml:
         {

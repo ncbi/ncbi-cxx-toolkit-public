@@ -49,7 +49,9 @@
 #include <serial/iterator.hpp>
 #include <serial/objostrxml.hpp>
 #include <objects/omssa/omssa__.hpp>
+#include <util/compress/bzip2.hpp> 
 
+#include "omssa.hpp"
 #include "msmerge.hpp"
 
 #include <fstream>
@@ -79,7 +81,7 @@ private:
 
 COMSSAMerge::COMSSAMerge()
 {
-    SetVersion(CVersionInfo(1, 0, 1));
+    SetVersion(CVersionInfo(2, 1, 4));
 }
 
 
@@ -101,6 +103,7 @@ void COMSSAMerge::Init()
     argDesc->AddFlag("it", "input as text asn.1 formatted search results");
     argDesc->AddFlag("ib", "input as binary asn.1 formatted search results");
     argDesc->AddFlag("ix", "input as xml formatted search results");
+    argDesc->AddFlag("ibz2", "input as xml formatted search results compressed by bzip2");
 
     argDesc->AddPositional("o", "output file name", CArgDescriptions::eString);
 
@@ -108,6 +111,7 @@ void COMSSAMerge::Init()
     argDesc->AddFlag("ot", "output as text asn.1 formatted search results");
     argDesc->AddFlag("ob", "output as binary asn.1 formatted search results");
     argDesc->AddFlag("ox", "output as xml formatted search results");
+    argDesc->AddFlag("obz2", "output as xml formatted search results compressed by bzip2");
 
     argDesc->AddExtra(0,10000, "input file names", CArgDescriptions::eString);
 
@@ -139,14 +143,25 @@ int COMSSAMerge::Run()
 
     ESerialDataFormat InFileType(eSerial_Xml), OutFileType(eSerial_Xml);
 
+    bool obz2(false);  // output bzip2 compressed?
+    bool ibz2(false);  // input bzip2 compressed?
+
     if(args["ox"]) OutFileType = eSerial_Xml;
     else if(args["ob"]) OutFileType = eSerial_AsnBinary;
     else if(args["ot"]) OutFileType = eSerial_AsnText;
+    else if(args["obz2"]) {
+        OutFileType = eSerial_Xml;
+        obz2 = true;
+    }
     else ERR_POST(Fatal << "output file type not given");
 
     if(args["ix"]) InFileType = eSerial_Xml;
     else if(args["ib"]) InFileType = eSerial_AsnBinary;
     else if(args["it"]) InFileType = eSerial_AsnText;
+    else if(args["ibz2"]) {
+        InFileType = eSerial_Xml;
+        ibz2 = true;
+    }
     else ERR_POST(Fatal << "input file type not given");
 
 
@@ -162,7 +177,8 @@ int COMSSAMerge::Run()
             if(iFileName == "" || is.eof()) continue;
             try {
                 CRef <COMSSASearch> InSearch(new COMSSASearch);
-                InSearch->ReadCompleteSearch(iFileName, InFileType);
+                CSearchHelper::ReadCompleteSearch(iFileName, InFileType, ibz2, *InSearch);
+//                InSearch->ReadCompleteSearch(iFileName, InFileType, ibz2);
                 if(Begin) {
                     Begin = false;
                     MySearch->CopyCMSSearch(InSearch);
@@ -181,7 +197,8 @@ int COMSSAMerge::Run()
     else if ( args.GetNExtra() ) {
         for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
             CRef <COMSSASearch> InSearch(new COMSSASearch);
-            InSearch->ReadCompleteSearch(args[extra].AsString(), InFileType);
+            CSearchHelper::ReadCompleteSearch(args[extra].AsString(), InFileType, ibz2, *InSearch);
+            //InSearch->ReadCompleteSearch(args[extra].AsString(), InFileType, ibz2);
             try {
                 if(extra == 1) {
                     // copy
@@ -200,8 +217,25 @@ int COMSSAMerge::Run()
     }
  
     // write out the new search
-    auto_ptr <CObjectOStream> txt_out(
-         CObjectOStream::Open(args["o"].AsString(), OutFileType));
+
+    auto_ptr <CNcbiOfstream> raw_out;
+    auto_ptr <CCompressionOStream> compress_out;
+    auto_ptr <CObjectOStream> txt_out;
+    
+    if( obz2 ) {
+        raw_out.reset(new CNcbiOfstream(args["o"].AsString().c_str()));
+        compress_out.reset( new CCompressionOStream (*raw_out, 
+                                                     new CBZip2StreamCompressor(), 
+                                                     CCompressionStream::fOwnProcessor)); 
+        txt_out.reset(CObjectOStream::Open(OutFileType, *compress_out)); 
+    }
+    else {
+        txt_out.reset(CObjectOStream::Open(args["o"].AsString().c_str(), OutFileType));
+    }
+
+
+//    auto_ptr <CObjectOStream> txt_out(
+//         CObjectOStream::Open(args["o"].AsString(), OutFileType));
 
     if(txt_out.get()) {
         SetUpOutputFile(txt_out.get(), OutFileType);
