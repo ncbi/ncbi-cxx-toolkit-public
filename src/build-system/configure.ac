@@ -1981,8 +1981,12 @@ esac
 if test "$with_dll" = "no"; then # no DLLs whatsoever!
    DLL=
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
+   APP_LIB_SETTING='$(STATIC_LIB)'
+   APP_LIBS_SETTING='$(STATIC_LIBS)'
 else
    FORCE_STATIC_LIB=
+   APP_LIB_SETTING='$(LIB)'
+   APP_LIBS_SETTING='$(LIBS)'
    NCBI_FEATURE(DLL)
    # Some shared libraries end up containing static libraries, so make
    # sure to use DLL flags for both on platforms where such inclusion
@@ -5751,6 +5755,8 @@ AC_SUBST(DEBUG_SFX)
 
 AC_SUBST(LIB_OR_DLL)
 AC_SUBST(FORCE_STATIC_LIB)
+AC_SUBST(APP_LIB_SETTING)
+AC_SUBST(APP_LIBS_SETTING)
 AC_SUBST(LINK_DLL)
 AC_SUBST(has_dll_loadable)
 AC_SUBST(LINK_LOADABLE)

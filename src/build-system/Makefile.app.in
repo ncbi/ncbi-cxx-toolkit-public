@@ -33,8 +33,10 @@ include $(builddir)/Makefile.$(Rules)
 XAPP = $(APP)@exe_ext@
 XOBJ = $(SOURCES:=@obj_ext@)
 XOBJ2 = $(OBJ:=@obj_ext@)
-XLIB = $(runpath) @f_libpath@$(libdir) $(LIB:%=@lib_l_pre@%@lib_l_ext@)
-XLIBDEP = $(LIB:%=$(status_dir)/.%.dep)
+XAPP_LIB = @APP_LIB_SETTING@
+XAPP_LIBS = @APP_LIBS_SETTING@
+XLIB = $(runpath) @f_libpath@$(libdir) $(XAPP_LIB:%=@lib_l_pre@%@lib_l_ext@)
+XLIBDEP = $(XAPP_LIB:%=$(status_dir)/.%.dep)
 
 ASK_REBUILD = \
     base=`echo $$l | sed -e 's,.*/\.\([^.]*\)\.dep$$,\1,'`; \
@@ -65,7 +67,7 @@ rebuild-libs:
 
 $(XAPP): $(XOBJ) $(XLIBDEP)
 	@-$(RM) .$(XAPP).stamp
-	$(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(APP_LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP) $(LINK_FILTER)
+	$(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(APP_LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(XAPP_LIBS) @f_outexe@$(XAPP) $(LINK_FILTER)
 	$(STRIP) $(XAPP)
 	$(POST_LINK) $(XAPP)
 	@if [ '$(BINCOPY)' != '@:' -a -d $(bindir) -a -w $(bindir) -a $(srcdir) != . ]; then \

@@ -202,6 +202,9 @@ LDFLAGS_DLL     = $(LDFLAGS)
 
 # Alternate DLL_LIB setting to use when configured --with-dll.
 DLL_DLIB = $(DLL_LIB)
+# Alternate LIB and LIBS settings to use when configured --without-dll.
+STATIC_LIB = $(LIB)
+STATIC_LIBS = $(LIBS)
 
 ### To enable extra, potentially unsafe, optimization, use these flags
 ### INSTEAD of $(ORIG_*FLAGS).
