@@ -5458,11 +5458,21 @@ fi
 
 ## `dbapi' projects
 
+DBAPI_CTLIB=
+DBAPI_DBLIB=
+DBAPI_MYSQL=
+DBAPI_ODBC=
+DBAPI_SQLITE3=
 if test "$with_dbapi" = "no" ; then
    dbapi=
 else
    NCBI_PROJECT(dbapi)
    dbapi="dbapi"
+   test -n "$SYBASE_LIBS"    &&  DBAPI_CTLIB=ncbi_xdbapi_ctlib
+   test -n "$SYBASE_DBLIBS"  &&  DBAPI_DBLIB=ncbi_xdbapi_dblib
+   test -n "$MYSQL_LIBS"     &&  DBAPI_MYSQL=ncbi_xdbapi_mysql
+   test -n "$ODBC_LIBS"      &&  DBAPI_ODBC=ncbi_xdbapi_odbc
+   test -n "$SQLITE3_LIBS"   &&  DBAPI_SQLITE3=ncbi_xdbapi_sqlite3
 fi
 
 
@@ -5802,6 +5812,11 @@ AC_SUBST(f_outexe)
 
 AC_SUBST(BDB_LIB)
 AC_SUBST(BDB_CACHE_LIB)
+AC_SUBST(DBAPI_CTLIB)
+AC_SUBST(DBAPI_DBLIB)
+AC_SUBST(DBAPI_MYSQL)
+AC_SUBST(DBAPI_ODBC)
+AC_SUBST(DBAPI_SQLITE3)
 
 AC_SUBST(THREAD_LIBS)
 AC_SUBST(NCBIATOMIC_LIB)

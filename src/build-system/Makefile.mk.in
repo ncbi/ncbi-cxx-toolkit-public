@@ -287,6 +287,14 @@ XCONNEXT = @XCONNEXT@
 BDB_LIB       = @BDB_LIB@
 BDB_CACHE_LIB = @BDB_CACHE_LIB@
 
+# Possibly absent DBAPI drivers (depending on whether the relevant
+# 3rd-party libraries are present)
+DBAPI_CTLIB   = @DBAPI_CTLIB@
+DBAPI_DBLIB   = @DBAPI_DBLIB@
+DBAPI_MYSQL   = @DBAPI_MYSQL@
+DBAPI_SQLITE3 = @DBAPI_SQLITE3@
+DBAPI_ODBC    = @DBAPI_ODBC@
+
 # Compression libraries; the LIBS version goes in LIBS, and the LIB
 # version goes in LIB.
 Z_INCLUDE   = @Z_INCLUDE@
