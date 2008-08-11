@@ -81,7 +81,8 @@ static bool s_NoNameSubtype(CSubSource::TSubtype val)
     if (val == CSubSource::eSubtype_germline    ||
         val == CSubSource::eSubtype_rearranged  ||
         val == CSubSource::eSubtype_transgenic  ||
-        val == CSubSource::eSubtype_environmental_sample) {
+        val == CSubSource::eSubtype_environmental_sample  ||
+        val == CSubSource::eSubtype_metagenomic) {
         return true;
     }
     return false;
@@ -554,7 +555,7 @@ void CCleanup_imp::BasicCleanup(COrgName& on)
         COrgName::TMod::iterator it = mods.begin();
         while (it != mods.end() ) {
             BasicCleanup(**it);
-            if ((*it)->GetSubname().empty()) {
+            if ((! (*it)->IsSetSubname()) || (*it)->GetSubname().empty()) {
                 it = mods.erase(it);
             } else {
                 ++it;
@@ -1192,7 +1193,8 @@ void CCleanup_imp::x_ExtendedCleanSubSourceList (CBioSource &bs)
             if (subtype != CSubSource::eSubtype_germline
                 && subtype != CSubSource::eSubtype_rearranged
                 && subtype != CSubSource::eSubtype_transgenic
-                && subtype != CSubSource::eSubtype_environmental_sample) {
+                && subtype != CSubSource::eSubtype_environmental_sample
+                && subtype != CSubSource::eSubtype_metagenomic) {
                 CleanString((*it)->SetName());
                 if (!NStr::IsBlank((*it)->GetName())) {
                     tmp.push_back(*it);
