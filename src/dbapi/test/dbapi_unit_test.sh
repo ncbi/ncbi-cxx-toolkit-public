@@ -7,16 +7,7 @@ ulimit -n 1024 > /dev/null 2>&1
 # Declare drivers and servers
 driver_list="ctlib dblib ftds odbc ftds_odbc ftds_dblib ftds8" # mysql
 
-if echo $FEATURES | grep "\-connext" > /dev/null ; then
-	server_list="MSDEV1 CLEMENTI"
-
-	server_mssql2005="MSDEV1"
-else
-	server_list="MS_TEST SYB_TEST"
-	# "MSSQL67 THALBERG"
-
-	server_mssql2005="MS_TEST"
-fi
+server_list="mssql sybase"
 
 res_file="/tmp/dbapi_unit_test.sh.$$"
 trap 'rm -f $res_file' 1 2 15
