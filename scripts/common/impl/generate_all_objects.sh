@@ -50,6 +50,7 @@ if [ -f $splitdb_dir/Makefile.asntool ]; then
     if $force || [ ! -f $splitdb_dir/objPSSM.c ]; then
         top_srcdir=`pwd`
         builddir=`ls -dt $top_srcdir/*/build $top_srcdir/.??*/build | head -1`
+        [ -d "$builddir" ] || builddir=$NCBI/c++.metastable/Release/build
         (cd $splitdb_dir && ${MAKE-make} -f Makefile.asntool sources top_srcdir=$top_srcdir builddir=$builddir) || exit $?
     fi
 fi
