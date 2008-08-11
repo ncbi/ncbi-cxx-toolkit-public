@@ -60,6 +60,7 @@ public:
     void AddConfigureProject(const string& full_path, const CVisualStudioProject& prj);
     void AddBuildAllProject (const string& full_path, const CVisualStudioProject& prj);
     void AddAsnAllProject   (const string& full_path, const CVisualStudioProject& prj);
+    void AddLibsAllProject  (const string& full_path, const CVisualStudioProject& prj);
 
     void VerifyProjectDependencies(void);
     void SaveSolution(const string& file_path);
@@ -78,6 +79,7 @@ private:
     // BuildAll utility project
     TUtilityProject m_BuildAllProject; 
     TUtilityProject m_AsnAllProject; 
+    TUtilityProject m_LibsAllProject; 
     map<string, string> m_PathToName;
 
     class CPrjContext
@@ -123,6 +125,9 @@ private:
                                 CNcbiOfstream& ofs);
 
     void WriteAsnAllProject    (const TUtilityProject& project, 
+                                CNcbiOfstream& ofs);
+
+    void WriteLibsAllProject    (const TUtilityProject& project, 
                                 CNcbiOfstream& ofs);
 
     void WriteProjectConfigurations(CNcbiOfstream&     ofs, 

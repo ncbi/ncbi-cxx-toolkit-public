@@ -364,7 +364,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,5,3) );
+    SetVersion( CVersionInfo(1,5,4) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -676,6 +676,14 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     asn_all_prj_path += MSVC_PROJECT_FILE_EXT;
     SaveIfNewer(asn_all_prj_path, asn_all_xmlprj);
 
+    // LibAll utility project
+    CVisualStudioProject libs_all_xmlprj;
+    CreateUtilityProject("-LIBS-ALL-", *configurations, &libs_all_xmlprj);
+    string libs_all_prj_path = 
+        CDirEntry::ConcatPath(utility_projects_dir, "_LIBS_ALL_");
+    libs_all_prj_path += MSVC_PROJECT_FILE_EXT;
+    SaveIfNewer(libs_all_prj_path, libs_all_xmlprj);
+
     // Solution
     CMsvcSolutionGenerator sln_gen(*configurations);
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
@@ -689,6 +697,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
                                         configure_generator.GetVisualStudioProject(true));
         sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
         sln_gen.AddAsnAllProject(asn_all_prj_path, asn_all_xmlprj);
+        sln_gen.AddLibsAllProject(libs_all_prj_path, libs_all_xmlprj);
     }
     sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
     sln_gen.SaveSolution(m_Solution);
@@ -754,6 +763,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
     ofs << "# MTARGET=clean - to clean, or MTARGET=purge - to purge" << endl;
     ofs << "MTARGET =" << endl << endl;
     if (ofs.is_open()) {
+// all projects
         ofs << "all_projects =";
         ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
             if (p->second.m_MakeType == eMakeType_Excluded ||
@@ -768,6 +778,22 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         }
         ofs << endl << endl;
         ofs << "ptb_all :" << " $(all_projects)";
+        ofs << endl << endl;
+
+// all libs
+        ofs << "all_libraries =";
+        ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+            if (p->second.m_MakeType == eMakeType_Excluded ||
+                p->second.m_MakeType == eMakeType_ExcludedByReq) {
+                continue;
+            }
+            if (p->first.Type() == CProjKey::eLib ||
+                p->first.Type() == CProjKey::eDll) {
+                ofs << " \\" <<endl << "    " << CreateProjectName(p->first);
+            }
+        }
+        ofs << endl << endl;
+        ofs << "all_libs :" << " $(all_libraries)";
         ofs << endl << endl;
 
         ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
