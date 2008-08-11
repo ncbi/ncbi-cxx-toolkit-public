@@ -265,7 +265,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
 
-    SetServerType(CalculateServerType(params));
+    SetServerType(CalculateServerType(params.GetServerType()));
 }
 
 

@@ -135,7 +135,7 @@ CTDS_Connection::CTDS_Connection(CTDSContext& cntx,
     CheckFunctCall();
 
 
-    SetServerType(CalculateServerType(params));
+    SetServerType(CalculateServerType(params.GetServerType()));
 }
 
 

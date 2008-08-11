@@ -149,10 +149,8 @@ void CConnection::MarkClosed(void)
 
 
 CDBConnParams::EServerType 
-CConnection::CalculateServerType(const CDBConnParams& params)
+CConnection::CalculateServerType(CDBConnParams::EServerType server_type)
 {
-    CDBConnParams::EServerType server_type = params.GetServerType();
-
     if (server_type == CDBConnParams::eUnknown) {
         CMsgHandlerGuard guard(*this);
 

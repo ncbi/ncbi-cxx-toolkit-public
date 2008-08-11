@@ -197,6 +197,9 @@ public:
     {
         return m_ServerType;
     }
+
+    //
+    CDBConnParams::EServerType CalculateServerType(CDBConnParams::EServerType server_type);
     
 protected:
     /// These methods to allow the children of CConnection to create
@@ -236,9 +239,6 @@ protected:
 
     void CheckCanOpen(void);
     void MarkClosed(void);
-
-    //
-    CDBConnParams::EServerType CalculateServerType(const CDBConnParams& params);
 
     //
     bool IsBCPable(void) const

@@ -365,198 +365,225 @@ CRowInfo_SP_SQL_Server::~CRowInfo_SP_SQL_Server(void)
 void 
 CRowInfo_SP_SQL_Server::Initialize(void) const
 {
-    const CDBConnParams::EServerType server_type = GetCConnection().GetServerType();
+	impl::CConnection& conn = GetCConnection();
+	unsigned int step = 0;
+    CDBConnParams::EServerType server_type = conn.GetServerType();
 
-    if (server_type == CDBConnParams::eSybaseSQLServer
-        || server_type == CDBConnParams::eMSSqlServer) 
-    {
-        string sql; 
-        string db_name;
-        string db_owner;
-        string sp_name;
-        auto_ptr<CDB_LangCmd> cmd;
+	if (server_type == CDBConnParams::eUnknown) {
+		server_type = conn.CalculateServerType(server_type);
+		++step;
+	}
 
-        {
-            vector<string> arr_param;
+	while (step++ < 3) {
+		if (server_type == CDBConnParams::eSybaseSQLServer
+            || server_type == CDBConnParams::eMSSqlServer) 
+		{
+			string sql; 
+			string db_name;
+			string db_owner;
+			string sp_name;
+			auto_ptr<CDB_LangCmd> cmd;
 
-            NStr::Tokenize(GetSPName(), ".", arr_param);
-            size_t pos = 0;
+			{
+				vector<string> arr_param;
 
-            switch (arr_param.size()) {
-                case 3:
-                    db_name = arr_param[pos++];
-                case 2:
-                    db_owner = arr_param[pos++];
-                case 1:
-                    sp_name = arr_param[pos++];
-                    break;
-                default:
-                    DATABASE_DRIVER_ERROR("Invalid format of stored procedure's name: " + GetSPName(), 1);
-            }
-        }
+				NStr::Tokenize(GetSPName(), ".", arr_param);
+				size_t pos = 0;
 
-        if (db_name.empty()) {
-            sql = 
-                "SELECT '' from sysobjects WHERE name = @name \n"
-                "UNION \n"
-                "SELECT 'master' from master..sysobjects WHERE name = @name \n"
-                ;
+				switch (arr_param.size()) {
+                    case 3:
+                        db_name = arr_param[pos++];
+                    case 2:
+                        db_owner = arr_param[pos++];
+                    case 1:
+                        sp_name = arr_param[pos++];
+                        break;
+                    default:
+                        DATABASE_DRIVER_ERROR("Invalid format of stored procedure's name: " + GetSPName(), 1);
+				}
+			}
 
-            if (server_type == CDBConnParams::eSybaseSQLServer) {
-                sql +=
+			if (db_name.empty()) {
+				sql = 
+                    "SELECT '' from sysobjects WHERE name = @name \n"
                     "UNION \n"
-                    "SELECT 'sybsystemprocs' from sybsystemprocs..sysobjects WHERE name = @name \n"
-                    "UNION \n"
-                    "SELECT 'sybsystemdb' from sybsystemdb..sysobjects WHERE name = @name"
+                    "SELECT 'master' from master..sysobjects WHERE name = @name \n"
                     ;
-            }
 
-            CMsgHandlerGuard guard(GetCConnection());
-            cmd.reset(GetCConnection().LangCmd(sql));
-            CDB_VarChar sp_name_value(sp_name);
+				if (server_type == CDBConnParams::eSybaseSQLServer) {
+                    sql +=
+                        "UNION \n"
+						"SELECT 'sybsystemprocs' from sybsystemprocs..sysobjects WHERE name = @name \n"
+						"UNION \n"
+						"SELECT 'sybsystemdb' from sybsystemdb..sysobjects WHERE name = @name"
+						;
+				}
 
-            try {
-                cmd->GetBindParams().Bind("@name", &sp_name_value);
+				CMsgHandlerGuard guard(conn);
+				cmd.reset(conn.LangCmd(sql));
+				CDB_VarChar sp_name_value(sp_name);
+
+				try {
+                    cmd->GetBindParams().Bind("@name", &sp_name_value);
+                    cmd->Send();
+
+                    while (cmd->HasMoreResults()) {
+                        auto_ptr<CDB_Result> res(cmd->Result());
+
+                        if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
+                            CDB_VarChar db_name_value;
+
+                            while (res->Fetch()) {
+                                res->GetItem(&db_name_value);
+
+                                if (!db_name_value.IsNULL()) {
+                                    db_name = db_name_value.Value();
+                                }
+                            }
+                        }
+                    }
+				} catch (const CDB_Exception&) {
+                    // Something is wrong. Probably we do not have enough permissios.
+                    // We assume that the object is located in the current database. What
+                    // else can we do?
+
+                    // Probably, this method was supplied with a wrong
+                    // server_type value;
+                    if (step < 2) {
+                        server_type = conn.CalculateServerType(server_type);
+                        ++step;
+                        continue;
+                    }
+				}
+			}
+
+			// auto_ptr<CDB_RPCCmd> sp(conn.RPC("sp_sproc_columns"));
+			// We cannot use CDB_RPCCmd here because of recursion ...
+			sql = "exec " + db_name + "." + db_owner + ".sp_sproc_columns @procedure_name";
+			cmd.reset(conn.LangCmd(sql));
+			CDB_VarChar name_value(sp_name);
+
+			try {
+                cmd->GetBindParams().Bind("@procedure_name", &name_value);
                 cmd->Send();
 
                 while (cmd->HasMoreResults()) {
                     auto_ptr<CDB_Result> res(cmd->Result());
 
                     if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
-                        CDB_VarChar db_name_value;
+                        CDB_VarChar column_name;
+                        CDB_SmallInt column_type;
+                        CDB_SmallInt data_type;
+                        CDB_Int data_len = 0;
 
                         while (res->Fetch()) {
-                            res->GetItem(&db_name_value);
+                            res->SkipItem();
+                            res->SkipItem();
+                            res->SkipItem();
+                            res->GetItem(&column_name);
+                            res->GetItem(&column_type);
+                            res->GetItem(&data_type);
+                            res->SkipItem();
+                            res->SkipItem();
+                            res->GetItem(&data_len);
 
-                            if (!db_name_value.IsNULL()) {
-                                db_name = db_name_value.Value();
+                            // Decode data_type
+                            EDB_Type edb_data_type(eDB_UnsupportedType);
+                            switch (data_type.Value()) {
+                                case SQL_LONGVARCHAR:
+                                    edb_data_type = eDB_VarChar;
+                                    break;
+                                case SQL_BINARY:
+                                    edb_data_type = eDB_Binary;
+                                    break;
+                                case SQL_VARBINARY:
+                                    edb_data_type = eDB_VarBinary;
+                                    break;
+                                case SQL_LONGVARBINARY:
+                                    edb_data_type = eDB_Binary;
+                                    break;
+                                case SQL_BIGINT:
+                                    edb_data_type = eDB_BigInt;
+                                    break;
+                                case SQL_TINYINT:
+                                    edb_data_type = eDB_TinyInt;
+                                    break;
+                                case SQL_BIT:
+                                    edb_data_type = eDB_Bit;
+                                    break;
+                                    // case SQL_GUID:
+                                case -9:
+                                    edb_data_type = eDB_VarChar;
+                                    break;
+                                case SQL_CHAR:
+                                    edb_data_type = eDB_Char;
+                                    break;
+                                case SQL_NUMERIC:
+                                case SQL_DECIMAL:
+                                    edb_data_type = eDB_Numeric;
+                                    break;
+                                case SQL_INTEGER:
+                                    edb_data_type = eDB_Int;
+                                    break;
+                                case SQL_SMALLINT:
+                                    edb_data_type = eDB_SmallInt;
+                                    break;
+                                case SQL_FLOAT:
+                                case SQL_REAL:
+                                    edb_data_type = eDB_Float;
+                                    break;
+                                case SQL_DOUBLE:
+                                    edb_data_type = eDB_Double;
+                                    break;
+                                case SQL_DATETIME:
+                                case SQL_TIME:
+                                case SQL_TIMESTAMP:
+                                    edb_data_type = eDB_DateTime;
+                                    break;
+                                case SQL_VARCHAR:
+                                    edb_data_type = eDB_VarChar;
+                                    break;
+
+                                    // case SQL_TYPE_DATE:
+                                    // case SQL_TYPE_TIME:
+                                    // case SQL_TYPE_TIMESTAMP:
+                                default:
+                                    edb_data_type = eDB_UnsupportedType;
                             }
+
+                            EDirection direction = CDBParams::eIn;
+
+                            if (column_type.Value() == 2 /*SQL_PARAM_TYPE_OUTPUT*/ ||
+                                    column_type.Value() == 4 /*SQL_PARAM_OUTPUT*/ ||
+                                    column_type.Value() == 5 /*SQL_RETURN_VALUE*/ ) 
+                            {
+                                direction = CDBParams::eOut;
+                            }
+
+                            Add(column_name.Value(),
+                                    size_t(data_len.Value()),
+                                    edb_data_type,
+                                    direction
+                               );
                         }
-                    }
+                    } // if ...
+                } // while HasMoreresults ...
+
+                // Break the loop, Everything seems to be fine. ...
+                break;
+			} catch (const CDB_Exception&) {
+                // Something is wrong ...
+                // We may not have permissions to run stored procedures ...
+
+                // Probably, this method was supplied with a wrong
+                // server_type value;
+                if (step < 2) {
+                    server_type = conn.CalculateServerType(server_type);
+                    ++step;
                 }
-            } catch (const CDB_Exception&) {
-                // Something is wrong. Probably we do not have enough permissios.
-                // We assume that the object is located in the current database. What
-                // else can we do?
-            }
-        }
-
-        // auto_ptr<CDB_RPCCmd> sp(conn.RPC("sp_sproc_columns"));
-        // We cannot use CDB_RPCCmd here because of recursion ...
-        sql = "exec " + db_name + "." + db_owner + ".sp_sproc_columns @procedure_name";
-        cmd.reset(GetCConnection().LangCmd(sql));
-        CDB_VarChar name_value(sp_name);
-
-        try {
-            cmd->GetBindParams().Bind("@procedure_name", &name_value);
-            cmd->Send();
-
-            while (cmd->HasMoreResults()) {
-                auto_ptr<CDB_Result> res(cmd->Result());
-
-                if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
-                    CDB_VarChar column_name;
-                    CDB_SmallInt column_type;
-                    CDB_SmallInt data_type;
-                    CDB_Int data_len = 0;
-
-                    while (res->Fetch()) {
-                        res->SkipItem();
-                        res->SkipItem();
-                        res->SkipItem();
-                        res->GetItem(&column_name);
-                        res->GetItem(&column_type);
-                        res->GetItem(&data_type);
-                        res->SkipItem();
-                        res->SkipItem();
-                        res->GetItem(&data_len);
-
-                        // Decode data_type
-                        EDB_Type edb_data_type(eDB_UnsupportedType);
-                        switch (data_type.Value()) {
-                            case SQL_LONGVARCHAR:
-                                edb_data_type = eDB_VarChar;
-                                break;
-                            case SQL_BINARY:
-                                edb_data_type = eDB_Binary;
-                                break;
-                            case SQL_VARBINARY:
-                                edb_data_type = eDB_VarBinary;
-                                break;
-                            case SQL_LONGVARBINARY:
-                                edb_data_type = eDB_Binary;
-                                break;
-                            case SQL_BIGINT:
-                                edb_data_type = eDB_BigInt;
-                                break;
-                            case SQL_TINYINT:
-                                edb_data_type = eDB_TinyInt;
-                                break;
-                            case SQL_BIT:
-                                edb_data_type = eDB_Bit;
-                                break;
-                                // case SQL_GUID:
-                            case -9:
-                                edb_data_type = eDB_VarChar;
-                                break;
-                            case SQL_CHAR:
-                                edb_data_type = eDB_Char;
-                                break;
-                            case SQL_NUMERIC:
-                            case SQL_DECIMAL:
-                                edb_data_type = eDB_Numeric;
-                                break;
-                            case SQL_INTEGER:
-                                edb_data_type = eDB_Int;
-                                break;
-                            case SQL_SMALLINT:
-                                edb_data_type = eDB_SmallInt;
-                                break;
-                            case SQL_FLOAT:
-                            case SQL_REAL:
-                                edb_data_type = eDB_Float;
-                                break;
-                            case SQL_DOUBLE:
-                                edb_data_type = eDB_Double;
-                                break;
-                            case SQL_DATETIME:
-                            case SQL_TIME:
-                            case SQL_TIMESTAMP:
-                                edb_data_type = eDB_DateTime;
-                                break;
-                            case SQL_VARCHAR:
-                                edb_data_type = eDB_VarChar;
-                                break;
-
-                                // case SQL_TYPE_DATE:
-                                // case SQL_TYPE_TIME:
-                                // case SQL_TYPE_TIMESTAMP:
-                            default:
-                                edb_data_type = eDB_UnsupportedType;
-                        }
-
-                        EDirection direction = CDBParams::eIn;
-
-                        if (column_type.Value() == 2 /*SQL_PARAM_TYPE_OUTPUT*/ ||
-                            column_type.Value() == 4 /*SQL_PARAM_OUTPUT*/ ||
-                            column_type.Value() == 5 /*SQL_RETURN_VALUE*/ ) 
-                        {
-                            direction = CDBParams::eOut;
-                        }
-
-                        Add(column_name.Value(),
-                                size_t(data_len.Value()),
-                                edb_data_type,
-                                direction
-                           );
-                    }
-                } // if ...
-            } // while HasMoreresults ...
-        } catch (const CDB_Exception&) {
-            // Something is wrong ...
-            // We may not have permissions to run stored procedures ...
-        }
-    } // if server_type
+			}
+		} // if server_type
+	}
 
     SetInitialized();
 }

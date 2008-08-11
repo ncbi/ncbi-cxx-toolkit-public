@@ -175,7 +175,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
     CheckFunctCall();
 
-    SetServerType(CalculateServerType(params));
+    SetServerType(CalculateServerType(params.GetServerType()));
 }
 
 
