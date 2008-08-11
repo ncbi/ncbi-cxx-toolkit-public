@@ -4,8 +4,16 @@ corelib/impl$
 util$
 util/bitset$
 util/regexp$
+util/cache$
+util/sequtil$
+util/math$
 serial$
 serial/impl$
 serial/datatool
 objects
+connect$
+connect/ext$
+cgi$
+cgi/impl$
+html$
 internal/cppcore/seqfetch_cgi
