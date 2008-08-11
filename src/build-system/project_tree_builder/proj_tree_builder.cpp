@@ -722,6 +722,13 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     //depends
     list<string> depends;
     k = makefile.m_Contents.find("LIB");
+    if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
+        CSimpleMakeFileContents::TContents::const_iterator tmp_k =
+            makefile.m_Contents.find("STATIC_LIB");
+        if (tmp_k != makefile.m_Contents.end()) {
+            k = tmp_k;
+        }
+    }
     if (k != makefile.m_Contents.end()) {
 //        depends = k->second;
         ITERATE(list<string>, i, k->second) {
@@ -777,6 +784,13 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     //LIBS
     list<string> libs_3_party;
     k = makefile.m_Contents.find("LIBS");
+    if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
+        CSimpleMakeFileContents::TContents::const_iterator tmp_k =
+            makefile.m_Contents.find("STATIC_LIBS");
+        if (tmp_k != makefile.m_Contents.end()) {
+            k = tmp_k;
+        }
+    }
     if (k != makefile.m_Contents.end()) {
         const list<string> libs_flags = k->second;
         SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party);
@@ -983,6 +997,13 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
 
     //project name
     k = m->second.m_Contents.find("LIB");
+    if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
+        CSimpleMakeFileContents::TContents::const_iterator tmp_k =
+            m->second.m_Contents.find("STATIC_LIB");
+        if (tmp_k != m->second.m_Contents.end()) {
+            k = tmp_k;
+        }
+    }
     if (k == m->second.m_Contents.end()  ||  
                                            k->second.empty()) {
         if (GetApp().IsScanningWholeTree()) {
@@ -999,6 +1020,13 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     //LIBS
     list<string> libs_3_party;
     k = m->second.m_Contents.find("LIBS");
+    if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
+        CSimpleMakeFileContents::TContents::const_iterator tmp_k =
+            m->second.m_Contents.find("STATIC_LIBS");
+        if (tmp_k != m->second.m_Contents.end()) {
+            k = tmp_k;
+        }
+    }
     if (k != m->second.m_Contents.end()) {
         const list<string> libs_flags = k->second;
         SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party);
@@ -1946,6 +1974,10 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
         set<string> keys;
         keys.insert("LIB");
         keys.insert("LIBS");
+        if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
+            keys.insert("STATIC_LIB");
+            keys.insert("STATIC_LIBS");
+        }
         keys.insert("NCBI_C_LIBS");
         SMakeProjectT::DoResolveDefs(resolver, makefiles.m_App, keys);
     }}
@@ -1956,6 +1988,10 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
         set<string> keys;
         keys.insert("LIB");
         keys.insert("LIBS");
+        if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
+            keys.insert("STATIC_LIB");
+            keys.insert("STATIC_LIBS");
+        }
         keys.insert("SRC");
         keys.insert("DLL_LIB");
         SMakeProjectT::DoResolveDefs(resolver, makefiles.m_Lib, keys);
