@@ -131,6 +131,9 @@ void CStreamTestApp::Init()
     arg_desc->AddFlag( "compressed",
         "Input is compressed" );
 
+    arg_desc->AddFlag( "cleanup",
+        "BasicCleanup each record" );
+
     arg_desc->AddKey( "test", 
         "TestCase",
         "Mode for generation",

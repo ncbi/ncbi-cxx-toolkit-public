@@ -60,6 +60,8 @@ public:
         const CArgs& args )
     //  ------------------------------------------------------------------------
     {
+        CScopedProcess::ProcessInitialize( args );
+
         m_out = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
 
         string options = args["options"].AsString();

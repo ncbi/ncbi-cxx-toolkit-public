@@ -57,6 +57,8 @@ public:
         const CArgs& args )
     //  ------------------------------------------------------------------------
     {
+        CSeqEntryProcess::ProcessInitialize( args );
+
         m_out = new CFastaOstream( args["o"].AsOutputFile() );
     };
 

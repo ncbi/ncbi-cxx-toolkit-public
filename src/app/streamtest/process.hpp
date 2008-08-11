@@ -45,6 +45,7 @@ public:
     CSeqEntryProcess()
     //  ------------------------------------------------------------------------
         : m_objectcount( 0 )
+        , m_cleanup (false)
     {};
 
     //  ------------------------------------------------------------------------
@@ -54,9 +55,13 @@ public:
 
     //  ------------------------------------------------------------------------
     virtual void ProcessInitialize(
-        const CArgs& )
+        const CArgs& args )
     //  ------------------------------------------------------------------------
-    {};
+    {
+        if (args["cleanup"]) {
+            m_cleanup = true;
+        }
+    };
 
     //  ------------------------------------------------------------------------
     virtual void ProcessFinalize()
@@ -70,6 +75,11 @@ public:
     {
         m_entry.Reset( se );
         m_entry->Parentize();
+
+        if (m_cleanup) {
+            CCleanup cleanup;
+            cleanup.BasicCleanup( *m_entry );
+        }
     };
 
     //  ------------------------------------------------------------------------
@@ -89,7 +99,8 @@ public:
     };
 
 protected:
-    unsigned int m_objectcount;
+    unsigned int     m_objectcount;
+    bool             m_cleanup;
     CRef<CSeq_entry> m_entry;
 };
 
