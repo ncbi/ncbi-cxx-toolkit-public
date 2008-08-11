@@ -87,6 +87,23 @@ private:
     ETransBehavior  m_TransBehavior;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+class CUnitTestParams : public CDBConnParamsDelegate
+{
+public:
+    CUnitTestParams(const CDBConnParams& other);
+    virtual ~CUnitTestParams(void);
+
+public:
+    virtual string GetServerName(void) const;
+
+private:
+    // Non-copyable.
+    CUnitTestParams(const CUnitTestParams& other);
+    CUnitTestParams& operator =(const CUnitTestParams& other);
+};
+
+
 ///////////////////////////////////////////////////////////////////////////
 class CTestArguments : public CObject
 {
@@ -171,7 +188,8 @@ private:
     bool m_ReportExpected;
 
     CDBConnParamsBase m_ParamBase;
-    CCPPToolkitConnParams m_ConnParams;
+    CCPPToolkitConnParams m_CPPParams;
+    CUnitTestParams m_ConnParams;
 };
 
 

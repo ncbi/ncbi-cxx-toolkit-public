@@ -2042,12 +2042,45 @@ void CExprTestSuite::RegisterTests(TTestCase& test_case, TTestParent& test_paren
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+CUnitTestParams::CUnitTestParams(const CDBConnParams& other)
+: CDBConnParamsDelegate(other)
+{
+}
+
+CUnitTestParams::~CUnitTestParams(void)
+{
+}
+
+string CUnitTestParams::GetServerName(void) const
+{
+    const string server_name = CDBConnParamsDelegate::GetServerName();
+
+    if (NStr::CompareNocase(server_name, "MsSql") == 0) {
+#ifdef HAVE_LIBCONNEXT
+        return "MS_TEST";
+#else
+        return "MSDEV1";
+#endif
+    } else if (NStr::CompareNocase(server_name, "Sybase") == 0) {
+#ifdef HAVE_LIBCONNEXT
+        return "SYB_TEST";
+#else
+        return "CLEMENTI";
+#endif
+    }
+
+    return server_name;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 CTestArguments::CTestArguments(void)
 : m_TestConfiguration(eWithExceptions)
 , m_NumOfDisabled(0)
 , m_ReportDisabled(false)
 , m_ReportExpected(false)
-, m_ConnParams(m_ParamBase)
+, m_CPPParams(m_ParamBase)
+, m_ConnParams(m_CPPParams)
 {
     const CNcbiApplication* app = CNcbiApplication::Instance();
 
