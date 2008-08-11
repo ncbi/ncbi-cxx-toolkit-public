@@ -36,13 +36,13 @@
 //  ============================================================================
 class CDeflineProcess
 //  ============================================================================
-    : public CSeqEntryProcess
+    : public CScopedProcess
 {
 public:
     //  ------------------------------------------------------------------------
     CDeflineProcess()
     //  ------------------------------------------------------------------------
-        : CSeqEntryProcess()
+        : CScopedProcess()
         , m_out( 0 )
     {};
 
@@ -57,16 +57,21 @@ public:
         const CArgs& args )
     //  ------------------------------------------------------------------------
     {
-        CSeqEntryProcess::ProcessInitialize( args );
+        CScopedProcess::ProcessInitialize( args );
 
+        /*
         m_out = new CFastaOstream( args["o"].AsOutputFile() );
+        */
+        m_out = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
     };
 
     //  ------------------------------------------------------------------------
     void ProcessFinalize()
     //  ------------------------------------------------------------------------
     {
+        /*
         delete m_out;
+        */
     }
 
     //  ------------------------------------------------------------------------
@@ -74,8 +79,59 @@ public:
         CRef<CSeq_entry>& se )
     //  ------------------------------------------------------------------------
     {
-        CSeqEntryProcess::SeqEntryInitialize( se );
+        CScopedProcess::SeqEntryInitialize( se );
     };
+
+    //  ------------------------------------------------------------------------
+    void x_DeflineSeqIdWrite(const CBioseq& bioseq)
+    //  ------------------------------------------------------------------------
+    {
+        string gi_string;
+        string accn_string;
+
+        bool has_gi = false;
+        bool has_accn = false;
+
+        FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bioseq) {
+            const CSeq_id& sid = **sid_itr;
+            TSEQID_CHOICE chs = sid.Which();
+            switch (chs) {
+                case NCBI_SEQID(Gi):
+                {
+                    const string str = sid.AsFastaString();
+                    gi_string = str;
+                    BREAK(sid_itr);
+                }
+            }
+        }
+
+        FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bioseq) {
+            const CSeq_id& sid = **sid_itr;
+            TSEQID_CHOICE chs = sid.Which();
+            switch (chs) {
+                case NCBI_SEQID(Other):
+                case NCBI_SEQID(Genbank):
+                case NCBI_SEQID(Embl):
+                case NCBI_SEQID(Ddbj):
+                case NCBI_SEQID(Tpg):
+                case NCBI_SEQID(Tpe):
+                case NCBI_SEQID(Tpd):
+                {
+                    const string str = sid.AsFastaString();
+                    accn_string = str;
+                    BREAK(sid_itr);
+                }
+                 default:
+                   break;
+            }
+        }
+
+        if (gi_string.empty() || accn_string.empty()) {
+            CSeq_id::WriteAsFasta (*m_out, bioseq);
+        } else {
+            *m_out << gi_string << "|" << accn_string;
+        }
+    }
 
     //  ------------------------------------------------------------------------
     void SeqEntryProcess()
@@ -84,7 +140,16 @@ public:
         try {
             VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                 const CBioseq& bioseq = *bit;
+                // !!! NOTE CALL TO OBJECT MANAGER !!!
+                const CBioseq_Handle& hnd = m_scope->GetBioseqHandle (bioseq);
+                /*
                 m_out->WriteTitle( bioseq, 0, true );
+                */
+                string title = GetTitle (hnd, 0);
+                *m_out << ">";
+                x_DeflineSeqIdWrite (bioseq);
+                *m_out << " ";
+                *m_out << title << endl;
                 ++m_objectcount;
             }
         }
@@ -94,7 +159,10 @@ public:
     };
 
 protected:
+    /*
     CFastaOstream* m_out;
+    */
+    CNcbiOstream* m_out;
 };
 
 #endif
