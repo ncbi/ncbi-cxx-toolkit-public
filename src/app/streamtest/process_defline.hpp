@@ -44,6 +44,7 @@ public:
     //  ------------------------------------------------------------------------
         : CScopedProcess()
         , m_out( 0 )
+        , m_flags( 0 )
     {};
 
     //  ------------------------------------------------------------------------
@@ -63,6 +64,11 @@ public:
         m_out = new CFastaOstream( args["o"].AsOutputFile() );
         */
         m_out = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
+
+        string options = args["options"].AsString();
+        if ( options == "ignore_existing" ) {
+            m_flags |= fGetTitle_Reconstruct;
+        }
     };
 
     //  ------------------------------------------------------------------------
@@ -145,7 +151,7 @@ public:
                 /*
                 m_out->WriteTitle( bioseq, 0, true );
                 */
-                string title = GetTitle (hnd, 0);
+                string title = GetTitle (hnd, m_flags);
                 *m_out << ">";
                 x_DeflineSeqIdWrite (bioseq);
                 *m_out << " ";
@@ -163,6 +169,7 @@ protected:
     CFastaOstream* m_out;
     */
     CNcbiOstream* m_out;
+    TGetTitleFlags m_flags;
 };
 
 #endif
