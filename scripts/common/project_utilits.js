@@ -525,9 +525,9 @@ function CopyDlls(oShell, oTree, oTask)
         var configs = GetConfigs(oTask);
         for( var config_i = 0; config_i < configs.length; config_i++ ) {
             var config = configs[config_i];
-            var dlls_bin_path  = oTask.ToolkitPath + "\\" + config;
+            var dlls_bin_path  = oTask.ToolkitPath + "\\lib\\dll\\" + config;
             if (!oFso.FolderExists(dlls_bin_path)) {
-                dlls_bin_path  = oTask.ToolkitPath + "\\lib\\dll\\" + config;
+                dlls_bin_path  = oTask.ToolkitPath + "\\" + config;
             }
             var local_bin_path = oTree.BinPathDll  + "\\" + config;
 
