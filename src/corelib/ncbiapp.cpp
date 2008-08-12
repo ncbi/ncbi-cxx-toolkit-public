@@ -300,6 +300,12 @@ int CNcbiApplication::AppMain
     s_MacArgMunging(*this, &argc, &argv, exepath);
 #endif
 
+    // Preparse command line
+    if (PreparseArgs(argc, argv) == ePreparse_Exit) {
+        GetDiagContext().DiscardMessages();
+        return 0;
+    }
+
     // Check command line for presence special arguments
     // "-logfile", "-conffile", "-version"
     bool is_diag_setup = false;
@@ -704,6 +710,14 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg,
                                   const string*  conf)
 {
     return LoadConfig(reg, conf, IRegistry::fWithNcbirc);
+}
+
+
+CNcbiApplication::EPreparseArgs
+CNcbiApplication::PreparseArgs(int                /*argc*/,
+                               const char* const* /*argv*/)
+{
+    return ePreparse_Continue;
 }
 
 

@@ -295,6 +295,17 @@ public:
     NCBI_DEPRECATED virtual bool SetupDiag_AppSpecific(void);
 
 protected:
+    /// Result of PreparseArgs()
+    enum EPreparseArgs {
+        ePreparse_Continue,  ///< Continue application execution
+        ePreparse_Exit       ///< Exit the application with zero exit code
+    };
+
+    /// Check the command line arguments before parsing them.
+    /// @sa EPreparseArgs
+    virtual EPreparseArgs PreparseArgs(int                argc,
+                                       const char* const* argv);
+
     /// Disable argument descriptions.
     ///
     /// Call with a bit flag set if you do not want std AND user

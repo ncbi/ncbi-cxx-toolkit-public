@@ -154,6 +154,13 @@ private:
     CCgiRequest* GetSavedRequest(const string& rid);
 
 protected:
+    /// Check the command line arguments before parsing them.
+    /// If '-version' or '-version-full' is the only argument,
+    /// print the version and exit (return ePreparse_Exit). Otherwise
+    /// return ePreparse_Continue for normal execution.
+    virtual EPreparseArgs PreparseArgs(int                argc,
+                                       const char* const* argv);
+
     void SetRequestId(const string& rid, bool is_done);
 
     /// This method is called if an exception is thrown during the processing

@@ -882,6 +882,32 @@ ICache* CCgiApplication::GetCacheStorage() const
     return NULL;
 }
 
+
+CCgiApplication::EPreparseArgs
+CCgiApplication::PreparseArgs(int                argc,
+                              const char* const* argv)
+{
+    static const char* s_ArgVersion = "-version";
+    static const char* s_ArgFullVersion = "-version-full";
+
+    if (argc != 2  ||  !argv[1]) {
+        return ePreparse_Continue;
+    }
+    if ( NStr::strcmp(argv[1], s_ArgVersion) == 0 ) {
+        // Print VERSION
+        cout << GetFullVersion().Print(GetProgramDisplayName(),
+            CVersion::fVersionInfo | CVersion::fPackageShort);
+        return ePreparse_Exit;
+    }
+    else if ( NStr::strcmp(argv[1], s_ArgFullVersion) == 0 ) {
+        // Print full VERSION
+        cout << GetFullVersion().Print(GetProgramDisplayName());
+        return ePreparse_Exit;
+    }
+    return ePreparse_Continue;
+}
+
+
 void CCgiApplication::SetRequestId(const string& rid, bool is_done)
 {
     m_RID = rid;
