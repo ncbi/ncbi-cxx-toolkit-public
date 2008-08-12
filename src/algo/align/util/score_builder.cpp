@@ -149,50 +149,6 @@ CScoreBuilder::~CScoreBuilder()
     m_ScoreBlk = BlastScoreBlkFree(m_ScoreBlk);
 }
 
-
-///
-/// calculate the number of gaps in our alignment
-///
-static int s_GetGapCount(const CSeq_align& align)
-{
-    int gap_count = 0;
-    switch (align.GetSegs().Which()) {
-    case CSeq_align::TSegs::e_Denseg:
-        {{
-            const CDense_seg& ds = align.GetSegs().GetDenseg();
-            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
-                bool is_gapped = false;
-                for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
-                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
-                        is_gapped = true;
-                        break;
-                    }
-                }
-                if (is_gapped) {
-                    ++gap_count;
-                }
-            }
-        }}
-        break;
-
-    case CSeq_align::TSegs::e_Disc:
-        {{
-            ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter, align.GetSegs().GetDisc().Get()) {
-                gap_count += s_GetGapCount(**iter);
-            }
-        }}
-        break;
-
-    case CSeq_align::TSegs::e_Std:
-        break;
-
-    default:
-        break;
-    }
-
-    return gap_count;
-}
-
 ///
 /// calculate the length of all gap segments
 ///
@@ -412,7 +368,7 @@ int CScoreBuilder::GetMismatchCount(CScope& scope, const CSeq_align& align)
 
 int CScoreBuilder::GetGapCount(const CSeq_align& align)
 {
-    return s_GetGapCount(align);
+    return align.GetNumGapOpenings();
 }
 
 
