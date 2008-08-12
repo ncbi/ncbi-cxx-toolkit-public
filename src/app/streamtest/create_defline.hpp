@@ -1037,6 +1037,8 @@ string CDeflineGenerator::x_TitleFromProtein (void)
     // strip trailing periods, commas, and spaces
     while (NStr::EndsWith (result, ".") ||
                NStr::EndsWith (result, ",") ||
+               NStr::EndsWith (result, ";") ||
+               NStr::EndsWith (result, "~") ||
                NStr::EndsWith (result, " ")) {
         result.erase (result.end() - 1);
     }
@@ -1325,6 +1327,7 @@ string CDeflineGenerator::GenerateDefline (
                 while (NStr::EndsWith (title, ".") ||
                            NStr::EndsWith (title, ",") ||
                            NStr::EndsWith (title, ";") ||
+                           NStr::EndsWith (title, "~") ||
                            NStr::EndsWith (title, " ")) {
                     title.erase (title.end() - 1);
                 }
@@ -1391,6 +1394,7 @@ string CDeflineGenerator::GenerateDefline (
     // strip trailing commas, semicolons, and spaces (period may be an sp. species)
     while (NStr::EndsWith (title, ",") ||
                NStr::EndsWith (title, ";") ||
+               NStr::EndsWith (title, "~") ||
                NStr::EndsWith (title, " ")) {
         title.erase (title.end() - 1);
     }
