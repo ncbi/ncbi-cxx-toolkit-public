@@ -20,3 +20,4 @@ APP: seqfetch.cgi
 # --with-distcc, --with-action etc.
 
 Linux64    : plain : GCC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
+Linux32    : plain : GCC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
