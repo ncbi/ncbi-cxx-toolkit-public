@@ -28,24 +28,24 @@ POSTBUILD: echo FAKE postbuild COMMAND for $platform
 
 
 
-Linux32    : plain     : ICC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
-Linux32    : plain     : GCC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
+Linux32    : plain     : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux32    : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-Linux64    : plain     : ICC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
-Linux64    : plain     : GCC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
+Linux64    : plain     : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux64    : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-FreeBSD32  : plain     : GCC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
+FreeBSD32  : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-SunOSx86   : plain     : GCC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
-SunOSx86   : plain     : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
-SunOSx86   : plain     : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
+SunOSx86   : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSx86   : plain     : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSx86   : plain     : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-SunOSSparc : plain     : WorkShop55.sh 64 --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
-SunOSSparc : plain     : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
-SunOSSparc : plain     : GCC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
+SunOSSparc : plain     : WorkShop55.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSSparc : plain     : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSSparc : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-PowerMAC   : plain     : GCC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile
-PowerMAC   : universal : GCC.sh           --without-debug --without-mt --with-static --without-version --without-runpath --with-flat-makefile --with-universal
+PowerMAC   : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+PowerMAC   : universal : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-universal
 
 Win32      : plain32   : msvc800_prj  static  32  ReleaseDLL
 Test       : plain32   : msvc800_prj  static  32  ReleaseDLL
