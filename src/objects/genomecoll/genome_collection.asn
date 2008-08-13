@@ -87,6 +87,11 @@ GC-Assembly ::= SEQUENCE
     -- unplaced bits for this asssembly
     unplaced SET OF GC-Sequence OPTIONAL, 
     
+    -- Lower level sequences that compose this assembly
+    -- in case we want all components, without their structure as scaffolds
+    bits SET OF GC-Sequence OPTIONAL,
+
+    bits-count INTEGER OPTIONAL,    -- Count # of lowest level components
     -- statistics
     stats GC-SequenceStats OPTIONAL
 }
@@ -151,9 +156,9 @@ GC-Sequence ::= SEQUENCE {
     -- [Note: Not populated at scaffold level]
     bits SET OF GC-Sequence OPTIONAL,
 
+    bits-count INTEGER OPTIONAL,    -- Count # of lowest level components
     -- statistics
     stats GC-SequenceStats OPTIONAL
-
 }
 
 -- Stats of complex objects
@@ -168,6 +173,7 @@ GC-SequenceStats ::= SEQUENCE {
 -- All stats for one type of data
 -- Can be at any level. Even a single scaffold might have stats.
 Scaf-stats ::= SEQUENCE {
+  count INTEGER OPTIONAL, -- How many scaffolds
   length SEQUENCE {
     total-length INTEGER,
     ungapped-length INTEGER
@@ -194,11 +200,6 @@ Scaf-stats ::= SEQUENCE {
   gap-closure SEQUENCE {
     spanned-gaps INTEGER,
     unspanned-gaps INTEGER
-  } OPTIONAL,
-  counts SEQUENCE {
-    ordered-seqs INTEGER,
-    unlocalized-seqs INTEGER,
-    unplaced-seqs INTEGER
   } OPTIONAL
 }
 
