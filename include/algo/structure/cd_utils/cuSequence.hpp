@@ -113,6 +113,41 @@ NCBI_CDUTILS_EXPORT
 bool GetPDBBlockFromSeqEntry(CRef< CSeq_entry > seqEntry, CRef< CPDB_block >& pdbBlock);
 NCBI_CDUTILS_EXPORT 
 bool checkAndFixPdbBioseq(CRef< CBioseq > bioseq);
+
+//  Return 'false' if the bioseq doesn't have a gi-typed seq-id.
+//  Last arg tells which id to use if there are multiple gis.
+NCBI_CDUTILS_EXPORT 
+bool ExtractGi(const CRef<CBioseq>& bioseq, unsigned int& gi, unsigned int nth = 1);
+NCBI_CDUTILS_EXPORT 
+bool CopyGiSeqId(const CRef<CBioseq>& bioseq, CRef<CSeq_id>& giSeqId, unsigned int nth = 1);
+
+//  Return 'false' if the bioseq doesn't have a pdb-typed seq-id.
+//  Last arg tells which id to use if there are multiple pdbs.
+NCBI_CDUTILS_EXPORT 
+bool ExtractPdbMolChain(const CRef<CBioseq>& bioseq, string& pdbMol, string& pdbChain, unsigned int nth = 1);
+NCBI_CDUTILS_EXPORT 
+bool CopyPdbSeqId(const CRef<CBioseq>& bioseq, CRef<CSeq_id>& pdbSeqId, unsigned int nth = 1);
+
+//  Returns number of ids of the requested type found.
+//  Returned CSeq_id objects are copies of those found in the bioseq/seqEntry.
+NCBI_CDUTILS_EXPORT 
+unsigned int CopySeqIdsOfType(const CBioseq& bioseq, CSeq_id::E_Choice choice, list< CRef< CSeq_id > >& idsOfType);
+NCBI_CDUTILS_EXPORT 
+unsigned int CopySeqIdsOfType(const CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice choice, list< CRef< CSeq_id > >& idsOfType);
+
+//  Return 'false' if the seqEntry doesn't have a bioseq containing a seq-id of the requested type.
+//  Returned CBioseq object is a copy of that found in the bioseq/seqEntry.
+NCBI_CDUTILS_EXPORT 
+bool CopyBioseqWithType(const CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice choice, CRef< CBioseq >& seqEntryBioseq) ;
+
+//  Return 'false' if the seqEntry doesn't have a bioseq containing a seq-id of the requested type.
+//  Returned CBioseq object is an editable reference to the one in the CSeq_entry passed in.
+NCBI_CDUTILS_EXPORT 
+bool GetBioseqWithType(CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice choice, CRef< CBioseq >& seqEntryBioseq) ;
+
+
+
+
 END_SCOPE(cd_utils) // namespace ncbi::objects::
 
 END_NCBI_SCOPE

@@ -503,5 +503,185 @@ bool checkAndFixPdbBioseq(CRef< CBioseq > bioseq)
 	return false;
 }
 
+bool CopyGiSeqId(const CRef<CBioseq>& bioseq, CRef<CSeq_id>& giSeqId, unsigned int nth)
+{
+    bool result = false;
+    unsigned int ctr = 0;
+    CBioseq::TId::const_iterator idCit, idEnd;
+
+    idEnd = bioseq->GetId().end();
+    for (idCit = bioseq->GetId().begin(); idCit != idEnd && ctr < nth; ++idCit) {
+        if ((*idCit).NotEmpty() && (*idCit)->IsGi()) {
+
+            //  Skip until hit the specified entry in the bioseq.
+            ++ctr;
+            if (ctr != nth) continue;
+            
+            giSeqId->Assign(**idCit);
+            result = true;
+        }
+    }
+    return result;
+}
+
+bool ExtractGi(const CRef<CBioseq>& bioseq, unsigned int& gi, unsigned int nth)
+{
+    bool result = false;
+    CRef< CSeq_id > giSeqId(new CSeq_id());
+
+    gi = 0;
+    if (CopyGiSeqId(bioseq, giSeqId, nth)) {
+        gi = (unsigned int) giSeqId->GetGi();
+        result = true;
+    }
+    return result;
+}
+
+//  Last arg tells which id to use if there are multiple pdbs - which there shouldn't be.
+bool CopyPdbSeqId(const CRef<CBioseq>& bioseq, CRef<CSeq_id>& pdbSeqId, unsigned int nth)
+{
+    bool result = false;
+    unsigned int ctr = 0;
+    CBioseq::TId::const_iterator idCit, idEnd;
+
+    idEnd = bioseq->GetId().end();
+    for (idCit = bioseq->GetId().begin(); idCit != idEnd && ctr < nth; ++idCit) {
+        if ((*idCit).NotEmpty() && (*idCit)->IsPdb()) {
+
+            //  Skip until hit the specified entry in the bioseq.
+            ++ctr;
+            if (ctr != nth) continue;
+            
+            pdbSeqId->Assign(**idCit);
+            result = true;
+        }
+    }
+    return result;
+}
+
+//  Last arg tells which id to use if there are multiple pdbs - which there shouldn't be.
+bool ExtractPdbMolChain(const CRef<CBioseq>& bioseq, string& pdbMol, string& pdbChain, unsigned int nth)
+{
+    bool result = false;
+    CRef< CSeq_id > pdbSeqId(new CSeq_id());
+
+    pdbMol = "";
+    pdbChain = "";
+    if (CopyPdbSeqId(bioseq, pdbSeqId, nth)) {
+        pdbMol = pdbSeqId->GetPdb().GetMol().Get();
+        if (pdbSeqId->GetPdb().IsSetChain()) {
+            pdbChain = string(1, pdbSeqId->GetPdb().GetChain());
+        }
+        result = true;
+    }
+    return result;
+}
+
+
+unsigned int CopySeqIdsOfType(const CBioseq& bioseq, CSeq_id::E_Choice choice, list< CRef< CSeq_id > >& idsOfType)
+{
+    CBioseq::TId::const_iterator idCit = bioseq.GetId().begin(), idEnd = bioseq.GetId().end();
+
+    idsOfType.clear();                    
+    for (; idCit != idEnd; ++idCit) {
+        if ((*idCit)->Which() == choice) {
+            CRef< CSeq_id > id(new CSeq_id);
+            id->Assign(**idCit);
+            idsOfType.push_back(id);
+        }
+    }
+    return idsOfType.size();
+}
+
+unsigned int CopySeqIdsOfType(const CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice choice, list< CRef< CSeq_id > >& idsOfType)
+{
+    list< CRef< CSeq_id > > tmpList;
+    CBioseq_set::TSeq_set::const_iterator bssCit, bssEnd;
+
+    idsOfType.clear();
+    if (seqEntry.NotEmpty()) {
+        if (seqEntry->IsSet()) {
+            bssCit = seqEntry->GetSet().GetSeq_set().begin();
+            bssEnd = seqEntry->GetSet().GetSeq_set().end();
+            for (; bssCit != bssEnd; ++bssCit) {
+                if ((*bssCit)->IsSeq()) {
+                    tmpList.clear();
+                    if (CopySeqIdsOfType((*bssCit)->GetSeq(), choice, tmpList) > 0) {
+                        idsOfType.insert(idsOfType.end(), tmpList.begin(), tmpList.end());
+                    }
+                }
+            }
+        } else if (seqEntry->IsSeq()) {
+            CopySeqIdsOfType(seqEntry->GetSeq(), choice, idsOfType);
+        }
+    }
+    return idsOfType.size();
+}
+
+
+bool CopyBioseqWithType(const CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice choice, CRef< CBioseq >& seqEntryBioseq) 
+{
+    bool result = false;
+    list< CRef< CSeq_id > > tmpList;
+    CBioseq_set::TSeq_set::const_iterator bssCit, bssEnd;
+
+    if (seqEntry.NotEmpty()) {
+        if (seqEntry->IsSet()) {
+
+            bssCit = seqEntry->GetSet().GetSeq_set().begin();
+            bssEnd = seqEntry->GetSet().GetSeq_set().end();
+            for (; bssCit != bssEnd && !result; ++bssCit) {
+                if ((*bssCit)->IsSeq()) {
+                    tmpList.clear();
+                    if (CopySeqIdsOfType((*bssCit)->GetSeq(), choice, tmpList) > 0) {
+                        seqEntryBioseq->Assign((*bssCit)->GetSeq());
+                        result = true;
+                    }
+                }
+            }
+
+        } else if (seqEntry->IsSeq()) {
+            if (CopySeqIdsOfType(seqEntry->GetSeq(), choice, tmpList) > 0) {
+                seqEntryBioseq->Assign(seqEntry->GetSeq());
+                result = true;
+            }
+        }
+    }
+
+    return result;
+}
+
+bool GetBioseqWithType(CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice choice, CRef< CBioseq >& seqEntryBioseq) 
+{
+    bool result = false;
+    list< CRef< CSeq_id > > tmpList;
+    CBioseq_set::TSeq_set::iterator bssIt, bssEnd;
+
+    if (seqEntry.NotEmpty()) {
+        if (seqEntry->IsSet()) {
+
+            bssIt = seqEntry->SetSet().SetSeq_set().begin();
+            bssEnd = seqEntry->SetSet().SetSeq_set().end();
+            for (; bssIt != bssEnd && !result; ++bssIt) {
+                if ((*bssIt)->IsSeq()) {
+                    tmpList.clear();
+                    if (CopySeqIdsOfType((*bssIt)->GetSeq(), choice, tmpList) > 0) {
+                        seqEntryBioseq = &(*bssIt)->SetSeq();
+                        result = true;
+                    }
+                }
+            }
+
+        } else if (seqEntry->IsSeq()) {
+            if (CopySeqIdsOfType(seqEntry->GetSeq(), choice, tmpList) > 0) {
+                seqEntryBioseq = &(seqEntry->SetSeq());
+                result = true;
+            }
+        }
+    }
+
+    return result;
+}
+
 END_SCOPE(cd_utils) // namespace ncbi::objects::
 END_NCBI_SCOPE
