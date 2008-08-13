@@ -287,13 +287,6 @@ void CObjectOStreamJson::WriteClassMember(const CMemberId& memberId,
                                           TTypeInfo memberType,
                                           TConstObjectPtr memberPtr)
 {
-    if (memberType->GetTypeFamily() == eTypeFamilyContainer) {
-        const CContainerTypeInfo* cont =
-            dynamic_cast<const CContainerTypeInfo*>(memberType);
-        if (cont && cont->GetElementCount(memberPtr) == 0) {
-            return;
-        }
-    }
     CObjectOStream::WriteClassMember(memberId,memberType,memberPtr);
 }
 
