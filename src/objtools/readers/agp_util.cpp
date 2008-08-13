@@ -46,7 +46,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "invalid value for X",
     "invalid linkage \"yes\" for gap_type ",
 
-    "X must be a positive integer",
+    "X must be a positive integer not exceeding 2e+9",
     "object_end is less than object_beg",
     "component_end is less than component_beg",
     "object range length not equal to the gap length",
@@ -81,6 +81,9 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "gap line missing column 9 (null)",
     "missing line separator at the end of file",
     "extra text in the column 9 of the gap line",
+    "component_id looks like a WGS accession, component_type is not W",
+    "component_id looks like a non-WGS accession, yet component_type is W",
+    // ? "component_id looks like a protein accession"
     kEmptyCStr // W_Last
 };
 
@@ -212,7 +215,6 @@ int CAgpRow::FromString(const string& line)
             pcomment--;
         }
         if(pcomment==0) return -1; // A comment line; to be skipped.
-        //line.resize(pos);
         NStr::Tokenize(line.substr(0, pcomment), "\t", cols);
     }
     else {
@@ -232,6 +234,12 @@ int CAgpRow::FromString(const string& line)
         // skip this entire line, report an error
         m_AgpErr->Msg(CAgpErr::E_ColumnCount,
             string(", found ") + NStr::IntToString(cols.size()) );
+        return CAgpErr::E_ColumnCount;
+    }
+
+    // No spaces allowed (except in comments)
+    if( NPOS != NStr::Find(line, " ", 0, pcomment) ) {
+        m_AgpErr->Msg( CAgpErr::E_ColumnCount, ", found space characters" );
         return CAgpErr::E_ColumnCount;
     }
 
