@@ -33,87 +33,25 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbiargs.hpp>
-#include <corelib/ncbithr.hpp>
+//#include <corelib/ncbithr.hpp>
+#include <corelib/expr.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
+#ifdef HAVE_LIBCONNEXT
+#  include <connect/ext/ncbi_crypt.h>
+#endif
 
 #include <dbapi/driver/drivers.hpp>
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
-
-#include <corelib/expr.hpp>
-
-#ifdef HAVE_LIBCONNEXT
-#  include <connect/ext/ncbi_crypt.h>
-#endif
-
-#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-CDBSetConnParams::CDBSetConnParams(
-        const string& server_name,
-        const string& user_name,
-        const string& password,
-        Uint4 tds_version,
-        const CDBConnParams& other)
-: CDBConnParamsDelegate(other)
-, m_ProtocolVersion(tds_version)
-, m_ServerName(server_name)
-, m_UserName(user_name)
-, m_Password(password)
-{
-}
-
-CDBSetConnParams::~CDBSetConnParams(void)
-{
-}
-
-Uint4 
-CDBSetConnParams::GetProtocolVersion(void) const
-{
-    return m_ProtocolVersion;
-}
-
-string 
-CDBSetConnParams::GetServerName(void) const
-{
-    return m_ServerName;
-}
-
-string 
-CDBSetConnParams::GetUserName(void) const
-{
-    return m_UserName;
-}
-
-string 
-CDBSetConnParams::GetPassword(void) const
-{
-    return m_Password;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-const char* ftds8_driver = "ftds8";
-const char* ftds64_driver = "ftds";
-const char* ftds_driver = ftds64_driver;
-
-const char* ftds_odbc_driver = "ftds_odbc";
-const char* ftds_dblib_driver = "ftds_dblib";
-
-const char* odbc_driver = "odbc";
-const char* ctlib_driver = "ctlib";
-const char* dblib_driver = "dblib";
-
-////////////////////////////////////////////////////////////////////////////////
-const char* msg_record_expected = "Record expected";
-
-/////////////////////////////////////////////////////////////////////////////
 inline
 CDiagCompileInfo GetBlankCompileInfo(void)
 {
@@ -156,164 +94,84 @@ CTestTransaction::~CTestTransaction(void)
     }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-class CIConnectionIFPolicy
-{
-protected:
-    static void Destroy(IConnection* obj)
-    {
-        delete obj;
-    }
-    static IConnection* Init(IDataSource* ds)
-    {
-        return ds->CreateConnection( CONN_OWNERSHIP );
-    }
-};
 
-///////////////////////////////////////////////////////////////////////////////
-CDBAPIUnitTest::CDBAPIUnitTest(const CRef<const CTestArguments>& args)
-: m_Args(args)
-, m_DM( CDriverManager::GetInstance() )
-, m_DS( NULL )
-, m_TableName( "#dbapi_unit_table" )
+static AutoPtr<IConnection> s_Conn = NULL;
+
+IConnection&
+GetConnection(void)
 {
-    // SetDiagFilter(eDiagFilter_Trace, "!/dbapi/driver/ctlib");
+    _ASSERT(s_Conn.get());
+    return *s_Conn;
 }
 
-CDBAPIUnitTest::~CDBAPIUnitTest(void)
+
+///////////////////////////////////////////////////////////////////////////////
+NCBITEST_AUTO_INIT()
+{
+    if (!CommonInit())
+        return;
+
+    s_Conn.reset(GetDS().CreateConnection( CONN_OWNERSHIP ));
+    _ASSERT(s_Conn.get());
+
+    s_Conn->Connect(GetArgs().GetConnParams());
+
+    auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+
+    // Create a test table ...
+    string sql;
+
+    sql  = " CREATE TABLE " + GetTableName() + "( \n";
+    sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
+    sql += "    int_field INT NULL, \n";
+    sql += "    vc1000_field VARCHAR(1000) NULL, \n";
+    sql += "    text_field TEXT NULL, \n";
+    sql += "    image_field IMAGE NULL \n";
+    sql += " )";
+
+    // Create the table
+    auto_stmt->ExecuteUpdate(sql);
+
+    sql  = " CREATE UNIQUE INDEX #ind01 ON " + GetTableName() + "( id ) \n";
+
+    // Create an index
+    auto_stmt->ExecuteUpdate( sql );
+
+    sql  = " CREATE TABLE #dbapi_bcp_table2 ( \n";
+    sql += "    id INT NULL, \n";
+    // Identity won't work with bulk insert ...
+    // sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
+    sql += "    int_field INT NULL, \n";
+    sql += "    vc1000_field VARCHAR(1000) NULL, \n";
+    sql += "    text_field TEXT NULL \n";
+    sql += " )";
+
+    auto_stmt->ExecuteUpdate( sql );
+
+    sql  = " CREATE TABLE #test_unicode_table ( \n";
+    sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
+    sql += "    nvc255_field NVARCHAR(255) NULL \n";
+//        sql += "    nvc255_field VARCHAR(255) NULL \n";
+    sql += " )";
+
+    // Create table
+    auto_stmt->ExecuteUpdate(sql);
+}
+
+NCBITEST_AUTO_FINI()
 {
 //     I_DriverContext* drv_context = GetDS().GetDriverContext();
 //
 //     drv_context->PopDefConnMsgHandler( m_ErrHandler.get() );
 //     drv_context->PopCntxMsgHandler( m_ErrHandler.get() );
 
-    m_Conn.reset(NULL);
-    m_DM.DestroyDs(m_DS);
-    m_DS = NULL;
+    s_Conn.reset(NULL);
+    CommonFini();
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::TestInit(void)
-{
-    try {
-        DBLB_INSTALL_DEFAULT();
-
-        if ( GetArgs().GetServerType() == CDBConnParams::eMSSqlServer) {
-            m_max_varchar_size = 8000;
-        } else {
-            // Sybase
-            m_max_varchar_size = 1900;
-        }
-
-#ifdef USE_STATICALLY_LINKED_DRIVERS
-
-#ifdef HAVE_LIBSYBASE
-        DBAPI_RegisterDriver_CTLIB();
-        DBAPI_RegisterDriver_DBLIB();
-#endif
-        DBAPI_RegisterDriver_FTDS();
-
-#endif
-
-        if (false) {
-            // Two calls below will cause problems with the Sybase 12.5.1 client
-            // (No problems with the Sybase 12.5.0 client)
-            IDataSource* ds = m_DM.MakeDs(GetArgs().GetConnParams());
-            m_DM.DestroyDs(ds);
-        }
-
-        m_DS = m_DM.MakeDs(GetArgs().GetConnParams());
-
-        I_DriverContext* drv_context = GetDS().GetDriverContext();
-        drv_context->SetLoginTimeout(2);
-
-        if (GetArgs().GetTestConfiguration() != CTestArguments::eWithoutExceptions) {
-            if (GetArgs().IsODBCBased()) {
-                drv_context->PushCntxMsgHandler(
-                    new CDB_UserHandler_Exception_ODBC,
-                    eTakeOwnership
-                    );
-                drv_context->PushDefConnMsgHandler(
-                    new CDB_UserHandler_Exception_ODBC,
-                    eTakeOwnership
-                    );
-            } else {
-                drv_context->PushCntxMsgHandler(
-                    new CDB_UserHandler_Exception,
-                    eTakeOwnership
-                    );
-                drv_context->PushDefConnMsgHandler(
-                    new CDB_UserHandler_Exception,
-                    eTakeOwnership
-                    );
-            }
-        }
-
-        m_Conn.reset(GetDS().CreateConnection( CONN_OWNERSHIP ));
-        BOOST_CHECK(m_Conn.get() != NULL);
-
-        m_Conn->Connect(GetArgs().GetConnParams());
-
-        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
-
-        // Create a test table ...
-        string sql;
-
-        sql  = " CREATE TABLE " + GetTableName() + "( \n";
-        sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
-        sql += "    int_field INT NULL, \n";
-        sql += "    vc1000_field VARCHAR(1000) NULL, \n";
-        sql += "    text_field TEXT NULL, \n";
-        sql += "    image_field IMAGE NULL \n";
-        sql += " )";
-
-        // Create the table
-        auto_stmt->ExecuteUpdate(sql);
-
-        sql  = " CREATE UNIQUE INDEX #ind01 ON " + GetTableName() + "( id ) \n";
-
-        // Create an index
-        auto_stmt->ExecuteUpdate( sql );
-
-        sql  = " CREATE TABLE #dbapi_bcp_table2 ( \n";
-        sql += "    id INT NULL, \n";
-        // Identity won't work with bulk insert ...
-        // sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
-        sql += "    int_field INT NULL, \n";
-        sql += "    vc1000_field VARCHAR(1000) NULL, \n";
-        sql += "    text_field TEXT NULL \n";
-        sql += " )";
-
-        auto_stmt->ExecuteUpdate( sql );
-
-        sql  = " CREATE TABLE #test_unicode_table ( \n";
-        sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
-        sql += "    nvc255_field NVARCHAR(255) NULL \n";
-//        sql += "    nvc255_field VARCHAR(255) NULL \n";
-        sql += " )";
-
-        // Create table
-        auto_stmt->ExecuteUpdate(sql);
-    }
-    catch(const CDB_Exception& ex) {
-        DBAPI_BOOST_FAIL(ex);
-    }
-    catch(const CPluginManagerException& ex) {
-        DBAPI_BOOST_FAIL(ex);
-    }
-    catch(const CException& ex) {
-        DBAPI_BOOST_FAIL(ex);
-    }
-    catch (...) {
-        BOOST_FAIL("Couldn't initialize the test-suite.");
-    }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_Unicode_Simple(void)
+BOOST_AUTO_TEST_CASE(Test_Unicode_Simple)
 {
     string sql;
     string str_value;
@@ -371,7 +229,7 @@ void CDBAPIUnitTest::Test_Unicode_Simple(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Test unicode without binding values ...
-void CDBAPIUnitTest::Test_UnicodeNB(void)
+BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
 {
     string table_name("#test_unicode_table");
     // string table_name("DBAPI_Sample..test_unicode_table");
@@ -516,8 +374,8 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 size_t
-CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
-                                const string& table_name)
+GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
+                const string& table_name)
 {
     size_t cur_rec_num = 0;
 
@@ -540,7 +398,7 @@ CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
 }
 
 size_t
-CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt)
+GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt)
 {
     size_t rec_num = 0;
 
@@ -562,7 +420,7 @@ CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_Unicode(void)
+BOOST_AUTO_TEST_CASE(Test_Unicode)
 {
     string table_name("#test_unicode_table");
     // string table_name("DBAPI_Sample..test_unicode_table");
@@ -682,8 +540,7 @@ void CDBAPIUnitTest::Test_Unicode(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Insert(void)
+BOOST_AUTO_TEST_CASE(Test_Insert)
 {
     string sql;
     const string small_msg("%");
@@ -769,8 +626,7 @@ CDBAPIUnitTest::Test_Insert(void)
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_UNIQUE(void)
+BOOST_AUTO_TEST_CASE(Test_UNIQUE)
 {
     string sql;
     CVariant value(eDB_VarBinary, 16);
@@ -843,7 +699,7 @@ CDBAPIUnitTest::Test_UNIQUE(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-CDBAPIUnitTest::DumpResults(IStatement* const stmt)
+DumpResults(IStatement* const stmt)
 {
     while ( stmt->HasMoreResults() ) {
         if ( stmt->HasRows() ) {
@@ -853,7 +709,7 @@ CDBAPIUnitTest::DumpResults(IStatement* const stmt)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_CDB_Exception(void)
+BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
 {
     const char* message = "Very dangerous message";
     const int msgnumber = 67890;
@@ -1067,8 +923,7 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_NCBI_LS(void)
+BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
 {
     try {
         if (true) {
@@ -1444,7 +1299,7 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_Truncation(void)
+BOOST_AUTO_TEST_CASE(Test_Truncation)
 {
     string sql;
 
@@ -1471,830 +1326,30 @@ void CDBAPIUnitTest::Test_Truncation(void)
     }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Repeated_Usage(void)
+
+NCBITEST_INIT_TREE()
 {
+    NCBITEST_DEPENDS_ON(Test_GetRowCount,           Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_Cursor,                Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_Cursor2,               Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_Cursor_Param,          Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_Cursor_Multiple,       Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_LOB,                   Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_LOB2,                  Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_LOB_Multiple,          Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_LOB_Multiple_LowLevel, Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_BlobStream,            Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_UnicodeNB,             Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_Unicode,               Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_ClearParamList,        Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_SelectStmt2,           Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_NULL,                  Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_UserErrorHandler,      Test_Exception_Safety);
+    NCBITEST_DEPENDS_ON(Test_Recordset,             Test_SelectStmt);
+    NCBITEST_DEPENDS_ON(Test_ResultsetMetaData,     Test_SelectStmt);
+    NCBITEST_DEPENDS_ON(Test_SelectStmtXML,         Test_SelectStmt);
+    NCBITEST_DEPENDS_ON(Test_Unicode_Simple,        Test_SelectStmtXML);
 }
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Single_Value_Writing(void)
-{
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Single_Value_Reading(void)
-{
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Bulk_Reading(void)
-{
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Multiple_Resultset(void)
-{
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Error_Conditions(void)
-{
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Transactional_Behavior(void)
-{
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Heavy_Load(void)
-{
-    try {
-        // Heavy bulk-insert
-        Test_HugeTableSelect(m_Conn);
-
-        string table_name = "#test_heavy_load";
-        enum {num_tests = 30000};
-        {
-            string sql = "create table " + table_name + " ("
-                         "int_field int,"
-                         "flt_field float,"
-                         "date_field datetime,"
-                         "vc200_field varchar(200),"
-                         "vc2000_field varchar(2000),"
-                         "txt_field text"
-                         ")";
-
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-            auto_stmt->ExecuteUpdate( sql );
-        }
-
-        // Heavy insert with parameters
-        {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-            auto_ptr<IStatement> auto_stmt2( m_Conn->GetStatement() );
-
-            string sql = "INSERT INTO " + table_name +
-                         " VALUES(@int_field, @flt_field, @date_field, "
-                                 "@vc200_field, @vc2000_field, @txt_field)";
-
-            string vc200_val = string(190, 'a');
-            string vc2000_val = string(1500, 'z');
-            string txt_val = string(2000, 'q');
-
-            CStopWatch timer(CStopWatch::eStart);
-
-            auto_stmt->SetParam( CVariant( Int4(123456) ), "@int_field" );
-            auto_stmt->SetParam( CVariant(654.321), "@flt_field" );
-            auto_stmt->SetParam( CVariant(CTime(CTime::eCurrent)),
-                                 "@date_field" );
-            auto_stmt->SetParam( CVariant::VarChar(vc200_val.c_str(),
-                                                   vc200_val.size()),
-                                 "@vc200_field" );
-            auto_stmt->SetParam( CVariant::LongChar(vc2000_val.c_str(),
-                                                    vc2000_val.size()),
-                                 "@vc2000_field"
-                                 );
-            auto_stmt->SetParam( CVariant::VarChar(txt_val.c_str(),
-                                                   txt_val.size()),
-                                 "@txt_field" );
-
-            auto_stmt2->ExecuteUpdate("BEGIN TRAN");
-            for (int i = 0; i < num_tests; ++i) {
-                auto_stmt->ExecuteUpdate( sql );
-
-                if (i % 1000 == 0) {
-                    auto_stmt2->ExecuteUpdate("COMMIT TRAN");
-                    auto_stmt2->ExecuteUpdate("BEGIN TRAN");
-                }
-            }
-            auto_stmt2->ExecuteUpdate("COMMIT TRAN");
-            LOG_POST( "Inserts made in " << timer.Elapsed() << " sec." );
-        }
-
-        // Heavy select
-        {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
-            string sql = "select * from " + table_name;
-
-            IResultSet* rs;
-
-            CStopWatch timer(CStopWatch::eStart);
-
-            rs = auto_stmt->ExecuteQuery(sql);
-            rs->BindBlobToVariant(true);
-
-            while (rs->Next()) {
-                /*int int_val =*/ rs->GetVariant(1).GetInt4();
-                /*double flt_val =*/ rs->GetVariant(2).GetDouble();
-                CTime date_val = rs->GetVariant(3).GetCTime();
-                string vc1_val = rs->GetVariant(4).GetString();
-                string vc2_val = rs->GetVariant(5).GetString();
-                const CVariant& txt_var = rs->GetVariant(6);
-                string txt_val;
-                txt_val.resize(txt_var.GetBlobSize());
-                txt_var.Read(&txt_val[0], txt_val.size());
-            }
-
-            LOG_POST( "Select finished in " << timer.Elapsed() << " sec." );
-        }
-    }
-    catch(const CException& ex) {
-        DBAPI_BOOST_FAIL(ex);
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-string GetSybaseClientVersion(void)
-{
-    string sybase_version;
-
-#if defined(NCBI_OS_MSWIN)
-    sybase_version = "12.5";
-#else
-    CNcbiEnvironment env;
-    sybase_version = env.Get("SYBASE");
-    CDirEntry dir_entry(sybase_version);
-    dir_entry.DereferenceLink();
-    sybase_version = dir_entry.GetPath();
-
-    sybase_version = sybase_version.substr(
-        sybase_version.find_last_of('/') + 1
-        );
-#endif
-
-    return sybase_version;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-class CExprTestSuiteBase : public boost::unit_test::test_suite
-{
-public:
-    CExprTestSuiteBase(const string& name);
-    virtual ~CExprTestSuiteBase(void);
-
-public:
-    typedef map<string, boost::unit_test::test_unit*> TTestCase;
-    typedef map<string, string> TTestParent;
-
-    // Pure virtual methods ...
-    virtual void DefineSymbols(CExprParser& parser) = 0;
-    virtual void RegisterTests(TTestCase& test_case, TTestParent& test_parent) = 0;
-
-public:
-    void Init(void);
-
-private:
-    void InitInternalStructures(void);
-
-private:
-    CExprParser m_Parser;
-
-    TTestCase   m_TestCase;
-    TTestParent m_TestParent;
-};
-
-CExprTestSuiteBase::CExprTestSuiteBase(const string& name)
-: boost::unit_test::test_suite(name)
-, m_Parser(CExprParser::eDenyAutoVar)
-{
-    CPluginManager_DllResolver::EnableGlobally(true);
-}
-
-CExprTestSuiteBase::~CExprTestSuiteBase(void)
-{
-}
-
-void CExprTestSuiteBase::Init(void)
-{
-    ///////////////////
-    // OS
-#if defined(NCBI_OS_AIX)
-    m_Parser.AddSymbol("OS_Aix", true);
-#else
-    m_Parser.AddSymbol("OS_Aix", false);
-#endif
-
-#if defined(NCBI_OS_BSD)
-    m_Parser.AddSymbol("OS_BSD", true);
-#else
-    m_Parser.AddSymbol("OS_BSD", false);
-#endif
-
-#if defined(NCBI_OS_CYGWIN)
-    m_Parser.AddSymbol("OS_Cygwin", true);
-#else
-    m_Parser.AddSymbol("OS_Cygwin", false);
-#endif
-
-#if defined(NCBI_OS_DARWIN)
-    m_Parser.AddSymbol("OS_MacOSX", true);
-#else
-    m_Parser.AddSymbol("OS_MacOSX", false);
-#endif
-
-#if defined(NCBI_OS_IRIX)
-    m_Parser.AddSymbol("OS_Irix", true);
-#else
-    m_Parser.AddSymbol("OS_Irix", false);
-#endif
-
-#if defined(NCBI_OS_LINUX)
-    m_Parser.AddSymbol("OS_Linux", true);
-#else
-    m_Parser.AddSymbol("OS_Linux", false);
-#endif
-
-#if defined(NCBI_OS_MAC)
-    m_Parser.AddSymbol("OS_MacOS", true);
-#else
-    m_Parser.AddSymbol("OS_MacOS", false);
-#endif
-
-#if defined(NCBI_OS_MSWIN)
-    m_Parser.AddSymbol("OS_Windows", true);
-#else
-    m_Parser.AddSymbol("OS_Windows", false);
-#endif
-
-#if defined(NCBI_OS_OSF1)
-    m_Parser.AddSymbol("OS_Tru64", true);
-#else
-    m_Parser.AddSymbol("OS_Tru64", false);
-#endif
-
-#if defined(NCBI_OS_SOLARIS)
-    m_Parser.AddSymbol("OS_Solaris", true);
-#else
-    m_Parser.AddSymbol("OS_Solaris", false);
-#endif
-
-#if defined(NCBI_OS_UNIX)
-    m_Parser.AddSymbol("OS_Unix", true);
-#else
-    m_Parser.AddSymbol("OS_Unix", false);
-#endif
-
-    //////////////////////
-    // Compiler
-#if defined(NCBI_COMPILER_COMPAQ)
-    m_Parser.AddSymbol("COMPILER_Compaq", true);
-#else
-    m_Parser.AddSymbol("COMPILER_Compaq", false);
-#endif
-
-#if defined(NCBI_COMPILER_GCC)
-    m_Parser.AddSymbol("COMPILER_GCC", true);
-#else
-    m_Parser.AddSymbol("COMPILER_GCC", false);
-#endif
-
-#if defined(NCBI_COMPILER_ICC)
-    m_Parser.AddSymbol("COMPILER_ICC", true);
-#else
-    m_Parser.AddSymbol("COMPILER_ICC", false);
-#endif
-
-#if defined(NCBI_COMPILER_KCC)
-    m_Parser.AddSymbol("COMPILER_KCC", true);
-#else
-    m_Parser.AddSymbol("COMPILER_KCC", false);
-#endif
-
-#if defined(NCBI_COMPILER_MIPSPRO)
-    m_Parser.AddSymbol("COMPILER_MipsPro", true);
-#else
-    m_Parser.AddSymbol("COMPILER_MipsPro", false);
-#endif
-
-#if defined(NCBI_COMPILER_MSVC)
-    m_Parser.AddSymbol("COMPILER_MSVC", true);
-#else
-    m_Parser.AddSymbol("COMPILER_MSVC", false);
-#endif
-
-#if defined(NCBI_COMPILER_VISUALAGE)
-    m_Parser.AddSymbol("COMPILER_VisualAge", true);
-#else
-    m_Parser.AddSymbol("COMPILER_VisualAge", false);
-#endif
-
-#if defined(NCBI_COMPILER_WORKSHOP)
-    m_Parser.AddSymbol("COMPILER_WorkShop", true);
-#else
-    m_Parser.AddSymbol("COMPILER_WorkShop", false);
-#endif
-
-
-    ////////////////////////
-    // Sybase ...
-    m_Parser.AddSymbol("SYBASE_ClientVersion", NStr::StringToDouble(
-        GetSybaseClientVersion().substr(0, 4))
-    );
-
-    ///////////////////////
-    // Build-related ...
-#if defined(NCBI_DLL_BUILD)
-    m_Parser.AddSymbol("BUILD_Dll", true);
-#else
-    m_Parser.AddSymbol("BUILD_Dll", false);
-#endif
-
-    ///////////////////////
-    // Configuration-related ...
-#ifdef HAVE_LIBCONNEXT
-    m_Parser.AddSymbol("HAVE_LibConnExt", CRYPT_Version(-1) != -1);
-#else
-    m_Parser.AddSymbol("HAVE_LibConnExt", false);
-#endif
-
-    // Register user-defined symbols ...
-    DefineSymbols(m_Parser);
-
-    RegisterTests(m_TestCase, m_TestParent);
-
-    InitInternalStructures();
-}
-
-void CExprTestSuiteBase::InitInternalStructures(void)
-{
-    const string section_name("UNIT_TEST");
-    const CNcbiApplication* app = CNcbiApplication::Instance();
-
-    if (!app) {
-        return;
-    }
-
-    const IRegistry& registry = app->GetConfig();
-
-    list<string> entries; 
-    registry.EnumerateEntries(section_name, &entries);
-
-    // Disable tests ...
-    ITERATE(list<string>, cit, entries) {
-        const string test_case_name = *cit;
-        TTestCase::iterator it = m_TestCase.find("CDBAPIUnitTest::" + test_case_name);
-        if (it != m_TestCase.end()) {
-            m_Parser.Parse(registry.Get(section_name, test_case_name).c_str());
-            const CExprValue& p_result = m_Parser.GetResult();
-
-            if (p_result.GetType() == CExprValue::eBOOL && !p_result.GetBool()) {
-                NcbiTestDisable(it->second);
-            }
-        } else {
-            cerr << "Invalid test case name: " << test_case_name << endl;
-            continue;
-        }
-    }
-    
-    // Dependencies ...
-    ITERATE(TTestParent, cit, m_TestParent) {
-        const TTestCase::const_iterator it = m_TestCase.find(cit->first);
-        const TTestCase::const_iterator parent_it = m_TestCase.find(cit->second);
-
-        if (it == m_TestCase.end()) {
-            cerr << "Unknown test case: " << cit->first << endl;
-            continue;
-        }
-
-        if (parent_it == m_TestCase.end()) {
-            cerr << "Unknown test case: " << cit->second << endl;
-            continue;
-        }
-
-        NcbiTestDependsOn(it->second, parent_it->second);
-    }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-#define CLASS_TEST_CASE(name) \
-    tu = BOOST_CLASS_TEST_CASE( name, DBAPIInstance ); \
-    add(tu); \
-    test_case[tu->p_name.get()] = tu; 
-
-#define CLASS_TEST_CASE2(name, parent) \
-    tu = BOOST_CLASS_TEST_CASE( name, DBAPIInstance ); \
-    add(tu); \
-    test_case[tu->p_name.get()] = tu; \
-    { \
-        boost::unit_test::const_string cparent = BOOST_TEST_STRINGIZE(parent); \
-        string parent_name; \
-        boost::unit_test::assign_op(parent_name, cparent, 0); \
-        test_parent[tu->p_name.get()] = parent_name; \
-    } 
-
-////////////////////////////////////////////////////////////////////////////////
-class CExprTestSuite : public CExprTestSuiteBase
-{
-public:
-    CExprTestSuite(void);
-    ~CExprTestSuite(void);
-
-public:
-    virtual void DefineSymbols(CExprParser& parser);
-    virtual void RegisterTests(TTestCase& test_case, TTestParent& test_parent);
-
-private:
-    const CRef<const CTestArguments> m_Args;
-};
-
-CExprTestSuite::CExprTestSuite(void)
-: CExprTestSuiteBase("DBAPI Test Suite")
-, m_Args(new CTestArguments)
-{
-    Init();
-}
-
-CExprTestSuite::~CExprTestSuite(void)
-{
-}
-
-void CExprTestSuite::DefineSymbols(CExprParser& parser)
-{
-    parser.AddSymbol("DRIVER_AllowsMultipleContexts", m_Args->DriverAllowsMultipleContexts());
-
-    parser.AddSymbol("SERVER_MySQL", m_Args->GetServerType() == CDBConnParams::eMySQL);
-    parser.AddSymbol("SERVER_SybaseOS", m_Args->GetServerType() == CDBConnParams::eSybaseOpenServer);
-    parser.AddSymbol("SERVER_SybaseSQL", m_Args->GetServerType() == CDBConnParams::eSybaseSQLServer);
-    parser.AddSymbol("SERVER_MicrosoftSQL", m_Args->GetServerType() == CDBConnParams::eMSSqlServer);
-    parser.AddSymbol("SERVER_SQLite", m_Args->GetServerType() == CDBConnParams::eSqlite);
-
-    parser.AddSymbol("DRIVER_ftds", m_Args->GetDriverName() == ftds_driver);
-    parser.AddSymbol("DRIVER_ftds8", m_Args->GetDriverName() == ftds8_driver);
-    parser.AddSymbol("DRIVER_ftds64", m_Args->GetDriverName() == ftds64_driver);
-    parser.AddSymbol("DRIVER_ftds_odbc", m_Args->GetDriverName() == ftds_odbc_driver);
-    parser.AddSymbol("DRIVER_ftds_dblib", m_Args->GetDriverName() == ftds_dblib_driver);
-    parser.AddSymbol("DRIVER_odbc", m_Args->GetDriverName() == odbc_driver);
-    parser.AddSymbol("DRIVER_ctlib", m_Args->GetDriverName() == ctlib_driver);
-    parser.AddSymbol("DRIVER_dblib", m_Args->GetDriverName() == dblib_driver);
-
-    parser.AddSymbol("DRIVER_IsBcpAvailable", m_Args->IsBCPAvailable());
-    parser.AddSymbol("DRIVER_IsOdbcBased", m_Args->GetDriverName() == ftds_odbc_driver ||
-            m_Args->GetDriverName() == odbc_driver);
-}
-
-void CExprTestSuite::RegisterTests(TTestCase& test_case, TTestParent& test_parent)
-{
-    boost::shared_ptr<CDBAPIUnitTest> DBAPIInstance(new CDBAPIUnitTest(m_Args));
-
-    boost::unit_test::test_unit* tu = NULL;
-
-    // Register tests ...
-    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many);
-    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_One);
-    CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_VARCHAR_MAX,     CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_VARCHAR_MAX_BCP, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_CHAR,            CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Truncation,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ConnParams,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ConnFactory,     CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ConnPool,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_DropConnection,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BlobStore,       CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Timeout,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Timeout2,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Query_Cancelation,   CDBAPIUnitTest::TestInit);
-#ifdef HAVE_LIBCONNEXT
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Authentication,  CDBAPIUnitTest::TestInit);
-#endif
-    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Object);
-    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant);
-    CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Numeric,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Create_Destroy,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Multiple_Close,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing2,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing3,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing4,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing5,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Late_Bind,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Writing6,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_StatementParameters, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_GetRowCount,     CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB_LowLevel,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Cursor,          CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Cursor2,         CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Cursor_Param,    CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Cursor_Multiple, CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB,             CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB2,            CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB3,            CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB4,            CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB_Multiple,    CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB_Multiple_LowLevel,   CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BlobStream,      CDBAPIUnitTest::Test_Cursor);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_UnicodeNB,       CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Unicode,         CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_StmtMetaData,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ClearParamList,  CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_SelectStmt2,     CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_NULL,            CDBAPIUnitTest::Test_StatementParameters);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BulkInsertBlob,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_MsgToEx,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_MsgToEx2,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Exception_Safety,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_UserErrorHandler,    CDBAPIUnitTest::Test_Exception_Safety);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_SelectStmt,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Recordset,       CDBAPIUnitTest::Test_SelectStmt);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_ResultsetMetaData,   CDBAPIUnitTest::Test_SelectStmt);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_SelectStmtXML,   CDBAPIUnitTest::Test_SelectStmt);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Unicode_Simple,  CDBAPIUnitTest::Test_SelectStmtXML);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Insert,          CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Procedure,       CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Variant2,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_GetTotalColumns, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Procedure2,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Procedure3,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_UNIQUE,          CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_DateTimeBCP,     CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Bulk_Overflow,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Iskhakov,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_DateTime,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Decimal,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_SetLogStream,    CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Identity,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_UserErrorHandler_LT, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_N_Connections,   CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_NCBI_LS,         CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_HasMoreResults,  CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_BCP_Cancel,      CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_NTEXT,           CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_NVARCHAR,        CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_LOB_Replication, CDBAPIUnitTest::TestInit);
-    CLASS_TEST_CASE2(&CDBAPIUnitTest::Test_Heavy_Load,      CDBAPIUnitTest::TestInit);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-CUnitTestParams::CUnitTestParams(const CDBConnParams& other)
-: CDBConnParamsDelegate(other)
-{
-}
-
-CUnitTestParams::~CUnitTestParams(void)
-{
-}
-
-string CUnitTestParams::GetServerName(void) const
-{
-    const string server_name = CDBConnParamsDelegate::GetServerName();
-
-    if (NStr::CompareNocase(server_name, "MsSql") == 0) {
-#ifdef HAVE_LIBCONNEXT
-        return "MS_TEST";
-#else
-        return "MSDEV1";
-#endif
-    } else if (NStr::CompareNocase(server_name, "Sybase") == 0) {
-#ifdef HAVE_LIBCONNEXT
-        return "SYB_TEST";
-#else
-        return "CLEMENTI";
-#endif
-    }
-
-    return server_name;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-CTestArguments::CTestArguments(void)
-: m_TestConfiguration(eWithExceptions)
-, m_NumOfDisabled(0)
-, m_ReportDisabled(false)
-, m_ReportExpected(false)
-, m_CPPParams(m_ParamBase)
-, m_ConnParams(m_CPPParams)
-{
-    const CNcbiApplication* app = CNcbiApplication::Instance();
-
-    if (!app) {
-        return;
-    }
-
-    const CArgs& args = app->GetArgs();
-
-    // Get command-line arguments ...
-    m_ParamBase.SetServerName(args["S"].AsString());
-    m_ParamBase.SetUserName(args["U"].AsString());
-    m_ParamBase.SetPassword(args["P"].AsString());
-
-    if (args["d"].HasValue()) {
-        m_ParamBase.SetDriverName(args["d"].AsString());
-    }
-
-    if (args["D"].HasValue()) {
-        m_ParamBase.SetDatabaseName(args["D"].AsString());
-    }
-
-    if ( args["v"].HasValue() ) {
-        m_ParamBase.SetProtocolVersion(args["v"].AsInteger());
-    }
-    if ( args["H"].HasValue() ) {
-        m_GatewayHost = args["H"].AsString();
-    } else {
-        m_GatewayHost.clear();
-    }
-
-    m_GatewayPort  = args["p"].AsString();
-
-    if (args["conf"].AsString() == "with-exceptions") {
-        m_TestConfiguration = CTestArguments::eWithExceptions;
-    } else if (args["conf"].AsString() == "without-exceptions") {
-        m_TestConfiguration = CTestArguments::eWithoutExceptions;
-    } else if (args["conf"].AsString() == "fast") {
-        m_TestConfiguration = CTestArguments::eFast;
-    }
-
-    SetDatabaseParameters();
-}
-
-bool
-CTestArguments::IsBCPAvailable(void) const
-{
-#if defined(NCBI_OS_SOLARIS)
-    const bool os_solaris = true;
-#else
-    const bool os_solaris = false;
-#endif
-
-    if (os_solaris && HOST_CPU[0] == 'i' &&
-        (GetDriverName() == dblib_driver || GetDriverName() == ctlib_driver)
-        ) {
-        // Solaris Intel native Sybase drivers ...
-        // There is no apropriate client
-        return false;
-    } else if ( GetDriverName() == ftds_odbc_driver
-         || (GetDriverName() == ftds8_driver
-             && GetServerType() == CDBConnParams::eSybaseSQLServer)
-         ) {
-        return false;
-    }
-
-    return true;
-}
-
-bool
-CTestArguments::IsODBCBased(void) const
-{
-    return GetDriverName() == odbc_driver ||
-           GetDriverName() == ftds_odbc_driver;
-}
-
-bool CTestArguments::DriverAllowsMultipleContexts(void) const
-{
-    return GetDriverName() == ctlib_driver
-        || GetDriverName() == ftds64_driver
-        || IsODBCBased();
-}
-
-void
-CTestArguments::SetDatabaseParameters(void)
-{
-    if ((GetDriverName() == ftds8_driver ||
-         GetDriverName() == ftds64_driver ||
-         // GetDriverName() == odbc_driver ||
-         // GetDriverName() == ftds_odbc_driver ||
-         GetDriverName() == ftds_dblib_driver) && GetServerType() == CDBConnParams::eMSSqlServer
-        ) 
-    {
-        m_ParamBase.SetEncoding(eEncoding_UTF8);
-    }
-
-    if (!m_GatewayHost.empty()) {
-        m_ParamBase.SetParam("host_name", m_GatewayHost);
-        m_ParamBase.SetParam("port_num", m_GatewayPort);
-        m_ParamBase.SetParam("driver_name", GetDriverName());
-    }
-}
-
-void CTestArguments::PutMsgDisabled(const char* msg) const
-{
-    ++m_NumOfDisabled;
-
-    if (m_ReportDisabled) {
-        LOG_POST(Warning << "- " << msg << " is disabled !!!");
-    }
-}
-
-void CTestArguments::PutMsgExpected(const char* msg, const char* replacement) const
-{
-    if (m_ReportExpected) {
-        LOG_POST(Warning << "? " << msg << " is expected instead of " << replacement);
-    }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-CArgDescriptions* NcbiTestPrepareArgDescrs(void) 
-{
-    // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
-// Describe the expected command-line arguments
-#if defined(NCBI_OS_MSWIN)
-#define DEF_SERVER    "MSDEV1"
-#define DEF_DRIVER    ftds_driver
-#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, odbc_driver, \
-                    ftds_dblib_driver, ftds_odbc_driver, ftds8_driver
-
-#elif defined(HAVE_LIBSYBASE)
-#define DEF_SERVER    "CLEMENTI"
-#define DEF_DRIVER    ctlib_driver
-#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, ftds_dblib_driver, \
-                    ftds_odbc_driver, ftds8_driver
-#else
-#define DEF_SERVER    "MSDEV1"
-#define DEF_DRIVER    ftds_driver
-#define ALL_DRIVERS   ftds64_driver, ftds_dblib_driver, ftds_odbc_driver, \
-                    ftds8_driver
-#endif
-
-    arg_desc->AddDefaultKey("S", "server",
-                            "Name of the SQL server to connect to",
-                            CArgDescriptions::eString, DEF_SERVER);
-
-    arg_desc->AddOptionalKey("d", "driver",
-                            "Name of the DBAPI driver to use",
-                            CArgDescriptions::eString);
-    arg_desc->SetConstraint("d", &(*new CArgAllow_Strings, ALL_DRIVERS));
-
-    arg_desc->AddDefaultKey("U", "username",
-                            "User name",
-                            CArgDescriptions::eString, "anyone");
-
-    arg_desc->AddDefaultKey("P", "password",
-                            "Password",
-                            CArgDescriptions::eString, "allowed");
-    arg_desc->AddOptionalKey("D", "database",
-                            "Name of the database to connect",
-                            CArgDescriptions::eString);
-
-    arg_desc->AddOptionalKey("v", "version",
-                            "TDS protocol version",
-                            CArgDescriptions::eInteger);
-
-    arg_desc->AddOptionalKey("H", "gateway_host",
-                            "DBAPI gateway host",
-                            CArgDescriptions::eString);
-
-    arg_desc->AddDefaultKey("p", "gateway_port",
-                            "DBAPI gateway port",
-                            CArgDescriptions::eInteger,
-                            "65534");
-
-    arg_desc->AddDefaultKey("conf", "configuration",
-                            "Configuration for testing",
-                            CArgDescriptions::eString, "with-exceptions");
-    arg_desc->SetConstraint("conf", &(*new CArgAllow_Strings,
-                            "with-exceptions", "without-exceptions", "fast"));
-
-    return arg_desc.release();
-}
-
 
 
 END_NCBI_SCOPE
-
-
-////////////////////////////////////////////////////////////////////////////////
-test_suite*
-init_unit_test_suite( int argc, char * argv[] )
-{
-//     ncbi::CException::SetStackTraceLevel(ncbi::eDiag_Warning);
-
-    // Configure UTF ...
-    // boost::unit_test_framework::unit_test_log::instance().set_log_format( "XML" );
-    // boost::unit_test_framework::unit_test_result::set_report_format( "XML" );
-
-    // Disable old log format ...
-    // ncbi::GetDiagContext().SetOldPostFormat(false);
-
-    // Using old log format ...
-    // Show time (no msec.) ...
-    ncbi::SetDiagPostFlag(ncbi::eDPF_DateTime);
-    ncbi::CONNECT_Init();
-
-    test_suite* test = BOOST_TEST_SUITE("DBAPI Unit Test.");
-
-    test->add(new ncbi::CExprTestSuite());
-
-    return test;
-}
-

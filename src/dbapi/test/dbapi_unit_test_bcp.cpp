@@ -32,16 +32,14 @@
 
 #include <ncbi_pch.hpp>
 
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
-
-#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_DateTimeBCP(void)
+BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
 {
     string table_name("#test_bcp_datetime");
     // string table_name("DBAPI_Sample..test_bcp_datetime");
@@ -173,8 +171,7 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_BulkInsertBlob(void)
+BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
 {
     string sql;
     enum { record_num = 100 };
@@ -283,8 +280,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
+BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
 {
     string sql;
     // enum { record_num = 10 };
@@ -732,8 +728,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
+BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
 {
     string sql;
     // enum { record_num = 10 };
@@ -1079,8 +1074,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_BCP_Cancel(void)
+BOOST_AUTO_TEST_CASE(Test_BCP_Cancel)
 {
     string sql;
 
@@ -1175,8 +1169,7 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Bulk_Overflow(void)
+BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
 {
     string sql;
     enum {column_size = 32, data_size = 64};
@@ -1329,8 +1322,7 @@ BulkAddRow(const auto_ptr<IBulkInsert>& bi, const CVariant& col)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Bulk_Writing(void)
+BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 {
     string sql;
     string table_name = "#bin_bulk_insert_table";
@@ -1383,18 +1375,18 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_VarChar);
-                CVariant col3(eDB_LongBinary, m_max_varchar_size);
+                CVariant col3(eDB_LongBinary, GetMaxVarcharSize());
 
                 bi->Bind(1, &col1);
                 bi->Bind(2, &col2);
                 bi->Bind(3, &col3);
 
                 for(int i = 0; i < num_of_tests; ++i ) {
-                    int int_value = m_max_varchar_size / num_of_tests * i;
+                    int int_value = GetMaxVarcharSize() / num_of_tests * i;
                     string str_val(int_value , char_val);
 
                     col1 = int_value;
-                    col3 = CVariant::LongBinary(m_max_varchar_size,
+                    col3 = CVariant::LongBinary(GetMaxVarcharSize(),
                                                 str_val.c_str(),
                                                 str_val.size()
                                                 );
@@ -1422,7 +1414,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 for(int i = 0; i < num_of_tests; ++i ) {
                     BOOST_CHECK( rs->Next() );
 
-                    int int_value = m_max_varchar_size / num_of_tests * i;
+                    int int_value = GetMaxVarcharSize() / num_of_tests * i;
                     Int4 id = rs->GetVariant(1).GetInt4();
                     string vb8000_value = rs->GetVariant(2).GetString();
 
@@ -1656,7 +1648,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                         BulkAddRow(bi, CVariant(eDB_VarChar));
                         break;
                     case 1:
-                        BulkAddRow(bi, CVariant(eDB_LongChar, m_max_varchar_size));
+                        BulkAddRow(bi, CVariant(eDB_LongChar, GetMaxVarcharSize()));
                         break;
                     case 2:
                         BulkAddRow(bi, CVariant(eDB_LongChar, 1024));
@@ -1700,13 +1692,13 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                             case 0:
                                 BOOST_CHECK_EQUAL(
                                     col1.size(),
-                                    string::size_type(m_max_varchar_size)
+                                    string::size_type(GetMaxVarcharSize())
                                     );
                                 break;
                             case 1:
                                 BOOST_CHECK_EQUAL(
                                     col1.size(),
-                                    string::size_type(m_max_varchar_size)
+                                    string::size_type(GetMaxVarcharSize())
                                     );
                                 break;
                             case 2:
@@ -1749,8 +1741,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Bulk_Writing2(void)
+BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
 {
     string sql;
     const string table_name("#SbSubs");
@@ -1906,8 +1897,7 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Bulk_Writing3(void)
+BOOST_AUTO_TEST_CASE(Test_Bulk_Writing3)
 {
     string sql;
     string table_name("#blk_table3");
@@ -1971,8 +1961,7 @@ CDBAPIUnitTest::Test_Bulk_Writing3(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Bulk_Writing4(void)
+BOOST_AUTO_TEST_CASE(Test_Bulk_Writing4)
 {
     string sql;
     string table_name("#blk_table4");
@@ -2054,8 +2043,7 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Bulk_Writing5(void)
+BOOST_AUTO_TEST_CASE(Test_Bulk_Writing5)
 {
     string sql;
     const string table_name("#blk_table5");
@@ -2177,8 +2165,7 @@ CDBAPIUnitTest::Test_Bulk_Writing5(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Bulk_Writing6(void)
+BOOST_AUTO_TEST_CASE(Test_Bulk_Writing6)
 {
     string sql;
     string table_name("#blk_table6");
@@ -2271,8 +2258,7 @@ CDBAPIUnitTest::Test_Bulk_Writing6(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Bulk_Late_Bind(void)
+BOOST_AUTO_TEST_CASE(Test_Bulk_Late_Bind)
 {
     string sql;
     const string table_name("#blk_late_bind_table");

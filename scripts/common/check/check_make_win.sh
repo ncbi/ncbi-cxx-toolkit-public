@@ -422,7 +422,12 @@ RunTest() {
 
       # And write result also on the screen and into the log
       x_cmd="\$x_cmd \$x_name"
-      if test \$result -eq 0; then
+      if grep -q NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
+          echo "DIS --  \$x_cmd"
+          echo "DIS --  \$x_cmd" >> \$res_log
+
+          [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "DIS" >> "\$x_test_rep"
+      elif test \$result -eq 0; then
           echo "OK  --  \$x_cmd     (\$exec_time)"
           echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
           count_ok=\`expr \$count_ok + 1\`

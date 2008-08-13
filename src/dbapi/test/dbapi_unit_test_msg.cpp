@@ -32,9 +32,8 @@
 
 #include <ncbi_pch.hpp>
 
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
-
-#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
@@ -148,8 +147,27 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_UserErrorHandler(void)
+// Throw CDB_Exception ...
+static void
+s_ES_01_Internal(IConnection& conn)
+{
+    auto_ptr<IStatement> auto_stmt( conn.GetStatement() );
+
+    auto_stmt->SendSql( "select name from wrong table" );
+    while( auto_stmt->HasMoreResults() ) {
+        if( auto_stmt->HasRows() ) {
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+            while( rs->Next() ) {
+                // int col1 = rs->GetVariant(1).GetInt4();
+            }
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
 {
     try {
         // Set up an user-defined error handler ..
@@ -197,7 +215,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             // Current connection should not be affected ...
             {
                 try {
-                    ES_01_Internal(*local_conn);
+                    s_ES_01_Internal(*local_conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -215,7 +233,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 drv_err_handler->Init();
 
                 try {
-                    ES_01_Internal(*conn);
+                    s_ES_01_Internal(*conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -230,7 +248,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
 
                 try {
-                    ES_01_Internal(*local_conn);
+                    s_ES_01_Internal(*local_conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -252,7 +270,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 drv_err_handler->Init();
 
                 try {
-                    ES_01_Internal(*conn);
+                    s_ES_01_Internal(*conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -280,7 +298,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             // Current connection should not be affected ...
             {
                 try {
-                    ES_01_Internal(*local_conn);
+                    s_ES_01_Internal(*local_conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -296,7 +314,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
 
                 try {
-                    ES_01_Internal(*local_conn);
+                    s_ES_01_Internal(*local_conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -316,7 +334,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             // New connection should be affected ...
             {
                 try {
-                    ES_01_Internal(*new_conn);
+                    s_ES_01_Internal(*new_conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -332,7 +350,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 new_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
 
                 try {
-                    ES_01_Internal(*new_conn);
+                    s_ES_01_Internal(*new_conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -351,7 +369,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 conn->Connect(GetArgs().GetConnParams());
 
                 try {
-                    ES_01_Internal(*conn);
+                    s_ES_01_Internal(*conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -407,7 +425,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 // User error handler life-time ...
-void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
+BOOST_AUTO_TEST_CASE(Test_UserErrorHandler_LT)
 {
     I_DriverContext* drv_context = GetDS().GetDriverContext();
 
@@ -733,8 +751,7 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Exception_Safety(void)
+BOOST_AUTO_TEST_CASE(Test_Exception_Safety)
 {
     string sql;
     string table_name = "#exception_table";
@@ -743,7 +760,7 @@ CDBAPIUnitTest::Test_Exception_Safety(void)
     // Very first test ...
     {
         // Try to catch a base class ...
-        BOOST_CHECK_THROW(ES_01_Internal(*m_Conn), CDB_Exception);
+        BOOST_CHECK_THROW(s_ES_01_Internal(GetConnection()), CDB_Exception);
     }
 
     // Second test ...
@@ -812,8 +829,7 @@ CDBAPIUnitTest::Test_Exception_Safety(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_MsgToEx(void)
+BOOST_AUTO_TEST_CASE(Test_MsgToEx)
 {
     // First test ...
     {
@@ -829,7 +845,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
         {
             msg_num = 0;
 
-            BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
+            BOOST_CHECK_THROW(s_ES_01_Internal(*local_conn), CDB_Exception);
 
             while((dbex = local_conn->GetErrorAsEx()->Pop())) {
                 ++msg_num;
@@ -845,7 +861,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
             // Enable MsgToEx ...
             local_conn->MsgToEx(false);
 
-            BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
+            BOOST_CHECK_THROW(s_ES_01_Internal(*local_conn), CDB_Exception);
 
             while ((dbex = local_conn->GetErrorAsEx()->Pop())) {
                 ++msg_num;
@@ -861,7 +877,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
             // Enable MsgToEx ...
             local_conn->MsgToEx(true);
 
-            BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
+            BOOST_CHECK_THROW(s_ES_01_Internal(*local_conn), CDB_Exception);
 
             while ((dbex = local_conn->GetErrorAsEx()->Pop())) {
                 ++msg_num;
@@ -877,7 +893,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
             // Enable MsgToEx ...
             local_conn->MsgToEx(false);
 
-            BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
+            BOOST_CHECK_THROW(s_ES_01_Internal(*local_conn), CDB_Exception);
 
             while ((dbex = local_conn->GetErrorAsEx()->Pop())) {
                 ++msg_num;
@@ -895,7 +911,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
             // Disable MsgToEx ...
             local_conn->MsgToEx(false);
 
-            BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
+            BOOST_CHECK_THROW(s_ES_01_Internal(*local_conn), CDB_Exception);
 
             while ((dbex = local_conn->GetErrorAsEx()->Pop())) {
                 ++msg_num;
@@ -922,7 +938,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
         // Disable MsgToEx ...
         // local_conn->MsgToEx(false);
 
-        BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
+        BOOST_CHECK_THROW(s_ES_01_Internal(*local_conn), CDB_Exception);
     }
 }
 
@@ -961,8 +977,7 @@ public:
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_MsgToEx2(void)
+BOOST_AUTO_TEST_CASE(Test_MsgToEx2)
 {
     CRef<BaoshanGu_handler> handler(new BaoshanGu_handler);
     I_DriverContext* drv_context = GetDS().GetDriverContext();
@@ -994,31 +1009,6 @@ CDBAPIUnitTest::Test_MsgToEx2(void)
 
     drv_context->PopCntxMsgHandler(handler);
     drv_context->PopDefConnMsgHandler(handler);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Throw CDB_Exception ...
-void
-CDBAPIUnitTest::ES_01_Internal(IConnection& conn)
-{
-    auto_ptr<IStatement> auto_stmt( conn.GetStatement() );
-
-    auto_stmt->SendSql( "select name from wrong table" );
-    while( auto_stmt->HasMoreResults() ) {
-        if( auto_stmt->HasRows() ) {
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-
-            while( rs->Next() ) {
-                // int col1 = rs->GetVariant(1).GetInt4();
-            }
-        }
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Exception(void)
-{
 }
 
 

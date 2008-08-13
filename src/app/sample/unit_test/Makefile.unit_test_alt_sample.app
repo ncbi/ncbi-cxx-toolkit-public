@@ -10,12 +10,12 @@ SRC = unit_test_alt_sample
 ### BEGIN COPIED SETTINGS
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xncbi test_boost
-LIBS = $(ORIG_LIBS)
+LIB = test_boost xncbi
 PRE_LIBS = $(BOOST_LIBS)
 
 REQUIRES = Boost.Test
 
-# Uncomment to run automatically as part of "make check"
+# Uncomment next 2 lines to run automatically as part of "make check"
+# CHECK_COPY = unit_test_alt_sample.ini
 # CHECK_CMD =
 ### END COPIED SETTINGS

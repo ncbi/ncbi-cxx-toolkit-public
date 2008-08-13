@@ -32,16 +32,14 @@
 
 #include <ncbi_pch.hpp>
 
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
-
-#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Procedure(void)
+BOOST_AUTO_TEST_CASE(Test_Procedure)
 {
     try {
         // Test a regular IStatement with "exec"
@@ -581,8 +579,7 @@ CDBAPIUnitTest::Test_Procedure(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Procedure2(void)
+BOOST_AUTO_TEST_CASE(Test_Procedure2)
 {
     try {
         {
@@ -631,8 +628,7 @@ CDBAPIUnitTest::Test_Procedure2(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Procedure3(void)
+BOOST_AUTO_TEST_CASE(Test_Procedure3)
 {
     try {
         // Reading multiple result-sets from a stored procedure ...

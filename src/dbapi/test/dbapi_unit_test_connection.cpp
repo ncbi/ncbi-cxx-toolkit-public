@@ -35,19 +35,18 @@
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
 
 #ifdef HAVE_LIBCONNEXT
 #  include <connect/ext/ncbi_crypt.h>
 #endif
 
-#include <common/test_assert.h>  /* This header must go last */
-
 
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_Multiple_Close(void)
+BOOST_AUTO_TEST_CASE(Test_Multiple_Close)
 {
     try {
         ///////////////////////
@@ -228,7 +227,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_DropConnection(void)
+BOOST_AUTO_TEST_CASE(Test_DropConnection)
 {
     string sql;
     enum {
@@ -290,8 +289,7 @@ void CDBAPIUnitTest::Test_DropConnection(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_N_Connections(void)
+BOOST_AUTO_TEST_CASE(Test_N_Connections)
 {
     {
         enum {
@@ -300,8 +298,8 @@ CDBAPIUnitTest::Test_N_Connections(void)
 
         auto_ptr<IConnection> auto_conns[eN + 1];
 
-        // There are already 2 connections - so +2
-        CDriverManager::GetInstance().SetMaxConnect(eN + 2);
+        // There is already 1 connections - so +1
+        CDriverManager::GetInstance().SetMaxConnect(eN + 1);
         for (int i = 0; i < eN; ++i) {
             auto_ptr<IConnection> auto_conn(GetDS().CreateConnection(CONN_OWNERSHIP));
             auto_conn->Connect(GetArgs().GetConnParams());
@@ -373,10 +371,13 @@ MakeCDBUDPriorityMapper01(const IRegistry* registry)
     return mapper.release();
 }
 
+typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)
+            (IDBServiceMapper::TFactory svc_mapper_factory);
+
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Check_Validator(TDBConnectionFactoryFactory factory,
-                                IConnValidator& validator)
+static void
+s_Check_Validator(TDBConnectionFactoryFactory factory,
+                  IConnValidator& validator)
 {
     TSvrRef server01(new CDBServer("MSDEV1"));
     const string service_name("TEST_SERVICE_01");
@@ -552,8 +553,8 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
+static void
+s_CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
 {
     const string db_name("AlignModel"); // This database should exist in MSDEV1, and not in MSDEV2
 
@@ -561,7 +562,7 @@ CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
     {
         CTrivialConnValidator validator(db_name);
 
-        Check_Validator(factory_factory, validator);
+        s_Check_Validator(factory_factory, validator);
     }
 
     // Same as before but with a customized validator ...
@@ -569,7 +570,7 @@ CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
         // Connection validator to check against DBAPI_Sample ...
         CValidator validator(db_name);
 
-        Check_Validator(factory_factory, validator);
+        s_Check_Validator(factory_factory, validator);
     }
 
     // Another customized validator ...
@@ -578,7 +579,7 @@ CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
         // Connection validator to check against DBAPI_Sample ...
         CValidator01 validator(db_name);
 
-        Check_Validator(factory_factory, validator);
+        s_Check_Validator(factory_factory, validator);
     }
 
     // One more ...
@@ -586,13 +587,12 @@ CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
         // Connection validator to check against DBAPI_Sample ...
         CValidator02 validator(db_name);
 
-        Check_Validator(factory_factory, validator);
+        s_Check_Validator(factory_factory, validator);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_ConnFactory(void)
+BOOST_AUTO_TEST_CASE(Test_ConnFactory)
 {
     enum {num_of_tests = 128};
 
@@ -655,10 +655,10 @@ CDBAPIUnitTest::Test_ConnFactory(void)
         }
 
         // Check CDBConnectionFactory ...
-        CheckConnFactory(CDBConnectionFactoryFactory);
+        s_CheckConnFactory(CDBConnectionFactoryFactory);
 
         // Check CDBRedispatchFactory ...
-        CheckConnFactory(CDBRedispatchFactoryFactory);
+        s_CheckConnFactory(CDBRedispatchFactoryFactory);
 
         // Future development ...
 //         ncbi::CDbapiConnMgr::Instance().SetConnectionFactory(
@@ -676,8 +676,7 @@ CDBAPIUnitTest::Test_ConnFactory(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_ConnPool(void)
+BOOST_AUTO_TEST_CASE(Test_ConnPool)
 {
 
     const string pool_name("test_pool");
@@ -740,8 +739,7 @@ CDBAPIUnitTest::Test_ConnPool(void)
 ///////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LIBCONNEXT
 
-void
-CDBAPIUnitTest::Test_Authentication(void)
+BOOST_AUTO_TEST_CASE(Test_Authentication)
 {
     try {
         // MSSQL10 has SSL certificate.
@@ -791,7 +789,7 @@ CDBAPIUnitTest::Test_Authentication(void)
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_ConnParams(void)
+BOOST_AUTO_TEST_CASE(Test_ConnParams)
 {
     // Checking parser ...
     if (true) {
@@ -875,7 +873,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
                         "@" + GetArgs().GetServerName()
                         );
 
-                IDataSource* ds = m_DM.MakeDs(params);
+                IDataSource* ds = GetDM().MakeDs(params);
                 auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
                 conn->Connect(params);
                 auto_ptr<IStatement> auto_stmt(conn->GetStatement());
@@ -892,7 +890,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
                         "@" + GetArgs().GetServerName()
                         );
 
-                IDataSource* ds = m_DM.MakeDs(params);
+                IDataSource* ds = GetDM().MakeDs(params);
                 auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
                 conn->Connect(params);
                 auto_ptr<IStatement> auto_stmt(conn->GetStatement());
@@ -909,7 +907,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
                         "@" + GetArgs().GetServerName()
                         );
 
-                IDataSource* ds = m_DM.MakeDs(params);
+                IDataSource* ds = GetDM().MakeDs(params);
                 auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
                 conn->Connect(params);
                 auto_ptr<IStatement> auto_stmt(conn->GetStatement());
@@ -930,7 +928,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
                         ";SERVER=" + GetArgs().GetServerName()
                         );
 
-                IDataSource* ds = m_DM.MakeDs(params);
+                IDataSource* ds = GetDM().MakeDs(params);
                 auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
                 conn->Connect(params);
                 auto_ptr<IStatement> auto_stmt(conn->GetStatement());
@@ -947,7 +945,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
                         ";SERVER=" + GetArgs().GetServerName()
                         );
 
-                IDataSource* ds = m_DM.MakeDs(params);
+                IDataSource* ds = GetDM().MakeDs(params);
                 auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
                 conn->Connect(params);
                 auto_ptr<IStatement> auto_stmt(conn->GetStatement());
@@ -964,7 +962,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
                         ";SERVER=" + GetArgs().GetServerName()
                         );
 
-                IDataSource* ds = m_DM.MakeDs(params);
+                IDataSource* ds = GetDM().MakeDs(params);
                 auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
                 conn->Connect(params);
                 auto_ptr<IStatement> auto_stmt(conn->GetStatement());
@@ -987,7 +985,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
         env.Set("DBAPI_USER", GetArgs().GetUserName());
         env.Set("DBAPI_PASSWORD", GetArgs().GetUserPassword());
 
-        IDataSource* ds = m_DM.MakeDs(params);
+        IDataSource* ds = GetDM().MakeDs(params);
         auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
         conn->Connect(params);
         auto_ptr<IStatement> auto_stmt(conn->GetStatement());
@@ -1007,7 +1005,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
 
         CDBInterfacesFileConnParams params(uri_params);
 
-        IDataSource* ds = m_DM.MakeDs(params);
+        IDataSource* ds = GetDM().MakeDs(params);
         auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
         conn->Connect(params);
         auto_ptr<IStatement> auto_stmt(conn->GetStatement());

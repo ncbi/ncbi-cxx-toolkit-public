@@ -32,18 +32,16 @@
 
 #include <ncbi_pch.hpp>
 
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
 
 #include <dbapi/driver/util/blobstore.hpp>
-
-#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_LOB_Replication(void)
+BOOST_AUTO_TEST_CASE(Test_LOB_Replication)
 {
     string sql, sql2;
     CDB_Text txt;
@@ -111,8 +109,7 @@ CDBAPIUnitTest::Test_LOB_Replication(void)
     }
 }
 
-void
-CDBAPIUnitTest::Test_LOB(void)
+BOOST_AUTO_TEST_CASE(Test_LOB)
 {
     // static char clob_value[] = "1234567890";
     static string clob_value("1234567890");
@@ -474,8 +471,7 @@ CDBAPIUnitTest::Test_LOB(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_LOB2(void)
+BOOST_AUTO_TEST_CASE(Test_LOB2)
 {
     static char clob_value[] = "1234567890";
     string sql;
@@ -552,8 +548,7 @@ CDBAPIUnitTest::Test_LOB2(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_LOB3(void)
+BOOST_AUTO_TEST_CASE(Test_LOB3)
 {
     const string clob_value =
         "Seq-align ::= { type partial, dim 2, score "
@@ -629,8 +624,7 @@ CDBAPIUnitTest::Test_LOB3(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_LOB4(void)
+BOOST_AUTO_TEST_CASE(Test_LOB4)
 {
     const string table_name = "#test_lob4";
     const string clob_value = "hello";
@@ -693,8 +687,7 @@ CDBAPIUnitTest::Test_LOB4(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_LOB_Multiple(void)
+BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
 {
     const string table_name = "#test_lob_multiple";
     static string clob_value("1234567890");
@@ -794,8 +787,7 @@ CDBAPIUnitTest::Test_LOB_Multiple(void)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_LOB_LowLevel(void)
+BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
 {
     string sql;
     CDB_Text txt;
@@ -918,8 +910,7 @@ CDBAPIUnitTest::Test_LOB_LowLevel(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_LOB_Multiple_LowLevel(void)
+BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_LowLevel)
 {
     const string table_name = "#test_lob_ll_multiple";
     static string clob_value("1234567890");
@@ -1090,8 +1081,7 @@ CDBAPIUnitTest::Test_LOB_Multiple_LowLevel(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_BlobStream(void)
+BOOST_AUTO_TEST_CASE(Test_BlobStream)
 {
     string sql;
     enum {test_size = 10000};
@@ -1202,7 +1192,7 @@ CDBAPIUnitTest::Test_BlobStream(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_BlobStore(void)
+BOOST_AUTO_TEST_CASE(Test_BlobStore)
 {
     string sql;
     string table_name = "#TestBlobStore";
@@ -1306,7 +1296,7 @@ void CDBAPIUnitTest::Test_BlobStore(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Based on Soussov's API.
-void CDBAPIUnitTest::Test_Iskhakov(void)
+BOOST_AUTO_TEST_CASE(Test_Iskhakov)
 {
     string sql;
 

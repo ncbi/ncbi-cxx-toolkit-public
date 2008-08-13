@@ -32,16 +32,14 @@
 
 #include <ncbi_pch.hpp>
 
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
-
-#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_CDB_Object(void)
+BOOST_AUTO_TEST_CASE(Test_CDB_Object)
 {
     try {
         // Check for NULL a default constructor ...
@@ -313,8 +311,7 @@ CDBAPIUnitTest::Test_CDB_Object(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Variant(void)
+BOOST_AUTO_TEST_CASE(Test_Variant)
 {
     const Uint1 value_Uint1 = 1;
     const Int2 value_Int2 = -2;
@@ -1392,8 +1389,7 @@ CDBAPIUnitTest::Test_Variant(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Variant2(void)
+BOOST_AUTO_TEST_CASE(Test_Variant2)
 {
     const long rec_num = 3;
     const size_t size_step = 10;
@@ -1459,8 +1455,7 @@ CDBAPIUnitTest::Test_Variant2(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_DateTime(void)
+BOOST_AUTO_TEST_CASE(Test_DateTime)
 {
     string sql;
     auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
@@ -1710,7 +1705,7 @@ CDBAPIUnitTest::Test_DateTime(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_Numeric(void)
+BOOST_AUTO_TEST_CASE(Test_Numeric)
 {
     const string table_name("#test_numeric");
     const string str_value("2843113322.00");
@@ -1942,7 +1937,7 @@ void CDBAPIUnitTest::Test_Numeric(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_VARCHAR_MAX(void)
+BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
 {
     string sql;
     const string table_name = "#test_varchar_max_table";
@@ -2049,7 +2044,7 @@ void CDBAPIUnitTest::Test_VARCHAR_MAX(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_VARCHAR_MAX_BCP(void)
+BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX_BCP)
 {
     string sql;
     const string table_name = "#test_varchar_max_bcp_table";
@@ -2131,7 +2126,7 @@ void CDBAPIUnitTest::Test_VARCHAR_MAX_BCP(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_CHAR(void)
+BOOST_AUTO_TEST_CASE(Test_CHAR)
 {
     string sql;
     const string table_name = "#test_char_table";
@@ -2203,7 +2198,7 @@ void CDBAPIUnitTest::Test_CHAR(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_NVARCHAR(void)
+BOOST_AUTO_TEST_CASE(Test_NVARCHAR)
 {
     string sql;
 
@@ -2240,7 +2235,7 @@ void CDBAPIUnitTest::Test_NVARCHAR(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_NTEXT(void)
+BOOST_AUTO_TEST_CASE(Test_NTEXT)
 {
     string sql;
 
@@ -2284,7 +2279,7 @@ void CDBAPIUnitTest::Test_NTEXT(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_Decimal(void)
+BOOST_AUTO_TEST_CASE(Test_Decimal)
 {
     string sql;
     auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );

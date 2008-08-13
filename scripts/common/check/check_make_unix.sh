@@ -568,18 +568,25 @@ EOF_launch
                     fi
 
                     # Write result also on the screen and into the log
-                    if [ \$result -eq 0 ]; then
-                        echo "OK  --  \$x_cmd     (\$exec_time)"
-                        echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
-                        count_ok=\`expr \$count_ok + 1\`
+                    if grep -q NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
+                        echo "DIS --  \$x_cmd"
+                        echo "DIS --  \$x_cmd" >> \$res_log
 
-                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "OK" >> "\$x_test_rep"
+                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "DIS" >> "\$x_test_rep"
                     else
-                        echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
-                        echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
-                        count_err=\`expr \$count_err + 1\`
+                        if [ \$result -eq 0 ]; then
+                            echo "OK  --  \$x_cmd     (\$exec_time)"
+                            echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
+                            count_ok=\`expr \$count_ok + 1\`
 
-                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "ERR" >> "\$x_test_rep"
+                            [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "OK" >> "\$x_test_rep"
+                        else
+                            echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
+                            echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
+                            count_err=\`expr \$count_err + 1\`
+
+                            [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "ERR" >> "\$x_test_rep"
+                        fi
                     fi
 
                     if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then

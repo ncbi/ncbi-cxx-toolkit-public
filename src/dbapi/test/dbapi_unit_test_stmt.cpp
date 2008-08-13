@@ -32,16 +32,14 @@
 
 #include <ncbi_pch.hpp>
 
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
-
-#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_SelectStmt(void)
+BOOST_AUTO_TEST_CASE(Test_SelectStmt)
 {
     try {
         // Scenario:
@@ -203,8 +201,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_SelectStmt2(void)
+BOOST_AUTO_TEST_CASE(Test_SelectStmt2)
 {
     string sql;
     string table_name("#blk_table7");
@@ -271,8 +268,7 @@ CDBAPIUnitTest::Test_SelectStmt2(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_SelectStmtXML(void)
+BOOST_AUTO_TEST_CASE(Test_SelectStmtXML)
 {
     try {
         // SQL + XML
@@ -299,8 +295,7 @@ CDBAPIUnitTest::Test_SelectStmtXML(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Recordset(void)
+BOOST_AUTO_TEST_CASE(Test_Recordset)
 {
     try {
         auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
@@ -1275,8 +1270,7 @@ CDBAPIUnitTest::Test_Recordset(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_ResultsetMetaData(void)
+BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 {
     try {
         auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
@@ -1616,8 +1610,7 @@ CDBAPIUnitTest::Test_ResultsetMetaData(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_StmtMetaData(void)
+BOOST_AUTO_TEST_CASE(Test_StmtMetaData)
 {
     try {
         auto_ptr<ICallableStatement> auto_stmt;
@@ -1792,8 +1785,7 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_NULL(void)
+BOOST_AUTO_TEST_CASE(Test_NULL)
 {
     const string table_name = GetTableName();
     // const string table_name("DBAPI_Sample..dbapi_unit_test");
@@ -2149,60 +2141,15 @@ CDBAPIUnitTest::Test_NULL(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_GetRowCount()
-{
-    try {
-        enum {repeat_num = 5};
-        for ( int i = 0; i < repeat_num; ++i ) {
-            // Shared/Reusable statement
-            {
-                auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
-
-                CheckGetRowCount( i, eNoTrans, stmt.get() );
-                CheckGetRowCount( i, eTransCommit, stmt.get() );
-                CheckGetRowCount( i, eTransRollback, stmt.get() );
-            }
-            // Dedicated statement
-            {
-                CheckGetRowCount( i, eNoTrans );
-                CheckGetRowCount( i, eTransCommit );
-                CheckGetRowCount( i, eTransRollback );
-            }
-        }
-
-        for ( int i = 0; i < repeat_num; ++i ) {
-            // Shared/Reusable statement
-            {
-                auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
-
-                CheckGetRowCount2( i, eNoTrans, stmt.get() );
-                CheckGetRowCount2( i, eTransCommit, stmt.get() );
-                CheckGetRowCount2( i, eTransRollback, stmt.get() );
-            }
-            // Dedicated statement
-            {
-                CheckGetRowCount2( i, eNoTrans );
-                CheckGetRowCount2( i, eTransCommit );
-                CheckGetRowCount2( i, eTransRollback );
-            }
-        }
-    }
-    catch(const CException& ex) {
-        DBAPI_BOOST_FAIL(ex);
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::CheckGetRowCount(
+static void
+s_CheckGetRowCount(
     int row_count,
-    ETransBehavior tb,
-    IStatement* stmt
+    ETransBehavior tb = eNoTrans,
+    IStatement* stmt = NULL
     )
 {
     // Transaction ...
-    CTestTransaction transaction(*m_Conn, tb);
+    CTestTransaction transaction(GetConnection(), tb);
     string sql;
     sql  = " INSERT INTO " + GetTableName() + "(int_field) VALUES( 1 ) \n";
 
@@ -2320,15 +2267,15 @@ CDBAPIUnitTest::CheckGetRowCount(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::CheckGetRowCount2(
+static void
+s_CheckGetRowCount2(
     int row_count,
-    ETransBehavior tb,
-    IStatement* stmt
+    ETransBehavior tb = eNoTrans,
+    IStatement* stmt = NULL
     )
 {
     // Transaction ...
-    CTestTransaction transaction(*m_Conn, tb);
+    CTestTransaction transaction(GetConnection(), tb);
     // auto_ptr<IStatement> stmt( GetConnection().CreateStatement() );
     // _ASSERT(curr_stmt->get());
     string sql;
@@ -2499,9 +2446,58 @@ CDBAPIUnitTest::CheckGetRowCount2(
 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_GetRowCount)
+{
+    try {
+        {
+            auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
+
+            stmt->ExecuteUpdate("DELETE FROM " + GetTableName());
+        }
+
+        enum {repeat_num = 5};
+        for ( int i = 0; i < repeat_num; ++i ) {
+            // Shared/Reusable statement
+            {
+                auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
+
+                s_CheckGetRowCount( i, eNoTrans, stmt.get() );
+                s_CheckGetRowCount( i, eTransCommit, stmt.get() );
+                s_CheckGetRowCount( i, eTransRollback, stmt.get() );
+            }
+            // Dedicated statement
+            {
+                s_CheckGetRowCount( i, eNoTrans );
+                s_CheckGetRowCount( i, eTransCommit );
+                s_CheckGetRowCount( i, eTransRollback );
+            }
+        }
+
+        for ( int i = 0; i < repeat_num; ++i ) {
+            // Shared/Reusable statement
+            {
+                auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
+
+                s_CheckGetRowCount2( i, eNoTrans, stmt.get() );
+                s_CheckGetRowCount2( i, eTransCommit, stmt.get() );
+                s_CheckGetRowCount2( i, eTransRollback, stmt.get() );
+            }
+            // Dedicated statement
+            {
+                s_CheckGetRowCount2( i, eNoTrans );
+                s_CheckGetRowCount2( i, eTransCommit );
+                s_CheckGetRowCount2( i, eTransRollback );
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_HasMoreResults(void)
+BOOST_AUTO_TEST_CASE(Test_HasMoreResults)
 {
     string sql;
     auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
@@ -2556,8 +2552,7 @@ CDBAPIUnitTest::Test_HasMoreResults(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_GetTotalColumns(void)
+BOOST_AUTO_TEST_CASE(Test_GetTotalColumns)
 {
     string sql;
 
@@ -2641,7 +2636,7 @@ CDBAPIUnitTest::Test_GetTotalColumns(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 Int8
-CDBAPIUnitTest::GetIdentity(const auto_ptr<IStatement>& auto_stmt)
+GetIdentity(const auto_ptr<IStatement>& auto_stmt)
 {
     Int8 identity = 0;
 
@@ -2664,8 +2659,7 @@ CDBAPIUnitTest::GetIdentity(const auto_ptr<IStatement>& auto_stmt)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Identity(void)
+BOOST_AUTO_TEST_CASE(Test_Identity)
 {
     string sql;
     Int8 table_id = 0;
@@ -2761,8 +2755,7 @@ CDBAPIUnitTest::Test_Identity(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_StatementParameters(void)
+BOOST_AUTO_TEST_CASE(Test_StatementParameters)
 {
     try {
         // Very first test ...
@@ -2893,8 +2886,7 @@ CDBAPIUnitTest::Test_StatementParameters(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Query_Cancelation(void)
+BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
 {
     string sql;
 
@@ -3124,8 +3116,7 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_BindByPos(void)
+BOOST_AUTO_TEST_CASE(Test_BindByPos)
 {
     const long rec_num  = 10;
     const string table_name = GetTableName();
@@ -3203,15 +3194,8 @@ CDBAPIUnitTest::Test_BindByPos(void)
 
 }
 
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Execute(void)
-{
-}
-
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_ClearParamList(void)
+BOOST_AUTO_TEST_CASE(Test_ClearParamList)
 {
     const long rec_num  = 10;
     const string table_name = GetTableName();
@@ -3303,8 +3287,7 @@ CDBAPIUnitTest::Test_ClearParamList(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Create_Destroy(void)
+BOOST_AUTO_TEST_CASE(Test_Create_Destroy)
 {
     try {
         ///////////////////////

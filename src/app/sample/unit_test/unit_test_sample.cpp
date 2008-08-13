@@ -26,18 +26,17 @@
 * Author:  Pavel Ivanov, NCBI
 *
 * File Description:
-*   Sample unit test with auto-registration of test cases.
+*   Sample unit tests file for main stream test developing.
 *
-* If you don't want to use auto-registration of test cases or you want to use
-* some features that are not available with auto-registration
-* (e.g. dependencies between tests) look into another sample -
-* unit_test_alt_sample.cpp.
+* This file represents basic most common usage of Ncbi.Test framework based
+* on Boost.Test framework. For more advanced techniques look into another
+* sample - unit_test_alt_sample.cpp.
 *
 * NOTE:
 *   Boost.Test reports some memory leaks when compiled in MSVC even for this
 *   simple code. Maybe it's related to some toolkit static variables.
 *   To avoid annoying messages about memory leaks run this program with
-*   parameter --detect_memory_leak=0
+*   parameter --detect_memory_leaks=0
 *
 * ===========================================================================
 */
@@ -63,12 +62,17 @@
 USING_NCBI_SCOPE;
 
 
-
-BOOST_AUTO_INITIALIZATION(MyTestInit)
+NCBITEST_AUTO_INIT()
 {
     // Your application initialization code here (optional)
+    printf("Initialization function executed\n");
 }
 
+NCBITEST_AUTO_FINI()
+{
+    // Your application finalization code here (optional)
+    printf("Finalization function executed\n");
+}
 
 BOOST_AUTO_TEST_CASE(TestSimpleTools)
 {

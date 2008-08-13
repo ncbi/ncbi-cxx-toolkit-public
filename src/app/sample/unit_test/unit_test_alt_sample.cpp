@@ -23,127 +23,170 @@
 *
 * ===========================================================================
 *
-* Author:  Aaron Ucko, Pavel Ivanov, NCBI
+* Author:  Pavel Ivanov, NCBI
 *
 * File Description:
-*   Sample unit test without auto-registration of test cases.
+*   Sample unit tests file with advanced developing techniques.
 *
-* If you don't like concept of init_unit_test_suite() function and want
-* to use auto-registration of test cases look into another sample
-* unit_test_sample.cpp.
+* This file represents advanced developing techniques in usage of Ncbi.Test
+* framework based on Boost.Test framework. For more simple example look into
+* another sample - unit_test_sample.cpp.
 *
 * NOTE:
 *   Boost.Test reports some memory leaks when compiled in MSVC even for this
 *   simple code. Maybe it's related to some toolkit static variables.
 *   To avoid annoying messages about memory leaks run this program with
-*   parameter --detect_memory_leak=0
+*   parameter --detect_memory_leaks=0
 *
 * ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
 
-// This macro should be defined in all unit tests that do not use
-// auto-registration facility of Boost.Test
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/ncbiapp.hpp>
+
+// This macro should be defined before inclusion of test_boost.hpp in all
+// "*.cpp" files inside executable except one. It is like function main() for
+// non-Boost.Test executables is defined only in one *.cpp file - other files
+// should not include it. If NCBI_BOOST_NO_AUTO_TEST_MAIN will not be defined
+// then test_boost.hpp will define such "main()" function for tests.
+//
+// Usually if your unit tests contain only one *.cpp file you should not
+// care about this macro at all.
+//
+//#undef NCBI_BOOST_NO_AUTO_TEST_MAIN
+
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
-// For use in init_unit_test_suite()
-#include <boost/shared_ptr.hpp>
 
 USING_NCBI_SCOPE;
 
 
-void TestSimpleTools(void)
+NCBITEST_AUTO_INIT()
 {
-    int i = 1;
-    double d = 0.123;
+    // Your application initialization code here (optional)
+    //
+    // Useful function that can be used here:
+    // if (some condition) {
+    //     NcbiTestSetGlobalDisabled();
+    //     return;
+    // }
+
+    printf("Initialization function executed\n");
+}
+
+NCBITEST_AUTO_FINI()
+{
+    // Your application finalization code here (optional)
+
+    printf("Finalization function executed\n");
+}
+
+NCBITEST_INIT_CMDLINE(descrs)
+{
+    // Here we make descriptions of command line parameters that we are
+    // going to use.
+
+    descrs->AddOptionalPositional("some_arg",
+                                  "This is custom sample command line "
+                                  "argument that will be distinguished by "
+                                  "test application",
+                                  CArgDescriptions::eString);
+}
+
+NCBITEST_INIT_VARIABLES(parser)
+{
+    // Here we are initializing variables that will be used in conditions
+    // in unit_test_alt_sample.ini
+
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+    parser->AddSymbol("some_arg_passed", args["some_arg"].HasValue());
+}
+
+NCBITEST_INIT_TREE()
+{
+    // Here we can set some dependencies between tests (if one disabled or
+    // failed other shouldn't execute) and hard-coded disablings. Note though
+    // that more preferable way to make always disabled test is add to
+    // ini-file in UNITTESTS_DISABLE section this line:
+    // TestName = true
+
+    NCBITEST_DEPENDS_ON(DependentOnArg, UsingArg);
+
+    NCBITEST_DISABLE(AlwaysDisabled);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestSimpleTools)
+{
+    int    i  = 1;
+    double d  = 0.123;
     string s1 = "qwerty";
     string s2 = "qwerty";
 
     // If this check fails, test will continue its execution
     BOOST_CHECK_EQUAL(i,  1);
     // If this check fails, test will stop its execution at this point
-    BOOST_REQUIRE_EQUAL(d, 0.123);
+    BOOST_REQUIRE_EQUAL(d,  0.123);
 
     BOOST_CHECK_EQUAL(s1, s2);
 
-    // Never use it this way, because it will not compile on WorkShop
-    // BOOST_CHECK_EQUAL(s1, "qwerty");
-    // Instead of that use it this way
+    // Never use it this way, because it will not compile on WorkShop:
+    //    BOOST_CHECK_EQUAL(s1, "qwerty");
+    // Instead, use it this way:
     BOOST_CHECK(s1 == "qwerty");
-    // Or this way
+    // ...or this way:
     BOOST_CHECK_EQUAL(s1, string("qwerty"));
 }
 
 
-class CExceptionTests
-{
-public:
-    void TestWithException(void);
-    void TestWithoutException(void);
-
-private:
-    void ThrowSomeException(void);
-    void FuncWithoutException(void);
-};
-
-void CExceptionTests::ThrowSomeException(void)
+static void s_ThrowSomeException(void)
 {
     NCBI_THROW(CException, eUnknown, "Some exception message");
 }
 
-void CExceptionTests::FuncWithoutException(void)
+BOOST_AUTO_TEST_CASE(TestWithException)
 {
-    printf("Here is some dummy message");
-}
-
-void CExceptionTests::TestWithException(void)
-{
-    BOOST_CHECK_THROW( ThrowSomeException(), CException );
-}
-
-void CExceptionTests::TestWithoutException(void)
-{
-    BOOST_CHECK_NO_THROW( FuncWithoutException() );
+    BOOST_CHECK_THROW( s_ThrowSomeException(), CException );
 }
 
 
-using namespace boost::unit_test;
-
-// Initialization function - it must be in global namespace, i.e. outside of
-// any BEGIN_NCBI_SCOPE-END_NCBI_SCOPE structures.
-test_suite*
-init_unit_test_suite( int argc, char* argv[] )
+static void s_FuncWithoutException(void)
 {
-    test_suite* ts = BOOST_TEST_SUITE("Main Sample Test Suite");
+    printf("Here is some dummy message\n");
+}
 
-    test_case* tc = BOOST_TEST_CASE(TestSimpleTools);
-    ts->add(tc);
+BOOST_AUTO_TEST_CASE(TestWithoutException)
+{
+    BOOST_CHECK_NO_THROW( s_FuncWithoutException() );
+}
 
-    test_suite* sub_ts = BOOST_TEST_SUITE("Test Suite for exceptions");
-    ts->add(sub_ts);
-    // all tests in sub_ts should not be called if tc fails
-    sub_ts->depends_on(tc);
+BOOST_AUTO_TEST_CASE(TestDependentOnArg)
+{
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+    string arg_value = args["some_arg"].AsString();
 
-    // Object for 2 other test cases. It will be destroyed when last
-    // shared_ptr for it will be destroyed.
-    boost::shared_ptr<CExceptionTests> testObj(new CExceptionTests());
+    LOG_POST("Argument value is " << arg_value);
+}
 
-    test_case* tc_class =
-        BOOST_CLASS_TEST_CASE(&CExceptionTests::TestWithException, testObj);
-    sub_ts->add(tc_class);
+BOOST_AUTO_TEST_CASE(TestAlwaysDisabled)
+{
+    printf("This message will never be printed.\n");
+}
 
-    tc_class =
-        BOOST_CLASS_TEST_CASE(&CExceptionTests::TestWithoutException, testObj);
-    sub_ts->add(tc_class);
+BOOST_AUTO_TEST_CASE(TestDisabledInConfig)
+{
+    printf("This message will be printed only after "
+           "proper editing of *.ini file or after adding command line "
+           "argument --run_test='*DisabledInConfig'.\n");
+}
 
+BOOST_AUTO_TEST_CASE(TestUsingArg)
+{
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+    string arg_value = args["some_arg"].AsString();
 
-    // Here (or anywhere else in this function) you can call any other
-    // initialization code which you want to execute before all tests.
-
-
-    return ts;
+    BOOST_CHECK( !arg_value.empty() );
 }

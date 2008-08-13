@@ -10,8 +10,7 @@ SRC = unit_test_sample
 ### BEGIN COPIED SETTINGS
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xncbi test_boost
-LIBS = $(ORIG_LIBS)
+LIB = test_boost xncbi
 PRE_LIBS = $(BOOST_LIBS)
 
 REQUIRES = Boost.Test

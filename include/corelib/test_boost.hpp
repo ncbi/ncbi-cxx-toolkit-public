@@ -38,6 +38,8 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/expr.hpp>
+#include <corelib/ncbiargs.hpp>
 
 /// Redefinition of the name of global function used in Boost.Test for
 /// initialization. It is called now from NCBI wrapper function called before
@@ -58,6 +60,11 @@
 #endif
 
 #include <boost/test/auto_unit_test.hpp>
+
+#include <boost/preprocessor/tuple/rem.hpp>
+#include <boost/preprocessor/repeat.hpp>
+#include <boost/preprocessor/array/elem.hpp>
+#include <boost/preprocessor/arithmetic/inc.hpp>
 
 
 // Redefine some Boost macros to make them more comfortable
@@ -109,46 +116,193 @@ catch( ... ) {                                                               \
 
 BEGIN_NCBI_SCOPE
 
-/// Define global user-defined function for preparing command line
-/// arguments description only if user do not have his own one.
-#ifndef NCBI_NO_TEST_PREPARE_ARG_DESCRS
 
-class CArgDescriptions;
+/// Macro for introducing function initializing argument descriptions for
+/// tests. This function will be called before CNcbiApplication will parse
+/// command line arguments. So it will parse command line using descriptions
+/// set by this function. Also test framework will react correctly on such
+/// arguments as -h, -help or -dryrun (the last will just print list of unit
+/// tests without actually executing them). The parameter var_name is a name
+/// for variable of type CArgDescriptions* that can be used inside function
+/// to set up argument descriptions. Usage of this macro is like this:<pre>
+/// NCBITEST_INIT_CMDLINE(my_args)
+/// {
+///     my_args->SetUsageContext(...);
+///     my_args->AddPositional(...);
+/// }
+/// </pre>
+///
+#define NCBITEST_INIT_CMDLINE(var_name)                     \
+    NCBITEST_AUTOREG_PARAMFUNC(eTestUserFuncCmdLine,        \
+                               CArgDescriptions* var_name,  \
+                               NcbiTestGetArgDescrs)
 
-CArgDescriptions* NcbiTestPrepareArgDescrs(void)
-{
-    return NULL;
-}
 
-#endif
-
-
-/// Type of function with unit tests initialization code
-typedef void (*TNcbiBoostInitFunc)(void);
-
-/// Macro defining initialization function which will be called before
-/// tests execution. The usage of this macro is similar to
-/// BOOST_AUTO_TEST_CASE, i.e.:
-/// BOOST_AUTO_INITIALIZATION(FunctionName)
+/// Macro for introducing initialization function which will be called before
+/// tests execution and only if tests will be executed (if there's no command
+/// line parameter -dryrun or --do_not_test) even if only select number of
+/// tests will be executed (if command line parameter --run_test=... were
+/// given). If any of these initialization functions will throw an exception
+/// then tests will not be executed. The usage of this macro:<pre>
+/// NCBITEST_AUTO_INIT()
 /// {
 ///     // initialization function body
 /// }
-#define BOOST_AUTO_INITIALIZATION(name)                                     \
-static void name(void);                                                     \
-static ::NCBI_NS_NCBI::SNcbiBoostIniter BOOST_JOIN(name, _initer) (&name);  \
-static void name(void)
+/// </pre>
+/// Arbitrary number of initialization functions can be defined. They all will
+/// be called before tests but the order of these callings is not defined.
+///
+/// @sa NCBITEST_AUTO_FINI
+///
+#define NCBITEST_AUTO_INIT()  NCBITEST_AUTOREG_FUNCTION(eTestUserFuncInit)
 
-/// Registrar of all initialization functions
-void RegisterNcbiBoostInit(TNcbiBoostInitFunc func);
 
-/// Class for implementing automatic registration of init-functions
-struct SNcbiBoostIniter
-{
-    SNcbiBoostIniter(TNcbiBoostInitFunc func)
-    {
-        RegisterNcbiBoostInit(func);
-    }
-};
+/// Macro for introducing finalization function which will be called after
+/// actual tests execution even if only select number of tests will be
+/// executed (if command line parameter --run_test=... were given). The usage
+/// of this macro:<pre>
+/// NCBITEST_AUTO_FINI()
+/// {
+///     // finalization function body
+/// }
+/// </pre>
+/// Arbitrary number of finalization functions can be defined. They all will
+/// be called after tests are executed but the order of these callings is not
+/// defined.
+///
+/// @sa NCBITEST_AUTO_INIT
+///
+#define NCBITEST_AUTO_FINI()  NCBITEST_AUTOREG_FUNCTION(eTestUserFuncFini)
+
+
+/// Macro for introducing function which should initialize configuration
+/// conditions parser. This parser will be used to evaluate conditions for
+/// running tests written in configuration file. So you should set values for
+/// all variables that you want to participate in those expressions. Test
+/// framework automatically adds all OS*, COMPILER* and DLL_BUILD variables
+/// with the values of analogous NCBI_OS*, NCBI_COMPILER* and NCBI_DLL_BUILD
+/// macros. The usage of this macro:<pre>
+/// NCBITEST_INIT_VARIABLES(my_parser)
+/// {
+///    my_parser->AddSymbol("var_name1", value_expr1);
+///    my_parser->AddSymbol("var_name2", value_expr2);
+/// }
+/// </pre>
+/// Arbitrary number of such functions can be defined.
+///
+#define NCBITEST_INIT_VARIABLES(var_name)              \
+    NCBITEST_AUTOREG_PARAMFUNC(eTestUserFuncVars,      \
+                               CExprParser* var_name,  \
+                               NcbiTestGetIniParser)
+
+
+/// Macro for introducing function which should initialize dependencies
+/// between test units and some hard coded (not taken from configuration file)
+/// tests disablings. All function job can be done by using NCBITEST_DISABLE,
+/// NCBITEST_DEPENDS_ON and NCBITEST_DEPENDS_ON_N macros in conjunction with
+/// some conditional statements maybe. The usage of this macro:<pre>
+/// NCBITEST_INIT_TREE()
+/// {
+///     NCBITEST_DISABLE(test_name11);
+///
+///     NCBITEST_DEPENDS_ON(test_name22, test_name1);
+///     NCBITEST_DEPENDS_ON_N(test_name33, N, (test_name1, ..., test_nameN));
+/// }
+/// </pre>
+/// Arbitrary number of such functions can be defined.
+///
+/// @sa NCBITEST_DISABLE, NCBITEST_DEPENDS_ON, NCBITEST_DEPENDS_ON_N
+///
+#define NCBITEST_INIT_TREE()  NCBITEST_AUTOREG_FUNCTION(eTestUserFuncDeps)
+
+
+/// Unconditionally disable test case. To be used inside function introduced
+/// by NCBITEST_INIT_TREE.
+///
+/// @param test_name
+///   Name of the test as a bare text without quotes. Name can exclude test_
+///   prefix if function name includes one and class prefix if it is class
+///   member test case.
+///
+/// @sa NCBITEST_INIT_TREE
+///
+#define NCBITEST_DISABLE(test_name)                               \
+    NcbiTestDisable(NcbiTestGetUnit(BOOST_STRINGIZE(test_name)))
+
+
+/// Add dependency between test test_name and dep_name. This dependency means
+/// if test dep_name is failed during execution or was disabled by any reason
+/// then test test_name will not be executed (will be skipped).
+/// To be used inside function introduced by NCBITEST_INIT_TREE.
+///
+/// @param test_name
+///   Name of the test as a bare text without quotes. Name can exclude test_
+///   prefix if function name includes one and class prefix if it is class
+///   member test case.
+/// @param dep_name
+///   Name of the test to depend on. Name can be given with the same
+///   assumptions as test_name.
+///
+/// @sa NCBITEST_INIT_TREE, NCBI_TEST_DEPENDS_ON_N
+///
+#define NCBITEST_DEPENDS_ON(test_name, dep_name)                    \
+    NcbiTestDependsOn(NcbiTestGetUnit(BOOST_STRINGIZE(test_name)),  \
+                      NcbiTestGetUnit(BOOST_STRINGIZE(dep_name)))
+
+
+/// Helper macro to implement NCBI_TEST_DEPENDS_ON_N. For internal use only.
+#define NCBITEST_DEPENDS_ON_N_IMPL(z, n, names_array)               \
+    NCBITEST_DEPENDS_ON(BOOST_PP_ARRAY_ELEM(0, names_array),        \
+                        BOOST_PP_ARRAY_ELEM(BOOST_PP_INC(n), names_array));
+
+
+/// Add dependency between test test_name and several other tests which names
+/// given in the list dep_names_array. This dependency means if any of the
+/// tests in list dep_names_array is failed during execution or was disabled
+/// by any reason then test test_name will not be executed (will be skipped).
+/// To be used inside function introduced by NCBITEST_INIT_TREE. Macro is
+/// equivalent to use NCBI_TEST_DEPENDS_ON several times for each test in
+/// dep_names_array.
+///
+/// @param test_name
+///   Name of the test as a bare text without quotes. Name can exclude test_
+///   prefix if function name includes one and class prefix if it is class
+///   member test case.
+/// @param N
+///   Number of tests in dep_names_array
+/// @param dep_names_array
+///   Names of tests to depend on. Every name can be given with the same
+///   assumptions as test_name. Array should be given enclosed in parenthesis
+///   like (test_name1, ..., test_nameN) and should include exactly N elements
+///   or preprocessor error will occur during compilation.
+///
+/// @sa NCBITEST_INIT_TREE, NCBI_TEST_DEPENDS_ON
+///
+#define NCBITEST_DEPENDS_ON_N(test_name, N, dep_names_array)        \
+    BOOST_PP_REPEAT(N, NCBITEST_DEPENDS_ON_N_IMPL,                  \
+                    (BOOST_PP_INC(N), (test_name,                   \
+                        BOOST_PP_TUPLE_REM(N) dep_names_array)))    \
+    (void)0
+
+
+/// Disable execution of all tests in current configuration. Call to the
+/// function is equivalent to setting GLOBAL = true in ini file.
+/// Globally disabled tests are equivalent to not built test program and thus
+/// they are shown as ABSent by check scripts (called via make check).
+/// Function should be called inly from NCBITEST_AUTO_INIT() or
+/// NCBITEST_INIT_TREE() functions.
+///
+/// @sa NCBITEST_AUTO_INIT, NCBITEST_INIT_TREE
+///
+void NcbiTestSetGlobalDisabled(void);
+
+
+//////////////////////////////////////////////////////////////////////////
+// All API from this line below is for internal use only and is not
+// intended for use by any users. All this stuff is used by end-user
+// macros defined above.
+//////////////////////////////////////////////////////////////////////////
+
 
 /// Mark test case/suite as dependent on another test case/suite.
 /// If dependency test case didn't executed successfully for any reason then
@@ -170,6 +324,71 @@ void NcbiTestDependsOn(boost::unit_test::test_unit* tu,
 /// to setting p_enabled to false when test does not appear in final
 /// Boost.Test report).
 void NcbiTestDisable(boost::unit_test::test_unit* tu);
+
+
+/// Type of user-defined function which will be automatically registered
+/// in test framework
+typedef void (*TNcbiTestUserFunction)(void);
+
+/// Types of functions that user can define
+enum ETestUserFuncType {
+    eTestUserFuncInit,
+    eTestUserFuncFini,
+    eTestUserFuncCmdLine,
+    eTestUserFuncVars,
+    eTestUserFuncDeps,
+    eTestUserFuncFirst = eTestUserFuncInit,
+    eTestUserFuncLast  = eTestUserFuncDeps
+};
+
+/// Registrar of all user-defined functions
+void RegisterNcbiTestUserFunc(TNcbiTestUserFunction func,
+                              ETestUserFuncType     func_type);
+
+/// Class for implementing automatic registration of user functions
+struct SNcbiTestUserFuncReg
+{
+    SNcbiTestUserFuncReg(TNcbiTestUserFunction func,
+                         ETestUserFuncType     func_type)
+    {
+        RegisterNcbiTestUserFunc(func, func_type);
+    }
+};
+
+/// Get pointer to parser which will be used for evaluating conditions written
+/// in configuration file
+CExprParser* NcbiTestGetIniParser(void);
+
+/// Get ArgDescriptions object which will be passed to application for parsing
+/// command line arguments.
+CArgDescriptions* NcbiTestGetArgDescrs(void);
+
+/// Get pointer to test unit by its name which can be partial, i.e. without
+/// class prefix and/or test_ prefix if any.
+boost::unit_test::test_unit* NcbiTestGetUnit(CTempString test_name);
+
+
+/// Helper macros for unique identifiers
+#define NCBITEST_AUTOREG_FUNC(type)  \
+                      BOOST_JOIN(BOOST_JOIN(Ncbi_, type),       __LINE__)
+#define NCBITEST_AUTOREG_OBJ     BOOST_JOIN(NcbiTestAutoObj,    __LINE__)
+#define NCBITEST_AUTOREG_HELPER  BOOST_JOIN(NcbiTestAutoHelper, __LINE__)
+
+#define NCBITEST_AUTOREG_FUNCTION(type)                                    \
+static void NCBITEST_AUTOREG_FUNC(type)(void);                             \
+static ::NCBI_NS_NCBI::SNcbiTestUserFuncReg                                \
+NCBITEST_AUTOREG_OBJ(&NCBITEST_AUTOREG_FUNC(type), ::NCBI_NS_NCBI::type);  \
+static void NCBITEST_AUTOREG_FUNC(type)(void)
+
+#define NCBITEST_AUTOREG_PARAMFUNC(type, param_decl, param_func)       \
+static void NCBITEST_AUTOREG_FUNC(type)(::NCBI_NS_NCBI::param_decl);   \
+static void NCBITEST_AUTOREG_HELPER(void)                              \
+{                                                                      \
+    NCBITEST_AUTOREG_FUNC(type)(::NCBI_NS_NCBI::param_func());         \
+}                                                                      \
+static ::NCBI_NS_NCBI::SNcbiTestUserFuncReg                            \
+NCBITEST_AUTOREG_OBJ(&NCBITEST_AUTOREG_HELPER, ::NCBI_NS_NCBI::type);  \
+static void NCBITEST_AUTOREG_FUNC(type)(::NCBI_NS_NCBI::param_decl)
 
 
 END_NCBI_SCOPE

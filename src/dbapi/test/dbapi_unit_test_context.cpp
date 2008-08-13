@@ -34,131 +34,14 @@
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
-
-#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
 
 ////////////////////////////////////////////////////////////////////////////////
-class CContextThread : public CThread
-{
-public:
-    CContextThread(CDriverManager& dm, CRef<const CTestArguments> args);
-
-protected:
-    virtual ~CContextThread(void);
-    virtual void* Main(void);
-    virtual void  OnExit(void);
-
-    const CTestArguments& GetArgs(void) const
-    {
-        return *m_Args;
-    }
-
-private:
-    CRef<const CTestArguments> m_Args;
-
-    CDriverManager&         m_DM;
-    IDataSource*            m_DS;
-};
-
-///////////////////////////////////////////////////////////////////////////////
-CContextThread::CContextThread(CDriverManager& dm,
-                               CRef<const CTestArguments> args) :
-    m_Args(args),
-    m_DM(dm),
-    m_DS(NULL)
-{
-}
-
-
-CContextThread::~CContextThread(void)
-{
-}
-
-
-void*
-CContextThread::Main(void)
-{
-    try {
-        m_DS = m_DM.MakeDs(GetArgs().GetConnParams());
-        return m_DS;
-    } catch (const CDB_ClientEx&) {
-        // Ignore it ...
-    } catch (...) {
-        _ASSERT(false);
-    }
-
-    return NULL;
-}
-
-
-void  CContextThread::OnExit(void)
-{
-    if (m_DS) {
-        m_DM.DestroyDs(m_DS);
-    }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_DriverContext_One(void)
-{
-    enum {eNumThreadsMax = 5};
-    void* ok;
-    int succeeded_num = 0;
-    CRef<CContextThread> thr[eNumThreadsMax];
-
-    // Spawn more threads
-    for (int i = 0; i < eNumThreadsMax; ++i) {
-        thr[i] = new CContextThread(m_DM, m_Args);
-        // Allow threads to run even in single thread environment
-        thr[i]->Run(CThread::fRunAllowST);
-    }
-
-    // Wait for all threads
-    for (unsigned int i = 0; i < eNumThreadsMax; ++i) {
-        thr[i]->Join(&ok);
-        if (ok != NULL) {
-            ++succeeded_num;
-        }
-    }
-
-    BOOST_CHECK(succeeded_num >= 1);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_DriverContext_Many(void)
-{
-    enum {eNumThreadsMax = 5};
-    void* ok;
-    int succeeded_num = 0;
-    CRef<CContextThread> thr[eNumThreadsMax];
-
-    // Spawn more threads
-    for (int i = 0; i < eNumThreadsMax; ++i) {
-        thr[i] = new CContextThread(m_DM, m_Args);
-        // Allow threads to run even in single thread environment
-        thr[i]->Run(CThread::fRunAllowST);
-    }
-
-    // Wait for all threads
-    for (unsigned int i = 0; i < eNumThreadsMax; ++i) {
-        thr[i]->Join(&ok);
-        if (ok != NULL) {
-            ++succeeded_num;
-        }
-    }
-
-    BOOST_CHECK_EQUAL(succeeded_num, int(eNumThreadsMax));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_SetLogStream(void)
+BOOST_AUTO_TEST_CASE(Test_SetLogStream)
 {
     try {
         CNcbiOfstream logfile("dbapi_unit_test.log");

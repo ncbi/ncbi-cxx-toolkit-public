@@ -32,16 +32,14 @@
 
 #include <ncbi_pch.hpp>
 
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
-
-#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Cursor(void)
+BOOST_AUTO_TEST_CASE(Test_Cursor)
 {
     const size_t rec_num = 2;
     string sql;
@@ -265,8 +263,7 @@ CDBAPIUnitTest::Test_Cursor(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Cursor2(void)
+BOOST_AUTO_TEST_CASE(Test_Cursor2)
 {
     const size_t rec_num = 2;
     string sql;
@@ -348,8 +345,7 @@ CDBAPIUnitTest::Test_Cursor2(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Cursor_Param(void)
+BOOST_AUTO_TEST_CASE(Test_Cursor_Param)
 {
     string sql;
     const size_t rec_num = 2;
@@ -431,7 +427,7 @@ CDBAPIUnitTest::Test_Cursor_Param(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_Cursor_Multiple(void)
+BOOST_AUTO_TEST_CASE(Test_Cursor_Multiple)
 {
     string sql;
     const size_t rec_num = 2;

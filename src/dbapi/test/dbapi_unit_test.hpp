@@ -37,20 +37,13 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 
+#include <corelib/test_boost.hpp>
+
 #include <dbapi/dbapi.hpp>
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
 
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
-#define NCBI_NO_TEST_PREPARE_ARG_DESCRS
-#include <corelib/test_boost.hpp>
-
-using boost::unit_test_framework::test_suite;
-
-// #define DBAPI_BOOST_FAIL(ex)
-//     ERR_POST(ex);
-//     BOOST_FAIL(ex.GetMsg())
 
 #define DBAPI_BOOST_FAIL(ex) \
     BOOST_FAIL(ex.what())
@@ -193,200 +186,28 @@ private:
 };
 
 
+const string& GetTableName(void);
+IConnection& GetConnection(void);
+IDataSource& GetDS(void);
+const CTestArguments& GetArgs(void);
+int GetMaxVarcharSize(void);
 
-///////////////////////////////////////////////////////////////////////////
-class CDBAPIUnitTest
+inline
+CDriverManager& GetDM(void)
 {
-public:
-    CDBAPIUnitTest(const CRef<const CTestArguments>& args);
-    ~CDBAPIUnitTest(void);
+    return CDriverManager::GetInstance();
+}
 
-public:
-    void TestInit(void);
+void DumpResults(IStatement* const stmt);
+size_t GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
+                       const string& table_name);
+size_t GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt);
+Int8 GetIdentity(const auto_ptr<IStatement>& auto_stmt);
 
-public:
-    // Test IStatement interface.
 
-    // Testing Approach for value wrappers
-    void Test_CDB_Object(void);
-    void Test_Variant(void);
-    void Test_Variant2(void);
-    void Test_Numeric(void);
+bool CommonInit(void);
+void CommonFini(void);
 
-    void Test_CDB_Exception(void);
-
-    // Testing Approach for Members
-    // Test particular methods.
-    void Test_GetRowCount();
-    void CheckGetRowCount(
-        int row_count,
-        ETransBehavior tb = eNoTrans,
-        IStatement* stmt = NULL);
-    void CheckGetRowCount2(
-        int row_count,
-        ETransBehavior tb = eNoTrans,
-        IStatement* stmt = NULL);
-
-    void Test_StatementParameters(void);
-    void Test_UserErrorHandler(void);
-    // User error handler life-time ...
-    void Test_UserErrorHandler_LT(void);
-    void Test_NULL();
-
-    void Test_SelectStmt(void);
-    void Test_SelectStmt2(void);
-    void Test_SelectStmtXML(void);
-
-    void Test_Recordset(void);
-    void Test_ResultsetMetaData(void);
-    void Test_StmtMetaData(void);
-
-    void Test_Cursor(void);
-    void Test_Cursor2(void);
-    void Test_Cursor_Param(void);
-    void Test_Cursor_Multiple(void);
-
-    void Test_Procedure(void);
-    void Test_Procedure2(void);
-    void Test_Procedure3(void);
-
-    void Test_Bulk_Writing(void);
-    void Test_Bulk_Writing2(void);
-    void Test_Bulk_Writing3(void);
-    void Test_Bulk_Writing4(void);
-    void Test_Bulk_Writing5(void);
-    void Test_Bulk_Writing6(void);
-    void Test_Bulk_Late_Bind(void);
-    void Test_Bulk_Overflow(void);
-    
-    void Test_GetTotalColumns(void);
-
-    void Test_LOB(void);
-    void Test_LOB2(void);
-    void Test_LOB3(void);
-    void Test_LOB4(void);
-    void Test_LOB_Multiple(void);
-    void Test_LOB_LowLevel(void);
-    void Test_LOB_Multiple_LowLevel(void);
-    void Test_BlobStream(void);
-
-    void Test_BulkInsertBlob(void);
-    void Test_BulkInsertBlob_LowLevel(void);
-    void Test_BulkInsertBlob_LowLevel2(void);
-
-    void Test_UNIQUE(void);
-    void Test_DateTime(void);
-    void Test_DateTimeBCP(void);
-    void Test_Insert(void);
-    void Test_HasMoreResults(void);
-    void Test_Create_Destroy(void);
-    void Test_Multiple_Close(void);
-
-    void Test_Unicode_Simple(void);
-    void Test_UnicodeNB(void);
-    void Test_Unicode(void);
-
-    void Test_VARCHAR_MAX(void);
-    void Test_VARCHAR_MAX_BCP(void);
-    void Test_NVARCHAR(void);
-    void Test_NTEXT(void);
-    void Test_CHAR(void);
-    
-    void Test_Iskhakov(void);
-    void Test_NCBI_LS(void);
-#ifdef HAVE_LIBCONNEXT
-    void Test_Authentication(void);
-#endif
-    void Test_DriverContext_One(void);
-    void Test_DriverContext_Many(void);
-    void Test_Decimal(void);
-    void Test_Query_Cancelation(void);
-
-    void Test_Timeout(void);
-    void Test_Timeout2(void);
-
-    void Test_SetLogStream(void);
-    void Test_Identity(void);
-    void Test_BlobStore(void);
-    void Test_DropConnection(void);
-    void Test_N_Connections(void);
-    void Test_ConnFactory(void);
-    void Test_ConnPool(void);
-    void Test_BCP_Cancel(void);
-    void Test_ClearParamList(void);
-    void Test_Truncation(void);
-    void Test_ConnParams(void);
-    void Test_BindByPos(void);
-
-    void Test_LOB_Replication(void);
-    void Test_Heavy_Load(void);
-
-public:
-    typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)
-                (IDBServiceMapper::TFactory svc_mapper_factory);
-    void Test_Exception_Safety(void);
-    void Test_MsgToEx(void);
-    void Test_MsgToEx2(void);
-    void ES_01_Internal(IConnection& conn);
-    void Check_Validator(TDBConnectionFactoryFactory factory,
-                         IConnValidator& validator);
-    void CheckConnFactory(TDBConnectionFactoryFactory factory_factory);
-
-public:
-    // Not implemented yet ...
-    void Test_Execute(void);
-
-    void Test_Exception(void);
-
-    // Test scenarios.
-    void Repeated_Usage(void);
-    void Single_Value_Writing(void);
-    void Single_Value_Reading(void);
-    void Bulk_Reading(void);
-    void Multiple_Resultset(void);
-    void Error_Conditions(void);
-    void Transactional_Behavior(void);
-
-protected:
-    const string& GetTableName(void) const
-    {
-        return m_TableName;
-    }
-    static void DumpResults(IStatement* const stmt);
-    static size_t GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
-                                  const string& table_name);
-    static size_t GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt);
-    static Int8 GetIdentity(const auto_ptr<IStatement>& auto_stmt);
-
-    void Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn);
-    void Test_WaitForDelay(const auto_ptr<IConnection>& auto_conn);
-
-    IConnection& GetConnection(void)
-    {
-        _ASSERT(m_Conn.get());
-        return *m_Conn;
-    }
-    IDataSource& GetDS(void)
-    {
-        _ASSERT(m_DS);
-        return *m_DS;
-    }
-
-    const CTestArguments& GetArgs(void) const
-    {
-        return *m_Args;
-    }
-
-private:
-    CRef<const CTestArguments>  m_Args;
-
-    CDriverManager&             m_DM;
-    IDataSource*                m_DS;
-    auto_ptr<IConnection>       m_Conn;
-
-    const string                m_TableName;
-    unsigned int                m_max_varchar_size;
-};
 
 ///////////////////////////////////////////////////////////////////////////
 class CDBSetConnParams : public CDBConnParamsDelegate

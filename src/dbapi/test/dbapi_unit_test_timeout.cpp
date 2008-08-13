@@ -32,91 +32,19 @@
 
 #include <ncbi_pch.hpp>
 
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
-
-#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
 
-///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_Timeout(void)
-{
-    try {
-        auto_ptr<IConnection> auto_conn;
-        auto_ptr<IStatement> auto_stmt;
-
-        // Alter DriverContext ...
-        {
-            I_DriverContext* dc = GetDS().GetDriverContext();
-            unsigned int timeout = dc->GetTimeout();
-
-            dc->SetTimeout(2);
-
-            // Create connection ...
-            auto_conn.reset(GetDS().CreateConnection());
-            BOOST_CHECK(auto_conn.get() != NULL);
-
-            auto_conn->Connect(GetArgs().GetConnParams());
-
-            Test_WaitForDelay(auto_conn);
-
-            // Crete new connection because some drivers (ftds8 for example)
-            // can close connection in the Test_WaitForDelay test.
-            auto_conn.reset(GetDS().CreateConnection());
-            BOOST_CHECK(auto_conn.get() != NULL);
-
-            auto_conn->Connect(GetArgs().GetConnParams());
-
-            //
-            // Check selecting from a huge table ...
-            Test_HugeTableSelect(auto_conn);
-
-            dc->SetTimeout(timeout);
-        } // Alter DriverContext ...
-    }
-    catch(const CException& ex) {
-        DBAPI_BOOST_FAIL(ex);
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_Timeout2(void)
-{
-    try {
-        auto_ptr<IConnection> auto_conn;
-        auto_ptr<IStatement> auto_stmt;
-
-
-        // Alter connection ...
-        {
-            auto_conn.reset(GetDS().CreateConnection());
-            BOOST_CHECK(auto_conn.get() != NULL);
-
-            auto_conn->Connect(GetArgs().GetConnParams());
-
-            auto_conn->SetTimeout(2);
-
-            Test_WaitForDelay(auto_conn);
-
-            //
-            // Check selecting from a huge table ...
-            Test_HugeTableSelect(auto_conn);
-
-        }
-    }
-    catch(const CException& ex) {
-        DBAPI_BOOST_FAIL(ex);
-    }
-}
-
 ////////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_WaitForDelay(const auto_ptr<IConnection>& auto_conn)
+static void s_WaitForDelay(IConnection& conn)
 {
     auto_ptr<IStatement> auto_stmt;
     bool timeout_was_reported = false;
 
-    auto_stmt.reset(auto_conn->GetStatement());
+    auto_stmt.reset(conn.GetStatement());
 
     if(GetArgs().GetDriverName() == ftds8_driver) {
         try {
@@ -154,7 +82,7 @@ void CDBAPIUnitTest::Test_WaitForDelay(const auto_ptr<IConnection>& auto_conn)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn)
+static void s_HugeTableSelect(IConnection& conn)
 {
     const string table_name("#huge_table");
 
@@ -165,7 +93,7 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
     string sql;
     auto_ptr<IStatement> auto_stmt;
 
-    auto_stmt.reset(auto_conn->GetStatement());
+    auto_stmt.reset(conn.GetStatement());
 
     bool small_amount = !GetArgs().IsBCPAvailable()
                         ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer;
@@ -195,7 +123,7 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
             CVariant col2(eDB_VarChar);
 
             auto_ptr<IBulkInsert> bi(
-                    auto_conn->GetBulkInsert(table_name)
+                    conn.GetBulkInsert(table_name)
                     );
 
             bi->Bind(1, &col1);
@@ -245,7 +173,7 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
     {
         size_t num = 0;
 
-        auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+        auto_ptr<IStatement> auto_stmt(conn.GetStatement());
 
         CStopWatch timer(CStopWatch::eStart);
 
@@ -273,8 +201,178 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
     }
 
     {
-        auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+        auto_ptr<IStatement> auto_stmt(conn.GetStatement());
         auto_stmt->ExecuteUpdate("drop table " + table_name);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_Timeout)
+{
+    try {
+        auto_ptr<IConnection> conn;
+        auto_ptr<IStatement> auto_stmt;
+
+        // Alter DriverContext ...
+        {
+            I_DriverContext* dc = GetDS().GetDriverContext();
+            unsigned int timeout = dc->GetTimeout();
+
+            dc->SetTimeout(2);
+
+            // Create connection ...
+            conn.reset(GetDS().CreateConnection());
+            BOOST_CHECK(conn.get() != NULL);
+
+            conn->Connect(GetArgs().GetConnParams());
+
+            s_WaitForDelay(*conn);
+
+            // Crete new connection because some drivers (ftds8 for example)
+            // can close connection in the Test_WaitForDelay test.
+            conn.reset(GetDS().CreateConnection());
+            BOOST_CHECK(conn.get() != NULL);
+
+            conn->Connect(GetArgs().GetConnParams());
+
+            //
+            // Check selecting from a huge table ...
+            s_HugeTableSelect(*conn);
+
+            dc->SetTimeout(timeout);
+        } // Alter DriverContext ...
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_Timeout2)
+{
+    try {
+        auto_ptr<IConnection> conn;
+        auto_ptr<IStatement> auto_stmt;
+
+
+        // Alter connection ...
+        {
+            conn.reset(GetDS().CreateConnection());
+            BOOST_CHECK(conn.get() != NULL);
+
+            conn->Connect(GetArgs().GetConnParams());
+
+            conn->SetTimeout(2);
+
+            s_WaitForDelay(*conn);
+
+            //
+            // Check selecting from a huge table ...
+            s_HugeTableSelect(*conn);
+
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
+{
+    try {
+        // Heavy bulk-insert
+        s_HugeTableSelect(GetConnection());
+
+        string table_name = "#test_heavy_load";
+        enum {num_tests = 30000};
+        {
+            string sql = "create table " + table_name + " ("
+                "int_field int,"
+                "flt_field float,"
+                "date_field datetime,"
+                "vc200_field varchar(200),"
+                "vc2000_field varchar(2000),"
+                "txt_field text"
+                ")";
+
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        // Heavy insert with parameters
+        {
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            auto_ptr<IStatement> auto_stmt2( GetConnection().GetStatement() );
+
+            string sql = "INSERT INTO " + table_name +
+                " VALUES(@int_field, @flt_field, @date_field, "
+                "@vc200_field, @vc2000_field, @txt_field)";
+
+            string vc200_val = string(190, 'a');
+            string vc2000_val = string(1500, 'z');
+            string txt_val = string(2000, 'q');
+
+            CStopWatch timer(CStopWatch::eStart);
+
+            auto_stmt->SetParam( CVariant( Int4(123456) ), "@int_field" );
+            auto_stmt->SetParam( CVariant(654.321), "@flt_field" );
+            auto_stmt->SetParam( CVariant(CTime(CTime::eCurrent)),
+                "@date_field" );
+            auto_stmt->SetParam( CVariant::VarChar(vc200_val.c_str(),
+                vc200_val.size()),
+                "@vc200_field" );
+            auto_stmt->SetParam( CVariant::LongChar(vc2000_val.c_str(),
+                vc2000_val.size()),
+                "@vc2000_field"
+                );
+            auto_stmt->SetParam( CVariant::VarChar(txt_val.c_str(),
+                txt_val.size()),
+                "@txt_field" );
+
+            auto_stmt2->ExecuteUpdate("BEGIN TRAN");
+            for (int i = 0; i < num_tests; ++i) {
+                auto_stmt->ExecuteUpdate( sql );
+
+                if (i % 1000 == 0) {
+                    auto_stmt2->ExecuteUpdate("COMMIT TRAN");
+                    auto_stmt2->ExecuteUpdate("BEGIN TRAN");
+                }
+            }
+            auto_stmt2->ExecuteUpdate("COMMIT TRAN");
+            LOG_POST( "Inserts made in " << timer.Elapsed() << " sec." );
+        }
+
+        // Heavy select
+        {
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+
+            string sql = "select * from " + table_name;
+
+            IResultSet* rs;
+
+            CStopWatch timer(CStopWatch::eStart);
+
+            rs = auto_stmt->ExecuteQuery(sql);
+            rs->BindBlobToVariant(true);
+
+            while (rs->Next()) {
+                /*int int_val =*/ rs->GetVariant(1).GetInt4();
+                /*double flt_val =*/ rs->GetVariant(2).GetDouble();
+                CTime date_val = rs->GetVariant(3).GetCTime();
+                string vc1_val = rs->GetVariant(4).GetString();
+                string vc2_val = rs->GetVariant(5).GetString();
+                const CVariant& txt_var = rs->GetVariant(6);
+                string txt_val;
+                txt_val.resize(txt_var.GetBlobSize());
+                txt_var.Read(&txt_val[0], txt_val.size());
+            }
+
+            LOG_POST( "Select finished in " << timer.Elapsed() << " sec." );
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
