@@ -50,7 +50,7 @@ GC-ProjectList ::= SEQUENCE {
 
 GC-GenomicPart ::= CHOICE {
     assembly GC-Assembly,
-    mol GC-Molecule,
+    mol GC-Replicon,
     seqs GC-Sequence
 }
 
@@ -82,7 +82,7 @@ GC-Assembly ::= SEQUENCE
     coverage REAL OPTIONAL,
 
     -- collections of molecules for this assembly
-    mols SET OF GC-Molecule,
+    mols SET OF GC-Replicon,
 
     -- unplaced bits for this asssembly
     unplaced SET OF GC-Sequence OPTIONAL, 
@@ -96,7 +96,7 @@ GC-Assembly ::= SEQUENCE
     stats GC-SequenceStats OPTIONAL
 }
 
-GC-Molecule ::= SEQUENCE
+GC-Replicon ::= SEQUENCE
 {
     -- the sequence(s) representing this molecule
     -- in the case of 2L and 2R - the molecule is represented by 
