@@ -191,6 +191,7 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || subtype == CSeqFeatData::eSubtype_tRNA
         || subtype == CSeqFeatData::eSubtype_otherRNA
         || subtype == CSeqFeatData::eSubtype_misc_RNA
+        || subtype == CSeqFeatData::eSubtype_ncRNA
         || IsNoncodingProductFeat()
         || IsTransposon()
         || IsInsertionSequence()
@@ -537,6 +538,26 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
                 label = "tRNA-" + label;
             }
             product_name = label;
+            return true;
+        } else if (subtype == CSeqFeatData::eSubtype_ncRNA) {
+            string ncrna_class = m_MainFeat.GetNamedQual("ncRNA_class");
+            string ncrna_product = m_MainFeat.GetNamedQual("product");
+            if (!NStr::IsBlank (ncrna_product)) {
+                if (!NStr::IsBlank (ncrna_class) && !NStr::Equal (ncrna_class, "other")) {
+                    product_name = ncrna_product + " " + ncrna_class;
+                } else {
+                    product_name = ncrna_product;
+                }
+            } else if (!NStr::IsBlank(ncrna_class)) {
+                if (NStr::Equal (ncrna_class, "other")) {
+                    product_name = "non-coding RNA";
+                } else {
+                    product_name = ncrna_class;
+                }
+            // note - in the future, add option to use comment if comment is not empty
+            } else {
+                product_name = "non-coding RNA";
+            }
             return true;
         } else {
             product_name = m_MainFeat.GetNamedQual("product");
@@ -1001,8 +1022,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause)
         && subtype != CSeqFeatData::eSubtype_rRNA
         && subtype != CSeqFeatData::eSubtype_tRNA
         && subtype != CSeqFeatData::eSubtype_misc_RNA
-        && subtype != CSeqFeatData::eSubtype_snRNA
-        && subtype != CSeqFeatData::eSubtype_snoRNA
+        && subtype != CSeqFeatData::eSubtype_ncRNA
         && subtype != CSeqFeatData::eSubtype_precursor_RNA
         && !x_GetNoncodingProductFeatProduct(noncoding_product_name)) {
         return false;
