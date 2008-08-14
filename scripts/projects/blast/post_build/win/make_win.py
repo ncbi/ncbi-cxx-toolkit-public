@@ -63,10 +63,18 @@ def main():
             print "Copying", app, "to", cwd
         copy(app, cwd)
     
+    
+    update_blast_version(NSIS_CONFIG)
+    # Copy necessary files to the current working directory
+    copy(NSIS_CONFIG, cwd)
     license_file = os.path.join(SCRIPT_DIR, "..", "..", "LICENSE")
     copy(license_file, cwd)
-    update_blast_version(NSIS_CONFIG)
-    copy(NSIS_CONFIG, cwd)
+    for aux_file in ("EnvVarUpdate.nsh", "ncbilogo.ico"):
+        src = os.path.join(SCRIPT_DIR, aux_file)
+        if VERBOSE:
+            print "Copying", src, "to", cwd
+        copy(src, cwd)
+        
     # makensis is in the path of the script courtesy of the release framework
     cmd = "makensis " + os.path.basename(NSIS_CONFIG)
     safe_exec(cmd)
