@@ -44,6 +44,7 @@
 #include <dbapi/driver/drivers.hpp>
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
+#include <dbapi/driver/impl/dbapi_impl_context.hpp>
 
 #include "dbapi_unit_test.hpp"
 
@@ -180,7 +181,7 @@ bool CommonInit(void)
 
 #else
     CPluginManager_DllResolver::EnableGlobally(true);
-#endif // NCBI_DLL_BUILD
+#endif // NCBI_DLL_SUPPORT
 
     if (false) {
         // Two calls below will cause problems with the Sybase 12.5.1 client

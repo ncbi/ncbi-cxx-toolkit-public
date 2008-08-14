@@ -5,7 +5,7 @@ SRC = dbapi_unit_test_common dbapi_context_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = dbapi dbapi_driver dbapi_util_blobstore$(STATIC) \
+LIB  = dbapi$(STATIC) dbapi_driver$(STATIC) \
        $(COMPRESS_LIBS) $(XCONNEXT) test_boost$(STATIC) xconnect xutil xncbi
 STATIC_LIB = $(DBAPI_CTLIB) $(DBAPI_MYSQL) $(DBAPI_ODBC) $(DBAPI_SQLITE3) \
 			 ncbi_xdbapi_ftds $(FTDS_LIB) ncbi_xdbapi_ftds8 ncbi_xdbapi_ftds_odbc $(FTDS64_ODBC_LIB) $(LIB)
