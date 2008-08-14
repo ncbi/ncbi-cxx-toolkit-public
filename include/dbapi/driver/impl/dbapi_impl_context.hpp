@@ -137,6 +137,8 @@ public:
         return m_MaxTextImageSize;
     }
 
+    static void ResetEnvSybase(void);
+
 protected:
     typedef list<CConnection*> TConnPool;
 
@@ -171,8 +173,6 @@ protected:
     {
         return m_ExtraMsg;
     }
-
-    void ResetEnvSybase(void) const;
 
 
 private:

@@ -192,9 +192,11 @@ void CDriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
 }
 
 
-void CDriverContext::ResetEnvSybase(void) const
+void CDriverContext::ResetEnvSybase(void)
 {
-    CMutexGuard mg(m_CtxMtx);
+    DEFINE_STATIC_MUTEX(env_mtx);
+
+    CMutexGuard mg(env_mtx);
     CNcbiEnvironment env;
 
     // If user forces his own Sybase client path using $RESET_SYBASE

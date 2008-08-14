@@ -243,6 +243,8 @@ string GetSybaseClientVersion(void)
 #if defined(NCBI_OS_MSWIN)
     sybase_version = "12.5";
 #else
+    impl::CDriverContext::ResetEnvSybase();
+
     CNcbiEnvironment env;
     sybase_version = env.Get("SYBASE");
     CDirEntry dir_entry(sybase_version);
