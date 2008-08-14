@@ -12,9 +12,9 @@
   ;Name and file
   Name "NCBI BLAST BLAST_VERSION+"
   OutFile "ncbi-blast-BLAST_VERSION+.exe"
-  ; Install/uninstall icons (FIXME)
-  Icon "ncbilogo.ico"
-  UninstallIcon "${NSISDIR}\Contrib\Graphics\Icons\nsis1-uninstall.ico"
+  ; Install/uninstall icons
+  !define MUI_ICON "ncbilogo.ico"
+  !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\nsis1-uninstall.ico"
 
   ;Default installation folder
   InstallDir "$PROGRAMFILES\NCBI\blast-BLAST_VERSION+"
