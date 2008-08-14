@@ -1208,14 +1208,14 @@ CNcbiTestApplication::x_CollectAllTests(void)
         return;
 
     CNcbiTestsCollector collector;
-    traverse_test_tree(but::framework::master_test_suite(), collector);
+    but::traverse_test_tree(but::framework::master_test_suite(), collector);
 }
 
 inline int
 CNcbiTestApplication::x_GetEnabledTestsCount(void)
 {
     but::test_case_counter tcc;
-    traverse_test_tree(but::framework::master_test_suite(), tcc);
+    but::traverse_test_tree(but::framework::master_test_suite(), tcc);
     return tcc.p_count;
 }
 
@@ -1251,8 +1251,8 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
         // and without it at the same time.
         x_CollectAllTests();
 
-        traverse_test_tree(but::framework::master_test_suite(),
-                           m_TreeBuilder);
+        but::traverse_test_tree(but::framework::master_test_suite(),
+                                m_TreeBuilder);
 
         // We do not read configuration if particular tests were given in
         // command line
