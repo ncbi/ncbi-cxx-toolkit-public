@@ -4,6 +4,7 @@
 ;Include Modern UI
 
   !include "MUI.nsh"
+  !include "EnvVarUpdate.nsh"
 
 ;--------------------------------
 ;General
@@ -11,6 +12,9 @@
   ;Name and file
   Name "NCBI BLAST BLAST_VERSION+"
   OutFile "ncbi-blast-BLAST_VERSION+.exe"
+  ; Install/uninstall icons (FIXME)
+  Icon "ncbilogo.ico"
+  UninstallIcon "${NSISDIR}\Contrib\Graphics\Icons\nsis1-uninstall.ico"
 
   ;Default installation folder
   InstallDir "$PROGRAMFILES\NCBI\blast-BLAST_VERSION+"
@@ -43,7 +47,7 @@
 ;Installer Sections
 
 Section "DefaultSection" SecDflt
-
+  
   SetOutPath "$INSTDIR\bin"
   
   File "blastn.exe"
@@ -66,15 +70,18 @@ Section "DefaultSection" SecDflt
   WriteRegStr HKCU "Software\NCBI\blast-BLAST_VERSION+" "" $INSTDIR
   
   ;Create uninstaller
-  WriteUninstaller "$INSTDIR\Uninstall.exe"
-
+  WriteUninstaller "$INSTDIR\Uninstall-ncbi-blast-BLAST_VERSION+.exe"
+  
+  ;Update PATH
+  ${EnvVarUpdate} $0 "PATH" "P" "HKCU" "$INSTDIR\bin"
+  
 SectionEnd
 
 ;--------------------------------
 ;Uninstaller Section
 
 Section "Uninstall"
-  Delete "$INSTDIR\Uninstall.exe"
+  Delete "$INSTDIR\Uninstall-ncbi-blast-BLAST_VERSION+.exe"
   
   Delete "$INSTDIR\bin\blastn.exe"
   Delete "$INSTDIR\bin\blastp.exe"
@@ -95,5 +102,8 @@ Section "Uninstall"
   RMDir "$INSTDIR"
 
   DeleteRegKey /ifempty HKCU "Software\NCBI\blast-BLAST_VERSION+"
+  
+  ; Remove installation directory from PATH
+  ${un.EnvVarUpdate} $0 "PATH" "R" "HKCU" "$INSTDIR\bin" 
 
 SectionEnd
