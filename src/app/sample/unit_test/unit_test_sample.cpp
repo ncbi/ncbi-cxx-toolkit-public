@@ -32,12 +32,6 @@
 * on Boost.Test framework. For more advanced techniques look into another
 * sample - unit_test_alt_sample.cpp.
 *
-* NOTE:
-*   Boost.Test reports some memory leaks when compiled in MSVC even for this
-*   simple code. Maybe it's related to some toolkit static variables.
-*   To avoid annoying messages about memory leaks run this program with
-*   parameter --detect_memory_leaks=0
-*
 * ===========================================================================
 */
 

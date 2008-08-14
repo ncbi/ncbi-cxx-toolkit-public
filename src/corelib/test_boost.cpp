@@ -58,6 +58,7 @@
 #include <boost/test/utils/xml_printer.hpp>
 #include <boost/test/detail/global_typedef.hpp>
 #include <boost/test/detail/unit_test_parameters.hpp>
+#include <boost/test/debug.hpp>
 
 #include <list>
 #include <vector>
@@ -1222,6 +1223,10 @@ CNcbiTestApplication::x_GetEnabledTestsCount(void)
 inline but::test_suite*
 CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
 {
+    // Do not detect memory leaks using msvcrt - this information is useless
+    boost::debug::detect_memory_leaks(false);
+    boost::debug::break_memory_alloc(0);
+
     x_SetupBoostReporters();
     but::framework::register_observer(m_Initializer);
 
@@ -1383,7 +1388,7 @@ CNcbiBoostLogger::log_finish(ostream& ostr)
     m_Upper->log_finish(ostr);
     if (!m_IsXML) {
         ostr << "Executed " << s_GetTestApp().GetRanTestsCount()
-             << " test cases.";
+             << " test cases." << endl;
     }
 }
 
