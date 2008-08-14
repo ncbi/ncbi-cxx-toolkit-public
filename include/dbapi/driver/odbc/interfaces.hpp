@@ -85,6 +85,28 @@ BEGIN_SCOPE(odbc)
 
 END_SCOPE(odbc)
 
+#ifdef FTDS_IN_USE
+// Make it look like the ftds driver ...
+#    define CODBC_Reporter			CODBC_TDS_Reporter
+#    define CODBCContext            CODBC_TDSContext
+#    define CODBC_Connection        CODBC_TDS_Connection
+#    define CStatementBase			CODBC_TDSStatementBase
+#    define CODBC_LangCmd           CODBC_TDS_LangCmd
+#    define CODBC_RPCCmd            CODBC_TDS_RPCCmd
+#    define CODBC_CursorCmdBase     CODBC_TDS_CursorCmdBase
+#    define CODBC_CursorCmd         CODBC_TDS_CursorCmd
+#    define CODBC_CursorCmdExpl     CODBC_TDS_CursorCmdExpl
+#    define CODBC_BCPInCmd          CODBC_TDS_BCPInCmd
+#    define CODBC_SendDataCmd       CODBC_TDS_SendDataCmd
+#    define CODBC_RowResult         CODBC_TDS_RowResult
+#    define CODBC_StatusResult      CODBC_TDS_StatusResult
+#    define CODBC_ParamResult       CODBC_TDS_ParamResult
+#    define CODBC_CursorResult      CODBC_TDS_CursorResult
+#    define CODBC_CursorResultExpl  CODBC_TDS_CursorResultExpl
+#    define CODBCContextRegistry    CODBC_TDSContextRegistry
+
+#endif // FTDS_IN_USE
+
 class CODBCContext;
 class CODBC_Connection;
 class CODBC_LangCmd;
@@ -94,7 +116,6 @@ class CODBC_BCPInCmd;
 class CODBC_SendDataCmd;
 class CODBC_RowResult;
 class CODBC_ParamResult;
-class CODBC_ComputeResult;
 class CODBC_StatusResult;
 class CODBCContextRegistry;
 class CStatementBase;
@@ -755,7 +776,6 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CODBC_ParamResult::
-//  CODBC_ComputeResult::
 //  CODBC_StatusResult::
 //  CODBC_CursorResult::
 //
