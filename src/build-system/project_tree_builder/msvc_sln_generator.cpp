@@ -37,6 +37,7 @@
 #include "msvc_prj_defines.hpp"
 #include "msvc_makefile.hpp"
 #include "ptb_err_codes.hpp"
+#include "proj_tree_builder.hpp"
 
 BEGIN_NCBI_SCOPE
 #if NCBI_COMPILER_MSVC
@@ -363,9 +364,11 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
             CProjKey id_alt(CProjKey::eMsvc,id.Id());
             n = m_Projects.find(id_alt);
             if (n == m_Projects.end()) {
-                PTB_WARNING_EX(project.m_ProjectName, ePTB_MissingDependency,
-                               "Project " << project.m_ProjectName
-                               << " depends on missing project " << id.Id());
+                if (!SMakeProjectT::IsConfigurableDefine(id.Id())) {
+                    PTB_WARNING_EX(project.m_ProjectName, ePTB_MissingDependency,
+                                "Project " << project.m_ProjectName
+                                << " depends on missing project " << id.Id());
+                }
                 continue;
             }
         }

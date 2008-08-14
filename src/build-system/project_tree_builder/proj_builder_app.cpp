@@ -364,7 +364,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,5,4) );
+    SetVersion( CVersionInfo(1,5,5) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -832,8 +832,10 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                     n = projects_tree.m_Projects.find(id_alt);
                     if (n == projects_tree.m_Projects.end())*/
                     {
-                        LOG_POST(Warning << "Project " + 
-                                p->first.Id() + " depends on missing project " + id.Id());
+                        if (!SMakeProjectT::IsConfigurableDefine(id.Id())) {
+                            LOG_POST(Warning << "Project " + 
+                                    p->first.Id() + " depends on missing project " + id.Id());
+                        }
                         continue;
                     }
                 }

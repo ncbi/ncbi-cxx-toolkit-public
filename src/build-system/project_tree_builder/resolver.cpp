@@ -204,6 +204,11 @@ void CSymResolver::AddDefinition(const string& key, const string& value)
     m_Data.AddDefinition(key, value);
 }
 
+bool CSymResolver::HasDefinition( const string& key) const
+{
+    return m_Data.HasDefinition(key);
+}
+
 bool CSymResolver::IsEmpty(void) const
 {
     return m_Data.m_Contents.empty();

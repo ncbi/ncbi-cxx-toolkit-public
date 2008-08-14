@@ -60,6 +60,7 @@ public:
 
     static void LoadFrom(const string& file_path, CSymResolver* resolver);
     void AddDefinition( const string& key, const string& value);
+    bool HasDefinition( const string& key) const;
 
     bool IsEmpty(void) const;
 

@@ -78,6 +78,7 @@ public:
 
     static void LoadFrom(const string& file_path, CSimpleMakeFileContents* fc);
     void AddDefinition( const string& key, const string& value);
+    bool HasDefinition( const string& key) const;
     bool GetValue(const string& key, string& value) const;
     
     EMakeFileType GetMakeType(void) const

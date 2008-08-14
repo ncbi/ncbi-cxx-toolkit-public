@@ -130,6 +130,11 @@ void CSimpleMakeFileContents::AddDefinition(const string& key,
     AddReadyKV(kv);
 }
 
+bool CSimpleMakeFileContents::HasDefinition( const string& key) const
+{
+    return m_Contents.find(key) != m_Contents.end();
+}
+
 bool CSimpleMakeFileContents::GetValue(const string& key, string& value) const
 {
     TContents::const_iterator k = m_Contents.find(key);

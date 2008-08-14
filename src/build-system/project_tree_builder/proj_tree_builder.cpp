@@ -269,6 +269,14 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                         msvc_prj.Append(new_vals,NStr::Replace(define, raw, resolved_def_str));
                                     }
                                 } else {
+                                    string stripped = CSymResolver::StripDefine(val_define);
+                                    if (GetApp().GetSite().GetMacros().HasDefinition(stripped)) {
+                                        if (msvc_empty) {
+                                            new_vals.push_back(string("@")+stripped+"@");
+                                        } else {
+                                            msvc_prj.Append(new_vals,string("@")+stripped+"@");
+                                        }
+                                    }
                                     if (msvc_empty) {
                                         new_vals.push_back(define);
                                     } else {
