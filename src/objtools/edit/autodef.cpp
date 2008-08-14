@@ -761,10 +761,6 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
             } else if (subtype == CSeqFeatData::eSubtype_promoter) {
                 delete new_clause;
                 new_clause = new CAutoDefPromoterClause(bh, cf, mapped_loc);
-            } else if (new_clause->IsIntergenicSpacer()) {
-                delete new_clause;
-                x_AddIntergenicSpacerFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags);
-                new_clause = NULL;
             } else if (subtype == CSeqFeatData::eSubtype_otherRNA
                        || subtype == CSeqFeatData::eSubtype_misc_RNA
                        || subtype == CSeqFeatData::eSubtype_rRNA) {
@@ -772,6 +768,10 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
                     delete new_clause;
                     new_clause = NULL;
                 }
+            } else if (new_clause->IsIntergenicSpacer()) {
+                delete new_clause;
+                x_AddIntergenicSpacerFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags);
+                new_clause = NULL;
             } else if (new_clause->IsGeneCluster()) {
                 delete new_clause;
                 new_clause = new CAutoDefGeneClusterClause(bh, cf, mapped_loc);
