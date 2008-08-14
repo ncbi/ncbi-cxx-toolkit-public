@@ -18,4 +18,6 @@ dbapi/driver/ctlib$
 dbapi/driver/ftds
 dbapi/driver/ftds64/freetds
 dbapi/driver/ftds64/ctlib$
+internal$
+internal/cppcore$
 internal/cppcore/test_stat_ext
