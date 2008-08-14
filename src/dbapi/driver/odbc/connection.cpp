@@ -48,15 +48,20 @@
 
 BEGIN_NCBI_SCOPE
 
+#ifdef FTDS_IN_USE
+#	define IsBCPCapable IsBCPCapableFTDS
+
 inline
 bool IsBCPCapable(void)
 {
-#ifdef FTDS_IN_USE
     return false;
-#else
-    return true;
-#endif
 }
+#else
+bool IsBCPCapable(void)
+{
+    return true;
+}
+#endif
 
 static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
                                   CDB_ITDescriptor& descr_in,
@@ -72,10 +77,10 @@ static bool ODBC_xSendDataGetId(CStatementBase& stmt,
 CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
                                    const CDBConnParams& params) :
     impl::CConnection(
-            cntx,
+        cntx,
         params,
-            IsBCPCapable()
-            ),
+        IsBCPCapable()
+        ),
     m_Link(NULL),
     m_Reporter(0, SQL_HANDLE_DBC, NULL, &cntx.GetReporter()),
     m_query_timeout(cntx.GetTimeout())

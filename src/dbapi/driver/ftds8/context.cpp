@@ -108,7 +108,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 CDblibContextRegistry::CDblibContextRegistry(void)
 {
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN) && defined(NCBI_DLL_BUILD)
 
     try {
         m_ExitProcessPatched = 

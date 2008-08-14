@@ -30,7 +30,7 @@
 #define ENABLE_EXTRA_CHECKS 1
 #endif
 
-#include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
+#include <dbapi/driver/ftds64/ncbi_ftds_rename_sybdb_ver64.h>
 #include <dbapi/driver/ftds64/freetds/rename_freetds64.h>
 #include <dbapi/driver/ftds64/freetds/rename_ftds64_odbc.h>
 

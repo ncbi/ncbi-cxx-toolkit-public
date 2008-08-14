@@ -19,6 +19,10 @@
 
 #include <ncbiconf.h>
 
+#ifndef NCBI_FTDS_RENAME_SYBDB
+#  define NCBI_FTDS_RENAME_SYBDB
+#endif
+
 #include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
 
 #if defined(HAVE_GETHOSTBYADDR_R)

@@ -23,6 +23,7 @@
 #ifndef NCBI_FTDS_RENAME_SYBDB
 #  define NCBI_FTDS_RENAME_SYBDB
 #endif
+
 #include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
 
 #include "tds.h"

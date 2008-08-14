@@ -99,7 +99,7 @@ private:
 
 CODBCContextRegistry::CODBCContextRegistry(void)
 {
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN) && defined(NCBI_DLL_BUILD)
     try {
         m_ExitProcessPatched = 
             NWinHook::COnExitProcess::Instance().Add(CODBCContextRegistry::StaticClearAll);
@@ -477,6 +477,10 @@ void CODBCContext::x_ReportConError(SQLHDBC con)
 // Driver manager related functions
 //
 
+#if defined(FTDS_IN_USE)
+#	define CDbapiOdbcCFBase CFTDS_DbapiOdbcCFBase
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
 class CDbapiOdbcCFBase : public CSimpleClassFactoryImpl<I_DriverContext, CODBCContext>
 {
@@ -575,14 +579,7 @@ CDbapiOdbcCFBase::CreateInstance(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-class CDbapiOdbcCF : public CDbapiOdbcCFBase
-{
-public:
-    CDbapiOdbcCF(void)
-    : CDbapiOdbcCFBase("odbc")
-    {
-    }
-};
+#ifdef FTDS_IN_USE
 
 class CDbapiOdbcCF_ftds64 : public CDbapiOdbcCFBase
 {
@@ -593,25 +590,21 @@ public:
     }
 };
 
-class CDbapiOdbcCF_odbcw : public CDbapiOdbcCFBase
+#else
+
+class CDbapiOdbcCF : public CDbapiOdbcCFBase
 {
 public:
-    CDbapiOdbcCF_odbcw(void)
-    : CDbapiOdbcCFBase("odbcw")
+    CDbapiOdbcCF(void)
+    : CDbapiOdbcCFBase("odbc")
     {
     }
 };
 
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
-NCBI_DBAPIDRIVER_ODBC_EXPORT
-void
-NCBI_EntryPoint_xdbapi_odbc(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
-{
-    CHostEntryPointImpl<CDbapiOdbcCF>::NCBI_EntryPointImpl( info_list, method );
-}
+#ifdef FTDS_IN_USE
 
 NCBI_DBAPIDRIVER_ODBC_EXPORT
 void
@@ -624,11 +617,20 @@ NCBI_EntryPoint_xdbapi_ftds_odbc(
 
 NCBI_DBAPIDRIVER_ODBC_EXPORT
 void
-NCBI_EntryPoint_xdbapi_odbcw(
+DBAPI_RegisterDriver_FTDS_ODBC(void)
+{
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds_odbc );
+}
+
+#else
+
+NCBI_DBAPIDRIVER_ODBC_EXPORT
+void
+NCBI_EntryPoint_xdbapi_odbc(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
-    CHostEntryPointImpl<CDbapiOdbcCF_odbcw>::NCBI_EntryPointImpl( info_list, method );
+    CHostEntryPointImpl<CDbapiOdbcCF>::NCBI_EntryPointImpl( info_list, method );
 }
 
 NCBI_DBAPIDRIVER_ODBC_EXPORT
@@ -636,9 +638,10 @@ void
 DBAPI_RegisterDriver_ODBC(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbc );
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds_odbc );
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbcw );
 }
+
+#endif
+
 
 END_NCBI_SCOPE
 

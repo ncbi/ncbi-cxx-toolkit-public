@@ -161,17 +161,26 @@ bool CommonInit(void)
 
     DBLB_INSTALL_DEFAULT();
 
-#ifdef USE_STATICALLY_LINKED_DRIVERS
+#ifndef NCBI_DLL_BUILD
 
 #ifdef HAVE_LIBSYBASE
     DBAPI_RegisterDriver_CTLIB();
-    DBAPI_RegisterDriver_DBLIB();
 #endif
+
+#ifdef HAVE_LIBSQLITE3
+    DBAPI_RegisterDriver_SQLITE3();
+#endif
+
+#ifdef HAVE_ODBC
+    DBAPI_RegisterDriver_ODBC();
+#endif
+
     DBAPI_RegisterDriver_FTDS();
+    DBAPI_RegisterDriver_FTDS_ODBC();
 
 #else
     CPluginManager_DllResolver::EnableGlobally(true);
-#endif
+#endif // NCBI_DLL_BUILD
 
     if (false) {
         // Two calls below will cause problems with the Sybase 12.5.1 client
@@ -265,6 +274,30 @@ NCBITEST_INIT_VARIABLES(parser)
     parser->AddSymbol("HAVE_LibConnExt", false);
 #endif
 
+#ifdef HAVE_LIBSYBASE
+    parser->AddSymbol("HAVE_Sybase", true);
+#else
+    parser->AddSymbol("HAVE_Sybase", false);
+#endif
+
+#ifdef HAVE_ODBC
+    parser->AddSymbol("HAVE_ODBC", true);
+#else
+    parser->AddSymbol("HAVE_ODBC", false);
+#endif
+
+#ifdef HAVE_MYSQL
+    parser->AddSymbol("HAVE_MYSQL", true);
+#else
+    parser->AddSymbol("HAVE_MYSQL", false);
+#endif
+
+#ifdef HAVE_LIBSQLITE3
+    parser->AddSymbol("HAVE_SQLITE3", true);
+#else
+    parser->AddSymbol("HAVE_SQLITE3", false);
+#endif
+
     parser->AddSymbol("DRIVER_AllowsMultipleContexts", GetArgs().DriverAllowsMultipleContexts());
 
     parser->AddSymbol("SERVER_MySQL", GetArgs().GetServerType() == CDBConnParams::eMySQL);
@@ -281,6 +314,7 @@ NCBITEST_INIT_VARIABLES(parser)
     parser->AddSymbol("DRIVER_odbc", GetArgs().GetDriverName() == odbc_driver);
     parser->AddSymbol("DRIVER_ctlib", GetArgs().GetDriverName() == ctlib_driver);
     parser->AddSymbol("DRIVER_dblib", GetArgs().GetDriverName() == dblib_driver);
+    parser->AddSymbol("DRIVER_mysql", GetArgs().GetDriverName() == "mysql");
 
     parser->AddSymbol("DRIVER_IsBcpAvailable", GetArgs().IsBCPAvailable());
     parser->AddSymbol("DRIVER_IsOdbcBased", GetArgs().GetDriverName() == ftds_odbc_driver ||

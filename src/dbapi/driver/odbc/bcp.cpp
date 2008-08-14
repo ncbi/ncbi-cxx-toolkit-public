@@ -36,7 +36,7 @@
 #include <string.h>
 
 #ifdef FTDS_IN_USE
-    #include <sybdb.h>
+//    #include <sybdb.h>
 #else
     #include <odbcss.h>
 #endif

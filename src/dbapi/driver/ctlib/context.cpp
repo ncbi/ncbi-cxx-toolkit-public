@@ -126,7 +126,7 @@ private:
 CTLibContextRegistry::CTLibContextRegistry(void) :
 m_ExitProcessPatched(false)
 {
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN) && defined(NCBI_DLL_BUILD)
 
     try {
         m_ExitProcessPatched = 
