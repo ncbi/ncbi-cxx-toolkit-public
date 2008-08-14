@@ -24,6 +24,7 @@ EXTENSIONS         = dll pdb manifest
 MSVCRT_SRC = \\snowman\win-coremake\Lib\ThirdParty\msvc\$(MSVC_SRC)\bin
 
 
+
 #################################################################
 # Source folders
 #
@@ -38,14 +39,35 @@ PTB_GENERATED = $(THIRDPARTY_MAKEFILES_DIR)\$(INTDIR)\Makefile.third_party.mk
 !ERROR  $(PTB_GENERATED)  not found
 !ENDIF
 
+
+BERKELEYDB_SRC = $(BERKELEYDB_BINPATH)\$(INTDIR)
+!IF !EXIST($(BERKELEYDB_SRC))
+BERKELEYDB_SRC = $(BERKELEYDB_BINPATH)\$(ALTDIR)
+!ENDIF
+
 FLTK_SRC = $(FLTK_BINPATH)\$(INTDIR)
 !IF !EXIST($(FLTK_SRC))
 FLTK_SRC = $(FLTK_BINPATH)\$(ALTDIR)
 !ENDIF
 
-BERKELEYDB_SRC = $(BERKELEYDB_BINPATH)\$(INTDIR)
-!IF !EXIST($(BERKELEYDB_SRC))
-BERKELEYDB_SRC = $(BERKELEYDB_BINPATH)\$(ALTDIR)
+LZO_SRC = $(LZO_BINPATH)\$(INTDIR)
+!IF !EXIST($(LZO_SRC))
+LZO_SRC = $(LZO_BINPATH)\$(ALTDIR)
+!ENDIF
+
+MSSQL_SRC = $(MSSQL_BINPATH)\$(INTDIR)
+!IF !EXIST($(MSSQL_SRC))
+MSSQL_SRC = $(MSSQL_BINPATH)\$(ALTDIR)
+!ENDIF
+
+MYSQL_SRC = $(MYSQL_BINPATH)\$(INTDIR)
+!IF !EXIST($(MYSQL_SRC))
+MYSQL_SRC = $(MYSQL_BINPATH)\$(ALTDIR)
+!ENDIF
+
+OPENSSL_SRC = $(OPENSSL_BINPATH)\$(INTDIR)
+!IF !EXIST($(OPENSSL_SRC))
+OPENSSL_SRC = $(OPENSSL_BINPATH)\$(ALTDIR)
 !ENDIF
 
 SQLITE_SRC = $(SQLITE_BINPATH)\$(INTDIR)
@@ -58,9 +80,9 @@ SQLITE3_SRC = $(SQLITE3_BINPATH)\$(INTDIR)
 SQLITE3_SRC = $(SQLITE3_BINPATH)\$(ALTDIR)
 !ENDIF
 
-WXWINDOWS_SRC = $(WXWINDOWS_BINPATH)\$(INTDIR)
-!IF !EXIST($(WXWINDOWS_SRC))
-WXWINDOWS_SRC = $(WXWINDOWS_BINPATH)\$(ALTDIR)
+SYBASE_SRC = $(SYBASE_BINPATH)\$(INTDIR)
+!IF !EXIST($(SYBASE_SRC))
+SYBASE_SRC = $(SYBASE_BINPATH)\$(ALTDIR)
 !ENDIF
 
 WXWIDGETS_SRC = $(WXWIDGETS_BINPATH)\$(INTDIR)
@@ -68,30 +90,22 @@ WXWIDGETS_SRC = $(WXWIDGETS_BINPATH)\$(INTDIR)
 WXWIDGETS_SRC = $(WXWIDGETS_BINPATH)\$(ALTDIR)
 !ENDIF
 
-SYBASE_SRC = $(SYBASE_BINPATH)\$(INTDIR)
-!IF !EXIST($(SYBASE_SRC))
-SYBASE_SRC = $(SYBASE_BINPATH)\$(ALTDIR)
+WXWINDOWS_SRC = $(WXWINDOWS_BINPATH)\$(INTDIR)
+!IF !EXIST($(WXWINDOWS_SRC))
+WXWINDOWS_SRC = $(WXWINDOWS_BINPATH)\$(ALTDIR)
 !ENDIF
 
-MYSQL_SRC = $(MYSQL_BINPATH)\$(INTDIR)
-!IF !EXIST($(MYSQL_SRC))
-MYSQL_SRC = $(MYSQL_BINPATH)\$(ALTDIR)
+XALAN_SRC = $(XALAN_BINPATH)\$(INTDIR)
+!IF !EXIST($(XALAN_SRC))
+XALAN_SRC = $(XALAN_BINPATH)\$(ALTDIR)
 !ENDIF
 
-MSSQL_SRC = $(MSSQL_BINPATH)\$(INTDIR)
-!IF !EXIST($(MSSQL_SRC))
-MSSQL_SRC = $(MSSQL_BINPATH)\$(ALTDIR)
+XERCES_SRC = $(XERCES_BINPATH)\$(INTDIR)
+!IF !EXIST($(XERCES_SRC))
+XERCES_SRC = $(XERCES_BINPATH)\$(ALTDIR)
 !ENDIF
 
-OPENSSL_SRC = $(OPENSSL_BINPATH)\$(INTDIR)
-!IF !EXIST($(OPENSSL_SRC))
-OPENSSL_SRC = $(OPENSSL_BINPATH)\$(ALTDIR)
-!ENDIF
 
-LZO_SRC = $(LZO_BINPATH)\$(INTDIR)
-!IF !EXIST($(LZO_SRC))
-LZO_SRC = $(LZO_BINPATH)\$(ALTDIR)
-!ENDIF
 
 
 #################################################################
@@ -113,140 +127,127 @@ CLEAN_CMD = \
 	) else (echo ERROR:   "$*" not found)
 
 
+
 #################################################################
 # Targets
 #
 
-
-$(FLTK_SRC).fltk_install :
-	@echo ---- & echo Copying FLTK DLLs & $(INSTALL_CMD)
-
-$(FLTK_SRC).fltk_clean :
-	@echo ---- & echo Deleting FLTK DLLs & $(CLEAN_CMD)
-
-install_fltk : $(FLTK_SRC).fltk_install
-
-clean_fltk : $(FLTK_SRC).fltk_clean
-
-
-
 $(BERKELEYDB_SRC).berkeleydb_install :
 	@echo ---- & echo Copying BerkeleyDB DLLs & $(INSTALL_CMD)
-
 $(BERKELEYDB_SRC).berkeleydb_clean :
 	@echo ---- & echo Deleting BerkeleyDB DLLs & $(CLEAN_CMD)
-
 install_berkeleydb : $(BERKELEYDB_SRC).berkeleydb_install
-
 clean_berkeleydb : $(BERKELEYDB_SRC).berkeleydb_clean
 
 
 
-$(SQLITE_SRC).sqlite_install :
-	@echo ---- & echo Copying SQLite DLLs & $(INSTALL_CMD)
-
-$(SQLITE_SRC).sqlite_clean :
-	@echo ---- & echo Deleting SQLite DLLs & $(CLEAN_CMD)
-
-install_sqlite : $(SQLITE_SRC).sqlite_install
-
-clean_sqlite : $(SQLITE_SRC).sqlite_clean
+$(FLTK_SRC).fltk_install :
+	@echo ---- & echo Copying FLTK DLLs & $(INSTALL_CMD)
+$(FLTK_SRC).fltk_clean :
+	@echo ---- & echo Deleting FLTK DLLs & $(CLEAN_CMD)
+install_fltk : $(FLTK_SRC).fltk_install
+clean_fltk : $(FLTK_SRC).fltk_clean
 
 
 
-$(SQLITE3_SRC).sqlite3_install :
-	@echo ---- & echo Copying SQLite3 DLLs & $(INSTALL_CMD)
-
-$(SQLITE3_SRC).sqlite3_clean :
-	@echo ---- & echo Deleting SQLite3 DLLs & $(CLEAN_CMD)
-
-install_sqlite3 : $(SQLITE3_SRC).sqlite3_install
-
-clean_sqlite3 : $(SQLITE3_SRC).sqlite3_clean
-
-
-
-$(WXWINDOWS_SRC).wxwindows_install :
-	@echo ---- & echo Copying wxWindows DLLs & $(INSTALL_CMD)
-
-$(WXWINDOWS_SRC).wxwindows_clean :
-	@echo ---- & echo Deleting wxWindows DLLs & $(CLEAN_CMD)
-
-install_wxwindows : $(WXWINDOWS_SRC).wxwindows_install
-
-clean_wxwindows : $(WXWINDOWS_SRC).wxwindows_clean
-
-
-
-$(WXWIDGETS_SRC).wxwidgets_install :
-	@echo ---- & echo Copying wxWidgets DLLs & $(INSTALL_CMD)
-
-$(WXWIDGETS_SRC).wxwidgets_clean :
-	@echo ---- & echo Deleting wxWidgets DLLs & $(CLEAN_CMD)
-
-install_wxwidgets : $(WXWIDGETS_SRC).wxwidgets_install
-
-clean_wxwidgets : $(WXWIDGETS_SRC).wxwidgets_clean
-
-
-
-$(SYBASE_SRC).sybase_install :
-	@echo ---- & echo Copying Sybase DLLs & $(INSTALL_CMD)
-
-$(SYBASE_SRC).sybase_clean :
-	@echo ---- & echo Deleting Sybase DLLs & $(CLEAN_CMD)
-
-install_sybase : $(SYBASE_SRC).sybase_install
-
-clean_sybase : $(SYBASE_SRC).sybase_clean
+$(LZO_SRC).lzo_install :
+	@echo ---- & echo Copying LZO DLLs & $(INSTALL_CMD)
+$(LZO_SRC).lzo_clean :
+	@echo ---- & echo Deleting LZO DLLs & $(CLEAN_CMD)
+install_lzo : $(LZO_SRC).lzo_install
+clean_lzo : $(LZO_SRC).lzo_clean
 
 
 
 $(MYSQL_SRC).mysql_install :
 	@echo ---- & echo Copying MySQL DLLs & $(INSTALL_CMD)
-
 $(MYSQL_SRC).mysql_clean :
 	@echo ---- & echo Deleting MySQL DLLs & $(CLEAN_CMD)
-
 install_mysql : $(MYSQL_SRC).mysql_install
-
 clean_mysql : $(MYSQL_SRC).mysql_clean
 
 
 
 $(MSSQL_SRC).mssql_install :
 	@echo ---- & echo Copying MSSQL DLLs & $(INSTALL_CMD)
-
 $(MSSQL_SRC).mssql_clean :
 	@echo ---- & echo Deleting MSSQL DLLs & $(CLEAN_CMD)
-
 install_mssql : $(MSSQL_SRC).mssql_install
-
 clean_mssql : $(MSSQL_SRC).mssql_clean
 
 
 
 $(OPENSSL_SRC).openssl_install :
 	@echo ---- & echo Copying OpenSSL DLLs & $(INSTALL_CMD)
-
 $(OPENSSL_SRC).openssl_clean :
 	@echo ---- & echo Deleting OpenSSL DLLs & $(CLEAN_CMD)
-
 install_openssl : $(OPENSSL_SRC).openssl_install
-
 clean_openssl : $(OPENSSL_SRC).openssl_clean
 
 
 
-$(LZO_SRC).lzo_install :
-	@echo ---- & echo Copying LZO DLLs & $(INSTALL_CMD)
+$(SQLITE_SRC).sqlite_install :
+	@echo ---- & echo Copying SQLite DLLs & $(INSTALL_CMD)
+$(SQLITE_SRC).sqlite_clean :
+	@echo ---- & echo Deleting SQLite DLLs & $(CLEAN_CMD)
+install_sqlite : $(SQLITE_SRC).sqlite_install
+clean_sqlite : $(SQLITE_SRC).sqlite_clean
 
-$(LZO_SRC).lzo_clean :
-	@echo ---- & echo Deleting LZO DLLs & $(CLEAN_CMD)
 
-install_lzo : $(LZO_SRC).lzo_install
 
-clean_lzo : $(LZO_SRC).lzo_clean
+$(SQLITE3_SRC).sqlite3_install :
+	@echo ---- & echo Copying SQLite3 DLLs & $(INSTALL_CMD)
+$(SQLITE3_SRC).sqlite3_clean :
+	@echo ---- & echo Deleting SQLite3 DLLs & $(CLEAN_CMD)
+install_sqlite3 : $(SQLITE3_SRC).sqlite3_install
+clean_sqlite3 : $(SQLITE3_SRC).sqlite3_clean
+
+
+
+$(SYBASE_SRC).sybase_install :
+	@echo ---- & echo Copying Sybase DLLs & $(INSTALL_CMD)
+$(SYBASE_SRC).sybase_clean :
+	@echo ---- & echo Deleting Sybase DLLs & $(CLEAN_CMD)
+install_sybase : $(SYBASE_SRC).sybase_install
+clean_sybase : $(SYBASE_SRC).sybase_clean
+
+
+
+$(WXWIDGETS_SRC).wxwidgets_install :
+	@echo ---- & echo Copying wxWidgets DLLs & $(INSTALL_CMD)
+$(WXWIDGETS_SRC).wxwidgets_clean :
+	@echo ---- & echo Deleting wxWidgets DLLs & $(CLEAN_CMD)
+install_wxwidgets : $(WXWIDGETS_SRC).wxwidgets_install
+clean_wxwidgets : $(WXWIDGETS_SRC).wxwidgets_clean
+
+
+
+$(WXWINDOWS_SRC).wxwindows_install :
+	@echo ---- & echo Copying wxWindows DLLs & $(INSTALL_CMD)
+$(WXWINDOWS_SRC).wxwindows_clean :
+	@echo ---- & echo Deleting wxWindows DLLs & $(CLEAN_CMD)
+install_wxwindows : $(WXWINDOWS_SRC).wxwindows_install
+clean_wxwindows : $(WXWINDOWS_SRC).wxwindows_clean
+
+
+
+$(XALAN_SRC).xalan_install :
+	@echo ---- & echo Copying Xalan DLLs & $(INSTALL_CMD)
+$(XALAN_SRC).xalan_clean :
+	@echo ---- & echo Deleting Xalan DLLs & $(CLEAN_CMD)
+install_xalan : $(XALAN_SRC).xalan_install
+clean_xalan : $(XALAN_SRC).xalan_clean
+
+
+
+
+$(XERCES_SRC).xerces_install :
+	@echo ---- & echo Copying Xerces DLLs & $(INSTALL_CMD)
+$(XERCES_SRC).xerces_clean :
+	@echo ---- & echo Deleting Xerces DLLs & $(CLEAN_CMD)
+install_xerces : $(XERCES_SRC).xerces_install
+clean_xerces : $(XERCES_SRC).xerces_clean
+
 
 
 
@@ -256,15 +257,11 @@ clean_lzo : $(LZO_SRC).lzo_clean
 msvc_install : dirs $(MSVCRT_SRC).msvc_install
 
 install_msvc : msvc_install
-
 msvc_clean : $(MSVCRT_SRC).msvc_clean
-
 clean_msvc : msvc_clean
-
 msvc_rebuild : msvc_clean msvc_install
 
 $(MSVCRT_SRC).msvc_install :
 	@echo ---- & echo Copying MSVC DLLs & $(INSTALL_CMD)
-
 $(MSVCRT_SRC).msvc_clean :
 	@echo ---- & echo Deleting MSVC DLLs & $(CLEAN_CMD)

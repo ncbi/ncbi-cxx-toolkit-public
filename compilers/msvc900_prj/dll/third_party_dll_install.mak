@@ -15,31 +15,34 @@ META_MAKE = $(THIRDPARTY_MAKEFILES_DIR)\..\third_party_install.meta.mk
 !ENDIF
 
 THIRD_PARTY_LIBS = \
-	install_fltk       \
 	install_berkeleydb \
-	install_openssl     \
+	install_fltk       \
+	install_lzo        \
+	install_mssql      \
+	install_mysql      \
+	install_openssl    \
 	install_sqlite     \
 	install_sqlite3    \
-	install_wxwindows  \
-	install_wxwidgets  \
 	install_sybase     \
-	install_mysql      \
-	install_mssql      \
-	install_openssl    \
-	install_lzo
+	install_wxwidgets  \
+	install_wxwindows  \
+	install_xalan      \
+	install_xerces     
 
 CLEAN_THIRD_PARTY_LIBS = \
-	clean_fltk       \
 	clean_berkeleydb \
+	clean_fltk       \
+	clean_lzo        \
+	clean_mssql      \
+	clean_mysql      \
+	clean_openssl    \
 	clean_sqlite     \
 	clean_sqlite3    \
-	clean_wxwindows  \
-	clean_wxwidgets  \
 	clean_sybase     \
-	clean_mysql      \
-	clean_mssql      \
-	clean_openssl    \
-	clean_lzo
+	clean_wxwidgets  \
+	clean_wxwindows  \
+	clean_xalan      \
+	clean_xerces
 
 all : dirs $(THIRD_PARTY_LIBS)
 
