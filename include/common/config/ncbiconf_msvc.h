@@ -25,6 +25,9 @@
 #define HOST_VENDOR  "pc"
 
 #define NCBI_PLUGIN_AUTO_LOAD      1
+#ifdef NCBI_DLL_BUILD
+#  define NCBI_DLL_SUPPORT 1
+#endif
 
 #define HAVE_STRDUP                1
 #define HAVE_STRICMP               1

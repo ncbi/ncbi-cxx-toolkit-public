@@ -161,7 +161,7 @@ bool CommonInit(void)
 
     DBLB_INSTALL_DEFAULT();
 
-#ifndef NCBI_DLL_BUILD
+#ifndef NCBI_DLL_SUPPORT
 
 #ifdef HAVE_LIBSYBASE
     DBAPI_RegisterDriver_CTLIB();

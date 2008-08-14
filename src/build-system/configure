@@ -7339,6 +7339,11 @@ else
         CXXFLAGS_DLL=
         ;;
    esac
+
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_DLL_SUPPORT 1
+_ACEOF
+
    if test "$with_dll" = "yes"; then
 
 cat >>confdefs.h <<\_ACEOF

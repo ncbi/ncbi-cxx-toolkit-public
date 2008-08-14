@@ -2000,6 +2000,9 @@ else
         CXXFLAGS_DLL=
         ;;
    esac
+   AC_DEFINE(NCBI_DLL_SUPPORT, 1,
+     [Define to 1 if building dynamic libraries at all
+      (albeit not necessarily by default).])
    if test "$with_dll" = "yes"; then
       AC_DEFINE(NCBI_DLL_BUILD, 1,
                 [Define to 1 if building dynamic libraries by default.])

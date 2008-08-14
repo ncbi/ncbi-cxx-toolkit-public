@@ -232,7 +232,6 @@
 
 /* Define to 1 if libjpeg is available. */
 #define HAVE_LIBJPEG 1
-#define HAVE_LIBJPEG 1
 
 /* Define to 1 if KSTAT is available, either in its own library or as part of
    the standard libraries. */
@@ -637,6 +636,13 @@
    functions as deprecated. */
 #define NCBI_DEPRECATED __attribute__((__deprecated__))
 
+/* Define to 1 if building dynamic libraries by default. */
+#define NCBI_DLL_BUILD 1
+
+/* Define to 1 if building dynamic libraries at all (albeit not necessarily by
+   default). */
+#define NCBI_DLL_SUPPORT 1
+
 /* Define to whatever syntax your compiler supports for marking functions as
    to be inlined even if they might not otherwise be. */
 #define NCBI_FORCEINLINE inline __attribute__((always_inline))
@@ -690,6 +696,9 @@
 
 /* Define to 1 on Unix. */
 #define NCBI_OS_UNIX 1
+
+/* Define to 1 if the plugin manager should load DLLs by default. */
+#define NCBI_PLUGIN_AUTO_LOAD 1
 
 /* Define to whatever syntax, if any, your C compiler supports for marking
    pointers as restricted in the C99 sense. */
