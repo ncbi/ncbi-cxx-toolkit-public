@@ -5,12 +5,17 @@ SRC_DIR=$2
 INSTALL_DIR=$3
 
 CGI_NAME="test_stat_ext.cgi"
-CGI_PATH="internal/cppcore/test_stat_ext/cgi"
+CGI_PATH="src/internal/cppcore/test_stat_ext/cgi"
 CGI_XSL_DIR="xsl"
 CGI_INIFILE_NAME="test_stat_ext.cgi.ini"
 
 
-if [ ! -d "$BIN_DIR" -o ! -d "$INSTALL_DIR" ]; then
+if [[ "$(uname -s)" == CYGWIN* ]]; then
+    CGI_NAME="${CGI_NAME}.exe"
+fi
+
+
+if [ ! -d "$BIN_DIR" -o ! -d "$SRC_DIR" -o ! -d "$INSTALL_DIR" ]; then
     echo "Parameters given ('$BIN_DIR' and '$INSTALL_DIR') are not directories" >&2
     exit 1
 fi

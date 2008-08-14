@@ -1,12 +1,16 @@
 corelib$
+corelib/impl$
+util$
 util/cache$
 util/bitset$
-util/regexp$
 serial$
 serial/impl$
 serial/datatool$
+cgi$
 cgi/impl$
 connect$
+dbapi$
+dbapi/driver$
 dbapi/driver/impl$
 dbapi/driver/util$ update-only
 dbapi/driver/odbc/unix_odbc$ update-only
