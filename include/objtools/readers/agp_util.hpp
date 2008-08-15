@@ -305,7 +305,7 @@ public:
     // This implementation accumulates multiple errors separately for
     // the current and the previous lines, ignores warnings.
     virtual void Msg(int code, const string& details, int appliesTo=fAtThisLine);
-    void Msg(int code, int appliesTo=fAtThisLine)
+    virtual void Msg(int code, int appliesTo=fAtThisLine)
     {
       Msg(code, NcbiEmptyString, appliesTo);
     }
