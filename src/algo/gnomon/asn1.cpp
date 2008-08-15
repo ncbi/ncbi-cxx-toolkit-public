@@ -521,12 +521,14 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_gene_feature(const 
 
     CRef<CSeq_feat> gene_feature(new CSeq_feat);
 
+    string gene_id_str = "gene." + NStr::IntToString(model.GeneID());
+
     CRef<CObject_id> obj_id( new CObject_id() );
-    obj_id->SetStr("gene." + NStr::IntToString(model.GeneID()));
+    obj_id->SetStr(gene_id_str);
     CRef<CFeat_id> feat_id( new CFeat_id() );
     feat_id->SetLocal(*obj_id);
     gene_feature->SetIds().push_back(feat_id);
-    gene_feature->SetData().SetGene();
+    gene_feature->SetData().SetGene().SetDesc(gene_id_str);
 
     if (model.Status() & CGeneModel::ePseudo) {
         gene_feature->SetData().SetGene().SetPseudo(true);
