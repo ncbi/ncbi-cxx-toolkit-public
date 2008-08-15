@@ -248,13 +248,18 @@ string GetSybaseClientVersion(void)
 
     CNcbiEnvironment env;
     sybase_version = env.Get("SYBASE");
-    CDirEntry dir_entry(sybase_version);
-    dir_entry.DereferenceLink();
-    sybase_version = dir_entry.GetPath();
 
-    sybase_version = sybase_version.substr(
-        sybase_version.find_last_of('/') + 1
-        );
+	if (!sybase_version.empty()) {
+		CDirEntry dir_entry(sybase_version);
+		dir_entry.DereferenceLink();
+		sybase_version = dir_entry.GetPath();
+
+		sybase_version = sybase_version.substr(
+				sybase_version.find_last_of('/') + 1
+				);
+	} else {
+		sybase_version = "0.0";
+	}
 #endif
 
     return sybase_version;
@@ -265,9 +270,21 @@ NCBITEST_INIT_VARIABLES(parser)
 {
     ////////////////////////
     // Sybase ...
-    parser->AddSymbol("SYBASE_ClientVersion", NStr::StringToDouble(
-        GetSybaseClientVersion().substr(0, 4))
-    );
+	{
+		double syb_client_ver = 0.0;
+		const string syb_client_ver_str = GetSybaseClientVersion();
+
+		if (!syb_client_ver_str.empty()) {
+			try {
+				syb_client_ver = NStr::StringToDouble(syb_client_ver_str.substr(0, 4));
+			} catch (const CStringException&) {
+				// Conversion error
+			}
+		}
+
+		parser->AddSymbol("SYBASE_ClientVersion", syb_client_ver);
+
+	}
 
     ///////////////////////
     // Configuration-related ...
