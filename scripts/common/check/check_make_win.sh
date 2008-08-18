@@ -318,7 +318,7 @@ RunTest() {
    x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext"
 
    if \$is_db_load; then
-      test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" >> "$x_build_dir/test_stat_load.log" 2>&1
+      test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "$x_build_dir/test_stat_load.log" 2>&1
    else
       if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
          case "\$COMPILER" in
