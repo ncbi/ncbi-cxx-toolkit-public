@@ -914,9 +914,12 @@ void CCgiRequest::x_Init
 
     // Check for an IMAGEMAP input entry like: "Command.x=5&Command.y=3" and
     // put them with empty string key for better access
-    if (m_Entries.find(kEmptyStr) != m_Entries.end()) {
+    TCgiEntries::const_iterator empty_it = m_Entries.find(kEmptyStr);
+    if (empty_it != m_Entries.end()) {
         // there is already empty name key
-        ERR_POST_X(5, "empty key name:  we will not check for IMAGE names");
+        ERR_POST_X(5, "Encountered query parameter with empty name, "
+            "its value is: '" << empty_it->second << "'. ATTENTION: "
+            "Because of this, check for image names will be disabled.");
         return;
     }
     string image_name;
