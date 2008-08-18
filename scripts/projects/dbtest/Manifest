@@ -14,6 +14,7 @@ APP: test_stat_load
 
 COPY: $srcdir/src/internal/cppcore/test_stat_ext/db_structure.sql $installdir
 COPY: $srcdir/src/internal/cppcore/test_stat_ext/loader/test_stat_load.ini $installdir/bin
+COPY: $srcdir/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh $installdir/bin
 
 POSTBUILD: $srcdir/scripts/projects/dbtest/post_build/copy_cgi.sh $bindir $srcdir $installdir/bin
 

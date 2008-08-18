@@ -392,6 +392,9 @@ RunTest()
           CYGWIN* )
             test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "$x_build_dir/test_stat_load.log" 2>&1
             ;;
+          IRIX* )
+            $NCBI/bin/_production/CPPCORE/test_stat_load.sh "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "$x_build_dir/test_stat_load.log" 2>&1
+            ;;
           * )
             $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "$x_build_dir/test_stat_load.log" 2>&1
             ;;
