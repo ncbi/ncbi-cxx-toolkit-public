@@ -1264,7 +1264,7 @@ void CNcbiRegistry::x_Init(void)
     m_AllRegistries->SetCoreCutoff(ePriority_Reserved);
 
     m_MainRegistry.Reset(new CTwoLayerRegistry);
-    m_AllRegistries->Add(*m_MainRegistry, ePriority_Main);
+    m_AllRegistries->Add(*m_MainRegistry, ePriority_Main, sm_MainRegName);
 
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (app) {
@@ -1272,13 +1272,13 @@ void CNcbiRegistry::x_Init(void)
     } else {
         m_EnvRegistry.Reset(new CEnvironmentRegistry);
     }
-    m_AllRegistries->Add(*m_EnvRegistry, ePriority_Environment);
+    m_AllRegistries->Add(*m_EnvRegistry, ePriority_Environment, sm_EnvRegName);
 
     m_FileRegistry.Reset(new CTwoLayerRegistry);
-    m_AllRegistries->Add(*m_FileRegistry, ePriority_File);
+    m_AllRegistries->Add(*m_FileRegistry, ePriority_File, sm_FileRegName);
 
     m_SysRegistry.Reset(new CTwoLayerRegistry);
-    m_AllRegistries->Add(*m_SysRegistry, ePriority_Default - 1);
+    m_AllRegistries->Add(*m_SysRegistry, ePriority_Default - 1, sm_SysRegName);
 }
 
 
