@@ -56,8 +56,7 @@ Seq-feat ::= SEQUENCE {
     pseudo BOOLEAN OPTIONAL ,     -- annotated on pseudogene?
     except-text VisibleString OPTIONAL , -- explain if except=TRUE
     ids SET OF Feat-id OPTIONAL ,       -- set of Ids; will replace 'id' field
-    exts SET OF User-object OPTIONAL    -- set of extensions; will replace 'ext' field
-}
+    exts SET OF User-object OPTIONAL }  -- set of extensions; will replace 'ext' field
 
 SeqFeatData ::= CHOICE {
     gene Gene-ref ,
@@ -454,10 +453,28 @@ BioSource ::= SEQUENCE {
       mut (3) ,                        -- artificially mutagenized
       artificial (4) ,                 -- artificially engineered
       synthetic (5) ,                  -- purely synthetic
-      other (255) } DEFAULT unknown , 
+      other (255)
+    } DEFAULT unknown , 
     org Org-ref ,
     subtype SEQUENCE OF SubSource OPTIONAL ,
-    is-focus NULL OPTIONAL }   -- to distinguish biological focus
+    is-focus NULL OPTIONAL ,           -- to distinguish biological focus
+    pcr-primers PCRReactionSet OPTIONAL }
+
+PCRReactionSet ::= SET OF PCRReaction
+
+PCRReaction ::= SEQUENCE {
+    forward PCRPrimerSet OPTIONAL ,
+    reverse PCRPrimerSet OPTIONAL }
+
+PCRPrimerSet ::= SET OF PCRPrimer
+
+PCRPrimer ::= SEQUENCE {
+    seq PCRPrimerSeq OPTIONAL ,
+    name PCRPrimerName OPTIONAL }
+
+PCRPrimerSeq ::= VisibleString
+
+PCRPrimerName ::= VisibleString
 
 SubSource ::= SEQUENCE {
     subtype INTEGER {
