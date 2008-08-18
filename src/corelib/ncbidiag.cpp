@@ -1337,6 +1337,11 @@ void CDiagContext::DeleteProperty(const string& name,
 
 void CDiagContext::SetAppName(const string& app_name)
 {
+    if ( !m_AppName.empty() ) {
+        // AppName can be set only once
+        ERR_POST("Application name can not be changed.");
+        return;
+    }
     for (size_t i = 0; i < app_name.size(); i++) {
         if ( !(app_name[i])  ||  isspace(app_name[i]) ) {
             m_AppName = NStr::URLEncode(app_name);
