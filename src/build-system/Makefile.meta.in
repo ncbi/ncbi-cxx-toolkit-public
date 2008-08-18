@@ -372,11 +372,11 @@ all_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
 	@-echo "`date`: recursive build succeeded in `pwd`" > .built_r
 
 clean_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
-	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS_NR) clean; else true; fi
+	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS_NR) clean.real; else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) clean_p $(SUB_KET_P); else true; fi
 
 purge_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
-	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS_NR) purge; else true; fi
+	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS_NR) purge.real; else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) purge_p $(SUB_KET_P); else true; fi
 
 check_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
