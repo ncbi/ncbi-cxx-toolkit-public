@@ -257,9 +257,6 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
     datetime.SetFormat("Y-M-DTh:m:s");
     this->SetAttlist().SetDate(datetime.AsString());
     this->SetAttlist().SetSummary_xml(newname);
-    this->SetAttlist().SetXmlns("http://regis-web.systemsbiology.net/pepXML");
-    this->SetAttlist().SetXmlnsxsi("http://www.w3.org/2001/XMLSchema-instance");
-    this->SetAttlist().SetXsischemaLocation("http://regis-web.systemsbiology.net/pepXML pepXML_v111.xsd");
 
     // Create the Run Summary (need to generalize)
     CRef<CMsms_run_summary> rSum(new CMsms_run_summary);
