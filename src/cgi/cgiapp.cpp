@@ -70,7 +70,7 @@ static NCBI_PARAM_TYPE(CGI, Print_User_Agent) s_PrintUserAgentParam;
 
 
 NCBI_PARAM_DECL(bool, CGI, Print_Self_Url);
-NCBI_PARAM_DEF_EX(bool, CGI, Print_Self_Url, false, eParam_NoThread,
+NCBI_PARAM_DEF_EX(bool, CGI, Print_Self_Url, true, eParam_NoThread,
                   CGI_PRINT_SELF_URL);
 static NCBI_PARAM_TYPE(CGI, Print_Self_Url) s_PrintSelfUrlParam;
 
@@ -527,7 +527,8 @@ CCgiApplication::CCgiApplication(void)
    m_ArgContextSync(false),
    m_HTTPStatus(200),
    m_IsResultReady(true),
-   m_ShouldExit(false)
+   m_ShouldExit(false),
+   m_RequestStartPrinted(false)
 {
     // CGI applications should use /log for logging by default
     CDiagContext::SetUseRootLog();
@@ -644,6 +645,7 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
             // Print request start message
             if ( !CDiagContext::IsSetOldPostFormat() ) {
                 GetDiagContext().PrintRequestStart(req.GetCGIEntriesStr());
+                m_RequestStartPrinted = true;
             }
 
             const string& phid = CDiagContext::GetRequestContext().GetHitID();
@@ -682,9 +684,11 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
         }
     case eEndRequest:
         {
-            if ( !CDiagContext::IsSetOldPostFormat() ) {
+            if ( m_RequestStartPrinted  &&
+                !CDiagContext::IsSetOldPostFormat() ) {
                 // This will also reset request context
                 GetDiagContext().PrintRequestStop();
+                m_RequestStartPrinted = false;
             }
             break;
         }

@@ -288,7 +288,7 @@ const string& CCgiContext::GetSelfURL(ESelfUrlPort use_port)
     bool secure = AStrEquiv(GetRequest().GetRandomProperty("HTTPS",
         false), "on", PNocase());
     m_SelfURL = secure ? "https://" : "http://";
-    m_SelfURL += GetRequest().GetProperty(eCgi_ServerName);
+    m_SelfURL += server;
     if (use_port != eSelfUrlPort_Strip) {
         m_SelfURL += ':';
         m_SelfURL += GetRequest().GetProperty(eCgi_ServerPort);

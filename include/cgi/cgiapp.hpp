@@ -331,6 +331,10 @@ private:
     /// @sa FASTCGI_ScheduleExit()
     bool m_ShouldExit;
 
+    /// Remember if request-start was printed, don't print request-stop
+    /// without request-start.
+    bool m_RequestStartPrinted;
+
     // forbidden
     CCgiApplication(const CCgiApplication&);
     CCgiApplication& operator=(const CCgiApplication&);
