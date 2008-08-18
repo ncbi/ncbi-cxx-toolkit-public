@@ -1020,6 +1020,7 @@ static const char * kBuiltInGuide[] = {
     "2+6  FZ  ddbj_other_nuc",
     "2+6  GA  ddbj_other_nuc",
     "2+6  GB  ddbj_other_nuc",
+    "2+6  GC  gb_patent",
     "2+6  ??  unreserved_nuc",
     "",
     "# SPECIAL CASES",
