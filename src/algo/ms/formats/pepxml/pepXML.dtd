@@ -5,7 +5,7 @@
 	summary_xml CDATA #REQUIRED
 >
 <!--Summary of analysis subjected to run(s)-->
-<!ELEMENT analysis_summary (#PCDATA)>
+<!ELEMENT analysis_summary (peptideprophet_summary*, interact_summary*, libra_summary*, asapratio_summary*, xpressratio_summary*)>
 <!ATTLIST analysis_summary
 	time NMTOKEN #REQUIRED
 	analysis CDATA #REQUIRED
@@ -119,7 +119,7 @@
 	type CDATA #IMPLIED
 >
 <!--Reference for analysis applied to current run (time corresponds with analysis_summary/@time, id corresponds with analysis_result/@id)-->
-<!ELEMENT analysis_timestamp (#PCDATA)>
+<!ELEMENT analysis_timestamp (database_refresh_timestamp*, xpressratio_timestamp*)>
 <!ATTLIST analysis_timestamp
 	time NMTOKEN #REQUIRED
 	analysis CDATA #REQUIRED
@@ -187,7 +187,7 @@
 	value CDATA #REQUIRED
 	type CDATA #IMPLIED
 >
-<!ELEMENT analysis_result (#PCDATA)>
+<!ELEMENT analysis_result (peptideprophet_result*, asapratio_result*, xpressratio_result*)>
 <!ATTLIST analysis_result
 	analysis CDATA #REQUIRED
 	id NMTOKEN "1"
