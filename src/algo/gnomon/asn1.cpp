@@ -75,7 +75,7 @@ public:
     CRef<CSeq_entry> main_seq_entry;
 
 private:
-
+	static const int HOLE_SIZE = 30;
 
     CRef<CSeq_feat> create_gene_feature(const SModelData& md) const;
     void update_gene_feature(CSeq_feat& gene, CSeq_feat& mrna_feat) const;
@@ -291,7 +291,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
         cdregion_location->SetPartialStop(true,eExtreme_Biological);
     cdregion_feature->SetLocation(*cdregion_location);
 
-    if (!model.HasStart() || !model.HasStop())
+    if (!model.HasStart() || !model.HasStop() || !model.Continuous())
         cdregion_feature->SetPartial(true);
 
     return cdregion_feature;
@@ -337,11 +337,26 @@ CRef<CSeq_loc> CAnnotationASN1::CImplementationData::create_packed_int_seqloc(co
     CPacked_seqint& packed_int = seq_loc->SetPacked_int();
     ENa_strand strand = model.Strand()==ePlus?eNa_strand_plus:eNa_strand_minus; 
 
-    ITERATE(CGeneModel::TExons, e, model.Exons()) {
+	for (size_t i=0; i < model.Exons().size(); ++i) {
+		const CModelExon* e = &model.Exons()[i];
         TSignedSeqRange interval_range = e->Limits() & limits;
         if (interval_range.Empty())
             continue;
         CRef<CSeq_interval> interval(new CSeq_interval(*contig_sid, interval_range.GetFrom(),interval_range.GetTo(), strand));
+
+		if (!e->m_fsplice && 0 < i) {
+			if (strand==ePlus)
+				interval->SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+			else
+				interval->SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+		}
+		if (!e->m_ssplice && i < model.Exons().size()-1) {
+			if (strand==ePlus)
+				interval->SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+			else
+				interval->SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+		}
+
         packed_int.AddInterval(*interval);
     }
     return seq_loc->Merge(CSeq_loc::fSort, NULL);
@@ -364,7 +379,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
 
     mrna_feature->SetLocation(*create_packed_int_seqloc(model));
                 
-    if(!model.HasStart() || !model.HasStop())
+    if(!model.HasStart() || !model.HasStop() || !model.Continuous())
         mrna_feature->SetPartial(true);
 
     if(model.HasStart())
@@ -401,6 +416,10 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
         vector<string> ests;
         ITERATE(CSupportInfoSet,s,model.Support()) {
             string accession = s->Seqid()->GetSeqIdString(true);
+			if (s->Type()&CGeneModel::eChain) {
+                support_field->AddField("Chain",accession);
+				continue;
+			}
             if (s->CoreAlignment())
                 support_field->AddField("Core",accession);
             if (s->Type()&CGeneModel::eProt)
@@ -445,13 +464,17 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
 
     CRef<CSeqdesc> desc(new CSeqdesc);
     desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
-    desc->SetMolinfo().SetCompleteness(model.HasStart()?
-                                       (model.HasStop()?
-                                        CMolInfo::eCompleteness_complete:
-                                        CMolInfo::eCompleteness_has_left):
-                                       (model.HasStop()?
-                                        CMolInfo::eCompleteness_has_right:
-                                        CMolInfo::eCompleteness_no_ends));
+    desc->SetMolinfo().SetCompleteness(
+		model.Continuous()?
+			(model.HasStart()?
+				(model.HasStop()?
+					CMolInfo::eCompleteness_complete:
+                    CMolInfo::eCompleteness_has_left):
+                (model.HasStop()?
+					CMolInfo::eCompleteness_has_right:
+					CMolInfo::eCompleteness_no_ends)):
+			CMolInfo::eCompleteness_partial
+	);
     sprot->SetSeq().SetDescr().Set().push_back(desc);
 
 
@@ -482,13 +505,17 @@ CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SMo
     smrna->SetSeq().SetDescr().Set().push_back(mdes);
     mdes->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
 
-    mdes->SetMolinfo().SetCompleteness(model.HasStart()?
-                                       (model.HasStop()?
-                                        CMolInfo::eCompleteness_unknown:
-                                        CMolInfo::eCompleteness_no_right):
-                                       (model.HasStop()?
-                                        CMolInfo::eCompleteness_no_left:
-                                        CMolInfo::eCompleteness_no_ends));
+    mdes->SetMolinfo().SetCompleteness(
+		model.Continuous()?
+			(model.HasStart()?
+				(model.HasStop()?
+					CMolInfo::eCompleteness_unknown:
+                    CMolInfo::eCompleteness_no_right):
+                (model.HasStop()?
+					CMolInfo::eCompleteness_no_left:
+					CMolInfo::eCompleteness_no_ends)):
+			CMolInfo::eCompleteness_partial
+	);
 
     smrna->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     smrna->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
@@ -497,9 +524,22 @@ CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SMo
     md.mrna_map.EditedSequence(contig_seq, mrna_seq_vec);
     string mrna_seq_str((char*)&mrna_seq_vec[0],mrna_seq_vec.size());
 
-    CRef<CSeq_data> dmrna(new CSeq_data(mrna_seq_str, CSeq_data::e_Iupacna));
-    smrna->SetSeq().SetInst().SetSeq_data(*dmrna);
-    smrna->SetSeq().SetInst().SetLength(mrna_seq_str.size());
+	CSeq_inst& seq_inst = smrna->SetSeq().SetInst();
+	if (mrna_seq_str.find('-')==NPOS) { // no holes
+		CRef<CSeq_data> dmrna(new CSeq_data(mrna_seq_str, CSeq_data::e_Iupacna));
+		seq_inst.SetSeq_data(*dmrna);
+		seq_inst.SetLength(mrna_seq_str.size());
+	} else {
+		TSeqPos b = 0;
+		TSeqPos e = 0;
+		while ((e=mrna_seq_str.find('-',b))!=NPOS) {
+			seq_inst.SetExt().SetDelta().AddLiteral(mrna_seq_str.substr(b,e-b),CSeq_inst::eMol_rna);
+			b=mrna_seq_str.find_first_of('-',e);
+			seq_inst.SetExt().SetDelta().AddLiteral(b-e);
+			seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+		}
+		seq_inst.SetExt().SetDelta().AddLiteral(mrna_seq_str.substr(b),CSeq_inst::eMol_rna);
+	}
     smrna->SetSeq().SetInst().SetHist().SetAssembly().push_back(model2spliced_seq_align(md));
 
     CRef<CSeq_annot> annot(new CSeq_annot);
@@ -679,6 +719,8 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
         se.SetProduct_start().SetNucpos(accumulated_product_len);
         accumulated_product_len += model.FShiftedLen(se.GetGenomic_start(),se.GetGenomic_end());
         se.SetProduct_end().SetNucpos(accumulated_product_len-1);
+		if (!se.CanGetSplice_3_prime() || !se.GetSplice_3_prime().IsSetBases())
+			accumulated_product_len += HOLE_SIZE;
     }
 
     return seq_align;
