@@ -386,7 +386,7 @@ TSignedSeqPos CFrameShiftedSeqMap::InsertIndelRangesForInterval(TSignedSeqPos or
     return edit_a;
 }
 
-CFrameShiftedSeqMap::CFrameShiftedSeqMap(const CGeneModel& align, EMapLimit limit)
+CFrameShiftedSeqMap::CFrameShiftedSeqMap(const CGeneModel& align, EMapLimit limit, int holelen)
 {
     m_orientation = align.Strand();
 
@@ -437,8 +437,10 @@ CFrameShiftedSeqMap::CFrameShiftedSeqMap(const CGeneModel& align, EMapLimit limi
             } else {
                 estart += (*align.TranscriptExonsP())[i].GetFrom()-(*align.TranscriptExonsP())[i+1].GetTo()-1;
             }
+        } else if(i != align.Exons().size()-1 && (!align.Exons()[i+1].m_fsplice || !align.Exons()[i].m_ssplice)) {
+            estart += holelen;
         }
-    }
+    } 
 
     _ASSERT(m_edited_ranges.size() == m_orig_ranges.size());
     //    _ASSERT(m_edited_ranges.empty() || (m_edited_ranges.front().GetExtraFrom() == 0 && m_edited_ranges.back().GetExtraTo() == 0));
