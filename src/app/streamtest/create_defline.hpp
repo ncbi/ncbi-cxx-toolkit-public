@@ -1288,11 +1288,9 @@ string CDeflineGenerator::x_SetSuffix (
                     suffix = ", whole genome shotgun sequencing project";
                 }            
             } else if (title.find ("whole genome shotgun sequence") == NPOS) {
-                if (! m_taxname.empty()) {
-                    string orgnl = x_OrganelleName (false, false, true);
-                    if (! orgnl.empty()) {
-                        suffix = " " + orgnl;
-                    }
+                string orgnl = x_OrganelleName (false, false, true);
+                if (! orgnl.empty()) {
+                    suffix = " " + orgnl;
                 }
                 suffix += ", whole genome shotgun sequence";
             }
