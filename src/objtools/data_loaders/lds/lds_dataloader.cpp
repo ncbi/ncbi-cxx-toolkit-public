@@ -84,26 +84,6 @@ public:
           m_HrMap(hrmap)
         {}
 
-    void AddResult(int object_id0, int parent_id0, int tse_id0) {
-        int object_id = tse_id0 ? tse_id0 : object_id0;
-        
-        // check if we can extract seq-entry out of binary bioseq-set file
-        //
-        //   (this trick has been added by kuznets (Jan-12-2005) to read 
-        //    molecules out of huge refseq files)
-        CLDS_Query::SObjectDescr obj_descr =
-            m_LDS_query.GetObjectDescr(m_LDS_db->GetObjTypeMap(),
-                                       tse_id0, false/*do not trace to top*/);
-        if ((obj_descr.is_object && obj_descr.id > 0)      &&
-            (obj_descr.format == CFormatGuess::eBinaryASN) &&
-            (obj_descr.type_str == "Bioseq-set")
-            ) {
-            obj_descr = m_LDS_query.GetTopSeqEntry(m_LDS_db->GetObjTypeMap(),
-                                                   object_id);
-        }
-        m_Result.push_back(obj_descr);
-    }
-
     void operator()(SLDS_ObjectDB& dbf)
     {
         if (dbf.primary_seqid.IsNull())
@@ -194,13 +174,61 @@ public:
 
     void GetResult(TResult& result)
     {
-        m_Result.swap(result);
+        result.clear();
+        ITERATE ( TCandidates, it, m_Candidates ) {
+            const SCandidate& sc = *it;
+            int tse_id = sc.tse_id;
+            int object_id = tse_id? tse_id: sc.object_id;
+
+            // check if we can extract seq-entry out of binary bioseq-set file
+            //
+            //   (this trick has been added by kuznets (Jan-12-2005) to read 
+            //    molecules out of huge refseq files)
+            if ( tse_id ) {
+                CLDS_Query::SObjectDescr obj_descr =
+                    m_LDS_query.GetObjectDescr(m_LDS_db->GetObjTypeMap(),
+                                               tse_id,
+                                               false/*do not trace to top*/);
+                if ((obj_descr.is_object && obj_descr.id > 0)      &&
+                    (obj_descr.format == CFormatGuess::eBinaryASN) &&
+                    (obj_descr.type_str == "Bioseq-set")
+                    ) {
+                    obj_descr =
+                        m_LDS_query.GetTopSeqEntry(m_LDS_db->GetObjTypeMap(),
+                                                   object_id);
+                    result.push_back(obj_descr);
+                    continue;
+                }
+            }
+            CLDS_Query::SObjectDescr obj_descr =
+                m_LDS_query.GetObjectDescr(m_LDS_db->GetObjTypeMap(),
+                                           object_id,
+                                           false/*do not trace to top*/);
+            result.push_back(obj_descr);
+        }
     }
+
+protected:
+    struct SCandidate {
+        int object_id;
+        int parent_id;
+        int tse_id;
+    };
+    typedef vector<SCandidate> TCandidates;
+
+    void AddResult(int object_id, int parent_id, int tse_id) {
+        SCandidate sc;
+        sc.object_id = object_id;
+        sc.parent_id = parent_id;
+        sc.tse_id = tse_id;
+        m_Candidates.push_back(sc);
+    }
+
 private:
     CLDS_Database*          m_LDS_db;      // Reference on the LDS database 
     CLDS_Query&             m_LDS_query;   // Query object
     const CHandleRangeMap&  m_HrMap;       ///< Range map of seq ids to search
-    TResult                 m_Result;      ///< Search result (found objects)
+    TCandidates             m_Candidates;  ///< Search result (found objects)
 };
 
 
