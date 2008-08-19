@@ -7,6 +7,7 @@ INSTALL_DIR=$3
 CGI_NAME="test_stat_ext.cgi"
 CGI_PATH="src/internal/cppcore/test_stat_ext/cgi"
 CGI_XSL_DIR="xsl"
+CGI_OVERLIB_DIR="overlib"
 CGI_INIFILE_NAME="test_stat_ext.cgi.ini"
 
 
@@ -23,7 +24,8 @@ fi
 if [ -f "$BIN_DIR/$CGI_NAME" ]; then
     cp    "$BIN_DIR/$CGI_NAME" "$INSTALL_DIR/" || exit 2
     cp -R "$SRC_DIR/$CGI_PATH/$CGI_XSL_DIR" "$INSTALL_DIR/" || exit 3
-    cp    "$SRC_DIR/$CGI_PATH/$CGI_INIFILE_NAME" "$INSTALL_DIR/" || exit 4
+    cp -R "$SRC_DIR/$CGI_PATH/$CGI_OVERLIB_DIR" "$INSTALL_DIR/" || exit 4
+    cp    "$SRC_DIR/$CGI_PATH/$CGI_INIFILE_NAME" "$INSTALL_DIR/" || exit 5
 fi
 
 exit 0
