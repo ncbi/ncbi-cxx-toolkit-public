@@ -563,7 +563,7 @@ public:
 }
     CFrameShiftedSeqMap(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TFrameShifts::const_iterator fsi_begin, const TFrameShifts::const_iterator fsi_end) : m_orientation(ePlus) { InsertIndelRangesForInterval(orig_a, orig_b, 0, fsi_begin, fsi_end); }
     enum EMapLimit{ eNoLimit, eCdsOnly, eRealCdsOnly };
-    CFrameShiftedSeqMap(const CGeneModel& align, EMapLimit limit = eNoLimit);
+    CFrameShiftedSeqMap(const CGeneModel& align, EMapLimit limit = eNoLimit, int holelen = 0);
     TSignedSeqPos MapOrigToEdited(TSignedSeqPos orig_pos) const;
     TSignedSeqPos MapEditedToOrig(TSignedSeqPos edited_pos) const;
     TSignedSeqRange MapRangeOrigToEdited(TSignedSeqRange orig_range, bool withextras = true) const;
