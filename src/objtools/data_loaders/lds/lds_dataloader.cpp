@@ -62,20 +62,9 @@ BEGIN_SCOPE(objects)
 
 DEFINE_STATIC_FAST_MUTEX(sx_LDS_Lock);
 
+#define LDS_GUARD() CFastMutexGuard guard(sx_LDS_Lock)
 
 
-/// @internal
-///
-struct SLDS_ObjectDisposition
-{
-    SLDS_ObjectDisposition(int object, int parent, int tse)
-      : object_id(object), parent_id(parent), tse_id(tse)
-    {}
-
-    int     object_id;
-    int     parent_id;
-    int     tse_id;
-};
 
 /// Objects scanner
 ///
@@ -84,14 +73,36 @@ struct SLDS_ObjectDisposition
 class CLDS_FindSeqIdFunc
 {
 public:
-    typedef vector<SLDS_ObjectDisposition>  TDisposition;
+    typedef vector<CLDS_Query::SObjectDescr>  TResult;
 
 public:
-    CLDS_FindSeqIdFunc(SLDS_TablesCollection& db,
+    CLDS_FindSeqIdFunc(CLDS_Database* lds,
+                       CLDS_Query& query,
                        const CHandleRangeMap&  hrmap)
-    : m_HrMap(hrmap),
-      m_db(db)
-    {}
+        : m_LDS_db(lds),
+          m_LDS_query(query),
+          m_HrMap(hrmap)
+        {}
+
+    void AddResult(int object_id0, int parent_id0, int tse_id0) {
+        int object_id = tse_id0 ? tse_id0 : object_id0;
+        
+        // check if we can extract seq-entry out of binary bioseq-set file
+        //
+        //   (this trick has been added by kuznets (Jan-12-2005) to read 
+        //    molecules out of huge refseq files)
+        CLDS_Query::SObjectDescr obj_descr =
+            m_LDS_query.GetObjectDescr(m_LDS_db->GetObjTypeMap(),
+                                       tse_id0, false/*do not trace to top*/);
+        if ((obj_descr.is_object && obj_descr.id > 0)      &&
+            (obj_descr.format == CFormatGuess::eBinaryASN) &&
+            (obj_descr.type_str == "Bioseq-set")
+            ) {
+            obj_descr = m_LDS_query.GetTopSeqEntry(m_LDS_db->GetObjTypeMap(),
+                                                   object_id);
+        }
+        m_Result.push_back(obj_descr);
+    }
 
     void operator()(SLDS_ObjectDB& dbf)
     {
@@ -117,20 +128,18 @@ public:
                 CSeq_id_Handle seq_id_hnd = it->first;
                 CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
                 if (seq_id->Match(*seq_id_db)) {
-                    m_Disposition.push_back(
-                        SLDS_ObjectDisposition(object_id, parent_id, tse_id));
+                    AddResult(object_id, parent_id, tse_id);
 /*
                     LOG_POST_X(1, Info << "LDS: Local object " << seq_id_str
                                        << " id=" << object_id << " matches "
                                        << seq_id->AsFastaString());
 */
-
                     return;
                 }
             } // ITERATE
         }}
 
-        // Primaty seq_id scan gave no results
+        // Primary seq_id scan gave no results
         // Trying supplemental aliases
 /*
         m_db.object_attr_db.object_attr_id = object_id;
@@ -168,8 +177,7 @@ public:
                 CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
 
                 if (seq_id->Match(*seq_id_db)) {
-                    m_Disposition.push_back(
-                        SLDS_ObjectDisposition(object_id, parent_id, tse_id));
+                    AddResult(object_id, parent_id, tse_id);
 /*
                     LOG_POST_X(2, Info << "LDS: Local object " << seq_id_str
                                        << " id=" << object_id << " matches "
@@ -184,14 +192,15 @@ public:
         } // ITERATE
     }
 
-    const TDisposition& GetResultDisposition() const 
+    void GetResult(TResult& result)
     {
-        return m_Disposition;
+        m_Result.swap(result);
     }
 private:
+    CLDS_Database*          m_LDS_db;      // Reference on the LDS database 
+    CLDS_Query&             m_LDS_query;   // Query object
     const CHandleRangeMap&  m_HrMap;       ///< Range map of seq ids to search
-    SLDS_TablesCollection&  m_db;          ///< The LDS database
-    TDisposition            m_Disposition; ///< Search result (found objects)
+    TResult                 m_Result;      ///< Search result (found objects)
 };
 
 
@@ -247,7 +256,7 @@ CLDS_DataLoader::CLDS_LoaderMaker::CLDS_LoaderMaker(const string& source_path,
 CDataLoader*
 CLDS_DataLoader::CLDS_LoaderMaker::CreateLoader(void) const
 {
-    CFastMutexGuard mg(sx_LDS_Lock);
+    LDS_GUARD();
 
     CLDS_Manager mgr(m_SourcePath, m_DbPath, m_DbAlias);
     mgr.Index(m_Recurse, m_ControlSum);
@@ -312,7 +321,7 @@ CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
     ///?? Should a lds db be reindexed here ?????
     //    auto_ptr<CLDS_Database> lds(new CLDS_Database(db_path, kEmptyStr));
     CLDS_Manager mgr(paths.first, paths.second);
-    CFastMutexGuard mg(sx_LDS_Lock);
+    LDS_GUARD();
     //lds->Open();
     m_LDS_db = mgr.ReleaseDB();
     
@@ -329,7 +338,7 @@ void CLDS_DataLoader::SetDatabase(CLDS_Database& lds_db,
                                   EOwnership owner,
                                   const string&  dl_name)
 {
-    CFastMutexGuard mg(sx_LDS_Lock);
+    LDS_GUARD();
     
     if (m_LDS_db && m_OwnDatabase) {
         delete m_LDS_db;
@@ -352,131 +361,94 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
 {
     unsigned db_recovery_count = 0;
     while (true) {
-    try {
+        try {
+            TTSE_LockSet locks;
+            CHandleRangeMap hrmap;
+            hrmap.AddRange(idh, CRange<TSeqPos>::GetWhole(), eNa_strand_unknown);
 
-        TTSE_LockSet locks;
-        CHandleRangeMap hrmap;
-        hrmap.AddRange(idh, CRange<TSeqPos>::GetWhole(), eNa_strand_unknown);
+            CLDS_FindSeqIdFunc::TResult result;
 
-        CLDS_FindSeqIdFunc search_func(m_LDS_db->GetTables(), hrmap);
-
-        {{
-        CFastMutexGuard mg(sx_LDS_Lock);
-
-            SLDS_TablesCollection& db = m_LDS_db->GetTables();
-            CLDS_Query lds_query(*m_LDS_db);
-
-            // index screening
-            CLDS_Set       cand_set;
             {{
-            CBDB_FileCursor cur_int_idx(db.obj_seqid_int_idx);
-            cur_int_idx.SetCondition(CBDB_FileCursor::eEQ);
+                LDS_GUARD();
+                
+                SLDS_TablesCollection& db = m_LDS_db->GetTables();
+                CLDS_Query lds_query(*m_LDS_db);
+                
+                // index screening
+                CLDS_Set       cand_set;
+                {{
+                    CBDB_FileCursor cur_int_idx(db.obj_seqid_int_idx);
+                    cur_int_idx.SetCondition(CBDB_FileCursor::eEQ);
 
-            CBDB_FileCursor cur_txt_idx(db.obj_seqid_txt_idx);
-            cur_txt_idx.SetCondition(CBDB_FileCursor::eEQ);
+                    CBDB_FileCursor cur_txt_idx(db.obj_seqid_txt_idx);
+                    cur_txt_idx.SetCondition(CBDB_FileCursor::eEQ);
 
-            SLDS_SeqIdBase sbase;
+                    SLDS_SeqIdBase sbase;
 
-            ITERATE (CHandleRangeMap, it, hrmap) {
-                CSeq_id_Handle seq_id_hnd = it->first;
-                CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
+                    ITERATE (CHandleRangeMap, it, hrmap) {
+                        CSeq_id_Handle seq_id_hnd = it->first;
+                        CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
 
-                LDS_GetSequenceBase(*seq_id, &sbase);
+                        LDS_GetSequenceBase(*seq_id, &sbase);
 
-                if (!sbase.str_id.empty()) {
-                    NStr::ToUpper(sbase.str_id);
+                        if (!sbase.str_id.empty()) {
+                            NStr::ToUpper(sbase.str_id);
+                        }
+
+                        lds_query.ScreenSequence(sbase, 
+                                                 &cand_set, 
+                                                 cur_int_idx, 
+                                                 cur_txt_idx);
+
+
+                    } // ITER
+                }}
+
+                // finding matching sequences using pre-screened result set
+
+                if (cand_set.any()) {
+                    CLDS_FindSeqIdFunc search_func(m_LDS_db, lds_query, hrmap);
+                    BDB_iterate_file(db.object_db, 
+                                     cand_set.first(), cand_set.end(),
+                                     search_func);
+                    search_func.GetResult(result);
                 }
-
-                lds_query.ScreenSequence(sbase, 
-                                        &cand_set, 
-                                        cur_int_idx, 
-                                        cur_txt_idx);
-
-
-            } // ITER
-
             }}
 
-            // finding matching sequences using pre-screened result set
+            // load objects
 
-            if (cand_set.any()) {
+            CDataSource* data_source = GetDataSource();
+            _ASSERT(data_source);
 
-                BDB_iterate_file(db.object_db, 
-                                cand_set.first(), cand_set.end(), 
-                                search_func);        
-            }
-
-        }}
-
-        // load objects
-
-        const CLDS_FindSeqIdFunc::TDisposition& disposition = 
-                                            search_func.GetResultDisposition();
-
-        CDataSource* data_source = GetDataSource();
-        _ASSERT(data_source);
-
-        CLDS_FindSeqIdFunc::TDisposition::const_iterator it;
-        for (it = disposition.begin(); it != disposition.end(); ++it) {
-            const SLDS_ObjectDisposition& obj_disp = *it;
-            int object_id = 
-                obj_disp.tse_id ? obj_disp.tse_id : obj_disp.object_id;
-
-            // check if we can extract seq-entry out of binary bioseq-set file
-            //
-            //   (this trick has been added by kuznets (Jan-12-2005) to read 
-            //    molecules out of huge refseq files)
-            {
-		        CFastMutexGuard mg(sx_LDS_Lock);
-			
-                CLDS_Query query(*m_LDS_db);
-                CLDS_Query::SObjectDescr obj_descr = 
-                    query.GetObjectDescr(
-                                    m_LDS_db->GetObjTypeMap(),
-                                    obj_disp.tse_id, false/*do not trace to top*/);
-                if ((obj_descr.is_object && obj_descr.id > 0)      &&
-                    (obj_descr.format == CFormatGuess::eBinaryASN) &&
-                    (obj_descr.type_str == "Bioseq-set")
-                ) {
-                obj_descr = 
-                        query.GetTopSeqEntry(m_LDS_db->GetObjTypeMap(),
-                                            obj_disp.object_id);
-                object_id = obj_descr.id;
+            ITERATE ( CLDS_FindSeqIdFunc::TResult, it, result ) {
+                const CLDS_Query::SObjectDescr& obj_descr = *it;
+                int object_id = obj_descr.id;
+                TBlobId blob_id(new CBlobIdInt(object_id));
+                CTSE_LoadLock load_lock =
+                    data_source->GetTSE_LoadLock(blob_id);
+                if ( !load_lock.IsLoaded() ) {
+                    CRef<CSeq_entry> seq_entry = LDS_LoadTSE(obj_descr);
+                    if ( !seq_entry ) {
+                        NCBI_THROW2(CBlobStateException, eBlobStateError,
+                                    "cannot load blob",
+                                    CBioseq_Handle::fState_no_data);
+                    }
+                    load_lock->SetSeq_entry(*seq_entry);
+                    load_lock.SetLoaded();
                 }
+                locks.insert(load_lock);
             }
 
-            TBlobId blob_id(new CBlobIdInt(object_id));
-            CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(blob_id);
-            if ( !load_lock.IsLoaded() ) {
-		        CFastMutexGuard mg(sx_LDS_Lock);	
-                CRef<CSeq_entry> seq_entry = 
-                    LDS_LoadTSE(*m_LDS_db, object_id, false/*dont trace to top*/);
-                if ( !seq_entry ) {
-                    NCBI_THROW2(CBlobStateException, eBlobStateError,
-                                "cannot load blob",
-                                CBioseq_Handle::fState_no_data);
-                }
-                load_lock->SetSeq_entry(*seq_entry);
-                load_lock.SetLoaded();
-            }
-            locks.insert(load_lock);
-        }
-
-
-        return locks;
-    } 
-    catch (CBDB_ErrnoException& ex)
-    {
-        if (ex.IsRecovery()) {
-            ++db_recovery_count;
-            if (db_recovery_count > 10) {
+            return locks;
+        } 
+        catch (CBDB_ErrnoException& ex) {
+            if ( !ex.IsRecovery() || ++db_recovery_count > 10) {
                 throw;
             }
             ERR_POST_X(3, "LDS Database returned db recovery error... Reopening.");
-            CFastMutexGuard mg(sx_LDS_Lock);
+            LDS_GUARD();
             m_LDS_db->ReOpen();
         }
-    }
     } // while
 }
 

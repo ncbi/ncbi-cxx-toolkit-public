@@ -54,16 +54,8 @@ BEGIN_SCOPE(objects)
 
 
 CRef<CSeq_entry> 
-LDS_LoadTSE(CLDS_Database& lds_db, 
-            int            object_id,
-            bool           trace_to_top)
+LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
 {
-    const map<string, int>& type_map = lds_db.GetObjTypeMap();
-
-    CLDS_Query query(lds_db);
-    CLDS_Query::SObjectDescr obj_descr = 
-        query.GetObjectDescr(type_map, object_id, trace_to_top);
-
     if (!obj_descr.is_object || obj_descr.id <= 0) {
         return CRef<CSeq_entry>();
     }
@@ -128,7 +120,20 @@ LDS_LoadTSE(CLDS_Database& lds_db,
     default:
         LDS_THROW(eNotImplemented, "Not implemeneted yet.");
     }
+}
 
+
+CRef<CSeq_entry> 
+LDS_LoadTSE(CLDS_Database& lds_db, 
+            int            object_id,
+            bool           trace_to_top)
+{
+    const map<string, int>& type_map = lds_db.GetObjTypeMap();
+
+    CLDS_Query query(lds_db);
+    CLDS_Query::SObjectDescr obj_descr = 
+        query.GetObjectDescr(type_map, object_id, trace_to_top);
+    return LDS_LoadTSE(obj_descr);
 }
 
 
