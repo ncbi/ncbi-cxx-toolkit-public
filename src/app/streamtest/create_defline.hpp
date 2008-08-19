@@ -114,7 +114,8 @@ private:
     string m_general_str;
     string m_patent_country;
     string m_patent_number;
-    string m_patent_sequence;
+
+    int m_patent_sequence;
 
     int m_pdb_chain;
 
@@ -127,6 +128,7 @@ private:
     bool m_htgs_unfinished;
     bool m_is_tsa;
     bool m_is_wgs;
+    bool m_is_est_sts_gss;
 
     bool m_use_biosrc;
 
@@ -293,7 +295,7 @@ void CDeflineGenerator::x_SetFlags (void)
                 m_is_patent = true;
                 const CPatent_seq_id& pat_id = sid.GetPatent();
                 if (pat_id.IsSetSeqid()) {
-                    m_patent_sequence = NStr::IntToString(pat_id.GetSeqid());
+                    m_patent_sequence = pat_id.GetSeqid();
                 }
                 if (pat_id.IsSetCit()) {
                     const CId_pat& cit = pat_id.GetCit();
@@ -302,6 +304,8 @@ void CDeflineGenerator::x_SetFlags (void)
                 }
                 break;
             }
+            case NCBI_SEQID(Gpipe):
+                break;
             default:
                 break;
         }
@@ -322,10 +326,12 @@ void CDeflineGenerator::x_SetFlags (void)
                 // fall through
             case NCBI_TECH(htgs_3):
                 m_htg_tech = true;
-                // fall through
+                m_use_biosrc = true;
+                break;
             case NCBI_TECH(est):
             case NCBI_TECH(sts):
             case NCBI_TECH(survey):
+                m_is_est_sts_gss = true;
                 m_use_biosrc = true;
                 break;
             case NCBI_TECH(wgs):
@@ -519,6 +525,11 @@ string CDeflineGenerator::x_TitleFromBioSrc (void)
 {
     string chr, cln, mp, pls, stn, sfx;
 
+    if (! m_strain.empty()) {
+        if (! x_EndsWithStrain ()) {
+            stn = " strain " + m_strain.substr (0, m_strain.find(';'));
+        }
+    }
     if (! m_chromosome.empty()) {
         chr = " chromosome " + m_chromosome;
     }
@@ -531,11 +542,6 @@ string CDeflineGenerator::x_TitleFromBioSrc (void)
     if (! m_plasmid.empty()) {
         if (m_is_wgs) {
             pls = " plasmid " + m_plasmid;
-        }
-    }
-    if (! m_strain.empty()) {
-        if (! x_EndsWithStrain ()) {
-            stn = " strain " + m_strain.substr (0, m_strain.find(';'));
         }
     }
 
@@ -890,7 +896,7 @@ string CDeflineGenerator::x_TitleFromPatent (void)
 {
     string result;
 
-    result = "Sequence " + m_patent_sequence +
+    result = "Sequence " + NStr::IntToString(m_patent_sequence) +
              " from Patent " + m_patent_country +
              " " + m_patent_number;
 
@@ -1050,8 +1056,8 @@ string CDeflineGenerator::x_TitleFromProtein (void)
     if (taxname.empty() ||
         (NStr::CompareNocase (taxname, "synthetic construct") != 0 &&
          NStr::CompareNocase (taxname, "artificial sequence") != 0 &&
-         NStr::CompareNocase (taxname, "vector") != 0 &&
-         NStr::CompareNocase (taxname, "Vector") != 0)) {
+         taxname.find ("vector") == NPOS &&
+         taxname.find ("Vector") == NPOS)) {
         if (cds_loc) {
             CConstRef<CSeq_feat> src_feat = GetOverlappingSource (*cds_loc, m_scope);
             if (src_feat) {
@@ -1157,6 +1163,11 @@ string CDeflineGenerator::x_TitleFromWGS (void)
 {
     string chr, cln, mp, pls, stn, sfx;
 
+    if (! m_strain.empty()) {
+        if (! x_EndsWithStrain ()) {
+            stn = " strain " + m_strain.substr (0, m_strain.find(';'));
+        }
+    }
     if (! m_chromosome.empty()) {
         chr = " chromosome " + m_chromosome;
     }
@@ -1169,11 +1180,6 @@ string CDeflineGenerator::x_TitleFromWGS (void)
     if (! m_plasmid.empty()) {
         if (m_is_wgs) {
             pls = " plasmid " + m_plasmid;
-        }
-    }
-    if (! m_strain.empty()) {
-        if (! x_EndsWithStrain ()) {
-            stn = " strain " + m_strain.substr (0, m_strain.find(';'));
         }
     }
     if (! m_general_str.empty()) {
@@ -1357,7 +1363,7 @@ string CDeflineGenerator::GenerateDefline (
                 title = x_TitleFromNR ();
             } else if (m_is_aa) {
                 title = x_TitleFromProtein ();
-            } else if (m_is_seg) {
+            } else if (m_is_seg && (! m_is_est_sts_gss)) {
                 title = x_TitleFromSegSeq ();
             } else if (m_is_tsa || (m_is_wgs && (! m_wgs_master))) {
                 title = x_TitleFromWGS ();
