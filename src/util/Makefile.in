@@ -3,8 +3,8 @@
 # Meta-makefile ("UTIL" project)
 #################################
 
-LIB_PROJ = util xregexp
-SUB_PROJ = regexp compress image tables creaders fileblobstorage test sequtil bitset qparse demo
+LIB_PROJ = util
+SUB_PROJ = regexp xregexp compress image tables creaders fileblobstorage sequtil bitset qparse test demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

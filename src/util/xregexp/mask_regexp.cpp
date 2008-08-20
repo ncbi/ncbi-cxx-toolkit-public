@@ -28,7 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <util/mask_regexp.hpp>
+#include <util/xregexp/mask_regexp.hpp>
 
 
 BEGIN_NCBI_SCOPE

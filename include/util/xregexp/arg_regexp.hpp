@@ -35,7 +35,7 @@
 /// CArgAllow_Regexp -- regexp based constraint for argument value
 
 #include <corelib/ncbiargs.hpp>
-#include <util/regexp.hpp>
+#include <util/xregexp/regexp.hpp>
 
 
 /** @addtogroup Args

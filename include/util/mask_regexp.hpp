@@ -1,5 +1,5 @@
-#ifndef UTIL___MASK_REGEXP__HPP
-#define UTIL___MASK_REGEXP__HPP
+#ifndef UTIL___MASK_REGEXP__HPP_
+#define UTIL___MASK_REGEXP__HPP_
 
 /*  $Id$
  * ===========================================================================
@@ -30,54 +30,12 @@
  *
  */
 
-/// @file mask_regexp.hpp
-/// 
-/// CMaskRegexp -- regexp based class to match string against set of masks.
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbi_mask.hpp>
-#include <util/regexp.hpp>
+#ifdef __GNUC__
+#  warning "Header <util/mask_regexp.hpp> is obsolete; please use <util/xregexp/mask_regexp.hpp> instead!"
+#endif // __GNUC__ 
 
-
-/** @addtogroup Utility Regexp
- *
- * @{
- */
-
-BEGIN_NCBI_SCOPE
+#include <util/xregexp/mask_regexp.hpp>
 
 
-//////////////////////////////////////////////////////////////////////////////
-///
-/// CMaskRegexp --
-///
-/// Class to match string against set of masks using regular expressions.
-///
-/// The empty mask object always correspond to "all is included" case.
-/// Throw exceptions on error.
-///
-class NCBI_XREGEXP_EXPORT CMaskRegexp : public CMask
-{
-public:
-    /// Match string
-    ///
-    /// @param str
-    ///   String to match.
-    /// @param use_case
-    ///   Whether to do a case sensitive compare (eCase -- default), or a
-    ///   case-insensitive compare (eNocase).
-    /// @return 
-    ///   Return TRUE if string 'str' matches to one of inclusion masks
-    ///   and not matches none of exclusion masks, or match masks are
-    ///   not specified. Otherwise return FALSE.
-    /// @sa
-    ///   NStr::MatchesMask, CMask
-    bool Match(const string& str, NStr::ECase use_case = NStr::eCase) const;
-};
-
-/* @} */
-
-
-END_NCBI_SCOPE
-
-#endif /* UTIL___MASK_REGEXP__HPP */
+#endif /* UTIL___MASK_REGEXP__HPP_ */

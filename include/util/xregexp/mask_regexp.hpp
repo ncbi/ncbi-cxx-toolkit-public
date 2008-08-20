@@ -36,7 +36,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_mask.hpp>
-#include <util/regexp.hpp>
+#include <util/xregexp/regexp.hpp>
 
 
 /** @addtogroup Utility Regexp

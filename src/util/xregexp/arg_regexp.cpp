@@ -32,7 +32,7 @@
 /// CArgAllow_Regexp -- regexp based constraint for argument value
 
 #include <ncbi_pch.hpp>
-#include <util/arg_regexp.hpp>
+#include <util/xregexp/arg_regexp.hpp>
 
 
 BEGIN_NCBI_SCOPE

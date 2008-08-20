@@ -32,11 +32,12 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbistl.hpp>
-#include <util/regexp.hpp>
+#include <util/xregexp/regexp.hpp>
 #include <pcre.h>
 
 #include <memory>
 #include <stdlib.h>
+
 
 BEGIN_NCBI_SCOPE
 

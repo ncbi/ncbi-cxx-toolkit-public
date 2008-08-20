@@ -1,5 +1,5 @@
-#ifndef UTIL___ARG_REGEXP__HPP
-#define UTIL___ARG_REGEXP__HPP
+#ifndef UTIL___ARG_REGEXP__HPP_
+#define UTIL___ARG_REGEXP__HPP_
 
 /*  $Id$
  * ===========================================================================
@@ -30,64 +30,12 @@
  *
  */
 
-/// @file arg_regexp.hpp
-/// 
-/// CArgAllow_Regexp -- regexp based constraint for argument value
 
-#include <corelib/ncbiargs.hpp>
-#include <util/regexp.hpp>
+#ifdef __GNUC__
+#  warning "Header <util/arg_regexp.hpp> is obsolete; please use <util/xregexp/arg_regexp.hpp> instead!"
+#endif // __GNUC__ 
 
-
-/** @addtogroup Args
- *
- * @{
- */
-
-BEGIN_NCBI_SCOPE
+#include <util/xregexp/arg_regexp.hpp>
 
 
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CArgAllow_Regexp --
-///
-/// Define constraint to match arg value against Perl regular expression.
-///
-/// Examples:
-/// - To allow only capitalized words (one per argument):
-///   SetConstraint("MyArg", new CArgAllow_Regexp("^[A-Z][a-z][a-z]*$"))
-///
-
-class NCBI_XREGEXP_EXPORT CArgAllow_Regexp : public CArgAllow
-{
-public:
-    /// @param pattern
-    ///   Perl regexp pattern that the argument value must match
-    /// @sa CRegexp
-    CArgAllow_Regexp(const string& pattern);
-
-protected:
-    /// @param value
-    ///   Argument value to match against the Perl regular expression
-    /// @sa CArgAllow_Regexp()
-    virtual bool Verify(const string& value) const;
-
-    /// Get usage information.
-    virtual string GetUsage(void) const;
-
-    /// Print constraints in XML format
-    virtual void PrintUsageXml(CNcbiOstream& out) const;
-
-    /// Protected destructor.
-    virtual ~CArgAllow_Regexp(void);
-
-private:
-    const string  m_Pattern;  ///< Regexp pattern to match against
-    CRegexp       m_Regexp;   ///< Pre-compiled regexp
-};
-
-
-END_NCBI_SCOPE
-
-/* @} */
-
-#endif  /* UTIL___ARG_REGEXP__HPP */
+#endif  /* UTIL___ARG_REGEXP__HPP_ */

@@ -35,9 +35,8 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
-#include <util/regexp.hpp>
-#include <util/arg_regexp.hpp>
-#include <util/mask_regexp.hpp>
+#include <util/xregexp/arg_regexp.hpp>
+#include <util/xregexp/mask_regexp.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
