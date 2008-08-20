@@ -361,9 +361,12 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
                 else if (len != seg_len) {
                     multi_width = true;
                     if (len/3 == seg_len) {
+                        seg_len = len/3;
+                    }
+                    else if (len*3 == seg_len) {
                         seg_len = len;
                     }
-                    else if (len*3 != seg_len) {
+                    else {
                         NCBI_THROW(CAnnotMapperException, eBadLocation,
                                 "Rows have different lengths in std-seg");
                     }
@@ -390,13 +393,26 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
             // Adjust each segment width. Do not check if sequence always
             // has the same width.
             for (size_t i = 0; i < seg.m_Rows.size(); ++i) {
-                if (seglens[seg.m_Rows[i].m_Id] != seg_len) {
-                    seg.m_Rows[i].m_Width = 3;
+                int w = GetSeqWidth(*seg.m_Rows[i].m_Id.GetSeqId());
+                if ( w ) {
+                    seg.m_Rows[i].m_Width = w;
+                }
+                else {
+                    if (seglens[seg.m_Rows[i].m_Id] != seg_len) {
+                        seg.m_Rows[i].m_Width = 1;
+                    }
+                    else {
+                        seg.m_Rows[i].m_Width = 3;
+                    }
                 }
             }
         }
         seglens.clear();
         m_HaveWidths |= multi_width;
+        m_MapWidths |= multi_width;
+        if (multi_width) {
+            m_OnlyNucs = false;
+        }
     }
 }
 
@@ -1045,8 +1061,8 @@ void CSeq_align_Mapper_Base::x_GetDstStd(CRef<CSeq_align>& dst) const
                 // interval
                 loc->SetInt().SetId(*id);
                 TSeqPos len = seg_it->m_Len;
-                if (row->m_Width) {
-                    len /= row->m_Width;
+                if (row->m_Width == 1) {
+                    len *= 3;
                 }
                 loc->SetInt().SetFrom(row->m_Start);
                 // len may be 0 after dividing by width
