@@ -47,6 +47,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 USING_SCOPE(ncbi::objects);
 
+const TSeqPos HOLE_SIZE = 90;
+
 struct SModelData {
     SModelData(const CGeneModel& model, const CEResidueVec& contig_seq);
 
@@ -57,9 +59,9 @@ struct SModelData {
     CRef<CSeq_id> prot_sid;
 };
 
-SModelData::SModelData(const CGeneModel& m, const CEResidueVec& contig_seq) : model(m), mrna_map(m)
+SModelData::SModelData(const CGeneModel& m, const CEResidueVec& contig_seq) : model(m), mrna_map(m, CFrameShiftedSeqMap::eNoLimit, HOLE_SIZE)
 {
-    mrna_map.EditedSequence(contig_seq, mrna_seq);
+    mrna_map.EditedSequence(contig_seq, mrna_seq, true);
 
     string model_tag = "hmm." + NStr::IntToString(model.ID());
     prot_sid = new CSeq_id(CSeq_id::e_Local, model_tag + ".p");  
@@ -75,8 +77,6 @@ public:
     CRef<CSeq_entry> main_seq_entry;
 
 private:
-	static const int HOLE_SIZE = 30;
-
     CRef<CSeq_feat> create_gene_feature(const SModelData& md) const;
     void update_gene_feature(CSeq_feat& gene, CSeq_feat& mrna_feat) const;
     CRef<CSeq_entry>  create_prot_seq_entry(const SModelData& md, const CSeq_entry& mrna_seq_entry, const CSeq_feat& cdregion_feature) const;
@@ -345,16 +345,10 @@ CRef<CSeq_loc> CAnnotationASN1::CImplementationData::create_packed_int_seqloc(co
         CRef<CSeq_interval> interval(new CSeq_interval(*contig_sid, interval_range.GetFrom(),interval_range.GetTo(), strand));
 
 		if (!e->m_fsplice && 0 < i) {
-			if (strand==ePlus)
-				interval->SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
-			else
-				interval->SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+                    interval->SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
 		}
 		if (!e->m_ssplice && i < model.Exons().size()-1) {
-			if (strand==ePlus)
-				interval->SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
-			else
-				interval->SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+                    interval->SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
 		}
 
         packed_int.AddInterval(*interval);
@@ -414,20 +408,23 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
         vector<string> proteins;
         vector<string> mrnas;
         vector<string> ests;
+        vector<string> unknown;
         ITERATE(CSupportInfoSet,s,model.Support()) {
             string accession = s->Seqid()->GetSeqIdString(true);
-			if (s->Type()&CGeneModel::eChain) {
+            if (s->Type()&CGeneModel::eChain) {
                 support_field->AddField("Chain",accession);
-				continue;
-			}
+                continue;
+            }
             if (s->CoreAlignment())
                 support_field->AddField("Core",accession);
             if (s->Type()&CGeneModel::eProt)
                 proteins.push_back(accession);
-            if (s->Type()&CGeneModel::emRNA)
+            else if (s->Type()&CGeneModel::emRNA)
                 mrnas.push_back(accession);
-            if (s->Type()&CGeneModel::eEST)
+            else if (s->Type()&CGeneModel::eEST)
                 ests.push_back(accession);
+            else
+                unknown.push_back(accession);
         }
         if (!proteins.empty()) {
             support_field->AddField("Proteins",proteins);
@@ -441,6 +438,11 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
         }
         if (!ests.empty()) {
             support_field->AddField("ESTs",ests);
+            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
+            support_field->SetData().SetFields().back()->SetNum(ests.size());
+        }
+        if (!unknown.empty()) {
+            support_field->AddField("unknown",unknown);
             // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(ests.size());
         }
@@ -465,15 +467,15 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
     CRef<CSeqdesc> desc(new CSeqdesc);
     desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
     desc->SetMolinfo().SetCompleteness(
-		model.Continuous()?
-			(model.HasStart()?
-				(model.HasStop()?
-					CMolInfo::eCompleteness_complete:
+	model.Continuous()?
+	    (model.HasStart()?
+		(model.HasStop()?
+		    CMolInfo::eCompleteness_complete:
                     CMolInfo::eCompleteness_has_left):
                 (model.HasStop()?
-					CMolInfo::eCompleteness_has_right:
-					CMolInfo::eCompleteness_no_ends)):
-			CMolInfo::eCompleteness_partial
+                    CMolInfo::eCompleteness_has_right:
+                    CMolInfo::eCompleteness_no_ends)):
+	    CMolInfo::eCompleteness_partial
 	);
     sprot->SetSeq().SetDescr().Set().push_back(desc);
 
@@ -506,40 +508,64 @@ CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SMo
     mdes->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
 
     mdes->SetMolinfo().SetCompleteness(
-		model.Continuous()?
-			(model.HasStart()?
-				(model.HasStop()?
-					CMolInfo::eCompleteness_unknown:
+        model.Continuous()?
+            (model.HasStart()?
+                (model.HasStop()?
+                    CMolInfo::eCompleteness_unknown:
                     CMolInfo::eCompleteness_no_right):
                 (model.HasStop()?
-					CMolInfo::eCompleteness_no_left:
-					CMolInfo::eCompleteness_no_ends)):
-			CMolInfo::eCompleteness_partial
-	);
+                    CMolInfo::eCompleteness_no_left:
+                    CMolInfo::eCompleteness_no_ends)):
+            CMolInfo::eCompleteness_partial
+        );
 
     smrna->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     smrna->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
 
     CResidueVec mrna_seq_vec;
-    md.mrna_map.EditedSequence(contig_seq, mrna_seq_vec);
+    md.mrna_map.EditedSequence(contig_seq, mrna_seq_vec, true);
     string mrna_seq_str((char*)&mrna_seq_vec[0],mrna_seq_vec.size());
 
-	CSeq_inst& seq_inst = smrna->SetSeq().SetInst();
-	if (mrna_seq_str.find('-')==NPOS) { // no holes
-		CRef<CSeq_data> dmrna(new CSeq_data(mrna_seq_str, CSeq_data::e_Iupacna));
-		seq_inst.SetSeq_data(*dmrna);
-		seq_inst.SetLength(mrna_seq_str.size());
-	} else {
-		TSeqPos b = 0;
-		TSeqPos e = 0;
-		while ((e=mrna_seq_str.find('-',b))!=NPOS) {
-			seq_inst.SetExt().SetDelta().AddLiteral(mrna_seq_str.substr(b,e-b),CSeq_inst::eMol_rna);
-			b=mrna_seq_str.find_first_of('-',e);
-			seq_inst.SetExt().SetDelta().AddLiteral(b-e);
-			seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-		}
-		seq_inst.SetExt().SetDelta().AddLiteral(mrna_seq_str.substr(b),CSeq_inst::eMol_rna);
-	}
+    CSeq_inst& seq_inst = smrna->SetSeq().SetInst();
+    seq_inst.SetLength(mrna_seq_str.size());
+
+    if (model.Continuous()) {
+        CRef<CSeq_data> dmrna(new CSeq_data(mrna_seq_str, CSeq_data::e_Iupacna));
+        seq_inst.SetSeq_data(*dmrna);
+    } else {
+        TSeqPos b = 0;
+        TSeqPos e = 0;
+
+        if (model.Strand()==ePlus) {
+            for (size_t i=0; i< model.Exons().size()-1; ++i) {
+                const CModelExon& e1= model.Exons()[i];
+                const CModelExon& e2= model.Exons()[i+1];
+                if (e1.m_ssplice && e2.m_fsplice)
+                    continue;
+                e = md.mrna_map.MapOrigToEdited(e1.GetTo())+1;
+                seq_inst.SetExt().SetDelta().AddLiteral(mrna_seq_str.substr(b,e-b),CSeq_inst::eMol_rna);
+                b =  md.mrna_map.MapOrigToEdited(e2.GetFrom());
+                _ASSERT( b-e == HOLE_SIZE );
+                seq_inst.SetExt().SetDelta().AddLiteral(b-e);
+                seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+            }
+        } else {
+            for (size_t i=model.Exons().size()-1; i > 0; --i) {
+                const CModelExon& e1= model.Exons()[i-1];
+                const CModelExon& e2= model.Exons()[i];
+                if (e1.m_ssplice && e2.m_fsplice)
+                    continue;
+                e = md.mrna_map.MapOrigToEdited(e2.GetFrom())+1;
+                seq_inst.SetExt().SetDelta().AddLiteral(mrna_seq_str.substr(b,e-b),CSeq_inst::eMol_rna);
+                b =  md.mrna_map.MapOrigToEdited(e1.GetTo());
+                _ASSERT( b-e == HOLE_SIZE );
+                seq_inst.SetExt().SetDelta().AddLiteral(b-e);
+                seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+            }
+        }
+        seq_inst.SetExt().SetDelta().AddLiteral(mrna_seq_str.substr(b),CSeq_inst::eMol_rna);
+    }
+
     smrna->SetSeq().SetInst().SetHist().SetAssembly().push_back(model2spliced_seq_align(md));
 
     CRef<CSeq_annot> annot(new CSeq_annot);
