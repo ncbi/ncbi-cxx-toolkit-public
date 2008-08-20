@@ -131,22 +131,24 @@ void CLDS_CoreObjectsReader::Reset()
 CLDS_CoreObjectsReader::SObjectDetails* 
 CLDS_CoreObjectsReader::FindObjectInfo(CNcbiStreampos pos)
 {
-    int idx = FindObject(pos);
-    if (idx < 0)
-        return 0;
-    return &m_Objects[idx];
+    if ( m_ObjectIndex.empty() ) {
+        NON_CONST_ITERATE ( TObjectVector, it, m_Objects ) {
+            SObjectDetails& obj = *it;
+            m_ObjectIndex.insert(TObjectIndex::value_type(obj.offset, &obj));
+        }
+    }
+
+    TObjectIndex::const_iterator it = m_ObjectIndex.find(pos);
+    if ( it != m_ObjectIndex.end() ) {
+        return it->second;
+    }
+    return 0;
 }
 
-int CLDS_CoreObjectsReader::FindObject(CNcbiStreampos stream_pos)
+void CLDS_CoreObjectsReader::ClearObjectsVector()
 {
-    int idx = 0;
-    ITERATE(TObjectVector, it, m_Objects) {
-        if (it->offset == stream_pos) {
-            return idx;
-        }
-        ++idx;
-    }
-    return -1;
+    m_Objects.clear();
+    m_ObjectIndex.clear();
 }
 
 END_SCOPE(objects)

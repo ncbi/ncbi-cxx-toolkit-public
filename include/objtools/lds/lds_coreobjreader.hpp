@@ -91,14 +91,18 @@ public:
     };
 
     typedef vector<SObjectDetails>    TObjectVector;
+    typedef map<CNcbiStreampos, SObjectDetails*> TObjectIndex;
 
     // Find object information based on the stream offset.
     // Return NULL if not found.
+    // This function works on the fact that only one object can 
+    // be found in one particular offset, and offset udentifies any
+    // object unqiely in its file.
     SObjectDetails* FindObjectInfo(CNcbiStreampos pos);
 
     TObjectVector& GetObjectsVector() { return m_Objects; }
 
-    void ClearObjectsVector() { m_Objects.clear(); }
+    void ClearObjectsVector();
 
 protected:
 
@@ -120,19 +124,11 @@ protected:
 
     typedef stack<SObjectParseDescr>  TParseStack;
 
-protected:
-    // Find object in the objects vector (m_Objects) by the stream 
-    // offset. Returns objects' index in vector, -1 if "not found".
-    // This function works on the fact that only one object can 
-    // be found in one particular offset, and offset udentifies any
-    // object unqiely in its file.
-    int FindObject(CNcbiStreampos stream_pos);
-
 private:
     TParseStack         m_Stack;
     SObjectParseDescr   m_TopDescr;
     TObjectVector       m_Objects;
-
+    TObjectIndex        m_ObjectIndex;
 };
 
 

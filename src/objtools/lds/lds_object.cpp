@@ -308,7 +308,8 @@ void CLDS_Object::UpdateFileObjects(int file_id,
         format == CFormatGuess::eTextASN ||
         format == CFormatGuess::eXml) {
 
-        LOG_POST_X(2, Info << "Scanning file: " << file_name);
+        LOG_POST_X(2, Info << CTime(CTime::eCurrent) <<
+                   ": Scanning file: " << file_name);
 
         CLDS_CoreObjectsReader sniffer;
         ESerialDataFormat stream_format = FormatGuess2Serial(format);
@@ -321,14 +322,17 @@ void CLDS_Object::UpdateFileObjects(int file_id,
                                                 = sniffer.GetObjectsVector();
 
         if (obj_vector.size()) {
-            for (unsigned int i = 0; i < obj_vector.size(); ++i) {
+            LOG_POST_X(3, Info << CTime(CTime::eCurrent) <<
+                       ": Saving " << obj_vector.size() <<
+                       " object(s) found in: " << file_name);
+            for (size_t i = 0; i < obj_vector.size(); ++i) {
                 CLDS_CoreObjectsReader::SObjectDetails* obj_info = &obj_vector[i];
                 // If object is not in the database yet.
                 if (obj_info->ext_id == 0) {
                     SaveObject(file_id, &sniffer, obj_info);
                 }
             }
-            LOG_POST_X(3, Info << "LDS: " 
+            LOG_POST_X(3, Info << CTime(CTime::eCurrent) << ": LDS: " 
                                << obj_vector.size() 
                                << " object(s) found in:" 
                                << file_name);
