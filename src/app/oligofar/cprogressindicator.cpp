@@ -5,8 +5,12 @@
 
 USING_OLIGOFAR_SCOPES;
 
+#ifndef _WIN32
 static unsigned char * s_heapTop = (unsigned char *)sbrk(0);
-    
+#else
+template <class real> real round( real x ) { return floor( x + 0.5 ); }
+#endif    
+
 inline ostream& CProgressIndicator::FormatBigNumber( ostream&o, double number ) 
 {
     if( number >= 1e12 ) {
@@ -29,13 +33,17 @@ void CProgressIndicator::Format( EIndicate i, time_t t2 )
     int seconds = t2 - m_t0;
     char buffer[4096];
     strftime( buffer, sizeof( buffer ), "\r\x1b[K[%H:%M:%S,%F] ", localtime( &t2 ) );
-    double range = m_currentValue - m_initialValue;
-    unsigned long long memUsed = ((unsigned char*)sbrk(0)) - s_heapTop;
 
+	double range = m_currentValue - m_initialValue;
     ostringstream o;
     o << buffer << " ";
+
+#ifndef _WIN32
+    unsigned long long memUsed = ((unsigned char*)sbrk(0)) - s_heapTop;
     FormatBigNumber( o, memUsed );
-    o << "b " << m_message << ": ";
+    o << "b ";
+#endif
+	o << m_message << ": ";
     FormatBigNumber( o, range );
     if( m_units.length() ) o << " " << m_units;
     if( m_initialValue/m_increment < m_finalValue/m_increment ) {
@@ -64,7 +72,11 @@ void CProgressIndicator::Format( EIndicate i, time_t t2 )
         }
     }
     if( i == e_final ) o << "\n";
+#ifndef _WIN32
     write( 2, o.str().c_str(), o.str().length() );
+#else
+	fwrite( o.str().c_str(), 1, o.str().length(), stderr );
+#endif
     m_t1 = time(0);
 }
 

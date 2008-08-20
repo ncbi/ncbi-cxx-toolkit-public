@@ -1,7 +1,11 @@
 // $Id$
 #include <ncbi_pch.hpp>
 #include "capp.hpp"
+#ifndef _WIN32
 #include <sysexits.h>
+#else
+#define EX_USAGE 64
+#endif
 #include <iostream>
 
 USING_OLIGOFAR_SCOPES;

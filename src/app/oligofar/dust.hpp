@@ -2,6 +2,7 @@
 #define OLIGOFAR_DUST__HPP
 
 #include "cbithacks.hpp"
+#include "assert.h"
 
 BEGIN_OLIGOFAR_SCOPES
 

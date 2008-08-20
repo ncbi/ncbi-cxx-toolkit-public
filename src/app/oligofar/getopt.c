@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include "getopt.h"
 
-#ifdef __WIN32__
+#ifdef _WIN32
 
 int optind=1;
 int optopt=-1;
@@ -72,9 +72,9 @@ int getopt_long( int argc, char ** argv, const char * optstring, const struct op
 			else if( longoption ) {
 				const char * begin = nextarg + 1;
 				const char * end = strchr( begin, '=' );
-				nextarg = 0;
 				int l = end ? end - begin : strlen( begin );
 				int index = 0;
+				nextarg = 0;
 				for( ; longoption->name != 0; ++index, ++longoption ) {
 					if( strncmp( longoption->name, begin, l ) == 0 && strlen( longoption->name ) == l ) {
 						// found!

@@ -16,8 +16,10 @@
 #include <fstream>
 #include <sstream>
 
-#ifndef __WIN32__
+#ifndef _WIN32
 #include <sys/resource.h>
+#else
+#define strtoll( a, b, c ) strtoui64( a, b, c )
 #endif
 
 USING_OLIGOFAR_SCOPES;
@@ -243,7 +245,8 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case 'G': m_gapOpeningScore = -fabs( NStr::StringToDouble( arg ) ); break;
     case 'Q': m_gapExtentionScore = -fabs( NStr::StringToDouble( arg ) ); break;
     case 'X': m_xdropoff = abs( strtol( arg, 0, 10 ) ); break;
-    case 'L':
+	case 'L':
+#ifndef _WIN32
         do {
             char * t = 0;
             m_memoryLimit = strtoll( arg, &t, 10 );
@@ -255,6 +258,9 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
                 }
             }
         } while(0);
+#else
+		cerr << "[" << GetProgramBasename() << "] Warning: -L is ignored in win32\n";
+#endif
         break;
     case 'T': m_performTests = (*arg == '+') ? true : (*arg == '-') ? false : m_performTests; break;
     default: return CApp::ParseArg( opt, arg, longindex );
@@ -277,7 +283,7 @@ int COligoFarApp::RunTestSuite()
 
 int COligoFarApp::SetLimits()
 {
-#ifndef __WIN32__
+#ifndef _WIN32
     struct rlimit rl;
     rl.rlim_cur = m_memoryLimit;
     rl.rlim_max = RLIM_INFINITY;
