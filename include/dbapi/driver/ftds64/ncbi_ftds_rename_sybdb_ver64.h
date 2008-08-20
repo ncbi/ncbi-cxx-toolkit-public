@@ -203,6 +203,11 @@
 #  define scan_xact scan_xact_ver64
 #  define start_xact start_xact_ver64
 #  define stat_xact stat_xact_ver64
+#  if defined(NCBI_OS_MSWIN)
+#    define asprintf asprintf_ver64
+#    define vasprintf vasprintf_ver64
+#    define strtok_r strtok_r_ver64
+#  endif
 #endif  /* NCBI_FTDS_RENAME_SYBDB */
 
 #endif  /* DBAPI_DRIVER_FTDS___NCBI_FTDS_RENAME_SYBDB_VER64__H */
