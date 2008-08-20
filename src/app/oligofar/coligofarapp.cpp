@@ -52,9 +52,14 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_maxMismOnly( false ),
 	m_alignmentAlgo( eAlignment_fast ),
 	m_hashType( CQueryHash::eHash_arraymap ),
+#ifdef _WIN32
+	//m_guideFile( "nul:" ),
+	m_outputFile( "con:" ),
+#else
     m_guideFile( "/dev/null" ),
     m_outputFile( "/dev/stdout" ),
-    m_outputFlags( "m" )
+#endif
+	m_outputFlags( "m" )
 {
 #ifndef _WIN32
     ifstream meminfo( "/proc/meminfo" );
