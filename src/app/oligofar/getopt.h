@@ -27,6 +27,10 @@ extern const char * optarg;
 }
 #endif
 
+#else
+
+#include <getopt.h>
+
 #endif
 
 #endif
