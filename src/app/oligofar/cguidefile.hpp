@@ -64,9 +64,11 @@ inline CGuideFile::CGuideFile( const string& fileName, CFilter& filter, CSeqIds&
 {
 	ASSERT( m_filter );
 	ASSERT( m_seqIds );
-    m_in.open( fileName.c_str() );
-    if( m_in.fail() ) THROW( runtime_error, "Failed to open file " << fileName << ": " << strerror(errno) );
-    getline( m_in, m_buff );
+	if( fileName.length() ) {
+	    m_in.open( fileName.c_str() );
+		if( m_in.fail() ) THROW( runtime_error, "Failed to open file " << fileName << ": " << strerror(errno) );
+	    getline( m_in, m_buff );
+	}
 }
 
 END_OLIGOFAR_SCOPES
