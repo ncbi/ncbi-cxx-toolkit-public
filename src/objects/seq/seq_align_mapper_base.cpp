@@ -303,7 +303,11 @@ void CSeq_align_Mapper_Base::x_Init(const CDense_seg& denseg)
 void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
 {
     typedef map<CSeq_id_Handle, int> TSegLenMap;
+    typedef map<CSeq_id_Handle, int> TSeqWidthMap;
     TSegLenMap seglens;
+    TSeqWidthMap seqwid;
+    // Need to know if there are empty locations
+    bool have_empty = false;
 
     ITERATE ( CSeq_align::C_Segs::TStd, it, sseg ) {
         const CStd_seg& stdseg = **it;
@@ -335,6 +339,7 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
             switch ( loc.Which() ) {
             case CSeq_loc::e_Empty:
                 start = (int)kInvalidSeqPos;
+                have_empty = true;
                 break;
             case CSeq_loc::e_Whole:
                 start = 0;
@@ -394,16 +399,18 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
             // has the same width.
             for (size_t i = 0; i < seg.m_Rows.size(); ++i) {
                 int w = GetSeqWidth(*seg.m_Rows[i].m_Id.GetSeqId());
-                if ( w ) {
-                    seg.m_Rows[i].m_Width = w;
+                if ( !w ) {
+                    w = (seglens[seg.m_Rows[i].m_Id] != seg_len) ? 1 : 3;
                 }
-                else {
-                    if (seglens[seg.m_Rows[i].m_Id] != seg_len) {
-                        seg.m_Rows[i].m_Width = 1;
+                seg.m_Rows[i].m_Width = w;
+                // Remember widths of non-empty intervals
+                if ( w  &&  seg.m_Rows[i].m_Start != (int)kInvalidSeqPos ) {
+                    int& seq_width = seqwid[seg.m_Rows[i].m_Id];
+                    if ( seq_width  &&  seq_width != w ) {
+                        NCBI_THROW(CAnnotMapperException, eBadLocation,
+                                "Inconsistent sequence width in in std-seg");
                     }
-                    else {
-                        seg.m_Rows[i].m_Width = 3;
-                    }
+                    seq_width = w;
                 }
             }
         }
@@ -412,6 +419,27 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
         m_MapWidths |= multi_width;
         if (multi_width) {
             m_OnlyNucs = false;
+        }
+    }
+    // Set the correct widths and segment lengths for empty intervals
+    if ( m_HaveWidths  &&  have_empty ) {
+        NON_CONST_ITERATE(TSegments, seg, m_Segs) {
+            bool have_prot = false;
+            NON_CONST_ITERATE(SAlignment_Segment::TRows, row, seg->m_Rows) {
+                if ( !row->m_Width ) {
+                    int w = seqwid[row->m_Id];
+                    if ( w ) {
+                        row->m_Width = w;
+                    }
+                }
+                if (row->m_Start != (int)kInvalidSeqPos) {
+                    have_prot |= (row->m_Width == 3);
+                }
+            }
+            if ( !have_prot ) {
+                // The segment's length has not been adjusted yet
+                seg->m_Len /= 3;
+            }
         }
     }
 }
@@ -1061,7 +1089,7 @@ void CSeq_align_Mapper_Base::x_GetDstStd(CRef<CSeq_align>& dst) const
                 // interval
                 loc->SetInt().SetId(*id);
                 TSeqPos len = seg_it->m_Len;
-                if (row->m_Width == 1) {
+                if (m_HaveWidths  &&  row->m_Width == 1) {
                     len *= 3;
                 }
                 loc->SetInt().SetFrom(row->m_Start);
