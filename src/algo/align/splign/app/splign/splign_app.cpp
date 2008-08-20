@@ -87,8 +87,8 @@ void CSplignApp::Init()
                 fHideXmlHelp | fHideFullHelp);
 #endif
 
-    SetVersion(CVersionInfo(1, 33, 0, "Splign"));
-    string program_name ("Splign v.1.33");
+    SetVersion(CVersionInfo(1, 34, 0, "Splign"));
+    string program_name ("Splign v.1.34");
 #ifdef GENOME_PIPELINE
     program_name += 'p';
 #endif
@@ -1341,7 +1341,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
 
     if(m_AsnOut) {
         *m_AsnOut << MSerial_AsnText 
-                  << *(m_Formatter->AsSeqAlignSet(&splign_results))
+                  << *(m_Formatter->AsSeqAlignSet(&splign_results,CSplignFormatter::fSeqAlign_SplicedSeg_WithParts))
                   << endl;
     }
     
