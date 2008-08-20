@@ -1,0 +1,68 @@
+#ifndef OLIGOFAR_SCOPES__HPP
+#define OLIGOFAR_SCOPES__HPP
+
+#ifndef OLIGOFAR_STANDALONE
+#include <corelib/ncbistd.hpp>
+#endif
+
+#ifndef BEGIN_SCOPE
+#define BEGIN_SCOPE(a) namespace a {
+#endif
+
+#ifndef END_SCOPE
+#define END_SCOPE(a) }
+#endif
+
+#ifndef USING_SCOPE
+#define USING_SCOPE(a) using namespace a
+#endif
+
+#ifndef NCBI_SCOPE
+#define NCBI_SCOPE ncbi
+#endif
+
+#ifndef OLIGOFAR_SCOPE
+#define OLIGOFAR_SCOPE oligofar
+#endif
+
+#ifndef OLIGOFAR_SCOPES
+#define OLIGOFAR_SCOPES ncbi::oligofar
+#endif
+
+#ifndef BEGIN_NCBI_SCOPE
+#define BEGIN_NCBI_SCOPE BEGIN_SCOPE(NCBI_SCOPE)
+#endif
+
+#ifndef END_NCBI_SCOPE
+#define END_NCBI_SCOPE END_SCOPE(NCBI_SCOPE)
+#endif
+
+#ifndef USING_NCBI_SCOPE
+#define USING_NCBI_SCOPE USING_SCOPE(NCBI_SCOPE)
+#endif
+    
+#ifndef BEGIN_OLIGOFAR_SCOPE
+#define BEGIN_OLIGOFAR_SCOPE BEGIN_SCOPE(OLIGOFAR_SCOPE)
+#endif
+
+#ifndef END_OLIGOFAR_SCOPE
+#define END_OLIGOFAR_SCOPE END_SCOPE(OLIGOFAR_SCOPE)
+#endif
+
+#ifndef USING_OLIGOFAR_SCOPE
+#define USING_OLIGOFAR_SCOPE USING_SCOPE(OLIGOFAR_SCOPE)
+#endif
+
+#ifndef BEGIN_OLIGOFAR_SCOPES
+#define BEGIN_OLIGOFAR_SCOPES BEGIN_NCBI_SCOPE BEGIN_OLIGOFAR_SCOPE
+#endif
+
+#ifndef END_OLIGOFAR_SCOPES
+#define END_OLIGOFAR_SCOPES END_OLIGOFAR_SCOPE END_NCBI_SCOPE
+#endif
+
+#ifndef USING_OLIGOFAR_SCOPES
+#define USING_OLIGOFAR_SCOPES USING_NCBI_SCOPE; USING_OLIGOFAR_SCOPE
+#endif
+
+#endif
