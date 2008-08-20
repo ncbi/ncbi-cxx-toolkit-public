@@ -83,7 +83,7 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
 namespace {
     inline int RevNo()
     {
-        return strtol( "Rev: 142"+6, 0, 10 );
+        return strtol( "$Rev$"+6, 0, 10 );
     }
 
     void COligoFarApp::Version()
