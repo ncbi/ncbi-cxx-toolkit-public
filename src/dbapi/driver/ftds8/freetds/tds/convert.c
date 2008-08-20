@@ -43,26 +43,7 @@ atoll(const char *nptr)
 
 #ifdef NCBI_FTDS
 #ifdef _WIN32
-char *
-strtok_r(char *str, const char *sep, char **lasts)
-{
-	char *p;
-
-	if (str == NULL) {
-		str = *lasts;
-	}
-	if (str == NULL) {
-		return NULL;
-	}
-	str += strspn(str, sep);
-	if ((p = strpbrk(str, sep)) != NULL) {
-		*lasts = p + 1;
-		*p = '\0';
-	} else {
-		*lasts = NULL;
-	}
-	return str;
-} 
+#define strtok_r tds_strtok_r
 #endif
 #endif
 

@@ -399,7 +399,26 @@ char *
 tds_strtok_r(char *s, const char *delim, char **ptrptr)
 {
 #ifdef _REENTRANT
+#  if defined(NCBI_FTDS) && defined(_WIN32)
+    char *p;
+
+    if (s == NULL) {
+        s = *ptrptr;
+    }
+    if (s == NULL) {
+        return NULL;
+    }
+    s += strspn(s, delim);
+    if ((p = strpbrk(s, delim)) != NULL) {
+        *ptrptr = p + 1;
+        *p = '\0';
+    } else {
+        *ptrptr = NULL;
+    }
+    return s;
+#  else
 	return strtok_r(s, delim, ptrptr);
+#  endif
 #else
 	return strtok(s, delim);
 #endif
