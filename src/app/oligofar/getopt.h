@@ -1,6 +1,8 @@
 #ifndef OLIGOFAR__GETOPT__H
 #define OLIGOFAR__GETOPT__H
 
+#ifdef __WIN32__
+
 #ifdef __cplusplus 
 extern "C" {
 #endif
@@ -20,8 +22,11 @@ extern int optopt;
 extern int opterr;
 extern const char * optarg;
 
+
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif

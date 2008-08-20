@@ -32,6 +32,8 @@
 #include <stdio.h>
 #include "getopt.h"
 
+#ifdef __WIN32__
+
 int optind=1;
 int optopt=-1;
 int opterr=0;
@@ -164,3 +166,4 @@ int getopt_long( int argc, char ** argv, const char * optstring, const struct op
     return optopt = -1;
 }
     
+#endif
