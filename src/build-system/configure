@@ -4519,6 +4519,16 @@ case "$host_os:$compiler" in
       -a "$with_strip" = "yes" ; then
       LDFLAGS="-s $LDFLAGS"
    fi
+   # Recent versions default to DWARF, yielding much larger executables in
+   # debug configurations; insist on STABS when the choice exists, even for
+   # versions that already default to it.
+   case "$with_debug:$compiler" in
+      no:* | *:WorkShop5[0-4] ) ;;
+      * )
+         CFLAGS="-xdebugformat=stabs $CFLAGS"
+         CXXFLAGS="-xdebugformat=stabs $CXXFLAGS"
+         ;;
+   esac
    CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/unix/cxx_filter.$compiler.sh"
    LINK_FILTER="$CXX_FILTER"
    AR_FILTER="$CXX_FILTER"
