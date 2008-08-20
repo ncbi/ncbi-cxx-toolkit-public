@@ -569,7 +569,7 @@ public:
     TSignedSeqRange MapRangeOrigToEdited(TSignedSeqRange orig_range, bool withextras = true) const;
     TSignedSeqRange MapRangeEditedTodOrig(TSignedSeqRange edited_range, bool withextras = true) const;
     template <class Vec>
-    void EditedSequence(const Vec& original_sequence, Vec& edited_sequence) const;
+    void EditedSequence(const Vec& original_sequence, Vec& edited_sequence, bool includeholes = false) const;
     bool EditedRangeIncludesTransformedDeletion(TSignedSeqRange edited_range) const;
     int FShiftedLen(TSignedSeqRange ab, bool withextras = true) const { return MapRangeOrigToEdited(ab, withextras).GetLength(); }
     int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b, bool withextras = true) const { return FShiftedLen(TSignedSeqRange(a,b), withextras); }

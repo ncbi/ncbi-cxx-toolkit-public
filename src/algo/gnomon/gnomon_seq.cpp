@@ -448,7 +448,7 @@ CFrameShiftedSeqMap::CFrameShiftedSeqMap(const CGeneModel& align, EMapLimit limi
 }
 
 template <class Vec>
-void CFrameShiftedSeqMap::EditedSequence(const Vec& original_sequence, Vec& edited_sequence) const
+void CFrameShiftedSeqMap::EditedSequence(const Vec& original_sequence, Vec& edited_sequence, bool includeholes) const
 {
     edited_sequence.clear();
     edited_sequence.insert(edited_sequence.end(),m_edited_ranges.front().GetExtraFrom(),res_traits<typename Vec::value_type>::_fromACGT('N'));    
@@ -459,7 +459,11 @@ void CFrameShiftedSeqMap::EditedSequence(const Vec& original_sequence, Vec& edit
         edited_sequence.insert(edited_sequence.end(),m_edited_ranges[range].GetExtraTo(),res_traits<typename Vec::value_type>::_fromACGT('N'));
 
         if(range < (int)m_orig_ranges.size()-1 && m_edited_ranges[range].GetExtendedTo() < m_edited_ranges[range+1].GetExtendedFrom()) {
-            edited_sequence.insert(edited_sequence.end(),m_edited_ranges[range+1].GetExtraFrom(),res_traits<typename Vec::value_type>::_fromACGT('N'));
+            int l = m_edited_ranges[range+1].GetExtraFrom();
+            if(includeholes) 
+                l = m_edited_ranges[range+1].GetFrom()-m_edited_ranges[range].GetTo()-1;
+            if(l > 0)
+                edited_sequence.insert(edited_sequence.end(),l,res_traits<typename Vec::value_type>::_fromACGT('N'));
         }
     }
     
@@ -473,9 +477,9 @@ int CFrameShiftedSeqMap::FindLowerRange(const vector<CFrameShiftedSeqMap::SMapRa
 }
 
 template
-void CFrameShiftedSeqMap::EditedSequence<CResidueVec>(const CResidueVec& original_sequence, CResidueVec& edited_sequence) const;
+void CFrameShiftedSeqMap::EditedSequence<CResidueVec>(const CResidueVec& original_sequence, CResidueVec& edited_sequence, bool includeholes) const;
 template
-void CFrameShiftedSeqMap::EditedSequence<CEResidueVec>(const CEResidueVec& original_sequence, CEResidueVec& edited_sequence) const;
+void CFrameShiftedSeqMap::EditedSequence<CEResidueVec>(const CEResidueVec& original_sequence, CEResidueVec& edited_sequence, bool includeholes) const;
 
 bool CFrameShiftedSeqMap::EditedRangeIncludesTransformedDeletion(TSignedSeqRange edited_range) const {
 
