@@ -13,6 +13,7 @@ class COligoFarApp : public CApp
 {
 public:
     COligoFarApp( int argc, char ** argv );
+	static int RevNo();
 protected:
     virtual void Help();
     virtual void Version();

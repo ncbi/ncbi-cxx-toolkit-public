@@ -1,5 +1,6 @@
 #include <ncbi_pch.hpp>
 #include "cseqscanner.hpp"
+#include "cscancallback.hpp"
 #include "cprogressindicator.hpp"
 #include "cqueryhash.hpp"
 #include "cfilter.hpp"
@@ -87,107 +88,89 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
 	rangeMap.push_back( make_pair( TRange( lastPos, A - a ), lastType ) );
 }
 
-namespace 
+    
+void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned off, unsigned end )
 {
-    typedef array_set <CQueryHash::SHashAtom> TMatches;
-    class CScanCallback
-    {
-    public:
-        CScanCallback( TMatches& matches, CQueryHash& queryHash ) :
-            m_matches( matches ), m_queryHash( queryHash ) {}
-        void operator () ( Uint4 hash, Uint4 mism, Uint8 alt ) {
-            m_mism = mism;
-            m_queryHash.ForEach( hash, *this );
+    TRangeMap rangeMap;
+    CreateRangeMap( rangeMap, a, A );
+
+    using namespace fourplanes;
+
+    typedef CScanCallback::TMatches TMatches;
+
+    TMatches matches;
+    CScanCallback callback( matches, *m_queryHash );
+    unsigned mask = CBitHacks::WordFootprint<unsigned>( 2 * m_windowLength );
+
+    string seqname;
+    if( m_seqIds ) {
+        seqname = m_seqIds->GetSeqDef( m_ord ).GetBestIdString();
+    } else seqname = "sequence";
+
+    CProgressIndicator p( "Processing " + seqname, "bases" );
+    p.SetFinalValue( A - a );
+    for( TRangeMap::const_iterator i = rangeMap.begin(); i != rangeMap.end(); ++i ) {
+        if( i->second == eType_skip ) {
+            p.SetCurrentValue( i->first.second );
+        } else if( i->second == eType_direct ) {
+            CHashCode hashCode( m_windowLength );
+            CComplexityMeasure complexity;
+            const char * x = a + i->first.first;
+            for( unsigned pos = 0 ; pos < m_windowLength && x < A; ++pos ) {
+                hashCode.AddBaseCode( Ncbi4na2Ncbi2na( *x++ ) );
+                complexity.Add( hashCode.GetNewestTriplet() );
+            }
+            for( int pos = off + i->first.first, end = off + i->first.second; pos < end; ++pos ) {
+                ASSERT( (pos + a) < A );
+                if( (pos + a + m_windowLength) != x ) THROW( logic_error, " x - a - w = " << ( x - a - m_windowLength ) << " while pos = " << pos << " and off = " << off );
+                if( complexity < m_maxSimplicity ) {
+                    matches.clear();
+                    callback( hashCode.GetHashValue(), 0, 1 );
+                    ITERATE( TMatches, m, matches ) {
+                        switch( m->strand ) {
+                        case '+': m_filter->Match( *m, a, A, pos - m->offset ); break;
+                        case '-': m_filter->Match( *m, a, A, pos + m->offset + m_windowLength - 1 ); break;
+                        default: THROW( logic_error, "Invalid strand " << m->strand );
+                        }
+                    }
+                }
+                complexity.Del( hashCode.GetOldestTriplet() );
+                hashCode.AddBaseCode( Ncbi4na2Ncbi2na( *x++ ) );
+                complexity.Add( hashCode.GetNewestTriplet() );
+                p.Increment();
+            }
+        } else { // eType_iterate
+            CHashGenerator hashGen( m_windowLength );
+            CComplexityMeasure complexity;
+            const char * x = a + i->first.first;
+            for( unsigned pos = 0 ; pos < m_windowLength && x < A; ++pos ) {
+                hashGen.AddBaseMask( *x++ );
+                complexity.Add( hashGen.GetNewestTriplet() );
+            }
+    
+            for( int pos = off + i->first.first, end = off + i->first.second; pos < end; ++pos ) {
+                ASSERT( (pos + a) < A );
+                if( (pos + a + m_windowLength) != x ) THROW( logic_error, " x - a - w = " << ( x - a - m_windowLength ) << " while pos = " << pos << " and off = " << off );
+                if( hashGen.GetAlternativesCount() < m_maxAlternatives && complexity < m_maxSimplicity ) {
+                    matches.clear();
+                    for( CHashIterator h( hashGen, mask, mask ); h; ++h ) {
+                        callback( *h, 0, hashGen.GetAlternativesCount() );
+                    }
+                    ITERATE( TMatches, m, matches ) {
+                        switch( m->strand ) {
+                        case '+': m_filter->Match( *m, a, A, pos - m->offset ); break;
+                        case '-': m_filter->Match( *m, a, A, pos + m->offset + m_windowLength - 1 ); break;
+                        default: THROW( logic_error, "Invalid strand " << m->strand );
+                        }
+                    }
+                }
+                complexity.Del( hashGen.GetOldestTriplet() );
+                hashGen.AddBaseMask( *x++ );
+                complexity.Add( hashGen.GetNewestTriplet() );
+                p.Increment();
+            }
         }
-        void operator () ( const CQueryHash::SHashAtom& a ) { m_matches.insert( a ); }
-    protected:
-        Uint4 m_mism;
-        TMatches& m_matches;
-        CQueryHash& m_queryHash;
-    };
-    
-    
-    void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned off, unsigned end )
-    {
-		TRangeMap rangeMap;
-		CreateRangeMap( rangeMap, a, A );
-
-        using namespace fourplanes;
-
-        TMatches matches;
-        CScanCallback callback( matches, *m_queryHash );
-        unsigned mask = CBitHacks::WordFootprint<unsigned>( 2 * m_windowLength );
-
-        string seqname;
-        if( m_seqIds ) {
-            seqname = m_seqIds->GetSeqDef( m_ord ).GetBestIdString();
-        } else seqname = "sequence";
-
-        CProgressIndicator p( "Processing " + seqname, "bases" );
-        p.SetFinalValue( A - a );
-		for( TRangeMap::const_iterator i = rangeMap.begin(); i != rangeMap.end(); ++i ) {
-			if( i->second == eType_skip ) {
-				p.SetCurrentValue( i->first.second );
-			} else if( i->second == eType_direct ) {
-				CHashCode hashCode( m_windowLength );
-				CComplexityMeasure complexity;
-				const char * x = a + i->first.first;
-        		for( unsigned pos = 0 ; pos < m_windowLength && x < A; ++pos ) {
-		            hashCode.AddBaseCode( Ncbi4na2Ncbi2na( *x++ ) );
-        		    complexity.Add( hashCode.GetNewestTriplet() );
-        		}
-                for( int pos = off + i->first.first, end = off + i->first.second; pos < end; ++pos ) {
-					ASSERT( (pos + a) < A );
-					if( (pos + a + m_windowLength) != x ) THROW( logic_error, " x - a - w = " << ( x - a - m_windowLength ) << " while pos = " << pos << " and off = " << off );
-                    if( complexity < m_maxSimplicity ) {
-                        matches.clear();
-                        callback( hashCode.GetHashValue(), 0, 1 );
-                        ITERATE( TMatches, m, matches ) {
-                            switch( m->strand ) {
-                            case '+': m_filter->Match( *m, a, A, pos - m->offset ); break;
-                            case '-': m_filter->Match( *m, a, A, pos + m->offset + m_windowLength - 1 ); break;
-                            default: THROW( logic_error, "Invalid strand " << m->strand );
-                            }
-                        }
-                    }
-                    complexity.Del( hashCode.GetOldestTriplet() );
-		            hashCode.AddBaseCode( Ncbi4na2Ncbi2na( *x++ ) );
-                    complexity.Add( hashCode.GetNewestTriplet() );
-                    p.Increment();
-                }
-			} else { // eType_iterate
-                CHashGenerator hashGen( m_windowLength );
-                CComplexityMeasure complexity;
-				const char * x = a + i->first.first;
-        		for( unsigned pos = 0 ; pos < m_windowLength && x < A; ++pos ) {
-		            hashGen.AddBaseMask( *x++ );
-        		    complexity.Add( hashGen.GetNewestTriplet() );
-        		}
-    
-                for( int pos = off + i->first.first, end = off + i->first.second; pos < end; ++pos ) {
-					ASSERT( (pos + a) < A );
-					if( (pos + a + m_windowLength) != x ) THROW( logic_error, " x - a - w = " << ( x - a - m_windowLength ) << " while pos = " << pos << " and off = " << off );
-                    if( hashGen.GetAlternativesCount() < m_maxAlternatives && complexity < m_maxSimplicity ) {
-                        matches.clear();
-                        for( CHashIterator h( hashGen, mask, mask ); h; ++h ) {
-                            callback( *h, 0, hashGen.GetAlternativesCount() );
-                        }
-                        ITERATE( TMatches, m, matches ) {
-                            switch( m->strand ) {
-                            case '+': m_filter->Match( *m, a, A, pos - m->offset ); break;
-                            case '-': m_filter->Match( *m, a, A, pos + m->offset + m_windowLength - 1 ); break;
-                            default: THROW( logic_error, "Invalid strand " << m->strand );
-                            }
-                        }
-                    }
-                    complexity.Del( hashGen.GetOldestTriplet() );
-                    hashGen.AddBaseMask( *x++ );
-                    complexity.Add( hashGen.GetNewestTriplet() );
-                    p.Increment();
-                }
-			}
-		}
-        p.Summary();
     }
+    p.Summary();
 }
 

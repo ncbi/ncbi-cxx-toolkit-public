@@ -33,6 +33,7 @@ public:
     void Indicate( EIndicate i = e_current ) { time_t t2 = time(0); if( t2 != m_t1 ) Format( i, t2 ); }
 protected:
     void Format( EIndicate, time_t );
+	static ostream& FormatBigNumber( ostream&, double );
 protected:
     time_t m_t0;
     time_t m_t1;

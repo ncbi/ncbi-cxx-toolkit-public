@@ -54,7 +54,7 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_outputFile( "/dev/stdout" ),
     m_outputFlags( "m" )
 {
-#ifndef __WIN32__
+#ifndef _WIN32
     ifstream meminfo( "/proc/meminfo" );
     string buff;
     if( !meminfo.fail() ) {
@@ -80,16 +80,14 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
 #endif
 }
 
-namespace {
-    inline int RevNo()
-    {
-        return strtol( "$Rev$"+6, 0, 10 );
-    }
+int COligoFarApp::RevNo()
+{
+    return strtol( "$Rev$"+6, 0, 10 );
+}
 
-    void COligoFarApp::Version()
-    {
-        cout << GetProgramBasename() << " ver 3.19." << RevNo() << " [" << (8*sizeof(void*)) << "bit]" << endl;
-    }
+void COligoFarApp::Version()
+{
+    cout << GetProgramBasename() << " ver 3.19." << RevNo() << " [" << (8*sizeof(void*)) << "bit]" << endl;
 }
 
 void COligoFarApp::Help()
