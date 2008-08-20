@@ -875,6 +875,10 @@ bool LDS_GetSequenceBase(const string&   seq_id_str,
                          SLDS_SeqIdBase* seqid_base,
                          CSeq_id*        conv_seq_id)
 {
+    if ( seq_id_str.empty() ) {
+        return false;
+    }
+
     _ASSERT(seqid_base);
 
     CRef<CSeq_id> tmp_seq_id;
@@ -890,13 +894,11 @@ bool LDS_GetSequenceBase(const string&   seq_id_str,
         conv_seq_id->Set(seq_id_str);
     } catch (CSeqIdException&) {
         try {
-            conv_seq_id->Set(CSeq_id::e_Local, 
-                                seq_id_str);
+            conv_seq_id->Set(CSeq_id::e_Local, seq_id_str);
         } catch (CSeqIdException&) {
             can_convert = false;
-            LOG_POST_X(12, Error 
-                << "Cannot convert seq id string: "
-                << seq_id_str);
+            LOG_POST_X(12, Error <<
+                       "Cannot convert seq id string: " << seq_id_str);
             seqid_base->Init();
         }
     }
