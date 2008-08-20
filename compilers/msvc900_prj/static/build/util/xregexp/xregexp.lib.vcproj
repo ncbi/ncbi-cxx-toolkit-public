@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject ProjectType="Visual C++" Version="9.00" Name="xregexp.lib" Keyword="Win32Proj" ProjectGUID="{E46C5B0B-675C-4C37-B618-02608C379C67}">
+  <Platforms>
+    <Platform Name="Win32"/>
+    <Platform Name="x64"/>
+  </Platforms>
+  <Configurations>
+    <Configuration Name="ReleaseDLL|Win32" OutputDirectory="..\..\..\lib\$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="4" CharacterSet="2">
+      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;" AdditionalIncludeDirectories="..\..\..\..\..\..\include\, ..\..\..\..\..\..\include\internal\, ..\..\..\..\..\..\include\util\regexp\" BasicRuntimeChecks="0" RuntimeLibrary="2" RuntimeTypeInfo="TRUE" ProgramDataBaseFileName="$(IntDir)\xregexp.pdb" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="2" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="3" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"/>
+      <Tool Name="VCLinkerTool" OutputFile="" AdditionalDependencies="" LargeAddressAware="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE" FixedBaseAddress=""/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)\$(ProjectName)" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"/>
+      <Tool Name="VCCustomBuildTool"/>
+      <Tool Name="VCMIDLTool"/>
+      <Tool Name="VCPostBuildEventTool"/>
+      <Tool Name="VCPreBuildEventTool" CommandLine=""/>
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="" Culture="" AdditionalIncludeDirectories="" AdditionalOptions=""/>
+      <Tool Name="VCWebServiceProxyGeneratorTool"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+    </Configuration>
+    <Configuration Name="ReleaseDLL|x64" OutputDirectory="..\..\..\lib\$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="4" CharacterSet="2">
+      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;" AdditionalIncludeDirectories="..\..\..\..\..\..\include\, ..\..\..\..\..\..\include\internal\, ..\..\..\..\..\..\include\util\regexp\" BasicRuntimeChecks="0" RuntimeLibrary="2" RuntimeTypeInfo="TRUE" ProgramDataBaseFileName="$(IntDir)\xregexp.pdb" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="2" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="3" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"/>
+      <Tool Name="VCLinkerTool" OutputFile="" AdditionalDependencies="" LargeAddressAware="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE" FixedBaseAddress=""/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)\$(ProjectName)" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"/>
+      <Tool Name="VCCustomBuildTool"/>
+      <Tool Name="VCMIDLTool"/>
+      <Tool Name="VCPostBuildEventTool"/>
+      <Tool Name="VCPreBuildEventTool" CommandLine=""/>
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="" Culture="" AdditionalIncludeDirectories="" AdditionalOptions=""/>
+      <Tool Name="VCWebServiceProxyGeneratorTool"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+    </Configuration>
+  </Configurations>
+  <References></References>
+  <Files>
+    <Filter Name="Source Files" Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx">
+      <File RelativePath="..\..\..\..\..\..\src\util\xregexp\arg_regexp.cpp">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="1" PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="1" PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\xregexp\mask_regexp.cpp">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="2" PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="2" PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\xregexp\regexp.cpp">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="2" PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="2" PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+        </FileConfiguration>
+      </File>
+    </Filter>
+    <Filter Name="Header Files" Filter="h;hpp;hxx;hm;inc;xsd">
+      <File RelativePath="..\..\..\..\..\..\include\util\xregexp\arg_regexp.hpp"></File>
+      <File RelativePath="..\..\..\..\..\..\include\util\xregexp\mask_regexp.hpp"></File>
+      <File RelativePath="..\..\..\..\..\..\include\util\xregexp\regexp.hpp"></File>
+    </Filter>
+    <Filter Name="Inline Files" Filter="inl"></Filter>
+    <Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"></Filter>
+  </Files>
+  <Globals></Globals>
+</VisualStudioProject>

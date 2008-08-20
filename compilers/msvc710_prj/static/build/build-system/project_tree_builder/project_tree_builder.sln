@@ -49,7 +49,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "project_tree_builder.exe", 
 		{277F85C0-3CAB-4C73-999F-8F0E748F130D} = {277F85C0-3CAB-4C73-999F-8F0E748F130D}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xregexp.lib", "..\..\util\xregexp.lib.vcproj", "{23836B5B-93A7-4E7F-BA18-EEA8FF859054}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xregexp.lib", "..\..\util\xregexp\xregexp.lib.vcproj", "{23836B5B-93A7-4E7F-BA18-EEA8FF859054}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
