@@ -108,13 +108,13 @@ void CLDS_Database::Create()
         }
 
     }}
-	
+
     m_db.reset(new SLDS_TablesCollection);
 
     LOG_POST_X(3, Info << "Creating LDS table: " << "file");
 
     fname = m_LDS_DirName + "lds_file.db";
-	const char* c = fname.c_str(); 
+    const char* c = fname.c_str(); 
     m_db->file_db.Open(c,
                       "file",
                       CBDB_RawFile::eCreate);

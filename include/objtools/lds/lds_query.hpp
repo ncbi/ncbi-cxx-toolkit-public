@@ -148,8 +148,8 @@ public:
     struct SObjectDescr
     {
         SObjectDescr() 
-		: id(0), is_object(false), format(CFormatGuess::eUnknown), pos(0)  
-		{}
+            : id(0), is_object(false), format(CFormatGuess::eUnknown), pos(0)  
+            {}
         int                     id;
         bool                    is_object;
         string                  type_str;
