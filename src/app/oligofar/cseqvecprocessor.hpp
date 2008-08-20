@@ -81,8 +81,8 @@ inline void CSeqVecProcessor::Process( const char* name )
 
 inline void CSeqVecProcessor::Process( const string& name )
 {
-    if( access( (name + ".nin").c_str(), F_OK ) == 0 ||
-		access( (name + ".nal").c_str(), F_OK ) == 0 ) Process_SeqDB( name );
+    if( CFile(name + ".nin").Exists() || 
+		CFile(name + ".nal").Exists() ) Process_SeqDB( name );
     else Process_fasta( name );
 }
 

@@ -1,7 +1,7 @@
 #ifndef OLIGOFAR__GETOPT__H
 #define OLIGOFAR__GETOPT__H
 
-#ifdef __WIN32__
+#ifdef _WIN32
 
 #ifdef __cplusplus 
 extern "C" {

@@ -248,7 +248,7 @@ inline CNcbiqnaBase::CNcbiqnaBase( const CNcbipnaBase& b ) : m_base(0)
 	}
 	if( next == 0 ) m_base |= 0xfc;
 	else {
-		double pscore = 10*std::log10( max/next );
+		double pscore = 10*std::log10( double( max ) / next );
 		m_base |= AdjustScore( int(pscore) ) << 2;
 	}
 }

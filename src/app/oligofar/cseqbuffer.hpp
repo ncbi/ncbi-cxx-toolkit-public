@@ -28,7 +28,7 @@ protected:
     bool m_bufferAllocated;
 
 protected:
-    explicit CSeqBuffer( const CSeqBuffer& ) { THROW( logic_error, __PRETTY_FUNCTION__ ); } 
+	explicit CSeqBuffer( const CSeqBuffer& ) { THROW( logic_error, "CSeqBuffer copy constructor is prohibited!" ); } 
 };
 
 ////////////////////////////////////////////////////////////////////////

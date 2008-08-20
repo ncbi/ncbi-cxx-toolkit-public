@@ -59,13 +59,13 @@ public:
     static word DuplicateBits( word in );
 
     enum EMagic { // did not work correct in templates with -O9 :-[
-        kPattern_02 = 0x5555555555555555LL,
-        kPattern_04 = 0x3333333333333333LL,
-        kPattern_08 = 0x0f0f0f0f0f0f0f0fLL,
-        kPattern_16 = 0x00ff00ff00ff00ffLL,
-        kPattern_32 = 0x0000ffff0000ffffLL,
-        kPattern_64 = 0x00000000ffffffffLL,
-        kPattern_ff = 0xffffffffffffffffLL
+        kPattern_02 = 0x5555555555555555ULL,
+        kPattern_04 = 0x3333333333333333ULL,
+        kPattern_08 = 0x0f0f0f0f0f0f0f0fULL,
+        kPattern_16 = 0x00ff00ff00ff00ffULL,
+        kPattern_32 = 0x0000ffff0000ffffULL,
+        kPattern_64 = 0x00000000ffffffffULL,
+        kPattern_ff = 0xffffffffffffffffULL
     };
 protected:
     template<class word> static word x_SwapBits( word w, int shift, EMagic mask );

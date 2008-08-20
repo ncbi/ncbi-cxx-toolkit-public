@@ -20,7 +20,7 @@ public:
 	public:
 		typedef set<string> TIdSet;
 		CSeqDef( int oid = -1 ) : m_oid( oid ) {}
-		CSeqDef( int oid = -1, const TIds& ids ) : m_oid( oid ) { AddIds( ids ); }
+		CSeqDef( int oid, const TIds& ids ) : m_oid( oid ) { AddIds( ids ); }
 		const TIdSet& GetIdStrings() const { return m_ids; }
 		string GetBestIdString() const;
 		string GetFullIdString() const;

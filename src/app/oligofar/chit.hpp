@@ -19,7 +19,7 @@ public:
     CHit( CQuery* q, Uint4 seqOrd, bool pairmate, double score, int from, int to );
     CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, double score2, int from2, int to2 );
 
-    static int GetComponentMask( bool pairmate ) { return 1 << pairmate; }
+    static int GetComponentMask( bool pairmate ) { return 1 << (int)pairmate; }
     CQuery * GetQuery() const { return m_query; }
     Uint4 GetSeqOrd() const { return m_seqOrd; }
     int GetComponents() const { return m_components; }

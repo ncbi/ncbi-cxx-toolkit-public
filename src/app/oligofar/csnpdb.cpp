@@ -26,7 +26,7 @@ string CSnpDbBase::GetSeqId() const
     case eSeqId_string: return m_prefix + string(m_stringId) + m_suffix;
     case eSeqId_integer: return m_prefix + NStr::IntToString( m_intId ) + m_suffix;
     }
-    throw logic_error( "Undefined m_seqIdType in "+string( __PRETTY_FUNCTION__ ) );
+	throw logic_error( "Undefined m_seqIdType in CSnpDbBase::GetSeqId()" );
 }
 
 void CSnpDbBase::ParseSeqId( const string& id )

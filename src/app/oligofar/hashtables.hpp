@@ -18,12 +18,28 @@ public:
     static const char * ClassName() { return "AVectorTable"; }
     static int DefaultWindowSize() { return sizeof(void*) == 8 ? 13 : 11; }
     
-    template<class Callback>
-    void Count( Callback& callback ) const;
-    template<class Callback>
-    void ForEach( Callback& callback ) const;
-    template<class Callback>
-    void ForEach( unsigned hash, Callback& callback ) const;
+	template<class Callback>
+	void Count( Callback& callback ) const {
+		typedef typename TTable::const_iterator const_iterator;
+		for( const_iterator e = m_table.begin(); e != m_table.end(); ++e ) {
+			callback( e - m_table.begin(), e->size() );
+		}
+	}
+	template<class Callback>
+	void ForEach( Callback& callback ) const {
+		typedef typename TTable::const_iterator const_iterator;
+		for( const_iterator e = m_table.begin(); e != m_table.end(); ++e ) {
+			typedef typename TEntry::const_iterator const_iterator;
+			for( const_iterator o = e->begin(); o != e->end(); ++o ) 
+				callback( e - m_table.begin(), *o );
+		}
+	}
+	template<typename Callback>	
+	void ForEach( unsigned hash, Callback& callback ) const {
+	    typedef typename TEntry::const_iterator const_iterator;
+		const TEntry& e = m_table[hash];
+		for( const_iterator o = e.begin(); o != e.end(); ++o ) callback( *o );
+	}
     void Insert( unsigned hash, Atom oligo );
 	void Freeze() {}
 	/*
@@ -91,10 +107,20 @@ public:
     static const char * ClassName() { return "AMultimapTable"; }
     static int DefaultWindowSize() { return 15; }
 
-    template<class Callback>
-    void ForEach( Callback& callback ) const;
-    template<class Callback>
-    void ForEach( unsigned hash, Callback& callback ) const;
+	template<class Callback>
+	void ForEach( unsigned hash, Callback& callback ) const  {
+		typedef typename TTable::const_iterator const_iterator;
+	    for( const_iterator x = m_table.find( hash ); x != m_table.end() && x->first == hash; ++x )
+		    callback( x->second );
+	}
+
+	template<class Callback>
+	void ForEach( Callback& callback ) const {
+		typedef typename TTable::const_iterator const_iterator;
+	    for( const_iterator x = m_table.begin(); x != m_table.end(); ++x )
+		    callback( x->first, x->second );
+	}
+
     void Insert( unsigned hash, Atom oligo );
     void Reserve( unsigned ) {}
 	void Freeze() {}
@@ -128,7 +154,7 @@ public:
 
     typedef C_ConstIterator const_iterator;
 
-    AArraymapTable( int win, int mism, int alt ) { m_order = ( Uint8( pow( (double)win, mism ) ) + 1 )*Uint8( sqrt( alt ) ); }
+    AArraymapTable( int win, int mism, int alt ) { m_order = ( (Uint8)( pow( (double)win, mism ) ) + 1 )*(Uint8)( sqrt( (double)alt ) ); }
 
     static const char * ClassName() { return "AArraymapTable"; }
     static int DefaultWindowSize() { return 15; }
@@ -139,10 +165,19 @@ public:
 		bool operator () ( const TEntry& a, const TEntry& b ) const	{ return a.first < b.first; }
 	};
     
-    template<class Callback>
-    void ForEach( Callback& callback ) const;
-    template<class Callback>
-    void ForEach( unsigned hash, Callback& callback ) const;
+	template<class Callback>
+	void ForEach( Callback& callback ) const {
+		for( typename TTable::const_iterator x = m_table.begin(); x != m_table.end(); ++x ) 
+			callback( x->first, x->second );
+	}
+
+	template<class Callback>
+	void ForEach( unsigned hash, Callback& callback ) const {
+		TEntry e( hash, 0 );
+		typename TTable::const_iterator x = lower_bound( m_table.begin(), m_table.end(), e, C_Less() );
+		for( ; x != m_table.end() && x->first == hash ; ++x ) callback( x->second );
+	}
+
     void Insert( unsigned hash, Atom oligo );
     void Reserve( unsigned batch ) { m_table.reserve( batch * m_order ); }
 	void Freeze();
@@ -173,62 +208,10 @@ inline AVectorTable<Atom>::C_ConstIterator::C_ConstIterator( const TTable& t, un
 }
 
 template <class Atom>
-inline bool AVectorTable<Atom>::C_ConstIterator::operator == ( const AVectorTable<Atom>::C_ConstIterator& other ) const {
+inline bool AVectorTable<Atom>::C_ConstIterator::operator == ( const typename AVectorTable<Atom>::C_ConstIterator& other ) const {
     return m_hash == other.m_hash && ( m_hash == m_table.size() || m_pointer == other.m_pointer );
 }
 
-
-template<class Atom>
-template<class Callback>
-inline void AVectorTable<Atom>::ForEach( unsigned hash, Callback& callback ) const
-{
-    typedef typename TEntry::const_iterator const_iterator;
-
-    const TEntry& e = m_table[hash];
-    for( const_iterator o = e.begin(); o != e.end(); ++o ) callback( *o );
-}
-
-template<class Atom>
-template<class Callback>
-inline void AVectorTable<Atom>::Count( Callback& callback ) const
-{
-    typedef typename TTable::const_iterator const_iterator;
-    for( const_iterator e = m_table.begin(); e != m_table.end(); ++e ) {
-        callback( e - m_table.begin(), e->size() );
-    }
-}
-
-template<class Atom>
-template<class Callback>
-inline void AVectorTable<Atom>::ForEach( Callback& callback ) const
-{
-    typedef typename TTable::const_iterator const_iterator;
-    for( const_iterator e = m_table.begin(); e != m_table.end(); ++e ) {
-        typedef typename TEntry::const_iterator const_iterator;
-        for( const_iterator o = e->begin(); o != e->end(); ++o ) 
-            callback( e - m_table.begin(), *o );
-    }
-}
-
-template<class Atom>
-template<class Callback>
-inline void AMultimapTable<Atom>::ForEach( unsigned hash, Callback& callback ) const 
-{
-    typedef typename TTable::const_iterator const_iterator;
-
-    for( const_iterator x = m_table.find( hash ); x != m_table.end() && x->first == hash; ++x )
-        callback( x->second );
-}
-
-template<class Atom>
-template<class Callback>
-inline void AMultimapTable<Atom>::ForEach( Callback& callback ) const 
-{
-    typedef typename TTable::const_iterator const_iterator;
-
-    for( const_iterator x = m_table.begin(); x != m_table.end(); ++x )
-        callback( x->first, x->second );
-}
 
 template<class Atom>
 inline void AVectorTable<Atom>::Insert( unsigned hash, Atom query )
@@ -284,22 +267,6 @@ template<class Atom>
 inline void AMultimapTable<Atom>::Clear()
 {
     m_table.clear();
-}
-
-template<class Atom>
-template<class Callback>
-inline void AArraymapTable<Atom>::ForEach( Callback& callback ) const
-{
-	for( typename TTable::const_iterator x = m_table.begin(); x != m_table.end(); ++x ) callback( x->first, x->second );
-}
-
-template<class Atom>
-template<class Callback>
-inline void AArraymapTable<Atom>::ForEach( unsigned hash, Callback& callback ) const
-{
-    TEntry e( hash, 0 );
-	typename TTable::const_iterator x = lower_bound( m_table.begin(), m_table.end(), e, C_Less() );
-	for( ; x != m_table.end() && x->first == hash ; ++x ) callback( x->second );
 }
 
 template<class Atom>

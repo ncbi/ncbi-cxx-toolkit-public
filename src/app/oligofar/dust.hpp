@@ -49,7 +49,7 @@ inline void CComplexityMeasure::Del( int tripletId )
     if( m_windowSize > 2 ) {
         int & tripletCount = m_tripletCounts[tripletId];
         if( tripletCount <= 0 ) 
-            throw logic_error( string( __PRETTY_FUNCTION__ ) + ": Deleting non-existing triplet!" );
+			throw logic_error( "CComplexityMeasure::Del(int tripletId): Deleting non-existing triplet!" );
         tripletCount --;
         m_windowSize -- ;
         m_score -= tripletCount * ( tripletCount + 1 );

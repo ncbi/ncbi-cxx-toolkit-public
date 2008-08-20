@@ -2,7 +2,11 @@
 #define OLIGOFAR_CPROGRESSINDICATOR__HPP
 
 #include "iprogress.hpp"
+#ifndef _WIN32
 #include <sys/time.h>
+#else
+#include <time.h>
+#endif
 
 BEGIN_OLIGOFAR_SCOPES
 
