@@ -58,6 +58,15 @@ public:
     template<class word>
     static word DuplicateBits( word in );
 
+#ifdef _WIN32
+#define kPattern_02 0x5555555555555555ULL
+#define kPattern_04 0x3333333333333333ULL
+#define kPattern_08 0x0f0f0f0f0f0f0f0fULL
+#define kPattern_16 0x00ff00ff00ff00ffULL
+#define kPattern_32 0x0000ffff0000ffffULL
+#define kPattern_64 0x00000000ffffffffULL
+#define kPattern_ff 0xffffffffffffffffULL
+#else
     enum EMagic { // did not work correct in templates with -O9 :-[
         kPattern_02 = 0x5555555555555555ULL,
         kPattern_04 = 0x3333333333333333ULL,
@@ -67,8 +76,12 @@ public:
         kPattern_64 = 0x00000000ffffffffULL,
         kPattern_ff = 0xffffffffffffffffULL
     };
+#endif
+
 protected:
+#ifndef _WIN32
     template<class word> static word x_SwapBits( word w, int shift, EMagic mask );
+#endif
     template<class word> static word x_SwapBits( word w, int shift, word mask );
     template<class word> static word x_SwapBits( word w, int shift );
     template<class word> static word x_Count( word w, int c );
@@ -183,12 +196,13 @@ inline int CBitHacks::BitCount8( Uint8 x )
     return BitCount4( x ) + BitCount4( x >> 32 );
 }
 
+#ifndef _WIN32
 template<class word> 
 inline word CBitHacks::x_SwapBits( word w, int shift, EMagic mask )
 {
     return x_SwapBits( w, shift, word(mask) ); 
 }
-
+#endif
 
 template<class word> 
 inline word CBitHacks::x_SwapBits( word w, int shift, word mask )
@@ -204,65 +218,65 @@ inline word CBitHacks::x_SwapBits( word w, int shift )
 
 inline Uint1 CBitHacks::ReverseBits1( Uint1 x ) 
 {
-    x = x_SwapBits( x, 0x01, kPattern_02 );
-    x = x_SwapBits( x, 0x02, kPattern_04 );
+    x = x_SwapBits<Uint1>( x, 0x01, kPattern_02 );
+    x = x_SwapBits<Uint1>( x, 0x02, kPattern_04 );
     return x_SwapBits( x, 0x04 );
 }
 
 inline Uint2 CBitHacks::ReverseBits2( Uint2 x ) 
 {
-    x = x_SwapBits( x, 0x01, kPattern_02 );
-    x = x_SwapBits( x, 0x02, kPattern_04 );
-    x = x_SwapBits( x, 0x04, kPattern_08 );
+    x = x_SwapBits<Uint2>( x, 0x01, kPattern_02 );
+    x = x_SwapBits<Uint2>( x, 0x02, kPattern_04 );
+    x = x_SwapBits<Uint2>( x, 0x04, kPattern_08 );
     return x_SwapBits( x, 0x08 );
 }
 
 inline Uint4 CBitHacks::ReverseBits4( Uint4 x ) 
 {
-    x = x_SwapBits( x, 0x01, kPattern_02 );
-    x = x_SwapBits( x, 0x02, kPattern_04 );
-    x = x_SwapBits( x, 0x04, kPattern_08 );
-    x = x_SwapBits( x, 0x08, kPattern_16 );
+    x = x_SwapBits<Uint4>( x, 0x01, kPattern_02 );
+    x = x_SwapBits<Uint4>( x, 0x02, kPattern_04 );
+    x = x_SwapBits<Uint4>( x, 0x04, kPattern_08 );
+    x = x_SwapBits<Uint4>( x, 0x08, kPattern_16 );
     return x_SwapBits( x, 0x10 );
 }
 
 inline Uint8 CBitHacks::ReverseBits8( Uint8 x ) 
 {
-    x = x_SwapBits( x, 0x01, kPattern_02 );
-    x = x_SwapBits( x, 0x02, kPattern_04 );
-    x = x_SwapBits( x, 0x04, kPattern_08 );
-    x = x_SwapBits( x, 0x08, kPattern_16 );
-    x = x_SwapBits( x, 0x10, kPattern_32 );
+    x = x_SwapBits<Uint8>( x, 0x01, kPattern_02 );
+    x = x_SwapBits<Uint8>( x, 0x02, kPattern_04 );
+    x = x_SwapBits<Uint8>( x, 0x04, kPattern_08 );
+    x = x_SwapBits<Uint8>( x, 0x08, kPattern_16 );
+    x = x_SwapBits<Uint8>( x, 0x10, kPattern_32 );
     return x_SwapBits( x, 0x20 );
 }
 
 inline Uint1 CBitHacks::ReverseBitPairs1( Uint1 x ) 
 {
-    x = x_SwapBits( x, 0x02, kPattern_04 );
+    x = x_SwapBits<Uint1>( x, 0x02, kPattern_04 );
     return x_SwapBits( x, 0x04 );
 }
 
 inline Uint2 CBitHacks::ReverseBitPairs2( Uint2 x ) 
 {
-    x = x_SwapBits( x, 0x02, kPattern_04 );
-    x = x_SwapBits( x, 0x04, kPattern_08 );
+    x = x_SwapBits<Uint2>( x, 0x02, kPattern_04 );
+    x = x_SwapBits<Uint2>( x, 0x04, kPattern_08 );
     return x_SwapBits( x, 0x08 );
 }
 
 inline Uint4 CBitHacks::ReverseBitPairs4( Uint4 x ) 
 {
-    x = x_SwapBits( x, 0x02, kPattern_04 );
-    x = x_SwapBits( x, 0x04, kPattern_08 );
-    x = x_SwapBits( x, 0x08, kPattern_16 );
+    x = x_SwapBits<Uint4>( x, 0x02, kPattern_04 );
+    x = x_SwapBits<Uint4>( x, 0x04, kPattern_08 );
+    x = x_SwapBits<Uint4>( x, 0x08, kPattern_16 );
     return x_SwapBits( x, 0x10 );
 }
 
 inline Uint8 CBitHacks::ReverseBitPairs8( Uint8 x ) 
 {
-    x = x_SwapBits( x, 0x02, kPattern_04 );
-    x = x_SwapBits( x, 0x04, kPattern_08 );
-    x = x_SwapBits( x, 0x08, kPattern_16 );
-    x = x_SwapBits( x, 0x10, kPattern_32 );
+    x = x_SwapBits<Uint8>( x, 0x02, kPattern_04 );
+    x = x_SwapBits<Uint8>( x, 0x04, kPattern_08 );
+    x = x_SwapBits<Uint8>( x, 0x08, kPattern_16 );
+    x = x_SwapBits<Uint8>( x, 0x10, kPattern_32 );
     return x_SwapBits( x, 0x20 );
 }
 
