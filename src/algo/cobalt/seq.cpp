@@ -114,6 +114,16 @@ CSequence::Reset(const blast::SSeqLoc& seq_in)
 }
 
 
+void
+CSequence::Reset(int length) 
+{
+    m_Sequence.resize(length); 
+    for (int i=0;i < length;i++) {
+        m_Sequence[i] = kGapChar;
+    }
+}
+
+
 CSequence::CSequence(const blast::SSeqLoc& sl) 
 {
     Reset(sl);
