@@ -218,7 +218,7 @@ CMultiAligner::ComputeTree()
             printf("%5d ", i);
         printf("\n");
     
-        for (int i = 0; i < matrix.GetRows() - 1; i++) {
+        for (int i = 0; i < (int)matrix.GetRows() - 1; i++) {
             printf("%2d: ", i);
             for (int j = matrix.GetCols() - 1; j > i; j--) {
                 printf("%5.3f ", matrix(i, j));
@@ -283,11 +283,11 @@ CMultiAligner::FindQueryClusters()
         printf("K-mer counts distance matrix:\n");
         printf("    ");
         for (size_t i=1;i < m_QueryData.size();i++) {
-            printf("%6d", i);
+            printf("%6d", (int)i);
         }
         printf("\n");
         for (size_t i=0;i < m_QueryData.size() - 1;i++) {
-            printf("%3d:", i);
+            printf("%3d:", (int)i);
             for (size_t j=1;j < m_QueryData.size();j++) {
                 if (j < i+1) {
                     printf("      ");
@@ -446,7 +446,7 @@ void CMultiAligner::AlignInClusters(void)
 
             //------------------------------------------------------------
             if (m_Verbose) {
-                printf("Aligning in cluster %d:\n", cluster_idx);
+                printf("Aligning in cluster %d:\n", (int)cluster_idx);
                 ITERATE(CClusterer::TSingleCluster, elem, cluster) {
                     const CSequence& seq = m_AllQueryData[*elem];
                     printf("%3d: ", *elem);
@@ -467,7 +467,7 @@ void CMultiAligner::AlignInClusters(void)
                 continue;
             }
 
-            printf("Gaps in cluster %d: ", i);
+            printf("Gaps in cluster %d: ", (int)i);
             size_t j;
             for (j=0;j < m_ClusterGapPositions[i].size() - 1;j++) {
                 printf("%3d, ", m_ClusterGapPositions[i][j]);
