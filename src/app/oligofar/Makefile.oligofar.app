@@ -37,3 +37,4 @@ LDFLAGS = $(LOCAL_LDFLAGS) $(FAST_LDFLAGS)
 
 
 CHECK_CMD = ./test-oligofar.sh
+CHECK_FILES = NM_012345.fa NM_012345.reads NM_012345.pairs NM_012345.reads.out NM_012345.pairs.out
