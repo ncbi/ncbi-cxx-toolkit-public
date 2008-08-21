@@ -488,6 +488,29 @@ private:
         }
     };
 
+    /// Column in an alignment used for combining result from multiple
+    /// alignment and pair-wise in-cluster alignments
+    typedef struct SColumn {
+        /// Is the column an insertion from in-cluster alignment
+        bool insert;
+        
+        /// Indeces of letters in this column
+        /// for regular column: index of a letter in input sequence 
+        /// (n-th letter)
+        /// for inserted column: index of a letter in in-cluster alignment
+        vector<int> letters;
+
+        /// number of letters in range (inserted column only)
+        int number;
+
+        /// cluster index (inserted column only)
+        int cluster;
+
+        SColumn(void) : insert(false), number(1), cluster(-1) {}
+        
+    } SColumn;
+
+
     blast::TSeqLocVector m_tQueries;
     vector<CSequence> m_QueryData;
     vector<CSequence> m_Results;
