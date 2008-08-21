@@ -52,8 +52,8 @@ inline void TAligner_fast<CQuery,CSubject>::Align( int flags )
 			if( Match( q + 1, s ) ) {
 				int qc = Count1( q + 1, Q );
 				int sc = Count1( s, S );
-                int cc = min( qc, sc );
-				if( qc < sc || ! Match( q + 1 + cc, s + cc ) ) {
+//                int cc = min( qc, sc );
+				if( qc < sc ) { // || ! Match( q + cc + 1, s + cc ) ) {
 					DoMismatch();
 					DoIdentity();
 				} else {
@@ -63,8 +63,8 @@ inline void TAligner_fast<CQuery,CSubject>::Align( int flags )
 			} else if( Match( q, s + 1 ) ) {
 				int qc = Count1( q, Q );
 				int sc = Count1( s + 1, S );
-                int cc = min( qc, sc );
-				if( qc > sc || ! Match( q + cc, s + 1 + cc ) ) {
+//                int cc = min( qc, sc );
+				if( qc > sc ) { // || ! Match( q + cc, s + cc + 1 ) ) {
 					DoMismatch();
 					DoIdentity();
 				} else {
