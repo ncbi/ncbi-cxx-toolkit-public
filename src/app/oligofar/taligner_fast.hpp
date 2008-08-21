@@ -182,7 +182,6 @@ inline void TAligner_fast<CQuery,CSubject>::DoDeletion( int cnt )
 		}
 		++TSuper::m_subject;
 	}
-	m_inGap = false;
 }
 
 template<class CQuery,class CSubject>
