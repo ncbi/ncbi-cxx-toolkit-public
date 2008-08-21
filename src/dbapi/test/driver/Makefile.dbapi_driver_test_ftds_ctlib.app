@@ -10,6 +10,6 @@ LIBS = $(FTDS_LIBS) $(SYBASE_LIBS) $(SYBASE_DLLS) $(NETWORK_LIBS) $(ORIG_LIBS) $
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
 
-CHECK_CMD = run_sybase_app.sh dbapi_driver_test_ftds_ctlib
+CHECK_CMD = run_sybase_app.sh dbapi_driver_test_ftds_ctlib /CHECK_NAME=dbapi_driver_test_ftds_ctlib
 
 REQUIRES = FreeTDS Sybase

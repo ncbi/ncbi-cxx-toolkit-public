@@ -9,6 +9,6 @@ LIBS = $(FTDS64_CTLIB_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(DL_LIBS)
 CPPFLAGS = -DFTDS_IN_USE $(FTDS64_INCLUDE) $(ORIG_CPPFLAGS)
 
 # CHECK_CMD = run_sybase_app.sh ctl_sp_databases_ftds64
-CHECK_CMD = run_sybase_app.sh ctl_sp_databases_ftds64 -S MSDEV1
+CHECK_CMD = run_sybase_app.sh ctl_sp_databases_ftds64 -S MSDEV1 /CHECK_NAME=ctl_sp_databases_ftds64 -S MSDEV1
 
 REQUIRES = FreeTDS

@@ -8,4 +8,4 @@ APP = test_resize_iter
 SRC = test_resize_iter
 LIB = xutil xncbi
 
-CHECK_CMD = test_resize_iter "test"
+CHECK_CMD = test_resize_iter "test" /CHECK_NAME=test_resize_iter

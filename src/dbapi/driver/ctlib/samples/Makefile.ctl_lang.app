@@ -11,4 +11,4 @@ CPPFLAGS = -I$(includedir)/dbapi/driver/ctlib $(SYBASE_INCLUDE) $(ORIG_CPPFLAGS)
 REQUIRES = Sybase
 
 CHECK_COPY = ctl_lang.ini
-CHECK_CMD = run_sybase_app.sh ctl_lang
+CHECK_CMD = run_sybase_app.sh ctl_lang /CHECK_NAME=ctl_lang
