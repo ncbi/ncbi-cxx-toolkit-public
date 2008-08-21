@@ -171,7 +171,8 @@ Cdd-descr ::= CHOICE {
                             readwrite (2),    -- the tracking database, for
                             other (255) },    -- use within curation software
   book-ref      Cdd-book-ref,                 -- links to Entrez/books
-  attribution   Pub                           -- add citations and/or author names
+  attribution   Pub,                          -- add citations and/or author names
+  title         VisibleString                 -- hold short descriptive text
 }
 
 Cdd-descr-set ::= SET OF Cdd-descr
@@ -411,7 +412,7 @@ Cdd ::= SEQUENCE {
   distance      Triangle      OPTIONAL, -- pairwise distances for all seqs.
   parent        Cdd-id        OPTIONAL, -- this CD is the result of a split
   children      Cdd-id-set    OPTIONAL, -- this CD has been split, not used
-  siblings      Cdd-id-set    OPTIONAL, -- related CDs (common hits), not used
+  siblings      Cdd-id-set    OPTIONAL, -- related CDs (common hits), clusters
   neighbors     Cdd-id-set    OPTIONAL, -- co-occurring CDs, not used
   pending       SEQUENCE OF Update-align OPTIONAL,  -- contains alignments from
                                                     -- update or "lower panel"
