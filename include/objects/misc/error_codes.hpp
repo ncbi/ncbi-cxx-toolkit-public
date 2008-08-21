@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 NCBI_DEFINE_ERRCODE_X(Objects_UOConv,      1301,  4);
 NCBI_DEFINE_ERRCODE_X(Objects_Taxonomy,    1302, 19);
 NCBI_DEFINE_ERRCODE_X(Objects_SeqIdMap,    1303,  4);
-NCBI_DEFINE_ERRCODE_X(Objects_SeqAlignMap, 1304, 20);
+NCBI_DEFINE_ERRCODE_X(Objects_SeqAlignMap, 1304, 21);
 NCBI_DEFINE_ERRCODE_X(Objects_SeqLocMap,   1305, 21);
 NCBI_DEFINE_ERRCODE_X(Objects_SeqId,       1306, 10);
 NCBI_DEFINE_ERRCODE_X(Objects_SeqLoc,      1307,  3);

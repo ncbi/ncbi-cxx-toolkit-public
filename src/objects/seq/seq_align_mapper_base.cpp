@@ -438,6 +438,11 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
             }
             if ( !have_prot ) {
                 // The segment's length has not been adjusted yet
+                if (seg->m_Len % 3) {
+                    ERR_POST_X(21, Warning <<
+                        "Inconsistent length of nucleotide interval in std-seg. "
+                        "The interval may be truncated.");
+                }
                 seg->m_Len /= 3;
             }
         }
