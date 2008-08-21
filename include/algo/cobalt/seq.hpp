@@ -76,6 +76,12 @@ public:
     ///
     void Reset(const blast::SSeqLoc& seq);
 
+    /// Replace the sequence with sequence of gaps of given length
+    /// @param length Number of gaps [in]
+    ///
+    void Reset(int length);
+
+
     /// Access the list of position frequencies associated
     /// with a sequence
     /// @return The frequency matrix
@@ -92,6 +98,12 @@ public:
     /// @return The sequence letter
     ///
     unsigned char GetLetter(int pos) const { return m_Sequence[pos]; }
+
+    /// Change letter in a given position to a given one
+    /// @param pos Position in the sequence [in]
+    /// @param letter Letter [in]
+    ///
+    void SetLetter(int pos, unsigned char letter) { m_Sequence[pos] = letter; }
 
     /// Access the sequence letter at a specified position,
     /// and return an ASCII representation of that letter
