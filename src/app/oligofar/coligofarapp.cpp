@@ -94,7 +94,7 @@ int COligoFarApp::RevNo()
 
 void COligoFarApp::Version()
 {
-    cout << GetProgramBasename() << " ver 3.19." << RevNo() << " [" << (8*sizeof(void*)) << "bit]" << endl;
+    cout << GetProgramBasename() << " ver 3.19 (Rev:" << RevNo() << ") " NCBI_SIGNATURE << endl;
 }
 
 void COligoFarApp::Help()
