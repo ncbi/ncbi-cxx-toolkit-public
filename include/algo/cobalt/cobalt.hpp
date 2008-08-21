@@ -488,6 +488,7 @@ private:
         }
     };
 
+public:
     /// Column in an alignment used for combining result from multiple
     /// alignment and pair-wise in-cluster alignments
     typedef struct SColumn {
@@ -511,6 +512,7 @@ private:
     } SColumn;
 
 
+private:
     blast::TSeqLocVector m_tQueries;
     vector<CSequence> m_QueryData;
     vector<CSequence> m_Results;
