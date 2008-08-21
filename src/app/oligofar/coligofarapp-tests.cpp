@@ -17,7 +17,7 @@ int COligoFarApp::TestSuite()
 
     TESTVAL( string, CBitHacks::AsBits( CBitHacks::ReverseBits1( Uint1('\x01') ) ), CBitHacks::AsBits( Uint1('\x80') ) );
     TESTVAL( string, CBitHacks::AsBits( CBitHacks::ReverseBits2( Uint2( 0x0123U ) ) ), CBitHacks::AsBits( Uint2( 0xc480U ) ) );
-    TESTVAL( string, CBitHacks::AsBits( CBitHacks::ReverseBits4( 0x01234567UL ) ), CBitHacks::AsBits( 0xe6a2c480UL ) );
+    TESTVAL( string, CBitHacks::AsBits( CBitHacks::ReverseBits4( Uint4( 0x01234567UL ) ) ), CBitHacks::AsBits( Uint4( 0xe6a2c480UL ) ) );
     TESTVAL( string, CBitHacks::AsBits( CBitHacks::ReverseBits8( 0x0123456789abcdefULL ) ), CBitHacks::AsBits( 0xf7b3d591e6a2c480ULL ) );
     TESTVAL( string, CBitHacks::AsBits( CBitHacks::ReverseBitPairs8( 0x0123456789abcdefULL ) ), CBitHacks::AsBits( 0xfb73ea62d951c840ULL ) );
     
