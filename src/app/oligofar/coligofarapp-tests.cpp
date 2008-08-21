@@ -104,28 +104,31 @@ int COligoFarApp::TestSuite()
         }
     }
 
-    Uint8 fwindow = 0;
-    Uint8 rwindow = 0;
+    Uint8 fwindow8 = 0;
+    Uint8 rwindow8 = 0;
     
-    fwindow = Iupacna2Ncbi4naRevCompl( (const unsigned char*)"NBDKHYWTVSRGMCA-", 15 );
+    fwindow8 = Iupacna2Ncbi4naRevCompl( (const unsigned char*)"NBDKHYWTVSRGMCA-", 15 );
 
-    TESTVAL( string, Ncbi4naToIupac( fwindow, 15 ), "TGKCYSBAWRDMHVN" );
+    TESTVAL( string, Ncbi4naToIupac( fwindow8, 15 ), "TGKCYSBAWRDMHVN" );
 
-    rwindow = Ncbi4naRevCompl( fwindow, 15 );
+    rwindow8 = Ncbi4naRevCompl( fwindow8, 15 );
 
-    TESTVAL( string, Ncbi4naToIupac( rwindow, 15 ), "NBDKHYWTVSRGMCA" );
+    TESTVAL( string, Ncbi4naToIupac( rwindow8, 15 ), "NBDKHYWTVSRGMCA" );
 
-    fwindow = Iupacna2Ncbi2na( (const unsigned char*)"ACGTATCGGCTATGCA", 15 );
+	Uint4 fwindow4 = 0;
+	Uint4 rwindow4 = 0;
 
-    TESTVAL( Uint4, fwindow, 0x1b369ce4 );
+    fwindow4 = Iupacna2Ncbi2na( (const unsigned char*)"ACGTATCGGCTATGCA", 15 );
 
-    fwindow = Iupacna2Ncbi2naRevCompl( (const unsigned char*)"TGCATAGCCGATACGT", 15 );
-    TESTVAL( string, CBitHacks::AsBits(Uint4(fwindow)), CBitHacks::AsBits(0x06cda739U) );
+    TESTVAL( Uint4, fwindow4, 0x1b369ce4 );
 
-    rwindow = Ncbi2naRevCompl( fwindow, 15 );
-    TESTVAL( string, CBitHacks::AsBits( Uint4(rwindow) ), CBitHacks::AsBits(0x24c9631bU) );
+    fwindow4 = Iupacna2Ncbi2naRevCompl( (const unsigned char*)"TGCATAGCCGATACGT", 15 );
+    TESTVAL( string, CBitHacks::AsBits( fwindow4 ), CBitHacks::AsBits(0x06cda739U) );
 
-    TESTVAL(string, Ncbi2naToIupac( rwindow, 15 ),"TGCATAGCCGATACG"); // last char is changed to A - is out of window
+    rwindow4 = Ncbi2naRevCompl( fwindow4, 15 );
+    TESTVAL( string, CBitHacks::AsBits( rwindow4 ), CBitHacks::AsBits(0x24c9631bU) );
+
+    TESTVAL(string, Ncbi2naToIupac( rwindow4, 15 ),"TGCATAGCCGATACG"); // last char is changed to A - is out of window
 
 //     const char line[] = 
 //         " 40   6 -40 -40 "" 40  13 -40 -40 "" 40  19 -40 -40 "" 40  25 -40 -40 "

@@ -34,7 +34,7 @@ public:
 	int GetMismatchCount() const { return m_mismatches; }
 	int GetIndelCount() const { return m_insertions + m_deletions; }
 
-    bool PictureQueryStrand( int flags ) const { return flags & fPictureQueryStrand; }
+    bool PictureQueryStrand( int flags ) const { return (flags & fPictureQueryStrand) != 0; }
     bool PictureSubjectStrand( int flags ) const { return (flags & fPictureQueryStrand) == 0; }
 
     double GetScore() const { return 100.0 * m_score / m_bestScore; }

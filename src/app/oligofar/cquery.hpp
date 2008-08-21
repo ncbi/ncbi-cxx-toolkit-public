@@ -27,8 +27,8 @@ public:
 	CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& data2 = "" );
 	~CQuery() { delete m_topHit; delete [] m_data; --s_count; }
 
-	bool IsPairedRead() const { return m_length[1]; }
-	bool HasComponent( int i ) const { return bool( GetLength( i ) ); }
+	bool IsPairedRead() const { return m_length[1] != 0; }
+	bool HasComponent( int i ) const { return GetLength( i ) != 0; }
 
 	const char* GetId() const { return (const char*)m_data; }
 	const char* GetData( int i ) const { return (const char*)m_data + m_offset[i]; }

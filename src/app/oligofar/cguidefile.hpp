@@ -43,7 +43,7 @@ public:
 
 	CGuideFile( const string& fileName, CFilter& filter, CSeqIds& seqIds );
     
-    bool NextHit( int ordinal, CQuery * query );
+    bool NextHit( Uint8 ordinal, CQuery * query );
     
 	int GetMaxDist() const { return m_filter->GetMaxDist(); }
 	int GetMinDist() const { return m_filter->GetMinDist(); }

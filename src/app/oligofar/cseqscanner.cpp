@@ -125,7 +125,7 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
                 if( (pos + a + m_windowLength) != x ) THROW( logic_error, " x - a - w = " << ( x - a - m_windowLength ) << " while pos = " << pos << " and off = " << off );
                 if( complexity < m_maxSimplicity ) {
                     matches.clear();
-                    callback( hashCode.GetHashValue(), 0, 1 );
+                    callback( Uint4( hashCode.GetHashValue() ), 0, 1 );
                     ITERATE( TMatches, m, matches ) {
                         switch( m->strand ) {
                         case '+': m_filter->Match( *m, a, A, pos - m->offset ); break;
@@ -154,7 +154,7 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
                 if( hashGen.GetAlternativesCount() < m_maxAlternatives && complexity < m_maxSimplicity ) {
                     matches.clear();
                     for( CHashIterator h( hashGen, mask, mask ); h; ++h ) {
-                        callback( *h, 0, hashGen.GetAlternativesCount() );
+                        callback( Uint4( *h ), 0, hashGen.GetAlternativesCount() );
                     }
                     ITERATE( TMatches, m, matches ) {
                         switch( m->strand ) {

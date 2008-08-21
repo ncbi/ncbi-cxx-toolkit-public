@@ -179,7 +179,7 @@ public:
 	}
 
     void Insert( unsigned hash, Atom oligo );
-    void Reserve( unsigned batch ) { m_table.reserve( batch * m_order ); }
+    void Reserve( unsigned batch ) { m_table.reserve( unsigned( batch * m_order ) ); }
 	void Freeze();
     void Clear();
 

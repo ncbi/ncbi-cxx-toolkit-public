@@ -15,7 +15,7 @@ public:
 	// TSeqRef<C*naBase,incr,CSeqCoding::eCoding_*na> API
 	template<class QryRef, class SbjRef>
 	static bool MatchRef( const QryRef& q, const SbjRef& s ) {
-		return CNcbi8naBase( q.GetBase() ) & CNcbi8naBase( s.GetBase() );
+		return ( CNcbi8naBase( q.GetBase() ) & CNcbi8naBase( s.GetBase() ) ) != 0;
 	}
 	
 	template<class QryRef, class SbjRef>

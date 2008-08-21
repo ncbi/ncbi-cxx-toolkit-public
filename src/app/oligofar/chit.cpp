@@ -11,8 +11,8 @@ CHit::CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, double s
       m_components( 3 ) 
 {
     ASSERT( m_seqOrd != ~0U );
-    m_score[0] = score1;
-    m_score[1] = score2;
+    m_score[0] = float( score1 );
+    m_score[1] = float( score2 );
     m_from[0] = from1;
     m_from[1] = from2;
     m_to[0] = to1;
@@ -20,7 +20,7 @@ CHit::CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, double s
     ++s_count;
 }
 
-void CHit::SetTarget( bool pairmate, const char * begin, const char * end ) 
+void CHit::SetTarget( int pairmate, const char * begin, const char * end ) 
 { 
     if( begin == 0 || !HasComponent( pairmate ) ) {
         m_target[pairmate] = "";

@@ -16,29 +16,29 @@ public:
             
     ~CHit();
     CHit( CQuery* q );
-    CHit( CQuery* q, Uint4 seqOrd, bool pairmate, double score, int from, int to );
+    CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int to );
     CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, double score2, int from2, int to2 );
 
-    static int GetComponentMask( bool pairmate ) { return 1 << (int)pairmate; }
+    static int GetComponentMask( int pairmate ) { return 1 << pairmate; }
     CQuery * GetQuery() const { return m_query; }
     Uint4 GetSeqOrd() const { return m_seqOrd; }
     int GetComponents() const { return m_components; }
     double GetTotalScore() const { return m_score[0] + m_score[1]; }
-    double GetScore( bool pairmate ) const { return m_score[pairmate]; }
-    int GetFrom( bool pairmate ) const { return m_from[pairmate]; }
-    int GetTo( bool pairmate ) const { return m_to[pairmate]; }
-    bool IsRevCompl( bool pairmate ) const { return m_from[pairmate] > m_to[pairmate]; }
+    double GetScore( int pairmate ) const { return m_score[pairmate]; }
+    int GetFrom( int pairmate ) const { return m_from[pairmate]; }
+    int GetTo( int pairmate ) const { return m_to[pairmate]; }
+    bool IsRevCompl( int pairmate ) const { return m_from[pairmate] > m_to[pairmate]; }
     
     char GetStrand() const { return m_components & 1 ? IsRevCompl( 0 ) ? '-' : '+' : IsRevCompl( 1 ) ? '+' : '-'; }
     bool IsPaired() const { return GetComponents() == 3; }
-    bool HasPairTo( bool pairmate ) const { return HasComponent( !pairmate ); }
-    bool HasComponent( bool pairmate ) const { return m_components & (1 << pairmate); }
+    bool HasPairTo( int pairmate ) const { return HasComponent( pairmate ^ 1 ); }
+    bool HasComponent( int pairmate ) const { return ( m_components & (1 << pairmate ) ) != 0; }
     bool IsNull() const { return m_components == 0; }
 
     CHit * GetNextHit() const { return m_next; }
 
-    void SetTarget( bool pairmate, const char * from, const char * to );
-    const string& GetTarget( bool pairmate ) const { return m_target[pairmate]; }
+    void SetTarget( int pairmate, const char * from, const char * to );
+    const string& GetTarget( int pairmate ) const { return m_target[pairmate]; }
 
 	bool TargetNotSet() const { return m_target[0].size() == 0 && m_target[1].size() == 0; }
 
@@ -74,11 +74,11 @@ inline CHit::CHit( CQuery* q ) :
 //        ++s_count;
 }
 
-inline CHit::CHit( CQuery* q, Uint4 seqOrd, bool pairmate, double score, int from, int to ) 
+inline CHit::CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int to ) 
     : m_query( q ), m_next( 0 ), m_seqOrd( seqOrd ), 
       m_components( GetComponentMask( pairmate ) ) 
 {
-    m_score[pairmate] = score;
+    m_score[pairmate] = float( score );
     m_score[!pairmate] = 0;
     m_from[pairmate] = from;
     m_from[!pairmate] = 0;

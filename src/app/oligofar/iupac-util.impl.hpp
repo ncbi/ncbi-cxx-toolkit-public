@@ -341,7 +341,7 @@ inline Uint4 Ncbi2naRevCompl( Uint4 window, unsigned windowSize )
 
 inline bool Ncbi4naIsAmbiguous( unsigned t )
 {
-    return "\x0\x0\x0\x1\x0\x1\x1\x1\x0\x1\x1\x1\x1\x1\x1\x1"[t&0x0f];
+    return "\x0\x0\x0\x1\x0\x1\x1\x1\x0\x1\x1\x1\x1\x1\x1\x1"[t&0x0f] != 0;
 }
 
 inline unsigned Ncbi4naAlternativeCount( unsigned t )
@@ -353,7 +353,7 @@ inline Uint8 Ncbi4naAlternativeCount( Uint8 t, unsigned windowSize )
 {
     Uint8 total = 1;
     for( unsigned i = 0; i < windowSize; ++i ) {
-        if( unsigned c = Ncbi4naAlternativeCount( t >> (i*4) ) ) total *= c;
+        if( unsigned c = Ncbi4naAlternativeCount( unsigned( t >> (i*4) ) ) ) total *= c;
     }
     return total;
 }

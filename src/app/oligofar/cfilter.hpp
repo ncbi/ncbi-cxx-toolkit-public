@@ -16,11 +16,11 @@ public:
     typedef multimap<int,CHit*> TPendingHits;
     CFilter() : m_seqIds( 0 ), m_aligner( 0 ), 
                 m_ord( -1 ), m_begin( 0 ), m_end( 0 ), 
-                m_minDist(100), m_maxDist( 300 ), 
+                m_minDist( 100 ), m_maxDist( 300 ), 
                 m_topCnt( 10 ), m_topPct( 10 ), 
                 m_scoreCutoff( 80 ), m_outputFormatter( 0 ) {}
 
-    void Match( double score, int seqFrom, int seqTo, CQuery * query, bool pairmate );
+    void Match( double score, int seqFrom, int seqTo, CQuery * query, int pairmate );
     void Match( const CQueryHash::SHashAtom& , const char * seqBegin, const char * seqEnd, int pos );
 
     virtual void SequenceBegin( const TSeqIds&, int oid );
@@ -40,7 +40,7 @@ public:
     int GetMaxDist() const { return m_maxDist; }
     int GetMinDist() const { return m_minDist; }
     
-    CHit * SetHit( CHit * target, bool pairmate, double score, int from, int to, bool allowCombinations = false );
+    CHit * SetHit( CHit * target, int pairmate, double score, int from, int to, bool allowCombinations = false );
 
 protected:
 	friend class CGuideFile;

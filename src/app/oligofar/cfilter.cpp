@@ -6,7 +6,7 @@
 
 USING_OLIGOFAR_SCOPES;
 
-CHit * CFilter::SetHit( CHit * target, bool pairmate, double score, int from, int to, bool allowCombinations ) {
+CHit * CFilter::SetHit( CHit * target, int pairmate, double score, int from, int to, bool allowCombinations ) {
     ASSERT( ! target->IsNull() );
     ASSERT( target->m_seqOrd != ~0U );
     ASSERT( target->HasPairTo( pairmate ) );
@@ -30,7 +30,7 @@ CHit * CFilter::SetHit( CHit * target, bool pairmate, double score, int from, in
         }
     }
     target->m_components |= target->GetComponentMask( pairmate );
-    target->m_score[pairmate] = score;
+    target->m_score[pairmate] = float( score );
     target->m_from[pairmate] = from;
     target->m_to[pairmate] = to;
     return otherHit;
@@ -56,7 +56,7 @@ void CFilter::Match( const CQueryHash::SHashAtom& m, const char * a, const char 
 	}
 }
 
-void CFilter::Match( double score, int seqFrom, int seqTo, CQuery * query, bool pairmate )
+void CFilter::Match( double score, int seqFrom, int seqTo, CQuery * query, int pairmate )
 {
     int p = seqFrom - m_maxDist;
     

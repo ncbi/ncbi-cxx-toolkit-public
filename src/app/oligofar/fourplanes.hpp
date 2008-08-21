@@ -49,8 +49,8 @@ public:
 
     void Reset();
 
-    int GetOldestTriplet() const { return m_value & 0x3f; }
-    int GetNewestTriplet() const { return (m_value >> ((m_wordSize - 3)*int(kBitsPerBase))) & 0x3f; }
+    int GetOldestTriplet() const { return int( m_value & 0x3f ); }
+    int GetNewestTriplet() const { return int( (m_value >> ((m_wordSize - 3)*int(kBitsPerBase))) & 0x3f ); }
 
     void AddIupacNa( char c );
     void AddBaseCode( int code );
@@ -106,7 +106,7 @@ public:
     const THashValue& operator  * () const { return m_value; }
     const THashValue* operator -> () const { return &m_value; }
 
-    operator bool () const { return m_planeMask; }
+    operator bool () const { return m_planeMask != 0; }
 
     CHashIterator& operator ++ ();
     CHashIterator operator ++ (int) { CHashIterator x(*this); ++*this; return x; }
@@ -154,7 +154,7 @@ inline CHashIterator::CHashIterator( const CHashGenerator& generator, TPlaneMask
     m_baseMask( baseMask )
 {
     x_SearchFirstAmbiguousPosition();
-    m_status = ( m_hashMask & m_value ) >> (2 * m_position);
+    m_status = int( ( m_hashMask & m_value ) >> (2 * m_position) );
 }
 
 inline void CHashIterator::x_ResetPosition()
@@ -162,7 +162,7 @@ inline void CHashIterator::x_ResetPosition()
     m_hashMask = 0x3;
     m_planeMask = 1;
     x_SearchFirstAmbiguousPosition();
-    m_status = (m_hashMask & m_generator.m_hashCode.GetHashValue()) >> (2 * m_position);
+    m_status = int( (m_hashMask & m_generator.m_hashCode.GetHashValue()) >> (2 * m_position) );
 }
 
 inline bool CHashIterator::x_NextBaseCallAtPosition()
@@ -194,7 +194,7 @@ inline CHashIterator& CHashIterator::operator ++ ()
         m_hashMask  <<= CHashCode::kBitsPerBase;
         ++m_position;
         if( m_planeMask & ambMask ) {
-            m_status = (m_value & m_hashMask) >> (2 * m_position);
+            m_status = int( (m_value & m_hashMask) >> (2 * m_position) );
             if( x_NextBaseCallAtPosition() ) {
                 x_ResetPosition();
                 return *this;

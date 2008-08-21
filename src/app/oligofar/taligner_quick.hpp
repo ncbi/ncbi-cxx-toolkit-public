@@ -72,7 +72,7 @@ inline void TAligner_quick<CQuery,CSubject>::Align( int flags )
             for( CQuery QQ(q + wordsize) ;qq < QQ; ++qq ) hq.AddBaseMask( CNcbi8naBase( *qq ) );
             for( int i = 0; i < m_wordcount && qq < Q; ++i, hq.AddBaseMask( CNcbi8naBase( *++qq ) ) ) {
                 for( fourplanes::CHashIterator iq( hq, mask, mask ); iq; ++iq ) {
-                    qwords.push_back( make_pair( i, *iq ) );
+                    qwords.push_back( make_pair( i, unsigned( *iq ) ) );
                 }
 			}
             fourplanes::CHashGenerator hs( wordsize );

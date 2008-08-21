@@ -69,7 +69,7 @@ public:
     void ForEach1q( unsigned w, Uint8 ncbi4na, Callback& callback, 
                     unsigned m = 0, Uint8 a = 1, unsigned h = 0 ) const {
         w = (w - 1) % 4 + 1;
-        unsigned x = ncbi4na & ((1<<(4*w))-1);
+        unsigned x = unsigned( ncbi4na & ((1<<(4*w))-1) );
 		const TEntry& e = GetEntry( x, w );
         Uint8 ai = a * e.GetAlternatives();
 		if( ai == 0 || ai > m_maxAlt ) return;
@@ -84,7 +84,7 @@ public:
     void ForEach2q( unsigned w, Uint8 ncbi4na, Callback& callback,
                     unsigned m = 0, Uint8 a = 1, unsigned h = 0 ) const {
         w = (w - 1) % 4 + 1;
-        unsigned x = (ncbi4na >> 16) & ((1<<(4*w))-1);
+        unsigned x = unsigned( (ncbi4na >> 16) & ((1<<(4*w))-1) );
 		const TEntry& e = GetEntry( x, w );
         Uint8 ai = a * e.GetAlternatives();
 		if( ai == 0 || ai > m_maxAlt ) return;
@@ -100,7 +100,7 @@ public:
     void ForEach3q( unsigned w, Uint8 ncbi4na, Callback& callback,
                     unsigned m = 0, Uint8 a = 1, unsigned h = 0 ) const {
         w = (w - 1) % 4 + 1;
-        unsigned x = (ncbi4na >> 32) & ((1<<(4*w))-1);
+        unsigned x = unsigned( (ncbi4na >> 32) & ((1<<(4*w))-1) );
 		const TEntry& e = GetEntry( x, w );
         Uint8 ai = a * e.GetAlternatives();
 		if( ai == 0 || ai > m_maxAlt ) return;
@@ -115,7 +115,7 @@ public:
     template<class Callback>
     void ForEach4q( unsigned w, Uint8 ncbi4na, Callback& callback, unsigned m = 0 ) const {
         w = (w - 1) % 4 + 1;
-        unsigned x = (ncbi4na >> 48) & ((1<<(4*w))-1);
+        unsigned x = unsigned( (ncbi4na >> 48) & ((1<<(4*w))-1) );
 		const TEntry& e = GetEntry( x, w );
         Uint8 ai = e.GetAlternatives();
 		if( ai == 0 || ai > m_maxAlt ) return;

@@ -183,17 +183,17 @@ inline int CBitHacks::BitCount1( Uint1 x )
 
 inline int CBitHacks::BitCount2( Uint2 x )
 {
-    return BitCount1( x ) + BitCount1( x >> 8 );
+    return BitCount1( Uint1( x ) ) + BitCount1( x >> 8 );
 }
 
 inline int CBitHacks::BitCount4( Uint4 x )
 {
-    return BitCount2( x ) + BitCount2( x >> 16 );
+    return BitCount2( Uint2( x ) ) + BitCount2( x >> 16 );
 }
 
 inline int CBitHacks::BitCount8( Uint8 x )
 {
-    return BitCount4( x ) + BitCount4( x >> 32 );
+    return BitCount4( Uint4( x ) ) + BitCount4( Uint4( x >> 32 ) );
 }
 
 #ifndef _WIN32
@@ -218,25 +218,25 @@ inline word CBitHacks::x_SwapBits( word w, int shift )
 
 inline Uint1 CBitHacks::ReverseBits1( Uint1 x ) 
 {
-    x = x_SwapBits<Uint1>( x, 0x01, kPattern_02 );
-    x = x_SwapBits<Uint1>( x, 0x02, kPattern_04 );
+    x = x_SwapBits<Uint1>( x, Uint1( 0x01 ), Uint1( kPattern_02 ) );
+    x = x_SwapBits<Uint1>( x, Uint1( 0x02 ), Uint1( kPattern_04 ) );
     return x_SwapBits( x, 0x04 );
 }
 
 inline Uint2 CBitHacks::ReverseBits2( Uint2 x ) 
 {
-    x = x_SwapBits<Uint2>( x, 0x01, kPattern_02 );
-    x = x_SwapBits<Uint2>( x, 0x02, kPattern_04 );
-    x = x_SwapBits<Uint2>( x, 0x04, kPattern_08 );
+    x = x_SwapBits<Uint2>( x, Uint2( 0x01 ), Uint2( kPattern_02 ) );
+    x = x_SwapBits<Uint2>( x, Uint2( 0x02 ), Uint2( kPattern_04 ) );
+    x = x_SwapBits<Uint2>( x, Uint2( 0x04 ), Uint2( kPattern_08 ) );
     return x_SwapBits( x, 0x08 );
 }
 
 inline Uint4 CBitHacks::ReverseBits4( Uint4 x ) 
 {
-    x = x_SwapBits<Uint4>( x, 0x01, kPattern_02 );
-    x = x_SwapBits<Uint4>( x, 0x02, kPattern_04 );
-    x = x_SwapBits<Uint4>( x, 0x04, kPattern_08 );
-    x = x_SwapBits<Uint4>( x, 0x08, kPattern_16 );
+    x = x_SwapBits<Uint4>( x, Uint4( 0x01 ), Uint4( kPattern_02 ) );
+    x = x_SwapBits<Uint4>( x, Uint4( 0x02 ), Uint4( kPattern_04 ) );
+    x = x_SwapBits<Uint4>( x, Uint4( 0x04 ), Uint4( kPattern_08 ) );
+    x = x_SwapBits<Uint4>( x, Uint4( 0x08 ), Uint4( kPattern_16 ) );
     return x_SwapBits( x, 0x10 );
 }
 
@@ -252,22 +252,22 @@ inline Uint8 CBitHacks::ReverseBits8( Uint8 x )
 
 inline Uint1 CBitHacks::ReverseBitPairs1( Uint1 x ) 
 {
-    x = x_SwapBits<Uint1>( x, 0x02, kPattern_04 );
+    x = x_SwapBits<Uint1>( x, Uint1( 0x02 ), Uint1( kPattern_04 ) );
     return x_SwapBits( x, 0x04 );
 }
 
 inline Uint2 CBitHacks::ReverseBitPairs2( Uint2 x ) 
 {
-    x = x_SwapBits<Uint2>( x, 0x02, kPattern_04 );
-    x = x_SwapBits<Uint2>( x, 0x04, kPattern_08 );
+    x = x_SwapBits<Uint2>( x, Uint2( 0x02 ), Uint2( kPattern_04 ) );
+    x = x_SwapBits<Uint2>( x, Uint2( 0x04 ), Uint2( kPattern_08 ) );
     return x_SwapBits( x, 0x08 );
 }
 
 inline Uint4 CBitHacks::ReverseBitPairs4( Uint4 x ) 
 {
-    x = x_SwapBits<Uint4>( x, 0x02, kPattern_04 );
-    x = x_SwapBits<Uint4>( x, 0x04, kPattern_08 );
-    x = x_SwapBits<Uint4>( x, 0x08, kPattern_16 );
+    x = x_SwapBits<Uint4>( x, Uint4( 0x02 ), Uint4( kPattern_04 ) );
+    x = x_SwapBits<Uint4>( x, Uint4( 0x04 ), Uint4( kPattern_08 ) );
+    x = x_SwapBits<Uint4>( x, Uint4( 0x08 ), Uint4( kPattern_16 ) );
     return x_SwapBits( x, 0x10 );
 }
 
@@ -339,7 +339,7 @@ inline Uint4 CBitHacks::DuplicateBits<Uint4>( Uint4 in )
 template<>
 inline Uint8 CBitHacks::DuplicateBits<Uint8>( Uint8 in ) 
 {
-    return DuplicateBits<Uint4>( in ) | ( ( (Uint8)DuplicateBits<Uint4>( in >> 16 ) ) << 32 );
+    return DuplicateBits<Uint4>( Uint4( in ) ) | ( ( (Uint8)DuplicateBits<Uint4>( Uint4( in >> 16 ) ) ) << 32 );
 }
 
 END_OLIGOFAR_SCOPES

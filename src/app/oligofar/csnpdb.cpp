@@ -74,11 +74,11 @@ bool CSnpDbCreator::Insert( const string& id, int pos, double a, double c, doubl
     ParseSeqId( id );
 
     m_pos = pos;
-    m_prob[0] = a/total;
-    m_prob[1] = c/total;
-    m_prob[2] = g/total;
-    m_prob[3] = t/total;
-    return CBDB_File::Insert();
+    m_prob[0] = float( a/total );
+    m_prob[1] = float( c/total );
+    m_prob[2] = float( g/total );
+    m_prob[3] = float( t/total );
+    return CBDB_File::Insert() == eBDB_Ok;
 }
 
 int CSnpDb::First( const string& seqId )

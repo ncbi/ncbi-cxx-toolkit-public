@@ -31,7 +31,7 @@ public:
 	void SetGuideFile( const CGuideFile& guideFile ) { m_guideFile = &guideFile; }
 	string GetSubjectId( int ord ) const;
 	void FormatHit( const CHit * hit ) const;
-	bool ShouldFormatAllHits()  const { return m_flags & fReportAllHits; }
+	bool ShouldFormatAllHits()  const { return ( m_flags & fReportAllHits ) != 0; }
     void SetAligner( IAligner * aligner ) { m_aligner = aligner; }
 protected:
 	void FormatCore( const CHit * hit ) const;

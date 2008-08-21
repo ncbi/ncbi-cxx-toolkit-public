@@ -12,7 +12,7 @@ template<class THashTable>
 class CHashInserterCbk
 {
 public:
-    void operator() ( Uint4 hash, int mism, int alt ) { 
+    void operator() ( Uint4 hash, int mism, Uint8 alt ) { 
         double c = ComputeComplexity( hash, m_windowSize );
         if( c <= m_maxSimplicity ) {
             m_count ++;
@@ -47,12 +47,12 @@ public:
 	int PopulateHash( THashTable& hashTable ) const {
 		int ret = 0;
         if( (1 << m_component) & m_strands ) {
-			CHashInserterCbk<THashTable> cbkf( hashTable, m_windowLength, m_query, '+', m_offset, m_component, m_maxSimplicity );
+			CHashInserterCbk<THashTable> cbkf( hashTable, m_windowLength, m_query, '+', m_offset, m_component != 0, m_maxSimplicity );
 			m_permutator.ForEach( m_windowLength, m_fwindow, cbkf );
 			ret += cbkf.GetCount();
 		}
 	    if( (1 << (1-m_component)) & m_strands ) {
-			CHashInserterCbk<THashTable> cbkr( hashTable, m_windowLength, m_query, '-', m_offset, m_component, m_maxSimplicity );
+			CHashInserterCbk<THashTable> cbkr( hashTable, m_windowLength, m_query, '-', m_offset, m_component != 0, m_maxSimplicity );
     		Uint8 rwindow = Ncbi4naRevCompl( m_fwindow, m_windowLength );
 			m_permutator.ForEach( m_windowLength, rwindow, cbkr );
 			ret += cbkr.GetCount();

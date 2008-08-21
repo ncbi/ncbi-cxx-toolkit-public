@@ -22,7 +22,7 @@ public:
     string GetSeqId() const;
     
     int    GetPos() const { return m_pos; }
-    int    GetProb( int i ) const { return m_prob[i]; }
+    float  GetProb( int i ) const { return m_prob[i]; }
 
     unsigned GetBase( double cutoff = 0.1 ) const { 
         return 
@@ -84,7 +84,7 @@ public:
     int  First( const string& seqId );
     int  Next();
     
-    bool Ok() const { return m_cursor.get(); }
+    bool Ok() const { return m_cursor.get() != 0; }
 
 protected:
     auto_ptr<CBDB_FileCursor> m_cursor;

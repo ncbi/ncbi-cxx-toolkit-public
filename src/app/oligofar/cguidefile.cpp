@@ -16,13 +16,14 @@ void CGuideFile::AdjustInput( int& fwd, char dir, int& p1, int which ) const
 	--p1;
 }
 
-bool CGuideFile::NextHit( int ordinal, CQuery * query )
+bool CGuideFile::NextHit( Uint8 ordinal, CQuery * query )
 {
     if( m_buff.length() == 0 ) return false;
 
     while( m_buff.length() ) {
         istringstream in( m_buff );
-        int resultType, qord, soid, sord, spos1, mpos1, spos2, mpos2, sfwd1, sfwd2;
+		Uint8 qord;
+        int resultType, soid, sord, spos1, mpos1, spos2, mpos2, sfwd1, sfwd2;
         char mbase1, mbase2, sdir1, sdir2;
 		string sid, qid;
         in >> resultType >> qid >> sid >> spos1 >> sdir1 >> mpos1 >> mbase1;
@@ -69,7 +70,8 @@ bool CGuideFile::NextHit( int ordinal, CQuery * query )
 			AdjustInput( sfwd2, sdir2, spos2, 2 );
 
             if( mpos2 != 0 ) continue;
-            if( sfwd2 ^ sfwd1 != 1 ) continue;
+			// NB: rest of the block should be changed if one wants to make mutual orientation to be configurable
+            if( ( sfwd2 ^ sfwd1 ) != 1 ) continue; 
             if( sfwd1 ) {
                 if( spos1 < spos2 + (int)query->GetLength(1) - GetMaxDist() ) continue;
                 if( spos1 > spos2 + (int)query->GetLength(1) - GetMinDist() ) continue;

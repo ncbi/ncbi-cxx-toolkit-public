@@ -198,7 +198,7 @@ inline CNcbipnaBase::CNcbipnaBase( const CIupacnaBase& b )
 inline CNcbipnaBase::CNcbipnaBase( const CNcbi2naBase& b ) 
 {
     fill( m_base, m_base + 5, 0 );
-    m_base[b] = m_base[4] = 255;
+    m_base[b] = m_base[4] = '\xff';
 }
 
 inline CNcbipnaBase::CNcbipnaBase( const CNcbi4naBase& b ) 
@@ -209,22 +209,22 @@ inline CNcbipnaBase::CNcbipnaBase( const CNcbi4naBase& b )
 inline void CNcbipnaBase::x_Init( const CNcbi8naBase& b ) 
 { 
     fill( m_base, m_base + 5, 0 );
-    if( b & 0x01 ) m_base[0] = 255;
-    if( b & 0x02 ) m_base[1] = 255;
-    if( b & 0x03 ) m_base[2] = 255;
-    if( b & 0x04 ) m_base[3] = 255;
-    m_base[4] = b ? 255 : 0;
+    if( b & 0x01 ) m_base[0] = '\xff';
+    if( b & 0x02 ) m_base[1] = '\xff';
+    if( b & 0x03 ) m_base[2] = '\xff';
+    if( b & 0x04 ) m_base[3] = '\xff';
+    m_base[4] = b ? '\xff' : 0;
 }
 
 inline CNcbipnaBase::CNcbipnaBase( const CNcbiqnaBase& b ) 
 {
-	int val = int( 255 * ( std::pow(10.0,b.GetPhrapScore()/10)) );
+	Uint1 val = Uint1( 255 * ( std::pow(10.0, b.GetPhrapScore() / 10 ) ) );
 	int x = CNcbi2naBase( b );
-	m_base[0] = x-- ? val : 255;
-	m_base[1] = x-- ? val : 255;
-	m_base[2] = x-- ? val : 255;
-	m_base[3] = x-- ? val : 255;
-	m_base[4] = 255;
+	m_base[0] = x-- ? val : '\xff';
+	m_base[1] = x-- ? val : '\xff';
+	m_base[2] = x-- ? val : '\xff';
+	m_base[3] = x-- ? val : '\xff';
+	m_base[4] = '\xff';
 }
 
 ////////////////////////////////////////////////////////////////////////
