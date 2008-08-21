@@ -1,0 +1,134 @@
+#!/bin/bash
+#
+# Author: Pavel Ivanov
+#
+#
+# This script will build and deploy test_stat_load and test_stat_ext.cgi into standard locations
+# of these programs. Script should be launched under coremake account on coremake2 or any other
+# machine that can freely (without password) log into coremake2 and beastie computers. Script
+# should be launched in the following way:
+#
+# install_all.sh 0.0.0 -m "JIRA ticket"
+#
+# Where 0.0.0 is version of the release that should be deployed.
+#
+
+
+TMP_DIR="/tmp/$$"
+
+
+declare -a PLATF_FILE_MASKS
+PLATF_FILE_MASKS=(   "*linux*gizmo1*"
+                     "*Win64*"
+                     "*linux*coredev1*"
+                     "*freebsd*"
+                     "*darwin*"
+                     "*WorkShop*make1sx*"
+                     "*WorkShop*make1ss*")
+declare -a PLATF_SERVERS
+PLATF_SERVERS=(      "coremake2"
+                     "coremake2"
+                     "coremake2"
+                     "beastie"
+                     "coremake2"
+                     "coremake2"
+                     "coremake2")
+declare -a PLATF_NCBI_BIN_DIRS
+PLATF_NCBI_BIN_DIRS=("/net/coleman/vol/export3/lnx64_netopt/ncbi_tools/bin/_production/CPPCORE"
+                     "/net/snowman/vol/export2/win-coremake/Builds/bin"
+                     "/net/snowman/vol/export2/lnx_netopt/ncbi_tools/bin/_production/CPPCORE"
+                     "/netopt/ncbi_tools/bin/_production/CPPCORE"
+                     "/net/coleman/vol/export3/darwin/ncbi_tools/bin/_production/CPPCORE"
+                     "/net/coleman/vol/export3/ncbi_tools.solaris/i386-5.10/bin/_production/CPPCORE"
+                     "/net/coleman/vol/export3/ncbi_tools.solaris/sparc-5.10/bin/_production/CPPCORE")
+
+CGI_BIN_DIR="/net/snowman/vol/export2/iweb/ieb/ToolBox/STAT/test_stat"
+
+
+VERSION=$1
+shift
+if [[ -z "$VERSION" ]]; then
+    echo "Usage: install_all.sh <version> [parameters to prepare_release]"
+    exit 1
+fi
+
+
+mkdir -p "$TMP_DIR"
+cd $TMP_DIR || exit 2
+echo "Working in directory '${TMP_DIR}'"
+
+echo "Building release version $VERSION"
+
+prepare_release build dbtest "$VERSION" "$@" || exit 3
+PREPARE_DIR="$(find . -type d -name "prepare_release*")"
+if [[ ! -d "$PREPARE_DIR" ]]; then
+    echo "Cannot find directory made by prepare_release build!!!"
+    exit 4
+fi
+cd "$PREPARE_DIR"
+
+
+for ((i = 0; i < 7; ++i)); do
+    echo "Deploying ${PLATF_FILE_MASKS[$i]}"
+
+    PLATF_FILE="$(find . -type f -name "${PLATF_FILE_MASKS[$i]}.tar.gz")"
+    if [[ -z "$PLATF_FILE" ]]; then
+        echo "Cannot find file for mask '${PLATF_FILE_MASKS[$i]}.tar.gz'"
+        exit 5
+    fi
+
+    PLATF_DIR="${PLATF_FILE%%.tar.gz}"
+    mkdir -p "${PLATF_DIR}"
+    tar -zxf "${PLATF_FILE}" -C "${PLATF_DIR}" || exit 6
+
+    EXE=""
+    if [[ "${PLATF_FILE_MASKS[$i]}" == *"Win64"* ]]; then
+        EXE=".exe"
+    fi
+
+    cat "${PLATF_DIR}/bin/test_stat_load${EXE}" | ssh coremake@"${PLATF_SERVERS[$i]}" "cat >${PLATF_NCBI_BIN_DIRS[$i]}/test_stat_load${EXE}" || exit 7
+
+
+    if [[ "${PLATF_FILE_MASKS[$i]}" == *"gizmo"* ]]; then
+        echo "Deploying cgi interface"
+
+        cp "${PLATF_DIR}/bin/test_stat_ext.cgi" "${CGI_BIN_DIR}/" || exit 8
+        cp -R "${PLATF_DIR}/bin/xsl/" "${CGI_BIN_DIR}/" || exit 9
+        cp -R "${PLATF_DIR}/bin/overlib/" "${CGI_BIN_DIR}/" || exit 10
+
+        touch "${CGI_BIN_DIR}/.sink_subtree"
+    fi
+
+    rm -rf "${PLATF_DIR}"
+done
+
+
+echo "Going to cruncher"
+
+ssh coremake@cruncher "bash -s" <<EOF || exit 11
+
+mkdir -p "$TMP_DIR"
+cd "$TMP_DIR" || exit 1
+
+svn co "https://svn.ncbi.nlm.nih.gov/repos/toolkit/release/dbtest/${VERSION}" ./ || exit 2
+CC=cc CXX=CC ./configure --with-dll --without-debug --without-mt --with-flat-makefile || exit 3
+gmake -j 5 || exit 4
+
+for i in \`find ./c++/MIPSpro73-ReleaseDLL/lib/ -name "*.so" | egrep -v "odbc_ftds64|sybdb_ftds64|test_boost|test_mt|xcgi|xfcgi|xthrserv"\`; do
+    cp "\$i" "\$NCBI/bin/_production/CPPCORE/" || exit 4
+done
+cp "./c++/MIPSpro73-ReleaseDLL/bin/test_stat_load" "\$NCBI/bin/_production/CPPCORE/" || exit 5
+cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "\$NCBI/bin/_production/CPPCORE/" || exit 6
+
+cd
+rm -rf "$TMP_DIR"
+
+EOF
+
+echo "Successfully returned from cruncher"
+
+
+cd
+rm -rf "$TMP_DIR"
+
+echo "Everything installed successfully"
