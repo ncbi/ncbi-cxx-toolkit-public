@@ -21,9 +21,9 @@ public: \
 	\
 protected: \
     template<class CQuery> \
-    void Align( const char * q, int qlen, const char * s, int slen, int flags ); \
+    void AlignQ( const char * q, int qlen, const char * s, int slen, int flags ); \
     template<class CQuery, class CSubject> \
-    void Align( const char * q, int qlen, const char * s, int slen, int flags ); \
+    void AlignQS( const char * q, int qlen, const char * s, int slen, int flags ); \
 protected: \
     PvtType m_ ## PvtObj;                      \
 };
@@ -35,23 +35,23 @@ inline void CAligner_ ## ALGO::Align( CSeqCoding::ECoding qc, const char * q, in
     ASSERT( sc == CSeqCoding::eCoding_ncbi8na ); \
     ASSERT( qlen >= 0 ); \
     switch( qc ) { \
-    case CSeqCoding::eCoding_ncbipna: Align<TQueryNcbipnaRef>( q, qlen, s, slen, flags ); break; \
-    case CSeqCoding::eCoding_ncbi8na: Align<TQueryNcbi8naRef>( q, qlen, s, slen, flags ); break; \
+    case CSeqCoding::eCoding_ncbipna: AlignQ<TQueryNcbipnaRef>( q, qlen, s, slen, flags ); break; \
+    case CSeqCoding::eCoding_ncbi8na: AlignQ<TQueryNcbi8naRef>( q, qlen, s, slen, flags ); break; \
     default: THROW( logic_error, "Query coding other then ncbi8na or ncbipna is not implemented" ); \
     } \
 } \
  \
 template<class CQuery> \
-inline void CAligner_ ## ALGO::Align( const char * q, int qlen, const char * s, int slen, int flags ) \
+inline void CAligner_ ## ALGO::AlignQ( const char * q, int qlen, const char * s, int slen, int flags ) \
 { \
     if( slen > 0 ) \
-        Align<CQuery,TSubjectRefFwd>( q, qlen, s, slen, flags ); \
+        AlignQS<CQuery,TSubjectRefFwd>( q, qlen, s, slen, flags ); \
     else \
-        Align<CQuery,TSubjectRefRev>( q, qlen, s, slen, flags ); \
+        AlignQS<CQuery,TSubjectRefRev>( q, qlen, s, slen, flags ); \
 } \
  \
 template<class CQuery, class CSubject> \
-inline void CAligner_ ## ALGO::Align( const char * q, int qlen, const char * s, int slen, int flags ) \
+inline void CAligner_ ## ALGO::AlignQS( const char * q, int qlen, const char * s, int slen, int flags ) \
 { \
     TAligner_ ## ALGO<CQuery,CSubject> aligner( m_ ## PvtObj ); \
     aligner.SetAlignerBase( &m_alignerBase );     \
