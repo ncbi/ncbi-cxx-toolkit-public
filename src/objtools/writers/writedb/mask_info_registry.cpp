@@ -114,7 +114,6 @@ CMaskInfoRegistry::Add(EBlast_filter_program program,
         string msg("Invalid filtering program: ");
         msg += NStr::IntToString((int)program);
         NCBI_THROW(CWriteDBException, eArgErr, msg);
-        break;
     }
 
     m_UsedIds.insert(algo_id);

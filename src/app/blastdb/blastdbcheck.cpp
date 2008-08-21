@@ -403,7 +403,7 @@ public:
     {
     }
     
-    virtual bool DoTest(CSeqDB & db, TSeen & seen)
+    virtual bool DoTest(CSeqDB & db, TSeen & /*seen*/)
     {
         // Here I get more values than I actually have useful tests
         // for, because I want to trigger exceptions due to binary

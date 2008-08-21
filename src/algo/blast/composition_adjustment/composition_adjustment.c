@@ -945,7 +945,7 @@ s_GetPssmScoreProbs(double ** scoreProb, int * obs_min, int * obs_max,
 
 /* Documented in composition_adjustment.h. */
 void
-Blast_Int4MatrixFromFreq(Int4 **matrix, int alphsize, 
+Blast_Int4MatrixFromFreq(int **matrix, int alphsize, 
                          double ** freq, double Lambda)
 {
     /* A row of the matrix in double precision */
@@ -1441,7 +1441,7 @@ Blast_CompositionMatrixAdj(int ** matrix,
 
 /* Documented in composition_adjustment.h. */
 int
-Blast_AdjustScores(Int4 ** matrix,
+Blast_AdjustScores(int ** matrix,
                    const Blast_AminoAcidComposition * query_composition,
                    int queryLength,
                    const Blast_AminoAcidComposition * subject_composition,

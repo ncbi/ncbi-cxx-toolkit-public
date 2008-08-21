@@ -70,6 +70,8 @@ if ($application eq "blastall") {
     $revision =~ s/\$Revision: | \$//g;
     print "$0 version $revision\n";
     goto CLEAN_UP;
+} elsif ($application =~ /help/) {
+    pod2usage({-exitval => 1, -verbose => 2});
 } else {
     die "Application: '$application' is not supported\n";
 }
@@ -970,13 +972,13 @@ sub handle_fastacmd
         $retval .= "-info ";
     }
     if (defined $opt_a and (length($opt_a) == 0 or $opt_a =~ /t/i)) {
-        $retval .= "-get_dups T ";
+        $retval .= "-get_dups ";
     }
     if (defined $opt_t and (length($opt_t) == 0 or $opt_t =~ /t/i)) {
-        $retval .= "-target_only T ";
+        $retval .= "-target_only ";
     }
     if (defined $opt_c and (length($opt_c) == 0 or $opt_c =~ /t/i)) {
-        $retval .= "-ctrl_a T ";
+        $retval .= "-ctrl_a ";
     }
     return $retval;
 }
@@ -1051,6 +1053,7 @@ sub handle_formatdb
     }
     $retval .= "-gilist $opt_F "            if (defined $opt_F);
     $retval .= "-logfile $opt_l "           if (defined $opt_l);
+    $retval .= "-taxid-map $opt_T "           if (defined $opt_T);
 
     if (defined $opt_o and (length($opt_o) == 0 or $opt_o =~ /t/i)) {
         $retval .= "-parse_seqids ";
@@ -1070,10 +1073,6 @@ sub handle_formatdb
     if (defined $opt_V) {
         print STDERR "Warning: -V option is not supported\n";
     }
-    if (defined $opt_T) {
-        print STDERR "Warning: -T option is not supported, please use " .
-            "the -taxid-map option to multisource\n";
-    }
     if (defined $opt_v) {
         print STDERR "Warning: -v option is not supported, please use " .
             "the -max_file_sz option to makeblastdb\n";
@@ -1092,6 +1091,7 @@ toolkit's implementation to NCBI C++ toolkit's implementation.
 legacy_blast.pl <C toolkit command line program and arguments> [--print_only] 
 [--path /path/to/binaries] 
 legacy_blast.pl [--version]
+legacy_blast.pl [--help]
 
 =head1 OPTIONS
 

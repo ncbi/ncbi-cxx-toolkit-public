@@ -157,7 +157,7 @@ public:
     }
 
     /// @inheritDoc
-    int GetLengthAdjustment(int query_index) const {
+    int GetLengthAdjustment(int /*query_index*/) const {
         /// @todo FIXME no way to retrieve this
         /// given the data available
         return 0;

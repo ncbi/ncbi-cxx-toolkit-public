@@ -93,6 +93,7 @@ CBlastHitMatrix::CBlastHitMatrix(const list< CRef< CSeq_align > > &seqAligns,
     m_Width = width;
     m_Format = format;
     m_FileOut = false;
+    m_Thumbnail = false;
 }
 
 
@@ -135,7 +136,11 @@ void CBlastHitMatrix::x_PreProcess(void)
 	m_DataSource->SelectDefaultIds();
 
     x_InitPort();       
-        
+    
+    m_Renderer.ShowRulers(!m_Thumbnail);
+    m_Renderer.ShowGrid(!m_Thumbnail);
+    CRgbaColor cl("236 255 243");
+    m_Renderer.SetBackgroundColor(cl);
     m_Renderer.Update(m_DataSource.GetPointer(), m_Port);
 }
 
@@ -146,11 +151,19 @@ void CBlastHitMatrix::x_Render(void)
 {
     if(m_Aligns.size() > 0) {
         m_Renderer.Resize(m_Width, m_Height, m_Port);
-        m_Renderer.GetBottomRuler().SetDisplayOptions(CRuler::fShowTextLabel);        
-        m_Renderer.GetLeftRuler().SetDisplayOptions(CRuler::fShowTextLabel);
-
-        m_Renderer.GetBottomRuler().SetTextLabel(m_QueryID);        
-        m_Renderer.GetLeftRuler().SetTextLabel(m_SubjectID);
+        if(m_Thumbnail) {
+            m_Renderer.GetBottomRuler().SetDisplayOptions(CRuler::fHideLabels);        
+            m_Renderer.GetLeftRuler().SetDisplayOptions(CRuler::fHideLabels);            
+            //m_Renderer.SetBackGroundColor(CRgbaColor("211 223 245"));
+            //m_Renderer.SetBackGroundColor(CRgbaColor("238 238 238"));
+        }
+        else {
+            m_Renderer.GetBottomRuler().SetDisplayOptions(CRuler::fShowTextLabel);        
+            m_Renderer.GetLeftRuler().SetDisplayOptions(CRuler::fShowTextLabel);
+            m_Renderer.GetBottomRuler().SetTextLabel(m_QueryID);        
+            m_Renderer.GetLeftRuler().SetTextLabel(m_SubjectID);
+        }
+        
 
         //m_Renderer.GetBottomRuler().SetColor(CRuler::eText,CRgbaColor(24,0,0));        
         //m_Renderer.GetLeftRuler().SetColor(CRuler::eBackground,CRgbaColor(175,238,238));
@@ -158,7 +171,7 @@ void CBlastHitMatrix::x_Render(void)
         //m_Renderer.GetLeftRuler().SetColor(CRuler::eBackground,CRgbaColor("173 255 47"));
         
         // adjust visible space
-        m_Port.SetViewport(TVPRect(0, 0, m_Width, m_Height)); ///### this have to be eliminated
+        m_Port.SetViewport(TVPRect(10, 10, m_Width, m_Height)); ///### this have to be eliminated
         m_Port.ZoomAll();
 
         m_Renderer.Render(m_Port);
@@ -219,6 +232,8 @@ bool CBlastHitMatrix::x_RenderImage(void)
     }    
     return success;
 }
+
+
 
 END_NCBI_SCOPE
 

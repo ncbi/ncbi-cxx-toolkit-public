@@ -38,6 +38,7 @@
 #include <corelib/plugin_manager_store.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <algo/blast/api/remote_blast.hpp>  // for CRemoteBlast::GetSequenceInfo
 
 //=======================================================================
 // RemoteBlastDataLoader Public interface 

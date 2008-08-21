@@ -51,7 +51,6 @@ static char const rcsid[] =
 #include <util/regexp.hpp>
 #include <util/util_exception.hpp>
 #include <objtools/writers/writedb/build_db.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <algo/blast/blastinput/blast_input.hpp>
 #include "../blast/blast_app_util.hpp"
@@ -103,8 +102,6 @@ private:
     
     CNcbiOstream * m_LogFile;
     
-    CRef<CObjectManager> m_ObjMgr;
-
     CRef<CBuildDatabase> m_DB;
     
     CRef<CMaskedRangeSet> m_Ranges;
@@ -209,6 +206,19 @@ void CMakeBlastDBApp::Init()
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
                             "Maximum file size for BLAST database files",
                             CArgDescriptions::eString, "1GB");
+
+    arg_desc->SetCurrentGroup("Taxonomy options");
+    arg_desc->AddOptionalKey("taxid", "TaxID", 
+                             "Taxonomy ID to assign to all sequences",
+                             CArgDescriptions::eInteger);
+    arg_desc->SetConstraint("taxid", new CArgAllowValuesGreaterThanOrEqual(0));
+    arg_desc->SetDependency("taxid", CArgDescriptions::eExcludes, "taxid_map");
+
+    arg_desc->AddOptionalKey("taxid_map", "TaxIDMapFile",
+             "Text file mapping sequence IDs to taxonomy IDs.\n"
+             "Format:<SequenceId> <TaxonomyId><newline>",
+             CArgDescriptions::eInputFile);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -588,19 +598,6 @@ void CMakeBlastDBApp::x_BuildDatabase()
     CWriteDB::EIndexType indexing = (CWriteDB::EIndexType)
         (CWriteDB::eDefault | (hash_index ? CWriteDB::eAddHash : 0));
 
-    if (m_ObjMgr.Empty()) {
-        m_ObjMgr.Reset(CObjectManager::GetInstance());
-        try {
-            CGBLoaderParams params("id2");
-            params.SetPreopenConnection(CGBLoaderParams::ePreopenNever);
-            CGBDataLoader::RegisterInObjectManager(*m_ObjMgr,
-                                                params,
-                                                CObjectManager::eDefault);
-        } catch (const CException& e) {
-            ERR_POST(Warning << e.GetMsg());
-        }
-    }
-        
     m_DB.Reset(new CBuildDatabase(dbname,
                                   title,
                                   is_protein,
@@ -629,6 +626,18 @@ void CMakeBlastDBApp::x_BuildDatabase()
                << Uint8ToString_DataSize(bytes) << endl;
     
     m_DB->SetMaxFileSize(bytes);
+
+    if (args["taxid"].HasValue()) {
+        _ASSERT( !args["taxid_map"].HasValue() );
+        CRef<CTaxIdSet> taxids(new CTaxIdSet(args["taxid"].AsInteger()));
+        m_DB->SetTaxids(*taxids);
+    } else if (args["taxid_map"].HasValue()) {
+        _ASSERT( !args["taxid"].HasValue() );
+        CRef<CTaxIdSet> taxids(new CTaxIdSet());
+        taxids->SetMappingFromFile(args["taxid_map"].AsInputFile());
+        m_DB->SetTaxids(*taxids);
+    }
+
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )

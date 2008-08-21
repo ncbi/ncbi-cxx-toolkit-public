@@ -1235,7 +1235,7 @@ void RemapToQueryLoc(CRef<CSeq_align> sar, const CSeq_loc & query)
 
 /// Remap subject alignment if its location specified the reverse strand or
 /// a starting location other than the beginning of the sequence.
-/// @param subj_aligns Discontinuous Seq-align containing HSPs for a given 
+/// @param subj_aligns Seq-align containing HSPs for a given 
 /// query-subject alignment [in|out]
 /// @param subj_loc Location of the subject sequence searched. [in]
 static void 
@@ -1244,15 +1244,6 @@ s_RemapToSubjectLoc(CRef<CSeq_align> & subj_aligns, const CSeq_loc& subj_loc)
     const int kSubjDimension = 1;
     _ASSERT(subj_loc.IsInt() || subj_loc.IsWhole());
     subj_aligns.Reset(RemapAlignToLoc(*subj_aligns, kSubjDimension, subj_loc));
-    
-
-    /// Iterate over this subject's HSPs...
-/*
-    NON_CONST_ITERATE(CSeq_align_set::Tdata, hsp, 
-                      subj_aligns->SetSegs().SetDisc().Set()) {
-        hsp->Reset(RemapAlignToLoc(**hsp, kSubjDimension, subj_loc));
-    }
-*/
 }
 
 /// Retrieve the minimum and maximum subject offsets that span all HSPs in the
@@ -1517,11 +1508,11 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                                                    hit_align);
             }
             seq_aligns.Reset(new CSeq_align_set());
+            CConstRef<CSeq_loc> subj_loc = seqinfo_src.GetSeqLoc(subj_index);
             NON_CONST_ITERATE(vector<CRef<CSeq_align > >, iter, hit_align) {
                 RemapToQueryLoc(*iter, *seqloc);
                 if ( !is_ooframe )
-                    s_RemapToSubjectLoc(*iter, 
-                                    *seqinfo_src.GetSeqLoc(subj_index));
+                    s_RemapToSubjectLoc(*iter, *subj_loc); 
                 seq_aligns->Set().push_back(*iter);
             }
         } else {
@@ -1531,6 +1522,35 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
     }
 
     return retval;
+}
+
+/// Transpose the (linearly organized) seqalign set matrix from
+/// (q1 s1 q2 s1 ... qN s1, ..., q1 sM q2 sM ... qN sM) to
+/// (q1 s1 q1 s2 ... q1 sM, ..., qN s1 qN s2 ... qN sM)
+/// this method only reorganizes the seqalign sets, does not copy them.
+/// @param alnvec data structure to reorganize [in]
+/// @param num_queries number of queries [in]
+/// @param num_subjects number of subjects [in]
+/// @retval transposed data structure
+static TSeqAlignVector 
+s_TransposeSeqAlignVector(const TSeqAlignVector& alnvec,
+                          const size_t num_queries,
+                          const size_t num_subjects)
+{
+    TSeqAlignVector result_alnvec;
+
+    for (size_t iQuery = 0; iQuery < num_queries; iQuery++)
+    {
+        for (size_t iSubject = 0; iSubject < num_subjects; iSubject++)
+        {
+            size_t iLinearIndex = iSubject * num_queries + iQuery;
+            CRef<CSeq_align_set> aln_set = alnvec[iLinearIndex];
+            result_alnvec.push_back(aln_set);
+        }
+    }
+
+    _ASSERT(result_alnvec.size() == alnvec.size());
+    return result_alnvec;
 }
 
 static TSeqAlignVector
@@ -1576,7 +1596,8 @@ s_BlastResults2SeqAlignSequenceCmp_OMF(const BlastHSPResults* results,
         }
     }
     _ASSERT(retval.size() == query_data.GetNumQueries() * seqinfo_src->Size());
-    return retval;
+    return s_TransposeSeqAlignVector(retval, query_data.GetNumQueries(),
+                                     seqinfo_src->Size());
 }
 
 static TSeqAlignVector

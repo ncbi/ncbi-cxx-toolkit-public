@@ -591,7 +591,7 @@ bool CShowBlastDefline::x_CheckForStructureLink()
           const CRef<CBlast_def_line_set> bdlRef = CBlastFormatUtil::GetBlastDefline(handle);
           const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
           for(list< CRef< CBlast_def_line > >::const_iterator bdl_iter = bdl.begin();
-              bdl_iter != bdl.end() & struct_linkout == false; bdl_iter++){
+              bdl_iter != bdl.end() && struct_linkout == false; bdl_iter++){
               if ((*bdl_iter)->IsSetLinks())
               {
                  for (list< int >::const_iterator link_iter = (*bdl_iter)->GetLinks().begin();

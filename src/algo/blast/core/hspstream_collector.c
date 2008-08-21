@@ -311,7 +311,7 @@ s_BlastHSPListCollectorMerge(SSplitQueryBlk *squery_blk,
    BlastHSPResults *results2 = stream2->results;
    Int4 contexts_per_query = BLAST_GetNumberOfContexts(stream2->program);
 #ifdef _DEBUG
-   size_t num_queries = 0, num_ctx = 0, num_ctx_offsets = 0;
+   Int4 num_queries = 0, num_ctx = 0, num_ctx_offsets = 0;
    Int4 max_ctx;
 #endif
 

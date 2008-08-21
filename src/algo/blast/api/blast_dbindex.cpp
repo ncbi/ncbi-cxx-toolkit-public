@@ -916,26 +916,9 @@ static Int2 s_IDbGetSequence( void * handle, BlastSeqSrcGetSeqArg * seq_arg )
 {
     CIndexedDb::TThreadLocal * idb_handle = (CIndexedDb::TThreadLocal *)handle;
     CRef< CIndexedDb > idb = idb_handle->idb_;
-
-    if( !idb->SeqFromIndex() || seq_arg->encoding != 0 ) {
-        BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
-        void * fw_handle = s_GetForwardSeqDb( handle );
-        return _BlastSeqSrcImpl_GetGetSequence( fw_seqsrc )( fw_handle, 
-                                                             seq_arg );
-    }
-    else {
-        if( seq_arg->seq == 0 ) {
-            BLAST_SequenceBlk * new_seq_blk;
-            if( BlastSeqBlkNew( &new_seq_blk ) < 0 ) return -1;
-            seq_arg->seq = new_seq_blk;
-        }
-
-        BlastSequenceBlkClean( seq_arg->seq );
-        seq_arg->seq->oid = seq_arg->oid;
-        seq_arg->seq->sequence = idb->GetSeqData( seq_arg->oid );
-        seq_arg->seq->length = idb->GetSeqLength( seq_arg->oid );
-        return 0;
-    }
+    BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
+    void * fw_handle = s_GetForwardSeqDb( handle );
+    return _BlastSeqSrcImpl_GetGetSequence( fw_seqsrc )( fw_handle, seq_arg );
 }
 
 //------------------------------------------------------------------------------

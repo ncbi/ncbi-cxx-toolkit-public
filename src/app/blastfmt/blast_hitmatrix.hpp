@@ -52,6 +52,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
 ///This class displays the image of the hitmatrix view for blast 2 seq results
 ///
 ///Usage:
@@ -99,6 +100,12 @@ public:
     ///
     ///@param fileName: file name for image output
     void SetFileName(string fileName) {m_File = fileName;m_FileOut = true;}
+
+
+    ///Indicates that thumbmail should be shown
+    ///
+    ///@param set
+    void SetThumbnail(bool set) {m_Thumbnail = set;}
     
     ///Checks if image is to be written to the file
     ///
@@ -168,6 +175,8 @@ private:
     ///true if output to the file
     bool                    m_FileOut;
 
+    bool                    m_Thumbnail;
+
     ///Image height
     int                     m_Height;
 
@@ -191,10 +200,13 @@ private:
 
     /// Renderer setup Parameter
     CHitMatrixRenderer   m_Renderer;
+    //CBlastHitMatrixRenderer   m_Renderer;
 
     ///CGlOsContext context
     CRef <CGlOsContext> m_Context;
 };
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

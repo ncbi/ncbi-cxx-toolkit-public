@@ -46,7 +46,7 @@
  */
 
 //forward declarations
-class CShowBlastDeflineTest;  //For internal test only
+struct CShowBlastDeflineTest;  //For internal test only
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -412,7 +412,7 @@ protected:
     ///
     void x_DisplayDeflineTable(CNcbiOstream & out);
     //For internal test
-    friend class ::CShowBlastDeflineTest;
+    friend struct ::CShowBlastDeflineTest;
 };
 
 END_SCOPE(objects)

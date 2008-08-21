@@ -102,15 +102,15 @@ Nlm_DenseMatrixFree(double *** mat)
 
 
 /* Documented in nlm_linear_algebra.h. */
-Int4 ** Nlm_Int4MatrixNew(int nrows, int ncols)
+int ** Nlm_Int4MatrixNew(int nrows, int ncols)
 {
     int i;             /* iteration index */
-    Int4 ** mat;     /* the new matrix */
+    int ** mat;     /* the new matrix */
 
-    mat = (Int4 **) calloc(nrows, sizeof(Int4 *));
+    mat = (int **) calloc(nrows, sizeof(int *));
     if (mat != NULL) {
-        mat[0] = (Int4 *) malloc((size_t) nrows *
-                                   (size_t) ncols * sizeof(Int4));
+        mat[0] = (int *) malloc((size_t) nrows *
+                                   (size_t) ncols * sizeof(int));
         if (mat[0] != NULL) {
             for (i = 1;  i < nrows;  i++) {
                 mat[i] = &mat[0][i * ncols];
@@ -126,7 +126,7 @@ Int4 ** Nlm_Int4MatrixNew(int nrows, int ncols)
 
 /* Documented in nlm_linear_algebra.h. */
 void
-Nlm_Int4MatrixFree(Int4 *** mat)
+Nlm_Int4MatrixFree(int *** mat)
 {
     if(*mat != NULL) {
         free((*mat)[0]);

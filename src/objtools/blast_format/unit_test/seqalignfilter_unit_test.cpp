@@ -222,8 +222,11 @@ static bool s_GetFilteredGiList(CRef<CSeq_align> sa, vector<int>& vec_all_gis,
 /////////////////////////////////////////////////////////////////////////////
 // Functions to test filtering results for individual seqaligns
 
-static void s_Check_GiListConsistency(CRef<CSeq_align> sa_orig, CRef<CSeq_align> sa_new,
-                                    list<int>& list_orig_filtered, list<int>& list_new_filtered)
+static void 
+s_Check_GiListConsistency(CRef<CSeq_align> /*sa_orig*/, 
+                          CRef<CSeq_align> sa_new,
+                          list<int>& list_orig_filtered, 
+                          list<int>& list_new_filtered)
 {
     list<int> list_new;
     s_GetFullGiList(sa_new, list_new);

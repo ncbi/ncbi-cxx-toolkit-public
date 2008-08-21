@@ -98,8 +98,8 @@ public:
     string AsString() const {
         string retval;
         switch (m_EntryChoice) {
-        case ePig:      retval = "PIG " + GetPig(); break;
-        case eGi:       retval = "GI " + GetGi(); break;
+        case ePig:      retval = "PIG " + NStr::IntToString(GetPig()); break;
+        case eGi:       retval = "GI " + NStr::IntToString(GetGi()); break;
         case eSeqId:    retval = "'" + GetStringId() + "'"; break;
         case eNone:
                         if (GetOID() != CBlastDBSeqId::kInvalid) {

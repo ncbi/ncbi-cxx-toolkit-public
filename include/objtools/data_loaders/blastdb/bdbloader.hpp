@@ -83,10 +83,7 @@ public:
               m_UseFixedSizeSlices(use_fixed_size_slices), m_BlastDbHandle(0) {}
 
         SBlastDbParam(CRef<CSeqDB> db_handle,
-                      bool          use_fixed_size_slices = true)
-            : m_DbName(kEmptyStr), m_DbType(eUnknown),
-              m_UseFixedSizeSlices(use_fixed_size_slices), 
-              m_BlastDbHandle(db_handle) {}
+                      bool          use_fixed_size_slices = true);
 
         string          m_DbName;
         EDbType         m_DbType;

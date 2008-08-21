@@ -48,6 +48,7 @@ static char const rcsid[] =
 #include <objects/general/Object_id.hpp>
 
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
+#include <algo/blast/blastinput/blast_input_aux.hpp>
 
 #include <util/regexp.hpp>
 
@@ -383,6 +384,7 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
                                         CScope& scope)
 {
     static const TSeqRange kEmptyRange(TSeqRange::GetEmpty());
+    CRef<CBlastScopeSource> query_scope_source;
 
     if (m_Config.GetLowercaseMask())
         lcase_mask = m_InputReader->SaveMask();
@@ -393,6 +395,14 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
 
     CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry));
     CRef<CSeq_loc> retval(new CSeq_loc());
+
+    if ( !blast::HasRawSequenceData(*itr) ) {
+        if (query_scope_source.Empty()) {
+            query_scope_source.Reset
+                (new CBlastScopeSource(m_Config.GetDataLoaderConfig()));
+        }
+        query_scope_source->AddDataLoaders(CRef<CScope>(&scope));
+    }
 
     if (m_ReadProteins && itr->IsNa()) {
         NCBI_THROW(CInputException, eSequenceMismatch,

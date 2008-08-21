@@ -261,7 +261,14 @@ private:
 /// Search Results for All Queries.
 /// 
 /// This class encapsulates all of the search results and related data
-/// from a search.
+/// from a search, it supports BLAST database and Bl2Seq searches and provides
+/// a convenient way of accessing the results from BLAST.
+///
+/// @note When representing BLAST database results, there are
+/// CSearchResultSet::NumQueries() objects of type CSearchResultSet::value_type 
+/// in this object. When representing Bl2Seq results, there are
+/// (CSearchResultSet::NumQueries() * number of subjects) objects of type
+/// CSearchResultSet::value_type in this object.
 
 class NCBI_XBLAST_EXPORT CSearchResultSet : public CObject {
 public:
@@ -301,6 +308,11 @@ public:
     /// @param ancillary_data vector of per-query search ancillary data [in]
     /// @param masks Mask locations for this query [in]
     /// @param res_type result type stored in this object [in]
+    /// @note this constructor assumes that the ids, msg_vec, and 
+    /// ancillary_data vectors are of the SAME size as the aligns vector. The
+    /// masks vector can be of the same size as aligns or have as many elements
+    /// as there were queries in the search and they will be adjusted as
+    /// necessary.
     CSearchResultSet(TQueryIdVector  ids,
                      TSeqAlignVector aligns,
                      TSearchMessages msg_vec,
@@ -366,6 +378,11 @@ public:
         return m_NumQueries;
     }
 
+    /// Sets the filtered query regions. If results are of type
+    /// eSequenceComparison, the masks can be one for each query and they will
+    /// be duplicated as necessary to meet this class' pre-conditions.
+    void SetFilteredQueryRegions(const TSeqLocInfoVector& masks);
+
     /// Identical to GetNumResults, provided to facilitate STL-style iteration
     /// @sa note in GetNumResults
     size_type size() const { return GetNumResults(); }
@@ -420,6 +437,9 @@ private:
 
     /// Vector of results.
     vector< CRef<CSearchResults> > m_Results;
+
+    /// True if this object contains PHI-BLAST results
+    bool m_IsPhiBlast;
 };
 
 END_SCOPE(blast)

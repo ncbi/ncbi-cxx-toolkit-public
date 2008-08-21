@@ -2115,8 +2115,7 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration)
     CWriteDB_CreateAliasFile(kAliasFileName, kDbName, CWriteDB::eProtein,
                              kGiFileName, kTitle);
     kAliasFileName += ".pal";
-    CFileDeleteAtExit delete_at_exit;
-    delete_at_exit.Add(kAliasFileName);
+    CFileDeleteAtExit::Add(kAliasFileName);
 
     BOOST_REQUIRE(CFile(kAliasFileName).Exists());
     ifstream alias_file(kAliasFileName.c_str());

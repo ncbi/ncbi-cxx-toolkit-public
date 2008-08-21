@@ -201,6 +201,12 @@ CalculateFormattingParams(TSeqPos max_target_seqs,
                           TSeqPos* num_alignments, 
                           TSeqPos* num_overview = NULL);
 
+/// Returns true if the Bioseq passed as argument has the full, raw sequence
+/// data in its Seq-inst field
+/// @param bioseq Bioseq to examine [in]
+NCBI_XBLAST_EXPORT 
+bool HasRawSequenceData(const objects::CBioseq& bioseq);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

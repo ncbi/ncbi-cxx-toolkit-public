@@ -51,6 +51,8 @@ static char const rcsid[] = "$Id$";
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <util/format_guess.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast_format/tabular.hpp>
+#include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <sstream>
 
@@ -998,7 +1000,8 @@ CPhiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         }
         if (!pattern.empty())
             opt.SetPHIPattern(pattern.c_str(), 
-               Blast_QueryIsNucleotide(opt.GetProgramType()));
+               (Blast_QueryIsNucleotide(opt.GetProgramType())
+               ? true : false));
         else
             NCBI_THROW(CBlastException, eInvalidArgument, 
                        "PHI pattern not read");
@@ -1163,6 +1166,10 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                    CArgDescriptions::eExcludes, 
                                    *kDatabaseArgs[i]);
         }
+        // Because Blast4-subject does not support Seq-locs, specifying a
+        // subject range does not work for remote searches
+        arg_desc.SetDependency(kArgSubjectLocation, 
+                               CArgDescriptions::eExcludes, kArgRemote);
     }
 
     arg_desc.SetCurrentGroup("");
@@ -1273,24 +1280,29 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("Formatting options");
 
+    const string kOutputFormatDescription = string(
+    "alignment view options:\n"
+    "  0 = pairwise,\n"
+    "  1 = query-anchored showing identities,\n"
+    "  2 = query-anchored no identities,\n"
+    "  3 = flat query-anchored, show identities,\n"
+    "  4 = flat query-anchored, no identities,\n"
+    "  5 = XML Blast output,\n"
+    "  6 = tabular,\n"
+    "  7 = tabular with comment lines,\n"
+    "  8 = Text ASN.1,\n"
+    "  9 = Binary ASN.1\n"
+    " 10 = Comma-separated values\n\n"
+    "Options 6, 7, and 10 can be additionally configured to produce\n"
+    "a custom format specified by space delimited format specifiers.\n"
+    "The supported format specifiers are:\n") +
+        CBlastTabularInfo::DescribeFormatSpecifiers() + 
+        string("\n");
+
     // alignment view
-    arg_desc.AddDefaultKey(kArgOutputFormat, "format", 
-                    "alignment view options:\n"
-                    "  0 = pairwise,\n"
-                    "  1 = query-anchored showing identities,\n"
-                    "  2 = query-anchored no identities,\n"
-                    "  3 = flat query-anchored, show identities,\n"
-                    "  4 = flat query-anchored, no identities,\n"
-                    "  5 = XML Blast output,\n"
-                    "  6 = tabular,\n"
-                    "  7 = tabular with comment lines,\n"
-                    "  8 = Text ASN.1,\n"
-                    "  9 = Binary ASN.1\n",
-                   CArgDescriptions::eInteger,
-                   NStr::IntToString(kDfltArgOutputFormat));
-    arg_desc.SetConstraint(kArgOutputFormat, 
-                           new CArgAllow_Integers((int)ePairwise, 
-                                                  ((int)eEndValue-1)));
+    arg_desc.AddDefaultKey(kArgOutputFormat, "format", kOutputFormatDescription,
+                           CArgDescriptions::eString, 
+                           NStr::IntToString(kDfltArgOutputFormat));
 
     // show GIs in deflines
     arg_desc.AddFlag(kArgShowGIs, "Show NCBI GIs in deflines?", true);
@@ -1331,12 +1343,31 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opt)
 {
     if (args[kArgOutputFormat]) {
-        int val(args[kArgOutputFormat].AsInteger());
+        string fmt_choice = 
+            NStr::TruncateSpaces(args[kArgOutputFormat].AsString());
+        string::size_type pos;
+        if ( (pos = fmt_choice.find_first_of(' ')) != string::npos) {
+            m_CustomOutputFormatSpec.assign(fmt_choice, pos+1,
+                                            fmt_choice.size()-(pos+1));
+            fmt_choice.erase(pos);
+        }
+        int val = 0;
+        try { val =NStr::StringToInt(fmt_choice); }
+        catch (const CStringException&) {   // probably a conversion error
+            ostringstream os;
+            os << "'" << fmt_choice << "' is not a valid output format";
+            NCBI_THROW(CInputException, eInvalidInput, os.str());
+        }
         if (val < 0 || val >= static_cast<int>(eEndValue)) {
             string msg("Formatting choice is out of range");
             throw std::out_of_range(msg);
         }
         m_OutputFormat = static_cast<EOutputFormat>(val);
+        if ( !(m_OutputFormat == eTabular ||
+               m_OutputFormat == eTabularWithComments ||
+               m_OutputFormat == eCommaSeparatedValues) ) {
+               m_CustomOutputFormatSpec.clear();
+        }
     }
 
     m_ShowGis = static_cast<bool>(args[kArgShowGIs]);

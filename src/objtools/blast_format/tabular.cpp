@@ -49,6 +49,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
 
+#include <sstream>
 #include <map>
 
 /** @addtogroup BlastFormatting
@@ -59,48 +60,166 @@ static char const rcsid[] = "$Id$";
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+/// Structure to store the format specification strings, their description and
+/// their corresponding enumeration
+struct SFormatSpec {
+    /// Format specification name
+    string name;
+    /// A description of what the above name represents
+    string description;
+    /// Enumeration that corresponds to this field
+    CBlastTabularInfo::ETabularField field;
+
+    /// Constructor
+    /// @param n format specification name [in]
+    /// @param d format specification description [in]
+    /// @param f enumeration value [in]
+    SFormatSpec(string n, string d, CBlastTabularInfo::ETabularField f)
+        : name(n), description(d), field(f) {}
+};
+
+/// Static array of possible format specifications
+static SFormatSpec sc_FormatSpecifiers[] = {
+    SFormatSpec("qseqid",   
+                "Query Seq-id",
+                CBlastTabularInfo::eQuerySeqId),
+    SFormatSpec("qgi",
+                "Query GI",
+                CBlastTabularInfo::eQueryGi),
+    SFormatSpec("qacc",
+                "Query accesion",
+                CBlastTabularInfo::eQueryAccession),
+    SFormatSpec("sseqid",
+                "Subject Seq-id",
+                CBlastTabularInfo::eSubjectSeqId),
+    SFormatSpec("sallseqid",
+                "All subject Seq-id(s), separated by a ';'", 
+                CBlastTabularInfo::eSubjectAllSeqIds),
+    SFormatSpec("sgi",
+                "Subject GI", 
+                CBlastTabularInfo::eSubjectGi),
+    SFormatSpec("sallgi",
+                "All subject GIs", 
+                CBlastTabularInfo::eSubjectAllGis),
+    SFormatSpec("sacc",
+                "Subject accession", 
+                CBlastTabularInfo::eSubjectAccession),
+    SFormatSpec("sallacc", 
+                "All subject accessions", 
+                CBlastTabularInfo::eSubjectAllAccessions),
+    SFormatSpec("qstart",
+                "Start of alignment in query", 
+                CBlastTabularInfo::eQueryStart),
+    SFormatSpec("qend",
+                "End of alignment in query", 
+                CBlastTabularInfo::eQueryEnd),
+    SFormatSpec("sstart", 
+                "Start of alignment in subject", 
+                CBlastTabularInfo::eSubjectStart),
+    SFormatSpec("send",
+                "End of alignment in subject", 
+                CBlastTabularInfo::eSubjectEnd),
+    SFormatSpec("qseq",
+                "Aligned part of query sequence",
+                CBlastTabularInfo::eQuerySeq),
+    SFormatSpec("sseq",
+                "Aligned part of subject sequence", 
+                CBlastTabularInfo::eSubjectSeq),
+    SFormatSpec("evalue", 
+                "Expect value", 
+                CBlastTabularInfo::eEvalue),
+    SFormatSpec("bitscore", 
+                "Bit score", 
+                CBlastTabularInfo::eBitScore),
+    SFormatSpec("score",
+                "Raw score", 
+                CBlastTabularInfo::eScore),
+    SFormatSpec("length", 
+                "Alignment length", 
+                CBlastTabularInfo::eAlignmentLength),
+    SFormatSpec("pident",
+                "Percentage of identical matches", 
+                CBlastTabularInfo::ePercentIdentical),
+    SFormatSpec("nident",
+                "Number of identical matches", 
+                CBlastTabularInfo::eNumIdentical),
+    SFormatSpec("mismatch",
+                "Number of mismatches", 
+                CBlastTabularInfo::eMismatches),
+    SFormatSpec("positive", 
+                "Number of positive-scoring matches", 
+                CBlastTabularInfo::ePositives),
+    SFormatSpec("gapopen", 
+                "Number of gap openings", 
+                CBlastTabularInfo::eGapOpenings),
+    SFormatSpec("gaps",
+                "Total number of gaps", 
+                CBlastTabularInfo::eGaps),
+    SFormatSpec("ppos",
+                "Percentage of positive-scoring matches", 
+                CBlastTabularInfo::ePercentPositives),
+    SFormatSpec("frames",   
+                "Query and subject frames separated by a '/'", 
+                CBlastTabularInfo::eFrames),
+    SFormatSpec("qframe", 
+                "Query frame", 
+                CBlastTabularInfo::eQueryFrame),
+    SFormatSpec("sframe",   
+                "Subject frame", 
+                CBlastTabularInfo::eSubjFrame)
+};
+/// Number of elements in the array above
+static const size_t kNumFormatSpecifiers = 
+    (sizeof(sc_FormatSpecifiers)/sizeof(*sc_FormatSpecifiers));
+
+// Definition for default format specification
+const string
+CBlastTabularInfo::kDefaultFormat =
+    "qseqid sallseqid pident length mismatch gapopen qstart qend sstart send "
+    "evalue bitscore";
+
+/// This keyword is equivalent to specifying the kDefaultFormat string
+static const string kDefaultKeyword("std");
+
+string CBlastTabularInfo::DescribeFormatSpecifiers()
+{
+    ostringstream os;
+    for (size_t i = 0; i < kNumFormatSpecifiers; i++) {
+        os << "\t" << setw(10) << sc_FormatSpecifiers[i].name << " means ";
+        os << sc_FormatSpecifiers[i].description << "\n";
+    }
+    os << "When not provided, the default value is:\n";
+    os << "'" << CBlastTabularInfo::kDefaultFormat << "', which is equivalent ";
+    os << "to the keyword '" << kDefaultKeyword << "'";
+    return os.str();
+}
+
+void 
+CBlastTabularInfo::x_AddDefaultFieldsToShow()
+{
+    vector<string> format_tokens;
+    NStr::Tokenize(CBlastTabularInfo::kDefaultFormat, " ", format_tokens);
+    ITERATE (vector<string>, iter, format_tokens) {
+        _ASSERT(m_FieldMap.count(*iter) > 0);
+        x_AddFieldToShow(m_FieldMap[*iter]);
+    }
+}
+
 void CBlastTabularInfo::x_SetFieldsToShow(const string& format)
 {
-    m_FieldMap["qseqid"] = eQuerySeqId;
-    m_FieldMap["qgi"] = eQueryGi;
-    m_FieldMap["qacc"] = eQueryAccession;
-    m_FieldMap["sseqid"] = eSubjectSeqId;
-    m_FieldMap["sallseqid"] = eSubjectAllSeqIds;
-    m_FieldMap["sgi"] = eSubjectGi;
-    m_FieldMap["sallgi"] = eSubjectAllGis;
-    m_FieldMap["sacc"] = eSubjectAccession;
-    m_FieldMap["sallacc"] = eSubjectAllAccessions;
-    m_FieldMap["qstart"] = eQueryStart;
-    m_FieldMap["qend"] = eQueryEnd;
-    m_FieldMap["sstart"] = eSubjectStart;
-    m_FieldMap["send"] = eSubjectEnd;
-    m_FieldMap["qseq"] = eQuerySeq;
-    m_FieldMap["sseq"] = eSubjectSeq;
-    m_FieldMap["evalue"] = eEvalue;
-    m_FieldMap["bitscore"] = eBitScore;
-    m_FieldMap["score"] = eScore;
-    m_FieldMap["length"] = eAlignmentLength;
-    m_FieldMap["pident"] = ePercentIdentical;
-    m_FieldMap["nident"] = eNumIdentical;
-    m_FieldMap["mismatch"] = eMismatches;
-    m_FieldMap["positive"] = ePositives;
-    m_FieldMap["gapopen"] = eGapOpenings;
-    m_FieldMap["gaps"] = eGaps;
-    m_FieldMap["ppos"] = ePercentPositives;
-    m_FieldMap["frames"] = eFrames;
-    m_FieldMap["qframe"] = eQueryFrame;
-    m_FieldMap["sframe"] = eSubjFrame;
-    
+    for (size_t i = 0; i < kNumFormatSpecifiers; i++) {
+        m_FieldMap.insert(make_pair(sc_FormatSpecifiers[i].name,
+                                    sc_FormatSpecifiers[i].field));
+    }
     
     vector<string> format_tokens;
-
     NStr::Tokenize(format, " ", format_tokens);
 
     if (format_tokens.empty())
         x_AddDefaultFieldsToShow();
 
     ITERATE (vector<string>, iter, format_tokens) {
-        if (*iter == "std")
+        if (*iter == kDefaultKeyword)
             x_AddDefaultFieldsToShow();
         else if ((*iter)[0] == '-') {
             string field = (*iter).substr(1);
@@ -110,6 +229,10 @@ void CBlastTabularInfo::x_SetFieldsToShow(const string& format)
             if (m_FieldMap.count(*iter) > 0)
                 x_AddFieldToShow(m_FieldMap[*iter]);
         }
+    }
+
+    if (m_FieldsToShow.empty()) {
+        x_AddDefaultFieldsToShow();
     }
 }
 
@@ -550,7 +673,8 @@ CBlastTabularInfo::PrintHeader(const string& program_in,
        const string& dbname, 
        const string& rid /* = kEmptyStr */,
        unsigned int iteration /* = numeric_limits<unsigned int>::max() */,
-       const CSeq_align_set* align_set /* = 0 */)
+       const CSeq_align_set* align_set /* = 0 */,
+       CConstRef<CBioseq> subj_bioseq /* = CConstRef<CBioseq>() */)
 {
     m_Ostream << "# ";
     string program(program_in);
@@ -560,12 +684,27 @@ CBlastTabularInfo::PrintHeader(const string& program_in,
     if (iteration != numeric_limits<unsigned int>::max())
         m_Ostream << "# Iteration: " << iteration << "\n";
 
+    const size_t kLineLength(0);
+    const bool kBelieveQuery(false);
+    const bool kHtmlFormat(false);
+    const bool kTabularFormat(true);
+
     // Print the query defline with no html; there is no need to set the 
     // line length restriction, since it's ignored for the tabular case.
-    CBlastFormatUtil::AcknowledgeBlastQuery(bioseq, 0, m_Ostream, false, false,
-                                            true, rid);
+    CBlastFormatUtil::AcknowledgeBlastQuery(bioseq, kLineLength, m_Ostream, 
+                                            kBelieveQuery, kHtmlFormat,
+                                            kTabularFormat, rid);
     
-    m_Ostream << "\n# Database: " << dbname << "\n";
+    if (dbname != kEmptyStr) {
+        m_Ostream << "\n# Database: " << dbname << "\n";
+    } else {
+        _ASSERT(subj_bioseq.NotEmpty());
+        m_Ostream << "\n";
+        CBlastFormatUtil::AcknowledgeBlastSubject(*subj_bioseq, kLineLength,
+                                                  m_Ostream, kBelieveQuery,
+                                                  kHtmlFormat, kTabularFormat);
+        m_Ostream << "\n";
+    }
 
     x_PrintFieldNames();
     

@@ -914,7 +914,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                const string & title,
                                bool           is_protein,
                                bool           sparse,
-                               bool           parse_seqids,
+                               bool           /*parse_seqids*/,
                                ostream      * logfile)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),

@@ -360,6 +360,32 @@ CObjMgr_QueryFactory::ExtractScopes()
     return retval;
 }
 
+TSeqLocVector
+CObjMgr_QueryFactory::GetTSeqLocVector()
+{
+    TSeqLocVector retval;
+    if ( !m_SSeqLocVector.empty() ) {
+        retval = m_SSeqLocVector;
+    } else if (m_QueryVector.NotEmpty()) {
+        for (CBlastQueryVector::size_type i = 0; 
+             i < m_QueryVector->Size(); i++) {
+            TMaskedQueryRegions mqr = m_QueryVector->GetMaskedRegions(i);
+            CRef<CSeq_loc> masks;
+            CRef<CPacked_seqint> conv_masks = mqr.ConvertToCPacked_seqint();
+            if (conv_masks.NotEmpty()) {
+                masks.Reset(new CSeq_loc);
+                masks->SetPacked_int(*conv_masks);
+            }
+            SSeqLoc sl(m_QueryVector->GetQuerySeqLoc(i), 
+                       m_QueryVector->GetScope(i), masks);
+            retval.push_back(sl);
+        }
+    } else {
+        abort();
+    }
+    return retval;
+}
+
 /// Auxiliary function to help guess the program type from a CSeq-loc. This
 /// should only be used in the context of 
 /// CObjMgr_QueryFactory::ExtractUserSpecifiedMasks

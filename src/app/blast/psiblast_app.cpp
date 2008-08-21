@@ -246,10 +246,8 @@ int CPsiBlastApp::Run(void)
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
         CNcbiOstream& out_stream = m_CmdLineArgs->GetOutputStream();
-        CBlastFormat formatter(opt,
-                               db_args->GetDatabaseName(),
+        CBlastFormat formatter(opt, *db_adapter,
                                fmt_args->GetFormattedOutputChoice(),
-                               db_args->IsProtein(),
                                query_opts->GetParseDeflines(),
                                out_stream,
                                fmt_args->GetNumDescriptions(),
@@ -262,7 +260,8 @@ int CPsiBlastApp::Run(void)
                                opt.GetDbGeneticCode(),
                                opt.GetSumStatisticsMode(),
                                m_CmdLineArgs->ExecuteRemotely(),
-                               db_adapter->GetFilteringAlgorithms());
+                               db_adapter->GetFilteringAlgorithms(),
+                               fmt_args->GetCustomOutputFormatSpec());
         formatter.PrintProlog();
 
         SaveSearchStrategy(args, m_CmdLineArgs, query_factory, opts_hndl, pssm);
@@ -270,7 +269,7 @@ int CPsiBlastApp::Run(void)
         if (m_CmdLineArgs->ExecuteRemotely()) {
 
             CRef<CRemoteBlast> rmt_psiblast = 
-                InitializeRemoteBlast(query_factory, db_args, opts_hndl, scope,
+                InitializeRemoteBlast(query_factory, db_args, opts_hndl,
                       m_CmdLineArgs->ProduceDebugRemoteOutput(), pssm);
             // FIXME: determine if errors ocurred, if so, return appropriate
             // exit code

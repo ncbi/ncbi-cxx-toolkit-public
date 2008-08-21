@@ -119,29 +119,11 @@ CLocalBlast::Run()
                                                   *m_Opts,
                                                   *seqinfo_src,
                                                   search_msgs));
+    if (m_LocalDbAdapter.NotEmpty() && !m_LocalDbAdapter->IsBlastDb()) {
+        m_TbackSearch->SetResultType(eSequenceComparison);
+    }
     CRef<CSearchResultSet> retval = m_TbackSearch->Run();
-
-    bool phi_blast = false;
-    if (retval->GetNumResults() > 0)
-    {
-       CSearchResults& results = (*retval)[0];
-       if (results.GetPhiQueryInfo() != NULL)
-           phi_blast = true;
-    }
-
-    // Add the filtered query regions, if any
-    TSeqLocInfoVector masks = m_PrelimSearch->GetFilteredQueryRegions();
-    if ( !masks.empty() ) {
-        _ASSERT(masks.size() == retval->GetNumResults());
-        for (size_t i = 0; i < retval->GetNumResults(); i++) {
-            (*retval)[i].SetMaskedQueryRegions(masks[i]);
-        }
-    } else if (phi_blast) {
-        for (size_t i = 0; i < retval->GetNumResults(); i++) {
-            (*retval)[i].SetMaskedQueryRegions(masks[0]);
-        }
-    }
-    
+    retval->SetFilteredQueryRegions(m_PrelimSearch->GetFilteredQueryRegions());
     return retval;
 }
 

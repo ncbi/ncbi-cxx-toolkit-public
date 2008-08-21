@@ -128,6 +128,9 @@ public:
 
     /// Performs the same functionality as Run(), but it returns a different
     /// data type
+    /// @note the number of CSearchResultSet::value_type objects in this
+    /// function's return value will be (number of queries * number of
+    /// subjects)
     CRef<CSearchResultSet> RunEx();
 
     /// Runs the search but does not produce seqalign output
@@ -179,12 +182,6 @@ protected:
 
     /// Return a seqalign list for each query/subject pair, even if it is empty.
     virtual TSeqAlignVector x_Results2SeqAlign();
-
-    /// Transpose the (linearly organized) seqalign set matrix from
-    /// (q1 s1 q2 s1 ... qN s1, ..., q1 sM q2 sM ... qN sM) to
-    /// (q1 s1 q1 s2 ... q1 sM, ..., qN s1 qN s2 ... qN sM)
-    /// this method only reorganizes the seqalign sets, does not copy them.
-    TSeqAlignVector x_TransposeSeqAlignVector(const TSeqAlignVector& alnvec);
 
     /// Convert the TSeqLocVector to a vector of Seq-ids
     /// @param slv TSeqLocVector used as source [in]

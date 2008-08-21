@@ -52,7 +52,6 @@ BEGIN_NCBI_SCOPE
  * @param queries query sequence(s) or NULL in case of PSSM input [in]
  * @param db_args database/subject arguments [in]
  * @param opts_hndl BLAST options handle [in]
- * @param scope scope to which the subject sequence(s) will be added [in]
  * @param verbose_output set to true if CRemoteBlast should produce verbose
  * output [in]
  * @param pssm PSSM to use for single iteration remote PSI-BLAST
@@ -62,7 +61,6 @@ CRef<blast::CRemoteBlast>
 InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
                       CRef<blast::CBlastDatabaseArgs> db_args,
                       CRef<blast::CBlastOptionsHandle> opts_hndl,
-                      CRef<objects::CScope> scope,
                       bool verbose_output,
                       CRef<objects::CPssmWithParameters> pssm = 
                         CRef<objects::CPssmWithParameters>());

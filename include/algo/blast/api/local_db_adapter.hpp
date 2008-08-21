@@ -38,6 +38,7 @@
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/api/uniform_search.hpp> // for CSearchDatabase
 #include <objtools/readers/seqdb/seqdb.hpp>  // for CSeqDB
+#include <algo/blast/api/sseqloc.hpp>        // for TSeqLocVector
 
 /** @addtogroup AlgoBlast
  *
@@ -102,6 +103,16 @@ public:
     /// Retrieve the database filtering algorithms
     const CSearchDatabase::TFilteringAlgorithms& GetFilteringAlgorithms() const;
 
+    /// Returns true if this object represents protein or nucleotide sequences
+    bool IsProtein() const;
+
+    /// Returns the database name if appropriate, else kEmptyStr for subject
+    /// sequences
+    string GetDatabaseName() const { return m_DbName; }
+    
+    /// Returns true if this object represents a BLAST database
+    bool IsBlastDb() const { return m_DbName != kEmptyStr; }
+
 private:
     /// Pointer to the BlastSeqSrc this object owns and manages
     BlastSeqSrc* m_SeqSrc;
@@ -116,10 +127,18 @@ private:
     CRef<CSeqDB> m_SeqDb;
 
     /// IQueryFactory containing the subject sequences
-    CRef<IQueryFactory> m_QueryFactory;
+    CRef<IQueryFactory> m_SubjectFactory;
 
     /// Options to be used when instantiating the subject sequences
     CConstRef<CBlastOptionsHandle> m_OptsHandle;
+
+    /// This is initialized ONLY if the m_SubjectFactory is of type
+    /// CObjMgr_QueryFactory, case in which it's not empty. This is needed to
+    /// handle delta sequences as input and it uses the object manager APIs
+    TSeqLocVector m_Subjects;
+
+    /// This is initialized ONLY if this object represents a BLAST database
+    const string m_DbName;
     
     /// Initialize a CSeqDB object from a CSearchDatabase object
     CRef<CSeqDB> x_InitSeqDB(CConstRef<CSearchDatabase> dbinfo);

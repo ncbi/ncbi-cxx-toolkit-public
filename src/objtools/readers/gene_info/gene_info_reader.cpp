@@ -33,7 +33,7 @@
 //==========================================================================//
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbienv.hpp>
+#include <corelib/env_reg.hpp>
 
 #include <objtools/readers/gene_info/gene_info_reader.hpp>
 #include <objtools/readers/gene_info/file_utils.hpp>
@@ -262,10 +262,11 @@ bool CGeneInfoFileReader::x_GiToGeneId(int gi, list<int>& listGeneIds)
 {
     STwoIntRecord* pRecs;
     int nRecs;
+    bool retval = false;
     if (s_GetMemFilePtrAndLength(m_memGi2GeneFile.get(),
                                  pRecs, nRecs))
     {
-        return s_SearchSortedArray(pRecs, nRecs,
+        retval = s_SearchSortedArray(pRecs, nRecs,
                                    gi, 1, listGeneIds, false);
     }
     else
@@ -275,7 +276,7 @@ bool CGeneInfoFileReader::x_GiToGeneId(int gi, list<int>& listGeneIds)
             "Gi to Gene ID conversion.");
     }
 
-    return false;
+    return retval;
 }
 
 bool CGeneInfoFileReader::x_GeneIdToOffset(int geneId, int& nOffset)
@@ -313,10 +314,11 @@ bool CGeneInfoFileReader::x_GiToOffset(int gi, list<int>& listOffsets)
 
     STwoIntRecord* pRecs;
     int nRecs;
+    bool retval = false;
     if (s_GetMemFilePtrAndLength(m_memGi2OffsetFile.get(),
                                  pRecs, nRecs))
     {
-        return s_SearchSortedArray(pRecs, nRecs,
+        retval = s_SearchSortedArray(pRecs, nRecs,
                                    gi, 1, listOffsets, false);
     }
     else
@@ -326,7 +328,7 @@ bool CGeneInfoFileReader::x_GiToOffset(int gi, list<int>& listOffsets)
             "Gi to Gene Info Offset conversion.");
     }
 
-    return false;
+    return retval;
 }
 
 bool CGeneInfoFileReader::x_GeneIdToGi(int geneId, int iGiField,
@@ -334,10 +336,11 @@ bool CGeneInfoFileReader::x_GeneIdToGi(int geneId, int iGiField,
 {
     SMultiIntRecord<4>* pRecs;
     int nRecs;
+    bool retval = false;
     if (s_GetMemFilePtrAndLength(m_memGene2GiFile.get(),
                                  pRecs, nRecs))
     {
-        return s_SearchSortedArray(pRecs, nRecs,
+        retval = s_SearchSortedArray(pRecs, nRecs,
                                    geneId, iGiField, listGis, true);
     }
     else
@@ -347,7 +350,7 @@ bool CGeneInfoFileReader::x_GeneIdToGi(int geneId, int iGiField,
             "Gene ID to Gi conversion.");
     }
 
-    return false;
+    return retval;
 }
 
 
@@ -383,11 +386,53 @@ CGeneInfoFileReader::CGeneInfoFileReader(const string& strGi2GeneFile,
     x_MapMemFiles();
 }
 
+/// Find the path to the gene info files, first checking the environment
+/// variable GENE_INFO_PATH, then the section BLAST, label
+/// GENE_INFO_PATH in the NCBI configuration file. If not found in either
+/// location, try the $BLASTDB/features directory. If all fails return the
+/// current working directory
+/// @sa s_FindPathToWM
+static string
+s_FindPathToGeneInfoFiles(void)
+{
+    string retval = kEmptyStr;
+    const string kSection("BLAST");
+    CNcbiIstrstream empty_stream(kEmptyCStr);
+    CRef<CNcbiRegistry> reg(new CNcbiRegistry(empty_stream,
+                                              IRegistry::fWithNcbirc));
+    CRef<CSimpleEnvRegMapper> mapper(new CSimpleEnvRegMapper(kSection,
+                                                             kEmptyStr));
+    CRef<CEnvironmentRegistry> env_reg(new CEnvironmentRegistry);
+    env_reg->AddMapper(*mapper, CEnvironmentRegistry::ePriority_Max);
+    reg->Add(*env_reg, CNcbiRegistry::ePriority_MaxUser);
+    retval = reg->Get(kSection, GENE_INFO_PATH_ENV_VARIABLE);
+
+    // Try the features subdirectory in the BLAST database storage location
+    if (retval == kEmptyStr) {
+        if ( (retval = reg->Get(kSection, "BLASTDB")) != kEmptyStr) {
+            retval = CDirEntry::ConcatPath(retval, "features");
+            if ( !CDir(retval).Exists() ) {
+                retval = kEmptyStr;
+            }
+        }
+    }
+
+    if (retval == kEmptyStr) {
+        retval = CDir::GetCwd();
+    }
+#if defined(NCBI_OS_MSWIN)
+	// We address this here otherwise CDirEntry::IsAbsolutePath() fails
+	if (NStr::StartsWith(retval, "//")) {
+		NStr::ReplaceInPlace(retval, "//", "\\\\");
+	}
+#endif
+    return retval;
+}
+
 CGeneInfoFileReader::CGeneInfoFileReader(bool bGiToOffsetLookup)
     : m_bGiToOffsetLookup(bGiToOffsetLookup)
 {
-    CNcbiEnvironment env;
-    string strDirPath = env.Get(GENE_INFO_PATH_ENV_VARIABLE);
+    string strDirPath = s_FindPathToGeneInfoFiles();
     if (strDirPath.length() == 0 ||
         !CheckDirExistence(strDirPath))
     {
@@ -395,6 +440,7 @@ CGeneInfoFileReader::CGeneInfoFileReader(bool bGiToOffsetLookup)
             "Invalid path to Gene info directory: " +
             strDirPath);
     }
+    strDirPath = CDirEntry::AddTrailingPathSeparator(strDirPath);
 
     m_strGi2GeneFile = strDirPath + GENE_GI2GENE_FILE_NAME;
     m_strGene2OffsetFile = strDirPath + GENE_GENE2OFFSET_FILE_NAME;

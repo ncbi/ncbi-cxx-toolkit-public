@@ -67,6 +67,10 @@ public:
     /// @note This method is intended to be used for query splitting only
     TSeqLocInfoVector ExtractUserSpecifiedMasks();
 
+    /// Retrieves the TSeqLocVector used to construct this object or a
+    /// conversion of the CBlastQueryVector provided
+    TSeqLocVector GetTSeqLocVector();
+
 protected:
     CRef<ILocalQueryData> x_MakeLocalQueryData(const CBlastOptions* opts);
     CRef<IRemoteQueryData> x_MakeRemoteQueryData();

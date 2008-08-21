@@ -135,10 +135,8 @@ int CTblastnApp::Run(void)
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
-        CBlastFormat formatter(opt,
-                               db_args->GetDatabaseName(),
+        CBlastFormat formatter(opt, *db_adapter,
                                fmt_args->GetFormattedOutputChoice(),
-                               db_args->IsProtein(),
                                query_opts->GetParseDeflines(),
                                m_CmdLineArgs->GetOutputStream(),
                                fmt_args->GetNumDescriptions(),
@@ -151,7 +149,8 @@ int CTblastnApp::Run(void)
                                opt.GetDbGeneticCode(),
                                opt.GetSumStatisticsMode(),
                                m_CmdLineArgs->ExecuteRemotely(),
-                               db_adapter->GetFilteringAlgorithms());
+                               db_adapter->GetFilteringAlgorithms(),
+                               fmt_args->GetCustomOutputFormatSpec());
 
         formatter.PrintProlog();
 
@@ -167,7 +166,7 @@ int CTblastnApp::Run(void)
 
             if (m_CmdLineArgs->ExecuteRemotely()) {
                 CRef<CRemoteBlast> rmt_blast = 
-                    InitializeRemoteBlast(queries, db_args, opts_hndl, scope,
+                    InitializeRemoteBlast(queries, db_args, opts_hndl,
                           m_CmdLineArgs->ProduceDebugRemoteOutput());
                 results = rmt_blast->GetResultSet();
             } else {

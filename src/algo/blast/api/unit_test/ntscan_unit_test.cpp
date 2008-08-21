@@ -459,7 +459,7 @@ struct TestFixture {
             {
                 BOOST_REQUIRE(offset_pairs[i].qs_offsets.q_off <= 
                                (Uint4)(query_bases - bases_per_lut_word) &&
-                               offset_pairs[i].qs_offsets.q_off >= (Uint4)0);
+                               ((int)offset_pairs[i].qs_offsets.q_off) >= 0);
                 BOOST_REQUIRE(offset_pairs[i].qs_offsets.s_off < 
                                (Uint4)subject_bases); 
 

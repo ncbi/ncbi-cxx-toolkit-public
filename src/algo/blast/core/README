@@ -1,0 +1,26 @@
+This directory contains the implementation of the core of the BLAST algorithm
+(also known as the BLAST engine). In the future, NCBI may provide a simple
+C API to access this implementation, in the meantime, working with these
+sources directly is possible, but not recommended unless one is very familiar
+with them.
+
+Build instructions
+------------------
+To build these source files into a library without the rest of the NCBI C++
+toolkit, one should use the following commands (on UNIX):
+
+./configure --with-projects=scripts/projects/blast_core_lib.lst \
+            --without-debug --with-mt --with-build-root=ReleaseMT
+cd c++/ReleaseMT/build
+make all_p
+
+This will configure and build an optimized library called blast, which can then
+be referenced in makefiles as follows:
+
+NCBI_HOME=<installation directory of the NCBI C++ toolkit>
+-I$NCBI_HOME/c++/ReleaseMT/inc -I$NCBI_HOME/c++/include
+-L $NCBI_HOME/c++/ReleaseMT/lib
+
+NOTE: By following this approach some features supported by the NCBI C++ toolkit
+such as BLAST database access, BLAST formatting, embedded logging, MT locking,
+and configuration support will be absent or only partially supported.

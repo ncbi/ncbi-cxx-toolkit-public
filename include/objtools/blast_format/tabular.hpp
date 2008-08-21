@@ -69,13 +69,23 @@ public:
         eComma    ///< Comma
     };
 
+    /// Default format specification
+    static const string kDefaultFormat;
+
     /// Constructor
     /// @param ostr Stream to write output to [in]
     /// @param format Output format - what fields to include in the output [in]
     /// @param delim Delimiter to use between tabular fields [in]
-    CBlastTabularInfo(CNcbiOstream& ostr, const string& format=NcbiEmptyString,
-                      EFieldDelimiter delim=eTab,
-                      bool parse_local_ids=false);
+    /// @note fields that are not recognized will be ignored, if no fields are
+    /// specified (or left after purging those that are not recognized), the
+    /// default format is assumed
+    CBlastTabularInfo(CNcbiOstream& ostr, const string& format = kDefaultFormat,
+                      EFieldDelimiter delim = eTab,
+                      bool parse_local_ids = false);
+
+    /// Returns a string with the available format specifiers
+    static string DescribeFormatSpecifiers();
+
     /// Destructor
     ~CBlastTabularInfo();
     /// Set query id from a CSeq_id
@@ -137,7 +147,9 @@ public:
                              const string& rid = kEmptyStr,
                              unsigned int iteration = 
                                 numeric_limits<unsigned int>::max(),
-                             const CSeq_align_set* align_set=0); 
+                             const CSeq_align_set* align_set=0,
+                             CConstRef<CBioseq> subj_bioseq
+                                = CConstRef<CBioseq>()); 
 
      /// Prints number of queries processed.
      /// @param num_queries number of queries processed [in]
@@ -165,16 +177,16 @@ public:
         eBitScore,             ///< Bit score
         eScore,                ///< Raw score
         eAlignmentLength,      ///< Alignment length
-        ePercentIdentical,     ///< Percent of identical matches
+        ePercentIdentical,     ///< Percentage of identical matches
         eNumIdentical,         ///< Number of identical matches
         eMismatches,           ///< Number of mismatches
         ePositives,            ///< Number of positive-scoring matches
         eGapOpenings,          ///< Number of gap openings
         eGaps,                 ///< Total number of gaps
-        ePercentPositives,     ///<percent positives 
-        eFrames,               ///< frames
-        eQueryFrame,               ///< frames
-        eSubjFrame,               ///< frames
+        ePercentPositives,     ///< Percentage of positive-scoring matches
+        eFrames,               ///< Query and subject frames separated by a '/'
+        eQueryFrame,           ///< Query frame
+        eSubjFrame,            ///< Subject frame
         eMaxTabularField       ///< Sentinel value
     };
 
@@ -366,23 +378,6 @@ CBlastTabularInfo::x_DeleteFieldToShow(ETabularField field)
     while ((iter = find(m_FieldsToShow.begin(), m_FieldsToShow.end(), field))
            != m_FieldsToShow.end())
         m_FieldsToShow.erase(iter); 
-}
-
-inline void 
-CBlastTabularInfo::x_AddDefaultFieldsToShow()
-{
-    x_AddFieldToShow(eQuerySeqId);
-    x_AddFieldToShow(eSubjectAllSeqIds);
-    x_AddFieldToShow(ePercentIdentical);
-    x_AddFieldToShow(eAlignmentLength);
-    x_AddFieldToShow(eMismatches);
-    x_AddFieldToShow(eGapOpenings);
-    x_AddFieldToShow(eQueryStart);
-    x_AddFieldToShow(eQueryEnd);
-    x_AddFieldToShow(eSubjectStart);
-    x_AddFieldToShow(eSubjectEnd);
-    x_AddFieldToShow(eEvalue);
-    x_AddFieldToShow(eBitScore);
 }
 
 inline void 

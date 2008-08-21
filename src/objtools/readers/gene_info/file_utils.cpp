@@ -64,7 +64,7 @@ bool CGeneFileUtils::CheckExistence(const string& strFile)
     return file.Exists();
 }
 
-int CGeneFileUtils::GetLength(const string& strFile)
+Int8 CGeneFileUtils::GetLength(const string& strFile)
 {
     CFile file(strFile);
     if (!file.Exists())

@@ -1943,7 +1943,7 @@ void s_ReadRanges(const vector<int>           & vol_algos,
                 p.first = TRead::Read(blob);
                 p.second = TRead::Read(blob);
                 
-                _ASSERT(p.first >= 0);
+                _ASSERT(((int)p.first) >= 0);
                 _ASSERT(p.second >= p.first);
                 ranges.push_back(p);
             }

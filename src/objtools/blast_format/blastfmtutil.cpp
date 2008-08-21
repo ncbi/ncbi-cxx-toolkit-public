@@ -391,13 +391,43 @@ void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs,
                                              bool tabular /* = false */,
                                              const string& rid /* = kEmptyStr*/)
 {
+    const string label("Query");
+    CBlastFormatUtil::x_AcknowledgeBlastSequence(cbs, line_len, out,
+                                                 believe_query, html,
+                                                 label, tabular, rid);
+}
+
+void 
+CBlastFormatUtil::AcknowledgeBlastSubject(const CBioseq& cbs, 
+                                          size_t line_len,
+                                          CNcbiOstream& out,
+                                          bool believe_query,
+                                          bool html, 
+                                          bool tabular /* = false */)
+{
+    const string label("Subject");
+    CBlastFormatUtil::x_AcknowledgeBlastSequence(cbs, line_len, out,
+                                                 believe_query, html,
+                                                 label, tabular, kEmptyStr);
+}
+
+void 
+CBlastFormatUtil::x_AcknowledgeBlastSequence(const CBioseq& cbs, 
+                                             size_t line_len,
+                                             CNcbiOstream& out,
+                                             bool believe_query,
+                                             bool html, 
+                                             const string& label,
+                                             bool tabular /* = false */,
+                                             const string& rid /* = kEmptyStr*/)
+{
 
     if (html) {
-        out << "<b>Query=</b> ";
+        out << "<b>" << label << "=</b> ";
     } else if (tabular) {
-        out << "# Query: ";
+        out << "# " << label << ": ";
     } else {
-        out << "Query= ";
+        out << label << "= ";
     }
     
     string all_id_str = GetSeqIdString(cbs, believe_query);

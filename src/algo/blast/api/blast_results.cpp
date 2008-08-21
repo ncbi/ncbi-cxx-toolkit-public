@@ -414,6 +414,42 @@ CSearchResultSet::CSearchResultSet(TSeqAlignVector aligns,
     x_Init(queries, aligns, msg_vec, ancillary_data, NULL);
 }
 
+void
+CSearchResultSet::SetFilteredQueryRegions(const TSeqLocInfoVector& orig_masks)
+{
+    if (orig_masks.empty()) {
+        return;
+    }
+    TSeqLocInfoVector masks;
+
+    if (m_ResultType == eSequenceComparison &&
+        orig_masks.size() != m_Results.size()) {
+        // Make the number of masks match the number of results for bl2seq if
+        // it already isn't the case
+        const size_t kNumQueries = orig_masks.size();
+        const size_t kNumSubjects = m_Results.size() / kNumQueries;
+        masks.resize(m_Results.size());
+        for (size_t i = 0; i < m_Results.size(); i++) {
+            const TMaskedQueryRegions& mqr = orig_masks[i/kNumSubjects];
+            copy(mqr.begin(), mqr.end(), back_inserter(masks[i]));
+        }
+    } else {
+        masks = orig_masks;
+    }
+    _ASSERT(masks.size() == m_Results.size());
+
+    if (m_IsPhiBlast) {
+        for (size_t i = 0; i < m_Results.size(); i++) {
+            m_Results[i]->SetMaskedQueryRegions(masks[0]);
+        }
+    } else {
+        _ASSERT(masks.size() == m_Results.size());
+        for (size_t i = 0; i < m_Results.size(); i++) {
+            m_Results[i]->SetMaskedQueryRegions(masks[i]);
+        }
+    }
+}
+
 void CSearchResultSet::x_Init(TQueryIdVector&                    queries,
                               TSeqAlignVector                    aligns,
                               TSearchMessages                    msg_vec,
@@ -424,6 +460,8 @@ void CSearchResultSet::x_Init(TQueryIdVector&                    queries,
     _ASSERT(queries.size() == aligns.size());
     _ASSERT(aligns.size() == msg_vec.size());
     _ASSERT(aligns.size() == ancillary_data.size());
+
+    m_IsPhiBlast = (phi_query_info != NULL) ? true : false;
 
     // determine the number of unique queries
     if (m_ResultType == eSequenceComparison)
@@ -438,7 +476,6 @@ void CSearchResultSet::x_Init(TQueryIdVector&                    queries,
                 num_repeated_ids++;
             }
         }
-
         // calculate the actual number of queries
         m_NumQueries = queries.size() / num_repeated_ids;
     }
@@ -450,23 +487,16 @@ void CSearchResultSet::x_Init(TQueryIdVector&                    queries,
     m_Results.resize(aligns.size());
     
     for(size_t i = 0; i < aligns.size(); i++) {
-        if (query_masks && !query_masks->empty()) {
-            m_Results[i].Reset(new CSearchResults(queries[i],
-                                                  aligns[i],
-                                                  msg_vec[i],
-                                                  ancillary_data[i],
-                                                  &(*query_masks)[i],
-                                                  kEmptyStr,
-                                                  phi_query_info));
-        } else {
-            m_Results[i].Reset(new CSearchResults(queries[i],
-                                                  aligns[i],
-                                                  msg_vec[i],
-                                                  ancillary_data[i],
-                                                  NULL,
-                                                  kEmptyStr,
-                                                  phi_query_info));
-        }
+        m_Results[i].Reset(new CSearchResults(queries[i],
+                                              aligns[i],
+                                              msg_vec[i],
+                                              ancillary_data[i],
+                                              NULL,
+                                              kEmptyStr,
+                                              phi_query_info));
+    }
+    if (query_masks) {
+        SetFilteredQueryRegions(*query_masks);
     }
 }
 

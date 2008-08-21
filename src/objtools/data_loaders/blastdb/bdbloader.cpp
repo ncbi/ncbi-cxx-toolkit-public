@@ -106,6 +106,15 @@ CBlastDbDataLoader::EDbType SeqTypeToDbType(CSeqDB::ESeqType seq_type)
     }
 }
 
+CBlastDbDataLoader::SBlastDbParam::SBlastDbParam(CRef<CSeqDB> db_handle,
+                                                 bool use_fixed_size_slices)
+{
+    m_BlastDbHandle = db_handle;
+    m_UseFixedSizeSlices = use_fixed_size_slices;
+    m_DbName.assign(db_handle->GetDBNameList());
+    m_DbType = SeqTypeToDbType(db_handle->GetSequenceType());
+}
+
 string CBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& param)
 {
     return "BLASTDB_" + param.m_DbName + DbTypeToStr(param.m_DbType);
@@ -457,21 +466,19 @@ int CBlastDbDataLoader::GetOid(const CSeq_id_Handle& idh)
     // this Seq-id.  If there are other data loaders installed, they
     // will have an opportunity to resolve the Seq-id.
     
-    bool found = m_SeqDB->GetIdSet().Blank();
+    bool found = false;
+    
+    list< CRef<CSeq_id> > filtered = m_SeqDB->GetSeqIDs(oid);
+    
+    ITERATE(list< CRef<CSeq_id> >, id, filtered) {
+        if (seqid->Compare(**id) == CSeq_id::e_YES) {
+            found = true;
+            break;
+        }
+    }
     
     if (! found) {
-        list< CRef<CSeq_id> > filtered = m_SeqDB->GetSeqIDs(oid);
-        
-        ITERATE(list< CRef<CSeq_id> >, id, filtered) {
-            if (seqid->Compare(**id) == CSeq_id::e_YES) {
-                found = true;
-                break;
-            }
-        }
-        
-        if (! found) {
-            return -1;
-        }
+        return -1;
     }
     
     {

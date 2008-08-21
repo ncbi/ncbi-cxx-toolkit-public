@@ -5,11 +5,9 @@ SRC = blastinput_unit_test blast_scope_src_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-REGEX_LIBS = xregexp $(PCRE_LIB)
 ENTREZ_LIBS = entrez2cli entrez2
 
-LIB_ = $(BLAST_FORMATTER_LIBS) $(ENTREZ_LIBS) $(BLAST_LIBS) \
-	$(REGEX_LIBS) $(OBJMGR_LIBS)
+LIB_ = $(ENTREZ_LIBS) $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 LIBS = $(BOOST_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) \

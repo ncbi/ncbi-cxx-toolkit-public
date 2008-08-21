@@ -570,6 +570,10 @@ private:
 class NCBI_XBLAST_EXPORT CBlastDatabaseArgs : public IBlastCmdLineArgs
 {
 public:
+    /// The default priority for subjects, should be used for
+    /// subjects/databases
+    static const int kSubjectsDataLoaderPriority = 10;
+
     /// alias for a list of gis
     typedef CSearchDatabase::TGiList TGiList;
     /// alias for the database molecule type
@@ -636,7 +640,10 @@ public:
     /// initialized IQueryFactory object
     CRef<IQueryFactory> GetSubjects(objects::CScope* scope = NULL) {
         if (m_Subjects && scope) {
-            scope->AddScope(*m_Scope);
+            // m_Scope contains the subject(s) read
+            _ASSERT(m_Scope.NotEmpty()); 
+            // Add the scope with a lower priority to avoid conflicts
+            scope->AddScope(*m_Scope, kSubjectsDataLoaderPriority);
         }
         return m_Subjects; 
     }
@@ -685,6 +692,8 @@ public:
         eAsnText,
         /// ASN.1 binary output
         eAsnBinary,
+        /// Comma-separated values
+        eCommaSeparatedValues,
         /// Sentinel value for error checking
         eEndValue
     };
@@ -733,12 +742,21 @@ public:
         return m_Html;
     }
 
+    /// Retrieve for string that specifies the custom output format for tabular
+    /// and comma-separated value
+    string GetCustomOutputFormatSpec() const { 
+        return m_CustomOutputFormatSpec; 
+    }
+
 private:
     EOutputFormat m_OutputFormat;   ///< Choice of formatting output
     bool m_ShowGis;                 ///< Display NCBI GIs?
     TSeqPos m_NumDescriptions;       ///< Number of 1-line descr. to show
     TSeqPos m_NumAlignments;         ///< Number of alignments to show
     bool m_Html;                    ///< Display HTML output?
+    /// The format specification for custom output, e.g.: tabular or
+    /// comma-separated value (populated if applicable)
+    string m_CustomOutputFormatSpec;
 };
 
 /// Argument class to collect multi-threaded arguments

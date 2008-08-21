@@ -36,7 +36,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
-#include <algo/blast/api/remote_blast.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqset/Seq_entry.hpp>

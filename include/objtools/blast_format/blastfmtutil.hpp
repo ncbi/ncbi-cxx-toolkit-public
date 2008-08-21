@@ -388,7 +388,29 @@ public:
                                       CNcbiOstream& out, bool believe_query,
                                       bool html, bool tabular=false,
                                       const string& rid = kEmptyStr);
-    
+
+    /// Print out blast subject info
+    /// @param cbs bioseq of interest
+    /// @param line_len length of each line desired
+    /// @param out stream to ouput
+    /// @param believe_query use user id or not
+    /// @param html in html format or not [in]
+    /// @param tabular Is this done for tabular formatting? [in]
+    ///
+    static void AcknowledgeBlastSubject(const CBioseq& cbs, size_t line_len,
+                                        CNcbiOstream& out, bool believe_query,
+                                        bool html, bool tabular=false);
+private:
+    static void x_AcknowledgeBlastSequence(const CBioseq& cbs, 
+                                           size_t line_len,
+                                           CNcbiOstream& out,
+                                           bool believe_query,
+                                           bool html, 
+                                           const string& label,
+                                           bool tabular /* = false */,
+                                           const string& rid /* = kEmptyStr*/);
+public:
+
     /// Prints out PHI-BLAST info for header (or footer)
     /// @param num_patterns number of times pattern appears in query [in]
     /// @param pattern the pattern used [in]

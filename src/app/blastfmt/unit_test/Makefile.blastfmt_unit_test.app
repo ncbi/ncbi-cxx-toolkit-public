@@ -7,7 +7,7 @@ CPPFLAGS = $(OSMESA_INCLUDE) $(FLTK_INCLUDE) $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-LIB_ = $(BLAST_FORMATTER_LIBS) w_hit_matrix w_aln_data gui_glmesa w_gl \
+LIB_ = $(BLAST_FORMATTER_MINIMAL_LIBS) w_hit_matrix w_aln_data gui_glmesa w_gl \
 	  gui_graph gui_opengl gui_print gui_objutils gui_utils_fl gui_utils \
       xalnmgr ximage xcgi xhtml xobjutil entrez2cli entrez2 valerr gbseq \
       tables xconnserv $(BLAST_LIBS) $(OBJMGR_LIBS) 

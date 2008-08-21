@@ -979,7 +979,9 @@ CRemoteBlast::ConvertToRemoteMasks(const TSeqLocInfoVector& masking_locations,
 
         CRef<CPacked_seqint> packed_int = 
             query_masks->ConvertToCPacked_seqint(warnings);
-        _ASSERT(packed_int.NotEmpty());
+        if (packed_int.Empty()) {
+            continue;
+        }
         CRef<CBlast4_mask> network_mask = 
             s_CreateBlastMask(*packed_int, program);
         _ASSERT(network_mask.NotEmpty());
@@ -2001,8 +2003,7 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
         
         CBlastOptionsBuilder bob(program_s, service_s);
         
-        string task;
-        m_CBOH = bob.GetSearchOptions(m_AlgoOpts, m_ProgramOpts, &task);
+        m_CBOH = bob.GetSearchOptions(m_AlgoOpts, m_ProgramOpts, &m_Task);
         
         if (bob.HaveEntrezQuery()) {
             m_EntrezQuery = bob.GetEntrezQuery();

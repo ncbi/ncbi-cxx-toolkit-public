@@ -64,6 +64,7 @@ static char const rcsid[] = "$Id$";
 
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/winmask/seq_masker.hpp>
+#include <corelib/env_reg.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -135,8 +136,7 @@ void s_BuildMaskedRanges(CSeqMasker::TMaskList & masks,
                          const CSeq_loc        & seqloc,
                          CSeq_id               & query_id,
                          TMaskedQueryRegions   * mqr,
-                         CRef<CSeq_loc>        * psl,
-                         ENa_strand              strand)
+                         CRef<CSeq_loc>        * psl)
 {
     TSeqPos query_start = seqloc.GetStart(eExtreme_Positional);
     
@@ -154,18 +154,16 @@ void s_BuildMaskedRanges(CSeqMasker::TMaskList & masks,
         ival->SetFrom (query_start + start);
         ival->SetTo   (query_start + end);
         ival->SetId   (query_id);
-        
-        if (strand == eNa_strand_unknown) {
-            ival->ResetStrand();
-        } else {
-            ival->SetStrand(strand);
-        }
+        ival->SetStrand(eNa_strand_both);
         
         if (mqr) {
-            CRef<CSeqLocInfo> info
+            CRef<CSeqLocInfo> info_plus
                 (new CSeqLocInfo(&* ival, CSeqLocInfo::eFramePlus1));
-            
-            mqr->push_back(info);
+            mqr->push_back(info_plus);
+
+            CRef<CSeqLocInfo> info_minus
+                (new CSeqLocInfo(&* ival, CSeqLocInfo::eFrameMinus1));
+            mqr->push_back(info_minus);
         }
         
         if (psl) {
@@ -279,8 +277,7 @@ Blast_FindWindowMaskerLoc(CBlastQueryVector & queries, const string & lstat)
                             *seqloc,
                             *query_seq_id,
                             & mqr,
-                            0,
-                            eNa_strand_unknown);
+                            0);
         
         query.SetMaskedRegions(mqr);
     }
@@ -312,8 +309,7 @@ Blast_FindWindowMaskerLoc(TSeqLocVector & queries, const string & lstat)
                             *seqloc,
                             *query_seq_id,
                             0,
-                            & queries[j].mask,
-                            eNa_strand_unknown);
+                            & queries[j].mask);
         
         CPacked_seqint::Tdata & seqint_list =
             queries[0].mask->SetPacked_int().Set();
@@ -397,49 +393,45 @@ static bool s_VersionNumberLess(const string & a, const string & b)
     return one < two;
 }
 
+/// Find the path to the window masker files, first checking the environment
+/// variable WINDOW_MASKER_PATH, then the section WINDOW_MASKER, label
+/// WINDOW_MASKER_PATH in the NCBI configuration file. If not found in either
+/// location, return the current working directory
+/// @sa s_FindPathToGeneInfoFiles
+static string
+s_FindPathToWM(void)
+{
+    string retval = kEmptyStr;
+    const string kEnvVar("WINDOW_MASKER_PATH");
+    const string kSection("WINDOW_MASKER");
+    CNcbiIstrstream empty_stream(kEmptyCStr);
+    CRef<CNcbiRegistry> reg(new CNcbiRegistry(empty_stream,
+                                              IRegistry::fWithNcbirc));
+    CRef<CSimpleEnvRegMapper> mapper(new CSimpleEnvRegMapper(kSection,
+                                                             kEmptyStr));
+    CRef<CEnvironmentRegistry> env_reg(new CEnvironmentRegistry);
+    env_reg->AddMapper(*mapper, CEnvironmentRegistry::ePriority_Max);
+    reg->Add(*env_reg, CNcbiRegistry::ePriority_MaxUser);
+    retval = reg->Get(kSection, kEnvVar);
+    if (retval == kEmptyStr) {
+        retval = CDir::GetCwd();
+    }
+#if defined(NCBI_OS_MSWIN)
+	// We address this here otherwise CDirEntry::IsAbsolutePath() fails
+	if (NStr::StartsWith(retval, "//")) {
+		NStr::ReplaceInPlace(retval, "//", "\\\\");
+	}
+#endif
+    return retval;
+}
+
 static string
 s_WindowMaskerTaxidToDb(int taxid)
 {
-#if defined(NCBI_OS_UNIX)
-    const string default_path =
-        "/net/snowman/vol/export2/win-coremake/App/Ncbi/gbench/data/window-masker";
-#else
-    const string default_path =
-        "\\\\snowman\\win-coremake\\App\\Ncbi\\gbench\\data\\window-masker";
-#endif
-    
-    // This may not be a complete solution (and if it is, then most of
-    // it should probably be extracted into a separate function and
-    // moved to a more general location.)
-    
-    const string unix_sep = "/";
-    const string win_sep = "\\";
-    
-    string platform_sep;
-    platform_sep += CFile::GetPathSeparator();
-    
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    
-    string path;
-    if (sentry.registry) {
-        path = sentry.registry->Get("BLAST", "WINDOW_MASKER_PATH");
-    }
-    
-    if (! path.size()) {
-        path = default_path;
-    }
-    
-    path += platform_sep + NStr::IntToString(taxid)
-        + platform_sep + "*.*"
-        + platform_sep;
-    
-    if (unix_sep != platform_sep) {
-        NStr::ReplaceInPlace(path, unix_sep, platform_sep);
-    }
-    if (win_sep != platform_sep) {
-        NStr::ReplaceInPlace(path, win_sep, platform_sep);
-    }
+    string path = s_FindPathToWM();
+    path += CFile::GetPathSeparator() + NStr::IntToString(taxid)
+        + CFile::GetPathSeparator() + "*.*"
+        + CFile::GetPathSeparator();
     
     const string binpath = path + "wmasker.obinary";
     const string ascpath = path + "wmasker.oascii";
@@ -453,7 +445,7 @@ s_WindowMaskerTaxidToDb(int taxid)
     
     if (builds.empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
-                   "Empty sequence vector for id and length retrieval");
+                   "Unable to open window masker files");
     }
     
     // I want to select the latest build, so I pick the directory name

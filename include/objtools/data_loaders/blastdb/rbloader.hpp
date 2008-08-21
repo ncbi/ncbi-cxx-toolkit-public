@@ -37,7 +37,6 @@
 #include <corelib/ncbistd.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objtools/data_loaders/blastdb/remotedb.hpp>
-#include <algo/blast/api/remote_blast.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_descr.hpp>

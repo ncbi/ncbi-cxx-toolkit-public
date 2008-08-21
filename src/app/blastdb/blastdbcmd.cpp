@@ -99,13 +99,47 @@ private:
     /// options
     /// @param queries queries to retrieve [in|out]
     void x_GetQueries(TQueries& queries) const;
+
+    /// Process a single query and add it to the return value
+    /// @param retval the return value where the queries will be added [in|out]
+    /// @param entry the user's query [in]
+    void x_ProcessSingleQuery(CBlastDBCmdApp::TQueries& retval, 
+                              const string& entry) const;
 };
+
+void
+CBlastDBCmdApp::x_ProcessSingleQuery(CBlastDBCmdApp::TQueries& retval, 
+                                     const string& entry) const
+{
+    const CArgs& args = GetArgs();
+    const bool kGetDuplicates = args["get_dups"];
+    const bool kTargetGi = args["target_only"];
+
+    CRef<CBlastDBSeqId> blastdb_seqid;
+    if (kGetDuplicates) {
+        _ASSERT(kTargetGi == false);
+        vector<int> oids;
+        m_BlastDb->AccessionToOids(entry, oids);
+        ITERATE(vector<int>, oid, oids) {
+            blastdb_seqid.Reset(new CBlastDBSeqId());
+            blastdb_seqid->SetOID(*oid);
+            retval.push_back(blastdb_seqid);
+        }
+    } else {
+        blastdb_seqid.Reset(new CBlastDBSeqId(entry));
+        if (kTargetGi && !blastdb_seqid->IsGi()) {
+            ERR_POST(Warning << "Skipping " << blastdb_seqid->AsString() 
+                     << " as it is not a GI and target_only is being used");
+            return;
+        }
+        retval.push_back(blastdb_seqid);
+    }
+}
 
 void
 CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
 {
     const CArgs& args = GetArgs();
-    const bool kGetDuplicates = args["get_dups"];
     retval.clear();
 
     _ASSERT(m_BlastDb.NotEmpty());
@@ -120,27 +154,16 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
 
         static const string kDelim(",");
         const string& entry = args["entry"].AsString();
-        CRef<CBlastDBSeqId> blastdb_seqid;
         if (entry.find(kDelim[0]) != string::npos) {
             vector<string> tokens;
             NStr::Tokenize(entry, kDelim, tokens);
             retval.reserve(tokens.size());
             ITERATE(vector<string>, itr, tokens) {
-                if (kGetDuplicates) {
-                    vector<int> oids;
-                    m_BlastDb->AccessionToOids(*itr, oids);
-                    ITERATE(vector<int>, oid, oids) {
-                        blastdb_seqid.Reset(new CBlastDBSeqId());
-                        blastdb_seqid->SetOID(*oid);
-                        retval.push_back(blastdb_seqid);
-                    }
-                } else {
-                    blastdb_seqid.Reset(new CBlastDBSeqId(*itr));
-                    retval.push_back(blastdb_seqid);
-                }
+                x_ProcessSingleQuery(retval, *itr);
             }
         } else if (entry == "all") {
             // dump all OIDs in this database
+            CRef<CBlastDBSeqId> blastdb_seqid;
             for (int i = 0; m_BlastDb->CheckOrFindOID(i); i++) {
                 blastdb_seqid.Reset(new CBlastDBSeqId());
                 blastdb_seqid->SetOID(i);
@@ -148,47 +171,27 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
             }
         } else {
             retval.reserve(1);
-            if (kGetDuplicates) {
-                vector<int> oids;
-                m_BlastDb->AccessionToOids(entry, oids);
-                ITERATE(vector<int>, oid, oids) {
-                    blastdb_seqid.Reset(new CBlastDBSeqId());
-                    blastdb_seqid->SetOID(*oid);
-                    retval.push_back(blastdb_seqid);
-                }
-            } else {
-                blastdb_seqid.Reset(new CBlastDBSeqId(entry));
-                retval.push_back(blastdb_seqid);
-            }
+            x_ProcessSingleQuery(retval, entry);
         }
 
     } else if (args["entry_batch"].HasValue()) {
 
         CNcbiIstream& input = args["entry_batch"].AsInputFile();
         retval.reserve(256); // arbitrary value
-        CRef<CBlastDBSeqId> blastdb_seqid;
         while (input) {
             string line;
             NcbiGetlineEOL(input, line);
             if ( !line.empty() ) {
-                if (kGetDuplicates) {
-                    vector<int> oids;
-                    m_BlastDb->AccessionToOids(line, oids);
-                    ITERATE(vector<int>, oid, oids) {
-                        blastdb_seqid.Reset(new CBlastDBSeqId());
-                        blastdb_seqid->SetOID(*oid);
-                        retval.push_back(blastdb_seqid);
-                    }
-                } else {
-                    blastdb_seqid.Reset(new CBlastDBSeqId(line));
-                    retval.push_back(blastdb_seqid);
-                }
+                x_ProcessSingleQuery(retval, line);
             }
         }
 
     } else {
-        NCBI_THROW(CBlastException, eInvalidArgument, 
-                   "Must specify query type");
+        NCBI_THROW(CInputException, eInvalidInput, "Must specify query type");
+    }
+    if (retval.empty()) {
+        NCBI_THROW(CInputException, eInvalidInput, 
+                   "No valid entries to search");
     }
 }
 
@@ -379,6 +382,7 @@ void CBlastDBCmdApp::Init()
     arg_desc->SetConstraint("pig", new CArgAllowValuesGreaterThanOrEqual(0));
     arg_desc->SetDependency("pig", CArgDescriptions::eExcludes, "entry");
     arg_desc->SetDependency("pig", CArgDescriptions::eExcludes, "entry_batch");
+    arg_desc->SetDependency("pig", CArgDescriptions::eExcludes, "target_only");
 
     arg_desc->AddFlag("info", "Print BLAST database information", true);
     // All other options to this program should be here
@@ -425,12 +429,14 @@ void CBlastDBCmdApp::Init()
     //                        "Definition line should contain target gi only",
     //                        CArgDescriptions::eBoolean, "false");
     arg_desc->AddFlag("target_only", 
-                      "Definition line should contain target gi only", true);
+                      "Definition line should contain target GI only", true);
     
     //arg_desc->AddDefaultKey("get_dups", "value",
     //                        "Retrieve duplicate accessions",
     //                        CArgDescriptions::eBoolean, "false");
     arg_desc->AddFlag("get_dups", "Retrieve duplicate accessions", true);
+    arg_desc->SetDependency("get_dups", CArgDescriptions::eExcludes, 
+                            "target_only");
 
     arg_desc->SetCurrentGroup("Output configuration options for FASTA format");
     arg_desc->AddDefaultKey("line_length", "number",

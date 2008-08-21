@@ -50,6 +50,8 @@ Author: Jason Papadopoulos
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_args.hpp>
+#include <algo/blast/api/local_db_adapter.hpp>
+#include <algo/blast/api/blast_seqinfosrc.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -64,9 +66,9 @@ public:
 
     /// Constructor
     /// @param opts BLAST options used in the search [in]
-    /// @param dbname Name of database to search ("" if none) [in]
+    /// @param db_adapter Adapter object representing a BLAST database or
+    /// subject sequences [in]
     /// @param format_type Integer indication the type of output [in]
-    /// @param db_is_aa true if database contains protein sequences [in]
     /// @param believe_query true if sequence ID's of query sequences
     ///                are to be parsed. If multiple queries are provieded,
     ///                their sequence ID's must be distinct [in]
@@ -95,9 +97,13 @@ public:
     /// applicable) [in]
     /// @param is_megablast true if megablast [in]
     /// @param is_indexed true if indexed search [in]
-    CBlastFormat(const blast::CBlastOptions& opts, const string& dbname, 
+    /// @param custom_output_format custom output format specification for
+    /// tabular/comma-separated value output format. An empty string implies to
+    /// use the default value when applicable. [in]
+    CBlastFormat(const blast::CBlastOptions& opts, 
+                 blast::CLocalDbAdapter& db_adapter,
                  blast::CFormattingArgs::EOutputFormat format_type, 
-                 bool db_is_aa, bool believe_query, CNcbiOstream& outfile,
+                 bool believe_query, CNcbiOstream& outfile,
                  int num_summary, 
                  int num_alignments,
                  CScope & scope,
@@ -109,6 +115,7 @@ public:
                  bool use_sum_statistics = false,
                  bool is_remote_search = false,
                  const vector<int>& dbfilt_algorithms = vector<int>(),
+                 const string& custom_output_format = kEmptyStr,
                  bool is_megablast = false,
                  bool is_indexed = false);
 
@@ -193,6 +200,8 @@ private:
     
     bool m_Megablast;           ///< true if megablast was used.
     bool m_IndexedMegablast;    ///< true if indexed megablast was used.
+    /// Used to retrieve subject sequence information
+    CRef<blast::IBlastSeqInfoSrc> m_SeqInfoSrc;
 
     /// internal representation of database information
     vector<CBlastFormatUtil::SDbInfo> m_DbInfo;
@@ -201,6 +210,8 @@ private:
     CRef<blast::CBlastQueryVector> m_AccumulatedQueries;
     /// Accumulated results to display in XML format 
     blast::CSearchResultSet m_AccumulatedResults;
+    /// The custom output format specification
+    string m_CustomOutputFormatSpec;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]
@@ -270,6 +281,12 @@ private:
    /// @param itr_num Iteration number for PSI-BLAST [in]
    void x_PrintTabularReport(const blast::CSearchResults& results,
                              unsigned int itr_num);
+
+   /// Creates a bioseq to be able to print the acknowledgement for the
+   /// subject bioseq when formatting bl2seq results
+   /// @note this method contains a static variable that assumes the order of
+   /// the calls to it to retrieve the proper subject sequence
+   CConstRef<objects::CBioseq> x_CreateSubjectBioseq();
 };
 
 END_NCBI_SCOPE

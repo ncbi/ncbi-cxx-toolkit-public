@@ -2,6 +2,10 @@
 
 SUB_PROJ = unit_test
 REQUIRES = objects gui FLTK MESA
+APP_PROJ = hitmatrix
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
+
+hitmatrix:
+	make -f Makefile.hitmatrix_app

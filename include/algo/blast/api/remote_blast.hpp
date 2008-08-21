@@ -474,6 +474,16 @@ public:
 
     /// Fetch the search strategy for this object without submitting the search
     CRef<objects::CBlast4_request> GetSearchStrategy();
+
+    /// Returns the list of filtering algorithm IDs for the database
+    list<int> GetDbFilteringAlgorithmIds() const {
+        return m_DbFilteringAlgorithmIds;
+    }
+
+    /// Returns the task used to create the remote search (if any)
+    string GetTask() const {
+        return m_Task;
+    }
     
 private:
 
@@ -828,6 +838,10 @@ private:
 
     /// List of filtering algorithms to use in the database
     list<Int4> m_DbFilteringAlgorithmIds;
+
+    /// Task used when the search was submitted (recovered via
+    /// CBlastOptionsBuilder)
+    string m_Task;
 };
 
 /** Converts the return value of CSeqLocInfo::GetFrame into the

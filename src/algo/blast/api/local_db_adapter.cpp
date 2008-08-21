@@ -37,8 +37,10 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp> // for CObjMgr_QueryFactory
 #include <algo/blast/api/seqsrc_seqdb.hpp>  // for SeqDbBlastSeqSrcInit
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>  // for CSeqDbSeqInfoSrc
+#include <algo/blast/api/seqinfosrc_seqvec.hpp> // for CSeqVecSeqInfoSrc
 #include "seqsrc_query_factory.hpp"  // for QueryFactoryBlastSeqSrcInit
 #include "psiblast_aux_priv.hpp"    // for CPsiBlastValidate
 #include "seqinfosrc_bioseq.hpp"    // for CBioseqInfoSrc
@@ -52,7 +54,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 CLocalDbAdapter::CLocalDbAdapter(const CSearchDatabase& dbinfo)
-    : m_SeqSrc(0), m_SeqInfoSrc(0), 
+    : m_SeqSrc(0), m_SeqInfoSrc(0), m_DbName(dbinfo.GetDatabaseName()),
     m_FilteringAlgs(dbinfo.GetFilteringAlgorithms())
 {
     m_DbInfo.Reset(new CSearchDatabase(dbinfo));
@@ -61,7 +63,8 @@ CLocalDbAdapter::CLocalDbAdapter(const CSearchDatabase& dbinfo)
 CLocalDbAdapter::CLocalDbAdapter(CRef<CSeqDB> seqdb,
                                  const CSearchDatabase::TFilteringAlgorithms&
                                  filt_algs)
-    : m_SeqSrc(0), m_SeqInfoSrc(0), m_SeqDb(seqdb), m_FilteringAlgs(filt_algs)
+    : m_SeqSrc(0), m_SeqInfoSrc(0), m_SeqDb(seqdb),
+    m_DbName(seqdb->GetDBNameList()), m_FilteringAlgs(filt_algs)
 {
     if (m_SeqDb.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, "NULL CSeqDB");
@@ -70,8 +73,8 @@ CLocalDbAdapter::CLocalDbAdapter(CRef<CSeqDB> seqdb,
 
 CLocalDbAdapter::CLocalDbAdapter(CRef<IQueryFactory> subject_sequences,
                                  CConstRef<CBlastOptionsHandle> opts_handle)
-    : m_SeqSrc(0), m_SeqInfoSrc(0), m_QueryFactory(subject_sequences),
-    m_OptsHandle(opts_handle)
+    : m_SeqSrc(0), m_SeqInfoSrc(0), m_SubjectFactory(subject_sequences),
+    m_OptsHandle(opts_handle), m_DbName(kEmptyStr)
 {
     if (subject_sequences.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
@@ -83,6 +86,11 @@ CLocalDbAdapter::CLocalDbAdapter(CRef<IQueryFactory> subject_sequences,
     if (opts_handle->GetOptions().GetProgram() == ePSIBlast) {
         CPsiBlastValidate::QueryFactory(subject_sequences, *opts_handle,
                                         CPsiBlastValidate::eQFT_Subject);
+    }
+
+    CObjMgr_QueryFactory* objmgr_qf = NULL;
+    if ( (objmgr_qf = dynamic_cast<CObjMgr_QueryFactory*>(&*m_SubjectFactory)) ) {
+        m_Subjects = objmgr_qf->GetTSeqLocVector();
     }
 }
 
@@ -128,9 +136,15 @@ CLocalDbAdapter::MakeSeqSrc()
             }
             m_SeqSrc = SeqDbBlastSeqSrcInit(m_SeqDb.GetNonNullPointer(),
                                             m_FilteringAlgs);
-        } else if (m_QueryFactory.NotEmpty() && m_OptsHandle.NotEmpty()) {
-            m_SeqSrc = QueryFactoryBlastSeqSrcInit(m_QueryFactory,
-                           m_OptsHandle->GetOptions().GetProgramType());
+        } else if (m_SubjectFactory.NotEmpty() && m_OptsHandle.NotEmpty()) {
+            const EBlastProgramType program =
+                               m_OptsHandle->GetOptions().GetProgramType();
+            if ( !m_Subjects.empty() ) {
+                m_SeqSrc = QueryFactoryBlastSeqSrcInit(m_Subjects, program);
+            } else {
+                m_SeqSrc = QueryFactoryBlastSeqSrcInit(m_SubjectFactory, program);
+            }
+            _ASSERT(m_SeqSrc);
         } else {
             abort();
         }
@@ -191,19 +205,42 @@ CLocalDbAdapter::MakeSeqInfoSrc()
         } else if (m_DbInfo.NotEmpty()) {
             m_SeqDb = x_InitSeqDB(m_DbInfo);
             m_SeqInfoSrc = &*s_InitCSeqDbSeqInfoSrc(m_SeqDb, m_FilteringAlgs);
-        } else if (m_QueryFactory.NotEmpty() && m_OptsHandle.NotEmpty()) {
-            CRef<IRemoteQueryData> subj_data
-                (m_QueryFactory->MakeRemoteQueryData());
-            CRef<CBioseq_set> subject_bioseqs(subj_data->GetBioseqSet());
+        } else if (m_SubjectFactory.NotEmpty() && m_OptsHandle.NotEmpty()) {
             EBlastProgramType p(m_OptsHandle->GetOptions().GetProgramType());
-            bool is_prot = Blast_SubjectIsProtein(p) ? true : false;
-            m_SeqInfoSrc = new CBioseqSeqInfoSrc(*subject_bioseqs, is_prot);
+            if ( !m_Subjects.empty() ) {
+                m_SeqInfoSrc = new CSeqVecSeqInfoSrc(m_Subjects);
+            } else {
+                CRef<IRemoteQueryData> subj_data
+                    (m_SubjectFactory->MakeRemoteQueryData());
+                CRef<CBioseq_set> subject_bioseqs(subj_data->GetBioseqSet());
+                bool is_prot = Blast_SubjectIsProtein(p) ? true : false;
+                m_SeqInfoSrc = new CBioseqSeqInfoSrc(*subject_bioseqs, is_prot);
+            }
         } else {
             abort();
         }
         _ASSERT(m_SeqInfoSrc);
     }
     return m_SeqInfoSrc;
+}
+
+bool
+CLocalDbAdapter::IsProtein() const
+{
+    bool retval = false;
+    if (m_DbInfo) {
+        retval = m_DbInfo->IsProtein();
+    } else if (m_SeqDb) {
+        retval = (m_SeqDb->GetSequenceType() == CSeqDB::eProtein) ? true :
+            false;
+    } else if (m_OptsHandle) {
+        const EBlastProgramType p = m_OptsHandle->GetOptions().GetProgramType();
+        retval = Blast_SubjectIsProtein(p) ? true : false;
+    } else {
+        // Data type provided in a constructor, but not handled here
+        abort();
+    }
+    return retval;
 }
 
 END_SCOPE(Blast)

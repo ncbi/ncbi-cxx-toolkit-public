@@ -42,6 +42,9 @@ static char const rcsid[] =
 /* for CBlastFastaInputSource */
 #include <algo/blast/blastinput/blast_fasta_input.hpp>  
 #include <algo/blast/blastinput/psiblast_args.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Seq_ext.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -187,6 +190,31 @@ CalculateFormattingParams(TSeqPos max_target_seqs,
             *num_alignments = kResetSeqNumMax;
         }
     }
+}
+
+bool
+HasRawSequenceData(const objects::CBioseq& bioseq)
+{
+     if (CBlastBioseqMaker::IsEmptyBioseq(bioseq))
+         return false;
+     else if (bioseq.GetInst().CanGetSeq_data() == true)
+         return true;
+     else if (bioseq.GetInst().IsSetExt())
+     {
+         if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_delta)
+         {
+              bool is_raw = true;
+              ITERATE (CSeq_inst::TExt::TDelta::Tdata, iter,
+                      bioseq.GetInst().GetExt().GetDelta().Get()) {
+                 if ((*iter)->Which() == CDelta_seq::e_Loc) {
+                     is_raw = false;
+                     break;
+                 }
+              }
+              return is_raw;
+         }
+     }
+     return false;
 }
 
 END_SCOPE(blast)

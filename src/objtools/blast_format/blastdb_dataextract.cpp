@@ -83,6 +83,19 @@ int COidExtractor::ExtractOID(CBlastDBSeqId& id, CSeqDB& blastdb)
         retval = id.GetOID();
     } else if (id.IsGi()) {
         blastdb.GiToOid(id.GetGi(), retval);
+        // Verify that the GI of interest is among the Seq-ids this oid
+        // retrieves 
+        list< CRef<CSeq_id> > filtered_ids = blastdb.GetSeqIDs(retval);
+        bool found = false;
+        ITERATE(list< CRef<CSeq_id> >, seqid, filtered_ids) {
+            if ((*seqid)->IsGi() && ((*seqid)->GetGi() == id.GetGi())) {
+                found = true;
+                break;
+            }
+        }
+        if ( !found ) {
+            retval = CBlastDBSeqId::kInvalid;
+        }
     } else if (id.IsPig()) {
         blastdb.PigToOid(id.GetPig(), retval);
     } else if (id.IsStringId()) {
@@ -162,12 +175,23 @@ s_GetBioseq(CBlastDBSeqId& id, CSeqDB& blastdb, bool get_sequence = false,
             bool get_target_gi_only = false)
 {
     const int kOid = COidExtractor().ExtractOID(id, blastdb);
-    const int kTargetGi = get_target_gi_only
-        ? (id.IsGi() ? id.GetGi() : 0)
-        : 0;
-    return get_sequence 
-        ? blastdb.GetBioseq(kOid, kTargetGi) 
-        : blastdb.GetBioseqNoData(kOid, kTargetGi);
+    if (get_target_gi_only) _ASSERT(id.IsGi());
+    const int kTargetGi = get_target_gi_only ? id.GetGi() : 0;
+
+    CRef<CBioseq> retval;
+    try {
+        retval = get_sequence 
+            ? blastdb.GetBioseq(kOid, kTargetGi) 
+            : blastdb.GetBioseqNoData(kOid, kTargetGi);
+    } catch (const CSeqDBException& e) {
+        // this happens when CSeqDB detects a GI that doesn't belong to a
+        // filtered database (e.g.: swissprot as a subset of nr)
+        if (e.GetMsg().find("oid headers do not contain target gi")) {
+            NCBI_THROW(CSeqDBException, eArgErr, 
+                       "Entry not found in BLAST database");
+        }
+    }
+    return retval;
 }
 
 string CTitleExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
@@ -242,8 +266,8 @@ CFastaExtractor::CFastaExtractor(TSeqPos line_width,
 /// Hacky function to replace ' >' for Ctrl-A's in the Bioseq's title
 static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)
 {
-    static const string kTarget(" >");
-    static const string kCtrlA(1, '\001');
+    static const string kTarget(" >gi");
+    static const string kCtrlA = string(1, '\001') + string("gi");
     NON_CONST_ITERATE(CSeq_descr::Tdata, desc, bioseq->SetDescr().Set()) {
         if ((*desc)->Which() == CSeqdesc::e_Title) {
             NStr::ReplaceInPlace((*desc)->SetTitle(), kTarget, kCtrlA);

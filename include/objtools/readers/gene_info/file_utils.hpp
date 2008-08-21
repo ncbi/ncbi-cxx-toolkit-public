@@ -94,7 +94,7 @@ public:
     static bool CheckExistence(const string& strFile);
 
     /// Get the length of a file, given its name.
-    static int GetLength(const string& strFile);
+    static Int8 GetLength(const string& strFile);
 
     /// Open the given text file for reading.
     static bool OpenTextInputFile(const string& strFileName,

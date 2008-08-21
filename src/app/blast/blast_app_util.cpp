@@ -61,7 +61,6 @@ CRef<blast::CRemoteBlast>
 InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
                       CRef<blast::CBlastDatabaseArgs> db_args,
                       CRef<blast::CBlastOptionsHandle> opts_hndl,
-                      CRef<objects::CScope> scope,
                       bool verbose_output,
                       CRef<objects::CPssmWithParameters> pssm 
                         /* = CRef<objects::CPssmWithParameters>() */)
@@ -85,8 +84,11 @@ InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
             NCBI_THROW(CInputException, eInvalidInput,
                        "Remote PSI-BL2SEQ is not supported");
         } else {
+            // N.B.: there is NO scope needed in the GetSubjects call because
+            // the subjects (if any) should have already been added in 
+            // InitializeSubject 
             retval.Reset(new CRemoteBlast(queries, opts_hndl,
-                                         db_args->GetSubjects(scope)));
+                                         db_args->GetSubjects()));
         }
     }
     if (verbose_output) {
@@ -188,10 +190,23 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
         db_adapter.Reset(new CLocalDbAdapter(subjects, opts_hndl));
     } else {
         _ASSERT(search_db.NotEmpty());
-        CRef<CSeqDB> seqdb = GetSeqDB(db_args);
-        db_adapter.Reset(new CLocalDbAdapter(seqdb,
-                             search_db->GetFilteringAlgorithms()));
-        scope->AddDataLoader(RegisterOMDataLoader(seqdb));
+        try { 
+            // Try to open the BLAST database even for remote searches, as if
+            // it is available locally, it will be better to fetch the
+            // sequence data for formatting from this (local) source
+            CRef<CSeqDB> seqdb = GetSeqDB(db_args); 
+            db_adapter.Reset(new CLocalDbAdapter(seqdb,
+                                 search_db->GetFilteringAlgorithms()));
+            scope->AddDataLoader(RegisterOMDataLoader(seqdb));
+        } catch (const CSeqDBException& e) {
+            // The BLAST database couldn't be found, report this for local
+            // searches, but for remote searches go on.
+            if (is_remote_search ) {
+                db_adapter.Reset(new CLocalDbAdapter(*search_db));
+            } else {
+                throw;
+            }
+        }
     }
 }
 
@@ -200,8 +215,9 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle)
     // the blast formatter requires that the database coexist in
     // the same scope with the query sequences
     CRef<CObjectManager> om = CObjectManager::GetInstance();
-    CBlastDbDataLoader::RegisterInObjectManager(*om, db_handle);/*, true,
-                                                CObjectManager::eDefault);*/
+    CBlastDbDataLoader::RegisterInObjectManager(*om, db_handle, true,
+                        CObjectManager::eDefault,
+                        CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
     CBlastDbDataLoader::SBlastDbParam param(db_handle);
     return CBlastDbDataLoader::GetLoaderNameFromArgs(param);
 }
@@ -222,10 +238,8 @@ s_ExportSearchStrategy(CNcbiOstream* out,
     _ASSERT(db_args);
     _ASSERT(options_handle);
 
-    CRef<CScope> null_scope;
     CRef<CRemoteBlast> rmt_blast =
-        InitializeRemoteBlast(queries, db_args, options_handle, null_scope, 
-                              false, pssm);
+        InitializeRemoteBlast(queries, db_args, options_handle, false, pssm);
     CRef<CBlast4_request> req = rmt_blast->GetSearchStrategy();
     // N.B.: If writing XML, be sure to call SetEnforcedStdXml on the stream!
     *out << MSerial_AsnText << *req;
