@@ -485,373 +485,208 @@ void CMultiAligner::AlignInClusters(void)
 
 }
 
-// Translates position of a gap with respect to non-gap characters to simple
-// position in the sequence
-static Uint4 s_CorrectLocation(Uint4 pos, const CSequence& seq)
-{    
-    Uint4 letters = 0;
-    int i;
-    for (i=0; letters < pos && i < seq.GetLength();i++) {
-        if (seq.GetLetter(i) != CSequence::kGapChar) {
-            letters++;
-        }
-    }
-
-    _ASSERT(letters == pos || letters + 1 == pos);
-
-    return i;
-}
-
-// Translates gap positions with respect to non-gap letters to simple position
-// in the sequence. Each new position for a series of gaps is independent
-// of others in the vector.
-// pos [in|out]
-static void s_CorrectLocations(vector<Uint4>& pos, const CSequence& seq)
+// Initiate regular column of multiple alignment
+static void s_InitColumn(vector<CMultiAligner::SColumn>::iterator& it,
+                         size_t len)
 {
-    // Translate 'before letter' coordinate to absolute position in the sequence
-    int j = -1;
-    Int4 letters = -1;
-    size_t i = 0;
-
-    // For each i-th position find i-th letter
-    for (i=0;i < pos.size();i++) {
-
-        while (j < seq.GetLength() && letters < (Int4)pos[i]) {
-
-            j++;
-
-            // skip gaps
-            while (j < seq.GetLength()
-                   && seq.GetLetter(j) == CSequence::kGapChar) {
-                j++;
-            }
-            letters++;
-        }
-
-        pos[i] = j - 1;
+    it->insert = false;
+    it->letters.resize(len);
+    for (size_t i=0;i < len;i++) {
+        it->letters[i] = -1;
     }
-
-    // For a series of gaps before the same letter find position of each gap
-    j = 1;
-    while (j < (int)pos.size()) {
-        while (j < (int)pos.size() && pos[j] != pos[j - 1]) {
-            j++;
-        }
-        Uint4 offset = 0;
-        while (j < (int)pos.size() && pos[j] == pos[j - 1]) {
-            j++;
-            offset++;
-        }
-        for (Uint4 i=0;i <= offset;i++) {
-            pos[j - i - 1] -= i;
-        }
-    }
-
-    // Make positions independent (as if previous gaps were not there)
-    for (size_t i=0;i < pos.size();i++) {
-        pos[i] -= i;
-    }
+    it->number = 1;
+    it->cluster = -1;
 }
 
 
-// TODO: gaps are represented as single positions, those should be changed
-// to ranges
+// Initiate a range from in-cluster alignment for insertion into multiple
+// alignment
+static void s_InitInsertColumn(vector<CMultiAligner::SColumn>::iterator& it,
+                               size_t len, int num, int cluster)
+{
+    it->insert = true;
+    it->letters.resize(len);
+    for (size_t i=0;i < len;i++) {
+        it->letters[i] = -1;
+    }
+    it->number = num;
+    it->cluster = cluster;
+}
+
 void CMultiAligner::MultiAlignClusters(void)
 {
-    vector<CSequence> results(m_AllQueryData.size());
     const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
-    vector< vector<Uint4> > multi_aln_gaps(clusters.size());
 
-    // Copy sequences to results list
-    // and get positions of multiple alignment gaps
-    for (size_t cluster_idx=0;cluster_idx < clusters.size();cluster_idx++) {
-        const CClusterer::TSingleCluster& cluster = clusters[cluster_idx];
-        ITERATE(CClusterer::TSingleCluster, elem, cluster) {
-            if (*elem == cluster.GetPrototype()) {
-                results[*elem] = m_Results[cluster_idx];
+    int seq_length = m_Results[0].GetLength();
+    size_t num_seqs = m_AllQueryData.size();
 
-                // Get positions of multiple alignment gaps
-                const CSequence& prototype = results[*elem];
-                for (int i=0;i < prototype.GetLength();i++) {
-                    if (prototype.GetLetter(i) == CSequence::kGapChar) {
-                        multi_aln_gaps[cluster_idx].push_back((Uint4)i);
-                    }
-                }
-            }
-            else {
-                results[*elem] = m_AllQueryData[*elem];
+    vector<int> letter_inds(clusters.size());
+    vector<SColumn> columns(seq_length);
+
+    // Represent multiple alignment as list of columns of positions in input
+    // sequences (n-th letter)
+    int col = 0;
+    NON_CONST_ITERATE(vector<SColumn>, it, columns) {
+        s_InitColumn(it, num_seqs);
+        for (size_t j=0;j < clusters.size();j++) {
+            if (m_Results[j].GetLetter(col) != CSequence::kGapChar) {
+                it->letters[clusters[j].GetPrototype()] = letter_inds[j]++;
             }
         }
-        //--------------------------------------------------------------------
-        if (m_Verbose) {
-            if (cluster_idx == 0) {
-                printf("Multiple alignment gaps for clusters:\n");
-            }
-            if (!multi_aln_gaps[cluster_idx].empty()) {
-                printf("%3d: ", cluster_idx);
-                int i;
-                for (i=0;i < multi_aln_gaps[cluster_idx].size();i++) {
-                    printf("%4d-", multi_aln_gaps[cluster_idx][i]);
-                    while (i < multi_aln_gaps[cluster_idx].size()
-                           && multi_aln_gaps[cluster_idx][i] + 1 
-                           == multi_aln_gaps[cluster_idx][i + 1]) {
-                        i++;
-                    }                     
-                    if (i == (int)multi_aln_gaps.size()) {
-                        printf("%4d", multi_aln_gaps[cluster_idx][i - 1]);
-                    }
-                    else {
-                        printf("%4d", multi_aln_gaps[cluster_idx][i]);
-                    }
-                }
-                printf("\n");
-            }
-        }
-        //--------------------------------------------------------------------
+        col++;
     }
 
-    // Calculate positions for multiple alignmnent gaps considering
-    // in-cluster alignmenet gaps
-    vector< vector<Uint4> > multi_aln_gaps_corrected(clusters.size());
+    // Insert in-cluster ranges to columns
+    size_t new_length = seq_length;
+
+    // for each cluster
     for (size_t cluster_idx=0;cluster_idx < clusters.size();cluster_idx++) {
 
-        // Nothing to do for if no gaps were added in multiple alignment
-        if (multi_aln_gaps[cluster_idx].empty()) {
-            continue;
-        }
+        // for each gap position
+        for (size_t i=0;i < m_ClusterGapPositions[cluster_idx].size();i++) {
 
-        const CClusterer::TSingleCluster& cluster = clusters[cluster_idx];
-        const CSequence& prototype = results[cluster.GetPrototype()];
-        multi_aln_gaps_corrected[cluster_idx].resize(
-                                       multi_aln_gaps[cluster_idx].size());
+            // get letter before which the gap needs to be placed
+            size_t letter = m_ClusterGapPositions[cluster_idx][i];
+            size_t offset = i;
+            int num = 1;
 
-        copy(multi_aln_gaps[cluster_idx].begin(),
-             multi_aln_gaps[cluster_idx].end(),
-             multi_aln_gaps_corrected[cluster_idx].begin());
-
-
-        if (m_ClusterGapPositions[cluster_idx].empty()) {
-            continue;
-        }
-
-        // For each multiple alignment gap
-        Uint4 offset = 0, i = 0;
-        for (Uint4 j=0;j < multi_aln_gaps[cluster_idx].size();j++) {
-            Uint4 pos;
-
-            // Translate in-cluster alignment gap
-            if (i < m_ClusterGapPositions[cluster_idx].size()) {
-                pos = s_CorrectLocation(m_ClusterGapPositions[cluster_idx][i],
-                                        prototype);
-            }
-
-            // For each in-cluster alignment gap with smaller position
-            // shift multiple alignemnt gap
-            while (pos < multi_aln_gaps[cluster_idx][j] 
-                   && i < m_ClusterGapPositions[cluster_idx].size()) {
+            // combine all gaps before the same letter as one range
+            while (i < m_ClusterGapPositions[cluster_idx].size()
+                   && m_ClusterGapPositions[cluster_idx][i + 1] == letter) {
                 i++;
-                offset++;
+                num++;
+            }
+            
+            // find that column that contains this letter
+            vector<SColumn>::iterator it = columns.begin();
+            size_t prototype_idx =  clusters[cluster_idx].GetPrototype();
+            while (it != columns.end() 
+                 && (it->insert || it->letters[prototype_idx] < (int)letter)) {
+                ++it;
+            }
 
-                if (i < m_ClusterGapPositions[cluster_idx].size()) {
-                    pos = s_CorrectLocation(
-                                        m_ClusterGapPositions[cluster_idx][i],
-                                        prototype);
-                }
-            }
-            multi_aln_gaps_corrected[cluster_idx][j] += offset;
+            // insert the range in all cluster sequences
+            it = columns.insert(it, SColumn());
+            s_InitInsertColumn(it, num_seqs, num, cluster_idx);
+            ITERATE(CClusterer::TSingleCluster, elem, clusters[cluster_idx]) {
 
+                // for insert ranges leter index is absolute index in 
+                // in-cluster alignment
+                it->letters[*elem] = letter + offset;
+            }
 
-            // Keep the same shift size for a series of gaps
-            while (j < multi_aln_gaps[cluster_idx].size() - 1 
-                     && multi_aln_gaps[cluster_idx][j] + 1 
-                      == multi_aln_gaps[cluster_idx][j + 1]) {
-                j++;
-                multi_aln_gaps_corrected[cluster_idx][j] += offset;
-            }
-        
-        }
-        //--------------------------------------------------------------------
-        if (m_Verbose) {
-            printf("\nCorrected multiple alignment gaps for clusters:\n"); 
-            if (!multi_aln_gaps_corrected[cluster_idx].empty()) {
-                printf("%3d: ", cluster_idx);
-                int i;
-                for (i=0;i < multi_aln_gaps_corrected[cluster_idx].size()
-                         ;i++) {
-                    printf("%4d-", multi_aln_gaps_corrected[cluster_idx][i]);
-                    while (i < multi_aln_gaps_corrected[cluster_idx].size()
-                           && multi_aln_gaps_corrected[cluster_idx][i] + 1
-                           == multi_aln_gaps_corrected[cluster_idx][i + 1]) {
-                        i++;
-                    }
-                    if (i == multi_aln_gaps_corrected.size()) {
-                        printf("%4d ",
-                               multi_aln_gaps_corrected[cluster_idx][i - 1]);
-                    }
-                    else {
-                        printf("%4d ",
-                               multi_aln_gaps_corrected[cluster_idx][i]);
-                    }
-                }
-                printf("\n");
-            }
-        }
-        //--------------------------------------------------------------------
-    }
-
-    // Insert multiple alignment gaps into cluster sequences
-    // and in-cluster alignment gaps into cluster prototypes
-    for (size_t cluster_idx=0;cluster_idx < clusters.size();cluster_idx++) {
-        const CClusterer::TSingleCluster& cluster = clusters[cluster_idx];
-        if (cluster.size() == 1) {
-            continue;
-        }
-        ITERATE(CClusterer::TSingleCluster, elem, cluster) {
-            if (*elem == cluster.GetPrototype()) {
-                results[*elem].InsertGaps(m_ClusterGapPositions[cluster_idx],
-                                          false);
-            }
-            else {
-                results[*elem].InsertGaps(multi_aln_gaps_corrected[cluster_idx],
-                                          true);
-            }
+            // extend the length of the sequences by added ranges
+            new_length += num;
         }
     }
 
-    //----------------------------------------------------------------------
-    if (m_Verbose) {
-        for (size_t cluster_idx=0;cluster_idx < clusters.size();cluster_idx++) {
-            const CClusterer::TSingleCluster& cluster = clusters[cluster_idx];
-            if (cluster.size() == 1) {
-                continue;
-            }
-            printf("\nCluster %d with multiple alingnment and in-cluster"
-                   " gaps:\n", cluster_idx);
-            const CSequence& prototype = results[cluster.GetPrototype()];
-            printf("%4d: ", cluster.GetPrototype());
-            for (int i=0;i < prototype.GetLength();i++) {
-                printf("%c", prototype.GetPrintableLetter(i));
-            }
-            printf("\n");
-            ITERATE(CClusterer::TSingleCluster, elem, cluster) {
-                if (*elem == cluster.GetPrototype()) {
+
+    // Convert columns to array of CSequence
+    vector<CSequence> results(m_AllQueryData.size());
+
+    // Initialize all sequences to gaps
+    NON_CONST_ITERATE(vector<CSequence>, it, results) {
+        it->Reset(new_length);
+    }
+
+
+    // offsets caused by in-cluster gaps in cluster prototypes
+    vector<int> gap_offsets(clusters.size());
+    col = 0;
+
+    // for each column
+    ITERATE(vector<SColumn>, it, columns) {
+        if (!it->insert) {
+
+            // for regular column
+            // for each cluster
+            for (size_t i=0;i < clusters.size();i++) {
+                
+                // find letter index in input sequnece (n-th letter)
+                size_t prototype_idx = clusters[i].GetPrototype();
+                int letter = it->letters[prototype_idx];
+                
+                // if gap in this position, do nothing
+                if (letter < 0) {
                     continue;
                 }
-                printf("%4d: ", *elem);
-                for (int i=0;i < results[*elem].GetLength();i++) {
-                    printf("%c", results[*elem].GetPrintableLetter(i));
+
+                // find correct location by skipping gaps in in-cluster
+                // alingment
+                // NOTE: This index juggling could be simplified if we
+                // kept an array of unmodified input sequences
+                while (m_AllQueryData[prototype_idx].GetLetter(letter 
+                       + gap_offsets[i]) == CSequence::kGapChar) {
+                    gap_offsets[i]++;
                 }
-                printf("\n");
-            }
-        }
-    }
-    //----------------------------------------------------------------------
 
-    // Calculate positions of in-cluster alignements
-    // (translate from before letter to positions in a sequence)
-    for (size_t cluster_idx=0;cluster_idx < clusters.size();cluster_idx++) {
-        const CClusterer::TSingleCluster& cluster = clusters[cluster_idx];
-        const CSequence& prototype = results[cluster.GetPrototype()];
-
-        s_CorrectLocations(m_ClusterGapPositions[cluster_idx], prototype);
-
-        //--------------------------------------------------------------------
-        if (m_Verbose) {
-            if (cluster_idx == 0) {
-                printf("\nCorrected in-cluster gaps for clusters:\n");
-            }
-            if (!m_ClusterGapPositions[cluster_idx].empty()) {
-                printf("%3d:", cluster_idx);
-                size_t i;
-                for (i=0;i < m_ClusterGapPositions[cluster_idx].size() - 1
-                         ;i++) {
-                    printf("%4d,", m_ClusterGapPositions[cluster_idx][i]);
-                }
-                printf("%4d\n", m_ClusterGapPositions[cluster_idx][i]);
-            }
-        }
-        //--------------------------------------------------------------------
-    }
-
-    // Insert in-cluster gaps from other clusters to each cluster sequence
-    // (thery are already there)
-    for (size_t cluster_idx=0;cluster_idx < clusters.size();cluster_idx++) {
-        
-        size_t size = 0;
-        for (size_t i=0;i < m_ClusterGapPositions.size();i++) {
-            if (i != cluster_idx) {
-                size += m_ClusterGapPositions[i].size();
-            }
-        }
-
-        // Combine all in-cluster gaps in one vector
-        vector<Uint4> gaps(size);
-        size_t ind = 0;
-         for (size_t i=0;i < m_ClusterGapPositions.size();i++) {
-            if (i != cluster_idx && !m_ClusterGapPositions[i].empty()) {
-                ITERATE(vector<Uint4>, it, m_ClusterGapPositions[i]) {
-                    gaps[ind++] = *it;
+                // insert letter in all cluster sequences
+                ITERATE(CClusterer::TSingleCluster, elem, clusters[i]) {
+                    results[*elem].SetLetter(col,
+                     m_AllQueryData[*elem].GetLetter(letter + gap_offsets[i]));
                 }
             }
         }
-        sort(gaps.begin(), gaps.end());
-
-        // Correct gap positions by gaps that are being added
-        // shift each larger position by number of gaps with smaller positions
-        for (size_t i=0;i < gaps.size();i++) {
-            gaps[i] += i;
-        }
-
-        // Correct gap positions by considering in-cluster gaps from 
-        // the cluster that the sequence belongs to
-        Uint4 offset = 0;
-        size_t j = 0;
-        for (size_t i=0;i < gaps.size();i++) {
-            while (j < m_ClusterGapPositions[cluster_idx].size() 
-                   && m_ClusterGapPositions[cluster_idx][j] < gaps[i]) {
-                j++;
-                offset++;
+        else {
+            
+            // for insetr columns
+            // for each cluster sequence copy letters from in-cluster alignment
+            ITERATE(CClusterer::TSingleCluster, elem, clusters[it->cluster]) {
+                for (int i=0; i < it->number;i++) {
+                    results[*elem].SetLetter(col + i,
+                      m_AllQueryData[*elem].GetLetter(it->letters[*elem] + i));
+                }
             }
-            gaps[i] += offset;
+
         }
-
-        const CClusterer::TSingleCluster& cluster = clusters[cluster_idx];
-        _ASSERT(gaps[gaps.size() - 1] 
-              <= results[cluster.GetPrototype()].GetLength() + gaps.size());
-
-        // Insert gaps
-        ITERATE(CClusterer::TSingleCluster, elem, cluster) {
-            results[*elem].InsertGaps(gaps, true);
-        }
-
+        col += it->number;
     }
+
 
     //----------------------------------------------------------------------
     if (m_Verbose) {
-        printf("\n\nCluster prototypes only:\n");
-        for (size_t i=0;i < clusters.size();i++) {
-            const CClusterer::TSingleCluster& cluster = clusters[i];
-            for (int j=0;j < results[cluster.GetPrototype()].GetLength();j++) {
-                printf("%c",
-                       results[cluster.GetPrototype()].GetPrintableLetter(j));
+        printf("Cluster prototypes:\n");
+        ITERATE(CClusterer::TClusters, it, clusters) {
+            const CSequence& seq = results[it->GetPrototype()];
+            for (int i=0;i < seq.GetLength();i++) {
+                printf("%c", (char)seq.GetPrintableLetter(i));
             }
             printf("\n");
         }
         printf("\n\n");
 
+        printf("Individual clusters:\n");
+        for (int i=0;i < (int)clusters.size();i++) {
+            if (clusters[i].size() > 1) {
+                printf("Cluster %d:\n", i);
+                ITERATE(CClusterer::TSingleCluster, elem, clusters[i]) {
+                    const CSequence& seq = results[*elem];
+                    for (int j=0;j < seq.GetLength();j++) {
+                        printf("%c", (char)seq.GetPrintableLetter(j));
+                    }
+                    printf("\n");
+                }
+                printf("\n");
+            }
+        }
+        printf("\n\n");
+
+
         printf("All queries:\n");
-        for (size_t i=0;i < results.size();i++) {
-            for (int j=0;j < results[i].GetLength();j++) {
-                printf("%c", results[i].GetPrintableLetter(j));
+        ITERATE(vector<CSequence>, it, results) {
+            const CSequence& seq = *it;
+            for (int i=0;i < seq.GetLength();i++) {
+                printf("%c", (char)seq.GetPrintableLetter(i));
             }
             printf("\n");
         }
-        printf("\n");
+        printf("\n\n");
     }
     //----------------------------------------------------------------------
-    
+
     m_Results.swap(results);
 }
+
 
 // Frequencies are not normalized
 void CMultiAligner::MakeClusterResidueFrequencies(void) 
