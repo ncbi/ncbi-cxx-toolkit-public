@@ -451,7 +451,7 @@ int COligoFarApp::ProcessData()
         }
         if( iline.fail() ) THROW( runtime_error, "Failed to parse line [" << buff << "]" );
         CQuery * query = new CQuery( coding, id, fwd, rev );
-        while( guideFile.NextHit( queriesTotal + 1, query ) ); // add guided hits
+        while( guideFile.NextHit( queriesTotal, query ) ); // add guided hits
         entriesTotal += batch.AddQuery( query );
         queriesTotal ++;
         p.Increment();
