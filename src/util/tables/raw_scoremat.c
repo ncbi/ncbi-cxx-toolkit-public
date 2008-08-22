@@ -110,3 +110,45 @@ void NCBISM_Unpack(const SNCBIPackedScoreMatrix* psm,
         memcpy(fsm->s[aa1], fsm->s[toupper((unsigned char) aa1)], NCBI_FSM_DIM);
     }
 }
+
+static
+int /* bool */ s_NCBISM_StartsWith(const char* str, const char* pfx)
+{
+    for ( ;  *pfx;  ++str, ++pfx) {
+        if (tolower((unsigned char)*str) != *pfx) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+const SNCBIPackedScoreMatrix* NCBISM_GetStandardMatrix(const char* name)
+{
+    switch (name[0]) {
+    case 'B': case 'b':
+        if ( !s_NCBISM_StartsWith(name, "blosum") ) {
+            return NULL;
+        }
+        switch (name[6]) {
+        case '4': return strcmp(name + 6, "45") ? NULL : &NCBISM_Blosum45;
+        case '5': return strcmp(name + 6, "50") ? NULL : &NCBISM_Blosum50;
+        case '6': return strcmp(name + 6, "62") ? NULL : &NCBISM_Blosum62;
+        case '8': return strcmp(name + 6, "80") ? NULL : &NCBISM_Blosum80;
+        case '9': return strcmp(name + 6, "90") ? NULL : &NCBISM_Blosum90;
+        default:  return NULL;
+        }
+
+    case 'P': case 'p':
+        if ( !s_NCBISM_StartsWith(name, "pam") ) {
+            return NULL;
+        }
+        switch (name[3]) {
+        case '2': return strcmp(name + 3, "250") ? NULL : &NCBISM_Pam250;
+        case '3': return strcmp(name + 3, "30")  ? NULL : &NCBISM_Pam30;
+        case '7': return strcmp(name + 3, "70")  ? NULL : &NCBISM_Pam70;
+        }
+
+    default:
+        return NULL;
+    }
+}

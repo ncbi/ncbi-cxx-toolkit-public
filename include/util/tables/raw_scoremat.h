@@ -80,6 +80,8 @@ extern NCBI_TABLES_EXPORT const SNCBIPackedScoreMatrix NCBISM_Pam30;
 extern NCBI_TABLES_EXPORT const SNCBIPackedScoreMatrix NCBISM_Pam70;
 extern NCBI_TABLES_EXPORT const SNCBIPackedScoreMatrix NCBISM_Pam250;
 
+const SNCBIPackedScoreMatrix* NCBISM_GetStandardMatrix(const char* name);
+
 #ifdef __cplusplus
 }
 #endif
