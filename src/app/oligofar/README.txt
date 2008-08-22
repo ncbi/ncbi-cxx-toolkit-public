@@ -355,8 +355,8 @@ Guide file
 		0 - paired match; 
 		1 - non-paired match for the first member of the pair; 
 		2 - non-paired match for the second member of the pair;
-    2. query ordinal number or query id;
-    3. subject ordinal number or subject id;
+    2. query ordinal number (0-based) or query id;
+    3. subject ordinal number (OID) or subject id;
     4. subject offset 1-based (for the first member of the pair if paired match);
     5. '0' or '-' - reverse strand; '1' or '+' - forward strand (for the first 
 	   member of the pair if paired match);
