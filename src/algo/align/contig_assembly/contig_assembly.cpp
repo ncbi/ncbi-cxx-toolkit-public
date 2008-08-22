@@ -548,19 +548,26 @@ CRef<CDense_seg> CContigAssembly::BestLocalSubAlignment(const CDense_seg& ds_in,
 
     // Find the closest zero prior to this; the column after this
     // is what we want.  If we never hit zero, we want position zero.
-    unsigned int i;
-    for (i = right_end - 1; i > 0; --i) {
-        if (scores[i] == 0) {
-            break;
-        }
-    }
-    if (i > 0) {
-        left_end = i + 1;
+    if (right_end == 0) {
+        left_end = 0;  // This will return an alignment of length one.
+                       // If score[0] == 0, it is possible that we should
+                       // return an alignment of length zero, so this is
+                       // not strictly correct.
     } else {
-        if (scores[0] == 0) {
-            left_end = 1;
+        unsigned int i;
+        for (i = right_end - 1; i > 0; --i) {
+            if (scores[i] == 0) {
+                break;
+            }
+        }
+        if (i > 0) {
+            left_end = i + 1;
         } else {
-            left_end = 0;
+            if (scores[0] == 0) {
+                left_end = 1;
+            } else {
+                left_end = 0;
+            }
         }
     }
 
