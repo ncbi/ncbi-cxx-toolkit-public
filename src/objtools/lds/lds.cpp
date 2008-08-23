@@ -203,7 +203,7 @@ void CLDS_Database::Open(EOpenMode omode)
 
     m_OpenMode = omode;
 
-    CBDB_RawFile::EOpenMode om; 
+    CBDB_RawFile::EOpenMode om = CBDB_RawFile::eReadOnly;
     switch (omode) {
     case eReadWrite:
         om = CBDB_RawFile::eReadWrite;
