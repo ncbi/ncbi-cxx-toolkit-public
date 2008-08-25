@@ -16,7 +16,8 @@ for dir in "$@"; do
     fi
     for f in $dir/*; do
         case "`basename $f`" in
-            speedtest | testipub | test_checksum | test_mghbn | *.gz )
+            speedtest | streamtest | testipub | test_checksum | test_mghbn \
+                | *.gz )
                 ;;
             *test* | *demo* | *sample*)
                 gzip -Nf $f
