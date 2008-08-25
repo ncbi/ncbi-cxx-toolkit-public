@@ -40,9 +40,9 @@ inline unsigned char Ncbipna2Ncbi4naN( const unsigned char * p, unsigned short m
 inline unsigned char Ncbipna2Ncbi4naComplN( const unsigned char * p, unsigned short mask = 0xf000 );
 
 template<class iterator>
-inline iterator Solexa2Ncbipna( iterator dest, const string& line );
+inline iterator Solexa2Ncbipna( iterator dest, const string& line, int base );
 template<class iterator>
-inline iterator Iupacnaq2Ncbapna( iterator dest, const string& iupac, const string& qual33 );
+inline iterator Iupacnaq2Ncbapna( iterator dest, const string& iupac, const string& qual, int base );
 
 inline double ComputeComplexity( unsigned hash, unsigned bases );
 

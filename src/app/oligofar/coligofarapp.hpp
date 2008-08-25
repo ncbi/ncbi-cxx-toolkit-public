@@ -63,6 +63,7 @@ protected:
     int      m_maxPair;
     int      m_pairMargin;
 	int      m_qualityChannels;
+	int      m_qualityBase;
 //    bool     m_reversePair;
     Uint8    m_memoryLimit;
     bool     m_performTests;

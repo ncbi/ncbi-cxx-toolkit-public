@@ -214,7 +214,7 @@ inline unsigned char Ncbipna2Ncbi4naComplN( const unsigned char * p, unsigned sh
 }
 
 template<class iterator>
-inline iterator Solexa2Ncbipna( iterator dest, const string& line ) 
+inline iterator Solexa2Ncbipna( iterator dest, const string& line, int ) 
 {
     istringstream in( line );
     while( !in.eof() ) {
@@ -233,16 +233,16 @@ inline iterator Solexa2Ncbipna( iterator dest, const string& line )
 }
 
 template<class iterator>
-inline iterator Iupacnaq2Ncbapna( iterator dest, const string& iupac, const string& qual33 )
+inline iterator Iupacnaq2Ncbapna( iterator dest, const string& iupac, const string& qual, int base )
 {
-	for( const char * i = iupac.c_str(), * q = qual33.c_str(); *i && *q ; ++i, ++q ) {
-		if( *i == 'N' || *i == 'n' || *q < 35 ) {
+	for( const char * i = iupac.c_str(), * q = qual.c_str(); *i && *q ; ++i, ++q ) {
+		if( *i == 'N' || *i == 'n' || *q < base + 2 ) {
 			*dest++ = 255;
 			*dest++ = 255;
 			*dest++ = 255;
 			*dest++ = 255;
 		} else {
-			int val = int( 255 * ( pow(10.0,-double(*q - 33)/10)) );
+			int val = int( 255 * ( pow(10.0,-double(*q - base)/10)) );
 			int x = Iupacna2Ncbi2na( *i )&0x03;
 			*dest++ = (x--) ? val : 255;
 			*dest++ = (x--) ? val : 255;

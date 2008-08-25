@@ -16,6 +16,7 @@ public:
     friend class CFilter;
     friend class CGuideFile;
     
+	enum EConst { kDefaultQualityBase = 33 };
 	enum EFlags {
 		fCoding_ncbi8na = 0x01,
 		fCoding_ncbipna = 0x02,
@@ -24,7 +25,7 @@ public:
 	};
     static Uint4 GetCount() { return s_count; }
 
-	CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& data2 = "" );
+	CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& data2 = "", int base = kDefaultQualityBase );
 	~CQuery() { delete m_topHit; delete [] m_data; --s_count; }
 
 	bool IsPairedRead() const { return m_length[1] != 0; }
@@ -46,9 +47,9 @@ private:
     explicit CQuery( const CQuery& q );
     
 protected:
-	void x_InitNcbi8na( const string& id, const string& data1, const string& data2 );
-	void x_InitNcbiqna( const string& id, const string& data1, const string& data2 );
-	void x_InitNcbipna( const string& id, const string& data1, const string& data2 );
+	void x_InitNcbi8na( const string& id, const string& data1, const string& data2, int base );
+	void x_InitNcbiqna( const string& id, const string& data1, const string& data2, int base );
+	void x_InitNcbipna( const string& id, const string& data1, const string& data2, int base );
     unsigned x_ComputeInformativeLength( const string& seq ) const;
 
 protected:
@@ -63,12 +64,12 @@ protected:
 ////////////////////////////////////////////////////////////////////////
 // Implementation
 
-inline CQuery::CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& data2 ) : m_data(0), m_flags(0), m_topHit(0)
+inline CQuery::CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& data2, int base ) : m_data(0), m_flags(0), m_topHit(0)
 {
 	switch( coding ) {
-	case CSeqCoding::eCoding_ncbi8na: x_InitNcbi8na( id, data1, data2 ); break;
-	case CSeqCoding::eCoding_ncbiqna: x_InitNcbiqna( id, data1, data2 ); break;
-	case CSeqCoding::eCoding_ncbipna: x_InitNcbipna( id, data1, data2 ); break;
+	case CSeqCoding::eCoding_ncbi8na: x_InitNcbi8na( id, data1, data2, base ); break;
+	case CSeqCoding::eCoding_ncbiqna: x_InitNcbiqna( id, data1, data2, base ); break;
+	case CSeqCoding::eCoding_ncbipna: x_InitNcbipna( id, data1, data2, base ); break;
 	default: THROW( logic_error, "Invalid coding " << coding );
 	}
     ++s_count;
@@ -81,7 +82,7 @@ inline unsigned CQuery::x_ComputeInformativeLength( const string& seq ) const
     return l;
 }
 
-inline void CQuery::x_InitNcbi8na( const string& id, const string& data1, const string& data2 )
+inline void CQuery::x_InitNcbi8na( const string& id, const string& data1, const string& data2, int )
 {
 	m_flags &= ~fCoding_BITS;
 	m_flags |= fCoding_ncbi8na;
@@ -101,7 +102,7 @@ inline void CQuery::x_InitNcbi8na( const string& id, const string& data1, const 
 		m_data[j++] = CNcbi8naBase( CIupacnaBase( data2[i++] ) );
 }
 
-inline void CQuery::x_InitNcbiqna( const string& id, const string& data1, const string& data2 )
+inline void CQuery::x_InitNcbiqna( const string& id, const string& data1, const string& data2, int base )
 {
 	m_flags &= ~fCoding_BITS;
 	m_flags |= fCoding_ncbipna;
@@ -115,17 +116,17 @@ inline void CQuery::x_InitNcbiqna( const string& id, const string& data1, const 
 	strcpy( (char*)m_data, id.c_str() );
 	m_offset[0] = id.length() + 1;
 	m_offset[1] = m_offset[0] + 4*m_length[0];
-	Iupacnaq2Ncbapna( m_data + m_offset[0], data1.substr(0, m_length[0]), data1.substr( data1.length()/2, m_length[0] ) );
-	Iupacnaq2Ncbapna( m_data + m_offset[1], data2.substr(0, m_length[1]), data2.substr( data2.length()/2, m_length[1] ) );
+	Iupacnaq2Ncbapna( m_data + m_offset[0], data1.substr(0, m_length[0]), data1.substr( data1.length()/2, m_length[0] ), base );
+	Iupacnaq2Ncbapna( m_data + m_offset[1], data2.substr(0, m_length[1]), data2.substr( data2.length()/2, m_length[1] ), base );
 }
 
-inline void CQuery::x_InitNcbipna( const string& id, const string& data1, const string& data2 )
+inline void CQuery::x_InitNcbipna( const string& id, const string& data1, const string& data2, int base )
 {
 	m_flags &= ~fCoding_BITS;
 	m_flags |= fCoding_ncbipna;
 	vector<unsigned char> buff1, buff2;
-    Solexa2Ncbipna( back_inserter( buff1 ), data1 );
-    if( data2.length() ) Solexa2Ncbipna( back_inserter( buff2 ), data2 );
+    Solexa2Ncbipna( back_inserter( buff1 ), data1, base );
+    if( data2.length() ) Solexa2Ncbipna( back_inserter( buff2 ), data2, base );
 	m_data = new unsigned char[id.length() + 1 + buff1.size() + buff2.size()];
     ASSERT( buff1.size()%5 == 0 );
     ASSERT( buff2.size()%5 == 0 );

@@ -46,6 +46,7 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_maxPair( 200 ),
     m_pairMargin( 20 ),
     m_qualityChannels( 0 ),
+	m_qualityBase( 33 ),
 //    m_reversePair( true ),
     m_memoryLimit( Uint8( sizeof(void*) == 4 ? 3 : 8 ) * int(kGigaByte) ),
     m_performTests( false ),
@@ -100,10 +101,10 @@ void COligoFarApp::Version()
 void COligoFarApp::Help()
 {
     cout << "usage: [-hV] [-i inputfile] [-d genomedb] [-b snpdb] [-g guidefile] [-l gilist] [-o output]\n"
-		 << "[-1 solexa1] [-2 solexa2] [-q 0|1] [-O -eumxtadh] [-B batchsz] [-w winsize] [-n maxmism] [-N +|-]\n"
-		 << "[-H v|m|a] [-a maxalt] [-A maxalt] [-y bits] [-F dust] [-s 1|2|3] [-r f|q|s] [-X xdropoff]\n"
-		 << "[-I idscore] [-M mismscore] [-G gapcore] [-Q gapextscore] [-p cutoff] [-u topcnt] [-t toppct]\n"
-		 << "[-z minPair] [-Z maxPair] [-D margin] [-L memlimit] [-T +|-]\n"
+		 << "[-1 solexa1] [-2 solexa2] [-q 0|1] [-0 qbase] [-O -eumxtadh] [-B batchsz] [-w winsize]\n"
+		 << "[-n maxmism] [-N +|-] [-H v|m|a] [-a maxalt] [-A maxalt] [-y bits] [-F dust] [-s 1|2|3]\n"
+		 << "[-r f|q|s] [-X xdropoff] [-I idscore] [-M mismscore] [-G gapcore] [-Q gapextscore]\n"
+		 << "[-p cutoff] [-u topcnt] [-t toppct] [-z minPair] [-Z maxPair] [-D margin] [-L memlimit] [-T +|-]\n"
 		 << "\nFile options:\n" 
          << "  -i file    --input-file=file          short reads input file [" << m_readFile << "]\n"
          << "  -d file    --fasta-file=file          database (fasta or basename of blastdb) file [" << m_fastaFile << "]\n"
@@ -115,6 +116,8 @@ void COligoFarApp::Help()
          << "  -1 file    --qual-1-file=file         read 1 4-channel quality file [" << m_read1qualityFile << "]\n"
          << "  -2 file    --qual-2-file=file         read 2 4-channel quality file [" << m_read2qualityFile << "]\n"
          << "  -q 0|1     --quality-channels=cnt     number of channels in input file quality columns [" << m_qualityChannels << "]\n"
+		 << "  -0 value   --quality-base=value       base quality number (ASCII value for character representing phrap score 0) [" << m_qualityBase << "]\n"
+		 << "  -0 +char   --quality-base=+char       base quality char (character representing phrap score 0) [+" << char(m_qualityBase) << "]\n"
          << "  -O flags   --output-flags=flags       add output flags (-huxmtdae) [" << m_outputFlags << "]\n"
          << "  -B count   --batch-size=count         how many short seqs to map at once [" << m_readsPerRun << "]\n"
 		 << "\nHashing and scanning options:\n"
@@ -187,6 +190,7 @@ const option * COligoFarApp::GetLongOptions() const
         {"qual-1-file", 1, 0, '1'},
         {"qual-2-file", 1, 0, '2'},
         {"quality-channels", 1, 0, 'q'},
+		{"quality-base", 1, 0, '0'},
         {"solexa-sensitivity", 1, 0, 'y'},
         {"min-pair", 1, 0, 'z'},
         {"max-pair", 1, 0, 'Z'},
@@ -208,7 +212,7 @@ const option * COligoFarApp::GetLongOptions() const
 
 const char * COligoFarApp::GetOptString() const
 {
-    return "w:n:N:H:a:A:i:d:b:v:g:o:O:l:s:B:p:u:t:1:2:q:y:z:Z:D:"/*R:*/"F:r:I:M:G:Q:X:L:T:";
+    return "w:n:N:H:a:A:i:d:b:v:g:o:O:l:s:B:p:u:t:1:2:q:0:y:z:Z:D:"/*R:*/"F:r:I:M:G:Q:X:L:T:";
 }
 
 int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
@@ -237,6 +241,7 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case '1': m_read1qualityFile = arg; break;
     case '2': m_read2qualityFile = arg; break;
     case 'q': m_qualityChannels = NStr::StringToInt( arg ); break;
+	case '0': m_qualityBase = ( arg[0] && arg[0] == '+' ) ? arg[1] : NStr::StringToInt( arg ); break;
     case 'y': m_solexaSensitivity = strtol( arg, 0, 10 ); break;
     case 'z': m_minPair = strtol( arg, 0, 10 ); break;
     case 'Z': m_maxPair = strtol( arg, 0, 10 ); break;
@@ -450,7 +455,7 @@ int COligoFarApp::ProcessData()
             rev += qr;
         }
         if( iline.fail() ) THROW( runtime_error, "Failed to parse line [" << buff << "]" );
-        CQuery * query = new CQuery( coding, id, fwd, rev );
+        CQuery * query = new CQuery( coding, id, fwd, rev, m_qualityBase );
         while( guideFile.NextHit( queriesTotal, query ) ); // add guided hits
         entriesTotal += batch.AddQuery( query );
         queriesTotal ++;
