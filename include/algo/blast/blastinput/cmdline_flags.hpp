@@ -119,6 +119,73 @@ NCBI_XBLAST_EXPORT extern const string kArgProduceHtml;
 /// Default value which specifies whether to create output as HTML or not
 NCBI_XBLAST_EXPORT extern const bool kDfltArgProduceHtml;
 
+/* Formatting options: tabular/comma-separated value output formats */
+
+/// Default value for tabular and comma-separated value output formats
+NCBI_XBLAST_EXPORT extern const string kDfltArgTabularOutputFmt;
+/// Tag/keyword which is equivalent to using kDfltArgTabularOutputFmt
+NCBI_XBLAST_EXPORT extern const string kDfltArgTabularOutputFmtTag;
+
+/// Enumeration for all fields that are supported in the tabular output
+enum ETabularField {
+    eQuerySeqId = 0,       ///< Query Seq-id(s)
+    eQueryGi,              ///< Query gi
+    eQueryAccession,       ///< Query accession
+    eSubjectSeqId,         ///< Subject Seq-id(s)
+    eSubjectAllSeqIds,     ///< If multiple redundant sequences, all sets
+                           /// of subject Seq-ids, separated by ';'
+    eSubjectGi,            ///< Subject gi
+    eSubjectAllGis,        ///< All subject gis
+    eSubjectAccession,     ///< Subject accession 
+    eSubjectAllAccessions, ///< All subject accessions, separated by ';'
+    eQueryStart,           ///< Start of alignment in query
+    eQueryEnd,             ///< End of alignment in query
+    eSubjectStart,         ///< Start of alignment in subject
+    eSubjectEnd,           ///< End of alignment in subject
+    eQuerySeq,             ///< Aligned part of query sequence
+    eSubjectSeq,           ///< Aligned part of subject sequence
+    eEvalue,               ///< Expect value
+    eBitScore,             ///< Bit score
+    eScore,                ///< Raw score
+    eAlignmentLength,      ///< Alignment length
+    ePercentIdentical,     ///< Percentage of identical matches
+    eNumIdentical,         ///< Number of identical matches
+    eMismatches,           ///< Number of mismatches
+    ePositives,            ///< Number of positive-scoring matches
+    eGapOpenings,          ///< Number of gap openings
+    eGaps,                 ///< Total number of gaps
+    ePercentPositives,     ///< Percentage of positive-scoring matches
+    eFrames,               ///< Query and subject frames separated by a '/'
+    eQueryFrame,           ///< Query frame
+    eSubjFrame,            ///< Subject frame
+    eMaxTabularField       ///< Sentinel value
+};
+
+/// Structure to store the format specification strings, their description and
+/// their corresponding enumeration
+struct SFormatSpec {
+    /// Format specification name
+    string name;
+    /// A description of what the above name represents
+    string description;
+    /// Enumeration that corresponds to this field
+    ETabularField field;
+
+    /// Constructor
+    /// @param n format specification name [in]
+    /// @param d format specification description [in]
+    /// @param f enumeration value [in]
+    SFormatSpec(string n, string d, ETabularField f)
+        : name(n), description(d), field(f) {}
+};
+
+NCBI_XBLAST_EXPORT extern const SFormatSpec sc_FormatSpecifiers[];
+/// Number of elements in the sc_FormatSpecifiers array
+NCBI_XBLAST_EXPORT extern const size_t kNumTabularOutputFormatSpecifiers;
+
+/// Returns a string documenting the available format specifiers
+NCBI_XBLAST_EXPORT string DescribeTabularOutputFormatSpecifiers();
+
 /// Argument to specify the maximum number of target sequences to keep (a.k.a.:
 /// hitlist size) 
 /// If not set in the command line, this value is the maximum of the number of

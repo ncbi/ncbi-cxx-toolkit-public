@@ -69,9 +69,6 @@ public:
         eComma    ///< Comma
     };
 
-    /// Default format specification
-    static const string kDefaultFormat;
-
     /// Constructor
     /// @param ostr Stream to write output to [in]
     /// @param format Output format - what fields to include in the output [in]
@@ -79,12 +76,10 @@ public:
     /// @note fields that are not recognized will be ignored, if no fields are
     /// specified (or left after purging those that are not recognized), the
     /// default format is assumed
-    CBlastTabularInfo(CNcbiOstream& ostr, const string& format = kDefaultFormat,
+    CBlastTabularInfo(CNcbiOstream& ostr, 
+                      const string& format = blast::kDfltArgTabularOutputFmt,
                       EFieldDelimiter delim = eTab,
                       bool parse_local_ids = false);
-
-    /// Returns a string with the available format specifiers
-    static string DescribeFormatSpecifiers();
 
     /// Destructor
     ~CBlastTabularInfo();
@@ -155,41 +150,6 @@ public:
      /// @param num_queries number of queries processed [in]
      void PrintNumProcessed(int num_queries);
 
-    /// Enumeration for all fields that are supported in the tabular output
-    enum ETabularField {
-        eQuerySeqId = 0,       ///< Query Seq-id(s)
-        eQueryGi,              ///< Query gi
-        eQueryAccession,       ///< Query accession
-        eSubjectSeqId,         ///< Subject Seq-id(s)
-        eSubjectAllSeqIds,     ///< If multiple redundant sequences, all sets
-                               /// of subject Seq-ids, separated by ';'
-        eSubjectGi,            ///< Subject gi
-        eSubjectAllGis,        ///< All subject gis
-        eSubjectAccession,     ///< Subject accession 
-        eSubjectAllAccessions, ///< All subject accessions, separated by ';'
-        eQueryStart,           ///< Start of alignment in query
-        eQueryEnd,             ///< End of alignment in query
-        eSubjectStart,         ///< Start of alignment in subject
-        eSubjectEnd,           ///< End of alignment in subject
-        eQuerySeq,             ///< Aligned part of query sequence
-        eSubjectSeq,           ///< Aligned part of subject sequence
-        eEvalue,               ///< Expect value
-        eBitScore,             ///< Bit score
-        eScore,                ///< Raw score
-        eAlignmentLength,      ///< Alignment length
-        ePercentIdentical,     ///< Percentage of identical matches
-        eNumIdentical,         ///< Number of identical matches
-        eMismatches,           ///< Number of mismatches
-        ePositives,            ///< Number of positive-scoring matches
-        eGapOpenings,          ///< Number of gap openings
-        eGaps,                 ///< Total number of gaps
-        ePercentPositives,     ///< Percentage of positive-scoring matches
-        eFrames,               ///< Query and subject frames separated by a '/'
-        eQueryFrame,           ///< Query frame
-        eSubjFrame,            ///< Subject frame
-        eMaxTabularField       ///< Sentinel value
-    };
-
     /// Return all field names supported in the format string.
     list<string> GetAllFieldNames(void);
 
@@ -201,10 +161,10 @@ protected:
     /// Add a field to the list of fields to show, if it is not yet present in
     /// the list of fields.
     /// @param field Which field to add? [in]
-    void x_AddFieldToShow(ETabularField field);
+    void x_AddFieldToShow(blast::ETabularField field);
     /// Delete a field from the list of fields to show
     /// @param field Which field to delete? [in]
-    void x_DeleteFieldToShow(ETabularField field);
+    void x_DeleteFieldToShow(blast::ETabularField field);
     /// Add a default set of fields to show.
     void x_AddDefaultFieldsToShow(void);
     /// Set fields to show, given an output format string
@@ -219,7 +179,7 @@ protected:
     void x_PrintFieldNames(void);
     /// Print the value of a given field
     /// @param field Which field to show? [in]
-    void x_PrintField(ETabularField field);
+    void x_PrintField(blast::ETabularField field);
     /// Print query Seq-id
     void x_PrintQuerySeqId(void);
     /// Print query gi
@@ -300,8 +260,8 @@ private:
     int m_QueryFrame;        ///< query frame
     int m_SubjectFrame;      ///< subject frame
     /// Map of field enum values to field names.
-    map<string, ETabularField> m_FieldMap; 
-    list<ETabularField> m_FieldsToShow; ///< Which fields to show?
+    map<string, blast::ETabularField> m_FieldMap; 
+    list<blast::ETabularField> m_FieldsToShow; ///< Which fields to show?
     char m_FieldDelimiter;   ///< Delimiter character for tabular fields.
     /// Should the query deflines be parsed for local IDs?
     bool m_ParseLocalIds;
@@ -355,7 +315,7 @@ CBlastTabularInfo::GetAllFieldNames(void)
 {
     list<string> field_names;
 
-    for (map<string,ETabularField>::iterator iter = m_FieldMap.begin();
+    for (map<string, blast::ETabularField>::iterator iter = m_FieldMap.begin();
          iter != m_FieldMap.end(); ++iter) {
         field_names.push_back((*iter).first);
     }
@@ -363,7 +323,7 @@ CBlastTabularInfo::GetAllFieldNames(void)
 }
 
 inline void 
-CBlastTabularInfo::x_AddFieldToShow(ETabularField field)
+CBlastTabularInfo::x_AddFieldToShow(blast::ETabularField field)
 {
     if (find(m_FieldsToShow.begin(), m_FieldsToShow.end(), field) == 
         m_FieldsToShow.end())
@@ -371,9 +331,9 @@ CBlastTabularInfo::x_AddFieldToShow(ETabularField field)
 }
 
 inline void 
-CBlastTabularInfo::x_DeleteFieldToShow(ETabularField field)
+CBlastTabularInfo::x_DeleteFieldToShow(blast::ETabularField field)
 {
-    list<ETabularField>::iterator iter; 
+    list<blast::ETabularField>::iterator iter; 
 
     while ((iter = find(m_FieldsToShow.begin(), m_FieldsToShow.end(), field))
            != m_FieldsToShow.end())
@@ -381,66 +341,66 @@ CBlastTabularInfo::x_DeleteFieldToShow(ETabularField field)
 }
 
 inline void 
-CBlastTabularInfo::x_PrintField(ETabularField field)
+CBlastTabularInfo::x_PrintField(blast::ETabularField field)
 {
     switch (field) {
-    case eQuerySeqId:
+    case blast::eQuerySeqId:
         x_PrintQuerySeqId(); break;
-    case eQueryGi:
+    case blast::eQueryGi:
         x_PrintQueryGi(); break;
-    case eQueryAccession:
+    case blast::eQueryAccession:
         x_PrintQueryAccession(); break;
-    case eSubjectSeqId:
+    case blast::eSubjectSeqId:
         x_PrintSubjectSeqId(); break;
-    case eSubjectAllSeqIds:
+    case blast::eSubjectAllSeqIds:
         x_PrintSubjectAllSeqIds(); break;
-    case eSubjectGi:
+    case blast::eSubjectGi:
         x_PrintSubjectGi(); break;
-    case eSubjectAllGis:
+    case blast::eSubjectAllGis:
         x_PrintSubjectAllGis(); break;
-    case eSubjectAccession:
+    case blast::eSubjectAccession:
         x_PrintSubjectAccession(); break;
-    case eSubjectAllAccessions:
+    case blast::eSubjectAllAccessions:
         x_PrintSubjectAllAccessions(); break;
-    case eQueryStart:
+    case blast::eQueryStart:
         x_PrintQueryStart(); break;
-    case eQueryEnd:
+    case blast::eQueryEnd:
         x_PrintQueryEnd(); break;
-    case eSubjectStart:
+    case blast::eSubjectStart:
         x_PrintSubjectStart(); break;
-    case eSubjectEnd:
+    case blast::eSubjectEnd:
         x_PrintSubjectEnd(); break;
-    case eQuerySeq:
+    case blast::eQuerySeq:
         x_PrintQuerySeq(); break;
-    case eSubjectSeq:
+    case blast::eSubjectSeq:
         x_PrintSubjectSeq(); break;
-    case eEvalue:
+    case blast::eEvalue:
         x_PrintEvalue(); break;
-    case eBitScore:
+    case blast::eBitScore:
         x_PrintBitScore(); break;
-    case eScore:
+    case blast::eScore:
         x_PrintScore(); break;
-    case eAlignmentLength:
+    case blast::eAlignmentLength:
         x_PrintAlignmentLength(); break;
-    case ePercentIdentical:
+    case blast::ePercentIdentical:
         x_PrintPercentIdentical(); break;
-    case eNumIdentical:
+    case blast::eNumIdentical:
         x_PrintNumIdentical(); break;
-    case eMismatches:
+    case blast::eMismatches:
         x_PrintMismatches(); break;
-    case ePositives:
+    case blast::ePositives:
         x_PrintNumPositives(); break;
-    case eGapOpenings:
+    case blast::eGapOpenings:
         x_PrintGapOpenings(); break;
-    case eGaps:
+    case blast::eGaps:
         x_PrintGaps(); break;
-    case ePercentPositives:
+    case blast::ePercentPositives:
         x_PrintPercentPositives(); break;
-    case eFrames:
+    case blast::eFrames:
         x_PrintFrames(); break;
-    case eQueryFrame:
+    case blast::eQueryFrame:
         x_PrintQueryFrame(); break;
-    case eSubjFrame:
+    case blast::eSubjFrame:
         x_PrintSubjectFrame(); break;        
     default:
         break;

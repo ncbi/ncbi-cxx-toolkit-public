@@ -51,7 +51,6 @@ static char const rcsid[] = "$Id$";
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <util/format_guess.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
-#include <objtools/blast_format/tabular.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <sstream>
@@ -1296,7 +1295,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     "Options 6, 7, and 10 can be additionally configured to produce\n"
     "a custom format specified by space delimited format specifiers.\n"
     "The supported format specifiers are:\n") +
-        CBlastTabularInfo::DescribeFormatSpecifiers() + 
+        DescribeTabularOutputFormatSpecifiers() + 
         string("\n");
 
     // alignment view

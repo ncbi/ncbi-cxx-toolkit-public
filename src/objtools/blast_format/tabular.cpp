@@ -49,7 +49,6 @@ static char const rcsid[] = "$Id$";
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
 
-#include <sstream>
 #include <map>
 
 /** @addtogroup BlastFormatting
@@ -60,145 +59,11 @@ static char const rcsid[] = "$Id$";
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-/// Structure to store the format specification strings, their description and
-/// their corresponding enumeration
-struct SFormatSpec {
-    /// Format specification name
-    string name;
-    /// A description of what the above name represents
-    string description;
-    /// Enumeration that corresponds to this field
-    CBlastTabularInfo::ETabularField field;
-
-    /// Constructor
-    /// @param n format specification name [in]
-    /// @param d format specification description [in]
-    /// @param f enumeration value [in]
-    SFormatSpec(string n, string d, CBlastTabularInfo::ETabularField f)
-        : name(n), description(d), field(f) {}
-};
-
-/// Static array of possible format specifications
-static SFormatSpec sc_FormatSpecifiers[] = {
-    SFormatSpec("qseqid",   
-                "Query Seq-id",
-                CBlastTabularInfo::eQuerySeqId),
-    SFormatSpec("qgi",
-                "Query GI",
-                CBlastTabularInfo::eQueryGi),
-    SFormatSpec("qacc",
-                "Query accesion",
-                CBlastTabularInfo::eQueryAccession),
-    SFormatSpec("sseqid",
-                "Subject Seq-id",
-                CBlastTabularInfo::eSubjectSeqId),
-    SFormatSpec("sallseqid",
-                "All subject Seq-id(s), separated by a ';'", 
-                CBlastTabularInfo::eSubjectAllSeqIds),
-    SFormatSpec("sgi",
-                "Subject GI", 
-                CBlastTabularInfo::eSubjectGi),
-    SFormatSpec("sallgi",
-                "All subject GIs", 
-                CBlastTabularInfo::eSubjectAllGis),
-    SFormatSpec("sacc",
-                "Subject accession", 
-                CBlastTabularInfo::eSubjectAccession),
-    SFormatSpec("sallacc", 
-                "All subject accessions", 
-                CBlastTabularInfo::eSubjectAllAccessions),
-    SFormatSpec("qstart",
-                "Start of alignment in query", 
-                CBlastTabularInfo::eQueryStart),
-    SFormatSpec("qend",
-                "End of alignment in query", 
-                CBlastTabularInfo::eQueryEnd),
-    SFormatSpec("sstart", 
-                "Start of alignment in subject", 
-                CBlastTabularInfo::eSubjectStart),
-    SFormatSpec("send",
-                "End of alignment in subject", 
-                CBlastTabularInfo::eSubjectEnd),
-    SFormatSpec("qseq",
-                "Aligned part of query sequence",
-                CBlastTabularInfo::eQuerySeq),
-    SFormatSpec("sseq",
-                "Aligned part of subject sequence", 
-                CBlastTabularInfo::eSubjectSeq),
-    SFormatSpec("evalue", 
-                "Expect value", 
-                CBlastTabularInfo::eEvalue),
-    SFormatSpec("bitscore", 
-                "Bit score", 
-                CBlastTabularInfo::eBitScore),
-    SFormatSpec("score",
-                "Raw score", 
-                CBlastTabularInfo::eScore),
-    SFormatSpec("length", 
-                "Alignment length", 
-                CBlastTabularInfo::eAlignmentLength),
-    SFormatSpec("pident",
-                "Percentage of identical matches", 
-                CBlastTabularInfo::ePercentIdentical),
-    SFormatSpec("nident",
-                "Number of identical matches", 
-                CBlastTabularInfo::eNumIdentical),
-    SFormatSpec("mismatch",
-                "Number of mismatches", 
-                CBlastTabularInfo::eMismatches),
-    SFormatSpec("positive", 
-                "Number of positive-scoring matches", 
-                CBlastTabularInfo::ePositives),
-    SFormatSpec("gapopen", 
-                "Number of gap openings", 
-                CBlastTabularInfo::eGapOpenings),
-    SFormatSpec("gaps",
-                "Total number of gaps", 
-                CBlastTabularInfo::eGaps),
-    SFormatSpec("ppos",
-                "Percentage of positive-scoring matches", 
-                CBlastTabularInfo::ePercentPositives),
-    SFormatSpec("frames",   
-                "Query and subject frames separated by a '/'", 
-                CBlastTabularInfo::eFrames),
-    SFormatSpec("qframe", 
-                "Query frame", 
-                CBlastTabularInfo::eQueryFrame),
-    SFormatSpec("sframe",   
-                "Subject frame", 
-                CBlastTabularInfo::eSubjFrame)
-};
-/// Number of elements in the array above
-static const size_t kNumFormatSpecifiers = 
-    (sizeof(sc_FormatSpecifiers)/sizeof(*sc_FormatSpecifiers));
-
-// Definition for default format specification
-const string
-CBlastTabularInfo::kDefaultFormat =
-    "qseqid sallseqid pident length mismatch gapopen qstart qend sstart send "
-    "evalue bitscore";
-
-/// This keyword is equivalent to specifying the kDefaultFormat string
-static const string kDefaultKeyword("std");
-
-string CBlastTabularInfo::DescribeFormatSpecifiers()
-{
-    ostringstream os;
-    for (size_t i = 0; i < kNumFormatSpecifiers; i++) {
-        os << "\t" << setw(10) << sc_FormatSpecifiers[i].name << " means ";
-        os << sc_FormatSpecifiers[i].description << "\n";
-    }
-    os << "When not provided, the default value is:\n";
-    os << "'" << CBlastTabularInfo::kDefaultFormat << "', which is equivalent ";
-    os << "to the keyword '" << kDefaultKeyword << "'";
-    return os.str();
-}
-
 void 
 CBlastTabularInfo::x_AddDefaultFieldsToShow()
 {
     vector<string> format_tokens;
-    NStr::Tokenize(CBlastTabularInfo::kDefaultFormat, " ", format_tokens);
+    NStr::Tokenize(blast::kDfltArgTabularOutputFmt, " ", format_tokens);
     ITERATE (vector<string>, iter, format_tokens) {
         _ASSERT(m_FieldMap.count(*iter) > 0);
         x_AddFieldToShow(m_FieldMap[*iter]);
@@ -207,9 +72,9 @@ CBlastTabularInfo::x_AddDefaultFieldsToShow()
 
 void CBlastTabularInfo::x_SetFieldsToShow(const string& format)
 {
-    for (size_t i = 0; i < kNumFormatSpecifiers; i++) {
-        m_FieldMap.insert(make_pair(sc_FormatSpecifiers[i].name,
-                                    sc_FormatSpecifiers[i].field));
+    for (size_t i = 0; i < blast::kNumTabularOutputFormatSpecifiers; i++) {
+        m_FieldMap.insert(make_pair(blast::sc_FormatSpecifiers[i].name,
+                                    blast::sc_FormatSpecifiers[i].field));
     }
     
     vector<string> format_tokens;
@@ -219,7 +84,7 @@ void CBlastTabularInfo::x_SetFieldsToShow(const string& format)
         x_AddDefaultFieldsToShow();
 
     ITERATE (vector<string>, iter, format_tokens) {
-        if (*iter == kDefaultKeyword)
+        if (*iter == blast::kDfltArgTabularOutputFmtTag)
             x_AddDefaultFieldsToShow();
         else if ((*iter)[0] == '-') {
             string field = (*iter).substr(1);
@@ -583,7 +448,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
 
 void CBlastTabularInfo::Print() 
 {
-    ITERATE(list<ETabularField>, iter, m_FieldsToShow) {
+    ITERATE(list<blast::ETabularField>, iter, m_FieldsToShow) {
         // Add tab in front of field, except for the first field.
         if (iter != m_FieldsToShow.begin())
             m_Ostream << m_FieldDelimiter;
@@ -596,68 +461,68 @@ void CBlastTabularInfo::x_PrintFieldNames()
 {
     m_Ostream << "# Fields: ";
 
-    ITERATE(list<ETabularField>, iter, m_FieldsToShow) {
+    ITERATE(list<blast::ETabularField>, iter, m_FieldsToShow) {
         if (iter != m_FieldsToShow.begin())
             m_Ostream << ", ";
 
         switch (*iter) {
-        case eQuerySeqId:
+        case blast::eQuerySeqId:
             m_Ostream << "query id"; break;
-        case eQueryGi:
+        case blast::eQueryGi:
             m_Ostream << "query gi"; break;
-        case eQueryAccession:
+        case blast::eQueryAccession:
             m_Ostream << "query acc."; break;
-        case eSubjectSeqId:
+        case blast::eSubjectSeqId:
             m_Ostream << "subject id"; break;
-        case eSubjectAllSeqIds:
+        case blast::eSubjectAllSeqIds:
             m_Ostream << "subject ids"; break;
-        case eSubjectGi:
+        case blast::eSubjectGi:
             m_Ostream << "subject gi"; break;
-        case eSubjectAllGis:
+        case blast::eSubjectAllGis:
             m_Ostream << "subject gis"; break;
-        case eSubjectAccession:
+        case blast::eSubjectAccession:
             m_Ostream << "subject acc."; break;
-        case eSubjectAllAccessions:
+        case blast::eSubjectAllAccessions:
             m_Ostream << "subject accs."; break;
-        case eQueryStart:
+        case blast::eQueryStart:
             m_Ostream << "q. start"; break;
-        case eQueryEnd:
+        case blast::eQueryEnd:
             m_Ostream << "q. end"; break;
-        case eSubjectStart:
+        case blast::eSubjectStart:
             m_Ostream << "s. start"; break;
-        case eSubjectEnd:
+        case blast::eSubjectEnd:
             m_Ostream << "s. end"; break;
-        case eQuerySeq:
+        case blast::eQuerySeq:
             m_Ostream << "query seq"; break;
-        case eSubjectSeq:
+        case blast::eSubjectSeq:
             m_Ostream << "subject seq"; break;
-        case eEvalue:
+        case blast::eEvalue:
             m_Ostream << "evalue"; break;
-        case eBitScore:
+        case blast::eBitScore:
             m_Ostream << "bit score"; break;
-        case eScore:
+        case blast::eScore:
             m_Ostream << "score"; break;
-        case eAlignmentLength:
+        case blast::eAlignmentLength:
             m_Ostream << "alignment length"; break;
-        case ePercentIdentical:
+        case blast::ePercentIdentical:
             m_Ostream << "% identity"; break;
-        case eNumIdentical:
+        case blast::eNumIdentical:
             m_Ostream << "identical"; break;
-        case eMismatches:
+        case blast::eMismatches:
             m_Ostream << "mismatches"; break;
-        case ePositives:
+        case blast::ePositives:
             m_Ostream << "positives"; break;
-        case eGapOpenings:
+        case blast::eGapOpenings:
             m_Ostream << "gap opens"; break;
-        case eGaps:
+        case blast::eGaps:
             m_Ostream << "gaps"; break;
-        case ePercentPositives:
+        case blast::ePercentPositives:
             m_Ostream << "% positives"; break;
-        case eFrames:
+        case blast::eFrames:
             m_Ostream << "query/sbjct frames"; break; 
-        case eQueryFrame:
+        case blast::eQueryFrame:
             m_Ostream << "query frame"; break; 
-        case eSubjFrame:
+        case blast::eSubjFrame:
             m_Ostream << "sbjct frame"; break; 
         default:
             break;

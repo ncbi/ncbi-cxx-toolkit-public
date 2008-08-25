@@ -41,6 +41,7 @@ static char const rcsid[] =
 #ifndef SKIP_DOXYGEN_PROCESSING
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <algo/blast/core/blast_options.h>
+#include <sstream>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -75,6 +76,115 @@ const string kArgMinRawGappedScore("min_raw_gapped_score");
 
 const string kArgOutputFormat("outfmt");
 const int kDfltArgOutputFormat = 0;
+const string kDfltArgTabularOutputFmt =
+    "qseqid sallseqid pident length mismatch gapopen qstart qend sstart send "
+    "evalue bitscore";
+const string kDfltArgTabularOutputFmtTag("std");
+
+const size_t kNumTabularOutputFormatSpecifiers = 29;
+const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
+    SFormatSpec("qseqid",   
+                "Query Seq-id",
+                eQuerySeqId),
+    SFormatSpec("qgi",
+                "Query GI",
+                eQueryGi),
+    SFormatSpec("qacc",
+                "Query accesion",
+                eQueryAccession),
+    SFormatSpec("sseqid",
+                "Subject Seq-id",
+                eSubjectSeqId),
+    SFormatSpec("sallseqid",
+                "All subject Seq-id(s), separated by a ';'", 
+                eSubjectAllSeqIds),
+    SFormatSpec("sgi",
+                "Subject GI", 
+                eSubjectGi),
+    SFormatSpec("sallgi",
+                "All subject GIs", 
+                eSubjectAllGis),
+    SFormatSpec("sacc",
+                "Subject accession", 
+                eSubjectAccession),
+    SFormatSpec("sallacc", 
+                "All subject accessions", 
+                eSubjectAllAccessions),
+    SFormatSpec("qstart",
+                "Start of alignment in query", 
+                eQueryStart),
+    SFormatSpec("qend",
+                "End of alignment in query", 
+                eQueryEnd),
+    SFormatSpec("sstart", 
+                "Start of alignment in subject", 
+                eSubjectStart),
+    SFormatSpec("send",
+                "End of alignment in subject", 
+                eSubjectEnd),
+    SFormatSpec("qseq",
+                "Aligned part of query sequence",
+                eQuerySeq),
+    SFormatSpec("sseq",
+                "Aligned part of subject sequence", 
+                eSubjectSeq),
+    SFormatSpec("evalue", 
+                "Expect value", 
+                eEvalue),
+    SFormatSpec("bitscore", 
+                "Bit score", 
+                eBitScore),
+    SFormatSpec("score",
+                "Raw score", 
+                eScore),
+    SFormatSpec("length", 
+                "Alignment length", 
+                eAlignmentLength),
+    SFormatSpec("pident",
+                "Percentage of identical matches", 
+                ePercentIdentical),
+    SFormatSpec("nident",
+                "Number of identical matches", 
+                eNumIdentical),
+    SFormatSpec("mismatch",
+                "Number of mismatches", 
+                eMismatches),
+    SFormatSpec("positive", 
+                "Number of positive-scoring matches", 
+                ePositives),
+    SFormatSpec("gapopen", 
+                "Number of gap openings", 
+                eGapOpenings),
+    SFormatSpec("gaps",
+                "Total number of gaps", 
+                eGaps),
+    SFormatSpec("ppos",
+                "Percentage of positive-scoring matches", 
+                ePercentPositives),
+    SFormatSpec("frames",   
+                "Query and subject frames separated by a '/'", 
+                eFrames),
+    SFormatSpec("qframe", 
+                "Query frame", 
+                eQueryFrame),
+    SFormatSpec("sframe",   
+                "Subject frame", 
+                eSubjFrame)
+};
+
+string DescribeTabularOutputFormatSpecifiers()
+{
+    ostringstream os;
+    for (size_t i = 0; i < kNumTabularOutputFormatSpecifiers; i++) {
+        os << "\t" << setw(10) << sc_FormatSpecifiers[i].name << " means ";
+        os << sc_FormatSpecifiers[i].description << "\n";
+    }
+    os << "When not provided, the default value is:\n";
+    os << "'" << kDfltArgTabularOutputFmt << "', which is equivalent ";
+    os << "to the keyword '" << kDfltArgTabularOutputFmtTag << "'";
+    return os.str();
+}
+
 const string kArgShowGIs("show_gis");
 const bool kDfltArgShowGIs = false;
 const string kArgNumDescriptions("num_descriptions");
