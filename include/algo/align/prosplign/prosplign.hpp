@@ -50,7 +50,25 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 /// Scoring parameters object
-class NCBI_XALGOALIGN_EXPORT CProSplignScoring: public CObject
+class NCBI_XALGOALIGN_EXPORT CProSplignOptions_Base: public CObject
+{
+public:
+    static void SetupArgDescriptions(CArgDescriptions* argdescr);
+
+    /// creates scoring parameter object with default values
+    CProSplignOptions_Base();
+    CProSplignOptions_Base(const CArgs& args);
+
+    CProSplignOptions_Base& SetScoreMatrix(const string& matrix_name);
+    const string& GetScoreMatrix() const;
+
+    static const string default_score_matrix_name; // BLOSUM62
+
+private:
+    string score_matrix_name;
+};
+
+class NCBI_XALGOALIGN_EXPORT CProSplignScoring: public CProSplignOptions_Base
 {
 public:
     static void SetupArgDescriptions(CArgDescriptions* argdescr);
@@ -64,7 +82,8 @@ public:
     CProSplignScoring& SetMinIntronLen(int);
     int GetMinIntronLen() const;
 
-    ///  in addition to BLOSUM62 prosplign uses following costs (negate to get a score)
+
+    ///  in addition to ScoreMatrix prosplign uses following costs (negate to get a score)
 
     CProSplignScoring& SetGapOpeningCost(int);
     int GetGapOpeningCost() const;
@@ -128,7 +147,7 @@ private:
 /// i.e. it aligns the whole protein no matter how bad some parts of this alignment might be.
 /// Usually we don't want the bad pieces and remove them.
 /// The following parameters define good parts.
-class NCBI_XALGOALIGN_EXPORT CProSplignOutputOptions: public CObject
+class NCBI_XALGOALIGN_EXPORT CProSplignOutputOptions: public CProSplignOptions_Base
 {
 public:
     enum EMode {
@@ -282,6 +301,7 @@ private:
 
 BEGIN_SCOPE(prosplign)
 class CSubstMatrix;
+class CTranslationTable;
 END_SCOPE(prosplign)
 
 /// Text representation of ProSplign alignment
@@ -294,7 +314,7 @@ END_SCOPE(prosplign)
 class CProSplignText {
 public:
     /// Outputs formatted text
-    static void Output(const objects::CSeq_align& seqalign, objects::CScope& scope, ostream& out, int width);
+    static void Output(const objects::CSeq_align& seqalign, objects::CScope& scope, ostream& out, int width, const string& matrix_name = "BLOSUM62");
 
     CProSplignText(objects::CScope& scope, const objects::CSeq_align& seqalign, const string& matrix_name = "BLOSUM62");
     ~CProSplignText();
@@ -310,6 +330,7 @@ private:
     string m_match;
     string m_protein;
     auto_ptr<prosplign::CSubstMatrix> m_matrix;
+    CRef<prosplign::CTranslationTable> m_trans_table;
 
     void AddDNAText(objects::CSeqVector_CI& genomic_ci, int& nuc_prev, size_t len);
     void TranslateDNA(int phase, size_t len, bool is_insertion);
