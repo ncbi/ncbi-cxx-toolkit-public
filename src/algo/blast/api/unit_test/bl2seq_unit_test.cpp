@@ -1340,8 +1340,8 @@ BOOST_AUTO_TEST_CASE(MegablastGreedyTraceback) {
     opts.SetGapTracebackAlgorithm(eGreedyTbck);
 
     CBl2Seq blaster(*ql, *sl, opts);
-    blaster.RunWithoutSeqalignGeneration();
-    BlastHSPResults *results = blaster.GetResults();
+    blaster.RunWithoutSeqalignGeneration(); /* NCBI_FAKE_WARNING */
+    BlastHSPResults *results = blaster.GetResults(); /* NCBI_FAKE_WARNING */
     BlastHSPList *hsplist = results->hitlist_array[0]->hsplist_array[0];
     BOOST_REQUIRE_EQUAL(1, hsplist->hspcnt);
     BlastHSP *hsp = hsplist->hsp_array[0];
@@ -1765,8 +1765,8 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
         handle.SetEvalueThreshold(10000);
 
         CBl2Seq blaster(ss1, ss2, handle);
-        blaster.RunWithoutSeqalignGeneration();
-        BlastHSPResults *results = blaster.GetResults();
+        blaster.RunWithoutSeqalignGeneration(); /* NCBI_FAKE_WARNING */
+        BlastHSPResults *results = blaster.GetResults(); /* NCBI_FAKE_WARNING */
         BOOST_REQUIRE(results != NULL);
         BOOST_REQUIRE(results->hitlist_array[0] != NULL);
         BOOST_REQUIRE(results->hitlist_array[0]->hsplist_array[0] != NULL);
@@ -2595,8 +2595,8 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
         CBlastProteinOptionsHandle prot_opts;
         prot_opts.SetSegFiltering(false);
         CBl2Seq blaster(seq_vec, seq_vec, prot_opts);
-        blaster.RunWithoutSeqalignGeneration();
-        BlastHSPResults* results = blaster.GetResults();
+        blaster.RunWithoutSeqalignGeneration(); /* NCBI_FAKE_WARNING */
+        BlastHSPResults* results = blaster.GetResults(); /* NCBI_FAKE_WARNING */
 
         int qindex, sindex, qindex1, sindex1;
         for (qindex = 0; qindex < num_seqs; ++qindex) {
