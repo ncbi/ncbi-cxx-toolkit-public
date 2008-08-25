@@ -221,7 +221,10 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case 'w': m_windowLength = strtol( arg, 0, 10 ); break;
     case 'n': m_maxHashMism = strtol( arg, 0, 10 ); break;
     case 'N': m_maxMismOnly = *arg == '+' ? true : *arg == '-' ? false : m_maxMismOnly; break;
-	case 'H': m_hashType = (*arg == 'v'? CQueryHash::eHash_vector : *arg == 'm'? CQueryHash::eHash_multimap : *arg == 'a'? CQueryHash::eHash_arraymap : 
+	case 'H': m_hashType = (
+					  *arg == 'v'? CQueryHash::eHash_vector : 
+					  *arg == 'm'? CQueryHash::eHash_multimap : 
+					  *arg == 'a'? CQueryHash::eHash_arraymap : 
 			  ((cerr << "Warning: Unknown hash type " << arg << ": ignored"), m_hashType) ); break;
     case 'a': m_maxHashAlt = strtol( arg, 0, 10 ); break;
     case 'A': m_maxFastaAlt = strtol( arg, 0, 10 ); break;
@@ -248,8 +251,11 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case 'D': m_pairMargin = strtol( arg, 0, 10 ); break;
 //    case 'R': m_reversePair = *arg == 'y'? true : *arg == 'n' ? false : m_reversePair; break;
     case 'F': m_maxSimplicity = NStr::StringToDouble( arg ); break;
-	case 'r': m_alignmentAlgo = *arg == 'f' ? eAlignment_fast : *arg == 'q' ? eAlignment_quick : *arg == 's' ? eAlignment_SW : 
-			  ( (cerr << "Warning: ignoring bad alignment algorithm option " << arg << endl), m_alignmentAlgo ); break;
+	case 'r': m_alignmentAlgo = (
+					  *arg == 'f' ? eAlignment_fast : 
+					  *arg == 'q' ? eAlignment_quick : 
+					  *arg == 's' ? eAlignment_SW : 
+			  ( (cerr << "Warning: ignoring bad alignment algorithm option " << arg << endl), m_alignmentAlgo ) ); break;
     case 'I': m_identityScore = fabs( NStr::StringToDouble( arg ) ); break;
     case 'M': m_mismatchScore = -fabs( NStr::StringToDouble( arg ) ); break;
     case 'G': m_gapOpeningScore = -fabs( NStr::StringToDouble( arg ) ); break;
@@ -448,8 +454,13 @@ int COligoFarApp::ProcessData()
             iline >> qf;
             if( rev.length() ) iline >> qr;
             if( qr == "-" ) qr = "";
-            if( qf.length() != fwd.length() || qr.length() != rev.length() ) {
-                THROW( runtime_error, "Quality column length does not equal to IUPAC column length" );
+            if( qf.length() != fwd.length() ) {
+                THROW( runtime_error, "Fwd read quality column length (" << qf << " - " << qf.length() 
+						<< ") does not equal to IUPAC column length (" << fwd << " - " << fwd.length() << ")" );
+            }
+			if( qr.length() != rev.length() ) {
+                THROW( runtime_error, "Rev read quality column length (" << qr << " - " << qr.length() 
+						<< ") does not equal to IUPAC column length (" << rev << " - " << rev.length() << ")" );
             }
             fwd += qf;
             rev += qr;
