@@ -50,7 +50,7 @@ static char const rcsid[] =
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 
-#include <util/regexp.hpp>
+#include <util/xregexp/regexp.hpp>
 
 
 BEGIN_NCBI_SCOPE

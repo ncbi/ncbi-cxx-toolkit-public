@@ -59,7 +59,7 @@
 #include <algo/blast/api/objmgr_query_data.hpp> // for CObjMgr_QueryFactory
 
 #include <objtools/simple/simple_om.hpp>        // for CSimpleOM
-#include <objtools/readers/fasta.hpp>           // for ReadFasta
+#include <objtools/readers/fasta.hpp>           // for CFastaReader
 #include <objmgr/util/seq_loc_util.hpp>
 
 #include "test_objmgr.hpp"
@@ -1236,7 +1236,7 @@ BOOST_AUTO_TEST_CASE(ProteinCompBasedStats) {
     ifstream in1(kFileName.c_str());
     if ( !in1 )
         throw runtime_error("Failed to open " + kFileName);
-    if ( !(seq_entry1 = ReadFasta(in1)))
+    if ( !(seq_entry1 = CFastaReader(in1).ReadOneSeq()))
         throw runtime_error("Failed to read sequence from " + kFileName);
     scope->AddTopLevelSeqEntry(*seq_entry1);
     CRef<CSeq_loc> seqloc1(new CSeq_loc);
@@ -1357,7 +1357,7 @@ BOOST_AUTO_TEST_CASE(MegablastGreedyTraceback2) {
     ifstream in1("data/greedy1a.fsa");
     if ( !in1 )
         throw runtime_error("Failed to open file1");
-    if ( !(seq_entry1 = ReadFasta(in1)))
+    if ( !(seq_entry1 = CFastaReader(in1).ReadOneSeq()))
         throw runtime_error("Failed to read sequence from file1");
     scope->AddTopLevelSeqEntry(*seq_entry1);
     CRef<CSeq_loc> seqloc1(new CSeq_loc);
@@ -1370,7 +1370,7 @@ BOOST_AUTO_TEST_CASE(MegablastGreedyTraceback2) {
     ifstream in2("data/greedy1b.fsa");
     if ( !in2 )
         throw runtime_error("Failed to open file2");
-    if ( !(seq_entry2 = ReadFasta(in2)))
+    if ( !(seq_entry2 = CFastaReader(in2).ReadOneSeq()))
         throw runtime_error("Failed to read sequence from file2");
     scope->AddTopLevelSeqEntry(*seq_entry2);
     CRef<CSeq_loc> seqloc2(new CSeq_loc);
@@ -1734,7 +1734,7 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
         ifstream in1(file1);
         if ( !in1 )
             throw runtime_error("Failed to open file1");
-        if ( !(seq_entry1 = ReadFasta(in1)))
+        if ( !(seq_entry1 = CFastaReader(in1).ReadOneSeq()))
             throw runtime_error("Failed to read sequence from file1");
         scope->AddTopLevelSeqEntry(*seq_entry1);
         CRef<CSeq_loc> seqloc1(new CSeq_loc);
@@ -1747,7 +1747,7 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
         ifstream in2(file2);
         if ( !in2 )
             throw runtime_error("Failed to open file2");
-        if ( !(seq_entry2 = ReadFasta(in2)))
+        if ( !(seq_entry2 = CFastaReader(in2).ReadOneSeq()))
             throw runtime_error("Failed to read sequence from file2");
         scope->AddTopLevelSeqEntry(*seq_entry2);
         CRef<CSeq_loc> seqloc2(new CSeq_loc);

@@ -198,7 +198,7 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
             db_adapter.Reset(new CLocalDbAdapter(seqdb,
                                  search_db->GetFilteringAlgorithms()));
             scope->AddDataLoader(RegisterOMDataLoader(seqdb));
-        } catch (const CSeqDBException& e) {
+        } catch (const CSeqDBException&) {
             // The BLAST database couldn't be found, report this for local
             // searches, but for remote searches go on.
             if (is_remote_search ) {

@@ -197,6 +197,7 @@ CBlastFormatterApp::x_ExtractQueries(bool query_is_protein)
         }
     }
 
+    (void)kNumQueries;  // eliminate compiler warning;
     _ASSERT(kNumQueries == retval->size());
     return retval;
 }

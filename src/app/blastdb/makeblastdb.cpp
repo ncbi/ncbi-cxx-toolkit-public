@@ -48,7 +48,7 @@ static char const rcsid[] =
 #include <objtools/writers/writedb/writedb.hpp>
 #include <objtools/writers/writedb/writedb_error.hpp>
 #include <util/format_guess.hpp>
-#include <util/regexp.hpp>
+#include <util/xregexp/regexp.hpp>
 #include <util/util_exception.hpp>
 #include <objtools/writers/writedb/build_db.hpp>
 
