@@ -319,7 +319,7 @@ sub handle_blastall($)
         $retval .= "-ungapped ";
     }
     if (defined $opt_J and (length($opt_J) == 0 or $opt_J =~ /t/i)) {
-        $retval .= "-parse_query_defline ";
+        $retval .= "-parse_deflines ";
     }
     $retval .= &convert_strand($opt_S) if (defined $opt_S);
     if (defined $opt_s and (length($opt_s) == 0 or $opt_s =~ /t/i)) {
@@ -447,7 +447,7 @@ sub handle_megablast($)
         $retval .= "-show_gis ";
     }
     if (defined $opt_J and (length($opt_J) == 0 or $opt_J =~ /t/i)) {
-        $retval .= "-parse_query_defline ";
+        $retval .= "-parse_deflines ";
     }
 
 
@@ -625,7 +625,7 @@ sub handle_blastpgp($)
         $retval .= "-show_gis ";
     }
     if (defined $opt_J and (length($opt_J) == 0 or $opt_J =~ /t/i)) {
-        $retval .= "-parse_query_defline ";
+        $retval .= "-parse_deflines ";
     }
     if (defined $opt_s and (length($opt_s) == 0 or $opt_s =~ /t/i)) {
         $retval .= "-use_sw_tback ";
@@ -892,7 +892,7 @@ sub handle_rpsblast
         $retval .= "-show_gis ";
     }
     if (defined $opt_J and (length($opt_J) == 0 or $opt_J =~ /t/i)) {
-        $retval .= "-parse_query_defline ";
+        $retval .= "-parse_deflines ";
     }
     if (defined $opt_U and (length($opt_U) == 0 or $opt_U =~ /t/i)) {
         $retval .= "-lcase_masking ";
