@@ -40,3 +40,5 @@ CHECK_CMD = dbapi_unit_test -d odbc       -S Sybase
 CHECK_CMD = dbapi_unit_test -d ftds_odbc  -S Sybase
 CHECK_CMD = dbapi_unit_test -d ftds_dblib -S Sybase
 CHECK_CMD = dbapi_unit_test -d ftds8      -S Sybase
+
+CHECK_CMD = dbapi_unit_test -d ftds -S MsSql --run_test=Test_Authentication
