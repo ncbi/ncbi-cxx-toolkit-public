@@ -40,7 +40,7 @@ use Pod::Usage;
 
 use constant DEBUG => 0;
 # Default PATH where binaries will be found
-use constant DEFAULT_PATH => "/opt/ncbi/blast/bin";
+use constant DEFAULT_PATH => "/usr/bin";
 
 pod2usage({-exitval => 1, -verbose => 2}) if (@ARGV == 0);
 
@@ -1100,7 +1100,7 @@ legacy_blast.pl [--help]
 =item B<--path>
 
 Use the provided path as the location of the BLAST binaries to execute/print
-(default: /opt/ncbi/blast/bin).
+(default: /usr/bin).
 
 =item B<--print_only>
 
