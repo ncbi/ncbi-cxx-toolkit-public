@@ -146,10 +146,24 @@ NCBI_PARAM_DECL(bool, NCBI, FileAPILogging);
 NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
     eParam_NoThread, NCBI_CONFIG__FileAPILogging);
 
-#define LOG_IF_ERROR_AND_RETURN(call, log_message) \
-    if ((call) == 0) \
-        return true; \
-    else { \
+#define LOG_ERROR(log_message) \
+    { \
+        if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
+            int saved_error = errno; \
+            ERR_POST(log_message << ": " << strerror(saved_error)); \
+        } \
+    }
+
+#define LOG_ERROR_AND_RETURN(log_message) \
+    { \
+        if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
+            ERR_POST(log_message); \
+        } \
+        return false; \
+    }
+
+#define LOG_ERROR_AND_RETURN_ERRNO(log_message) \
+    { \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
             int saved_error = errno; \
             ERR_POST(log_message << ": " << strerror(saved_error)); \
@@ -401,6 +415,7 @@ string CDirEntry::GetDir(EIfEmptyPath mode) const
     }
     return dir;
 }
+
 
 bool CDirEntry::IsAbsolutePath(const string& path)
 {
@@ -811,7 +826,7 @@ bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode,
 {
     struct stat st;
     if (stat(GetPath().c_str(), &st) != 0) {
-        return false;
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::GetMode(): stat() failed for " << GetPath());
     }
     // Owner
     if (usr_mode) {
@@ -906,7 +921,10 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode,
     }
     mode_t mode = MakeModeT(user_mode, group_mode, other_mode, special);
 
-    return chmod(GetPath().c_str(), mode) == 0;
+    if ( chmod(GetPath().c_str(), mode) != 0 ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetMode(): chmod() failed for " << GetPath());
+    }
+    return true;
 }
 
 
@@ -1192,7 +1210,7 @@ bool CDirEntry::CheckAccess(TMode access_mode) const
     if (getuid() == geteuid()  &&  getgid() == getegid()) {
         return access(GetPath().c_str(), amode) == 0;
     }
-    // Otherwise, try to check permissions self.
+    // Otherwise, try to check permissions itself.
     // Note, that this function is not perfect, it doesn't work with ACL,
     // which implementation can differ for each platform.
     // But in most cases it works.
@@ -1272,6 +1290,7 @@ bool CDirEntry::GetTime(CTime* modification,
     // Get file times using FindFile
     handle = FindFirstFile(GetPath().c_str(), &buf);
     if ( handle == INVALID_HANDLE_VALUE ) {
+        //LOG_ERROR_AND_RETURN("CDirEntry::GetTime(): Could not find " << GetPath());
         return false;
     }
     FindClose(handle);
@@ -1279,15 +1298,15 @@ bool CDirEntry::GetTime(CTime* modification,
     // Convert file UTC times into CTime format
     if ( modification  &&
         !s_FileTimeToCTime(buf.ftLastWriteTime, *modification) ) {
-        return false;
+        LOG_ERROR_AND_RETURN("CDirEntry::GetTime(): Could not get modification time for " << GetPath());
     }
     if ( last_access  &&
          !s_FileTimeToCTime(buf.ftLastAccessTime, *last_access) ) {
-        return false;
+        LOG_ERROR_AND_RETURN("CDirEntry::GetTime(): Could not get access time for " << GetPath());
     }
     if ( creation  &&
         !s_FileTimeToCTime(buf.ftCreationTime, *creation) ) {
-        return false;
+        LOG_ERROR_AND_RETURN("CDirEntry::GetTime(): Could not get creation time for " << GetPath());
     }
     return true;
 
@@ -1295,9 +1314,9 @@ bool CDirEntry::GetTime(CTime* modification,
 
     struct SStat st;
     if ( !Stat(&st) ) {
+        //LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::GetTime(): Could not get time for " << GetPath());
         return false;
     }
-
     if ( modification ) {
         modification->SetTimeT(st.orig.st_mtime);
         if ( st.mtime_nsec )
@@ -1352,11 +1371,11 @@ bool CDirEntry::SetTime(CTime* modification,
                           FILE_SHARE_READ, NULL, OPEN_EXISTING,
                           FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
     if ( h == INVALID_HANDLE_VALUE ) {
-        return false;
+        LOG_ERROR_AND_RETURN("CDirEntry::SetTime(): Could not open " << GetPath());
     }
     if ( !SetFileTime(h, p_creation, p_last_access, p_modification) ) {
         CloseHandle(h);
-        return false;
+        LOG_ERROR_AND_RETURN("CDirEntry::SetTime(): Could not set new time for " << GetPath());
     }
     CloseHandle(h);
 
@@ -1392,10 +1411,14 @@ bool CDirEntry::SetTime(CTime* modification,
     tvp[1].tv_usec = modification->NanoSecond() / 1000;
 
 #    ifdef HAVE_LUTIMES
-    return lutimes(GetPath().c_str(), tvp) == 0;
+    bool ut_res = lutimes(GetPath().c_str(), tvp) == 0;
 #    else
-    return utimes(GetPath().c_str(), tvp) == 0;
+    bool ut_res = utimes(GetPath().c_str(), tvp) == 0;
 #    endif
+    if ( !ut_res ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetTime(): Could not change time for " << GetPath());
+    }
+    return true;
 
 # else
     // utimes() does not exist on current platform,
@@ -1415,7 +1438,10 @@ bool CDirEntry::SetTime(CTime* modification,
     struct utimbuf times;
     times.modtime  = modification ? modification->GetTimeT() : x_modification;
     times.actime   = last_access  ? last_access->GetTimeT()  : x_last_access;
-    return utime(GetPath().c_str(), &times) == 0;
+    if ( utime(GetPath().c_str(), &times) != 0 ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetTime(): Could not change time for " << GetPath());
+    }
+    return true;
 
 #  endif // HAVE_UTIMES
 
@@ -1429,7 +1455,7 @@ bool CDirEntry::GetTimeT(time_t* modification,
 {
     struct stat st;
     if (stat(GetPath().c_str(), &st) != 0) {
-        return false;
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::GetTimeT(): stat() failed for " << GetPath());
     }
     if ( modification ) {
         *modification = st.st_mtime;
@@ -1475,11 +1501,12 @@ bool CDirEntry::SetTimeT(time_t* modification,
                           FILE_SHARE_READ, NULL, OPEN_EXISTING,
                           FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
     if ( h == INVALID_HANDLE_VALUE ) {
+        LOG_ERROR_AND_RETURN("CDirEntry::SetTimeT(): Could not open " << GetPath());
         return false;
     }
     if ( !SetFileTime(h, p_creation, p_last_access, p_modification) ) {
         CloseHandle(h);
-        return false;
+        LOG_ERROR_AND_RETURN("CDirEntry::SetTimeT(): Could not set new time for " << GetPath());
     }
     CloseHandle(h);
 
@@ -1501,7 +1528,10 @@ bool CDirEntry::SetTimeT(time_t* modification,
     struct utimbuf times;
     times.modtime = modification ? *modification : x_modification;
     times.actime  = last_access  ? *last_access  : x_last_access;
-    return utime(GetPath().c_str(), &times) == 0;
+    if ( utime(GetPath().c_str(), &times) != 0 ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetTimeT(): Could not change time for " << GetPath());
+    }
+    return true;
 
 #endif
 }
@@ -1511,7 +1541,7 @@ bool CDirEntry::Stat(struct SStat *buffer, EFollowLinks follow_links) const
 {
     if ( !buffer ) {
         errno = EFAULT;
-        return false;
+        LOG_ERROR_AND_RETURN("CDirEntry::Stat(): Incorrect parameters");
     }
 
     int errcode;
@@ -1778,7 +1808,7 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
     // The source entry must exists
     EType src_type = src.GetType();
     if ( src_type == eUnknown )  {
-        return false;
+        LOG_ERROR_AND_RETURN("CDirEntry::Rename(): Source path doesnt exists: " << src.GetPath());
     }
     EType dst_type = dst.GetType();
     
@@ -1786,11 +1816,11 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
     if ( dst_type != eUnknown ) {
         // Can rename entries with different types?
         if ( F_ISSET(flags, fRF_EqualTypes)  &&  (src_type != dst_type) ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CDirEntry::Rename(): Source and destination exists and have different types: " << src.GetPath() << " and " << dst.GetPath());
         }
         // Can overwrite entry?
         if ( !F_ISSET(flags, fRF_Overwrite) ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CDirEntry::Rename(): Destination path already exists: " << dst.GetPath());
         }
         // Rename only if destination is older, otherwise just remove source
         if ( F_ISSET(flags, fRF_Update)  &&  !src.IsNewer(dst.GetPath(), 0)) {
@@ -1802,12 +1832,14 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
             // will be changed after backup
             CDirEntry dst_tmp(dst);
             if ( !dst_tmp.Backup(GetBackupSuffix(), eBackup_Rename) ) {
-                return false;
+                LOG_ERROR_AND_RETURN("CDirEntry::Rename(): Backup failed for " << dst.GetPath());
             }
         }
         // Overwrite destination entry
         if ( F_ISSET(flags, fRF_Overwrite) ) {
-            dst.Remove();
+            if ( dst.Exists() ) {
+                dst.Remove();
+            }
         }
     }
 
@@ -1815,17 +1847,17 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
     // on others it can overwrite destination.
     // For consistency return FALSE if destination already exists.
     if ( dst.Exists() ) {
-        return false;
+        LOG_ERROR_AND_RETURN("CDirEntry::Rename(): Destination path exists: " << GetPath());
     }
     // Rename
     if ( rename(src.GetPath().c_str(), dst.GetPath().c_str()) != 0 ) {
 #ifdef NCBI_OS_MSWIN
         if ( errno != EACCES ) {
-            return false;
+            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::Rename(): rename() failed for " << GetPath());
         }
 #else  // NCBI_OS_UNIX
         if ( errno != EXDEV ) {
-            return false;
+            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::Rename(): rename() failed for " << GetPath());
         }
 #endif // NCBI_OS_...
         // Note that rename() fails in the case of cross-device renaming.
@@ -1858,8 +1890,10 @@ bool CDirEntry::Remove(EDirRemoveMode mode) const
         return dir.Remove(mode);
     }
     // Other entries
-    LOG_IF_ERROR_AND_RETURN(remove(GetPath().c_str()),
-        "Could not remove " << GetPath());
+    if ( remove(GetPath().c_str()) != 0 ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::Remove(): Could not remove " << GetPath());
+    }
+    return true;
 }
 
 
@@ -1879,7 +1913,7 @@ bool CDirEntry::Backup(const string& suffix, EBackupMode mode,
         case eBackup_Rename:
             return Rename(backup_name, fRF_Overwrite);
         default:
-            break;
+            _TROUBLE;
     }
     return false;
 }
@@ -1939,7 +1973,7 @@ bool CDirEntry::IsNewer(time_t tm, EIfAbsent if_absent) const
                 return false;
             case eIfAbsent_Throw:
             default:
-                 NCBI_THROW(CFileException, eNotExists, 
+                 NCBI_THROW(CFileException, eNotExists,
                             "dir entry does not exist");
         }
     }
@@ -1971,9 +2005,11 @@ bool CDirEntry::IsIdentical(const string& entry_name,
 {
 #if defined(NCBI_OS_UNIX)
     struct SStat st1, st2;
-    if ( !Stat(&st1, follow_links)  ||
-         !CDirEntry(entry_name).Stat(&st2, follow_links) ) {
-        return false;
+    if ( !Stat(&st1, follow_links) ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::IsIdentical(): Could not find " << GetPath());
+    }
+    if ( !CDirEntry(entry_name).Stat(&st2, follow_links) ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::IsIdentical(): Could not find " << entry_name);
     }
     return st1.orig.st_dev == st2.orig.st_dev  &&
            st1.orig.st_ino == st2.orig.st_ino;
@@ -2006,7 +2042,7 @@ bool CDirEntry::GetOwner(string* owner, string* group,
         errcode = lstat(GetPath().c_str(), &st);
     }
     if ( errcode != 0 ) {
-        return false;
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::GetOwner(): stat() failed for " << GetPath());
     }
     
     if ( owner ) {
@@ -2053,7 +2089,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
         errcode = lstat(GetPath().c_str(), &st);
     }
     if ( errcode != 0 ) {
-        return false;
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::GetOwner(): stat() failed for " << GetPath());
     }
     
     uid_t uid = uid_t(-1);
@@ -2064,8 +2100,8 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
         if ( !pw ) {
             uid = (uid_t) NStr::StringToUInt(owner.c_str(),
                                              NStr::fConvErr_NoThrow, 0);
-            if (errno)
-                return false;
+            if ( errno )
+                LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner(): Incorrect owner name " << owner);
         } else {
             uid = pw->pw_uid;
         }
@@ -2075,8 +2111,8 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
         if ( !gr ) {
             gid = (gid_t) NStr::StringToUInt(group.c_str(),
                                              NStr::fConvErr_NoThrow, 0);
-            if (errno)
-                return false;
+            if ( errno )
+                LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner(): Incorrect group name " << group);
         } else {
             gid = gr->gr_gid;
         }
@@ -2084,12 +2120,12 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
     
     if ( follow == eFollowLinks ) {
         if ( chown(GetPath().c_str(), uid, gid) ) {
-            return false;
+            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner(): Could not change owner for " << GetPath());
         }
     } else {
 #  if defined(HAVE_LCHOWN)
         if ( lchown(GetPath().c_str(), uid, gid) ) {
-            return false;
+            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner(): Could not change owner for " << GetPath());
         }
 #  endif
     }
@@ -2241,6 +2277,7 @@ fstream* CDirEntry::CreateTmpFile(const string& filename,
 {
     string tmpname = filename.empty() ? GetTmpName(eTmpFileCreate) : filename;
     if ( tmpname.empty() ) {
+        LOG_ERROR("CDirEntry::CreateTmpFile(): Cannot get temporary file name");
         return 0;
     }
 #if defined(NCBI_OS_MSWIN)
@@ -2310,7 +2347,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
 
     CDirEntry::SStat st;
     if ( !CDirEntry(from).Stat(&st) ) {
-        return false;
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr(): stat() failed for " << from);
     }
 
     // Date/time.
@@ -2325,11 +2362,11 @@ static bool s_CopyAttrs(const char* from, const char* to,
         tvp[1].tv_usec = st.mtime_nsec / 1000;
 #    if defined(HAVE_LUTIMES)
         if (lutimes(to, tvp)) {
-            return false;
+            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr(): lutimes() failed for " << to);
         }
 #    else
         if (utimes(to, tvp)) {
-            return false;
+            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr(): utimes() failed for " << to);
         }
 #    endif
 # else  // !HAVE_UTIMES
@@ -2339,7 +2376,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
         times.actime  = st.orig.st_atime;
         times.modtime = st.orig.st_mtime;
         if (utime(to, &times)) {
-            return false;
+            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr(): utime() failed for " << to);
         }
 #  endif // HAVE_UTIMES
     }
@@ -2353,7 +2390,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
 #  if defined(HAVE_LCHOWN)
             if ( lchown(to, st.orig.st_uid, st.orig.st_gid) ) {
                 if (errno != EPERM) {
-                    return false;
+                    LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr(): lchown() failed for " << to);
                 }
             }
 #  endif
@@ -2366,7 +2403,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
             // strip the setuid/gid bits.
             if ( chown(to, st.orig.st_uid, st.orig.st_gid) ) {
                 if ( errno != EPERM ) {
-                    return false;
+                    LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr(): chown() failed for " << to);
                 }
                 st.orig.st_mode &= ~(S_ISUID | S_ISGID);
             }
@@ -2377,7 +2414,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
     if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm)  &&
         type != CDirEntry::eLink ) {
         if ( chmod(to, st.orig.st_mode) ) {
-            return false;
+            LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::s_CopyAttr(): chmod() failed for " << to);
         }
     }
     return true;
@@ -2398,12 +2435,12 @@ static bool s_CopyAttrs(const char* from, const char* to,
                               OPEN_EXISTING,
                               FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL); 
         if ( h == INVALID_HANDLE_VALUE ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CDirEntry::s_CopyAttr(): Could not open " << to);
         }
         if ( !SetFileTime(h, &attr.ftCreationTime, &attr.ftLastAccessTime,
                         &attr.ftLastWriteTime) ) {
             CloseHandle(h);
-            return false;
+            LOG_ERROR_AND_RETURN("CDirEntry::s_CopyAttr(): Could not change time for " << to);
         }
         CloseHandle(h);
     }
@@ -2411,7 +2448,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
     // Permissions
     if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm) ) {
         if ( !::SetFileAttributes(to, attr.dwFileAttributes) ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CDirEntry::s_CopyAttr(): Could not change pemissions for " << to);
         }
     }
 
@@ -2447,11 +2484,13 @@ Int8 CFile::GetLength(void) const
 #if defined(NCBI_OS_MSWIN)
     struct __stat64 buf;
     if ( _stat64(GetPath().c_str(), &buf) != 0 ) {
+        //LOG_ERROR("CFile:GetLength(): _stat64() failed for " << GetPath());
         return -1;
     }
 #else
     struct stat buf;
     if ( stat(GetPath().c_str(), &buf) != 0 ) {
+        //LOG_ERROR("CFile:GetLength(): stat() failed for " << GetPath());
         return -1;
     }
 #endif
@@ -2511,7 +2550,7 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     // The source file must exists
     EType src_type = src.GetType();
     if ( src_type != eFile )  {
-        return false;
+        LOG_ERROR_AND_RETURN("CFile::Copy(): Source is not a file: " << GetPath());
     }
 
     EType dst_type   = dst.GetType();
@@ -2529,11 +2568,11 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
         // Can copy entries with different types?
         // The Destination must be a file too.
         if ( F_ISSET(flags, fCF_EqualTypes)  &&  (src_type != dst_type) ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CFile::Copy(): Destination is not a file: " << dst.GetPath());
         }
         // Can overwrite entry?
         if ( !F_ISSET(flags, fCF_Overwrite) ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CFile::Copy(): Destination file exists: " << dst.GetPath());
         }
         // Copy only if destination is older
         if ( F_ISSET(flags, fCF_Update)  &&  !src.IsNewer(dst.GetPath(),0) ) {
@@ -2545,7 +2584,7 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
             // will be changed after backup
             CDirEntry dst_tmp(dst);
             if ( !dst_tmp.Backup(GetBackupSuffix(), eBackup_Rename) ) {
-                return false;
+                LOG_ERROR_AND_RETURN("CFile::Copy(): Backup failed for " << dst.GetPath());
             }
         }
     }
@@ -2553,16 +2592,16 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     // Copy
 #if defined(NCBI_OS_MSWIN)
     if ( !::CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), FALSE) )
-        return false;
+        LOG_ERROR_AND_RETURN("CFile::Copy(): Failed to copy file " << src.GetPath() << " to " << dst.GetPath());
 #else
     if ( !s_CopyFile(src.GetPath().c_str(), dst.GetPath().c_str(), buf_size) ){
-        return false;
+        LOG_ERROR_AND_RETURN("CFile::Copy(): Failed to copy file " << src.GetPath() << " to " << dst.GetPath());
     }
 #endif
 
     // Verify copied data
     if ( F_ISSET(flags, fCF_Verify)  &&  !src.Compare(dst.GetPath()) ) {
-        return false;
+        LOG_ERROR_AND_RETURN("CFile::Copy(): Copy verification for " << src.GetPath() << " and " << dst.GetPath() << " failed");
     }
 
     // Preserve attributes.
@@ -2636,7 +2675,7 @@ static bool s_GetHomeByUID(string& home)
     struct passwd* pwd;
 
     if ((pwd = getpwuid(getuid())) == 0) {
-        return false;
+        LOG_ERROR_AND_RETURN_ERRNO("s_GetHomeByUID(): getpwuid() failed");
     }
     home = pwd->pw_dir;
     return true;
@@ -2649,14 +2688,14 @@ static bool s_GetHomeByLOGIN(string& home)
     if ( !(ptr = getenv("USER")) ) {
         if ( !(ptr = getenv("LOGNAME")) ) {
             if ( !(ptr = getlogin()) ) {
-                return false;
+                LOG_ERROR_AND_RETURN_ERRNO("s_GetHomeByLOGIN(): Unable to get user name");
             }
         }
     }
     // Get home dir for this user
     struct passwd* pwd = getpwnam(ptr);
     if ( !pwd ||  pwd->pw_dir[0] == '\0') {
-        return false;
+        LOG_ERROR_AND_RETURN_ERRNO("s_GetHomeByLOGIN(): getpwnam() failed");
     }
     home = pwd->pw_dir;
     return true;
@@ -2760,9 +2799,15 @@ string CDir::GetCwd()
 bool CDir::SetCwd(const string& dir)
 {
 #if defined(NCBI_OS_UNIX)
-    return chdir(dir.c_str()) == 0;
+    if ( chdir(dir.c_str()) != 0 ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDir::SetCwd(): Could not change directory to " << dir);
+    }
+    return true;
 #elif defined(NCBI_OS_MSWIN)
-    return _chdir(dir.c_str()) == 0;
+    if ( _chdir(dir.c_str()) != 0 ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDir::SetCwd(): Could not change directory to " << dir);
+    }
+    return true;
 #else    
     return false;
 #endif
@@ -3029,18 +3074,21 @@ bool CDir::Create(void) const
 #if defined(NCBI_OS_MSWIN)
     errno = 0;
     if ( mkdir(GetPath().c_str()) != 0  &&  errno != EEXIST ) {
-        return false;
+        LOG_ERROR_AND_RETURN_ERRNO("CDir::(): Could not make directory " << GetPath());
     }
 
 #elif defined(NCBI_OS_UNIX)
     errno = 0;
     // The permissions for the created directory are (mode & ~umask & 0777).
     if ( mkdir(GetPath().c_str(), mode) != 0  &&  errno != EEXIST ) {
-        return false;
+        LOG_ERROR_AND_RETURN_ERRNO("CDir::(): Could not make directory " << GetPath());
     }
     // so we need to call chmod() directly
 #endif
-    return chmod(GetPath().c_str(), mode) == 0;
+    if ( chmod(GetPath().c_str(), mode) != 0 ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDir::Create(): Could not set mode for directory " << GetPath());
+    }
+    return true;
 }
 
 
@@ -3059,7 +3107,7 @@ bool CDir::CreatePath(void) const
     string path_up = GetDir();
     if ( path_up == path ) {
         // special case: unknown disk name
-        return false;
+        LOG_ERROR_AND_RETURN("CDir::CreatePath(): Disk name not specified: " << path);
     } 
     // Create a copy for this object to derive creation mode
     CDir dir_up(*this);
@@ -3087,7 +3135,7 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     // The source dir must exists
     EType src_type = src.GetType();
     if ( src_type != eDir )  {
-        return false;
+        LOG_ERROR_AND_RETURN("CDir::Copy(): Source is not a directory: " << src.GetPath());
     }
     EType dst_type   = dst.GetType();
     bool  dst_exists = (dst_type != eUnknown);
@@ -3096,11 +3144,11 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     if ( dst_exists ) {
         // Check on copying dir into yourself
         if ( src.IsIdentical(dst.GetPath()) ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CDir::Copy(): Source and destination are the same: " << src.GetPath());
         }
         // Can rename entries with different types?
         if ( F_ISSET(flags, fCF_EqualTypes)  &&  (src_type != dst_type) ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CDir::Copy(): Destination is not a directory: " << dst.GetPath());
         }
 
         // Some operation can be made for top directory only
@@ -3108,7 +3156,7 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
         if ( F_ISSET(flags, fCF_TopDirOnly) ) {
             // Can overwrite entry?
             if ( !F_ISSET(flags, fCF_Overwrite) ) {
-                return false;
+                LOG_ERROR_AND_RETURN("CDir::Copy(): Destination directory already exists: " << dst.GetPath());
             }
             // Copy only if destination is older
             if ( F_ISSET(flags, fCF_Update)  &&
@@ -3121,11 +3169,11 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
                 // will be changed after backup
                 CDirEntry dst_tmp(dst);
                 if ( !dst_tmp.Backup(GetBackupSuffix(), eBackup_Rename) ) {
-                    return false;
+                    LOG_ERROR_AND_RETURN("CDir::Copy(): Cannot backup destination directory: " << dst.GetPath());
                 }
                 // Create target directory
                 if ( !dst.CreatePath() ) {
-                    return false;
+                    LOG_ERROR_AND_RETURN("CDir::Copy(): Cannot create target directory: " << dst.GetPath());
                 }
             }
             // Remove unneeded flags.
@@ -3135,7 +3183,7 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     } else {
         // Create target directory
         if ( !dst.CreatePath() ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CDir::Copy(): Cannot create directory: " << dst.GetPath());
         }
     }
 
@@ -3151,7 +3199,7 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
         }
         // Copy entry
         if ( !entry.CopyToDir(dst.GetPath(), flags, buf_size) ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CDir::Copy(): Cannot copy " << entry.GetPath() << " to directory " << dst.GetPath());
         }
     }
 
@@ -3174,8 +3222,10 @@ bool CDir::Remove(EDirRemoveMode mode) const
 {
     // Remove directory as empty
     if ( mode == eOnlyEmpty ) {
-        LOG_IF_ERROR_AND_RETURN(rmdir(GetPath().c_str()),
-            "Could not remove (by implication empty) directory " << GetPath());
+        if ( rmdir(GetPath().c_str()) != 0 ) {
+            LOG_ERROR_AND_RETURN_ERRNO("CDir::Remove(): Cannot remove (by implication empty) directory " << GetPath());
+        }
+        return true;
     }
     // Read all entries in directory
     auto_ptr<TEntries> contents(GetEntriesPtr());
@@ -3206,8 +3256,10 @@ bool CDir::Remove(EDirRemoveMode mode) const
     }
 
     // Remove main directory
-    LOG_IF_ERROR_AND_RETURN(rmdir(GetPath().c_str()),
-        "Could not remove directory " << GetPath());
+    if ( rmdir(GetPath().c_str()) != 0 ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDir::Remove(): Cannot remove directory " << GetPath());
+    }
+    return true;
 }
 
 
@@ -3236,7 +3288,7 @@ bool CSymLink::Create(const string& path) const
     // Leave it to the kernel to decide whether the symlink can be recreated
     return symlink(path.c_str(), GetPath().c_str()) != 0 ? false : true;
 #else
-    return false;
+    LOG_ERROR_AND_RETURN("CSymLink::Create(): Symbolic links not supported on this platform " << path);
 #endif
 }
 
@@ -3263,7 +3315,7 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size) c
     // The source link must exists
     EType src_type = GetType(eIgnoreLinks);
     if ( src_type == eUnknown )  {
-        return false;
+        LOG_ERROR_AND_RETURN("CSymLink::Copy(): Unknown entry type " << GetPath());
     }
     CSymLink dst(new_path);
     EType dst_type   = dst.GetType(eIgnoreLinks);
@@ -3273,15 +3325,15 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size) c
     if ( dst_exists ) {
         // Check on copying link into yourself.
         if ( IsIdentical(dst.GetPath()) ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CSymLink::Copy(): Source and destination are the same: " << GetPath());
         }
         // Can copy entries with different types?
         if ( F_ISSET(flags, fCF_EqualTypes)  &&  (src_type != dst_type) ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CSymLink::Copy(): Cannot copy entries with different types: " << GetPath());
         }
         // Can overwrite entry?
         if ( !F_ISSET(flags, fCF_Overwrite) ) {
-            return false;
+            LOG_ERROR_AND_RETURN("CSymLink::Copy(): Destination already exists:" << dst.GetPath());
         }
         // Copy only if destination is older
         if ( F_ISSET(flags, fCF_Update)  &&  !IsNewer(dst.GetPath(), 0)) {
@@ -3293,7 +3345,7 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size) c
             // will be changed after backup
             CDirEntry dst_tmp(dst);
             if ( !dst_tmp.Backup(GetBackupSuffix(), eBackup_Rename) ) {
-                return false;
+                LOG_ERROR_AND_RETURN("CSymLink::Copy(): Cannot backup destination:" << dst.GetPath());
             }
         }
         // Overwrite destination entry
@@ -3306,11 +3358,11 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size) c
     char buf[PATH_MAX+1];
     int  len = (int)readlink(GetPath().c_str(), buf, sizeof(buf)-1);
     if ( len < 1 ) {
-        return false;
+        LOG_ERROR_AND_RETURN("CSymLink::Copy(): Cannot create new symbolic link to " << GetPath());
     }
     buf[len] = '\0';
     if ( symlink(buf, new_path.c_str()) ) {
-        return false;
+        LOG_ERROR_AND_RETURN_ERRNO("CSymLink::Copy(): Cannot create new symbolic link to " << GetPath());
     }
 
     // Preserve attributes
@@ -3930,7 +3982,10 @@ bool CMemoryFile_Base::MemMapAdviseAddr(void* addr, size_t len,
         adv = MADV_NORMAL;
     }
     // Conversion type of "addr" to char* -- Sun Solaris fix
-    return madvise((char*)addr, len, adv) == 0;
+    if ( madvise((char*)addr, len, adv) != 0 ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CMemoryFile_Base::MemMapAdviseAddr(): Could not get advice about use of memory");
+    }
+    return true;
 }
 #endif  /* HAVE_MADVISE */
 
@@ -4026,6 +4081,9 @@ bool CMemoryFileSegment::Flush(void) const
 #elif defined(NCBI_OS_UNIX)
     status = (msync((char*)m_DataPtrReal, m_LengthReal, MS_SYNC) == 0);
 #endif
+    if ( !status ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CMemoryFileSegment::Flush(): Could not flush memory segment");
+    }
     return status;
 }
 
@@ -4044,6 +4102,8 @@ bool CMemoryFileSegment::Unmap(void)
 #endif
     if ( status ) {
         m_DataPtr = 0;
+    } else {
+        LOG_ERROR_AND_RETURN_ERRNO("CMemoryFileSegment::Unmap(): Could not unmap memory segment");
     }
     return status;
 }
@@ -4175,6 +4235,9 @@ bool CMemoryFileMap::Unmap(void* ptr)
             delete segment->second;
             m_Segments.erase(segment);
         }
+    }
+    if ( !status ) {
+        LOG_ERROR_AND_RETURN_ERRNO("CMemoryFileMap::Unmap(): Could not find specified memory segment");
     }
     return status;
 }
@@ -4470,6 +4533,7 @@ void* CMemoryFile::Extend(size_t length)
     // Changing file size is necessary
     if (Int8(offset + length) > file_size) {
         x_Close();
+        m_Ptr = 0;
         x_Extend(offset + length - file_size);
         x_Open();
     }
@@ -5366,11 +5430,18 @@ void CFileLock::Unlock(void)
     return;
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Misc
+//
+
 void CFileAPI::SetLogging(ESwitch on_off_default)
 {
     NCBI_PARAM_TYPE(NCBI, FileAPILogging)::SetDefault(
         on_off_default != eDefault ?
             on_off_default != eOff : DEFAULT_LOGGING_VALUE);
 }
+
 
 END_NCBI_SCOPE

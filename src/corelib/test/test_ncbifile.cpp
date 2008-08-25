@@ -429,7 +429,9 @@ static void s_TEST_File(void)
         // Get file size
         assert( f.Exists() );
         assert( f.GetLength() == 9);
-        f2.Remove();
+        if ( f2.Exists() ) {
+            f2.Remove();
+        }
         s_CreateTestFile(f2.GetPath());
         assert( !f.IsNewer(f2.GetPath(), 0) );
         f2.Remove();
@@ -1333,6 +1335,8 @@ int CTest::Run(void)
 
 int main(int argc, const char* argv[])
 {
+    // Enable FileAPI logging, if necessary
+    // CFileAPI::SetLogging(eOn);
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
