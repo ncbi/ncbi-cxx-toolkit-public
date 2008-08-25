@@ -86,6 +86,15 @@ if ($print_only) {
 CLEAN_UP:
 unlink foreach (@files2delete);
 
+# Only add quotation marks in case there are spaces in the database argument
+sub create_db_argument($)
+{
+    my $arg = shift;
+    my $retval = "-db ";
+    $retval .= ( ($arg =~ /\s/) ? "\"$arg\" " : "$arg ");
+    return $retval;
+}
+
 sub convert_sequence_locations($$)
 {
     my $arg = shift;
@@ -245,7 +254,7 @@ sub handle_blastall($)
             $retval .= "-task blastn " if ($opt_p eq "blastn");
         }
     }
-    $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
+    $retval .= &create_db_argument($opt_d)  if (defined $opt_d);
     $retval .= "-query $opt_i "             if (defined $opt_i);
     $retval .= "-gilist $opt_l "            if (defined $opt_l);
     $retval .= "-dbsize $opt_z "            if (defined $opt_z);
@@ -395,7 +404,7 @@ sub handle_megablast($)
     $retval .= "/blastn";
     $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
     $retval .= "-query $opt_i "             if (defined $opt_i);
-    $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
+    $retval .= &create_db_argument($opt_d)  if (defined $opt_d);
     $retval .= "-evalue $opt_e "            if (defined $opt_e);
     $retval .= "-xdrop_gap $opt_X "         if (defined $opt_X);
     $retval .= "-gilist $opt_l "            if (defined $opt_l);
@@ -563,7 +572,7 @@ sub handle_blastpgp($)
         die "Program '$opt_p' not implemented\n";
     }
 
-    $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
+    $retval .= &create_db_argument($opt_d)  if (defined $opt_d);
     $retval .= "-query $opt_i "             if (defined $opt_i);
     $retval .= "-gilist $opt_l "            if (defined $opt_l);
     $retval .= "-gap_trigger $opt_N "       if (defined $opt_N);
@@ -849,7 +858,7 @@ sub handle_rpsblast
     $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
 
     $retval .= "-query $opt_i "             if (defined $opt_i);
-    $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
+    $retval .= &create_db_argument($opt_d)  if (defined $opt_d);
     $retval .= "-evalue $opt_e "            if (defined $opt_e);
     $retval .= "-out $opt_o "               if (defined $opt_o);
     $retval .= "-xdrop_ungap $opt_y "       if (defined $opt_y);
@@ -931,7 +940,7 @@ sub handle_fastacmd
 
     my $retval = $path . "/blastdbcmd";
     $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
-    $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
+    $retval .= &create_db_argument($opt_d)  if (defined $opt_d);
     if (defined $opt_p) {
         $retval .= "-dbtype ";
         if ($opt_p =~ /p/i) {
@@ -1041,12 +1050,12 @@ sub handle_formatdb
     if ($retval =~ /blastdb_aliastool/) {
         $retval .= "-out $opt_L "               if (defined $opt_L);
         if (defined $opt_i and not defined $opt_n) {
-            $retval .= "-db $opt_i ";
+            $retval .= &create_db_argument($opt_i);
         }
         # there's no -n in blastdb_aliastool, as we copy the argument value
         # verbatim into the DBLIST field of the alias file, so we make
         # formatdb's -n option tool override -i
-        $retval .= "-db $opt_n "                if (defined $opt_n);
+        $retval .= &create_db_argument($opt_n)  if (defined $opt_n);
     } else {
         $retval .= "-out $opt_n "               if (defined $opt_n);
         $retval .= "-in $opt_i "                if (defined $opt_i);
