@@ -404,7 +404,7 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
                 }
                 seg.m_Rows[i].m_Width = w;
                 // Remember widths of non-empty intervals
-                if ( w  &&  seg.m_Rows[i].m_Start != (int)kInvalidSeqPos ) {
+                if ( w  &&  seg.m_Rows[i].m_Start != kInvalidSeqPos ) {
                     int& seq_width = seqwid[seg.m_Rows[i].m_Id];
                     if ( seq_width  &&  seq_width != w ) {
                         NCBI_THROW(CAnnotMapperException, eBadLocation,
@@ -432,7 +432,7 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
                         row->m_Width = w;
                     }
                 }
-                if (row->m_Start != (int)kInvalidSeqPos) {
+                if (row->m_Start != kInvalidSeqPos) {
                     have_prot |= (row->m_Width == 3);
                 }
             }
@@ -1029,6 +1029,7 @@ void CSeq_align_Mapper_Base::x_GetDstDenseg(CRef<CSeq_align>& dst) const
     bool have_prots = false;
     // Find first non-gap in each row, get its seq-id
     for (size_t r = 0; r < m_Segs.front().m_Rows.size(); r++) {
+        bool only_gaps = true;
         ITERATE(TSegments, seg, m_Segs) {
             const SAlignment_Segment::SAlignment_Row& row = seg->m_Rows[r];
             if (row.m_Start != kInvalidSeqPos) {
@@ -1039,8 +1040,14 @@ void CSeq_align_Mapper_Base::x_GetDstDenseg(CRef<CSeq_align>& dst) const
                     dseg.SetWidths().push_back(row.m_Width);
                 }
                 have_prots |= row.m_Width == 3;
+                only_gaps = false;
                 break;
             }
+        }
+        // The row contains only gaps, don't know how to build a valid denseg
+        if ( only_gaps ) {
+            NCBI_THROW(CAnnotMapperException, eBadAlignment,
+                    "Mapped denseg contains empty row.");
         }
     }
     TStrands strands;
@@ -1164,7 +1171,12 @@ void CSeq_align_Mapper_Base::x_GetDstDisc(CRef<CSeq_align>& dst) const
 {
     CSeq_align_set::Tdata& data = dst->SetSegs().SetDisc().Set();
     ITERATE(TSubAligns, it, m_SubAligns) {
-        data.push_back((*it)->GetDstAlign());
+        try {
+            data.push_back((*it)->GetDstAlign());
+        }
+        catch (CAnnotMapperException) {
+            // Skip invalid sub-alignments (e.g. containing empty rows)
+        }
     }
 }
 
