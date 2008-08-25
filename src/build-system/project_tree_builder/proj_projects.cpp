@@ -32,7 +32,7 @@
 #include "proj_tree.hpp"
 
 #include <corelib/ncbienv.hpp>
-#include <util/regexp.hpp>
+#include <util/xregexp/regexp.hpp>
 BEGIN_NCBI_SCOPE
 
 //-----------------------------------------------------------------------------
