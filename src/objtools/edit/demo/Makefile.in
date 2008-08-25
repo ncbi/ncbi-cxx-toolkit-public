@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("AUTODEF demo" project)
+#################################
+
+APP_PROJ = autodef_demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
