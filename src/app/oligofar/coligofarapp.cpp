@@ -221,7 +221,7 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case 'w': m_windowLength = strtol( arg, 0, 10 ); break;
     case 'n': m_maxHashMism = strtol( arg, 0, 10 ); break;
     case 'N': m_maxMismOnly = *arg == '+' ? true : *arg == '-' ? false : m_maxMismOnly; break;
-	case 'H': m_hashType = (*arg == 'v'? CQueryHash::eHash_vector : *arg == 'm'? CQueryHash::eHash_multimap : *arg == 'v'? CQueryHash::eHash_arraymap : 
+	case 'H': m_hashType = (*arg == 'v'? CQueryHash::eHash_vector : *arg == 'm'? CQueryHash::eHash_multimap : *arg == 'a'? CQueryHash::eHash_arraymap : 
 			  ((cerr << "Warning: Unknown hash type " << arg << ": ignored"), m_hashType) ); break;
     case 'a': m_maxHashAlt = strtol( arg, 0, 10 ); break;
     case 'A': m_maxFastaAlt = strtol( arg, 0, 10 ); break;
