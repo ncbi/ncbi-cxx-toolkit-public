@@ -719,7 +719,6 @@ bool CAutoDefFeatureClause_Base::x_OkToConsolidate (unsigned int clause1, unsign
 
 void CAutoDefFeatureClause_Base::ConsolidateRepeatedClauses ()
 {
-    unsigned int last_clause = m_ClauseList.size();
     if (m_ClauseList.size() < 2) {
         return;
     }
@@ -998,7 +997,6 @@ void CAutoDefFeatureClause_Base::GroupClauses(bool gene_cluster_opp_strand)
 
 void CAutoDefFeatureClause_Base::RemoveNonSegmentClauses(CRange<TSeqPos> range)
 {
-    bool has_remaining_subclauses = false;
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
         if (m_ClauseList[k] != NULL && !m_ClauseList[k]->IsMarkedForDeletion()) {
             m_ClauseList[k]->RemoveNonSegmentClauses(range);

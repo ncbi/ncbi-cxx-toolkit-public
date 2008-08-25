@@ -143,10 +143,13 @@ class NCBI_XOBJEDIT_EXPORT CAutoDefIntergenicSpacerClause : public CAutoDefFeatu
 {
 public:    
     CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
+    CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string comment);
     ~CAutoDefIntergenicSpacerClause();
   
     virtual void Label();
     virtual bool IsIntergenicSpacer() { return true; }
+protected:
+    void InitWithString (string comment);
 };
 
 class NCBI_XOBJEDIT_EXPORT CAutoDefParsedClause : public CAutoDefFeatureClause
@@ -196,6 +199,17 @@ public:
     CAutoDefMiscCommentClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefMiscCommentClause();
   
+    virtual void Label();
+    virtual bool IsRecognizedFeature() { return true; }
+};
+
+
+class NCBI_XOBJEDIT_EXPORT CAutoDefParsedRegionClause : public CAutoDefFeatureClause
+{
+public:
+    CAutoDefParsedRegionClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string product);
+    ~CAutoDefParsedRegionClause();
+
     virtual void Label();
     virtual bool IsRecognizedFeature() { return true; }
 };

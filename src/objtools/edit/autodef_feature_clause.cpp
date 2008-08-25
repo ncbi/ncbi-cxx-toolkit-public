@@ -1396,52 +1396,78 @@ void CAutoDefPromoterClause::Label()
  * "intergenic spacer", this text will appear in the definition line before the words
  * "intergenic spacer".
  */
-CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc)
-                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+
+void CAutoDefIntergenicSpacerClause::InitWithString (string comment)
 {
     m_Typeword = "intergenic spacer";
     m_TypewordChosen = true;
     m_ShowTypewordFirst = false;
     m_Pluralizable = false;
     
-    string comment = m_MainFeat.GetComment();
+
+    if (NStr::StartsWith(comment, "may contain ")) {
+        m_Description = comment.substr(12);
+        m_DescriptionChosen = true;
+        m_Typeword = "";
+        m_TypewordChosen = true;
+        m_Interval = "region";
+    } else {
+        if (NStr::StartsWith(comment, "contains ")) {
+            comment = comment.substr(9);
+        }
     
-    if (NStr::StartsWith(comment, "contains ")) {
-        comment = comment.substr(9);
-    }
-    
-    if (NStr::StartsWith(comment, "intergenic spacer")) {
-        comment = comment.substr(17);
-        if (NStr::IsBlank(comment)) {
-            m_ShowTypewordFirst = false;
-            m_Description = "";
-            m_DescriptionChosen = true;
-        } else {
-            NStr::TruncateSpacesInPlace(comment);
-            if (NStr::StartsWith(comment, "and ")) {
+        if (NStr::StartsWith(comment, "intergenic spacer")) {
+            comment = comment.substr(17);
+            if (NStr::IsBlank(comment)) {
+                m_ShowTypewordFirst = false;
                 m_Description = "";
                 m_DescriptionChosen = true;
-                m_ShowTypewordFirst = false;
             } else {
-                string::size_type pos = NStr::Find(comment, ";");
-                if (pos != NCBI_NS_STD::string::npos) {
-                    comment = comment.substr(0, pos);
+                NStr::TruncateSpacesInPlace(comment);
+                if (NStr::StartsWith(comment, "and ")) {
+                    m_Description = "";
+                    m_DescriptionChosen = true;
+                    m_ShowTypewordFirst = false;
+                } else {
+                    m_Description = comment;
+                    m_DescriptionChosen = true;
+                    m_ShowTypewordFirst = true;
                 }
-                m_Description = comment;
+            }
+        } else {
+            string::size_type pos = NStr::Find(comment, "intergenic spacer");
+            if (pos != NCBI_NS_STD::string::npos) {
+                m_Description = comment.substr(0, pos);
+                NStr::TruncateSpacesInPlace(m_Description);
                 m_DescriptionChosen = true;
-                m_ShowTypewordFirst = true;
+                m_ShowTypewordFirst = false;
             }
         }
-    } else {
-        string::size_type pos = NStr::Find(comment, "intergenic spacer");
-        if (pos != NCBI_NS_STD::string::npos) {
-            m_Description = comment.substr(0, pos);
-            NStr::TruncateSpacesInPlace(m_Description);
-            m_DescriptionChosen = true;
-            m_ShowTypewordFirst = false;
-        }
+        x_GetGenericInterval(m_Interval);        
     }
-    x_GetGenericInterval(m_Interval);        
+}
+
+
+CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc, string comment)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+{
+    InitWithString (comment);
+}
+
+
+CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc)
+                  : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+{
+
+    string comment = m_MainFeat.GetComment();
+
+    /* truncate at first semicolon */
+    string::size_type pos = NStr::Find(comment, ";");
+    if (pos != NCBI_NS_STD::string::npos) {
+        comment = comment.substr(0, pos);
+    }
+
+    InitWithString (comment);
 }
 
 
@@ -1463,11 +1489,13 @@ CAutoDefParsedIntergenicSpacerClause::CAutoDefParsedIntergenicSpacerClause(CBios
     if (!NStr::IsBlank(description)) {
         m_Description = description;
     }
+
     // adjust partialness of location
     bool partial5 = m_ClauseLocation->IsPartialStart(eExtreme_Biological) && is_first;
     bool partial3 = m_ClauseLocation->IsPartialStop(eExtreme_Biological) && is_last;
     m_ClauseLocation->SetPartialStart(partial5, eExtreme_Biological);
     m_ClauseLocation->SetPartialStop(partial3, eExtreme_Biological);
+    x_GetGenericInterval(m_Interval);        
 }
 
 
@@ -1579,6 +1607,29 @@ CAutoDefMiscCommentClause::~CAutoDefMiscCommentClause()
 void CAutoDefMiscCommentClause::Label()
 {
     m_DescriptionChosen = true;
+}
+
+
+CAutoDefParsedRegionClause::CAutoDefParsedRegionClause
+(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string product)
+                       : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+{
+    m_Description = product;
+    m_DescriptionChosen = true;
+
+    m_Typeword = "";
+    m_TypewordChosen = true;
+    m_Interval = "region";
+}
+
+
+CAutoDefParsedRegionClause::~CAutoDefParsedRegionClause()
+{
+}
+
+
+void CAutoDefParsedRegionClause::Label()
+{
 }
 
 

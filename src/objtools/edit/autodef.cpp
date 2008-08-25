@@ -306,33 +306,46 @@ CAutoDefParsedtRNAClause *CAutoDef::x_tRNAClauseFromNote(CBioseq_Handle bh, cons
     string product_name = "";
     string gene_name = "";
     
-    /* tRNA name must start with "tRNA-" and be followed by one uppercase letter and
-     * two lowercase letters.
-     */
-    if (!NStr::StartsWith(comment, "tRNA-")
-        || comment.length() < 8
-        || !isalpha(comment.c_str()[5]) || !isupper(comment.c_str()[5])
-        || !isalpha(comment.c_str()[6]) || !islower(comment.c_str()[6])
-        || !isalpha(comment.c_str()[7]) || !islower(comment.c_str()[7])) {
-        return NULL;
-    }
-    product_name = comment.substr(0, 8);
-    comment = comment.substr(8);
-    NStr::TruncateSpacesInPlace(comment);
 
-    /* gene name must be in parentheses, start with letters "trn",
-     * and end with one uppercase letter.
-     */    
-    if (comment.length() < 6
-        || !NStr::StartsWith(comment, "(trn" )
-        || !isalpha(comment.c_str()[4])
-        || !isupper(comment.c_str()[4])
-        || comment.c_str()[5] != ')' ) {
+    string::size_type pos = NStr::Find(comment, "(");
+    if (pos == NCBI_NS_STD::string::npos) {
         return NULL;
     }
-    gene_name = comment.substr(1, 4);
-    comment = comment.substr(6);
-    NStr::TruncateSpacesInPlace(comment);
+    product_name = comment.substr(0, pos);
+    comment = comment.substr (pos + 1);
+    pos = NStr::Find(comment, ")");
+    if (pos == NCBI_NS_STD::string::npos) {
+        return NULL;
+    }
+    gene_name = comment.substr (0, pos);
+
+    NStr::TruncateSpacesInPlace(product_name);
+    NStr::TruncateSpacesInPlace(gene_name);
+    
+    if (NStr::StartsWith (product_name, "tRNA-")) {
+        /* tRNA name must start with "tRNA-" and be followed by one uppercase letter and
+         * two lowercase letters.
+         */
+        if (product_name.length() < 8
+            || !isalpha(product_name.c_str()[5]) || !isupper(product_name.c_str()[5])
+            || !isalpha(product_name.c_str()[6]) || !islower(product_name.c_str()[6])
+            || !isalpha(product_name.c_str()[7]) || !islower(product_name.c_str()[7])) {
+            return NULL;
+        }
+
+        /* gene name must be in parentheses, start with letters "trn",
+         * and end with one uppercase letter.
+         */    
+        if (gene_name.length() < 4
+            || !NStr::StartsWith(gene_name, "trn" )
+            || !isalpha(gene_name.c_str()[3])
+            || !isupper(gene_name.c_str()[3])) {
+            return NULL;
+        }
+    }
+    if (NStr::IsBlank (product_name) || NStr::IsBlank (gene_name)) {
+        return NULL;
+    }
          
     return new CAutoDefParsedtRNAClause(bh, cf, mapped_loc, gene_name, product_name, is_first, is_last);
 
@@ -341,33 +354,14 @@ CAutoDefParsedtRNAClause *CAutoDef::x_tRNAClauseFromNote(CBioseq_Handle bh, cons
 
 const int kParsedTrnaGene = 1;
 const int kParsedTrnaSpacer = 2;
-bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
+
+
+vector<CAutoDefFeatureClause *> CAutoDef::x_GetIntergenicSpacerClauseList (string comment, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool suppress_locus_tags)
 {
-    CSeqFeatData::ESubtype subtype = cf.GetData().GetSubtype();
-    if ((subtype != CSeqFeatData::eSubtype_misc_feature && subtype != CSeqFeatData::eSubtype_otherRNA)
-        || !cf.CanGetComment()) {
-        return false;
-    }
-    string comment = cf.GetComment();
-    string::size_type pos = NStr::Find(comment, "intergenic spacer");
-    if (pos == NCBI_NS_STD::string::npos) {
-        return false;
-    }
-    
-    // ignore "contains " at beginning of comment
-    if (NStr::StartsWith(comment, "contains ")) {
-        comment = comment.substr(9);
-    }
-    
-    // get rid of any leading or trailing spaces
-    NStr::TruncateSpacesInPlace(comment);
+    string::size_type pos;
+    vector<CAutoDefFeatureClause *> clause_list;
 
-    // ignore anything after the first semicolon
-    pos = NStr::Find(comment, ";");
-    if (pos != NCBI_NS_STD::string::npos) {
-        comment = comment.substr(0, pos);
-    }
-
+    clause_list.clear();
     pos = NStr::Find (comment, " and ");
     // insert comma for parsing
     if (pos != NCBI_NS_STD::string::npos && pos > 0 && !NStr::StartsWith (comment.substr(pos - 1), ",")) {
@@ -377,7 +371,12 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
     vector<string> parts;
     NStr::Tokenize(comment, ",", parts, NStr::eMergeDelims );
     if ( parts.empty() ) {
-        return false;
+        return clause_list;
+    }
+
+    if (parts.size() == 1 && NStr::Find (parts[0], "intergenic spacer") != NCBI_NS_STD::string::npos) {
+        clause_list.push_back (new CAutoDefIntergenicSpacerClause (bh, cf, mapped_loc, parts[0]));
+        return clause_list;
     }
     
     bool bad_phrase = false;
@@ -385,7 +384,6 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
     bool names_correct = true;
     int last_type = 0;
 
-    vector<CAutoDefFeatureClause *> clause_list;
 
     CAutoDefParsedtRNAClause *gene = NULL;
 
@@ -395,7 +393,7 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
             parts[j] = parts[j].substr(4);
         }
         if (NStr::EndsWith (parts[j], " intergenic spacer")) {
-          // must be a spacer
+            // must be a spacer
             string spacer_description = parts[j].substr(0, parts[j].length() - 18);
             CAutoDefFeatureClause *spacer = new CAutoDefParsedIntergenicSpacerClause(bh, cf, mapped_loc, spacer_description, j == 0, j == parts.size() - 1);
             if (spacer == NULL) {
@@ -437,15 +435,64 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
         }
     }
 
-    if (!bad_phrase && alternating && names_correct) {
-        for (int i = 0; i < clause_list.size(); i++) {
-            main_clause.AddSubclause (clause_list[i]);
-        }
-        return true;
-    } else {
+    if (bad_phrase || !alternating || !names_correct) {
         for (int i = 0; i < clause_list.size(); i++) {
             delete clause_list[i];
         }
+        clause_list.clear();
+    }
+    return clause_list;
+}
+
+
+bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
+{
+    CSeqFeatData::ESubtype subtype = cf.GetData().GetSubtype();
+    if ((subtype != CSeqFeatData::eSubtype_misc_feature && subtype != CSeqFeatData::eSubtype_otherRNA)
+        || !cf.CanGetComment()) {
+        return false;
+    }
+    string comment = cf.GetComment();
+
+    // get rid of any leading or trailing spaces
+    NStr::TruncateSpacesInPlace(comment);
+
+    // ignore anything after the first semicolon
+    string::size_type pos = NStr::Find(comment, ";");
+    if (pos != NCBI_NS_STD::string::npos) {
+        comment = comment.substr(0, pos);
+    }
+
+    pos = NStr::Find(comment, "intergenic spacer");
+    if (pos == NCBI_NS_STD::string::npos) {
+        return false;
+    }
+
+    bool is_region = false;
+    
+    // ignore "contains " at beginning of comment
+    if (NStr::StartsWith(comment, "contains ")) {
+        comment = comment.substr(9);
+    } else if (NStr::StartsWith (comment, "may contain ")) {
+        comment = comment.substr(12);
+        is_region = true;
+    }
+    
+    vector<CAutoDefFeatureClause *> clause_list = x_GetIntergenicSpacerClauseList (comment, bh, cf, mapped_loc, suppress_locus_tags);
+
+    if (clause_list.size() > 0) {
+        if (is_region) {
+            main_clause.AddSubclause (new CAutoDefParsedRegionClause (bh, cf, mapped_loc, comment));
+            for (int i = 0; i < clause_list.size(); i++) {
+                delete (clause_list[i]);
+            }
+        } else {
+            for (int i = 0; i < clause_list.size(); i++) {
+                main_clause.AddSubclause (clause_list[i]);
+            }
+        }
+        return true;
+    } else {
         return false;
     }
 }
@@ -471,118 +518,120 @@ typedef enum {
   NUM_MISC_RNA_WORDS
 } MiscWord;
 
-static string separators [] = {
-  ", and ",
-  " and ",
-  ", ",
-  "; "
-};
-
-#define num_separators 3
-
 
 bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
 {
-    string product = "";
+    string comment = "";
     string::size_type pos;
-    bool is_first = true;
     
     if (cf.GetData().Which() == CSeqFeatData::e_Rna) {
-        product = cf.GetNamedQual("product");
-        if (NStr::IsBlank(product)
+        comment = cf.GetNamedQual("product");
+        if (NStr::IsBlank(comment)
             && cf.GetData().GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name) {
-            product = cf.GetData().GetRna().GetExt().GetName();
+            comment = cf.GetData().GetRna().GetExt().GetName();
         }
     }
 
-    if ((NStr::Equal (product, "misc_RNA") || NStr::IsBlank (product)) && cf.CanGetComment()) {
-        product = cf.GetComment();
+    if ((NStr::Equal (comment, "misc_RNA") || NStr::IsBlank (comment)) && cf.CanGetComment()) {
+        comment = cf.GetComment();
     }
-    if (NStr::IsBlank(product)) {
+    if (NStr::IsBlank(comment)) {
         return false;
     }
     
-    if (NStr::StartsWith(product, "contains ")) {
-        product = product.substr(9);
-    }
-    
-    pos = NStr::Find(product, "spacer");
+    pos = NStr::Find(comment, "spacer");
     if (pos == NCBI_NS_STD::string::npos) {
         return false;
     }
+
+    vector<CAutoDefFeatureClause *> clause_list;
+    int j;
+    bool bad_phrase = false;
+    bool is_region = false;
+
+    if (NStr::StartsWith (comment, "contains ")) {
+        comment = comment.substr(9);
+    } else if (NStr::StartsWith (comment, "may contain ")) {
+        comment = comment.substr(12);
+        is_region = true;
+    }
     
-    while (!NStr::IsBlank(product)) {
-        string this_label = product;
-        string::size_type first_separator = NCBI_NS_STD::string::npos;
-        string::size_type separator_len = 0;
-        for (unsigned int i = 0; i < 4; i++) {
-            pos = NStr::Find(product, separators[i]);
-            if (pos != NCBI_NS_STD::string::npos 
-                && (first_separator == NCBI_NS_STD::string::npos
-                    || pos < first_separator)) {
-                first_separator = pos;
-                separator_len = separators[i].length();
-            }
-        }
-        
-        if (first_separator != NCBI_NS_STD::string::npos) {
-            this_label = product.substr(0, first_separator);
-            product = product.substr(first_separator + separator_len);
-        } else {
-            product = "";
-        }
-    
+ 
+    clause_list.clear();
+    pos = NStr::Find (comment, " and ");
+    // insert comma for parsing
+    if (pos != NCBI_NS_STD::string::npos && pos > 0 && !NStr::StartsWith (comment.substr(pos - 1), ",")) {
+        comment = comment.substr(0, pos - 1) + "," + comment.substr(pos);
+    }
+
+    vector<string> parts;
+    NStr::Tokenize(comment, ",", parts, NStr::eMergeDelims );
+    if ( parts.empty() ) {
+        return false;
+    }
+
+    vector<unsigned int> types;
+
+    for (j = 0; j < parts.size() && !bad_phrase; j++) {
         // find first of the recognized words to occur in the string
         string::size_type first_word = NCBI_NS_STD::string::npos;
         unsigned int word_id = 0;
     
         for (unsigned int i = 0; i < NUM_MISC_RNA_WORDS && first_word == NCBI_NS_STD::string::npos; i++) {
-            first_word = NStr::Find (this_label, misc_words[i]);
+            first_word = NStr::Find (parts[j], misc_words[i]);
             if (first_word != NCBI_NS_STD::string::npos) {
                 word_id = i;
             }
         }
         if (first_word == NCBI_NS_STD::string::npos) {
-            continue;
+            bad_phrase = true;
+        } else {
+            types.push_back (word_id);
         }
-        
-        // check to see if any other clauses are present
-        bool is_last = true;
-        for (unsigned int i = 0; i < NUM_MISC_RNA_WORDS && is_last; i++) {
-            if (NStr::Find (product, misc_words[i]) != NCBI_NS_STD::string::npos) {
-                is_last = false;
-            }
-        }
+    }
 
-        // create a clause of the appropriate type
-        CAutoDefParsedClause *new_clause = new CAutoDefParsedClause(bh, cf, mapped_loc, is_first, is_last);        
-        string description = "";
-        if (word_id == MISC_RNA_WORD_INTERNAL_SPACER
-            || word_id == MISC_RNA_WORD_EXTERNAL_SPACER
-            || word_id == MISC_RNA_WORD_RNA_INTERGENIC_SPACER
-            || word_id == MISC_RNA_WORD_INTERGENIC_SPACER) {
-            if (first_word == 0) {
-                new_clause->SetTypewordFirst(true);
-                description = this_label.substr(misc_words[word_id].length());
-            } else {
-                new_clause->SetTypewordFirst(false);
-                description = this_label.substr(0, first_word);
+    if (!bad_phrase) {
+        if (is_region) {
+            clause_list.push_back (new CAutoDefParsedRegionClause(bh, cf, mapped_loc, comment));
+        } else {
+            for (j = 0; j < parts.size(); j++) {
+                // create a clause of the appropriate type
+                CAutoDefParsedClause *new_clause = new CAutoDefParsedClause(bh, cf, mapped_loc, j == 0, j == parts.size() - 1);        
+                string description = "";
+                if (types[j] == MISC_RNA_WORD_INTERNAL_SPACER
+                    || types[j] == MISC_RNA_WORD_EXTERNAL_SPACER
+                    || types[j] == MISC_RNA_WORD_RNA_INTERGENIC_SPACER
+                    || types[j] == MISC_RNA_WORD_INTERGENIC_SPACER) {
+                    if (NStr::StartsWith (parts[j], misc_words[types[j]])) {
+                        new_clause->SetTypewordFirst(true);
+                        description = parts[j].substr(misc_words[types[j]].length());
+                    } else {
+                        new_clause->SetTypewordFirst(false);
+                        description = parts[j].substr(0, NStr::Find(parts[j], misc_words[types[j]]));
+                    }
+                    new_clause->SetTypeword(misc_words[types[j]]);
+                } else if (types[j] == MISC_RNA_WORD_RNA) {
+                    description = parts[j];
+                    new_clause->SetTypeword("gene");
+                    new_clause->SetTypewordFirst(false);
+                }
+                NStr::TruncateSpacesInPlace(description);
+                new_clause->SetDescription(description);
+        
+                new_clause->SetSuppressLocusTag(suppress_locus_tags);
+                clause_list.push_back (new_clause);
             }
-            new_clause->SetTypeword(misc_words[word_id]);
-        } else if (word_id == MISC_RNA_WORD_RNA) {
-            description = this_label;
-            new_clause->SetTypeword("gene");
-            new_clause->SetTypewordFirst(false);
         }
-        NStr::TruncateSpacesInPlace(description);
-        new_clause->SetDescription(description);
-        
-        new_clause->SetSuppressLocusTag(suppress_locus_tags);
-        
-        main_clause.AddSubclause(new_clause);
-        is_first = false;   
-    }       
-    return !is_first;
+    }
+
+    if (clause_list.size() > 0) {
+        for (j = 0; j < clause_list.size(); j++) {
+            main_clause.AddSubclause(clause_list[j]);
+        }
+        return true;
+    } else {
+        return false;
+    }
 }
 
 void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause, CBioseq_Handle bh)
