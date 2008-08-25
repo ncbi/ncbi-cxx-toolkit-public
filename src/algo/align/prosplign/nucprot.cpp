@@ -44,101 +44,71 @@
 #include "AlignInfo.hpp"
 #include "scoring.hpp"
 
+#include <util/tables/raw_scoremat.h>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
 
 const int infinity = numeric_limits<int>::min()/3;
 
-const string CSubstMatrix::blosum62(
-"#  Matrix made by matblas from blosum62.iij\n"
-"#  * column uses minimum score\n"
-"#  BLOSUM Clustered Scoring Matrix in 1/2 Bit Units\n"
-"#  Blocks Database = /data/blocks_5.0/blocks.dat\n"
-"#  Cluster Percentage: >= 62\n"
-"#  Entropy =   0.6979, Expected =  -0.5209\n"
-"   A  R  N  D  C  Q  E  G  H  I  L  K  M  F  P  S  T  W  Y  V  B  Z  X  *\n"
-"A  4 -1 -2 -2  0 -1 -1  0 -2 -1 -1 -1 -1 -2 -1  1  0 -3 -2  0 -2 -1  0 -4 \n"
-"R -1  5  0 -2 -3  1  0 -2  0 -3 -2  2 -1 -3 -2 -1 -1 -3 -2 -3 -1  0 -1 -4 \n"
-"N -2  0  6  1 -3  0  0  0  1 -3 -3  0 -2 -3 -2  1  0 -4 -2 -3  3  0 -1 -4 \n"
-"D -2 -2  1  6 -3  0  2 -1 -1 -3 -4 -1 -3 -3 -1  0 -1 -4 -3 -3  4  1 -1 -4 \n"
-"C  0 -3 -3 -3  9 -3 -4 -3 -3 -1 -1 -3 -1 -2 -3 -1 -1 -2 -2 -1 -3 -3 -2 -4 \n"
-"Q -1  1  0  0 -3  5  2 -2  0 -3 -2  1  0 -3 -1  0 -1 -2 -1 -2  0  3 -1 -4 \n"
-"E -1  0  0  2 -4  2  5 -2  0 -3 -3  1 -2 -3 -1  0 -1 -3 -2 -2  1  4 -1 -4 \n"
-"G  0 -2  0 -1 -3 -2 -2  6 -2 -4 -4 -2 -3 -3 -2  0 -2 -2 -3 -3 -1 -2 -1 -4 \n"
-"H -2  0  1 -1 -3  0  0 -2  8 -3 -3 -1 -2 -1 -2 -1 -2 -2  2 -3  0  0 -1 -4 \n"
-"I -1 -3 -3 -3 -1 -3 -3 -4 -3  4  2 -3  1  0 -3 -2 -1 -3 -1  3 -3 -3 -1 -4 \n"
-"L -1 -2 -3 -4 -1 -2 -3 -4 -3  2  4 -2  2  0 -3 -2 -1 -2 -1  1 -4 -3 -1 -4 \n"
-"K -1  2  0 -1 -3  1  1 -2 -1 -3 -2  5 -1 -3 -1  0 -1 -3 -2 -2  0  1 -1 -4 \n"
-"M -1 -1 -2 -3 -1  0 -2 -3 -2  1  2 -1  5  0 -2 -1 -1 -1 -1  1 -3 -1 -1 -4 \n"
-"F -2 -3 -3 -3 -2 -3 -3 -3 -1  0  0 -3  0  6 -4 -2 -2  1  3 -1 -3 -3 -1 -4 \n"
-"P -1 -2 -2 -1 -3 -1 -1 -2 -2 -3 -3 -1 -2 -4  7 -1 -1 -4 -3 -2 -2 -1 -2 -4 \n"
-"S  1 -1  1  0 -1  0  0  0 -1 -2 -2  0 -1 -2 -1  4  1 -3 -2 -2  0  0  0 -4 \n"
-"T  0 -1  0 -1 -1 -1 -1 -2 -2 -1 -1 -1 -1 -2 -1  1  5 -2 -2  0 -1 -1  0 -4 \n"
-"W -3 -3 -4 -4 -2 -2 -3 -2 -2 -3 -2 -3 -1  1 -4 -3 -2 11  2 -3 -4 -3 -2 -4 \n"
-"Y -2 -2 -2 -3 -2 -1 -2 -3  2 -1 -1 -2 -1  3 -3 -2 -2  2  7 -1 -3 -2 -1 -4 \n"
-"V  0 -3 -3 -3 -1 -2 -2 -3 -3  3  1 -2  1 -1 -2 -2  0 -3 -1  4 -3 -2 -1 -4 \n"
-"B -2 -1  3  4 -3  0  1 -1  0 -3 -4  0 -3 -3 -2  0 -1 -4 -3 -3  4  1 -1 -4 \n"
-"Z -1  0  0  1 -3  3  4 -2  0 -3 -3  1 -1 -3 -1  0 -1 -3 -2 -2  1  4 -1 -4 \n"
-"X  0 -1 -1 -1 -2 -1 -1 -1 -1 -1 -1 -1 -1 -1 -2  0  0 -2 -1 -1 -1 -1 -1 -4 \n"
-"* -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4  1 \n"
-);
-
-CSubstMatrix::CSubstMatrix(const string& name, int scaling)  // matrix for proteins
+CSubstMatrix::CSubstMatrix(const string& matrix_name, int scaling)
 {
-    if (name != "BLOSUM62")
-        NCBI_THROW(CProSplignException, eParam, "unsupported scoring matrix: "+name);
+    const SNCBIPackedScoreMatrix* packed_mtx = &NCBISM_Blosum62;
+//        NCBISM_GetStandardMatrix(matrix_name.c_str());
+    if (packed_mtx == NULL)
+        NCBI_THROW(CProSplignException, eParam, "unknown scoring matrix: "+matrix_name);
+
+    m_alphabet = packed_mtx->symbols;
+    m_alphabet = NStr::ToUpper(m_alphabet);
+
+    if (string::npos == m_alphabet.find('X'))
+        NCBI_THROW(CProSplignException, eParam, "unsupported scoring matrix: "+matrix_name);
+
+    SNCBIFullScoreMatrix mtx;
+    NCBISM_Unpack(packed_mtx, &mtx);
 
     for(int i = 0; i < 256;  ++i) {
         for(int j = 0; j < 256;  ++j) {
-            scaled_subst_matrix[i][j] = 0;
+            scaled_subst_matrix[i][j] = packed_mtx->defscore*scaling;
         }
     }
-    
-    istream *is;
-    istringstream isstr(blosum62);
-    is = &isstr;
-    
-    string line;
-    while(getline(*is,line) && line[0] == '#');
-    
-    istringstream istr(line);
-    
-    vector<int> letters;
-    char ch;
-    while(istr >> ch) letters.push_back(ch);
-    
-    while(getline(*is,line)) {
-        istringstream istr(line);
-        char ch;
-        istr >> ch;
-        int c = ch;
-            
-        int score;
-        for(int i = 0; istr >> score; ++i) {
-            score *= scaling;
-            int d = letters[i];
+
+    int score;
+    for(const char* p1 = packed_mtx->symbols; *p1; ++p1) {
+        char c = toupper(*p1);
+        for(const char* p2 = packed_mtx->symbols; *p2; ++p2) {
+            char d = toupper(*p2);
+            score = mtx.s[*p1][*p2]*scaling;
             scaled_subst_matrix[c][d] = score;
             scaled_subst_matrix[tolower(c)][tolower(d)] = score;
             scaled_subst_matrix[c][tolower(d)] = score;
             scaled_subst_matrix[tolower(c)][d] = score;
-        }
-    }
+    }}
 }
 
-const char* SEQUTIL::aa_table = "KNKNXTTTTTRSRSXIIMIXXXXXXQHQHXPPPPPRRRRRLLLLLXXXXXEDEDXAAAAAGGGGGVVVVVXXXXX*Y*YXSSSSS*CWCXLFLFXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+void CSubstMatrix::SetTranslationTable(const CTranslationTable* trans_table)
+{
+    m_trans_table.Reset(trans_table);
+}
 
-const string SEQUTIL::alphabet = "ARNDCQEGHILKMFPSTWYVBZX*";
+CTranslationTable::CTranslationTable(int gcode) : m_trans_table(CGen_code_table::GetTransTable(gcode))
+{
+    for(int i=0; i<5; ++i)
+    for(int j=0; j<5; ++j)
+    for(int k=0; k<5; ++k)
+        aa_table[i*(8*8)+j*8+k] =
+            TranslateTriplet(NucToChar(i),NucToChar(j),NucToChar(k));
+}
 
-int SEQUTIL::CharToNuc(char c) {
+int CTranslationTable::CharToNuc(char c) {
   if(c == 'A' || c == 'a') return nA;
   if(c == 'C' || c == 'c') return nC;
   if(c == 'G' || c == 'g') return nG;
   if(c == 'T' || c == 't') return nT;
-  //if(c == 'N' || c == 'n') return nN;
   return nN;
 }
 
-char SEQUTIL::NucToChar(int n) {
+char CTranslationTable::NucToChar(int n) {
     if(n == nA) return 'A';
     if(n == nT) return 'T';
     if(n == nG) return 'G';
@@ -150,11 +120,11 @@ char SEQUTIL::NucToChar(int n) {
 void CFastIScore::Init(const CNSeq& seq, const CSubstMatrix& matrix) {
     Init(matrix);
     m_size = seq.size() - 2;
-    m_scores.resize( m_size *  SEQUTIL::alphabet.size() + 1);
+    m_scores.resize( m_size *  matrix.m_alphabet.size() + 1);
     int j;
     string::size_type i;
     int *pos = &m_scores[0];
-    for(i=0; i<SEQUTIL::alphabet.size(); ++i) {
+    for(i=0; i<matrix.m_alphabet.size(); ++i) {
         m_gpos = &m_gscores[i * 125];
         for(j=2; j<seq.size(); ++j) {
             *++pos = GetScore(seq[j-2], seq[j-1], seq[j]);
@@ -164,8 +134,8 @@ void CFastIScore::Init(const CNSeq& seq, const CSubstMatrix& matrix) {
 
 void CFastIScore::SetAmin(char amin, const CSubstMatrix& matrix) {
     Init(matrix);
-    string::size_type num = SEQUTIL::alphabet.find(toupper(amin));
-    if(num == string::npos) num = SEQUTIL::alphabet.find('X');
+    string::size_type num = matrix.m_alphabet.find(toupper(amin));
+    if(num == string::npos) num = matrix.m_alphabet.find('X');
     m_gpos = &m_gscores[num * 125];
     m_pos = &m_scores[num * m_size];
 }
@@ -177,13 +147,13 @@ void CFastIScore::SetAmin(char amin, const CSubstMatrix& matrix) {
 void CFastIScore::Init(const CSubstMatrix& matrix) {
     if(m_init) return;
     m_init = true;
-    m_gscores.resize(125*SEQUTIL::alphabet.size());
+    m_gscores.resize(125*matrix.m_alphabet.size());
     int *pos = &m_gscores[0];
     int arr[] = { nA, nC, nG, nT, nN };
     int i1, i2, i3;
     string::size_type i;
-    for(i=0; i<SEQUTIL::alphabet.size(); ++i) {
-        char amin = SEQUTIL::alphabet[i];
+    for(i=0; i<matrix.m_alphabet.size(); ++i) {
+        char amin = matrix.m_alphabet[i];
         for(i1 = 0; i1<5; ++i1) {
             for(i2 = 0; i2<5; ++i2) {
                 for(i3 = 0; i3<5; ++i3) *pos++ = matrix.MultScore(arr[i1], arr[i2], arr[i3], amin);

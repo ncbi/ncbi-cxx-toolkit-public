@@ -43,14 +43,52 @@
 #include "Info.hpp"
 
 #include <objects/seqloc/seqloc__.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(ncbi::objects);
 USING_SCOPE(ncbi::prosplign);
 
+const string CProSplignOptions_Base::default_score_matrix_name = "BLOSUM62";
+
+void CProSplignOptions_Base::SetupArgDescriptions(CArgDescriptions* arg_desc)
+{
+    if (arg_desc->Exist("score_matrix"))
+        return;
+    arg_desc->AddDefaultKey
+        ("score_matrix",
+         "score_matrix",
+         "Aminoacid substitution matrix",
+         CArgDescriptions::eString,
+         CProSplignScoring::default_score_matrix_name);
+}
+
+CProSplignOptions_Base::CProSplignOptions_Base()
+{
+    SetScoreMatrix(default_score_matrix_name);
+}
+
+CProSplignOptions_Base::CProSplignOptions_Base(const CArgs& args)
+{
+    SetScoreMatrix(args["score_matrix"].AsString());
+}
+
+CProSplignOptions_Base& CProSplignOptions_Base::SetScoreMatrix(const string& matrix_name)
+{
+    score_matrix_name = matrix_name;
+    return *this;
+}
+const string& CProSplignOptions_Base::GetScoreMatrix() const
+{
+    return score_matrix_name;
+}
+
 void CProSplignScoring::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
+    CProSplignOptions_Base::SetupArgDescriptions(arg_desc);
+
     arg_desc->AddDefaultKey
         ("min_intron_len",
          "min_intron_len",
@@ -107,7 +145,7 @@ void CProSplignScoring::SetupArgDescriptions(CArgDescriptions* arg_desc)
          NStr::IntToString(CProSplignScoring::default_inverted_intron_extension));
 }
 ///////////////////////////////////////////////////////////////////////////
-CProSplignScoring::CProSplignScoring()
+CProSplignScoring::CProSplignScoring() : CProSplignOptions_Base()
 {
     SetMinIntronLen(default_min_intron_len);
     SetGapOpeningCost(default_gap_opening);
@@ -120,7 +158,7 @@ CProSplignScoring::CProSplignScoring()
     SetInvertedIntronExtensionCost(default_inverted_intron_extension);
 }
 
-CProSplignScoring::CProSplignScoring(const CArgs& args)
+CProSplignScoring::CProSplignScoring(const CArgs& args) : CProSplignOptions_Base(args)
 {
     SetMinIntronLen(args["min_intron_len"].AsInteger());
     SetGapOpeningCost(args["gap_opening"].AsInteger());
@@ -134,6 +172,8 @@ CProSplignScoring::CProSplignScoring(const CArgs& args)
 }
 void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
+    CProSplignOptions_Base::SetupArgDescriptions(arg_desc);
+
     arg_desc->AddFlag("full", "output global alignment as is (all postprocessing options are ingoned)");
     arg_desc->AddDefaultKey
         ("eat_gaps",
@@ -216,7 +256,7 @@ void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
 }
 
 ///////////////////////////////////////////////////////////////////////////
-CProSplignOutputOptions::CProSplignOutputOptions(EMode mode)
+CProSplignOutputOptions::CProSplignOutputOptions(EMode mode) : CProSplignOptions_Base()
 {
     switch (mode) {
     case eWithHoles:
@@ -258,7 +298,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(EMode mode)
     }
 }
 
-CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args)
+CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args) : CProSplignOptions_Base(args)
 {
     if (args["full"]) {
         SetEatGaps(false);
@@ -508,7 +548,7 @@ class CProSplign::CImplementation {
 public:
     static CImplementation* create(CProSplignScoring scoring, bool intronless, bool one_stage, bool just_second_stage, bool old);
     CImplementation(CProSplignScoring scoring) :
-        m_scoring(scoring), m_matrix("BLOSUM62",m_scoring.sm_koef)
+        m_scoring(scoring), m_matrix(m_scoring.GetScoreMatrix(), m_scoring.sm_koef)
     {
     }
     virtual ~CImplementation() {}
@@ -860,6 +900,12 @@ CRef<CSeq_align> CProSplign::FindGlobalAlignment(CScope& scope, const CSeq_id& p
 
 int CProSplign::CImplementation::FindGlobalAlignment_stage1(CScope& scope, const CSeq_id& protein, const CSeq_loc& genomic)
 {
+    int gcode = 1;
+    try {
+        gcode = sequence::GetOrg_ref(sequence::GetBioseqFromSeqLoc(genomic, scope)).GetGcode();
+    } catch (...) {}
+    m_matrix.SetTranslationTable(new CTranslationTable(gcode));
+
     m_scope = &scope;
     m_protein = &protein;
     m_genomic.Reset(new CSeq_loc);
@@ -894,7 +940,7 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
     if (output_options.IsPassThrough())
         return refined_align;
 
-    CProSplignText alignment_text(scope, seq_align, "BLOSUM62");
+    CProSplignText alignment_text(scope, seq_align, output_options.GetScoreMatrix());
     list<CNPiece> good_parts = FindGoodParts( alignment_text.GetMatch(), alignment_text.GetProtein(), output_options);
 
     prosplign::RefineAlignment(scope, *refined_align, good_parts);

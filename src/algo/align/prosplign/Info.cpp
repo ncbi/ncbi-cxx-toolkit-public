@@ -45,7 +45,9 @@
 
 #include <objects/general/general__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -599,7 +601,7 @@ void CProSplignText::TranslateDNA(int phase, size_t len, bool is_insertion)
              m_dna[start_pos]==GAP_CHAR) &&
             m_match[prev_exon_pos]!=BAD_PIECE_CHAR) {
             string codon = m_dna.substr(prev_exon_pos-phase+1,phase)+m_dna.substr(start_pos,3-phase);
-            char aa = (codon[0]!=GAP_CHAR && codon[1]!=GAP_CHAR) ? prosplign::SEQUTIL::TranslateTriplet(codon) : SPACE_CHAR;
+            char aa = (codon[0]!=GAP_CHAR && codon[1]!=GAP_CHAR) ? m_trans_table->TranslateTriplet(codon) : SPACE_CHAR;
             for( size_t i = prev_exon_pos-phase+1; i<=prev_exon_pos;++i) {
                 m_translation[i] = tolower(aa);
                 m_match[i] = MatchChar(i);
@@ -614,7 +616,7 @@ void CProSplignText::TranslateDNA(int phase, size_t len, bool is_insertion)
     if (m_dna[start_pos]!=GAP_CHAR) {
         char aa[] = "   ";
         for ( ; start_pos+3 <= m_dna.size(); start_pos += 3) {
-            aa[1] = prosplign::SEQUTIL::TranslateTriplet(m_dna.substr(start_pos,3));
+            aa[1] = m_trans_table->TranslateTriplet(m_dna.substr(start_pos,3));
             m_translation += aa;
         }
     }
@@ -722,8 +724,8 @@ CProSplignText::~CProSplignText()
 {
 }
 
-CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align& seqalign, const string& matrix_name) :
-    m_matrix(new prosplign::CSubstMatrix(matrix_name, 1))
+CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align& seqalign,
+                               const string& matrix_name)
 {
     const CSpliced_seg& sps = seqalign.GetSegs().GetSpliced();
 
@@ -737,6 +739,14 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
     CRef<CSeq_loc> genomic_seqloc = prosplign::GetGenomicBounds(scope, seqalign);
     CSeqVector genomic_seqvec(*genomic_seqloc, scope, CBioseq_Handle::eCoding_Iupac);
     CSeqVector_CI genomic_ci(genomic_seqvec);
+
+    int gcode = 1;
+    try {
+        gcode = sequence::GetOrg_ref(sequence::GetBioseqFromSeqLoc(*genomic_seqloc, scope)).GetGcode();
+    } catch (...) {}
+    m_trans_table.Reset(new prosplign::CTranslationTable(gcode));
+    m_matrix.reset(new prosplign::CSubstMatrix(matrix_name, 1));
+    m_matrix->SetTranslationTable(m_trans_table.GetNonNullPointer());
 
     int nuc_from = genomic_seqloc->GetTotalRange().GetFrom();
     int nuc_to = genomic_seqloc->GetTotalRange().GetTo();
@@ -859,7 +869,7 @@ int GetCompNum(const CSeq_align& sa)
 }
 }
 
-void CProSplignText::Output(const CSeq_align& seqalign, CScope& scope, ostream& out, int width)
+void CProSplignText::Output(const CSeq_align& seqalign, CScope& scope, ostream& out, int width, const string& matrix_name)
 {
     int compartment_id = GetCompNum(seqalign);
     string contig_name = seqalign.GetSegs().GetSpliced().GetGenomic_id().GetSeqIdString(true);
@@ -875,7 +885,7 @@ void CProSplignText::Output(const CSeq_align& seqalign, CScope& scope, ostream& 
     out<<compartment_id<<"\t"<<contig_name<<"\t"<<prot_id<<"\t"<<nuc_from<<"\t"<<nuc_to<<"\t";
     out<<(is_plus_strand?'+':'-')<<endl;
 
-    CProSplignText align_text(scope, seqalign);
+    CProSplignText align_text(scope, seqalign, matrix_name);
     const string& dna = align_text.GetDNA();
     const string& translation = align_text.GetTranslation();
     string match = align_text.GetMatch();

@@ -43,6 +43,8 @@
 #include "BackAlignInfo.hpp"
 #include "scoring.hpp"
 
+#include <objects/seqfeat/Genetic_code_table.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
 
@@ -73,20 +75,31 @@ struct CBMode {//back tracking for one stage fast version (AlignFNog, BackAlignF
     int wlen, vlen, h1len, h2len, h3len; //splice lengths
 };
 
-struct SEQUTIL {
-    static const char* aa_table;
-    static const string alphabet;
+class CTranslationTable : public CObject {
+public:
+    CTranslationTable(int gcode);
 
     static int CharToNuc(char c);
     static char NucToChar(int n);
 
-    inline static char nuc2a(int nuc1, int nuc2, int nuc3) {
-        return aa_table[nuc1*25+nuc2*5+nuc3];
-    }
-    inline static char TranslateTriplet(const string& triplet)
+    inline char nuc2a(int nuc1, int nuc2, int nuc3) const
     {
-        return nuc2a(CharToNuc(triplet[0]),CharToNuc(triplet[1]),CharToNuc(triplet[2]));
+        return aa_table[nuc1*(8*8)+nuc2*8+nuc3]; // need 5, use 8 for speed
     }
+
+    char TranslateTriplet(char n1, char n2, char n3) const
+    {
+        return m_trans_table.GetCodonResidue(m_trans_table.SetCodonState(n1, n2, n3));
+    }
+
+    char TranslateTriplet(const string& triplet) const
+    {
+        return TranslateTriplet(triplet[0],triplet[1],triplet[2]);
+    }
+
+private:
+    const CTrans_table& m_trans_table;
+    char aa_table[8*8*8];
 };
 
 /// Substitution Matrix for Scoring Amino-Acid Alignments
@@ -94,10 +107,14 @@ class CSubstMatrix {
 public:
     CSubstMatrix(const string& name, int scaling);
 
-    inline int MultScore(int nuc1, int nuc2, int nuc3, char amin) const { return scaled_subst_matrix[int(amin)][int(SEQUTIL::nuc2a(nuc1, nuc2, nuc3))]; }
+    void SetTranslationTable(const CTranslationTable* trans_table);
+
+    inline int MultScore(int nuc1, int nuc2, int nuc3, char amin) const { return scaled_subst_matrix[int(amin)][int(m_trans_table->nuc2a(nuc1, nuc2, nuc3))]; }
 
     int scaled_subst_matrix[256][256];
-    static const string blosum62;
+    string m_alphabet;
+private:
+    CConstRef<CTranslationTable> m_trans_table;
 };
 
 

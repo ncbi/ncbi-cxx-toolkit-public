@@ -316,10 +316,10 @@ MGET(GetW2,j-1)
 
     CIntron(/*int i,*/ int j, char amin, char don11, char don21, char acs11, char acs21, const CAlignInfo& prev,  const CAlignInfo& cur, const CNSeq& nseq, const CProSplignScaledScoring& scoring)
             : CAnyIntron(/*i, */j, amin, prev, cur, nseq, scoring) {
-            don1 = SEQUTIL::CharToNuc(don11);
-            don2 = SEQUTIL::CharToNuc(don21);
-            acs1 = SEQUTIL::CharToNuc(acs11);
-            acs2 = SEQUTIL::CharToNuc(acs21);
+            don1 = CTranslationTable::CharToNuc(don11);
+            don2 = CTranslationTable::CharToNuc(don21);
+            acs1 = CTranslationTable::CharToNuc(acs11);
+            acs2 = CTranslationTable::CharToNuc(acs21);
             donj0 = j-scoring.lmin;
             donj1 = donj0 - 1;
             donj2 = donj1 - 1;

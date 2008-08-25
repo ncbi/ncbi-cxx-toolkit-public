@@ -57,7 +57,7 @@ CNSeq::~CNSeq(void)
 // letter by position
 char CNSeq::Upper(int pos) const
 {
-    return SEQUTIL::NucToChar(seq[pos]);
+    return CTranslationTable::NucToChar(seq[pos]);
 }
 
 
