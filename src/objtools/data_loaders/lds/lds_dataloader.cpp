@@ -177,34 +177,35 @@ public:
         result.clear();
         ITERATE ( TCandidates, it, m_Candidates ) {
             const SCandidate& sc = *it;
-            int tse_id = sc.tse_id;
-            int object_id = tse_id? tse_id: sc.object_id;
-
             // check if we can extract seq-entry out of binary bioseq-set file
             //
             //   (this trick has been added by kuznets (Jan-12-2005) to read 
             //    molecules out of huge refseq files)
-            if ( tse_id ) {
-                CLDS_Query::SObjectDescr obj_descr =
+            if ( sc.tse_id ) {
+                CLDS_Query::SObjectDescr tse_descr =
                     m_LDS_query.GetObjectDescr(m_LDS_db->GetObjTypeMap(),
-                                               tse_id,
-                                               false/*do not trace to top*/);
-                if ((obj_descr.is_object && obj_descr.id > 0)      &&
-                    (obj_descr.format == CFormatGuess::eBinaryASN) &&
-                    (obj_descr.type_str == "Bioseq-set")
+                                               sc.tse_id,
+                                               false);
+                if ((tse_descr.is_object && tse_descr.id > 0)      &&
+                    (tse_descr.format == CFormatGuess::eBinaryASN) &&
+                    (tse_descr.type_str == "Bioseq-set")
                     ) {
-                    obj_descr =
+                    CLDS_Query::SObjectDescr obj_descr =
                         m_LDS_query.GetTopSeqEntry(m_LDS_db->GetObjTypeMap(),
-                                                   object_id);
+                                                   sc.object_id);
                     result.push_back(obj_descr);
-                    continue;
+                }
+                else {
+                    result.push_back(tse_descr);
                 }
             }
-            CLDS_Query::SObjectDescr obj_descr =
-                m_LDS_query.GetObjectDescr(m_LDS_db->GetObjTypeMap(),
-                                           object_id,
-                                           false/*do not trace to top*/);
-            result.push_back(obj_descr);
+            else {
+                CLDS_Query::SObjectDescr obj_descr =
+                    m_LDS_query.GetObjectDescr(m_LDS_db->GetObjTypeMap(),
+                                               sc.object_id,
+                                               false);
+                result.push_back(obj_descr);
+            }
         }
     }
 
