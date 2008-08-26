@@ -443,7 +443,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
 #if defined(TIMEZONE_IS_UNDEFINED)
             ERR_POST_X(3, "Format symbol 'z' is unsupported on this platform");
 #else
-            m_Data.tz = eLocal;
+            m_Data.tz = eGmt;
             if (NStr::strncasecmp(sss, "GMT", 3) == 0) {
                 sss += 3;
             }
@@ -666,11 +666,9 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
 #if !defined(TIMEZONE_IS_UNDEFINED)
-    // Adjust time for current timezone
-    if ( adjust_needed  &&  adjust_tz != -TimeZone() ) {
-        // MT-Safe protect for TimeZone()
-        CFastMutexGuard LOCK(s_TimeMutex);
-        AddSecond(-TimeZone() - adjust_tz);
+    // Adjust time to GMT time (see 'z' format symbol above)
+    if ( adjust_needed ) {
+        AddSecond(-adjust_tz, CTime::eIgnoreDaylight);
     }
 #endif
 }

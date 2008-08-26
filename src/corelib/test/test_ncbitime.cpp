@@ -532,8 +532,9 @@ static void s_TestFormats(void)
         for (int i = 0;  s_Fmt[i].format;  i++) {
             const char* fmt = s_Fmt[i].format;
             
+            bool is_gmt = (strchr(fmt, 'Z') ||  strchr(fmt, 'z'));
             CTime t1(2001, 4, 2, hour, 4, 5, 88888888,
-                     strchr(fmt, 'Z') ? CTime::eGmt : CTime::eLocal);
+                     is_gmt ? CTime::eGmt : CTime::eLocal);
             
             CTime::SetFormat(fmt);
             string t1_str = t1.AsString();

@@ -526,14 +526,14 @@ public:
     ///   - P = am/pm                          (AM/PM)
     ///   - p = am/pm                          (am/pm)
     ///   - Z = timezone format                (GMT or none)
-    ///   - z = timezone shift                 (GMT[+/-HHMM])
+    ///   - z = timezone shift                 ([GMT]+/-HHMM)
     ///   - W = full day of week name          (Sunday-Saturday)
     ///   - w = abbreviated day of week name   (Sun-Sat)
     ///
     ///   Format string can represent date/time partially, in this case
     ///   current time, or defaut values, will be used to amplify time
-    ///   object, if possible. Current date/time cannot be used if
-    ///   format string contains "z" (time shift) format symbol.
+    ///   object, if possible. Current date/time cannot be used
+    ///   if format string contains "z" (time shift) format symbol.
     ///   Also, it cannot be used if time format is ambiguous, like "Y/D".
     ///   Note, that you still can use "Y/M", or even "Y", where month and
     ///   day will be defined to 1; or "M/D", where year will be set as
