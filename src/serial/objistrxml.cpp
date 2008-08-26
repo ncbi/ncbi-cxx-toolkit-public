@@ -373,8 +373,16 @@ CTempString CObjectIStreamXml::ReadName(char c)
             string value;
             ReadAttributeValue(value, true);
             if (m_LastTag == m_CurrNsPrefix) {
-                if (FetchFrameFromTop(1).HasTypeInfo()) {
-                    TTypeInfo type = FetchFrameFromTop(1).GetTypeInfo();
+                size_t depth = GetStackDepth();
+                TTypeInfo type=0;
+                    if (depth > 1 && FetchFrameFromTop(1).HasTypeInfo()) {
+                        type = FetchFrameFromTop(1).GetTypeInfo();
+                        if (type->GetName().empty() &&
+                            depth > 3 && FetchFrameFromTop(3).HasTypeInfo()) {
+                                type = FetchFrameFromTop(3).GetTypeInfo();
+                        }
+                    }
+                if (type) {
                     type->SetNamespacePrefix(m_CurrNsPrefix);
                     type->SetNamespaceName(value);
                 }
@@ -398,7 +406,9 @@ CTempString CObjectIStreamXml::ReadName(char c)
             }
         }
     } else {
-        m_CurrNsPrefix.erase();
+        if (!m_Attlist) {
+            m_CurrNsPrefix.erase();
+        }
         if (m_Attlist && m_LastTag == "xmlns") {
             string value;
             ReadAttributeValue(value, true);
@@ -1849,6 +1859,9 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
         }
 // if it is an attribute list, but the tag is unrecognized - just skip it
         if (m_Attlist) {
+            if (ind == kInvalidMember && tagName.empty()) {
+                return ind;
+            }
             string value;
             ReadAttributeValue(value);
             m_Input.SkipChar();
