@@ -74,7 +74,7 @@ public:
         eUnknown = 2        ///< protein is attempted first, then nucleotide
     };
 
-    struct SBlastDbParam
+    struct NCBI_XLOADER_BLASTDB_EXPORT SBlastDbParam
     {
         SBlastDbParam(const string& db_name = "nr",
                       EDbType       dbtype = eUnknown,
