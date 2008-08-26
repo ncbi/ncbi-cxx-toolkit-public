@@ -10,7 +10,7 @@ SRC = test_objmgr blast_test_util blast_unit_test bl2seq_unit_test \
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I../
 
-LIB_ = $(BLAST_FORMATTER_MINIMAL_LIBS) $(BLAST_LIBS) xobjsimple $(OBJMGR_LIBS) \
+LIB_ = $(BLAST_FORMATTER_LIBS) $(BLAST_LIBS) xobjsimple $(OBJMGR_LIBS) \
 xalgowinmask
 LIB = $(LIB_:%=%$(STATIC))
 
