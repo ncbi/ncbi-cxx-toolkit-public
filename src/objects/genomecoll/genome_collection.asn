@@ -65,6 +65,10 @@ GC-Assembly ::= SEQUENCE
     -- this is the ID for this asssembly and may reflect the submitter/source
     project SET OF GC-ProjectList OPTIONAL,
 
+    -- Names of the assembly
+    name VisibleString OPTIONAL,
+    submitter-name VisibleString OPTIONAL,
+
     -- Various attributes assigned at this level:
     -- biosrc, comments, publications...
     descr Seq-descr OPTIONAL , 
@@ -82,7 +86,7 @@ GC-Assembly ::= SEQUENCE
     coverage REAL OPTIONAL,
 
     -- collections of molecules for this assembly
-    mols SET OF GC-Replicon,
+    mols SET OF GC-Replicon OPTIONAL,
 
     -- unplaced bits for this asssembly
     unplaced SET OF GC-Sequence OPTIONAL, 
