@@ -110,7 +110,7 @@ inline void CQuery::x_InitNcbiqna( const string& id, const string& data1, const 
 	ASSERT( data2.length() < 255 );
 	m_length[0] = x_ComputeInformativeLength( data1.substr( 0, data1.length()/2 ) );
 	m_length[1] = x_ComputeInformativeLength( data2.substr( 0, data2.length()/2 ) );
-    unsigned sz = id.length() + 5*m_length[0] + 5*m_length[1];
+    unsigned sz = id.length() + 5*m_length[0] + 5*m_length[1] + 1;
     m_data = new unsigned char[sz];
     memset( m_data, 0, sz );
 	strcpy( (char*)m_data, id.c_str() );
