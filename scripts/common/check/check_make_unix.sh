@@ -546,16 +546,9 @@ EOF_launch
                                        ;;
                         esac
 
-                        # Get build tree checkout date
-                        checkout=''
-                        if [ -f "\$root_dir/checkout.date" ] ; then
-                            checkout=\`cat \$root_dir/checkout.date\`
-                        fi
-
                         # Write result of the test into the his output file
                         echo "Start time   : \$start_time"   >> \$x_test_out
                         echo "Stop time    : \$stop_time"    >> \$x_test_out
-                        echo "Checkout date: \$checkout"     >> \$x_test_out
                         echo >> \$x_test_out
                         echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
                         echo "@@@ EXIT CODE: \$result" >> \$x_test_out
@@ -643,7 +636,6 @@ MailToAuthors()
    echo '-----------------------'
    echo "Send results of the test \$x_app to \$x_authors"
    echo '-----------------------'
-  
         echo "To: \$x_authors"
         echo "Subject: [C++ CHECK] \$x_app | \$signature"
         echo
@@ -659,6 +651,8 @@ MailToAuthors()
         echo \$x_cmd
         echo
         cat \$tmp
+        echo 
+        cat \$top_srcdir/build_info
    } | \$sendmail \$x_authors
    echo '-----------------------'
    rm -f \$tmp > /dev/null

@@ -48,6 +48,7 @@ script_args="$*"
 
 summary_res="check.sh.log"
 error_res="check.sh.out_err"
+build_info="build_info"
 
 if test -x /usr/sbin/sendmail; then
     sendmail="/usr/sbin/sendmail -oi"
@@ -124,6 +125,7 @@ if test "$need_check" = "yes" ; then
    make="$1"
    builddir="$2"
    action="$3"
+   build_info="$builddir/../build_info"
 
    shift
    shift
@@ -247,7 +249,10 @@ if test -n "$mail_list_full" ; then
         echo "Subject: [C++ CHECK]  $subject"
         DoMime
         echo
-        echo "$subject"; echo
+        echo "$subject"
+        echo
+        test -f $build_info  &&  cat $build_info
+        echo
         cat $tmp_dst
       } | $sendmail $mailto  ||  err_list="$err_list MAIL_ERR:\"$loc\""
    done
@@ -262,7 +267,10 @@ if test -n "$mail_list"  -a  -s "$error_res" ; then
         echo "Subject: [C++ ERRORS]  $subject"
         DoMime
         echo
-        echo "$subject"; echo
+        echo "$subject"
+        echo
+        test -f $build_info  &&  cat $build_info
+        echo
         cat $tmp_dst
       } | $sendmail $mailto  ||  err_list="$err_list MAIL_ERR:\"$loc\""
    done
@@ -292,6 +300,8 @@ if test -n "$watch_list" ; then
         DoMime
         echo
         echo "$err_list"
+        echo
+        test -f $build_info  &&  cat $build_info
         echo
         echo "========================================"
         COMMON_LimitTextFileSize $err_log $tmp_dst $mail_limit

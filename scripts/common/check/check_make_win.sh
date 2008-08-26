@@ -406,16 +406,9 @@ RunTest() {
       rm -f $x_tmp/\$\$.out
       rm -f \$x_test_out.\$\$
 
-      # Get build tree checkout date
-      checkout=''
-      if [ -f "\$root_dir/checkout_info" ] ; then
-          checkout=\`grep "Sources date" \$root_dir/checkout_info | sed 's/^.* : //'\`
-      fi
-
       # Write result of the test into the his output file
       echo "Start time   : \$start_time"   >> \$x_test_out
       echo "Stop time    : \$stop_time"    >> \$x_test_out
-      echo "Checkout date: \$checkout"     >> \$x_test_out
       echo >> \$x_test_out
       echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
       echo "@@@ EXIT CODE: \$result" >> \$x_test_out
