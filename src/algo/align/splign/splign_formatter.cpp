@@ -93,7 +93,7 @@ void CSplignFormatter::SetSeqIds(CConstRef<objects::CSeq_id> id1,
 
 
 string CSplignFormatter::AsExonTable(
-    const CSplign::TResults* results, EFlags flags) const
+    const CSplign::TResults* results, ETextFlags flags) const
 {
     if(results == 0) {
         results = &m_splign_results;
@@ -105,7 +105,7 @@ string CSplignFormatter::AsExonTable(
     CNcbiOstrstream oss;
     oss.precision(3);
 
-    const bool print_exon_scores ((flags & fNoExonScores)? false: true);
+    const bool print_exon_scores ((flags & eTF_NoExonScores)? false: true);
     
     ITERATE(CSplign::TResults, ii, *results) {
 
@@ -517,9 +517,9 @@ double CalcIdentity(const string& transcript)
 CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
     const vector<size_t>& boxes,
     const vector<string>& transcripts,
-    const vector<CNWAligner::TScore>&    scores ) const
+    const vector<float>&  scores ) const
 {
-    const size_t num_exons = boxes.size() / 4;
+    const size_t num_exons (boxes.size() / 4);
 
     CRef<CSeq_align> sa (new CSeq_align);
 
@@ -619,11 +619,11 @@ CRef<CSpliced_exon_chunk> CreateSplicedExonChunk(char cur, size_t count)
 
 CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(
    const CSplign::TResults * results, 
-   EFlags flag)
+   EAsnFlags flag)
 const
 {
-    if(flag != fSeqAlign_Disc && flag != fSeqAlign_SplicedSeg_NoParts
-       && flag != fSeqAlign_SplicedSeg_WithParts)
+    if(flag != eAF_Disc && flag != eAF_SplicedSegNoParts
+       && flag != eAF_SplicedSegWithParts)
     {
         NCBI_THROW(CAlgoAlignException,
                    eBadParameter,
@@ -641,7 +641,7 @@ const
     
         if(ii->m_Status != CSplign::SAlignedCompartment::eStatus_Ok) continue;
 
-        if(flag != fSeqAlign_Disc) {
+        if(flag != eAF_Disc) {
 
             CRef<CSeq_align> sa (new CSeq_align);
             sa->SetType(CSeq_align::eType_global);
@@ -722,24 +722,24 @@ const
                         scores.push_back(score);
                     }}
 
-                    // add 5' (acceptor) residues if available
+                    // add acceptor residues if available
                     const size_t adim (seg.m_annot.size());
                     if(adim > 2 && seg.m_annot[2] == '<') {
                         string acc;
                         acc.push_back(seg.m_annot[0]);
                         acc.push_back(seg.m_annot[1]);
-                        exon->SetSplice_5_prime().SetBases(acc);
+                        exon->SetSplice_3_prime().SetBases(acc);
                     }
 
-                    // add 3' (donor) residues if available
+                    // add donor residues if available
                     if(adim > 2 && seg.m_annot[adim - 3] == '>') {
                         string dnr;
                         dnr.push_back(seg.m_annot[adim - 2]);
                         dnr.push_back(seg.m_annot[adim - 1]);
-                        exon->SetSplice_3_prime().SetBases(dnr);
+                        exon->SetSplice_5_prime().SetBases(dnr);
                     }
 
-                    if(flag == fSeqAlign_SplicedSeg_WithParts) {
+                    if(flag == eAF_SplicedSegWithParts) {
 
                         // add parts
                         CSpliced_exon::TParts & parts (exon->SetParts());
@@ -775,14 +775,11 @@ const
         else {
             vector<size_t> boxes;
             vector<string> transcripts;
-            vector<CNWAligner::TScore> scores;
+            vector<float>  scores;
 
             for(size_t i (0), seg_dim (ii->m_Segments.size()); i < seg_dim; ++i) {
-            
                 const CSplign::TSegment& seg (ii->m_Segments[i]);
-            
                 if(seg.m_exon) {
-                
                     copy(seg.m_box, seg.m_box + 4, back_inserter(boxes));
                     transcripts.push_back(seg.m_details);
                     scores.push_back(seg.m_score);

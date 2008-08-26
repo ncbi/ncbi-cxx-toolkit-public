@@ -47,6 +47,8 @@ class CBlastTabular;
 BEGIN_SCOPE(objects)
     class CScope;
     class CSeq_id;
+    class CScore_set;
+    class CSeq_align_set;
 END_SCOPE(objects)
 
 
@@ -130,7 +132,7 @@ public:
         size_t           m_Cds_start, m_Cds_stop;
         size_t           m_QueryLen;
         size_t           m_PolyA;
-        TAligner::TScore m_Score;
+        float            m_Score;
         TSegments        m_Segments;
         
         SAlignedCompartment(void):
@@ -191,6 +193,45 @@ public:
 
     static size_t s_TestPolyA(const char * seq, size_t dim, size_t cds_stop = 0);
 
+    // alignment statistics
+
+    enum ECompartmentScores {
+        eCS_Matches             = 6,
+        eCS_OverallIdentity     = 10,
+        eCS_InframeMatches      = 20,
+        eCS_InframeIdentity     = 22,
+        eCS_Splices             = 23,
+        eCS_ConsensusSplices    = 24,
+        eCS_ProductCoverage     = 27,
+        eCS_ExonIdentity        = 28,
+        eCS_CombinationIdentity = 32
+    };
+
+    enum EStatFlags {
+        eSF_BasicNonCds = 1 << 0,
+        eSF_BasicCds    = 1 << 1
+    };
+
+    typedef list<CRef<objects::CScore_set> > TScoreSets;
+
+    /// Generate statistics based on splign-generated ASN
+    ///
+    /// @param sas
+    ///   [IN] Seq-align-set describing the input alignment.
+    /// @param output_stats
+    ///   [OUT] A pointer to the object to be be filled in with computed stats.
+    /// @param cds
+    ///   [IN] Coding region start and stop to use when computing cds-related stats.
+    ///   If both are null then no cds-related stats will be computed.
+    /// @param flags
+    ///   [IN] Bitwise OR of the eSF_* flags specifying types of statistics to include.
+    /// @return
+    ///   The number of elements written in output_stats.
+    static size_t s_ComputeStats(
+        CRef<objects::CSeq_align_set> sas,
+        TScoreSets * output_stats,
+        TOrf cds = TOrf(0, 0),
+        EStatFlags flags = eSF_BasicNonCds);
 
 protected:
 
@@ -269,13 +310,13 @@ protected:
                                             size_t range_left,
                                             size_t range_right);
 
-    TAligner::TScore    x_Run(const char* seq1, const char* seq2);
+    float  x_Run(const char* seq1, const char* seq2);
 
     void   x_SplitQualifyingHits(THitRefs* phitrefs);
     void   x_SetPattern(THitRefs* hitrefs);
     bool   x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const;
     Uint4  x_GetGenomicExtent(const Uint4 query_extent, Uint4 max_ext = 0) const;
-    void   x_FinilizeAlignedCompartment(SAlignedCompartment & ac);
+    void   x_FinalizeAlignedCompartment(SAlignedCompartment & ac);
 
     void   x_LoadSequence(vector<char>* seq, 
                           const objects::CSeq_id& seqid,

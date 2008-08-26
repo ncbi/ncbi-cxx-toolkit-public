@@ -472,18 +472,20 @@ void CNWFormatter::SSegment::Update(const CNWAligner* paligner)
     m_len = m_details.size();
 
     string::const_iterator ib = m_details.begin(), ie = m_details.end();
-    size_t count = 0; // std::count() not supported on some platforms
+    size_t count (0); // std::count() not supported on some platforms
     for(string::const_iterator ii = ib; ii != ie; ++ii) {
         if(*ii == 'M') ++count;
     }
     m_idty = double(count) / m_len;
     
-    CNWAligner::TTranscript transcript (m_details.size());
-    size_t i = 0;
-    ITERATE(string, ii, m_details) {
-        transcript[i++] = CNWAligner::ETranscriptSymbol(*ii); // 2b fixed
+    const size_t xcript_dim (m_details.size());
+    CNWAligner::TTranscript transcript (xcript_dim);
+    for(size_t i (0); i < xcript_dim; ++i) {
+        transcript[i] = CNWAligner::ETranscriptSymbol(m_details[i]);
     }
-    m_score = paligner->CNWAligner::ScoreFromTranscript(transcript);
+
+    m_score = float(paligner->CNWAligner::ScoreFromTranscript(transcript)) /
+        paligner->GetWm();
 }
 
 

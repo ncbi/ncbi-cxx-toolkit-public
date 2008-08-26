@@ -87,8 +87,8 @@ void CSplignApp::Init()
                 fHideXmlHelp | fHideFullHelp);
 #endif
 
-    SetVersion(CVersionInfo(1, 34, 0, "Splign"));
-    string program_name ("Splign v.1.34");
+    SetVersion(CVersionInfo(1, 35, 0, "Splign"));
+    string program_name ("Splign v.1.35");
 #ifdef GENOME_PIPELINE
     program_name += 'p';
 #endif
@@ -1211,9 +1211,9 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
 {
 
 #ifdef GENOME_PIPELINE
-    const CSplignFormatter::EFlags flags (CSplignFormatter::fNone);
+    const CSplignFormatter::ETextFlags flags (CSplignFormatter::eTF_None);
 #else
-    const CSplignFormatter::EFlags flags (CSplignFormatter::fNoExonScores);
+    const CSplignFormatter::ETextFlags flags (CSplignFormatter::eTF_NoExonScores);
 #endif
 
     const bool raw_hits (!args["comps"]);
@@ -1340,9 +1340,11 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
     cout << m_Formatter->AsExonTable(&splign_results, flags);
 
     if(m_AsnOut) {
-        *m_AsnOut << MSerial_AsnText 
-                  << *(m_Formatter->AsSeqAlignSet(&splign_results,CSplignFormatter::fSeqAlign_SplicedSeg_WithParts))
-                  << endl;
+        CRef<CSeq_align_set> sas (
+            m_Formatter-> AsSeqAlignSet(&splign_results,
+                                        CSplignFormatter::
+                                        eAF_SplicedSegWithParts));
+        *m_AsnOut << MSerial_AsnText  << *sas << endl;
     }
     
     if(m_AlnOut) {       

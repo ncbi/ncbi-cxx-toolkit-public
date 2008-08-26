@@ -105,7 +105,7 @@ public:
         string m_annot;   // text description like AG<exon>GT
         string m_details; // transcript for exons, '-' for gaps
 
-        CNWAligner::TScore m_score; // dynprog score
+        float  m_score;   // dynprog score (normalized)
         
         void ExtendLeft(int extent, const char* seq1, const char* seq2,
                              CConstRef<CSplicedAligner> aligner);

@@ -51,6 +51,16 @@
 #include <objmgr/util/seq_loc_util.hpp>
 
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
+#include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Splice_site.hpp>
+#include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Score_set.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include <math.h>
 #include <algorithm>
@@ -768,7 +778,7 @@ CSplign::TOrfPair CSplign::GetCds(const THit::TId& id, const vector<char> * seq_
 }
 
 
-void CSplign::x_FinilizeAlignedCompartment(SAlignedCompartment & ac)
+void CSplign::x_FinalizeAlignedCompartment(SAlignedCompartment & ac)
 {
     ac.m_Id         = ++m_model_id;
     ac.m_Segments   = m_segments;
@@ -886,7 +896,7 @@ void CSplign::Run(THitRefs* phitrefs)
                     if(smin > box[2]) smin = box[2];
 
                     SAlignedCompartment ac (x_RunOnCompartment(&comp_hits, smin,smax));
-                    x_FinilizeAlignedCompartment(ac);
+                    x_FinalizeAlignedCompartment(ac);
                     m_result.push_back(ac);
                 }
             }
@@ -942,7 +952,7 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
     try {
 
         SAlignedCompartment ac (x_RunOnCompartment(phitrefs, subj_min, subj_max));
-        x_FinilizeAlignedCompartment(ac);
+        x_FinalizeAlignedCompartment(ac);
         *result = ac;        
         m_mrna.resize(0);
     }
@@ -1405,7 +1415,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
 static const char s_kGap [] = "<GAP>";
 
 // at this level and below, plus strand is assumed for both sequences
-CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
+float CSplign::x_Run(const char* Seq1, const char* Seq2)
 {
     typedef deque<TSegment> TSegmentDeque;
     TSegmentDeque segments;
@@ -1420,7 +1430,7 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
         NCBI_THROW(CAlgoAlignException, eInternal, "Multiple maps not supported");
     }
 
-    TAligner::TScore rv (0);
+    float rv (0);
     size_t cds_start (0), cds_stop (0);
     const int kMaxShot (5);
     for(size_t i (0); i < map_dim; ++i) {
@@ -1863,6 +1873,7 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
     }
 #endif
 
+    rv /= m_aligner->GetWm();
     return rv;
 }
 
@@ -2209,6 +2220,184 @@ void CSplign::SAlignedCompartment::FromBuffer(const TNetCacheBuffer& source)
         seg.FromBuffer(TNetCacheBuffer(p, p + seg_buf_size));
         p += seg_buf_size;
     }
+}
+
+
+bool IsConsDonor(const objects::CSpliced_exon& exon) {
+    USING_SCOPE(objects);
+    const CSpliced_exon::TSplice_5_prime & splice (exon.GetSplice_5_prime());
+    const string bases (splice.GetBases());
+    return (bases.size() >= 2 && bases[0] == 'G' && bases[1] == 'T');
+}
+
+
+bool IsConsAcceptor(const objects::CSpliced_exon& exon) {
+    USING_SCOPE(objects);
+    const CSpliced_exon::TSplice_3_prime & splice (exon.GetSplice_3_prime());
+    const string bases (splice.GetBases());
+    const size_t dim (bases.size());
+    return (dim >= 2 && bases[dim - 2] == 'A' && bases[dim - 1] == 'G');
+}
+
+
+size_t CSplign::s_ComputeStats(CRef<objects::CSeq_align_set> sas,
+                               TScoreSets * output_stats,
+                               TOrf cds,
+                               EStatFlags flags)
+{
+    USING_SCOPE(objects);
+
+    const
+    bool valid_input (sas.GetPointer() && sas->CanGet() && sas->Get().size() 
+                      && sas->Get().front()->CanGetSegs()
+                      && sas->Get().front()->GetSegs().IsSpliced()
+                      && sas->Get().front()->GetSegs().GetSpliced().GetProduct_type() 
+                      == CSpliced_seg::eProduct_type_transcript
+                      && output_stats);
+
+    if(!valid_input) {
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
+                   "CSplign::s_ComputeStats(): Invalid input");
+    }
+
+    if(flags != eSF_BasicNonCds) {
+        NCBI_THROW(CException, eUnknown,
+                   "CSplign::s_ComputeStats(): mode not yet supported.");
+    }
+
+    output_stats->resize(0);
+    
+    ITERATE(CSeq_align_set::Tdata, ii1, sas->Get()) {
+
+        typedef CSeq_align::TSegs::TSpliced TSpliced;
+        const TSpliced & spliced ((*ii1)->GetSegs().GetSpliced());
+        if(spliced.GetProduct_type() != CSpliced_seg::eProduct_type_transcript) {
+            NCBI_THROW(CAlgoAlignException, eBadParameter,
+                       "CSplign::s_ComputeStats(): Unsupported product type");
+        }
+
+        typedef TSpliced::TExons TExons;
+        const TExons & exons (spliced.GetExons());
+
+        size_t matches (0),
+               aligned_query_bases (0),  // matches, mismatches and indels
+               aln_length_exons (0),
+               aln_length_gaps (0),
+               splices_total (0),        // twice the number of introns
+               splices_consensus (0);
+
+        const bool  qstrand (spliced.GetProduct_strand() != eNa_strand_minus);
+        const TSeqPos  qlen (spliced.GetProduct_length());
+        const TSeqPos polya (spliced.CanGetPoly_a()?
+                             spliced.GetPoly_a(): (qstrand? qlen: TSeqPos(-1)));
+        const TSeqPos prod_length_no_polya (qstrand? polya: qlen - 1 - polya);
+        
+        typedef CSpliced_exon TExon;
+        TSeqPos qprev (qstrand? TSeqPos(-1): qlen);
+        bool cons_dnr (false);
+        ITERATE(TExons, ii2, exons) {
+
+            const TExon & exon (**ii2);
+            const TSeqPos qmin (exon.GetProduct_start().GetNucpos()),
+                          qmax (exon.GetProduct_end().GetNucpos());
+
+            const TSeqPos qgap (qstrand? qmin - qprev - 1: qprev - qmax - 1);
+
+            if(qgap > 0) {
+                aln_length_gaps += qgap;
+                cons_dnr = false;
+            }
+            else if (ii2 != exons.begin()) {
+                splices_total += 2;
+                if(cons_dnr && IsConsAcceptor(exon)) { splices_consensus += 2; }
+            }
+
+            typedef TExon::TParts TParts;
+            const TParts & parts (exon.GetParts());
+            string errmsg;
+            ITERATE(TParts, ii3, parts) {
+                const CSpliced_exon_chunk & part (**ii3);
+                const CSpliced_exon_chunk::E_Choice choice (part.Which());
+                TSeqPos len (0);
+                switch(choice) {
+                case CSpliced_exon_chunk::e_Match:
+                    len = part.GetMatch();
+                    matches += len;
+                    aligned_query_bases += len;
+                    break;
+                case CSpliced_exon_chunk::e_Mismatch:
+                    len = part.GetMismatch();
+                    aligned_query_bases += len;
+                    break;
+                case CSpliced_exon_chunk::e_Product_ins:
+                    len = part.GetProduct_ins();
+                    aligned_query_bases += len;
+                    break;
+                case CSpliced_exon_chunk::e_Genomic_ins:
+                    len = part.GetGenomic_ins();
+                    break;
+                default:
+                    errmsg = "Unexpected spliced exon chunk part: "
+                        + part.SelectionName(choice);
+                    NCBI_THROW(CAlgoAlignException, eBadParameter, errmsg);
+                }
+                aln_length_exons += len;
+            }
+
+            cons_dnr = IsConsDonor(exon);
+            qprev = qstrand? qmax: qmin;
+        } // TExons
+
+        const TSeqPos qgap (qstrand? polya - qprev - 1: qprev - polya - 1);
+        aln_length_gaps += qgap;
+
+        // set individual scores
+        CRef<CScore_set> ss (new CScore_set);
+        CScore_set::Tdata & scores (ss->Set());
+        
+        {
+        CRef<CScore> score_matches (new CScore());
+        score_matches->SetId().SetId(eCS_Matches);
+        score_matches->SetValue().SetInt(matches);
+        scores.push_back(score_matches);
+        }
+        {
+        CRef<CScore> score_overall_identity (new CScore());
+        score_overall_identity->SetId().SetId(eCS_OverallIdentity);
+        score_overall_identity->SetValue().
+            SetReal(double(matches)/(aln_length_exons + aln_length_gaps));
+        scores.push_back(score_overall_identity);
+        }
+        {
+        CRef<CScore> score_splices (new CScore());
+        score_splices->SetId().SetId(eCS_Splices);
+        score_splices->SetValue().SetInt(splices_total);
+        scores.push_back(score_splices);
+        }
+        {
+        CRef<CScore> score_splices_consensus (new CScore());
+        score_splices_consensus->SetId().SetId(eCS_ConsensusSplices);
+        score_splices_consensus->SetValue().SetInt(splices_consensus);
+        scores.push_back(score_splices_consensus);
+        }
+        {
+        CRef<CScore> score_coverage (new CScore());
+        score_coverage->SetId().SetId(eCS_ProductCoverage);
+        score_coverage->SetValue().
+            SetReal(double(aligned_query_bases) / prod_length_no_polya);
+        scores.push_back(score_coverage);
+        }
+        {
+        CRef<CScore> score_exon_identity (new CScore());
+        score_exon_identity->SetId().SetId(eCS_ExonIdentity);
+        score_exon_identity->SetValue().SetReal(double(matches) / aln_length_exons);
+        scores.push_back(score_exon_identity);
+        }
+
+        output_stats->push_back(ss);
+    }
+
+    return output_stats->size();
 }
 
 

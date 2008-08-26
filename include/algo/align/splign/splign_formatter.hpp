@@ -57,18 +57,20 @@ public:
     void SetSeqIds(CConstRef<objects::CSeq_id> id1, 
                    CConstRef<objects::CSeq_id> id2);
 
+    enum ETextFlags {
+        eTF_None = 0,
+        eTF_NoExonScores = 1
+    };
 
-    enum EFlags {
-        fNone = 0,
-        fNoExonScores = 1,
-        fSeqAlign_Disc,
-        fSeqAlign_SplicedSeg_NoParts,
-        fSeqAlign_SplicedSeg_WithParts
+    enum EAsnFlags {
+        eAF_Disc,
+        eAF_SplicedSegNoParts,
+        eAF_SplicedSegWithParts
     };
 
     // formatters
     string AsExonTable(const CSplign::TResults* results = 0,
-                       EFlags flags = fNone) const;
+                       ETextFlags flags = eTF_None) const;
 
     /// Format alignment as plain text.
     ///
@@ -94,14 +96,14 @@ public:
     /// @param results
     ///   Splign results for formatting. If not specified, the results
     ///   will be read from the object used to construct the formatter.
-    /// @flag
-    ///   Must be one of the fSeqAlign_* flags specifying seq-align content.
+    /// @param asn_flags
+    ///   Must be one of the eAF_* flags specifying seq-align content.
     /// @return
     ///   Formatted alignment as a seq-align-set reference.
     CRef<objects::CSeq_align_set> AsSeqAlignSet(
         const CSplign::TResults* results = 0,
-        EFlags flag = fSeqAlign_Disc)
-    const;
+        EAsnFlags asn_flags  = eAF_SplicedSegWithParts)
+        const;
 
 private:
 
@@ -112,7 +114,7 @@ private:
     CRef<objects::CSeq_align> x_Compartment2SeqAlign(
                                const vector<size_t>& boxes,
                                const vector<string>& transcripts,
-                               const vector<CNWAligner::TScore>& scores) const;
+                               const vector<float>&  scores) const;
 
     void x_Exon2DS(const size_t* box, const string& trans,
                    objects::CDense_seg* pds) const;
