@@ -245,6 +245,201 @@ CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
 }
 
 
+class CLDS_IStreamCache : public CObject
+{
+public:
+    class CIStream : public CObject
+    {
+    public:
+        CIStream(const string& name, CNcbiStreampos pos)
+            : m_Name(name),
+              m_Stream(name.c_str(), IOS_BASE::binary)
+            {
+                SetPos(pos);
+            }
+        const string& GetName(void) const
+            {
+                return m_Name;
+            }
+        CNcbiIstream& GetStream(void)
+            {
+                return m_Stream;
+            }
+
+    protected:
+        friend class CLDS_IStreamCache;
+        void SetPos(CNcbiStreampos pos)
+            {
+                m_Stream.seekg(pos);
+                m_LastPos = pos;
+            }
+        CNcbiStreampos GetLastPos(void) const
+            {
+                return m_LastPos;
+            }
+        pair<string, CNcbiStreampos> GetKey(void) const
+            {
+                return pair<string, CNcbiStreampos>(GetName(), GetLastPos());
+            }
+
+    private:
+        string          m_Name;
+        CNcbiStreampos  m_LastPos;
+        CNcbiIfstream   m_Stream;
+    };
+
+    CLDS_IStreamCache(size_t size = 16)
+        : m_CacheSize(size)
+        {
+        }
+
+    size_t GetCacheSize(void) const
+        {
+            return m_CacheSize;
+        }
+    void SetCacheSize(size_t size);
+    
+    CRef<CIStream> GetStream(const string& name, CNcbiStreampos pos);
+    void ReleaseStream(CRef<CIStream> stream);
+
+protected:
+    // x_*() methods must be called with guard
+    size_t x_GetStreamCount(void)
+        {
+            return m_StreamMap.size();
+        }
+    void x_ReduceStreamCountTo(size_t count);
+    void x_RemoveOldestStream(void);
+    
+private:
+    typedef list<CRef<CIStream> > TStreamCache;
+    typedef pair<string, CNcbiStreampos> TStreamMapKey;
+    typedef multimap<TStreamMapKey, TStreamCache::iterator> TStreamMap;
+
+    CFastMutex   m_StreamCacheLock;
+    size_t       m_CacheSize;
+    TStreamCache m_StreamCache;
+    TStreamMap   m_StreamMap;
+};
+
+
+CRef<CLDS_IStreamCache::CIStream>
+CLDS_IStreamCache::GetStream(const string& name, CNcbiStreampos pos)
+{
+    {{
+        CFastMutexGuard guard(m_StreamCacheLock);
+        TStreamMap::iterator iter =
+            m_StreamMap.lower_bound(TStreamMapKey(name, pos));
+        if ( iter != m_StreamMap.begin() ) {
+            TStreamMap::iterator prev = iter;
+            --prev;
+            if ( prev->first.first == name ) {
+                iter = prev;
+            }
+        }
+        if ( iter != m_StreamMap.end() && iter->first.first == name ) {
+            CRef<CIStream> stream = *iter->second;
+            m_StreamCache.erase(iter->second);
+            m_StreamMap.erase(iter);
+            stream->SetPos(pos);
+            return stream;
+        }
+    }}
+    //ERR_POST_X(1, "open stream for " << name << " @ " << pos);
+    return Ref(new CIStream(name, pos));
+}
+
+
+void CLDS_IStreamCache::ReleaseStream(CRef<CIStream> stream)
+{
+    CFastMutexGuard guard(m_StreamCacheLock);
+    if ( GetCacheSize() == 0 ) {
+        return;
+    }
+    x_ReduceStreamCountTo(GetCacheSize()-1);
+    TStreamCache::iterator cache_iter =
+        m_StreamCache.insert(m_StreamCache.end(), stream);
+    m_StreamMap.insert(TStreamMap::value_type(stream->GetKey(), cache_iter));
+}
+
+
+void CLDS_IStreamCache::SetCacheSize(size_t size)
+{
+    CFastMutexGuard guard(m_StreamCacheLock);
+    x_ReduceStreamCountTo(size);
+    m_CacheSize = size;
+}
+
+
+void CLDS_IStreamCache::x_ReduceStreamCountTo(size_t count)
+{
+    while ( x_GetStreamCount() > count ) {
+        x_RemoveOldestStream();
+    }
+}
+
+
+void CLDS_IStreamCache::x_RemoveOldestStream(void)
+{
+    if ( m_StreamCache.empty() ) {
+        return;
+    }
+    TStreamCache::iterator cache_iter = m_StreamCache.begin();
+    CRef<CIStream> stream = *cache_iter;
+    TStreamMap::iterator iter = m_StreamMap.lower_bound(stream->GetKey());
+    _ASSERT(iter != m_StreamMap.end());
+    _ASSERT(iter->first.first == stream->GetName());
+    while ( iter->second != cache_iter ) {
+        ++iter;
+        _ASSERT(iter != m_StreamMap.end());
+        _ASSERT(iter->first.first == stream->GetName());
+    }
+    m_StreamCache.erase(cache_iter);
+    m_StreamMap.erase(iter);
+}
+
+
+CRef<CLDS_IStreamCache> CLDS_DataLoader::x_GetIStreamCache(void)
+{
+    if ( !m_IStreamCache ) {
+        LDS_GUARD();
+        if ( !m_IStreamCache ) {
+            m_IStreamCache = new CLDS_IStreamCache();
+        }
+    }
+    return m_IStreamCache;
+}
+
+
+void CLDS_DataLoader::SetIStreamCacheSize(size_t size)
+{
+    x_GetIStreamCache()->SetCacheSize(size);
+}
+
+
+CRef<CSeq_entry>
+CLDS_DataLoader::x_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
+{
+    if (!obj_descr.is_object || obj_descr.id <= 0) {
+        return null;
+    }
+    
+    if ( obj_descr.pos ) {
+        CRef<CLDS_IStreamCache> cache = x_GetIStreamCache();
+        CRef<CLDS_IStreamCache::CIStream> stream =
+            cache->GetStream(obj_descr.file_name, obj_descr.pos);
+        CRef<CSeq_entry> entry = LDS_LoadTSE(obj_descr, stream->GetStream());
+        cache->ReleaseStream(stream);
+        return entry;
+    }
+    else {
+        CNcbiIfstream stream(obj_descr.file_name.c_str(), 
+                             IOS_BASE::in | IOS_BASE::binary);
+        return LDS_LoadTSE(obj_descr, stream);
+    }
+}
+
+
 string CLDS_DataLoader::GetLoaderNameFromArgs(void)
 {
     return "LDS_dataloader";
@@ -270,11 +465,12 @@ string CLDS_DataLoader::GetLoaderNameFromArgs(CLDS_Database& lds_db)
     return "LDS_dataloader_" + lds_db.GetDirName();
 }
 
-CLDS_DataLoader::CLDS_LoaderMaker::CLDS_LoaderMaker(const string& source_path,
-                                                    const string& db_path,
-                                                    const string& db_alias,
-                                                    CLDS_Manager::ERecurse           recurse,
-                                                    CLDS_Manager::EComputeControlSum csum)
+CLDS_DataLoader::CLDS_LoaderMaker::CLDS_LoaderMaker(
+    const string& source_path,
+    const string& db_path,
+    const string& db_alias,
+    CLDS_Manager::ERecurse recurse,
+    CLDS_Manager::EComputeControlSum csum)
     : m_SourcePath(source_path), m_DbPath(db_path), m_DbAlias(db_alias),
       m_Recurse(recurse), m_ControlSum(csum)
 {
@@ -456,7 +652,7 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
                 CTSE_LoadLock load_lock =
                     data_source->GetTSE_LoadLock(blob_id);
                 if ( !load_lock.IsLoaded() ) {
-                    CRef<CSeq_entry> seq_entry = LDS_LoadTSE(obj_descr);
+                    CRef<CSeq_entry> seq_entry = x_LoadTSE(obj_descr);
                     if ( !seq_entry ) {
                         NCBI_THROW2(CBlobStateException, eBlobStateError,
                                     "cannot load blob",

@@ -48,6 +48,9 @@ CRef<CSeq_entry> NCBI_LDS_EXPORT LDS_LoadTSE(CLDS_Database&         lds_db,
                                              bool trace_to_top = true);
 CRef<CSeq_entry> NCBI_LDS_EXPORT LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr);
 
+CRef<CSeq_entry> NCBI_LDS_EXPORT LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr,
+                                             CNcbiIstream& in);
+
 // Load annotation.
 CRef<CSeq_annot> 
 NCBI_LDS_EXPORT LDS_LoadAnnot(SLDS_TablesCollection& lds_db, 

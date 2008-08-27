@@ -36,12 +36,14 @@
 #include <objmgr/data_loader.hpp>
 
 #include <objtools/lds/lds_set.hpp>
+#include <objtools/lds/lds_query.hpp>
 #include <objtools/lds/lds_manager.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CLDS_Database;
+class CLDS_IStreamCache;
 
 //////////////////////////////////////////////////////////////////
 //
@@ -99,11 +101,18 @@ public:
                      const string&  dl_name);
     
     CLDS_Database& GetDatabase();
+
+    void SetIStreamCacheSize(size_t size);
+
 // private:
     typedef CSimpleLoaderMaker<CLDS_DataLoader>                TSimpleMaker;
     typedef CParamLoaderMaker<CLDS_DataLoader, CLDS_Database&> TDbMaker;
     friend class CSimpleLoaderMaker<CLDS_DataLoader>;
     friend class CParamLoaderMaker<CLDS_DataLoader, CLDS_Database&>;
+
+protected:
+    CRef<CSeq_entry> x_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr);
+    CRef<CLDS_IStreamCache> x_GetIStreamCache(void);
 
 private:
     class CLDS_LoaderMaker : public TSimpleMaker
@@ -139,6 +148,12 @@ private:
 
     CLDS_Database*      m_LDS_db;        // Reference on the LDS database 
     bool                m_OwnDatabase;   // "TRUE" if datalaoder owns m_LDS_db
+
+    CRef<CLDS_IStreamCache> m_IStreamCache;
+
+private: // to prevent copying
+    CLDS_DataLoader(const CLDS_DataLoader&);
+    void operator==(const CLDS_DataLoader&);
 };
 
 END_SCOPE(objects)

@@ -52,25 +52,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CSeq_entry;
 
-CRef<CSeq_entry> 
-LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
+CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr,
+                             CNcbiIstream& in)
 {
-    if (!obj_descr.is_object || obj_descr.id <= 0) {
-        return CRef<CSeq_entry>();
-    }
-
-    CNcbiIfstream in(obj_descr.file_name.c_str(), 
-                     IOS_BASE::in | IOS_BASE::binary);
-    if (!in.is_open()) {
-        string msg = "Cannot open file:";
-        msg.append(obj_descr.file_name);
-        LDS_THROW(eFileNotFound, msg);
-    }
-
     switch (obj_descr.format) {
     case CFormatGuess::eFasta:
-        in.seekg(obj_descr.pos);
         {{
         CStreamLineReader lr(in);
         CFastaReader      fr(lr, 
@@ -83,7 +71,6 @@ LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
     case CFormatGuess::eXml:
     case CFormatGuess::eBinaryASN:
         {
-        in.seekg(obj_descr.pos);
         auto_ptr<CObjectIStream> 
           is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
         if (obj_descr.type_str == "Bioseq") {
@@ -96,12 +83,12 @@ LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
             CRef<CSeq_entry> seq_entry(new CSeq_entry());
             seq_entry->SetSeq(*bioseq);
             return seq_entry;
-        } else 
+        }
         if (obj_descr.type_str == "Seq-entry") {
             CRef<CSeq_entry> seq_entry(new CSeq_entry());
             is->Read(ObjectInfo(*seq_entry));
             return seq_entry;
-        } else 
+        }
         if (obj_descr.type_str == "Bioseq-set") {
             CRef<CBioseq_set> bioseq_set(new CBioseq_set());
             is->Read(ObjectInfo(*bioseq_set));
@@ -111,22 +98,34 @@ LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
             seq_entry->SetSet(s);
             return seq_entry;
         }
-        else {
-            LDS_THROW(eInvalidDataType, "Non Seq-entry object type");
+        LDS_THROW(eInvalidDataType, "Non Seq-entry object type");
         }
-
-        }
-        break;
     default:
         LDS_THROW(eNotImplemented, "Not implemeneted yet.");
     }
 }
 
 
-CRef<CSeq_entry> 
-LDS_LoadTSE(CLDS_Database& lds_db, 
-            int            object_id,
-            bool           trace_to_top)
+CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
+{
+    if (!obj_descr.is_object || obj_descr.id <= 0) {
+        return CRef<CSeq_entry>();
+    }
+    
+    CNcbiIfstream in(obj_descr.file_name.c_str(), IOS_BASE::binary);
+    if ( !in.is_open() ) {
+        string msg = "Cannot open file:";
+        msg.append(obj_descr.file_name);
+        LDS_THROW(eFileNotFound, msg);
+    }
+    in.seekg(obj_descr.pos);
+    return LDS_LoadTSE(obj_descr, in);
+}
+
+
+CRef<CSeq_entry> LDS_LoadTSE(CLDS_Database& lds_db, 
+                             int            object_id,
+                             bool           trace_to_top)
 {
     const map<string, int>& type_map = lds_db.GetObjTypeMap();
 
