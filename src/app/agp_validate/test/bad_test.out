@@ -1,0 +1,264 @@
+
+7:chrY	1	50000	1	N	50000	short_arm	yes	#  comment
+	ERROR, line skipped: invalid linkage "yes" for gap_type short_arm
+
+8:chrY	50001	53043	2	B	AADB02037551.1	1	3043	+
+	ERROR, line skipped: invalid value for component_type (column 5)
+
+9:chrY	53044	93491	3	w	AADB02037552.1	1	40448	+
+	ERROR, line skipped: invalid value for component_type (column 5)
+
+11:chrY	93592	170572	5	9	AADB02037553.1	1	76981	+
+	ERROR, line skipped: invalid value for component_type (column 5)
+
+12:chrY	170573	170672	6	n	100	fragment	no	
+	ERROR, line skipped: invalid value for component_type (column 5)
+
+13:chrY	170673	198341	7	-	AADB02037554.1	1	27669	+
+	ERROR, line skipped: invalid value for component_type (column 5)
+
+18:chrY	205643	205742	12	u	100	fragment	yes	
+	ERROR, line skipped: invalid value for component_type (column 5)
+
+19:chrY	205743	211650	13	W	AADB02037557.1	1	5908	?
+	ERROR, line skipped: invalid value for orientation (column 9)
+
+66:chrY	3423628	3473627	60	N	50000	contig	yes	
+	ERROR, line skipped: invalid linkage "yes" for gap_type contig
+
+67:chrY	3473628	3565954	61	W	AADB02037581.1	1	92327	0
+	ERROR: 0 or na component orientation may only be used in a singleton scaffold
+
+70:chrY	3623105	3673104	64	N	50000	centromere	yes	
+	ERROR, line skipped: invalid linkage "yes" for gap_type centromere
+
+71:chrY	3673105	3678682	65	W	AADB02037583.1	1	5578	?
+	ERROR, line skipped: invalid value for orientation (column 9)
+
+72:chrY	3678683	3728682	66	N	50000	heterochromatin	yes	
+	ERROR, line skipped: invalid linkage "yes" for gap_type heterochromatin
+
+107:chrY	6997598	7000631	101	W	AADB02037601.1	0	3034	+
+	ERROR, line skipped: component_beg (column 7) must be a positive integer not exceeding 2e+9
+
+108:chrY	7000632	7050631	102	N	0	contig	no	
+	ERROR, line skipped: gap_length (column 6) must be a positive integer not exceeding 2e+9
+
+109:chrY	7050632	7053381	103	W	AADB02037602.1	1	0	+
+	ERROR, line skipped: component_end (column 8) must be a positive integer not exceeding 2e+9
+
+110:chrY	7053382	7103381	0	N	50000	contig	no	
+	ERROR, line skipped: part_number (column 4) must be a positive integer not exceeding 2e+9
+
+111:chrY	0	7107650	105	W	AADB02037603.1	1	4269	+
+	ERROR, line skipped: object_beg (column 2) must be a positive integer not exceeding 2e+9
+
+112:chrY	7107651	0	106	N	50000	contig	no	
+	ERROR, line skipped: object_end (column 3) must be a positive integer not exceeding 2e+9
+
+121:chrY	18336154	8409082	115	W	AADB02037608.1	1	72929	+
+	ERROR, line skipped: object_end is less than object_beg
+
+123:chrY	8451473	8469374	117	W	AADB02037609.1	17902	1	+
+	ERROR, line skipped: component_end is less than component_beg
+
+132:chrY	8534243	8534387	126	N	145	fragment	yes	
+133:chrY	8534388	8535698	127	N	1311	fragment	yes	
+	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+134:chrY	8535699	8535938	128	N	240	fragment	yes	
+	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+
+147:chrY	9307071	9315045	141	W	AADB02037621.1	1	7975	-
+148:chrY	9315045	9322053	142	N	7009	fragment	yes	
+	ERROR: object_beg != previous object_end + 1
+
+149:chrY	9322054	9325079	143	W	AADB02037622.1	1	3026	+
+150:chrY	9325079	9325178	144	N	100	fragment	yes	
+	ERROR: object_beg != previous object_end + 1
+
+153:chrY	9332433	9358223	147	W	AADB02037624.1	1	25791	+
+154:chrY	9358124	9358223	148	N	100	fragment	yes	
+	ERROR: object_beg != previous object_end + 1
+155:chrY	9358324	9364423	149	W	AADB02037625.1	1	6100	+
+	ERROR: object_beg != previous object_end + 1
+
+176:chrY	10128961	10178960	170	N	50000	scaffold	no	
+	ERROR, line skipped: invalid value for gap_type (column 7)
+
+178:chrY	10194984	10244983	172	N	50000	contig	?	
+	ERROR, line skipped: invalid value for linkage (column 8)
+
+186:chrY	10507047	10507146	180	N	100	fragment	yes	
+187:chrY	10507147	10509939	180	W	AADB02037641.1	1	2793	-# modified
+	ERROR: part number (column 4) != previous part number + 1
+
+188:chrY	10509940	10517020	182	N	100	fragment	yes	# modified
+	ERROR, line skipped: object range length not equal to the gap length: 7081 != 100
+
+192:chrY	10901301	10951300	186	N	50000	telomere	yes	
+	ERROR, line skipped: invalid linkage "yes" for gap_type telomere
+
+194:chrY	10955352	11009781	188	N	54430	telomere	no	
+195:chrX	1001	2000	1	W	AADB02037645.1	1	1000	+
+	ERROR: first line of an object must have object_beg=1
+196:chrX	2002	3001	2	W	AADB02037646.1	1	1000	+
+	ERROR: object_beg != previous object_end + 1
+197:chrZ	1	1000	3	W	AADB02037647.1	1	1000	+
+	ERROR: first line of an object must have part_number=1
+
+198:chrX	1	100	1	W	AADB02037645.1	1	1000	+
+	ERROR, line skipped: object range length not equal to component range length: 100 != 1000
+199:chrX	2002	3001	2	W	AADB02037646.1	1	1000	+
+	ERROR: duplicate object chrX
+	WARNING: the span overlaps a previous span for this component: 1..1000 at line 196
+
+200:	1	1000	1	W	AADB02037648.1	1	1000	+
+	ERROR, line skipped: column 1 is empty
+
+201:chrA		2000	2	W	AADB02037649.1	1	1000	+
+	ERROR, line skipped: column 2 is empty
+
+202:chrA	2001		3	W	AADB02037650.1	1	1000	+
+	ERROR, line skipped: column 3 is empty
+
+203:chrA	3001	4000		W	AADB02037651.1	1	1000	+
+	ERROR, line skipped: column 4 is empty
+
+204:chrA	4001	5000	5		AADB02037652.1	1	1000	+
+	ERROR, line skipped: column 5 is empty
+
+205:chrA	5001	6000	6	W		1	1000	+
+	ERROR, line skipped: column 6 is empty
+
+206:chrA	6001	7000	7	W	AADB02037654.1		1000	+
+	ERROR, line skipped: column 7 is empty
+
+207:chrA	7001	8000	8	W	AADB02037655.1	1		+
+	ERROR, line skipped: column 8 is empty
+
+208:chrA	8001	9000	9	W	AADB02037656.1	1	1000	
+	ERROR, line skipped: invalid value for orientation (column 9)
+
+210:chrA	10001	11000	11	W	AADB02037658.1	1	1000
+	ERROR, line skipped: expecting 9 tab-separated columns, found 8
+
+211:chrA	11001	12000	12	W	AADB02037659.1	1	1000	+	
+	WARNING: extra <TAB> character at the end of line
+
+212:chrA	12001	13000	13	W	AADB02037660.1	1	1000	+		
+	ERROR, line skipped: expecting 9 tab-separated columns, found 11
+
+213:chrB	1	100	1	N	100	fragment	yes	
+	WARNING: no components in object chrB
+	WARNING: gap at the end of object chrB
+214:chrY	1	177051	1	D	AC163727.2	1	177051	+
+	ERROR: duplicate object chrY
+
+219:chrY	218658	223697	6	F	AC163728.2	4033	9072	-
+	WARNING: duplicate component with non-draft type; preceding span: 9173..32729 at line 217
+
+221:chrY	223798	277847	8	F	AC163728.2	65081	119130	-
+	WARNING: component span appears out of order; preceding span: 4033..9072 at line 219
+
+225:chrY	452891	462370	12	F	AC158542.1	11304	20783	+
+	WARNING: duplicate component with non-draft type; preceding span: 1549..11203 at line 223
+
+227:chrY	462471	471917	14	F	AC158542.1	20884	30330	+
+	WARNING: duplicate component with non-draft type; preceding span: 1549..11203 at line 223
+
+229:chrY	472018	564686	16	F	AC158542.1	85272	177940	+
+	WARNING: duplicate component with non-draft type; preceding span: 1549..11203 at line 223
+
+231:chrY	564787	567081	18	F	AC158542.1	38856	41150	+
+	WARNING: component span appears out of order; preceding span: 85272..177940 at line 229
+
+233:chrC	1	100	1	W	AADB02037644.1	4051	4150	+
+	WARNING: the span overlaps a previous span for this component: 1..4051 at line 193
+
+234:chrC	101	200	2	W	AADB02037645.1	1000	1099	-
+	WARNING: the span overlaps a previous span for this component: 1..1000 at line 195
+
+235:chrC	201	300	3	W	AADB02037646.1	1	100	-
+	WARNING: the span overlaps a previous span for this component: 1..1000 at line 196
+
+236:
+	ERROR, line skipped: empty line
+
+48 errors, 17 warnings; 2 not printed.
+  count  description
+      2  expecting 9 tab-separated columns
+      8  column X is empty
+      1  empty line
+     11  invalid value for X
+      5  invalid linkage "yes" for gap_type 
+      6  X must be a positive integer not exceeding 2e+9
+      1  object_end is less than object_beg
+      1  component_end is less than component_beg
+      1  object range length not equal to the gap length
+      1  object range length not equal to component range length
+      2  duplicate object 
+      1  first line of an object must have object_beg=1
+      1  first line of an object must have part_number=1
+      1  part number (column 4) != previous part number + 1
+      1  0 or na component orientation may only be used in a singleton scaffold
+      5  object_beg != previous object_end + 1
+      1  gap at the end of object 
+      2  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+      1  no components in object
+      4  the span overlaps a previous span for this component
+      2  component span appears out of order
+      4  duplicate component with non-draft type
+      1  extra <TAB> character at the end of line
+      2  component_id looks like a WGS accession, component_type is not W
+         (Use -g to print lines with WGS component_id/component_type mismatch.)
+
+
+NOTE: 37 invalid lines were skipped.
+Some counts below may be smaller than expected by 37 or less.
+
+Objects                :  8
+- with single component:  2
+
+Scaffolds              : 16
+- with single component:  5
+
+Components             : 103 (W:89, F:10, D:2, O:1, P:1)
+	orientation +  : 82
+	orientation -  : 19
+	orientation 0  :  1
+	orientation na :  1
+
+Gaps                   : 90 (N)
+- do not break scaffold: 79
+  clone   , linkage yes:  1
+  fragment, linkage yes: 77
+  fragment, linkage no :  0
+  repeat  , linkage yes:  1
+- break it, linkage no : 11
+	clone          :  1
+	repeat         :  1
+	contig         :  8
+	centromere     :  0
+	short_arm      :  0
+	heterochromatin:  0
+	telomere       :  1
+
+Object names:  6
+  chrZ      :  1
+  chrY      :  1
+  chrX      :  1
+  chrC      :  1
+  chrB      :  1
+  chrA      :  1
+
+Component names             :  92
+------ Nucleotide accessions:  88
+  AADB[02037555..02037659].1:  86
+  AC163726                  :   1
+  AAAA01999999.1            :   1
+------ OTHER identifiers    :   4
+  AC[16371..163728].[1,2]   :   4 (some local or misspelled)
+Use -g or -a to print lines with suspicious accessions.
+
+#Comment line count    : 6
+End of line #comments  : 5

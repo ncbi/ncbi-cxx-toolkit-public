@@ -4,3 +4,9 @@ APP_PROJ = agp_validate agp_renumber
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
+
+.PHONY : test
+
+test : agp_validate
+	sh -c "./agp_validate $(srcdir)/test/bad_test.agp >bad_test.out 2>&1"
+	diff $(srcdir)/test/bad_test.out bad_test.out
