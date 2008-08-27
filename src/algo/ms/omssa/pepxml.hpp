@@ -74,8 +74,9 @@ private:
     typedef pair<char, double> TAminoAcidMassPair;
     typedef map<char, double> TAminoAcidMassMap;
     
-    TAminoAcidMassMap aaMassMap;
-
+    TAminoAcidMassMap m_aaMassMap;
+    set<char> m_staticModSet;
+    
 };
 
 

@@ -61,9 +61,9 @@ typedef pair<int, string> TAAModPair;
 typedef map<int, string> TAAModMap;
 
 CRef<CModification_info> CPepXML::ConvertModifications(CRef<CMSHits> msHits, CRef<CMSModSpecSet> Modset, set<int>& vModSet) {
-    if (msHits->GetMods().empty()) {
-        return null;
-    }
+    //if (msHits->GetMods().empty()) {
+    //    return null;
+    //}
     CRef<CModification_info> modInfo(new CModification_info);
 
     TAAModMap modMap;
@@ -76,7 +76,7 @@ CRef<CModification_info> CPepXML::ConvertModifications(CRef<CMSHits> msHits, CRe
         EMSModType type = Modset->GetModType(num);
         double mdiff = MSSCALE2DBL(Modset->GetModMass(num));
         char aa = pep[pos];
-        double aaMass = aaMassMap.find(aa)->second;
+        double aaMass = m_aaMassMap.find(aa)->second;
         double mass = aaMass + mdiff;
         string sMass = NStr::DoubleToString(mass, 6);
         string iMass = "[" + NStr::IntToString(static_cast<int>(mass)) + "]";
@@ -112,13 +112,22 @@ CRef<CModification_info> CPepXML::ConvertModifications(CRef<CMSHits> msHits, CRe
     string modPep;
     
     for (unsigned int i=0; i<pep.length(); i++) {
-        modPep.append(1, pep[i]);
+        char p = pep[i];
+        modPep.append(1, p);
         TAAModMap::iterator it;
         it = modMap.find(i);
         if (it != modMap.end()) {
             modPep.append(it->second);
+        } else if (m_staticModSet.count(p)>0) {
+            CRef<CMod_aminoacid_mass> modaaMass(new CMod_aminoacid_mass);
+            modaaMass->SetAttlist().SetPosition(NStr::IntToString(i+1));
+            string staticMass = NStr::DoubleToString(m_aaMassMap.find(p)->second,6);
+            modaaMass->SetAttlist().SetMass(staticMass);
+            modInfo->SetMod_aminoacid_mass().push_back(modaaMass);
         }
     }
+    if (modInfo->GetMod_aminoacid_mass().empty()) return null;
+
     modInfo->SetAttlist().SetModified_peptide(modPep);    
 
     return modInfo;
@@ -136,15 +145,15 @@ void CPepXML::ConvertModSetting(CRef<CSearch_summary> sSum, CRef<CMSModSpecSet> 
             string aaStr(1, aa);
             aaMod->SetAttlist().SetAminoacid(aaStr);
             double mdiff = MSSCALE2DBL(Modset->GetModMass(modnum));
-            //double aaMass = MonoMass[modchar];
-            double aaMass = aaMassMap.find(aa)->second;
+            double aaMass = m_aaMassMap.find(aa)->second;
             string mass = NStr::DoubleToString(aaMass + mdiff, 6);
             aaMod->SetAttlist().SetMassdiff(NStr::DoubleToString(mdiff, 6));
             aaMod->SetAttlist().SetMass(mass);
             if (fixed) {
                 aaMod->SetAttlist().SetVariable("N");
-                aaMassMap.erase(aa);
-                aaMassMap.insert(TAminoAcidMassPair(aa, aaMass + mdiff));
+                m_aaMassMap.erase(aa);
+                m_aaMassMap.insert(TAminoAcidMassPair(aa, aaMass + mdiff));
+                m_staticModSet.insert(aa);
             } else {
                 aaMod->SetAttlist().SetVariable("Y");
             }
@@ -247,11 +256,11 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
 
     CTime datetime(CTime::eCurrent);
 
-    // set up aaMassMap for modifications
+    // set up m_aaMassMap for modifications
     for (int modchar=0; modchar < 29; modchar++) {
         char aa = ConvertAA(modchar);
         double aaMass = MonoMass[modchar];
-        aaMassMap.insert(TAminoAcidMassPair(aa, aaMass));
+        m_aaMassMap.insert(TAminoAcidMassPair(aa, aaMass));
     }
 
     datetime.SetFormat("Y-M-DTh:m:s");
@@ -378,7 +387,7 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
 				int tot_num_ions = ((*iHit)->GetPepstring().length()-1) * 2;
 				sHit->SetAttlist().SetTot_num_ions(NStr::IntToString(tot_num_ions));
                 sHit->SetAttlist().SetCalc_neutral_pep_mass(NStr::DoubleToString((*iHit)->GetTheomass()/scale));
-                sHit->SetAttlist().SetMassdiff(NStr::DoubleToString(((*iHit)->GetTheomass() - (*iHit)->GetMass())/scale));
+                sHit->SetAttlist().SetMassdiff(NStr::DoubleToString(((*iHit)->GetMass() - (*iHit)->GetTheomass())/scale));
                 //sHit->SetSearch_hit().SetAttlist().SetNum_tol_term("42"); //skip
                 //sHit->SetSearch_hit().SetAttlist().SetNum_missed_cleavages("42"); //skip
                 sHit->SetAttlist().SetIs_rejected("0");
