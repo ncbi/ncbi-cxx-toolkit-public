@@ -83,15 +83,20 @@ int GetCompartmentNum(const CSeq_align& sa)
 }
 }
 
+void debug() {
+}
+
+
 CAlignModel::CAlignModel(const CSeq_align& seq_align) :
     CGeneModel(seq_align.GetSegs().GetSpliced().GetGenomic_strand()==eNa_strand_minus?eMinus:ePlus,
                GetCompartmentNum(seq_align),
-               seq_align.GetSegs().GetSpliced().GetProduct_type()==CSpliced_seg::eProduct_type_protein? eProt:emRNA) 
-{
+               seq_align.GetSegs().GetSpliced().GetProduct_type()==CSpliced_seg::eProduct_type_protein? eProt:emRNA) {
+   
+    debug();
+
     const CSpliced_seg& sps = seq_align.GetSegs().GetSpliced();
     if(sps.CanGetProduct_strand() && sps.GetProduct_strand()==eNa_strand_minus) 
         Status() |= CGeneModel::eReversed;
-    
 
     CRef<CSeq_id> product_idref(new CSeq_id);
     product_idref->Assign( sps.GetProduct_id() );
@@ -102,7 +107,12 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
     if (is_protein)
         product_len *=3;
     int prod_prev = -1;
-    bool prev_splice = false;
+    bool prev_3_prime_splice = false;
+
+    m_target_len = product_len;
+
+    vector<TSignedSeqRange> transcript_exons;
+    TInDels indels;
 
     ITERATE(CSpliced_seg::TExons, e_it, sps.GetExons()) {
         const CSpliced_exon& exon = **e_it;
@@ -116,53 +126,31 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         int nuc_cur_start = exon.GetGenomic_start();
         int nuc_cur_end = exon.GetGenomic_end();
 
-        bool hole_before =
-            prod_prev+1 != prod_cur_start || 
-            !prev_splice || 
-            !(exon.CanGetSplice_5_prime() && exon.GetSplice_5_prime().CanGetBases() && exon.GetSplice_5_prime().GetBases().size()==2);
-        if (hole_before)
+        bool cur_5_prime_splice = exon.CanGetSplice_5_prime() && exon.GetSplice_5_prime().CanGetBases() && exon.GetSplice_5_prime().GetBases().size()==2;
+        if (prod_prev+1 != prod_cur_start || !prev_3_prime_splice || !cur_5_prime_splice)
             AddHole();
-        prev_splice = exon.CanGetSplice_3_prime() && exon.GetSplice_3_prime().CanGetBases() && exon.GetSplice_3_prime().GetBases().size()==2;
+        prev_3_prime_splice = exon.CanGetSplice_3_prime() && exon.GetSplice_3_prime().CanGetBases() && exon.GetSplice_3_prime().GetBases().size()==2;
+
+        AddExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end));
+        transcript_exons.push_back(TSignedSeqRange(GetProdPosInBases(exon.GetProduct_start()),GetProdPosInBases(exon.GetProduct_end())));
 
         int pos = 0;
         int prod_pos = prod_cur_start;
         ITERATE(CSpliced_exon::TParts, p_it, exon.GetParts()) {
             const CSpliced_exon_chunk& chunk = **p_it;
             if (chunk.IsProduct_ins()) {
-                if (chunk.GetProduct_ins()%3 != 0) {
-                    CFrameShiftInfo fs(Strand()==ePlus?nuc_cur_start+pos:nuc_cur_end-pos+1,chunk.GetProduct_ins()%3,false);
-                    
-                    if (is_protein) {
-                        int phase = prod_pos%3;
-                        int replacement_len = 3 - fs.Len();
-                        if (replacement_len < phase) //two codons affected
-                            replacement_len = 4;
-                        TSignedSeqPos replacement_loc = fs.Loc() - (Strand()==ePlus?phase:(replacement_len-phase));
-                        if (replacement_loc < nuc_cur_start) {
-                            replacement_len %= 3;
-                            replacement_loc = nuc_cur_start;
-                        }
-                        if (nuc_cur_end<replacement_loc+replacement_len-1) {
-                            replacement_len %= 3;
-                            if (nuc_cur_end<replacement_loc+replacement_len-1)
-                                replacement_loc = nuc_cur_end-replacement_len+1;
-                        }
-                        fs.ReplaceWithInsertion(replacement_loc,replacement_len);
-                    }
-                    if (Strand()==ePlus)
-                        FrameShifts().push_back(fs);
-                    else
-                        FrameShifts().insert(FrameShifts().begin(), fs);
-                }
+                CInDelInfo fs(Strand()==ePlus?nuc_cur_start+pos:nuc_cur_end-pos+1,chunk.GetProduct_ins(),false);
+                if (Strand()==ePlus)
+                    indels.push_back(fs);
+                else
+                    indels.insert(indels.begin(), fs);
                 prod_pos += chunk.GetProduct_ins();
             } else if (chunk.IsGenomic_ins()) {
                 const int genomic_ins = chunk.GetGenomic_ins();
-                if (genomic_ins%3 !=0) {
-                    if (Strand()==ePlus)
-                        FrameShifts().push_back(CFrameShiftInfo(nuc_cur_start+pos,genomic_ins));
-                    else
-                        FrameShifts().insert(FrameShifts().begin(), CFrameShiftInfo(nuc_cur_end-pos-genomic_ins+1,genomic_ins));
-                }
+                if (Strand()==ePlus)
+                    indels.push_back(CInDelInfo(nuc_cur_start+pos,genomic_ins));
+                else
+                    indels.insert(indels.begin(), CInDelInfo(nuc_cur_end-pos-genomic_ins+1,genomic_ins));
                 pos += genomic_ins;
             } else if (chunk.IsMatch()) {
                 pos += chunk.GetMatch();
@@ -176,100 +164,83 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             }
         }
 
-        if (is_protein) {
-            int nuc_start = nuc_cur_start;
-            int nuc_end  = nuc_cur_end;
-            if (hole_before && prod_cur_start%3!=0) {
-                // Trim 5' incompelete codon, assume there's no frameshift
-                if (Strand()==ePlus) {
-                    nuc_start += 3-prod_cur_start%3;
-                    _ASSERT( FrameShifts(nuc_cur_start,nuc_start-1).size()==0 );
-                } else {
-                    nuc_end -= 3-prod_cur_start%3;
-                    _ASSERT( FrameShifts(nuc_end+1,nuc_cur_end).size()==0 );
-                }
-            }
-            AddExon(TSignedSeqRange(nuc_start, nuc_end),
-                    TSignedSeqRange::GetEmpty());
-        } else {
-            AddExon(TSignedSeqRange(nuc_cur_start, nuc_cur_end),
-                    TSignedSeqRange(GetProdPosInBases(exon.GetProduct_start()),
-                                    GetProdPosInBases(exon.GetProduct_end())));
-        }
-
         prod_prev = prod_cur_end;
     }
 
-    
+    sort(transcript_exons.begin(),transcript_exons.end());
+    bool minusstrand = Strand() == eMinus;
+    EStrand orientation = (is_product_reversed == minusstrand) ? ePlus : eMinus;
+    if(orientation == eMinus)
+       reverse(transcript_exons.begin(),transcript_exons.end());
+
     if (is_protein) {
-        if (!Exons().empty()) {
-            // ignore whole codon gaps spliced into two frameshifts around an intron
-            for (size_t i=0; i<Exons().size()-1;++i) {
-                if (Exons()[i].m_ssplice && Exons()[i+1].m_fsplice) {
-                    TFrameShifts f1 = FrameShifts(Exons()[i].GetTo(),Exons()[i].GetTo());
-                    if (f1.size()!=1)
-                        continue;
-                    TFrameShifts f2 = FrameShifts(Exons()[i+1].GetFrom(),Exons()[i+1].GetFrom());
-                    if (f2.size()!=1)
-                        continue;
-                    if (f1[0].IsInsertion()==f2[0].IsInsertion() && (f1[0].Len() + f2[0].Len())%3==0) {
-                        for (TFrameShifts::iterator fi = FrameShifts().begin(); fi != FrameShifts().end(); ) {
-                            if (*fi==f1[0] || *fi==f2[0])
-                                fi = FrameShifts().erase(fi);
-                            else 
-                                ++fi;
-                        }
+        _ASSERT(orientation == Strand());
+        if (sps.CanGetModifiers()) {
+            ITERATE(CSpliced_seg::TModifiers, m, sps.GetModifiers()) {
+                if ((*m)->IsStop_codon_found()) {
+                    m_target_len += 3;
+                    if (Strand() == ePlus) {
+                        ExtendRight( 3 );
+                        _ASSERT((transcript_exons.back().GetTo()+1)%3 == 0);
+                        transcript_exons.back().SetTo(transcript_exons.back().GetTo()+3);
+                    } else {
+                        ExtendLeft( 3 );
+                        _ASSERT((transcript_exons.front().GetTo()+1)%3 == 0);
+                        transcript_exons.front().SetTo(transcript_exons.front().GetTo()+3);
                     }
                 }
             }
         }
-        for (CGeneModel::TExons::const_iterator piece_begin = Exons().begin(); piece_begin != Exons().end(); ++piece_begin) {
-            _ASSERT( !piece_begin->m_fsplice );
+    }
 
-            CGeneModel::TExons::const_iterator piece_end;
-            for (piece_end = piece_begin; piece_end != Exons().end() && piece_end->m_ssplice; ++piece_end) ;
-            _ASSERT( piece_end != Exons().end() );
-
-            TSignedSeqPos left = piece_begin->GetFrom();
-            TSignedSeqPos right = piece_end->GetTo();
-            int piece_len = FShiftedLen(left, right);
-            if (piece_len%3 != 0) {
-                if (Strand()==ePlus) {
-                    right = FShiftedMove(right, -(piece_len%3));
-                } else {
-                    left = FShiftedMove(left, piece_len%3);
-                }
-                Clip(TSignedSeqRange(left, right), CGeneModel::eDontRemoveExons);
-            }
-            piece_begin = piece_end;
-        }
+    m_alignmap = CAlignMap(Exons(), transcript_exons, indels, orientation );
+    FrameShifts() = m_alignmap.GetInDels(true);
+    
+    for (CGeneModel::TExons::const_iterator piece_begin = Exons().begin(); piece_begin != Exons().end(); ++piece_begin) {
+        _ASSERT( !piece_begin->m_fsplice );
         
+        CGeneModel::TExons::const_iterator piece_end;
+        for (piece_end = piece_begin; piece_end != Exons().end() && piece_end->m_ssplice; ++piece_end) ;
+        _ASSERT( piece_end != Exons().end() );
+        
+        TSignedSeqRange piece_range(piece_begin->GetFrom(),piece_end->GetTo());
+            
+        piece_range = m_alignmap.ShrinkToRealPoints(piece_range, is_protein); // finds first projectable interval (on codon boundaries  for proteins)   
+
+        TSignedSeqRange pr;
+        while(pr != piece_range) {
+            pr = piece_range;
+            ITERATE(TInDels, i, indels) { // here we check that no indels touch our interval from outside   
+                if((i->IsDeletion() && i->Loc() == pr.GetFrom()) || (i->IsInsertion() && i->Loc()+i->Len() == pr.GetFrom()))
+                    pr.SetFrom(pr.GetFrom()+1);                
+                else if(i->Loc() == pr.GetTo()+1)
+                    pr.SetTo(pr.GetTo()-1);
+            }
+            if(pr != piece_range)
+                piece_range = m_alignmap.ShrinkToRealPoints(pr, is_protein);
+        }
+
+        _ASSERT(piece_range.NotEmpty());
+        _ASSERT(piece_range.IntersectingWith(piece_begin->Limits()) && piece_range.IntersectingWith(piece_end->Limits()));
+        Clip(piece_range, CGeneModel::eDontRemoveExons); 
+            
+        piece_begin = piece_end;
+    }
+
+
+
+    if (is_protein) {
         TSignedSeqRange reading_frame = Limits();
         TSignedSeqRange start, stop;
         if (sps.CanGetModifiers()) {
             ITERATE(CSpliced_seg::TModifiers, m, sps.GetModifiers()) {
+                TSignedSeqRange rf = m_alignmap.MapRangeOrigToEdited(reading_frame, true);
                 if ((*m)->IsStart_codon_found()) {
-                    if(Strand() == ePlus) {
-                        TSignedSeqPos codon_end = FShiftedMove(reading_frame.GetFrom(),+2);
-                        if (FrameShifts(reading_frame.GetFrom(),codon_end).empty()) {
-                            start =  TSignedSeqRange(reading_frame.GetFrom(),codon_end);
-                            reading_frame.SetFrom( FShiftedMove(codon_end,+1) );
-                        }
-                    } else {
-                        TSignedSeqPos codon_end = FShiftedMove(reading_frame.GetTo(),-2);
-                        if (FrameShifts(codon_end,reading_frame.GetTo()).empty()) {
-                            start =  TSignedSeqRange(codon_end,reading_frame.GetTo());
-                            reading_frame.SetTo( FShiftedMove(codon_end,-1) );
-                        }
-                    }
+                    start = m_alignmap.MapRangeEditedToOrig(TSignedSeqRange(rf.GetFrom(),rf.GetFrom()+2),false);
+                    reading_frame = m_alignmap.MapRangeEditedToOrig(TSignedSeqRange(rf.GetFrom()+3,rf.GetTo()),true);
                 } else if ((*m)->IsStop_codon_found()) {
-                    if (Strand() == ePlus) {
-                        stop = TSignedSeqRange(Limits().GetTo()+1,Limits().GetTo()+3);
-                        ExtendRight( 3 );
-                    } else {
-                        stop = TSignedSeqRange(Limits().GetFrom()-3,Limits().GetFrom()-1);
-                        ExtendLeft( 3 );
-                    }
+                    stop = m_alignmap.MapRangeEditedToOrig(TSignedSeqRange(rf.GetTo()-2,rf.GetTo()),false);
+                    reading_frame = m_alignmap.MapRangeEditedToOrig(TSignedSeqRange(rf.GetFrom(),rf.GetTo()-3),true);
                 }
             }
         }
@@ -279,8 +250,9 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         if (start.NotEmpty()) {
             cds_info.SetStart(start, GetProdPosInBases(sps.GetExons().front()->GetProduct_start()) == 0 && sps.GetExons().front()->GetParts().front()->IsMatch());
         }
-        if (stop.NotEmpty())
-            cds_info.SetStop(stop);
+        if (stop.NotEmpty()) {
+            cds_info.SetStop(stop, GetProdPosInBases(sps.GetExons().back()->GetProduct_end()) == product_len-1 );
+        }
         SetCdsInfo(cds_info);
     }
 }
@@ -291,7 +263,7 @@ string CGeneModel::GetProtein (const CResidueVec& contig_sequence) const
     if(ReadingFrame().Empty())
         return prot_seq;
 
-    CFrameShiftedSeqMap cdsmap(*this, CFrameShiftedSeqMap::eRealCdsOnly);
+    CAlignMap cdsmap(Exons(), FrameShifts(), Strand(), RealCdsLimits());
     CResidueVec cds;
     cdsmap.EditedSequence(contig_sequence, cds);
     TSignedSeqRange mappedcds = cdsmap.MapRangeOrigToEdited(GetCdsInfo().Cds(), false);

@@ -162,7 +162,7 @@ CResidueVec CSeqScores::ConstructSequenceAndMaps(const TGeneModelList& aligns, c
             m_fshifts.insert(m_fshifts.end(),align.FrameShifts().begin(),align.FrameShifts().end());
     }
     sort(m_fshifts.begin(),m_fshifts.end());
-    m_map = CFrameShiftedSeqMap(m_chunk_start, m_chunk_stop, m_fshifts.begin(), m_fshifts.end());
+    m_map = CAlignMap(m_chunk_start, m_chunk_stop, m_fshifts.begin(), m_fshifts.end());
     CResidueVec sequence;
     m_map.EditedSequence(original_sequence, sequence);
 
@@ -188,15 +188,15 @@ struct SAlignOrder
 typedef set<CGeneModel,SAlignOrder> TAlignSet;
 
 struct CIndelMapper: public CRangeMapper {
-    CIndelMapper(const CFrameShiftedSeqMap& seq_map):
+    CIndelMapper(const CAlignMap& seq_map):
         m_seq_map(seq_map) {}
 
-    const CFrameShiftedSeqMap& m_seq_map;
+    const CAlignMap& m_seq_map;
 
     TSignedSeqRange operator() (TSignedSeqRange r, bool withextras = true) const
     {
-        if(withextras)
-            r = m_seq_map.ShrinkToRealPoints(r); // if exon starts/ends with insertion move to projectable points 
+        //        if(withextras)
+            //            r = m_seq_map.ShrinkToRealPoints(r); // if exon starts/ends with insertion move to projectable points 
         return m_seq_map.MapRangeOrigToEdited(r, withextras);
     }
 };
@@ -224,7 +224,7 @@ static bool s_AlignLeftLimitOrder(const CGeneModel& ap, const CGeneModel& bp)
 CSeqScores::CSeqScores (const CTerminal& a, const CTerminal& d, const CTerminal& stt, const CTerminal& stp, 
 const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& ing,
                const CIntronParameters&     intron_params,
-                        TSignedSeqPos from, TSignedSeqPos to, const TGeneModelList& cls, const TFrameShifts& initial_fshifts, double mpp, const CGnomonEngine& gnomon)
+                        TSignedSeqPos from, TSignedSeqPos to, const TGeneModelList& cls, const TInDels& initial_fshifts, double mpp, const CGnomonEngine& gnomon)
 : m_acceptor(a), m_donor(d), m_start(stt), m_stop(stp), m_cdr(cr), m_ncdr(ncr), m_intrg(ing), 
   m_align_list(cls), m_fshifts(initial_fshifts), m_map(from,to), m_chunk_start(from), m_chunk_stop(to), m_mpp(mpp)
 {
@@ -241,7 +241,7 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
                     TSignedSeqRange pstop(align.Exons()[i-1].GetTo(),align.Exons()[i].GetFrom());     // to make sure GetScore doesn't complain about "new" pstops
                     cds_info.AddPStop(pstop);
                     if(hole_len%3 != 0) {
-                        align.FrameShifts().push_back(CFrameShiftInfo((align.Exons()[i-1].GetTo()+align.Exons()[i].GetFrom())/2, hole_len%3, true));
+                        align.FrameShifts().push_back(CInDelInfo((align.Exons()[i-1].GetTo()+align.Exons()[i].GetFrom())/2, hole_len%3, true));
                     }
 
                     CGeneModel a(align.Strand());
@@ -382,7 +382,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
             if(strand == eMinus) swap(extraNs5p,extraNs3p); 
             
             CEResidueVec mRNA;
-            CFrameShiftedSeqMap mrnamap(al);
+            CAlignMap mrnamap(al.GetAlignMap());
             mrnamap.EditedSequence(m_seq[ePlus], mRNA);
             mRNA.insert(mRNA.begin(),extraNs5p,enN);
             mRNA.insert(mRNA.end(),extraNs3p,enN);
@@ -411,7 +411,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
             }
         }
         
-        _ASSERT(align.FShiftedLen(align.ReadingFrame(), false)%3==0);
+        _ASSERT(align.FShiftedLen(align.ReadingFrame(), true)%3==0);
 
         if(align.MaxCdsLimits().NotEmpty()) {
             limits = align.MaxCdsLimits();
@@ -1119,7 +1119,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
     
 }
 
-double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& best_frame, int& best_start, int& best_stop) const
+double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& best_frame, int& best_start, int& best_stop) const
 {
     //    const CTerminal& acceptor    = *m_data->m_acceptor;
     // const CTerminal& donor       = *m_data->m_donor;
@@ -1304,7 +1304,7 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
 //    if (cds_info.ConfirmedStart() && best_start == starts[best_frame].back())
 //        best_score /= 1.1;
 
-    if(cds_info.ConfirmedStart() && model.Continuous() && (int)mrna.size() - best_stop >=3) {  // looks like a complete model, will get a permanent boost in score which will improve chanses for the first placement over notcomplete models
+    if(cds_info.ConfirmedStart() && cds_info.ConfirmedStop() && model.Continuous()) {  // looks like a complete model, will get a permanent boost in score which will improve chanses for the first placement over notcomplete models
         best_score += max(1.,0.3*best_score);        // in case s negative
     }
 
@@ -1313,7 +1313,7 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
 
 void CGnomonEngine::GetScore(CGeneModel& model) const
 {
-    CFrameShiftedSeqMap mrnamap(model);
+    CAlignMap mrnamap(model.Exons(),model.FrameShifts(),model.Strand());
     CEResidueVec mrna;
     mrnamap.EditedSequence(m_data->m_ds[ePlus], mrna);
 
@@ -1346,13 +1346,14 @@ void CGnomonEngine::GetScore(CGeneModel& model) const
     }
 
     if (cds_info.ConfirmedStart() && best_start != starts[frame].back()) {
-        cerr << "Moved ConfirmedStart " << model;
+        cerr << "Moved ConfirmedStart " << model.ID() << endl;
     }
                 
     bool has_start = best_start>=0;
     bool confirmed_start = cds_info.ConfirmedStart();   //we wamnt to keep the status even if the actual start moved within alignment, the status will be used in gnomon and will prevent any furher extension
+    bool confirmed_stop = cds_info.ConfirmedStop();
 
-    TSignedSeqRange best_reading_frame = MapRangeToOrig(best_start+3,best_stop-1,mrnamap);
+    TSignedSeqRange best_reading_frame = mrnamap.MapRangeEditedToOrig(TSignedSeqRange(best_start+3,best_stop-1), true);
     if (Include(best_reading_frame, cds_info.Start()))
         cds_info.SetStart(TSignedSeqRange::GetEmpty());
 
@@ -1366,29 +1367,36 @@ void CGnomonEngine::GetScore(CGeneModel& model) const
 
     //    cds_info.Clear5PrimeCdsLimit();
     if(has_start) {
-        cds_info.SetStart(MapRangeToOrig(best_start,best_start+2,mrnamap), confirmed_start);
-                
-        int upstream_stop;
-        if(FindUpstreamStop(stops[frame],best_start,upstream_stop)) {
-            int first_start = *lower_bound(starts[frame].begin(),starts[frame].end(),upstream_stop+3);
+        int upstream_stop = -3;
+        bool found_upstream_stop = FindUpstreamStop(stops[frame],best_start,upstream_stop);
+        int first_start = *lower_bound(starts[frame].begin(),starts[frame].end(),upstream_stop+3);
+        _ASSERT( first_start >= 0 );
+        
+        cds_info.SetStart(mrnamap.MapRangeEditedToOrig(TSignedSeqRange(first_start,first_start+2), false), confirmed_start);
+        if(first_start != best_start) {    // ensure the longest 5'
+            best_reading_frame = mrnamap.MapRangeEditedToOrig(TSignedSeqRange(first_start+3,best_stop-1), true);
+            cds_info.SetReadingFrame(best_reading_frame);
+        }
+
+        if(found_upstream_stop) {
             first_start = mrnamap.MapEditedToOrig(first_start);
             _ASSERT( first_start >= 0 );
             cds_info.Set5PrimeCdsLimit(first_start);
         } else {
 #ifdef _DEBUG
             for(int i = best_start; i >=0; i -= 3) {
-                _ASSERT(!IsProperStop(i,mrna,mrnamap));
+                _ASSERT(!IsStopCodon(&mrna[i]));
             }
 #endif
         }
     }
 
     if ((int)mrna.size() - best_stop >=3)
-        cds_info.SetStop(MapRangeToOrig(best_stop,best_stop+2,mrnamap));
+        cds_info.SetStop(mrnamap.MapRangeEditedToOrig(TSignedSeqRange(best_stop,best_stop+2), false),confirmed_stop);
     
     for(int i = best_start+3; i < best_stop; i += 3) {
-        if(IsProperStop(i,mrna,mrnamap)) {
-            TSignedSeqRange pstop = MapRangeToOrig(i,i+2,mrnamap);
+        if(IsStopCodon(&mrna[i])) {
+            TSignedSeqRange pstop = mrnamap.MapRangeEditedToOrig(TSignedSeqRange(i,i+2), false);
             cds_info.AddPStop(pstop);
         }
     }

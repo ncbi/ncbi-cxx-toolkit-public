@@ -53,13 +53,13 @@ struct SModelData {
     SModelData(const CGeneModel& model, const CEResidueVec& contig_seq);
 
     const CGeneModel& model;
-    CFrameShiftedSeqMap mrna_map;
+    CAlignMap mrna_map;
     CEResidueVec mrna_seq;
     CRef<CSeq_id> mrna_sid;
     CRef<CSeq_id> prot_sid;
 };
 
-SModelData::SModelData(const CGeneModel& m, const CEResidueVec& contig_seq) : model(m), mrna_map(m, CFrameShiftedSeqMap::eNoLimit, HOLE_SIZE)
+SModelData::SModelData(const CGeneModel& m, const CEResidueVec& contig_seq) : model(m), mrna_map(m.Exons(),m.FrameShifts(),m.Strand(), TSignedSeqRange::GetWhole(), HOLE_SIZE)
 {
     mrna_map.EditedSequence(contig_seq, mrna_seq, true);
 
@@ -216,7 +216,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
                 pstop.Reset(new CSeq_loc(*md.mrna_sid, from, to, eNa_strand_plus));
                 break;
             case eOnGenome:
-                _ASSERT(model.FShiftedLen(from,to)==3);
+                _ASSERT(md.mrna_map.FShiftedLen(from,to)==3);
                 pstop = create_packed_int_seqloc(model,*s);
                 break;
             }
@@ -687,16 +687,14 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
 
     CSpliced_seg::TExons& exons = spliced_seg.SetExons();
 
-    TFrameShifts frameshifts = model.FrameShifts();
-    NON_CONST_ITERATE(TFrameShifts, fsi, frameshifts) {
-        fsi->RestoreIfReplaced();
-    }
-    TFrameShifts::const_iterator indel_i = frameshifts.begin();
+    TInDels frameshifts = model.FrameShifts();
+
+    TInDels::const_iterator indel_i = frameshifts.begin();
     ITERATE(CGeneModel::TExons, e, model.Exons()) {
         CRef<CSpliced_exon> se = spliced_exon(*e,model.Strand());
         int last_chunk = e->GetFrom();
         while (indel_i != frameshifts.end() && indel_i->Loc() <= e->GetTo()+1) {
-            const CFrameShiftInfo& indel = *indel_i;
+            const CInDelInfo& indel = *indel_i;
             _ASSERT( e->GetFrom() <= indel.Loc() );
             
             if (indel.Loc()-last_chunk > 0) {
@@ -743,7 +741,7 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
     NON_CONST_ITERATE(CSpliced_seg::TExons, exon_i, exons) {
         CSpliced_exon& se = **exon_i;
         se.SetProduct_start().SetNucpos(accumulated_product_len);
-        accumulated_product_len += model.FShiftedLen(se.GetGenomic_start(),se.GetGenomic_end());
+        accumulated_product_len += md.mrna_map.FShiftedLen(se.GetGenomic_start(),se.GetGenomic_end());
         se.SetProduct_end().SetNucpos(accumulated_product_len-1);
 		if (!se.CanGetSplice_3_prime() || !se.GetSplice_3_prime().IsSetBases())
 			accumulated_product_len += HOLE_SIZE;
@@ -775,17 +773,17 @@ struct collect_indels : public unary_function<CRef<CDelta_seq>, void>
             CSeqportUtil::Convert(literal.GetSeq_data(), &seq_data, CSeq_data::e_Iupacna);
             if (model.Strand() == eMinus)
                 ReverseComplement(&seq_data);
-            model.FrameShifts().push_back(CFrameShiftInfo(next_seg_start,literal.GetLength(), false, seq_data.GetIupacna()));
+            model.FrameShifts().push_back(CInDelInfo(next_seg_start,literal.GetLength(), false, seq_data.GetIupacna()));
         } else {
             const CSeq_interval& loc = delta_seq->GetLoc().GetInt();
             while (exon_i->GetTo() < loc.GetFrom()) {
                 if (next_seg_start <= exon_i->GetTo())
-                    model.FrameShifts().push_back(CFrameShiftInfo(next_seg_start,exon_i->GetTo()-next_seg_start+1, true));
+                    model.FrameShifts().push_back(CInDelInfo(next_seg_start,exon_i->GetTo()-next_seg_start+1, true));
                 ++exon_i;
                 next_seg_start = exon_i->GetFrom();
             }
             if (next_seg_start < loc.GetFrom())
-                model.FrameShifts().push_back(CFrameShiftInfo(next_seg_start,loc.GetFrom()-next_seg_start, true));
+                model.FrameShifts().push_back(CInDelInfo(next_seg_start,loc.GetFrom()-next_seg_start, true));
             next_seg_start = loc.GetTo();
         }
     }
@@ -793,7 +791,7 @@ struct collect_indels : public unary_function<CRef<CDelta_seq>, void>
     {
         for(;;) {
             if (next_seg_start <= exon_i->GetTo())
-                model.FrameShifts().push_back(CFrameShiftInfo(next_seg_start,exon_i->GetTo()-next_seg_start+1, true));
+                model.FrameShifts().push_back(CInDelInfo(next_seg_start,exon_i->GetTo()-next_seg_start+1, true));
             if ( ++exon_i == m.end())
                 break;
             next_seg_start = exon_i->GetFrom();

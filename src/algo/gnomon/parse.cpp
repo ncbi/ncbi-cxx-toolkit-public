@@ -499,6 +499,9 @@ void AddSupport(const TGeneModelList& align_list, TSignedSeqRange inside_range, 
             support.Extend(algn, false);
             support.Support().insert(CSupportInfo(algn.Seqid(),false));
             supporting_align = &algn;
+
+            if((algn.Status()&CGeneModel::ePolyA) != 0)
+                gene.Status() |= CGeneModel::ePolyA; 
         }
     }
 
@@ -535,7 +538,7 @@ list<CGeneModel> CParse::GetGenes() const
 {
     list<CGeneModel> genes;
     vector< vector<const CExon*> > gen_exons;
-    const CFrameShiftedSeqMap& seq_map = m_seqscr.FrameShiftedSeqMap();
+    const CAlignMap& seq_map = m_seqscr.FrameShiftedSeqMap();
     
     if(dynamic_cast<const CIntron*>(Path()) && Path()->LeftState())
         gen_exons.push_back(vector<const CExon*>());
@@ -561,11 +564,12 @@ list<CGeneModel> CParse::GetGenes() const
 
             TSignedSeqRange local_exon(pe->Start(),pe->Stop());
             local_gene.AddExon(local_exon);
-            TSignedSeqRange exon = seq_map.MapRangeEditedTodOrig(local_exon);
+            TSignedSeqRange exon = seq_map.MapRangeEditedToOrig(local_exon);
             gene.AddExon(exon);
 
             score += pe->RgnScore()+pe->ExonScore();
         }
+        CAlignMap localmap(local_gene.Exons(), local_gene.FrameShifts(), local_gene.Strand());
 
         TSignedSeqRange local_reading_frame(g_it->back()->Start(), g_it->front()->Stop());
 
@@ -579,24 +583,24 @@ list<CGeneModel> CParse::GetGenes() const
                 lframe += 3;
             int del = pe->isPlus() ? (3-lframe)%3 : (1+lframe)%3;
             
-            if(local_gene.FShiftedLen(local_reading_frame) <= del) {
+            if(localmap.FShiftedLen(local_reading_frame) <= del) {
                 genes.pop_front();
                 continue;
             }
 
-            local_reading_frame.SetFrom(local_gene.FShiftedMove(local_reading_frame.GetFrom(),del));    // do it hard way in case we will get into next exon
+            local_reading_frame.SetFrom(localmap.FShiftedMove(local_reading_frame.GetFrom(),del));    // do it hard way in case we will get into next exon
         }
         if (!g_it->front()->isGeneRightEnd()) {
             const CExon* pe = g_it->front();
             int rframe = pe->Phase();
             int del = pe->isPlus() ? (1+rframe)%3 : (3-rframe)%3;
             
-            if(local_gene.FShiftedLen(local_reading_frame) <= del) {
+            if(localmap.FShiftedLen(local_reading_frame) <= del) {
                 genes.pop_front();
                 continue;
             }
 
-            local_reading_frame.SetTo(local_gene.FShiftedMove(local_reading_frame.GetTo(),-del));      // do it hard way in case we will get into next exon
+            local_reading_frame.SetTo(localmap.FShiftedMove(local_reading_frame.GetTo(),-del));      // do it hard way in case we will get into next exon
         }
 
         if (local_reading_frame.Empty()) {
@@ -604,9 +608,7 @@ list<CGeneModel> CParse::GetGenes() const
             continue;
         }
         
-        TSignedSeqRange reading_frame(
-                                      seq_map.MapEditedToOrig(local_reading_frame.GetFrom()),
-                                      seq_map.MapEditedToOrig(local_reading_frame.GetTo()));
+        TSignedSeqRange reading_frame = seq_map.MapRangeEditedToOrig(local_reading_frame, true);
         _ASSERT(reading_frame.NotEmpty() && reading_frame.GetFrom() >= 0 && reading_frame.GetTo() >= 0);
         _ASSERT(gene.Limits().GetFrom() <= reading_frame.GetFrom() && gene.FShiftedLen(gene.Limits().GetFrom(),reading_frame.GetFrom(),false) <=3);
         _ASSERT(gene.Limits().GetTo() >= reading_frame.GetTo() && gene.FShiftedLen(reading_frame.GetTo(),gene.Limits().GetTo(),false) <= 3);
@@ -616,24 +618,39 @@ list<CGeneModel> CParse::GetGenes() const
                    gene, reading_frame);
 
         TSignedSeqRange start, stop;
-
+        CAlignMap gene_map = gene.GetAlignMap();
         if (g_it->back()->isGeneLeftEnd()) {
-            int utr_len = gene.FShiftedLen(gene.Limits().GetFrom(), reading_frame.GetFrom(),false) -1;
-            if(utr_len > 0 || m_seqscr.isReadingFrameLeftEnd(local_reading_frame.GetFrom(),strand)) {            // extend gene only if start/stop is conventional
+            int utr_len = gene_map.FShiftedLen(TSignedSeqRange(gene.Limits().GetFrom(),reading_frame.GetFrom()), CAlignMap::eSinglePoint, CAlignMap::eLeftEnd) - 1; 
+            if(utr_len > 0 || m_seqscr.isReadingFrameLeftEnd(local_reading_frame.GetFrom(),strand)) {                                       // extend gene only if start/stop is conventional
                 if (utr_len < 3 ) {
                     gene.ExtendLeft(3-utr_len);
+                    gene_map = gene.GetAlignMap();
                 }
-                start = TSignedSeqRange(gene.FShiftedMove(reading_frame.GetFrom(),-3),gene.FShiftedMove(reading_frame.GetFrom(),-1));
+                
+                TSignedSeqRange rf = gene_map.MapRangeOrigToEdited(reading_frame, true);
+                TSignedSeqRange stt(rf.GetFrom()-3,rf.GetFrom()-1);
+                TSignedSeqRange stp(rf.GetTo()+1,rf.GetTo()+3);
+                if (strand == eMinus)
+                    swap(stt,stp);
+                start = gene_map.MapRangeEditedToOrig(stt, false);
             }
         }
 
         if (g_it->front()->isGeneRightEnd()) {
-            int utr_len = gene.FShiftedLen(reading_frame.GetTo(), gene.Limits().GetTo(),false) -1;
-            if(utr_len > 0 || m_seqscr.isReadingFrameRightEnd(local_reading_frame.GetTo(),strand)) {            // extend gene only if start/stop is conventional
+            int utr_len = gene_map.FShiftedLen(TSignedSeqRange(reading_frame.GetTo(),gene.Limits().GetTo()), CAlignMap::eRightEnd, CAlignMap::eSinglePoint) - 1; 
+            if(utr_len > 0 || m_seqscr.isReadingFrameRightEnd(local_reading_frame.GetTo(),strand)) {                                        // extend gene only if start/stop is conventional
                 if (utr_len < 3 ) {
                     gene.ExtendRight(3-utr_len);
+                    gene_map = gene.GetAlignMap();
                 }
-                stop = TSignedSeqRange(gene.FShiftedMove(reading_frame.GetTo(),+1),gene.FShiftedMove(reading_frame.GetTo(),+3));
+                
+                CAlignMap gene_map = gene.GetAlignMap();
+                TSignedSeqRange rf = gene_map.MapRangeOrigToEdited(reading_frame, true);
+                TSignedSeqRange stt(rf.GetFrom()-3,rf.GetFrom()-1);
+                TSignedSeqRange stp(rf.GetTo()+1,rf.GetTo()+3);
+                if (strand == eMinus)
+                    swap(stt,stp);
+                stop = gene_map.MapRangeEditedToOrig(stp, false);
             }
         }
 
@@ -647,7 +664,7 @@ list<CGeneModel> CParse::GetGenes() const
         if (start.NotEmpty())
             cds_info.SetStart(start, gene.ConfirmedStart() && start == gene.GetCdsInfo().Start());
         if (stop.NotEmpty())
-            cds_info.SetStop(stop);
+            cds_info.SetStop(stop, gene.ConfirmedStop());
 
         ITERATE(CCDSInfo::TPStops,s,gene.GetCdsInfo().PStops())
             cds_info.AddPStop(*s);
@@ -665,7 +682,7 @@ void CParse::PrintInfo() const
     vector<const CHMM_State*> states;
     for(const CHMM_State* p = Path(); p != 0; p = p->LeftState()) states.push_back(p);
     reverse(states.begin(),states.end());
-    const CFrameShiftedSeqMap& seq_map = m_seqscr.FrameShiftedSeqMap();
+    const CAlignMap& seq_map = m_seqscr.FrameShiftedSeqMap();
 
     Out(" ",15);
     Out("Start",11);

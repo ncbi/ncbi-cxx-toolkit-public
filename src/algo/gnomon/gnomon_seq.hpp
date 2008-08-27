@@ -152,9 +152,9 @@ inline TResidue toACGT(EResidue c)
     }
 }
 
-void FindAllStarts(TIVec codons[], const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap, TSignedSeqRange search_region, int fixed_frame);
-void FindAllStops(TIVec codons[], const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap, TSignedSeqRange search_region, int fixed_frame);
-void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap,
+void FindAllStarts(TIVec codons[], const CEResidueVec& mrna, const CAlignMap& mrnamap, TSignedSeqRange search_region, int fixed_frame);
+void FindAllStops(TIVec codons[], const CEResidueVec& mrna, const CAlignMap& mrnamap, TSignedSeqRange search_region, int fixed_frame);
+void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, const CEResidueVec& mrna, const CAlignMap& mrnamap,
                      TIVec starts[3],  TIVec stops[3], int& frame);
 bool FindUpstreamStop(const vector<int>& stops, int start, int& stop);
 

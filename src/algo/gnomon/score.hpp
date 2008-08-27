@@ -51,7 +51,7 @@ public:
                 const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& ing, 
                 const CIntronParameters& intron_params,
                 TSignedSeqPos from, TSignedSeqPos to, const TGeneModelList& cls, 
-                const TFrameShifts& initial_fshifts, double mpp, const CGnomonEngine& gnomon);
+                const TInDels& initial_fshifts, double mpp, const CGnomonEngine& gnomon);
     void Init(CResidueVec& original_sequence, bool repeats, bool leftwall, 
               bool rightwall, double consensuspenalty,
               const CIntergenicParameters& intergenic_params
@@ -72,8 +72,8 @@ public:
     const CTerminal& Start() const { return m_start; }
     const CTerminal& Stop() const { return m_stop; }
     const TGeneModelList& Alignments() const { return m_align_list; }
-    const TFrameShifts& SeqTFrameShifts() const { return m_fshifts; }
-    const CFrameShiftedSeqMap& FrameShiftedSeqMap() const { return m_map; }
+    const TInDels& SeqTInDels() const { return m_fshifts; }
+    const CAlignMap& FrameShiftedSeqMap() const { return m_map; }
     bool StopInside(int a, int b, int strand, int frame) const;
     bool OpenCodingRegion(int a, int b, int strand, int frame) const;
     double CodingScore(int a, int b, int strand, int frame) const;
@@ -102,10 +102,10 @@ private:
     const CCodingRegion &m_cdr;
     const CNonCodingRegion &m_ncdr, &m_intrg;
     TGeneModelList m_align_list;
-    TFrameShifts m_fshifts;
+    TInDels m_fshifts;
     CEResidueVec m_seq[2];
     TIVec m_laststop[2][3], m_notinexon[2][3], m_notinintron[2], m_notining;
-    CFrameShiftedSeqMap m_map;
+    CAlignMap m_map;
     TDVec m_ascr[2], m_dscr[2], m_sttscr[2], m_stpscr[2], m_ncdrscr[2], m_ingscr[2], m_cdrscr[2][3];
     TIVec m_asplit[2][2], m_dsplit[2][2];
     TIVec m_inalign;

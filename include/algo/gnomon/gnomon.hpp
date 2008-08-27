@@ -81,7 +81,7 @@ public:
 
     // calculate gnomon score for a gene model
     void GetScore(CGeneModel& model) const;
-    double SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap,
+    double SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CAlignMap& mrnamap,
                                   TIVec starts[3],  TIVec stops[3], int& frame, int& best_start, int& best_stop) const;
 
     // run gnomon. return score

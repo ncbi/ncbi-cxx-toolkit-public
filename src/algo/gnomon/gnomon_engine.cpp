@@ -69,7 +69,8 @@ int CGnomonEngine::GetMinIntronLen() const
 
 double CGnomonEngine::GetChanceOfIntronLongerThan(int l) const
 {
-    return exp(m_data->m_intron_params->m_intronlen.ClosingScore(l));
+    double p = exp(m_data->m_intron_params->m_intronlen.ClosingScore(l));
+    return p;
 }
 
 void CGnomonEngine::CheckRange()
@@ -145,7 +146,7 @@ double CGnomonEngine::Run(const TGeneModelList& cls,
     m_data->m_parse.reset();
     m_data->m_ss.reset();
 
-    TFrameShifts initial_fshifts;
+    TInDels initial_fshifts;
 
     m_data->m_ss.reset( new CSeqScores(*m_data->m_acceptor, *m_data->m_donor, *m_data->m_start, *m_data->m_stop,
                                        *m_data->m_cdr, *m_data->m_ncdr, *m_data->m_intrg,
@@ -171,7 +172,7 @@ list<CGeneModel> CGnomonEngine::GetGenes() const
 
 TSignedSeqPos CGnomonEngine::PartialModelStepBack(list<CGeneModel>& genes) const
 {
-    const CFrameShiftedSeqMap& seq_map = m_data->m_ss->FrameShiftedSeqMap();
+    const CAlignMap& seq_map = m_data->m_ss->FrameShiftedSeqMap();
     
     TSignedSeqPos right = seq_map.MapEditedToOrig(m_data->m_ss->SeqLen()-1);
     if (!genes.empty() && !genes.back().RightComplete()) {

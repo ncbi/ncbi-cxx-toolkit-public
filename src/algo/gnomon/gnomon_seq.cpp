@@ -141,61 +141,25 @@ bool IsStopCodon(const Res * seq, int strand)   // seq points to T for both stra
     }
 }
 template bool IsStopCodon<EResidue>(const EResidue * seq, int strand);
+template bool IsStopCodon<TResidue>(const TResidue * seq, int strand);
 
-/*
-bool CodonWithoutDeletions( const TFrameShifts& fshifts, size_t codon_start, const CFrameShiftedSeqMap& cdsmap)
-{
-    TSignedSeqPos start = cdsmap.MapEditedToOrig(codon_start);
-    TSignedSeqPos stop = cdsmap.MapEditedToOrig(codon_start+2);
-    _ASSERT(stop >= 0);
-    if (start > stop)
-        swap(start,stop);
-    _ASSERT( 0<=start );
 
-    ITERATE(TFrameShifts, fsi, fshifts)
-        if( fsi->IntersectingWith(start,stop) && (fsi->IsDeletion() || fsi->ReplacementLoc() != -1))
-            return false;
-
-    return true;
-}
-*/
-
-template <class Vec>
-bool IsProperStart(size_t pos, const Vec& mrna, const CFrameShiftedSeqMap& mrnamap)
-{
-    return IsStartCodon(&mrna[pos]) &&
-        !mrnamap.EditedRangeIncludesTransformedDeletion(TSignedSeqRange(pos,pos+2))
-        ;
-}
-template bool IsProperStart<CEResidueVec>(size_t pos, const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap);
-template bool IsProperStart<CResidueVec>(size_t pos, const CResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap);
-
-template <class Vec>
-bool IsProperStop(size_t pos, const Vec& mrna, const CFrameShiftedSeqMap& mrnamap)
-{
-    return IsStopCodon(&mrna[pos]) && 
-        !mrnamap.EditedRangeIncludesTransformedDeletion(TSignedSeqRange(pos,pos+2))
-        ;
-}
-template bool IsProperStop<CResidueVec>(size_t pos, const CResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap);
-template bool IsProperStop<CEResidueVec>(size_t pos, const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap);
-
-void FindAllCodonInstances(TIVec positions[], const EResidue codon[], const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap, TSignedSeqRange search_region, int fixed_frame)
+void FindAllCodonInstances(TIVec positions[], const EResidue codon[], const CEResidueVec& mrna, const CAlignMap& mrnamap, TSignedSeqRange search_region, int fixed_frame)
 {
     for (CEResidueVec::const_iterator pos = mrna.begin()+search_region.GetFrom(); (pos = search(pos,mrna.end(),codon,codon+3)) < mrna.begin()+search_region.GetTo(); ++pos) {
         int l = pos-mrna.begin();
         int frame = l%3;
-        if ((fixed_frame==-1 || fixed_frame==frame) && !mrnamap.EditedRangeIncludesTransformedDeletion(TSignedSeqRange(l,l+2)))
+        if (fixed_frame==-1 || fixed_frame==frame)
             positions[frame].push_back(l);
     }
 }
 
-void FindAllStarts(TIVec starts[], const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap, TSignedSeqRange search_region, int fixed_frame)
+void FindAllStarts(TIVec starts[], const CEResidueVec& mrna, const CAlignMap& mrnamap, TSignedSeqRange search_region, int fixed_frame)
 {
     FindAllCodonInstances(starts, ecodons[0], mrna, mrnamap, search_region, fixed_frame);
 }
 
-void FindAllStops(TIVec stops[], const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap, TSignedSeqRange search_region, int fixed_frame)
+void FindAllStops(TIVec stops[], const CEResidueVec& mrna, const CAlignMap& mrnamap, TSignedSeqRange search_region, int fixed_frame)
 {
     for (int i=1; i <=3; ++i)
         FindAllCodonInstances(stops, ecodons[i], mrna, mrnamap, search_region, fixed_frame);
@@ -224,7 +188,7 @@ bool UpstreamStartOrSplice(const CEResidueVec& seq_strand, int start, int frame)
 
 }
 
-void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& frame)
+void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& frame)
 {
     int left_cds_limit = -1;
     int reading_frame_start = mrna.size();
@@ -239,18 +203,18 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
         right_cds_limit = mrnamap.MapOrigToEdited(model.GetCdsInfo().MaxCdsLimits().GetTo());
         _ASSERT(right_cds_limit >= 0 || model.GetCdsInfo().MaxCdsLimits().GetTo() == TSignedSeqRange::GetWholeTo());
 
-        reading_frame_start = mrnamap.MapOrigToEdited(model.ReadingFrame().GetFrom());
+        TSignedSeqRange rf = mrnamap.MapRangeOrigToEdited(model.ReadingFrame(),true);
+        reading_frame_start = rf.GetFrom();
         _ASSERT(reading_frame_start >= 0);
-        reading_frame_stop = mrnamap.MapOrigToEdited(model.ReadingFrame().GetTo());
+        reading_frame_stop = rf.GetTo();
         _ASSERT(reading_frame_stop >= 0);
 
         if(strand == eMinus) {
             std::swap(left_cds_limit,right_cds_limit);
-            std::swap(reading_frame_start,reading_frame_stop);
         }
         if(right_cds_limit < 0) right_cds_limit = mrna.size();
 
-        if (reading_frame_start == 0 && IsProperStart(reading_frame_start,mrna,mrnamap))
+        if (reading_frame_start == 0 && IsStartCodon(&mrna[reading_frame_start]))
             reading_frame_start += 3;
 
         _ASSERT( -1 <= left_cds_limit && left_cds_limit <= reading_frame_start );
@@ -319,29 +283,100 @@ bool FindUpstreamStop(const vector<int>& stops, int start, int& stop)
         return false;
 }
 
+void PushInDel(TInDels& indels, bool fs_only, TSignedSeqPos p, int len, bool insertion) {
+    if(fs_only)
+        len %= 3;
+    if(len != 0) 
+        indels.push_back(CInDelInfo(p, len, insertion));
+}
 
-void CFrameShiftedSeqMap::InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edited_start, int len, const CFrameShiftInfo* left_fs, const CFrameShiftInfo* right_fs)
+TInDels CAlignMap::GetInDels(bool fs_only) const {
+    TInDels indels;
+
+    if(m_orig_ranges.front().GetExtraFrom() > 0) {   // everything starts from insertion
+        int len = m_orig_ranges.front().GetExtraFrom();
+        TSignedSeqPos p = m_orig_ranges.front().GetFrom()-len;
+        PushInDel(indels, fs_only, p, len, true);
+    }
+    if(m_edited_ranges.front().GetExtraFrom() > 0) {   // everything starts from deletion
+        int len = m_edited_ranges.front().GetExtraFrom();
+        TSignedSeqPos p = m_orig_ranges.front().GetFrom();
+        PushInDel(indels, fs_only, p, len, false);
+    }
+
+    for(unsigned int range = 1; range < m_orig_ranges.size(); ++range) {
+        if(fs_only) {
+            int len = m_orig_ranges[range].GetExtraFrom()-m_edited_ranges[range].GetExtraFrom();
+            if(m_orig_ranges[range].GetTypeFrom() != eInDel)
+                len += m_orig_ranges[range-1].GetExtraTo()-m_edited_ranges[range-1].GetExtraTo();
+            if(len%3 == 0)
+                continue;
+        }
+
+        if(m_orig_ranges[range-1].GetTypeTo() != eInDel) {
+            if(m_orig_ranges[range-1].GetExtraTo() > 0) {
+                int len = m_orig_ranges[range-1].GetExtraTo();
+                TSignedSeqPos p = m_orig_ranges[range-1].GetTo()+1;
+                PushInDel(indels, fs_only, p, len, true);
+            }
+            if(m_edited_ranges[range-1].GetExtraTo() > 0) {
+                int len = m_edited_ranges[range-1].GetExtraTo();
+                TSignedSeqPos p = m_orig_ranges[range-1].GetTo()+1;
+                PushInDel(indels, fs_only, p, len, false);
+            }
+        }
+        
+        if(m_orig_ranges[range].GetExtraFrom() > 0) {   // insertion on the left side   
+            int len = m_orig_ranges[range].GetExtraFrom();
+            TSignedSeqPos p = m_orig_ranges[range].GetFrom()-len;
+            PushInDel(indels, fs_only, p, len, true);
+        }
+        if(m_edited_ranges[range].GetExtraFrom() > 0) {   // deletion on the left side  
+            int len = m_edited_ranges[range].GetExtraFrom();
+            TSignedSeqPos p = m_orig_ranges[range].GetFrom();
+            PushInDel(indels, fs_only, p, len, false);
+        }
+    }
+
+    if(m_orig_ranges.back().GetExtraTo() > 0) {   // everything ends by insertion
+        int len = m_orig_ranges.back().GetExtraTo();
+        TSignedSeqPos p = m_orig_ranges.back().GetTo()+1;
+        PushInDel(indels, fs_only, p, len, true);
+    }
+    if(m_edited_ranges.back().GetExtraTo() > 0) {   // everything ends by deletion
+        int len = m_edited_ranges.back().GetExtraTo();
+        TSignedSeqPos p = m_orig_ranges.back().GetTo()+1;
+        PushInDel(indels, fs_only, p, len, false);
+    }
+
+    return indels;
+}
+
+
+void CAlignMap::InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edited_start, int len, const CInDelInfo* left_fs, const CInDelInfo* right_fs, EEdgeType left_type, EEdgeType right_type)
 {
     _ASSERT(len > 0);
     _ASSERT(m_orig_ranges.empty() || (orig_start > m_orig_ranges.back().GetTo() && edited_start > m_edited_ranges.back().GetTo()));
 
-    CFrameShiftedSeqMap::SMapRangeEdge orig_from(orig_start);
+    CAlignMap::SMapRangeEdge orig_from(orig_start);
+    orig_from.m_edge_type = left_type;
     if(left_fs != 0 && left_fs->IsInsertion()) {
         orig_from.m_extra = left_fs->Len();
-        orig_from.m_was_deletion = (left_fs->ReplacementLoc() >= 0);
     }
-    CFrameShiftedSeqMap::SMapRangeEdge orig_to(orig_start+len-1);
+    CAlignMap::SMapRangeEdge orig_to(orig_start+len-1);
+    orig_to.m_edge_type = right_type;
     if(right_fs != 0 && right_fs->IsInsertion()) {
         orig_to.m_extra = right_fs->Len();
-        orig_to.m_was_deletion = (right_fs->ReplacementLoc() >= 0);
     }
     m_orig_ranges.push_back(SMapRange(orig_from, orig_to));
 
-    CFrameShiftedSeqMap::SMapRangeEdge edited_from(edited_start);
+    CAlignMap::SMapRangeEdge edited_from(edited_start);
+    edited_from.m_edge_type = orig_from.m_edge_type;
     if(left_fs != 0 && left_fs->IsDeletion()) {
         edited_from.m_extra = left_fs->Len();
     }
-    CFrameShiftedSeqMap::SMapRangeEdge edited_to(edited_start+len-1);
+    CAlignMap::SMapRangeEdge edited_to(edited_start+len-1);
+    edited_to.m_edge_type = orig_to.m_edge_type;
     if(right_fs != 0 && right_fs->IsDeletion()) {
         edited_to.m_extra = right_fs->Len();
     }
@@ -349,11 +384,11 @@ void CFrameShiftedSeqMap::InsertOneToOneRange(TSignedSeqPos orig_start, TSignedS
 }
 
 
-TSignedSeqPos CFrameShiftedSeqMap::InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TSignedSeqPos edit_a, TFrameShifts::const_iterator fsi_begin, TFrameShifts::const_iterator fsi_end) 
+TSignedSeqPos CAlignMap::InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TSignedSeqPos edit_a, TInDels::const_iterator fsi_begin, TInDels::const_iterator fsi_end, EEdgeType type_a, EEdgeType type_b) 
 {
-    const CFrameShiftInfo* left_fs = 0;
-    const CFrameShiftInfo* right_fs = 0;
-    for (TFrameShifts::const_iterator fsi = fsi_begin; fsi != fsi_end; ++fsi) {
+    const CInDelInfo* left_fs = 0;
+    const CInDelInfo* right_fs = 0;
+    for (TInDels::const_iterator fsi = fsi_begin; fsi != fsi_end; ++fsi) {
         TSignedSeqPos blim = fsi->IsInsertion() ? orig_b : orig_b+1;
         if(fsi->Loc() < orig_a) {
             _ASSERT( !fsi->IntersectingWith(orig_a,orig_b) );
@@ -364,91 +399,101 @@ TSignedSeqPos CFrameShiftedSeqMap::InsertIndelRangesForInterval(TSignedSeqPos or
             right_fs = &(*fsi);
             int len = fsi->Loc()-orig_a;
             _ASSERT(left_fs == 0 || len > 0);                               // no two insertion in a row;
+
+            TSignedSeqPos next_orig_a = orig_a;
+            if (fsi->IsInsertion()) 
+                next_orig_a += fsi->Len();
+            
             if(len > 0) {
-                InsertOneToOneRange(orig_a, edit_a, len, left_fs, right_fs);
-                orig_a += len;
+                next_orig_a += len;
+                InsertOneToOneRange(orig_a, edit_a, len, left_fs, right_fs, type_a, (next_orig_a <= orig_b) ? eInDel : type_b);
                 edit_a += len;
+                type_a = eInDel;
             }
-            if (fsi->IsInsertion()) {
-                orig_a += fsi->Len();
-            } else {
+            if (fsi->IsDeletion()) 
                 edit_a += fsi->Len();
-            }
+            orig_a = next_orig_a;
             left_fs = right_fs;
         }
     }
     if(orig_a <= orig_b) {
         int len = orig_b-orig_a+1;
-        InsertOneToOneRange(orig_a, edit_a, len, left_fs, 0);
+        InsertOneToOneRange(orig_a, edit_a, len, left_fs, 0, type_a, type_b);
         edit_a += len;
     }
 
     return edit_a;
 }
 
-CFrameShiftedSeqMap::CFrameShiftedSeqMap(const CGeneModel& align, EMapLimit limit, int holelen)
-{
-    m_orientation = align.Strand();
+CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const vector<TSignedSeqRange>& transcript_exons, const TInDels& indels, EStrand orientation ) : m_orientation(orientation) {
 
-    int first_aligned = 0;
-    if(align.TranscriptExonsP() != 0) {
-        _ASSERT(align.TranscriptExonsP()->size() == align.Exons().size());
-
-        bool notreversed = (align.Status()&CGeneModel::eReversed) == 0;
-        bool plusstrand = align.Strand() == ePlus;
-        m_orientation = (notreversed == plusstrand) ? ePlus : eMinus;
-
-        first_aligned = (m_orientation == ePlus) ? align.TranscriptExonsP()->front().GetFrom() : align.TranscriptExonsP()->back().GetFrom();
+#ifdef _DEBUG
+    _ASSERT(transcript_exons.size() == exons.size());
+    _ASSERT(transcript_exons.size() == 1 || (orientation == ePlus && transcript_exons.front().GetFrom() < transcript_exons.back().GetFrom()) ||
+           (orientation == eMinus && transcript_exons.front().GetFrom() > transcript_exons.back().GetFrom()));
+    int diff = 0;
+    for(unsigned int i = 0; i < exons.size(); ++i) {
+        diff += exons[i].GetTo()-exons[i].GetFrom()-transcript_exons[i].GetTo()+transcript_exons[i].GetFrom();
     }
-    
-    TFrameShifts::const_iterator fsi_begin = align.FrameShifts().begin();
-    TFrameShifts::const_iterator fsi_end = align.FrameShifts().end();
-    TSignedSeqRange lim = align.Limits();
-    if(limit != eNoLimit) {
-        first_aligned = 0;
-        lim = (limit == eCdsOnly) ? align.GetCdsInfo().Cds() : align.RealCdsLimits();
-        while(fsi_begin != align.FrameShifts().end() && fsi_begin->Loc() <= lim.GetFrom()) {
-            _ASSERT(!fsi_begin->IntersectingWith(lim.GetFrom(),lim.GetTo()));
-            ++fsi_begin;
+    ITERATE(TInDels, f, indels) {
+        diff += (f->IsDeletion()) ? f->Len() : -f->Len();
+    }
+    _ASSERT(diff == 0);
+#endif
+
+    m_orig_ranges.reserve(exons.size()+indels.size());
+    m_edited_ranges.reserve(exons.size()+indels.size());
+
+    TSignedSeqPos estart = (m_orientation == ePlus) ? transcript_exons.front().GetFrom() : transcript_exons.back().GetFrom();
+    for(unsigned int i = 0; i < exons.size(); ++i) {
+        EEdgeType type_a = exons[i].m_fsplice ? eSplice : eBoundary;
+        EEdgeType type_b = exons[i].m_ssplice ? eSplice : eBoundary;
+        estart = InsertIndelRangesForInterval(exons[i].GetFrom(), exons[i].GetTo(), estart, indels.begin(), indels.end(), type_a, type_b);
+        if(m_orientation == ePlus) {
+            estart += transcript_exons[i+1].GetFrom()-transcript_exons[i].GetTo()-1;
+        } else {
+            estart += transcript_exons[i].GetFrom()-transcript_exons[i+1].GetTo()-1;
         }
-        fsi_end = fsi_begin;
-        while(fsi_end != align.FrameShifts().end() && fsi_end->Loc() <= lim.GetTo()) ++fsi_end;
-        _ASSERT(fsi_end == align.FrameShifts().end() || !fsi_end->IntersectingWith(lim.GetFrom(),lim.GetTo()));
     }
+}
 
-    m_orig_ranges.reserve(align.Exons().size()+fsi_end-fsi_begin);
-    m_edited_ranges.reserve(align.Exons().size()+fsi_end-fsi_begin);
+CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const TInDels& frameshifts, EStrand strand, TSignedSeqRange lim, int holelen) : m_orientation(strand) { 
+
+    TInDels::const_iterator fsi_begin = frameshifts.begin();
+    TInDels::const_iterator fsi_end = frameshifts.end();
+
+    m_orig_ranges.reserve(exons.size()+fsi_end-fsi_begin);
+    m_edited_ranges.reserve(exons.size()+fsi_end-fsi_begin);
     
-    TSignedSeqPos estart = first_aligned;
-    for(unsigned int i = 0; i < align.Exons().size(); ++i) {
-        TSignedSeqPos start = align.Exons()[i].GetFrom();
-        TSignedSeqPos stop = align.Exons()[i].GetTo();
+    TSignedSeqPos estart = 0;
+    for(unsigned int i = 0; i < exons.size(); ++i) {
+        TSignedSeqPos start = exons[i].GetFrom();
+        TSignedSeqPos stop = exons[i].GetTo();
+        EEdgeType type_a = exons[i].m_fsplice ? eSplice : eBoundary;
+        EEdgeType type_b = exons[i].m_ssplice ? eSplice : eBoundary;
         
         if(stop < lim.GetFrom()) continue;
         if(lim.GetTo() < start) break;
         
-        start = max(start,lim.GetFrom());
-        stop = min(stop,lim.GetTo());
-
-        estart = InsertIndelRangesForInterval(start, stop, estart, fsi_begin, fsi_end);
-        if(i != align.Exons().size()-1 && align.TranscriptExonsP() != 0) {
-            if(m_orientation == ePlus) {
-                estart += (*align.TranscriptExonsP())[i+1].GetFrom()-(*align.TranscriptExonsP())[i].GetTo()-1;
-            } else {
-                estart += (*align.TranscriptExonsP())[i].GetFrom()-(*align.TranscriptExonsP())[i+1].GetTo()-1;
-            }
-        } else if(i != align.Exons().size()-1 && (!align.Exons()[i+1].m_fsplice || !align.Exons()[i].m_ssplice)) {
-            estart += holelen;
+        if(lim.GetFrom() >= start) {
+            start = lim.GetFrom();
+            type_a = eBoundary;
         }
-    } 
+        if(lim.GetTo() <= stop) {
+            stop = lim.GetTo();
+            type_b = eBoundary;
+        }
+
+        estart = InsertIndelRangesForInterval(start, stop, estart, fsi_begin, fsi_end, type_a, type_b);
+        if(i != exons.size()-1 && (!exons[i+1].m_fsplice || !exons[i].m_ssplice)) 
+            estart += holelen;
+    }
 
     _ASSERT(m_edited_ranges.size() == m_orig_ranges.size());
-    //    _ASSERT(m_edited_ranges.empty() || (m_edited_ranges.front().GetExtraFrom() == 0 && m_edited_ranges.back().GetExtraTo() == 0));
-    //    _ASSERT(m_orig_ranges.empty() || (m_orig_ranges.front().GetExtraFrom() == 0 && m_orig_ranges.back().GetExtraTo() == 0));
 }
 
 template <class Vec>
-void CFrameShiftedSeqMap::EditedSequence(const Vec& original_sequence, Vec& edited_sequence, bool includeholes) const
+void CAlignMap::EditedSequence(const Vec& original_sequence, Vec& edited_sequence, bool includeholes) const
 {
     edited_sequence.clear();
     edited_sequence.insert(edited_sequence.end(),m_edited_ranges.front().GetExtraFrom(),res_traits<typename Vec::value_type>::_fromACGT('N'));    
@@ -471,43 +516,18 @@ void CFrameShiftedSeqMap::EditedSequence(const Vec& original_sequence, Vec& edit
         ReverseComplement(edited_sequence.begin(), edited_sequence.end());
 }
 
-int CFrameShiftedSeqMap::FindLowerRange(const vector<CFrameShiftedSeqMap::SMapRange>& a,  TSignedSeqPos p) {
-    int num = lower_bound(a.begin(), a.end(), CFrameShiftedSeqMap::SMapRange(p+1,p+1))-a.begin()-1;
+int CAlignMap::FindLowerRange(const vector<CAlignMap::SMapRange>& a,  TSignedSeqPos p) {
+    int num = lower_bound(a.begin(), a.end(), CAlignMap::SMapRange(p+1,p+1))-a.begin()-1;
     return num;
 }
 
 template
-void CFrameShiftedSeqMap::EditedSequence<CResidueVec>(const CResidueVec& original_sequence, CResidueVec& edited_sequence, bool includeholes) const;
+void CAlignMap::EditedSequence<CResidueVec>(const CResidueVec& original_sequence, CResidueVec& edited_sequence, bool includeholes) const;
 template
-void CFrameShiftedSeqMap::EditedSequence<CEResidueVec>(const CEResidueVec& original_sequence, CEResidueVec& edited_sequence, bool includeholes) const;
+void CAlignMap::EditedSequence<CEResidueVec>(const CEResidueVec& original_sequence, CEResidueVec& edited_sequence, bool includeholes) const;
 
-bool CFrameShiftedSeqMap::EditedRangeIncludesTransformedDeletion(TSignedSeqRange edited_range) const {
 
-    if(m_orientation == eMinus) {
-        int left = edited_range.GetTo();
-        int right = edited_range.GetFrom();
-        int offset = m_edited_ranges.front().GetFrom()+m_edited_ranges.back().GetTo();
-        edited_range = TSignedSeqRange(offset-left,offset-right);
-    }
-
-    _ASSERT(edited_range.NotEmpty() && Include(TSignedSeqRange(m_edited_ranges.front().GetFrom(),m_edited_ranges.back().GetTo()), edited_range));
-
-    TSignedSeqPos a = edited_range.GetFrom();
-    int numa = FindLowerRange(m_edited_ranges, a);
-    _ASSERT(Include(TSignedSeqRange(m_edited_ranges[numa].GetFrom(),m_edited_ranges[numa].GetTo()), a));
-
-    TSignedSeqPos b = edited_range.GetTo();
-    int numb = FindLowerRange(m_edited_ranges, b);
-    _ASSERT(Include(TSignedSeqRange(m_edited_ranges[numb].GetFrom(),m_edited_ranges[numb].GetTo()), b));
-
-    for(int i = numa; i < numb; ++i) {
-        if(m_orig_ranges[i].RightEndIsTransformedDeletion() || m_orig_ranges[i+1].LeftEndIsTransformedDeletion()) return true;
-    }
-
-    return false;
-}
-
-TSignedSeqRange CFrameShiftedSeqMap::ShrinkToRealPoints(TSignedSeqRange orig_range, bool snap_to_codons) const {
+TSignedSeqRange CAlignMap::ShrinkToRealPoints(TSignedSeqRange orig_range, bool snap_to_codons) const {
 
     _ASSERT(orig_range.NotEmpty() && Include(TSignedSeqRange(m_orig_ranges.front().GetExtendedFrom(),m_orig_ranges.back().GetExtendedTo()), orig_range));
 
@@ -521,14 +541,22 @@ TSignedSeqRange CFrameShiftedSeqMap::ShrinkToRealPoints(TSignedSeqRange orig_ran
         a = m_orig_ranges[numa].GetFrom();
     }
     if(snap_to_codons) {
-        while((m_edited_ranges[numa].GetFrom()+a-m_orig_ranges[numa].GetFrom())%3 != 0) {  // not a codon boundary, assumes that initial alignment was snapped
-            if(a < m_orig_ranges[numa].GetTo()) {      // can move in this interval
-                ++a;
-            } else {                                   // moved to next interval
-                ++numa;
-                if((int)m_orig_ranges.size() == numa)
-                    return TSignedSeqRange::GetEmpty();
-                a = m_orig_ranges[numa].GetFrom();
+        bool snapped = false;
+        while(!snapped) {
+            TSignedSeqPos tp = m_edited_ranges[numa].GetFrom()+a-m_orig_ranges[numa].GetFrom(); 
+            if(m_orientation == eMinus) 
+                tp = m_edited_ranges.front().GetFrom()+m_edited_ranges.back().GetTo()-tp;
+            if((m_orientation == ePlus && tp%3 == 0) || (m_orientation == eMinus && tp%3 == 2)) {
+                snapped = true;
+            } else {                                       // not a codon boundary
+                if(a < m_orig_ranges[numa].GetTo()) {      // can move in this interval
+                    ++a;
+                } else {                                   // moved to next interval
+                    ++numa;
+                    if((int)m_orig_ranges.size() == numa)
+                        return TSignedSeqRange::GetEmpty();
+                    a = m_orig_ranges[numa].GetFrom();
+                }
             }
         }
     }
@@ -541,14 +569,22 @@ TSignedSeqRange CFrameShiftedSeqMap::ShrinkToRealPoints(TSignedSeqRange orig_ran
        b = m_orig_ranges[numb].GetTo();
     }
     if(snap_to_codons) {
-        while((m_edited_ranges[numb].GetFrom()+b-m_orig_ranges[numb].GetFrom())%3 != 2) {  // not a codon boundary
-            if(b > m_orig_ranges[numb].GetFrom()) {      // can move in this interval        
-                --b;
-            } else {                                   // moved to next interval
-                --numb;
-                if(numb < 0)
-                    return TSignedSeqRange::GetEmpty();
-                b = m_orig_ranges[numb].GetTo();
+        bool snapped = false;
+        while(!snapped) {
+            TSignedSeqPos tp = m_edited_ranges[numb].GetFrom()+b-m_orig_ranges[numb].GetFrom();
+            if(m_orientation == eMinus) 
+                tp = m_edited_ranges.front().GetFrom()+m_edited_ranges.back().GetTo()-tp;
+            if((m_orientation == ePlus && tp%3 == 2) || (m_orientation == eMinus && tp%3==0)) {
+                snapped = true;
+            } else {                                       // not a codon boundary
+                if(b > m_orig_ranges[numb].GetFrom()) {      // can move in this interval        
+                    --b;
+                } else {                                   // moved to next interval
+                    --numb;
+                    if(numb < 0)
+                        return TSignedSeqRange::GetEmpty();
+                    b = m_orig_ranges[numb].GetTo();
+                }
             }
         }
     }
@@ -556,7 +592,7 @@ TSignedSeqRange CFrameShiftedSeqMap::ShrinkToRealPoints(TSignedSeqRange orig_ran
     return TSignedSeqRange(a, b);
 }
 
-TSignedSeqPos CFrameShiftedSeqMap::FShiftedMove(TSignedSeqPos orig_pos, int len) const {
+TSignedSeqPos CAlignMap::FShiftedMove(TSignedSeqPos orig_pos, int len) const {
     orig_pos = MapOrigToEdited(orig_pos);
     _ASSERT(orig_pos >= 0);
     if(m_orientation == ePlus)
@@ -569,7 +605,7 @@ TSignedSeqPos CFrameShiftedSeqMap::FShiftedMove(TSignedSeqPos orig_pos, int len)
 }
 
 
-TSignedSeqPos CFrameShiftedSeqMap::MapAtoB(const vector<CFrameShiftedSeqMap::SMapRange>& a, const vector<CFrameShiftedSeqMap::SMapRange>& b, TSignedSeqPos p, ERangeEnd move_mode) {
+TSignedSeqPos CAlignMap::MapAtoB(const vector<CAlignMap::SMapRange>& a, const vector<CAlignMap::SMapRange>& b, TSignedSeqPos p, ERangeEnd move_mode) {
     if(p < a.front().GetExtendedFrom() || p > a.back().GetExtendedTo()) return -1;
 
     if(p < a.front().GetFrom()) {
@@ -622,7 +658,7 @@ TSignedSeqPos CFrameShiftedSeqMap::MapAtoB(const vector<CFrameShiftedSeqMap::SMa
     }
 }
 
-TSignedSeqPos CFrameShiftedSeqMap::MapOrigToEdited(TSignedSeqPos orig_pos)  const {
+TSignedSeqPos CAlignMap::MapOrigToEdited(TSignedSeqPos orig_pos)  const {
     TSignedSeqPos p = MapAtoB(m_orig_ranges, m_edited_ranges, orig_pos, eSinglePoint);
     
     if(m_orientation == eMinus && p >= 0) {
@@ -631,7 +667,7 @@ TSignedSeqPos CFrameShiftedSeqMap::MapOrigToEdited(TSignedSeqPos orig_pos)  cons
     return p;
 }
 
-TSignedSeqPos CFrameShiftedSeqMap::MapEditedToOrig(TSignedSeqPos edited_pos)  const {
+TSignedSeqPos CAlignMap::MapEditedToOrig(TSignedSeqPos edited_pos)  const {
     if(m_orientation == eMinus) {
         edited_pos = m_edited_ranges.front().GetFrom()+m_edited_ranges.back().GetTo()-edited_pos;
     }
@@ -640,7 +676,7 @@ TSignedSeqPos CFrameShiftedSeqMap::MapEditedToOrig(TSignedSeqPos edited_pos)  co
 }
 
 
-TSignedSeqRange CFrameShiftedSeqMap::MapRangeAtoB(const vector<CFrameShiftedSeqMap::SMapRange>& a, const vector<CFrameShiftedSeqMap::SMapRange>& b, TSignedSeqRange r, bool withextras) {
+TSignedSeqRange CAlignMap::MapRangeAtoB(const vector<CAlignMap::SMapRange>& a, const vector<CAlignMap::SMapRange>& b, TSignedSeqRange r, ERangeEnd lend, ERangeEnd rend) {
 
     if(r.Empty()) return TSignedSeqRange::GetEmpty();
 
@@ -648,14 +684,14 @@ TSignedSeqRange CFrameShiftedSeqMap::MapRangeAtoB(const vector<CFrameShiftedSeqM
     if(r.GetFrom() == TSignedSeqRange::GetWholeFrom()) {
         left = TSignedSeqRange::GetWholeFrom();
     } else {
-        left = MapAtoB(a, b, r.GetFrom(), withextras ? eLeftEnd : eSinglePoint);
+        left = MapAtoB(a, b, r.GetFrom(), lend);
         _ASSERT(left >= 0);
     }
     TSignedSeqPos right;
     if(r.GetTo() == TSignedSeqRange::GetWholeTo()) {
         right = TSignedSeqRange::GetWholeTo();
     } else {
-        right = MapAtoB(a, b, r.GetTo(), withextras ? eRightEnd : eSinglePoint);
+        right = MapAtoB(a, b, r.GetTo(), rend);
         _ASSERT(right >= 0);
     }
 
@@ -664,11 +700,11 @@ TSignedSeqRange CFrameShiftedSeqMap::MapRangeAtoB(const vector<CFrameShiftedSeqM
     return TSignedSeqRange(left, right);
 }
 
-TSignedSeqRange CFrameShiftedSeqMap::MapRangeOrigToEdited(TSignedSeqRange orig_range, bool withextras) const {
+TSignedSeqRange CAlignMap::MapRangeOrigToEdited(TSignedSeqRange orig_range, ERangeEnd lend, ERangeEnd rend) const {
     
     if(orig_range.Empty()) return TSignedSeqRange::GetEmpty();
 
-    TSignedSeqRange er = MapRangeAtoB(m_orig_ranges, m_edited_ranges, orig_range, withextras);
+    TSignedSeqRange er = MapRangeAtoB(m_orig_ranges, m_edited_ranges, orig_range, lend, rend);
 
     if(m_orientation == ePlus) return er;
 
@@ -691,7 +727,7 @@ TSignedSeqRange CFrameShiftedSeqMap::MapRangeOrigToEdited(TSignedSeqRange orig_r
     return TSignedSeqRange(left, right);
 }
 
-TSignedSeqRange CFrameShiftedSeqMap::MapRangeEditedTodOrig(TSignedSeqRange edited_range, bool withextras) const {
+TSignedSeqRange CAlignMap::MapRangeEditedToOrig(TSignedSeqRange edited_range, bool withextras) const {
     
     if(edited_range.Empty()) return TSignedSeqRange::GetEmpty();
 
@@ -716,17 +752,6 @@ TSignedSeqRange CFrameShiftedSeqMap::MapRangeEditedTodOrig(TSignedSeqRange edite
     }
 
     return MapRangeAtoB(m_edited_ranges, m_orig_ranges, edited_range, withextras);
-}
-
-
-TSignedSeqRange MapRangeToOrig(TSignedSeqPos start, TSignedSeqPos stop, const CFrameShiftedSeqMap& mrnamap)
-{
-    start = mrnamap.MapEditedToOrig(start);
-    stop = mrnamap.MapEditedToOrig(stop);
-    _ASSERT(start>=0 && stop>=0); // not out of range and not a deletion, because we converted deletion into insertions
-    if (start > stop)
-        swap(start, stop);
-    return TSignedSeqRange(start, stop);
 }
 
 
