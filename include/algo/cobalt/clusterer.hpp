@@ -96,6 +96,12 @@ public:
     ///
     int FindCenterElement(const TDistMatrix& dmatrix) const;
 
+    /// Get element
+    /// @param index Element index
+    /// @return Element
+    ///
+    int operator[](size_t index) const
+    {_ASSERT(index < m_Elements.size()); return m_Elements[index];}
 
     // Iterators
 
@@ -137,6 +143,12 @@ public:
     /// @param dmat Distance matrix
     ///
     void SetDistMatrix(auto_ptr<TDistMatrix>& dmat);
+
+    /// Get distance matrix
+    /// @return Distance matrix
+    ///
+    const TDistMatrix& GetDistMatrix(void) const 
+    {_ASSERT(m_DistMatrix.get()); return *m_DistMatrix;}
 
     /// Compute clusters
     /// @param max_dim Maximum distance between two elements in a cluster

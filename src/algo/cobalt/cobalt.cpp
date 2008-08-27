@@ -282,19 +282,14 @@ CMultiAligner::FindQueryClusters()
     if (m_Verbose) {
         printf("K-mer counts distance matrix:\n");
         printf("    ");
-        for (size_t i=1;i < m_QueryData.size();i++) {
+        for (size_t i=dmat->GetCols() - 1;i > 0;i--) {
             printf("%6d", (int)i);
         }
         printf("\n");
-        for (size_t i=0;i < m_QueryData.size() - 1;i++) {
+        for (size_t i=0;i < dmat->GetRows() - 1;i++) {
             printf("%3d:", (int)i);
-            for (size_t j=1;j < m_QueryData.size();j++) {
-                if (j < i+1) {
-                    printf("      ");
-                }
-                else {
-                    printf("%6.3f", (*dmat)(i, j));
-                }
+            for (size_t j=dmat->GetCols() - 1;j > i;j--) {
+                printf("%6.3f", (*dmat)(i, j));
             }
             printf("\n");
         }
@@ -322,15 +317,35 @@ CMultiAligner::FindQueryClusters()
         return false;
     }
 
-    // Selecting cluster prototypes as center elements
-    m_Clusterer.SetPrototypes();
+    // Select cluster prototypes
+    NON_CONST_ITERATE(CClusterer::TClusters, it, m_Clusterer.GetClusters()) {
+
+        // For one-element clusters same element
+        if (it->size() == 1) {
+            it->SetPrototype(*it->begin());
+
+        } else if (it->size() == 2) {
+
+            // For two-element clusters - the longer sequence
+            int len1 = m_QueryData[(*it)[0]].GetLength();
+            int len2 = m_QueryData[(*it)[1]].GetLength();
+            int prot = (len1 > len2) ? (*it)[0] : (*it)[1];
+            it->SetPrototype(prot);
+
+        } else {
+
+            // For more than two elements - cluster center
+            it->SetPrototype(it->FindCenterElement(m_Clusterer.GetDistMatrix()));
+        }
+    }
+
     blast::TSeqLocVector cluster_prototypes;
     ITERATE(CClusterer::TClusters, cluster_it, m_Clusterer.GetClusters()) {
         cluster_prototypes.push_back(m_tQueries[cluster_it->GetPrototype()]);
         m_AllQueryData.push_back(m_QueryData[cluster_it->GetPrototype()]);
     }
 
-    // Rearenging input sequences to consider cluster information
+    // Rearrenging input sequences to consider cluster information
     m_tQueries.resize(cluster_prototypes.size());
     copy(cluster_prototypes.begin(), cluster_prototypes.end(), 
          m_tQueries.begin());
@@ -359,7 +374,66 @@ CMultiAligner::FindQueryClusters()
                num_in_clusters,
                (double)num_in_clusters / m_AllQueryData.size() * 100.0);
         printf("Number of domain searches reduced by: %d (%.0f%%)\n\n", gain, 
-               (double) gain / m_AllQueryData.size() * 100.0); 
+               (double) gain / m_AllQueryData.size() * 100.0);
+
+        const CClusterer::TDistMatrix& d = m_Clusterer.GetDistMatrix();
+        printf("Distances in clusters:\n");
+        for (size_t cluster_idx=0;cluster_idx < clusters.size();
+             cluster_idx++) {
+
+            const CClusterer::TSingleCluster& cluster = clusters[cluster_idx];
+            if (cluster.size() == 1) {
+                continue;
+            }
+
+            printf("Cluster %d:\n", (int)cluster_idx);
+            if (cluster.size() == 2) {
+                printf("   %6.3f\n\n", d(cluster[0], cluster[1]));
+                continue;
+            }
+
+            printf("    ");
+            for (size_t i= cluster.size() - 1;i > 0;i--) {
+                printf("%6d", (int)cluster[i]);
+            }
+            printf("\n");
+            for (size_t i=0;i < cluster.size() - 1;i++) {
+                printf("%3d:", (int)cluster[i]);
+                for (size_t j=cluster.size() - 1;j > i;j--) {
+                    printf("%6.3f", d(cluster[i], cluster[j]));
+                }
+                printf("\n");
+            }
+            printf("\n\n");
+        }
+
+        printf("Sequences that belong to different clusters with distance"
+               " smaller than threshold (exludes prototypes):\n");
+        ITERATE(CClusterer::TClusters, it, clusters) {
+            if (it->size() == 1) {
+                continue;
+            }
+            ITERATE(CClusterer::TSingleCluster, elem, *it) {
+                ITERATE(CClusterer::TClusters, cl, clusters) {
+                    if (it == cl) {
+                        continue;
+                    }
+
+                    ITERATE(CClusterer::TSingleCluster, el, *cl) {
+
+                        if (*el == cl->GetPrototype()) {
+                            continue;
+                        }
+
+                        if (d(*elem, *el) < m_MaxClusterDist) {
+                            printf("%3d, %3d: %f\n", *elem, *el, d(*elem, *el));
+                        }
+                    }
+                }
+            }
+        }
+        printf("\n\n");
+        
         
     }
     //-------------------------------------------------------
@@ -375,6 +449,13 @@ void CMultiAligner::AlignInClusters(void)
     const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
     m_ClusterGapPositions.clear();
     m_ClusterGapPositions.resize(clusters.size());
+
+    m_Aligner.SetWg(m_GapOpen);
+    m_Aligner.SetStartWg(m_EndGapOpen);
+    m_Aligner.SetEndWg(m_EndGapOpen);
+    m_Aligner.SetWs(m_GapExtend);
+    m_Aligner.SetStartWs(m_EndGapExtend);
+    m_Aligner.SetEndWs(m_EndGapExtend);
 
     // For each cluster
     for (size_t cluster_idx=0;cluster_idx < clusters.size();cluster_idx++) {
@@ -403,7 +484,34 @@ void CMultiAligner::AlignInClusters(void)
                                        cluster_seq.GetLength(), 
                                        (const char*)cluster_prot.GetSequence(), 
                                        cluster_prot.GetLength());
+
+                m_Aligner.SetEndSpaceFree(false, false, false, false);
+
+                // If there is a large length disparity between the two
+                // profiles, reduce or eliminate gap penalties. Also 
+                // scale up the gap penalties to match those of the score matrix
+
+                int len1 = cluster_seq.GetLength();
+                int len2 = cluster_prot.GetLength();
+                if (len1 > 1.2 * len2 || len2 > 1.2 * len1) {
+                    m_Aligner.SetStartWs(m_EndGapExtend / 2);
+                    m_Aligner.SetEndWs(m_EndGapExtend / 2); 
+                }
+                if (len1 > 1.5 * len2 || len2 > 1.5 * len1) {
+                    m_Aligner.SetEndSpaceFree(true, true, true, true);
+                }
+
+                // Run aligner
                 m_Aligner.Run();
+
+                // Reset gap penalties
+                m_Aligner.SetWg(m_GapOpen);
+                m_Aligner.SetStartWg(m_EndGapOpen);
+                m_Aligner.SetEndWg(m_EndGapOpen);
+                m_Aligner.SetWs(m_GapExtend);
+                m_Aligner.SetStartWs(m_EndGapExtend);
+                m_Aligner.SetEndWs(m_EndGapExtend);
+
                 CNWAligner::TTranscript t = m_Aligner.GetTranscript(false);
                 cluster_seq.PropagateGaps(t, CNWAligner::eTS_Insert);
 
