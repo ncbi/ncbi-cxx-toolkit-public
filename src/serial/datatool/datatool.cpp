@@ -79,7 +79,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,9,1) );
+    SetVersion( CVersionInfo(1,9,2) );
 }
 
 void CDataTool::Init(void)
@@ -248,7 +248,7 @@ bool CDataTool::ProcessModules(void)
     }
     
     if ( const CArgValue& opm = args["opm"] ) {
-        modulesPath.clear();
+//        modulesPath.clear();
         NStr::Split(opm.AsString(), ",", modulesPath);
     }
     
