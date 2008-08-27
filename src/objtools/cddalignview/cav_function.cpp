@@ -299,14 +299,19 @@ int CAV_DisplayMultiple(
         outStream = outputStream;
     else
         outStream = &NcbiCout;
-    if (diagnosticStream)
-        SetDiagStream(diagnosticStream);
-    else
-        SetDiagStream(&NcbiCerr);
-    if (options & CAV_DEBUG)
-        SetDiagPostLevel(defaultDiagPostLevel = eDiag_Info);   // show all messages
-    else
-        SetDiagPostLevel(defaultDiagPostLevel = eDiag_Error);  // show only errors
+    if (options & CAV_NO_CHANGE_DIAG) {
+        defaultDiagPostLevel = SetDiagPostLevel();
+        SetDiagPostLevel(defaultDiagPostLevel);
+    } else {
+        if (diagnosticStream)
+            SetDiagStream(diagnosticStream);
+        else
+            SetDiagStream(&NcbiCerr);
+        if (options & CAV_DEBUG)
+            SetDiagPostLevel(defaultDiagPostLevel = eDiag_Info);   // show all messages
+        else
+            SetDiagPostLevel(defaultDiagPostLevel = eDiag_Error);  // show only errors
+    }
 
     // check option consistency
     if (options & CAV_CONDENSED && !(options & CAV_TEXT || options & CAV_HTML)) {

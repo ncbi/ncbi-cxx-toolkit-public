@@ -58,6 +58,7 @@ extern "C" {
 #define CAV_FASTA_LOWERCASE 0x0200  /* make unaligned residues lower case in FASTA output */
 #define CAV_ANNOT_BOTTOM    0x0400  /* put annotations on bottom; default is on top */
 #define CAV_NO_PARAG_COLOR  0x0800  /* don't use colored background for alignment paragraphs (HTML only) */
+#define CAV_NO_CHANGE_DIAG  0x1000  /* don't change any diagnostic stream/level (e.g. for applog) */
 
 
 /* data structure for holding alignment feature/annotation info */
