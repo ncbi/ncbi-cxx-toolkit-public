@@ -163,7 +163,7 @@ void CAgpContextValidator::x_OnGapRow(CAgpRow& row)
 {
   int i = row.gap_type;
   if(row.linkage) i+= CAgpRow::eGapCount;
-  NCBI_ASSERT( i < (int)sizeof(m_GapTypeCnt)/sizeof(m_GapTypeCnt[0]),
+  NCBI_ASSERT( i < (int)(sizeof(m_GapTypeCnt)/sizeof(m_GapTypeCnt[0])),
     "m_GapTypeCnt[] index out of bounds" );
   m_GapTypeCnt[i]++;
   m_GapCount++;
@@ -176,29 +176,32 @@ void CAgpContextValidator::x_OnGapRow(CAgpRow& row)
         row.GetObject(), CAgpErr::fAtThisLine|CAgpErrEx::fAtSkipAfterBad);
     }
   }
-  else if( prev_line_gap_type>=0 ) {
-    agpErr.Msg( CAgpErrEx::W_ConseqGaps, NcbiEmptyString,
-      CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErrEx::fAtSkipAfterBad );
-  }
-  else if( row.GapEndsScaffold() ) {
-    if(componentsInLastScaffold>0) {
-      // A breaking gap after a component; prev line is the last component of a scaffold.
-      m_ScaffoldCount++;
-      if(componentsInLastScaffold==1) {
-        m_SingleCompScaffolds++;
+  else {
+    if( prev_line_gap_type>=0 ) {
+      agpErr.Msg( CAgpErrEx::W_ConseqGaps, NcbiEmptyString,
+        CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErrEx::fAtSkipAfterBad );
+    }
+    if( row.GapEndsScaffold() ) {
+      if(componentsInLastScaffold>0) {
+        // A breaking gap after a component; prev line is the last component of a scaffold.
+        m_ScaffoldCount++;
+        if(componentsInLastScaffold==1) {
+          m_SingleCompScaffolds++;
+        }
+      }
+      // else: a breaking gap following the start of the object or another breaking gap
+    }
+    else {
+      // a non-breaking gap after a component
+      if(prev_orientation_unknown && componentsInLastScaffold==1) {
+                              // ^^^can probably ASSERT this^^^
+        agpErr.Msg(CAgpErrEx::E_UnknownOrientation,
+          NcbiEmptyString, CAgpErr::fAtPrevLine);
+        prev_orientation_unknown=false;
       }
     }
-    // else: a breaking gap following the start of the object
   }
-  else {
-    // a non-breaking gap after a component
-    if(prev_orientation_unknown && componentsInLastScaffold==1) {
-                             // ^^^can probably ASSERT this^^^
-      agpErr.Msg(CAgpErrEx::E_UnknownOrientation,
-        NcbiEmptyString, CAgpErr::fAtPrevLine);
-      prev_orientation_unknown=false;
-    }
-  }
+
   if( row.GapEndsScaffold() ) {
     componentsInLastScaffold=0;
   }
@@ -281,16 +284,28 @@ void CAgpContextValidator::x_OnCompRow(CAgpRow& row, int line_num)
     spans.AddSpan(comp);
   }
 
+  CSeq_id::EAccessionInfo acc_inf = CSeq_id::IdentifyAccession( row.GetComponentId() );
+  int div = acc_inf & CSeq_id::eAcc_division_mask;
+  bool unknown_or_local =
+    div == CSeq_id::eAcc_unknown ||
+    div == CSeq_id::eAcc_local;
   if(m_CheckCompNames) {
-    CSeq_id::EAccessionInfo acc_inf = CSeq_id::IdentifyAccession( row.GetComponentId() );
     string msg;
     if(  acc_inf & CSeq_id::fAcc_prot ) msg="; looks like a protein accession";
-    else if(
-      (acc_inf & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_unknown ||
-      (acc_inf & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_local
-    ) msg="; local or misspelled accession";
+    else if( unknown_or_local         ) msg="; local or misspelled accession";
 
     if(msg.size()) agpErr.Msg(CAgpErrEx::G_InvalidCompId, msg);
+  }
+
+  if(!unknown_or_local && acc_inf & CSeq_id::fAcc_nuc) {
+    if( div == CSeq_id::eAcc_wgs ||
+        div == CSeq_id::eAcc_wgs_intermed
+    ) {
+      if(row.component_type != 'W') agpErr.Msg(CAgpErr::W_CompIsWgsTypeIsNot);
+    }
+    else if( div == CSeq_id::eAcc_htgs ) {
+      if(row.component_type == 'W') agpErr.Msg(CAgpErr::W_CompIsNotWgsTypeIs);
+    }
   }
 }
 
@@ -312,6 +327,12 @@ void CAgpContextValidator::PrintTotals()
     if(agpErr.m_MaxRepeat && (e_count+w_count) ) {
       cout << "\n";
       agpErr.PrintMessageCounts(cout, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last);
+      if(!m_CheckCompNames && (
+        agpErr.CountTotals(CAgpErrEx::W_CompIsWgsTypeIsNot) ||
+        agpErr.CountTotals(CAgpErrEx::W_CompIsNotWgsTypeIs)
+      ) ) {
+        cout << "         (Use -g to print lines with WGS component_id/component_type mismatch.)";
+      }
     }
     cout << "\n";
   }

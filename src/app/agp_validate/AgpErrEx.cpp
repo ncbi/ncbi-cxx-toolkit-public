@@ -174,8 +174,10 @@ CAgpErrEx::CAgpErrEx()
 
   memset(m_MsgCount , 0, sizeof(m_MsgCount ));
   memset(m_MustSkip , 0, sizeof(m_MustSkip ));
-  // likely to be a systematic error, skip it by default
+  // errors that are "silenced" by default (only the count is printed)
   m_MustSkip[W_GapLineMissingCol9]=true;
+  m_MustSkip[W_CompIsWgsTypeIsNot]=true;
+  m_MustSkip[W_CompIsNotWgsTypeIs]=true;
 
   // A "random check" to make sure enum, msg[] and msg_ex[]
   // are not out of skew.

@@ -264,7 +264,14 @@ int CAgpValidateApplication::Run(void)
   else if( args["a"  ].HasValue() ) m_ValidationType = VT_Acc;
   else {
     m_ValidationType = VT_Context;
-    m_ContextValidator = new CAgpContextValidator(args["g"].HasValue());
+    bool checkCompNames=args["g"].HasValue();
+    m_ContextValidator = new CAgpContextValidator(checkCompNames);
+    if(checkCompNames) {
+      // also print WGS component_id/component_type mismatches.
+      agpErr.SkipMsg(CAgpErr::W_CompIsWgsTypeIsNot, true);
+      agpErr.SkipMsg(CAgpErr::W_CompIsNotWgsTypeIs, true);
+    }
+
   }
   if(m_ValidationType & VT_Acc) {
     //// Setup registry, error log, MT-lock for CONNECT library

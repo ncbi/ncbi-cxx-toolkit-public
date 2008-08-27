@@ -175,6 +175,10 @@ public:
 
   // we override Msg() that comes from CAgpErr
   virtual void Msg(int code, const string& details, int appliesTo=fAtThisLine);
+  virtual void Msg(int code, int appliesTo=fAtThisLine)
+  {
+    Msg(code, NcbiEmptyString, appliesTo);
+  }
 
   // Print any accumulated messages.
   // invalid_line=true: for the next line, suppress
@@ -192,8 +196,12 @@ public:
   //   ""                          no matches found for str
   //   string beginning with "  "  one or more messages that matched
   //   else                        printable [error] message
-  // Note: call SkipMsg("all") nefore SkipMsg(smth, true)
+  // Note: call SkipMsg("all") before SkipMsg(smth, true)
   string SkipMsg(const string& str, bool skip_other=false);
+  void SkipMsg(int code, bool skip_other=false)
+  {
+    if(code>=E_First && code<CODE_Last) m_MustSkip[code] = !skip_other;
+  }
 
   bool MustSkip(int code);
 
