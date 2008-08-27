@@ -3,14 +3,17 @@
 # Author: Pavel Ivanov
 #
 #
-# This script will build and deploy test_stat_load and test_stat_ext.cgi into standard locations
+# This script will deploy test_stat_load and test_stat_ext.cgi into standard locations
 # of these programs. Script should be launched under coremake account on coremake2 or any other
 # machine that can freely (without password) log into coremake2 and beastie computers. Script
 # should be launched in the following way:
 #
-# install_all.sh 0.0.0 -m "JIRA ticket"
+# install_all.sh 0.0.0
 #
-# Where 0.0.0 is version of the release that should be deployed.
+# Where 0.0.0 is version of the release that should be deployed. Script should be launched from
+# the directory where dbtest was built on all platforms, i.e. current directory should contain
+# prepare_release* subdirectory left by prepare_release build script and it should be writable
+# by coremake user.
 #
 
 
@@ -48,19 +51,12 @@ CGI_BIN_DIR="/net/snowman/vol/export2/iweb/ieb/ToolBox/STAT/test_stat"
 VERSION=$1
 shift
 if [[ -z "$VERSION" ]]; then
-    echo "Usage: install_all.sh <version> [parameters to prepare_release]"
+    echo "Usage: install_all.sh <version>"
     exit 1
 fi
 
 
-mkdir -p "$TMP_DIR"
-cd $TMP_DIR || exit 2
-echo "Working in directory '${TMP_DIR}'"
-
-echo "Building release version $VERSION"
-
-prepare_release build dbtest "$VERSION" "$@" || exit 3
-PREPARE_DIR="$(find . -type d -name "prepare_release*")"
+PREPARE_DIR="$(find . -type d -name "prepare_release*build*")"
 if [[ ! -d "$PREPARE_DIR" ]]; then
     echo "Cannot find directory made by prepare_release build!!!"
     exit 4
@@ -71,7 +67,7 @@ cd "$PREPARE_DIR"
 for ((i = 0; i < 7; ++i)); do
     echo "Deploying ${PLATF_FILE_MASKS[$i]}"
 
-    PLATF_FILE="$(find . -type f -name "${PLATF_FILE_MASKS[$i]}.tar.gz")"
+    PLATF_FILE="$(find . -type f -name "${PLATF_FILE_MASKS[$i]}.tar.gz" -a ! -name "*-src*")"
     if [[ -z "$PLATF_FILE" ]]; then
         echo "Cannot find file for mask '${PLATF_FILE_MASKS[$i]}.tar.gz'"
         exit 5
@@ -124,11 +120,5 @@ cd
 rm -rf "$TMP_DIR"
 
 EOF
-
-echo "Successfully returned from cruncher"
-
-
-cd
-rm -rf "$TMP_DIR"
 
 echo "Everything installed successfully"
