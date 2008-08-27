@@ -145,7 +145,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
         }
 
         if( iformatstr == "fasta" )
-            reader = new CMaskFastaReader( *is, false, args["parse_seqids"] );
+            reader = new CMaskFastaReader( *is, true, args["parse_seqids"] );
         else if( iformatstr == "blastdb" )
             reader = new CMaskBDBReader( args[kInput].AsString() );
 
