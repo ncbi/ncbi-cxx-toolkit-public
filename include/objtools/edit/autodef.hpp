@@ -146,7 +146,9 @@ private:
     string x_GetFeatureClauses(CBioseq_Handle bh);
     string x_GetFeatureClauseProductEnding(const string& feature_clauses,
                                            CBioseq_Handle bh);
-    vector<CAutoDefFeatureClause *> CAutoDef::x_GetIntergenicSpacerClauseList (string comment, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool suppress_locus_tags);
+    vector<CAutoDefFeatureClause *> x_GetIntergenicSpacerClauseList
+        (string comment, CBioseq_Handle bh, const CSeq_feat& cf,
+         const CSeq_loc& mapped_loc, bool suppress_locus_tags);
     bool x_AddIntergenicSpacerFeatures(CBioseq_Handle bh,
                                        const CSeq_feat& cf,
                                        const CSeq_loc& mapped_loc,
