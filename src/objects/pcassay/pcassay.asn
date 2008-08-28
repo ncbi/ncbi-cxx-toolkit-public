@@ -50,8 +50,7 @@ PC-AssaySubmit ::= SEQUENCE {
                           aid           INTEGER,             --   Assay Identifier
                           aid-source    PC-Source,           --   External Assay Identifier
                           descr         PC-AssayDescription, --   Assay Description (new or updated)
-                          aidver        PC-ID,               --   Assay Identifier/Version (for internal use)
-                          aidpal        PC-AssayPanelDescription              --   Assay Panel Description(new or updated)
+                          aidver        PC-ID                --   Assay Identifier/Version (for internal use)
                       },
     data              SEQUENCE OF PC-AssayResults  OPTIONAL, -- Assay Data Deposition (vector)
     revoke            SEQUENCE OF INTEGER          OPTIONAL  -- List of SID's whose data is to be suppressed
@@ -155,6 +154,7 @@ PC-AssayDescription ::= SEQUENCE {
                          nucleotide                    (2),
                          other                         (255)
                       }   OPTIONAL,                             -- to distinguish the type of substance used in the screening
+
     -- Grant and project category information
     grant-number      SEQUENCE OF VisibleString     OPTIONAL,               -- grant proposal number
                                                                 -- required for 'MLSCN' & 'MLPCN' projects
@@ -162,58 +162,40 @@ PC-AssayDescription ::= SEQUENCE {
                         mlscn    (1),
                         mlpcn    (2),
                         other    (255)
-                      }                 OPTIONAL                -- to distinguish projects funded through MLSCN, MLPCN or other
+                      }                 OPTIONAL,               -- to distinguish projects funded through MLSCN, MLPCN or other
                                                                 -- required for 'MLSCN' & 'MLPCN' projects
+
+    -- annotation to indicate whether an assay is a panel, e.g. containing multiple components, or belongs to a group    
+    is-panel          Boolean    OPTIONAL,                      -- annotation for panel assay, e.g. to indicate that this assay
+                                                                -- contains multiple members/components. 
+                                                                -- A panel assay can be one assay reporting readouts for
+                                                                -- many targets, or reporting readouts for different
+                                                                -- cell lines, or different organisms
+                                                                -- examples such as bioassay containing kinase profiling data
+                                                                -- or bioassay containing cytoxicity data for multiple cell lines
+                                                                -- or bioassay containing screening data from different stages, 
+                                                                -- such as primary screening, follow ups
+    assay-group       SEQUENCE OF VisibleString   OPTIONAL,     -- annotation for assay gruop information, e.g. this 
+                                                                -- assay belongs to a group of assay associated by 
+                                                                -- a unique name, e.g. the value assigned to 'assay-group',  
+                                                                -- assays belonging to this group can be 
+                                                                -- retrieved using this unique name
+                                                                -- it is depositor's responsibility to make the name 
+                                                                -- distinct if necessary
+                                                                -- this can be used as the mechanism to specify 'related bioassays'
+                                                                -- before hand so it is not necessary to update the descriptions of
+                                                                -- related assays when new group member submitted to PubChem 
+
+    panel-info        PC-AssayPanel     OPTIONAL                -- for 'panel' type of bioassay only
+                                                                -- store assay panel member information
 }
  
 -- Description for Panel Assay
 -- Describe general information about the panel, and link to information for each panel member 
---   A panel assay can be one assay reporting readouts for
---   many targets, or reporting readouts for different
---   cell lines, or different organisms
---   examples such as bioassay containing kinase profiling data
---   or bioassay containing cytoxicity data for multiple cell lines
---   or bioassay containing screening data from different stages, such as primary screening, follow ups
-PC-AssayPanelDescription ::= SEQUENCE {
-    -- Internal/External Tracking Information
-    aid               PC-ID,                                 -- Assay Description ID/Version  [Either valid ID 
-                                                             --   or, if "aid-source" is used, a "0" dummy value]
-                                                             --   Note: Version is for internal use (only?)
-                                                             --   Note: A valid ID is greater than "0"
-    aid-source        PC-Source                    OPTIONAL, -- External Identifier for this Assay Description
-                                                             --   Note: May be used in-lieu of "aid"
-                                                             --   Note: This is non-optional if "aid" ID is "0"
-
-    -- Assay Description Information
-    name              VisibleString,                         -- Short Assay Name (for display purposes)
-    description       SEQUENCE OF VisibleString    OPTIONAL, -- Description of Assay
-    protocol          SEQUENCE OF VisibleString    OPTIONAL, -- Procedure used to generate results
-    comment           SEQUENCE OF VisibleString    OPTIONAL, -- Comments or additional information
-    xref              SEQUENCE OF PC-AnnotatedXRef OPTIONAL, -- Annotated Cross-Reference Information
-
-    -- Allowed Assay Result Types
-    results           SEQUENCE OF PC-ResultType,             -- Result Definitions (vector)
-
-    -- Additional Information
-    pub               SEQUENCE OF Pub              OPTIONAL, -- Depositor provided publications for this assay
-    revision          INTEGER                      OPTIONAL, -- Revision identifier for textual description
-    substance-type    INTEGER{
-                         small-molecule (1),
-                         nucleotide     (2),
-                         other          (255)
-                      }                            OPTIONAL, -- to distinguish the type of substance used in the screening
-    -- Grant and project category information
-    grant-number      SEQUENCE OF VisibleString     OPTIONAL,               -- grant proposal number
-                                                                -- required for 'MLSCN' & 'MLPCN' projects
-    project-category  INTEGER{
-                        mlscn    (1),
-                        mlpcn    (2),
-                        other    (255)
-                      }                             OPTIONAL,   -- to distinguish projects funded through MLSCN, MLPCN or other
-                                                                -- required for 'MLSCN' & 'MLPCN' projects
-    -- Panel member information
-    member    SEQUENCE OF PC-AssayPanelMember       OPTIONAL    -- store panel member information
- 
+PC-AssayPanel ::= SEQUENCE {
+    name      VisibleString,                                    -- short name for the panel, such as 'Kinase Profiling'
+    descr     VisibleString                        OPTIONAL,    -- short description of this panel
+    member    SEQUENCE OF PC-AssayPanelMember      OPTIONAL     -- store panel member information
 }
 
 -- Specific information about each panel member(or component), such as target, cell line name, cross-reference ... 
