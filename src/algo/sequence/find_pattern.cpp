@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/sequence/find_pattern.hpp>
-#include <util/regexp.hpp>
+#include <util/xregexp/regexp.hpp>
 
 BEGIN_NCBI_SCOPE
 
