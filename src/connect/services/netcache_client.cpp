@@ -833,6 +833,10 @@ CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock, size_t blob_size)
 CNetCacheSock_RW::~CNetCacheSock_RW()
 {
     try {
+        if ( m_BlobBytesToRead > 0 ) {
+            m_BlobComment +=
+                ": remained bytes="+NStr::IntToString(m_BlobBytesToRead);
+        }
         FinishTransmission();
     } catch(exception& ex) {
         ERR_POST_X(1, "Exception in CNetCacheSock_RW::~CNetCacheSock_RW():" << ex.what());

@@ -121,8 +121,8 @@ void CNetICacheClient::ReturnSocket(CSocket* sock, const string& blob_comments)
         string line;
         if (io_st == eIO_Success) {
             sock->ReadLine(line);
-            ERR_POST_X(7, "ReturnSocket detected unread input " <<
-                blob_comments << " :" << line);
+            ERR_POST_X(7, "ReturnSocket detected unread input for " <<
+                       blob_comments << ": "<<line.size()<<" bytes:" << NStr::PrintableString(line));
             delete sock;
             return;
         }
