@@ -349,13 +349,15 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
             }
             //string query = NStr::IntToString(HitSet->GetNumber());
 
-            ConvertScanID(sQuery, spectrumID, HitSet->GetNumber(), (*iHit)->GetCharge());
+            int charge = (*iHit)->GetCharge();
+            ConvertScanID(sQuery, spectrumID, HitSet->GetNumber(), charge);
             //sQuery->SetAttlist().SetSpectrum(spectrumID);
             //sQuery->SetAttlist().SetStart_scan(ParseScan(spectrumID, 1, query));
             //sQuery->SetAttlist().SetEnd_scan(ParseScan(spectrumID, 2, query));
 
-            sQuery->SetAttlist().SetPrecursor_neutral_mass(NStr::DoubleToString((*iHit)->GetMass()/scale));
-            sQuery->SetAttlist().SetAssumed_charge(NStr::IntToString((*iHit)->GetCharge()));
+            double neutral_precursor_mass = ((*iHit)->GetMass()/scale)/charge;
+            sQuery->SetAttlist().SetPrecursor_neutral_mass(NStr::DoubleToString(neutral_precursor_mass));
+            sQuery->SetAttlist().SetAssumed_charge(NStr::IntToString(charge));
             sQuery->SetAttlist().SetIndex(NStr::IntToString(index++));
 
             // Only one search_result per query (for now)
@@ -387,7 +389,7 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
 				int tot_num_ions = ((*iHit)->GetPepstring().length()-1) * 2;
 				sHit->SetAttlist().SetTot_num_ions(NStr::IntToString(tot_num_ions));
                 sHit->SetAttlist().SetCalc_neutral_pep_mass(NStr::DoubleToString((*iHit)->GetTheomass()/scale));
-                sHit->SetAttlist().SetMassdiff(NStr::DoubleToString(((*iHit)->GetMass() - (*iHit)->GetTheomass())/scale));
+                sHit->SetAttlist().SetMassdiff(NStr::DoubleToString(neutral_precursor_mass - ((*iHit)->GetTheomass())/scale));
                 //sHit->SetSearch_hit().SetAttlist().SetNum_tol_term("42"); //skip
                 //sHit->SetSearch_hit().SetAttlist().SetNum_missed_cleavages("42"); //skip
                 sHit->SetAttlist().SetIs_rejected("0");
