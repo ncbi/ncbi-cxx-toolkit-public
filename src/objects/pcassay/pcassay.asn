@@ -166,7 +166,7 @@ PC-AssayDescription ::= SEQUENCE {
                                                                 -- required for 'MLSCN' & 'MLPCN' projects
 
     -- annotation to indicate whether an assay is a panel, e.g. containing multiple components, or belongs to a group    
-    is-panel          Boolean    OPTIONAL,                      -- annotation for panel assay, e.g. to indicate that this assay
+    is-panel          BOOLEAN    OPTIONAL,                      -- annotation for panel assay, e.g. to indicate that this assay
                                                                 -- contains multiple members/components. 
                                                                 -- A panel assay can be one assay reporting readouts for
                                                                 -- many targets, or reporting readouts for different
