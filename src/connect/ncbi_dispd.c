@@ -305,8 +305,8 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     size_t n;
 
     assert(data);
-    if (s_IsUpdateNeeded(iter->time, data)  &&
-        (!s_Resolve(iter)  ||  !data->n_cand)) {
+    if (s_IsUpdateNeeded(iter->time, data)
+        &&  (!s_Resolve(iter)  ||  !data->n_cand)) {
         return 0;
     }
 
