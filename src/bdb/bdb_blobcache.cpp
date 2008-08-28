@@ -146,8 +146,23 @@ public:
 
     virtual ~CBDB_CacheIReader()
     {
-        delete m_OverflowFile;
-        delete m_RawBuffer;
+        if ( m_RawBuffer ) {
+            if ( m_BufferSize ) {
+                ERR_POST("CBDB_CacheIReader: detected unread input "<<
+                         m_BufferSize);
+            }
+            delete m_RawBuffer;
+        }
+        if ( m_OverflowFile ) {
+            CNcbiStreampos pos = m_OverflowFile->tellg();
+            m_OverflowFile->seekg(0, IOS_BASE::end);
+            CNcbiStreampos end = m_OverflowFile->tellg();
+            if ( pos != end ) {
+                ERR_POST("CBDB_CacheIReader: detected unread input "<<
+                         (end-pos)<<": "<<pos<<" of "<<end);
+            }
+            delete m_OverflowFile;
+        }
     }
 
 
@@ -2280,6 +2295,9 @@ bool CBDB_Cache::HasBlobs(const string&  key,
         cur.From << key;
         cur.From << version;
         if (cur.FetchFirst() != eBDB_Ok)
+            return false;
+        const char* found_key = m_CacheAttrDB->key;
+        if ( key != found_key )
             return false;
         // We have version, now fetch subkey
         version = m_CacheAttrDB->version;
