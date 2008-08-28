@@ -130,10 +130,11 @@ const CSplign::TResults& CSplignSimple::Run(void)
 
 /*---------------------------------------------------------------------------*/
 // PRE : splign run
-// POST: splign results (if any) as Seq_align_set
+// POST: splign results (if any) as Seq_align_set/Dense_seg
 CRef<CSeq_align_set> CSplignSimple::GetResultsAsAln(void) const
 {
-    CRef<CSeq_align_set> sas(CSplignFormatter(*m_Splign).AsSeqAlignSet());
+    CRef<CSeq_align_set> sas (CSplignFormatter(*m_Splign).
+                              AsSeqAlignSet(0, CSplignFormatter::eAF_Disc));
 
     CRef<CSeq_id> si;
 
