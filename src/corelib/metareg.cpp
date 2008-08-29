@@ -37,6 +37,16 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
+// strstream (aka CNcbiStrstream) remains the default for historical
+// reasons; however, MIPSpro's implementation is buggy, yielding
+// truncated results in some cases. :-/
+#ifdef NCBI_COMPILER_MIPSPRO
+#  include <sstream>
+typedef std::stringstream TStrStream;
+#else
+typedef ncbi::CNcbiStrstream TStrStream;
+#endif
+
 BEGIN_NCBI_SCOPE
 
 
@@ -75,7 +85,7 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
             // Go through a temporary so errors (exceptions) won't
             // cause *registry to be incomplete.
             CMemoryRegistry tmp_reg;
-            CNcbiStrstream  str;
+            TStrStream      str;
             tmp_reg.Read(ifs, reg_flags);
             tmp_reg.Write(str, reg_flags);
             str.seekg(0);
@@ -128,7 +138,7 @@ CMetaRegistry::SEntry CMetaRegistry::Load(const string& name,
         }
         TRegFlags rflags = IRWRegistry::AssessImpact(reg_flags,
                                                      IRWRegistry::eRead);
-        CNcbiStrstream str;
+        TStrStream str;
         entry.registry->Write(str, rflags);
         str.seekg(0);
         CRegistryWriteGuard REG_GUARD(*reg);
