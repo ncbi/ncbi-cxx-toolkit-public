@@ -870,46 +870,6 @@ CStmtStr::find_TSQL(const string& str,
     return pos;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-CConnParam::CConnParam(
-    const string& driver_name,
-    const string& db_type,
-    const string& server_name,
-    const string& db_name,
-    const string& user_name,
-    const string& user_pswd
-    )
-: m_driver_name(driver_name)
-, m_db_type(db_type)
-, m_server_name(server_name)
-, m_db_name(db_name)
-, m_user_name(user_name)
-, m_user_pswd(user_pswd)
-, m_ServerType(eUnknown)
-{
-    // Setup a server type ...
-    string db_type_uc = db_type;
-    NStr::ToUpper(db_type_uc);
-
-    if ( db_type_uc == "SYBASE" ) {
-        m_ServerType = eSybase;
-    } else if ( db_type_uc == "ORACLE" ) {
-        m_ServerType = eOracle;
-    } else if ( db_type_uc == "MYSQL" ) {
-        m_ServerType = eMySql;
-    } else if ( db_type_uc == "SQLITE" ) {
-        m_ServerType = eSqlite;
-    } else if ( db_type_uc == "MSSQL" ||
-            db_type_uc == "MS_SQL" ||
-            db_type_uc == "MS SQL") {
-        m_ServerType = eMsSql;
-    }
-}
-
-CConnParam::~CConnParam(void)
-{
-}
-
 /* Future development
 //////////////////////////////////////////////////////////////////////////////
 struct DataSourceDeleter
@@ -1068,39 +1028,89 @@ string RetrieveModuleFileName(void)
 
 //////////////////////////////////////////////////////////////////////////////
 CConnection::CConnection(
-    const CConnParam& conn_param,
-    EConnectionMode conn_mode
+    const string& driver_name,
+    const string& db_type,
+    const string& server_name,
+    const string& db_name,
+    const string& user_name,
+    const string& user_pswd,
+    const pythonpp::CObject& extra_params
     )
-: m_ConnParam(conn_param)
+: m_DefParams(server_name, user_name, user_pswd)
+, m_Params(m_DefParams)
 , m_DM(CDriverManager::GetInstance())
 , m_DS(NULL)
 , m_DefTransaction( NULL )
-, m_ConnectionMode( conn_mode )
+, m_ConnectionMode(eSimpleMode)
 {
-//--------------------------------------------------
-//     CFile file(RetrieveModuleFileName());
-//     m_ModuleName = file.GetBase();
-//     m_DM.AddDllSearchPath(file.GetDir().c_str());
-//--------------------------------------------------
-
     try {
-        m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName(), &m_ConnParam.GetDatabaseParameters() );
+        m_DefParams.SetDriverName(driver_name);
+        m_DefParams.SetDatabaseName(db_name);
 
+        // Set up a server type ...
+        string db_type_uc = db_type;
+        NStr::ToUpper(db_type_uc);
+
+        if ( db_type_uc == "SYBASE" ) {
+            m_DefParams.SetServerType(CDBConnParams::eSybaseSQLServer);
+        } else if ( db_type_uc == "MYSQL" ) {
+            m_DefParams.SetServerType(CDBConnParams::eMySQL);
+        } else if ( db_type_uc == "SQLITE" ) {
+            m_DefParams.SetServerType(CDBConnParams::eSqlite);
+        } else if ( db_type_uc == "MSSQL" ||
+                db_type_uc == "MS_SQL" ||
+                db_type_uc == "MS SQL") 
+        {
+            m_DefParams.SetServerType(CDBConnParams::eMSSqlServer);
+        }
+
+
+        // Handle extra-parameters ...
+        if (!pythonpp::CNone::HasSameType(extra_params)) {
+            if (pythonpp::CDict::HasSameType(extra_params)) {
+                const pythonpp::CDict dict = extra_params;
+
+                // Iterate over a dict.
+                pythonpp::py_ssize_t i = 0;
+                PyObject* key;
+                PyObject* value;
+                while ( PyDict_Next(dict, &i, &key, &value) ) {
+                    // Refer to borrowed references in key and value.
+                    const string param_name = pythonpp::CString(key);
+                    const string param_value = pythonpp::CString(value);
+
+                    m_DefParams.SetParam(param_name, param_value);
+                }
+            } else if (pythonpp::CBool::HasSameType(extra_params)) {
+                bool support_standard_interface = pythonpp::CBool(extra_params);
+                m_ConnectionMode = (support_standard_interface ? eStandardMode : eSimpleMode);
+            } else {
+                throw CNotSupportedError("Expected dictionary as an argument.");
+            }
+        }
+
+        // Make a datasource ...
+        m_DS = m_DM.MakeDs(m_Params);
+
+        // Set up message handlers ...
         I_DriverContext* drv_context = m_DS->GetDriverContext();
+
 		drv_context->PushCntxMsgHandler(
 				new CDB_UserHandler_Exception,
 				eTakeOwnership
 				);
+
 		drv_context->PushDefConnMsgHandler(
 				new CDB_UserHandler_Exception,
 				eTakeOwnership
 				);
     }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
     }
-
-//    m_DS = &CDataSourcePool::GetInstance().GetDataSource( m_ConnParam.GetDriverName() );
 
     PrepareForPython(this);
 
@@ -1108,6 +1118,9 @@ CConnection::CConnection(
         // Create a default transaction ...
         // m_DefTransaction = new CTransaction(this, pythonpp::eBorrowed, m_ConnectionMode);
         m_DefTransaction = new CTransaction(this, pythonpp::eAcquired, m_ConnectionMode);
+    }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
@@ -1141,12 +1154,7 @@ CConnection::MakeDBConnection(void) const
     _ASSERT(m_DS);
     // !!! eTakeOwnership !!!
     IConnection* connection = m_DS->CreateConnection( eTakeOwnership );
-    connection->Connect(
-        m_ConnParam.GetUserName(),
-        m_ConnParam.GetUserPswd(),
-        m_ConnParam.GetServerName(),
-        m_ConnParam.GetDBName()
-        );
+    connection->Connect(m_Params);
     return connection;
 }
 
@@ -1337,6 +1345,9 @@ CDMLConnPool::commit(void) const
             GetLocalStmt().ExecuteUpdate( "COMMIT TRANSACTION" );
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
         }
+        catch(const CDB_Exception& e) {
+            throw CDatabaseError(e);
+        }
         catch(const CException& e) {
             throw CDatabaseError(e.what());
         }
@@ -1355,6 +1366,9 @@ CDMLConnPool::rollback(void) const
         try {
             GetLocalStmt().ExecuteUpdate( "ROLLBACK TRANSACTION" );
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
+        }
+        catch(const CDB_Exception& e) {
+            throw CDatabaseError(e);
         }
         catch(const CException& e) {
             throw CDatabaseError(e.what());
@@ -1401,6 +1415,9 @@ CTransaction::close(const pythonpp::CTuple& args)
 	try {
 		CloseInternal();
 	}
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
 	catch(const CException& e) {
 		throw CDatabaseError(e.what());
 	}
@@ -1418,6 +1435,9 @@ CTransaction::cursor(const pythonpp::CTuple& args)
 	try {
 		return pythonpp::CObject(CreateCursor(), pythonpp::eTakeOwnership);
 	}
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
 	catch(const CException& e) {
 		throw CDatabaseError(e.what());
 	}
@@ -1429,6 +1449,9 @@ CTransaction::commit(const pythonpp::CTuple& args)
 	try {
 		CommitInternal();
 	}
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
 	catch(const CException& e) {
 		throw CDatabaseError(e.what());
 	}
@@ -1442,6 +1465,9 @@ CTransaction::rollback(const pythonpp::CTuple& args)
 	try {
 		RollbackInternal();
 	}
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
 	catch(const CException& e) {
 		throw CDatabaseError(e.what());
 	}
@@ -1718,6 +1744,9 @@ CStmtHelper::SetParam(const string& name, const CVariant& value)
     try {
         m_Stmt->SetParam( value, param_name );
     }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch(const CException& e) {
         throw CDatabaseError( e.what() );
     }
@@ -1743,6 +1772,9 @@ CStmtHelper::Execute(void)
     }
     catch(const bad_cast&) {
         throw CInternalError("std::bad_cast exception within 'CStmtHelper::Execute'");
+    }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
@@ -1813,6 +1845,9 @@ CStmtHelper::MoveToNextRS(void)
                 return true;
             }
         }
+    }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
@@ -1940,6 +1975,9 @@ CCallableStmtHelper::SetParam(const string& name, const CVariant& value, bool& o
             output_param = true;
         }
     }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch(const CException& e) {
         throw CDatabaseError( e.what() );
     }
@@ -1966,6 +2004,9 @@ CCallableStmtHelper::Execute(bool cache_results)
     }
     catch(const bad_cast&) {
         throw CInternalError("std::bad_cast exception within 'CCallableStmtHelper::Execute'");
+    }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
@@ -2301,6 +2342,9 @@ CCursor::callproc(const pythonpp::CTuple& args)
             return output_args;
         }
 	}
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
 	catch(const CException& e) {
 		throw CDatabaseError(e.what());
 	}
@@ -2320,6 +2364,9 @@ CCursor::close(const pythonpp::CTuple& args)
 
         // Unregister this cursor with the parent transaction ...
         GetTransaction().DestroyCursor(this);
+    }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
@@ -2372,6 +2419,9 @@ CCursor::execute(const pythonpp::CTuple& args)
 
         m_StmtHelper.Execute();
         m_RowsNum = m_StmtHelper.GetRowCount();
+    }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
@@ -2493,6 +2543,9 @@ CCursor::executemany(const pythonpp::CTuple& args)
             }
         }
     }
+    catch(const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
     }
@@ -2523,7 +2576,10 @@ CCursor::fetchone(const pythonpp::CTuple& args)
             }
         }
     }
-    catch(const CException& e) {
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
+    catch (const CException& e) {
         throw CDatabaseError(e.what());
     }
 
@@ -2579,6 +2635,9 @@ CCursor::fetchmany(const pythonpp::CTuple& args)
             m_RowsNum = m_StmtHelper.GetRowCount();
         }
     }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
     }
@@ -2618,6 +2677,9 @@ CCursor::fetchall(const pythonpp::CTuple& args)
             }
         }
     }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
     }
@@ -2654,6 +2716,9 @@ CCursor::NextSetInternal(void)
             }
         }
     }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
     }
@@ -2671,6 +2736,9 @@ CCursor::nextset(const pythonpp::CTuple& args)
 			if ( NextSetInternal() ) {
 					return pythonpp::CBool(true);
 			}
+    }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
@@ -2711,6 +2779,9 @@ CCursor::get_proc_return_status(const pythonpp::CTuple& args)
             return pythonpp::CInt( m_StmtHelper.GetReturnStatus() );
         }
     }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch(const CException& e) {
         throw CDatabaseError(e.what());
     }
@@ -2719,6 +2790,162 @@ CCursor::get_proc_return_status(const pythonpp::CTuple& args)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+CWarning::CWarning(const string& msg)
+: pythonpp::CUserError<CWarning>( msg )
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CError::CError(void)
+{
+}
+
+CError::CError(const string& msg)
+: pythonpp::CUserError<CError>( msg )
+{
+}
+
+CError::CError(const string& msg, PyObject* err_type)
+: pythonpp::CUserError<CError>(msg, err_type)
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CInterfaceError::CInterfaceError(const string& msg)
+: pythonpp::CUserError<CInterfaceError, CError>( msg )
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CDatabaseError::CDatabaseError(const CDB_Exception& e)
+: pythonpp::CUserError<CDatabaseError, CError>()
+{
+    const CException* cur_exception = &e;
+    string srv_msg;
+
+    for (; cur_exception; cur_exception = cur_exception->GetPredecessor()) {
+        /* Collect all messages ...
+        if (!srv_msg.empty() && !cur_exception->GetMsg().empty()) {
+            srv_msg += " ";
+        }
+
+        srv_msg += cur_exception->GetMsg();
+        */
+
+        // Get the last message only ...
+        srv_msg = cur_exception->GetMsg();
+    }
+
+    SetPythonExeption(e.what(), e.GetDBErrCode(), srv_msg);
+}
+
+CDatabaseError::CDatabaseError(const string& msg, long db_errno, const string& db_msg)
+: pythonpp::CUserError<CDatabaseError, CError>()
+{
+    SetPythonExeption(msg, db_errno, db_msg);
+}
+
+CDatabaseError::CDatabaseError(const string& msg, PyObject* err_type)
+: pythonpp::CUserError<CDatabaseError, CError>(msg, err_type)
+{
+}
+
+void 
+CDatabaseError::SetPythonExeption(const string& msg, long db_errno, const string& db_msg)
+{        
+    PyObject *exc_ob = NULL;
+    PyObject *errno_ob = NULL;
+    PyObject *msg_ob = NULL;
+
+    // Make an integer for the error code. 
+    errno_ob = PyInt_FromLong(db_errno);
+    if (errno_ob == NULL) {
+        return;
+    }
+
+    msg_ob = PyString_FromString((char*)db_msg.c_str());
+    if (errno_ob == NULL) {
+        Py_DECREF(errno_ob);
+        return;
+    }
+
+    // Instantiate a SubversionException object.
+    exc_ob = PyObject_CallFunction(GetPyException(), (char *)"s", (char*)msg.c_str());
+    if (exc_ob == NULL)
+    {
+        Py_DECREF(errno_ob);
+        Py_DECREF(msg_ob);
+        return;
+    }
+
+    //  Set the "db_errno" attribute of the exception to our error code.
+    if (PyObject_SetAttrString(exc_ob, (char *)"srv_errno", errno_ob) == -1)
+    {
+        Py_DECREF(errno_ob);
+        Py_DECREF(msg_ob);
+        Py_DECREF(exc_ob);
+        return;
+    }
+
+    //  Finished with the errno_ob object.
+    Py_DECREF(errno_ob);
+
+    //  Set the "db_msg" attribute of the exception to our message.
+    if (PyObject_SetAttrString(exc_ob, (char *)"srv_msg", msg_ob) == -1)
+    {
+        Py_DECREF(msg_ob);
+        Py_DECREF(exc_ob);
+        return;
+    }
+
+    //  Finished with the msg_ob object.
+    Py_DECREF(msg_ob);
+    
+    //  Set the error state to our exception object.
+    PyErr_SetObject(GetPyException(), exc_ob);
+
+    //  Finished with the exc_ob object.
+    Py_DECREF(exc_ob);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CInternalError::CInternalError(const string& msg)
+: pythonpp::CUserError<CInternalError, CDatabaseError>( msg )
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+COperationalError::COperationalError(const string& msg)
+: pythonpp::CUserError<COperationalError, CDatabaseError>( msg )
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CProgrammingError::CProgrammingError(const string& msg)
+: pythonpp::CUserError<CProgrammingError, CDatabaseError>( msg )
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CIntegrityError::CIntegrityError(const string& msg)
+: pythonpp::CUserError<CIntegrityError, CDatabaseError>( msg )
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CDataError::CDataError(const string& msg)
+: pythonpp::CUserError<CDataError, CDatabaseError>( msg )
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CNotSupportedError::CNotSupportedError(const string& msg)
+: pythonpp::CUserError<CNotSupportedError, CDatabaseError>( msg )
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
 /* Future development ... 2/4/2005 12:05PM
 //////////////////////////////////////////////////////////////////////////////
 // Future development ...
@@ -2779,6 +3006,9 @@ CModuleDBAPI::connect(const pythonpp::CTuple& args)
         // Feef the object to the Python interpreter ...
         return pythonpp::CObject(conn, pythonpp::eTakeOwnership);
     }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
     }
@@ -2810,6 +3040,9 @@ CModuleDBAPI::Date(const pythonpp::CTuple& args)
         // Feef the object to the Python interpreter ...
         return pythonpp::CDate(year, month, day);
     }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
     }
@@ -2840,6 +3073,9 @@ CModuleDBAPI::Time(const pythonpp::CTuple& args)
 
         // Feef the object to the Python interpreter ...
         return pythonpp::CTime(hour, minute, second, 0);
+    }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
@@ -2879,6 +3115,9 @@ CModuleDBAPI::Timestamp(const pythonpp::CTuple& args)
         // Feef the object to the Python interpreter ...
         return pythonpp::CDateTime(year, month, day, hour, minute, second, 0);
     }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
     }
@@ -2896,6 +3135,9 @@ pythonpp::CObject
 CModuleDBAPI::DateFromTicks(const pythonpp::CTuple& args)
 {
     try {
+    }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
@@ -2915,6 +3157,9 @@ CModuleDBAPI::TimeFromTicks(const pythonpp::CTuple& args)
 {
     try {
     }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
     }
@@ -2932,6 +3177,9 @@ pythonpp::CObject
 CModuleDBAPI::TimestampFromTicks(const pythonpp::CTuple& args)
 {
     try {
+    }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
@@ -2964,6 +3212,9 @@ CModuleDBAPI::Binary(const pythonpp::CTuple& args)
 
         // Feef the object to the Python interpreter ...
         return pythonpp::CObject(obj, pythonpp::eTakeOwnership);
+    }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
@@ -3040,6 +3291,7 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
 }
 */
 
+// Genetal declarations ...
 namespace python
 {
 //////////////////////////////////////////////////////////////////////////////
@@ -3051,13 +3303,17 @@ Connect(PyObject *self, PyObject *args)
     CConnection* conn = NULL;
 
     try {
+        // Debugging ...
+        // throw  python::CDatabaseError("oops ..."); 
+        // throw  python::CDatabaseError("oops ...", 200, "Blah-blah-blah"); 
+
         string driver_name;
         string db_type;
         string server_name;
         string db_name;
         string user_name;
         string user_pswd;
-        bool support_standard_interface = false;
+        pythonpp::CObject extra_params = pythonpp::CNone();
 
         try {
             const pythonpp::CTuple func_args(args);
@@ -3069,31 +3325,33 @@ Connect(PyObject *self, PyObject *args)
             user_name = pythonpp::CString(func_args[4]);
             user_pswd = pythonpp::CString(func_args[5]);
             if ( func_args.size() > 6 ) {
-                support_standard_interface = pythonpp::CBool(func_args[6]);
+                extra_params = func_args[6];
             }
         } catch (const pythonpp::CError&) {
             throw CProgrammingError("Invalid parameters within 'connect' function");
         }
 
-        conn = new CConnection( CConnParam(
+        conn = new CConnection(
             driver_name,
             db_type,
             server_name,
             db_name,
             user_name,
-            user_pswd
-            ),
-            ( support_standard_interface ? eStandardMode : eSimpleMode )
+            user_pswd,
+            extra_params
             );
+    }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
     }
-    catch(const pythonpp::CError&) {
+    catch (const pythonpp::CError&) {
         // An error message is already set by an exception ...
         return NULL;
     }
-    catch(...) {
+    catch (...) {
         pythonpp::CError::SetString("Unknown error in python_ncbi_dbapi::Connect");
     }
 
@@ -3125,6 +3383,9 @@ Date(PyObject *self, PyObject *args)
         }
 
         return IncRefCount(pythonpp::CDate(year, month, day));
+    }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
@@ -3166,6 +3427,9 @@ Time(PyObject *self, PyObject *args)
         }
 
         return IncRefCount(pythonpp::CTime(hour, minute, second, 0));
+    }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
@@ -3215,6 +3479,9 @@ Timestamp(PyObject *self, PyObject *args)
 
         return IncRefCount(pythonpp::CDateTime(year, month, day, hour, minute, second, 0));
     }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
     }
@@ -3242,6 +3509,9 @@ DateFromTicks(PyObject *self, PyObject *args)
     try {
         throw CNotSupportedError("Function DateFromTicks");
     }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
     }
@@ -3268,6 +3538,9 @@ TimeFromTicks(PyObject *self, PyObject *args)
     try {
         throw CNotSupportedError("Function TimeFromTicks");
     }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
+    }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
     }
@@ -3293,6 +3566,9 @@ TimestampFromTicks(PyObject *self, PyObject *args)
 {
     try {
         throw CNotSupportedError("Function TimestampFromTicks");
+    }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
@@ -3329,6 +3605,9 @@ Binary(PyObject *self, PyObject *args)
         }
 
         obj = new CBinary(value);
+    }
+    catch (const CDB_Exception& e) {
+        throw CDatabaseError(e);
     }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.what());
@@ -3378,6 +3657,230 @@ static struct PyMethodDef python_ncbi_dbapi_methods[] = {
     { NULL, NULL }
 };
 
+///////////////////////////////////////////////////////////////////////////////
+// DatabaseErrorExt extends PyBaseExceptionObject
+/* DO NOT delete this code ...
+struct PyDatabaseErrorExtObject : public PyBaseExceptionObject
+{
+    PyObject *db_message;
+    PyObject *db_code;
+};
+ 
+
+static int
+DatabaseErrorExt_init(PyDatabaseErrorExtObject *self, PyObject *args, PyObject *kwds)
+{
+    if (PyExc_BaseException->ob_type->tp_init((PyObject *)self, args, kwds) < 0) {
+        return -1;
+    }
+
+    PyObject* message = NULL;
+    PyObject *db_message = NULL, *db_code = NULL, *tmp;
+
+    static char *kwlist[] = {"message", "db_message", "db_code", NULL};
+
+    if (! PyArg_ParseTupleAndKeywords(
+            args, 
+            kwds, 
+            "S|SO", 
+            kwlist, 
+            &message,
+            &db_message, 
+            &db_code
+            )
+        ) 
+    {
+        return -1; 
+    }
+
+    if (db_message) {
+        tmp = self->db_message;
+        Py_INCREF(db_message);
+        self->db_message = db_message;
+        Py_DECREF(tmp);
+    }
+
+    if (db_code) {
+        // We are reading an object. Let us check the type.
+        if (! PyInt_CheckExact(db_code)) {
+            PyErr_SetString(PyExc_TypeError, 
+                    "The second attribute value must be an int or a long");
+            return -1;
+        }
+
+        tmp = self->db_code;
+        Py_INCREF(db_code);
+        self->db_code = db_code;
+        Py_DECREF(tmp);
+    }
+
+    return 0;
+}
+
+static PyObject *
+DatabaseErrorExt_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyDatabaseErrorExtObject *self;
+
+    self = (PyDatabaseErrorExtObject *)type->tp_alloc(type, 0);
+    // self = (PyDatabaseErrorExtObject *)type->tp_new(type, args, kwds);
+    if (self != NULL) {
+        self->db_message = PyString_FromString("");
+        if (self->db_message == NULL)
+        {
+            Py_DECREF(self);
+            return NULL;
+        }
+
+        self->db_code = PyLong_FromLong(0);
+        if (self->db_code == NULL)
+        {
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
+
+    return (PyObject *)self;
+}
+
+static PyObject *
+DatabaseErrorExt_get_db_message(PyDatabaseErrorExtObject *self, void* )
+{
+    Py_INCREF(self->db_message);
+    return self->db_message;
+}
+
+static int
+DatabaseErrorExt_set_db_message(PyDatabaseErrorExtObject *self, PyObject *value, void* )
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete the db_message attribute");
+        return -1;
+    }
+
+    if (! PyString_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, 
+                "The first attribute value must be a string");
+        return -1;
+    }
+
+    Py_DECREF(self->db_message);
+    Py_INCREF(value);
+    self->db_message = value;    
+
+    return 0;
+}
+
+static PyObject *
+DatabaseErrorExt_get_db_code(PyDatabaseErrorExtObject *self, void *closure)
+{
+    Py_INCREF(self->db_code);
+    return self->db_code;
+}
+
+static int
+DatabaseErrorExt_set_db_code(PyDatabaseErrorExtObject *self, PyObject *value, void *closure)
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete the db_code attribute");
+        return -1;
+    }
+
+    if (! PyLong_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, 
+                "The second attribute value must be a long");
+        return -1;
+    }
+
+    Py_DECREF(self->db_code);
+    Py_INCREF(value);
+    self->db_code = value;    
+
+    return 0;
+}
+
+static PyGetSetDef DatabaseErrorExt_getseters[] = {
+    {"db_message", (getter)DatabaseErrorExt_get_db_message, (setter)DatabaseErrorExt_set_db_message, "Database message", NULL},
+    {"db_code", (getter)DatabaseErrorExt_get_db_code, (setter)DatabaseErrorExt_set_db_code, "Database error code", NULL},
+    {NULL}  
+};
+
+static int
+DatabaseErrorExt_traverse(PyDatabaseErrorExtObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->db_message);
+    Py_VISIT(self->db_code);
+
+    return 0;
+}
+
+static int 
+DatabaseErrorExt_clear(PyDatabaseErrorExtObject *self)
+{
+    Py_CLEAR(self->db_message);
+    Py_CLEAR(self->db_code);
+
+    return 0;
+}
+
+static void
+DatabaseErrorExt_dealloc(PyDatabaseErrorExtObject *self)
+{
+    // ???
+    // PyExc_BaseException->ob_type->tp_dealloc((PyObject *)self);
+
+    DatabaseErrorExt_clear(self);
+
+    self->ob_type->tp_free((PyObject *)self);
+}
+*/
+
+
+// static PyTypeObject DatabaseErrorExtType = {
+//     PyObject_HEAD_INIT(NULL)
+//     0,                       /* ob_size */
+//     "python_ncbi_dbapi.DatabaseErrorExt", /* tp_name */
+//     sizeof(PyDatabaseErrorExtObject), /* tp_basicsize */
+//     0,                       /* tp_itemsize */
+//     (destructor)DatabaseErrorExt_dealloc,  /* tp_dealloc */
+//     0,                       /* tp_print */
+//     0,                       /* tp_getattr */
+//     0,                       /* tp_setattr */
+//     0,                       /* tp_compare */
+//     0,                       /* tp_repr */
+//     0,                       /* tp_as_number */
+//     0,                       /* tp_as_sequence */
+//     0,                       /* tp_as_mapping */
+//     0,                       /* tp_hash */
+//     0,                       /* tp_call */
+//     0,                       /* tp_str */
+//     0,                       /* tp_getattro */
+//     0,                       /* tp_setattro */
+//     0,                       /* tp_as_buffer */
+//     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,   /* tp_flags */
+//     "Database error",        /* tp_doc */
+//     (traverseproc)DatabaseErrorExt_traverse, /* tp_traverse */
+//     (inquiry)DatabaseErrorExt_clear, /* tp_clear */
+//     0,                       /* tp_richcompare */
+//     0,                       /* tp_weaklistoffset */
+//     0,                       /* tp_iter */
+//     0,                       /* tp_iternext */
+//     0,                       /* tp_methods */
+//     0,                       /* tp_members */
+//     DatabaseErrorExt_getseters, /* tp_getset */
+//     0,                       /* tp_base */
+//     0,                       /* tp_dict */
+//     0,                       /* tp_descr_get */
+//     0,                       /* tp_descr_set */
+//     0,                       /* tp_dictoffset */
+//     (initproc)DatabaseErrorExt_init, /* tp_init */
+//     0,                       /* tp_alloc */
+//     0, // DatabaseErrorExt_new,    /* tp_new */
+// };
+// static PyObject *PyExc_DatabaseErrorExtType = (PyObject *)&DatabaseErrorExtType; 
+// static PyObject* PyExc_DatabaseErrorExt = NULL;
+
+///////////////////////////////////////////////////////////////////////////////
 static
 void init_common(const string& module_name)
 {
@@ -3451,7 +3954,7 @@ void init_common(const string& module_name)
     python::CCursor::Declare(string(module_name + ".Cursor").c_str());
 
     ///////////////////////////////////
-    // Dclare types ...
+    // Declare types ...
 
     // Declare BINARY
     if ( PyType_Ready(&python::CBinary::GetType()) == -1 ) {
@@ -3479,6 +3982,47 @@ void init_common(const string& module_name)
 
     ///////////////////////////////////
     // Add exceptions ...
+
+    /* DO NOT delete this code ...
+    {
+        DatabaseErrorExtType.tp_new = DatabaseErrorExt_new;
+        DatabaseErrorExtType.tp_base = python::CError::GetPyException()->ob_type;
+
+        if (PyType_Ready(&DatabaseErrorExtType) < 0) {
+            Py_FatalError("exceptions bootstrapping error.");
+            return;
+        }
+
+        PyObject* dict = PyModule_GetDict(module);
+        if (dict == NULL) {
+            Py_FatalError("exceptions bootstrapping error."); 
+        }
+
+        Py_INCREF(PyExc_DatabaseErrorExtType);
+        PyModule_AddObject(module, "DatabaseErrorExt", PyExc_DatabaseErrorExtType);
+        if (PyDict_SetItemString(dict, "DatabaseErrorExt", PyExc_DatabaseErrorExtType)) {
+            Py_FatalError("Module dictionary insertion problem.");
+        }
+
+        PyExc_DatabaseErrorExt = (PyObject*) PyErr_NewException("python_ncbi_dbapi.DatabaseErrorExt2", PyExc_DatabaseErrorExtType, NULL);
+        python::CError::Check( PyExc_DatabaseErrorExt );
+        if ( PyModule_AddObject( module, "DatabaseErrorExt2", PyExc_DatabaseErrorExt ) == -1 ) {
+            throw pythonpp::CSystemError( "Unable to add an object to a module" );
+        }
+        if (PyDict_SetItemString(dict, "DatabaseErrorExt2", PyExc_DatabaseErrorExt)) {
+            Py_FatalError("Module dictionary insertion problem.");
+        }
+    }
+    */
+
+    /* DO NOT delete this code ...
+
+    python::CDatabaseError::Declare(
+        string(module_name + ".DatabaseErrorExt").c_str(), 
+        NULL, 
+        python::CError::GetPyException()->ob_type
+        );
+    */
 
     python::CWarning::Declare("Warning");
     python::CError::Declare("Error");

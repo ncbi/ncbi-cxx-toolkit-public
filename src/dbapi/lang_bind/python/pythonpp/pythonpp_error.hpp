@@ -140,6 +140,10 @@ public:
     {
         SetString(msg);
     }
+    CError(PyObject* value)
+    {
+        SetObject(value);
+    }
 
 protected:
     CError(const string& msg, PyObject* err_type)
@@ -175,7 +179,11 @@ public:
 public:
     static void SetString(const string& msg)
     {
-        PyErr_SetString(GetPyException(), msg.c_str());
+        SetString(GetPyException(), msg.c_str());
+    }
+    static void SetObject(PyObject* value)
+    {
+        SetObject(GetPyException(), value);
     }
 
 protected:
@@ -713,6 +721,9 @@ protected:
 class CStandardError : public CError
 {
 public:
+    CStandardError(void)
+    {
+    }
     CStandardError(const string& msg)
     : CError(msg, GetPyException())
     {

@@ -7,7 +7,7 @@ REQUIRES = PYTHON Boost.Test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(PYTHON_INCLUDE) $(BOOST_INCLUDE)
 
-LIB  = xutil xncbi
+LIB  = dbapi_driver$(STATIC) xutil xncbi
 LIBS = $(BOOST_LIBS) $(PYTHON_LIBS) $(ORIG_LIBS)
 
 # CHECK_REQUIRES = mswin

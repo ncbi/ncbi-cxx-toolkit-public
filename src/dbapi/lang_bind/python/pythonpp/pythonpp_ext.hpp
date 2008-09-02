@@ -36,6 +36,7 @@
 #define PYTHONPP_EXT_H
 
 #include "pythonpp_seq.hpp"
+#include "pythonpp_dict.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -107,7 +108,8 @@ class CExtType : public PyTypeObject
 public:
     CExtType(
         size_t basic_size,
-        destructor dr = standard_dealloc)
+        destructor dr = standard_dealloc,
+        PyTypeObject* base = &PyBaseObject_Type)
     {
         BasicInit();
 
@@ -116,6 +118,8 @@ public:
         tp_dealloc = dr;
         // Py_TPFLAGS_BASETYPE - means that the type is subtypable ...
         tp_flags = Py_TPFLAGS_DEFAULT;
+        tp_base = base;
+        // tp_bases = ??? // It should be NULL for statically defined types.
 
         // Finalize the type object including setting type of the new type
         // object; doing it here is required for portability to Windows
@@ -509,12 +513,19 @@ public:
 
     template <size_t N> friend class CClass;
 
-    static void Declare(const char* name, const char* descr = 0)
-    {
+    static void Declare(
+        const char* name, 
+        const char* descr = 0,
+        PyTypeObject* base = &PyBaseObject_Type
+        )
+    { 
+        _ASSERT(sm_Base == NULL);
+        sm_Base = base;
+
         CExtType& type = GetType();
 
         type.SetName(name);
-        if ( descr ) {
+         if ( descr ) {
             type.SetDescription(descr);
         }
         type.SupportGetAttr(GetAttrImpl);
@@ -529,7 +540,8 @@ public:
     // Return a python object type.
     static CExtType& GetType(void)
     {
-        static CExtType obj_type( sizeof(T), deallocator );
+        _ASSERT(sm_Base != NULL);
+        static CExtType obj_type( sizeof(T), deallocator, sm_Base );
 
         return obj_type;
     }
@@ -570,6 +582,9 @@ protected:
     }
 
 private:
+    static PyTypeObject* sm_Base;
+
+private:
     typedef vector<SMethodDef>  TMethodHndlList;
     static TMethodHndlList      sm_MethodHndlList;
 
@@ -604,6 +619,7 @@ private:
     }
 };
 
+template <class T> PyTypeObject* CExtObject<T>::sm_Base = NULL;
 template <class T> typename CExtObject<T>::TMethodHndlList CExtObject<T>::sm_MethodHndlList;
 template <class T> typename CExtObject<T>::TMethodList CExtObject<T>::sm_MethodList;
 
@@ -828,6 +844,9 @@ template <class T, class B = CStandardError>
 class CUserError : public B
 {
 public:
+    CUserError(void)
+    {
+    }
     CUserError(const string& msg)
     : B( msg, GetPyException() )
     {
@@ -851,8 +870,19 @@ public:
             throw CSystemError( "Unable to add an object to a module" );
         }
     }
+    static void Declare(const string& name, const pythonpp::CDict& dict)
+    {
+        _ASSERT( m_Exception == NULL );
+        _ASSERT( CModuleExt::GetPyModule() );
+        const string full_name = CModuleExt::GetName() + "." + name;
+        m_Exception = PyErr_NewException(const_cast<char*>(full_name.c_str()), B::GetPyException(), dict);
+        CError::Check( m_Exception );
+        if ( PyModule_AddObject( CModuleExt::GetPyModule(), const_cast<char*>(name.c_str()), m_Exception ) == -1 ) {
+            throw CSystemError( "Unable to add an object to a module" );
+        }
+    }
 
-protected:
+public:
     static PyObject* GetPyException(void)
     {
         _ASSERT( m_Exception );

@@ -32,6 +32,7 @@
 */
 
 #include <dbapi/dbapi.hpp>
+#include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <set>
 
 #include "pythonpp/pythonpp_ext.hpp"
@@ -585,79 +586,6 @@ private:
 };
 
 //////////////////////////////////////////////////////////////////////////////
-class CConnParam
-{
-public:
-    CConnParam(
-        const string& driver_name,
-        const string& db_type,
-        const string& server_name,
-        const string& db_name,
-        const string& user_name,
-        const string& user_pswd
-        );
-    ~CConnParam(void);
-
-public:
-    enum EServerType {
-        eSybase,    //< Sybase server
-        eMsSql,     //< Microsoft SQL server
-        eOracle,    //< ORACLE server
-        eSqlite,    //< SQLITE database
-        eMySql,     //< MySQL server
-        eUnknown    //< Server type is not known
-    };
-    typedef map<string, string> TDatabaseParameters;
-
-public:
-    /// Return current driver name
-    const string& GetDriverName(void) const
-    {
-        return m_driver_name;
-    }
-    /// Return current server type
-    EServerType GetServerType(void) const
-    {
-        return m_ServerType;
-    }
-    const string& GetDBType(void) const
-    {
-        return m_db_type;
-    }
-    const string& GetServerName(void) const
-    {
-        return m_server_name;
-    }
-    const string& GetDBName(void) const
-    {
-        return m_db_name;
-    }
-    const string& GetUserName(void) const
-    {
-        return m_user_name;
-    }
-    const string& GetUserPswd(void) const
-    {
-        return m_user_pswd;
-    }
-    const TDatabaseParameters& GetDatabaseParameters(void) const
-    {
-        return m_DatabaseParameters;
-    }
-
-private:
-    const string m_driver_name;
-    const string m_db_type;
-    const string m_server_name;
-    const string m_db_name;
-    const string m_user_name;
-    const string m_user_pswd;
-
-    EServerType         m_ServerType;
-    TDatabaseParameters m_DatabaseParameters;
-};
-
-//////////////////////////////////////////////////////////////////////////////
 // CConnection does not represent an "physical" connection to a database.
 // In current implementation CConnection is a factory of CTransaction.
 // CTransaction owns and manages "physical" connections to a database.
@@ -666,8 +594,13 @@ class CConnection : public pythonpp::CExtObject<CConnection>
 {
 public:
     CConnection(
-        const CConnParam& conn_param,
-        EConnectionMode conn_mode = eSimpleMode
+        const string& driver_name,
+        const string& db_type,
+        const string& server_name,
+        const string& db_name,
+        const string& user_name,
+        const string& user_pswd,
+        const pythonpp::CObject& extra_params
         );
     ~CConnection(void);
 
@@ -697,12 +630,14 @@ protected:
 private:
     typedef set<CTransaction*> TTransList;
 
-    CConnParam              m_ConnParam;
+    CDBDefaultConnParams    m_DefParams;
+    CCPPToolkitConnParams   m_Params;
+
     CDriverManager&         m_DM;
     IDataSource*            m_DS;
     CTransaction*           m_DefTransaction;   //< The lifetime of the default transaction will be managed by Python
     TTransList              m_TransList;        //< List of user-defined transactions
-    const EConnectionMode   m_ConnectionMode;
+    EConnectionMode         m_ConnectionMode;
     string                  m_ModuleName;
 };
 
@@ -726,36 +661,26 @@ private:
 class CWarning : public pythonpp::CUserError<CWarning>
 {
 public:
-    CWarning(const string& msg)
-    : pythonpp::CUserError<CWarning>( msg )
-    {
-    }
+    CWarning(const string& msg);
 };
 
 class CError : public pythonpp::CUserError<CError>
 {
 public:
-    CError(const string& msg)
-    : pythonpp::CUserError<CError>( msg )
-    {
-    }
+    CError(void);
+    CError(const string& msg);
 
 protected:
-    CError(const string& msg, PyObject* err_type)
-    : pythonpp::CUserError<CError>(msg, err_type)
-    {
-    }
+    CError(const string& msg, PyObject* err_type);
 };
 
 class CInterfaceError : public pythonpp::CUserError<CInterfaceError, CError>
 {
 public:
-    CInterfaceError(const string& msg)
-    : pythonpp::CUserError<CInterfaceError, CError>( msg )
-    {
-    }
+    CInterfaceError(const string& msg);
 };
 
+/* Old implementation of CDatabaseError ...
 class CDatabaseError : public pythonpp::CUserError<CDatabaseError, CError>
 {
 public:
@@ -770,59 +695,106 @@ protected:
     {
     }
 };
+*/
+
+/* DO NOT delete this code.
+class CDatabaseError : public pythonpp::CExtObject<CDatabaseError>, public pythonpp::CError
+{
+public:
+    typedef pythonpp::CExtObject<CDatabaseError> obj_type;
+
+    CDatabaseError(void)
+    : m_db_errno(0)
+    {
+        obj_type::ROAttr(string("db_errno"), m_db_errno);
+        obj_type::ROAttr(string("db_msg"), m_db_msg);
+    }
+    CDatabaseError(const string& msg, long errno = 0, const string& db_msg = kEmptyStr)
+    : m_db_msg(db_msg)
+    , m_db_errno(errno)
+    {
+        ROAttr("db_errno", m_db_errno);
+        ROAttr("db_msg", m_db_msg);
+    }
+
+public:
+    static void Declare(
+        const char* name, 
+        const char* descr = 0,
+        PyTypeObject* base = &PyBaseObject_Type
+        )
+    {
+        Py_INCREF(base);
+
+        obj_type::Declare(name, descr, base);
+
+        // if ( PyModule_AddObject( pythonpp::CModuleExt::GetPyModule(), const_cast<char*>(name), GetPyException() ) == -1 ) {
+        if ( PyModule_AddObject( pythonpp::CModuleExt::GetPyModule(), "DatabaseErrorExt", GetPyException() ) == -1 ) {
+            throw pythonpp::CSystemError( "Unable to add an object to a module" );
+        }
+    }
+
+public:
+    static PyObject* GetPyException(void)
+    {
+        static CDatabaseError obj;
+
+        return &obj;
+    }
+
+private:
+    string m_db_msg;
+    long m_db_errno;
+};
+*/
+
+class CDatabaseError : public pythonpp::CUserError<CDatabaseError, CError>
+{
+public:
+    CDatabaseError(const CDB_Exception& e);
+    CDatabaseError(const string& msg, long db_errno = 0, const string& db_msg = kEmptyStr);
+
+protected:
+    CDatabaseError(const string& msg, PyObject* err_type);
+
+protected:
+    void SetPythonExeption(const string& msg, long db_errno = 0, const string& db_msg = kEmptyStr);
+};
 
 class CInternalError : public pythonpp::CUserError<CInternalError, CDatabaseError>
 {
 public:
-    CInternalError(const string& msg)
-    : pythonpp::CUserError<CInternalError, CDatabaseError>( msg )
-    {
-    }
+    CInternalError(const string& msg);
 };
 
 class COperationalError : public pythonpp::CUserError<COperationalError, CDatabaseError>
 {
 public:
-    COperationalError(const string& msg)
-    : pythonpp::CUserError<COperationalError, CDatabaseError>( msg )
-    {
-    }
+    COperationalError(const string& msg);
 };
 
 class CProgrammingError : public pythonpp::CUserError<CProgrammingError, CDatabaseError>
 {
 public:
-    CProgrammingError(const string& msg)
-    : pythonpp::CUserError<CProgrammingError, CDatabaseError>( msg )
-    {
-    }
+    CProgrammingError(const string& msg);
 };
 
 class CIntegrityError : public pythonpp::CUserError<CIntegrityError, CDatabaseError>
 {
 public:
-    CIntegrityError(const string& msg)
-    : pythonpp::CUserError<CIntegrityError, CDatabaseError>( msg )
-    {
-    }
+    CIntegrityError(const string& msg);
 };
 
 class CDataError : public pythonpp::CUserError<CDataError, CDatabaseError>
 {
 public:
-    CDataError(const string& msg)
-    : pythonpp::CUserError<CDataError, CDatabaseError>( msg )
-    {
-    }
+    CDataError(const string& msg);
 };
 
 class CNotSupportedError : public pythonpp::CUserError<CNotSupportedError, CDatabaseError>
 {
 public:
-    CNotSupportedError(const string& msg)
-    : pythonpp::CUserError<CNotSupportedError, CDatabaseError>( msg )
-    {
-    }
+    CNotSupportedError(const string& msg);
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -35,6 +35,8 @@
 #include <corelib/plugin_manager.hpp>
 
 #include "python_ncbi_dbapi_test.hpp"
+#include <dbapi/driver/impl/dbapi_impl_context.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
@@ -162,71 +164,89 @@ CPythonDBAPITest::TestBasic(void)
 void
 CPythonDBAPITest::TestConnection(void)
 {
+    const string connection_args( m_args.GetDriverName() + "', '" +
+            m_args.GetServerTypeStr() + "', '" +
+            m_args.GetServerName() + "', '" +
+            m_args.GetDatabaseName() + "', '" +
+            m_args.GetUserName() + "', '" +
+            m_args.GetUserPassword() );
+
     try {
-        string connection_args( m_args.GetDriverName() + "', '" +
-                                m_args.GetServerTypeStr() + "', '" +
-                                m_args.GetServerName() + "', '" +
-                                m_args.GetDatabaseName() + "', '" +
-                                m_args.GetUserName() + "', '" +
-                                m_args.GetUserPassword() );
-
-        string connection_str( "tmp_connection = dbapi.connect('" +
-                                connection_args +
-                                "', True)\n");
-        string connection2_str( "tmp_connection2 = dbapi.connect('" +
-                                 connection_args +
-                                 "', True)\n");
-        string connection3_str( "tmp_connection3 = dbapi.connect('" +
-                                 connection_args +
-                                 "', True)\n");
+        // First test ...
+        {
+            const string connection_str( "tmp_connection = dbapi.connect('" +
+                connection_args +
+                "', True)\n");
+            const string connection2_str( "tmp_connection2 = dbapi.connect('" +
+                connection_args +
+                "', True)\n");
+            const string connection3_str( "tmp_connection3 = dbapi.connect('" +
+                connection_args +
+                "', True)\n");
 
 
+            // Open and close connection ...
+            {
+                ExecuteStr( connection_str.c_str() );
+                ExecuteStr( "tmp_connection.close()\n" );
+            }
 
-	// Open and close connection ...
-	{
-		ExecuteStr( connection_str.c_str() );
-		ExecuteStr( "tmp_connection.close()\n" );
-	}
+            // Open connection, run a query, close connection ...
+            {
+                ExecuteStr( connection_str.c_str() );
+                ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
+                ExecuteStr( "tmp_cursor.execute('SET NOCOUNT ON')\n" );
+                ExecuteStr( "tmp_connection.close()\n" );
+            }
 
-	// Open connection, run a query, close connection ...
-	{
-		ExecuteStr( connection_str.c_str() );
-		ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
-		ExecuteStr( "tmp_cursor.execute('SET NOCOUNT ON')\n" );
-		ExecuteStr( "tmp_connection.close()\n" );
-	}
+            // Open multiple connection simulteniously ...
+            {
+                ExecuteStr( connection_str.c_str() );
+                ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
+                ExecuteStr( "tmp_cursor.execute('SELECT @@version')\n" );
 
-	// Open multiple connection simulteniously ...
-	{
-		ExecuteStr( connection_str.c_str() );
-		ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
-		ExecuteStr( "tmp_cursor.execute('SELECT @@version')\n" );
-		
-		ExecuteStr( connection2_str.c_str() );
-		ExecuteStr( "tmp_cursor2 = tmp_connection2.cursor()\n");
-		ExecuteStr( "tmp_cursor2.execute('SELECT @@version')\n" );
+                ExecuteStr( connection2_str.c_str() );
+                ExecuteStr( "tmp_cursor2 = tmp_connection2.cursor()\n");
+                ExecuteStr( "tmp_cursor2.execute('SELECT @@version')\n" );
 
-		ExecuteStr( connection3_str.c_str() );
-		ExecuteStr( "tmp_cursor3 = tmp_connection3.cursor()\n");
-		ExecuteStr( "tmp_cursor3.execute('SELECT @@version')\n" );
+                ExecuteStr( connection3_str.c_str() );
+                ExecuteStr( "tmp_cursor3 = tmp_connection3.cursor()\n");
+                ExecuteStr( "tmp_cursor3.execute('SELECT @@version')\n" );
 
-		// Execute all statements again ...
-		{
-			ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
-			ExecuteStr( "tmp_cursor.execute('SELECT @@version')\n" );
-			
-			ExecuteStr( "tmp_cursor2 = tmp_connection2.cursor()\n");
-			ExecuteStr( "tmp_cursor2.execute('SELECT @@version')\n" );
+                // Execute all statements again ...
+                {
+                    ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
+                    ExecuteStr( "tmp_cursor.execute('SELECT @@version')\n" );
 
-			ExecuteStr( "tmp_cursor3 = tmp_connection3.cursor()\n");
-			ExecuteStr( "tmp_cursor3.execute('SELECT @@version')\n" );
-		}
+                    ExecuteStr( "tmp_cursor2 = tmp_connection2.cursor()\n");
+                    ExecuteStr( "tmp_cursor2.execute('SELECT @@version')\n" );
 
-		// Close all open connections ...
-		ExecuteStr( "tmp_connection.close()\n" );
-		ExecuteStr( "tmp_connection2.close()\n" );
-		ExecuteStr( "tmp_connection3.close()\n" );
-	}
+                    ExecuteStr( "tmp_cursor3 = tmp_connection3.cursor()\n");
+                    ExecuteStr( "tmp_cursor3.execute('SELECT @@version')\n" );
+                }
+
+                // Close all open connections ...
+                ExecuteStr( "tmp_connection.close()\n" );
+                ExecuteStr( "tmp_connection2.close()\n" );
+                ExecuteStr( "tmp_connection3.close()\n" );
+            }
+        }
+        
+        // Second test ...
+        // Test extra-parameters with connection ...
+        if (false) {
+            const string connection_str( "tmp_connection = dbapi.connect('" +
+                connection_args +
+                "', {'client_charset':'UTF-8'})\n");
+
+            // Open connection, run a query, close connection ...
+            {
+                ExecuteStr( connection_str.c_str() );
+                ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
+                ExecuteStr( "tmp_cursor.execute('SET NOCOUNT ON')\n" );
+                ExecuteStr( "tmp_connection.close()\n" );
+            }
+        }
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -665,6 +685,334 @@ CPythonDBAPITest::Test_LOB(void)
 
 }
 
+void 
+CPythonDBAPITest::Test_RaiseError(void)
+{
+    try {
+        ExecuteStr("cursor = conn_simple.cursor()\n");
+        ExecuteSQL("select @@servername");
+        ExecuteStr("cursor.fetchall()\n");
+
+        try {
+            ExecuteSQL( "raiserror 99999 'error msg'\n" );
+            BOOST_CHECK(false);
+        } catch (const string&) {
+            ;
+        }
+
+        ExecuteStr("cursor.fetchall()\n");
+    }
+    catch ( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
+}
+
+void 
+CPythonDBAPITest::Test_Exception(void)
+{
+    try {
+//    StandardError
+//    |__Warning
+//    |__Error
+//        |__InterfaceError
+//        |__DatabaseError
+//            |__DataError
+//            |__OperationalError
+//            |__IntegrityError
+//            |__InternalError
+//            |__ProgrammingError
+//            |__NotSupportedError
+
+
+        // Catch exception ...
+        {
+            ///////////////////////////////
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.Warning(\"Oops ...\") \n"
+                "except dbapi.Warning, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.Warning(\"Oops ...\") \n"
+                "except StandardError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ///////////////////////////////
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.Error(\"Oops ...\") \n"
+                "except dbapi.Error, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.Error(\"Oops ...\") \n"
+                "except StandardError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ///////////////////////////////
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.InterfaceError(\"Oops ...\") \n"
+                "except dbapi.InterfaceError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.InterfaceError(\"Oops ...\") \n"
+                "except dbapi.Error, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ///////////////////////////////
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.DatabaseError(\"Oops ...\") \n"
+                "except dbapi.DatabaseError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.DatabaseError(\"Oops ...\") \n"
+                "except dbapi.Error, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+            ExecuteStr(
+                "try: \n"
+                "   cursor.execute('SELECT * FROM wrong_table') \n"
+                "except dbapi.DatabaseError, inst: \n"
+                "   print type(inst), inst.srv_errno, inst.srv_msg \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ///////////////////////////////
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.DataError(\"Oops ...\") \n"
+                "except dbapi.DataError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.DataError(\"Oops ...\") \n"
+                "except dbapi.DatabaseError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ///////////////////////////////
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.OperationalError(\"Oops ...\") \n"
+                "except dbapi.OperationalError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.OperationalError(\"Oops ...\") \n"
+                "except dbapi.DatabaseError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ///////////////////////////////
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.IntegrityError(\"Oops ...\") \n"
+                "except dbapi.IntegrityError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.IntegrityError(\"Oops ...\") \n"
+                "except dbapi.DatabaseError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ///////////////////////////////
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.InternalError(\"Oops ...\") \n"
+                "except dbapi.InternalError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.InternalError(\"Oops ...\") \n"
+                "except dbapi.DatabaseError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ///////////////////////////////
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.ProgrammingError(\"Oops ...\") \n"
+                "except dbapi.ProgrammingError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.ProgrammingError(\"Oops ...\") \n"
+                "except dbapi.DatabaseError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ///////////////////////////////
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.NotSupportedError(\"Oops ...\") \n"
+                "except dbapi.NotSupportedError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.NotSupportedError(\"Oops ...\") \n"
+                "except dbapi.DatabaseError, inst: \n"
+                "   print type(inst), \"is OK!\" \n"
+                "else: \n"
+                "   raise \n"
+                );
+        }
+
+        // Print exception ...
+        {
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.Warning(\"Oops ...\") \n"
+                "except dbapi.Warning, inst: \n"
+                "   print type(inst), inst \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.Error(\"Oops ...\") \n"
+                "except dbapi.Error, inst: \n"
+                "   print type(inst), inst \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.InterfaceError(\"Oops ...\") \n"
+                "except dbapi.InterfaceError, inst: \n"
+                "   print type(inst), inst \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.DatabaseError(\"Oops ...\") \n"
+                "except dbapi.DatabaseError, inst: \n"
+                "   print type(inst), inst \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.DataError(\"Oops ...\") \n"
+                "except dbapi.DataError, inst: \n"
+                "   print type(inst), inst \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.OperationalError(\"Oops ...\") \n"
+                "except dbapi.OperationalError, inst: \n"
+                "   print type(inst), inst \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.IntegrityError(\"Oops ...\") \n"
+                "except dbapi.IntegrityError, inst: \n"
+                "   print type(inst), inst \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.InternalError(\"Oops ...\") \n"
+                "except dbapi.InternalError, inst: \n"
+                "   print type(inst), inst \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.ProgrammingError(\"Oops ...\") \n"
+                "except dbapi.ProgrammingError, inst: \n"
+                "   print type(inst), inst \n"
+                "else: \n"
+                "   raise \n"
+                );
+
+            ExecuteStr(
+                "try: \n"
+                "   raise dbapi.NotSupportedError(\"Oops ...\") \n"
+                "except dbapi.NotSupportedError, inst: \n"
+                "   print type(inst), inst \n"
+                "else: \n"
+                "   raise \n"
+                );
+        }
+    }
+    catch ( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
+}
+
 // From example8.py
 void
 CPythonDBAPITest::TestScenario_1(void)
@@ -791,8 +1139,15 @@ CPythonDBAPITest::TestScenario_2(void)
 static
 string GetSybaseClientVersion(void)
 {
+    string sybase_version;
+
+#if defined(NCBI_OS_MSWIN)
+    sybase_version = "12.5";
+#else
+    impl::CDriverContext::ResetEnvSybase();
+
     CNcbiEnvironment env;
-    string sybase_version = env.Get("SYBASE");
+    sybase_version = env.Get("SYBASE");
     CDirEntry dir_entry(sybase_version);
     dir_entry.DereferenceLink();
     sybase_version = dir_entry.GetPath();
@@ -800,6 +1155,7 @@ string GetSybaseClientVersion(void)
     sybase_version = sybase_version.substr(
         sybase_version.find_last_of('/') + 1
         );
+#endif
 
     return sybase_version;
 }
@@ -832,6 +1188,14 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     add(tc_init);
 
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestConnection, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_RaiseError, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_Exception, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
 

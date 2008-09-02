@@ -249,6 +249,10 @@ public:
     {
         impl::CDBConnParamsBase::SetEncoding(encoding);
     }
+    void SetDatabaseName(const string& name)
+    {
+        impl::CDBConnParamsBase::SetDatabaseName(name);
+    }
     void SetServerType(EServerType type)
     {
         impl::CDBConnParamsBase::SetServerType(type);

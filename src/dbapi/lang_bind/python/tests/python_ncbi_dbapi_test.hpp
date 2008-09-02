@@ -131,6 +131,8 @@ public:
     void TestExecuteStoredProc(void);
     void Test_SelectStmt(void);
     void Test_LOB(void);
+    void Test_RaiseError(void);
+    void Test_Exception(void);
 
     // Test scenarios.
     void TestTransaction(void);
