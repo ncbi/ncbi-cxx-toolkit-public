@@ -25,6 +25,7 @@ APP: datatool
 
 Linux32    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 Linux32    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux32    : debug : GCC.sh           --with-debug    --without-mt --with-static --without-runpath --with-flat-makefile
 
 Linux64    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 Linux64    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
