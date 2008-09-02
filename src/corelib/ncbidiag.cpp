@@ -155,6 +155,36 @@ NCBI_PARAM_DEF_EX(unsigned int, Diag, TraceLog_Rate_Period, 1, eParam_NoThread,
                   DIAG_TRACELOG_RATE_PERIOD);
 typedef NCBI_PARAM_TYPE(Diag, TraceLog_Rate_Period) TTraceLogRatePeriodParam;
 
+// Duplicate messages to STDERR
+NCBI_PARAM_DECL(bool, Diag, Tee_To_Stderr);
+NCBI_PARAM_DEF_EX(bool, Diag, Tee_To_Stderr, false, eParam_NoThread,
+                  DIAG_TEE_TO_STDERR);
+typedef NCBI_PARAM_TYPE(Diag, Tee_To_Stderr) TTeeToStderr;
+
+// Minimum severity of the messages duplicated to STDERR
+NCBI_PARAM_ENUM_DECL(EDiagSev, Diag, Tee_Min_Severity);
+NCBI_PARAM_ENUM_ARRAY(EDiagSev, Diag, Tee_Min_Severity)
+{
+    {"Info", eDiag_Info},
+    {"Warning", eDiag_Warning},
+    {"Error", eDiag_Error},
+    {"Critical", eDiag_Critical},
+    {"Fatal", eDiag_Fatal},
+    {"Trace", eDiag_Trace}
+};
+
+const EDiagSev kTeeMinSeverityDef =
+#if defined(NDEBUG)
+    eDiag_Error;
+#else
+    eDiag_Warning;
+#endif
+
+NCBI_PARAM_ENUM_DEF_EX(EDiagSev, Diag, Tee_Min_Severity,
+                       kTeeMinSeverityDef,
+                       eParam_NoThread, DIAG_TEE_MIN_SEVERITY);
+typedef NCBI_PARAM_TYPE(Diag, Tee_Min_Severity) TTeeMinSeverity;
+
 
 CDiagCollectGuard::CDiagCollectGuard(void)
 {
@@ -1909,7 +1939,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
 
     bool log_switched = false;
     bool name_changed = true; // By default consider it's a new name
-    bool merge_lines = false;
+    bool to_applog = false;
     bool try_root_log_first = false;
     if ( config ) {
         try_root_log_first = config->GetBool("LOG", "TryRootLogFirst", false)
@@ -1998,7 +2028,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                             if ( SetLogFile(log_name, eDiagFile_All) ) {
                                 log_switched = true;
                                 name_changed = log_name != old_log_name;
-                                merge_lines = true;
+                                to_applog = true;
                                 break;
                             }
                         }
@@ -2007,7 +2037,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         if ( SetLogFile(log_name, eDiagFile_All) ) {
                             log_switched = true;
                             name_changed = log_name != old_log_name;
-                            merge_lines = true;
+                            to_applog = true;
                             break;
                         }
                         if (try_root_log_first &&
@@ -2021,7 +2051,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         if ( SetLogFile(log_name, eDiagFile_All) ) {
                             log_switched = true;
                             name_changed = log_name != old_log_name;
-                            merge_lines = true;
+                            to_applog = true;
                             break;
                         }
                     }
@@ -2043,7 +2073,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         if ( SetLogFile(kDefaultFallback, eDiagFile_All) ) {
                             log_switched = true;
                             name_changed = kDefaultFallback != old_log_name;
-                            merge_lines = true;
+                            to_applog = true;
                         }
                         else {
                             ERR_POST_X(4, Info <<
@@ -2066,7 +2096,8 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         }
     }
 
-    if ( merge_lines ) {
+    if ( to_applog ) {
+        GetDiagContext().SetOldPostFormat(false);
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
         s_MergeLinesSetBySetupDiag = true;
@@ -3339,7 +3370,18 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream&   os,
 CNcbiOstream& SDiagMessage::x_Write(CNcbiOstream& os,
                                     TDiagWriteFlags flags) const
 {
-    return x_IsSetOldFormat() ? x_OldWrite(os, flags) : x_NewWrite(os, flags);
+    CNcbiOstream& res =
+        x_IsSetOldFormat() ? x_OldWrite(os, flags) : x_NewWrite(os, flags);
+    // Copy to STDERR
+    if ( TTeeToStderr::GetDefault() ) {
+        bool visible = CompareDiagPostLevel(m_Severity,
+            TTeeMinSeverity::GetDefault()) >= 0;
+        if ( visible ) {
+            // Reset flags - STDERR does not need to skip prefix or merge lines
+            x_OldWrite(cerr, fNone);
+        }
+    }
+    return res;
 }
 
 
