@@ -124,7 +124,12 @@ public:
         ///< Use gzip (.gz) file format to write into compression stream
         ///< (the archive also can store file name and file modification
         ///< date in this format)
-        fWriteGZipFormat      = (1<<2)
+        fWriteGZipFormat      = (1<<2),
+        ///< This flag can be used only with DecompressFile[IntoDir]().
+        ///< It allow to restore the original file name and/or time stamp stored
+        ///< in the file header, if present.
+        ///< @sa DecompressFile, DecompressFileIntoDir
+        fRestoreFileAttr      = (1<<3)
     };
 
     /// Constructor.
@@ -226,12 +231,12 @@ public:
     /// @return
     ///   Return TRUE on success, FALSE on error.
     /// @sa
-    ///   DecompressFile
+    ///   DecompressFile, DecompressFileIntoDir
     /// @note
     ///   This method, as well as some gzip utilities, always
     ///   keeps the original file name and timestamp in
     ///   the compressed file. On this moment DecompressFile()
-    ///   do not use this information at all, but be aware...
+    ///   do not use original file name at all, but be aware...
     ///   If you assign different base name to destination
     ///   compressed file, that behavior of decompression utilities
     ///   on different platforms may differ.
@@ -257,16 +262,42 @@ public:
     /// @return
     ///   Return TRUE on success, FALSE on error.
     /// @sa
-    ///   CompressFile
+    ///   CompressFile, DecompressFileIntoDir
     /// @note
     ///   CompressFile() method, as well as some gzip utilities,
     ///   always keeps the original file name and timestamp in
-    ///   the compressed file. On this moment DecompressFile()
-    ///   do not use this information at all.
-    ///   See CompressFile() for more details.
+    ///   the compressed file. If fRestoreFileAttr flag is set,
+    ///   that time stamp, stored in the file header will be restored.
+    ///   The original file name cannot be restored here,
+    ///   see DecompressFileIntoDir().
     virtual bool DecompressFile(
         const string& src_file,
         const string& dst_file, 
+        size_t        buf_size = kCompressionDefaultBufSize
+    );
+
+    /// Decompress file into specified directory.
+    ///
+    /// @param src_file
+    ///   File name of source file.
+    /// @param dst_dir
+    ///   Destination directory.
+    /// @param buf_size
+    ///   Buffer size used to read/write files.
+    /// @return
+    ///   Return TRUE on success, FALSE on error.
+    /// @sa
+    ///   CompressFile, DecompressFile
+    /// @note
+    ///   CompressFile() method, as well as some gzip utilities,
+    ///   always keeps the original file name and timestamp in
+    ///   the compressed file. If fRestoreFileAttr flag is set,
+    ///   that original file name and time stamp, stored in
+    ///   the file header will be restored. If not, that destination
+    ///   file will be named as archive name without extention.
+    virtual bool DecompressFileIntoDir(
+        const string& src_file,
+        const string& dst_dir, 
         size_t        buf_size = kCompressionDefaultBufSize
     );
 

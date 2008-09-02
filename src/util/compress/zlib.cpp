@@ -530,16 +530,90 @@ bool CZipCompression::DecompressFile(const string& src_file,
     CZipCompressionFile cf(GetLevel(), m_WindowBits, m_MemLevel, m_Strategy);
     cf.SetFlags(cf.GetFlags() | GetFlags());
 
-    if ( !cf.Open(src_file, CCompressionFile::eMode_Read) ) {
-        return false;
-    } 
+    bool need_restore_attr = false;
+    SFileInfo info;
+
+    // Open compressed file, and define name of the destination file
+    if ( F_ISSET(fRestoreFileAttr) ) {
+        if ( !cf.Open(src_file, CCompressionFile::eMode_Read, &info) ) {
+            return false;
+        } 
+        if ( !info.name.empty() ) {
+            need_restore_attr = true;
+        }
+    } else {
+        if ( !cf.Open(src_file, CCompressionFile::eMode_Read, 0) ) {
+            return false;
+        } 
+    }
+    // Decompress file
     if ( CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
-        return cf.Close();
+        if ( !cf.Close() ) {
+            return false;
+        }
+        // Restore time stamp if needed
+        if ( need_restore_attr ) {
+            CFile(dst_file).SetTimeT(&info.mtime);
+        }
+        return true;
     }
     // Restore previous error info
     int    errcode = cf.GetErrorCode();
     string errmsg  = cf.GetErrorDescription();
+    cf.Close();
+    // Set error information
+    SetError(errcode, errmsg.c_str());
+    return false;
+}
+
+
+bool CZipCompression::DecompressFileIntoDir(const string& src_file,
+                                            const string& dst_dir,
+                                            size_t        buf_size)
+{
+    CZipCompressionFile cf(GetLevel(), m_WindowBits, m_MemLevel, m_Strategy);
+    cf.SetFlags(cf.GetFlags() | GetFlags());
+
+    bool need_restore_attr = false;
+    SFileInfo info;
+    string dir, name, ext;
+    string dst_file;
+
+    // Open compressed file, and define name of the destination file
+    if ( F_ISSET(fRestoreFileAttr) ) {
+        if ( !cf.Open(src_file, CCompressionFile::eMode_Read, &info) ) {
+            return false;
+        } 
+        if ( info.name.empty() ) {
+            // Header is possible broken, ignore it
+            CFile::SplitPath(src_file, &dir, &name, &ext);
+            dst_file = CFile::MakePath(dst_dir, name);
+        } else {
+            need_restore_attr = true;
+            dst_file = CFile::MakePath(dst_dir, info.name);
+        }
+    } else {
+        if ( !cf.Open(src_file, CCompressionFile::eMode_Read, 0) ) {
+            return false;
+        } 
+        CFile::SplitPath(src_file, &dir, &name, &ext);
+        dst_file = CFile::MakePath(dst_dir, name);
+    }
+
+    // Decompress file
+    if ( CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
+        if ( !cf.Close() ) {
+            return false;
+        }
+        // Restore time stamp if needed
+        if ( need_restore_attr ) {
+            CFile(dst_file).SetTimeT(&info.mtime);
+        }
+        return true;
+    }
     // Restore previous error info
+    int    errcode = cf.GetErrorCode();
+    string errmsg  = cf.GetErrorDescription();
     cf.Close();
     // Set error information
     SetError(errcode, errmsg.c_str());
@@ -635,7 +709,13 @@ bool CZipCompressionFile::Open(const string& file_name, EMode mode,
     if (mode == eMode_Read  &&  F_ISSET(fCheckFileHeader)  &&  info) {
         char buf[kMaxHeaderSize];
         m_File->read(buf, kMaxHeaderSize);
-        m_File->seekg(0);
+        // NOTE: 
+        // m_File->seekg(0, ios_base::beg); -- do not work in all cases
+        if ( m_File->rdbuf()->PUBSEEKPOS(0, ios_base::in) == CT_POS_TYPE(-1) ) {
+            string description = string("Cannot read file header '") + file_name + "'";
+            SetError(-1, description.c_str());
+            return false;
+        }
         s_CheckGZipHeader(buf, m_File->gcount(), info);
     }
 
