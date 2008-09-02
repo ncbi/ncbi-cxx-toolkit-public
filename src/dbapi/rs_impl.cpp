@@ -75,6 +75,8 @@ CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
 
 void CResultSet::Init()
 {
+	_ASSERT(m_rs);
+
     // Reserve storage for column data
     EDB_Type type;
     for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
@@ -142,6 +144,7 @@ const IResultSetMetaData* CResultSet::GetMetaData(EOwnership ownership)
 
 EDB_ResType CResultSet::GetResultType()
 {
+	_ASSERT(m_rs);
     return m_rs->ResultType();
 }
 
@@ -157,11 +160,12 @@ void CResultSet::DisableBind(bool b)
 
 bool CResultSet::Next()
 {
-
     bool more = false;
     EDB_Type type = eDB_UnsupportedType;
 
-    more = m_rs->Fetch();
+	if (m_rs) {
+		more = m_rs->Fetch();
+	}
 
     if (more  &&  m_data.size() == 0) {
         Init();
@@ -191,7 +195,10 @@ bool CResultSet::Next()
             m_rs->GetItem(m_data[i].GetNonNullData());
         }
     }
-    m_column = m_rs->CurrentItemNo();
+	
+	if (m_rs) {
+		m_column = m_rs->CurrentItemNo();
+	}
 
     if( !more ) {
         if( m_ostr ) {
@@ -221,6 +228,7 @@ bool CResultSet::Next()
 
 size_t CResultSet::Read(void* buf, size_t size)
 {
+	_ASSERT(m_rs);
 
     if( m_column < 0 ) {
         _TRACE("CResulstSet: No available column for Read(), current column: "
@@ -253,11 +261,13 @@ bool CResultSet::WasNull()
 
 int CResultSet::GetColumnNo()
 {
+	_ASSERT(m_rs);
     return m_rs->CurrentItemNo() + 1;
 }
 
 unsigned int CResultSet::GetTotalColumns()
 {
+	_ASSERT(m_rs);
     return m_rs->NofItems();
 }
 
@@ -283,6 +293,7 @@ CNcbiOstream& CResultSet::GetBlobOStream(size_t blob_size,
 										 EAllowLog log_it,
 										 size_t buf_size)
 {
+	_ASSERT(m_conn);
 	return xGetBlobOStream(m_conn->CloneCDB_Conn(), blob_size,
                            log_it, buf_size, true);
 }
@@ -292,6 +303,7 @@ CNcbiOstream& CResultSet::GetBlobOStream(IConnection *conn,
                                           EAllowLog log_it,
                                           size_t buf_size)
 {
+	_ASSERT(m_conn);
 	return xGetBlobOStream(conn->GetCDB_Connection(), blob_size,
                            log_it, buf_size, false);
 }
@@ -302,6 +314,8 @@ CNcbiOstream& CResultSet::xGetBlobOStream(CDB_Connection *cdb_conn,
                                           size_t buf_size,
 										  bool destroy)
 {
+	_ASSERT(m_rs);
+
     // GetConnAux() returns pointer to pooled CDB_Connection.
     // we need to delete it every time we request new one.
     // The same with ITDescriptor
@@ -375,7 +389,9 @@ void CResultSet::Action(const CDbapiEvent& e)
 }
 
 
-int CResultSet::GetColNum(const string& name) {
+int CResultSet::GetColNum(const string& name) 
+{
+	_ASSERT(m_rs);
 
     unsigned int i = 0;
     for( ; i < m_rs->NofItems(); ++i ) {
