@@ -75,6 +75,28 @@ CBlastDbDataLoader::RegisterInObjectManager(
     return maker.GetRegisterInfo();
 }
 
+CBlastDbDataLoader::TRegisterLoaderInfo 
+CBlastDbDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    const string& dbname,
+    const EDbType dbtype,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority priority)
+{
+    return RegisterInObjectManager(om, dbname, dbtype, true, is_default,
+                                   priority);
+}
+
+CBlastDbDataLoader::TRegisterLoaderInfo 
+CBlastDbDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    CRef<CSeqDB> db_handle,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority priority)
+{
+    return RegisterInObjectManager(om, db_handle, true, is_default, priority);
+}
+
 inline
 string DbTypeToStr(CBlastDbDataLoader::EDbType dbtype)
 {

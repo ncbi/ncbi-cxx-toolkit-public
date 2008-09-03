@@ -159,6 +159,23 @@ public:
     ///   The returned data.
     virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
     
+    /// @note this is added to temporarily comply with the toolkit's stable
+    /// components rule of having backwards compatible APIs
+    NCBI_DEPRECATED
+    static TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager& om,
+        const string& dbname,
+        const EDbType dbtype,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    /// @note this is added to temporarily comply with the toolkit's stable
+    /// components rule of having backwards compatible APIs
+    NCBI_DEPRECATED
+    static TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager& om,
+        CRef<CSeqDB> db_handle,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
 private:
     /// TPlace is a Seq-id or an integer id, this data loader uses the former.
     typedef CTSE_Chunk_Info::TPlace         TPlace;
