@@ -125,7 +125,7 @@ if test "$need_check" = "yes" ; then
    make="$1"
    builddir="$2"
    action="$3"
-   build_info="$builddir/../build_info"
+   build_info="$builddir/../../build_info"
 
    shift
    shift
