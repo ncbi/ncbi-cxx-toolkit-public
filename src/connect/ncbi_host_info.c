@@ -41,16 +41,8 @@
 #endif
 
 
-typedef struct SHostInfoTag {
-    const char* env;
-    const char* arg;
-    const char* val;
-    double      pad;    /* for proper 'hinfo' alignment; also as a magic */
-} SHOST_Info;
-
-
-HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env,
-                       const char* arg, const char* val)
+HOST_INFO HINFO_Create(unsigned int addr, const void* hinfo, size_t hinfo_size,
+                       const char* env, const char* arg, const char* val)
 {
     SHOST_Info* host_info;
     size_t      size;
@@ -67,6 +59,7 @@ HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env,
     size = sizeof(*host_info) + hinfo_size;
     if (!(host_info = (SHOST_Info*) calloc(1, size + e_s + a_s + v_s)))
         return 0;
+    host_info->addr = addr;
     memcpy((char*) host_info + sizeof(*host_info), hinfo, hinfo_size);
     s = (char*) host_info + size;
     if (e_s) {
@@ -86,11 +79,19 @@ HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env,
 }
 
 
+unsigned int HINFO_HostAddr(const HOST_INFO host_info)
+{
+    if (!host_info || host_info->pad != M_PI)
+        return 0;
+    return host_info->addr;
+}
+
+
 int HINFO_CpuCount(const HOST_INFO host_info)
 {
     if (!host_info || host_info->pad != M_PI)
         return -1;
-    return LBSM_HINFO_CpuCount((const char*) host_info + sizeof(*host_info));
+    return LBSM_HINFO_CpuCount(host_info);
 }
 
 
@@ -98,7 +99,7 @@ int HINFO_CpuUnits(const HOST_INFO host_info)
 {
     if (!host_info || host_info->pad != M_PI)
         return -1;
-    return LBSM_HINFO_CpuUnits((const char*) host_info + sizeof(*host_info));
+    return LBSM_HINFO_CpuUnits(host_info);
 }
 
 
@@ -106,14 +107,14 @@ double HINFO_CpuClock(const HOST_INFO host_info)
 {
     if (!host_info || host_info->pad != M_PI)
         return 0.0;
-    return LBSM_HINFO_CpuClock((const char*) host_info + sizeof(*host_info));
+    return LBSM_HINFO_CpuClock(host_info);
 }
 
 int HINFO_TaskCount(const HOST_INFO host_info)
 {
     if (!host_info || host_info->pad != M_PI)
         return -1;
-    return LBSM_HINFO_TaskCount((const char*) host_info + sizeof(*host_info));
+    return LBSM_HINFO_TaskCount(host_info);
 }
  
 
@@ -121,8 +122,7 @@ int HINFO_Memusage(const HOST_INFO host_info, double memusage[5])
 {
     if (!host_info || host_info->pad != M_PI)
         return -1;
-    return LBSM_HINFO_Memusage((const char*) host_info + sizeof(*host_info),
-                               memusage);
+    return LBSM_HINFO_Memusage(host_info, memusage);
 }
 
 
@@ -130,8 +130,7 @@ int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2])
 {
     if (!host_info || host_info->pad != M_PI)
         return 0;
-    return LBSM_HINFO_LoadAverage((const char*) host_info + sizeof(*host_info),
-                                  lavg);
+    return LBSM_HINFO_LoadAverage(host_info, lavg);
 }
 
 
@@ -139,8 +138,7 @@ int/*bool*/ HINFO_Status(const HOST_INFO host_info, double status[2])
 {
     if (!host_info || host_info->pad != M_PI)
         return 0;
-    return LBSM_HINFO_Status((const char*) host_info + sizeof(*host_info),
-                             status);
+    return LBSM_HINFO_Status(host_info, status);
 }
 
 

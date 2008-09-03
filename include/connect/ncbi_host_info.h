@@ -53,8 +53,8 @@ extern "C" {
 #endif
 
 
-struct SHostInfoTag;
-typedef struct SHostInfoTag* HOST_INFO;
+struct SHostInfoTag;  /*forward declaration of an opaque private structure*/
+typedef struct SHostInfoTag* HOST_INFO; /*handle for the user code use*/
 
 
 /* Return CPU count or -1 if an error occurred.
@@ -64,7 +64,7 @@ int HINFO_CpuCount(const HOST_INFO host_info);
 
 
 /* Return number of actual CPU units, 0 if the number cannot
- * be determinted, or -1 if an error occurred.
+ * be determined, or -1 if an error occurred.
  */
 extern NCBI_XCONNECT_EXPORT
 int HINFO_CpuUnits(const HOST_INFO host_info);
@@ -92,10 +92,7 @@ int HINFO_TaskCount(const HOST_INFO host_info);
  * Return 0 if an error occurred.
  */
 extern NCBI_XCONNECT_EXPORT
-int/*bool*/ HINFO_Memusage
-(const HOST_INFO host_info,
- double          memusage[5]
- );
+int/*bool*/ HINFO_Memusage(const HOST_INFO host_info, double memusage[5]);
 
 
 /* Return non-zero on success and store load averages in the
@@ -104,10 +101,7 @@ int/*bool*/ HINFO_Memusage
  * (aka BLAST) stored at index [1].  Return 0 on error.
  */
 extern NCBI_XCONNECT_EXPORT
-int/*bool*/ HINFO_LoadAverage
-(const HOST_INFO host_info,
- double          lavg[2]
- );
+int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2]);
 
 
 /* Return non-zero on success and store host status coefficients in
@@ -117,10 +111,7 @@ int/*bool*/ HINFO_LoadAverage
  * does not provide such information.  Return 0 on error.
  */
 extern NCBI_XCONNECT_EXPORT
-int/*bool*/ HINFO_Status
-(const HOST_INFO host_info,
- double          status[2]
- );
+int/*bool*/ HINFO_Status(const HOST_INFO host_info, double status[2]);
 
 
 /* Obtain and return host environment.  The host environment is the
@@ -132,25 +123,22 @@ int/*bool*/ HINFO_Status
  * in the application program.
  */
 extern NCBI_XCONNECT_EXPORT
-const char* HINFO_Environment
-(const HOST_INFO host_info);
+const char* HINFO_Environment(const HOST_INFO host_info);
 
 
 /* Obtain affinity argument and value that has keyed the service
  * selection (if affinities have been used at all).  NULL gets returned
- * as argument if no affinity has been found (in this case value
- * will be returned 0 as well).  Otherwise, NULL gets returned as
- * value if there was no particular value matched but the argument
+ * as argument if no affinity has been found (in this case the value
+ * will be returned NULL as well).  Otherwise, NULL gets returned as
+ * the value if there was no particular value matched but the argument
  * played alone; "" is the value has been used empty, or any other
- * substring from the host environment that has keyed the decision.
+ * substring from the host environment that keyed the selection decision.
  */
 extern NCBI_XCONNECT_EXPORT
-const char* HINFO_AffinityArgument
-(const HOST_INFO host_info);
+const char* HINFO_AffinityArgument(const HOST_INFO host_info);
 
 extern NCBI_XCONNECT_EXPORT
-const char* HINFO_AffinityArgvalue
-(const HOST_INFO host_info);
+const char* HINFO_AffinityArgvalue(const HOST_INFO host_info);
 
 
 #ifdef __cplusplus
