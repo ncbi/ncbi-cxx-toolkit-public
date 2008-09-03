@@ -202,7 +202,7 @@ typedef struct {
 #define REG_CONN_HTTP_REFERER     "HTTP_REFERER"
 #define DEF_CONN_HTTP_REFERER     0
 
-/* Environment/registry keys that are not kept in SConnNetInfo */
+/* Environment/registry keys that are *not* kept in SConnNetInfo */
 #define REG_CONN_SERVICE_NAME     "SERVICE_NAME"
 #define REG_CONN_LOCAL_ENABLE     "LOCAL_ENABLE"
 #define REG_CONN_LBSMD_DISABLE    "LBSMD_DISABLE"
@@ -245,11 +245,11 @@ extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetValue
  *  http_user_header  HTTP_USER_HEADER  "\r\n" if missing is appended
  *  http_referer      HTTP_REFERER      may be assigned automatically
  *
- * A value of the field NAME is first looked for in the environment variable
- * of the form service_CONN_NAME; then in the current corelib registry,
- * in the section 'service' by using key CONN_NAME; then in the environment
- * variable again, but using the name CONN_NAME; and finally in the default
- * registry section (DEF_CONN_REG_SECTION), using just NAME. If service
+ * A value of the field NAME is first looked up in the environment variable
+ * of the form service_CONN_<NAME>; then in the current corelib registry,
+ * in the section 'service' by using key CONN_<NAME>; then in the environment
+ * variable again, but using the name CONN_<NAME>; and finally in the default
+ * registry section (DEF_CONN_REG_SECTION), using just <NAME>. If service
  * is NULL or empty then the first 2 steps in the above lookup are skipped.
  *
  * For default values see right above, in macros DEF_CONN_<NAME>.
