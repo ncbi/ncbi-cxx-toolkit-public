@@ -313,12 +313,12 @@ static const SSERV_Info* s_GetNextInfo(SServiceConnector* uuu)
 }
 
 
-/* Although all additional HTTP tags, which comprise dispatching, have
+/* Although all additional HTTP tags that comprise dispatching have
  * default values, which in most cases are fine with us, we will use
- * these tags explicitly to distinguish calls originated from within the
- * service connector from the calls from a Web browser, for example.
- * This technique allows the dispatcher to decide whether to use more
- * expensive dispatching (inlovling loopback connections) in case of browser.
+ * these tags explicitly to distinguish the calls originated within the
+ * service connector from other calls (by Web browsers, for example), and
+ * let the dispatcher to decide whether to use more expensive dispatching
+ * (involving loopback connections) in the latter case.
  */
 
 #ifdef __cplusplus
