@@ -42,7 +42,17 @@ extern "C" {
 #endif
 
 
-HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size,
+typedef struct SHostInfoTag {
+    unsigned int addr;   /* host IP, network byte order                   */
+    const char*  env;
+    const char*  arg;
+    const char*  val;
+    double       pad;    /* for proper 'hinfo' alignment; also as a magic */
+} SHOST_Info;
+
+
+
+HOST_INFO HINFO_Create(unsigned int addr, const void* hinfo, size_t hinfo_size,
                        const char* env, const char* arg, const char* val);
 
 
