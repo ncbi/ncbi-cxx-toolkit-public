@@ -27,17 +27,20 @@ inline unsigned char Ncbi2naCompl( unsigned char x );
 inline unsigned char Ncbipna2Ncbi4na( unsigned char a, unsigned char c,
                                       unsigned char g, unsigned char t, 
                                       unsigned char n = 255, 
-                                      unsigned short bitmask = 0xf000 );
+                                      unsigned short score = 0x7f );
 
 inline unsigned char Ncbipna2Ncbi4naCompl( unsigned char a, unsigned char c,
                                            unsigned char g, unsigned char t, 
                                            unsigned char n = 255,
-                                           unsigned short bitmask = 0xf000 );
+                                           unsigned short score = 0x7f );
 
-inline unsigned char Ncbipna2Ncbi4na( const unsigned char * p, unsigned short mask = 0xf000 );
-inline unsigned char Ncbipna2Ncbi4naCompl( const unsigned char * p, unsigned short mask = 0xf000 );
-inline unsigned char Ncbipna2Ncbi4naN( const unsigned char * p, unsigned short mask = 0xf000 );
-inline unsigned char Ncbipna2Ncbi4naComplN( const unsigned char * p, unsigned short mask = 0xf000 );
+inline unsigned char Ncbipna2Ncbi4na( const unsigned char * p, unsigned short score = 0x7f );
+inline unsigned char Ncbipna2Ncbi4naCompl( const unsigned char * p, unsigned short score = 0x7f );
+inline unsigned char Ncbipna2Ncbi4naN( const unsigned char * p, unsigned short score = 0x7f );
+inline unsigned char Ncbipna2Ncbi4naComplN( const unsigned char * p, unsigned short score = 0x7f );
+
+inline unsigned char Ncbiqna2Ncbi4na( const unsigned char * p, unsigned short score = 3 );
+inline unsigned char Ncbiqna2Ncbi4naCompl( const unsigned char * p, unsigned short score = 3 );
 
 template<class iterator>
 inline iterator Solexa2Ncbipna( iterator dest, const string& line, int base );
@@ -46,8 +49,10 @@ inline iterator Iupacnaq2Ncbapna( iterator dest, const string& iupac, const stri
 
 inline double ComputeComplexity( unsigned hash, unsigned bases );
 
-inline Uint8 Ncbipna2Ncbi4na( const unsigned char * data, unsigned windowLength, unsigned short mask = 0xf000 );
-inline Uint8 Ncbipna2Ncbi4naRevCompl( const unsigned char * data, unsigned windowLength, unsigned short mask = 0xf000 );
+inline Uint8 Ncbipna2Ncbi4na( const unsigned char * data, unsigned windowLength, unsigned short score = 0x7f );
+inline Uint8 Ncbipna2Ncbi4naRevCompl( const unsigned char * data, unsigned windowLength, unsigned short score = 0x7f );
+inline Uint8 Ncbiqna2Ncbi4na( const unsigned char * data, unsigned windowLength, unsigned short score = 3 );
+inline Uint8 Ncbiqna2Ncbi4naRevCompl( const unsigned char * data, unsigned windowLength, unsigned short score = 3 );
 inline Uint8 Ncbi8na2Ncbi4na( const unsigned char * data, unsigned windowLength );
 inline Uint8 Ncbi8na2Ncbi4naRevCompl( const unsigned char * data, unsigned windowLength );
 inline Uint8 Iupacna2Ncbi4na( const unsigned char * data, unsigned windowLength );

@@ -69,7 +69,8 @@ public:
 	}
 
     int GetNcbi4na( Uint8& window, CSeqCoding::ECoding, const unsigned char * data, unsigned length );
-    void SetNcbipnaToNcbi4naMask( Uint2 mask ) { m_ncbipnaToNcbi4naMask = mask; }
+    void SetNcbipnaToNcbi4naScore( Uint2 score ) { m_ncbipnaToNcbi4naScore = score; }
+    void SetNcbiqnaToNcbi4naScore( Uint2 score ) { m_ncbiqnaToNcbi4naScore = score; }
     
     void SetStrands( int s ) { m_strands = s; }
 
@@ -79,8 +80,17 @@ public:
 	void SetMaxMism( int i );
 	void SetMinimalMaxMism( int i );
 protected:
+	typedef Uint8 TCvt( const unsigned char *, int, unsigned short );
+	typedef Uint2 TDecr( Uint2 );
     int x_GetNcbi4na_ncbi8na( Uint8& window, const unsigned char * data, unsigned length );
     int x_GetNcbi4na_ncbipna( Uint8& window, const unsigned char * data, unsigned length );
+    int x_GetNcbi4na_ncbiqna( Uint8& window, const unsigned char * data, unsigned length );
+    int x_GetNcbi4na_colorsp( Uint8& window, const unsigned char * data, unsigned length );
+    int x_GetNcbi4na_quality( Uint8& window, const unsigned char * data, unsigned length, TCvt * fun, int incr, Uint2 score, TDecr * decr );
+	static Uint2 x_UpdateNcbipnaScore( Uint2 score ) { return score /= 2; }
+	static Uint2 x_UpdateNcbiqnaScore( Uint2 score ) { return score - 1; }
+	static TCvt  x_Ncbipna2Ncbi4na;
+	static TCvt  x_Ncbiqna2Ncbi4na;
     
 protected:
 //    THashTable m_hashTable;
@@ -94,7 +104,8 @@ protected:
 
     double m_maxSimplicity;
     unsigned m_windowLength;
-    Uint2 m_ncbipnaToNcbi4naMask;
+    Uint2 m_ncbipnaToNcbi4naScore;
+	Uint2 m_ncbiqnaToNcbi4naScore;
     Uint2 m_strands;
 	Uint2 m_minMism;
 	Uint2 m_maxMism;
@@ -118,7 +129,7 @@ inline CQueryHash::CQueryHash( EHashType type, int winsize, int maxm, int maxa, 
     m_hashTableM( type == eHash_multimap ? winsize:0, maxm, maxa ), 
     m_hashTableA( type == eHash_arraymap ? winsize:0, maxm, maxa ), 
     m_maxSimplicity( maxsimpl ), m_windowLength( winsize ), 
-	m_ncbipnaToNcbi4naMask( 0xffc0 ), m_strands( 3 ), 
+	m_ncbipnaToNcbi4naScore( 0x7f ), m_ncbiqnaToNcbi4naScore( 3 ), m_strands( 3 ), 
 	m_minMism( 0 ), m_maxMism( 0 ), m_maxAlt( maxa ), m_permutators( maxm + 1 )
 {
 	for( int i = 0; i <= maxm; ++i ) 

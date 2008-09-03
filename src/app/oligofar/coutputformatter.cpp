@@ -25,6 +25,45 @@ inline ostream& operator << ( ostream& o, const CNcbi8naPrinter& p )
 	return o;
 }
 
+class CNcbiqnaPrinter
+{
+public:
+	CNcbiqnaPrinter( const string& s ) : m_data(s) {}
+	const char * data() const { return m_data.c_str(); }
+	unsigned size() const { return m_data.size(); }
+protected:
+	const string& m_data;
+};
+
+inline ostream& operator << ( ostream& o, const CNcbiqnaPrinter& p ) 
+{
+	if( p.size() == 0 ) o.put('-'); 
+	else for( unsigned i = 0; i < p.size(); ++i ) {
+		o.put( CIupacnaBase( CNcbiqnaBase( p.data()[i] ) ) );
+	}
+	return o;
+}
+
+class CNcbipnaPrinter
+{
+public:
+	CNcbipnaPrinter( const char * data, unsigned len ) : m_data( data ), m_len( len ) {}
+	const char * data() const { return m_data; }
+	unsigned size() const { return m_len; }
+protected:
+	const char * m_data;
+	unsigned m_len;
+};
+
+inline ostream& operator << ( ostream& o, const CNcbipnaPrinter& p ) 
+{
+	if( p.size() == 0 ) o.put('-'); 
+	else for( unsigned i = 0; i < p.size(); ++i ) {
+		o.put( CIupacnaBase( CNcbipnaBase( p.data() + i*5 ) ) );
+	}
+	return o;
+}
+
 string COutputFormatter::GetSubjectId( int ord ) const 
 {
 	return m_seqIds.GetSeqDef( ord ).GetBestIdString();
@@ -107,6 +146,16 @@ void COutputFormatter::operator () ( const CQuery * query )
             if( query->HasComponent(1) ) 
                 m_out << CNcbi8naPrinter( string(query->GetData(1), query->GetLength(1)) ) << "\n";
             else m_out << "-\n";
+		} else if( query->GetCoding() == CSeqCoding::eCoding_ncbipna ) {
+            m_out << CNcbipnaPrinter( query->GetData(0), query->GetLength(0) ) << "\t";
+            if( query->HasComponent(1) ) 
+                m_out << CNcbipnaPrinter( query->GetData(1), query->GetLength(1) ) << "\n";
+            else m_out << "-\n";
+		} else if( query->GetCoding() == CSeqCoding::eCoding_ncbiqna ) {
+            m_out << CNcbiqnaPrinter( string(query->GetData(0), query->GetLength(0)) ) << "\t";
+            if( query->HasComponent(1) ) 
+                m_out << CNcbiqnaPrinter( string(query->GetData(1), query->GetLength(1)) ) << "\n";
+            else m_out << "-\n";
         } else {
             // TODO: implement printer for Ncbipna
             m_out << "-\t-\n";
@@ -139,6 +188,7 @@ void COutputFormatter::FormatDifferences( int rank, const CHit * hit, int matepa
     const char * s = target.data();
     int length = target.length();
     const int aflags = CAlignerBase::fComputePicture | CAlignerBase::fComputeScore | CAlignerBase::fPictureSubjectStrand;
+	m_aligner->SetBestPossibleQueryScore( query->GetBestScore( matepair ) );
     if( hit->IsRevCompl( matepair ) == false ) {
         m_aligner->Align( query->GetCoding(),
                           query->GetData( matepair ),

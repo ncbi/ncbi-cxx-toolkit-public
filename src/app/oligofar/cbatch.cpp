@@ -8,14 +8,17 @@ int CBatch::AddQuery( CQuery * query )
 {
     int cnt = 0;
     if( query->GetTopHit() == 0 ) {
-        cnt = m_queryHash.AddQuery( query );
+        m_hashEntries += (cnt = m_queryHash.AddQuery( query ));
         if( cnt ) {
             ++m_hashedReads;
             m_inputChunk.push_back( query );
-        } else delete query;
+        } else {
+			++m_ignoredReads;
+			delete query;
+		}
     } else {
         m_inputChunk.push_back( query ); // do not hash if we have guided hit
-        ++ m_guidedReads;
+        ++m_guidedReads;
     }
     if( m_hashedReads && m_hashedReads % m_readsPerRun == 0 || 
         int( m_inputChunk.size() ) >= 2*m_readsPerRun ) Purge();
@@ -30,7 +33,7 @@ int CBatch::x_EstimateMismatchCount( const CQuery* query, bool matepair ) const
     if( hit == 0 ) return kNoHitEquivalent;
     if( query->HasComponent( matepair ) ) {
         if( hit->HasComponent( matepair ) ) {
-            return int( query->ComputeBestScore( m_scoreTbl, matepair ) * ( 1.0 - hit->GetScore( matepair ) / 100.0 ) / m_mismatchPenalty );
+            return int( query->GetBestScore( matepair ) * ( 1.0 - hit->GetScore( matepair ) / 100.0 ) / m_mismatchPenalty );
 			//	int( (100.0 - hit->GetScore( matepair )) / (100.0 * m_mismatchPenalty) );
         } else return kNoHitEquivalent;
     } else return 0; // no read - no mismatches, n'est pas?
@@ -38,9 +41,9 @@ int CBatch::x_EstimateMismatchCount( const CQuery* query, bool matepair ) const
 
 void CBatch::Purge()
 {
+	cerr << "Queries: guided " << m_guidedReads << ", hashed " << m_hashedReads << ", ignored: " << m_ignoredReads << ", entries: " << m_hashEntries << "\n";
     if( CProgressIndicator * p = m_readProgressIndicator) p->Format( CProgressIndicator::e_final );
     while( m_hashedReads ) {
-
         m_queryHash.Freeze();
         m_seqVecProcessor.Process( m_fastaFile );
         m_queryHash.Clear();
@@ -72,6 +75,8 @@ void CBatch::Purge()
     cerr << "OK, " << CHit::GetCount() << "/" << CQuery::GetCount() << " left\n";
     m_hashedReads = 0;
     m_guidedReads = 0;
+	m_ignoredReads = 0;
+	m_hashEntries = 0;
 }
 
 void CBatch::x_LoadSeqIds()

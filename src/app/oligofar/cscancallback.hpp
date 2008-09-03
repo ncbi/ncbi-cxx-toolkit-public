@@ -2,13 +2,14 @@
 #define OLIGOFAR_CSCANCALLBACK__HPP
 
 #include "cqueryhash.hpp"
+#include "cseqscanner.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
 
 class CScanCallback
 {
 public:
-    typedef array_set <CQueryHash::SHashAtom> TMatches;
+    typedef CSeqScanner::TMatches TMatches;
     CScanCallback( TMatches& matches, CQueryHash& queryHash ) :
         m_matches( matches ), m_queryHash( queryHash ) {}
     void operator () ( Uint4 hash, Uint4 mism, Uint8 alt ) {

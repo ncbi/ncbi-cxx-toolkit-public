@@ -13,13 +13,19 @@ public: \
                         CSeqCoding::ECoding sc, const char * s, int slen, int flags ); \
     typedef TSeqRef<CNcbi8naBase,+1,CSeqCoding::eCoding_ncbi8na> TQueryNcbi8naRef; \
     typedef TSeqRef<CNcbipnaBase,+5,CSeqCoding::eCoding_ncbipna> TQueryNcbipnaRef; \
-    typedef TSeqRef<CNcbi8naBase,+1,CSeqCoding::eCoding_ncbi8na> TSubjectRefFwd; \
-    typedef TSeqRef<CNcbi8naBase,-1,CSeqCoding::eCoding_ncbi8na> TSubjectRefRev; \
+    typedef TSeqRef<CNcbiqnaBase,+1,CSeqCoding::eCoding_ncbiqna> TQueryNcbiqnaRef; \
+    typedef TSeqRef<CColorTwoBase,+1,CSeqCoding::eCoding_colorsp> TQueryColorspRef; \
+    typedef TSeqRef<CNcbi8naBase,+1,CSeqCoding::eCoding_ncbi8na> TSbjNcbi8naRefFwd; \
+    typedef TSeqRef<CNcbi8naBase,-1,CSeqCoding::eCoding_ncbi8na> TSbjNcbi8naRefRev; \
+    typedef TSeqRef<CColorTwoBase,+1,CSeqCoding::eCoding_colorsp> TSbjColorspRefFwd; \
+    typedef TSeqRef<CColorTwoBase,-1,CSeqCoding::eCoding_colorsp> TSbjColorspRefRev; \
     \
     const PvtType& Get ## PvtObj() const { return m_ ## PvtObj; } \
     PvtType& Set ## PvtObj() { return m_ ## PvtObj; }       \
 	\
 protected: \
+    template<class CQuery> \
+    void AlignC( const char * q, int qlen, const char * s, int slen, int flags ); \
     template<class CQuery> \
     void AlignQ( const char * q, int qlen, const char * s, int slen, int flags ); \
     template<class CQuery, class CSubject> \
@@ -32,22 +38,32 @@ protected: \
 inline void CAligner_ ## ALGO::Align( CSeqCoding::ECoding qc, const char * q, int qlen, \
                                       CSeqCoding::ECoding sc, const char * s, int slen, int flags ) \
 { \
-    ASSERT( sc == CSeqCoding::eCoding_ncbi8na ); \
     ASSERT( qlen >= 0 ); \
     switch( qc ) { \
+    case CSeqCoding::eCoding_colorsp: AlignC<TQueryColorspRef>( q, qlen, s, slen, flags ); break; \
+    case CSeqCoding::eCoding_ncbiqna: AlignQ<TQueryNcbiqnaRef>( q, qlen, s, slen, flags ); break; \
     case CSeqCoding::eCoding_ncbipna: AlignQ<TQueryNcbipnaRef>( q, qlen, s, slen, flags ); break; \
     case CSeqCoding::eCoding_ncbi8na: AlignQ<TQueryNcbi8naRef>( q, qlen, s, slen, flags ); break; \
-    default: THROW( logic_error, "Query coding other then ncbi8na or ncbipna is not implemented" ); \
+    default: THROW( logic_error, "Query coding other then ncbi8na, ncbiqna or ncbipna is not implemented" ); \
     } \
+} \
+ \
+template<class CQuery> \
+inline void CAligner_ ## ALGO::AlignC( const char * q, int qlen, const char * s, int slen, int flags ) \
+{ \
+    if( slen > 0 ) \
+        AlignQS<CQuery,TSbjColorspRefFwd>( q, qlen, s, slen, flags ); \
+    else \
+        AlignQS<CQuery,TSbjColorspRefRev>( q, qlen, s, slen, flags ); \
 } \
  \
 template<class CQuery> \
 inline void CAligner_ ## ALGO::AlignQ( const char * q, int qlen, const char * s, int slen, int flags ) \
 { \
     if( slen > 0 ) \
-        AlignQS<CQuery,TSubjectRefFwd>( q, qlen, s, slen, flags ); \
+        AlignQS<CQuery,TSbjNcbi8naRefFwd>( q, qlen, s, slen, flags ); \
     else \
-        AlignQS<CQuery,TSubjectRefRev>( q, qlen, s, slen, flags ); \
+        AlignQS<CQuery,TSbjNcbi8naRefRev>( q, qlen, s, slen, flags ); \
 } \
  \
 template<class CQuery, class CSubject> \
@@ -59,7 +75,11 @@ inline void CAligner_ ## ALGO::AlignQS( const char * q, int qlen, const char * s
     aligner.SetQuery( q, qlen );  \
     aligner.SetSubject( s, slen );  \
     aligner.Align( flags ); \
-    if( flags & CAlignerBase::fComputeScore ) aligner.ComputeBestQueryScore(); \
+    /*if( flags & CAlignerBase::fComputeScore ) aligner.ComputeBestQueryScore(); */ \
+	if( flags & CAlignerBase::fComputeScore ) { \
+		if( double sc = GetBestPossibleQueryScore() ) aligner.SetBestQueryScore( sc ); \
+		/*else aligner.ComputeBestQueryScore();*/ \
+	} \
     aligner.ReverseStringsIfNeeded( flags ); \
 }
 

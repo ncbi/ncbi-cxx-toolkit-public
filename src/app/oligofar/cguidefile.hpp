@@ -45,22 +45,22 @@ public:
     
     bool NextHit( Uint8 ordinal, CQuery * query );
     
-	int GetMaxDist() const { return m_filter->GetMaxDist(); }
-	int GetMinDist() const { return m_filter->GetMinDist(); }
-
 protected:
+	typedef pair<int,int> TRange;
 
 	void AdjustInput( int& fwd, char dir, int& p1, int which ) const;
+	TRange ComputeRange( bool fwd, int pos, int length ) const;
 
 protected:
     ifstream m_in;
     string m_buff;
 	CFilter * m_filter;
 	CSeqIds * m_seqIds;
+	Uint8 m_lastQord;
 };
 
 inline CGuideFile::CGuideFile( const string& fileName, CFilter& filter, CSeqIds& seqIds )
-	: m_filter( &filter ), m_seqIds( &seqIds )
+	: m_filter( &filter ), m_seqIds( &seqIds ), m_lastQord( 0 )
 {
 	ASSERT( m_filter );
 	ASSERT( m_seqIds );

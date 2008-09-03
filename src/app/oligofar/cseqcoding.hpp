@@ -12,6 +12,7 @@ class CNcbiqnaBase;
 class CNcbi8naBase;
 class CNcbi4naBase;
 class CNcbi2naBase;
+class CColorTwoBase;
 
 class CSeqCoding
 {
@@ -22,7 +23,8 @@ public:
         eCoding_ncbi8na,
         eCoding_ncbi4na,
         eCoding_ncbi2na,
-		eCoding_ncbiqna
+		eCoding_ncbiqna,
+		eCoding_colorsp
     };
 	enum EStrand { 
 		eStrand_pos = 0, 
@@ -42,7 +44,8 @@ public:
     CIupacnaBase( const CNcbi4naBase& );
     CIupacnaBase( const CNcbi2naBase& );
     CIupacnaBase( const CNcbiqnaBase& , int cutoff = 5 );
-    CIupacnaBase( const CNcbipnaBase& , int mask = 0xf000 );
+    CIupacnaBase( const CNcbipnaBase& , int score = 127 );
+    CIupacnaBase( const CColorTwoBase& b );
     CIupacnaBase Complement() const { return s_complement[(int)m_base]; }
 	CIupacnaBase Get( EStrand strand ) const { return strand == eStrand_neg ? Complement() : *this; }
     operator char () const { return m_base; }
@@ -63,6 +66,8 @@ public:
     CNcbipnaBase( const CNcbi4naBase& b );
     CNcbipnaBase( const CNcbi2naBase& );
     CNcbipnaBase( const CNcbiqnaBase& );
+    CNcbipnaBase( const CColorTwoBase& b ) { THROW( logic_error, "CNcbipnaBase( CColorTwoBase ) should not be called" ); }
+    operator char () const { THROW( logic_error, "CNcbiqnaBase::operator char () should not be called!" ); }
     operator const char * () const { return m_base; }
     unsigned char operator [] (int i) const { return m_base[i]; }
 	CNcbipnaBase Complement() const { return CNcbipnaBase( m_base, eStrand_neg ); }
@@ -84,10 +89,11 @@ public:
 	CNcbiqnaBase( const CNcbi4naBase& b, unsigned score = 63 );
 	CNcbiqnaBase( const CNcbi2naBase& b, unsigned score = 63 );
 	CNcbiqnaBase( const CIupacnaBase& b, unsigned score = 63 );
+    CNcbiqnaBase( const CColorTwoBase& b ) { THROW( logic_error, "CNcbiqnaBase( CColorTwoBase ) should not be called" ); }
 	CNcbiqnaBase Complement() const { return m_base ^ '\x03'; }
 	CNcbiqnaBase Get( EStrand strand ) const { return ( strand == eStrand_neg ) ? Complement() : *this; }
     operator char () const { return m_base; }
-	int GetPhrapScore() const { return m_base >> 2; }
+	int GetPhrapScore() const { return ((unsigned char)m_base) >> 2; }
 	static char AdjustScore( int score ); 
 	static CNcbiqnaBase Any() { return CNcbiqnaBase( 0 ); }
 protected:
@@ -103,20 +109,24 @@ public:
     CNcbi8naBase( int c, EStrand strand = eStrand_pos );
     CNcbi8naBase( unsigned int c, EStrand strand  = eStrand_pos );
     CNcbi8naBase( const CIupacnaBase& b );
-    CNcbi8naBase( const CNcbipnaBase& b, int mask = 0xf000 );
+    CNcbi8naBase( const CNcbipnaBase& b, int score = 127 );
+    CNcbi8naBase( const CNcbiqnaBase& b, int cutoff = 5 );
+    CNcbi8naBase( const CNcbi8naBase& b, int ) : m_base( b ) {}
     CNcbi8naBase( const CNcbi4naBase& b );
     CNcbi8naBase( const CNcbi2naBase& b );
-    CNcbi8naBase( const CNcbiqnaBase& b, int cutoff = 5 );
+    CNcbi8naBase( const CColorTwoBase& b ) { THROW( logic_error, "CNcbi8naBase( CColorTwoBase ) should not be called" ); }
     CNcbi8naBase Complement() const;
 	CNcbi8naBase Get( EStrand strand ) const { return ( strand == eStrand_neg ) ? Complement() : *this; }
     int GetAltCount() const { return s_altCount[(int)m_base]; }
     operator char () const { return m_base; }
 	static CNcbi8naBase Any() { return CNcbi8naBase( '\x0f' ); }
+	CNcbi2naBase GetSmallestNcbi2na() const;
 protected:
     char m_base;
     static char s_fromIupacna[];
 	static char s_complement[];
 	static char s_altCount[];
+	static char s_smallestNcbi2na[];
 };
 
 class CNcbi4naBase : public CNcbi8naBase 
@@ -133,11 +143,11 @@ public:
     CNcbi2naBase( char c ) : m_base( c ) {}
     CNcbi2naBase( int c ) : m_base( c ) {}
     CNcbi2naBase( unsigned int c ) : m_base( c ) {}
-    CNcbi2naBase( const CNcbipnaBase& b, int mask = 0xf000 );
+    CNcbi2naBase( const CNcbipnaBase& b, int score = 127 );
     CNcbi2naBase( const CIupacnaBase& b );
     CNcbi2naBase( const CNcbi8naBase& b );
     CNcbi2naBase( const CNcbi4naBase& b );
-    CNcbi2naBase( const CNcbiqnaBase& b, int cutoff = 5 );
+    CNcbi2naBase( const CNcbiqnaBase& b );
     operator char () const { return m_base; }
     CNcbi2naBase Complement() const { return '\x03' ^ m_base; }
 	CNcbi2naBase Get( EStrand strand ) const { return ( strand == eStrand_neg ) ? Complement() : *this; }
@@ -147,8 +157,38 @@ protected:
     static char s_ncbi8naTable[];
 };
 
-////////////////////////////////////////////////////////////////////////
+class CColorTwoBase : public CSeqCoding
+{
+public:
+	enum EColorHi { eColor_BLUE = 0x00, eColor_GREEN = 0x10, eColor_YELLOW = 0x20, eColor_RED = 30 };
+	enum EFromASCII { eFromASCII };
+	CColorTwoBase( char c ) : m_base( c ) {}
+	CColorTwoBase( char c, EStrand ) : m_base( c ) {}
+	CColorTwoBase( const char * c ) : m_base( *c ) {}
+	CColorTwoBase( const char * c, EStrand ) : m_base( *c ) {}
+	CColorTwoBase( EFromASCII, char c ) { x_Init( c ); }
+	CColorTwoBase( CNcbi2naBase b ) : m_base( CNcbi8naBase( b ) ) {}
+	CColorTwoBase( CNcbi8naBase b ) : m_base( b ) {}
+	CColorTwoBase( CNcbi2naBase prev, CNcbi2naBase b ) :
+		m_base( s_dibase2code[(prev << 2) | b] | CColorTwoBase(b) ) {}
+	CColorTwoBase( CNcbi2naBase prev, CNcbi8naBase b ) :
+		m_base( s_dibase2code[(prev << 2) | b.GetSmallestNcbi2na()] | CColorTwoBase(b) ) {}
+	CColorTwoBase( CNcbi8naBase prev, CNcbi8naBase b ) :
+		m_base( s_dibase2code[(prev.GetSmallestNcbi2na() << 2) | b.GetSmallestNcbi2na()] | CColorTwoBase(b) ) {}
+	operator char () const { return m_base; }
+	CNcbi8naBase GetBaseCalls() const { return m_base & 0xf; }
+	CColorTwoBase Complement() const { return GetBaseCalls().Complement() | GetColor(); }
+	int GetColor() const { return m_base & 0x30; }
+	int GetColorOrd() const { return GetColor() >> 4; }
+	char AsAscii() const { return '0' + GetColorOrd(); }
+protected:
+	void x_Init( char c );
+protected:
+	static char s_dibase2code[];
+	char m_base; // ..cc4444
+};
 
+////////////////////////////////////////////////////////////////////////
 template<class BaseA, class BaseB>
 inline int ComputeScore( const BaseA& a, const BaseB& b )
 {
@@ -182,12 +222,11 @@ inline int operator * ( const CNcbi2naBase& a, const CNcbi2naBase& b )
 
 inline CIupacnaBase::CIupacnaBase( const CNcbi8naBase& b ) : m_base("-ACMGRSVTWYHKDBN"[b&0x0f]) {}
 inline CIupacnaBase::CIupacnaBase( const CNcbi4naBase& b ) : m_base("-ACMGRSVTWYHKDBN"[b&0x0f]) {}
-inline CIupacnaBase::CIupacnaBase( const CNcbi2naBase& b ) : m_base("-ACGT"[b&0x03]) {}
-inline CIupacnaBase::CIupacnaBase( const CNcbipnaBase& b, int mask ) : m_base(0) 
-{
-    m_base = CIupacnaBase( CNcbi8naBase( b, mask ) );
-}
-inline CIupacnaBase::CIupacnaBase( const CNcbiqnaBase& b, int cutoff ) : m_base( b.GetPhrapScore() > cutoff ? (char)CNcbi2naBase(b) : 'N' ) {}
+inline CIupacnaBase::CIupacnaBase( const CNcbi2naBase& b ) : m_base("ACGT"[b&0x03]) {}
+inline CIupacnaBase::CIupacnaBase( const CNcbipnaBase& b, int score ) : m_base(0) { m_base = CIupacnaBase( CNcbi8naBase( b, score ) ); }
+inline CIupacnaBase::CIupacnaBase( const CNcbiqnaBase& b, int cutoff ) : m_base( b.GetPhrapScore() > cutoff ? "ACGT"[b&3] : 'N' ) {}
+inline CIupacnaBase::CIupacnaBase( const CColorTwoBase& b ) { m_base = b.GetColorOrd() + '0'; }
+
 ////////////////////////////////////////////////////////////////////////
 
 inline CNcbipnaBase::CNcbipnaBase( const CIupacnaBase& b ) 
@@ -255,25 +294,25 @@ inline CNcbiqnaBase::CNcbiqnaBase( const CNcbipnaBase& b ) : m_base(0)
 inline CNcbiqnaBase::CNcbiqnaBase( const CNcbi8naBase& b, unsigned score ) 
 {
 	if( b.GetAltCount() > 1 ) m_base = 0;
-	else m_base = CNcbi2naBase( b ) | AdjustScore(score << 2);
+	else m_base = CNcbi2naBase( b ) | (AdjustScore(score) << 2);
 }
 
 inline CNcbiqnaBase::CNcbiqnaBase( const CNcbi4naBase& b, unsigned score )
 {
 	if( b.GetAltCount() > 1 ) m_base = 0;
-	else m_base = CNcbi2naBase( b ) | AdjustScore(score << 2);
+	else m_base = CNcbi2naBase( b ) | (AdjustScore(score) << 2);
 }
 
 inline CNcbiqnaBase::CNcbiqnaBase( const CNcbi2naBase& b, unsigned score )
 {
-	m_base = b | AdjustScore(score << 2);
+	m_base = b | (AdjustScore(score) << 2);
 }
 
 inline CNcbiqnaBase::CNcbiqnaBase( const CIupacnaBase& b, unsigned score )
 {
 	CNcbi8naBase _b( b );
 	if( _b.GetAltCount() > 1 ) m_base = 0;
-	else m_base = CNcbi2naBase( b ) | AdjustScore(score << 2);
+	else m_base = CNcbi2naBase( b ) | (AdjustScore(score) << 2);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -296,13 +335,13 @@ inline CNcbi8naBase::CNcbi8naBase( unsigned int c, EStrand strand ) : m_base( c 
 inline CNcbi8naBase::CNcbi8naBase( const CNcbi4naBase& b ) : m_base( b ) {}
 inline CNcbi8naBase::CNcbi8naBase( const CNcbi2naBase& b ) : m_base( "\x01\x02\x04\x08"[(int)b] ) {}
 
-inline CNcbi8naBase::CNcbi8naBase( const CNcbipnaBase& b, int mask ) : m_base(0) 
+inline CNcbi8naBase::CNcbi8naBase( const CNcbipnaBase& b, int score ) : m_base(0) 
 {
-    if( b[0] & mask ) m_base |= 0x01;
-    if( b[1] & mask ) m_base |= 0x02;
-    if( b[2] & mask ) m_base |= 0x04;
-    if( b[3] & mask ) m_base |= 0x08;
-    if( (!m_base) && ( b[4] & mask ) ) m_base = 0x0f;
+    if( b[0] > score ) m_base |= 0x01;
+    if( b[1] > score ) m_base |= 0x02;
+    if( b[2] > score ) m_base |= 0x04;
+    if( b[3] > score ) m_base |= 0x08;
+    if( (!m_base) && ( b[4] > score ) ) m_base = 0x0f;
 }
 
 inline CNcbi8naBase::CNcbi8naBase( const CIupacnaBase& b ) : m_base( s_fromIupacna[b] ) 
@@ -310,12 +349,9 @@ inline CNcbi8naBase::CNcbi8naBase( const CIupacnaBase& b ) : m_base( s_fromIupac
     if( m_base == '\xf0' ) THROW( runtime_error, "Invalid IUPACNA base ASCII[" << int(b) << "] " << b );
 }
 
-inline CNcbi8naBase CNcbi8naBase::Complement() const 
-{ 
-    return s_complement[(int)m_base]; 
-}
-
-inline CNcbi8naBase::CNcbi8naBase( const CNcbiqnaBase& b, int cutoff ) : m_base( b.GetPhrapScore() > cutoff ? (char)CNcbi2naBase(b) : 'N' ) {}
+inline CNcbi8naBase::CNcbi8naBase( const CNcbiqnaBase& b, int cutoff ) : m_base( b.GetPhrapScore() > cutoff ? CNcbi8naBase( CNcbi2naBase( b&3 ) ) : Any() ) {}
+inline CNcbi8naBase CNcbi8naBase::Complement() const { return s_complement[(int)m_base]; }
+inline CNcbi2naBase CNcbi8naBase::GetSmallestNcbi2na() const { return s_smallestNcbi2na[int(m_base)]; }
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -334,9 +370,19 @@ inline CNcbi2naBase::CNcbi2naBase( const CNcbi4naBase& b ) : m_base( s_ncbi8naTa
     if( m_base == '\xf0' ) THROW( runtime_error, "Invalid NCBI8NA base 0x" << setw(2) << hex << setfill('0') << int(b) << " IUPACNA " << CIupacnaBase(b) );
 }
 
-inline CNcbi2naBase::CNcbi2naBase( const CNcbiqnaBase& b, int cutoff ) : m_base( b.GetPhrapScore() > cutoff ? (char)CNcbi2naBase(b) : 'N' ) {}
+inline CNcbi2naBase::CNcbi2naBase( const CNcbiqnaBase& b ) : m_base( b & 3 ) {}
 
 ////////////////////////////////////////////////////////////////////////
+
+inline void CColorTwoBase::x_Init( char c )
+{ 
+	static const char * t = "0123ACGT";
+	const char * x = strchr( t, toupper( c ) );
+	if( x == 0 || *x == 0 ) THROW( runtime_error, "Invalid colorspace base " << c );
+	m_base = x - t;
+	if( m_base < 4 ) (m_base <<= 4);
+	else m_base = CNcbi8naBase( CNcbi2naBase( m_base & 0x03 ) ); 
+}
 
 END_OLIGOFAR_SCOPES
 

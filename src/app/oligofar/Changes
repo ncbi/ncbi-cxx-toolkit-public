@@ -1,0 +1,14 @@
+3.21	2008/08/27
+	* Removed flag -y (replaced with -P, different meaning)
+	* Added flag -P phrapScore
+	* Added flag -C config-file
+	* Added flag -U version
+	* Added internal 1-channel quality encoding
+	* Added actual computation of the best score possible for the read
+	* Fixed output for paired reads - some hits did not have "target" columns set
+
+3.22    2008/09/03
+        * Added flag -R (mutual orientation)
+        * Added development version of di-nucleotide colorspace mapping
+
+	

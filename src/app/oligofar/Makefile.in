@@ -1,4 +1,4 @@
-APP_PROJ = oligofar
+APP_PROJ = oligofar fadice
 
 REQUIRES = objects bdb -Cygwin
 

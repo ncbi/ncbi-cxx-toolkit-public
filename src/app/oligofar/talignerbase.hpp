@@ -30,7 +30,11 @@ public:
     CQuery GetQueryEnd() const { return CQuery( m_alignerBase->m_qend ); }
     CSubject GetSubjectEnd() const { return CSubject( m_alignerBase->m_send ); }
 
-	double ComputeBestQueryScore();
+	//double ComputeBestQueryScore();
+	double SetBestQueryScore( double score ) { return m_alignerBase->m_bestScore = score; }
+
+	double GetGapOpeningScore() const { return GetAlignerBase().GetScoreTbl().GetGapOpeningScore(); }
+	double GetGapExtentionScore() const { return GetAlignerBase().GetScoreTbl().GetGapExtentionScore(); }
 
 	template<class TQuery,class TSubject>
 	bool   Match( const TQuery& q, const TSubject& s ) const { return GetScoreTbl().MatchRef( q, s ); }
@@ -75,12 +79,13 @@ protected:
 ////////////////////////////////////////////////////////////////////////
 // Implementations
 
+/* Note: keep this code *******
 template<class CQuery,class CSubject>
 inline double TAlignerBase<CQuery,CSubject>::ComputeBestQueryScore() 
 {
     return m_alignerBase->m_bestScore = ( GetAlignerBase().GetQueryAlignedLength() * ( m_query.GetCoding() == CSeqCoding::eCoding_ncbipna ? 255 : 1 ) );
 }
-
+*/
 template<class CQuery,class CSubject>
 inline CIupacnaBase TAlignerBase<CQuery,CSubject>::GetIupacnaQuery( const CQuery& q, int flags ) const 
 {

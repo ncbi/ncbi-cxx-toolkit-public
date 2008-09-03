@@ -1,19 +1,26 @@
-oligoFAR 3.19                     7-AUG-2008                                1-NCBI
+oligoFAR 3.21                     7-AUG-2008                                1-NCBI
 
 NAME 
-    oligoFAR version 3.19 - global alignment of single or paired short reads
+    oligoFAR version 3.21 - global alignment of single or paired short reads
 
 SYNOPSIS
-    oligofar [-hV] [-w wsize] [-n hashmism] [-N+|-] 
-            [-a max-alt-qry] [-A max-alt-sbj] [-H v|m|a]
-            [-z minDist] [-Z maxDist] [-D deltaDist] [-p minPct]
-            [-u topCnt] [-t topPct] [-F dust] [-s strands]
-            [-i input] [-d database] [-l gilist] [-b snpdb]
-            [-o output] [-O outflags] [-g guidefile]
-            [-D batchSize] [-r algo] [-X dropoff] 
-            [-q qualChannels] [-0 qualBase] [-1 solexa1] [-2 solexa2] 
-            [-y sensitivity] [-I score] [-M score] [-G score] [-Q score] 
-            [-T test] [-L memlimit] 
+    oligofar [-hV] [-C config] [-w wsize] [-n hashmism] [-N+|-] 
+             [-a max-alt-qry] [-A max-alt-sbj] [-H v|m|a]
+             [-z minDist] [-Z maxDist] [-D deltaDist] [-p minPct]
+             [-u topCnt] [-t topPct] [-F dust] [-s strands]
+             [-i input] [-d database] [-l gilist] [-b snpdb]
+             [-o output] [-O outflags] [-g guidefile] [-c +|-] 
+             [-D batchSize] [-r algo] [-X dropoff] [-R geometry]
+             [-q qualChannels] [-0 qualBase] [-1 solexa1] [-2 solexa2] 
+             [-P phrap] [-I score] [-M score] [-G score] [-Q score] 
+             [-T test] [-L memlimit] [-U version] 
+
+EXAMPLES
+    oligofar -U 3.21 -C human-data.ini -C deep-search.ini -i my.reads -h
+
+    oligofar -i pairs.tbl -d contigs.fa -b snpdb.bdb -l gilist -g pairs.guide \
+             -w 13 -B 250000 -Hv -n2 -rf -p90 -z100 -Z500 -D50 -Rp \
+             -L16G -o output -Omx
 
 DESCRIPTION
     Performs global alignments of multiple single or paired short reads 
@@ -87,9 +94,9 @@ NOTE
     scores, so they may be as high as 200.
     
 PAIRED READS
-    Pairs are looked-up constrained by requirements: 
-     - reads should be on opposing strands
-     - plus-stranded read should start before minus-stranded one
+    Pairs are looked-up constrained by following requirements: 
+     - relative orientation (geometry) which may be set by --geometry or -R 
+       (see section OPTIONS subsection ``Filtering and ranking options'')
      - distance between lowest position of plus-stranded read and highest
        position on minus-stranded one should be in range [ $z - $D ; $Z + $D ] 
        where $z, $Z and $D are values given in -z, -Z and -D switches' 
@@ -99,11 +106,11 @@ PAIRED READS
     hits for the pair components still will be reported.
 
     Paired reads have one ID per pair. Individual reads in this case do not
-    have ID, although report provides info which component(s) of the pair
-    produce the hit.
+    have individual ID, although report provides info which component(s) of 
+    the pair produce the hit.
 
 OPTIONS
-    
+
 Service options
     --help    
     -h          Print help to stdout, finish parsing commandline, and then 
@@ -116,6 +123,22 @@ Service options
     --version
     -V          Print current version and hash implementation, finish parsing
                 commandline and exit with error code 0.
+
+    --assert-version=version
+    -U          If oligofar version is not that is specified in argument,
+                forces oligofar to exit with error.  Every time this option 
+                appears in commandline or in config file, the comparison is
+                performed, so each config file may contain this check
+                independently.  
+
+    --config-file=file
+    -C file     Parses config file and continues to parse commandline.  May
+                override values specified in commandline ahead, and may be
+                overriden by the values specified after.  May be used multiple
+                times with different files, each time new file will be parsed.
+                Config file is expected to contain section [oligofar] with
+                entries equal to long option names with no preceeding dashes.
+                All entries are optional.  See more in FILE FORMATS section.
 
     --test-suite=+|-
     -T +|-      Run internal tests for basic operations before doing anything
@@ -170,10 +193,15 @@ File options
 
     --quality-base=value
     --quality-base=+char
-    -q value
-    -q +char    Sets base value for character-encoded phrap quality scores,
-                i.e. integer ASCII value or `+' followed by characer which 
-                corresponds to phrap score of 0.
+    -0 value
+    -0 +char    Sets base value for character-encoded phrap quality scores,
+                i.e. integer ASCII value or `+' followed by character which 
+                corresponds to the phrap score of 0.
+
+    --colorspace=+|-
+    -c +|-      DEVELOPMENT. Input is in di-base colorspace encoding. Hashing 
+                and alignment will be performed in the colorspace encoding. 
+                Not compatible with -q, -1, -2 parameters.
 
     --output-flags=-eumxtadh
     -O-eumxtadh Controls what types of records should be produced on output.
@@ -234,14 +262,13 @@ Hashing and scanning options
                 ambiguous bases) on database side for the window to be used 
                 to perform hash lookup and seed an alignment. 
 
-    --solexa-sensitivity=bits
-    -y bits     sensitivity (0-15) for basecalling of 4-channel scores. Affects
-                how scores are treated to produce ambiguities for hashing. The
-                larger this value, the more ambiguities are produced while
-                basecalling. But if oligoFAR can't find window with low enough
-                number of alternatives for a read, it automatically reduces
-                sensitivity value for this read repeatedly until the read may 
-                be hashed.
+    --phrap-cutoff=score
+    -P score    Phrap score for which and below bases are considered as
+                ambiguous (used for hashing). The larger it is, the more
+                chances to seed lower quality read to where it belongs, but
+                also the larger hash table is which decreases performance. 
+                Affects 1-channel and 4-channel input. Replaces obsolete 
+                --solexa-sencitivity (-y) option.
 
     --max-simplicity=dust
     -F dust     Maximal dust score of a window for read to be hashed or for
@@ -308,11 +335,67 @@ Filtering and ranking options
                 where z, Z and D are the valuee set by -z, -Z and -D options
                 correspondently.
 
-EXAMPLE
-    ./oligofar -i pairs.tbl -d contigs.fa -b snpdb.bdb -l gilist -g pairs.guide \
-                -w 13 -B 250000 -Hv -n2 -rf -p90 -z100 -Z500 -D50 -L16G -o output -O mx
+    --geometry=type
+    -R geometry Sets allowed mutual orientation of the hits in paired read hits. 
+                Values allowed (synonyms are separated by `|') are:
+
+        p|centripetal|inside|pcr|solexa     reads are oriented so that vectors 
+                                            5'->3' are pointing to each other
+                                            ex: >>>>>>>   <<<<<<<
+
+        f|centrifugal|outside               reads are oriented so that vectors 
+                                            5'->3' are pointing outside
+                                            ex: <<<<<<<   >>>>>>>
+
+        i|incr|incremental|solid            reads are on same strand, first 
+                                            preceeds second on this strand
+                                            ex: >>>1>>>   >>>2>>>
+                                            or: <<<2<<<   <<<1<<<
+
+        d|decr|decremental                  reads are on same strand, first 
+                                            succeeds second on this strand
+                                            ex: >>>2>>>   >>>1>>>
+                                            or: <<<1<<<   <<<2<<<
+
+        o|opposite                          reads are on opposite strands 
+                                            (combination of p and f)
+                                            ex: >>>>>>>   <<<<<<<
+                                            or: <<<<<<<   >>>>>>>
+
+        c|consecutive                       reads are on same strand 
+                                            (combination of i and d)
+                                            ex: >>>>>>>   >>>>>>>
+                                            or: <<<<<<<   <<<<<<<
+
+        a|all|any                           any orientation, no constraints 
+                                            are applied
+
+                In examples above the pattern >>>1>>> means first component of 
+                the paired read on plus strand, <<<2<<< means second component 
+                on reverse complement strand; if the digit is not set than 
+                component number does not matter for the example.
 
 FILE FORMATS
+
+Config file
+    Config file is standrd NCBI registry file, containing section [oligofar].
+    When parsing config file, all entries spelled as oligofar command line 
+    long option names without two preceeding dashes are parsed as if they
+    appear in command line.  Thus, including of one config file into another 
+    is possible.  NB: no recursion checks are performed!!!  Order of entries
+    in config file does not matter.  Order of processing of included files is
+    not specified and may depend on option, so preferrably the files shoulde
+    be orthogonal  Only one file may be directly included in a config file.
+    
+    Example:
+
+        [oligofar]
+        assert-version = 3.21
+        window-size = 12
+        input-max-mism = 0
+        input-max-alt = 256
+        phrap-score = 3
+        config-file = alignment-scores.ini
 
 Input file
     Input file is two to five column whitespace-separated text file. Empty
@@ -330,7 +413,8 @@ Input file
 
     Quality scores should be represented as ASCII-strings of length equal to 
     appropriate read length, one char per base, with ASCII-value of each char 
-    minus 33 representing phrap quality score for the appropriate base.
+    minus 33 representing phrap quality score for the appropriate base.  The 
+    number 33 here may be changed with -0 (--quality-base) parameter.
 
     If -q1 is used, column 4 is required and should not be '-'; same as column 5 
     if column 3 is not '-' and not empty.
@@ -348,6 +432,23 @@ Input file
     Here in column 4 each char represents a base score for appropriate base in
     column 2, e.g. ? indicates phrap score of 30, > stands for phrap score of 
     29, etc.
+
+Input file with di-base colorspace reads (SOLiD technology)
+    Reads may be specified in di-base colorspace encoding.  Option --colorspace=+ 
+    should be used, quality scores will be ignored.  SEquence representation should 
+    be following: first base is IUPACna, all the rest are digits 0-3 representing 
+    dibases:
+
+    0 - AA, CC, GG, or TT
+    1 - AC, CA, GT, or TG
+    2 - AG, GA, CT, or TC
+    3 - AT, TA, CG, or GC
+
+    Example: 
+
+    rd1    C02033003022113110030030211    -
+    
+    The read above represents sequence CCTTATTTAAGACATGTTTAAATTCAC.
 
 Guide file
     Guide file is an output of srsearch program or similar tool which finds 
@@ -459,6 +560,12 @@ OUTPUT FORMAT
     #     |||||||||| ||||||| | | ||||||||||||    i:31, m:4, g:1
     # 5'=ATTCCTTTAGATAGAGCAGTTTTGAAACACCCTTTT=3' subject
 
+    or for di-base colorspace reads (DEVELOPMENT):
+
+    # 3'=110103000001111213020302010=5' query[1]
+    #    |||| |  ||||||||||||||||||     i:23, m:3, g:1
+    # 5'=110123-20001111213020302013=3' subject
+
     This format is intended for human review and may be changed in future
     versions.
 
@@ -536,6 +643,21 @@ Output record types
     sorted). If flag e of option -O is set, an empty line is inserted in
     output between blocks of records for different reads to visually separate
     them.
+
+BUGS, UNTESTED AND DEVELOPMENT CODE, SPECIAL CASES
+    - Mutual orientation restriction code is not tested on guide files yet
+
+    - Fast alignment code produces suboptimal alignments by design. Some patterns
+      may be improved in time, but to gain speed it gives up pricision. One of 
+      the typical cases when it currently makes mistakes is pattern 'flip+indel' 
+      like:
+            TTA-CC      TT-ACC
+            ||  ||      || |||
+            TTCACC      TTCACC
+      which produces mismatch + indel instead of indel + match
+
+    - Di-nucleotide colorspace is at development stage: first (IUPACna) base 
+      is not taken into account, scoring is very trivial
 
 EXIT VALUES
     0 for success, non-zero for failure.

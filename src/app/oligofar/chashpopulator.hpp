@@ -38,10 +38,10 @@ class CHashPopulator
 {
 public:
 	CHashPopulator( const CPermutator4b& permutator, int windowLength, CQuery * query, 
-			int strands, int offset, int component, double maxSimplicity, Uint8 fwindow ) : 
+			int strands, int offset, int component, double maxSimplicity, Uint8 fwindow, CSeqCoding::ECoding coding ) : 
 		m_permutator( permutator ), m_windowLength( windowLength ), m_query( query ), 
 		m_strands( strands ), m_offset( offset ), m_component( component ),
-		m_maxSimplicity( maxSimplicity ), m_fwindow( fwindow ) {}
+		m_maxSimplicity( maxSimplicity ), m_fwindow( fwindow ), m_coding( coding ) {}
 	
 	template<class THashTable>
 	int PopulateHash( THashTable& hashTable ) const {
@@ -53,7 +53,9 @@ public:
 		}
 	    if( (1 << (1-m_component)) & m_strands ) {
 			CHashInserterCbk<THashTable> cbkr( hashTable, m_windowLength, m_query, '-', m_offset, m_component != 0, m_maxSimplicity );
-    		Uint8 rwindow = Ncbi4naRevCompl( m_fwindow, m_windowLength );
+    		Uint8 rwindow = m_coding == CSeqCoding::eCoding_colorsp ? 
+                Ncbi4naReverse( m_fwindow, m_windowLength ) : 
+                Ncbi4naRevCompl( m_fwindow, m_windowLength );
 			m_permutator.ForEach( m_windowLength, rwindow, cbkr );
 			ret += cbkr.GetCount();
 		}
@@ -68,6 +70,7 @@ protected:
 	int m_component;
 	double m_maxSimplicity;
 	Uint8 m_fwindow;
+    CSeqCoding::ECoding m_coding;
 };
     
 END_OLIGOFAR_SCOPES

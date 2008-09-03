@@ -24,6 +24,10 @@
 
 USING_OLIGOFAR_SCOPES;
 
+#ifndef OLIGOFAR_VERSION
+#define OLIGOFAR_VERSION "3.22" 
+#endif
+
 COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     CApp( argc, argv ),
     m_windowLength( 13 ),
@@ -32,7 +36,7 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_maxFastaAlt( 256 ),
     m_strands( 0x03 ),
     m_readsPerRun( 250000 ),
-    m_solexaSensitivity( 8 ),
+    m_phrapSensitivity( 4 ),
     m_xdropoff( 2 ),
     m_topCnt( 10 ),
     m_topPct( 99 ),
@@ -46,21 +50,24 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_maxPair( 200 ),
     m_pairMargin( 20 ),
     m_qualityChannels( 0 ),
-	m_qualityBase( 33 ),
+    m_qualityBase( 33 ),
 //    m_reversePair( true ),
     m_memoryLimit( Uint8( sizeof(void*) == 4 ? 3 : 8 ) * int(kGigaByte) ),
     m_performTests( false ),
     m_maxMismOnly( false ),
-	m_alignmentAlgo( eAlignment_fast ),
-	m_hashType( CQueryHash::eHash_arraymap ),
+    m_colorSpace( false ),
+    m_run_old_scanning_code( false ),
+    m_alignmentAlgo( eAlignment_fast ),
+    m_hashType( CQueryHash::eHash_arraymap ),
 #ifdef _WIN32
-	//m_guideFile( "nul:" ),
-	m_outputFile( "con:" ),
+    //m_guideFile( "nul:" ),
+    m_outputFile( "con:" ),
 #else
     m_guideFile( "/dev/null" ),
     m_outputFile( "/dev/stdout" ),
 #endif
-	m_outputFlags( "m" )
+    m_outputFlags( "m" ),
+    m_geometry( "p" )
 {
 #ifndef _WIN32
     ifstream meminfo( "/proc/meminfo" );
@@ -95,70 +102,82 @@ int COligoFarApp::RevNo()
 
 void COligoFarApp::Version()
 {
-    cout << GetProgramBasename() << " ver 3.19 (Rev:" << RevNo() << ") " NCBI_SIGNATURE << endl;
+    cout << GetProgramBasename() << " ver " OLIGOFAR_VERSION " (Rev:" << RevNo() << ") " NCBI_SIGNATURE << endl;
 }
 
 void COligoFarApp::Help()
 {
-    cout << "usage: [-hV] [-i inputfile] [-d genomedb] [-b snpdb] [-g guidefile] [-l gilist] [-o output]\n"
-		 << "[-1 solexa1] [-2 solexa2] [-q 0|1] [-0 qbase] [-O -eumxtadh] [-B batchsz] [-w winsize]\n"
-		 << "[-n maxmism] [-N +|-] [-H v|m|a] [-a maxalt] [-A maxalt] [-y bits] [-F dust] [-s 1|2|3]\n"
-		 << "[-r f|q|s] [-X xdropoff] [-I idscore] [-M mismscore] [-G gapcore] [-Q gapextscore]\n"
-		 << "[-p cutoff] [-u topcnt] [-t toppct] [-z minPair] [-Z maxPair] [-D margin] [-L memlimit] [-T +|-]\n"
-		 << "\nFile options:\n" 
+    cout << "usage: [-hV] [-C config] [-i inputfile] [-d genomedb] [-b snpdb] [-g guidefile] [-l gilist]\n"
+         << "[-c+|-] [-1 solexa1] [-2 solexa2] [-q 0|1] [-0 qbase] [-O -eumxtadh] [-o output] [-B batchsz]\n"
+         << "[-w winsize] [-n maxmism] [-N +|-] [-H v|m|a] [-a maxalt] [-A maxalt] [-P phrap] [-F dust]\n"
+         << "[-s 1|2|3] [-r f|q|s] [-X xdropoff] [-I idscore] [-M mismscore] [-G gapcore] [-Q gapextscore]\n"
+         << "[-p cutoff] [-u topcnt] [-t toppct] [-z minPair] [-Z maxPair] [-D margin] [-R geometry]\n"
+         << "[-L memlimit] [-U version] [-T +|-]\n"
+         << "\nFile options:\n" 
          << "  -i file    --input-file=file          short reads input file [" << m_readFile << "]\n"
          << "  -d file    --fasta-file=file          database (fasta or basename of blastdb) file [" << m_fastaFile << "]\n"
          << "  -b file    --snpdb-file=file          snp database subject file [" << m_snpdbFile << "]\n"
 //       << "  -v file    --vardb-file=file         *general variation database subject file [" << m_vardbFile << "]\n"
-		 << "  -g file    --guide-file=file          guide file (output of sr-search [" << m_guideFile << "]\n"
+         << "  -g file    --guide-file=file          guide file (output of sr-search [" << m_guideFile << "]\n"
          << "  -l file    --gi-list=file             gi list to use for the blast db [" << m_gilistFile << "]\n"
          << "  -o output  --output-file=output       set output file [" << m_outputFile << "]\n"
          << "  -1 file    --qual-1-file=file         read 1 4-channel quality file [" << m_read1qualityFile << "]\n"
          << "  -2 file    --qual-2-file=file         read 2 4-channel quality file [" << m_read2qualityFile << "]\n"
+         << "  -c +|-     --colorspace=+|-          *reads are set in dibase colorspace [" << (m_colorSpace?"yes":"no") << "]\n"
          << "  -q 0|1     --quality-channels=cnt     number of channels in input file quality columns [" << m_qualityChannels << "]\n"
-		 << "  -0 value   --quality-base=value       base quality number (ASCII value for character representing phrap score 0) [" << m_qualityBase << "]\n"
-		 << "  -0 +char   --quality-base=+char       base quality char (character representing phrap score 0) [+" << char(m_qualityBase) << "]\n"
+         << "  -0 value   --quality-base=value       base quality number (ASCII value for character representing phrap score 0) [" << m_qualityBase << "]\n"
+         << "  -0 +char   --quality-base=+char       base quality char (character representing phrap score 0) [+" << char(m_qualityBase) << "]\n"
          << "  -O flags   --output-flags=flags       add output flags (-huxmtdae) [" << m_outputFlags << "]\n"
          << "  -B count   --batch-size=count         how many short seqs to map at once [" << m_readsPerRun << "]\n"
-		 << "\nHashing and scanning options:\n"
+         << "  -C config  --config-file=file         take parameters from config file section `oligofar' and continue parsing commandline\n"
+         << "\nHashing and scanning options:\n"
          << "  -w size    --window-size=size         window size [" << m_windowLength << "]\n"
          << "  -n mism    --input-max-mism=mism      maximal number of mismatches in hash window [" << m_maxHashMism << "]\n"
          << "  -N +|-     --max-mism-only=+|-        hash with max mismatches only [" << (m_maxMismOnly ? "+" : "-") << "]\n"
          << "  -H v|m|a   --hash-type=v|m|a          set hash type to vector, multimap, or arraymap [" << 
-		 	(m_hashType == CQueryHash::eHash_vector ? 'v' : m_hashType == CQueryHash::eHash_multimap ? 'm' : m_hashType == CQueryHash::eHash_arraymap ? 'a' : '?' ) << "]\n"
+            (m_hashType == CQueryHash::eHash_vector ? 'v' : m_hashType == CQueryHash::eHash_multimap ? 'm' : m_hashType == CQueryHash::eHash_arraymap ? 'a' : '?' ) << "]\n"
          << "  -a alt     --input-max-alt=alt        maximal number of alternatives in hash window [" << m_maxHashAlt << "]\n"
          << "  -A alt     --fasta-max-alt=alt        maximal number of alternatives in fasta window [" << m_maxFastaAlt << "]\n"
-         << "  -y bits    --solexa-sensitivity=bits  set solexa seeding sensitivity (0-15) [" << m_solexaSensitivity << "]\n"
+         << "  -P score   --phrap-cutoff=score       set maximal phrap score to consider base as ambiguous [" << m_phrapSensitivity << "]\n"
          << "  -F simpl   --max-simplicity=val       low complexity filter cutoff for hash words [" << m_maxSimplicity << "]\n"
          << "  -s 1|2|3   --strands=1|2|3            align strands [" << m_strands << "]\n"
-		 << "\nAlignment and scoring options:\n"
+         << "\nAlignment and scoring options:\n"
          << "  -r f|q|s   --algorithm=f|q|s          use alignment algoRithm (Fast, Quick or Smith-waterman) [" << char(m_alignmentAlgo) << "]\n"
          << "  -X value   --x-dropoff=value          set half band width for alignment [" << m_xdropoff << "]\n"
          << "  -I score   --identity-score=score     set identity score [" << m_identityScore << "]\n"
          << "  -M score   --mismatch-score=score     set mismatch score [" << m_mismatchScore << "]\n"
          << "  -G score   --gap-opening-score=score  set gap opening score [" << m_gapOpeningScore << "]\n"
          << "  -Q score   --gap-extention-score=val  set gap extention score [" << m_gapExtentionScore << "]\n"
-		 << "\nFiltering and ranking options:\n"
+         << "\nFiltering and ranking options:\n"
          << "  -p pctid   --min-pctid=pctid          set global percent identity cutoff [" << m_minPctid << "]\n"
          << "  -u topcnt  --top-count=val            maximal number of top hits per read [" << m_topCnt << "]\n"
          << "  -t toppct  --top-percent=val          maximal score of hit (in % to best) to be reported [" << m_topPct << "]\n"
          << "  -z minPair --min-pair-dist=len        minimal pair distance [" << m_minPair << "]\n"
          << "  -Z maxPair --max-pair-dist=len        maximal pair distance [" << m_maxPair << "]\n"
          << "  -D dist    --pair-margin=len          pair distance margin [" << m_pairMargin << "]\n"
-//         << "  -R y|n     --reverse-pair=y|n         are paired reads on opposite strands [" << (m_reversePair?'y':'n') << "]\n"
-		 << "\nOther options:\n"
+         << "  -R value   --geometry=value           restrictions on relative hit orientation and order for paired hits [" << (m_geometry) << "]\n"
+         << "\nOther options:\n"
+         << "  -U version --assert-version=version   make sure that the oligofar version is what expected [" OLIGOFAR_VERSION "]\n"
          << "  -L value   --memory-limit=value       set rlimit for the program (k|M|G suffix is allowed) [" << m_memoryLimit << "]\n"
          << "  -T +|-     --test-suite=+|-           turn test suite on/off [" << (m_performTests?"on":"off") << "]\n"
-		 << "\nOutput flags (for -O):\n"
-		 << "    -   reset all flags\n"
-		 << "    h   report all hits before ranking\n"
-		 << "    u   report unmapped reads\n"
-		 << "    x   indicate that there are more reads of this rank\n"
-		 << "    m   indicate that there are more reads of lower ranks\n"
-		 << "    t   indicate that there were no more hits\n"
-		 << "    d   report differences between query and subject\n"
-		 << "    a   report alignment details\n"
-		 << "    e   print empty line after all hits of the read are reported\n"
+         << "\nRelative orientation flags recognized:\n"
+         << "    p|centripetal|inside|pcr|solexa     reads are oriented so that vectors 5'->3' pointing to each other\n"
+         << "    f|centrifugal|outside               reads are oriented so that vectors 5'->3' are pointing outside\n"
+         << "    i|incr|incremental|solid            reads are on same strand, first preceeds second on this strand\n"
+         << "    d|decr|decremental                  reads are on same strand, first succeeds second on this strand\n"
+         << "    o|opposite                          reads are on opposite strands (combination of p and f)\n"
+         << "    c|consecutive                       reads are on same strand (combination of i and d)\n"
+         << "    a|all|any                           any orientation, no constraints are applied\n"
+         << "\nOutput flags (for -O):\n"
+         << "    -   reset all flags\n"
+         << "    h   report all hits before ranking\n"
+         << "    u   report unmapped reads\n"
+         << "    x   indicate that there are more reads of this rank\n"
+         << "    m   indicate that there are more reads of lower ranks\n"
+         << "    t   indicate that there were no more hits\n"
+         << "    d   report differences between query and subject\n"
+         << "    a   report alignment details\n"
+         << "    e   print empty line after all hits of the read are reported\n"
          << "\nNB: although -L flag is optional, it is strongly recommended to use it!\n"
         ;
 }
@@ -166,21 +185,24 @@ void COligoFarApp::Help()
 const option * COligoFarApp::GetLongOptions() const
 {
     static struct option opt[] = {
-		{"help", 0, 0, 'h'},
-		{"version", 0, 0, 'V'},
+        {"help", 0, 0, 'h'},
+        {"version", 0, 0, 'V'},
+        {"assert-version", 0, 0, 'U'},
         {"window-size", 1, 0, 'w'},
         {"max-mism-only", 1, 0, 'N'},
         {"input-max-mism", 1, 0, 'n'},
         {"hash-type", 1, 0, 'H'},
         {"input-max-alt", 1, 0, 'a'},
         {"fasta-max-alt", 1, 0, 'A'},
+        {"colorspace", 1, 0, 'c'},
         {"input-file", 1, 0, 'i'},
         {"fasta-file", 1, 0, 'd'},
         {"snpdb-file", 1, 0, 'b'},
         {"vardb-file", 1, 0, 'v'},
-		{"guide-file", 1, 0, 'g'},
+        {"guide-file", 1, 0, 'g'},
         {"output-file", 1, 0, 'o'},
         {"output-flags", 1, 0, 'O'},
+        {"config-file", 1, 0, 'C'},
         {"gi-list", 1, 0, 'l'},
         {"strands", 1, 0, 's'},
         {"batch-size", 1, 0, 'B'},
@@ -190,12 +212,12 @@ const option * COligoFarApp::GetLongOptions() const
         {"qual-1-file", 1, 0, '1'},
         {"qual-2-file", 1, 0, '2'},
         {"quality-channels", 1, 0, 'q'},
-		{"quality-base", 1, 0, '0'},
-        {"solexa-sensitivity", 1, 0, 'y'},
+        {"quality-base", 1, 0, '0'},
+        {"phrap-score", 1, 0, 'P'},
         {"min-pair", 1, 0, 'z'},
         {"max-pair", 1, 0, 'Z'},
         {"pair-margin", 1, 0, 'D'},
-//        {"reverse-pair", 1, 0, 'R'},
+        {"geometry", 1, 0, 'R'},
         {"max-simplicity", 1, 0, 'F'},
         {"algorithm", 1, 0, 'r'},
         {"identity-score", 1, 0, 'I'},
@@ -205,6 +227,7 @@ const option * COligoFarApp::GetLongOptions() const
         {"x-dropoff", 1, 0, 'X'},
         {"memory-limit", 1, 0, 'L'},
         {"test-suite", 1, 0, 'T'},
+        {"OLD", 1, 0, '9'},
         {0,0,0,0}
     };
     return opt;
@@ -212,27 +235,34 @@ const option * COligoFarApp::GetLongOptions() const
 
 const char * COligoFarApp::GetOptString() const
 {
-    return "w:n:N:H:a:A:i:d:b:v:g:o:O:l:s:B:p:u:t:1:2:q:0:y:z:Z:D:"/*R:*/"F:r:I:M:G:Q:X:L:T:";
+    return "U:C:w:n:N:H:a:A:c:i:d:b:v:g:o:O:l:s:B:p:u:t:1:2:q:0:P:z:Z:D:R:F:r:I:M:G:Q:X:L:T:9:";
 }
 
 int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
 {
     switch( opt ) {
+    case '9': m_run_old_scanning_code = NStr::StringToBool( arg ); break;
+    case 'U': if( strcmp( arg, OLIGOFAR_VERSION ) ) THROW( runtime_error, "Expected oligofar version " << arg << ", called " OLIGOFAR_VERSION ); break;
+    case 'C': ParseConfig( arg ); break;
     case 'w': m_windowLength = strtol( arg, 0, 10 ); break;
     case 'n': m_maxHashMism = strtol( arg, 0, 10 ); break;
-    case 'N': m_maxMismOnly = *arg == '+' ? true : *arg == '-' ? false : m_maxMismOnly; break;
-	case 'H': m_hashType = (
-					  *arg == 'v'? CQueryHash::eHash_vector : 
-					  *arg == 'm'? CQueryHash::eHash_multimap : 
-					  *arg == 'a'? CQueryHash::eHash_arraymap : 
-			  ((cerr << "Warning: Unknown hash type " << arg << ": ignored"), m_hashType) ); break;
+    case 'N': m_maxMismOnly = *arg == '+' ? true : *arg == '-' ? false : NStr::StringToBool( arg ); break;
+    case 'H': 
+        switch( *arg ) {
+        case 'v': case 'V': m_hashType = CQueryHash::eHash_vector; break;
+        case 'm': case 'M': m_hashType = CQueryHash::eHash_multimap; break;
+        case 'a': case 'A': m_hashType = CQueryHash::eHash_arraymap; break;
+        default: THROW( runtime_error, "Unknown hash type " << arg );
+        }
+        break;
     case 'a': m_maxHashAlt = strtol( arg, 0, 10 ); break;
     case 'A': m_maxFastaAlt = strtol( arg, 0, 10 ); break;
+    case 'c': m_colorSpace = *arg == '+' ? true : *arg == '-' ? false : NStr::StringToBool( arg ); break;
     case 'i': m_readFile = arg; break;
     case 'd': m_fastaFile = arg; break;
     case 'b': m_snpdbFile = arg; break;
     case 'v': m_vardbFile = arg; break;
-	case 'g': m_guideFile = arg; break;
+    case 'g': m_guideFile = arg; break;
     case 'o': m_outputFile = arg; break;
     case 'O': m_outputFlags += arg; if( const char * m = strrchr( m_outputFlags.c_str(), '-' ) ) m_outputFlags = m + 1; break;
     case 'l': m_gilistFile = arg; break;
@@ -244,24 +274,27 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case '1': m_read1qualityFile = arg; break;
     case '2': m_read2qualityFile = arg; break;
     case 'q': m_qualityChannels = NStr::StringToInt( arg ); break;
-	case '0': m_qualityBase = ( arg[0] && arg[0] == '+' ) ? arg[1] : NStr::StringToInt( arg ); break;
-    case 'y': m_solexaSensitivity = strtol( arg, 0, 10 ); break;
+    case '0': m_qualityBase = ( arg[0] && arg[0] == '+' ) ? arg[1] : NStr::StringToInt( arg ); break;
+    case 'P': m_phrapSensitivity = strtol( arg, 0, 10 ); break;
     case 'z': m_minPair = strtol( arg, 0, 10 ); break;
     case 'Z': m_maxPair = strtol( arg, 0, 10 ); break;
     case 'D': m_pairMargin = strtol( arg, 0, 10 ); break;
-//    case 'R': m_reversePair = *arg == 'y'? true : *arg == 'n' ? false : m_reversePair; break;
+    case 'R': m_geometry = arg; break;
     case 'F': m_maxSimplicity = NStr::StringToDouble( arg ); break;
-	case 'r': m_alignmentAlgo = (
-					  *arg == 'f' ? eAlignment_fast : 
-					  *arg == 'q' ? eAlignment_quick : 
-					  *arg == 's' ? eAlignment_SW : 
-			  ( (cerr << "Warning: ignoring bad alignment algorithm option " << arg << endl), m_alignmentAlgo ) ); break;
+    case 'r': 
+        switch( *arg ) {
+        case 'f': case 'F': m_alignmentAlgo = eAlignment_fast ; break;
+        case 'g': case 'Q': m_alignmentAlgo = eAlignment_quick ; break;
+        case 's': case 'S': m_alignmentAlgo = eAlignment_SW ; break;
+        default: THROW( runtime_error, "Bad alignment algorithm option " << arg );
+        }
+        break;
     case 'I': m_identityScore = fabs( NStr::StringToDouble( arg ) ); break;
     case 'M': m_mismatchScore = -fabs( NStr::StringToDouble( arg ) ); break;
     case 'G': m_gapOpeningScore = -fabs( NStr::StringToDouble( arg ) ); break;
     case 'Q': m_gapExtentionScore = -fabs( NStr::StringToDouble( arg ) ); break;
     case 'X': m_xdropoff = abs( strtol( arg, 0, 10 ) ); break;
-	case 'L':
+    case 'L':
 #ifndef _WIN32
         do {
             char * t = 0;
@@ -275,13 +308,31 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
             }
         } while(0);
 #else
-		cerr << "[" << GetProgramBasename() << "] Warning: -L is ignored in win32\n";
+        cerr << "[" << GetProgramBasename() << "] Warning: -L is ignored in win32\n";
 #endif
         break;
-    case 'T': m_performTests = (*arg == '+') ? true : (*arg == '-') ? false : m_performTests; break;
+    case 'T': m_performTests = (*arg == '+') ? true : (*arg == '-') ? false : NStr::StringToBool( arg ); break;
     default: return CApp::ParseArg( opt, arg, longindex );
     }
     return 0;
+}
+
+void COligoFarApp::ParseConfig( const string& cfg ) 
+{
+    ifstream in( cfg.c_str() );
+    if( !in.good() ) THROW( runtime_error, "Failed to read config file " << cfg );
+    CNcbiRegistry reg( in );
+    ParseConfig( &reg );
+}
+
+void COligoFarApp::ParseConfig( IRegistry * reg )
+{
+    const option * opts = GetLongOptions();
+    for( int index = 0 ; opts && opts->name != 0 ; ++opts, ++index ) {
+        if( reg->HasEntry( "oligofar", opts->name ) ) {
+            ParseArg( opts->val, reg->Get( "oligofar", opts->name ).c_str(), index );
+        }
+    }
 }
 
 int COligoFarApp::RunTestSuite()
@@ -310,7 +361,7 @@ int COligoFarApp::SetLimits()
     return rc;
 #else
     cerr << "[" << GetProgramBasename() << "] Setting memory limit is not implemented for win32 yet, ignored.\n";
-	return 0;
+    return 0;
 #endif
 }
 
@@ -323,22 +374,48 @@ int COligoFarApp::Execute()
 
 int COligoFarApp::GetOutputFlags() const
 {
-	int oflags = 0;
+    int oflags = 0;
     for( const char * f = m_outputFlags.c_str(); *f; ++f ) {
         switch( tolower(*f) ) {
-		case '-': oflags = 0; break;
+        case '-': oflags = 0; break;
         case 'e': oflags |= COutputFormatter::fReportEmptyLines; break;
         case 'u': oflags |= COutputFormatter::fReportUnmapped; break;
         case 'm': oflags |= COutputFormatter::fReportMany; break;
         case 'x': oflags |= COutputFormatter::fReportMore; break;
         case 't': oflags |= COutputFormatter::fReportTerminator; break;
-		case 'a': oflags |= COutputFormatter::fReportAlignment; break;
-		case 'd': oflags |= COutputFormatter::fReportDifferences; break;
-		case 'h': oflags |= COutputFormatter::fReportAllHits; break;
-		default: cerr << "[" << GetProgramBasename() << "] Warning: unknown format flag `" << *f << "'\n"; break;
+        case 'a': oflags |= COutputFormatter::fReportAlignment; break;
+        case 'd': oflags |= COutputFormatter::fReportDifferences; break;
+        case 'h': oflags |= COutputFormatter::fReportAllHits; break;
+        default: cerr << "[" << GetProgramBasename() << "] Warning: unknown format flag `" << *f << "'\n"; break;
         }
     }
     return oflags;
+}
+
+void COligoFarApp::SetupGeometries( map<string,int>& geometries )
+{
+    geometries.insert( make_pair("p",CFilter::fInside) );
+    geometries.insert( make_pair("centripetal",CFilter::fInside) );
+    geometries.insert( make_pair("inside",CFilter::fInside) );
+    geometries.insert( make_pair("pcr",CFilter::fInside) );
+    geometries.insert( make_pair("solexa",CFilter::fInside) );
+    geometries.insert( make_pair("f",CFilter::fOutside) );
+    geometries.insert( make_pair("centrifugal",CFilter::fOutside) );
+    geometries.insert( make_pair("outside",CFilter::fOutside) );
+    geometries.insert( make_pair("i",CFilter::fInOrder) );
+    geometries.insert( make_pair("incr",CFilter::fInOrder) );
+    geometries.insert( make_pair("incremental",CFilter::fInOrder) );
+    geometries.insert( make_pair("solid",CFilter::fInOrder) );
+    geometries.insert( make_pair("d",CFilter::fBackOrder) );
+    geometries.insert( make_pair("decr",CFilter::fBackOrder) );
+    geometries.insert( make_pair("decremental",CFilter::fBackOrder) );
+    geometries.insert( make_pair("o",CFilter::fInside|CFilter::fOutside) );
+    geometries.insert( make_pair("opposite",CFilter::fInside|CFilter::fOutside) );
+    geometries.insert( make_pair("c",CFilter::fInOrder|CFilter::fBackOrder) );
+    geometries.insert( make_pair("consecutive",CFilter::fInOrder|CFilter::fBackOrder) );
+    geometries.insert( make_pair("a",CFilter::fAll) );
+    geometries.insert( make_pair("all",CFilter::fAll) );
+    geometries.insert( make_pair("any",CFilter::fAll) );
 }
 
 int COligoFarApp::ProcessData()
@@ -351,16 +428,19 @@ int COligoFarApp::ProcessData()
     ofstream o( m_outputFile.c_str() );
     ifstream reads( m_readFile.c_str() ); // to format output
 
-    CSeqCoding::ECoding coding = CSeqCoding::eCoding_ncbi8na;
+    CSeqCoding::ECoding sbjCoding = m_colorSpace ? CSeqCoding::eCoding_colorsp : CSeqCoding::eCoding_ncbi8na;
+    CSeqCoding::ECoding qryCoding = sbjCoding;
 
     auto_ptr<ifstream> i1(0), i2(0);
     if( m_read1qualityFile.length() ) {
-        coding = CSeqCoding::eCoding_ncbipna;
+        if( m_colorSpace ) THROW( runtime_error, "Have no idea how to use 4-channel quality files and colorspace at the same time" ); 
+        qryCoding = CSeqCoding::eCoding_ncbipna;
         i1.reset( new ifstream( m_read1qualityFile.c_str() ) );
         if( i1->fail() )
             THROW( runtime_error, "Failed to open file [" << m_read1qualityFile << "]: " << strerror(errno) );
     } else if( m_qualityChannels == 1 ) {
-        coding = CSeqCoding::eCoding_ncbiqna;
+        if( m_colorSpace ) THROW( runtime_error, "Have no idea how to use 1-channel quality scores and colorspace at the same time" ); 
+        qryCoding = CSeqCoding::eCoding_ncbiqna;
     }
     if( m_read2qualityFile.length() ) {
         if( ! m_read1qualityFile.length() )
@@ -368,6 +448,12 @@ int COligoFarApp::ProcessData()
         i2.reset( new ifstream( m_read2qualityFile.c_str() ) );
         if( i2->fail() )
             THROW( runtime_error, "Failed to open file [" << m_read2qualityFile << "]: " << strerror(errno) );
+    }
+    map<string,int> geometries;
+    SetupGeometries( geometries );
+
+    if( geometries.find( m_geometry ) == geometries.end() ) {
+        THROW( runtime_error, "Unknown geometry `" << m_geometry << "'" );
     }
 
     CSeqIds seqIds;
@@ -392,17 +478,18 @@ int COligoFarApp::ProcessData()
     }
 
     formatter.AssignFlags( GetOutputFlags() );
-	formatter.SetGuideFile( guideFile );
+    formatter.SetGuideFile( guideFile );
     formatter.SetAligner( aligner.get() );
 
+    filter.SetGeometryFlags( geometries[m_geometry] );
     filter.SetSeqIds( &seqIds );
-	filter.SetAligner( aligner.get() );
+    filter.SetAligner( aligner.get() );
     filter.SetMaxDist( m_maxPair + m_pairMargin );
     filter.SetMinDist( m_minPair - m_pairMargin );
     filter.SetTopPct( m_topPct );
     filter.SetTopCnt( m_topCnt );
     filter.SetScorePctCutoff( m_minPctid );
-	filter.SetOutputFormatter( &formatter );
+    filter.SetOutputFormatter( &formatter );
 
     if( m_minPctid > m_topPct ) {
         cerr << "[" << GetProgramBasename() << "] Warning: top% is greater then %cutoff ("
@@ -410,14 +497,17 @@ int COligoFarApp::ProcessData()
     }
 
     queryHash.SetStrands( m_strands );
-    queryHash.SetNcbipnaToNcbi4naMask( 0xffff << (16 - m_solexaSensitivity) );
+    queryHash.SetNcbipnaToNcbi4naScore( Uint2( 255 * pow( 10.0, double(m_phrapSensitivity)/10) ) );
+    queryHash.SetNcbiqnaToNcbi4naScore( m_phrapSensitivity );
 
     seqScanner.SetFilter( &filter );
     seqScanner.SetQueryHash( &queryHash );
     seqScanner.SetSeqIds( &seqIds );
     seqScanner.SetMaxAlternatives( m_maxFastaAlt );
     seqScanner.SetMaxSimplicity( m_maxSimplicity );
+    seqScanner.SetRunOldScanningCode( m_run_old_scanning_code );
 
+    seqVecProcessor.SetTargetCoding( sbjCoding );
     seqVecProcessor.AddCallback( 1, &filter );
     seqVecProcessor.AddCallback( 0, &seqScanner );
 
@@ -434,8 +524,8 @@ int COligoFarApp::ProcessData()
     seqScanner.SetInputChunk( batch.GetInputChunk() );
 
     for( int count = 0; getline( reads, buff ); ++count ) {
-		if( buff.length() == 0 ) continue;
-		if( buff[0] == '#' ) continue; // ignore comments
+        if( buff.length() == 0 ) continue;
+        if( buff[0] == '#' ) continue; // ignore comments
         istringstream iline( buff );
         string id, fwd, rev;
         iline >> id >> fwd;
@@ -456,17 +546,19 @@ int COligoFarApp::ProcessData()
             if( qr == "-" ) qr = "";
             if( qf.length() != fwd.length() ) {
                 THROW( runtime_error, "Fwd read quality column length (" << qf << " - " << qf.length() 
-						<< ") does not equal to IUPAC column length (" << fwd << " - " << fwd.length() << ")" );
+                        << ") does not equal to IUPAC column length (" << fwd << " - " << fwd.length() << ") for read " << id );
             }
-			if( qr.length() != rev.length() ) {
+            if( qr.length() != rev.length() ) {
                 THROW( runtime_error, "Rev read quality column length (" << qr << " - " << qr.length() 
-						<< ") does not equal to IUPAC column length (" << rev << " - " << rev.length() << ")" );
+                        << ") does not equal to IUPAC column length (" << rev << " - " << rev.length() << ") for read " << id );
             }
             fwd += qf;
             rev += qr;
         }
         if( iline.fail() ) THROW( runtime_error, "Failed to parse line [" << buff << "]" );
-        CQuery * query = new CQuery( coding, id, fwd, rev, m_qualityBase );
+        CQuery * query = new CQuery( qryCoding, id, fwd, rev, m_qualityBase );
+        query->ComputeBestScore( scoreTbl, 0 );
+        query->ComputeBestScore( scoreTbl, 1 );
         while( guideFile.NextHit( queriesTotal, query ) ); // add guided hits
         entriesTotal += batch.AddQuery( query );
         queriesTotal ++;

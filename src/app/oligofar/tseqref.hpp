@@ -52,6 +52,7 @@ protected:
 	const char * m_ptr;
 };
 
+
 END_OLIGOFAR_SCOPES
 
 #endif

@@ -31,7 +31,7 @@ public:
         virtual void SequenceEnd() = 0;
     };
     
-    CSeqVecProcessor() {}
+    CSeqVecProcessor() : m_tgtCoding( CSeqCoding::eCoding_ncbi8na ) {}
     
     virtual ~CSeqVecProcessor() {}
     template<class Iterator> 
@@ -56,12 +56,16 @@ public:
     // - SequenceBuffer (from higher to lower)
     // - SequenceEnd (from lower to higher)
     void AddCallback( int priority, ICallback * cbk ); 
+
+    CSeqCoding::ECoding GetTargetCoding() const { return m_tgtCoding; }
+    void SetTargetCoding( CSeqCoding::ECoding c ) { m_tgtCoding = c; }
 protected:
 //    ICallback * m_callBack;
     typedef multimap<int,ICallback*> TCallbacks;
     TCallbacks m_callbacks;
     string m_giListFile;
 	int    m_oid;
+    CSeqCoding::ECoding m_tgtCoding;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -175,7 +179,7 @@ inline void CSeqVecProcessor::AddCallback( int prio, ICallback * cbk )
 
 inline void CSeqVecProcessor::Process( const TSeqIds& seqIds, const CSeqVector& vect, int oid )
 {
-    CSeqBuffer buffer( vect );
+    CSeqBuffer buffer( vect, m_tgtCoding );
     for( TCallbacks::reverse_iterator c = m_callbacks.rbegin(); c != m_callbacks.rend(); ++c ) {
         c->second->SequenceBegin( seqIds, oid );
     }

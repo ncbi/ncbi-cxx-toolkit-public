@@ -32,6 +32,8 @@ protected:
     int m_readsPerRun;
     int m_hashedReads;
     int m_guidedReads;
+	int m_ignoredReads;
+	Uint8 m_hashEntries;
 	const CScoreTbl& m_scoreTbl;
     double m_mismatchPenalty;
     string m_fastaFile;
@@ -48,7 +50,7 @@ protected:
 inline CBatch::CBatch( int readCount, const string& fastaFile, CQueryHash& queryHash,
                                     CSeqVecProcessor& seqVecProcessor, COutputFormatter& formatter,
                                     const CScoreTbl& scoreTbl ) :
-    m_readsPerRun( readCount ), m_hashedReads( 0 ),
+    m_readsPerRun( readCount ), m_hashedReads( 0 ), m_guidedReads( 0 ), m_ignoredReads( 0 ), m_hashEntries( 0 ),
 	m_scoreTbl( scoreTbl ),
     m_mismatchPenalty( scoreTbl.GetIdentityScore() - max( scoreTbl.GetMismatchScore(), scoreTbl.GetGapOpeningScore() ) ),
     m_fastaFile( fastaFile ), m_queryHash( queryHash ), m_seqVecProcessor( seqVecProcessor ),

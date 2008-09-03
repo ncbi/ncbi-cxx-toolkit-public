@@ -12,7 +12,7 @@ BEGIN_OLIGOFAR_SCOPES
 DECLARE_AND_DEFINE_ALIGNER( SW, CAligner_SW_Base::TMatrix, Matrix )
 DECLARE_AND_DEFINE_ALIGNER( HSP, int, foo )
 DECLARE_AND_DEFINE_ALIGNER( fast, int, foo )
-DECLARE_AND_DEFINE_ALIGNER( quick, CAligner_quick_Base::TParam, Param )
+//DECLARE_AND_DEFINE_ALIGNER( quick, CAligner_quick_Base::TParam, Param )
 
 END_OLIGOFAR_SCOPES
 

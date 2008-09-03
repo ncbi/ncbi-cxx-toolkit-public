@@ -15,6 +15,7 @@
     do {                                                                \
         std::ostringstream o;                                           \
         o << "In file "__FILE__" line " << __LINE__ << " " << #x << ": " << m; \
+        o << "\n" << CStackTrace(#x) << "\n";                            \
         throw x(o.str());                                               \
     } while(0)
 

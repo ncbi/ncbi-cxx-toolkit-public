@@ -17,12 +17,12 @@ IAligner * COligoFarApp::CreateAligner() const
         	swalign->SetMatrix().resize( 2*m_xdropoff + 1 );
         	return swalign.release();
     	} while(0); break;
-	case eAlignment_quick: 
-		do {
-			auto_ptr<CAligner_quick> qalign( new CAligner_quick() );
-			qalign->SetParam() = make_pair( m_xdropoff + 2, m_xdropoff + 1 );
-			return qalign.release();
-		} while(0); break;
+// 	case eAlignment_quick: 
+// 		do {
+// 			auto_ptr<CAligner_quick> qalign( new CAligner_quick() );
+// 			qalign->SetParam() = make_pair( m_xdropoff + 2, m_xdropoff + 1 );
+// 			return qalign.release();
+// 		} while(0); break;
 	default: THROW( logic_error, "Bad value for m_alignmentAlgo" );
 	}
 }

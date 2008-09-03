@@ -4,7 +4,7 @@
 #include "types.hpp"
 #include "cbithacks.hpp"
 #include "cseqcoding.hpp"
-#include "iupac-util.hpp"
+//#include "iupac-util.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
 BEGIN_SCOPE( fourplanes )
@@ -28,8 +28,11 @@ public:
     int   GetAmbiguityCount() const { return m_ambiguityCount; }
     int   GetWordSize() const { return m_wordSize; }
     
-    void AddIupacNa( char c );
-    void AddBaseMask( int base );
+	void AddIupacNa( CIupacnaBase c );
+	void AddBaseMask( CNcbi8naBase c );
+
+//    void AddIupacNa( char c );
+//    void AddBaseMask( int base );
     void Reset();
 protected:
     TPlaneMask m_footprintMask;
@@ -52,8 +55,10 @@ public:
     int GetOldestTriplet() const { return int( m_value & 0x3f ); }
     int GetNewestTriplet() const { return int( (m_value >> ((m_wordSize - 3)*int(kBitsPerBase))) & 0x3f ); }
 
-    void AddIupacNa( char c );
-    void AddBaseCode( int code );
+//    void AddIupacNa( char c );
+//    void AddBaseCode( int code );
+	void AddIupacNa( CIupacnaBase c );
+	void AddBaseCode( CNcbi2naBase c );
 
     THashMask  GetFootprintMask() const { return m_footprintMask; }
     THashValue GetHashValue() const { return m_value & m_footprintMask; }
@@ -73,8 +78,11 @@ public:
 
     void Reset();
 
-    void AddIupacNa( char iupacna );
-    void AddBaseMask( char ncbi8na );
+	void AddIupacNa( CIupacnaBase c );
+	void AddBaseMask( CNcbi8naBase c );
+
+//    void AddIupacNa( char iupacna );
+//    void AddBaseMask( char ncbi8na );
     
     int   GetWordSize() const { return m_hashPlanes.GetWordSize(); }
     int   GetOldestTriplet() const { return m_hashCode.GetOldestTriplet(); }
@@ -218,15 +226,15 @@ inline void CHashGenerator::Reset()
     m_hashPlanes.Reset();
 }
 
-inline void CHashGenerator::AddIupacNa( char iupacna )
+inline void CHashGenerator::AddIupacNa( CIupacnaBase iupacna )
 {
     m_hashCode.AddIupacNa( iupacna );
     m_hashPlanes.AddIupacNa( iupacna );
 }
 
-inline void CHashGenerator::AddBaseMask( char ncbi8na )
+inline void CHashGenerator::AddBaseMask( CNcbi8naBase ncbi8na )
 {
-    m_hashCode.AddBaseCode( Ncbi4na2Ncbi2na( ncbi8na ) );
+    m_hashCode.AddBaseCode( "\x0\x0\x1\x0""\x2\x0\x1\x0""\x3\x0\x1\x0""\x2\x0\x1\x0"[ncbi8na] );
     m_hashPlanes.AddBaseMask( ncbi8na );
 }
 
@@ -259,12 +267,12 @@ inline CHashPlanes::CHashPlanes( int wordSize ) :
 //     return ret;
 // }
             
-inline void CHashPlanes::AddIupacNa( char c ) 
+inline void CHashPlanes::AddIupacNa( CIupacnaBase c ) 
 { 
-    AddBaseMask( Iupacna2Ncbi4na(c) ); 
+    AddBaseMask( CNcbi8naBase( c ) ); 
 }
 
-inline void CHashPlanes::AddBaseMask( int base ) 
+inline void CHashPlanes::AddBaseMask( CNcbi8naBase base ) 
 {
     if( base == 0 ) return;
     int b = base;
@@ -286,7 +294,7 @@ inline void CHashPlanes::AddBaseMask( int base )
     if( c ) m_alternativesCount *= c;
     if( m_ambiguityMask & 1 ) { m_ambiguityCount--; }
     m_ambiguityMask >>= 1;
-    if( Ncbi4naIsAmbiguous( base ) ) { m_ambiguityMask |= p; m_ambiguityCount++; }
+    if( base.GetAltCount() > 1 ) { m_ambiguityMask |= p; m_ambiguityCount++; }
 //    else { m_ambiguityMask &= P; }
 }
 
@@ -306,13 +314,12 @@ inline CHashCode::CHashCode( int wordSize ) :
     m_footprintMask( CBitHacks::WordFootprint<THashMask>( wordSize * int(kBitsPerBase) ) )
 {}
 
-inline void CHashCode::AddIupacNa( char c )
+inline void CHashCode::AddIupacNa( CIupacnaBase c )
 {
-    int x = Iupacna2Ncbi2na(c);
-    if( x != 0xf ) AddBaseCode( x );
+	AddBaseCode( CNcbi2naBase( c ) );
 }
 
-inline void CHashCode::AddBaseCode( int code ) 
+inline void CHashCode::AddBaseCode( CNcbi2naBase code ) 
 {
     m_value >>= kBitsPerBase;
     m_value |= (code & 0x3) << ((m_wordSize - 1)*int(kBitsPerBase));

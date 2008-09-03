@@ -2,6 +2,7 @@
 #define OLIGOFAR_CSCORETBL__HPP
 
 #include "cscoring.hpp"
+#include "tseqref.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
 
@@ -15,60 +16,54 @@ public:
 	// TSeqRef<C*naBase,incr,CSeqCoding::eCoding_*na> API
 	template<class QryRef, class SbjRef>
 	static bool MatchRef( const QryRef& q, const SbjRef& s ) {
-		return ( CNcbi8naBase( q.GetBase() ) & CNcbi8naBase( s.GetBase() ) ) != 0;
+         if( q.GetCoding() == CSeqCoding::eCoding_colorsp ) 
+             return CColorTwoBase( char(q.GetBase()) ).GetColor() == CColorTwoBase( char(s.GetBase()) ).GetColor();
+         else
+             return ( CNcbi8naBase( q.GetBase() ) & CNcbi8naBase( s.GetBase() ) ) != 0;
 	}
 	
 	template<class QryRef, class SbjRef>
 	double ScoreRef( const QryRef& q, const SbjRef& s ) const {
-		CNcbi8naBase sbj( s.GetBase() );
+        return ScoreRefSbj( q, s.GetBase() );
+    }
+
+    template<class QryRef, class Sbj>
+    double ScoreRefSbj( const QryRef& q, const Sbj& sbj ) const {
 		// q.GetCoding() is constant, so optimizer hopefuly should exclude one of branches
-		if( q.GetCoding() == CSeqCoding::eCoding_ncbipna ) { 
-			CNcbipnaBase qry( q.GetBase() );
-       		unsigned sc = max( max( qry[0] * ((sbj&1)>>0), 
-									qry[1] * ((sbj&2)>>1) ),
-                	           max( qry[2] * ((sbj&4)>>2), 
-								   	qry[3] * ((sbj&8)>>3) ) );
-        	return ProbScore( double(sc)/qry[4]*s_probtbl[(int)sbj] );
-		} else {
-			CNcbi8naBase qry( q.GetBase() );
-			return qry & sbj ? m_scoretbl[int( sbj )] : m_mismatch;
+		switch( q.GetCoding() ) {
+		case CSeqCoding::eCoding_ncbipna: 
+			do {
+				CNcbipnaBase qry( q.GetBase() );
+	       		unsigned sc = max( max( qry[0] * ((sbj&1)>>0), 
+										qry[1] * ((sbj&2)>>1) ),
+        	        	           max( qry[2] * ((sbj&4)>>2), 
+									   	qry[3] * ((sbj&8)>>3) ) );
+	        	return ProbScore( double(sc)/qry[4] * s_probtbl[(int)sbj] );
+			} while(0); break;
+		case CSeqCoding::eCoding_ncbiqna: 
+			do {
+				CNcbiqnaBase qry( q.GetBase() );
+				return CNcbi8naBase( qry ) & sbj ? ProbScore( s_phrapProbTbl[qry.GetPhrapScore()] * s_probtbl[sbj] ) : m_mismatch;
+//				return CNcbi8naBase( qry ) & sbj ? m_phraptbl[sbj][qry.GetPhrapScore()] : m_mismatch;
+			} while(0); break;
+ 		case CSeqCoding::eCoding_colorsp: 
+ 			do {
+                return CColorTwoBase(char(sbj)).GetColor() == CColorTwoBase( char( q.GetBase() ) ).GetColor() ? m_identity : m_mismatch ;
+ 			} while(0); break;
+		default:
+			do {
+				CNcbi8naBase qry( q.GetBase() );
+				return qry & sbj ? m_scoretbl[int( sbj )] : m_mismatch;
+			} while(0); break;
 		}
 	}
 
-	////////////////////////////////////////////////////////////////////////	
-	// CSeqRef API
-#if 0
-    template<class CQueryBase, class CSubjectBase> 
-    static bool Match( const CSeqRef& query, const CSeqRef& subj ) {
-        return CNcbi8naBase( query.GetBase<CQueryBase>() ) & CNcbi8naBase( subj.GetBase<CSubjectBase>() );
-    }
-    template<class CQueryBase, class CSubjectBase> 
-    double Score( const CSeqRef& query, const CSeqRef& subj ) const {
-        return ScoreBase( query.GetBase<CQueryBase>(), subj.GetBase<CSubjectBase>() );
-    }
-
-	template<class CQueryBase, class CSubjectBase>
-	double ScoreBase( const CQueryBase& q, const CSubjectBase& s ) const {
-		CNcbi8naBase qry( q );
-		CNcbi8naBase sbj( s );
-		return qry & sbj ? m_scoretbl[int( sbj )] : m_mismatch;
-	}
-
-	template<class CSubjectBase>
-	double ScoreBase( const CNcbipnaBase& q, const CSubjectBase& s ) const {
-		CNcbi8naBase subj( s );
-        unsigned sc = max( max( q[0] * ((subj&1)>>0), 
-								q[1] * ((subj&2)>>1) ),
-                           max( q[2] * ((subj&4)>>2), 
-							   	q[3] * ((subj&8)>>3) ) );
-        return ProbScore( double(sc)/q[4]*s_probtbl[(int)subj] );
-	}
-#endif
     double ProbScore( double prob ) const {
         return m_identity * prob + m_mismatch * (1 - prob);
     }
 protected:
     double m_scoretbl[16];
+	double m_phraptbl[16][64];
 protected:
     static double * x_InitProbTbl();
     void x_InitScoretbl() {
@@ -77,8 +72,13 @@ protected:
         for( int i = 1; i < 16; ++i ) {
             m_scoretbl[i] = ProbScore( s_probtbl[i] );
         }
+        for( int i = 0; i < 16; ++i ) {
+        	for( int j = 0; j < 64; ++j ) 
+				m_phraptbl[i][j] = ProbScore( s_phrapProbTbl[j] * s_probtbl[i] );
+		}
     }
     static double * s_probtbl;
+	static double s_phrapProbTbl[];
 };
 
 END_OLIGOFAR_SCOPES

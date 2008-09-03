@@ -16,6 +16,12 @@ void CGuideFile::AdjustInput( int& fwd, char dir, int& p1, int which ) const
 	--p1;
 }
 
+CGuideFile::TRange CGuideFile::ComputeRange( bool fwd, int pos, int len ) const
+{
+	if( fwd ) return TRange( pos, pos + len - 1 );
+	else return TRange( pos + len - 1, pos );
+}
+
 bool CGuideFile::NextHit( Uint8 ordinal, CQuery * query )
 {
     if( m_buff.length() == 0 ) return false;
@@ -45,6 +51,9 @@ bool CGuideFile::NextHit( Uint8 ordinal, CQuery * query )
 		if( !use_ids ) {
 			qord = NStr::StringToInt( qid );
         	if( qord > ordinal ) break; // preserve the buffer - will try again next call
+			if( qord < m_lastQord )
+				THROW( runtime_error, "Bad sort order for guide file: it should be exactly the same as for input file" );
+			m_lastQord = qord;
 		}
 		else if( qid == query->GetId() ) 
 			qord = ordinal;
@@ -70,15 +79,11 @@ bool CGuideFile::NextHit( Uint8 ordinal, CQuery * query )
 			AdjustInput( sfwd2, sdir2, spos2, 2 );
 
             if( mpos2 != 0 ) continue;
-			// NB: rest of the block should be changed if one wants to make mutual orientation to be configurable
-            if( ( sfwd2 ^ sfwd1 ) != 1 ) continue; 
-            if( sfwd1 ) {
-                if( spos1 < spos2 + (int)query->GetLength(1) - GetMaxDist() ) continue;
-                if( spos1 > spos2 + (int)query->GetLength(1) - GetMinDist() ) continue;
-            } else {
-                if( spos2 < spos1 + (int)query->GetLength(0) - GetMaxDist() ) continue;
-                if( spos2 > spos1 + (int)query->GetLength(0) - GetMinDist() ) continue;
-            }
+
+			TRange r1 = ComputeRange( sfwd1, spos1, query->GetLength(0) );
+			TRange r2 = ComputeRange( sfwd2, spos2, query->GetLength(1) );
+
+			if( ! m_filter->CheckGeometry( r1.first, r1.second, r2.first, r2.second ) ) continue;
         }
         CHit * hit = 0;
         if( sfwd1 ) {

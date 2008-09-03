@@ -46,6 +46,13 @@ public:
     static Uint4 ReverseBitPairs4( Uint4 x );
     static Uint8 ReverseBitPairs8( Uint8 x );
 
+    // can be used as reverse for dibase colorspace represented as 4-channel 1-bit sets, 
+    // and ~ may be used as complement to ncbi2na
+    static Uint1 ReverseBitQuads1( Uint1 x );
+    static Uint2 ReverseBitQuads2( Uint2 x );
+    static Uint4 ReverseBitQuads4( Uint4 x );
+    static Uint8 ReverseBitQuads8( Uint8 x );
+
     template<class word, class output_iterator>
     static output_iterator AsBits( word m, int w, output_iterator );
 
@@ -274,6 +281,32 @@ inline Uint4 CBitHacks::ReverseBitPairs4( Uint4 x )
 inline Uint8 CBitHacks::ReverseBitPairs8( Uint8 x ) 
 {
     x = x_SwapBits<Uint8>( x, 0x02, kPattern_04 );
+    x = x_SwapBits<Uint8>( x, 0x04, kPattern_08 );
+    x = x_SwapBits<Uint8>( x, 0x08, kPattern_16 );
+    x = x_SwapBits<Uint8>( x, 0x10, kPattern_32 );
+    return x_SwapBits( x, 0x20 );
+}
+
+inline Uint1 CBitHacks::ReverseBitQuads1( Uint1 x ) 
+{
+    return x_SwapBits( x, 0x04 );
+}
+
+inline Uint2 CBitHacks::ReverseBitQuads2( Uint2 x ) 
+{
+    x = x_SwapBits<Uint2>( x, Uint2( 0x04 ), Uint2( kPattern_08 ) );
+    return x_SwapBits( x, 0x08 );
+}
+
+inline Uint4 CBitHacks::ReverseBitQuads4( Uint4 x ) 
+{
+    x = x_SwapBits<Uint4>( x, Uint4( 0x04 ), Uint4( kPattern_08 ) );
+    x = x_SwapBits<Uint4>( x, Uint4( 0x08 ), Uint4( kPattern_16 ) );
+    return x_SwapBits( x, 0x10 );
+}
+
+inline Uint8 CBitHacks::ReverseBitQuads8( Uint8 x ) 
+{
     x = x_SwapBits<Uint8>( x, 0x04, kPattern_08 );
     x = x_SwapBits<Uint8>( x, 0x08, kPattern_16 );
     x = x_SwapBits<Uint8>( x, 0x10, kPattern_32 );

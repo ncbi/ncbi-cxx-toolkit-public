@@ -11,7 +11,8 @@ int CQueryHash::AddQuery( CQuery * query, int component )
     if( len == 0 ) return 0;
     Uint8 fwindow = 0;
     int offset = GetNcbi4na( fwindow, query->GetCoding(), (unsigned char*)query->GetData( component ), len );
-	CHashPopulator hashPopulator( *m_permutators[m_maxMism], m_windowLength, query, m_strands, offset, component, m_maxSimplicity, fwindow ); 
+	if( offset < 0 ) return 0;
+	CHashPopulator hashPopulator( *m_permutators[m_maxMism], m_windowLength, query, m_strands, offset, component, m_maxSimplicity, fwindow, query->GetCoding() ); 
 	switch( m_hashType ) {
 	case eHash_vector:   return hashPopulator.PopulateHash( m_hashTableV );
 	case eHash_multimap: return hashPopulator.PopulateHash( m_hashTableM );
@@ -33,24 +34,46 @@ int CQueryHash::x_GetNcbi4na_ncbi8na( Uint8& window, const unsigned char * data,
     int off = 0;
     const unsigned char * t = data;
     for( int left = length - m_windowLength; left > 0; --left, ++off, ++t ) {
-        unsigned char x = *t;
-        if( Ncbi4naAlternativeCount( x ) <= Ncbi4naAlternativeCount( t[m_windowLength] ) ) 
+        if( CNcbi8naBase( t[0] ).GetAltCount() <= CNcbi8naBase( t[m_windowLength] ).GetAltCount() )
             break; // there is no benefit in shifting right
     }
     window = Ncbi8na2Ncbi4na( t, m_windowLength ); 
     return off;
 }
 
+int CQueryHash::x_GetNcbi4na_colorsp( Uint8& window, const unsigned char * data, unsigned length )
+{
+	// this encoding does not support ambiguities, 
+    window = 0;
+    // to provide uniform hashing algo, conver colors to 4-channel 1-bit per channel sets
+    for( unsigned x = 0; x < m_windowLength; ++x ) 
+        window |= Uint8( "\x1\x2\x4\x8"[CColorTwoBase( data[x+1] ).GetColorOrd()] ) << (x*4); 
+    return 1; // always has offset of 1
+}
+
+Uint8 CQueryHash::x_Ncbipna2Ncbi4na( const unsigned char * data, int len, unsigned short score ) { return Ncbipna2Ncbi4na( data, len, score ); }
+Uint8 CQueryHash::x_Ncbiqna2Ncbi4na( const unsigned char * data, int len, unsigned short score ) { return Ncbiqna2Ncbi4na( data, len, score ); }
+
 // this procedure tries to perform optimization on number of alternatives 
 // if one is out of allowed range
 int CQueryHash::x_GetNcbi4na_ncbipna( Uint8& window, const unsigned char * data, unsigned length )
 {
+	return x_GetNcbi4na_quality( window, data, length, x_Ncbipna2Ncbi4na, 5, m_ncbipnaToNcbi4naScore, x_UpdateNcbipnaScore );
+}
+
+int CQueryHash::x_GetNcbi4na_ncbiqna( Uint8& window, const unsigned char * data, unsigned length )
+{
+	return x_GetNcbi4na_quality( window, data, length, x_Ncbiqna2Ncbi4na, 1, m_ncbiqnaToNcbi4naScore, x_UpdateNcbiqnaScore );
+}
+
+int CQueryHash::x_GetNcbi4na_quality( Uint8& window, const unsigned char * data, unsigned length, TCvt * fun, int incr, unsigned short score, TDecr * decr )
+{
     int off = 0;
     const unsigned char * t = data;
-    unsigned short mask = m_ncbipnaToNcbi4naMask;
     int left = length - m_windowLength;
+	if( left < 0 ) return -1;
 
-    window = Ncbipna2Ncbi4na( t, m_windowLength, mask );
+    window = fun( t, m_windowLength, score );
     Uint8 ac = Ncbi4naAlternativeCount( window, m_windowLength );
 
     while( ac > m_maxAlt ) {
@@ -58,12 +81,12 @@ int CQueryHash::x_GetNcbi4na_ncbipna( Uint8& window, const unsigned char * data,
         Uint8 acm = ~Uint8(0);
         Uint8 owin = 0;
         Uint8 mwin = 0;
-        if( left ) {
-            owin = Ncbipna2Ncbi4na( t+5, m_windowLength, mask );
+        if( left > 0 ) {
+            owin = fun( t + incr, m_windowLength, score );
             aco  = Ncbi4naAlternativeCount( owin, m_windowLength );
         }
-        if( mask ) {
-            mwin = Ncbipna2Ncbi4na( t, m_windowLength, mask << 1 );
+        if( score ) { 
+            mwin = fun( t, m_windowLength, decr( score ) );
             acm  = Ncbi4naAlternativeCount( mwin, m_windowLength );
         }
         if( aco == ~Uint8(0) && acm == ~Uint8(0) ) return off;
@@ -84,13 +107,13 @@ int CQueryHash::x_GetNcbi4na_ncbipna( Uint8& window, const unsigned char * data,
             window = mwin;
             return off;
         } else if( acm <= aco ) {
-            mask <<= 1;
+            score = decr( score );
             window = mwin;
             ac = acm;
         } else {
             ++off;
-            --left;
-            t += 5;
+            if( --left < 0 ) return off;
+            t += incr;
             window = owin;
             ac = aco;
         }
@@ -104,7 +127,9 @@ int CQueryHash::GetNcbi4na( Uint8& window, CSeqCoding::ECoding coding,
 {
     switch( coding ) {
     case CSeqCoding::eCoding_ncbi8na: return x_GetNcbi4na_ncbi8na( window, data, length );
+    case CSeqCoding::eCoding_ncbiqna: return x_GetNcbi4na_ncbiqna( window, data, length );
     case CSeqCoding::eCoding_ncbipna: return x_GetNcbi4na_ncbipna( window, data, length );
+    case CSeqCoding::eCoding_colorsp: return x_GetNcbi4na_colorsp( window, data, length );
     default: THROW( logic_error, "Invalid query coding " << coding );
     }
 }

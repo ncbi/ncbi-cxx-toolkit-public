@@ -171,46 +171,58 @@ inline unsigned char Ncbi2naCompl( unsigned char x )
 
 inline unsigned char Ncbipna2Ncbi4na( unsigned char a, unsigned char c,
                                       unsigned char g, unsigned char t, 
-                                      unsigned char n, unsigned short bitmask )
+                                      unsigned char n, unsigned short score )
 {
     return
-        (unsigned(a)*n & bitmask ? 0x01 : 0) |
-        (unsigned(c)*n & bitmask ? 0x02 : 0) |
-        (unsigned(g)*n & bitmask ? 0x04 : 0) |
-        (unsigned(t)*n & bitmask ? 0x08 : 0) ;
+        (unsigned(a) > score ? 0x01 : 0) |
+        (unsigned(c) > score ? 0x02 : 0) |
+        (unsigned(g) > score ? 0x04 : 0) |
+        (unsigned(t) > score ? 0x08 : 0) ;
 }
 
 inline unsigned char Ncbipna2Ncbi4naCompl( unsigned char a, unsigned char c,
                                            unsigned char g, unsigned char t, 
-                                           unsigned char n, unsigned short bitmask )
+                                           unsigned char n, unsigned short score )
 {
     return
-        (unsigned(a)*n & bitmask ? 0x08 : 0) |
-        (unsigned(c)*n & bitmask ? 0x04 : 0) |
-        (unsigned(g)*n & bitmask ? 0x02 : 0) |
-        (unsigned(t)*n & bitmask ? 0x01 : 0) ;
+        (unsigned(a) > score ? 0x08 : 0) |
+        (unsigned(c) > score ? 0x04 : 0) |
+        (unsigned(g) > score ? 0x02 : 0) |
+        (unsigned(t) > score ? 0x01 : 0) ;
 }
 
-inline unsigned char Ncbipna2Ncbi4na( const unsigned char * p, unsigned short mask )
+inline unsigned char Ncbipna2Ncbi4na( const unsigned char * p, unsigned short score )
 {
-    return Ncbipna2Ncbi4na( p[0], p[1], p[2], p[3], p[4], mask );
+    return Ncbipna2Ncbi4na( p[0], p[1], p[2], p[3], p[4], score );
 }
 
-inline unsigned char Ncbipna2Ncbi4naCompl( const unsigned char * p, unsigned short mask )
+inline unsigned char Ncbipna2Ncbi4naCompl( const unsigned char * p, unsigned short score )
 {
-    return Ncbipna2Ncbi4naCompl( p[0], p[1], p[2], p[3], p[4], mask );
+    return Ncbipna2Ncbi4naCompl( p[0], p[1], p[2], p[3], p[4], score );
 }
 
-inline unsigned char Ncbipna2Ncbi4naN( const unsigned char * p, unsigned short mask )
+inline unsigned char Ncbipna2Ncbi4naN( const unsigned char * p, unsigned short score )
 {
-    unsigned char x = Ncbipna2Ncbi4na( p[0], p[1], p[2], p[3], p[4], mask );
+    unsigned char x = Ncbipna2Ncbi4na( p[0], p[1], p[2], p[3], p[4], score );
     return x ? x : 0x0f;
 }
 
-inline unsigned char Ncbipna2Ncbi4naComplN( const unsigned char * p, unsigned short mask )
+inline unsigned char Ncbipna2Ncbi4naComplN( const unsigned char * p, unsigned short score )
 {
-    unsigned char x = Ncbipna2Ncbi4naCompl( p[0], p[1], p[2], p[3], p[4], mask );
+    unsigned char x = Ncbipna2Ncbi4naCompl( p[0], p[1], p[2], p[3], p[4], score );
     return x ? x : 0x0f;
+}
+
+inline unsigned char Ncbiqna2Ncbi4na( const unsigned char * p, unsigned short score )
+{
+	if( (*p >> 2) > score ) return "\x1\x2\x4\x8"[(*p)&3];
+	else return '\xf';
+}
+
+inline unsigned char Ncbiqna2Ncbi4naCompl( const unsigned char * p, unsigned short score )
+{
+	if( (*p >> 2) > score ) return "\x8\x4\x2\x1"[(*p)&3];
+	else return '\xf';
 }
 
 template<class iterator>
@@ -266,19 +278,35 @@ inline double ComputeComplexity( unsigned hash, unsigned bases )
     return c / 2 / (bases - 3);
 }
 
-inline Uint8 Ncbipna2Ncbi4na( const unsigned char * data, unsigned windowLength, unsigned short mask )
+inline Uint8 Ncbipna2Ncbi4na( const unsigned char * data, unsigned windowLength, unsigned short score )
 {
     Uint8 ret = 0;
     for( unsigned x = 0; x < windowLength; ++x ) 
-        ret |= Uint8( Ncbipna2Ncbi4na( data + 5*x, mask ) ) << (x*4);
+        ret |= Uint8( Ncbipna2Ncbi4na( data + 5*x, score ) ) << (x*4);
     return ret;
 }
 
-inline Uint8 Ncbipna2Ncbi4naRevCompl( const unsigned char * data, unsigned windowLength, unsigned short mask )
+inline Uint8 Ncbipna2Ncbi4naRevCompl( const unsigned char * data, unsigned windowLength, unsigned short score )
 {
     Uint8 ret = 0;
     for( unsigned x = 0, y = windowLength - 1; x < windowLength; ++x, --y ) 
-        ret |= Uint8( Ncbipna2Ncbi4na( data + 5*x, mask ) ) << (y*4);
+        ret |= Uint8( Ncbipna2Ncbi4naCompl( data + 5*x, score ) ) << (y*4);
+    return ret;
+}
+
+inline Uint8 Ncbiqna2Ncbi4na( const unsigned char * data, unsigned windowLength, unsigned short score )
+{
+    Uint8 ret = 0;
+    for( unsigned x = 0; x < windowLength; ++x ) 
+        ret |= Uint8( Ncbiqna2Ncbi4na( data + x, score ) ) << (x*4);
+    return ret;
+}
+
+inline Uint8 Ncbiqna2Ncbi4naRevCompl( const unsigned char * data, unsigned windowLength, unsigned short score )
+{
+    Uint8 ret = 0;
+    for( unsigned x = 0, y = windowLength - 1; x < windowLength; ++x, --y ) 
+        ret |= Uint8( Ncbiqna2Ncbi4naCompl( data + x, score ) ) << (y*4);
     return ret;
 }
 
@@ -327,6 +355,11 @@ inline Uint4 Iupacna2Ncbi2naRevCompl( const unsigned char * data, unsigned windo
     for( unsigned x = 0, t = windowLength - 1; x < windowLength; ++x, --t ) 
         ret |= Uint4( Iupacna2Ncbi2naCompl( data[t] ) ) << (x*2);
     return ret;
+}
+
+inline Uint8 Ncbi4naReverse( Uint8 window, unsigned windowSize )
+{
+    return CBitHacks::ReverseBitQuads8( window ) >> (64 - 4 * windowSize);
 }
 
 inline Uint8 Ncbi4naRevCompl( Uint8 window, unsigned windowSize )
