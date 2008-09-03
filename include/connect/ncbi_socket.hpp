@@ -96,6 +96,9 @@ public:
 
     EIO_Status GetStatus(void) const;
 
+    // Access to the underlying "TRIGGER" and the system-specific handle.
+    TRIGGER            GetTRIGGER (void) const;
+
     virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
 
 protected:
@@ -731,6 +734,12 @@ inline EIO_Status CTrigger::IsSet(void)
 inline EIO_Status CTrigger::Reset(void)
 {
     return m_Trigger ? TRIGGER_Reset(m_Trigger) : eIO_Unknown;
+}
+
+
+inline TRIGGER    CTrigger::GetTRIGGER(void) const
+{
+    return m_Trigger;
 }
 
 
