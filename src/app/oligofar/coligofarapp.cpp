@@ -202,7 +202,7 @@ void COligoFarApp::Help( const char * arg )
             ;
     if( flags & fExtended ) 
         cout << "\nExtended options:\n"
-             << "  --scan-old=true|false           Use older versions algorithms [" << (m_run_old_scanning_code?"true":"false") << "]\n"
+             << "  --scan-old=true|false      Use older versions algorithms [" << (m_run_old_scanning_code?"true":"false") << "]\n"
              << "  --min-block-length=bases   Length for subject sequence to be scanned at once [" << m_minBlockLength << "]\n"
             ;
 }
