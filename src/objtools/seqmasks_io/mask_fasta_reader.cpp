@@ -73,6 +73,7 @@ CRef< CSeq_entry > CMaskFastaReader::GetNextSequence()
 
         if( aSeqEntry != 0 && aSeqEntry->IsSeq() )
             return aSeqEntry;
+        else break;
     }
 
     return CRef< CSeq_entry >( null );
