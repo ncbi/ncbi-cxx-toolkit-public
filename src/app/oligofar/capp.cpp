@@ -24,14 +24,14 @@ int CApp::Run()
 	return Execute();
 }
 
-void CApp::Version()
+void CApp::Version( const char * )
 {
 	cout << GetProgramBasename() << " compiled on " << __DATE__ << endl;
 }
 
-void CApp::Help()
+void CApp::Help( const char * )
 {
-	cout << "usage: [-hV]\n";
+	cout << "usage: [-hV] [--help=[arg]] [--version=[arg]]\n";
 }
 
 const char * CApp::GetOptString() const 
@@ -42,8 +42,8 @@ const char * CApp::GetOptString() const
 int CApp::ParseArg( int optopt, const char * optarg, int )
 {
 	switch( optopt ) {
-	case 'h': Help(); break;
-	case 'V': Version(); break;
+	case 'h': Help( optarg ); break;
+	case 'V': Version( optarg ); break;
 	default:  return EX_USAGE;
 	}
 	m_done = true;

@@ -77,7 +77,7 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
 		if( lastType != type ) {
 			if( lastPos != -1 ) {
 				if( lastType != eType_skip && rangeMap.back().second != eType_skip && 
-					rangeMap.back().first.second - rangeMap.back().first.first + z - a - lastPos < 100000 ) {
+					rangeMap.back().first.second - rangeMap.back().first.first + z - a - lastPos < m_minBlockLength ) {
 					// merge too short blocks
 					rangeMap.back().first.second = z - a;
 					rangeMap.back().second = eType_iterate; // whatever it is - we drive it to larger of the two

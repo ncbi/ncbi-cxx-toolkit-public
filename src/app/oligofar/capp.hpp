@@ -19,8 +19,8 @@ protected:
 
 	// normally following virtual functions should be reimplemented in subclasses
 	virtual int  Execute() = 0;
-	virtual void Version();
-	virtual void Help();
+	virtual void Version( const char * );
+	virtual void Help( const char * );
 
 	virtual const option * GetLongOptions() const;
 	virtual const char * GetOptString() const;

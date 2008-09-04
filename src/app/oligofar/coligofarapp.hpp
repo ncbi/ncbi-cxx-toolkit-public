@@ -16,8 +16,8 @@ public:
     COligoFarApp( int argc, char ** argv );
 	static int RevNo();
 protected:
-    virtual void Help();
-    virtual void Version();
+    virtual void Help( const char * );
+    virtual void Version( const char * );
     virtual int  Execute();
     virtual int  TestSuite();
     
@@ -47,6 +47,12 @@ protected:
     };
     void SetupGeometries( map<string,int>& );
 
+    enum ELongOpt { 
+        kLongOptBase = 0x100,
+        kLongOpt_old = kLongOptBase + 0x01,
+        kLongOpt_min_block_length = kLongOptBase + 0x02
+    };
+
 protected:
     unsigned m_windowLength;
     unsigned m_maxHashMism;
@@ -69,6 +75,7 @@ protected:
     int      m_pairMargin;
 	int      m_qualityChannels;
 	int      m_qualityBase;
+    int      m_minBlockLength;
     Uint8    m_memoryLimit;
     bool     m_performTests;
 	bool     m_maxMismOnly;

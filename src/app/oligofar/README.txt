@@ -112,10 +112,14 @@ PAIRED READS
 OPTIONS
 
 Service options
-    --help    
+    --help=[brief|full|extended]
     -h          Print help to stdout, finish parsing commandline, and then 
-                exit with error code 0.
-                The help output contains current values assumend for options, 
+                exit with error code 0. Long version may accept otional 
+                argument which specifies should be printed brief help version
+                (synopsis), full version (without extended options) or extended
+                options help.
+
+                The output (except brief) contains current values taken for options, 
                 so commandline arguments values which preceed -h or --help will
                 be reflected in the output, for others default values will be
                 printed.
@@ -374,6 +378,22 @@ Filtering and ranking options
                 the paired read on plus strand, <<<2<<< means second component 
                 on reverse complement strand; if the digit is not set than 
                 component number does not matter for the example.
+
+Extended options
+    These options are supposed more for development cycle - they may choose 
+    development versus production algorithm implementations, or set parameters 
+    that may not supposed to be exposed in the future. These options should 
+    not be used on production and are not guarranteed to be preserved.
+
+    --scan-old=true|false
+                Use old sequence scanning function (to test performance)
+
+    --min-block-length=bases
+                Set minimal length of the subject sequence block to be 
+                processed as a whole with same algorithm (depending on 
+                presence of ambiguity characters).  Added to tune 
+                performance when high density of SNPs is provided. Makes
+                no difference with -A1.
 
 FILE FORMATS
 

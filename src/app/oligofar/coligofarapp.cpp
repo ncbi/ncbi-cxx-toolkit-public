@@ -100,94 +100,119 @@ int COligoFarApp::RevNo()
     return strtol( "$Rev$"+6, 0, 10 );
 }
 
-void COligoFarApp::Version()
+void COligoFarApp::Version( const char * )
 {
     cout << GetProgramBasename() << " ver " OLIGOFAR_VERSION " (Rev:" << RevNo() << ") " NCBI_SIGNATURE << endl;
 }
 
-void COligoFarApp::Help()
+void COligoFarApp::Help( const char * arg )
 {
-    cout << "usage: [-hV] [-C config] [-i inputfile] [-d genomedb] [-b snpdb] [-g guidefile] [-l gilist]\n"
-         << "[-c+|-] [-1 solexa1] [-2 solexa2] [-q 0|1] [-0 qbase] [-O -eumxtadh] [-o output] [-B batchsz]\n"
-         << "[-w winsize] [-n maxmism] [-N +|-] [-H v|m|a] [-a maxalt] [-A maxalt] [-P phrap] [-F dust]\n"
-         << "[-s 1|2|3] [-r f|q|s] [-X xdropoff] [-I idscore] [-M mismscore] [-G gapcore] [-Q gapextscore]\n"
-         << "[-p cutoff] [-u topcnt] [-t toppct] [-z minPair] [-Z maxPair] [-D margin] [-R geometry]\n"
-         << "[-L memlimit] [-U version] [-T +|-]\n"
-         << "\nFile options:\n" 
-         << "  -i file    --input-file=file          short reads input file [" << m_readFile << "]\n"
-         << "  -d file    --fasta-file=file          database (fasta or basename of blastdb) file [" << m_fastaFile << "]\n"
-         << "  -b file    --snpdb-file=file          snp database subject file [" << m_snpdbFile << "]\n"
+    enum EFlags {
+        fSynopsis = 0x01,
+        fDetails  = 0x02,
+        fExtended = 0x04
+    };
+    int flags = fSynopsis;
+    if( arg ) {
+        switch( *arg ) {
+        case 'b': case 'B': break;
+        case 'e': case 'E': flags = fExtended; break;
+        case 'f': case 'F': flags = fDetails; break;
+        }
+    }
+    if( flags & fSynopsis ) 
+        cout << "usage: [-hV] [--help[=full|brief|extended]] [-U version] [-C config]\n"
+             << "  [-i inputfile] [-d genomedb] [-b snpdb] [-g guidefile] [-l gilist]\n"
+             << "  [-1 solexa1] [-2 solexa2] [-q 0|1] [-0 qbase] [-c +|-] [-o output]\n"
+             << "  [-O -eumxtadh] [-B batchsz] [-w winsize] [-n maxmism] [-N +|-] [-r f|s]\n"
+             << "  [-H v|m|a] [-a maxalt] [-A maxalt] [-P phrap] [-F dust] [-s 1|2|3]\n"
+             << "  [-X xdropoff] [-I idscore] [-M mismscore] [-G gapcore] [-Q gapextscore]\n"
+             << "  [-z minPair] [-Z maxPair] [-D margin] [-R geometry]\n"
+             << "  [-p cutoff] [-u topcnt] [-t toppct] [-L memlimit] [-T +|-]\n";
+    if( flags & fDetails ) 
+        cout 
+            << "\nFile options:\n" 
+            << "  -i file    --input-file=file          short reads input file [" << m_readFile << "]\n"
+            << "  -d file    --fasta-file=file          database (fasta or basename of blastdb) file [" << m_fastaFile << "]\n"
+            << "  -b file    --snpdb-file=file          snp database subject file [" << m_snpdbFile << "]\n"
 //       << "  -v file    --vardb-file=file         *general variation database subject file [" << m_vardbFile << "]\n"
-         << "  -g file    --guide-file=file          guide file (output of sr-search [" << m_guideFile << "]\n"
-         << "  -l file    --gi-list=file             gi list to use for the blast db [" << m_gilistFile << "]\n"
-         << "  -o output  --output-file=output       set output file [" << m_outputFile << "]\n"
-         << "  -1 file    --qual-1-file=file         read 1 4-channel quality file [" << m_read1qualityFile << "]\n"
-         << "  -2 file    --qual-2-file=file         read 2 4-channel quality file [" << m_read2qualityFile << "]\n"
-         << "  -c +|-     --colorspace=+|-          *reads are set in dibase colorspace [" << (m_colorSpace?"yes":"no") << "]\n"
-         << "  -q 0|1     --quality-channels=cnt     number of channels in input file quality columns [" << m_qualityChannels << "]\n"
-         << "  -0 value   --quality-base=value       base quality number (ASCII value for character representing phrap score 0) [" << m_qualityBase << "]\n"
-         << "  -0 +char   --quality-base=+char       base quality char (character representing phrap score 0) [+" << char(m_qualityBase) << "]\n"
-         << "  -O flags   --output-flags=flags       add output flags (-huxmtdae) [" << m_outputFlags << "]\n"
-         << "  -B count   --batch-size=count         how many short seqs to map at once [" << m_readsPerRun << "]\n"
-         << "  -C config  --config-file=file         take parameters from config file section `oligofar' and continue parsing commandline\n"
-         << "\nHashing and scanning options:\n"
-         << "  -w size    --window-size=size         window size [" << m_windowLength << "]\n"
-         << "  -n mism    --input-max-mism=mism      maximal number of mismatches in hash window [" << m_maxHashMism << "]\n"
-         << "  -N +|-     --max-mism-only=+|-        hash with max mismatches only [" << (m_maxMismOnly ? "+" : "-") << "]\n"
-         << "  -H v|m|a   --hash-type=v|m|a          set hash type to vector, multimap, or arraymap [" << 
+            << "  -g file    --guide-file=file          guide file (output of sr-search [" << m_guideFile << "]\n"
+            << "  -l file    --gi-list=file             gi list to use for the blast db [" << m_gilistFile << "]\n"
+            << "  -o output  --output-file=output       set output file [" << m_outputFile << "]\n"
+            << "  -1 file    --qual-1-file=file         read 1 4-channel quality file [" << m_read1qualityFile << "]\n"
+            << "  -2 file    --qual-2-file=file         read 2 4-channel quality file [" << m_read2qualityFile << "]\n"
+            << "  -c +|-     --colorspace=+|-          *reads are set in dibase colorspace [" << (m_colorSpace?"yes":"no") << "]\n"
+            << "  -q 0|1     --quality-channels=cnt     number of channels in input file quality columns [" << m_qualityChannels << "]\n"
+            << "  -0 value   --quality-base=value       base quality number (ASCII value for character representing phrap score 0) [" << m_qualityBase << "]\n"
+            << "  -0 +char   --quality-base=+char       base quality char (character representing phrap score 0) [+" << char(m_qualityBase) << "]\n"
+            << "  -O flags   --output-flags=flags       add output flags (-huxmtdae) [" << m_outputFlags << "]\n"
+            << "  -B count   --batch-size=count         how many short seqs to map at once [" << m_readsPerRun << "]\n"
+            << "  -C config  --config-file=file         take parameters from config file section `oligofar' and continue parsing commandline\n"
+            << "\nHashing and scanning options:\n"
+            << "  -w size    --window-size=size         window size [" << m_windowLength << "]\n"
+            << "  -n mism    --input-max-mism=mism      maximal number of mismatches in hash window [" << m_maxHashMism << "]\n"
+            << "  -N +|-     --max-mism-only=+|-        hash with max mismatches only [" << (m_maxMismOnly ? "+" : "-") << "]\n"
+            << "  -H v|m|a   --hash-type=v|m|a          set hash type to vector, multimap, or arraymap [" << 
             (m_hashType == CQueryHash::eHash_vector ? 'v' : m_hashType == CQueryHash::eHash_multimap ? 'm' : m_hashType == CQueryHash::eHash_arraymap ? 'a' : '?' ) << "]\n"
-         << "  -a alt     --input-max-alt=alt        maximal number of alternatives in hash window [" << m_maxHashAlt << "]\n"
-         << "  -A alt     --fasta-max-alt=alt        maximal number of alternatives in fasta window [" << m_maxFastaAlt << "]\n"
-         << "  -P score   --phrap-cutoff=score       set maximal phrap score to consider base as ambiguous [" << m_phrapSensitivity << "]\n"
-         << "  -F simpl   --max-simplicity=val       low complexity filter cutoff for hash words [" << m_maxSimplicity << "]\n"
-         << "  -s 1|2|3   --strands=1|2|3            align strands [" << m_strands << "]\n"
-         << "\nAlignment and scoring options:\n"
-         << "  -r f|q|s   --algorithm=f|q|s          use alignment algoRithm (Fast, Quick or Smith-waterman) [" << char(m_alignmentAlgo) << "]\n"
-         << "  -X value   --x-dropoff=value          set half band width for alignment [" << m_xdropoff << "]\n"
-         << "  -I score   --identity-score=score     set identity score [" << m_identityScore << "]\n"
-         << "  -M score   --mismatch-score=score     set mismatch score [" << m_mismatchScore << "]\n"
-         << "  -G score   --gap-opening-score=score  set gap opening score [" << m_gapOpeningScore << "]\n"
-         << "  -Q score   --gap-extention-score=val  set gap extention score [" << m_gapExtentionScore << "]\n"
-         << "\nFiltering and ranking options:\n"
-         << "  -p pctid   --min-pctid=pctid          set global percent identity cutoff [" << m_minPctid << "]\n"
-         << "  -u topcnt  --top-count=val            maximal number of top hits per read [" << m_topCnt << "]\n"
-         << "  -t toppct  --top-percent=val          maximal score of hit (in % to best) to be reported [" << m_topPct << "]\n"
-         << "  -z minPair --min-pair-dist=len        minimal pair distance [" << m_minPair << "]\n"
-         << "  -Z maxPair --max-pair-dist=len        maximal pair distance [" << m_maxPair << "]\n"
-         << "  -D dist    --pair-margin=len          pair distance margin [" << m_pairMargin << "]\n"
-         << "  -R value   --geometry=value           restrictions on relative hit orientation and order for paired hits [" << (m_geometry) << "]\n"
-         << "\nOther options:\n"
-         << "  -U version --assert-version=version   make sure that the oligofar version is what expected [" OLIGOFAR_VERSION "]\n"
-         << "  -L value   --memory-limit=value       set rlimit for the program (k|M|G suffix is allowed) [" << m_memoryLimit << "]\n"
-         << "  -T +|-     --test-suite=+|-           turn test suite on/off [" << (m_performTests?"on":"off") << "]\n"
-         << "\nRelative orientation flags recognized:\n"
-         << "    p|centripetal|inside|pcr|solexa     reads are oriented so that vectors 5'->3' pointing to each other\n"
-         << "    f|centrifugal|outside               reads are oriented so that vectors 5'->3' are pointing outside\n"
-         << "    i|incr|incremental|solid            reads are on same strand, first preceeds second on this strand\n"
-         << "    d|decr|decremental                  reads are on same strand, first succeeds second on this strand\n"
-         << "    o|opposite                          reads are on opposite strands (combination of p and f)\n"
-         << "    c|consecutive                       reads are on same strand (combination of i and d)\n"
-         << "    a|all|any                           any orientation, no constraints are applied\n"
-         << "\nOutput flags (for -O):\n"
-         << "    -   reset all flags\n"
-         << "    h   report all hits before ranking\n"
-         << "    u   report unmapped reads\n"
-         << "    x   indicate that there are more reads of this rank\n"
-         << "    m   indicate that there are more reads of lower ranks\n"
-         << "    t   indicate that there were no more hits\n"
-         << "    d   report differences between query and subject\n"
-         << "    a   report alignment details\n"
-         << "    e   print empty line after all hits of the read are reported\n"
-         << "\nNB: although -L flag is optional, it is strongly recommended to use it!\n"
-        ;
+            << "  -a alt     --input-max-alt=alt        maximal number of alternatives in hash window [" << m_maxHashAlt << "]\n"
+            << "  -A alt     --fasta-max-alt=alt        maximal number of alternatives in fasta window [" << m_maxFastaAlt << "]\n"
+            << "  -P score   --phrap-cutoff=score       set maximal phrap score to consider base as ambiguous [" << m_phrapSensitivity << "]\n"
+            << "  -F simpl   --max-simplicity=val       low complexity filter cutoff for hash words [" << m_maxSimplicity << "]\n"
+            << "  -s 1|2|3   --strands=1|2|3            align strands [" << m_strands << "]\n"
+            << "\nAlignment and scoring options:\n"
+            << "  -r f|q|s   --algorithm=f|s            use alignment algoRithm (Fast or Smith-waterman) [" << char(m_alignmentAlgo) << "]\n"
+            << "  -X value   --x-dropoff=value          set half band width for alignment [" << m_xdropoff << "]\n"
+            << "  -I score   --identity-score=score     set identity score [" << m_identityScore << "]\n"
+            << "  -M score   --mismatch-score=score     set mismatch score [" << m_mismatchScore << "]\n"
+            << "  -G score   --gap-opening-score=score  set gap opening score [" << m_gapOpeningScore << "]\n"
+            << "  -Q score   --gap-extention-score=val  set gap extention score [" << m_gapExtentionScore << "]\n"
+            << "\nFiltering and ranking options:\n"
+            << "  -p pctid   --min-pctid=pctid          set global percent identity cutoff [" << m_minPctid << "]\n"
+            << "  -u topcnt  --top-count=val            maximal number of top hits per read [" << m_topCnt << "]\n"
+            << "  -t toppct  --top-percent=val          maximal score of hit (in % to best) to be reported [" << m_topPct << "]\n"
+            << "  -z minPair --min-pair-dist=len        minimal pair distance [" << m_minPair << "]\n"
+            << "  -Z maxPair --max-pair-dist=len        maximal pair distance [" << m_maxPair << "]\n"
+            << "  -D dist    --pair-margin=len          pair distance margin [" << m_pairMargin << "]\n"
+            << "  -R value   --geometry=value           restrictions on relative hit orientation and order for paired hits [" << (m_geometry) << "]\n"
+            << "\nOther options:\n"
+            << "  -h         --help=[brief|full|ext]    print help with current parameter values and exit after parsing cmdline\n"
+            << "  -V         --version                  print version and exit after parsing cmdline\n"
+            << "  -U version --assert-version=version   make sure that the oligofar version is what expected [" OLIGOFAR_VERSION "]\n"
+            << "  -L value   --memory-limit=value       set rlimit for the program (k|M|G suffix is allowed) [" << m_memoryLimit << "]\n"
+            << "  -T +|-     --test-suite=+|-           turn test suite on/off [" << (m_performTests?"on":"off") << "]\n"
+            << "\nRelative orientation flags recognized:\n"
+            << "    p|centripetal|inside|pcr|solexa     reads are oriented so that vectors 5'->3' pointing to each other\n"
+            << "    f|centrifugal|outside               reads are oriented so that vectors 5'->3' are pointing outside\n"
+            << "    i|incr|incremental|solid            reads are on same strand, first preceeds second on this strand\n"
+            << "    d|decr|decremental                  reads are on same strand, first succeeds second on this strand\n"
+            << "    o|opposite                          reads are on opposite strands (combination of p and f)\n"
+            << "    c|consecutive                       reads are on same strand (combination of i and d)\n"
+            << "    a|all|any                           any orientation, no constraints are applied\n"
+            << "\nOutput flags (for -O):\n"
+            << "    -   reset all flags\n"
+            << "    h   report all hits before ranking\n"
+            << "    u   report unmapped reads\n"
+            << "    x   indicate that there are more reads of this rank\n"
+            << "    m   indicate that there are more reads of lower ranks\n"
+            << "    t   indicate that there were no more hits\n"
+            << "    d   report differences between query and subject\n"
+            << "    a   report alignment details\n"
+            << "    e   print empty line after all hits of the read are reported\n"
+            << "\nNB: although -L flag is optional, it is strongly recommended to use it!\n"
+            ;
+    if( flags & fExtended ) 
+        cout << "\nExtended options:\n"
+             << "  --scan-old=true|false           Use older versions algorithms [" << (m_run_old_scanning_code?"true":"false") << "]\n"
+             << "  --min-block-length=bases   Length for subject sequence to be scanned at once [" << m_minBlockLength << "]\n"
+            ;
 }
 
 const option * COligoFarApp::GetLongOptions() const
 {
     static struct option opt[] = {
-        {"help", 0, 0, 'h'},
+        {"help", 2, 0, 'h'},
         {"version", 0, 0, 'V'},
-        {"assert-version", 0, 0, 'U'},
+        {"assert-version", 1, 0, 'U'},
         {"window-size", 1, 0, 'w'},
         {"max-mism-only", 1, 0, 'N'},
         {"input-max-mism", 1, 0, 'n'},
@@ -227,7 +252,8 @@ const option * COligoFarApp::GetLongOptions() const
         {"x-dropoff", 1, 0, 'X'},
         {"memory-limit", 1, 0, 'L'},
         {"test-suite", 1, 0, 'T'},
-        {"OLD", 1, 0, '9'},
+        {"scan-old", 1, 0, kLongOpt_old },
+        {"min-block-length", 1, 0, kLongOpt_min_block_length },
         {0,0,0,0}
     };
     return opt;
@@ -235,13 +261,14 @@ const option * COligoFarApp::GetLongOptions() const
 
 const char * COligoFarApp::GetOptString() const
 {
-    return "U:C:w:n:N:H:a:A:c:i:d:b:v:g:o:O:l:s:B:p:u:t:1:2:q:0:P:z:Z:D:R:F:r:I:M:G:Q:X:L:T:9:";
+    return "U:C:w:n:N:H:a:A:c:i:d:b:v:g:o:O:l:s:B:p:u:t:1:2:q:0:P:z:Z:D:R:F:r:I:M:G:Q:X:L:T:";
 }
 
 int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
 {
     switch( opt ) {
-    case '9': m_run_old_scanning_code = NStr::StringToBool( arg ); break;
+    case kLongOpt_old: m_run_old_scanning_code = NStr::StringToBool( arg ); break;
+    case kLongOpt_min_block_length: m_minBlockLength = NStr::StringToInt( arg ); break;
     case 'U': if( strcmp( arg, OLIGOFAR_VERSION ) ) THROW( runtime_error, "Expected oligofar version " << arg << ", called " OLIGOFAR_VERSION ); break;
     case 'C': ParseConfig( arg ); break;
     case 'w': m_windowLength = strtol( arg, 0, 10 ); break;
@@ -284,8 +311,8 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case 'r': 
         switch( *arg ) {
         case 'f': case 'F': m_alignmentAlgo = eAlignment_fast ; break;
-        case 'g': case 'Q': m_alignmentAlgo = eAlignment_quick ; break;
         case 's': case 'S': m_alignmentAlgo = eAlignment_SW ; break;
+        case 'g': case 'Q': THROW( runtime_error, "Quick algorithm is not supported in the current version" ); //m_alignmentAlgo = eAlignment_quick ; break;
         default: THROW( runtime_error, "Bad alignment algorithm option " << arg );
         }
         break;
@@ -506,6 +533,7 @@ int COligoFarApp::ProcessData()
     seqScanner.SetMaxAlternatives( m_maxFastaAlt );
     seqScanner.SetMaxSimplicity( m_maxSimplicity );
     seqScanner.SetRunOldScanningCode( m_run_old_scanning_code );
+    seqScanner.SetMinBlockLength( m_minBlockLength );
 
     seqVecProcessor.SetTargetCoding( sbjCoding );
     seqVecProcessor.AddCallback( 1, &filter );
