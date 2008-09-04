@@ -114,7 +114,7 @@ UsePch         = TRUE
 PchUsageDefine = NCBI_USE_PCH
 DefaultPch     = ncbi_pch.hpp
 
-internal/structure/CDTree2               = cdtree2_pch.hpp
+internal/structure/CDTree3               = cdtree_pch.hpp
 internal/structure/PubChem/PCView/PCView = PCView_pch.hpp
 internal/structure/PubChem/assay         = assay_pch.hpp
 internal/ID/utils                        = -
