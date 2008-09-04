@@ -71,7 +71,7 @@ static char* s_ServiceName(const char* service, size_t depth)
     *s++ = '_';
     memcpy(s, CONN_SERVICE_NAME, sizeof(CONN_SERVICE_NAME));
     /* Looking for "service_CONN_SERVICE_NAME" in environment */
-    if (!(s = getenv(strupr(buf)))) {
+    if (!(s = getenv(strupr(buf)))  ||  !*s) {
         /* Looking for "CONN_SERVICE_NAME" in registry's section [service] */
         buf[len++] = '\0';
         CORE_REG_GET(buf, buf + len, srv, sizeof(srv), 0);
