@@ -116,7 +116,7 @@ protected:
     class C_LoopImpl_ColorspAmbiguities : public C_LoopImpl_Ncbi8naAmbiguities
     {
     public:
-        C_LoopImpl_ColorspAmbiguities( int windowLength, double maxSimpl, int maxAlt, unsigned mask ) : 
+        C_LoopImpl_ColorspAmbiguities( int windowLength, double maxSimpl, Uint8 maxAlt, unsigned mask ) : 
             C_LoopImpl_Ncbi8naAmbiguities( windowLength, maxSimpl, maxAlt, mask ) {}
         void Prepare( char a );
         void Update( char a );
