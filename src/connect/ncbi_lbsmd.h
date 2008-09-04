@@ -80,10 +80,6 @@ extern NCBI_XCONNECT_EXPORT HEAP LBSMD_GetHeapCopy(TNCBI_Time time);
 extern NCBI_XCONNECT_EXPORT ESwitch LBSMD_FastHeapAccess(ESwitch onoff);
 
 
-/* Host info getters */
-typedef const void* LBSM_HINFO;
-
-
 int LBSM_HINFO_CpuCount(const HOST_INFO hinfo);
 
 
