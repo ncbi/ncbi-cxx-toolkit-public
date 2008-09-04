@@ -89,7 +89,7 @@ protected:
     class C_LoopImpl_Ncbi8naAmbiguities : public C_ScanImpl_Base
     {
     public:
-        C_LoopImpl_Ncbi8naAmbiguities( int windowLength, double maxSimpl, int maxAlt, unsigned mask ) : 
+        C_LoopImpl_Ncbi8naAmbiguities( int windowLength, double maxSimpl, Uint8 maxAlt, unsigned mask ) : 
             C_ScanImpl_Base( windowLength, maxSimpl ), m_hashGenerator( windowLength ), m_maxAlternatives( maxAlt ), m_mask( mask ) {}
         template<class Callback>
         void RunCallback( Callback& );
@@ -99,7 +99,7 @@ protected:
         const char * GetName() const { return "C_LoopImpl_Ncbi8naAmbiguities"; }
     protected:
         fourplanes::CHashGenerator m_hashGenerator;
-        unsigned m_maxAlternatives;
+        Uint8 m_maxAlternatives;
         unsigned m_mask;
     };
 
