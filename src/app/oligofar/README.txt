@@ -1,7 +1,7 @@
-oligoFAR 3.21                     7-AUG-2008                                1-NCBI
+oligoFAR 3.22                     7-AUG-2008                                1-NCBI
 
 NAME 
-    oligoFAR version 3.21 - global alignment of single or paired short reads
+    oligoFAR version 3.22 - global alignment of single or paired short reads
 
 SYNOPSIS
     oligofar [-hV] [-C config] [-w wsize] [-n hashmism] [-N+|-] 
@@ -16,7 +16,7 @@ SYNOPSIS
              [-T test] [-L memlimit] [-U version] 
 
 EXAMPLES
-    oligofar -U 3.21 -C human-data.ini -C deep-search.ini -i my.reads -h
+    oligofar -U 3.22 -C human-data.ini -C deep-search.ini -i my.reads -h
 
     oligofar -i pairs.tbl -d contigs.fa -b snpdb.bdb -l gilist -g pairs.guide \
              -w 13 -B 250000 -Hv -n2 -rf -p90 -z100 -Z500 -D50 -Rp \
@@ -390,7 +390,7 @@ Config file
     Example:
 
         [oligofar]
-        assert-version = 3.21
+        assert-version = 3.22
         window-size = 12
         input-max-mism = 0
         input-max-alt = 256
