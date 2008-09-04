@@ -24,6 +24,12 @@
  * =========================================================================
  *
  * Author: Kirill Rotmistrovsky
+ * 
+ * These getopt and getopt_long implement almost all functionality of GNU getopt 
+ * and getopt_long except they don't support `tossing' argv (thus `+' in the 
+ * beginning of optstring and POSIXLY_CORRECT environment have no effect, 
+ * although the functions behave like it is always set if string does not start 
+ * with `-').
  *
  * ========================================================================= */
 
@@ -48,7 +54,8 @@ int getopt(int argc, char ** argv, const char* optstring)
 
 int getopt_long( int argc, char ** argv, const char * optstring, const struct option * longoption, int * longindex )
 {
-	int parsePositional = *optstring == '-' ? ++optstring : 0;
+	int parsePositional = 0;
+	if( *optstring == '-' ) { parsePositional = 1; ++optstring; }
 	optarg = 0;
     while( optind < argc ) {
 

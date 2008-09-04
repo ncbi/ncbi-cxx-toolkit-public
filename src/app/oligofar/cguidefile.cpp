@@ -80,8 +80,8 @@ bool CGuideFile::NextHit( Uint8 ordinal, CQuery * query )
 
             if( mpos2 != 0 ) continue;
 
-			TRange r1 = ComputeRange( sfwd1, spos1, query->GetLength(0) );
-			TRange r2 = ComputeRange( sfwd2, spos2, query->GetLength(1) );
+			TRange r1 = ComputeRange( sfwd1 != 0, spos1, query->GetLength(0) );
+			TRange r2 = ComputeRange( sfwd2 != 0, spos2, query->GetLength(1) );
 
 			if( ! m_filter->CheckGeometry( r1.first, r1.second, r2.first, r2.second ) ) continue;
         }
