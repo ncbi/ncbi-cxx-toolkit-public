@@ -657,11 +657,18 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
             CSocket* s = dynamic_cast<CSocket*> (p);
             if (!s) {
                 CListeningSocket* ls = dynamic_cast<CListeningSocket*> (p);
-                x_polls[i].poll = POLLABLE_FromLSOCK(ls ? ls->GetLSOCK() : 0);
+                if (!ls) {
+                    CTrigger* tr = dynamic_cast<CTrigger*> (p);
+                    x_polls[i].poll = POLLABLE_FromTRIGGER(tr
+                                                           ? tr->GetTRIGGER()
+                                                           : 0);
+                } else
+                    x_polls[i].poll = POLLABLE_FromLSOCK(ls->GetLSOCK());
             } else {
                 x_polls[i].poll =
-                    POLLABLE_FromSOCK(s->GetStatus(eIO_Open) == eIO_Success ?
-                                      s->GetSOCK() : 0);
+                    POLLABLE_FromSOCK(s->GetStatus(eIO_Open) == eIO_Success
+                                      ? s->GetSOCK()
+                                      : 0);
             }
             x_polls[i].event = event;
         } else
