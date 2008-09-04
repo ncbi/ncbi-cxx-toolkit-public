@@ -111,7 +111,7 @@ static int/*bool*/ s_AddServerInfo(struct SDISPD_Data* data, SSERV_Info* info)
 extern "C" {
     static int s_ParseHeader(const char*, void*, int);
 }
-#endif /* __cplusplus */
+#endif /*__cplusplus*/
 
 static int/*bool*/ s_ParseHeader(const char* header,
                                  void*       iter,
@@ -126,7 +126,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
 extern "C" {
     static int s_Adjust(SConnNetInfo*, void*, unsigned int);
 }
-#endif /* __cplusplus */
+#endif /*__cplusplus*/
 
 /*ARGSUSED*/
 /* This callback is only for services called via direct HTTP */
