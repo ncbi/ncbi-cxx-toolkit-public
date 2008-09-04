@@ -51,7 +51,7 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_pairMargin( 20 ),
     m_qualityChannels( 0 ),
     m_qualityBase( 33 ),
-//    m_reversePair( true ),
+    m_minBlockLength( 1000 ),
     m_memoryLimit( Uint8( sizeof(void*) == 4 ? 3 : 8 ) * int(kGigaByte) ),
     m_performTests( false ),
     m_maxMismOnly( false ),
