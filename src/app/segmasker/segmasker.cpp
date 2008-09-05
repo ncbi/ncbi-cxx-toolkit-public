@@ -63,6 +63,14 @@ USING_SCOPE(objects);
 
 class SegMaskerApplication : public CNcbiApplication
 {
+public:
+    /// Application constructor
+    SegMaskerApplication() {
+        CRef<CVersion> version(new CVersion());
+        version->SetVersionInfo(1, 0, 0);
+        SetFullVersion(version);
+    }
+
 private:
     virtual void Init(void);
     virtual int  Run(void);

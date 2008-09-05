@@ -46,6 +46,12 @@ BEGIN_NCBI_SCOPE
 class CDustMaskApplication : public CNcbiApplication
 {
 public:
+    /// Application constructor
+    CDustMaskApplication() {
+        CRef<CVersion> version(new CVersion());
+        version->SetVersionInfo(1, 0, 0);
+        SetFullVersion(version);
+    }
 
     static const char * const USAGE_LINE;
     virtual void Init(void);
