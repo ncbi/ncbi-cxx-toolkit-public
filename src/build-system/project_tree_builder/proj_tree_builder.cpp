@@ -881,27 +881,33 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     string check_copy;
     k = makefile.m_Contents.find("CHECK_COPY");
     if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
-        check_copy = k->second.front();
+        check_copy = NStr::Join(k->second, " ");
     }
     string check_timeout("200");
     k = makefile.m_Contents.find("CHECK_TIMEOUT");
     if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
-        check_timeout = k->second.front();
+        check_timeout = NStr::Join(k->second, " ");
     }
     string check_requires;
     k = makefile.m_Contents.find("CHECK_REQUIRES");
     if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
-        check_requires = k->second.front();
+        check_requires = NStr::Join(k->second, " ");
+    } else {
+        k = makefile.m_Contents.find("REQUIRES");
+        if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
+            check_requires = NStr::Join(k->second, " ");
+        }
     }
+    
     string check_authors;
     k = makefile.m_Contents.find("CHECK_AUTHORS");
     if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
-        check_authors = k->second.front();
+        check_authors = NStr::Join(k->second, " ");
     }
     k = makefile.m_Contents.find("CHECK_CMD");
     if ( k != makefile.m_Contents.end() ) {
         const list<string> check_cmd_list = k->second;
-        string test_name("/CHECK_NAME");
+        string test_name("/CHECK_NAME=");
         ITERATE(list<string>, i, check_cmd_list) {
             string check_cmd(*i), check_name;
             string::size_type  n = check_cmd.find(test_name);
@@ -921,19 +927,6 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
                 << s_check_separator << check_authors;
             project.m_CheckInfo.push_back( CNcbiOstrstreamToString(check) );
         }
-    } else {
-        string check_cmd(check_appname), check_name;
-        CNcbiOstrstream check;
-        check << check_dir
-            << s_check_separator << check_testname
-            << s_check_separator << check_appname
-            << s_check_separator << check_cmd
-            << s_check_separator << check_name
-            << s_check_separator << check_copy
-            << s_check_separator << check_timeout
-            << s_check_separator << check_requires
-            << s_check_separator << check_authors;
-        project.m_CheckInfo.push_back( CNcbiOstrstreamToString(check) );
     }
 
     CProjKey proj_key(CProjKey::eApp, proj_id);

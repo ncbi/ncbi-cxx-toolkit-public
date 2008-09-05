@@ -364,7 +364,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,5,5) );
+    SetVersion( CVersionInfo(1,5,6) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -979,15 +979,21 @@ void CProjBulderApp::CreateCheckList(const list<SConfigInfo>* configs,
         CNcbiOfstream ofs(file_path.c_str(), IOS_BASE::out | IOS_BASE::trunc );
         if ( !ofs )
             NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
+        list<string> all_cmd;
         ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
             const CProjItem& project = p->second;
             if (project.m_CheckConfigs.find(cfg) != project.m_CheckConfigs.end()) {
                 ITERATE( list<string>, cmd, project.m_CheckInfo) {
-                    ofs << *cmd << endl;
+                    all_cmd.push_back(*cmd);
                 }
             } else if (!project.m_CheckInfo.empty()) {
                 PTB_INFO("Project: " << p->first.Id() << ": CHECK_CMD disabled in " << cfg);
             }
+        }
+        all_cmd.sort();
+        all_cmd.unique();
+        ITERATE(list<string>, cmd, all_cmd) {
+            ofs << *cmd << endl;
         }
     }
 }
