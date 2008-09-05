@@ -40,4 +40,3 @@ SunOSSparc : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static
 PowerMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
 
 Win64      : plain : msvc800_prj  static  32  ReleaseDLL
-Win64      : debug : msvc800_prj  static  64  ReleaseDLL
