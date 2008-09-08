@@ -31,6 +31,9 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/align/util/align_shadow.hpp>
+#include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 #include <algorithm>
 #include <numeric>
@@ -39,8 +42,31 @@
 
 BEGIN_NCBI_SCOPE
 
-const CAlignShadow::TCoord g_UndefCoord 
-    = numeric_limits<CAlignShadow::TCoord>::max();
+namespace {
+
+    const CAlignShadow::TCoord g_UndefCoord (
+        numeric_limits<CAlignShadow::TCoord>::max());
+
+    typedef pair<objects::ENa_strand, objects::ENa_strand> TStrands;
+}
+
+TStrands RetrieveStdStrands(const objects::CSeq_align& seq_align)
+{
+    USING_SCOPE(objects);
+
+    const CSeq_align::TSegs::TStd & std_list (seq_align.GetSegs().GetStd());
+    const CStd_seg & stdseg (*(std_list.front()));
+    const CStd_seg::TLoc & locs (stdseg.GetLoc());
+
+    TStrands rv (eNa_strand_unknown, eNa_strand_unknown);
+    const CSeq_interval & qinterval (locs[0]->GetInt());
+    const CSeq_interval & sinterval (locs[1]->GetInt());
+
+    rv = TStrands(qinterval.GetStrand(), sinterval.GetStrand());
+
+    return rv;
+}
+
 
 CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcript)
 {
@@ -51,88 +77,79 @@ CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcrip
                    "Pairwise seq-align required to init align-shadow");
     }
 
-    if (seq_align.GetSegs().IsDenseg() == false) {
+    const bool is_denseg (seq_align.GetSegs().IsDenseg());
+    const bool is_stdseg (seq_align.GetSegs().IsStd());
+    if(!is_denseg && !is_stdseg) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   "Must be a dense-seg to init align-shadow");
-    }
-
-    const CDense_seg &ds = seq_align.GetSegs().GetDenseg();
-    char query_strand = 0, subj_strand = 0;
-    if(ds.CanGetStrands()) {
-
-        const CDense_seg::TStrands& strands = ds.GetStrands();
-
-        if(strands.size() >= 2) {
-            if(strands[0] == eNa_strand_plus || strands[0] == eNa_strand_unknown) {
-                query_strand = '+';
-            }
-            else if(strands[0] == eNa_strand_minus) {
-                query_strand = '-';
-            }
-            if(strands[1] == eNa_strand_plus || strands[1] == eNa_strand_unknown) {
-                subj_strand = '+';
-            }
-            else if(strands[1] == eNa_strand_minus) {
-                subj_strand = '-';
-            }
-        }
-        else if(strands.size() == 0) {
-            query_strand = subj_strand = '+';
-        }
-    }
-    else {
-        query_strand = subj_strand = '+';
-    }
-
-    if(query_strand == 0 || subj_strand == 0) {
-        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
-                   "Unexpected strand found when initializing "
-                   "align-shadow from dense-seg");
+                   "Must be a dense-seg or std_seg to init align-shadow");
     }
 
     m_Id.first.Reset(&seq_align.GetSeq_id(0));
     m_Id.second.Reset(&seq_align.GetSeq_id(1));
 
-    if(query_strand == '+') {
-        m_Box[0] = seq_align.GetSeqStart(0);
-        m_Box[1] = seq_align.GetSeqStop(0);
+    ENa_strand qstrand (eNa_strand_unknown);
+    ENa_strand sstrand (eNa_strand_unknown);
+    
+    if(is_denseg) {
+        qstrand = seq_align.GetSeqStrand(0);
+        sstrand = seq_align.GetSeqStrand(1);
     }
     else {
+        const TStrands strands (RetrieveStdStrands(seq_align));
+        qstrand = strands.first;
+        sstrand = strands.second;
+    }
+
+    if(qstrand == eNa_strand_minus) {
         m_Box[1] = seq_align.GetSeqStart(0);
         m_Box[0] = seq_align.GetSeqStop(0);
     }
-
-    if(subj_strand == '+') {
-        m_Box[2] = seq_align.GetSeqStart(1);
-        m_Box[3] = seq_align.GetSeqStop(1);
-    }
     else {
+        m_Box[0] = seq_align.GetSeqStart(0);
+        m_Box[1] = seq_align.GetSeqStop(0);
+    }
+        
+    if(sstrand == eNa_strand_minus) {
         m_Box[3] = seq_align.GetSeqStart(1);
         m_Box[2] = seq_align.GetSeqStop(1);
+    }
+    else {
+        m_Box[2] = seq_align.GetSeqStart(1);
+        m_Box[3] = seq_align.GetSeqStop(1);
     }
 
     if(save_xcript) {
 
-        // compile edit transcript treating diags as matches
-        const CDense_seg::TStarts& starts = ds.GetStarts();
-        const CDense_seg::TLens& lens = ds.GetLens();
-        size_t i = 0;
-        ITERATE(CDense_seg::TLens, ii_lens, lens) {
-            char c;
-            if(starts[i] < 0) {
-                c = 'I';
+        if(is_denseg) {
+
+            // compile edit transcript treating diags as matches
+            const CDense_seg & ds (seq_align.GetSegs().GetDenseg());
+            const CDense_seg::TStarts& starts (ds.GetStarts());
+            const CDense_seg::TLens& lens (ds.GetLens());
+            size_t i (0);
+            ITERATE(CDense_seg::TLens, ii_lens, lens) {
+                char c;
+                if(starts[i] < 0) {
+                    c = 'I';
+                }
+                else if(starts[i+1] < 0) {
+                    c = 'D';
+                }
+                else {
+                    c = 'M';
+                }
+                m_Transcript.push_back(c);
+                if(*ii_lens > 1) {
+                    m_Transcript.append(NStr::IntToString(*ii_lens));
+                }
+                i += 2;
             }
-            else if(starts[i+1] < 0) {
-                c = 'D';
-            }
-            else {
-                c = 'M';
-            }
-            m_Transcript.push_back(c);
-            if(*ii_lens > 1) {
-                m_Transcript.append(NStr::IntToString(*ii_lens));
-            }
-            i += 2;
+        }
+        else {
+            NCBI_THROW(CAlgoAlignUtilException,
+                       eInternal,
+                       "CAlignShadow()::CAlignShadow(): "
+                       "save_xcript mode not yet implemented");           
         }
     }
 }

@@ -32,7 +32,10 @@
 #include <ncbi_pch.hpp>
 #include <algo/align/util/blast_tabular.hpp>
 #include <algo/align/util/algo_align_util_exceptions.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqalign/Std_seg.hpp>
 #include <objects/general/Object_id.hpp>
 #include <corelib/ncbiutil.hpp>
 
@@ -48,34 +51,148 @@ USING_SCOPE(objects);
 CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
     TParent(seq_align, save_xcript)
 {
-    const CDense_seg &ds = seq_align.GetSegs().GetDenseg();
-    const CDense_seg::TLens& lens = ds.GetLens();
-    const CDense_seg::TStarts& starts = ds.GetStarts();
-    TCoord spaces = 0, gaps = 0, aln_len = 0;
-    for(size_t i = 0, dim = lens.size(); i < dim; ++i) {
-        if(starts[2*i] == -1 || starts[2*i+1] == -1) {
-            ++gaps;
-            spaces += lens[i];
-        }
-        aln_len += lens[i];
-    }
+    const CSeq_align::TSegs & seq_align_segs (seq_align.GetSegs());
 
-    SetLength(aln_len);
-    SetGaps(gaps);
+    TCoord spaces (0), gaps (0), aln_len (0);
+    if(seq_align_segs.IsDenseg()) {
+
+        // assume Megablast alignments
+
+        const CDense_seg & ds (seq_align_segs.GetDenseg());
+        const CDense_seg::TLens& lens (ds.GetLens());
+        const CDense_seg::TStarts& starts (ds.GetStarts());
+        for(size_t i (0), dim = lens.size(); i < dim; ++i) {
+            if(starts[2*i] == -1 || starts[2*i+1] == -1) {
+                ++gaps;
+                spaces += lens[i];
+            }
+            aln_len += lens[i];
+        }
+        
+        double score;
+        if(seq_align.GetNamedScore("bit_score", score) == false) {
+            score = 2.f * aln_len;
+        }
+        SetScore(float(score));
+    }
+    else {
+
+        // assume BlastX alignments
+
+        const CSeq_align::TSegs::TStd & std_segs (seq_align_segs.GetStd());
+        size_t k (0);
+        TSeqPos qprev (0), sprev (0);
+        ITERATE(CSeq_align::TSegs::TStd, ii, std_segs) {
+
+            const CStd_seg & seg (**ii);
+            const CStd_seg::TLoc & locs (seg.GetLoc());
+
+            const CSeq_loc & loc_query (*locs[0]);
+            TSeqPos qmin (TSeqPos(-1));
+            TSeqPos qmax (TSeqPos(-1));
+            CConstRef<CSeq_interval> qinterval (new CSeq_interval);
+            if(loc_query.IsInt()) {
+                qinterval.Reset(&loc_query.GetInt());
+                qmin = qinterval->GetFrom();
+                qmax = qinterval->GetTo();
+            }
+
+            const CSeq_loc & loc_subj (*locs[1]);
+            TSeqPos smin (TSeqPos(-1));
+            TSeqPos smax (TSeqPos(-1));
+            CConstRef<CSeq_interval> sinterval (new CSeq_interval);
+            if(loc_subj.IsInt()) {
+                sinterval.Reset(&loc_subj.GetInt());
+                smin = sinterval->GetFrom();
+                smax = sinterval->GetTo();
+            }
+
+            if(k++) {
+
+                TSeqPos qdelta (0);
+                if(loc_query.IsEmpty()) {
+                    ++gaps;
+                }
+                else {
+                    if(qinterval->GetStrand() == eNa_strand_minus) {
+                        qdelta = qprev - qmax - 1;
+                        qprev = qmin;
+                    }
+                    else if (qinterval->GetStrand() == eNa_strand_plus) {
+                        qdelta = qmin - qprev - 1;
+                        qprev = qmax;
+                    }
+                    else {
+                        NCBI_THROW(CException, eUnknown,
+                                   "Unexpected query strand when parsing "
+                                   "blastx alignments");
+                    }
+
+                    if(qdelta > 0) {
+                        if(qdelta % 3) {
+                            NCBI_THROW(CException, eUnknown,
+                                       "Unexpected nuc gap size when parsing "
+                                       "blastx alignments");
+                        }
+
+                        spaces += qdelta / 3;
+                    }
+                }
+
+                TSeqPos sdelta (0);
+                if(loc_subj.IsEmpty()) {
+                    ++gaps;
+                    aln_len += (qmax - qmin + 1) / 3;
+                }
+                else {
+                    if(sinterval->GetStrand() == eNa_strand_unknown) {
+                        sdelta = smin - sprev - 1;
+                        sprev = smax;
+                    }
+                    else {
+                        NCBI_THROW(CAlgoAlignUtilException, eInternal,
+                                   "Unexpected subj strand when parsing "
+                                   "blastx alignments");
+                    }
+
+                    if(sdelta > 0) {
+                        spaces += sdelta;
+                    }
+
+                    aln_len += smax - smin + 1;
+                }
+
+                if(qdelta > 0 && sdelta > 0) {
+                    NCBI_THROW(CAlgoAlignUtilException, eInternal,
+                               "Simultaneous gaps in both sequences not expected "
+                               "in blastx alignments");
+                }
+            }
+            else {
+
+                // first segment
+                qprev = (qinterval->GetStrand() == eNa_strand_minus)? qmin: qmax;
+                aln_len += smax -smin + 1;
+                sprev = smax;;
+            }
+        }
+
+        double score;
+        if(seq_align.GetNamedScore("bit_score", score) == false) {
+            score = 0;
+        }
+        SetScore(float(score));
+    }
 
     double matches;
     if(seq_align.GetNamedScore("num_ident", matches) == false) {
-        matches = aln_len - spaces; // just an estimate
+        matches = aln_len - spaces; // rough estimate
     }
-    SetIdentity(float(matches/aln_len));
+    SetIdentity(float(matches / aln_len));
 
+    SetLength(aln_len);
+    SetGaps(gaps);
     SetMismatches(aln_len - spaces - TCoord(matches));
-
-    double score;
-    if(seq_align.GetNamedScore("bit_score", score) == false) {
-        score = 2.f * aln_len;
-    }
-    SetScore(float(score));
 
     double evalue;
     if(seq_align.GetNamedScore("e_value", evalue) == false) {
