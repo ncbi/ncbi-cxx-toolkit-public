@@ -229,7 +229,7 @@ inline
 bool SAlignment_Segment::SAlignment_Row::
 SameStrand(const SAlignment_Row& r) const
 {
-    return m_IsSetStrand  &&  SameOrientation(m_Strand, r.m_Strand);
+    return SameOrientation(m_Strand, r.m_Strand);
 }
 
 
