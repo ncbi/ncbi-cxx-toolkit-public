@@ -1,0 +1,5 @@
+#DTD_PROJ = unimod
+XSD_PROJ = unimod
+APP_PROJ = test_unimod update_omssamod
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
