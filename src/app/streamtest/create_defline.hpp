@@ -70,6 +70,10 @@ private:
         bool virus_or_phage,
         bool wgs_suffix
     );
+    CConstRef<CSeq_feat> x_GetLongestProtein (void);
+    CConstRef<CGene_ref> x_GetGeneRefViaCDS (void);
+    bool x_HasSourceFeats (void);
+    CConstRef<CBioSource> x_GetSourceFeatViaCDS (void);
 
     string x_TitleFromBioSrc (void);
     string x_TitleFromNC (void);
@@ -918,15 +922,81 @@ string CDeflineGenerator::x_TitleFromPDB (void)
 }
 
 // generate title for protein
-string CDeflineGenerator::x_TitleFromProtein (void)
+CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (void)
 
 {
-    CConstRef<CProt_ref> prot;
-    CConstRef<CSeq_feat> cds_feat;
-    CConstRef<CSeq_loc>  cds_loc;
-    CConstRef<CGene_ref> gene;
-    string               locus_tag;
-    string               result;
+    bool                  go_on = true;
+    TSeqPos               longest = 0;
+    CProt_ref::EProcessed bestprocessed = CProt_ref::eProcessed_not_set;
+    CProt_ref::EProcessed processed;
+    CConstRef<CProt_ref>  prot;
+    CConstRef<CSeq_feat>  prot_feat;
+    CSeq_entry*           se;
+    TSeqPos               seq_len = UINT_MAX;
+
+    if (m_bioseq.IsSetInst ()) {
+        const CSeq_inst& inst = m_bioseq.GetInst ();
+        if (inst.IsSetLength ()) {
+            seq_len = inst.GetLength ();
+        }
+    }
+    
+    se = m_bioseq.GetParentEntry();
+
+    while (se && go_on) {
+        const CSeq_entry& entry = *se;
+        FOR_EACH_ANNOT_ON_SEQENTRY (sa_itr, entry) {
+            const CSeq_annot& annot = **sa_itr;
+            FOR_EACH_FEATURE_ON_ANNOT (sf_itr, annot) {
+                const CSeq_feat& feat = **sf_itr;
+                if (! feat.IsSetData ()) continue;
+                const CSeqFeatData& sfdata = feat.GetData ();
+                if (! sfdata.IsProt ()) continue;
+                const CProt_ref& prp = sfdata.GetProt();
+                processed = CProt_ref::eProcessed_not_set;
+                if (prp.IsSetProcessed()) {
+                    processed = prp.GetProcessed();
+                }
+                if (! feat.IsSetLocation ()) continue;
+                const CSeq_loc& loc = feat.GetLocation ();
+                TSeqPos prot_length = GetLength (loc, &m_scope);
+                if (prot_length > longest) {
+                    prot_feat = *sf_itr;
+                    longest = prot_length;
+                    bestprocessed = processed;
+                } else if (prot_length == longest) {
+                    // unprocessed 0 preferred over preprotein 1 preferred over mat peptide 2
+                    if (processed < bestprocessed) {
+                        prot_feat = *sf_itr;
+                        longest = prot_length;
+                        bestprocessed = processed;
+                    }
+                }
+            }
+        }
+
+        if (longest == seq_len && prot_feat) return prot_feat;
+
+        se = se->GetParentEntry();
+
+        go_on = false;
+        if (se) {
+            if (se->IsSet ()) {
+                const CBioseq_set& bss = se->GetSet ();
+                if (bss.IsSetClass ()) {
+                    CBioseq_set::EClass bss_class = bss.GetClass ();
+                    if (bss_class == CBioseq_set::eClass_parts ||
+                        bss_class == CBioseq_set::eClass_segset) {
+                        go_on = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if (prot_feat) {
+        return prot_feat;
+    }
 
     // !!! NOTE CALL TO OBJECT MANAGER !!!
     const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
@@ -934,27 +1004,146 @@ string CDeflineGenerator::x_TitleFromProtein (void)
     CSeq_loc everywhere;
     everywhere.SetWhole().Assign(*hnd.GetSeqId());
 
-    {{
-        CConstRef<CSeq_feat> prot_feat
-            = GetBestOverlappingFeat (everywhere, CSeqFeatData::e_Prot,
-                                      eOverlap_Contained, m_scope);
-        if (prot_feat) {
-            prot = &prot_feat->GetData().GetProt();
-        }
-    }}
+    prot_feat = GetBestOverlappingFeat (everywhere, CSeqFeatData::e_Prot,
+                                        eOverlap_Contained, m_scope);
 
-    {{
-        cds_feat = GetCDSForProduct (hnd);
-        if (cds_feat) {
-            cds_loc = &cds_feat->GetLocation();
-        }
-    }}
+    if (prot_feat) {
+        return prot_feat;
+    }
 
-    if (cds_loc) {
-        CConstRef<CSeq_feat> gene_feat = GetOverlappingGene (*cds_loc, m_scope);
-        if (gene_feat) {
-            gene = &gene_feat->GetData().GetGene();
+    return CConstRef<CSeq_feat> ();
+}
+
+CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (void)
+
+{
+    CConstRef<CSeq_feat> cds_feat;
+    CConstRef<CSeq_loc>  cds_loc;
+    CConstRef<CSeq_feat> gene_feat;
+    CConstRef<CGene_ref> gene_ref;
+
+    // !!! NOTE CALL TO OBJECT MANAGER !!!
+    const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
+
+    cds_feat = GetCDSForProduct (hnd);
+
+    if (cds_feat) {
+        const CSeq_feat& feat = (*cds_feat);
+        FOR_EACH_SEQFEATXREF_ON_FEATURE (xf_itr, feat) {
+            const CSeqFeatXref& sfx = **xf_itr;
+            if (sfx.IsSetData()) {
+                const CSeqFeatData& sfd = sfx.GetData();
+                if (sfd.IsGene()) {
+                    gene_ref = &sfd.GetGene();
+                }
+            }
         }
+
+        if (gene_ref) {
+            return gene_ref;
+        }
+
+        cds_loc = &cds_feat->GetLocation();
+        if (cds_loc) {
+            gene_feat = GetOverlappingGene (*cds_loc, m_scope);
+            if (gene_feat) {
+                gene_ref = &gene_feat->GetData().GetGene();
+            }
+        }
+    }
+
+    if (gene_ref) {
+        return gene_ref;
+    }
+
+    return CConstRef<CGene_ref> ();
+}
+
+bool CDeflineGenerator::x_HasSourceFeats (void)
+
+{
+    CSeq_entry* se;
+    CSeq_entry* top;
+
+    se = m_bioseq.GetParentEntry();
+    top = se;
+
+    while (se) {
+        top = se;
+        se = se->GetParentEntry();
+    }
+
+    if (top) {
+        const CSeq_entry& entry = *top;
+        
+        VISIT_ALL_FEATURES_WITHIN_SEQENTRY (ft_itr, entry) {
+            const CSeq_feat& feat = *ft_itr;
+            if (feat.IsSetData()) {
+                const CSeqFeatData& sfd = feat.GetData();
+                if (sfd.IsBiosrc()) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+CConstRef<CBioSource> CDeflineGenerator::x_GetSourceFeatViaCDS (void)
+
+{
+    CConstRef<CSeq_feat>   cds_feat;
+    CConstRef<CSeq_loc>    cds_loc;
+    CConstRef<CBioSource>  src_ref;
+
+    // !!! NOTE CALL TO OBJECT MANAGER !!!
+    const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
+
+    cds_feat = GetCDSForProduct (hnd);
+
+    if (cds_feat) {
+        /*
+        const CSeq_feat& feat = *cds_feat;
+        */
+        cds_loc = &cds_feat->GetLocation();
+        if (cds_loc) {
+            CConstRef<CSeq_feat> src_feat = GetOverlappingSource (*cds_loc, m_scope);
+            if (src_feat) {
+                const CSeq_feat& feat = *src_feat;
+                if (feat.IsSetData()) {
+                    const CSeqFeatData& sfd = feat.GetData();
+                    if (sfd.IsBiosrc()) {
+                        src_ref = &sfd.GetBiosrc();
+                    }
+                }
+            }
+        }
+    }
+
+    if (src_ref) {
+        return src_ref;
+    }
+
+    return CConstRef<CBioSource> ();
+}
+
+
+string CDeflineGenerator::x_TitleFromProtein (void)
+
+{
+    CConstRef<CProt_ref>  prot;
+    CConstRef<CSeq_feat>  prot_feat;
+    CConstRef<CGene_ref>  gene;
+    CConstRef<CBioSource> src;
+    string                locus_tag;
+    string                result;
+
+    // gets longest protein on Bioseq, parts set, or seg set, even if not full-length
+    prot_feat = x_GetLongestProtein ();
+
+    if (prot_feat) {
+        prot = &prot_feat->GetData().GetProt();
     }
 
     if (prot) {
@@ -971,28 +1160,11 @@ string CDeflineGenerator::x_TitleFromProtein (void)
         }
         if (! result.empty()) {
             if (NStr::CompareNocase (result, "hypothetical protein") == 0) {
-                bool check_gene_feat = true;
-                // first look for gene xref on CDS for locus_tag
-                if (cds_feat) {
-                    const CSeq_feat& feat = (*cds_feat);
-                    FOR_EACH_SEQFEATXREF_ON_FEATURE (xf_itr, feat) {
-                        const CSeqFeatXref& sfx = **xf_itr;
-                        if (sfx.IsSetData()) {
-                            const CSeqFeatData& sfd = sfx.GetData();
-                            if (sfd.IsGene()) {
-                                check_gene_feat = false;
-                                const CGene_ref& grp = sfd.GetGene();
-                                if (grp.IsSetLocus_tag()) {
-                                    locus_tag = grp.GetLocus_tag();
-                                }
-                            }
-                        }
-                    }
-                }
-                // otherwise check overlapping gene feature for locus_tag
-                if (check_gene_feat) {
-                    if (gene && gene->IsSetLocus_tag()) {
-                        locus_tag = gene->GetLocus_tag();
+                gene = x_GetGeneRefViaCDS ();
+                if (gene) {
+                    const CGene_ref& grp = *gene;
+                    if (grp.IsSetLocus_tag()) {
+                        locus_tag = grp.GetLocus_tag();
                     }
                 }
                 if (! locus_tag.empty()) {
@@ -1014,21 +1186,24 @@ string CDeflineGenerator::x_TitleFromProtein (void)
         }
     }
 
-    if (result.empty() && gene) {
-        const CGene_ref& grp = *gene;
-        if (grp.IsSetLocus()) {
-            result = grp.GetLocus();
-        }
-        if (result.empty()) {
-            FOR_EACH_SYNONYM_ON_GENE (syn_itr, grp) {
-                const string& str = *syn_itr;
-                result = str;
-                BREAK(syn_itr);
+    if (result.empty()) {
+        gene = x_GetGeneRefViaCDS ();
+        if (gene) {
+            const CGene_ref& grp = *gene;
+            if (grp.IsSetLocus()) {
+                result = grp.GetLocus();
             }
-        }
-        if (result.empty()) {
-            if (grp.IsSetDesc()) {
-                result = grp.GetDesc();
+            if (result.empty()) {
+                FOR_EACH_SYNONYM_ON_GENE (syn_itr, grp) {
+                    const string& str = *syn_itr;
+                    result = str;
+                    BREAK(syn_itr);
+                }
+            }
+            if (result.empty()) {
+                if (grp.IsSetDesc()) {
+                    result = grp.GetDesc();
+                }
             }
         }
         if (! result.empty()) {
@@ -1058,19 +1233,14 @@ string CDeflineGenerator::x_TitleFromProtein (void)
          NStr::CompareNocase (taxname, "artificial sequence") != 0 &&
          taxname.find ("vector") == NPOS &&
          taxname.find ("Vector") == NPOS)) {
-        if (cds_loc) {
-            CConstRef<CSeq_feat> src_feat = GetOverlappingSource (*cds_loc, m_scope);
-            if (src_feat) {
-                const CSeq_feat& feat = *src_feat;
-                if (feat.IsSetData()) {
-                    const CSeqFeatData& fdata = feat.GetData();
-                    if (fdata.IsBiosrc()) {
-                        const CBioSource& source = fdata.GetBiosrc();
-                        if (source.IsSetTaxname()) {
-                            const string& str = source.GetTaxname();
-                            taxname = str;
-                        }
-                    }
+
+        if (x_HasSourceFeats()) {
+            src = x_GetSourceFeatViaCDS ();
+            if (src) {
+                const CBioSource& source = *src;
+                if (source.IsSetTaxname()) {
+                    const string& str = source.GetTaxname();
+                    taxname = str;
                 }
             }
         }
