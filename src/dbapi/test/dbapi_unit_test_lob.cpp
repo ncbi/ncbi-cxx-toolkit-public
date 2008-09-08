@@ -1302,7 +1302,7 @@ BOOST_AUTO_TEST_CASE(Test_Iskhakov)
 
     try {
         CDBSetConnParams params(
-            "LINK_OS",
+            "LINK_OS_INTERNAL",
             "anyone",
             "allowed",
             125,
