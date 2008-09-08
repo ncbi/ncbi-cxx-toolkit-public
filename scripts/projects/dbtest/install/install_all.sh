@@ -28,6 +28,15 @@ PLATF_FILE_MASKS=(   "*linux*gizmo1*"
                      "*darwin*"
                      "*WorkShop*make1sx*"
                      "*WorkShop*make1ss*")
+declare -a PLATF_DIR_NAMES
+PLATF_DIR_NAMES=(    "Linux64"
+                     "Win32"
+                     "Linux32"
+                     "FreeBSD32"
+                     "PowerMAC"
+                     "SunOSx86"
+                     "SunOSSparc"
+                     "Irix")
 declare -a PLATF_SERVERS
 PLATF_SERVERS=(      "coremake2"
                      "coremake2"
@@ -64,6 +73,10 @@ fi
 cd "$PREPARE_DIR"
 
 
+ATTIC_DIR="/net/attic1/vol/vol1/release-repository/dbtest/builds/${VERSION}"
+mkdir -p "${ATTIC_DIR}"
+
+
 for ((i = 0; i < 7; ++i)); do
     echo "Deploying ${PLATF_FILE_MASKS[$i]}"
 
@@ -75,6 +88,8 @@ for ((i = 0; i < 7; ++i)); do
 
     PLATF_DIR="${PLATF_FILE%%.tar.gz}"
     mkdir -p "${PLATF_DIR}"
+    PLATF_ATTIC_DIR="${ATTIC_DIR}/${PLATF_DIR_NAMES[$i]}"
+    mkdir -p "${PLATF_ATTIC_DIR}"
     tar -zxf "${PLATF_FILE}" -C "${PLATF_DIR}" || exit 6
 
     EXE=""
@@ -83,14 +98,18 @@ for ((i = 0; i < 7; ++i)); do
     fi
 
     cat "${PLATF_DIR}/bin/test_stat_load${EXE}" | ssh coremake@"${PLATF_SERVERS[$i]}" "cat >${PLATF_NCBI_BIN_DIRS[$i]}/test_stat_load${EXE}" || exit 7
+    cp  "${PLATF_DIR}/bin/test_stat_load${EXE}" "${PLATF_ATTIC_DIR}/" || exit 8
 
 
     if [[ "${PLATF_FILE_MASKS[$i]}" == *"gizmo"* ]]; then
         echo "Deploying cgi interface"
 
-        cp "${PLATF_DIR}/bin/test_stat_ext.cgi" "${CGI_BIN_DIR}/" || exit 8
-        cp -R "${PLATF_DIR}/bin/xsl/" "${CGI_BIN_DIR}/" || exit 9
-        cp -R "${PLATF_DIR}/bin/overlib/" "${CGI_BIN_DIR}/" || exit 10
+        cp "${PLATF_DIR}/bin/test_stat_ext.cgi" "${CGI_BIN_DIR}/" || exit 9
+        cp "${PLATF_DIR}/bin/test_stat_ext.cgi" "${PLATF_ATTIC_DIR}/" || exit 10
+        cp -R "${PLATF_DIR}/bin/xsl/" "${CGI_BIN_DIR}/" || exit 11
+        cp -R "${PLATF_DIR}/bin/xsl/" "${PLATF_ATTIC_DIR}/" || exit 12
+        cp -R "${PLATF_DIR}/bin/overlib/" "${CGI_BIN_DIR}/" || exit 13
+        cp -R "${PLATF_DIR}/bin/overlib/" "${PLATF_ATTIC_DIR}/" || exit 14
 
         touch "${CGI_BIN_DIR}/.sink_subtree"
     fi
@@ -101,7 +120,7 @@ done
 
 echo "Going to cruncher"
 
-ssh coremake@cruncher "bash -s" <<EOF || exit 11
+ssh coremake@cruncher "bash -s" <<EOF || exit 15
 
 mkdir -p "$TMP_DIR"
 cd "$TMP_DIR" || exit 1
@@ -113,8 +132,11 @@ gmake -j 5 || exit 4
 for i in \`find ./c++/MIPSpro73-ReleaseDLL64/lib/ -name "*.so" | egrep -v "odbc_ftds64|sybdb_ftds64|test_boost|test_mt|xcgi|xfcgi|xthrserv"\`; do
     cp "\$i" "\$NCBI/bin/_production/CPPCORE/" || exit 4
 done
+
 cp "./c++/MIPSpro73-ReleaseDLL64/bin/test_stat_load" "\$NCBI/bin/_production/CPPCORE/" || exit 5
-cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "\$NCBI/bin/_production/CPPCORE/" || exit 6
+cp "./c++/MIPSpro73-ReleaseDLL64/bin/test_stat_load" "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}" || exit 6
+cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "\$NCBI/bin/_production/CPPCORE/" || exit 7
+cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}" || exit 8
 
 cd
 rm -rf "$TMP_DIR"
