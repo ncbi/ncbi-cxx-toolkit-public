@@ -238,6 +238,16 @@ bool CBioseq::IsAa(void) const
     return GetInst ().IsAa ();
 }
 
+bool CBioseq::IsSetLength(void) const
+{
+    return GetInst ().IsSetLength ();
+}
+
+TSeqPos CBioseq::GetLength(void) const
+{
+    return GetInst ().GetLength ();
+}
+
 void CBioseq::PackAsDeltaSeq(void)
 {
     CSeq_inst& inst = SetInst();

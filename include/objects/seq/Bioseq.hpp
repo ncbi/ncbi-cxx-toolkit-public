@@ -113,6 +113,10 @@ public:
     bool IsNa(void) const;
     bool IsAa(void) const;
 
+    // convenience functions for access to Bioseq length
+    bool IsSetLength(void) const;
+    TSeqPos GetLength(void) const;
+
     /// Convert a raw nucleotide sequence with occasional ambiguities
     /// or gaps into a tighter (but somewhat more complex) delta-seq
     /// representation.
