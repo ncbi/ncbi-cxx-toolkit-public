@@ -128,6 +128,36 @@ const CSeq_descr& CSeq_entry::GetDescr(void) const
 }
 
 
+bool CSeq_entry::IsSetAnnot(void) const
+{
+    switch ( Which() ) {
+    case e_Seq:
+        return (GetSeq().IsSetAnnot());
+    case e_Set:
+        return (GetSet().IsSetAnnot());
+    default:
+        break;
+    }
+
+    return false;
+}
+
+const CSeq_entry::TAnnot& CSeq_entry::GetAnnot(void) const
+{
+    switch ( Which() ) {
+    case e_Seq:
+        return (GetSeq().GetAnnot());
+    case e_Set:
+        return (GetSet().GetAnnot());
+    default:
+      NCBI_THROW(CSerialException, eNotImplemented,
+                 "CSeq_entry::GetAnnot: unsupported entry type "
+                 + SelectionName(Which()));
+    }
+}
+
+
+
 // Implemented here to prevent CBioseq dependency on CSeq_entry
 CConstRef<CSeqdesc> CBioseq::GetClosestDescriptor (CSeqdesc::E_Choice choice, int* level) const
 {

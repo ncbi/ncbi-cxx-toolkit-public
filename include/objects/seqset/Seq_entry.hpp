@@ -49,10 +49,12 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CSeq_loc;
 class CSeq_descr;
+class CSeq_annot;
 
 class NCBI_SEQSET_EXPORT CSeq_entry : public CSeq_entry_Base, public CSerialUserOp
 {
     typedef CSeq_entry_Base Tparent;
+    typedef list< CRef< CSeq_annot > > TAnnot;
 public:
     // constructor
     CSeq_entry(void);
@@ -75,6 +77,10 @@ public:
     // convenience functions to get descriptor chain from underlying Bioseq or Bioseq-set
     bool IsSetDescr(void) const;
     const CSeq_descr& GetDescr(void) const;
+
+    // convenience functions to get annot list from underlying Bioseq or Bioseq-set
+    bool IsSetAnnot(void) const;
+    const TAnnot& GetAnnot(void) const;
 
     enum ELabelType {
         eType,
