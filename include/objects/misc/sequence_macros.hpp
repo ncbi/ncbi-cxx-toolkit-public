@@ -376,6 +376,15 @@ NCBI_TEST_ITERATE((Seq).IsSetDescr(), \
     Iter, \
     (Seq).GetDescr().Get())
 
+/// FOR_EACH_ANNOT_ON_SEQENTRY
+// Takes const CSeq_entry& as input and makes iterator to const CSeq_annot&
+// Dereference with const CSeq_annot& annot = **iter;
+#define FOR_EACH_ANNOT_ON_SEQENTRY(Iter, Seq) \
+NCBI_TEST_ITERATE((Seq).IsSetAnnot(), \
+    CSeq_entry::TAnnot, \
+    Iter, \
+    (Seq).GetAnnot())
+
 
 /// CBioseq iterators
 
