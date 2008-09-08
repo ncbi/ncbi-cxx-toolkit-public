@@ -73,7 +73,8 @@ property xutil : {name:"xutil", path:"util"}
 property bdb : {name:"bdb", path:"bdb", exc:{"bdb_query_bison.tab.c", "bdb_query_lexer.cpp", "bdb_blobcache.cpp", "bdb_result_store.cpp"}}
 property xcache_bdb : {name:"xcache_bdb", path:"bdb", inc:{"bdb_blobcache.cpp"}}
 property xcache_netcache : {name:"xcache_netcache", path:"connect:services"}
-property xregexp : {name:"xregexp", path:"util:regexp", exc:{"pcreposix.c"}}
+property regexp : {name:"regexp", path:"util:regexp"}
+property xregexp : {name:"xregexp", path:"util:xregexp"}
 property ximage : {name:"ximage", path:"util:image"}
 property xcompress : {name:"xcompress", path:"util:compress"}
 property xbz2 : {name:"xbz2", path:"util:compress:bzip2", inc:{"blocksort.c", "compress.c", "huffman.c", "decompress.c", "crctable.c", "randtable.c", "bzlib.c"}}
@@ -273,7 +274,7 @@ property gui_view_validator : {name:"gui_view_validator", path:"gui:plugins:view
 (*****************************************************************************************)
 -- Organize everything into convinient packs --
 (*****************************************************************************************)
-property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, xbz2, tables, sequtil, creaders, xregexp, xutil, xconnect, xser}, dep:Z_LIBS, fworks:"CoreServices", req:true}
+property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, xbz2, tables, sequtil, creaders, regexp, xregexp, xutil, xconnect, xser}, dep:Z_LIBS, fworks:"CoreServices", req:true}
 property ncbi_web : {name:"ncbi_web", libs:{xhtml, xcgi}, dep:"ncbi_core", req:true}
 property ncbi_bdb : {name:"ncbi_bdb", libs:{bdb}, dep:"ncbi_core" & BDB_LIBS, req:true}
 property ncbi_xcache_bdb : {name:"ncbi_xcache_bdb", libs:{xcache_bdb}, dep:"ncbi_core ncbi_bdb db", req:true}
