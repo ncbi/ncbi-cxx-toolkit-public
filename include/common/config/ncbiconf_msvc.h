@@ -101,7 +101,6 @@ typedef   int   ssize_t;
 #define HAVE_INT64                      1
 #define HAVE_MALLOC_H                   1
 #define HAVE_MEMORY_H                   1
-#define HAVE_STDINT_H                   1
 #define HAVE_STDLIB_H                   1
 #define HAVE_STRING_H                   1
 
