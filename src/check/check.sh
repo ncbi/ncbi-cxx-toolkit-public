@@ -125,7 +125,9 @@ if test "$need_check" = "yes" ; then
    make="$1"
    builddir="$2"
    action="$3"
-   build_info="$builddir/../../build_info"
+   # build_info can be located in the current directory or 2 levels upper,
+   # depends on platform and arguments
+   test ! -f $build_info  &&  build_info="$builddir/../../build_info"
 
    shift
    shift
