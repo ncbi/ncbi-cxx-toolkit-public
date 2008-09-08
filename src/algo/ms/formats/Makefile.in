@@ -1,4 +1,4 @@
-SUB_PROJ = mzdata mzml mzxml pepxml
+SUB_PROJ = mzdata mzml mzxml pepxml unimod
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
