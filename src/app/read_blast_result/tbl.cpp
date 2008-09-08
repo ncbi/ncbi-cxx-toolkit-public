@@ -92,7 +92,7 @@ bool Ctbl_seg::Read(istream& in)
 
   char *c=buf;
   char *tok;
-  while(tok=strtok(c,"\t"))
+  while((tok=strtok(c,"\t")) !=NULL)
     {
     tabs.push_back(tok);
     c=NULL;
@@ -120,7 +120,7 @@ bool Ctbl_seg::Read(istream& in)
 // end of segment, rewind back
     tabs.clear();
     c=buf;
-    while(tok=strtok(c,"\t"))
+    while((tok=strtok(c,"\t"))!=NULL)
       {
       tabs.push_back(tok);
       c=NULL;

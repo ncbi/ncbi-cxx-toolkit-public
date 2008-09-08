@@ -83,7 +83,7 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
     IncreaseVerbosity();
     while(fgets(str, MAXSTR, fpt))
     {
-        if(s=strstr(str, "Query= "))
+        if((s=strstr(str, "Query= "))!=NULL)
 // new sequence, new blast "file"
         {
             ihit=0;
@@ -140,7 +140,7 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
             blastMap[qName].hits.resize(ihit+1);
             long gi =0; 
 	    list<long> sbjGIs;            /////////////////////
-            if(s=strstr(str,"gi|")) 
+            if((s=strstr(str,"gi|")) !=NULL)
                {
                gi=atoi(s+3);
                sbjGIs.push_back(gi);
@@ -157,7 +157,7 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
             {
                strcat( bigbuf, str );
                fgets(str, MAXSTR, fpt);
-               if(s=strstr(str,"gi|")) 
+               if((s=strstr(str,"gi|")) !=NULL)
                  {
                  gi=atoi(s+3);
                  sbjGIs.push_back(gi);
