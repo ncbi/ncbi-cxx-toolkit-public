@@ -564,7 +564,7 @@ EOF_launch
                     fi
 
                     # Write result also on the screen and into the log
-                    if grep -q NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
+                    if grep NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
                         echo "DIS --  \$x_cmd"
                         echo "DIS --  \$x_cmd" >> \$res_log
 
