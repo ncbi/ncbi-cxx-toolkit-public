@@ -194,9 +194,11 @@ int COmssa2pepxmlApplication::Run ( void )
     //PrintModInfo(Modset);
 
     outPepXML.ConvertFromOMSSA(inOMSSA, Modset, basename, newname);
+    
+    //CNcbiOfstream out(newname.c_str());
+    //out << MSerial_Xml << outPepXML;
 
     auto_ptr<CObjectOStream> oStream(CObjectOStream::Open(newname, eSerial_Xml));
-
     CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (oStream.get());
     xml_out->SetDefaultSchemaNamespace("http://regis-web.systemsbiology.net/pepXML");
     xml_out->SetReferenceSchema();

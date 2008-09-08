@@ -34,7 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
-#include <util/regexp.hpp>
+#include <util/xregexp/regexp.hpp>
 
 #include "pepxml.hpp"
 #include "omssa.hpp"
@@ -43,6 +43,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(omssa)
 
+const double PROTON_MASS = 1.007276466;
+
 char const * const kMolNames[5] = {
     "not set",
     "DNA",
@@ -50,6 +52,19 @@ char const * const kMolNames[5] = {
     "AA",
     "NA"
 };
+
+string CPepXML::ConvertDouble(double n) {
+    string val = NStr::DoubleToString(n,15);
+    int len = val.length();
+    while (NStr::EndsWith(val,"0")) {
+        val.erase(--len);
+    }
+    if (NStr::EndsWith(val,".")) {
+        val.append("0");
+    }
+    return val;
+}
+
 
 char CPepXML::ConvertAA(char in) {
     string out;
@@ -78,7 +93,6 @@ CRef<CModification_info> CPepXML::ConvertModifications(CRef<CMSHits> msHits, CRe
         char aa = pep[pos];
         double aaMass = m_aaMassMap.find(aa)->second;
         double mass = aaMass + mdiff;
-        string sMass = NStr::DoubleToString(mass, 6);
         string iMass = "[" + NStr::IntToString(static_cast<int>(mass)) + "]";
         
         modMap.insert(TAAModPair(pos,iMass));
@@ -87,21 +101,21 @@ CRef<CModification_info> CPepXML::ConvertModifications(CRef<CMSHits> msHits, CRe
 
         switch (type) {
         case eMSModType_modaa:
-            modaaMass->SetAttlist().SetPosition(NStr::IntToString(pos+1));
-            modaaMass->SetAttlist().SetMass(sMass);
+            modaaMass->SetAttlist().SetPosition(pos+1);
+            modaaMass->SetAttlist().SetMass(mass);
             modInfo->SetMod_aminoacid_mass().push_back(modaaMass);
             break;
         case eMSModType_modn:
         case eMSModType_modnaa:
         case eMSModType_modnp:
         case eMSModType_modnpaa:
-            modInfo->SetAttlist().SetMod_nterm_mass(sMass);
+            modInfo->SetAttlist().SetMod_nterm_mass(mass);
             break;
         case eMSModType_modc:
         case eMSModType_modcaa:
         case eMSModType_modcp:
         case eMSModType_modcpaa:
-            modInfo->SetAttlist().SetMod_cterm_mass(sMass);
+            modInfo->SetAttlist().SetMod_cterm_mass(mass);
             break;
         default:
             // perhaps some error handling here
@@ -120,8 +134,8 @@ CRef<CModification_info> CPepXML::ConvertModifications(CRef<CMSHits> msHits, CRe
             modPep.append(it->second);
         } else if (m_staticModSet.count(p)>0) {
             CRef<CMod_aminoacid_mass> modaaMass(new CMod_aminoacid_mass);
-            modaaMass->SetAttlist().SetPosition(NStr::IntToString(i+1));
-            string staticMass = NStr::DoubleToString(m_aaMassMap.find(p)->second,6);
+            modaaMass->SetAttlist().SetPosition(i+1);
+            double staticMass = m_aaMassMap.find(p)->second;
             modaaMass->SetAttlist().SetMass(staticMass);
             modInfo->SetMod_aminoacid_mass().push_back(modaaMass);
         }
@@ -146,8 +160,8 @@ void CPepXML::ConvertModSetting(CRef<CSearch_summary> sSum, CRef<CMSModSpecSet> 
             aaMod->SetAttlist().SetAminoacid(aaStr);
             double mdiff = MSSCALE2DBL(Modset->GetModMass(modnum));
             double aaMass = m_aaMassMap.find(aa)->second;
-            string mass = NStr::DoubleToString(aaMass + mdiff, 6);
-            aaMod->SetAttlist().SetMassdiff(NStr::DoubleToString(mdiff, 6));
+            double mass = aaMass + mdiff;
+            aaMod->SetAttlist().SetMassdiff(ConvertDouble(mdiff));
             aaMod->SetAttlist().SetMass(mass);
             if (fixed) {
                 aaMod->SetAttlist().SetVariable("N");
@@ -166,9 +180,8 @@ void CPepXML::ConvertModSetting(CRef<CSearch_summary> sSum, CRef<CMSModSpecSet> 
         }
     } else {
         CRef<CTerminal_modification> termMod(new CTerminal_modification);
-        double mdiff = MSSCALE2DBL(Modset->GetModMass(modnum));
-        string mass = NStr::DoubleToString(mdiff);
-        termMod->SetAttlist().SetMassdiff(mass);
+        double mass = MSSCALE2DBL(Modset->GetModMass(modnum));
+        termMod->SetAttlist().SetMassdiff(ConvertDouble(mass));
         termMod->SetAttlist().SetMass(mass);
         if (fixed) {
             termMod->SetAttlist().SetVariable("N");
@@ -236,8 +249,8 @@ void CPepXML::ConvertScanID(CRef<CSpectrum_query> sQuery, string SpecID, int que
     }
     
     sQuery->SetAttlist().SetSpectrum(specFile + "." + startScan + "." + stopScan + "." + dtaCharge);
-    sQuery->SetAttlist().SetStart_scan(startScan);
-    sQuery->SetAttlist().SetEnd_scan(stopScan);
+    sQuery->SetAttlist().SetStart_scan(NStr::StringToInt(startScan));
+    sQuery->SetAttlist().SetEnd_scan(NStr::StringToInt(stopScan));
 }
 
 string CPepXML::GetProteinName(CRef<CMSPepHit> pHit) {
@@ -249,6 +262,7 @@ string CPepXML::GetProteinName(CRef<CMSPepHit> pHit) {
     return pHit->GetDefline();
 }
 
+//CSearch_summary::C_Attlist::EAttlist_precursor_mass_type CPepXML::ConvertSearchType(MSSearchType::EMSSearchType val) {}
 
 void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, string basename, string newname) {
 
@@ -279,7 +293,19 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
 
     CRef<CSpecificity> specificity(new CSpecificity);
     specificity->SetAttlist().SetCut(cleave->GetCleaveAt());
-    specificity->SetAttlist().SetSense(cleave->GetCleaveSense()); 
+    switch (cleave->GetCleaveSense()[0]) {
+    case 'c':
+    case 'C':
+        specificity->SetAttlist().SetSense(CSpecificity::C_Attlist::eAttlist_sense_C);
+        break;
+    case 'n':
+    case 'N':
+        specificity->SetAttlist().SetSense(CSpecificity::C_Attlist::eAttlist_sense_N);
+        break;
+    default:
+        // Should be some sort of error here
+        cerr << "Hmm, a cleavage with no sense, how odd." << endl;
+    }
     if (cleave->GetCheckProline()) {
         specificity->SetAttlist().SetNo_cut("P");
     }
@@ -289,31 +315,54 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
     CRef<CSearch_summary> sSum(new CSearch_summary);
     //sSum->SetAttlist().SetBase_name(baseFile.GetName());
     sSum->SetAttlist().SetBase_name(basename);
-    sSum->SetAttlist().SetSearch_engine("OMSSA");
+    sSum->SetAttlist().SetSearch_engine(CSearch_summary::C_Attlist::eAttlist_search_engine_OMSSA);
     sSum->SetAttlist().SetOut_data_type("n/a");
     sSum->SetAttlist().SetOut_data("n/a");
 
     EMSSearchType searchType = static_cast <EMSSearchType>(inOMSSA.GetRequest().front()->GetSettings().GetPrecursorsearchtype());
-    string searchTypeName = kSearchType[searchType];
-    sSum->SetAttlist().SetPrecursor_mass_type(searchTypeName);
+    //string searchTypeName = kSearchType[searchType];
+    switch (searchType) {
+    case eMSSearchType_average:
+        sSum->SetAttlist().SetPrecursor_mass_type(CSearch_summary::C_Attlist::eAttlist_precursor_mass_type_average);
+        break;
+    case eMSSearchType_monoisotopic:
+    case eMSSearchType_monon15:
+    case eMSSearchType_exact:
+        sSum->SetAttlist().SetPrecursor_mass_type(CSearch_summary::C_Attlist::eAttlist_precursor_mass_type_monoisotopic);
+        break;
+    default:
+        // Should be some sort of error here
+        cerr << "Hmm, a typeless search, how odd." << endl;
+    }
+
 
     searchType = static_cast <EMSSearchType>(inOMSSA.GetRequest().front()->GetSettings().GetProductsearchtype());
-    searchTypeName = kSearchType[searchType];
-    sSum->SetAttlist().SetFragment_mass_type(searchTypeName);
-    //sSum->SetSearch_summary().SetAttlist().SetOut_data_type("out");
-    //sSum->SetSearch_summary().SetAttlist().SetOut_data("tgz");
-    sSum->SetAttlist().SetSearch_id("1"); // Should be count based upon search number
+    //searchTypeName = kSearchType[searchType];
+    switch (searchType) {
+    case eMSSearchType_average:
+        sSum->SetAttlist().SetFragment_mass_type(CSearch_summary::C_Attlist::eAttlist_fragment_mass_type_average);
+        break;
+    case eMSSearchType_monoisotopic:
+    case eMSSearchType_monon15:
+    case eMSSearchType_exact:
+        sSum->SetAttlist().SetFragment_mass_type(CSearch_summary::C_Attlist::eAttlist_fragment_mass_type_monoisotopic);
+        break;
+    default:
+        // Should be some sort of error here
+        cerr << "Hmm, a typeless search, how odd." << endl;
+    }
+    //sSum->SetAttlist().SetFragment_mass_type(searchTypeName);
+    sSum->SetAttlist().SetSearch_id(1); // Should be count based upon search number
 
     string dbname = inOMSSA.GetRequest().front()->GetSettings().GetDb();
-    string dbsize = NStr::IntToString(inOMSSA.GetResponse().front()->GetDbversion());
     string dbtype = kMolNames[inOMSSA.GetResponse().front()->GetBioseqs().Get().front()->GetSeq().GetInst().GetMol()];
     sSum->SetSearch_database().SetAttlist().SetLocal_path(dbname);
     sSum->SetSearch_database().SetAttlist().SetType(dbtype);
-    sSum->SetSearch_database().SetAttlist().SetSize_in_db_entries(dbsize);
+    sSum->SetSearch_database().SetAttlist().SetSize_in_db_entries(inOMSSA.GetResponse().front()->GetDbversion());
 
     sSum->SetEnzymatic_search_constraint().SetAttlist().SetEnzyme(enzymeName);
-    sSum->SetEnzymatic_search_constraint().SetAttlist().SetMax_num_internal_cleavages(NStr::IntToString(inOMSSA.GetRequest().front()->GetSettings().GetMissedcleave())); //check this
-    sSum->SetEnzymatic_search_constraint().SetAttlist().SetMin_number_termini(NStr::IntToString(cleave->GetCleaveNum())); //check this
+    sSum->SetEnzymatic_search_constraint().SetAttlist().SetMax_num_internal_cleavages(inOMSSA.GetRequest().front()->GetSettings().GetMissedcleave()); //check this
+    sSum->SetEnzymatic_search_constraint().SetAttlist().SetMin_number_termini(cleave->GetCleaveNum()); //check this
 
     // Fixed mods
     CMSSearchSettings::TFixed::const_iterator iterF;
@@ -355,10 +404,11 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
             //sQuery->SetAttlist().SetStart_scan(ParseScan(spectrumID, 1, query));
             //sQuery->SetAttlist().SetEnd_scan(ParseScan(spectrumID, 2, query));
 
-            double neutral_precursor_mass = ((*iHit)->GetMass()/scale)/charge;
-            sQuery->SetAttlist().SetPrecursor_neutral_mass(NStr::DoubleToString(neutral_precursor_mass));
-            sQuery->SetAttlist().SetAssumed_charge(NStr::IntToString(charge));
-            sQuery->SetAttlist().SetIndex(NStr::IntToString(index++));
+            //double neutral_precursor_mass = ((*iHit)->GetMass()/scale)/charge - (charge * PROTON_MASS);
+            double neutral_precursor_mass = (*iHit)->GetMass()/scale;
+            sQuery->SetAttlist().SetPrecursor_neutral_mass(neutral_precursor_mass);
+            sQuery->SetAttlist().SetAssumed_charge(charge);
+            sQuery->SetAttlist().SetIndex(index++);
 
             // Only one search_result per query (for now)
             CRef<CSearch_result> sResult(new CSearch_result);
@@ -372,7 +422,7 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
                 // Each set of MSHits is a search_hit
                 CRef<CSearch_hit> sHit(new CSearch_hit);
                 //if (prevEValue < (*iHit)->GetEvalue()) hitRank++; // This sets those hits with the same score to have the same rank 
-                sHit->SetAttlist().SetHit_rank(NStr::IntToString(hitRank));
+                sHit->SetAttlist().SetHit_rank(hitRank);
                 hitRank++; // Arbitrarily advances the rank, ever if the scores are the same
                 sHit->SetAttlist().SetPeptide((*iHit)->GetPepstring());
                 if((*iHit)->CanGetPepstart())
@@ -382,33 +432,31 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
 
                 sHit->SetAttlist().SetProtein(GetProteinName(*iPephit));
 
-                sHit->SetAttlist().SetNum_tot_proteins(NStr::IntToString((*iHit)->GetPephits().size()));
-                sHit->SetAttlist().SetNum_matched_ions(NStr::IntToString((*iHit)->GetMzhits().size()));
-                // skip calculating the theoretical number of ions for now
-                //int tot_num_ions = (*iHit)->GetPepstring().size() * inOMSSA.GetRequest().front()->GetSettings().GetIonstosearch().size();
-				int tot_num_ions = ((*iHit)->GetPepstring().length()-1) * 2;
-				sHit->SetAttlist().SetTot_num_ions(NStr::IntToString(tot_num_ions));
-                sHit->SetAttlist().SetCalc_neutral_pep_mass(NStr::DoubleToString((*iHit)->GetTheomass()/scale));
-                sHit->SetAttlist().SetMassdiff(NStr::DoubleToString(neutral_precursor_mass - ((*iHit)->GetTheomass())/scale));
+                sHit->SetAttlist().SetNum_tot_proteins((*iHit)->GetPephits().size());
+                sHit->SetAttlist().SetNum_matched_ions((*iHit)->GetMzhits().size());
+                int tot_num_ions = ((*iHit)->GetPepstring().length()-1) * 2;
+                sHit->SetAttlist().SetTot_num_ions(tot_num_ions);
+                sHit->SetAttlist().SetCalc_neutral_pep_mass((*iHit)->GetTheomass()/scale);
+                sHit->SetAttlist().SetMassdiff(ConvertDouble(neutral_precursor_mass - ((*iHit)->GetTheomass())/scale));
                 //sHit->SetSearch_hit().SetAttlist().SetNum_tol_term("42"); //skip
                 //sHit->SetSearch_hit().SetAttlist().SetNum_missed_cleavages("42"); //skip
-                sHit->SetAttlist().SetIs_rejected("0");
+                sHit->SetAttlist().SetIs_rejected(CSearch_hit::C_Attlist::eAttlist_is_rejected_0);
                 sHit->SetAttlist().SetProtein_descr((*iPephit)->GetDefline());
                 //sHit->SetSearch_hit().SetAttlist().SetCalc_pI("42"); //skip
                 //sHit->SetSearch_hit().SetAttlist().SetProtein_mw("42"); //skip
                 CRef<CSearch_score> pValue(new CSearch_score);
                 pValue->SetAttlist().SetName("pvalue");
-                pValue->SetAttlist().SetValue(NStr::DoubleToString((*iHit)->GetPvalue()));
+                pValue->SetAttlist().SetValue(ConvertDouble((*iHit)->GetPvalue()));
                 CRef<CSearch_score> eValue(new CSearch_score);
                 eValue->SetAttlist().SetName("expect");
-                eValue->SetAttlist().SetValue(NStr::DoubleToString((*iHit)->GetEvalue()));
+                eValue->SetAttlist().SetValue(ConvertDouble((*iHit)->GetEvalue()));
                 sHit->SetSearch_score().push_back(pValue);
                 sHit->SetSearch_score().push_back(eValue);
                 if ((*iHit)->CanGetScores()) {
                     ITERATE(CMSHits::TScores, iScore, (*iHit)->GetScores()) {
                         CRef<CSearch_score> score(new CSearch_score);
                         score->SetAttlist().SetName((*iScore)->GetName());
-                        score->SetAttlist().SetValue(NStr::DoubleToString((*iScore)->GetValue()));
+                        score->SetAttlist().SetValue(ConvertDouble((*iScore)->GetValue()));
                         sHit->SetSearch_score().push_back(score);
                     }
                 }

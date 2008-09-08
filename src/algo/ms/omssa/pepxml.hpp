@@ -65,12 +65,13 @@ private:
     CPepXML(const CPepXML& value);
     CPepXML& operator=(const CPepXML& value);
 
+    string ConvertDouble(double n);
     char ConvertAA(char in);
     CRef<CModification_info> ConvertModifications(CRef<CMSHits> msHits, CRef<CMSModSpecSet> Modset, set<int>& vModSet);
     void ConvertModSetting(CRef<CSearch_summary> sSum, CRef<CMSModSpecSet> Modset, int modnum, bool fixed);
     void ConvertScanID(CRef<CSpectrum_query> sQuery, string SpecID, int query, int charge);
     string GetProteinName(CRef<CMSPepHit> pHit);
-
+    
     typedef pair<char, double> TAminoAcidMassPair;
     typedef map<char, double> TAminoAcidMassMap;
     
