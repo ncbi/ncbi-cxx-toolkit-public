@@ -133,10 +133,12 @@ for i in \`find ./c++/MIPSpro73-ReleaseDLL64/lib/ -name "*.so" | egrep -v "odbc_
     cp "\$i" "\$NCBI/bin/_production/CPPCORE/" || exit 4
 done
 
+mkdir -p "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}/"
+
 cp "./c++/MIPSpro73-ReleaseDLL64/bin/test_stat_load" "\$NCBI/bin/_production/CPPCORE/" || exit 5
-cp "./c++/MIPSpro73-ReleaseDLL64/bin/test_stat_load" "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}" || exit 6
+cp "./c++/MIPSpro73-ReleaseDLL64/bin/test_stat_load" "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}/" || exit 6
 cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "\$NCBI/bin/_production/CPPCORE/" || exit 7
-cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}" || exit 8
+cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}/" || exit 8
 
 cd
 rm -rf "$TMP_DIR"
