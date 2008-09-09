@@ -72,7 +72,6 @@ private:
     );
     CConstRef<CSeq_feat> x_GetLongestProtein (void);
     CConstRef<CGene_ref> x_GetGeneRefViaCDS (void);
-    bool x_HasSourceFeats (void);
     CConstRef<CBioSource> x_GetSourceFeatViaCDS (void);
 
     string x_TitleFromBioSrc (void);
@@ -1059,37 +1058,6 @@ CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (void)
     return CConstRef<CGene_ref> ();
 }
 
-bool CDeflineGenerator::x_HasSourceFeats (void)
-
-{
-    CSeq_entry* se;
-    CSeq_entry* top;
-
-    se = m_bioseq.GetParentEntry();
-    top = se;
-
-    while (se) {
-        top = se;
-        se = se->GetParentEntry();
-    }
-
-    if (top) {
-        const CSeq_entry& entry = *top;
-        
-        VISIT_ALL_FEATURES_WITHIN_SEQENTRY (ft_itr, entry) {
-            const CSeq_feat& feat = *ft_itr;
-            if (feat.IsSetData()) {
-                const CSeqFeatData& sfd = feat.GetData();
-                if (sfd.IsBiosrc()) {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
 CConstRef<CBioSource> CDeflineGenerator::x_GetSourceFeatViaCDS (void)
 
 {
@@ -1234,14 +1202,12 @@ string CDeflineGenerator::x_TitleFromProtein (void)
          taxname.find ("vector") == NPOS &&
          taxname.find ("Vector") == NPOS)) {
 
-        if (x_HasSourceFeats()) {
-            src = x_GetSourceFeatViaCDS ();
-            if (src) {
-                const CBioSource& source = *src;
-                if (source.IsSetTaxname()) {
-                    const string& str = source.GetTaxname();
-                    taxname = str;
-                }
+        src = x_GetSourceFeatViaCDS ();
+        if (src) {
+            const CBioSource& source = *src;
+            if (source.IsSetTaxname()) {
+                const string& str = source.GetTaxname();
+                taxname = str;
             }
         }
     }
