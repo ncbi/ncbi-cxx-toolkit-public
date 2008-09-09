@@ -183,13 +183,20 @@ void CSparseKmerCounts::Reset(const blast::SSeqLoc& seq)
         }
 
         // Convert to sparse vector
-        int ind = 0;
-        while (ind < (int)(num_elements / kBitChunk + 1)) {
-            while (ind < (int)(num_elements / kBitChunk + 1)
-                   && used_entries[ind] == 0) {
+        size_t ind = 0;
+        Uint4 num_bit_chunks = num_elements / kBitChunk + 1;
+        while (ind < num_elements / kBitChunk + 1) {
+
+            // find next chunk with at least one non-zero count
+            while (ind < num_bit_chunks && used_entries[ind] == 0) {
                 ind++;
             }
 
+            if (ind == num_bit_chunks) {
+                break;
+            }
+
+            // find the set bit and get position in the counts vector
             for (Uint4 mask=0x80000000,j=0;used_entries[ind] != 0;
                  j++, mask>>=1) {
                 _ASSERT(j < 32);
