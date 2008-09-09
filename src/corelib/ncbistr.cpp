@@ -2234,7 +2234,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 break;
             }
 
-            if (score >= best_score) {
+            if (score >= best_score  &&  score_pos > pos0) {
                 best_pos   = score_pos;
                 best_score = score;
             }
