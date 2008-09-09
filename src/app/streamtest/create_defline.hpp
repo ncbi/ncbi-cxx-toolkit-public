@@ -397,7 +397,7 @@ void CDeflineGenerator::x_SetFlags (void)
                 if (m_pdb_compound.empty()) {
                     m_pdb_compound = str;
                     // take first, then break to skip remainder
-                    BREAK(cp_itr);
+                    break;
                 }
             }
         }
@@ -886,7 +886,7 @@ string CDeflineGenerator::x_TitleFromNR (void)
                 default:
                     break;
             }
-            BREAK(it);
+            break;
         }
     }
 
@@ -1122,7 +1122,7 @@ string CDeflineGenerator::x_TitleFromProtein (void)
             result += prefix;
             result += str;
             if (! m_allprotnames) {
-                BREAK(prp_itr);
+                break;
             }
             prefix = "; ";
         }
@@ -1149,7 +1149,7 @@ string CDeflineGenerator::x_TitleFromProtein (void)
             FOR_EACH_ACTIVITY_ON_PROT (act_itr, prp) {
                 const string& str = *act_itr;
                 result = str;
-                BREAK(act_itr);
+                break;
             }
         }
     }
@@ -1165,7 +1165,7 @@ string CDeflineGenerator::x_TitleFromProtein (void)
                 FOR_EACH_SYNONYM_ON_GENE (syn_itr, grp) {
                     const string& str = *syn_itr;
                     result = str;
-                    BREAK(syn_itr);
+                    break;
                 }
             }
             if (result.empty()) {
@@ -1267,7 +1267,7 @@ string CDeflineGenerator::x_TitleFromSegSeq (void)
             }
         }
 
-        BREAK(it);
+        break;
     }
 
     result = m_taxname;

@@ -106,8 +106,10 @@ public:
                 {
                     const string str = sid.AsFastaString();
                     gi_string = str;
-                    BREAK(sid_itr);
+                    break;
                 }
+                default:
+                    break;
             }
         }
 
@@ -125,7 +127,7 @@ public:
                 {
                     const string str = sid.AsFastaString();
                     accn_string = str;
-                    BREAK(sid_itr);
+                    break;
                 }
                  default:
                    break;
