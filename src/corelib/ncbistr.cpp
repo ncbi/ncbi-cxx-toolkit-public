@@ -2161,7 +2161,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
     }
 
     const string* pfx = prefix1 ? prefix1 : prefix;
-    SIZE_TYPE     pos = 0, len = str.size();
+    SIZE_TYPE     pos = 0, len = str.size(), nl_pos = 0;
     
     bool          is_html  = flags & fWrap_HTMLPre ? true : false;
     bool          do_flat = (flags & fWrap_FlatFile) != 0;
@@ -2182,9 +2182,11 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         SIZE_TYPE best_pos   = NPOS;
         EScore    best_score = eForced;
         SIZE_TYPE pos0       = pos;
-        SIZE_TYPE nl_pos     = str.find('\n', pos);
-        if (nl_pos == NPOS) {
-            nl_pos = len;
+        if (nl_pos <= pos) {
+            nl_pos = str.find('\n', pos);
+            if (nl_pos == NPOS) {
+                nl_pos = len;
+            }
         }
         if (column + (nl_pos-pos) <= width) {
             pos0 = nl_pos;
