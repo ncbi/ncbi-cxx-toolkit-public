@@ -194,7 +194,7 @@ if (! (Test)) {} else for (CTypeConstIterator<Type> Var (Cont); Var; ++Var)
 // Takes const CSeq_entry& as input and makes iterator to const CSeq_entry&
 // Dereference with const CSeq_entry& seqentry = *iter;
 #define VISIT_ALL_SEQENTRYS_WITHIN_SEQENTRY(Iter, Seq) \
-NCBI_SERIAL_TEST_EXPLORE((Seq).IsSetSeq_set(), \
+NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CSeq_entry, \
     Iter, \
     (Seq))
