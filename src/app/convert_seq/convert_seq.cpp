@@ -34,8 +34,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <util/arg_regexp.hpp>
 #include <util/static_map.hpp>
+#include <util/xregexp/arg_regexp.hpp>
 #include <serial/iterator.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
