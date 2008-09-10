@@ -104,6 +104,9 @@ public:
     ///
     /// @param col
     ///   Column number
+    /// 
+    /// @return 
+    ///   Max number of bytes needed to hold the returned data. 
     virtual int GetMaxSize (const CDBParamVariant& param) const = 0;
 
     /// Get name of column.
