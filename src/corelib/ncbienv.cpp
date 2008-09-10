@@ -160,6 +160,16 @@ void CNcbiEnvironment::Unset(const string& name)
 {
 #ifdef NCBI_OS_MSWIN
     Set(name, kEmptyStr);
+#elif defined(NCBI_OS_IRIX)
+    {{
+        char* p = getenv(name.c_str());
+        if (p) {
+            _ASSERT(p[-1] == '=');
+            p -= name.size() + 1;
+            _ASSERT( !memcmp(p, name.data(), name.size()) );
+            p[0] = '\0';
+        }
+    }}
 #else
     unsetenv(name.c_str());
 #endif
