@@ -294,6 +294,19 @@ bool CTestRegApp::TestApp_Init(void)
     m_Registry.EnumerateEntries(NcbiEmptyString, &entries);
     assert( entries.empty() );
 
+    // Test setting and deletion of environment variables
+    {{
+        const string kTestEnvVarName("HELLO");
+        const string kTestEnvVarValue("world");
+        CNcbiEnvironment env;
+        assert( env.Get(kTestEnvVarName) == kEmptyStr);
+        env.Set(kTestEnvVarName, kTestEnvVarValue);
+        assert( env.Get(kTestEnvVarName) == kTestEnvVarValue);
+        env.Unset(kTestEnvVarName);
+        assert( env.Get(kTestEnvVarName) == kEmptyStr);
+        env.Reset();
+    }}
+
     // Put some variables to test CNcbiEnvironment
     for (unsigned i = 0; i < s_NumThreads*100; i++) {
         string e = "TESTENV" + NStr::IntToString(i) + "=value";

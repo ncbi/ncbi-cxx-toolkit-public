@@ -133,6 +133,10 @@ public:
     /// This will throw an exception if setting the variable fails
     void Set(const string& name, const string& value);
 
+    /// Delete an environment variable by name
+    /// @param name environment variable name [in]
+    void Unset(const string& name);
+
 protected:
     /// Load value of specified environment variable.
     virtual string Load(const string& name) const;

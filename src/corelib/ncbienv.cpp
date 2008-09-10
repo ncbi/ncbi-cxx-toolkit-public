@@ -127,7 +127,6 @@ void CNcbiEnvironment::Enumerate(list<string>& names, const string& prefix)
     }
 }
 
-
 void CNcbiEnvironment::Set(const string& name, const string& value)
 {
 #ifdef NCBI_OS_MSWIN
@@ -157,6 +156,23 @@ void CNcbiEnvironment::Set(const string& name, const string& value)
 #endif
 }
 
+void CNcbiEnvironment::Unset(const string& name)
+{
+#ifdef NCBI_OS_MSWIN
+    Set(name, kEmptyStr);
+#else
+    unsetenv(name.c_str());
+#endif
+
+    CFastMutexGuard LOCK(m_CacheMutex);
+    TCache::iterator i = m_Cache.find(name);
+    if ( i != m_Cache.end() ) {
+        if ( i->second.ptr ) {
+            free(i->second.ptr);
+        }
+        m_Cache.erase(i);
+    }
+}
 
 string CNcbiEnvironment::Load(const string& name) const
 {
