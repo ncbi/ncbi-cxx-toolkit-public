@@ -519,19 +519,19 @@ void SMakeProjectT::AnalyzeMakeIn
     p = makein_contents.m_Contents.find("ASN_PROJ");
     if (p != makein_contents.m_Contents.end()) {
 
-        info->push_back(SMakeInInfo(SMakeInInfo::eAsn, p->second,
+        info->push_back(SMakeInInfo(SMakeInInfo::eASN, p->second,
             makein_contents.GetMakeType())); 
     }
     p = makein_contents.m_Contents.find("DTD_PROJ");
     if (p != makein_contents.m_Contents.end()) {
 
-        info->push_back(SMakeInInfo(SMakeInInfo::eAsn, p->second,
+        info->push_back(SMakeInInfo(SMakeInInfo::eDTD, p->second,
             makein_contents.GetMakeType())); 
     }
     p = makein_contents.m_Contents.find("XSD_PROJ");
     if (p != makein_contents.m_Contents.end()) {
 
-        info->push_back(SMakeInInfo(SMakeInInfo::eAsn, p->second,
+        info->push_back(SMakeInInfo(SMakeInInfo::eXSD, p->second,
             makein_contents.GetMakeType())); 
     }
 
@@ -1204,7 +1204,7 @@ CProjKey SAsnProjectT::DoCreate(const string& source_base_dir,
                                 const TFiles& makeapp, 
                                 const TFiles& makelib, 
                                 CProjectItemsTree* tree,
-                                EMakeFileType maketype)
+                                const SMakeProjectT::SMakeInInfo& makeinfo)
 {
     TAsnType asn_type = GetAsnProjectType(applib_mfilepath, makeapp, makelib);
     if (asn_type == eMultiple) {
@@ -1213,7 +1213,7 @@ CProjKey SAsnProjectT::DoCreate(const string& source_base_dir,
                                               applib_mfilepath,
                                               makeapp, 
                                               makelib, 
-                                              tree, maketype);
+                                              tree, makeinfo);
     }
     if(asn_type == eSingle) {
         return SAsnProjectSingleT::DoCreate(source_base_dir,
@@ -1221,7 +1221,7 @@ CProjKey SAsnProjectT::DoCreate(const string& source_base_dir,
                                               applib_mfilepath,
                                               makeapp, 
                                               makelib, 
-                                              tree, maketype);
+                                              tree, makeinfo);
     }
     return CProjKey();
 }
@@ -1259,8 +1259,9 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
                                       const TFiles& makeapp, 
                                       const TFiles& makelib, 
                                       CProjectItemsTree* tree,
-                                      EMakeFileType maketype)
+                                      const SMakeProjectT::SMakeInInfo& makeinfo)
 {
+    EMakeFileType maketype = makeinfo.m_MakeType;
     CProjItem::TProjType proj_type = 
         IsMakeLibFile( CDirEntry(applib_mfilepath).GetName()) ? CProjKey::eLib : CProjKey::eApp;
     
@@ -1288,12 +1289,24 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
 
     //Will process .asn or .dtd files
     string source_file_path = CDirEntry::ConcatPath(source_base_dir, proj_name);
-    if ( CDirEntry(source_file_path + ".asn").Exists() )
-        source_file_path += ".asn";
-    else if ( CDirEntry(source_file_path + ".dtd").Exists() )
-        source_file_path += ".dtd";
-    else if ( CDirEntry(source_file_path + ".xsd").Exists() )
-        source_file_path += ".xsd";
+    switch (makeinfo.m_Type) {
+    case SMakeProjectT::SMakeInInfo::eASN:
+        if ( CDirEntry(source_file_path + ".asn").Exists() )
+            source_file_path += ".asn";
+        break;
+    case SMakeProjectT::SMakeInInfo::eDTD:
+        if ( CDirEntry(source_file_path + ".dtd").Exists() )
+            source_file_path += ".dtd";
+        break;
+    case SMakeProjectT::SMakeInInfo::eXSD:
+        if ( CDirEntry(source_file_path + ".xsd").Exists() )
+            source_file_path += ".xsd";
+        break;
+    }
+    if ( !CDirEntry(source_file_path).Exists() ) {
+        LOG_POST(Error << "Data specification for ASN project not found: " + proj_id.Id());
+        return CProjKey();
+    }
 
     CDataToolGeneratedSrc data_tool_src;
     CDataToolGeneratedSrc::LoadFrom(source_file_path, &data_tool_src);
@@ -1311,8 +1324,9 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
                                         const TFiles& makeapp, 
                                         const TFiles& makelib, 
                                         CProjectItemsTree* tree,
-                                        EMakeFileType maketype)
+                                        const SMakeProjectT::SMakeInInfo& makeinfo)
 {
+    EMakeFileType maketype = makeinfo.m_MakeType;
     CProjItem::TProjType proj_type = 
         IsMakeLibFile( CDirEntry(applib_mfilepath).GetName()) ? CProjKey::eLib : CProjKey::eApp;
     

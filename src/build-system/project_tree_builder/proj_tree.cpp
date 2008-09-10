@@ -146,7 +146,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                         SAsnProjectT::DoCreate(source_base_dir, 
                                                proj_name, 
                                                applib_mfilepath, 
-                                               makeapp, makelib, tree, info.m_MakeType);
+                                               makeapp, makelib, tree, info);
                     } else {
                         SAppProjectT::DoCreate(source_base_dir, 
                                                proj_name, 
@@ -165,7 +165,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                         SAsnProjectT::DoCreate(source_base_dir, 
                                                proj_name, 
                                                applib_mfilepath, 
-                                               makeapp, makelib, tree, info.m_MakeType);
+                                               makeapp, makelib, tree, info);
                     } else {
                         SLibProjectT::DoCreate(source_base_dir, 
                                                proj_name, 
@@ -179,12 +179,14 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                                            applib_mfilepath, 
                                            makedll, tree, info.m_MakeType);
                 }
-                else if (info.m_Type == SMakeProjectT::SMakeInInfo::eAsn) {
+                else if (info.m_Type == SMakeProjectT::SMakeInInfo::eASN ||
+                         info.m_Type == SMakeProjectT::SMakeInInfo::eDTD ||
+                         info.m_Type == SMakeProjectT::SMakeInInfo::eXSD) {
 
                     SAsnProjectT::DoCreate(source_base_dir, 
                                            proj_name, 
                                            applib_mfilepath, 
-                                           makeapp, makelib, tree, info.m_MakeType);
+                                           makeapp, makelib, tree, info);
                 }
                 else if (info.m_Type == SMakeProjectT::SMakeInInfo::eMsvc) {
 

@@ -62,7 +62,9 @@ struct SMakeProjectT
             eApp,
             eLib,
             eDll,
-            eAsn,
+            eASN,
+            eDTD,
+            eXSD,
             eMsvc
         } TMakeinType;
 
@@ -210,7 +212,7 @@ struct SAsnProjectT : public SMakeProjectT
                              const TFiles&      makeapp, 
                              const TFiles&      makelib, 
                              CProjectItemsTree* tree,
-                             EMakeFileType      maketype);
+                             const SMakeProjectT::SMakeInInfo& makeinfo);
     
     enum TAsnType {
         eNoAsn,
@@ -240,7 +242,7 @@ struct SAsnProjectSingleT : public SAsnProjectT
                              const TFiles&      makeapp, 
                              const TFiles&      makelib, 
                              CProjectItemsTree* tree,
-                             EMakeFileType maketype);
+                             const SMakeProjectT::SMakeInInfo& makeinfo);
 };
 
 
@@ -260,7 +262,7 @@ struct SAsnProjectMultipleT : public SAsnProjectT
                              const TFiles&      makeapp, 
                              const TFiles&      makelib, 
                              CProjectItemsTree* tree,
-                             EMakeFileType maketype);
+                             const SMakeProjectT::SMakeInInfo& makeinfo);
 };
 
 
