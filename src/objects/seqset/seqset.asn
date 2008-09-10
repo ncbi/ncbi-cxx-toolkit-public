@@ -41,8 +41,10 @@ Bioseq-set ::= SEQUENCE {      -- just a collection
         pop-set (14) ,              -- population study
         phy-set (15) ,              -- phylogenetic study
         eco-set (16) ,              -- ecological sample study
-        gen-prod-set (17) ,         -- genomic products, chrom+mRNa+protein
+        gen-prod-set (17) ,         -- genomic products, chrom+mRNA+protein
         wgs-set (18) ,              -- whole genome shotgun project
+        named-annot (19) ,          -- named annotation set
+        named-annot-prod (20) ,     -- with instantiated mRNA+protein
         other (255) } DEFAULT not-set ,
     release VisibleString OPTIONAL ,
     date Date OPTIONAL ,
