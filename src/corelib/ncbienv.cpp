@@ -165,9 +165,8 @@ void CNcbiEnvironment::Unset(const string& name)
         char* p = getenv(name.c_str());
         if (p) {
             _ASSERT(p[-1] == '=');
-            p -= name.size() + 1;
-            _ASSERT( !memcmp(p, name.data(), name.size()) );
-            p[0] = '\0';
+            _ASSERT( !memcmp(p - name.size() - 1, name.data(), name.size()) );
+            p[-1] = '\0';
         }
     }}
 #else
