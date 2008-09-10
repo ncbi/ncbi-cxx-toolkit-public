@@ -1290,6 +1290,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Bit);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 1);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1303,6 +1304,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_TinyInt);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 1);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1316,6 +1318,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_SmallInt);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 2);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1329,6 +1332,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Int);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 4);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1343,7 +1347,28 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                     BOOST_CHECK(md);
 
                     EDB_Type curr_type = md->GetType(1);
-                    BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
+                    if (GetArgs().GetDriverName() == ftds_dblib_driver && 
+                            GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
+                        ) {
+                        BOOST_CHECK_EQUAL(curr_type, eDB_Double);
+                    } else {
+                        BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
+                    }
+
+                    if (GetArgs().GetDriverName() == ftds_dblib_driver && 
+                            GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
+                        ) {
+                        BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8);
+                    } else if (GetArgs().GetDriverName() == ftds8_driver ||
+                        (GetArgs().GetDriverName() == ftds_dblib_driver && 
+                            GetArgs().GetServerType() == CDBConnParams::eMSSqlServer)
+                        ) {
+                        BOOST_CHECK_EQUAL(md->GetMaxSize(1), 17);
+                    } else if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                        BOOST_CHECK_EQUAL(md->GetMaxSize(1), 38);
+                    } else {
+                        BOOST_CHECK_EQUAL(md->GetMaxSize(1), 35);
+                    }
 
                     DumpResults(auto_stmt.get());
                 }
@@ -1356,7 +1381,28 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                     BOOST_CHECK(md);
 
                     EDB_Type curr_type = md->GetType(1);
-                    BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
+                    if (GetArgs().GetDriverName() == ftds_dblib_driver && 
+                            GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
+                        ) {
+                        BOOST_CHECK_EQUAL(curr_type, eDB_Double);
+                    } else {
+                        BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
+                    }
+
+                    if (GetArgs().GetDriverName() == ftds_dblib_driver && 
+                            GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
+                        ) {
+                        BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8);
+                    } else if (GetArgs().GetDriverName() == ftds8_driver ||
+                        (GetArgs().GetDriverName() == ftds_dblib_driver && 
+                            GetArgs().GetServerType() == CDBConnParams::eMSSqlServer)
+                        ) {
+                        BOOST_CHECK_EQUAL(md->GetMaxSize(1), 17);
+                    } else if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                        BOOST_CHECK_EQUAL(md->GetMaxSize(1), 18);
+                    } else {
+                        BOOST_CHECK_EQUAL(md->GetMaxSize(1), 35);
+                    }
 
                     DumpResults(auto_stmt.get());
                 }
@@ -1385,6 +1431,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Float);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 4);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1398,6 +1445,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Double);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1411,6 +1459,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Float);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 4);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1425,6 +1474,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Double);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 2);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1439,6 +1489,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Double);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 2);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1452,6 +1503,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_SmallDateTime);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 4);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1464,7 +1516,12 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                BOOST_CHECK_EQUAL(curr_type, eDB_DateTime);
+                if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_SmallDateTime);
+                } else {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_DateTime);
+                }
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1477,20 +1534,47 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                BOOST_CHECK_EQUAL(curr_type, eDB_Char);
+                if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_Char);
+                } else {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
+                }
+
+                // BOOST_CHECK_EQUAL(md->GetMaxSize(1), 32);
 
                 DumpResults(auto_stmt.get());
             }
 
             // long char
-            {
+            // ftds_dblib_driver will crash in DumpResults().
+            if (GetArgs().GetDriverName() != ftds_dblib_driver) {
                 rs = auto_stmt->ExecuteQuery("select convert(char(8000), '12345')");
                 BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                BOOST_CHECK_EQUAL(curr_type, eDB_Char);
+                if (GetArgs().GetDriverName() == ftds_driver ||
+                    GetArgs().GetDriverName() == dblib_driver ||
+                    GetArgs().GetDriverName() == ftds_dblib_driver
+                    ) {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
+                } else if (GetArgs().GetDriverName() == ctlib_driver ||
+                    GetArgs().GetDriverName() == ftds8_driver ||
+                    GetArgs().GetDriverName() == ftds_odbc_driver
+                    ) {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_LongChar);
+                } else {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_Char);
+                }
+
+                if (GetArgs().GetDriverName() == dblib_driver ||
+                    GetArgs().GetDriverName() == ftds_dblib_driver
+                    ) {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 255);
+                } else {
+                    // BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8000);
+                }
 
                 DumpResults(auto_stmt.get());
             }
@@ -1504,6 +1588,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
+                // BOOST_CHECK_EQUAL(md->GetMaxSize(1), 32);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1516,7 +1601,12 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                BOOST_CHECK_EQUAL(curr_type, eDB_Char);
+                if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_Char);
+                } else {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
+                }
+                // BOOST_CHECK_EQUAL(md->GetMaxSize(1), 32);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1530,6 +1620,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
+                // BOOST_CHECK_EQUAL(md->GetMaxSize(1), 32);
 
                 DumpResults(auto_stmt.get());
             }
@@ -1542,20 +1633,49 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                BOOST_CHECK_EQUAL(curr_type, eDB_Binary);
+                if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_Binary);
+                } else {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_VarBinary);
+                }
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 32);
 
                 DumpResults(auto_stmt.get());
             }
 
             // long binary
-            {
+            // ftds_dblib_driver will crash in DumpResults.
+            if (GetArgs().GetDriverName() != ftds_dblib_driver) {
                 rs = auto_stmt->ExecuteQuery("select convert(binary(8000), '12345')");
                 BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                BOOST_CHECK_EQUAL(curr_type, eDB_Binary);
+                if ((GetArgs().GetDriverName() == ftds_driver && 
+                        GetArgs().GetServerType() == CDBConnParams::eMSSqlServer) ||
+                    GetArgs().GetDriverName() == dblib_driver ||
+                    GetArgs().GetDriverName() == ftds_dblib_driver
+                    ) {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_VarBinary);
+                } else if ((GetArgs().GetDriverName() == ftds_driver && 
+                        GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) ||
+                    GetArgs().GetDriverName() == ctlib_driver ||
+                    GetArgs().GetDriverName() == ftds8_driver ||
+                    GetArgs().GetDriverName() == ftds_odbc_driver
+                    ) {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_LongBinary);
+                } else {
+                    BOOST_CHECK_EQUAL(curr_type, eDB_Binary);
+                }
+
+                if (GetArgs().GetDriverName() == dblib_driver ||
+                    GetArgs().GetDriverName() == ftds_dblib_driver
+                    ) {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 255);
+                } else {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8000);
+                }
 
                 DumpResults(auto_stmt.get());
             }
@@ -1569,12 +1689,34 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_VarBinary);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 32);
 
                 DumpResults(auto_stmt.get());
             }
 
-            // text
+            // Explicitly set max LOB size ...
             {
+                I_DriverContext* drv_context = GetDS().GetDriverContext();
+
+                if ( drv_context == NULL ) {
+                    BOOST_FAIL("FATAL: Unable to load context for dbdriver " +
+                            GetArgs().GetDriverName());
+                }
+
+                drv_context->SetMaxTextImageSize( 0x7fffffff );
+            }
+
+            // Set text size manually ...
+            // SetMaxTextImageSize() method doesn't work in case of ctlib
+            // driver.
+            {
+                rs = auto_stmt->ExecuteQuery("set textsize 2147483647");
+                DumpResults(auto_stmt.get());
+            }
+
+            // text
+            // ftds_dblib_driver will crash in DumpResults.
+            if (GetArgs().GetDriverName() != ftds_dblib_driver) {
                 rs = auto_stmt->ExecuteQuery("select convert(text, '12345')");
                 BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
@@ -1582,12 +1724,14 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Text);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 2147483647);
 
                 DumpResults(auto_stmt.get());
             }
 
             // image
-            {
+            // ftds_dblib_driver will crash in DumpResults.
+            if (GetArgs().GetDriverName() != ftds_dblib_driver) {
                 rs = auto_stmt->ExecuteQuery("select convert(image, '12345')");
                 BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
@@ -1595,6 +1739,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Image);
+                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 2147483647);
 
                 DumpResults(auto_stmt.get());
             }
