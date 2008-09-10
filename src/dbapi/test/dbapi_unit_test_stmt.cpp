@@ -1304,8 +1304,11 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_TinyInt);
-                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 1);
-
+                if (GetArgs().GetDriverName() == odbc_driver) {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 3);
+                } else {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 1);
+                }
                 DumpResults(auto_stmt.get());
             }
 
@@ -1318,7 +1321,12 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_SmallInt);
-                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 2);
+
+                if (GetArgs().GetDriverName() == odbc_driver) {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 5);
+                } else {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 2);
+                }
 
                 DumpResults(auto_stmt.get());
             }
@@ -1332,7 +1340,12 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Int);
-                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 4);
+
+                if (GetArgs().GetDriverName() == odbc_driver) {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 10);
+                } else {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 4);
+                }
 
                 DumpResults(auto_stmt.get());
             }
@@ -1364,7 +1377,9 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                             GetArgs().GetServerType() == CDBConnParams::eMSSqlServer)
                         ) {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 17);
-                    } else if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                    } else if (GetArgs().GetDriverName() == ftds_odbc_driver ||
+                        GetArgs().GetDriverName() == odbc_driver
+                        ) {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 38);
                     } else {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 35);
@@ -1398,7 +1413,9 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                             GetArgs().GetServerType() == CDBConnParams::eMSSqlServer)
                         ) {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 17);
-                    } else if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                    } else if (GetArgs().GetDriverName() == ftds_odbc_driver ||
+                        GetArgs().GetDriverName() == odbc_driver
+                        ) {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 18);
                     } else {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 35);
@@ -1431,7 +1448,12 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Float);
-                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 4);
+
+                if (GetArgs().GetDriverName() == odbc_driver) {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 24);
+                } else {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 4);
+                }
 
                 DumpResults(auto_stmt.get());
             }
@@ -1445,7 +1467,12 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Double);
-                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8);
+
+                if (GetArgs().GetDriverName() == odbc_driver) {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 53);
+                } else {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8);
+                }
 
                 DumpResults(auto_stmt.get());
             }
@@ -1459,7 +1486,12 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Float);
-                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 4);
+
+                if (GetArgs().GetDriverName() == odbc_driver) {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 24);
+                } else {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 4);
+                }
 
                 DumpResults(auto_stmt.get());
             }
@@ -1503,7 +1535,12 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_SmallDateTime);
-                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 4);
+
+                if (GetArgs().GetDriverName() == odbc_driver) {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 16);
+                } else {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 4);
+                }
 
                 DumpResults(auto_stmt.get());
             }
@@ -1521,7 +1558,12 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 } else {
                     BOOST_CHECK_EQUAL(curr_type, eDB_DateTime);
                 }
-                BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8);
+
+                if (GetArgs().GetDriverName() == odbc_driver) {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 23);
+                } else {
+                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8);
+                }
 
                 DumpResults(auto_stmt.get());
             }
@@ -1534,7 +1576,9 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                if (GetArgs().GetDriverName() == ftds_odbc_driver ||
+                    GetArgs().GetDriverName() == odbc_driver
+                    ) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_Char);
                 } else {
                     BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
@@ -1561,7 +1605,8 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                     BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
                 } else if (GetArgs().GetDriverName() == ctlib_driver ||
                     GetArgs().GetDriverName() == ftds8_driver ||
-                    GetArgs().GetDriverName() == ftds_odbc_driver
+                    GetArgs().GetDriverName() == ftds_odbc_driver ||
+                    GetArgs().GetDriverName() == odbc_driver
                     ) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_LongChar);
                 } else {
@@ -1601,7 +1646,9 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                if (GetArgs().GetDriverName() == ftds_odbc_driver ||
+                    GetArgs().GetDriverName() == odbc_driver
+                    ) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_Char);
                 } else {
                     BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
@@ -1633,7 +1680,9 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                if (GetArgs().GetDriverName() == ftds_odbc_driver ||
+                    GetArgs().GetDriverName() == odbc_driver
+                    ) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_Binary);
                 } else {
                     BOOST_CHECK_EQUAL(curr_type, eDB_VarBinary);
@@ -1662,7 +1711,8 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                         GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) ||
                     GetArgs().GetDriverName() == ctlib_driver ||
                     GetArgs().GetDriverName() == ftds8_driver ||
-                    GetArgs().GetDriverName() == ftds_odbc_driver
+                    GetArgs().GetDriverName() == ftds_odbc_driver ||
+                    GetArgs().GetDriverName() == odbc_driver
                     ) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_LongBinary);
                 } else {
