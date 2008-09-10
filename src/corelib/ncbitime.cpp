@@ -352,9 +352,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
     const char* fff;
     const char* sss = str.c_str();
     bool  adjust_needed = false;
-#if ! defined(TIMEZONE_IS_UNDEFINED)
     long  adjust_tz     = 0;
-#endif
 
     enum EHourFormat{
         e24, eAM, ePM
@@ -440,9 +438,6 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
 
         // Timezone (local time in format GMT+HHMM)
         if (*fff == 'z') {
-#if defined(TIMEZONE_IS_UNDEFINED)
-            ERR_POST_X(3, "Format symbol 'z' is unsupported on this platform");
-#else
             m_Data.tz = eGmt;
             if (NStr::strncasecmp(sss, "GMT", 3) == 0) {
                 sss += 3;
@@ -491,7 +486,6 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
             }
             adjust_needed = true;
             adjust_tz = sign * (x_hour * 60 + x_min) * 60;
-#endif
             continue;
         }
 
@@ -665,12 +659,10 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
-#if !defined(TIMEZONE_IS_UNDEFINED)
     // Adjust time to GMT time (see 'z' format symbol above)
     if ( adjust_needed ) {
         AddSecond(-adjust_tz, CTime::eIgnoreDaylight);
     }
-#endif
 }
 
 
@@ -1062,8 +1054,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
         case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
         case 'z': {
 #if defined(TIMEZONE_IS_UNDEFINED)
-                  ERR_POST_X(5, "Format symbol 'z' is not supported on "
-                                "this platform");
+                  ERR_POST_X(5, "Format symbol 'z' is unsupported on this platform");
 #else
                   str += "GMT";
                     if (IsGmtTime()) {

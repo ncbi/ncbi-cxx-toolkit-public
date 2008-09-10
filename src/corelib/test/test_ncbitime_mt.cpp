@@ -40,6 +40,10 @@
 
 USING_NCBI_SCOPE;
 
+#if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
+#  define TIMEZONE_IS_UNDEFINED  1
+#endif
+
 
 //=============================================================================
 //
@@ -204,7 +208,9 @@ static void s_TestFormats(void)
         {"D B Y h:m:s",             1},
         {"B d, Y h:m:s",            1},
         {"D b Y h:m:s",             1},
+#if !defined(TIMEZONE_IS_UNDEFINED)
         {"M/D/Y h:m:s z",           1},
+#endif
         {"M/D/Y Z h:m:s",           1},
         {"smhyMD",                  1},
         {"y||||M++++D   h===ms",    1},

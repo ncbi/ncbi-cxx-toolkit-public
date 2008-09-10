@@ -527,6 +527,7 @@ public:
     ///   - p = am/pm                          (am/pm)
     ///   - Z = timezone format                (GMT or none)
     ///   - z = timezone shift                 ([GMT]+/-HHMM)
+    ///         -- available only on POSIX platforms
     ///   - W = full day of week name          (Sunday-Saturday)
     ///   - w = abbreviated day of week name   (Sun-Sat)
     ///
