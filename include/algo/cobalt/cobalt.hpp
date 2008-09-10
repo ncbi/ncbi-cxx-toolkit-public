@@ -525,6 +525,7 @@ private:
     double m_MaxClusterDist;
     TKMethods::EDistMeasures m_ClustDistMeasure;
     vector<CSequence> m_AllQueryData;
+    blast::TSeqLocVector m_AllQueries;
     CClusterer m_Clusterer;
     vector< vector<Uint4> > m_ClusterGapPositions;
 

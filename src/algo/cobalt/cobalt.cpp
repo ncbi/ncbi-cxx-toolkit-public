@@ -346,9 +346,8 @@ CMultiAligner::FindQueryClusters()
     }
 
     // Rearrenging input sequences to consider cluster information
-    m_tQueries.resize(cluster_prototypes.size());
-    copy(cluster_prototypes.begin(), cluster_prototypes.end(), 
-         m_tQueries.begin());
+    m_tQueries.swap(cluster_prototypes);
+    cluster_prototypes.swap(m_AllQueries);
     m_QueryData.swap(m_AllQueryData);
 
     //-------------------------------------------------------
@@ -793,6 +792,7 @@ void CMultiAligner::MultiAlignClusters(void)
     //----------------------------------------------------------------------
 
     m_Results.swap(results);
+    m_tQueries.swap(m_AllQueries);
 }
 
 
