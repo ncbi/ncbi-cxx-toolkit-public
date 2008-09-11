@@ -93,6 +93,9 @@ public:
     CFastaReader(const string& path,  TFlags flags = 0);
     virtual ~CFastaReader(void);
 
+    /// Indicates (negatively) whether there is any more input.
+    bool AtEOF(void) const { return m_LineReader->AtEOF(); }
+
     /// Read a single effective sequence, which may turn out to be a
     /// segmented set.
     virtual CRef<CSeq_entry> ReadOneSeq(void);
