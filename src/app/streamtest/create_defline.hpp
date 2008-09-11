@@ -86,8 +86,7 @@ private:
         CScope& scope
     );
     bool x_HasSourceFeats (
-        const CBioseq& bioseq,
-        CScope& scope
+        const CBioseq& bioseq
     );
     CConstRef<CBioSource> x_GetSourceFeatViaCDS (
         const CBioseq& bioseq,
@@ -189,6 +188,10 @@ private:
     // orgmod fields
     string m_isolate;
     string m_strain;
+
+    // persistent flags for blob to suppress unnecessary feature indexing
+    // -1 = not yet tested, 0 = no source features, 1 = has source features
+    int m_has_biosrc_feats;
 };
 
 
@@ -201,6 +204,7 @@ private:
 
 // constructor
 CDeflineGenerator::CDeflineGenerator (void)
+    : m_has_biosrc_feats (-1)  // mark as not yet tested
 
 {
 }
@@ -1126,53 +1130,56 @@ CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (
 }
 
 bool CDeflineGenerator::x_HasSourceFeats (
-    const CBioseq& bioseq,
-    CScope& scope
+    const CBioseq& bioseq
 )
 
 {
-    CSeq_entry* se;
-    CSeq_entry* top;
+    if (m_has_biosrc_feats == -1) {
+        CSeq_entry* se;
+        CSeq_entry* top;
 
-    se = bioseq.GetParentEntry();
-    top = se;
-
-    while (se) {
+        se = bioseq.GetParentEntry();
         top = se;
-        se = se->GetParentEntry();
-    }
 
-    if (top) {
-        /*
-        VISIT_ALL_FEATURES_WITHIN_SEQENTRY (ft_itr, *top) {
-            const CSeq_feat& feat = *ft_itr;
-            if (feat.IsSetData()) {
-                const CSeqFeatData& sfd = feat.GetData();
-                if (sfd.IsBiosrc()) {
-                    return true;
+        while (se) {
+            top = se;
+            se = se->GetParentEntry();
+        }
+
+        if (top) {
+            m_has_biosrc_feats = 0;
+            /*
+            VISIT_ALL_FEATURES_WITHIN_SEQENTRY (ft_itr, *top) {
+                const CSeq_feat& feat = *ft_itr;
+                if (feat.IsSetData()) {
+                    const CSeqFeatData& sfd = feat.GetData();
+                    if (sfd.IsBiosrc()) {
+                        m_has_biosrc_feats = 1;
+                        return true;
+                    }
                 }
             }
-        }
-        */
-        /*
-        VISIT_ALL_SEQENTRYS_WITHIN_SEQENTRY (se_itr, *top) {
-            const CSeq_entry& entry = *se_itr;
-            FOR_EACH_ANNOT_ON_SEQENTRY (an_itr, entry) {
-                const CSeq_annot& annot = **an_itr;
-                FOR_EACH_FEATURE_ON_ANNOT (ft_itr, annot) {
-                    const CSeq_feat& feat = **ft_itr;
-                    if (feat.IsSetData()) {
-                        const CSeqFeatData& sfd = feat.GetData();
-                        if (sfd.IsBiosrc()) {
-                            return true;
+            */
+            VISIT_ALL_SEQENTRYS_WITHIN_SEQENTRY (se_itr, *top) {
+                const CSeq_entry& entry = *se_itr;
+                FOR_EACH_ANNOT_ON_SEQENTRY (an_itr, entry) {
+                    const CSeq_annot& annot = **an_itr;
+                    FOR_EACH_FEATURE_ON_ANNOT (ft_itr, annot) {
+                        const CSeq_feat& feat = **ft_itr;
+                        if (feat.IsSetData()) {
+                            const CSeqFeatData& sfd = feat.GetData();
+                            if (sfd.IsBiosrc()) {
+                                m_has_biosrc_feats = 1;
+                                return true;
+                            }
                         }
                     }
                 }
             }
         }
-        */
-        return true;
     }
+
+    if (m_has_biosrc_feats == 1) return true;
 
     return false;
 }
@@ -1327,7 +1334,7 @@ string CDeflineGenerator::x_TitleFromProtein (
          taxname.find ("vector") == NPOS &&
          taxname.find ("Vector") == NPOS)) {
 
-        if (x_HasSourceFeats(bioseq, scope)) {
+        if (x_HasSourceFeats(bioseq)) {
             src = x_GetSourceFeatViaCDS (bioseq, scope);
             if (src) {
                 const CBioSource& source = *src;
