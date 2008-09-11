@@ -45,13 +45,13 @@ BEGIN_SCOPE(omssa)
 
 const double PROTON_MASS = 1.007276466;
 
-char const * const kMolNames[5] = {
-    "not set",
-    "DNA",
-    "RNA",
-    "AA",
-    "NA"
-};
+// char const * const kMolNames[5] = {
+//     "not set",
+//     "DNA",
+//     "RNA",
+//     "AA",
+//     "NA"
+// };
 
 string CPepXML::ConvertDouble(double n) {
     string val = NStr::DoubleToString(n,15);
@@ -355,9 +355,17 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
     sSum->SetAttlist().SetSearch_id(1); // Should be count based upon search number
 
     string dbname = inOMSSA.GetRequest().front()->GetSettings().GetDb();
-    string dbtype = kMolNames[inOMSSA.GetResponse().front()->GetBioseqs().Get().front()->GetSeq().GetInst().GetMol()];
     sSum->SetSearch_database().SetAttlist().SetLocal_path(dbname);
-    sSum->SetSearch_database().SetAttlist().SetType(dbtype);
+
+    int dbtype = inOMSSA.GetResponse().front()->GetBioseqs().Get().front()->GetSeq().GetInst().GetMol();
+    switch (dbtype) {
+    case 3:
+        sSum->SetSearch_database().SetAttlist().SetType(CSearch_database::C_Attlist::eAttlist_type_AA);
+        break;
+    default:
+        sSum->SetSearch_database().SetAttlist().SetType(CSearch_database::C_Attlist::eAttlist_type_NA);
+    }
+    
     sSum->SetSearch_database().SetAttlist().SetSize_in_db_entries(inOMSSA.GetResponse().front()->GetDbversion());
 
     sSum->SetEnzymatic_search_constraint().SetAttlist().SetEnzyme(enzymeName);
