@@ -427,8 +427,9 @@ void DTDElement::MergeAttributes(void)
                 if (i->GetValueType() != redef->GetValueType()) {
                     i->SetValueType( redef->GetValueType() );
                 }
+                DTDAttribute::EValueType t = redef->GetValueType();
                 redef = m_Attrib.erase(redef);
-                if (redef->GetValueType() == DTDAttribute::eProhibited) {
+                if (t == DTDAttribute::eProhibited) {
                     i = m_Attrib.erase(i);
                     found = true;
                 }
