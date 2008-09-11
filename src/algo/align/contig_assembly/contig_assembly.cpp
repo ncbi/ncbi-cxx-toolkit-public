@@ -123,11 +123,11 @@ CRef<CSeq_align_set> CContigAssembly::Blastn(const CSeq_loc& query_loc,
 {
     SSeqLoc query_sl(query_loc, scope);
     SSeqLoc subject_sl(subject_loc, scope);
-    
+
     CBl2Seq bl2seq(query_sl, subject_sl, eBlastn);
     vector<string> args;
     s_SplitCommandLine(param_string, args);
-    CBlastNucleotideOptionsHandle& opts = 
+    CBlastNucleotideOptionsHandle& opts =
         dynamic_cast<CBlastNucleotideOptionsHandle&>(bl2seq.SetOptionsHandle());
     opts.SetTraditionalBlastnDefaults();
     for (unsigned int i = 0;  i < args.size();  i += 2) {
@@ -178,9 +178,9 @@ void CContigAssembly::DiagCounts(const CSeq_align_set& align_set, CScope& scope,
         }
     }
 
-    const CSeq_id& id0 = 
+    const CSeq_id& id0 =
         *align_set.Get().front()->GetSegs().GetDenseg().GetIds()[0];
-    const CSeq_id& id1 = 
+    const CSeq_id& id1 =
         *align_set.Get().front()->GetSegs().GetDenseg().GetIds()[1];
 
     TSeqPos len0 = scope.GetBioseqHandle(id0).GetBioseqLength();
@@ -319,60 +319,25 @@ CContigAssembly::BandedGlobalAlignment(const CSeq_id& id0, const CSeq_id& id1,
     string seq1;
     vec1.GetSeqData(0, vec1.size(), seq1);
 
-    // adjust diag and half_width to fake the non-main diagonal thing
-    if (diag > vec0.size()) {
-        diag -= half_width;
-    } else {
-        diag += half_width;
-    }
-    half_width *= 2;
-
-    unsigned int largest_diag = vec0.size() + vec1.size() - 2;
-    TSeqPos begin0, end0, begin1, end1;
-    string sub_seq0, sub_seq1;
-    if (strand == eNa_strand_plus) {
-        begin0 = max(0, int(vec0.size()) - int(diag) - 1);
-        end0   = min(int(vec0.size()) - 1, int(largest_diag) - int(diag));
-        begin1 = max(0, int(vec1.size()) - (int(largest_diag) - int(diag)) - 1);
-        end1 = min(int(vec1.size()) - 1, int(diag));
-        sub_seq0 = seq0.substr(begin0, end0 - begin0 + 1);
-        sub_seq1 = seq1.substr(begin1, end1 - begin1 + 1);
-    } else {
-        begin0 = max(0, int(diag) - int(vec1.size()) + 1);
-        end0 = min(vec0.size() - 1, diag);
-        begin1 = max(0, int(diag) - int(vec0.size()) + 1);
-        end1 = min(int(vec1.size()) - 1, int(diag));
-        sub_seq0 = seq0.substr(vec0.size() - end0 - 1, end0 - begin0 + 1);
-        sub_seq1 = seq1.substr(begin1, end1 - begin1 + 1);
-    }
-
-    // For short overlaps, need to limit band width.
-    // For len(sub_seq0) - 1, alignment runs ok but
-    // may produce empty aligment.
-    if (half_width >= sub_seq0.size() - 1) {
-        half_width = sub_seq0.size() - 2;
-    }
-
-    CBandAligner alnr(sub_seq0, sub_seq1, 0, half_width);
+    CBandAligner alnr(seq0, seq1, 0, half_width);
     alnr.SetEndSpaceFree(true, true, true, true);
-
-    // due to nasty trick for non-main diagonal
-    if (diag > vec0.size()) {
-        alnr.SetEndSpaceFree(true, false, false, true);
+    // Translate shift from one convention (lower left corner is zero)
+    // to another (upper left is zero, direction of shift given separately)
+    Uint1 direction;
+    size_t shift;
+    if (diag <= seq0.size()) {
+        direction = 0;
+        shift = seq0.size() - 1 - diag;
     } else {
-        alnr.SetEndSpaceFree(false, true, true, false);
+        direction = 1;
+        shift = diag - (seq0.size() - 1);
     }
+    alnr.SetShift(direction, shift);
     alnr.Run();
 
-    TSeqPos pos0;
     CRef<CDense_seg> ds(new CDense_seg);
-    if (strand == eNa_strand_plus) {
-        pos0 = begin0;
-    } else {
-        pos0 = end0;
-    }
-    ds->FromTranscript(pos0, strand,
-                       begin1, eNa_strand_plus,
+    ds->FromTranscript(strand == eNa_strand_plus ? 0 : seq0.size() - 1, strand,
+                       0, eNa_strand_plus,
                        alnr.GetTranscriptString());
     CRef<CSeq_id> cr_id0(new CSeq_id);
     cr_id0->Assign(id0);
@@ -528,7 +493,7 @@ CRef<CDense_seg> CContigAssembly::BestLocalSubAlignment(const CDense_seg& ds_in,
             // mismatch
             scores[i] = previous_score + Wms;
         }
-   
+
         // Don't let the score drop below zero
         if (scores[i] < 0) {
             scores[i] = 0;
@@ -643,7 +608,7 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
             }
             CRef<CDense_seg> global_ds;
             try {
-                global_ds = 
+                global_ds =
                     BandedGlobalAlignment(id0, id1, strand,
                                           diag, *band_halfwidth, scope);
             }
@@ -713,7 +678,7 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
                 aln->SetSegs().SetDenseg(*local_ds);
                 aln->SetType(aln->eType_partial);
                 return vector<CRef<CSeq_align> >(1, aln);
-                     
+
             } else {
                 if (ostr) {
                     *ostr << "Banded alignment not an acceptable "
@@ -837,7 +802,7 @@ void CContigAssembly::GatherAlignStats(const CAlnVec& vec,
                                         &vec.GetScope());
                 simple = cmp_res == sequence::eContained
                     || cmp_res == sequence::eSame;
-                
+
                 if (simple) {
                     gap_simple = 1;
                 } else if (gap_simple == -1) {
