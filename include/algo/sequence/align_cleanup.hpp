@@ -68,8 +68,16 @@ public:
 
     /// flags
     /// these primarity affect the CAlnVec implementation
+
+    /// Sort input alignments by score before evaluating
     void SortInputsByScore(bool b)      { m_SortByScore = b; }
+
+    /// Permit off-diagonal high-scoring items (particularly ones on
+    /// the opposite strand)
     void AllowTranslocations(bool b)    { m_AllowTransloc = b; }
+
+    /// Assume that the alignments contains alignments of a sequence to itself
+    void PreserveRows(bool b)    { m_PreserveRows = b; }
 
     static void CreatePairwiseFromMultiple(const CSeq_align& multiple,
                                            TAligns&          pairwise);
@@ -78,6 +86,7 @@ private:
     CRef<CScope> m_Scope;
     bool m_SortByScore;
     bool m_AllowTransloc;
+    bool m_PreserveRows;
 
     void x_Cleanup_AlignVec(const TConstAligns& aligns_in,
                             TAligns&            aligns_out);

@@ -199,6 +199,7 @@ CAlignCleanup::CAlignCleanup(CScope& scope)
     : m_Scope(&scope)
     , m_SortByScore(true)
     , m_AllowTransloc(true)
+    , m_PreserveRows(false)
 {
 }
 
@@ -309,8 +310,23 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
 
     CAlnUserOptions opts;
     opts.m_MergeAlgo = CAlnUserOptions::eMergeAllSeqs;
+    /**
+    if (m_PreserveRows) {
+        opts.m_MergeAlgo = CAlnUserOptions::ePreserveRows;
+    }
+    **/
     opts.m_Direction = CAlnUserOptions::eBothDirections;
-    opts.SetMergeFlags(CAlnUserOptions::fTruncateOverlaps, true);
+
+    CAlnUserOptions::TMergeFlags flags = CAlnUserOptions::fTruncateOverlaps;
+    /**
+    if (m_AllowTransloc) {
+        flags |= CAlnUserOptions::fAllowTranslocation;
+    }
+    if ( !m_SortByScore ) {
+        flags |= CAlnUserOptions::fSkipSortByScore;
+    }
+    **/
+    opts.SetMergeFlags(flags, true);
 
     ///
     /// create a set of anchored alignments
@@ -330,17 +346,28 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     ///
     if (all_pairwise) {
         /// Create individual Dense-segs (one per CPairwiseAln)
-        ITERATE(CAnchoredAln::TPairwiseAlnVector,
-                pairwise_aln_i, 
-                out_anchored_aln.GetPairwiseAlns()) {
+        CAnchoredAln::TPairwiseAlnVector::const_iterator begin =
+            out_anchored_aln.GetPairwiseAlns().begin();
 
+        CAnchoredAln::TPairwiseAlnVector::const_iterator end =
+            out_anchored_aln.GetPairwiseAlns().end();
+
+        if ( !m_PreserveRows  &&  begin != end ) {
+            /// HACK:
+            /// the last row contains a dummy - alignment of a sequence to itself
+            /// trim it here
+            --end;
+        }
+
+        for ( ;  begin != end;  ++begin) {
             CRef<CDense_seg> ds = 
-                CreateDensegFromPairwiseAln(**pairwise_aln_i);
+                CreateDensegFromPairwiseAln(**begin);
             CRef<CSeq_align> aln(new CSeq_align);
             aln->SetSegs().SetDenseg(*ds);
             aln->SetType(CSeq_align::eType_partial);
             aligns_out.push_back(aln);
         }
+
     } else {
         CRef<CSeq_align> ds_align =
             CreateSeqAlignFromAnchoredAln(out_anchored_aln,
@@ -430,7 +457,7 @@ void CAlignCleanup::x_Cleanup_AlignVec(const TConstAligns& aligns_in,
             try {
                 CAlnMix mix(*m_Scope);
                 CAlnMix::TAddFlags flags = 0;
-                if (iter->first.size() == 1) {
+                if (iter->first.size() == 1  ||  m_PreserveRows) {
                     flags |= CAlnMix::fPreserveRows;
                 }
                 ITERATE (TAlignList, i, *it) {
