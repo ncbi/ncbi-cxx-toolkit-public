@@ -142,10 +142,13 @@ public:
     //  ------------------------------------------------------------------------
     {
         try {
+            CDeflineGenerator gen;
+
             VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                 const CBioseq& bioseq = *bit;
-                const string& title = CreateDefLine (bioseq, *m_scope,
-                                                     m_ignore_existing, false);
+                const string& title = gen.GenerateDefline (bioseq, *m_scope,
+                                                           m_ignore_existing,
+                                                           false);
                 *m_out << ">";
                 x_FastaSeqIdWrite (bioseq);
                 *m_out << " ";
