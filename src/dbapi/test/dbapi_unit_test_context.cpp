@@ -190,6 +190,47 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_SetMaxTextImageSize)
+{
+    try {
+        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+        IResultSet* rs;
+        const IResultSetMetaData* md = NULL;
+        const int expected_max_text_size = 234567;
+
+        // Set textsize ...
+        {
+            rs = auto_stmt->ExecuteQuery("set textsize 123456");
+            DumpResults(auto_stmt.get());
+        }
+
+        // Call SetMaxTextImageSize ...
+        {
+            I_DriverContext* drv_context = GetDS().GetDriverContext();
+
+            if ( drv_context == NULL ) {
+                BOOST_FAIL("FATAL: Unable to load context for dbdriver " +
+                        GetArgs().GetDriverName());
+            }
+
+            drv_context->SetMaxTextImageSize(expected_max_text_size);
+        }
+
+        // Check what we've got ...
+        {
+            rs = auto_stmt->ExecuteQuery("select convert(text, '12345')");
+            BOOST_CHECK(rs != NULL);
+            md = rs->GetMetaData();
+            BOOST_CHECK(md);
+
+            BOOST_CHECK_EQUAL(md->GetMaxSize(1), expected_max_text_size);
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
 
 
 END_NCBI_SCOPE
