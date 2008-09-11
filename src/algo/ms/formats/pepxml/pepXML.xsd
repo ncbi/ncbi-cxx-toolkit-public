@@ -7,8 +7,7 @@
 
 <xs:schema
   xmlns="http://regis-web.systemsbiology.net/pepXML"
-  xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
-  xs:schemaLocation="http://regis-web.systemsbiology.net/pepXML pepXML.xsd"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
   targetNamespace="http://regis-web.systemsbiology.net/pepXML"
   elementFormDefault="qualified"
   attributeFormDefault="unqualified">
@@ -535,7 +534,6 @@
     <xs:attribute name="database_release_identifier" type="xs:string" use="optional"/>
     <xs:attribute name="size_in_db_entries" type="xs:integer" use="optional"/>
     <xs:attribute name="size_of_residues" type="xs:integer" use="optional"/>
-    <xs:attribute name="type" type="xs:string" use="required"/>
     <xs:attribute name="type" use="required">
 	  <xs:annotation>
 		<xs:documentation>Database type (AA=amino acid, NA=nucleic acid)</xs:documentation>
