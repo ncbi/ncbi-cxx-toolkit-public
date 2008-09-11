@@ -487,9 +487,7 @@ void CMultiAligner::AlignInClusters(void)
                 m_Aligner.SetEndSpaceFree(false, false, false, false);
 
                 // If there is a large length disparity between the two
-                // profiles, reduce or eliminate gap penalties. Also 
-                // scale up the gap penalties to match those of the score matrix
-
+                // sequences, reduce or eliminate gap penalties.
                 int len1 = cluster_seq.GetLength();
                 int len2 = cluster_prot.GetLength();
                 if (len1 > 1.2 * len2 || len2 > 1.2 * len1) {
