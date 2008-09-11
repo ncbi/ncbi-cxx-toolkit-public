@@ -1560,6 +1560,7 @@ enum EPostNumberIncrement {
 struct SRequestCtxWrapper;
 class CRequestContext;
 class CRequestRateControl;
+class CEncodedString;
 
 
 /// Thread local context data stored in TLS
@@ -1836,28 +1837,34 @@ public:
     static void UseSystemThreadId(bool value = true);
 
     /// Get username
-    const string& GetUsername(void) const { return m_Username; }
+    const string& GetUsername(void) const;
     /// Set username
     /// @sa SetDiagUserAndHost
-    void SetUsername(const string& username) { m_Username = username; }
+    void SetUsername(const string& username);
 
     /// Get host name. The order is: cached hostname, cached hostIP,
     /// uname or COMPUTERNAME, SERVER_ADDR, empty string.
     const string& GetHost(void) const;
+    /// URL-encoded version of GetHost()
+    const string& GetEncodedHost(void) const;
 
     /// Get cached hostname - do not try to detect host name as Getost() does.
-    const string& GetHostname(void) const { return m_Host; }
+    const string& GetHostname(void) const;
+    /// Get URL-encoded hostname
+    const string& GetEncodedHostname(void) const;
     /// Set hostname
     /// @sa SetDiagUserAndHost
-    void SetHostname(const string& hostname) { m_Host = hostname; }
+    void SetHostname(const string& hostname);
 
     /// Get host IP address
     const string& GetHostIP(void) const { return m_HostIP; }
     /// Set host IP address
-    void SetHostIP(const string& ip) { m_HostIP = ip; }
+    void SetHostIP(const string& ip);
 
     /// Get application name
-    const string& GetAppName(void) const { return m_AppName; }
+    const string& GetAppName(void) const;
+    /// Get URL-encoded application name
+    const string& GetEncodedAppName(void) const;
     /// Set application name
     void SetAppName(const string& app_name);
 
@@ -1956,29 +1963,29 @@ private:
     typedef list<SDiagMessage> TMessages;
 
     // Cached process ID
-    static TPID            sm_PID;
+    static TPID                         sm_PID;
 
-    mutable TUID           m_UID;
-    mutable string         m_Host;
-    string                 m_HostIP;
-    string                 m_Username;
-    string                 m_AppName;
-    int                    m_ExitCode;
-    int                    m_ExitSig;
-    EDiagAppState          m_AppState;
-    TProperties            m_Properties;
-    auto_ptr<CStopWatch>   m_StopWatch;
-    auto_ptr<TMessages>    m_Messages;
-    size_t                 m_MaxMessages;
-    static CDiagContext*   sm_Instance;
+    mutable TUID                        m_UID;
+    mutable auto_ptr<CEncodedString>    m_Host;
+    string                              m_HostIP;
+    auto_ptr<CEncodedString>            m_Username;
+    auto_ptr<CEncodedString>            m_AppName;
+    int                                 m_ExitCode;
+    int                                 m_ExitSig;
+    EDiagAppState                       m_AppState;
+    TProperties                         m_Properties;
+    auto_ptr<CStopWatch>                m_StopWatch;
+    auto_ptr<TMessages>                 m_Messages;
+    size_t                              m_MaxMessages;
+    static CDiagContext*                sm_Instance;
 
     // Rate control
-    auto_ptr<CRequestRateControl> m_AppLogRC;
-    auto_ptr<CRequestRateControl> m_ErrLogRC;
-    auto_ptr<CRequestRateControl> m_TraceLogRC;
-    bool                          m_AppLogSuspended;
-    bool                          m_ErrLogSuspended;
-    bool                          m_TraceLogSuspended;
+    auto_ptr<CRequestRateControl>       m_AppLogRC;
+    auto_ptr<CRequestRateControl>       m_ErrLogRC;
+    auto_ptr<CRequestRateControl>       m_TraceLogRC;
+    bool                                m_AppLogSuspended;
+    bool                                m_ErrLogSuspended;
+    bool                                m_TraceLogSuspended;
 };
 
 

@@ -815,6 +815,9 @@ CDiagContext* CDiagContext::sm_Instance = NULL;
 
 CDiagContext::CDiagContext(void)
     : m_UID(0),
+      m_Host(new CEncodedString),
+      m_Username(new CEncodedString),
+      m_AppName(new CEncodedString),
       m_ExitCode(0),
       m_ExitSig(0),
       m_AppState(eDiagAppState_AppBegin),
@@ -1086,11 +1089,23 @@ string CDiagContext::GetNextHitID(void) const
 }
 
 
+const string& CDiagContext::GetUsername(void) const
+{
+    return m_Username->GetOriginalString();
+}
+
+
+void CDiagContext::SetUsername(const string& username)
+{
+    m_Username->SetString(username);
+}
+
+
 const string& CDiagContext::GetHost(void) const
 {
     // Check context properties
-    if ( !m_Host.empty() ) {
-        return m_Host;
+    if ( !m_Host->IsEmpty() ) {
+        return m_Host->GetOriginalString();
     }
     if ( !m_HostIP.empty() ) {
         return m_HostIP;
@@ -1101,8 +1116,8 @@ const string& CDiagContext::GetHost(void) const
     {{
         struct utsname buf;
         if (uname(&buf) == 0) {
-            m_Host = buf.nodename;
-            return m_Host;
+            m_Host->SetString(buf.nodename);
+            return m_Host->GetOriginalString();
         }
     }}
 #endif
@@ -1111,17 +1126,88 @@ const string& CDiagContext::GetHost(void) const
     // MSWIN - use COMPUTERNAME
     const char* compname = ::getenv("COMPUTERNAME");
     if ( compname  &&  *compname ) {
-        m_Host = compname;
-        return m_Host;
+        m_Host->SetString(compname);
+        return m_Host->GetOriginalString();
     }
 #endif
 
     // Server env. - use SERVER_ADDR
     const char* servaddr = ::getenv("SERVER_ADDR");
     if ( servaddr  &&  *servaddr ) {
-        m_Host = servaddr;
+        m_Host->SetString(servaddr);
     }
-    return m_Host;
+    return m_Host->GetOriginalString();
+}
+
+
+const string& CDiagContext::GetEncodedHost(void) const
+{
+    if ( !m_Host->IsEmpty() ) {
+        return m_Host->GetEncodedString();
+    }
+    if ( !m_HostIP.empty() ) {
+        return m_HostIP;
+    }
+    // Initialize m_Host, this does not change m_HostIP
+    GetHost();
+    return m_Host->GetEncodedString();
+}
+
+
+const string& CDiagContext::GetHostname(void) const
+{
+    return m_Host->GetOriginalString();
+}
+
+
+const string& CDiagContext::GetEncodedHostname(void) const
+{
+    return m_Host->GetEncodedString();
+}
+
+
+void CDiagContext::SetHostname(const string& hostname)
+{
+    m_Host->SetString(hostname);
+}
+
+
+void CDiagContext::SetHostIP(const string& ip)
+{
+    if ( !NStr::IsIPAddress(ip) ) {
+        m_HostIP.clear();
+        ERR_POST("Bad host IP value: " << ip);
+        return;
+    }
+
+    m_HostIP = ip;
+}
+
+
+const string& CDiagContext::GetAppName(void) const
+{
+    return m_AppName->GetOriginalString();
+}
+
+
+const string& CDiagContext::GetEncodedAppName(void) const
+{
+    return m_AppName->GetEncodedString();
+}
+
+
+void CDiagContext::SetAppName(const string& app_name)
+{
+    if ( !m_AppName->IsEmpty() ) {
+        // AppName can be set only once
+        ERR_POST("Application name can not be changed.");
+        return;
+    }
+    m_AppName->SetString(app_name);
+    if ( m_AppName->IsEncoded() ) {
+        ERR_POST("Illegal characters in application name: '" << app_name <<
+            "', using URL-encode.");
+    }
 }
 
 
@@ -1362,25 +1448,6 @@ void CDiagContext::DeleteProperty(const string& name,
     if (gprop != m_Properties.end()) {
         m_Properties.erase(gprop);
     }
-}
-
-
-void CDiagContext::SetAppName(const string& app_name)
-{
-    if ( !m_AppName.empty() ) {
-        // AppName can be set only once
-        ERR_POST("Application name can not be changed.");
-        return;
-    }
-    for (size_t i = 0; i < app_name.size(); i++) {
-        if ( !(app_name[i])  ||  isspace(app_name[i]) ) {
-            m_AppName = NStr::URLEncode(app_name);
-            ERR_POST("Illegal characters in application name, "
-                "using URL-encode");
-            return;
-        }
-    }
-    m_AppName = app_name;
 }
 
 
@@ -3769,13 +3836,13 @@ void SDiagMessage::x_SaveContextData(void) const
     }
     x_InitData();
     CDiagContext& dctx = GetDiagContext();
-    m_Data->m_Host = dctx.GetHost();
-    m_Data->m_AppName = dctx.GetAppName();
+    m_Data->m_Host = dctx.GetEncodedHost();
+    m_Data->m_AppName = dctx.GetEncodedAppName();
     m_Data->m_AppState = dctx.GetAppState();
 
     CRequestContext& rctx = dctx.GetRequestContext();
     m_Data->m_Client = rctx.GetClientIP();
-    m_Data->m_Session = rctx.GetSessionID();
+    m_Data->m_Session = rctx.GetEncodedSessionID();
 }
 
 
@@ -3784,7 +3851,7 @@ const string& SDiagMessage::GetHost(void) const
     if ( m_Data ) {
         return m_Data->m_Host;
     }
-    return GetDiagContext().GetHost();
+    return GetDiagContext().GetEncodedHost();
 }
 
 
@@ -3798,7 +3865,7 @@ const string& SDiagMessage::GetClient(void) const
 const string& SDiagMessage::GetSession(void) const
 {
     return m_Data ? m_Data->m_Session
-        : CDiagContext::GetRequestContext().GetSessionID();
+        : CDiagContext::GetRequestContext().GetEncodedSessionID();
 }
 
 
@@ -3807,7 +3874,7 @@ const string& SDiagMessage::GetAppName(void) const
     if ( m_Data ) {
         return m_Data->m_AppName;
     }
-    return GetDiagContext().GetAppName();
+    return GetDiagContext().GetEncodedAppName();
 }
 
 

@@ -42,6 +42,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbistr.hpp>
 
 
 /** @addtogroup Diagnostics
@@ -90,6 +91,8 @@ public:
     void          UnsetSessionID(void);
     /// Create and set new session ID
     const string& SetSessionID(void);
+    /// Get URL-encoded session ID
+    const string& GetEncodedSessionID(void) const;
 
     /// Hit ID
     const string& GetHitID(void) const;
@@ -170,18 +173,18 @@ private:
     void x_SetProp(EProperty prop);
     void x_UnsetProp(EProperty prop);
 
-    int           m_RequestID;
-    EDiagAppState m_AppState;
-    string        m_ClientIP;
-    string        m_SessionID;
-    string        m_HitID;
-    int           m_ReqStatus;
-    CStopWatch    m_ReqTimer;
-    Int8          m_BytesRd;
-    Int8          m_BytesWr;
-    TProperties   m_Properties;
-    TPropSet      m_PropSet;
-    bool          m_IsRunning;
+    int            m_RequestID;
+    EDiagAppState  m_AppState;
+    string         m_ClientIP;
+    CEncodedString m_SessionID;
+    string         m_HitID;
+    int            m_ReqStatus;
+    CStopWatch     m_ReqTimer;
+    Int8           m_BytesRd;
+    Int8           m_BytesWr;
+    TProperties    m_Properties;
+    TPropSet       m_PropSet;
+    bool           m_IsRunning;
 };
 
 
@@ -242,14 +245,22 @@ void CRequestContext::UnsetClientIP(void)
 inline
 const string& CRequestContext::GetSessionID(void) const
 {
-    return x_IsSetProp(eProp_SessionID) ? m_SessionID : kEmptyStr;
+    return x_IsSetProp(eProp_SessionID) ?
+        m_SessionID.GetOriginalString() : kEmptyStr;
+}
+
+inline
+const string& CRequestContext::GetEncodedSessionID(void) const
+{
+    return x_IsSetProp(eProp_SessionID) ?
+        m_SessionID.GetEncodedString() : kEmptyStr;
 }
 
 inline
 void CRequestContext::SetSessionID(const string& session)
 {
     x_SetProp(eProp_SessionID);
-    m_SessionID = session;
+    m_SessionID.SetString(session);
 }
 
 inline
@@ -262,7 +273,7 @@ inline
 void CRequestContext::UnsetSessionID(void)
 {
     x_UnsetProp(eProp_SessionID);
-    m_SessionID.clear();
+    m_SessionID.SetString(kEmptyStr);
 }
 
 

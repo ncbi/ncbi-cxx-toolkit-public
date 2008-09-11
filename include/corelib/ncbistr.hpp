@@ -1689,6 +1689,12 @@ public:
     /// URL-decode string to itself
     static void URLDecodeInPlace(string& str,
                                  EUrlDecode flag = eUrlDec_All);
+    /// Check if the string needs the reqested URL-encoding
+    static bool NeedsURLEncoding(const string& str,
+                                EUrlEncode flag = eUrlEnc_SkipMarkChars);
+
+    /// Check if the string contains a valid IP address
+    static bool IsIPAddress(const string& ip);
 
     /// Wrap the specified string into lines of a specified width -- prefix,
     /// prefix1 default version.
@@ -2609,6 +2615,42 @@ public:
 
 private:
     NStr::EUrlDecode m_Flag;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CEncodedString --
+///
+/// Class to detect if a string needs to be URL-encoded and hold both
+/// encoded and original versions.
+///
+
+class NCBI_XNCBI_EXPORT CEncodedString
+{
+public:
+    CEncodedString(void) {}
+    CEncodedString(const string& s,
+                   NStr::EUrlEncode flag = NStr::eUrlEnc_SkipMarkChars);
+
+    /// Set new original string
+    void SetString(const string& s,
+                   NStr::EUrlEncode flag = NStr::eUrlEnc_SkipMarkChars);
+
+    /// Check if the original string was encoded.
+    bool IsEncoded(void) const { return m_Encoded.get(); }
+    /// Get the original unencoded string
+    const string& GetOriginalString(void) const { return m_Original; }
+    /// Get encoded string
+    const string& GetEncodedString(void) const
+        { return IsEncoded() ? *m_Encoded : m_Original; }
+
+    /// Check if the string is empty
+    bool IsEmpty(void) const { return m_Original.empty(); }
+
+private:
+    string           m_Original;
+    auto_ptr<string> m_Encoded;
 };
 
 
