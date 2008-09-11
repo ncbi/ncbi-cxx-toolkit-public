@@ -81,9 +81,12 @@ public:
     //  the missing data will not work.
     bool ImportAlignmentData(const string& fastaFile, bool cleanUp = false);
 
-    //  These add a specific type of Cdd-descr to the CD
+    //  These add a specific type of Cdd-descr to the CD.
+    //  Typically, duplicates will not be added; functions return
+    //  'false' when attempting to add a duplicate description.
     bool AddComment(const string& comment);
     bool AddOthername(const string& othername);
+    bool AddTitle(const string& title);
     bool AddPmidReference(unsigned int pmid);
     bool AddSource(const string& source, bool removeExistingSources = true);
     bool AddCreateDate();  //  uses the current time
