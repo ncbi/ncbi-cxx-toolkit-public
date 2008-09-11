@@ -40,16 +40,15 @@ class CDeflineGenerator
 {
 public:
     // constructor
-    CDeflineGenerator (
-        const CBioseq& bioseq,
-        CScope& scope
-    );
+    CDeflineGenerator (void);
 
     // destructor
     ~CDeflineGenerator (void);
 
     // main method
     string GenerateDefline (
+        const CBioseq& bioseq,
+        CScope& scope,
         bool ignoreExisting,
         bool allProteinNames
     );
@@ -57,8 +56,16 @@ public:
 private:
     // internal methods
 
-    void x_SetFlags (void);
-    void x_SetBioSrc (void);
+    void x_SetFlags (
+        const CBioseq& bioseq,
+        CScope& scope,
+        bool ignoreExisting,
+        bool allProteinNames
+    );
+    void x_SetBioSrc (
+        const CBioseq& bioseq,
+        CScope& scope
+    );
 
     string x_DescribeClones (void);
     bool x_EndsWithStrain (void);
@@ -70,31 +77,53 @@ private:
         bool virus_or_phage,
         bool wgs_suffix
     );
-    CConstRef<CSeq_feat> x_GetLongestProtein (void);
-    CConstRef<CGene_ref> x_GetGeneRefViaCDS (void);
-    bool x_HasSourceFeats (void);
-    CConstRef<CBioSource> x_GetSourceFeatViaCDS (void);
+    CConstRef<CSeq_feat> x_GetLongestProtein (
+        const CBioseq& bioseq,
+        CScope& scope
+    );
+    CConstRef<CGene_ref> x_GetGeneRefViaCDS (
+        const CBioseq& bioseq,
+        CScope& scope
+    );
+    bool x_HasSourceFeats (
+        const CBioseq& bioseq,
+        CScope& scope
+    );
+    CConstRef<CBioSource> x_GetSourceFeatViaCDS (
+        const CBioseq& bioseq,
+        CScope& scope
+    );
 
     string x_TitleFromBioSrc (void);
     string x_TitleFromNC (void);
-    string x_TitleFromNM (void);
-    string x_TitleFromNR (void);
+    string x_TitleFromNM (
+        const CBioseq& bioseq,
+        CScope& scope
+    );
+    string x_TitleFromNR (
+        const CBioseq& bioseq,
+        CScope& scope
+    );
     string x_TitleFromPatent (void);
     string x_TitleFromPDB (void);
-    string x_TitleFromProtein (void);
-    string x_TitleFromSegSeq (void);
+    string x_TitleFromProtein (
+        const CBioseq& bioseq,
+        CScope& scope
+    );
+    string x_TitleFromSegSeq (
+        const CBioseq& bioseq,
+        CScope& scope
+    );
     string x_TitleFromWGS (void);
 
     string x_SetPrefix (void);
     string x_SetSuffix (
+        const CBioseq& bioseq,
+        CScope& scope,
         const string& title
     );
 
 private:
-    // instance variables
-    const CBioseq& m_bioseq;
-    CScope& m_scope;
-
     // ignore existing title is forced for certain types
     bool m_reconstruct;
     bool m_allprotnames;
@@ -171,17 +200,31 @@ private:
 #include <objmgr/feat_ci.hpp>
 
 // constructor
-CDeflineGenerator::CDeflineGenerator (
-    const CBioseq& bioseq,
-    CScope& scope
-)
-    : m_bioseq (bioseq)
-    , m_scope (scope)
+CDeflineGenerator::CDeflineGenerator (void)
 
 {
-    m_reconstruct = false;
-    m_allprotnames = false;
+}
 
+// destructor
+CDeflineGenerator::~CDeflineGenerator (void)
+
+{
+}
+
+// set instance variables from Seq-inst, Seq-ids, MolInfo, etc., but not BioSource
+void CDeflineGenerator::x_SetFlags (
+    const CBioseq& bioseq,
+    CScope& scope,
+    bool ignoreExisting,
+    bool allProteinNames
+)
+
+{
+    // set flags from record components
+    m_reconstruct = ignoreExisting;
+    m_allprotnames = allProteinNames;
+
+    // reset member variables to cleared state
     m_is_na = false;
     m_is_aa = false;
 
@@ -195,6 +238,12 @@ CDeflineGenerator::CDeflineGenerator (
     m_is_pdb = false;
     m_third_party = false;
     m_wgs_master = false;
+
+    m_general_str.clear();
+    m_patent_country.clear();
+    m_patent_number.clear();
+
+    m_patent_sequence = 0;
 
     m_pdb_chain = 0;
 
@@ -215,24 +264,26 @@ CDeflineGenerator::CDeflineGenerator (
     m_tpa_exp = false;
     m_tpa_inf = false;
 
+    m_pdb_compound.clear();
+
+    m_taxname.clear();
     m_genome = NCBI_GENOME(unknown);
-}
 
-// destructor
-CDeflineGenerator::~CDeflineGenerator (void)
+    m_chromosome.clear();
+    m_clone.clear();
+    m_map.clear();
+    m_plasmid.clear();
+    m_segment.clear();
 
-{
-}
+    m_isolate.clear();
+    m_strain.clear();
 
-// set instance variables from Seq-inst, Seq-ids, MolInfo, etc., but not BioSource
-void CDeflineGenerator::x_SetFlags (void)
+    // now start setting member variables
+    m_is_na = bioseq.IsNa();
+    m_is_aa = bioseq.IsAa();
 
-{
-    m_is_na = m_bioseq.IsNa();
-    m_is_aa = m_bioseq.IsAa();
-
-    if (m_bioseq.IsSetInst()) {
-        const CSeq_inst& inst = m_bioseq.GetInst();
+    if (bioseq.IsSetInst()) {
+        const CSeq_inst& inst = bioseq.GetInst();
         if (inst.IsSetRepr()) {
             TSEQ_REPR repr = inst.GetRepr();
             m_is_seg = (repr == CSeq_inst::eRepr_seg);
@@ -241,7 +292,7 @@ void CDeflineGenerator::x_SetFlags (void)
     }
 
     // process Seq-ids
-    FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, m_bioseq) {
+    FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bioseq) {
         const CSeq_id& sid = **sid_itr;
         TSEQID_CHOICE chs = sid.Which();
          switch (chs) {
@@ -316,7 +367,7 @@ void CDeflineGenerator::x_SetFlags (void)
     }
 
     // process MolInfo tech
-    IF_EXISTS_CLOSEST_MOLINFO (mi_ref, m_bioseq, NULL) {
+    IF_EXISTS_CLOSEST_MOLINFO (mi_ref, bioseq, NULL) {
         const CMolInfo& molinf = (*mi_ref).GetMolinfo();
         m_mi_biomol = molinf.GetBiomol();
         m_mi_tech = molinf.GetTech();
@@ -356,14 +407,14 @@ void CDeflineGenerator::x_SetFlags (void)
         // process keywords
         const list <string> *keywords = NULL;
 
-        IF_EXISTS_CLOSEST_GENBANKBLOCK (gb_ref, m_bioseq, NULL) {
+        IF_EXISTS_CLOSEST_GENBANKBLOCK (gb_ref, bioseq, NULL) {
             const CGB_block& gbk = (*gb_ref).GetGenbank();
             if (gbk.IsSetKeywords()) {
                 keywords = &gbk.GetKeywords();
             }
         }
         if (keywords == NULL) {
-            IF_EXISTS_CLOSEST_EMBLBLOCK (eb_ref, m_bioseq, NULL) {
+            IF_EXISTS_CLOSEST_EMBLBLOCK (eb_ref, bioseq, NULL) {
                 const CEMBL_block& ebk = (*eb_ref).GetEmbl();
                 if (ebk.IsSetKeywords()) {
                     keywords = &ebk.GetKeywords();
@@ -391,7 +442,7 @@ void CDeflineGenerator::x_SetFlags (void)
     if (m_is_pdb) {
 
         // process PDB block
-        IF_EXISTS_CLOSEST_PDBBLOCK (pb_ref, m_bioseq, NULL) {
+        IF_EXISTS_CLOSEST_PDBBLOCK (pb_ref, bioseq, NULL) {
             const CPDB_block& pbk = (*pb_ref).GetPdb();
             FOR_EACH_COMPOUND_ON_PDBBLOCK (cp_itr, pbk) {
                 const string& str = *cp_itr;
@@ -406,10 +457,13 @@ void CDeflineGenerator::x_SetFlags (void)
 }
 
 // set instance variables from BioSource
-void CDeflineGenerator::x_SetBioSrc (void)
+void CDeflineGenerator::x_SetBioSrc (
+    const CBioseq& bioseq,
+    CScope& scope
+)
 
 {
-    IF_EXISTS_CLOSEST_BIOSOURCE (bs_ref, m_bioseq, NULL) {
+    IF_EXISTS_CLOSEST_BIOSOURCE (bs_ref, bioseq, NULL) {
         const CBioSource& source = (*bs_ref).GetSource();
 
         // get organism name
@@ -784,7 +838,10 @@ void CDeflineGenerator::x_FlyCG_PtoR (
     }
 }
 
-string CDeflineGenerator::x_TitleFromNM (void)
+string CDeflineGenerator::x_TitleFromNM (
+    const CBioseq& bioseq,
+    CScope& scope
+)
 
 {
     unsigned int         genes = 0, cdregions = 0, prots = 0;
@@ -796,7 +853,7 @@ string CDeflineGenerator::x_TitleFromNM (void)
     if (m_taxname.empty()) return result;
 
     // !!! NOTE CALL TO OBJECT MANAGER !!!
-    const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
+    CBioseq_Handle hnd = scope.GetBioseqHandle (bioseq);
 
     for (CFeat_CI it(hnd); it; ++it) {
         switch (it->GetData().Which()) {
@@ -819,13 +876,13 @@ string CDeflineGenerator::x_TitleFromNM (void)
     if (genes == 1 && cdregions == 1 && (! m_taxname.empty())) {
         result = m_taxname + " ";
         string cds_label;
-        feature::GetLabel (*cdregion, &cds_label, feature::eContent, &m_scope);
+        feature::GetLabel (*cdregion, &cds_label, feature::eContent, &scope);
         if (NStr::EqualNocase (m_taxname, "Drosophila melanogaster")) {
             x_FlyCG_PtoR (cds_label);
         }
         result += NStr::Replace (cds_label, "isoform ", "transcript variant ");
         result += " (";
-        feature::GetLabel (*gene, &result, feature::eContent, &m_scope);
+        feature::GetLabel (*gene, &result, feature::eContent, &scope);
         result += "), mRNA";
     }
 
@@ -833,7 +890,10 @@ string CDeflineGenerator::x_TitleFromNM (void)
 }
 
 // generate title for NR
-string CDeflineGenerator::x_TitleFromNR (void)
+string CDeflineGenerator::x_TitleFromNR (
+    const CBioseq& bioseq,
+    CScope& scope
+)
 
 {
     string result;
@@ -842,7 +902,7 @@ string CDeflineGenerator::x_TitleFromNR (void)
     if (m_taxname.empty()) return result;
 
     // !!! NOTE CALL TO OBJECT MANAGER !!!
-    const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
+    CBioseq_Handle hnd = scope.GetBioseqHandle (bioseq);
 
     for (CTypeConstIterator<CSeq_feat> it(
           *hnd.GetTopLevelEntry().GetCompleteSeq_entry()); it; ++it) {
@@ -922,7 +982,10 @@ string CDeflineGenerator::x_TitleFromPDB (void)
 }
 
 // generate title for protein
-CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (void)
+CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (
+    const CBioseq& bioseq,
+    CScope& scope
+)
 
 {
     bool                  go_on = true;
@@ -934,14 +997,14 @@ CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (void)
     CSeq_entry*           se;
     TSeqPos               seq_len = UINT_MAX;
 
-    if (m_bioseq.IsSetInst ()) {
-        const CSeq_inst& inst = m_bioseq.GetInst ();
+    if (bioseq.IsSetInst ()) {
+        const CSeq_inst& inst = bioseq.GetInst ();
         if (inst.IsSetLength ()) {
             seq_len = inst.GetLength ();
         }
     }
     
-    se = m_bioseq.GetParentEntry();
+    se = bioseq.GetParentEntry();
 
     while (se && go_on) {
         const CSeq_entry& entry = *se;
@@ -959,7 +1022,7 @@ CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (void)
                 }
                 if (! feat.IsSetLocation ()) continue;
                 const CSeq_loc& loc = feat.GetLocation ();
-                TSeqPos prot_length = GetLength (loc, &m_scope);
+                TSeqPos prot_length = GetLength (loc, &scope);
                 if (prot_length > longest) {
                     prot_feat = *sf_itr;
                     longest = prot_length;
@@ -999,13 +1062,13 @@ CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (void)
     }
 
     // !!! NOTE CALL TO OBJECT MANAGER !!!
-    const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
+    const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
 
     CSeq_loc everywhere;
     everywhere.SetWhole().Assign(*hnd.GetSeqId());
 
     prot_feat = GetBestOverlappingFeat (everywhere, CSeqFeatData::e_Prot,
-                                        eOverlap_Contained, m_scope);
+                                        eOverlap_Contained, scope);
 
     if (prot_feat) {
         return prot_feat;
@@ -1014,7 +1077,10 @@ CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (void)
     return CConstRef<CSeq_feat> ();
 }
 
-CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (void)
+CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (
+    const CBioseq& bioseq,
+    CScope& scope
+)
 
 {
     CConstRef<CSeq_feat> cds_feat;
@@ -1023,7 +1089,7 @@ CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (void)
     CConstRef<CGene_ref> gene_ref;
 
     // !!! NOTE CALL TO OBJECT MANAGER !!!
-    const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
+    const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
 
     cds_feat = GetCDSForProduct (hnd);
 
@@ -1045,7 +1111,7 @@ CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (void)
 
         cds_loc = &cds_feat->GetLocation();
         if (cds_loc) {
-            gene_feat = GetOverlappingGene (*cds_loc, m_scope);
+            gene_feat = GetOverlappingGene (*cds_loc, scope);
             if (gene_feat) {
                 gene_ref = &gene_feat->GetData().GetGene();
             }
@@ -1059,13 +1125,16 @@ CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (void)
     return CConstRef<CGene_ref> ();
 }
 
-bool CDeflineGenerator::x_HasSourceFeats (void)
+bool CDeflineGenerator::x_HasSourceFeats (
+    const CBioseq& bioseq,
+    CScope& scope
+)
 
 {
     CSeq_entry* se;
     CSeq_entry* top;
 
-    se = m_bioseq.GetParentEntry();
+    se = bioseq.GetParentEntry();
     top = se;
 
     while (se) {
@@ -1085,6 +1154,7 @@ bool CDeflineGenerator::x_HasSourceFeats (void)
             }
         }
         */
+        /*
         VISIT_ALL_SEQENTRYS_WITHIN_SEQENTRY (se_itr, *top) {
             const CSeq_entry& entry = *se_itr;
             FOR_EACH_ANNOT_ON_SEQENTRY (an_itr, entry) {
@@ -1100,12 +1170,17 @@ bool CDeflineGenerator::x_HasSourceFeats (void)
                 }
             }
         }
+        */
+        return true;
     }
 
     return false;
 }
 
-CConstRef<CBioSource> CDeflineGenerator::x_GetSourceFeatViaCDS (void)
+CConstRef<CBioSource> CDeflineGenerator::x_GetSourceFeatViaCDS  (
+    const CBioseq& bioseq,
+    CScope& scope
+)
 
 {
     CConstRef<CSeq_feat>   cds_feat;
@@ -1113,7 +1188,7 @@ CConstRef<CBioSource> CDeflineGenerator::x_GetSourceFeatViaCDS (void)
     CConstRef<CBioSource>  src_ref;
 
     // !!! NOTE CALL TO OBJECT MANAGER !!!
-    const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
+    const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
 
     cds_feat = GetCDSForProduct (hnd);
 
@@ -1123,7 +1198,7 @@ CConstRef<CBioSource> CDeflineGenerator::x_GetSourceFeatViaCDS (void)
         */
         cds_loc = &cds_feat->GetLocation();
         if (cds_loc) {
-            CConstRef<CSeq_feat> src_feat = GetOverlappingSource (*cds_loc, m_scope);
+            CConstRef<CSeq_feat> src_feat = GetOverlappingSource (*cds_loc, scope);
             if (src_feat) {
                 const CSeq_feat& feat = *src_feat;
                 if (feat.IsSetData()) {
@@ -1144,7 +1219,10 @@ CConstRef<CBioSource> CDeflineGenerator::x_GetSourceFeatViaCDS (void)
 }
 
 
-string CDeflineGenerator::x_TitleFromProtein (void)
+string CDeflineGenerator::x_TitleFromProtein (
+    const CBioseq& bioseq,
+    CScope& scope
+)
 
 {
     CConstRef<CProt_ref>  prot;
@@ -1155,7 +1233,7 @@ string CDeflineGenerator::x_TitleFromProtein (void)
     string                result;
 
     // gets longest protein on Bioseq, parts set, or seg set, even if not full-length
-    prot_feat = x_GetLongestProtein ();
+    prot_feat = x_GetLongestProtein (bioseq, scope);
 
     if (prot_feat) {
         prot = &prot_feat->GetData().GetProt();
@@ -1175,7 +1253,7 @@ string CDeflineGenerator::x_TitleFromProtein (void)
         }
         if (! result.empty()) {
             if (NStr::CompareNocase (result, "hypothetical protein") == 0) {
-                gene = x_GetGeneRefViaCDS ();
+                gene = x_GetGeneRefViaCDS (bioseq, scope);
                 if (gene) {
                     const CGene_ref& grp = *gene;
                     if (grp.IsSetLocus_tag()) {
@@ -1202,7 +1280,7 @@ string CDeflineGenerator::x_TitleFromProtein (void)
     }
 
     if (result.empty()) {
-        gene = x_GetGeneRefViaCDS ();
+        gene = x_GetGeneRefViaCDS (bioseq, scope);
         if (gene) {
             const CGene_ref& grp = *gene;
             if (grp.IsSetLocus()) {
@@ -1249,8 +1327,8 @@ string CDeflineGenerator::x_TitleFromProtein (void)
          taxname.find ("vector") == NPOS &&
          taxname.find ("Vector") == NPOS)) {
 
-        if (x_HasSourceFeats()) {
-            src = x_GetSourceFeatViaCDS ();
+        if (x_HasSourceFeats(bioseq, scope)) {
+            src = x_GetSourceFeatViaCDS (bioseq, scope);
             if (src) {
                 const CBioSource& source = *src;
                 if (source.IsSetTaxname()) {
@@ -1269,7 +1347,10 @@ string CDeflineGenerator::x_TitleFromProtein (void)
 }
 
 // generate title for segmented sequence
-string CDeflineGenerator::x_TitleFromSegSeq (void)
+string CDeflineGenerator::x_TitleFromSegSeq  (
+    const CBioseq& bioseq,
+    CScope& scope
+)
 
 {
     string completeness = "complete";
@@ -1277,7 +1358,7 @@ string CDeflineGenerator::x_TitleFromSegSeq (void)
     string locus, product, result;
 
     // !!! NOTE CALL TO OBJECT MANAGER !!!
-    const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
+    const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
 
     if (m_taxname.empty()) {
         m_taxname = "Unknown";
@@ -1286,7 +1367,7 @@ string CDeflineGenerator::x_TitleFromSegSeq (void)
     CSeq_loc everywhere;
     everywhere.SetMix().Set() = hnd.GetInst_Ext().GetSeg();
 
-    CFeat_CI it(m_scope, everywhere, CSeqFeatData::e_Cdregion);
+    CFeat_CI it(scope, everywhere, CSeqFeatData::e_Cdregion);
     for (; it; ++it) {
         cds_found = true;
         if ( !it->IsSetProduct() ) {
@@ -1300,14 +1381,14 @@ string CDeflineGenerator::x_TitleFromSegSeq (void)
 
         CConstRef<CSeq_feat> prot_feat
             = GetBestOverlappingFeat(product_loc, CSeqFeatData::e_Prot,
-                                     eOverlap_Interval, m_scope);
+                                     eOverlap_Interval, scope);
         if (product.empty()  &&  prot_feat.NotEmpty() &&
             prot_feat->GetData().GetProt().IsSetName()) {
             product = *prot_feat->GetData().GetProt().GetName().begin();
         }
 
         CConstRef<CSeq_feat> gene_feat
-            = GetOverlappingGene(it->GetLocation(), m_scope);
+            = GetOverlappingGene(it->GetLocation(), scope);
         if (locus.empty()  &&  gene_feat.NotEmpty()) {
             if (gene_feat->GetData().GetGene().IsSetLocus()) {
                 locus = gene_feat->GetData().GetGene().GetLocus();
@@ -1403,6 +1484,8 @@ string CDeflineGenerator::x_SetPrefix (void)
 
 // generate suffix if not already present
 string CDeflineGenerator::x_SetSuffix (
+    const CBioseq& bioseq,
+    CScope& scope,
     const string& title
 )
 
@@ -1432,7 +1515,7 @@ string CDeflineGenerator::x_SetSuffix (
             if (m_is_delta) {
                 unsigned int pieces = 1;
                 // !!! NOTE CALL TO OBJECT MANAGER !!!
-                const CBioseq_Handle& hnd = m_scope.GetBioseqHandle (m_bioseq);
+                const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
                 for (CSeqMap_CI it (hnd, CSeqMap::fFindGap); it; ++it) {
                     ++pieces;
                 }
@@ -1489,6 +1572,8 @@ string CDeflineGenerator::x_SetSuffix (
 
 // main method
 string CDeflineGenerator::GenerateDefline (
+    const CBioseq& bioseq,
+    CScope& scope,
     bool ignoreExisting,
     bool allProteinNames
 )
@@ -1497,16 +1582,12 @@ string CDeflineGenerator::GenerateDefline (
     string prefix, title, suffix;
 
     // set flags from record components
-    m_reconstruct = ignoreExisting;
-    m_allprotnames = allProteinNames;
-
-    // set flags from record components
-    x_SetFlags ();
+    x_SetFlags (bioseq, scope, ignoreExisting, allProteinNames);
 
     if (! m_reconstruct) {
         // look for existing instantiated title
         int level = 0;
-        IF_EXISTS_CLOSEST_TITLE (ttl_ref, m_bioseq, &level) {
+        IF_EXISTS_CLOSEST_TITLE (ttl_ref, bioseq, &level) {
             const string& str = (*ttl_ref).GetTitle();
             // for non-PDB proteins, title must be packaged on Bioseq
             if (m_is_na || m_is_pdb || level == 0) {
@@ -1535,19 +1616,19 @@ string CDeflineGenerator::GenerateDefline (
 
         if (title.empty()) {
             // set fields from source information
-            x_SetBioSrc ();
+            x_SetBioSrc (bioseq, scope);
 
             // several record types have specific methods
             if (m_is_nc) {
                 title = x_TitleFromNC ();
             } else if (m_is_nm) {
-                title = x_TitleFromNM ();
+                title = x_TitleFromNM (bioseq, scope);
             } else if (m_is_nr) {
-                title = x_TitleFromNR ();
+                title = x_TitleFromNR (bioseq, scope);
             } else if (m_is_aa) {
-                title = x_TitleFromProtein ();
+                title = x_TitleFromProtein (bioseq, scope);
             } else if (m_is_seg && (! m_is_est_sts_gss)) {
-                title = x_TitleFromSegSeq ();
+                title = x_TitleFromSegSeq (bioseq, scope);
             } else if (m_is_tsa || (m_is_wgs && (! m_wgs_master))) {
                 title = x_TitleFromWGS ();
             }
@@ -1592,7 +1673,7 @@ string CDeflineGenerator::GenerateDefline (
     prefix = x_SetPrefix ();
 
     // calculate suffix
-    suffix = x_SetSuffix (title);
+    suffix = x_SetSuffix (bioseq, scope, title);
 
     return prefix + title + suffix;
 }
@@ -1609,9 +1690,9 @@ static string CreateDefLine (
 )
 
 {
-    CDeflineGenerator def (bioseq, scope);
+    CDeflineGenerator gen;
 
-    return def.GenerateDefline (ignoreExisting, allProteinNames);
+    return gen.GenerateDefline (bioseq, scope, ignoreExisting, allProteinNames);
 }
 
 // alternative provided for backward compatibility with existing function
