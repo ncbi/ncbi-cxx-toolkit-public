@@ -135,6 +135,12 @@ void CStreamTestApp::Init()
     arg_desc->AddFlag( "cleanup",
         "BasicCleanup each record" );
 
+    arg_desc->AddDefaultKey( "skip", 
+        "Skip",
+        "Skip certain record types",
+        CArgDescriptions::eString,
+        "" );
+
     arg_desc->AddKey( "test", 
         "TestCase",
         "Mode for generation",
