@@ -54,7 +54,6 @@ class CSeq_annot;
 class NCBI_SEQSET_EXPORT CSeq_entry : public CSeq_entry_Base, public CSerialUserOp
 {
     typedef CSeq_entry_Base Tparent;
-    typedef list< CRef< CSeq_annot > > TAnnot;
 public:
     // constructor
     CSeq_entry(void);
@@ -79,6 +78,7 @@ public:
     const CSeq_descr& GetDescr(void) const;
 
     // convenience functions to get annot list from underlying Bioseq or Bioseq-set
+    typedef list< CRef< CSeq_annot > > TAnnot;
     bool IsSetAnnot(void) const;
     const TAnnot& GetAnnot(void) const;
 
