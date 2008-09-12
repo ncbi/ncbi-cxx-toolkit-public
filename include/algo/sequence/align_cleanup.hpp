@@ -79,6 +79,9 @@ public:
     /// Assume that the alignments contains alignments of a sequence to itself
     void PreserveRows(bool b)    { m_PreserveRows = b; }
 
+    /// Fill any unaligned regions with explicit gaps
+    void FillUnaligned(bool b)    { m_FillUnaligned = b; }
+
     static void CreatePairwiseFromMultiple(const CSeq_align& multiple,
                                            TAligns&          pairwise);
 
@@ -87,6 +90,7 @@ private:
     bool m_SortByScore;
     bool m_AllowTransloc;
     bool m_PreserveRows;
+    bool m_FillUnaligned;
 
     void x_Cleanup_AlignVec(const TConstAligns& aligns_in,
                             TAligns&            aligns_out);

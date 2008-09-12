@@ -200,6 +200,7 @@ CAlignCleanup::CAlignCleanup(CScope& scope)
     , m_SortByScore(true)
     , m_AllowTransloc(true)
     , m_PreserveRows(false)
+    , m_FillUnaligned(false)
 {
 }
 
@@ -310,22 +311,18 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
 
     CAlnUserOptions opts;
     opts.m_MergeAlgo = CAlnUserOptions::eMergeAllSeqs;
-    /**
     if (m_PreserveRows) {
         opts.m_MergeAlgo = CAlnUserOptions::ePreserveRows;
     }
-    **/
     opts.m_Direction = CAlnUserOptions::eBothDirections;
 
     CAlnUserOptions::TMergeFlags flags = CAlnUserOptions::fTruncateOverlaps;
-    /**
     if (m_AllowTransloc) {
         flags |= CAlnUserOptions::fAllowTranslocation;
     }
     if ( !m_SortByScore ) {
         flags |= CAlnUserOptions::fSkipSortByScore;
     }
-    **/
     opts.SetMergeFlags(flags, true);
 
     ///
@@ -344,6 +341,24 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     ///
     /// create dense-segs and return
     ///
+    CRef<CSeq_align> ds_align =
+        CreateSeqAlignFromAnchoredAln(out_anchored_aln,
+                                      CSeq_align::TSegs::e_Denseg);
+    if (ds_align->CheckNumRows() > 2  &&  all_pairwise) {
+        CreatePairwiseFromMultiple(*ds_align, aligns_out);
+    } else {
+        aligns_out.push_back(ds_align);
+    }
+
+    /// fill unaligned regions
+    if (m_FillUnaligned) {
+        NON_CONST_ITERATE (TAligns, align_iter, aligns_out) {
+            CRef<CDense_seg> ds = (*align_iter)->SetSegs().SetDenseg().FillUnaligned();
+            (*align_iter)->SetSegs().SetDenseg(*ds);
+        }
+    }
+
+#if 0
     if (all_pairwise) {
         /// Create individual Dense-segs (one per CPairwiseAln)
         CAnchoredAln::TPairwiseAlnVector::const_iterator begin =
@@ -362,6 +377,7 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
         for ( ;  begin != end;  ++begin) {
             CRef<CDense_seg> ds = 
                 CreateDensegFromPairwiseAln(**begin);
+            //ds = ds->FillUnaligned();
             CRef<CSeq_align> aln(new CSeq_align);
             aln->SetSegs().SetDenseg(*ds);
             aln->SetType(CSeq_align::eType_partial);
@@ -374,6 +390,7 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
                                           CSeq_align::TSegs::e_Denseg);
         aligns_out.push_back(ds_align);
     }
+#endif
 }
 
 
