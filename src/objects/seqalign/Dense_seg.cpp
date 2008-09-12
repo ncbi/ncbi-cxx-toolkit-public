@@ -1129,10 +1129,10 @@ CRef<CDense_seg> CDense_seg::FillUnaligned()
 
         // insert extra segments
         if (extra_numsegs) {
-            while (extra_segs[extra_seg] == seg) {
-                new_lens[new_seg++] = extra_lens[extra_seg++];
-                for (row = 0; row < numrows; row++) {
-                    new_starts[new_idx++] = extra_starts[extra_idx++];
+            for ( ;  extra_seg < extra_segs.size()  &&  extra_segs[extra_seg] == seg;  ++new_seg, ++extra_seg) {
+                new_lens[new_seg] = extra_lens[extra_seg];
+                for (row = 0;  row < numrows;  ++row, ++new_idx, ++extra_idx) {
+                    new_starts[new_idx] = extra_starts[extra_idx];
                 }
             }   
         }
