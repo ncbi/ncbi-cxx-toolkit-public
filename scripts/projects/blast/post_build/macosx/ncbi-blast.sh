@@ -16,7 +16,9 @@ DB_BINS="blastdbcmd makeblastdb makembindex"
 ALL_BINS="$BLAST_BINS $MASKING_BINS $DB_BINS"
 
 rm -rf $PRODUCT.dmg $PRODUCT _stage $INSTALLDIR/installer
-mkdir -p _stage/bin _stage/doc
+mkdir -p _stage/usr/local/ncbi/blast/bin _stage/usr/local/ncbi/blast/doc _stage/etc/paths.d
+
+cp -p ./ncbi_blast _stage/etc/paths.d
 
 # This is needed because the binary ncbi-blast.pmproj has this string hard
 # coded
@@ -28,12 +30,12 @@ done
 
 for bin in $ALL_BINS; do
     echo copying $bin
-    cp -p $INSTALLDIR/bin/$bin _stage/bin
+    cp -p $INSTALLDIR/bin/$bin _stage/usr/local/ncbi/blast/bin
 done
 
 echo building package
 mkdir $PRODUCT
-/Developer/Tools/packagemaker -build -proj ncbi-blast.pmproj -p $PRODUCT/$PRODUCT.pkg
+/Developer/Tools/packagemaker --doc ncbi-blast.pmdoc --out $PRODUCT/$PRODUCT.pkg
 
 echo creating disk image
 /usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT
