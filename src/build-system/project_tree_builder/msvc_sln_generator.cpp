@@ -237,6 +237,10 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
          !m_AsnAllProject.second.empty() ) {
         proj_guid.push_back(m_AsnAllProject.second);
     }
+    if ( !m_LibsAllProject.first.empty() &&
+         !m_LibsAllProject.second.empty() ) {
+        proj_guid.push_back(m_LibsAllProject.second);
+    }
     // Projects from tree
     ITERATE(TProjects, p, m_Projects) {
         proj_guid.push_back(p->second.m_GUID);
