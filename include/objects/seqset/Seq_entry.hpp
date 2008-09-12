@@ -37,6 +37,7 @@
 #ifndef OBJECTS_SEQSET_SEQ_ENTRY_HPP
 #define OBJECTS_SEQSET_SEQ_ENTRY_HPP
 
+#include <list>
 
 // generated includes
 #include <objects/seqset/Seq_entry_.hpp>
