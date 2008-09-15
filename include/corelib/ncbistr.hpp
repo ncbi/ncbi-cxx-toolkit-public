@@ -2638,7 +2638,7 @@ public:
                    NStr::EUrlEncode flag = NStr::eUrlEnc_SkipMarkChars);
 
     /// Check if the original string was encoded.
-    bool IsEncoded(void) const { return m_Encoded.get(); }
+    bool IsEncoded(void) const { return m_Encoded.get() != 0; }
     /// Get the original unencoded string
     const string& GetOriginalString(void) const { return m_Original; }
     /// Get encoded string
