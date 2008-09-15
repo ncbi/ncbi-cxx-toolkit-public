@@ -200,7 +200,8 @@ bool CommonInit(void)
     }
 
     I_DriverContext* drv_context = GetDS().GetDriverContext();
-    drv_context->SetLoginTimeout(2);
+    drv_context->SetLoginTimeout(4);
+    drv_context->SetTimeout(4);
 
     if (GetArgs().GetTestConfiguration() != CTestArguments::eWithoutExceptions) {
         if (GetArgs().IsODBCBased()) {
