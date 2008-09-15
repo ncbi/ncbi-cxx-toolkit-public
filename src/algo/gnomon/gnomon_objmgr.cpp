@@ -109,7 +109,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
     int prod_prev = -1;
     bool prev_3_prime_splice = false;
 
-    m_target_len = product_len;
+    int target_len = product_len;
 
     vector<TSignedSeqRange> transcript_exons;
     TInDels indels;
@@ -178,7 +178,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         if (sps.CanGetModifiers()) {
             ITERATE(CSpliced_seg::TModifiers, m, sps.GetModifiers()) {
                 if ((*m)->IsStop_codon_found()) {
-                    m_target_len += 3;
+                    target_len += 3;
                     if (Strand() == ePlus) {
                         ExtendRight( 3 );
                         _ASSERT((transcript_exons.back().GetTo()+1)%3 == 0);
@@ -193,7 +193,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         }
     }
 
-    m_alignmap = CAlignMap(Exons(), transcript_exons, indels, orientation );
+    m_alignmap = CAlignMap(Exons(), transcript_exons, indels, orientation, target_len );
     FrameShifts() = m_alignmap.GetInDels(true);
     
     for (CGeneModel::TExons::const_iterator piece_begin = Exons().begin(); piece_begin != Exons().end(); ++piece_begin) {

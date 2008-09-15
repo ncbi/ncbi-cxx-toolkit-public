@@ -507,9 +507,13 @@ public:
     CAlignMap(TSignedSeqPos orig_a, TSignedSeqPos orig_b) : m_orientation(ePlus) {
         m_orig_ranges.push_back(SMapRange(SMapRangeEdge(orig_a), SMapRangeEdge(orig_b)));
         m_edited_ranges = m_orig_ranges;
-}
-    CAlignMap(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TInDels::const_iterator fsi_begin, const TInDels::const_iterator fsi_end) : m_orientation(ePlus) { InsertIndelRangesForInterval(orig_a, orig_b, 0, fsi_begin, fsi_end, eBoundary, eBoundary); }
-    CAlignMap(const CGeneModel::TExons& exons, const vector<TSignedSeqRange>& transcript_exons, const TInDels& indels, EStrand orientation );     //orientation == strand if not Reversed
+        m_target_len = FShiftedLen(orig_a, orig_b); 
+    }
+    CAlignMap(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TInDels::const_iterator fsi_begin, const TInDels::const_iterator fsi_end) : m_orientation(ePlus) { 
+        InsertIndelRangesForInterval(orig_a, orig_b, 0, fsi_begin, fsi_end, eBoundary, eBoundary); 
+        m_target_len = FShiftedLen(orig_a, orig_b);
+    }
+    CAlignMap(const CGeneModel::TExons& exons, const vector<TSignedSeqRange>& transcript_exons, const TInDels& indels, EStrand orientation, int targetlen );     //orientation == strand if not Reversed
     CAlignMap(const CGeneModel::TExons& exons, const TInDels& frameshifts, EStrand strand, TSignedSeqRange lim = TSignedSeqRange::GetWhole(), int holelen = 0);
     TSignedSeqPos MapOrigToEdited(TSignedSeqPos orig_pos) const;
     TSignedSeqPos MapEditedToOrig(TSignedSeqPos edited_pos) const;
@@ -525,6 +529,7 @@ public:
     TSignedSeqRange ShrinkToRealPoints(TSignedSeqRange orig_range, bool snap_to_codons = false) const;
     TSignedSeqPos FShiftedMove(TSignedSeqPos orig_pos, int len) const;
     TInDels GetInDels(bool fs_only) const;
+    int TargetLen() const { return m_target_len; }
 
 // private: // breaks SMapRange on WorkShop. :-/
     struct SMapRangeEdge {
@@ -565,11 +570,12 @@ private:
     };
     static int FindLowerRange(const vector<CAlignMap::SMapRange>& a,  TSignedSeqPos p);
 
-    void InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edited_start, int len, const CInDelInfo* left_fs, const CInDelInfo* right_fs, EEdgeType left_type, EEdgeType right_type);
+    void InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edited_start, int len, int left_orige, int left_edite, int right_orige, int right_edite, EEdgeType left_type, EEdgeType right_type);
     TSignedSeqPos InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TSignedSeqPos edit_a, TInDels::const_iterator fsi_begin, TInDels::const_iterator fsi_end, EEdgeType type_a, EEdgeType type_b);
 
     vector<SMapRange> m_orig_ranges, m_edited_ranges;
     EStrand m_orientation;
+    int m_target_len;
 };
 
 
@@ -579,17 +585,16 @@ class CAlignModel : public CGeneModel {
 public:
     CAlignModel() {}
     CAlignModel(const objects::CSeq_align& seq_align);
-    CAlignModel(const CGeneModel& g) : CGeneModel(g), m_alignmap(g.GetAlignMap()) { m_target_len = m_alignmap.FShiftedLen(Limits(), false); }
-    CAlignModel(const CGeneModel& g, const CAlignMap& a, int len) : CGeneModel(g), m_alignmap(a), m_target_len(len) {}
+    CAlignModel(const CGeneModel& g) : CGeneModel(g), m_alignmap(g.GetAlignMap()) {}
+    CAlignModel(const CGeneModel& g, const CAlignMap& a) : CGeneModel(g), m_alignmap(a) {}
     TSignedSeqRange TranscriptExon(int i) const;
     virtual CAlignMap GetAlignMap() const { return m_alignmap; }
-    int TargetLen() const { return m_target_len; }
+    int TargetLen() const { return m_alignmap.TargetLen(); }
     TInDels GetInDels(bool fs_only) const;
     TInDels GetInDels(TSignedSeqPos a, TSignedSeqPos b, bool fs_only) const;
     int PolyALen();
 private:
     CAlignMap m_alignmap;
-    int m_target_len;
 };
 
 

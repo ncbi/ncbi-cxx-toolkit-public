@@ -352,7 +352,33 @@ TInDels CAlignMap::GetInDels(bool fs_only) const {
     return indels;
 }
 
+void CAlignMap::InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edited_start, int len, int left_orige, int left_edite, int right_orige, int right_edite,  EEdgeType left_type, EEdgeType right_type)
+{
+    _ASSERT(len > 0);
+    _ASSERT(m_orig_ranges.empty() || (orig_start > m_orig_ranges.back().GetTo() && edited_start > m_edited_ranges.back().GetTo()));
 
+    CAlignMap::SMapRangeEdge orig_from(orig_start);
+    orig_from.m_edge_type = left_type;
+    orig_from.m_extra = left_orige;
+
+    CAlignMap::SMapRangeEdge orig_to(orig_start+len-1);
+    orig_to.m_edge_type = right_type;
+    orig_to.m_extra = right_orige;
+
+    m_orig_ranges.push_back(SMapRange(orig_from, orig_to));
+
+    CAlignMap::SMapRangeEdge edited_from(edited_start);
+    edited_from.m_edge_type = orig_from.m_edge_type;
+    edited_from.m_extra = left_edite;
+
+    CAlignMap::SMapRangeEdge edited_to(edited_start+len-1);
+    edited_to.m_edge_type = orig_to.m_edge_type;
+    edited_to.m_extra = right_edite;
+
+    m_edited_ranges.push_back(SMapRange(edited_from, edited_to));
+}
+
+/*
 void CAlignMap::InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edited_start, int len, const CInDelInfo* left_fs, const CInDelInfo* right_fs, EEdgeType left_type, EEdgeType right_type)
 {
     _ASSERT(len > 0);
@@ -382,8 +408,65 @@ void CAlignMap::InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edit
     }
     m_edited_ranges.push_back(SMapRange(edited_from, edited_to));
 }
+*/
 
+TSignedSeqPos CAlignMap::InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TSignedSeqPos edit_a, TInDels::const_iterator fsi_begin, TInDels::const_iterator fsi_end, EEdgeType type_a, EEdgeType type_b) 
+{
+    TInDels::const_iterator fsi = fsi_begin;
+    for( ;fsi != fsi_end && fsi->Loc() < orig_a; ++fsi ) {
+        _ASSERT( !fsi->IntersectingWith(orig_a,orig_b) );
+    }
 
+    int left_orige = 0;
+    int left_edite = 0;
+
+    for( ;fsi != fsi_end && fsi->Loc() == orig_a; ++fsi ) {    // first left end
+        if (fsi->IsInsertion()) {
+            orig_a += fsi->Len();
+            left_orige += fsi->Len(); 
+        } else {
+            edit_a += fsi->Len();
+            left_edite += fsi->Len();
+        }
+    }
+
+    while(fsi != fsi_end && fsi->Loc() <= (fsi->IsInsertion() ? orig_b : orig_b+1)) {
+        int len = fsi->Loc()-orig_a;
+        _ASSERT(len > 0 && orig_a+len-1 <= orig_b);
+
+        int bb = fsi->Loc();
+        int right_orige = 0;
+        int right_edite = 0;
+        for( ;fsi != fsi_end && fsi->Loc() == bb; ++fsi ) {      // right end
+            if (fsi->IsInsertion()) {
+                right_orige += fsi->Len();
+                bb += fsi->Len();
+            } else {
+                right_edite += fsi->Len();
+            }
+        }
+
+        int next_orig_a = orig_a+len+right_orige;
+        InsertOneToOneRange(orig_a, edit_a, len, left_orige, left_edite, right_orige, right_edite, type_a, (next_orig_a <= orig_b) ? eInDel : type_b);
+
+        orig_a = next_orig_a;
+        edit_a += len+right_edite;
+        type_a = eInDel;
+        left_orige = right_orige;
+        left_edite = right_edite;
+    }
+
+    if(orig_a <= orig_b) {
+        int len = orig_b-orig_a+1;
+        _ASSERT(len > 0);
+        InsertOneToOneRange(orig_a, edit_a, len, left_orige, left_edite, 0, 0, type_a, type_b);
+        edit_a += len;
+    }
+
+    return edit_a;
+}
+
+/*
 TSignedSeqPos CAlignMap::InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TSignedSeqPos edit_a, TInDels::const_iterator fsi_begin, TInDels::const_iterator fsi_end, EEdgeType type_a, EEdgeType type_b) 
 {
     const CInDelInfo* left_fs = 0;
@@ -398,7 +481,7 @@ TSignedSeqPos CAlignMap::InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSig
         } else {
             right_fs = &(*fsi);
             int len = fsi->Loc()-orig_a;
-            _ASSERT(left_fs == 0 || len > 0);                               // no two insertion in a row;
+            //            _ASSERT(left_fs == 0 || len > 0);                               // no two insertion in a row;
 
             TSignedSeqPos next_orig_a = orig_a;
             if (fsi->IsInsertion()) 
@@ -424,8 +507,9 @@ TSignedSeqPos CAlignMap::InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSig
 
     return edit_a;
 }
+*/
 
-CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const vector<TSignedSeqRange>& transcript_exons, const TInDels& indels, EStrand orientation ) : m_orientation(orientation) {
+CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const vector<TSignedSeqRange>& transcript_exons, const TInDels& indels, EStrand orientation, int target_len ) : m_orientation(orientation), m_target_len(target_len) {
 
 #ifdef _DEBUG
     _ASSERT(transcript_exons.size() == exons.size());
@@ -489,6 +573,9 @@ CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const TInDels& frameshifts
             estart += holelen;
     }
 
+    if(!m_edited_ranges.empty())
+        m_target_len = m_edited_ranges.back().GetExtendedTo()+1;
+
     _ASSERT(m_edited_ranges.size() == m_orig_ranges.size());
 }
 
@@ -496,20 +583,26 @@ template <class Vec>
 void CAlignMap::EditedSequence(const Vec& original_sequence, Vec& edited_sequence, bool includeholes) const
 {
     edited_sequence.clear();
-    edited_sequence.insert(edited_sequence.end(),m_edited_ranges.front().GetExtraFrom(),res_traits<typename Vec::value_type>::_fromACGT('N'));    
+    int l = includeholes ? m_edited_ranges.front().GetFrom() : m_edited_ranges.front().GetExtraFrom();
+    edited_sequence.insert(edited_sequence.end(),l,res_traits<typename Vec::value_type>::_fromACGT('N'));    
     for(int range = 0; range < (int)m_orig_ranges.size(); ++range) {
         int a = m_orig_ranges[range].GetFrom();
         int b = m_orig_ranges[range].GetTo()+1;
         edited_sequence.insert(edited_sequence.end(),original_sequence.begin()+a, original_sequence.begin()+b);
-        edited_sequence.insert(edited_sequence.end(),m_edited_ranges[range].GetExtraTo(),res_traits<typename Vec::value_type>::_fromACGT('N'));
 
-        if(range < (int)m_orig_ranges.size()-1 && m_edited_ranges[range].GetExtendedTo() < m_edited_ranges[range+1].GetExtendedFrom()) {
-            int l = m_edited_ranges[range+1].GetExtraFrom();
+        int l = 0;
+        if(range < (int)m_orig_ranges.size()-1) {
             if(includeholes) 
-                l = m_edited_ranges[range+1].GetFrom()-m_edited_ranges[range].GetTo()-1;
-            if(l > 0)
-                edited_sequence.insert(edited_sequence.end(),l,res_traits<typename Vec::value_type>::_fromACGT('N'));
+                l = m_edited_ranges[range+1].GetFrom()-m_edited_ranges[range].GetTo()-1;                  // missed part
+            else if(m_edited_ranges[range].GetExtendedTo() < m_edited_ranges[range+1].GetExtendedFrom())
+                l = m_edited_ranges[range].GetExtraTo() + m_edited_ranges[range+1].GetExtraFrom();        // indels from two exon ends
+            else
+                l = m_edited_ranges[range].GetExtraTo();                                                  // indel inside exon
+
+        } else {
+            l = includeholes ? CAlignMap::TargetLen()-m_edited_ranges.back().GetTo()-1 : m_edited_ranges.back().GetExtraTo();
         }
+        edited_sequence.insert(edited_sequence.end(),l,res_traits<typename Vec::value_type>::_fromACGT('N'));
     }
     
     if(m_orientation == eMinus) 

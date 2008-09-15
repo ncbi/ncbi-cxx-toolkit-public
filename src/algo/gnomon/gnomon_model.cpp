@@ -728,6 +728,9 @@ void CModelExon::Extend(const CModelExon& e)
 
 void CGeneModel::TrimEdgesToFrameInOtherAlignGaps(const TExons& exons_with_gaps, bool ensure_cds_invariant)
 {
+    if(Exons().empty())
+        return;
+
     TSignedSeqPos left_edge = Limits().GetFrom();
     TSignedSeqPos right_edge = Limits().GetTo();
     CAlignMap mrnamap(Exons(), FrameShifts(), Strand());
@@ -1563,7 +1566,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
     }
 
     sort(indels.begin(),indels.end());
-    CAlignMap amap(a.Exons(), transcript_exons, indels, orientation);
+    CAlignMap amap(a.Exons(), transcript_exons, indels, orientation, target_len);
 
     a.FrameShifts() = amap.GetInDels(true);
 
@@ -1631,7 +1634,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
 
     a.SetCdsInfo(cds_info);
 
-    align = CAlignModel(a, amap, target_len);
+    align = CAlignModel(a, amap);
     contig_stream_state.slot(is) = rec.seqid;
     return is;
 }
