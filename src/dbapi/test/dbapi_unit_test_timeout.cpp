@@ -213,11 +213,11 @@ BOOST_AUTO_TEST_CASE(Test_Timeout)
         auto_ptr<IConnection> conn;
         auto_ptr<IStatement> auto_stmt;
 
+        I_DriverContext* dc = GetDS().GetDriverContext();
+        unsigned int timeout = dc->GetTimeout();
+
         // Alter DriverContext ...
         {
-            I_DriverContext* dc = GetDS().GetDriverContext();
-            unsigned int timeout = dc->GetTimeout();
-
             dc->SetTimeout(2);
 
             // Create connection ...
@@ -238,9 +238,9 @@ BOOST_AUTO_TEST_CASE(Test_Timeout)
             //
             // Check selecting from a huge table ...
             s_HugeTableSelect(*conn);
-
-            dc->SetTimeout(timeout);
         } // Alter DriverContext ...
+
+        dc->SetTimeout(timeout);
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -254,6 +254,9 @@ BOOST_AUTO_TEST_CASE(Test_Timeout2)
         auto_ptr<IConnection> conn;
         auto_ptr<IStatement> auto_stmt;
 
+
+        I_DriverContext* dc = GetDS().GetDriverContext();
+        unsigned int timeout = dc->GetTimeout();
 
         // Alter connection ...
         {
@@ -271,6 +274,8 @@ BOOST_AUTO_TEST_CASE(Test_Timeout2)
             s_HugeTableSelect(*conn);
 
         }
+
+        dc->SetTimeout(timeout);
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
