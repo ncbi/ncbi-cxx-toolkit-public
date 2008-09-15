@@ -148,27 +148,79 @@ public:
 public:
     enum EDirection {eIn, eOut, eInOut};
 
+    /// Get total number of columns in resultset.
+    /// 
+    /// @return 
+    ///   total number of columns in resultset
     virtual unsigned int GetNum(void) const = 0;
 
-    // This method is returning const reference because meta-info MUST be
-    // cached for performance reasons.
+    /// Get name of column.
+    /// This method is returning const reference because meta-info MUST be
+    /// cached for performance reasons.
+    ///
+    /// @param param
+    ///   Column number or name
     virtual const string& GetName(
         const CDBParamVariant& param, 
         CDBParamVariant::ENameFormat format = 
             CDBParamVariant::eSQLServerName) const = 0;
+
+    /// @brief 
+    /// 
+    /// @param param 
+    ///   Column number or name
+    /// 
+    /// @return 
+    ///   Number of a columnn, which is corresponding to a name.
     virtual unsigned int GetIndex(const CDBParamVariant& param) const = 0;
     
+    /// Get maximum size in bytes for column.
+    ///
+    /// @param col
+    ///   Column number or name
+    /// 
+    /// @return 
+    ///   Max number of bytes needed to hold the returned data. 
     virtual size_t GetMaxSize(const CDBParamVariant& param) const = 0;
+
+    /// Get data type for column in the resultset.
+    ///
+    /// @param param
+    ///   Column number or name
     virtual EDB_Type GetDataType(const CDBParamVariant& param) const = 0;
+
+    /// Get parameter's direction (in/out/inout).
+    ///
+    /// @param param
+    ///   Column number or name
     virtual EDirection GetDirection(const CDBParamVariant& param) const = 0;
 
     /// This method stores pointer to data.
+    ///
+    /// @param param
+    ///   Column number or name
+    ///
+    /// @param value
+    ///   Binded object
+    ///
+    /// @param out_param
+    ///   true if this parameter is an output parameter
     virtual CDBParams& Bind(
         const CDBParamVariant& param, 
         CDB_Object* value, 
         bool out_param = false
         );
+
     /// This method stores copy of data.
+    ///
+    /// @param param
+    ///   Column number or name
+    ///
+    /// @param value
+    ///   Binded object
+    ///
+    /// @param out_param
+    ///   true if this parameter is an output parameter
     virtual CDBParams& Set(
         const CDBParamVariant& param, 
         CDB_Object* value, 

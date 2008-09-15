@@ -100,7 +100,7 @@ public:
     ///   Column number or name
     virtual EDB_Type GetType(const CDBParamVariant& param) const = 0;
 
-    /// Get maximum size for column.
+    /// Get maximum size in bytes for column.
     ///
     /// @param col
     ///   Column number
