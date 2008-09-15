@@ -356,6 +356,10 @@ void CLDS_IStreamCache::ReleaseStream(CRef<CIStream> stream)
     if ( GetCacheSize() == 0 ) {
         return;
     }
+    if ( stream->GetStream().bad() ) { // do not keep bad streams
+        return;
+    }
+    stream->GetStream().clear(); // clear possible EOF or FAIL state
     x_ReduceStreamCountTo(GetCacheSize()-1);
     TStreamCache::iterator cache_iter =
         m_StreamCache.insert(m_StreamCache.end(), stream);
