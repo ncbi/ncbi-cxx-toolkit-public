@@ -129,18 +129,40 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
     TDim dim = aln_stats.GetDimForAln(aln_idx);
 
     size_t anchor_id_idx;
-    if (options.GetAnchorId()) {
-        // if anchor was chosen by the user
-        typedef typename TAlnStats::TIdMap TIdMap;
-        typename TIdMap::const_iterator it = aln_stats.GetAnchorIdMap().find(options.GetAnchorId());
-        if (it == aln_stats.GetAnchorIdMap().end()) {
-            NCBI_THROW(CAlnException, eInvalidRequest,
-                       "Invalid options.GetAnchorId()");
+    if (aln_stats.CanBeAnchored()) {
+        if (options.GetAnchorId()) {
+            // if anchor was chosen by the user
+            typedef typename TAlnStats::TIdMap TIdMap;
+            typename TIdMap::const_iterator it = aln_stats.GetAnchorIdMap().find(options.GetAnchorId());
+            if (it == aln_stats.GetAnchorIdMap().end()) {
+                NCBI_THROW(CAlnException, eInvalidRequest,
+                           "Invalid options.GetAnchorId()");
+            }
+            anchor_id_idx = it->second[0];
+        } else {
+            // if not explicitly chosen, just choose the first potential
+            // anchor that is preferably not aligned to itself
+            for (size_t i = 0; i < aln_stats.GetAnchorIdVec().size(); ++i) {
+                const TAlnSeqIdIRef& anchor_id = aln_stats.GetAnchorIdVec()[i];
+                if (aln_stats.GetAnchorIdMap().find(anchor_id)->second.size() > 1) {
+                    // this potential anchor is aligned to itself, not
+                    // the best choice
+                    if (i == 0) {
+                        // but still, keep the first one in case all
+                        // are bad
+                        anchor_id_idx = aln_stats.GetAnchorIdxVec()[i];
+                    }
+                } else {
+                    // perfect: the first anchor that is not aligned
+                    // to itself
+                    anchor_id_idx = aln_stats.GetAnchorIdxVec()[i];
+                    break;
+                }
+            }
         }
-        anchor_id_idx = it->second[0];
     } else {
-        // if not explicitly chosen, just choose the first potential anchor:
-        anchor_id_idx = aln_stats.GetAnchorIdxVec()[0];
+        NCBI_THROW(CAlnException, eInvalidRequest,
+                   "Alignments cannot be anchored.");
     }
 
     /// Anchor row

@@ -294,11 +294,11 @@ int CAlnBuildApp::Run(void)
             return 0;
         }
         aln_user_options.SetAnchorId(aln_stats.GetIdVec()[anchor_row]);
-        cout << "Manually set anchor to: " << aln_user_options.GetAnchorId() << endl << endl;
+        cout << "Manually set anchor to: " << aln_user_options.GetAnchorId();
     } else {
-        aln_user_options.SetAnchorId(aln_stats.GetAnchorIdVec()[0]);
-        cout << "Automatically set anchor to: " << aln_user_options.GetAnchorId() << endl << endl;
+        cout << "Anchor will be automatically set.";
     }
+    cout << endl << endl;
     
 
     /// Construct a vector of anchored alignments
