@@ -263,6 +263,18 @@ string printed_range(const CBioseq& seq)
    return printed_range(CReadBlastApp::getGenomicLocation(seq));
 }
 
+string printed_range_plus(const CBioseq& seq)
+{
+  string range = printed_range(CReadBlastApp::getGenomicLocation(seq));
+  string title="NOTITLE";
+  ITERATE(CSeq_descr::Tdata, desc, seq.GetDescr().Get())
+    {
+    if(!(*desc)->IsTitle()) continue;
+    title=(*desc)->GetTitle(); break;
+    }
+  return range + " (" + title + ")";
+}
+
 string printed_range(const TSimpleSeqs::iterator& ext_rna)
 {
   return printed_range(*ext_rna);

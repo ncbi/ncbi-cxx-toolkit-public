@@ -269,7 +269,7 @@ bool CReadBlastApp::overlaps_prot_na
        strstream buffer2;
        buffer2 << "potential RNA location " << printed_range(**f1)
             << " (" << trna_type << ")"
-            << " and potential protein location " << printed_range(seq)
+            << " and potential protein location " << printed_range_plus(seq)
             << " overlap by " << overlap
             << "bp"
             << NcbiEndl << '\0';
