@@ -918,6 +918,8 @@ CNcbiTestApplication::x_ActualizeDeps(void)
 /// if it was defined to something else or wasn't defined at all.
 #define IS_FLAG_DEFINED(flag)                                 \
     BOOST_PP_TUPLE_ELEM(2, 1, IS_FLAG_DEFINED_I(BOOST_PP_CAT(NCBI_, flag)))
+#define IS_VAR_DEFINED(var)                                   \
+    BOOST_PP_TUPLE_ELEM(2, 1, IS_FLAG_DEFINED_I(var))
 #define IS_FLAG_DEFINED_I(flag)                               \
     (BOOST_PP_CAT(IS_FLAG_DEFINED_II_, flag) (), false)
 #define IS_FLAG_DEFINED_II_()                                 \
@@ -951,6 +953,9 @@ CNcbiTestApplication::x_InitCommonParserVars(void)
 
     m_IniParser->AddSymbol("PLATFORM_Bits32",    NCBI_PLATFORM_BITS == 32);
     m_IniParser->AddSymbol("PLATFORM_Bits64",    NCBI_PLATFORM_BITS == 64);
+
+    m_IniParser->AddSymbol("PLATFORM_BigEndian",     IS_VAR_DEFINED(WORDS_BIGENDIAN));
+    m_IniParser->AddSymbol("PLATFORM_LittleEndian", !IS_VAR_DEFINED(WORDS_BIGENDIAN));
 
     m_IniParser->AddSymbol("BUILD_Dll",          IS_FLAG_DEFINED(DLL_BUILD));
     m_IniParser->AddSymbol("BUILD_Static",      !IS_FLAG_DEFINED(DLL_BUILD));
