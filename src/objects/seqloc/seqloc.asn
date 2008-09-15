@@ -22,25 +22,26 @@ IMPORTS Object-id, Int-fuzz, Dbtag, Date FROM NCBI-General
 --*
 
 Seq-id ::= CHOICE {
-    local Object-id ,        -- local use
-    gibbsq INTEGER ,         -- Geninfo backbone seqid
-    gibbmt INTEGER ,         -- Geninfo backbone moltype
-    giim Giimport-id ,       -- Geninfo import id
+    local Object-id ,            -- local use
+    gibbsq INTEGER ,             -- Geninfo backbone seqid
+    gibbmt INTEGER ,             -- Geninfo backbone moltype
+    giim Giimport-id ,           -- Geninfo import id
     genbank Textseq-id ,
     embl Textseq-id ,
     pir Textseq-id ,
     swissprot Textseq-id ,
     patent Patent-seq-id ,
-    other Textseq-id ,       -- for historical reasons, 'other' = 'refseq'
-    general Dbtag ,          -- for other databases
-    gi INTEGER ,             -- GenInfo Integrated Database
-    ddbj Textseq-id ,        -- DDBJ
-    prf Textseq-id ,         -- PRF SEQDB
-    pdb PDB-seq-id ,         -- PDB sequence
-    tpg Textseq-id ,         -- Third Party Annot/Seq Genbank
-    tpe Textseq-id ,         -- Third Party Annot/Seq EMBL
-    tpd Textseq-id ,         -- Third Party Annot/Seq DDBJ
-    gpipe Textseq-id         -- Internal NCBI genome pipeline processing ID
+    other Textseq-id ,           -- for historical reasons, 'other' = 'refseq'
+    general Dbtag ,              -- for other databases
+    gi INTEGER ,                 -- GenInfo Integrated Database
+    ddbj Textseq-id ,            -- DDBJ
+    prf Textseq-id ,             -- PRF SEQDB
+    pdb PDB-seq-id ,             -- PDB sequence
+    tpg Textseq-id ,             -- Third Party Annot/Seq Genbank
+    tpe Textseq-id ,             -- Third Party Annot/Seq EMBL
+    tpd Textseq-id ,             -- Third Party Annot/Seq DDBJ
+    gpipe Textseq-id ,           -- Internal NCBI genome pipeline processing ID
+    named-annot-track Textseq-id -- Internal named annotation tracking ID
 }
 
 
