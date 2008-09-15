@@ -318,10 +318,20 @@ private:
     TRowVecVec m_RowVecVec;
     TBitVecVec m_BitVecVec;
     mutable TAlignedIdsMap m_AlignedIdsMap;
-    mutable TIdxVec m_AnchorIdxVec;
-    mutable TIdMap m_AnchorIdMap;
-    mutable TIdVec m_AnchorIdVec;
-    mutable int m_CanBeAnchored;
+
+    mutable TIdxVec m_AnchorIdxVec; ///< vector of indexes (as
+                                    ///  represented in m_RowVecVec
+                                    ///  and m_BitVecVec) of the ids
+                                    ///  of potential anchors
+
+    mutable TIdMap m_AnchorIdMap;   ///< Maps a the id of each
+                                    ///  potential anchor to its
+                                    ///  index(es) in m_RowVecVec
+
+    mutable TIdVec m_AnchorIdVec;   ///< A vector of potential anchors
+
+    mutable int m_CanBeAnchored;    ///< If there's at least one
+                                    ///  potential anchor
 };
 
 
