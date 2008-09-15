@@ -218,7 +218,7 @@ END
 NCBI-RNA DEFINITIONS ::=
 BEGIN
 
-EXPORTS RNA-ref, Trna-ext;
+EXPORTS RNA-ref, Trna-ext, RNA-gen, RNA-qual, RNA-qual-set;
 
 IMPORTS Seq-loc FROM NCBI-Seqloc;
 
@@ -234,14 +234,19 @@ RNA-ref ::= SEQUENCE {
         mRNA (2) ,
         tRNA (3) ,
         rRNA (4) ,
-        snRNA (5) ,
-        scRNA (6) ,
-        snoRNA (7) ,
+        snRNA (5) ,              -- will become ncRNA, with RNA-gen.class = snRNA
+        scRNA (6) ,              -- will become ncRNA, with RNA-gen.class = scRNA
+        snoRNA (7) ,             -- will become ncRNA, with RNA-gen.class = snoRNA
+        ncRNA (8) ,              -- non-coding RNA; subsumes snRNA, scRNA, snoRNA
+        tmRNA (9) ,
+        miscRNA (10) ,
         other (255) } ,
-    pseudo BOOLEAN OPTIONAL ,  
+    pseudo BOOLEAN OPTIONAL ,
     ext CHOICE {
         name VisibleString ,        -- for naming "other" type
-        tRNA Trna-ext } OPTIONAL }  -- for tRNAs
+        tRNA Trna-ext ,             -- for tRNAs
+        gen RNA-gen } OPTIONAL      -- generic fields for ncRNA, tmRNA, miscRNA
+    }
 
 Trna-ext ::= SEQUENCE {                 -- tRNA feature extensions
     aa CHOICE {                         -- aa this carries
@@ -251,6 +256,19 @@ Trna-ext ::= SEQUENCE {                 -- tRNA feature extensions
         ncbistdaa INTEGER } OPTIONAL ,
     codon SET OF INTEGER OPTIONAL ,     -- codon(s) as in Genetic-code
     anticodon Seq-loc OPTIONAL }        -- location of anticodon
+
+RNA-gen ::= SEQUENCE {
+    class VisibleString OPTIONAL ,      -- for ncRNAs, the class of non-coding RNA:
+                                        -- examples: antisense_RNA, guide_RNA, snRNA
+    product VisibleString OPTIONAL ,
+    quals RNA-qual-set OPTIONAL         -- e.g., tag_peptide qualifier for tmRNAs
+}
+
+RNA-qual ::= SEQUENCE {                 -- Additional data values for RNA-gen,
+    qual VisibleString ,                -- in a tag (qual), value (val) format
+    val VisibleString }
+
+RNA-qual-set ::= SEQUENCE OF RNA-qual
 
 END
 
