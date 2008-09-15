@@ -250,6 +250,7 @@ CMultiAligner::Run()
             AlignInClusters();
             // No multiple alignment is done for one cluster
             if (m_Clusterer.GetClusters().size() == 1) {
+                m_tQueries.swap(m_AllQueries);
                 return;
             }
         }
