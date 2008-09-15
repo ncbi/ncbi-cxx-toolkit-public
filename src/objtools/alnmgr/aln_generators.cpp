@@ -405,4 +405,61 @@ CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln)
 }
 
 
+void
+s_TranslatePairwise(CPairwiseAln& pw,       ///< input/output pairwise to translate
+                    const CPairwiseAln& tr) ///< translating pairwise
+{
+    ITERATE (CPairwiseAln, it, pw) {
+        CPairwiseAln::TAlnRng ar = *it;
+        pw.erase(it);
+        _ASSERT(ar.GetFirstFrom() == tr.GetSecondPosByFirstPos(ar.GetFirstFrom()));
+        ar.SetFirstFrom(tr.GetSecondPosByFirstPos(ar.GetFirstFrom()));
+        pw.insert(ar);
+    }
+}    
+
+
+void
+CreateSeqAlignFromEachPairwiseAln
+(const CAnchoredAln::TPairwiseAlnVector pairwises, ///< input
+ size_t anchor,                                    ///< choice of anchor
+ vector<CRef<CSeq_align> >& out_seqaligns,         ///< output
+ objects::CSeq_align::TSegs::E_Choice choice)      ///< choice of alignment 'segs'
+{
+    out_seqaligns.resize(pairwises.size() - 1);
+    for (CAnchoredAln::TDim row = 0, sa_idx = 0;
+         row < pairwises.size();
+         ++row, ++sa_idx) {
+        if (row != anchor) {
+            CRef<CSeq_align> sa(new CSeq_align);
+            sa->SetType(CSeq_align::eType_partial);
+            sa->SetDim(2);
+            
+            CRef<CPairwiseAln> p(new CPairwiseAln(*pairwises[row]));
+            s_TranslatePairwise(*p, *pairwises[anchor]);
+
+            switch(choice)    {
+            case CSeq_align::TSegs::e_Denseg: {
+                CRef<CDense_seg> ds = CreateDensegFromPairwiseAln(*p);
+                sa->SetSegs().SetDenseg(*ds);
+                break;
+            }
+            case CSeq_align::TSegs::e_Dendiag:
+            case CSeq_align::TSegs::e_Std:
+            case CSeq_align::TSegs::e_Packed:
+            case CSeq_align::TSegs::e_Disc:
+            case CSeq_align::TSegs::e_Spliced:
+            case CSeq_align::TSegs::e_Sparse:
+                NCBI_THROW(CAlnException, eInvalidRequest,
+                           "Unsupported CSeq_align::TSegs type.");
+            case CSeq_align::TSegs::e_not_set:
+            default:
+                NCBI_THROW(CAlnException, eInvalidRequest,
+                           "Invalid CSeq_align::TSegs type.");
+            }
+            out_seqaligns[sa_idx].Reset(sa);
+        }
+    }
+}
+
 END_NCBI_SCOPE

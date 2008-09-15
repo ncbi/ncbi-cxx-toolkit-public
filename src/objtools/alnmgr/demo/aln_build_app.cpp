@@ -230,7 +230,7 @@ int CAlnBuildApp::Run(void)
     
     LoadInputAlns();
     ReportTime("LoadInputAlns");
-    
+
 
     /// Create a vector of seq-ids per seq-align
     TIdExtract id_extract;
@@ -414,6 +414,15 @@ int CAlnBuildApp::Run(void)
         *asn_out << *ds;
     }
 
+    /// Create individual Dense-segs (one per CPairwiseAln) via CreateSeqAlignFromEachPairwiseAln
+    vector<CRef<CSeq_align> > out_seqaligns;
+    CreateSeqAlignFromEachPairwiseAln(out_anchored_aln.GetPairwiseAlns(),
+                                      out_anchored_aln.GetAnchorRow(),
+                                      out_seqaligns,
+                                      CSeq_align::TSegs::e_Denseg);
+    ITERATE(vector<CRef<CSeq_align> >, sa_it, out_seqaligns) {
+        *asn_out << **sa_it;
+    }
 
     return 0;
 }
