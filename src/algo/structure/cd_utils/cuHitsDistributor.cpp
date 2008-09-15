@@ -100,7 +100,7 @@ void HitDistributor::distribute()
 			ERR_POST("Can't get evalue from SeqAlign.  Something is wrong");
 			continue;
 		}
-		for (int i = 1; i < hits.size(); i++)
+		for (int i = 1; i < (int) hits.size(); i++)
 		{
 			seqAlignRef = hits[i];
 			if (!(*seqAlignRef)->GetNamedScore("e_value", evalue))
@@ -114,7 +114,7 @@ void HitDistributor::distribute()
 				min_id = i;
 			}
 		}
-		for (int i = 0; i < hits.size(); i++)
+		for (int i = 0; i < (int) hits.size(); i++)
 		{
 			seqAlignRef = hits[i];
 			if (i != min_id)
@@ -131,7 +131,7 @@ void HitDistributor::distribute()
 		}
 	}
 	//remove all Empty CRef from m_batches
-	for (int b =0; b < m_batches.size(); b++)
+	for (unsigned int b =0; b < m_batches.size(); b++)
 	{
 		list< CRef< CSeq_align > >& seqAlignList = m_batches[b]->Set();
 		list< CRef< CSeq_align > >::iterator lit = seqAlignList.begin();
@@ -164,7 +164,7 @@ void HitDistributor::dump(string filename)
 		vector< CRef< CSeq_align >* >& hits = fit->second;
 		const GiFootPrint& gfp = fit->first;
 		outStream<<"GI-Footprint"<<gfp.gi<<':'<<gfp.from<<'-'<<gfp.to<<endl;
-		for (int i = 0; i < hits.size(); i++)
+		for (unsigned int i = 0; i < hits.size(); i++)
 		{
 			if (!WriteASNToStream(outStream, **hits[i], false,&err))
 				LOG_POST("Failed to write to "<<filename<<" because of "<<err);
