@@ -4546,7 +4546,7 @@ case "$host_os:$compiler" in
    # 1460: Function %n is redeclared "inline" after being called.
    # 1521: A nonstandard preprocessing directive is used.
    CFLAGS="$COMMON_FLAGS -woff 1209 $CFLAGS"
-   CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424 $CXXFLAGS"
+   CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section -no_auto_include -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424 $CXXFLAGS"
    : ${CXXCPP:="$CXX -E -LANG:std"}
    LDFLAGS="-LANG:std -G0 -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section $LDFLAGS"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
