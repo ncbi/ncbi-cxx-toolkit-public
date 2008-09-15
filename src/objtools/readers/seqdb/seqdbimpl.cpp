@@ -31,6 +31,10 @@
 /// Implementation for the CSeqDBImpl class, the top implementation
 /// layer for SeqDB.
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include "seqdbimpl.hpp"
 #include <iostream>
@@ -2121,6 +2125,13 @@ void CSeqDBImpl::GetMaskData(int                 oid,
     }
 }
 #endif
+
+void CSeqDBImpl::GarbageCollect(void)
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.GarbageCollect(locked);
+}
 
 const CSeqDBFiltInfo & CSeqDBImpl::x_GetFiltInfo(CSeqDBLockHold & locked)
 {

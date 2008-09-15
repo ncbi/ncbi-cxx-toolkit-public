@@ -287,6 +287,16 @@ private:
    /// @note this method contains a static variable that assumes the order of
    /// the calls to it to retrieve the proper subject sequence
    CConstRef<objects::CBioseq> x_CreateSubjectBioseq();
+
+   /// Wrap the Seq-align-set to be printed in a Seq-annot (as the C toolkit
+   /// binaries)
+   /// @param alnset Alignment to wrap in a Seq-annot, must be non-NULL [in]
+   CRef<objects::CSeq_annot> 
+   x_WrapAlignmentInSeqAnnot(CConstRef<objects::CSeq_align_set> alnset) const;
+
+   /// Computes the 'Blast Type' portion of the Seq-annot created in
+   /// x_WrapAlignmentInSeqAnnot
+   pair<string, int> x_ComputeBlastTypePair() const;
 };
 
 END_NCBI_SCOPE

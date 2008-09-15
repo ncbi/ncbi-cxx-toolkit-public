@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(RetrieveFromGenbank_IncorrectBlastDbType) {
 
 BOOST_AUTO_TEST_CASE(InvalidBlastDatabase) {
     // Make sure to post warnings
-    SetDiagPostLevel(eDiag_Warning);
+    SetDiagPostLevel(eDiag_Info);
     CNcbiOstream* diag_stream = GetDiagStream();
 
     // Redirect the output warnings
@@ -252,6 +252,7 @@ BOOST_AUTO_TEST_CASE(InvalidBlastDatabase) {
 
     // restore the diagnostic stream
     SetDiagStream(diag_stream);
+    SetDiagPostLevel(eDiag_Warning);
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

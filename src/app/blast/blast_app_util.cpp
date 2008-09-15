@@ -238,11 +238,22 @@ s_ExportSearchStrategy(CNcbiOstream* out,
     _ASSERT(db_args);
     _ASSERT(options_handle);
 
-    CRef<CRemoteBlast> rmt_blast =
-        InitializeRemoteBlast(queries, db_args, options_handle, false, pssm);
-    CRef<CBlast4_request> req = rmt_blast->GetSearchStrategy();
-    // N.B.: If writing XML, be sure to call SetEnforcedStdXml on the stream!
-    *out << MSerial_AsnText << *req;
+    try { 
+        CRef<CRemoteBlast> rmt_blast =
+            InitializeRemoteBlast(queries, db_args, options_handle, false,
+                                  pssm);
+        CRef<CBlast4_request> req = rmt_blast->GetSearchStrategy(); 
+        // N.B.: If writing XML, be sure to call SetEnforcedStdXml on the
+        // stream!
+        *out << MSerial_AsnText << *req;
+    } catch (const CBlastException& e) {
+        if (e.GetErrCode() == CBlastException::eNotSupported) {
+            NCBI_THROW(CInputException, eInvalidInput, 
+                       "Saving search strategies with gi lists is currently "
+                       "not supported");
+        }
+        throw;
+    }
 }
 
 /// Converts a list of Bioseqs into a TSeqLocVector. All Bioseqs are added to

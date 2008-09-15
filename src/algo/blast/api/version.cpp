@@ -74,7 +74,7 @@ FEBS J. 272:5101-5109.",
     "Aleksandr Morgulis, George Coulouris, Yan Raytselis, \
 Thomas L. Madden, Richa Agarwala, Alejandro A. Sch&auml;ffer \
 (2008), \"Database Indexing for Production MegaBLAST Searches\", \
-Bioinformatics; doi: 10.1093/bioinformatics/btn322.",
+Bioinformatics 24:1757-1764.",
     // eMaxPublications
     kEmptyStr
 };

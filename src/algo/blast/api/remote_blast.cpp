@@ -128,7 +128,8 @@ void CRemoteBlast::x_SearchErrors(CRef<objects::CBlast4_reply> reply)
             break;
             
         case eBlast4_error_code_bad_request_id:
-            m_Errs.push_back(string("bad_request_id") + msg);
+            _ASSERT(msg == kEmptyStr);
+            m_Errs.push_back(string("Invalid/unknown RID (bad_request_id)"));
             break;
         }
     }
@@ -319,8 +320,17 @@ CRemoteBlast::CheckStatus()
     return retval;
 }
 
+bool CRemoteBlast::x_IsUnknownRID(void)
+{
+    bool retval = false;
+    if (NStr::Find(GetErrors(), "bad_request_id") != NPOS) {
+        retval = true;
+    }
+    return retval;
+}
+
 // Pre:  start, wait or done
-// Post: wait or done
+// Post: wait, done, or failed
 
 // Returns: true if done
 
@@ -339,7 +349,8 @@ bool CRemoteBlast::CheckDone(void)
         x_CheckResults();
     }
     
-    return (x_GetState() == eDone);
+    int state = x_GetState();
+    return (state == eDone || (state == eFailed && !x_IsUnknownRID()));
 }
 
 CRemoteBlast::TGSRR * CRemoteBlast::x_GetGSRR(void)
@@ -1291,6 +1302,9 @@ void CRemoteBlast::SetGIList(const list<Int4> & gi_list)
 {
     if (gi_list.empty()) {
         return;
+    } else {
+        NCBI_THROW(CBlastException, eNotSupported, 
+           "Submitting gi lists remotely is currently not supported");
     }
     x_SetOneParam(B4Param_GiList, & gi_list);
     
@@ -1314,6 +1328,9 @@ void CRemoteBlast::SetNegativeGIList(const list<Int4> & gi_list)
 {
     if (gi_list.empty()) {
         return;
+    } else {
+        NCBI_THROW(CBlastException, eNotSupported, 
+           "Submitting negative gi lists remotely is currently not supported");
     }
     x_SetOneParam(B4Param_NegativeGiList, & gi_list);
     

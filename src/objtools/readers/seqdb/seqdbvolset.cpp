@@ -30,6 +30,10 @@
 /// @file seqdbvolset.cpp
 /// Implementation for the CSeqDBVolSet class, which manages a list of volumes.
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include "seqdbvolset.hpp"
 

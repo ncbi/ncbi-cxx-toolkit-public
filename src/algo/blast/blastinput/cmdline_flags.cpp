@@ -77,7 +77,7 @@ const string kArgMinRawGappedScore("min_raw_gapped_score");
 const string kArgOutputFormat("outfmt");
 const int kDfltArgOutputFormat = 0;
 const string kDfltArgTabularOutputFmt =
-    "qseqid sallseqid pident length mismatch gapopen qstart qend sstart send "
+    "qseqid sseqid pident length mismatch gapopen qstart qend sstart send "
     "evalue bitscore";
 const string kDfltArgTabularOutputFmtTag("std");
 

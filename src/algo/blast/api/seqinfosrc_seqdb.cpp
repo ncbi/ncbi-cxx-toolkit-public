@@ -127,6 +127,11 @@ bool CSeqDbSeqInfoSrc::GetMasks(Uint4 index,
     return (retval.empty() ? false : true);
 }
 
+void CSeqDbSeqInfoSrc::GarbageCollect() 
+{
+    m_iSeqDb->GarbageCollect();
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

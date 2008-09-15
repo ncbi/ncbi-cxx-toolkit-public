@@ -31,6 +31,10 @@
 /// Implementation for the CSeqDBOIDList class, an array of bits
 /// describing a subset of the virtual oid space.
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include "seqdboidlist.hpp"

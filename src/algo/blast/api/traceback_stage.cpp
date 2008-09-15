@@ -67,7 +67,6 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
       m_Options      (opts),
       m_InternalData (new SInternalData),
       m_OptsMemento  (0),
-      m_HspResults   (0),
       m_SeqInfoSrc   (0),
       m_OwnSeqInfoSrc(false),
       m_ResultType(eDatabaseSearch),
@@ -90,7 +89,6 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
       m_Options      (opts),
       m_InternalData (new SInternalData),
       m_OptsMemento  (0),
-      m_HspResults   (0),
       m_SeqInfoSrc   (0),
       m_OwnSeqInfoSrc(false),
       m_ResultType(eDatabaseSearch),
@@ -112,7 +110,6 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>   qf,
       m_Options      (opts),
       m_InternalData (new SInternalData),
       m_OptsMemento  (0),
-      m_HspResults   (0),
       m_SeqInfoSrc   (InitSeqInfoSrc(seqsrc)),
       m_OwnSeqInfoSrc(true),
       m_ResultType(eDatabaseSearch),
@@ -133,7 +130,6 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory> qf,
       m_InternalData (internal_data),
       m_OptsMemento  (opts.CreateSnapshot()),
       m_Messages     (search_msgs),
-      m_HspResults   (0),
       m_SeqInfoSrc   (const_cast<IBlastSeqInfoSrc*>(&seqinfosrc)),
       m_OwnSeqInfoSrc(false),
       m_ResultType(eDatabaseSearch),
@@ -262,6 +258,10 @@ CBlastTracebackSearch::Run()
             m_InternalData->m_LookupTable->GetPointer()->lut;
         phi_lookup_table->num_patterns_db = m_DBscanInfo->m_NumPatOccurInDB;
     }
+    else
+    {
+        m_InternalData->m_LookupTable.Reset(NULL);
+    }
 
     // When dealing with PSI-BLAST iterations, we need to keep a larger
     // alignment for the PSSM engine as to replicate blastpgp's behavior
@@ -294,12 +294,14 @@ CBlastTracebackSearch::Run()
                                  (*m_InternalData->m_RpsData)() : 0,
                                  phi_lookup_table,
                                  & hsp_results);
-    
     if (status) {
         NCBI_THROW(CBlastException, eCoreBlastError, "Traceback failed"); 
     }
     
-    m_HspResults.Reset(WrapStruct(hsp_results, Blast_HSPResultsFree));
+    // This is the data resulting from the traceback phase (before it is converted to ASN.1).
+    // We wrap it this way so it is released even if an exception is thrown below.
+    CRef< CStructWrapper<BlastHSPResults> > HspResults;
+    HspResults.Reset(WrapStruct(hsp_results, Blast_HSPResultsFree));
     
     _ASSERT(m_SeqInfoSrc);
     _ASSERT(m_QueryFactory);
@@ -307,6 +309,7 @@ CBlastTracebackSearch::Run()
     
     CRef<ILocalQueryData> qdata = m_QueryFactory->MakeLocalQueryData(m_Options);
     
+    m_SeqInfoSrc->GarbageCollect();
     vector<TSeqLocInfoVector> subj_masks;
     TSeqAlignVector aligns =
         LocalBlastResults2SeqAlign(hsp_results,

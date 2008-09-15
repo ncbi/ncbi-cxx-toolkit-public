@@ -571,12 +571,12 @@ CBlastTabularInfo::PrintHeader(const string& program_in,
         m_Ostream << "\n";
     }
 
-    x_PrintFieldNames();
-    
     // Print number of alignments found, but only if it has been set.
-    if (align_set)
-    {
+    if (align_set) {
        int num_hits = align_set->Get().size();
+       if (num_hits != 0) {
+           x_PrintFieldNames();
+       }
        m_Ostream << "# " << num_hits << " hits found" << "\n";
     }
 }

@@ -821,6 +821,8 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
     TAutoUint1Ptr safe_buf;     // contains buf to ensure exception safety
     vector<TSeqPos> replaced_residues; // Substituted residue positions
     vector<TSeqPos> invalid_residues;        // Invalid residue positions
+    // This is the maximum number of residues we'll write a warning about
+    static const size_t kMaxResiduesToWarnAbout = 20;
 
     sv.SetCoding(CSeq_data::e_Ncbistdaa);
     buflen = CalculateSeqBufferLength(sv.size(), eBlastEncodingProtein);
@@ -847,8 +849,13 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
     if (invalid_residues.size() > 0) {
         string error("Invalid residues found at positions ");
         error += NStr::IntToString(invalid_residues[0]);
-        for (i = 1; i < invalid_residues.size(); i++) {
+        for (i = 1; i < min(kMaxResiduesToWarnAbout, invalid_residues.size()); 
+             i++) {
             error += ", " + NStr::IntToString(invalid_residues[i]);
+        }
+        if (invalid_residues.size() > kMaxResiduesToWarnAbout) {
+            error += ",... (only first ";
+            error += NStr::IntToString(kMaxResiduesToWarnAbout) + " shown)";
         }
         NCBI_THROW(CBlastException, eInvalidCharacter, error);
     }
@@ -858,8 +865,14 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
         *warnings += "One or more U or O characters replaced by X for ";
         *warnings += "alignment score calculations at positions ";
         *warnings += NStr::IntToString(replaced_residues[0]);
-        for (i = 1; i < replaced_residues.size(); i++) {
+        for (i = 1; i < min(kMaxResiduesToWarnAbout, replaced_residues.size()); 
+             i++) {
             *warnings += ", " + NStr::IntToString(replaced_residues[i]);
+        }
+        if (replaced_residues.size() > kMaxResiduesToWarnAbout) {
+            *warnings += ",... (only first ";
+            *warnings += NStr::IntToString(kMaxResiduesToWarnAbout);
+            *warnings += " shown)";
         }
     }
     return SBlastSequence(safe_buf.release(), buflen);

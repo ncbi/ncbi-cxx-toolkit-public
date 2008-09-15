@@ -244,9 +244,6 @@ public:
     ///   The set of resolved database path names.
     void ListFiles(vector<string> & files);
     
-    /// Identifies the algorithm that produced the filtering data.
-    typedef vector<SBlastDbMaskData> TRanges;
-    
     /// Register a type of filtering data found in this database.
     ///
     /// The BlastDb format supports storage of masking data (lists of
@@ -272,7 +269,7 @@ public:
     /// sequence can have filtering data from various algorithms.
     /// 
     /// @param ranges Filtered ranges for this sequence and algorithm.
-    void SetMaskData(const TRanges & ranges);
+    void SetMaskData(const CMaskedRangesVector & ranges);
     
     /// Set up a generic CWriteDB metadata column.
     ///

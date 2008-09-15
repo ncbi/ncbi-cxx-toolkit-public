@@ -30,6 +30,10 @@
 /// @file writedb.cpp
 /// Implementation for the CWriteDB class, the top level class for WriteDB.
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include <objtools/writers/writedb/writedb.hpp>
 #include "writedb_impl.hpp"
@@ -141,7 +145,7 @@ RegisterMaskAlgorithm(EBlast_filter_program   program,
     return m_Impl->RegisterMaskAlgorithm(program, options);
 }
 
-void CWriteDB::SetMaskData(const TMaskedRanges & ranges)
+void CWriteDB::SetMaskData(const CMaskedRangesVector & ranges)
 {
     m_Impl->SetMaskData(ranges);
 }

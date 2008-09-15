@@ -31,6 +31,10 @@
  *  Defines classes which extract data from a BLAST database
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include <objtools/blast_format/blastdb_dataextract.hpp>
 #include <objects/seq/Seqdesc.hpp>
@@ -222,12 +226,7 @@ string CAccessionExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
     CRef<CSeq_id> theId = FindBestChoice(bioseq->GetId(), CSeq_id::WorstRank);
 
     string retval;
-    const CTextseq_id* tsid = theId->GetTextseq_Id();
-    if (tsid) {
-        retval = tsid->GetAccession();
-    } else {
-        theId->GetLabel(&retval, CSeq_id::eContent);
-    } 
+    theId->GetLabel(&retval, CSeq_id::eContent);
     return retval;
 }
 

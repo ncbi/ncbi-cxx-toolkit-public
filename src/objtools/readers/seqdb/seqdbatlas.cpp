@@ -31,6 +31,10 @@
 /// Implementation for the CSeqDBAtlas class and several related
 /// classes, which provide control of a set of memory mappings.
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 
 #include "seqdbatlas.hpp"
@@ -1404,7 +1408,7 @@ void CSeqDBAtlas::UnregisterExternal(CSeqDBMemReg & memreg)
     size_t bytes = memreg.m_Bytes;
     
     if (bytes > 0) {
-        _ASSERT((int)m_CurAlloc >= (int)bytes);
+        _ASSERT((size_t)m_CurAlloc >= bytes);
         m_CurAlloc     -= bytes;
         memreg.m_Bytes = 0;
     }

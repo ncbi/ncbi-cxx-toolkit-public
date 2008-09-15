@@ -581,6 +581,11 @@ private:
     /// Determine what state the search is in.
     EState x_GetState(void);
     
+    /// Determine if this is an unknown RID.
+    /// @note caller must have contacted the server for this method to work
+    /// (e.g.: via CheckDone());
+    bool x_IsUnknownRID(void);
+
     /// Poll until done, return the CBlast4_get_search_results_reply.
     /// @return Pointer to GSR reply object or NULL if search failed.
     TGSRR * x_GetGSRR(void);

@@ -126,13 +126,6 @@ private:
     /// Warnings and Errors
     TSearchMessages m_Messages;
     
-    // Wrapped C objects
-    
-    // The output of traceback, I think...
-    
-    /// The data resulting from the traceback phase.
-    CRef< CStructWrapper<BlastHSPResults> > m_HspResults;
-    
     /// Pointer to the IBlastSeqInfoSrc object to use to generate the
     /// Seq-aligns
     IBlastSeqInfoSrc* m_SeqInfoSrc;

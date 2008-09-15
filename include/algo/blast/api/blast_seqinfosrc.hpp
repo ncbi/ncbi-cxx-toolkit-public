@@ -88,6 +88,9 @@ public:
     virtual bool GetMasks(Uint4 index, 
                           const TSeqRange& target_range,
                           TMaskedSubjRegions& retval) const = 0;
+
+    /// Allow implementations to provide a facility to release memory
+    virtual void GarbageCollect() {};
 };
 
 END_SCOPE(blast)

@@ -1207,35 +1207,6 @@ BlastScoreBlkMaxScoreSet(BlastScoreBlk* sbp)
     return 0;
 }
 
-NCBI_XBLAST_EXPORT SNCBIPackedScoreMatrix*
-BlastScoreBlkGetCompiledInMatrix(const char* name)
-{
-    SNCBIPackedScoreMatrix* psm = NULL; 
-
-    if (name == NULL)
-        return NULL;
-
-    if (strcasecmp(name, "BLOSUM62") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum62;
-    } else if (strcasecmp(name, "BLOSUM45") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum45;
-    } else if (strcasecmp(name, "BLOSUM50") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum50;
-    } else if (strcasecmp(name, "BLOSUM80") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum80;
-    } else if (strcasecmp(name, "BLOSUM90") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum90;
-    } else if (strcasecmp(name, "PAM30") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam30;
-    } else if (strcasecmp(name, "PAM70") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam70;
-    } else if (strcasecmp(name, "PAM250") == 0) {
-        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam250;
-    }
- 
-    return psm;
-}
-
 /** Sets sbp->matrix->data field using sbp->name field using
  * the matrices in the toolkit (util/tables/raw_scoremat.h).
  * @param sbp the object containing matrix and name [in|out]
@@ -1256,7 +1227,7 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
     ASSERT(sbp->matrix->ncols == BLASTAA_SIZE);
     ASSERT(sbp->matrix->nrows == BLASTAA_SIZE);
 
-    psm = BlastScoreBlkGetCompiledInMatrix(sbp->name); 
+    psm = NCBISM_GetStandardMatrix(sbp->name); 
     if (psm == NULL)
        return 1;
 

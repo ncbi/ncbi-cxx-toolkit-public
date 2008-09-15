@@ -300,7 +300,7 @@ int CBlastFormatterApp::Run(void)
 
         switch (m_RmtBlast->CheckStatus()) {
         case CRemoteBlast::eStatus_Unknown:
-            cerr << "Unknown RID '" << kRid << "'." << endl;
+            cerr << "Unknown/invalid RID '" << kRid << "'." << endl;
             status = EXIT_CODE__UNKNOWN_RID;
             break;
 
@@ -315,6 +315,7 @@ int CBlastFormatterApp::Run(void)
 
         case CRemoteBlast::eStatus_Failed:
             cerr << "RID '" << kRid << "' has failed" << endl;
+            cerr << m_RmtBlast->GetErrors() << endl;
             status = EXIT_CODE__SEARCH_FAILED;
             break;
            

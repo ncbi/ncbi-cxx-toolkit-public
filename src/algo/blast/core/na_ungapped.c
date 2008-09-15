@@ -788,7 +788,10 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
            faster. Point to the first base of the lookup table hit and
            work backwards */
 
-        max_bases_left = MIN(extra_bases, MIN(q_offset, s_offset));
+        Int4 context = BSearchContextInfo(q_offset, query_info);
+        Int4 context_i = query_info->contexts[context].query_offset;
+        Int4 context_f = context_i + query_info->contexts[context].query_length;
+        max_bases_left = MIN(extra_bases, MIN(q_offset - context_i, s_offset));
         q = q_start + q_offset;
         s = s_start + s_offset / COMPRESSION_RATIO;
         s_off = s_offset;
@@ -815,7 +818,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             q = q_start + q_off;
             s = s_start + s_off / COMPRESSION_RATIO;
             max_bases_right = MIN(extra_bases - extended_left,
-                                  MIN(query_length - q_off,
+                                  MIN(context_f - q_off,
                                       subject_length - s_off));
 
             for (extended_right = 0; extended_right < max_bases_right;
@@ -939,7 +942,10 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
            and s points to the first four bases of the hit (which is
            guaranteed to be aligned on a byte boundary) */
 
-        max_bases_left = MIN(extra_bases, MIN(q_offset, s_offset));
+        Int4 context = BSearchContextInfo(q_offset, query_info);
+        Int4 context_i = query_info->contexts[context].query_offset;
+        Int4 context_f = context_i + query_info->contexts[context].query_length;
+        max_bases_left = MIN(extra_bases, MIN(q_offset - context_i, s_offset));
         q = q_start + q_offset;
         s = s_start + s_offset / COMPRESSION_RATIO;
 
@@ -971,7 +977,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             q = q_start + q_off;
             s = s_start + s_off / COMPRESSION_RATIO;
             max_bases_right = MIN(extra_bases - extended_left,
-                                  MIN(query_length - q_off,
+                                  MIN(context_f - q_off,
                                       subject_length - s_off));
 
             for (; extended_right < max_bases_right;
@@ -1113,12 +1119,15 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
            technically be negative, but the compressed version
            of the query has extra pad bytes before q[0] */
 
-        if (q_off > 0 && s_off > 0) {
+        Int4 context = BSearchContextInfo(q_off, query_info);
+        Int4 context_i = query_info->contexts[context].query_offset;
+        Int4 context_f = context_i + query_info->contexts[context].query_length;
+        if (q_off > context_i  && s_off > 0) {
             Uint1 q_byte = q[q_off - 4];
             Uint1 s_byte = s[s_off / COMPRESSION_RATIO - 1];
             extended_left = s_ExactMatchExtendLeft[q_byte ^ s_byte];
             extended_left = MIN(extended_left, extra_bases);
-            extended_left = MIN(extended_left, q_off);
+            extended_left = MIN(extended_left, q_off - context_i);
         }
 
         /* look for up to 4 exact matches to the right of the seed */
@@ -1128,7 +1137,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
             Int4 s_end = s_off + lut_word_length;
             Uint1 q_byte, s_byte;
 
-            if (q_end == query_length || s_end == subject_length)
+            if (q_end == context_f || s_end == subject_length)
                 continue;
 
             q_byte = q[q_end];
@@ -1136,7 +1145,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
             extended_right = s_ExactMatchExtendRight[q_byte ^ s_byte];
             extended_right = MIN(extended_right, 
                                  extra_bases - extended_left);
-            extended_right = MIN(extended_right, query_length - q_end);
+            extended_right = MIN(extended_right, context_f - q_end);
             extended_right = MIN(extended_right, subject_length - s_end);
             if (extended_left + extended_right < extra_bases)
                 continue;
@@ -1229,7 +1238,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
 {
     BlastSmallNaLookupTable *lut = (BlastSmallNaLookupTable *) lookup_wrap->lut;
     Int4 i;
-    Int4 query_length = query->length;
+//    Int4 query_length = query->length;
     Int4 subject_length = subject->length;
     Uint1 *q = query->compressed_nuc_seq;
     Uint1 *s = subject->sequence;
@@ -1244,6 +1253,11 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     for (i = 0; i < num_hits; i++) {
         Int4 s_off = offset_pairs[i].qs_offsets.s_off;
         Int4 q_off = offset_pairs[i].qs_offsets.q_off;
+
+        Int4 context = BSearchContextInfo(q_off, query_info);
+        Int4 context_i = query_info->contexts[context].query_offset;
+        Int4 context_f = context_i + query_info->contexts[context].query_length;
+
         Int4 s_start;
         Int4 q_start;
         Int4 extended_left = 0;
@@ -1262,7 +1276,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
            of the query has extra pad bytes before q[0] */
 
         extra_bases = MIN(word_length - lut_word_length + extra_bases, 
-                          MIN(q_off, s_off));
+                          MIN(q_off - context_i, s_off));
         s_start = s_off;
         q_start = q_off;
         while (extended_left < extra_bases) {
@@ -1281,7 +1295,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
            base not examined by the left extension */
 
         extra_bases = word_length - extended_left;
-        extra_bases = MIN(extra_bases, query_length - q_off);
+        extra_bases = MIN(extra_bases, context_f - q_off);
         extra_bases = MIN(extra_bases, subject_length - s_off);
         s_start = s_off;
         q_start = q_off;

@@ -66,7 +66,7 @@ public:
         x_CombineLocs(x_Set(algo_id, k), v);
     }
     
-    virtual TMaskedRanges &
+    virtual CMaskedRangesVector &
     GetRanges(const list< CRef<CSeq_id> > & idlist);
     
 private:
@@ -78,7 +78,7 @@ private:
     
     typedef map< SSeqIdKey, CConstRef<CSeq_loc> > TAlgoMap;
     
-    TMaskedRanges m_Ranges;
+    CMaskedRangesVector m_Ranges;
     vector< TAlgoMap > m_Values;
 };
 

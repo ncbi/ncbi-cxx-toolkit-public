@@ -30,6 +30,10 @@
 *
 * ===========================================================================
 */
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>

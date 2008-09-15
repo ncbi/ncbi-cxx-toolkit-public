@@ -56,6 +56,9 @@ void
 CBlastRPSOptionsHandle::SetLookupTableDefaults()
 {
     m_Opts->SetLookupTableType(eRPSLookupTable);
+    // N.B.: the word threshold is not set because for RPS-BLAST it CANNOT be
+    // done, i.e.: the RPS-BLAST databases already have this value encoded in
+    // them and therefore this value cannot be changed on an RPS-BLAST run
 }
 
 void

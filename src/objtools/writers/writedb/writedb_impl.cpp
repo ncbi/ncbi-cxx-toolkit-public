@@ -31,6 +31,10 @@
 /// Implementation for the CWriteDB_Impl class.
 /// class for WriteDB.
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include <objtools/writers/writedb/writedb_error.hpp>
 #include <objtools/readers/seqdb/seqdbexpert.hpp>
@@ -903,13 +907,9 @@ void s_WriteRanges(CBlastDbBlob  & blob,
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
-void CWriteDB_Impl::SetMaskData(const CWriteDB_Impl::TRanges & ranges)
+void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges)
 {
     TSeqPos seq_length = x_ComputeSeqLength();
-    int col_id = x_GetMaskDataColumnId();
-    
-    CBlastDbBlob & blob = SetBlobData(col_id);
-    blob.Clear();
     
     // Check validity of data and determine maximum integer value
     // stored here before writing anything.  The best numeric_size
@@ -924,8 +924,8 @@ void CWriteDB_Impl::SetMaskData(const CWriteDB_Impl::TRanges & ranges)
     
     int max_sz = 0;
     
-    ITERATE(TRanges, r1, ranges) {
-        if (! r1->offsets.size()) {
+    ITERATE(CMaskedRangesVector, r1, ranges) {
+        if (r1->empty()) {
             continue;
         }
         
@@ -983,7 +983,9 @@ void CWriteDB_Impl::SetMaskData(const CWriteDB_Impl::TRanges & ranges)
     }
     
     // Write the actual data.
-    
+    const int col_id = x_GetMaskDataColumnId();
+    CBlastDbBlob & blob = SetBlobData(col_id);
+    blob.Clear();
     blob.WriteInt1(numeric_size);
     
     if (numeric_size != 1) {
@@ -1000,7 +1002,7 @@ void CWriteDB_Impl::SetMaskData(const CWriteDB_Impl::TRanges & ranges)
             //s_WriteRanges<SWriteInt1>(blob, range_list_count, ranges);
             blob.WriteInt1(range_list_count);
             
-            ITERATE(TRanges, r1, ranges) {
+            ITERATE(CMaskedRangesVector, r1, ranges) {
                 if (r1->offsets.size()) {
                     blob.WriteInt1(r1->algorithm_id);
                     blob.WriteInt1(r1->offsets.size());
@@ -1019,7 +1021,7 @@ void CWriteDB_Impl::SetMaskData(const CWriteDB_Impl::TRanges & ranges)
             //s_WriteRanges<SWriteInt2>(blob, range_list_count, ranges);
             blob.WriteInt2(range_list_count);
             
-            ITERATE(TRanges, r1, ranges) {
+            ITERATE(CMaskedRangesVector, r1, ranges) {
                 if (r1->offsets.size()) {
                     blob.WriteInt2(r1->algorithm_id);
                     blob.WriteInt2(r1->offsets.size());
@@ -1038,7 +1040,7 @@ void CWriteDB_Impl::SetMaskData(const CWriteDB_Impl::TRanges & ranges)
             //s_WriteRanges<SWriteInt4>(blob, range_list_count, ranges);
             blob.WriteInt4(range_list_count);
             
-            ITERATE(TRanges, r1, ranges) {
+            ITERATE(CMaskedRangesVector, r1, ranges) {
                 if (r1->offsets.size()) {
                     blob.WriteInt4(r1->algorithm_id);
                     blob.WriteInt4(r1->offsets.size());

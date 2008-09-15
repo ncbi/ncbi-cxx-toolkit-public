@@ -30,6 +30,10 @@
  *
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include <objtools/blast_format/vectorscreen.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>

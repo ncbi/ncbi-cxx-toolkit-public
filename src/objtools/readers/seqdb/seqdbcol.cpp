@@ -32,6 +32,10 @@
 /// CSeqDBColumn, CSeqDBColumnFlush, and CSeqDB_ColumnEntry classes,
 /// which support read operations on BlastDb format database columns.
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include <objtools/readers/seqdb/column_reader.hpp>
 #include "seqdbcol.hpp"

@@ -31,6 +31,10 @@
 /// Data conversion tools for CWriteDB and associated code.
 /// class for WriteDB.
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include "writedb_general.hpp"

@@ -56,6 +56,27 @@ USING_SCOPE(objects);
 /// Forward definition for PIMPL idiom.
 class CWriteDB_Impl;
 
+/// This represents a set of masks for a given sequence. It is represented as a
+/// vector because there can be multiple types of filtering applied to a single
+/// sequence (e.g.: DUST, WINDOWMASKER, REPEATS, etc).
+/// The type of masking data produced in IMaskDataSource
+class NCBI_XOBJWRITE_EXPORT CMaskedRangesVector: public vector<SBlastDbMaskData>
+{
+public:
+    /// Our parent class
+    typedef vector<SBlastDbMaskData> TParent;
+
+    /// Redefine empty to mean no elements or none of its elements being empty
+    bool empty() const {
+        ITERATE(TParent, itr, *this) {
+            if ( !itr->empty() ) {
+                return false;
+            }
+        }
+        return true;
+    }
+};
+
 
 /// CWriteDB
 ///
@@ -219,9 +240,6 @@ public:
     int RegisterMaskAlgorithm(EBlast_filter_program program, 
                               const string & options = string());
     
-    /// Type storing masking data for a sequence.
-    typedef vector<SBlastDbMaskData> TMaskedRanges;
-    
     /// Set filtering data for a sequence.
     /// 
     /// This method specifies filtered regions for this sequence.  A
@@ -232,7 +250,7 @@ public:
     /// uses the algorithm id for a non-empty offset range list.
     /// 
     /// @param ranges Filtered ranges for this sequence and algorithm.
-    void SetMaskData(const TMaskedRanges & ranges);
+    void SetMaskData(const CMaskedRangesVector & ranges);
     
     //
     // Output

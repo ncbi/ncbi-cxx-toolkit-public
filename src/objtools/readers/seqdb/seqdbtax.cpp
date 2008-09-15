@@ -31,6 +31,10 @@
 /// Implementation for the CSeqDBVol class, which provides an
 /// interface for all functionality of one database volume.
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include <objtools/error_codes.hpp>
 #include "seqdbtax.hpp"

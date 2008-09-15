@@ -118,13 +118,11 @@ public:
 /// An interface providing lookups of mask-data by Seq-id.
 class NCBI_XOBJWRITE_EXPORT IMaskDataSource : public CObject {
 public:
-    /// Type of masking data produced here.
-    typedef vector<SBlastDbMaskData> TMaskedRanges;
-    
     /// Get ranges of masking data for the given Seq-ids.
     /// @param id Seq-ids for which to get masking data.
     /// @return Masking data for these Seq-ids.
-    virtual TMaskedRanges & GetRanges(const list< CRef<CSeq_id> > & id) = 0;
+    virtual CMaskedRangesVector & 
+        GetRanges(const list< CRef<CSeq_id> > & id) = 0;
 };
 
 /// Build BlastDB format databases from various data sources.
@@ -365,9 +363,6 @@ public:
     ///
     /// @param max_file_size Maximum file size in bytes.
     void SetMaxFileSize(Uint8 max_file_size);
-    
-    /// The type used to communicate subject masking data.
-    typedef IMaskDataSource::TMaskedRanges TMaskedRanges;
     
     /// Define a masking algorithm.
     ///

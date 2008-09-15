@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/blast_seqinfosrc_aux.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <serial/typeinfo.hpp>
 #include <corelib/ncbiutil.hpp>
 
 #include <algorithm>
@@ -48,15 +49,18 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 void GetSequenceLengthAndId(const blast::IBlastSeqInfoSrc * seqinfo_src,
-                       int                      oid,
-                       CConstRef<CSeq_id>     & seqid,
-                       TSeqPos                * length)
+                            int                      oid,
+                            CRef<CSeq_id>          & seqid,
+                            TSeqPos                * length)
 {
     _ASSERT(length);
     list<CRef<CSeq_id> > seqid_list = seqinfo_src->GetId(oid);
     
-    // seqid.Reset(seqid_list.front());
-    seqid.Reset(FindBestChoice(seqid_list, CSeq_id::BestRank));
+    CRef<CSeq_id> id = FindBestChoice(seqid_list, CSeq_id::BestRank);
+    if (id.NotEmpty()) {
+        seqid.Reset(new CSeq_id);
+        SerialAssign(*seqid, *id);
+    }
     *length = seqinfo_src->GetLength(oid);
 
     return;
@@ -73,6 +77,7 @@ void GetFilteredRedundantGis(const IBlastSeqInfoSrc & seqinfo_src,
     }
     
     list< CRef<CSeq_id> > seqid_list = seqinfo_src.GetId(oid);
+    gis.reserve(seqid_list.size());
     
     ITERATE(list< CRef<CSeq_id> >, id, seqid_list) {
         if ((**id).IsGi()) {

@@ -30,6 +30,10 @@
 /** @file build_db.cpp 
   Code to build a database given various sources of sequence data.
 */
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 
 // Blast databases
@@ -413,9 +417,11 @@ CBuildDatabase::x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids)
         return;
     }
     
-    IMaskDataSource::TMaskedRanges * rng = & m_MaskData->GetRanges(ids);
-    
-    m_OutputDb->SetMaskData(*rng);
+    const CMaskedRangesVector& rng = m_MaskData->GetRanges(ids);
+    if (rng.empty()) {
+        return;
+    }
+    m_OutputDb->SetMaskData(rng);
 }
 #endif
 

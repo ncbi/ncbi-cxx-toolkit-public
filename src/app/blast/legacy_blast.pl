@@ -65,6 +65,8 @@ if ($application eq "blastall") {
     $cmd = &handle_fastacmd(\$print_only);
 } elsif ($application eq "formatdb") {
     $cmd = &handle_formatdb(\$print_only);
+} elsif ($application eq "seedtop") {
+    $cmd = &handle_seedtop(\$print_only);
 } elsif ($application =~ /version/) {
     my $revision = '$Revision$';
     $revision =~ s/\$Revision: | \$//g;
@@ -80,7 +82,10 @@ if ($print_only) {
     print "$cmd\n";
 } else {
     print STDERR "$cmd\n" if (DEBUG);
-    system($cmd);
+    my $rv = system($cmd);
+    unless ($rv == 0) {
+        die "Program failed, try executing the command manually.\n"; 
+    }
 }
 
 CLEAN_UP:
@@ -93,6 +98,30 @@ sub create_db_argument($)
     my $retval = "-db ";
     $retval .= ( ($arg =~ /\s/) ? "\"$arg\" " : "$arg ");
     return $retval;
+}
+
+# Converts floating point numbers to integers
+sub convert_float_to_int($)
+{
+    my $float_arg = shift;
+    my $retval = 0;
+    if ($float_arg =~ /(\d+)e([+-])(\d+)/) {
+        $retval = $1;
+        if ($2 eq "+") {
+            $retval *= 10**$3
+        } else {
+            $retval /= 10**$3
+        }
+    } else {
+        $retval = int($float_arg);
+    }
+    return $retval;
+}
+
+# Add the .exe extension for binaries if necessary on windows
+sub add_exe_extension()
+{
+    return ($^O =~ /mswin|cygwin/i) ? ".exe " : " ";
 }
 
 sub convert_sequence_locations($$)
@@ -116,18 +145,17 @@ sub convert_sequence_locations($$)
 
 sub convert_filter_string($$)
 {
-    use constant DUST_ARGS => "\"20 64 1\"";
-    use constant SEG_ARGS => "\"12 2.2 2.5\"";
     my $filter_string = shift;
     my $program = shift;
 
     #print STDERR "Parsing '$filter_string'\n";
 
     if ($filter_string =~ /F/) {
-        if ($program eq "blastp" or $program eq "tblastn") {
-            return "-seg no";
+        if ($program eq "blastp" or $program eq "tblastn" or 
+            $program eq "blastx") {
+            return "-seg no ";
         } else {
-            return "-dust no";
+            return "-dust no ";
         }
     }
 
@@ -144,11 +172,12 @@ sub convert_filter_string($$)
         $retval .= "-filtering_db repeat/repeat_9606 ";
     }
 
-    if ($filter_string =~ /L|T/) {
-        if ($program eq "blastp" or $program eq "tblastn") {
-            $retval .= "-seg " . SEG_ARGS . " ";
+    if ($filter_string =~ /L|T|S|D/ and not ($retval =~ /seg|dust/)) {
+        if ($program eq "blastp" or $program eq "tblastn" or 
+            $program eq "blastx") {
+            $retval .= "-seg yes ";
         } else {
-            $retval .= "-dust " . DUST_ARGS . " ";
+            $retval .= "-dust yes ";
         }
     }
 
@@ -242,20 +271,22 @@ sub handle_blastall($)
     if (defined $opt_p) {
         if (defined $opt_R) {
             $retval .= "/tblastn";
-            $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+            $retval .= &add_exe_extension();
             $retval .= "-in_pssm $opt_R ";
         } elsif (defined $opt_n and $opt_n =~ /t/i) {
             $retval .= "/blastn";
-            $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+            $retval .= &add_exe_extension();
             $retval .= "-task megablast ";
         } else {
             $retval .= "/$opt_p";
-            $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+            $retval .= &add_exe_extension();
             $retval .= "-task blastn " if ($opt_p eq "blastn");
         }
     }
     $retval .= &create_db_argument($opt_d)  if (defined $opt_d);
-    $retval .= "-query $opt_i "             if (defined $opt_i);
+    if (defined $opt_i and (not $retval =~ /\/tblastn/)) {
+        $retval .= "-query $opt_i ";
+    }
     $retval .= "-gilist $opt_l "            if (defined $opt_l);
     $retval .= "-dbsize $opt_z "            if (defined $opt_z);
     $retval .= "-matrix $opt_M "            if (defined $opt_M);
@@ -276,7 +307,9 @@ sub handle_blastall($)
         $retval .= "-window_size 0 ";
     }
     $retval .= "-word_size $opt_W "         if (defined $opt_W);
-    $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
+    if (defined $opt_Y) {
+        $retval .= "-searchsp " . &convert_float_to_int($opt_Y) . " ";
+    }
     if (defined $opt_f) {
         unless ($opt_p eq "blastn") {
             $retval .= "-min_word_score $opt_f "    
@@ -330,7 +363,9 @@ sub handle_blastall($)
     if (defined $opt_J and (length($opt_J) == 0 or $opt_J =~ /t/i)) {
         $retval .= "-parse_deflines ";
     }
-    $retval .= &convert_strand($opt_S) if (defined $opt_S);
+    $retval .= &convert_strand($opt_S) if (defined $opt_S and not
+                                           ($opt_p ne "blastp" or 
+                                            $opt_p ne "tblastn"));
     if (defined $opt_s and (length($opt_s) == 0 or $opt_s =~ /t/i)) {
         $retval .= "-use_sw_tback ";
     }
@@ -339,6 +374,108 @@ sub handle_blastall($)
         $retval .= &convert_filter_string($opt_F, $opt_p);
     }
 
+    return $retval;
+}
+
+sub handle_seedtop($)
+{
+    my $print_only = shift;
+    my $path = DEFAULT_PATH;
+    my ($opt_C, $opt_D, $opt_E, $opt_F, $opt_G, $opt_I, $opt_J, $opt_K, $opt_M,
+        $opt_O, $opt_S, $opt_X, $opt_d, $opt_e, $opt_f, $opt_i, $opt_k, $opt_o,
+        $opt_p, $opt_q, $opt_r);
+
+    GetOptions("<>"             => sub { $application = shift; },
+               "print_only!"    => $print_only,
+               "path=s"         => \$path,
+               "C=i"            => \$opt_C,
+               "D=i"            => \$opt_D,
+               "E=i"            => \$opt_E,
+               "F:s"            => \$opt_F,
+               "G=i"            => \$opt_G,
+               "I:s"            => \$opt_I,
+               "J:s"            => \$opt_J,
+               "K=i"            => \$opt_K,
+               "M=s"            => \$opt_M,
+               "O=s"            => \$opt_O,
+               "S=i"            => \$opt_S,
+               "X=i"            => \$opt_X,
+               "d=s"            => \$opt_d,
+               "e=f"            => \$opt_e,
+               "f:s"            => \$opt_f,
+               "i=s"            => \$opt_i,
+               "k=s"            => \$opt_k,
+               "o=s"            => \$opt_o,
+               "p=s"            => \$opt_p,
+               "q=i"            => \$opt_q,
+               "r=i"            => \$opt_r
+               );
+
+    my $retval = $path;
+    $retval .= "/psiblast";
+    $retval .= &add_exe_extension();
+    $retval .= "-query $opt_i "             if (defined $opt_i);
+    $retval .= "-phi_pattern $opt_k "       if (defined $opt_k);
+    $retval .= &create_db_argument($opt_d)  if (defined $opt_d);
+    $retval .= "-gapopen $opt_G "           if (defined $opt_G);
+    $retval .= "-gapextend $opt_E "         if (defined $opt_E);
+    $retval .= "-out $opt_o "               if (defined $opt_o);
+    if (defined $opt_O) {
+        unless ($retval =~ s/-out \S+ /-out $opt_O /) {
+            $retval .= "-out $opt_O ";
+        }
+        unless ($retval =~ s/-outfmt \d+/-outfmt 8/) {
+            $retval .= "-outfmt 8 ";
+        } else {
+            print STDERR "Warning: overriding output format\n";
+        }
+    }
+    if (defined $opt_I and (length($opt_I) == 0 or $opt_I =~ /t/i)) {
+        $retval .= "-show_gis ";
+    }
+    if (defined $opt_J and (length($opt_J) == 0 or $opt_J =~ /t/i)) {
+        $retval .= "-parse_deflines ";
+    }
+    $retval .= "-xdrop_gap $opt_X "         if (defined $opt_X);
+    $retval .= "-evalue $opt_e "            if (defined $opt_e);
+    $retval .= "-matrix $opt_M "            if (defined $opt_M);
+    my $query_is_protein = "1";
+    if (defined $opt_p) {
+        unless ($opt_p eq "patseedp") {
+            die "Only patseedp program is supported\n";
+        }
+        # Change query_is_protein if other programs are supported
+    } else {
+        die "Program must be specified\n";
+    }
+    if (defined $opt_F) {
+        $retval .= &convert_filter_string($opt_F,
+                                          ($query_is_protein eq "1")
+                                          ? "blastp" : "blastn");
+    }
+
+    # Unsupported options
+    if (defined $opt_D) {
+        print STDERR "Warning: -D option is not supported!\n";
+    }
+    if (defined $opt_S) {
+        print STDERR "Warning: -S option is not supported!\n";
+    }
+    if (defined $opt_C) {
+        print STDERR "Warning: -C option is not supported!\n";
+    }
+    if (defined $opt_q) {
+        print STDERR "Warning: -q option is not supported!\n";
+    }
+    if (defined $opt_r) {
+        print STDERR "Warning: -r option is not supported!\n";
+    }
+    if (defined $opt_f) {
+        print STDERR "Warning: -f option is not supported!\n";
+    }
+    if (defined $opt_K) {
+        print STDERR "Warning: -K option is not supported!\n";
+    }
     return $retval;
 }
 
@@ -402,7 +539,7 @@ sub handle_megablast($)
     my $retval = $path;
 
     $retval .= "/blastn";
-    $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+    $retval .= &add_exe_extension();
     $retval .= "-query $opt_i "             if (defined $opt_i);
     $retval .= &create_db_argument($opt_d)  if (defined $opt_d);
     $retval .= "-evalue $opt_e "            if (defined $opt_e);
@@ -439,10 +576,17 @@ sub handle_megablast($)
     $retval .= "-num_threads $opt_a "       if (defined $opt_a);
     $retval .= "-word_size $opt_W "         if (defined $opt_W);
     $retval .= "-dbsize $opt_z "            if (defined $opt_z);
-    $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
+    if (defined $opt_Y) {
+        $retval .= "-searchsp " . &convert_float_to_int($opt_Y) . " ";
+    }
     $retval .= "-xdrop_ungap $opt_y "       if (defined $opt_y);
     $retval .= "-xdrop_gap_final $opt_Z "   if (defined $opt_Z);
-    $retval .= "-template_length $opt_t "   if (defined $opt_t);
+    if (defined $opt_t) {
+        $retval .= "-template_length $opt_t ";
+        # Set the template type to the default value in megablast if not
+        # provided, as blastn requires it
+        $opt_N = 0 unless (defined $opt_N); 
+    }
     $retval .= "-window_size $opt_A "       if (defined $opt_A);
     if (defined $opt_N) {
         $retval .= "-template_type coding " if ($opt_N == 0);
@@ -451,9 +595,6 @@ sub handle_megablast($)
     }
     if (defined $opt_F) {
         $retval .= &convert_filter_string($opt_F, "blastn");
-    }
-    if (defined $opt_I and (length($opt_I) == 0 or $opt_I =~ /t/i)) {
-        $retval .= "-show_gis ";
     }
     if (defined $opt_J and (length($opt_J) == 0 or $opt_J =~ /t/i)) {
         $retval .= "-parse_deflines ";
@@ -472,25 +613,81 @@ sub handle_megablast($)
     }
 
     # Unsupported options
-    if (defined $opt_M) {
-        print STDERR "Warning: -M option is ignored\n";
-    }
+    # This option can be safely ignored
+    #if (defined $opt_M) {
+    #    print STDERR "Warning: -M option is ignored\n";
+    #}
+
+    my $tab_with_acc =
+        "-outfmt \"7 qacc sseqid pident length mismatch gapopen qstart qend " .
+        "sstart send evalue bitscore\" ";
+
+    # Here are some combinations of options and their equivalent conversion to
+    # the -outfmt option:
+    # NOTE: only in the last case we use sgi as the user explicitely requests
+    # the GIs to be shown (via -I), thus we assume the database/subjects will
+    # have GIs. We don't do the same for accessions, because if these are not
+    # available, an ordinal ID gets printed.
+    # -J -D3 -R -fF = -outfmt "7 qacc sseqid pident length mismatch gapopen
+    # qstart qend sstart send evalue bitscore"
+    # -J -D3 -R -fT = -outfmt "7 qseqid sseqid pident length mismatch gapopen
+    # qstart qend sstart send evalue bitscore"
+    # -J -D3 -R -fT -I = -outfmt "7 qgi sgi pident length mismatch gapopen
+    # qstart qend sstart send evalue bitscore"
+
     if (defined $opt_D) {
-        print STDERR "Warning: -D option is not supported!\n";
+        if ($opt_D == 3) {  # tabular output
+            unless ($retval =~ s/-outfmt \d+/$tab_with_acc/) {
+                $retval .= "$tab_with_acc ";
+            } else {
+                print STDERR "Warning: overriding output format\n";
+            }
+        } elsif ($opt_D == 2) { # traditional BLAST output
+            unless ($retval =~ s/-outfmt \d+/-outfmt 0/) {
+                $retval .= "-outfmt 0 ";
+            } else {
+                print STDERR "Warning: overriding output format\n";
+            }
+        } elsif ($opt_D == 4) { # text ASN.1
+            unless ($retval =~ s/-outfmt \d+/-outfmt 8/) {
+                $retval .= "-outfmt 8 ";
+            } else {
+                print STDERR "Warning: overriding output format\n";
+            }
+        } elsif ($opt_D == 5) { # binary ASN.1
+            unless ($retval =~ s/-outfmt \d+/-outfmt 9/) {
+                $retval .= "-outfmt 9 ";
+            } else {
+                print STDERR "Warning: overriding output format\n";
+            }
+        } else {
+            print STDERR "Warning: -D option with value $opt_D is not " .
+                "supported!\n";
+        }
     }
+
+    if (defined $opt_I and (length($opt_I) == 0 or $opt_I =~ /t/i)) {
+        $retval .= "-show_gis ";
+        $retval =~ s/qacc/qgi/;
+        $retval =~ s/sseqid/sgi/;
+    }
+    # -fF is the default, if -f or -fT is specified, we assume that's what's
+    # desired and we apply a modification to the previously set output format
+    # (we can safely assume this b/c -f only works with -D3)
+    if (defined $opt_f and (length($opt_f) == 0 or $opt_f =~ /t/i)) {
+        $retval =~ s/qacc/qseqid/;
+    }
+    if (defined $opt_R and not ($retval =~ /-outfmt.*7/)) {
+        print STDERR "Warning: -R option is deprecated, please rely on the ".
+            "application's exit code to determine its success or failure.\n" .
+            "0 means success, non-zero means failure\n";
+    }
+    # Deprecated options
     if (defined $opt_g and $opt_g =~ /f/i) {
         print STDERR "Warning: -g option is not supported!\n";
     }
     if (defined $opt_H) {
         print STDERR "Warning -H option is not supported!\n";
-    }
-
-    # Deprecated options
-    if (defined $opt_f) {
-        print STDERR "Warning: -f option is deprecated\n";
-    }
-    if (defined $opt_R) {
-        print STDERR "Warning: -R option is deprecated\n";
     }
     if (defined $opt_Q) {
         print STDERR "Warning: -Q option is deprecated\n";
@@ -563,12 +760,12 @@ sub handle_blastpgp($)
                "z=f"            => \$opt_z
                );
     my $retval = $path . "/psiblast";
-    $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+    $retval .= &add_exe_extension();
 
     my $query_is_protein = "1";
 
-    if (defined $opt_p and ($opt_p ne "blastpgp" or
-                            $opt_p ne "patseedp")) {
+    if (defined $opt_p and not ($opt_p ne "blastpgp" or
+                                $opt_p ne "patseedp")) {
         die "Program '$opt_p' not implemented\n";
     }
 
@@ -584,7 +781,9 @@ sub handle_blastpgp($)
     $retval .= "-gapextend $opt_E "         if (defined $opt_E);
     $retval .= "-num_threads $opt_a "       if (defined $opt_a);
     $retval .= "-dbsize $opt_z "            if (defined $opt_z);
-    $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
+    if (defined $opt_Y) {
+        $retval .= "-searchsp " . &convert_float_to_int($opt_Y) . " ";
+    }
     $retval .= "-pseudocount $opt_c "       if (defined $opt_c);
     $retval .= "-inclusion_ethresh $opt_h " if (defined $opt_h);
     if (defined $opt_A) {
@@ -735,7 +934,7 @@ sub handle_bl2seq
     }
 
     $retval .= "/$opt_p"                  if (defined $opt_p);
-    $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+    $retval .= &add_exe_extension();
     unless (defined $opt_A) {
         $retval .= "-query $opt_i "             if (defined $opt_i);
         $retval .= "-subject $opt_j "           if (defined $opt_j);
@@ -773,6 +972,13 @@ sub handle_bl2seq
             print STDERR "Warning: overriding output format\n";
         }
     }
+    if (defined $opt_D and $opt_D =~ /1/) {
+        if ($retval =~ s/-outfmt \d+/-outfmt 7/) {
+            print STDERR "Warning: overriding output format\n";
+        } else {
+            $retval .= "-outfmt 7 ";
+        }
+    }
     if (defined $opt_T and (length($opt_T) == 0 or $opt_T =~ /t/i)) {
         $retval .= "-html "                     
     }
@@ -787,7 +993,9 @@ sub handle_bl2seq
     $retval .= "-max_intron_length $opt_t " if (defined $opt_t);
     $retval .= "-dbsize $opt_d "            if (defined $opt_d);
     $retval .= "-xdrop_gap $opt_X "         if (defined $opt_X);
-    $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
+    if (defined $opt_Y) {
+        $retval .= "-searchsp " . &convert_float_to_int($opt_Y) . " ";
+    }
     if (defined $opt_U and (length($opt_U) == 0 or $opt_U =~ /t/i)) {
         $retval .= "-lcase_masking ";
     }
@@ -802,9 +1010,6 @@ sub handle_bl2seq
 
     if (defined $opt_F) {
         $retval .= &convert_filter_string($opt_F, $opt_p);
-    }
-    if (defined $opt_D) {
-        die "Tabular is not handled yet in new C++ binaries!\n";
     }
 
     return $retval;
@@ -855,7 +1060,7 @@ sub handle_rpsblast
     } else {
         $retval .= "/rpsblast";
     }
-    $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+    $retval .= &add_exe_extension();
 
     $retval .= "-query $opt_i "             if (defined $opt_i);
     $retval .= &create_db_argument($opt_d)  if (defined $opt_d);
@@ -868,7 +1073,9 @@ sub handle_rpsblast
     $retval .= "-num_descriptions $opt_v "  if (defined $opt_v);
     $retval .= "-num_alignments $opt_b "    if (defined $opt_b);
     $retval .= "-dbsize $opt_z "            if (defined $opt_z);
-    $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
+    if (defined $opt_Y) {
+        $retval .= "-searchsp " . &convert_float_to_int($opt_Y) . " ";
+    }
     $retval .= "-xdrop_gap_final $opt_Z "   if (defined $opt_Z);
     if (defined $opt_m) {
         if ($opt_m == 5 or $opt_m == 6) {
@@ -939,7 +1146,7 @@ sub handle_fastacmd
                );
 
     my $retval = $path . "/blastdbcmd";
-    $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+    $retval .= &add_exe_extension();
     $retval .= &create_db_argument($opt_d)  if (defined $opt_d);
     if (defined $opt_p) {
         $retval .= "-dbtype ";
@@ -1028,12 +1235,12 @@ sub handle_formatdb
     } else {
         $retval .= "/makeblastdb";
     }
-    $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+    $retval .= &add_exe_extension();
 
     if (defined $opt_B) {
         die "-F option must be specified with -B\n" unless (defined $opt_F);
         $retval = $path . "/blastdb_aliastool";
-        $retval .= (($^O =~ /win|cygwin/i) ? ".exe " : " ");
+        $retval .= &add_exe_extension();
         $retval .= "-gi_file_in $opt_F -gi_file_out $opt_B";
         return $retval;
     }

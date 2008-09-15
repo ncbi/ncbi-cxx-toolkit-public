@@ -96,6 +96,9 @@ public:
     virtual bool GetMasks(Uint4 index, 
                           const TSeqRange& target_range,
                           TMaskedSubjRegions& retval) const;
+
+    /// Invoke CSeqDB's garbage collector
+    virtual void GarbageCollect();
 private:
     mutable CRef<CSeqDB> m_iSeqDb; ///< BLAST database object
     /// Algorithm IDs for filtering algorithms used with these subjects

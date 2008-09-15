@@ -563,9 +563,41 @@ BOOST_AUTO_TEST_CASE(CheckColoRID) {
     BOOST_REQUIRE(sav[0].NotEmpty());
 }
 
-#if 0 
-// Temporarily disabled until changes in SplitDB are done
+/// Similar to the one found in algo/blast/blastinput
+class CAutoEnvironmentVariable
+{
+public:
+    CAutoEnvironmentVariable(const char* var_name) 
+        : m_VariableName(var_name)
+    {
+        _ASSERT(var_name);
+        string var(m_VariableName);
+        string value("1");
+        CNcbiEnvironment env(0);
+        env.Set(var, value);
+    }
+
+    CAutoEnvironmentVariable(const char* var_name, const char* var_value) 
+        : m_VariableName(var_name)
+    {
+        _ASSERT(var_name);
+        _ASSERT(var_value);
+        string var(m_VariableName);
+        CNcbiEnvironment env(0);
+        env.Set(var, string(var_value));
+    }
+
+    ~CAutoEnvironmentVariable() {
+        string var(m_VariableName);
+        CNcbiEnvironment env(0);
+        env.Set(var, kEmptyStr);
+    }
+private:
+    const char* m_VariableName;
+};
+
 BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
+    CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
     const string rid("1214512158-10611-186074495131.BLASTQ23"); // Permanent RID
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
@@ -581,19 +613,53 @@ BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
     BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Failed, 
                         rmt_blaster.CheckStatus());
 }
-#endif
 
-BOOST_AUTO_TEST_CASE(CheckMissingRID) {
+// This tests an expired/invalid RID
+BOOST_AUTO_TEST_CASE(RetrieveInvalidRID) {
+    CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
     const string non_existent_rid("1068741992-11111-263425.BLASTQ3");
     CRemoteBlast rmt_blaster(non_existent_rid);
+    //rmt_blaster.SetVerbose();
 
     BOOST_REQUIRE_EQUAL(non_existent_rid, rmt_blaster.GetRID());
-    BOOST_REQUIRE_EQUAL(false, rmt_blaster.CheckDone());
     // make sure error is something like: RID not found
+    BOOST_REQUIRE_EQUAL(false, rmt_blaster.CheckDone());
+    //cerr << "Errors: '" << rmt_blaster.GetErrors() << "'" << endl;
     BOOST_REQUIRE(rmt_blaster.GetErrors() != kEmptyStr);
     BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Unknown,
                         rmt_blaster.CheckStatus());
 }
+
+BOOST_AUTO_TEST_CASE(RetrieveRIDWithError) {
+    CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    const string rid("1213977851-19717-200807286580.BLASTQ23");
+    CRemoteBlast rmt_blaster(rid);
+    //rmt_blaster.SetVerbose();
+
+    BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
+    BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
+    //cerr << "Errors: '" << rmt_blaster.GetErrors() << "'" << endl;
+    BOOST_REQUIRE(NStr::Find(rmt_blaster.GetErrors(), "Error: File") != NPOS);
+    BOOST_REQUIRE(NStr::Find(rmt_blaster.GetErrors(), "not found.") != NPOS);
+    BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Failed,
+                        rmt_blaster.CheckStatus());
+}
+
+BOOST_AUTO_TEST_CASE(RetrieveRIDWithSIGXCPU) {
+    CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    const string rid("1219425735-25988-94487186920.BLASTQ1");
+    CRemoteBlast rmt_blaster(rid);
+    //rmt_blaster.SetVerbose();
+
+    BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
+    BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
+    //cerr << "Errors: '" << rmt_blaster.GetErrors() << "'" << endl;
+    BOOST_REQUIRE(NStr::Find(rmt_blaster.GetErrors(), 
+                             "Error: CPU usage limit was exceeded") != NPOS);
+    BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Failed,
+                        rmt_blaster.CheckStatus());
+}
+
 
 //     BOOST_AUTO_TEST_CASE(SubmitNonExistentDatabase) {
 //         CBlastProteinOptionsHandle prot_opts(CBlastOptions::eRemote);

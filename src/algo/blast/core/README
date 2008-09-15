@@ -6,8 +6,14 @@ with them.
 
 Build instructions
 ------------------
+
+NOTE: By following this approach some features supported by the NCBI C++ toolkit
+such as BLAST database access, BLAST formatting, embedded logging, MT locking,
+and configuration support will be absent or only partially supported.
+
+UNIX:
 To build these source files into a library without the rest of the NCBI C++
-toolkit, one should use the following commands (on UNIX):
+toolkit, one should use the following commands:
 
 ./configure --with-projects=scripts/projects/blast_core_lib.lst \
             --without-debug --with-mt --with-build-root=ReleaseMT
@@ -21,6 +27,19 @@ NCBI_HOME=<installation directory of the NCBI C++ toolkit>
 -I$NCBI_HOME/c++/ReleaseMT/inc -I$NCBI_HOME/c++/include
 -L $NCBI_HOME/c++/ReleaseMT/lib
 
-NOTE: By following this approach some features supported by the NCBI C++ toolkit
-such as BLAST database access, BLAST formatting, embedded logging, MT locking,
-and configuration support will be absent or only partially supported.
+Windows:
+1) Open the ncbi_cpp.sln project/solution file 
+   c++/compilers/msvc800_prj/static/build/ncbi_cpp.sln. 
+2) Right click on the -CONFIGURE-DIALOG- project on the Solution Explorer and
+   select "Build" from the context menu, which will bring up a window titled
+   "Project Tree Builder". 
+3) In the "Project Tree Builder" window's first text box, enter
+   scripts\projects\blast_core_lib.lst, click OK, and on the subsequent window
+   click "Reload". 
+4) After the environment reloads, right click on blast.lib and select "Build".
+
+The blast.lib library file will be found in
+c++\compilers\msvc800_prj\static\lib\CONF\blast.lib, where CONF represents the
+appropriate configuration (e.g.: debugdll, debugmt, releasedll, or releasemt),
+and the headers will be found in c++\compilers\msvc800_prj\static\inc and
+c++\include

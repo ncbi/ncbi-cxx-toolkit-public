@@ -29,6 +29,10 @@
 
 //==========================================================================//
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include <objtools/writers/gene_info/gene_info_writer.hpp>
 #include "gene_file_defs.hpp"

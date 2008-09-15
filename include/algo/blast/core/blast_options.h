@@ -96,7 +96,8 @@ extern "C" {
  *  will go into the BLAST lookup table when it is generated 
  */
 #define BLAST_WORD_THRESHOLD_BLASTP 11 /**< default neighboring threshold
-                                         (blastp/rpsblast) */
+                                         (blastp and for rpsblast at RPS-BLAST
+                                         database creation time) */
 #define BLAST_WORD_THRESHOLD_BLASTN 0 /**< default threshold (blastn) */
 #define BLAST_WORD_THRESHOLD_BLASTX 12 /**< default threshold (blastx) */
 #define BLAST_WORD_THRESHOLD_TBLASTN 13 /**< default neighboring threshold 

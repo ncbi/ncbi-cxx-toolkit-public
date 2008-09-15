@@ -1926,7 +1926,7 @@ BOOST_AUTO_TEST_CASE(MaskDataColumn)
         int oid = oids[i];
         W.AddSequence(*R.GetBioseq(oid));
         
-        CWriteDB::TMaskedRanges ranges;
+        CMaskedRangesVector ranges;
         
         if (i & 1) {
             ranges.push_back(SBlastDbMaskData());
@@ -2048,7 +2048,7 @@ BOOST_AUTO_TEST_CASE(UndefinedAlgoID)
     int L = R.GetSeqLength(oid);
     W.AddSequence(*R.GetBioseq(oid));
     
-    CWriteDB::TMaskedRanges ranges;
+    CMaskedRangesVector ranges;
     
     ranges.push_back(SBlastDbMaskData());
     ranges.back().algorithm_id = (int)eBlast_filter_program_dust;
@@ -2087,7 +2087,7 @@ BOOST_AUTO_TEST_CASE(MaskDataBoundsError)
     int L = R.GetSeqLength(oid);
     W.AddSequence(*R.GetBioseq(oid));
     
-    CWriteDB::TMaskedRanges ranges;
+    CMaskedRangesVector ranges;
     
     ranges.push_back(SBlastDbMaskData());
     ranges.back().algorithm_id = (int)eBlast_filter_program_dust;

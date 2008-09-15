@@ -272,25 +272,39 @@ Blast4-get-seq-parts-reply ::= SEQUENCE {
 --  --------------------------------------------------------------------
 
 Blast4-error ::= SEQUENCE {
+    -- This is an integer to allow for flexibility, but the values assigned
+    -- should be of type Blast4-error-code
     code                    INTEGER,
     message                 VisibleString OPTIONAL
 }
 
+-- This enumeration defines values that are intended to be used with the
+-- Blast4-error::code in a logical AND operation to easily determine whether a
+-- given Blast4-error object contains either a warning or an error
 Blast4-error-flags ::= ENUMERATED {
     warning                 (1024),
     error                   (2048)
 }
 
+-- Defines values for use in Blast4-error::code.
+-- Note: warnings should have values greater than 1024 and less than 2048,
+-- errors should have values greater than 2048.
 Blast4-error-code ::= INTEGER {
-	-- warnings
-	conversion-warning		(1024),
+    -- A conversion issue was found when converting to/from blast3 from/to 
+    -- blast4 protocol in the blast4 server
+    conversion-warning		(1024),
 
-	-- errors
+    -- Indicates internal errors in the blast4 server
     internal-error          (2048),
+    -- Request type is not implemented in the blast4 server
     not-implemented         (2049),
+    -- Request type is not allowed in the blast4 server
     not-allowed             (2050),
+    -- Malformed/invalid requests (e.g.: parsing errors or invalid data in request)
     bad-request             (2051),
+    -- The RID requested is unknown or it has expired
     bad-request-id          (2052),
+    -- The search is pending
     search-pending          (2053)
 }
 

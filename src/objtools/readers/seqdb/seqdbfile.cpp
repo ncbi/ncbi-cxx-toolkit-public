@@ -31,6 +31,10 @@
 /// Several classes providing access to the component files of a
 /// database volume.
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include "seqdbfile.hpp"
 

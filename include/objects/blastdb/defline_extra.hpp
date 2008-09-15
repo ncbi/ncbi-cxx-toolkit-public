@@ -71,6 +71,11 @@ struct SBlastDbMaskData {
     
     /// Start and end offsets of the filtered area.
     vector< pair<TSeqPos, TSeqPos> > offsets;
+
+    /// Determines whether this object contains no offsets
+    bool empty() const {
+        return offsets.empty();
+    }
 };
 
 END_objects_SCOPE

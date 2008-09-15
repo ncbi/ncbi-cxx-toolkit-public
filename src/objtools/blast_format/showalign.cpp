@@ -30,6 +30,10 @@
  *
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include <objtools/blast_format/showalign.hpp>
 
@@ -91,7 +95,6 @@
 #include <util/tables/raw_scoremat.h>
 #include <objtools/readers/getfeature.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
-#include <algo/blast/core/blast_stat.h>
 #include <html/htmlhelper.hpp>
 
 
@@ -203,7 +206,9 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_Ctx = NULL;
 
     const SNCBIPackedScoreMatrix* packed_mtx = 
-        BlastScoreBlkGetCompiledInMatrix(matrix_name);
+        NCBISM_GetStandardMatrix(matrix_name 
+                                 ? matrix_name 
+                                 : BLAST_DEFAULT_MATRIX);
     if (packed_mtx == NULL) {
         packed_mtx = &NCBISM_Blosum62;
     }

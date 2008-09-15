@@ -980,6 +980,9 @@ public:
                      bool                inverted,
                      TSequenceRanges   & ranges);
 #endif
+
+    /// Invoke the garbage collector to free up memory
+    void GarbageCollect(void);
     
 private:
     CLASS_MARKER_FIELD("IMPL")

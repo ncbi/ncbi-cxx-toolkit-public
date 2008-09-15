@@ -39,6 +39,8 @@ Author: Jason Papadopoulos
 
 #include <ncbi_pch.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include <algo/blast/core/blast_stat.h>
 #include <objtools/blast_format/blastxml_format.hpp>
@@ -468,6 +470,65 @@ s_SetFlags(string& program,
     return flags;
 }
 
+// Ported from blastutl.c's BlastGetTypes and BlastGetProgramNumber (CVS
+// revision 6.471), using program number definitions from blastdef.h (CVS
+// revision 6.169)
+pair<string, int> 
+CBlastFormat::x_ComputeBlastTypePair() const
+{
+    pair<string, int> retval("unknown", 0);
+    if (NStr::CompareNocase(m_Program, "blastn") == 0 ||
+        NStr::CompareNocase(m_Program, "phiblastn") == 0) {
+        retval = make_pair<string, int>("BLASTN", 1);
+    } else if (NStr::CompareNocase(m_Program, "blastp") == 0 ||
+               NStr::CompareNocase(m_Program, "psiblast") == 0 ||
+               NStr::CompareNocase(m_Program, "rpsblast") == 0 ||
+               NStr::CompareNocase(m_Program, "phiblastp") == 0) {
+        retval = make_pair<string, int>("BLASTP", 2);
+    } else if (NStr::CompareNocase(m_Program, "blastx") == 0 ||
+               NStr::CompareNocase(m_Program, "rpstblastn") == 0) {
+        retval = make_pair<string, int>("BLASTX", 3);
+    } else if (NStr::CompareNocase(m_Program, "tblastn") == 0) {
+        retval = make_pair<string, int>("TBLASTN", 4);
+    } else if (NStr::CompareNocase(m_Program, "tblastx") == 0) {
+        retval = make_pair<string, int>(kEmptyStr, 5);
+    } else if (NStr::CompareNocase(m_Program, "psitblastn") == 0) {
+        retval = make_pair<string, int>("TBLASTN", 6);
+    } 
+    return retval;
+}
+
+// Port of jzmisc.c's AddAlignInfoToSeqAnnotEx (CVS revision 6.11)
+CRef<CSeq_annot>
+CBlastFormat::x_WrapAlignmentInSeqAnnot(CConstRef<CSeq_align_set> alnset) const
+{
+    _ASSERT(alnset.NotEmpty());
+    CRef<CSeq_annot> retval(new CSeq_annot);
+    static const string kHistSeqalign("Hist Seqalign");
+    static const string kBlastType("Blast Type");
+
+    CRef<CUser_object> hist_align_obj(new CUser_object);
+    hist_align_obj->AddField(kHistSeqalign, true);
+    hist_align_obj->SetType().SetStr(kHistSeqalign);
+    retval->AddUserObject(*hist_align_obj);
+
+    pair<string, int> blast_type_pair(x_ComputeBlastTypePair());
+    CRef<CUser_object> blast_type(new CUser_object);
+    blast_type->AddField(blast_type_pair.first, blast_type_pair.second);
+    if (blast_type_pair.first == kEmptyStr) {
+        // For backwards compatibility with C toolkit BLAST output
+        blast_type->SetData().back()->SetLabel().SetId(0);
+    }
+    blast_type->SetType().SetStr(kBlastType);
+    retval->AddUserObject(*blast_type);
+
+    ITERATE(CSeq_align_set::Tdata, itr, alnset->Get()) {
+        retval->SetData().SetAlign().push_back(*itr);
+    }
+
+    return retval;
+}
+
 void 
 CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
               CConstRef<blast::CBlastQueryVector> queries)
@@ -477,12 +538,13 @@ CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
     // ASN.1 formatting is straightforward
     if (m_FormatType == CFormattingArgs::eAsnText) {
         if (results.HasAlignments()) {
-            m_Outfile << MSerial_AsnText << *aln_set;
+            m_Outfile << MSerial_AsnText << *x_WrapAlignmentInSeqAnnot(aln_set);
         }
         return;
     } else if (m_FormatType == CFormattingArgs::eAsnBinary) {
         if (results.HasAlignments()) {
-            m_Outfile << MSerial_AsnBinary << *aln_set;
+            m_Outfile << MSerial_AsnBinary <<
+                *x_WrapAlignmentInSeqAnnot(aln_set);
         }
         return;
     } else if (m_FormatType == CFormattingArgs::eXml) {

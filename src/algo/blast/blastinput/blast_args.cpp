@@ -177,7 +177,7 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("Statistical options");
     // effective search space
     // Default value is the real size
-    arg_desc.AddOptionalKey(kArgEffSearchSpace, "float_value", 
+    arg_desc.AddOptionalKey(kArgEffSearchSpace, "int_value", 
                             "Effective length of the search space",
                             CArgDescriptions::eInt8);
     arg_desc.SetConstraint(kArgEffSearchSpace, 
@@ -377,7 +377,7 @@ CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
             string("Please specify at most one of ") + kArgFilteringDb + ", " +
             kArgWindowMaskerTaxId + ", or " + kArgWindowMaskerDatabase + ".";
         
-        NCBI_THROW(CBlastException, eInvalidArgument, msg);
+        NCBI_THROW(CInputException, eInvalidInput, msg);
     }
 }
 
@@ -655,7 +655,7 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
         }
 
         if (ungapped && *ungapped && compo_mode != eNoCompositionBasedStats) {
-            NCBI_THROW(CBlastException, eInvalidArgument, 
+            NCBI_THROW(CInputException, eInvalidInput, 
                        "Composition-adjusted searched are not supported with "
                        "an ungapped search, please add -comp_based_stats F or "
                        "do a gapped search");
@@ -944,19 +944,26 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     if (args.Exist(kArgPSIInputChkPntFile) && args[kArgPSIInputChkPntFile]) {
         CNcbiIstream& in = args[kArgPSIInputChkPntFile].AsInputFile();
         m_Pssm.Reset(new CPssmWithParameters);
-        switch (CFormatGuess().Format(in)) {
-        case CFormatGuess::eBinaryASN:
-            in >> MSerial_AsnBinary >> *m_Pssm;
-            break;
-        case CFormatGuess::eTextASN:
-            in >> MSerial_AsnText >> *m_Pssm;
-            break;
-        case CFormatGuess::eXml:
-            in >> MSerial_Xml >> *m_Pssm;
-            break;
-        default:
-            NCBI_THROW(CBlastException, eInvalidArgument, 
-                       "Unsupported format for PSSM");
+        try {
+            switch (CFormatGuess().Format(in)) {
+            case CFormatGuess::eBinaryASN:
+                in >> MSerial_AsnBinary >> *m_Pssm;
+                break;
+            case CFormatGuess::eTextASN:
+                in >> MSerial_AsnText >> *m_Pssm;
+                break;
+            case CFormatGuess::eXml:
+                in >> MSerial_Xml >> *m_Pssm;
+                break;
+            default:
+                NCBI_THROW(CInputException, eInvalidInput, 
+                           "Unsupported format for PSSM");
+            }
+        } catch (const CSerialException&) {
+            string msg("Unrecognized format for PSSM in ");
+            msg += args[kArgPSIInputChkPntFile].AsString() + " (must be ";
+            msg += "PssmWithParameters)";
+            NCBI_THROW(CInputException, eInvalidInput, msg);
         }
         _ASSERT(m_Pssm.NotEmpty());
     }
@@ -1002,7 +1009,7 @@ CPhiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
                (Blast_QueryIsNucleotide(opt.GetProgramType())
                ? true : false));
         else
-            NCBI_THROW(CBlastException, eInvalidArgument, 
+            NCBI_THROW(CInputException, eInvalidInput, 
                        "PHI pattern not read");
     }
 }
@@ -1259,7 +1266,7 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         m_Subjects.Reset(new blast::CObjMgr_QueryFactory(*subjects));
 
     } else {
-        NCBI_THROW(CBlastException, eInvalidArgument,
+        NCBI_THROW(CInputException, eInvalidInput,
            "Either a BLAST database or subject sequence(s) must be specified");
     }
 
@@ -1397,7 +1404,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         msg += kArgMaxTargetSequences + ", -";
         msg += kArgNumDescriptions + ", or -" + kArgNumAlignments + " must ";
         msg += "be non-zero";
-        NCBI_THROW(CBlastException, eInvalidArgument, msg);
+        NCBI_THROW(CInputException, eInvalidInput, msg);
     }
     else if (hitlist_size != 0) {
         opt.SetHitlistSize(hitlist_size);
@@ -1545,7 +1552,7 @@ CMbIndexArgs::ExtractAlgorithmOptions(const CArgs& args,
                 index_name = args[kArgDb].AsString();
             }
             else {
-                NCBI_THROW( CBlastException, eInvalidArgument,
+                NCBI_THROW(CInputException, eInvalidInput,
                         "Can not deduce database index name" );
             }
     

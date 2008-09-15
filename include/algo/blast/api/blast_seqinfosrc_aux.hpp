@@ -56,7 +56,7 @@ BEGIN_SCOPE(blast)
 NCBI_XBLAST_EXPORT
 void GetSequenceLengthAndId(const IBlastSeqInfoSrc* seqinfo_src, 
                         int oid,
-                        CConstRef<objects::CSeq_id>& seqid, 
+                        CRef<objects::CSeq_id>& seqid, 
                         TSeqPos* length);
  
 /// Get GIs for a sequence in a redundant database.

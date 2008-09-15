@@ -31,6 +31,10 @@
 /// Implementation for the CWriteDB_Files class.
 /// class for WriteDB.
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include "writedb_files.hpp"
 #include "writedb_convert.hpp"

@@ -64,14 +64,9 @@ BEGIN_SCOPE(blast)
 #define GAP_VALUE -1
 #endif
 
-/// Duplicate any serial object.
-template<class TObj>
-CRef<TObj> s_DuplicateObject(const TObj & id)
-{
-    CRef<TObj> id2(new TObj);
-    SerialAssign(*id2, id);
-    return id2;
-}
+/// BLAST alignments have always 2 dimensions (i.e.: Pairwise alignment is 2
+/// dimensional)
+static const TSeqPos kBlastAlignmentDim = 2;
 
 /// Converts a frame into the appropriate strand
 static ENa_strand
@@ -184,6 +179,10 @@ s_CollectSeqAlignData(const BlastHSP* hsp, const GapEditScript* esp,
     int length1 = query_length;
     int length2 = subject_length;
 
+    lengths.reserve(nsegs);
+    starts.reserve(nsegs*kBlastAlignmentDim);
+    strands.reserve(nsegs*kBlastAlignmentDim);
+
     if (translate1)
         length1 = s_GetProteinFrameLength(length1, hsp->query.frame);
     if (translate2)
@@ -258,37 +257,35 @@ s_CollectSeqAlignData(const BlastHSP* hsp, const GapEditScript* esp,
 
 /// Creates a Dense-seg object from the starts, lengths and strands vectors and two 
 /// Seq-ids.
+/// @param dense_seg the object to populate [in|out]
 /// @param master Query Seq-id [in]
 /// @param slave Subject Seq-ids [in]
 /// @param starts Vector of start positions for alignment segments [in]
 /// @param lengths Vector of alignment segments lengths [in]
 /// @param strands Vector of alignment segments strands [in]
 /// @return The Dense-seg object.
-static CRef<CDense_seg>
-s_CreateDenseg(const CSeq_id* master, const CSeq_id* slave,
+static void
+s_CreateDenseg(CDense_seg& dense_seg, 
+               CRef<CSeq_id> master, CRef<CSeq_id> slave,
                vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
                vector<ENa_strand>& strands)
 {
     _ASSERT(master);
     _ASSERT(slave);
 
-    CRef<CDense_seg> dense_seg(new CDense_seg());
-
-    // Pairwise alignment is 2 dimensional
-    dense_seg->SetDim(2);
+    dense_seg.SetDim(kBlastAlignmentDim);
 
     // Set the sequence ids
-    CDense_seg::TIds & ids = dense_seg->SetIds();
-    ids.push_back(s_DuplicateObject(*master));
-    ids.push_back(s_DuplicateObject(*slave));
-    ids.resize(dense_seg->GetDim());
-    
-    dense_seg->SetLens() = lengths;
-    dense_seg->SetStrands() = strands;
-    dense_seg->SetStarts() = starts;
-    dense_seg->SetNumseg((int) lengths.size());
+    CDense_seg::TIds & ids = dense_seg.SetIds();
+    ids.reserve(kBlastAlignmentDim);
 
-    return dense_seg;
+    ids.push_back(master);
+    ids.push_back(slave);
+    
+    dense_seg.SetNumseg((int) lengths.size());
+    dense_seg.SetLens().swap(lengths);
+    dense_seg.SetStrands().swap(strands);
+    dense_seg.SetStarts().swap(starts);
 }
 
 /// Creates a Std-seg object from the starts, lengths and strands vectors and two 
@@ -302,7 +299,7 @@ s_CreateDenseg(const CSeq_id* master, const CSeq_id* slave,
 /// @param translate_slave Is subject sequenec translated? [in]
 /// @return The Std-seg object.
 static CSeq_align::C_Segs::TStd
-s_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave, 
+s_CreateStdSegs(CRef<CSeq_id> master, CRef<CSeq_id> slave, 
                 vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
                 vector<ENa_strand>& strands, bool translate_master, 
                 bool translate_slave)
@@ -315,20 +312,16 @@ s_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
     TSignedSeqPos m_start, m_stop;      // start and stop for master sequence
     TSignedSeqPos s_start, s_stop;      // start and stop for slave sequence
     
-    CRef<CSeq_id> master_id = s_DuplicateObject(*master);
-    CRef<CSeq_id> slave_id = s_DuplicateObject(*slave);
-    
     for (int i = 0; i < nsegs; i++) {
         CRef<CStd_seg> std_seg(new CStd_seg());
         CRef<CSeq_loc> master_loc(new CSeq_loc());
         CRef<CSeq_loc> slave_loc(new CSeq_loc());
 
-        // Pairwise alignment is 2 dimensional
-        std_seg->SetDim(2);
+        std_seg->SetDim(kBlastAlignmentDim);
 
         // Set master seqloc
         if ( (m_start = starts[2*i]) != GAP_VALUE) {
-            master_loc->SetInt().SetId(*master_id);
+            master_loc->SetInt().SetId(*master);
             master_loc->SetInt().SetFrom(m_start);
             if (translate_master)
                 m_stop = m_start + CODON_LENGTH*lengths[i] - 1;
@@ -337,12 +330,12 @@ s_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
             master_loc->SetInt().SetTo(m_stop);
             master_loc->SetInt().SetStrand(strands[2*i]);
         } else {
-            master_loc->SetEmpty(*master_id);
+            master_loc->SetEmpty(*master);
         }
 
         // Set slave seqloc
         if ( (s_start = starts[2*i+1]) != GAP_VALUE) {
-            slave_loc->SetInt().SetId(*slave_id);
+            slave_loc->SetInt().SetId(*slave);
             slave_loc->SetInt().SetFrom(s_start);
             if (translate_slave)
                 s_stop = s_start + CODON_LENGTH*lengths[i] - 1;
@@ -351,11 +344,13 @@ s_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
             slave_loc->SetInt().SetTo(s_stop);
             slave_loc->SetInt().SetStrand(strands[2*i+1]);
         } else {
-            slave_loc->SetEmpty(*slave_id);
+            slave_loc->SetEmpty(*slave);
         }
 
-        std_seg->SetIds().push_back(master_id);
-        std_seg->SetIds().push_back(slave_id);
+        std_seg->SetIds().reserve(kBlastAlignmentDim);
+        std_seg->SetLoc().reserve(kBlastAlignmentDim);
+        std_seg->SetIds().push_back(master);
+        std_seg->SetIds().push_back(slave);
         std_seg->SetLoc().push_back(master_loc);
         std_seg->SetLoc().push_back(slave_loc);
 
@@ -405,22 +400,21 @@ s_CorrectUASequence(BlastHSP* hsp)
 /// @param translate_slave Is subject translated? [in]
 /// @return Resulting Seq-align object.
 static CRef<CSeq_align>
-s_CreateSeqAlign(const CSeq_id* master, const CSeq_id* slave,
+s_CreateSeqAlign(CRef<CSeq_id> master, CRef<CSeq_id> slave,
     vector<TSignedSeqPos> starts, vector<TSeqPos> lengths,
     vector<ENa_strand> strands, bool translate_master, bool translate_slave)
 {
     CRef<CSeq_align> sar(new CSeq_align());
     sar->SetType(CSeq_align::eType_partial);
-    sar->SetDim(2);         // BLAST only creates pairwise alignments
+    sar->SetDim(kBlastAlignmentDim);
 
     if (translate_master || translate_slave) {
         sar->SetSegs().SetStd() =
             s_CreateStdSegs(master, slave, starts, lengths, strands,
                             translate_master, translate_slave);
     } else {
-        CRef<CDense_seg> dense_seg = 
-            s_CreateDenseg(master, slave, starts, lengths, strands);
-        sar->SetSegs().SetDenseg(*dense_seg);
+        s_CreateDenseg(sar->SetSegs().SetDenseg(), master, slave, starts,
+                       lengths, strands);
     }
 
     return sar;
@@ -437,7 +431,7 @@ s_CreateSeqAlign(const CSeq_id* master, const CSeq_id* slave,
 /// @return Resulting Seq-align object.
 static CRef<CSeq_align>
 s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp, 
-                    const CSeq_id* id1, const CSeq_id* id2,
+                    CRef<CSeq_id> id1, CRef<CSeq_id> id2,
                     Int4 query_length, Int4 subject_length)
 {
     _ASSERT(hsp != NULL);
@@ -471,7 +465,7 @@ s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 
         CRef<CSeq_align> seqalign(new CSeq_align());
         seqalign->SetType(CSeq_align::eType_partial);
-        seqalign->SetDim(2);         // BLAST only creates pairwise alignments
+        seqalign->SetDim(kBlastAlignmentDim);
 
         bool skip_region;
         GapEditScript* esp=hsp->gap_info;
@@ -538,7 +532,7 @@ s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 /// @param subject_length Length of subject sequence [in]
 static CRef<CSeq_align>
 s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
-                       const CSeq_id* query_id, const CSeq_id* subject_id,
+                       CRef<CSeq_id> query_id, CRef<CSeq_id> subject_id,
                        Int4 query_length, Int4 subject_length)
 {
     _ASSERT(hsp != NULL);
@@ -551,13 +545,12 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
     Int4 original_length1, original_length2;
     CRef<CSeq_interval> seq_int1_last;
     CRef<CSeq_interval> seq_int2_last;
-    CConstRef<CSeq_id> id1;
-    CConstRef<CSeq_id> id2;
+    CRef<CSeq_id> id1;
+    CRef<CSeq_id> id2;
     CRef<CSeq_loc> slp1, slp2;
     ENa_strand strand1, strand2;
     bool first_shift;
     Int4 from1, from2, to1, to2;
-    CRef<CSeq_id> tmp;
 
     if (program == eBlastTypeBlastx) {
        reverse = TRUE;
@@ -583,7 +576,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
     strand1 = s_Frame2Strand(frame1);
     strand2 = s_Frame2Strand(frame2);
     
-    seqalign->SetDim(2); /**only two dimensional alignment**/
+    seqalign->SetDim(kBlastAlignmentDim);
     
     seqalign->SetType(CSeq_align::eType_partial); /**partial for gapped translating search. */
 
@@ -603,13 +596,11 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 
             slp1->SetInt().SetFrom(s_GetCurrPos(start1, esp->num[index]));
             slp1->SetInt().SetTo(MIN(start1,original_length1) - 1);
-            tmp = s_DuplicateObject(*id1);
-            slp1->SetInt().SetId(*tmp);
+            slp1->SetInt().SetId(*id1);
             slp1->SetInt().SetStrand(strand1);
             
             /* Empty nucleotide piece */
-            tmp = s_DuplicateObject(*id2);
-            slp2->SetEmpty(*tmp);
+            slp2->SetEmpty(*id2);
             
             seq_int1_last.Reset(&slp1->SetInt());
             /* Keep previous seq_int2_last, in case there is a frame shift
@@ -626,8 +617,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                 slp1->SetInt().SetFrom(s_GetCurrPos(start1, 1));
                 to1 = MIN(start1,original_length1) - 1;
                 slp1->SetInt().SetTo(to1);
-                tmp = s_DuplicateObject(*id1);
-                slp1->SetInt().SetId(*tmp);
+                slp1->SetInt().SetId(*id1);
                 slp1->SetInt().SetStrand(strand1);
                 
                 /* Nucleotide scale shifted by op_type */
@@ -644,29 +634,26 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                     slp2->SetInt().SetFrom(original_length2 - to2 - 1);
                 }
                 
-                tmp = s_DuplicateObject(*id2);
-                slp2->SetInt().SetId(*tmp);
+                slp2->SetInt().SetId(*id2);
                 slp2->SetInt().SetStrand(strand2);
 
                 CRef<CStd_seg> seg(new CStd_seg());
-                seg->SetDim(2);
+                seg->SetDim(kBlastAlignmentDim);
 
                 CStd_seg::TIds& ids = seg->SetIds();
+                ids.reserve(kBlastAlignmentDim);
+                seg->SetLoc().reserve(kBlastAlignmentDim);
 
                 if (reverse) {
                     seg->SetLoc().push_back(slp2);
                     seg->SetLoc().push_back(slp1);
-                    tmp = s_DuplicateObject(*id2);
-                    ids.push_back(tmp);
-                    tmp = s_DuplicateObject(*id1);
-                    ids.push_back(tmp);
+                    ids.push_back(id2);
+                    ids.push_back(id1);
                 } else {
                     seg->SetLoc().push_back(slp1);
                     seg->SetLoc().push_back(slp2);
-                    tmp = s_DuplicateObject(*id1);
-                    ids.push_back(tmp);
-                    tmp = s_DuplicateObject(*id2);
-                    ids.push_back(tmp);
+                    ids.push_back(id1);
+                    ids.push_back(id2);
                 }
                 ids.resize(seg->GetDim());
                 
@@ -676,8 +663,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
             first_shift = false;
 
             /* Protein piece is empty */
-            tmp = s_DuplicateObject(*id1);
-            slp1->SetEmpty(*tmp);
+            slp1->SetEmpty(*id1);
             
             /* Nucleotide scale shifted by 3, protein gapped */
             from2 = s_GetCurrPos(start2, esp->num[index]*3);
@@ -690,8 +676,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                 slp2->SetInt().SetTo(original_length2 - from2 - 1);
                 slp2->SetInt().SetFrom(original_length2 - to2 - 1);
             }
-            tmp = s_DuplicateObject(*id2);
-            slp2->SetInt().SetId(*tmp);
+            slp2->SetInt().SetId(*id2);
             slp2->SetInt().SetStrand(strand2);
             
             seq_int1_last.Reset(NULL);
@@ -727,13 +712,11 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 
             slp1->SetInt().SetFrom(from1);
             slp1->SetInt().SetTo(to1);
-            tmp = s_DuplicateObject(*id1);
-            slp1->SetInt().SetId(*tmp);
+            slp1->SetInt().SetId(*id1);
             slp1->SetInt().SetStrand(strand1);
             slp2->SetInt().SetFrom(from2);
             slp2->SetInt().SetTo(to2);
-            tmp = s_DuplicateObject(*id2);
-            slp2->SetInt().SetId(*tmp);
+            slp2->SetInt().SetId(*id2);
             slp2->SetInt().SetStrand(strand2);
            
 
@@ -768,13 +751,11 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 
                 slp1->SetInt().SetFrom(from1);
                 slp1->SetInt().SetTo(to1);
-                tmp = s_DuplicateObject(*id1);
-                slp1->SetInt().SetId(*tmp);
+                slp1->SetInt().SetId(*id1);
                 slp1->SetInt().SetStrand(strand1);
                 slp2->SetInt().SetFrom(from2);
                 slp2->SetInt().SetTo(to2);
-                tmp = s_DuplicateObject(*id2);
-                slp2->SetInt().SetId(*tmp);
+                slp2->SetInt().SetId(*id2);
                 slp2->SetInt().SetStrand(strand2);
 
                 seq_int1_last.Reset(&slp1->SetInt()); 
@@ -815,8 +796,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 
             } else if ((Uint1)esp->op_type[index] > 3) {
                 /* Protein piece is empty */
-                tmp = s_DuplicateObject(*id1);
-                slp1->SetEmpty(*tmp);
+                slp1->SetEmpty(*id1);
                 /* Simulating insertion of nucleotides */
                 from2 = s_GetCurrPos(start2, 
                                      esp->num[index]*((Uint1)esp->op_type[index]-3));
@@ -832,8 +812,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                 slp2->SetInt().SetFrom(from2);
                 slp2->SetInt().SetTo(to2);
                 
-                tmp = s_DuplicateObject(*id2);
-                slp2->SetInt().SetId(*tmp);
+                slp2->SetInt().SetId(*id2);
 
                 seq_int1_last.Reset(NULL);
                 seq_int2_last.Reset(&slp2->SetInt()); /* Will be used to adjust "to" value */
@@ -849,24 +828,22 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
         } 
 
         CRef<CStd_seg> seg(new CStd_seg());
-        seg->SetDim(2);
+        seg->SetDim(kBlastAlignmentDim);
         
         CStd_seg::TIds& ids = seg->SetIds();
+        ids.reserve(kBlastAlignmentDim);
+        seg->SetLoc().reserve(kBlastAlignmentDim);
 
         if (reverse) {
             seg->SetLoc().push_back(slp2);
             seg->SetLoc().push_back(slp1);
-            tmp = s_DuplicateObject(*id2);
-            ids.push_back(tmp);
-            tmp = s_DuplicateObject(*id1);
-            ids.push_back(tmp);
+            ids.push_back(id2);
+            ids.push_back(id1);
         } else {
             seg->SetLoc().push_back(slp1);
             seg->SetLoc().push_back(slp2);
-            tmp = s_DuplicateObject(*id1);
-            ids.push_back(tmp);
-            tmp = s_DuplicateObject(*id2);
-            ids.push_back(tmp);
+            ids.push_back(id1);
+            ids.push_back(id2);
         }
         ids.resize(seg->GetDim());
         
@@ -887,18 +864,54 @@ static CRef<CScore>
 s_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
 {
     CRef<CScore> retval(new CScore());
+    retval->SetId().SetStr(ident_string);
 
-    CRef<CObject_id> id(new CObject_id());
-    id->SetStr(ident_string);
-    retval->SetId(*id);
-
-    CRef<CScore::C_Value> val(new CScore::C_Value());
     if (i)
-        val->SetInt(i);
+        retval->SetValue().SetInt(i);
     else
-        val->SetReal(d);
-    retval->SetValue(*val);
+        retval->SetValue().SetReal(d);
 
+    return retval;
+}
+
+/// Computes the exact size of a CSeq_align::TScore for a given HSP
+/// @param hsp HSP for which the score objects will be built, must be non-NULL
+/// [in]
+/// @param gi_list list of GIs associated with this HSP [in]
+static size_t 
+s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<int>  & gi_list)
+{
+    _ASSERT(hsp);
+    size_t retval = 0;
+
+    if (hsp->score) {
+        retval++;
+    }
+
+    if (hsp->num > 1) {
+        retval++;
+    }
+
+    double evalue = (hsp->evalue < SMALLEST_EVALUE) ? 0.0 : hsp->evalue;
+    if (evalue >= 0.0) {
+        retval++;
+    }
+
+    if (hsp->bit_score >= 0.0) {
+        retval++;
+    }
+
+    if (hsp->num_ident > 0) {
+        retval++;
+    }
+
+    if (hsp->comp_adjustment_method > 0) {
+        retval++;
+    }
+    
+    if ( !gi_list.empty() ) {
+        retval += gi_list.size();
+    }
     return retval;
 }
 
@@ -911,46 +924,52 @@ s_BuildScoreList(const BlastHSP     * hsp,
                  CSeq_align::TScore & scores,
                  const vector<int>  & gi_list)
 {
-    string score_type;
-
     if (!hsp)
         return;
 
-    score_type = "score";
-    if (hsp->score)
-        scores.push_back(s_MakeScore(score_type, 0.0, hsp->score));
+    scores.reserve(s_CalculateScoreVectorSize(hsp, gi_list));
 
-    score_type = "sum_n";
-    if (hsp->num > 1)
-        scores.push_back(s_MakeScore(score_type, 0.0, hsp->num));
+    if (hsp->score) {
+        static const string kScore("score");
+        scores.push_back(s_MakeScore(kScore, 0.0, hsp->score));
+    }
+
+    if (hsp->num > 1) {
+        static const string kSumN("sum_n");
+        scores.push_back(s_MakeScore(kSumN, 0.0, hsp->num));
+    }
 
     // Set the E-Value
     double evalue = (hsp->evalue < SMALLEST_EVALUE) ? 0.0 : hsp->evalue;
-    score_type = (hsp->num <= 1) ? "e_value" : "sum_e";
-    if (evalue >= 0.0)
+    if (evalue >= 0.0) {
+        static string score_type = (hsp->num <= 1) ? "e_value" : "sum_e";
         scores.push_back(s_MakeScore(score_type, evalue));
+    }
 
     // Calculate the bit score from the raw score
-    score_type = "bit_score";
 
-    if (hsp->bit_score >= 0.0)
-        scores.push_back(s_MakeScore(score_type, hsp->bit_score));
+    if (hsp->bit_score >= 0.0) {
+        static const string kBitScore("bit_score");
+        scores.push_back(s_MakeScore(kBitScore, hsp->bit_score));
+    }
 
     // Set the identity score
-    score_type = "num_ident";
-    if (hsp->num_ident > 0)
-        scores.push_back(s_MakeScore(score_type, 0.0, hsp->num_ident));
+    if (hsp->num_ident > 0) {
+        static const string kNumIdent("num_ident");
+        scores.push_back(s_MakeScore(kNumIdent, 0.0, hsp->num_ident));
+    }
 
-    score_type = "comp_adjustment_method";
     if (hsp->comp_adjustment_method > 0) {
-        scores.push_back(s_MakeScore(score_type, 0.0,
+        static const string kCompAdj("comp_adjustment_method");
+        scores.push_back(s_MakeScore(kCompAdj, 0.0,
                                      hsp->comp_adjustment_method));
     }
     
-    score_type = "use_this_gi";
-    
-    ITERATE(vector<int>, gi, gi_list) {
-        scores.push_back(s_MakeScore(score_type, 0.0, *gi));
+    if ( !gi_list.empty() ) {
+        static const string kUseThisGi("use_this_gi");
+        ITERATE(vector<int>, gi, gi_list) {
+            scores.push_back(s_MakeScore(kUseThisGi, 0.0, *gi));
+        }
     }
     
     return;
@@ -983,28 +1002,29 @@ s_AddScoresToSeqAlign(CRef<CSeq_align>  & seqalign,
 /// @param gi_list List of GIs for the subject sequence.
 /// @return Resulting Dense-diag object.
 CRef<CDense_diag>
-x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id, 
-                         const CSeq_id *subject_id,
+x_UngappedHSPToDenseDiag(BlastHSP* hsp, CRef<CSeq_id> query_id, 
+                         CRef<CSeq_id> subject_id,
                          Int4 query_length, Int4 subject_length,
                          const vector<int> & gi_list)
 {
     CRef<CDense_diag> retval(new CDense_diag());
     
-    // Pairwise alignment is 2 dimensional
-    retval->SetDim(2);
+    retval->SetDim(kBlastAlignmentDim);
 
     // Set the sequence ids
     CDense_diag::TIds& ids = retval->SetIds();
-    ids.push_back(s_DuplicateObject(*query_id));
-    ids.push_back(s_DuplicateObject(*subject_id));
-    ids.resize(retval->GetDim());
+    ids.reserve(kBlastAlignmentDim);
+    ids.push_back(query_id);
+    ids.push_back(subject_id);
     
     retval->SetLen(hsp->query.end - hsp->query.offset);
     
     CDense_diag::TStrands& strands = retval->SetStrands();
+    strands.reserve(kBlastAlignmentDim);
     strands.push_back(s_Frame2Strand(hsp->query.frame));
     strands.push_back(s_Frame2Strand(hsp->subject.frame));
     CDense_diag::TStarts& starts = retval->SetStarts();
+    starts.reserve(kBlastAlignmentDim);
     if (hsp->query.frame >= 0) {
        starts.push_back(hsp->query.offset);
     } else {
@@ -1032,28 +1052,26 @@ x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id,
 /// @param gi_list List of GIs for the subject sequence.
 /// @return Resulting Std-seg object.
 CRef<CStd_seg>
-x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id, 
-                      const CSeq_id *subject_id,
+x_UngappedHSPToStdSeg(BlastHSP* hsp, CRef<CSeq_id> query_id, 
+                      CRef<CSeq_id> subject_id,
                       Int4 query_length, Int4 subject_length,
                       const vector<int> & gi_list)
 {
     CRef<CStd_seg> retval(new CStd_seg());
 
-    // Pairwise alignment is 2 dimensional
-    retval->SetDim(2);
+    retval->SetDim(kBlastAlignmentDim);
+    retval->SetLoc().reserve(kBlastAlignmentDim);
 
     CRef<CSeq_loc> query_loc(new CSeq_loc());
     CRef<CSeq_loc> subject_loc(new CSeq_loc());
+    query_loc->SetInt().SetId(*query_id);
+    subject_loc->SetInt().SetId(*subject_id);
 
     // Set the sequence ids
     CStd_seg::TIds& ids = retval->SetIds();
-    CRef<CSeq_id> tmp = s_DuplicateObject(*query_id);
-    query_loc->SetInt().SetId(*tmp);
-    ids.push_back(tmp);
-    tmp = s_DuplicateObject(*subject_id);
-    subject_loc->SetInt().SetId(*tmp);
-    ids.push_back(tmp);
-    ids.resize(retval->GetDim());
+    ids.reserve(kBlastAlignmentDim);
+    ids.push_back(query_id);
+    ids.push_back(subject_id);
 
     query_loc->SetInt().SetStrand(s_Frame2Strand(hsp->query.frame));
     subject_loc->SetInt().SetStrand(s_Frame2Strand(hsp->subject.frame));
@@ -1109,8 +1127,8 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
 void
 BLASTUngappedHspListToSeqAlign(EBlastProgramType program, 
                                BlastHSPList* hsp_list,
-                               const CSeq_id *query_id, 
-                               const CSeq_id *subject_id,
+                               CRef<CSeq_id> query_id, 
+                               CRef<CSeq_id> subject_id, 
                                Int4 query_length,
                                Int4 subject_length,
                                const vector<int> & gi_list,
@@ -1138,7 +1156,7 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
                 x_UngappedHSPToDenseDiag(hsp,
                                          query_id,
                                          subject_id, 
-					 query_length,
+                                         query_length,
                                          subject_length,
                                          gi_list));
         }
@@ -1149,7 +1167,7 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
                 x_UngappedHSPToStdSeg(hsp,
                                       query_id,
                                       subject_id, 
-				      query_length,
+		                              query_length,
                                       subject_length,
                                       gi_list));
         }
@@ -1170,7 +1188,7 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
 /// @param sa_vector Resulting Seq-align object [in|out] 
 void
 BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
-                       const CSeq_id *query_id, const CSeq_id *subject_id, 
+                       CRef<CSeq_id> query_id, CRef<CSeq_id> subject_id, 
                        Int4 query_length, Int4 subject_length, bool is_ooframe,
                        const vector<int> & gi_list,
                        vector<CRef<CSeq_align > > & sa_vector)
@@ -1181,6 +1199,7 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
     BlastHSP** hsp_array = hsp_list->hsp_array;
 
     sa_vector.clear();
+    sa_vector.reserve(hsp_list->hspcnt);
 
     for (int index = 0; index < hsp_list->hspcnt; index++) { 
         BlastHSP* hsp = hsp_array[index];
@@ -1289,14 +1308,15 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         return CreateEmptySeq_align_set(seq_aligns);
     }
     
-    CConstRef<CSeq_id> query_id(& CSeq_loc_CI(query_loc).GetSeq_id());
+    CRef<CSeq_id> query_id(new CSeq_id);
+    SerialAssign(*query_id, CSeq_loc_CI(query_loc).GetSeq_id());
     _ASSERT(query_id);
     
     for (int index = 0; index < hit_list->hsplist_count; index++) {
         BlastHSPList* hsp_list = hit_list->hsplist_array[index];
         if (!hsp_list)
             continue;
-        
+
         // Sort HSPs with e-values as first priority and scores as 
         // tie-breakers, since that is the order we want to see them in 
         // in Seq-aligns.
@@ -1304,7 +1324,7 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         
         const Uint4 kOid = hsp_list->oid;
         TSeqPos subj_length = 0;
-        CConstRef<CSeq_id> subject_id;
+        CRef<CSeq_id> subject_id;
         GetSequenceLengthAndId(seqinfo_src, kOid, subject_id, &subj_length);
         
         // Extract subject masks
@@ -1340,7 +1360,7 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
                                                hit_align);
         }
         
-        ITERATE(vector<CRef<CSeq_align > >, iter, hit_align) {
+        NON_CONST_ITERATE(vector<CRef<CSeq_align > >, iter, hit_align) {
            RemapToQueryLoc(*iter, query_loc);
            seq_aligns->Set().push_back(*iter);
         }
@@ -1365,6 +1385,7 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
 
     subj_masks.clear();
     subj_masks.resize(pattern_info->num_patterns);
+    retval.reserve(pattern_info->num_patterns);
 
     if (phi_results) {
         for (int pattern_index = 0; pattern_index < pattern_info->num_patterns;
@@ -1440,13 +1461,14 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
     _ASSERT(results->num_queries == (int)query_data.GetNumQueries());
 
     TSeqAlignVector retval;
-    CConstRef<CSeq_id> subject_id;
+    CRef<CSeq_id> subject_id;
     TSeqPos subj_length = 0;
 
     // Subject is the same for all queries, so retrieve its id right away
     GetSequenceLengthAndId(&seqinfo_src, subj_index, subject_id, &subj_length);
 
     vector<CRef<CSeq_align > > hit_align;
+    retval.reserve(results->num_queries);
 
     // Process each query's hit list
     for (int qindex = 0; qindex < results->num_queries; qindex++) {
@@ -1474,7 +1496,8 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             Blast_HSPListSortByEvalue(hsp_list);
 
             CConstRef<CSeq_loc> seqloc = query_data.GetSeq_loc(qindex);
-            CConstRef<CSeq_id> query_id(seqloc->GetId());
+            CRef<CSeq_id> query_id(new CSeq_id);
+            SerialAssign(*query_id, *seqloc->GetId());
             TSeqPos query_length = query_data.GetSeqLength(qindex); 
             
             vector<int> gi_list;
@@ -1538,6 +1561,7 @@ s_TransposeSeqAlignVector(const TSeqAlignVector& alnvec,
                           const size_t num_subjects)
 {
     TSeqAlignVector result_alnvec;
+    result_alnvec.reserve(alnvec.size());
 
     for (size_t iQuery = 0; iQuery < num_queries; iQuery++)
     {
@@ -1616,6 +1640,7 @@ s_BlastResults2SeqAlignDatabaseSearch_OMF(const BlastHSPResults  * results,
     
     subj_masks.clear();
     subj_masks.resize(results->num_queries);
+    retval.reserve(results->num_queries);
 
     // Process each query's hit list
     for (int index = 0; index < results->num_queries; index++) {

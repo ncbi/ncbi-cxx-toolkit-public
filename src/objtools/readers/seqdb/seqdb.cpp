@@ -30,6 +30,10 @@
 /// @file seqdb.cpp
 /// Implementation for the CSeqDB class, the top level class for SeqDB.
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
@@ -1054,6 +1058,11 @@ void CSeqDB::GetMaskData(int                 oid,
     m_Impl->GetMaskData(oid, algo_ids, invert, ranges);
 }
 #endif
+
+void CSeqDB::GarbageCollect(void)
+{
+    m_Impl->GarbageCollect();
+}
 
 END_NCBI_SCOPE
 

@@ -33,12 +33,12 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-CMaskedRangeSet::TMaskedRanges &
+CMaskedRangesVector &
 CMaskedRangeSet::GetRanges(const list< CRef<CSeq_id> > & idlist)
 {
     // For each algorithm for which data is provided
     
-    NON_CONST_ITERATE(TMaskedRanges, algo_iter, m_Ranges) {
+    NON_CONST_ITERATE(CMaskedRangesVector, algo_iter, m_Ranges) {
         algo_iter->offsets.resize(0);
         int algo_id = algo_iter->algorithm_id;
         
