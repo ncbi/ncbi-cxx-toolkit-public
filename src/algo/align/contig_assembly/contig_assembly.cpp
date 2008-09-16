@@ -386,7 +386,8 @@ bool CContigAssembly::IsDovetail(const CDense_seg& ds,
 
     // This assumes other sequence is plus strand,
     // ie., ds.GetSeqStrand(1) == ncbi.eNa_strand_plus
-    if (ds.GetSeqStrand(0) == eNa_strand_plus) {
+    if (!ds.CanGetStrands() || ds.GetStrands().empty() ||
+         ds.GetSeqStrand(0) == eNa_strand_plus) {
         if (ds.GetSeqStart(0) <= slop &&
             len1 - ds.GetSeqStop(1) - 1 <= slop) {
             return true;
@@ -550,7 +551,8 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
                        unsigned int max_end_slop, CScope& scope,
                        CNcbiOstream* ostr,
                        const vector<unsigned int>& band_halfwidths,
-                       unsigned int diag_finding_window)
+                       unsigned int diag_finding_window,
+                       ENa_strand strand0, ENa_strand strand1)
 {
     if (min_ident > 1 || min_ident < 0) {
         throw runtime_error("min_ident must be between zero and one (got "
@@ -572,9 +574,11 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
         return vector<CRef<CSeq_align> >();
     }
     vector<CRef<CSeq_align> > good_alns;
-    ITERATE (CSeq_align_set::Tdata, aln, alns->Get()) {
+    NON_CONST_ITERATE (CSeq_align_set::Tdata, aln, alns->Set()) {
+        x_OrientAlign((*aln)->SetSegs().SetDenseg(), scope);
         if (IsDovetail((*aln)->GetSegs().GetDenseg(), max_end_slop, scope)
-            && FracIdent((*aln)->GetSegs().GetDenseg(), scope) >= min_ident) {
+            && FracIdent((*aln)->GetSegs().GetDenseg(), scope) >= min_ident
+            && x_IsAllowedStrands((*aln)->GetSegs().GetDenseg(), strand0, strand1) ) {
             good_alns.push_back(*aln);
         }
     }
@@ -620,12 +624,14 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
             }
 
             local_ds = BestLocalSubAlignment(*global_ds, scope);
+            x_OrientAlign(*local_ds, scope);
             double frac_ident = FracIdent(*local_ds, scope);
             if (ostr) {
                 *ostr << "Fraction identity: " << frac_ident << endl;
             }
             if (IsDovetail(*local_ds, max_end_slop, scope)
-                && FracIdent(*local_ds, scope) >= min_ident) {
+                && FracIdent(*local_ds, scope) >= min_ident
+                && x_IsAllowedStrands(*local_ds, strand0, strand1) ) {
                 if (ostr) {
                     *ostr << "Alignment acceptable (full dovetail)" << endl;
                 }
@@ -646,8 +652,9 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
         ITERATE (CSeq_align_set::Tdata, aln, alns->Get()) {
             if (IsAtLeastHalfDovetail((*aln)->GetSegs().GetDenseg(),
                                       max_end_slop, scope)
-                && FracIdent((*aln)->GetSegs().GetDenseg(), scope)
-                >= min_ident) {
+                && FracIdent((*aln)->GetSegs().GetDenseg(), scope) >= min_ident
+                && x_IsAllowedStrands((*aln)->GetSegs().GetDenseg(), strand0, strand1)
+                ) {
                 good_alns.push_back(*aln);
             }
         }
@@ -663,7 +670,8 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
             // acceptable half-dovetail (including contained)
             if (local_ds
                 && IsAtLeastHalfDovetail(*local_ds, max_end_slop, scope)
-                && FracIdent(*local_ds, scope) >= min_ident) {
+                && FracIdent(*local_ds, scope) >= min_ident
+                && x_IsAllowedStrands(*local_ds, strand0, strand1) ) {
                 string dovetail_string;
                 if (IsContained(*local_ds, max_end_slop, scope)) {
                     dovetail_string = "contained";
@@ -868,6 +876,41 @@ void CContigAssembly::GatherAlignStats(const CSeq_align& aln,
 {
     GatherAlignStats(aln.GetSegs().GetDenseg(), scope, align_stats);
 }
+
+
+void CContigAssembly::x_OrientAlign(CDense_seg& ds, CScope& scope)
+{
+    SAlignStats stats;
+    CAlnVec avec(ds, scope);
+    s_GetTails(avec, stats.tails);
+
+    if(stats.tails[0].left < stats.tails[1].left) {
+        ds.Reverse();
+    }
+}
+
+
+bool CContigAssembly::x_IsAllowedStrands(const CDense_seg& ds,
+                                       ENa_strand strand0,
+                                       ENa_strand strand1)
+{
+    ENa_strand align_strands[2];
+    bool matches[2] = {false, false};
+    if(!ds.CanGetStrands() || ds.GetStrands().empty()) {
+        align_strands[0] = align_strands[1] = eNa_strand_plus;
+    } else {
+        align_strands[0] = ds.GetSeqStrand(0);
+        align_strands[1] = ds.GetSeqStrand(1);
+    }
+
+    if(strand0 == align_strands[0] || strand0 == eNa_strand_unknown)
+        matches[0] = true;
+    if(strand1 == align_strands[1] || strand1 == eNa_strand_unknown)
+        matches[1] = true;
+
+    return (matches[0] & matches[1]);
+}
+
 
 
 END_NCBI_SCOPE

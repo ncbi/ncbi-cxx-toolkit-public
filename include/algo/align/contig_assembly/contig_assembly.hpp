@@ -31,6 +31,7 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/scope.hpp>
+#include <objects/seqloc/Na_strand_.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -80,7 +81,9 @@ public:
           CNcbiOstream* ostr = 0,
           const vector<unsigned int>& band_halfwidths
               = vector<unsigned int>(1, 200),
-          unsigned int diag_finding_window = 200);
+          unsigned int diag_finding_window = 200,
+          objects::ENa_strand strand0 = objects::eNa_strand_unknown,
+          objects::ENa_strand strand1 = objects::eNa_strand_unknown);
 
     /// Utility for running blastn.
     // It accepts a blast parameter string such as
@@ -144,6 +147,7 @@ public:
     static double FracIdent(const objects::CDense_seg& ds,
                             objects::CScope& scope);
 
+
     /// Alignment characterization
 
     struct SAlignStats {
@@ -196,11 +200,17 @@ public:
     static void GatherAlignStats(const objects::CSeq_align& aln,
                                  objects::CScope& scope,
                                  SAlignStats& align_stats);
+
+    private:
+        static void x_OrientAlign(objects::CDense_seg& ds, objects::CScope& scope);
+        static bool x_IsAllowedStrands(const objects::CDense_seg& ds,
+                                       objects::ENa_strand strand0,
+                                       objects::ENa_strand strand1);
 };
 
 
 inline
-double CContigAssembly::CAlnStats::GetFracIdentity() const 
+double CContigAssembly::CAlnStats::GetFracIdentity() const
 {
     return 1.0 - double(m_MM + m_Gaps) / m_AdjustedLen;
 }
