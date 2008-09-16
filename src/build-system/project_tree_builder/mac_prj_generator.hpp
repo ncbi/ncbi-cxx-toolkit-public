@@ -36,13 +36,13 @@
 #include "prj_file_collector.hpp"
 
 #include <corelib/ncbienv.hpp>
-#include <build-system/project_tree_builder/property_list__.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 #if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
 
+#include <build-system/project_tree_builder/property_list__.hpp>
 /////////////////////////////////////////////////////////////////////////////
 class ncbi::objects::CPlist;
 

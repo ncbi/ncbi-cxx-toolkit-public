@@ -41,7 +41,6 @@
 #include "ptb_err_codes.hpp"
 
 #include <algorithm>
-#include <build-system/project_tree_builder/property_list__.hpp>
 #include <serial/objostrxml.hpp>
 #include <serial/serial.hpp>
 
