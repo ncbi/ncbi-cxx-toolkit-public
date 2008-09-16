@@ -265,6 +265,14 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
 
+    if (!params.GetDatabaseName().empty()) {
+        const string sql = "use " + params.GetDatabaseName();
+
+        auto_ptr<CDB_LangCmd> auto_stmt(LangCmd(sql));
+        auto_stmt->Send();
+        auto_stmt->DumpResults();
+    }
+
     SetServerType(CalculateServerType(params.GetServerType()));
 }
 

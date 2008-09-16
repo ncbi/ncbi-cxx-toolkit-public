@@ -135,6 +135,14 @@ CTDS_Connection::CTDS_Connection(CTDSContext& cntx,
     CheckFunctCall();
 
 
+    if (!params.GetDatabaseName().empty()) {
+        const string sql = "use " + params.GetDatabaseName();
+
+        auto_ptr<CDB_LangCmd> auto_stmt(LangCmd(sql));
+        auto_stmt->Send();
+        auto_stmt->DumpResults();
+    }
+
     SetServerType(CalculateServerType(params.GetServerType()));
 }
 

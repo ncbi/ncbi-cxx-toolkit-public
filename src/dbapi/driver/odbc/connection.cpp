@@ -74,6 +74,7 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
 static bool ODBC_xSendDataGetId(CStatementBase& stmt,
                                 SQLPOINTER* id);
 
+////////////////////////////////////////////////////////////////////////////////
 CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
                                    const CDBConnParams& params) :
     impl::CConnection(
@@ -107,6 +108,14 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
     x_SetConnAttributesBefore(cntx, params);
 
     x_Connect(cntx, params);
+
+    if (!params.GetDatabaseName().empty()) {
+        const string sql = "use " + params.GetDatabaseName();
+
+        auto_ptr<CDB_LangCmd> auto_stmt(LangCmd(sql));
+        auto_stmt->Send();
+        auto_stmt->DumpResults();
+    }
 }
 
 
