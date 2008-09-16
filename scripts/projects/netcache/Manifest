@@ -11,8 +11,6 @@
 
 APP: netcached netcache_check netcache_control
 ETC: src/app/netcache/netcached.ini
-SRC: src/app/netcache/netcached.cpp
-CONF: build/app/netcache/nc_handler.d
 
 # Each line describes a single configuration
 # The format is as follows:
