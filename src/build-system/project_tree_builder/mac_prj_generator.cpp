@@ -41,8 +41,11 @@
 #include "ptb_err_codes.hpp"
 
 #include <algorithm>
-#include <serial/objostrxml.hpp>
-#include <serial/serial.hpp>
+
+#if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
+#  include <serial/objostrxml.hpp>
+#  include <serial/serial.hpp>
+#endif
 
 BEGIN_NCBI_SCOPE
 
