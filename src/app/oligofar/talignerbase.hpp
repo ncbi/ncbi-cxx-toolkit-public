@@ -101,7 +101,7 @@ inline CIupacnaBase TAlignerBase<CQuery,CSubject>::GetIupacnaQuery( const CQuery
     }
     else {
         if( q.GetCoding() == CSeqCoding::eCoding_colorsp && q == m_query ) {
-            CNcbi8naBase x( char(*q) ); //CNcbi8naBase( char( q.GetBase( m_subject.GetStrand() ) ) & 0x0f );
+            CNcbi8naBase x = char(*q); //CNcbi8naBase( char( q.GetBase( m_subject.GetStrand() ) ) & 0x0f );
             return m_subject.IsReverse() ? CNcbi8naBase( char(*q) ).Complement() : CNcbi8naBase( char(*q) );
         }
         else
