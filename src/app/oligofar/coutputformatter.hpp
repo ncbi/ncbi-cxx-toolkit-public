@@ -22,6 +22,7 @@ public:
 		fReportAllHits = 0x080,
         fDefault = 0x0f
     };
+    // comment
     void AssignFlags( int flags ) { m_flags = flags; }
     COutputFormatter( ostream& out, const CSeqIds& seqIds ) : 
         m_flags( fDefault ), m_out( out ), m_seqIds( seqIds ), m_aligner( 0 ) {}

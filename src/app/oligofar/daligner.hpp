@@ -52,9 +52,9 @@ template<class CQuery> \
 inline void CAligner_ ## ALGO::AlignC( const char * q, int qlen, const char * s, int slen, int flags ) \
 { \
     if( slen > 0 ) \
-        AlignQS<CQuery,TSbjColorspRefFwd>( q, qlen, s, slen, flags ); \
+        AlignQS<CQuery,TSbjNcbi8naRefFwd>( q, qlen, s, slen, flags ); \
     else \
-        AlignQS<CQuery,TSbjColorspRefRev>( q, qlen, s, slen, flags ); \
+        AlignQS<CQuery,TSbjNcbi8naRefRev>( q, qlen, s, slen, flags ); \
 } \
  \
 template<class CQuery> \

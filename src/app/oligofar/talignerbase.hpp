@@ -37,8 +37,10 @@ public:
 	double GetGapExtentionScore() const { return GetAlignerBase().GetScoreTbl().GetGapExtentionScore(); }
 
 	template<class TQuery,class TSubject>
-	bool   Match( const TQuery& q, const TSubject& s ) const { return GetScoreTbl().MatchRef( q, s ); }
-	double Score( const CQuery& q, const CSubject& s ) const { return GetScoreTbl().ScoreRef( q, s ); }
+	bool   Match( const TQuery& q, const TSubject& s ) const { return GetScoreTbl().MatchRef( q, s, q - m_query, s - m_subject ); }
+	double Score( const CQuery& q, const CSubject& s ) const { return GetScoreTbl().ScoreRef( q, s, q - m_query, s - m_subject ); }
+	template<class TQuery>
+	bool   Match( const TQuery& q, const TQuery& s ) const { return GetScoreTbl().MatchRef( q, s, 2, 2 ); }
 
 //    TODO: correct this code
 	CSeqCoding::EStrand GetReferenceStrandForQuery( int flags ) const;
@@ -92,8 +94,19 @@ inline CIupacnaBase TAlignerBase<CQuery,CSubject>::GetIupacnaQuery( const CQuery
     ASSERT( CAlignerBase::fPictureQueryStrand );
     ASSERT( !CAlignerBase::fPictureSubjectStrand );
 
-    if( flags & CAlignerBase::fPictureQueryStrand ) return q.GetBase();
-    else return q.GetBase( m_subject.GetStrand() );
+    if( flags & CAlignerBase::fPictureQueryStrand ) {
+        if( q.GetCoding() == CSeqCoding::eCoding_colorsp && q == m_query ) 
+            return CNcbi8naBase( char(*q) ); //CNcbi8naBase( char(q.GetBase())&0x0f ) ;
+        else return q.GetBase();
+    }
+    else {
+        if( q.GetCoding() == CSeqCoding::eCoding_colorsp && q == m_query ) {
+            CNcbi8naBase x( char(*q) ); //CNcbi8naBase( char( q.GetBase( m_subject.GetStrand() ) ) & 0x0f );
+            return m_subject.IsReverse() ? CNcbi8naBase( char(*q) ).Complement() : CNcbi8naBase( char(*q) );
+        }
+        else
+            return q.GetBase( m_subject.GetStrand() );
+    }
 }
 
 template<class CQuery,class CSubject>

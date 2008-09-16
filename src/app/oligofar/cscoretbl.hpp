@@ -14,22 +14,40 @@ public:
 
 	////////////////////////////////////////////////////////////////////////	
 	// TSeqRef<C*naBase,incr,CSeqCoding::eCoding_*na> API
+// 	template<class QryRef, class SbjRef>
+// 	static bool MatchRef( const QryRef& q, const SbjRef& s ) {
+//          if( q.GetCoding() == CSeqCoding::eCoding_colorsp ) 
+//              return CColorTwoBase( char(q.GetBase()) ).GetColor() == CColorTwoBase( char(s.GetBase()) ).GetColor();
+//          else
+//              return ( CNcbi8naBase( q.GetBase() ) & CNcbi8naBase( s.GetBase() ) ) != 0;
+// 	}
+	
+    // Note: in following functions most of ifs are for constant arguments, so optimizer should ideally elminate them...
+
+    /*
+    template<class SbjRef>
+    static CNcbi8naBase GetUncoloredBase( const SbjRef& s ) {
+        return s.IsReverse() ? CNcbi8naBase((s - 1).GetBase() & 0x0f) : CNcbi8naBase(char(*s) & 0x0f);
+    }
+    */
+
 	template<class QryRef, class SbjRef>
-	static bool MatchRef( const QryRef& q, const SbjRef& s ) {
-         if( q.GetCoding() == CSeqCoding::eCoding_colorsp ) 
-             return CColorTwoBase( char(q.GetBase()) ).GetColor() == CColorTwoBase( char(s.GetBase()) ).GetColor();
-         else
-             return ( CNcbi8naBase( q.GetBase() ) & CNcbi8naBase( s.GetBase() ) ) != 0;
+	static bool MatchRef( const QryRef& q, const SbjRef& s, int qp, int ) {
+        if( q.GetCoding() == CSeqCoding::eCoding_colorsp ) 
+            if( s.GetCoding() == CSeqCoding::eCoding_colorsp ) 
+                return CColorTwoBase( char(*q) ).GetColor() == CColorTwoBase( char(*s) ).GetColor();
+            else 
+                if( qp != 0 ) 
+                    return CColorTwoBase( char(*q) ).GetColor() == CColorTwoBase( s[-1], s[0] ).GetColor(); 
+                else 
+                    return (char(q.GetBase()) & CNcbi8naBase( s.GetBase() )) != 0;
+        else
+            return ( CNcbi8naBase( q.GetBase() ) & CNcbi8naBase( s.GetBase() ) ) != 0;
 	}
 	
 	template<class QryRef, class SbjRef>
-	double ScoreRef( const QryRef& q, const SbjRef& s ) const {
-        return ScoreRefSbj( q, s.GetBase() );
-    }
-
-    template<class QryRef, class Sbj>
-    double ScoreRefSbj( const QryRef& q, const Sbj& sbj ) const {
-		// q.GetCoding() is constant, so optimizer hopefuly should exclude one of branches
+	double ScoreRef( const QryRef& q, const SbjRef& s, int qp, int sp ) const {
+        CNcbi8naBase sbj( s.GetBase() );
 		switch( q.GetCoding() ) {
 		case CSeqCoding::eCoding_ncbipna: 
 			do {
@@ -48,7 +66,7 @@ public:
 			} while(0); break;
  		case CSeqCoding::eCoding_colorsp: 
  			do {
-                return CColorTwoBase(char(sbj)).GetColor() == CColorTwoBase( char( q.GetBase() ) ).GetColor() ? m_identity : m_mismatch ;
+                return MatchRef( q, s, qp, sp ) ? m_identity : m_mismatch;
  			} while(0); break;
 		default:
 			do {

@@ -86,6 +86,7 @@ void CFilter::Match( const CQueryHash::SHashAtom& m, const char * a, const char 
 {
 	ASSERT( m_aligner );
 	m_aligner->SetBestPossibleQueryScore( m.query->GetBestScore( m.pairmate ) );
+    if( m.strand == '-' && m.query->GetCoding() == CSeqCoding::eCoding_colorsp ) --pos;
     m_aligner->Align( m.query->GetCoding(),
                       m.query->GetData( m.pairmate ),
                       m.query->GetLength( m.pairmate ),

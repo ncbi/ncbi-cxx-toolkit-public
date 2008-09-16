@@ -181,7 +181,7 @@ void COutputFormatter::FormatHit( const CHit * hit ) const
 void COutputFormatter::FormatDifferences( int rank, const CHit * hit, int matepair, int flags ) const
 {
 	if( hit->HasComponent( matepair ) == false ) return;
-	if( hit->GetScore( matepair ) == 100 ) return;
+//	if( hit->GetScore( matepair ) == 100 ) return;
     ASSERT( m_aligner );
     const CQuery * query = hit->GetQuery();
     const string& target = hit->GetTarget( matepair );

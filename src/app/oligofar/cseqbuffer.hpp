@@ -49,7 +49,9 @@ inline CSeqBuffer::CSeqBuffer( const objects::CSeqVector& vect, CSeqCoding::ECod
 	const char * a = s.c_str();
     char * b = m_begin;
     switch( tgtCoding ) {
+    case CSeqCoding::eCoding_colorsp: 
     case CSeqCoding::eCoding_ncbi8na: while( b != m_end ) *b++ = CNcbi8naBase( CIupacnaBase( *a++ ) ); break;
+                                          /*
     case CSeqCoding::eCoding_colorsp: 
         do {
             CNcbi8naBase prev('\x0');
@@ -60,6 +62,7 @@ inline CSeqBuffer::CSeqBuffer( const objects::CSeqVector& vect, CSeqCoding::ECod
             }
         } while(0);
         break;
+        */
     default: THROW( logic_error, "CSeqBuffer supports only NCBI8na and Colorspace target encodings" );
     }
 }

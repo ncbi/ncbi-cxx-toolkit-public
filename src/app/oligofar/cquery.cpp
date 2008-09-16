@@ -9,7 +9,6 @@ Uint4 CQuery::s_count = 0;
 
 double CQuery::ComputeBestScore( const CScoreTbl& scoreTbl, int component ) 
 {
-	// TODO: it may be computed much more carefuly... this is fast and dirty solution here
 	switch( GetCoding() ) {
 	case CSeqCoding::eCoding_colorsp:
 	case CSeqCoding::eCoding_ncbi8na: return m_bestScore[component] = float( scoreTbl.GetIdentityScore() * GetLength( component ) );
@@ -24,8 +23,10 @@ double CQuery::x_ComputeBestScore( const CScoreTbl& scoreTbl, int component )
 {
 	double score = 0;
 	TSeqRef<CBase,incr,coding> data( GetData( component ) );
-	for( int i = 0, I = GetLength( component ); i < I; ++i, ++data ) 
-		score += scoreTbl.ScoreRefSbj( data, CNcbi8naBase( CNcbi8naBase( data.GetBase() ).GetSmallestNcbi2na() ) ); // consider match to non-ambiguous base
+	for( int i = 0, I = GetLength( component ); i < I; ++i, ++data ) {
+        char ref = CNcbi8naBase( CNcbi8naBase( data.GetBase() ).GetSmallestNcbi2na() );
+		score += scoreTbl.ScoreRef( data, TSeqRef<CNcbi8naBase,1,CSeqCoding::eCoding_ncbi8na>( &ref ), i, i ); // consider match to non-ambiguous base
+    }
 	m_bestScore[component] = float( score );
 	return score;
 }

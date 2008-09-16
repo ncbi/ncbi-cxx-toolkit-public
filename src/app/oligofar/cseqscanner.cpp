@@ -94,6 +94,7 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
 	rangeMap.push_back( make_pair( TRange( lastPos, A - a ), lastType ) );
 }
 
+////////////////////////////////////////////////////////////////////////
 // ncbi8na
 template<class Callback>
 inline void CSeqScanner::C_LoopImpl_Ncbi8naNoAmbiguities::RunCallback( Callback& callback )
@@ -133,18 +134,22 @@ inline void CSeqScanner::C_LoopImpl_Ncbi8naAmbiguities::Update( char x )
     Prepare( x );
 }
 
+////////////////////////////////////////////////////////////////////////
 // colorspace
 inline void CSeqScanner::C_LoopImpl_ColorspNoAmbiguities::Prepare( char x )
 {
-    m_hashCode.AddBaseCode( CColorTwoBase( x ).GetColorOrd() );
+    m_hashCode.AddBaseCode( CColorTwoBase( CNcbi8naBase( m_lastBase ), CNcbi8naBase( x ) ).GetColorOrd() );
     m_complexityMeasure.Add( m_hashCode.GetNewestTriplet() );
+    m_lastBase = x;
 }
 
 inline void CSeqScanner::C_LoopImpl_ColorspAmbiguities::Prepare( char x )
 {
     // todo: logic should be modified here to take care of previous bases
-    m_hashGenerator.AddBaseMask( CNcbi8naBase( x & 0xf ).GetAltCount() > 1 ? '\xf' : ( 1 << CColorTwoBase( x ).GetColorOrd() ) );
+    CNcbi8naBase z = CNcbi8naBase( x & 0xf ).GetAltCount() > 1 ? '\xf' : ( 1 << CColorTwoBase( x ).GetColorOrd() );
+    m_hashGenerator.AddBaseMask( CColorTwoBase( CNcbi8naBase( m_lastBase ), z ).GetColorOrd() );
     m_complexityMeasure.Add( m_hashGenerator.GetNewestTriplet() );
+    m_lastBase = x;
 }
 
 inline void CSeqScanner::C_LoopImpl_ColorspNoAmbiguities::Update( char x )
@@ -161,6 +166,8 @@ inline void CSeqScanner::C_LoopImpl_ColorspAmbiguities::Update( char x )
     Prepare( x );
 }
 
+////////////////////////////////////////////////////////////////////////
+//
 template <class LoopImpl, class Callback>
 void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callback, CProgressIndicator* p, 
                             int from, int toOpen, const char * a, const char * A, int off )
@@ -178,7 +185,7 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
     off -= m_windowLength;
     for( const char * w = a + toOpen ; x < w ; ) {
         //int pos = off + from, end = off + toOpen - m_windowLength; pos < end; ++pos ) {
-    //for( int pos = off + from, end = off + toOpen - m_windowLength; pos < end; ++pos ) {
+        //for( int pos = off + from, end = off + toOpen - m_windowLength; pos < end; ++pos ) {
         //ASSERT( (pos + a + m_windowLength ) < A );
         //if( (pos + a + m_windowLength) != x ) THROW( logic_error, " x - a - w = " << ( x - a - m_windowLength ) << " while pos = " << pos << " and off = " << off );
         if( loop.IsOk() ) {

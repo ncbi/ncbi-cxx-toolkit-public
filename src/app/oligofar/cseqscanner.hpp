@@ -108,20 +108,24 @@ protected:
     {
     public:
         C_LoopImpl_ColorspNoAmbiguities( int windowLength, double maxSimpl ) : 
-            C_LoopImpl_Ncbi8naNoAmbiguities( windowLength, maxSimpl ) {}
+            C_LoopImpl_Ncbi8naNoAmbiguities( windowLength, maxSimpl ), m_lastBase(1) {}
         void Prepare( char a );
         void Update( char a );
         const char * GetName() const { return "C_LoopImpl_ColorspNoAmbiguities"; }
+    protected:
+        char m_lastBase;
     };
 
     class C_LoopImpl_ColorspAmbiguities : public C_LoopImpl_Ncbi8naAmbiguities
     {
     public:
         C_LoopImpl_ColorspAmbiguities( int windowLength, double maxSimpl, Uint8 maxAlt, unsigned mask ) : 
-            C_LoopImpl_Ncbi8naAmbiguities( windowLength, maxSimpl, maxAlt, mask ) {}
+            C_LoopImpl_Ncbi8naAmbiguities( windowLength, maxSimpl, maxAlt, mask ),m_lastBase(1) {}
         void Prepare( char a );
         void Update( char a );
         const char * GetName() const { return "C_LoopImpl_ColorspAmbiguities"; }
+    protected:
+        char m_lastBase;
     };
 
 protected:

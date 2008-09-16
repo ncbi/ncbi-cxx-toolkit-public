@@ -168,13 +168,22 @@ public:
 	CColorTwoBase( const char * c, EStrand ) : m_base( *c ) {}
 	CColorTwoBase( EFromASCII, char c ) { x_Init( c ); }
 	CColorTwoBase( CNcbi2naBase b ) : m_base( CNcbi8naBase( b ) ) {}
+	CColorTwoBase( CNcbiqnaBase b ) : m_base( CNcbi8naBase( b ) ) {}
 	CColorTwoBase( CNcbi8naBase b ) : m_base( b ) {}
+	CColorTwoBase( CNcbipnaBase b ) : m_base( CNcbi8naBase(b) ) {}
 	CColorTwoBase( CNcbi2naBase prev, CNcbi2naBase b ) :
 		m_base( s_dibase2code[(prev << 2) | b] | CColorTwoBase(b) ) {}
+	CColorTwoBase( CNcbiqnaBase prev, CNcbiqnaBase b ) :
+		m_base( s_dibase2code[(prev&0x30 << 2) | b&0x30] | CColorTwoBase(b) ) {}
 	CColorTwoBase( CNcbi2naBase prev, CNcbi8naBase b ) :
 		m_base( s_dibase2code[(prev << 2) | b.GetSmallestNcbi2na()] | CColorTwoBase(b) ) {}
+	CColorTwoBase( CColorTwoBase prev, CColorTwoBase b ) { THROW( logic_error, "CColorTwoBase( CColorTwoBase, CColorTwoBase ) should never be called" ); }
 	CColorTwoBase( CNcbi8naBase prev, CNcbi8naBase b ) :
 		m_base( s_dibase2code[(prev.GetSmallestNcbi2na() << 2) | b.GetSmallestNcbi2na()] | CColorTwoBase(b) ) {}
+	CColorTwoBase( CNcbipnaBase prev, CNcbipnaBase b ) :
+		m_base( s_dibase2code[(CNcbi8naBase(prev).GetSmallestNcbi2na() << 2) | CNcbi8naBase(b).GetSmallestNcbi2na()] | CColorTwoBase(b) ) {}
+//     template<class base>
+//     CColorTwoBase( base a, base b ) : m_base( s_dibase2code[(CNcbi8naBase( a ).GetSmallestNcbi2na()<<2) | CNcbi8naBase( b ).GetSmallestNcbi2na()] ) {}
 	operator char () const { return m_base; }
 	CNcbi8naBase GetBaseCalls() const { return m_base & 0xf; }
 	CColorTwoBase Complement() const { return GetBaseCalls().Complement() | GetColor(); }
