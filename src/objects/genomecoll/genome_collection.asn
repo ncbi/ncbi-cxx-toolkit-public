@@ -99,7 +99,7 @@ GC-Assembly ::= SEQUENCE
     -- statistics
     -- "stats" field holds stats for all chromosomes combined: ordered/unordered scaffolds
     -- "unplaced-stats" holds stats for ChrUn which is omitted from "stats"
-    stats GC-SequenceStats OPTIONAL
+    stats GC-SequenceStats OPTIONAL,
     unplaced-stats Scaf-stats OPTIONAL
 }
 
