@@ -1,0 +1,4 @@
+[AddToProject]
+SourceFiles    = ncbi_lbsmd_stub
+HeadersInInclude = *.h
+HeadersInSrc = *.h
