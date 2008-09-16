@@ -220,25 +220,6 @@ void x_TrimParensAndCommas(string& str)
 }
 
 
-void x_CombinePrimerStrings(string& orig_seq, const string& new_seq)
-{
-    if (new_seq.empty()) {
-        return;
-    }
-    if (orig_seq.empty()) {
-        orig_seq = new_seq;
-        return;
-    }
-    string new_seq_trim(new_seq);
-    x_TrimParensAndCommas(new_seq_trim);
-    if ( orig_seq.find(new_seq_trim) != NPOS ) {
-        return;
-    }
-    x_TrimParensAndCommas(orig_seq);
-    orig_seq = '(' + orig_seq + ',' + new_seq_trim + ')';
-}
-
-
 bool s_RemoveRedundantPlastidNameSubSourceQualifier (CBioSource& bs)
 {
     bool rval = false;
@@ -320,61 +301,19 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
     }
     
     
-    // merge any duplicate fwd_primer_seq and rev_primer_seq.
-    // and any duplicate fwd_primer_name and rev_primer_name.
-    // these are iterators pointing to the subtype into which we will merge others.
-    CBioSource::TSubtype::iterator fwd_primer_seq = subtypes.end();
-    CBioSource::TSubtype::iterator rev_primer_seq = subtypes.end();
-    CBioSource::TSubtype::iterator fwd_primer_name = subtypes.end();
-    CBioSource::TSubtype::iterator rev_primer_name = subtypes.end();
+    // remove spaces and convert to lowercase in fwd_primer_seq and rev_primer_seq.
     CBioSource::TSubtype::iterator it = subtypes.begin();
     while (it != subtypes.end()) {
         if (*it) {
             CSubSource& ss = **it;
             if ( ss.GetSubtype() == CSubSource::eSubtype_fwd_primer_seq  || 
                  ss.GetSubtype() == CSubSource::eSubtype_rev_primer_seq ) {
+                string before = ss.GetName();
                 NStr::ToLower(ss.SetName());
                 ss.SetName(NStr::Replace(ss.GetName(), " ", kEmptyStr));
-                if (ss.GetSubtype() == CSubSource::eSubtype_fwd_primer_seq) {
-                    if (fwd_primer_seq == subtypes.end() ) {
-                        fwd_primer_seq = it;
-                    } else {
-                        x_CombinePrimerStrings((*fwd_primer_seq)->SetName(), ss.GetName());
-                        ChangeMade(CCleanupChange::eChangeSubsource);
-                        it = subtypes.erase(it);
-                        continue;
-                    }
-                } else if (ss.GetSubtype() == CSubSource::eSubtype_rev_primer_seq) {
-                    if (rev_primer_seq == subtypes.end() ) {
-                        rev_primer_seq = it;
-                    } else {
-                        x_CombinePrimerStrings((*rev_primer_seq)->SetName(), ss.GetName());
-                        ChangeMade(CCleanupChange::eChangeSubsource);
-                        it = subtypes.erase(it);
-                        continue;
-                    }
-                }
-            } else if ( ss.GetSubtype() == CSubSource::eSubtype_fwd_primer_name  || 
-                        ss.GetSubtype() == CSubSource::eSubtype_rev_primer_name ) {
-                if (ss.GetSubtype() == CSubSource::eSubtype_fwd_primer_name) {
-                    if (fwd_primer_name == subtypes.end() ) {
-                        fwd_primer_name = it;
-                    } else {
-                        x_CombinePrimerStrings((*fwd_primer_name)->SetName(), ss.GetName());
-                        ChangeMade(CCleanupChange::eChangeSubsource);
-                        it = subtypes.erase(it);
-                        continue;
-                    }
-                } else if (ss.GetSubtype() == CSubSource::eSubtype_rev_primer_name) {
-                    if (rev_primer_name == subtypes.end() ) {
-                        rev_primer_name = it;
-                    } else {
-                        x_CombinePrimerStrings((*rev_primer_name)->SetName(), ss.GetName());
-                        ChangeMade(CCleanupChange::eChangeSubsource);
-                        it = subtypes.erase(it);
-                        continue;
-                    }
-                }
+				if (!NStr::Equal (before, ss.GetName())) {
+                    ChangeMade(CCleanupChange::eCleanSubsource);
+				}
             }
         }
         ++it;
