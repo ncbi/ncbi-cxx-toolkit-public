@@ -582,9 +582,9 @@ OUTPUT FORMAT
 
     or for di-base colorspace reads (DEVELOPMENT):
 
-    # 3'=110103000001111213020302010=5' query[1]
-    #    |||| |  ||||||||||||||||||     i:23, m:3, g:1
-    # 5'=110123-20001111213020302013=3' subject
+    # 3'=31200000222133320222333030T=5' query[1]
+    #    ||| |||||||||||||||||||||||    i:26, m:0, g:1
+    # 5'=TAC-TTTTTCTCATATCCTCTATAATT=3' subject
 
     This format is intended for human review and may be changed in future
     versions.
@@ -683,3 +683,5 @@ EXIT VALUES
     0 for success, non-zero for failure.
 
 END
+
+vim:expandtab:tabstop=4
