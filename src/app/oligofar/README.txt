@@ -203,8 +203,8 @@ File options
                 corresponds to the phrap score of 0.
 
     --colorspace=+|-
-    -c +|-      DEVELOPMENT. Input is in di-base colorspace encoding. Hashing 
-                and alignment will be performed in the colorspace encoding. 
+    -c +|-      Input is in di-base colorspace encoding. Hashing and alignment 
+                will be performed in the colorspace encoding. 
                 Not compatible with -q, -1, -2 parameters.
 
     --output-flags=-eumxtadh
@@ -580,7 +580,7 @@ OUTPUT FORMAT
     #     |||||||||| ||||||| | | ||||||||||||    i:31, m:4, g:1
     # 5'=ATTCCTTTAGATAGAGCAGTTTTGAAACACCCTTTT=3' subject
 
-    or for di-base colorspace reads (DEVELOPMENT):
+    or for di-base colorspace reads:
 
     # 3'=31200000222133320222333030T=5' query[1]
     #    ||| |||||||||||||||||||||||    i:26, m:0, g:1
@@ -676,8 +676,8 @@ BUGS, UNTESTED AND DEVELOPMENT CODE, SPECIAL CASES
             TTCACC      TTCACC
       which produces mismatch + indel instead of indel + match
 
-    - Di-nucleotide colorspace is at development stage: first (IUPACna) base 
-      is not taken into account, scoring is very trivial
+    - Di-nucleotide colorspace is at development stage - scoring is very
+      trivial and suites for mapping, not for SNP detection.
 
 EXIT VALUES
     0 for success, non-zero for failure.
