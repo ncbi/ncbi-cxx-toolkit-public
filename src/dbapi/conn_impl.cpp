@@ -36,6 +36,7 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/public.hpp>
 #include <dbapi/error_codes.hpp>
+#include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
 #include "conn_impl.hpp"
 #include "ds_impl.hpp"
@@ -108,30 +109,29 @@ void CConnection::Connect(const string& user,
                           const string& database)
 {
     CHECK_NCBI_DBAPI(m_connection != 0, "Connection is already open");
+    CHECK_NCBI_DBAPI(m_ds == NULL, "m_ds is not initialized");
 
-    m_connection = m_ds->
-        GetDriverContext()->Connect(server,
-                                    user,
-                                    password,
-                                    m_modeMask,
-                                    m_ds->IsPoolUsed());
-    
-    if (GetCDB_Connection()) {
-        SetDbName(database);
-    }
+    CDBDefaultConnParams def_params(
+            server,
+            user,
+            password,
+            m_modeMask,
+            m_ds->IsPoolUsed()
+            );
+    const CCPPToolkitConnParams params(def_params);
 
+    def_params.SetDatabaseName(database);
+
+    m_connection = m_ds->GetDriverContext()->MakeConnection(params);
 }
 
 
 void CConnection::Connect(const CDBConnParams& params)
 {
     CHECK_NCBI_DBAPI(m_connection != 0, "Connection is already open");
+    CHECK_NCBI_DBAPI(m_ds == NULL, "m_ds is not initialized");
 
     m_connection = m_ds->GetDriverContext()->MakeConnection(params);
-    
-    if (GetCDB_Connection()) {
-        SetDbName(params.GetDatabaseName());
-    }
 }
 
 
@@ -142,19 +142,21 @@ void CConnection::ConnectValidated(IConnValidator& validator,
                                    const string& database)
 {
     CHECK_NCBI_DBAPI(m_connection != 0, "Connection is already open");
+    CHECK_NCBI_DBAPI(m_ds == NULL, "m_ds is not initialized");
 
-    m_connection = m_ds->
-        GetDriverContext()->ConnectValidated(server,
-                                    user,
-                                    password,
-                                    validator,
-                                    m_modeMask,
-                                    m_ds->IsPoolUsed());
-    
-    if (GetCDB_Connection()) {
-        SetDbName(database);
-    }
+    CDBDefaultConnParams def_params(
+            server,
+            user,
+            password,
+            m_modeMask,
+            m_ds->IsPoolUsed()
+            );
+    const CCPPToolkitConnParams params(def_params);
 
+    def_params.SetDatabaseName(database);
+    def_params.SetConnValidator(CRef<IConnValidator>(&validator));
+
+    m_connection = m_ds->GetDriverContext()->MakeConnection(params);
 }
 
 CConnection::~CConnection()
@@ -204,6 +206,7 @@ void CConnection::SetDbName(const string& name, CDB_Connection* conn)
 
 CDB_Connection* CConnection::CloneCDB_Conn()
 {
+    CHECK_NCBI_DBAPI(m_ds == NULL, "m_ds is not initialized");
     CDB_Connection *temp = m_ds->
     GetDriverContext()->Connect(GetCDB_Connection()->ServerName(),
                                GetCDB_Connection()->UserName(),
@@ -243,6 +246,7 @@ IConnection* CConnection::CloneConnection(EOwnership ownership)
         conn->MsgToEx(true);
 
     conn->AddListener(m_ds);
+    CHECK_NCBI_DBAPI(m_ds == NULL, "m_ds is not initialized");
     m_ds->AddListener(conn);
 
     return conn;
