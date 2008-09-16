@@ -148,12 +148,15 @@ inline void TAligner_SW<CQuery,CSubject>::x_ExtendToQueryEnd()
 template<class CQuery,class CSubject>
 inline void TAligner_SW<CQuery,CSubject>::x_BackTrace( int flags )
 {
-    const CQuery& query = TSuper::GetQueryBegin();
-    const CSubject& subject = TSuper::GetSubjectBegin();
+    const CQuery query = TSuper::GetQueryBegin();
+    const CSubject subject = TSuper::GetSubjectBegin();
     
     int q = TSuper::m_query - query - 1;
     int s = TSuper::m_subject - subject - 1;
 
+    TSuper::m_query -= TSuper::SetQueryAligned();
+    TSuper::m_subject -= TSuper::SetSubjectAligned();
+    
     int xdropOff = SetMatrix().size()/2;
 
     while( q >= 0 && s >= 0 ) {
@@ -187,6 +190,10 @@ inline void TAligner_SW<CQuery,CSubject>::x_BackTrace( int flags )
             break;
         }
     }
+
+    TSuper::m_query = query;
+    TSuper::m_subject = subject;
+    
     if( flags & CAlignerBase::fComputePicture ) {
         x_Reverse( TSuper::SetQueryString() );
         x_Reverse( TSuper::SetSubjectString() );
