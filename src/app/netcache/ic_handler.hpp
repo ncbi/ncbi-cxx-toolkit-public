@@ -135,12 +135,11 @@ private:
 
     struct SProcessorInfo
     {
-        CICacheHandler::TProcessRequestFunc func;
-        size_t                              params_cnt;
+        TProcessRequestFunc func;
+        size_t              params_cnt;
 
 
-        SProcessorInfo(CICacheHandler::TProcessRequestFunc _func,
-                       size_t                              _params_cnt)
+        SProcessorInfo(TProcessRequestFunc _func, size_t _params_cnt)
             : func(_func), params_cnt(_params_cnt)
         {}
 

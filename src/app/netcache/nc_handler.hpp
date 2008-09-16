@@ -136,12 +136,11 @@ private:
 
     struct SProcessorInfo
     {
-        CNetCacheHandler::TProcessRequestFunc func;
-        size_t                                params_cnt;
+        TProcessRequestFunc func;
+        size_t              params_cnt;
 
 
-        SProcessorInfo(CNetCacheHandler::TProcessRequestFunc _func,
-                       size_t                                _params_cnt)
+        SProcessorInfo(CNetCacheHandler _func, size_t _params_cnt)
             : func(_func), params_cnt(_params_cnt)
         {}
 
