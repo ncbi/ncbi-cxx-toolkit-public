@@ -1,0 +1,72 @@
+[Common]
+#Version=3.0
+
+
+[Compiler]
+ARCHS = i386
+GCC_WARN_ABOUT_RETURN_TYPE = YES
+GCC_WARN_UNUSED_VARIABLE = YES
+GCC_WARN_EFFECTIVE_CPLUSPLUS_VIOLATIONS =
+GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS =
+GCC_WARN_NON_VIRTUAL_DESTRUCTOR =
+GCC_WARN_PEDANTIC =
+GCC_WARN_SHADOW =
+GCC_WARN_SIGN_COMPARE =
+GCC_DYNAMIC_NO_PIC = NO
+GCC_ENABLE_FIX_AND_CONTINUE = NO
+GCC_MODEL_TUNING = G5
+GCC_ENABLE_CPP_EXCEPTIONS = YES
+GCC_ENABLE_CPP_RTTI = YES
+SDKROOT = $(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk
+FRAMEWORK_SEARCH_PATHS = /System/Library/Frameworks/CoreServices.framework/Frameworks
+
+[Compiler.debug]
+COPY_PHASE_STRIP = NO
+GCC_OPTIMIZATION_LEVEL = 0
+GCC_GENERATE_DEBUGGING_SYMBOLS = YES
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
+GCC_DEBUGGING_SYMBOLS = default
+GCC_PREPROCESSOR_DEFINITIONS = _MT _DEBUG NCBI_XCODE_BUILD
+
+[Compiler.release]
+COPY_PHASE_STRIP = YES
+GCC_GENERATE_DEBUGGING_SYMBOLS = NO
+GCC_PREPROCESSOR_DEFINITIONS = _MT NDEBUG NCBI_XCODE_BUILD
+
+
+[Linker]
+DEAD_CODE_STRIPPING = YES
+PREBINDING = NO
+ZERO_LINK = NO
+OTHER_LDFLAGS = -framework CoreServices
+
+
+[Linker.debug]
+
+[Linker.release]
+
+
+[Librarian]
+GCC_ENABLE_SYMBOL_SEPARATION = YES
+GCC_INLINES_ARE_PRIVATE_EXTERN = YES
+GCC_SYMBOLS_PRIVATE_EXTERN = YES
+
+
+[ResourceCompiler]
+
+
+###############################################################################
+# Precompiled headers
+
+[UsePch]
+UsePch         = TRUE
+PchUsageDefine =
+DefaultPch     = ncbi_pch.hpp
+
+internal/structure/CDTree2               = cdtree2_pch.hpp
+internal/structure/PubChem/PCView/PCView = PCView_pch.hpp
+internal/structure/PubChem/assay         = assay_pch.hpp
+internal/ID/utils                        = -
+
+DoNotUsePch = test_mt test_ncbidiag_p
+
