@@ -957,7 +957,12 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
     if ( client.empty() ) {
         client = x_GetPropertyByName(GetPropertyName(eCgi_RemoteAddr));
     }
-    CDiagContext::GetRequestContext().SetClientIP(client);
+    if ( !client.empty() ) {
+        CDiagContext::GetRequestContext().SetClientIP(client);
+    }
+    else {
+        CDiagContext::GetRequestContext().UnsetClientIP();
+    }
 }
 
 
