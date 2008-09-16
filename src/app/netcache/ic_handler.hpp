@@ -130,6 +130,8 @@ private:
                            size_t                  param_num,
                            SNetCache_RequestStat&  stat);
 
+    struct SProcessorInfo;
+    friend struct SProcessorInfo;
 
     struct SProcessorInfo
     {

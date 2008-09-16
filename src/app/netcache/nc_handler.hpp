@@ -131,6 +131,8 @@ private:
 private:
     void x_CheckBlobIdParam(const string& req_id);
 
+    struct SProcessorInfo;
+    friend struct SProcessorInfo;
 
     struct SProcessorInfo
     {
