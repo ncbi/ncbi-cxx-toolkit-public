@@ -38,6 +38,7 @@
 #include <algo/blast/api/blast_prot_options.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
+#include <objects/general/User_field.hpp>
 #include <algo/structure/cd_utils/cuCppNCBI.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 #include <algo/structure/cd_utils/cuCdUpdateParameters.hpp>
@@ -203,6 +204,8 @@ private:
 	CRef<CSeq_align_set> m_hits;
 	int m_hitsNeeded;
 	int m_blastQueryRow;
+
+    static void OssToDefline(const CUser_field::TData::TOss & oss, CBlast_def_line_set& bdls);
 };
 
 class NCBI_CDUTILS_EXPORT GroupUpdater : public UpdaterInterface

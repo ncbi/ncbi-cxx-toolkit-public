@@ -119,7 +119,7 @@ string CDUpdateStats::toString(vector<int>& gis, string type)
 string CDUpdateStats::toString(vector<int>& gis)
 {
 	string result;
-	for(int i = 0; i < gis.size(); i++)
+	for(unsigned int i = 0; i < gis.size(); i++)
 	{
 		result += toString(gis[i]);
 		result += ",";
@@ -141,7 +141,7 @@ string CDUpdateStats::toString(vector<OldNewGiPair>& giPairs, string type)
 	string result = "Number of " + type + " =";
 	result += toString((int)giPairs.size()); 
 	result += ":\n";
-	for (int i = 0 ; i < giPairs.size(); i++)
+	for (unsigned int i = 0 ; i < giPairs.size(); i++)
 	{
 		result += toString(giPairs[i].second);
 		result += "(";
@@ -172,7 +172,7 @@ bool UpdaterInterface::IsEmpty()
 
 void UpdaterInterface::removeUpdaters(const vector<CCdCore*>& cds)
 {
-	for (int i = 0; i < cds.size(); i++)
+	for (unsigned int i = 0; i < cds.size(); i++)
 	{
 		for (list<UpdaterInterface*>::iterator lit = m_updaterList.begin();
 			lit != m_updaterList.end(); lit++)
@@ -194,7 +194,7 @@ void UpdaterInterface::removeUpdaters(const vector<CCdCore*>& cds)
 
 void UpdaterInterface::removeUpdaters(const vector<UpdaterInterface*>& updaters)
 {
-	for (int i = 0; i < updaters.size(); i++)
+	for (unsigned int i = 0; i < updaters.size(); i++)
 	{
 		for (list<UpdaterInterface*>::iterator lit = m_updaterList.begin();
 			lit != m_updaterList.end(); lit++)
@@ -235,13 +235,13 @@ int UpdaterInterface::checkAllBlasts(vector<UpdaterInterface*>& blasted)
 
 GroupUpdater::GroupUpdater(vector<CCdCore*>& cds, CdUpdateParameters& config)
 {
-	for (int i = 0; i < cds.size(); i++)
+	for (unsigned int i = 0; i < cds.size(); i++)
 		m_cdUpdaters.push_back(new CDUpdater(cds[i], config));
 }
 
 GroupUpdater::~GroupUpdater() //delete all in m_cdUpdaters
 {
-	for (int i = 0; i < m_cdUpdaters.size(); i++)
+	for (unsigned int i = 0; i < m_cdUpdaters.size(); i++)
 		delete (m_cdUpdaters[i]);
 }
 	
@@ -249,7 +249,7 @@ GroupUpdater::~GroupUpdater() //delete all in m_cdUpdaters
 int GroupUpdater::submitBlast(bool wait, int row)
 {
     int count = 0;
-    for (int i = 0; i < m_cdUpdaters.size(); i++)
+    for (unsigned int i = 0; i < m_cdUpdaters.size(); i++)
 	{
         if (!(m_cdUpdaters[i])->submitBlast(wait,row)) {
 			return 0;  // return 0 if one fails so legacy "if" statements still work.
@@ -264,7 +264,7 @@ int GroupUpdater::submitBlast(bool wait, int row)
 bool GroupUpdater::getBlastHits()
 {
 	bool allDone = true;
-	for (int i = 0; i < m_cdUpdaters.size(); i++)
+	for (unsigned int i = 0; i < m_cdUpdaters.size(); i++)
 	{
 		if (!(m_cdUpdaters[i]->getBlastHits()))
 			allDone = false;
@@ -281,7 +281,7 @@ bool GroupUpdater::processBlastHits()
 	}
 	//distribute
 	HitDistributor dist;
-	for (int i = 0; i < m_cdUpdaters.size(); i++)
+	for (unsigned int i = 0; i < m_cdUpdaters.size(); i++)
 	{
 		dist.addBatch(m_cdUpdaters[i]->getAlignments());
 	}
@@ -289,7 +289,7 @@ bool GroupUpdater::processBlastHits()
 	dist.distribute();
 	//update individual CDs
 	bool allDone = true;
-	for (int i = 0; i < m_cdUpdaters.size(); i++)
+	for (unsigned int i = 0; i < m_cdUpdaters.size(); i++)
 	{
 		if (!(m_cdUpdaters[i]->processBlastHits()))
 			allDone = false;
@@ -299,7 +299,7 @@ bool GroupUpdater::processBlastHits()
 
 void GroupUpdater::getCds(vector<CCdCore*>& cds)
 {
-	for (int i = 0; i < m_cdUpdaters.size(); i++)
+	for (unsigned int i = 0; i < m_cdUpdaters.size(); i++)
 	{
 		m_cdUpdaters[i]->getCds(cds);
 	}
@@ -307,7 +307,7 @@ void GroupUpdater::getCds(vector<CCdCore*>& cds)
 
 bool GroupUpdater::hasCd(CCdCore* cd)
 {
-	for (int i = 0; i < m_cdUpdaters.size(); i++)
+	for (unsigned int i = 0; i < m_cdUpdaters.size(); i++)
 	{
 		if (m_cdUpdaters[i]->hasCd(cd))
 			return true;
@@ -637,7 +637,7 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	if (m_config.replaceOldAcc)
 		refresher = new CDRefresher(cd);
 	vector< CRef< CBioseq > > bioseqVec;
-	for (int i = 0; i < bioseqs.size(); i++)
+	for (unsigned int i = 0; i < bioseqs.size(); i++)
 	{
 		bioseqVec.clear();
 		SplitBioseqByBlastDefline (bioseqs[i], bioseqVec);
@@ -878,7 +878,7 @@ int CDUpdater::pickBioseq(CDRefresher* refresher, CRef< CSeq_align > seqAlignRef
 	seqID = seqIdVec[1];
 	int index = -1;
 	//if the current seqId's bioseq has a PDB , no change
-	for (int i = 0; i < bioseqVec.size(); i++)
+	for (int i = 0; i < (int) bioseqVec.size(); i++)
 	{
 		if(BioseqHasSeqId(*(bioseqVec[i]), *seqID))
 		{
@@ -896,7 +896,7 @@ int CDUpdater::pickBioseq(CDRefresher* refresher, CRef< CSeq_align > seqAlignRef
 	}
 	assert(index >= 0);
 	//use other PDB if there is one.
-	for (int i = 0; i < bioseqVec.size(); i++)
+	for (int i = 0; i < (int) bioseqVec.size(); i++)
 	{
 		if (i==index)
 			continue;
@@ -925,7 +925,7 @@ int CDUpdater::pickBioseq(CDRefresher* refresher, CRef< CSeq_align > seqAlignRef
 	//this can be used to replace the old one later
 	if (refresher)
 	{
-		for (int i = 0; i < bioseqVec.size(); i++)
+		for (int i = 0; i < (int) bioseqVec.size(); i++)
 		{
 			if (refresher->hasOlderVersion(bioseqVec[i]))
 			{
@@ -1129,7 +1129,7 @@ bool CDUpdater::retrieveSeq(CID1Client& client, CRef<CSeq_id> seqID, CRef<CSeq_e
 
 bool CDUpdater::findSeq(CRef<CSeq_id> seqID, vector< CRef< CBioseq > >& bioseqs, CRef<CSeq_entry>& seqEntry)
 {
-    for (int i = 0; i < bioseqs.size(); i++)
+    for (unsigned int i = 0; i < bioseqs.size(); i++)
 	{
 		const CBioseq::TId& ids = bioseqs[i]->SetId();
         CBioseq::TId::const_iterator it = ids.begin(), itend = ids.end();
@@ -1157,11 +1157,9 @@ bool CDUpdater::findSeq(CRef<CSeq_id> seqID, vector< CRef< CBioseq > >& bioseqs,
 void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< CBioseq > >& bioseqs)
 {
 	vector< CRef<CSeq_id> > seqids;
-	int batchSize = 500;
-	int maxBatchSize = 2000;
+	unsigned int batchSize = 500;
+	unsigned int maxBatchSize = 2000;
 	list< CRef< CSeq_align > >& seqAligns = alignments.Set();
-	int total = seqAligns.size();
-	int percentage = 0;
 	list< CRef< CSeq_align > >::iterator lit = seqAligns.begin();
 	for (; lit != seqAligns.end(); lit++)
 	{
@@ -1174,12 +1172,12 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
 			string errors, warnings;
 			vector< CRef< CBioseq > > bioseqBatch;
 			try {
-				//LOG_POST("Calling RemoteBlast::GetSequences().\n");
+				LOG_POST("Calling RemoteBlast::GetSequences().\n");
 				CRemoteBlast::GetSequences(seqids, "nr", 'p', bioseqBatch, errors,warnings);
-				//LOG_POST("Returned from RemoteBlast::GetSequences().\n");
+				LOG_POST("Returned from RemoteBlast::GetSequences(). " << bioseqBatch.size() << "\n");
 			}
 			catch (blast::CBlastException& be)
-			{
+            {
 				if (seqids.size() > maxBatchSize)
 				{
 					seqids.clear(); //give up on retrieving sequence on these hits.
@@ -1188,14 +1186,19 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
 				else
 					LOG_POST("Retrieving sequences from RemoteBlast failed with an exception of "<<be.GetErrCodeString());
 				continue;
-			}
+			} catch (...) 
+            {
+                LOG_POST("Unspecified exception during CRemoteBlast::GetSequences().  Skipping to next Seq-align.\n");
+                continue;
+            }
+
 			if (seqids.size()!= bioseqBatch.size())
 			{
 				LOG_POST("Ask for "<< seqids.size()<<" sequences.  Got "<<bioseqs.size()<<" back\n");
 				LOG_POST("Error="<<errors<<"\nWarnings="<<warnings);
 			}
 			seqids.clear();
-			for (int i = 0 ; i < bioseqBatch.size(); i++)
+			for (unsigned int i = 0 ; i < bioseqBatch.size(); i++)
 			{
 				bioseqs.push_back(bioseqBatch[i]);
 			}
@@ -1207,7 +1210,7 @@ int CDUpdater::getGi(CRef< CSeq_entry > seqEntry)
 {
 	vector< CRef< CSeq_id > > seqIds;
 	GetAllIdsFromSeqEntry(seqEntry, seqIds);
-	for (int i = 0; i < seqIds.size(); i++)
+	for (unsigned int i = 0; i < seqIds.size(); i++)
 		if (seqIds[i]->IsGi())
 			return seqIds[i]->GetGi();
 	return 0;
@@ -1483,7 +1486,7 @@ bool CDUpdater::SeqEntryHasSeqId(CRef< CSeq_entry > seqEntry, const CSeq_id& seq
 {
 	vector< CRef< CSeq_id > > seqIds;
 	GetAllIdsFromSeqEntry(seqEntry, seqIds,false);
-	for (int i = 0; i < seqIds.size(); i++)
+	for (unsigned int i = 0; i < seqIds.size(); i++)
 	{
 		if (seqIds[i]->Match(seqId))
 			return true;
@@ -1564,62 +1567,86 @@ void CDUpdater::reformatBioseqByBlastDefline(CRef<CBioseq> bioseq, CRef< CBlast_
 	bioseq->SetId().assign(blastDefline->GetSeqid().begin(), blastDefline->GetSeqid().end());
 }
 
-CRef<CBlast_def_line_set>  CDUpdater::GetBlastDefline (const CBioseq& handle)
+//  IMPORTANT:  This code is being forked from src/objtools/blast_format/blastfmtutil.cpp.
+//  Check for changes in original source if this forked version misbehaves in the future.
+/// Efficiently decode a Blast-def-line-set from binary ASN.1.
+/// @param oss Octet string sequence of binary ASN.1 data.
+/// @param bdls Blast def line set decoded from oss.
+void CDUpdater::OssToDefline(const CUser_field::TData::TOss & oss, CBlast_def_line_set& bdls)
 {
-	static const string kAsnDeflineObjLabel = "ASN1_BlastDefLine";
-  CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set());
-  if(handle.IsSetDescr()){
-    const CSeq_descr& desc = handle.GetDescr();
-    const list< CRef< CSeqdesc > >& descList = desc.Get();
-    for (list<CRef< CSeqdesc > >::const_iterator iter = descList.begin(); iter != descList.end(); iter++){
-      
-      if((*iter)->IsUser()){
-        const CUser_object& uobj = (*iter)->GetUser();
-        const CObject_id& uobjid = uobj.GetType();
-        if(uobjid.IsStr()){
-   
-          const string& label = uobjid.GetStr();
-          if (label == kAsnDeflineObjLabel){
-           const vector< CRef< CUser_field > >& usf = uobj.GetData();
-           string buf;
-          
-	   if(usf.front()->GetData().IsOss()){ //only one user field
-             typedef const CUser_field::TData::TOss TOss;
-             const TOss& oss = usf.front()->GetData().GetOss();
-             int size = 0;
-             //determine the octet string length
-             ITERATE (TOss, iter3, oss) {
-	       size += (**iter3).size();
-             }
-             
-             int i =0;
-             char* temp = new char[size];
-             //retrive the string
-             ITERATE (TOss, iter3, oss) {
-      
-               for(vector< char >::iterator iter4 = (**iter3).begin(); iter4 !=(**iter3).end(); iter4++){
-                 temp[i] = *iter4;
-                 i++;
-               }
-             }            
-	    
-	     CConn_MemoryStream stream;
-             stream.write(temp, i);
-             auto_ptr<CObjectIStream> ois(CObjectIStream::Open(eSerial_AsnBinary, stream));
-             *ois >> *bdls;
-	     delete [] temp;
-           }         
-          }
+    typedef const CUser_field::TData::TOss TOss;
+    
+    const char * data = NULL;
+    size_t size = 0;
+    string temp;
+    
+    if (oss.size() == 1) {
+        // In the single-element case, no copies are needed.
+        
+        const vector<char> & v = *oss.front();
+        data = & v[0];
+        size = v.size();
+    } else {
+        // Determine the octet string length and do one allocation.
+        
+        ITERATE (TOss, iter1, oss) {
+            size += (**iter1).size();
         }
-      }
+        
+        temp.reserve(size);
+        
+        ITERATE (TOss, iter3, oss) {
+            // 23.2.4[1] "The elements of a vector are stored contiguously".
+            temp.append(& (**iter3)[0], (*iter3)->size());
+        }
+        
+        data = & temp[0];
     }
-  }
-  return bdls;
+    
+    CObjectIStreamAsnBinary inpstr(data, size);
+    inpstr >> bdls;
+}
+
+
+
+//  IMPORTANT:  This code is being forked from src/objtools/blast_format/blastfmtutil.cpp.
+//  That method uses the object manager, however, so we're not calling the function directly.
+//  Check for changes in original source if this forked version misbehaves in the future.
+CRef<CBlast_def_line_set>  CDUpdater::GetBlastDefline (const CBioseq& bioseq)
+{
+	static const string asnDeflineObjLabel = "ASN1_BlastDefLine";
+
+    CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set());
+    if(bioseq.IsSetDescr()){
+        const CSeq_descr& desc = bioseq.GetDescr();
+        const list< CRef< CSeqdesc > >& descList = desc.Get();
+        for (list<CRef< CSeqdesc > >::const_iterator iter = descList.begin(); iter != descList.end(); iter++){
+      
+            if((*iter)->IsUser()){
+                const CUser_object& uobj = (*iter)->GetUser();
+                const CObject_id& uobjid = uobj.GetType();
+                if(uobjid.IsStr()){
+   
+                    const string& label = uobjid.GetStr();
+                    if (label == asnDeflineObjLabel){
+                        const vector< CRef< CUser_field > >& usf = uobj.GetData();
+
+                        if(usf.front()->GetData().IsOss()){ //only one user field
+                            typedef const CUser_field::TData::TOss TOss;
+                            const TOss& oss = usf.front()->GetData().GetOss();
+                            OssToDefline(oss, *bdls);
+                        }         
+                    }
+                }
+            }
+        }
+    }
+    return bdls;
 }
 
 void CDUpdater::RemoveBlastDefline (CBioseq& handle)
 {
-	static const string kAsnDeflineObjLabel = "ASN1_BlastDefLine";
+	static const string asnDeflineObjLabel = "ASN1_BlastDefLine";
 	if(handle.IsSetDescr())
 	{
 		CSeq_descr& desc = handle.SetDescr();
@@ -1633,7 +1660,7 @@ void CDUpdater::RemoveBlastDefline (CBioseq& handle)
 				if(uobjid.IsStr())
 				{
 					const string& label = uobjid.GetStr();
-					if (label == kAsnDeflineObjLabel)
+					if (label == asnDeflineObjLabel)
 					{
 						descList.erase(iter);
 						return;
@@ -1669,7 +1696,7 @@ int CDUpdater::processPendingToNormal(int overlap, CCdCore* cd)
 	set<int> goodRows;
 	vector<int> rows;
 	bf.getQualifiedRows(rows);
-	for (int r = 0; r < rows.size(); r++)
+	for (unsigned int r = 0; r < rows.size(); r++)
 		goodRows.insert(rows[r]);
 	cd->ErasePendingRows(goodRows);
 	return num - numGood;
@@ -1761,7 +1788,7 @@ int CDRefresher::refresh(CRef< CSeq_align> seqAlign, CRef< CSeq_entry > seqEntry
 	vector< CRef< CSeq_id > > newIds;
 	CDUpdater::GetAllIdsFromSeqEntry(seqEntry, newIds);
 	CRef< CSeq_id > giId, pdbId;
-	for (int i = 0; i < newIds.size(); i++)
+	for (unsigned int i = 0; i < newIds.size(); i++)
 	{
 		if (newIds[i]->IsGi())
 			giId = newIds[i];
