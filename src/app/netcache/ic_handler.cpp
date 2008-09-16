@@ -194,7 +194,7 @@ bool CICacheHandler::ProcessTransmission(
 void
 CICacheHandler::Process_IC_SetTimeStampPolicy(ICache&                 ic,
                                               const CNCRequestParser& parser,
-                                              SNetCache_RequestStat&  stat)
+                                              SNetCache_RequestStat&  /* stat */)
 {
     ic.SetTimeStampPolicy(parser.GetUIntParam(0),
                           parser.GetUIntParam(1),
@@ -205,8 +205,8 @@ CICacheHandler::Process_IC_SetTimeStampPolicy(ICache&                 ic,
 
 void
 CICacheHandler::Process_IC_GetTimeStampPolicy(ICache&                 ic,
-                                              const CNCRequestParser& parser,
-                                              SNetCache_RequestStat&  stat)
+                                              const CNCRequestParser& /* parser */,
+                                              SNetCache_RequestStat&  /* stat */)
 {
     ICache::TTimeStampFlags flags = ic.GetTimeStampPolicy();
     string str;
@@ -217,7 +217,7 @@ CICacheHandler::Process_IC_GetTimeStampPolicy(ICache&                 ic,
 void
 CICacheHandler::Process_IC_SetVersionRetention(ICache&                 ic,
                                                const CNCRequestParser& parser,
-                                               SNetCache_RequestStat&  stat)
+                                               SNetCache_RequestStat&  /* stat */)
 {
     const string& key = parser.GetParam(0);
     ICache::EKeepVersions policy;
@@ -239,8 +239,8 @@ CICacheHandler::Process_IC_SetVersionRetention(ICache&                 ic,
 
 void
 CICacheHandler::Process_IC_GetVersionRetention(ICache&                 ic,
-                                               const CNCRequestParser& parser,
-                                               SNetCache_RequestStat&  stat)
+                                               const CNCRequestParser& /* parser */,
+                                               SNetCache_RequestStat&  /* stat */)
 {
     int p = ic.GetVersionRetention();
     string str;
@@ -250,8 +250,8 @@ CICacheHandler::Process_IC_GetVersionRetention(ICache&                 ic,
 
 void
 CICacheHandler::Process_IC_GetTimeout(ICache&                 ic,
-                                      const CNCRequestParser& parser,
-                                      SNetCache_RequestStat&  stat)
+                                      const CNCRequestParser& /* parser */,
+                                      SNetCache_RequestStat&  /* stat */)
 {
     int to = ic.GetTimeout();
     string str;
@@ -261,8 +261,8 @@ CICacheHandler::Process_IC_GetTimeout(ICache&                 ic,
 
 void
 CICacheHandler::Process_IC_IsOpen(ICache&                 ic,
-                                  const CNCRequestParser& parser,
-                                  SNetCache_RequestStat&  stat)
+                                  const CNCRequestParser& /* parser */,
+                                  SNetCache_RequestStat&  /* stat */)
 {
     bool io = ic.IsOpen();
     string str;
@@ -430,7 +430,7 @@ CICacheHandler::Process_IC_Remove(ICache&                 ic,
 void
 CICacheHandler::Process_IC_RemoveKey(ICache&                 ic,
                                      const CNCRequestParser& parser,
-                                     SNetCache_RequestStat&  stat)
+                                     SNetCache_RequestStat&  /* stat */)
 {
     ic.Remove(parser.GetParam(0));
     WriteMsg(GetSocket(), "OK:", "");
@@ -468,7 +468,7 @@ CICacheHandler::Process_IC_HasBlobs(ICache&                 ic,
 void
 CICacheHandler::Process_IC_Purge1(ICache&                 ic,
                                   const CNCRequestParser& parser,
-                                  SNetCache_RequestStat&  stat)
+                                  SNetCache_RequestStat&  /* stat */)
 {
     ICache::EKeepVersions keep_versions
                              = (ICache::EKeepVersions)parser.GetUIntParam(0);

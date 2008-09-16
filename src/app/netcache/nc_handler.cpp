@@ -118,7 +118,7 @@ void CNetCacheHandler::ProcessRequest(CNCRequestParser&      parser,
 
 
 void
-CNetCacheHandler::ProcessShutdown(const CNCRequestParser& parser,
+CNetCacheHandler::ProcessShutdown(const CNCRequestParser& /* parser */,
                                   SNetCache_RequestStat&  /* stat */)
 {
     m_Server->SetShutdownFlag();
@@ -126,14 +126,14 @@ CNetCacheHandler::ProcessShutdown(const CNCRequestParser& parser,
 }
 
 void
-CNetCacheHandler::ProcessVersion(const CNCRequestParser& parser,
+CNetCacheHandler::ProcessVersion(const CNCRequestParser& /* parser */,
                                  SNetCache_RequestStat&  /* stat */)
 {
     WriteMsg(GetSocket(), "OK:", NETCACHED_VERSION); 
 }
 
 void
-CNetCacheHandler::ProcessGetConfig(const CNCRequestParser& parser,
+CNetCacheHandler::ProcessGetConfig(const CNCRequestParser& /* parser */,
                                    SNetCache_RequestStat&  /* stat */)
 {
     CSocket& sock = GetSocket();
@@ -146,7 +146,7 @@ CNetCacheHandler::ProcessGetConfig(const CNCRequestParser& parser,
 }
 
 void
-CNetCacheHandler::ProcessGetStat(const CNCRequestParser& parser,
+CNetCacheHandler::ProcessGetStat(const CNCRequestParser& /* parser */,
                                  SNetCache_RequestStat&  /* stat */)
 {
     //CNcbiRegistry reg;
@@ -180,7 +180,7 @@ CNetCacheHandler::ProcessGetStat(const CNCRequestParser& parser,
 }
 
 void
-CNetCacheHandler::ProcessDropStat(const CNCRequestParser& parser,
+CNetCacheHandler::ProcessDropStat(const CNCRequestParser& /* parser */,
                                   SNetCache_RequestStat&  /* stat */)
 {
     CBDB_Cache* bdb_cache = m_Server->GetCache();
@@ -402,8 +402,8 @@ CNetCacheHandler::ProcessGet(const CNCRequestParser& parser,
 
 
 void
-CNetCacheHandler::ProcessPut(const CNCRequestParser& parser,
-                             SNetCache_RequestStat&  stat)
+CNetCacheHandler::ProcessPut(const CNCRequestParser& /* parser */,
+                             SNetCache_RequestStat&  /* stat */)
 {
     WriteMsg(GetSocket(), "ERR:", "Obsolete");
 }
@@ -531,7 +531,7 @@ CNetCacheHandler::ProcessPut3(const CNCRequestParser& parser,
 
 void
 CNetCacheHandler::ProcessHasBlob(const CNCRequestParser& parser,
-                                 SNetCache_RequestStat&  stat)
+                                 SNetCache_RequestStat&  /* stat */)
 {
     const string& req_id = parser.GetParam(0);
     x_CheckBlobIdParam(req_id);
@@ -545,7 +545,7 @@ CNetCacheHandler::ProcessHasBlob(const CNCRequestParser& parser,
 
 void
 CNetCacheHandler::ProcessGetBlobOwner(const CNCRequestParser& parser,
-                                      SNetCache_RequestStat&  stat)
+                                      SNetCache_RequestStat&  /* stat */)
 {
     const string& req_id = parser.GetParam(0);
     x_CheckBlobIdParam(req_id);
@@ -559,7 +559,7 @@ CNetCacheHandler::ProcessGetBlobOwner(const CNCRequestParser& parser,
 
 void
 CNetCacheHandler::ProcessIsLock(const CNCRequestParser& parser,
-                                SNetCache_RequestStat&  stat)
+                                SNetCache_RequestStat&  /* stat */)
 {
     const string& req_id = parser.GetParam(0);
     x_CheckBlobIdParam(req_id);
@@ -575,7 +575,7 @@ CNetCacheHandler::ProcessIsLock(const CNCRequestParser& parser,
 
 void
 CNetCacheHandler::ProcessGetSize(const CNCRequestParser& parser,
-                                 SNetCache_RequestStat&  stat)
+                                 SNetCache_RequestStat&  /* stat */)
 {
     const string& req_id = parser.GetParam(0);
     x_CheckBlobIdParam(req_id);
