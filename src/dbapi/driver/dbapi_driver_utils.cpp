@@ -450,7 +450,7 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
                     // Probably, this method was supplied with a wrong
                     // server_type value;
                     if (step < 2) {
-                        server_type = conn.CalculateServerType(server_type);
+                        server_type = conn.CalculateServerType(CDBConnParams::eUnknown);
                         ++step;
                         continue;
                     }
@@ -578,7 +578,7 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
                 // Probably, this method was supplied with a wrong
                 // server_type value;
                 if (step < 2) {
-                    server_type = conn.CalculateServerType(server_type);
+                    server_type = conn.CalculateServerType(CDBConnParams::eUnknown);
                     ++step;
                 }
 			}
