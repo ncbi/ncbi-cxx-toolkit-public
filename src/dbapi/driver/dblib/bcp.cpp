@@ -85,6 +85,9 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
             switch ( param.GetType() ) {
+            case eDB_Bit: 
+                DATABASE_DRIVER_ERROR("Bit data type is not supported", 10005);
+                break;
             case eDB_Int: {
                 CDB_Int& val = dynamic_cast<CDB_Int&> (param);
                 // DBINT v = (DBINT) val.Value();

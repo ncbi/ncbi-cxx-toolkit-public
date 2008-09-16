@@ -201,6 +201,9 @@ bool CTL_BCPInCmd::x_AssignParams()
         CS_RETCODE ret_code;
 
         switch ( param.GetType() ) {
+        case eDB_Bit: 
+            DATABASE_DRIVER_ERROR("Bit data type is not supported", 10005);
+            break;
         case eDB_Int: {
             CDB_Int& par = dynamic_cast<CDB_Int&> (param);
             param_fmt.datatype = CS_INT_TYPE;

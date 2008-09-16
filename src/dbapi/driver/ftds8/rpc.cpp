@@ -238,6 +238,9 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
 
     if (!param.IsNULL()) {
         switch (param.GetType()) {
+        case eDB_Bit: 
+            DATABASE_DRIVER_ERROR("Bit data type is not supported", 10005);
+            break;
         case eDB_Int: {
             const CDB_Int& val = dynamic_cast<const CDB_Int&> (param);
             sprintf(val_buffer, "%d\n", val.Value());

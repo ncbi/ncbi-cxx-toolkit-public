@@ -286,6 +286,9 @@ bool CDBL_LangCmd::x_AssignParams()
             return false;
 
         switch (param.GetType()) {
+        case eDB_Bit: 
+            DATABASE_DRIVER_ERROR("Bit data type is not supported", 10005);
+            break;
         case eDB_Int:
             type = "int";
             break;

@@ -826,6 +826,9 @@ bool CTL_CursorCmdExpl::x_AssignParams()
 
         if (!param.IsNULL()) {
             switch (param.GetType()) {
+            case eDB_Bit: 
+                DATABASE_DRIVER_ERROR("Bit data type is not supported", 10005);
+                break;
             case eDB_Int: {
                 CDB_Int& val = dynamic_cast<CDB_Int&> (param);
                 sprintf(val_buffer, "%d", val.Value());

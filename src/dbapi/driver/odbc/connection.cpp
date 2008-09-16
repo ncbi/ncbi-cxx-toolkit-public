@@ -944,6 +944,9 @@ CStatementBase::Type2String(const CDB_Object& param) const
     string type_str;
 
     switch (param.GetType()) {
+    case eDB_Bit:
+        type_str = "bit";
+        break;
     case eDB_Int:
         type_str = "int";
         break;
