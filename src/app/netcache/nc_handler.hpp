@@ -140,7 +140,7 @@ private:
         size_t              params_cnt;
 
 
-        SProcessorInfo(CNetCacheHandler _func, size_t _params_cnt)
+        SProcessorInfo(TProcessRequestFunc _func, size_t _params_cnt)
             : func(_func), params_cnt(_params_cnt)
         {}
 
