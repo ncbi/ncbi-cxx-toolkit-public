@@ -132,6 +132,7 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
     InitializeFrom(site);
     site.ProcessMacros(configs);
 
+//TODO: XCODE
     if (CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
         return;
     }

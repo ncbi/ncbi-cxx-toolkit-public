@@ -33,6 +33,7 @@
 #include "proj_tree_builder.hpp"
 #include "msvc_prj_utils.hpp"
 #include "msvc_prj_generator.hpp"
+#include "mac_prj_generator.hpp"
 #include "msvc_sln_generator.hpp"
 #include "msvc_masterproject_generator.hpp"
 #include "proj_utils.hpp"
@@ -364,7 +365,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,5,7) );
+    SetVersion( CVersionInfo(1,6,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -393,6 +394,12 @@ void CProjBulderApp::Init(void)
         context = "MSVC ";
         context += CMsvc7RegSettings::GetProjectFileFormatVersion() +
             " (" + CMsvc7RegSettings::GetMsvcPlatformName() + ")";
+    } else if (CMsvc7RegSettings::GetMsvcPlatform() > CMsvc7RegSettings::eUnix) {
+        context = "XCODE ";
+/*
+        context += CMsvc7RegSettings::GetMsvcVersionName() +
+            " (" + CMsvc7RegSettings::GetMsvcPlatformName() + ")";
+*/
     } else {
         context = CMsvc7RegSettings::GetMsvcPlatformName();
     }
@@ -570,8 +577,12 @@ int CProjBulderApp::Run(void)
     PTB_INFO("Creating projects...");
     if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         GenerateMsvcProjects(prj_tree);
-    } else {
+    }
+    else if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
         GenerateUnixProjects(prj_tree);
+    }
+    else {
+        GenerateMacProjects(prj_tree);
     }
     //
     PTB_INFO("Done.  Elapsed time = " << sw.Elapsed() << " seconds");
@@ -750,6 +761,41 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     PTB_INFO("    " << str_path << "/%ConfigurationName%");
     PTB_INFO("===========================================================");
 #endif //NCBI_COMPILER_MSVC
+}
+
+void CProjBulderApp::GenerateMacProjects(CProjectItemsTree& projects_tree)
+{
+#if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
+    PTB_INFO("Generating XCode projects...");
+
+    bool dll = (GetBuildType().GetType() == CBuildType::eDll);
+    list<SConfigInfo> dll_configs;
+    const list<SConfigInfo>* configurations = 0;
+    bool skip_config = !GetEnvironment().Get(s_ptb_skipconfig).empty();
+    string str_config;
+
+    if (dll) {
+        _TRACE("DLL build");
+        GetBuildConfigs(&dll_configs);
+        configurations = &dll_configs;
+    } else {
+        _TRACE("Static build");
+        configurations = &GetRegSettings().m_ConfigInfo;
+    }
+    {{
+        ITERATE(list<SConfigInfo>, p , *configurations) {
+            str_config += p->GetConfigFullName() + " ";
+        }
+        PTB_INFO("Building configurations: " << str_config);
+    }}
+
+    if ( m_AddMissingLibs ) {
+        m_CurrentBuildTree = &projects_tree;
+    }
+    // Projects
+    CMacProjectGenerator prj_gen(*configurations, projects_tree);
+    prj_gen.Generate(m_Solution);
+#endif
 }
 
 void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
@@ -1006,6 +1052,8 @@ void CProjBulderApp::Exit(void)
 
 void CProjBulderApp::ParseArguments(void)
 {
+    CMsvc7RegSettings::IdentifyPlatform();
+
     CArgs args = GetArgs();
 
     m_Subtree = args["subtree"].AsString();
@@ -1090,7 +1138,11 @@ void CProjBulderApp::VerifyArguments(void)
     m_IncDir = CDirEntry::ConcatPath(m_IncDir,GetRegSettings().m_CompilersSubdir);
     m_IncDir = CDirEntry::ConcatPath(m_IncDir, GetBuildType().GetTypeStr());
     m_IncDir = CDirEntry::ConcatPath(m_IncDir, "inc");
+#if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
+    m_IncDir = CDirEntry::ConcatPath(m_IncDir, "$(CONFIGURATION)");
+#else
     m_IncDir = CDirEntry::ConcatPath(m_IncDir, "$(ConfigurationName)");
+#endif
 }
 
 
@@ -1148,17 +1200,19 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
     if ( !m_MsvcRegSettings.get() ) {
         m_MsvcRegSettings.reset(new CMsvc7RegSettings());
 
+        string section(CMsvc7RegSettings::GetMsvcRegSection());
+
         m_MsvcRegSettings->m_MakefilesExt = 
-            GetConfig().GetString(MSVC_REG_SECTION, "MakefilesExt", "msvc");
+            GetConfig().GetString(section, "MakefilesExt", "msvc");
     
         m_MsvcRegSettings->m_ProjectsSubdir  = 
-            GetConfig().GetString(MSVC_REG_SECTION, "Projects", "build");
+            GetConfig().GetString(section, "Projects", "build");
 
         m_MsvcRegSettings->m_MetaMakefile = 
-            GetConfig().Get(MSVC_REG_SECTION, "MetaMakefile");
+            GetConfig().Get(section, "MetaMakefile");
 
         m_MsvcRegSettings->m_DllInfo = 
-            GetConfig().Get(MSVC_REG_SECTION, "DllInfo");
+            GetConfig().Get(section, "DllInfo");
     
         m_MsvcRegSettings->m_Version = 
             GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "Version");

@@ -49,7 +49,7 @@ CProjectsLstFileFilter::CProjectsLstFileFilter(const string& root_src_dir,
     }
     string dll_subtree = GetApp().GetConfig().Get("ProjectTree", "dll");
     string s = ConvertToMask("dll");
-    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
         if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
             m_listEnabled.push_back(s);
         }

@@ -125,12 +125,13 @@ static void s_InitalizeDllProj(const string&                  dll_id,
     }
     dll->m_Depends = new_depends;
 
-    string dll_main = GetApp().GetProjectTreeInfo().m_Compilers;
-    dll_main = CDirEntry::ConcatPath(dll_main, GetApp().GetRegSettings().m_CompilersSubdir);
-    dll_main = CDirEntry::ConcatPath(dll_main, GetApp().GetBuildType().GetTypeStr());
-    dll_main = CDirEntry::ConcatPath(dll_main, "dll_main");
-
-    dll->m_Sources.push_back(CDirEntry::CreateRelativePath(dll->m_SourcesBaseDir, dll_main));
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+        string dll_main = GetApp().GetProjectTreeInfo().m_Compilers;
+        dll_main = CDirEntry::ConcatPath(dll_main, GetApp().GetRegSettings().m_CompilersSubdir);
+        dll_main = CDirEntry::ConcatPath(dll_main, GetApp().GetBuildType().GetTypeStr());
+        dll_main = CDirEntry::ConcatPath(dll_main, "dll_main");
+        dll->m_Sources.push_back(CDirEntry::CreateRelativePath(dll->m_SourcesBaseDir, dll_main));
+    }
 }
 
 

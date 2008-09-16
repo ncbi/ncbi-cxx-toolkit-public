@@ -51,7 +51,8 @@ CMsvcSite::CMsvcSite(const string& reg_path)
 
     string str;
 
-    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+//TODO: XCODE
+    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
         // MSWin
         // Provided requests
         str = m_Registry.Get("Configure", "ProvidedRequests");
@@ -135,6 +136,7 @@ bool CMsvcSite::IsProvided(const string& thing) const
         return true;
     }
 
+//TODO: XCODE
     bool res = 
         CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix ?
             IsDescribed(thing) : false;
@@ -317,6 +319,7 @@ CMsvcSite::SLibChoice::SLibChoice(const CMsvcSite& site,
  :m_LibId    (lib),
   m_3PartyLib(lib_3party)
 {
+//TODO: XCODE
     if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         m_Choice = e3PartyLib;
         // special case: lzo is always 3rd party lib
@@ -600,6 +603,7 @@ void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
         bool res = false;
         ITERATE(list<string>, p, components) {
             const string& component = *p;
+//TODO: XCODE
             if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
                 ITERATE(list<SConfigInfo>, n, configs) {
                     const SConfigInfo& config = *n;

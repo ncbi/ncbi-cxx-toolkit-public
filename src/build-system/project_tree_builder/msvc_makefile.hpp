@@ -149,6 +149,10 @@ public:
                                    const string& source_file_full_path,
                                    const string& tree_src_dir) const;
     string GetPchUsageDefine      (void) const;
+    string GetDefaultPch(void) const
+    {
+        return GetPchInfo().m_DefaultPch;
+    }
 
 
 protected:

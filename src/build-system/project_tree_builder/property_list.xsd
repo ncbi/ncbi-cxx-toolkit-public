@@ -1,0 +1,71 @@
+<?xml version="1.0" ?>
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:ncbi="http://www.ncbi.nlm.nih.gov"
+  xmlns="http://www.ncbi.nlm.nih.gov"
+  targetNamespace="http://www.ncbi.nlm.nih.gov"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified">
+
+
+<xs:group name="plistObject">
+  <xs:choice>
+    <xs:element ref="array"/>
+
+<!-- Contents interpreted as Base-64 encoded  -->
+    <xs:element name="data" type="xs:base64Binary"/>
+
+<!-- Contents should conform to a subset of ISO 8601
+(in particular, YYYY '-' MM '-' DD 'T' HH ':' MM ':' SS 'Z'.
+ Smaller units may be omitted with a loss of precision)  -->
+    <xs:element name="date" type="xs:string"/>
+
+    <xs:element ref="dict"/>
+
+<!-- Contents should represent a floating point number matching
+("+" | "-")? d+ ("."d*)? ("E" ("+" | "-") d+)? where d is a digit 0-9.   -->
+    <xs:element name="real" type="xs:double"/>
+
+<!-- Contents should represent a (possibly signed) integer number in base 10  -->
+    <xs:element name="integer" type="xs:integer"/>
+
+<!--- Primitive types  -->
+    <xs:element name="string" type="xs:string"/>
+
+<!-- Boolean constant true -->
+    <xs:element name="true">
+      <xs:complexType/>
+    </xs:element>
+
+<!-- Boolean constant false  -->
+    <xs:element name="false">
+      <xs:complexType/>
+    </xs:element>
+  </xs:choice>
+</xs:group>
+
+<xs:element name="array">
+  <xs:complexType>
+    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+      <xs:group ref="plistObject"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="dict">
+  <xs:complexType>
+    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="key" type="xs:string"/>
+      <xs:group ref="plistObject"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="plist">
+  <xs:complexType>
+    <xs:group ref="plistObject"/>
+    <xs:attribute name="version" type="xs:string" use="optional" default="1.0"/>
+  </xs:complexType>
+</xs:element>
+
+</xs:schema>

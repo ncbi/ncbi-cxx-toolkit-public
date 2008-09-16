@@ -184,12 +184,14 @@ public:
         eMsvc710 = 0,
         eMsvc800,
         eMsvc900,
+        eXCode30,
         eMsvcNone
     };
     enum EMsvcPlatform {
         eMsvcWin32 = 0,
         eMsvcX64,
-        eUnix
+        eUnix,
+        eXCode
     };
 
     CMsvc7RegSettings(void);
@@ -202,6 +204,7 @@ public:
     string            m_MetaMakefile;
     string            m_DllInfo;
 
+    static void IdentifyPlatform(void);
     static EMsvcVersion    GetMsvcVersion(void)
     {
         return sm_MsvcVersion;
@@ -218,6 +221,7 @@ public:
     {
         return sm_MsvcPlatformName;
     }
+    static string          GetMsvcRegSection(void);
     static string          GetMsvcSection(void);
 
     static string    GetProjectFileFormatVersion(void);

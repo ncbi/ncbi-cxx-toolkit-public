@@ -1050,6 +1050,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         lib_or_dll = k->second.front();
     }
     string dll_host;
+//TODO: XCODE
     if (!lib_or_dll.empty() ||
         CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
         if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
@@ -1301,6 +1302,8 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
     case SMakeProjectT::SMakeInInfo::eXSD:
         if ( CDirEntry(source_file_path + ".xsd").Exists() )
             source_file_path += ".xsd";
+        break;
+    default:
         break;
     }
     if ( !CDirEntry(source_file_path).Exists() ) {
@@ -1685,8 +1688,9 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         }
         return;
     }
+//TODO: XCODE
     if (!is_root &&
-        CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
+        CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
         // on UNIX the build tree is already configured,
         // we check if this particular subtree is enabled (ie, exists) there
         string subtree =

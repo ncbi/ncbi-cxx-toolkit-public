@@ -53,6 +53,7 @@
 
 
 #define MSVC_REG_SECTION            "msvc"
+#define XCODE_REG_SECTION           "xcode"
 #define UNIX_REG_SECTION            "unix"
 #define MSVC_SOLUTION_HEADER_LINE   \
                 "Microsoft Visual Studio Solution File, Format Version "

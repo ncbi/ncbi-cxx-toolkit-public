@@ -25,9 +25,11 @@ SRC = file_contents \
       msvc_prj_files_collector \
       configurable_file \
       ptb_gui \
-      ptb_registry
+      ptb_registry \
+      mac_prj_generator \
+      prj_file_collector
 
-DATATOOL_SRC = msvc71_project
+DATATOOL_SRC = msvc71_project property_list
 
 
 LIB = xutil xncbi xregexp $(PCRE_LIB)

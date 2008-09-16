@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 //-----------------------------------------------------------------------------
 CMsvcMetaMakefile::CMsvcMetaMakefile(const string& file_path)
 {
-#if NCBI_COMPILER_MSVC
+#if defined(NCBI_COMPILER_MSVC) || defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
     if (CFile(file_path).Exists()) {
         CNcbiIfstream ifs(file_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
         //read registry
@@ -203,8 +203,7 @@ string CreateMsvcProjectMakefileName(const string&        project_name,
                    NStr::IntToString(type));
         break;
     }
-
-    name += "msvc";
+    name += GetApp().GetRegSettings().m_MakefilesExt;
     return name;
 }
 

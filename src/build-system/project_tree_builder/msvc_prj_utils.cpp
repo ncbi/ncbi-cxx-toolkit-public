@@ -437,7 +437,16 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
 
 
 //-----------------------------------------------------------------------------
-#if NCBI_COMPILER_MSVC
+#if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
+CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
+    CMsvc7RegSettings::eXCode30;
+string CMsvc7RegSettings::sm_MsvcVersionName = "30";
+
+CMsvc7RegSettings::EMsvcPlatform CMsvc7RegSettings::sm_MsvcPlatform =
+    CMsvc7RegSettings::eXCode;
+string CMsvc7RegSettings::sm_MsvcPlatformName = "i386";
+
+#elif defined(NCBI_COMPILER_MSVC)
 
 #if _MSC_VER >= 1500
 CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
@@ -475,18 +484,46 @@ string CMsvc7RegSettings::sm_MsvcPlatformName = "Unix";
 
 #endif // NCBI_COMPILER_MSVC
 
+void CMsvc7RegSettings::IdentifyPlatform()
+{
+#if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
+    string arch( CNcbiApplication::Instance()->GetEnvironment().Get("NATIVE_ARCH"));
+    if (!arch.empty()) {
+        sm_MsvcPlatformName = arch;
+    }
+    string xcode( CNcbiApplication::Instance()->GetEnvironment().Get("XCODE_VERSION_MAJOR"));
+    if (xcode >= "0300") {
+        sm_MsvcVersion = eXCode30;
+        sm_MsvcVersionName = "30";
+    }
+    sm_MsvcPlatform = eXCode;
+#endif
+}
 
-string CMsvc7RegSettings::GetMsvcSection(void)
+string CMsvc7RegSettings::GetMsvcRegSection(void)
 {
     if (GetMsvcPlatform() == eUnix) {
         return UNIX_REG_SECTION;
-    } else {
-        string s = string(MSVC_REG_SECTION) + GetMsvcVersionName();
-        if (GetMsvcPlatform() != eMsvcWin32) {
-            s += "." + GetMsvcPlatformName();
-        }
+    } else if (GetMsvcPlatform() == eXCode) {
+        return XCODE_REG_SECTION;
+    }
+    return MSVC_REG_SECTION;
+}
+
+string CMsvc7RegSettings::GetMsvcSection(void)
+{
+    string s(GetMsvcRegSection());
+    if (GetMsvcPlatform() == eUnix) {
+        return s;
+    } else if (GetMsvcPlatform() == eXCode) {
+        s += GetMsvcVersionName();
         return s;
     }
+    s += GetMsvcVersionName();
+    if (GetMsvcPlatform() != eMsvcWin32) {
+        s += "." + GetMsvcPlatformName();
+    }
+    return s;
 }
 
 CMsvc7RegSettings::CMsvc7RegSettings(void)
@@ -713,9 +750,11 @@ CSrcToFilterInserterWithPch::DefinePchUsage(const string& project_dir,
         return TPch(eNotUse, "");
 
 /*
- Documentation says:
+ MSVC documentation says:
  Although you can use only one precompiled header (.pch) file per source file,
  you can use multiple .pch files in a project.
+ Apple XCode:
+ Each target can have only one prefix header
 */
     if (m_PchHeaders.find(pch_file) == m_PchHeaders.end()) {
         // New PCH - this source file will create it
