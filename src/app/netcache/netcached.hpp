@@ -78,7 +78,8 @@ struct STraceEvent
 ///
 struct SNetCache_RequestStat
 {
-    CTime        conn_time;    ///< request incoming time in seconds
+    CTime        conn_time;    ///< connection incoming time in seconds
+    CTime        req_time;     ///< request incoming time in seconds
     unsigned     req_code;     ///< 'P' put, 'G' get
     SBDB_CacheUnitStatistics::EErrGetPut op_code; /// error opcode for BDB
     CStopWatch   elapsed_watch; /// watch for request elapsed time
@@ -116,6 +117,7 @@ struct SNetCache_RequestStat
     }
     void InitRequest() {
         elapsed_watch.Restart();
+        req_time.SetCurrent();
 #ifdef _DEBUG
         events.clear();
 #endif

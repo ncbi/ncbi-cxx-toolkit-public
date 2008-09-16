@@ -30,6 +30,7 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/request_ctx.hpp>
 
 #include "message_handler.hpp"
 #include "nc_handler.hpp"
@@ -43,57 +44,12 @@
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
-// MessageHandler implementation
-void MessageHandler::OnRead(void)
-{
-    CSocket &socket = GetSocket();
-    char read_buf[kNetworkBufferSize];
-    size_t n_read;
-
-    if (!m_InRequest) {
-        m_Stat.InitRequest();
-        m_InRequest = true;
-    }
-    EIO_Status status;
-    {{
-        CTimeGuard time_guard(m_Stat.comm_elapsed);
-        status = socket.Read(read_buf, sizeof(read_buf), &n_read);
-        ++m_Stat.io_blocks;
-    }}
-    switch (status) {
-    case eIO_Success:
-        break;
-    case eIO_Timeout:
-        this->OnTimeout();
-        return;
-    case eIO_Closed:
-        this->OnClose();
-        return;
-    default:
-        // TODO: ??? OnError
-        return;
-    }
-    int message_tail;
-    char *buf_ptr = read_buf;
-    for ( ;n_read > 0; ) {
-        message_tail = this->CheckMessage(&m_Buffer, buf_ptr, n_read);
-        // TODO: what should we do if message_tail > n_read?
-        if (message_tail < 0) {
-            return;
-        } else {
-            this->OnMessage(m_Buffer);
-        }
-        int consumed = n_read - message_tail;
-        buf_ptr += consumed;
-        n_read -= consumed;
-    }
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
 // CNetCache_MessageHandler implementation
 CNetCache_MessageHandler::CNetCache_MessageHandler(CNetCacheServer* server)
-    : m_Server(server), m_SeenCR(false),
+    : m_Server(server),
+    m_InRequest(false),
+    m_Buffer(0),
+    m_SeenCR(false),
     m_ICHandler(new CICacheHandler(this)),
     m_NCHandler(new CNetCacheHandler(this)),
     m_InTransmission(false), m_DelayedWrite(false),
@@ -169,7 +125,6 @@ int CNetCache_MessageHandler::CheckMessage(BUF* buffer, const void *data, size_t
                 if (m_Length == 0xffffffff) {
                     _TRACE("Got end of transmission, tail is " << (size-n-1) << " buf size " << BUF_Size(*buffer));
                     m_InTransmission = false;
-                    OnRequestEnd();
                     return size-n-1;
                 }
                 if (m_ByteSwap)
@@ -184,7 +139,7 @@ int CNetCache_MessageHandler::CheckMessage(BUF* buffer, const void *data, size_t
             m_Length -= chunk_len;
             n += chunk_len - 1;
             if (!m_Length) {
-                // Read next length, in next CheckMessage invokation
+                // Read next length, in next CheckMessage invocation
                 m_LenRead = 0;
                 return size-n-1;
             }
@@ -218,13 +173,64 @@ void CNetCache_MessageHandler::OnOpen(void)
 
 void CNetCache_MessageHandler::OnRead(void)
 {
+    x_InitDiagnostics();
+
     CCounterGuard pending_req_guard(m_Server->GetRequestCounter());
-    MessageHandler::OnRead();
+    CSocket &socket = GetSocket();
+    char read_buf[kNetworkBufferSize];
+    size_t n_read;
+
+    if (!m_InRequest) {
+        m_Stat.InitRequest();
+        m_InRequest = true;
+    }
+    EIO_Status status;
+    {{
+        CTimeGuard time_guard(m_Stat.comm_elapsed);
+        status = socket.Read(read_buf, sizeof(read_buf), &n_read);
+        ++m_Stat.io_blocks;
+    }}
+    switch (status) {
+    case eIO_Success:
+        break;
+    case eIO_Timeout:
+        this->OnTimeout();
+        m_InRequest = false;
+        return;
+    case eIO_Closed:
+        this->OnClose();
+        m_InRequest = false;
+        return;
+    default:
+        // TODO: ??? OnError
+        return;
+    }
+    int message_tail = 0;
+    char *buf_ptr = read_buf;
+    for ( ;n_read > 0 && message_tail >= 0; ) {
+        message_tail = this->CheckMessage(&m_Buffer, buf_ptr, n_read);
+        // TODO: what should we do if message_tail > n_read?
+        if (message_tail >= 0) {
+            this->OnMessage(m_Buffer);
+
+            int consumed = n_read - message_tail;
+            buf_ptr += consumed;
+            n_read -= consumed;
+        }
+    }
+
+    if (!m_InTransmission && !m_DelayedWrite) {
+        OnRequestEnd();
+    }
+
+    x_DeinitDiagnostics();
 }
 
 
 void CNetCache_MessageHandler::OnWrite(void)
 {
+    x_InitDiagnostics();
+
     CCounterGuard pending_req_guard(m_Server->GetRequestCounter());
     if (!m_DelayedWrite) return;
     if (!m_LastHandler) {
@@ -237,17 +243,23 @@ void CNetCache_MessageHandler::OnWrite(void)
     bool res = m_LastHandler->ProcessWrite();
     m_DelayedWrite = m_DelayedWrite && res;
     if (!m_DelayedWrite) OnRequestEnd();
+
+    x_DeinitDiagnostics();
 }
 
 
 void CNetCache_MessageHandler::OnClose(void)
 {
+    //x_InitDiagnostics();
+    //x_DeinitDiagnostics();
 }
 
 
 void CNetCache_MessageHandler::OnTimeout(void)
 {
+    x_InitDiagnostics();
     LOG_POST(Error << "Timeout, closing connection");
+    x_DeinitDiagnostics();
 }
 
 
@@ -262,7 +274,7 @@ void CNetCache_MessageHandler::OnMessage(BUF buffer)
 {
     if (m_Server->ShutdownRequested()) {
         WriteMsg("ERR:",
-            "NetSchedule server is shutting down. Session aborted.");
+            "NetCache server is shutting down. Session aborted.");
         return;
     }
 
@@ -296,7 +308,7 @@ void CNetCache_MessageHandler::ProcessMsgAuth(BUF buffer)
 }
 
 
-void CNetCache_MessageHandler::ProcessSM(CSocket& socket, string& req)
+void CNetCache_MessageHandler::ProcessSM(const CNCRequestParser& parser)
 {
     // SMR host pid     -- registration
     // or
@@ -307,19 +319,16 @@ void CNetCache_MessageHandler::ProcessSM(CSocket& socket, string& req)
         return;
     }
     do {
+        const string& cmd = parser.GetCommand();
         bool reg;
-        if (req.compare(0, 3, "SMR") == 0)
+        if (cmd == "SMR")
             reg = true;
-        else if (req.compare(0, 3, "SMU") == 0)
+        else if (cmd == "SMU")
             reg = false;
         else
             break;
-        req.erase(0, 3);
-        NStr::TruncateSpacesInPlace(req, NStr::eTrunc_Begin);
-        string host, port_str;
-        bool split = NStr::SplitInTwo(req, " ", host, port_str);
-        if (!split)
-            break;
+        string host = parser.GetParam(0);
+        string port_str = parser.GetParam(1);
         unsigned port = NStr::StringToUInt(port_str);
 
         if (!port || host.empty())
@@ -349,33 +358,31 @@ void CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
     string request;
     s_ReadBufToString(buffer, request);
     try {
-        {{
-        if (request.length() < 2) { 
-            WriteMsg("ERR:", "Invalid request");
-            m_Server->RegisterProtocolErr(
-                SBDB_CacheUnitStatistics::eErr_Unknown, request);
-            return;
-        }
+        CNCRequestParser parser(request);
+        const string& cmd = parser.GetCommand();
 
         // check if it is NC or IC
         _TRACE("Processing request " << request.substr(0, 100));
         m_Stat.request = request;
-        if (request[0] == 'I' && request[1] == 'C') {
+        if (cmd[0] == 'I' && cmd[1] == 'C') {
             // ICache request
             m_LastHandler = m_ICHandler.get();
             m_ICHandler->SetSocket(&socket);
-            m_ICHandler->ProcessRequest(request, m_Stat);
-        } else if (request[0] == 'A' && request[1] == '?') {
+            m_ICHandler->ProcessRequest(parser, m_Stat);
+        } else if (cmd == "A?") {
             // Alive?
             WriteMsg("OK:", "");
-        } else if (request[0] == 'S' && request[1] == 'M') {
+        } else if (cmd[0] == 'S' && cmd[1] == 'M') {
             // Session management
             if (1) m_Stat.type = "Session";
-            ProcessSM(socket, request);
+            ProcessSM(parser);
             // need to disconnect after reg-unreg
             close_socket = true;
-        } else if (request[0] == 'O' && request[1] == 'K') {
-        } else if (request == "MONI") {
+        } else if (cmd == "OK") {
+        } else if (cmd == "MONI") {
+            if (parser.GetParamsCount() >= 2) {
+                SetDiagParameters(parser.GetParam(0), parser.GetParam(1));
+            }
             socket.DisableOSSendDelay(false);
             WriteMsg("OK:", "Monitor for " NETCACHED_VERSION "\n");
             m_Server->SetMonitorSocket(socket);
@@ -383,41 +390,20 @@ void CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
             // NetCache request
             m_LastHandler = m_NCHandler.get();
             m_NCHandler->SetSocket(&socket);
-            m_NCHandler->ProcessRequest(request, m_Stat);
-        }
-        }}
-        if (!m_InTransmission && !m_DelayedWrite) {
-            OnRequestEnd();
-        }
-
-        // Monitoring
-        //
-        if (IsMonitoring()) {
-            string msg, tmp;
-            msg += m_Auth;
-            msg += "\"";
-            msg += request;
-            msg += "\" ";
-            msg += m_Stat.peer_address;
-            msg += "\n\t";
-            msg += "ConnTime=" + m_Stat.conn_time.AsString();
-            msg += " BLOB size=";
-            NStr::UInt8ToString(tmp, m_Stat.blob_size);
-            msg += tmp;
-            msg += " elapsed=";
-            msg += NStr::DoubleToString(m_Stat.elapsed, 5);
-            msg += " comm.elapsed=";
-            msg += NStr::DoubleToString(m_Stat.comm_elapsed, 5);
-            msg += "\n\t";
-            msg += m_Stat.type + ":" + m_Stat.details;
-
-            MonitorPost(msg);
+            m_NCHandler->ProcessRequest(parser, m_Stat);
         }
 
         if (close_socket) {
             socket.Close();
         }
     } 
+    catch (CNCReqParserException& ex)
+    {
+        ReportException(ex, "NC request parser error: ", request);
+        WriteMsg("ERR:", ex.GetMsg());
+        m_Server->RegisterProtocolErr(
+                            SBDB_CacheUnitStatistics::eErr_Unknown, m_Auth);
+    }
     catch (CNetCacheException &ex)
     {
         ReportException(ex, "NC Server error: ", request);
@@ -461,6 +447,9 @@ void CNetCache_MessageHandler::OnRequestEnd()
 {
     m_Stat.EndRequest();
     m_InRequest = false;
+    m_ClientIP.clear();
+    m_SessionID.clear();
+
     int level = m_Server->GetLogLevel();
     if (level >= CNetCacheServer::kLogLevelRequest ||
         (level >= CNetCacheServer::kLogLevelBase &&
@@ -503,6 +492,34 @@ void CNetCache_MessageHandler::OnRequestEnd()
 #endif
         ;
         LOG_POST(Error << (string) CNcbiOstrstreamToString(msg));
+    }
+
+    // Monitoring
+    //
+    if (IsMonitoring()) {
+        string msg, tmp;
+        msg += m_Stat.req_time.AsString();
+        msg += " (finish - ";
+        msg += CTime(CTime::eCurrent).AsString();
+        msg += ")\n\t";
+        msg += m_Auth;
+        msg += " \"";
+        msg += m_Stat.request;
+        msg += "\" ";
+        msg += m_Stat.peer_address;
+        msg += "\n\t";
+        msg += "ConnTime=" + m_Stat.conn_time.AsString();
+        msg += " BLOB size=";
+        NStr::UInt8ToString(tmp, m_Stat.blob_size);
+        msg += tmp;
+        msg += " elapsed=";
+        msg += NStr::DoubleToString(m_Stat.elapsed, 5);
+        msg += " comm.elapsed=";
+        msg += NStr::DoubleToString(m_Stat.comm_elapsed, 5);
+        msg += "\n\t";
+        msg += m_Stat.type + ":" + m_Stat.details;
+
+        MonitorPost(msg);
     }
 }
 
@@ -574,8 +591,42 @@ void CNetCache_MessageHandler::ProcessMsgTransmission(BUF buffer)
     }
     if (!m_InTransmission) {
         m_ProcessMessage = &CNetCache_MessageHandler::ProcessMsgRequest;
-        OnRequestEnd();
     }
+}
+
+void
+CNetCache_MessageHandler::x_InitDiagnostics(void)
+{
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    if (m_ClientIP.empty()) {
+        req.UnsetClientIP();
+    }
+    else {
+        req.SetClientIP(m_ClientIP);
+    }
+    if (m_SessionID.empty()) {
+        req.UnsetSessionID();
+    }
+    else {
+        req.SetSessionID(m_SessionID);
+    }
+}
+
+void
+CNetCache_MessageHandler::x_DeinitDiagnostics(void)
+{
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    req.UnsetClientIP();
+    req.UnsetSessionID();
+}
+
+void
+CNetCache_MessageHandler::SetDiagParameters(const string& client_ip,
+                                            const string& session_id)
+{
+    m_ClientIP = client_ip;
+    m_SessionID = NStr::URLDecode(session_id);
+    x_InitDiagnostics();
 }
 
 

@@ -284,21 +284,25 @@ public:
       m_Owner(owner),
       m_BlobLock(blob_lock.GetLockVector(), blob_lock.GetTimeout())
     {
+        //_TRACE("CBDB_CacheIWriter::CBDB_CacheIWriter point 1");
 //        m_Buffer = new unsigned char[m_Cache.GetOverflowLimit()];
         m_Buffer.reserve(4 * 1024);
         m_BlobLock.TakeFrom(blob_lock);
+        //_TRACE("CBDB_CacheIWriter::CBDB_CacheIWriter point 2");
     }
 
     virtual ~CBDB_CacheIWriter()
     {
+        //_TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 1");
         try {
-            bool upd_statistics = false;
+            //bool upd_statistics = false;
 		    if (/* !m_AttrUpdFlag || */ m_Buffer.size() != 0) {
 
 			    // Dumping the buffer
                 try {
                     //if (m_Buffer.size()) {
-                    if (!m_OverflowFile) {
+                    if (!m_OverflowFile  &&  !m_Flushed) {
+                        _TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 2");
                         m_Cache.x_Store(m_BlobIdExt,
                                         m_BlobKey,
                                         m_Version,
@@ -312,15 +316,18 @@ public:
 				        //delete[] m_Buffer; m_Buffer = 0;
                     }
                 } catch (CBDB_Exception& ) {
+                    //_TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 3");
                     m_Cache.KillBlob(m_BlobKey, m_Version, m_SubKey, 
                                      1,
                                      0);
                     throw;
                 }
+                //_TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 4");
 		    }
 
             if (m_OverflowFile) {
                 if (m_OverflowFile->is_open()) {
+                    //_TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 5");
                     m_OverflowFile->close();
                     try {
                         m_Cache.RegisterOverflow(m_BlobKey, m_Version, m_SubKey,
@@ -329,28 +336,28 @@ public:
                         m_Cache.KillBlob(m_BlobKey, m_Version, m_SubKey, 1, 0);
                         throw;
                     }
-                    upd_statistics = true;
+                    //_TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 6");
+                    //upd_statistics = true;
                 }
                 delete m_OverflowFile; m_OverflowFile = 0;
-            }
 
-            // statistics
-            // FIXME: ideally statistics should not sit on the same main mutex
-            /*
-            if (upd_statistics) {
-                try {
-                    CFastMutexGuard guard(m_Cache.m_DB_Lock);
-                    m_Cache.m_Statistics.AddStore(m_Owner,
-                                                  m_RequestTime,
-                                                  m_BlobStore,
-                                                  m_BlobUpdate,
-                                                  m_BlobSize,
-                                                  m_Overflow);
-                } catch (exception& ) {
-                    // ignore non critical exceptions
+                // statistics
+                // FIXME: ideally statistics should not sit on the same main mutex
+                if (/*upd_statistics && */m_Cache.IsSaveStatistics()) {
+                    try {
+                        CFastMutexGuard guard(m_Cache.m_DB_Lock);
+                        m_Cache.m_Statistics.AddStore(m_Owner,
+                                                      m_RequestTime,
+                                                      m_BlobStore,
+                                                      m_BlobUpdate,
+                                                      m_BlobSize,
+                                                      m_Overflow);
+                    } catch (exception& ) {
+                        // ignore non critical exceptions
+                    }
                 }
             }
-            */
+            //_TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 7");
 
         } catch (exception & ex) {
             ERR_POST_X(1, "Exception in ~CBDB_CacheIWriter() : " << ex.what()
@@ -373,6 +380,7 @@ public:
             return eRW_Success;
 //		m_AttrUpdFlag = false;
         m_BlobSize += count;
+        m_Flushed = false;
 
         // check BLOB size quota
         if (m_Cache.GetMaxBlobSize()) {
@@ -381,12 +389,12 @@ public:
                 m_Buffer.clear();
                 delete m_OverflowFile; m_OverflowFile = 0;
                 m_Cache.KillBlob(m_BlobKey, m_Version, m_SubKey, 1, 0);
-/* FIXME:
-                {{
-                CFastMutexGuard guard(m_Cache.m_DB_Lock);
-                m_Cache.m_Statistics.AddBlobQuotaError(m_Owner);
-                }}
-*/
+// FIXME:
+                if (m_Cache.IsSaveStatistics()) {
+                    CFastMutexGuard guard(m_Cache.m_DB_Lock);
+                    m_Cache.m_Statistics.AddBlobQuotaError(m_Owner);
+                }
+
                 string msg("BLOB larger than allowed. size=");
                 msg.append(NStr::UIntToString(m_BlobSize));
                 msg.append(" quota=");
@@ -469,8 +477,8 @@ public:
                                 m_Owner,
                                 false // do not lock blob
                                 );
-                m_BlobLock.Unlock();
-                return eRW_Success;
+                //m_BlobLock.Unlock();
+                //return eRW_Success;
             } 
             catch (exception&) {
                 m_Buffer.clear();
@@ -480,8 +488,8 @@ public:
 
 			//delete[] m_Buffer; m_Buffer = 0;
             //m_BytesInBuffer = 0;
-            m_Buffer.clear();
-            return eRW_Success;
+            //m_Buffer.clear();
+            //return eRW_Success;
         }
 
         if ( m_OverflowFile ) {
@@ -495,12 +503,12 @@ public:
                     BDB_THROW(eOverflowFileIO, 
                               "Error trying to flush an overflow file");
                 }
+/*
                 m_Cache.RegisterOverflow(m_BlobKey, m_Version, m_SubKey,
                                          m_TTL, m_Owner);
 
                 // FIXME:
-/*
-                {{
+                if (m_Cache.IsSaveStatistics()) {
                     CFastMutexGuard guard(m_Cache.m_DB_Lock);
                     try {
                         m_Cache.m_Statistics.AddStore(m_Owner,
@@ -512,9 +520,8 @@ public:
                     } catch (exception&) {
                         // ignore
                     }
-                }}
+                }
 */
-
             } catch (CBDB_Exception& ) {
                 m_Cache.KillBlob(m_BlobKey, m_Version, m_SubKey, 
                                  1,
@@ -1142,6 +1149,7 @@ CBDB_Cache::CBDB_Cache()
   m_CheckPointInterval(24 * (1024 * 1024)),
   m_OverflowLimit(512 * 1024),
   m_MaxTTL_prolong(0),
+  m_SaveStatistics(false),
   m_MaxBlobSize(0),
   m_RoundRobinVolumes(0),
   m_MempTrickle(10),
@@ -1473,6 +1481,7 @@ void CBDB_Cache::Open(const string& cache_path,
                 CBDB_Env::eBackground_MempTrickle  |
                 CBDB_Env::eBackground_Checkpoint   |
                 CBDB_Env::eBackground_DeadLockDetect;
+            //_TRACE("Running background writer with delay " << m_PurgeThreadDelay);
             m_Env->RunBackgroundWriter(flags, 
                                        m_PurgeThreadDelay, 
                                        m_MempTrickle);
@@ -1731,14 +1740,16 @@ void CBDB_Cache::DropBlob(const string&  key,
             if (!for_update) {   // permanent BLOB removal
                 m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
 
-                /* FIXME:
-                m_Statistics.AddExplDelete(m_TmpOwnerName);
-                if (0 == m_CacheAttrDB->read_count) {
-                    m_Statistics.AddNeverRead(m_TmpOwnerName);
+                // FIXME:
+                if (IsSaveStatistics()) {
+                    m_Statistics.AddExplDelete(m_TmpOwnerName);
+                    if (0 == m_CacheAttrDB->read_count) {
+                        m_Statistics.AddNeverRead(m_TmpOwnerName);
+                    }
+                    x_UpdateOwnerStatOnDelete(m_TmpOwnerName, 
+                                              true);//explicit del
                 }
-                x_UpdateOwnerStatOnDelete(m_TmpOwnerName, 
-                                          true);//explicit del
-                */
+
                 cur.Delete();
             }
 
@@ -1906,24 +1917,24 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
     if (IsReadOnly()) {
         return;
     }
+    //_TRACE("CBDB_Cache::x_Store point 1 size=" << size);
     unsigned coord[2] = {0,};
     unsigned overflow = 0, old_overflow = 0;
     EBDB_ErrCode ret;
 
     time_t curr = time(0);
-    // int tz_delta = m_LocalTimer.GetLocalTimezone();
+    int tz_delta = m_LocalTimer.GetLocalTimezone();
     
     // ----------------------------------------------------
     // check BLOB size quota
     // ----------------------------------------------------
     if (GetMaxBlobSize() && size > GetMaxBlobSize()) {
         // FIXME:
-        /*
-        {{
+        if (IsSaveStatistics()) {
             CFastMutexGuard guard(m_DB_Lock);
             m_Statistics.AddBlobQuotaError(owner);
-        }}
-        */
+        }
+
         string msg("BLOB larger than allowed. size=");
         msg.append(NStr::UIntToString(size));
         msg.append(" quota=");
@@ -1937,6 +1948,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
     // ----------------------------------------------------
 
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
+        //_TRACE("CBDB_Cache::x_Store point 2");
         Purge(key, subkey, 0, m_VersionFlag);
     }
 
@@ -1953,6 +1965,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
                     blob_lock, do_blob_lock, 
                     &coord[0], &coord[1],
                     &old_overflow);
+    //_TRACE("CBDB_Cache::x_Store point 3");
     _ASSERT(check_res != EBlobCheckIn_NotFound);
     _ASSERT(blob_lock.GetId());
 
@@ -1961,6 +1974,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
     try {
 
         if (size > GetOverflowLimit()) {
+            //_TRACE("CBDB_Cache::x_Store point 4");
             // ----------------------------------------------------
             // write overflow file
             // ----------------------------------------------------
@@ -1987,6 +2001,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
         
         if (overflow != old_overflow && check_res == eBlobCheckIn_Found) {
             if (overflow) { // BLOB goes from split to file
+                //_TRACE("CBDB_Cache::x_Store point 5");
                 // ----------------------------------------------------
                 // Delete old split store content
                 // ----------------------------------------------------
@@ -2016,6 +2031,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
                 trans.Commit();  
                 coord[0] = coord[1] = 0;
             } else {
+                //_TRACE("CBDB_Cache::x_Store point 6");
                 // ----------------------------------------------------
                 // Delete old overflow file
                 // ----------------------------------------------------
@@ -2029,15 +2045,18 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
         // ----------------------------------------------------
 
         {{
+            //_TRACE("CBDB_Cache::x_Store point 7");
             CBDB_Transaction trans(*m_Env,
                                     CBDB_Transaction::eEnvDefault,
                                     CBDB_Transaction::eNoAssociation);
             m_BLOB_SplitStore->SetTransaction(&trans);
+            //_TRACE("CBDB_Cache::x_Store point 32");
 
             m_BLOB_SplitStore->UpdateInsert(blob_id, 
                                             coord, 
                                             data, size, 
                                             coord);
+            //_TRACE("CBDB_Cache::x_Store point 33");
             trans.Commit();
         }}
 
@@ -2122,7 +2141,6 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
 
 
         // FIXME: locks, correct statistics, etc
-        /*
         unsigned blob_updated = 0;
         unsigned blob_stored  = 0;
         EBlobAccessType access_type;
@@ -2133,9 +2151,11 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
             blob_stored = 1;
         }
 
-        m_Statistics.AddStore(owner, curr - tz_delta, 
-                              blob_stored, blob_updated, size, overflow);
-        */
+        if (IsSaveStatistics()) {
+            CFastMutexGuard guard(m_DB_Lock);
+            m_Statistics.AddStore(owner, curr - tz_delta, 
+                                  blob_stored, blob_updated, size, overflow);
+        }
 
     } 
     catch (exception)
@@ -2338,7 +2358,7 @@ bool CBDB_Cache::Read(const string& key,
 	EBDB_ErrCode ret;
 
     time_t curr = time(0);
-    // int tz_delta = m_LocalTimer.GetLocalTimezone();
+    int tz_delta = m_LocalTimer.GetLocalTimezone();
 
 	int overflow;
     unsigned volume_id, split_id;
@@ -2395,10 +2415,12 @@ bool CBDB_Cache::Read(const string& key,
     _ASSERT(blob_id);
     trans.Commit();
 
-    /*  FIXME: locks, etc
+    //  FIXME: locks, etc
     m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
-    m_Statistics.AddRead(m_TmpOwnerName, curr - tz_delta);
-    */
+    if (IsSaveStatistics()) {
+        CFastMutexGuard guard(m_DB_Lock);
+        m_Statistics.AddRead(m_TmpOwnerName, curr - tz_delta);
+    }
 
     // read the data
 
@@ -2576,7 +2598,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 	EBDB_ErrCode ret;
 
     time_t curr = time(0);
-    // int tz_delta = m_LocalTimer.GetLocalTimezone();
+    int tz_delta = m_LocalTimer.GetLocalTimezone();
 	int overflow;
     unsigned volume_id, split_id;
 
@@ -2635,10 +2657,12 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     _ASSERT(blob_id);
     trans.Commit();
 
-    /*  FIXME: locks, statistics, etc
+    //  FIXME: locks, statistics, etc
     m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
-    m_Statistics.AddRead(m_TmpOwnerName, curr - tz_delta);
-    */
+    if (IsSaveStatistics()) {
+        CFastMutexGuard guard(m_DB_Lock);
+        m_Statistics.AddRead(m_TmpOwnerName, curr - tz_delta);
+    }
 
     if (overflow) {
         size_t bsize;
@@ -2779,7 +2803,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     EBDB_ErrCode ret;
 
     time_t curr = time(0);
-    // int tz_delta = m_LocalTimer.GetLocalTimezone();
+    int tz_delta = m_LocalTimer.GetLocalTimezone();
 	int overflow;
     unsigned volume_id, split_id;
 
@@ -2837,10 +2861,12 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     _ASSERT(blob_id);
     trans.Commit();
 
-    /*  FIXME: locks, statistics, etc
+    //  FIXME: locks, statistics, etc
     m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
-    m_Statistics.AddRead(m_TmpOwnerName, curr - tz_delta);
-    */
+    if (IsSaveStatistics()) {
+        CFastMutexGuard guard(m_DB_Lock);
+        m_Statistics.AddRead(m_TmpOwnerName, curr - tz_delta);
+    }
 
 
 // Here we have a race(sic!) between overflow flag read/write and blob_id locking
@@ -3083,10 +3109,13 @@ IWriter* CBDB_Cache::GetWriteStream(unsigned         blob_id_ext,
         return 0;
     }
 
+    //_TRACE("CBDB_Cache::GetWriteStream point 1");
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
+        //_TRACE("CBDB_Cache::GetWriteStream point 2");
         Purge(key, subkey, 0, m_VersionFlag);
     }
 
+    //_TRACE("CBDB_Cache::GetWriteStream point 3");
     if (m_MaxTimeout) {
         if (time_to_live > m_MaxTimeout) {
             time_to_live = m_MaxTimeout;
@@ -3114,6 +3143,7 @@ IWriter* CBDB_Cache::GetWriteStream(unsigned         blob_id_ext,
                     blob_lock, do_id_lock,
                     &coord[0], &coord[1],
                     &overflow);
+    //_TRACE("CBDB_Cache::GetWriteStream point 4");
     _ASSERT(check_res != EBlobCheckIn_NotFound);
     _ASSERT(blob_lock.GetId());
 
@@ -3161,13 +3191,15 @@ void CBDB_Cache::Remove(const string& key)
             cache_elements.push_back(
                 SCacheDescr(key, version, subkey, overflow, blob_id));
 
-            unsigned read_count = m_CacheAttrDB->read_count;
-            m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
-            if (0 == read_count) {
-                m_Statistics.AddNeverRead(m_TmpOwnerName);
+            if (IsSaveStatistics()) {
+                unsigned read_count = m_CacheAttrDB->read_count;
+                m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
+                if (0 == read_count) {
+                    m_Statistics.AddNeverRead(m_TmpOwnerName);
+                }
+                m_Statistics.AddExplDelete(m_TmpOwnerName);
+                x_UpdateOwnerStatOnDelete(m_TmpOwnerName, true/*expl-delete*/);
             }
-            m_Statistics.AddExplDelete(m_TmpOwnerName);
-            x_UpdateOwnerStatOnDelete(m_TmpOwnerName, true/*expl-delete*/);
         }
     }} // m_DB_Lock
 
@@ -3231,13 +3263,15 @@ void CBDB_Cache::Remove(const string&    key,
         cache_elements.push_back(
             SCacheDescr(key, version, subkey, overflow, blob_id));
 
-        unsigned read_count = m_CacheAttrDB->read_count;
-        m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
-        if (0 == read_count) {
-            m_Statistics.AddNeverRead(m_TmpOwnerName);
+        if (IsSaveStatistics()) {
+            unsigned read_count = m_CacheAttrDB->read_count;
+            m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
+            if (0 == read_count) {
+                m_Statistics.AddNeverRead(m_TmpOwnerName);
+            }
+            m_Statistics.AddExplDelete(m_TmpOwnerName);
+            x_UpdateOwnerStatOnDelete(m_TmpOwnerName, true/*expl-delete*/);
         }
-        m_Statistics.AddExplDelete(m_TmpOwnerName);
-        x_UpdateOwnerStatOnDelete(m_TmpOwnerName, true/*expl-delete*/);
     }
 
     }} // m_DB_Lock
@@ -3860,15 +3894,17 @@ purge_start:
 
                     m_CacheAttrDB_RO2->owner_name.ToString(m_TmpOwnerName);
                     
-                    /* FIXME: statistics, locking, etc
-                    if (0 == m_CacheAttrDB_RO2->read_count) {
-                        m_Statistics.AddNeverRead(m_TmpOwnerName);
+                    // FIXME: statistics, locking, etc
+                    if (IsSaveStatistics()) {
+                        CFastMutexGuard guard(m_DB_Lock);
+                        if (0 == m_CacheAttrDB_RO2->read_count) {
+                            m_Statistics.AddNeverRead(m_TmpOwnerName);
+                        }
+                        m_Statistics.AddPurgeDelete(m_TmpOwnerName);
+                        x_UpdateOwnerStatOnDelete(m_TmpOwnerName, 
+                                                  false//non-expl-delete
+                                                  );
                     }
-                    m_Statistics.AddPurgeDelete(m_TmpOwnerName);
-                    x_UpdateOwnerStatOnDelete(m_TmpOwnerName, 
-                                              false//non-expl-delete
-                                              );
-                    */
 
                     cache_entries.push_back(
                          SCacheDescr(key, version, subkey, overflow, blob_id));
@@ -4025,10 +4061,10 @@ purge_start:
 
     ++m_PurgeCount;
 
-    {{
-    CFastMutexGuard guard(m_DB_Lock);
-    m_Statistics.GlobalStatistics().blobs_db = db_recs;
-    }}
+    if (IsSaveStatistics()) {
+        CFastMutexGuard guard(m_DB_Lock);
+        m_Statistics.GlobalStatistics().blobs_db = db_recs;
+    }
 
     if ((m_PurgeCount % 200) == 0) {
         m_BLOB_SplitStore->Save();
@@ -4140,14 +4176,16 @@ void CBDB_Cache::Purge(const string&    key,
             cache_entries.push_back(
                      SCacheDescr(x_key, version, x_subkey, overflow, blob_id));
 
-            unsigned read_count = m_CacheAttrDB->read_count;
-            m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
-            if (0 == read_count) {
-                m_Statistics.AddNeverRead(m_TmpOwnerName);
+            if (IsSaveStatistics()) {
+                unsigned read_count = m_CacheAttrDB->read_count;
+                m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
+                if (0 == read_count) {
+                    m_Statistics.AddNeverRead(m_TmpOwnerName);
+                }
+                m_Statistics.AddPurgeDelete(m_TmpOwnerName);
+                x_UpdateOwnerStatOnDelete(m_TmpOwnerName, 
+                                          false/*non-expl-delete*/);
             }
-            m_Statistics.AddPurgeDelete(m_TmpOwnerName);
-            x_UpdateOwnerStatOnDelete(m_TmpOwnerName, 
-                                      false/*non-expl-delete*/);
             
 
             continue;
@@ -4917,32 +4955,40 @@ void CBDB_Cache::RegisterInternalError(
         SBDB_CacheUnitStatistics::EErrGetPut operation,
         const string&                        owner)
 {
-    CFastMutexGuard guard(m_DB_Lock);
-    m_Statistics.AddInternalError(owner, operation);
+    if (IsSaveStatistics()) {
+        CFastMutexGuard guard(m_DB_Lock);
+        m_Statistics.AddInternalError(owner, operation);
+    }
 }
 
 void CBDB_Cache::RegisterProtocolError(
                             SBDB_CacheUnitStatistics::EErrGetPut operation,
                             const string&                        owner)
 {
-    CFastMutexGuard guard(m_DB_Lock);
-    m_Statistics.AddProtocolError(owner, operation);
+    if (IsSaveStatistics()) {
+        CFastMutexGuard guard(m_DB_Lock);
+        m_Statistics.AddProtocolError(owner, operation);
+    }
 }
 
 void CBDB_Cache::RegisterNoBlobError(
                              SBDB_CacheUnitStatistics::EErrGetPut operation,
                              const string&                        owner)
 {
-    CFastMutexGuard guard(m_DB_Lock);
-    m_Statistics.AddNoBlobError(owner, operation);
+    if (IsSaveStatistics()) {
+        CFastMutexGuard guard(m_DB_Lock);
+        m_Statistics.AddNoBlobError(owner, operation);
+    }
 }
 
 void CBDB_Cache::RegisterCommError(
                               SBDB_CacheUnitStatistics::EErrGetPut operation, 
                               const string&                        owner)
 {
-    CFastMutexGuard guard(m_DB_Lock);
-    m_Statistics.AddCommError(owner, operation);
+    if (IsSaveStatistics()) {
+        CFastMutexGuard guard(m_DB_Lock);
+        m_Statistics.AddCommError(owner, operation);
+    }
 }
 
 

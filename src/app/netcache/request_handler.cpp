@@ -28,12 +28,71 @@
  * File Description: Network cache daemon
  *
  */
+
 #include <ncbi_pch.hpp>
 
+#include <corelib/ncbimisc.hpp>
 #include "request_handler.hpp"
 
 
 BEGIN_NCBI_SCOPE
+
+const char*
+CNCReqParserException::GetErrCodeString(void) const
+{
+    switch (GetErrCode())
+    {
+    case eWrongFormat:    return "eWrongFormat";
+    case eNotCommand:     return "eNotCommand";
+    case eWrongParamsCnt: return "eWrongParamsCnt";
+    case eWrongParams:    return "eWrongParams";
+    default:              return CException::GetErrCodeString();
+    }
+}
+
+
+CNCRequestParser::CNCRequestParser(const string& request)
+{
+    const char* s = request.c_str();
+    string tmp_str;
+    while (*s != 0) {
+        for (; *s && isspace(*s); ++s)
+        {}
+
+        tmp_str.clear();
+        bool is_quoted;
+        if (*s == '"') {
+            is_quoted = true;
+            ++s;
+        }
+        else {
+            is_quoted = false;
+        }
+
+        for (; *s  &&  (     is_quoted  &&  *s != '"'
+                        ||  !is_quoted  &&  !isspace(*s)); ++s)
+        {
+            tmp_str.append(1, *s);
+        }
+        if (is_quoted  &&  *s != '"') {
+            NCBI_THROW(CNCReqParserException, eWrongFormat,
+                       "Invalid request: unfinished quoting");
+        }
+        else if (is_quoted) {
+            ++s;
+        }
+
+        if (!tmp_str.empty()  ||  is_quoted) {
+            m_Params.push_back(tmp_str);
+        }
+    }
+
+    if (m_Params.size() == 0  ||  m_Params[0].size() < 2) {
+        NCBI_THROW(CNCReqParserException, eNotCommand,
+                  "Invalid request: command not mentioned");
+    }
+}
+
 
 CNetCache_RequestHandler::CNetCache_RequestHandler(
     CNetCache_RequestHandlerHost* host)
@@ -44,5 +103,24 @@ CNetCache_RequestHandler::CNetCache_RequestHandler(
     m_Stat   = m_Host->GetStat();
     m_Auth   = m_Host->GetAuth();
 }
+
+void
+CNetCache_RequestHandler::CheckParamsCount(const CNCRequestParser& parser,
+                                           size_t                  need_cnt)
+{
+    size_t params_cnt = parser.GetParamsCount();
+    if (params_cnt < need_cnt
+        ||  params_cnt > need_cnt + 2
+        ||  params_cnt == need_cnt + 1)
+    {
+        NCBI_THROW(CNCReqParserException, eWrongParamsCnt,
+                   "Incorrect number of parameters to command '"
+                   + parser.GetCommand() + "'");
+    }
+
+    m_Host->SetDiagParameters(parser.GetParam(need_cnt),
+                              parser.GetParam(need_cnt + 1));
+}
+
 
 END_NCBI_SCOPE

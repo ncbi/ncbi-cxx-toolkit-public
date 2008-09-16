@@ -35,41 +35,17 @@
 
 BEGIN_NCBI_SCOPE
 
-// Clone of IServer_MessageHandler with read timing added
-// Unfortunately, CServer standard abstract class, implementing
+// All of IServer_MessageHandler functionality is copied with read timing
+// added. Unfortunately, CServer standard abstract class, implementing
 // message handling functionality does not expose socket Read
 // method. We need to surround this method by timing accounting,
-// so we duplicated this class here with timing added.
-class MessageHandler :
-    public IServer_ConnectionHandler
-{
-public:
-    MessageHandler() :
-        m_Buffer(0)
-    { }
-    virtual ~MessageHandler() { BUF_Destroy(m_Buffer); }
-
-    // IServer_MessageHandler signature
-    virtual void OnRead(void);
-    virtual int CheckMessage(BUF* buffer, const void *data, size_t size) = 0;
-    virtual void OnMessage(BUF buffer) = 0;
-
-protected:
-    bool                  m_InRequest;
-    // Statistics
-    SNetCache_RequestStat m_Stat;
-
-private:
-    // IServer_MessageHandling implementation
-    BUF m_Buffer;
-};
-
-
-class CNetCache_MessageHandler : public MessageHandler,
+// so we duplicated this code here with timing added.
+class CNetCache_MessageHandler : public IServer_ConnectionHandler,
     public CNetCache_RequestHandlerHost
 {
 public:
     CNetCache_MessageHandler(CNetCacheServer* server);
+    virtual ~CNetCache_MessageHandler(void) { BUF_Destroy(m_Buffer); }
     // MessageHandler protocol
     virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const;
     virtual void OnOpen(void);
@@ -95,6 +71,8 @@ public:
     virtual CNetCacheServer* GetServer();
     virtual SNetCache_RequestStat* GetStat();
     virtual const string* GetAuth();
+    virtual void SetDiagParameters(const string& client_ip,
+                                   const string& session_id);
 
 protected:
     void WriteMsg(const string& prefix, const string& msg)
@@ -124,10 +102,22 @@ private:
     // Phase of connection - login, queue, command, batch submit etc.
     void (CNetCache_MessageHandler::*m_ProcessMessage)(BUF buffer);
 
-    void ProcessSM(CSocket& socket, string& req);
+    void ProcessSM(const CNCRequestParser& parser);
+
+    /// Init diagnostics Client IP and Session ID for proper logging
+    void x_InitDiagnostics(void);
+    /// Reset diagnostics Client IP and Session ID to avoid logging
+    /// not related to the request
+    void x_DeinitDiagnostics(void);
 
 private:
     CNetCacheServer* m_Server;
+
+    bool                  m_InRequest;
+    // Statistics
+    SNetCache_RequestStat m_Stat;
+    // IServer_MessageHandling implementation
+    BUF m_Buffer;
 
     // Line message handling
     bool             m_SeenCR;
@@ -145,10 +135,16 @@ private:
     auto_ptr<CNetCache_RequestHandler> m_ICHandler;
     auto_ptr<CNetCache_RequestHandler> m_NCHandler;
 
-    // Continuous read flag
+    /// Continuous read flag
     bool m_InTransmission;
-    // Delayed write flag
+    /// Delayed write flag
     bool m_DelayedWrite;
+    /// Client IP for current request. It will be set in diagnostics for
+    /// proper logging.
+    string m_ClientIP;
+    /// Session ID for current request. It will be set in diagnostics for
+    /// proper logging.
+    string m_SessionID;
     // By original design, connection can process a mix of commands from
     // both NC and IC subsets. Commands that require Read Transmission or
     // DelayedWrite are processed in more than one request, and we need to

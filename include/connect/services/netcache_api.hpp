@@ -217,6 +217,8 @@ private:
     CNetServerConnection x_PutInitiate(
         string*  key, unsigned  time_to_live);
 
+    string x_MakeCommand(const string& cmd) const;
+
     CNetCacheAPI(const CNetCacheAPI&);
     CNetCacheAPI& operator=(const CNetCacheAPI&);
 

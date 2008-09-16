@@ -162,9 +162,8 @@ protected:
     /// throws an exception if it cannot establish connection
     bool CheckConnect();
 
-    void MakeCommandPacket(string* out_str,
-                           const string& cmd_str,
-                           bool          connected) const;
+    string MakeCommandPacket(const string& cmd_str,
+                             bool          connected) const;
     void AddKVS(string*          out_str,
                 const string&    key,
                 int              version,

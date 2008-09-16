@@ -497,6 +497,16 @@ public:
     /// Drop the previously collected statistics
     void InitStatistics();
 
+    void SetSaveStatistics(bool save)
+    {
+        m_SaveStatistics = save;
+    }
+
+    bool IsSaveStatistics(void) const
+    {
+        return m_SaveStatistics;
+    }
+
 
     /// Lock cache access
     void Lock();
@@ -935,6 +945,8 @@ private:
 
     /// Stat counters
     SBDB_CacheStatistics       m_Statistics;
+    /// If it's necessary to store work statistics or not
+    bool                       m_SaveStatistics;
     /// used by x_UpdateOwnerStatOnDelete
     string                     m_TmpOwnerName;
     /// Fast local timer

@@ -33,295 +33,110 @@
 #include "nc_handler.hpp"
 #include "netcache_version.hpp"
 
+
 BEGIN_NCBI_SCOPE
 
-CNetCacheHandler::CNetCacheHandler(CNetCache_RequestHandlerHost* host) :
-    CNetCache_RequestHandler(host), m_PutOK(false)
-{}
 
-void CNetCacheHandler::ParseRequest(const string& reqstr, SNC_Request* req)
+const size_t kVariableParamsCnt = (size_t)-1;
+
+
+CNetCacheHandler::CNetCacheHandler(CNetCache_RequestHandlerHost* host)
+    : CNetCache_RequestHandler(host),
+      m_PutOK(false)
 {
-    const char* s = reqstr.c_str();
+#define NC_PROCESSOR(func, cnt)  SProcessorInfo(&CNetCacheHandler::func, cnt);
 
+    // All accepted commands
+    m_Processors["PUT"     ] = NC_PROCESSOR(ProcessPut,  kVariableParamsCnt);
+    m_Processors["PUT2"    ] = NC_PROCESSOR(ProcessPut2, kVariableParamsCnt);
+    m_Processors["PUT3"    ] = NC_PROCESSOR(ProcessPut3, kVariableParamsCnt);
+    m_Processors["GET"     ] = NC_PROCESSOR(ProcessGet,  kVariableParamsCnt);
+    m_Processors["GET2"    ] = NC_PROCESSOR(ProcessGet,  kVariableParamsCnt);
+    m_Processors["GETCONF" ] = NC_PROCESSOR(ProcessGetConfig,    0);
+    m_Processors["GETSTAT" ] = NC_PROCESSOR(ProcessGetStat,      0);
+    m_Processors["GSIZ"    ] = NC_PROCESSOR(ProcessGetSize,      1);
+    m_Processors["GBOW"    ] = NC_PROCESSOR(ProcessGetBlobOwner, 1);
+    m_Processors["HASB"    ] = NC_PROCESSOR(ProcessHasBlob,      1);
+    m_Processors["ISLK"    ] = NC_PROCESSOR(ProcessIsLock,       1);
+    m_Processors["REMOVE"  ] = NC_PROCESSOR(ProcessRemove,       1);
+    m_Processors["RMV2"    ] = NC_PROCESSOR(ProcessRemove2,      1);
+    m_Processors["DROPSTAT"] = NC_PROCESSOR(ProcessDropStat,     0);
+    m_Processors["SHUTDOWN"] = NC_PROCESSOR(ProcessShutdown,     0);
+    m_Processors["STAT"    ] = NC_PROCESSOR(ProcessStat,         1);
+    m_Processors["VERSION" ] = NC_PROCESSOR(ProcessVersion,      0);
+    m_Processors["LOG"     ] = NC_PROCESSOR(ProcessLog,          1);
 
-    switch (s[0]) {
-
-    case 'P':
-
-        if (strncmp(s, "PUT3", 4) == 0) {
-            req->req_type = ePut3;
-            req->timeout = 0;
-            req->req_id.erase();
-
-            s += 4;
-            x_ParsePutArgs(s, req);
-            return;
-        } // PUT3
-
-        if (strncmp(s, "PUT2", 4) == 0) {
-            req->req_type = ePut2;
-            req->timeout = 0;
-            req->req_id.erase();
-
-            s += 4;
-            x_ParsePutArgs(s, req);
-            return;
-        } // PUT2
-
-        if (strncmp(s, "PUT", 3) == 0) {
-            req->req_type = ePut;
-            req->timeout = 0;
-            req->req_id.erase();
-
-            s += 3;
-            x_ParsePutArgs(s, req);
-            return;
-        } // PUT
-        break;
-
-    case 'G':
-
-        if (strncmp(s, "GET2", 4) == 0) {
-            req->req_type = eGet;
-            s += 4;
-            x_ParseGetArgs(s, req);
-            return;
-        }
-
-        if (strncmp(s, "GET", 3) == 0) {
-            req->req_type = eGet;
-            s += 3;
-
-            if (isspace((unsigned char)(*s))) { // "GET"
-                x_ParseGetArgs(s, req);
-                return;
-
-            } else { // GET...
-                if (strncmp(s, "CONF", 4) == 0) {
-                    req->req_type = eGetConfig;
-                    s += 4;
-                    return;
-                } // GETCONF
-
-                if (strncmp(s, "STAT", 4) == 0) {
-                    req->req_type = eGetStat;
-                    s += 4;
-                    return;
-                } // GETSTAT
-            }
-        } // GET*
-
-        if (strncmp(s, "GSIZ", 4) == 0) {
-            req->req_type = eGetSize;
-            s += 4;
-            x_ParseBlobId(s, req);
-            return;
-        }
-
-        if (strncmp(s, "GBOW", 4) == 0) {  // get blob owner
-            req->req_type = eGetBlobOwner;
-            s += 4;
-            x_ParseBlobId(s, req);
-            return;
-        } // GBOW
-
-        break;
-
-    case 'H':
-        if (strncmp(s, "HASB", 4) == 0) {  // has blob
-            req->req_type = eHasBlob;
-            s += 4;
-            x_ParseBlobId(s, req);
-            return;
-        } // HASB
-
-        break;
-
-    case 'I':
-
-        if (strncmp(s, "ISLK", 4) == 0) {
-            req->req_type = eIsLock;
-            s += 4;
-            x_ParseBlobId(s, req);
-            return;
-        }
-
-        break;
-
-    case 'R':
-
-        if (strncmp(s, "RMV2", 4) == 0) {
-            req->req_type = eRemove2;
-            s += 4;
-            x_ParseBlobId(s, req);
-            return;
-        } // REMOVE
-
-        if (strncmp(s, "REMOVE", 3) == 0) {
-            req->req_type = eRemove;
-            s += 6;
-            x_ParseBlobId(s, req);
-            return;
-        } // REMOVE
-
-        break;
-
-    case 'D':
-
-        if (strncmp(s, "DROPSTAT", 8) == 0) {
-            req->req_type = eDropStat;
-            s += 8;
-            return;
-        } // DROPSTAT
-
-        break;
-
-    case 'S':
-
-        if (strncmp(s, "SHUTDOWN", 7) == 0) {
-            req->req_type = eShutdown;
-            return;
-        } // SHUTDOWN
-
-        break;
-
-    case 'V':
-
-        if (strncmp(s, "VERSION", 7) == 0) {
-            req->req_type = eVersion;
-            return;
-        } // VERSION
-
-        break;
-
-    case 'L':
-
-        if (strncmp(s, "LOG", 3) == 0) {
-            req->req_type = eLogging;
-            s += 3;
-            // "ON/OFF" instead of blob_id in this case
-            x_ParseBlobId(s, req);
-            return;
-        } // LOG
-
-        break;
-
-    default:
-        break;
-    
-    } // switch
-
-
-    req->req_type = eError;
-    req->err_msg = "Unknown request";
+#undef NC_PROCESSOR
 }
 
-
-void CNetCacheHandler::ProcessRequest(string&                request,
-                                      SNetCache_RequestStat& stat)
+void
+CNetCacheHandler::x_CheckBlobIdParam(const string& req_id)
 {
-    CSocket& socket = GetSocket();
-    SNC_Request req;
-    ParseRequest(request, &req);
-
-    if (1) { // was conditional, may be it still makes sense
-        stat.type = "NC";
-        stat.blob_id = req.req_id;
-        stat.details = req.req_id;
+    if (req_id.empty()) {
+        NCBI_THROW(CNCReqParserException, eWrongParams,
+                   "Error in command parameter: BLOB id is empty");
     }
 
+    try {
+        CNetCache_Key blob_id(req_id);
+        if (blob_id.version != 1     ||
+            blob_id.hostname.empty() ||
+            blob_id.id == 0          ||
+            blob_id.port == 0) 
+        {
+            NCBI_THROW(CNCReqParserException, eWrongParams,
+                       "BLOB id format error.");
+        }
+    }
+    catch (CNetCacheException& ex) {
+        NCBI_THROW(CNCReqParserException, eWrongParams,
+                   "BLOB id format error: " + ex.GetMsg());
+    }
+}
+
+void CNetCacheHandler::ProcessRequest(CNCRequestParser&      parser,
+                                      SNetCache_RequestStat& stat)
+{
+    stat.type = "NC";
     stat.op_code = SBDB_CacheUnitStatistics::eErr_Unknown;
-    switch (req.req_type) {
-    case ePut:
-        stat.op_code = SBDB_CacheUnitStatistics::eErr_Put;
-        stat.req_code = 'P';
-        ProcessPut(socket, req, stat);
-        break;
-    case ePut2:
-        stat.op_code = SBDB_CacheUnitStatistics::eErr_Put;
-        stat.req_code = 'P';
-        ProcessPut2(socket, req, stat);
-        break;
-    case ePut3:
-        stat.op_code = SBDB_CacheUnitStatistics::eErr_Put;
-        stat.req_code = 'P';
-        ProcessPut3(socket, req, stat);
-        break;
-    case eGet:
-        stat.op_code = SBDB_CacheUnitStatistics::eErr_Get;
-        stat.req_code = 'G';
-        ProcessGet(socket, req, stat);
-        break;
-    case eShutdown:
-        stat.req_code = 'S';
-        ProcessShutdown(socket);
-        break;
-    case eGetConfig:
-        stat.req_code = 'C';
-        ProcessGetConfig(socket);
-        break;
-    case eGetStat:
-        stat.req_code = 'T';
-        ProcessGetStat(socket, req);
-        break;
-    case eDropStat:
-        stat.req_code = 'D';
-        ProcessDropStat(socket);
-        break;
-    case eHasBlob:
-        ProcessHasBlob(socket, req);
-        break;
-    case eGetBlobOwner:
-        ProcessGetBlobOwner(socket, req);
-        break;
-    case eVersion:
-        stat.req_code = 'V';
-        ProcessVersion(socket, req);
-        break;
-    case eRemove:
-        stat.req_code = 'R';
-        ProcessRemove(socket, req);
-        break;
-    case eRemove2:
-        stat.req_code = 'R';
-        ProcessRemove2(socket, req);
-        break;
-    case eLogging:
-        stat.req_code = 'L';
-        ProcessLog(socket, req);
-        break;
-    case eIsLock:
-        stat.req_code = 'K';
-        ProcessIsLock(socket, req);
-        break;
-    case eGetSize:
-        stat.req_code = 'G';
-        ProcessGetSize(socket, req);
-        break;
-    case eError:
-        WriteMsg(socket, "ERR:", req.err_msg);
-        m_Server->RegisterProtocolErr(
-            SBDB_CacheUnitStatistics::eErr_Unknown, *m_Auth);
-        break;
-    default:
-        _ASSERT(0);
-    } // switch
+
+    TProcessorsMap::iterator it = m_Processors.find(parser.GetCommand());
+    if (it == m_Processors.end()) {
+        NCBI_THROW(CNCReqParserException, eNotCommand,
+                   "Invalid command for NetCache: " + parser.GetCommand());
+    }
+
+    size_t need_cnt = it->second.params_cnt;
+    if (need_cnt != kVariableParamsCnt) {
+        CheckParamsCount(parser, need_cnt);
+    }
+
+    (this->*it->second.func)(parser, stat);
+
+    stat.details = stat.blob_id;
 }
 
 
-void CNetCacheHandler::ProcessShutdown(CSocket& sock)
-{    
+void
+CNetCacheHandler::ProcessShutdown(const CNCRequestParser& parser,
+                                  SNetCache_RequestStat&  /* stat */)
+{
     m_Server->SetShutdownFlag();
-    WriteMsg(sock, "OK:", "");
+    WriteMsg(GetSocket(), "OK:", "");
 }
 
-void CNetCacheHandler::ProcessVersion(CSocket& sock, const SNC_Request& req)
+void
+CNetCacheHandler::ProcessVersion(const CNCRequestParser& parser,
+                                 SNetCache_RequestStat&  /* stat */)
 {
-    WriteMsg(sock, "OK:", NETCACHED_VERSION); 
+    WriteMsg(GetSocket(), "OK:", NETCACHED_VERSION); 
 }
 
-void CNetCacheHandler::ProcessGetConfig(CSocket& sock)
+void
+CNetCacheHandler::ProcessGetConfig(const CNCRequestParser& parser,
+                                   SNetCache_RequestStat&  /* stat */)
 {
+    CSocket& sock = GetSocket();
     SOCK sk = sock.GetSOCK();
     sock.SetOwnership(eNoOwnership);
     sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
@@ -330,10 +145,13 @@ void CNetCacheHandler::ProcessGetConfig(CSocket& sock)
     m_Server->GetRegistry().Write(ios);
 }
 
-void CNetCacheHandler::ProcessGetStat(CSocket& sock, const SNC_Request& req)
+void
+CNetCacheHandler::ProcessGetStat(const CNCRequestParser& parser,
+                                 SNetCache_RequestStat&  /* stat */)
 {
     //CNcbiRegistry reg;
 
+    CSocket& sock = GetSocket();
     SOCK sk = sock.GetSOCK();
     sock.SetOwnership(eNoOwnership);
     sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
@@ -361,44 +179,43 @@ void CNetCacheHandler::ProcessGetStat(CSocket& sock, const SNC_Request& req)
     //reg.Write(ios,  CNcbiRegistry::fTransient | CNcbiRegistry::fPersistent);
 }
 
-void CNetCacheHandler::ProcessDropStat(CSocket& sock)
+void
+CNetCacheHandler::ProcessDropStat(const CNCRequestParser& parser,
+                                  SNetCache_RequestStat&  /* stat */)
 {
     CBDB_Cache* bdb_cache = m_Server->GetCache();
     if (!bdb_cache) {
         return;
     }
 	bdb_cache->InitStatistics();
-    WriteMsg(sock, "OK:", "");
+    WriteMsg(GetSocket(), "OK:", "");
 }
 
 
-void CNetCacheHandler::ProcessRemove(CSocket& sock, const SNC_Request& req)
+void
+CNetCacheHandler::ProcessRemove(const CNCRequestParser& parser,
+                                SNetCache_RequestStat&  /* stat */)
 {
-    const string& req_id = req.req_id;
-
-    if (req_id.empty()) {
-        WriteMsg(sock, "ERR:", "BLOB id is empty.");
-        return;
-    }
-
-    CNetCache_Key blob_id(req_id);
-    if (!x_CheckBlobId(sock, &blob_id))
-        return;
-
+    const string& req_id = parser.GetParam(0);
+    x_CheckBlobIdParam(req_id);
     m_Server->GetCache()->Remove(req_id);
 }
 
 
-void CNetCacheHandler::ProcessRemove2(CSocket& sock, const SNC_Request& req)
+void
+CNetCacheHandler::ProcessRemove2(const CNCRequestParser& parser,
+                                 SNetCache_RequestStat&  stat)
 {
-    ProcessRemove(sock, req);
-    WriteMsg(sock, "OK:", "");
+    ProcessRemove(parser, stat);
+    WriteMsg(GetSocket(), "OK:", "");
 }
 
 
-void CNetCacheHandler::ProcessLog(CSocket&  sock, const SNC_Request&  req)
+void
+CNetCacheHandler::ProcessLog(const CNCRequestParser& parser,
+                             SNetCache_RequestStat&  /* stat */)
 {
-    const char* str = req.req_id.c_str();
+    const char* str = parser.GetParam(0).c_str();
     int level = CNetCacheServer::kLogLevelBase;
     if (NStr::strcasecmp(str, "ON") == 0)
         level = CNetCacheServer::kLogLevelMax;
@@ -413,12 +230,35 @@ void CNetCacheHandler::ProcessLog(CSocket&  sock, const SNC_Request&  req)
         try {
             level = NStr::StringToInt(str);
         } catch (...) {
-            WriteMsg(sock, "ERR:", "");
-            return;
+            NCBI_THROW(CNCReqParserException, eWrongParams,
+                       "NetCache Log command: invalid parameter");
         }
     }
     m_Server->SetLogLevel(level);
-    WriteMsg(sock, "OK:", "");
+    WriteMsg(GetSocket(), "OK:", "");
+}
+
+
+void
+CNetCacheHandler::ProcessStat(const CNCRequestParser& parser,
+                              SNetCache_RequestStat&  /* stat */)
+{
+    CBDB_Cache* bdb_cache = m_Server->GetCache();
+    if (!bdb_cache) {
+        return;
+    }
+
+    const char* str = parser.GetParam(0).c_str();
+    if (NStr::strcasecmp(str, "ON") == 0)
+        bdb_cache->SetSaveStatistics(true);
+    else if (NStr::strcasecmp(str, "OFF") == 0)
+        bdb_cache->SetSaveStatistics(false);
+    else {
+        NCBI_THROW(CNCReqParserException, eWrongParams,
+                   "NetCache Stat command: invalid parameter");
+    }
+
+    WriteMsg(GetSocket(), "OK:", "");
 }
 
 
@@ -470,22 +310,36 @@ bool CNetCacheHandler::ProcessWriteAndReport(unsigned blob_size,
 }
 
 
-void CNetCacheHandler::ProcessGet(CSocket&               sock, 
-                                  const SNC_Request&     req,
-                                  SNetCache_RequestStat& stat)
+void
+CNetCacheHandler::ProcessGet(const CNCRequestParser& parser,
+                             SNetCache_RequestStat&  stat)
 {
-    const string& req_id = req.req_id;
+    stat.op_code = SBDB_CacheUnitStatistics::eErr_Get;
 
-    if (req_id.empty()) {
-        WriteMsg(sock, "ERR:", "BLOB id is empty.");
-        m_Server->RegisterProtocolErr(stat.op_code, *m_Auth);
-        return;
+    size_t params_cnt = parser.GetParamsCount();
+    if (params_cnt == 0) {
+        NCBI_THROW(CNCReqParserException, eWrongParamsCnt,
+                   "NetCache Get command: not enough parameters");
     }
 
-    if (req.no_lock) {
+    const string& req_id = parser.GetParam(0);
+    x_CheckBlobIdParam(req_id);
+
+    stat.blob_id = req_id;
+    int param_ind = 1;
+    int no_lock = false;
+
+    if (NStr::strcasecmp(parser.GetParam(param_ind).c_str(), "NW") == 0) {
+        no_lock = true;
+        ++param_ind;
+    }
+
+    CheckParamsCount(parser, param_ind);
+
+    if (no_lock) {
         bool locked = m_Server->GetCache()->IsLocked(req_id, 0, kEmptyStr);
         if (locked) {
-            WriteMsg(sock, "ERR:", "BLOB locked by another client"); 
+            WriteMsg(GetSocket(), "ERR:", "BLOB locked by another client"); 
             return;
         }
     }
@@ -518,7 +372,7 @@ void CNetCacheHandler::ProcessGet(CSocket&               sock,
 
                 }
             }}
-            WriteMsg(sock, "ERR:", string("BLOB not found. ") + req_id);
+            WriteMsg(GetSocket(), "ERR:", string("BLOB not found. ") + req_id);
             return;
         } else {
             break;
@@ -526,7 +380,7 @@ void CNetCacheHandler::ProcessGet(CSocket&               sock,
     }
 
     if (ba_descr.blob_size == 0) {
-        WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
+        WriteMsg(GetSocket(), "OK:", "BLOB found. SIZE=0");
         return;
     }
 
@@ -535,7 +389,7 @@ void CNetCacheHandler::ProcessGet(CSocket&               sock,
     // re-translate reader to the network
     m_Reader.reset(ba_descr.reader.release());
     if (!m_Reader.get()) {
-        WriteMsg(sock, "ERR:", string("BLOB not found. ") + req_id);
+        WriteMsg(GetSocket(), "ERR:", string("BLOB not found. ") + req_id);
         return;
     }
 
@@ -547,25 +401,48 @@ void CNetCacheHandler::ProcessGet(CSocket&               sock,
 }
 
 
-void CNetCacheHandler::ProcessPut(CSocket&               sock, 
-                                  SNC_Request&           req,
-                                  SNetCache_RequestStat& stat)
+void
+CNetCacheHandler::ProcessPut(const CNCRequestParser& parser,
+                             SNetCache_RequestStat&  stat)
 {
-    WriteMsg(sock, "ERR:", "Obsolete");
+    WriteMsg(GetSocket(), "ERR:", "Obsolete");
 }
 
 
-void CNetCacheHandler::ProcessPut2(CSocket&               sock, 
-                                   SNC_Request&           req,
-                                   SNetCache_RequestStat& stat)
+void
+CNetCacheHandler::ProcessPut2(const CNCRequestParser& parser,
+                              SNetCache_RequestStat&  stat)
 {
-    string& rid = req.req_id;
+    stat.op_code = SBDB_CacheUnitStatistics::eErr_Put;
+
+    size_t params_cnt = parser.GetParamsCount();
+    size_t param_ind = 0;
+    int timeout = 0;
+    if (params_cnt > param_ind) {
+        timeout = parser.GetIntParam(param_ind);
+        ++param_ind;
+    }
+
+    string rid;
+    if (params_cnt > param_ind) {
+        rid = parser.GetParam(param_ind);
+        try {
+            CNetCache_Key key(rid);
+            ++param_ind;
+        }
+        catch (CNetCacheException&) {
+            rid.clear();
+        }
+    }
+
+    CheckParamsCount(parser, param_ind);
+
     bool do_id_lock = true;
 
     CBDB_Cache* bdb_cache = m_Server->GetCache();
     unsigned int id = 0;
-    _TRACE("Getting an id, socket " << &sock);
-    if (req.req_id.empty()) {
+    _TRACE("Getting an id, socket " << &GetSocket());
+    if (rid.empty()) {
         CTimeGuard time_guard(stat.db_elapsed, &stat);
         id = bdb_cache->GetNextBlobId(do_id_lock);
         time_guard.Stop();
@@ -581,7 +458,7 @@ void CNetCacheHandler::ProcessPut2(CSocket&               sock,
     // BLOB already locked, it is safe to return BLOB id
     if (!do_id_lock) {
         CTimeGuard time_guard(stat.comm_elapsed, &stat);
-        WriteMsg(sock, "ID:", rid);
+        WriteMsg(GetSocket(), "ID:", rid);
     }
 
     // create the reader up front to guarantee correct BLOB locking
@@ -591,12 +468,12 @@ void CNetCacheHandler::ProcessPut2(CSocket&               sock,
         CTimeGuard time_guard(stat.db_elapsed, &stat);
         m_Writer.reset(
             bdb_cache->GetWriteStream(id, rid, 0, kEmptyStr, do_id_lock,
-                                    req.timeout, *m_Auth));
+                                      timeout, *m_Auth));
     }}
 
     if (do_id_lock) {
         CTimeGuard time_guard(stat.comm_elapsed, &stat);
-        WriteMsg(sock, "ID:", rid);
+        WriteMsg(GetSocket(), "ID:", rid);
     }
 
     _TRACE("Begin read transmission");
@@ -604,8 +481,10 @@ void CNetCacheHandler::ProcessPut2(CSocket&               sock,
 }
 
 
-bool CNetCacheHandler::ProcessTransmission(
-    const char* buf, size_t buf_size, ETransmission eot)
+bool
+CNetCacheHandler::ProcessTransmission(const char*   buf,
+                                      size_t        buf_size,
+                                      ETransmission eot)
 {
     size_t bytes_written;
     ERW_Result res;
@@ -641,152 +520,72 @@ bool CNetCacheHandler::ProcessTransmission(
 }
 
 
-void CNetCacheHandler::ProcessPut3(CSocket&               sock, 
-                                   SNC_Request&           req,
-                                   SNetCache_RequestStat& stat)
+void
+CNetCacheHandler::ProcessPut3(const CNCRequestParser& parser,
+                              SNetCache_RequestStat&  stat)
 {
     m_PutOK = true;
-    ProcessPut2(sock, req, stat);
+    ProcessPut2(parser, stat);
 }
 
 
-void CNetCacheHandler::ProcessHasBlob(CSocket&           sock, 
-                                      const SNC_Request& req)
+void
+CNetCacheHandler::ProcessHasBlob(const CNCRequestParser& parser,
+                                 SNetCache_RequestStat&  stat)
 {
-    const string& req_id = req.req_id;
-
-    if (req_id.empty()) {
-        WriteMsg(sock, "ERR:", "BLOB id is empty.");
-        return;
-    }
-    CNetCache_Key blob_id(req_id);
-    _TRACE("Checking blob " << req_id);
-    if (!x_CheckBlobId(sock, &blob_id))
-        return;
+    const string& req_id = parser.GetParam(0);
+    x_CheckBlobIdParam(req_id);
 
     bool hb = m_Server->GetCache()->HasBlobs(req_id, kEmptyStr);
     string str;
     NStr::UIntToString(str, (int)hb);
-    WriteMsg(sock, "OK:", str);
+    WriteMsg(GetSocket(), "OK:", str);
 }
 
 
-void CNetCacheHandler::ProcessGetBlobOwner(CSocket&           sock, 
-                                           const SNC_Request& req)
+void
+CNetCacheHandler::ProcessGetBlobOwner(const CNCRequestParser& parser,
+                                      SNetCache_RequestStat&  stat)
 {
-    const string& req_id = req.req_id;
-
-    if (req_id.empty()) {
-        WriteMsg(sock, "ERR:", "BLOB id is empty.");
-        return;
-    }
-    CNetCache_Key blob_id(req_id);
-    if (!x_CheckBlobId(sock, &blob_id))
-        return;
+    const string& req_id = parser.GetParam(0);
+    x_CheckBlobIdParam(req_id);
 
     string owner;
     m_Server->GetCache()->GetBlobOwner(req_id, 0, kEmptyStr, &owner);
 
-    WriteMsg(sock, "OK:", owner);
+    WriteMsg(GetSocket(), "OK:", owner);
 }
 
 
-void CNetCacheHandler::ProcessIsLock(CSocket& sock, const SNC_Request& req)
+void
+CNetCacheHandler::ProcessIsLock(const CNCRequestParser& parser,
+                                SNetCache_RequestStat&  stat)
 {
-    const string& req_id = req.req_id;
-    if (req_id.empty()) {
-        WriteMsg(sock, "ERR:", "BLOB id is empty.");
-        return;
-    }
+    const string& req_id = parser.GetParam(0);
+    x_CheckBlobIdParam(req_id);
 
-    CNetCache_Key blob_id(req_id);
-    if (!x_CheckBlobId(sock, &blob_id))
-        return;
-
-    if (m_Server->GetCache()->IsLocked(blob_id.id)) {
-        WriteMsg(sock, "OK:", "1");
+    if (m_Server->GetCache()->IsLocked(CNetCache_Key::GetBlobId(req_id))) {
+        WriteMsg(GetSocket(), "OK:", "1");
     } else {
-        WriteMsg(sock, "OK:", "0");
+        WriteMsg(GetSocket(), "OK:", "0");
     }
 
 }
 
 
-void CNetCacheHandler::ProcessGetSize(CSocket& sock, const SNC_Request& req)
+void
+CNetCacheHandler::ProcessGetSize(const CNCRequestParser& parser,
+                                 SNetCache_RequestStat&  stat)
 {
-    const string& req_id = req.req_id;
-    if (req_id.empty()) {
-        WriteMsg(sock, "ERR:", "BLOB id is empty.");
-        return;
-    }
+    const string& req_id = parser.GetParam(0);
+    x_CheckBlobIdParam(req_id);
+
     size_t size;
     if (!m_Server->GetCache()->GetSizeEx(req_id, 0, kEmptyStr, &size)) {
-        WriteMsg(sock, "ERR:", string("BLOB not found. ") + req_id);
+        WriteMsg(GetSocket(), "ERR:", "BLOB not found. " + req_id);
     } else {
-        WriteMsg(sock, "OK:", NStr::UIntToString(size));
+        WriteMsg(GetSocket(), "OK:", NStr::UIntToString(size));
     }
-}
-
-
-bool CNetCacheHandler::x_CheckBlobId(CSocket& sock, CNetCache_Key* blob_id)
-{
-    if (blob_id->version != 1     ||
-        blob_id->hostname.empty() ||
-        blob_id->id == 0          ||
-        blob_id->port == 0) 
-    {
-        WriteMsg(sock, "ERR:", "BLOB id format error.");
-        return false;
-    }
-    return true;
-}
-
-
-void CNetCacheHandler::x_ParseGetArgs(const char* s, SNC_Request* req)
-{
-    while (*s && isspace((unsigned char)(*s))) ++s;
-
-    req->req_id.erase();
-
-    while (*s && !isspace((unsigned char)(*s))) {
-        char ch = *s;
-        req->req_id.append(1, ch);
-        ++s;
-    }
-    if (!*s) return;
-
-    // skip whitespace
-    while (*s && isspace((unsigned char)(*s))) ++s;
-    if (!*s) return;
-
-    // NW modifier (no wait request)
-    if (s[0] == 'N' && s[1] == 'W') {
-        req->no_lock = true;
-    }
-}
-
-
-void CNetCacheHandler::x_ParsePutArgs(const char* s, SNC_Request* req)
-{
-    while (*s && isspace((unsigned char)(*s))) ++s;
-
-    if (*s) {  // timeout value
-        int time_out = atoi(s);
-        if (time_out > 0) {
-            req->timeout = time_out;
-        }
-    }
-    while (*s && isdigit((unsigned char)(*s))) ++s;
-    while (*s && isspace((unsigned char)(*s))) ++s;
-    req->req_id = s;
-}
-
-
-void CNetCacheHandler::x_ParseBlobId(const char* s, SNC_Request* req)
-{
-    req->req_id.erase();
-    while (*s && isspace((unsigned char)(*s))) ++s;
-    req->req_id = s;
 }
 
 

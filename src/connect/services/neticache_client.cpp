@@ -40,6 +40,7 @@
 #include <util/cache/icache_cf.hpp>
 
 #include <corelib/ncbitime.hpp>
+#include <corelib/request_ctx.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 
 #include <memory>
@@ -49,6 +50,18 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+void s_MakeCommand(string* cmd)
+{
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    cmd->append(" \"");
+    cmd->append(req.GetClientIP());
+    cmd->append("\" \"");
+    cmd->append(req.GetSessionID());
+    cmd->append("\"");
+}
+
 
 
 CNetICacheClient::CNetICacheClient()
@@ -194,11 +207,10 @@ bool CNetICacheClient::CheckConnect()
 }
 
 
-void CNetICacheClient::MakeCommandPacket(string* out_str,
-                                         const string& cmd_str,
-                                         bool          connected) const
+string CNetICacheClient::MakeCommandPacket(const string& cmd_str,
+                                           bool          connected) const
 {
-    _ASSERT(out_str);
+    string out_str;
 
     if (m_ClientName.length() < 3) {
         NCBI_THROW(CNetCacheException,
@@ -212,20 +224,21 @@ void CNetICacheClient::MakeCommandPacket(string* out_str,
     if (connected) {
         // connection has been re-established,
         //   need to send authentication line
-        *out_str = m_ClientName;
+        out_str = m_ClientName;
         const string& client_name_comment = GetClientNameComment();
         if (!client_name_comment.empty()) {
-            out_str->append(" ");
-            out_str->append(client_name_comment);
+            out_str.append(" ");
+            out_str.append(client_name_comment);
         }
-        out_str->append("\r\n");
-    } else {
-        out_str->erase();
+        out_str.append("\r\n");
     }
-    out_str->append("IC(");
-    out_str->append(m_CacheName);
-    out_str->append(") ");
-    out_str->append(cmd_str);
+    out_str.append("IC(");
+    out_str.append(m_CacheName);
+    out_str.append(") ");
+    out_str.append(cmd_str);
+    s_MakeCommand(&out_str);
+
+    return out_str;
 }
 
 
@@ -281,6 +294,7 @@ void CNetICacheClient::RegisterSession(unsigned pid)
     cmd.append(hostname);
     cmd.push_back(' ');
     cmd.append(NStr::UIntToString(pid));
+    s_MakeCommand(&cmd);
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -319,6 +333,7 @@ void CNetICacheClient::UnRegisterSession(unsigned pid)
     cmd.append(hostname);
     cmd.push_back(' ');
     cmd.append(NStr::UIntToString(pid));
+    s_MakeCommand(&cmd);
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -339,13 +354,13 @@ void CNetICacheClient::SetTimeStampPolicy(TTimeStampFlags policy,
     bool reconnected = cl->CheckConnect();
     CSockGuard sg(*m_Sock);
 
-    string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "STSP ", reconnected);
+    string cmd("STSP ");
     cmd.append(NStr::IntToString(policy));
     cmd.append(" ");
     cmd.append(NStr::IntToString(timeout));
     cmd.append(" ");
     cmd.append(NStr::IntToString(max_timeout));
+    cmd = MakeCommandPacket(cmd, reconnected);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
@@ -365,8 +380,8 @@ ICache::TTimeStampFlags CNetICacheClient::GetTimeStampPolicy() const
     bool reconnected = cl->CheckConnect();
     CSockGuard sg(*m_Sock);
 
-    string& cmd = cl->m_Tmp;
-    MakeCommandPacket(&cmd, "GTSP ", reconnected);
+    string cmd("GTSP ");
+    cmd = MakeCommandPacket(cmd, reconnected);
 
     cl->WriteStr(cmd.c_str(), cmd.length() + 1);
     cl->WaitForServer();
@@ -389,8 +404,8 @@ int CNetICacheClient::GetTimeout() const
     bool reconnected = cl->CheckConnect();
     CSockGuard sg(*m_Sock);
 
-    string& cmd = cl->m_Tmp;
-    MakeCommandPacket(&cmd, "GTOU ", reconnected);
+    string cmd("GTOU ");
+    MakeCommandPacket(cmd, reconnected);
     cl->WriteStr(cmd.c_str(), cmd.length() + 1);
     cl->WaitForServer();
     if (!cl->ReadStr(*m_Sock, &cl->m_Tmp)) {
@@ -414,8 +429,8 @@ bool CNetICacheClient::IsOpen() const
     bool reconnected = cl->CheckConnect();
     CSockGuard sg(*m_Sock);
 
-    string cmd;
-    MakeCommandPacket(&cmd, "ISOP ", reconnected);
+    string cmd("ISOP ");
+    cmd = MakeCommandPacket(cmd, reconnected);
     cl->WriteStr(cmd.c_str(), cmd.length() + 1);
     cl->WaitForServer();
     string answer;
@@ -437,8 +452,7 @@ void CNetICacheClient::SetVersionRetention(EKeepVersions policy)
 
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
-    string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "SVRP ", reconnected);
+    string cmd("SVRP ");
     switch (policy) {
     case ICache::eKeepAll:
         cmd.append("KA");
@@ -452,6 +466,7 @@ void CNetICacheClient::SetVersionRetention(EKeepVersions policy)
     default:
         _ASSERT(0);
     }
+    cmd = MakeCommandPacket(cmd, reconnected);
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -470,8 +485,8 @@ ICache::EKeepVersions CNetICacheClient::GetVersionRetention() const
     bool reconnected = cl->CheckConnect();
     CSockGuard sg(*m_Sock);
 
-    string cmd;
-    MakeCommandPacket(&cmd, "ISOP ", reconnected);
+    string cmd("ISOP ");
+    cmd = MakeCommandPacket(cmd, reconnected);
     cl->WriteStr(cmd.c_str(), cmd.length() + 1);
     cl->WaitForServer();
     string answer;
@@ -498,12 +513,12 @@ void CNetICacheClient::Store(const string&  key,
 
     bool reconnected = CheckConnect();
 //    CSockGuard sg(*m_Sock);
-    string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "STRS ", reconnected);
+    string cmd("STRS ");
     cmd.append(NStr::UIntToString(time_to_live));
     cmd.push_back(' ');
     cmd.append(NStr::UIntToString(size));
     AddKVS(&cmd, key, version, subkey);
+    cmd = MakeCommandPacket(cmd, reconnected);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
@@ -545,9 +560,9 @@ size_t CNetICacheClient::GetSize(const string&  key,
 
     bool reconnected = CheckConnect();
 
-    string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "GSIZ ", reconnected);
+    string cmd("GSIZ ");
     AddKVS(&cmd, key, version, subkey);
+    cmd = MakeCommandPacket(cmd, reconnected);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
@@ -571,9 +586,9 @@ void CNetICacheClient::GetBlobOwner(const string&  key,
 
     bool reconnected = CheckConnect();
 
-    string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "GBLW ", reconnected);
+    string cmd("GBLW ");
     AddKVS(&cmd, key, version, subkey);
+    cmd = MakeCommandPacket(cmd, reconnected);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
@@ -685,10 +700,10 @@ IWriter* CNetICacheClient::GetWriteStream(const string&    key,
 
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
-    string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "STOR ", reconnected);
+    string cmd("STOR ");
     cmd.append(NStr::UIntToString(time_to_live));
     AddKVS(&cmd, key, version, subkey);
+    cmd = MakeCommandPacket(cmd, reconnected);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
@@ -729,11 +744,11 @@ void CNetICacheClient::Remove(const string& key)
 
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
-    string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "REMK ", reconnected);
+    string cmd("REMK ");
     cmd.push_back('"');
     cmd.append(key);
     cmd.push_back('"');
+    cmd = MakeCommandPacket(cmd, reconnected);
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -752,9 +767,9 @@ void CNetICacheClient::Remove(const string&    key,
 
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
-    string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "REMO ", reconnected);
+    string cmd("REMO ");
     AddKVS(&cmd, key, version, subkey);
+    cmd = MakeCommandPacket(cmd, reconnected);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
@@ -774,9 +789,9 @@ time_t CNetICacheClient::GetAccessTime(const string&  key,
 
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
-    string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "GACT ", reconnected);
+    string cmd("GACT ");
     AddKVS(&cmd, key, version, subkey);
+    cmd = MakeCommandPacket(cmd, reconnected);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
@@ -796,9 +811,9 @@ bool CNetICacheClient::HasBlobs(const string&  key,
     CFastMutexGuard guard(m_Lock);
 
     bool reconnected = CheckConnect();
-    string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "HASB ", reconnected);
+    string cmd("HASB ");
     AddKVS(&cmd, key, 0, subkey);
+    cmd = MakeCommandPacket(cmd, reconnected);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
@@ -820,11 +835,11 @@ void CNetICacheClient::Purge(time_t           access_timeout,
     CFastMutexGuard guard(m_Lock);
 
     bool reconnected = CheckConnect();
-    string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "PRG1 ", reconnected);
+    string cmd("PRG1 ");
     cmd.append(NStr::IntToString((long) access_timeout));
     cmd.append(" ");
     cmd.append(NStr::IntToString((int)keep_last_version));
+    cmd = MakeCommandPacket(cmd, reconnected);
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -850,9 +865,9 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
 {
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
-    string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "READ ", reconnected);
+    string cmd("READ ");
     AddKVS(&cmd, key, version, subkey);
+    cmd = MakeCommandPacket(cmd, reconnected);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();

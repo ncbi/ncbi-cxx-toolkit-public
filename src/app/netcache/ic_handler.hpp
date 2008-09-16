@@ -31,68 +31,23 @@
  * File Description: Network cache daemon
  *
  */
+
 #include "request_handler.hpp"
 #include <util/cache/icache.hpp>
 #include "netcached.hpp"
 
+
 BEGIN_NCBI_SCOPE
 
-/// IC requests
-///
-/// @internal
-typedef enum {
-    eIC_Error,
-    eIC_SetTimeStampPolicy,
-    eIC_GetTimeStampPolicy,
-    eIC_SetVersionRetention,
-    eIC_GetVersionRetention,
-    eIC_GetTimeout,
-    eIC_IsOpen,
-    eIC_Store,
-    eIC_StoreBlob,
-    eIC_GetSize,
-    eIC_GetBlobOwner,
-    eIC_Read,
-    eIC_Remove,
-    eIC_RemoveKey,
-    eIC_GetAccessTime,
-    eIC_HasBlobs,
-    eIC_Purge1
-} EIC_RequestType;
-
-
-
-/// Parsed IC request
-///
-/// @internal 
-struct SIC_Request
-{
-    EIC_RequestType req_type;
-    string          cache_name;
-    string          key;
-    int             version;
-    string          subkey;
-    string          err_msg;
-
-    unsigned        i0;
-    unsigned        i1;
-    unsigned        i2;
-
-    SIC_Request() : req_type(eIC_Error), version(0), i0(0), i1(0), i2(0)
-    { }
-};
 
 class CICacheHandler : public CNetCache_RequestHandler
 {
 public:
     CICacheHandler(CNetCache_RequestHandlerHost* host);
 
-    // Transitional
-    void ParseRequest(const string& reqstr, SIC_Request* req);
-
     /// Process ICache request
     virtual
-    void ProcessRequest(string&                request,
+    void ProcessRequest(CNCRequestParser&      parser,
                         SNetCache_RequestStat& stat);
     virtual
     bool ProcessTransmission(const char* buf, size_t buf_size,
@@ -101,72 +56,104 @@ public:
     bool ProcessWrite();
 
 private:
+    typedef void (CICacheHandler::*TProcessRequestFunc)
+                                        (ICache&                 ic,
+                                         const CNCRequestParser& parser,
+                                         SNetCache_RequestStat&  stat);
+
     // ICache request processing
-    void Process_IC_SetTimeStampPolicy(ICache&               ic,
-                                       CSocket&              sock, 
-                                       SIC_Request&          req);
+    void Process_IC_SetTimeStampPolicy(ICache&                 ic,
+                                       const CNCRequestParser& parser,
+                                       SNetCache_RequestStat&  stat);
 
-    void Process_IC_GetTimeStampPolicy(ICache&               ic,
-                                       CSocket&              sock, 
-                                       SIC_Request&          req);
+    void Process_IC_GetTimeStampPolicy(ICache&                 ic,
+                                       const CNCRequestParser& parser,
+                                       SNetCache_RequestStat&  stat);
 
-    void Process_IC_SetVersionRetention(ICache&              ic,
-                                       CSocket&              sock, 
-                                       SIC_Request&          req);
+    void Process_IC_SetVersionRetention(ICache&                 ic,
+                                        const CNCRequestParser& parser,
+                                        SNetCache_RequestStat&  stat);
 
-    void Process_IC_GetVersionRetention(ICache&              ic,
-                                       CSocket&              sock, 
-                                       SIC_Request&          req);
+    void Process_IC_GetVersionRetention(ICache&                 ic,
+                                        const CNCRequestParser& parser,
+                                        SNetCache_RequestStat&  stat);
 
-    void Process_IC_GetTimeout(ICache&              ic,
-                               CSocket&             sock, 
-                               SIC_Request&         req);
+    void Process_IC_GetTimeout(ICache&                 ic,
+                               const CNCRequestParser& parser,
+                               SNetCache_RequestStat&  stat);
 
-    void Process_IC_IsOpen(ICache&              ic,
-                           CSocket&             sock, 
-                           SIC_Request&         req);
+    void Process_IC_IsOpen(ICache&                 ic,
+                           const CNCRequestParser& parser,
+                           SNetCache_RequestStat&  stat);
 
-    void Process_IC_Store(ICache&              ic,
-                          CSocket&             sock, 
-                          SIC_Request&         req);
-    void Process_IC_StoreBlob(ICache&              ic,
-                              CSocket&             sock,
-                              SIC_Request&         req);
+    void Process_IC_Store(ICache&                 ic,
+                          const CNCRequestParser& parser,
+                          SNetCache_RequestStat&  stat);
+    void Process_IC_StoreBlob(ICache&                 ic,
+                              const CNCRequestParser& parser,
+                              SNetCache_RequestStat&  stat);
 
-    void Process_IC_GetSize(ICache&              ic,
-                            CSocket&             sock, 
-                            SIC_Request&         req);
+    void Process_IC_GetSize(ICache&                 ic,
+                            const CNCRequestParser& parser,
+                            SNetCache_RequestStat&  stat);
 
-    void Process_IC_GetBlobOwner(ICache&              ic,
-                                 CSocket&             sock, 
-                                 SIC_Request&         req);
+    void Process_IC_GetBlobOwner(ICache&                 ic,
+                                 const CNCRequestParser& parser,
+                                 SNetCache_RequestStat&  stat);
 
-    void Process_IC_Read(ICache&              ic,
-                         CSocket&             sock, 
-                         SIC_Request&         req);
+    void Process_IC_Read(ICache&                 ic,
+                         const CNCRequestParser& parser,
+                         SNetCache_RequestStat&  stat);
 
-    void Process_IC_Remove(ICache&              ic,
-                           CSocket&             sock, 
-                           SIC_Request&         req);
+    void Process_IC_Remove(ICache&                 ic,
+                           const CNCRequestParser& parser,
+                           SNetCache_RequestStat&  stat);
 
-    void Process_IC_RemoveKey(ICache&              ic,
-                              CSocket&             sock, 
-                              SIC_Request&         req);
+    void Process_IC_RemoveKey(ICache&                 ic,
+                              const CNCRequestParser& parser,
+                              SNetCache_RequestStat&  stat);
 
-    void Process_IC_GetAccessTime(ICache&              ic,
-                                  CSocket&             sock, 
-                                  SIC_Request&         req);
+    void Process_IC_GetAccessTime(ICache&                 ic,
+                                  const CNCRequestParser& parser,
+                                  SNetCache_RequestStat&  stat);
 
-    void Process_IC_HasBlobs(ICache&              ic,
-                             CSocket&             sock, 
-                             SIC_Request&         req);
+    void Process_IC_HasBlobs(ICache&                 ic,
+                             const CNCRequestParser& parser,
+                             SNetCache_RequestStat&  stat);
 
-    void Process_IC_Purge1(ICache&              ic,
-                            CSocket&            sock, 
-                            SIC_Request&        req);
+    void Process_IC_Purge1(ICache&                 ic,
+                           const CNCRequestParser& parser,
+                           SNetCache_RequestStat&  stat);
 
 private:
-    void x_GetKeyVersionSubkey(const char* s, SIC_Request* req);
+    void x_ParseKeyVersion(const CNCRequestParser& parser,
+                           size_t                  param_num,
+                           SNetCache_RequestStat&  stat);
+
+
+    struct SProcessorInfo
+    {
+        TProcessRequestFunc func;
+        size_t              params_cnt;
+
+
+        SProcessorInfo(TProcessRequestFunc _func, size_t _params_cnt)
+            : func(_func), params_cnt(_params_cnt)
+        {}
+
+        SProcessorInfo(void)
+            : func(NULL), params_cnt(0)
+        {}
+    };
+
+    typedef map<string, SProcessorInfo> TProcessorsMap;
+
+
+    TProcessorsMap    m_Processors;
+    string            m_CacheName;
+    string            m_Key;
+    unsigned int      m_Version;
+    string            m_SubKey;
     bool              m_SizeKnown;
     size_t            m_BlobSize;
     auto_ptr<IWriter> m_Writer;

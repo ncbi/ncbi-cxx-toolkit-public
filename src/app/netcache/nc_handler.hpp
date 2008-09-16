@@ -35,56 +35,15 @@
 
 BEGIN_NCBI_SCOPE
 
-/// NC requests
-///
-/// @internal
-typedef enum {
-    eError,
-    ePut,
-    ePut2,   ///< PUT v.2 transmission protocol
-    ePut3,   ///< PUT v.2 transmission protocol with commit confirmation
-    eGet,
-    eShutdown,
-    eVersion,
-    eRemove,
-    eRemove2, ///< Remove with confirmation
-    eLogging,
-    eGetConfig,
-    eGetStat,
-    eIsLock,
-    eGetBlobOwner,
-    eDropStat,
-    eHasBlob,
-    eGetSize
-} ENC_RequestType;
-
-
-/// Parsed NetCache request 
-///
-/// @internal
-struct SNC_Request
-{
-    ENC_RequestType req_type;
-    unsigned int    timeout;
-    string          req_id;
-    string          err_msg;
-    bool            no_lock;
-
-    SNC_Request() : req_type(eError), timeout(0), no_lock(false)
-    { }
-};
 
 class CNetCacheHandler : public CNetCache_RequestHandler
 {
 public:
     CNetCacheHandler(CNetCache_RequestHandlerHost* host);
 
-    // Transitional
-    void ParseRequest(const string& reqstr, SNC_Request* req);
-
     /// Process request
     virtual
-    void ProcessRequest(string&                request,
+    void ProcessRequest(CNCRequestParser&      parser,
                         SNetCache_RequestStat& stat);
     virtual
     bool ProcessTransmission(const char* buf, size_t buf_size,
@@ -97,73 +56,102 @@ public:
     // NetCache request processing
 
 private:
+    typedef void (CNetCacheHandler::*TProcessRequestFunc)
+                                        (const CNCRequestParser& parser,
+                                         SNetCache_RequestStat&  stat);
+
     /// Process "PUT" request
-    void ProcessPut(CSocket&              sock, 
-                    SNC_Request&          req,
-                    SNetCache_RequestStat& stat);
+    void ProcessPut(const CNCRequestParser& parser,
+                    SNetCache_RequestStat&  stat);
 
     /// Process "PUT2" request
-    void ProcessPut2(CSocket&              sock, 
-                     SNC_Request&          req,
-                     SNetCache_RequestStat& stat);
+    void ProcessPut2(const CNCRequestParser& parser,
+                     SNetCache_RequestStat&  stat);
 
     /// Process "PUT3" request
-    void ProcessPut3(CSocket&              sock, 
-                     SNC_Request&          req,
-                     SNetCache_RequestStat& stat);
+    void ProcessPut3(const CNCRequestParser& parser,
+                     SNetCache_RequestStat&  stat);
 
     /// Process "GET" request
-    void ProcessGet(CSocket&              sock, 
-                    const SNC_Request&    req,
-                    SNetCache_RequestStat& stat);
-
-    /// Process "GET2" request
-    void ProcessGet2(CSocket&              sock,
-                     const SNC_Request&    req,
-                     SNetCache_RequestStat& stat);
+    void ProcessGet(const CNCRequestParser& parser,
+                    SNetCache_RequestStat&  stat);
 
     /// Process "VERSION" request
-    void ProcessVersion(CSocket& sock, const SNC_Request& req);
+    void ProcessVersion(const CNCRequestParser& parser,
+                        SNetCache_RequestStat&  stat);
 
     /// Process "LOG" request
-    void ProcessLog(CSocket& sock, const SNC_Request& req);
+    void ProcessLog(const CNCRequestParser& parser,
+                    SNetCache_RequestStat&  stat);
+
+    /// Process "STAT" request
+    void ProcessStat(const CNCRequestParser& parser,
+                     SNetCache_RequestStat&  stat);
 
     /// Process "REMOVE" request
-    void ProcessRemove(CSocket& sock, const SNC_Request& req);
+    void ProcessRemove(const CNCRequestParser& parser,
+                       SNetCache_RequestStat&  stat);
 
     /// Process "REMOVE2" request
-    void ProcessRemove2(CSocket& sock, const SNC_Request& req);
+    void ProcessRemove2(const CNCRequestParser& parser,
+                        SNetCache_RequestStat&  stat);
 
     /// Process "SHUTDOWN" request
-    void ProcessShutdown(CSocket& sock);
+    void ProcessShutdown(const CNCRequestParser& parser,
+                         SNetCache_RequestStat&  stat);
 
     /// Process "GETCONF" request
-    void ProcessGetConfig(CSocket& sock);
+    void ProcessGetConfig(const CNCRequestParser& parser,
+                          SNetCache_RequestStat&  stat);
 
     /// Process "DROPSTAT" request
-    void ProcessDropStat(CSocket& sock);
+    void ProcessDropStat(const CNCRequestParser& parser,
+                         SNetCache_RequestStat&  stat);
 
      /// Process "HASB" request
-    void ProcessHasBlob(CSocket& sock, const SNC_Request& req);
+    void ProcessHasBlob(const CNCRequestParser& parser,
+                        SNetCache_RequestStat&  stat);
 
     /// Process "GBOW" request
-    void ProcessGetBlobOwner(CSocket& sock, const SNC_Request& req);
+    void ProcessGetBlobOwner(const CNCRequestParser& parser,
+                             SNetCache_RequestStat&  stat);
 
     /// Process "GETSTAT" request
-    void ProcessGetStat(CSocket& sock, const SNC_Request& req);
+    void ProcessGetStat(const CNCRequestParser& parser,
+                        SNetCache_RequestStat&  stat);
 
     /// Process "ISLK" request
-    void ProcessIsLock(CSocket& sock, const SNC_Request& req);
+    void ProcessIsLock(const CNCRequestParser& parser,
+                       SNetCache_RequestStat&  stat);
 
     /// Process "GSIZ" request
-    void ProcessGetSize(CSocket& sock, const SNC_Request& req);
+    void ProcessGetSize(const CNCRequestParser& parser,
+                        SNetCache_RequestStat&  stat);
 
 private:
-    bool x_CheckBlobId(CSocket&       sock, CNetCache_Key* blob_id);
-    void x_ParseGetArgs(const char* s, SNC_Request* req);
-    void x_ParsePutArgs(const char* s, SNC_Request* req);
-    void x_ParseBlobId(const char* s, SNC_Request* req);
-    bool m_PutOK;
+    void x_CheckBlobIdParam(const string& req_id);
+
+
+    struct SProcessorInfo
+    {
+        TProcessRequestFunc func;
+        size_t              params_cnt;
+
+
+        SProcessorInfo(TProcessRequestFunc _func, size_t _params_cnt)
+            : func(_func), params_cnt(_params_cnt)
+        {}
+
+        SProcessorInfo(void)
+            : func(NULL), params_cnt(0)
+        {}
+    };
+
+    typedef map<string, SProcessorInfo> TProcessorsMap;
+
+
+    TProcessorsMap    m_Processors;
+    bool              m_PutOK;
     auto_ptr<IWriter> m_Writer;
     auto_ptr<IReader> m_Reader;
 };

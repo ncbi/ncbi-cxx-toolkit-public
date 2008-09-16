@@ -48,7 +48,7 @@ void CNetCacheAdmin::ShutdownServer()
                    "This command is allowed only for non-loadbalance client.");
     }
     CNetServerConnection conn = m_API->x_GetConnection();
-    m_API->SendCmdWaitResponse(conn, "SHUTDOWN");
+    m_API->SendCmdWaitResponse(conn, m_API->x_MakeCommand("SHUTDOWN"));
 }
 
 void CNetCacheAdmin::Logging(bool on_off) const
@@ -60,22 +60,25 @@ void CNetCacheAdmin::Logging(bool on_off) const
     string cmd = "LOG ";
     cmd += on_off ? "ON" : "OFF";
     CNetServerConnection conn = m_API->x_GetConnection();
-    m_API->SendCmdWaitResponse(conn, cmd);
+    m_API->SendCmdWaitResponse(conn, m_API->x_MakeCommand(cmd));
 }
 
 void CNetCacheAdmin::PrintConfig(CNetServiceAPI_Base::ISink& sink) const
 {
-    m_API->x_CollectStreamOutput("GETCONF", sink, CNetServiceAPI_Base::ePrintServerOut);
+    m_API->x_CollectStreamOutput(m_API->x_MakeCommand("GETCONF"),
+                                 sink, CNetServiceAPI_Base::ePrintServerOut);
 }
 
 void CNetCacheAdmin::PrintStat(CNetServiceAPI_Base::ISink& sink) const
 {
-    m_API->x_CollectStreamOutput("GETSTAT", sink, CNetServiceAPI_Base::ePrintServerOut);
+    m_API->x_CollectStreamOutput(m_API->x_MakeCommand("GETSTAT"),
+                                 sink, CNetServiceAPI_Base::ePrintServerOut);
 }
 
 void CNetCacheAdmin::GetServerVersion(CNetServiceAPI_Base::ISink& sink) const
 {
-    m_API->x_CollectStreamOutput("VERSION", sink, CNetServiceAPI_Base::eSendCmdWaitResponse);
+    m_API->x_CollectStreamOutput(m_API->x_MakeCommand("VERSION"),
+                                 sink, CNetServiceAPI_Base::eSendCmdWaitResponse);
 }
 
 void CNetCacheAdmin::DropStat() const
@@ -85,7 +88,7 @@ void CNetCacheAdmin::DropStat() const
                    "This command is allowed only for non-loadbalance client.");
     }
     CNetServerConnection conn = m_API->x_GetConnection();
-    m_API->SendCmdWaitResponse(conn, "DROPSTAT");
+    m_API->SendCmdWaitResponse(conn, m_API->x_MakeCommand("DROPSTAT"));
 }
 
 void CNetCacheAdmin::Monitor(CNcbiOstream & out) const
@@ -95,7 +98,7 @@ void CNetCacheAdmin::Monitor(CNcbiOstream & out) const
                    "This command is allowed only for non-loadbalance client.");
     }
     CNetServerConnection conn = m_API->x_GetConnection();
-    conn.WriteStr("MONI\r\n");
+    conn.WriteStr(m_API->x_MakeCommand("MONI") + "\r\n");
     conn.Telnet(&out, NULL);
 }
 

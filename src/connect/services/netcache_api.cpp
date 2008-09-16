@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/request_ctx.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <connect/ncbi_conn_exception.hpp>
@@ -82,6 +83,19 @@ void CNetCacheAPI::x_SendAuthetication(CNetServerConnection& conn) const
     conn.WriteStr(auth + "\r\n");
 }
 
+string CNetCacheAPI::x_MakeCommand(const string& cmd) const
+{
+    string command(cmd);
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    command += " \"";
+    command += req.GetClientIP();
+    command += "\" \"";
+    command += req.GetSessionID();
+    command += "\"";
+    return command;
+}
+
+
 
 CNetCacheAPI::CNetCacheAPI(const string&  client_name)
     : CNetServiceAPI_Base(kEmptyStr, client_name), m_NoHasBlob(false)
@@ -122,7 +136,7 @@ CNetServerConnection CNetCacheAPI::x_PutInitiate(
     request += *key;
 
     CNetServerConnection conn = x_GetConnection(*key);
-    *key = SendCmdWaitResponse(conn, request);
+    *key = SendCmdWaitResponse(conn, x_MakeCommand(request));
 
     if (NStr::FindCase(*key, "ID:") != 0) {
         // Answer is not in "ID:....." format
@@ -180,7 +194,8 @@ bool CNetCacheAPI::HasBlob(const string& key)
         return !GetOwner(key).empty();
     string request = "HASB " + key;
     try {
-        return SendCmdWaitResponse(x_GetConnection(key), request)[0] == '1';
+        return SendCmdWaitResponse(x_GetConnection(key),
+                                   x_MakeCommand(request))[0] == '1';
     } catch (CNetServiceException& e) {
         if (e.GetErrCode() != CNetServiceException::eCommunicationError ||
             e.GetMsg() != "Unknown request")
@@ -197,7 +212,7 @@ void CNetCacheAPI::Remove(const string& key)
 
     CNetServerConnection conn = x_GetConnection(key);
     try {
-        SendCmdWaitResponse(conn, request);
+        SendCmdWaitResponse(conn, x_MakeCommand(request));
     } catch (...) {
         // ignore the error???
     }
@@ -213,7 +228,7 @@ bool CNetCacheAPI::IsLocked(const string& key)
     CNetServerConnection conn = x_GetConnection(key);
 
     try {
-        string answer = SendCmdWaitResponse(conn, request);
+        string answer = SendCmdWaitResponse(conn, x_MakeCommand(request));
         if ( answer[0] == '1' )
             return true;
         return false;
@@ -231,7 +246,7 @@ string CNetCacheAPI::GetOwner(const string& key)
 
     CNetServerConnection conn = x_GetConnection(key);
     try {
-        string answer = SendCmdWaitResponse(conn, request);
+        string answer = SendCmdWaitResponse(conn, x_MakeCommand(request));
         return answer;
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
@@ -262,7 +277,7 @@ IReader* CNetCacheAPI::GetData(const string& key,
 
     string answer;
     try {
-        answer = SendCmdWaitResponse(conn, request);
+        answer = SendCmdWaitResponse(conn, x_MakeCommand(request));
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return NULL;

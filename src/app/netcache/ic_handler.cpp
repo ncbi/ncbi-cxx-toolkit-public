@@ -36,44 +36,60 @@
 #include "netcached.hpp"
 #include "ic_handler.hpp"
 
+
 BEGIN_NCBI_SCOPE
 
-CICacheHandler::CICacheHandler(CNetCache_RequestHandlerHost* host) :
-    CNetCache_RequestHandler(host)
-{}
 
-#define NC_SKIPNUM(x)  \
-    while (*x && (*x >= '0' && *x <= '9')) { ++x; }
-#define NC_SKIPSPACE(x)  \
-    while (*x && (*x == ' ' || *x == '\t')) { ++x; }
-#define NC_RETURN_ERROR(err) \
-    { req->req_type = eIC_Error; req->err_msg = err; return; }
-#define NC_CHECK_END(s) \
-    if (*s == 0) { \
-        req->req_type = eIC_Error; req->err_msg = "Protocol error"; return; }
-#define NC_GETSTRING(x, str) \
-    for (;*x && !(*x == ' ' || *x == '\t'); ++x) { str.push_back(*x); }
-#define NC_GETVAR(x, str) \
-    if (*x != '"') NC_RETURN_ERROR("Invalid IC request"); \
-    do { ++x;\
-        if (*x == 0) NC_RETURN_ERROR("Invalid IC request"); \
-        if (*x == '"') { ++x; break; } \
-        str.push_back(*x); \
-    } while (1);
-
-
-
-inline static
-bool CmpCmd4(const char* req, const char* cmd4)
+CICacheHandler::CICacheHandler(CNetCache_RequestHandlerHost* host)
+    : CNetCache_RequestHandler(host),
+      m_SizeKnown(false),
+      m_BlobSize(0)
 {
-    return req[0] == cmd4[0] && 
-           req[1] == cmd4[1] &&
-           req[2] == cmd4[2] &&
-           req[3] == cmd4[3];
+#define IC_PROCESSOR(func, cnt)   SProcessorInfo(&CICacheHandler::func, cnt);
+
+    m_Processors["STOR"] = IC_PROCESSOR(Process_IC_Store,               4);
+    m_Processors["STRS"] = IC_PROCESSOR(Process_IC_StoreBlob,           5);
+    m_Processors["GSIZ"] = IC_PROCESSOR(Process_IC_GetSize,             3);
+    m_Processors["GBLW"] = IC_PROCESSOR(Process_IC_GetBlobOwner,        3);
+    m_Processors["READ"] = IC_PROCESSOR(Process_IC_Read,                3);
+    m_Processors["REMO"] = IC_PROCESSOR(Process_IC_Remove,              3);
+    m_Processors["REMK"] = IC_PROCESSOR(Process_IC_RemoveKey,           1);
+    m_Processors["GACT"] = IC_PROCESSOR(Process_IC_GetAccessTime,       3);
+    m_Processors["HASB"] = IC_PROCESSOR(Process_IC_HasBlobs,            3);
+    m_Processors["GACT"] = IC_PROCESSOR(Process_IC_GetAccessTime,       3);
+    m_Processors["STSP"] = IC_PROCESSOR(Process_IC_SetTimeStampPolicy,  3);
+    m_Processors["GTSP"] = IC_PROCESSOR(Process_IC_GetTimeStampPolicy,  0);
+    m_Processors["GTOU"] = IC_PROCESSOR(Process_IC_GetTimeout,          0);
+    m_Processors["ISOP"] = IC_PROCESSOR(Process_IC_IsOpen,              0);
+    m_Processors["SVRP"] = IC_PROCESSOR(Process_IC_SetVersionRetention, 1);
+    m_Processors["GVRP"] = IC_PROCESSOR(Process_IC_GetVersionRetention, 1);
+    m_Processors["PRG1"] = IC_PROCESSOR(Process_IC_Purge1,              2);
+
+#undef IC_PROCESSOR
 }
 
+void
+CICacheHandler::x_ParseKeyVersion(const CNCRequestParser& parser,
+                                  size_t                  param_num,
+                                  SNetCache_RequestStat&  stat)
+{
+    m_Key     = parser.GetParam    (param_num++);
+    m_Version = parser.GetUIntParam(param_num++);
+    m_SubKey  = parser.GetParam    (param_num++);
 
-void CICacheHandler::ParseRequest(const string& reqstr, SIC_Request* req)
+    stat.blob_id = m_Key + ":"
+                   + NStr::IntToString(m_Version) + ":"
+                   + m_SubKey;
+    stat.details = "Cache=\"";
+    stat.details += m_CacheName + "\"";
+    stat.details += " key=\"" + m_Key;
+    stat.details += "\" version=" + NStr::IntToString(m_Version);
+    stat.details += " subkey=\"" + m_SubKey +"\"";
+}
+
+void
+CICacheHandler::ProcessRequest(CNCRequestParser&      parser,
+                               SNetCache_RequestStat& stat)
 {
     // request format:
     // IC(cache_name) COMMAND_CLAUSE
@@ -96,248 +112,44 @@ void CICacheHandler::ParseRequest(const string& reqstr, SIC_Request* req)
     //   PRG1 "key" keep_version
 
 
-    const char* s = reqstr.c_str();
-
-    if (s[0] != 'I' || s[1] != 'C' || s[2] != '(') {
-        NC_RETURN_ERROR("Unknown request");
-    }
-
-    s+=3;
-
-    for (; *s != ')'; ++s) {
-        if (*s == 0) {
-            NC_RETURN_ERROR("Invalid IC request")
-        }
-        req->cache_name.append(1, *s);
-    }
-
-    ++s;
-
-    NC_SKIPSPACE(s)
-
-    // Parsing commands
-
-
-    if (CmpCmd4(s, "STOR")) { // Store
-        req->req_type = eIC_Store;
-        s += 4;
-        NC_SKIPSPACE(s)
-        req->i0 = (unsigned) atoi(s);  // ttl
-        NC_SKIPNUM(s)
-        x_GetKeyVersionSubkey(s, req);
-        return;
-    } // STOR
-
-    if (CmpCmd4(s, "STRS")) { // Store size
-        req->req_type = eIC_StoreBlob;
-        s += 4;
-        NC_SKIPSPACE(s)
-        req->i0 = (unsigned) atoi(s);  // ttl
-        NC_SKIPNUM(s)
-        NC_SKIPSPACE(s)
-        req->i1 = (unsigned) atoi(s);  // blob size
-        NC_SKIPNUM(s)
-        x_GetKeyVersionSubkey(s, req);
-        return;
-    }
-
-    if (CmpCmd4(s, "GSIZ")) { // GetSize
-        req->req_type = eIC_GetSize;
-        s += 4;
-        x_GetKeyVersionSubkey(s, req);
-        return;
-    }
-
-    if (CmpCmd4(s, "GBLW")) { // GetBlobOwner
-        req->req_type = eIC_GetBlobOwner;
-        s += 4;
-        x_GetKeyVersionSubkey(s, req);
-        return;
-    }
-
-    if (CmpCmd4(s, "READ")) { // Read
-        req->req_type = eIC_Read;
-        s += 4;
-        x_GetKeyVersionSubkey(s, req);
-        return;
-    }
-
-    if (CmpCmd4(s, "REMO")) { // Remove
-        req->req_type = eIC_Remove;
-        s += 4;
-        x_GetKeyVersionSubkey(s, req);
-        return;
-    }
-
-    if (CmpCmd4(s, "REMK")) { // RemoveKey
-        req->req_type = eIC_Remove;
-        s += 4;
-        NC_SKIPSPACE(s)
-        NC_CHECK_END(s)
-        NC_GETVAR(s, req->key);
-        return;
-    }
-
-    if (CmpCmd4(s, "GACT")) { // GetAccessTime
-        req->req_type = eIC_GetAccessTime;
-        s += 4;
-        x_GetKeyVersionSubkey(s, req);
-        return;
-    }
-
-    if (CmpCmd4(s, "HASB")) { // HasBlobs
-        req->req_type = eIC_HasBlobs;
-        s += 4;
-        x_GetKeyVersionSubkey(s, req);
-        return;
-    }
-
-
-    if (CmpCmd4(s, "STSP")) { // SetTimeStampPolicy
-        req->req_type = eIC_SetTimeStampPolicy;
-        s += 4;
-        NC_SKIPSPACE(s)
-        NC_CHECK_END(s)
-        req->i0 = (unsigned)atoi(s);
-        NC_SKIPNUM(s)
-        NC_SKIPSPACE(s)
-        NC_CHECK_END(s)
-        req->i1 = (unsigned)atoi(s);
-        NC_SKIPNUM(s)
-        NC_SKIPSPACE(s)
-        NC_CHECK_END(s)
-        req->i2 = (unsigned)atoi(s);
-        return;
-    }
-
-    if (CmpCmd4(s, "GTSP")) { // GetTimeStampPolicy
-        req->req_type = eIC_GetTimeStampPolicy;
-        return;
-    }
-
-    if (CmpCmd4(s, "GTOU")) { // GetTimeout
-        req->req_type = eIC_GetTimeout;
-        return;
-    }
-
-    if (CmpCmd4(s, "ISOP")) { // IsOpen
-        req->req_type = eIC_IsOpen;
-        return;
-    }
-
-    if (CmpCmd4(s, "SVRP")) { // SetVersionRetention
-        req->req_type = eIC_SetVersionRetention;
-        s += 4;
-        NC_SKIPSPACE(s)
-        NC_CHECK_END(s)
-        NC_GETSTRING(s, req->key)
-        return;
-    }
-    if (CmpCmd4(s, "GVRP")) { // GetVersionRetention
-        req->req_type = eIC_GetVersionRetention;
-        return;
-    }
-
-    if (CmpCmd4(s, "PRG1")) { // Purge1
-        req->req_type = eIC_Purge1;
-        s += 4;
-        NC_SKIPSPACE(s)
-        NC_CHECK_END(s)
-        req->i0 = (unsigned)atoi(s);
-        NC_SKIPNUM(s)
-        NC_SKIPSPACE(s)
-        NC_CHECK_END(s)
-        req->i1 = (unsigned)atoi(s);
-        return;
-    }
-}
-
-
-void CICacheHandler::ProcessRequest(string&                request,
-                                    SNetCache_RequestStat& stat)
-{
-    CSocket& socket = GetSocket();
-    SIC_Request req;
-    ParseRequest(request, &req);
-
-    ICache* ic = m_Server->GetLocalCache(req.cache_name);
-    if (ic == 0) {
-        req.err_msg = "Cache unknown: ";
-        req.err_msg.append(req.cache_name);
-        WriteMsg(socket, "ERR:", req.err_msg);
-        return;
-    }
-
-    if (1) { // was conditional, may be it still makes sense
-        stat.type = "IC";
-        stat.blob_id = req.key + ":" +
-            NStr::IntToString(req.version) + ":" +
-            req.subkey;
-        stat.details = "Cache=\"";
-        stat.details += req.cache_name + "\"";
-        stat.details += " key=\"" + req.key;
-        stat.details += "\" version=" + NStr::IntToString(req.version);
-        stat.details += " subkey=\"" + req.subkey +"\"";
-    }
-
-
+    stat.type = "IC";
     stat.op_code = SBDB_CacheUnitStatistics::eErr_Unknown;
-    switch (req.req_type) {
-    case eIC_SetTimeStampPolicy:
-        Process_IC_SetTimeStampPolicy(*ic, socket, req);
-        break;
-    case eIC_GetTimeStampPolicy:
-        Process_IC_GetTimeStampPolicy(*ic, socket, req);
-        break;
-    case eIC_SetVersionRetention:
-        Process_IC_SetVersionRetention(*ic, socket, req);
-        break;
-    case eIC_GetVersionRetention:
-        Process_IC_GetVersionRetention(*ic, socket, req);
-        break;
-    case eIC_GetTimeout:
-        Process_IC_GetTimeout(*ic, socket, req);
-        break;
-    case eIC_IsOpen:
-        Process_IC_IsOpen(*ic, socket, req);
-        break;
-    case eIC_Store:
-        Process_IC_Store(*ic, socket, req);
-        break;
-    case eIC_StoreBlob:
-        Process_IC_StoreBlob(*ic, socket, req);
-        break;
-    case eIC_GetSize:
-        Process_IC_GetSize(*ic, socket, req);
-        break;
-    case eIC_GetBlobOwner:
-        Process_IC_GetBlobOwner(*ic, socket, req);
-        break;
-    case eIC_Read:
-        Process_IC_Read(*ic, socket, req);
-        break;
-    case eIC_Remove:
-        Process_IC_Remove(*ic, socket, req);
-        break;
-    case eIC_RemoveKey:
-        Process_IC_RemoveKey(*ic, socket, req);
-        break;
-    case eIC_GetAccessTime:
-        Process_IC_GetAccessTime(*ic, socket, req);
-        break;
-    case eIC_HasBlobs:
-        Process_IC_HasBlobs(*ic, socket, req);
-        break;
-    case eIC_Purge1:
-        Process_IC_Purge1(*ic, socket, req);
-        break;
 
-    case eIC_Error:
-        WriteMsg(socket, "ERR:", req.err_msg);
-        break;
-    default:
-        _ASSERT(0);
+    const string& cmd = parser.GetCommand();
+    parser.ShiftParams();
+
+    if (cmd[0] != 'I'  ||  cmd[1] != 'C'  ||  cmd[2] != '('
+        ||  cmd[cmd.size() - 1] != ')')
+    {
+        NCBI_THROW(CNCReqParserException, eNotCommand,
+                   "Invalid IC request: '" + cmd + "'");
     }
+
+    m_CacheName = cmd.substr(3, cmd.size() - 4);
+
+    ICache* ic = m_Server->GetLocalCache(m_CacheName);
+    if (ic == 0) {
+        string err_msg = "Cache unknown: ";
+        err_msg.append(m_CacheName);
+        WriteMsg(GetSocket(), "ERR:", err_msg);
+        return;
+    }
+
+    stat.details = "Cache=\"";
+    stat.details += m_CacheName + "\"";
+
+    string cmd_name = parser.GetCommand();
+
+    TProcessorsMap::iterator it = m_Processors.find(cmd_name);
+    if (it == m_Processors.end()) {
+        NCBI_THROW(CNCReqParserException, eNotCommand,
+                   "Invalid IC command: '" + cmd_name + "'");
+    }
+
+    size_t need_cnt = it->second.params_cnt;
+    CheckParamsCount(parser, need_cnt);
+
+    (this->*it->second.func)(*ic, parser, stat);
 }
 
 
@@ -379,135 +191,155 @@ bool CICacheHandler::ProcessTransmission(
 }
 
 
-void CICacheHandler::Process_IC_SetTimeStampPolicy(ICache&           ic,
-                                                   CSocket&          sock, 
-                                                   SIC_Request&      req)
+void
+CICacheHandler::Process_IC_SetTimeStampPolicy(ICache&                 ic,
+                                              const CNCRequestParser& parser,
+                                              SNetCache_RequestStat&  stat)
 {
-    ic.SetTimeStampPolicy(req.i0, req.i1, req.i2);
-    WriteMsg(sock, "OK:", "");
+    ic.SetTimeStampPolicy(parser.GetUIntParam(0),
+                          parser.GetUIntParam(1),
+                          parser.GetUIntParam(2));
+    WriteMsg(GetSocket(), "OK:", "");
 }
 
 
-void CICacheHandler::Process_IC_GetTimeStampPolicy(ICache&           ic,
-                                                   CSocket&          sock, 
-                                                   SIC_Request&      req)
+void
+CICacheHandler::Process_IC_GetTimeStampPolicy(ICache&                 ic,
+                                              const CNCRequestParser& parser,
+                                              SNetCache_RequestStat&  stat)
 {
     ICache::TTimeStampFlags flags = ic.GetTimeStampPolicy();
     string str;
     NStr::UIntToString(str, flags);
-    WriteMsg(sock, "OK:", str);
+    WriteMsg(GetSocket(), "OK:", str);
 }
 
-void CICacheHandler::Process_IC_SetVersionRetention(ICache&           ic,
-                                                    CSocket&          sock, 
-                                                    SIC_Request&      req)
+void
+CICacheHandler::Process_IC_SetVersionRetention(ICache&                 ic,
+                                               const CNCRequestParser& parser,
+                                               SNetCache_RequestStat&  stat)
 {
+    const string& key = parser.GetParam(0);
     ICache::EKeepVersions policy;
-    if (NStr::CompareNocase(req.key, "KA") == 0) {
+    if (NStr::CompareNocase(key, "KA") == 0) {
         policy = ICache::eKeepAll;
     } else 
-    if (NStr::CompareNocase(req.key, "DO") == 0) {
+    if (NStr::CompareNocase(key, "DO") == 0) {
         policy = ICache::eDropOlder;
     } else 
-    if (NStr::CompareNocase(req.key, "DA") == 0) {
+    if (NStr::CompareNocase(key, "DA") == 0) {
         policy = ICache::eDropAll;
     } else {
-        WriteMsg(sock, "ERR:", "Invalid version retention code");
+        WriteMsg(GetSocket(), "ERR:", "Invalid version retention code");
         return;
     }
     ic.SetVersionRetention(policy);
-    WriteMsg(sock, "OK:", "");
+    WriteMsg(GetSocket(), "OK:", "");
 }
 
-void CICacheHandler::Process_IC_GetVersionRetention(ICache&           ic,
-                                                    CSocket&          sock, 
-                                                    SIC_Request&      req)
+void
+CICacheHandler::Process_IC_GetVersionRetention(ICache&                 ic,
+                                               const CNCRequestParser& parser,
+                                               SNetCache_RequestStat&  stat)
 {
     int p = ic.GetVersionRetention();
     string str;
     NStr::IntToString(str, p);
-    WriteMsg(sock, "OK:", str);
+    WriteMsg(GetSocket(), "OK:", str);
 }
 
-void CICacheHandler::Process_IC_GetTimeout(ICache&           ic,
-                                           CSocket&          sock, 
-                                           SIC_Request&      req)
+void
+CICacheHandler::Process_IC_GetTimeout(ICache&                 ic,
+                                      const CNCRequestParser& parser,
+                                      SNetCache_RequestStat&  stat)
 {
     int to = ic.GetTimeout();
     string str;
     NStr::UIntToString(str, to);
-    WriteMsg(sock, "OK:", str);
+    WriteMsg(GetSocket(), "OK:", str);
 }
 
-void CICacheHandler::Process_IC_IsOpen(ICache&              ic,
-                                       CSocket&              sock, 
-                                       SIC_Request&          req)
+void
+CICacheHandler::Process_IC_IsOpen(ICache&                 ic,
+                                  const CNCRequestParser& parser,
+                                  SNetCache_RequestStat&  stat)
 {
     bool io = ic.IsOpen();
     string str;
     NStr::UIntToString(str, (int)io);
-    WriteMsg(sock, "OK:", str);
+    WriteMsg(GetSocket(), "OK:", str);
 }
 
 
-void CICacheHandler::Process_IC_Store(ICache&              ic,
-                                      CSocket&             sock, 
-                                      SIC_Request&         req)
+void
+CICacheHandler::Process_IC_Store(ICache&                 ic,
+                                 const CNCRequestParser& parser,
+                                 SNetCache_RequestStat&  stat)
 {
-    WriteMsg(sock, "OK:", "");
+    unsigned int ttl = parser.GetUIntParam(0);
+    x_ParseKeyVersion(parser, 1, stat);
+
+    WriteMsg(GetSocket(), "OK:", "");
     m_SizeKnown = false;
 
     m_Writer.reset(
-        ic.GetWriteStream(req.key, req.version, req.subkey,
-                          req.i0, *m_Auth));
+        ic.GetWriteStream(m_Key, m_Version, m_SubKey, ttl, *m_Auth));
 
     m_Host->BeginReadTransmission();
 }
 
-void CICacheHandler::Process_IC_StoreBlob(ICache&              ic,
-                                          CSocket&             sock, 
-                                          SIC_Request&         req)
+void
+CICacheHandler::Process_IC_StoreBlob(ICache&                 ic,
+                                     const CNCRequestParser& parser,
+                                     SNetCache_RequestStat&  stat)
 {
-    WriteMsg(sock, "OK:", "");
+    unsigned int ttl = parser.GetUIntParam(0);
+    m_BlobSize = parser.GetUIntParam(1);
+    x_ParseKeyVersion(parser, 2, stat);
 
-    size_t blob_size = req.i1;
-    if (blob_size == 0) {
-        ic.Store(req.key, req.version, req.subkey, 0,
-                 0, req.i0, *m_Auth);
+    WriteMsg(GetSocket(), "OK:", "");
+
+    if (m_BlobSize == 0) {
+        ic.Store(m_Key, m_Version, m_SubKey, 0, 0, ttl, *m_Auth);
         return;
     }
 
     m_SizeKnown = true;
-    m_BlobSize = blob_size;
 
     m_Writer.reset(
-        ic.GetWriteStream(req.key, req.version, req.subkey,
-                          req.i0, *m_Auth));
+        ic.GetWriteStream(m_Key, m_Version, m_SubKey, ttl, *m_Auth));
 
     m_Host->BeginReadTransmission();
 }
 
 
-void CICacheHandler::Process_IC_GetSize(ICache&              ic,
-                                        CSocket&             sock,
-                                        SIC_Request&         req)
+void
+CICacheHandler::Process_IC_GetSize(ICache&                 ic,
+                                   const CNCRequestParser& parser,
+                                   SNetCache_RequestStat&  stat)
 {
-    size_t sz = ic.GetSize(req.key, req.version, req.subkey);
+    x_ParseKeyVersion(parser, 0, stat);
+
+    size_t sz = ic.GetSize(m_Key, m_Version, m_SubKey);
     string str;
     NStr::UIntToString(str, sz);
-    WriteMsg(sock, "OK:", str);
+    WriteMsg(GetSocket(), "OK:", str);
 }
 
-void CICacheHandler::Process_IC_GetBlobOwner(ICache&              ic,
-                                             CSocket&             sock, 
-                                             SIC_Request&         req)
+void
+CICacheHandler::Process_IC_GetBlobOwner(ICache&                 ic,
+                                        const CNCRequestParser& parser,
+                                        SNetCache_RequestStat&  stat)
 {
+    x_ParseKeyVersion(parser, 0, stat);
+
     string owner;
-    ic.GetBlobOwner(req.key, req.version, req.subkey, &owner);
-    WriteMsg(sock, "OK:", owner);
+    ic.GetBlobOwner(m_Key, m_Version, m_SubKey, &owner);
+    WriteMsg(GetSocket(), "OK:", owner);
 }
 
-bool CICacheHandler::ProcessWrite()
+bool
+CICacheHandler::ProcessWrite()
 {
     char buf[4096];
     size_t bytes_read;
@@ -528,23 +360,26 @@ bool CICacheHandler::ProcessWrite()
 }
 
 
-void CICacheHandler::Process_IC_Read(ICache&              ic,
-                                     CSocket&             sock, 
-                                     SIC_Request&         req)
+void
+CICacheHandler::Process_IC_Read(ICache&                 ic,
+                                const CNCRequestParser& parser,
+                                SNetCache_RequestStat&  stat)
 {
+    x_ParseKeyVersion(parser, 0, stat);
+
     ICache::SBlobAccessDescr ba_descr;
     ba_descr.buf = 0;
     ba_descr.buf_size = 0;
-    ic.GetBlobAccess(req.key, req.version, req.subkey, &ba_descr);
+    ic.GetBlobAccess(m_Key, m_Version, m_SubKey, &ba_descr);
 
     if (!ba_descr.blob_found) {
         string msg = "BLOB not found. ";
         //msg += req_id;
-        WriteMsg(sock, "ERR:", msg);
+        WriteMsg(GetSocket(), "ERR:", msg);
         return;
     }
     if (ba_descr.blob_size == 0) {
-        WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
+        WriteMsg(GetSocket(), "OK:", "BLOB found. SIZE=0");
         return;
     }
  
@@ -554,7 +389,7 @@ void CICacheHandler::Process_IC_Read(ICache&              ic,
     if (!m_Reader.get()) {
         string msg = "BLOB not found. ";
         //msg += req_id;
-        WriteMsg(sock, "ERR:", msg);
+        WriteMsg(GetSocket(), "ERR:", msg);
         return;
     }
     // Write first chunk right here
@@ -563,7 +398,7 @@ void CICacheHandler::Process_IC_Read(ICache&              ic,
     ERW_Result io_res = m_Reader->Read(buf, sizeof(buf), &bytes_read);
     if (io_res != eRW_Success || !bytes_read) { // TODO: should we check here for bytes_read?
         string msg = "BLOB not found. ";
-        WriteMsg(sock, "ERR:", msg);
+        WriteMsg(GetSocket(), "ERR:", msg);
         m_Reader.reset(0);
         return;
     }
@@ -571,75 +406,74 @@ void CICacheHandler::Process_IC_Read(ICache&              ic,
     string sz;
     NStr::UIntToString(sz, ba_descr.blob_size);
     msg += sz;
-    WriteMsg(sock, "OK:", msg);
+    WriteMsg(GetSocket(), "OK:", msg);
     
     // translate BLOB fragment to the network
-    CNetCacheServer::WriteBuf(sock, buf, bytes_read);
+    CNetCacheServer::WriteBuf(GetSocket(), buf, bytes_read);
 
     // TODO: Can we check here that bytes_read is less than sizeof(buf)
     // and optimize out delayed write?
     m_Host->BeginDelayedWrite();
 }
 
-void CICacheHandler::Process_IC_Remove(ICache&              ic,
-                                       CSocket&             sock, 
-                                       SIC_Request&         req)
+void
+CICacheHandler::Process_IC_Remove(ICache&                 ic,
+                                  const CNCRequestParser& parser,
+                                  SNetCache_RequestStat&  stat)
 {
-    ic.Remove(req.key, req.version, req.subkey);
-    WriteMsg(sock, "OK:", "");
+    x_ParseKeyVersion(parser, 0, stat);
+
+    ic.Remove(m_Key, m_Version, m_SubKey);
+    WriteMsg(GetSocket(), "OK:", "");
 }
 
-void CICacheHandler::Process_IC_RemoveKey(ICache&              ic,
-                                          CSocket&             sock, 
-                                          SIC_Request&         req)
+void
+CICacheHandler::Process_IC_RemoveKey(ICache&                 ic,
+                                     const CNCRequestParser& parser,
+                                     SNetCache_RequestStat&  stat)
 {
-    ic.Remove(req.key);
-    WriteMsg(sock, "OK:", "");
+    ic.Remove(parser.GetParam(0));
+    WriteMsg(GetSocket(), "OK:", "");
 }
 
 
-void CICacheHandler::Process_IC_GetAccessTime(ICache&              ic,
-                                              CSocket&             sock, 
-                                              SIC_Request&         req)
+void
+CICacheHandler::Process_IC_GetAccessTime(ICache&                 ic,
+                                         const CNCRequestParser& parser,
+                                         SNetCache_RequestStat&  stat)
 {
-    time_t t = ic.GetAccessTime(req.key, req.version, req.subkey);
+    x_ParseKeyVersion(parser, 0, stat);
+
+    time_t t = ic.GetAccessTime(m_Key, m_Version, m_SubKey);
     string str;
-    NStr::UIntToString(str, t);
-    WriteMsg(sock, "OK:", str);
+    NStr::UIntToString(str, static_cast<unsigned long>(t));
+    WriteMsg(GetSocket(), "OK:", str);
 }
 
 
-void CICacheHandler::Process_IC_HasBlobs(ICache&              ic,
-                                         CSocket&             sock, 
-                                         SIC_Request&         req)
+void
+CICacheHandler::Process_IC_HasBlobs(ICache&                 ic,
+                                    const CNCRequestParser& parser,
+                                    SNetCache_RequestStat&  stat)
 {
-    bool hb = ic.HasBlobs(req.key, req.subkey);
+    x_ParseKeyVersion(parser, 0, stat);
+
+    bool hb = ic.HasBlobs(m_Key, m_SubKey);
     string str;
     NStr::UIntToString(str, (int)hb);
-    WriteMsg(sock, "OK:", str);
+    WriteMsg(GetSocket(), "OK:", str);
 }
 
 
-void CICacheHandler::Process_IC_Purge1(ICache&              ic,
-                                       CSocket&             sock, 
-                                       SIC_Request&         req)
+void
+CICacheHandler::Process_IC_Purge1(ICache&                 ic,
+                                  const CNCRequestParser& parser,
+                                  SNetCache_RequestStat&  stat)
 {
-    ICache::EKeepVersions keep_versions = (ICache::EKeepVersions) req.i1;
-    ic.Purge(req.i0, keep_versions);
-    WriteMsg(sock, "OK:", "");
-}
-
-
-void CICacheHandler::x_GetKeyVersionSubkey(const char* s, SIC_Request* req)
-{
-    NC_SKIPSPACE(s)
-    NC_GETVAR(s, req->key)
-    NC_SKIPSPACE(s)
-    NC_CHECK_END(s)
-    req->version = (unsigned) atoi(s);
-    NC_SKIPNUM(s)
-    NC_SKIPSPACE(s)
-    NC_GETVAR(s, req->subkey)
+    ICache::EKeepVersions keep_versions
+                             = (ICache::EKeepVersions)parser.GetUIntParam(0);
+    ic.Purge(parser.GetUIntParam(1), keep_versions);
+    WriteMsg(GetSocket(), "OK:", "");
 }
 
 

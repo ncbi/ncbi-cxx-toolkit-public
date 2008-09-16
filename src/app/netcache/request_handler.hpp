@@ -46,7 +46,54 @@ public:
     virtual CNetCacheServer* GetServer() = 0;
     virtual SNetCache_RequestStat* GetStat() = 0;
     virtual const string* GetAuth() = 0;
+    virtual void SetDiagParameters(const string& client_ip,
+                                   const string& session_id) = 0;
 };
+
+
+class CNCReqParserException : public CException
+{
+public:
+    enum EErrCode {
+        /// Request has wrong format
+        /// (e.g. parameter starts with quote but not ends with it)
+        eWrongFormat,
+        /// Empty line in protocol or invalid command
+        eNotCommand,
+        /// Wrong number of parameters to the command
+        eWrongParamsCnt,
+        /// Wrong format of command parameters
+        eWrongParams
+    };
+
+    virtual const char* GetErrCodeString(void) const;
+
+    NCBI_EXCEPTION_DEFAULT(CNCReqParserException, CException);
+};
+
+
+class CNCRequestParser
+{
+public:
+	CNCRequestParser(const string& request);
+
+    const string& GetCommand(void) const;
+
+    size_t GetParamsCount(void) const;
+
+    const string& GetParam(size_t param_num) const;
+
+    int GetIntParam(size_t param_num) const;
+    unsigned int GetUIntParam(size_t param_num) const;
+
+    bool IsParamNCKey(size_t param_num) const;
+
+    void ShiftParams(void);
+
+private:
+    vector<string> m_Params;
+};
+
 
 // NetCache request handler
 class CNetCache_RequestHandler
@@ -60,7 +107,7 @@ public:
     virtual ~CNetCache_RequestHandler() {}
     /// Process request
     virtual
-    void ProcessRequest(string&                request,
+    void ProcessRequest(CNCRequestParser&      parser,
                         SNetCache_RequestStat& stat) = 0;
     // Optional for transmission reader, to start reading
     // transmission call m_Host->BeginReadTransmission()
@@ -81,6 +128,9 @@ protected:
     {
         CNetCacheServer::WriteMsg(sock, prefix, msg);
     }
+
+    void CheckParamsCount(const CNCRequestParser& parser, size_t need_cnt);
+
 protected:
     CNetCache_RequestHandlerHost* m_Host;
     CNetCacheServer*              m_Server;
@@ -90,6 +140,69 @@ protected:
 private:
     CSocket* m_Socket;
 };
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//     Inlines
+//////////////////////////////////////////////////////////////////////////
+
+inline const string&
+CNCRequestParser::GetCommand(void) const
+{
+    return m_Params[0];
+}
+
+inline size_t
+CNCRequestParser::GetParamsCount(void) const
+{
+    return m_Params.size() - 1;
+}
+
+inline const string&
+CNCRequestParser::GetParam(size_t param_num) const
+{
+    ++param_num;
+    if (param_num < m_Params.size())
+        return m_Params[param_num];
+    else
+        return kEmptyStr;
+}
+
+inline int
+CNCRequestParser::GetIntParam(size_t param_num) const
+{
+    return atoi(GetParam(param_num).c_str());
+}
+
+inline unsigned int
+CNCRequestParser::GetUIntParam(size_t param_num) const
+{
+    return static_cast<unsigned int>(GetIntParam(param_num));
+}
+
+inline bool
+CNCRequestParser::IsParamNCKey(size_t param_num) const
+{
+    bool is_key;
+    try
+    {
+        CNetCache_Key key(GetParam(param_num));
+        is_key = true;
+    }
+    catch (CException&)
+    {
+    	is_key = false;
+    }
+    return is_key;
+}
+
+inline void
+CNCRequestParser::ShiftParams(void)
+{
+    m_Params.erase(m_Params.begin());
+}
+
 
 END_NCBI_SCOPE
 
