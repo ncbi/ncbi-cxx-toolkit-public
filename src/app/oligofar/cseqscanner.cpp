@@ -64,16 +64,29 @@ void CSeqScanner::SequenceBuffer( CSeqBuffer* buffer )
 
 void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const char * A )
 {
+    if( m_queryHash == 0 ) return;
+    
 	Uint8 altCount = 1;
+    int ambCount = 0;
+    int allowedMismatches = m_queryHash->GetMaxMism();
+    
 	const char * y = a;
-	for( const char * Y = a + m_windowLength; y < Y; ++y ) {
-		altCount *= Ncbi4naAlternativeCount( 0x0f & *y );
+
+    int winLen = min( m_queryHash->GetWindowLength(), 15 );
+
+	for( const char * Y = a + winLen; y < Y; ++y ) {
+        CNcbi8naBase b( *y & 0x0f );
+        int k = b.GetAltCount();
+        if( k > 1 ) {
+            altCount *= k;
+            ambCount++;
+        }
 	}
 	int lastPos = -1;
 	ERangeType lastType = eType_skip;
 	// TODO: somewhere here a check on range length should be inserted
 	for( const char * z = a; y < A;  ) {
-		ERangeType type = ( altCount == 1 ) ? eType_direct : ( altCount < m_maxAlternatives ) ? eType_iterate : eType_skip ;
+		ERangeType type = ( altCount == 1 || ambCount <= allowedMismatches ) ? eType_direct : ( altCount < m_maxAlternatives ) ? eType_iterate : eType_skip ;
 		if( lastType != type ) {
 			if( lastPos != -1 ) {
 				if( lastType != eType_skip && rangeMap.back().second != eType_skip && 
@@ -88,8 +101,12 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
 			lastPos = z - a;
 			lastType = type;
 		}
-		altCount /= Ncbi4naAlternativeCount( 0x0f & *z++ );
-		altCount *= Ncbi4naAlternativeCount( 0x0f & *y++ );
+        CNcbi8naBase bz( 0x0f & *z++ );
+        CNcbi8naBase by( 0x0f & *y++ );
+		altCount /= bz.GetAltCount();
+		altCount *= by.GetAltCount();
+        ambCount -= bz.GetAltCount() > 1 ? 1 : 0;
+        ambCount += by.GetAltCount() > 1 ? 1 : 0;
 	}
 	rangeMap.push_back( make_pair( TRange( lastPos, A - a ), lastType ) );
 }
@@ -99,14 +116,14 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
 template<class Callback>
 inline void CSeqScanner::C_LoopImpl_Ncbi8naNoAmbiguities::RunCallback( Callback& callback )
 {
-    callback( Uint4( m_hashCode.GetHashValue() ), 0, 1 );
+    callback( Uint8( m_hashCode.GetHashValue() ), 0, 1 );
 }
 
 template<class Callback>
 inline void CSeqScanner::C_LoopImpl_Ncbi8naAmbiguities::RunCallback( Callback& callback )
 {
     for( CHashIterator h( m_hashGenerator, m_mask, m_mask ); h; ++h ) {
-        callback( Uint4( *h ), 0, m_hashGenerator.GetAlternativesCount() );
+        callback( Uint8( *h ), 0, m_hashGenerator.GetAlternativesCount() );
     }
 }
 
@@ -172,22 +189,19 @@ template <class LoopImpl, class Callback>
 void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callback, CProgressIndicator* p, 
                             int from, int toOpen, const char * a, const char * A, int off )
 {
+    if( m_queryHash == 0 ) return;
+    int winLen = m_queryHash->GetWindowLength();
+    
     if( from < 0 ) from = 0;
     if( toOpen > A - a ) toOpen = A - a;
-    if( toOpen - from < int( m_windowLength ) ) return;
-
-    //cerr << "\n[" << (off + from) << ".." << (off + toOpen - 1) << "] " << loop.GetName() << "\n";
+    if( toOpen - from < int( winLen ) ) return;
 
     const char * x = a + from;
-    for( const char * w = x + m_windowLength; x < w ; ) loop.Prepare( *x++ );
+    for( const char * w = x + winLen; x < w ; ) loop.Prepare( *x++ );
 
     if( p ) p->SetCurrentValue( off + from );
-    off -= m_windowLength;
+    off -= winLen;
     for( const char * w = a + toOpen ; x < w ; ) {
-        //int pos = off + from, end = off + toOpen - m_windowLength; pos < end; ++pos ) {
-        //for( int pos = off + from, end = off + toOpen - m_windowLength; pos < end; ++pos ) {
-        //ASSERT( (pos + a + m_windowLength ) < A );
-        //if( (pos + a + m_windowLength) != x ) THROW( logic_error, " x - a - w = " << ( x - a - m_windowLength ) << " while pos = " << pos << " and off = " << off );
         if( loop.IsOk() ) {
             matches.clear();
             loop.RunCallback( callback );
@@ -195,7 +209,7 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
             ITERATE( TMatches, m, matches ) {
                 switch( m->strand ) {
                 case '+': m_filter->Match( *m, a, A, pos - m->offset ); break;
-                case '-': m_filter->Match( *m, a, A, pos + m->offset + m_windowLength - 1 ); break;
+                case '-': m_filter->Match( *m, a, A, pos + m->offset + winLen - 1 ); break;
                 default: THROW( logic_error, "Invalid strand " << m->strand );
                 }
             }
@@ -208,18 +222,20 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
 template<class NoAmbiq, class Ambiq, class Callback>
 void CSeqScanner::x_RangemapLoop( const TRangeMap& rm, TMatches& matches,  Callback& cbk, CProgressIndicator*p, const char * a, const char * A, int off )
 {
-    unsigned mask = CBitHacks::WordFootprint<unsigned>( 2 * m_windowLength );
+    if( m_queryHash == 0 ) return;
+    int winLen = m_queryHash->GetWindowLength();
+    Uint8 mask = CBitHacks::WordFootprint<Uint8>( 2 * winLen );
     for( TRangeMap::const_iterator i = rm.begin(); i != rm.end(); ++i ) {
         if( i->second == eType_skip ) {
             if( p ) p->SetCurrentValue( i->first.second );
         } else if( i->second == eType_direct ) {
 
-            NoAmbiq impl( m_windowLength, m_maxSimplicity );
+            NoAmbiq impl( *m_queryHash, m_maxSimplicity );
             x_MainLoop( impl, matches, cbk, p, i->first.first, i->first.second, a, A, off );
 
         } else { // eType_iterate
 
-            Ambiq impl( m_windowLength, m_maxSimplicity, m_maxAlternatives, mask );
+            Ambiq impl( *m_queryHash, m_maxSimplicity, m_maxAlternatives, mask );
             x_MainLoop( impl, matches, cbk, p, i->first.first, i->first.second, a, A, off );
         }
     }
@@ -256,6 +272,11 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
 {
     cerr << "ATTENTION! OLD SEQUENCE SCANNER IS BEING USED! DON'T USE IT FOR PRODUCTION PURPOSES!\n";
 
+    if( m_queryHash == 0 ) return;
+    if( m_queryHash->GetOffset() ) THROW( runtime_error, "OLD SEQUENCE SCANNER DOES NOT SUPPORT LONG WINDOW SIZE!" );
+
+    unsigned winLen = m_queryHash->GetWindowLength();
+
     TRangeMap rangeMap;
     CreateRangeMap( rangeMap, a, A );
 
@@ -264,7 +285,7 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
 
     TMatches matches;
     CScanCallback callback( matches, *m_queryHash );
-    unsigned mask = CBitHacks::WordFootprint<unsigned>( 2 * m_windowLength );
+    Uint8 mask = CBitHacks::WordFootprint<Uint8>( 2 * winLen );
 
     string seqname;
     if( m_seqIds ) {
@@ -279,17 +300,17 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
         if( i->second == eType_skip ) {
             p.SetCurrentValue( i->first.second );
         } else if ( i->second == eType_direct ) {
-            CHashCode hashCode( m_windowLength );
+            CHashCode hashCode( winLen );
             CComplexityMeasure complexity;
             const char * x = a + i->first.first;
-            for( unsigned pos = 0 ; pos < m_windowLength && x < A; ++pos ) {
+            for( unsigned pos = 0 ; pos < winLen && x < A; ++pos ) {
                 hashCode.AddBaseCode( Ncbi4na2Ncbi2na( *x++ ) );
                 complexity.Add( hashCode.GetNewestTriplet() );
             }
-            for( int pos = off + i->first.first, end = off + i->first.second - m_windowLength; pos < end; ++pos ) {
+            for( int pos = off + i->first.first, end = off + i->first.second - winLen; pos < end; ++pos ) {
                 ASSERT( (pos + a) < A );
                 
-                if( (pos + a + m_windowLength) != x ) THROW( logic_error, " x - a - w = " << ( x - a - m_windowLength ) << " while pos = " << pos << " and off = " << off );
+                if( (pos + a + winLen) != x ) THROW( logic_error, " x - a - w = " << ( x - a - winLen ) << " while pos = " << pos << " and off = " << off );
                 if( complexity < m_maxSimplicity ) {
                     matches.clear();
                     callback( Uint4( hashCode.GetHashValue() ), 0, 1 );
@@ -297,7 +318,7 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
                         switch( m->strand ) {
                         case '+': m_filter->Match( *m, a, A, pos - m->offset );
                             break;
-                        case '-': m_filter->Match( *m, a, A, pos + m->offset + m_windowLength - 1 );
+                        case '-': m_filter->Match( *m, a, A, pos + m->offset + winLen - 1 );
                             break;
                         default: THROW( logic_error, "Invalid strand " << m->strand );
                         }
@@ -310,17 +331,17 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
             }
         } else {
             // eType_iterate
-            CHashGenerator hashGen( m_windowLength );
+            CHashGenerator hashGen( winLen );
             CComplexityMeasure complexity;
             const char * x = a + i->first.first;
-            for( unsigned pos = 0 ; pos < m_windowLength && x < A; ++pos ) {
+            for( unsigned pos = 0 ; pos < winLen && x < A; ++pos ) {
                 hashGen.AddBaseMask( *x++ );
                 complexity.Add( hashGen.GetNewestTriplet() );
             }
     
             for( int pos = off + i->first.first, end = off + i->first.second; pos < end; ++pos ) {
                 ASSERT( (pos + a) < A );
-                if( (pos + a + m_windowLength) != x ) THROW( logic_error, " x - a - w = " << ( x - a - m_windowLength ) << " while pos = " << pos << " and off = " << off );
+                if( (pos + a + winLen) != x ) THROW( logic_error, " x - a - w = " << ( x - a - winLen ) << " while pos = " << pos << " and off = " << off );
                 if( hashGen.GetAlternativesCount() < m_maxAlternatives && complexity < m_maxSimplicity ) {
                     matches.clear();
                     for( CHashIterator h( hashGen, mask, mask ); h; ++h ) {
@@ -330,7 +351,7 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
                         switch( m->strand ) {
                         case '+': m_filter->Match( *m, a, A, pos - m->offset );
                             break;
-                        case '-': m_filter->Match( *m, a, A, pos + m->offset + m_windowLength - 1 );
+                        case '-': m_filter->Match( *m, a, A, pos + m->offset + winLen - 1 );
                             break;
                         default: THROW( logic_error, "Invalid strand " << m->strand );
                         }

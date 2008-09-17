@@ -8,7 +8,11 @@
 	* Fixed output for paired reads - some hits did not have "target" columns set
 
 3.22    2008/09/03
-        * Added flag -R (mutual orientation)
-        * Added development version of di-nucleotide colorspace mapping
+    * Added flag -R (mutual orientation)
+    * Added development version of di-nucleotide colorspace mapping
+
+3.23	2008/09/17
+	* Now -A1 -n1 allows one ambiguity per hash word on subject side - it gets considered as miamatch
+	* Option -W is added, now window may be longer then 15 bases (may be up to 24).
 
 	

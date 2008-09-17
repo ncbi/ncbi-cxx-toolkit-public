@@ -4,8 +4,8 @@ NAME
     oligoFAR version 3.22 - global alignment of single or paired short reads
 
 SYNOPSIS
-    oligofar [-hV] [-C config] [-w wsize] [-n hashmism] [-N+|-] 
-             [-a max-alt-qry] [-A max-alt-sbj] [-H v|m|a]
+    oligofar [-hV] [-C config] [-w winlen] [-k wordsz] [-n hashmism] 
+             [-N+|-] [-a max-alt-qry] [-A max-alt-sbj] [-H v|m|a]
              [-z minDist] [-Z maxDist] [-D deltaDist] [-p minPct]
              [-u topCnt] [-t topPct] [-F dust] [-s strands]
              [-i input] [-d database] [-l gilist] [-b snpdb]
@@ -227,12 +227,21 @@ File options
                 small makes scan inefficient. 
 
 Hashing and scanning options
+    --word-size=size
+    -k size     Sets hashing word size. Reasonable values are 11-13 for
+                VectorTable (11 for 32-bit architecture), 11-15 for 
+                ArraymapTable (see --hash-type).  Default is the smaller 
+                of window size (see --window-size) and 11, 13 or 15 (depending 
+                on an architecture and hash type). Can't be less then half of
+                window size.
+
     --window-size=size
-    -w size     Sets window size. Reasonable values are 11-13 for VectorTable, 
-                11-15 for ArraymapTable implementations of hash.  OligoFAR
-                hashes one window per read, choosing it as close to 5' end as
-                possible, but may shift it to the right if the 5' end has too
-                many low quality (ambiguous) bases.
+    -w size     Sets window size. Reasonable values are 11-26 for VectorTable, 
+                11-30 for ArraymapTable implementations of hash (11-22 for
+                VectorTable on 32-bit architecture).  OligoFAR hashes one window 
+                per read, choosing it as close to 5' end as possible, but may 
+                shift it to the right if the 5' end has too many low quality 
+                (ambiguous) bases.  
 
     --input-max-mism=count
     -n count    Sets maximal allowed number of mismatches within hashed word.

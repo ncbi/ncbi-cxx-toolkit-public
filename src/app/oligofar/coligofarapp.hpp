@@ -53,8 +53,14 @@ protected:
         kLongOpt_min_block_length = kLongOptBase + 0x02
     };
 
+    unsigned WordSize() const;
+    unsigned DefaultWordSize() const;
+    char HashTypeChar() const;
+
 protected:
     unsigned m_windowLength;
+    unsigned m_wordSize;
+    unsigned m_windowMask;
     unsigned m_maxHashMism;
     unsigned m_maxHashAlt;
     unsigned m_maxFastaAlt;

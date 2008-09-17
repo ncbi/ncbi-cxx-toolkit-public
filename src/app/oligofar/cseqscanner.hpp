@@ -20,8 +20,8 @@ public:
     typedef vector<CQuery*> TInputChunk;
     typedef array_set <CQueryHash::SHashAtom> TMatches;
 
-    CSeqScanner( unsigned windowLength ) : 
-        m_windowLength( windowLength ), m_maxAlternatives( 1024 ), m_maxSimplicity( 2.0 ), 
+    CSeqScanner() : 
+        m_maxAlternatives( 1024 ), m_maxSimplicity( 2.0 ), 
         m_seqIds(0), m_snpDb(0), m_filter(0), m_queryHash(0), m_inputChunk(0), m_minBlockLength(1000),
         m_ord(-1), m_run_old_scanning_code(false) {}
     
@@ -63,12 +63,16 @@ protected:
     class C_ScanImpl_Base 
     {
     public:
-        C_ScanImpl_Base( int windowLength, double maxSimpl ) : 
-            m_windowLength( windowLength ), m_maxSimplicity( maxSimpl ) {}
+        C_ScanImpl_Base( const CHashParam& hp, double maxSimpl ) : 
+            m_hashParam( hp ), m_maxSimplicity( maxSimpl ) {}
         double GetComplexity() const { return m_complexityMeasure; }
         bool IsOk() const { return m_complexityMeasure <= m_maxSimplicity; }
+        // CHashParam  API
+        int GetWindowLength() const { return m_hashParam.GetWindowLength(); }
+        int GetExtWordOffset() const { return m_hashParam.GetOffset(); }
+        int GetWordLength( int i ) const { return m_hashParam.GetWordLength( i ); }
     protected:
-        int m_windowLength;
+        const CHashParam& m_hashParam;
         double m_maxSimplicity;
         CComplexityMeasure m_complexityMeasure;
     };
@@ -76,8 +80,8 @@ protected:
     class C_LoopImpl_Ncbi8naNoAmbiguities : public C_ScanImpl_Base
     {
     public:
-        C_LoopImpl_Ncbi8naNoAmbiguities( int windowLength, double maxSimpl ) : 
-            C_ScanImpl_Base( windowLength, maxSimpl ), m_hashCode( windowLength ) {}
+        C_LoopImpl_Ncbi8naNoAmbiguities( const CHashParam& hp, double maxSimpl ) : 
+            C_ScanImpl_Base( hp, maxSimpl ), m_hashCode( hp.GetWindowLength() ) {}
         template<class Callback>
         void RunCallback( Callback& );
         void Prepare( char a );
@@ -90,8 +94,11 @@ protected:
     class C_LoopImpl_Ncbi8naAmbiguities : public C_ScanImpl_Base
     {
     public:
-        C_LoopImpl_Ncbi8naAmbiguities( int windowLength, double maxSimpl, Uint8 maxAlt, unsigned mask ) : 
-            C_ScanImpl_Base( windowLength, maxSimpl ), m_hashGenerator( windowLength ), m_maxAlternatives( maxAlt ), m_mask( mask ) {}
+        C_LoopImpl_Ncbi8naAmbiguities( const CHashParam& hp, 
+                                       double maxSimpl, Uint8 maxAlt, Uint8 mask ) : 
+            C_ScanImpl_Base( hp, maxSimpl ), 
+            m_hashGenerator( hp.GetWindowLength() ), 
+            m_maxAlternatives( maxAlt ), m_mask( mask ) {}
         template<class Callback>
         void RunCallback( Callback& );
         void Prepare( char a );
@@ -101,14 +108,14 @@ protected:
     protected:
         fourplanes::CHashGenerator m_hashGenerator;
         Uint8 m_maxAlternatives;
-        unsigned m_mask;
+        Uint8 m_mask;
     };
 
     class C_LoopImpl_ColorspNoAmbiguities : public C_LoopImpl_Ncbi8naNoAmbiguities
     {
     public:
-        C_LoopImpl_ColorspNoAmbiguities( int windowLength, double maxSimpl ) : 
-            C_LoopImpl_Ncbi8naNoAmbiguities( windowLength, maxSimpl ), m_lastBase(1) {}
+        C_LoopImpl_ColorspNoAmbiguities( const CHashParam& hp, double maxSimpl ) : 
+            C_LoopImpl_Ncbi8naNoAmbiguities( hp, maxSimpl ), m_lastBase(1) {}
         void Prepare( char a );
         void Update( char a );
         const char * GetName() const { return "C_LoopImpl_ColorspNoAmbiguities"; }
@@ -119,8 +126,9 @@ protected:
     class C_LoopImpl_ColorspAmbiguities : public C_LoopImpl_Ncbi8naAmbiguities
     {
     public:
-        C_LoopImpl_ColorspAmbiguities( int windowLength, double maxSimpl, Uint8 maxAlt, unsigned mask ) : 
-            C_LoopImpl_Ncbi8naAmbiguities( windowLength, maxSimpl, maxAlt, mask ),m_lastBase(1) {}
+        C_LoopImpl_ColorspAmbiguities( const CHashParam& hp, 
+                                       double maxSimpl, Uint8 maxAlt, Uint8 mask ) : 
+            C_LoopImpl_Ncbi8naAmbiguities( hp, maxSimpl, maxAlt, mask ),m_lastBase(1) {}
         void Prepare( char a );
         void Update( char a );
         const char * GetName() const { return "C_LoopImpl_ColorspAmbiguities"; }
@@ -129,7 +137,7 @@ protected:
     };
 
 protected:
-    unsigned m_windowLength;
+//    unsigned m_windowLength;
     Uint8 m_maxAlternatives;
     double m_maxSimplicity;
     CSeqIds * m_seqIds;

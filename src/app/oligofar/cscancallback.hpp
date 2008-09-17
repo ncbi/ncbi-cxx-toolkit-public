@@ -12,7 +12,7 @@ public:
     typedef CSeqScanner::TMatches TMatches;
     CScanCallback( TMatches& matches, CQueryHash& queryHash ) :
         m_matches( matches ), m_queryHash( queryHash ) {}
-    void operator () ( Uint4 hash, Uint4 mism, Uint8 alt ) {
+    void operator () ( Uint8 hash, Uint4 mism, Uint8 alt ) {
         m_mism = mism;
         m_queryHash.ForEach( hash, *this );
     }
