@@ -33,6 +33,8 @@
 #ifndef CMASK_FASTA_READER_H
 #define CMASK_FASTA_READER_H
 
+#include <objtools/readers/fasta.hpp>
+
 #include <objtools/seqmasks_io/mask_reader.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -48,12 +50,20 @@ public:
      **\brief Object constructor.
      **
      **\param newInputStream input stream to read data from.
+     **\param is_nucl true if the input is DNA, false if it is protein
+     **\param parse_seqids false to disable parsing of deflines
      **
      **/
     CMaskFastaReader( CNcbiIstream & newInputStream, bool is_nucl = true,
                       bool parse_seqids = false )
         : CMaskReader( newInputStream ), is_nucleotide_(is_nucl),
-        parse_seqids_(parse_seqids)
+          parse_seqids_(parse_seqids), 
+          fasta_reader_( newInputStream,
+                         CONST_FLAGS | 
+                         (is_nucl ? objects::CFastaReader::fAssumeNuc 
+                                  : objects::CFastaReader::fAssumeProt) |
+                         (parse_seqids ? 0 
+                                       : objects::CFastaReader::fNoParseID) )
     {
         if( !newInputStream && !newInputStream.eof() ) {
             NCBI_THROW( Exception, eBadStream, 
@@ -78,8 +88,16 @@ public:
     virtual CRef< objects::CSeq_entry > GetNextSequence();
 
 private:
+    /** Unchaged subset of flags. */
+    static const objects::CFastaReader::TFlags CONST_FLAGS =
+        objects::CFastaReader::fForceType | 
+        objects::CFastaReader::fOneSeq    | 
+        objects::CFastaReader::fAllSeqIds;
+
     bool is_nucleotide_; /**< This object is reading nucleotide sequences */
     bool parse_seqids_;  /**< Should the Seq-ids be parsed? */
+
+    objects::CFastaReader fasta_reader_; /**< Fasta reader object. */
 };
 
 END_NCBI_SCOPE

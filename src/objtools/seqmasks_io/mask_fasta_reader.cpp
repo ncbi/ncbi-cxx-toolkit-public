@@ -36,7 +36,6 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidbg.hpp>
-#include <objtools/readers/fasta.hpp>
 #include <objects/seq/Bioseq.hpp>
 
 #include <objtools/seqmasks_io/mask_fasta_reader.hpp>
@@ -48,27 +47,10 @@ USING_SCOPE(objects);
 //-------------------------------------------------------------------------
 CRef< CSeq_entry > CMaskFastaReader::GetNextSequence()
 {
-    if( input_stream.eof() ) return CRef< CSeq_entry >( null );
-    CStreamLineReader line_reader( input_stream );
-
-    CFastaReader::TFlags flags = 
-        CFastaReader::fForceType |
-        CFastaReader::fOneSeq    |
-        CFastaReader::fAllSeqIds;
-    if ( !parse_seqids_ ) {
-        flags |= CFastaReader::fNoParseID;
-    }
-
-    flags += is_nucleotide_ 
-        ? CFastaReader::fAssumeNuc 
-        : CFastaReader::fAssumeProt;
-
-    CFastaReader fasta_reader( line_reader, flags );
-
-    while( !input_stream.eof() )
+    while( !fasta_reader_.AtEOF() )
     {
         CRef< CSeq_entry > aSeqEntry( null );
-        aSeqEntry = fasta_reader.ReadSet( 1 );
+        aSeqEntry = fasta_reader_.ReadSet( 1 );
 
         if( !input_stream && !input_stream.eof() ) {
             NCBI_THROW( Exception, eBadStream,
