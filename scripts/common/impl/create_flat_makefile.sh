@@ -106,7 +106,7 @@ fi
 COMMON_Exec cd $builddir
 dll=""
 test -f "../status/DLL.enabled" && dll="-dll"
-ptbini="$srcdir/compilers/msvc710_prj/$ptbname.ini"
+ptbini="$srcdir/src/build-system/$ptbname.ini"
 test -f "$ptbini" || Usage "$ptbini not found"
 
 
