@@ -72,12 +72,7 @@ public:
 	void Freeze();
     void Reserve( unsigned batch );
 
-    /*
-    template<class Callback, class HashImpl>
-    void ForEach( unsigned hash, const HashImpl& hashTable, Callback& callback ) const { hashTable.ForEach( hash, callback ); }
-    */
-
-    typedef deque<SHashAtom> TMatchSet;
+    typedef vector<SHashAtom> TMatchSet;
 
     class C_ListInserter
     {
@@ -90,6 +85,9 @@ public:
 
     template<class Callback>
     void ForEach( Uint8 hash, Callback& callback ) const;
+
+    bool GetOneHash() const { return m_oneHash; }
+    void SetOneHash( bool to ) { m_oneHash = to; }
 
     int  GetNcbi4na( Uint8& window, CSeqCoding::ECoding, const unsigned char * data, unsigned length );
     int  GetNcbi4na( Uint8& window, Uint8& windowx, CSeqCoding::ECoding, const unsigned char * data, unsigned length );
@@ -137,6 +135,8 @@ protected:
     
 protected:
 	EHashType m_hashType;
+
+    mutable TMatchSet m_listA, m_listB; // to keep memory space reserved between ForEach calls
 	
 	CVectorTable m_hashTableV;
 	CMultimapTable m_hashTableM;
@@ -156,6 +156,8 @@ protected:
 	Uint2 m_maxAlt;
     unsigned m_hashedQueries;
 	vector<CPermutator4b*> m_permutators;
+
+    bool m_oneHash;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -178,7 +180,8 @@ inline CQueryHash::CQueryHash( EHashType type, unsigned winsize, unsigned wordsi
     m_hashTableAx( type == eHash_arraymap ? GetPackedSize(1):0, maxm, maxa ), 
     m_maxSimplicity( maxsimpl ), 
 	m_ncbipnaToNcbi4naScore( 0x7f ), m_ncbiqnaToNcbi4naScore( 3 ), m_strands( 3 ), 
-	m_minMism( 0 ), m_maxMism( 0 ), m_maxAlt( maxa ), m_permutators( maxm + 1 )
+	m_minMism( 0 ), m_maxMism( 0 ), m_maxAlt( maxa ), m_permutators( maxm + 1 ),
+    m_oneHash( false )
 {
 	for( int i = 0; i <= maxm; ++i ) 
 		m_permutators[i] = new CPermutator4b( i, maxa );
@@ -230,14 +233,19 @@ inline void CQueryHash::SetMinimalMaxMism( int i )
 template<class Callback>
 void CQueryHash::ForEach( Uint8 hash, Callback& callback ) const 
 { 
-    if( GetOffset() == 0 ) {
+    if( GetOffset() == 0 || m_oneHash ) {
         switch( GetHashType() ) {
         case eHash_vector:   m_hashTableV.ForEach( Uint4( hash ), callback ); break;
         case eHash_multimap: m_hashTableM.ForEach( Uint4( hash ), callback ); break;
         case eHash_arraymap: m_hashTableA.ForEach( Uint4( hash ), callback ); break;
         }
     } else {
-        TMatchSet listA, listB;
+        TMatchSet& listA( m_listA );
+        TMatchSet& listB( m_listB );
+
+        listA.resize(0);
+        listB.resize(0);
+
         Uint4 hashA = Uint4( hash >> GetOffset()*2 );
         Uint4 hashB = Uint4( hash & (( 1 << (2*GetWordLength(1))) - 1) );
 //         cerr << setw(GetWindowLength()*2) << setfill('0') << NStr::Int8ToString( hash, 0, 2 ) << "\t" << GetWindowLength() << "\n"
