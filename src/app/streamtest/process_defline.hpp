@@ -95,9 +95,6 @@ public:
         string gi_string;
         string accn_string;
 
-        bool has_gi = false;
-        bool has_accn = false;
-
         FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bioseq) {
             const CSeq_id& sid = **sid_itr;
             TSEQID_CHOICE chs = sid.Which();
