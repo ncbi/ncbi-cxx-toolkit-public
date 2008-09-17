@@ -1529,7 +1529,9 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
                 a.Status() |= CGeneModel::eReversed;
             }
             exons.push_back(TSignedSeqRange(r->start,r->end));
-            transcript_exons.push_back(TSignedSeqRange(r->tstart,r->tend));
+            TSignedSeqRange texon(r->tstart,r->tend);
+            if(texon.NotEmpty())
+                transcript_exons.push_back(texon);
             readGFF3Gap(r->attributes["Gap"],r->start,r->end,inserter(indels,indels.end()));
         } else if (r->type == "CDS") {
             TSignedSeqRange cds_exon(r->start,r->end);
@@ -1566,7 +1568,11 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
     }
 
     sort(indels.begin(),indels.end());
-    CAlignMap amap(a.Exons(), transcript_exons, indels, orientation, target_len);
+    CAlignMap amap;
+    if(!transcript_exons.empty())
+        amap = CAlignMap(a.Exons(), transcript_exons, indels, orientation, target_len);
+    else
+        amap = CAlignMap(a.Exons(), indels, a.Strand());
 
     a.FrameShifts() = amap.GetInDels(true);
 
