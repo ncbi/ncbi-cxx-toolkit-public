@@ -181,8 +181,8 @@ inline void
 CNetServiceAPI_Base::CheckClientNameNotEmpty(string* client_name) const
 {
     if (client_name->empty()
-        ||  client_name->find("sample")  != string::npos
-        ||  client_name->find("unknown") != string::npos)
+        ||  NStr::FindNoCase(client_name, "sample")  != NPOS
+        ||  NStr::FindNoCase(client_name, "unknown") != NPOS)
     {
         *client_name = CNcbiApplication::Instance()->GetProgramDisplayName();
     }
