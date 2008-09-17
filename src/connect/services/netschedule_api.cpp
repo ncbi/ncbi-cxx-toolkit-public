@@ -146,6 +146,7 @@ CNetScheduleAPI::StringToStatus(const string& status_str)
 void CNetScheduleAPI::x_SendAuthetication(CNetServerConnection& conn) const
 {
     string auth = GetClientName();
+    CheckClientNameNotEmpty(&auth);
     if (!m_ProgramVersion.empty()) {
         auth += " prog='" + m_ProgramVersion + '\'';
     }

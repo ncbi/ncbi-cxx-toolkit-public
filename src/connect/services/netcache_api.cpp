@@ -80,6 +80,7 @@ CNetServerConnection CNetCacheAPI::x_GetConnection(const string& bid)
 void CNetCacheAPI::x_SendAuthetication(CNetServerConnection& conn) const
 {
     string auth = GetClientName();
+    CheckClientNameNotEmpty(&auth);
     conn.WriteStr(auth + "\r\n");
 }
 

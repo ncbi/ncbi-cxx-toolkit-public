@@ -33,6 +33,8 @@
  *
  */
 
+#include <corelib/ncbiapp.hpp>
+
 #include <connect/services/srv_discovery.hpp>
 #include <connect/services/srv_connections.hpp>
 
@@ -139,6 +141,8 @@ protected:
 
     void DiscoverServers(TDiscoveredServers& servers);
 
+    void CheckClientNameNotEmpty(string* client_name) const;
+
 private:
     friend class CNetServiceAuthenticator;
     void DoAuthenticate(CNetServerConnection& conn) const {
@@ -169,6 +173,20 @@ private:
     unsigned int                      m_MaxRetries;
     ESwitch                           m_PermanentConnection;
 };
+
+
+
+
+inline void
+CNetServiceAPI_Base::CheckClientNameNotEmpty(string* client_name) const
+{
+    if (client_name->empty()
+        ||  client_name->find("sample")  != string::npos
+        ||  client_name->find("unknown") != string::npos)
+    {
+        *client_name = CNcbiApplication::Instance()->GetProgramDisplayName();
+    }
+}
 
 
 END_NCBI_SCOPE
