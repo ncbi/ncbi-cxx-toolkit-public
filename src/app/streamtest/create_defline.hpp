@@ -1689,7 +1689,7 @@ string CDeflineGenerator::GenerateDefline (
 // PUBLIC FUNCTIONS
 
 // preferred function only does feature indexing if necessary
-static string CreateDefLine (
+string CreateDefLine (
     const CBioseq& bioseq,
     CScope& scope,
     bool ignoreExisting = false,
@@ -1703,7 +1703,7 @@ static string CreateDefLine (
 }
 
 // alternative provided for backward compatibility with existing function
-static string CreateDefLine (
+string CreateDefLine (
     const CBioseq_Handle& hnd,
     bool ignoreExisting = false,
     bool allProteinNames = false
