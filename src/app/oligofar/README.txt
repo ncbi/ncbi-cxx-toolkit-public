@@ -1,7 +1,7 @@
-oligoFAR 3.22                     7-AUG-2008                                1-NCBI
+oligoFAR 3.23                     7-AUG-2008                                1-NCBI
 
 NAME 
-    oligoFAR version 3.22 - global alignment of single or paired short reads
+    oligoFAR version 3.23 - global alignment of single or paired short reads
 
 SYNOPSIS
     oligofar [-hV] [-C config] [-w winlen] [-k wordsz] [-n hashmism] 
@@ -419,7 +419,7 @@ Config file
     Example:
 
         [oligofar]
-        assert-version = 3.22
+        assert-version = 3.23
         window-size = 12
         input-max-mism = 0
         input-max-alt = 256
