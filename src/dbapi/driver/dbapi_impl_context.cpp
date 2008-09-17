@@ -303,6 +303,21 @@ CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection)
     return new CDB_Connection(connection);
 }
 
+static 
+CDB_Connection* 
+SetDatabase(CDB_Connection* conn, const CDBConnParams& params)
+{
+    _ASSERT(conn);
+
+    const string sql = "use " + params.GetDatabaseName();
+
+    auto_ptr<CDB_LangCmd> auto_stmt(conn->LangCmd(sql));
+    auto_stmt->Send();
+    auto_stmt->DumpResults();
+
+    return conn;
+}
+
 CDB_Connection*
 CDriverContext::MakePooledConnection(const CDBConnParams& params)
 {
@@ -320,7 +335,11 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                     if (params.GetParam("pool_name").compare(t_con->PoolName()) == 0) {
                         it = m_NotInUse.erase(it);
                         if(t_con->Refresh()) {
-                            return MakeCDBConnection(t_con);
+                            if (!params.GetDatabaseName().empty()) {
+                                return SetDatabase(MakeCDBConnection(t_con), params);
+                            } else {
+                                return MakeCDBConnection(t_con);
+                            }
                         }
                         else {
                             delete t_con;
@@ -343,8 +362,12 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
 
                     if (params.GetServerName().compare(t_con->ServerName()) == 0) {
                         it = m_NotInUse.erase(it);
-                        if(t_con->Refresh()) {
-                            return MakeCDBConnection(t_con);
+                        if (t_con->Refresh()) {
+                            if (!params.GetDatabaseName().empty()) {
+                                return SetDatabase(MakeCDBConnection(t_con), params);
+                            } else {
+                                return MakeCDBConnection(t_con);
+                            }
                         }
                         else {
                             delete t_con;

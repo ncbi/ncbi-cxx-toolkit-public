@@ -688,7 +688,9 @@ public:
     /// Connect to a database.
     ///
     /// @param params
-    ///   Connection parameters.
+    ///   Connection parameters. Parameters should include all necessary
+    ///   settings because all info set via SetMode() or ResetMode() will
+    ///   be ignored.
     virtual void Connect(const CDBConnParams& params) = 0;
 
     /// Connect to a database using connect validator
@@ -709,10 +711,10 @@ public:
              const string& server,
              const string& database = kEmptyStr) = 0;
 
-    // Clone existing connection. All settings are copied except
-    // message handlers
-    // Set ownership to eTakeOwnership to prevent deleting
-    // connection upon deleting parent object
+    /// Clone existing connection. All settings are copied except
+    /// message handlers
+    /// Set ownership to eTakeOwnership to prevent deleting
+    /// connection upon deleting parent object
     virtual IConnection* CloneConnection(EOwnership ownership = eNoOwnership) = 0;
 
     /// Set current database.
