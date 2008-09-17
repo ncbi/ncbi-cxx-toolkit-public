@@ -479,7 +479,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 if (!i->haveFlag && as_ref && isNullWithAtt) {
                     methods <<
                         "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void) const\n{\n" <<
-                        "    return "<<i->mName<<"->IsSet"<<i->cName<<"();\n}\n\n";
+                        "    return "<<i->mName<<" ? "<<i->mName<<"->IsSet"<<i->cName<<"() : false;\n}\n\n";
                 } else {
                     inlineMethods <<
                         "inline\n"
