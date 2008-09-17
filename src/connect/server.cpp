@@ -274,7 +274,12 @@ CStdRequest* TConnection::CreateRequest(EIO_Event event,
 
 bool TConnection::IsOpen(void)
 {
-    m_Open = m_Open  &&  GetStatus(eIO_Open) == eIO_Success;
+    // GetStatus should not be called with eIO_Open parameter because it
+    // checks only that we successfully opened socket and didn't close it.
+    // But eIO_Read and eIO_Write check that we can read and write into the
+    // socket which will not be true if socket e.g. closed by the peer.
+    m_Open = m_Open  &&  GetStatus(eIO_Read)  == eIO_Success
+                     &&  GetStatus(eIO_Write) == eIO_Success;
     return m_Open;
 }
 
