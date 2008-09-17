@@ -115,6 +115,13 @@ NCBI_PARAM_DEF_EX(bool, Diag, Print_System_TID, false, eParam_NoThread,
                   DIAG_PRINT_SYSTEM_TID);
 typedef NCBI_PARAM_TYPE(Diag, Print_System_TID) TPrintSystemTID;
 
+// Use assert() instead of abort() in Abort() function to show the assertion
+// dialog and allow to choose the action (stop/debug/continue).
+NCBI_PARAM_DECL(bool, Diag, Assert_On_Abort);
+NCBI_PARAM_DEF_EX(bool, Diag, Assert_On_Abort, false, eParam_NoThread,
+                  DIAG_ASSERT_ON_ABORT);
+typedef NCBI_PARAM_TYPE(Diag, Assert_On_Abort) TAssertOnAbort;
+
 
 ///////////////////////////////////////////////////////
 //  Output rate control parameters
@@ -5266,7 +5273,20 @@ extern void Abort(void)
 #endif
             {
 #if defined(_DEBUG)
+
+#  ifdef NCBI_COMPILER_MSVC
+                if ( TAssertOnAbort::GetDefault() ) {
+                    int old_mode = _set_error_mode(_OUT_TO_MSGBOX);
+                    _ASSERT(false); // Show assertion dialog
+                    _set_error_mode(old_mode);
+                }
+                else {
+                    ::abort();
+                }
+#  else  // NCBI_COMPILER_MSVC
                 ::abort();
+#  endif // NCBI_COMPILER_MSVC
+
 #else
                 ::exit(255);
 #endif
