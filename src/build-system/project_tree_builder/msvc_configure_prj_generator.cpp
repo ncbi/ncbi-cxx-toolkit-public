@@ -320,7 +320,8 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
     }
 
     ofs << " -logfile \"%SLN_PATH%_configuration_log.txt\""
-        << " -conffile \"%PTB_PATH%\\..\\..\\..\\project_tree_builder.ini\" "
+/*        << " -conffile \"%PTB_PATH%\\..\\..\\..\\project_tree_builder.ini\" " */
+        << " -conffile \"%TREE_ROOT%\\src\\build-system\\project_tree_builder.ini\" "
         << "\"%TREE_ROOT%\"" << " " << "%PTB_PROJECT%" << " " << "\"%SLN_PATH%\"" << endl;
     ofs << "@echo off" << endl
         << "if errorlevel 1 goto report_error" << endl
