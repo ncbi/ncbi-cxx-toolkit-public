@@ -383,6 +383,7 @@ CTestArguments::CTestArguments(void)
 , m_ReportExpected(false)
 , m_CPPParams(m_ParamBase)
 , m_ConnParams(m_CPPParams)
+// , m_ConnParams(m_ParamBase)
 {
     const CNcbiApplication* app = CNcbiApplication::Instance();
 

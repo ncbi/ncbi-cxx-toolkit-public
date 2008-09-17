@@ -1350,6 +1350,7 @@ NCBITEST_INIT_TREE()
     NCBITEST_DEPENDS_ON(Test_SelectStmtXML,         Test_SelectStmt);
     NCBITEST_DEPENDS_ON(Test_Unicode_Simple,        Test_SelectStmtXML);
     NCBITEST_DEPENDS_ON(Test_SetMaxTextImageSize,   Test_ResultsetMetaData);
+    NCBITEST_DEPENDS_ON(Test_CloneConnection,       Test_ConnParamsDatabase);
 }
 
 

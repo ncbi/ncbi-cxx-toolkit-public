@@ -1014,5 +1014,62 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
+{
+    try {
+        const string target_db_name("DBAPI_Sample");
+
+        AutoPtr<IConnection> conn(GetDS().CreateConnection( CONN_OWNERSHIP ));
+        conn->Connect(
+            GetArgs().GetConnParams().GetUserName(), 
+            GetArgs().GetConnParams().GetPassword(), 
+            GetArgs().GetConnParams().GetServerName(), 
+            target_db_name);
+
+        auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+
+        IResultSet* rs = auto_stmt->ExecuteQuery("select db_name()");
+        BOOST_CHECK( rs != NULL );
+        BOOST_CHECK( rs->Next() );
+        const  string db_name = rs->GetVariant(1).GetString();
+        BOOST_CHECK_EQUAL(db_name, target_db_name);
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_CloneConnection)
+{
+    try {
+        const string target_db_name("DBAPI_Sample");
+
+        // Create new connection ...
+        auto_ptr<IConnection> conn(GetDS().CreateConnection( CONN_OWNERSHIP ));
+        conn->Connect(
+            GetArgs().GetConnParams().GetUserName(), 
+            GetArgs().GetConnParams().GetPassword(), 
+            GetArgs().GetConnParams().GetServerName(), 
+            target_db_name);
+
+        // Clone connection ...
+        auto_ptr<IConnection> new_conn(conn->CloneConnection(eTakeOwnership));
+        auto_ptr<IStatement> auto_stmt( new_conn->GetStatement() );
+
+        // Check that database was set correctly with the new connection ...
+        {
+            IResultSet* rs = auto_stmt->ExecuteQuery("select db_name()");
+            BOOST_CHECK( rs != NULL );
+            BOOST_CHECK( rs->Next() );
+            const  string db_name = rs->GetVariant(1).GetString();
+            BOOST_CHECK_EQUAL(db_name, target_db_name);
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
 
 END_NCBI_SCOPE
