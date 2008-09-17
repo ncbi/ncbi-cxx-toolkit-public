@@ -162,7 +162,7 @@ inline CHashIterator::CHashIterator( const CHashGenerator& generator, TPlaneMask
     m_baseMask( baseMask )
 {
     x_SearchFirstAmbiguousPosition();
-    m_status = int( ( m_hashMask & m_value ) >> (2 * m_position) );
+    m_status = int( ( m_hashMask & m_value ) >> (CHashCode::kBitsPerBase * m_position) );
 }
 
 inline void CHashIterator::x_ResetPosition()
@@ -170,21 +170,21 @@ inline void CHashIterator::x_ResetPosition()
     m_hashMask = 0x3;
     m_planeMask = 1;
     x_SearchFirstAmbiguousPosition();
-    m_status = int( (m_hashMask & m_generator.m_hashCode.GetHashValue()) >> (2 * m_position) );
+    m_status = int( (m_hashMask & m_generator.m_hashCode.GetHashValue()) >> (CHashCode::kBitsPerBase * m_position) );
 }
 
 inline bool CHashIterator::x_NextBaseCallAtPosition()
 {
-    static THashValue basePattern[4] = { 0x0000000000000000ULL, 0x5555555555555555ULL, 0xaaaaaaaaaaaaaaaaULL, 0xffffffffffffffffULL };
+    static const THashValue basePattern[4] = { 0x0000000000000000ULL, 0x5555555555555555ULL, 0xaaaaaaaaaaaaaaaaULL, 0xffffffffffffffffULL };
     
     while( ++m_status < 4 ) {
         if( m_planeMask & m_generator.m_hashPlanes.GetPlane( m_status ) ) { 
-            m_value = (m_value & ~m_hashMask) | (basePattern[m_status] & m_hashMask);  // can be optimized
+            m_value = (m_value & ~m_hashMask) | (basePattern[m_status] & m_hashMask);  // TODO: can be optimized
             return true;
         }
     }
     // restore base value at the position
-    m_value = ( m_value & ~m_hashMask ) | ( m_generator.m_hashCode.GetHashValue() & m_hashMask ); // can be optimized
+    m_value = ( m_value & ~m_hashMask ) | ( m_generator.m_hashCode.GetHashValue() & m_hashMask ); // TODO: can be optimized
     return false;
 }
 
@@ -278,7 +278,7 @@ inline void CHashPlanes::AddBaseMask( CNcbi8naBase base )
     int b = base;
     int c = 0;
     int d = 0;
-    TPlaneMask p = 1 << (m_wordSize - 1);
+    TPlaneMask p = TPlaneMask(1) << (m_wordSize - 1);
 //    TPlaneMask P = ~p;
     for( int i = 0; i < 4; ++i, b >>= 1 ) {
         if( m_planes[i] & 1 ) d++;
@@ -312,7 +312,8 @@ inline void CHashPlanes::Reset()
 inline CHashCode::CHashCode( int wordSize ) :  
     m_value( 0 ), m_wordSize( wordSize ),
     m_footprintMask( CBitHacks::WordFootprint<THashMask>( wordSize * int(kBitsPerBase) ) )
-{}
+{
+}
 
 inline void CHashCode::AddIupacNa( CIupacnaBase c )
 {
@@ -322,7 +323,7 @@ inline void CHashCode::AddIupacNa( CIupacnaBase c )
 inline void CHashCode::AddBaseCode( CNcbi2naBase code ) 
 {
     m_value >>= kBitsPerBase;
-    m_value |= (code & 0x3) << ((m_wordSize - 1)*int(kBitsPerBase));
+    m_value |= THashValue(code & 0x3) << ((m_wordSize - 1)*int(kBitsPerBase));
 }
 
 inline void CHashCode::Reset()
