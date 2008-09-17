@@ -126,7 +126,7 @@ protected:
 	static TCvt  x_Ncbipna2Ncbi4na;
 	static TCvt  x_Ncbiqna2Ncbi4na;
 
-    static int x_ComputeWordRetAmbcount( Uint8& window, const unsigned char * data, int len, TCvt * fun, unsigned short score ) {
+    static Uint8 x_ComputeWordRetAmbcount( Uint8& window, const unsigned char * data, int len, TCvt * fun, unsigned short score ) {
         if( len ) { window = fun( data, len, score ); return Ncbi4naAlternativeCount( window, len ); } else { window = 0; return 1; }
     }
 
@@ -232,14 +232,14 @@ void CQueryHash::ForEach( Uint8 hash, Callback& callback ) const
 { 
     if( GetOffset() == 0 ) {
         switch( GetHashType() ) {
-        case eHash_vector:   m_hashTableV.ForEach( hash, callback ); break;
-        case eHash_multimap: m_hashTableM.ForEach( hash, callback ); break;
-        case eHash_arraymap: m_hashTableA.ForEach( hash, callback ); break;
+        case eHash_vector:   m_hashTableV.ForEach( Uint4( hash ), callback ); break;
+        case eHash_multimap: m_hashTableM.ForEach( Uint4( hash ), callback ); break;
+        case eHash_arraymap: m_hashTableA.ForEach( Uint4( hash ), callback ); break;
         }
     } else {
         TMatchSet listA, listB;
-        Uint4 hashA = hash >> GetOffset()*2;
-        Uint4 hashB = hash & (( 1 << (2*GetWordLength(1))) - 1);
+        Uint4 hashA = Uint4( hash >> GetOffset()*2 );
+        Uint4 hashB = Uint4( hash & (( 1 << (2*GetWordLength(1))) - 1) );
 //         cerr << setw(GetWindowLength()*2) << setfill('0') << NStr::Int8ToString( hash, 0, 2 ) << "\t" << GetWindowLength() << "\n"
 //              << setw(GetWordLength(0)*2) << setfill('0') << NStr::IntToString( hashA, 0, 2 ) << "\t" << GetWordLength(0) << "\n"
 //              << string(2*GetOffset(),'.') << setw(GetWordLength(1)*2) << setfill('0') << NStr::IntToString( hashB, 0, 2 ) << "\t" << GetWordLength(1) << " + " << GetOffset() << "\n";

@@ -122,7 +122,7 @@ inline void CSeqScanner::C_LoopImpl_Ncbi8naNoAmbiguities::RunCallback( Callback&
 template<class Callback>
 inline void CSeqScanner::C_LoopImpl_Ncbi8naAmbiguities::RunCallback( Callback& callback )
 {
-    for( CHashIterator h( m_hashGenerator, m_mask, m_mask ); h; ++h ) {
+    for( CHashIterator h( m_hashGenerator, Uint4( m_mask ), m_mask ); h; ++h ) {
         callback( Uint8( *h ), 0, m_hashGenerator.GetAlternativesCount() );
     }
 }
@@ -344,7 +344,7 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
                 if( (pos + a + winLen) != x ) THROW( logic_error, " x - a - w = " << ( x - a - winLen ) << " while pos = " << pos << " and off = " << off );
                 if( hashGen.GetAlternativesCount() < m_maxAlternatives && complexity < m_maxSimplicity ) {
                     matches.clear();
-                    for( CHashIterator h( hashGen, mask, mask ); h; ++h ) {
+                    for( CHashIterator h( hashGen, TPlaneMask( mask ), mask ); h; ++h ) {
                         callback( Uint4( *h ), 0, hashGen.GetAlternativesCount() );
                     }
                     ITERATE( TMatches, m, matches ) {
