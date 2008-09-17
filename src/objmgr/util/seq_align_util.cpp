@@ -63,6 +63,10 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
 
     // Create source seq-loc
     CSeq_loc src_loc(*id, 0, GetLength(loc, scope) - 1);
+    ENa_strand strand = loc.GetStrand();
+    if (strand != eNa_strand_unknown) {
+        src_loc.SetStrand(strand);
+    }
     CSeq_loc_Mapper mapper(src_loc, loc, scope);
     return mapper.Map(align, row);
 }
