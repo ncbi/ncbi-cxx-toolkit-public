@@ -114,32 +114,32 @@ public:
 
     string GetDriverName(void) const
     {
-        return m_ConnParams.GetDriverName();
+        return GetTestParams().GetDriverName();
     }
 
     string GetServerName(void) const
     {
-        return m_ConnParams.GetServerName();
+        return GetTestParams().GetServerName();
     }
 
     string GetUserName(void) const
     {
-        return m_ConnParams.GetUserName();
+        return GetTestParams().GetUserName();
     }
 
     string GetUserPassword(void) const
     {
-        return m_ConnParams.GetPassword();
+        return GetTestParams().GetPassword();
     }
 
     string GetDatabaseName(void) const
     {
-        return m_ConnParams.GetDatabaseName();
+        return GetTestParams().GetDatabaseName();
     }
 
     CDBConnParams::EServerType GetServerType(void) const
     {
-        return m_ConnParams.GetServerType();
+        return GetTestParams().GetServerType();
     }
 
     string GetProgramBasename(void) const;
@@ -164,11 +164,18 @@ public:
 
     const CDBConnParams& GetConnParams(void) const
     {
-        return m_ConnParams;
+        // return m_ConnParams;
+        return m_ConnParams2;
     }
 
 private:
     void SetDatabaseParameters(void);
+
+    const CDBConnParams& GetTestParams(void) const
+    {
+        // return m_CPPParams;
+        return m_ConnParams2;
+    }
 
 private:
     string m_GatewayHost;
@@ -181,8 +188,12 @@ private:
     bool m_ReportExpected;
 
     CDBConnParamsBase m_ParamBase;
-    CCPPToolkitConnParams m_CPPParams;
+    CDBConnParamsBase m_ParamBase2;
     CUnitTestParams m_ConnParams;
+    CCPPToolkitConnParams m_CPPParams;
+    CUnitTestParams m_ConnParams2;
+    // CCPPToolkitConnParams m_CPPParams;
+    // CUnitTestParams m_ConnParams;
 };
 
 

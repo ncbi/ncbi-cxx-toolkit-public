@@ -1020,20 +1020,43 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
     try {
         const string target_db_name("DBAPI_Sample");
 
-        AutoPtr<IConnection> conn(GetDS().CreateConnection( CONN_OWNERSHIP ));
-        conn->Connect(
-            GetArgs().GetConnParams().GetUserName(), 
-            GetArgs().GetConnParams().GetPassword(), 
-            GetArgs().GetConnParams().GetServerName(), 
-            target_db_name);
+        // Check method Connect() ...
+        {
+            auto_ptr<IConnection> conn(GetDS().CreateConnection( eTakeOwnership ));
+            conn->Connect(
+                GetArgs().GetConnParams().GetUserName(), 
+                GetArgs().GetConnParams().GetPassword(), 
+                GetArgs().GetConnParams().GetServerName(), 
+                target_db_name);
 
-        auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
 
-        IResultSet* rs = auto_stmt->ExecuteQuery("select db_name()");
-        BOOST_CHECK( rs != NULL );
-        BOOST_CHECK( rs->Next() );
-        const  string db_name = rs->GetVariant(1).GetString();
-        BOOST_CHECK_EQUAL(db_name, target_db_name);
+            IResultSet* rs = auto_stmt->ExecuteQuery("select db_name()");
+            BOOST_CHECK( rs != NULL );
+            BOOST_CHECK( rs->Next() );
+            const  string db_name = rs->GetVariant(1).GetString();
+            BOOST_CHECK_EQUAL(db_name, target_db_name);
+        }
+
+        // Check method ConnectValidated() ...
+        {
+            auto_ptr<IConnection> conn(GetDS().CreateConnection( eTakeOwnership ));
+            CTrivialConnValidator validator(target_db_name);
+            conn->ConnectValidated(
+                validator,
+                GetArgs().GetConnParams().GetUserName(), 
+                GetArgs().GetConnParams().GetPassword(), 
+                GetArgs().GetConnParams().GetServerName(), 
+                target_db_name);
+
+            auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+
+            IResultSet* rs = auto_stmt->ExecuteQuery("select db_name()");
+            BOOST_CHECK( rs != NULL );
+            BOOST_CHECK( rs->Next() );
+            const  string db_name = rs->GetVariant(1).GetString();
+            BOOST_CHECK_EQUAL(db_name, target_db_name);
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);

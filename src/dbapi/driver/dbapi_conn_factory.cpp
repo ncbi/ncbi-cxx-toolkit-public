@@ -695,6 +695,60 @@ CTrivialConnValidator::~CTrivialConnValidator(void)
 {
 }
 
+/* Future development ...
+IConnValidator::EConnStatus
+CTrivialConnValidator::Validate(CDB_Connection& conn)
+{
+    string curr_dbname;
+
+    // Get current database name ...
+    {
+        auto_ptr<CDB_LangCmd> auto_stmt(conn.LangCmd("select db_name()"));
+        auto_stmt->Send();
+        while (auto_stmt->HasMoreResults()) {
+            auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+            if (rs.get() == NULL) {
+                continue;
+            }
+
+            if (rs->ResultType() != eDB_RowResult) {
+                continue;
+            }
+
+            while (rs->Fetch()) {
+                CDB_VarChar db_name;
+                rs->GetItem(&db_name);
+                curr_dbname = static_cast<const string&>(db_name);
+            }
+        }
+    }
+    // Try to change a database ...
+    if (curr_dbname != GetDBName()) {
+        auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + GetDBName()));
+        set_cmd->Send();
+        set_cmd->DumpResults();
+    }
+
+    if (GetAttr() & eCheckSysobjects) {
+        auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
+        set_cmd->Send();
+        set_cmd->DumpResults();
+    }
+
+    // Go back to the original (master) database ...
+    if (GetAttr() & eRestoreDefaultDB && curr_dbname != GetDBName()) {
+        auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + curr_dbname));
+        set_cmd->Send();
+        set_cmd->DumpResults();
+    }
+
+    // All exceptions are supposed to be caught and processed by
+    // CDBConnectionFactory ...
+    return eValidConn;
+}
+*/
+
 IConnValidator::EConnStatus
 CTrivialConnValidator::Validate(CDB_Connection& conn)
 {

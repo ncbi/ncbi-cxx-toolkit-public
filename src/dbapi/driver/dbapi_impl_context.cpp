@@ -335,11 +335,15 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                     if (params.GetParam("pool_name").compare(t_con->PoolName()) == 0) {
                         it = m_NotInUse.erase(it);
                         if(t_con->Refresh()) {
+                            /* Future development ...
                             if (!params.GetDatabaseName().empty()) {
                                 return SetDatabase(MakeCDBConnection(t_con), params);
                             } else {
                                 return MakeCDBConnection(t_con);
                             }
+                            */
+                            
+                            return MakeCDBConnection(t_con);
                         }
                         else {
                             delete t_con;
@@ -363,11 +367,15 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                     if (params.GetServerName().compare(t_con->ServerName()) == 0) {
                         it = m_NotInUse.erase(it);
                         if (t_con->Refresh()) {
+                            /* Future development ...
                             if (!params.GetDatabaseName().empty()) {
                                 return SetDatabase(MakeCDBConnection(t_con), params);
                             } else {
                                 return MakeCDBConnection(t_con);
                             }
+                            */
+
+                            return MakeCDBConnection(t_con);
                         }
                         else {
                             delete t_con;

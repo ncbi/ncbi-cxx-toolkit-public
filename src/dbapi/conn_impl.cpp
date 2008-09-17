@@ -122,9 +122,10 @@ void CConnection::Connect(const string& user,
 
     def_params.SetDatabaseName(database);
     // Explicitly set member value ...
-    m_database = database;
+    // m_database = database;
 
     m_connection = m_ds->GetDriverContext()->MakeConnection(params);
+    SetDatabase(database);
 }
 
 
@@ -136,6 +137,7 @@ void CConnection::Connect(const CDBConnParams& params)
     m_connection = m_ds->GetDriverContext()->MakeConnection(params);
     // Explicitly set member value ...
     m_database = params.GetDatabaseName();
+    SetDatabase(GetDatabase());
 }
 
 
@@ -159,10 +161,11 @@ void CConnection::ConnectValidated(IConnValidator& validator,
 
     def_params.SetDatabaseName(database);
     // Explicitly set member value ...
-    m_database = database;
+    // m_database = database;
     def_params.SetConnValidator(CRef<IConnValidator>(&validator));
 
     m_connection = m_ds->GetDriverContext()->MakeConnection(params);
+    SetDatabase(database);
 }
 
 CConnection::~CConnection()
@@ -245,12 +248,15 @@ CDB_Connection* CConnection::CloneCDB_Conn()
     _TRACE("CDB_Connection " << (void*)GetCDB_Connection()
         << " cloned, new CDB_Connection: " << (void*)tmp_conn);
 
+    SetDbName(GetDatabase(), tmp_conn);
+
     return tmp_conn;
 }
 
 CConnection* CConnection::Clone()
 {
-    /* Old code
+    CHECK_NCBI_DBAPI(m_ds == NULL, "m_ds is not initialized");
+
     CConnection *conn = new CConnection(CloneCDB_Conn(), m_ds);
     //conn->AddListener(m_ds);
     //m_ds->AddListener(conn);
@@ -261,9 +267,8 @@ CConnection* CConnection::Clone()
 
     ++m_connCounter;
     return conn;
-    */
 
-    CHECK_NCBI_DBAPI(m_ds == NULL, "m_ds is not initialized");
+    /* Future development ...
     CConnection *conn = new CConnection(CloneCDB_Conn(), m_ds);
 
     if( m_msgToEx )
@@ -271,6 +276,7 @@ CConnection* CConnection::Clone()
 
     ++m_connCounter;
     return conn;
+    */
 }
 
 IConnection* CConnection::CloneConnection(EOwnership ownership)

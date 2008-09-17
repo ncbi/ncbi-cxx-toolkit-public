@@ -109,6 +109,7 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
 
     x_Connect(cntx, params);
 
+    /* Future development ...
     if (!params.GetDatabaseName().empty()) {
         const string sql = "use " + params.GetDatabaseName();
 
@@ -116,6 +117,7 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
         auto_stmt->Send();
         auto_stmt->DumpResults();
     }
+    */
 }
 
 

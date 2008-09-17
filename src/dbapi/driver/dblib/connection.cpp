@@ -175,6 +175,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
     CheckFunctCall();
 
+    /* Future development ...
     if (!params.GetDatabaseName().empty()) {
         const string sql = "use " + params.GetDatabaseName();
 
@@ -182,6 +183,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
         auto_stmt->Send();
         auto_stmt->DumpResults();
     }
+    */
 
     SetServerType(CalculateServerType(params.GetServerType()));
 }

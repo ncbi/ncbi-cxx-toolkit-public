@@ -95,81 +95,6 @@ CTestTransaction::~CTestTransaction(void)
 }
 
 
-static AutoPtr<IConnection> s_Conn = NULL;
-
-IConnection&
-GetConnection(void)
-{
-    _ASSERT(s_Conn.get());
-    return *s_Conn;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-NCBITEST_AUTO_INIT()
-{
-    if (!CommonInit())
-        return;
-
-    s_Conn.reset(GetDS().CreateConnection( CONN_OWNERSHIP ));
-    _ASSERT(s_Conn.get());
-
-    s_Conn->Connect(GetArgs().GetConnParams());
-
-    auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
-
-    // Create a test table ...
-    string sql;
-
-    sql  = " CREATE TABLE " + GetTableName() + "( \n";
-    sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
-    sql += "    int_field INT NULL, \n";
-    sql += "    vc1000_field VARCHAR(1000) NULL, \n";
-    sql += "    text_field TEXT NULL, \n";
-    sql += "    image_field IMAGE NULL \n";
-    sql += " )";
-
-    // Create the table
-    auto_stmt->ExecuteUpdate(sql);
-
-    sql  = " CREATE UNIQUE INDEX #ind01 ON " + GetTableName() + "( id ) \n";
-
-    // Create an index
-    auto_stmt->ExecuteUpdate( sql );
-
-    sql  = " CREATE TABLE #dbapi_bcp_table2 ( \n";
-    sql += "    id INT NULL, \n";
-    // Identity won't work with bulk insert ...
-    // sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
-    sql += "    int_field INT NULL, \n";
-    sql += "    vc1000_field VARCHAR(1000) NULL, \n";
-    sql += "    text_field TEXT NULL \n";
-    sql += " )";
-
-    auto_stmt->ExecuteUpdate( sql );
-
-    sql  = " CREATE TABLE #test_unicode_table ( \n";
-    sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
-    sql += "    nvc255_field NVARCHAR(255) NULL \n";
-//        sql += "    nvc255_field VARCHAR(255) NULL \n";
-    sql += " )";
-
-    // Create table
-    auto_stmt->ExecuteUpdate(sql);
-}
-
-NCBITEST_AUTO_FINI()
-{
-//     I_DriverContext* drv_context = GetDS().GetDriverContext();
-//
-//     drv_context->PopDefConnMsgHandler( m_ErrHandler.get() );
-//     drv_context->PopCntxMsgHandler( m_ErrHandler.get() );
-
-    s_Conn.reset(NULL);
-    CommonFini();
-}
-
-
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_Unicode_Simple)
 {
@@ -1324,33 +1249,6 @@ BOOST_AUTO_TEST_CASE(Test_Truncation)
     catch(const CDB_Exception& ex) {
         DBAPI_BOOST_FAIL(ex);
     }
-}
-
-
-NCBITEST_INIT_TREE()
-{
-    NCBITEST_DEPENDS_ON(Test_GetRowCount,           Test_StatementParameters);
-    NCBITEST_DEPENDS_ON(Test_Cursor,                Test_StatementParameters);
-    NCBITEST_DEPENDS_ON(Test_Cursor2,               Test_StatementParameters);
-    NCBITEST_DEPENDS_ON(Test_Cursor_Param,          Test_Cursor);
-    NCBITEST_DEPENDS_ON(Test_Cursor_Multiple,       Test_Cursor);
-    NCBITEST_DEPENDS_ON(Test_LOB,                   Test_Cursor);
-    NCBITEST_DEPENDS_ON(Test_LOB2,                  Test_Cursor);
-    NCBITEST_DEPENDS_ON(Test_LOB_Multiple,          Test_Cursor);
-    NCBITEST_DEPENDS_ON(Test_LOB_Multiple_LowLevel, Test_Cursor);
-    NCBITEST_DEPENDS_ON(Test_BlobStream,            Test_Cursor);
-    NCBITEST_DEPENDS_ON(Test_UnicodeNB,             Test_StatementParameters);
-    NCBITEST_DEPENDS_ON(Test_Unicode,               Test_StatementParameters);
-    NCBITEST_DEPENDS_ON(Test_ClearParamList,        Test_StatementParameters);
-    NCBITEST_DEPENDS_ON(Test_SelectStmt2,           Test_StatementParameters);
-    NCBITEST_DEPENDS_ON(Test_NULL,                  Test_StatementParameters);
-    NCBITEST_DEPENDS_ON(Test_UserErrorHandler,      Test_Exception_Safety);
-    NCBITEST_DEPENDS_ON(Test_Recordset,             Test_SelectStmt);
-    NCBITEST_DEPENDS_ON(Test_ResultsetMetaData,     Test_SelectStmt);
-    NCBITEST_DEPENDS_ON(Test_SelectStmtXML,         Test_SelectStmt);
-    NCBITEST_DEPENDS_ON(Test_Unicode_Simple,        Test_SelectStmtXML);
-    NCBITEST_DEPENDS_ON(Test_SetMaxTextImageSize,   Test_ResultsetMetaData);
-    NCBITEST_DEPENDS_ON(Test_CloneConnection,       Test_ConnParamsDatabase);
 }
 
 
