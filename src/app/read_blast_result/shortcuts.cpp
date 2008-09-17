@@ -99,11 +99,9 @@ string Get3type(const CRNA_ref& rna)
     }
   return type;
 }
-EMyFeatureType get_my_seq_type(const CBioseq& seq)
-{
-  string name = GetStringDescr(seq);
-  EMyFeatureType type = eMyFeatureType_unknown;
 
+string get_title(const CBioseq& seq)
+{
   string descr="";
   if(seq.CanGetDescr())
     {
@@ -116,6 +114,16 @@ EMyFeatureType get_my_seq_type(const CBioseq& seq)
       }
     }
 
+ return descr;
+}
+
+EMyFeatureType get_my_seq_type(const CBioseq& seq)
+{
+  string name = GetStringDescr(seq);
+  EMyFeatureType type = eMyFeatureType_unknown;
+
+  string descr="";
+  descr=get_title(seq);
   if( descr.find("hypothetical") != string::npos)
     {
     type = eMyFeatureType_hypo_CDS;
@@ -261,18 +269,6 @@ string printed_range(const CSeq_loc& seq_interval)
 string printed_range(const CBioseq& seq)
 {
    return printed_range(CReadBlastApp::getGenomicLocation(seq));
-}
-
-string printed_range_plus(const CBioseq& seq)
-{
-  string range = printed_range(CReadBlastApp::getGenomicLocation(seq));
-  string title="NOTITLE";
-  ITERATE(CSeq_descr::Tdata, desc, seq.GetDescr().Get())
-    {
-    if(!(*desc)->IsTitle()) continue;
-    title=(*desc)->GetTitle(); break;
-    }
-  return range + " (" + title + ")";
 }
 
 string printed_range(const TSimpleSeqs::iterator& ext_rna)

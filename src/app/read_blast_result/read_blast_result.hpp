@@ -571,7 +571,7 @@ string GetRRNAtype(const CRNA_ref& rna);
 string printed_range(const CSeq_feat& feat);
 string printed_range(const CSeq_loc& seq_interval);
 string printed_range(const CBioseq& seq);
-string printed_range_plus(const CBioseq& seq);
+string get_title(const CBioseq& seq);
 string printed_range(const TSimpleSeqs::iterator& ext_rna);
 string printed_range(const TSimpleSeq& ext_rna);
 string printed_range(const TSimpleSeqs::iterator& ext_rna, const TSimpleSeqs::iterator& end);
