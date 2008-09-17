@@ -508,7 +508,12 @@
             }
             ptb_command_line += lib_dir;
             ptb_command_line += "\" -logfile \"" + oTree.TreeRoot + "\\" + oTask.ProjectName + "_log.txt\"";
-            ptb_command_line += " -conffile \"" + oTree.CompilersBranch + "\\project_tree_builder.ini\"";
+            var ptbini;
+            ptbini = oTree.SrcBuildSystemBranch + "\\project_tree_builder.ini";
+            if (!oFso.FileExists(ptbini)) {
+                ptbini = oTree.CompilersBranch + "\\project_tree_builder.ini";
+            }
+            ptb_command_line += " -conffile \"" + ptbini + "\"";
             ptb_command_line += " \"" + oTree.TreeRoot;
             ptb_command_line += "\" src\\";
             if ( oTask.DllBuild ) {

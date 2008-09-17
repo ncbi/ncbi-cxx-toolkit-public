@@ -208,6 +208,7 @@ function FillTreeStructure(oShell, oTree)
     var build_files = new Array (
         "Makefile.mk.in",
         "Makefile.mk.in.msvc",
+        "project_tree_builder.ini",
         "project_tags.txt"
         );
     GetFilesFromTree(oShell, oTree, oTask,
