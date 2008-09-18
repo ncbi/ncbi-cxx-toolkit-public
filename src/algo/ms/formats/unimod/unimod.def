@@ -1,2 +1,5 @@
 [-]
 _namespace=ncbi::objects::unimod
+_export = NCBI_UNIMOD_EXPORT
+[modifications]
+mod._type=vector
