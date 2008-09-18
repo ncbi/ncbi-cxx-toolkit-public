@@ -113,6 +113,21 @@ Uint4  CDBConnParamsBase::GetProtocolVersion(void) const
                     // ftds8 works with Sybase databases using protocol v42 only ...
                     return 42;
                 }
+            case eUnknown:
+                // Set lowes possible version to work with Sybase and Microsoft ... 
+                // ftds64 can autodetect tds version by itself.
+
+                if (NStr::Compare(driver_name, "ftds8") == 0) {
+                    // ftds8 works with Sybase databases using protocol v42 only ...
+                    return 42;
+                } else if (NStr::Compare(driver_name, "dblib") == 0) {
+                    // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
+                    // BcpIn to it using protocol version other than "100".
+                    return 46;
+                } else if (NStr::Compare(driver_name, "ftds_dblib") == 0) {
+                    return 46;
+                }
+
             default:
                 break;
         }
