@@ -51,6 +51,9 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 BEGIN_unimod_SCOPE // namespace ncbi::objects::unimod::
 
+bool CompMonoMass(CRef<CMod> a, CRef<CMod> b);
+bool CompAvgMass(CRef<CMod> a, CRef<CMod> b);
+
 /////////////////////////////////////////////////////////////////////////////
 class CUnimod : public CUnimod_Base
 {
@@ -64,11 +67,18 @@ public:
     CRef<CMod> FindMod(int modnum);
     void ResetModMap(); // For rare cases
 
+    void SetUseAverageMass(bool val);
+    CRef<CMod> MatchMod(double dmass, string name, string residues, double maxError = 0.01);
+    double GetModMass(CRef<CMod> mod);
+    void SetModMass(CRef<CMod> mod, double mass);
+
 private:
     typedef pair< int, CRef<CMod> > TModPair;
     typedef map< int, CRef<CMod> > TModMap;
 
-    TModMap modMap;
+    TModMap m_modMap;
+    bool m_useAverageMass;
+    bool (*m_comp)(CRef<CMod>, CRef<CMod>);
 
     // Prohibit copy constructor and assignment operator
     CUnimod(const CUnimod& value);
