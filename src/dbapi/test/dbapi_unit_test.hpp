@@ -89,6 +89,7 @@ public:
 
 public:
     virtual string GetServerName(void) const;
+    virtual EServerType GetServerType(void) const;
 
 private:
     // Non-copyable.
@@ -164,8 +165,7 @@ public:
 
     const CDBConnParams& GetConnParams(void) const
     {
-        // return m_ConnParams;
-        return m_ConnParams2;
+        return m_ConnParams;
     }
 
 private:
@@ -173,7 +173,6 @@ private:
 
     const CDBConnParams& GetTestParams(void) const
     {
-        // return m_CPPParams;
         return m_ConnParams2;
     }
 

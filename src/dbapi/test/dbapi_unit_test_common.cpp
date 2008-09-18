@@ -477,6 +477,26 @@ string CUnitTestParams::GetServerName(void) const
     return server_name;
 }
 
+CDBConnParams::EServerType 
+CUnitTestParams::GetServerType(void) const
+{
+    const string server_name = GetThis().GetServerName();
+    const string driver_name = GetThis().GetDriverName();
+
+    if (driver_name == "dblib" 
+        || driver_name == "ftds_dblib"
+        || driver_name == "ftds8"
+        ) {
+        if (NStr::CompareNocase(server_name, 0, 8, "CLEMENTI") == 0
+            || NStr::CompareNocase(server_name, 0, 8, "SYB_TEST") == 0
+            ) 
+        {
+            return eSybaseSQLServer;
+        }
+    }
+
+    return CDBConnParamsDelegate::GetServerType();
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 CTestArguments::CTestArguments(void)
