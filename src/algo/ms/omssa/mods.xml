@@ -9,7 +9,7 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>methylation of K</MSModSpec_name>
-    <MSModSpec_monomass>14.02</MSModSpec_monomass>
+    <MSModSpec_monomass>14.015650</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
@@ -26,7 +26,7 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>oxidation of M</MSModSpec_name>
-    <MSModSpec_monomass>16</MSModSpec_monomass>
+    <MSModSpec_monomass>15.994915</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
@@ -43,7 +43,7 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>carboxymethyl C</MSModSpec_name>
-    <MSModSpec_monomass>58.01</MSModSpec_monomass>
+    <MSModSpec_monomass>58.005479</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
@@ -60,7 +60,7 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>carbamidomethyl C</MSModSpec_name>
-    <MSModSpec_monomass>57.02</MSModSpec_monomass>
+    <MSModSpec_monomass>57.021464</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
@@ -77,7 +77,7 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>deamidation of N and Q</MSModSpec_name>
-    <MSModSpec_monomass>0.98</MSModSpec_monomass>
+    <MSModSpec_monomass>0.984016</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
@@ -95,7 +95,7 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>propionamide C</MSModSpec_name>
-    <MSModSpec_monomass>71.04</MSModSpec_monomass>
+    <MSModSpec_monomass>71.037114</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
