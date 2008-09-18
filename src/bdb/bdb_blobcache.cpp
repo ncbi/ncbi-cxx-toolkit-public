@@ -296,34 +296,32 @@ public:
         //_TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 1");
         try {
             //bool upd_statistics = false;
-		    if (/* !m_AttrUpdFlag || */ m_Buffer.size() != 0) {
 
-			    // Dumping the buffer
-                try {
-                    //if (m_Buffer.size()) {
-                    if (!m_OverflowFile  &&  !m_Flushed) {
-                        _TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 2");
-                        m_Cache.x_Store(m_BlobIdExt,
-                                        m_BlobKey,
-                                        m_Version,
-                                        m_SubKey,
-                                        m_Buffer.data(),
-                                        m_Buffer.size(), // m_BytesInBuffer,
-                                        m_TTL,
-                                        m_Owner,
-                                        false // do not lock blob
-                                        );
-				        //delete[] m_Buffer; m_Buffer = 0;
-                    }
-                } catch (CBDB_Exception& ) {
-                    //_TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 3");
-                    m_Cache.KillBlob(m_BlobKey, m_Version, m_SubKey, 
-                                     1,
-                                     0);
-                    throw;
+            // Dumping the buffer
+            try {
+                //if (m_Buffer.size()) {
+                if (!m_OverflowFile  &&  !m_Flushed) {
+                    _TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 2");
+                    m_Cache.x_Store(m_BlobIdExt,
+                                    m_BlobKey,
+                                    m_Version,
+                                    m_SubKey,
+                                    m_Buffer.data(),
+                                    m_Buffer.size(), // m_BytesInBuffer,
+                                    m_TTL,
+                                    m_Owner,
+                                    false // do not lock blob
+                                    );
+			        //delete[] m_Buffer; m_Buffer = 0;
                 }
-                //_TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 4");
-		    }
+            } catch (CBDB_Exception& ) {
+                //_TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 3");
+                m_Cache.KillBlob(m_BlobKey, m_Version, m_SubKey, 
+                                 1,
+                                 0);
+                throw;
+            }
+            //_TRACE("CBDB_CacheIWriter::~CBDB_CacheIWriter point 4");
 
             if (m_OverflowFile) {
                 if (m_OverflowFile->is_open()) {
@@ -2808,7 +2806,10 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     unsigned volume_id, split_id;
 
     unsigned blob_id = GetBlobId(key, version, subkey);
-    if (!blob_id) return;
+    if (!blob_id) {
+        //_TRACE("CBDB_Cache::GetBlobAccess return 1");
+        return;
+    }
     TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout); 
 
 
@@ -2831,6 +2832,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
             if (ret == eBDB_Ok) {
                 if (m_TimeStampFlag & fCheckExpirationAlways) {
                     if (x_CheckTimeStampExpired(*m_CacheAttrDB, curr)) {
+                        //_TRACE("CBDB_Cache::GetBlobAccess return 2");
                         return;
                     }
                 }
@@ -2850,12 +2852,14 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
 
                 ret = cur.Update();
             } else {
+                //_TRACE("CBDB_Cache::GetBlobAccess return 3");
                 return;
             }
         }} // cursor
     }} // m_DB_Lock
 
     if (ret != eBDB_Ok) {
+        //_TRACE("CBDB_Cache::GetBlobAccess return 4");
         return;
     }
     _ASSERT(blob_id);
@@ -2886,6 +2890,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
 
     // Inline BLOB, reading from BDB storage
     if (blob_id == 0) {
+        //_TRACE("CBDB_Cache::GetBlobAccess return 5");
         return;
     }
 
@@ -2933,6 +2938,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
                         new CBDB_RawFile::TBuffer(8 * 1024));
     ret = m_BLOB_SplitStore->ReadRealloc(blob_id, coords, *buffer);
     if (ret != eBDB_Ok) {
+        //_TRACE("CBDB_Cache::GetBlobAccess return 6");
         return;
     }
     blob_descr->blob_found = true;
