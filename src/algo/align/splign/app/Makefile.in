@@ -1,9 +1,0 @@
-# $Id$
-
-# Meta-makefile("ALGOALIGNSPLIGN app" project)
-#################################
-
-SUB_PROJ = splign
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
