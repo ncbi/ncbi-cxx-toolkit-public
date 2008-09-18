@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 
 NCBI_DEFINE_ERRCODE_X(ConnServ_WorkerNode,  401, 59);
-NCBI_DEFINE_ERRCODE_X(ConnServ_NetCache,    402, 11);
+NCBI_DEFINE_ERRCODE_X(ConnServ_NetCache,    402, 12);
 NCBI_DEFINE_ERRCODE_X(ConnServ_NetSchedule, 403, 13);
 NCBI_DEFINE_ERRCODE_X(ConnServ_Remote,      404, 18);
 NCBI_DEFINE_ERRCODE_X(ConnServ_Connection,  405,  5);

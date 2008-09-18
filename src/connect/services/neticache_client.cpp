@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include <connect/services/neticache_client.hpp>
+#include <connect/services/netservice_params.hpp>
 #include <connect/services/error_codes.hpp>
 
 #include <connect/ncbi_conn_exception.hpp>
@@ -54,12 +55,14 @@ BEGIN_NCBI_SCOPE
 
 void s_MakeCommand(string* cmd)
 {
-    CRequestContext& req = CDiagContext::GetRequestContext();
-    cmd->append(" \"");
-    cmd->append(req.GetClientIP());
-    cmd->append("\" \"");
-    cmd->append(req.GetSessionID());
-    cmd->append("\"");
+    if (s_GetNetCacheCompatVersion() != eNC_Pre406) {
+        CRequestContext& req = CDiagContext::GetRequestContext();
+        cmd->append(" \"");
+        cmd->append(req.GetClientIP());
+        cmd->append("\" \"");
+        cmd->append(req.GetSessionID());
+        cmd->append("\"");
+    }
 }
 
 

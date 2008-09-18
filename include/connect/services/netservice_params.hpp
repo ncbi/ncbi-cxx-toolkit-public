@@ -69,6 +69,18 @@ typedef NCBI_PARAM_TYPE(netservice_api, max_connection_pool_size)
     TServConn_MaxConnPoolSize;
 
 
+NCBI_PARAM_DECL(string, netcache_api, compatibility_version);
+typedef NCBI_PARAM_TYPE(netcache_api, compatibility_version)
+    TNetCache_CompatVersion;
+
+enum ENCCompatVersion {
+    eNC_Pre406,
+    eNC_406
+};
+
+NCBI_XCONNECT_EXPORT ENCCompatVersion s_GetNetCacheCompatVersion(void);
+
+
 NCBI_XCONNECT_EXPORT STimeout s_GetDefaultCommTimeout();
 NCBI_XCONNECT_EXPORT void s_SetDefaultCommTimeout(const STimeout& tm);
 
