@@ -64,6 +64,7 @@
 #include "job_status.hpp"
 #include "access_list.hpp"
 #include "background_host.hpp"
+#include "worker_node.hpp"
 
 #include "netschedule_version.hpp"
 
@@ -344,7 +345,7 @@ private:
     static SCommandMap sm_CommandMap[];
     static SArgument sm_BatchArgs[];
 
-    FProcessor ParseRequest(const string& reqstr);
+    void ParseRequest(const string& reqstr, FProcessor& req_proc);
 
     // Command processors
     void ProcessFastStatusS();
@@ -391,8 +392,8 @@ private:
     void ProcessConfirm();
     void ProcessReadFailed();
     void ProcessGetAffinityList();
-    void ProcessInitNode();
-    void ProcessClearNode();
+    void ProcessInitWorkerNode();
+    void ProcessClearWorkerNode();
 
     // Delayed output handlers
     void WriteProjection();
@@ -435,15 +436,16 @@ private:
     char   m_MsgBuffer[kMaxMessageSize];
 
     unsigned                    m_PeerAddr;
-    unsigned short              m_NotifPort;
+    // WorkerNodeInfo contains duplicates of m_AuthString and m_PeerAddr
+    SWorkerNodeInfo             m_WorkerNodeInfo;
     string                      m_AuthString;
     CNetScheduleServer*         m_Server;
     string                      m_QueueName;
     auto_ptr<CQueue>            m_Queue;
     SJS_Request                 m_JobReq;
-    // Uncapabilities - that is combination of ENSAccess
+    // Incapabilities - that is combination of ENSAccess
     // rights, which can NOT be performed by this connection
-    unsigned                    m_Uncaps;
+    unsigned                    m_Incaps;
     unsigned                    m_Unreported;
     bool                        m_VersionControl;
     // Unique command number for relating command and reply
@@ -504,7 +506,7 @@ private:
 
 //////////////////////////////////////////////////////////////////////////
 /// Parameters for server
-struct SNS_Parameters : SServer_Parameters//, public CParameterEnumerator etaoin
+struct SNS_Parameters : SServer_Parameters
 {
     bool reinit;
     unsigned short port;
@@ -757,8 +759,8 @@ bool CNetScheduleBackgroundHost::ShouldRun()
 // ConnectionHandler implementation
 
 CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
-    : m_PeerAddr(0), m_NotifPort(0), m_Server(server),
-      m_Uncaps(~0L), m_Unreported(~0L), m_VersionControl(false)
+    : m_PeerAddr(0), m_Server(server),
+      m_Incaps(~0L), m_Unreported(~0L), m_VersionControl(false)
 {
 }
 
@@ -783,8 +785,7 @@ void CNetScheduleHandler::OnOpen(void)
     if (m_PeerAddr == m_Server->GetHostNetAddr()) {
         m_PeerAddr = CSocketAPI::GetLoopbackAddress();
     }
-
-    m_AuthString.erase();
+    m_WorkerNodeInfo.host = m_PeerAddr;
 
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgAuth;
     m_DelayedOutput = NULL;
@@ -913,8 +914,9 @@ void CNetScheduleHandler::ProcessMsgAuth(BUF buffer)
     {
         // TODO: queue admin should be checked in ProcessMsgQueue,
         // when queue info is available
-        m_Uncaps &= ~(eNSAC_Admin | eNSAC_QueueAdmin);
+        m_Incaps &= ~(eNSAC_Admin | eNSAC_QueueAdmin);
     }
+    m_WorkerNodeInfo.auth = m_AuthString;
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgQueue;
 }
 
@@ -925,11 +927,11 @@ void CNetScheduleHandler::ProcessMsgQueue(BUF buffer)
 
     if (m_QueueName != "noname" && !m_QueueName.empty()) {
         m_Queue.reset(m_Server->OpenQueue(m_QueueName, m_PeerAddr));
-        m_Uncaps &= ~eNSAC_Queue;
+        m_Incaps &= ~eNSAC_Queue;
         if (m_Queue->IsWorkerAllowed())
-            m_Uncaps &= ~eNSAC_Worker;
+            m_Incaps &= ~eNSAC_Worker;
         if (m_Queue->IsSubmitAllowed())
-            m_Uncaps &= ~eNSAC_Submitter;
+            m_Incaps &= ~eNSAC_Submitter;
         if (m_Queue->IsVersionControl())
             m_VersionControl = true;
     }
@@ -963,9 +965,10 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     }
 
     m_JobReq.Init();
-    FProcessor requestProcessor = ParseRequest(m_Request);
+    FProcessor processor;
+    ParseRequest(m_Request, processor);
 
-    if (requestProcessor == &CNetScheduleHandler::ProcessQuitSession) {
+    if (processor == &CNetScheduleHandler::ProcessQuitSession) {
         ProcessQuitSession();
         return;
     }
@@ -973,9 +976,9 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     // program version control
     if (m_VersionControl &&
         // we want status request to be fast, skip version control
-        (requestProcessor != &CNetScheduleHandler::ProcessStatus) &&
+        (processor != &CNetScheduleHandler::ProcessStatus) &&
         // bypass for admin tools
-        (m_Uncaps & eNSAC_Admin)) {
+        (m_Incaps & eNSAC_Admin)) {
         if (!x_CheckVersion()) {
             WriteErr("eInvalidClientOrVersion:");
             CSocket& socket = GetSocket();
@@ -985,8 +988,9 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
         // One check per session is enough
         m_VersionControl = false;
     }
-    (this->*requestProcessor)();
+    (this->*processor)();
 }
+
 
 bool CNetScheduleHandler::x_CheckVersion()
 {
@@ -1022,7 +1026,7 @@ bool CNetScheduleHandler::x_CheckVersion()
 
 void CNetScheduleHandler::x_CheckAccess(TNSClientRole role)
 {
-    unsigned deficit = role & m_Uncaps;
+    unsigned deficit = role & m_Incaps;
     if (!deficit) return;
     if (deficit & eNSAC_DynQueueAdmin) {
         // check that we have admin rights on queue m_JobReq.param1
@@ -1035,10 +1039,10 @@ void CNetScheduleHandler::x_CheckAccess(TNSClientRole role)
     if (!deficit) return;
     bool deny =
         (deficit & eNSAC_AnyAdminMask)  ||  // for any admin access
-        (m_Uncaps & eNSAC_Queue)        ||  // or if no queue
+        (m_Incaps & eNSAC_Queue)        ||  // or if no queue
         m_Queue->IsDenyAccessViolations();  // or if queue configured so
     bool report =
-        !(m_Uncaps & eNSAC_Queue)         &&  // only if there is a queue
+        !(m_Incaps & eNSAC_Queue)         &&  // only if there is a queue
         m_Queue->IsLogAccessViolations()  &&  // so configured
         (m_Unreported & deficit);             // and we did not report it yet
     if (report) {
@@ -1216,6 +1220,7 @@ void CNetScheduleHandler::ProcessFastStatusW()
 
     TJobStatus status = m_Queue->GetStatus(job_id);
     WriteOK(NStr::IntToString((int) status));
+    m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
 }
 
 
@@ -1408,13 +1413,13 @@ void CNetScheduleHandler::ProcessMsgBatchSubmit(BUF buffer)
 
 bool CNetScheduleHandler::IsMonitoring()
 {
-    return (m_Uncaps & eNSAC_Queue) || m_Queue->IsMonitoring();
+    return (m_Incaps & eNSAC_Queue) || m_Queue->IsMonitoring();
 }
 
 
 void CNetScheduleHandler::MonitorPost(const string& msg)
 {
-    if (m_Uncaps & eNSAC_Queue)
+    if (m_Incaps & eNSAC_Queue)
         return;
     m_Queue->MonitorPost(msg);
 }
@@ -1464,7 +1469,7 @@ void CNetScheduleHandler::ProcessJobRunTimeout()
 void CNetScheduleHandler::ProcessJobDelayExpiration()
 {
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
-    m_Queue->JobDelayExpiration(job_id, m_JobReq.timeout);
+    m_Queue->JobDelayExpiration(m_WorkerNodeInfo, job_id, m_JobReq.timeout);
     WriteOK();
 }
 
@@ -1556,14 +1561,14 @@ void CNetScheduleHandler::ProcessPutMessage()
 
 void CNetScheduleHandler::ProcessGetJob()
 {
+    if (m_JobReq.port)
+        m_WorkerNodeInfo.port = m_JobReq.port;
+
     list<string> aff_list;
     NStr::Split(m_JobReq.affinity_token, "\t,",
                 aff_list, NStr::eNoMergeDelims);
     CJob job;
-    m_Queue->GetJob(m_PeerAddr,
-                    &m_AuthString,
-                    &aff_list,
-                    &job);
+    m_Queue->GetJob(m_WorkerNodeInfo, &aff_list, &job);
 
     unsigned job_id = job.GetId();
     if (job_id) {
@@ -1586,11 +1591,16 @@ void CNetScheduleHandler::ProcessGetJob()
         MonitorPost(msg);
     }
 
-    if (m_JobReq.port) {  // unregister notification
-        m_NotifPort = m_JobReq.port;
+    // We don't call UnRegisterNotificationListener here
+	// because for old worker nodes it finishes the session
+	// and cleans up all the information, affinity association
+	// included.
+    if (m_JobReq.port)  // unregister notification
         m_Queue->RegisterNotificationListener(
-            m_PeerAddr, m_JobReq.port, 0, m_AuthString);
-    }
+            m_WorkerNodeInfo, m_JobReq.port, 0);
+    else
+        // FIXME: see note in PutResultGetJob below
+        m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
 }
 
 
@@ -1609,12 +1619,11 @@ CNetScheduleHandler::ProcessJobExchange()
     }
 
     CJob job;
-    m_Queue->PutResultGetJob(done_job_id,
+    m_Queue->PutResultGetJob(m_WorkerNodeInfo,
+                             done_job_id,
                              m_JobReq.job_return_code,
                              &m_JobReq.output,
                              // GetJob params
-                             m_PeerAddr,
-                             &m_AuthString,
                              &aff_list,
                              &job);
 
@@ -1625,6 +1634,12 @@ CNetScheduleHandler::ProcessJobExchange()
     } else {
         WriteOK();
     }
+    // FIXME: PutResultGetJob (and for the same reason, GetJob) must ensure
+    // existence of a valid worker node record before actual assigning of
+    // a job to the node, so they must call this before and this particular
+    // call is redundant
+    if (!job_id && !done_job_id)
+        m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
 
     if (IsMonitoring()) {
         CSocket& socket = GetSocket();
@@ -1644,13 +1659,15 @@ CNetScheduleHandler::ProcessJobExchange()
 
 void CNetScheduleHandler::ProcessWaitGet()
 {
+    if (m_JobReq.port)
+        m_WorkerNodeInfo.port = m_JobReq.port;
+
     list<string> aff_list;
     NStr::Split(m_JobReq.affinity_token, "\t,",
                 aff_list, NStr::eNoMergeDelims);
 
     CJob job;
-    m_Queue->GetJob(m_PeerAddr,
-                    &m_AuthString,
+    m_Queue->GetJob(m_WorkerNodeInfo,
                     &aff_list,
                     &job);
 
@@ -1664,30 +1681,25 @@ void CNetScheduleHandler::ProcessWaitGet()
     // job not found, initiate waiting mode
     WriteOK();
 
-    m_NotifPort = m_JobReq.port;
+    // FIXME: see note in PutResultGetJob above
     m_Queue->RegisterNotificationListener(
-        m_PeerAddr, m_JobReq.port, m_JobReq.timeout,
-        m_AuthString);
+        m_WorkerNodeInfo, m_JobReq.port, m_JobReq.timeout);
 }
 
 
 void CNetScheduleHandler::ProcessRegisterClient()
 {
-    m_NotifPort = m_JobReq.port;
+    if (m_JobReq.port)
+        m_WorkerNodeInfo.port = m_JobReq.port;
     m_Queue->RegisterNotificationListener(
-        m_PeerAddr, m_JobReq.port, 1, m_AuthString);
-
+        m_WorkerNodeInfo, m_JobReq.port, 0);
     WriteOK();
 }
 
 
 void CNetScheduleHandler::ProcessUnRegisterClient()
 {
-    m_NotifPort = 0;
-    m_Queue->UnRegisterNotificationListener(m_PeerAddr,
-                                            m_JobReq.port);
-    m_Queue->ClearAffinity(m_PeerAddr, m_AuthString);
-
+    m_Queue->UnRegisterNotificationListener(m_WorkerNodeInfo);
     WriteOK();
 }
 
@@ -1716,9 +1728,9 @@ void CNetScheduleHandler::ProcessQuitSession(void)
 void CNetScheduleHandler::ProcessPutFailure()
 {
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
-    m_Queue->JobFailed(job_id, m_JobReq.err_msg, m_JobReq.output,
-                       m_JobReq.job_return_code,
-                       m_PeerAddr, m_AuthString);
+    m_Queue->FailJob(m_WorkerNodeInfo,
+                     job_id, m_JobReq.err_msg, m_JobReq.output,
+                     m_JobReq.job_return_code);
     WriteOK();
 }
 
@@ -1726,7 +1738,8 @@ void CNetScheduleHandler::ProcessPutFailure()
 void CNetScheduleHandler::ProcessPut()
 {
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
-    m_Queue->PutResult(job_id, m_JobReq.job_return_code, &m_JobReq.output);
+    m_Queue->PutResult(m_WorkerNodeInfo,
+                       job_id, m_JobReq.job_return_code, &m_JobReq.output);
     WriteOK();
 }
 
@@ -1734,7 +1747,7 @@ void CNetScheduleHandler::ProcessPut()
 void CNetScheduleHandler::ProcessReturn()
 {
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
-    m_Queue->ReturnJob(job_id);
+    m_Queue->ReturnJob(m_WorkerNodeInfo, job_id);
     WriteOK();
 }
 
@@ -2312,19 +2325,26 @@ void CNetScheduleHandler::ProcessReadFailed()
 void CNetScheduleHandler::ProcessGetAffinityList()
 {
     WriteOK("Affinity preference placeholder");
+    // Revise this if we'd call some other worker node functions, which
+    // update validity time stamps
+    m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
 }
 
 
-void CNetScheduleHandler::ProcessInitNode()
+void CNetScheduleHandler::ProcessInitWorkerNode()
 {
-    m_Queue->InitNode(m_PeerAddr, m_JobReq.port, m_JobReq.param1);
+    if (!m_WorkerNodeInfo.node_id.empty())
+        m_Queue->ClearWorkerNode(m_WorkerNodeInfo.node_id);
+    m_WorkerNodeInfo.port    = m_JobReq.port;
+    m_WorkerNodeInfo.node_id = m_JobReq.param1;
+    m_Queue->InitWorkerNode(m_WorkerNodeInfo);
     WriteOK();
 }
 
 
-void CNetScheduleHandler::ProcessClearNode()
+void CNetScheduleHandler::ProcessClearWorkerNode()
 {
-    m_Queue->ClearNode(m_JobReq.param1);
+    m_Queue->ClearWorkerNode(m_JobReq.param1);
     WriteOK();
 }
 
@@ -2488,11 +2508,11 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "AFLS",     &CNetScheduleHandler::ProcessGetAffinityList, eNSCR_Worker,
         NO_ARGS },
     // INIT port : uint id : string
-    { "INIT",     &CNetScheduleHandler::ProcessInitNode, eNSCR_Worker,
+    { "INIT",     &CNetScheduleHandler::ProcessInitWorkerNode, eNSCR_Worker,
         { { eNSA_Required, eNST_Int, eNSRF_Port },
           { eNSA_Required, eNST_Str, eNSRF_Guid }, sm_End } },
     // CLRN id : string
-    { "CLRN",     &CNetScheduleHandler::ProcessClearNode, eNSCR_Worker,
+    { "CLRN",     &CNetScheduleHandler::ProcessClearWorkerNode, eNSCR_Any,
         { { eNSA_Required, eNST_Str, eNSRF_Guid }, sm_End } },
     { 0,          &CNetScheduleHandler::ProcessError },
 };
@@ -2613,8 +2633,9 @@ bool CNetScheduleHandler::x_GetValue(ENSTokenType ttype,
 }
 
 
-CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
-    const string& reqstr)
+void CNetScheduleHandler::ParseRequest(
+    const string& reqstr,
+    CNetScheduleHandler::FProcessor& processor)
 {
     // Request formats and types:
     //
@@ -2651,7 +2672,7 @@ CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
     // 29.JDEX JSID_01_1 timeout
     // 30.STSN [aff="Affinity token"]
 
-    FProcessor processor = &CNetScheduleHandler::ProcessError;
+    processor = &CNetScheduleHandler::ProcessError;
     const char* s = reqstr.data();
     const char* end = s + reqstr.size();
     const char* token;
@@ -2661,7 +2682,7 @@ CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
     ttype = x_GetToken(s, end, token, tsize);
     if (ttype != eNST_Id) {
         m_JobReq.err_msg = "eProtocolSyntaxError:Command absent";
-        return &CNetScheduleHandler::ProcessError;
+        return;
     }
     const SArgument *argsDescr = 0;
     // Look up command
@@ -2676,33 +2697,18 @@ CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
     }
     if (!argsDescr) {
         m_JobReq.err_msg = "eProtocolSyntaxError:Unknown request";
-        return &CNetScheduleHandler::ProcessError;
+        return;
     }
     TNSClientRole role = sm_CommandMap[n_cmd].role;
     x_CheckAccess(role);
 
-    if (role & eNSAC_Worker)
-        m_JobReq.timeout = 0;
-
     if (!x_ParseArguments(s, end, argsDescr)) {
-        m_JobReq.err_msg = "eProtocolSyntaxError:Malformed ";
-        m_JobReq.err_msg.append(sm_CommandMap[n_cmd].cmd);
-        m_JobReq.err_msg.append(" request");
-        return &CNetScheduleHandler::ProcessError;
+        m_JobReq.err_msg = string("eProtocolSyntaxError:Malformed ") +
+                           sm_CommandMap[n_cmd].cmd +
+                           " request";
+        processor = &CNetScheduleHandler::ProcessError;
+        return;
     }
-
-    // Worker node-specific operation
-    if ((role & eNSAC_Worker)
-        // Not all of worker node commands pass notification
-        // port, so if we were not fortunate enough to get it
-        // we can not identify node by (host, port) pair
-        && m_NotifPort)
-    {
-        m_Queue->RegisterWorkerNodeVisit(m_PeerAddr, m_NotifPort,
-                                         m_JobReq.timeout);
-    }
-
-    return processor;
 }
 
 

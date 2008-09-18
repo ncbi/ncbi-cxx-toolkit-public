@@ -133,7 +133,7 @@ public:
     // Getter/setters
     unsigned       GetId() const
         { return m_Id; }
-    TJobStatus GetStatus() const 
+    TJobStatus     GetStatus() const 
         { return m_Status; }
     unsigned       GetTimeSubmit() const
         { return m_TimeSubmit; }
@@ -199,8 +199,8 @@ public:
 
     // generic access via field name
     static
-    int GetFieldIndex(const string& name);
-    string GetField(int index) const;
+    int            GetFieldIndex(const string& name);
+    string         GetField(int index) const;
 
     // manipulators
     CJobRun&       AppendRun();
@@ -226,6 +226,9 @@ public:
     // to create separate CJobIterator.
     // EJobFetchResult FetchNext(SLockedQueue* queue);
     bool Flush(SLockedQueue* queue);
+
+    // Should we notify submitter in the moment of time 'curr'
+    bool CJob::ShouldNotify(time_t curr);
 private:
     void x_ParseTags(const string& strtags, TNSTagList& tags);
     // Service flags
@@ -445,7 +448,7 @@ private:
     time_t                       m_BecameEmpty;
 
     // List of active worker node listeners waiting for pending jobs
-    CQueueWorkerNodes            m_WorkerNodes; ///< worker nodes
+    CQueueWorkerNodeList         m_WorkerNodeList;
     string                       q_notif;       ///< Queue notification message
 
 public:
@@ -575,12 +578,18 @@ public:
     ///
     /// @return job_id
     unsigned
-    FindPendingJob(unsigned       client_addr,
-                   const string&  client_name,
-                   time_t         t);
+    FindPendingJob(const string& node_id, time_t curr);
 
-    void x_ReadAffIdx_NoLock(unsigned            aff_id,
-                             TNSBitVector*       jobs);
+    /// @return is job modified
+    bool FailJob(unsigned      job_id,
+                 const string& err_msg,
+                 const string& output,
+                 int           ret_code,
+                 const string* node_id = 0);
+
+
+    void x_ReadAffIdx_NoLock(unsigned      aff_id,
+                             TNSBitVector* jobs);
 
     /// Update the affinity index
     void AddJobsToAffinity(CBDB_Transaction& trans,
@@ -592,27 +601,30 @@ public:
                            const vector<CJob>& batch);
 
     // Worker node methods
+    void InitWorkerNode(const SWorkerNodeInfo& node_info);
+    void ClearWorkerNode(const string& node_id);
     void NotifyListeners(bool unconditional, unsigned aff_id);
     void PrintWorkerNodeStat(CNcbiOstream& out) const;
-    void RegisterNotificationListener(unsigned        host,
-                                      unsigned short  port,
-                                      unsigned        timeout,
-                                      const string&   auth);
-    void UnRegisterNotificationListener(unsigned       host,
-                                        unsigned short port);
-    void RegisterWorkerNodeVisit(unsigned       host_addr,
-                                 unsigned short udp_port,
-                                 unsigned       timeout);
+    void RegisterNotificationListener(const string&  node_id,
+                                      unsigned short port,
+                                      unsigned       timeout);
+	// Is the unregistration final? True for old style nodes.
+    bool UnRegisterNotificationListener(const string& node_id);
+    void RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info);
+    void AddJobToWorkerNode(SWorkerNodeInfo& node_info,
+                            unsigned         job_id,
+                            time_t           exp_time);
+    void RemoveJobFromWorkerNode(const SWorkerNodeInfo& node_info,
+                                 unsigned               job_id);
+	void x_FailJobsAtNodeClose(TJobList& jobs);
+    //
 
     typedef CWorkerNodeAffinity::TNetAddress TNetAddress;
-    void ClearAffinity(TNetAddress   addr,
-                       const string& client_name);
-    void AddAffinity(TNetAddress   addr,
-                     const string& client_name,
+    void ClearAffinity(const string& node_id);
+    void AddAffinity(const string& node_id,
                      unsigned      aff_id,
                      time_t        exp_time);
-    void BlacklistJob(TNetAddress   addr,
-                      const string& client_name,
+    void BlacklistJob(const string& node_id,
                       unsigned      job_id,
                       time_t        exp_time);
 
@@ -758,17 +770,7 @@ private:
 };
 
 
-class CParameterEnumerator
-{
-public:
-    virtual ~CParameterEnumerator() { }
-    virtual unsigned GetNumParams() const { return 0; }
-    virtual string GetParamName(unsigned n) const { return ""; }
-    virtual string GetParamValue(unsigned n) const { return ""; }
-};
-
-
-class CQueueParamAccessor : public CParameterEnumerator
+class CQueueParamAccessor
 {
     // When modifying this, modify all places marked with PARAMETERS
 public:

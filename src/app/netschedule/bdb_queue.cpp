@@ -962,8 +962,7 @@ CQueue::CQueue(CQueueDataBase&    db,
                unsigned           client_host_addr)
 : m_Db(db),
   m_LQueue(queue),
-  m_ClientHostAddr(client_host_addr),
-  m_QueueDbAccessCounter(0)
+  m_ClientHostAddr(client_host_addr)
 {
 }
 
@@ -1924,37 +1923,38 @@ void CQueue::FailReadingJobs(unsigned read_id, TNSBitVector& jobs)
 }
 
 
-void CQueue::InitNode(unsigned       host,
-                      unsigned short port,
-                      const string&  node_id)
+void CQueue::InitWorkerNode(const SWorkerNodeInfo& node_info)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    q->InitWorkerNode(node_info);
 }
 
 
-void CQueue::ClearNode(const string&  node_id)
+void CQueue::ClearWorkerNode(const string& node_id)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-
+    q->ClearWorkerNode(node_id);
 }
 
 
-void CQueue::PutResult(unsigned      job_id,
-                       int           ret_code,
-                       const string* output)
+void CQueue::PutResult(SWorkerNodeInfo& node_info,
+                       unsigned         job_id,
+                       int              ret_code,
+                       const string*    output)
 {
-    PutResultGetJob(job_id, ret_code, output,
-                    0, 0, 0, 0);
+    PutResultGetJob(node_info,
+                    job_id, ret_code, output,
+                    0, 0);
 }
 
 
-void CQueue::GetJob(unsigned       worker_node,
-                    const string*  client_name,
+void CQueue::GetJob(SWorkerNodeInfo&    node_info,
                     const list<string>* aff_list,
-                    CJob*          job)
+                    CJob*               job)
 {
-    PutResultGetJob(0, 0, 0,
-        worker_node, client_name, aff_list, job);
+    PutResultGetJob(node_info,
+                    0, 0, 0,
+                    aff_list, job);
 }
 
 
@@ -1996,29 +1996,17 @@ CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
 }
 
 
-bool CQueue::x_ShouldNotify(time_t curr, const CJob& job)
-{
-    unsigned time_submit  = job.GetTimeSubmit();
-    unsigned subm_timeout = job.GetSubmTimeout();
-    unsigned subm_addr    = job.GetSubmAddr();
-    unsigned subm_port    = job.GetSubmPort();
-    return time_submit && subm_timeout && subm_addr && subm_port &&
-          (time_submit + subm_timeout >= (unsigned)curr);
-}
-
-
 void
-CQueue::PutResultGetJob(// PutResult parameters
-                        unsigned       done_job_id,
-                        int            ret_code,
-                        const string*  output,
+CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
+                        // PutResult parameters
+                        unsigned         done_job_id,
+                        int              ret_code,
+                        const string*    output,
                         // GetJob parameters
                         // in
-                        unsigned       worker_node,
-                        const string*  client_name,
                         const list<string>* aff_list,
                         // out
-                        CJob*          new_job)
+                        CJob*            new_job)
 {
     // PutResult parameter check
     _ASSERT(!done_job_id || output);
@@ -2048,7 +2036,7 @@ CQueue::PutResultGetJob(// PutResult parameters
     CQueueJSGuard js_guard(q, done_job_id,
                            CNetScheduleAPI::eDone,
                            &need_update);
-    // This is a HACK - if js_guard is not commited, it will rollback
+    // This is a HACK - if js_guard is not committed, it will rollback
     // to previous state, so it is safe to change status after the guard.
     if (delete_done) {
         q->Erase(done_job_id);
@@ -2058,7 +2046,7 @@ CQueue::PutResultGetJob(// PutResult parameters
     // TODO: move affinity assignment there as well
     unsigned pending_job_id = 0;
     if (new_job)
-        pending_job_id = q->FindPendingJob(worker_node, *client_name, curr);
+        pending_job_id = q->FindPendingJob(node_info.node_id, curr);
     bool done_rec_updated = false;
     CJob job;
 
@@ -2084,8 +2072,9 @@ CQueue::PutResultGetJob(// PutResult parameters
 
                 if (pending_job_id) {
                     upd_status =
-                        x_UpdateDB_GetJobNoLock(curr, pending_job_id,
-                            worker_node, *new_job);
+                        x_UpdateDB_GetJobNoLock(node_info,
+                                                curr, pending_job_id,
+                                                *new_job);
                 }
             }}
 
@@ -2107,8 +2096,9 @@ CQueue::PutResultGetJob(// PutResult parameters
                 _ASSERT(0);
             }
 
-            if (done_job_id) q->CountEvent(SLockedQueue::eStatPutEvent);
-            if (pending_job_id) q->CountEvent(SLockedQueue::eStatGetEvent);
+            if (done_job_id) q->RemoveJobFromWorkerNode(node_info, done_job_id);
+            if (pending_job_id) q->AddJobToWorkerNode(node_info, pending_job_id,
+                                                      curr + run_timeout);
             break;
         }
         catch (CBDB_ErrnoException& ex) {
@@ -2139,13 +2129,12 @@ CQueue::PutResultGetJob(// PutResult parameters
     unsigned job_aff_id;
     if (new_job && (job_aff_id = new_job->GetAffinityId())) {
         time_t exp_time = run_timeout ? curr + 2*run_timeout : 0;
-        q->AddAffinity(worker_node, *client_name,
-                       job_aff_id, exp_time);
+        q->AddAffinity(node_info.node_id, job_aff_id, exp_time);
     }
 
     x_TimeLineExchange(done_job_id, pending_job_id, curr);
 
-    if (done_rec_updated  &&  x_ShouldNotify(curr, job)) {
+    if (done_rec_updated  &&  job.ShouldNotify(curr)) {
         q->Notify(job.GetSubmAddr(), job.GetSubmPort(), done_job_id);
     }
 
@@ -2166,7 +2155,7 @@ CQueue::PutResultGetJob(// PutResult parameters
             msg += " (GET) job id=";
             msg += NStr::IntToString(pending_job_id);
             msg += " worker_node=";
-            msg += CSocketAPI::gethostbyaddr(worker_node);
+            msg += node_info.node_id;
         }
         MonitorPost(msg);
     }
@@ -2204,124 +2193,33 @@ bool CQueue::PutProgressMessage(unsigned      job_id,
 }
 
 
-void CQueue::JobFailed(unsigned      job_id,
-                       const string& err_msg,
-                       const string& output,
-                       int           ret_code,
-                       unsigned      worker_node,
-                       const string& client_name)
+void CQueue::FailJob(const SWorkerNodeInfo& node_info,
+                     unsigned               job_id,
+                     const string&          err_msg,
+                     const string&          output,
+                     int                    ret_code)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    unsigned failed_retries;
-    unsigned max_output_size;
-    unsigned blacklist_time;
-    {{
-        CQueueParamAccessor qp(*q);
-        failed_retries  = qp.GetFailedRetries();
-        max_output_size = qp.GetMaxOutputSize();
-        blacklist_time  = qp.GetBlacklistTime();
-    }}
-
-    if (output.size() > max_output_size) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong,
-           "Output is too long");
-    }
-    // We first change memory state to "Failed", it is safer because
-    // there is only danger to find job in inconsistent state, and because
-    // Failed is terminal, usually you can not allocate job or do anything
-    // disturbing from this state.
-    CQueueJSGuard js_guard(q, job_id,
-                           CNetScheduleAPI::eFailed);
-
-    CJob job;
-    CNS_Transaction trans(q);
-
-    time_t curr = time(0);
-
-    bool rescheduled = false;
-    {{
-        CQueueGuard guard(q, &trans);
-
-        CJob::EJobFetchResult res = job.Fetch(q, job_id);
-        if (res != CJob::eJF_Ok) {
-            // TODO: Integrity error or job just expired?
-            LOG_POST(Error << "Can not fetch job " << q->DecorateJobId(job_id));
-            return;
-        }
-
-        unsigned run_count = job.GetRunCount();
-        if (run_count <= failed_retries) {
-            time_t exp_time = blacklist_time ? curr + blacklist_time : 0;
-            q->BlacklistJob(worker_node, client_name,
-                            job_id, exp_time);
-            job.SetStatus(CNetScheduleAPI::ePending);
-            js_guard.SetStatus(CNetScheduleAPI::ePending);
-            rescheduled = true;
-            LOG_POST(Warning << "Job " << q->DecorateJobId(job_id)
-                             << " rescheduled with "
-                             << (failed_retries - run_count)
-                             << " retries left");
-        } else {
-            job.SetStatus(CNetScheduleAPI::eFailed);
-            rescheduled = false;
-            LOG_POST(Warning << "Job " << q->DecorateJobId(job_id)
-                             << " failed");
-        }
-
-        CJobRun* run = job.GetLastRun();
-        if (!run) {
-            ERR_POST(Error << "No JobRun for running job "
-                           << q->DecorateJobId(job_id));
-            run = &job.AppendRun();
-        }
-
-        run->SetStatus(CNetScheduleAPI::eFailed);
-        run->SetTimeDone(curr);
-        run->SetErrorMsg(err_msg);
-        run->SetRetCode(ret_code);
-        job.SetOutput(output);
-
-        job.Flush(q);
-    }}
-
-    trans.Commit();
-    js_guard.Commit();
-
-    x_RemoveFromTimeLine(job_id);
-
-    if (!rescheduled  &&  x_ShouldNotify(curr, job)) {
-        q->Notify(job.GetSubmAddr(), job.GetSubmPort(), job_id);
-    }
-
-    if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
-        msg += " CQueue::JobFailed() job id=";
-        msg += NStr::IntToString(job_id);
-        msg += " err_msg=";
-        msg += err_msg;
-        msg += " output=";
-        msg += output;
-        if (rescheduled)
-            msg += " rescheduled";
-        MonitorPost(msg);
-    }
+    q->RemoveJobFromWorkerNode(node_info, job_id);
+    q->FailJob(job_id, err_msg, output, ret_code, &node_info.node_id);
 }
 
 
-void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
+void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
+                                unsigned job_id,
+                                unsigned tm)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
 
-    unsigned q_time_descr = 20;
-    unsigned run_timeout;
-    unsigned time_start;
+    if (tm == 0) return;
+
+    time_t run_timeout;
+    time_t time_start;
 
     TJobStatus st = GetStatus(job_id);
-    if (st != CNetScheduleAPI::eRunning) {
+    if (st != CNetScheduleAPI::eRunning)
         return;
-    }
 
     CJob job;
     CNS_Transaction trans(q);
@@ -2329,14 +2227,13 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
     unsigned exp_time = 0;
     time_t curr = time(0);
 
+    bool job_updated = false;
     {{
         CQueueGuard guard(q, &trans);
 
         CJob::EJobFetchResult res;
-        if ((res = job.Fetch(q, job_id)) != CJob::eJF_Ok) {
-            // TODO: return error code?
+        if ((res = job.Fetch(q, job_id)) != CJob::eJF_Ok)
             return;
-        }
 
         CJobRun* run = job.GetLastRun();
         if (!run) {
@@ -2344,6 +2241,7 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
                            << q->DecorateJobId(job_id));
             // Fix it
             run = &job.AppendRun();
+			job_updated = true;
         }
 
         time_start = run->GetTimeStart();
@@ -2355,35 +2253,32 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
             // Fix it just in case
             time_start = curr;
             run->SetTimeStart(curr);
+			job_updated = true;
         }
         run_timeout = job.GetRunTimeout();
-        if (run_timeout == 0) {
-            run_timeout = queue_run_timeout;
-        }
+        if (run_timeout == 0) run_timeout = queue_run_timeout;
 
-        // check if current timeout is enough and job requires no prolongation
-        time_t safe_exp_time =
-            curr + std::max(queue_run_timeout, 2*tm) + q_time_descr;
-        if (time_start + run_timeout > (unsigned) safe_exp_time) {
-            // FIXME: what if we already changed job object? Shouldn't we flush?
+        if (time_start + run_timeout > curr + tm) {
+            // Old timeout is enough to cover this request, keep it.
+            // If we already changed job object (fixing it), we flush it.
+			if (job_updated) job.Flush(q);
             return;
         }
 
-        while (time_start + run_timeout <= (unsigned) safe_exp_time) {
-            run_timeout += std::max(queue_run_timeout, tm);
-        }
-        job.SetRunTimeout(run_timeout);
-
+        job.SetRunTimeout(curr + tm - time_start);
         job.Flush(q);
     }}
 
     trans.Commit();
+    q->AddJobToWorkerNode(node_info, job_id, curr + tm);
+
     exp_time = x_ComputeExpirationTime(time_start, run_timeout);
 
     {{
         CWriteLockGuard guard(q->rtl_lock);
         q->run_time_line->MoveObject(exp_time, curr + tm, job_id);
     }}
+    q->RegisterWorkerNodeVisit(node_info);
 
     if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
@@ -2401,12 +2296,15 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
 
         MonitorPost(msg);
     }
+    return;
 }
 
 
-void CQueue::ReturnJob(unsigned job_id)
+void CQueue::ReturnJob(const SWorkerNodeInfo& node_info, unsigned job_id)
 {
-    _ASSERT(job_id);
+    // FIXME: move the body to SLockedQueue, provide fallback to
+    // RegisterWorkerNodeVisit if unsuccessful
+    if (!job_id) return;
 
     CRef<SLockedQueue> q(x_GetLQueue());
 
@@ -2446,6 +2344,7 @@ void CQueue::ReturnJob(unsigned job_id)
     }}
     trans.Commit();
     js_guard.Commit();
+    q->RemoveJobFromWorkerNode(node_info, job_id);
     x_RemoveFromTimeLine(job_id);
 
     if (IsMonitoring()) {
@@ -2459,9 +2358,9 @@ void CQueue::ReturnJob(unsigned job_id)
 
 
 CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
+                            const SWorkerNodeInfo& node_info,
                             time_t            curr,
                             unsigned          job_id,
-                            unsigned          worker_node,
                             CJob&             job)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
@@ -2530,7 +2429,11 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
         CJobRun& run = job.AppendRun();
         run.SetStatus(CNetScheduleAPI::eRunning);
         run.SetTimeStart(curr);
-        run.SetWorkerNode(worker_node);
+// FIXME: extend CJobRun so that it takes more detailed info on the
+// worker node including its id, host and client program.
+// As alternative, keep a log of worker node registrations and store
+// only node id there.
+//        run.SetWorkerNode(worker_node);
         job.SetStatus(CNetScheduleAPI::eRunning);
         job.SetRunTimeout(0);
         job.SetRunCount(run_count);
@@ -2722,41 +2625,39 @@ CQueue::x_TimeLineExchange(unsigned remove_job_id,
 }
 
 
-void CQueue::RegisterNotificationListener(unsigned        host,
-                                          unsigned short  port,
-                                          unsigned        timeout,
-                                          const string&   auth)
+void CQueue::RegisterNotificationListener(const SWorkerNodeInfo& node_info,
+                                          unsigned short         port,
+                                          unsigned               timeout)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    q->RegisterNotificationListener(host, port, timeout, auth);
-}
-
-
-void 
-CQueue::UnRegisterNotificationListener(unsigned       host,
-                                       unsigned short port)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->UnRegisterNotificationListener(host, port);
+    q->RegisterNotificationListener(node_info.node_id, port, timeout);
 }
 
 
 void
-CQueue::RegisterWorkerNodeVisit(unsigned       host,
-                                unsigned short port,
-                                unsigned       timeout)
+CQueue::UnRegisterNotificationListener(const SWorkerNodeInfo& node_info)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    q->RegisterWorkerNodeVisit(host, port, timeout);
+    if (!q->UnRegisterNotificationListener(node_info.node_id)) {
+        SWorkerNodeInfo ni(node_info);
+        q->RegisterWorkerNodeVisit(ni);
+    }
+}
+
+
+void
+CQueue::RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info)
+{
+    CRef<SLockedQueue> q(x_GetLQueue());
+    q->RegisterWorkerNodeVisit(node_info);
 }
 
 
 
-void CQueue::ClearAffinity(unsigned      host_addr,
-                           const string& auth)
+void CQueue::ClearAffinity(const string& node_id)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    q->ClearAffinity(host_addr, auth);
+    q->ClearAffinity(node_id);
 }
 
 

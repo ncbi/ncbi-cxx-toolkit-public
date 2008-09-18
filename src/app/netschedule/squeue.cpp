@@ -642,6 +642,13 @@ bool CJob::Flush(SLockedQueue* queue)
 }
 
 
+bool CJob::ShouldNotify(time_t curr)
+{
+    return m_TimeSubmit && m_SubmTimeout && m_SubmAddr && m_SubmPort &&
+          (m_TimeSubmit + m_SubmTimeout >= (unsigned)curr);
+}
+
+
 void CJob::x_ParseTags(const string& strtags, TNSTagList& tags)
 {
     list<string> tokens;
@@ -1055,10 +1062,14 @@ unsigned SLockedQueue::LoadStatusMatrix()
         if ((status == CNetScheduleAPI::eRunning ||
              status == CNetScheduleAPI::eReading) &&
             run_time_line) {
-            // Add object to the first available slot
+            // Add object to the first available slot;
             // it is going to be rescheduled or dropped
             // in the background control thread
             run_time_line->AddObject(run_time_line->GetHead(), job_id);
+        }
+        if (status == CNetScheduleAPI::eRunning) {
+            // TODO: recover worker node, running this job, at least for
+            // failing jobs correctly when worker nodes recover.
         }
         if (last_id < job_id) last_id = job_id;
         ++recs;
@@ -1645,9 +1656,7 @@ SLockedQueue::GetJobsWithAffinity(unsigned      aff_id,
 
 
 unsigned
-SLockedQueue::FindPendingJob(unsigned       client_addr,
-                             const string&  client_name,
-                             time_t         t)
+SLockedQueue::FindPendingJob(const string& node_id, time_t curr)
 {
     unsigned job_id = 0;
 
@@ -1658,10 +1667,10 @@ SLockedQueue::FindPendingJob(unsigned       client_addr,
     {{
         CFastMutexGuard aff_guard(m_AffinityMapLock);
         CWorkerNodeAffinity::SAffinityInfo* ai =
-            m_AffinityMap.GetAffinity(client_addr, client_name);
+            m_AffinityMap.GetAffinity(node_id);
 
         if (ai) {  // established affinity association
-            blacklisted_jobs = ai->GetBlacklistedJobs(t);
+            blacklisted_jobs = ai->GetBlacklistedJobs(curr);
             do {
                 // check for candidates
                 if (!ai->candidate_jobs.any() && ai->aff_ids.any()) {
@@ -1683,9 +1692,7 @@ SLockedQueue::FindPendingJob(unsigned       client_addr,
                 bool pending_jobs_avail =
                     status_tracker.GetPendingJobFromSet(
                         &ai->candidate_jobs, &job_id);
-                if (job_id)
-                    return job_id;
-                if (!pending_jobs_avail)
+                if (!job_id && !pending_jobs_avail)
                     return 0;
             } while (0);
         }
@@ -1695,7 +1702,7 @@ SLockedQueue::FindPendingJob(unsigned       client_addr,
     // established affinity
 
     // try to find a vacant(not taken by any other worker node) affinity id
-    {{
+    if (!job_id) {
         TNSBitVector assigned_aff;
         {{
             CFastMutexGuard aff_guard(m_AffinityMapLock);
@@ -1711,20 +1718,124 @@ SLockedQueue::FindPendingJob(unsigned       client_addr,
             // we got list of jobs we do NOT want to schedule
             bool pending_jobs_avail =
                 status_tracker.GetPendingJob(assigned_candidate_jobs,
-                                               &job_id);
-            if (job_id)
-                return job_id;
-            if (!pending_jobs_avail)
+                                             &job_id);
+            if (!job_id && !pending_jobs_avail)
                 return 0;
         }
-    }}
+    }
 
     // We just take the first available job in the queue, taking into account
     // blacklisted jobs as usual.
-    _ASSERT(job_id == 0);
-    status_tracker.GetPendingJob(blacklisted_jobs, &job_id);
+    if (!job_id)
+		status_tracker.GetPendingJob(blacklisted_jobs, &job_id);
 
     return job_id;
+}
+
+
+bool SLockedQueue::FailJob(unsigned      job_id,
+                           const string& err_msg,
+                           const string& output,
+                           int           ret_code,
+                           const string* node_id)
+{
+    unsigned failed_retries;
+    unsigned max_output_size;
+    unsigned blacklist_time;
+    {{
+        CQueueParamAccessor qp(*this);
+        failed_retries  = qp.GetFailedRetries();
+        max_output_size = qp.GetMaxOutputSize();
+        blacklist_time  = qp.GetBlacklistTime();
+    }}
+
+    if (output.size() > max_output_size) {
+        NCBI_THROW(CNetScheduleException, eDataTooLong,
+           "Output is too long");
+    }
+    // We first change memory state to "Failed", it is safer because
+    // there is only danger to find job in inconsistent state, and because
+    // Failed is terminal, usually you can not allocate job or do anything
+    // disturbing from this state.
+    CQueueJSGuard js_guard(this, job_id,
+                           CNetScheduleAPI::eFailed);
+
+    CJob job;
+    CNS_Transaction trans(this);
+
+    time_t curr = time(0);
+
+    bool rescheduled = false;
+    {{
+        CQueueGuard guard(this, &trans);
+
+        CJob::EJobFetchResult res = job.Fetch(this, job_id);
+        if (res != CJob::eJF_Ok) {
+            // TODO: Integrity error or job just expired?
+            LOG_POST(Error << "Can not fetch job " << DecorateJobId(job_id));
+            return false;
+        }
+
+        unsigned run_count = job.GetRunCount();
+        if (run_count <= failed_retries) {
+            time_t exp_time = blacklist_time ? curr + blacklist_time : 0;
+            if (node_id) BlacklistJob(*node_id, job_id, exp_time);
+            job.SetStatus(CNetScheduleAPI::ePending);
+            js_guard.SetStatus(CNetScheduleAPI::ePending);
+            rescheduled = true;
+            LOG_POST(Warning << "Job " << DecorateJobId(job_id)
+                             << " rescheduled with "
+                             << (failed_retries - run_count)
+                             << " retries left");
+        } else {
+            job.SetStatus(CNetScheduleAPI::eFailed);
+            rescheduled = false;
+            LOG_POST(Warning << "Job " << DecorateJobId(job_id)
+                             << " failed");
+        }
+
+        CJobRun* run = job.GetLastRun();
+        if (!run) {
+            ERR_POST(Error << "No JobRun for running job "
+                           << DecorateJobId(job_id));
+            run = &job.AppendRun();
+        }
+
+        run->SetStatus(CNetScheduleAPI::eFailed);
+        run->SetTimeDone(curr);
+        run->SetErrorMsg(err_msg);
+        run->SetRetCode(ret_code);
+        job.SetOutput(output);
+
+        job.Flush(this);
+    }}
+
+    trans.Commit();
+    js_guard.Commit();
+
+    if (run_time_line) {
+        CWriteLockGuard guard(rtl_lock);
+        run_time_line->RemoveObject(job_id);
+    }
+
+    if (!rescheduled  &&  job.ShouldNotify(curr)) {
+        Notify(job.GetSubmAddr(), job.GetSubmPort(), job_id);
+    }
+
+    if (IsMonitoring()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " CQueue::JobFailed() job id=";
+        msg += NStr::IntToString(job_id);
+        msg += " err_msg=";
+        msg += err_msg;
+        msg += " output=";
+        msg += output;
+        if (rescheduled)
+            msg += " rescheduled";
+        MonitorPost(msg);
+    }
+    return true;
 }
 
 
@@ -1734,6 +1845,29 @@ SLockedQueue::x_ReadAffIdx_NoLock(unsigned      aff_id,
 {
     m_AffinityIdx.aff_id = aff_id;
     m_AffinityIdx.ReadVector(jobs, bm::set_OR, NULL);
+}
+
+
+// Worker node
+
+
+void SLockedQueue::InitWorkerNode(const SWorkerNodeInfo& node_info)
+{
+    TJobList jobs;
+    m_WorkerNodeList.RegisterNode(node_info, jobs);
+	x_FailJobsAtNodeClose(jobs);
+}
+
+
+void SLockedQueue::ClearWorkerNode(const string& node_id)
+{
+    TJobList jobs;
+    m_WorkerNodeList.ClearNode(node_id, jobs);
+	{{
+		CFastMutexGuard guard(m_AffinityMapLock);
+		m_AffinityMap.ClearAffinity(node_id);
+	}}
+	x_FailJobsAtNodeClose(jobs);
 }
 
 
@@ -1749,7 +1883,8 @@ void SLockedQueue::NotifyListeners(bool unconditional, unsigned aff_id)
 
     list<TWorkerNodeHostPort> notify_list;
     if ((unconditional || status_tracker.AnyPending()) &&
-        m_WorkerNodes.GetNotifyList(unconditional, curr, notify_timeout, notify_list)) {
+        m_WorkerNodeList.GetNotifyList(unconditional, curr,
+                                       notify_timeout, notify_list)) {
 
         const char* msg = q_notif.c_str();
         size_t msg_len = q_notif.length()+1;
@@ -1774,68 +1909,101 @@ void SLockedQueue::NotifyListeners(bool unconditional, unsigned aff_id)
 
 void SLockedQueue::PrintWorkerNodeStat(CNcbiOstream& out) const
 {
-    int run_timeout = CQueueParamAccessor(*this).GetRunTimeout();
     time_t curr = time(0);
 
     list<string> nodes_info;
-    m_WorkerNodes.GetNodesInfo(curr, run_timeout, nodes_info);
+    m_WorkerNodeList.GetNodesInfo(curr, nodes_info);
     ITERATE(list<string>, it, nodes_info) {
         out << *it << "\n";
     }
 }
 
 
-void SLockedQueue::RegisterNotificationListener(unsigned        host,
-                                                unsigned short  port,
-                                                unsigned        timeout,
-                                                const string&   auth)
+void SLockedQueue::RegisterNotificationListener(const string&  node_id,
+                                                unsigned short port,
+                                                unsigned       timeout)
 {
-    m_WorkerNodes.RegisterNotificationListener(host, port, timeout, auth);
+    m_WorkerNodeList.RegisterNotificationListener(node_id, port, timeout);
 }
 
 
-void SLockedQueue::UnRegisterNotificationListener(unsigned       host,
-                                                  unsigned short port)
+bool SLockedQueue::UnRegisterNotificationListener(const string& node_id)
 {
-    m_WorkerNodes.UnRegisterNotificationListener(host, port);
+	TJobList jobs;
+	bool final =
+		m_WorkerNodeList.UnRegisterNotificationListener(node_id, jobs);
+	if (final) {
+		// Clean affinity association only for old style worker nodes
+		// New style nodes should explicitely call ClearWorkerNode
+		{{
+			CFastMutexGuard guard(m_AffinityMapLock);
+			m_AffinityMap.ClearAffinity(node_id);
+		}}
+		x_FailJobsAtNodeClose(jobs);
+	}
+	return final;
 }
 
 
-void SLockedQueue::RegisterWorkerNodeVisit(unsigned       host,
-                                           unsigned short port,
-                                           unsigned       timeout)
+void SLockedQueue::RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info)
 {
-    m_WorkerNodes.RegisterWorkerNodeVisit(host, port, timeout);
+    m_WorkerNodeList.RegisterNodeVisit(node_info);
 }
 
 
-void SLockedQueue::ClearAffinity(TNetAddress   addr,
-                                 const string& client_name)
+void SLockedQueue::AddJobToWorkerNode(SWorkerNodeInfo& node_info,
+                                      unsigned         job_id,
+                                      time_t           exp_time)
+{
+    m_WorkerNodeList.AddJob(node_info, job_id, exp_time);
+    CountEvent(eStatGetEvent);
+}
+
+
+void SLockedQueue::RemoveJobFromWorkerNode(const SWorkerNodeInfo& node_info,
+                                           unsigned               job_id)
+{
+    m_WorkerNodeList.RemoveJob(node_info, job_id);
+    CountEvent(eStatPutEvent);
+}
+
+
+
+void SLockedQueue::x_FailJobsAtNodeClose(TJobList& jobs)
+{
+	ITERATE(TJobList, it, jobs) {
+		FailJob(*it, "Node closed", "", 0);
+	}
+}
+
+// Affinity
+
+void SLockedQueue::ClearAffinity(const string& node_id)
 {
     CFastMutexGuard guard(m_AffinityMapLock);
-    m_AffinityMap.ClearAffinity(addr, client_name);
+    m_AffinityMap.ClearAffinity(node_id);
 }
 
 
-void SLockedQueue::AddAffinity(TNetAddress   addr,
-                               const string& client_name,
+void SLockedQueue::AddAffinity(const string& node_id,
                                unsigned      aff_id,
                                time_t        exp_time)
 {
     CFastMutexGuard guard(m_AffinityMapLock);
-    m_AffinityMap.AddAffinity(addr, client_name, aff_id, exp_time);
+    m_AffinityMap.AddAffinity(node_id, aff_id, exp_time);
 }
 
 
-void SLockedQueue::BlacklistJob(TNetAddress   addr,
-                                const string& client_name,
+void SLockedQueue::BlacklistJob(const string& node_id,
                                 unsigned      job_id,
                                 time_t        exp_time)
 {
     CFastMutexGuard guard(m_AffinityMapLock);
-    m_AffinityMap.BlacklistJob(addr, client_name, job_id, exp_time);
+    m_AffinityMap.BlacklistJob(node_id, job_id, exp_time);
 }
 
+
+// Tags
 
 void SLockedQueue::SetTagDbTransaction(CBDB_Transaction* trans)
 {
@@ -1975,6 +2143,8 @@ void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
     }
 }
 
+
+//
 
 void SLockedQueue::CheckExecutionTimeout()
 {

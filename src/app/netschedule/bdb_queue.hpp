@@ -51,6 +51,7 @@
 #include "squeue.hpp"
 #include "queue_vc.hpp"
 #include "background_host.hpp"
+#include "worker_node.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -123,35 +124,35 @@ public:
     /// Move job to pending ignoring its current status
     void ForceReschedule(unsigned job_id);
 
-    void PutResult(unsigned      job_id,
-                   int           ret_code,
-                   const string* output);
+    // Worker node-specific methods
+    void PutResult(SWorkerNodeInfo& node_info,
+                   unsigned         job_id,
+                   int              ret_code,
+                   const string*    output);
 
-    void GetJob(unsigned       worker_node,
-                const string*  client_name,
+    void GetJob(SWorkerNodeInfo&    node_info,
                 const list<string>* aff_list,
-                CJob*          new_job);
+                CJob*               new_job);
 
-    void PutResultGetJob(unsigned       done_job_id,
-                         int            ret_code,
-                         const string*  output,
-                         // GetJob params
-                         unsigned       worker_node,
-                         const string*  client_name,
+    void PutResultGetJob(SWorkerNodeInfo& node_info,
+                         // PutResult parameters
+                         unsigned         done_job_id,
+                         int              ret_code,
+                         const string*    output,
+                         // GetJob parameters
                          const list<string>* aff_list,
-                         CJob*          new_job);
+                         CJob*            new_job);
 
     bool PutProgressMessage(unsigned      job_id,
                             const string& msg);
 
-    void JobFailed(unsigned      job_id,
-                   const string& err_msg,
-                   const string& output,
-                   int           ret_code,
-                   unsigned      worker_node,
-                   const string& client_name);
+    void FailJob(const SWorkerNodeInfo& node_info,
+                 unsigned               job_id,
+                 const string&          err_msg,
+                 const string&          output,
+                 int                    ret_code);
 
-    void ReturnJob(unsigned job_id);
+    void ReturnJob(const SWorkerNodeInfo& node_info, unsigned job_id);
 
     /// @param expected_status
     ///    If current status is different from expected try to
@@ -176,7 +177,9 @@ public:
     /// Prolong job expiration timeout
     /// @param tm
     ///    Time worker node needs to execute the job (in seconds)
-    void JobDelayExpiration(unsigned job_id, unsigned tm);
+    void JobDelayExpiration(SWorkerNodeInfo& node_info,
+                            unsigned         job_id,
+                            unsigned         tm);
 
     /// Check jobs for expiry and if expired, delete up to batch_size jobs
     /// @return
@@ -209,34 +212,25 @@ public:
 
     // Make new worker node record with id, host and port
     // Also check that old nodes with same (host, port) are cleared
-    void InitNode(unsigned       host,
-                  unsigned short port,
-                  const string&  node_id);
+    void InitWorkerNode(const SWorkerNodeInfo& node_info);
     /// Clear all jobs, still running for node.
     /// Fails all such jobs, called by external node watcher, can safely
     /// clean out node's record
-    void ClearNode(const string&  node_id);
+    void ClearWorkerNode(const string& node_id);
 
     /// @param host_addr
     ///    host address in network BO
     ///
-    void RegisterNotificationListener(unsigned       host,
-                                      unsigned short port,
-                                      unsigned       timeout,
-                                      const string&  auth);
-    void UnRegisterNotificationListener(unsigned       host,
-                                        unsigned short port);
-    void RegisterWorkerNodeVisit(unsigned       host,
-                                 unsigned short port,
-                                 unsigned       timeout);
+    void RegisterNotificationListener(const SWorkerNodeInfo& node_info,
+                                      unsigned short         port,
+                                      unsigned               timeout);
+    void UnRegisterNotificationListener(const SWorkerNodeInfo& node_info);
+    void RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info);
 
     /// Remove affinity association for a specified host
     ///
-    /// @note Affinity is based on network host name and
-    /// program name (not UDP port). Presumed that we have one
-    /// worker node instance per host.
-    void ClearAffinity(unsigned      host_addr,
-                       const string& auth);
+    /// @note Affinity is based on worker node id
+    void ClearAffinity(const string& node_id);
 
     /// Pass socket for monitor
     void SetMonitorSocket(CSocket& socket);
@@ -334,8 +328,7 @@ private:
                                                // because iterator access is
                                                // const, and this constructor
                                                // is for CQueueIterator only
-        m_ClientHostAddr(0),
-        m_QueueDbAccessCounter(0) {}
+        m_ClientHostAddr(0) {}
 
     // Helper method for CQueueIterator so that it can return the same
     // CQueue object reference every iteration, only modifying underlying
@@ -365,8 +358,6 @@ private:
                                     const string&        output,
                                     CJob&                job);
 
-    bool x_ShouldNotify(time_t curr, const CJob& job);
-
     enum EGetJobUpdateStatus
     {
         eGetJobUpdate_Ok,
@@ -375,10 +366,10 @@ private:
         eGetJobUpdate_JobFailed
     };
     EGetJobUpdateStatus x_UpdateDB_GetJobNoLock(
-                                time_t            curr,
-                                unsigned          job_id,
-                                unsigned          worker_node,
-                                CJob&             job);
+                                const SWorkerNodeInfo& node_info,
+                                time_t                 curr,
+                                unsigned               job_id,
+                                CJob&                  job);
 
     CRef<SLockedQueue> x_GetLQueue(void);
     const CRef<SLockedQueue> x_GetLQueue(void) const;
@@ -398,15 +389,6 @@ private:
     CQueueDataBase&    m_Db;      ///< Parent structure reference
     CWeakRefOrig<SLockedQueue> m_LQueue;
     unsigned           m_ClientHostAddr;
-
-    // Per client data
-    /// For private DB
-    unsigned        m_QueueDbAccessCounter;
-    /// Private database (for long running sessions)
-    auto_ptr<SQueueDB>         m_QueueDB;
-    /// Private cursor
-    auto_ptr<CBDB_FileCursor>  m_QueueDB_Cursor;
-
 }; // CQueue
 
 
@@ -481,7 +463,7 @@ private:
 };
 
 
-struct SNSDBEnvironmentParams : public CParameterEnumerator
+struct SNSDBEnvironmentParams
 {
     string    db_path;
     string    db_log_path;

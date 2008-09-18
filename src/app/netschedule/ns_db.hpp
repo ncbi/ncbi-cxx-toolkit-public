@@ -156,7 +156,10 @@ struct SRunsDB : public CBDB_File
     CBDB_FieldInt4   status;       ///< Final job status for this run
     CBDB_FieldUint4  time_start;   ///< Start time (former time_run)
     CBDB_FieldUint4  time_done;    ///< Result submission time
-    CBDB_FieldUint4  worker_node;  ///< IP of worker node (net byteorder)
+    CBDB_FieldUint4  worker_node;  ///< IP of worker node (net byte order)
+	CBDB_FieldUint4  client_ip;    ///< IP of the client node (net byte order)
+	CBDB_FieldUint2  client_port;  ///< Client node's port
+	CBDB_FieldString worker_node_id; ///< worker node id
     CBDB_FieldInt4   ret_code;     ///< Return code
     CBDB_FieldString err_msg;      ///< Error message (exception::what())
 

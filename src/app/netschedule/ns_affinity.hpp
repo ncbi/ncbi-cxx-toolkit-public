@@ -137,16 +137,14 @@ public:
     void ClearAffinity();
 
     /// Forget affinity association
-    void ClearAffinity(TNetAddress addr, const string& client_name);
+    void ClearAffinity(const string& node_id);
 
     /// Create/update affinity association
-    void AddAffinity(TNetAddress   addr,
-                     const string& client_name,
+    void AddAffinity(const string& node_id,
                      unsigned      aff_id,
                      time_t        exp_time);
 
-    void BlacklistJob(TNetAddress   addr,
-                      const string& client_name,
+    void BlacklistJob(const string& node_id,
                       unsigned      job_id,
                       time_t        exp_time);
 
@@ -165,15 +163,14 @@ public:
     /// Free unused memory
     void OptimizeMemory();
 
-    SAffinityInfo* GetAffinity(TNetAddress   addr,
-                               const string& client_name);
+    SAffinityInfo* GetAffinity(const string& node_id);
 private:
     CWorkerNodeAffinity(const CWorkerNodeAffinity&);
     CWorkerNodeAffinity& operator=(const CWorkerNodeAffinity&);
 private:
     /// Worker node to affinity id map
-    typedef map<pair<TNetAddress, string>, SAffinityInfo*> TAffMap;
-    TAffMap        m_AffinityMap;
+    typedef map<string, SAffinityInfo*> TAffMap;
+    TAffMap m_AffinityMap;
 };
 
 

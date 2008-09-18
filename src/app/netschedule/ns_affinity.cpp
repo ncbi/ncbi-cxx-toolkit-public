@@ -351,10 +351,9 @@ void CWorkerNodeAffinity::ClearAffinity()
     m_AffinityMap.erase(m_AffinityMap.begin(), m_AffinityMap.end());
 }
 
-void CWorkerNodeAffinity::ClearAffinity(TNetAddress   addr,
-                                        const string& client_name)
+void CWorkerNodeAffinity::ClearAffinity(const string& node_id)
 {
-    TAffMap::iterator it = m_AffinityMap.find(pair<unsigned, string>(addr, client_name));
+    TAffMap::iterator it = m_AffinityMap.find(node_id);
     if (it == m_AffinityMap.end()) {
         return;
     }
@@ -362,28 +361,26 @@ void CWorkerNodeAffinity::ClearAffinity(TNetAddress   addr,
     m_AffinityMap.erase(it);
 }
 
-void CWorkerNodeAffinity::AddAffinity(TNetAddress   addr,
-                                      const string& client_name,
+void CWorkerNodeAffinity::AddAffinity(const string& node_id,
                                       unsigned      aff_id,
                                       time_t        exp_time)
 {
-    SAffinityInfo* ai = GetAffinity(addr, client_name);
+    SAffinityInfo* ai = GetAffinity(node_id);
     if (ai == 0) {
         ai = new SAffinityInfo();
-        m_AffinityMap[pair<unsigned, string>(addr, client_name)] = ai;
+        m_AffinityMap[node_id] = ai;
     }
     ai->aff_ids.set(aff_id);
 }
 
-void CWorkerNodeAffinity::BlacklistJob(TNetAddress   addr,
-                                       const string& client_name,
+void CWorkerNodeAffinity::BlacklistJob(const string& node_id,
                                        unsigned      job_id,
                                        time_t        exp_time)
 {
-    SAffinityInfo* ai = GetAffinity(addr, client_name);
+    SAffinityInfo* ai = GetAffinity(node_id);
     if (ai == 0) {
         ai = new SAffinityInfo();
-        m_AffinityMap[pair<unsigned, string>(addr, client_name)] = ai;
+        m_AffinityMap[node_id] = ai;
     }
     bool was_empty = !ai->blacklisted_jobs.any();
     ai->blacklisted_jobs.set(job_id);
@@ -407,11 +404,9 @@ void CWorkerNodeAffinity::OptimizeMemory()
 
 
 CWorkerNodeAffinity::SAffinityInfo*
-CWorkerNodeAffinity::GetAffinity(TNetAddress   addr,
-                                 const string& client_name)
+CWorkerNodeAffinity::GetAffinity(const string& node_id)
 {
-    TAffMap::iterator it = m_AffinityMap.find(
-        pair<unsigned, string>(addr, client_name));
+    TAffMap::iterator it = m_AffinityMap.find(node_id);
     if( it != m_AffinityMap.end()) return it->second;
     return 0;
 }
