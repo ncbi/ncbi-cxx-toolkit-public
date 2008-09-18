@@ -915,6 +915,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
                 check_name = check_cmd.substr(n+test_name.size());
                 check_cmd = check_cmd.substr(0,n);
             }
+            NStr::TruncateSpacesInPlace(check_cmd);
             CNcbiOstrstream check;
             check << check_dir
                 << s_check_separator << check_testname
