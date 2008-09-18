@@ -1058,7 +1058,9 @@ void CProjBulderApp::ParseArguments(void)
 
     m_Subtree = args["subtree"].AsString();
 
-    m_Root = args["root"].AsString();
+    string root = args["root"].AsString();
+    m_Root = CDirEntry::IsAbsolutePath(root) ? 
+        root : CDirEntry::ConcatPath( CDir::GetCwd(), root);
     m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
     m_Root = CDirEntry::NormalizePath(m_Root);
     m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
