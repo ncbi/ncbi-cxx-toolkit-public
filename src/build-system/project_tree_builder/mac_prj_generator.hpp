@@ -37,12 +37,13 @@
 
 #include <corelib/ncbienv.hpp>
 
-
-BEGIN_NCBI_SCOPE
-
 #if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
 
 #include <build-system/project_tree_builder/property_list__.hpp>
+
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+
 /////////////////////////////////////////////////////////////////////////////
 class ncbi::objects::CPlist;
 
@@ -130,8 +131,9 @@ private:
     CMacProjectGenerator(const CMacProjectGenerator&);
     CMacProjectGenerator& operator= (const CMacProjectGenerator&);
 };
-#endif
 
 END_NCBI_SCOPE
+
+#endif
 
 #endif //PROJECT_TREE_BUILDER__MAC_PRJ_GENERATOR__HPP

@@ -136,7 +136,6 @@ void CMacProjectGenerator::Generate(const string& solution)
             AddString( *dict_dep, "target", proj_target);
         }
         // project product
-/*
         {
             CRef<CDict> dict_product( AddDict( *dict_objects, proj_product));
             AddString( *dict_product, "explicitFileType", explicit_type);
@@ -152,7 +151,6 @@ void CMacProjectGenerator::Generate(const string& solution)
 //            AddString( *dict_product, "refType", "3");
             AddString( *dict_product, "sourceTree", "BUILT_PRODUCTS_DIR");
         }
-*/
     }
 
 // collect file groups
@@ -400,7 +398,7 @@ string CMacProjectGenerator::CreateProjectTarget(
     AddString( *dict_target, "isa", "PBXNativeTarget");
     AddString( *dict_target, "name", target_name);
     AddString( *dict_target, "productName", target_name);
-//  AddString( *dict_target, "productReference", "" /*proj_product*/);
+    AddString( *dict_target, "productReference", GetProjProduct(prj));
     AddString( *dict_target, "productType", product_type);
     return proj_target;
 }
