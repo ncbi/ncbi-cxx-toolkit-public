@@ -193,6 +193,7 @@
 #  define NCBI_OMSSA_EXPORTS
 #  define NCBI_XOMSSA_EXPORTS
 #  define NCBI_PEPXML_EXPORTS
+#  define NCBI_UNIMOD_EXPORTS
 #endif
 
 /* Definitions for NCBI_ALGO_STRUCTURE.DLL
@@ -805,6 +806,14 @@
 #  define NCBI_TINYSEQ_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library unimod
+ */
+#ifdef NCBI_UNIMOD_EXPORTS
+#  define NCBI_UNIMOD_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_UNIMOD_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library validator
  */
 #ifdef NCBI_VALIDATOR_EXPORTS
@@ -1275,6 +1284,7 @@
 #  define NCBI_TAXON1_EXPORT
 #  define NCBI_THREADER_EXPORT
 #  define NCBI_TINYSEQ_EXPORT
+#  define NCBI_UNIMOD_EXPORT
 #  define NCBI_VALERR_EXPORT
 #  define NCBI_VALIDATOR_EXPORT
 #  define NCBI_XALGOALIGN_EXPORT
