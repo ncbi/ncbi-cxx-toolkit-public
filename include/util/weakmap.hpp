@@ -40,6 +40,10 @@
 #include <set>
 
 
+#if defined __GNUG__
+# warning This file is deprecated and will be removed soon.
+#endif
+
 /** @addtogroup WeakMap
  *
  * @{
@@ -108,7 +112,7 @@ public:
     typedef typename TMap::iterator iterator;
 
 public:
-    CWeakMap(void);
+    NCBI_DEPRECATED_CTOR(CWeakMap(void));
     ~CWeakMap(void);
 
     size_t size(void) const;
