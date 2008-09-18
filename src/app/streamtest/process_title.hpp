@@ -30,7 +30,7 @@
 * ===========================================================================
 */
 
-#include "create_defline.hpp"
+#include <objmgr/util/create_defline.hpp>
 
 #ifndef __process_title__hpp__
 #define __process_title__hpp__
@@ -45,8 +45,8 @@ public:
     CTitleProcess()
     //  ------------------------------------------------------------------------
         : CScopedProcess()
-        , m_out( 0 )
-        , m_ignore_existing (false)
+        , m_out (0)
+        , m_flags (0)
         , m_skip_virtual (false)
         , m_skip_segmented (false)
     {};
@@ -68,7 +68,7 @@ public:
 
         string options = args["options"].AsString();
         if ( options == "ignore_existing" ) {
-            m_ignore_existing = true;
+            m_flags = CDeflineGenerator::fIgnoreExisting;
         }
 
         string skip = args["skip"].AsString();
@@ -191,9 +191,7 @@ public:
                 }
  
                 if (okay) {
-                    const string& title = gen.GenerateDefline (bioseq, *m_scope,
-                                                               m_ignore_existing,
-                                                               false);
+                    const string& title = gen.GenerateDefline (bioseq, *m_scope, m_flags);
 
                     *m_out << ">";
                     x_FastaSeqIdWrite (bioseq);
@@ -210,7 +208,7 @@ public:
 
 protected:
     CNcbiOstream* m_out;
-    bool m_ignore_existing;
+    CDeflineGenerator::TUserFlags m_flags;
     bool m_skip_virtual;
     bool m_skip_segmented;
 };
