@@ -11,4 +11,4 @@ connect$
 connect/services$
 bdb$
 dll
-app/netcache
+app/netcache$
