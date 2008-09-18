@@ -10,6 +10,7 @@ util/cache$
 util/math$
 util/demo$
 util/test$
+util/xregexp$
 connect$
 connect/services
 connect/test
