@@ -163,7 +163,6 @@ GC-Sequence ::= SEQUENCE {
     -- [Note: Not populated at scaffold level]
     bits SET OF GC-Sequence OPTIONAL,
 
-    bits-count INTEGER OPTIONAL,    -- Count # of lowest level components
     -- statistics
     stats GC-SequenceStats OPTIONAL
 }
@@ -180,7 +179,11 @@ GC-SequenceStats ::= SEQUENCE {
 -- All stats for one type of data
 -- Can be at any level. Even a single scaffold might have stats.
 Scaf-stats ::= SEQUENCE {
-  count INTEGER OPTIONAL, -- How many scaffolds
+  chromosomes-count INTEGER OPTIONAL, -- How many chromosomes
+        --(needed to report #chromsomes w/ ordered/unordered scaffolds)
+  scaffolds-count INTEGER OPTIONAL, -- How many scaffolds
+  components-count INTEGER OPTIONAL, -- How many components
+  component-spans-count INTEGER OPTIONAL, -- How many placements of components
   length SEQUENCE {
     total-length INTEGER,
     ungapped-length INTEGER
@@ -203,7 +206,7 @@ Scaf-stats ::= SEQUENCE {
     estimated-bases-in-gaps INTEGER,
     percentage-estimated-bases-in-gaps REAL
   } OPTIONAL,
-  n50 INTEGER,
+  n50 INTEGER OPTIONAL,
   gap-closure SEQUENCE {
     spanned-gaps INTEGER,
     unspanned-gaps INTEGER
