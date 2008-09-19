@@ -759,7 +759,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     }
                     methods <<
                         "    if ( !"<<i->mName<<" )\n"
-                        "        "<<i->mName<<".Reset("<<i->type->NewInstance(NcbiEmptyString)<<");\n"
+                        "        "<<i->mName<<".Reset("<<i->type->NewInstance(NcbiEmptyString)<<");\n";
+                    if (isNullWithAtt) {
+                        methods <<
+                            "    "<<i->mName<<"->Set"<<i->cName<<"();\n";
+                    }
+                    methods <<
                         "    return "<<i->valueName<<";\n"
                         "}\n"
                         "\n";
