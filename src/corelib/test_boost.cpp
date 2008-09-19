@@ -1205,10 +1205,12 @@ CNcbiTestApplication::GetTestUnit(CTempString test_name)
 {
     TStringToUnitMap::iterator it = m_AllTests.find(
                                             x_GetTrimmedTestName(test_name));
-    if (it != m_AllTests.end())
-        return it->second;
+    if (it == m_AllTests.end()) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "Test unit '" + (string)test_name + " not found.");
+    }
 
-    return NULL;
+    return it->second;
 }
 
 inline void

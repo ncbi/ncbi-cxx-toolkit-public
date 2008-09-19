@@ -364,7 +364,8 @@ CExprParser* NcbiTestGetIniParser(void);
 CArgDescriptions* NcbiTestGetArgDescrs(void);
 
 /// Get pointer to test unit by its name which can be partial, i.e. without
-/// class prefix and/or test_ prefix if any.
+/// class prefix and/or test_ prefix if any. Throws an exception in case of
+/// name of non-existent test
 boost::unit_test::test_unit* NcbiTestGetUnit(CTempString test_name);
 
 
