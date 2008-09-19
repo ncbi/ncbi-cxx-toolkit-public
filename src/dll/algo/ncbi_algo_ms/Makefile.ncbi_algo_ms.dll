@@ -2,7 +2,7 @@
 
 DLL = ncbi_algo_ms
 
-HOSTED_LIBS    = xomssa omssa pepXML
+HOSTED_LIBS    = xomssa omssa pepXML unimod
 
 DEPENDENCIES   = ncbi_core ncbi_algo ncbi_seq ncbi_general \
                  ncbi_pub ncbi_seqext
