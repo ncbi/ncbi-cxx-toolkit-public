@@ -54,13 +54,15 @@ void SeqSwapper::swapSequences()
 	makeClusters(m_clusteringThreshold, clusters);
 	vector< pair<int, int> > replacementPairs;
 	set<int> structures;
-	LOG_POST("Clustering is done");
+	LOG_POST("Clustering is done (made " << clusters.size() << " clusters)");
 	LOG_POST("Find replacements by BLAST in each cluster");
 	for (int i = 0; i < clusters.size(); i++)
 	{
 		vector<int>* cluster = clusters[i];
-		findReplacements(*cluster, replacementPairs, structures);
-		delete cluster;
+        if (cluster) {
+            findReplacements(*cluster, replacementPairs, structures);
+            delete cluster;
+        }
 	}
 	LOG_POST("Done with BLAST in each cluster");
 	set<int> usedPendings;

@@ -77,8 +77,8 @@ const long CdBlaster::DEFAULT_NR_SIZE = 1196146007;
 const int CdBlaster::DEFAULT_NR_SEQNUM = 3479934;
 
 CdBlaster::CdBlaster(AlignmentCollection& source, string matrixName)
-: m_ac(&source), m_seqs(0), m_scoringMatrix(matrixName), m_psiTargetCd(0), m_useWhole(false),
-m_queryRows(0), m_subjectRows(0), m_scoreType(CSeq_align::eScore_Score) 
+: m_ac(&source), m_queryRows(0), m_subjectRows(0), m_seqs(0), m_scoringMatrix(matrixName), m_useWhole(false), 
+m_scoreType(CSeq_align::eScore_Score), m_psiTargetCd(0)  
 {
 	//m_offsets.assign(m_ac->GetNumRows(), 0);
 	m_batchSizes.assign(m_ac->GetNumRows(), 0);
@@ -88,7 +88,7 @@ m_queryRows(0), m_subjectRows(0), m_scoreType(CSeq_align::eScore_Score)
 }
 
 CdBlaster::CdBlaster(vector< CRef<CBioseq> >& seqs, string matrixName)
-: m_ac(0), m_seqs(&seqs), m_scoringMatrix(matrixName), m_psiTargetCd(0), m_useWhole(false)
+: m_ac(0), m_seqs(&seqs), m_scoringMatrix(matrixName), m_useWhole(false), m_psiTargetCd(0) 
 {
 	//m_offsets.assign(seqs.size(), 0);
 	m_batchSizes.assign(seqs.size(), 0);
@@ -137,7 +137,7 @@ bool CdBlaster::blast(NotifierFunction notifier)
 	{
 		nrows = m_queryRows->size() + m_subjectRows->size();
 		totalBlasts = m_queryRows->size() * m_subjectRows->size();
-		for (int q = 0; q < m_queryRows->size(); q++)
+		for (unsigned int q = 0; q < m_queryRows->size(); q++)
 		{
 			if (m_useWhole)
 			{
@@ -147,7 +147,7 @@ bool CdBlaster::blast(NotifierFunction notifier)
 			else
 				m_truncatedBioseqs.push_back(truncateBioseq((*m_queryRows)[q]));
 		}
-		for (int s = 0; s < m_subjectRows->size(); s++)
+		for (unsigned int s = 0; s < m_subjectRows->size(); s++)
 		{
 			if (m_useWhole)
 			{
@@ -390,25 +390,29 @@ CRef< CBioseq > CdBlaster::truncateBioseq(int row)
 
 void CdBlaster::processBlastHits(int queryRow, CSearchResultSet& hits)
 {
+    double score, idScore;
 	int seqLen = m_truncatedBioseqs[queryRow]->GetInst().GetLength();
 	int nhits = hits.GetNumResults();
 	assert (nhits == m_batchSizes[queryRow]);
 	for (int i = 0; i < nhits; i++)
 	{
+		score = 0.0;
 		const list< CRef< CSeq_align > >& seqAlignList = hits[i].GetSeqAlign()->Get();
-		CRef< CSeq_align > sa = *(seqAlignList.begin());  
-		CSeq_align::C_Segs::TDenseg& denseg = sa->SetSegs().SetDenseg();
-		double score = 0.0;
-		if (!sa.Empty()) 
+		if (seqAlignList.size() > 0) 
 		{
-			if (m_scoreType == CSeq_align::eScore_PercentIdentity)
-			{
-				double idScore = 0.0;
-				sa->GetNamedScore(CSeq_align::eScore_IdentityCount, idScore);
-				score = 100*idScore/seqLen;
-			}
-			else
-				sa->GetNamedScore(m_scoreType, score);
+            CRef< CSeq_align > sa = *(seqAlignList.begin());  
+            if (!sa.Empty()) {
+                if (m_scoreType == CSeq_align::eScore_PercentIdentity)
+                    {
+                        idScore = 0.0;
+                        sa->GetNamedScore(CSeq_align::eScore_IdentityCount, idScore);
+                        if (seqLen != 0) {
+                            score = 100*idScore/seqLen;
+                        }
+                    }
+                else
+                    sa->GetNamedScore(m_scoreType, score);
+            }
 		}
 		m_scores.push_back(score);
 	}
