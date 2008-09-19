@@ -55,7 +55,7 @@ bool CompMonoMass(CRef<CMod> a, CRef<CMod> b);
 bool CompAvgMass(CRef<CMod> a, CRef<CMod> b);
 
 /////////////////////////////////////////////////////////////////////////////
-class CUnimod : public CUnimod_Base
+class NCBI_UNIMOD_EXPORT CUnimod : public CUnimod_Base
 {
     typedef CUnimod_Base Tparent;
 public:
