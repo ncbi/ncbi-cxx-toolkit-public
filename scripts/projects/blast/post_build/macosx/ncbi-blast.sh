@@ -16,9 +16,9 @@ DB_BINS="blastdbcmd makeblastdb makembindex"
 ALL_BINS="$BLAST_BINS $MASKING_BINS $DB_BINS"
 
 rm -rf $PRODUCT.dmg $PRODUCT _stage $INSTALLDIR/installer
-mkdir -p _stage/usr/local/ncbi/blast/bin _stage/usr/local/ncbi/blast/doc _stage/etc/paths.d
+mkdir -p _stage/usr/local/ncbi/blast/bin _stage/usr/local/ncbi/blast/doc _stage/private/etc/paths.d
 
-cp -p $SCRIPTDIR/ncbi_blast _stage/etc/paths.d
+cp -p $SCRIPTDIR/ncbi_blast _stage/private/etc/paths.d
 
 # This is needed because the binary ncbi-blast.pmproj has this string hard
 # coded
