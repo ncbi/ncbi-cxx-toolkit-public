@@ -1251,5 +1251,32 @@ BOOST_AUTO_TEST_CASE(Test_Truncation)
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+NCBITEST_INIT_TREE()
+{
+    NCBITEST_DEPENDS_ON(Test_GetRowCount,           Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_Cursor,                Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_Cursor2,               Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_Cursor_Param,          Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_Cursor_Multiple,       Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_LOB,                   Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_LOB2,                  Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_LOB_Multiple,          Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_LOB_Multiple_LowLevel, Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_BlobStream,            Test_Cursor);
+    NCBITEST_DEPENDS_ON(Test_UnicodeNB,             Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_Unicode,               Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_ClearParamList,        Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_SelectStmt2,           Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_NULL,                  Test_StatementParameters);
+    NCBITEST_DEPENDS_ON(Test_UserErrorHandler,      Test_Exception_Safety);
+    NCBITEST_DEPENDS_ON(Test_Recordset,             Test_SelectStmt);
+    NCBITEST_DEPENDS_ON(Test_ResultsetMetaData,     Test_SelectStmt);
+    NCBITEST_DEPENDS_ON(Test_SelectStmtXML,         Test_SelectStmt);
+    NCBITEST_DEPENDS_ON(Test_Unicode_Simple,        Test_SelectStmtXML);
+    NCBITEST_DEPENDS_ON(Test_SetMaxTextImageSize,   Test_ResultsetMetaData);
+    NCBITEST_DEPENDS_ON(Test_CloneConnection,       Test_ConnParamsDatabase);
+}
+
 
 END_NCBI_SCOPE
