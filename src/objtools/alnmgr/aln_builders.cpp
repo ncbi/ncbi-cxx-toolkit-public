@@ -37,7 +37,7 @@
 #include <objtools/alnmgr/aln_builders.hpp>
 #include <objtools/alnmgr/aln_rng_coll_oper.hpp>
 #include <objtools/alnmgr/aln_serial.hpp>
-
+#include <corelib/ncbitime.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -288,10 +288,70 @@ SortAnchoredAlnVecByScore(TAnchoredAlnVec& anchored_aln_vec)
 }
 
 
+void
+s_TranslateAnchorToAlnCoords(CPairwiseAln& out_anchor_pw, ///< output must be empty
+                             const CPairwiseAln& anchor_pw)
+{
+    CPairwiseAln::TPos aln_pos = 0; /// Start at 0
+    ITERATE (CPairwiseAln::TAlnRngColl, it, anchor_pw) {
+        CPairwiseAln::TAlnRng ar = *it;
+        ar.SetFirstFrom(aln_pos);
+        out_anchor_pw.insert(ar);
+        aln_pos += ar.GetLength();
+    }
+}
+
+
+void
+s_TranslatePairwiseToAlnCoords(CPairwiseAln& out_pw,   ///< output pairwise (needs to be empty)
+                               const CPairwiseAln& pw, ///< input pairwise to translate from
+                               const CPairwiseAln& tr) ///< translating (aln segments) pairwise
+{
+    ITERATE (CPairwiseAln, it, pw) {
+        CPairwiseAln::TAlnRng ar = *it;
+        ar.SetFirstFrom(tr.GetFirstPosBySecondPos(ar.GetFirstFrom()));
+        out_pw.insert(ar);
+    }
+}
+
+
+void
+s_TranslateToAlnCoords(CAnchoredAln& anchored_aln,
+                       const TAlnSeqIdIRef& pseudo_seqid)
+{
+    CAnchoredAln::TPairwiseAlnVector& pairwises = anchored_aln.SetPairwiseAlns();
+    typedef CAnchoredAln::TDim TDim;
+    const TDim anchor_row = anchored_aln.GetAnchorRow();
+
+    /// Fix the anchor pairwise, so it's expressed in aln coords:
+    const CPairwiseAln& anchor_pw = *pairwises[anchor_row];
+
+    CRef<CPairwiseAln> new_anchor_pw(new CPairwiseAln(pseudo_seqid,
+                                                      anchor_pw.GetSecondId(),
+                                                      anchor_pw.GetFlags()));
+    s_TranslateAnchorToAlnCoords(*new_anchor_pw, anchor_pw);
+
+    /// Translate non-anchor pairwises to aln coords:
+    for (TDim row = 0;  row < (TDim)pairwises.size();  ++row) {
+        if (row == anchor_row) {
+            pairwises[row].Reset(new_anchor_pw);
+        } else {
+            const CPairwiseAln& pw = *pairwises[row];
+            CRef<CPairwiseAln> new_pw(new CPairwiseAln(pseudo_seqid,
+                                                       pw.GetSecondId(),
+                                                       pw.GetFlags()));
+            s_TranslatePairwiseToAlnCoords(*new_pw, pw, *new_anchor_pw);
+            pairwises[row].Reset(new_pw);
+        }
+    }            
+}    
+
+
 void 
 BuildAln(TAnchoredAlnVec& in_alns,
          CAnchoredAln& out_aln,
-         const CAlnUserOptions& options)
+         const CAlnUserOptions& options,
+         TAlnSeqIdIRef pseudo_seqid)
 {
     // Types
     typedef CAnchoredAln::TDim TDim;
@@ -416,6 +476,14 @@ BuildAln(TAnchoredAlnVec& in_alns,
         break;
     }
     out_aln.SetAnchorRow(out_aln.GetPairwiseAlns().size() - 1);
+    if ( !(options.m_MergeFlags & CAlnUserOptions::fUseAnchorAsAlnSeq) ) {
+        if ( !pseudo_seqid ) {
+            CRef<CSeq_id> seq_id (new CSeq_id("lcl|pseudo [timestamp: " + CTime(CTime::eCurrent).AsString() + "]"));
+            CRef<CAlnSeqId> aln_seq_id(new CAlnSeqId(*seq_id));
+            pseudo_seqid.Reset(aln_seq_id);
+        }
+        s_TranslateToAlnCoords(out_aln, pseudo_seqid);
+    }
 
 
     /// 2. Sort the ids and alns according to score, how to collect score?

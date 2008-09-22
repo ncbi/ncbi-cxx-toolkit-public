@@ -406,37 +406,42 @@ CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln)
 
 
 void
-s_TranslatePairwise(CPairwiseAln& pw,       ///< input/output pairwise to translate
+s_TranslatePairwise(CPairwiseAln& out_pw,   ///< output pairwise (needs to be empty)
+                    const CPairwiseAln& pw, ///< input pairwise to translate from
                     const CPairwiseAln& tr) ///< translating pairwise
 {
     ITERATE (CPairwiseAln, it, pw) {
         CPairwiseAln::TAlnRng ar = *it;
-        pw.erase(it);
-        _ASSERT(ar.GetFirstFrom() == tr.GetSecondPosByFirstPos(ar.GetFirstFrom()));
         ar.SetFirstFrom(tr.GetSecondPosByFirstPos(ar.GetFirstFrom()));
-        pw.insert(ar);
+        out_pw.insert(ar);
     }
 }    
+
+
+typedef CAnchoredAln::TDim TDim;
 
 
 void
 CreateSeqAlignFromEachPairwiseAln
 (const CAnchoredAln::TPairwiseAlnVector pairwises, ///< input
- size_t anchor,                                    ///< choice of anchor
+ TDim anchor,                                      ///< choice of anchor
  vector<CRef<CSeq_align> >& out_seqaligns,         ///< output
  objects::CSeq_align::TSegs::E_Choice choice)      ///< choice of alignment 'segs'
 {
     out_seqaligns.resize(pairwises.size() - 1);
-    for (CAnchoredAln::TDim row = 0, sa_idx = 0;
-         row < pairwises.size();
+    for (TDim row = 0, sa_idx = 0;
+         row < (TDim) pairwises.size();
          ++row, ++sa_idx) {
         if (row != anchor) {
             CRef<CSeq_align> sa(new CSeq_align);
             sa->SetType(CSeq_align::eType_partial);
             sa->SetDim(2);
             
-            CRef<CPairwiseAln> p(new CPairwiseAln(*pairwises[row]));
-            s_TranslatePairwise(*p, *pairwises[anchor]);
+            const CPairwiseAln& pw = *pairwises[row];
+            CRef<CPairwiseAln> p(new CPairwiseAln(pairwises[anchor]->GetSecondId(),
+                                                  pw.GetSecondId(),
+                                                  pw.GetFlags()));
+            s_TranslatePairwise(*p, pw, *pairwises[anchor]);
 
             switch(choice)    {
             case CSeq_align::TSegs::e_Denseg: {

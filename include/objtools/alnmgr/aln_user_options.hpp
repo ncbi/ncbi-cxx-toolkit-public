@@ -80,19 +80,31 @@ public:
     EMergeAlgo m_MergeAlgo;
 
     enum EMergeFlags {
-        fTruncateOverlaps   = 0x0001, ///< Otherwise put on separate
+        fTruncateOverlaps   = 1 << 0, ///< Otherwise put on separate
                                       ///  rows
 
-        fAllowMixedStrand   = 0x0002, ///< Allow mixed strand on the
+        fAllowMixedStrand   = 1 << 1, ///< Allow mixed strand on the
                                       ///  same row
 
-        fAllowTranslocation = 0x0004, ///< Allow translocations on the
+        fAllowTranslocation = 1 << 2, ///< Allow translocations on the
                                       ///  same row
 
-        fSkipSortByScore    = 0x0008  ///< In greedy algos, skip
+        fSkipSortByScore    = 1 << 3, ///< In greedy algos, skip
                                       ///  sorting input alignments by
                                       ///  score thus allowing for
                                       ///  user-defined sort order.
+
+        fUseAnchorAsAlnSeq  = 1 << 4  ///< (Not recommended!) Use the
+                                      ///  anchor sequence as the
+                                      ///  alignment sequence.
+                                      ///  Otherwise (the default) a
+                                      ///  pseudo sequence is created
+                                      ///  whose coordinates are the
+                                      ///  alignment coordinates.
+                                      ///  WARNING: This will make all
+                                      ///  CSparseAln::*AlnPos*
+                                      ///  methods incosistent with
+                                      ///  CAlnVec::*AlnPos*.
 
     };
     typedef int TMergeFlags;

@@ -157,18 +157,29 @@ void CAlnBuildApp::Init(void)
     // Merge option
     arg_desc->AddDefaultKey
         ("merge_flags", "merge_flags",
-         "fTruncateOverlaps   = 0x0001, ///< Otherwise put on separate\n"
+         "fTruncateOverlaps   = 1 << 0, ///< Otherwise put on separate\n"
          "                              ///  rows\n"
-         "fAllowMixedStrand   = 0x0002, ///< Allow mixed strand on the\n"
+         "fAllowMixedStrand   = 1 << 1, ///< Allow mixed strand on the\n"
          "                              ///  same row\n"
-         "fAllowTranslocation = 0x0004, ///< Allow translocations on the\n"
+         "fAllowTranslocation = 1 << 2, ///< Allow translocations on the\n"
          "                              ///  same row\n"
-         "fSkipSortByScore    = 0x0008  ///< In greedy algos, skip\n"
+         "fSkipSortByScore    = 1 << 3, ///< In greedy algos, skip\n"
          "                              ///  sorting input alignments by\n"
          "                              ///  score thus allowing for\n"
-         "                              ///  user-defined sort order.\n",
+         "                              ///  user-defined sort order.\n"
+         "fUseAnchorAsAlnSeq  = 1 << 4  ///< (Not recommended!) Use the\n"
+         "                              ///  anchor sequence as the\n"
+         "                              ///  alignment sequence.\n"
+         "                              ///  Otherwise (the default) a\n"
+         "                              ///  pseudo sequence is created\n"
+         "                              ///  whose coordinates are the\n"
+         "                              ///  alignment coordinates.\n"
+         "                              ///  WARNING: This will make all\n"
+         "                              ///  CSparseAln::*AlnPos*\n"
+         "                              ///  methods incosistent with\n"
+         "                              ///  CAlnVec::*AlnPos*.\n",
          CArgDescriptions::eInteger, "0");
-    arg_desc->SetConstraint("merge_flags", new CArgAllow_Integers(0,15));
+    arg_desc->SetConstraint("merge_flags", new CArgAllow_Integers(0,31));
 
 
     // Program description
@@ -324,9 +335,18 @@ int CAlnBuildApp::Run(void)
         
     /// Build a single anchored aln
     CAnchoredAln out_anchored_aln;
+
+    /// Optionally, create an id for the alignment pseudo sequence
+    /// (otherwise one would be created automatically)
+    CRef<CSeq_id> seq_id (new CSeq_id("lcl|PSEUDO ALNSEQ"));
+    CRef<CAlnSeqId> aln_seq_id(new CAlnSeqId(*seq_id));
+    TAlnSeqIdIRef pseudo_seqid(aln_seq_id);
+
     BuildAln(anchored_aln_vec,
              out_anchored_aln,
-             aln_user_options);
+             aln_user_options,
+             pseudo_seqid);
+
     ReportTime("BuildAln");
     {
         cout << out_anchored_aln;

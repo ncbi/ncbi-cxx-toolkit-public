@@ -70,7 +70,7 @@ NCBI_XALNMGR_EXPORT
 void
 CreateSeqAlignFromEachPairwiseAln
 (const CAnchoredAln::TPairwiseAlnVector pairwises, ///< input
- size_t anchor,                                    ///< choice of anchor
+ CAnchoredAln::TDim anchor,                        ///< choice of anchor
  vector<CRef<CSeq_align> >& out_seqaligns,         ///< output
  objects::CSeq_align::TSegs::E_Choice choice);     ///< choice of alignment 'segs'
                   
