@@ -69,13 +69,6 @@ public:
           m_SecondId(second_id) {}
 
 
-    /// Copy Constructor
-    CPairwiseAln(const CPairwiseAln& pairwise_aln)
-        : TAlnRngColl(pairwise_aln),
-          m_FirstId(pairwise_aln.GetFirstId()),
-          m_SecondId(pairwise_aln.GetSecondId()) {}
-
-
     /// Base width of the first row
     int GetFirstBaseWidth() const {
         return m_FirstId->GetBaseWidth();
