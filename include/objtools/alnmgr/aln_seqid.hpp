@@ -110,7 +110,7 @@ public:
     /// Constructor
     CAlnSeqId(const CSeq_id& id) :
         CSeq_id_Handle(CSeq_id_Handle::GetHandle(id)),
-        m_Seq_id(id),
+        m_Seq_id(&id),
         m_BaseWidth(1)
     {};
 
@@ -142,7 +142,7 @@ public:
 
 
 private:
-    const CSeq_id& m_Seq_id;
+    CConstRef<CSeq_id> m_Seq_id;
     CBioseq_Handle m_BioseqHandle;
     mutable TMol m_Mol;
     int m_BaseWidth;
