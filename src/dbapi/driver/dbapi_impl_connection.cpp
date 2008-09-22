@@ -90,14 +90,15 @@ CDB_SendDataCmd* CConnection::Create_SendDataCmd(CSendDataCmd& senddata_cmd)
 
 
 CConnection::CConnection(CDriverContext& dc,
-			 const CDBConnParams& params,
+                         const CDBConnParams& params,
                          bool isBCPable
                          )
 : m_DriverContext(&dc)
 , m_MsgHandlers(dc.GetConnHandlerStack())
 , m_Interface(NULL)
 , m_ResProc(NULL)
-, m_ServerType(CDBConnParams::eUnknown)
+, m_ServerType(params.GetServerType())
+, m_ServerTypeIsKnown(false)
 , m_Server(params.GetServerName())
 , m_User(params.GetUserName())
 , m_Passwd(params.GetPassword())
@@ -194,6 +195,17 @@ CConnection::CalculateServerType(CDBConnParams::EServerType server_type)
     }
 
     return server_type;
+}
+
+CDBConnParams::EServerType 
+CConnection::GetServerType(void)
+{
+    if (m_ServerType == CDBConnParams::eUnknown && !m_ServerTypeIsKnown) {
+        m_ServerType = CalculateServerType(CDBConnParams::eUnknown);
+        m_ServerTypeIsKnown = true;
+    }
+
+    return m_ServerType;
 }
 
 

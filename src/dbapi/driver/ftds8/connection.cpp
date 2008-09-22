@@ -52,7 +52,6 @@ inline int close(int fd)
 
 BEGIN_NCBI_SCOPE
 
-
 CTDS_Connection::CTDS_Connection(CTDSContext& cntx,
                                  const CDBConnParams& params) :
     impl::CConnection(cntx, params, true),
@@ -144,8 +143,6 @@ CTDS_Connection::CTDS_Connection(CTDSContext& cntx,
         auto_stmt->DumpResults();
     }
     */
-
-    SetServerType(CalculateServerType(params.GetServerType()));
 }
 
 

@@ -303,6 +303,7 @@ CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection)
     return new CDB_Connection(connection);
 }
 
+/*
 static 
 CDB_Connection* 
 SetDatabase(CDB_Connection* conn, const CDBConnParams& params)
@@ -317,6 +318,7 @@ SetDatabase(CDB_Connection* conn, const CDBConnParams& params)
 
     return conn;
 }
+*/
 
 CDB_Connection*
 CDriverContext::MakePooledConnection(const CDBConnParams& params)

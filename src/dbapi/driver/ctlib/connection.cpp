@@ -65,6 +65,29 @@ BEGIN_NCBI_SCOPE
 #ifdef FTDS_IN_USE
 namespace ftds64_ctlib
 {
+
+
+CDBConnParams::EServerType 
+GetTDSServerType(CS_CONNECTION* conn)
+{
+    if (conn != NULL && conn->tds_socket != NULL) {
+        const char* product = conn->tds_socket->product_name;
+
+        if (product != NULL && strlen(product) != 0) {
+            if (strcmp(product, "sql server") == 0) {
+                return CDBConnParams::eSybaseSQLServer;
+            } else if (strcmp(product, "Microsoft SQL Server") == 0) {
+                return CDBConnParams::eMSSqlServer;
+            } else if (strcmp(product, "OpenServer") == 0
+                || strcmp(product, "NcbiTdsServer")) {
+                return CDBConnParams::eSybaseOpenServer;
+            }
+        }
+    }
+
+    return CDBConnParams::eUnknown;
+}
+
 #endif
 
 ////////////////////////////////////////////////////////////////////////////
@@ -275,7 +298,9 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     }
     */
 
-    SetServerType(CalculateServerType(params.GetServerType()));
+#ifdef FTDS_IN_USE
+    SetServerType(GetTDSServerType(m_Handle.GetNativeHandle()));
+#endif
 }
 
 

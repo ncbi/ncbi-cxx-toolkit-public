@@ -184,8 +184,6 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
         auto_stmt->DumpResults();
     }
     */
-
-    SetServerType(CalculateServerType(params.GetServerType()));
 }
 
 

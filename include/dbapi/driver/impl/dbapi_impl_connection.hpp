@@ -193,10 +193,7 @@ public:
     virtual void SetTimeout(size_t nof_secs) = 0;
     virtual void SetTextImageSize(size_t nof_bytes);
 
-    CDBConnParams::EServerType GetServerType(void) const
-    {
-        return m_ServerType;
-    }
+    CDBConnParams::EServerType GetServerType(void);
 
     //
     CDBConnParams::EServerType CalculateServerType(CDBConnParams::EServerType server_type);
@@ -268,7 +265,9 @@ private:
     TCommandList                    m_CMDs;
     CInterfaceHook<CDB_Connection>  m_Interface;
     CDB_ResultProcessor*            m_ResProc;
+
     CDBConnParams::EServerType      m_ServerType;
+    bool                            m_ServerTypeIsKnown;
 
     const string   m_Server;
     const string   m_User;
