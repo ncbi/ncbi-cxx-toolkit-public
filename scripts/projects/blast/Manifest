@@ -41,5 +41,4 @@ Win64       : plain : msvc800_prj   static  64  ReleaseDLL
 SunOSx86    : plain : WorkShop59.sh 64  --without-debug --with-mt --with-flat-makefile
 SunOSSparc  : plain : WorkShop59.sh 64  --without-debug --with-mt --with-flat-makefile
 
-# Use --no-fake-root for now tof fix a problem with permissions on network drive
-IntelMAC    : universal : GCC.sh        --without-debug --with-mt --with-flat-makefile --with-universal --no-fake-root
+IntelMAC    : universal : GCC.sh        --without-debug --with-mt --with-flat-makefile --with-universal
