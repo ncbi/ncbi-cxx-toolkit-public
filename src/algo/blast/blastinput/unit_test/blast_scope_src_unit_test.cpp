@@ -44,7 +44,11 @@
 #  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
 #endif
 
-#ifndef SKIP_DOXYGEN_PROCESSING
+#if defined(NCBI_COMPILER_WORKSHOP) && defined(NDEBUG) && defined(NCBI_WITHOUT_MT) && defined(__i386) && NCBI_COMPILER_VERSION == 550
+#  define BUGGY_COMPILER
+#endif
+
+#if !defined(SKIP_DOXYGEN_PROCESSING) && !defined(BUGGY_COMPILER)
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
