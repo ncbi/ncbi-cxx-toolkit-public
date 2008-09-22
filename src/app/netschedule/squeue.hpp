@@ -228,7 +228,7 @@ public:
     bool Flush(SLockedQueue* queue);
 
     // Should we notify submitter in the moment of time 'curr'
-    bool CJob::ShouldNotify(time_t curr);
+    bool ShouldNotify(time_t curr);
 private:
     void x_ParseTags(const string& strtags, TNSTagList& tags);
     // Service flags
