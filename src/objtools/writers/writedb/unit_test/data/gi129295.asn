@@ -1,0 +1,282 @@
+Seq-entry ::= seq {
+  id {
+    swissprot {
+      name "OVALX_CHICK",
+      accession "P01013",
+      release "reviewed",
+      version 1
+    },
+    gi 129295
+  },
+  descr {
+    title "Ovalbumin-related protein X (Gene X protein).",
+    sp {
+      class standard,
+      seqref {
+        gi 63055,
+        gi 763099,
+        gi 63057,
+        gi 763100,
+        gi 63059,
+        gi 763101,
+        gi 68737
+      },
+      dbref {
+        {
+          db "UniGene",
+          tag str "Gga.32323"
+        },
+        {
+          db "HSSP",
+          tag str "P01012"
+        },
+        {
+          db "Ensembl",
+          tag str "ENSGALG00000019551"
+        },
+        {
+          db "HOGENOM",
+          tag str "P01013"
+        },
+        {
+          db "HOVERGEN",
+          tag str "P01013"
+        },
+        {
+          db "InterPro",
+          tag str "IPR000215"
+        },
+        {
+          db "PANTHER",
+          tag str "PTHR11461"
+        },
+        {
+          db "Pfam",
+          tag str "PF00079"
+        },
+        {
+          db "SMART",
+          tag str "SM00093"
+        },
+        {
+          db "PROSITE",
+          tag str "PS00284"
+        }
+      },
+      created std {
+        year 1986,
+        month 7,
+        day 21
+      },
+      sequpd std {
+        year 1986,
+        month 7,
+        day 21
+      },
+      annotupd std {
+        year 2008,
+        month 6,
+        day 10
+      }
+    },
+    comment "[SIMILARITY] Belongs to the serpin family. Ov-serpin subfamily.",
+    create-date std {
+      year 1986,
+      month 7,
+      day 21
+    },
+    update-date std {
+      year 2008,
+      month 6,
+      day 10
+    },
+    source {
+      org {
+        taxname "Gallus gallus",
+        common "chicken",
+        db {
+          {
+            db "taxon",
+            tag id 9031
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Gallus",
+            species "gallus"
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Archosauria; Dinosauria; Saurischia; Theropoda; Coelurosauria;
+ Aves; Neognathae; Galliformes; Phasianidae; Phasianinae; Gallus",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      }
+    },
+    molinfo {
+      biomol peptide,
+      completeness no-left
+    },
+    pub {
+      pub {
+        gen {
+          serial-number 1
+        },
+        pmid 7418002,
+        article {
+          title {
+            name "The ovalbumin gene family: structure of the X gene and
+ evolution of duplicated split genes."
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "Heilig",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Perrin",
+                  initials "F."
+                }
+              },
+              {
+                name name {
+                  last "Gannon",
+                  initials "F."
+                }
+              },
+              {
+                name name {
+                  last "Mandel",
+                  initials "J.L."
+                }
+              },
+              {
+                name name {
+                  last "Chambon",
+                  initials "P."
+                }
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Cell",
+              ml-jta "Cell",
+              issn "0092-8674",
+              name "Cell"
+            },
+            imp {
+              date std {
+                year 1980,
+                month 7
+              },
+              volume "20",
+              issue "3",
+              pages "625-637",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 1980,
+                    month 7,
+                    day 1
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 1980,
+                    month 7,
+                    day 1,
+                    hour 0,
+                    minute 1
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            doi "10.1016/0092-8674(80)90309-8",
+            pubmed 7418002,
+            pii "0092-8674(80)90309-8"
+          }
+        }
+      },
+      comment "NUCLEOTIDE SEQUENCE [GENOMIC DNA]."
+    }
+  },
+  inst {
+    repr raw,
+    mol aa,
+    length 232,
+    seq-data ncbieaa "QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMM
+CMNNSFNVATLPAEKMKILELPFASGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEE
+KYNLTSVLMALGMTDLFIPSANLTGISSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFL
+FLIKHNPTNTIVYFGRYWSP",
+    hist {
+      replaces {
+        date std {
+          year 2007,
+          month 3,
+          day 23
+        },
+        ids {
+          gi 68737
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data region "Mature chain",
+          partial TRUE,
+          comment "Ovalbumin-related protein X. /FTId=PRO_0000094130.",
+          location int {
+            from 0,
+            to 231,
+            id gi 129295,
+            fuzz-from lim lt
+          },
+          exp-ev experimental
+        },
+        {
+          data gene {
+            locus "SERPINB14C",
+            syn {
+              "X"
+            }
+          },
+          location int {
+            from 0,
+            to 231,
+            id gi 129295
+          }
+        },
+        {
+          data prot {
+            name {
+              "Ovalbumin-related protein X"
+            }
+          },
+          partial TRUE,
+          location int {
+            from 0,
+            to 231,
+            id gi 129295,
+            fuzz-from lim lt
+          }
+        }
+      }
+    }
+  }
+}
+

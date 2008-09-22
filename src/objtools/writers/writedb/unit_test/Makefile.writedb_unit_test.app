@@ -7,10 +7,10 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-LIB_ = seqdb writedb xobjutil xobjread creaders blastdb $(OBJMGR_LIBS)
+LIB_ = writedb seqdb xobjread xobjutil creaders blastdb $(SOBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
-LIBS = $(BOOST_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) \
-$(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(BOOST_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = writedb_unit_test
 CHECK_AUTHORS = blastsoft
+CHECK_COPY = data

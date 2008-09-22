@@ -1,0 +1,448 @@
+Seq-entry ::= seq {
+  id {
+    swissprot {
+      name "OVALY_CHICK",
+      accession "P01014",
+      release "reviewed",
+      version 1
+    },
+    gi 129296
+  },
+  descr {
+    title "Ovalbumin-related protein Y (Gene Y protein).",
+    sp {
+      class standard,
+      seqref {
+        gi 212899,
+        gi 212900,
+        gi 68738,
+        gi 71897377
+      },
+      dbref {
+        {
+          db "UniGene",
+          tag str "Gga.32113"
+        },
+        {
+          db "HSSP",
+          tag str "P01012"
+        },
+        {
+          db "Ensembl",
+          tag str "ENSGALG00000012871"
+        },
+        {
+          db "GeneID",
+          tag str "420897"
+        },
+        {
+          db "KEGG",
+          tag str "gga:420897"
+        },
+        {
+          db "HOGENOM",
+          tag str "P01014"
+        },
+        {
+          db "HOVERGEN",
+          tag str "P01014"
+        },
+        {
+          db "GO",
+          tag str "GO:0005576"
+        },
+        {
+          db "InterPro",
+          tag str "IPR000215"
+        },
+        {
+          db "PANTHER",
+          tag str "PTHR11461"
+        },
+        {
+          db "Pfam",
+          tag str "PF00079"
+        },
+        {
+          db "SMART",
+          tag str "SM00093"
+        },
+        {
+          db "PROSITE",
+          tag str "PS00284"
+        }
+      },
+      keywords {
+        "Direct protein sequencing",
+        "Glycoprotein",
+        "Proteoglycan",
+        "Secreted"
+      },
+      created std {
+        year 1986,
+        month 7,
+        day 21
+      },
+      sequpd std {
+        year 1986,
+        month 7,
+        day 21
+      },
+      annotupd std {
+        year 2008,
+        month 6,
+        day 10
+      }
+    },
+    comment "[SUBCELLULAR LOCATION] Secreted.",
+    comment "[TISSUE SPECIFICITY] Major protein of egg white.",
+    comment "[PTM] N-glycosylated on at least two Asn residues by ovomucoid
+ type carbohydrate units.",
+    comment "[PTM] The N-terminus is blocked.",
+    comment "[SIMILARITY] Belongs to the serpin family. Ov-serpin subfamily.",
+    create-date std {
+      year 1986,
+      month 7,
+      day 21
+    },
+    update-date std {
+      year 2008,
+      month 6,
+      day 10
+    },
+    source {
+      org {
+        taxname "Gallus gallus",
+        common "chicken",
+        db {
+          {
+            db "taxon",
+            tag id 9031
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Gallus",
+            species "gallus"
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Archosauria; Dinosauria; Saurischia; Theropoda; Coelurosauria;
+ Aves; Neognathae; Galliformes; Phasianidae; Phasianinae; Gallus",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      }
+    },
+    molinfo {
+      biomol peptide,
+      completeness complete
+    },
+    pub {
+      pub {
+        gen {
+          serial-number 1
+        },
+        pmid 7122240,
+        article {
+          title {
+            name "The ovalbumin gene family: complete sequence and structure
+ of the Y gene."
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "Heilig",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Muraskowsky",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Kloepfer",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Mandel",
+                  initials "J.L."
+                }
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Nucleic Acids Res.",
+              ml-jta "Nucleic Acids Res",
+              issn "0305-1048",
+              name "Nucleic acids research"
+            },
+            imp {
+              date std {
+                year 1982,
+                month 7,
+                day 24
+              },
+              volume "10",
+              issue "14",
+              pages "4363-4382",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 1982,
+                    month 7,
+                    day 24
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 1982,
+                    month 7,
+                    day 24,
+                    hour 0,
+                    minute 1
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            doi "10.1093/nar/10.14.4363",
+            pubmed 7122240
+          }
+        }
+      },
+      comment "NUCLEOTIDE SEQUENCE [GENOMIC DNA]."
+    },
+    pub {
+      pub {
+        gen {
+          serial-number 2
+        },
+        pmid 16428832,
+        article {
+          title {
+            name "Ovalbumin-related gene Y protein bears carbohydrate chains
+ of the ovomucoid type."
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "Hirose",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Doi",
+                  initials "Y."
+                }
+              },
+              {
+                name name {
+                  last "Kitabatake",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Narita",
+                  initials "H."
+                }
+              }
+            },
+            affil str "Department of Life Style Studies, School of Human
+ Cultures, The University of Shiga Prefecture, Shiga, Japan."
+          },
+          from journal {
+            title {
+              iso-jta "Biosci. Biotechnol. Biochem.",
+              ml-jta "Biosci Biotechnol Biochem",
+              issn "0916-8451",
+              name "Bioscience, biotechnology, and biochemistry"
+            },
+            imp {
+              date std {
+                year 2006,
+                month 1
+              },
+              volume "70",
+              issue "1",
+              pages "144-151",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2006,
+                    month 1,
+                    day 24,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2006,
+                    month 4,
+                    day 7,
+                    hour 9,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            doi "10.1271/bbb.70.144",
+            pii "JST.JSTAGE/bbb/70.144",
+            pubmed 16428832
+          }
+        }
+      },
+      comment "PROTEIN SEQUENCE OF 56-63 AND 156-164, SUBCELLULAR LOCATION,
+ TISSUE SPECIFICITY, GLYCOSYLATION, AND BLOCKAGE OF N-TERMINUS.~TISSUE=Egg
+ white"
+    }
+  },
+  inst {
+    repr raw,
+    mol aa,
+    length 388,
+    seq-data ncbieaa "MDSISVTNAKFCFDVFNEMKVHHVNENILYCPLSILTALAMVYLGARGNTESQMKK
+VLHFDSITGAGSTTDSQCGSSEYVHNLFKELLSEITRPNATYSLEIADKLYVDKTFSVLPEYLSCARKFYTGGVEEVN
+FKTAAEEARQLINSWVEKETNGQIKDLLVSSSIDFGTTMVFINTIYFKGIWKIAFNTEDTREMPFSMTKEESKPVQMM
+CMNNSFNVATLPAEKMKILELPYASGDLSMLVLLPDEVSGLERIEKTINFDKLREWTSTNAMAKKSMKVYLPRMKIEE
+KYNLTSILMALGMTDLFSRSANLTGISSVDNLMISDAVHGVFMEVNEEGTEATGSTGAIGNIKHSLELEEFRADHPFL
+FFIRYNPTNAILFFGRYWSP",
+    hist {
+      replaces {
+        date std {
+          year 2006,
+          month 4,
+          day 21
+        },
+        ids {
+          gi 68738
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data region "Mature chain",
+          comment "Ovalbumin-related protein Y. /FTId=PRO_0000094131.",
+          location int {
+            from 0,
+            to 387,
+            id gi 129296
+          },
+          exp-ev experimental
+        },
+        {
+          data site other,
+          comment "Reactive bond homolog.",
+          location int {
+            from 352,
+            to 353,
+            id gi 129296
+          },
+          exp-ev experimental
+        },
+        {
+          data site glycosylation,
+          comment "N-linked (GlcNAc...) (Potential).",
+          location pnt {
+            point 94,
+            id gi 129296
+          },
+          exp-ev not-experimental
+        },
+        {
+          data site glycosylation,
+          comment "N-linked (GlcNAc...) (Potential).",
+          location pnt {
+            point 214,
+            id gi 129296
+          },
+          exp-ev not-experimental
+        },
+        {
+          data site glycosylation,
+          comment "N-linked (GlcNAc...) (Potential).",
+          location pnt {
+            point 292,
+            id gi 129296
+          },
+          exp-ev not-experimental
+        },
+        {
+          data site glycosylation,
+          comment "N-linked (GlcNAc...) (Potential).",
+          location pnt {
+            point 311,
+            id gi 129296
+          },
+          exp-ev not-experimental
+        },
+        {
+          data bond disulfide,
+          comment "By similarity.",
+          location bond {
+            a {
+              point 73,
+              id gi 129296
+            },
+            b {
+              point 120,
+              id gi 129296
+            }
+          },
+          exp-ev not-experimental
+        },
+        {
+          data gene {
+            locus "SERPINB14B",
+            syn {
+              "Y"
+            }
+          },
+          location int {
+            from 0,
+            to 387,
+            id gi 129296
+          }
+        },
+        {
+          data prot {
+            name {
+              "Ovalbumin-related protein Y"
+            }
+          },
+          location int {
+            from 0,
+            to 387,
+            id gi 129296
+          }
+        }
+      }
+    }
+  }
+}
+

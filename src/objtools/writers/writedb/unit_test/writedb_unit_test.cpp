@@ -34,10 +34,11 @@
 
 #include <objtools/readers/seqdb/seqdbexpert.hpp>
 #include <objtools/writers/writedb/writedb.hpp>
+#include <objmgr/object_manager.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <serial/objistr.hpp>
+#include <serial/serial.hpp>
 #include "../mask_info_registry.hpp"
 #include <sstream>
 
@@ -554,27 +555,26 @@ s_DupSequencesTest(const TIdList & ids,
     CHECK_CUTPOINT(12);
 }
 
-// Create an object manager, add ID2 loaders to it, and return it.
+// Get and return a CScope with local copies of test sequences loaded.
 
-static CRef<CObjectManager> s_CreateObjMgr()
+static CRef<CScope> s_GetScope()
 {
-    CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
-    CRef<CReader> reader(new CId2Reader());
-    reader->SetPreopenConnection(false);
-    CGBDataLoader::RegisterInObjectManager(*obj_mgr, reader);
-    return obj_mgr;
-}
-
-// Get and return a CScope with default loaders.
-
-CRef<CScope> s_GetScope()
-{
-    static CRef<CObjectManager> obj_mgr = s_CreateObjMgr();
+    static CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
 
     CRef<CScope> scope(new CScope(*obj_mgr));
 
-    // Add default loaders to the scope.
-    scope->AddDefaults();
+    auto_ptr<CObjectIStream> ois
+        (CObjectIStream::Open(eSerial_AsnText, "data/gi129295.asn"));
+    CRef<CSeq_entry> entry(new CSeq_entry);
+
+    *ois >> *entry;
+    scope->AddTopLevelSeqEntry(*entry);
+
+    ois.reset(CObjectIStream::Open(eSerial_AsnText, "data/gi129296.asn"));
+    entry.Reset(new CSeq_entry);
+
+    *ois >> *entry;
+    scope->AddTopLevelSeqEntry(*entry);
 
     return scope;
 }

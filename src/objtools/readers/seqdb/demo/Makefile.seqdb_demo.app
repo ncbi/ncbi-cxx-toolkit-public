@@ -2,7 +2,7 @@
 
 APP = seqdb_demo
 SRC = seqdb_demo
-LIB_ = seqdb xobjutil blastdb $(OBJMGR_LIBS)
+LIB_ = seqdb xobjutil blastdb $(SOBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 CFLAGS    = $(FAST_CFLAGS)
