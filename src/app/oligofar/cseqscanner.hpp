@@ -108,7 +108,7 @@ protected:
     protected:
         fourplanes::CHashGenerator m_hashGenerator;
         Uint8 m_maxAlternatives;
-        Uint8 m_mask4;
+        Uint4 m_mask4;
         Uint8 m_mask8;
     };
 

@@ -238,7 +238,7 @@ template<class Callback>
 void CQueryHash::ForEach( Uint8 hash, Callback& callback ) const 
 { 
     if( GetOffset() == 0 || m_oneHash ) {
-        Uint4 h = hash >> GetOffset()*2;
+        Uint4 h = Uint4( hash >> ( GetOffset()*2 ) );
         if( ((hash >> GetOffset()*2) & ~CBitHacks::WordFootprint<Uint8>( 2*m_wordLen[0] )) != 0 ) {
             THROW( logic_error, NStr::UInt8ToString( hash, 0, 2 ) << " >> " << (GetOffset()*2) <<  " = " <<  NStr::UInt8ToString( hash >> (2*GetOffset()), 0, 2 ) 
                    << "; wordLen[0] = " << unsigned(m_wordLen[0]) << ", ~footprint = " << NStr::UInt8ToString(~CBitHacks::WordFootprint<Uint8>( 2*m_wordLen[0] ), 0, 2 ) );

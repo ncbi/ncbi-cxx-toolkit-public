@@ -11,8 +11,11 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <objtools/readers/seqdb/seqdb.hpp>
+/*
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
+*/
 #include <objtools/readers/reader_exception.hpp>
 
 BEGIN_OLIGOFAR_SCOPES
