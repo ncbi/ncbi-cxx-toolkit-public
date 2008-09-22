@@ -133,25 +133,9 @@ const CSplign::TResults& CSplignSimple::Run(void)
 // POST: splign results (if any) as Seq_align_set/Dense_seg
 CRef<CSeq_align_set> CSplignSimple::GetResultsAsAln(void) const
 {
-    CRef<CSeq_align_set> sas (CSplignFormatter(*m_Splign).
-                              AsSeqAlignSet(0, CSplignFormatter::eAF_Disc));
-
-    CRef<CSeq_id> si;
-
-    NON_CONST_ITERATE (CSeq_align_set::Tdata, compartmentI, sas->Set()) {
-        NON_CONST_ITERATE (CSeq_align_set::Tdata, saI,
-                           (*compartmentI)->SetSegs().SetDisc().Set()) {
-
-            CDense_seg &ds = (*saI)->SetSegs().SetDenseg();
-            ds.SetIds().clear();
-            si = new CSeq_id;
-            si->Assign(*m_TranscriptId);
-            ds.SetIds().push_back(si);
-            si = new CSeq_id;
-            si->Assign(*m_GenomicId);
-            ds.SetIds().push_back(si);
-        }
-    }
+    CSplignFormatter sf (*m_Splign);
+    sf.SetSeqIds(m_TranscriptId, m_GenomicId);
+    CRef<CSeq_align_set> sas (sf.AsSeqAlignSet(0, CSplignFormatter::eAF_Disc));
 
     return sas;
 }
