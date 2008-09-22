@@ -1028,6 +1028,10 @@ void CProjBulderApp::CreateCheckList(const list<SConfigInfo>* configs,
         list<string> all_cmd;
         ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
             const CProjItem& project = p->second;
+            if (project.m_MakeType == eMakeType_Excluded ||
+                project.m_MakeType == eMakeType_ExcludedByReq) {
+                continue;
+            }
             if (project.m_CheckConfigs.find(cfg) != project.m_CheckConfigs.end()) {
                 ITERATE( list<string>, cmd, project.m_CheckInfo) {
                     all_cmd.push_back(*cmd);
