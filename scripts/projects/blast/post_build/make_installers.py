@@ -40,7 +40,7 @@ def main(): #IGNORE:R0911
         return launch_rpm_build(installdir)
     if platform == "FreeBSD32":
         return do_nothing(platform)
-    if platform == "PowerMAC":
+    if platform == "IntelMAC":
         return mac_post_build(installdir)
     if platform == "SunOSSparc":
         return do_nothing(platform)
