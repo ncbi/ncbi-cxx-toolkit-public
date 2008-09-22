@@ -36,7 +36,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/data_loader.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_descr.hpp>

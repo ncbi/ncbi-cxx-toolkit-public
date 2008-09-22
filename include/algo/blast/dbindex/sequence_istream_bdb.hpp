@@ -34,7 +34,7 @@
 #define C_SEQUENCE_I_STREAM_BDB_HPP
 
 #include <algo/blast/core/blast_export.h>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 #include "sequence_istream.hpp"
 

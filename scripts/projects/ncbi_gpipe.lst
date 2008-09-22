@@ -36,4 +36,4 @@ util
 -objtools/asniotest
 -objtools/cddalignview
 -objtools/data_loaders/genbank/readers/id1/split_cache
--objtools/writers/gene_info
+-objtools/blast/gene_info_writer

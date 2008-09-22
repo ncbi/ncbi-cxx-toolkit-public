@@ -36,7 +36,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <objtools/readers/seqdb/seqdbcommon.hpp>   // for SeqDB_ReadGiList
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>   // for SeqDB_ReadGiList
 #include <corelib/ncbithr.hpp>                      // for CThread
 #include <util/random_gen.hpp>
 

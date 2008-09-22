@@ -33,7 +33,7 @@
 #ifndef CMASK_BDB_READER_H
 #define CMASK_BDB_READER_H
 
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 #include <objtools/seqmasks_io/mask_reader.hpp>
 

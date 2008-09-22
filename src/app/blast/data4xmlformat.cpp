@@ -37,7 +37,7 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 #include <objects/seq/Seq_annot.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <util/tables/raw_scoremat.h>
 #include "blast_format.hpp"
 #include "data4xmlformat.hpp"

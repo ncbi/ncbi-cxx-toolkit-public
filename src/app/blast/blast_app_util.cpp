@@ -46,7 +46,7 @@ static char const rcsid[] =
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>     // for CObjMgr_QueryFactory
 #include <algo/blast/api/blast_options_builder.hpp>
-#include <objtools/readers/seqdb/seqdbcommon.hpp>   // for CSeqDBException
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>   // for CSeqDBException
 #include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
 #include <algo/blast/blastinput/psiblast_args.hpp>
 #include <algo/blast/blastinput/tblastn_args.hpp>

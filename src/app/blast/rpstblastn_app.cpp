@@ -45,7 +45,7 @@ static char const rcsid[] =
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include "blast_app_util.hpp"
 #include "blast_format.hpp"
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;

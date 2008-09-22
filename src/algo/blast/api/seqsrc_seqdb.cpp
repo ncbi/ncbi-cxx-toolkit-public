@@ -35,7 +35,7 @@
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_seqsrc_impl.h>
-#include <objtools/readers/seqdb/seqdbexpert.hpp>
+#include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
 #include "blast_setup.hpp"
 
 /** @addtogroup AlgoBlast

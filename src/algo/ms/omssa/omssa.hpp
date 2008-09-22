@@ -55,7 +55,7 @@
 
 #include <objects/omssa/omssa__.hpp>
 
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 #include "msms.hpp"
 #include "msladder.hpp"

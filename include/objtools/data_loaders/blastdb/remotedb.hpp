@@ -35,7 +35,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqset/Seq_entry.hpp>

@@ -1,0 +1,6 @@
+# $Id$
+
+SUB_PROJ = seqdb_reader seqdb_writer gene_info_reader gene_info_writer
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

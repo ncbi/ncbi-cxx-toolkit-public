@@ -27,47 +27,14 @@
 *
 */
 
-/** @file taxid_set.hpp
- * Class which defines sequence id to taxid mapping.
- */
-
 #ifndef _OBJTOOLS_WRITERS_WRITEDB__TAXID_SET_HPP_
 #define _OBJTOOLS_WRITERS_WRITEDB__TAXID_SET_HPP_
 
-#include <corelib/ncbistd.hpp>
+#ifdef __GNUC__
+#  warning "Header <objtools/writers/writedb/taxid_set.hpp> is obsolete; please use <objtools/blast/seqdb_writer/taxid_set.hpp> instead!"
+#endif // __GNUC__ 
 
-// Blast databases
-#include <objects/blastdb/Blast_def_line.hpp>
-#include <objects/blastdb/Blast_def_line_set.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class NCBI_XOBJWRITE_EXPORT CTaxIdSet : public CObject {
-public:
-    static const int kTaxIdNotSet = 0;
-
-    CTaxIdSet(int global_taxid = kTaxIdNotSet)
-        : m_GlobalTaxId(global_taxid) {}
-    
-    void SetMappingFromFile(CNcbiIstream & f);
-    
-    /// Check that each defline has the specified taxid; if not,
-    /// replace the defline and set the taxid.
-    /// @param deflines Deflines to fix taxIDs [in|out]
-    void FixTaxId(CRef<objects::CBlast_def_line_set> deflines) const;
-    
-private:
-    int                m_GlobalTaxId;
-    map< string, int > m_TaxIdMap;
-
-    /// Selects the most suitable tax id for the input passed in, checking the
-    /// global taxid first, then the mapping provided by an input file, and
-    /// finally what's found in the defline argument
-    int x_SelectBestTaxid(const objects::CBlast_def_line & defline) const;
-    
-};
-
-END_NCBI_SCOPE
+#include <objtools/blast/seqdb_writer/taxid_set.hpp>
 
 #endif // _OBJTOOLS_WRITERS_WRITEDB__TAXID_SET_HPP_
 

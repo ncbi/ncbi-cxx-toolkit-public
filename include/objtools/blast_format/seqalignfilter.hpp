@@ -43,7 +43,7 @@
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 /** @addtogroup BlastFormatting
  *

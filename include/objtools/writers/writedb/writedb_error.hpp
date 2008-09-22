@@ -30,50 +30,11 @@
  *
  */
 
-/// @file writedb_error.hpp
-/// Defines exception class for WriteDB.
-/// 
-/// Defines classes:
-///     CWriteDBException
-/// 
-/// Implemented for: UNIX, MS-Windows
+#ifdef __GNUC__
+#  warning "Header <objtools/writers/writedb/writedb_error.hpp> is obsolete; please use <objtools/blast/seqdb_writer/writedb_error.hpp> instead!"
+#endif // __GNUC__ 
 
-#include <ncbiconf.h>
-#include <corelib/ncbiobj.hpp>
-
-BEGIN_NCBI_SCOPE
-
-/// CWriteDBException
-/// 
-/// This exception class is thrown for WriteDB related errors such as
-/// configuration, parameter, and file errors.
-
-class NCBI_XOBJWRITE_EXPORT CWriteDBException : public CException {
-public:
-    /// Errors are classified into one of two types.
-    enum EErrCode {
-        /// Argument validation failed.
-        eArgErr,
-        
-        /// Files were missing or contents were incorrect.
-        eFileErr
-    };
-    
-    /// Get a message describing the situation leading to the throw.
-    virtual const char* GetErrCodeString() const
-    {
-        switch ( GetErrCode() ) {
-        case eArgErr:  return "eArgErr";
-        case eFileErr: return "eFileErr";
-        default:       return CException::GetErrCodeString();
-        }
-    }
-    
-    /// Include standard NCBI exception behavior.
-    NCBI_EXCEPTION_DEFAULT(CWriteDBException,CException);
-};
-
-END_NCBI_SCOPE
+#include <objtools/blast/seqdb_writer/writedb_error.hpp>
 
 #endif // OBJTOOLS_WRITERS_WRITEDB__WRITEDB_ERROR_HPP
 

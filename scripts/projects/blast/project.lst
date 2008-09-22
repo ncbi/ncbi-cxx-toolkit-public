@@ -27,12 +27,12 @@ util/cache$
 objtools/alnmgr$
 objtools/readers$
 objtools/seqmasks_io$
-objtools/readers/seqdb$
-objtools/readers/gene_info$
+objtools/blast/seqdb_reader$
+objtools/blast/gene_info_reader$
 objtools/cleanup$
 objtools/format$
 objtools/format/items$
-objtools/writers/writedb$
+objtools/blast/seqdb_writer$
 objtools/blast_format$
 dbapi$
 dbapi/driver$

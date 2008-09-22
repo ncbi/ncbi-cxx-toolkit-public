@@ -43,7 +43,7 @@
 #include <objtools/readers/getfeature.hpp>
 #include <cgi/cgictx.hpp>
 #include <algo/blast/api/blast_aux.hpp>
-#include <objtools/readers/gene_info/gene_info_reader.hpp>
+#include <objtools/blast/gene_info_reader/gene_info_reader.hpp>
 
 /** @addtogroup BlastFormatting
  *

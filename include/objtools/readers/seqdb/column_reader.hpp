@@ -30,80 +30,11 @@
  *
  */
 
-/// @file column_reader.hpp
-/// Defines column reader class for SeqDB.
-/// 
-/// Defines classes:
-///     CSeqDB_ColumnReader
-/// 
-/// Implemented for: UNIX, MS-Windows
+#ifdef __GNUC__
+#  warning "Header <objtools/readers/seqdb/column_reader.hpp> is obsolete; please use <objtools/blast/seqdb_reader/column_reader.hpp> instead!"
+#endif // __GNUC__ 
 
-#include <ncbiconf.h>
-#include <corelib/ncbiobj.hpp>
-#include <objtools/readers/seqdb/seqdbblob.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-
-BEGIN_NCBI_SCOPE
-
-/// Include definitions from the objects namespace.
-USING_SCOPE(objects);
-
-
-/// Reader for BlastDb format column files.
-///
-/// This class supports reading of BlastDb format column files.  To
-/// read column files attached to a volume, use SeqDB's column related
-/// methods.  This class is intended for column data not associated
-/// with specific BlastDb volumes.
-
-class NCBI_XOBJREAD_EXPORT CSeqDB_ColumnReader : public CObject {
-public:
-    /// Read a BlastDb format column.
-    ///
-    /// The BlastDb format column with the given base name and file id
-    /// is opened.  The file_id character must be alphanumeric.
-    ///
-    /// @param basename Column filename (minus extension).
-    /// @param file_id  Identifier for this column.
-    CSeqDB_ColumnReader(const string & basename, char file_id = 'a');
-    
-    /// Destructor.
-    ~CSeqDB_ColumnReader();
-    
-    /// Get the column title.
-    ///@return The column title.
-    const string & GetTitle() const;
-    
-    /// Get the column's key/value meta data.
-    /// @return All key/value meta data stored here.
-    const map<string,string> & GetMetaData();
-    
-    /// Look up one metadata value.
-    /// @param key The key to look up.
-    /// @return The value if found, or "" if not.
-    const string & GetValue(const string & key);
-    
-    /// Get the number of rows stored in this column.
-    /// @return The number of rows stored in this column.
-    int GetNumOIDs() const;
-    
-    /// Fetch the data blob for the given oid.
-    /// @param oid  The OID of the blob. [in]
-    /// @param blob The data will be returned here. [out]
-    void GetBlob(int oid, CBlastDbBlob & blob);
-    
-private:
-    /// Prevent copy construction.
-    CSeqDB_ColumnReader(const CSeqDB_ColumnReader&);
-    
-    /// Prevent copy assignment.
-    CSeqDB_ColumnReader & operator= (CSeqDB_ColumnReader&);
-    
-    /// Implementation object.
-    class CSeqDBColumn * m_Impl;
-};
-
-END_NCBI_SCOPE
+#include <objtools/blast/seqdb_reader/column_reader.hpp>
 
 #endif // CORELIB__SEQDB__COLUMN_READER_HPP
 

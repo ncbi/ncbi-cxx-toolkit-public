@@ -5,7 +5,7 @@
 
 REQUIRES = objects
 
-SUB_PROJ = readers lds data_loaders simple alnmgr cddalignview test \
+SUB_PROJ = readers blast lds data_loaders simple alnmgr cddalignview test \
 	manip validator asniotest format align edit writers \
 	blast_format cleanup seqmasks_io eutils
 

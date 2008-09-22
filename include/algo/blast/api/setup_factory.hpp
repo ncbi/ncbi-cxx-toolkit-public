@@ -40,7 +40,7 @@
 #include <algo/blast/api/blast_dbindex.hpp>
 #include <algo/blast/core/blast_hspstream.h>
 #include <algo/blast/core/pattern.h>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 /** @addtogroup AlgoBlast
  *

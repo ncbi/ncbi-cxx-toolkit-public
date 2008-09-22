@@ -37,7 +37,7 @@
 #include <corelib/ncbifile.hpp>
 #include <util/random_gen.hpp>
 #include <algo/align/util/compartment_finder.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 #include <math.h>
 

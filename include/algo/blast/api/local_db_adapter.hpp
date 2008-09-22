@@ -37,7 +37,7 @@
 
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/api/uniform_search.hpp> // for CSearchDatabase
-#include <objtools/readers/seqdb/seqdb.hpp>  // for CSeqDB
+#include <objtools/blast/seqdb_reader/seqdb.hpp>  // for CSeqDB
 #include <algo/blast/api/sseqloc.hpp>        // for TSeqLocVector
 
 /** @addtogroup AlgoBlast

@@ -39,9 +39,9 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <algo/blast/api/version.hpp>
-#include <objtools/readers/seqdb/seqdbcommon.hpp>
-#include <objtools/writers/writedb/writedb.hpp>
-#include <objtools/writers/writedb/writedb_error.hpp>
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
+#include <objtools/blast/seqdb_writer/writedb.hpp>
+#include <objtools/blast/seqdb_writer/writedb_error.hpp>
 
 #include <algo/blast/blastinput/blast_input.hpp>
 #include "../blast/blast_app_util.hpp"

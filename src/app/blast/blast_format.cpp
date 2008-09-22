@@ -41,7 +41,7 @@ Author: Jason Papadopoulos
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/core/blast_stat.h>
 #include <objtools/blast_format/blastxml_format.hpp>
 #include <algo/blast/api/remote_services.hpp>   // for CRemoteServices

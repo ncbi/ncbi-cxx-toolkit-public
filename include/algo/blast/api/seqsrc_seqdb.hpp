@@ -34,7 +34,7 @@
 /// Implementation of the BlastSeqSrc interface using the C++ BLAST databases
 /// API
 
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_def.h>

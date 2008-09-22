@@ -37,7 +37,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_results.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/api/query_data.hpp>        // for IQueryFactory
 #include <algo/blast/api/blast_options.hpp>     // for CBlastOptions
 #include <algo/blast/api/setup_factory.hpp>     // for SInternalData

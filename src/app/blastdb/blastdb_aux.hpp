@@ -34,7 +34,7 @@
 #ifndef __SRC_APP_BLASTDB__BLASTDB_AUX__HPP__
 #define __SRC_APP_BLASTDB__BLASTDB_AUX__HPP__
 
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)

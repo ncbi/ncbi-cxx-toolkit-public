@@ -50,7 +50,7 @@ static char const rcsid[] = "$Id$";
 #include <objtools/blast_format/blastfmtutil.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <util/format_guess.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <sstream>

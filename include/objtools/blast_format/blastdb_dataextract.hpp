@@ -35,7 +35,7 @@
 #define OBJTOOLS_BLAST_FORMAT___BLASTDB_DATAEXTRACT__HPP
 
 #include <objtools/blast_format/blastdb_seqid.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <sstream>
 

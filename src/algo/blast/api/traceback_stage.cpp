@@ -39,7 +39,7 @@ static char const rcsid[] =
 #include <algo/blast/api/traceback_stage.hpp>
 #include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>  // for CSeqDbSeqInfoSrc
-#include <objtools/readers/seqdb/seqdb.hpp>     // for CSeqDb
+#include <objtools/blast/seqdb_reader/seqdb.hpp>     // for CSeqDb
 
 #include "blast_memento_priv.hpp"
 #include "blast_seqalign.hpp"

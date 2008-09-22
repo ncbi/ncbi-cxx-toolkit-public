@@ -39,7 +39,7 @@
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_util.h>
 
-#include <objtools/readers/seqdb/seqdbcommon.hpp>
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 
 #include <algo/blast/api/blast_dbindex.hpp>
 #include <algo/blast/dbindex/dbindex.hpp>

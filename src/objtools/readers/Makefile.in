@@ -4,7 +4,7 @@
 ############################################
 
 LIB_PROJ = xobjread xobjreadex
-SUB_PROJ = seqdb app gene_info test
+SUB_PROJ = app test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

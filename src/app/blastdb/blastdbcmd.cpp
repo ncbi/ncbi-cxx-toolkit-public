@@ -40,7 +40,7 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <algo/blast/api/version.hpp>
-#include <objtools/readers/seqdb/seqdbexpert.hpp>
+#include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <objtools/blast_format/seq_writer.hpp>

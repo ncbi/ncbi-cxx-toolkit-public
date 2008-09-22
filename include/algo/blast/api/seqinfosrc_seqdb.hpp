@@ -37,7 +37,7 @@
 
 #include <algo/blast/core/blast_export.h>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 /** @addtogroup AlgoBlast
  *

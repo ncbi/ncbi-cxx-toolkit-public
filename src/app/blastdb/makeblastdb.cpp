@@ -43,14 +43,14 @@ static char const rcsid[] =
 #include <corelib/ncbiapp.hpp>
 #include <objects/blastdb/Blast_db_mask_info.hpp>
 #include <objects/blastdb/Blast_mask_list.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
-#include <objtools/readers/seqdb/seqdbcommon.hpp>
-#include <objtools/writers/writedb/writedb.hpp>
-#include <objtools/writers/writedb/writedb_error.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
+#include <objtools/blast/seqdb_writer/writedb.hpp>
+#include <objtools/blast/seqdb_writer/writedb_error.hpp>
 #include <util/format_guess.hpp>
 #include <util/xregexp/regexp.hpp>
 #include <util/util_exception.hpp>
-#include <objtools/writers/writedb/build_db.hpp>
+#include <objtools/blast/seqdb_writer/build_db.hpp>
 
 #include <algo/blast/blastinput/blast_input.hpp>
 #include "../blast/blast_app_util.hpp"

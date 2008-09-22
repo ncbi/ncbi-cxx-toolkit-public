@@ -41,7 +41,7 @@
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
 #include <algo/blast/api/blast_seqinfosrc_aux.hpp>
 
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objtools/blast_format/seqalignfilter.hpp>
 
 #include <serial/serial.hpp>

@@ -38,7 +38,7 @@
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/query_data.hpp>
 #include <algo/blast/api/uniform_search.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
 
 /** @addtogroup AlgoBlast

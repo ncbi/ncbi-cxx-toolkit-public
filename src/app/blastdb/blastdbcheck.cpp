@@ -36,7 +36,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
 #include <algo/blast/api/version.hpp>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <util/random_gen.hpp>
 #include "blastdb_aux.hpp"
 

@@ -25,161 +25,16 @@
 *
 * Author:  Kevin Bealer
 *
-* File Description:
-*     Utility functions and classes for multisource app.
 */
 
 #ifndef _OBJTOOLS_WRITERS_WRITEDB__MULTISOURCE_UTIL_HPP_
 #define _OBJTOOLS_WRITERS_WRITEDB__MULTISOURCE_UTIL_HPP_
 
-#include <corelib/ncbistd.hpp>
+#ifdef __GNUC__
+#  warning "Header <objtools/writers/writedb/multisource_util.hpp> is obsolete; please use <objtools/blast/seqdb_writer/multisource_util.hpp> instead!"
+#endif // __GNUC__ 
 
-// Blast databases
-#include <objects/blastdb/Blast_def_line.hpp>
-
-// SeqDB interface to blast databases
-#include <objtools/readers/seqdb/seqdb.hpp>
-
-BEGIN_NCBI_SCOPE
-
-/// Get all keys for a defline.
-NCBI_XOBJWRITE_EXPORT
-void GetDeflineKeys(const objects::CBlast_def_line & defline,
-                    vector<string>        & keys);
-
-/// CMultisourceException
-/// 
-/// This exception class is thrown for errors occurring during
-/// traceback.
-
-class NCBI_XOBJWRITE_EXPORT CMultisourceException : public CException {
-public:
-    /// Errors are classified into several types.
-    enum EErrCode {
-        /// Argument validation failed.
-        eArg
-    };
-    
-    /// Get a message describing the exception.
-    virtual const char* GetErrCodeString() const
-    {
-        switch ( GetErrCode() ) {
-        case eArg: return "eArgErr";
-        default:   return CException::GetErrCodeString();
-        }
-    }
-    
-    /// Include standard NCBI exception behavior.
-    NCBI_EXCEPTION_DEFAULT(CMultisourceException, CException);
-};
-
-/// Gi List for database construction.
-///
-/// This GI list is built from the set of identifiers the user has
-/// specified for inclusion in the resulting database.  By using a
-/// SeqDB GI list, database filtering can be done using SeqDB's
-/// internal processing machinery.
-
-class NCBI_XOBJWRITE_EXPORT CInputGiList : public CSeqDBGiList {
-public:
-    /// Construct an empty GI list.
-    CInputGiList(int capacity = 1024)
-        : m_Last(0)
-    {
-        if (capacity > 0) {
-            m_GisOids.reserve(capacity);
-        }
-        
-        // An empty vector is always sorted, right?
-        m_CurrentOrder = eGi;
-    }
-    
-    /// Append a GI.
-    /// 
-    /// This method adds a GI to the list.
-    /// 
-    /// @param gi A sequence identifier.
-    void AppendGi(int gi, int oid = -1)
-    {
-        if (m_CurrentOrder == eGi) {
-            if (m_Last > gi) {
-                m_CurrentOrder = eNone;
-            } else if (m_Last == gi) {
-                return;
-            }
-        }
-        
-        m_GisOids.push_back(SGiOid(gi, oid));
-        m_Last = gi;
-    }
-    
-    /// Append a Seq-id
-    /// 
-    /// This method adds a Seq-id to the list.
-    /// 
-    /// @param seqid A sequence identifier.
-    void AppendSeqId(CRef<objects::CSeq_id> seqid, int oid = -1)
-    {
-        // This could verify ordering, but since ordering for GIs is
-        // common, and ordering for Seq-ids is rare, for now I'll just
-        // assume that Seq-ids are out-of order.  This also fits the
-        // basic practice of not making tiny optimizations in code
-        // paths that are slow.
-        
-        m_CurrentOrder = eNone;
-        m_SeqIdsOids.push_back(SSeqIdOid(seqid, oid));
-    }
-    
-private:
-    int m_Last;
-};
-
-
-NCBI_XOBJWRITE_EXPORT
-void ReadTextFile(CNcbiIstream   & f,
-                  vector<string> & lines);
-
-class NCBI_XOBJWRITE_EXPORT CSequenceReturn {
-public:
-    CSequenceReturn(CSeqDB & seqdb, const char * buffer)
-        : m_SeqDB(seqdb), m_Buffer(buffer)
-    {
-    }
-    
-    ~CSequenceReturn()
-    {
-        m_SeqDB.RetSequence(& m_Buffer);
-    }
-    
-private:
-    CSequenceReturn & operator=(CSequenceReturn &);
-    
-    CSeqDB     & m_SeqDB;
-    const char * m_Buffer;
-};
-
-/// Maps Seq-id key to bitset.
-typedef map< string, int > TIdToBits;
-
-/// Map from linkout bit number to list of ids.
-typedef map<int, vector<string> > TLinkoutMap;
-
-NCBI_XOBJWRITE_EXPORT
-void MapToLMBits(const TLinkoutMap & gilist, TIdToBits & gi2links);
-
-NCBI_XOBJWRITE_EXPORT
-bool CheckAccession(const string  & acc,
-                    int           & gi,
-                    CRef<objects::CSeq_id> & seqid,
-                    bool          & specific);
-
-NCBI_XOBJWRITE_EXPORT
-void GetSeqIdKey(const objects::CSeq_id & id, string & key);
-
-NCBI_XOBJWRITE_EXPORT
-string AccessionToKey(const string & acc);
-
-END_NCBI_SCOPE
+#include <objtools/blast/seqdb_writer/multisource_util.hpp>
 
 #endif // _OBJTOOLS_WRITERS_WRITEDB__MULTISOURCE_UTIL_HPP_
 

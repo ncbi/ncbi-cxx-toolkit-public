@@ -34,7 +34,7 @@
 #ifndef OBJTOOLS_BLAST_FORMAT___BLASTDB_ID__HPP
 #define OBJTOOLS_BLAST_FORMAT___BLASTDB_ID__HPP
 
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 /** @addtogroup BlastFormatting
  *

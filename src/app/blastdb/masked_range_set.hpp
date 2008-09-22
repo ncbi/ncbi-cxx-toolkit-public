@@ -30,7 +30,7 @@
 #ifndef _MASKED_RANGE_SET_HPP_
 #define _MASKED_RANGE_SET_HPP_
 
-#include <objtools/writers/writedb/build_db.hpp>
+#include <objtools/blast/seqdb_writer/build_db.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
