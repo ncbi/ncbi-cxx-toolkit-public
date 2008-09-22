@@ -57,10 +57,24 @@ protected:
     unsigned DefaultWordSize() const;
     char HashTypeChar() const;
 
+    static pair<int,int> ParseRange( const string& str, const string& delim = "-," ) { return ParseRange( str.c_str(), delim ); }
+    static pair<int,int> ParseRange( const char * str, const string& delim = "-," );
+    static void ParseRange( int& a, int& b, const string& str, const string& delim = "-," ) {
+        pair<int,int> val = ParseRange( str, delim );
+        a = val.first;
+        b = val.second;
+    }
+    static void ParseRange( unsigned& a, unsigned& b, const string& str, const string& delim = "-," ) {
+        pair<int,int> val = ParseRange( str, delim );
+        a = val.first;
+        b = val.second;
+    }
+
 protected:
     unsigned m_windowLength;
     unsigned m_wordSize;
     unsigned m_windowMask;
+    unsigned m_minHashMism;
     unsigned m_maxHashMism;
     unsigned m_maxHashAlt;
     unsigned m_maxFastaAlt;
@@ -84,8 +98,8 @@ protected:
     int      m_minBlockLength;
     Uint8    m_memoryLimit;
     bool     m_performTests;
-	bool     m_maxMismOnly;
 	bool     m_colorSpace;
+    bool     m_allowShortWindow;
     bool     m_run_old_scanning_code;
 	EAlignmentAlgo m_alignmentAlgo;
 	CQueryHash::EHashType m_hashType;

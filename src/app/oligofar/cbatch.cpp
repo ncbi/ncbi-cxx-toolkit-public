@@ -39,6 +39,26 @@ int CBatch::x_EstimateMismatchCount( const CQuery* query, bool matepair ) const
     } else return 0; // no read - no mismatches, n'est pas?
 }
 
+void CBatch::x_Rehash( int m ) 
+{
+    CProgressIndicator p("Rehashing reads with non-perfect matches using max-mism=" + NStr::IntToString(m_queryHash.GetMaxMism()) + 
+                         " and winlen=" + NStr::IntToString( m_queryHash.GetCurrentWindowLength() ) );
+    int entries = 0;
+    ITERATE( TInputChunk, i, m_inputChunk ) {
+        ASSERT( *i );
+        if( x_EstimateMismatchCount( *i, 0 ) > m || x_EstimateMismatchCount( *i, 1 ) > m ) {
+            (*i)->ClearHits();
+            entries += m_queryHash.AddQuery( *i );
+            p.Increment();
+        } else {
+            m_hashedReads--;
+        }
+    }
+    p.SetMessage( "Rehashed " + NStr::IntToString( entries ) + " entries for non-perfectly matched reads using max-mism=" + NStr::IntToString(m_queryHash.GetMaxMism()) + 
+                  " and winlen=" + NStr::IntToString( m_queryHash.GetCurrentWindowLength() ) );
+    p.Summary();
+}
+
 void CBatch::Purge()
 {
 	cerr << "Queries: guided " << m_guidedReads << ", hashed " << m_hashedReads << ", ignored: " << m_ignoredReads << ", entries: " << m_hashEntries << "\n";
@@ -48,22 +68,17 @@ void CBatch::Purge()
         m_seqVecProcessor.Process( m_fastaFile );
         m_queryHash.Clear();
 
+        bool rehash = false;
+        if( m_allowShortWindow && m_queryHash.GetOffset() && ( m_queryHash.GetOneHash() == false )) {
+            rehash = true;
+            m_queryHash.SetOneHash( true );
+        }
         if( m_queryHash.GetMaxMism() < m_queryHash.GetAbsoluteMaxMism() ) {
-            int m = m_queryHash.GetMaxMism();
-            m_queryHash.SetMaxMism( m + 1 );
-            CProgressIndicator p("Rehashing reads with non-perfect matches using max-mism=" + NStr::IntToString(m + 1));
-            ITERATE( TInputChunk, i, m_inputChunk ) {
-                ASSERT( *i );
-                if( x_EstimateMismatchCount( *i, 0 ) > m || x_EstimateMismatchCount( *i, 1 ) > m ) {
-                    (*i)->ClearHits();
-                    m_queryHash.AddQuery( *i );
-                    p.Increment();
-                } else {
-                    m_hashedReads--;
-                }
-            }
-            p.Summary();
-        } else break;
+            rehash = true;
+            m_queryHash.SetMaxMism( m_queryHash.GetMaxMism() + 1 );
+        }
+        if( rehash ) x_Rehash( m_queryHash.GetMaxMism() );
+        else break;
     }
 
     if( m_guidedReads && m_formatter.NeedSeqids() ) x_LoadSeqIds();

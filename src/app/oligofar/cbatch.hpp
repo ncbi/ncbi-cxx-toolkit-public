@@ -22,12 +22,16 @@ public:
     void SetReadProgressIndicator( CProgressIndicator * p ) { m_readProgressIndicator = p; }
     int AddQuery( CQuery * query );
     void Purge();
+    
+    bool GetAllowShortWindow() const { return m_allowShortWindow; }
+    void SetAllowShortWindow( bool a ) { m_allowShortWindow = a; }
 
     const TInputChunk& GetInputChunk() const { return m_inputChunk; }
     
 protected:
     int x_EstimateMismatchCount( const CQuery*, bool matepair ) const;
     void x_LoadSeqIds();
+    void x_Rehash( int mm );
 protected:
     int m_readsPerRun;
     int m_hashedReads;
@@ -36,6 +40,7 @@ protected:
 	Uint8 m_hashEntries;
 	const CScoreTbl& m_scoreTbl;
     double m_mismatchPenalty;
+    bool m_allowShortWindow;
     string m_fastaFile;
     TInputChunk m_inputChunk;
     CQueryHash       & m_queryHash;
@@ -53,6 +58,7 @@ inline CBatch::CBatch( int readCount, const string& fastaFile, CQueryHash& query
     m_readsPerRun( readCount ), m_hashedReads( 0 ), m_guidedReads( 0 ), m_ignoredReads( 0 ), m_hashEntries( 0 ),
 	m_scoreTbl( scoreTbl ),
     m_mismatchPenalty( scoreTbl.GetIdentityScore() - max( scoreTbl.GetMismatchScore(), scoreTbl.GetGapOpeningScore() ) ),
+    m_allowShortWindow( false ),
     m_fastaFile( fastaFile ), m_queryHash( queryHash ), m_seqVecProcessor( seqVecProcessor ),
     m_formatter( formatter ), m_readProgressIndicator( 0 )
 {

@@ -25,7 +25,7 @@
 USING_OLIGOFAR_SCOPES;
 
 #ifndef OLIGOFAR_VERSION
-#define OLIGOFAR_VERSION "3.23" 
+#define OLIGOFAR_VERSION "3.24" 
 #endif
 
 unsigned COligoFarApp::WordSize() const { return min( DefaultWordSize(), max( (m_windowLength + 1 )/2, min( m_wordSize, m_windowLength ) ) ); }
@@ -36,13 +36,29 @@ char COligoFarApp::HashTypeChar() const
             m_hashType == CQueryHash::eHash_multimap ? 'm' : 
             m_hashType == CQueryHash::eHash_arraymap ? 'a' : '?' );
 }
-
+pair<int,int> COligoFarApp::ParseRange( const char * str, const string& delim ) 
+{
+    const char * x = 0;
+    pair<int,int> ret(0,0);
+    ret.first = strtol( str, const_cast<char**>( &x ), 10 );
+    if( x == 0 || x == str )
+        THROW( runtime_error, "Integer or integer range expected, got [" << str << "]" );
+    if( *x == 0 ) { ret.second = ret.first; return ret; }
+    if( strchr( delim.c_str(), *x ) ) {
+        const char * s = x+1;
+        ret.second = strtol( s, const_cast<char**>( &x ), 10 );
+        if( x != 0 && x != s && *x == 0 ) 
+            return ret;
+    }
+    THROW( runtime_error, "Integer or integer range expected, got trailing characters (" << x << ") in [" << str << "]" );
+}
 
 COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     CApp( argc, argv ),
     m_windowLength( 13 ),
     m_wordSize( 100 ),
     m_windowMask( ~0 ),
+    m_minHashMism( 1 ),
     m_maxHashMism( 1 ),
     m_maxHashAlt( 256 ),
     m_maxFastaAlt( 256 ),
@@ -66,8 +82,8 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_minBlockLength( 1000 ),
     m_memoryLimit( Uint8( sizeof(void*) == 4 ? 3 : 8 ) * int(kGigaByte) ),
     m_performTests( false ),
-    m_maxMismOnly( false ),
     m_colorSpace( false ),
+    m_allowShortWindow( false ),
     m_run_old_scanning_code( false ),
     m_alignmentAlgo( eAlignment_fast ),
     m_hashType( CQueryHash::eHash_arraymap ),
@@ -136,64 +152,63 @@ void COligoFarApp::Help( const char * arg )
         cout << "usage: [-hV] [--help[=full|brief|extended]] [-U version] [-C config]\n"
              << "  [-i inputfile] [-d genomedb] [-b snpdb] [-g guidefile] [-l gilist]\n"
              << "  [-1 solexa1] [-2 solexa2] [-q 0|1] [-0 qbase] [-c +|-] [-o output]\n"
-             << "  [-O -eumxtadh] [-B batchsz] [-w winlen] [-k wordsz]\n" //[-x winskip]\n"
-             << "  [-n maxmism] [-N +|-] [-r f|s] [-H v|m|a] [-a maxalt] [-A maxalt]\n"
+             << "  [-O -eumxtadh] [-B batchsz] [-w winlen[/wordsz]] [-S +|-]\n" //[-x winskip]\n"
+             << "  [-n [minMism[-maxmism]] [-r f|s] [-H v|m|a] [-a maxalt] [-A maxalt]\n"
              << "  [-P phrap] [-F dust] [-s 1|2|3] [-p cutoff] [-u topcnt] [-t toppct]\n"
              << "  [-X xdropoff] [-I idscore] [-M mismscore] [-G gapcore] [-Q gapextscore]\n"
-             << "  [-z minPair] [-Z maxPair] [-D margin] [-R geometry]\n"
+             << "  [-D minPair[-maxPair]] [-m margin] [-R geometry]\n"
              << "  [-L memlimit] [-T +|-]\n";
     if( flags & fDetails ) 
         cout 
             << "\nFile options:\n" 
-            << "  -i file    --input-file=file          short reads input file [" << m_readFile << "]\n"
-            << "  -d file    --fasta-file=file          database (fasta or basename of blastdb) file [" << m_fastaFile << "]\n"
-            << "  -b file    --snpdb-file=file          snp database subject file [" << m_snpdbFile << "]\n"
-//       << "  -v file    --vardb-file=file         *general variation database subject file [" << m_vardbFile << "]\n"
-            << "  -g file    --guide-file=file          guide file (output of sr-search [" << m_guideFile << "]\n"
-            << "  -l file    --gi-list=file             gi list to use for the blast db [" << m_gilistFile << "]\n"
-            << "  -o output  --output-file=output       set output file [" << m_outputFile << "]\n"
-            << "  -1 file    --qual-1-file=file         read 1 4-channel quality file [" << m_read1qualityFile << "]\n"
-            << "  -2 file    --qual-2-file=file         read 2 4-channel quality file [" << m_read2qualityFile << "]\n"
-            << "  -c +|-     --colorspace=+|-          *reads are set in dibase colorspace [" << (m_colorSpace?"yes":"no") << "]\n"
-            << "  -q 0|1     --quality-channels=cnt     number of channels in input file quality columns [" << m_qualityChannels << "]\n"
-            << "  -0 value   --quality-base=value       base quality number (ASCII value for character representing phrap score 0) [" << m_qualityBase << "]\n"
-            << "  -0 +char   --quality-base=+char       base quality char (character representing phrap score 0) [+" << char(m_qualityBase) << "]\n"
-            << "  -O flags   --output-flags=flags       add output flags (-huxmtdae) [" << m_outputFlags << "]\n"
-            << "  -B count   --batch-size=count         how many short seqs to map at once [" << m_readsPerRun << "]\n"
-            << "  -C config  --config-file=file         take parameters from config file section `oligofar' and continue parsing commandline\n"
+            << "  -i file       --input-file=file          short reads input file [" << m_readFile << "]\n"
+            << "  -d file       --fasta-file=file          database (fasta or basename of blastdb) file [" << m_fastaFile << "]\n"
+            << "  -b file       --snpdb-file=file          snp database subject file [" << m_snpdbFile << "]\n"
+//       << "  -v file       --vardb-file=file         *general variation database subject file [" << m_vardbFile << "]\n"
+            << "  -g file       --guide-file=file          guide file (output of sr-search [" << m_guideFile << "]\n"
+            << "  -l file       --gi-list=file             gi list to use for the blast db [" << m_gilistFile << "]\n"
+            << "  -o output     --output-file=output       set output file [" << m_outputFile << "]\n"
+            << "  -1 file       --qual-1-file=file         read 1 4-channel quality file [" << m_read1qualityFile << "]\n"
+            << "  -2 file       --qual-2-file=file         read 2 4-channel quality file [" << m_read2qualityFile << "]\n"
+            << "  -c +|-        --colorspace=+|-          *reads are set in dibase colorspace [" << (m_colorSpace?"yes":"no") << "]\n"
+            << "  -q 0|1           --quality-channels=cnt     number of channels in input file quality columns [" << m_qualityChannels << "]\n"
+            << "  -0 value      --quality-base=value       base quality number (ASCII value for character representing phrap score 0) [" << m_qualityBase << "]\n"
+            << "  -0 +char      --quality-base=+char       base quality char (character representing phrap score 0) [+" << char(m_qualityBase) << "]\n"
+            << "  -O flags      --output-flags=flags       add output flags (-huxmtdae) [" << m_outputFlags << "]\n"
+            << "  -B count      --batch-size=count         how many short seqs to map at once [" << m_readsPerRun << "]\n"
+            << "  -C config     --config-file=file         take parameters from config file section `oligofar' and continue parsing commandline\n"
             << "\nHashing and scanning options:\n"
-            << "  -w size    --window-size=size         window size (3.." << (2*DefaultWordSize()) << " for -H" << HashTypeChar() << ") [" << m_windowLength << "]\n"
-            << "  -k size    --word-size=size           word size (3.." << DefaultWordSize() << " for -H" << HashTypeChar() << ") [" << WordSize() << "]\n"
-//            << "  -m mask    --window-mask=mask         window mask [" << NStr::UInt8ToString( m_windowMask, 0, 2 ) << "]\n"
-            << "  -n mism    --input-max-mism=mism      maximal number of mismatches in hash window [" << m_maxHashMism << "]\n"
-            << "  -N +|-     --max-mism-only=+|-        hash with max mismatches only [" << (m_maxMismOnly ? "+" : "-") << "]\n"
-            << "  -H v|m|a   --hash-type=v|m|a          set hash type to vector, multimap, or arraymap [" << HashTypeChar() << "]\n"
-            << "  -a alt     --input-max-alt=alt        maximal number of alternatives in hash window [" << m_maxHashAlt << "]\n"
-            << "  -A alt     --fasta-max-alt=alt        maximal number of alternatives in fasta window [" << m_maxFastaAlt << "]\n"
-            << "  -P score   --phrap-cutoff=score       set maximal phrap score to consider base as ambiguous [" << m_phrapSensitivity << "]\n"
-            << "  -F simpl   --max-simplicity=val       low complexity filter cutoff for hash words [" << m_maxSimplicity << "]\n"
-            << "  -s 1|2|3   --strands=1|2|3            align strands [" << m_strands << "]\n"
+            << "  -w win[/word] --window-size=win[/word]   window size (3.." 
+            << (2*DefaultWordSize()) << "/3.." << DefaultWordSize() << " for -H" << HashTypeChar() << ") [" << m_windowLength << "/" << WordSize() << "]\n"
+//            << "  -m mask       --window-mask=mask         window mask [" << NStr::UInt8ToString( m_windowMask, 0, 2 ) << "]\n"
+            << "  -S +|-        --allow-short-window=+|-   rehash queries with no good hits with one word (if word-size < window-size) [" << (m_allowShortWindow?'+':'-') << "]\n"
+            << "  -n ini[-fin]  --input-mism=ini[-fin]     initial and final maximal number of mismatches in hash window [" << m_minHashMism << "-" << m_maxHashMism << "]\n"
+            << "  -H v|m|a      --hash-type=v|m|a          set hash type to vector, multimap, or arraymap [" << HashTypeChar() << "]\n"
+            << "  -a alt        --input-max-alt=alt        maximal number of alternatives in hash window [" << m_maxHashAlt << "]\n"
+            << "  -A alt        --fasta-max-alt=alt        maximal number of alternatives in fasta window [" << m_maxFastaAlt << "]\n"
+            << "  -P score      --phrap-cutoff=score       set maximal phrap score to consider base as ambiguous [" << m_phrapSensitivity << "]\n"
+            << "  -F simpl      --max-simplicity=val       low complexity filter cutoff for hash words [" << m_maxSimplicity << "]\n"
+            << "  -s 1|2|3      --strands=1|2|3            align strands [" << m_strands << "]\n"
             << "\nAlignment and scoring options:\n"
-            << "  -r f|q|s   --algorithm=f|s            use alignment algoRithm (Fast or Smith-waterman) [" << char(m_alignmentAlgo) << "]\n"
-            << "  -X value   --x-dropoff=value          set half band width for alignment [" << m_xdropoff << "]\n"
-            << "  -I score   --identity-score=score     set identity score [" << m_identityScore << "]\n"
-            << "  -M score   --mismatch-score=score     set mismatch score [" << m_mismatchScore << "]\n"
-            << "  -G score   --gap-opening-score=score  set gap opening score [" << m_gapOpeningScore << "]\n"
-            << "  -Q score   --gap-extention-score=val  set gap extention score [" << m_gapExtentionScore << "]\n"
+            << "  -r f|q|s      --algorithm=f|s            use alignment algoRithm (Fast or Smith-waterman) [" << char(m_alignmentAlgo) << "]\n"
+            << "  -X value      --x-dropoff=value          set half band width for alignment [" << m_xdropoff << "]\n"
+            << "  -I score      --identity-score=score     set identity score [" << m_identityScore << "]\n"
+            << "  -M score      --mismatch-score=score     set mismatch score [" << m_mismatchScore << "]\n"
+            << "  -G score      --gap-opening-score=score  set gap opening score [" << m_gapOpeningScore << "]\n"
+            << "  -Q score      --gap-extention-score=val  set gap extention score [" << m_gapExtentionScore << "]\n"
             << "\nFiltering and ranking options:\n"
-            << "  -p pctid   --min-pctid=pctid          set global percent identity cutoff [" << m_minPctid << "]\n"
-            << "  -u topcnt  --top-count=val            maximal number of top hits per read [" << m_topCnt << "]\n"
-            << "  -t toppct  --top-percent=val          maximal score of hit (in % to best) to be reported [" << m_topPct << "]\n"
-            << "  -z minPair --min-pair-dist=len        minimal pair distance [" << m_minPair << "]\n"
-            << "  -Z maxPair --max-pair-dist=len        maximal pair distance [" << m_maxPair << "]\n"
-            << "  -D dist    --pair-margin=len          pair distance margin [" << m_pairMargin << "]\n"
-            << "  -R value   --geometry=value           restrictions on relative hit orientation and order for paired hits [" << (m_geometry) << "]\n"
+            << "  -p pctid      --min-pctid=pctid          set global percent identity cutoff [" << m_minPctid << "]\n"
+            << "  -u topcnt     --top-count=val            maximal number of top hits per read [" << m_topCnt << "]\n"
+            << "  -t toppct     --top-percent=val          maximal score of hit (in % to best) to be reported [" << m_topPct << "]\n"
+            << "  -D min[-max]  --pair-distance=min[-max]  pair distance [" << m_minPair << "-" << m_maxPair << "]\n"
+            << "  -m dist       --pair-margin=len          pair distance margin [" << m_pairMargin << "]\n"
+            << "  -R value      --geometry=value           restrictions on relative hit orientation and order for paired hits [" << (m_geometry) << "]\n"
             << "\nOther options:\n"
-            << "  -h         --help=[brief|full|ext]    print help with current parameter values and exit after parsing cmdline\n"
-            << "  -V         --version                  print version and exit after parsing cmdline\n"
-            << "  -U version --assert-version=version   make sure that the oligofar version is what expected [" OLIGOFAR_VERSION "]\n"
-            << "  -L value   --memory-limit=value       set rlimit for the program (k|M|G suffix is allowed) [" << m_memoryLimit << "]\n"
-            << "  -T +|-     --test-suite=+|-           turn test suite on/off [" << (m_performTests?"on":"off") << "]\n"
+            << "  -h            --help=[brief|full|ext]    print help with current parameter values and exit after parsing cmdline\n"
+            << "  -V            --version                  print version and exit after parsing cmdline\n"
+            << "  -U version    --assert-version=version   make sure that the oligofar version is what expected [" OLIGOFAR_VERSION "]\n"
+            << "  -L value      --memory-limit=value       set rlimit for the program (k|M|G suffix is allowed) [" << m_memoryLimit << "]\n"
+            << "  -T +|-        --test-suite=+|-           turn test suite on/off [" << (m_performTests?"on":"off") << "]\n"
             << "\nRelative orientation flags recognized:\n"
             << "    p|centripetal|inside|pcr|solexa     reads are oriented so that vectors 5'->3' pointing to each other\n"
             << "    f|centrifugal|outside               reads are oriented so that vectors 5'->3' are pointing outside\n"
@@ -228,10 +243,9 @@ const option * COligoFarApp::GetLongOptions() const
         {"version", 0, 0, 'V'},
         {"assert-version", 1, 0, 'U'},
         {"window-size", 1, 0, 'w'},
-        {"word-size",1,0,'k'},
-//        {"window-mask",1,0,'m'},
-        {"max-mism-only", 1, 0, 'N'},
-        {"input-max-mism", 1, 0, 'n'},
+ //        {"window-mask",1,0,'m'},
+        {"input-mism", 1, 0, 'n'},
+        {"allow-short-window", 1, 0, 'S'},
         {"hash-type", 1, 0, 'H'},
         {"input-max-alt", 1, 0, 'a'},
         {"fasta-max-alt", 1, 0, 'A'},
@@ -255,9 +269,8 @@ const option * COligoFarApp::GetLongOptions() const
         {"quality-channels", 1, 0, 'q'},
         {"quality-base", 1, 0, '0'},
         {"phrap-score", 1, 0, 'P'},
-        {"min-pair", 1, 0, 'z'},
-        {"max-pair", 1, 0, 'Z'},
-        {"pair-margin", 1, 0, 'D'},
+        {"pair-distance", 1, 0, 'D'},
+        {"pair-margin", 1, 0, 'm'},
         {"geometry", 1, 0, 'R'},
         {"max-simplicity", 1, 0, 'F'},
         {"algorithm", 1, 0, 'r'},
@@ -277,7 +290,7 @@ const option * COligoFarApp::GetLongOptions() const
 
 const char * COligoFarApp::GetOptString() const
 {
-    return "U:C:w:k:m:n:N:H:a:A:c:i:d:b:v:g:o:O:l:s:B:p:u:t:1:2:q:0:P:z:Z:D:R:F:r:I:M:G:Q:X:L:T:";
+    return "U:C:w:n:S:H:a:A:c:i:d:b:v:g:o:O:l:s:B:p:u:t:1:2:q:0:P:m:D:R:F:r:I:M:G:Q:X:L:T:";
 }
 
 int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
@@ -287,11 +300,10 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case kLongOpt_min_block_length: m_minBlockLength = NStr::StringToInt( arg ); break;
     case 'U': if( strcmp( arg, OLIGOFAR_VERSION ) ) THROW( runtime_error, "Expected oligofar version " << arg << ", called " OLIGOFAR_VERSION ); break;
     case 'C': ParseConfig( arg ); break;
-    case 'w': m_windowLength = strtol( arg, 0, 10 ); break;
-    case 'k': m_wordSize = strtol( arg, 0, 10 ); break;
+    case 'w': ParseRange( m_windowLength, m_wordSize, arg, "/" ); break;
 //    case 'm': m_windowMask = NStr::StringToUInt8( arg, 0, 2 ); break;
-    case 'n': m_maxHashMism = strtol( arg, 0, 10 ); break;
-    case 'N': m_maxMismOnly = *arg == '+' ? true : *arg == '-' ? false : NStr::StringToBool( arg ); break;
+    case 'S': m_allowShortWindow = *arg == '+' ? true : *arg == '-' ? false : NStr::StringToBool( arg ); break;
+    case 'n': ParseRange( m_minHashMism, m_maxHashMism, arg ); break;
     case 'H': 
         switch( *arg ) {
         case 'v': case 'V': m_hashType = CQueryHash::eHash_vector; break;
@@ -321,9 +333,8 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case 'q': m_qualityChannels = NStr::StringToInt( arg ); break;
     case '0': m_qualityBase = ( arg[0] && arg[0] == '+' ) ? arg[1] : NStr::StringToInt( arg ); break;
     case 'P': m_phrapSensitivity = strtol( arg, 0, 10 ); break;
-    case 'z': m_minPair = strtol( arg, 0, 10 ); break;
-    case 'Z': m_maxPair = strtol( arg, 0, 10 ); break;
-    case 'D': m_pairMargin = strtol( arg, 0, 10 ); break;
+    case 'D': ParseRange( m_minPair, m_maxPair, arg ); break;
+    case 'm': m_pairMargin = strtol( arg, 0, 10 ); break;
     case 'R': m_geometry = arg; break;
     case 'F': m_maxSimplicity = NStr::StringToDouble( arg ); break;
     case 'r': 
@@ -473,10 +484,10 @@ int COligoFarApp::ProcessData()
     // TODO: this logic should be tweaked in future
     m_wordSize = WordSize();
     
-    if( m_windowLength < 3 || m_windowLength > 26 ) 
-        THROW( runtime_error, "Window length is set to " << m_windowLength << " but should be in range of 3..26" );
+    if( m_windowLength < 3 || m_windowLength > 30 ) 
+        THROW( runtime_error, "Window length is set to " << m_windowLength << " but should be in range of 3..30" );
     if( m_wordSize < 3 ) 
-        THROW( runtime_error, "Word size is set to " << m_wordSize << " but should be in range of 3..13" );
+        THROW( runtime_error, "Word size is set to " << m_wordSize << " but should be in range of 3..15" );
     Uint4 footprint = ((1 << m_windowLength) - 1);
 //    int badPositions = CBitHacks::BitCount4( footprint & ~m_windowMask );
     m_windowMask = footprint & m_windowMask;
@@ -526,9 +537,6 @@ int COligoFarApp::ProcessData()
     auto_ptr<IAligner> aligner( CreateAligner() );
     aligner->SetScoreTbl( scoreTbl );
 
-    if( m_maxMismOnly )
-        queryHash.SetMinimalMaxMism( queryHash.GetAbsoluteMaxMism() );
-
     CSnpDb snpDb( CSnpDb::eSeqId_integer );
     if( m_snpdbFile.length() ) {
         snpDb.Open( m_snpdbFile, CBDB_File::eReadOnly );
@@ -555,6 +563,7 @@ int COligoFarApp::ProcessData()
     }
 
     queryHash.SetStrands( m_strands );
+    queryHash.SetMinimalMaxMism( min( unsigned(queryHash.GetAbsoluteMaxMism()), m_minHashMism ) );
     queryHash.SetNcbipnaToNcbi4naScore( Uint2( 255 * pow( 10.0, double(m_phrapSensitivity)/10) ) );
     queryHash.SetNcbiqnaToNcbi4naScore( m_phrapSensitivity );
 
@@ -579,7 +588,9 @@ int COligoFarApp::ProcessData()
     CProgressIndicator p( "Reading " + m_readFile, "lines" );
     CBatch batch( m_readsPerRun, m_fastaFile, queryHash, seqVecProcessor, formatter, scoreTbl );
 
+    batch.SetAllowShortWindow( m_allowShortWindow );
     batch.SetReadProgressIndicator( &p );
+
     seqScanner.SetInputChunk( batch.GetInputChunk() );
 
     for( int count = 0; getline( reads, buff ); ++count ) {

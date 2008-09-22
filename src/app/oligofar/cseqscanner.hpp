@@ -95,10 +95,10 @@ protected:
     {
     public:
         C_LoopImpl_Ncbi8naAmbiguities( const CHashParam& hp, 
-                                       double maxSimpl, Uint8 maxAlt, Uint8 mask ) : 
+                                       double maxSimpl, Uint8 maxAlt, Uint4 mask4, Uint8 mask8 ) : 
             C_ScanImpl_Base( hp, maxSimpl ), 
             m_hashGenerator( hp.GetWindowLength() ), 
-            m_maxAlternatives( maxAlt ), m_mask( mask ) {}
+            m_maxAlternatives( maxAlt ), m_mask4( mask4 ), m_mask8( mask8 ) {}
         template<class Callback>
         void RunCallback( Callback& );
         void Prepare( char a );
@@ -108,7 +108,8 @@ protected:
     protected:
         fourplanes::CHashGenerator m_hashGenerator;
         Uint8 m_maxAlternatives;
-        Uint8 m_mask;
+        Uint8 m_mask4;
+        Uint8 m_mask8;
     };
 
     class C_LoopImpl_ColorspNoAmbiguities : public C_LoopImpl_Ncbi8naNoAmbiguities
@@ -127,8 +128,8 @@ protected:
     {
     public:
         C_LoopImpl_ColorspAmbiguities( const CHashParam& hp, 
-                                       double maxSimpl, Uint8 maxAlt, Uint8 mask ) : 
-            C_LoopImpl_Ncbi8naAmbiguities( hp, maxSimpl, maxAlt, mask ),m_lastBase(1) {}
+                                       double maxSimpl, Uint8 maxAlt, Uint4 mask4, Uint8 mask8 ) : 
+            C_LoopImpl_Ncbi8naAmbiguities( hp, maxSimpl, maxAlt, mask4, mask8 ),m_lastBase(1) {}
         void Prepare( char a );
         void Update( char a );
         const char * GetName() const { return "C_LoopImpl_ColorspAmbiguities"; }

@@ -89,6 +89,8 @@ public:
     bool GetOneHash() const { return m_oneHash; }
     void SetOneHash( bool to ) { m_oneHash = to; }
 
+    unsigned GetCurrentWindowLength() const { return GetOneHash() ? m_wordLen[0] : m_winLen ; }
+
     int  GetNcbi4na( Uint8& window, CSeqCoding::ECoding, const unsigned char * data, unsigned length );
     int  GetNcbi4na( Uint8& window, Uint8& windowx, CSeqCoding::ECoding, const unsigned char * data, unsigned length );
 
@@ -219,13 +221,15 @@ inline void CQueryHash::Reserve( unsigned batch )
 
 inline void CQueryHash::SetMaxMism( int i ) 
 { 
-	ASSERT( unsigned(i) < m_permutators.size() ); 
+	ASSERT( i >= m_minMism );
+	ASSERT( i <= GetAbsoluteMaxMism() ); 
 	m_maxMism = i; 
 } 
 
 inline void CQueryHash::SetMinimalMaxMism( int i ) 
 { 
-	ASSERT( i >= 0 && i <= GetAbsoluteMaxMism() ); 
+	ASSERT( i >= 0 );
+    ASSERT( i <= GetAbsoluteMaxMism() ); 
 	m_minMism = i; 
 	if( i > m_maxMism ) m_maxMism = i; 
 }
@@ -234,10 +238,15 @@ template<class Callback>
 void CQueryHash::ForEach( Uint8 hash, Callback& callback ) const 
 { 
     if( GetOffset() == 0 || m_oneHash ) {
+        Uint4 h = hash >> GetOffset()*2;
+        if( ((hash >> GetOffset()*2) & ~CBitHacks::WordFootprint<Uint8>( 2*m_wordLen[0] )) != 0 ) {
+            THROW( logic_error, NStr::UInt8ToString( hash, 0, 2 ) << " >> " << (GetOffset()*2) <<  " = " <<  NStr::UInt8ToString( hash >> (2*GetOffset()), 0, 2 ) 
+                   << "; wordLen[0] = " << unsigned(m_wordLen[0]) << ", ~footprint = " << NStr::UInt8ToString(~CBitHacks::WordFootprint<Uint8>( 2*m_wordLen[0] ), 0, 2 ) );
+        }
         switch( GetHashType() ) {
-        case eHash_vector:   m_hashTableV.ForEach( Uint4( hash ), callback ); break;
-        case eHash_multimap: m_hashTableM.ForEach( Uint4( hash ), callback ); break;
-        case eHash_arraymap: m_hashTableA.ForEach( Uint4( hash ), callback ); break;
+        case eHash_vector:   m_hashTableV.ForEach( h, callback ); break;
+        case eHash_multimap: m_hashTableM.ForEach( h, callback ); break;
+        case eHash_arraymap: m_hashTableA.ForEach( h, callback ); break;
         }
     } else {
         TMatchSet& listA( m_listA );
@@ -246,7 +255,7 @@ void CQueryHash::ForEach( Uint8 hash, Callback& callback ) const
         listA.resize(0);
         listB.resize(0);
 
-        Uint4 hashA = Uint4( hash >> GetOffset()*2 );
+        Uint4 hashA = Uint4( hash >> (GetOffset()*2) );
         Uint4 hashB = Uint4( hash & (( 1 << (2*GetWordLength(1))) - 1) );
 //         cerr << setw(GetWindowLength()*2) << setfill('0') << NStr::Int8ToString( hash, 0, 2 ) << "\t" << GetWindowLength() << "\n"
 //              << setw(GetWordLength(0)*2) << setfill('0') << NStr::IntToString( hashA, 0, 2 ) << "\t" << GetWordLength(0) << "\n"
@@ -256,20 +265,28 @@ void CQueryHash::ForEach( Uint8 hash, Callback& callback ) const
 //             ASSERT( hashB & ~CBitHacks::WordFootprint<Uint4>( GetWordLength(1) ) == 0 );
         C_ListInserter iA( listA );
         C_ListInserter iB( listB );
+
         switch( GetHashType() ) {
         case eHash_vector:   m_hashTableV.ForEach( hashA, iA ); m_hashTableVx.ForEach( hashB, iB ); break;
         case eHash_multimap: m_hashTableM.ForEach( hashA, iA ); m_hashTableMx.ForEach( hashB, iB ); break;
         case eHash_arraymap: m_hashTableA.ForEach( hashA, iA ); m_hashTableAx.ForEach( hashB, iB ); break;
         }
+
         sort( listA.begin(), listA.end() );
         sort( listB.begin(), listB.end() );
+
         TMatchSet::const_iterator a = listA.begin(), A = listA.end();
         TMatchSet::const_iterator b = listB.begin(), B = listB.end();
+
         while( a != A && b != B ) {
+
             if( *a < *b ) { ++a; continue; }
             if( *b < *a ) { ++b; continue; }
+
             callback( a->strand == '+' ? *b : *a ); // one time is enough
+
             TMatchSet::const_iterator x = a; 
+
             do if( ! ( ++a < A ) ) return; while( *a == *x );
             do if( ! ( ++b < B ) ) return; while( *b == *x );
         }

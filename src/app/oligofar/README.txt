@@ -1,26 +1,30 @@
-oligoFAR 3.23                     7-AUG-2008                                1-NCBI
+oligoFAR 3.24                     7-AUG-2008                                1-NCBI
 
 NAME 
-    oligoFAR version 3.23 - global alignment of single or paired short reads
+    oligoFAR version 3.24 - global alignment of single or paired short reads
 
 SYNOPSIS
-    oligofar [-hV] [-C config] [-w winlen] [-k wordsz] [-n hashmism] 
-             [-N+|-] [-a max-alt-qry] [-A max-alt-sbj] [-H v|m|a]
-             [-z minDist] [-Z maxDist] [-D deltaDist] [-p minPct]
+    oligofar [-hV] [-C config] [-w winlen[/wordsz]] [-n mismMax[-mismMin]] 
+             [-a max-alt-qry] [-A max-alt-sbj] [-H v|m|a] [-S +|-]
+             [-D distMin[-distMax]] [-m distMargin] [-p minPct]
              [-u topCnt] [-t topPct] [-F dust] [-s strands]
              [-i input] [-d database] [-l gilist] [-b snpdb]
              [-o output] [-O outflags] [-g guidefile] [-c +|-] 
-             [-D batchSize] [-r algo] [-X dropoff] [-R geometry]
+             [-B batchSize] [-r algo] [-X dropoff] [-R geometry]
              [-q qualChannels] [-0 qualBase] [-1 solexa1] [-2 solexa2] 
              [-P phrap] [-I score] [-M score] [-G score] [-Q score] 
              [-T test] [-L memlimit] [-U version] 
 
 EXAMPLES
-    oligofar -U 3.22 -C human-data.ini -C deep-search.ini -i my.reads -h
+    oligofar -U 3.24 -C human-data.ini -C deep-search.ini -i my.reads -h
 
     oligofar -i pairs.tbl -d contigs.fa -b snpdb.bdb -l gilist -g pairs.guide \
-             -w 13 -B 250000 -Hv -n2 -rf -p90 -z100 -Z500 -D50 -Rp \
+             -w 20/12 -B 250000 -Hv -n2 -rf -p90 -D100-500 -m50 -Rp \
              -L16G -o output -Omx
+
+CHANGES
+    Following parameters are new, have changed or have disappeared 
+    in version 3.24: -n, -w, -N, -z, -Z, -D, -m, -S. 
 
 DESCRIPTION
     Performs global alignments of multiple single or paired short reads 
@@ -67,8 +71,8 @@ DESCRIPTION
           allows indels, but sometimes may produce suboptimal results.
 
     Alignments are filtered (see -p option). For paired reads geometrical
-    constraints are applied (reads of the same pair should be on opposite
-    strands with 5'-ends pointing outside, distznce is set by -z, -Z and -D
+    constraints are applied (reads of the same pair should be mutually 
+    oriented according to -R option, distance is set by -D and -m
     options). Then hits ranked by score (hits of the same score have same
     rank, best hits have rank 0). Week hits or too repetitive hits are 
     thrown away (see -t and -u options).
@@ -85,7 +89,7 @@ NOTE
 
     To save disk space and computational resources, oligoFAR ranks hits by
     score and reports only the best hits and ties to the best hits. Certain 
-    options (like -N-) may affect completeness of tie hits reported - in this 
+    options (like -S) may affect completeness of tie hits reported - in this 
     case only hits of same score as the best are guarranteed to appear in 
     output no matter what value of -t is set.
 
@@ -98,9 +102,8 @@ PAIRED READS
      - relative orientation (geometry) which may be set by --geometry or -R 
        (see section OPTIONS subsection ``Filtering and ranking options'')
      - distance between lowest position of plus-stranded read and highest
-       position on minus-stranded one should be in range [ $z - $D ; $Z + $D ] 
-       where $z, $Z and $D are values given in -z, -Z and -D switches' 
-       arguments correspondently.
+       position on minus-stranded one should be in range [ $a - $m ; $b + $m ] 
+       where $a, $b and $m are arguments of parameters -D $a-$b -m $m.
 
     If pair has no hits which comply constraints mentioned above, individual 
     hits for the pair components still will be reported.
@@ -227,25 +230,29 @@ File options
                 small makes scan inefficient. 
 
 Hashing and scanning options
-    --word-size=size
-    -k size     Sets hashing word size. Reasonable values are 11-13 for
-                VectorTable (11 for 32-bit architecture), 11-15 for 
-                ArraymapTable (see --hash-type).  Default is the smaller 
-                of window size (see --window-size) and 11, 13 or 15 (depending 
-                on an architecture and hash type). Can't be less then half of
-                window size.
+    --window-size=size[/word]
+    -w size[/word]     
+                Sets window size and word size. If window size is below 15 (13 
+                for -Hv on 64-bit, or 11 for -Hv on 32-bit architecture), word 
+                size by default equals to window size. Otherwise word size by 
+                default is chosen to be 15, 13, or 11 depending on -H value and 
+                architecture.  OligoFAR hashes one window per read, choosing 
+                it as close to 5' end as possible, but may shift it to the right 
+                if the 5' end has too many low quality (ambiguous) bases.  
 
-    --window-size=size
-    -w size     Sets window size. Reasonable values are 11-26 for VectorTable, 
-                11-30 for ArraymapTable implementations of hash (11-22 for
-                VectorTable on 32-bit architecture).  OligoFAR hashes one window 
-                per read, choosing it as close to 5' end as possible, but may 
-                shift it to the right if the 5' end has too many low quality 
-                (ambiguous) bases.  
+    --input-mism=initial[-final]
+    -n ini[-fi] Sets maximal allowed number of mismatches within hashed word.
+                Reasonable values are 0 and 1, sometimes 2. OligoFAR will hash 
+                first with initial value as maximal number of mismatches, then
+                will iteratively rehash reads with that many or more mismatches
+                allowing extra mismatches in hash word until final value is 
+                exceeded.
 
-    --input-max-mism=count
-    -n count    Sets maximal allowed number of mismatches within hashed word.
-                Reasonable values are 0 and 1, sometimes 2.
+    --allow-short-window=+|-
+    -S +|-      If window size is more then word size and this option is enabled, 
+                after first pass window size will be decreased to word size and
+                reads which have more mismatches then initial number of mismatches 
+                allowed in hash word will be rehashed.
 
     --hash-type=v|m|a
     -H v|m|a    Set hash type to v (vector), m (multimap) or a (arraymap).
@@ -254,14 +261,6 @@ Hashing and scanning options
                 practical (more intended for debugging). Arraymap is the least
                 memory consuming and is fast for small counts of reads.
                 Arraymap is the only practical in 32-bit application.
-
-    --max-mism-only=+|-
-    -N +|-      If set to +, reads are hashed with mismatches allowed by -n
-                option just after being read. If set to -, they are first
-                hashed with no mismatches allowed, then after first pass only
-                those reads which have mismatches or have no hits are
-                rehashed, then (if -n2 is used) on third pass only those reads
-                which have two mismatches or more are rehashed.
 
     --input-max-alt=count
     -a count    Maximal number of alternative versions of window (based on
@@ -333,20 +332,15 @@ Filtering and ranking options
                 reported by ouptut option -Oh do not count - they will be
                 reported all.
 
-    --min-pair-dist=bases
-    -z bases    Set minimal `insert' length allowed for paired reads. This is
-                5' to 5' distance (reads should be on opposite strands
-                pointing 5' ends outside).
-
-    --max-pair-dist=bases
-    -Z bases    Set maximal `insert' length allowed for paired reads. See also
-                option -z. 
+    --pair-distance=min[-max]
+    -D m[-M]    Set allowed range for distance between component hits for 
+                paired read hits. If max is omited it is considered to be equal 
+                to min.Length of hits should be included to this length. 
 
     --pair-margin=bases
-    -D bases    Set fuzz, or margin for `insert' length for paired reads. The
-                actual range of insert lengths allowed is [z - D, Z + D],
-                where z, Z and D are the valuee set by -z, -Z and -D options
-                correspondently.
+    -m bases    Set fuzz, or margin for `insert' length for paired reads. The
+                actual range of insert lengths allowed is [a - m, b + m],
+                where a, b, and m are set with -D a-b -m m command line parameters.
 
     --geometry=type
     -R geometry Sets allowed mutual orientation of the hits in paired read hits. 
@@ -419,7 +413,7 @@ Config file
     Example:
 
         [oligofar]
-        assert-version = 3.23
+        assert-version = 3.24
         window-size = 12
         input-max-mism = 0
         input-max-alt = 256

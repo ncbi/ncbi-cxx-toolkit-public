@@ -72,7 +72,7 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
     
 	const char * y = a;
 
-    int winLen = min( m_queryHash->GetWindowLength(), 15 );
+    int winLen = m_queryHash->GetCurrentWindowLength();
 
 	for( const char * Y = a + winLen; y < Y; ++y ) {
         CNcbi8naBase b( *y & 0x0f );
@@ -122,7 +122,7 @@ inline void CSeqScanner::C_LoopImpl_Ncbi8naNoAmbiguities::RunCallback( Callback&
 template<class Callback>
 inline void CSeqScanner::C_LoopImpl_Ncbi8naAmbiguities::RunCallback( Callback& callback )
 {
-    for( CHashIterator h( m_hashGenerator, Uint4( m_mask ), m_mask ); h; ++h ) {
+    for( CHashIterator h( m_hashGenerator, m_mask4, m_mask8 ); h; ++h ) {
         callback( Uint8( *h ), 0, m_hashGenerator.GetAlternativesCount() );
     }
 }
@@ -190,7 +190,8 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
                             int from, int toOpen, const char * a, const char * A, int off )
 {
     if( m_queryHash == 0 ) return;
-    int winLen = m_queryHash->GetWindowLength();
+    int winLen = m_queryHash->GetCurrentWindowLength();
+//    cerr << __PRETTY_FUNCTION__ << DISPLAY( winLen ) << endl;
     
     if( from < 0 ) from = 0;
     if( toOpen > A - a ) toOpen = A - a;
@@ -207,6 +208,7 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
             loop.RunCallback( callback );
             int pos = x - a + off;
             ITERATE( TMatches, m, matches ) {
+//                cerr << DISPLAY( winLen ) << DISPLAY( m->strand ) << DISPLAY( int(m->offset) ) << endl;
                 switch( m->strand ) {
                 case '+': m_filter->Match( *m, a, A, pos - m->offset ); break;
                 case '-': m_filter->Match( *m, a, A, pos + m->offset + winLen - 1 ); break;
@@ -223,8 +225,11 @@ template<class NoAmbiq, class Ambiq, class Callback>
 void CSeqScanner::x_RangemapLoop( const TRangeMap& rm, TMatches& matches,  Callback& cbk, CProgressIndicator*p, const char * a, const char * A, int off )
 {
     if( m_queryHash == 0 ) return;
-    int winLen = m_queryHash->GetWindowLength();
-    Uint8 mask = CBitHacks::WordFootprint<Uint8>( 2 * winLen );
+    int winLen = m_queryHash->GetCurrentWindowLength();
+//    cerr << __PRETTY_FUNCTION__ << DISPLAY( winLen ) << endl;
+
+    Uint4 mask4 = CBitHacks::WordFootprint<Uint4>( 2 * winLen );
+    Uint8 mask8 = CBitHacks::WordFootprint<Uint8>( 4 * winLen );
     for( TRangeMap::const_iterator i = rm.begin(); i != rm.end(); ++i ) {
         if( i->second == eType_skip ) {
             if( p ) p->SetCurrentValue( i->first.second );
@@ -235,7 +240,7 @@ void CSeqScanner::x_RangemapLoop( const TRangeMap& rm, TMatches& matches,  Callb
 
         } else { // eType_iterate
 
-            Ambiq impl( *m_queryHash, m_maxSimplicity, m_maxAlternatives, mask );
+            Ambiq impl( *m_queryHash, m_maxSimplicity, m_maxAlternatives, mask4, mask8 );
             x_MainLoop( impl, matches, cbk, p, i->first.first, i->first.second, a, A, off );
         }
     }
