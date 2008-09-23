@@ -552,6 +552,7 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
                        CNcbiOstream* ostr,
                        const vector<unsigned int>& band_halfwidths,
                        unsigned int diag_finding_window,
+                       unsigned int min_align_length,
                        ENa_strand strand0, ENa_strand strand1)
 {
     if (min_ident > 1 || min_ident < 0) {
@@ -560,8 +561,15 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
     }
 
     if (ostr) {
+        map<int,string> strandmap;
+        strandmap[eNa_strand_unknown] = "Unknown";
+        strandmap[eNa_strand_plus] = "Plus";
+        strandmap[eNa_strand_minus] = "Minus";
         *ostr << "Running blast for " << id0.GetSeqIdString(true)
               << " and " << id1.GetSeqIdString(true) << endl;
+        *ostr << "Filtering on " << min_ident << "%, slop " << max_end_slop
+              << "bp, min length " << min_align_length << "bp"
+              << " and strands " << strandmap[strand0] << ", " << strandmap[strand1] << endl;
     }
     CRef<CSeq_align_set> alns;
     try {
@@ -578,7 +586,8 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
         x_OrientAlign((*aln)->SetSegs().SetDenseg(), scope);
         if (IsDovetail((*aln)->GetSegs().GetDenseg(), max_end_slop, scope)
             && FracIdent((*aln)->GetSegs().GetDenseg(), scope) >= min_ident
-            && x_IsAllowedStrands((*aln)->GetSegs().GetDenseg(), strand0, strand1) ) {
+            && x_IsAllowedStrands((*aln)->GetSegs().GetDenseg(), strand0, strand1)
+            && x_DensegLength((*aln)->GetSegs().GetDenseg()) >= min_align_length ) {
             good_alns.push_back(*aln);
         }
     }
@@ -631,7 +640,8 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
             }
             if (IsDovetail(*local_ds, max_end_slop, scope)
                 && FracIdent(*local_ds, scope) >= min_ident
-                && x_IsAllowedStrands(*local_ds, strand0, strand1) ) {
+                && x_IsAllowedStrands(*local_ds, strand0, strand1)
+                && x_DensegLength(*local_ds) >= min_align_length ) {
                 if (ostr) {
                     *ostr << "Alignment acceptable (full dovetail)" << endl;
                 }
@@ -654,6 +664,7 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
                                       max_end_slop, scope)
                 && FracIdent((*aln)->GetSegs().GetDenseg(), scope) >= min_ident
                 && x_IsAllowedStrands((*aln)->GetSegs().GetDenseg(), strand0, strand1)
+                && x_DensegLength((*aln)->GetSegs().GetDenseg()) >= min_align_length
                 ) {
                 good_alns.push_back(*aln);
             }
@@ -671,7 +682,8 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
             if (local_ds
                 && IsAtLeastHalfDovetail(*local_ds, max_end_slop, scope)
                 && FracIdent(*local_ds, scope) >= min_ident
-                && x_IsAllowedStrands(*local_ds, strand0, strand1) ) {
+                && x_IsAllowedStrands(*local_ds, strand0, strand1)
+                && x_DensegLength(*local_ds) >= min_align_length) {
                 string dovetail_string;
                 if (IsContained(*local_ds, max_end_slop, scope)) {
                     dovetail_string = "contained";
@@ -911,6 +923,23 @@ bool CContigAssembly::x_IsAllowedStrands(const CDense_seg& ds,
     return (matches[0] & matches[1]);
 }
 
+
+TSeqPos CContigAssembly::x_DensegLength(const objects::CDense_seg& ds)
+{
+    TSeqPos Length = 0;
+    const CDense_seg::TStarts& Starts = ds.GetStarts();
+    const CDense_seg::TLens& Lens = ds.GetLens();
+    int Dim = ds.GetDim();
+
+    for(unsigned int Seg = 0; Seg < Lens.size(); Seg++) {
+
+        if(Starts[(Seg*Dim)] == -1 || Starts[(Seg*Dim)+1] == -1)
+            Length++;
+        else
+            Length += Lens[Seg];
+    }
+    return Length;
+}
 
 
 END_NCBI_SCOPE

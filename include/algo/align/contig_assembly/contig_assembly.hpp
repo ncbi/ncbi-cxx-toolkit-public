@@ -82,6 +82,7 @@ public:
           const vector<unsigned int>& band_halfwidths
               = vector<unsigned int>(1, 200),
           unsigned int diag_finding_window = 200,
+          unsigned int min_align_length = 50,
           objects::ENa_strand strand0 = objects::eNa_strand_unknown,
           objects::ENa_strand strand1 = objects::eNa_strand_unknown);
 
@@ -206,6 +207,7 @@ public:
         static bool x_IsAllowedStrands(const objects::CDense_seg& ds,
                                        objects::ENa_strand strand0,
                                        objects::ENa_strand strand1);
+        static TSeqPos x_DensegLength(const objects::CDense_seg& ds);
 };
 
 
