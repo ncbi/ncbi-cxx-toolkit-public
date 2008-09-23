@@ -134,6 +134,69 @@ void CCacheWriter::SaveStringSeq_ids(CReaderRequestResult& result,
 }
 
 
+namespace {
+    class CStoreBuffer {
+    public:
+        CStoreBuffer(void)
+            : m_Ptr(m_Buffer)
+            {
+            }
+        
+        const char* data(void) const
+            {
+                return m_Buffer;
+            }
+        size_t size(void) const
+            {
+                return m_Ptr - m_Buffer;
+            }
+        void CheckStore(size_t size) const;
+        void StoreUint4(Uint4 v)
+            {
+                CheckStore(4);
+                x_StoreUint4(v);
+            }
+        void StoreInt4(Int4 v)
+            {
+                StoreUint4(v);
+            }
+        void StoreString(const string& s)
+            {
+                size_t size = s.size();
+                CheckStore(4+size);
+                x_StoreUint4(size);
+                memcpy(m_Ptr, s.data(), size);
+                m_Ptr += size;
+            }
+
+    protected:
+        void x_StoreUint4(Uint4 v)
+            {
+                m_Ptr[0] = v>>24;
+                m_Ptr[1] = v>>16;
+                m_Ptr[2] = v>>8;
+                m_Ptr[3] = v;
+                m_Ptr += 4;
+            }
+
+    private:
+        CStoreBuffer(const CStoreBuffer&);
+        void operator=(const CStoreBuffer&);
+
+        char m_Buffer[4096];
+        char* m_Ptr;
+    };
+
+    
+    void CStoreBuffer::CheckStore(size_t size) const
+    {
+        if ( m_Ptr + size > m_Buffer + sizeof(m_Buffer) ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "store buffer overflow");
+        }
+    }
+}
+
 void CCacheWriter::SaveStringGi(CReaderRequestResult& result,
                                 const string& seq_id)
 {
@@ -143,12 +206,10 @@ void CCacheWriter::SaveStringGi(CReaderRequestResult& result,
 
     CLoadLockSeq_ids ids(result, seq_id);
     if ( ids->IsLoadedGi() ) {
-        int gi = ids->GetGi();
-        m_IdCache->Store(seq_id,
-                         0,
-                         GetGiSubkey(),
-                         &gi,
-                         sizeof(gi));
+        CStoreBuffer str;
+        str.StoreInt4(ids->GetGi());
+        m_IdCache->Store(seq_id, 0, GetGiSubkey(),
+                         str.data(), str.size());
     }
 }
 
@@ -174,12 +235,10 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
 
     CLoadLockSeq_ids ids(result, seq_id);
     if ( ids->IsLoadedGi() ) {
-        int gi = ids->GetGi();
-        m_IdCache->Store(GetIdKey(seq_id),
-                         0,
-                         GetGiSubkey(),
-                         &gi,
-                         sizeof(gi));
+        CStoreBuffer str;
+        str.StoreInt4(ids->GetGi());
+        m_IdCache->Store(GetIdKey(seq_id), 0, GetGiSubkey(),
+                         str.data(), str.size());
     }
 }
 
@@ -194,15 +253,9 @@ void CCacheWriter::SaveSeq_idAccVer(CReaderRequestResult& result,
     CLoadLockSeq_ids ids(result, seq_id);
     if ( ids->IsLoadedAccVer() ) {
         CSeq_id_Handle acc = ids->GetAccVer();
-        string str;
-        if ( acc ) {
-            str = acc.AsString();
-        }
-        m_IdCache->Store(GetIdKey(seq_id),
-                         0,
-                         GetAccVerSubkey(),
-                         str.data(),
-                         str.size());
+        const string& str = acc.AsString();
+        m_IdCache->Store(GetIdKey(seq_id), 0, GetAccVerSubkey(),
+                         str.data(), str.size());
     }
 }
 
@@ -216,13 +269,42 @@ void CCacheWriter::SaveSeq_idLabel(CReaderRequestResult& result,
 
     CLoadLockSeq_ids ids(result, seq_id);
     if ( ids->IsLoadedLabel() ) {
-        const string& label = ids->GetLabel();
-        m_IdCache->Store(GetIdKey(seq_id),
-                         0,
-                         GetLabelSubkey(),
-                         label.data(),
-                         label.size());
+        const string& str = ids->GetLabel();
+        m_IdCache->Store(GetIdKey(seq_id), 0, GetLabelSubkey(),
+                         str.data(), str.size());
     }
+}
+
+
+namespace {
+    class CCacheDataEraser {
+        CCacheDataEraser(ICache* cache,
+                         const string& key, int version, const string& subkey)
+            : m_Cache(cache),
+              m_Key(key), m_Version(version), m_Subkey(subkey)
+            {
+            }
+        ~CCacheDataEraser(void) {
+            if ( m_Cache ) {
+                try {
+                    m_Cache->Remove(m_Key, m_Version, m_Subkey);
+                }
+                catch (...) { // ignored
+                }
+                m_Cache = 0;
+            }
+        }
+
+        void Done(void) {
+            m_Cache = 0;
+        }
+        
+    private:
+        ICache* m_Cache;
+        string m_Key;
+        int m_Version;
+        string m_Subkey;
+    };
 }
 
 
@@ -258,7 +340,7 @@ void CCacheWriter::WriteSeq_ids(const string& key,
         // In case of an error we need to remove incomplete data
         // from the cache.
         try {
-            m_BlobCache->Remove(key);
+            m_BlobCache->Remove(key, 0, GetSeq_idsSubkey());
         }
         catch ( exception& /*exc*/ ) {
             // ignored
@@ -269,34 +351,36 @@ void CCacheWriter::WriteSeq_ids(const string& key,
 
 
 void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
-                                      const CSeq_id_Handle& seq_id)
+                                      const CSeq_id_Handle& seq_id,
+                                      const SAnnotSelector* sel)
 {
     if ( !m_IdCache) {
         return;
     }
 
-    CLoadLockBlob_ids ids(result, seq_id);
+    CLoadLockBlob_ids ids(result, seq_id, sel);
     if ( !ids.IsLoaded() ) {
         return;
     }
 
-    TIdCacheData data;
-    data.push_back(IDS_MAGIC);
-    data.push_back(ids->GetState());
+    CStoreBuffer str;
+    str.StoreInt4(IDS_MAGIC);
+    str.StoreUint4(ids->GetState());
+    str.StoreUint4(ids->size());
     ITERATE ( CLoadInfoBlob_ids, it, *ids ) {
-        CConstRef<CBlob_id> id = it->first;
+        const CBlob_id& id = *it->first;
+        str.StoreUint4(id.GetSat());
+        str.StoreUint4(id.GetSubSat());
+        str.StoreUint4(id.GetSatKey());
         const CBlob_Info& info = it->second;
-        data.push_back(id->GetSat());
-        data.push_back(id->GetSubSat());
-        data.push_back(id->GetSatKey());
-        data.push_back(info.GetContentsMask());
+        str.StoreUint4(info.GetContentsMask());
+        str.StoreUint4(info.GetNamedAnnotNames().size());
+        ITERATE(CBlob_Info::TNamedAnnotNames, it2, info.GetNamedAnnotNames()) {
+            str.StoreString(*it2);
+        }
     }
-    _ASSERT(data.size() % IDS_SIZE == IDS_HSIZE && data.front() == IDS_MAGIC);
-    m_IdCache->Store(GetIdKey(seq_id),
-                     0,
-                     GetBlob_idsSubkey(),
-                     &data.front(),
-                     data.size() * sizeof(int));
+    m_IdCache->Store(GetIdKey(seq_id), 0, GetBlob_idsSubkey(sel),
+                     str.data(), str.size());
 }
 
 
@@ -308,51 +392,10 @@ void CCacheWriter::SaveBlobVersion(CReaderRequestResult& /*result*/,
         return;
     }
 
-    m_IdCache->Store(GetBlobKey(blob_id),
-                     0,
-                     GetBlobVersionSubkey(),
-                     &version,
-                     sizeof(version));
-}
-
-
-void CCacheWriter::SaveBlobAnnotInfo(CReaderRequestResult& /*result*/,
-                                     const TBlobId& blob_id,
-                                     const TAnnotInfo& annot_info)
-{
-    if( !m_IdCache ) {
-        return;
-    }
-
-    try {
-        auto_ptr<IWriter> writer
-            (m_IdCache->GetWriteStream(GetBlobKey(blob_id), 0,
-                                       GetBlobAnnotInfoSubkey()));
-        if ( !writer.get() ) {
-            return;
-        }
-
-        {{
-            CWStream w_stream(writer.get());
-            CObjectOStreamAsnBinary obj_stream(w_stream);
-            ITERATE ( TAnnotInfo, it, annot_info ) {
-                obj_stream << **it;
-            }
-        }}
-
-        writer.reset();
-    }
-    catch ( ... ) {
-        // In case of an error we need to remove incomplete data
-        // from the cache.
-        try {
-            m_IdCache->Remove(GetBlobKey(blob_id));
-        }
-        catch ( exception& /*exc*/ ) {
-            // ignored
-        }
-        // ignore cache write error - it doesn't affect application
-    }
+    CStoreBuffer str;
+    str.StoreInt4(version);
+    m_IdCache->Store(GetBlobKey(blob_id), 0, GetBlobVersionSubkey(),
+                     str.data(), str.size());
 }
 
 

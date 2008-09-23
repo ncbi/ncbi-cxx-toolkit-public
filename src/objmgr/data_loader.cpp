@@ -149,6 +149,39 @@ CDataLoader::GetExternalRecords(const CBioseq_Info& bioseq)
 }
 
 
+CDataLoader::TTSE_LockSet
+CDataLoader::GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
+                                   const SAnnotSelector* /*sel*/)
+{
+    return GetRecords(idh, eOrphanAnnot);
+}
+
+
+CDataLoader::TTSE_LockSet
+CDataLoader::GetExternalAnnotRecords(const CSeq_id_Handle& idh,
+                                     const SAnnotSelector* /*sel*/)
+{
+    return GetRecords(idh, eExtAnnot);
+}
+
+
+CDataLoader::TTSE_LockSet
+CDataLoader::GetExternalAnnotRecords(const CBioseq_Info& bioseq,
+                                     const SAnnotSelector* sel)
+{
+    TTSE_LockSet ret;
+    ITERATE ( CBioseq_Info::TId, it, bioseq.GetId() ) {
+        if ( GetBlobId(*it) ) {
+            // correct id is found
+            TTSE_LockSet ret2 = GetExternalAnnotRecords(*it, sel);
+            ret.swap(ret2);
+            break;
+        }
+    }
+    return ret;
+}
+
+
 bool CDataLoader::CanGetBlobById(void) const
 {
     return false;

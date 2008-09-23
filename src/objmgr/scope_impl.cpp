@@ -1778,7 +1778,8 @@ void CScope_Impl::x_ResolveSeq_id(TSeq_idMapValue& id_info,
 }
 
 
-void CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh, TTSE_LockMatchSet& lock)
+void CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
+                                      TTSE_LockMatchSet& lock)
 {
     {{
         TConfReadLockGuard rguard(m_ConfLock);
@@ -1791,7 +1792,7 @@ void CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh, TTSE_LockMatchS
             if ( init ) {
                 CRef<CBioseq_ScopeInfo::TTSE_MatchSetObject> match
                     (new CBioseq_ScopeInfo::TTSE_MatchSetObject);
-                x_GetTSESetWithBioseqAnnots(lock, match->GetData(), *binfo);
+                x_GetTSESetWithBioseqAnnots(lock, match->GetData(), *binfo, 0);
                 binfo->m_BioseqAnnotRef_Info = match;
             }
             else {
@@ -1799,7 +1800,7 @@ void CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh, TTSE_LockMatchS
             }
 #ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
             if ( binfo->x_GetTSE_ScopeInfo().CanBeEdited() ) {
-                x_GetTSESetWithBioseqAnnots(lock, *binfo);
+                x_GetTSESetWithBioseqAnnots(lock, *binfo, 0);
                 return;
             }
 #endif
@@ -1811,7 +1812,7 @@ void CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh, TTSE_LockMatchS
                     (new CBioseq_ScopeInfo::TTSE_MatchSetObject);
                 CSeq_id_Handle::TMatches ids;
                 idh.GetReverseMatchingHandles(ids);
-                x_GetTSESetWithOrphanAnnots(lock, match->GetData(), ids, 0);
+                x_GetTSESetWithOrphanAnnots(lock, match->GetData(), ids, 0, 0);
                 info.second.m_AllAnnotRef_Info = match;
             }
             else {
@@ -1822,7 +1823,8 @@ void CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh, TTSE_LockMatchS
 }
 
 
-void CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh, TTSE_LockMatchSet& lock)
+void CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh,
+                                      TTSE_LockMatchSet& lock)
 {
     if ( bh ) {
         TConfReadLockGuard rguard(m_ConfLock);
@@ -1835,7 +1837,7 @@ void CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh, TTSE_LockMatchSe
         if ( init ) {
             CRef<CBioseq_ScopeInfo::TTSE_MatchSetObject> match
                 (new CBioseq_ScopeInfo::TTSE_MatchSetObject);
-            x_GetTSESetWithBioseqAnnots(lock, match->GetData(), *binfo);
+            x_GetTSESetWithBioseqAnnots(lock, match->GetData(), *binfo, 0);
             binfo->m_BioseqAnnotRef_Info = match;
         }
         else {
@@ -1843,8 +1845,56 @@ void CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh, TTSE_LockMatchSe
         }
 #ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
         if ( binfo->x_GetTSE_ScopeInfo().CanBeEdited() ) {
-            x_GetTSESetWithBioseqAnnots(lock, *binfo);
+            x_GetTSESetWithBioseqAnnots(lock, *binfo, 0);
             return;
+        }
+#endif
+    }
+}
+
+
+void CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
+                                      TTSE_LockMatchSet& lock,
+                                      const SAnnotSelector& sel)
+{
+    TConfReadLockGuard rguard(m_ConfLock);
+    TSeq_idMapValue& info = x_GetSeq_id_Info(idh);
+    SSeqMatch_Scope seq_match;
+    CRef<CBioseq_ScopeInfo> binfo =
+        x_InitBioseq_Info(info, CScope::eGetBioseq_All, seq_match);
+    TTSE_MatchSet match;
+    if ( binfo->HasBioseq() ) {
+        x_GetTSESetWithBioseqAnnots(lock, match, *binfo, &sel);
+#ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
+        if ( binfo->x_GetTSE_ScopeInfo().CanBeEdited() ) {
+            x_GetTSESetWithBioseqAnnots(lock, *binfo, &sel);
+        }
+#endif
+    }
+    else {
+        CSeq_id_Handle::TMatches ids;
+        idh.GetReverseMatchingHandles(ids);
+        x_GetTSESetWithOrphanAnnots(lock, match, ids, 0, &sel);
+    }
+}
+
+
+void CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh,
+                                      TTSE_LockMatchSet& lock,
+                                      const SAnnotSelector& sel)
+{
+    if ( bh ) {
+        TConfReadLockGuard rguard(m_ConfLock);
+        CRef<CBioseq_ScopeInfo> binfo
+            (&const_cast<CBioseq_ScopeInfo&>(bh.x_GetScopeInfo()));
+        
+        _ASSERT(binfo->HasBioseq());
+        
+        TTSE_MatchSet match;
+        x_GetTSESetWithBioseqAnnots(lock, match, *binfo, &sel);
+#ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
+        if ( binfo->x_GetTSE_ScopeInfo().CanBeEdited() ) {
+            x_GetTSESetWithBioseqAnnots(lock, *binfo, &sel);
         }
 #endif
     }
@@ -1877,7 +1927,8 @@ void CScope_Impl::x_AddTSESetWithAnnots(TTSE_LockMatchSet& lock,
 void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
                                               TTSE_MatchSet& match,
                                               const TSeq_idSet& ids,
-                                              CDataSource_ScopeInfo* excl_ds)
+                                              CDataSource_ScopeInfo* excl_ds,
+                                              const SAnnotSelector* sel)
 {
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         if ( &*it == excl_ds ) {
@@ -1886,7 +1937,7 @@ void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
         }
         CDataSource& ds = it->GetDataSource();
         TTSE_LockMatchSet_DS ds_lock;
-        ds.GetTSESetWithOrphanAnnots(ids, ds_lock);
+        ds.GetTSESetWithOrphanAnnots(ids, ds_lock, sel);
         x_AddTSESetWithAnnots(lock, match, ds_lock, *it);
     }
 }
@@ -1894,7 +1945,8 @@ void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
 
 void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
                                               TTSE_MatchSet& match,
-                                              CBioseq_ScopeInfo& binfo)
+                                              CBioseq_ScopeInfo& binfo,
+                                              const SAnnotSelector* sel)
 {
     CDataSource_ScopeInfo& ds_info = binfo.x_GetTSE_ScopeInfo().GetDSInfo();
     CDataSource& ds = ds_info.GetDataSource();
@@ -1909,7 +1961,7 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
             ids.insert(syns->GetSeq_id_Handle(syn_it));
         }
         // add orphan annots
-        x_GetTSESetWithOrphanAnnots(lock, match, ids, &ds_info);
+        x_GetTSESetWithOrphanAnnots(lock, match, ids, &ds_info, sel);
     }
 
 #ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
@@ -1923,13 +1975,14 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
     TTSE_LockMatchSet_DS ds_lock;
     ds.GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
                                  bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock,
-                                 ds_lock);
+                                 ds_lock, sel);
     x_AddTSESetWithAnnots(lock, match, ds_lock, ds_info);
 }
 
 
 void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
-                                              CBioseq_ScopeInfo& binfo)
+                                              CBioseq_ScopeInfo& binfo,
+                                              const SAnnotSelector* sel)
 {
     CDataSource_ScopeInfo& ds_info = binfo.x_GetTSE_ScopeInfo().GetDSInfo();
     CDataSource& ds = ds_info.GetDataSource();
@@ -1939,7 +1992,7 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
     TTSE_LockMatchSet_DS ds_lock;
     ds.GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
                                  bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock,
-                                 ds_lock);
+                                 ds_lock, sel);
     CBioseq_ScopeInfo::TTSE_MatchSet match;
     x_AddTSESetWithAnnots(lock, match, ds_lock, ds_info);
     sort(lock.begin(), lock.end());

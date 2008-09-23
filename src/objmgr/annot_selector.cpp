@@ -144,6 +144,10 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_MaxSize = sel.m_MaxSize;
         m_IncludeAnnotsNames = sel.m_IncludeAnnotsNames;
         m_ExcludeAnnotsNames = sel.m_ExcludeAnnotsNames;
+        if ( sel.m_NamedAnnotAccessions ) {
+            m_NamedAnnotAccessions.reset
+                (new TNamedAnnotAccessions(*sel.m_NamedAnnotAccessions));
+        }
         m_NoMapping = sel.m_NoMapping;
         m_AdaptiveDepthFlags = sel.m_AdaptiveDepthFlags;
         m_ExactDepth = sel.m_ExactDepth;
@@ -243,26 +247,29 @@ SAnnotSelector& SAnnotSelector::SetSearchExternal(const CBioseq_Handle& seq)
 }
 
 
-bool SAnnotSelector::x_Has(const TAnnotsNames& names, const CAnnotName& name)
-{
-    return find(names.begin(), names.end(), name) != names.end();
-}
-
-
-void SAnnotSelector::x_Add(TAnnotsNames& names, const CAnnotName& name)
-{
-    if ( !x_Has(names, name) ) {
-        names.push_back(name);
+namespace {
+    template<class TNames, class TName>
+    inline bool sx_Has(const TNames& names, const TName& name)
+    {
+        return find(names.begin(), names.end(), name) != names.end();
     }
-}
 
+    template<class TNames, class TName>
+    inline void sx_Add(TNames& names, const TName& name)
+    {
+        if ( !sx_Has(names, name) ) {
+            names.push_back(name);
+        }
+    }
 
-void SAnnotSelector::x_Del(TAnnotsNames& names, const CAnnotName& name)
-{
-    NON_CONST_ITERATE( TAnnotsNames, it, names ) {
-        if ( *it == name ) {
-            names.erase(it);
-            return;
+    template<class TNames, class TName>
+    void sx_Del(TNames& names, const TName& name)
+    {
+        NON_CONST_ITERATE( typename TNames, it, names ) {
+            if ( *it == name ) {
+                names.erase(it);
+                break;
+            }
         }
     }
 }
@@ -270,13 +277,13 @@ void SAnnotSelector::x_Del(TAnnotsNames& names, const CAnnotName& name)
 
 bool SAnnotSelector::IncludedAnnotName(const CAnnotName& name) const
 {
-    return x_Has(m_IncludeAnnotsNames, name);
+    return sx_Has(m_IncludeAnnotsNames, name);
 }
 
 
 bool SAnnotSelector::ExcludedAnnotName(const CAnnotName& name) const
 {
-    return x_Has(m_ExcludeAnnotsNames, name);
+    return sx_Has(m_ExcludeAnnotsNames, name);
 }
 
 
@@ -317,8 +324,8 @@ SAnnotSelector& SAnnotSelector::ResetUnnamedAnnots(void)
 
 SAnnotSelector& SAnnotSelector::AddNamedAnnots(const CAnnotName& name)
 {
-    x_Add(m_IncludeAnnotsNames, name);
-    x_Del(m_ExcludeAnnotsNames, name);
+    sx_Add(m_IncludeAnnotsNames, name);
+    sx_Del(m_ExcludeAnnotsNames, name);
     return *this;
 }
 
@@ -337,8 +344,8 @@ SAnnotSelector& SAnnotSelector::AddUnnamedAnnots(void)
 
 SAnnotSelector& SAnnotSelector::ExcludeNamedAnnots(const CAnnotName& name)
 {
-    x_Add(m_ExcludeAnnotsNames, name);
-    x_Del(m_IncludeAnnotsNames, name);
+    sx_Add(m_ExcludeAnnotsNames, name);
+    sx_Del(m_IncludeAnnotsNames, name);
     return *this;
 }
 
@@ -369,6 +376,24 @@ SAnnotSelector& SAnnotSelector::SetDataSource(const string& source)
         AddUnnamedAnnots();
     }
     return AddNamedAnnots(source);
+}
+
+
+SAnnotSelector&
+SAnnotSelector::IncludeNamedAnnotAccession(const string& acc)
+{
+    if ( !m_NamedAnnotAccessions ) {
+        m_NamedAnnotAccessions.reset(new TNamedAnnotAccessions());
+    }
+    m_NamedAnnotAccessions->insert(acc);
+    return *this;
+}
+
+
+bool SAnnotSelector::IsIncludedNamedAnnotAccession(const string& acc) const
+{
+    return IsIncludedAnyNamedAnnotAccession() &&
+        m_NamedAnnotAccessions->find(acc) != m_NamedAnnotAccessions->end();
 }
 
 

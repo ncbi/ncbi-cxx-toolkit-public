@@ -62,13 +62,11 @@ public:
     virtual void SaveSeq_idLabel(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id);
     virtual void SaveSeq_idBlob_ids(CReaderRequestResult& result,
-                                    const CSeq_id_Handle& seq_id);
+                                    const CSeq_id_Handle& seq_id,
+                                    const SAnnotSelector* sel);
     virtual void SaveBlobVersion(CReaderRequestResult& result,
                                  const TBlobId& blob_id,
                                  TBlobVersion version);
-    virtual void SaveBlobAnnotInfo(CReaderRequestResult& result,
-                                   const TBlobId& blob_id,
-                                   const TAnnotInfo& annot_info);
 
     virtual CRef<CBlobStream> OpenBlobStream(CReaderRequestResult& result,
                                              const TBlobId& blob_id,

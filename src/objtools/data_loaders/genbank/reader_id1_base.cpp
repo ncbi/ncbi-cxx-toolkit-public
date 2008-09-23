@@ -98,15 +98,18 @@ bool CId1ReaderBase::LoadSeq_idSeq_ids(CReaderRequestResult& result,
 
 
 bool CId1ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
-                                        const CSeq_id_Handle& seq_id)
+                                        const CSeq_id_Handle& seq_id,
+                                        const SAnnotSelector* sel)
 {
-    CLoadLockBlob_ids ids(result, seq_id);
+    CLoadLockBlob_ids ids(result, seq_id, sel);
     if ( ids.IsLoaded() ) {
         return true;
     }
 
     try {
-        GetSeq_idBlob_ids(result, ids, seq_id);
+        if ( !GetSeq_idBlob_ids(result, ids, seq_id, sel) ) {
+            return CReader::LoadSeq_idBlob_ids(result, seq_id, sel);
+        }
     }
     catch ( CLoaderException& exc ) {
         if (exc.GetErrCode() == exc.ePrivateData) {
@@ -125,7 +128,7 @@ bool CId1ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
             throw;
         }
     }
-    SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
+    SetAndSaveSeq_idBlob_ids(result, seq_id, sel, ids);
     return true;
 }
 

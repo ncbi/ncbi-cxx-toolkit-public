@@ -1171,7 +1171,12 @@ void CAnnot_Collector::x_SearchMaster(const CBioseq_Handle& bh,
         }
         else {
             CScope_Impl::TTSE_LockMatchSet tse_map;
-            m_Scope->GetTSESetWithAnnots(bh, tse_map);
+            if ( m_Selector->IsIncludedAnyNamedAnnotAccession() ) {
+                m_Scope->GetTSESetWithAnnots(bh, tse_map, *m_Selector);
+            }
+            else {
+                m_Scope->GetTSESetWithAnnots(bh, tse_map);
+            }
             ITERATE (CScope_Impl::TTSE_LockMatchSet, tse_it, tse_map) {
                 tse.AddUsedTSE(tse_it->first);
                 x_SearchTSE(tse_it->first, tse_it->second,
@@ -1700,6 +1705,15 @@ void CAnnot_Collector::x_AddObjectMapping(CAnnotObject_Ref&    object_ref,
 }
 
 
+static bool sx_IsEmpty(const SAnnotSelector& sel)
+{
+    if ( sel.GetAnnotType() != CSeq_annot::C_Data::e_not_set ) {
+        return false;
+    }
+    return true;
+}
+
+
 void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
                                        const SIdAnnotObjs*   objs,
                                        CTSE_Info::TAnnotLockReadGuard& guard,
@@ -1711,6 +1725,10 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
     if ( m_Selector->m_CollectNames ) {
         if ( m_AnnotNames->find(annot_name) != m_AnnotNames->end() ) {
             // already found
+            return;
+        }
+        if ( sx_IsEmpty(*m_Selector) ) {
+            m_AnnotNames->insert(annot_name);
             return;
         }
     }
@@ -2147,7 +2165,13 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
             }
             else {
                 CScope_Impl::TTSE_LockMatchSet tse_map;
-                m_Scope->GetTSESetWithAnnots(idit->first, tse_map);
+                if ( m_Selector->IsIncludedAnyNamedAnnotAccession() ) {
+                    m_Scope->GetTSESetWithAnnots(idit->first, tse_map,
+                                                 *m_Selector);
+                }
+                else {
+                    m_Scope->GetTSESetWithAnnots(idit->first, tse_map);
+                }
                 ITERATE ( CScope_Impl::TTSE_LockMatchSet, tse_it, tse_map ) {
                     if ( tse ) {
                         tse->AddUsedTSE(tse_it->first);

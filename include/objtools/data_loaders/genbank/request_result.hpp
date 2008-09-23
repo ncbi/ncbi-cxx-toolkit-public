@@ -169,19 +169,30 @@ class CBlob_Info
 {
 public:
     typedef TBlobContentsMask TContentsMask;
+    typedef set<string> TNamedAnnotNames;
 
-    explicit CBlob_Info(TContentsMask contents)
-        : m_Contents(contents)
-        {
-        }
+    explicit CBlob_Info(TContentsMask contents);
+    ~CBlob_Info(void);
 
     TContentsMask GetContentsMask(void) const
         {
             return m_Contents;
         }
+    const TNamedAnnotNames& GetNamedAnnotNames(void) const
+        {
+            return m_NamedAnnotNames;
+        }
+
+    void AddNamedAnnotName(const string& name)
+        {
+            m_NamedAnnotNames.insert(name);
+        }
+
+    bool Matches(TContentsMask mask, const SAnnotSelector* sel) const;
 
 private:
     TContentsMask   m_Contents;
+    TNamedAnnotNames m_NamedAnnotNames;
 };
 
 
@@ -195,7 +206,8 @@ public:
     typedef map<CRef<TBlobId>, TBlob_Info> TBlobIds;
     typedef TBlobIds::const_iterator const_iterator;
 
-    CLoadInfoBlob_ids(const TSeq_id& id);
+    CLoadInfoBlob_ids(const TSeq_id& id, const SAnnotSelector* sel);
+    CLoadInfoBlob_ids(const pair<TSeq_id, string>& key);
     ~CLoadInfoBlob_ids(void);
 
     const TSeq_id& GetSeq_id(void) const
@@ -214,6 +226,14 @@ public:
     bool empty(void) const
         {
             return m_Blob_ids.empty();
+        }
+    size_t size(void) const
+        {
+            return m_Blob_ids.size();
+        }
+    void clear(void)
+        {
+            m_Blob_ids.clear();
         }
 
     TBlob_Info& AddBlob_id(const TBlobId& id, const TBlob_Info& info);
@@ -370,7 +390,12 @@ public:
     CLoadLockBlob_ids(void)
         {
         }
-    CLoadLockBlob_ids(TMutexSource& src, const CSeq_id_Handle& seq_id);
+    CLoadLockBlob_ids(TMutexSource& src,
+                      const CSeq_id_Handle& seq_id,
+                      const SAnnotSelector* sel);
+    CLoadLockBlob_ids(TMutexSource& src,
+                      const CSeq_id_Handle& seq_id,
+                      const string& na_accs);
     
     TInfo& Get(void)
         {
@@ -465,11 +490,6 @@ public:
     bool IsSetBlobVersion(void) const;
     TBlobVersion GetBlobVersion(void) const;
     void SetBlobVersion(TBlobVersion);
-    void SetAnnotInfo(const TAnnotInfo& annot_info);
-    const TAnnotInfo& GetAnnotInfo(void) const;
-
-private:
-    TAnnotInfo m_AnnotInfo;
 };
 
 /*
@@ -522,7 +542,7 @@ public:
     typedef string TKeySeq_ids;
     typedef CSeq_id_Handle TKeySeq_ids2;
     typedef CLoadInfoSeq_ids TInfoSeq_ids;
-    typedef CSeq_id_Handle TKeyBlob_ids;
+    typedef pair<CSeq_id_Handle, string> TKeyBlob_ids;
     typedef CLoadInfoBlob_ids TInfoBlob_ids;
     typedef CBlob_id TKeyBlob;
     typedef CTSE_Lock TTSE_Lock;

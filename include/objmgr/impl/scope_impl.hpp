@@ -344,8 +344,16 @@ private:
     // Return the highest priority loader or null
     CDataSource* GetFirstLoaderSource(void);
 
-    void GetTSESetWithAnnots(const CSeq_id_Handle& idh, TTSE_LockMatchSet& tse_set);
-    void GetTSESetWithAnnots(const CBioseq_Handle& bh, TTSE_LockMatchSet& tse_set);
+    void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
+                             TTSE_LockMatchSet& tse_set);
+    void GetTSESetWithAnnots(const CBioseq_Handle& bh,
+                             TTSE_LockMatchSet& tse_set);
+    void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
+                             TTSE_LockMatchSet& tse_set,
+                             const SAnnotSelector& sel);
+    void GetTSESetWithAnnots(const CBioseq_Handle& bh,
+                             TTSE_LockMatchSet& tse_set,
+                             const SAnnotSelector& sel);
 
     void x_AttachToOM(CObjectManager& objmgr);
     void x_DetachFromOM(void);
@@ -483,12 +491,15 @@ private:
     void x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
                                      TTSE_MatchSet& match,
                                      const TSeq_idSet& ids,
-                                     CDataSource_ScopeInfo* excl_ds);
+                                     CDataSource_ScopeInfo* excl_ds,
+                                     const SAnnotSelector* sel);
     void x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
                                      TTSE_MatchSet& match,
-                                     CBioseq_ScopeInfo& binfo);
+                                     CBioseq_ScopeInfo& binfo,
+                                     const SAnnotSelector* sel);
     void x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
-                                     CBioseq_ScopeInfo& binfo);
+                                     CBioseq_ScopeInfo& binfo,
+                                     const SAnnotSelector* sel);
 
     void x_LockMatchSet(TTSE_LockMatchSet& lock,
                         const TTSE_MatchSet& match);

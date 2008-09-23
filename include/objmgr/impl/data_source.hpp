@@ -191,10 +191,12 @@ public:
     void UpdateAnnotIndex(const CSeq_annot_Info& annot_info);
 
     void GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
-                                   TTSE_LockMatchSet& tse_set);
+                                   TTSE_LockMatchSet& tse_set,
+                                   const SAnnotSelector* sel);
     void GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
                                    const TTSE_Lock& tse,
-                                   TTSE_LockMatchSet& tse_set);
+                                   TTSE_LockMatchSet& tse_set,
+                                   const SAnnotSelector* sel);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
     // Return empty tse lock if the entry was not found or is not a TSE.

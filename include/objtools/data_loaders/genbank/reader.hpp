@@ -47,6 +47,7 @@ class CLoadLockSeq_ids;
 class CLoadLockBlob_ids;
 class CLoadLockBlob;
 class CReaderCacheManager;
+class SAnnotSelector;
 
 class NCBI_XREADER_EXPORT CReader : public CObject
 {
@@ -70,7 +71,8 @@ public:
     virtual bool LoadStringSeq_ids(CReaderRequestResult& result,
                                    const string& seq_id) = 0;
     virtual bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
-                                    const CSeq_id_Handle& seq_id) = 0;
+                                    const CSeq_id_Handle& seq_id,
+                                    const SAnnotSelector* sel);
     virtual bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
                                    const CSeq_id_Handle& seq_id) = 0;
     virtual bool LoadSeq_idGi(CReaderRequestResult& result,
@@ -83,13 +85,16 @@ public:
                                  const TBlobId& blob_id) = 0;
     virtual bool LoadBlobs(CReaderRequestResult& result,
                            const string& seq_id,
-                           TContentsMask mask);
+                           TContentsMask mask,
+                           const SAnnotSelector* sel);
     virtual bool LoadBlobs(CReaderRequestResult& result,
                            const CSeq_id_Handle& seq_id,
-                           TContentsMask mask);
+                           TContentsMask mask,
+                           const SAnnotSelector* sel);
     virtual bool LoadBlobs(CReaderRequestResult& result,
                            CLoadLockBlob_ids blobs,
-                           TContentsMask mask);
+                           TContentsMask mask,
+                           const SAnnotSelector* sel);
     virtual bool LoadBlob(CReaderRequestResult& result,
                           const CBlob_id& blob_id) = 0;
     virtual bool LoadChunk(CReaderRequestResult& result,
@@ -117,7 +122,8 @@ public:
                             const CSeq_id_Handle& seq_id,
                             const string& label) const;
     void SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
-                                  const CSeq_id_Handle& seq_id) const;
+                                  const CSeq_id_Handle& seq_id,
+                                  const SAnnotSelector* sel) const;
     void SetAndSaveBlobVersion(CReaderRequestResult& result,
                                const TBlobId& blob_id,
                                TBlobVersion version) const;
@@ -149,6 +155,7 @@ public:
                                const string& label) const;
     void SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id,
+                                  const SAnnotSelector* sel,
                                   CLoadLockBlob_ids& blob_ids) const;
     void SetAndSaveBlobVersion(CReaderRequestResult& result,
                                const TBlobId& blob_id,
@@ -159,13 +166,6 @@ public:
                           TChunkId chunk_id,
                           CLoadLockBlob& blob);
     typedef CLoadLockBlob::TAnnotInfo TAnnotInfo;
-    void SetAndSaveBlobAnnotInfo(CReaderRequestResult& result,
-                                 const TBlobId& blob_id,
-                                 const TAnnotInfo& info) const;
-    void SetAndSaveBlobAnnotInfo(CReaderRequestResult& result,
-                                 const TBlobId& blob_id,
-                                 CLoadLockBlob& blob,
-                                 const TAnnotInfo& info) const;
 
     int SetMaximumConnections(int max);
     int GetMaximumConnections(void) const;

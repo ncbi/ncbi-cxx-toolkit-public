@@ -33,6 +33,7 @@
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/annot_selector.hpp>
 #include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -184,8 +185,16 @@ void CLoadInfoSeq_ids::SetLoadedLabel(const string& label)
 // CLoadInfoBlob_ids
 /////////////////////////////////////////////////////////////////////////////
 
-CLoadInfoBlob_ids::CLoadInfoBlob_ids(const TSeq_id& id)
+CLoadInfoBlob_ids::CLoadInfoBlob_ids(const TSeq_id& id,
+                                     const SAnnotSelector* /*sel*/)
     : m_Seq_id(id),
+      m_State(0)
+{
+}
+
+
+CLoadInfoBlob_ids::CLoadInfoBlob_ids(const pair<TSeq_id, string>& key)
+    : m_Seq_id(key.first),
       m_State(0)
 {
 }
@@ -297,7 +306,7 @@ CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src, const string& seq_id)
 
 CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src,
                                    const CSeq_id_Handle& seq_id)
-    : m_Blob_ids(src, seq_id)
+    : m_Blob_ids(src, seq_id, 0)
 {
     CRef<TInfo> info = src.GetInfoSeq_ids(seq_id);
     Lock(*info, src);
@@ -320,14 +329,90 @@ void CLoadLockSeq_ids::AddSeq_id(const CSeq_id& seq_id)
 
 
 /////////////////////////////////////////////////////////////////////////////
+// CBlob_Info
+/////////////////////////////////////////////////////////////////////////////
+
+
+CBlob_Info::CBlob_Info(TContentsMask contents)
+    : m_Contents(contents)
+{
+}
+
+
+CBlob_Info::~CBlob_Info(void)
+{
+}
+
+
+bool CBlob_Info::Matches(TContentsMask mask, const SAnnotSelector* sel) const
+{
+    TContentsMask common_mask = GetContentsMask() & mask;
+    if ( common_mask == 0 ) {
+        return false;
+    }
+
+    if ( (common_mask & ~(fBlobHasExtAnnot|fBlobHasNamedAnnot)) != 0 ) {
+        // not only features;
+        return true;
+    }
+
+    // only features
+    if ( !sel ||
+         !sel->IsIncludedAnyNamedAnnotAccession() ||
+         GetNamedAnnotNames().empty() ) {
+        // no filtering by name
+        return true;
+    }
+
+    if ( sel->IsIncludedNamedAnnotAccession("NA*") ) {
+        return true;
+    }
+    
+    // annot filtering by name
+    ITERATE ( TNamedAnnotNames, it, GetNamedAnnotNames() ) {
+        const string& name = *it;
+        if ( sel->IsIncludedNamedAnnotAccession(name) ) {
+            // matches
+            return true;
+        }
+    }
+    // no match by name found
+    return false;
+}            
+
+
+/////////////////////////////////////////////////////////////////////////////
 // CLoadLockBlob_ids
 /////////////////////////////////////////////////////////////////////////////
 
 
 CLoadLockBlob_ids::CLoadLockBlob_ids(TMutexSource& src,
-                                     const CSeq_id_Handle& seq_id)
+                                     const CSeq_id_Handle& seq_id,
+                                     const SAnnotSelector* sel)
 {
-    CRef<TInfo> info = src.GetInfoBlob_ids(seq_id);
+    TMutexSource::TKeyBlob_ids key;
+    key.first = seq_id;
+    if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
+        ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it,
+                  sel->GetNamedAnnotAccessions() ) {
+            key.second += *it;
+            key.second += ',';
+        }
+    }
+    CRef<TInfo> info = src.GetInfoBlob_ids(key);
+    Lock(*info, src);
+    if ( !IsLoaded() ) {
+        src.SetRequestedId(seq_id);
+    }
+}
+
+
+CLoadLockBlob_ids::CLoadLockBlob_ids(TMutexSource& src,
+                                     const CSeq_id_Handle& seq_id,
+                                     const string& na_accs)
+{
+    TMutexSource::TKeyBlob_ids key(seq_id, na_accs);
+    CRef<TInfo> info = src.GetInfoBlob_ids(key);
     Lock(*info, src);
     if ( !IsLoaded() ) {
         src.SetRequestedId(seq_id);
@@ -420,18 +505,6 @@ void CLoadLockBlob::SetBlobVersion(TBlobVersion version)
     if ( *this ) {
         (**this).SetBlobVersion(version);
     }
-}
-
-
-void CLoadLockBlob::SetAnnotInfo(const TAnnotInfo& annot_info)
-{
-    m_AnnotInfo = annot_info;
-}
-
-
-const CLoadLockBlob::TAnnotInfo& CLoadLockBlob::GetAnnotInfo(void) const
-{
-    return m_AnnotInfo;
 }
 
 
@@ -662,11 +735,11 @@ CStandaloneRequestResult::GetInfoSeq_ids(const CSeq_id_Handle& key)
 
 
 CRef<CLoadInfoBlob_ids>
-CStandaloneRequestResult::GetInfoBlob_ids(const CSeq_id_Handle& key)
+CStandaloneRequestResult::GetInfoBlob_ids(const TKeyBlob_ids& key)
 {
     CRef<CLoadInfoBlob_ids>& ret = m_InfoBlob_ids[key];
     if ( !ret ) {
-        ret = new CLoadInfoBlob_ids(key);
+        ret = new CLoadInfoBlob_ids(key.first, 0);
     }
     return ret;
 }

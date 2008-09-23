@@ -42,6 +42,7 @@
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/annot_selector.hpp>
 
 #include <corelib/ncbimtx.hpp>
 
@@ -406,17 +407,21 @@ void CId1Reader::GetSeq_idSeq_ids(CReaderRequestResult& result,
 }
 
 
-void CId1Reader::GetSeq_idBlob_ids(CReaderRequestResult& result,
+bool CId1Reader::GetSeq_idBlob_ids(CReaderRequestResult& result,
                                    CLoadLockBlob_ids& ids,
-                                   const CSeq_id_Handle& seq_id)
+                                   const CSeq_id_Handle& seq_id,
+                                   const SAnnotSelector* sel)
 {
     if ( ids.IsLoaded() ) {
-        return;
+        return true;
+    }
+    if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
+        return false;
     }
 
     if ( seq_id.Which() == CSeq_id::e_Gi ) {
         GetGiBlob_ids(result, seq_id, ids);
-        return;
+        return true;
     }
 
     if ( seq_id.Which() == CSeq_id::e_General ) {
@@ -434,8 +439,8 @@ void CId1Reader::GetSeq_idBlob_ids(CReaderRequestResult& result,
                     blob_id.SetSatKey(num);
                     blob_id.SetSubSat(iter->second.second);
                     ids.AddBlob_id(blob_id, CBlob_Info(fBlobHasAllLocal));
-                    SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
-                    return;
+                    SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids);
+                    return true;
                 }
             }
         }
@@ -446,18 +451,19 @@ void CId1Reader::GetSeq_idBlob_ids(CReaderRequestResult& result,
     int gi = seq_ids->GetGi();
     if ( !gi ) {
         // no gi -> no blobs
-        SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
-        return;
+        SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids);
+        return true;
     }
 
     CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi);
-    CLoadLockBlob_ids gi_ids(result, gi_handle);
-    m_Dispatcher->LoadSeq_idBlob_ids(result, gi_handle);
+    CLoadLockBlob_ids gi_ids(result, gi_handle, 0);
+    m_Dispatcher->LoadSeq_idBlob_ids(result, gi_handle, 0);
 
     // copy Seq-id list from gi to original seq-id
     ids->m_Blob_ids = gi_ids->m_Blob_ids;
     ids->SetState(gi_ids->GetState());
-    SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
+    SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids);
+    return true;
 }
 
 
@@ -511,7 +517,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
         gi = seq_id.GetSeqId()->GetGi();
     }
     if ( gi == 0 ) {
-        SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
+        SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids);
         return;
     }
 
@@ -548,7 +554,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
             }
         }
         ids->SetState(state);
-        SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
+        SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids);
         return;
     }
 
@@ -560,7 +566,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
         ids.AddBlob_id(blob_id, CBlob_Info(0));
         ids->SetState(CBioseq_Handle::fState_withdrawn|
                       CBioseq_Handle::fState_no_data);
-        SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
+        SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids);
         return;
     }
     if (info.GetConfidential() > 0) {
@@ -570,7 +576,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
         ids.AddBlob_id(blob_id, CBlob_Info(0));
         ids->SetState(CBioseq_Handle::fState_confidential|
                       CBioseq_Handle::fState_no_data);
-        SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
+        SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids);
         return;
     }
     if ( info.GetSat() < 0 || info.GetSat_key() < 0 ) {
@@ -581,7 +587,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
         ids.AddBlob_id(blob_id, CBlob_Info(0));
         ids->SetState(CBioseq_Handle::fState_other_error|
                       CBioseq_Handle::fState_no_data);
-        SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
+        SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids);
         return;
     }
     if ( CProcessor::TrySNPSplit() ) {
@@ -615,7 +621,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
         }
         ids.AddBlob_id(blob_id, CBlob_Info(fBlobHasAllLocal));
     }
-    SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
+    SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids);
 }
 
 

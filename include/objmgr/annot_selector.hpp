@@ -481,6 +481,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
 
     typedef vector<CAnnotName> TAnnotsNames;
+    typedef set<string> TNamedAnnotAccessions;
+
     /// Select annotations from all Seq-annots
     SAnnotSelector& ResetAnnotsNames(void);
     /// Reset special processing of unnamed annots (added or excluded)
@@ -506,14 +508,41 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& SetDataSource(const string& name);
 
     // Access methods for iterator
+    const TAnnotsNames& GetIncludedAnnotsNames(void) const
+        {
+            return m_IncludeAnnotsNames;
+        }
+    const TAnnotsNames& GetExcludedAnnotsNames(void) const
+        {
+            return m_ExcludeAnnotsNames;
+        }
     bool IsSetAnnotsNames(void) const
         {
             return
                 !m_IncludeAnnotsNames.empty() ||
                 !m_ExcludeAnnotsNames.empty();
         }
+    bool IsSetIncludedAnnotsNames(void) const
+        {
+            return !m_IncludeAnnotsNames.empty();
+        }
     bool IncludedAnnotName(const CAnnotName& name) const;
     bool ExcludedAnnotName(const CAnnotName& name) const;
+
+    /// Add named annot accession (NA*) in the search.
+    SAnnotSelector& IncludeNamedAnnotAccession(const string& acc);
+    /// 
+    const TNamedAnnotAccessions& GetNamedAnnotAccessions(void) const
+        {
+            return *m_NamedAnnotAccessions;
+        }
+    /// check if any named annot accession is included in the search
+    bool IsIncludedAnyNamedAnnotAccession(void) const
+        {
+            return m_NamedAnnotAccessions;
+        }
+    /// check if named annot accession is included in the search
+    bool IsIncludedNamedAnnotAccession(const string& acc) const;
 
     // Limit search with a set of TSEs
     SAnnotSelector& ExcludeTSE(const CTSE_Handle& tse);
@@ -564,9 +593,6 @@ protected:
 
     void CheckLimitObjectType(void) const;
 
-    static bool x_Has(const TAnnotsNames& names, const CAnnotName& name);
-    static void x_Add(TAnnotsNames& names, const CAnnotName& name);
-    static void x_Del(TAnnotsNames& names, const CAnnotName& name);
     void x_InitializeAnnotTypesSet(bool default_value);
     void x_ClearAnnotTypesSet(void);
 
@@ -592,6 +618,7 @@ protected:
     size_t                m_MaxSize; //
     TAnnotsNames          m_IncludeAnnotsNames;
     TAnnotsNames          m_ExcludeAnnotsNames;
+    AutoPtr<TNamedAnnotAccessions> m_NamedAnnotAccessions;
     bool                  m_NoMapping;
     TAdaptiveDepthFlags   m_AdaptiveDepthFlags;
     bool                  m_ExactDepth;

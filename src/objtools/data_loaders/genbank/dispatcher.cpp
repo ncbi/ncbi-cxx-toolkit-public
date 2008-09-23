@@ -430,9 +430,10 @@ namespace {
         typedef CSeq_id_Handle TKey;
         typedef CLoadLockBlob_ids TLock;
         CCommandLoadSeq_idBlob_ids(CReaderRequestResult& result,
-                                   const TKey& key)
+                                   const TKey& key,
+                                   const SAnnotSelector* sel)
             : CReadDispatcherCommand(result),
-              m_Key(key), m_Lock(result, key)
+              m_Key(key), m_Selector(sel), m_Lock(result, key, sel)
             {
             }
 
@@ -442,7 +443,8 @@ namespace {
             }
         bool Execute(CReader& reader)
             {
-                return reader.LoadSeq_idBlob_ids(GetResult(), m_Key);
+                return reader.LoadSeq_idBlob_ids(GetResult(),
+                                                 m_Key, m_Selector);
             }
         string GetErrMsg(void) const
             {
@@ -460,6 +462,7 @@ namespace {
         
     private:
         TKey m_Key;
+        const SAnnotSelector* m_Selector;
         TLock m_Lock;
     };
 
@@ -504,13 +507,14 @@ namespace {
 
     bool s_AllBlobsAreLoaded(CReaderRequestResult& result,
                              const CLoadLockBlob_ids& blobs,
-                             CReadDispatcher::TContentsMask mask)
+                             CReadDispatcher::TContentsMask mask,
+                             const SAnnotSelector* sel)
     {
         _ASSERT(blobs.IsLoaded());
 
         ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
             const CBlob_Info& info = it->second;
-            if ( (info.GetContentsMask() & mask) != 0 ) {
+            if ( info.Matches(mask, sel) ) {
                 CLoadLockBlob blob(result, *it->first);
                 if ( !blob.IsLoaded() ) {
                     return false;
@@ -519,26 +523,6 @@ namespace {
         }
         return true;
     }
-    int s_CountNotLoaded(CReaderRequestResult& result,
-                         const CLoadLockBlob_ids& blobs,
-                         CReadDispatcher::TContentsMask mask)
-    {
-        if ( !blobs.IsLoaded() ) {
-            return kMax_Int;
-        }
-
-        int not_loaded = 0;
-        ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
-            const CBlob_Info& info = it->second;
-            if ( (info.GetContentsMask() & mask) != 0 ) {
-                CLoadLockBlob blob(result, *it->first);
-                if ( !blob.IsLoaded() ) {
-                    ++not_loaded;
-                }
-            }
-        }
-        return not_loaded;
-    }
 
     class CCommandLoadBlobs : public CReadDispatcherCommand
     {
@@ -546,19 +530,21 @@ namespace {
         typedef CLoadLockBlob_ids TIds;
         typedef CReadDispatcher::TContentsMask TMask;
         CCommandLoadBlobs(CReaderRequestResult& result,
-                          TIds ids, TMask mask)
+                          TIds ids, TMask mask, const SAnnotSelector* sel)
             : CReadDispatcherCommand(result),
-              m_Ids(ids), m_Mask(mask)
+              m_Ids(ids), m_Mask(mask), m_Selector(sel)
             {
             }
 
         bool IsDone(void)
             {
-                return s_AllBlobsAreLoaded(GetResult(), m_Ids, m_Mask);
+                return s_AllBlobsAreLoaded(GetResult(),
+                                           m_Ids, m_Mask, m_Selector);
             }
         bool Execute(CReader& reader)
             {
-                return reader.LoadBlobs(GetResult(), m_Ids, m_Mask);
+                return reader.LoadBlobs(GetResult(),
+                                        m_Ids, m_Mask, m_Selector);
             }
         string GetErrMsg(void) const
             {
@@ -577,50 +563,8 @@ namespace {
     private:
         TIds m_Ids;
         TMask m_Mask;
+        const SAnnotSelector* m_Selector;
     };
-    /*
-    class CCommandLoadStringBlobs : public CReadDispatcherCommand
-    {
-    public:
-        typedef string TKey;
-        typedef CLoadLockBlob_ids TIds;
-        typedef CReadDispatcher::TContentsMask TMask;
-        CCommandLoadStringBlobs(CReaderRequestResult& result,
-                                const TKey& key, TMask mask)
-            : CReadDispatcherCommand(result),
-              m_Key(key), m_Ids(result, key), m_Mask(mask)
-            {
-            }
-
-        bool IsDone(void)
-            {
-                return m_Ids.IsLoaded() &&
-                    s_AllBlobsAreLoaded(GetResult(), m_Ids, m_Mask);
-            }
-        bool Execute(CReader& reader)
-            {
-                return reader.LoadBlobs(GetResult(), m_Key, m_Mask);
-            }
-        string GetErrMsg(void) const
-            {
-                return "LoadBlobs("+m_Key+"): "
-                    "data not found";
-            }
-        CGBRequestStatistics::EStatType GetStatistics(void) const
-            {
-                return CGBRequestStatistics::eStat_LoadBlob;
-            }
-        string GetStatisticsDescription(void) const
-            {
-                return "blobs(string "+m_Key+")";
-            }
-
-    private:
-        TKey m_Key;
-        TIds m_Ids;
-        TMask m_Mask;
-    };
-    */
     class CCommandLoadSeq_idBlobs : public CReadDispatcherCommand
     {
     public:
@@ -628,20 +572,24 @@ namespace {
         typedef CLoadLockBlob_ids TIds;
         typedef CReadDispatcher::TContentsMask TMask;
         CCommandLoadSeq_idBlobs(CReaderRequestResult& result,
-                                const TKey& key, TMask mask)
+                                const TKey& key, TMask mask,
+                                const SAnnotSelector* sel)
             : CReadDispatcherCommand(result),
-              m_Key(key), m_Ids(result, key), m_Mask(mask)
+              m_Key(key), m_Ids(result, key, sel),
+              m_Mask(mask), m_Selector(sel)
             {
             }
 
         bool IsDone(void)
             {
                 return m_Ids.IsLoaded() &&
-                    s_AllBlobsAreLoaded(GetResult(), m_Ids, m_Mask);
+                    s_AllBlobsAreLoaded(GetResult(),
+                                        m_Ids, m_Mask, m_Selector);
             }
         bool Execute(CReader& reader)
             {
-                return reader.LoadBlobs(GetResult(), m_Key, m_Mask);
+                return reader.LoadBlobs(GetResult(),
+                                        m_Key, m_Mask, m_Selector);
             }
         string GetErrMsg(void) const
             {
@@ -661,6 +609,7 @@ namespace {
         TKey m_Key;
         TIds m_Ids;
         TMask m_Mask;
+        const SAnnotSelector* m_Selector;
     };
 
     class CCommandLoadBlob : public CReadDispatcherCommand
@@ -848,7 +797,7 @@ namespace {
         bool IsDone(void)
             {
                 ITERATE(TIds, id, m_Ids) {
-                    CLoadLockBlob_ids blob_ids(GetResult(), *id);
+                    CLoadLockBlob_ids blob_ids(GetResult(), *id, 0);
                     if ( !blob_ids.IsLoaded() ) {
                         return false;
                     }
@@ -991,9 +940,10 @@ void CReadDispatcher::LoadSeq_idLabel(CReaderRequestResult& result,
 
 
 void CReadDispatcher::LoadSeq_idBlob_ids(CReaderRequestResult& result,
-                                         const CSeq_id_Handle& seq_id)
+                                         const CSeq_id_Handle& seq_id,
+                                         const SAnnotSelector* sel)
 {
-    CCommandLoadSeq_idBlob_ids command(result, seq_id);
+    CCommandLoadSeq_idBlob_ids command(result, seq_id, sel);
     Process(command);
 }
 
@@ -1005,30 +955,22 @@ void CReadDispatcher::LoadBlobVersion(CReaderRequestResult& result,
     Process(command);
 }
 
-/*
-void CReadDispatcher::LoadBlobs(CReaderRequestResult& result,
-                                const string& seq_id,
-                                TContentsMask mask)
-{
-    CCommandLoadStringBlobs command(result, seq_id, mask);
-    Process(command);
-}
-*/
-
 void CReadDispatcher::LoadBlobs(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id,
-                                TContentsMask mask)
+                                TContentsMask mask,
+                                const SAnnotSelector* sel)
 {
-    CCommandLoadSeq_idBlobs command(result, seq_id, mask);
+    CCommandLoadSeq_idBlobs command(result, seq_id, mask, sel);
     Process(command);
 }
 
 
 void CReadDispatcher::LoadBlobs(CReaderRequestResult& result,
                                 CLoadLockBlob_ids blobs,
-                                TContentsMask mask)
+                                TContentsMask mask,
+                                const SAnnotSelector* sel)
 {
-    CCommandLoadBlobs command(result, blobs, mask);
+    CCommandLoadBlobs command(result, blobs, mask, sel);
     Process(command);
 }
 

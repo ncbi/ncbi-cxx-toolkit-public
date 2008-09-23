@@ -109,8 +109,8 @@ int CTestApplication::Run(void)
             }
             NcbiCout << NcbiEndl;
             
-            dispatcher->LoadSeq_idBlob_ids(request, seq_id);
-            CLoadLockBlob_ids blob_ids(request, seq_id);
+            dispatcher->LoadSeq_idBlob_ids(request, seq_id, 0);
+            CLoadLockBlob_ids blob_ids(request, seq_id, 0);
             ITERATE ( CLoadInfoBlob_ids, i, *blob_ids ) {
                 CConstRef<CBlob_id> blob_id = i->first;
                 NcbiCout << "  " << blob_id->ToString() << NcbiEndl;

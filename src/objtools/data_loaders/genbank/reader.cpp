@@ -36,6 +36,7 @@
 #include <objtools/error_codes.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/annot_selector.hpp>
 #include <algorithm>
 #include <math.h>
 #include <corelib/ncbi_system.hpp>
@@ -353,9 +354,28 @@ bool CReader::LoadSeq_idLabel(CReaderRequestResult& result,
 }
 
 
+bool CReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
+                                 const CSeq_id_Handle& seq_id,
+                                 const SAnnotSelector* sel)
+{
+    if ( !sel || !sel->IsIncludedAnyNamedAnnotAccession() ) {
+        return false;
+    }
+    // recurse to non-named version
+    if ( !LoadSeq_idBlob_ids(result, seq_id, 0) ) {
+        return false;
+    }
+    return false;
+    CLoadLockBlob_ids dst_ids(result, seq_id, sel);
+    CLoadLockBlob_ids src_ids(result, seq_id, 0);
+    return true;
+}
+
+
 bool CReader::LoadBlobs(CReaderRequestResult& result,
                         const string& seq_id,
-                        TContentsMask mask)
+                        TContentsMask mask,
+                        const SAnnotSelector* sel)
 {
     CLoadLockSeq_ids ids(result, seq_id);
     if ( !ids.IsLoaded() ) {
@@ -367,7 +387,7 @@ bool CReader::LoadBlobs(CReaderRequestResult& result,
         }
     }
     if ( ids->size() == 1 ) {
-        m_Dispatcher->LoadBlobs(result, *ids->begin(), mask);
+        m_Dispatcher->LoadBlobs(result, *ids->begin(), mask, sel);
     }
     return true;
 }
@@ -375,35 +395,38 @@ bool CReader::LoadBlobs(CReaderRequestResult& result,
 
 bool CReader::LoadBlobs(CReaderRequestResult& result,
                         const CSeq_id_Handle& seq_id,
-                        TContentsMask mask)
+                        TContentsMask mask,
+                        const SAnnotSelector* sel)
 {
-    CLoadLockBlob_ids ids(result, seq_id);
+    CLoadLockBlob_ids ids(result, seq_id, sel);
     if ( !ids.IsLoaded() ) {
-        if ( !LoadSeq_idBlob_ids(result, seq_id) && !ids.IsLoaded() ) {
+        if ( !LoadSeq_idBlob_ids(result, seq_id, sel) && !ids.IsLoaded() ) {
             return false;
         }
         if ( !ids.IsLoaded() ) {
             return true;
         }
     }
-    m_Dispatcher->LoadBlobs(result, ids, mask);
+    m_Dispatcher->LoadBlobs(result, ids, mask, sel);
     return true;
 }
 
 
 bool CReader::LoadBlobs(CReaderRequestResult& result,
                         CLoadLockBlob_ids blobs,
-                        TContentsMask mask)
+                        TContentsMask mask,
+                        const SAnnotSelector* sel)
 {
     int loaded_count = 0;
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
-        if ( (info.GetContentsMask() & mask) != 0 ) {
+        if ( info.Matches(mask, sel) ) {
             CLoadLockBlob blob(result, *it->first);
             if ( blob.IsLoaded() ) {
                 continue;
             }
-            if ( LoadBlob(result, *it->first) ) {
+            m_Dispatcher->LoadBlob(result, *it->first);
+            if ( blob.IsLoaded() ) {
                 ++loaded_count;
             }
         }
@@ -437,7 +460,7 @@ bool CReader::LoadBlobSet(CReaderRequestResult& result,
 {
     bool ret = false;
     ITERATE(TSeqIds, id, seq_ids) {
-        ret |= LoadBlobs(result, *id, fBlobHasCore);
+        ret |= LoadBlobs(result, *id, fBlobHasCore, 0);
     }
     return ret;
 }
@@ -524,10 +547,11 @@ void CReader::SetAndSaveSeq_idLabel(CReaderRequestResult& result,
 
 
 void CReader::SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
-                                       const CSeq_id_Handle& seq_id) const
+                                       const CSeq_id_Handle& seq_id,
+                                       const SAnnotSelector* sel) const
 {
-    CLoadLockBlob_ids blob_ids(result, seq_id);
-    SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
+    CLoadLockBlob_ids blob_ids(result, seq_id, sel);
+    SetAndSaveSeq_idBlob_ids(result, seq_id, sel, blob_ids);
 }
 
 
@@ -537,15 +561,6 @@ void CReader::SetAndSaveBlobVersion(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id);
     SetAndSaveBlobVersion(result, blob_id, blob, version);
-}
-
-
-void CReader::SetAndSaveBlobAnnotInfo(CReaderRequestResult& result,
-                                      const TBlobId& blob_id,
-                                      const TAnnotInfo& annot_info) const
-{
-    CLoadLockBlob blob(result, blob_id);
-    SetAndSaveBlobAnnotInfo(result, blob_id, blob, annot_info);
 }
 
 
@@ -593,7 +608,7 @@ void CReader::SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
     }
     seq_ids.SetLoaded();
     if (seq_ids->GetState() & CBioseq_Handle::fState_no_data) {
-        SetAndSaveSeq_idBlob_ids(result, seq_id);
+        SetAndSaveSeq_idBlob_ids(result, seq_id, 0);
     }
     CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
     if( writer ) {
@@ -653,6 +668,7 @@ void CReader::SetAndSaveSeq_idLabel(CReaderRequestResult& result,
 
 void CReader::SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                        const CSeq_id_Handle& seq_id,
+                                       const SAnnotSelector* sel,
                                        CLoadLockBlob_ids& blob_ids) const
 {
     if ( blob_ids.IsLoaded() ) {
@@ -665,7 +681,7 @@ void CReader::SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
     blob_ids.SetLoaded();
     CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
     if( writer ) {
-        writer->SaveSeq_idBlob_ids(result, seq_id);
+        writer->SaveSeq_idBlob_ids(result, seq_id, sel);
     }
 }
 
@@ -682,19 +698,6 @@ void CReader::SetAndSaveBlobVersion(CReaderRequestResult& result,
     CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
     if( writer ) {
         writer->SaveBlobVersion(result, blob_id, version);
-    }
-}
-
-
-void CReader::SetAndSaveBlobAnnotInfo(CReaderRequestResult& result,
-                                      const TBlobId& blob_id,
-                                      CLoadLockBlob& blob,
-                                      const TAnnotInfo& annot_info) const
-{
-    blob.SetAnnotInfo(annot_info);
-    CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
-    if( writer ) {
-        writer->SaveBlobAnnotInfo(result, blob_id, annot_info);
     }
 }
 

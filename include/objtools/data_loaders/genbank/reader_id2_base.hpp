@@ -89,19 +89,23 @@ public:
     bool LoadSeq_idLabel(CReaderRequestResult& result,
                          const CSeq_id_Handle& seq_id);
     bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
-                            const CSeq_id_Handle& seq_id);
+                            const CSeq_id_Handle& seq_id,
+                            const SAnnotSelector* sel);
     bool LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
 
     bool LoadBlobs(CReaderRequestResult& result,
                    const string& seq_id,
-                   TContentsMask mask);
+                   TContentsMask mask,
+                   const SAnnotSelector* sel);
     bool LoadBlobs(CReaderRequestResult& result,
                    const CSeq_id_Handle& seq_id,
-                   TContentsMask mask);
+                   TContentsMask mask,
+                   const SAnnotSelector* sel);
     bool LoadBlobs(CReaderRequestResult& result,
                    CLoadLockBlob_ids blobs,
-                   TContentsMask mask);
+                   TContentsMask mask,
+                   const SAnnotSelector* sel);
     bool LoadBlob(CReaderRequestResult& result,
                   const TBlobId& blob_id);
     bool LoadChunk(CReaderRequestResult& result,
@@ -153,9 +157,11 @@ protected:
                             CReaderRequestResult& result);
 
     void x_ProcessRequest(CReaderRequestResult& result,
-                          CID2_Request& req);
+                          CID2_Request& req,
+                          const SAnnotSelector* sel);
     void x_ProcessPacket(CReaderRequestResult& result,
-                         CID2_Request_Packet& packet);
+                         CID2_Request_Packet& packet,
+                         const SAnnotSelector* sel);
 
     enum EErrorFlags {
         fError_warning          = 1 << 0,
@@ -212,7 +218,8 @@ protected:
                            const CID2S_Reply_Get_Chunk& reply);
 
     void x_UpdateLoadedSet(CReaderRequestResult& result,
-                           const SId2LoadedSet& loaded_set);
+                           const SId2LoadedSet& loaded_set,
+                           const SAnnotSelector* sel);
 
     bool x_LoadSeq_idBlob_idsSet(CReaderRequestResult& result,
                                  const TSeqIds& seq_ids);

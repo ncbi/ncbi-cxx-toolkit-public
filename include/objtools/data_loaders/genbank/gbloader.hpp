@@ -180,6 +180,7 @@ public:
     // typedefs from CReader
     typedef unsigned                  TConn;
     typedef CBlob_id                  TRealBlobId;
+    typedef set<string>               TNamedAnnotNames;
 
     virtual ~CGBDataLoader(void);
 
@@ -195,6 +196,10 @@ public:
     virtual TTSE_LockSet GetDetailedRecords(const CSeq_id_Handle& idh,
                                             const SRequestDetails& details);
     virtual TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq);
+    virtual TTSE_LockSet GetExternalAnnotRecords(const CSeq_id_Handle& idh,
+                                                 const SAnnotSelector* sel);
+    virtual TTSE_LockSet GetExternalAnnotRecords(const CBioseq_Info& bioseq,
+                                                 const SAnnotSelector* sel);
 
     virtual void GetChunk(TChunk chunk);
     virtual void GetChunks(const TChunkSet& chunks);
@@ -259,12 +264,15 @@ public:
 
     virtual void GC(void);
 
+    virtual TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh);
+
     const TRealBlobId& GetRealBlobId(const TBlobId& blob_id) const;
     const TRealBlobId& GetRealBlobId(const CTSE_Info& tse_info) const;
 
     CRef<CLoadInfoSeq_ids> GetLoadInfoSeq_ids(const string& key);
     CRef<CLoadInfoSeq_ids> GetLoadInfoSeq_ids(const CSeq_id_Handle& key);
-    CRef<CLoadInfoBlob_ids> GetLoadInfoBlob_ids(const CSeq_id_Handle& key);
+    typedef pair<CSeq_id_Handle, string>                      TLoadKeyBlob_ids;
+    CRef<CLoadInfoBlob_ids> GetLoadInfoBlob_ids(const TLoadKeyBlob_ids& key);
 
     // params modifying access methods
     // argument params should be not-null
@@ -310,7 +318,8 @@ protected:
     TBlobContentsMask x_MakeContentMask(const SRequestDetails& details) const;
 
     TTSE_LockSet x_GetRecords(const CSeq_id_Handle& idh,
-                              TBlobContentsMask sr_mask);
+                              TBlobContentsMask sr_mask,
+                              const SAnnotSelector* sel);
 
 private:
     typedef CParamLoaderMaker<CGBDataLoader, const CGBLoaderParams&> TGBMaker;
@@ -326,7 +335,7 @@ private:
 
     typedef CLoadInfoMap<string, CLoadInfoSeq_ids>            TLoadMapSeq_ids;
     typedef CLoadInfoMap<CSeq_id_Handle, CLoadInfoSeq_ids>    TLoadMapSeq_ids2;
-    typedef CLoadInfoMap<CSeq_id_Handle, CLoadInfoBlob_ids>   TLoadMapBlob_ids;
+    typedef CLoadInfoMap<TLoadKeyBlob_ids, CLoadInfoBlob_ids> TLoadMapBlob_ids;
 
     CInitMutexPool          m_MutexPool;
 

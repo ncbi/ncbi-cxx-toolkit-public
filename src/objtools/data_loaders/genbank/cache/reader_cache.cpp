@@ -45,6 +45,7 @@
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/annot_selector.hpp>
 
 #include <serial/objistrasnb.hpp>       // for reading Seq-ids
 #include <serial/serial.hpp>            // for reading Seq-ids
@@ -55,9 +56,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-const int    SCacheInfo::IDS_MAGIC = 0x32fd0104;
-const size_t SCacheInfo::IDS_HSIZE  = 2;
-const size_t SCacheInfo::IDS_SIZE  = 4;
+const int    SCacheInfo::IDS_MAGIC = 0x32fd0105;
 
 string SCacheInfo::GetBlobKey(const CBlob_id& blob_id)
 {
@@ -89,15 +88,23 @@ string SCacheInfo::GetIdKey(const CSeq_id_Handle& id)
 }
 
 
-const char* SCacheInfo::GetBlob_idsSubkey(void)
+string SCacheInfo::GetBlob_idsSubkey(const SAnnotSelector* sel)
 {
-    return "blobs";
+    string subkey = "blobs";
+    if ( sel ) {
+        ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it,
+                  sel->GetNamedAnnotAccessions() ) {
+            subkey += ';';
+            subkey += *it;
+        }
+    }
+    return subkey;
 }
 
 
 const char* SCacheInfo::GetGiSubkey(void)
 {
-    return "gi";
+    return "gi4";
 }
 
 
@@ -121,13 +128,7 @@ const char* SCacheInfo::GetSeq_idsSubkey(void)
 
 const char* SCacheInfo::GetBlobVersionSubkey(void)
 {
-    return "ver";
-}
-
-
-const char* SCacheInfo::GetBlobAnnotInfoSubkey(void)
-{
-    return "named";
+    return "ver4";
 }
 
 
@@ -222,83 +223,139 @@ int CCacheReader::GetMaximumConnectionsLimit(void) const
 
 
 namespace {
-    inline
-    bool x_Read(ICache::SBlobAccessDescr& descr, char* buf, size_t size)
+    class CParseBuffer {
+    public:
+        CParseBuffer(ICache* cache,
+                     const string& key, int version, const string& subkey);
+
+        bool Found(void) const
+            {
+                return m_Descr.blob_found;
+            }
+        bool Done(void) const
+            {
+                if ( m_Ptr ) {
+                    return m_Size == 0;
+                }
+                else {
+                    return x_Eof();
+                }
+            }
+
+        Uint4 ParseUint4(void)
+            {
+                const char* ptr = x_NextBytes(4);
+                return ((ptr[0]&0xff)<<24)|((ptr[1]&0xff)<<16)|
+                    ((ptr[2]&0xff)<<8)|(ptr[3]&0xff);
+            }
+        Int4 ParseInt4(void)
+            {
+                return ParseUint4();
+            }
+        string ParseString(void);
+        string FullString(void);
+        
+    protected:
+        bool x_Eof(void) const;
+        const char* x_NextBytes(size_t size);
+        
+    private:
+        CParseBuffer(const CParseBuffer&);
+        void operator=(const CParseBuffer&);
+
+        char m_Buffer[4096];
+        ICache::SBlobAccessDescr m_Descr;
+        const char* m_Ptr;
+        size_t m_Size;
+    };
+
+    CParseBuffer::CParseBuffer(ICache* cache,
+                               const string& key,
+                               int version,
+                               const string& subkey)
+        : m_Descr(m_Buffer, sizeof(m_Buffer)), m_Ptr(0), m_Size(0)
     {
-        if ( descr.reader.get() ) {
+        cache->GetBlobAccess(key, version, subkey, &m_Descr);
+        if ( !m_Descr.reader.get() ) {
+            m_Ptr = m_Descr.buf;
+            m_Size = m_Descr.blob_size;
+        }
+    }
+    
+    string CParseBuffer::ParseString(void)
+    {
+        string ret;
+        size_t size = ParseUint4();
+        if ( m_Ptr ) {
+            ret.assign(x_NextBytes(size), size);
+        }
+        else {
+            ret.reserve(size);
+            while ( size ) {
+                size_t count = min(size, sizeof(m_Buffer));
+                ret.assign(x_NextBytes(count), count);
+                size -= count;
+            }
+        }
+        return ret;
+    }
+
+    string CParseBuffer::FullString(void)
+    {
+        string ret;
+        if ( m_Ptr ) {
+            ret.assign(m_Ptr, m_Size);
+            m_Ptr += m_Size;
+            m_Size = 0;
+        }
+        else {
+            for ( ;; ) {
+                size_t count = 0;
+                if ( m_Descr.reader->Read(m_Buffer, sizeof(m_Buffer), &count) != eRW_Success ) {
+                    break;
+                }
+                ret.append(m_Buffer, count);
+            }
+        }
+        return ret;
+    }
+    
+    const char* CParseBuffer::x_NextBytes(size_t size)
+    {
+        const char* ret = m_Ptr;
+        if ( ret ) {
+            if ( m_Size >= size ) {
+                m_Ptr = ret + size;
+                m_Size -= size;
+                return ret;
+            }
+        }
+        else if ( size <= sizeof(m_Buffer) ) {
+            char* buf = m_Buffer;
             while ( size ) {
                 size_t count = 0;
-                if ( descr.reader->Read(buf, size, &count) != eRW_Success ) {
-                    return false;
+                if ( m_Descr.reader->Read(buf, size, &count) != eRW_Success ) {
+                    break;
                 }
                 buf += count;
                 size -= count;
             }
+            if ( size == 0 ) {
+                return m_Buffer;
+            }
         }
-        else {
-            memcpy(buf, descr.buf, size);
-        }
-        return true;
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "parse buffer overflow");
+    }
+
+    bool CParseBuffer::x_Eof(void) const
+    {
+        char buffer[1];
+        size_t count;
+        return m_Descr.reader->Read(buffer, 1, &count) == eRW_Eof;
     }
 }
 
-
-
-bool CCacheReader::x_LoadIdCache(const string& key,
-                                 const string& subkey,
-                                 TIdCacheData& data)
-{
-    CConn conn(this);
-    char buffer[256];
-    ICache::SBlobAccessDescr descr(buffer, sizeof(buffer));
-    m_IdCache->GetBlobAccess(key, 0, subkey, &descr);
-    if ( descr.blob_found ) {
-        size_t size = descr.blob_size;
-        data.resize(size / sizeof(int));
-        if ( size == 0 ) {
-            conn.Release();
-            return false;
-        }
-        if ( size % sizeof(int) != 0 ) {
-            conn.Release();
-            return false;
-        }
-        if ( !x_Read(descr, reinterpret_cast<char*>(&data[0]), size) ) {
-            conn.Release();
-            return false;
-        }
-    }
-    conn.Release();
-    return true;
-}
-
-
-bool CCacheReader::x_LoadIdCache(const string& key,
-                                 const string& subkey,
-                                 string& data)
-{
-    CConn conn(this);
-    char buffer[256];
-    ICache::SBlobAccessDescr descr(buffer, sizeof(buffer));
-    m_IdCache->GetBlobAccess(key, 0, subkey, &descr);
-    if ( !descr.blob_found ) {
-        conn.Release();
-        return false;
-    }
-    size_t size = descr.blob_size;
-    if ( !descr.reader.get() ) {
-        data.assign(descr.buf, size);
-    }
-    else {
-        data.resize(size);
-        if ( !x_Read(descr, &data[0], size) ) {
-            conn.Release();
-            return false;
-        }
-    }
-    conn.Release();
-    return true;
-}
 
 
 bool CCacheReader::LoadStringSeq_ids(CReaderRequestResult& result,
@@ -334,11 +391,13 @@ bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
 
     CLoadLockSeq_ids ids(result, seq_id);
     if ( !ids->IsLoadedGi() ) {
-        TIdCacheData data;
-        if ( x_LoadIdCache(GetIdKey(seq_id), GetGiSubkey(), data) &&
-             data.size() == 1  ) {
-            ids->SetLoadedGi(data.front());
-            return true;
+        CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetGiSubkey());
+        if ( str.Found() ) {
+            int gi = str.ParseInt4();
+            if ( str.Done() ) {
+                ids->SetLoadedGi(gi);
+                return true;
+            }
         }
     }
     return false;
@@ -354,8 +413,9 @@ bool CCacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
 
     CLoadLockSeq_ids ids(result, seq_id);
     if ( !ids->IsLoadedAccVer() ) {
-        string data;
-        if ( x_LoadIdCache(GetIdKey(seq_id), GetAccVerSubkey(), data) ) {
+        CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetAccVerSubkey());
+        if ( str.Found() ) {
+            string data = str.FullString();
             CSeq_id_Handle acch;
             if ( !data.empty() ) {
                 CSeq_id id(data);
@@ -378,9 +438,9 @@ bool CCacheReader::LoadSeq_idLabel(CReaderRequestResult& result,
 
     CLoadLockSeq_ids ids(result, seq_id);
     if ( !ids->IsLoadedLabel() ) {
-        string data;
-        if ( x_LoadIdCache(GetIdKey(seq_id), GetLabelSubkey(), data) ) {
-            ids->SetLoadedLabel(data);
+        CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetLabelSubkey());
+        if ( str.Found() ) {
+            ids->SetLoadedLabel(str.FullString());
             return true;
         }
     }
@@ -424,62 +484,44 @@ bool CCacheReader::ReadSeq_ids(const string& key,
 
 
 bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
-                                      const CSeq_id_Handle& seq_id)
+                                      const CSeq_id_Handle& seq_id,
+                                      const SAnnotSelector* sel)
 {
     if ( !m_IdCache ) {
         return false;
     }
 
-    CLoadLockBlob_ids ids(result, seq_id);
+    CLoadLockBlob_ids ids(result, seq_id, sel);
     if( ids.IsLoaded() ) {
         return true;
     }
 
-    string key = GetIdKey(seq_id);
-
-    TIdCacheData data;
-    if ( !x_LoadIdCache(key, GetBlob_idsSubkey(), data) ||
-         data.size() % IDS_SIZE != IDS_HSIZE|| data.front() != IDS_MAGIC ) {
-        return false;
-    }
-
-    for ( size_t i = IDS_HSIZE; i < data.size(); i += IDS_SIZE ) {
-        CBlob_id id;
-        id.SetSat(data[i+0]);
-        id.SetSubSat(data[i+1]);
-        id.SetSatKey(data[i+2]);
-        int content_mask = data[i+3];
-        if ( content_mask & fBlobHasNamedAnnot ) {
-            CConn conn(this);
-            auto_ptr<IReader> reader
-                (m_IdCache->GetReadStream(GetBlobKey(id), 0,
-                                          GetBlobAnnotInfoSubkey()));
-            if ( !reader.get() ) {
-                conn.Release();
-                return false;
+    CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetBlob_idsSubkey(sel));
+    if ( str.Found() ) {
+        if ( str.ParseInt4() != IDS_MAGIC ) {
+            return false;
+        }
+        ids->clear();
+        ids->SetState(str.ParseUint4());
+        size_t blob_count = str.ParseUint4();
+        for ( size_t i = 0; i < blob_count; ++i ) {
+            CBlob_id id;
+            id.SetSat(str.ParseUint4());
+            id.SetSubSat(str.ParseUint4());
+            id.SetSatKey(str.ParseUint4());
+            CBlob_Info info(str.ParseUint4());
+            size_t name_count = str.ParseUint4();
+            for ( size_t j = 0; j < name_count; ++j ) {
+                info.AddNamedAnnotName(str.ParseString());
             }
-            TAnnotInfo annot_info;
-            CRStream r_stream(reader.get());
-            CObjectIStreamAsnBinary obj_stream(r_stream);
-            while ( obj_stream.HaveMoreData() ) {
-                CRef<CID2S_Seq_annot_Info> type(new CID2S_Seq_annot_Info);
-                obj_stream >> *type;
-                annot_info.push_back(type);
-            }
-            SetAndSaveBlobAnnotInfo(result, id, annot_info);
+            ids.AddBlob_id(id, info);
+        }
+        ids.SetLoaded();
+        if ( !str.Done() ) {
+            ids->clear();
+            return false;
         }
     }
-
-    ids->SetState(data[1]);
-    for ( size_t i = IDS_HSIZE; i < data.size(); i += IDS_SIZE ) {
-        CBlob_id id;
-        id.SetSat(data[i+0]);
-        id.SetSubSat(data[i+1]);
-        id.SetSatKey(data[i+2]);
-        int content_mask = data[i+3];
-        ids.AddBlob_id(id, CBlob_Info(content_mask));
-    }
-    ids.SetLoaded();
     return true;
 }
 
@@ -490,12 +532,14 @@ bool CCacheReader::LoadBlobVersion(CReaderRequestResult& result,
     if ( !m_IdCache ) {
         return false;
     }
-
-    TIdCacheData data;
-    if ( x_LoadIdCache(GetBlobKey(blob_id), GetBlobVersionSubkey(), data) &&
-         data.size() == 1  ) {
-        SetAndSaveBlobVersion(result, blob_id, data.front());
-        return true;
+    
+    CParseBuffer str(m_IdCache, GetBlobKey(blob_id), 0, GetBlobVersionSubkey());
+    if ( str.Found() ) {
+        int version = str.ParseInt4();
+        if ( str.Done() ) {
+            SetAndSaveBlobVersion(result, blob_id, version);
+            return true;
+        }
     }
     return false;
 }

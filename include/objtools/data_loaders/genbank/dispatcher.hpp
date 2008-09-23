@@ -82,7 +82,8 @@ public:
     void LoadStringSeq_ids(CReaderRequestResult& result,
                            const string& seq_id);
     void LoadSeq_idBlob_ids(CReaderRequestResult& result,
-                            const CSeq_id_Handle& seq_id);
+                            const CSeq_id_Handle& seq_id,
+                            const SAnnotSelector* sel);
     void LoadSeq_idSeq_ids(CReaderRequestResult& result,
                            const CSeq_id_Handle& seq_id);
     void LoadSeq_idGi(CReaderRequestResult& result,
@@ -93,17 +94,14 @@ public:
                          const CSeq_id_Handle& seq_id);
     void LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
-    /*
-    void LoadBlobs(CReaderRequestResult& result,
-                   const string& seq_id,
-                   TContentsMask mask);
-    */
     void LoadBlobs(CReaderRequestResult& result,
                    const CSeq_id_Handle& seq_id,
-                   TContentsMask mask);
+                   TContentsMask mask,
+                   const SAnnotSelector* sel);
     void LoadBlobs(CReaderRequestResult& result,
                    CLoadLockBlob_ids blobs,
-                   TContentsMask mask);
+                   TContentsMask mask,
+                   const SAnnotSelector* sel);
     void LoadBlob(CReaderRequestResult& result,
                   const CBlob_id& blob_id);
     void LoadChunk(CReaderRequestResult& result,

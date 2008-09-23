@@ -55,6 +55,7 @@
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/data_loader_factory.hpp>
+#include <objmgr/annot_selector.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 
@@ -113,7 +114,7 @@ public:
     //virtual void ReleaseConn(void);
     virtual CRef<CLoadInfoSeq_ids> GetInfoSeq_ids(const string& id);
     virtual CRef<CLoadInfoSeq_ids> GetInfoSeq_ids(const CSeq_id_Handle& id);
-    virtual CRef<CLoadInfoBlob_ids> GetInfoBlob_ids(const CSeq_id_Handle& id);
+    virtual CRef<CLoadInfoBlob_ids> GetInfoBlob_ids(const TKeyBlob_ids& id);
     virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id);
     virtual void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                                    TLoadedBlob_ids& blob_ids) const;
@@ -706,8 +707,8 @@ CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id& id)
 CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
 {
     CGBReaderRequestResult result(this, sih);
-    CLoadLockBlob_ids blobs(result, sih);
-    m_Dispatcher->LoadSeq_idBlob_ids(result, sih);
+    CLoadLockBlob_ids blobs(result, sih, 0);
+    m_Dispatcher->LoadSeq_idBlob_ids(result, sih, 0);
 
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
@@ -986,7 +987,7 @@ CGBDataLoader::x_MakeContentMask(const SRequestDetails& details) const
 CDataLoader::TTSE_LockSet
 CGBDataLoader::GetRecords(const CSeq_id_Handle& sih, const EChoice choice)
 {
-    return x_GetRecords(sih, x_MakeContentMask(choice));
+    return x_GetRecords(sih, x_MakeContentMask(choice), 0);
 }
 
 
@@ -994,7 +995,7 @@ CDataLoader::TTSE_LockSet
 CGBDataLoader::GetDetailedRecords(const CSeq_id_Handle& sih,
                                   const SRequestDetails& details)
 {
-    return x_GetRecords(sih, x_MakeContentMask(details));
+    return x_GetRecords(sih, x_MakeContentMask(details), 0);
 }
 
 
@@ -1091,7 +1092,40 @@ CGBDataLoader::GetExternalRecords(const CBioseq_Info& bioseq)
 
 
 CDataLoader::TTSE_LockSet
-CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
+CGBDataLoader::GetExternalAnnotRecords(const CSeq_id_Handle& idh,
+                                       const SAnnotSelector* sel)
+{
+    return x_GetRecords(idh, fBlobHasExtAnnot|fBlobHasNamedAnnot, sel);
+}
+
+
+CDataLoader::TTSE_LockSet
+CGBDataLoader::GetExternalAnnotRecords(const CBioseq_Info& bioseq,
+                                       const SAnnotSelector* sel)
+{
+    TTSE_LockSet ret;
+    TIds ids = bioseq.GetId();
+    sort(ids.begin(), ids.end(), SBetterId());
+    ITERATE ( TIds, it, ids ) {
+        if ( GetBlobId(*it) ) {
+            // correct id is found
+            TTSE_LockSet ret2 = GetExternalAnnotRecords(*it, sel);
+            ret.swap(ret2);
+            break;
+        }
+        else if ( it->Which() == CSeq_id::e_Gi ) {
+            // gi is not found, do not try any other Seq-id
+            break;
+        }
+    }
+    return ret;
+}
+
+
+CDataLoader::TTSE_LockSet
+CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
+                            TBlobContentsMask mask,
+                            const SAnnotSelector* sel)
 {
     TTSE_LockSet locks;
 
@@ -1105,8 +1139,8 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
     }
 
     CGBReaderRequestResult result(this, sih);
-    CLoadLockBlob_ids blobs(result, sih);
-    m_Dispatcher->LoadBlobs(result, sih, mask);
+    CLoadLockBlob_ids blobs(result, sih, sel);
+    m_Dispatcher->LoadBlobs(result, sih, mask, sel);
     _ASSERT(blobs.IsLoaded());
 
     if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
@@ -1116,7 +1150,7 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
 
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
-        if ( info.GetContentsMask() & mask ) {
+        if ( info.Matches(mask, sel) ) {
             CLoadLockBlob blob(result, *it->first);
             _ASSERT(blob.IsLoaded());
             if ((blob.GetBlobState() & CBioseq_Handle::fState_no_data) != 0) {
@@ -1129,6 +1163,33 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
     }
     result.SaveLocksTo(locks);
     return locks;
+}
+
+
+CGBDataLoader::TNamedAnnotNames
+CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
+{
+    TNamedAnnotNames names;
+
+    CGBReaderRequestResult result(this, sih);
+    SAnnotSelector sel;
+    sel.IncludeNamedAnnotAccession("NA*");
+    CLoadLockBlob_ids blobs(result, sih, &sel);
+    m_Dispatcher->LoadSeq_idBlob_ids(result, sih, &sel);
+    _ASSERT(blobs.IsLoaded());
+
+    if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
+        NCBI_THROW2(CBlobStateException, eBlobStateError,
+                    "blob state error for "+sih.AsString(), blobs->GetState());
+    }
+
+    ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
+        const CBlob_Info& info = it->second;
+        ITERATE(CBlob_Info::TNamedAnnotNames, jt, info.GetNamedAnnotNames()) {
+            names.insert(*jt);
+        }
+    }
+    return names;
 }
 
 
@@ -1164,17 +1225,17 @@ void CGBDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
     TBlobContentsMask mask = fBlobHasCore;
     CReadDispatcher::TIds ids;
     ITERATE(TTSE_LockSets, tse_set, tse_sets) {
-        CLoadLockBlob_ids blob_ids_lock(result, tse_set->first);
+        CLoadLockBlob_ids blob_ids_lock(result, tse_set->first, 0);
         ids.push_back(tse_set->first);
     }
     m_Dispatcher->LoadBlobSet(result, ids);
 
     NON_CONST_ITERATE(TTSE_LockSets, tse_set, tse_sets) {
         const CSeq_id_Handle& id = tse_set->first;
-        CLoadLockBlob_ids blob_ids_lock(result, id);
+        CLoadLockBlob_ids blob_ids_lock(result, id, 0);
         ITERATE (CLoadInfoBlob_ids, it, *blob_ids_lock) {
             const CBlob_Info& info = it->second;
-            if ( info.GetContentsMask() & mask ) {
+            if ( info.Matches(mask, 0) ) {
                 CLoadLockBlob blob(result, *it->first);
                 _ASSERT(blob.IsLoaded());
                 /*
@@ -1252,7 +1313,7 @@ CGBDataLoader::GetLoadInfoSeq_ids(const CSeq_id_Handle& key)
 
 
 CRef<CLoadInfoBlob_ids>
-CGBDataLoader::GetLoadInfoBlob_ids(const CSeq_id_Handle& key)
+CGBDataLoader::GetLoadInfoBlob_ids(const TLoadKeyBlob_ids& key)
 {
     return m_LoadMapBlob_ids.Get(key);
 }
@@ -1287,7 +1348,7 @@ CGBReaderRequestResult::GetInfoSeq_ids(const CSeq_id_Handle& key)
 
 
 CRef<CLoadInfoBlob_ids>
-CGBReaderRequestResult::GetInfoBlob_ids(const CSeq_id_Handle& key)
+CGBReaderRequestResult::GetInfoBlob_ids(const TKeyBlob_ids& key)
 {
     return GetLoader().GetLoadInfoBlob_ids(key);
 }

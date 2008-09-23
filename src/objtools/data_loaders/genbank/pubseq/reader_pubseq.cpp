@@ -39,6 +39,7 @@
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/annot_selector.hpp>
 
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
@@ -412,7 +413,8 @@ bool CPubseqReader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
 
 
 bool CPubseqReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
-                                       const CSeq_id_Handle& seq_id)
+                                       const CSeq_id_Handle& seq_id,
+                                       const SAnnotSelector* /*sel*/)
 {
     CLoadLockSeq_ids seq_ids(result, seq_id);
     CLoadLockBlob_ids& blob_ids = seq_ids.GetBlob_ids();
@@ -423,7 +425,7 @@ bool CPubseqReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
          seq_ids->GetState() & CBioseq_Handle::fState_no_data ) {
         // no such seq-id
         blob_ids->SetState(seq_ids->GetState());
-        SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
+        SetAndSaveSeq_idBlob_ids(result, seq_id, 0, blob_ids);
         return true;
     }
 
@@ -656,7 +658,7 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                                             CBlob_Info(fBlobHasAllLocal));
                     }
                     if ( !named_gi ) {
-                        SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
+                        SetAndSaveSeq_idBlob_ids(result, seq_id, 0, blob_ids);
                     }
                 }
 
@@ -728,8 +730,10 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                     blob_id.SetSat(satGot.Value());
                     blob_id.SetSatKey(satKeyGot.Value());
                     CBlob_Info info(fBlobHasNamedFeat);
+                    info.AddNamedAnnotName(nameGot.Value());
                     blob_ids.AddBlob_id(blob_id, info);
 
+                    /*
                     CRef<CID2S_Feat_type_Info> feat(new CID2S_Feat_type_Info);
                     feat->SetType(typeGot.Value());
                     CRef<CID2S_Seq_annot_Info> annot(new CID2S_Seq_annot_Info);
@@ -737,9 +741,12 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                     annot->SetFeat().push_back(feat);
                     list<CRef<CID2S_Seq_annot_Info> > annot_info(1, annot);
                     SetAndSaveBlobAnnotInfo(result, blob_id, annot_info);
+                    */
                 }
             }
-            SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
+            SAnnotSelector sel;
+            sel.IncludeNamedAnnotAccession("NA*");
+            SetAndSaveSeq_idBlob_ids(result, seq_id, &sel, blob_ids);
         }
     }}
 
@@ -748,9 +755,10 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
 }
 
 
-void CPubseqReader::GetSeq_idBlob_ids(CReaderRequestResult& result,
+bool CPubseqReader::GetSeq_idBlob_ids(CReaderRequestResult& result,
                                       CLoadLockBlob_ids& ids,
-                                      const CSeq_id_Handle& seq_id)
+                                      const CSeq_id_Handle& seq_id,
+                                      const SAnnotSelector* sel)
 {
     NCBI_THROW(CLoaderException, eLoaderFailed, "invalid call");
 }

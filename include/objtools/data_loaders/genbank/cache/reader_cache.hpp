@@ -56,8 +56,6 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     typedef vector<int> TIdCacheData;
 
     static const int    IDS_MAGIC;
-    static const size_t IDS_HSIZE;
-    static const size_t IDS_SIZE;
 
     //////////////////////////////////////////////////////////////////
     // Keys manipulation methods:
@@ -68,8 +66,8 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     static string GetIdKey(int gi);
 
     /// Id cache subkeys:
-    // Seq-id/gi -> blob_id (4*N ints)
-    static const char* GetBlob_idsSubkey(void);
+    // Seq-id/gi -> blob_id & contents info
+    static string GetBlob_idsSubkey(const SAnnotSelector* sel);
     // Seq-id -> gi (1 int)
     static const char* GetGiSubkey(void);
     // Seq-id -> acc (string: fasta)
@@ -80,8 +78,6 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     static const char* GetSeq_idsSubkey(void);
     // blob_id -> blob version (1 int)
     static const char* GetBlobVersionSubkey(void);
-    // blob_id -> named annot info, binary ASN.1
-    static const char* GetBlobAnnotInfoSubkey(void);
 
     /// Return BLOB cache key string based on Sat() and SatKey()
     static string GetBlobKey(const CBlob_id& blob_id);
@@ -149,7 +145,8 @@ public:
     bool LoadSeq_idLabel(CReaderRequestResult& result,
                          const CSeq_id_Handle& seq_id);
     bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
-                            const CSeq_id_Handle& seq_id);
+                            const CSeq_id_Handle& seq_id,
+                            const SAnnotSelector* sel);
     bool LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
 
@@ -173,13 +170,6 @@ protected:
     void x_RemoveConnectionSlot(TConn conn);
     void x_DisconnectAtSlot(TConn conn);
     void x_ConnectAtSlot(TConn conn);
-
-    bool x_LoadIdCache(const string& key,
-                       const string& subkey,
-                       TIdCacheData& data);
-    bool x_LoadIdCache(const string& key,
-                       const string& subkey,
-                       string& data);
 };
 
 

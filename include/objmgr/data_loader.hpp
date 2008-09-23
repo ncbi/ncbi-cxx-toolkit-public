@@ -61,6 +61,7 @@ class CTSE_Info;
 class CTSE_Chunk_Info;
 class CBioseq_Info;
 class IEditSaver;
+class SAnnotSelector;
 
 /////////////////////////////////////////////////////////////////////////////
 // structure to describe required data set
@@ -236,10 +237,16 @@ public:
     /// Default implementation will call GetRecords().
     virtual TTSE_LockSet GetDetailedRecords(const CSeq_id_Handle& idh,
                                             const SRequestDetails& details);
-
     /// Request from a datasource set of blobs with external annotations.
     /// CDataLoader has reasonable default implementation.
     virtual TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq);
+
+    virtual TTSE_LockSet GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
+                                               const SAnnotSelector* sel);
+    virtual TTSE_LockSet GetExternalAnnotRecords(const CSeq_id_Handle& idh,
+                                                 const SAnnotSelector* sel);
+    virtual TTSE_LockSet GetExternalAnnotRecords(const CBioseq_Info& bioseq,
+                                                 const SAnnotSelector* sel);
 
     typedef vector<CSeq_id_Handle> TIds;
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
@@ -320,7 +327,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 3, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 3, 2, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>

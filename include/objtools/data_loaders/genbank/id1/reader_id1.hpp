@@ -70,9 +70,10 @@ public:
     void GetSeq_idSeq_ids(CReaderRequestResult& result,
                           CLoadLockSeq_ids& ids,
                           const CSeq_id_Handle& id);
-    void GetSeq_idBlob_ids(CReaderRequestResult& result,
+    bool GetSeq_idBlob_ids(CReaderRequestResult& result,
                            CLoadLockBlob_ids& ids,
-                           const CSeq_id_Handle& id);
+                           const CSeq_id_Handle& id,
+                           const SAnnotSelector* sel);
     void GetGiSeq_ids(CReaderRequestResult& result,
                       const CSeq_id_Handle& seq_id,
                       CLoadLockSeq_ids& ids);
