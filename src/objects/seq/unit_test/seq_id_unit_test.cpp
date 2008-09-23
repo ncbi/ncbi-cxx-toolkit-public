@@ -239,6 +239,16 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromGpipeAcc)
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_1234567890")));
 }
 
+BOOST_AUTO_TEST_CASE(s_TestInitFromNatAcc)
+{
+    CRef<CSeq_id> id;
+
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("AT_12345")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("AT_123456789.1")));
+    BOOST_CHECK(id->IsNamed_annot_track());
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("AT_1234567890")));
+}
+
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaLocal)
 {
     CRef<CSeq_id> id;
@@ -485,6 +495,13 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGpipe)
     BOOST_CHECK(id->IsGpipe());
 }
 
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaNat)
+{
+    CRef<CSeq_id> id;
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("nat|AT_123456789")));
+    BOOST_CHECK(id->IsNamed_annot_track());
+}
+
 
 static CSeq_id* s_NewDbtagId(const string& db, const string& tag,
                              bool set_as_general = false)
@@ -611,6 +628,7 @@ static const char* kTestFastaStrings[] = {
     "tpe|BN000123|",
     "tpd|FAA00017|",
     "gpp|GPC_123456789|",
+    "nat|AT_123456789.1|",
     /* Must be last due to special-cased greedy parsing */
     "gnl|dbSNP|rs31251_allelePos=201totallen=401|taxid=9606"
     "|snpClass=1|alleles=?|mol=?|build=?"

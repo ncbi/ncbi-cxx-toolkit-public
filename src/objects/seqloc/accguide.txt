@@ -3,6 +3,7 @@ version  1 # of file format
 
 # 8-character protein accessions
 3+5  AAE  gb_patent_prot
+3+5  ??_  unknown
 3+5  A??  gb_prot
 3+5  B??  ddbj_prot
 3+5  C??  embl_prot *
@@ -22,6 +23,10 @@ version  1 # of file format
 4+8   C???  embl_wgs_nuc
 4+9   C???  embl_wgs_nuc
 4+10  C???  embl_wgs_nuc
+
+# Named annotation track (new as of September 2008)
+3+9  AT_  unreserved_nuc # fallback to placate older clients
+3+9  AT_  named_annot_track
 
 # NCBI reference sequence accessions
 3+6  AC_      refseq_chromosome

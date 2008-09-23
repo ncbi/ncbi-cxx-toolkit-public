@@ -307,7 +307,10 @@ public:
         eAcc_gpipe_chromosome = e_Gpipe | eAcc_chromosome | fAcc_nuc,  // GPC_
         eAcc_gpipe_genomic    = e_Gpipe | eAcc_genomic_rgn| fAcc_nuc,  // GPG_
         eAcc_gpipe_ncrna      = e_Gpipe | eAcc_ncrna      | fAcc_nuc,  // GPR_
-        eAcc_gpipe_unreserved = e_Gpipe | eAcc_unreserved              // GPX_
+        eAcc_gpipe_unreserved = e_Gpipe | eAcc_unreserved,             // GPX_
+
+        // named annotation track; mixed nucleotides and proteins
+        eAcc_named_annot_track = e_Named_annot_track | eAcc_other // AT_
     };
 
     static E_Choice GetAccType(EAccessionInfo info)
