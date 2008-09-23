@@ -77,18 +77,24 @@ public:
         { return m_TimeStart; }
     unsigned GetTimeDone() const
         { return m_TimeDone; }
-    unsigned GetWorkerNode() const
-        { return m_WorkerNode; }
+    unsigned GetClientIp() const
+        { return m_ClientIp; }
+    unsigned short GetClientPort() const
+        { return m_ClientPort; }
     int      GetRetCode() const
         { return m_RetCode; }
+    const string& GetWorkerNodeId() const
+    { return m_WorkerNodeId; }
     const string& GetErrorMsg() const
         { return m_ErrorMsg; }
 
     void SetStatus(TJobStatus status);
     void SetTimeStart(unsigned t);
     void SetTimeDone(unsigned t);
-    void SetWorkerNode(unsigned node);
+    void SetClientIp(unsigned node_ip);
+    void SetClientPort(unsigned short port);
     void SetRetCode(int retcode);
+    void SetWorkerNodeId(const string& node_id);
     void SetErrorMsg(const string& msg);
 
     // generic access via field name
@@ -106,8 +112,10 @@ private:
     TJobStatus m_Status;      ///< final job status for this run
     unsigned   m_TimeStart;   ///< job start time
     unsigned   m_TimeDone;    ///< job result submission time
-    unsigned   m_WorkerNode;  ///< IP of worker node (net byteorder)
+    unsigned   m_ClientIp;    ///< IP of a client (typically, worker node)
+    unsigned short m_ClientPort; ///< Notification port of a client
     int        m_RetCode;     ///< Return code
+    string     m_WorkerNodeId; //
     string     m_ErrorMsg;    ///< Error message (exception::what())
 };
 
@@ -605,18 +613,19 @@ public:
     void ClearWorkerNode(const string& node_id);
     void NotifyListeners(bool unconditional, unsigned aff_id);
     void PrintWorkerNodeStat(CNcbiOstream& out) const;
-    void RegisterNotificationListener(const string&  node_id,
-                                      unsigned short port,
-                                      unsigned       timeout);
-	// Is the unregistration final? True for old style nodes.
+    void RegisterNotificationListener(const SWorkerNodeInfo& node_info,
+                                      unsigned short         port,
+                                      unsigned               timeout);
+    // Is the unregistration final? True for old style nodes.
     bool UnRegisterNotificationListener(const string& node_id);
     void RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info);
-    void AddJobToWorkerNode(SWorkerNodeInfo& node_info,
-                            unsigned         job_id,
-                            time_t           exp_time);
+    void AddJobToWorkerNode(const SWorkerNodeInfo& node_info,
+                            unsigned               job_id,
+                            time_t                 exp_time);
     void RemoveJobFromWorkerNode(const SWorkerNodeInfo& node_info,
-                                 unsigned               job_id);
-	void x_FailJobsAtNodeClose(TJobList& jobs);
+                                 unsigned               job_id,
+                                 ENSCompletion          reason);
+    void x_FailJobsAtNodeClose(TJobList& jobs);
     //
 
     typedef CWorkerNodeAffinity::TNetAddress TNetAddress;

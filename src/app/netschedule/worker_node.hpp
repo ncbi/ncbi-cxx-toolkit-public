@@ -44,6 +44,9 @@
 
 BEGIN_NCBI_SCOPE
 
+
+// This structure is passed from upper level code. Some functions can modify
+// it by assigning missing parts.
 struct SWorkerNodeInfo
 {
     SWorkerNodeInfo() : host(0), port(0) {}
@@ -68,29 +71,21 @@ typedef list<TNSJobId> TJobList;
 class CWorkerNode : public CObject
 {
 public:
-	// Constructor for the new style worker nodes, called from INIT command
-    CWorkerNode(const string& node_id, time_t curr,
-        const string& auth, unsigned host, unsigned short port);
-	// Constructor for the old style worker nodes, called at the first WN-specific
-	// command. Port is set later when one of GET, WGET, REGC commands mention it.
-    // Called from CQueueWorkerNodeList::RegisterNodeVisit
-	CWorkerNode(const string& node_id, time_t curr,
-        const string& auth, unsigned host);
-    // Ditto, but being called from CQueueWorkerNodeList::AddJob have even less
-    // info to fill out.
-    CWorkerNode(const string& node_id, time_t curr);
+    // Universal constructor for both new and old nodes
+    CWorkerNode(const SWorkerNodeInfo& node_info, time_t curr, bool new_style);
+
     // Set authentication token and host - we're doing it from RegisterNodeVisit
     void SetClientInfo(const string& auth, unsigned host);
     void SetNotificationTimeout(time_t curr, unsigned timeout);
     bool ShouldNotify(time_t curr) const;
-	time_t ValidityTime() const;
+    time_t ValidityTime() const;
     void UpdateValidityTime();
-	string AsString(time_t curr) const;
+    string AsString(time_t curr) const;
 private:
     friend class CQueueWorkerNodeList;
     string           m_Id;
     string           m_Auth;
-	bool             m_NewStyle;
+    bool             m_NewStyle;
     unsigned         m_Host;
     unsigned short   m_Port;
 
@@ -99,16 +94,24 @@ private:
 
     // Copied over from old SWorkerNodeInfo
     // Session management
-	// On every update of m_Jobs, maximum of their validity time is recorded into
-	// m_JobValidityTime. Then we can figure if node is still valid by comparing
-	// maximum of (m_LastVisit+m_VisitTimeout), m_JobValidityTime and m_NotifyTime
-	// with current time.
+    // On every update of m_Jobs, maximum of their validity time is recorded into
+    // m_JobValidityTime. Then we can figure if node is still valid by comparing
+    // maximum of (m_LastVisit+m_VisitTimeout), m_JobValidityTime and m_NotifyTime
+    // with current time.
     time_t   m_LastVisit;    ///< Last time client executed worker node command
     unsigned m_VisitTimeout; ///< When last visit should be expired
-	time_t   m_JobValidityTime; ///< Max of jobs validity times
+    time_t   m_JobValidityTime; ///< Max of jobs validity times
     // Notification management
     /// Up to what time client expects notifications, if 0 - do not notify
     time_t   m_NotifyTime;
+};
+
+
+enum ENSCompletion {
+    eNSCDone = 0,
+    eNSCFailed,
+    eNSCReturned,
+    eNSCTimeout
 };
 
 
@@ -125,32 +128,37 @@ public:
     void ClearNode(const string& node_id, TJobList& jobs);
     
     // Add job to worker node job list
-    void AddJob(SWorkerNodeInfo& node_info, TNSJobId job_id, time_t exp_time);
+    void AddJob(const string& node_id, TNSJobId job_id, time_t exp_time);
     // Remove job from worker node job list
-    void RemoveJob(const SWorkerNodeInfo& node_info, TNSJobId job_id);
+    void RemoveJob(const string& node_id, TNSJobId job_id,
+                   ENSCompletion reason);
 
     // Returns true and adds entries to notify_list if it decides that it's OK to notify.
     bool GetNotifyList(bool unconditional, time_t curr,
                        int notify_timeout, list<TWorkerNodeHostPort>& notify_list);
     void GetNodesInfo(time_t curr, list<string>& nodes_info) const;
 
-    void RegisterNotificationListener(const string&  node_id,
-                                      unsigned short port,
-                                      unsigned       timeout);
-	// In the case of old style job, returns true, and node needs its affinity,
-	// cleared and jobs which ran on the node (and returned in 'jobs' out
-	// parameter) should be failed.
+    void RegisterNotificationListener(const SWorkerNodeInfo& node_info,
+                                      unsigned short         port,
+                                      unsigned               timeout,
+                                      TJobList&              jobs);
+    // In the case of old style job, returns true, and node needs its affinity,
+    // cleared and jobs which ran on the node (and returned in 'jobs' out
+    // parameter) should be failed.
     bool UnRegisterNotificationListener(const string& node_id, TJobList& jobs);
 
     // Update node liveness time-out. If node is old-fashioned, it did not
     // register with INIT command, so we assign the node server-generated id.
-    void RegisterNodeVisit(SWorkerNodeInfo& node_info);
+    // @returns is this visit was first from this node (jobs may be filled)
+    bool RegisterNodeVisit(SWorkerNodeInfo& node_info, TJobList& jobs);
 private:
-	typedef map<TWorkerNodeHostPort, string> THostPortIdx;
-	typedef map<string, CRef<CWorkerNode> >  TWorkerNodeById;
+    typedef map<TWorkerNodeHostPort, string> THostPortIdx;
+    typedef map<string, CRef<CWorkerNode> >  TWorkerNodeById;
 
-	void x_ClearNode(const string& node_id, TJobList& jobs);
-	void x_ClearNode(TWorkerNodeById::iterator& it, TJobList& jobs);
+    void x_CheckOldWorkerNode(const SWorkerNodeInfo& node_info,
+                              TJobList&              jobs);
+    void x_ClearNode(const string& node_id, TJobList& jobs);
+    void x_ClearNode(TWorkerNodeById::iterator& it, TJobList& jobs);
     void x_GenerateNodeId(string& node_id);
 
     time_t          m_LastNotifyTime;
@@ -160,6 +168,7 @@ private:
 
     CAtomicCounter  m_GeneratedIdCounter;
     string          m_HostName;
+    time_t          m_StartTime;
     mutable CRWLock m_Lock;
 };
 

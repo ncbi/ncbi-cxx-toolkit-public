@@ -144,6 +144,7 @@ struct SJobInfoDB : public CBDB_File
 };
 
 
+const unsigned kMaxWorkerNodeIdSize = 64;
 /// BDB table to store run information
 /// Every instantiation of a job is reflected in this table under
 /// correspoding (id, run) key. In particular, this table stores
@@ -156,11 +157,10 @@ struct SRunsDB : public CBDB_File
     CBDB_FieldInt4   status;       ///< Final job status for this run
     CBDB_FieldUint4  time_start;   ///< Start time (former time_run)
     CBDB_FieldUint4  time_done;    ///< Result submission time
-    CBDB_FieldUint4  worker_node;  ///< IP of worker node (net byte order)
-	CBDB_FieldUint4  client_ip;    ///< IP of the client node (net byte order)
-	CBDB_FieldUint2  client_port;  ///< Client node's port
-	CBDB_FieldString worker_node_id; ///< worker node id
+    CBDB_FieldUint4  client_ip;    ///< IP of the client node (net byte order)
+    CBDB_FieldUint2  client_port;  ///< Client node's port
     CBDB_FieldInt4   ret_code;     ///< Return code
+    CBDB_FieldString worker_node_id; ///< worker node id
     CBDB_FieldString err_msg;      ///< Error message (exception::what())
 
     SRunsDB()
@@ -170,8 +170,10 @@ struct SRunsDB : public CBDB_File
         BindData("status",      &status);
         BindData("time_start",  &time_start);
         BindData("time_done",   &time_done);
-        BindData("worker_node", &worker_node);
+        BindData("client_ip",   &client_ip);
+        BindData("client_port", &client_port);
         BindData("ret_code",    &ret_code);
+        BindData("worker_node_id", &worker_node_id, kMaxWorkerNodeIdSize);
         BindData("err_msg",     &err_msg, kNetScheduleMaxDBErrSize);
     }
 };

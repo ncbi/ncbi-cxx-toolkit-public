@@ -1064,7 +1064,7 @@ void CQueue::x_PrintJobStat(const CJob&   job,
 
     int node_num = 1;
     ITERATE(vector<CJobRun>, it, job.GetRuns()) {
-        unsigned addr = it->GetWorkerNode();
+        unsigned addr = it->GetClientIp();
         string node_name = "worker_node" + NStr::IntToString(node_num++) + ": ";
         out << NS_PFNAME(node_name)
             << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << fsp;
@@ -1520,7 +1520,7 @@ void CQueue::PrepareFields(SFieldsDescription& field_descr,
         if (i >= 0) {
             if (field_name == "id") {
                 formatter = FormatNSId;
-            } else if (field_name == "worker_node" ||
+            } else if (field_name == "client_ip" ||
                        field_name == "subm_addr") {
                 formatter = FormatHostName;
             }
@@ -2096,7 +2096,8 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
                 _ASSERT(0);
             }
 
-            if (done_job_id) q->RemoveJobFromWorkerNode(node_info, done_job_id);
+            if (done_job_id) q->RemoveJobFromWorkerNode(node_info, done_job_id,
+                                                        eNSCDone);
             if (pending_job_id) q->AddJobToWorkerNode(node_info, pending_job_id,
                                                       curr + run_timeout);
             break;
@@ -2200,7 +2201,7 @@ void CQueue::FailJob(const SWorkerNodeInfo& node_info,
                      int                    ret_code)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    q->RemoveJobFromWorkerNode(node_info, job_id);
+    q->RemoveJobFromWorkerNode(node_info, job_id, eNSCFailed);
     q->FailJob(job_id, err_msg, output, ret_code, &node_info.node_id);
 }
 
@@ -2241,7 +2242,7 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
                            << q->DecorateJobId(job_id));
             // Fix it
             run = &job.AppendRun();
-			job_updated = true;
+    		job_updated = true;
         }
 
         time_start = run->GetTimeStart();
@@ -2253,7 +2254,7 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
             // Fix it just in case
             time_start = curr;
             run->SetTimeStart(curr);
-			job_updated = true;
+    		job_updated = true;
         }
         run_timeout = job.GetRunTimeout();
         if (run_timeout == 0) run_timeout = queue_run_timeout;
@@ -2261,7 +2262,7 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
         if (time_start + run_timeout > curr + tm) {
             // Old timeout is enough to cover this request, keep it.
             // If we already changed job object (fixing it), we flush it.
-			if (job_updated) job.Flush(q);
+    		if (job_updated) job.Flush(q);
             return;
         }
 
@@ -2344,7 +2345,7 @@ void CQueue::ReturnJob(const SWorkerNodeInfo& node_info, unsigned job_id)
     }}
     trans.Commit();
     js_guard.Commit();
-    q->RemoveJobFromWorkerNode(node_info, job_id);
+    q->RemoveJobFromWorkerNode(node_info, job_id, eNSCReturned);
     x_RemoveFromTimeLine(job_id);
 
     if (IsMonitoring()) {
@@ -2429,11 +2430,14 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
         CJobRun& run = job.AppendRun();
         run.SetStatus(CNetScheduleAPI::eRunning);
         run.SetTimeStart(curr);
-// FIXME: extend CJobRun so that it takes more detailed info on the
-// worker node including its id, host and client program.
-// As alternative, keep a log of worker node registrations and store
-// only node id there.
-//        run.SetWorkerNode(worker_node);
+
+        // We're setting host:port here using node_info. It is faster
+        // than looking up this info by node_id in worker node list and
+        // should provide exactly same info.
+        run.SetWorkerNodeId(node_info.node_id);
+        run.SetClientIp(node_info.host);
+        run.SetClientPort(node_info.port);
+
         job.SetStatus(CNetScheduleAPI::eRunning);
         job.SetRunTimeout(0);
         job.SetRunCount(run_count);
@@ -2630,7 +2634,7 @@ void CQueue::RegisterNotificationListener(const SWorkerNodeInfo& node_info,
                                           unsigned               timeout)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    q->RegisterNotificationListener(node_info.node_id, port, timeout);
+    q->RegisterNotificationListener(node_info, port, timeout);
 }
 
 

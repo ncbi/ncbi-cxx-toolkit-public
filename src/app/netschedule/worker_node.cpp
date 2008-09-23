@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <util/md5.hpp>
 
 #include "worker_node.hpp"
 
@@ -41,29 +42,10 @@ BEGIN_NCBI_SCOPE
 ///////////////////////////////////////////////////////////////////////
 // CWorkerNode
 
-CWorkerNode::CWorkerNode(const string& node_id, time_t curr, 
-    const string& auth, unsigned host, unsigned short port)
-  : m_Id(node_id), m_Auth(auth), m_NewStyle(true),
-    m_Host(host), m_Port(port),
-    m_LastVisit(curr), m_VisitTimeout(60),
-    m_JobValidityTime(0), m_NotifyTime(0)
-{
-}
-
-
-CWorkerNode::CWorkerNode(const string& node_id, time_t curr,
-    const string& auth, unsigned host)
-  : m_Id(node_id), m_Auth(auth), m_NewStyle(false),
-    m_Host(host), m_Port(0),
-    m_LastVisit(curr), m_VisitTimeout(60),
-    m_JobValidityTime(0), m_NotifyTime(0)
-{
-}
-
-
-CWorkerNode::CWorkerNode(const string& node_id, time_t curr)
-  : m_Id(node_id), m_NewStyle(false),
-    m_Host(0), m_Port(0),
+CWorkerNode::CWorkerNode(const SWorkerNodeInfo& node_info, time_t curr,
+                         bool new_style)
+  : m_Id(node_info.node_id), m_Auth(node_info.auth), m_NewStyle(new_style),
+    m_Host(node_info.host), m_Port(node_info.port),
     m_LastVisit(curr), m_VisitTimeout(60),
     m_JobValidityTime(0), m_NotifyTime(0)
 {
@@ -112,7 +94,7 @@ std::string CWorkerNode::AsString(time_t curr) const
 {
     CTime lv_time(m_LastVisit);
 
-	string s(m_Auth);
+    string s(m_Auth);
     s += " @ ";
     s += CSocketAPI::gethostbyaddr(m_Host);
     s += " UDP:";
@@ -123,8 +105,8 @@ std::string CWorkerNode::AsString(time_t curr) const
         s += " ";
     }
     s += lv_time.ToLocalTime().AsString();
-	s += " (";
-	s += NStr::IntToString(ValidityTime() - curr);
+    s += " (";
+    s += NStr::IntToString(ValidityTime() - curr);
     s += ") jobs:";
     ITERATE(TWNJobInfoMap, it, m_Jobs) {
         s += " ";
@@ -141,6 +123,7 @@ CQueueWorkerNodeList::CQueueWorkerNodeList()
   : m_LastNotifyTime(0)
 {
     m_HostName = CSocketAPI::gethostname();
+    m_StartTime = time(0);
     m_GeneratedIdCounter.Set(0);
 }
 
@@ -148,21 +131,15 @@ CQueueWorkerNodeList::CQueueWorkerNodeList()
 void CQueueWorkerNodeList::RegisterNode(const SWorkerNodeInfo& node_info,
                                         TJobList&              jobs)
 {
-	time_t curr = time(0);
+    time_t curr = time(0);
     CWriteLockGuard guard(m_Lock);
-    THostPortIdx::iterator it =
-        m_HostPortIdx.find(TWorkerNodeHostPort(node_info.host, node_info.port));
-    if (it != m_HostPortIdx.end()) {
-        if (it->second != node_info.node_id)
-            x_ClearNode(it->second, jobs);
-    }
     TWorkerNodeById::iterator it1 = m_WorkerNodeById.find(node_info.node_id);
     CWorkerNode* node;
     if (it1 == m_WorkerNodeById.end()) {
-		node = new CWorkerNode(node_info.node_id, curr, node_info.auth,
-            node_info.host, node_info.port);
-		m_WorkerNodeById[node_info.node_id] = CRef<CWorkerNode>(node);
-	} else {
+    	node = new CWorkerNode(node_info, curr, true);
+    	m_WorkerNodeById[node_info.node_id] = CRef<CWorkerNode>(node);
+        x_CheckOldWorkerNode(node_info, jobs);
+    } else {
         // Re-registers the new style node, probably from completely different
         // host:port and with different auth.
         node = it1->second;
@@ -170,7 +147,7 @@ void CQueueWorkerNodeList::RegisterNode(const SWorkerNodeInfo& node_info,
         node->m_Auth = node_info.auth;
         node->m_Host = node_info.host;
         node->m_Port = node_info.port;
-	}
+    }
     m_HostPortIdx[TWorkerNodeHostPort(node_info.host, node_info.port)] =
         node_info.node_id;
     node->SetNotificationTimeout(curr, 0);
@@ -184,62 +161,34 @@ void CQueueWorkerNodeList::ClearNode(const string& node_id, TJobList& jobs)
 }
 
 
-void CQueueWorkerNodeList::x_ClearNode(const string& node_id, TJobList& jobs)
+void CQueueWorkerNodeList::AddJob(const string& node_id,
+                                  TNSJobId job_id,
+    							  time_t exp_time)
 {
+    time_t curr = time(0);
+    CWriteLockGuard guard(m_Lock);
     TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_id);
     if (it == m_WorkerNodeById.end()) return;
-	x_ClearNode(it, jobs);
-}
-
-void CQueueWorkerNodeList::x_ClearNode(TWorkerNodeById::iterator& it,
-									   TJobList& jobs)
-{
-	CWorkerNode* node = it->second;
-    ITERATE(CWorkerNode::TWNJobInfoMap, jobinfo_it, node->m_Jobs) {
-        jobs.push_back(jobinfo_it->first);
-    }
-    m_WorkerNodeById.erase(it);
-    NON_CONST_ITERATE(THostPortIdx, hostposrt_it, m_HostPortIdx) {
-        if (hostposrt_it->second == node->m_Id) {
-            m_HostPortIdx.erase(hostposrt_it);
-            return;
-        }
-    }
-}
-
-
-void CQueueWorkerNodeList::AddJob(SWorkerNodeInfo& node_info,
-                                  TNSJobId job_id,
-								  time_t exp_time)
-{
-    time_t curr = time(0);
-    CWriteLockGuard guard(m_Lock);
-    TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_info.node_id);
-    CWorkerNode* node;
-    if (it == m_WorkerNodeById.end()) {
-        // make synthetic node it here
-        x_GenerateNodeId(node_info.node_id);
-        node = new CWorkerNode(node_info.node_id, curr);
-        m_WorkerNodeById[node_info.node_id] = CRef<CWorkerNode>(node);
-    } else {
-        node = it->second;
-    }
+    CWorkerNode* node = it->second;
     node->m_Jobs[job_id] = exp_time;
     node->UpdateValidityTime();
+    node->SetNotificationTimeout(curr, 0);
 }
 
 
-void CQueueWorkerNodeList::RemoveJob(const SWorkerNodeInfo& node_info,
-                                     TNSJobId job_id)
+void CQueueWorkerNodeList::RemoveJob(const string& node_id,
+                                     TNSJobId job_id,
+                                     ENSCompletion reason)
 {
     time_t curr = time(0);
     CWriteLockGuard guard(m_Lock);
-    TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_info.node_id);
+    TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_id);
     if (it == m_WorkerNodeById.end()) return;
     CWorkerNode* node = it->second;
     node->m_Jobs.erase(job_id);
     node->UpdateValidityTime();
-    node->SetNotificationTimeout(curr, 0);
+    if (reason != eNSCTimeout)
+        node->SetNotificationTimeout(curr, 0);
 }
 
 
@@ -257,9 +206,9 @@ CQueueWorkerNodeList::GetNotifyList(bool unconditional, time_t curr,
     // Get worker node list to notify
     bool has_notify = false;
     ITERATE(TWorkerNodeById, it, m_WorkerNodeById) {
-        if (!unconditional && it->second->ShouldNotify(curr))
-            continue;
         const CWorkerNode& node = *(it->second);
+        if (!unconditional && node.ShouldNotify(curr))
+            continue;
         has_notify = true;
         notify_list.push_back(TWorkerNodeHostPort(node.m_Host, node.m_Port));
     }
@@ -277,73 +226,127 @@ void CQueueWorkerNodeList::GetNodesInfo(time_t curr,
         const CWorkerNode& node = *it->second;
         if (node.ValidityTime() > curr) {
             nodes_info.push_back(node.AsString(curr));
+        } else {
+            // DEBUG
+            nodes_info.push_back(node.AsString(curr)+" invalid");
         }
     }
 }
 
 
-void CQueueWorkerNodeList::RegisterNotificationListener(const string&  node_id,
-                                                        unsigned short port,
-                                                        unsigned       timeout)
+void
+CQueueWorkerNodeList::RegisterNotificationListener(
+    const SWorkerNodeInfo& node_info,
+    unsigned short         port,
+    unsigned               timeout,
+    TJobList&              jobs)
 {
     CWriteLockGuard guard(m_Lock);
     time_t curr = time(0);
-	TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_id);
-	if (it == m_WorkerNodeById.end()) return;
-	CWorkerNode* node = it->second;
-	if (!node->m_Port) {
-		// This is the first worker node command from old style node
-		// which mentions the port (one of GET, WGET, or REGC)
-		node->m_Port = port;
-	} else {
-		if (!port) {
-			// GET with 0 port - no notification
-			timeout = 0;
-		} else if (node->m_Port != port) {
-			LOG_POST(Warning << "Node "
-				<< node_id << "(" << node->m_Host << ":" << node->m_Port << ")"
-				<< " changed port to " << port);
-			// ??? Should we revise host:port mapping of the node here
-			node->m_Port = port;
-		}
-	}
-	node->SetNotificationTimeout(curr, timeout);
+    TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_info.node_id);
+    if (it == m_WorkerNodeById.end()) return;
+    CWorkerNode* node = it->second;
+    if (!node->m_Port) {
+    	// This is the first worker node command from old style node
+    	// which mentions the port (one of GET, WGET, or REGC)
+    	node->m_Port = port;
+        x_CheckOldWorkerNode(node_info, jobs);
+    } else {
+    	if (!port) {
+    		// GET with 0 port - no notification
+    		timeout = 0;
+    	} else if (node->m_Port != port) {
+    		LOG_POST(Warning << "Node "
+    			<< node->m_Id << "(" << node->m_Host << ":" << node->m_Port << ")"
+    			<< " changed port to " << port);
+    		// Remap to new host:port
+            m_HostPortIdx.erase(TWorkerNodeHostPort(node->m_Host, node->m_Port));
+            node->m_Port = port;
+            m_HostPortIdx[TWorkerNodeHostPort(node->m_Host, node->m_Port)] =
+                node->m_Id;
+    	}
+    }
+    node->SetNotificationTimeout(curr, timeout);
 }
 
 
 bool
 CQueueWorkerNodeList::UnRegisterNotificationListener(const string& node_id,
-												     TJobList& jobs)
+    											     TJobList& jobs)
 {
     CWriteLockGuard guard(m_Lock);
-	TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_id);
-	if (it == m_WorkerNodeById.end()) return false;
-	CWorkerNode* node = it->second;
-	if (node->m_NewStyle) return false;
-	// If the node is old style, destroy node information including affinity
-	// association. New style node will explicitly call ClearNode
-	x_ClearNode(it, jobs);
-	return true;
+    TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_id);
+    if (it == m_WorkerNodeById.end()) return false;
+    CWorkerNode* node = it->second;
+    if (node->m_NewStyle) return false;
+    // If the node is old style, destroy node information including affinity
+    // association. New style node will explicitly call ClearNode
+    x_ClearNode(it, jobs);
+    return true;
 }
 
 
-void CQueueWorkerNodeList::RegisterNodeVisit(SWorkerNodeInfo& node_info)
+bool CQueueWorkerNodeList::RegisterNodeVisit(SWorkerNodeInfo& node_info,
+                                             TJobList& jobs)
 {
     time_t curr = time(0);
+    bool first_visit = false;
     CWriteLockGuard guard(m_Lock);
     TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_info.node_id);
     CWorkerNode* node;
     if (it == m_WorkerNodeById.end()) {
-		// This call to worker node-specific function is the first one, so the
-		// node did not call INIT before and is an old style one.
+    	// This call to worker node-specific function is the first one, so the
+    	// node did not call INIT before and is an old style one.
         x_GenerateNodeId(node_info.node_id);
-        node = new CWorkerNode(node_info.node_id, curr, node_info.auth, node_info.host);
+        node = new CWorkerNode(node_info, curr, false);
         m_WorkerNodeById[node_info.node_id] = CRef<CWorkerNode>(node);
+        x_CheckOldWorkerNode(node_info, jobs);
+        first_visit = true;
     } else {
         node = it->second;
         node->SetClientInfo(node_info.auth, node_info.host);
     }
     node->SetNotificationTimeout(curr, 0);
+    return first_visit;
+}
+
+
+void
+CQueueWorkerNodeList::x_CheckOldWorkerNode(const SWorkerNodeInfo& node_info,
+                                           TJobList&              jobs)
+{
+    THostPortIdx::iterator it =
+        m_HostPortIdx.find(TWorkerNodeHostPort(node_info.host, node_info.port));
+    if (it != m_HostPortIdx.end()) {
+        if (it->second != node_info.node_id)
+            x_ClearNode(it->second, jobs);
+    }
+    m_HostPortIdx[TWorkerNodeHostPort(node_info.host, node_info.port)] =
+        node_info.node_id;
+}
+
+
+void CQueueWorkerNodeList::x_ClearNode(const string& node_id, TJobList& jobs)
+{
+    TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_id);
+    if (it == m_WorkerNodeById.end()) return;
+    x_ClearNode(it, jobs);
+}
+
+void CQueueWorkerNodeList::x_ClearNode(TWorkerNodeById::iterator& it,
+                                       TJobList& jobs)
+{
+    CWorkerNode* node = it->second;
+    ITERATE(CWorkerNode::TWNJobInfoMap, jobinfo_it, node->m_Jobs) {
+        jobs.push_back(jobinfo_it->first);
+    }
+    m_WorkerNodeById.erase(it);
+    NON_CONST_ITERATE(THostPortIdx, hostposrt_it, m_HostPortIdx) {
+        if (hostposrt_it->second == node->m_Id) {
+            m_HostPortIdx.erase(hostposrt_it);
+            return;
+        }
+    }
 }
 
 
@@ -351,9 +354,16 @@ void CQueueWorkerNodeList::x_GenerateNodeId(string& node_id)
 {
     // Generate synthetic id for node
     // FIXME: this code is called from under m_Lock guard, do we need it
-    // really to be an atomic counter?
-    node_id = m_HostName + '_' +
-        NStr::UIntToString((unsigned) m_GeneratedIdCounter.Add(1));
+    // really to use an atomic counter?
+    CMD5 md5;
+    md5.Update(m_HostName.data(), m_HostName.size());
+    time_t t = time(0);
+    md5.Update((const char*)&t, sizeof(t));
+    unsigned ordinal = (unsigned) m_GeneratedIdCounter.Add(1);
+    md5.Update((const char*)&ordinal, sizeof(ordinal));
+    md5.Update((const char*)&m_StartTime, sizeof(m_StartTime));
+    md5.Update((const char*)&m_LastNotifyTime, sizeof(m_LastNotifyTime));
+    node_id = md5.GetHexSum();
 }
 
 

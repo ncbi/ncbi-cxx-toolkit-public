@@ -1563,6 +1563,8 @@ void CNetScheduleHandler::ProcessGetJob()
 {
     if (m_JobReq.port)
         m_WorkerNodeInfo.port = m_JobReq.port;
+    // See note in PutResultGetJob below
+    m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
 
     list<string> aff_list;
     NStr::Split(m_JobReq.affinity_token, "\t,",
@@ -1592,15 +1594,12 @@ void CNetScheduleHandler::ProcessGetJob()
     }
 
     // We don't call UnRegisterNotificationListener here
-	// because for old worker nodes it finishes the session
-	// and cleans up all the information, affinity association
-	// included.
+    // because for old worker nodes it finishes the session
+    // and cleans up all the information, affinity association
+    // included.
     if (m_JobReq.port)  // unregister notification
         m_Queue->RegisterNotificationListener(
             m_WorkerNodeInfo, m_JobReq.port, 0);
-    else
-        // FIXME: see note in PutResultGetJob below
-        m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
 }
 
 
@@ -1618,6 +1617,11 @@ CNetScheduleHandler::ProcessJobExchange()
         done_job_id = 0;
     }
 
+    // PutResultGetJob (and for the same reason, GetJob) must ensure
+    // existence of a valid worker node record before actual assigning of
+    // a job to the node
+    m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
+
     CJob job;
     m_Queue->PutResultGetJob(m_WorkerNodeInfo,
                              done_job_id,
@@ -1634,12 +1638,6 @@ CNetScheduleHandler::ProcessJobExchange()
     } else {
         WriteOK();
     }
-    // FIXME: PutResultGetJob (and for the same reason, GetJob) must ensure
-    // existence of a valid worker node record before actual assigning of
-    // a job to the node, so they must call this before and this particular
-    // call is redundant
-    if (!job_id && !done_job_id)
-        m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
 
     if (IsMonitoring()) {
         CSocket& socket = GetSocket();
@@ -1661,6 +1659,8 @@ void CNetScheduleHandler::ProcessWaitGet()
 {
     if (m_JobReq.port)
         m_WorkerNodeInfo.port = m_JobReq.port;
+    // See note in PutResultGetJob above
+    m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
 
     list<string> aff_list;
     NStr::Split(m_JobReq.affinity_token, "\t,",
@@ -1681,7 +1681,6 @@ void CNetScheduleHandler::ProcessWaitGet()
     // job not found, initiate waiting mode
     WriteOK();
 
-    // FIXME: see note in PutResultGetJob above
     m_Queue->RegisterNotificationListener(
         m_WorkerNodeInfo, m_JobReq.port, m_JobReq.timeout);
 }
