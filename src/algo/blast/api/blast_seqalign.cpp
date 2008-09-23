@@ -1434,6 +1434,30 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
     return retval;
 }
 
+/** 
+ * @brief This function changes the subject frame for HSPs if the program is
+ * blastn and the subject was specified with a negative strand. This is
+ * necessary because the engine doesn't handle negative strands in subjects for
+ * blastn (it does for translated searches).
+ * 
+ * @param subj_strand Strand for the subject sequence [in]
+ * @param program BLAST program [in]
+ * @param hsp_list list of HSPs to possibly adjust [in]
+ */
+static void s_AdjustNegativeSubjFrameInBlastn(ENa_strand subj_strand,
+                                     EBlastProgramType program,
+                                     BlastHSPList* hsp_list)
+{
+    _ASSERT(hsp_list);
+    if (subj_strand != eNa_strand_minus || program != eBlastTypeBlastn)
+        return;
+
+    for (int index = 0; index < hsp_list->hspcnt; index++) { 
+        BlastHSP* hsp = hsp_list->hsp_array[index];
+        hsp->subject.frame = -1;
+    }
+}
+
 /** Extracts results from the BlastHSPResults structure for only one subject 
  * sequence, identified by its index, and converts them into a vector of 
  * CSeq_align_set objects. Returns one vector element per query sequence; 
@@ -1443,7 +1467,7 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
  * @param query_data All query sequences [in]
  * @param seqinfo_src Source of subject sequences information [in]
  * @param prog type of BLAST program [in]
- * @param subj_index Index of this subject sequence in a set [in]
+ * @param subj_idx Index of this subject sequence in a set [in]
  * @param is_gapped Is this a gapped search? [in]
  * @param is_ooframe Is it a search with out-of-frame gapping? [in]
  * @return Vector of seqalign sets (one set per query sequence).
@@ -1453,7 +1477,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                                     ILocalQueryData& query_data,
                                     const IBlastSeqInfoSrc& seqinfo_src,
                                     EBlastProgramType prog, 
-                                    Uint4 subj_index, 
+                                    Uint4 subj_idx, 
                                     bool is_gapped, 
                                     bool is_ooframe,
                                     vector<TSeqLocInfoVector>& subj_masks)
@@ -1465,7 +1489,10 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
     TSeqPos subj_length = 0;
 
     // Subject is the same for all queries, so retrieve its id right away
-    GetSequenceLengthAndId(&seqinfo_src, subj_index, subject_id, &subj_length);
+    GetSequenceLengthAndId(&seqinfo_src, subj_idx, subject_id, &subj_length);
+    // For blastn, we may need to fix the strand in the HSPs, as the engine
+    // doesn't expect negative subject strands
+    const ENa_strand kSubjStrand = seqinfo_src.GetSeqLoc(subj_idx)->GetStrand();
 
     vector<CRef<CSeq_align > > hit_align;
     retval.reserve(results->num_queries);
@@ -1481,7 +1508,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             int sindex;
             for (sindex = 0; sindex < hit_list->hsplist_count; ++sindex) {
                 hsp_list = hit_list->hsplist_array[sindex];
-                if (hsp_list->oid == static_cast<Int4>(subj_index))
+                if (hsp_list->oid == static_cast<Int4>(subj_idx))
                     break;
             }
             /* If hsp_list for this subject is not found, set it to NULL */
@@ -1499,12 +1526,13 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             CRef<CSeq_id> query_id(new CSeq_id);
             SerialAssign(*query_id, *seqloc->GetId());
             TSeqPos query_length = query_data.GetSeqLength(qindex); 
+            s_AdjustNegativeSubjFrameInBlastn(kSubjStrand, prog, hsp_list);
             
             vector<int> gi_list;
             GetFilteredRedundantGis(seqinfo_src, hsp_list->oid, gi_list);
 
             TMaskedSubjRegions masks;
-            if (seqinfo_src.GetMasks(subj_index, 
+            if (seqinfo_src.GetMasks(subj_idx, 
                                       s_GetSubjRanges(hsp_list), masks)) {
                 subj_masks[qindex].push_back(masks);
             }
@@ -1531,7 +1559,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                                                    hit_align);
             }
             seq_aligns.Reset(new CSeq_align_set());
-            CConstRef<CSeq_loc> subj_loc = seqinfo_src.GetSeqLoc(subj_index);
+            CConstRef<CSeq_loc> subj_loc = seqinfo_src.GetSeqLoc(subj_idx);
             NON_CONST_ITERATE(vector<CRef<CSeq_align > >, iter, hit_align) {
                 RemapToQueryLoc(*iter, *seqloc);
                 if ( !is_ooframe )

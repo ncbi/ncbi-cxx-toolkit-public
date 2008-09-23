@@ -723,8 +723,9 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
 
     EBlastEncoding encoding = GetSubjectEncoding(prog);
        
-    // TODO: Should strand selection on the subject sequences be allowed?
-    //ENa_strand strand = options->GetStrandOption(); 
+    // N.B.: strand selection is only allowed for translated subjects, this is
+    // done in the engine. For non-translated nucleotide subjects, the
+    // alignment is "fixed" in s_AdjustNegativeSubjFrameInBlastn
 
     *max_subjlen = 0;
 
