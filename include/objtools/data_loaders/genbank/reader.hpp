@@ -47,7 +47,7 @@ class CLoadLockSeq_ids;
 class CLoadLockBlob_ids;
 class CLoadLockBlob;
 class CReaderCacheManager;
-class SAnnotSelector;
+struct SAnnotSelector;
 
 class NCBI_XREADER_EXPORT CReader : public CObject
 {

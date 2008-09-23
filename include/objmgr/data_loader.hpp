@@ -61,7 +61,7 @@ class CTSE_Info;
 class CTSE_Chunk_Info;
 class CBioseq_Info;
 class IEditSaver;
-class SAnnotSelector;
+struct SAnnotSelector;
 
 /////////////////////////////////////////////////////////////////////////////
 // structure to describe required data set
