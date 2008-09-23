@@ -1,7 +1,7 @@
-APP = makembindex
-SRC = main mkindex_app
+APP = srsearch
+SRC = main srsearch_app
 
-LIB_ = xalgoblastdbindex blast composition_adjustment seqdb blastdb \
+LIB_ = xalgoblastdbindex xalgoblastdbindex_search blast composition_adjustment seqdb blastdb \
       xobjread creaders xobjutil tables connect $(SOBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 

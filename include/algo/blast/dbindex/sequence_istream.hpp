@@ -84,9 +84,10 @@ class NCBI_XBLAST_EXPORT CSequenceIStream
                 /** Numerical error codes. */
                 enum EErrCode
                 {
-                    eOpNotSupported     /**< The requested operation is not implemented
+                    eOpNotSupported,    /**< The requested operation is not implemented
                                              by this kind of sequence stream (e.g. the
                                              stream can not rewind). */
+                    eIO                 /**< System io error. */
                 };
 
                 /** Get the exception description string.
@@ -97,6 +98,8 @@ class NCBI_XBLAST_EXPORT CSequenceIStream
                     switch( GetErrCode() ) {
                         case eOpNotSupported: 
                             return "stream operation is not supported";
+                        case eIO:
+                            return "I/O error";
                         default: return CException::GetErrCodeString();
                     }
                 }

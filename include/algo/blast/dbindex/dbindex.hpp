@@ -42,34 +42,16 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )
 
-// Template length for discontiguous words. 
-//      0 - use contiguous words.
-const unsigned long DISC_CONT   = 0UL;  /**< Contiguous words. */
-const unsigned long DISC_16     = 1UL;  /**< 16 bp pattern.    */
-const unsigned long DISC_18     = 2UL;  /**< 18 bp pattern.    */
-const unsigned long DISC_21     = 3UL;  /**< 21 bp pattern.    */
-
-// Template types.
-const unsigned long DISC_CODING  = 0UL;  /**< Use coding templates.  */
-const unsigned long DISC_OPTIMAL = 1UL;  /**< Use optimal templates. */
-
 // Compression types.
 const unsigned long UNCOMPRESSED = 0UL; /**< No compression. */
 
 // Encoding of entries in offset lists.
-const unsigned long OFFSET_RAW      = 0UL;      /**< Raw index-wide offset. */
 const unsigned long OFFSET_COMBINED = 1UL;      /**< Combination of chunk 
                                                      number and chunk-based 
                                                      offset. */
 
 // Index bit width.
 const unsigned long WIDTH_32    = 0UL;  /**< 32-bit index. */
-const unsigned long WIDTH_64    = 1UL;  /**< 64-bit index. */
-
-// Sequence input type for index creation.
-const unsigned long FASTA       = 0UL;  /**< FASTA formatted input with
-                                             masking information encoded
-                                             in lower case letters. */
 
 // Switching between one-hit and two-hit searches.
 const unsigned long ONE_HIT     = 0UL;  /**< Use one-hit search (normal). */
@@ -79,6 +61,134 @@ const unsigned long TWO_HIT     = 1UL;  /**< Use two-hit search. */
 const unsigned long REPORT_QUIET   = 0UL;       /**< No progress reporting. */
 const unsigned long REPORT_NORMAL  = 1UL;       /**< Normal reporting. */
 const unsigned long REPORT_VERBOSE = 2UL;       /**< Verbose reporting. */
+
+/** Compute the number of bits to encode special offsets based on stride.
+    
+    @param stride the value of stride
+
+    @return number of bits necessary to encode numbers [0 - stride].
+  */
+extern unsigned long GetCodeBits( unsigned long stride );
+
+/** Compute the minimum offset value needed encode offsets based on stride.
+
+    @param stride the value of stride
+
+    @return minimum offset used by an index with the given stride
+  */
+unsigned long GetMinOffset( unsigned long stride );
+
+/** Structure into which an index header is loaded. */
+struct SIndexHeader
+{
+    bool legacy_;               /**< This is a legacy index format. */
+
+    unsigned long hkey_width_;  /**< Size in bp of the Nmer used as a hash key. */
+    unsigned long stride_;      /**< Stride used to index database locations. */
+    unsigned long ws_hint_;     /**< Word size hint used during index creation. */
+
+    unsigned long max_chunk_size_; /**< Chunk size used to split subjects. */
+    unsigned long chunk_overlap_;  /**< Overlap of neighboring chunks. */
+
+    CSequenceIStream::TStreamPos start_;             /**< OID of the first sequence in the index. */
+    CSequenceIStream::TStreamPos start_chunk_;       /**< Number of the first chunk of the first sequence in the index. */
+    CSequenceIStream::TStreamPos stop_;              /**< OID of the last sequence in the index. */
+    CSequenceIStream::TStreamPos stop_chunk_;        /**< Number of the last chunk of the last sequence in the index. */
+};
+
+/** A vector or pointer based sequence wrapper.
+    Serves as either a std::vector wrapper or holds a constant size
+    sequence pointed to by an external pointer.
+*/
+template< typename T >
+class CVectorWrap
+{
+    typedef std::vector< T > TVector;   /**< Sequence type being wrapped. */
+
+    public:
+
+        /**@name Declarations forwarded from TVector. */
+        /**@{*/
+        typedef typename TVector::size_type size_type;
+        typedef typename TVector::value_type value_type;
+        typedef typename TVector::reference reference;
+        typedef typename TVector::const_reference const_reference;
+        /**@}*/
+
+        /** Iterator type pointing to const data. */
+        typedef const T * const_iterator;
+
+        /** Object constructor.
+            Initializes the object as a std::vector wrapper.
+            @param sz   [I]     initial size
+            @param v    [I]     initial element value
+        */
+        CVectorWrap( size_type sz = 0, T v = T() )
+            : base_( 0 ), data_( sz, v ), vec_( true )
+        { if( !data_.empty() ) base_ = &data_[0]; }
+
+        /** Make the object hold an external sequence.
+            @param base [I]     pointer to the external sequence
+            @param sz   [I]     size of the external sequence
+        */
+        void SetPtr( T * base, size_type sz ) 
+        {
+            base_ = base;
+            vec_ = false;
+            size_ = sz;
+        }
+
+        /** Indexing operator.
+            @param n    [I]     index
+            @return reference to the n-th element
+        */
+        reference operator[]( size_type n )
+        { return base_[n]; }
+
+        /** Indexing operator.
+            @param n    [I]     index
+            @return reference to constant value of the n-th element.
+        */
+        const_reference operator[]( size_type n ) const
+        { return base_[n]; }
+
+        /** Change the size of the sequence.
+            Only works when the object holds a std::vector.
+            @param n    [I]     new sequence size
+            @param v    [I]     initial value for newly created elements
+        */
+        void resize( size_type n, T v = T() )
+        { 
+            if( vec_ ) {
+                data_.resize( n, v ); 
+                base_ = &data_[0];
+            }
+        }
+
+        /** Get the sequence size.
+            @return length of the sequence
+        */
+        size_type size() const
+        { return vec_ ? data_.size() : size_; }
+
+        /** Get the start of the sequence.
+            @return iterator pointing to the beginning of the sequence.
+        */
+        const_iterator begin() const { return base_; }
+
+        /** Get the end of the sequence.
+            @return iterator pointing to past the end of the sequence.
+        */
+        const_iterator end() const
+        { return vec_ ? base_ + data_.size() : base_ + size_; }
+
+    private:
+
+        T * base_;          /**< Pointer to the first element of the sequence. */
+        TVector data_;      /**< std::vector object wrapped by this object. */
+        bool vec_;          /**< Flag indicating whether it is a wrapper or a holder of external sequence. */
+        size_type size_;    /**< Size of the external sequence. */
+};
 
 /** Types of exception the indexing library can throw.
   */
@@ -103,6 +213,8 @@ class NCBI_XBLAST_EXPORT CDbIndex_Exception : public CException
 
         NCBI_EXCEPTION_DEFAULT( CDbIndex_Exception, CException );
 };
+
+class CSubjectMap;
 
 /** Base class providing high level interface to index objects.
   */
@@ -138,44 +250,28 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
         static const unsigned char VERSION = (unsigned char)5;
 
         /** Simple record type used to specify index creation parameters.
-
-            The following template types are defined:
-
-            <PRE>
-            0   - contiguous megablast
-            1   - 16 bit pattern, 11 bit hash, coding   pattern: 110,110,110,110,110,1
-            2   - 16 bit pattern, 11 bit hash, optimal  pattern: 1,110,010,110,110,111
-            3   - 16 bit pattern, 12 bit hash, coding   pattern: 111,110,110,110,110,1
-            4   - 16 bit pattern, 12 bit hash, optimal  pattern: 1,110,110,110,110,111
-            5   - 18 bit pattern, 11 bit hash, coding   pattern: 10,110,110,010,110,110,1
-            6   - 18 bit pattern, 11 bit hash, optimal  pattern: 111,010,010,110,010,111
-            7   - 18 bit pattern, 12 bit hash, coding   pattern: 10,110,110,110,110,110,1
-            8   - 18 bit pattern, 12 bit hash, optimal  pattern: 111,010,110,010,110,111
-            9   - 21 bit pattern, 11 bit hash, coding   pattern: 10,010,110,010,110,010,110,1
-            10  - 21 bit pattern, 11 bit hash, optimal  pattern: 111,010,010,100,010,010,111
-            11  - 21 bit pattern, 12 bit hash, coding   pattern: 10,010,110,110,110,010,110,1
-            12  - 21 bit pattern, 12 bit hash, optimal  pattern: 111,010,010,110,010,010,111
-            </PRE>
           */
         struct SOptions
         {
-            unsigned long template_type;        /**< Type of the discontiguous pattern. */
-            unsigned long compression;          /**< Type of compression to use. */
-            unsigned long bit_width;            /**< Creating 32 or 64 bit wide index. */
-            unsigned long input_type;           /**< Input format for index creation. */
+            bool idmap;                         /**< Indicator of the index map creation. */
+            bool legacy;                        /**< Indicator of the legacy index format. */
+            unsigned long stride;               /**< Stride to use for stored database locations. */
+            unsigned long ws_hint;              /**< Most likely word size to use for searches. */
             unsigned long hkey_width;           /**< Width of the hash key in bits. */
             unsigned long chunk_size;           /**< Long sequences are split into chunks
-                                                  of this size. */
+                                                     of this size. */
             unsigned long chunk_overlap;        /**< Amount by which individual chunks overlap. */
             unsigned long report_level;         /**< Verbose index creation. */
             unsigned long max_index_size;       /**< Maximum index size in megabytes. */
-            unsigned long version;              /**< Index format version. */
 
             std::string stat_file_name;         /**< File to write index statistics into. */
         };
 
         /** Type used to enumerate sequences in the index. */
         typedef CSequenceIStream::TStreamPos TSeqNum;
+
+        /** Type representing main memory unit of the index structure. */
+        typedef Uint4 TWord;
 
         /** This class represents a set of seeds obtained by searching
             all subjects represented by the index.
@@ -189,6 +285,9 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
 
             public:
 
+                /** Convenience declaration */
+                typedef CDbIndex::TWord TWord;
+
                 /** Object constructor.
                     @param word_size    [I]     word size used for the search
                     @param start        [I]     logical subject corresponding to the
@@ -199,11 +298,10 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                                                 logical sequence ids
                     @param map_size     [I]     number of elements in map
                 */
-                template< typename word_t >
                 CSearchResults( 
                         unsigned long word_size,
                         TSeqNum start, TSeqNum size,
-                        const word_t * map, size_t map_size )
+                        const TWord * map, size_t map_size )
                     : word_size_( word_size ), start_( start ), results_( size, 0 )
                 {
                     for( size_t i = 0; i < map_size; ++i ) {
@@ -327,7 +425,6 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
         struct SSearchOptions
         {
             unsigned long word_size;            /**< Target seed length. */
-            unsigned long template_type;        /**< Type of the discontiguous pattern. */
             unsigned long two_hits;             /**< Window for two-hit method (see megablast docs). */
         };
 
@@ -335,11 +432,6 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
 
           Creates an instance of CDbIndex using the named resource as input.
           The name of the resource is given by the <TT>fname</TT> parameter. 
-          CDbIndex::SOptions::input_type controls the type of resource used
-          as input.
-
-          <TT>stop_chunk</TT> is needed only if <TT>options.whole_seq</TT> is
-          set to <TT>CHUNKS</TT>.
 
           @param fname          [I]     input file name
           @param oname          [I]     output file name
@@ -392,10 +484,6 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
         /** Create an index object.
 
           Creates an instance of CDbIndex using a given stream as input.
-          CDbIndex::Soptions::input_type has no effect in this case.
-
-          <TT>stop_chunk</TT> is needed only if <TT>options.whole_seq</TT> is
-          set to <TT>CHUNKS</TT>.
 
           @param input          [I]     stream for reading sequence and mask information
           @param oname          [I]     output file name
@@ -451,7 +539,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
 
           @return CRef to the loaded index
           */
-        static CRef< CDbIndex > Load( const std::string & fname );
+        static CRef< CDbIndex > Load( const std::string & fname, bool nomap = false );
 
         /** Search the index.
 
@@ -464,28 +552,6 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                 const BlastSeqLoc * locs,
                 const SSearchOptions & search_options
         );
-
-        /** Return internal subject id by subject id and chunk number.
-            @param all_results combined result set for all subjects
-            @param subject real subject id
-            @param chunk   chunk number
-            @return internal if of the sequence corresponding to the
-                    given chunk of the given subject sequence
-        */
-        BlastInitHitList * ExtractResults( 
-                CConstRef< CSearchResults > all_results, 
-                TSeqNum subject, TSeqNum chunk ) const
-        { return DoExtractResults( all_results, subject, chunk ); }
-
-        /** Check if the there are results available for the subject sequence.
-            @param all_results  [I]     combined result set for all subjects
-            @param oid          [I]     real subject id
-            @return     true if there are results for the given oid; 
-                        false otherwise
-        */
-        bool CheckResults( 
-                CConstRef< CSearchResults > all_results, TSeqNum oid ) const
-        { return DoCheckResults( all_results, oid ); }
 
         /** Index object destructor. */
         virtual ~CDbIndex() {}
@@ -540,26 +606,10 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
             return 0;
         }
 
-        /** Get the index format version.
-
-            @return The index format version.
-        */
-        virtual unsigned long Version() const { return 0; }
-
         /** If possible reduce the index footpring by unmapping
             the portion that does not contain sequence data.
         */
         virtual void Remap() {}
-
-    protected:
-
-        /** Version specific index loading function.
-            @param is           [I/O]   IO stream with index data
-            @param version      [I]     index format version
-            @return object containing loaded index data
-        */
-        static CRef< CDbIndex > LoadByVersion( 
-                CNcbiIstream & is, unsigned long version );
 
     private:
 
@@ -567,17 +617,19 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
             @param is   [I]     stream containing index data
             @return object containing loaded index data
         */
-        template< unsigned long VERSION >
         static CRef< CDbIndex > LoadIndex( CNcbiIstream & is );
 
         /** Load index from a named file.
             Usually this is used to memmap() the file data into
             the index structure.
             @param fname        [I]     index file name
+            @param nomap        [I]     if 'true', then read the the file
+                                        instead of mmap()'ing it
             @return object containing loaded index data
         */
-        template< unsigned long VERSION >
-        static CRef< CDbIndex > LoadIndex( const std::string & fname );
+        template< bool LEGACY >
+        static CRef< CDbIndex > LoadIndex( 
+                const std::string & fname, bool nomap = false );
 
         /** Actual implementation of seed searching.
             Must be implemented by child classes.
@@ -589,22 +641,91 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                 const SSearchOptions & )
         { return CConstRef< CSearchResults >( null ); }
 
-        /** Actual result extraction procedure.
-            Must be implemented by child classes.
-            @sa ExtractResults
-        */
-        virtual BlastInitHitList * DoExtractResults( 
-                CConstRef< CSearchResults >, 
-                TSeqNum, TSeqNum ) const
-        { return 0; }
+    public:
 
-        /** Actual result checking procedure.
-            Must be implemented by child classes.
-            @sa CheckResults
-        */
-        virtual bool DoCheckResults(
-                CConstRef< CSearchResults >, TSeqNum ) const
-        { return false; }
+        struct SOffsetValue
+        {
+            TWord special;
+            TWord offset;
+        };
+
+        typedef SOffsetValue TOffsetValue;
+
+        typedef CSubjectMap TSubjectMap;
+
+        TSeqNum getStartOId() const { return header_.start_; }
+        TSeqNum getStopOId() const  { return header_.stop_; }
+
+        TSeqNum getSIdByOId( TSeqNum oid ) const 
+        { 
+            ASSERT( oid >= getStartOId() );
+            return oid - getStartOId(); 
+        }
+
+        TSeqNum getOIdBySId( TSeqNum sid ) const
+        {
+            ASSERT( sid <= getStopOId() - getStartOId() );
+            return sid + getStartOId();
+        }
+
+        unsigned long getHKeyWidth() const { return header_.hkey_width_; }
+        unsigned long getStride() const    { return header_.stride_; }
+        unsigned long getWSHint() const    { return header_.ws_hint_; }
+
+        unsigned long getMaxChunkSize() const { return header_.max_chunk_size_; }
+        unsigned long getChunkOverlap() const { return header_.chunk_overlap_; }
+
+        bool isLegacy() const { return header_.legacy_; }
+
+        TWord getSubjectLength( TSeqNum sid ) const;
+        TSeqNum getCId( TSeqNum sid, TSeqNum rcid ) const;
+        TSeqNum getCId( TSeqNum sid ) const { return getCId( sid, 0 ); }
+        pair< TSeqNum, TSeqNum > getSRCId( TSeqNum cid ) const;
+        TSeqNum getSIdByCId( TSeqNum cid ) const { return getSRCId( cid ).first; }
+        TWord getChunkLength( TSeqNum cid ) const;
+        TWord getChunkLength( TSeqNum sid, TSeqNum rcid ) const
+        { return getChunkLength( getCId( sid, rcid ) ); }
+        TSeqNum getCIdByLRCId( TSeqNum lid, TSeqNum rcid ) const;
+        TSeqNum getSIdByLRCId( TSeqNum lid, TSeqNum rcid ) const
+        { return getSIdByCId( getCIdByLRCId( lid, rcid ) ); }
+        pair< TSeqNum, TSeqPos > getRCIdOffByLIdOff( TSeqNum lid, TSeqPos loff ) const;
+
+        pair< TSeqNum, TSeqPos > getCIdOffByLIdOff( TSeqNum lid, TSeqPos loff ) const
+        { 
+            pair< TSeqNum, TSeqPos > t = getRCIdOffByLIdOff( lid, loff );
+            return make_pair( getCIdByLRCId( lid, t.first ), t.second );
+        }
+
+        TSeqPos getSOff( TSeqNum sid, TSeqNum rcid, TSeqPos coff ) const;
+
+        pair< TSeqNum, TSeqPos > getSIdOffByCIdOff( TSeqNum cid, TSeqPos coff ) const
+        {
+            pair< TSeqNum, TSeqNum > t = getSRCId( cid );
+            return make_pair( t.first, getSOff( t.first, t.second, coff ) );
+        }
+
+        pair< TSeqNum, TSeqPos > getSIdOffByLIdOff( TSeqNum lid, TSeqPos loff ) const
+        { 
+            pair< TSeqNum, TSeqPos > t = getCIdOffByLIdOff( lid, loff );
+            return getSIdOffByCIdOff( t.first, t.second );
+        }
+
+        TSeqNum getNumSubjects() const;
+        TSeqNum getNumChunks() const;
+        TSeqNum getNumChunks( TSeqNum sid ) const;
+
+        const Uint1 * getSeqData( TSeqNum sid ) const;
+
+        TSeqNum getLId( const TOffsetValue & v ) const;
+        TSeqPos getLOff( const TOffsetValue & v ) const;
+
+        const string getBioseqIdBySId( TSeqNum sid ) const
+        {
+            if( sid < idmap_.size() ) return idmap_[sid];
+            else return "unknown";
+        }
+
+        const vector< string > & getIdMap() const { return idmap_; }
 
     protected:
 
@@ -612,13 +733,490 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
         TSeqNum start_chunk_;   /**< Number of the first chunk of the first sequence. */
         TSeqNum stop_;          /**< OID of the last sequence in the inex. */
         TSeqNum stop_chunk_;    /**< Number of the last chunk of the last sequence. */
+
+        SIndexHeader header_;       /**< The index header structure. */
+        TSubjectMap * subject_map_; /**< The subject map object. */
+        vector< string > idmap_;    /**< Mapping from source ids to bioseq ids. */
 };
 
-//-------------------------------------------------------------------------
-/** Metafunction that computes the base word type from the index width. */
-template< unsigned long WIDTH > struct SWord {};
-template<> struct SWord< WIDTH_32 > { typedef Uint4 type; /**< Metafunction result. */};
-template<> struct SWord< WIDTH_64 > { typedef Uint8 type; /**< Metafunction result. */};
+/** Class representing index hash table and offset list database.
+*/
+class COffsetData_Base
+{
+    friend class CPreOrderedOffsetIterator;
+
+    public:
+
+        /** Index word type (public to support Solaris). */
+        typedef CDbIndex::TWord TWord;
+
+        typedef CDbIndex::SOffsetValue TOffsetValue;
+
+        /** The type of the hash table.
+            The hash table implements the mapping from Nmer values to
+            the corresponding offset lists.
+        */
+        typedef CVectorWrap< TWord > THashTable;
+
+        /** Object constructor.
+            Creates the object by mapping data from a memory segment.
+            @param map          [I/O]   pointer to the memory segment
+            @param hkey_width   [I]     width in bp of the hash key
+            @param stride       [I]     stride of the index
+            @param ws_hint      [I]     ws_hint value of the index
+        */
+        COffsetData_Base( 
+                TWord ** map, unsigned long hkey_width, 
+                unsigned long stride, unsigned long ws_hint );
+
+        /** Get the width of the hash key in base pairs.
+            @return hash key width
+        */
+        unsigned long hkey_width() const { return hkey_width_; }
+
+        /** Accessor for minimum offset value.
+
+            @return the minimum offset value
+          */
+        unsigned long getMinOffset() const { return min_offset_; }
+
+        /** Accessor for stride value.
+
+            @return the stride value
+          */
+        unsigned long getStride() const { return stride_; }
+
+        /** Accessor for ws_hint value.
+
+            @return the ws_hint value
+          */
+        unsigned long getWSHint() const { return ws_hint_; }
+
+    protected:
+
+        /** Auxiliary data member used for importing the offset 
+            list data.
+        */
+        TWord total_;
+
+        unsigned long hkey_width_;      /**< Hash key width in bp. */
+        unsigned long stride_;          /**< Stride value used by the index. */
+        unsigned long ws_hint_;         /**< ws_hint values used by the index. */
+        unsigned long min_offset_;      /**< Minimum offset value used by the index. */
+
+        THashTable hash_table_;         /**< The hash table (mapping from
+                                             Nmer values to the lists of
+                                             offsets. */
+};
+
+/** Type representing subject map data.
+*/
+class CSubjectMap
+{
+    private:
+
+        typedef CDbIndex::TSeqNum TSeqNum;
+        typedef CDbIndex::TWord TWord;
+        typedef CDbIndex::TOffsetValue TOffsetValue;
+
+        /** Type used to map database oids to the chunk info. */
+        typedef CVectorWrap< TWord > TSubjects;
+
+        /** Type used for compressed subject sequence data storage. */
+        typedef CVectorWrap< Uint1 > TSeqStore;
+
+        /** Type for storing the chunk data.
+            For raw offset encoding the offset into the vector serves also
+            as the internal logical sequence id.
+        */
+        typedef CVectorWrap< TWord > TChunks;
+
+        typedef CVectorWrap< TWord > TLengths;      /**< Subject lengths storage type. */
+        typedef CVectorWrap< TWord > TLIdMap;       /**< Local id -> chunks map storage type. */
+
+    public:
+
+        /** Trivial constructor. */
+        CSubjectMap() : total_( 0 ) {}
+
+        /** Constructs object by mapping to the memory segment.
+            @param map          [I/O]   pointer to the memory segment
+            @param start        [I]     database oid of the first sequence
+                                        in the map
+            @param stop         [I]     database oid of the last sequence
+                                        in the map
+            @param stride       [I]     index stride value
+        */
+        CSubjectMap( 
+                TWord ** map, TSeqNum start, TSeqNum stop,
+                unsigned long stride );
+
+        CSubjectMap( TWord ** map, const SIndexHeader & header );
+
+        /** Loads index by mapping to the memory segment.
+            @param map          [I/O]   pointer to the memory segment
+            @param start        [I]     database oid of the first sequence
+                                        in the map
+            @param stop         [I]     database oid of the last sequence
+                                        in the map
+            @param stride       [I]     index stride value
+        */
+        void Load( 
+                TWord ** map, TSeqNum start, TSeqNum stop, 
+                unsigned long stride );
+
+        /** Provides a mapping from real subject ids and chunk numbers to
+            internal logical subject ids.
+            @return start of the (subject,chunk)->id mapping
+        */
+        const TWord * GetSubjectMap() const { return &subjects_[0]; }
+
+        /** Return the start of the raw storage for compressed subject 
+            sequence data.
+            @return start of the sequence data storage
+        */
+        const Uint1 * GetSeqStoreBase() const { return &seq_store_[0]; }
+
+        /** Return the size in bytes of the eaw sequence storage.
+
+            @return Size of the sequence data storage.
+        */
+        TWord GetSeqStoreSize() const { return total_; }
+
+        /** Get the total number of sequence chunks in the map.
+            @return number of chunks in the map
+        */
+        TSeqNum NumChunks() const { return (TSeqNum)(chunks_.size()); }
+
+        /** Get number of chunks combined into a given logical sequence.
+
+            @param lid The logical sequence id.
+
+            @return Corresponding number of chunks.
+        */
+        TSeqNum GetNumChunks( TSeqNum lid ) const 
+        {
+            TWord * ptr = (TWord *)&lid_map_[0] + (lid<<2);
+            return *(ptr + 1) - *ptr;
+        }
+
+        /** Get the logical sequence id from the database oid and the
+            chunk number.
+            @param subject      [I]     database oid
+            @param chunk        [I]     the chunk number
+            @return logical sequence id corresponding to subject and chunk
+        */
+        TSeqNum MapSubject( TSeqNum subject, TSeqNum chunk ) const
+        {
+            if( subject < subjects_.size() ) {
+                TSeqNum result = 
+                    (TSeqNum)(subjects_[subject]) + chunk;
+
+                if( result < chunks_.size() ) {
+                    return result;
+                }
+            }
+
+            return 0;
+        }
+
+        /** Accessor for stride value.
+            
+            @return the stride value used by the index
+          */
+        unsigned long GetStride() const { return stride_; }
+
+        /** Decode offset.
+
+            @param offset The encoded offset value.
+
+            @return A pair with first element being the local subject sequence
+                    id and the second element being the subject offset.
+        */
+        std::pair< TSeqNum, TSeqPos > DecodeOffset( TWord offset ) const 
+        {
+            offset -= min_offset_;
+            return std::make_pair( 
+                    (TSeqNum)(offset>>offset_bits_),
+                    (TSeqPos)(min_offset_ + 
+                              (offset&offset_mask_)*stride_) );
+        }
+
+        /** Return the subject information based on the given logical subject
+            id.
+            @param subj         [I]     logical subject id
+            @param start        [0]     starting offset of subj in the sequence store
+            @param end          [0]     1 + ending offset of subj in the sequence store
+        */
+        void SetSubjInfo( 
+                TSeqNum subj, TWord & start, TWord & end ) const
+        {
+            TWord * ptr = (TWord *)&lid_map_[0] + (subj<<2) + 2;
+            start = *ptr++;
+            end   = *ptr;
+        }
+
+        /** Map logical sequence id and logical sequence offset to 
+            relative chunk number and chunk offset.
+
+            @param lid The logical sequence id.
+            @param soff The logical sequence offset.
+
+            @return Pair of relative chunk number and chunk offset.
+        */
+        std::pair< TSeqNum, TSeqPos > MapSubjOff( 
+            TSeqNum lid, TSeqPos soff ) const
+        {
+            static const unsigned long CR = CDbIndex::CR;
+
+            TWord * ptr = (TWord *)&lid_map_[0] + (lid<<2);
+            TSeqNum start = (TSeqNum)*ptr++;
+            TSeqNum end   = (TSeqNum)*ptr++;
+            TWord lid_start = *ptr;
+            TWord abs_offset = lid_start + (TWord)soff/CR;
+
+            typedef TChunks::const_iterator TChunksIter;
+            TChunksIter siter = chunks_.begin() + start;
+            TChunksIter eiter = chunks_.begin() + end;
+            ASSERT( siter != eiter );
+            TChunksIter res = std::upper_bound( siter, eiter, abs_offset );
+            ASSERT( res != siter );
+            --res;
+
+            return std::make_pair( 
+                    (TSeqNum)(res - siter), 
+                    (TSeqPos)(soff - (*res - lid_start)*CR) );
+        }
+
+        /** Map logical id and relative chunk to absolute chunk id.
+
+            @param lid logical sequence id
+            @param lchunk chunk number within the logical sequence
+
+            @return chunk id of the corresponding chunk
+        */
+        TSeqNum MapLId2Chunk( TSeqNum lid, TSeqNum lchunk ) const
+        {
+            TWord * ptr = (TWord *)&lid_map_[0] + (lid<<2);
+            TSeqNum start = (TSeqNum)*ptr++;
+            return start + lchunk;
+        }
+
+        /** Get the total number of logical sequences in the map.
+            @return number of chunks in the map
+        */
+        TSeqNum NumSubjects() const
+        { return 1 + (lid_map_.size()>>2); }
+
+        /** Get the length of the subject sequence.
+            
+            @param oid Ordinal id of the subject sequence.
+
+            @return Length of the sequence in bases.
+        */
+        TSeqPos GetSeqLen( TSeqNum oid ) const
+        { return lengths_[oid]; }
+
+        /** Get the sequence data of the subject sequence.
+            
+            @param oid Ordinal id of the subject sequence.
+
+            @return Pointer to the sequence data.
+        */
+        const Uint1 * GetSeqData( TSeqNum oid ) const
+        {
+            TWord chunk = subjects_[oid] - 1;
+            TWord start_index = chunks_[chunk];
+            return &seq_store_[0] + start_index;
+        }
+
+        TWord getSubjectLength( TSeqNum sid ) const
+        {
+            ASSERT( sid <= subjects_.size() );
+            return lengths_[sid];
+        }
+
+        TSeqNum getCId( TSeqNum sid, TSeqNum rcid ) const
+        {
+            ASSERT( sid <= subjects_.size() );
+            TSeqNum result = subjects_[sid] + rcid - 1;
+            ASSERT( result <= chunks_.size() );
+            return result;
+        }
+
+        typedef pair< TSeqNum, TSeqPos > TSOPair;
+        typedef pair< TSeqNum, TSeqNum > TSCPair;
+        typedef vector< TSCPair > TSCPairMap;
+
+        TSCPair getSRCId( TSeqNum cid ) const
+        { 
+            ASSERT( cid < chunks_.size() );
+            return c2s_map_[cid];
+        }
+
+        TWord getChunkLength( TSeqNum cid ) const
+        {
+            ASSERT( cid < chunks_.size() );
+            if( cid < chunks_.size() - 1 ) {
+                TSCPair t = getSRCId( cid );
+                
+                if( t.first < subjects_.size() - 1 ) {
+                    TSeqNum nc = subjects_[t.first + 1] - subjects_[t.first];
+                    return (t.second == nc - 1) ?  max_chunk_size_ : 
+                        getSubjectLength( t.first )%(
+                                max_chunk_size_ - chunk_overlap_ );
+                }
+                else return max_chunk_size_;
+            }
+            else {
+                return getSubjectLength( subjects_.size() - 2 )%(
+                        max_chunk_size_ - chunk_overlap_ );
+            }
+        }
+
+        TSeqNum getCIdByLRCId( TSeqNum lid, TSeqNum rcid ) const
+        {
+            ASSERT( lid < lid_map_.size() );
+            TWord * ptr = (TWord *)&lid_map_[0] + (lid<<2);
+            TSeqNum start = (TSeqNum)*ptr++;
+            ASSERT( rcid < (TSeqNum)*ptr - start );
+            return start + rcid;
+        }
+
+        TSOPair getRCIdOffByLIdOff( TSeqNum lid, TSeqPos loff ) const
+        {
+            ASSERT( lid < lid_map_.size() );
+            static const unsigned long CR = CDbIndex::CR;
+
+            TWord * ptr = (TWord *)&lid_map_[0] + (lid<<2);
+            TSeqNum start = (TSeqNum)*ptr++;
+            TSeqNum end   = (TSeqNum)*ptr++;
+            ASSERT( start < chunks_.size() );
+            ASSERT( end <= chunks_.size() );
+            TWord lid_start = *ptr;
+            TWord abs_offset = lid_start + (TWord)loff/CR;
+            ASSERT( abs_offset < seq_store_.size() );
+
+            typedef TChunks::const_iterator TChunksIter;
+            TChunksIter siter = chunks_.begin() + start;
+            TChunksIter eiter = chunks_.begin() + end;
+            ASSERT( siter != eiter );
+            TChunksIter res = std::upper_bound( siter, eiter, abs_offset );
+            ASSERT( res != siter );
+            --res;
+
+            return std::make_pair( 
+                    (TSeqNum)(res - siter), 
+                    (TSeqPos)(loff - (*res - lid_start)*CR) );
+        }
+
+        TSeqPos getSOff( TSeqNum sid, TSeqNum rcid, TSeqPos coff ) const
+        {
+            ASSERT( sid < subjects_.size() - 1 );
+            ASSERT( subjects_[sid] - 1 + rcid < chunks_.size() );
+            TSeqPos res = rcid*(max_chunk_size_ - chunk_overlap_) + coff;
+            ASSERT( res < lengths_[sid] );
+            return res;
+        }
+
+        TSeqNum getNumSubjects() const { return subjects_.size() - 1; }
+        TSeqNum getNumChunks() const { return chunks_.size(); }
+
+        TSeqNum getNumChunks( TSeqNum sid ) const
+        {
+            ASSERT( sid < subjects_.size() -1 );
+            if( sid < subjects_.size() - 2 ) {
+                return subjects_[sid + 1] - subjects_[sid];
+            }
+            else return chunks_.size() + 1 - subjects_[sid];
+        }
+
+        const Uint1 * getSeqData( TSeqNum sid ) const
+        {
+            ASSERT( sid < subjects_.size() - 1 );
+            TWord chunk = subjects_[sid] - 1;
+            TWord start_index = chunks_[chunk];
+            return &seq_store_[0] + start_index;
+        }
+
+        TSeqNum getLId( const TOffsetValue & v ) const
+        { return (TSeqNum)(v.offset>>offset_bits_); }
+
+        TSeqPos getLOff( const TOffsetValue & v ) const
+        { return (TSeqPos)((v.offset&offset_mask_)*stride_); }
+
+    private:
+
+        /** Set up the sequence store from the memory segment.
+            @param map  [I/O]   points to the memory segment
+        */
+        void SetSeqDataFromMap( TWord ** map );
+
+        TSubjects subjects_;    /**< Mapping from database oids to the chunk info. */
+        TSeqStore seq_store_;   /**< Storage for the raw subject sequence data. */
+        TWord total_;           /**< Size in bytes of the raw sequence storage.
+                                     (only valid after the complete object has
+                                     been constructed) */
+        TChunks chunks_;        /**< Collection of individual chunk descriptors. */
+
+        unsigned long stride_;     /**< Index stride value. */
+        unsigned long min_offset_; /**< Minimum offset used by the index. */
+
+        TLengths lengths_;      /**< Subject lengths storage. */
+        TLIdMap lid_map_;       /**< Local id -> chunk map storage. */
+        Uint1 offset_bits_;     /**< Number of bits used to encode offset. */
+        TWord offset_mask_;     /**< Mask to extract offsets. */
+        TSCPairMap c2s_map_;    /**< CId -> (SId, RCId) map. */
+
+        unsigned long max_chunk_size_;
+        unsigned long chunk_overlap_;
+};
+
+inline CDbIndex::TWord 
+CDbIndex::getSubjectLength( CDbIndex::TSeqNum sid ) const
+{ return subject_map_->getSubjectLength( sid ); }
+
+inline CDbIndex::TSeqNum 
+CDbIndex::getCId( CDbIndex::TSeqNum sid, CDbIndex::TSeqNum rcid ) const
+{ return subject_map_->getCId( sid, rcid ); }
+
+inline pair< CDbIndex::TSeqNum, CDbIndex::TSeqNum > 
+CDbIndex::getSRCId( CDbIndex::TSeqNum cid ) const
+{ return subject_map_->getSRCId( cid ); }
+
+inline CDbIndex::TWord CDbIndex::getChunkLength( CDbIndex::TSeqNum cid ) const
+{ return subject_map_->getChunkLength( cid ); }
+
+inline CDbIndex::TSeqNum 
+CDbIndex::getCIdByLRCId( CDbIndex::TSeqNum lid, CDbIndex::TSeqNum rcid ) const
+{ return subject_map_->getCIdByLRCId( lid, rcid ); }
+
+inline pair< CDbIndex::TSeqNum, TSeqPos >
+CDbIndex::getRCIdOffByLIdOff( CDbIndex::TSeqNum lid, TSeqPos loff ) const
+{ return subject_map_->getRCIdOffByLIdOff( lid, loff ); }
+
+inline TSeqPos CDbIndex::getSOff( 
+        CDbIndex::TSeqNum sid, CDbIndex::TSeqNum rcid, TSeqPos coff ) const
+{ return subject_map_->getSOff( sid, rcid, coff ); }
+
+inline CDbIndex::TSeqNum CDbIndex::getNumSubjects() const
+{ return subject_map_->getNumSubjects(); }
+
+inline CDbIndex::TSeqNum CDbIndex::getNumChunks() const
+{ return subject_map_->getNumChunks(); }
+
+inline CDbIndex::TSeqNum CDbIndex::getNumChunks( CDbIndex::TSeqNum sid ) const
+{ return subject_map_->getNumChunks( sid ); }
+
+inline const Uint1 * CDbIndex::getSeqData( CDbIndex::TSeqNum sid ) const
+{ return subject_map_->getSeqData( sid ); }
+
+inline CDbIndex::TSeqNum CDbIndex::getLId( 
+        const CDbIndex::TOffsetValue & v ) const
+{ return subject_map_->getLId( v ); }
+
+inline TSeqPos CDbIndex::getLOff( const CDbIndex::TOffsetValue & v ) const
+{ return subject_map_->getLOff( v ); }
 
 END_SCOPE( blastdbindex )
 END_NCBI_SCOPE

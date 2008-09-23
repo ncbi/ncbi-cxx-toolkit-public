@@ -35,6 +35,8 @@
 
 #include <string>
 #include <corelib/ncbistre.hpp>
+#include <objtools/readers/fasta.hpp>
+
 #include "sequence_istream.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -51,6 +53,8 @@ class NCBI_XBLAST_EXPORT CSequenceIStreamFasta : public CSequenceIStream
         bool stream_allocated_;         /**< Whether to deallocate the stream at destruction. */
         CNcbiIstream * istream_;        /**< Standard IO stream for reading FASTA data. */
         size_t curr_seq_;               /**< Current sequence number. */
+
+        objects::CFastaReader * fasta_reader_; /**< Object to read fasta files. */
 
         /** Starting positions of sequences withing the FASTA stream. */
         std::vector< pos_type > seq_positions_; 

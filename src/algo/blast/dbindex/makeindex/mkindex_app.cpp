@@ -79,17 +79,34 @@ void CMkIndexApplication::Init()
     arg_desc->AddDefaultKey(
             "iformat", "input_format", "type of input used",
             CArgDescriptions::eString, "fasta" );
+    arg_desc->AddDefaultKey(
+            "legacy", "use_legacy_index_format",
+            "use legacy (0-terminated offset lists) dbindex format",
+            CArgDescriptions::eBoolean, "true" );
+    arg_desc->AddDefaultKey(
+            "idmap", "generate_idmap",
+            "generate id map for the sequences in the index",
+            CArgDescriptions::eBoolean, "false" );
     arg_desc->AddOptionalKey(
-            "volsize", "volume_size", "size of an index volume in MB",
+            "nmer", "nmer_size",
+            "length of the indexed words",
             CArgDescriptions::eInteger );
     arg_desc->AddOptionalKey(
-            "iversion", "index_version", "index format version",
+            "ws_hint", "word_size_hint",
+            "most likely word size used in searches",
+            CArgDescriptions::eInteger );
+    arg_desc->AddOptionalKey(
+            "volsize", "volume_size", "size of an index volume in MB",
             CArgDescriptions::eInteger );
     arg_desc->AddOptionalKey(
             "stat", "statistics_file",
             "write index statistics into file with that name "
             "(for testing and debugging purposes only).",
             CArgDescriptions::eString );
+    arg_desc->AddOptionalKey(
+            "stride", "stride",
+            "distance between stored database positions",
+            CArgDescriptions::eInteger );
     arg_desc->SetConstraint( 
             "verbosity",
             &(*new CArgAllow_Strings, "quiet", "normal", "verbose") );
@@ -99,12 +116,22 @@ void CMkIndexApplication::Init()
     arg_desc->SetConstraint(
             "volsize",
             new CArgAllow_Integers( 1, kMax_Int ) );
+    arg_desc->SetConstraint(
+            "stride",
+            new CArgAllow_Integers( 1, kMax_Int ) );
+    arg_desc->SetConstraint(
+            "ws_hint",
+            new CArgAllow_Integers( 1, kMax_Int ) );
+    arg_desc->SetConstraint(
+            "nmer",
+            new CArgAllow_Integers( 1, kMax_Int ) );
     SetupArgDescriptions( arg_desc.release() );
 }
 
 //------------------------------------------------------------------------------
 int CMkIndexApplication::Run()
 { 
+    SetDiagPostLevel( eDiag_Warning );
     CDbIndex::SOptions options = CDbIndex::DefaultSOptions();
     std::string verbosity = GetArgs()["verbosity"].AsString();
 
@@ -118,13 +145,41 @@ int CMkIndexApplication::Run()
         options.max_index_size = GetArgs()["volsize"].AsInteger();
     }
 
-    if( GetArgs()["iversion"] ) {
-        options.version = GetArgs()["iversion"].AsInteger();
-    }
-
     if( GetArgs()["stat"] ) {
         options.stat_file_name = GetArgs()["stat"].AsString();
     }
+
+    if( GetArgs()["nmer"] ) {
+        options.hkey_width = GetArgs()["nmer"].AsInteger();
+    }
+
+    options.legacy = GetArgs()["legacy"].AsBoolean();
+    options.idmap  = GetArgs()["idmap"].AsBoolean();
+
+    if( GetArgs()["stride"] ) {
+        if( options.legacy ) {
+            ERR_POST( Warning << "-stride has no effect upon "
+                                 "legacy index creation" );
+        }
+        else options.stride = GetArgs()["stride"].AsInteger();
+    }
+
+    if( GetArgs()["ws_hint"] )
+        if( options.legacy ) {
+            ERR_POST( Warning << "-ws_hint has no effect upon "
+                                 "legacy index creation" );
+        }
+        else {
+            unsigned long ws_hint = GetArgs()["ws_hint"].AsInteger();
+    
+            if( ws_hint < options.hkey_width + options.stride - 1 ) {
+                ws_hint = options.hkey_width + options.stride - 1;
+                ERR_POST( Warning << "-ws_hint requested is too low. Setting "
+                                     "to the minimum value of " << ws_hint );
+            }
+
+            options.ws_hint = ws_hint;
+        }
 
     unsigned int vol_num = 0;
 
@@ -158,6 +213,7 @@ int CMkIndexApplication::Run()
         ostringstream os;
         os << ofname_base << "." << setfill( '0' ) << setw( 2 ) 
            << vol_num++ << ".idx";
+        cerr << "creating " << os.str() << endl;
         CDbIndex::MakeIndex( 
                 *seqstream,
                 os.str(), start, stop, options );

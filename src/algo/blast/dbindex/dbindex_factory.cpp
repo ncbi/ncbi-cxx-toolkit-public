@@ -39,6 +39,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
 #include <algo/blast/core/blast_gapalign.h>
@@ -59,76 +60,23 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )
 
-namespace{
-
 /**@name Useful constants from CDbIndex scope. */
 /**@{*/
 static const unsigned long CR         = CDbIndex::CR;
-static const unsigned long STRIDE     = CDbIndex::STRIDE;
-static const unsigned long MIN_OFFSET = CDbIndex::MIN_OFFSET;
-static const unsigned long CODE_BITS  = CDbIndex::CODE_BITS;
 /**@}*/
 
-//-------------------------------------------------------------------------
-/** Class used to report progress during index creation.
-*/
-class CProgressReporter
-{
-    public:
+/** Alias for CDbIndex::TWord type. */
+typedef CDbIndex::TWord TWord;
 
-        /** Object constructor.
-            @param real_level           [I]     reporting level
-            @param requested_level      [I]     reporting level threshold
-                                                requested by the user
-        */
-        CProgressReporter( 
-                unsigned long real_level,
-                unsigned long requested_level )
-            : real_level_( real_level ), 
-              requested_level_( requested_level )
-        {}
-
-        /** Message output operator.
-            Sends the given message to standard error stream if
-            the reporting level requested by the user is bigger
-            than that of the msg itself.
-            @param t value to be sent to the error stream
-        */
-        template< typename T >
-        const CProgressReporter & operator<<( const T & t ) const
-        { 
-            if( requested_level_ >= real_level_ ) 
-                std::cerr << t << std::flush; 
-
-            return *this;
-        }
-
-    private:
-
-        unsigned long real_level_;      /**< Message reporting level. */
-        unsigned long requested_level_; /**< User requested reporting level. */
-};
-
-//-------------------------------------------------------------------------
-/** A simple function to report progress of the index creation.
-  @param real_level      the reporting level of <TT>msg</TT>
-  @param requested_level the level of reporting requested by the user
-  @param t               value to display 
-*/
-template< typename T >
-inline void report_progress(
-        unsigned long real_level,
-        unsigned long requested_level,
-        const T & t )
-{ CProgressReporter( real_level, requested_level ) << t; }
+/** Alias for index creation options. */
+typedef CDbIndex::SOptions TOptions;
 
 //-------------------------------------------------------------------------
 /** Convert an integer to hex string representation.
     @param word [I]     the integer value
     @return string containing the hexadecimal representation of word.
 */
-template< typename word_t >
-const std::string to_hex_str( word_t word )
+const std::string to_hex_str( TWord word )
 {
     std::ostringstream os;
     os << hex << word;
@@ -164,15 +112,30 @@ inline Uint1 base_value( objects::CSeqVectorTypes::TResidue r )
 }
 
 //-------------------------------------------------------------------------
-/** Part of the CSubjectMap class that is independent of template 
+/** Part of the CSubjectMap_Factory class that is independent of template 
     parameters.
 */
-class CSubjectMap_Base
+class CSubjectMap_Factory_Base
 {
     public:
 
         typedef CSequenceIStream::TSeqData TSeqData;    /**< forwarded type */
         typedef CDbIndex::TSeqNum TSeqNum;              /**< forwarded type */
+
+        /** Type used to store a masked segment internally. */
+        struct SSeqSeg // public to compile under Solaris
+        {
+            TSeqPos start_;     /**< Start of the segment. */
+            TSeqPos stop_;      /**< One past the end of the segment. */
+
+            /** Object constructor.
+                @param start start of the new segment
+                @param stop one past the end of the new segment
+              */
+            SSeqSeg( TSeqPos start, TSeqPos stop = 0 )
+                : start_( start ), stop_( stop )
+            {}
+        };
 
     protected:
 
@@ -199,21 +162,6 @@ class CSubjectMap_Base
         /** Type for storing mapping from subject oids to the chunk numbers. */
         typedef std::vector< TSeqNum > TSubjects;
 
-        /** Type used to store a masked segment internally. */
-        struct SSeqSeg
-        {
-            TSeqPos start_;     /**< Start of the segment. */
-            TSeqPos stop_;      /**< One past the end of the segment. */
-
-            /** Object constructor.
-                @param start start of the new segment
-                @param stop one past the end of the new segment
-              */
-            SSeqSeg( TSeqPos start, TSeqPos stop = 0 )
-                : start_( start ), stop_( stop )
-            {}
-        };
-
         /** A helper class used when creating internal set masked locations
             in the process of converting the sequence data to NCBI2NA and
             storing it in seq_store_.
@@ -224,7 +172,7 @@ class CSubjectMap_Base
 
                 typedef CSequenceIStream::TMask TMask; /**< forwarded type */
 
-                /** See documentation for CSubjectMap_Base::TLocs. */
+                /** See documentation for CSubjectMap_Factory_Base::TLocs. */
                 typedef objects::CSeq_loc::TPacked_int::Tdata TLocs;
 
                 /** Collection of TLocs extracted from 
@@ -316,24 +264,24 @@ class CSubjectMap_Base
         TSeqStore::size_type ss_cap_;           /**< Current seq_store capacity. */
         TSubjects subjects_;                    /**< Mapping from subject oid to chunk information. */
         CRef< CMaskHelper > mask_helper_;       /**< Auxiliary object used to compute unmasked parts of the sequences. */
+        unsigned long stride_;                  /**< Stride selected in index creation options. */
+        unsigned long min_offset_;              /**< Minimum offset value used by the index. */
 
         /** Object constructor. 
-            @param chunk_size maximum internal sequecnce size
-            @param chunk_overlap amount of overlap between consecutive
-                                 chunks of one input sequence
-            @param report_level [I]     level of progress reporting requested by the user
+            @param options index creation options
         */
-        CSubjectMap_Base( 
-                unsigned long chunk_size, 
-                unsigned long chunk_overlap,
-                unsigned long report_level ) 
-            : chunk_size_( chunk_size ), chunk_overlap_( chunk_overlap ),
-              report_level_( report_level ),
+        CSubjectMap_Factory_Base( 
+                const TOptions & options ) 
+            : chunk_size_( options.chunk_size ), 
+              chunk_overlap_( options.chunk_overlap ),
+              report_level_( options.report_level ),
               committed_( 0 ), last_chunk_( 0 ),
               om_( objects::CObjectManager::GetInstance() ),
-              seq_store_( STRIDE, 0 ),
+              seq_store_( options.stride, 0 ),
               ss_cap_( SS_INCR ),
-              mask_helper_( null )
+              mask_helper_( null ),
+              stride_( options.stride ),
+              min_offset_( GetMinOffset( options.stride ) )
         {}
 
         /** Helper function used to extract CSeqVector instance from 
@@ -341,7 +289,7 @@ class CSubjectMap_Base
             The extracted CSeqVector is stored in c_seq_ data member.
             @param sd the object containing the input sequence data
         */
-        void extractSeqVector( TSeqData & sd );
+        string extractSeqVector( TSeqData & sd );
 
     public:
 
@@ -355,30 +303,21 @@ class CSubjectMap_Base
             @param start_chunk only store data related to chunks numbered
                                higher than the value of this parameter
         */
-        void NewSequenceInit( TSeqData & sd, TSeqNum start_chunk );
+        string NewSequenceInit( TSeqData & sd, TSeqNum start_chunk );
 };
 
-/** Part of the subject map that depends on the word type.
-    @param word_t type of the natural machine word.
+/** To be merged with CSubjectMap_Factory_Base
 */
-template< typename word_t >
-class CSubjectMap_TBase : public CSubjectMap_Base
+class CSubjectMap_Factory_TBase : public CSubjectMap_Factory_Base
 {
     public:
 
-        typedef word_t TWord;   /**< Bit width is provided as part of the interface. */
-
         /** Object constructor.
-            @param chunk_size maximum internal sequecnce size
-            @param chunk_overlap amount of overlap between consecutive
-                                 chunks of one input sequence
-            @param report_level [I]     level of progress reporting requested by the user
+            @param options index creation options
         */
-        CSubjectMap_TBase( 
-                unsigned long chunk_size, 
-                unsigned long chunk_overlap,
-                unsigned long report_level ) 
-            : CSubjectMap_Base( chunk_size, chunk_overlap, report_level )
+        CSubjectMap_Factory_TBase( 
+                const TOptions & options ) 
+            : CSubjectMap_Factory_Base( options )
         {}
 
         /** Get the total memory usage by the subject map in bytes.
@@ -480,9 +419,8 @@ class CSubjectMap_TBase : public CSubjectMap_Base
 
         /** Save the subject map and sequence info.
             @param os output stream open in binary mode
-            @param version index format version
         */
-        void Save( CNcbiOstream & os, unsigned long version ) const;
+        void Save( CNcbiOstream & os ) const;
 
         /** Revert to the state before the start of processing of the 
             current input sequence.
@@ -490,99 +428,20 @@ class CSubjectMap_TBase : public CSubjectMap_Base
         void RollBack();
 };
 
-/** Subject map parts dependent on offset encoding. 
-    @param word_t type representing the natural machine word
-    @param OFF_TYPE type of offset encoding
-*/
-template< typename word_t, unsigned long OFF_TYPE >
-class CSubjectMap {};
-
-/** Specialization of CSubjectMap for raw ofset encoding. */
-template< typename word_t >
-class CSubjectMap< word_t, OFFSET_RAW > 
-    : public CSubjectMap_TBase< word_t >
+/** To be merged with CSubjectMap_Factory_Base.
+  */
+class CSubjectMap_Factory : public CSubjectMap_Factory_TBase
 {
-    /** Base class template. */
-    typedef CSubjectMap_TBase< word_t > TBase;
+    public: // This section is for Solaris compilation.
+
+    /** Base class. */
+    typedef CSubjectMap_Factory_TBase TBase;
 
     /** @name Aliases to the names from the base class. */
     /**@{*/
-    typedef typename TBase::TSeqNum TSeqNum;
-    typedef typename TBase::TSeqData TSeqData;
+    typedef TBase::TSeqNum TSeqNum;
+    typedef TBase::TSeqData TSeqData;
     /**@}*/
-
-    public:
-
-        /** Alias to the name from the base class. */
-        typedef typename TBase::TWord TWord;
-
-        /** Object constructor.
-            @param chunk_size maximum internal sequecnce size
-            @param chunk_overlap amount of overlap between consecutive
-                                 chunks of one input sequence
-            @param report_level [I]     level of progress reporting requested by the user
-        */
-        CSubjectMap( 
-                unsigned long chunk_size, 
-                unsigned long chunk_overlap,
-                unsigned long report_level )
-            : TBase( chunk_size, chunk_overlap, report_level )
-        {}
-
-        /** Check if index information should be produced for this offset.
-            
-            Typically it computes the full offset in way typical for the
-            corresponding version of index and checks if it is a multiple
-            of STRIDE.
-
-            @param seq Start of the buffer containing the compressed sequence.
-            @param off Offset relative to the start of seq.
-            @return true if information about this offset should be in the index;
-                    false otherwise.
-        */
-        bool CheckOffset( const Uint1 * seq, TSeqPos off ) const;
-
-        /** Encode an offset given a pointer to the compressed sequence
-            data and relative offset.
-            @param seq start of the buffer containing the compressed sequence
-            @param off offset relative to the start of seq
-            @return encoded offset that can be added to an offset list
-        */
-        TWord MakeOffset( const Uint1 * seq, TSeqPos off ) const;
-
-        /** Encode an offset given an internal oid and relative offset.
-            @param seq internal oid of a sequence
-            @param off offset relative to the start of seq
-            @return encoded offset that can be added to an offset list
-        */
-        TWord MakeOffset( TSeqNum seq, TSeqPos off ) const;
-
-        /** Append the next chunk of the input sequence currently being
-            processed to the subject map.
-            The return value of false should be used as iteration termination
-            condition.
-            @return true for success; false if no more chunks were available
-        */
-        bool AddSequenceChunk();
-};
-
-template< typename word_t >
-class CSubjectMap< word_t, OFFSET_COMBINED >
-    : public CSubjectMap_TBase< word_t >
-{
-    /** Base class template. */
-    typedef CSubjectMap_TBase< word_t > TBase;
-
-    /** @name Aliases to the names from the base class. */
-    /**@{*/
-    typedef typename TBase::TSeqNum TSeqNum;
-    typedef typename TBase::TSeqData TSeqData;
-    /**@}*/
-
-    public:
-
-        /** Alias to the name from the base class. */
-        typedef typename TBase::TWord TWord;
 
     private:
 
@@ -604,15 +463,10 @@ class CSubjectMap< word_t, OFFSET_COMBINED >
     public:
 
         /** Object constructor.
-            @param chunk_size maximum internal sequecnce size
-            @param chunk_overlap amount of overlap between consecutive
-                                 chunks of one input sequence
-            @param report_level [I]     level of progress reporting requested by the user
+            @param options index creation options
         */
-        CSubjectMap( 
-                unsigned long chunk_size, 
-                unsigned long chunk_overlap,
-                unsigned long report_level );
+        CSubjectMap_Factory( 
+                const TOptions & options );
 
         /** Start processing of the new input sequence.
 
@@ -623,25 +477,27 @@ class CSubjectMap< word_t, OFFSET_COMBINED >
             @param start_chunk only store data related to chunks numbered
                                higher than the value of this parameter
         */
-        void NewSequenceInit( TSeqData & sd, TSeqNum start_chunk )
+        string NewSequenceInit( TSeqData & sd, TSeqNum start_chunk )
         {
-            TBase::NewSequenceInit( sd, start_chunk );
+            string result = TBase::NewSequenceInit( sd, start_chunk );
             lengths_.push_back( this->c_seq_.size() );
+            return result;
         }
 
         /** Append the next chunk of the input sequence currently being
             processed to the subject map.
             The return value of false should be used as iteration termination
             condition.
+            @param overflow [O] returns true if lid overflow occured
             @return true for success; false if no more chunks were available
         */
-        bool AddSequenceChunk();
+        bool AddSequenceChunk( bool & overflow );
 
         /** Check if index information should be produced for this offset.
             
             Typically it computes the full offset in way typical for the
             corresponding version of index and checks if it is a multiple
-            of STRIDE.
+            of stride.
 
             @param seq Start of the buffer containing the compressed sequence.
             @param off Offset relative to the start of seq.
@@ -667,9 +523,8 @@ class CSubjectMap< word_t, OFFSET_COMBINED >
 
         /** Save the subject map and sequence info.
             @param os output stream open in binary mode
-            @param version index format version
         */
-        void Save( CNcbiOstream & os, unsigned long version ) const;
+        void Save( CNcbiOstream & os ) const;
 
     private:
 
@@ -680,7 +535,7 @@ class CSubjectMap< word_t, OFFSET_COMBINED >
 };
 
 //-------------------------------------------------------------------------
-void CSubjectMap_Base::CMaskHelper::Init()
+void CSubjectMap_Factory_Base::CMaskHelper::Init()
 {
     vit_ = c_locs_.begin();
 
@@ -698,7 +553,7 @@ void CSubjectMap_Base::CMaskHelper::Init()
 }
 
 //-------------------------------------------------------------------------
-void CSubjectMap_Base::CMaskHelper::Advance()
+void CSubjectMap_Factory_Base::CMaskHelper::Advance()
 {
     while( Good() ) {
         if( ++it_ != (*vit_)->end() ) {
@@ -713,7 +568,7 @@ void CSubjectMap_Base::CMaskHelper::Advance()
 }
 
 //-------------------------------------------------------------------------
-void CSubjectMap_Base::CMaskHelper::Adjust( TSeqPos pos )
+void CSubjectMap_Factory_Base::CMaskHelper::Adjust( TSeqPos pos )
 {
     bool notdone;
 
@@ -723,7 +578,7 @@ void CSubjectMap_Base::CMaskHelper::Adjust( TSeqPos pos )
 }
 
 //-------------------------------------------------------------------------
-bool CSubjectMap_Base::CMaskHelper::Retreat()
+bool CSubjectMap_Factory_Base::CMaskHelper::Retreat()
 {
     if( c_locs_.empty() ) return false;
 
@@ -777,7 +632,7 @@ bool CSubjectMap_Base::CMaskHelper::Retreat()
 }
 
 //-------------------------------------------------------------------------
-bool CSubjectMap_Base::CMaskHelper::In( TSeqPos pos )
+bool CSubjectMap_Factory_Base::CMaskHelper::In( TSeqPos pos )
 {
     while( Good() && pos >= stop_ ) Advance();
     if( !Good() ) return false;
@@ -785,7 +640,7 @@ bool CSubjectMap_Base::CMaskHelper::In( TSeqPos pos )
 }
 
 //-------------------------------------------------------------------------
-void CSubjectMap_Base::extractSeqVector( TSeqData & sd )
+string CSubjectMap_Factory_Base::extractSeqVector( TSeqData & sd )
 {
     objects::CSeq_entry * entry = sd.seq_entry_.GetPointerOrNull();
 
@@ -800,17 +655,22 @@ void CSubjectMap_Base::extractSeqVector( TSeqData & sd )
     objects::CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry( *entry );
     objects::CBioseq_Handle bsh = seh.GetSeq();
     c_seq_ = bsh.GetSeqVector( objects::CBioseq_Handle::eCoding_Iupac );
+    string idstr = objects::sequence::GetTitle( bsh );
+    Uint4 pos = idstr.find_first_of( " \t" );
+    idstr = idstr.substr( 0, pos );
+    return idstr;
 }
 
 //-------------------------------------------------------------------------
-void CSubjectMap_Base::NewSequenceInit(
+string CSubjectMap_Factory_Base::NewSequenceInit(
         TSeqData & sd, TSeqNum start_chunk )
 {
+    string result = "unknown";
     subjects_.push_back( 0 );
     c_chunk_ = start_chunk;
 
     if( sd ) {
-        extractSeqVector( sd );
+        result = extractSeqVector( sd );
         TMask & mask = sd.mask_locs_;
         mask_helper_.Reset( new CMaskHelper );
 
@@ -822,14 +682,11 @@ void CSubjectMap_Base::NewSequenceInit(
         mask_helper_->Init();
     }
 
-    CProgressReporter( REPORT_VERBOSE, report_level_ ) 
-        << "SN: " << subjects_.size() - 1 << "\n";
+    return result;
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-void CSubjectMap_TBase< word_t >::Save( 
-        CNcbiOstream & os, unsigned long version ) const
+void CSubjectMap_Factory_TBase::Save( CNcbiOstream & os ) const
 {
     TWord tmp = subjects_.size();
     TWord subject_map_size = 
@@ -839,27 +696,22 @@ void CSubjectMap_TBase< word_t >::Save(
 
     for( TSubjects::const_iterator cit = subjects_.begin();
             cit != subjects_.end(); ++cit ) {
-        if( version == 1 ) WriteWord( os, *cit );
-        else if( version >= 2 ) WriteWord( os, (TWord)(*cit) );
+        WriteWord( os, (TWord)(*cit) );
     }
 
-    for( typename TChunks::const_iterator cit = chunks_.begin();
+    for( TChunks::const_iterator cit = chunks_.begin();
             cit != chunks_.end(); ++cit ) {
         WriteWord( os, cit->seq_start_ );
     }
 
-    if( version >= 2 ) WriteWord( os, (TWord)(seq_store_.size()) );
-
-    if( version == 1 ) WriteWord( os, seq_store_.size() );
-    else if( version >= 2 ) WriteWord( os, (TWord)(seq_store_.size()) );
-
+    WriteWord( os, (TWord)(seq_store_.size()) );
+    WriteWord( os, (TWord)(seq_store_.size()) );
     os.write( (char *)(&seq_store_[0]), seq_store_.size() );
     os << std::flush;
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-bool CSubjectMap_TBase< word_t >::AddSequenceChunk( 
+bool CSubjectMap_Factory_TBase::AddSequenceChunk( 
         TSeqStore::size_type seq_off )
 {
     TSeqPos chunk_start = (chunk_size_ - chunk_overlap_)*(c_chunk_++);
@@ -872,7 +724,7 @@ bool CSubjectMap_TBase< word_t >::AddSequenceChunk(
     TSeqPos chunk_end = 
         std::min( (TSeqPos)(chunk_start + chunk_size_), c_seq_.size() );
     TSeqPos chunk_len = chunk_end - chunk_start;
-    typename SSeqInfo::TSegs segs;
+    SSeqInfo::TSegs segs;
 
     if( chunk_len > 0 ) {
         unsigned int lc = 0;
@@ -919,38 +771,24 @@ bool CSubjectMap_TBase< word_t >::AddSequenceChunk(
     
     if( *subjects_.rbegin() == 0 ) {
         *subjects_.rbegin() = chunks_.size();
-        CProgressReporter( REPORT_VERBOSE, report_level_ ) 
-            << "SC: " << subjects_.size() - 1 << " "
-            << chunks_.size() << " " 
-            << seq_off*CR << "\n";
     }
 
     last_chunk_ = chunks_.size();
-    CProgressReporter( REPORT_VERBOSE, report_level_ ) 
-        << "CN: " << last_chunk_ 
-        << " " << chunk_overlap_*(c_chunk_ - 1) << "\n";
     return true;
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-void CSubjectMap_TBase< word_t >::RollBack()
+void CSubjectMap_Factory_TBase::RollBack()
 {
-    CProgressReporter( REPORT_VERBOSE, report_level_ ) << "ROLLBACK: ";
-
     if( !subjects_.empty() ) {
         last_chunk_ = *subjects_.rbegin() - 1;
         c_chunk_ = 0;
         *subjects_.rbegin() = 0;
-        CProgressReporter( REPORT_VERBOSE, report_level_ ) 
-            << subjects_.size() - 1 << " "
-            << last_chunk_ << "\n";
     }
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-void CSubjectMap_TBase< word_t >::Commit()
+void CSubjectMap_Factory_TBase::Commit()
 {
     if( last_chunk_ < chunks_.size() ) {
         TSeqStore::size_type newsize = 
@@ -960,104 +798,31 @@ void CSubjectMap_TBase< word_t >::Commit()
     }
 
     committed_ = last_chunk_;
-    CProgressReporter( REPORT_VERBOSE, report_level_ )
-        << "COMMIT: " << subjects_.size() - 1 << " "
-        << chunks_.size() << " " << seq_store_.size() << "\n";
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-bool CSubjectMap< word_t, OFFSET_RAW >::AddSequenceChunk()
-{
-    TSeqPos chunk_start = 
-        (this->chunk_size_ - this->chunk_overlap_)*(this->c_chunk_);
-    TSeqPos chunk_end = 
-        std::min( (TSeqPos)(chunk_start + this->chunk_size_), 
-                  this->c_seq_.size() );
-    TSeqPos chunk_len = chunk_end - chunk_start;
-    typename TBase::TSeqStore::size_type seq_off = this->seq_store_.size();
-    if( !TBase::AddSequenceChunk( seq_off ) ) return false;
-
-    if( chunk_len > 0 ) {
-        if( this->ss_cap_ <= this->seq_store_.size() + TBase::SS_THRESH ) {
-            this->ss_cap_ += TBase::SS_INCR; 
-            this->seq_store_.reserve( this->ss_cap_ );
-        }
-
-        Uint1 accum = 0;
-        unsigned int lc = 0;
-
-        for( TSeqPos pos = chunk_start; 
-                pos < chunk_end; ++pos, lc = (lc + 1)%CR ) {
-            Uint1 letter = base_value( this->c_seq_[pos] );
-            if( letter != 0 ) --letter;
-            accum = (accum << 2) + letter;
-            if( lc == 3 ) this->seq_store_.push_back( accum );
-        }
-
-        if( lc != 0 ) {
-            accum <<= (CR - lc)*2;
-            this->seq_store_.push_back( accum );
-        }
-
-        while( this->seq_store_.size()%STRIDE != 0 ) {
-            this->seq_store_.push_back( 0 );
-        }
-    }
-
-    report_progress( REPORT_NORMAL, this->report_level_, "+" );
-    return true;
-}
-
-//-------------------------------------------------------------------------
-template< typename word_t >
-inline bool CSubjectMap< word_t, OFFSET_RAW >::CheckOffset(
-        const Uint1 * , TSeqPos off ) const
-{ return (off%STRIDE == 0); }
-
-//-------------------------------------------------------------------------
-template< typename word_t >
-inline typename CSubjectMap< word_t, OFFSET_RAW >::TWord 
-CSubjectMap< word_t, OFFSET_RAW >::MakeOffset(
-        const Uint1 * seq, TSeqPos off ) const
-{ return MIN_OFFSET + (CR*((TWord)(seq - &(this->seq_store_)[0])) + off)/STRIDE; }
-
-//-------------------------------------------------------------------------
-template< typename word_t >
-inline typename CSubjectMap< word_t, OFFSET_RAW >::TWord 
-CSubjectMap< word_t, OFFSET_RAW >::MakeOffset(
-        TSeqNum seqnum, TSeqPos off ) const
-{
-    const Uint1 * seq = 
-        &(this->seq_store_)[0] + (this->chunks_)[seqnum].seq_start_;
-    return MakeOffset( seq, off );
-}
-
-//-------------------------------------------------------------------------
-template< typename word_t >
-CSubjectMap< word_t, OFFSET_COMBINED >::CSubjectMap( 
-        unsigned long chunk_size, unsigned long chunk_overlap,
-        unsigned long report_level ) 
-    : TBase( chunk_size, chunk_overlap, report_level ),
+CSubjectMap_Factory::CSubjectMap_Factory( 
+        const TOptions & options ) 
+    : TBase( options ),
       cur_lid_len_( 0 ), offset_bits_( 16 )
 {
-    unsigned long max_len = (1 + chunk_size/5) + MIN_OFFSET;
+    unsigned long max_len = (1 + options.chunk_size/stride_) + min_offset_;
     while( (max_len>>offset_bits_) != 0 ) ++offset_bits_;
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-bool CSubjectMap< word_t, OFFSET_COMBINED >::AddSequenceChunk()
+bool CSubjectMap_Factory::AddSequenceChunk( bool & overflow )
 {
+    overflow = false;
     bool starting = (this->c_chunk_ == 0);
     TSeqPos chunk_start = 
         (this->chunk_size_ - this->chunk_overlap_)*this->c_chunk_;
-    typename TBase::TSeqStore::size_type seq_off = 
+    TBase::TSeqStore::size_type seq_off = 
         starting ? this->seq_store_.size() :
                    this->chunks_.rbegin()->seq_start_
                    + (this->chunk_size_ - this->chunk_overlap_)/CR;
     if( !TBase::AddSequenceChunk( seq_off ) ) return false;
-    typename TBase::TSeq::size_type seqlen = this->c_seq_.size();
+    TBase::TSeq::size_type seqlen = this->c_seq_.size();
     
     // Combining sequences.
     //
@@ -1067,9 +832,16 @@ bool CSubjectMap< word_t, OFFSET_COMBINED >::AddSequenceChunk()
     TSeqPos chunk_len = chunk_end - chunk_start;
     
     if( lid_map_.empty() || cur_lid_len_ + chunk_len > length_limit ) {
+        Uint1 lid_bits = 8*sizeof( TWord ) - offset_bits_;
+        TSeqNum lid_limit = (1UL<<lid_bits);
+
+        if( lid_map_.size() >= lid_limit ) {
+            overflow = true;
+            return true;
+        }
+
         SLIdMapElement newlid = { this->chunks_.size() - 1, 0, seq_off };
         lid_map_.push_back( newlid );
-        report_progress( REPORT_NORMAL, this->report_level_, "." );
         cur_lid_len_ = 0;
     }
 
@@ -1103,39 +875,34 @@ bool CSubjectMap< word_t, OFFSET_COMBINED >::AddSequenceChunk()
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-inline bool CSubjectMap< word_t, OFFSET_COMBINED >::CheckOffset(
+inline bool CSubjectMap_Factory::CheckOffset( 
         const Uint1 * seq, TSeqPos off ) const
 {
     TSeqPos soff = seq - &(this->seq_store_[0]);
-    typename TLIdMap::const_reverse_iterator iter = lid_map_.rbegin();
+    TLIdMap::const_reverse_iterator iter = lid_map_.rbegin();
     while( iter != lid_map_.rend() && iter->seq_start_ > soff ) ++iter;
     ASSERT( iter->seq_start_ <= soff );
     off += (soff - iter->seq_start_)*CR;
-    return (off%STRIDE == 0);
+    return (off%stride_ == 0);
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-inline typename CSubjectMap< word_t, OFFSET_COMBINED >::TWord 
-CSubjectMap< word_t, OFFSET_COMBINED >::MakeOffset(
+inline TWord CSubjectMap_Factory::MakeOffset(
         const Uint1 * seq, TSeqPos off ) const
 {
     TSeqPos soff = seq - &(this->seq_store_[0]);
-    typename TLIdMap::const_reverse_iterator iter = lid_map_.rbegin();
+    TLIdMap::const_reverse_iterator iter = lid_map_.rbegin();
     while( iter != lid_map_.rend() && iter->seq_start_ > soff ) ++iter;
     ASSERT( iter->seq_start_ <= soff );
     off += (soff - iter->seq_start_)*CR;
-    off /= STRIDE;
-    off += MIN_OFFSET;
+    off /= stride_;
+    off += min_offset_;
     TWord result = ((lid_map_.rend() - iter - 1)<<offset_bits_) + off;
     return result;
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-inline typename CSubjectMap< word_t, OFFSET_COMBINED >::TWord 
-CSubjectMap< word_t, OFFSET_COMBINED >::MakeOffset(
+inline TWord CSubjectMap_Factory::MakeOffset(
         TSeqNum seqnum, TSeqPos off ) const
 {
     const Uint1 * seq = 
@@ -1144,15 +911,13 @@ CSubjectMap< word_t, OFFSET_COMBINED >::MakeOffset(
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-void CSubjectMap< word_t, OFFSET_COMBINED >::Save( 
-        CNcbiOstream & os, unsigned long version ) const
+void CSubjectMap_Factory::Save( CNcbiOstream & os ) const
 {
     TWord sz = sizeof( TWord )*lengths_.size();
     WriteWord( os, sz );
     WriteWord( os, (TWord)offset_bits_ );
 
-    for( typename TLengthTable::const_iterator it = lengths_.begin();
+    for( TLengthTable::const_iterator it = lengths_.begin();
             it != lengths_.end(); ++it ) {
         WriteWord( os, (TWord)(*it) );
     }
@@ -1160,7 +925,7 @@ void CSubjectMap< word_t, OFFSET_COMBINED >::Save(
     sz = 4*sizeof( TWord )*lid_map_.size();
     WriteWord( os, sz );
 
-    for( typename TLIdMap::const_iterator it = lid_map_.begin();
+    for( TLIdMap::const_iterator it = lid_map_.begin();
             it != lid_map_.end(); ++it ) {
         WriteWord( os, (TWord)(it->start_) );
         WriteWord( os, (TWord)(it->end_) );
@@ -1168,26 +933,27 @@ void CSubjectMap< word_t, OFFSET_COMBINED >::Save(
         WriteWord( os, (TWord)(it->seq_end_) );
     }
 
-    TBase::Save( os, version );
+    TBase::Save( os );
 }
 
 //-------------------------------------------------------------------------
 /** Type representing an offset list corresponding to an Nmer. 
-    See documentation of COffsetData classes for the description 
+    See documentation of COffsetData_Factory classes for the description 
     of template parameters.
 */
-template< typename word_t, unsigned long COMPRESSION >
-class COffsetList {};
-
-/** Specialized version for uncompressed offsets. */
-template< typename word_t >
-class COffsetList< word_t, UNCOMPRESSED >
+class COffsetList
 {
-    private:
-
-        typedef word_t TWord;   /**< Renamed for consistency. */
-
     public:
+
+        /** Set the index creation parameters. 
+            
+            @param options index creation options
+         */
+        void SetIndexParams( const TOptions & options )
+        { 
+            min_offset_ = GetMinOffset( options.stride );
+            mult_ = (options.ws_hint - options.hkey_width + 1)/options.stride;
+        }
 
         /** Add an offset to the list. Update the total.
             @param item  [I]   offset to be appended to the list
@@ -1212,95 +978,308 @@ class COffsetList< word_t, UNCOMPRESSED >
 
         /** Save the offset list.
             @param os output stream open in binary mode
-            @param version index format version
         */
-        void Save( CNcbiOstream & os, unsigned long version ) const;
+        void Save( CNcbiOstream & os ) const;
+
+    public: // for Solaris
+
+        struct SDataUnit;
+
+        static const Uint4 DATA_UNIT_SIZE = 1 + 10*sizeof( SDataUnit * )/sizeof( TWord );
+
+        struct SDataUnit
+        {
+            TWord data[DATA_UNIT_SIZE];
+            SDataUnit * next;
+        };
+
+        class CDataPool
+        {
+                static const Uint4 BLOCK_SIZE     = 1024*1024ULL;
+                static const Uint4 BLOCKS_RESERVE = 10*1024ULL;
+
+                typedef vector< SDataUnit > TBlock;
+                typedef vector< TBlock > TBlocks;
+
+            public:
+
+                CDataPool() : free_( 0 )
+                {
+                    pool_.reserve( BLOCKS_RESERVE );
+                    new_block();
+                }
+
+                SDataUnit * alloc()
+                {
+                    if( free_ != 0 ) {
+                        SDataUnit * result = free_;
+                        free_ = free_->next;
+                        return result;
+                    }
+
+                    if( first_unused_ >= BLOCK_SIZE ) new_block();
+                    return &(*pool_.rbegin())[first_unused_++];
+                }
+
+                void free( SDataUnit * d )
+                {
+                    if( d == 0 ) return;
+                    SDataUnit * t = free_;
+                    free_ = d;
+                    while( d->next != 0 ) d = d->next;
+                    d->next = t;
+                }
+
+                void clear()
+                {
+                    free_ = 0;
+                    pool_.resize( 1 );
+                    first_unused_ = 0;
+                }
+
+            private:
+
+                void new_block()
+                {
+                    pool_.push_back( TBlock( BLOCK_SIZE ) );
+                    first_unused_ = 0;
+                }
+
+                SDataUnit * free_;
+
+                Uint4 first_unused_;
+
+                TBlocks pool_;
+        };
 
     private:
 
-        /** Type used to store offset list data. */
-        typedef std::vector< TWord > TData;
+        class CData
+        {
+                class CDataIterator
+                {
+                    public:
 
-        TData data_;    /**< Offset list data storage. */
+                        CDataIterator( 
+                                SDataUnit * cunit, 
+                                Uint4 cindex, 
+                                Uint4 size )
+                            : cunit_( cunit ), cindex_( cindex ), 
+                              size_( size ), prev_( 0 )
+                        { ASSERT( cindex_ != 0 ); }
+
+                        CDataIterator & operator++()
+                        {
+                            if( size_ != 0 ) {
+                                if( cindex_ >= DATA_UNIT_SIZE ) {
+                                    prev_ = &cunit_->data[cindex_ - 1];
+                                    cunit_ = cunit_->next;
+                                    cindex_ = 1;
+                                }
+                                else ++cindex_;
+
+                                --size_;
+
+                                if( size_ == 0 ) {
+                                    cunit_  = 0;
+                                    cindex_ = 1;
+                                    prev_   = 0;
+                                }
+                            }
+
+                            return *this;
+                        }
+                        
+                        CDataIterator & operator--()
+                        {
+                            if( size_ != 0 ) {
+                                ASSERT( cindex_ != 0 );
+                                --cindex_;
+                                ++size_;
+                            }
+
+                            return *this;
+                        }
+
+                        TWord operator*() const 
+                        { 
+                            ASSERT( size_ != 0 );
+                            ASSERT( cindex_ != 0 || prev_ != 0 );
+                            ASSERT( cindex_ == 0 || cunit_ != 0 );
+                            return ( cindex_ != 0 ) ? cunit_->data[cindex_ - 1] 
+                                                    : *prev_;
+                        }
+
+                        friend bool operator==( 
+                                const CDataIterator & rhs,
+                                const CDataIterator & lhs )
+                        { 
+                            return rhs.cunit_ == lhs.cunit_ ? 
+                                    rhs.cunit_ == 0 ?
+                                        true :
+                                        rhs.cindex_ == lhs.cindex_ :
+                                    false;
+                        }
+
+                        friend bool operator!=( 
+                                const CDataIterator & rhs,
+                                const CDataIterator & lhs )
+                        { return !(rhs == lhs); }
+
+                    private:
+
+                        SDataUnit * cunit_;
+                        Uint4 cindex_;
+                        Uint4 size_;
+                        TWord * prev_;
+                };
+
+            public:
+
+                typedef CDataIterator const_iterator;
+                typedef Uint4 size_type;
+
+                CData() : start_( 0 ), curr_( 0 ), last_( 0 ), size_( 0 )
+                {}
+
+                const_iterator begin() const
+                { return const_iterator( start_, 1, size_ ); }
+
+                const_iterator end() const
+                { return const_iterator( 0, 1, 0 ); }
+
+                Uint4 size() const { return size_; }
+                bool empty() const { return (size() == 0); }
+
+                void push_back( const TWord & d )
+                {
+                    if( start_ == 0 ) {
+                        start_ = curr_ = Pool_.alloc();
+                        start_->next = 0;
+                    }
+                    
+                    curr_->data[last_++] = d;
+
+                    if( last_ >= DATA_UNIT_SIZE ) {
+                        SDataUnit * t = Pool_.alloc();
+                        t->next = 0;
+                        curr_->next = t;
+                        curr_ = t;
+                        last_ = 0;
+                    }
+
+                    ++size_;
+                }
+
+                void resize( Uint4 newsize )
+                {
+                    if( newsize == 0 ) {
+                        Pool_.free( start_ );
+                        start_ = curr_ = 0;
+                        size_ = last_ = 0;
+                        return;
+                    }
+
+                    while( newsize > size() ) push_back( 0 );
+                    Uint4 t = 0;
+                    SDataUnit * tp = 0, * tn = start_;
+
+                    while( t < newsize ) {
+                        t += DATA_UNIT_SIZE;
+                        tp = tn;
+                        tn = tp->next;
+                    }
+
+                    Pool_.free( tn );
+                    curr_ = tp;
+                    last_ = DATA_UNIT_SIZE - (t - newsize) - 1;
+                    size_ = newsize;
+                }
+
+                static void Clear() { Pool_.clear(); }
+
+            private:
+
+                static CDataPool Pool_;
+
+                SDataUnit * start_;
+                SDataUnit * curr_;
+                Uint4 last_;
+                Uint4 size_;
+        };
+
+        /** Type used to store offset list data. */
+        typedef CData TData;
+
+        TData data_;               /**< Offset list data storage. */
+        unsigned long min_offset_; /**< Minimum offset used by the index. */
+        unsigned long mult_;       /**< Max multiple to use in list pre-ordering. */
+
+    public:
+
+        static void ClearAll() { TData::Clear(); }
 };
 
+COffsetList::CDataPool COffsetList::CData::Pool_;
+
 //-------------------------------------------------------------------------
-template< typename word_t >
-inline void COffsetList< word_t, UNCOMPRESSED >::Save( 
-        CNcbiOstream & os, unsigned long version ) const
+inline void COffsetList::Save( CNcbiOstream & os) const
 {
-    if( version <= 3 ) {
-        for( typename TData::const_iterator cit = data_.begin(); 
-                cit != data_.end(); ++cit ) {
+    for( TData::const_iterator cit = data_.begin();
+            cit != data_.end(); ++cit )
+        if( *cit < min_offset_ ) {
             WriteWord( os, *cit );
+            WriteWord( os, *(++cit) );
         }
-    }
-    else if( version >= 4 ) {
-        for( typename TData::const_iterator cit = data_.begin(); 
-                cit != data_.end(); ++cit ) {
-            if( *cit < MIN_OFFSET ) {
-                WriteWord( os, *cit );
-                WriteWord( os, *(++cit) );
-            }
-            else if( (*cit)%3 == 0 ) {
-                WriteWord( os, *cit );
-            }
-        }
+        else if( (*cit)%mult_ == 0 ) WriteWord( os, *cit );
 
-        for( typename TData::const_iterator cit = data_.begin(); 
-                cit != data_.end(); ++cit ) {
-            if( (*cit) < MIN_OFFSET ) {
-                ++cit;
-            }
-            else if( (*cit)%3 != 0 && (*cit)%2 == 0 ) {
-                WriteWord( os, *cit );
-            }
-        }
+    unsigned long m = mult_;
 
-        for( typename TData::const_iterator cit = data_.begin(); 
+    while( --m > 0 ) {
+        for( TData::const_iterator cit = data_.begin();
                 cit != data_.end(); ++cit ) {
-            if( (*cit) < MIN_OFFSET ) {
-                ++cit;
-            }
-            else if( (*cit)%3 != 0 && (*cit)%2 != 0 ) {
-                WriteWord( os, *cit );
+            if( *cit < min_offset_ ) ++cit;
+            else {
+                bool skip = false;
+
+                for( unsigned long n = mult_; n > m; --n )
+                    if( (*cit)%n == 0 ) { skip = true; break; }
+
+                if( !skip && (*cit)%m == 0 ) WriteWord( os, *cit );
             }
         }
     }
 
-    if( version >= 3 && !data_.empty() ) {
-        WriteWord( os, (word_t)0 );
+    if( !data_.empty() ) {
+        WriteWord( os, (TWord)0 );
     }
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-inline void COffsetList< word_t, UNCOMPRESSED >::AddData( 
-        TWord item, TWord & total )
+inline void COffsetList::AddData( TWord item, TWord & total )
 {
     data_.push_back( item );
     ++total;
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-inline void COffsetList< word_t, UNCOMPRESSED >::TruncateList(
-        TWord offset, TWord & total )
+inline void COffsetList::TruncateList( TWord offset, TWord & total )
 {
     bool flag = false;
+    TData::const_iterator it = data_.begin();
 
-    for( typename TData::size_type i = 0; i < data_.size(); ++i ) {
-        if( data_[i] < MIN_OFFSET ) {
+    for( TData::size_type i = 0; i < data_.size(); ++i, ++it ) {
+        if( *it < min_offset_ ) {
             flag = true;
             continue;
         }
 
-        if( data_[i] >= offset ) {
+        if( *it >= offset ) {
             if( flag ) {
-                --i;
+                --i; --it;
             }
 
-            typename TData::size_type diff = data_.size() - i;
+            TData::size_type diff = data_.size() - i;
             data_.resize( i );
             total -= diff;
             return;
@@ -1311,31 +1290,21 @@ inline void COffsetList< word_t, UNCOMPRESSED >::TruncateList(
 }
 
 //-------------------------------------------------------------------------
-/** Family of classes responsible for creation and management of Nmer
+/** A class responsible for creation and management of Nmer
     offset lists.
-    The correct specialization of this class is selected based on
-    the options given to the index creation procedure.
-    @param word_t type of the natural machine word. Used to support
-                  32 and 64 bit wide indices.
-    @param subject_map_t type prividing mapping from internal oids to
-                         sequence data
-    @param COMPRESSION type of compression used for offset lists
 */
-template< 
-    typename word_t, typename subject_map_t, unsigned long COMPRESSION >
-class COffsetData 
+class COffsetData_Factory 
 {
     public:
 
-        typedef subject_map_t TSubjectMap;      /**< Rename for consistency. */
-        typedef word_t TWord;                   /**< Rename for consistency. */
+        typedef CSubjectMap_Factory TSubjectMap;    /**< Rename for consistency. */
 
         /** Object constructor.
             @param subject_map structure to use to map logical oids to the
                                actual sequence data
             @param options index creation options
         */
-        COffsetData( 
+        COffsetData_Factory( 
                 TSubjectMap & subject_map, 
                 const CDbIndex::SOptions & options )
             : subject_map_( subject_map ),
@@ -1344,8 +1313,16 @@ class COffsetData
               total_( 0 ),
               hkey_width_( options.hkey_width ),
               last_seq_( 0 ),
-              options_( options )
-        {}
+              options_( options ),
+              code_bits_( GetCodeBits( options.stride ) )
+        {
+            for( THashTable::iterator i = hash_table_.begin();
+                    i != hash_table_.end(); ++i ) {
+                i->SetIndexParams( options_ );
+            }
+        }
+
+        ~COffsetData_Factory() { COffsetList::ClearAll(); }
 
         /** Get the total memory usage by offset lists in bytes.
             @return memory usage by this instance
@@ -1359,17 +1336,16 @@ class COffsetData
 
         /** Save the offset lists into the binary output stream.
             @param os output stream; must be open in binary mode
-            @param version index format version
         */
-        void Save( CNcbiOstream & os, unsigned long version );
+        void Save( CNcbiOstream & os );
 
     private:
 
         /** Type used for individual offset lists. */
-        typedef COffsetList< word_t, COMPRESSION > TOffsetList;
+        typedef COffsetList TOffsetList;
 
-        typedef CDbIndex::TSeqNum TSeqNum;                      /**< Forwarding from CDbIndex. */
-        typedef typename TSubjectMap::TSeqInfo TSeqInfo;        /**< Forwarding from TSubjectMap. */
+        typedef CDbIndex::TSeqNum TSeqNum;             /**< Forwarding from CDbIndex. */
+        typedef TSubjectMap::TSeqInfo TSeqInfo;        /**< Forwarding from TSubjectMap. */
 
         /** Type used for mapping Nmer values to corresponding 
             offset lists. 
@@ -1422,21 +1398,17 @@ class COffsetData
         TSeqNum last_seq_;              /**< Logical oid of last processed sequence. */
 
         const CDbIndex::SOptions & options_; /**< Index options. */
+        unsigned long code_bits_;            /**< Number of bits to encode special offset prefixes. */
 };
 
 //-------------------------------------------------------------------------
-template< 
-    typename word_t, typename subject_map_t, unsigned long COMPRESSION >
-void COffsetData< word_t, subject_map_t, COMPRESSION >::Save(
-        CNcbiOstream & os, unsigned long version ) 
+void COffsetData_Factory::Save( CNcbiOstream & os ) 
 {
-    if( version >= 3 ) { // Adjust total_ to include end zeroes.
-        ++this->total_;
+    ++this->total_;
 
-        for( typename THashTable::const_iterator cit = hash_table_.begin();
-                cit != hash_table_.end(); ++cit ) {
-            if( cit->Size() > 0 ) ++this->total_;
-        }
+    for( THashTable::const_iterator cit = hash_table_.begin();
+            cit != hash_table_.end(); ++cit ) {
+        if( cit->Size() > 0 ) ++this->total_;
     }
 
     bool stat = !options_.stat_file_name.empty();
@@ -1451,15 +1423,15 @@ void COffsetData< word_t, subject_map_t, COMPRESSION >::Save(
     TWord tot = 0;
     unsigned long nmer = 0;
 
-    for( typename THashTable::const_iterator cit = hash_table_.begin();
+    for( THashTable::const_iterator cit = hash_table_.begin();
             cit != hash_table_.end(); ++cit, ++nmer ) {
-        if( version >= 3 && cit->Size() != 0 ) {
+        if( cit->Size() != 0 ) {
             ++tot;
         }
 
-        if( version < 3 || (version >= 3 && cit->Size() != 0) ) 
+        if( cit->Size() != 0 ) 
             WriteWord( os, tot );
-        else WriteWord( os, (word_t)0 );
+        else WriteWord( os, (TWord)0 );
 
         tot += cit->Size();
 
@@ -1469,54 +1441,41 @@ void COffsetData< word_t, subject_map_t, COMPRESSION >::Save(
         }
     }
 
-    if( version >= 2 ) WriteWord( os, total() );
-    if( version >= 3 ) WriteWord( os, (word_t)0 ); // offset list data starts
-                                                   //     zero entry
+    WriteWord( os, total() );
+    WriteWord( os, (TWord)0 );
 
-    for( typename THashTable::const_iterator cit = hash_table_.begin();
+    for( THashTable::const_iterator cit = hash_table_.begin();
             cit != hash_table_.end(); ++cit ) {
-        cit->Save( os, version );
+        cit->Save( os );
     }
 
     os << std::flush;
 }
 
 //-------------------------------------------------------------------------
-template< 
-    typename word_t, typename subject_map_t, unsigned long COMPRESSION >
-void 
-COffsetData< word_t, subject_map_t, COMPRESSION >::EncodeAndAddOffset(
+void COffsetData_Factory::EncodeAndAddOffset(
         TWord nmer, TSeqPos start, TSeqPos stop, 
         TSeqPos curr, TWord offset )
 {
-    CProgressReporter( REPORT_VERBOSE, report_level_ ) << "OA: ";
     TSeqPos start_diff = curr + 2 - hkey_width_ - start;
     TSeqPos end_diff = stop - curr;
 
-    if( start_diff <= STRIDE || end_diff <= STRIDE ) {
-        if( start_diff > STRIDE ) start_diff = 0;
-        if( end_diff > STRIDE ) end_diff = 0;
-        TWord code = (start_diff<<CODE_BITS) + end_diff;
-        hash_table_[(typename THashTable::size_type)nmer].AddData( 
+    if( start_diff <= options_.stride || end_diff <= options_.stride ) {
+        if( start_diff > options_.stride ) start_diff = 0;
+        if( end_diff > options_.stride ) end_diff = 0;
+        TWord code = (start_diff<<code_bits_) + end_diff;
+        hash_table_[(THashTable::size_type)nmer].AddData( 
                 code, total_ );
-        CProgressReporter( REPORT_VERBOSE, report_level_ ) 
-            << to_hex_str( code );
     }
 
-    hash_table_[(typename THashTable::size_type)nmer].AddData( 
+    hash_table_[(THashTable::size_type)nmer].AddData( 
             offset, total_ );
-    CProgressReporter( REPORT_VERBOSE, report_level_ ) 
-        << " " << offset << " " << to_hex_str( nmer ) << "\n";
 }
 
 //-------------------------------------------------------------------------
-template< 
-    typename word_t, typename subject_map_t, unsigned long COMPRESSION >
-void COffsetData< word_t, subject_map_t, COMPRESSION >::AddSeqSeg(
+void COffsetData_Factory::AddSeqSeg(
         const Uint1 * seq, TWord , TSeqPos start, TSeqPos stop )
 {
-    CProgressReporter( REPORT_VERBOSE, report_level_ ) 
-        << "SEGMENT: " << start << " " << stop << "\n";
     const TWord nmer_mask = (((TWord)1)<<(2*hkey_width_)) - 1;
     const Uint1 letter_mask = 0x3;
     TWord nmer = 0;
@@ -1537,12 +1496,9 @@ void COffsetData< word_t, subject_map_t, COMPRESSION >::AddSeqSeg(
 }
 
 //-------------------------------------------------------------------------
-template< 
-    typename word_t, typename subject_map_t, unsigned long COMPRESSION >
-void COffsetData< word_t, subject_map_t, COMPRESSION >::AddSeqInfo(
-        const TSeqInfo & sinfo )
+void COffsetData_Factory::AddSeqInfo( const TSeqInfo & sinfo )
 {
-    for( typename TSeqInfo::TSegs::const_iterator it = sinfo.segs_.begin();
+    for( TSeqInfo::TSegs::const_iterator it = sinfo.segs_.begin();
             it != sinfo.segs_.end(); ++it ) {
         AddSeqSeg( 
                 subject_map_.seq_store_start() + sinfo.seq_start_, 
@@ -1551,58 +1507,40 @@ void COffsetData< word_t, subject_map_t, COMPRESSION >::AddSeqInfo(
 }
 
 //-------------------------------------------------------------------------
-template< 
-    typename word_t, typename subject_map_t, unsigned long COMPRESSION >
-void COffsetData< word_t, subject_map_t, COMPRESSION >::Truncate()
+void COffsetData_Factory::Truncate()
 {
     last_seq_ = subject_map_.LastGoodSequence();
     TWord offset = subject_map_.MakeOffset( last_seq_, 0 );
-    CProgressReporter( REPORT_VERBOSE, report_level_ ) 
-        << "TR: " << offset << "\n";
 
-    for( typename THashTable::iterator it = hash_table_.begin();
+    for( THashTable::iterator it = hash_table_.begin();
             it != hash_table_.end(); ++it ) {
         it->TruncateList( offset, total_ );
     }
 }
 
 //-------------------------------------------------------------------------
-template< 
-    typename word_t, typename subject_map_t, unsigned long COMPRESSION >
-void COffsetData< word_t, subject_map_t, COMPRESSION >::Update()
+void COffsetData_Factory::Update()
 {
     if( subject_map_.LastGoodSequence() < last_seq_ ) {
         Truncate();
-        report_progress( 
-                REPORT_NORMAL, report_level_, 
-                std::string( 
-                    last_seq_ - subject_map_.LastGoodSequence(), '-' ) );
     }
 
     const TSeqInfo * sinfo;
 
     while( (sinfo = subject_map_.GetSeqInfo( last_seq_ + 1 )) != 0 ) {
-        CProgressReporter( REPORT_VERBOSE, report_level_ ) 
-            << "AS: " << last_seq_ + 1 << "\n";
         AddSeqInfo( *sinfo );
         ++last_seq_;
     }
 }
 
-} // Anonymous namespace
-
 //-------------------------------------------------------------------------
-/** Index implementation.
+/** Index factory implementation.
   */
-template< unsigned long WIDTH >
 class CDbIndex_Factory : public CDbIndex
 {
     private:
 
-        /** Integral type representing the unit of the index hash table. */
-        typedef typename SWord< WIDTH >::type TWord;
-
-        static const TWord MEGABYTE = 1024*1024;        /**< Obvious... */
+        static const Uint8 MEGABYTE = 1024*1024ULL;        /**< Obvious... */
 
     public:
 
@@ -1635,28 +1573,22 @@ class CDbIndex_Factory : public CDbIndex
 
         /** Save the index header.
             @param os          output stream open in binary mode
-            @param version     index format version
-            @param hkey_width  length of the hash key in bases
+            @param options     index creation options
             @param start       oid of the first sequence in the index
             @param start_chunk chunk number of the first chunk of the first sequence
             @param stop        oid of the last sequence in the index
             @param stop_chunk  chunk number of the last chunk of the last sequence
         */
-        template< unsigned long OFF_TYPE, unsigned long COMPRESSION >
         static void SaveHeader(
                 CNcbiOstream & os,
-                unsigned long version,
-                unsigned long hkey_width,
+                const SOptions & options,
                 TSeqNum start,
                 TSeqNum start_chunk,
                 TSeqNum stop,
                 TSeqNum stop_chunk );
 
-        /** Specialization of the index creation function for given
-            offset type and compression method.
-            For description of parameters see CDbIndex_Factory::Create().
+        /** Called by CDbIndex::Create() (should be merged?).
         */
-        template< unsigned long OFF_TYPE, unsigned long COMPRESSION >
         static void do_create(
                 CSequenceIStream & input, const std::string & oname,
                 TSeqNum start, TSeqNum start_chunk,
@@ -1664,9 +1596,8 @@ class CDbIndex_Factory : public CDbIndex
                 const SOptions & options
         );
 
-        /** Index creation function for index format version 1 and 2.
+        /** Another forward from do_create() (should be merged?).
         */
-        template< unsigned long OFF_TYPE, unsigned long COMPRESSION >
         static void do_create_1_2(
                 CSequenceIStream & input, const std::string & oname,
                 TSeqNum start, TSeqNum start_chunk,
@@ -1676,116 +1607,68 @@ class CDbIndex_Factory : public CDbIndex
 };
 
 //-------------------------------------------------------------------------
-template< unsigned long WIDTH >
-template< unsigned long OFF_TYPE, unsigned long COMPRESSION >
-void CDbIndex_Factory< WIDTH >::SaveHeader(
+void CDbIndex_Factory::SaveHeader(
                 CNcbiOstream & os,
-                unsigned long version,
-                unsigned long hkey_width,
+                const SOptions & options,
                 TSeqNum start,
                 TSeqNum start_chunk,
                 TSeqNum stop,
                 TSeqNum stop_chunk )
 {
-    ASSERT( version >= 1 && version < 6 );
-
-    switch( version ) {
-        case 1:
-
-        WriteWord( os, (unsigned char)version );
-        WriteWord( os, (unsigned char)WIDTH );
-        WriteWord( os, (unsigned char)hkey_width );
-        WriteWord( os, (unsigned char)OFF_TYPE );
-        WriteWord( os, (unsigned char)COMPRESSION );
-        WriteWord( os, start );
-        WriteWord( os, start_chunk );
-        WriteWord( os, stop );
-        WriteWord( os, stop_chunk );
-        os << std::flush;
-        break;
-
-        case 2: case 3: case 4: case 5:
-
-        {
-            WriteWord( os, (unsigned char)version );
-            for( int i = 0; i < 7; ++i ) WriteWord( os, (unsigned char)0 );
-            WriteWord( os, (Uint8)WIDTH );
-            WriteWord( os, (TWord)hkey_width );
-            WriteWord( os, (TWord)OFF_TYPE );
-            WriteWord( os, (TWord)COMPRESSION );
-            WriteWord( os, (TWord)start );
-            WriteWord( os, (TWord)start_chunk );
-            WriteWord( os, (TWord)stop );
-            WriteWord( os, (TWord)stop_chunk );
-            os << std::flush;
-        }
-
-        break;
-
-        default: break;
+    if( options.legacy ) {
+        WriteWord( os, (unsigned char)VERSION );
+        for( int i = 0; i < 7; ++i ) WriteWord( os, (unsigned char)0 );
+        WriteWord( os, (Uint8)WIDTH_32 );
+        WriteWord( os, (TWord)options.hkey_width );
+        WriteWord( os, (TWord)OFFSET_COMBINED );
+        WriteWord( os, (TWord)UNCOMPRESSED );
     }
+    else {
+        WriteWord( os, (unsigned char)(VERSION + 1) );
+        for( int i = 0; i < 7; ++i ) WriteWord( os, (unsigned char)0 );
+        WriteWord( os, (Uint8)WIDTH_32 );
+        WriteWord( os, (TWord)options.hkey_width );
+        WriteWord( os, (TWord)options.stride );
+        WriteWord( os, (TWord)options.ws_hint );
+    }
+
+    WriteWord( os, (TWord)start );
+    WriteWord( os, (TWord)start_chunk );
+    WriteWord( os, (TWord)stop );
+    WriteWord( os, (TWord)stop_chunk );
+    os << std::flush;
 }
 
 //-------------------------------------------------------------------------
-/* The method performs initial analysis of the input data and requested
-   index options and chooses the appropriately optimized index creation
-   routine.
- */
-template< unsigned long WIDTH >
-void CDbIndex_Factory< WIDTH >::Create(
+void CDbIndex_Factory::Create(
         CSequenceIStream & input, const std::string & oname,
         TSeqNum start, TSeqNum start_chunk,
         TSeqNum & stop, TSeqNum & stop_chunk, const SOptions & options )
 {
-    report_progress( 
-            REPORT_VERBOSE, options.report_level,
-            std::string( "Creating " ) +
-            (WIDTH == WIDTH_32 ? "32" : "64") +
-            "-bit wide index.\n" );
-    do_create< OFFSET_RAW, UNCOMPRESSED >(
+    do_create( 
             input, oname, start, start_chunk, stop, stop_chunk, options );
 }
 
 //-------------------------------------------------------------------------
-template< unsigned long WIDTH >
-template< unsigned long OFF_TYPE, unsigned long COMPRESSION >
-void CDbIndex_Factory< WIDTH >::do_create(
+void CDbIndex_Factory::do_create(
         CSequenceIStream & input, const std::string & oname,
         TSeqNum start, TSeqNum start_chunk,
         TSeqNum & stop, TSeqNum & stop_chunk, const SOptions & options )
 {
-    switch( options.version ) {
-        case 1: case 2: case 3: case 4:
-
-            do_create_1_2< OFF_TYPE, COMPRESSION >(
-                input, oname, start, start_chunk, 
-                stop, stop_chunk, options );
-            break;
-
-        case 5:
-
-            do_create_1_2< OFFSET_COMBINED, COMPRESSION >(
-                input, oname, start, start_chunk, 
-                stop, stop_chunk, options );
-            break;
-
-        default: break;
-    }
+    do_create_1_2( 
+            input, oname, start, start_chunk, stop, stop_chunk, options );
 }
 
 //-------------------------------------------------------------------------
-template< unsigned long WIDTH >
-template< unsigned long OFF_TYPE, unsigned long COMPRESSION >
-void CDbIndex_Factory< WIDTH >::do_create_1_2(
+void CDbIndex_Factory::do_create_1_2(
         CSequenceIStream & input, const std::string & oname,
         TSeqNum start, TSeqNum start_chunk,
         TSeqNum & stop, TSeqNum & stop_chunk, const SOptions & options )
 {
-    typedef CSubjectMap< TWord, OFF_TYPE > TSubjectMap;
-    typedef COffsetData< TWord, TSubjectMap, COMPRESSION > TOffsetData;
+    typedef CSubjectMap_Factory TSubjectMap;
+    typedef COffsetData_Factory TOffsetData;
 
-    TSubjectMap subject_map( 
-            options.chunk_size, options.chunk_overlap, options.report_level );
+    TSubjectMap subject_map( options );
     TOffsetData offset_data( subject_map, options );
 
     TSeqNum i = start;
@@ -1795,15 +1678,15 @@ void CDbIndex_Factory< WIDTH >::do_create_1_2(
         return;
     }
 
-    while( i < stop ) {
-        CProgressReporter( REPORT_VERBOSE, options.report_level ) 
-            << "SUBJECT: " << i - 1 << "\n";
+    vector< string > idmap;
 
+    while( i < stop ) {
         typedef CSequenceIStream::TSeqData TSeqData;
 
         CRef< TSeqData > seq_data( input.next() );
         TSeqData * sd = seq_data.GetNonNullPointer();
-        subject_map.NewSequenceInit( *sd, start_chunk );
+        string idstr = subject_map.NewSequenceInit( *sd, start_chunk );
+        idmap.push_back( idstr );
 
         if( !*sd ) {
             if( i == start ) {
@@ -1816,12 +1699,21 @@ void CDbIndex_Factory< WIDTH >::do_create_1_2(
             break;
         }
 
-        while( subject_map.AddSequenceChunk() ) {
-            offset_data.Update();
-            TWord total = subject_map.total() + 
-                sizeof( TWord )*offset_data.total();
+        bool overflow;
 
-            if( total > MEGABYTE*options.max_index_size ) {
+        while( subject_map.AddSequenceChunk( overflow ) ) {
+            if( !overflow ) {
+                offset_data.Update();
+            }
+            else {
+                std::cerr << "WARNING: logical sequence id overflow. "
+                          << "Starting new volume." << std::endl;
+            }
+
+            Uint8 total = (Uint8)subject_map.total() + 
+                ((Uint8)sizeof( TWord ))*offset_data.total();
+
+            if( total > MEGABYTE*options.max_index_size || overflow ) {
                 input.putback();
                 subject_map.RollBack();
                 offset_data.Update();
@@ -1837,15 +1729,12 @@ void CDbIndex_Factory< WIDTH >::do_create_1_2(
         ++i;
     }
 
-    report_progress( REPORT_NORMAL, options.report_level, "\n" );
-
     {
         std::ostringstream os;
         os << "Last processed: sequence " 
            << start + subject_map.GetLastSequence() - 1
            << " ; chunk " << subject_map.GetLastSequenceChunk() 
            << std::endl;
-        report_progress( REPORT_NORMAL, options.report_level, os.str() );
     }
 
     {
@@ -1853,21 +1742,24 @@ void CDbIndex_Factory< WIDTH >::do_create_1_2(
         os << "Index size: " 
            << subject_map.total() + sizeof( TWord )*offset_data.total() 
            << " bytes (not counting the hash table)." << std::endl;
-        report_progress( REPORT_NORMAL, options.report_level, os.str() );
     }
 
-    report_progress( REPORT_NORMAL, options.report_level, "Saving.. " );
     CNcbiOfstream os( oname.c_str(), IOS_BASE::binary );
-    SaveHeader< OFF_TYPE, COMPRESSION >( 
-            os, options.version, options.hkey_width, 
-            start, start_chunk, stop, stop_chunk );
-    report_progress( REPORT_NORMAL, options.report_level, "header.." );
-    offset_data.Save( os, options.version );
-    report_progress( 
-            REPORT_NORMAL, options.report_level, "offset data.." );
-    subject_map.Save( os, options.version );
-    report_progress( 
-            REPORT_NORMAL, options.report_level, "sequence data.\n" );
+    SaveHeader( os, options, start, start_chunk, stop, stop_chunk );
+    offset_data.Save( os );
+    subject_map.Save( os );
+    
+    if( options.idmap ) {
+        string mapname = oname + ".map";
+        CNcbiOfstream maps( mapname.c_str() );
+        
+        for( vector< string >::const_iterator i = idmap.begin();
+                i != idmap.end(); ++i ) {
+            maps << *i << "\n";
+        }
+
+        maps << flush;
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -1878,26 +1770,10 @@ void CDbIndex::MakeIndex(
 {
     // Make an CSequenceIStream out of fname and forward to
     // MakeIndex( CSequenceIStream &, ... ).
-    switch( options.input_type ) {
-        case FASTA:
-
-            {
-                CSequenceIStreamFasta input( fname ); 
-                MakeIndex( 
-                        input, oname, start, start_chunk, 
-                        stop, stop_chunk, options );
-            }
-
-            break;
-
-        default:
-
-            {
-                std::ostringstream str;
-                str << "unknown option " << options.input_type;
-                NCBI_THROW( CDbIndex_Exception, eBadOption, str.str() );
-            }
-    }
+    CSequenceIStreamFasta input( fname ); 
+    MakeIndex( 
+            input, oname, start, start_chunk, 
+            stop, stop_chunk, options );
 }
 
 //-------------------------------------------------------------------------
@@ -1915,19 +1791,9 @@ void CDbIndex::MakeIndex(
     TSeqNum start, TSeqNum start_chunk,
     TSeqNum & stop, TSeqNum & stop_chunk, const SOptions & options )
 {
-    if( options.bit_width == WIDTH_32 ) {
-        typedef CDbIndex_Factory< WIDTH_32 > TIndex_Impl;
-        TIndex_Impl::Create( 
-                input, oname,
-                start, start_chunk, stop, stop_chunk, options );
-    }else if( options.bit_width == WIDTH_64 ) {
-        typedef CDbIndex_Factory< WIDTH_64 > TIndex_Impl;
-        TIndex_Impl::Create( 
-                input, oname, 
-                start, start_chunk, stop, stop_chunk, options );
-    }else {
-        NCBI_THROW( CDbIndex_Exception, eBadOption, "wrong index width" );
-    }
+    typedef CDbIndex_Factory TIndex_Impl;
+    TIndex_Impl::Create( 
+            input, oname, start, start_chunk, stop, stop_chunk, options );
 }
 
 //-------------------------------------------------------------------------

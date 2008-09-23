@@ -1,0 +1,177 @@
+ABSTRACT
+
+    srsearch is a program to find nearly exact matches (up
+    to one mismatch) for short queries against a large genomic
+    database. The program can also match pairs of short
+    sequences given approximate target distance between them
+    in the genome.
+
+    NOTE: srsearch works with specially formatted indexed databases
+    that can be created from a FASTA formatted text file before using
+    srsearch via a utility called makembindex. Usage information for
+    makembindex can be found in algo/blast/dbindex/makeindex/ 
+    subdirectory of the NCBI C++ Toolkit tree.
+
+SYNOPSIS
+
+    srsearch [-h] [-help] -input input_file_name 
+    [-input1 paired_input_file_name] [-output output_file_name]
+    [-pair_distance pair_distance] [-pair_distance_fuzz pair_distance_fuzz]
+    [-mismatch allow_mismatch] -index index_name [-start_vol index_volume]
+    [-end_vol index_volume] [-restrict_matches number_of_matches]
+
+OPTIONS
+
+    -h
+
+        Print a short usage information and exit.
+
+    -help
+
+        Print a comprehensive usage information and exit.
+
+    -input input_file_name
+
+        Name of the FASTA formatted input file containing a set of short
+        queries.
+
+    -input1 paired_input_file_name
+
+        default: empty
+
+        Name of the FASTA formatted file containing paired sequences to
+        the queries in the file specified by -input option. Presence
+        of this parameter automatically switches srsearch to the paired
+        query mode. Both files specified in -input and -input1 options
+        must contain exactly the same number of sequences.
+
+    -output output_file_name
+
+        default: stdout
+
+        Name of the output file. If the option is not specified, then
+        the output is directed to the program's standard output stream.
+
+    -pair_distance pair_distance
+
+        This parameter is required for paired search operation. It
+        specifies the target number of bases between the pair of subject
+        subsequences matched to a given pair of queries.
+
+    -pair_distance_fuzz pair_distance_fuzz
+
+        default: half of the value specified by -pair_distance option
+
+        This parameter is only applicable in the case of paired search
+        operation. It is used to define the range of distances around
+        the value of -pair_distance option for which a pair of matched
+        subject subsequences are reported as a paired match. The value
+        of this option must be less than the value of -pair_distance 
+        option. If d is the value of -pair_distance option and 
+        df is the value of -pair_distance_fuzz option, then the range
+        [d - df, d + df] is considered acceptable distances between
+        subject subsequences in the paired match.
+
+    -mismatch [true|false]
+
+        default: false
+
+        The value of 'true' allows for the results with one mismatch;
+        the value of 'false' restricts search to exact matches only.
+
+    -index index_name
+
+        The name of the pre-indexed database. An index can have multiple
+        volumes of the form <index_name>.<nn>.idx, where nn is the 2 digit
+        integer volume number. For example, if an indexed database contains
+        3 volumes called db.00.idx, db.01.idx, and db.02.idx, then the
+        option to srsearch to search against this database would be
+        -index db
+
+    -start_vol index_volume
+
+        This optional parameter can be used to restrict the search
+        to index volumes starting from the volume number specified by
+        the option.
+
+    -end_vol index_volume
+
+        This optional parameter can be used to stop the search when
+        the index volume given by the option is reached.
+
+    -restrict_matches number_of_matches
+
+        default: 3
+
+        This option can be used to restrict the number of results reported
+        per query. The value of 0 means "unrestricted". 
+
+        All results are prioritized according to the following (in the
+        order of decreasing priority):
+
+        paired match with both queries matching exactly;
+        paired match with at least one query having one mismatch;
+        single exact match;
+        single match with one mismatch.
+
+        For each query, only the highest priority results found for that
+        query are reported and the number of results reported is restricted 
+        by the value of -restrict_matches parameter.
+
+        If the value of -restrict_matches parameter is non-zero, then
+        the final output is ordered by the appearance of queries in the
+        source query file, i.e. the results for each query are accumulated
+        for all index volumes.
+
+        On the other hand, if the value of -restrict_matches is 0, then
+        the results for each index volume are reported separately. However,
+        the results within the same volume are still ordered by the position of
+        the query in the source query file.
+
+OUTPUT FORMAT
+
+    The program output is formatted as plain text with one row per match.
+    Each row is tab separated set of values with the following meaning.
+
+    1. type of result:
+        for non-paired search - always 0;
+        for paired search: 
+            0 - paired match; 
+            1 - non-paired match for the first member of the pair; 
+            2 - non-paired match for the second member of the pair;
+    2. query ordinal number;
+    3. subject ordinal number;
+    4. subject offset (for the first member of the pair if paired match);
+    5. 0 - reverse strand; 1 - forward strand (for the first member of the
+       pair if paired match);
+    6. mismatch position in the query (0 for exact match) (for the first
+       member of the pair if paired match);
+    7. subject base at mismatch position ('-' for exact match) (for the first
+       member of the pair if paired match);
+    8. if paired match - subject offset of the second member of the pair;
+    9. if paired match - strand of the second member of the pair;
+   10. if paired match - mismatch position of the second member of the pair;
+   11. if paired match - subject base at mismatch position for the second
+       member of the pair.
+
+EXAMPLES
+
+    To search for exact matches of queries from file input.fa against
+    the two-volume pre-indexed database db.00.idx, db.01.idx with up
+    to 5 matches to be reported, the following command can be used:
+
+    srsearch -index db -input input.fa -output results -restrict_matches 5
+
+    To obtain all results for exact matches or matches with 1 mismatch
+    (if no exact matches exist for a query) the command can be modified
+    as follows:
+
+    srsearch -mismatch true -index db -input input.fa -output results -restrict_matches 0
+
+    To search for paired matches with input files in pair1.fa and pair2.fa 
+    against the same database allowing one mismatch, requiring that
+    subsequences of a matching pair are within 400 -- 600 bases apart, and
+    reporting up to 3 results:
+
+    srsearch -mismatch true -index db -input pair1.fa -input1 pair2.fa -output results -pair_distance 500 -pair_distance_fuzz 100
+

@@ -618,7 +618,6 @@ void CIndexedDb::SetNumThreads( size_t n_threads )
                         + index_names_[ind]).c_str() );
             }
 
-            if( index->Version() != 5 ) seq_from_index_ = false;
             indices_.push_back( index );
             results_.push_back( CConstRef< CDbIndex::CSearchResults >( null ) );
             CDbIndex::TSeqNum s = seqmap_.empty() ? 0 : *seqmap_.rbegin();
@@ -696,7 +695,6 @@ void CIndexedDb::PreSearch(
 {
     CDbIndex::SSearchOptions sopt;
     sopt.word_size = lut_options->word_size;
-    sopt.template_type = lut_options->mb_template_type;
     sopt.two_hits = word_options->window_size;
 
     for( vector< string >::size_type v = 0; 
@@ -714,7 +712,6 @@ void CIndexedDb::PreSearch(
                             + index_names_[v+ind]).c_str() );
                 }
 
-                if( index->Version() != 5 ) seq_from_index_ = false;
                 indices_.push_back( index );
                 results_.push_back( CConstRef< CDbIndex::CSearchResults >( null ) );
                 CDbIndex::TSeqNum s = seqmap_.empty() ? 0 : *seqmap_.rbegin();

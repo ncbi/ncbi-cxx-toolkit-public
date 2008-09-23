@@ -45,28 +45,45 @@ BEGIN_SCOPE( blastdbindex )
 
 //------------------------------------------------------------------------------
 /** Flags for opening FASTA files. */
-static const objects::TReadFastaFlags READ_FASTA_FLAGS =
-    objects::fReadFasta_AssumeNuc |
-    objects::fReadFasta_ForceType |
-    objects::fReadFasta_OneSeq    |
-    objects::fReadFasta_AllSeqIds;
+static objects::CFastaReader::TFlags CFASTAREADER_FLAGS = 
+        objects::CFastaReader::fForceType |
+        objects::CFastaReader::fAssumeNuc |
+        objects::CFastaReader::fNoParseID |
+        objects::CFastaReader::fAllSeqIds;
 
 //------------------------------------------------------------------------------
 CSequenceIStreamFasta::CSequenceIStreamFasta( 
         const std::string & name , size_t pos )
-    : stream_allocated_( false ), istream_( 0 ), curr_seq_( 0 ), name_( name ),
+    : stream_allocated_( false ), istream_( 0 ), curr_seq_( 0 ), 
+      fasta_reader_( 0 ), name_( name ),
       cache_( null ), use_cache_( false )
 {
     istream_ = new CNcbiIfstream( name.c_str() );
+    
+    if( !*istream_ ) {
+        NCBI_THROW( CSequenceIStream_Exception, eIO,
+                "failed to open input stream" );
+    }
+
     stream_allocated_ = true;
+    CRef< CStreamLineReader > line_reader( new CStreamLineReader( *istream_ ) );
+    fasta_reader_ = new objects::CFastaReader( *line_reader, CFASTAREADER_FLAGS );
 }
 
 //------------------------------------------------------------------------------
 CSequenceIStreamFasta::CSequenceIStreamFasta( 
         CNcbiIstream & input_stream, size_t pos )
-    : stream_allocated_( false ), istream_( &input_stream ), curr_seq_( 0 ),
+    : stream_allocated_( false ), istream_( &input_stream ), 
+      curr_seq_( 0 ), fasta_reader_( 0 ),
       cache_( null ), use_cache_( false )
 {
+    if( !*istream_ ) {
+        NCBI_THROW( CSequenceIStream_Exception, eIO,
+                "failed to open input stream" );
+    }
+
+    CRef< CStreamLineReader > line_reader( new CStreamLineReader( *istream_ ) );
+    fasta_reader_ = new objects::CFastaReader( *line_reader, CFASTAREADER_FLAGS );
 }
 
 //------------------------------------------------------------------------------
@@ -88,7 +105,12 @@ CRef< CSequenceIStream::TSeqData > CSequenceIStreamFasta::next()
     CRef< TSeqData > result( new TSeqData );
 
     try {
-        result->seq_entry_ = ncbi::objects::ReadFasta( *istream_, READ_FASTA_FLAGS, 0, &result->mask_locs_ );
+        while( !fasta_reader_->AtEOF() )
+        {
+            result->mask_locs_.push_back( fasta_reader_->SaveMask() );
+            result->seq_entry_ = fasta_reader_->ReadOneSeq();
+            if( result->seq_entry_ != 0 && result->seq_entry_->IsSeq() ) break;
+        }
     }catch( ... ) {}
 
     cache_ = result;
