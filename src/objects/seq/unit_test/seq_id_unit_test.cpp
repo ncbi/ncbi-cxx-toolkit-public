@@ -56,6 +56,13 @@ USING_SCOPE(objects);
 
 #define NCBI_CHECK_THROW_SEQID(s) BOOST_CHECK_THROW(s, CSeqIdException)
 
+NCBITEST_AUTO_INIT()
+{
+    // force use of built-in accession guide
+    CNcbiApplication::Instance()->GetConfig().Set("NCBI", "Data", kEmptyStr,
+                                                  IRegistry::fPersistent);
+}
+
 BOOST_AUTO_TEST_CASE(s_TestDefaultInit)
 {
     CSeq_id id;
