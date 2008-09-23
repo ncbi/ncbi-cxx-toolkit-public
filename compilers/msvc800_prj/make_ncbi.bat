@@ -26,11 +26,11 @@ REM ===========================================================================
 REM 
 REM Author:  Vladimir Ivanov
 REM
-REM Configure/build NCBI C++ core tree in specified configuration(s)
+REM Configure/build/check NCBI C++ core tree in specified configuration(s)
 REM
-REM     make_ncbi.bat <configure|build|make> <static|dll> <32|64> [cfgs..]
+REM     make_ncbi.bat <configure|build|make|check> <static|dll> <32|64> [cfgs..]
 REM
-REM     %1% - Build, configure, or build and configure build tree.
+REM     %1% - Configure, build, check or build and configure (make) build tree.
 REM     %2% - Type of used libraries (static, dll).
 REM     %3% - This parameter is ignored on MSVC7, should be "32" always.
 REM     %4% - Configuration name(s)
@@ -43,9 +43,9 @@ REM ===========================================================================
 IF _%2 == _dll GOTO DLL
 
 :STATIC
-@call make.bat %1 ncbi_cpp.sln %2 %3 %4 %5 %6 %7 %8 %9
+@call make.bat %1 ncbi_cpp %2 %3 %4 %5 %6 %7 %8 %9
 EXIT %ERRORLEVEL%
 
 :DLL
-@call make.bat %1 ncbi_cpp_dll.sln %2 %3 %4 %5 %6 %7 %8 %9
+@call make.bat %1 ncbi_cpp_dll %2 %3 %4 %5 %6 %7 %8 %9
 EXIT %ERRORLEVEL%

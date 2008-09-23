@@ -26,12 +26,12 @@ REM ===========================================================================
 REM 
 REM Author:  Vladimir Ivanov
 REM
-REM Configure/build NCBI C++ tree in specified configuration(s)
+REM Configure/build/check NCBI C++ tree in specified configuration(s)
 REM
-REM     make.bat <configure|build|make> <solution> <static|dll> <32|64> [cfgs..]
+REM     make.bat <configure|build|make|check> <solution> <static|dll> <32|64> [cfgs..]
 REM
-REM     %1% - Build, configure, or build and configure build tree.
-REM     %2% - Solution file name (relative path from build directory).
+REM     %1% - Configure, build, make (configure and build_ or check build tree.
+REM     %2% - Solution file name without extention (relative path from build directory).
 REM     %3% - Type of used libraries (static, dll).
 REM     %4% - 32/64-bits architerture.
 REM     %5% - Configuration name(s) (ALL, DebugDLL, ReleaseDLL).
@@ -78,11 +78,14 @@ if _%ARCH%_ == _64_ SET ARCHW=x64
 IF _%CMD% == _configure GOTO CONFIG
 IF _%CMD% == _make      GOTO CONFIG
 IF _%CMD% == _build     GOTO BUILD
-ECHO The following action names are recognized: configure, build, make.
+IF _%CMD% == _check     GOTO CHECK
+
+ECHO The following action names are recognized: configure, build, make, check.
 ECHO FATAL: Unknown action name %CMD%. Please correct.
 GOTO ABORT
 
 
+REM ###########################################################################
 :CONFIG
 
 IF %CFG% == DebugDLL   GOTO CONTCFG
@@ -96,14 +99,15 @@ GOTO ABORT
 :CONTCFG
 TIME /T
 ECHO INFO: Configure "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
-%DEVENV% %LIBDLL%\build\%SOLUTION% /build "%CFG%|%ARCHW%" /project "-CONFIGURE-"
+%DEVENV% %LIBDLL%\build\%SOLUTION%.sln /build "%CFG%|%ARCHW%" /project "-CONFIGURE-"
 IF ERRORLEVEL 1 GOTO ABORT
 IF NOT _%CMD% == _make GOTO COMPLETE
 
 
+REM ###########################################################################
 :BUILD
 
-:ARGLOOP
+:ARGLOOPB
 IF %CFG% == DebugDLL   GOTO CONTBLD
 IF %CFG% == DebugMT    GOTO CONTBLD
 IF %CFG% == ReleaseDLL GOTO CONTBLD
@@ -115,19 +119,56 @@ GOTO ABORT
 :CONTBLD
 TIME /T
 ECHO INFO: Building "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
-%DEVENV% %LIBDLL%\build\%SOLUTION% /build "%CFG%|%ARCHW%" /project "-BUILD-ALL-"
+%DEVENV% %LIBDLL%\build\%SOLUTION%.sln /build "%CFG%|%ARCHW%" /project "-BUILD-ALL-"
 IF ERRORLEVEL 1 GOTO ABORT
 SHIFT
 IF _%5% == _ GOTO COMPLETE
 SET CFG=%5%
-GOTO ARGLOOP
+GOTO ARGLOOPB
+
+
+REM ###########################################################################
+:CHECK
+
+ECHO INFO: Checking init
+bash -c "../../scripts/common/check/check_make_win_cfg.sh init; exit $?"
+SET ERRORLEV=0
+:ARGLOOPC
+IF %CFG% == DebugMT    GOTO CONTCH
+IF %CFG% == DebugDLL   GOTO CONTCH
+IF %CFG% == ReleaseMT  GOTO CONTCH
+IF %CFG% == ReleaseDLL GOTO CONTCH
+ECHO The following configuration names are recognized:
+ECHO     DebugDLL DebugMT ReleaseDLL ReleaseMT
+ECHO FATAL: Unknown configuration name %CFG%. Please correct.
+GOTO ABORT
+:CONTCH
+ECHO INFO: Create check script for "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
+bash -c "../../scripts/common/check/check_make_win_cfg.sh create %SOLUTION% %LIBDLL% %CFG%"; exit $?"
+IF ERRORLEVEL 1 GOTO ABORT
+ECHO INFO: Checking "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
+SET CHECKSH=%LIBDLL%/build/%SOLUTION%.check/%CFG%/check.sh
+bash -c "%CHECKSH% run; exit $?"
+IF ERRORLEVEL 1 SET ERRORLEV=1
+bash -c "cp %CHECKSH%.journal check.sh.%LIBDLL%_%CFG%.journal; cp %CHECKSH%.log check.sh.%LIBDLL%_%CFG%.log"
+SHIFT
+IF _%5% == _ GOTO CHECKEND
+SET CFG=%5%
+GOTO ARGLOOPC
+:CHECKEND
+COPY /Y /B check.sh.*.journal check.sh.journal
+COPY /Y /B check.sh.*.log     check.sh.log
+IF %ERRORLEV%==0 GOTO COMPLETE
+
+
+REM ###########################################################################
 
 :ABORT
-ECHO INFO: Build failed.
+ECHO INFO: %CMD% failed.
 EXIT 1
 
 :COMPLETE
-ECHO INFO: Build complete.
+ECHO INFO: %CMD% complete.
 
 :EXIT
 EXIT %ERRORLEVEL%
