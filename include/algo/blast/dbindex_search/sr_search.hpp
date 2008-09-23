@@ -349,6 +349,9 @@ class CSRSearch : public CObject
             TSRPairedResults pres;
         };
 
+#ifdef NCBI_COMPILER_MIPSPRO
+    public:
+#endif
         class InternalException : public CException
         {
             public:
@@ -363,6 +366,7 @@ class CSRSearch : public CObject
                 NCBI_EXCEPTION_DEFAULT( InternalException, CException );
         };
 
+    protected:
         CSRSearch( CRef< CDbIndex > index, TSeqPos d, TSeqPos dfuzz ) 
             : index_( index ), dmax_( d + dfuzz ), dmin_( d - dfuzz )
         {
