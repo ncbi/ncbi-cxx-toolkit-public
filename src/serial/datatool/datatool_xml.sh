@@ -5,7 +5,9 @@
 base="${1:-./testdata}"
 if test ! -d $base; then
     echo "Error -- test data dir not found: $base"
-    exit 1
+    echo "Test will be skipped."
+    echo " (for autobuild scripts: NCBI_UNITTEST_SKIPPED)"
+    exit 0
 fi
 
 d="$base/data"
