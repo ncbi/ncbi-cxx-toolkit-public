@@ -1,3 +1,7 @@
+September 23, 2008
+Add support for timed out and skipped tests and for timed out units.
+
+
 September 5. 2008
 Speed up database queries for cgi-interface.
 
