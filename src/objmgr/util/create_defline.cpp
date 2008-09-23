@@ -1108,7 +1108,17 @@ string CDeflineGenerator::x_TitleFromProtein (
             }
             prefix = "; ";
         }
+
         if (! result.empty()) {
+            // strip trailing periods, commas, and spaces
+            while (NStr::EndsWith (result, ".") ||
+                   NStr::EndsWith (result, ",") ||
+                   NStr::EndsWith (result, ";") ||
+                   NStr::EndsWith (result, "~") ||
+                   NStr::EndsWith (result, " ")) {
+                result.erase (result.end() - 1);
+            }
+
             if (NStr::CompareNocase (result, "hypothetical protein") == 0) {
                 gene = x_GetGeneRefViaCDS (bioseq, scope);
                 if (gene) {
