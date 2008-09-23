@@ -125,6 +125,8 @@ const CTextseq_id* CSeq_id::GetTextseq_Id(void) const
         return &GetTpd();
     case e_Gpipe:
         return &GetGpipe();
+    case e_Named_annot_track:
+        return &GetNamed_annot_track();
     default:
         return 0;
     }
@@ -306,6 +308,9 @@ void CSeq_id::Assign(const CSerialObject& obj, ESerialRecursionMode how)
         case e_Gpipe:
             x_Assign(SetGpipe(), id.GetGpipe());
             return;
+        case e_Named_annot_track:
+            x_Assign(SetNamed_annot_track(), id.GetNamed_annot_track());
+            return;
         }
     }
     CSerialObject::Assign(obj, how);
@@ -369,6 +374,9 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
         return GetTpd().Match(sid2.GetTpd()) ? e_YES : e_NO;
     case e_Gpipe:
         return GetGpipe().Match(sid2.GetGpipe()) ? e_YES : e_NO;
+    case e_Named_annot_track:
+        return GetNamed_annot_track().Match(sid2.GetNamed_annot_track())
+            ? e_YES : e_NO;
     default:
         return e_error;
     }
@@ -431,6 +439,8 @@ static const TChoiceMapEntry sc_ChoiceArray[] = {
     TChoiceMapEntry("gpp",          CSeq_id::e_Gpipe),
     TChoiceMapEntry("lcl",          CSeq_id::e_Local),
     TChoiceMapEntry("local",        CSeq_id::e_Local),
+    TChoiceMapEntry("named_annot_track", CSeq_id::e_Named_annot_track),
+    TChoiceMapEntry("nat",          CSeq_id::e_Named_annot_track),
     TChoiceMapEntry("not_set",      CSeq_id::e_not_set),
     TChoiceMapEntry("oth",          CSeq_id::e_Other), // deprecated vs. ref
     TChoiceMapEntry("other",        CSeq_id::e_Other),
@@ -474,7 +484,8 @@ static const char* const s_TextId[CSeq_id::e_MaxChoice+1] =
     "tpg",  // tpg = tpg|accession|name
     "tpe",  // tpe = tpe|accession|name
     "tpd",  // tpd = tpd|accession|name
-    "gpp"   // gpipe = gpp|accession|name
+    "gpp",  // gpipe = gpp|accession|name
+    "nat",  // named_annot_track = nat|accession|name
     ""  // Placeholder for end of list
 };
 
@@ -1340,9 +1351,9 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
     case e_Pir: case e_Swissprot: case e_Prf: // but *NOT* e_Pdb
         return (EAccessionInfo)(type | fAcc_prot); // always just protein
 
-    case e_Genbank: case e_Embl: case e_Ddbj:
-    case e_Tpg:     case e_Tpe:  case e_Tpd:
-    case e_Other:   case e_Gpipe:
+    case e_Genbank: case e_Embl:  case e_Ddbj:
+    case e_Tpg:     case e_Tpe:   case e_Tpd:
+    case e_Other:   case e_Gpipe: case e_Named_annot_track:
     {
         const CTextseq_id* tsid = GetTextseq_Id();
         if (tsid->IsSetAccession()) {
@@ -1638,6 +1649,9 @@ void CSeq_id::WriteAsFasta(ostream& out)
         break;
     case e_Gpipe:
         GetGpipe().AsFastaString(out);
+        break;
+    case e_Named_annot_track:
+        GetNamed_annot_track().AsFastaString(out);
         break;
     default:
         out << "[UnknownSeqIdType]";
@@ -2142,6 +2156,7 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
     case e_Tpe:        tsid = &SetTpe();        break;
     case e_Tpd:        tsid = &SetTpd();        break;
     case e_Gpipe:      tsid = &SetGpipe();      break;
+    case e_Named_annot_track:  tsid = &SetNamed_annot_track();  break;
 
     case e_Patent:
         {
