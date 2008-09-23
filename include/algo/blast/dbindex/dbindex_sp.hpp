@@ -396,22 +396,6 @@ class CDbIndex_Impl : public CDbIndex
         const TOffsetIterator OffsetIterator( TWord nmer, unsigned long mod ) const
         { return TOffsetIterator( *offset_data_, nmer, mod ); }
 
-        /** Return the subject information based on the given logical subject
-            id.
-            @param subject      [I]     logical subject id
-            @param start_off    [O]     smallest offset value for subj
-            @param end_off      [O]     smallest offset value for subj + 1
-            @param start        [0]     starting offset of subj in the sequence store
-            @param end          [0]     1 + ending offset of subj in the sequence store
-        */
-        void SetSubjInfo( 
-                TSeqNum subject, TWord & start_off, TWord & end_off,
-                TWord & start, TWord & end ) const
-        { 
-            subject_map_->SetSubjInfo( 
-                    subject, start_off, end_off, start, end ); 
-        }
-
         /** Get the total number of sequence chunks in the index.
             @sa CSubjectMap::NumChunks()
         */
@@ -434,16 +418,6 @@ class CDbIndex_Impl : public CDbIndex
         */
         const Uint1 * GetSeqStoreBase() const 
         { return subject_map_->GetSeqStoreBase(); }
-
-        /** Decode offset.
-
-            @param subject Chunk number.
-            @param offset The offset value.
-
-            @return Corresponding position in the subject sequence.
-        */
-        TSeqPos DecodeOffset( TSeqNum subject, TWord offset ) const
-        { return subject_map_->DecodeOffset( subject, offset ); }
 
         /** Decode offset.
 
