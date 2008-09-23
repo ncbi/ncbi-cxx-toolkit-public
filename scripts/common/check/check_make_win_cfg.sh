@@ -9,7 +9,7 @@
 # MS VisualC++ build tree.
 #
 # Usage:
-#    check_make_win.sh <action> <solution> <static|dll> <32|64> <cfg> [build_dir]
+#    check_make_win_cfg.sh <action> <solution> <static|dll> <cfg> [build_dir]
 #
 #    <action>      - { init | create } 
 #                      init   - initialize master script directory;
