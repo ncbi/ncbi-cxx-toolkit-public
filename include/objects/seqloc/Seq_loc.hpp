@@ -188,6 +188,11 @@ public:
     /// are treated as different sub-sets. In some operations strand may
     /// still be checked (see fMerge_Abutting and order of ranges).
     ///
+    /// NOTE: merge flags do not sort ranges, so only overlaps bewtween
+    /// neighbor ranges can be detected. To merge all overlappig ranges
+    /// add fSort flag. The only exception is fSortAndMerge_All which
+    /// already includes fSort;
+    ///
     /// fMerge_Contained - merges (removes) any range which is completely
     /// contained in another range.
     /// fMerge_Abutting - merge abutting ranges. Also forces merging of
@@ -196,7 +201,11 @@ public:
     /// true if loc1.strand is minus).
     /// fMerge_Overlapping - merge overlapping ranges. Also forces merging of
     /// contained ranges.
-    /// fMerge_All - merge any ranges if possible (contained, overlapping, abutting)
+    /// fMerge_All - merge any ranges if possible (contained, overlapping,
+    /// abutting). The flag does not force sorting, so only neighbor ranges
+    /// can be merged. To sort ranges before merging add fSort flag or use
+    /// fSortAndMerge_All.
+    /// fSortAndMerge_All - combination of fSort and fMerge_All.
     /// fMerge_SingleRange - creates a single range, covering all original ranges.
     /// Strand is set to the first strand in the original seq-loc, regardless of the
     /// strand flag.
@@ -217,7 +226,8 @@ public:
         fMerge_Overlapping     = fMerge_OverlappingOnly | fMerge_Contained,
         fMerge_All             = fMerge_Abutting | fMerge_Overlapping,
         fMerge_SingleRange     = 1<<4,
-        fSort                  = 1<<5
+        fSort                  = 1<<5,
+        fSortAndMerge_All      = fSort | fMerge_All
     };
     typedef int TOpFlags;
 
