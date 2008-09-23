@@ -120,7 +120,13 @@ typedef NCBI_PARAM_TYPE(Diag, Print_System_TID) TPrintSystemTID;
 NCBI_PARAM_DECL(bool, Diag, Assert_On_Abort);
 NCBI_PARAM_DEF_EX(bool, Diag, Assert_On_Abort, false, eParam_NoThread,
                   DIAG_ASSERT_ON_ABORT);
-typedef NCBI_PARAM_TYPE(Diag, Assert_On_Abort) TAssertOnAbort;
+typedef NCBI_PARAM_TYPE(Diag, Assert_On_Abort) TAssertOnAbortParam;
+
+// Limit log file size, rotate log when it reaches the limit.
+NCBI_PARAM_DECL(long, Diag, Log_Size_Limit);
+NCBI_PARAM_DEF_EX(long, Diag, Log_Size_Limit, 0, eParam_NoThread,
+                  DIAG_LOG_SIZE_LIMIT);
+typedef NCBI_PARAM_TYPE(Diag, Log_Size_Limit) TLogSizeLimitParam;
 
 
 ///////////////////////////////////////////////////////
@@ -2175,6 +2181,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
         s_MergeLinesSetBySetupDiag = true;
+        TLogSizeLimitParam::SetDefault(0); // No log size limit
     }
     else if ( s_MergeLinesSetBySetupDiag ) {
         UnsetDiagPostFlag(eDPF_PreMergeLines);
@@ -4261,6 +4268,12 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
     }
 
     if (m_Handle >= 0) {
+        long pos = lseek(m_Handle, 0, SEEK_CUR);
+        long limit = TLogSizeLimitParam::GetDefault();
+        if (limit > 0  &&  pos > limit) {
+            CFile f(GetLogName());
+            f.Rename(GetLogName() + "-backup");
+        }
         close(m_Handle);
     }
     int mode = O_WRONLY | O_APPEND | O_CREAT;
@@ -5275,7 +5288,7 @@ extern void Abort(void)
 #if defined(_DEBUG)
 
 #  ifdef NCBI_COMPILER_MSVC
-                if ( TAssertOnAbort::GetDefault() ) {
+                if ( TAssertOnAbortParam::GetDefault() ) {
                     int old_mode = _set_error_mode(_OUT_TO_MSGBOX);
                     _ASSERT(false); // Show assertion dialog
                     _set_error_mode(old_mode);
