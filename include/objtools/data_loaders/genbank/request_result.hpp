@@ -165,7 +165,7 @@ public:
 };
 
 
-class CBlob_Info
+class NCBI_XREADER_EXPORT CBlob_Info
 {
 public:
     typedef TBlobContentsMask TContentsMask;
