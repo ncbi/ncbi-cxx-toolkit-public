@@ -74,7 +74,9 @@ cd "$PREPARE_DIR"
 
 
 ATTIC_DIR="/net/attic1/vol/vol1/release-repository/dbtest/builds/${VERSION}"
+ATTIC_SRC_DIR="/net/attic1/vol/vol1/release-repository/dbtest/src/${VERSION}"
 mkdir -p "${ATTIC_DIR}"
+mkdir -p "${ATTIC_SRC_DIR}"
 
 
 for ((i = 0; i < 7; ++i)); do
@@ -86,11 +88,21 @@ for ((i = 0; i < 7; ++i)); do
         exit 5
     fi
 
+    PLATF_SRC_FILE="$(find . -type f -name "${PLATF_FILE_MASKS[$i]}-src.tar.gz")"
+    if [[ -z "$PLATF_SRC_FILE" ]]; then
+        echo "Cannot find sources file for mask '${PLATF_FILE_MASKS[$i]}-src.tar.gz'"
+        exit 5
+    fi
+
     PLATF_DIR="${PLATF_FILE%%.tar.gz}"
     mkdir -p "${PLATF_DIR}"
     PLATF_ATTIC_DIR="${ATTIC_DIR}/${PLATF_DIR_NAMES[$i]}"
     mkdir -p "${PLATF_ATTIC_DIR}"
     tar -zxf "${PLATF_FILE}" -C "${PLATF_DIR}" || exit 6
+
+    PLATF_ATTIC_SRC_DIR="${ATTIC_SRC_DIR}/${PLATF_DIR_NAMES[$i]}"
+    mkdir -p "${PLATF_ATTIC_SRC_DIR}"
+    tar -zxf "${PLATF_SRC_FILE}" -C "${PLATF_ATTIC_SRC_DIR}" || exit 16
 
     EXE=""
     if [[ "${PLATF_FILE_MASKS[$i]}" == *"Win64"* ]]; then
@@ -134,11 +146,14 @@ for i in \`find ./c++/MIPSpro73-ReleaseDLL64/lib/ -name "*.so" | egrep -v "odbc_
 done
 
 mkdir -p "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}/"
+mkdir -p "${ATTIC_SRC_DIR}/${PLATF_DIR_NAMES[7]}/"
 
 cp "./c++/MIPSpro73-ReleaseDLL64/bin/test_stat_load" "\$NCBI/bin/_production/CPPCORE/" || exit 5
 cp "./c++/MIPSpro73-ReleaseDLL64/bin/test_stat_load" "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}/" || exit 6
 cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "\$NCBI/bin/_production/CPPCORE/" || exit 7
 cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}/" || exit 8
+
+cp -R "./c++/MIPSpro73-ReleaseDLL64" "${ATTIC_SRC_DIR}/${PLATF_DIR_NAMES[7]}/" || exit 9
 
 cd
 rm -rf "$TMP_DIR"
