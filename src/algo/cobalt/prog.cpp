@@ -65,8 +65,8 @@ x_AddConstraint(vector<size_t>& constraint,
 
     if (!constraint.empty()) {
         int last = constraint.size();
-        if (constraint[last-4] >= seq1_start ||
-            constraint[last-2] >= seq2_start) {
+        if (constraint[last-4] >= (size_t)seq1_start ||
+            constraint[last-2] >= (size_t)seq2_start) {
             return;
         }
     }
@@ -413,7 +413,7 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
         // in the graph that the graph should expand to include 
         // constraint j
 
-        if (i == graph.size())
+        if (i == (int)graph.size())
             graph.push_back(SGraphNode(hit, j));
     }
 
