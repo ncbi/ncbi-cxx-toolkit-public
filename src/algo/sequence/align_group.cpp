@@ -299,7 +299,7 @@ void CAlignGroup::GroupBySequenceType(const TAlignList& alignments,
                                       TSequenceFlags    flags)
 {
     /// typedefs for dealing with separations by sequence types
-    typedef multiset<int> TSequenceTypes;
+    typedef set<int> TSequenceTypes;
     typedef map<TSequenceTypes, list< CRef<objects::CSeq_align> > > TSequenceAlignMap;
 
     ///
@@ -385,7 +385,7 @@ void CAlignGroup::GroupBySequenceType(const TAlignList& alignments,
                 }
             }
 
-            if ( !this_flags ) {
+            if (this_flags) {
                 types.insert(this_flags);
             }
         }
