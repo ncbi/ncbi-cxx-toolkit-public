@@ -360,10 +360,7 @@ CDbapiSampleApp::CreateConnection(IConnValidator*                  validator,
     }
 
     if ( m_UseSampleDatabase == eUseSampleDatabase ) {
-        //  Change default database:
-        auto_ptr<CDB_LangCmd> set_cmd(conn->LangCmd("use DBAPI_Sample"));
-        set_cmd->Send();
-        set_cmd->DumpResults();
+        conn->SetDatabaseName("DBAPI_Sample");
     }
 
     return conn.release();

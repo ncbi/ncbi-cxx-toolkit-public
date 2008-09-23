@@ -329,6 +329,18 @@ CConnection::GetClientEncoding(void) const
     return GetCDriverContext().GetClientEncoding();
 }
 
+void 
+CConnection::SetDatabaseName(const string& name)
+{
+    if (!name.empty()) {
+        const string sql = "use " + name;
+
+        auto_ptr<CDB_LangCmd> auto_stmt(LangCmd(sql));
+        auto_stmt->Send();
+        auto_stmt->DumpResults();
+    }
+}
+
 
 } // namespace impl
 

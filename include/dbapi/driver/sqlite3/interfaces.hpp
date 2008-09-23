@@ -110,6 +110,8 @@ protected:
     virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
 
+    virtual void SetDatabaseName(const string& name);
+
     virtual bool Refresh();
     virtual I_DriverContext::TConnectionMode ConnectMode() const;
 

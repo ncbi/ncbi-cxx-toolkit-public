@@ -331,6 +331,7 @@ I_Connection::~I_Connection(void)
     return;
 }
 
+
 END_NCBI_SCOPE
 
 

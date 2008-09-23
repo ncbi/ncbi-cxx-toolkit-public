@@ -1156,7 +1156,7 @@ protected:
     ///   SendDataCmd
     virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true) = 0;
-    
+
     /// @brief 
     /// Reset the connection to the "ready" state (cancel all active commands)
     /// 
@@ -1302,9 +1302,9 @@ public:
     }
     /// @deprecated 
     CDB_CursorCmd* Cursor(const string& cursor_name,
-                                  const string& query,
-                                  unsigned int /*unused*/,
-                                  unsigned int  batch_size)
+                          const string& query,
+                          unsigned int /*unused*/,
+                          unsigned int  batch_size)
     {
         return Cursor(cursor_name, query, batch_size);
     }

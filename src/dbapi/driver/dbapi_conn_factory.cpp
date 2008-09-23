@@ -452,9 +452,23 @@ CDBConnectionFactory::MakeValidConnection(
 {
     auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, params));
 
-    if (conn.get() && params.GetConnValidator()) {
+    if (conn.get()) 
+    {
+        CTrivialConnValidator use_db_validator(
+            params.GetDatabaseName(), 
+            CTrivialConnValidator::eKeepModifiedConnection
+            );
+        CConnValidatorCoR validator;
+
+        validator.Push(params.GetConnValidator());
+
+        // Check "use <database>" command ...
+        if (!params.GetDatabaseName().empty()) {
+            validator.Push(CRef<IConnValidator>(&use_db_validator));
+        }
+
         try {
-            conn_status = params.GetConnValidator()->Validate(*conn);
+            conn_status = validator.Validate(*conn);
             if (conn_status != IConnValidator::eValidConn) {
                 return NULL;
             }
@@ -628,8 +642,11 @@ CConnValidatorCoR::Validate(CDB_Connection& conn)
     CFastMutexGuard mg(m_Mtx);
 
     NON_CONST_ITERATE(TValidators, vr_it, m_Validators) {
-        if ((*vr_it)->Validate(conn) == eInvalidConn) {
-            return eInvalidConn;
+        EConnStatus status = (*vr_it)->Validate(conn);
+
+        // Exit if we met an invalid connection ...
+        if (status != eValidConn) {
+            return status;
         }
     }
     return eValidConn;
@@ -725,9 +742,7 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
     }
     // Try to change a database ...
     if (curr_dbname != GetDBName()) {
-        auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + GetDBName()));
-        set_cmd->Send();
-        set_cmd->DumpResults();
+        conn.SetDatabaseName(GetDBName());
     }
 
     if (GetAttr() & eCheckSysobjects) {
@@ -738,9 +753,7 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
 
     // Go back to the original (master) database ...
     if (GetAttr() & eRestoreDefaultDB && curr_dbname != GetDBName()) {
-        auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + curr_dbname));
-        set_cmd->Send();
-        set_cmd->DumpResults();
+        conn.SetDatabaseName(curr_dbname);
     }
 
     // All exceptions are supposed to be caught and processed by
@@ -753,11 +766,7 @@ IConnValidator::EConnStatus
 CTrivialConnValidator::Validate(CDB_Connection& conn)
 {
     // Try to change a database ...
-    {
-        auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + GetDBName()));
-        set_cmd->Send();
-        set_cmd->DumpResults();
-    }
+    conn.SetDatabaseName(GetDBName());
 
     if (GetAttr() & eCheckSysobjects) {
         auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
@@ -767,9 +776,7 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
 
     // Go back to the original (master) database ...
     if (GetAttr() & eRestoreDefaultDB) {
-        auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
-        set_cmd->Send();
-        set_cmd->DumpResults();
+        conn.SetDatabaseName("master");
     }
 
     // All exceptions are supposed to be caught and processed by

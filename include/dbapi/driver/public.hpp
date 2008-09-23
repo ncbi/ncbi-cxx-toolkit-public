@@ -131,6 +131,13 @@ public:
     ///   SendDataCmd
     virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
+
+    /// @brief 
+    ///   Set database name
+    /// 
+    /// @param name 
+    ///   Database name
+    void SetDatabaseName(const string& name);
     
     /// @brief 
     /// Reset the connection to the "ready" state (cancel all active commands)

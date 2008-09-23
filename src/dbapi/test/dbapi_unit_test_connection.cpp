@@ -456,9 +456,7 @@ public:
     {
         // Try to change a database ...
         try {
-            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd(string("use ") + GetDBName()));
-            set_cmd->Send();
-            set_cmd->DumpResults();
+            conn.SetDatabaseName(GetDBName());
         }
         catch(const CDB_Exception&) {
             // LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
@@ -475,9 +473,7 @@ public:
 
         // Go back to the original (master) database ...
         if (GetAttr() & eRestoreDefaultDB) {
-            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
-            set_cmd->Send();
-            set_cmd->DumpResults();
+            conn.SetDatabaseName("master");
         }
 
         // All exceptions are supposed to be caught and processed by
@@ -512,9 +508,7 @@ public:
     {
         // Try to change a database ...
         try {
-            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + GetDBName()));
-            set_cmd->Send();
-            set_cmd->DumpResults();
+            conn.SetDatabaseName(GetDBName());
         }
         catch(const CDB_Exception&) {
             // LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
@@ -531,9 +525,7 @@ public:
 
         // Go back to the original (master) database ...
         if (GetAttr() & eRestoreDefaultDB) {
-            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
-            set_cmd->Send();
-            set_cmd->DumpResults();
+            conn.SetDatabaseName("master");
         }
 
         // All exceptions are supposed to be caught and processed by

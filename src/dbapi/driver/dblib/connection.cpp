@@ -174,16 +174,6 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     // any problem.
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
     CheckFunctCall();
-
-    /* Future development ...
-    if (!params.GetDatabaseName().empty()) {
-        const string sql = "use " + params.GetDatabaseName();
-
-        auto_ptr<CDB_LangCmd> auto_stmt(LangCmd(sql));
-        auto_stmt->Send();
-        auto_stmt->DumpResults();
-    }
-    */
 }
 
 

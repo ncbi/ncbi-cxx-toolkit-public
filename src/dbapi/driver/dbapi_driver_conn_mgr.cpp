@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
+#include <dbapi/driver/dbapi_conn_factory.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <set>
 #include <map>
@@ -69,10 +70,23 @@ CDefaultConnectPolicy::MakeDBConnection(
 {
     auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, params));
 
-    if (conn.get() &&
-        params.GetConnValidator() &&
-        params.GetConnValidator()->Validate(*conn) == IConnValidator::eInvalidConn) {
-        return NULL;
+    if (conn.get()) {
+        CTrivialConnValidator use_db_validator(
+            params.GetDatabaseName(), 
+            CTrivialConnValidator::eKeepModifiedConnection
+            );
+        CConnValidatorCoR validator;
+
+        validator.Push(params.GetConnValidator());
+
+        // Check "use <database>" command ...
+        if (!params.GetDatabaseName().empty()) {
+            validator.Push(CRef<IConnValidator>(&use_db_validator));
+        }
+
+        if (validator.Validate(*conn) != IConnValidator::eValidConn) {
+            return NULL;
+        }
     }
     return conn.release();
 }

@@ -98,6 +98,9 @@ bool CSL3_Connection::SendData(I_ITDescriptor& /*desc*/,
     return false;
 }
 
+void CSL3_Connection::SetDatabaseName(const string& /*name*/)
+{
+}
 
 bool CSL3_Connection::Refresh()
 {

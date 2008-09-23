@@ -303,23 +303,6 @@ CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection)
     return new CDB_Connection(connection);
 }
 
-/*
-static 
-CDB_Connection* 
-SetDatabase(CDB_Connection* conn, const CDBConnParams& params)
-{
-    _ASSERT(conn);
-
-    const string sql = "use " + params.GetDatabaseName();
-
-    auto_ptr<CDB_LangCmd> auto_stmt(conn->LangCmd(sql));
-    auto_stmt->Send();
-    auto_stmt->DumpResults();
-
-    return conn;
-}
-*/
-
 CDB_Connection*
 CDriverContext::MakePooledConnection(const CDBConnParams& params)
 {
@@ -467,6 +450,9 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         err += "' as user '" + params.GetUserName() + "'";
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
+
+    // Set database ...
+    t_con->SetDatabaseName(params.GetDatabaseName());
 
     return t_con;
 }

@@ -1,8 +1,0 @@
-# $Id$
-
-LIB = sybdb_ftds63
-SRC = bcp dblib dbopen dbutil rpc xact
-
-DLL_LIB = tds_ftds63
-
-CPPFLAGS = -D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1 $(FTDS63_INCLUDE) $(ORIG_CPPFLAGS)

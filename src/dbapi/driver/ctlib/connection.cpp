@@ -470,7 +470,6 @@ bool CTL_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob,
     return x_SendData(desc, lob, log_it);
 }
 
-
 bool CTL_Connection::Refresh()
 {
     // close all commands first

@@ -1,9 +1,0 @@
-# $Id$
-#
-# FreeTDS CTLIB library
-
-LIB_PROJ = ctlib63
-
-srcdir = @srcdir@
-
-include @builddir@/Makefile.meta

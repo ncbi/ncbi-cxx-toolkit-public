@@ -148,6 +148,8 @@ public:
     virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true) = 0;
 
+    virtual void SetDatabaseName(const string& name);
+
     /// Reset the connection to the "ready" state (cancel all active commands)
     virtual bool Refresh(void) = 0;
 

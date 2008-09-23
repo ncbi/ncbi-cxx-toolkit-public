@@ -255,11 +255,11 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
                 BOOST_CHECK( nvc255_value.size() > 0);
 
                 BOOST_CHECK_EQUAL( utf8_str_ger.size(), nvc255_value.size() );
-                BOOST_CHECK_EQUAL( utf8_str_ger, nvc255_value );
+                BOOST_CHECK_EQUAL( NStr::PrintableString(utf8_str_ger), NStr::PrintableString(nvc255_value) );
                 CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
                 string value_ger =
                     utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
-                BOOST_CHECK_EQUAL( str_ger, value_ger );
+                BOOST_CHECK_EQUAL( NStr::PrintableString(str_ger), NStr::PrintableString(value_ger) );
 
                 //
                 BOOST_CHECK( rs->Next() );
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
                 BOOST_CHECK( nvc255_value.size() > 0);
 
                 BOOST_CHECK_EQUAL( utf8_str_rus.size(), nvc255_value.size() );
-                BOOST_CHECK_EQUAL( utf8_str_rus, nvc255_value );
+                BOOST_CHECK_EQUAL( NStr::PrintableString(utf8_str_rus), NStr::PrintableString(nvc255_value) );
             } else {
                 //
                 BOOST_CHECK( rs->Next() );
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
                 BOOST_CHECK( nvc255_value.size() > 0);
 
                 BOOST_CHECK_EQUAL( str_ger.size(), nvc255_value.size() );
-                BOOST_CHECK_EQUAL( str_ger, nvc255_value );
+                BOOST_CHECK_EQUAL( NStr::PrintableString(str_ger), NStr::PrintableString(nvc255_value) );
 
                 //
                 BOOST_CHECK( rs->Next() );
@@ -283,7 +283,7 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
                 BOOST_CHECK( nvc255_value.size() > 0);
 
                 BOOST_CHECK_EQUAL( strlen(reinterpret_cast<const char*>(str_rus)), nvc255_value.size() );
-                BOOST_CHECK_EQUAL( reinterpret_cast<const char*>(str_rus), nvc255_value );
+                BOOST_CHECK_EQUAL( NStr::PrintableString(reinterpret_cast<const char*>(str_rus)), NStr::PrintableString(nvc255_value) );
             }
 
             DumpResults(auto_stmt.get());
@@ -372,7 +372,7 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
     CStringUTF8 utf8_str_utf8(str_utf8, eEncoding_UTF8);
 
     BOOST_CHECK( str_utf8.size() > 0 );
-    BOOST_CHECK_EQUAL( str_utf8, utf8_str_utf8 );
+    BOOST_CHECK_EQUAL( NStr::PrintableString(str_utf8), NStr::PrintableString(utf8_str_utf8) );
 
     BOOST_CHECK( utf8_str_1252_rus.IsValid() );
     BOOST_CHECK( utf8_str_1252_ger.IsValid() );
@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
 
             //
             BOOST_CHECK( utf8_str_utf8.size() > 0 );
-            BOOST_CHECK_EQUAL( str_utf8, utf8_str_utf8 );
+            BOOST_CHECK_EQUAL( NStr::PrintableString(str_utf8), NStr::PrintableString(utf8_str_utf8) );
             auto_stmt->SetParam( CVariant::VarChar(utf8_str_utf8.c_str(),
                                                    utf8_str_utf8.size()),
                                  "@nvc_val" );
@@ -433,25 +433,25 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
             nvc255_value = rs->GetVariant(1).GetString();
             BOOST_CHECK( nvc255_value.size() > 0);
             BOOST_CHECK_EQUAL( utf8_str_utf8.size(), nvc255_value.size() );
-            BOOST_CHECK_EQUAL( utf8_str_utf8, nvc255_value );
+            BOOST_CHECK_EQUAL( NStr::PrintableString(utf8_str_utf8), NStr::PrintableString(nvc255_value) );
 
             // Read utf8_str_1252_rus ...
             BOOST_CHECK( rs->Next() );
             nvc255_value = rs->GetVariant(1).GetString();
             BOOST_CHECK( nvc255_value.size() > 0);
             BOOST_CHECK_EQUAL( utf8_str_1252_rus.size(), nvc255_value.size() );
-            BOOST_CHECK_EQUAL( utf8_str_1252_rus, nvc255_value );
+            BOOST_CHECK_EQUAL( NStr::PrintableString(utf8_str_1252_rus), NStr::PrintableString(nvc255_value) );
 
             // Read utf8_str_1252_ger ...
             BOOST_CHECK( rs->Next() );
             nvc255_value = rs->GetVariant(1).GetString();
             BOOST_CHECK( nvc255_value.size() > 0);
             BOOST_CHECK_EQUAL( utf8_str_1252_ger.size(), nvc255_value.size() );
-            BOOST_CHECK_EQUAL( utf8_str_1252_ger, nvc255_value );
+            BOOST_CHECK_EQUAL( NStr::PrintableString(utf8_str_1252_ger), NStr::PrintableString(nvc255_value) );
             CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
             string value_ger =
                 utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
-            BOOST_CHECK_EQUAL( str_ger, value_ger );
+            BOOST_CHECK_EQUAL( NStr::PrintableString(str_ger), NStr::PrintableString(value_ger) );
 
             DumpResults(auto_stmt.get());
         }
@@ -877,13 +877,7 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
                 pDbLink = drv_context->Connect( sDbServer, sDbUser, sDbPasswd,
                                 0, true, "Service" );
 
-                string sUseDb = "use "+sDbName;
-                auto_ptr<CDB_LangCmd> pUseCmd( pDbLink->LangCmd( sUseDb.c_str() ) );
-                if( pUseCmd->Send() ) {
-                    pUseCmd->DumpResults();
-                } else {
-                    BOOST_FAIL("Unable to send sql command "+ sUseDb);
-                }
+                pDbLink->SetDatabaseName(sDbName);
             } catch( CDB_Exception& dbe ) {
                 sErr = "CDB Exception from "+dbe.OriginatedFrom()+":" +
                     dbe.SeverityString()+": " + dbe.Message();

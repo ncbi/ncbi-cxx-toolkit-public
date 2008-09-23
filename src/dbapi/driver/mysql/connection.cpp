@@ -108,7 +108,6 @@ bool CMySQL_Connection::SendData(I_ITDescriptor& /*desc*/,
     return true;
 }
 
-
 bool CMySQL_Connection::Refresh()
 {
     // close all commands first

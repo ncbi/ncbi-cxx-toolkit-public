@@ -299,6 +299,12 @@ bool CDB_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob, bool log_it
     return m_ConnImpl->SendData(desc, lob, log_it);
 }
 
+void CDB_Connection::SetDatabaseName(const string& name)
+{
+    CHECK_CONNECTION(m_ConnImpl);
+    m_ConnImpl->SetDatabaseName(name);
+}
+
 bool CDB_Connection::Refresh()
 {
     CHECK_CONNECTION(m_ConnImpl);

@@ -103,12 +103,8 @@ CDemoApp::Run(void)
         auto_ptr<CDB_Connection> con(my_context.Connect(ServerName, UserName, Password, 0));
 
         // changing database
-        {
-            auto_ptr<CDB_LangCmd>
-                lcmd(con->LangCmd(string("use ") + Database));
-            lcmd->Send();
-            cout << "Database changed" << endl;
-        }
+        con->SetDatabaseName(Database);
+        cout << "Database changed" << endl;
 
         // creating table
         {
