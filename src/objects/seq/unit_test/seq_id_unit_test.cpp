@@ -47,6 +47,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
+#include <corelib/ncbiapp.hpp>
 #include <corelib/test_boost.hpp>
 
 #include <boost/test/parameterized_test.hpp>
