@@ -59,6 +59,7 @@
 #include <boost/test/detail/global_typedef.hpp>
 #include <boost/test/detail/unit_test_parameters.hpp>
 #include <boost/test/debug.hpp>
+#include <boost/test/execution_monitor.hpp>
 
 #include <list>
 #include <vector>
@@ -87,6 +88,7 @@ const char* kDummyTestCaseName    = BOOST_STRINGIZE(DUMMY_TEST_FUNCTION_NAME);
 
 const char* kTestResultPassed      = "passed";
 const char* kTestResultFailed      = "failed";
+const char* kTestResultTimeout     = "timeout";
 const char* kTestResultAborted     = "aborted";
 const char* kTestResultSkipped     = "skipped";
 const char* kTestResultDisabled    = "disabled";
@@ -184,16 +186,26 @@ private:
 
 /// Special observer to embed in Boost.Test framework to initialize test
 /// dependencies before they started execution.
-class CNcbiTestsInitializer : public but::test_observer
+class CNcbiTestsObserver : public but::test_observer
 {
 public:
-    virtual ~CNcbiTestsInitializer(void) {}
+    virtual ~CNcbiTestsObserver(void) {}
 
     /// Method called before execution of all tests
     virtual void test_start(but::counter_t /* test_cases_amount */);
 
     /// Method called after execution of all tests
     virtual void test_finish(void);
+
+    /// Method called before execution of each unit
+    virtual void test_unit_start(but::test_unit const& tu);
+
+    /// Method called after execution of each unit
+    virtual void test_unit_finish(but::test_unit const& tu,
+                                  unsigned long         elapsed);
+
+    /// Method called when some exception was caught during execution of unit
+    virtual void exception_caught(boost::execution_exception const& ex);
 };
 
 
@@ -349,7 +361,11 @@ public:
     /// Set test as disabled by user
     void SetTestDisabled(but::test_unit* tu);
 
+    /// Set flag that all tests globally disabled
     void SetGloballyDisabled(void);
+
+    /// Set flag that all tests globally skipped
+    void SetGloballySkipped(void);
 
     /// Initialize this application, main test suite and all test framework
     but::test_suite* InitTestFramework(int argc, char* argv[]);
@@ -376,6 +392,13 @@ public:
 
     /// Enable all necessary tests after execution but before printing report
     void ReEnableAllTests(void);
+
+    /// Check the correct setting for unit timeout and check overall
+    /// test timeout.
+    void AdjustTestTimeout(but::test_unit* tu);
+
+    /// Mark test case as failed due to hit of the timeout
+    void SetTestTimedOut(but::test_case* tc);
 
     /// Get number of actually executed tests
     int GetRanTestsCount(void);
@@ -465,10 +488,12 @@ private:
     TStringToUnitMap          m_AllTests;
     /// List of all disabled tests
     TUnitsSet                 m_DisabledTests;
+    /// List of all tests which result is a timeout
+    TUnitsSet                 m_TimedOutTests;
     /// List of all dependencies for each test having dependencies
     TUnitToManyMap            m_TestDeps;
-    /// Initializer to make test dependencies
-    CNcbiTestsInitializer     m_Initializer;
+    /// Observer to make test dependencies and look for unit's timeouts
+    CNcbiTestsObserver        m_Observer;
     /// Boost reporter - must be pointer because Boost.Test calls free() on it
     CNcbiBoostReporter*       m_Reporter;
     /// Boost logger - must be pointer because Boost.Test calls free() on it
@@ -479,6 +504,17 @@ private:
     CNcbiTestsTreeBuilder     m_TreeBuilder;
     /// Empty test case added to Boost for internal perposes
     but::test_case*           m_DummyTest;
+    /// Timeout for the whole test
+    double                    m_Timeout;
+    /// String representation for whole test timeout (real value taken from
+    /// CHECK_TIMEOUT in Makefile).
+    string                    m_TimeoutStr;
+    /// Timer measuring elapsed time for the whole test
+    CStopWatch                m_Timer;
+    /// Timeout that was set in currently executing unit before adjustment
+    ///
+    /// @sa AdjustTestTimeout()
+    unsigned int              m_CurUnitTimeout;
 };
 
 
@@ -753,7 +789,9 @@ inline
 CNcbiTestApplication::CNcbiTestApplication(void)
     : m_RunCalled(false),
       m_RunMode  (0),
-      m_DummyTest(NULL)
+      m_DummyTest(NULL),
+      m_Timeout  (0),
+      m_Timer    (CStopWatch::eStart)
 {
     m_Reporter = new CNcbiBoostReporter();
     m_Logger   = new CNcbiBoostLogger();
@@ -997,6 +1035,18 @@ CNcbiTestApplication::SetGloballyDisabled(void)
            " (for autobuild scripts: NCBI_UNITTEST_DISABLED)\n");
 }
 
+void
+CNcbiTestApplication::SetGloballySkipped(void)
+{
+    m_RunMode |= fDisabled;
+
+    // This should certainly go to the output. So we can use only printf,
+    // nothing else.
+    printf("Tests cannot be executed in current configuration "
+                                                    "and will be skipped.\n"
+           " (for autobuild scripts: NCBI_UNITTEST_SKIPPED)\n");
+}
+
 inline void
 CNcbiTestApplication::x_AddDummyTest(void)
 {
@@ -1110,6 +1160,38 @@ CNcbiTestApplication::ReEnableAllTests(void)
     }
 }
 
+inline void
+CNcbiTestApplication::SetTestTimedOut(but::test_case* tc)
+{
+    // If equal then it's real timeout, if not then it's just this unit hit
+    // the whole test timeout.
+    if (tc->p_timeout.get() == m_CurUnitTimeout) {
+        m_TimedOutTests.insert(tc);
+    }
+}
+
+inline void
+CNcbiTestApplication::AdjustTestTimeout(but::test_unit* tu)
+{
+    m_CurUnitTimeout = tu->p_timeout.get();
+
+    if (m_Timeout == 0)
+        return;
+
+    double elapsed = m_Timer.Elapsed();
+    if (m_Timeout <= elapsed) {
+        CNcbiEnvironment env;
+        printf("Maximum execution time of %s seconds is exceeded",
+               m_TimeoutStr.c_str());
+        throw but::test_being_aborted();
+    }
+
+    unsigned int new_timeout = static_cast<unsigned int>(m_Timeout - elapsed);
+    if (m_CurUnitTimeout == 0  ||  m_CurUnitTimeout > new_timeout) {
+        tu->p_timeout.set(new_timeout);
+    }
+}
+
 inline string
 CNcbiTestApplication::GetTestResultString(but::test_unit* tu)
 {
@@ -1118,7 +1200,9 @@ CNcbiTestApplication::GetTestResultString(but::test_unit* tu)
 
     if (m_DisabledTests.count(tu) != 0  ||  (m_RunMode & fDisabled))
         result = kTestResultDisabled;
-    else if( tr.p_aborted )
+    else if (m_TimedOutTests.count(tu) != 0)
+        result = kTestResultTimeout;
+    else if (tr.p_aborted)
         result = kTestResultAborted;
     else if (tr.p_assertions_failed.get() > tr.p_expected_failures.get()
              ||  tr.p_test_cases_failed.get()
@@ -1239,7 +1323,7 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
     boost::debug::break_memory_alloc(0);
 
     x_SetupBoostReporters();
-    but::framework::register_observer(m_Initializer);
+    but::framework::register_observer(m_Observer);
 
     // TODO: change this functionality to use only -dryrun parameter
     for (int i = 0; i < argc; ++i) {
@@ -1252,6 +1336,18 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
             }
             --argc;
         }
+    }
+
+    CNcbiEnvironment env;
+    m_TimeoutStr = env.Get("NCBI_CHECK_TIMEOUT");
+    if (!m_TimeoutStr.empty()) {
+        m_Timeout = NStr::StringToDouble(m_TimeoutStr, NStr::fConvErr_NoThrow);
+    }
+    if (m_Timeout == 0) {
+        m_Timer.Stop();
+    }
+    else {
+        m_Timeout = min(max(0.0, m_Timeout - 3), 0.9 * m_Timeout);
     }
 
     but::test_suite* global_suite = NULL;
@@ -1311,15 +1407,42 @@ CNcbiTestsCollector::test_suite_start(but::test_suite const& suite)
 
 
 void
-CNcbiTestsInitializer::test_start(but::counter_t /* test_cases_amount */)
+CNcbiTestsObserver::test_start(but::counter_t /* test_cases_amount */)
 {
     s_GetTestApp().InitTestsBeforeRun();
 }
 
 void
-CNcbiTestsInitializer::test_finish(void)
+CNcbiTestsObserver::test_finish(void)
 {
     s_GetTestApp().FiniTestsAfterRun();
+}
+
+void
+CNcbiTestsObserver::test_unit_start(but::test_unit const& tu)
+{
+    s_GetTestApp().AdjustTestTimeout(const_cast<but::test_unit*>(&tu));
+}
+
+void
+CNcbiTestsObserver::test_unit_finish(but::test_unit const& tu,
+                                     unsigned long         elapsed)
+{
+    unsigned long timeout = tu.p_timeout.get();
+    if (timeout != 0  &&  timeout < elapsed) {
+        boost::execution_exception ex(
+               boost::execution_exception::timeout_error, "Timeout exceeded");
+        but::framework::exception_caught(ex);
+    }
+}
+
+void
+CNcbiTestsObserver::exception_caught(boost::execution_exception const& ex)
+{
+    if (ex.code() == boost::execution_exception::timeout_error) {
+        s_GetTestApp().SetTestTimedOut(const_cast<but::test_case*>(
+                                       &but::framework::current_test_case()));
+    }
 }
 
 
@@ -1478,6 +1601,12 @@ void
 NcbiTestSetGlobalDisabled(void)
 {
     s_GetTestApp().SetGloballyDisabled();
+}
+
+void
+NcbiTestSetGlobalSkipped(void)
+{
+    s_GetTestApp().SetGloballySkipped();
 }
 
 CExprParser*

@@ -38,6 +38,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_system.hpp>
 
 // This macro should be defined before inclusion of test_boost.hpp in all
 // "*.cpp" files inside executable except one. It is like function main() for
@@ -155,6 +156,13 @@ static void s_FuncWithoutException(void)
 BOOST_AUTO_TEST_CASE(TestWithoutException)
 {
     BOOST_CHECK_NO_THROW( s_FuncWithoutException() );
+}
+
+BOOST_AUTO_TEST_CASE_TIMEOUT(TestTimeout, 1);
+BOOST_AUTO_TEST_CASE(TestTimeout)
+{
+    // This test will always fail due to timeout
+    SleepSec(2);
 }
 
 BOOST_AUTO_TEST_CASE(TestDependentOnArg)

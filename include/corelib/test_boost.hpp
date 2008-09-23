@@ -67,9 +67,11 @@
 #include <boost/preprocessor/arithmetic/inc.hpp>
 
 
-// Redefine some Boost macros to make them more comfortable
+// Redefine some Boost macros to make them more comfortable and fit them into
+// the framework.
 #undef BOOST_CHECK_THROW_IMPL
 #undef BOOST_CHECK_NO_THROW_IMPL
+#undef BOOST_FIXTURE_TEST_CASE
 
 #define BOOST_CHECK_THROW_IMPL( S, E, P, prefix, TL )                    \
 try {                                                                    \
@@ -106,6 +108,46 @@ catch( ... ) {                                                               \
                       TL, CHECK_MSG );                                       \
 }                                                                            \
 /**/
+
+#define BOOST_FIXTURE_TEST_CASE( test_name, F )                         \
+struct test_name : public F { void test_method(); };                    \
+                                                                        \
+static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
+{                                                                       \
+    test_name t;                                                        \
+    t.test_method();                                                    \
+}                                                                       \
+                                                                        \
+struct BOOST_AUTO_TC_UNIQUE_ID( test_name ) {};                         \
+                                                                        \
+static ::NCBI_NS_NCBI::SNcbiTestRegistrar                               \
+BOOST_JOIN( BOOST_JOIN( test_name, _registrar ), __LINE__ ) (           \
+    boost::unit_test::make_test_case(                                   \
+        &BOOST_AUTO_TC_INVOKER( test_name ), #test_name ),              \
+    boost::unit_test::ut_detail::auto_tc_exp_fail<                      \
+        BOOST_AUTO_TC_UNIQUE_ID( test_name )>::instance()->value(),     \
+    ::NCBI_NS_NCBI::SNcbiTestTCTimeout<                                 \
+        BOOST_AUTO_TC_UNIQUE_ID( test_name )>::instance()->value() );   \
+                                                                        \
+void test_name::test_method()                                           \
+/**/
+
+/// Set timeout value for the test case created using auto-registration
+/// facility.
+#define BOOST_AUTO_TEST_CASE_TIMEOUT(test_name, n)                      \
+struct BOOST_AUTO_TC_UNIQUE_ID( test_name );                            \
+                                                                        \
+static struct BOOST_JOIN( test_name, _timeout_spec )                    \
+: ::NCBI_NS_NCBI::                                                      \
+  SNcbiTestTCTimeout<BOOST_AUTO_TC_UNIQUE_ID( test_name ) >             \
+{                                                                       \
+    BOOST_JOIN( test_name, _timeout_spec )()                            \
+    : ::NCBI_NS_NCBI::                                                  \
+      SNcbiTestTCTimeout<BOOST_AUTO_TC_UNIQUE_ID( test_name ) >( n )    \
+    {}                                                                  \
+} BOOST_JOIN( test_name, _timeout_spec_inst );                          \
+/**/
+
 
 
 /** @addtogroup Tests
@@ -287,14 +329,25 @@ BEGIN_NCBI_SCOPE
 
 /// Disable execution of all tests in current configuration. Call to the
 /// function is equivalent to setting GLOBAL = true in ini file.
-/// Globally disabled tests are equivalent to not built test program and thus
-/// they are shown as ABSent by check scripts (called via make check).
+/// Globally disabled tests are shown as DIS by check scripts
+/// (called via make check).
 /// Function should be called inly from NCBITEST_AUTO_INIT() or
 /// NCBITEST_INIT_TREE() functions.
 ///
 /// @sa NCBITEST_AUTO_INIT, NCBITEST_INIT_TREE
 ///
 void NcbiTestSetGlobalDisabled(void);
+
+
+/// Skip execution of all tests in current configuration.
+/// Globally skipped tests are shown as SKP by check scripts
+/// (called via make check).
+/// Function should be called inly from NCBITEST_AUTO_INIT() or
+/// NCBITEST_INIT_TREE() functions.
+///
+/// @sa NCBITEST_AUTO_INIT, NCBITEST_INIT_TREE
+///
+void NcbiTestSetGlobalSkipped(void);
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -390,6 +443,72 @@ static void NCBITEST_AUTOREG_HELPER(void)                              \
 static ::NCBI_NS_NCBI::SNcbiTestUserFuncReg                            \
 NCBITEST_AUTOREG_OBJ(&NCBITEST_AUTOREG_HELPER, ::NCBI_NS_NCBI::type);  \
 static void NCBITEST_AUTOREG_FUNC(type)(::NCBI_NS_NCBI::param_decl)
+
+
+/// Extension auto-registrar from Boost.Test that can automatically set the
+/// timeout for unit.
+struct SNcbiTestRegistrar
+    : public boost::unit_test::ut_detail::auto_test_unit_registrar
+{
+    typedef boost::unit_test::ut_detail::auto_test_unit_registrar TParent;
+
+    SNcbiTestRegistrar(boost::unit_test::test_case* tc,
+                       boost::unit_test::counter_t  exp_fail,
+                       unsigned int                 timeout)
+        : TParent(tc, exp_fail)
+    {
+        tc->p_timeout.set(timeout);
+    }
+
+    SNcbiTestRegistrar(boost::unit_test::test_case* tc,
+                       boost::unit_test::counter_t  exp_fail)
+        : TParent(tc, exp_fail)
+    {}
+
+    explicit
+    SNcbiTestRegistrar(boost::unit_test::const_string ts_name)
+        : TParent(ts_name)
+    {}
+
+    explicit
+    SNcbiTestRegistrar(boost::unit_test::test_unit_generator const& tc_gen)
+        : TParent(tc_gen)
+    {}
+
+    explicit
+    SNcbiTestRegistrar(int n)
+        : TParent(n)
+    {}
+};
+
+
+/// Copy of auto_tc_exp_fail from Boost.Test to store the value of timeout
+/// for each test.
+template<typename T>
+struct SNcbiTestTCTimeout
+{
+    SNcbiTestTCTimeout() : m_value(0) {}
+
+    explicit SNcbiTestTCTimeout(unsigned int v)
+        : m_value( v )
+    {
+        instance() = this;
+    }
+
+    static SNcbiTestTCTimeout*& instance() 
+    {
+        static SNcbiTestTCTimeout  inst; 
+        static SNcbiTestTCTimeout* inst_ptr = &inst; 
+
+        return inst_ptr;
+    }
+
+    unsigned int value() const { return m_value; }
+
+private:
+    // Data members
+    unsigned    m_value;
+};
 
 
 END_NCBI_SCOPE

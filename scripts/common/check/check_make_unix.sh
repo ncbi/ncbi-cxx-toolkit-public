@@ -569,20 +569,28 @@ EOF_launch
                         echo "DIS --  \$x_cmd" >> \$res_log
 
                         [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "DIS" >> "\$x_test_rep"
+                    elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
+                        echo "SKP --  \$x_cmd"
+                        echo "SKP --  \$x_cmd" >> \$res_log
+
+                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "SKP" >> "\$x_test_rep"
+                    elif egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
+                        echo "TO --  \$x_cmd"
+                        echo "TO --  \$x_cmd" >> \$res_log
+
+                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "TO" >> "\$x_test_rep"
+                    elif [ \$result -eq 0 ]; then
+                        echo "OK  --  \$x_cmd     (\$exec_time)"
+                        echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
+                        count_ok=\`expr \$count_ok + 1\`
+
+                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "OK" >> "\$x_test_rep"
                     else
-                        if [ \$result -eq 0 ]; then
-                            echo "OK  --  \$x_cmd     (\$exec_time)"
-                            echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
-                            count_ok=\`expr \$count_ok + 1\`
+                        echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
+                        echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
+                        count_err=\`expr \$count_err + 1\`
 
-                            [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "OK" >> "\$x_test_rep"
-                        else
-                            echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
-                            echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
-                            count_err=\`expr \$count_err + 1\`
-
-                            [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "ERR" >> "\$x_test_rep"
-                        fi
+                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "ERR" >> "\$x_test_rep"
                     fi
 
                     if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then

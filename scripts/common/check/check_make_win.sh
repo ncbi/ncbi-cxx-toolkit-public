@@ -334,8 +334,10 @@ RunTest() {
          esac
          echo -n "-\$x_conf" >> "\$x_test_rep"
          case "\$x_conf" in
-         *DLL | *MT )
+         *DLL )
              echo -n "MT" >> "\$x_test_rep"
+             ;;
+         *MT )
              ;;
          * )
              echo -n "ST" >> "\$x_test_rep"
@@ -415,11 +417,21 @@ RunTest() {
 
       # And write result also on the screen and into the log
       x_cmd="\$x_cmd \$x_name"
-      if grep -q NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
+      if grep NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
           echo "DIS --  \$x_cmd"
           echo "DIS --  \$x_cmd" >> \$res_log
 
           [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "DIS" >> "\$x_test_rep"
+      elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
+          echo "SKP --  \$x_cmd"
+          echo "SKP --  \$x_cmd" >> \$res_log
+
+          [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "SKP" >> "\$x_test_rep"
+      elif egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
+          echo "TO --  \$x_cmd"
+          echo "TO --  \$x_cmd" >> \$res_log
+
+          [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "TO" >> "\$x_test_rep"
       elif test \$result -eq 0; then
           echo "OK  --  \$x_cmd     (\$exec_time)"
           echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log

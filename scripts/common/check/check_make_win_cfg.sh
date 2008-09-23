@@ -373,6 +373,16 @@ RunTest() {
       echo "DIS --  \$x_cmd"
       echo "DIS --  \$x_cmd" >> \$res_log
       [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "DIS" >> "\$x_test_rep"
+   elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
+      echo "SKP --  \$x_cmd"
+      echo "SKP --  \$x_cmd" >> \$res_log
+
+      [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "SKP" >> "\$x_test_rep"
+   elif egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
+      echo "TO --  \$x_cmd"
+      echo "TO --  \$x_cmd" >> \$res_log
+
+      [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "TO" >> "\$x_test_rep"
    elif test \$result -eq 0; then
       echo "OK  --  \$x_cmd     (\$exec_time)"
       echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
