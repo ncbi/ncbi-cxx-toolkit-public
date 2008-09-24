@@ -220,7 +220,8 @@ function FillTreeStructure(oShell, oTree)
         "ncbilogo.ico",
         "project_tree_builder.ini",
         "lock_ptb_config.bat",
-        "asn_prebuild.bat"
+        "asn_prebuild.bat",
+        "ptb.bat"
         );
     GetFilesFromTree(oShell, oTree, oTask,
         "/compilers/" + GetMsvcFolder(), compiler_files, oTree.CompilersBranch);
