@@ -111,7 +111,7 @@ for ((i = 0; i < 7; ++i)); do
     cp  "${PLATF_DIR}/bin/test_stat_load${EXE}" "${PLATF_ATTIC_DIR}/" || exit 8
 
 
-    if [[ "${PLATF_FILE_MASKS[$i]}" == *"gizmo"* ]]; then
+    if [[ "${PLATF_FILE_MASKS[$i]}" == *"Linux64"* ]]; then
         echo "Deploying cgi interface"
 
         cp "${PLATF_DIR}/bin/test_stat_ext.cgi" "${CGI_BIN_DIR}/" || exit 9
