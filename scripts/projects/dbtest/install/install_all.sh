@@ -100,9 +100,7 @@ for ((i = 0; i < 7; ++i)); do
     mkdir -p "${PLATF_ATTIC_DIR}"
     tar -zxf "${PLATF_FILE}" -C "${PLATF_DIR}" || exit 6
 
-    PLATF_ATTIC_SRC_DIR="${ATTIC_SRC_DIR}/${PLATF_DIR_NAMES[$i]}"
-    mkdir -p "${PLATF_ATTIC_SRC_DIR}"
-    tar -zxf "${PLATF_SRC_FILE}" -C "${PLATF_ATTIC_SRC_DIR}" || exit 16
+    tar -zxf "${PLATF_SRC_FILE}" -C "${ATTIC_SRC_DIR}" || exit 16
 
     EXE=""
     if [[ "${PLATF_FILE_MASKS[$i]}" == *"Win64"* ]]; then
@@ -139,6 +137,9 @@ cd "$TMP_DIR" || exit 1
 
 svn co "https://svn.ncbi.nlm.nih.gov/repos/toolkit/release/dbtest/${VERSION}" ./ || exit 2
 CC=cc CXX=CC ./configure --with-dll --without-debug --with-64 --with-flat-makefile || exit 3
+
+cp -R "./c++/MIPSpro73-ReleaseDLL64" "${ATTIC_SRC_DIR}/c++/" || exit 9
+
 gmake -j 5 || exit 4
 
 for i in \`find ./c++/MIPSpro73-ReleaseDLL64/lib/ -name "*.so" | egrep -v "odbc_ftds64|sybdb_ftds64|test_boost|test_mt|xcgi|xfcgi|xthrserv"\`; do
@@ -152,8 +153,6 @@ cp "./c++/MIPSpro73-ReleaseDLL64/bin/test_stat_load" "\$NCBI/bin/_production/CPP
 cp "./c++/MIPSpro73-ReleaseDLL64/bin/test_stat_load" "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}/" || exit 6
 cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "\$NCBI/bin/_production/CPPCORE/" || exit 7
 cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}/" || exit 8
-
-cp -R "./c++/MIPSpro73-ReleaseDLL64" "${ATTIC_SRC_DIR}/${PLATF_DIR_NAMES[7]}/" || exit 9
 
 cd
 rm -rf "$TMP_DIR"
