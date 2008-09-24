@@ -35,7 +35,11 @@ REM
 REM ===========================================================================
 
 if "%PREBUILT_PTB_EXE%"=="" (
-  set PREBUILT_PTB_EXE=\\snowman\win-coremake\App\Ncbi\cppcore\ptb\msvc9\project_tree_builder.exe
+  if "%PTB_PLATFORM%"=="x64" (
+    set PREBUILT_PTB_EXE=\\snowman\win-coremake\App\Ncbi\cppcore\ptb\msvc9.64\project_tree_builder.exe
+  ) else (
+    set PREBUILT_PTB_EXE=\\snowman\win-coremake\App\Ncbi\cppcore\ptb\msvc9\project_tree_builder.exe
+  )
 ) else (
   if not exist "%PREBUILT_PTB_EXE%" (
     if not "%PREBUILT_PTB_EXE%"=="bootstrap" (
