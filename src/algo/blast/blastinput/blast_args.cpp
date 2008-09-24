@@ -47,12 +47,12 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp> /* for CObjMgrQueryFactory */
 #include <algo/blast/core/blast_nalookup.h>
-#include <objtools/blast_format/blastfmtutil.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <util/format_guess.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
 #include <algo/blast/blastinput/blast_input_aux.hpp>
+#include <connect/ncbi_connutil.h>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
@@ -1260,9 +1260,13 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         const bool parse_deflines = args.Exist(kArgParseDeflines) 
             ? args[kArgParseDeflines]
             : kDfltArgParseDeflines;
+        const bool use_lcase_masks = args.Exist(kArgUseLCaseMasking)
+            ? args[kArgUseLCaseMasking]
+            : kDfltArgUseLCaseMasking;
         CRef<blast::CBlastQueryVector> subjects;
         m_Scope = ReadSequencesToBlast(subj_input_stream, IsProtein(),
-                                       subj_range, parse_deflines, subjects);
+                                       subj_range, parse_deflines,
+                                       use_lcase_masks, subjects);
         m_Subjects.Reset(new blast::CObjMgr_QueryFactory(*subjects));
 
     } else {
@@ -1469,6 +1473,8 @@ CDebugArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                      true);
     arg_desc.AddFlag("remote_verbose", 
                      "Produce verbose output for remote searches", true);
+    arg_desc.AddFlag("use_test_remote_service", 
+                     "Send remote requests to test servers", true);
     arg_desc.SetCurrentGroup("");
 #endif /* DEBUG */
 }
@@ -1479,6 +1485,12 @@ CDebugArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */
 #if _DEBUG
     m_DebugOutput = static_cast<bool>(args["verbose"]);
     m_RmtDebugOutput = static_cast<bool>(args["remote_verbose"]);
+    if (args["use_test_remote_service"]) {
+        IRWRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+        reg.Set("BLAST4", string(DEF_CONN_REG_SECTION) + " " +
+                string(REG_CONN_SERVICE_NAME),
+                "blast4test");
+    }
 #endif /* DEBUG */
 }
 

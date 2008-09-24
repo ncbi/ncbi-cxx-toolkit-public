@@ -134,6 +134,12 @@ ILocalQueryData::GetMessages(TSearchMessages& messages) const
     messages = m_Messages;
 }
 
+void
+ILocalQueryData::FlushSequenceData()
+{
+    m_SeqBlk.Reset();
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

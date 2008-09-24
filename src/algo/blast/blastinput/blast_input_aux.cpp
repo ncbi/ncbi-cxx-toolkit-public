@@ -143,6 +143,7 @@ ReadSequencesToBlast(CNcbiIstream& in,
                      bool read_proteins, 
                      const TSeqRange& range, 
                      bool parse_deflines,
+                     bool use_lcase_masking,
                      CRef<CBlastQueryVector>& sequences)
 {
     SDataLoaderConfig dlconfig(read_proteins);
@@ -151,6 +152,7 @@ ReadSequencesToBlast(CNcbiIstream& in,
     CBlastInputSourceConfig iconfig(dlconfig);
     iconfig.SetRange(range);
     iconfig.SetBelieveDeflines(parse_deflines);
+    iconfig.SetLowercaseMask(use_lcase_masking);
     iconfig.SetLocalIdCounterInitValue(1<<16);
 
     CRef<CBlastFastaInputSource> fasta(new CBlastFastaInputSource(in, iconfig));

@@ -225,6 +225,10 @@ CBlastPrelimSearch::Run()
                                 chunk_data->m_HspStream->GetPointer(),
                                 m_InternalData->m_HspStream->GetPointer());
                 _ASSERT(m_InternalData->m_HspStream->GetPointer());
+                // free this as the m_QuerySplitter keeps a reference to the
+                // chunk factories, which in turn keep a reference to the local
+                // query data.
+                query_data->FlushSequenceData();        
             } catch (const CBlastException& e) {
                 // This error message is safe to ignore for a given chunk,
                 // because the chunks might end up producing a region of
@@ -242,6 +246,12 @@ CBlastPrelimSearch::Run()
             }
         }
 
+        // Restore the full query sequence for the traceback stage!
+        if (m_InternalData->m_Queries == NULL) {
+            CRef<ILocalQueryData> query_data
+                (m_QueryFactory->MakeLocalQueryData(&*m_Options));
+            m_InternalData->m_Queries = query_data->GetSequenceBlk();
+        }
     } else {
 
         GetDbIndexRunSearchFn()( 

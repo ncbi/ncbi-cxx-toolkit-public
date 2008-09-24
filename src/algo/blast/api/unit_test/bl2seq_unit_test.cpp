@@ -1957,15 +1957,29 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
         // ... and compare it to what is expected
         for (size_t index = 0; index < kNumSegments; ++index) {
             ostringstream os;
-            os << "Segment " << index;
+            os << "Segment " << index << ": expected " << lengths[index]
+               << " actual " << seg_lengths[index];
             BOOST_REQUIRE_MESSAGE(lengths[index] == seg_lengths[index],
                                   os.str());
+
+            os.str("");
+            os << "Segment " << index << ": expected " << starts[index].first
+               << " actual " << seg_starts[2*index];
             BOOST_REQUIRE_MESSAGE(starts[index].first == seg_starts[2*index],
                                   os.str());
+            os.str("");
+            os << "Segment " << index << ": expected " << starts[index].second
+               << " actual " << seg_starts[2*index];
             BOOST_REQUIRE_MESSAGE(starts[index].second == seg_starts[2*index+1],
                                   os.str());
+            os.str("");
+            os << "Segment " << index << ": expected " << strands[index].first
+               << " actual " << seg_strands[2*index];
             BOOST_REQUIRE_MESSAGE(strands[index].first == seg_strands[2*index],
                                   os.str());
+            os.str("");
+            os << "Segment " << index << ": expected " << strands[index].second
+               << " actual " << seg_strands[2*index];
             BOOST_REQUIRE_MESSAGE(strands[index].second == seg_strands[2*index+1],
                                   os.str());
         }

@@ -98,6 +98,12 @@ public:
 
     /// Determine if at least one query sequence is valid or not
     bool IsAtLeastOneQueryValid();
+
+    /// Frees the cached sequence data structure (as this is usually the larger
+    /// data structure). This is to be used in the context of query splitting,
+    /// when the sequence data is only needed to set up global data structures,
+    /// but not in the actual search.
+    void FlushSequenceData();
     
 protected:
     /// Data member to cache the BLAST_SequenceBlk

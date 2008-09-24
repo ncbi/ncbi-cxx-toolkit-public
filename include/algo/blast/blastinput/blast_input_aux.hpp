@@ -176,6 +176,8 @@ GetQueryBatchSize(EProgram program);
  * @param read_proteins expect proteins or nucleotides as input [in]
  * @param range range restriction to apply to sequences read [in]
  * @param parse_deflines true if the subject deflines should be parsed [in]
+ * @param use_lcase_masking true if the subject lowercase sequence characters
+ * should be interpreted as masked regions [in]
  * @param sequences output will be placed here [in|out]
  * @return CScope object which contains all the sequences read
  */
@@ -185,6 +187,7 @@ ReadSequencesToBlast(CNcbiIstream& in,
                      bool read_proteins, 
                      const TSeqRange& range, 
                      bool parse_deflines,
+                     bool use_lcase_masking,
                      CRef<CBlastQueryVector>& sequences);
 
 /// Calculates the formatting parameters based on the maximum number of target

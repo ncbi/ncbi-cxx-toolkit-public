@@ -173,6 +173,14 @@ void s_BuildMaskedRanges(CSeqMasker::TMaskList & masks,
             (**psl).SetPacked_int().Set().push_back(ival);
         }
     }
+    if (psl && !psl->Empty())
+    {
+        const int kTopFlags = CSeq_loc::fStrand_Ignore|CSeq_loc::fMerge_All|CSeq_loc::fSort;
+        CRef<CSeq_loc> tmp = (*psl)->Merge(kTopFlags, 0);
+        psl->Reset(tmp);
+        (*psl)->ChangeToPackedInt();
+    }
+
 }
 
 // These templates only exist to reduce code duplication due to the

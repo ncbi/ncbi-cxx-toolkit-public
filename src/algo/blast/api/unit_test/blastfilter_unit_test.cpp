@@ -40,6 +40,8 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <serial/iterator.hpp>
 #include <util/random_gen.hpp>
+#include <objmgr/util/sequence.hpp>
+
 
 #include <algo/blast/api/blast_aux.hpp>
 #include "../blast_objmgr_priv.hpp"
@@ -637,16 +639,63 @@ BOOST_AUTO_TEST_CASE(RepeatsFilter_OnSeqInterval) {
     BOOST_REQUIRE_EQUAL(masked_regions.size(), loc_index);
 }
 
+
+BOOST_AUTO_TEST_CASE(RepeatsAndDustFilter) {
+
+    CSeq_id id1("gi|197333738");
+    auto_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1)); 
+    TSeqLocVector query_v1;
+    query_v1.push_back(*qsl1);
+
+    CSeq_id id2("gi|197333738");
+    auto_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2)); 
+    TSeqLocVector query_v2;
+    query_v2.push_back(*qsl2);
+
+    CBlastNucleotideOptionsHandle nucl_handle;
+    nucl_handle.SetDustFiltering(true);
+    nucl_handle.SetRepeatFiltering(true);
+
+    Blast_FindDustFilterLoc(query_v1, &nucl_handle);
+    Blast_FindRepeatFilterLoc(query_v1, &nucl_handle);
+
+
+    Blast_FindRepeatFilterLoc(query_v2, &nucl_handle);
+    Blast_FindDustFilterLoc(query_v2, &nucl_handle);
+
+    BOOST_REQUIRE_EQUAL(sequence::Compare(*(query_v1[0].mask), *(query_v2[0].mask), qsl1->scope), sequence::eSame); 
+}
+
+BOOST_AUTO_TEST_CASE(WindowMaskerAndDustFilter) {
+
+    CSeq_id id1("gi|197333738");
+    auto_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1)); 
+    TSeqLocVector query_v1;
+    query_v1.push_back(*qsl1);
+
+    CSeq_id id2("gi|197333738");
+    auto_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2)); 
+    TSeqLocVector query_v2;
+    query_v2.push_back(*qsl2);
+
+    CBlastNucleotideOptionsHandle nucl_handle;
+    nucl_handle.SetDustFiltering(true);
+    nucl_handle.SetWindowMaskerTaxId(9606);
+
+    Blast_FindDustFilterLoc(query_v1, &nucl_handle);
+    Blast_FindWindowMaskerLoc(query_v1, &nucl_handle);
+
+
+    Blast_FindWindowMaskerLoc(query_v2, &nucl_handle);
+    Blast_FindDustFilterLoc(query_v2, &nucl_handle);
+
+    BOOST_REQUIRE_EQUAL(sequence::Compare(*(query_v1[0].mask), *(query_v2[0].mask), qsl1->scope), sequence::eSame); 
+}
+
 BOOST_AUTO_TEST_CASE(WindowMasker_OnSeqInterval)
 {
-    // Note that ranges overlap -- the windowmasker code does not eliminate this at the moment.
+    // these are from window masker and dust
     vector<TSeqRange> masked_regions;
-    
-    // these two are from dust
-    masked_regions.push_back(TSeqRange(85028, 85060));
-    masked_regions.push_back(TSeqRange(85211, 85236));
-    
-    // these are from window masker
     masked_regions.push_back(TSeqRange(85019, 85172));
     masked_regions.push_back(TSeqRange(85190, 85345));
     masked_regions.push_back(TSeqRange(85385, 85452));
@@ -670,7 +719,7 @@ BOOST_AUTO_TEST_CASE(WindowMasker_OnSeqInterval)
     
     Blast_FindDustFilterLoc(query_v, &nucl_handle);
     Blast_FindWindowMaskerLoc(query_v, &nucl_handle);
-    
+
     BOOST_REQUIRE(query_v[0].mask->IsPacked_int());
     const CPacked_seqint::Tdata& seqinterval_list = 
         query_v[0].mask->GetPacked_int().Get();

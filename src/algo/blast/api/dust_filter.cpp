@@ -127,11 +127,10 @@ Blast_FindDustFilterLoc(TSeqLocVector& queries,
                                                             query->scope);
         query_masks.Reset(mapper->Map(*query_masks));
 
-        const int kTopFlags = CSeq_loc::fStrand_Ignore|CSeq_loc::fMerge_All;
+        const int kTopFlags = CSeq_loc::fStrand_Ignore|CSeq_loc::fMerge_All|CSeq_loc::fSort;
         if (query->mask.NotEmpty() && !query->mask->IsNull()) {
-            CRef<CSeq_loc> tmp(query->mask);
-            tmp->Add(*query_masks, kTopFlags, 0);
-            tmp->Merge(kTopFlags, 0);
+            CRef<CSeq_loc> tmp = query->mask->Add(*query_masks,  kTopFlags, 0);
+            query->mask.Reset(tmp);
         } else {
             query_masks->Merge(kTopFlags, 0);
             query->mask.Reset(query_masks);

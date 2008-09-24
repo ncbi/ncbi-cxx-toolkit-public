@@ -238,6 +238,13 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
     query_data->GetMessages(m);
     retval->m_Messages.Combine(m);
 
+    if (retval->m_QuerySplitter->IsQuerySplit()) {
+        // We don't need the full sequence for the preliminary stage, so we
+        // free it and NULL out references to it (this MUST be restored prior
+        // to the traceback stage)
+        query_data->FlushSequenceData();        
+        retval->m_InternalData->m_Queries = NULL;
+    }
     return retval;
 }
 
