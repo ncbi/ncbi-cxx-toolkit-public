@@ -1,2 +1,17 @@
-July 02, 2008
-First test release using the toolkit's release procedure.
+September 24, 2008 (SVN revision: 141260) 
+* Fix to prevent initial seed extension from going beyond context boundary.
+* Improvements to reduce memory usage when query splitting is applied.
+* Print the accession and version for blastdbcmd's %a output format.
+* gilists/negative gilists are not saved in search strategies or supported in
+  remote blast searches.
+* legacy_blast.pl fixed for MacOSX, as well as extended support for megablast
+  formatting options (-D, -f).
+* Enhancements to Mac installer to add installation path to user's PATH.
+* ASN.1 output is now of type Seq-annot.
+* -lcase_masking option now applies to subject sequences as well as queries.
+* Bug fix for creation of masked databases with non-redundant sequences that use
+  a BLAST database as its data source.
+* Bug fix for merging masking locations.
+
+August 21, 2008 (SVN revision: 138123)
+First internal release
