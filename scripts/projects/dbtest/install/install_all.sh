@@ -21,13 +21,13 @@ TMP_DIR="/tmp/$$"
 
 
 declare -a PLATF_FILE_MASKS
-PLATF_FILE_MASKS=(   "*linux*gizmo1*"
+PLATF_FILE_MASKS=(   "*Linux64*"
                      "*Win64*"
-                     "*linux*coredev1*"
-                     "*freebsd*"
-                     "*darwin*"
-                     "*WorkShop*make1sx*"
-                     "*WorkShop*make1ss*")
+                     "*Linux32*"
+                     "*FreeBSD32*"
+                     "*PowerMAC*"
+                     "*SunOSx86*"
+                     "*SunOSSparc*")
 declare -a PLATF_DIR_NAMES
 PLATF_DIR_NAMES=(    "Linux64"
                      "Win32"
@@ -147,12 +147,14 @@ for i in \`find ./c++/MIPSpro73-ReleaseDLL64/lib/ -name "*.so" | egrep -v "odbc_
 done
 
 mkdir -p "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}/"
-mkdir -p "${ATTIC_SRC_DIR}/${PLATF_DIR_NAMES[7]}/"
 
 cp "./c++/MIPSpro73-ReleaseDLL64/bin/test_stat_load" "\$NCBI/bin/_production/CPPCORE/" || exit 5
 cp "./c++/MIPSpro73-ReleaseDLL64/bin/test_stat_load" "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}/" || exit 6
 cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "\$NCBI/bin/_production/CPPCORE/" || exit 7
 cp "./c++/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh" "${ATTIC_DIR}/${PLATF_DIR_NAMES[7]}/" || exit 8
+
+mkdir -p "${ATTIC_SRC_DIR}/${PLATF_DIR_NAMES[7]}/"
+ln -s "../c++" "${ATTIC_SRC_DIR}/${PLATF_DIR_NAMES[7]}/c++"
 
 cd
 rm -rf "$TMP_DIR"
