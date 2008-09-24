@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="Windows-1252"?>
-<VisualStudioProject ProjectType="Visual C++" Version="7.10" Name="-CONFIGURE-" Keyword="ManagedCProj" RootNamespace="MasterProject">
+<VisualStudioProject ProjectType="Visual C++" Version="7.10" Name="-CONFIGURE-" Keyword="ManagedCProj" ProjectGUID="{0A252612-0A9F-4120-9F33-EDE4DF7DCE9F}" RootNamespace="MasterProject">
   <Platforms>
-    <Platform Name="Win32"></Platform>
+    <Platform Name="Win32"/>
   </Platforms>
   <Configurations>
     <Configuration Name="DebugDLL|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
-      <Tool Name="VCCustomBuildTool"></Tool>
-      <Tool Name="VCMIDLTool"></Tool>
-      <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool"></Tool>
+      <Tool Name="VCCustomBuildTool"/>
+      <Tool Name="VCMIDLTool"/>
+      <Tool Name="VCPostBuildEventTool"/>
+      <Tool Name="VCPreBuildEventTool"/>
     </Configuration>
     <Configuration Name="ReleaseDLL|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
-      <Tool Name="VCCustomBuildTool"></Tool>
-      <Tool Name="VCMIDLTool"></Tool>
-      <Tool Name="VCPostBuildEventTool"></Tool>
-      <Tool Name="VCPreBuildEventTool"></Tool>
+      <Tool Name="VCCustomBuildTool"/>
+      <Tool Name="VCMIDLTool"/>
+      <Tool Name="VCPostBuildEventTool"/>
+      <Tool Name="VCPreBuildEventTool"/>
     </Configuration>
   </Configurations>
   <References></References>
@@ -22,10 +22,10 @@
     <Filter Name="Configure" Filter="">
       <File RelativePath="configure._">
         <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\Release&#xa;if &quot;%PREBUILT_PTB_EXE%&quot;==&quot;&quot; (set PREBUILT_PTB_EXE=\\snowman\win-coremake\App\Ncbi\cppcore\ptb\msvc71\project_tree_builder.exe) else (if not exist &quot;%PREBUILT_PTB_EXE%&quot; (if not &quot;%PREBUILT_PTB_EXE%&quot;==&quot;bootstrap&quot; (echo ERROR: &quot;%PREBUILT_PTB_EXE%&quot; not found &amp; exit 1)))&#xa;if exist &quot;%PREBUILT_PTB_EXE%&quot; (set PTB_EXE=%PREBUILT_PTB_EXE%) else (set PTB_EXE=%PTB_PATH%\project_tree_builder.exe)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;if &quot;%PTB_PROJECT%&quot;==&quot;&quot; set PTB_PROJECT=scripts\projects\ncbi_wrap.lst&#xa;if not exist &quot;%PTB_EXE%&quot; (devenv /rebuild Release /project project_tree_builder.exe ..\..\..\..\static\build\build-system\project_tree_builder\project_tree_builder.sln) else (echo USING PREBUILT PTB at %PTB_EXE%)&#xa;if errorlevel 1 exit 1&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;" Outputs="$(ProjectDir)..\..\..\..\static\bin\Release\project_tree_builder.exe;$(InputPath).aanofile.out" Description="Configure solution : $(SolutionName)"></Tool>
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\Release&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(ProjectDir)..\wrappers.sln&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;if errorlevel 1 exit 1&#xa;" Outputs="$(InputPath).aanofile.out;$(ProjectDir)..\..\..\..\static\bin\Release\project_tree_builder.exe" Description="Configure solution : $(SolutionName)"/>
         </FileConfiguration>
         <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\Release&#xa;if &quot;%PREBUILT_PTB_EXE%&quot;==&quot;&quot; (set PREBUILT_PTB_EXE=\\snowman\win-coremake\App\Ncbi\cppcore\ptb\msvc71\project_tree_builder.exe) else (if not exist &quot;%PREBUILT_PTB_EXE%&quot; (if not &quot;%PREBUILT_PTB_EXE%&quot;==&quot;bootstrap&quot; (echo ERROR: &quot;%PREBUILT_PTB_EXE%&quot; not found &amp; exit 1)))&#xa;if exist &quot;%PREBUILT_PTB_EXE%&quot; (set PTB_EXE=%PREBUILT_PTB_EXE%) else (set PTB_EXE=%PTB_PATH%\project_tree_builder.exe)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;if &quot;%PTB_PROJECT%&quot;==&quot;&quot; set PTB_PROJECT=scripts\projects\ncbi_wrap.lst&#xa;if not exist &quot;%PTB_EXE%&quot; (devenv /rebuild Release /project project_tree_builder.exe ..\..\..\..\static\build\build-system\project_tree_builder\project_tree_builder.sln) else (echo USING PREBUILT PTB at %PTB_EXE%)&#xa;if errorlevel 1 exit 1&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;" Outputs="$(ProjectDir)..\..\..\..\static\bin\Release\project_tree_builder.exe;$(InputPath).aanofile.out" Description="Configure solution : $(SolutionName)"></Tool>
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\Release&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(ProjectDir)..\wrappers.sln&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;if errorlevel 1 exit 1&#xa;" Outputs="$(InputPath).aanofile.out;$(ProjectDir)..\..\..\..\static\bin\Release\project_tree_builder.exe" Description="Configure solution : $(SolutionName)"/>
         </FileConfiguration>
       </File>
     </Filter>

@@ -89,121 +89,24 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     string sln_path_par  = "$(SolutionPath)";
 #endif
 
-    m_CustomBuildCommand += "set PTB_PATH="  + ptb_path_par  + "\n";
-
-    string def_ptb = "\\\\snowman\\win-coremake\\App\\Ncbi\\cppcore\\ptb\\";
-    def_ptb += GetApp().GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "msvc_3rd");
-    def_ptb += "\\project_tree_builder.exe";
-    m_CustomBuildCommand +=
-        "if \"%PREBUILT_PTB_EXE%\"==\"\" (set PREBUILT_PTB_EXE=";
-    m_CustomBuildCommand += def_ptb;
-    m_CustomBuildCommand += ") else (if not exist \"%PREBUILT_PTB_EXE%\"";
-    m_CustomBuildCommand += " (if not \"%PREBUILT_PTB_EXE%\"==\"bootstrap\"";
-    m_CustomBuildCommand += " (echo ERROR: \"%PREBUILT_PTB_EXE%\" not found & exit 1)))\n";
-
-    m_CustomBuildCommand +=
-        "if exist \"%PREBUILT_PTB_EXE%\" (set PTB_EXE=%PREBUILT_PTB_EXE%)";
-    m_CustomBuildCommand +=
-        " else (set PTB_EXE=%PTB_PATH%\\project_tree_builder.exe)\n";
+    m_CustomBuildCommand =  "set PTB_PATH="  + ptb_path_par  + "\n";
     m_CustomBuildCommand += "set TREE_ROOT=" + tree_root_par + "\n";
     m_CustomBuildCommand += "set SLN_PATH="  + sln_path_par  + "\n";
     m_CustomBuildCommand += "set PTB_PLATFORM=$(PlatformName)\n";
-    m_CustomBuildCommand +=
-        "if \"%PTB_PROJECT%\"==\"\" set PTB_PROJECT=";
-    m_CustomBuildCommand += m_SubtreeToBuild;
-    m_CustomBuildCommand += "\n";
+
+    string build_root = CDirEntry::AddTrailingPathSeparator(
+        CDirEntry::ConcatPath(
+            GetApp().GetProjectTreeInfo().m_Compilers,
+            GetApp().GetRegSettings().m_CompilersSubdir));
+    string bld_root_par = "$(ProjectDir)" + CDirEntry::DeleteTrailingPathSeparator(
+            CDirEntry::CreateRelativePath(m_ProjectDir, build_root));
+    m_CustomBuildCommand += "set BUILD_TREE_ROOT="  + bld_root_par  + "\n";
+    m_CustomBuildCommand += "copy /Y $(InputFileName) $(InputName).bat\n";
+    m_CustomBuildCommand += "call $(InputName).bat\n";
+    m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
     if (m_BuildPtb) {
         m_CustomBuildOutput   = ptb_path_par  + "\\project_tree_builder.exe";
     }
-
-    // Build command for project_tree_builder.sln
-    if (m_BuildPtb) {
-        m_CustomBuildCommand += 
-            "if not exist \"%PTB_EXE%\" (";
-        if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710) {
-            m_CustomBuildCommand += 
-                "devenv /rebuild Release /project project_tree_builder.exe ";
-//           "devenv /build $(ConfigurationName) /project project_tree_builder.exe ";
-            string project_tree_builder_sln_dir = 
-                GetApp().GetProjectTreeInfo().m_Compilers;
-            project_tree_builder_sln_dir = 
-                CDirEntry::ConcatPath(project_tree_builder_sln_dir,
-                                    GetApp().GetRegSettings().m_CompilersSubdir);
-            project_tree_builder_sln_dir = 
-                CDirEntry::ConcatPath(project_tree_builder_sln_dir, "static");
-            project_tree_builder_sln_dir = 
-                CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
-                                    GetApp().GetRegSettings().m_ProjectsSubdir);
-            project_tree_builder_sln_dir = 
-                CDirEntry::ConcatPath(project_tree_builder_sln_dir, "build-system");
-            project_tree_builder_sln_dir = 
-                CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
-                                    "project_tree_builder");
-            project_tree_builder_sln_dir = 
-                CDirEntry::AddTrailingPathSeparator(project_tree_builder_sln_dir);
-            
-            string project_tree_builder_sln_path = 
-                CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
-                                    "project_tree_builder.sln");
-            project_tree_builder_sln_path = 
-                CDirEntry::CreateRelativePath(project_dir, 
-                                            project_tree_builder_sln_path);
-            
-            m_CustomBuildCommand += project_tree_builder_sln_path;
-        } else {
-            string project_tree_builder_sln_dir = 
-                GetApp().GetProjectTreeInfo().m_Compilers;
-            project_tree_builder_sln_dir = 
-                CDirEntry::ConcatPath(project_tree_builder_sln_dir,
-                                    GetApp().GetRegSettings().m_CompilersSubdir);
-            project_tree_builder_sln_dir = 
-                CDirEntry::ConcatPath(project_tree_builder_sln_dir, "static");
-            project_tree_builder_sln_dir = 
-                CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
-                                    GetApp().GetRegSettings().m_ProjectsSubdir);
-            project_tree_builder_sln_dir = 
-                CDirEntry::AddTrailingPathSeparator(project_tree_builder_sln_dir);
-            
-            string project_tree_builder_sln_path = 
-                CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
-                                    "ncbi_cpp.sln");
-            project_tree_builder_sln_path = 
-                CDirEntry::CreateRelativePath(project_dir, 
-                                            project_tree_builder_sln_path);
-            
-            m_CustomBuildCommand += "msbuild \"";
-            m_CustomBuildCommand += project_tree_builder_sln_path;
-            m_CustomBuildCommand +=
-                "\" /t:\"project_tree_builder_exe:Rebuild\"";
-            m_CustomBuildCommand +=
-                " /p:Configuration=ReleaseDLL;Platform=$(PlatformName)";
-            if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc900) {
-                m_CustomBuildCommand += " /maxcpucount";
-            }
-        }
-        m_CustomBuildCommand += ") else (echo USING PREBUILT PTB at %PTB_EXE%)\n";
-        m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
-    }
-
-    string lock_ptb_config = "lock_ptb_config.bat";
-    string lock_ptb_config_path = "$(ProjectDir)" +
-        CDirEntry::AddTrailingPathSeparator(
-            CDirEntry::CreateRelativePath(project_dir, 
-                CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Compilers, 
-                                      GetApp().GetRegSettings().m_CompilersSubdir)));
-    m_CustomBuildCommand += "call \"" + lock_ptb_config_path +
-        lock_ptb_config + "\" ON \"" + lock_ptb_config_path + "\"\n";
-    m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
-    // Make *.bat file from source file of this custom build.
-    // This file ( see CreateProjectFileItem below )
-    // will use defines PTB_PATH, TREE_ROOT and SLN_PATH mentioned above
-    m_CustomBuildCommand += "cd $(InputDir)\n";
-    m_CustomBuildCommand += "copy /Y $(InputFileName) $(InputName).bat\n";
-    m_CustomBuildCommand += "call $(InputName).bat\n";
-    m_CustomBuildCommand += "call \"" + lock_ptb_config_path +
-        lock_ptb_config + "\" OFF \"" + lock_ptb_config_path + "\"\n";
-    m_CustomBuildCommand += "del /Q $(InputName).bat\n";
-
     CreateUtilityProject(m_Name, m_Configs, &m_Xmlprj);
     CreateUtilityProject(m_NameGui, m_Configs, &m_XmlprjGui);
 }
@@ -291,13 +194,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
-    ofs << "@echo off" << endl
-        << "echo ******************************************************************************" << endl
-        << "echo Running -CONFIGURE- please wait" << endl
-        << "echo ******************************************************************************" << endl
-        << "@echo on" << endl;
-    ofs << "\"%PTB_EXE%\"";
-
+    ofs << "set PTB_FLAGS=";
     if ( m_DllBuild )
         ofs << " -dll";
     if (!m_BuildPtb) {
@@ -318,30 +215,10 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
     if (GetApp().m_ProjTags != "*") {
         ofs << " -projtag \"" << GetApp().m_ProjTags << "\"";
     }
-
-    ofs << " -logfile \"%SLN_PATH%_configuration_log.txt\""
-/*        << " -conffile \"%PTB_PATH%\\..\\..\\..\\project_tree_builder.ini\" " */
-        << " -conffile \"%TREE_ROOT%\\src\\build-system\\project_tree_builder.ini\" "
-        << "\"%TREE_ROOT%\"" << " " << "%PTB_PROJECT%" << " " << "\"%SLN_PATH%\"" << endl;
-    ofs << "@echo off" << endl
-        << "if errorlevel 1 goto report_error" << endl
-        << endl
-        << "echo ******************************************************************************" << endl
-        << "echo -CONFIGURE- has succeeded" << endl
-        << "echo Configuration log was saved at \"file://%SLN_PATH%_configuration_log.txt\"" << endl
-        << "echo ******************************************************************************" << endl
-        << "exit /b 0" << endl
-        << endl
-        << ":report_error" << endl
-        << "echo ******************************************************************************" << endl
-        << "echo -CONFIGURE- has failed" << endl
-        << "echo Configuration log was saved at \"file://%SLN_PATH%_configuration_log.txt\"" << endl
-        << "echo ******************************************************************************" << endl;
-    if (!with_gui) {
-        ofs << "if .%DIAG_SILENT_ABORT%==. ";
-    }
-    ofs << "start \"\" \"%SLN_PATH%_configuration_log.txt\"" << endl
-        << "exit /b 1" << endl;
+    ofs << "\n";
+    ofs << "set PTB_PROJECT_REQ=" << m_SubtreeToBuild << "\n";
+    ofs << "call \"%BUILD_TREE_ROOT%\\ptb.bat\"\n";
+    ofs << "if errorlevel 1 exit 1\n";
 }
 #endif //NCBI_COMPILER_MSVC
 

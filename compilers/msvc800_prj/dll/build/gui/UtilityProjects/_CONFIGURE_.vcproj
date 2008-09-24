@@ -113,46 +113,22 @@
 				<FileConfiguration
 					Name="DebugDLL|Win32"
 					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Configure solution : $(SolutionName)"
-                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL&#xa;if &quot;%PREBUILT_PTB_EXE%&quot;==&quot;&quot; (set PREBUILT_PTB_EXE=\\snowman\win-coremake\App\Ncbi\cppcore\ptb\msvc8\project_tree_builder.exe) else (if not exist &quot;%PREBUILT_PTB_EXE%&quot; (if not &quot;%PREBUILT_PTB_EXE%&quot;==&quot;bootstrap&quot; (echo ERROR: &quot;%PREBUILT_PTB_EXE%&quot; not found &amp; exit 1)))&#xa;if exist &quot;%PREBUILT_PTB_EXE%&quot; (set PTB_EXE=%PREBUILT_PTB_EXE%) else (set PTB_EXE=%PTB_PATH%\project_tree_builder.exe)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;if &quot;%PTB_PROJECT%&quot;==&quot;&quot; set PTB_PROJECT=scripts\projects\ncbi_gui.lst&#xa;if not exist &quot;%PTB_EXE%&quot; (msbuild &quot;..\..\..\..\static\build\ncbi_cpp.sln&quot; /t:&quot;project_tree_builder_exe:Rebuild&quot; /p:Configuration=ReleaseDLL;Platform=$(PlatformName)) else (echo USING PREBUILT PTB at %PTB_EXE%)&#xa;if errorlevel 1 exit 1&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
-						AdditionalDependencies=""
-						Outputs="$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe;$(InputPath).aanofile.out"
-					/>
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(ProjectDir)..\ncbi_gui_dll.sln&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;if errorlevel 1 exit 1&#xa;" Outputs="$(InputPath).aanofile.out;$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe" Description="Configure solution : $(SolutionName)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
 					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Configure solution : $(SolutionName)"
-                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL&#xa;if &quot;%PREBUILT_PTB_EXE%&quot;==&quot;&quot; (set PREBUILT_PTB_EXE=\\snowman\win-coremake\App\Ncbi\cppcore\ptb\msvc8\project_tree_builder.exe) else (if not exist &quot;%PREBUILT_PTB_EXE%&quot; (if not &quot;%PREBUILT_PTB_EXE%&quot;==&quot;bootstrap&quot; (echo ERROR: &quot;%PREBUILT_PTB_EXE%&quot; not found &amp; exit 1)))&#xa;if exist &quot;%PREBUILT_PTB_EXE%&quot; (set PTB_EXE=%PREBUILT_PTB_EXE%) else (set PTB_EXE=%PTB_PATH%\project_tree_builder.exe)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;if &quot;%PTB_PROJECT%&quot;==&quot;&quot; set PTB_PROJECT=scripts\projects\ncbi_gui.lst&#xa;if not exist &quot;%PTB_EXE%&quot; (msbuild &quot;..\..\..\..\static\build\ncbi_cpp.sln&quot; /t:&quot;project_tree_builder_exe:Rebuild&quot; /p:Configuration=ReleaseDLL;Platform=$(PlatformName)) else (echo USING PREBUILT PTB at %PTB_EXE%)&#xa;if errorlevel 1 exit 1&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
-						AdditionalDependencies=""
-						Outputs="$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe;$(InputPath).aanofile.out"
-					/>
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(ProjectDir)..\ncbi_gui_dll.sln&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;if errorlevel 1 exit 1&#xa;" Outputs="$(InputPath).aanofile.out;$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe" Description="Configure solution : $(SolutionName)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="DebugDLL|x64"
 					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Configure solution : $(SolutionName)"
-                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL&#xa;if &quot;%PREBUILT_PTB_EXE%&quot;==&quot;&quot; (set PREBUILT_PTB_EXE=\\snowman\win-coremake\App\Ncbi\cppcore\ptb\msvc8.64\project_tree_builder.exe) else (if not exist &quot;%PREBUILT_PTB_EXE%&quot; (if not &quot;%PREBUILT_PTB_EXE%&quot;==&quot;bootstrap&quot; (echo ERROR: &quot;%PREBUILT_PTB_EXE%&quot; not found &amp; exit 1)))&#xa;if exist &quot;%PREBUILT_PTB_EXE%&quot; (set PTB_EXE=%PREBUILT_PTB_EXE%) else (set PTB_EXE=%PTB_PATH%\project_tree_builder.exe)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;if &quot;%PTB_PROJECT%&quot;==&quot;&quot; set PTB_PROJECT=scripts\projects\ncbi_gui.lst&#xa;if not exist &quot;%PTB_EXE%&quot; (msbuild &quot;..\..\..\..\static\build\ncbi_cpp.sln&quot; /t:&quot;project_tree_builder_exe:Rebuild&quot; /p:Configuration=ReleaseDLL;Platform=$(PlatformName)) else (echo USING PREBUILT PTB at %PTB_EXE%)&#xa;if errorlevel 1 exit 1&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
-						AdditionalDependencies=""
-						Outputs="$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe;$(InputPath).aanofile.out"
-					/>
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(ProjectDir)..\ncbi_gui_dll.sln&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;if errorlevel 1 exit 1&#xa;" Outputs="$(InputPath).aanofile.out;$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe" Description="Configure solution : $(SolutionName)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ReleaseDLL|x64"
 					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Configure solution : $(SolutionName)"
-                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL&#xa;if &quot;%PREBUILT_PTB_EXE%&quot;==&quot;&quot; (set PREBUILT_PTB_EXE=\\snowman\win-coremake\App\Ncbi\cppcore\ptb\msvc8.64\project_tree_builder.exe) else (if not exist &quot;%PREBUILT_PTB_EXE%&quot; (if not &quot;%PREBUILT_PTB_EXE%&quot;==&quot;bootstrap&quot; (echo ERROR: &quot;%PREBUILT_PTB_EXE%&quot; not found &amp; exit 1)))&#xa;if exist &quot;%PREBUILT_PTB_EXE%&quot; (set PTB_EXE=%PREBUILT_PTB_EXE%) else (set PTB_EXE=%PTB_PATH%\project_tree_builder.exe)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;if &quot;%PTB_PROJECT%&quot;==&quot;&quot; set PTB_PROJECT=scripts\projects\ncbi_gui.lst&#xa;if not exist &quot;%PTB_EXE%&quot; (msbuild &quot;..\..\..\..\static\build\ncbi_cpp.sln&quot; /t:&quot;project_tree_builder_exe:Rebuild&quot; /p:Configuration=ReleaseDLL;Platform=$(PlatformName)) else (echo USING PREBUILT PTB at %PTB_EXE%)&#xa;if errorlevel 1 exit 1&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
-						AdditionalDependencies=""
-						Outputs="$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe;$(InputPath).aanofile.out"
-					/>
+          <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(ProjectDir)..\ncbi_gui_dll.sln&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;if errorlevel 1 exit 1&#xa;" Outputs="$(InputPath).aanofile.out;$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe" Description="Configure solution : $(SolutionName)"/>
 				</FileConfiguration>
 			</File>
 		</Filter>
