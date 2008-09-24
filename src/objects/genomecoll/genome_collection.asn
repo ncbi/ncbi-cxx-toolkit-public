@@ -95,8 +95,7 @@ GC-Assembly ::= SEQUENCE
     -- in case we want all components, without their structure as scaffolds
     bits SET OF GC-Sequence OPTIONAL,
 
-    bits-count INTEGER OPTIONAL,    -- Count # of lowest level components
-    -- statistics
+     -- statistics
     -- "stats" field holds stats for all chromosomes combined: ordered/unordered scaffolds
     -- "unplaced-stats" holds stats for ChrUn which is omitted from "stats"
     stats GC-SequenceStats OPTIONAL,
@@ -149,6 +148,8 @@ GC-Sequence ::= SEQUENCE {
     descr Seq-descr OPTIONAL , 
 
     -- ordered set of scaffolds/components that make this sequence
+    ordered SET OF GC-Sequence OPTIONAL,
+    -- locations of ordered scaffolds/components
     structure Delta-ext OPTIONAL,
 
     -- unlocalized scaffolds/components in this sequence
@@ -157,12 +158,6 @@ GC-Sequence ::= SEQUENCE {
     -- [Note: Not populated at scaffold level]
     unordered SET OF GC-Sequence OPTIONAL,
     
-    -- Lower level sequences that compose this sequence
-    -- For example, if the sequence is a molecule and we want a flat list
-    -- of components, without their structure as scaffolds
-    -- [Note: Not populated at scaffold level]
-    bits SET OF GC-Sequence OPTIONAL,
-
     -- statistics
     stats GC-SequenceStats OPTIONAL
 }
