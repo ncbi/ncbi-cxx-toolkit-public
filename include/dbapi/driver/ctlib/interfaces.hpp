@@ -917,6 +917,19 @@ protected:
 
     static EDB_Type ConvDataType_Ctlib2DBAPI(const CS_DATAFMT& fmt);
 
+    void SetCurrentItemNum(int num)
+    {
+        m_CurrItem = num;
+    }
+    int GetCurrentItemNum(void) const
+    {
+        return m_CurrItem;
+    }
+    void IncCurrentItemNum(void)
+    {
+        ++m_CurrItem;
+    }
+
 protected:
     enum ENullValue {eNullUnknown, eIsNull, eIsNotNull};
 

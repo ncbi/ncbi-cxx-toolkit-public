@@ -55,11 +55,19 @@
 
 BEGIN_NCBI_SCOPE
 
-CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
-    : m_conn(conn),
-      m_rs(rs), m_istr(0), m_ostr(0), m_column(-1),
-      m_bindBlob(false), m_disableBind(false), m_wasNull(true),
-      m_rd(0), m_totalRows(0)
+CResultSet::CResultSet(CConnection* conn, CDB_Result *rs) : 
+    m_conn(conn),
+    m_rs(rs), 
+    m_istr(0), 
+    m_ostr(0), 
+    m_column(-1),
+    m_bindBlob(true), 
+    m_disableBind(false), 
+    m_wasNull(true),
+    m_rd(0), 
+    m_totalRows(0),
+    m_ReadItemNum(0),
+    m_CallReadItemOnly(false)
 {
     SetIdent("CResultSet");
 
@@ -120,10 +128,31 @@ const CVariant& CResultSet::GetVariant(const CDBParamVariant& param)
 {
     int index = 0;
 
+    if (m_CallReadItemOnly) {
+        NCBI_DBAPI_THROW("You can call only method Read() at this point.");
+    }
+
     if (param.IsPositional()) {
         index = param.GetPosition();
     } else {
         index = GetColNum(param.GetName());
+    }
+
+    unsigned int uindex = static_cast<unsigned int>(index);
+
+    if (!IsDisableBind() && m_ReadItemNum < uindex) {
+        for (; m_ReadItemNum <= uindex && m_ReadItemNum < m_rs->NofItems(); ++m_ReadItemNum) {
+            switch (m_rs->ItemDataType(m_ReadItemNum)) {
+            case eDB_Text:
+            case eDB_Image:
+                ((CDB_Stream*)m_data[m_ReadItemNum].GetNonNullData())->Truncate();
+                break;
+            default:
+                break;
+            }
+
+            m_rs->GetItem(m_data[m_ReadItemNum].GetNonNullData());
+        }
     }
 
     CheckIdx(index);
@@ -161,41 +190,17 @@ void CResultSet::DisableBind(bool b)
 bool CResultSet::Next()
 {
     bool more = false;
-    EDB_Type type = eDB_UnsupportedType;
 
 	if (m_rs) {
 		more = m_rs->Fetch();
+        m_ReadItemNum = 0;
+        m_CallReadItemOnly = false;
 	}
 
     if (more  &&  m_data.size() == 0) {
         Init();
     }
 
-    if( more && !IsDisableBind() ) {
-
-        for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
-
-            type = m_rs->ItemDataType(i);
-
-            if( !IsBindBlob() ) {
-                if( type == eDB_Text || type == eDB_Image )  {
-                    break;
-                }
-            }
-            else {
-                switch(type) {
-                case eDB_Text:
-                case eDB_Image:
-                    ((CDB_Stream*)m_data[i].GetNonNullData())->Truncate();
-                    break;
-                default:
-                    break;
-                }
-            }
-            m_rs->GetItem(m_data[i].GetNonNullData());
-        }
-    }
-	
 	if (m_rs) {
 		m_column = m_rs->CurrentItemNo();
 	}
@@ -246,6 +251,7 @@ size_t CResultSet::Read(void* buf, size_t size)
     }
     else {
         int ret = m_rs->ReadItem(buf, size, &m_wasNull);
+        m_CallReadItemOnly = true;
         if( ret == 0 ) {
             m_column = m_rs->CurrentItemNo();
         }
@@ -405,7 +411,7 @@ int CResultSet::GetColNum(const string& name)
 
 void CResultSet::CheckIdx(unsigned int idx)
 {
-    if( idx > m_data.size() ) {
+    if ( idx > m_data.size() || idx > m_ReadItemNum ) {
 #ifdef _DEBUG
         NcbiCerr << "CResultSet::CheckIdx(): Column index " << idx << " out of range" << endl;
         _ASSERT(0);

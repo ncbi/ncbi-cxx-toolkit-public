@@ -137,7 +137,8 @@ private:
     bool m_wasNull;
     CxBlobReader *m_rd;
     int m_totalRows;
-
+    unsigned int m_ReadItemNum;
+    bool m_CallReadItemOnly;
 };
 
 //====================================================================
