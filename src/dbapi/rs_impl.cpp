@@ -141,7 +141,7 @@ const CVariant& CResultSet::GetVariant(const CDBParamVariant& param)
     unsigned int uindex = static_cast<unsigned int>(index);
 
     if (!IsDisableBind() && m_ReadItemNum < uindex) {
-        for (; m_ReadItemNum <= uindex && m_ReadItemNum < m_rs->NofItems(); ++m_ReadItemNum) {
+        for (; m_ReadItemNum < uindex && m_ReadItemNum < m_rs->NofItems(); ++m_ReadItemNum) {
             switch (m_rs->ItemDataType(m_ReadItemNum)) {
             case eDB_Text:
             case eDB_Image:
