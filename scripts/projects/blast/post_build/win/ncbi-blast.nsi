@@ -66,6 +66,9 @@ Section "DefaultSection" SecDflt
   File "dustmasker.exe"
   File "windowmasker.exe"
   
+  SetOutPath "$INSTDIR\doc"
+  File "user_manual.pdf"
+  
   ;Store installation folder
   WriteRegStr HKCU "Software\NCBI\blast-BLAST_VERSION+" "" $INSTDIR
   
@@ -98,7 +101,9 @@ Section "Uninstall"
   Delete "$INSTDIR\bin\segmasker.exe"
   Delete "$INSTDIR\bin\dustmasker.exe"
   Delete "$INSTDIR\bin\windowmasker.exe"
+  Delete "$INSTDIR\doc\user_manual.pdf"
   RmDir "$INSTDIR\bin"
+  RmDir "$INSTDIR\doc"
   RMDir "$INSTDIR"
 
   DeleteRegKey /ifempty HKCU "Software\NCBI\blast-BLAST_VERSION+"

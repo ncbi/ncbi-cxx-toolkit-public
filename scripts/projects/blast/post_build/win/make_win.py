@@ -7,9 +7,10 @@
 import os, sys, os.path
 from shutil import copy
 from optparse import OptionParser
+from urllib import urlretrieve
 SCRIPT_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(SCRIPT_DIR, ".."))
-from blast_utils import safe_exec, update_blast_version
+from blast_utils import safe_exec, update_blast_version, MANUAL_URL
 
 VERBOSE = False
     
@@ -69,6 +70,8 @@ def main():
     copy(NSIS_CONFIG, cwd)
     license_file = os.path.join(SCRIPT_DIR, "..", "..", "LICENSE")
     copy(license_file, cwd)
+
+    (manual_path, headers) = urlretrieve(MANUAL_URL, "user_manual.pdf")
     for aux_file in ("EnvVarUpdate.nsh", "ncbilogo.ico"):
         src = os.path.join(SCRIPT_DIR, aux_file)
         if VERBOSE:
