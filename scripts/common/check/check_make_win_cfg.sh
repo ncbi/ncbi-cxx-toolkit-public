@@ -204,7 +204,7 @@ case "\$method" in
    concat_err )
       rm -f "\$res_concat_err"
       ( 
-      grep 'ERR \[' \$res_log
+      egrep '(ERR|TO) \[' \$res_log
       test -f \$res_journal  ||  exit 0
       x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
       for x_file in \$x_files; do
