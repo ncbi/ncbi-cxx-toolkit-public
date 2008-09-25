@@ -6142,4 +6142,5 @@ smart_pwd='$smart_pwd'
 real_srcdir='$real_srcdir'
 ])
 
+AC_WARNING([*** Please don't forget to update .../src/build-system/NEWS if appropriate! ***])dnl
 AC_OUTPUT

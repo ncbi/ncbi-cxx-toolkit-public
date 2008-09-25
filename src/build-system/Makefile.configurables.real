@@ -17,6 +17,9 @@ config_status = $(build_root)/status/config.status
 
 build_sys_dir = $(abs_top_srcdir)/src/build-system
 
+# config_status_deps = $(build_sys_dir)/configure $(build_sys_dir)/config.h.in
+config_status_deps = $(build_sys_dir)/NEWS
+
 configurables: $(CONFIGURABLES)
 
 # If this is just a normal single-colon rule, gmake ignores it for
@@ -53,7 +56,7 @@ $(builddir)/%: $(abs_top_srcdir)/src/%.in $(config_status)
 $(builddir)/Makefile.meta: $(build_sys_dir)/Makefile.meta.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
 
-$(config_status): $(build_sys_dir)/configure $(build_sys_dir)/config.h.in
+$(config_status): $(config_status_deps)
 	$(abs_top_srcdir)/scripts/common/impl/maybe_reconfigure.sh $(builddir)
 
 .PHONY: configurables
