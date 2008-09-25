@@ -520,6 +520,7 @@ void CNetICacheClient::Store(const string&  key,
     cmd.append(NStr::UIntToString(time_to_live));
     cmd.push_back(' ');
     cmd.append(NStr::UIntToString(size));
+    cmd.push_back(' ');
     AddKVS(&cmd, key, version, subkey);
     cmd = MakeCommandPacket(cmd, reconnected);
 
@@ -705,6 +706,7 @@ IWriter* CNetICacheClient::GetWriteStream(const string&    key,
     CSockGuard sg(*m_Sock);
     string cmd("STOR ");
     cmd.append(NStr::UIntToString(time_to_live));
+    cmd.push_back(' ');
     AddKVS(&cmd, key, version, subkey);
     cmd = MakeCommandPacket(cmd, reconnected);
 

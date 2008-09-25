@@ -115,7 +115,7 @@ CICacheHandler::ProcessRequest(CNCRequestParser&      parser,
     stat.type = "IC";
     stat.op_code = SBDB_CacheUnitStatistics::eErr_Unknown;
 
-    const string& cmd = parser.GetCommand();
+    string cmd = parser.GetCommand();
     parser.ShiftParams();
 
     if (cmd[0] != 'I'  ||  cmd[1] != 'C'  ||  cmd[2] != '('
