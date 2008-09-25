@@ -964,6 +964,10 @@ case "$host_os:$compiler" in
       # -flat_namespace is necessary for proper handling of shared libraries
       # that don't themselves link against all their dependencies.
       LDFLAGS="-flat_namespace $LD_FLAGS"
+
+      if test "$with_ncbi_public" = yes; then
+         CPPFLAGS="-mmacosx-version-min=10.4"
+      fi
    else
       LDFLAGS="-Wl,-flat_namespace $LD_FLAGS"
    fi
