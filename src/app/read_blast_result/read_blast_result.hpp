@@ -376,7 +376,8 @@ private:
       vector<perfectHitStr>& results
       );
 public:
-    static bool less_pair(pair<int,int>& first, pair<int,int>& second);
+    static bool less_pair(const pair<int,int>& first,
+                          const pair<int,int>& second);
     static bool less_seq(const CRef<CSeq_entry>& first,
                          const CRef<CSeq_entry>& second);
     static bool less_simple_seq(const TSimpleSeq& first,

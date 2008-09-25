@@ -521,7 +521,8 @@ bool CReadBlastApp::less_simple_seq(const TSimpleSeq& first,
    return first.key < second.key;
 } // less_seq
 
-bool CReadBlastApp::less_pair(pair<int,int>& first, pair<int,int>& second)
+bool CReadBlastApp::less_pair(const pair<int,int>& first,
+                              const pair<int,int>& second)
 {
    if(first.first != second.first) return first.first < second.first;
    return first.second < second.second;
