@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author: Jonathan Kans
+* Author: Jonathan Kans, Aaron Ucko
 *
 * ===========================================================================
 */
@@ -200,6 +200,7 @@ private:
     bool m_HTGSPooled;
     bool m_TPAExp;
     bool m_TPAInf;
+    bool m_TPAReasm;
 
     /// pdb block fields
     string m_PDBCompound;

@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:
+* Author: Jonathan Kans, Aaron Ucko
 *
 * File Description:
 *
@@ -111,6 +111,7 @@ void CDeflineGenerator::x_SetFlags (
     m_HTGSPooled = false;
     m_TPAExp = false;
     m_TPAInf = false;
+    m_TPAReasm = false;
 
     m_PDBCompound.clear();
 
@@ -282,6 +283,8 @@ void CDeflineGenerator::x_SetFlags (
                     m_TPAExp = true;
                 } else if (NStr::EqualNocase (str, "TPA:inferential")) {
                     m_TPAInf = true;
+                } else if (NStr::EqualNocase (str, "TPA:reassembly")) {
+                    m_TPAReasm = true;
                 }
             }
         }
@@ -1342,6 +1345,8 @@ string CDeflineGenerator::x_SetPrefix (void)
             prefix = "TPA_exp: ";
         } else if (m_TPAInf) {
             prefix = "TPA_inf: ";
+        } else if (m_TPAReasm) {
+            prefix = "TPA_reasm: ";
         } else {
             prefix = "TPA: ";
         }
@@ -1520,6 +1525,8 @@ string CDeflineGenerator::GenerateDefline (
         title.erase (0, 8);
     } else if (NStr::StartsWith (title, "TPA_inf:", NStr::eNocase)) {
         title.erase (0, 8);
+    } else if (NStr::StartsWith (title, "TPA_reasm:", NStr::eNocase)) {
+        title.erase (0, 10);
     } else if (NStr::StartsWith (title, "TSA:", NStr::eNocase)) {
         title.erase (0, 4);
     }
