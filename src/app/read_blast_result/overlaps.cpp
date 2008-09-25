@@ -298,7 +298,8 @@ bool CReadBlastApp::overlaps_prot_na
          removen = n1;
          removeit=true;
          }
-       else if (rna_feat_type == eMyFeatureType_normal_tRNA && seq_type == eMyFeatureType_hypo_CDS)
+       else if ( (rna_feat_type == eMyFeatureType_normal_tRNA || rna_feat_type == eMyFeatureType_atypical_tRNA)
+             && seq_type == eMyFeatureType_hypo_CDS)
          {
          NcbiCerr << "overlaps_prot_na[seq,feats]: WARNING: CDS and gene "
                << n2 << " marked for deletion (hypothetical)" << "\n";
