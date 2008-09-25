@@ -25,7 +25,7 @@ version  1 # of file format
 4+10  C???  embl_wgs_nuc
 
 # Named annotation track (new as of September 2008)
-3+9  AT_  unreserved_nuc # fallback to placate older clients
+3+9  AT_  local # fallback to placate older clients
 3+9  AT_  named_annot_track
 
 # NCBI reference sequence accessions
