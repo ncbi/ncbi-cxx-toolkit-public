@@ -35,7 +35,7 @@ done
 
 echo building package
 mkdir $PRODUCT
-/Developer/Tools/packagemaker --doc ncbi-blast.pmdoc --out $PRODUCT/$PRODUCT.pkg
+/Developer/usr/bin/packagemaker --doc ncbi-blast.pmdoc --out $PRODUCT/$PRODUCT.pkg
 
 echo creating disk image
 /usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT
