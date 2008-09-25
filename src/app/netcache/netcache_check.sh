@@ -33,8 +33,8 @@ hosts="
    service3:9001   \
    service0:9005   \
    serviceqa:9005   \
-   service1:9002   \
-   service2:9002   \
+   service1:9102   \
+   service2:9102   \
    service1:9003   \
    service2:9003   \
    service1:9009   \
