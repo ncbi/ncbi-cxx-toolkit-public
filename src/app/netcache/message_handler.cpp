@@ -547,7 +547,7 @@ void CNetCache_MessageHandler::ReportException(const std::exception& ex,
                                                const string& request)
 {
     CSocket& socket = GetSocket();
-    ERR_POST(Error << ex
+    ERR_POST(Error << ex.what()
         << " client=" << m_Auth
         << " request='" << request << "'"
         << " peer=" << socket.GetPeerAddress()
