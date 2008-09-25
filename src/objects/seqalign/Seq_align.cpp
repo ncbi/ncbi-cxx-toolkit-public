@@ -341,7 +341,8 @@ static TScoreNamePair sc_ScoreNames[] = {
     TScoreNamePair(CSeq_align::eScore_EValue,          "e_value"),
     TScoreNamePair(CSeq_align::eScore_IdentityCount,   "num_ident"),
     TScoreNamePair(CSeq_align::eScore_PercentIdentity, "pct_identity"),
-    TScoreNamePair(CSeq_align::eScore_SumEValue,       "sum_e")
+    TScoreNamePair(CSeq_align::eScore_SumEValue,       "sum_e"),
+    TScoreNamePair(CSeq_align::eScore_CompAdjMethod,   "comp_adjustment_method")
 };
 
 
