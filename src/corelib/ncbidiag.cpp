@@ -1521,6 +1521,9 @@ CDiagContext_Extra::CDiagContext_Extra(const CDiagContext_Extra& args)
 }
 
 
+const TDiagPostFlags kApplogDiagPostFlags =
+        eDPF_OmitInfoSev | eDPF_OmitSeparator | eDPF_AppLog;
+
 void CDiagContext_Extra::Flush(void)
 {
     CDiagContext& ctx = GetDiagContext();
@@ -1531,7 +1534,7 @@ void CDiagContext_Extra::Flush(void)
     SDiagMessage mess(eDiag_Info,
                       "", 0, // no message
                       0, 0, // file, line
-                      eDPF_OmitInfoSev | eDPF_OmitSeparator | eDPF_AppLog,
+                      CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
                       NULL,
                       0, 0, // err code/subcode
                       NULL,
@@ -1805,7 +1808,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     SDiagMessage mess(eDiag_Info,
                       ostr.str(), ostr.pcount(),
                       0, 0, // file, line
-                      eDPF_OmitInfoSev | eDPF_OmitSeparator | eDPF_AppLog,
+                      CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
                       NULL,
                       0, 0, // err code/subcode
                       NULL,
@@ -4876,7 +4879,7 @@ CNcbiDiag::CNcbiDiag(EDiagSev sev, TDiagPostFlags post_flags)
       m_ErrCode(0), 
       m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()), 
-      m_PostFlags(post_flags),
+      m_PostFlags(ForceImportantFlags(post_flags)),
       m_CheckFilters(true),
       m_Line(0),
       m_ValChngFlags(0)
@@ -4890,7 +4893,7 @@ CNcbiDiag::CNcbiDiag(const CDiagCompileInfo &info,
       m_ErrCode(0), 
       m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()), 
-      m_PostFlags(post_flags),
+      m_PostFlags(ForceImportantFlags(post_flags)),
       m_CheckFilters(true),
       m_CompileInfo(info),
       m_Line(info.GetLine()),
@@ -4903,6 +4906,15 @@ CNcbiDiag::CNcbiDiag(const CDiagCompileInfo &info,
 CNcbiDiag::~CNcbiDiag(void) 
 {
     m_Buffer.Detach(this);
+}
+
+TDiagPostFlags CNcbiDiag::ForceImportantFlags(TDiagPostFlags flags)
+{
+    if ( !IsSetDiagPostFlag(eDPF_UseExactUserFlags, flags) ) {
+        flags = (flags & (~eDPF_ImportantFlagsMask)) |
+            (CDiagBuffer::s_GetPostFlags() & eDPF_ImportantFlagsMask);
+    }
+    return flags;
 }
 
 const CNcbiDiag& CNcbiDiag::SetFile(const char* file) const

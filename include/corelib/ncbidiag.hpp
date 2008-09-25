@@ -625,7 +625,20 @@ enum EDiagPostFlag {
 
     /// Use global default flags (merge with).
     /// @sa SetDiagPostFlag(), UnsetDiagPostFlag(), IsSetDiagPostFlag()
-    eDPF_Default            = 0x10000000
+    eDPF_Default            = 0x10000000,
+
+    /// Important bits which should be taken from the globally set flags
+    /// even if a user attempts to override (or forgets to set) them
+    /// when calling CNcbiDiag().
+    eDPF_ImportantFlagsMask = eDPF_PreMergeLines |
+                              eDPF_MergeLines |
+                              eDPF_OmitInfoSev |
+                              eDPF_OmitSeparator |
+                              eDPF_AtomicWrite,
+
+    /// Use flags provided by user as-is, do not allow CNcbiDiag to replace
+    /// "important" flags by the globally set ones.
+    eDPF_UseExactUserFlags  = 0x20000000
 };
 
 typedef int TDiagPostFlags;  ///< Binary OR of "EDiagPostFlag"
@@ -977,6 +990,10 @@ public:
 
     /// Reset IsMessage flag.
     void ResetIsMessageFlag(void) const { m_PostFlags &= ~eDPF_IsMessage; }
+
+    /// Set important flags to their globally set values
+    /// @sa EDiagPostFlags
+    static TDiagPostFlags ForceImportantFlags(TDiagPostFlags flags);
 
 private:
     enum EValChngFlags {
