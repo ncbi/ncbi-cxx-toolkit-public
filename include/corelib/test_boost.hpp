@@ -149,6 +149,43 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 /**/
 
 
+#define NCBITEST_CHECK_IMPL(P, check_descr, TL, CT)                          \
+    BOOST_CHECK_NO_THROW_IMPL(BOOST_CHECK_IMPL(P, check_descr, TL, CT), TL)
+
+#define NCBITEST_CHECK_WITH_ARGS_IMPL(P, check_descr, TL, CT, ARGS)          \
+    BOOST_CHECK_NO_THROW_IMPL(BOOST_CHECK_WITH_ARGS_IMPL(                    \
+    ::boost::test_tools::tt_detail::P(), check_descr, TL, CT, ARGS), TL)
+
+
+// Several analogs to BOOST_* macros that make simultaneous checking of
+// NO_THROW and some other condition
+#define NCBITEST_WARN(P)      NCBITEST_CHECK_IMPL( (P), BOOST_TEST_STRINGIZE( P ), WARN,    CHECK_PRED )
+#define NCBITEST_CHECK(P)     NCBITEST_CHECK_IMPL( (P), BOOST_TEST_STRINGIZE( P ), CHECK,   CHECK_PRED )
+#define NCBITEST_REQUIRE(P)   NCBITEST_CHECK_IMPL( (P), BOOST_TEST_STRINGIZE( P ), REQUIRE, CHECK_PRED )
+
+
+#define NCBITEST_WARN_MESSAGE( P, M )    NCBITEST_CHECK_IMPL( (P), M, WARN,    CHECK_MSG )
+#define NCBITEST_CHECK_MESSAGE( P, M )   NCBITEST_CHECK_IMPL( (P), M, CHECK,   CHECK_MSG )
+#define NCBITEST_REQUIRE_MESSAGE( P, M ) NCBITEST_CHECK_IMPL( (P), M, REQUIRE, CHECK_MSG )
+
+
+#define NCBITEST_WARN_EQUAL( L, R ) \
+    NCBITEST_CHECK_WITH_ARGS_IMPL( equal_impl_frwd, "", WARN,    CHECK_EQUAL, (L)(R) )
+#define NCBITEST_CHECK_EQUAL( L, R ) \
+    NCBITEST_CHECK_WITH_ARGS_IMPL( equal_impl_frwd, "", CHECK,   CHECK_EQUAL, (L)(R) )
+#define NCBITEST_REQUIRE_EQUAL( L, R ) \
+    NCBITEST_CHECK_WITH_ARGS_IMPL( equal_impl_frwd, "", REQUIRE, CHECK_EQUAL, (L)(R) )
+
+
+#define NCBITEST_WARN_NE( L, R ) \
+    NCBITEST_CHECK_WITH_ARGS_IMPL( ne_impl, "", WARN,    CHECK_NE, (L)(R) )
+#define NCBITEST_CHECK_NE( L, R ) \
+    NCBITEST_CHECK_WITH_ARGS_IMPL( ne_impl, "", CHECK,   CHECK_NE, (L)(R) )
+#define NCBITEST_REQUIRE_NE( L, R ) \
+    NCBITEST_CHECK_WITH_ARGS_IMPL( ne_impl, "", REQUIRE, CHECK_NE, (L)(R) )
+
+
+
 
 /** @addtogroup Tests
  *

@@ -81,8 +81,13 @@ BOOST_AUTO_TEST_CASE(TestSimpleTools)
     BOOST_CHECK_EQUAL(i,  1);
     // If this check fails, test will stop its execution at this point
     BOOST_REQUIRE_EQUAL(d,  0.123);
-
-    BOOST_CHECK_EQUAL(s1, s2);
+    // If something during checking can throw an exception and you don't want
+    // it to do that you can use different macros:
+    NCBITEST_CHECK_EQUAL(s1, s2);
+    // ... or
+    NCBITEST_CHECK(s1 == s2);
+    // ... or
+    NCBITEST_CHECK_MESSAGE(s1 == s2, "Object s1 not equal object s2");
 
     // Never use it this way, because it will not compile on WorkShop:
     //    BOOST_CHECK_EQUAL(s1, "qwerty");
