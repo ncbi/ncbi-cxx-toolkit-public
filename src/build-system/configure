@@ -7355,6 +7355,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
    if test "$with_dll" = "yes"; then
+                WithFeatures="$WithFeatures${WithFeaturesSep}DLL_BUILD"; WithFeaturesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define NCBI_DLL_BUILD 1
@@ -29894,7 +29895,7 @@ CHECK_TOOLS=$with_check_tools
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in MT DLL MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin IRIX Linux OSF Solaris MacOS PubSeqOS check; do
+for x in MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin IRIX Linux OSF Solaris MacOS PubSeqOS check; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"

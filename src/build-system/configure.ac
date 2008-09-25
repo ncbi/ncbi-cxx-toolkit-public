@@ -2014,6 +2014,7 @@ else
      [Define to 1 if building dynamic libraries at all
       (albeit not necessarily by default).])
    if test "$with_dll" = "yes"; then
+      NCBI_FEATURE(DLL_BUILD)
       AC_DEFINE(NCBI_DLL_BUILD, 1,
                 [Define to 1 if building dynamic libraries by default.])
       : ${with_plugin_auto_load=yes}
