@@ -73,7 +73,10 @@ public:
         eScore_PercentIdentity,
 
         //< blast-style 'sum_e'
-        eScore_SumEValue
+        eScore_SumEValue,
+
+        //< Composition-adjustment method.
+        eScore_CompAdjMethod
     };
 
     /// constructor
