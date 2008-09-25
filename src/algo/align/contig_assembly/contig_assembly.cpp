@@ -632,6 +632,13 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
                 continue;
             }
 
+            if (global_ds->GetNumseg() == 0) {
+                if (ostr) {
+                    *ostr << "banded alignment failed: num segs == 0\n" << endl;
+                }
+                continue;
+            }
+
             local_ds = BestLocalSubAlignment(*global_ds, scope);
             x_OrientAlign(*local_ds, scope);
             double frac_ident = FracIdent(*local_ds, scope);
