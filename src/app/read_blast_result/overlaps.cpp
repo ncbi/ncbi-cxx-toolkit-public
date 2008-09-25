@@ -262,6 +262,8 @@ bool CReadBlastApp::overlaps_prot_na
        report->space          = overlap; // not used
        report->left_frame     = left_frame;
        report->right_frame    = right_frame;
+       report->loc1 = &((*f1)->GetLocation());
+       report->loc2 = &seq_interval;
 
        char bufferchar[20480];  memset(bufferchar, 0, 20480);
        strstream buffer(bufferchar, 20480, IOS_BASE::out);

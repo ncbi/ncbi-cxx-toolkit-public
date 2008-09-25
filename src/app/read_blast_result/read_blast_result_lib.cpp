@@ -158,9 +158,15 @@ void CReadBlastApp::printOverlapReport
            << report->q_id_right 
            << (report->right_strand == eNa_strand_plus ? "(+)" : "(-)" )     
            << NcbiEndl;
+  string range1 = report->loc1.Empty() 
+      ? printed_range(report->q_loc_left_from, report->q_loc_left_to)
+      : printed_ranges(*(report->loc1));
+  string range2 = report->loc2.Empty() 
+      ? printed_range(report->q_loc_right_from, report->q_loc_right_to)
+      : printed_ranges(*(report->loc2));
   out
-           << "[" <<  report->q_loc_left_from  << "..." << report->q_loc_left_to  << "] " << report->left_frame << "\t\t"
-           << "[" <<  report->q_loc_right_from << "..." << report->q_loc_right_to << "] " << report->right_frame
+           << "[" <<  range1 << "] " << report->left_frame << "\t\t"
+           << "[" <<  range2 << "] " << report->right_frame
            << NcbiEndl;
   out << NcbiEndl;
 
@@ -514,6 +520,12 @@ bool CReadBlastApp::less_simple_seq(const TSimpleSeq& first,
 {
    return first.key < second.key;
 } // less_seq
+
+bool CReadBlastApp::less_pair(pair<int,int>& first, pair<int,int>& second)
+{
+   if(first.first != second.first) return first.first < second.first;
+   return first.second < second.second;
+}
 
 
 

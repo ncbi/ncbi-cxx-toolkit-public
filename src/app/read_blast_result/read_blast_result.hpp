@@ -122,6 +122,7 @@ typedef struct { int q_left_left, q_left_middle, q_left_right, space, q_right_le
                  int q_loc_left_to;
                  int q_loc_right_from;
                  int q_loc_right_to;
+                 CRef<const CSeq_loc> loc1, loc2;
                }  distanceReportStr;
 enum ECoreDataType   
      {
@@ -280,10 +281,6 @@ private:
 
     int SortSeqs(void);
     int CollectSimpleSeqs(TSimpleSeqs& seqs);
-    static bool less_seq(const CRef<CSeq_entry>& first,
-                         const CRef<CSeq_entry>& second);
-    static bool less_simple_seq(const TSimpleSeq& first,
-                                const TSimpleSeq& second);
     int SortSeqs(CBioseq_set::TSeq_set& seqs);
     int AnalyzeSeqs(void);
     int AnalyzeSeqs(CBioseq_set::TSeq_set& seqs);
@@ -379,6 +376,11 @@ private:
       vector<perfectHitStr>& results
       );
 public:
+    static bool less_pair(pair<int,int>& first, pair<int,int>& second);
+    static bool less_seq(const CRef<CSeq_entry>& first,
+                         const CRef<CSeq_entry>& second);
+    static bool less_simple_seq(const TSimpleSeq& first,
+                                const TSimpleSeq& second);
     static void getFromTo(const CSeq_loc& loc, TSeqPos& from, TSeqPos& to, ENa_strand& strand);
     static void getFromTo(const CSeq_loc_mix& mix, TSeqPos& from, TSeqPos& to, ENa_strand& strand);
     static void getFromTo(const CPacked_seqint& mix, TSeqPos& from, TSeqPos& to, ENa_strand& strand);
@@ -568,8 +570,10 @@ string GetStringDescr(const CBioseq& bioseq);
 string Get3type(const CRNA_ref& rna);
 string GetRRNAtype(const CRNA_ref& rna);
 
+string printed_range(const TSeqPos from2, const TSeqPos to2); // Mother Of Printed_Ranges
 string printed_range(const CSeq_feat& feat);
 string printed_range(const CSeq_loc& seq_interval);
+string printed_ranges(const CSeq_loc& seq_interval);
 string printed_range(const CBioseq& seq);
 string get_title(const CBioseq& seq);
 string printed_range(const TSimpleSeqs::iterator& ext_rna);

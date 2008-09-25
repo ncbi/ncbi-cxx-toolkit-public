@@ -31,6 +31,7 @@
 */
 #include <ncbi_pch.hpp>
 #include "read_blast_result.hpp"
+#include <objects/seqloc/Seq_point.hpp>
 
 string CReadBlastApp::GetProtName(const CBioseq& seq)
 {
@@ -250,6 +251,14 @@ string GetStringDescr(const CBioseq& bioseq)
   return result;
 }
 
+string printed_range(const TSeqPos from2, const TSeqPos to2) // Mother of All Printed_Ranges
+{
+   strstream rstr;
+   rstr << from2 << "..." << to2 << '\0';
+   string r  = rstr.str();
+   return r;
+}
+
 string printed_range(const CSeq_feat& feat)
 {
    return printed_range(feat.GetLocation());
@@ -260,10 +269,33 @@ string printed_range(const CSeq_loc& seq_interval)
    TSeqPos from2, to2;
    from2 = seq_interval.GetStart(eExtreme_Positional);
    to2   = seq_interval.GetStop (eExtreme_Positional);
-   strstream rstr;
-   rstr << from2 << "..." << to2 << '\0';
-   string r  = rstr.str();
-   return r;
+   return printed_range(from2, to2);
+}
+
+string printed_ranges(const CSeq_loc& seq_interval)
+{
+  typedef list<pair<int,int> > Tlist;
+  Tlist ints;
+  for(CTypeConstIterator<CSeq_interval> inter=::ConstBegin(seq_interval); inter; ++inter)
+    {
+    pair<int,int> apair(inter->GetFrom(), inter->GetTo());
+    ints.push_back(apair); 
+    }
+  for(CTypeConstIterator<CSeq_point> pnt=::ConstBegin(seq_interval); pnt; ++pnt)
+    {
+    pair<int,int> apair(pnt->GetPoint(), pnt->GetPoint());
+    ints.push_back(apair); 
+    }
+  ints.sort(CReadBlastApp::less_pair);
+
+  string ranges="";
+  NON_CONST_ITERATE(Tlist, interval, ints)
+    {
+    if(!ranges.empty()) ranges+=",";
+    ranges+=printed_range(interval->first, interval->second);
+    }
+
+  return ranges;
 }
 
 string printed_range(const CBioseq& seq)
@@ -288,9 +320,7 @@ string printed_range(const TSimpleSeq& ext_rna)
 {
    int from = ext_rna.exons[0].from;
    int to   = ext_rna.exons[ext_rna.exons.size()-1].to;
-   strstream ext_rna_range_stream; ext_rna_range_stream << from << "..." << to << '\0';
-   string ext_rna_range = ext_rna_range_stream.str();
-   return ext_rna_range;
+   return printed_range(from, to);
 }
 
 string printed_range(const TSimpleSeqs::iterator& ext_rna, const TSimpleSeqs::iterator& end)
