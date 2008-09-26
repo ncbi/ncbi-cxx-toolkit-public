@@ -37,6 +37,9 @@ echo building package
 mkdir $PRODUCT
 /Developer/usr/bin/packagemaker --doc ncbi-blast.pmdoc --out $PRODUCT/$PRODUCT.pkg
 
+echo copying uninstaller
+cp -p uninstall_ncbi_blast.zip $PRODUCT
+
 echo creating disk image
 /usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT
 
