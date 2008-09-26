@@ -9,7 +9,7 @@
 #          It is used by release configurator.
 #
 
-APP: netcached netcache_check netcache_control ncfetch.cgi save_to_nc test_ic_client test_netcache_api
+APP: netcached netcache_check netcache_control ncfetch.cgi$exe save_to_nc test_ic_client test_netcache_api
 ETC: src/app/netcache/netcached.ini
 
 # Each line describes a single configuration
