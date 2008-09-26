@@ -1,6 +1,10 @@
 # $Id$
 
-DO_FREETDS = export MAKEFLAGS ; MAKEFLAGS= ; cd freetds  &&  $(MAKE)
+# ATTENTION: We explicitly reset LIB_PROJ and APP_PROJ here!
+# Otherwise they leak (from Makefile.in) through this makefile down to
+# the sub-MAKEs that we semi-manually launch here -- e.g. when run
+# via Makefile.flat that passes LIB_PROJ and APP_PROJ in the MAKE's cmdline.
+DO_FREETDS = export MAKEFLAGS ; MAKEFLAGS= ; LIB_PROJ= ; APP_PROJ= ; cd freetds  &&  $(MAKE)
 
 all:
 	$(DO_FREETDS) all_r
