@@ -14,7 +14,7 @@ for arg in "$@"; do
     esac
 done
 
-status=0
+failed=
 
 for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/objtools/eutils/*/*.dtd src/gui/objects/*.asn \
@@ -43,7 +43,7 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
                 # exit $?
                 echo "$new_module $flag $base FAILED with status $?:"
                 (cd $dir && $new_module $flag $base)
-                status=1
+                failed="$failed $base"
             fi
         else
             echo "$spec -- skipped, already built and --force not given."
@@ -60,8 +60,14 @@ if [ -f $splitdb_dir/Makefile.asntool ]; then
         top_srcdir=`pwd`
         builddir=`ls -dt $top_srcdir/*/build $top_srcdir/.??*/build | head -1`
         [ -d "$builddir" ] || builddir=$NCBI/c++.metastable/Release/build
-        (cd $splitdb_dir && ${MAKE-make} -f Makefile.asntool sources top_srcdir=$top_srcdir builddir=$builddir) || exit $?
+        (cd $splitdb_dir && ${MAKE-make} -f Makefile.asntool sources top_srcdir=$top_srcdir builddir=$builddir) || failed="$failed SplitDB-C"
     fi
 fi
 
-exit $status
+if test -n "$failed"; then
+    echo "FAILED: $failed"
+    exit 1
+else
+    echo DONE
+    exit 0
+fi
