@@ -245,7 +245,7 @@ case "\$method" in
    concat_err )
       rm -f "\$res_concat_err"
       ( 
-      cat \$res_log | egrep '(ERR|TO) \['
+      cat \$res_log | egrep 'ERR \[|TO  -'
       x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
       for x_file in \$x_files; do
          x_file=\`echo "\$x_file" | sed -e 's/%gj_s4%/ /g'\`
@@ -575,8 +575,8 @@ EOF_launch
 
                         [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "SKP" >> "\$x_test_rep"
                     elif egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
-                        echo "TO --  \$x_cmd"
-                        echo "TO --  \$x_cmd" >> \$res_log
+                        echo "TO  --  \$x_cmd"
+                        echo "TO  --  \$x_cmd" >> \$res_log
 
                         [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "TO" >> "\$x_test_rep"
                     elif [ \$result -eq 0 ]; then
