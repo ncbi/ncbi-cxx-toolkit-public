@@ -71,7 +71,7 @@ enum EServIO_Event {
 inline EServIO_Event
 IOEventToServIOEvent(EIO_Event event)
 {
-    return reinterpret_cast<EServIO_Event>(event);
+    return (EServIO_Event)event;
 }
 
 
