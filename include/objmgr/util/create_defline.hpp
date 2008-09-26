@@ -61,7 +61,7 @@ BEGIN_SCOPE(sequence)
 /// blob, since it tracks presence or absence of biosource features to speed
 /// up protein title generation
 
-class CDeflineGenerator
+class NCBI_XOBJUTIL_EXPORT CDeflineGenerator
 {
 public:
     /// Constructor
