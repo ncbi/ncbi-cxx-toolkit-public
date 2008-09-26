@@ -62,7 +62,7 @@ void IServer_MessageHandler::OnRead(void)
         this->OnTimeout();
         return;
     case eIO_Closed:
-        this->OnClose();
+        this->OnCloseExt(IServer_ConnectionHandler::eClientClose);
         return;
     default:
         // TODO: ??? OnError
@@ -113,7 +113,7 @@ int Server_CheckLineMessage(BUF* buffer, const void *data, size_t size,
 class CServer_Request : public CStdRequest
 {
 public:
-    CServer_Request(EIO_Event event,
+    CServer_Request(EServIO_Event event,
                     CServer_ConnectionPool& conn_pool,
                     const STimeout* timeout)
         : m_Event(event), m_ConnPool(conn_pool), m_IdleTimeout(timeout) {}
@@ -121,7 +121,7 @@ public:
     virtual void Cancel(void) = 0;
 
 protected:
-    EIO_Event                m_Event;
+    EServIO_Event            m_Event;
     CServer_ConnectionPool&  m_ConnPool;
     const STimeout*          m_IdleTimeout;
 } ;
@@ -132,7 +132,7 @@ protected:
 class CAcceptRequest : public CServer_Request
 {
 public:
-    CAcceptRequest(EIO_Event event,
+    CAcceptRequest(EServIO_Event event,
                    CServer_ConnectionPool& conn_pool,
                    const STimeout* timeout,
                    TListener* listener,
@@ -144,7 +144,7 @@ private:
     int          m_RequestId;
 } ;
 
-CAcceptRequest::CAcceptRequest(EIO_Event event,
+CAcceptRequest::CAcceptRequest(EServIO_Event event,
                                CServer_ConnectionPool& conn_pool,
                                const STimeout* timeout,
                                TListener* listener,
@@ -176,7 +176,7 @@ void CAcceptRequest::Process(void)
         _TRACE("Begin accept request");
         if (m_ConnPool.Add(m_Connection,
                             CServer_ConnectionPool::eActiveSocket)) {
-            m_Connection->OnSocketEvent(eIO_Open);
+            m_Connection->OnSocketEvent(eServIO_Open);
             m_ConnPool.SetConnType(m_Connection,
                                     CServer_ConnectionPool::eInactiveSocket);
             _TRACE("Connection added to pool");
@@ -203,7 +203,7 @@ void CAcceptRequest::Cancel(void)
 class CServerConnectionRequest : public CServer_Request
 {
 public:
-    CServerConnectionRequest(EIO_Event event,
+    CServerConnectionRequest(EServIO_Event event,
                CServer_ConnectionPool& conn_pool,
                const STimeout* timeout,
                TConnection* connection,
@@ -249,7 +249,7 @@ void CServerConnectionRequest::Cancel(void)
 
 /////////////////////////////////////////////////////////////////////////////
 // CServer_Listener
-CStdRequest* TListener::CreateRequest(EIO_Event event,
+CStdRequest* TListener::CreateRequest(EServIO_Event event,
                                       CServer_ConnectionPool& conn_pool,
                                       const STimeout* timeout, int request_id)
 {
@@ -259,7 +259,7 @@ CStdRequest* TListener::CreateRequest(EIO_Event event,
 
 /////////////////////////////////////////////////////////////////////////////
 // CServer_Connection
-CStdRequest* TConnection::CreateRequest(EIO_Event event,
+CStdRequest* TConnection::CreateRequest(EServIO_Event event,
                                         CServer_ConnectionPool& conn_pool,
                                         const STimeout* timeout, int request_id)
 {
@@ -283,19 +283,22 @@ bool TConnection::IsOpen(void)
     return m_Open;
 }
 
-void TConnection::OnSocketEvent(EIO_Event event)
+void TConnection::OnSocketEvent(EServIO_Event event)
 {
-    if (event == (EIO_Event) -1) {
+    if (event == (EServIO_Event) -1) {
         m_Handler->OnTimer();
-    } else if (eIO_Open == event) {
+    } else if (eServIO_Open == event) {
         m_Handler->OnOpen();
-    } else if (eIO_Close == event) {
-        m_Handler->OnClose();
+    } else if (eServIO_OurClose == event) {
+        m_Handler->OnCloseExt(IServer_ConnectionHandler::eOurClose);
+        m_Open = false;
+    } else if (eServIO_ClientClose == event) {
+        m_Handler->OnCloseExt(IServer_ConnectionHandler::eClientClose);
         m_Open = false;
     } else {
-        if (eIO_Read & event)
+        if (eServIO_Read & event)
             m_Handler->OnRead();
-        if (eIO_Write & event)
+        if (eServIO_Write & event)
             m_Handler->OnWrite();
         // We don't need here to check GetStatus(eIO_Open), it is in IsOpen
         // method, but we need to check success of last read/write operations
@@ -412,7 +415,7 @@ void CServer::Run(void)
                     ITERATE (vector<IServer_ConnectionBase*>, it,
                              timer_requests) {
                         ++request_id;
-                        CreateRequest(threadPool, *it, (EIO_Event) -1,
+                        CreateRequest(threadPool, *it, (EServIO_Event) -1,
                                       timeout, request_id);
                     }
                 }
@@ -425,7 +428,8 @@ void CServer::Run(void)
                 TConnBase* conn_base = dynamic_cast<TConnBase*>(it->m_Pollable);
                 _ASSERT(conn_base);
                 ++request_id;
-                CreateRequest(threadPool, conn_base, it->m_REvent,
+                CreateRequest(threadPool, conn_base,
+                              IOEventToServIOEvent(it->m_REvent),
                               m_Parameters->idle_timeout, request_id);
             }
         }
@@ -460,7 +464,7 @@ void CServer::Exit()
 
 void CServer::CreateRequest(CStdPoolOfThreads& threadPool,
     IServer_ConnectionBase* conn_base,
-    EIO_Event event, const STimeout* timeout,
+    EServIO_Event event, const STimeout* timeout,
     int request_id)
 {
 #ifdef _DEBUG
@@ -489,7 +493,7 @@ void CServer::CreateRequest(CStdPoolOfThreads& threadPool,
         }
     }
     else {
-        _ASSERT(event == eIO_Read);
+        _ASSERT(event == eServIO_Read);
         _TRACE("Control read request handled");
     }
 }

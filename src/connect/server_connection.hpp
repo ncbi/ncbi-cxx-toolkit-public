@@ -52,7 +52,7 @@ public:
     virtual ~IServer_ConnectionBase() { }
     virtual EIO_Event GetEventsToPollFor(const CTime** /*alarm_time*/) const
         { return eIO_Read; }
-    virtual CStdRequest* CreateRequest(EIO_Event event,
+    virtual CStdRequest* CreateRequest(EServIO_Event event,
                                        CServer_ConnectionPool& connPool,
                                        const STimeout* timeout,
                                        int request_id) = 0;
@@ -73,7 +73,7 @@ public:
         { m_Handler->SetSocket(this); }
     virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const
         { return m_Handler->GetEventsToPollFor(alarm_time); }
-    virtual CStdRequest* CreateRequest(EIO_Event event,
+    virtual CStdRequest* CreateRequest(EServIO_Event event,
                                        CServer_ConnectionPool& connPool,
                                        const STimeout* timeout,
                                        int request_id);
@@ -81,7 +81,7 @@ public:
     virtual void OnOverflow(void) { m_Handler->OnOverflow(); }
     virtual bool IsOpen(void);
     // connection-specific methods
-    void OnSocketEvent(EIO_Event event);
+    void OnSocketEvent(EServIO_Event event);
 private:
     auto_ptr<IServer_ConnectionHandler> m_Handler;
     bool m_Open;
@@ -94,7 +94,7 @@ public:
     CServer_Listener(IServer_ConnectionFactory* factory, unsigned short port)
         : m_Factory(factory), m_Port(port)
         { }
-    virtual CStdRequest* CreateRequest(EIO_Event event,
+    virtual CStdRequest* CreateRequest(EServIO_Event event,
                                        CServer_ConnectionPool& connPool,
                                        const STimeout* timeout,
                                        int request_id);

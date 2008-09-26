@@ -50,7 +50,7 @@ class CServer_ControlConnection : public CSocket,
                                   public IServer_ConnectionBase
 {
 public:
-    virtual CStdRequest* CreateRequest(EIO_Event event,
+    virtual CStdRequest* CreateRequest(EServIO_Event event,
                                        CServer_ConnectionPool& connPool,
                                        const STimeout* timeout,
                                        int request_id);

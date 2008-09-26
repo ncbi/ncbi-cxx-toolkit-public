@@ -55,6 +55,25 @@ class  CServer_ConnectionPool;
 class  CStdPoolOfThreads;
 
 
+/// Extended copy of the type EIO_Event allowing to distinguish between
+/// connection closing from client and from ourselves
+enum EServIO_Event {
+    eServIO_Open        = 0x0,
+    eServIO_Read        = 0x1,
+    eServIO_Write       = 0x2,
+    eServIO_ReadWrite   = 0x3, /**< eIO_Read | eIO_Write                           */
+    eServIO_ClientClose = 0x4,
+    eServIO_OurClose    = 0x8
+};
+
+
+/// Transform EIO_Event type to EServIO_Event
+inline EServIO_Event
+IOEventToServIOEvent(EIO_Event event)
+{
+    return static_cast<EServIO_Event>(event);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -120,7 +139,7 @@ protected:
 private:
     void CreateRequest(CStdPoolOfThreads& threadPool,
                        IServer_ConnectionBase* conn_base,
-                       EIO_Event event, const STimeout* timeout,
+                       EServIO_Event event, const STimeout* timeout,
                        int request_id);
 
     SServer_Parameters*      m_Parameters;
@@ -171,8 +190,17 @@ public:
     virtual void OnRead(void) = 0;
     /// The client is ready to receive data.
     virtual void OnWrite(void) = 0;
-    /// The connection has spontaneously closed.
-    virtual void OnClose(void) = 0;
+    /// The connection has closed.
+    virtual void OnClose(void) { }
+
+    /// Type of connection closing
+    enum EClosePeer {
+        eOurClose,     ///< Connection closed by ourselves
+        eClientClose   ///< Connection closed by other peer
+    };
+
+    /// The connection has closed (with information on type of closing)
+    virtual void OnCloseExt(EClosePeer peer) { OnClose(); }
 
     /// Runs when a client has been idle for too long, prior to
     /// closing the connection [synchronous].

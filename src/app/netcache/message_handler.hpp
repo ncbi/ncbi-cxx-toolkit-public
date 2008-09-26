@@ -51,7 +51,7 @@ public:
     virtual void OnOpen(void);
     virtual void OnRead(void);
     virtual void OnWrite(void);
-    virtual void OnClose(void);
+    virtual void OnCloseExt(EClosePeer peer);
     virtual void OnTimeout(void);
     virtual void OnOverflow(void);
     virtual int CheckMessage(BUF* buffer, const void *data, size_t size);

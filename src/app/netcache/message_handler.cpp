@@ -168,6 +168,19 @@ void CNetCache_MessageHandler::OnOpen(void)
                     
     m_ProcessMessage = &CNetCache_MessageHandler::ProcessMsgAuth;
     m_DelayedWrite = false;
+
+    if (IsMonitoring()) {
+        string msg;
+        msg += CTime(CTime::eCurrent).AsString();
+        msg += "\n\t";
+        msg += m_Auth;
+        msg += " ";
+        msg += m_Stat.peer_address;
+        msg += "\n\t";
+        msg + "Connection is opened.";
+
+        MonitorPost(msg);
+    }
 }
 
 
@@ -198,7 +211,7 @@ void CNetCache_MessageHandler::OnRead(void)
         m_InRequest = false;
         return;
     case eIO_Closed:
-        this->OnClose();
+        this->OnCloseExt(eClientClose);
         m_InRequest = false;
         return;
     default:
@@ -248,10 +261,33 @@ void CNetCache_MessageHandler::OnWrite(void)
 }
 
 
-void CNetCache_MessageHandler::OnClose(void)
+void CNetCache_MessageHandler::OnCloseExt(EClosePeer peer)
 {
-    //x_InitDiagnostics();
-    //x_DeinitDiagnostics();
+    x_InitDiagnostics();
+    if (IsMonitoring()) {
+        string msg;
+        msg += CTime(CTime::eCurrent).AsString();
+        msg += "\n\t";
+        msg += m_Auth;
+        msg += " ";
+        msg += m_Stat.peer_address;
+        msg += "\n\t";
+        msg += "ConnTime=" + m_Stat.conn_time.AsString();
+        msg += "\n\t";
+
+        switch (peer)
+        {
+        case eOurClose:
+            MonitorPost(msg + "NetCache closing connection.");
+            break;
+        case eClientClose:
+            MonitorPost(msg + "Client closed connection to NetCache.");
+            break;
+        default:
+            break;
+        }
+    }
+    x_DeinitDiagnostics();
 }
 
 

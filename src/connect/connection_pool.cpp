@@ -65,7 +65,7 @@ void CServer_ConnectionPool::SPerConnInfo::UpdateExpiration(
 
 // CServer_ControlConnection
 CStdRequest* CServer_ControlConnection::CreateRequest(
-    EIO_Event event,
+    EServIO_Event event,
     CServer_ConnectionPool& connPool,
     const STimeout* timeout, int request_id)
 {
@@ -188,7 +188,7 @@ void CServer_ConnectionPool::Clean(void)
                 it->first->OnTimeout();
             } else {
                 _TRACE("Closed " << dynamic_cast<TConnBase *>(it->first));
-                conn->OnSocketEvent(eIO_Close);
+                conn->OnSocketEvent(eServIO_OurClose);
             }
             to_delete.push_back(it->first);
         }
