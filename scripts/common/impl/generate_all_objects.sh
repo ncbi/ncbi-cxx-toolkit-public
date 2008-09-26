@@ -14,6 +14,8 @@ for arg in "$@"; do
     esac
 done
 
+status=0
+
 for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/objtools/eutils/*/*.dtd src/gui/objects/*.asn \
   src/algo/gnomon/gnomon.asn src/algo/ms/formats/*/*.dtd \
@@ -35,7 +37,14 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
         base=`basename $spec $ext`
         if $force || [ ! -f $dir/$base.files ]; then
             echo $spec
-            (cd $dir && $new_module $flag $base >/dev/null 2>&1)  ||  exit $?
+            if (cd $dir && $new_module $flag $base >/dev/null 2>&1); then
+                : # all good
+            else
+                # exit $?
+                echo "$new_module $flag $base FAILED with status $?:"
+                (cd $dir && $new_module $flag $base)
+                status=1
+            fi
         else
             echo "$spec -- skipped, already built and --force not given."
         fi
@@ -55,4 +64,4 @@ if [ -f $splitdb_dir/Makefile.asntool ]; then
     fi
 fi
 
-exit 0
+exit $status
