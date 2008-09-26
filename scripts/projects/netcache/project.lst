@@ -9,6 +9,10 @@ util/cache$ update-only
 util/math$ update-only
 connect$
 connect/services$
+connect/services/test$
+cgi$
+cgi/impl$
 bdb$
 dll
 app/netcache$
+app/netcache/util$

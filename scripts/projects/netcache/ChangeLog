@@ -1,2 +1,12 @@
+Sept 26, 2008
+Enhanced logging and monitoring facilities.
+Fixed bugs of not writing empty blobs, writing blobs twice and
+leaking of resources if connection closed during writing of blob
+into it.
+Added logging of ClientIP and SessionID came from NetCache API client.
+
+Added tests to release to be able to test NetCache after releasing.
+
+
 Apr 04, 2008
 Initial release using a release procedure
