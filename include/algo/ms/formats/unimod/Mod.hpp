@@ -52,7 +52,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 BEGIN_unimod_SCOPE // namespace ncbi::objects::unimod::
 
 /////////////////////////////////////////////////////////////////////////////
-class CMod : public CMod_Base
+class NCBI_UNIMOD_EXPORT CMod : public CMod_Base
 {
     typedef CMod_Base Tparent;
 public:
