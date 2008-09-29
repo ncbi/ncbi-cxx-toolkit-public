@@ -1871,6 +1871,18 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                 }
             }
         }
+        {
+            map<string, EMakeFileType>::const_iterator s;
+            for (s = subprojects.begin(); s != subprojects.end(); ++s) {
+                if (s->first.find('/') != string::npos) {
+                    CDir dir_entry(CDirEntry::NormalizePath(
+                        CDirEntry::ConcatPath(dir_name, s->first)));
+                    if (dir_entry.IsDir()) {
+                        subprojects_dirs[dir_entry.GetPath()] = subprojects[s->first];
+                    }
+                }
+            }
+        }
 /*
     } else {
         // for non-root only subprojects
