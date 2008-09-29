@@ -221,7 +221,8 @@ int CCdCore::GetNumRows() const {
 //-------------------------------------------------------------------------
 
     const CRef< CSeq_annot >& alignment = GetAlignment();
-    if (alignment.NotEmpty() && alignment->GetData().IsAlign()) {
+    //  Be sure GetAlign() is not an empty container -> no such thing as a CD blob with one row.
+    if (alignment.NotEmpty() && alignment->GetData().IsAlign() && alignment->GetData().GetAlign().size() > 0) {
         // number pairs + 1 == num rows
         return(alignment->GetData().GetAlign().size()+1);
     }
@@ -2222,6 +2223,31 @@ int CCdCore::GetMmdbIdWithEvidence(set<int>& MmdbIds) {
   return MmdbIds.size();
 }
 
+
+bool  CCdCore::CopyBioseqForSeqId(const CRef< CSeq_id>& seqId, CRef< CBioseq >& bioseq) const
+{
+    if (!IsSetSequences() || !GetSequences().IsSet() || !GetSequences().GetSet().IsSetSeq_set()) {
+        bioseq.Reset();
+        return false;
+    }
+
+    const CBioseq_set::TSeq_set& seqEntryList = GetSequences().GetSet().GetSeq_set();
+    CBioseq_set::TSeq_set::const_iterator seListIt = seqEntryList.begin(), seListEnd = seqEntryList.end();
+    list< CRef< CSeq_id > >::const_iterator lsii;
+
+    for (; seListIt != seListEnd; ++seListIt) {
+        if ((*seListIt)->IsSeq()) {
+			const list< CRef< CSeq_id > > seqIdList = (*seListIt)->GetSeq().GetId();
+			for (lsii = seqIdList.begin(); lsii != seqIdList.end(); ++lsii) {
+				if (seqId->Match(**lsii)) {
+					bioseq->Assign((*seListIt)->GetSeq());
+					return true;
+				}
+			}
+        }
+	}
+    return false;
+}
 
 //  Recursively look for a bioseq with the given seqid; return the first instance found.
 bool CCdCore::GetBioseqWithSeqid(CSeq_id& seqid, const list< CRef< CSeq_entry > >& seqEntryList, const CBioseq*& bioseq) const{

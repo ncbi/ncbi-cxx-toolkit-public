@@ -124,6 +124,10 @@ public:
     bool   GetSeqEntryForIndex(int seqIndex, CRef< CSeq_entry > & seqEntry) const;  //  was cdGetSeq from algMerge
     bool   GetBioseqForIndex(int seqIndex, CRef< CBioseq >& bioseq) ;
 
+    //  Obtain a copy of the first bioseq found that matches the ID passed in.
+    //  Returns true if this is possible; false otherwise.
+    bool   CopyBioseqForSeqId(const CRef< CSeq_id>& seqId, CRef< CBioseq >& bioseq) const;
+
     /*  Examine alignment for a SeqId or footprint */
     bool   HasSeqId(const CRef<CSeq_id>& ID) const;                 // see if ID matches any ID in alignment  (deprecate???)
     bool   HasSeqId(const CRef<CSeq_id>& ID, int& RowIndex) const;  // same, but return row that matches
