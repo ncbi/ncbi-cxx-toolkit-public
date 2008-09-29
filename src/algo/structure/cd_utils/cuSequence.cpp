@@ -328,11 +328,18 @@ bool GetNcbistdSeq(const CBioseq& bioseq, vector<char>& seqData)
     return false;
 }
 
-
 //  Return as a raw string whatever found in the bioseq.  Ignore types ncbi8aa
 //  and ncbipaa, and all nucleic acid encodings.
 string GetRawSequenceString(const CBioseq& bioseq) 
 {
+    //  copied from algo/blast/core/blast_encoding.h
+    //  usage copied as per line 2190 in objtools/blast_format/blastfmtutil.cpp
+    static const char MY_NCBISTDAA_TO_AMINOACID[28] = {
+    '-','A','B','C','D','E','F','G','H','I','K','L','M',
+    'N','P','Q','R','S','T','V','W','X','Y','Z','U','*',
+    'O', 'J'};
+
+
     string s = kEmptyStr;
     if (bioseq.GetInst().IsSetSeq_data()) {
         const CSeq_data & pDat= bioseq.GetInst().GetSeq_data();
@@ -344,7 +351,8 @@ string GetRawSequenceString(const CBioseq& bioseq)
             const std::vector < char >& vec = pDat.GetNcbistdaa().Get();
             s.resize(vec.size());
             for (unsigned int i=0; i<vec.size(); i++) {
-                s.at(i) = vec[i];
+                //  simply doing s.at(i) = vec[i] didn't work
+                s.at(i) = MY_NCBISTDAA_TO_AMINOACID[(int)vec[i]];
             }
         }
     }
