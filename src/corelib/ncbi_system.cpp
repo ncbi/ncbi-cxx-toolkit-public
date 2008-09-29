@@ -461,6 +461,37 @@ unsigned long GetVirtualMemoryPageSize(void)
     return ps;
 }
 
+unsigned long GetPhysicalMemorySize(void)
+{
+    unsigned long num_pages = 0, page_size = 0;
+
+#if defined(NCBI_OS_MSWIN)
+    MEMORYSTATUSEX st;
+    st.dwLength = sizeof(st);
+    if ( !GlobalMemoryStatusEx(&st) ) {
+        return 0;
+    }
+    return st.ullTotalPhys;
+#elif defined (NCBI_OS_DARWIN)
+    page_size = GetVirtualMemoryPageSize();
+    struct vm_statistics vm_stat;
+    mach_port_t my_host = mach_host_self();
+    mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
+    if (host_statistics(my_host, HOST_VM_INFO, (integer_t*)&vm_stat, &count) !=
+        KERN_SUCCESS) {
+        return 0;
+    }
+    return (vm_stat.free_count + vm_stat.active_count + vm_stat.inactive_count +
+        vm_stat.wire_count) * page_size;
+#else
+    page_size = GetVirtualMemoryPageSize();
+    if ( ((long)(num_pages = sysconf(_SC_PHYS_PAGES))) == -1L) {
+        num_pages = 0;
+    }
+#endif
+    return num_pages * page_size;
+}
+
 
 bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
 {
