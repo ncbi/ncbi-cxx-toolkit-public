@@ -35,52 +35,33 @@
 ///
 
 
-#include <corelib/ncbistl.hpp>
+#include <corelib/ncbi_process.hpp>
 #if !defined(NCBI_OS_UNIX)
 #  error "ncbi_os_unix.hpp must be used on UNIX platforms only"
 #endif
 
-#include <unistd.h>
-
+#warning "This header currently defines a deprecated feature only; \
+please consider using <corelib/ncbi_process.hpp> instead"
 
 BEGIN_NCBI_SCOPE
 
 
 /// Daemonization flags
 enum FDaemonFlags {
-    fDaemon_DontChroot = 1,  ///< Don't change to "/"
-    fDaemon_KeepStdin  = 2,  ///< Keep stdin open as "/dev/null" (RO)
-    fDaemon_KeepStdout = 4,  ///< Keep stdout open as "/dev/null" (WO)
-    fDaemon_ImmuneTTY  = 8   ///< Make daemon immune to opening controlling TTY
+    fDaemon_DontChroot = CProcess::fDontChroot,
+    fDaemon_KeepStdin  = CProcess::fKeepStdin,
+    fDaemon_KeepStdout = CProcess::fKeepStdout,
+    fDaemon_ImmuneTTY  = CProcess::fImmuneTTY
 };
 /// Bit-wise OR of FDaemonFlags @sa FDaemonFlags
 typedef unsigned int TDaemonFlags;
 
-
-/// Go daemon.
-///
-/// Return true in the daemon thread.
-/// Return false on error (no daemon created), errno can be used to analyze.
-/// Reopen stderr/cerr in daemon thread if "logfile" specified as non-NULL
-/// (stderr will open to "/dev/null" if "logfile" == ""),
-/// otherwise stderr is closed in the daemon thread.
-/// NB: Always check stderr for errors of failed redirection!
-///
-/// Unless instructed by "flags" parameter, the daemon thread has its stdin/cin
-/// and stdout/cout closed, and current directory changed to root (/).
-/// If kept open, stdin and stdout are both redirected to /dev/null.
-/// Opening a terminal device as a controlling terminal is allowed, unless
-/// fDaemon_ImmuneTTY is specified in the flags, which then causes a second
-/// fork() so that the resultant process won't be allowed to open a TTY as
-/// its controlling TTY (but only with explicit O_NOCTTY, see open(2)), thus
-/// protecting the process from any blocking via TTY signalling.
-///
-/// Note that this call is somewhat destructive and may not be able
-/// to restore the process that called it to a state prior to the call
-/// in case of an error.  So that calling process can find std file
-/// pointers (and sometimes descriptors) screwed up.
-
-bool Daemonize(const char* logfile = 0, TDaemonFlags flags = 0);
+inline
+NCBI_DEPRECATED
+bool Daemonize(const char* logfile = 0, TDaemonFlags flags = 0)
+{
+    return CProcess::Daemonize(logfile, flags) ? true : false;
+} 
 
 
 END_NCBI_SCOPE

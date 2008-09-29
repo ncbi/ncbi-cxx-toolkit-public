@@ -32,120 +32,12 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_os_unix.hpp>
 #include <corelib/error_codes.hpp>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-
-
-#define NCBI_USE_ERRCODE_X   Corelib_Unix
 
 
 BEGIN_NCBI_SCOPE
 
 
-bool Daemonize(const char* logfile, TDaemonFlags flags)
-{
-    int fdin  = ::dup(STDIN_FILENO);
-    int fdout = ::dup(STDOUT_FILENO);
-    int fderr = ::dup(STDERR_FILENO);
-
-    try {
-        if (flags & fDaemon_KeepStdin) {
-            int nullr = ::open("/dev/null", O_RDONLY);
-            if (nullr < 0)
-                throw "Error opening /dev/null for reading";
-            if (nullr != STDIN_FILENO) {
-                int error = ::dup2(nullr, STDIN_FILENO);
-                int x_errno = errno;
-                ::close(nullr);
-                if (error < 0) {
-                    errno = x_errno;
-                    throw "Error redirecting stdin";
-                }
-            }
-        }
-        if (flags & fDaemon_KeepStdout) {
-            int nullw = ::open("/dev/null", O_WRONLY);
-            if (nullw < 0)
-                throw "Error opening /dev/null for writing";
-            ::fflush(stdout);
-            if (nullw != STDOUT_FILENO) {
-                int error = ::dup2(nullw, STDOUT_FILENO);
-                int x_errno = errno;
-                ::close(nullw);
-                if (error < 0) {
-                    ::dup2(fdin, STDIN_FILENO);
-                    errno = x_errno;
-                    throw "Error redirecting stdout";
-                }
-            }
-        }
-        if (logfile) {
-            int fd = (!*logfile ? ::open("/dev/null", O_WRONLY | O_APPEND) :
-                      ::open(logfile, O_WRONLY | O_APPEND | O_CREAT, 0666));
-            if (fd < 0)
-                throw "Unable to open logfile for stderr";
-            ::fflush(stderr);
-            if (fd != STDERR_FILENO) {
-                int error = ::dup2(fd, STDERR_FILENO);
-                int x_errno = errno;
-                ::close(fd);
-                if (error < 0) {
-                    ::dup2(fdin,  STDIN_FILENO);
-                    ::dup2(fdout, STDOUT_FILENO);
-                    errno = x_errno;
-                    throw "Error redirecting stderr";
-                }
-            }
-        }
-        pid_t pid = ::fork();
-        if (pid == (pid_t)(-1)) {
-            int x_errno = errno;
-            ::dup2(fdin,  STDIN_FILENO);
-            ::dup2(fdout, STDOUT_FILENO);
-            ::dup2(fderr, STDERR_FILENO);
-            errno = x_errno;
-            throw "Cannot fork";
-        }
-        if (pid)
-            ::_exit(0);
-        if (!(flags & fDaemon_DontChroot))
-            (void) ::chdir("/"); // "/" always exists
-        if (!(flags & fDaemon_KeepStdin))
-            ::fclose(stdin);
-        ::close(fdin);
-        if (!(flags & fDaemon_KeepStdout))
-            ::fclose(stdout);
-        ::close(fdout);
-        if (!logfile)
-            ::fclose(stderr);
-        ::close(fderr);
-        ::setsid();
-        if (flags & fDaemon_ImmuneTTY) {
-            pid = ::fork();
-            if (pid == (pid_t)(-1)) {
-                const char* error = strerror(errno);
-                ERR_POST_X(2,
-                           string("[Daemonize]  Second fork() failed to "
-                                  "immune from TTY accruals (") + error +
-                           string("), continue anyways"));
-            } else if (pid) {
-                ::_exit(0);
-            }
-        }
-        return true;
-    }
-    catch (const char* what) {
-        int x_errno = errno;
-        ERR_POST_X(1, string("[Daemonize]  ") + what);
-        ::close(fdin);
-        ::close(fdout);
-        ::close(fderr);
-        errno = x_errno;
-    }
-    return false;
-}
+/* empty */
 
 
 END_NCBI_SCOPE

@@ -25,23 +25,25 @@
  *
  * Authors:  Aaron Ucko, Vladimir Ivanov
  *
- *
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/error_codes.hpp>
+#include <corelib/ncbidiag.hpp>
 #include <corelib/ncbifile.hpp>
-#include <corelib/ncbi_system.hpp>
+#include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_safe_static.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbidiag.hpp>
+#include <corelib/ncbi_system.hpp>
 
 #if defined(NCBI_OS_UNIX)
-#  include <sys/types.h>
-#  include <signal.h>
-#  include <sys/wait.h>
 #  include <errno.h>
+#  include <fcntl.h>
+#  include <signal.h>
+#  include <stdio.h>
 #  include <unistd.h>
+#  include <sys/types.h>
+#  include <sys/wait.h>
 #elif defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbitime.hpp>  // for CStopWatch
 #  include <process.h>
@@ -51,6 +53,9 @@
 #if defined(NCBI_OS_MSWIN)
 #  pragma warning (disable : 4191)
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Corelib_Process
 
 
 BEGIN_NCBI_SCOPE
@@ -269,13 +274,123 @@ TPid CProcess::GetParentPid(void)
 
 TPid CProcess::Fork(void)
 {
-#if defined(NCBI_OS_MSWIN)
-    NCBI_THROW(CCoreException, eCore,
-               "Fork() not implemented on this platform");
-#else
-    TPid pid = fork();
+#ifdef NCBI_OS_UNIX
+    TPid pid = ::fork();
     CDiagContext::UpdatePID();
     return pid;
+#else
+    NCBI_THROW(CCoreException, eCore,
+               "Fork() not implemented on this platform");
+#endif
+}
+
+
+TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
+{
+#ifdef NCBI_OS_UNIX
+    TPid pid   = 0;
+    int  fdin  = ::dup(STDIN_FILENO);
+    int  fdout = ::dup(STDOUT_FILENO);
+    int  fderr = ::dup(STDERR_FILENO);
+
+    try {
+        if (flags & fKeepStdin) {
+            int nullr = ::open("/dev/null", O_RDONLY);
+            if (nullr < 0)
+                throw "Error opening /dev/null for reading";
+            if (nullr != STDIN_FILENO) {
+                int error = ::dup2(nullr, STDIN_FILENO);
+                int x_errno = errno;
+                ::close(nullr);
+                if (error < 0) {
+                    errno = x_errno;
+                    throw "Error redirecting stdin";
+                }
+            }
+        }
+        if (flags & fKeepStdout) {
+            int nullw = ::open("/dev/null", O_WRONLY);
+            if (nullw < 0)
+                throw "Error opening /dev/null for writing";
+            ::fflush(stdout);
+            if (nullw != STDOUT_FILENO) {
+                int error = ::dup2(nullw, STDOUT_FILENO);
+                int x_errno = errno;
+                ::close(nullw);
+                if (error < 0) {
+                    ::dup2(fdin, STDIN_FILENO);
+                    errno = x_errno;
+                    throw "Error redirecting stdout";
+                }
+            }
+        }
+        if (logfile) {
+            int fd = (!*logfile ? ::open("/dev/null", O_WRONLY | O_APPEND) :
+                      ::open(logfile, O_WRONLY | O_APPEND | O_CREAT, 0666));
+            if (fd < 0)
+                throw "Unable to open logfile for stderr";
+            ::fflush(stderr);
+            if (fd != STDERR_FILENO) {
+                int error = ::dup2(fd, STDERR_FILENO);
+                int x_errno = errno;
+                ::close(fd);
+                if (error < 0) {
+                    ::dup2(fdin,  STDIN_FILENO);
+                    ::dup2(fdout, STDOUT_FILENO);
+                    errno = x_errno;
+                    throw "Error redirecting stderr";
+                }
+            }
+        }
+        pid = Fork();
+        if (pid == (pid_t)(-1)) {
+            int x_errno = errno;
+            ::dup2(fdin,  STDIN_FILENO);
+            ::dup2(fdout, STDOUT_FILENO);
+            ::dup2(fderr, STDERR_FILENO);
+            errno = x_errno;
+            throw "Cannot fork";
+        }
+        if (pid)
+            ::_exit(0);
+        if (!(flags & fDontChroot))
+            (void) ::chdir("/");        // NB: "/" always exists
+        if (!(flags & fKeepStdin))
+            ::fclose(stdin);
+        ::close(fdin);
+        if (!(flags & fKeepStdout))
+            ::fclose(stdout);
+        ::close(fdout);
+        if (!logfile)
+            ::fclose(stderr);
+        ::close(fderr);
+        ::setsid();
+        if (flags & fImmuneTTY) {
+            pid = Fork();
+            if (pid == (pid_t)(-1)) {
+                const char* error = strerror(errno);
+                ERR_POST_X(2,
+                           string("[Daemonize]  Second fork() failed to"
+                                  " immune from TTY accruals (") + error +
+                           string("), continue anyways"));
+            } else if (pid) {
+                ::_exit(0);
+            }
+        }
+    }
+    catch (const char* what) {
+        int x_errno = errno;
+        ERR_POST_X(1, string("[Daemonize]  ") + what);
+        ::close(fdin);
+        ::close(fdout);
+        ::close(fderr);
+        errno = x_errno;
+        pid = 0;
+    }
+    return pid;
+#else
+    NCBI_THROW(CCoreException, eCore,
+               "Daemonize() not implemented on this platform");
 #endif
 }
 
