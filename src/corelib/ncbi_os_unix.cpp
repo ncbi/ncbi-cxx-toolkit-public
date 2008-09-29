@@ -34,6 +34,9 @@
 #include <corelib/error_codes.hpp>
 
 
+#define NCBI_USE_ERRCODE_X   Corelib_Unix
+
+
 BEGIN_NCBI_SCOPE
 
 
