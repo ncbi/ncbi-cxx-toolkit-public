@@ -40,8 +40,10 @@
 #  error "ncbi_os_unix.hpp must be used on UNIX platforms only"
 #endif
 
-#warning "This header currently defines a deprecated feature only; \
+#ifdef NCBI_COMPILER_GCC
+#  warning "This header currently defines a deprecated feature only; \
 please consider using <corelib/ncbi_process.hpp> instead"
+#endif
 
 BEGIN_NCBI_SCOPE
 
