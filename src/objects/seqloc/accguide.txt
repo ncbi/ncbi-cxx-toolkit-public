@@ -481,6 +481,7 @@ special  CAO03085-CAO03089  embl_tpa_prot
 special  CAP49313-CAP49318  embl_tpa_prot
 special  CAP49321-CAP49327  embl_tpa_prot
 special  CAP64321-CAP64334  embl_tpa_prot # '22 unassigned
+special  CAR63508-CAR63509  embl_tpa_prot
 ## Err on the side of caution on as yet unassigned IDs, and hope that
 ## there's not *too* much more backfilling.
-#special CAR47811-CZZ99999  unreserved_prot
+#special CAR79009-CZZ99999  unreserved_prot
