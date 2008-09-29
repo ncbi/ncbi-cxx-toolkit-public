@@ -351,28 +351,37 @@ const bool CMSPeak::AddHit(CMSHit& in, CMSHit *& out)
     out = 0;
     // initialize index using charge
     int Index = in.GetCharge() - Charges[0];
+    // above min number of hits?
+    if(in.GetHits() < GetMinhit()) return false;
     // check to see if hitlist is full
     if (HitListIndex[Index] >= HitListSize) {
         // if less or equal hits than recorded min, don't bother
         if (in.GetHits() <= LastHitNum[Index]) return false;
-        int i, min(HitList[Index][0].GetHits()); //the minimum number of hits in the list
-        int minpos(0);     // the position of min
-        // find the minimum in the hitslist
-        for (i = 1; i < HitListSize; i++) {
-            if (min > HitList[Index][i].GetHits()) {
-                min = HitList[Index][i].GetHits();
-                minpos = i;
+        int i;
+        // find the minimum in the hitlist
+        for (i = 0; i < HitListSize; i++) {
+            if (LastHitNum[Index] == HitList[Index][i].GetHits()) {
+                break;
+                }
             }
-        }
         // keep record of min
-        LastHitNum[Index] = min;    
+        LastHitNum[Index] = in.GetHits();    
         // replace in list
-        HitList[Index][minpos] = in;
-        out =  & (HitList[Index][minpos]);
+        HitList[Index][i] = in;
+        out =  & (HitList[Index][i]);
         return true;
-    }
+        }
     else {
-        // add to end of list
+        // hit list not full, add to end of list
+        // if first one, record the minhit
+        if(HitListIndex[Index] == 0) {
+            LastHitNum[Index] = in.GetHits();
+        }
+        // if less hits than minhits, reset minhits
+        else if(in.GetHits() < LastHitNum[Index]) {
+            LastHitNum[Index] = in.GetHits();
+        }
+        // add it to the back
         HitList[Index][HitListIndex[Index]] = in;
         out = & (HitList[Index][HitListIndex[Index]]);
         HitListIndex[Index]++;
@@ -707,9 +716,10 @@ void CMSPeak::SetComputedCharge(const CMSChargeHandle& ChargeHandle,
 }
 
 // initializes arrays used to track hits
-void CMSPeak::InitHitList(const int Minhit)
+void CMSPeak::InitHitList(const int Minhitin)
 {
     int iCharges;
+    SetMinhit() = Minhitin;
     for(iCharges = 0; iCharges < GetNumCharges(); iCharges++) {
 	LastHitNum[iCharges] = Minhit - 1;
 	HitListIndex[iCharges] = 0;

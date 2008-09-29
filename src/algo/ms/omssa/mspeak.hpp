@@ -950,9 +950,9 @@ public:
     /**
      * initializes arrays used to track hits
      * 
-     * @param Minhit minimal number of hits for a match
+     * @param Minhitin minimal number of hits for a match
      */
-    void InitHitList(const int Minhit
+    void InitHitList(const int Minhitin
 		      );
 
     /**
@@ -963,11 +963,24 @@ public:
     TMSHitList& GetHitList(const int Index);
 
     /**
-     * Get size of hit list
+     * Get minimum hit
      * 
+     */
+    const int GetMinhit() const;
+
+    /**
+     * Set minimum hit
+     *
+     */
+    int & SetMinhit(void);
+
+    /**
+     * Get size of hit list
+     *
      * @param Index which hit list
      */
     const int GetHitListIndex(const int Index) const;
+
 
     /**
      * add hit to hitlist.  returns true and the added hit if successful
@@ -1130,6 +1143,7 @@ private:
 
     CMSSpectrum::TIds Name;  // name taken from spectrum
     int Number;  // spectrum number taken from spectrum
+    int Minhit;  // minimum number of hit peaks to record hit
 
     // list of hits
     TMSHitList HitList[eMSPeakListChargeMax - eMSPeakListCharge1];
@@ -1179,6 +1193,18 @@ inline
 const int CMSPeak::GetHitListIndex(const int Index) const
 { 
     return HitListIndex[Index]; 
+}
+    
+inline
+const int CMSPeak::GetMinhit() const
+{
+    return Minhit;
+}
+
+inline
+int & CMSPeak::SetMinhit(void)
+{
+    return Minhit;
 }
 
 inline 
