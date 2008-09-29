@@ -483,7 +483,7 @@ unsigned long GetPhysicalMemorySize(void)
     }
     return (vm_stat.free_count + vm_stat.active_count + vm_stat.inactive_count +
         vm_stat.wire_count) * page_size;
-#else
+#elif defined(_SC_PHYS_PAGES)
     page_size = GetVirtualMemoryPageSize();
     if ( ((long)(num_pages = sysconf(_SC_PHYS_PAGES))) == -1L) {
         num_pages = 0;
