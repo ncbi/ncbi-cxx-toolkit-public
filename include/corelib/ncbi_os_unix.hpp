@@ -62,7 +62,7 @@ inline
 NCBI_DEPRECATED
 bool Daemonize(const char* logfile = 0, TDaemonFlags flags = 0)
 {
-    return CProcess::Daemonize(logfile, flags) ? true : false;
+    return CProcess::Daemonize(logfile, flags);
 } 
 
 

@@ -285,10 +285,9 @@ TPid CProcess::Fork(void)
 }
 
 
-TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
+bool CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
 {
 #ifdef NCBI_OS_UNIX
-    TPid pid   = 0;
     int  fdin  = ::dup(STDIN_FILENO);
     int  fdout = ::dup(STDOUT_FILENO);
     int  fderr = ::dup(STDERR_FILENO);
@@ -342,7 +341,7 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
                 }
             }
         }
-        pid = Fork();
+        TPid pid = Fork();
         if (pid == (pid_t)(-1)) {
             int x_errno = errno;
             ::dup2(fdin,  STDIN_FILENO);
@@ -377,21 +376,23 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
                 ::_exit(0);
             }
         }
+        return true/*success*/;
     }
     catch (const char* what) {
         int x_errno = errno;
-        ERR_POST_X(1, string("[Daemonize]  ") + what);
+        const char* error = x_errno ? strerror(x_errno) : 0;
+        ERR_POST_X(1, string("[Daemonize]  ") + what +
+                   (error  &&  *error ? string(": ") + error : kEmptyStr);
         ::close(fdin);
         ::close(fdout);
         ::close(fderr);
         errno = x_errno;
-        pid = 0;
     }
-    return pid;
 #else
     NCBI_THROW(CCoreException, eCore,
                "Daemonize() not implemented on this platform");
 #endif
+    return false/*failure*/;
 }
 
 

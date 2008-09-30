@@ -135,8 +135,9 @@ public:
 
     /// Go daemon.
     ///
-    /// Return new TPid in the daemon thread.
-    /// Return 0 on error (no daemon created), errno can be used to analyze.
+    /// Return true in the daemon thread (parent thread doesn't return).
+    /// Return false on error (no daemon created), see errno.
+    ///
     /// Reopen stderr/cerr in daemon thread if "logfile" specified as non-NULL
     /// (stderr will open to "/dev/null" if "logfile" == ""),
     /// otherwise stderr is closed in the daemon thread.
@@ -157,7 +158,7 @@ public:
     /// to restore the process that called it to a state prior to the call
     /// in case of an error.  So that calling process can find std file
     /// pointers (and sometimes descriptors) screwed up.
-    static TPid Daemonize(const char* logfile = 0, TDaemonFlags flags = 0);
+    static bool Daemonize(const char* logfile = 0, TDaemonFlags flags = 0);
 
     /// Check process existence.
     ///
@@ -194,29 +195,29 @@ public:
   
     /// Terminate a group of processes.
     ///
-    /// This method try to terminate all process in the group to which
+    /// This method tries to terminate all processes in the group to which
     /// process, specified in the constructor, belongs.
     ///
     /// @timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
     ///   attempts to terminate the process group. 
-    ///   If the timeout have zero value, than use unsafe process termination,
+    ///   If the timeout have zero value, then use unsafe process termination,
     ///   just try to terminate a process group without checks that it is
     ///   really terminated.
     /// @note
     ///   On UNIX in case of zero or very small timeout the killing process
-    ///   can be not released and continue to persists as zombie process
-    ///   even after call of this function.
-    ///   On MS Windows this method try to terminate the process itself
-    ///   and all its children. But in the case if one of the processes,
-    ///   that should be terminated, spawns a new process in the moment
-    ///   of execution this method, that this new process might be
-    ///   not terminated.
+    ///   can be not released and continue to persist as zombie process
+    ///   even after this call completes.
+    ///   On MS Windows this method tries to terminate the process itself
+    ///   and all its children.  But in the case if one of the processes,
+    ///   which should be terminated, spawns a new process at the moment
+    ///   of execution this method, then that new process might not be
+    ///   terminated.
     /// @return
     ///   TRUE  - if the process group did not exist or was successfully
     ///           terminated.
     ///   FALSE - if the process group is still running, cannot be terminated,
-    ///           or it is terminating right now (but still not terminated).
+    ///           or it is terminating right now (but is still not terminated).
     /// @sa Kill
     bool KillGroup(unsigned long timeout = kDefaultKillTimeout) const;
 
