@@ -684,7 +684,7 @@ bool CTestRegApp::Thread_Run(int idx)
 {
     // Run tests
     try {
-        for (int i=0; i<10; i++) {
+        for (int i=0; i<3; i++) {
             s_TestMisc(idx);
             s_TestFormats();
             s_TestGMT(idx);
