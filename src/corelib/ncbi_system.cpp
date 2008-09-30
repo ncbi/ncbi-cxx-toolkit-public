@@ -56,6 +56,9 @@
 #  if defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN)
 #    include <sys/sysctl.h>
 #  endif
+#  if defined(NCBI_OS_IRIX)
+#    include <sys/sysmp.h>
+#  endif
 #  define USE_SETHEAPLIMIT
 #  define USE_SETCPULIMIT
 #endif
@@ -502,7 +505,14 @@ unsigned long GetPhysicalMemorySize(void)
                  vm_stat.inactive_count + vm_stat.wire_count);
         }
     }
-#  endif /*NCBI_OS_DARWIN*/
+#  endif //NCBI_OS_DARWIN
+
+#elif NCBI_OS_IRIX
+
+    struct rminfo rmi;
+    if (sysmp(MP_SAGET, MPSA_RMINFO, &rmi, sizeof(rmi)) >= 0) {
+        return GetVirtualMemoryPageSize() * rmi.physmem;
+    }
 
 #endif
 
