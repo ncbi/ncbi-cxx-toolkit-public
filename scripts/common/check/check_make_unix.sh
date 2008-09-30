@@ -575,8 +575,8 @@ EOF_launch
 
                         [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "SKP" >> "\$x_test_rep"
                     elif egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
-                        echo "TO  --  \$x_cmd"
-                        echo "TO  --  \$x_cmd" >> \$res_log
+                        echo "TO  --  \$x_cmd     (\$exec_time)"
+                        echo "TO  --  \$x_cmd     (\$exec_time)" >> \$res_log
 
                         [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "TO" >> "\$x_test_rep"
                     elif [ \$result -eq 0 ]; then
