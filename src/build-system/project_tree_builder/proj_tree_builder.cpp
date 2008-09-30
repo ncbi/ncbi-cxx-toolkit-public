@@ -1057,6 +1057,13 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
             list<string> dll_depends;
             k = m->second.m_Contents.find("DLL_LIB");
+            if (GetApp().GetSite().IsProvided("DLL_BUILD")) {
+                CSimpleMakeFileContents::TContents::const_iterator tmp_k =
+                    m->second.m_Contents.find("DLL_DLIB");
+                if (tmp_k != m->second.m_Contents.end()) {
+                    k = tmp_k;
+                }
+            }
             if (k != m->second.m_Contents.end()) {
                 ITERATE(list<string>, i, k->second) {
                     dll_depends.push_back(
@@ -2026,6 +2033,9 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
         }
         keys.insert("SRC");
         keys.insert("DLL_LIB");
+        if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
+            keys.insert("DLL_DLIB");
+        }
         SMakeProjectT::DoResolveDefs(resolver, makefiles.m_Lib, keys);
     }}
 
