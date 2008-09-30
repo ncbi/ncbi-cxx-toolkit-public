@@ -1198,6 +1198,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleTis)
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRetrieveSeqData(false);
+    iconfig.SetDataLoaderConfig().m_BlastDbName = "Trace/Mus_musculus_WGS" ;
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     CScope scope(*CObjectManager::GetInstance());
 
@@ -1249,6 +1250,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleTi)
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRetrieveSeqData(true);
+    iconfig.SetDataLoaderConfig().m_BlastDbName = "Trace/Mus_musculus_WGS" ;
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
     CScope scope(*CObjectManager::GetInstance());
@@ -1272,7 +1274,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleTi)
 
     CHECK(ssl.seqloc->GetInt().IsSetId() == true);
     CHECK_EQUAL(CSeq_id::e_General, ssl.seqloc->GetInt().GetId().Which());
-    const string db("TRACE");
+    const string db("ti");
     CHECK_EQUAL(db, ssl.seqloc->GetInt().GetId().GetGeneral().GetDb());
     CHECK(ssl.seqloc->GetInt().GetId().GetGeneral().GetTag().IsId());
     const int ti(12345);
@@ -1300,6 +1302,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRetrieveSeqData(false);
+    iconfig.SetDataLoaderConfig().m_BlastDbName = "Trace/Mus_musculus_WGS" ;
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
     vector< pair<string, long> > gi_accessions;
