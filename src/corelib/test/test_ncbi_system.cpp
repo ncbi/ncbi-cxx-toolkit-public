@@ -51,9 +51,9 @@ static void Test_General(void)
 {
     LOG_POST("\nGeneral tests\n");
 
-    // Number of processors
-    cout << "Number of processors: " << GetCpuCount() << endl;
-    cout << "Page size: " << GetVirtualMemoryPageSize() << endl;
+    cout << "Number of processors: " << GetCpuCount()              << endl;
+    cout << "Page size:            " << GetVirtualMemoryPageSize() << endl;
+    cout << "Physical memory:      " << GetPhysicalMemorySize()    << endl;
 
     size_t total, resident, shared;
     if (GetMemoryUsage(&total, &resident, &shared)) {

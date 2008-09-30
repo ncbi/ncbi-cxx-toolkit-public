@@ -464,7 +464,7 @@ unsigned long GetVirtualMemoryPageSize(void)
     return ps;
 }
 
-unsigned long GetPhysicalMemorySize(void)
+Uint8 GetPhysicalMemorySize(void)
 {
 #if defined(NCBI_OS_MSWIN)
 
@@ -478,7 +478,7 @@ unsigned long GetPhysicalMemorySize(void)
 
     unsigned long num_pages = sysconf(_SC_PHYS_PAGES);
     if (long(num_pages) != -1L) {
-        return GetVirtualMemoryPageSize() * num_pages;
+        return GetVirtualMemoryPageSize() * Uint8(num_pages);
     }
 
 #elif defined(NCBI_OS_BSD)  ||  defined(NSBI_OS_DARWIN)
@@ -489,7 +489,7 @@ unsigned long GetPhysicalMemorySize(void)
     mib[0] = CTL_HW;
     mib[1] = HW_PHYSMEM;
     if (sysctl(mib, 2, &physmem, &len, 0, 0) == 0  &&  len == sizeof(physmem)){
-        return physmem;
+        return Uint8(physmem);
     }
 
 #  ifdef NCBI_OS_DARWIN
@@ -501,8 +501,8 @@ unsigned long GetPhysicalMemorySize(void)
         if (host_statistics(my_host, HOST_VM_INFO,
                             (integer_t*) &vm_stat, &count) == KERN_SUCCESS) {
             return GetVirtualMemoryPageSize() *
-                (vm_stat.free_count + vm_stat.active_count +
-                 vm_stat.inactive_count + vm_stat.wire_count);
+                (Uint8(vm_stat.free_count) + Uint8(vm_stat.active_count) +
+                 Uint8(vm_stat.inactive_count) + Uint8(vm_stat.wire_count));
         }
     }
 #  endif //NCBI_OS_DARWIN
@@ -511,7 +511,7 @@ unsigned long GetPhysicalMemorySize(void)
 
     struct rminfo rmi;
     if (sysmp(MP_SAGET, MPSA_RMINFO, &rmi, sizeof(rmi)) >= 0) {
-        return GetVirtualMemoryPageSize() * rmi.physmem;
+        return GetVirtualMemoryPageSize() * Uint8(rmi.physmem);
     }
 
 #endif

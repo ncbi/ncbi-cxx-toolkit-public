@@ -138,7 +138,7 @@ extern unsigned long GetVirtualMemoryPageSize(void);
 /// Return the amount of physical memory available on the machine.
 /// Return 0 if cannot determine it on current platform or if an error occurs.
 NCBI_XNCBI_EXPORT
-extern unsigned long GetPhysicalMemorySize(void);
+extern Uint8 GetPhysicalMemorySize(void);
 
 /// [UNIX & Windows] Return current memory usage, in bytes.
 /// NULL arguments will not be filled in.
