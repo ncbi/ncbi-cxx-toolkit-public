@@ -3,42 +3,9 @@
 #
 # Check netcached services
 
-services="
-   NC_FluAnalysis    \
-   NC_gds_kmeans     \
-   NC_Geo            \
-   NC_GeoSubmission  \
-   NC_gMap           \
-   NC_gProt          \
-   NC_HGRG_UniGene   \
-   NC_MapView        \
-   NC_ncgraph        \
-   NC_Pasc           \
-   NC_PCAssayGraph   \
-   NC_PCSketcher     \
-   NC_PhyloTree      \
-   NC_ProtMap        \
-   NC_Sage           \
-   NC_Splign         \
-   NC_TaxCommonTree  \
-   NC_test           \
-   NC_TraceAssmV     \
-   NC_TraceViewer    \
-   NC_Reserve"
+services="`cat ./servers/netcache_check_services.lst`"
 
-hosts="
-   serviceqa:9001   \
-   service1:9001   \
-   service2:9001   \
-   service3:9001   \
-   service0:9005   \
-   serviceqa:9005   \
-   service1:9102   \
-   service2:9102   \
-   service1:9003   \
-   service2:9003   \
-   service1:9009   \
-   netcache:9009"
+hosts="`cat ./servers/netcache_check_servers.lst`"
 
 # For Nagios test
 
