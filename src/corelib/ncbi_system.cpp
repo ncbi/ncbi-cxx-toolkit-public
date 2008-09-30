@@ -463,33 +463,50 @@ unsigned long GetVirtualMemoryPageSize(void)
 
 unsigned long GetPhysicalMemorySize(void)
 {
-    unsigned long num_pages = 0, page_size = 0;
-
 #if defined(NCBI_OS_MSWIN)
+
     MEMORYSTATUSEX st;
     st.dwLength = sizeof(st);
-    if ( !GlobalMemoryStatusEx(&st) ) {
-        return 0;
+    if ( GlobalMemoryStatusEx(&st) ) {
+        return st.ullTotalPhys;
     }
-    return st.ullTotalPhys;
-#elif defined (NCBI_OS_DARWIN)
-    page_size = GetVirtualMemoryPageSize();
-    struct vm_statistics vm_stat;
-    mach_port_t my_host = mach_host_self();
-    mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
-    if (host_statistics(my_host, HOST_VM_INFO, (integer_t*)&vm_stat, &count) !=
-        KERN_SUCCESS) {
-        return 0;
+
+#elif defined(NCBI_OS_UNIX)  &&  defined(_SC_PHYS_PAGES)
+
+    unsigned long num_pages = sysconf(_SC_PHYS_PAGES);
+    if (long(num_pages) != -1L) {
+        return GetVirtualMemoryPageSize() * num_pages;
     }
-    return (vm_stat.free_count + vm_stat.active_count + vm_stat.inactive_count +
-        vm_stat.wire_count) * page_size;
-#elif defined(_SC_PHYS_PAGES)
-    page_size = GetVirtualMemoryPageSize();
-    if ( ((long)(num_pages = sysconf(_SC_PHYS_PAGES))) == -1L) {
-        num_pages = 0;
+
+#elif defined(NCBI_OS_BSD)  ||  defined(NSBI_OS_DARWIN)
+
+    int mib[2];
+    int physmem;
+    size_t len = sizeof(physmem);
+    mib[0] = CTL_HW;
+    mib[1] = HW_PHYSMEM;
+    if (sysctl(mib, 2, &physmem, &len, 0, 0) == 0  &&  len == sizeof(physmem)){
+        return physmem;
     }
+
+#  ifdef NCBI_OS_DARWIN
+    {
+        /* heavier fallback */
+        struct vm_statistics vm_stat;
+        mach_port_t my_host = mach_host_self();
+        mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
+        if (host_statistics(my_host, HOST_VM_INFO,
+                            (integer_t*) &vm_stat, &count) == KERN_SUCCESS) {
+            return GetVirtualMemoryPageSize() *
+                (vm_stat.free_count + vm_stat.active_count +
+                 vm_stat.inactive_count + vm_stat.wire_count);
+        }
+    }
+#  endif /*NCBI_OS_DARWIN*/
+
 #endif
-    return num_pages * page_size;
+
+    return 0;
 }
 
 
