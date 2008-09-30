@@ -382,7 +382,7 @@ bool CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
         int x_errno = errno;
         const char* error = x_errno ? strerror(x_errno) : 0;
         ERR_POST_X(1, string("[Daemonize]  ") + what +
-                   (error  &&  *error ? string(": ") + error : kEmptyStr);
+                   (error  &&  *error ? string(": ") + error : kEmptyStr));
         ::close(fdin);
         ::close(fdout);
         ::close(fderr);
