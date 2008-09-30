@@ -36,7 +36,6 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbireg.hpp>
 
-#include <util/logrotate.hpp>
 #include <util/thread_nonstop.hpp>
 #include <util/time_line.hpp>
 
@@ -277,6 +276,9 @@ private:
 
 
 /// Queue databases
+// BerkeleyDB does not like to mix DB open/close with regular operations,
+// so we open a set of db files on startup to be used as actual databases.
+// This block represent a set of db files to serve one queue.
 struct SQueueDbBlock
 {
     void Open(CBDB_Env& env, const string& path, int pos);
@@ -332,6 +334,7 @@ struct SQueueParameters
     unsigned max_output_size;
     bool deny_access_violations;
     bool log_access_violations;
+    bool log_job_state;
     string subm_hosts;
     string wnode_hosts;
     // This parameter is not reconfigurable
@@ -348,6 +351,7 @@ struct SQueueParameters
         max_output_size(kNetScheduleMaxDBDataSize),
         deny_access_violations(false),
         log_access_violations(true),
+        log_job_state(false),
         run_timeout_precision(3600)
     { }
     ///
@@ -770,6 +774,7 @@ private:
     unsigned                     m_MaxOutputSize;
     bool                         m_DenyAccessViolations;
     bool                         m_LogAccessViolations;
+    bool                         m_LogJobState;
     /// Client program version control
     CQueueClientInfoList         m_ProgramVersionList;
     /// Host access list for job submission
@@ -797,6 +802,7 @@ public:
     unsigned GetMaxOutputSize() { return m_Queue.m_MaxOutputSize; }
     bool GetDenyAccessViolations() { return m_Queue.m_DenyAccessViolations; }
     bool GetLogAccessViolations() { return m_Queue.m_LogAccessViolations; }
+    bool GetLogJobState() { return m_Queue.m_LogJobState; }
     const CQueueClientInfoList& GetProgramVersionList()
         { return m_Queue.m_ProgramVersionList; }
     const CNetSchedule_AccessList& GetSubmHosts()
@@ -805,7 +811,7 @@ public:
         { return m_Queue.m_WnodeHosts; }
 
     unsigned GetNumParams() const {
-        return 15;
+        return 16;
     }
     string GetParamName(unsigned n) const {
         switch (n) {
@@ -821,9 +827,10 @@ public:
         case 9:  return "max_output_size";
         case 10: return "deny_access_violations";
         case 11: return "log_access_violations";
-        case 12: return "program";
-        case 13: return "subm_host";
-        case 14: return "wnode_host";
+        case 12: return "log_job_state";
+        case 13: return "program";
+        case 14: return "subm_host";
+        case 15: return "wnode_host";
         default: return "";
         }
     }
@@ -841,9 +848,10 @@ public:
         case 9:  return NStr::IntToString(m_Queue.m_MaxOutputSize);
         case 10: return m_Queue.m_DenyAccessViolations ? "true" : "false";
         case 11: return m_Queue.m_LogAccessViolations ? "true" : "false";
-        case 12: return m_Queue.m_ProgramVersionList.Print();
-        case 13: return m_Queue.m_SubmHosts.Print();
-        case 14: return m_Queue.m_WnodeHosts.Print();
+        case 12: return m_Queue.m_LogJobState ? "true" : "false";
+        case 13: return m_Queue.m_ProgramVersionList.Print();
+        case 14: return m_Queue.m_SubmHosts.Print();
+        case 15: return m_Queue.m_WnodeHosts.Print();
         default: return "";
         }
     }

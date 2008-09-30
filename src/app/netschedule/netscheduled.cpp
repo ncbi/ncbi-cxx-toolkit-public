@@ -37,28 +37,23 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbimisc.hpp>
-#include <corelib/plugin_manager.hpp>
-#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbimtx.hpp>
 
-#include <util/thread_nonstop.hpp>
+#include <corelib/ncbidiag.hpp>
+#include <corelib/request_ctx.hpp>
+
 #include <util/bitset/ncbi_bitset.hpp>
 
-#include <util/logrotate.hpp>
-
 #include <connect/ncbi_core_cxx.hpp>
-#include <connect/threaded_server.hpp>
 #include <connect/server.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
 #include <bdb/bdb_expt.hpp>
-#include <bdb/bdb_cursor.hpp>
 
 #include "bdb_queue.hpp"
-
 #include "ns_types.hpp"
 #include "ns_util.hpp"
 #include "job_status.hpp"
@@ -468,6 +463,12 @@ private:
     /// Quick local timer
     CFastLocalTime              m_LocalTimer;
 
+    // Due to processing of one logical request can span
+    // multiple threads, but goes on in a single handler,
+    // we use manual request context switching, thus replacing
+    // default per-thread mechanism.
+    CRequestContext             m_RequestContext;
+
 }; // CNetScheduleHandler
 
 //////////////////////////////////////////////////////////////////////////
@@ -772,6 +773,19 @@ EIO_Event CNetScheduleHandler::GetEventsToPollFor(const CTime** /*alarm_time*/) 
 }
 
 
+static void FormatIPAddress(unsigned int ipaddr, string& str_addr)
+{
+    unsigned int hostaddr = CSocketAPI::HostToNetLong(ipaddr);
+    char buf[32];
+    sprintf(buf, "%u.%u.%u.%u",
+        (hostaddr >> 24) & 0xff,
+        (hostaddr >> 16) & 0xff,
+        (hostaddr >> 8)  & 0xff,
+        hostaddr        & 0xff);
+    str_addr = buf;
+}
+
+
 void CNetScheduleHandler::OnOpen(void)
 {
     CSocket& socket = GetSocket();
@@ -786,6 +800,9 @@ void CNetScheduleHandler::OnOpen(void)
         m_PeerAddr = CSocketAPI::GetLoopbackAddress();
     }
     m_WorkerNodeInfo.host = m_PeerAddr;
+    string client_ip;
+    FormatIPAddress(m_PeerAddr, client_ip);
+    m_RequestContext.SetClientIP(client_ip);
 
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgAuth;
     m_DelayedOutput = NULL;
@@ -819,6 +836,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
     }
 
     try {
+        CDiagContext::SetRequestContext(&m_RequestContext);
         (this->*m_ProcessMessage)(buffer);
     }
     catch (CNetScheduleException &ex)
@@ -827,6 +845,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         string msg = x_FormatErrorMessage("Server error", ex.what());
         ERR_POST(msg);
         x_WriteErrorToMonitor(msg);
+        CDiagContext::SetRequestContext(0);
         throw;
     }
     catch (CNetServiceException &ex)
@@ -835,6 +854,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         string msg = x_FormatErrorMessage("Server error", ex.what());
         ERR_POST(msg);
         x_WriteErrorToMonitor(msg);
+        CDiagContext::SetRequestContext(0);
         throw;
     }
     catch (CBDB_ErrnoException& ex)
@@ -855,6 +875,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
             err = NStr::PrintableString(err);
             WriteErr(err);
         }
+        CDiagContext::SetRequestContext(0);
         throw;
     }
     catch (CBDB_Exception &ex)
@@ -866,6 +887,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         string msg = x_FormatErrorMessage("BDB error", ex.what());
         ERR_POST(msg);
         x_WriteErrorToMonitor(msg);
+        CDiagContext::SetRequestContext(0);
         throw;
     }
     catch (exception& ex)
@@ -877,8 +899,10 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         string msg = x_FormatErrorMessage("STL exception", ex.what());
         ERR_POST(msg);
         x_WriteErrorToMonitor(msg);
+        CDiagContext::SetRequestContext(0);
         throw;
     }
+    CDiagContext::SetRequestContext(0);
 }
 
 
@@ -2859,13 +2883,7 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters& params)
     if (params.use_hostname) {
         m_Host = CSocketAPI::gethostname();
     } else {
-        unsigned int hostaddr = SOCK_HostToNetLong(m_HostNetAddr);
-        char ipaddr[32];
-        sprintf(ipaddr, "%u.%u.%u.%u", (hostaddr >> 24) & 0xff,
-                                       (hostaddr >> 16) & 0xff,
-                                       (hostaddr >> 8)  & 0xff,
-                                        hostaddr        & 0xff);
-        m_Host = ipaddr;
+        FormatIPAddress(m_HostNetAddr, m_Host);
     }
 
     m_InactivityTimeout = params.network_timeout;
@@ -2896,7 +2914,6 @@ public:
     void Init(void);
     int Run(void);
 private:
-    auto_ptr<CRotatingLogStream> m_ErrLog;
     STimeout m_ServerAcceptTimeout;
 };
 

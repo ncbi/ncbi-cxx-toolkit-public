@@ -147,7 +147,7 @@ struct SJobInfoDB : public CBDB_File
 const unsigned kMaxWorkerNodeIdSize = 64;
 /// BDB table to store run information
 /// Every instantiation of a job is reflected in this table under
-/// correspoding (id, run) key. In particular, this table stores
+/// corresponding (id, run) key. In particular, this table stores
 /// ALL run attempts, so if the job was rescheduled, the number of
 /// actual attempts can be more than run_count.
 struct SRunsDB : public CBDB_File
@@ -183,7 +183,7 @@ struct SRunsDB : public CBDB_File
 /// occurs in background, with different pace for different tables,
 /// and even in different manner (blocks of jobs from main and aux job
 /// tables, and whole vectors from several records from affinity and tag
-/// tables), we need to maintain several bitvectors with deleted jobs.
+/// tables), we need to maintain several bit vectors with deleted jobs.
 ///
 /// @internal
 ///

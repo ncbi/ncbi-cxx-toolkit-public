@@ -33,6 +33,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <corelib/ncbidiag.hpp>
+#include <corelib/request_ctx.hpp>
 #include <util/md5.hpp>
 
 #include "worker_node.hpp"
@@ -163,7 +165,8 @@ void CQueueWorkerNodeList::ClearNode(const string& node_id, TJobList& jobs)
 
 void CQueueWorkerNodeList::AddJob(const string& node_id,
                                   TNSJobId job_id,
-    							  time_t exp_time)
+                                  time_t exp_time,
+                                  bool log_job_state)
 {
     time_t curr = time(0);
     CWriteLockGuard guard(m_Lock);
@@ -173,12 +176,16 @@ void CQueueWorkerNodeList::AddJob(const string& node_id,
     node->m_Jobs[job_id] = exp_time;
     node->UpdateValidityTime();
     node->SetNotificationTimeout(curr, 0);
+    if (log_job_state)
+        GetDiagContext().PrintRequestStart(string("Node ") +
+            node_id + " job " + NStr::IntToString(job_id));
 }
 
 
 void CQueueWorkerNodeList::RemoveJob(const string& node_id,
                                      TNSJobId job_id,
-                                     ENSCompletion reason)
+                                     ENSCompletion reason,
+                                     bool log_job_state)
 {
     time_t curr = time(0);
     CWriteLockGuard guard(m_Lock);
@@ -189,6 +196,10 @@ void CQueueWorkerNodeList::RemoveJob(const string& node_id,
     node->UpdateValidityTime();
     if (reason != eNSCTimeout)
         node->SetNotificationTimeout(curr, 0);
+    if (log_job_state) {
+        CDiagContext::GetRequestContext().SetRequestStatus(int(reason));
+        GetDiagContext().PrintRequestStop();
+    }
 }
 
 
@@ -207,7 +218,8 @@ CQueueWorkerNodeList::GetNotifyList(bool unconditional, time_t curr,
     bool has_notify = false;
     ITERATE(TWorkerNodeById, it, m_WorkerNodeById) {
         const CWorkerNode& node = *(it->second);
-        if (!unconditional && node.ShouldNotify(curr))
+        if (!node.m_Port) continue;
+        if (!unconditional && !node.ShouldNotify(curr))
             continue;
         has_notify = true;
         notify_list.push_back(TWorkerNodeHostPort(node.m_Host, node.m_Port));

@@ -128,10 +128,11 @@ public:
     void ClearNode(const string& node_id, TJobList& jobs);
     
     // Add job to worker node job list
-    void AddJob(const string& node_id, TNSJobId job_id, time_t exp_time);
+    void AddJob(const string& node_id, TNSJobId job_id, time_t exp_time,
+                bool log_job_state);
     // Remove job from worker node job list
     void RemoveJob(const string& node_id, TNSJobId job_id,
-                   ENSCompletion reason);
+                   ENSCompletion reason, bool log_job_state);
 
     // Returns true and adds entries to notify_list if it decides that it's OK to notify.
     bool GetNotifyList(bool unconditional, time_t curr,

@@ -30,10 +30,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <corelib/ncbi_system.hpp>
-#include <corelib/ncbifile.hpp>
-#include <corelib/ncbi_limits.h>
-#include <corelib/version.hpp>
+#include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/ncbireg.hpp>
 #include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -303,8 +300,8 @@ void CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
     if (reinit) {
         CDir dir(db_path);
         dir.Remove();
-        LOG_POST(Error << "Reinintialization. " << db_path
-                        << " removed. \n");
+        LOG_POST(Error << "Reinitialization. " << db_path
+                        << " removed.");
     }
 
     m_Path = CDirEntry::AddTrailingPathSeparator(db_path);
