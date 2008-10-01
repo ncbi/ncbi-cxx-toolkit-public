@@ -707,7 +707,11 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::eEngine_KHTML,   {125,  4, -1},
         { 5, 0, -1}
     },
-
+    { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.2.149.27 Safari/525.13",
+        CCgiUserAgent::eChrome,         {  0,  2,149},
+        CCgiUserAgent::eEngine_KHTML,   {525, 13, -1},
+        { 5, 0, -1}
+    },
 
     // AppComment tests
 

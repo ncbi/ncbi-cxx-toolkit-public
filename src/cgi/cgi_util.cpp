@@ -901,6 +901,8 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eFirefox,      "Firefox",                  "Firefox",                  CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
     { CCgiUserAgent::eFirefox,      "Firebird", /*ex-Firefox*/  "Firebird",                 CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
     { CCgiUserAgent::eFlock,        "Flock",                    "Flock",                    CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eIceCat,       "IceCat",                   "IceCat",                   CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eIceweasel,    "Iceweasel",                "Iceweasel",                CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
     { CCgiUserAgent::eGaleon,       "Galeon",                   "Galeon",                   CCgiUserAgent::eEngine_Gecko,   fAny },
     { CCgiUserAgent::eKMeleon,      "K-Meleon",                 "K-Meleon",                 CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
     { CCgiUserAgent::eMadfox,       "Madfox",                   "Madfox",                   CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
@@ -927,6 +929,7 @@ const SBrowser s_Browsers[] = {
 
     // AppleQWebKit/KHTML-based                                 
 
+    { CCgiUserAgent::eChrome,       "Google Chrome",            "Chrome",                   CCgiUserAgent::eEngine_KHTML,   fVendorProduct },
     { CCgiUserAgent::eOmniWeb,      "OmniWeb",                  "OmniWeb",                  CCgiUserAgent::eEngine_KHTML,   fVendorProduct },
     { CCgiUserAgent::eNetNewsWire,  "NetNewsWire",              "NetNewsWire",              CCgiUserAgent::eEngine_KHTML,   fAny },
     { CCgiUserAgent::eSafari,       "Safari",                   "Safari",                   CCgiUserAgent::eEngine_KHTML,   fVendorProduct },

@@ -481,6 +481,8 @@ public:
         eEpiphany,              ///< Epiphany   (www.gnome.org/projects/epiphany)
         eFirefox,               ///< Firefox    (www.mozilla.org/products/firefox)
         eFlock,                 ///< Flock      (www.flock.com)
+        eIceCat,                ///< GNU IceCat (http://www.gnu.org/software/gnuzilla)
+        eIceweasel,             ///< Debian Iceweasel   (www.geticeweasel.org)
         eGaleon,                ///< Gakeon     (galeon.sourceforge.net)
         eKMeleon,               ///< K-Meleon   (kmeleon.sf.net)
         eMadfox,                ///< Madfox     (www.splyb.com/madfox)
@@ -497,6 +499,7 @@ public:
         eNetCaptor,             ///< NetCaptor      (www.netcaptor.com)
 
         // AppleWebKit/KHTML based
+        eChrome,                ///< Google Chrome  (www.google.com/chrome)
         eOmniWeb,               ///< OmniWeb     (www.omnigroup.com/applications/omniweb)
         eNetNewsWire,           ///< NetNewsWire (www.apple.com)
         eSafari,                ///< Safari      (www.apple.com/safari)
