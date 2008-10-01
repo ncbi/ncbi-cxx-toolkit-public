@@ -319,7 +319,7 @@ CMultiAligner::FindQueryClusters()
     }
 
     // Select cluster prototypes
-    NON_CONST_ITERATE(CClusterer::TClusters, it, m_Clusterer.GetClusters()) {
+    NON_CONST_ITERATE(CClusterer::TClusters, it, m_Clusterer.SetClusters()) {
 
         // For one-element clusters same element
         if (it->size() == 1) {
@@ -799,10 +799,10 @@ void CMultiAligner::MultiAlignClusters(void)
 void CMultiAligner::MakeClusterResidueFrequencies(void) 
 {
     // Iterate over all clusters
-    CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
+    const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
     for (size_t cluster_idx=0;cluster_idx < clusters.size();cluster_idx++) {
 
-        CClusterer::TSingleCluster& cluster = clusters[cluster_idx];
+        const CClusterer::TSingleCluster& cluster = clusters[cluster_idx];
         _ASSERT(cluster.size() >= 1);
         
         // Skip one-element clusters

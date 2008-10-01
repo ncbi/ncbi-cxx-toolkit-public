@@ -84,6 +84,16 @@ public:
     ///
     int GetPrototype(void) const {return m_Prototype;}
 
+    /// Set maximum distance in cluster
+    /// @param dist Maximum distance
+    ///
+    void SetMaxDistance(double dist) {m_Diameter = dist;}
+	
+    /// Get maximum distance in cluster
+    /// @return Maximum distance in cluster
+    ///
+    double GetMaxDistance(void) const {return m_Diameter;}
+
     /// Get cluster size
     /// @return Number of elements in the cluster
     ///
@@ -112,6 +122,7 @@ public:
 
     protected:
     int m_Prototype;          ///< Index of cluster representative element
+    double m_Diameter;        ///< Max distance between elements
     vector<int> m_Elements;   ///< List of indeces of cluster elements
     };
 
@@ -167,7 +178,12 @@ public:
     /// Get clusters
     /// @return list of clusters
     ///
-    TClusters& GetClusters(void) {return m_Clusters;}
+    const TClusters& GetClusters(void) const {return m_Clusters;}
+
+    /// Set clusters
+    /// @return Clusters
+    ///
+    TClusters& SetClusters(void) {return m_Clusters;}
 
     /// Set prototypes for all clusters as center elements
     ///
