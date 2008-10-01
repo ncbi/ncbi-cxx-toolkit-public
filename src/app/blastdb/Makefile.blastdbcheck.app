@@ -1,3 +1,5 @@
+# $Id$
+
 APP = blastdbcheck
 SRC = blastdbcheck blastdb_aux
 REGEX_LIBS = xregexp $(PCRE_LIB)
@@ -13,4 +15,3 @@ CPPFLAGS = $(ORIG_CPPFLAGS)
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
-REGEX_LIBS = xregexp 
