@@ -67,6 +67,13 @@ void CMacProjectGenerator::Generate(const string& solution)
         solution : CDirEntry::ConcatPath( CDir::GetCwd(), solution);
     string solution_name = CDirEntry(m_SolutionDir).GetName();
     m_SolutionDir = CDirEntry(m_SolutionDir).GetDir(CDirEntry::eIfEmptyPath_Empty);
+
+    m_OutputDir = CDirEntry::AddTrailingPathSeparator(
+        CDirEntry::ConcatPath( CDirEntry::ConcatPath(
+            GetApp().GetProjectTreeInfo().m_Compilers,
+            GetApp().GetRegSettings().m_CompilersSubdir),
+            GetApp().GetBuildType().GetTypeStr()));
+    m_OutputDir = GetRelativePath(m_OutputDir);
     
     CRef<CPlist> xproj( new CPlist);
     CDict& dict_root = xproj->SetPlistObject().SetDict();
@@ -104,7 +111,7 @@ void CMacProjectGenerator::Generate(const string& solution)
         AddString( *all_dependencies, proj_dependency);
         AddString( *targets, proj_target);
 
-        CProjectFileCollector prj_files( prj, m_Configs, m_SolutionDir);
+        CProjectFileCollector prj_files( prj, m_Configs, m_SolutionDir+m_OutputDir);
         prj_files.DoCollect();
         
         CRef<CArray> build_phases( new CArray);
@@ -333,7 +340,7 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
             AddString( *inputs, GetRelativePath(*f));
             CDirEntry entry(*f);
             script += "echo Using datatool to create a C++ objects from " + entry.GetName() + "\n";
-            script += "./bin/$CONFIGURATION/datatool -oex \"\" -pch " + pch_name;
+            script += m_OutputDir + "bin/$CONFIGURATION/datatool -oex \"\" -pch " + pch_name;
             script += " -m " + GetRelativePath( entry.GetPath(), &GetApp().GetProjectTreeInfo().m_Src);
             string imports( prj_files.GetDataSpecImports(*f));
             if (!imports.empty()) {
@@ -568,7 +575,12 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
 {
     const CMsvcMetaMakefile& metamake( GetApp().GetMetaMakefile());
     bool dll_build = GetApp().GetBuildType().GetType() == CBuildType::eDll;
-    string lib_paths("lib/$(CONFIGURATION)");
+    string lib_paths(m_OutputDir + "lib/$(CONFIGURATION)");
+    string libs_out(m_OutputDir + "lib/$(CONFIGURATION)");
+    string bins_out(m_OutputDir + "bin/$(CONFIGURATION)");
+    string proj_dir("$(PROJECT_DIR)/");
+//    string temp_dir("$(BUILD_DIR)/$(CONFIGURATION)");
+//    string temp_dir("$(OBJROOT)/$(CONFIGURATION)");
 
     CRef<CDict> settings( AddDict( dict_cfg, "buildSettings"));
     AddString( dict_cfg, "isa", "XCBuildConfiguration");
@@ -580,29 +592,29 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddLibrarianSetting( *settings, cfg, "GCC_INLINES_ARE_PRIVATE_EXTERN");
         AddLibrarianSetting( *settings, cfg, "GCC_SYMBOLS_PRIVATE_EXTERN");
 
-        AddString( *settings, "CONFIGURATION_BUILD_DIR", "lib/$(CONFIGURATION)");
-        AddString( *settings, "CONFIGURATION_TEMP_DIR", "$(BUILD_DIR)/$(CONFIGURATION)");
-        AddString( *settings, "INSTALL_PATH", "$(PROJECT_DIR)/lib/$(CONFIGURATION)");
-        AddString( *settings, "OBJROOT", "build");
+        AddString( *settings, "CONFIGURATION_BUILD_DIR", libs_out);
+//        AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
+        AddString( *settings, "INSTALL_PATH", proj_dir + libs_out);
+        AddString( *settings, "OBJROOT", m_OutputDir + "build");
 
     } else if (prj.m_ProjType == CProjKey::eDll) {
 
         AddString( *settings, "GCC_SYMBOLS_PRIVATE_EXTERN", "NO");
 
-        AddString( *settings, "CONFIGURATION_BUILD_DIR", "lib/$(CONFIGURATION)");
-        AddString( *settings, "CONFIGURATION_TEMP_DIR", "$(BUILD_DIR)/$(CONFIGURATION)");
-        AddString( *settings, "INSTALL_PATH", "$(PROJECT_DIR)/lib/$(CONFIGURATION)");
-        AddString( *settings, "OBJROOT", "build");
+        AddString( *settings, "CONFIGURATION_BUILD_DIR", libs_out);
+//        AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
+        AddString( *settings, "INSTALL_PATH", proj_dir + libs_out);
+        AddString( *settings, "OBJROOT", m_OutputDir + "build");
 
         AddString( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
         AddString( *settings, "EXECUTABLE_PREFIX", "lib");
 
     } else if (prj.m_ProjType == CProjKey::eApp) {
 
-        AddString( *settings, "CONFIGURATION_BUILD_DIR", "bin/$(CONFIGURATION)");
-        AddString( *settings, "CONFIGURATION_TEMP_DIR", "$(BUILD_DIR)/$(CONFIGURATION)");
-        AddString( *settings, "INSTALL_PATH", "$(PROJECT_DIR)/bin/$(CONFIGURATION)");
-        AddString( *settings, "OBJROOT", "build");
+        AddString( *settings, "CONFIGURATION_BUILD_DIR", bins_out);
+//        AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
+        AddString( *settings, "INSTALL_PATH", proj_dir + bins_out);
+        AddString( *settings, "OBJROOT", m_OutputDir + "build");
 
         AddString( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
         AddString( *settings, "MACH_O_TYPE", "mh_execute");

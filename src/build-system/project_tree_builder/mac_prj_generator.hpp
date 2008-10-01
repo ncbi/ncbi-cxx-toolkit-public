@@ -60,6 +60,7 @@ private:
     list<SConfigInfo> m_Configs;
     const CProjectItemsTree& m_Projects_tree;
     string m_SolutionDir;
+    string m_OutputDir;
 
     void Save(const string& solution_name, ncbi::objects::CPlist& xproj);
 

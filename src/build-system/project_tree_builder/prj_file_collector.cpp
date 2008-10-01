@@ -38,9 +38,9 @@ BEGIN_NCBI_SCOPE
 #if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
 
 CProjectFileCollector::CProjectFileCollector(const CProjItem& prj,
-    const list<SConfigInfo>& configs, const string& solution)
+    const list<SConfigInfo>& configs, const string& output_dir)
     :m_ProjItem(prj), m_ProjContext(prj), m_Configs(configs),
-     m_SolutionDir(solution)
+     m_OutputDir(output_dir)
 {
 }
 
@@ -92,7 +92,7 @@ void CProjectFileCollector::CollectSources(void)
     ITERATE(list<string>, p, sources) {
         if ( NStr::EndsWith(*p, ".in") ) {
             CDirEntry ent( NStr::Replace( *p, ".in", ""));
-            string dest_path = CDirEntry::ConcatPath( m_SolutionDir, m_ProjItem.m_ID);
+            string dest_path = CDirEntry::ConcatPath( m_OutputDir, m_ProjItem.m_ID);
             dest_path = CDirEntry::ConcatPath( dest_path, ent.GetBase());
             ITERATE(list<SConfigInfo>, cfg, m_Configs) {
                 const SConfigInfo& cfg_info = *cfg;

@@ -43,7 +43,7 @@ class CProjectFileCollector
 {
 public:
     CProjectFileCollector(const CProjItem& prj,
-        const list<SConfigInfo>& configs, const string& solution);
+        const list<SConfigInfo>& configs, const string& output_dir);
     ~CProjectFileCollector(void);
 
     void DoCollect(void);
@@ -87,7 +87,7 @@ private:
     const CProjItem& m_ProjItem;
     CMsvcPrjProjectContext m_ProjContext;
     list<SConfigInfo> m_Configs;
-    string m_SolutionDir;
+    string m_OutputDir;
     list<string> m_Sources;
     list<string> m_ConfigurableSources;
     list<string> m_Headers;
