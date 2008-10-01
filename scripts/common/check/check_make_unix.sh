@@ -54,8 +54,8 @@ x_out=$6
 
 
 # Check for build dir
-if [ ! -z "$x_build_dir" ]; then
-   if [ ! -d "$x_build_dir" ]; then
+if test ! -z "$x_build_dir"; then
+   if test ! -d "$x_build_dir"; then
       echo "Build directory \"$x_build_dir\" don't exist."
       exit 1 
    fi
@@ -63,7 +63,7 @@ if [ ! -z "$x_build_dir" ]; then
 else
    # Get build dir name from the current path
    x_build_dir=`pwd | sed -e 's%/build.*$%%'`
-   if [ -d "$x_build_dir/build" ]; then
+   if test -d "$x_build_dir/build"; then
       x_build_dir="$x_build_dir/build"
    fi
 fi
@@ -72,8 +72,8 @@ x_conf_dir=`dirname "$x_build_dir"`
 x_bin_dir=`(cd "$x_build_dir/../bin"; pwd | sed -e 's/\/$//g')`
 
 # Check for top_srcdir
-if [ ! -z "$x_top_srcdir" ]; then
-   if [ ! -d "$x_top_srcdir" ]; then
+if test ! -z "$x_top_srcdir"; then
+   if test ! -d "$x_top_srcdir"; then
       echo "Top source directory \"$x_top_srcdir\" don't exist."
       exit 1 
    fi
@@ -86,8 +86,8 @@ else
 fi
 
 # Check for target dir
-if [ ! -z "$x_target_dir" ]; then
-   if [ ! -d "$x_target_dir" ]; then
+if test ! -z "$x_target_dir"; then
+   if test ! -d "$x_target_dir"; then
       echo "Target directory \"$x_target_dir\" don't exist."
       exit 1 
    fi
@@ -97,7 +97,7 @@ else
 fi
 
 # Check for a imported project or intree project
-if [ -f Makefile.out ] ; then
+if test -f Makefile.out ; then
    x_import_prj="yes"
    x_import_root=`sed -ne 's/^import_root *= *//p' Makefile`
    # x_compile_dir="`pwd | sed -e 's%/internal/c++/src.*$%%g'`/internal/c++/src"
@@ -107,18 +107,18 @@ else
    x_compile_dir="$x_build_dir"
 fi
 
-if [ -z "$x_list" ]; then
+if test -z "$x_list"; then
    x_list="$x_target_dir/$res_list"
 fi
 
-if [ -z "$x_out" ]; then
+if test -z "$x_out"; then
    x_out="$x_target_dir/$res_out"
 fi
 
 x_script_name=`echo "$x_out" | sed -e 's%^.*/%%'`
 
 # Check for a list file
-if [ ! -f "$x_list" ]; then
+if test ! -f "$x_list"; then
    echo "Check list file \"$x_list\" not found."
    exit 1 
 fi
@@ -198,7 +198,7 @@ EOF_usage
     exit 1
 }
 
-if [ \$# -ne 1 ]; then
+if test \$# -ne 1; then
    Usage "Invalid number of arguments."
 fi
 
@@ -252,7 +252,7 @@ case "\$method" in
          x_code=\`cat \$x_file | grep -c '@@@ EXIT CODE:'\`
          test \$x_code -ne 0 || continue
          x_good=\`cat \$x_file | grep -c '@@@ EXIT CODE: 0'\`
-         if [ \$x_good -ne 1 ]; then
+         if test \$x_good -ne 1; then
             echo 
             echo 
             cat \$x_file
@@ -265,9 +265,9 @@ case "\$method" in
    report_err )
       # This method works inside NCBI only 
       test "\$NCBI_CHECK_MAILTO_AUTHORS." = 'Y.'  ||  exit 0;
-      if [ -x /usr/sbin/sendmail ]; then
+      if test -x /usr/sbin/sendmail; then
          sendmail="/usr/sbin/sendmail -oi"
-      elif [ -x /usr/lib/sendmail ]; then
+      elif test -x /usr/lib/sendmail; then
          sendmail="/usr/lib/sendmail -oi"
       else
          echo sendmail not found on this platform
@@ -293,7 +293,7 @@ esac
 
 # Include configuration file
 . \${build_dir}/check.cfg
-if [ -z "\$NCBI_CHECK_TOOLS" ]; then
+if test -z "\$NCBI_CHECK_TOOLS"; then
    NCBI_CHECK_TOOLS="regular"
 fi
 
@@ -329,7 +329,7 @@ export DYLD_BIND_AT_LAUNCH
 
 EOF
 
-if [ -n "$x_conf_dir"  -a  -d "$x_conf_dir/lib" ];  then
+if test -n "$x_conf_dir"  -a  -d "$x_conf_dir/lib";  then
    cat >> $x_out <<EOF
 # Add a library path for running tests
 . \$root_dir/scripts/common/common.sh
@@ -352,7 +352,7 @@ if \$no_report_err && \$no_db_load; then
    rm -f "\$res_log"
 fi
 
-if [ "\$NCBI_CHECK_SETLIMITS" != "0" ] ; then
+if test "\$NCBI_CHECK_SETLIMITS" != "0"; then
    ulimit -c 1000000
    ulimit -v 2000000
 fi
@@ -401,25 +401,24 @@ RunTest()
 
         esac
     else
-        if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+        if test -n "\$NCBI_AUTOMATED_BUILD"; then
             echo "\$signature" > "\$x_test_rep"
             echo "\$x_work_dir_tail" >> "\$x_test_rep"
             echo "\$x_run" >> "\$x_test_rep"
             echo "\$x_real_name" >> "\$x_test_rep"
-
             NCBI_BOOST_REPORT_FILE="\$x_boost_rep"
             export NCBI_BOOST_REPORT_FILE
         fi
 
         # Check existence of the test's application directory
-        if [ -d "\$x_work_dir" ]; then
+        if test -d "\$x_work_dir"; then
 
             # Goto the test's directory 
             cd "\$x_work_dir"
             x_cmd="[\$x_work_dir_tail] \$x_name"
 
             # Run test if it exist
-            if [ -f "\$x_app" ]; then
+            if test -f "\$x_app"; then
 
                 CHECK_TIMEOUT="\$x_timeout"
                 export CHECK_TIMEOUT
@@ -436,7 +435,7 @@ RunTest()
                     tool_up=\`echo \$tool | tr '[a-z]' '[A-Z]'\`
                     NCBI_CHECK_TOOL=\`eval echo "\$"NCBI_CHECK_\${tool_up}""\`
       
-                    if [ \$tool_lo = "regular" ] ; then
+                    if test \$tool_lo = "regular"; then
                         x_cmd="[\$x_work_dir_tail] \$x_name"
                         x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext"
                     else
@@ -455,21 +454,21 @@ RunTest()
                         x_code=\`cat \$x_test_out | grep -c '@@@ EXIT CODE:'\`
                         test \$x_code -ne 0 || continue
                         x_good=\`cat \$x_test_out | grep -c '@@@ EXIT CODE: 0'\`
-                        if [ \$x_good -eq 1 ]; then
+                        if test \$x_good -eq 1; then
                             continue
                         fi
                         MailToAuthors "\$x_authors" "\$x_test_out"
                         continue
                     fi
          
-                    if [ ".\$NCBI_CHECK_TOOL" = ".?" ] ; then
+                    if test ".\$NCBI_CHECK_TOOL" = ".?"; then
                         result=255;
                         exec_time="Unknown check tool \$tool_up"
                     else
                         export NCBI_CHECK_TOOL
          
                         echo \$x_run | grep '.sh' > /dev/null 2>&1 
-                        if [ \$? -eq 0 ] ;  then
+                        if test \$? -eq 0;  then
                             # Run script without any check tools.
                             # It will be applied inside script using $CHECK_EXEC.
                             xx_run="\$x_run_fix"
@@ -493,7 +492,7 @@ RunTest()
 
                         # Run check
                         start_time="\`date +'$x_date_format'\`"
-                        if [ \$CHECK_TIMEOUT -gt 200 ] ; then
+                        if test \$CHECK_TIMEOUT -gt 200; then
                             # For heavy apps we would like to know execution time also
                             # for the case of exceeding of the maximum execution time.
                             launch_sh="/var/tmp/launch.\$\$.sh"
@@ -517,19 +516,24 @@ EOF_launch
                         }' \$x_log >> \$x_test_out
 
                         # Get application execution time
-                        exec_time=\`\$build_dir/sysdep.sh tl 7 \$x_log | tr '\n\r' '%%'\`
-                        echo \$exec_time | egrep 'real [0-9]|Maximum execution .* is exceeded' > /dev/null 2>&1 
-                        if [ \$? -eq 0 ] ;  then
-                            exec_time=\`echo \$exec_time |  \\
-                                        sed -e 's/%%/%/g'    \\
-                                            -e 's/%$//'      \\
-                                            -e 's/%/, /g'    \\
-                                            -e 's/[ ] */ /g' \\
-                                            -e 's/.*\(Maximum execution .* is exceeded\).*$/\1/' \\
-                                            -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
-                                            -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]*\).*/\1/'\`
+                        exec_time=\`\$build_dir/sysdep.sh tl 10 \$x_log | tr '\n\r' '%%'\`
+                        echo \$exec_time | grep 'time: command terminated abnormally' > /dev/null 2>&1 
+                        if test \$? -eq 0;  then
+                            exec_time='Maximum execution time is exceeded'
                         else
-                            exec_time='unparsable timing stats'
+                            echo \$exec_time | egrep 'real [0-9]|Maximum execution .* is exceeded' > /dev/null 2>&1 
+                            if test \$? -eq 0;  then
+                                exec_time=\`echo \$exec_time |   \\
+                                            sed -e 's/%%/%/g'    \\
+                                                -e 's/%$//'      \\
+                                                -e 's/%/, /g'    \\
+                                                -e 's/[ ] */ /g' \\
+                                                -e 's/.*\(Maximum execution .* is exceeded\).*$/\1/' \\
+                                                -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
+                                                -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]*\).*/\1/'\`
+                            else
+                                exec_time='unparsable timing stats'
+                            fi
                         fi
                
                         rm -f \$x_log
@@ -540,7 +544,7 @@ EOF_launch
                                        summary_ok=\`grep -c 'ERROR SUMMARY: 0 ' \$x_test_out\`
                                        # The number of given lines can be zero.
                                        # In some cases we can lost valgrind's summary.
-                                       if [ \$summary_all -ne \$summary_ok ]; then
+                                       if test \$summary_all -ne \$summary_ok; then
                                            result=254
                                        fi
                                        ;;
@@ -553,9 +557,9 @@ EOF_launch
                         echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
                         echo "@@@ EXIT CODE: \$result" >> \$x_test_out
 
-                        if [ -f "\$corefile" ]; then
+                        if test -f "\$corefile"; then
                             echo "@@@ CORE DUMPED" >> \$x_test_out
-                            if [ -d "\$bin_dir" -a -f "\$bin_dir/\$x_test" ]; then
+                            if test -d "\$bin_dir" -a -f "\$bin_dir/\$x_test"; then
                                 mv "\$corefile" "\$bin_dir/\$x_test.core"
                             else
                                 rm -f "\$corefile"
@@ -567,33 +571,32 @@ EOF_launch
                     if grep NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
                         echo "DIS --  \$x_cmd"
                         echo "DIS --  \$x_cmd" >> \$res_log
+                        test -n "\$NCBI_AUTOMATED_BUILD" && echo "DIS" >> "\$x_test_rep"
 
-                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "DIS" >> "\$x_test_rep"
                     elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
                         echo "SKP --  \$x_cmd"
                         echo "SKP --  \$x_cmd" >> \$res_log
+                        test -n "\$NCBI_AUTOMATED_BUILD" && echo "SKP" >> "\$x_test_rep"
 
-                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "SKP" >> "\$x_test_rep"
                     elif egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
                         echo "TO  --  \$x_cmd     (\$exec_time)"
                         echo "TO  --  \$x_cmd     (\$exec_time)" >> \$res_log
+                        test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
 
-                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "TO" >> "\$x_test_rep"
-                    elif [ \$result -eq 0 ]; then
+                    elif test \$result -eq 0; then
                         echo "OK  --  \$x_cmd     (\$exec_time)"
                         echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
                         count_ok=\`expr \$count_ok + 1\`
+                        test -n "\$NCBI_AUTOMATED_BUILD" && echo "OK" >> "\$x_test_rep"
 
-                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "OK" >> "\$x_test_rep"
                     else
                         echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
                         echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
                         count_err=\`expr \$count_err + 1\`
-
-                        [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "ERR" >> "\$x_test_rep"
+                        test -n "\$NCBI_AUTOMATED_BUILD" && echo "ERR" >> "\$x_test_rep"
                     fi
 
-                    if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+                    if test -n "\$NCBI_AUTOMATED_BUILD"; then
                         echo "\$start_time" >> "\$x_test_rep"
                         echo "\$result"     >> "\$x_test_rep"
                         echo "\$exec_time"  >> "\$x_test_rep"
@@ -605,7 +608,7 @@ EOF_launch
                     echo "ABS --  \$x_cmd" >> \$res_log
                     count_absent=\`expr \$count_absent + 1\`
 
-                    if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+                    if test -n "\$NCBI_AUTOMATED_BUILD"; then
                         echo "ABS"      >> "\$x_test_rep"
                         echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
                     fi
@@ -618,7 +621,7 @@ EOF_launch
                 echo "ABS -- \$x_work_dir - \$x_test" >> \$res_log
                 count_absent=\`expr \$count_absent + 1\`
 
-                if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+                if test -n "\$NCBI_AUTOMATED_BUILD"; then
                     echo "ABS"      >> "\$x_test_rep"
                     echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
                 fi
@@ -702,11 +705,11 @@ for x_row in $x_tests; do
 
    # Copy specified files to the build directory
 
-   if [ "$x_import_prj" = "no" ]; then
-      if [ ! -z "$x_files" ]; then
+   if test "$x_import_prj" = "no"; then
+      if test ! -z "$x_files"; then
          for i in $x_files ; do
             x_copy="$x_src_dir/$i"
-            if [ -f "$x_copy"  -o  -d "$x_copy" ]; then
+            if test -f "$x_copy"  -o  -d "$x_copy"; then
                cp -prf "$x_copy" "$x_work_dir"
                find "$x_work_dir/$i" -name .svn -print | xargs rm -rf
             else
@@ -718,7 +721,7 @@ for x_row in $x_tests; do
    fi
 
    # Generate extension for tests output file
-   if [ "$x_test" != "$x_test_prev" ]; then 
+   if test "$x_test" != "$x_test_prev"; then 
       x_cnt=1
       x_test_ext=""
    else
@@ -757,7 +760,7 @@ if \$no_report_err; then
    echo "Failed    : \$count_err"
    echo "Absent    : \$count_absent"
    echo
-   if [ \$count_err -eq 0 ]; then
+   if test \$count_err -eq 0; then
       echo
       echo "******** ALL TESTS COMPLETED SUCCESSFULLY ********"
       echo

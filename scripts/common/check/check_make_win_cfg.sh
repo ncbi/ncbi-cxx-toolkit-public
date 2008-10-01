@@ -103,7 +103,7 @@ x_script_name=`echo "$x_out" | sed -e 's%^.*/%%'`
 
 # Determine signature of the build (only for automatic builds)
 signature=""
-if [ -n "$NCBI_AUTOMATED_BUILD" ]; then
+if test -n "$NCBI_AUTOMATED_BUILD"; then
    case "$COMPILER" in
       msvc7 ) signature="MSVC_710" ;;
       msvc8 ) signature="MSVC_800" ;;
@@ -296,7 +296,7 @@ RunTest() {
       return 0
    fi
    
-   if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+   if test -n "\$NCBI_AUTOMATED_BUILD"; then
       echo "\$signature"   >> "\$x_test_rep"
       echo "\$x_wdir"      >> "\$x_test_rep"
       echo "\$x_run"       >> "\$x_test_rep"
@@ -311,7 +311,7 @@ RunTest() {
       echo "ABS --  \$x_cmd - \$x_test"
       echo "ABS --  \$x_cmd - \$x_test" >> \$res_log
       count_absent=\`expr \$count_absent + 1\`
-      if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+      if test -n "\$NCBI_AUTOMATED_BUILD"; then
          echo "ABS" >> "\$x_test_rep"
          echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
       fi
@@ -352,7 +352,7 @@ RunTest() {
    exec_time=\`tail -3 \$x_test_out.\$\$\ | tr '\r' '%'\`
    exec_time=\`echo "\$exec_time" | tr '\n' '%'\`
    echo \$exec_time | grep 'real [0-9]\|Maximum execution .* is exceeded' > /dev/null 2>&1 
-   if [ \$? -eq 0 ] ;  then
+   if test \$? -eq 0;  then
       exec_time=\`echo \$exec_time | sed -e 's/^%*//' -e 's/%*$//' -e 's/%%/%/g' -e 's/%/, /g' -e 's/[ ] */ /g'\`
    else
       exec_time='unparsable timing stats'
@@ -372,29 +372,32 @@ RunTest() {
    if grep -q NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
       echo "DIS --  \$x_cmd"
       echo "DIS --  \$x_cmd" >> \$res_log
-      [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "DIS" >> "\$x_test_rep"
+      test -n "\$NCBI_AUTOMATED_BUILD" && echo "DIS" >> "\$x_test_rep"
+      
    elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
       echo "SKP --  \$x_cmd"
       echo "SKP --  \$x_cmd" >> \$res_log
-
-      [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "SKP" >> "\$x_test_rep"
+      test -n "\$NCBI_AUTOMATED_BUILD" && echo "SKP" >> "\$x_test_rep"
+      
    elif egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
       echo "TO  --  \$x_cmd     (\$exec_time)"
       echo "TO  --  \$x_cmd     (\$exec_time)" >> \$res_log
+      test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
 
-      [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "TO" >> "\$x_test_rep"
    elif test \$result -eq 0; then
       echo "OK  --  \$x_cmd     (\$exec_time)"
       echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
       count_ok=\`expr \$count_ok + 1\`
-      [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "OK" >> "\$x_test_rep"
+      test -n "\$NCBI_AUTOMATED_BUILD" && echo "OK" >> "\$x_test_rep"
+
    else
        echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
        echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
        count_err=\`expr \$count_err + 1\`
-       [ -n "\$NCBI_AUTOMATED_BUILD" ] && echo "ERR" >> "\$x_test_rep"
+       test -n "\$NCBI_AUTOMATED_BUILD" && echo "ERR" >> "\$x_test_rep"
    fi
-   if [ -n "\$NCBI_AUTOMATED_BUILD" ]; then
+   
+   if test -n "\$NCBI_AUTOMATED_BUILD"; then
       echo "\$start_time" >> "\$x_test_rep"
       echo "\$result"     >> "\$x_test_rep"
       echo "\$exec_time"  >> "\$x_test_rep"
