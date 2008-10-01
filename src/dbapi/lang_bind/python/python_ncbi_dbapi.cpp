@@ -148,6 +148,8 @@ CCachedResultSet::CCachedResultSet(IResultSet& other)
 , m_CurRowNum(0)
 , m_CurColNum(0)
 {
+    other.BindBlobToVariant(true);
+
     while (other.Next()) {
         m_RecordSet.push_back(TRecord());
         TRecordSet::reference record = m_RecordSet.back();
@@ -232,6 +234,8 @@ CRealResultSet::CRealResultSet(IResultSet* other)
 : m_RS(other)
 {
     _ASSERT(other);
+
+    m_RS->BindBlobToVariant(true);
 }
 
 CRealResultSet::~CRealResultSet(void)
@@ -1757,6 +1761,9 @@ CStmtHelper::Execute(void)
         switch ( m_StmtStr.GetType() ) {
         case estSelect :
             m_RS = m_Stmt->ExecuteQuery ( m_StmtStr.GetStr() );
+            if (m_RS) {
+                m_RS->BindBlobToVariant(true);
+            }
             break;
         default:
             m_Stmt->ExecuteUpdate ( m_StmtStr.GetStr() );

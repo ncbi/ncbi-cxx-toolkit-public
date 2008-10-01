@@ -359,6 +359,7 @@ BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
             CStopWatch timer(CStopWatch::eStart);
 
             rs = auto_stmt->ExecuteQuery(sql);
+            rs->BindBlobToVariant(true);
 
             while (rs->Next()) {
                 /*int int_val =*/ rs->GetVariant(1).GetInt4();
