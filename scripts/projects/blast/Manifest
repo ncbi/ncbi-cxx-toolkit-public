@@ -18,6 +18,7 @@ APP: blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn
 APP: makembindex segmasker dustmasker windowmasker
 APP: makeblastdb blastdbcmd blastdb_aliastool
 APP: $srcdir/src/app/blast/legacy_blast.pl
+APP: $srcdir/src/app/blast/update_blastdb.pl
 
 POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $platform $installdir
 
