@@ -99,7 +99,7 @@ GC-Assembly ::= SEQUENCE
     -- "stats" field holds stats for all chromosomes combined: ordered/unordered scaffolds
     -- "unplaced-stats" holds stats for ChrUn which is omitted from "stats"
     stats GC-SequenceStats OPTIONAL,
-    unplaced-stats Scaf-stats OPTIONAL
+    unplaced-stats GC-Scaf-stats OPTIONAL
 }
 
 GC-Replicon ::= SEQUENCE
@@ -165,15 +165,15 @@ GC-Sequence ::= SEQUENCE {
 -- Stats of complex objects
 -- Used at assembly and chromosome levels
 GC-SequenceStats ::= SEQUENCE {
-  all-scaf Scaf-stats,
-  ordered-scaf Scaf-stats,
-  unordered-scaf Scaf-stats
+  all-scaf GC-Scaf-stats,
+  ordered-scaf GC-Scaf-stats,
+  unordered-scaf GC-Scaf-stats
 }
 
 -- Scaf-stats
 -- All stats for one type of data
 -- Can be at any level. Even a single scaffold might have stats.
-Scaf-stats ::= SEQUENCE {
+GC-Scaf-stats ::= SEQUENCE {
   chromosomes-count INTEGER OPTIONAL, -- How many chromosomes
         --(needed to report #chromsomes w/ ordered/unordered scaffolds)
   scaffolds-count INTEGER OPTIONAL, -- How many scaffolds
@@ -182,24 +182,16 @@ Scaf-stats ::= SEQUENCE {
   length SEQUENCE {
     total-length INTEGER,
     ungapped-length INTEGER
-  } OPTIONAL,
+  },
   composition SEQUENCE {
     active-finishing-bases INTEGER,
-    percentage-active-finishing-bases REAL,
     draft-bases INTEGER,
-    percentage-draft-bases REAL,
     finished-bases INTEGER,
-    percentage-finished-bases REAL,
     whole-genome-finishing-bases INTEGER,
-    percentage-whole-genome-finishing-bases REAL,
     other-sequences INTEGER,
-    percentage-other-sequences REAL,
     pre-draft INTEGER,
-    percentage-pre-draft REAL,
     wgs-bases INTEGER,
-    percentage-wgs-bases REAL,
-    estimated-bases-in-gaps INTEGER,
-    percentage-estimated-bases-in-gaps REAL
+    estimated-bases-in-gaps INTEGER
   } OPTIONAL,
   n50 INTEGER OPTIONAL,
   gap-closure SEQUENCE {
