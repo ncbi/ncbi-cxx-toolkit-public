@@ -688,7 +688,7 @@ bool CCgiUserAgent::IsBot(TBotFlags flags, const string& param_patterns) const
 
 //
 // Mozilla-compatible user agent always have next format:
-//     AppProduct (AppComment) *(VendorProduct|VendorComment)
+//     AppProduct (AppComment) * VendorProduct [(VendorComment)]
 //
 
 // Search flags
@@ -696,9 +696,11 @@ enum EUASearchFlags {
     fAppProduct    = (1<<1), 
     fAppComment    = (1<<2), 
     fVendorProduct = (1<<3),
-    fProduct       = fAppProduct | fVendorProduct,
-    fApp           = fAppProduct | fAppComment,
-    fAny           = fAppProduct | fAppComment | fVendorProduct
+    fVendorComment = (1<<4),
+    fProduct       = fAppProduct    | fVendorProduct,
+    fApp           = fAppProduct    | fAppComment,
+    fVendor        = fVendorProduct | fVendorComment,
+    fAny           = fApp | fVendor
 };
 typedef int TUASearchFlags; // Binary OR of "ESearchFlags"
 
@@ -872,7 +874,7 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eLinkChecker,  "W3C-checklink",            "W3C-checklink",            CCgiUserAgent::eEngine_Bot,     fAppProduct },
     { CCgiUserAgent::eLinkChecker,  "Zealbot",                  "Zealbot",                  CCgiUserAgent::eEngine_Bot,     fAppComment },
 
-    { CCgiUserAgent::eWebValidator, "CSE HTML Validator",        "htmlvalidator.com",        CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eWebValidator, "CSE HTML Validator",       "htmlvalidator.com",        CCgiUserAgent::eEngine_Bot,     fAppComment },
     { CCgiUserAgent::eWebValidator, "CSSCheck",                 "CSSCheck",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
     { CCgiUserAgent::eWebValidator, "W3C_CSS_Validator",        "W3C_CSS_Validator",        CCgiUserAgent::eEngine_Bot,     fAppProduct },
     { CCgiUserAgent::eWebValidator, "W3C_Validator",            "W3C_Validator",            CCgiUserAgent::eEngine_Bot,     fAppProduct },
@@ -1024,10 +1026,28 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     // If it matched some browser name, return it.
 
     SIZE_TYPE pos = m_UserAgent.rfind(")", NPOS);
-    if ((pos != NPOS)  &&  (pos < len-1)) {
-        string token = m_UserAgent.substr(pos+1);
-        x_ParseToken(token, fVendorProduct);
-        // Try to determine Mozilla and engine versions below,
+    if (pos != NPOS) {
+        // Have VendorProduct only
+        if (pos < len-1) {
+            string token = m_UserAgent.substr(pos+1);
+            x_ParseToken(token, fVendorProduct);
+        } 
+        // Have VendorComment also, cut it off before parsing VendorProduct token
+        else if ((pos == len-1)  &&
+                 (len >=5 /* min possible for string with VendorComment */)) { 
+            // AppComment token should be present also
+            pos = m_UserAgent.rfind(")", pos-1);
+            if (pos != NPOS) {
+                pos++;
+                SIZE_TYPE pos_comment = m_UserAgent.find("(", pos);
+                if (pos_comment != NPOS) {
+                    string token = m_UserAgent.substr(pos, pos_comment - pos);
+                    x_ParseToken(token, fVendorProduct);
+                }
+            }
+        }
+        // Possible, we already have browser name and version, but
+        // try to determine Mozilla and engine versions (below),
         // and only than return.
     }
 

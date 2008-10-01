@@ -682,6 +682,11 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::eEngine_Gecko,   { 1,  7,  5},
         { 5, 0, -1}
     },
+    { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.2) Gecko/2008091620 Firefox/3.0.2 (.NET CLR 3.5.30729)",
+        CCgiUserAgent::eFirefox,        {  3,  0,  2},
+        CCgiUserAgent::eEngine_Gecko,   {  1,  9,  0},
+        { 5, 0, -1}
+    },
     { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041107 Googlebot/2.1",
         CCgiUserAgent::eCrawler,        { 2,  1, -1},
         CCgiUserAgent::eEngine_Bot,     {-1, -1, -1},
