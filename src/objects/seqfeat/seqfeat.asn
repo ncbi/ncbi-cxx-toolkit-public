@@ -283,7 +283,7 @@ END
 NCBI-Gene DEFINITIONS ::=
 BEGIN
 
-EXPORTS Gene-ref;
+EXPORTS Gene-ref, Gene-nomenclature;
 
 IMPORTS Dbtag FROM NCBI-General;
 
@@ -300,7 +300,20 @@ Gene-ref ::= SEQUENCE {
     pseudo BOOLEAN DEFAULT FALSE ,        -- pseudogene
     db SET OF Dbtag OPTIONAL ,            -- ids in other dbases
     syn SET OF VisibleString OPTIONAL ,   -- synonyms for locus
-    locus-tag VisibleString OPTIONAL }    -- systematic gene name (e.g., MI0001, ORF0069)
+    locus-tag VisibleString OPTIONAL ,    -- systematic gene name (e.g., MI0001, ORF0069)
+    formal-name Gene-nomenclature OPTIONAL
+}
+
+Gene-nomenclature ::= SEQUENCE {
+    status ENUMERATED {
+        unknown (0) ,
+        official (1) ,
+        interim (2) 
+    } ,
+    symbol VisibleString OPTIONAL ,
+    name VisibleString OPTIONAL ,
+    source VisibleString OPTIONAL
+}
 
 END
 
