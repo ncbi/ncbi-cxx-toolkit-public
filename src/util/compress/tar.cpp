@@ -889,9 +889,11 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     }
     dump += '\n';
 
-    dump += TAR_PRINTABLE(version, true) + '\n';
+    dump += TAR_PRINTABLE(version, true);
 
     if (fmt != eTar_Legacy) {
+        dump += '\n';
+
         dump += TAR_PRINTABLE(uname, true) + '\n';
 
         dump += TAR_PRINTABLE(gname, true) + '\n';
@@ -927,10 +929,9 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
                 dump += (" [" + NStr::UIntToString(val)
                          + mtime.ToLocalTime().AsString(", Y-M-D h:m:s]"));
             }
-            dump += '\n';
             tname = h->gt.ctime + sizeof(h->gt.ctime);
         } else {
-            dump += TAR_PRINTABLE(prefix, true) + '\n';
+            dump += TAR_PRINTABLE(prefix, true);
             tname = h->prefix + sizeof(h->prefix);
         }
     } else
@@ -939,10 +940,11 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     for (size_t n = 0;  &tname[n] < (const char*) h + kBlockSize;  n++) {
         if (tname[n]) {
             size_t offset = (size_t)(&tname[n] - (const char*) h);
+            dump += '\n';
             dump += "@" + s_AddressAsString(offset) + ':' + string(11, ' ')
                 + '"' + NStr::PrintableString(string(&tname[n],
                                                      kBlockSize - offset))
-                + "\"\n";
+                + '"';
             break;
         }
     }
@@ -1494,7 +1496,7 @@ static void s_Dump(const string& file, Uint8 pos, size_t recsize,
 {
     unsigned long blocks = (unsigned long) BLOCK_OF(datasize + (kBlockSize-1));
     LOG_POST_X(2, s_PositionAsString(file, pos, recsize, entryname)
-             + s_DumpHeader(h, fmt)
+             + s_DumpHeader(h, fmt) + '\n'
              + (blocks
                 ? "Blocks of data: " + NStr::UIntToString(blocks) + '\n'
                 : kEmptyStr));
