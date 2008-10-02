@@ -57,7 +57,7 @@ echo
 echo "`date` *** Testing the archive"
 echo
 
-test_tar -T -f $test_base.tar                                         ||  exit 1
+dd if=$test_base.tar bs=8191 2>/dev/null | test_tar -T -f -           ||  exit 1
 
 sleep 1
 mkdir $test_base.1/newdir 2>/dev/null
@@ -136,7 +136,7 @@ echo
 test_tar -X -v -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > "$test_base.out.1"  ||  exit 1
 head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                           ||  exit 1
 cat "./test_tar${exe}" "$test_base.out.temp" "$test_base.2/newdir/datefile" > "$test_base.out.2"         ||  exit 1
-cmp -l "$test_base.out.1" "$test_base.out.2"                                      ||  exit 1
+cmp -l "$test_base.out.1" "$test_base.out.2"                                                             ||  exit 1
 
 echo
 echo "`date` *** TEST COMPLETE"
