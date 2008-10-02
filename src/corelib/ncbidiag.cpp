@@ -2355,7 +2355,8 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
             // The mutex must be locked before approving.
             CDiagBuffer& diag_buf = GetDiagBuffer();
             bool show_warning = false;
-            if ( GetDiagContext().ApproveMessage(mess, &show_warning) ) {
+            CDiagContext& ctx = GetDiagContext();
+            if ( ctx.ApproveMessage(mess, &show_warning) ) {
                 mess.m_Prefix = diag_buf.m_PostPrefix.empty() ?
                     0 : diag_buf.m_PostPrefix.c_str();
                 CDiagBuffer::sm_Handler->Post(mess);
@@ -2364,8 +2365,22 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
                 // Substitute the original message with the error.
                 // ERR_POST can not be used here since nested posts
                 // are blocked. Have to create the message manually.
-                string txt = "Exceeded maximum logging rate, "
-                    "suspending the output.";
+                string limit_name = "error";
+                CDiagContext::ELogRate_Type limit_type =
+                    CDiagContext::eLogRate_Err;
+                if ( IsSetDiagPostFlag(eDPF_AppLog, mess.m_Flags) ) {
+                    limit_name = "applog";
+                    limit_type = CDiagContext::eLogRate_App;
+                }
+                else if (mess.m_Severity == eDiag_Info ||
+                    mess.m_Severity == eDiag_Trace) {
+                        limit_name = "trace";
+                        limit_type = CDiagContext::eLogRate_Trace;
+                }
+                string txt = "Exceeded maximum logging rate for " + limit_name + " (" +
+                    NStr::IntToString(ctx.GetLogRate_Limit(limit_type)) + " messages per " +
+                    NStr::IntToString(ctx.GetLogRate_Period(limit_type)) +
+                    " sec), suspending the output.";
                 const CNcbiDiag diag(DIAG_COMPILE_INFO);
                 SDiagMessage err_msg(eDiag_Error,
                     txt.c_str(), txt.length(),
