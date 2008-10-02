@@ -134,7 +134,7 @@ CNcbiApplication::~CNcbiApplication(void)
     // At least under these conditions:
     //  1) WorkShop 5.5 on Solaris 10/SPARC, Release64MT,    and
     //  2) when IOS_BASE::sync_with_stdio(false) is called,  and
-    //  3) the contents of 'cout' is not flashed
+    //  3) the contents of 'cout' is not flushed
     // some applications crash on exit() while apparently trying to
     // flush 'cout' and getting confused by its own guts, with error:
     //   "*** libc thread failure: _thread_setschedparam_main() fails"
@@ -744,6 +744,9 @@ void CNcbiApplication::SetStdioFlags(TStdioSetupFlags stdio_flags)
 
 void CNcbiApplication::x_SetupStdio(void)
 {
+#if !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 411
+    // CAUTION:  http://gcc.gnu.org/bugzilla/show_bug.cgi?id=26777
+    //           fix applied Mar 29, 2006, scheduled for 4.1.1
     if ((m_StdioFlags & fDefault_SyncWithStdio) == 0) {
         // SUN WorkShop STL stream library has significant performance loss
         // (due to the multiple gratuitous lseeks() in std i/o)
@@ -751,6 +754,7 @@ void CNcbiApplication::x_SetupStdio(void)
         // so we turn off sync_with_stdio here.
         IOS_BASE::sync_with_stdio(false);
     }
+#endif
 
     if ((m_StdioFlags & fDefault_CinBufferSize) == 0
 #ifdef NCBI_OS_UNIX
