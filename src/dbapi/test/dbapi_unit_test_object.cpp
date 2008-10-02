@@ -2106,7 +2106,6 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX_BCP)
                         auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                         BOOST_CHECK( rs.get() != NULL );
 
-                        rs->BindBlobToVariant(true);
                         BOOST_CHECK( rs->Next() );
                         BOOST_CHECK_EQUAL(msg.size(), rs->GetVariant(1).GetBlobSize());
                         const string value = rs->GetVariant(1).GetString();
@@ -2259,7 +2258,6 @@ BOOST_AUTO_TEST_CASE(Test_NTEXT)
         while (auto_stmt->HasMoreResults()) {
             if (auto_stmt->HasRows()) {
                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                rs->BindBlobToVariant(true);
                 while (rs->Next()) {
                     const CVariant& var = rs->GetVariant("txt_fld");
                     BOOST_CHECK_EQUAL(var.GetBlobSize(), ins_value.size());

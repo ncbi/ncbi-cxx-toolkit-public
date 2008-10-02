@@ -125,6 +125,9 @@ private:
                                   EAllowLog log_it,
                                   size_t buf_size,
 					  			  bool destroy);
+
+    void x_CacheItems(int last_num);
+
     class CConnection* m_conn;
     CDB_Result *m_rs;
     //CResultSetMetaDataImpl *m_metaData;
@@ -137,8 +140,15 @@ private:
     bool m_wasNull;
     CxBlobReader *m_rd;
     int m_totalRows;
-    unsigned int m_ReadItemNum;
-    bool m_CallReadItemOnly;
+    int m_LastVariantNum;
+
+    enum ERowReadType {
+        eReadUnknown,
+        eReadVariant,
+        eReadRaw
+    };
+
+    ERowReadType m_RowReadType;
 };
 
 //====================================================================

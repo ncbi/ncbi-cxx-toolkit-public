@@ -165,8 +165,6 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                 if( auto_stmt->HasRows() ) {
                     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
-                    rs->BindBlobToVariant(true);
-
                     while ( rs->Next() ) {
                         const CVariant& value = rs->GetVariant(1);
 
@@ -195,8 +193,6 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             while( auto_stmt->HasMoreResults() ) {
                 if( auto_stmt->HasRows() ) {
                     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-                    rs->BindBlobToVariant(true);
 
                     while ( rs->Next() ) {
                         const CVariant& value = rs->GetVariant(1);
@@ -339,8 +335,6 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                 while( auto_stmt->HasMoreResults() ) {
                     if( auto_stmt->HasRows() ) {
                         auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-                        rs->BindBlobToVariant(true);
 
                         for (long ind = 0; ind < rec_num; ++ind) {
                             BOOST_CHECK(rs->Next());
@@ -527,8 +521,6 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
                 if( auto_stmt->HasRows() ) {
                     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
-                    rs->BindBlobToVariant(true);
-
                     while ( rs->Next() ) {
                         const CVariant& value = rs->GetVariant(1);
 
@@ -598,8 +590,6 @@ BOOST_AUTO_TEST_CASE(Test_LOB3)
                 if ( auto_stmt->HasRows() ) {
                     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
-                    rs->BindBlobToVariant(true);
-
                     while ( rs->Next() ) {
                         const CVariant& text_value = rs->GetVariant(1);
                         const CVariant& image_value = rs->GetVariant(2);
@@ -667,8 +657,6 @@ BOOST_AUTO_TEST_CASE(Test_LOB4)
             while( auto_stmt->HasMoreResults() ) {
                 if ( auto_stmt->HasRows() ) {
                     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-                    rs->BindBlobToVariant(true);
 
                     while ( rs->Next() ) {
                         const CVariant& value = rs->GetVariant(1);
@@ -762,8 +750,6 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
             while( auto_stmt->HasMoreResults() ) {
                 if( auto_stmt->HasRows() ) {
                     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-                    rs->BindBlobToVariant(true);
 
                     while ( rs->Next() ) {
                         for (int pos = 1; pos <= 4; ++pos) {
@@ -1116,7 +1102,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
 
             // blobRs should be destroyed before auto_cursor ...
             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-            while(blobRs->Next()) {
+            while (blobRs->Next()) {
                 ostream& ostrm = auto_cursor->GetBlobOStream(1,
                                                              data_len,
                                                              eDisableLog);
@@ -1152,11 +1138,11 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
         {
             auto_stmt->ExecuteUpdate("set textsize 2000000");
 
-            sql = "SELECT text_field FROM "+ GetTableName();
+            sql = "SELECT id, int_field, text_field FROM "+ GetTableName();
 
             auto_stmt->SendSql( sql );
-            while( auto_stmt->HasMoreResults() ) {
-                if( auto_stmt->HasRows() ) {
+            while ( auto_stmt->HasMoreResults() ) {
+                if ( auto_stmt->HasRows() ) {
                     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                     try {

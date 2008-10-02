@@ -55,11 +55,19 @@
 
 BEGIN_NCBI_SCOPE
 
-CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
-    : m_conn(conn),
-      m_rs(rs), m_istr(0), m_ostr(0), m_column(-1),
-      m_bindBlob(false), m_disableBind(false), m_wasNull(true),
-      m_rd(0), m_totalRows(0)
+CResultSet::CResultSet(CConnection* conn, CDB_Result *rs) : 
+    m_conn(conn),
+    m_rs(rs), 
+    m_istr(0), 
+    m_ostr(0), 
+    m_column(-1),
+    m_bindBlob(true), 
+    m_disableBind(false), 
+    m_wasNull(true),
+    m_rd(0), 
+    m_totalRows(0),
+    m_LastVariantNum(0),
+    m_RowReadType(eReadUnknown)
 {
     SetIdent("CResultSet");
 
@@ -127,8 +135,29 @@ const CVariant& CResultSet::GetVariant(const CDBParamVariant& param)
     }
 
     CheckIdx(index);
+    --index;
 
-    return m_data[index - 1];
+    if (index < m_LastVariantNum) {
+        x_CacheItems(index);
+    }
+    else {
+        switch (m_RowReadType) {
+        case eReadRaw:
+            // Here we will be also when IsDisableBind() == true
+            m_data[index].SetNull();
+            break;
+        case eReadUnknown:
+            m_RowReadType = eReadVariant;
+            m_column = -1;
+            // fall through
+        //case eReadVariant:
+        default:
+            x_CacheItems(index);
+            break;
+        }
+    }
+
+    return m_data[index];
 }
 
 const IResultSetMetaData* CResultSet::GetMetaData(EOwnership ownership)
@@ -161,44 +190,35 @@ void CResultSet::DisableBind(bool b)
 bool CResultSet::Next()
 {
     bool more = false;
-    EDB_Type type = eDB_UnsupportedType;
 
 	if (m_rs) {
 		more = m_rs->Fetch();
+        m_LastVariantNum = 0;
+        m_RowReadType = eReadUnknown;
 	}
 
     if (more  &&  m_data.size() == 0) {
         Init();
     }
 
+    m_column = 0;
     if( more && !IsDisableBind() ) {
-
         for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
-
-            type = m_rs->ItemDataType(i);
-
-            if( !IsBindBlob() ) {
-                if( type == eDB_Text || type == eDB_Image )  {
-                    break;
-                }
+            EDB_Type type = m_rs->ItemDataType(i);
+            if( type == eDB_Text || type == eDB_Image )  {
+                break;
             }
-            else {
-                switch(type) {
-                case eDB_Text:
-                case eDB_Image:
-                    ((CDB_Stream*)m_data[i].GetNonNullData())->Truncate();
-                    break;
-                default:
-                    break;
-                }
-            }
-            m_rs->GetItem(m_data[i].GetNonNullData());
+            ++m_column;
+        }
+
+        m_LastVariantNum = m_column;
+        if ((unsigned int)m_column >= m_rs->NofItems()) {
+            m_column = -1;
         }
     }
-	
-	if (m_rs) {
-		m_column = m_rs->CurrentItemNo();
-	}
+    else {
+        m_RowReadType = eReadRaw;
+    }
 
     if( !more ) {
         if( m_ostr ) {
@@ -226,6 +246,23 @@ bool CResultSet::Next()
     return more;
 }
 
+void CResultSet::x_CacheItems(int last_num) {
+    int ind;
+    while ((ind = m_rs->CurrentItemNo()) >= 0 && ind <= last_num) {
+        EDB_Type type = m_rs->ItemDataType(ind);
+
+        switch(type) {
+        case eDB_Text:
+        case eDB_Image:
+            ((CDB_Stream*)m_data[ind].GetNonNullData())->Truncate();
+            break;
+        default:
+            break;
+        }
+        m_rs->GetItem(m_data[ind].GetNonNullData());
+    }
+}
+
 size_t CResultSet::Read(void* buf, size_t size)
 {
 	_ASSERT(m_rs);
@@ -238,6 +275,9 @@ size_t CResultSet::Read(void* buf, size_t size)
     else {
 		_TRACE("CResultSet: Last column: " << m_column);
     }
+
+    x_CacheItems(m_column - 1);
+    m_RowReadType = eReadRaw;
 
     if( m_column != m_rs->CurrentItemNo() ) {
 
@@ -405,7 +445,7 @@ int CResultSet::GetColNum(const string& name)
 
 void CResultSet::CheckIdx(unsigned int idx)
 {
-    if( idx > m_data.size() ) {
+    if ( idx > m_data.size() ) {
 #ifdef _DEBUG
         NcbiCerr << "CResultSet::CheckIdx(): Column index " << idx << " out of range" << endl;
         _ASSERT(0);
