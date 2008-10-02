@@ -223,7 +223,8 @@ CDbapiSampleApp::Run()
     if (service_mapping == "on") {
         m_UseSvcMapper = true;
     } else if (service_mapping == "random") {
-        static CRandom rdm_gen(Uint4(time(NULL)));
+        static Uint4   rdm_seed = time(NULL);
+        static CRandom rdm_gen(rdm_seed);
         m_UseSvcMapper = (rdm_gen.GetRand(0, 1) != 0);
     }
 
