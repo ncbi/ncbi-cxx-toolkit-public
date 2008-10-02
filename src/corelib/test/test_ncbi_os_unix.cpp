@@ -31,6 +31,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_os_unix.hpp>
 #include <stdio.h>
+#include <unistd.h>
 #include <common/test_assert.h>  /* This header must go last */
 
 
