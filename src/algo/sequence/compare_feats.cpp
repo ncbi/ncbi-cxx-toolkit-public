@@ -899,23 +899,35 @@ public:
         try {
             int res = f1->Compare(*f2);
             
-            if(res < 0) {
-                return true;
-            }
-            
-            if(res > 0) {
-                return false;
+            if(res != 0) {
+                return res < 0;
             }
         } catch (...) {
             //Compare fails on multi-seq-id features
         }
-        
-        //Compare does not always go all the way (or throws), so here we manually try to distinguish by labels
+
+      
+        //Compare does not always go all the way (or throws), so here we manually try to distinguish by products and labels
         //Potential problem: may not be transitive?
+
         string s1 = "";
+        if(f1->CanGetProduct()) {
+            f1->GetProduct().GetLabel(&s1);
+        }
+
+        string s2 = "";
+        if(f2->CanGetProduct()) {
+            f2->GetProduct().GetLabel(&s2);
+        }
+       
+        if(s1 != s2) {
+            return s1 < s2;
+        } 
+
+        s1 = "";
         feature::GetLabel(*f1, &s1, feature::eBoth);
         
-        string s2 = "";
+        s2 = "";
         feature::GetLabel(*f2, &s2, feature::eBoth);
         
         return s1 < s2;
