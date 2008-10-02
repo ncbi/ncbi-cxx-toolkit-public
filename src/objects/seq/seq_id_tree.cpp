@@ -171,6 +171,11 @@ CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(const CSeq_id& id)
         s_AssignTextseq_id(id_ref->SetGpipe(), id.GetGpipe());
         break;
 
+    case CSeq_id::e_Named_annot_track:
+        s_AssignTextseq_id(id_ref->SetNamed_annot_track(),
+                           id.GetNamed_annot_track());
+        break;
+
     default:
         id_ref->Assign(id);
         break;
@@ -230,6 +235,7 @@ void CSeq_id_Which_Tree::Initialize(CSeq_id_Mapper* mapper,
     v[CSeq_id::e_Tpe].Reset(new CSeq_id_Tpe_Tree(mapper));
     v[CSeq_id::e_Tpd].Reset(new CSeq_id_Tpd_Tree(mapper));
     v[CSeq_id::e_Gpipe].Reset(new CSeq_id_Gpipe_Tree(mapper));
+    v[CSeq_id::e_Named_annot_track].Reset(new CSeq_id_Named_annot_track_Tree(mapper));
 }
 
 
@@ -1100,6 +1106,28 @@ bool CSeq_id_Gpipe_Tree::x_Check(const CSeq_id& id) const
 const CTextseq_id& CSeq_id_Gpipe_Tree::x_Get(const CSeq_id& id) const
 {
     return id.GetGpipe();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_id_Named_annot_track_Tree
+/////////////////////////////////////////////////////////////////////////////
+
+CSeq_id_Named_annot_track_Tree::CSeq_id_Named_annot_track_Tree(CSeq_id_Mapper* mapper)
+    : CSeq_id_Textseq_Tree(mapper)
+{
+}
+
+
+bool CSeq_id_Named_annot_track_Tree::x_Check(const CSeq_id& id) const
+{
+    return id.IsNamed_annot_track();
+}
+
+
+const CTextseq_id& CSeq_id_Named_annot_track_Tree::x_Get(const CSeq_id& id) const
+{
+    return id.GetNamed_annot_track();
 }
 
 

@@ -430,6 +430,20 @@ protected:
 
 
 ////////////////////////////////////////////////////////////////////
+// Named-annot-track tree
+
+
+class CSeq_id_Named_annot_track_Tree : public CSeq_id_Textseq_Tree
+{
+public:
+    CSeq_id_Named_annot_track_Tree(CSeq_id_Mapper* mapper);
+protected:
+    virtual bool x_Check(const CSeq_id& id) const;
+    virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
+};
+
+
+////////////////////////////////////////////////////////////////////
 // Other tree
 
 
