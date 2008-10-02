@@ -37,6 +37,7 @@
 #include <corelib/rwstream.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/request_ctx.hpp>
+#include <corelib/ncbi_strings.h>
 
 #include <util/multi_writer.hpp>
 #include <util/cache/cache_ref.hpp>
@@ -650,12 +651,13 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
 
             const string& phid = CDiagContext::GetRequestContext().GetHitID();
             // Check if ncbi_st cookie is set
-            const CCgiCookie* st = req.GetCookies().Find("ncbi_st");
+            const CCgiCookie* st = req.GetCookies().Find(
+                g_GetNcbiString(eNcbiStrings_Stat));
             CCgiArgs pg_info;
             if ( st ) {
                 pg_info.SetQueryString(st->GetValue());
             }
-            pg_info.SetValue("ncbi_phid", phid);
+            pg_info.SetValue(g_GetNcbiString(eNcbiStrings_PHID), phid);
             // Log ncbi_st values
             CDiagContext_Extra extra = GetDiagContext().Extra();
             // extra.SetType("NCBICGI");

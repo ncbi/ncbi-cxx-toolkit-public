@@ -31,6 +31,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/request_ctx.hpp>
+#include <corelib/ncbi_strings.h>
 #include <html/components.hpp>
 #include <html/page.hpp>
 #include <html/jsmenu.hpp>
@@ -112,7 +113,8 @@ CNcbiOstream& CHTMLPageStat::PrintBegin(CNcbiOstream& out, TMode mode)
     bool phid_present = false;
     string phid = CDiagContext::GetRequestContext().GetHitID();
     ITERATE(CPageStat::TData, it, stat) {
-        if ( NStr::EqualNocase(it->first, "ncbi_phid") ) {
+        if ( NStr::EqualNocase(it->first,
+            g_GetNcbiString(eNcbiStrings_PHID)) ) {
             phid_present = true;
         }
         CHTML_meta meta(CHTML_meta::eName, it->first, it->second);
@@ -120,7 +122,8 @@ CNcbiOstream& CHTMLPageStat::PrintBegin(CNcbiOstream& out, TMode mode)
         out << endl;
     }
     if ( !phid_present  &&  !phid.empty() ) {
-        CHTML_meta meta(CHTML_meta::eName, "ncbi_phid", phid);
+        CHTML_meta meta(CHTML_meta::eName, g_GetNcbiString(eNcbiStrings_PHID),
+            phid);
         meta.PrintBegin(out, mode);
         out << endl;
     }

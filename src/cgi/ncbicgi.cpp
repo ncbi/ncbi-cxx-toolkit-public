@@ -39,6 +39,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/request_ctx.hpp>
+#include <corelib/ncbi_strings.h>
 
 #include <cgi/cgi_exception.hpp>
 #include <cgi/ncbicgi.hpp>
@@ -903,7 +904,8 @@ void CCgiRequest::x_Init
     CRequestContext& rctx = CDiagContext::GetRequestContext();
     if ((flags & fIgnorePageHitId) == 0) {
         // Check if pageviewid is present. If not, generate one.
-        TCgiEntries::iterator phid_it = m_Entries.find("ncbi_phid");
+        TCgiEntries::iterator phid_it = m_Entries.find(
+            g_GetNcbiString(eNcbiStrings_PHID));
         if ( phid_it == m_Entries.end() ) {
             rctx.SetHitID();
         }

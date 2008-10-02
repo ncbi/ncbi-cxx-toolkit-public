@@ -1022,6 +1022,26 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbi_strings.c"
+				>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="1"
+					/>
+				</FileConfiguration>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -1225,6 +1245,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\corelib\version.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_strings.h"
 				>
 			</File>
 			<Filter

@@ -6,7 +6,7 @@ SRC = $(ncbicntr) blob_storage ddumpable env_reg metareg ncbi_config \
       ncbidiag_p ncbidll ncbienv ncbiexec ncbiexpt ncbifile ncbimempool \
       ncbimtx ncbiobj ncbireg ncbistr ncbistre ncbithr ncbitime obj_store \
       plugin_manager plugin_manager_store rwstreambuf stream_utils \
-      syslog version request_ctx request_control expr
+      syslog version request_ctx request_control expr ncbi_strings
 
 LIB = xncbi
 
