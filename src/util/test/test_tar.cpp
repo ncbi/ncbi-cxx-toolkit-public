@@ -80,6 +80,10 @@ protected:
 CTarTest::CTarTest()
     : m_Flags(0)
 {
+#ifdef __GLIBC__
+    // ATTENTION:  http://gcc.gnu.org/bugzilla/show_bug.cgi?id=26777
+    SetStdioFlags(fDefault_SyncWithStdio);
+#endif /*__GLIBC__*/
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostAllFlags(eDPF_DateTime | eDPF_Severity | eDPF_ErrorID);
     DisableArgDescriptions(fDisableStdArgs);
