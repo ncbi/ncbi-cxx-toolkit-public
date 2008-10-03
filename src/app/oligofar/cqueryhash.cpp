@@ -63,9 +63,6 @@ int CQueryHash::AddQuery( CQuery * query, int component )
             cb += PopulateHash( 1, hashPopulator );
             ca += PopulateHash( 0, hashPopulatorX ); // since order of words changes to opposite
         }
-//         cerr << "\t" << GetWindowLength() << " = " << count << "\n"
-//              << setw(GetWordLength(0)*4) << setfill('0') << NStr::IntToString( fwindowx, 0, 2 ) << "\t" << GetWordLength(0) << "\n"
-//              << string(4*GetOffset(),'.') << setw(GetWordLength(1)*4) << setfill('0') << NStr::IntToString( fwindow, 0, 2 ) << "\t" << GetWordLength(1) << " + " << GetOffset() << "\n";
         return min( ca, cb );
     }
 	THROW( logic_error, "Unknown hash type " << m_hashType << " is set in CQueryHash::AddQuery" );

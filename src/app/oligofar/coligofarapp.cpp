@@ -281,7 +281,7 @@ const option * COligoFarApp::GetLongOptions() const
 
 const char * COligoFarApp::GetOptString() const
 {
-    return "U:C:w:n:H:f:a:A:c:i:d:b:v:g:o:O:l:s:B:x:p:u:t:1:2:q:0:P:m:D:R:F:r:I:M:G:Q:X:L:T:";
+    return "U:C:w:k:n:H:f:a:A:c:i:d:b:v:g:o:O:l:s:B:x:p:u:t:1:2:q:0:P:m:D:R:F:r:I:M:G:Q:X:L:T:";
 }
 
 int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
@@ -510,6 +510,13 @@ int COligoFarApp::ProcessData()
         THROW( runtime_error, "Unknown geometry `" << m_geometry << "'" );
     }
 
+    // TODO: change to better behaviour
+    ITERATE( TSkipPositions, k, m_skipPositions ) {
+        if( *k > 0 && *k <= m_windowLength[0] ) {
+            m_maxHashAlt *= 4;
+        }
+    }
+
     CSeqIds seqIds;
     CFilter filter;
     CSeqVecProcessor seqVecProcessor;
@@ -619,6 +626,10 @@ int COligoFarApp::ProcessData()
         }
         if( iline.fail() ) THROW( runtime_error, "Failed to parse line [" << buff << "]" );
         CQuery * query = new CQuery( qryCoding, id, fwd, rev, m_qualityBase );
+        ITERATE( TSkipPositions, k, m_skipPositions ) {
+            query->MarkPositionAmbiguous( 0, *k - 1 );
+            query->MarkPositionAmbiguous( 1, *k - 1 );
+        }
         query->ComputeBestScore( scoreTbl, 0 );
         query->ComputeBestScore( scoreTbl, 1 );
         while( guideFile.NextHit( queriesTotal, query ) ); // add guided hits

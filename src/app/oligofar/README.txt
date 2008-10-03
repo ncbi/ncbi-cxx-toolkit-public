@@ -9,7 +9,7 @@ SYNOPSIS
              [-D distMin[-distMax]] [-m distMargin] [-p minPct]
              [-u topCnt] [-t topPct] [-F dust] [-s strands] [-f frac]
              [-i input] [-d database] [-l gilist] [-b snpdb] [-x mis]
-             [-o output] [-O outflags] [-g guidefile] [-c +|-] 
+             [-o output] [-O outflags] [-g guidefile] [-c +|-] [-k pos,...]
              [-B batchSize] [-r algo] [-X dropoff] [-R geometry]
              [-q qualChannels] [-0 qualBase] [-1 solexa1] [-2 solexa2] 
              [-P phrap] [-I score] [-M score] [-G score] [-Q score] 
@@ -24,7 +24,7 @@ EXAMPLES
 
 CHANGES
     Following parameters are new, have changed or have disappeared 
-    in version 3.25: -n, -w, -N, -z, -Z, -D, -m, -S, -x, -f. 
+    in version 3.25: -n, -w, -N, -z, -Z, -D, -m, -S, -x, -f, -k. 
 
 DESCRIPTION
     Performs global alignments of multiple single or paired short reads 
@@ -289,6 +289,10 @@ Hashing and scanning options
                 -f controls when to switch hash type from first to second. If
                 the fraction of reads rehashed (related to the batch size) is 
                 less then given value, the second hash type is used.
+
+    --window-skip=pos,...
+    -k pos,...  Always skip certain positions of reads when hashing and
+                scoring (effectively consider them as `N's).
 
     --input-max-alt=count
     -a count    Maximal number of alternative versions of window (based on

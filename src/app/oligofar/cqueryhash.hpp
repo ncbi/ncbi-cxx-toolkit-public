@@ -177,6 +177,7 @@ inline CQueryHash::CQueryHash( EHashType type, unsigned winsize, int maxm, int m
     m_maxSimplicity( maxsimpl ), 
 	m_ncbipnaToNcbi4naScore( 0x7f ), m_ncbiqnaToNcbi4naScore( 3 ), m_strands( 3 ), 
 	m_minMism( 0 ), m_maxMism( 0 ), m_maxAlt( maxa ), 
+    m_hashedQueries( 0 ),
     m_permutators( maxm + 1 )
 {
 	for( int i = 0; i <= maxm; ++i ) 

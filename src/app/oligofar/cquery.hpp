@@ -46,6 +46,8 @@ public:
 	double ComputeBestScore( const CScoreTbl& scoring, int component );
 	double GetBestScore(int i) const { return m_bestScore[i]; }
 
+    void MarkPositionAmbiguous( int component, int pos );
+
 private:
     explicit CQuery( const CQuery& q );
 
@@ -100,6 +102,17 @@ inline unsigned CQuery::x_ComputeInformativeLength( const string& seq ) const
     unsigned l = seq.length();
     while( l && strchr("N. \t",seq[l - 1]) ) --l;
     return l;
+}
+
+inline void CQuery::MarkPositionAmbiguous( int component, int pos ) 
+{
+    if( pos < 0 || pos >= m_length[component] ) return;
+	switch( m_flags & fCoding_BITS ) { 
+    case fCoding_ncbi8na: m_data[m_offset[component] + pos] = 0x0f; break; 
+    case fCoding_ncbiqna: m_data[m_offset[component] + pos] = 0x00; break; 
+    case fCoding_ncbipna: memset( m_data + m_offset[component] + pos*5, '\xff', 5 ); break; 
+    default:;
+    }
 }
 
 inline void CQuery::x_InitNcbi8na( const string& id, const string& data1, const string& data2, int )

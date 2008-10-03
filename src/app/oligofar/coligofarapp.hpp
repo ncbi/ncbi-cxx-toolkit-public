@@ -34,6 +34,7 @@ public:
         kLongOpt_old = kLongOptBase + 0x01,
         kLongOpt_min_block_length = kLongOptBase + 0x02
     };
+    typedef array_set<int> TSkipPositions;
 
 protected:
     virtual void Help( const char * );
@@ -103,7 +104,7 @@ protected:
     bool     m_run_old_scanning_code;
 	EAlignmentAlgo m_alignmentAlgo;
 	CQueryHash::EHashType m_hashType[2];
-    array_set<int> m_skipPositions;
+    TSkipPositions m_skipPositions;
     string m_readFile;
     string m_gilistFile;
     string m_fastaFile;
