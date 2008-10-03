@@ -36,7 +36,7 @@
 
 
 #include <corelib/ncbi_process.hpp>
-#if !defined(NCBI_OS_UNIX)
+#ifndef NCBI_OS_UNIX
 #  error "ncbi_os_unix.hpp must be used on UNIX platforms only"
 #endif
 
