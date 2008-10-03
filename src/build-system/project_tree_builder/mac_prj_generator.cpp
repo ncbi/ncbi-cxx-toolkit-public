@@ -189,6 +189,9 @@ void CMacProjectGenerator::Generate(const string& solution)
     AddGroupDict( *dict_objects, "Main_Group", main_groups, "NCBI C++ Toolkit");
 
     targets->Set().sort(s_String_less);
+    lib_dependencies->Set().sort(s_String_less);
+    app_dependencies->Set().sort(s_String_less);
+    all_dependencies->Set().sort(s_String_less);
 // aggregate targets
     InsertString( *targets,
         AddAggregateTarget("BUILD_LIBS", *dict_objects, lib_dependencies));
