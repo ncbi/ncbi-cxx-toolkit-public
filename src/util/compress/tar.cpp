@@ -2402,6 +2402,9 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
 void CTar::x_SkipArchive(size_t size)
 {
     while (size) {
+#ifndef NCBI_COMPILER_WORKSHOP
+        // RogueWave RTL is buggy in seeking pipes -- it clobbers
+        // (discards) streambuf data instead of leaving it alone..
         if (!(m_Flags & fSlowSkipWithRead)
             &&  !m_BufferPos  &&  size >= m_BufferSize) {
             CT_OFF_TYPE fskip =
@@ -2419,6 +2422,7 @@ void CTar::x_SkipArchive(size_t size)
             }
             m_Flags |= fSlowSkipWithRead;
         }
+#endif // NCBI_COMPILER_WORKSHOP
         size_t nskip = size < m_BufferSize ? (size_t) size : m_BufferSize;
         if (!x_ReadArchive(nskip)) {
             int x_errno = errno;
