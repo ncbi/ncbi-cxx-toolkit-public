@@ -38,6 +38,7 @@ Contents: Interface for CClusterer class
 
 
 #include <corelib/ncbidbg.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <util/math/matrix.hpp>
 #include <vector>
 
@@ -53,7 +54,7 @@ public:
     typedef CNcbiMatrix<double> TDistMatrix;
 
     /// Single cluster
-    class CSingleCluster 
+    class CSingleCluster : public CObject
     {
     public:
     typedef vector<int>::const_iterator const_iterator;
