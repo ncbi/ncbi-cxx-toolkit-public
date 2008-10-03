@@ -57,7 +57,7 @@ echo
 echo "`date` *** Testing the archive"
 echo
 
-dd if=$test_base.tar bs=8191 2>/dev/null | test_tar -v -T -f -        ||  exit 1
+dd if=$test_base.tar bs=123 2>/dev/null | test_tar -v -T -f -         ||  exit 1
 
 sleep 1
 mkdir $test_base.1/newdir 2>/dev/null
@@ -91,7 +91,7 @@ echo
 echo "`date` *** Testing piping in and extraction"
 echo
 
-cat $test_base.tar | test_tar -C $test_base.2 -v -x -f -              ||  exit 1
+dd if=$test_base.tar bs=4567 | test_tar -C $test_base.2 -v -x -f -    ||  exit 1
 rm -f $test_base.1/.testfifo $test_base.2/.testfifo
 diff -r $test_base.1 $test_base.2 2>/dev/null                         ||  exit 1
 
