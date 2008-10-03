@@ -37,6 +37,14 @@ BEGIN_NCBI_SCOPE
 
 #if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
 
+bool s_Name_less(const string& x, const string& y)
+{
+    string base_x, base_y;
+    CDirEntry::SplitPath(x, NULL, &base_x);
+    CDirEntry::SplitPath(y, NULL, &base_y);
+    return NStr::CompareNocase(base_x, base_y) < 0;
+}
+
 CProjectFileCollector::CProjectFileCollector(const CProjItem& prj,
     const list<SConfigInfo>& configs, const string& output_dir)
     :m_ProjItem(prj), m_ProjContext(prj), m_Configs(configs),
@@ -108,6 +116,7 @@ void CProjectFileCollector::CollectSources(void)
             m_Sources.push_back( *p);
         }
     }
+    m_Sources.sort(s_Name_less);
 }
 
 void CProjectFileCollector::CollectHeaders(void)
@@ -130,6 +139,7 @@ void CProjectFileCollector::CollectHeaders(void)
             }
         }
     }
+    m_Headers.sort(s_Name_less);
 }
 
 void CProjectFileCollector::CollectIncludeDirs(void)

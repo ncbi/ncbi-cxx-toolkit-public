@@ -51,6 +51,27 @@ BEGIN_NCBI_SCOPE
 
 #if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
 
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool s_ProjItem_less(const CProjItem& x, const CProjItem& y)
+{
+    ITERATE( list<CProjKey>, i, x.m_Depends) {
+        if (y.m_ID == i->Id()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool s_String_less(const CRef<CArray::C_E>& x, const CRef<CArray::C_E>& y)
+{
+    return NStr::CompareNocase(x->GetString(), y->GetString()) < 0;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 CMacProjectGenerator::CMacProjectGenerator(
     const list<SConfigInfo>& configs, const CProjectItemsTree& projects_tree)
     :m_Configs(configs), m_Projects_tree(projects_tree)
@@ -161,11 +182,13 @@ void CMacProjectGenerator::Generate(const string& solution)
     }
 
 // collect file groups
+    file_groups->Set().sort(s_String_less);
     AddGroupDict( *dict_objects, "Source_Files", file_groups, "Sources");
     CRef<CArray> main_groups( new CArray);
     AddString( *main_groups, "Source_Files");
     AddGroupDict( *dict_objects, "Main_Group", main_groups, "NCBI C++ Toolkit");
 
+    targets->Set().sort(s_String_less);
 // aggregate targets
     InsertString( *targets,
         AddAggregateTarget("BUILD_LIBS", *dict_objects, lib_dependencies));
@@ -173,6 +196,8 @@ void CMacProjectGenerator::Generate(const string& solution)
         AddAggregateTarget("BUILD_APPS", *dict_objects, app_dependencies));
     InsertString( *targets,
         AddAggregateTarget("BUILD_ALL",  *dict_objects, all_dependencies));
+    InsertString( *targets,
+        AddConfigureTarget(solution_name,  *dict_objects));
 
 // root object
     AddString( dict_root, "rootObject",
@@ -280,21 +305,28 @@ string CMacProjectGenerator::CreateProjectFileGroups(
         string hosted_inc(   *hosted_lib + "_include");
         string hosted_group( *hosted_lib + "_sources");
         if (!cpps->Get().empty()) {
+            cpps->Set().sort(s_String_less);
             AddString( *srcs, hosted_src);
             AddGroupDict( dict_objects, hosted_src, cpps, source_files);
         }
         if (!hpps->Get().empty()) {
+            hpps->Set().sort(s_String_less);
             AddString( *srcs, hosted_inc);
             AddGroupDict( dict_objects, hosted_inc, hpps, header_files);
         }
         AddGroupDict( dict_objects, hosted_group, srcs, *hosted_lib);
         AddString( *prj_sources, hosted_group);
     }
+    if (!prj.m_HostedLibs.empty()) {
+        prj_sources->Set().sort(s_String_less);
+    }
     if (!proj_cpps->Get().empty()) {
+        proj_cpps->Set().sort(s_String_less);
         AddString( *prj_sources, proj_src);
         AddGroupDict( dict_objects, proj_src,     proj_cpps, source_files);
     }
     if (!proj_hpps->Get().empty()) {
+        proj_hpps->Set().sort(s_String_less);
         AddString( *prj_sources, proj_include);
         AddGroupDict( dict_objects, proj_include, proj_hpps, header_files);
     }
@@ -302,7 +334,6 @@ string CMacProjectGenerator::CreateProjectFileGroups(
         AddString( *prj_sources, proj_specs);
         AddGroupDict( dict_objects, proj_specs,   specs, datatool_files);
     }
-
     AddGroupDict( dict_objects, src_group_name, prj_sources, proj_id);
     return src_group_name;
 }
@@ -559,16 +590,6 @@ void CMacProjectGenerator::CreateBuildSettings(CDict& dict_cfg, const SConfigInf
     }
 }
 
-bool s_ProjItem_less(const CProjItem& x, const CProjItem& y)
-{
-    ITERATE( list<CProjKey>, i, x.m_Depends) {
-        if (y.m_ID == i->Id()) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void CMacProjectGenerator::CreateProjectBuildSettings(
         const CProjItem& prj, const CProjectFileCollector& prj_files,
         CDict& dict_cfg, const SConfigInfo& cfg)
@@ -580,7 +601,7 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
     string bins_out(m_OutputDir + "bin/$(CONFIGURATION)");
     string proj_dir("$(PROJECT_DIR)/");
 //    string temp_dir("$(BUILD_DIR)/$(CONFIGURATION)");
-//    string temp_dir("$(OBJROOT)/$(CONFIGURATION)");
+    string temp_dir("$(OBJROOT)/$(CONFIGURATION)");
 
     CRef<CDict> settings( AddDict( dict_cfg, "buildSettings"));
     AddString( dict_cfg, "isa", "XCBuildConfiguration");
@@ -593,7 +614,7 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddLibrarianSetting( *settings, cfg, "GCC_SYMBOLS_PRIVATE_EXTERN");
 
         AddString( *settings, "CONFIGURATION_BUILD_DIR", libs_out);
-//        AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
+        AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
         AddString( *settings, "INSTALL_PATH", proj_dir + libs_out);
         AddString( *settings, "OBJROOT", m_OutputDir + "build");
 
@@ -602,7 +623,7 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddString( *settings, "GCC_SYMBOLS_PRIVATE_EXTERN", "NO");
 
         AddString( *settings, "CONFIGURATION_BUILD_DIR", libs_out);
-//        AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
+        AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
         AddString( *settings, "INSTALL_PATH", proj_dir + libs_out);
         AddString( *settings, "OBJROOT", m_OutputDir + "build");
 
@@ -612,7 +633,7 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
     } else if (prj.m_ProjType == CProjKey::eApp) {
 
         AddString( *settings, "CONFIGURATION_BUILD_DIR", bins_out);
-//        AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
+        AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
         AddString( *settings, "INSTALL_PATH", proj_dir + bins_out);
         AddString( *settings, "OBJROOT", m_OutputDir + "build");
 
@@ -724,6 +745,38 @@ string CMacProjectGenerator::AddAggregateTarget(
     AddString( *dict_target, "buildConfigurationList", configs_prj);
     AddArray(  *dict_target, "buildPhases");
     AddArray(  *dict_target, "dependencies", dependencies);
+    AddString( *dict_target, "isa", "PBXAggregateTarget");
+    AddString( *dict_target, "name", target_name);
+    AddString( *dict_target, "productName", target_name);
+    return proj_target;
+}
+
+string CMacProjectGenerator::AddConfigureTarget(
+    const string& solution_name, CDict& dict_objects)
+{
+    string target_name("CONFIGURE");
+    string proj_target( target_name + "_target");
+    string proj_script( target_name + "_script");
+
+    string configs_prj(
+        CreateAggregateBuildConfigurations( target_name, dict_objects));
+
+    string script;
+    script += m_OutputDir + "UtilityProjects/configure_";
+    script += solution_name + ".sh";
+    CRef<CDict> dict_script( AddDict( dict_objects, proj_script));
+    AddArray(  *dict_script, "files");
+    AddArray(  *dict_script, "inputPaths");
+    AddArray(  *dict_script, "outputPaths");
+    AddString( *dict_script, "isa", "PBXShellScriptBuildPhase");
+    AddString( *dict_script, "shellPath", "/bin/sh");
+    AddString( *dict_script, "shellScript", script);
+
+    CRef<CDict> dict_target( AddDict( dict_objects, proj_target));
+    AddString( *dict_target, "buildConfigurationList", configs_prj);
+    CRef<CArray> build_phases(AddArray(  *dict_target, "buildPhases"));
+    AddString( *build_phases, proj_script);
+    AddArray(  *dict_target, "dependencies");
     AddString( *dict_target, "isa", "PBXAggregateTarget");
     AddString( *dict_target, "name", target_name);
     AddString( *dict_target, "productName", target_name);

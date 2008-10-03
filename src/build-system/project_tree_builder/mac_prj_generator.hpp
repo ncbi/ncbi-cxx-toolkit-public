@@ -93,6 +93,8 @@ private:
 
     string AddAggregateTarget(const string& target_name,
         CDict& dict_objects, CRef<CArray>& dependencies);
+    string AddConfigureTarget(const string& solution_name,
+        CDict& dict_objects);
     string CreateRootObject(const string& configs_root,
         CDict& dict_objects, CRef<CArray>& targets);
     
