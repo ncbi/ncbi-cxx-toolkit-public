@@ -57,7 +57,7 @@ echo
 echo "`date` *** Testing the archive"
 echo
 
-dd if=$test_base.tar bs=8191 2>/dev/null | test_tar -T -f -           ||  exit 1
+dd if=$test_base.tar bs=8191 2>/dev/null | test_tar -v -T -f -        ||  exit 1
 
 sleep 1
 mkdir $test_base.1/newdir 2>/dev/null
