@@ -4,17 +4,16 @@
 
 USING_OLIGOFAR_SCOPES;
 
-IAligner * COligoFarApp::CreateAligner() const 
+static IAligner * sgx_NewAligner( COligoFarApp::EAlignmentAlgo algo, int xdropoff ) 
 {
-    if( m_xdropoff == 0 ) return new CAligner_HSP();
-
-	switch( m_alignmentAlgo ) {
-	case eAlignment_fast: return new CAligner_fast();
-	case eAlignment_HSP:  return new CAligner_HSP();
-    case eAlignment_SW:
+    if( xdropoff == 0 ) return new CAligner_HSP();
+    switch( algo ) {
+    case COligoFarApp::eAlignment_fast: return new CAligner_fast();
+    case COligoFarApp::eAlignment_HSP: return new CAligner_HSP();
+    case COligoFarApp::eAlignment_SW:
 		do {
         	auto_ptr<CAligner_SW> swalign( new CAligner_SW() );
-        	swalign->SetMatrix().resize( 2*m_xdropoff + 1 );
+        	swalign->SetMatrix().resize( 2*xdropoff + 1 );
         	return swalign.release();
     	} while(0); break;
 // 	case eAlignment_quick: 
@@ -27,3 +26,11 @@ IAligner * COligoFarApp::CreateAligner() const
 	}
 }
 
+
+IAligner * COligoFarApp::CreateAligner( EAlignmentAlgo algo, CScoreTbl * scoreTbl ) const 
+{
+    auto_ptr<IAligner> aligner( sgx_NewAligner( algo, m_xdropoff ) );
+    ASSERT( aligner.get() );
+    aligner->SetScoreTbl( *scoreTbl );
+    return aligner.release();
+}

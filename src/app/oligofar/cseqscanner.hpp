@@ -18,7 +18,7 @@ class CSeqScanner : public CSeqVecProcessor::ICallback
 {
 public:
     typedef vector<CQuery*> TInputChunk;
-    typedef array_set <CQueryHash::SHashAtom> TMatches;
+    typedef array_set <CHashAtom> TMatches;
 
     CSeqScanner() : 
         m_maxAlternatives( 1024 ), m_maxSimplicity( 2.0 ), 
@@ -70,7 +70,7 @@ protected:
         // CHashParam  API
         int GetWindowLength() const { return m_hashParam.GetWindowLength(); }
         int GetExtWordOffset() const { return m_hashParam.GetOffset(); }
-        int GetWordLength( int i ) const { return m_hashParam.GetWordLength( i ); }
+        int GetWordLength() const { return m_hashParam.GetWordLength(); }
     protected:
         const CHashParam& m_hashParam;
         double m_maxSimplicity;

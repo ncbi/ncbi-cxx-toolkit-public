@@ -13,6 +13,7 @@ template <class real> real round( real x ) { return floor( x + 0.5 ); }
 
 inline ostream& CProgressIndicator::FormatBigNumber( ostream&o, double number ) 
 {
+    o.precision(-1);
     if( number >= 1e12 ) {
         o << round(number/1e11 )/10 << "T";
     } else if( number >= 1e9) {

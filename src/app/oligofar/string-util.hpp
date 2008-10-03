@@ -3,6 +3,7 @@
 #define OLIGOFAR_STRINGUTIL__HPP
 
 #include "defs.hpp"
+#include <strstream>
 #include <cstring>
 #include <string>
 
@@ -27,24 +28,24 @@ inline iterator Split(const string& str, const string& delim,
 template<class container>
 inline string Join(const string& delim, const container& c) 
 {
-	string ret;
+	ostringstream ret;
 	typedef typename container::const_iterator iterator;
 	for( iterator q = c.begin(); q != c.end(); ++q ) {
-		if( q != c.begin() ) ret.append( delim );
-		ret.append( *q );
+		if( q != c.begin() ) ret << delim;
+		ret << *q;
 	}
-	return ret;
+	return ret.str();
 }
 
 template<class iterator>
 inline string Join(const string& delim, iterator b, iterator e) 
 {
-	string ret;
+	ostringstream ret;
 	for( iterator i = b; i != e; ++i ) {
-		if( i != b ) ret.append( delim );
-		ret.append( *i );
+		if( i != b ) ret << delim;
+		ret << *i;
 	}
-	return ret;
+	return ret.str();
 }
 
 END_OLIGOFAR_SCOPES

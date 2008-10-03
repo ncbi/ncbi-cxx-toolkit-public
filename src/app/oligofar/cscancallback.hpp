@@ -16,7 +16,7 @@ public:
         m_mism = mism;
         m_queryHash.ForEach( hash, *this );
     }
-    void operator () ( const CQueryHash::SHashAtom& a ) { m_matches.insert( a ); }
+    void operator () ( const CHashAtom& a ) { m_matches.insert( a ); }
 protected:
     Uint4 m_mism;
     TMatches& m_matches;

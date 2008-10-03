@@ -2,6 +2,8 @@
 #define OLIGOFAR_COLIGOFARAPP__HPP
 
 #include "capp.hpp"
+#include "util.hpp"
+#include "array_set.hpp"
 #include "cqueryhash.hpp"
 #include <corelib/ncbireg.hpp>
 #include <string>
@@ -10,11 +12,29 @@
 BEGIN_OLIGOFAR_SCOPES
 
 class IAligner;
+class CScoreTbl;
 class COligoFarApp : public CApp
 {
 public:
     COligoFarApp( int argc, char ** argv );
 	static int RevNo();
+    enum {
+        kKiloByte = 1024,
+        kMegaByte = 1024*kKiloByte,
+        kGigaByte = 1024*kMegaByte
+    };
+    enum EAlignmentAlgo {
+        eAlignment_HSP   = 'h',
+        eAlignment_SW    = 's',
+        eAlignment_fast  = 'f',
+        eAlignment_quick = 'q'
+    };
+    enum ELongOpt { 
+        kLongOptBase = 0x100,
+        kLongOpt_old = kLongOptBase + 0x01,
+        kLongOpt_min_block_length = kLongOptBase + 0x02
+    };
+
 protected:
     virtual void Help( const char * );
     virtual void Version( const char * );
@@ -29,51 +49,30 @@ protected:
 
     int GetOutputFlags() const;
 
-	IAligner * CreateAligner() const;
+	IAligner * CreateAligner( EAlignmentAlgo, CScoreTbl * tbl ) const;
 
     virtual const option * GetLongOptions() const;
     virtual const char * GetOptString() const;
     virtual int ParseArg( int, const char *, int );
-    enum {
-        kKiloByte = 1024,
-        kMegaByte = 1024*kKiloByte,
-        kGigaByte = 1024*kMegaByte
-    };
-    enum EAlignmentAlgo {
-        eAlignment_HSP   = 'h',
-        eAlignment_SW    = 's',
-        eAlignment_fast  = 'f',
-        eAlignment_quick = 'q'
-    };
+
     void SetupGeometries( map<string,int>& );
 
-    enum ELongOpt { 
-        kLongOptBase = 0x100,
-        kLongOpt_old = kLongOptBase + 0x01,
-        kLongOpt_min_block_length = kLongOptBase + 0x02
-    };
+    char HashTypeChar( int  = 0 ) const;
+    void SetHashType( int, char );
 
-    unsigned WordSize() const;
-    unsigned DefaultWordSize() const;
-    char HashTypeChar() const;
-
-    static pair<int,int> ParseRange( const string& str, const string& delim = "-," ) { return ParseRange( str.c_str(), delim ); }
-    static pair<int,int> ParseRange( const char * str, const string& delim = "-," );
     static void ParseRange( int& a, int& b, const string& str, const string& delim = "-," ) {
-        pair<int,int> val = ParseRange( str, delim );
+        pair<int,int> val = NUtil::ParseRange( str, delim );
         a = val.first;
         b = val.second;
     }
     static void ParseRange( unsigned& a, unsigned& b, const string& str, const string& delim = "-," ) {
-        pair<int,int> val = ParseRange( str, delim );
+        pair<int,int> val = NUtil::ParseRange( str, delim );
         a = val.first;
         b = val.second;
     }
 
 protected:
-    unsigned m_windowLength;
-    unsigned m_wordSize;
-    unsigned m_windowMask;
+    unsigned m_windowLength[2];
     unsigned m_minHashMism;
     unsigned m_maxHashMism;
     unsigned m_maxHashAlt;
@@ -90,19 +89,21 @@ protected:
     double   m_mismatchScore;
     double   m_gapOpeningScore;
     double   m_gapExtentionScore;
+    double   m_rehashFactor;
     int      m_minPair;
     int      m_maxPair;
     int      m_pairMargin;
 	int      m_qualityChannels;
 	int      m_qualityBase;
     int      m_minBlockLength;
+    int      m_guideFilemaxMismatch;
     Uint8    m_memoryLimit;
     bool     m_performTests;
 	bool     m_colorSpace;
-    bool     m_allowShortWindow;
     bool     m_run_old_scanning_code;
 	EAlignmentAlgo m_alignmentAlgo;
-	CQueryHash::EHashType m_hashType;
+	CQueryHash::EHashType m_hashType[2];
+    array_set<int> m_skipPositions;
     string m_readFile;
     string m_gilistFile;
     string m_fastaFile;

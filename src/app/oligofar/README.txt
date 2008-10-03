@@ -1,14 +1,14 @@
-oligoFAR 3.24                     7-AUG-2008                                1-NCBI
+oligoFAR 3.25                     7-AUG-2008                                1-NCBI
 
 NAME 
-    oligoFAR version 3.24 - global alignment of single or paired short reads
+    oligoFAR version 3.25 - global alignment of single or paired short reads
 
 SYNOPSIS
-    oligofar [-hV] [-C config] [-w winlen[/wordsz]] [-n mismMax[-mismMin]] 
-             [-a max-alt-qry] [-A max-alt-sbj] [-H v|m|a] [-S +|-]
+    oligofar [-hV] [-C config] [-w [ini,]size] [-n [mismMin-]mismMax] 
+             [-a max-alt-qry] [-A max-alt-sbj] [-H v|m|a[,v|m|a]] 
              [-D distMin[-distMax]] [-m distMargin] [-p minPct]
-             [-u topCnt] [-t topPct] [-F dust] [-s strands]
-             [-i input] [-d database] [-l gilist] [-b snpdb]
+             [-u topCnt] [-t topPct] [-F dust] [-s strands] [-f frac]
+             [-i input] [-d database] [-l gilist] [-b snpdb] [-x mis]
              [-o output] [-O outflags] [-g guidefile] [-c +|-] 
              [-B batchSize] [-r algo] [-X dropoff] [-R geometry]
              [-q qualChannels] [-0 qualBase] [-1 solexa1] [-2 solexa2] 
@@ -16,7 +16,7 @@ SYNOPSIS
              [-T test] [-L memlimit] [-U version] 
 
 EXAMPLES
-    oligofar -U 3.24 -C human-data.ini -C deep-search.ini -i my.reads -h
+    oligofar -U 3.25 -C human-data.ini -C deep-search.ini -i my.reads -h
 
     oligofar -i pairs.tbl -d contigs.fa -b snpdb.bdb -l gilist -g pairs.guide \
              -w 20/12 -B 250000 -Hv -n2 -rf -p90 -D100-500 -m50 -Rp \
@@ -24,7 +24,7 @@ EXAMPLES
 
 CHANGES
     Following parameters are new, have changed or have disappeared 
-    in version 3.24: -n, -w, -N, -z, -Z, -D, -m, -S. 
+    in version 3.25: -n, -w, -N, -z, -Z, -D, -m, -S, -x, -f. 
 
 DESCRIPTION
     Performs global alignments of multiple single or paired short reads 
@@ -111,6 +111,26 @@ PAIRED READS
     Paired reads have one ID per pair. Individual reads in this case do not
     have individual ID, although report provides info which component(s) of 
     the pair produce the hit.
+
+MULTIPASS MODE
+    If two values for -w and/or -n are used (ex: -w 24,13 -n 0,2), oligoFAR
+    runs twice for each batch: first pass with longer window size and less
+    mismatches allowed in hash, and with no indels allowed, and all consecutive 
+    passes with shorter window, indels allowed (unless -X0 is explicitely set
+    in command line), more mismatches in hash window and possibly with
+    different hash immplementation (if specified with -H and -f options), 
+    but only for reads which did not have good enough hits in previous passes. 
+    As example, if user specifies:
+
+    oligoFAR -w 24,13 -n 0,2 -X2 -rf -Hv,a -f1
+
+    it will run for some reads trice, with following options implied:
+
+    (1) -w24 -n0 -X0 -Hv
+    (2) -w13 -n1 -X2 -Ha -rf
+    (3) -w13 -n2 -X2 -Ha -rf
+
+    (every time for smaller subset of reads).
 
 OPTIONS
 
@@ -205,6 +225,9 @@ File options
                 i.e. integer ASCII value or `+' followed by character which 
                 corresponds to the phrap score of 0.
 
+    --guide-max-mism=count
+    -x count    Maximal number of mismatches for hits in guidefile to be used.
+
     --colorspace=+|-
     -c +|-      Input is in di-base colorspace encoding. Hashing and alignment 
                 will be performed in the colorspace encoding. 
@@ -230,15 +253,18 @@ File options
                 small makes scan inefficient. 
 
 Hashing and scanning options
-    --window-size=size[/word]
-    -w size[/word]     
-                Sets window size and word size. If window size is below 15 (13 
-                for -Hv on 64-bit, or 11 for -Hv on 32-bit architecture), word 
-                size by default equals to window size. Otherwise word size by 
-                default is chosen to be 15, 13, or 11 depending on -H value and 
-                architecture.  OligoFAR hashes one window per read, choosing 
-                it as close to 5' end as possible, but may shift it to the right 
-                if the 5' end has too many low quality (ambiguous) bases.  
+    --window-size=[ini,]size
+    -w [ini,]size
+                Sets window size. If one value is set it is considered to be
+                used for all passes. If two values are used, it turns on
+                multipass-mode (see above), when on first pass the first
+                value is used for hash window, and for all the rest passes 
+                second value is used. Reasonable values are 3-26 for initial
+                run and 3-13 for other passes. 
+                
+                OligoFAR hashes one window per read, choosing it as close to 
+                5' end as possible, but may shift it to the right if the 5' 
+                end has too many low quality (ambiguous) bases.  
 
     --input-mism=initial[-final]
     -n ini[-fi] Sets maximal allowed number of mismatches within hashed word.
@@ -248,19 +274,21 @@ Hashing and scanning options
                 allowing extra mismatches in hash word until final value is 
                 exceeded.
 
-    --allow-short-window=+|-
-    -S +|-      If window size is more then word size and this option is enabled, 
-                after first pass window size will be decreased to word size and
-                reads which have more mismatches then initial number of mismatches 
-                allowed in hash word will be rehashed.
-
-    --hash-type=v|m|a
-    -H v|m|a    Set hash type to v (vector), m (multimap) or a (arraymap).
+    --hash-type=v|m|a[,v|m|a]
+    -H v|m|a[,v|m|a]
+                Set hash type to v (vector), m (multimap) or a (arraymap) for 
+                the initial pass and optionally for consecutive passes.
                 Vector is the most memory consuming, but is the fastest for
                 batches of reads of tens of thousands or more. Multimap is not
                 practical (more intended for debugging). Arraymap is the least
                 memory consuming and is fast for small counts of reads.
                 Arraymap is the only practical in 32-bit application.
+
+    --rehash-fraction=value
+    -f value    In multipass move when -H specifies two different hash types
+                -f controls when to switch hash type from first to second. If
+                the fraction of reads rehashed (related to the batch size) is 
+                less then given value, the second hash type is used.
 
     --input-max-alt=count
     -a count    Maximal number of alternative versions of window (based on
@@ -413,7 +441,7 @@ Config file
     Example:
 
         [oligofar]
-        assert-version = 3.24
+        assert-version = 3.25
         window-size = 12
         input-max-mism = 0
         input-max-alt = 256
@@ -491,13 +519,15 @@ Guide file
     4. subject offset 1-based (for the first member of the pair if paired match);
     5. '0' or '-' - reverse strand; '1' or '+' - forward strand (for the first 
        member of the pair if paired match);
-    6. mismatch position in the query (1-based, 0 for exact match) (for the first
-       member of the pair if paired match);
+    6. comma-separated list of 1-based mismatch positions for the first
+       member of the pair if paired match; 0 values are ignored (so single 0 
+       is an empty list); dash (-) is considered for empty list as well; 
     7. subject base at mismatch position ('-' for exact match) (for the
        first member of the pair if paired match);
     8. if paired match - subject offset of the second member of the pair;
     9. if paired match - strand of the second member of the pair;
-    10. if paired match - mismatch position of the second member of the pair;
+    10. if paired match - mismatch position(s) of the second member of the
+        pair, like col 6;
     11. if paired match - subject base at mismatch position for the second
         member of the pair.
 

@@ -72,7 +72,7 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
     
 	const char * y = a;
 
-    int winLen = m_queryHash->GetCurrentWindowLength();
+    int winLen = m_queryHash->GetWindowLength();
 
 	for( const char * Y = a + winLen; y < Y; ++y ) {
         CNcbi8naBase b( *y & 0x0f );
@@ -190,7 +190,7 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
                             int from, int toOpen, const char * a, const char * A, int off )
 {
     if( m_queryHash == 0 ) return;
-    int winLen = m_queryHash->GetCurrentWindowLength();
+    int winLen = m_queryHash->GetWindowLength();
 //    cerr << __PRETTY_FUNCTION__ << DISPLAY( winLen ) << endl;
     
     if( from < 0 ) from = 0;
@@ -209,10 +209,10 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
             int pos = x - a + off;
             ITERATE( TMatches, m, matches ) {
 //                cerr << DISPLAY( winLen ) << DISPLAY( m->strand ) << DISPLAY( int(m->offset) ) << endl;
-                switch( m->strand ) {
-                case '+': m_filter->Match( *m, a, A, pos - m->offset ); break;
-                case '-': m_filter->Match( *m, a, A, pos + m->offset + winLen - 1 ); break;
-                default: THROW( logic_error, "Invalid strand " << m->strand );
+                switch( m->GetStrand() ) {
+                case '+': m_filter->Match( *m, a, A, pos - m->GetOffset() ); break;
+                case '-': m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 ); break;
+                default: THROW( logic_error, "Invalid strand " << m->GetStrand() );
                 }
             }
         }
@@ -225,7 +225,7 @@ template<class NoAmbiq, class Ambiq, class Callback>
 void CSeqScanner::x_RangemapLoop( const TRangeMap& rm, TMatches& matches,  Callback& cbk, CProgressIndicator*p, const char * a, const char * A, int off )
 {
     if( m_queryHash == 0 ) return;
-    int winLen = m_queryHash->GetCurrentWindowLength();
+    int winLen = m_queryHash->GetWindowLength();
 //    cerr << __PRETTY_FUNCTION__ << DISPLAY( winLen ) << endl;
 
     Uint4 mask4 = CBitHacks::WordFootprint<Uint4>( 2 * winLen );
@@ -320,12 +320,12 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
                     matches.clear();
                     callback( Uint4( hashCode.GetHashValue() ), 0, 1 );
                     ITERATE( TMatches, m, matches ) {
-                        switch( m->strand ) {
-                        case '+': m_filter->Match( *m, a, A, pos - m->offset );
+                        switch( m->GetStrand() ) {
+                        case '+': m_filter->Match( *m, a, A, pos - m->GetOffset() );
                             break;
-                        case '-': m_filter->Match( *m, a, A, pos + m->offset + winLen - 1 );
+                        case '-': m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 );
                             break;
-                        default: THROW( logic_error, "Invalid strand " << m->strand );
+                        default: THROW( logic_error, "Invalid strand " << m->GetStrand() );
                         }
                     }
                 }
@@ -353,12 +353,12 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
                         callback( Uint4( *h ), 0, hashGen.GetAlternativesCount() );
                     }
                     ITERATE( TMatches, m, matches ) {
-                        switch( m->strand ) {
-                        case '+': m_filter->Match( *m, a, A, pos - m->offset );
+                        switch( m->GetStrand() ) {
+                        case '+': m_filter->Match( *m, a, A, pos - m->GetOffset() );
                             break;
-                        case '-': m_filter->Match( *m, a, A, pos + m->offset + winLen - 1 );
+                        case '-': m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 );
                             break;
-                        default: THROW( logic_error, "Invalid strand " << m->strand );
+                        default: THROW( logic_error, "Invalid strand " << m->GetStrand() );
                         }
                     }
                 }

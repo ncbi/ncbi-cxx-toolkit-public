@@ -8,50 +8,48 @@ BEGIN_OLIGOFAR_SCOPES
 class CHashParam
 {
 public:
-    CHashParam( unsigned winLen, unsigned wordLen, unsigned winMask );
+	enum EHashType {
+		eHash_vector,
+		eHash_arraymap,
+		eHash_multimap
+	};
+
+    CHashParam( EHashType hashType, unsigned winLen );
+
+    EHashType GetHashType() const { return m_hashType; }
 
     int GetOffset() const { return m_offset; }
-
     int GetWindowLength() const { return m_winLen; }
-    int GetWordLength(int i) const { return m_wordLen[i]; }
-    int GetPackedSize(int i) const { return m_wordLen[i]; } // TODO: change when packing is implemented
+    int GetWordLength() const { return m_wordLen; }
 
-    template<int bitsPerBase, class uint>
-    uint PackWord(int i, uint word) const { return word; } // TODO: implement packing
+    bool SingleHash() const { return m_winLen == m_wordLen; }
+    bool DoubleHash() const { return m_winLen != m_wordLen; }
 
 protected:
-    Uint4 m_winMask;
+    EHashType m_hashType;
     Uint1 m_winLen;
+    Uint1 m_wordLen;
     Uint1 m_offset;
-    Uint1 m_wordLen[2];
-    Uint1 m_wordSize[2];
-    Uint4 m_wordMask[2];
-    Uint4 m_wordGaps[2];
 };
 
-inline CHashParam::CHashParam( unsigned winLen, unsigned wordLen, unsigned winMask ) :
-    m_winMask( winMask & ((1 << m_winLen) - 1) ),
+inline CHashParam::CHashParam( EHashType hashType, unsigned winLen ) :
+    m_hashType( hashType ),
     m_winLen( winLen ),
-    m_offset( m_winLen - min( winLen, wordLen ) )
+    m_wordLen( winLen ),
+    m_offset( 0 )
 {
-    if( m_offset ) {
-        m_wordLen[0] = m_wordLen[1] = wordLen;
-        m_wordMask[0] = m_winMask & ((1 << m_wordLen[0]) - 1);
-        m_wordMask[1] = (m_winMask >> m_offset) & ((1 << m_wordLen[1]) - 1);
-        m_wordSize[0] = CBitHacks::BitCount4( m_wordMask[0] );
-        m_wordSize[1] = CBitHacks::BitCount4( m_wordMask[1] );
-        // word lengths should be same to make simple hash 
-        // value computation for reverse strand
+    ASSERT( m_winLen < 31 );
+    if( hashType == eHash_vector ) {
+        if( m_winLen > 13 ) {
+            m_wordLen = max( 12, ( m_winLen + 1 ) / 2 );
+            m_offset = m_winLen - m_wordLen;
+        }
     } else {
-        m_wordLen[0] = m_winLen;
-        m_wordLen[1] = 0;
-        m_wordSize[0] = CBitHacks::BitCount4( m_winMask );
-        m_wordSize[1] = 0;
-        m_wordMask[0] = m_winMask;
-        m_wordMask[1] = 0;
+        if( m_winLen > 15 ) {
+            m_wordLen = max( 15, (m_winLen + 1 ) / 2 );
+            m_offset = m_winLen - m_wordLen;
+        }
     }
-    m_wordGaps[0] = (~m_wordMask[0]) & ((1 << m_wordLen[0]) - 1);
-    m_wordGaps[1] = (~m_wordMask[1]) & ((1 << m_wordLen[1]) - 1);
 }
 
 END_OLIGOFAR_SCOPES

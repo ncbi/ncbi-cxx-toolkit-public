@@ -6,6 +6,7 @@ APP = oligofar
 
 SRC = \
         main \
+		util \
         capp \
         chit \
         getopt \

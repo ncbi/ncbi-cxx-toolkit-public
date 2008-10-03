@@ -5,6 +5,17 @@
 USING_OLIGOFAR_SCOPES;
 USING_SCOPE(fourplanes);
 
+class GPermutatorCallback 
+{
+public:
+    GPermutatorCallback( int n ) : m_count(0), m_expected( n + n*3 ) {}
+    void operator () ( Uint8 hash, int mism, Uint8 alt ) { ++m_count; }
+    operator bool () const { return m_count == m_expected; }
+protected:
+    int m_count;
+    int m_expected;
+   // cerr << setw(3) << setfill('0') << ++count << "\t" << Ncbi2naToIupac( hash, 13 ) << "\t" << mism << "\t" << alt << endl;
+};
 
 int COligoFarApp::TestSuite()
 {
@@ -151,6 +162,10 @@ int COligoFarApp::TestSuite()
 //             ( Ncbipna2Ncbi4na( &ncbipna[i*20 + 15] ) << 0xc ) );
 //     }
 //     cout << endl;
+
+    CPermutator4b perm( 1, 1 );
+    GPermutatorCallback cbk( 13 );
+    perm.ForEach( 13, 0x1111111111111, cbk );
 
     return 0;
 }

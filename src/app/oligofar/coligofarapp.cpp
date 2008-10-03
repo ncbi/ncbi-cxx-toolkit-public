@@ -25,39 +25,27 @@
 USING_OLIGOFAR_SCOPES;
 
 #ifndef OLIGOFAR_VERSION
-#define OLIGOFAR_VERSION "3.24" 
+#define OLIGOFAR_VERSION "3.25" 
 #endif
 
-unsigned COligoFarApp::WordSize() const { return min( DefaultWordSize(), max( (m_windowLength + 1 )/2, min( m_wordSize, m_windowLength ) ) ); }
-unsigned COligoFarApp::DefaultWordSize() const { return m_hashType == CQueryHash::eHash_vector ? sizeof(void*) > 4 ? 13 : 11 : 15; }
-char COligoFarApp::HashTypeChar() const 
+char COligoFarApp::HashTypeChar( int i ) const 
 {
-    return (m_hashType == CQueryHash::eHash_vector ? 'v' : 
-            m_hashType == CQueryHash::eHash_multimap ? 'm' : 
-            m_hashType == CQueryHash::eHash_arraymap ? 'a' : '?' );
+    return (m_hashType[i] == CQueryHash::eHash_vector ? 'v' : 
+            m_hashType[i] == CQueryHash::eHash_multimap ? 'm' : 
+            m_hashType[i] == CQueryHash::eHash_arraymap ? 'a' : '?' );
 }
-pair<int,int> COligoFarApp::ParseRange( const char * str, const string& delim ) 
+void COligoFarApp::SetHashType( int i, char type ) 
 {
-    const char * x = 0;
-    pair<int,int> ret(0,0);
-    ret.first = strtol( str, const_cast<char**>( &x ), 10 );
-    if( x == 0 || x == str )
-        THROW( runtime_error, "Integer or integer range expected, got [" << str << "]" );
-    if( *x == 0 ) { ret.second = ret.first; return ret; }
-    if( strchr( delim.c_str(), *x ) ) {
-        const char * s = x+1;
-        ret.second = strtol( s, const_cast<char**>( &x ), 10 );
-        if( x != 0 && x != s && *x == 0 ) 
-            return ret;
+    switch( type ) {
+    case 'v': case 'V': m_hashType[i] = CQueryHash::eHash_vector; break;
+    case 'm': case 'M': m_hashType[i] = CQueryHash::eHash_multimap; break;
+    case 'a': case 'A': m_hashType[i] = CQueryHash::eHash_arraymap; break;
+    default: THROW( runtime_error, "Unknown hash type " << type );
     }
-    THROW( runtime_error, "Integer or integer range expected, got trailing characters (" << x << ") in [" << str << "]" );
 }
 
 COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     CApp( argc, argv ),
-    m_windowLength( 13 ),
-    m_wordSize( 100 ),
-    m_windowMask( ~0 ),
     m_minHashMism( 1 ),
     m_maxHashMism( 1 ),
     m_maxHashAlt( 256 ),
@@ -74,19 +62,19 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_mismatchScore( -1.0 ),
     m_gapOpeningScore( -3.0 ),
     m_gapExtentionScore( -1.5 ),
+    m_rehashFactor( 0.3 ),
     m_minPair( 100 ),
     m_maxPair( 200 ),
     m_pairMargin( 20 ),
     m_qualityChannels( 0 ),
     m_qualityBase( 33 ),
     m_minBlockLength( 1000 ),
+    m_guideFilemaxMismatch( 0 ),
     m_memoryLimit( Uint8( sizeof(void*) == 4 ? 3 : 8 ) * int(kGigaByte) ),
     m_performTests( false ),
     m_colorSpace( false ),
-    m_allowShortWindow( false ),
     m_run_old_scanning_code( false ),
     m_alignmentAlgo( eAlignment_fast ),
-    m_hashType( CQueryHash::eHash_arraymap ),
 #ifdef _WIN32
     //m_guideFile( "nul:" ),
     m_outputFile( "con:" ),
@@ -97,6 +85,8 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_outputFlags( "m" ),
     m_geometry( "p" )
 {
+    m_windowLength[0] = m_windowLength[1];
+    m_hashType[0] = m_hashType[1] = CQueryHash::eHash_arraymap;
 #ifndef _WIN32
     ifstream meminfo( "/proc/meminfo" );
     string buff;
@@ -152,38 +142,38 @@ void COligoFarApp::Help( const char * arg )
         cout << "usage: [-hV] [--help[=full|brief|extended]] [-U version] [-C config]\n"
              << "  [-i inputfile] [-d genomedb] [-b snpdb] [-g guidefile] [-l gilist]\n"
              << "  [-1 solexa1] [-2 solexa2] [-q 0|1] [-0 qbase] [-c +|-] [-o output]\n"
-             << "  [-O -eumxtadh] [-B batchsz] [-w winlen[/wordsz]] [-S +|-]\n" //[-x winskip]\n"
-             << "  [-n [minMism[-maxmism]] [-r f|s] [-H v|m|a] [-a maxalt] [-A maxalt]\n"
-             << "  [-P phrap] [-F dust] [-s 1|2|3] [-p cutoff] [-u topcnt] [-t toppct]\n"
-             << "  [-X xdropoff] [-I idscore] [-M mismscore] [-G gapcore] [-Q gapextscore]\n"
-             << "  [-D minPair[-maxPair]] [-m margin] [-R geometry]\n"
-             << "  [-L memlimit] [-T +|-]\n";
+             << "  [-O -eumxtadh] [-B batchsz] [-x 0|1|2] [-w [ini,]size]\n"
+             << "  [-k skipPos] [-n [minMism[-maxmism]] [-r f|s] [-H v|m|a[,v|m|a]]\n"
+             << "  [-f fraction] [-a maxalt] [-A maxalt] [-P phrap] [-F dust] [-s 1|2|3]\n"
+             << "  [-p cutoff] [-u topcnt] [-t toppct] [-X xdropoff] [-I idscore]\n"
+             << "  [-M mismscore] [-G gapcore] [-Q gapextscore] [-D minPair[-maxPair]]\n"
+             << "  [-m margin] [-R geometry] [-L memlimit] [-T +|-]\n";
     if( flags & fDetails ) 
         cout 
             << "\nFile options:\n" 
             << "  -i file       --input-file=file          short reads input file [" << m_readFile << "]\n"
             << "  -d file       --fasta-file=file          database (fasta or basename of blastdb) file [" << m_fastaFile << "]\n"
             << "  -b file       --snpdb-file=file          snp database subject file [" << m_snpdbFile << "]\n"
-//       << "  -v file       --vardb-file=file         *general variation database subject file [" << m_vardbFile << "]\n"
             << "  -g file       --guide-file=file          guide file (output of sr-search [" << m_guideFile << "]\n"
             << "  -l file       --gi-list=file             gi list to use for the blast db [" << m_gilistFile << "]\n"
-            << "  -o output     --output-file=output       set output file [" << m_outputFile << "]\n"
             << "  -1 file       --qual-1-file=file         read 1 4-channel quality file [" << m_read1qualityFile << "]\n"
             << "  -2 file       --qual-2-file=file         read 2 4-channel quality file [" << m_read2qualityFile << "]\n"
+            << "  -o output     --output-file=output       set output file [" << m_outputFile << "]\n"
+            << "  -x count      --guide-max-mism=count     set maximal number of mismatches for hits in guide file [" << m_guideFilemaxMismatch << "]\n"
             << "  -c +|-        --colorspace=+|-          *reads are set in dibase colorspace [" << (m_colorSpace?"yes":"no") << "]\n"
-            << "  -q 0|1           --quality-channels=cnt     number of channels in input file quality columns [" << m_qualityChannels << "]\n"
+            << "  -q 0|1        --quality-channels=cnt     number of channels in input file quality columns [" << m_qualityChannels << "]\n"
             << "  -0 value      --quality-base=value       base quality number (ASCII value for character representing phrap score 0) [" << m_qualityBase << "]\n"
             << "  -0 +char      --quality-base=+char       base quality char (character representing phrap score 0) [+" << char(m_qualityBase) << "]\n"
             << "  -O flags      --output-flags=flags       add output flags (-huxmtdae) [" << m_outputFlags << "]\n"
             << "  -B count      --batch-size=count         how many short seqs to map at once [" << m_readsPerRun << "]\n"
             << "  -C config     --config-file=file         take parameters from config file section `oligofar' and continue parsing commandline\n"
             << "\nHashing and scanning options:\n"
-            << "  -w win[/word] --window-size=win[/word]   window size (3.." 
-            << (2*DefaultWordSize()) << "/3.." << DefaultWordSize() << " for -H" << HashTypeChar() << ") [" << m_windowLength << "/" << WordSize() << "]\n"
-//            << "  -m mask       --window-mask=mask         window mask [" << NStr::UInt8ToString( m_windowMask, 0, 2 ) << "]\n"
-            << "  -S +|-        --allow-short-window=+|-   rehash queries with no good hits with one word (if word-size < window-size) [" << (m_allowShortWindow?'+':'-') << "]\n"
-            << "  -n ini[-fin]  --input-mism=ini[-fin]     initial and final maximal number of mismatches in hash window [" << m_minHashMism << "-" << m_maxHashMism << "]\n"
-            << "  -H v|m|a      --hash-type=v|m|a          set hash type to vector, multimap, or arraymap [" << HashTypeChar() << "]\n"
+            << "  -w [ini,]size --window-size=[ini,]size   window size for first and for consecutive passes [" << m_windowLength[0] << "," << m_windowLength[1] << "]\n"
+            << "  -k pos[,...]  --window-skip=pos[,...]    skip window positions when hashing (1-based) [" << Join( ",", m_skipPositions ) << "]\n"
+            << "  -n [ini,]mism --input-mism=[ini,]mism    initial and final maximal number of mismatches in hash window [" << m_minHashMism << "," << m_maxHashMism << "]\n"
+            << "  -H v|m|a[,..] --hash-type=v|m|a[,..]     set hash type to vector, multimap, or arraymap [" 
+            << HashTypeChar() << (m_hashType[0] == m_hashType[1] ? string("") : string(",") + HashTypeChar(1) ) << "]\n"
+            << "  -f fraction   --rehash-fraction=fraction what fraction of reads should be rehashed for second pass to switch hash type [" << m_rehashFactor << "]\n"
             << "  -a alt        --input-max-alt=alt        maximal number of alternatives in hash window [" << m_maxHashAlt << "]\n"
             << "  -A alt        --fasta-max-alt=alt        maximal number of alternatives in fasta window [" << m_maxFastaAlt << "]\n"
             << "  -P score      --phrap-cutoff=score       set maximal phrap score to consider base as ambiguous [" << m_phrapSensitivity << "]\n"
@@ -243,10 +233,10 @@ const option * COligoFarApp::GetLongOptions() const
         {"version", 0, 0, 'V'},
         {"assert-version", 1, 0, 'U'},
         {"window-size", 1, 0, 'w'},
- //        {"window-mask",1,0,'m'},
+        {"window-skip",1,0,'k'},
         {"input-mism", 1, 0, 'n'},
-        {"allow-short-window", 1, 0, 'S'},
         {"hash-type", 1, 0, 'H'},
+        {"rehash-fraction", 1, 0, 'f'},
         {"input-max-alt", 1, 0, 'a'},
         {"fasta-max-alt", 1, 0, 'A'},
         {"colorspace", 1, 0, 'c'},
@@ -261,6 +251,7 @@ const option * COligoFarApp::GetLongOptions() const
         {"gi-list", 1, 0, 'l'},
         {"strands", 1, 0, 's'},
         {"batch-size", 1, 0, 'B'},
+        {"guide-max-mism", 1, 0, 'x'},
         {"min-pctid", 1, 0, 'p'},
         {"top-count", 1, 0, 'u'},
         {"top-percent", 1, 0, 't'},
@@ -290,7 +281,7 @@ const option * COligoFarApp::GetLongOptions() const
 
 const char * COligoFarApp::GetOptString() const
 {
-    return "U:C:w:n:S:H:a:A:c:i:d:b:v:g:o:O:l:s:B:p:u:t:1:2:q:0:P:m:D:R:F:r:I:M:G:Q:X:L:T:";
+    return "U:C:w:n:H:f:a:A:c:i:d:b:v:g:o:O:l:s:B:x:p:u:t:1:2:q:0:P:m:D:R:F:r:I:M:G:Q:X:L:T:";
 }
 
 int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
@@ -300,18 +291,17 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case kLongOpt_min_block_length: m_minBlockLength = NStr::StringToInt( arg ); break;
     case 'U': if( strcmp( arg, OLIGOFAR_VERSION ) ) THROW( runtime_error, "Expected oligofar version " << arg << ", called " OLIGOFAR_VERSION ); break;
     case 'C': ParseConfig( arg ); break;
-    case 'w': ParseRange( m_windowLength, m_wordSize, arg, "/" ); break;
-//    case 'm': m_windowMask = NStr::StringToUInt8( arg, 0, 2 ); break;
-    case 'S': m_allowShortWindow = *arg == '+' ? true : *arg == '-' ? false : NStr::StringToBool( arg ); break;
-    case 'n': ParseRange( m_minHashMism, m_maxHashMism, arg ); break;
-    case 'H': 
-        switch( *arg ) {
-        case 'v': case 'V': m_hashType = CQueryHash::eHash_vector; break;
-        case 'm': case 'M': m_hashType = CQueryHash::eHash_multimap; break;
-        case 'a': case 'A': m_hashType = CQueryHash::eHash_arraymap; break;
-        default: THROW( runtime_error, "Unknown hash type " << arg );
-        }
+    case 'w': ParseRange( m_windowLength[0], m_windowLength[1], arg, "," ); break;
+    case 'k': 
+        do {
+            list<string> x;
+            Split( arg, ",", back_inserter( x ) );
+            ITERATE( list<string>, t, x ) m_skipPositions.insert( m_skipPositions.end(), NStr::StringToInt( *t ) );
+        } while(0);
         break;
+    case 'n': ParseRange( m_minHashMism, m_maxHashMism, arg, ",-" ); break;
+    case 'H': SetHashType( 0, *arg ); if( arg[1] == ',' ) SetHashType( 1, arg[2] ); break;
+    case 'f': m_rehashFactor = NStr::StringToDouble( arg ); break;
     case 'a': m_maxHashAlt = strtol( arg, 0, 10 ); break;
     case 'A': m_maxFastaAlt = strtol( arg, 0, 10 ); break;
     case 'c': m_colorSpace = *arg == '+' ? true : *arg == '-' ? false : NStr::StringToBool( arg ); break;
@@ -325,6 +315,7 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case 'l': m_gilistFile = arg; break;
     case 's': m_strands = strtol( arg, 0, 10 ); break;
     case 'B': m_readsPerRun = strtol( arg, 0, 10 ); break;
+    case 'x': m_guideFilemaxMismatch = strtol( arg, 0, 10 ); break;
     case 'p': m_minPctid = NStr::StringToDouble( arg ); break;
     case 'u': m_topCnt = strtol( arg, 0, 10 ); break;
     case 't': m_topPct = NStr::StringToDouble( arg ); break;
@@ -482,17 +473,11 @@ int COligoFarApp::ProcessData()
     }
 
     // TODO: this logic should be tweaked in future
-    m_wordSize = WordSize();
     
-    if( m_windowLength < 3 || m_windowLength > 30 ) 
-        THROW( runtime_error, "Window length is set to " << m_windowLength << " but should be in range of 3..30" );
-    if( m_wordSize < 3 ) 
-        THROW( runtime_error, "Word size is set to " << m_wordSize << " but should be in range of 3..15" );
-    Uint4 footprint = ((1 << m_windowLength) - 1);
-//    int badPositions = CBitHacks::BitCount4( footprint & ~m_windowMask );
-    m_windowMask = footprint & m_windowMask;
-    if( CBitHacks::BitCount4( m_windowMask ) < 3 ) 
-        THROW( runtime_error, "Window mask is set to " << NStr::UInt8ToString( m_windowMask ) << " has too few bits set (3 is required)" );
+    if( m_windowLength[0] < 3 || m_windowLength[0] > 30 ) 
+        THROW( runtime_error, "Window length is set to " << m_windowLength[0] << " but should be in range of 3..30" );
+
+    if( m_windowLength[0] < m_windowLength[1] ) { m_windowLength[1] = m_windowLength[0]; }
 
     ofstream o( m_outputFile.c_str() );
     ifstream reads( m_readFile.c_str() ); // to format output
@@ -530,12 +515,10 @@ int COligoFarApp::ProcessData()
     CSeqVecProcessor seqVecProcessor;
     CSeqScanner seqScanner;
     COutputFormatter formatter( o, seqIds );
-    CQueryHash queryHash( m_hashType, m_windowLength, m_wordSize, m_windowMask, m_maxHashMism, m_maxHashAlt, m_maxSimplicity );
+    CQueryHash queryHash( m_hashType[0], m_windowLength[0], m_maxHashMism, m_maxHashAlt, m_maxSimplicity );
     CScoreTbl scoreTbl( m_identityScore, m_mismatchScore, m_gapOpeningScore, m_gapExtentionScore );
     CGuideFile guideFile( m_guideFile, filter, seqIds );
-
-    auto_ptr<IAligner> aligner( CreateAligner() );
-    aligner->SetScoreTbl( scoreTbl );
+    CBatch batch( m_readsPerRun, m_fastaFile, queryHash, seqVecProcessor, filter, formatter, scoreTbl );
 
     CSnpDb snpDb( CSnpDb::eSeqId_integer );
     if( m_snpdbFile.length() ) {
@@ -543,13 +526,22 @@ int COligoFarApp::ProcessData()
         seqScanner.SetSnpDb( &snpDb );
     }
 
+    batch.SetInitialWindowLength( m_windowLength[0] );
+    batch.SetRegularWindowLength( m_windowLength[1] );
+    batch.SetInitialAligner( CreateAligner( eAlignment_HSP,  &scoreTbl ), true );
+    batch.SetRegularAligner( CreateAligner( m_alignmentAlgo, &scoreTbl ), true );
+    batch.SetInitialHashType( m_hashType[0] );
+    batch.SetRegularHashType( m_hashType[1] );
+    batch.SetHashTypeChangeFraction( m_rehashFactor );
+
+    guideFile.SetMismatchPenalty( scoreTbl );
+    guideFile.SetMaxMismatch( m_guideFilemaxMismatch );
+
     formatter.AssignFlags( GetOutputFlags() );
     formatter.SetGuideFile( guideFile );
-    formatter.SetAligner( aligner.get() );
 
     filter.SetGeometryFlags( geometries[m_geometry] );
     filter.SetSeqIds( &seqIds );
-    filter.SetAligner( aligner.get() );
     filter.SetMaxDist( m_maxPair + m_pairMargin );
     filter.SetMinDist( m_minPair - m_pairMargin );
     filter.SetTopPct( m_topPct );
@@ -562,7 +554,10 @@ int COligoFarApp::ProcessData()
              << m_topPct << " < " << m_minPctid << ")\n";
     }
 
+    for( array_set<int>::iterator i = m_skipPositions.begin(); i != m_skipPositions.end(); ++i ) --*i; // 1-based to 0-based
+
     queryHash.SetStrands( m_strands );
+    queryHash.SetSkipPositions( m_skipPositions );
     queryHash.SetMinimalMaxMism( min( unsigned(queryHash.GetAbsoluteMaxMism()), m_minHashMism ) );
     queryHash.SetNcbipnaToNcbi4naScore( Uint2( 255 * pow( 10.0, double(m_phrapSensitivity)/10) ) );
     queryHash.SetNcbiqnaToNcbi4naScore( m_phrapSensitivity );
@@ -574,6 +569,7 @@ int COligoFarApp::ProcessData()
     seqScanner.SetMaxSimplicity( m_maxSimplicity );
     seqScanner.SetRunOldScanningCode( m_run_old_scanning_code );
     seqScanner.SetMinBlockLength( m_minBlockLength );
+    seqScanner.SetInputChunk( batch.GetInputChunk() );
 
     seqVecProcessor.SetTargetCoding( sbjCoding );
     seqVecProcessor.AddCallback( 1, &filter );
@@ -586,12 +582,8 @@ int COligoFarApp::ProcessData()
     Uint8 entriesTotal = 0;
 
     CProgressIndicator p( "Reading " + m_readFile, "lines" );
-    CBatch batch( m_readsPerRun, m_fastaFile, queryHash, seqVecProcessor, formatter, scoreTbl );
-
-    batch.SetAllowShortWindow( m_allowShortWindow );
     batch.SetReadProgressIndicator( &p );
-
-    seqScanner.SetInputChunk( batch.GetInputChunk() );
+    batch.Start();
 
     for( int count = 0; getline( reads, buff ); ++count ) {
         if( buff.length() == 0 ) continue;

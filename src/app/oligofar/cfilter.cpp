@@ -82,24 +82,24 @@ bool CFilter::CheckGeometry( int from1, int to1, int from2, int to2 ) const
 	return false;
 }
 
-void CFilter::Match( const CQueryHash::SHashAtom& m, const char * a, const char * A, int pos ) // always start at pos
+void CFilter::Match( const CHashAtom& m, const char * a, const char * A, int pos ) // always start at pos
 {
 	ASSERT( m_aligner );
-	m_aligner->SetBestPossibleQueryScore( m.query->GetBestScore( m.pairmate ) );
-    if( m.strand == '-' && m.query->GetCoding() == CSeqCoding::eCoding_colorsp ) --pos;
-    m_aligner->Align( m.query->GetCoding(),
-                      m.query->GetData( m.pairmate ),
-                      m.query->GetLength( m.pairmate ),
+	m_aligner->SetBestPossibleQueryScore( m.GetQuery()->GetBestScore( m.GetPairmate() ) );
+    if( m.GetStrand() == '-' && m.GetQuery()->GetCoding() == CSeqCoding::eCoding_colorsp ) --pos;
+    m_aligner->Align( m.GetQuery()->GetCoding(),
+                      m.GetQuery()->GetData( m.GetPairmate() ),
+                      m.GetQuery()->GetLength( m.GetPairmate() ),
                       CSeqCoding::eCoding_ncbi8na,
                       a + pos,
-                      m.strand == '+' ? A - a - pos : -pos,
+                      m.GetStrand() == '+' ? A - a - pos : -pos,
                       CAlignerBase::fComputeScore );
     const CAlignerBase& abase = m_aligner->GetAlignerBase();
     double score = abase.GetScore();
     if( score >= m_scoreCutoff ) {
-        switch( m.strand ) {
-        case '+': Match( score, pos, pos + abase.GetSubjectAlignedLength() - 1, m.query, m.pairmate ); break;
-        case '-': Match( score, pos, pos - abase.GetSubjectAlignedLength() + 1, m.query, m.pairmate ); break;
+        switch( m.GetStrand() ) {
+        case '+': Match( score, pos, pos + abase.GetSubjectAlignedLength() - 1, m.GetQuery(), m.GetPairmate() ); break;
+        case '-': Match( score, pos, pos - abase.GetSubjectAlignedLength() + 1, m.GetQuery(), m.GetPairmate() ); break;
         }
 	}
 }

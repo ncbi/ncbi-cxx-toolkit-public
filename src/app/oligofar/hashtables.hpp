@@ -50,6 +50,8 @@ public:
     void Clear();
     Uint8 Size( unsigned hash ) { return m_table[hash].size(); }
 
+    void SetWinSize( int win ) { Clear(); m_table.resize( 1 << (2*win) ); }
+
     class C_ConstIterator 
     {
     public:

@@ -63,7 +63,7 @@ public:
                 m_scoreCutoff( 80 ), m_outputFormatter( 0 ) {}
 
     void Match( double score, int seqFrom, int seqTo, CQuery * query, int pairmate );
-    void Match( const CQueryHash::SHashAtom& , const char * seqBegin, const char * seqEnd, int pos );
+    void Match( const CHashAtom& , const char * seqBegin, const char * seqEnd, int pos );
 
 	void PurgeQueues();
 
@@ -72,7 +72,7 @@ public:
     virtual void SequenceEnd();
 
     void SetSeqIds( CSeqIds* seqIds ) { m_seqIds = seqIds; }
-    void SetAligner( IAligner* aligner ) { m_aligner = aligner; }
+    void SetAligner( IAligner* aligner ) { m_aligner = aligner; ASSERT( m_aligner ); }
 	void SetOutputFormatter( COutputFormatter * f ) { m_outputFormatter = f; }
 
     void SetMaxDist( int d ) { m_maxDist = d; }
@@ -90,6 +90,8 @@ public:
     int GetMinDist() const { return m_minDist; }
     
     CHit * SetHit( CHit * target, int pairmate, double score, int from, int to, bool allowCombinations = false );
+
+    IAligner * GetAligner() const { return m_aligner; }
 
 protected:
 	friend class CGuideFile;

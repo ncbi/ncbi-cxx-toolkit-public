@@ -18,13 +18,15 @@ BEGIN_OLIGOFAR_SCOPES
     4. subject offset (for the first member of the pair if paired match);
     5. 0 - reverse strand; 1 - forward strand (for the first member of the 
     pair if paired match);
-    6. mismatch position in the query (0 for exact match) (for the first 
-    member of the pair if paired match);
+    6. mismatch position (1-base) in the query (0 for exact match) (for 
+    the first member of the pair if paired match), may be comma-separated 
+    list for multiple mismatches;
     7. subject base at mismatch position ('-' for exact match) (for the 
     first member of the pair if paired match);
     8. if paired match - subject offset of the second member of the pair;
     9. if paired match - strand of the second member of the pair;
-    10. if paired match - mismatch position of the second member of the pair;
+    10. if paired match - mismatch position (1-based) of the second member 
+    of the pair, may be comma-separated list;
     11. if paired match - subject base at mismatch position for the second 
     member of the pair.
     ************************************************************************ */
@@ -35,6 +37,7 @@ BEGIN_OLIGOFAR_SCOPES
    less then column 8, alse column 4 should be greater then column 8 */
 
 class CSeqIds;
+class CScoring;
 class CGuideFile 
 {
 public:
@@ -44,12 +47,15 @@ public:
 	CGuideFile( const string& fileName, CFilter& filter, CSeqIds& seqIds );
     
     bool NextHit( Uint8 ordinal, CQuery * query );
+    void SetMaxMismatch( int mm ) { m_maxMismatch = mm; }
+    void SetMismatchPenalty( const CScoring& sc );
     
 protected:
 	typedef pair<int,int> TRange;
 
 	void AdjustInput( int& fwd, char dir, int& p1, int which ) const;
 	TRange ComputeRange( bool fwd, int pos, int length ) const;
+    int x_CountMismatches( const string& smposx ) const;
 
 protected:
     ifstream m_in;
@@ -57,10 +63,12 @@ protected:
 	CFilter * m_filter;
 	CSeqIds * m_seqIds;
 	Uint8 m_lastQord;
+    int m_maxMismatch;
+    double m_mismatchPenalty;
 };
 
 inline CGuideFile::CGuideFile( const string& fileName, CFilter& filter, CSeqIds& seqIds )
-	: m_filter( &filter ), m_seqIds( &seqIds ), m_lastQord( 0 )
+	: m_filter( &filter ), m_seqIds( &seqIds ), m_lastQord( 0 ), m_maxMismatch( 0 ), m_mismatchPenalty( 10000 )
 {
 	ASSERT( m_filter );
 	ASSERT( m_seqIds );
