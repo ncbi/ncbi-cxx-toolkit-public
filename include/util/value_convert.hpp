@@ -126,7 +126,7 @@ public:
         return CTime(m_Value);
     }
 
-#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 400
+#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 340 && NCBI_COMPILER_VERSION < 400
     operator char(void) const
     {
         return MakeCP<CP>(NStr::StringToInt(m_Value));
