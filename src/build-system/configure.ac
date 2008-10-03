@@ -966,7 +966,7 @@ case "$host_os:$compiler" in
       LDFLAGS="-flat_namespace $LD_FLAGS"
 
       if test "$with_ncbi_public" = yes; then
-         CPPFLAGS="-mmacosx-version-min=10.4"
+         CPPFLAGS="-mmacosx-version-min=10.4 $CPPFLAGS"
       fi
    else
       LDFLAGS="-Wl,-flat_namespace $LD_FLAGS"
