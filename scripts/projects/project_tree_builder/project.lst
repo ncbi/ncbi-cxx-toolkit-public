@@ -1,0 +1,6 @@
+corelib$
+util$
+util/regexp$
+util/xregexp$
+serial/datatool$
+build-system/project_tree_builder$
