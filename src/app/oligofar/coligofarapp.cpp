@@ -74,6 +74,7 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_performTests( false ),
     m_colorSpace( false ),
     m_run_old_scanning_code( false ),
+    m_ambiguifyPositions( false ),
     m_alignmentAlgo( eAlignment_fast ),
 #ifdef _WIN32
     //m_guideFile( "nul:" ),
@@ -223,7 +224,8 @@ void COligoFarApp::Help( const char * arg )
         cout << "\nExtended options:\n"
              << "  --scan-old=true|false      Use older versions algorithms [" << (m_run_old_scanning_code?"true":"false") << "]\n"
              << "  --min-block-length=bases   Length for subject sequence to be scanned at once [" << m_minBlockLength << "]\n"
-            ;
+             << "  --ambiguify-positions=true|false Use skip positions to make them ambiguous [" << (m_ambiguifyPositions?"true":"false") << "]\n"
+             ;
 }
 
 const option * COligoFarApp::GetLongOptions() const
@@ -274,6 +276,7 @@ const option * COligoFarApp::GetLongOptions() const
         {"test-suite", 1, 0, 'T'},
         {"scan-old", 1, 0, kLongOpt_old },
         {"min-block-length", 1, 0, kLongOpt_min_block_length },
+        {"ambiguify-positions", 1, 0, kLongOpt_ambiguifyPositions },
         {0,0,0,0}
     };
     return opt;
@@ -289,6 +292,7 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     switch( opt ) {
     case kLongOpt_old: m_run_old_scanning_code = NStr::StringToBool( arg ); break;
     case kLongOpt_min_block_length: m_minBlockLength = NStr::StringToInt( arg ); break;
+    case kLongOpt_ambiguifyPositions: m_ambiguifyPositions = NStr::StringToBool( arg ); break;
     case 'U': if( strcmp( arg, OLIGOFAR_VERSION ) ) THROW( runtime_error, "Expected oligofar version " << arg << ", called " OLIGOFAR_VERSION ); break;
     case 'C': ParseConfig( arg ); break;
     case 'w': ParseRange( m_windowLength[0], m_windowLength[1], arg, "," ); break;
@@ -512,7 +516,7 @@ int COligoFarApp::ProcessData()
 
     // TODO: change to better behaviour
     ITERATE( TSkipPositions, k, m_skipPositions ) {
-        if( *k > 0 && *k <= m_windowLength[0] ) {
+        if( *k > 0 && *k <= int( m_windowLength[0] ) ) {
             m_maxHashAlt *= 4;
         }
     }
@@ -563,8 +567,10 @@ int COligoFarApp::ProcessData()
 
     for( array_set<int>::iterator i = m_skipPositions.begin(); i != m_skipPositions.end(); ++i ) --*i; // 1-based to 0-based
 
+    if( !m_ambiguifyPositions ) {
+        queryHash.SetSkipPositions( m_skipPositions );
+    }
     queryHash.SetStrands( m_strands );
-    queryHash.SetSkipPositions( m_skipPositions );
     queryHash.SetMinimalMaxMism( min( unsigned(queryHash.GetAbsoluteMaxMism()), m_minHashMism ) );
     queryHash.SetNcbipnaToNcbi4naScore( Uint2( 255 * pow( 10.0, double(m_phrapSensitivity)/10) ) );
     queryHash.SetNcbiqnaToNcbi4naScore( m_phrapSensitivity );
@@ -626,9 +632,11 @@ int COligoFarApp::ProcessData()
         }
         if( iline.fail() ) THROW( runtime_error, "Failed to parse line [" << buff << "]" );
         CQuery * query = new CQuery( qryCoding, id, fwd, rev, m_qualityBase );
-        ITERATE( TSkipPositions, k, m_skipPositions ) {
-            query->MarkPositionAmbiguous( 0, *k - 1 );
-            query->MarkPositionAmbiguous( 1, *k - 1 );
+        if( m_ambiguifyPositions ) {
+            ITERATE( TSkipPositions, k, m_skipPositions ) {
+                query->MarkPositionAmbiguous( 0, *k - 1 );
+                query->MarkPositionAmbiguous( 1, *k - 1 );
+            }
         }
         query->ComputeBestScore( scoreTbl, 0 );
         query->ComputeBestScore( scoreTbl, 1 );

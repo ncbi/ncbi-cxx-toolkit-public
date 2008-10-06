@@ -16,11 +16,11 @@ public:
         double c = ComputeComplexity( hash, m_windowSize );
         if( c <= m_maxSimplicity ) {
             m_count ++;
-            m_table.Insert( hash, CHashAtom( m_query, m_flags, mism, m_offset ) ); 
+            m_table.Insert( hash&m_mask, CHashAtom( m_query, m_flags, mism, m_offset ) ); 
         }
     }
-    CHashInserterCbk( THashTable& table, unsigned wsize, CQuery * query, int offset, Uint2 flags, double msimpl ) 
-        : m_table( table ), m_maxSimplicity( msimpl ), m_windowSize( wsize ), m_query( query ), m_offset( offset ), m_flags( flags ), m_count( 0 ) {}
+    CHashInserterCbk( THashTable& table, unsigned wsize, CQuery * query, int offset, Uint2 flags, double msimpl, Uint4 mask ) 
+        : m_table( table ), m_maxSimplicity( msimpl ), m_windowSize( wsize ), m_query( query ), m_offset( offset ), m_flags( flags ), m_count( 0 ), m_mask( mask ) {}
     unsigned GetCount() const { return m_count; }
     
 protected:
@@ -31,6 +31,7 @@ protected:
     char  m_offset;
     Uint2 m_flags;
     unsigned m_count;
+    Uint4 m_mask;
 };
 
 class CHashPopulator 
@@ -40,19 +41,22 @@ public:
 			int strands, int offset, Uint2 flags, double maxSimplicity, Uint8 fwindow, CSeqCoding::ECoding coding ) : 
 		m_permutator( permutator ), m_windowLength( windowLength ), m_query( query ), 
 		m_strands( strands ), m_offset( offset ), m_flags( flags ),
-		m_maxSimplicity( maxSimplicity ), m_fwindow( fwindow ), m_coding( coding ) {}
+		m_maxSimplicity( maxSimplicity ), m_fwindow( fwindow ), m_coding( coding ),
+        m_fwdMask( ~0 ), m_revMask( ~0 ) {}
+
+    void SetMasks( Uint4 fwd, Uint4 rev ) { m_fwdMask = fwd; m_revMask = rev; }
 	
 	template<class THashTable>
 	int PopulateHash( THashTable& hashTable ) const {
 		int ret = 0;
         int component = m_flags & CHashAtom::fFlag_matePairs;
         if( (1 << component) & m_strands ) {
-			CHashInserterCbk<THashTable> cbkf( hashTable, m_windowLength, m_query, m_offset, m_flags | CHashAtom::fFlag_strandPos, m_maxSimplicity );
+			CHashInserterCbk<THashTable> cbkf( hashTable, m_windowLength, m_query, m_offset, m_flags | CHashAtom::fFlag_strandPos, m_maxSimplicity, m_fwdMask );
 			m_permutator.ForEach( m_windowLength, m_fwindow, cbkf );
 			ret += cbkf.GetCount();
 		}
 	    if( (1 << (1-component)) & m_strands ) {
-			CHashInserterCbk<THashTable> cbkr( hashTable, m_windowLength, m_query, m_offset, m_flags | CHashAtom::fFlag_strandNeg, m_maxSimplicity );
+			CHashInserterCbk<THashTable> cbkr( hashTable, m_windowLength, m_query, m_offset, m_flags | CHashAtom::fFlag_strandNeg, m_maxSimplicity, m_revMask );
     		Uint8 rwindow = m_coding == CSeqCoding::eCoding_colorsp ? 
                 Ncbi4naReverse( m_fwindow, m_windowLength ) : 
                 Ncbi4naRevCompl( m_fwindow, m_windowLength );
@@ -71,6 +75,8 @@ protected:
 	double m_maxSimplicity;
 	Uint8 m_fwindow;
     CSeqCoding::ECoding m_coding;
+    Uint4 m_fwdMask;
+    Uint4 m_revMask;
 };
     
 END_OLIGOFAR_SCOPES

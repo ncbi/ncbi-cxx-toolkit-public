@@ -45,13 +45,6 @@ public:
 	void Freeze();
     void Reserve( unsigned batch );
 
-    template<class container>
-    void SetSkipPositions( container c ) { m_skipPositions.clear(); AddSkipPositions( c ); }
-    template<class container> 
-    void AddSkipPositions( container c ) { AddSkipPositions( c.begin(), c.end() ); }
-    template<class iterator>
-    void AddSkipPositions( iterator a, iterator b ) { copy( a, b, inserter( m_skipPositions, m_skipPositions.end() ) ); }
-
     typedef vector<CHashAtom> TMatchSet;
 
     class C_ListInserter
@@ -108,6 +101,18 @@ public:
         Uint2 m_mask;
     };
 
+    template<class iterator>
+    void SetSkipPositions( iterator begin, iterator end ) {
+        m_skipPositions.clear();
+        copy( begin, end, inserter( m_skipPositions, m_skipPositions.end() ) );
+        ResetMasks();
+        SetMasks( begin, end );
+    }
+    
+    template<class container>
+    void SetSkipPositions( container c ) {
+        SetSkipPositions( c.begin(), c.end() );
+    }
 protected:
 	typedef Uint8 TCvt( const unsigned char *, int, unsigned short );
 	typedef Uint2 TDecr( Uint2 );
@@ -137,15 +142,25 @@ protected:
     Uint8 x_MakeXword( Uint8 word, Uint8 ext ) const { return ( ext | (word << m_offset)) & ((1 << m_wordLen) - 1 ); }
 
     int PopulateHash( int ext, CHashPopulator& hashPopulator );
-    
+
+    enum EHashMasks {
+        eHashW0F,
+        eHashW0R,
+        eHashW1F,
+        eHashW1R,
+        kDefaultMask = ~Uint4(0)
+    };
+
+    template<class iterator>
+    void SetMasks( iterator begin, iterator end ); // 1-based
+    void ResetMasks() { fill( m_mask, m_mask + 4, kDefaultMask ); }
+
 protected:
     mutable TMatchSet m_listA, m_listB; // to keep memory space reserved between ForEach calls
 	
 	CVectorTable   m_hashTableV;
 	CMultimapTable m_hashTableM;
 	CArraymapTable m_hashTableA;
-
-    TSkipPositions m_skipPositions;
 
     double m_maxSimplicity;
     
@@ -155,6 +170,9 @@ protected:
 	Uint2 m_minMism;
 	Uint2 m_maxMism;
 	Uint2 m_maxAlt;
+
+    Uint4 m_mask[4];
+    TSkipPositions m_skipPositions;
 
     unsigned m_hashedQueries;
 	vector<CPermutator4b*> m_permutators;
@@ -180,8 +198,29 @@ inline CQueryHash::CQueryHash( EHashType type, unsigned winsize, int maxm, int m
     m_hashedQueries( 0 ),
     m_permutators( maxm + 1 )
 {
+    ResetMasks();
 	for( int i = 0; i <= maxm; ++i ) 
 		m_permutators[i] = new CPermutator4b( i, maxa );
+}
+
+// TODO: check which is which
+template<class iterator>
+inline void CQueryHash::SetMasks( iterator begin, iterator end ) // 1-based 
+{
+    for( ; begin != end ; ++begin ) {
+        int k = *begin;
+        if( k <= 0 ) continue;
+        if( k <= m_wordLen ) {
+            m_mask[eHashW0F] &= (~Uint4(3) << (2*( k - 1 )));
+            m_mask[eHashW0R] &= (~Uint4(3) << (2*( m_wordLen - k )));
+        }
+        k -= m_offset;
+        if( k <= 0 ) continue;
+        if( k <= m_wordLen ) {
+            m_mask[eHashW1F] &= (~Uint4(3) << (2*( k - 1)));
+            m_mask[eHashW1R] &= (~Uint4(3) << (2*( m_wordLen - k )));
+        }
+    }
 }
 
 inline void CQueryHash::Clear()
@@ -224,16 +263,32 @@ template<class Callback>
 void CQueryHash::ForEach( Uint8 hash, Callback& callback ) const 
 { 
     if( SingleHash() ) {
-        Uint4 h = Uint4( hash >> ( GetOffset()*2 ) );
+        ASSERT( GetOffset() == 0 );
+        Uint4 h = Uint4( hash ); //>> ( GetOffset()*2 ) );
+        /*
         if( ((hash >> GetOffset()*2) & ~CBitHacks::WordFootprint<Uint8>( 2*m_wordLen )) != 0 ) {
             THROW( logic_error, NStr::UInt8ToString( hash, 0, 2 ) << " >> " << (GetOffset()*2) <<  " = " <<  NStr::UInt8ToString( hash >> (2*GetOffset()), 0, 2 ) 
                    << "; wordLen = " << unsigned(m_wordLen) << ", ~footprint = " << NStr::UInt8ToString(~CBitHacks::WordFootprint<Uint8>( 2*m_wordLen ), 0, 2 ) );
         }
-        C_ForEachFilter<Callback> cbk( callback, 0, 0 );
-        switch( GetHashType() ) {
-        case eHash_vector:   m_hashTableV.ForEach( h, cbk ); break;
-        case eHash_multimap: m_hashTableM.ForEach( h, cbk ); break;
-        case eHash_arraymap: m_hashTableA.ForEach( h, cbk ); break;
+        */
+        if( m_skipPositions.size() == 0 ) {
+            C_ForEachFilter<Callback> cbk( callback, 0, 0 );
+            switch( GetHashType() ) {
+            case eHash_vector:   m_hashTableV.ForEach( h, cbk ); break;
+            case eHash_multimap: m_hashTableM.ForEach( h, cbk ); break;
+            case eHash_arraymap: m_hashTableA.ForEach( h, cbk ); break;
+            }
+        } else {
+            C_ForEachFilter<Callback> cbkp( callback, CHashAtom::fFlag_strands, CHashAtom::fFlag_strandPos );
+            C_ForEachFilter<Callback> cbkn( callback, CHashAtom::fFlag_strands, CHashAtom::fFlag_strandNeg );
+            Uint4 hp = h & m_mask[eHashW0F];
+            Uint4 hn = h & m_mask[eHashW0R];
+
+            switch( GetHashType() ) {
+            case eHash_vector:   m_hashTableV.ForEach( hp, cbkp ); m_hashTableV.ForEach( hn, cbkn ); break;
+            case eHash_multimap: m_hashTableM.ForEach( hp, cbkp ); m_hashTableM.ForEach( hn, cbkn ); break;
+            case eHash_arraymap: m_hashTableA.ForEach( hp, cbkp ); m_hashTableA.ForEach( hn, cbkn ); break;
+            }
         }
     } else {
         TMatchSet& listA( m_listA );
@@ -248,13 +303,48 @@ void CQueryHash::ForEach( Uint8 hash, Callback& callback ) const
         C_ListInserter iA( listA );
         C_ListInserter iB( listB );
 
-        C_ForEachFilter<C_ListInserter> cbk0( iA, CHashAtom::fFlag_words, CHashAtom::fFlag_word0 );
-        C_ForEachFilter<C_ListInserter> cbk1( iB, CHashAtom::fFlag_words, CHashAtom::fFlag_word1 );
+        if( m_skipPositions.size() == 0 ) {
+            C_ForEachFilter<C_ListInserter> cbk0( iA, CHashAtom::fFlag_words, CHashAtom::fFlag_word0 );
+            C_ForEachFilter<C_ListInserter> cbk1( iB, CHashAtom::fFlag_words, CHashAtom::fFlag_word1 );
 
-        switch( GetHashType() ) {
-        case eHash_vector:   m_hashTableV.ForEach( hashA, cbk0 ); m_hashTableV.ForEach( hashB, cbk1 ); break;
-        case eHash_multimap: m_hashTableM.ForEach( hashA, cbk0 ); m_hashTableM.ForEach( hashB, cbk1 ); break;
-        case eHash_arraymap: m_hashTableA.ForEach( hashA, cbk0 ); m_hashTableA.ForEach( hashB, cbk1 ); break;
+            switch( GetHashType() ) {
+            case eHash_vector:   m_hashTableV.ForEach( hashA, cbk0 ); m_hashTableV.ForEach( hashB, cbk1 ); break;
+            case eHash_multimap: m_hashTableM.ForEach( hashA, cbk0 ); m_hashTableM.ForEach( hashB, cbk1 ); break;
+            case eHash_arraymap: m_hashTableA.ForEach( hashA, cbk0 ); m_hashTableA.ForEach( hashB, cbk1 ); break;
+            }
+        } else {
+            unsigned flagmask = CHashAtom::fFlag_words|CHashAtom::fFlag_strands;
+            C_ForEachFilter<C_ListInserter> cbk0p( iA, flagmask, CHashAtom::fFlag_word0|CHashAtom::fFlag_strandPos );
+            C_ForEachFilter<C_ListInserter> cbk1p( iB, flagmask, CHashAtom::fFlag_word1|CHashAtom::fFlag_strandPos );
+            C_ForEachFilter<C_ListInserter> cbk0n( iA, flagmask, CHashAtom::fFlag_word0|CHashAtom::fFlag_strandNeg );
+            C_ForEachFilter<C_ListInserter> cbk1n( iB, flagmask, CHashAtom::fFlag_word1|CHashAtom::fFlag_strandNeg );
+
+            // TODO: check eHash??? values
+            Uint4 hashAp = hashA & m_mask[eHashW1F];
+            Uint4 hashAn = hashA & m_mask[eHashW1R];
+            Uint4 hashBp = hashA & m_mask[eHashW0F];
+            Uint4 hashBn = hashA & m_mask[eHashW0R];
+
+            switch( GetHashType() ) {
+            case eHash_vector:   
+                m_hashTableV.ForEach( hashAp, cbk0p ); 
+                m_hashTableV.ForEach( hashBp, cbk1p ); 
+                m_hashTableV.ForEach( hashAn, cbk0n ); 
+                m_hashTableV.ForEach( hashBn, cbk1n ); 
+                break;
+            case eHash_multimap: 
+                m_hashTableM.ForEach( hashAp, cbk0p ); 
+                m_hashTableM.ForEach( hashBp, cbk1p ); 
+                m_hashTableM.ForEach( hashAn, cbk0n ); 
+                m_hashTableM.ForEach( hashBn, cbk1n ); 
+                break;
+            case eHash_arraymap: 
+                m_hashTableA.ForEach( hashAp, cbk0p ); 
+                m_hashTableA.ForEach( hashBp, cbk1p ); 
+                m_hashTableA.ForEach( hashAn, cbk0n ); 
+                m_hashTableA.ForEach( hashBn, cbk1n ); 
+                break;
+            }
         }
 
         sort( listA.begin(), listA.end() );

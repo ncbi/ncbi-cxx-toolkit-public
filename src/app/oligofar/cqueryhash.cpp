@@ -7,11 +7,6 @@ USING_OLIGOFAR_SCOPES;
 int CQueryHash::PopulateHash( int , CHashPopulator& hashPopulator ) 
 {
     switch( m_hashType ) {
-    /*
-    case eHash_vector:   return hashPopulator.PopulateHash( x ? m_hashTableVx : m_hashTableV );
-    case eHash_multimap: return hashPopulator.PopulateHash( x ? m_hashTableMx : m_hashTableM );
-    case eHash_arraymap: return hashPopulator.PopulateHash( x ? m_hashTableAx : m_hashTableA );
-    */
     case eHash_vector:   return hashPopulator.PopulateHash( m_hashTableV );
     case eHash_multimap: return hashPopulator.PopulateHash( m_hashTableM );
     case eHash_arraymap: return hashPopulator.PopulateHash( m_hashTableA );
@@ -28,6 +23,7 @@ void CQueryHash::SetHashType( EHashType ht, int win )
     case eHash_multimap: break;
     case eHash_vector:   m_hashTableV.SetWinSize( GetWordLength() ); break;
     }
+    SetMasks( m_skipPositions.begin(), m_skipPositions.end() );
 }
 
 int CQueryHash::AddQuery( CQuery * query, int component )
@@ -40,8 +36,9 @@ int CQueryHash::AddQuery( CQuery * query, int component )
         Uint8 fwindow = 0;
         flags |= CHashAtom::fFlag_word0;
         int offset = GetNcbi4na( fwindow, query->GetCoding(), (unsigned char*)query->GetData( component ), len );
-		if( offset < 0 ) return 0;
-		CHashPopulator hashPopulator( *m_permutators[m_maxMism], m_wordLen, query, m_strands, offset, flags, m_maxSimplicity, fwindow, query->GetCoding() ); 
+    	if( offset < 0 ) return 0;
+	    CHashPopulator hashPopulator( *m_permutators[m_maxMism], m_wordLen, query, m_strands, offset, flags, m_maxSimplicity, fwindow, query->GetCoding() ); 
+        if( m_skipPositions.size() ) hashPopulator.SetMasks( m_mask[eHashW0F], m_mask[eHashW0R] );
         return PopulateHash( 0, hashPopulator );
     } else {
         Uint8 fwindow = 0;
@@ -54,12 +51,22 @@ int CQueryHash::AddQuery( CQuery * query, int component )
         if( m_strands & 0x1 ) {
             CHashPopulator hashPopulator ( *m_permutators[m_maxMism], m_wordLen, query, 1, offsetx, flags | CHashAtom::fFlag_word0, m_maxSimplicity, fwindowx, query->GetCoding() );
             CHashPopulator hashPopulatorX( *m_permutators[m_maxMism], m_wordLen, query, 1, offset , flags | CHashAtom::fFlag_word1, m_maxSimplicity, fwindow, query->GetCoding() );
+            if( m_skipPositions.size() ) {
+                // TODO: may want to switch m_mask indexes
+                hashPopulator .SetMasks( m_mask[eHashW1F], m_mask[eHashW1R] );
+                hashPopulatorX.SetMasks( m_mask[eHashW0F], m_mask[eHashW0R] );
+            }
             ca += PopulateHash( 0, hashPopulator );
             cb += PopulateHash( 1, hashPopulatorX );
         }
         if( m_strands & 0x2 ) {
             CHashPopulator hashPopulator ( *m_permutators[m_maxMism], m_wordLen, query, 2, offsetx, flags | CHashAtom::fFlag_word1, m_maxSimplicity, fwindowx, query->GetCoding() );
             CHashPopulator hashPopulatorX( *m_permutators[m_maxMism], m_wordLen, query, 2, offset,  flags | CHashAtom::fFlag_word0, m_maxSimplicity, fwindow, query->GetCoding() );
+            if( m_skipPositions.size() ) {
+                // TODO: may want to switch m_mask indexes
+                hashPopulator .SetMasks( m_mask[eHashW1F], m_mask[eHashW1R] );
+                hashPopulatorX.SetMasks( m_mask[eHashW0F], m_mask[eHashW0R] );
+            }
             cb += PopulateHash( 1, hashPopulator );
             ca += PopulateHash( 0, hashPopulatorX ); // since order of words changes to opposite
         }
@@ -80,7 +87,7 @@ int CQueryHash::x_GetNcbi4na_ncbi8na( Uint8& window, const unsigned char * data,
 {
     int off = 0;
     const unsigned char * t = data;
-    for( int left = length - m_wordLen; left > 0; --left, ++off, ++t ) {
+    for( int left = length - m_wordLen; CanOptimizeOffset() && left > 0; --left, ++off, ++t ) {
         if( CNcbi8naBase( t[0] ).GetAltCount() <= CNcbi8naBase( t[m_wordLen] ).GetAltCount() )
             break; // there is no benefit in shifting right
     }
@@ -125,7 +132,7 @@ int CQueryHash::x_GetNcbi4na_quality( Uint8& window, const unsigned char * data,
         Uint8 acm = ~Uint8(0);
         Uint8 owin = 0;
         Uint8 mwin = 0;
-        if( left > 0 ) {
+        if( CanOptimizeOffset() && left > 0 ) {
             owin = fun( t + incr, m_wordLen, score );
             aco  = Ncbi4naAlternativeCount( owin, m_wordLen );
         }
@@ -196,7 +203,7 @@ int CQueryHash::x_GetNcbi4na_ncbi8na( Uint8& window, Uint8& windowx, const unsig
 {
     int off = 0;
     const unsigned char * t = data;
-    for( int left = length - m_winLen; left > 0; --left, ++off, ++t ) {
+    for( int left = length - m_winLen; CanOptimizeOffset() && left > 0; --left, ++off, ++t ) {
         if( CNcbi8naBase( t[0] ).GetAltCount() <= CNcbi8naBase( t[m_winLen] ).GetAltCount() )
             break; // there is no benefit in shifting right
     }
@@ -251,7 +258,7 @@ int CQueryHash::x_GetNcbi4na_quality( Uint8& window, Uint8& windowx, const unsig
         Uint8 acm = ~Uint8(0), acxm = ~Uint8(0);
         Uint8 owin = 0, owinx = 0;
         Uint8 mwin = 0, mwinx = 0;
-        if( left > 0 ) {
+        if( CanOptimizeOffset() && left > 0 ) {
             owin = fun( t + incr, m_wordLen, score );
             aco  = Ncbi4naAlternativeCount( owin, m_wordLen );
             acxo = x_ComputeWordRetAmbcount( owinx, t + incr + m_wordLen, wordDelta, fun, score );

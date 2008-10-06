@@ -32,7 +32,8 @@ public:
     enum ELongOpt { 
         kLongOptBase = 0x100,
         kLongOpt_old = kLongOptBase + 0x01,
-        kLongOpt_min_block_length = kLongOptBase + 0x02
+        kLongOpt_min_block_length = kLongOptBase + 0x02,
+        kLongOpt_ambiguifyPositions = kLongOptBase + 0x03
     };
     typedef array_set<int> TSkipPositions;
 
@@ -102,6 +103,7 @@ protected:
     bool     m_performTests;
 	bool     m_colorSpace;
     bool     m_run_old_scanning_code;
+    bool     m_ambiguifyPositions;
 	EAlignmentAlgo m_alignmentAlgo;
 	CQueryHash::EHashType m_hashType[2];
     TSkipPositions m_skipPositions;
