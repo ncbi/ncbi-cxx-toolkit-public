@@ -33,7 +33,7 @@
 /// @file cigar.hpp
 /// Code to handle Concise Idiosyncratic Gapped Alignment Report notation.
 ///
-/// See http://www.ensembl.org/Docs/wiki/html/EnsemblDocs/CigarFormat.html
+/// See http://may2005.archive.ensembl.org/Docs/wiki/html/EnsemblDocs/CigarFormat.html
 /// for the base format and http://song.sorceforge.net/gff3-jan04.shtml for
 /// the frame-shift extensions.
 
@@ -66,22 +66,38 @@ struct NCBI_XOBJREAD_EXPORT SCigarAlignment
     struct NCBI_XOBJREAD_EXPORT SSegment
     {
         SCigarAlignment::EOperation op;
-        TSeqPos    len;
+        TSeqPos                     len;
     };
     typedef vector<SSegment> TSegments;
 
-    SCigarAlignment(const string& s);
-    CRef<CSeq_align> operator()(const CSeq_interval& ref,
-                                const CSeq_interval& tgt);
+    /// Length-first (ENSEMBL) and operation-first (original) variants
+    /// both exist; allowing for the possibility of implicit lengths
+    /// (defaulting to 1), as observed in at least the operation-first
+    /// variant makes any string that both starts AND ends with a
+    /// letter ambiguous.
+    enum EFormat {
+        eConservativeGuess      = 1,
+        eLengthFirst            = 2,
+        eLengthFirstIfAmbiguous = 3,
+        eOpFirst                = 4,
+        eOpFirstIfAmbiguous     = 5
+    };
 
+    SCigarAlignment(const string& s, EFormat fmt = eLengthFirstIfAmbiguous);
+    CRef<CSeq_align> operator()(const CSeq_interval& ref,
+                                const CSeq_interval& tgt) const;
+
+    static EFormat GuessFormat(const string& s, EFormat fmt);
+
+    EFormat   format;
     TSegments segments;
 
 private:
     void x_AddAndClear(SSegment& seg)
-        { segments.push_back(seg);  seg.op = eNotSet;  seg.len = 0; }
+        { segments.push_back(seg);  seg.op = eNotSet;  seg.len = 1; }
 
     CRef<CSeq_loc> x_NextChunk(const CSeq_id& id, TSeqPos pos,
-                               TSignedSeqPos len);
+                               TSignedSeqPos len) const;
 };
 
 END_SCOPE(objects)

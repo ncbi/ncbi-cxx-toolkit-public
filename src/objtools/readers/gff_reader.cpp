@@ -711,7 +711,8 @@ CRef<CSeq_align> CGFFReader::x_ParseAlignRecord(const SRecord& record)
             align->SetSegs().SetStd().push_back(ss);
         }
     } else {
-        SCigarAlignment cigar((*gap_it)[1]);
+        SCigarAlignment cigar
+            ((*gap_it)[1], SCigarAlignment::eOpFirstIfAmbiguous);
         align = cigar(refloc->GetInt(), tgloc->GetInt());
     }
 

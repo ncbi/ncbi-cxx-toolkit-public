@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/cigar.hpp>
+#include <objtools/readers/reader_exception.hpp>
 
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqloc/Na_strand.hpp>
@@ -43,20 +44,26 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-SCigarAlignment::SCigarAlignment(const string& s)
+SCigarAlignment::SCigarAlignment(const string& s, EFormat fmt)
+    : format(GuessFormat(s, fmt))
 {
-    SSegment seg = { eNotSet, 0 };
+    SSegment seg = { eNotSet, 1 };
 
     for (SIZE_TYPE pos = 0;  pos < s.size();  ++pos) {
         if (isalpha((unsigned char) s[pos])) {
+            if (format == eOpFirst  &&  seg.op != eNotSet) {
+                _ASSERT(seg.len == 1);
+                x_AddAndClear(seg);
+            }
             seg.op = static_cast<EOperation>(toupper((unsigned char) s[pos]));
-            if (seg.len) {
+            if (format == eLengthFirst) {
                 x_AddAndClear(seg);
             }
         } else if (isdigit((unsigned char) s[pos])) {
             SIZE_TYPE pos2 = s.find_first_not_of("0123456789", pos + 1);
             seg.len = NStr::StringToInt(s.substr(pos, pos2 - pos));
-            if (seg.op) {
+            if (format == eOpFirst) {
+                _ASSERT(seg.op != eNotSet);
                 x_AddAndClear(seg);
             }
             pos = pos2 - 1;
@@ -64,14 +71,79 @@ SCigarAlignment::SCigarAlignment(const string& s)
         // ignore other characters, particularly space and plus.
     }
 
-    if (seg.op  &&  seg.len) {
+    if (seg.op != eNotSet) {
+        _ASSERT(format == eOpFirst);
+        _ASSERT(seg.len == 1);
         x_AddAndClear(seg);
     }
 }
 
 
+SCigarAlignment::EFormat SCigarAlignment::GuessFormat(const string& s,
+                                                      EFormat fmt)
+{
+    static const char* const kAlnum
+        = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    SIZE_TYPE first_alnum = s.find_first_of(kAlnum);
+    SIZE_TYPE last_alnum  = s.find_last_of(kAlnum);
+    EFormat   result      = fmt;
+
+    if (first_alnum == last_alnum) {
+        if (first_alnum != NPOS  &&  isdigit((unsigned char) s[first_alnum])) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                        "SCigarAlignment: no operations found", first_alnum);
+        } else {
+            result = eLengthFirst; // arbitrary
+        }
+    } else {
+        _ASSERT(first_alnum != NPOS);
+        _ASSERT(last_alnum  != NPOS);
+        _ASSERT(first_alnum < last_alnum);
+        if (isdigit((unsigned char) s[first_alnum])) {
+            if (fmt == eOpFirst) {
+                NCBI_THROW2(CObjReaderParseException, eFormat,
+                            "SCigarAlignment: expected operation-first syntax",
+                            first_alnum);
+            } else if (isdigit((unsigned char) s[last_alnum])) {
+                NCBI_THROW2
+                    (CObjReaderParseException, eFormat,
+                     "SCigarAlignment: must start or end with an operation",
+                     first_alnum);
+            } else {
+                result = eLengthFirst;
+            }
+        } else if (isdigit((unsigned char) s[last_alnum])) {
+            if (fmt == eLengthFirst) {
+                NCBI_THROW2(CObjReaderParseException, eFormat,
+                            "SCigarAlignment: expected length-first syntax",
+                            first_alnum);
+            } else {
+                result = eOpFirst;
+            }
+        } else if (s.find_first_of("0123456789") == NPOS) {
+            result = eLengthFirst; // arbitrary
+        } else {
+            switch (fmt) {
+            case eConservativeGuess:
+                NCBI_THROW2(CObjReaderParseException, eFormat,
+                            "SCigarAlignment: ambiguous syntax", first_alnum);
+            case eLengthFirst:
+            case eLengthFirstIfAmbiguous:
+                result = eLengthFirst;
+            case eOpFirst:
+            case eOpFirstIfAmbiguous:
+                result = eOpFirst;
+            }
+        }
+    }
+
+    return result;
+}
+
+
 CRef<CSeq_loc> SCigarAlignment::x_NextChunk(const CSeq_id& id, TSeqPos pos,
-                                            TSignedSeqPos len)
+                                            TSignedSeqPos len) const
 {
     CRef<CSeq_loc> loc(new CSeq_loc);
     loc->SetInt().SetId().Assign(id);
@@ -89,7 +161,7 @@ CRef<CSeq_loc> SCigarAlignment::x_NextChunk(const CSeq_id& id, TSeqPos pos,
 
 
 CRef<CSeq_align> SCigarAlignment::operator()(const CSeq_interval& ref,
-                                             const CSeq_interval& tgt)
+                                             const CSeq_interval& tgt) const
 {
     int refsign = 1, refscale = 1, tgtsign = 1, tgtscale = 1;
     CRef<CSeq_align> align(new CSeq_align);
