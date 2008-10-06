@@ -332,7 +332,7 @@ bool CReadBlastApp::overlaps_prot_na
          }
        }
      result = lres || result;
-     }
+     } # if(lres && overlap >= m_rna_overlapThreshold)
 
    DecreaseVerbosity();
    if(PrintDetails()) NcbiCerr << "overlaps_prot_na[seq,feats] ends" << NcbiEndl;
