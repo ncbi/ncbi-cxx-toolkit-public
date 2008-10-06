@@ -260,6 +260,9 @@ void CResultSet::x_CacheItems(int last_num) {
             break;
         }
         m_rs->GetItem(m_data[ind].GetNonNullData());
+
+        if (m_rs->ResultType() == eDB_StatusResult)
+            break;
     }
 }
 
