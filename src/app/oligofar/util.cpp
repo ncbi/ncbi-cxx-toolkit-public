@@ -3,10 +3,10 @@
 #include <cstdlib>
 #include <cstring>
 
-USING_OLIGOFAR_SCOPES;
-USING_SCOPE( NUtil );
+BEGIN_OLIGOFAR_SCOPES
+BEGIN_SCOPE( NUtil )
 
-pair<int,int> NUtil::ParseRange( const char * str, const char * delim ) 
+pair<int,int> ParseRange( const char * str, const char * delim ) 
 {
     const char * x = 0;
     pair<int,int> ret(0,0);
@@ -23,4 +23,5 @@ pair<int,int> NUtil::ParseRange( const char * str, const char * delim )
     THROW( runtime_error, "Integer or integer pair expected, got trailing characters (" << x << ") in [" << str << "]" );
 }
 
-
+END_SCOPE( NUtil )
+END_OLIGOFAR_SCOPES

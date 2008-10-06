@@ -16,6 +16,7 @@ class array_set
 public:
 	typedef unsigned size_type;
 	typedef        T value_type;
+	typedef       T& reference;
 	typedef const T& const_reference;
 
 	array_set(): m_data(0), m_size(0), m_capacity(0) {}

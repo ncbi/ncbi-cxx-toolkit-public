@@ -95,7 +95,7 @@ bool CGuideFile::NextHit( Uint8 ordinal, CQuery * query )
         try {
             mcnt1 = x_CountMismatches( smpos1 );
             if( mcnt1 > m_maxMismatch ) continue;
-        } catch( exception& e ) {
+        } catch( exception& ) {
             THROW( runtime_error, "Bad format of mismatch list of guide file line [" << m_buff << "]" );
         }
 
@@ -108,7 +108,7 @@ bool CGuideFile::NextHit( Uint8 ordinal, CQuery * query )
             try {
                 mcnt2 = x_CountMismatches( smpos2 );
                 if( mcnt2 > m_maxMismatch ) continue;
-            } catch( exception& e ) {
+            } catch( exception& ) {
                 THROW( runtime_error, "Bad format of mismatch list of guide file line [" << m_buff << "]" );
             }
 
