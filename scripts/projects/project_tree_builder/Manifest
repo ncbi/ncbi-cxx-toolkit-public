@@ -41,6 +41,8 @@ SunOSx86   : plain : GCC.sh           --without-debug --without-mt --with-static
 SunOSSparc : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath
 
 PowerMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath
+IntelMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath
+#IntelMAC    : universal : GCC.sh        --without-debug --without-mt  --with-static --with-universal
 
 Win32      : plain : msvc710_prj  static  32  ReleaseDLL
 Win32      : plain : msvc800_prj  static  32  ReleaseDLL
