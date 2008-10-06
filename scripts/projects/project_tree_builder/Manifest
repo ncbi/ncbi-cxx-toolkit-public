@@ -23,24 +23,25 @@ APP: project_tree_builder
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-Linux32    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux32    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux32    : debug : GCC.sh           --with-debug    --without-mt --with-static --without-runpath --with-flat-makefile
+#Linux32    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath
+Linux32    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath
+#Linux32    : debug : GCC.sh           --with-debug    --without-mt --with-static --without-runpath
 
-Linux64    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux64    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#Linux64    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath
+Linux64    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath
 
-FreeBSD32  : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+FreeBSD32  : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath
 
-SunOSx86   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSx86   : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSx86   : plain : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSx86   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath
+#SunOSx86   : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath
+#SunOSx86   : plain : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath
 
-SunOSSparc : plain : WorkShop55.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSSparc : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSSparc : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#SunOSSparc : plain : WorkShop55.sh 64 --without-debug --without-mt --with-static --without-runpath
+#SunOSSparc : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath
+SunOSSparc : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath
 
-PowerMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+PowerMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath
 
 Win32      : plain : msvc710_prj  static  32  ReleaseDLL
+Win32      : plain : msvc800_prj  static  32  ReleaseDLL
 Win64      : plain : msvc800_prj  static  64  ReleaseDLL
