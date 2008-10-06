@@ -977,10 +977,11 @@ static unsigned int s_GetProductFlagFromCDSProductNames (CBioseq_Handle bh)
     CFeat_CI feat_ci(bh, sel);
 	while (feat_ci && product_flag == CBioSource::eGenome_unknown) {
 		string label;
-        CConstRef<CSeq_feat> prot = GetBestOverlappingFeat(feat_ci->GetProduct(),
-                                                           CSeqFeatData::e_Prot,
-														   sequence::eOverlap_Simple,
-                                                           bh.GetScope());
+        CConstRef<CSeq_feat> prot
+            = sequence::GetBestOverlappingFeat(feat_ci->GetProduct(),
+                                               CSeqFeatData::e_Prot,
+                                               sequence::eOverlap_Simple,
+                                               bh.GetScope());
         if (prot) {
             feature::GetLabel(*prot, &label, feature::eContent);
 			if (NStr::Find (label, "macronuclear") != NCBI_NS_STD::string::npos) {
