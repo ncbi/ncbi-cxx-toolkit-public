@@ -174,11 +174,11 @@ GC-SequenceStats ::= SEQUENCE {
 -- All stats for one type of data
 -- Can be at any level. Even a single scaffold might have stats.
 GC-Scaf-stats ::= SEQUENCE {
-  chromosomes-count INTEGER OPTIONAL, -- How many chromosomes
+  replicon-count INTEGER OPTIONAL, -- How many chromosomes
         --(needed to report #chromsomes w/ ordered/unordered scaffolds)
-  scaffolds-count INTEGER OPTIONAL, -- How many scaffolds
-  components-count INTEGER OPTIONAL, -- How many components
-  component-spans-count INTEGER OPTIONAL, -- How many placements of components
+  scaffold-count INTEGER OPTIONAL, -- How many scaffolds
+  component-count INTEGER OPTIONAL, -- How many components
+  component-span-count INTEGER OPTIONAL, -- How many placements of components
   length SEQUENCE {
     total-length INTEGER,
     ungapped-length INTEGER
