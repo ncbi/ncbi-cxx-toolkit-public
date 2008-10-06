@@ -12,7 +12,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
-/*
+/* TODO: replace it in newer version
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 */

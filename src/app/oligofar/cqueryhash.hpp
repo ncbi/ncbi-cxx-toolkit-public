@@ -211,16 +211,21 @@ inline void CQueryHash::SetMasks( iterator begin, iterator end ) // 1-based
         int k = *begin;
         if( k <= 0 ) continue;
         if( k <= m_wordLen ) {
-            m_mask[eHashW0F] &= (~Uint4(3) << (2*( k - 1 )));
-            m_mask[eHashW0R] &= (~Uint4(3) << (2*( m_wordLen - k )));
+            m_mask[eHashW0F] &= ~(Uint4(3) << (2*( k - 1 )));
+            m_mask[eHashW0R] &= ~(Uint4(3) << (2*( m_wordLen - k )));
         }
         k -= m_offset;
         if( k <= 0 ) continue;
         if( k <= m_wordLen ) {
-            m_mask[eHashW1F] &= (~Uint4(3) << (2*( k - 1)));
-            m_mask[eHashW1R] &= (~Uint4(3) << (2*( m_wordLen - k )));
+            m_mask[eHashW1F] &= ~(Uint4(3) << (2*( k - 1)));
+            m_mask[eHashW1R] &= ~(Uint4(3) << (2*( m_wordLen - k )));
         }
     }
+//     cerr 
+//         << "MASK 0 F = " << hex << setw(32) << setfill('0') << m_mask[eHashW0F] << "\n"
+//         << "MASK 0 R = " << hex << setw(32) << setfill('0') << m_mask[eHashW0R] << "\n"
+//         << "MASK 1 F = " << hex << setw(32) << setfill('0') << m_mask[eHashW1F] << "\n"
+//         << "MASK 1 R = " << hex << setw(32) << setfill('0') << m_mask[eHashW1R] << "\n";
 }
 
 inline void CQueryHash::Clear()
@@ -273,6 +278,7 @@ void CQueryHash::ForEach( Uint8 hash, Callback& callback ) const
         */
         if( m_skipPositions.size() == 0 ) {
             C_ForEachFilter<Callback> cbk( callback, 0, 0 );
+
             switch( GetHashType() ) {
             case eHash_vector:   m_hashTableV.ForEach( h, cbk ); break;
             case eHash_multimap: m_hashTableM.ForEach( h, cbk ); break;
@@ -281,8 +287,16 @@ void CQueryHash::ForEach( Uint8 hash, Callback& callback ) const
         } else {
             C_ForEachFilter<Callback> cbkp( callback, CHashAtom::fFlag_strands, CHashAtom::fFlag_strandPos );
             C_ForEachFilter<Callback> cbkn( callback, CHashAtom::fFlag_strands, CHashAtom::fFlag_strandNeg );
+
             Uint4 hp = h & m_mask[eHashW0F];
             Uint4 hn = h & m_mask[eHashW0R];
+
+//             cerr 
+//                 << hex << setw(32) << setfill('0') << h << " (h)\n"
+//                 << hex << setw(32) << setfill('0') << m_mask[eHashW0F] << " (mf)\n"
+//                 << hex << setw(32) << setfill('0') << hp << " (hp)\n"
+//                 << hex << setw(32) << setfill('0') << m_mask[eHashW0R] << " (mr)\n"
+//                 << hex << setw(32) << setfill('0') << h << " (hn)\n";
 
             switch( GetHashType() ) {
             case eHash_vector:   m_hashTableV.ForEach( hp, cbkp ); m_hashTableV.ForEach( hn, cbkn ); break;
