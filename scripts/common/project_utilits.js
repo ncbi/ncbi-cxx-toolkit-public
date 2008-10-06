@@ -10,8 +10,8 @@ var g_def_branch = "toolkit/trunk/internal/c++";
 var g_branch     = "toolkit/trunk/internal/c++";
 
 // valid:   "71", "80", "80x64"
-var g_def_msvcver = "71";
-var g_msvcver     = "71";
+var g_def_msvcver = "80";
+var g_msvcver     = "80";
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
