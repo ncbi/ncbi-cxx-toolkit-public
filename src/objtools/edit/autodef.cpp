@@ -38,6 +38,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
@@ -966,11 +967,67 @@ string OrganelleByGenome(unsigned int genome_val)
     return organelle;
 }
 
+
+static unsigned int s_GetProductFlagFromCDSProductNames (CBioseq_Handle bh)
+{
+	unsigned int product_flag = CBioSource::eGenome_unknown;
+	unsigned int pos;
+
+	SAnnotSelector sel(CSeqFeatData::eSubtype_cdregion);
+    CFeat_CI feat_ci(bh, sel);
+	while (feat_ci && product_flag == CBioSource::eGenome_unknown) {
+		string label;
+        CConstRef<CSeq_feat> prot = GetBestOverlappingFeat(feat_ci->GetProduct(),
+                                                           CSeqFeatData::e_Prot,
+														   sequence::eOverlap_Simple,
+                                                           bh.GetScope());
+        if (prot) {
+            feature::GetLabel(*prot, &label, feature::eContent);
+			if (NStr::Find (label, "macronuclear") != NCBI_NS_STD::string::npos) {
+              product_flag = CBioSource::eGenome_macronuclear;
+			} else if (NStr::Find (label, "nucleomorph") != NCBI_NS_STD::string::npos) {
+              product_flag = CBioSource::eGenome_nucleomorph;
+			} else if (NStr::Find (label, "mitochondrion") != NCBI_NS_STD::string::npos
+				       || NStr::Find (label, "mitochondrial") != NCBI_NS_STD::string::npos) {
+              product_flag = CBioSource::eGenome_mitochondrion;
+			} else if (NStr::Find (label, "apicoplast") != NCBI_NS_STD::string::npos) {
+              product_flag = CBioSource::eGenome_apicoplast;
+			} else if (NStr::Find (label, "chloroplast") != NCBI_NS_STD::string::npos) {
+              product_flag = CBioSource::eGenome_chloroplast;
+			} else if (NStr::Find (label, "chromoplast") != NCBI_NS_STD::string::npos) {
+              product_flag = CBioSource::eGenome_chromoplast;
+			} else if (NStr::Find (label, "kinetoplast") != NCBI_NS_STD::string::npos) {
+              product_flag = CBioSource::eGenome_kinetoplast;
+			} else if (NStr::Find (label, "proplastid") != NCBI_NS_STD::string::npos) {
+              product_flag = CBioSource::eGenome_proplastid;
+			} else if ((pos = NStr::Find (label, "plastid")) != NCBI_NS_STD::string::npos
+				       && (pos == 0 || isspace (label.c_str()[pos]))) {
+              product_flag = CBioSource::eGenome_plastid;
+			} else if (NStr::Find (label, "cyanelle") != NCBI_NS_STD::string::npos) {
+              product_flag = CBioSource::eGenome_cyanelle;
+			} else if (NStr::Find (label, "leucoplast") != NCBI_NS_STD::string::npos) {
+              product_flag = CBioSource::eGenome_leucoplast;
+			} else if (NStr::Find (label, "hydrogenosome") != NCBI_NS_STD::string::npos) {
+              product_flag = CBioSource::eGenome_hydrogenosome;
+			} 
+        }
+		++feat_ci;
+	}
+    return product_flag;
+}
+
+
 string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
                                                  CBioseq_Handle bh)
 {
     bool pluralize = false;
+	unsigned int product_flag_to_use;
     
+	if (m_SpecifyNuclearProduct) {
+	    product_flag_to_use = s_GetProductFlagFromCDSProductNames (bh);
+	} else {
+		product_flag_to_use = m_ProductFlag;
+	}
     if (NStr::Find(feature_clauses, "genes") != NCBI_NS_STD::string::npos) {
         pluralize = true;
     } else {
@@ -1008,8 +1065,8 @@ string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
     }
     if (!NStr::IsBlank(ending)) {
         ending = "; " + ending;
-    } else if (m_SpecifyNuclearProduct) {
-        ending = OrganelleByGenome(m_ProductFlag);
+    } else {
+        ending = OrganelleByGenome(product_flag_to_use);
         if (NStr::IsBlank(ending)) {
             if (!NStr::IsBlank(genome_from_mods)) {
                 ending = "; " + genome_from_mods;

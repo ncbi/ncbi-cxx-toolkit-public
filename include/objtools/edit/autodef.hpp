@@ -87,6 +87,7 @@ public:
     void SetFeatureListType(unsigned int feature_list_type);
     void SetMiscFeatRule(unsigned int misc_feat_rule);
     void SetProductFlag (unsigned int product_flag);
+	void SetSpecifyNuclearProduct (bool specify_nuclear_product);
     void SetAltSpliceFlag (bool alt_splice_flag);
     void SetSuppressLocusTags(bool suppress_locus_tags);
     void SetGeneClusterOppStrand(bool gene_opp_strand);
@@ -198,8 +199,16 @@ void CAutoDef::SetMiscFeatRule(unsigned int misc_feat_rule)
 inline
 void CAutoDef::SetProductFlag(unsigned int product_flag)
 {
-    m_SpecifyNuclearProduct = true;
+    m_SpecifyNuclearProduct = false;
     m_ProductFlag = product_flag;
+}
+
+
+inline
+void CAutoDef::SetSpecifyNuclearProduct (bool specify_nuclear_product)
+{
+    m_SpecifyNuclearProduct = specify_nuclear_product;
+	m_ProductFlag = CBioSource::eGenome_unknown;
 }
 
 
