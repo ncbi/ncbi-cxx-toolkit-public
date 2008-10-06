@@ -217,10 +217,10 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
     }
     if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
         // Flush underlying stream (on write)
-        if (dir == CCompressionStream::eWrite  &&  !WriteOutBufToStream()) {
+        if (dir == CCompressionStream::eWrite  &&  !WriteOutBufToStream(true /*force write*/)) {
             return -1;
         }
-        // End of data state, nothing to do
+        // End of data, nothing to do
         return 0;
     }
 
@@ -270,6 +270,13 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
         }
     } while (out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow);
 
+    if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
+        // Flush underlying stream (on write)
+        if (dir == CCompressionStream::eWrite  &&  !WriteOutBufToStream(true /*force write*/)) {
+            return -1;
+        }
+        // End of data, nothing to do
+    }
     return 0;
 }
 
