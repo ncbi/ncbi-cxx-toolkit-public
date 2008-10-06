@@ -791,7 +791,7 @@ int CNetCacheDApp::Run(void)
             }
         }}
 
-        NcbiCerr << "Running server on port " << port << NcbiEndl;
+        //NcbiCerr << "Running server on port " << port << NcbiEndl;
         LOG_POST(Info << "Running server on port " << port);
         server->Run();
 
@@ -806,12 +806,12 @@ int CNetCacheDApp::Run(void)
     }
     catch (CBDB_ErrnoException& ex)
     {
-        NcbiCerr << "Error: DBD errno exception:" << ex.what();
+        ERR_POST("Error: DBD errno exception:" << ex);
         return 1;
     }
     catch (CBDB_LibException& ex)
     {
-        NcbiCerr << "Error: DBD library exception:" << ex.what();
+        ERR_POST("Error: DBD library exception:" << ex);
         return 1;
     }
 
