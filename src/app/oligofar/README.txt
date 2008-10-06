@@ -291,8 +291,12 @@ Hashing and scanning options
                 less then given value, the second hash type is used.
 
     --window-skip=pos,...
-    -k pos,...  Always skip certain positions of reads when hashing and
-                scoring (effectively consider them as `N's).
+    -k pos,...  Always skip certain positions of reads when hashing.
+                Useful in combination with -n0 when it is known that certain
+                bases have poor quality for all reads.
+                If used with --ambiguify-positions=true (extended option, may
+                be changed in next release), just replaces appropriate bases
+                with `N's, then this option affects scoring as well.
 
     --input-max-alt=count
     -a count    Maximal number of alternative versions of window (based on
