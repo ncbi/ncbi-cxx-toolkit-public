@@ -209,6 +209,10 @@ void CDense_seg::Validate(bool full_test) const
     const size_t& numrows = CheckNumRows();
     const size_t& numsegs = CheckNumSegs();
 
+    if (numsegs  == 0) {
+        return;
+    }
+
     if (full_test) {
         const size_t  max     = numrows * (numsegs -1);
 
