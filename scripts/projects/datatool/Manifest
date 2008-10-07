@@ -41,6 +41,9 @@ SunOSSparc : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static
 SunOSSparc : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 PowerMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+# --with-flat-makefile is ommited for IntelMAC with the test purposes. Should
+# work similar to the configurations where it is mentioned explicitly
+IntelMAC   :       : GCC.sh           --without-debug --without-mt --with-static --without-runpath
 
 Win32      : plain : msvc710_prj  static  32  ReleaseDLL
 Win64      : plain : msvc800_prj  static  64  ReleaseDLL
