@@ -4,7 +4,7 @@
 #################################
 
 SUB_PROJ = sample asn2asn asn2fasta asn2flat id1_fetch blast convert_seq \
-           nmer_repeats objmgr gi2taxid netcache netschedule \
+           nmer_repeats objmgr gi2taxid netcache netschedule grid \
            winmasker dustmasker segmasker blastdb blastfmt \
            agpconvert id2_fetch agp_validate objextract netbvstore lds_indexer \
            bdb_env_keeper nw_aligner speedtest \

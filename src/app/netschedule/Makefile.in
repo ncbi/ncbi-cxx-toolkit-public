@@ -1,5 +1,5 @@
 APP_PROJ = netscheduled netschedule_control netschedule_admin netschedule_check
-SUB_PROJ = test cgi_tunnel2grid cgi2rcgi grid_mgr remote_app
+SUB_PROJ = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

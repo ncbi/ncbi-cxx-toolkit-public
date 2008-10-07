@@ -1,0 +1,7 @@
+# $Id$
+
+# Grid applications
+SUB_PROJ = test cgi_tunnel2grid cgi2rcgi grid_mgr remote_app
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
