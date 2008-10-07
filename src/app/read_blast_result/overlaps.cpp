@@ -33,6 +33,7 @@
 #include "read_blast_result.hpp"
 
 // all things overlaps
+// that i've done
 
 int CReadBlastApp::find_overlap(TSimpleSeqs::iterator& seq, const TSimpleSeqs::iterator& ext_rna,
    TSimpleSeqs& seqs, TSimpleSeqs& best_seq)
