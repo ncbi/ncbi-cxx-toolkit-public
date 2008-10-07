@@ -215,23 +215,37 @@ int CReadBlastApp::AnalyzeSeqs(CBioseq_set::TSeq_set& seqs)
        continue;
        }
 ///////////////////////////////////
-     if(PrintDetails())
-          NcbiCerr << "AnalyzeSeqs: left: valid"
-                   <<  NcbiEndl;
 // compare to...
-     CBioseq_set::TSeq_set::iterator right = left; ++right;
-     if(!skip_toprot(right, seqs)) break;
-     if(PrintDetails())
+     CBioseq_set::TSeq_set::iterator right = left; 
+     bool again=true;
+     bool last_right=false;
+     while(again) // have overlaps
+       {
+       again=false;
+       ++right;
+       if(!skip_toprot(right, seqs)) {last_right=true; break;}
+       if(PrintDetails())
           NcbiCerr << "AnalyzeSeqs: right: "
-                   // <<  CSeq_id::GetStringDescr ((*right)->GetSeq(), CSeq_id::eFormat_FastA) << NcbiEndl;
                    <<  GetStringDescr ((*right)->GetSeq()) << NcbiEndl;
 // analyze for overlaps with the next one
-     PushVerbosity();
-     overlaps((*left)->GetSeq(), (*right)->GetSeq() );
-     PopVerbosity();
+       PushVerbosity();
+// if there are overlaps, keep on working on left, iterating through right
+       again=overlaps((*left)->GetSeq(), (*right)->GetSeq() );
+       PopVerbosity();
+       }
+     if (last_right) break;
+     if(PrintDetails())
+       NcbiCerr << "AnalyzeSeqs: finished lower level seq, overlaps: "
+                << NcbiEndl;
+     }
 
+   NON_CONST_ITERATE( CBioseq_set::TSeq_set, left, seqs)
+     {
+     if((*left)->IsSet()) continue;
 // does not hit. Skip
      if( !has_blast_hits((*left)->GetSeq()) ) continue;
+     if(PrintDetails()) NcbiCerr << "AnalyzeSeqs: left: valid" <<  NcbiEndl;
+     CBioseq_set::TSeq_set::iterator right = left;  ++right;
      if(!skip_to_valid_seq_cand(right, seqs)) break;
      if(PrintDetails()) NcbiCerr << "AnalyzeSeqs: right: valid" <<  NcbiEndl;
      string common_subject;
@@ -255,7 +269,7 @@ int CReadBlastApp::AnalyzeSeqs(CBioseq_set::TSeq_set& seqs)
         append_misc_feature(seqs, GetStringDescr((*left)->GetSeq()), eFrameShift);
         }
      if(PrintDetails())
-       NcbiCerr << "AnalyzeSeqs: finished lower level seq: "
+       NcbiCerr << "AnalyzeSeqs: finished lower level seq, frameshifts: "
                 << NcbiEndl;
      }
    DecreaseVerbosity();
