@@ -32,6 +32,8 @@
 #include <ncbi_pch.hpp>
 #include "read_blast_result.hpp"
 
+// all things overlaps
+
 int CReadBlastApp::find_overlap(TSimpleSeqs::iterator& seq, const TSimpleSeqs::iterator& ext_rna,
    TSimpleSeqs& seqs, TSimpleSeqs& best_seq)
 {
