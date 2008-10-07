@@ -590,7 +590,11 @@ bool CReadBlastApp::overlaps
 
   if(left_strand  != eNa_strand_plus && left_genomic_int.IsInt())  left_frame=-left_frame;
   if(right_strand != eNa_strand_plus && right_genomic_int.IsInt()) right_frame=-right_frame;
-  if(left_strand != right_strand) return result;
+/*
+  Tue 10/7/2008 9:25 AM, Bill Klimke + his consultation w/ Leigh Riley
+  opposite strands overlaps should be treated exactly the same way
+*/
+  // if(left_strand != right_strand) return result;
   if(PrintDetails()) NcbiCerr << "Matching strands" << NcbiEndl;
   int space =
                  (min((int)to1, (int)to2)-
