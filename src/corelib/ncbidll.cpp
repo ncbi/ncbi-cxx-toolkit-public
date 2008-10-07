@@ -303,7 +303,7 @@ bool CDllResolver::TryCandidate(const string& file_name,
 
             if ( !dll_name.empty() ) {
                 string base_name;
-                CDirEntry::SplitPath(entry_point_name, 0, &base_name, 0);
+                CDirEntry::SplitPath(dll_name, 0, &base_name, 0);
                 NStr::Replace(*it,
                               "${basename}", base_name, entry_point_name);
 
