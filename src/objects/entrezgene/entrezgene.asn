@@ -14,7 +14,7 @@
 NCBI-Entrezgene DEFINITIONS ::= 
 BEGIN 
  
-EXPORTS Entrezgene, Entrezgene-Set; 
+EXPORTS Entrezgene, Entrezgene-Set, Gene-track; 
  
 IMPORTS Gene-ref FROM NCBI-Gene 
     Prot-ref FROM NCBI-Protein 
@@ -42,6 +42,7 @@ Entrezgene ::= SEQUENCE {
         pseudo  (7) ,
         transposon  (8) ,
         miscRNA  (9) ,
+        ncRNA (10) ,
         other (255) } ,
     source BioSource , 
     gene Gene-ref ,                     -- for locus-tag see note 3
@@ -113,6 +114,9 @@ Gene-commentary ::= SEQUENCE {
         complex (20), -- used (but not limited) to identify resulting 
                       -- interaction complexes
         compound (21), -- pubchem entities
+
+        ncRNA (22), 
+        gene-group (23), -- for relationship sets (such as pseudogene / parent gene)
         comment (254) ,
         other (255) } ,
     heading VisibleString OPTIONAL ,      -- appears above text 
