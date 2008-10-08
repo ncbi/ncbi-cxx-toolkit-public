@@ -971,7 +971,7 @@ string OrganelleByGenome(unsigned int genome_val)
 static unsigned int s_GetProductFlagFromCDSProductNames (CBioseq_Handle bh)
 {
 	unsigned int product_flag = CBioSource::eGenome_unknown;
-	unsigned int pos;
+	string::size_type pos;
 
 	SAnnotSelector sel(CSeqFeatData::eSubtype_cdregion);
     CFeat_CI feat_ci(bh, sel);
