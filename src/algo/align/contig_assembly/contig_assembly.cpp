@@ -103,6 +103,28 @@ static void s_SplitCommandLine(string s, vector<string>& result)
 }
 
 
+static void s_GetTails(const CAlnVec& vec,
+                       vector<CContigAssembly::SAlignStats::STails>& tails)
+{
+    CContigAssembly::SAlignStats::STails tls;
+    for (int j = 0;  j < vec.GetNumRows();  ++j) {
+        TSeqPos start = vec.GetSeqStart(j);
+        TSeqPos stop  = vec.GetSeqStop(j);
+
+        TSeqPos seq_len = vec.GetBioseqHandle(j).GetBioseqLength();
+
+        if (vec.IsPositiveStrand(j)) {
+            tls.left = start;
+            tls.right = seq_len - stop - 1;
+        } else {
+            tls.right = start;
+            tls.left = seq_len - stop - 1;
+        }
+        tails.push_back(tls);
+    }
+}
+
+
 CRef<CSeq_align_set> CContigAssembly::Blastn(const CSeq_id& query_id,
                                              const CSeq_id& subject_id,
                                              const string& param_string,
@@ -379,6 +401,17 @@ CContigAssembly::BandedGlobalAlignment(const CSeq_id& id0, const CSeq_id& id1,
 bool CContigAssembly::IsDovetail(const CDense_seg& ds,
                                  unsigned int slop, CScope& scope)
 {
+    SAlignStats stats;
+    CAlnVec avec(ds, scope);
+    s_GetTails(avec, stats.tails);
+
+    if( (stats.tails[0].right <= slop && stats.tails[1].left <= slop) ||
+        (stats.tails[0].left <= slop && stats.tails[1].right <= slop) ) {
+        return true;
+    } else {
+        return false;
+    }
+/*
     const CSeq_id& id0 = *ds.GetIds()[0];
     const CSeq_id& id1 = *ds.GetIds()[1];
     TSeqPos len0 = scope.GetBioseqHandle(id0).GetBioseqLength();
@@ -407,7 +440,7 @@ bool CContigAssembly::IsDovetail(const CDense_seg& ds,
             return true;
         }
         return false;
-    }
+    }*/
 }
 
 
@@ -446,7 +479,9 @@ bool CContigAssembly::IsContained(const CDense_seg& ds,
 
 double CContigAssembly::FracIdent(const CDense_seg& ds, CScope& scope)
 {
-    return CAlnStats(ds, scope).GetFracIdentity();
+    double Ident = CAlnStats(ds, scope).GetFracIdentity();
+    //cerr << "Calc'ed Ident: " << Ident << endl;
+    return Ident;
 }
 
 
@@ -581,9 +616,14 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
         }
         return vector<CRef<CSeq_align> >();
     }
+    cerr << "Blast Count Total: " << alns->Get().size() << endl;
     vector<CRef<CSeq_align> > good_alns;
     NON_CONST_ITERATE (CSeq_align_set::Tdata, aln, alns->Set()) {
         x_OrientAlign((*aln)->SetSegs().SetDenseg(), scope);
+double Ident = FracIdent((*aln)->GetSegs().GetDenseg(), scope);
+bool Dovetail = IsDovetail((*aln)->GetSegs().GetDenseg(), max_end_slop, scope);
+int Len = x_DensegLength((*aln)->GetSegs().GetDenseg());
+cerr << "  Ident: " << Ident << "  Dove: " << Dovetail << "  Len: " << Len << endl;
         if (IsDovetail((*aln)->GetSegs().GetDenseg(), max_end_slop, scope)
             && FracIdent((*aln)->GetSegs().GetDenseg(), scope) >= min_ident
             && x_IsAllowedStrands((*aln)->GetSegs().GetDenseg(), strand0, strand1)
@@ -751,27 +791,6 @@ CContigAssembly::CAlnStats::CAlnStats(const objects::CDense_seg& ds,
     }
 }
 
-
-static void s_GetTails(const CAlnVec& vec,
-                       vector<CContigAssembly::SAlignStats::STails>& tails)
-{
-    CContigAssembly::SAlignStats::STails tls;
-    for (int j = 0;  j < vec.GetNumRows();  ++j) {
-        TSeqPos start = vec.GetSeqStart(j);
-        TSeqPos stop  = vec.GetSeqStop(j);
-
-        TSeqPos seq_len = vec.GetBioseqHandle(j).GetBioseqLength();
-
-        if (vec.IsPositiveStrand(j)) {
-            tls.left = start;
-            tls.right = seq_len - stop - 1;
-        } else {
-            tls.right = start;
-            tls.left = seq_len - stop - 1;
-        }
-        tails.push_back(tls);
-    }
-}
 
 
 void CContigAssembly::GatherAlignStats(const CAlnVec& vec,
