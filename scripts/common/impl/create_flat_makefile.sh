@@ -84,12 +84,17 @@ fi
 
 #-----------------------------------------------------------------------------
 # more checks
+ptb="$PREBUILT_PTB_EXE"
+if test -x "$ptb"; then
+  echo "Using prebuilt project tree builder at $ptb"
+else
 ptb="$extptb"
 if test $buildptb = "no"; then
   if test -x "$ptb"; then
+    echo "Testing $ptb"
+    $ptb -version 2>&1
     ptbver=`$ptb -version 2>&1 | grep $ptbname | sed -e 's/[a-zA-Z._: ]//g'`
     if test $ptbver -lt $ptbreqver; then
-      $ptb -version 2>&1
       echo "Prebuilt $ptbname at"
       echo $extptb
       echo "is too old. Will build PTB locally"
@@ -101,6 +106,7 @@ if test $buildptb = "no"; then
     echo "Will build PTB locally"
     buildptb="yes"
   fi
+fi
 fi
 
 COMMON_Exec cd $builddir
