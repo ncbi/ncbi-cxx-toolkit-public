@@ -99,6 +99,7 @@ public:
     void SetKeepLTRs(bool keep);
     void SetKeep3UTRs(bool keep);
     void SetKeep5UTRs(bool keep);
+	void SetUseNcRNAComment (bool use_comment);
     
     void SuppressFeature(objects::CFeatListItem feat);
     
@@ -135,6 +136,7 @@ private:
     bool         m_KeepLTRs;
     bool         m_Keep3UTRs;
     bool         m_Keep5UTRs;
+	bool         m_UseNcRNAComment;
     bool         m_Cancelled;
     
     void x_SortModifierListByRank
@@ -286,6 +288,13 @@ inline
 void CAutoDef::SetKeep5UTRs(bool keep)
 {
     m_Keep5UTRs = keep;
+}
+
+
+inline
+void CAutoDef::SetUseNcRNAComment(bool use_comment)
+{
+    m_UseNcRNAComment = use_comment;
 }
 
 

@@ -315,7 +315,8 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
         }
     } else if (subtype == CSeqFeatData::eSubtype_rRNA 
                || subtype == CSeqFeatData::eSubtype_snoRNA
-               || subtype == CSeqFeatData::eSubtype_snRNA) {
+               || subtype == CSeqFeatData::eSubtype_snRNA
+			   || subtype == CSeqFeatData::eSubtype_ncRNA) {
         return false;
     } else if (subtype == CSeqFeatData::eSubtype_precursor_RNA) {
         typeword = "precursor RNA";
@@ -538,26 +539,6 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
                 label = "tRNA-" + label;
             }
             product_name = label;
-            return true;
-        } else if (subtype == CSeqFeatData::eSubtype_ncRNA) {
-            string ncrna_class = m_MainFeat.GetNamedQual("ncRNA_class");
-            string ncrna_product = m_MainFeat.GetNamedQual("product");
-            if (!NStr::IsBlank (ncrna_product)) {
-                if (!NStr::IsBlank (ncrna_class) && !NStr::Equal (ncrna_class, "other")) {
-                    product_name = ncrna_product + " " + ncrna_class;
-                } else {
-                    product_name = ncrna_product;
-                }
-            } else if (!NStr::IsBlank(ncrna_class)) {
-                if (NStr::Equal (ncrna_class, "other")) {
-                    product_name = "non-coding RNA";
-                } else {
-                    product_name = ncrna_class;
-                }
-            // note - in the future, add option to use comment if comment is not empty
-            } else {
-                product_name = "non-coding RNA";
-            }
             return true;
         } else {
             product_name = m_MainFeat.GetNamedQual("product");
@@ -1266,6 +1247,41 @@ bool CAutoDefFeatureClause::IsBioseqPrecursorRNA()
     } else {
         return false;
     }
+}
+
+
+CAutoDefNcRNAClause::CAutoDefNcRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, bool use_comment)
+                      : CAutoDefFeatureClause(bh, main_feat, mapped_loc),
+					   m_UseComment (use_comment)
+{
+}
+
+
+CAutoDefNcRNAClause::~CAutoDefNcRNAClause()
+{
+}
+
+
+bool CAutoDefNcRNAClause::x_GetProductName(string &product_name)
+{
+    string ncrna_class = m_MainFeat.GetNamedQual("ncRNA_class");
+    string ncrna_product = m_MainFeat.GetNamedQual("product");
+	string ncrna_comment = m_MainFeat.GetComment();
+    if (!NStr::IsBlank (ncrna_product)) {
+        if (!NStr::IsBlank (ncrna_class) && !NStr::Equal (ncrna_class, "other")) {
+            product_name = ncrna_product + " " + ncrna_class;
+        } else {
+            product_name = ncrna_product;
+        }
+	} else if (!NStr::IsBlank(ncrna_class) && !NStr::Equal (ncrna_class, "other")) {
+        product_name = ncrna_class;
+	} else if (m_UseComment && !NStr::IsBlank (ncrna_comment)) {
+		product_name = ncrna_comment;
+    } else {
+        product_name = "non-coding RNA";
+    }
+    return true;
+
 }
 
 

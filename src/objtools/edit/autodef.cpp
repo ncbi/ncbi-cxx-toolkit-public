@@ -67,6 +67,7 @@ CAutoDef::CAutoDef()
       m_KeepLTRs(false),
       m_Keep3UTRs(false),
       m_Keep5UTRs(false),
+	  m_UseNcRNAComment(false),
       m_Cancelled(false)
 {
     m_SuppressedFeatures.clear();
@@ -800,45 +801,52 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
              || subtype == CSeqFeatData::eSubtype_cdregion
              || (stop >= range.GetFrom() && stop <= range.GetTo()))
             && !x_IsFeatureSuppressed(cf.GetData().GetSubtype())) {
-            new_clause = new CAutoDefFeatureClause(bh, cf, mapped_loc);
-            subtype = new_clause->GetMainFeatureSubtype();
-            if (new_clause->IsTransposon()) {
-                delete new_clause;
-                new_clause = new CAutoDefTransposonClause(bh, cf, mapped_loc);
-            } else if (new_clause->IsSatelliteClause()) {
-                delete new_clause;
-                new_clause = new CAutoDefSatelliteClause(bh, cf, mapped_loc);
-            } else if (subtype == CSeqFeatData::eSubtype_promoter) {
-                delete new_clause;
-                new_clause = new CAutoDefPromoterClause(bh, cf, mapped_loc);
-            } else if (subtype == CSeqFeatData::eSubtype_otherRNA
-                       || subtype == CSeqFeatData::eSubtype_misc_RNA
-                       || subtype == CSeqFeatData::eSubtype_rRNA) {
-                if (x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags)) {
-                    delete new_clause;
-                    new_clause = NULL;
-                }
-            } else if (new_clause->IsIntergenicSpacer()) {
-                delete new_clause;
-                x_AddIntergenicSpacerFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags);
-                new_clause = NULL;
-            } else if (new_clause->IsGeneCluster()) {
-                delete new_clause;
-                new_clause = new CAutoDefGeneClusterClause(bh, cf, mapped_loc);
-            } else if (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_misc_feature
-                       && !NStr::Equal(new_clause->GetTypeword(), "control region")) {
-                if (m_MiscFeatRule == eDelete
-                    || (m_MiscFeatRule == eNoncodingProductFeat && !new_clause->IsNoncodingProductFeat())) {
-                    delete new_clause;
-                    new_clause = NULL;
-                } else if (m_MiscFeatRule == eCommentFeat) {
-                    delete new_clause;
-                    new_clause = NULL;
-                    if (cf.CanGetComment() && ! NStr::IsBlank(cf.GetComment())) {
-                        new_clause = new CAutoDefMiscCommentClause(bh, cf, mapped_loc);
-                    }
-                }            
-            }
+
+			// some clauses can be created differently just knowing the subtype
+		    if (subtype == CSeqFeatData::eSubtype_ncRNA) {
+				new_clause = new CAutoDefNcRNAClause(bh, cf, mapped_loc, m_UseNcRNAComment);
+			} else {
+				// others require more parsing
+				new_clause = new CAutoDefFeatureClause(bh, cf, mapped_loc);
+				subtype = new_clause->GetMainFeatureSubtype();
+				if (new_clause->IsTransposon()) {
+					delete new_clause;
+					new_clause = new CAutoDefTransposonClause(bh, cf, mapped_loc);
+				} else if (new_clause->IsSatelliteClause()) {
+					delete new_clause;
+					new_clause = new CAutoDefSatelliteClause(bh, cf, mapped_loc);
+				} else if (subtype == CSeqFeatData::eSubtype_promoter) {
+					delete new_clause;
+					new_clause = new CAutoDefPromoterClause(bh, cf, mapped_loc);
+				} else if (subtype == CSeqFeatData::eSubtype_otherRNA
+						   || subtype == CSeqFeatData::eSubtype_misc_RNA
+						   || subtype == CSeqFeatData::eSubtype_rRNA) {
+					if (x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags)) {
+						delete new_clause;
+						new_clause = NULL;
+					}
+				} else if (new_clause->IsIntergenicSpacer()) {
+					delete new_clause;
+					x_AddIntergenicSpacerFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags);
+					new_clause = NULL;
+				} else if (new_clause->IsGeneCluster()) {
+					delete new_clause;
+					new_clause = new CAutoDefGeneClusterClause(bh, cf, mapped_loc);
+				} else if (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_misc_feature
+						   && !NStr::Equal(new_clause->GetTypeword(), "control region")) {
+					if (m_MiscFeatRule == eDelete
+						|| (m_MiscFeatRule == eNoncodingProductFeat && !new_clause->IsNoncodingProductFeat())) {
+						delete new_clause;
+						new_clause = NULL;
+					} else if (m_MiscFeatRule == eCommentFeat) {
+						delete new_clause;
+						new_clause = NULL;
+						if (cf.CanGetComment() && ! NStr::IsBlank(cf.GetComment())) {
+							new_clause = new CAutoDefMiscCommentClause(bh, cf, mapped_loc);
+						}
+					}            
+				}
+			}
         
             if (new_clause != NULL && new_clause->IsRecognizedFeature()) {
                 new_clause->SetSuppressLocusTag(m_SuppressLocusTags);

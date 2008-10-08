@@ -90,12 +90,12 @@ protected:
     CRef<CSeq_loc> m_ClauseLocation;
     CMolInfo::TBiomol m_Biomol;
 
-private:
+protected:
     CBioseq_Handle m_BH;
     
     bool x_GetFeatureTypeWord(string &typeword);
     bool x_ShowTypewordFirst(string typeword);
-    bool x_GetProductName(string &product_name);
+    virtual bool x_GetProductName(string &product_name);
     bool x_GetDescription(string &description);
     void x_SetBiomol();
     
@@ -106,6 +106,20 @@ private:
     bool x_GetExonDescription(string &description);
        
 };
+
+
+class NCBI_XOBJEDIT_EXPORT CAutoDefNcRNAClause : public CAutoDefFeatureClause
+{
+public:    
+    CAutoDefNcRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, bool use_comment);
+    ~CAutoDefNcRNAClause();
+
+protected:
+	virtual bool x_GetProductName(string &product_name);
+	bool m_UseComment;
+};
+
+
 
 class NCBI_XOBJEDIT_EXPORT CAutoDefTransposonClause : public CAutoDefFeatureClause
 {
