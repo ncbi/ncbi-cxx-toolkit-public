@@ -157,7 +157,7 @@ void COMSSABase::Init()
     argDesc->AddDefaultKey("tem", "premass", "precursor ion search type (0 = mono, 1 = avg, 2 = N15, 3 = exact)",
                 CArgDescriptions::eInteger, "0");
     argDesc->AddDefaultKey("tez", "prozdep", "charge dependency of precursor mass tolerance (0 = none, 1 = linear)",
-                CArgDescriptions::eInteger, "1");
+                CArgDescriptions::eInteger, "0");
     argDesc->AddDefaultKey("ta", "autotol", 
                    "automatic mass tolerance adjustment fraction",
                    CArgDescriptions::eDouble, 
