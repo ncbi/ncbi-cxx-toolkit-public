@@ -84,12 +84,12 @@ void CAutoDefSourceGroup::AddSource (CAutoDefSourceDescription *src)
 }
 
 
-bool CAutoDefSourceGroup::AddQual (bool IsOrgMod, int subtype)
+bool CAutoDefSourceGroup::AddQual (bool IsOrgMod, int subtype, bool keepAfterSemicolon)
 {
     bool rval = false;
 
     NON_CONST_ITERATE (TSourceDescriptionVector, it, m_SourceList) {
-        rval |= (*it)->AddQual (IsOrgMod, subtype);
+        rval |= (*it)->AddQual (IsOrgMod, subtype, keepAfterSemicolon);
     }
 
     return rval;

@@ -87,7 +87,7 @@ const CBioSource& CAutoDefSourceDescription::GetBioSource() const
 }
 
 
-bool CAutoDefSourceDescription::AddQual (bool isOrgMod, int subtype)
+bool CAutoDefSourceDescription::AddQual (bool isOrgMod, int subtype, bool keepAfterSemicolon)
 {
     bool rval = false;
     TModifierVector::iterator it;
@@ -96,7 +96,14 @@ bool CAutoDefSourceDescription::AddQual (bool isOrgMod, int subtype)
     while (it != m_Modifiers.end()) {
         if (isOrgMod) {
             if (it->IsOrgMod() && it->GetSubtype() == subtype) {
-                m_DescStrings.push_back (it->GetValue());
+				string val = it->GetValue();
+				if (!keepAfterSemicolon) {
+                    string::size_type end = NStr::Find(val, ";");
+                    if (end != NCBI_NS_STD::string::npos) {
+                        val = val.substr(0, end);
+					}
+				}
+                m_DescStrings.push_back (val);
                 it = m_Modifiers.erase(it);
                 rval = true;
             } else {
@@ -104,7 +111,14 @@ bool CAutoDefSourceDescription::AddQual (bool isOrgMod, int subtype)
             }
         } else {
             if (!it->IsOrgMod() && it->GetSubtype() == subtype) {
-                m_DescStrings.push_back (it->GetValue());
+				string val = it->GetValue();
+				if (!keepAfterSemicolon) {
+                    string::size_type end = NStr::Find(val, ";");
+                    if (end != NCBI_NS_STD::string::npos) {
+                        val = val.substr(0, end);
+					}
+				}
+                m_DescStrings.push_back (val);
                 it = m_Modifiers.erase(it);
                 rval = true;
             } else {

@@ -126,7 +126,7 @@ public:
     
     string GetComboDescription(IAutoDefCombo *mod_combo);
 
-    bool AddQual (bool isOrgMod, int subtype);
+    bool AddQual (bool isOrgMod, int subtype, bool keepAfterSemicolon);
     bool RemoveQual (bool isOrgMod, int subtype);
     int Compare(const CAutoDefSourceDescription& s) const;
     bool operator>(const CAutoDefSourceDescription& src) const

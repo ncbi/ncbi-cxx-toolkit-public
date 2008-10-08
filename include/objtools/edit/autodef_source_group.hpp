@@ -72,7 +72,7 @@ public:
 
 
     void AddSource (CAutoDefSourceDescription *src);
-    bool AddQual (bool IsOrgMod, int subtype);
+    bool AddQual (bool IsOrgMod, int subtype, bool keepAfterSemicolon);
     bool RemoveQual (bool IsOrgMod, int subtype);
     TSourceDescriptionVector GetSrcList() const { return m_SourceList; }
     vector<CAutoDefSourceGroup *> RemoveNonMatchingDescriptions ();

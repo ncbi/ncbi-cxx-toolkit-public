@@ -101,6 +101,8 @@ public:
     bool GetExcludeAffOrgs ();
     void SetKeepParen(bool keep);
     bool GetKeepParen();
+	void SetKeepAfterSemicolon(bool keep);
+	bool GetKeepAfterSemicolon();
     void SetHIVCloneIsolateRule(unsigned int rule_num);
     unsigned int GetHIVCloneIsolateRule();
 
@@ -149,6 +151,7 @@ private:
     bool         m_ExcludeAffOrgs;
 
     bool         m_KeepParen;
+	bool         m_KeepAfterSemicolon;
     unsigned int m_HIVCloneIsolateRule;
     
     string x_GetSubSourceLabel (CSubSource::ESubtype st);
@@ -270,6 +273,20 @@ inline
 bool CAutoDefModifierCombo::GetKeepParen()
 {
     return m_KeepParen;
+}
+
+
+inline
+void CAutoDefModifierCombo::SetKeepAfterSemicolon(bool keep)
+{
+    m_KeepAfterSemicolon = keep;
+}
+
+
+inline
+bool CAutoDefModifierCombo::GetKeepAfterSemicolon()
+{
+    return m_KeepAfterSemicolon;
 }
 
 

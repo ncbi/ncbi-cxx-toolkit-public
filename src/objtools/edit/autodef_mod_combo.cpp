@@ -55,6 +55,7 @@ CAutoDefModifierCombo::CAutoDefModifierCombo() : m_UseModifierLabels(false),
                                                  m_ExcludeNrOrgs(false),
                                                  m_ExcludeAffOrgs(false),
                                                  m_KeepParen(false),
+												 m_KeepAfterSemicolon(false),
                                                  m_HIVCloneIsolateRule(ePreferClone)
 
 {
@@ -354,15 +355,17 @@ bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, co
             source_description += " ";
             string val = (*subSrcI)->GetName();
             // truncate value at first semicolon
-            string::size_type pos = NStr::Find(val, ";");
-            if (pos != NCBI_NS_STD::string::npos) {
-                val = val.substr(0, pos);
-            }
+			if (!m_KeepAfterSemicolon) {
+				string::size_type pos = NStr::Find(val, ";");
+				if (pos != NCBI_NS_STD::string::npos) {
+					val = val.substr(0, pos);
+				}
+			}
                     
             // if country and not keeping text after colon, truncate after colon
             if (st == CSubSource::eSubtype_country
                 && ! m_KeepCountryText) {
-                pos = NStr::Find(val, ":");
+                string::size_type pos = NStr::Find(val, ":");
                 if (pos != NCBI_NS_STD::string::npos) {
                     val = val.substr(0, pos);
                 }
@@ -385,10 +388,13 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
 
             string val = (*modI)->GetSubname();
             // truncate value at first semicolon
-            string::size_type pos = NStr::Find(val, ";");
-            if (pos != NCBI_NS_STD::string::npos) {
-                val = val.substr(0, pos);
-            }
+			if (!m_KeepAfterSemicolon) {
+				string::size_type pos = NStr::Find(val, ";");
+				if (pos != NCBI_NS_STD::string::npos) {
+					val = val.substr(0, pos);
+				}
+			}
+
             if (st == COrgMod::eSubtype_specimen_voucher && NStr::StartsWith (val, "personal:")) {
                 val = val.substr(9);
             }
@@ -626,7 +632,7 @@ bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype)
 
     new_groups.clear();
     NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
-        added |= (*it)->AddQual (IsOrgMod, subtype);
+        added |= (*it)->AddQual (IsOrgMod, subtype, m_KeepAfterSemicolon);
     }
 
     if (added) {
