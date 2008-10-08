@@ -209,18 +209,19 @@ bool XSDParser::DefineElementType(DTDElement& node)
 {
     if (IsValue("string") || IsValue("token") ||
         IsValue("normalizedString") ||
-        IsValue("anyURI") || IsValue("QName") || IsValue("date")) {
+        IsValue("anyURI") || IsValue("QName") ||
+        IsValue("dateTime") || IsValue("time") || IsValue("date")) {
         node.SetType(DTDElement::eString);
     } else if (IsValue("double") || IsValue("float") || IsValue("decimal")) {
         node.SetType(DTDElement::eDouble);
     } else if (IsValue("boolean")) {
         node.SetType(DTDElement::eBoolean);
     } else if (IsValue("integer") || IsValue("int")
-             || IsValue("short") || IsValue("byte") 
-             || IsValue("negativeInteger") || IsValue("nonNegativeInteger")
-             || IsValue("positiveInteger") || IsValue("nonPositiveInteger")
-             || IsValue("unsignedInt") || IsValue("unsignedShort")
-             || IsValue("unsignedByte") ) {
+            || IsValue("short") || IsValue("byte") 
+            || IsValue("negativeInteger") || IsValue("nonNegativeInteger")
+            || IsValue("positiveInteger") || IsValue("nonPositiveInteger")
+            || IsValue("unsignedInt") || IsValue("unsignedShort")
+            || IsValue("unsignedByte") ) {
         node.SetType(DTDElement::eInteger);
     } else if (IsValue("long") || IsValue("unsignedLong")) {
         node.SetType(DTDElement::eBigInt);
@@ -237,7 +238,8 @@ bool XSDParser::DefineElementType(DTDElement& node)
 bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
 {
     if (IsValue("string") || IsValue("token") || IsValue("QName") ||
-        IsValue("anyURI")) {
+        IsValue("anyURI") ||
+        IsValue("dateTime") || IsValue("time") || IsValue("date")) {
         attrib.SetType(DTDAttribute::eString);
     } else if (IsValue("ID")) {
         attrib.SetType(DTDAttribute::eId);
@@ -256,7 +258,12 @@ bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
 
     } else if (IsValue("boolean")) {
         attrib.SetType(DTDAttribute::eBoolean);
-    } else if (IsValue("int") || IsValue("integer")) {
+    } else if (IsValue("int") || IsValue("integer")
+            || IsValue("short") || IsValue("byte") 
+            || IsValue("negativeInteger") || IsValue("nonNegativeInteger")
+            || IsValue("positiveInteger") || IsValue("nonPositiveInteger")
+            || IsValue("unsignedInt") || IsValue("unsignedShort")
+            || IsValue("unsignedByte") ) {
         attrib.SetType(DTDAttribute::eInteger);
     } else if (IsValue("float") || IsValue("double") || IsValue("decimal")) {
         attrib.SetType(DTDAttribute::eDouble);
