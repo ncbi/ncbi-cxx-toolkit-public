@@ -354,6 +354,7 @@ const bool CMSPeak::AddHit(CMSHit& in, CMSHit *& out)
     // above min number of hits?
     if(in.GetHits() < GetMinhit()) return false;
     // check to see if hitlist is full
+
     if (HitListIndex[Index] >= HitListSize) {
         // if less or equal hits than recorded min, don't bother
         if (in.GetHits() <= LastHitNum[Index]) return false;
@@ -365,10 +366,18 @@ const bool CMSPeak::AddHit(CMSHit& in, CMSHit *& out)
                 }
             }
         // keep record of min
-        LastHitNum[Index] = in.GetHits();    
+//        LastHitNum[Index] = in.GetHits();    
         // replace in list
         HitList[Index][i] = in;
         out =  & (HitList[Index][i]);
+        // find min
+        int minimum = in.GetHits();
+        for (i = 0; i < HitListSize; i++) {
+             if (minimum > HitList[Index][i].GetHits()) {
+                 minimum = HitList[Index][i].GetHits();
+                 }
+             }
+        LastHitNum[Index] = minimum;
         return true;
         }
     else {
