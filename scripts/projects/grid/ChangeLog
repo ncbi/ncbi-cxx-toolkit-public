@@ -1,0 +1,4 @@
+2008-10-07 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+
+	* The first release of Grid client-side applications
+	using the prepare_release.py framework.

@@ -1,0 +1,58 @@
+$Id$
+
+This package contains miscellaneous client-side Grid applications.
+
+Here is a brief description of the containing applications:
+
+* remote_app
+
+    A worker node daemon capable of running multiple distributed
+    copies of regular applications and collecting their output in the
+    Grid for later retrieval by what is called the submitter.
+
+* remote_cgi
+
+    A worker node daemon that runs CGI applications in the simulated
+    environment of a web server. The concept is similar to what
+    remote_app does except that the submitter is always an instance
+    of the cgi2rcgi application.
+
+* cgi2rcgi
+
+    CGI application that serializes HTTP requests and sends them
+    over the Grid for processing by remote_cgi worker nodes.
+
+* cgi_tunnel2grid.cgi
+
+    This is the early days version of the cgi2rcgi application.
+    Please do not use it.
+
+* grid_mgr.cgi
+
+    This is a CGI application that displays status of Grid services.
+    It is installed and can be accessed at
+    http://intranet/ieb/ToolBox/STAT/grid_monitor/grid_mgr.cgi
+
+* ns_submit_remote_job
+
+    Utility for submitting jobs for later processing by remote_app.
+    Command line arguments of the remote application can be specified
+    on the command line of ns_submit_remote_job and remote application
+    output can be retrieved later with ns_remote_job_control.
+
+* ns_remote_job_control
+
+    This utility is for querying information about a NetSchedule job.
+    It also can be used to stop worker nodes and cancel jobs.
+
+* remote_app_dispatcher.cgi
+
+    CGI interface for running a regular application under remote_app.
+    The application receives its arguments as parameters of the HTTP
+    request and returns its output via HTTP response.
+
+* test_gridclient_stress
+
+    An integrated stress test for Grid. It submits and then waits for
+    the specified number of NetSchedule jobs.  It is also possible to
+    specify the amount of data transmitted through NetCache.

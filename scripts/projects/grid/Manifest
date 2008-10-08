@@ -1,0 +1,27 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author:  Dmitry Kazimirov
+#
+# Purpose: This file holds all the supported configurations of the grid
+#          package. It is used by release configurator.
+#
+
+APP: remote_app remote_cgi cgi2rcgi cgi_tunnel2grid.cgi$exe grid_mgr.cgi$exe ns_submit_remote_job ns_remote_job_control remote_app_dispatcher.cgi$exe test_gridclient_stress
+ETC: src/app/grid/cgi_tunnel2grid/sample/sample.ini src/app/grid/test/test_gridclient_stress.ini src/app/grid/cgi2rcgi/cgi2rcgi.ini src/app/grid/grid_mgr/grid_mgr.ini src/app/grid/remote_app/remote_app_dispatcher.ini src/app/grid/remote_app/remote_cgi.ini src/app/grid/remote_app/remote_app.ini
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+Linux32 : - : GCC.sh 3.4.2 --without-debug --with-optimization --with-mt --with-flat-makefile --without-bdb
+Linux32 : - : GCC.sh 3.4.2 --with-debug --with-mt --with-flat-makefile --without-bdb
+Linux64 : - : GCC.sh 4.0.1 --without-debug --with-optimization --with-mt --with-flat-makefile --without-bdb
+Linux64 : - : GCC.sh 4.0.1 --with-debug --with-mt --with-flat-makefile --without-bdb
+
+Win32   : - : msvc800_prj  dll     32  DebugDLL
