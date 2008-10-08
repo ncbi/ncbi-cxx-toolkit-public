@@ -41,19 +41,23 @@
 #include <connect/services/remote_job.hpp>
 #include <connect/services/blob_storage_netcache.hpp>
 
+#define PROGRAM_NAME "CNSSubmitRemoteJobApp"
+#define PROGRAM_VERSION "1.0.0"
 
 USING_NCBI_SCOPE;
 
 class CNSSubmitRemoteJobApp : public CGridClientApp
 {
 public:
-    CNSSubmitRemoteJobApp() {}
+    CNSSubmitRemoteJobApp() {
+        SetVersion(CVersionInfo(PROGRAM_VERSION, PROGRAM_NAME));
+    }
 
     virtual void Init(void);
     virtual int Run(void);
     virtual string GetProgramVersion(void) const
     {
-        return "CNSSubmitRemoteJobApp version 1.0.0";
+        return PROGRAM_NAME " version " PROGRAM_VERSION;
     }
 
 protected:

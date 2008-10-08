@@ -42,11 +42,17 @@
 #include <math.h>
 #include <algorithm>
 
+#define PROGRAM_NAME "SampleNodeStressTest"
+#define PROGRAM_VERSION "1.0.1"
+
 USING_NCBI_SCOPE;
 
 class CGridClientTestApp : public CGridClientApp
 {
 public:
+    CGridClientTestApp() {
+        SetVersion(CVersionInfo(PROGRAM_VERSION, PROGRAM_NAME));
+    }
 
     virtual void Init(void);
     virtual int Run(void);
@@ -60,7 +66,7 @@ public:
 
 string CGridClientTestApp::GetProgramVersion(void) const
 {
-    return "SampleNodeStressTest version 1.0.1";
+    return PROGRAM_NAME " version " PROGRAM_VERSION;
 }
 
 

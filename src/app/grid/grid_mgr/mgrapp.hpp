@@ -34,6 +34,9 @@
 #include <cgi/cgiapp.hpp>
 #include <html/commentdiag.hpp>
 
+#define GRIDMGR_VERSION_MAJOR 1
+#define GRIDMGR_VERSION_MINOR 0
+#define GRIDMGR_VERSION_PATCH 0
 
 BEGIN_NCBI_SCOPE
 
@@ -44,6 +47,12 @@ BEGIN_NCBI_SCOPE
 class CGridMgrApp : public CCgiApplication
 {
 public:
+    CGridMgrApp() {
+        SetVersion(CVersionInfo(
+            GRIDMGR_VERSION_MAJOR,
+            GRIDMGR_VERSION_MINOR,
+            GRIDMGR_VERSION_PATCH));
+    }
 
     virtual void Init(void) {
 

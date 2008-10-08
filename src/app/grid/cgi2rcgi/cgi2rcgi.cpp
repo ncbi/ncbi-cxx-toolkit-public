@@ -45,6 +45,9 @@
 
 #include <vector>
 
+#define CGI2RCGI_VERSION_MAJOR 1
+#define CGI2RCGI_VERSION_MINOR 0
+#define CGI2RCGI_VERSION_PATCH 0
 
 USING_NCBI_SCOPE;
 
@@ -57,7 +60,12 @@ const string kElapsedTime = "ctg_time";
 class CCgi2RCgiApp : public  CGridCgiApplication
 {
 public:
-    CCgi2RCgiApp() : m_CgiContext(NULL) {}
+    CCgi2RCgiApp() : m_CgiContext(NULL) {
+        SetVersion(CVersionInfo(
+            CGI2RCGI_VERSION_MAJOR,
+            CGI2RCGI_VERSION_MINOR,
+            CGI2RCGI_VERSION_PATCH));
+    }
 
     virtual void Init(void);
     virtual string GetProgramVersion(void) const;

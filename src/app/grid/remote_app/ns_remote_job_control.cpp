@@ -42,12 +42,21 @@
 #include "info_collector.hpp"
 #include "renderer.hpp"
 
+#define REMOTEJOBCTL_VERSION_MAJOR 1
+#define REMOTEJOBCTL_VERSION_MINOR 0
+#define REMOTEJOBCTL_VERSION_PATCH 0
+
 USING_NCBI_SCOPE;
 
 class CNSRemoveJobControlApp : public CNcbiApplication
 {
 public:
-    CNSRemoveJobControlApp() {}
+    CNSRemoveJobControlApp() {
+        SetVersion(CVersionInfo(
+            REMOTEJOBCTL_VERSION_MAJOR,
+            REMOTEJOBCTL_VERSION_MINOR,
+            REMOTEJOBCTL_VERSION_PATCH));
+    }
 
     virtual void Init(void);
     virtual int Run(void);

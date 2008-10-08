@@ -118,6 +118,10 @@ public:
                    IBlobStorageFactory*   storage_factory = NULL,
                    INetScheduleClientFactory* client_factory = NULL,
                    ESignalHandling signal_handling = eStandardSignalHandling);
+
+    CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
+                   const CVersionInfo& version_info);
+
     virtual ~CGridWorkerApp();
 
     /// Register a listener of events of this class.
@@ -149,7 +153,11 @@ protected:
     virtual const IWorkerNodeInitContext&  GetInitContext() const;
 
 private:
+    void Construct(CGridWorkerApp_Impl* impl,
+        ESignalHandling signal_handling = eStandardSignalHandling);
+
     mutable auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
+
     auto_ptr<CGridWorkerApp_Impl> m_AppImpl;
 
     CGridWorkerApp(const CGridWorkerApp&);
@@ -161,25 +169,29 @@ inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
     m_AppImpl->SetListener(listener);
 }
 
-#define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version)     \
-NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version); \
-int main(int argc, const char* argv[])                    \
-{                                                         \
-    GetDiagContext().SetOldPostFormat(false);             \
-    BlobStorage_RegisterDriver_NetCache();                \
-    CGridWorkerApp app(new TWorkerNodeJob##Factory);      \
-    return app.AppMain(argc, argv, NULL, eDS_ToStdlog);  \
-}
+#define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version)                       \
+    NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version);               \
+    int main(int argc, const char* argv[])                                  \
+    {                                                                       \
+        GetDiagContext().SetOldPostFormat(false);                           \
+        BlobStorage_RegisterDriver_NetCache();                              \
+        CGridWorkerApp app(new TWorkerNodeJob##Factory,                     \
+            CVersionInfo(#Version));                                        \
+        return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                 \
+    }
 
-#define NCBI_WORKERNODE_MAIN_EX(TWorkerNodeJob, TWorkerNodeIdleTask, Version)     \
-NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob, TWorkerNodeIdleTask, Version); \
-int main(int argc, const char* argv[])                                            \
-{                                                                                 \
-    GetDiagContext().SetOldPostFormat(false);                                     \
-    BlobStorage_RegisterDriver_NetCache();                                        \
-    CGridWorkerApp app(new TWorkerNodeJob##FactoryEx);                            \
-    return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                          \
-}
+#define NCBI_WORKERNODE_MAIN_EX(TWorkerNodeJob,                             \
+        TWorkerNodeIdleTask, Version)                                       \
+    NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob,                      \
+            TWorkerNodeIdleTask, Version);                                  \
+    int main(int argc, const char* argv[])                                  \
+    {                                                                       \
+        GetDiagContext().SetOldPostFormat(false);                           \
+        BlobStorage_RegisterDriver_NetCache();                              \
+        CGridWorkerApp app(new TWorkerNodeJob##FactoryEx,                   \
+            CVersionInfo(#Version));                                        \
+        return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                 \
+    }
 
 /* @} */
 

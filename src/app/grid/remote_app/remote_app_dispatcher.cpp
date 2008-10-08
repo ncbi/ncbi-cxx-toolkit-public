@@ -48,12 +48,18 @@
 #include <connect/services/ra_dispatcher_client.hpp>
 #include <connect/services/remote_app.hpp>
 
+#define PROGRAM_NAME "RemoteAppDispatcher"
+#define PROGRAM_VERSION "1.0.0"
 
 USING_NCBI_SCOPE;
 
 class CRemoteAppDispatcher : public CCgiApplication
 {
 public:
+    CRemoteAppDispatcher() {
+        SetVersion(CVersionInfo(PROGRAM_VERSION, PROGRAM_NAME));
+    }
+
     virtual void Init(void);
     virtual int  ProcessRequest(CCgiContext& ctx);
 
@@ -235,7 +241,7 @@ CNetScheduleAPI* CRemoteAppDispatcher::x_CreateNSClient(const string& service,
 {
     auto_ptr<CNetScheduleAPI> cln;
     cln.reset(new CNetScheduleAPI(service, "remote_app_dispatcher", qname));
-    cln->SetProgramVersion("RemoteAppDispatcher version 1.0.0");
+    cln->SetProgramVersion(PROGRAM_NAME " version " PROGRAM_VERSION);
     return cln.release();
 }
 

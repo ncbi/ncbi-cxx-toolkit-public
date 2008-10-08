@@ -45,6 +45,9 @@
 
 #include <vector>
 
+#define CGITUNNEL2GRID_VERSION_MAJOR 1
+#define CGITUNNEL2GRID_VERSION_MINOR 0
+#define CGITUNNEL2GRID_VERSION_PATCH 0
 
 USING_NCBI_SCOPE;
 
@@ -60,7 +63,12 @@ const string kElapsedTime = "ctg_time";
 class CCgiTunnel2Grid : public  CGridCgiApplication
 {
 public:
-    CCgiTunnel2Grid() : m_CgiContext(NULL) {}
+    CCgiTunnel2Grid() : m_CgiContext(NULL) {
+        SetVersion(CVersionInfo(
+            CGITUNNEL2GRID_VERSION_MAJOR,
+            CGITUNNEL2GRID_VERSION_MINOR,
+            CGITUNNEL2GRID_VERSION_PATCH));
+    }
 
     virtual void Init(void);
     virtual string GetProgramVersion(void) const;

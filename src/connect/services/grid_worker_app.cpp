@@ -55,15 +55,11 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 //
 
-CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
-                               IBlobStorageFactory*   storage_factory,
-                               INetScheduleClientFactory* client_factory,
-                               ESignalHandling signal_handling)
+void CGridWorkerApp::Construct(CGridWorkerApp_Impl* impl,
+    ESignalHandling signal_handling)
 {
-    m_AppImpl.reset(new CGridWorkerApp_Impl(*this,
-                                            job_factory,
-                                            storage_factory,
-                                            client_factory));
+    m_AppImpl.reset(impl);
+
 #if defined(NCBI_OS_UNIX)
     if (signal_handling == eStandardSignalHandling) {
     // attempt to get server gracefully shutdown on signal
@@ -71,6 +67,23 @@ CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
         signal(SIGTERM, GridWorker_SignalHandler);
     }
 #endif
+}
+
+CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
+                               IBlobStorageFactory*   storage_factory,
+                               INetScheduleClientFactory* client_factory,
+                               ESignalHandling signal_handling)
+{
+    Construct(new CGridWorkerApp_Impl(*this, job_factory,
+        storage_factory, client_factory), signal_handling);
+}
+
+CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
+                               const CVersionInfo& version_info)
+{
+    Construct(new CGridWorkerApp_Impl(*this, job_factory, NULL, NULL));
+
+    SetVersion(version_info);
 }
 
 CGridWorkerApp::~CGridWorkerApp()
