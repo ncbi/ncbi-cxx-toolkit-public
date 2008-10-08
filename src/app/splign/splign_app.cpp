@@ -684,7 +684,7 @@ void CSplignApp::x_DoIncremental(void)
 
     try {
         CFastaReader fasta_reader(* line_reader, CFastaReader::fAssumeNuc);
-        for(CRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
+        for(CConstRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
             se.NotEmpty(); se = fasta_reader.ReadOneSeq()) 
         {
             CRef<CScope> scope (new CScope(*m_ObjMgr));
@@ -746,7 +746,7 @@ void CSplignApp::x_DoBatch3(void)
         line_reader.Reset(new CStreamLineReader(args["subj"].AsInputFile()));
     }
     CFastaReader fasta_reader(* line_reader, CFastaReader::fAssumeNuc);
-    for(CRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
+    for(CConstRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
         se.NotEmpty(); se = fasta_reader.ReadOneSeq()) 
     {
         CRef<CScope> scope (new CScope(*m_ObjMgr));
@@ -874,7 +874,7 @@ CRef<objects::CSeq_id> CSplignApp::x_ReadFastaSetId(const CArgValue& argval,
     }
     CFastaReader fasta_reader(* line_reader,
                               CFastaReader::fAssumeNuc | CFastaReader::fOneSeq);
-    CRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
+    CConstRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
 
     scope->AddTopLevelSeqEntry(*se);
     const CSeq_entry::TSeq& bioseq = se->GetSeq();    
