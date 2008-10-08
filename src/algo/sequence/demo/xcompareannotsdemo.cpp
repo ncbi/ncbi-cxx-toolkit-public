@@ -43,6 +43,8 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbiexpt.hpp> 
+#include <corelib/plugin_manager.hpp>
+
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp> 
@@ -52,7 +54,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seq/MolInfo.hpp>
-
+#include <objects/general/Dbtag.hpp>
 #include <util/compress/stream.hpp>
 #include <util/compress/zlib.hpp>
 
@@ -734,6 +736,8 @@ private:
     CRef<CSeq_loc> m_t_loc;
     
     map<int, map<string, string> > m_id_map; //aln_row (normally only 0 and 1) -> from_id -> to_id
+
+    CArgs m_args;
 };
 
 
@@ -813,7 +817,7 @@ void CXcompareAnnotsApplication::Init(void)
     
     arg_desc->AddDefaultKey("depth",
                             "integer",
-                            "SAnnotSelector exact depth",
+                            "SAnnotSelector resolve depth",
                             CArgDescriptions::eInteger,
                             "0");
     
@@ -835,6 +839,19 @@ void CXcompareAnnotsApplication::Init(void)
             "Use ID when explicitly provided scope is lacking necessary info"
             " (e.g. when remapping contig annots from file with chromosome alignments"
             " we would need to get chromosome seq-map from gb to iterate feats in chrom coords)");
+
+
+    arg_desc->AddOptionalKey("add_qual", 
+                             "qualkey", 
+                             "Add additional named qualifier columns q_qualkey and t_qualkey",
+                             CArgDescriptions::eString,
+                             CArgDescriptions::fAllowMultiple);
+
+    arg_desc->AddOptionalKey("add_dbxref",
+                             "dbxrefkey",
+                             "Add additional named dbxref columns q_dbxrefkey and t_dbxrefkey",
+                             CArgDescriptions::eString,
+                             CArgDescriptions::fAllowMultiple);
 
     
     //TODO: Must fix the code to decide whether to use scopeless_mapper automatically
@@ -862,6 +879,7 @@ void CXcompareAnnotsApplication::Init(void)
         
     
     m_mapping_ranges.Reset(new CMappingRanges);
+    CPluginManager_DllResolver::EnableGlobally(true); //to allow handling of dlls as specified in conffile
 }
  
 
@@ -896,7 +914,7 @@ void CXcompareAnnotsApplication::x_ProcessMappingRanges()
     CRef<ILocMapper> mapper(new CLocMapper_Default(
             *simple_mapper
             , *m_scope_q
-            , GetArgs()["spliced"]
+            , m_args["spliced"]
             , NULL
             , false));
     
@@ -932,7 +950,7 @@ void CXcompareAnnotsApplication::x_ProcessMappingRanges()
         region_comparator->SetOptions() |= CCompareSeqRegions::fSameTypeOnly;
     }
     
-    if(GetArgs()["strict_type"]) region_comparator->SetOptions() |= CCompareSeqRegions::fSameTypeOnly;
+    if(m_args["strict_type"]) region_comparator->SetOptions() |= CCompareSeqRegions::fSameTypeOnly;
     x_ProcessComparison(*region_comparator, len);
    
     rgn_loc->SetInt().SetStrand(eNa_strand_minus);
@@ -950,7 +968,7 @@ void CXcompareAnnotsApplication::x_ProcessMappingRanges()
         region_comparator->SetOptions() &= ~CCompareSeqRegions::fSelectBest;
         region_comparator->SetOptions() |= CCompareSeqRegions::fSameTypeOnly;
     }
-    if(GetArgs()["strict_type"]) region_comparator->SetOptions() |= CCompareSeqRegions::fSameTypeOnly;
+    if(m_args["strict_type"]) region_comparator->SetOptions() |= CCompareSeqRegions::fSameTypeOnly;
     x_ProcessComparison(*region_comparator, len);
 }
 
@@ -1032,10 +1050,9 @@ void CXcompareAnnotsApplication::x_ProcessSeqAlignSetFromFile(string filename)
 {
     typedef list<CRef<CSeq_align> > TSeqAlignList;
     typedef map<string, CRef<CAlnMix> > TAlnMixes;
-    const CArgs& args = GetArgs(); 
     
     AutoPtr<CObjectIStream> istr;
-    istr.reset(CObjectIStream::Open(StringToSerialFormat(args["i_serial"].AsString()), filename));
+    istr.reset(CObjectIStream::Open(StringToSerialFormat(m_args["i_serial"].AsString()), filename));
     
     CRef<CSeq_align_set> aligns_set;
     CRef<CSeq_annot> aligns_annot;
@@ -1048,19 +1065,19 @@ void CXcompareAnnotsApplication::x_ProcessSeqAlignSetFromFile(string filename)
     while(!istr->EndOfData()) { 
         try {
             typedef list<CRef<CSeq_align> > TSeqAlignList;
-            if(args["i_container"].AsString() == "Seq-align-set") {
+            if(m_args["i_container"].AsString() == "Seq-align-set") {
                 aligns_set.Reset(new CSeq_align_set);
                 *istr >> *aligns_set;   
-            } else if(args["i_container"].AsString() == "Seq-annot") {
+            } else if(m_args["i_container"].AsString() == "Seq-annot") {
                 aligns_annot.Reset(new CSeq_annot);
                 *istr >> *aligns_annot;
-            } else if (args["i_container"].AsString() == "Seq-align") {
+            } else if (m_args["i_container"].AsString() == "Seq-align") {
                 CRef<CSeq_align> aln(new CSeq_align);
                 *istr >> *aln;
                 aligns_list.clear();
                 aligns_list.push_back(aln);
             } else {
-                ERR_POST(Fatal << "Don't know about this format: " << args["i_container"].AsString());
+                ERR_POST(Fatal << "Don't know about this format: " << m_args["i_container"].AsString());
             }
         
             
@@ -1097,7 +1114,7 @@ void CXcompareAnnotsApplication::x_ProcessSeqAlignSetFromFile(string filename)
                 
                 
                 
-                if(args["reverse"]) {
+                if(m_args["reverse"]) {
                     (*it)->SwapRows(0, 1);
                 }
                 
@@ -1117,7 +1134,7 @@ void CXcompareAnnotsApplication::x_ProcessSeqAlignSetFromFile(string filename)
                 string str_aln = "aln:" + str_id_q + "->" + str_id_t;
                 
                 
-                if(args["sentinel_seqs"] && !m_scope_q->GetBioseqHandle(id_q)) {
+                if(m_args["sentinel_seqs"] && !m_scope_q->GetBioseqHandle(id_q)) {
                     AddSentinelRNASeq(*m_scope_q, id_q); //for remapper
                 }
                 
@@ -1221,7 +1238,7 @@ void CXcompareAnnotsApplication::x_ProcessSeqAlignSetFromFile(string filename)
                     loc_mapper.Reset(new CLocMapper_Default(
                             *simple_mapper, 
                             *m_scope_q, 
-                            args["spliced"],
+                            m_args["spliced"],
                             NULL,
                             false
                     ));
@@ -1246,7 +1263,7 @@ void CXcompareAnnotsApplication::x_ProcessSeqAlignSetFromFile(string filename)
         
                     
                     
-                    if(args["sentinel_feats"]) {
+                    if(m_args["sentinel_feats"]) {
                         AddDefaultSentinelFeats(*m_scope_q, *loc);
                         loc->SetInt().SetStrand(eNa_strand_both);
                     }
@@ -1268,7 +1285,7 @@ void CXcompareAnnotsApplication::x_ProcessSeqAlignSetFromFile(string filename)
                             m_sel, 
                             m_sel,
                             merged_aln->GetSeq_id(1)));
-                    if(args["strict_type"]) region_comparator->SetOptions() |= CCompareSeqRegions::fSameTypeOnly;
+                    if(m_args["strict_type"]) region_comparator->SetOptions() |= CCompareSeqRegions::fSameTypeOnly;
                     x_ProcessComparison(*region_comparator, source_len);  
                     
                     loc->SetInt().SetStrand(eNa_strand_minus);
@@ -1280,7 +1297,7 @@ void CXcompareAnnotsApplication::x_ProcessSeqAlignSetFromFile(string filename)
                             m_sel, 
                             m_sel,
                             merged_aln->GetSeq_id(1)));
-                    if(args["strict_type"]) region_comparator->SetOptions() |= CCompareSeqRegions::fSameTypeOnly;
+                    if(m_args["strict_type"]) region_comparator->SetOptions() |= CCompareSeqRegions::fSameTypeOnly;
                     x_ProcessComparison(*region_comparator, source_len);  
 
                     
@@ -1353,7 +1370,7 @@ void CXcompareAnnotsApplication::x_ProcessComparison(
 
             } else {
                 NcbiCout << "\t\t\t\t\t\t\t\t\t\t\t";
-                //if(args["long_loc_label"]) NcbiCout << "\t\t";
+                //if(m_args["long_loc_label"]) NcbiCout << "\t\t";
             }
             
             if(!cf->GetFeatT().IsNull()) {
@@ -1371,7 +1388,7 @@ void CXcompareAnnotsApplication::x_ProcessComparison(
                 
             } else {
                 NcbiCout << "\t\t\t\t\t\t\t";
-                //if(args["long_loc_label"]) NcbiCout << "\t";
+                //if(m_args["long_loc_label"]) NcbiCout << "\t";
                     
             }
             
@@ -1409,6 +1426,43 @@ void CXcompareAnnotsApplication::x_ProcessComparison(
             
             int ir = cf->GetIrrelevance();
             NcbiCout << (ir == 0 ? "B" : ir == 1 ? "F" : ir == 2 ? "R" : "O");
+
+
+            
+            //add qual and dbxref values
+            if(m_args["add_qual"]) {
+                ITERATE(CArgValue::TStringArray, it2, m_args["add_qual"].GetStringList()) {
+                    NcbiCout << "\t" << (cf->GetFeatQ().IsNull() ? "" : cf->GetFeatQ()->GetNamedQual(*it2)); 
+                    NcbiCout << "\t" << (cf->GetFeatT().IsNull() ? "" : cf->GetFeatT()->GetNamedQual(*it2)); 
+                }   
+            }
+            
+            if(m_args["add_dbxref"]) { 
+                ITERATE(CArgValue::TStringArray, it2, m_args["add_dbxref"].GetStringList()) {
+                    string tmpstr = "";
+                    if (!cf->GetFeatQ().IsNull()) {
+                        CConstRef<CDbtag> db_tag = cf->GetFeatQ()->GetNamedDbxref(*it2);
+                        if(!db_tag.IsNull()) {
+                            db_tag->GetLabel(&tmpstr);
+                        }
+                    }
+                    NcbiCout << "\t" << tmpstr;
+                    tmpstr = "";
+                    if (!cf->GetFeatT().IsNull()) {
+                        CConstRef<CDbtag> db_tag = cf->GetFeatT()->GetNamedDbxref(*it2);
+                        if(!db_tag.IsNull()) {
+                            db_tag->GetLabel(&tmpstr);
+                        }    
+                    } 
+                    NcbiCout << "\t" << tmpstr;
+                }  
+            }
+
+
+
+
+
+
             NcbiCout << "\n" << flush;
             comparisonNumber++;
         }
@@ -1420,23 +1474,23 @@ void CXcompareAnnotsApplication::x_ProcessComparison(
 ///////////////////////////////////////////////////////////////////////////////
 int CXcompareAnnotsApplication::Run(void)
 {
-    const CArgs& args = GetArgs(); 
+    m_args = GetArgs(); 
     
     string args_str = "";
-    args.Print(args_str);
+    m_args.Print(args_str);
     CTime time;
     time.SetCurrent();
     
     LOG_POST("Starting on " << time.AsString());
     LOG_POST("Args: " << args_str);
     
-    if(args["trace"]) {
+    if(m_args["trace"]) {
         SetDiagTrace(eDT_Enable); 
         SetDiagPostFlag(eDPF_All);
     }
 
     m_sel.SetSearchUnresolved(); //need for manually supplied far-reference annots with no seq-entries for scaffolds
-    if(args["adaptive_depth"]) {
+    if(m_args["adaptive_depth"]) {
         m_sel.SetAdaptiveDepth();
     } else {
         m_sel.SetExactDepth();
@@ -1447,9 +1501,9 @@ int CXcompareAnnotsApplication::Run(void)
     m_sel.IncludeFeatType(CSeqFeatData::e_Rna);
     m_sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
     m_sel.IncludeFeatType(CSeqFeatData::e_Gene);
-    m_sel.SetResolveDepth(args["depth"].AsInteger());
+    m_sel.SetResolveDepth(m_args["depth"].AsInteger());
     
-    if(args["range_overlap"]) {
+    if(m_args["range_overlap"]) {
         m_sel.SetOverlapTotalRange();
     } else {
         m_sel.SetOverlapIntervals();
@@ -1471,12 +1525,12 @@ int CXcompareAnnotsApplication::Run(void)
     
     m_scope_id->AddDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
     bool use_scopeless_mapper = false;
-    if(args["q"]) {
-        TLoadScopeMethod res = LoadScope(args["q"].AsString(), *m_scope_q, StringToSerialFormat(args["q_serial"].AsString()));
+    if(m_args["q"]) {
+        TLoadScopeMethod res = LoadScope(m_args["q"].AsString(), *m_scope_q, StringToSerialFormat(m_args["q_serial"].AsString()));
         if(res == eLoadScope_Failed) {
             ERR_POST(Fatal << "Can't load query scope");
         }
-        if(args["allow_ID"]) {
+        if(m_args["allow_ID"]) {
             m_scope_t->AddDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
         }
         
@@ -1488,14 +1542,14 @@ int CXcompareAnnotsApplication::Run(void)
     }
     LOG_POST(Info << "Loaded query scope on " << time.SetCurrent().AsString());
     
-    if(args["t"] && args["q"] && args["t"].AsString() == args["q"].AsString()) {
+    if(m_args["t"] && m_args["q"] && m_args["t"].AsString() == m_args["q"].AsString()) {
         m_scope_t = m_scope_q;
-    } else if(args["t"]) {
-        bool res = LoadScope(args["t"].AsString(), *m_scope_t, StringToSerialFormat(args["t_serial"].AsString()));
+    } else if(m_args["t"]) {
+        bool res = LoadScope(m_args["t"].AsString(), *m_scope_t, StringToSerialFormat(m_args["t_serial"].AsString()));
         if(res == eLoadScope_Failed) {
             ERR_POST(Fatal << "Can't load target scope");
         }
-        if(args["allow_ID"]) {
+        if(m_args["allow_ID"]) {
             m_scope_t->AddDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
         }
     } else {
@@ -1509,9 +1563,9 @@ int CXcompareAnnotsApplication::Run(void)
      * Fill seq-id synonyms, if provided
      * 
      *************************************************************************/
-    if(args["id_map"]) {
+    if(m_args["id_map"]) {
         LOG_POST("Loading id conversion map");
-        CNcbiIstream& istr=args["id_map"].AsInputFile();
+        CNcbiIstream& istr=m_args["id_map"].AsInputFile();
         string line;
         while(getline(istr, line).good()) {
             if(line.size() == 0 || line.compare(0, 1, "#") == 0) continue;
@@ -1580,10 +1634,32 @@ int CXcompareAnnotsApplication::Run(void)
              << "Tgt_LocusID\t"
              << "Qry_product\t"
              << "Tgt_product\t"
-             << "Preference\n";
+             << "Preference";
 
 
-    CNcbiIstream& istr = args["i"].AsInputFile();
+    //add qual and dbxref headers
+    if(m_args["add_qual"]) {
+        ITERATE(CArgValue::TStringArray, it, m_args["add_qual"].GetStringList()) {
+            NcbiCout << "\tq_" << *it;
+            NcbiCout << "\tt_" << *it;
+        }
+    }
+
+    if(m_args["add_dbxref"]) {
+        ITERATE(CArgValue::TStringArray, it, m_args["add_dbxref"].GetStringList()) {
+            NcbiCout << "\tq_" << *it;
+            NcbiCout << "\tt_" << *it;
+        }
+    }
+
+    NcbiCout << "\n";
+
+
+
+
+
+
+    CNcbiIstream& istr = m_args["i"].AsInputFile();
 
     string line;
     while (getline(istr, line).good()) {
@@ -1591,10 +1667,10 @@ int CXcompareAnnotsApplication::Run(void)
         vector<string> tokens;
         NStr::Tokenize(line, "\t", tokens);
         
-        if(args["i"].AsString().find(".asn") != string::npos && tokens[0].find(":=") != string::npos) 
+        if(m_args["i"].AsString().find(".asn") != string::npos && tokens[0].find(":=") != string::npos) 
         {
             try {
-                this->x_ProcessSeqAlignSetFromFile(args["i"].AsString());
+                this->x_ProcessSeqAlignSetFromFile(m_args["i"].AsString());
             }  catch (CException& e) {
                 NCBI_REPORT_EXCEPTION("Cannot process alignment file\n" + line, e);  
             }  
@@ -1625,7 +1701,7 @@ int CXcompareAnnotsApplication::Run(void)
                     t_stop = NStr::StringToUInt(tokens[5]) - 1;
                 }
                 
-                if(args["reverse"]) {
+                if(m_args["reverse"]) {
                     std::swap(t_id, q_id);
                     std::swap(q_start, t_start);
                     std::swap(q_stop, t_stop);
@@ -1676,7 +1752,7 @@ int CXcompareAnnotsApplication::Run(void)
                 CRef<ILocMapper> mapper(new CLocMapper_Default(
                         *simple_mapper
                         , *m_scope_q
-                        , args["spliced"]
+                        , m_args["spliced"]
                         , NULL
                         , false));
                 
