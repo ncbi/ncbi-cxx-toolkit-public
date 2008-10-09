@@ -1,7 +1,7 @@
 [-]
 _export = NCBI_GENOME_COLLECTION_EXPORT
 
-[Scaf-stats]
+[GC-Scaf-stats]
 length.total-length._type    = Uint8
 length.ungapped-length._type = Uint8
 composition.active-finishing-bases._type = Uint8
