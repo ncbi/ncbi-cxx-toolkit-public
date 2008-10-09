@@ -37,6 +37,7 @@
 #include <corelib/ncbicntr.hpp>
 
 #include "ns_types.hpp"
+#include "ns_util.hpp"
 
 #include <map>
 #include <list>
@@ -61,6 +62,18 @@ struct SWorkerNodeInfo
 // (host, port) key into TWorkerNodes map
 typedef pair<unsigned, unsigned short> TWorkerNodeHostPort;
 typedef list<TNSJobId> TJobList;
+
+class CRequestContext;
+struct SJobInfo {
+    SJobInfo() : exp_time(0), req_ctx(0) { }
+    SJobInfo(time_t t) : exp_time(t), req_ctx(0) { }
+    SJobInfo(time_t t, CRequestContext* ctx, CRequestContextFactory* f=0)
+        : exp_time(t), req_ctx(ctx), factory(f) { }
+
+    time_t           exp_time;
+    CRequestContext* req_ctx;
+    CRequestContextFactory* factory;
+};
 
 
 // CWorkerNode keeps information about worker node which is on the other
@@ -89,7 +102,7 @@ private:
     unsigned         m_Host;
     unsigned short   m_Port;
 
-    typedef map<TNSJobId, time_t> TWNJobInfoMap;
+    typedef map<TNSJobId, SJobInfo> TWNJobInfoMap;
     TWNJobInfoMap m_Jobs;
 
     // Copied over from old SWorkerNodeInfo
@@ -129,7 +142,10 @@ public:
     
     // Add job to worker node job list
     void AddJob(const string& node_id, TNSJobId job_id, time_t exp_time,
+                CRequestContextFactory* req_ctx_f,
                 bool log_job_state);
+    // Update job expiration time
+    void UpdateJob(const string& node_id, TNSJobId job_id, time_t exp_time);
     // Remove job from worker node job list
     void RemoveJob(const string& node_id, TNSJobId job_id,
                    ENSCompletion reason, bool log_job_state);

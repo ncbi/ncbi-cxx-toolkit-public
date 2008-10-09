@@ -39,6 +39,17 @@ BEGIN_NCBI_SCOPE
 
 string NS_EncodeBitVector(TNSBitVector& bv);
 TNSBitVector NS_DecodeBitVector(const string& s);
+void NS_FormatIPAddress(unsigned int ipaddr, string& str_addr);
+
+class CRequestContext;
+class CRequestContextFactory
+{
+public:
+    virtual ~CRequestContextFactory() {}
+    virtual CRequestContext* Get() = 0;
+    virtual void Return(CRequestContext*) = 0;
+};
+
 END_NCBI_SCOPE
 
 #endif /* NETSCHEDULE_NS_UTIL__HPP */

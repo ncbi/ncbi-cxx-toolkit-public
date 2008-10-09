@@ -32,6 +32,8 @@
 
 #include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/ncbireg.hpp>
+#include <corelib/request_ctx.hpp>
+
 #include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_socket.hpp>
 
@@ -1466,9 +1468,8 @@ static string FormatNSId(const string& val, SQueueDescription* qdesc)
 }
 
 
-static string FormatHostName(const string& val, SQueueDescription* qdesc)
+static string FormatHostName(unsigned host, SQueueDescription* qdesc)
 {
-    unsigned host = NStr::StringToInt(val);
     if (!host) return "0.0.0.0";
     string host_name;
     map<unsigned, string>::iterator it =
@@ -1480,6 +1481,12 @@ static string FormatHostName(const string& val, SQueueDescription* qdesc)
         host_name = it->second;
     }
     return host_name;
+}
+
+
+static string FormatHostName(const string& val, SQueueDescription* qdesc)
+{
+    return FormatHostName(NStr::StringToUInt(val), qdesc);
 }
 
 
@@ -1647,11 +1654,45 @@ void CQueue::PrintWNodeHosts(CNcbiOstream& out) const
 }
 
 
+static CDiagContext_Extra& s_PrintTags(CDiagContext_Extra& extra,
+                                       const TNSTagList& tags)
+{
+    ITERATE(TNSTagList, it, tags) {
+        extra.Print(string("tag_")+it->first, it->second);
+    }
+    return extra;
+}
+
+
+static void s_LogSubmit(SLockedQueue& q, 
+                        CJob& job,
+                        SQueueDescription& qdesc)
+{
+    s_PrintTags(GetDiagContext().Extra().SetType("submit")
+        .Print("queue", q.GetQueueName())
+        .Print("job_id", NStr::UIntToString(job.GetId()))
+        .Print("input", job.GetInput())
+        .Print("aff", job.GetAffinityToken())
+        .Print("mask", NStr::UIntToString(job.GetMask()))
+        .Print("progress_msg", job.GetProgressMsg())
+        .Print("subm_addr", FormatHostName(job.GetSubmAddr(), &qdesc))
+        .Print("subm_port", NStr::UIntToString(job.GetSubmPort()))
+        .Print("subm_timeout", NStr::UIntToString(job.GetSubmTimeout())),
+        job.GetTags());
+}
+
+
 unsigned CQueue::Submit(CJob& job)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
-    unsigned max_input_size = CQueueParamAccessor(*q).GetMaxInputSize();
+    unsigned max_input_size;
+    bool log_job_state;
+    {{
+        CQueueParamAccessor qp(*q);
+        log_job_state = qp.GetLogJobState();
+        max_input_size = qp.GetMaxInputSize();
+    }}
     if (job.GetInput().size() > max_input_size) 
         NCBI_THROW(CNetScheduleException, eDataTooLong,
            "Input is too long");
@@ -1692,7 +1733,19 @@ unsigned CQueue::Submit(CJob& job)
 
     trans.Commit();
     q->status_tracker.SetStatus(job_id, CNetScheduleAPI::ePending);
+    if (log_job_state) {
+        CRequestContext rq;
+        string client_ip;
+        // NS_FormatIPAddress(m_PeerAddr, client_ip);
+        // rq.SetClientIP(client_ip);
+        rq.SetRequestID(CRequestContext::GetNextRequestID());
 
+        CDiagContext::SetRequestContext(&rq);
+
+        SQueueDescription qdesc;
+        s_LogSubmit(*q, job, qdesc);
+        CDiagContext::SetRequestContext(0);
+    }
     if (was_empty) NotifyListeners(true, affinity_id);
 
     return job_id;
@@ -1941,17 +1994,18 @@ void CQueue::PutResult(SWorkerNodeInfo& node_info,
 {
     PutResultGetJob(node_info,
                     job_id, ret_code, output,
-                    0, 0);
+                    0, 0, 0);
 }
 
 
 void CQueue::GetJob(SWorkerNodeInfo&    node_info,
+                    CRequestContextFactory* rec_ctx_f,
                     const list<string>* aff_list,
                     CJob*               job)
 {
     PutResultGetJob(node_info,
                     0, 0, 0,
-                    aff_list, job);
+                    rec_ctx_f, aff_list, job);
 }
 
 
@@ -2001,6 +2055,7 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
                         const string*    output,
                         // GetJob parameters
                         // in
+                        CRequestContextFactory* rec_ctx_f,
                         const list<string>* aff_list,
                         // out
                         CJob*            new_job)
@@ -2095,7 +2150,8 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
 
             if (done_job_id) q->RemoveJobFromWorkerNode(node_info, done_job_id,
                                                         eNSCDone);
-            if (pending_job_id) q->AddJobToWorkerNode(node_info, pending_job_id,
+            if (pending_job_id) q->AddJobToWorkerNode(node_info, rec_ctx_f,
+                                                      pending_job_id,
                                                       curr + run_timeout);
             break;
         }
@@ -2268,7 +2324,7 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
     }}
 
     trans.Commit();
-    q->AddJobToWorkerNode(node_info, job_id, curr + tm);
+    q->UpdateWorkerNodeJob(node_info, job_id, curr + tm);
 
     exp_time = x_ComputeExpirationTime(time_start, run_timeout);
 

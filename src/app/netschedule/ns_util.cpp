@@ -33,6 +33,8 @@
 
 #include <util/bitset/bmalgo.h>
 
+#include <connect/ncbi_socket.hpp>
+
 #include "ns_util.hpp"
 
 
@@ -102,6 +104,19 @@ TNSBitVector NS_DecodeBitVector(const string& s)
         }
     }
     return bv;
+}
+
+
+void NS_FormatIPAddress(unsigned int ipaddr, string& str_addr)
+{
+    unsigned int hostaddr = CSocketAPI::HostToNetLong(ipaddr);
+    char buf[32];
+    sprintf(buf, "%u.%u.%u.%u",
+        (hostaddr >> 24) & 0xff,
+        (hostaddr >> 16) & 0xff,
+        (hostaddr >> 8)  & 0xff,
+        hostaddr        & 0xff);
+    str_addr = buf;
 }
 
 

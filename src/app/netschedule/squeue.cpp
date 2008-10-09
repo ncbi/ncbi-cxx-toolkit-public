@@ -1142,7 +1142,7 @@ unsigned SLockedQueue::LoadStatusMatrix()
         unsigned run_timeout = job.GetRunTimeout();
         if (run_timeout == 0) run_timeout = queue_run_timeout;
         unsigned exp_time = run->GetTimeStart() + run_timeout;
-        m_WorkerNodeList.AddJob(wni.node_id, job_id, exp_time, log_job_state);
+        m_WorkerNodeList.AddJob(wni.node_id, job_id, exp_time, 0, false);
     }
     m_LastId.Set(last_id);
     m_GroupLastId.Set(group_last_id);
@@ -2026,13 +2026,23 @@ void SLockedQueue::RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info)
 }
 
 
-void SLockedQueue::AddJobToWorkerNode(const SWorkerNodeInfo& node_info,
-                                      unsigned               job_id,
-                                      time_t                 exp_time)
+void SLockedQueue::AddJobToWorkerNode(const SWorkerNodeInfo&  node_info,
+                                      CRequestContextFactory* rec_ctx_f,
+                                      unsigned                job_id,
+                                      time_t                  exp_time)
 {
     bool log_job_state = CQueueParamAccessor(*this).GetLogJobState();
-    m_WorkerNodeList.AddJob(node_info.node_id, job_id, exp_time, log_job_state);
+    m_WorkerNodeList.AddJob(node_info.node_id, job_id, exp_time,
+                            rec_ctx_f, log_job_state);
     CountEvent(eStatGetEvent);
+}
+
+
+void SLockedQueue::UpdateWorkerNodeJob(const SWorkerNodeInfo& node_info,
+                                       unsigned               job_id,
+                                       time_t                 exp_time)
+{
+    m_WorkerNodeList.UpdateJob(node_info.node_id, job_id, exp_time);
 }
 
 

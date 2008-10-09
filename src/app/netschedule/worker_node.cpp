@@ -85,8 +85,8 @@ time_t CWorkerNode::ValidityTime() const
 void CWorkerNode::UpdateValidityTime()
 {
     time_t node_run_timeout = 0;
-    ITERATE(CWorkerNode::TWNJobInfoMap, jobinfo_it, m_Jobs) {
-        node_run_timeout = std::max(node_run_timeout, jobinfo_it->second);
+    ITERATE(CWorkerNode::TWNJobInfoMap, it, m_Jobs) {
+        node_run_timeout = std::max(node_run_timeout, it->second.exp_time);
     }
     m_JobValidityTime = node_run_timeout;
 }
@@ -166,6 +166,7 @@ void CQueueWorkerNodeList::ClearNode(const string& node_id, TJobList& jobs)
 void CQueueWorkerNodeList::AddJob(const string& node_id,
                                   TNSJobId job_id,
                                   time_t exp_time,
+                                  CRequestContextFactory* req_ctx_f,
                                   bool log_job_state)
 {
     time_t curr = time(0);
@@ -173,12 +174,34 @@ void CQueueWorkerNodeList::AddJob(const string& node_id,
     TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_id);
     if (it == m_WorkerNodeById.end()) return;
     CWorkerNode* node = it->second;
-    node->m_Jobs[job_id] = exp_time;
+    CRequestContext* req_ctx = 0;
+    if (log_job_state && req_ctx_f)
+        req_ctx = req_ctx_f->Get();
+    node->m_Jobs[job_id] = SJobInfo(exp_time, req_ctx, req_ctx_f);
     node->UpdateValidityTime();
     node->SetNotificationTimeout(curr, 0);
-    if (log_job_state)
+    if (log_job_state) {
+        CDiagContext::SetRequestContext(req_ctx);
         GetDiagContext().PrintRequestStart(string("Node ") +
             node_id + " job " + NStr::IntToString(job_id));
+    }
+}
+
+
+void CQueueWorkerNodeList::UpdateJob(const string& node_id,
+                                     TNSJobId job_id,
+                                     time_t exp_time)
+{
+    time_t curr = time(0);
+    CWriteLockGuard guard(m_Lock);
+    TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_id);
+    if (it == m_WorkerNodeById.end()) return;
+    CWorkerNode* node = it->second;
+    CWorkerNode::TWNJobInfoMap::iterator it1 = node->m_Jobs.find(job_id);
+    if (it1 == node->m_Jobs.end()) return;
+    node->m_Jobs[job_id].exp_time = exp_time;
+    node->UpdateValidityTime();
+    node->SetNotificationTimeout(curr, 0);
 }
 
 
@@ -192,14 +215,24 @@ void CQueueWorkerNodeList::RemoveJob(const string& node_id,
     TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_id);
     if (it == m_WorkerNodeById.end()) return;
     CWorkerNode* node = it->second;
-    node->m_Jobs.erase(job_id);
+    CWorkerNode::TWNJobInfoMap::iterator it1 = node->m_Jobs.find(job_id);
+    if (it1 == node->m_Jobs.end()) return;
+    //
+    SJobInfo& ji = it1->second;
+    CRequestContext* req_ctx = ji.req_ctx;
     node->UpdateValidityTime();
     if (reason != eNSCTimeout)
         node->SetNotificationTimeout(curr, 0);
-    if (log_job_state) {
+    if (log_job_state && req_ctx) {
+        CDiagContext::SetRequestContext(req_ctx);
         CDiagContext::GetRequestContext().SetRequestStatus(int(reason));
         GetDiagContext().PrintRequestStop();
     }
+    if (req_ctx) {
+        if (ji.factory) ji.factory->Return(req_ctx);
+        // else DISASTER
+    }
+    node->m_Jobs.erase(it1);
 }
 
 

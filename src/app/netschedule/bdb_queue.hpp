@@ -45,6 +45,7 @@
 #include <corelib/ncbicntr.hpp>
 
 #include <connect/services/netschedule_api.hpp>
+#include "ns_util.hpp"
 #include "job_status.hpp"
 #include "queue_clean_thread.hpp"
 #include "notif_thread.hpp"
@@ -131,6 +132,7 @@ public:
                    const string*    output);
 
     void GetJob(SWorkerNodeInfo&    node_info,
+                CRequestContextFactory* rec_ctx_f,
                 const list<string>* aff_list,
                 CJob*               new_job);
 
@@ -140,6 +142,7 @@ public:
                          int              ret_code,
                          const string*    output,
                          // GetJob parameters
+                         CRequestContextFactory* rec_ctx_f,
                          const list<string>* aff_list,
                          CJob*            new_job);
 

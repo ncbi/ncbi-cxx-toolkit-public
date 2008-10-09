@@ -41,7 +41,7 @@
 #include <corelib/ncbimtx.hpp>
 
 #include <corelib/ncbidiag.hpp>
-#include <corelib/request_ctx.hpp>
+#include <corelib/request_ctx.hpp> // FIXME: remove
 
 #include <util/bitset/ncbi_bitset.hpp>
 
@@ -226,12 +226,29 @@ struct SJS_Request
 };
 
 
+class CNetScheduleServer;
+
+//////////////////////////////////////////////////////////////////////////
+// CNSRequestContextFactory
+class CNSRequestContextFactory : public CRequestContextFactory
+{
+public:
+    CNSRequestContextFactory(CNetScheduleServer* server);
+    void SetClientIP(const string& client_ip);
+    virtual CRequestContext* Get();
+    virtual void Return(CRequestContext*);
+private:
+    CNetScheduleServer* m_Server;
+    string              m_ClientIP;
+};
+
+
+//
 const unsigned kMaxMessageSize = kNetScheduleMaxDBErrSize * 4;
 
 //////////////////////////////////////////////////////////////////////////
 /// ConnectionHandler for NetScheduler
 
-class CNetScheduleServer;
 class CNetScheduleHandler : public IServer_LineMessageHandler
 {
 public:
@@ -467,7 +484,7 @@ private:
     // multiple threads, but goes on in a single handler,
     // we use manual request context switching, thus replacing
     // default per-thread mechanism.
-    CRequestContext             m_RequestContext;
+    CNSRequestContextFactory    m_RequestContextFactory;
 
 }; // CNetScheduleHandler
 
@@ -659,6 +676,10 @@ public:
         m_LogFlag.Set(flag);
     }
     unsigned GetCommandNumber() { return m_AtomicCommandNumber.Add(1); }
+    CRequestContext* GetRequestContextFromPool()
+        { return m_RequestContextPool.Get(); }
+    void ReturnRequestContextToPool(CRequestContext* req_ctx)
+        { m_RequestContextPool.Return(req_ctx); }
     
     // Queue handling
     unsigned Configure(const IRegistry& reg) {
@@ -716,6 +737,8 @@ private:
     CAtomicCounter          m_LogFlag;
     /// Quick local timer
     CFastLocalTime          m_LocalTimer;
+    /// Pool of RequestContext
+    CResourcePool<CRequestContext, CFastMutex> m_RequestContextPool;
 
     /// List of admin stations
     CNetSchedule_AccessList m_AdminHosts;
@@ -737,6 +760,34 @@ static void s_ReadBufToString(BUF buf, string& str)
     str.reserve(size);
     BUF_PeekAtCB(buf, 0, s_BufReadHelper, &str, size);
     BUF_Read(buf, NULL, size);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// CNSRequestContextFactory implementation
+CNSRequestContextFactory::CNSRequestContextFactory(CNetScheduleServer* server)
+: m_Server(server)
+{
+}
+
+
+void CNSRequestContextFactory::SetClientIP(const string& client_ip)
+{
+    m_ClientIP = client_ip;
+}
+
+
+CRequestContext* CNSRequestContextFactory::Get()
+{
+    CRequestContext* req_ctx = m_Server->GetRequestContextFromPool();
+    req_ctx->SetClientIP(m_ClientIP);
+    req_ctx->SetRequestID(CRequestContext::GetNextRequestID());
+    return req_ctx;
+}
+
+
+void CNSRequestContextFactory::Return(CRequestContext* req_ctx)
+{
+    m_Server->ReturnRequestContextToPool(req_ctx);
 }
 
 
@@ -761,7 +812,8 @@ bool CNetScheduleBackgroundHost::ShouldRun()
 
 CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
     : m_PeerAddr(0), m_Server(server),
-      m_Incaps(~0L), m_Unreported(~0L), m_VersionControl(false)
+      m_Incaps(~0L), m_Unreported(~0L), m_VersionControl(false),
+      m_RequestContextFactory(server)
 {
 }
 
@@ -770,19 +822,6 @@ EIO_Event CNetScheduleHandler::GetEventsToPollFor(const CTime** /*alarm_time*/) 
 {
     if (m_DelayedOutput) return eIO_Write;
     return eIO_Read;
-}
-
-
-static void FormatIPAddress(unsigned int ipaddr, string& str_addr)
-{
-    unsigned int hostaddr = CSocketAPI::HostToNetLong(ipaddr);
-    char buf[32];
-    sprintf(buf, "%u.%u.%u.%u",
-        (hostaddr >> 24) & 0xff,
-        (hostaddr >> 16) & 0xff,
-        (hostaddr >> 8)  & 0xff,
-        hostaddr        & 0xff);
-    str_addr = buf;
 }
 
 
@@ -801,8 +840,8 @@ void CNetScheduleHandler::OnOpen(void)
     }
     m_WorkerNodeInfo.host = m_PeerAddr;
     string client_ip;
-    FormatIPAddress(m_PeerAddr, client_ip);
-    m_RequestContext.SetClientIP(client_ip);
+    NS_FormatIPAddress(m_PeerAddr, client_ip);
+    m_RequestContextFactory.SetClientIP(client_ip);
 
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgAuth;
     m_DelayedOutput = NULL;
@@ -836,7 +875,6 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
     }
 
     try {
-        CDiagContext::SetRequestContext(&m_RequestContext);
         (this->*m_ProcessMessage)(buffer);
     }
     catch (CNetScheduleException &ex)
@@ -1594,7 +1632,8 @@ void CNetScheduleHandler::ProcessGetJob()
     NStr::Split(m_JobReq.affinity_token, "\t,",
                 aff_list, NStr::eNoMergeDelims);
     CJob job;
-    m_Queue->GetJob(m_WorkerNodeInfo, &aff_list, &job);
+    m_Queue->GetJob(m_WorkerNodeInfo,
+        &m_RequestContextFactory, &aff_list, &job);
 
     unsigned job_id = job.GetId();
     if (job_id) {
@@ -1652,6 +1691,7 @@ CNetScheduleHandler::ProcessJobExchange()
                              m_JobReq.job_return_code,
                              &m_JobReq.output,
                              // GetJob params
+                             &m_RequestContextFactory,
                              &aff_list,
                              &job);
 
@@ -1692,6 +1732,7 @@ void CNetScheduleHandler::ProcessWaitGet()
 
     CJob job;
     m_Queue->GetJob(m_WorkerNodeInfo,
+                    &m_RequestContextFactory,
                     &aff_list,
                     &job);
 
@@ -2883,7 +2924,7 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters& params)
     if (params.use_hostname) {
         m_Host = CSocketAPI::gethostname();
     } else {
-        FormatIPAddress(m_HostNetAddr, m_Host);
+        NS_FormatIPAddress(m_HostNetAddr, m_Host);
     }
 
     m_InactivityTimeout = params.network_timeout;
