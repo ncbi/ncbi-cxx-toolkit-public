@@ -22,7 +22,16 @@ function execute(oShell, command)
     var oExec = oShell.Exec("cmd /c \"" + command + " 2>&1 \"");
     while( oExec.Status == 0 ) {
         while( !oExec.StdOut.AtEndOfStream ) {
-            VerboseEcho(oExec.StdOut.ReadLine());
+            var line = oExec.StdOut.ReadLine();
+            if (line.indexOf("Kerberos") >= 0 && line.indexOf("Authentication") >= 0) {
+                WScript.Echo("========================= Authentication failed");
+                WScript.Echo(line)
+                WScript.Echo("Please, terminate the script and execute the following command:")
+                WScript.Echo("svn list " + GetRepositoryRoot());
+//                oExec.Terminate();
+//                WScript.Quit(1);    
+            }
+            VerboseEcho(line);
         }
         WScript.Sleep(100);
     }
@@ -728,7 +737,7 @@ function GetSubtreeFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
     // Get it from SVN (CVS not implemented!)
     RemoveFolder(oShell, oFso, "temp");
     var cvs_path = GetRepository(oShell, cvs_rel_path);
-    execute(oShell, "svn checkout " + cvs_path + " temp");
+    execute(oShell, "svn xxx checkout " + cvs_path + " temp");
 	execute(oShell, "xcopy temp \"" + target_abs_dir + "\" /S /E /Y /C");
     RemoveFolder(oShell, oFso, "temp");
 }
