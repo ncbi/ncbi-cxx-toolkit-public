@@ -516,24 +516,19 @@ EOF_launch
                         }' \$x_log >> \$x_test_out
 
                         # Get application execution time
-                        exec_time=\`\$build_dir/sysdep.sh tl 10 \$x_log | tr '\n\r' '%%'\`
-                        echo \$exec_time | grep 'time: command terminated abnormally' > /dev/null 2>&1 
+                        exec_time=\`\$build_dir/sysdep.sh tl 7 \$x_log | tr '\n\r' '%%'\`
+                        echo \$exec_time | egrep 'real [0-9]|Maximum execution .* is exceeded' > /dev/null 2>&1 
                         if test \$? -eq 0;  then
-                            exec_time='Maximum execution time is exceeded'
+                            exec_time=\`echo \$exec_time |   \\
+                                        sed -e 's/%%/%/g'    \\
+                                            -e 's/%$//'      \\
+                                            -e 's/%/, /g'    \\
+                                            -e 's/[ ] */ /g' \\
+                                            -e 's/.*\(Maximum execution .* is exceeded\).*$/\1/' \\
+                                            -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
+                                            -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]*\).*/\1/'\`
                         else
-                            echo \$exec_time | egrep 'real [0-9]|Maximum execution .* is exceeded' > /dev/null 2>&1 
-                            if test \$? -eq 0;  then
-                                exec_time=\`echo \$exec_time |   \\
-                                            sed -e 's/%%/%/g'    \\
-                                                -e 's/%$//'      \\
-                                                -e 's/%/, /g'    \\
-                                                -e 's/[ ] */ /g' \\
-                                                -e 's/.*\(Maximum execution .* is exceeded\).*$/\1/' \\
-                                                -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
-                                                -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]*\).*/\1/'\`
-                            else
-                                exec_time='unparsable timing stats'
-                            fi
+                            exec_time='unparsable timing stats'
                         fi
                
                         rm -f \$x_log
