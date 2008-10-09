@@ -40,7 +40,7 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistr.hpp>
-#include <util/regexp.hpp>
+#include <util/xregexp/regexp.hpp>
 #include <objects/omssa/MSSpectrum.hpp>
 
 
