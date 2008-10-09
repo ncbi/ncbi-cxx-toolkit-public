@@ -312,7 +312,7 @@ Gene-nomenclature ::= SEQUENCE {
     } ,
     symbol VisibleString OPTIONAL ,
     name VisibleString OPTIONAL ,
-    source VisibleString OPTIONAL
+    source Dbtag OPTIONAL
 }
 
 END
