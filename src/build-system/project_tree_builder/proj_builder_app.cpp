@@ -823,7 +823,9 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             ofs << " \\" <<endl << "    " << CreateProjectName(p->first);
         }
         ofs << endl << endl;
-        ofs << "ptb_all :" << " $(all_projects)";
+        ofs << "ptb_all :" << endl << "\t$(MAKE) $(MFLAGS) -f Makefile.flat ptb_all_real" ;
+        ofs << endl << endl;
+        ofs << "ptb_all_real :" << " $(all_projects)";
         ofs << endl << endl;
 
 // all libs
