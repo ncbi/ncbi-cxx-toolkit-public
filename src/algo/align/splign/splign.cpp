@@ -2225,7 +2225,7 @@ void CSplign::SAlignedCompartment::FromBuffer(const TNetCacheBuffer& source)
 
 bool IsConsDonor(const objects::CSpliced_exon& exon) {
     USING_SCOPE(objects);
-    const CSpliced_exon::TSplice_5_prime & splice (exon.GetSplice_5_prime());
+    const CSpliced_exon::TDonor_after_exon & splice (exon.GetDonor_after_exon());
     const string bases (splice.GetBases());
     return (bases.size() >= 2 && bases[0] == 'G' && bases[1] == 'T');
 }
@@ -2233,7 +2233,7 @@ bool IsConsDonor(const objects::CSpliced_exon& exon) {
 
 bool IsConsAcceptor(const objects::CSpliced_exon& exon) {
     USING_SCOPE(objects);
-    const CSpliced_exon::TSplice_3_prime & splice (exon.GetSplice_3_prime());
+    const CSpliced_exon::TAcceptor_before_exon & splice (exon.GetAcceptor_before_exon());
     const string bases (splice.GetBases());
     const size_t dim (bases.size());
     return (dim >= 2 && bases[dim - 2] == 'A' && bases[dim - 1] == 'G');

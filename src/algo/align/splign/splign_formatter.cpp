@@ -728,7 +728,7 @@ const
                         string acc;
                         acc.push_back(seg.m_annot[0]);
                         acc.push_back(seg.m_annot[1]);
-                        exon->SetSplice_3_prime().SetBases(acc);
+                        exon->SetAcceptor_before_exon().SetBases(acc);
                     }
 
                     // add donor residues if available
@@ -736,7 +736,7 @@ const
                         string dnr;
                         dnr.push_back(seg.m_annot[adim - 2]);
                         dnr.push_back(seg.m_annot[adim - 1]);
-                        exon->SetSplice_5_prime().SetBases(dnr);
+                        exon->SetDonor_after_exon().SetBases(dnr);
                     }
 
                     if(flag == eAF_SplicedSegWithParts) {

@@ -491,8 +491,12 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
     sprot->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     sprot->SetSeq().SetInst().SetMol(CSeq_inst::eMol_aa);
     sprot->SetSeq().SetInst().SetLength(strprot.size());
-    CRef<CSeq_data> dprot(new CSeq_data(strprot, CSeq_data::e_Ncbieaa));
-    sprot->SetSeq().SetInst().SetSeq_data(*dprot);
+    if (model.Continuous()) {
+        CRef<CSeq_data> dprot(new CSeq_data(strprot, CSeq_data::e_Ncbieaa));
+        sprot->SetSeq().SetInst().SetSeq_data(*dprot);
+    } else {
+        
+    }
     return sprot;
 }
 
@@ -653,19 +657,19 @@ CRef<CSpliced_exon> CAnnotationASN1::CImplementationData::spliced_exon (const CM
     if (e.m_fsplice) {
         string bases((char*)&contig_seq[e.GetFrom()-2], 2);
         if (strand==ePlus) {
-            se->SetSplice_5_prime().SetBases(bases);
+            se->SetAcceptor_before_exon().SetBases(bases);
         } else {
             ReverseComplement(bases.begin(),bases.end());
-            se->SetSplice_3_prime().SetBases(bases);
+            se->SetDonor_after_exon().SetBases(bases);
         }
     }
     if (e.m_ssplice) {
         string bases((char*)&contig_seq[e.GetTo()+1], 2);
         if (strand==ePlus) {
-            se->SetSplice_3_prime().SetBases(bases);
+            se->SetDonor_after_exon().SetBases(bases);
         } else {
             ReverseComplement(bases.begin(),bases.end());
-            se->SetSplice_5_prime().SetBases(bases);
+            se->SetAcceptor_before_exon().SetBases(bases);
         }
     }
     return se;
@@ -743,7 +747,7 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
         se.SetProduct_start().SetNucpos(accumulated_product_len);
         accumulated_product_len += md.mrna_map.FShiftedLen(se.GetGenomic_start(),se.GetGenomic_end());
         se.SetProduct_end().SetNucpos(accumulated_product_len-1);
-		if (!se.CanGetSplice_3_prime() || !se.GetSplice_3_prime().IsSetBases())
+		if (!se.CanGetDonor_after_exon() || !se.GetDonor_after_exon().IsSetBases())
 			accumulated_product_len += HOLE_SIZE;
     }
 

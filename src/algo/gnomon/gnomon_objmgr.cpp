@@ -126,10 +126,10 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         int nuc_cur_start = exon.GetGenomic_start();
         int nuc_cur_end = exon.GetGenomic_end();
 
-        bool cur_5_prime_splice = exon.CanGetSplice_5_prime() && exon.GetSplice_5_prime().CanGetBases() && exon.GetSplice_5_prime().GetBases().size()==2;
+        bool cur_5_prime_splice = exon.CanGetAcceptor_before_exon() && exon.GetAcceptor_before_exon().CanGetBases() && exon.GetAcceptor_before_exon().GetBases().size()==2;
         if (prod_prev+1 != prod_cur_start || !prev_3_prime_splice || !cur_5_prime_splice)
             AddHole();
-        prev_3_prime_splice = exon.CanGetSplice_3_prime() && exon.GetSplice_3_prime().CanGetBases() && exon.GetSplice_3_prime().GetBases().size()==2;
+        prev_3_prime_splice = exon.CanGetDonor_after_exon() && exon.GetDonor_after_exon().CanGetBases() && exon.GetDonor_after_exon().GetBases().size()==2;
 
         AddExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end));
         transcript_exons.push_back(TSignedSeqRange(GetProdPosInBases(exon.GetProduct_start()),GetProdPosInBases(exon.GetProduct_end())));

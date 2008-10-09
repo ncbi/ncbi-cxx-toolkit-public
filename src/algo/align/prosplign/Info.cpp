@@ -768,7 +768,7 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
             nuc_cur_start = nuc_to - nuc_cur_start;
             nuc_cur_end = nuc_to - nuc_cur_end;
         }
-        bool cur_5_prime_splice = exon.CanGetSplice_5_prime() && exon.GetSplice_5_prime().CanGetBases() && exon.GetSplice_5_prime().GetBases().size()==2;
+        bool cur_5_prime_splice = exon.CanGetAcceptor_before_exon() && exon.GetAcceptor_before_exon().CanGetBases() && exon.GetAcceptor_before_exon().GetBases().size()==2;
         bool hole_before =
             prot_prev+1 != prot_cur_start || !( prev_3_prime_splice && cur_5_prime_splice || prot_cur_start==0 && nuc_cur_start==0);
 
@@ -790,7 +790,7 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
         _ASSERT( m_match.size() == m_protein.size() );
         _ASSERT( m_dna.size() == m_protein.size() );
         
-        prev_3_prime_splice = exon.CanGetSplice_3_prime() && exon.GetSplice_3_prime().CanGetBases() && exon.GetSplice_3_prime().GetBases().size()==2;
+        prev_3_prime_splice = exon.CanGetDonor_after_exon() && exon.GetDonor_after_exon().CanGetBases() && exon.GetDonor_after_exon().GetBases().size()==2;
 
         ITERATE(CSpliced_exon::TParts, p_it, exon.GetParts()) {
             const CSpliced_exon_chunk& chunk = **p_it;
@@ -1265,8 +1265,8 @@ void DropExonHead(TAliChunkIterator chunk_iter, bool genomic_plus)
     }
     cur_exon->SetProduct_start(*NultriposToProduct_pos(chunk_iter->m_prot_pos));
     cur_exon->SetPartial(true);
-    if (cur_exon->IsSetSplice_5_prime())
-        cur_exon->ResetSplice_5_prime();
+    if (cur_exon->IsSetAcceptor_before_exon())
+        cur_exon->ResetAcceptor_before_exon();
 
     _ASSERT( 0 < cur_exon->GetParts().size() );
     _ASSERT( cur_exon->GetParts().size() <  chunks_count );
@@ -1302,8 +1302,8 @@ void SplitExon(CSpliced_seg::TExons& exons, TAliChunkIterator chunk_iter, bool g
     }
     new_exon->SetProduct_end(*NultriposToProduct_pos(chunk_iter->m_prot_pos-1));
     new_exon->SetPartial(true);
-    if (new_exon->IsSetSplice_3_prime())
-        new_exon->ResetSplice_3_prime();
+    if (new_exon->IsSetDonor_after_exon())
+        new_exon->ResetDonor_after_exon();
 
     _ASSERT( new_exon->GetGenomic_start() <= new_exon->GetGenomic_end() );
     _ASSERT( GetProdPosInBases(new_exon->GetProduct_start()) <= GetProdPosInBases(new_exon->GetProduct_end()) );
@@ -1368,8 +1368,8 @@ void prosplign::RefineAlignment(CScope& scope, CSeq_align& seq_align, const list
         if (chunk_iter == chunks.end())
             break;
         if (prev_exon_iter != chunk_iter->m_exon_iter) {
-            if ((*chunk_iter->m_exon_iter)->IsSetSplice_5_prime())
-                (*chunk_iter->m_exon_iter)->ResetSplice_5_prime();
+            if ((*chunk_iter->m_exon_iter)->IsSetAcceptor_before_exon())
+                (*chunk_iter->m_exon_iter)->ResetAcceptor_before_exon();
         } else {
             SplitExon(sps.SetExons(),chunk_iter, genomic_plus);
         }

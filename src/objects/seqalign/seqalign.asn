@@ -170,8 +170,8 @@ Spliced-exon ::= SEQUENCE {
     scores Score-set OPTIONAL ,
 
     -- splice sites
-    splice-5-prime Splice-site OPTIONAL,
-    splice-3-prime Splice-site OPTIONAL,
+    acceptor-before-exon Splice-site OPTIONAL,
+    donor-after-exon Splice-site OPTIONAL,
     
     -- flag: is this exon complete or partial?
     partial BOOLEAN OPTIONAL,

@@ -182,7 +182,7 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(const CPSeq& cpseq, const CNSeq&
                 SetExonBioEnd(exon, nulpos-1, nultripos-1);
                 s[0] = cnseq.Upper(nulpos);
                 s[1] = cnseq.Upper(nulpos+1);
-                exon->SetSplice_3_prime().SetBases(s);
+                exon->SetDonor_after_exon().SetBases(s);
                 sps.SetExons().push_back(exon);
 
                 exon = new CSpliced_exon;
@@ -190,7 +190,7 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(const CPSeq& cpseq, const CNSeq&
                 SetExonBioStart(exon, nulpos, nultripos);
                 s[0] = cnseq.Upper(nulpos-2);
                 s[1] = cnseq.Upper(nulpos-1);
-                exon->SetSplice_5_prime().SetBases(s);
+                exon->SetAcceptor_before_exon().SetBases(s);
 
             } else {
                 if (exon.NotNull()) {
