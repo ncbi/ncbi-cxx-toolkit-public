@@ -100,6 +100,7 @@ public:
     void SetKeep3UTRs(bool keep);
     void SetKeep5UTRs(bool keep);
 	void SetUseNcRNAComment (bool use_comment);
+    void SetUseFakePromoters (bool use_fake);
     
     void SuppressFeature(objects::CFeatListItem feat);
     
@@ -137,6 +138,7 @@ private:
     bool         m_Keep3UTRs;
     bool         m_Keep5UTRs;
 	bool         m_UseNcRNAComment;
+    bool         m_UseFakePromoters;
     bool         m_Cancelled;
     
     void x_SortModifierListByRank
@@ -295,6 +297,14 @@ inline
 void CAutoDef::SetUseNcRNAComment(bool use_comment)
 {
     m_UseNcRNAComment = use_comment;
+}
+
+
+inline
+void CAutoDef::SetUseFakePromoters(bool use_fake)
+{
+    m_UseFakePromoters = use_fake;
+    m_KeepPromoters = true;
 }
 
 

@@ -68,6 +68,7 @@ CAutoDef::CAutoDef()
       m_Keep3UTRs(false),
       m_Keep5UTRs(false),
 	  m_UseNcRNAComment(false),
+      m_UseFakePromoters(false),
       m_Cancelled(false)
 {
     m_SuppressedFeatures.clear();
@@ -389,7 +390,7 @@ vector<CAutoDefFeatureClause *> CAutoDef::x_GetIntergenicSpacerClauseList (strin
 
     CAutoDefParsedtRNAClause *gene = NULL;
 
-    for (int j = 0; j < parts.size() && alternating && names_correct && !bad_phrase; j++) {
+    for (size_t j = 0; j < parts.size() && alternating && names_correct && !bad_phrase; j++) {
         NStr::TruncateSpacesInPlace(parts[j]);
         if (NStr::StartsWith (parts[j], "and ")) {
             parts[j] = parts[j].substr(4);
@@ -438,7 +439,7 @@ vector<CAutoDefFeatureClause *> CAutoDef::x_GetIntergenicSpacerClauseList (strin
     }
 
     if (bad_phrase || !alternating || !names_correct) {
-        for (int i = 0; i < clause_list.size(); i++) {
+        for (size_t i = 0; i < clause_list.size(); i++) {
             delete clause_list[i];
         }
         clause_list.clear();
@@ -485,11 +486,11 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
     if (clause_list.size() > 0) {
         if (is_region) {
             main_clause.AddSubclause (new CAutoDefParsedRegionClause (bh, cf, mapped_loc, comment));
-            for (int i = 0; i < clause_list.size(); i++) {
+            for (size_t i = 0; i < clause_list.size(); i++) {
                 delete (clause_list[i]);
             }
         } else {
-            for (int i = 0; i < clause_list.size(); i++) {
+            for (size_t i = 0; i < clause_list.size(); i++) {
                 main_clause.AddSubclause (clause_list[i]);
             }
         }
@@ -547,7 +548,7 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
     }
 
     vector<CAutoDefFeatureClause *> clause_list;
-    int j;
+    size_t j;
     bool bad_phrase = false;
     bool is_region = false;
 
@@ -788,6 +789,30 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     
     GetMasterLocation(master_bh, range);
 
+    // if no promoter, and fake promoters are requested, create one
+    if (m_UseFakePromoters) {
+        SAnnotSelector sel(CSeqFeatData::eSubtype_promoter);
+        CFeat_CI promoter_ci (bh, sel);
+
+        if (!promoter_ci) {
+            CRef<CSeq_feat> fake_promoter(new CSeq_feat());
+            CRef<CSeq_loc> fake_promoter_loc(new CSeq_loc());
+            const CSeq_id* id = FindBestChoice(bh.GetBioseqCore()->GetId(), CSeq_id::BestRank);
+            CRef <CSeq_id> new_id(new CSeq_id);
+            new_id->Assign(*id);
+            fake_promoter_loc->SetInt().SetId(*new_id);
+            fake_promoter_loc->SetInt().SetFrom(0);
+            fake_promoter_loc->SetInt().SetTo(bh.GetInst_Length() - 1);
+
+            fake_promoter->SetLocation(*fake_promoter_loc);
+
+            main_clause.AddSubclause (new CAutoDefFakePromoterClause (master_bh, 
+                                                                      *fake_promoter,
+                                                                      *fake_promoter_loc));
+        }
+    }
+
+    // now create clauses for real features
     CFeat_CI feat_ci(master_bh);
     while (feat_ci)
     { 

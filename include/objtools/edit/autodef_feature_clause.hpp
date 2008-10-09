@@ -229,6 +229,32 @@ public:
 };
 
 
+class NCBI_XOBJEDIT_EXPORT CAutoDefFakePromoterClause : public CAutoDefFeatureClause
+{
+public:
+    CAutoDefFakePromoterClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
+    ~CAutoDefFakePromoterClause();
+
+    virtual void Label();
+    virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() { return CSeqFeatData::eSubtype_promoter; };
+    
+    virtual bool IsRecognizedFeature() { return false; };
+    
+    virtual bool IsTransposon() { return false; };
+    virtual bool IsInsertionSequence() { return false; };
+    virtual bool IsControlRegion() { return false; };
+    virtual bool IsEndogenousVirusSourceFeature() { return false; };
+    virtual bool IsGeneCluster() { return false; };
+    virtual bool IsNoncodingProductFeat() { return false; };
+    virtual bool IsIntergenicSpacer() { return false; };
+    virtual bool IsSatelliteClause() { return false; };
+
+    virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand);
+    virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause);
+
+};
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

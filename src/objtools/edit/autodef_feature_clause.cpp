@@ -405,7 +405,7 @@ bool CAutoDefFeatureClause::x_FindNoncodingFeatureKeywordProduct (string comment
 
 bool CAutoDefFeatureClause::x_GetNoncodingProductFeatProduct (string &product_name)
 {
-    if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_misc_feature
+    if (GetMainFeatureSubtype() != CSeqFeatData::eSubtype_misc_feature
         || !m_MainFeat.CanGetComment()) {
         return false;
     }
@@ -983,7 +983,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause)
         return false;
     }
     
-    CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
+    CSeqFeatData::ESubtype subtype = GetMainFeatureSubtype ();
     
     sequence::ECompare loc_compare = gene_clause->CompareLocation(*m_ClauseLocation);
     
@@ -1658,6 +1658,71 @@ CAutoDefParsedRegionClause::~CAutoDefParsedRegionClause()
 void CAutoDefParsedRegionClause::Label()
 {
 }
+
+CAutoDefFakePromoterClause::CAutoDefFakePromoterClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc)
+                   : CAutoDefFeatureClause (bh, main_feat, mapped_loc)
+{
+    m_Description = "";
+    m_DescriptionChosen = true;
+    m_Typeword = "promoter region";
+    m_TypewordChosen = true;
+    m_ShowTypewordFirst = false;
+    m_Interval = "";
+        
+    
+    m_ClauseLocation = new CSeq_loc();
+    const CSeq_id* id = FindBestChoice(bh.GetBioseqCore()->GetId(), CSeq_id::BestRank);
+    CRef <CSeq_id> new_id(new CSeq_id);
+    new_id->Assign(*id);
+    m_ClauseLocation->SetInt().SetId(*new_id);
+    m_ClauseLocation->SetInt().SetFrom(0);
+    m_ClauseLocation->SetInt().SetTo(bh.GetInst_Length() - 1);
+
+}
+
+
+CAutoDefFakePromoterClause::~CAutoDefFakePromoterClause()
+{
+}
+
+
+void CAutoDefFakePromoterClause::Label()
+{
+}
+
+
+bool CAutoDefFakePromoterClause::OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand)
+{
+    if (parent_clause == NULL) {
+        return false;
+    } else {
+        return true;
+    } 
+}
+
+
+bool CAutoDefFakePromoterClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause)
+{
+    bool ok_to_group = false;
+    
+    if (parent_clause == NULL) {
+        return false;
+    }
+    CSeqFeatData::ESubtype parent_subtype = parent_clause->GetMainFeatureSubtype();
+
+    if (parent_subtype == CSeqFeatData::eSubtype_cdregion
+        || parent_subtype == CSeqFeatData::eSubtype_mRNA
+        || parent_subtype == CSeqFeatData::eSubtype_gene
+        || parent_subtype == CSeqFeatData::eSubtype_operon
+        || parent_clause->IsEndogenousVirusSourceFeature()
+        || parent_clause->IsGeneCluster()) {
+        ok_to_group = true;
+    }
+
+    return ok_to_group;
+}
+
+
 
 
 END_SCOPE(objects)
