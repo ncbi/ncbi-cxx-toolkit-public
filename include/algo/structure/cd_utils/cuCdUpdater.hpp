@@ -191,6 +191,8 @@ private:
 	void retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< CBioseq > >& bioseqs);
 	bool findSeq(CRef<CSeq_id> seqID, vector< CRef< CBioseq > >& bioseqs, CRef<CSeq_entry>& seqEntry);
 
+    double ComputePercentIdentity(const CRef< CSeq_align >& alignment, const string& queryString, const string& subjectString);
+
 	CdUpdateParameters m_config;
 	CDUpdateStats m_stats;
 	string m_rid;

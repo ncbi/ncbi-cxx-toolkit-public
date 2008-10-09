@@ -622,11 +622,48 @@ bool CDUpdater::checkBlastAndUpdate()
 		return false;
 }
 
+double CDUpdater::ComputePercentIdentity(const CRef< CSeq_align >& alignment, const string& queryString, const string& subjectString)
+{
+    double result = 0.0;
+    unsigned int nIdent = 0;
+    unsigned int qLen = queryString.length(), sLen = subjectString.length();
+    unsigned int i, j, qStart, qStop, sStart, sStop;
+
+    if (alignment.Empty() || qLen == 0 || sLen == 0) return result;
+
+    //  Note that is is only %id in the aligned region, and doesn't factor in any non-identities
+    //  implicit in any parts of the query N- and/or C-terminal to the alignment.
+	const CSeq_align::C_Segs::TDenseg& denseg = alignment->GetSegs().GetDenseg();
+    double denom = (denseg.GetSeqStop(0) - denseg.GetSeqStart(0) + 1);
+
+    CDense_seg::TStarts starts = denseg.GetStarts();
+    CDense_seg::TLens lens = denseg.GetLens();
+
+    for (i = 0; i < lens.size(); ++i) {
+        qStart = starts[2*i];
+        sStart = starts[2*i + 1];
+        if (qStart < 0 || sStart < 0) continue;  //  gap
+
+        qStop = qStart + lens[i] - 1;
+        sStop = sStart + lens[i] - 1;
+        if (qStop >= qLen || sStop >= sLen) continue;  //  string index out of range
+
+        for (j = 0; j < lens[i]; ++j) {
+            if (queryString[qStart + j] == subjectString[sStart + j]) ++nIdent;
+        }
+    }
+    result = 100.0*nIdent/denom;
+//    LOG_POST(nIdent << " identities found (" << result << "%)\nquery:    " << queryString << "\nsubject:  " << subjectString);
+
+    return result;
+}
+
 bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 {
 	if ( !cd || (!alignments.IsSet()))
 		return false;
 	
+    double pidScore = 0.0;
 	list< CRef< CSeq_align > >& seqAligns = alignments.Set();
 	m_stats.numBlastHits = seqAligns.size();
 	vector< CRef< CBioseq > > bioseqs;
@@ -643,7 +680,12 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 		SplitBioseqByBlastDefline (bioseqs[i], bioseqVec);
 		seqTable.addSequences(bioseqVec, true); //as a group
 	}
-	//debug
+
+    // debugging *** ***
+    //string err;
+    //WriteASNToFile("alignments.txt", alignments, false, &err);
+
+	// debugging *** ***
 	//seqTable.dump("seqTable.txt");
 	//LOG_POST("Retrieved "<<bioseqs.size()<<" Bioseqs for blast hits\n"); 
 	//LOG_POST("Process BLAST Hits and add them to "<<cd->GetAccession());
@@ -651,8 +693,23 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	list< CRef< CSeq_align > >::iterator it = seqAligns.begin();
 	//CID1Client id1Client;
 	//id1Client.SetAllowDeadEntries(false);
-	CRef< CSeq_id > seqID;
+
+	CRef< CSeq_id > seqID, querySeqID;
 	CRef<CSeq_entry> seqEntry;
+    CRef< CBioseq > queryBioseq(new CBioseq);
+    string queryString, subjectString;
+
+    //  Get bioseq corresponding to the query.
+    if (it != seqAligns.end()) {
+        querySeqID = (*it)->SetSegs().SetDenseg().GetIds()[0];
+        if (!cd->CopyBioseqForSeqId(querySeqID, queryBioseq)) {
+            queryBioseq.Reset();
+            LOG_POST("No bioseq found in CD for update query.");
+        } else {
+            queryString = GetRawSequenceString(*queryBioseq);
+        }
+    }
+
 
 	//for BLAST, if the master is PDB, the master seqid (gi from BLAST) needs to be changed
     if (m_config.blastType == eBLAST && it != seqAligns.end())
@@ -668,14 +725,23 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 			m_masterPdb = pdbIds[0];
 	}
 	for(; it != seqAligns.end(); it++)
-	{
+    {
+        pidScore = 0.0;
 		CRef< CSeq_align > seqAlignRef = *it;
 		//seqAlign from BLAST is in Denseg
 		CSeq_align::C_Segs::TDenseg& denseg = seqAlignRef->SetSegs().SetDenseg();
-		if (m_config.identityThreshold > 0)
+
+        //  9/25/08:  CRemoteBlast dropped the identity count from the scores, and is a 
+        //  pending issue (JIRA ticket http://jira.be-md.ncbi.nlm.nih.gov/browse/SB-114).
+        //  Workaround is to compute the % identity directly, as done below in
+        //  the function ComputePercentIdentity.
+		if (false && m_config.identityThreshold > 0)
 		{
-			double pidScore = 0.0;
-			seqAlignRef->GetNamedScore(CSeq_align::eScore_IdentityCount, pidScore);
+
+            //  Note:  if the type isn't in the seq-align, pidScore remains 0.0 and the
+            //  scan of seqAligns will be aborted.
+            seqAlignRef->GetNamedScore(CSeq_align::eScore_IdentityCount, pidScore);
+
 			int start = denseg.GetSeqStart(0);
 			int stop = denseg.GetSeqStop(0);
 			pidScore = 100*pidScore/(stop - start + 1);
@@ -704,12 +770,23 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 				seqEntry->SetSeq(*bioseqVec[index]);
 				seqID = denseg.GetIds()[1];
 				gi  = seqID->GetGi();
+                subjectString = GetRawSequenceString(*bioseqVec[index]);
 			}
 			else
 			{
 				seqEntry = new CSeq_entry;
 				seqEntry->SetSeq(*bioseqVec[0]);
+                subjectString = GetRawSequenceString(*bioseqVec[0]);
 			}
+
+            //  when there's no identity count in the seq-align, compute it directly
+    		if (m_config.identityThreshold > 0)
+	    	{
+                pidScore = ComputePercentIdentity(seqAlignRef, queryString, subjectString);
+        		if ((int)pidScore < m_config.identityThreshold)
+		    		break; //stop
+            }
+
 			//change seqAlign from denseg to dendiag
 			//use pdb_id if available
 			if(!modifySeqAlignSeqEntry(cd, *it, seqEntry))
