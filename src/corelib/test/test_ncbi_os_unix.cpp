@@ -29,7 +29,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidiag.hpp>
-#include <corelib/ncbi_os_unix.hpp>
+#include <corelib/ncbi_process.hpp>
+#include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <common/test_assert.h>  /* This header must go last */
@@ -45,9 +46,11 @@ int main()
     SetDiagPostLevel(eDiag_Info);
 
     // Run tests
-    _ASSERT(Daemonize("/test_ncbi_os_unix.log") == false);
-    _ASSERT(Daemonize("./test_ncbi_os_unix.log",
-                      fDaemon_DontChroot | fDaemon_KeepStdout) == true);
+    _ASSERT(CProcess::Daemonize("/test_ncbi_os_unix.log") == false);
+    _ASSERT(errno == EPERM);
+    _ASSERT(CProcess::Daemonize("./test_ncbi_os_unix.log",
+                                CProcess::fDontChroot |
+                                CProcess::fKeepStdout) == true);
     _ASSERT(access("./test_ncbi_os_unix.log", F_OK) == 0);
 
     LOG_POST("TEST COMPLETED SUCCESSFULLY");
