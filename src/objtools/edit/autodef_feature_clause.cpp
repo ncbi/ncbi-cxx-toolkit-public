@@ -703,15 +703,8 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
 bool CAutoDefFeatureClause::IsSatelliteClause() 
 {
     if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_repeat_region
-        && m_MainFeat.CanGetComment()) {
-        string comment = m_MainFeat.GetComment();
-        if (NStr::StartsWith(comment, "satellite")
-            || NStr::StartsWith(comment, "microsatellite")) {
-            string qual = m_MainFeat.GetNamedQual("rpt_type");
-            if (NStr::Equal(qual, "tandem")) {
-                return true;
-            }
-        }
+		&& !NStr::IsBlank (m_MainFeat.GetNamedQual("satellite"))) {
+        return true;
     }
     return false;
 }
@@ -1353,14 +1346,32 @@ void CAutoDefTransposonClause::Label()
 }
 
 
+const char *kMinisatellite = "minisatellite";
+const char *kMicrosatellite = "microsatellite";
+const char *kSatellite = "satellite";
+
 CAutoDefSatelliteClause::CAutoDefSatelliteClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc)
                   : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
-    string comment = m_MainFeat.GetComment();
+	string comment = m_MainFeat.GetNamedQual("satellite");
     string::size_type pos = NStr::Find(comment, ";");
     if (pos != NCBI_NS_STD::string::npos) {
         comment = comment.substr(0, pos);
     }
+
+	size_t len = 0;
+	
+	if (NStr::StartsWith(comment, kMinisatellite)) {
+		len = strlen (kMinisatellite);
+	} else if (NStr::StartsWith (comment, kMicrosatellite)) {
+		len = strlen (kMicrosatellite);
+	} else if (NStr::StartsWith (comment, kSatellite)) {
+		len = strlen (kSatellite);
+	}
+	if (len > 0 && NStr::Equal(comment.substr(len, 1), ":")) {
+	    comment = comment.substr (0, len) + " " + comment.substr (len + 1);
+	}
+	
     m_Description = comment;
     m_DescriptionChosen = true;
     m_Typeword = "sequence";
