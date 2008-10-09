@@ -616,14 +616,14 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
         }
         return vector<CRef<CSeq_align> >();
     }
-    cerr << "Blast Count Total: " << alns->Get().size() << endl;
+//    cerr << "Blast Count Total: " << alns->Get().size() << endl;
     vector<CRef<CSeq_align> > good_alns;
     NON_CONST_ITERATE (CSeq_align_set::Tdata, aln, alns->Set()) {
         x_OrientAlign((*aln)->SetSegs().SetDenseg(), scope);
-double Ident = FracIdent((*aln)->GetSegs().GetDenseg(), scope);
-bool Dovetail = IsDovetail((*aln)->GetSegs().GetDenseg(), max_end_slop, scope);
-int Len = x_DensegLength((*aln)->GetSegs().GetDenseg());
-cerr << "  Ident: " << Ident << "  Dove: " << Dovetail << "  Len: " << Len << endl;
+//double Ident = FracIdent((*aln)->GetSegs().GetDenseg(), scope);
+//bool Dovetail = IsDovetail((*aln)->GetSegs().GetDenseg(), max_end_slop, scope);
+//int Len = x_DensegLength((*aln)->GetSegs().GetDenseg());
+//cerr << "  Ident: " << Ident << "  Dove: " << Dovetail << "  Len: " << Len << endl;
         if (IsDovetail((*aln)->GetSegs().GetDenseg(), max_end_slop, scope)
             && FracIdent((*aln)->GetSegs().GetDenseg(), scope) >= min_ident
             && x_IsAllowedStrands((*aln)->GetSegs().GetDenseg(), strand0, strand1)
