@@ -3,12 +3,10 @@
 # Build application "omssamerge"
 #################################
 
-# pcre moved into platform specific make 
-# LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
 
-CXXFLAGS = $(FAST_CXXFLAGS) $(CMPRS_INCLUDE)
+CXXFLAGS = $(FAST_CXXFLAGS) $(CMPRS_INCLUDE) $(STATIC_CXXFLAGS)
 
-LDFLAGS  = $(FAST_LDFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS) $(STATIC_LDFLAGS) $(RUNPATH_ORIGIN)
 
 CPPFLAGS = -I$(top_srcdir)/src/algo/ms/omssa $(ORIG_CPPFLAGS)
 

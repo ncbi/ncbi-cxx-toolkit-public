@@ -4,9 +4,9 @@
 # Build application "omssacl"
 #################################
 
-CXXFLAGS = $(FAST_CXXFLAGS) $(CMPRS_INCLUDE)
+CXXFLAGS = $(FAST_CXXFLAGS) $(CMPRS_INCLUDE) $(STATIC_CXXFLAGS)
 
-LDFLAGS  = $(FAST_LDFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS) $(STATIC_LDFLAGS) $(RUNPATH_ORIGIN)
 
 APP = omssacl
 
