@@ -47,7 +47,7 @@ int main()
 
     // Run tests
     _ASSERT(CProcess::Daemonize("/test_ncbi_os_unix.log") == false);
-    _ASSERT(errno == EPERM);
+    _ASSERT(errno == EACCES  ||  errno == EPERM);
     _ASSERT(CProcess::Daemonize("./test_ncbi_os_unix.log",
                                 CProcess::fDontChroot |
                                 CProcess::fKeepStdout) == true);
