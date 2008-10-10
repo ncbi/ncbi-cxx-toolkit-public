@@ -31,18 +31,12 @@
 
 
 #include <ncbi_pch.hpp>
-#include <objects/seq/Bioseq.hpp>
+#include <objects/seqset/seqset__.hpp>
+#include <objects/seq/seq__.hpp>
+#include <objects/seqalign/seqalign__.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqloc/seqloc__.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqalign/Std_seg.hpp>
-#include <objects/seqalign/Dense_seg.hpp>
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Seq_literal.hpp>
-#include <objects/seq/Seqdesc.hpp>
 #include <objects/biblio/Id_pat.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
@@ -63,6 +57,13 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <serial/objhook.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objectiter.hpp>
+#include <serial/objectio.hpp>
+
+#define TRY_FAST_TITLE 1
+#define CREATE_SCOPES 1
 
 #define NCBI_USE_ERRCODE_X   Objtools_LDS_Object
 
@@ -166,7 +167,8 @@ CLDS_Object::CLDS_Object(CLDS_Database& db,
   m_db(db.GetTables()),
   m_ObjTypeMap(obj_map),
   m_MaxObjRecId(0),
-  m_ControlDupIds(false)
+  m_ControlDupIds(false),
+  m_GBReleaseMode(eDefaultGBReleaseMode)
 {}
 
 
@@ -298,51 +300,368 @@ void CLDS_Object::UpdateCascadeFiles(const CLDS_Set& file_ids)
 }
 
 
+class CLDS_SkipObjectHook : public CReadObjectHook
+{
+public:
+    virtual void ReadObject(CObjectIStream& in,
+                            const CObjectInfo& obj) {
+        DefaultSkip(in, obj);
+    }
+};
+
+
+class CLDS_CollectSeq_idsReader : public CSkipObjectHook
+{
+public:
+    typedef vector<CRef<CSeq_id> > TIds;
+    CLDS_CollectSeq_idsReader(void)
+        : m_Collect(0)
+        {
+        }
+
+    virtual void SkipObject(CObjectIStream& in,
+                            const CObjectTypeInfo& type) {
+        if ( m_Collect ) {
+            CRef<CSeq_id> id(new CSeq_id);
+            in.ReadSeparateObject(ObjectInfo(*id));
+            m_Collect->push_back(id);
+        }
+        else {
+            type.GetTypeInfo()->DefaultSkipData(in);
+        }
+    }
+
+    void Collect(TIds* ids) {
+        m_Collect = ids;
+    }
+
+private:
+    TIds* m_Collect;
+};
+
+
+class PLessObjectPtr
+{
+public:
+    bool operator()(const CObjectInfo& a, const CObjectInfo& b) const {
+        return a.GetObjectPtr() < b.GetObjectPtr();
+    }
+};
+
+
+class CLDS_Seq_idsCollector : public CReadClassMemberHook
+{
+public:
+    typedef CLDS_CollectSeq_idsReader::TIds TIds;
+    typedef map<CObjectInfo, TIds, PLessObjectPtr> TIdsMap;
+
+    CLDS_Seq_idsCollector(CLDS_CollectSeq_idsReader* collector)
+        : m_Collector(collector)
+        {
+        }
+
+    virtual void ReadClassMember(CObjectIStream& in,
+                                 const CObjectInfoMI& member) {
+        m_Collector->Collect(&m_Ids[member.GetClassObject()]);
+        DefaultSkip(in, member);
+        m_Collector->Collect(0);
+    }
+
+    const TIds* GetIds(const CObjectInfo& obj) const {
+        TIdsMap::const_iterator iter = m_Ids.find(obj);
+        return iter == m_Ids.end()? 0: &iter->second;
+    }
+    void ClearIds(void) {
+        m_Ids.clear();
+    }
+
+private:
+    CRef<CLDS_CollectSeq_idsReader> m_Collector;
+    TIdsMap m_Ids;
+};
+
+
+class CLDS_GBReleaseReadHook : public CReadClassMemberHook
+{
+public:
+    CLDS_GBReleaseReadHook(CLDS_Object& lobj,
+                           CLDS_CoreObjectsReader& objects);
+    ~CLDS_GBReleaseReadHook(void);
+
+    virtual void ReadClassMember(CObjectIStream& in,
+                                 const CObjectInfoMI& member);
+
+    void Remove(CObjectIStream& in) {
+        if ( !m_Removed ) {
+            m_Removed = true;
+            CObjectTypeInfo type = CType<CBioseq_set>();
+            type.FindMember("seq-set").ResetLocalReadHook(in);
+        }
+    }
+    bool Separate(void) const {
+        return m_Separate;
+    }
+
+private:
+    CLDS_Object& m_LObj;
+    CLDS_CoreObjectsReader& m_Objects;
+    bool m_Removed;
+    bool m_Separate;
+};
+
+
+CLDS_GBReleaseReadHook::CLDS_GBReleaseReadHook(CLDS_Object& lobj,
+                                               CLDS_CoreObjectsReader& objects)
+    : m_LObj(lobj),
+      m_Objects(objects),
+      m_Removed(false),
+      m_Separate(false)
+{
+}
+
+
+CLDS_GBReleaseReadHook::~CLDS_GBReleaseReadHook(void)
+{
+}
+
+
+void CLDS_GBReleaseReadHook::ReadClassMember(CObjectIStream& in,
+                                             const CObjectInfoMI& member)
+{
+    Remove(in);
+    CBioseq_set* seq_set = CType<CBioseq_set>::Get(member.GetClassObject());
+    _ASSERT(seq_set);
+    if ( seq_set ) {
+        switch ( m_LObj.GetGBReleasMode() ) {
+        case CLDS_Object::eForceGBRelease:
+            m_Separate = true;
+            break;
+        case CLDS_Object::eGuessGBRelease:
+            if ( (!seq_set->IsSetClass() ||
+                  seq_set->GetClass() == CBioseq_set::eClass_genbank) &&
+                 //!seq_set->IsSetId() &&
+                 //!seq_set->IsSetColl() &&
+                 //!seq_set->IsSetLevel() &&
+                 //!seq_set->IsSetRelease() &&
+                 //!seq_set->IsSetDate() &&
+                 !seq_set->IsSetDescr() ) {
+                m_Separate = true;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    if ( m_Separate ) {
+        m_Objects.Reset();
+        LOG_POST_X(3, Info << CTime(CTime::eCurrent) <<
+                   ": Scanning combined Bioseq-set found in: " <<
+                   m_Objects.GetFileName());
+        int entry_count = 0, object_count = 0;
+        // iterate over the sequence of entries
+        CRef<CSeq_entry> se(new CSeq_entry);
+        for ( CIStreamContainerIterator it(in, member); it; ++it ) {
+            CNcbiStreampos pos = in.GetStreamPos();
+            it >> *se;
+            ++entry_count;
+            m_LObj.SaveObject(&m_Objects, &m_Objects.GetObjectsVector()[0]);
+            object_count += m_LObj.SaveObjects(m_Objects, true);
+        }
+        LOG_POST_X(3, Info << CTime(CTime::eCurrent) << ": LDS: "
+                   << object_count
+                   << " object(s) found in "
+                   << entry_count << " Seq-entries in: "
+                   << m_Objects.GetFileName());
+    }
+    else {
+        DefaultRead(in, member);
+    }
+}
+
+
+bool CLDS_Object::UpdateBinaryASNObject(CObjectIStream& in,
+                                        CLDS_CoreObjectsReader& objects,
+                                        CObjectTypeInfo type)
+{
+    CNcbiStreampos start_pos = in.GetStreamPos();
+    objects.Reset();
+    LOG_POST_X(4, Info 
+               << "Trying ASN.1 binary top level object:" 
+               << type.GetTypeInfo()->GetName() );
+    CRef<CLDS_GBReleaseReadHook> hook;
+    try {
+        if ( m_GBReleaseMode != eNoGBRelease &&
+             type == CType<CBioseq_set>() ) {
+            // try to avoid loading full GenBank release Bioseq-set
+            hook = new CLDS_GBReleaseReadHook(*this, objects);
+            type.FindMember("seq-set").SetLocalReadHook(in, hook);
+        }
+        CObjectInfo object_info(type.GetTypeInfo());
+        CStopWatch sw(CStopWatch::eStart);
+        in.Read(object_info);
+        if ( hook && hook->Separate() ) {
+            LOG_POST_X(5, Info 
+                       << "Binary ASN.1 combined object found: "
+                       << type.GetTypeInfo()->GetName()
+                       << " in " << sw.Elapsed());
+        }
+        else {
+            LOG_POST_X(5, Info 
+                       << "Binary ASN.1 top level object found: "
+                       << type.GetTypeInfo()->GetName()
+                       << " in " << sw.Elapsed());
+        }
+        if ( hook ) {
+            hook->Remove(in);
+        }
+        return true;
+    }
+    catch (CEofException& ) {
+    }
+    catch (CException& _DEBUG_ARG(e)) {
+        _TRACE("  failed to read: " << e.GetMsg());
+    }
+    if ( hook ) {
+        hook->Remove(in);
+    }
+    in.SetStreamPos(start_pos);
+    return false;
+}
+
+
+int CLDS_Object::SaveObjects(CLDS_CoreObjectsReader& objects,
+                             bool internal)
+{
+    int ret = 0;
+    CLDS_CoreObjectsReader::TObjectVector& objs = objects.GetObjectsVector();
+    if ( !objs.empty() ) {
+        size_t count = objs.size();
+        if ( !internal ) {
+            LOG_POST_X(3, Info << CTime(CTime::eCurrent) <<
+                       ": Saving " << count <<
+                       " object(s) found in: " << objects.GetFileName());
+        }
+        for (size_t i = 0; i < count; ++i) {
+            CLDS_CoreObjectsReader::SObjectDetails& obj_info = objs[i];
+            // If object is not in the database yet.
+            if (obj_info.ext_id == 0) {
+                SaveObject(&objects, &obj_info);
+                ++ret;
+            }
+        }
+        if ( !internal ) {
+            LOG_POST_X(3, Info << CTime(CTime::eCurrent) << ": LDS: "
+                       << count
+                       << " object(s) found in: "<<objects.GetFileName());
+        }
+        objects.ClearObjectsVector();
+    }
+    else {
+        if ( !internal ) {
+            if ( objects.GetTotalObjects() == 0 ) {
+                LOG_POST_X(4, Info <<
+                           "LDS: No objects found in:" <<
+                           objects.GetFileName());
+            }
+            else {
+                LOG_POST_X(4, Info <<
+                           "LDS: No more objects found in:" <<
+                           objects.GetFileName());
+            }
+        }
+    }
+    if ( m_Seq_idsCollector ) {
+        m_Seq_idsCollector->ClearIds();
+    }
+    return ret;
+}
+
+
+void CLDS_Object::UpdateBinaryASNObjects(int file_id, 
+                                         const string& file_name)
+{
+    vector<CObjectTypeInfo> types;
+    types.push_back(CType<CBioseq_set>());
+    types.push_back(CType<CSeq_entry>());
+    types.push_back(CType<CBioseq>());
+    types.push_back(CType<CSeq_annot>());
+    types.push_back(CType<CSeq_align>());
+    vector<CObjectTypeInfo> skip_types;
+    skip_types.push_back(CType<CSeq_data>());
+    skip_types.push_back(CType<CSeq_ext>());
+    skip_types.push_back(CType<CSeq_hist>());
+
+    LOG_POST_X(2, Info << CTime(CTime::eCurrent) <<
+               ": Scanning file: " << file_name);
+
+    CRef<CLDS_CollectSeq_idsReader> seq_id_hook(new CLDS_CollectSeq_idsReader);
+    m_Seq_idsCollector = new CLDS_Seq_idsCollector(seq_id_hook);
+    CRef<CLDS_CoreObjectsReader> objects
+        (new CLDS_CoreObjectsReader(file_id, file_name));
+    auto_ptr<CObjectIStream>
+        in(CObjectIStream::Open(file_name, eSerial_AsnBinary));
+
+    {{ // setup hooks
+        ITERATE ( vector<CObjectTypeInfo>, it, types ) {
+            it->SetLocalReadHook(*in, objects);
+        }
+        CRef<CLDS_SkipObjectHook> skipper(new CLDS_SkipObjectHook);
+        ITERATE ( vector<CObjectTypeInfo>, it, skip_types ) {
+            it->SetLocalReadHook(*in, skipper);
+        }
+        CObjectTypeInfo seq_id_type = CType<CSeq_id>();
+        seq_id_type.SetLocalSkipHook(*in, seq_id_hook);
+        CObjectTypeInfo annot_type = CType<CSeq_annot>();
+        annot_type.FindMember("data").SetLocalReadHook(*in, m_Seq_idsCollector);
+    }}
+
+    size_t last_type = 0;
+    while ( in->HaveMoreData() ) {
+        // first try previous type
+        bool found = UpdateBinaryASNObject(*in, *objects, types[last_type]);
+        if ( !found ) {
+            // then all remaining possible types
+            for ( size_t i = 0; i < types.size(); ++i ) {
+                if ( i != last_type ) { // already tried
+                    if ( UpdateBinaryASNObject(*in, *objects, types[i]) ) {
+                        found = true;
+                        last_type = i;
+                        break;
+                    }
+                }
+            }
+        }
+        if ( !found ) {
+            break;
+        }
+        SaveObjects(*objects, false);
+    }
+}
+
+
 void CLDS_Object::UpdateFileObjects(int file_id, 
                                     const string& file_name, 
                                     CFormatGuess::EFormat format)
 {
     FindMaxObjRecId();
 
-    if (format == CFormatGuess::eBinaryASN ||
-        format == CFormatGuess::eTextASN ||
-        format == CFormatGuess::eXml) {
+    if (format == CFormatGuess::eBinaryASN ) {
+        UpdateBinaryASNObjects(file_id, file_name);
+    }
+    else if (format == CFormatGuess::eTextASN ||
+             format == CFormatGuess::eXml) {
 
         LOG_POST_X(2, Info << CTime(CTime::eCurrent) <<
                    ": Scanning file: " << file_name);
 
-        CLDS_CoreObjectsReader sniffer;
+        CLDS_CoreObjectsReader sniffer(file_id, file_name);
         ESerialDataFormat stream_format = FormatGuess2Serial(format);
 
         auto_ptr<CObjectIStream> 
           input(CObjectIStream::Open(file_name, stream_format));
         sniffer.Probe(*input);
 
-        CLDS_CoreObjectsReader::TObjectVector& obj_vector 
-                                                = sniffer.GetObjectsVector();
-
-        if (obj_vector.size()) {
-            LOG_POST_X(3, Info << CTime(CTime::eCurrent) <<
-                       ": Saving " << obj_vector.size() <<
-                       " object(s) found in: " << file_name);
-            for (size_t i = 0; i < obj_vector.size(); ++i) {
-                CLDS_CoreObjectsReader::SObjectDetails* obj_info = &obj_vector[i];
-                // If object is not in the database yet.
-                if (obj_info->ext_id == 0) {
-                    SaveObject(file_id, &sniffer, obj_info);
-                }
-            }
-            LOG_POST_X(3, Info << CTime(CTime::eCurrent) << ": LDS: " 
-                               << obj_vector.size() 
-                               << " object(s) found in:" 
-                               << file_name);
-
-            sniffer.ClearObjectsVector();
-
-        } else {
-            LOG_POST_X(4, Info << "LDS: No objects found in:" << file_name);
-        }
-
+        SaveObjects(sniffer, false);
     } else if ( format == CFormatGuess::eFasta ){
 
         int type_id;
@@ -412,8 +731,7 @@ int CLDS_Object::SaveObject(int file_id,
 }
 
 
-int CLDS_Object::SaveObject(int file_id, 
-                            CLDS_CoreObjectsReader* sniffer,
+int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
                             CLDS_CoreObjectsReader::SObjectDetails* obj_info)
 {
     int top_level_id, parent_id;
@@ -427,11 +745,11 @@ int CLDS_Object::SaveObject(int file_id,
         {{
 
             CLDS_CoreObjectsReader::SObjectDetails* parent_obj_info 
-                        = sniffer->FindObjectInfo(obj_info->parent_offset);
+                        = objects->FindObjectInfo(obj_info->parent_offset);
             _ASSERT(parent_obj_info);
             if (parent_obj_info->ext_id == 0) { // not yet in the database
                 // Recursively save the parent
-                parent_id = SaveObject(file_id, sniffer, parent_obj_info);
+                parent_id = SaveObject(objects, parent_obj_info);
             } else {
                 parent_id = parent_obj_info->ext_id;
             }
@@ -442,11 +760,11 @@ int CLDS_Object::SaveObject(int file_id,
         {{
 
             CLDS_CoreObjectsReader::SObjectDetails* top_obj_info 
-                        = sniffer->FindObjectInfo(obj_info->top_level_offset);
+                        = objects->FindObjectInfo(obj_info->top_level_offset);
             _ASSERT(top_obj_info);
             if (top_obj_info->ext_id == 0) { // not yet in the database
                 // Recursively save the parent
-                top_level_id = SaveObject(file_id, sniffer, top_obj_info);
+                top_level_id = SaveObject(objects, top_obj_info);
             } else {
                 top_level_id = top_obj_info->ext_id;
             }
@@ -460,7 +778,7 @@ int CLDS_Object::SaveObject(int file_id,
     map<string, int>::const_iterator it = m_ObjTypeMap.find(type_name);
     if (it == m_ObjTypeMap.end()) {
         LOG_POST_X(7, Info << "Unrecognized type: " << type_name);
-        return 0;                
+        return 0;
     }
     int type_id = it->second;
 
@@ -497,7 +815,7 @@ int CLDS_Object::SaveObject(int file_id,
         BDB_CHECK(err, "LDS::ObjectAttr");
 */
         m_db.object_db.object_id = m_MaxObjRecId;
-        m_db.object_db.file_id = file_id;
+        m_db.object_db.file_id = objects->GetFileId();
         m_db.object_db.seqlist_id = 0;  // TODO:
         m_db.object_db.object_type = type_id;
         Int8 i8 = NcbiStreamposToInt8(obj_info->offset);
@@ -514,17 +832,30 @@ int CLDS_Object::SaveObject(int file_id,
         err = m_db.object_db.Insert();
         BDB_CHECK(err, "LDS::Object");
 
-    } else {
-                
+    }
+    else if ( const CSeq_annot* annot = CType<CSeq_annot>().Get(obj_info->info)) {
         // Set of seq ids referenced in the annotation
         //
         set<string> ref_seq_ids;
-
-        // Check for alignment in annotation
-        //
-        const CSeq_annot* annot = 
-            CType<CSeq_annot>().Get(obj_info->info);
-        if (annot && annot->CanGetData()) {
+        const CLDS_Seq_idsCollector::TIds *ids =
+            m_Seq_idsCollector? m_Seq_idsCollector->GetIds(obj_info->info): 0;
+        if ( ids ) {
+            const CSeq_id *last_id = 0;
+            ITERATE ( CLDS_Seq_idsCollector::TIds, it, *ids ) {
+                const CRef<CSeq_id>& id = *it;
+                if ( last_id && last_id->Equals(*id) ) {
+                    continue;
+                }
+                ref_seq_ids.insert(id->AsFastaString());
+                last_id = id;
+            }
+            //LOG_POST_X(9, Info <<
+            //           "Saving " << ref_seq_ids.size() <<
+            //           " Seq-ids in Seq-annot");
+        }
+        else if ( annot->CanGetData()) {
+            // Check for alignment in annotation
+            //
             const CSeq_annot_Base::C_Data& adata = annot->GetData();
             if (adata.Which() == CSeq_annot_Base::C_Data::e_Align) {
                 const CSeq_annot_Base::C_Data::TAlign& al_list =
@@ -587,7 +918,7 @@ int CLDS_Object::SaveObject(int file_id,
         obj_info->ext_id = m_MaxObjRecId; // Keep external id for the next scan
                 
         m_db.annot_db.annot_id = m_MaxObjRecId;
-        m_db.annot_db.file_id = file_id;
+        m_db.annot_db.file_id = objects->GetFileId();
         m_db.annot_db.annot_type = type_id;
         Int8 i8 = NcbiStreamposToInt8(obj_info->offset);
         m_db.annot_db.file_pos = i8;
@@ -620,6 +951,16 @@ int CLDS_Object::SaveObject(int file_id,
 }
 
 
+CScope* CLDS_Object::GetScope(void)
+{
+    if ( !m_Scope && m_TSE ) {
+        m_Scope = new CScope(*m_TSE_Manager);
+        m_Scope->AddTopLevelSeqEntry(*m_TSE);
+    }
+    return m_Scope;
+}
+
+
 bool CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_info,
                            string* object_str_id,
                            string* object_title)
@@ -627,25 +968,27 @@ bool CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_i
     *object_title = "";
     *object_str_id = "";
 
-    if (parse_info.is_top_level) {
-
-        CSeq_entry* seq_entry = CType<CSeq_entry>().Get(parse_info.info);
-
-        if (seq_entry) {
-            m_Scope.Reset();
-            m_TSE_Manager = CObjectManager::GetInstance();
-            m_Scope = new CScope(*m_TSE_Manager);
-
-            m_Scope->AddTopLevelSeqEntry(*seq_entry);
+    if ( CREATE_SCOPES && parse_info.is_top_level ) {
+        m_TSE_Manager = CObjectManager::GetInstance();
+        m_Scope.Reset();
+        m_TSE_Info = parse_info.info;
+        m_TSE.Reset();
+        if ( CSeq_entry* obj = CType<CSeq_entry>().Get(m_TSE_Info) ) {
+            m_TSE = obj;
+            m_TSE->Parentize();
             return true;
-        } else {
-            CBioseq* bioseq = CType<CBioseq>().Get(parse_info.info);
-            if (bioseq) {
-                m_TSE_Manager = CObjectManager::GetInstance();
-                m_Scope = new CScope(*m_TSE_Manager);
-
-                m_Scope->AddBioseq(*bioseq);
-            }
+        }
+        else if ( CBioseq_set* obj = CType<CBioseq_set>().Get(m_TSE_Info) ) {
+            m_TSE = new CSeq_entry;
+            m_TSE->SetSet(*obj);
+            m_TSE->Parentize();
+            return true;
+        }
+        else if ( CBioseq* obj = CType<CBioseq>().Get(m_TSE_Info) ) {
+            m_TSE = new CSeq_entry;
+            m_TSE->SetSeq(*obj);
+            m_TSE->Parentize();
+            return true;
         }
     }
 
@@ -654,30 +997,38 @@ bool CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_i
         const CSeq_id* seq_id = bioseq->GetFirstId();
         if (seq_id) {
             *object_str_id = seq_id->AsFastaString();
-        } else {
+        }
+        else {
             *object_str_id = "";
         }
 
-        if (m_Scope) { // we are under OM here
-            CBioseq_Handle bio_handle = m_Scope->GetBioseqHandle(*bioseq);
+        if ( TRY_FAST_TITLE && sequence::GetTitle(*bioseq, object_title) ) {
+            // Good, we've got title fast way.
+        }
+        else if (CScope* scope = GetScope()) { // we are under OM here
+            CBioseq_Handle bio_handle = scope->GetBioseqHandle(*bioseq);
             if (bio_handle) {
                 *object_title = sequence::GetTitle(bio_handle);
                 //LOG_POST_X(10, Info << "object title: " << *object_title);
-            } else {
+            }
+            else {
                 // the last resort
                 bioseq->GetLabel(object_title, CBioseq::eBoth);
             }
             
-        } else {  // non-OM controlled object
+        }
+        else {  // non-OM controlled object
             bioseq->GetLabel(object_title, CBioseq::eBoth);
         }
-    } else {
+    }
+    else {
         const CSeq_annot* annot = 
             CType<CSeq_annot>().Get(parse_info.info);
         if (annot) {
             *object_str_id = "";
             return false;
-        } else {
+        }
+        else {
             const CSeq_align* align =  
                 CType<CSeq_align>().Get(parse_info.info);
             if (align) {

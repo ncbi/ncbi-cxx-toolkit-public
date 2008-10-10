@@ -46,7 +46,9 @@ BEGIN_SCOPE(objects)
 
 class CObjectManager;
 class CScope;
+class CSeq_entry;
 class CLDS_Database;
+class CLDS_Seq_idsCollector;
 
 //////////////////////////////////////////////////////////////////
 ///
@@ -65,6 +67,16 @@ public:
     /// contain sequences with duplicate ids
     void ControlDuplicateIds(bool flag = true) { m_ControlDupIds = flag; }
 
+    enum EGBReleaseMode {
+        eNoGBRelease,
+        eGuessGBRelease,
+        eForceGBRelease,
+        eDefaultGBReleaseMode = eGuessGBRelease
+    };
+    /// Control GBRelease file detection
+    void ControlGBRelease(EGBReleaseMode mode) { m_GBReleaseMode = mode; }
+    EGBReleaseMode GetGBReleasMode(void) const { return m_GBReleaseMode; }
+
     /// Delete all objects living in the specified set of files.
     /// All deleted ids are added to deleted set.
     void DeleteCascadeFiles(const CLDS_Set& file_ids, 
@@ -78,12 +90,22 @@ public:
                            const string& file_name,
                            CFormatGuess::EFormat format);
 
+    /// Load and index one object from binary ASN.1 stream.
+    /// Returns false if no more objects found.
+    bool UpdateBinaryASNObject(CObjectIStream& in,
+                               CLDS_CoreObjectsReader& objects,
+                               CObjectTypeInfo type);
+    void UpdateBinaryASNObjects(int file_id, const string& file_name);
+
     /// Return max record id in "object" and "annotation" tables. 
     /// Both tables share the same objects sequence numbering.
     /// Function returns 0 if no record were found.
     int FindMaxObjRecId();
 
-protected:
+    int SaveObjects(CLDS_CoreObjectsReader& objects,
+                    bool internal);
+    
+public:
 
     /// Checks if parsed object is a "bio object" (returns TRUE) 
     /// or an annotation. if applicable object_str_id parameter receives
@@ -97,8 +119,7 @@ protected:
     /// Save object to the database, return record id.
     /// NOTE: This function recursively finds all objects' parents and saves
     /// the whole genealogy tree (not only the immediate argument).
-    int SaveObject(int file_id, 
-                   CLDS_CoreObjectsReader* sniffer,
+    int SaveObject(CLDS_CoreObjectsReader* objects,
                    CLDS_CoreObjectsReader::SObjectDetails* obj_info);
 
     /// Save object information, return record id. This function is specific 
@@ -116,6 +137,8 @@ protected:
     /// Rebuild sequence id index
     void BuildSeqIdIdx();
 
+    CScope* GetScope(void);
+
 private:
     CLDS_Object(const CLDS_Object&);
     CLDS_Object& operator=(const CLDS_Object&);
@@ -129,8 +152,12 @@ private:
     /// Max. id in "object" and "annotation" table
     int                     m_MaxObjRecId;
     CRef<CObjectManager>    m_TSE_Manager;   ///< OM for top level seq entry
+    CObjectInfo             m_TSE_Info;
+    CRef<CSeq_entry>        m_TSE;
     CRef<CScope>            m_Scope;         ///< OM Scope
     bool                    m_ControlDupIds; ///< Control duplicates
+    EGBReleaseMode          m_GBReleaseMode;
+    CRef<CLDS_Seq_idsCollector> m_Seq_idsCollector;
 };
 
 

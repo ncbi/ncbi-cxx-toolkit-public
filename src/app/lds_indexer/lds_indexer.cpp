@@ -58,6 +58,10 @@ private:
 };
 
 
+#define GB_RELEASE_MODE_NONE "none"
+#define GB_RELEASE_MODE_GUESS "guess"
+#define GB_RELEASE_MODE_FORCE "force"
+
 
 void CLDSIndexerApplication::Init(void)
 {
@@ -100,6 +104,24 @@ void CLDSIndexerApplication::Init(void)
     arg_desc->AddFlag
         ("crc32",
          "Turn on control sums calculation");
+    arg_desc->AddFlag
+        ("nocrc32",
+         "Turn off control sums calculation");
+
+    arg_desc->AddOptionalKey
+        ("gb_release", "gb_release_mode",
+         "Mode of GB release file detection",
+         CArgDescriptions::eString);
+    arg_desc->SetConstraint("gb_release",
+                            &(*new CArgAllow_Strings,
+                              GB_RELEASE_MODE_NONE,
+                              GB_RELEASE_MODE_GUESS,
+                              GB_RELEASE_MODE_FORCE));
+
+    arg_desc->AddOptionalKey
+        ("dump_table", "table_name",
+         "Dump LDS table content",
+         CArgDescriptions::eString);
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -116,21 +138,10 @@ int CLDSIndexerApplication::Run(void)
     string lds_alias = reg.Get(lds_section_name, "Alias",
                                       IRegistry::fTruncate);
 
-    bool recurse_sub_dir = reg.GetBool(lds_section_name, "SubDir", true);
-
     string source_path = reg.Get(lds_section_name,  "Source",
                                         IRegistry::fTruncate);
    
 
-    bool crc32 = 
-        reg.GetBool(lds_section_name, "ControlSum", true);
-    
-        // if ControlSum key is true (default), try an alternative "CRC32" key
-        // (more straightforward synonym for the same setting)
-    if (crc32) {
-        crc32 = reg.GetBool(lds_section_name, "CRC32", true);
-    }
-    
     const CArgs& args = GetArgs();
     if (args["source"])
         source_path = args["source"].AsString();
@@ -138,22 +149,52 @@ int CLDSIndexerApplication::Run(void)
     if (args["db_path"] )
         lds_path = args["db_path"].AsString();
         
-    if (args["norecursive"])
+    CLDS_Manager::TFlags flags = CLDS_Manager::fDefaultFlags;
+
+    bool recurse_sub_dir = reg.GetBool(lds_section_name, "SubDir", true);
+    if ( args["norecursive"] ) {
         recurse_sub_dir = false;
+    }
+    flags = (flags & ~CLDS_Manager::fRecurseMask) |
+        (recurse_sub_dir? CLDS_Manager::fRecurseSubDirs: CLDS_Manager::fDontRecurse);
 
-    if (args["crc32"])
+    bool crc32 = 
+        reg.GetBool(lds_section_name, "ControlSum", true);
+    // if ControlSum key is true (default), try an alternative "CRC32" key
+    // (more straightforward synonym for the same setting)
+    if (crc32) {
+        crc32 = reg.GetBool(lds_section_name, "CRC32", true);
+    }
+    if ( args["crc32"] ) {
         crc32 = true;
+    }
+    if ( args["nocrc32"] ) {
+        crc32 = false;
+    }
+    flags = (flags & ~CLDS_Manager::fControlSumMask) |
+        (crc32? CLDS_Manager::fComputeControlSum: CLDS_Manager::fNoControlSum);
 
-    CLDS_Manager::ERecurse recurse = 
-        (recurse_sub_dir) ? CLDS_Manager::eRecurseSubDirs : 
-                            CLDS_Manager::eDontRecurse;
-
-    CLDS_Manager::EComputeControlSum control_sum =
-        (crc32) ? CLDS_Manager::eComputeControlSum : 
-        CLDS_Manager::eNoControlSum;
+    if ( args["gb_release"] ) {
+        string mode = args["gb_release"].AsString();
+        flags &= ~CLDS_Manager::fGBReleaseMask;
+        if ( mode == GB_RELEASE_MODE_NONE ) {
+            flags |= CLDS_Manager::fNoGBRelease;
+        }
+        if ( mode == GB_RELEASE_MODE_GUESS ) {
+            flags |= CLDS_Manager::fGuessGBRelease;
+        }
+        if ( mode == GB_RELEASE_MODE_FORCE ) {
+            flags |= CLDS_Manager::fForceGBRelease;
+        }
+    }
 
     CLDS_Manager manager( source_path, lds_path, lds_alias);
-    manager.Index(recurse, control_sum);
+    if ( args["dump_table"] ) {
+        manager.DumpTable(args["dump_table"].AsString());
+    }
+    else {
+        manager.Index(flags);
+    }
 
     return 0;
 }

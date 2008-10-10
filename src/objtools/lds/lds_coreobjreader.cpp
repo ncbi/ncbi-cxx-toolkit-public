@@ -40,19 +40,26 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CLDS_CoreObjectsReader;
 
-CLDS_CoreObjectsReader::CLDS_CoreObjectsReader(void)
+CLDS_CoreObjectsReader::CLDS_CoreObjectsReader(int file_id,
+                                               const string& file_name)
+    : m_FileId(file_id),
+      m_FileName(file_name),
+      m_TotalObjects(0)
 {
     AddCandidate(CObjectTypeInfo(CType<CSeq_entry>()));
     AddCandidate(CObjectTypeInfo(CType<CBioseq>()));
     AddCandidate(CObjectTypeInfo(CType<CBioseq_set>()));
     AddCandidate(CObjectTypeInfo(CType<CSeq_annot>()));
     AddCandidate(CObjectTypeInfo(CType<CSeq_align>()));
+    AddCandidate(CObjectTypeInfo(CType<CSeq_data>()), eSkipObject);
 }
 
 
@@ -66,12 +73,12 @@ void CLDS_CoreObjectsReader::OnTopObjectFoundPre(const CObjectInfo& object,
     CNcbiStreampos pos = GetStreamPos();
 
     m_TopDescr = SObjectParseDescr(&object, pos);
-    m_Stack.push(SObjectParseDescr(&object, pos));
+    m_Stack.push_back(SObjectParseDescr(&object, pos));
 }
 
 void CLDS_CoreObjectsReader::OnTopObjectFoundPost(const CObjectInfo& object)
 {
-    SObjectParseDescr pdescr = m_Stack.top();
+    SObjectParseDescr pdescr = m_Stack.back();
 
     SObjectDetails od(*pdescr.object_info, 
                       pdescr.stream_pos,
@@ -79,7 +86,7 @@ void CLDS_CoreObjectsReader::OnTopObjectFoundPost(const CObjectInfo& object)
                       0,
                       true);
     m_Objects.push_back(od);
-    m_Stack.pop();
+    m_Stack.pop_back();
     _ASSERT(m_Stack.empty());
 }
 
@@ -94,7 +101,7 @@ void CLDS_CoreObjectsReader::OnObjectFoundPre(const CObjectInfo& object,
 
     _ASSERT(stream_pos);
 
-    m_Stack.push(SObjectParseDescr(&object, stream_pos));
+    m_Stack.push_back(SObjectParseDescr(&object, stream_pos));
 }
 
 
@@ -104,11 +111,11 @@ void CLDS_CoreObjectsReader::OnObjectFoundPost(const CObjectInfo& object)
         OnTopObjectFoundPost(object);
         return;
     }
-    SObjectParseDescr object_descr = m_Stack.top();
-    m_Stack.pop();
+    SObjectParseDescr object_descr = m_Stack.back();
+    m_Stack.pop_back();
     _ASSERT(!m_Stack.empty());
 
-    SObjectParseDescr parent_descr = m_Stack.top();
+    SObjectParseDescr parent_descr = m_Stack.back();
     _ASSERT(object_descr.stream_pos); // non-top object must have an offset
 
     SObjectDetails od(object, 
@@ -122,8 +129,35 @@ void CLDS_CoreObjectsReader::OnObjectFoundPost(const CObjectInfo& object)
 
 void CLDS_CoreObjectsReader::Reset()
 {
-    while (!m_Stack.empty()) {
-        m_Stack.pop();
+    m_TotalObjects += m_Objects.size();
+    m_Stack.clear();
+    ClearObjectsVector();
+}
+
+
+void CLDS_CoreObjectsReader::ReadObject(CObjectIStream &in,
+                                        const CObjectInfo &object)
+{
+    CNcbiStreampos pos = in.GetStreamPos(), parent_pos(0), top_pos(0);
+    CLDS_CoreObjectsReader::SObjectDetails
+        descr(object, pos, parent_pos, top_pos, m_Stack.empty());
+    if ( !descr.is_top_level ) {
+        descr.parent_offset = m_Stack.back().stream_pos;
+        descr.top_level_offset = m_Stack.front().stream_pos;
+    }
+    m_Objects.push_back(descr);
+    m_Stack.push_back(SObjectParseDescr(0, pos));
+    try {
+        DefaultRead(in, object);
+        if ( !m_Stack.empty() ) {
+            m_Stack.pop_back();
+        }
+    }
+    catch ( ... ) {
+        if ( !m_Stack.empty() ) {
+            m_Stack.pop_back();
+        }
+        throw;
     }
 }
 

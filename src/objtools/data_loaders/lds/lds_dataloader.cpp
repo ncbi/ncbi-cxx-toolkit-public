@@ -53,6 +53,7 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
 
+#define SEPARATE_BIOSEQ_SET_ENTRIES 0
 
 #define NCBI_USE_ERRCODE_X   Objtools_LDS_Loader
 
@@ -186,9 +187,10 @@ public:
                     m_LDS_query.GetObjectDescr(m_LDS_db->GetObjTypeMap(),
                                                sc.tse_id,
                                                false);
-                if ((tse_descr.is_object && tse_descr.id > 0)      &&
-                    (tse_descr.format == CFormatGuess::eBinaryASN) &&
-                    (tse_descr.type_str == "Bioseq-set")
+                if ( SEPARATE_BIOSEQ_SET_ENTRIES &&
+                     (tse_descr.is_object && tse_descr.id > 0)      &&
+                     (tse_descr.format == CFormatGuess::eBinaryASN) &&
+                     (tse_descr.type_str == "Bioseq-set")
                     ) {
                     CLDS_Query::SObjectDescr obj_descr =
                         m_LDS_query.GetTopSeqEntry(m_LDS_db->GetObjTypeMap(),

@@ -36,6 +36,7 @@
 #include <objtools/lds/lds_files.hpp>
 #include <objtools/lds/lds_object.hpp>
 #include <objtools/error_codes.hpp>
+#include <bdb/bdb_cursor.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Objtools_LDS_Mgr
@@ -118,24 +119,46 @@ void CLDS_Manager::Index(ERecurse           recurse,
                          EComputeControlSum control_sum,
                          EDuplicateId       dup_control)
 {
+    TFlags flags = 0;
+    flags |= recurse == eDontRecurse? fDontRecurse: fRecurseSubDirs;
+    flags |= control_sum == eNoControlSum? fNoControlSum: fComputeControlSum;
+    flags |= dup_control == eIgnoreDuplicates? fIgnoreDuplicates: fCheckDuplicates;
+    Index(flags);
+}
+
+void CLDS_Manager::Index(TFlags flags)
+{
     auto_ptr<CLDS_Database> lds = x_OpenDB(CLDS_Database::eReadWrite);
     CLDS_Set files_deleted;
     CLDS_Set files_updated;
 
     CLDS_File aFile(*lds);
-    bool rec = (recurse == eRecurseSubDirs);
-    bool control = (control_sum == eComputeControlSum);
-    aFile.SyncWithDir(m_SourcePath, &files_deleted, &files_updated, rec, control);
+    bool recurse = (flags & fRecurseMask) == fRecurseSubDirs;
+    bool control_sum = (flags & fControlSumMask) == fComputeControlSum;
+    
+    aFile.SyncWithDir(m_SourcePath, &files_deleted, &files_updated,
+                      recurse, control_sum);
 
     CLDS_Set objects_deleted;
     CLDS_Set annotations_deleted;
 
+    bool check_dup = (flags & fDupliucatesMask) == fCheckDuplicates;
     CLDS_Object obj(*lds, lds->GetObjTypeMap());
-    obj.ControlDuplicateIds(dup_control == eCheckDuplicates);
+    obj.ControlDuplicateIds(check_dup);
+    switch ( flags & fGBReleaseMask ) {
+    case fNoGBRelease:
+        obj.ControlGBRelease(CLDS_Object::eNoGBRelease);
+        break;
+    case fForceGBRelease:
+        obj.ControlGBRelease(CLDS_Object::eForceGBRelease);
+        break;
+    default:
+        obj.ControlGBRelease(CLDS_Object::eGuessGBRelease);
+        break;
+    }
     obj.DeleteCascadeFiles(files_deleted, 
                            &objects_deleted, &annotations_deleted);
     obj.UpdateCascadeFiles(files_updated);
-
 
     lds->Sync();
 }
@@ -160,6 +183,123 @@ void CLDS_Manager::DeleteDB()
     if (dir.Exists())
         dir.Remove();
 }
+
+
+void CLDS_Manager::DumpTable(const string& table_name)
+{
+    NcbiCout << "LDS: Dump of table " << table_name << ":" << NcbiEndl;
+    Int8 rec_count = 0;
+    SLDS_TablesCollection& tables = GetDB().GetTables();
+    if ( table_name == "objecttype" ) {
+        SLDS_ObjectTypeDB& t = tables.object_type_db;
+        NcbiCout << "id\t"
+                 << "name\n";
+        CBDB_FileCursor cur(t);
+        cur.SetCondition(CBDB_FileCursor::eFirst);
+        while (cur.Fetch() == eBDB_Ok) {
+            ++rec_count;
+            NcbiCout << t.object_type << '\t'
+                     << t.type_name << '\n';
+        }
+    }
+    else if ( table_name == "file" ) {
+        SLDS_FileDB& t = tables.file_db;
+        NcbiCout << "id\t"
+                 << "name\t"
+                 << "format\t"
+                 << "time\t"
+                 << "CRC\t"
+                 << "size\n";
+        CBDB_FileCursor cur(t);
+        cur.SetCondition(CBDB_FileCursor::eFirst);
+        while (cur.Fetch() == eBDB_Ok) {
+            ++rec_count;
+            NcbiCout << t.file_id << '\t'
+                     << t.file_name << '\t'
+                     << t.format << '\t'
+                     << t.time_stamp << '\t'
+                     << t.CRC << '\t'
+                     << t.file_size << '\n';
+        }
+    }
+    else if ( table_name == "annot2obj" ) {
+        SLDS_Annot2ObjectDB& t = tables.annot2obj_db;
+        NcbiCout << "annot\t"
+                 << "object\n";
+        CBDB_FileCursor cur(t);
+        cur.SetCondition(CBDB_FileCursor::eFirst);
+        while (cur.Fetch() == eBDB_Ok) {
+            ++rec_count;
+            NcbiCout << t.annot_id << '\t'
+                     << t.object_id << '\n';
+        }
+    }
+    else if ( table_name == "annotation" ) {
+        SLDS_AnnotDB& t = tables.annot_db;
+        NcbiCout << "annot\t"
+                 << "file\t"
+                 << "type\t"
+                 << "pos\t"
+                 << "TSE\t"
+                 << "parent\n";
+        CBDB_FileCursor cur(t);
+        cur.SetCondition(CBDB_FileCursor::eFirst);
+        while (cur.Fetch() == eBDB_Ok) {
+            ++rec_count;
+            NcbiCout << t.annot_id << '\t'
+                     << t.file_id << '\t'
+                     << t.annot_type << '\t'
+                     << t.file_pos << '\t'
+                     << t.TSE_object_id << '\t'
+                     << t.parent_object_id << '\n';
+        }
+    }
+    else if ( table_name == "object" ) {
+        SLDS_ObjectDB& t = tables.object_db;
+        NcbiCout << "id\t"
+                 << "file\t"
+                 << "seqid\t"
+                 << "type\t"
+                 << "pos\t"
+                 << "TSE\t"
+                 << "parent\t"
+                 << "title\t"
+                 << "org\t"
+                 << "keyw\t"
+                 << "ids\n";
+        CBDB_FileCursor cur(t);
+        cur.SetCondition(CBDB_FileCursor::eFirst);
+        while (cur.Fetch() == eBDB_Ok) {
+            ++rec_count;
+            NcbiCout << t.object_id << '\t'
+                     << t.file_id << '\t'
+                     << t.primary_seqid << '\t'
+                     << t.object_type << '\t'
+                     << t.file_pos << '\t'
+                     << t.TSE_object_id << '\t'
+                     << t.parent_object_id << '\t'
+                     << t.object_title << '\t'
+                     << t.organism << '\t'
+                     << t.keywords << '\t'
+                     << t.seq_ids << '\n';
+        }
+    }
+    else if ( table_name == "seq_id_list" ) {
+        SLDS_SeqId_List& t = tables.seq_id_list;
+        NcbiCout << "id\t"
+                 << "seqid\n";
+        CBDB_FileCursor cur(t);
+        cur.SetCondition(CBDB_FileCursor::eFirst);
+        while (cur.Fetch() == eBDB_Ok) {
+            ++rec_count;
+            NcbiCout << t.object_id << '\t'
+                     << t.seq_id << '\n';
+        }
+    }
+    NcbiCout << "LDS: End of table " << table_name << ": "
+             << rec_count << " records" << NcbiEndl;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

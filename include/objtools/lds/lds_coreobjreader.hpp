@@ -33,20 +33,35 @@
 
 
 #include <objmgr/util/obj_sniff.hpp>
-#include <stack>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CObjectsSniffer;
 
 //////////////////////////////////////////////////////////////////
 //
 // Try and fail parser, used for discovery of files structure.
 //
 
-class NCBI_LDS_EXPORT CLDS_CoreObjectsReader : public CObjectsSniffer
+class NCBI_LDS_EXPORT CLDS_CoreObjectsReader : public CReadObjectHook,
+                                               public CObjectsSniffer
 {
 public:
-    CLDS_CoreObjectsReader();
+    explicit CLDS_CoreObjectsReader(int file_id = 0,
+                                    const string& file_name = kEmptyStr);
+
+    int GetFileId(void) const {
+        return m_FileId;
+    }
+    const string& GetFileName(void) const {
+        return m_FileName;
+    }
+
+    int GetTotalObjects(void) const {
+        return m_TotalObjects;
+    }
 
     // Event function called when parser finds a top level object
     virtual void OnTopObjectFoundPre(const CObjectInfo& object, 
@@ -102,9 +117,11 @@ public:
 
     TObjectVector& GetObjectsVector() { return m_Objects; }
 
-    void ClearObjectsVector();
+    void ClearObjectsVector(void);
 
 protected:
+
+    virtual void ReadObject(CObjectIStream &in, const CObjectInfo &object);
 
     struct SObjectParseDescr
     {
@@ -122,9 +139,12 @@ protected:
         {}
     };
 
-    typedef stack<SObjectParseDescr>  TParseStack;
+    typedef vector<SObjectParseDescr>  TParseStack;
 
 private:
+    int                 m_FileId;
+    string              m_FileName;
+    int                 m_TotalObjects;
     TParseStack         m_Stack;
     SObjectParseDescr   m_TopDescr;
     TObjectVector       m_Objects;

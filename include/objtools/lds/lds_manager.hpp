@@ -83,6 +83,28 @@ public:
         eIgnoreDuplicates   ///< ignore entries with duplicated ids
     };
 
+    enum EFlags {
+        fDontRecurse        = 0<<0,
+        fRecurseSubDirs     = 1<<0,
+        fRecurseMask        = 1<<0,
+
+        fNoControlSum       = 0<<1,
+        fComputeControlSum  = 1<<1,
+        fControlSumMask     = 1<<1,
+
+        fIgnoreDuplicates   = 0<<2,
+        fCheckDuplicates    = 1<<2,
+        fDupliucatesMask    = 1<<2,
+
+        fNoGBRelease        = 0<<3,
+        fGuessGBRelease     = 1<<3,
+        fForceGBRelease     = 2<<3,
+        fGBReleaseMask      = 3<<3,
+        
+        fDefaultFlags       = fRecurseSubDirs | fComputeControlSum |
+                              fIgnoreDuplicates | fGuessGBRelease,
+    };
+    typedef int TFlags;
 
     /// Index(reindex) LDS database content.
     /// The main workhorse function.
@@ -98,6 +120,7 @@ public:
     void Index(ERecurse           recurse     = eRecurseSubDirs,
                EComputeControlSum control_sum = eComputeControlSum,
                EDuplicateId       dup_control = eIgnoreDuplicates);
+    void Index(TFlags             flags = fDefaultFlags);
 
     /// Delete LDS database
     void DeleteDB();
@@ -115,6 +138,8 @@ public:
     /// @note Use Index() method to create or repair the database.
     CLDS_Database* ReleaseDB();
        
+    void DumpTable(const string& table_name);
+
 private:
     static void sx_CreateDB(CLDS_Database& lds);
     auto_ptr<CLDS_Database> x_OpenDB(CLDS_Database::EOpenMode omode);
