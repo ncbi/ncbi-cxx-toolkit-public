@@ -16,60 +16,53 @@ var g_msvcver     = "80";
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
 // create cmd, execute command in cmd and redirect output to console stdou2t
+function read_stdout_line(oExec)
+{
+    var line = oExec.StdOut.ReadLine();
+    if (line.indexOf("Kerberos") >= 0 && line.indexOf("Authentication") >= 0) {
+        WScript.Echo("========================= Authentication failed");
+        WScript.Echo(line)
+        WScript.Echo("To update your password, please, execute the following command:")
+        WScript.Echo("svn list " + GetRepositoryRoot());
+        WScript.Echo("terminating the script...")
+        oExec.Terminate();
+        while( oExec.Status == 0 ) {
+            WScript.Sleep(100);
+        }
+        WScript.Quit(1);    
+    }
+    return line;
+}
+
 function execute(oShell, command)
 {
     VerboseEcho("+  " + command);
     var oExec = oShell.Exec("cmd /c \"" + command + " 2>&1 \"");
     while( oExec.Status == 0 ) {
         while( !oExec.StdOut.AtEndOfStream ) {
-            var line = oExec.StdOut.ReadLine();
-            if (line.indexOf("Kerberos") >= 0 && line.indexOf("Authentication") >= 0) {
-                WScript.Echo("========================= Authentication failed");
-                WScript.Echo(line)
-                WScript.Echo("Please, terminate the script and execute the following command:")
-                WScript.Echo("svn list " + GetRepositoryRoot());
-//                oExec.Terminate();
-//                WScript.Quit(1);    
-            }
+            var line = read_stdout_line(oExec);
             VerboseEcho(line);
         }
         WScript.Sleep(100);
     }
     while( !oExec.StdOut.AtEndOfStream ) {
-        VerboseEcho(oExec.StdOut.ReadLine());
+        var line = read_stdout_line(oExec);
+        VerboseEcho(line);
     }
     return oExec.ExitCode;
 }
 
 function silent_execute(oShell, command)
 {
-/*
     var oExec = oShell.Exec("cmd /c \"" + command + " 2>&1 \"");
     while( oExec.Status == 0 ) {
         while (!oExec.StdOut.AtEndOfStream) {
-            oExec.StdOut.ReadLine();
+            read_stdout_line(oExec);
         }
         WScript.Sleep(100);
     }
     while (!oExec.StdOut.AtEndOfStream) {
-        oExec.StdOut.ReadLine();
-    }
-*/
-    var oExec = oShell.Exec("cmd /c \"" + command + "\"");
-    while( oExec.Status == 0 ) {
-        while (!oExec.StdErr.AtEndOfStream) {
-            VerboseEcho(oExec.StdErr.ReadLine());
-        }
-        while (!oExec.StdOut.AtEndOfStream) {
-            oExec.StdOut.SkipLine();
-        }
-        WScript.Sleep(100);
-    }
-    while (!oExec.StdErr.AtEndOfStream) {
-        VerboseEcho(oExec.StdErr.ReadLine());
-    }
-    while (!oExec.StdOut.AtEndOfStream) {
-        oExec.StdOut.SkipLine();
+        read_stdout_line(oExec);
     }
     return oExec.ExitCode;
 }
