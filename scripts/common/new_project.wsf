@@ -546,6 +546,7 @@
         </script>
         
         <script language="JScript">
+        WScript.Echo(WScript.ScriptFullName);
         var oShell = WScript.CreateObject("WScript.shell");
         
         var oTask  = new Task();
