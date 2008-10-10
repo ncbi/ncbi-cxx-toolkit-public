@@ -158,24 +158,6 @@ void CLDS_FastaScanner::EntryFound(CRef<CSeq_entry> se,
 }
 
 
-
-
-
-CLDS_Object::CLDS_Object(CLDS_Database& db, 
-                         const map<string, int>& obj_map)
-: m_DataBase(db),
-  m_db(db.GetTables()),
-  m_ObjTypeMap(obj_map),
-  m_MaxObjRecId(0),
-  m_ControlDupIds(false),
-  m_GBReleaseMode(eDefaultGBReleaseMode)
-{}
-
-
-CLDS_Object::~CLDS_Object()
-{
-}
-
 void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids, 
                                      CLDS_Set* objects_deleted,
                                      CLDS_Set* annotations_deleted)
@@ -1372,6 +1354,23 @@ void CLDS_Object::BuildSeqIdIdx()
 
     CLDS_BuildIdIdx func(m_DataBase, m_ControlDupIds);
     BDB_iterate_file(m_db.object_db, func);
+}
+
+
+CLDS_Object::CLDS_Object(CLDS_Database& db, 
+                         const map<string, int>& obj_map)
+: m_DataBase(db),
+  m_db(db.GetTables()),
+  m_ObjTypeMap(obj_map),
+  m_MaxObjRecId(0),
+  m_ControlDupIds(false),
+  m_GBReleaseMode(eDefaultGBReleaseMode)
+{
+}
+
+
+CLDS_Object::~CLDS_Object()
+{
 }
 
 
