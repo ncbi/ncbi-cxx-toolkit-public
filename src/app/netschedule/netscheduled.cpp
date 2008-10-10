@@ -635,6 +635,18 @@ string SNS_Parameters::GetParamValue(unsigned n) const
     }
 }
 
+struct CRequestContextPoolFactory
+{
+    static CRequestContext* Create() {
+        CRequestContext* rc = new CRequestContext;
+        rc->AddReference();
+        return rc;
+    }
+    static void Delete(CRequestContext* rc) {
+        if (rc) rc->RemoveReference();
+    }
+};
+
 
 //////////////////////////////////////////////////////////////////////////
 /// NetScheduler threaded server
@@ -680,7 +692,7 @@ public:
         { return m_RequestContextPool.Get(); }
     void ReturnRequestContextToPool(CRequestContext* req_ctx)
         { m_RequestContextPool.Return(req_ctx); }
-    
+
     // Queue handling
     unsigned Configure(const IRegistry& reg) {
         return m_QueueDB->Configure(reg);
@@ -738,7 +750,8 @@ private:
     /// Quick local timer
     CFastLocalTime          m_LocalTimer;
     /// Pool of RequestContext
-    CResourcePool<CRequestContext, CFastMutex> m_RequestContextPool;
+    CResourcePool<CRequestContext, CFastMutex, CRequestContextPoolFactory>
+        m_RequestContextPool;
 
     /// List of admin stations
     CNetSchedule_AccessList m_AdminHosts;
