@@ -532,6 +532,312 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
 }
 
 
+bool GetTitle(const CBioseq& seq, string* title_ptr, TGetTitleFlags flags)
+{
+    string                    prefix, title, suffix;
+    string                    organism;
+    CConstRef<CTextseq_id>    tsid(NULL);
+    CConstRef<CPDB_seq_id>    pdb_id(NULL);
+    CConstRef<CPatent_seq_id> pat_id(NULL);
+    CConstRef<CDbtag>         general_id(NULL);
+    CConstRef<CBioSource>     source(NULL);
+    CConstRef<CMolInfo>       mol_info(NULL);
+    bool                      third_party = false;
+    bool                      tpa_exp     = false;
+    bool                      tpa_inf     = false;
+    bool                      is_nc       = false;
+    bool                      is_nm       = false;
+    bool                      is_nr       = false;
+    bool                      is_tsa      = false;
+    bool                      wgs_master  = false;
+    CMolInfo::TTech           tech        = CMolInfo::eTech_unknown;
+    bool                      htg_tech    = false;
+    bool                      htgs_draft  = false;
+    bool                      htgs_cancelled = false;
+    bool                      htgs_pooled = false;
+    bool                      htgs_unfinished = false;
+    bool                      use_biosrc  = false;
+
+    ITERATE (CBioseq::TId, it, seq.GetId()) {
+        CConstRef<CSeq_id> id = *it;
+        if ( !tsid ) {
+            tsid = id->GetTextseq_Id();
+        }
+        switch (id->Which()) {
+        case CSeq_id::e_Other:
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Embl:
+        case CSeq_id::e_Ddbj:
+        {
+            const CTextseq_id& t = *id->GetTextseq_Id();
+            if (t.IsSetAccession()) {
+                const string& acc = t.GetAccession();
+                CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
+                if ((type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs
+                    &&  NStr::EndsWith(acc, "000000")) {
+                    wgs_master = true;
+                } else if (type == CSeq_id::eAcc_refseq_chromosome) {
+                    is_nc = true;
+                } else if (type == CSeq_id::eAcc_refseq_mrna) {
+                    is_nm = true;
+                } else if (type == CSeq_id::eAcc_refseq_ncrna) {
+                    is_nr = true;
+                }
+            }
+            break;
+        }
+        case CSeq_id::e_General:
+            if ( !id->GetGeneral().IsSkippable() ) {
+                general_id = &id->GetGeneral();
+            }
+            break;
+        case CSeq_id::e_Tpg:
+        case CSeq_id::e_Tpe:
+        case CSeq_id::e_Tpd:
+            third_party = true;
+            break;
+        case CSeq_id::e_Pdb:
+            pdb_id = &id->GetPdb();
+            break;
+        case CSeq_id::e_Patent:
+            pat_id = &id->GetPatent();
+            break;
+        default:
+            break;
+        }
+    }
+
+    {
+        if ( CConstRef<CSeqdesc> desc =
+             seq.GetClosestDescriptor(CSeqdesc::e_Source) ) {
+            source = &desc->GetSource();
+        }
+        if ( CConstRef<CSeqdesc> desc =
+             seq.GetClosestDescriptor(CSeqdesc::e_Molinfo) ) {
+            mol_info = &desc->GetMolinfo();
+            tech = mol_info->GetTech();
+        }
+    }
+
+    switch (tech) {
+    case CMolInfo::eTech_htgs_0:
+    case CMolInfo::eTech_htgs_1:
+    case CMolInfo::eTech_htgs_2:
+        htgs_unfinished = true;
+        // manufacture all titles for unfinished HTG sequences
+        flags |= fGetTitle_Reconstruct;
+        // fall through
+    case CMolInfo::eTech_htgs_3:
+        htg_tech = true;
+        // fall through
+    case CMolInfo::eTech_est:
+    case CMolInfo::eTech_sts:
+    case CMolInfo::eTech_survey:
+    case CMolInfo::eTech_wgs:
+        use_biosrc = true;
+        break;
+    case CMolInfo::eTech_tsa:
+        is_tsa = true;
+        use_biosrc = true;
+        break;
+    default:
+        break;
+    }
+
+    if (htg_tech  ||  third_party) {
+        return false;
+    }
+
+    if (!(flags & fGetTitle_Reconstruct)) {
+        size_t search_depth = 0;
+        // Ignore parents' titles for non-PDB proteins.
+        if (seq.IsAa()
+            &&  pdb_id.IsNull()) {
+            search_depth = 1;
+        }
+        int max_level = 0;
+        if ( CConstRef<CSeqdesc> desc =
+             seq.GetClosestDescriptor(CSeqdesc::e_Title, &max_level) ) {
+            title = desc->GetTitle();
+        }
+    }
+
+    if (title.empty()  &&  use_biosrc  &&  source.NotEmpty()) {
+        if (((tech == CMolInfo::eTech_wgs  &&  !wgs_master)  ||  is_tsa)
+            &&  general_id.NotEmpty()  &&  general_id->GetTag().IsStr()) {
+            title = s_TitleFromBioSource(*source, tech,
+                                         general_id->GetTag().GetStr());
+        } else {
+            title = s_TitleFromBioSource(*source, tech, kEmptyStr,
+                                         htgs_unfinished && htgs_pooled);
+        }
+        flags &= ~fGetTitle_Organism;
+    }
+
+    if (title.empty()  &&  is_nc  &&  source.NotEmpty()) {
+        switch (mol_info->GetBiomol()) {
+        case CMolInfo::eBiomol_genomic:
+        case CMolInfo::eBiomol_other_genetic:
+            title = s_TitleFromChromosome(*source, *mol_info);
+            if (!title.empty()) {
+                flags &= ~fGetTitle_Organism;
+            }
+            break;
+        }
+    } else if (title.empty()  &&  is_nm  &&  source.NotEmpty()) {
+        return false;
+    } else if (title.empty()  &&  is_nr  &&  source.NotEmpty()
+               &&  source->GetOrg().IsSetTaxname()) {
+        return false;
+    }
+
+    // originally further down, but moved up to match the C version
+    while (NStr::EndsWith(title, ".")  ||  NStr::EndsWith(title, " ")) {
+        title.erase(title.end() - 1);
+    }
+
+    if (title.empty()  &&  pdb_id.NotEmpty()) {
+        return false;
+    }
+
+    if (title.empty()  &&  pat_id.NotEmpty()) {
+        title = "Sequence " + NStr::IntToString(pat_id->GetSeqid())
+            + " from Patent " + pat_id->GetCit().GetCountry()
+            + ' ' + pat_id->GetCit().GetId().GetNumber();
+    }
+
+    if (title.empty()  &&  seq.IsAa()) {
+        return false;
+    }
+
+    if (title.empty()  &&  !htg_tech  &&
+        (!seq.IsSetInst() || seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg)) {
+        return false;
+    }
+
+    if (title.empty()  &&  !htg_tech  &&  source.NotEmpty()) {
+        title = s_TitleFromBioSource(*source, tech);
+        if (title.empty()) {
+            title = "No definition line found";
+        }
+    }
+
+    if (is_tsa  &&  !title.empty() ) {
+        prefix = "TSA: ";
+    } else if (third_party  &&  !title.empty() ) {
+        bool tpa_start = NStr::StartsWith(title, "TPA: ", NStr::eNocase);
+        if (tpa_exp) {
+            if ( !NStr::StartsWith(title, "TPA_exp:", NStr::eNocase) ) {
+                prefix = "TPA_exp: ";
+                if (tpa_start) {
+                    title.erase(0, 5);
+                }
+            }
+        } else if (tpa_inf) {
+            if ( !NStr::StartsWith(title, "TPA_inf:", NStr::eNocase) ) {
+                prefix = "TPA_inf: ";
+                if (tpa_start) {
+                    title.erase(0, 5);
+                }
+            }
+        } else if ( !tpa_start ) {
+            prefix = "TPA: ";
+        }
+    }
+
+    switch (tech) {
+    case CMolInfo::eTech_htgs_0:
+        if (title.find("LOW-PASS") == NPOS) {
+            suffix = ", LOW-PASS SEQUENCE SAMPLING";
+        }
+        break;
+    case CMolInfo::eTech_htgs_1:
+    case CMolInfo::eTech_htgs_2:
+    {
+        if (htgs_draft  &&  title.find("WORKING DRAFT") == NPOS) {
+            suffix = ", WORKING DRAFT SEQUENCE";
+        } else if ( !htgs_draft  &&  !htgs_cancelled
+                    &&  title.find("SEQUENCING IN") == NPOS) {
+            suffix = ", *** SEQUENCING IN PROGRESS ***";
+        }
+        
+        string un;
+        if (tech == CMolInfo::eTech_htgs_1) {
+            un = "un";
+        }
+        if ((!seq.IsSetInst() || seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta)) {
+            return false;
+        } else {
+            // suffix += ", in " + un + "ordered pieces";
+        }
+        break;
+    }
+    case CMolInfo::eTech_htgs_3:
+        if (title.find("complete sequence") == NPOS) {
+            suffix = ", complete sequence";
+        }
+        break;
+
+    case CMolInfo::eTech_est:
+        if (title.find("mRNA sequence") == NPOS) {
+            suffix = ", mRNA sequence";
+        }
+        break;
+
+    case CMolInfo::eTech_sts:
+        if (title.find("sequence tagged site") == NPOS) {
+            suffix = ", sequence tagged site";
+        }
+        break;
+
+    case CMolInfo::eTech_survey:
+        if (title.find("genomic survey sequence") == NPOS) {
+            suffix = ", genomic survey sequence";
+        }
+        break;
+
+    case CMolInfo::eTech_wgs:
+        if (wgs_master) {
+            if (title.find("whole genome shotgun sequencing project") == NPOS){
+                suffix = ", whole genome shotgun sequencing project";
+            }            
+        } else if (title.find("whole genome shotgun sequence") == NPOS) {
+            if (source.NotEmpty()) {
+                const char* orgnl = s_OrganelleName(source->GetGenome(),
+                                                    fON_wgs);
+                if (orgnl[0]) {
+                    suffix = string(1, ' ') + orgnl;
+                }
+            }
+            suffix += ", whole genome shotgun sequence";
+        }
+        break;
+    }
+
+    if (flags & fGetTitle_Organism) {
+        CConstRef<COrg_ref> org;
+        if (source) {
+            org = &source->GetOrg();
+        } else {
+            if ( CConstRef<CSeqdesc> desc =
+                 seq.GetClosestDescriptor(CSeqdesc::e_Org) ) {
+                org = &desc->GetOrg();
+            }
+        }
+
+        if (organism.empty()  &&  org.NotEmpty()  &&  org->IsSetTaxname()) {
+            organism = org->GetTaxname();
+        }
+        if ( !organism.empty()  &&  title.find(organism) == NPOS) {
+            suffix += " [" + organism + ']';
+        }
+    }
+
+    *title_ptr = prefix + title + suffix;
+    return true;
+}
+
+
 static string s_DescribeClones(const string& clone, bool pooled)
 {
     SIZE_TYPE count = 1;
