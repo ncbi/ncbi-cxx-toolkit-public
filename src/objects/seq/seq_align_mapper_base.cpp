@@ -87,7 +87,7 @@ SAlignment_Segment::SAlignment_Row& SAlignment_Segment::AddRow
     row.m_Strand = strand;
     row.m_Width = width;
     row.m_Frame = frame;
-    m_HaveStrands |= is_set_strand;
+    m_HaveStrands = m_HaveStrands  ||  is_set_strand;
     return row;
 }
 
@@ -108,7 +108,7 @@ SAlignment_Segment::SAlignment_Row& SAlignment_Segment::AddRow
     row.m_Strand = strand;
     row.m_Width = width;
     row.m_Frame = frame;
-    m_HaveStrands |= is_set_strand;
+    m_HaveStrands = m_HaveStrands  ||  is_set_strand;
     return row;
 }
 
@@ -415,8 +415,8 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
             }
         }
         seglens.clear();
-        m_HaveWidths |= multi_width;
-        m_MapWidths |= multi_width;
+        m_HaveWidths = m_HaveWidths  ||  multi_width;
+        m_MapWidths = m_MapWidths  ||  multi_width;
         if (multi_width) {
             m_OnlyNucs = false;
         }
@@ -433,7 +433,7 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
                     }
                 }
                 if (row->m_Start != kInvalidSeqPos) {
-                    have_prot |= (row->m_Width == 3);
+                    have_prot = have_prot  ||  (row->m_Width == 3);
                 }
             }
             if ( !have_prot ) {
@@ -547,7 +547,8 @@ void CSeq_align_Mapper_Base::x_Init(const CSpliced_seg& spliced)
             &ex.GetGenomic_id() : gen_id;
         const CSeq_id* ex_prod_id = ex.IsSetProduct_id() ?
             &ex.GetProduct_id() : prod_id;
-        m_HaveStrands |= ex.IsSetGenomic_strand() || ex.IsSetProduct_strand();
+        m_HaveStrands = m_HaveStrands  ||
+            ex.IsSetGenomic_strand() || ex.IsSetProduct_strand();
         ENa_strand ex_gen_strand = ex.IsSetGenomic_strand() ?
             ex.GetGenomic_strand() : gen_strand;
         ENa_strand ex_prod_strand = ex.IsSetProduct_strand() ?
@@ -881,13 +882,15 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                 mrow.m_Id = mapping->m_Dst_id_Handle;
                 mrow.m_Start = mapped_rg.GetFrom()/dst_width;
                 mrow.m_Width = dst_width;
-                mrow.m_IsSetStrand |= (dst_strand != eNa_strand_unknown);
+                mrow.m_IsSetStrand =
+                    mrow.m_IsSetStrand  ||  (dst_strand != eNa_strand_unknown);
                 mrow.m_Strand = dst_strand;
                 mrow.m_Frame = mrow.m_Frame ?
                     (mrow.m_Frame + left_shift - 1)%3+1 : 0;
                 mrow.SetMapped();
-                mseg.m_HaveStrands |= mrow.m_IsSetStrand;
-                m_HaveStrands |= mseg.m_HaveStrands;
+                mseg.m_HaveStrands = mseg.m_HaveStrands  ||
+                    mrow.m_IsSetStrand;
+                m_HaveStrands = m_HaveStrands  ||  mseg.m_HaveStrands;
             }
             else {
                 if (mrow.m_Start != kInvalidSeqPos) {
@@ -997,7 +1000,7 @@ void CSeq_align_Mapper_Base::x_GetDstDendiag(CRef<CSeq_align>& dst) const
                     push_back((TSeqPos)row->GetSegStart() != kInvalidSeqPos ?
                     row->m_Strand : strands[str_idx]);
             }
-            have_prots |= row->m_Width == 3;
+            have_prots = have_prots  ||  (row->m_Width == 3);
             str_idx++;
         }
         int new_len = seg_it->m_Len;
@@ -1039,7 +1042,7 @@ void CSeq_align_Mapper_Base::x_GetDstDenseg(CRef<CSeq_align>& dst) const
                 if ( m_HaveWidths ) {
                     dseg.SetWidths().push_back(row.m_Width);
                 }
-                have_prots |= row.m_Width == 3;
+                have_prots = have_prots  ||  (row.m_Width == 3);
                 only_gaps = false;
                 break;
             }
@@ -1150,7 +1153,7 @@ void CSeq_align_Mapper_Base::x_GetDstPacked(CRef<CSeq_align>& dst) const
                     push_back((TSeqPos)row->GetSegStart() != kInvalidSeqPos ?
                     row->m_Strand : strands[str_idx]);
             }
-            have_prots |= row->m_Width == 3;
+            have_prots = have_prots  ||  (row->m_Width == 3);
             str_idx++;
         }
         int new_len = seg_it->m_Len;
@@ -1210,7 +1213,7 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
                 if ( m_HaveWidths ) {
                     dseg.SetWidths().push_back(row.m_Width);
                 }
-                have_prots |= row.m_Width == 3;
+                have_prots = have_prots  ||  (row.m_Width == 3);
                 if ( have_scores ) {
                     CRef<CScore> score(new CScore);
                     score->Assign(*m_Segs.front().m_Scores[r]);

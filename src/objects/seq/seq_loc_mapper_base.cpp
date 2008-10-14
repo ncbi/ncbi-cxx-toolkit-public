@@ -471,7 +471,7 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             _ASSERT(!frame);
         }
     }
-    m_UseWidth |= (src_width != m_Dst_width);
+    m_UseWidth = m_UseWidth  ||  (src_width != m_Dst_width);
 
     // Create conversions
     CSeq_loc_CI src_it(source);
@@ -491,6 +491,10 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     }
     while (src_it  &&  dst_it) {
         // Set width flags if not set yet.
+        if (m_UseWidth  &&
+            m_Widths.find(dst_it.GetSeq_id_Handle()) == m_Widths.end()) {
+            m_Widths[dst_it.GetSeq_id_Handle()] = GetWidthFlags(m_Dst_width);
+        }
         if (m_UseWidth  &&
             m_Widths.find(src_it.GetSeq_id_Handle()) == m_Widths.end()) {
             m_Widths[src_it.GetSeq_id_Handle()] = GetWidthFlags(src_width);
@@ -728,7 +732,7 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_diag& diag, size_t to_row)
         int src_width = 0;
         const CSeq_id& src_id = *diag.GetIds()[row];
         src_width = CheckSeqWidth(src_id, src_width);
-        m_UseWidth |= (src_width != m_Dst_width);
+        m_UseWidth = m_UseWidth  ||  (src_width != m_Dst_width);
         int dst_width_rel = (m_UseWidth) ? m_Dst_width : 1;
         int src_width_rel = (m_UseWidth) ? src_width : 1;
         TSeqPos src_len = diag.GetLen()*src_width*dst_width_rel;
@@ -796,8 +800,12 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_seg& denseg,
         else {
             src_width = CheckSeqWidth(src_id, src_width);
         }
-        m_UseWidth |= (src_width != m_Dst_width);
+        m_UseWidth = m_UseWidth  ||  (src_width != m_Dst_width);
         // Set width flags if not set yet.
+        CSeq_id_Handle dst_idh = CSeq_id_Handle::GetHandle(dst_id);
+        if (m_UseWidth  &&  m_Widths.find(dst_idh) == m_Widths.end()) {
+            m_Widths[dst_idh] = GetWidthFlags(m_Dst_width);
+        }
         CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(src_id);
         if (m_UseWidth  &&  m_Widths.find(src_idh) == m_Widths.end()) {
             m_Widths[src_idh] = GetWidthFlags(src_width);
@@ -923,7 +931,7 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
 
         int src_width = 0;
         src_width = CheckSeqWidth(src_id, src_width);
-        m_UseWidth |= (src_width != m_Dst_width);
+        m_UseWidth = m_UseWidth  ||  (src_width != m_Dst_width);
         int dst_width_rel = (m_UseWidth) ? m_Dst_width : 1;
         int src_width_rel = (m_UseWidth) ? src_width : 1;
 
@@ -1066,6 +1074,10 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
         TSeqPos prod_len = prod_to - prod_from + 1;
         if ( to_row == 1 ) {
             // Set width flags if not set yet.
+            CSeq_id_Handle dst_idh = CSeq_id_Handle::GetHandle(*ex_prod_id);
+            if (m_UseWidth  &&  m_Widths.find(dst_idh) == m_Widths.end()) {
+                m_Widths[dst_idh] = GetWidthFlags(m_Dst_width);
+            }
             CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(*ex_gen_id);
             if (m_UseWidth  &&  m_Widths.find(src_idh) == m_Widths.end()) {
                 m_Widths[src_idh] = GetWidthFlags(src_width);
@@ -1077,6 +1089,10 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
         }
         else {
             // Set width flags if not set yet.
+            CSeq_id_Handle dst_idh = CSeq_id_Handle::GetHandle(*ex_gen_id);
+            if (m_UseWidth  &&  m_Widths.find(dst_idh) == m_Widths.end()) {
+                m_Widths[dst_idh] = GetWidthFlags(m_Dst_width);
+            }
             CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(*ex_prod_id);
             if (m_UseWidth  &&  m_Widths.find(src_idh) == m_Widths.end()) {
                 m_Widths[src_idh] = GetWidthFlags(src_width);
@@ -1136,6 +1152,11 @@ void CSeq_loc_Mapper_Base::x_InitSparse(const CSparse_seg& sparse,
     // Always use widths because another pair of rows may have different widths
     m_UseWidth = true;
     // Set width flags if not set yet.
+    CSeq_id_Handle dst_idh =
+        CSeq_id_Handle::GetHandle(to_second ? second_id : first_id);
+    if (m_Widths.find(dst_idh) == m_Widths.end()) {
+        m_Widths[dst_idh] = GetWidthFlags(m_Dst_width);
+    }
     CSeq_id_Handle src_idh =
         CSeq_id_Handle::GetHandle(to_second ? first_id : second_id);
     if (m_Widths.find(src_idh) == m_Widths.end()) {
@@ -1609,11 +1630,13 @@ bool CSeq_loc_Mapper_Base::x_MapInterval(const CSeq_id&   src_id,
     }
     TSeqPos last_src_to = 0;
     for (size_t idx = 0; idx < mappings.size(); ++idx) {
-        res |= x_MapNextRange(src_rg,
-                              is_set_strand, src_strand,
-                              orig_fuzz,
-                              mappings, idx,
-                              &last_src_to);
+        if ( x_MapNextRange(src_rg,
+                            is_set_strand, src_strand,
+                            orig_fuzz,
+                            mappings, idx,
+                            &last_src_to) ) {
+            res = true;
+        }
     }
     if ( !res ) {
         x_SetLastTruncated();
@@ -1930,7 +1953,7 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
             }
             x_PushLocToDstMix(dst_loc);
         }
-        m_Partial |= (!resA || !resB);
+        m_Partial = m_Partial  ||  (!resA)  ||  (!resB);
         break;
     }
     default:
@@ -2083,19 +2106,21 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
             TRangesById::iterator it = m_MappedLocs.begin();
             // Start new sub-location for:
             // New ID
-            bool no_merge = it == m_MappedLocs.end()  ||  it->first != id;
+            bool no_merge = (it == m_MappedLocs.end())  ||  (it->first != id);
             // New strand
-            no_merge |= it->second.size() <= strand_idx
-                ||  it->second.empty();
+            no_merge = no_merge  ||
+                (it->second.size() <= strand_idx)  ||  it->second.empty();
             // Ranges are not abutting
             if ( !no_merge ) {
                 if ( reverse ) {
-                    no_merge |= it->second[strand_idx].front().first.GetFrom() !=
-                        range.GetToOpen();
+                    no_merge = no_merge ||
+                        (it->second[strand_idx].front().first.GetFrom() !=
+                        range.GetToOpen());
                 }
                 else {
-                    no_merge |= it->second[strand_idx].back().first.GetToOpen() !=
-                        range.GetFrom();
+                    no_merge = no_merge  ||
+                        (it->second[strand_idx].back().first.GetToOpen() !=
+                        range.GetFrom());
                 }
             }
             if ( no_merge ) {
