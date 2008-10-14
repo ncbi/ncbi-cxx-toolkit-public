@@ -3211,13 +3211,30 @@ else
 fi
 
 ## SSL/TLS libraries
-if test -z "$GNUTLS_PATH"  &&  libgnutls-config --version >/dev/null 2>&1; then
-    p=`libgnutls-config --prefix`
-    test "x$p" = "x/usr"  ||  LIBGNUTLS_PATH=$p
+: ${GNUTLS_PATH=$NCBI/gnutls}
+if test -d "$GNUTLS_PATH"; then
+   NCBI_FIX_DIR(GNUTLS_PATH)
+fi
+AC_PATH_PROG(LIBGNUTLS_CONFIG, libgnutls-config, [], [${GNUTLS_BIN-$GNUTLS_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/bin}:$GNUTLS_PATH/bin${bit64_sfx}:$GNUTLS_PATH/bin:$PATH])
+if test -x "$LIBGNUTLS_CONFIG"; then
+   if test -z "$GNUTLS_PATH"; then
+      p=`libgnutls-config --prefix`
+      test "x$p" = "x/usr"  ||  GNUTLS_PATH=$p
+   fi
+   GNUTLS_INCLUDE=`$LIBGNUTLS_CONFIG --cflags`
+   NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBPATH, [$LIBGNUTLS_CONFIG --exec-prefix],
+      [s,^,-L,; s,$,/lib,;])
+   GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS"
+else
+   AS_UNSET(GNUTLS_CONFIG_LIBS)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
  [[AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]],
-   [[gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])]])
+   [[gnutls_session s; gnutls_init(&s, GNUTLS_CLIENT);]])]],
+ $GNUTLS_CONFIG_LIBS)
+if test -n "$GNUTLS_CONFIG_LIBS"; then
+   NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBS, [echo $GNUTLS_CONFIG_LIBS])
+fi
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(openssl, OPENSSL, ssl,
  [[AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
