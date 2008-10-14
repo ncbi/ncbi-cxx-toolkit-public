@@ -80,10 +80,21 @@ void WriteNexusTree(CNcbiOstream& os, const TPhyTreeNode& tree,
 };
 
 
-// Encode a label for Newick format: enclose it in single quotes,
+// Encode a label for Newick format:
+// If necessary, enclose it in single quotes,
 // but first escape any single quotes by doubling them.
 // e.g., "This 'label'" -> "'This ''label'''"
 static string s_EncodeLabel(const string& label) {
+    if (label.find_first_of("()[]':;,_") == string::npos) {
+        // No need to quote, but any spaces must be changed to underscores
+        string unquoted = label;
+        for (size_t i = 0; i < label.size(); ++i) {
+            if (unquoted[i] == ' ') {
+                unquoted[i] = '_';
+            }
+        }
+        return unquoted;
+    }
     if (label.find_first_of("'") == string::npos) {
         return '\'' + label + '\'';
     }
