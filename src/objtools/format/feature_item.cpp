@@ -1564,9 +1564,18 @@ void CFeatureItem::x_AddQualsRna(
         case CSeqFeatData::eSubtype_ncRNA:
         case CSeqFeatData::eSubtype_tmRNA:
             break;
+        case CSeqFeatData::eSubtype_misc_RNA:
+        case CSeqFeatData::eSubtype_otherRNA:
+            if ( rna.CanGetExt()  &&  rna.GetExt().IsName() ) {
+                string strName = rna.GetExt().GetName();
+                if ( strName != "misc_RNA" ) {
+                    x_AddQual( eFQ_product, new CFlatStringQVal( strName ) );
+                }
+            }
+            break;
         default:
             if ( rna.CanGetExt()  &&  rna.GetExt().IsName() ) {
-                x_AddQual(eFQ_product, new CFlatStringQVal(rna.GetExt().GetName()));
+                x_AddQual( eFQ_product, new CFlatStringQVal( rna.GetExt().GetName() ) );
             }
             break;
         }
