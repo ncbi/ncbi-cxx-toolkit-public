@@ -61,80 +61,80 @@ public:
     /// Structure for representing single user constraint for pair-wise
     /// alignment
     typedef struct SConstraint {
-	int seq1_index;
-	int seq1_start;
-	int seq1_stop;
+        int seq1_index;
+        int seq1_start;
+        int seq1_stop;
 
-	int seq2_index;
-	int seq2_start;
-	int seq2_stop;
+        int seq2_index;
+        int seq2_start;
+        int seq2_stop;
 
-	/// Create empty constraint
-	///
+        /// Create empty constraint
+        ///
         SConstraint(void) : seq1_index(-1), seq2_index(-1) {}
 
-	/// Create constraint for given sequences and locations
-	/// @param ind1 Index of sequence 1 in query array
-	/// @param start1 Start location for sequence 1
-	/// @param end1 End location for sequence 1
-	/// @param ind2 Index of sequence 2 in query array
-	/// @param start2 Start location for sequence 2
-	/// @param end2 End location for sequence 2
-	SConstraint(int ind1, int start1, int end1, int ind2, int start2,
-			int end2) 
-	    : seq1_index(ind1), seq1_start(start1), seq1_stop(end1),
-	      seq2_index(ind2), seq2_start(start2), seq2_stop(end2)
-	{}
+        /// Create constraint for given sequences and locations
+        /// @param ind1 Index of sequence 1 in query array
+        /// @param start1 Start location for sequence 1
+        /// @param end1 End location for sequence 1
+        /// @param ind2 Index of sequence 2 in query array
+        /// @param start2 Start location for sequence 2
+        /// @param end2 End location for sequence 2
+        SConstraint(int ind1, int start1, int end1, int ind2, int start2,
+                        int end2) 
+            : seq1_index(ind1), seq1_start(start1), seq1_stop(end1),
+              seq2_index(ind2), seq2_start(start2), seq2_stop(end2)
+        {}
 
     } SConstraint;
 
     /// Mode of multi aligner setings. Values can be combined.
     enum EMode {
 
-	// Qyery clusters 
-	eNoQueryClusters = 0, ///< No query clustering
-	                      ///< Expected very low percent identity between
+        // Qyery clusters 
+        eNoQueryClusters = 0, ///< No query clustering
+                              ///< Expected very low percent identity between
                               ///< the most similar query sequeces.
 
-	eConservativeQueryClusters, ///< Query clusters with conservative
+        eConservativeQueryClusters, ///< Query clusters with conservative
                                     ///< allowed in-cluster distance
-	                            ///< Use it if you expect many clusters of
+                                    ///< Use it if you expect many clusters of
                                     ///< very few (1 - 3) similar sequences.
 
 
-	eMediumQueryClusters,  ///< Query clusters with medium allowed 
-	                       ///< in-cluster distance.
+        eMediumQueryClusters,  ///< Query clusters with medium allowed 
+                               ///< in-cluster distance.
                                ///< Should work for most query sets.
-	                       ///< Expected clusters of similar sequences
-	                       ///< (percent identity more than 50).
+                               ///< Expected clusters of similar sequences
+                               ///< (percent identity more than 50).
 
 
-	eLargeQueryClusters,  ///< Query clusters with large allowed
-	                      ///< in-cluster distance.
-	                      ///< For clusters of very similar sequences
-	                      ///< (ex. BLAST serch result)
+        eLargeQueryClusters,  ///< Query clusters with large allowed
+                              ///< in-cluster distance.
+                              ///< For clusters of very similar sequences
+                              ///< (ex. BLAST serch result)
 
 
         // RPS Blast search
-	eNoRpsBlast = 0x04,        ///< Do not use RPS Blast
+        eNoRpsBlast = 0x04,        ///< Do not use RPS Blast
 
-	// Regular expression patterns search
-	eNoPatterns = 0x08,        ///< Do not use conserved domain patterns
+        // Regular expression patterns search
+        eNoPatterns = 0x08,        ///< Do not use conserved domain patterns
 
-	// Iterative alignment
-	eNoIterate = 0x010,          ///< Do not use Iterative alignment
+        // Iterative alignment
+        eNoIterate = 0x010,          ///< Do not use Iterative alignment
 
-	
-	// Other
-	eNonStandard = 0x080   ///< Not used as input, indicates that
+        
+        // Other
+        eNonStandard = 0x080   ///< Not used as input, indicates that
                                ///< non-standard settings were selected after
 
     };
 
     /// Method for construction of guide tree for progressive alignment
     enum ETreeMethod {
-	eNJ = 0,  ///< Neighbot Joining
-	eFastME   ///< Fast Minimum Evolution
+        eNJ = 0,  ///< Neighbot Joining
+        eFastME   ///< Fast Minimum Evolution
     };
 
 public:
@@ -148,7 +148,7 @@ public:
     /// @param mode Mode of operation
     ///
     CMultiAlignerOptions(const string& rps_db_name,
-			 EMode mode = eMediumQueryClusters);
+                         EMode mode = eMediumQueryClusters);
 
 
     // Turn on and off major options and set major parameters. Other parameter

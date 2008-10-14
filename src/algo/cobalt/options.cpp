@@ -50,9 +50,9 @@ BEGIN_SCOPE(cobalt)
 
 const CMultiAlignerOptions::EMode CMultiAlignerOptions::kQClustersModeMask
 = (CMultiAlignerOptions::EMode)(CMultiAlignerOptions::eNoQueryClusters 
-		        | CMultiAlignerOptions::eConservativeQueryClusters 
-			| CMultiAlignerOptions::eMediumQueryClusters 
-			| CMultiAlignerOptions::eLargeQueryClusters);
+                        | CMultiAlignerOptions::eConservativeQueryClusters 
+                        | CMultiAlignerOptions::eMediumQueryClusters 
+                        | CMultiAlignerOptions::eLargeQueryClusters);
 
 const int CMultiAlignerOptions::kDefaultGapOpen = BLAST_GAP_OPEN_PROT;
 const int CMultiAlignerOptions::kDefaultGapExtend = BLAST_GAP_EXTN_PROT;
@@ -63,7 +63,7 @@ CMultiAlignerOptions::CMultiAlignerOptions(EMode mode)
 }
 
 CMultiAlignerOptions::CMultiAlignerOptions(const string& rps_db_name,
-					   EMode mode)
+                                           EMode mode)
 {
     x_InitParams(mode);
     m_RpsDb = rps_db_name;
@@ -71,7 +71,7 @@ CMultiAlignerOptions::CMultiAlignerOptions(const string& rps_db_name,
 
 
 void CMultiAlignerOptions::SetUserConstraints(
-			       const vector<SConstraint>& constraints)
+                               const vector<SConstraint>& constraints)
 {
     m_UserHits.resize(constraints.size());
     copy(constraints.begin(), constraints.end(), m_UserHits.begin());
@@ -92,7 +92,7 @@ void CMultiAlignerOptions::AddCddPatterns(const vector<char*>& patterns)
     size_t old_size = m_Patterns.size();
     m_Patterns.resize(m_Patterns.size() + patterns.size());
     for (size_t i=0; i < m_Patterns.size();i++) {
-	m_Patterns[old_size + i] = patterns[i];
+        m_Patterns[old_size + i] = patterns[i];
     }
 
     m_Mode = eNonStandard;
@@ -102,69 +102,69 @@ bool CMultiAlignerOptions::Validate(void)
 {
     // Check whether m_UseQieryClusters and m_Mode are consistent
     if (((m_Mode & kQClustersModeMask) != eNoQueryClusters) 
-	!= m_UseQueryClusters && !(m_Mode & eNonStandard)) {
+        != m_UseQueryClusters && !(m_Mode & eNonStandard)) {
 
-	    NCBI_THROW(CMultiAlignerException, eInvalidOptions,
-		       "Conflicting use query clusters setting");
+            NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                       "Conflicting use query clusters setting");
     }
 
     // Check query clustering params
     if (m_UseQueryClusters) {
-	if (m_KmerAlphabet < TKMethods::eRegular
-	    || m_KmerAlphabet < TKMethods::eSE_V10) {
+        if (m_KmerAlphabet < TKMethods::eRegular
+            || m_KmerAlphabet < TKMethods::eSE_V10) {
 
-	    NCBI_THROW(CMultiAlignerException, eInvalidOptions,
-		       "Invalid alphabet for query cludtering");
-	}
+            NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                       "Invalid alphabet for query cludtering");
+        }
 
-	if (m_ClustDistMeasure != TKMethods::eFractionCommonKmersGlobal
-	    && m_ClustDistMeasure != TKMethods::eFractionCommonKmersLocal) {
+        if (m_ClustDistMeasure != TKMethods::eFractionCommonKmersGlobal
+            && m_ClustDistMeasure != TKMethods::eFractionCommonKmersLocal) {
 
-	    NCBI_THROW(CMultiAlignerException, eInvalidOptions,
-		       "Invalid distance measure for query clustering");
-	}
+            NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                       "Invalid distance measure for query clustering");
+        }
     }
 
     // Check if data base name is specified if option selected
     if (!(m_Mode & eNoRpsBlast) && !(m_Mode & eNonStandard)
-	&& m_RpsDb.empty()) {
+        && m_RpsDb.empty()) {
 
-	NCBI_THROW(CMultiAlignerException, eInvalidOptions,
-		   "RPS BLAST database name not specified");
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "RPS BLAST database name not specified");
     }
 
     // Check if RPS e-value allowed if RPS BLAST used
     if (!m_RpsDb.empty() && m_RpsEvalue < 0.0) {
-	NCBI_THROW(CMultiAlignerException, eInvalidOptions,
-		   "Incorrect RPS BLAST e-value");
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "Incorrect RPS BLAST e-value");
     }
 
     // Check if Blastp e-value allowed
     if (m_BlastpEvalue < 0.0) {
-	NCBI_THROW(CMultiAlignerException, eInvalidOptions,
-		   "Incorrect Blastp e-value");
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "Incorrect Blastp e-value");
     }
 
     // Check if patterns are specified if option selected
     if (!(m_Mode & eNoPatterns) && !(m_Mode & eNonStandard)
-	&& (m_Patterns.size() == 0)) {
+        && (m_Patterns.size() == 0)) {
 
-	NCBI_THROW(CMultiAlignerException, eInvalidOptions,
-		   "CDD patterns not specified");
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "CDD patterns not specified");
     }
 
     // Check if pseudocount value allowed if iterative alignment is selected
     if (!(m_Mode & eNoIterate) && !(m_Mode & eNonStandard)
-	&& m_Pseudocount < 0.0) {
+        && m_Pseudocount < 0.0) {
 
-	NCBI_THROW(CMultiAlignerException, eInvalidOptions,
-		   "Invalid pseudocount value");
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "Invalid pseudocount value");
     }
 
     // Check tree computation method
     if (m_TreeMethod != eNJ && m_TreeMethod != eFastME) {
-	NCBI_THROW(CMultiAlignerException, eInvalidOptions,
-		   "Invalid tree computation method for progressive alignment");
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "Invalid tree computation method for progressive alignment");
     }
 
     return true;
@@ -174,8 +174,8 @@ bool CMultiAlignerOptions::Validate(void)
 void CMultiAlignerOptions::x_InitParams(EMode mode)
 {
     if (mode & eNonStandard) {
-	NCBI_THROW(CMultiAlignerException, eInvalidOptions,
-		   "Invalid options mode value");
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "Invalid options mode value");
     }
 
     // Query clusters
@@ -183,16 +183,16 @@ void CMultiAlignerOptions::x_InitParams(EMode mode)
 
     switch (mode & kQClustersModeMask) {
     case eConservativeQueryClusters :
-	m_MaxInClusterDist = 0.6;
-	break;
+        m_MaxInClusterDist = 0.6;
+        break;
 
     case eMediumQueryClusters :
-	m_MaxInClusterDist = 0.85;
-	break;
+        m_MaxInClusterDist = 0.85;
+        break;
 
     case eLargeQueryClusters :
-	m_MaxInClusterDist = 0.95;
-	break;
+        m_MaxInClusterDist = 0.95;
+        break;
 
     // Do noting for eNoQueryClusters
     }
@@ -211,7 +211,7 @@ void CMultiAlignerOptions::x_InitParams(EMode mode)
 
     // Patterns
     if (!(mode & eNoPatterns)) {
-	AssignDefaultPatterns(m_Patterns);
+        AssignDefaultPatterns(m_Patterns);
     }
 
     // Iterate

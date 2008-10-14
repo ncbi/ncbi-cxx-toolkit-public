@@ -2783,7 +2783,7 @@ void AssignDefaultPatterns(vector<char*>& patterns)
     patterns.clear();
     patterns.resize(kNumDefPatterns);
     for (int i=0;kDefPatterns[i] && i < kNumDefPatterns;i++) {
-	patterns[i] = (char*)kDefPatterns[i];
+        patterns[i] = (char*)kDefPatterns[i];
     }
 }
 
