@@ -19,7 +19,8 @@ var g_msvcver     = "80";
 function read_stdout_line(oExec)
 {
     var line = oExec.StdOut.ReadLine();
-    if (line.indexOf("Kerberos") >= 0 && line.indexOf("Authentication") >= 0) {
+    if ((line.indexOf("Kerberos") >= 0 && line.indexOf("Authentication") >= 0) ||
+         line.indexOf("authorization failed") >= 0) {
         WScript.Echo("========================= Authentication failed");
         WScript.Echo(line)
         WScript.Echo("To update your password, please, execute the following command:")
@@ -571,7 +572,7 @@ function RepositoryExists(oShell,path)
 {
     var path_array = path.split(" ");
     var test_path = path_array[ path_array.length - 1 ];
-    return (silent_execute(oShell, "svn list " + test_path) == 0);
+    return (silent_execute(oShell, "svn --non-interactive list " + test_path) == 0);
 }
 
 function SearchRepository(oShell, abs_path, rel_path)
