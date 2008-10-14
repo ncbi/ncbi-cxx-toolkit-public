@@ -3211,7 +3211,11 @@ else
 fi
 
 ## SSL/TLS libraries
-: ${GNUTLS_PATH=$NCBI/gnutls}
+case "$with_gnutls" in
+   no )       ;;
+   yes | '' ) : ${GNUTLS_PATH=$NCBI/gnutls} ;;
+   * )        GNUTLS_PATH=$with_gnutls      ;;
+esac
 if test -d "$GNUTLS_PATH"; then
    NCBI_FIX_DIR(GNUTLS_PATH)
 fi
