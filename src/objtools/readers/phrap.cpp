@@ -488,7 +488,7 @@ void CPhrap_Read::Read(CNcbiIstream& in)
 
 bool CPhrap_Read::IsCircular(void) const
 {
-    return m_Start + GetAlignedFrom() < 0;
+    return m_Start + (TStart)GetAlignedFrom() < 0;
 }
 
 
@@ -602,7 +602,7 @@ void CPhrap_Read::x_AddTagFeats(CRef<CSeq_annot>& annot) const
     if (m_Tags.size() != m_NumReadTags) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "ReadPhrap: invalid number of RT tags for " + GetName() + ".",
-                    CT_POS_TYPE(-1));
+                    CT_POS_TYPE(0));
     }
     if ( !annot ) {
         annot.Reset(new CSeq_annot);
@@ -1382,7 +1382,7 @@ void CPhrap_Contig::x_AddBaseSegFeats(CRef<CSeq_annot>& annot) const
         if ( !read ) {
             NCBI_THROW2(CObjReaderParseException, eFormat,
                 "ReadPhrap: referenced read " + bs_set->first + " not found.",
-                        CT_POS_TYPE(-1));
+                        CT_POS_TYPE(0));
         }
         ITERATE(TBaseSegs, bs, bs_set->second) {
             TSignedSeqPos rd_start = read->GetStart();
