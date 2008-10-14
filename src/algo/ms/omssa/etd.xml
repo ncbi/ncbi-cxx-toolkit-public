@@ -17,7 +17,7 @@
           <MSSearchSettings_peptol>2</MSSearchSettings_peptol>
           <MSSearchSettings_msmstol>0.8</MSSearchSettings_msmstol>
           <MSSearchSettings_zdep>
-            <MSZdependence value="linearwithz">1</MSZdependence>
+            <MSZdependence value="independent">0</MSZdependence>
           </MSSearchSettings_zdep>
           <MSSearchSettings_cutoff>1</MSSearchSettings_cutoff>
           <MSSearchSettings_cutlo>0</MSSearchSettings_cutlo>
