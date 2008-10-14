@@ -67,7 +67,7 @@
     "fast_status=1;dyn_queues=1;tags=1;read_confirm=1;version=" NETSCHEDULED_VERSION
 
 #if defined(NCBI_OS_UNIX)
-# include <corelib/ncbi_os_unix.hpp>
+# include <corelib/ncbi_process.hpp>
 # include <signal.h>
 #endif
 
@@ -879,6 +879,26 @@ void CNetScheduleHandler::OnOverflow()
 //    ERR_POST("OnOverflow!");
 }
 
+class CRequestContextGuard
+{
+public:
+    CRequestContextGuard(CRequestContextFactory& factory)
+        : m_Factory(factory)
+    {
+        m_Ctx = &CDiagContext::GetRequestContext();
+    }
+    ~CRequestContextGuard()
+    {
+        CRequestContext* ctx = &CDiagContext::GetRequestContext();
+        if (ctx == m_Ctx) return;
+        CDiagContext::SetRequestContext(m_Ctx);
+        m_Factory.Return(ctx);
+    }
+private:
+    CRequestContextFactory& m_Factory;
+    CRequestContext*        m_Ctx;
+};
+
 
 void CNetScheduleHandler::OnMessage(BUF buffer)
 {
@@ -886,7 +906,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         WriteErr("NetSchedule server is shutting down. Session aborted.");
         return;
     }
-
+    CRequestContextGuard guard(m_RequestContextFactory);
     try {
         (this->*m_ProcessMessage)(buffer);
     }
@@ -896,7 +916,6 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         string msg = x_FormatErrorMessage("Server error", ex.what());
         ERR_POST(msg);
         x_WriteErrorToMonitor(msg);
-        CDiagContext::SetRequestContext(0);
         throw;
     }
     catch (CNetServiceException &ex)
@@ -905,14 +924,14 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         string msg = x_FormatErrorMessage("Server error", ex.what());
         ERR_POST(msg);
         x_WriteErrorToMonitor(msg);
-        CDiagContext::SetRequestContext(0);
         throw;
     }
     catch (CBDB_ErrnoException& ex)
     {
         if (ex.IsRecovery()) {
-            string msg = x_FormatErrorMessage("Fatal Berkeley DB error: DB_RUNRECOVERY. "
-                                              "Emergency shutdown initiated!", ex.what());
+            string msg = x_FormatErrorMessage(
+                "Fatal Berkeley DB error: DB_RUNRECOVERY. "
+                "Emergency shutdown initiated!", ex.what());
             ERR_POST(msg);
             x_WriteErrorToMonitor(msg);
             m_Server->SetShutdownFlag();
@@ -926,7 +945,6 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
             err = NStr::PrintableString(err);
             WriteErr(err);
         }
-        CDiagContext::SetRequestContext(0);
         throw;
     }
     catch (CBDB_Exception &ex)
@@ -938,7 +956,6 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         string msg = x_FormatErrorMessage("BDB error", ex.what());
         ERR_POST(msg);
         x_WriteErrorToMonitor(msg);
-        CDiagContext::SetRequestContext(0);
         throw;
     }
     catch (exception& ex)
@@ -950,10 +967,8 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         string msg = x_FormatErrorMessage("STL exception", ex.what());
         ERR_POST(msg);
         x_WriteErrorToMonitor(msg);
-        CDiagContext::SetRequestContext(0);
         throw;
     }
-    CDiagContext::SetRequestContext(0);
 }
 
 
@@ -2413,7 +2428,7 @@ void CNetScheduleHandler::ProcessInitWorkerNode()
     if (!m_WorkerNodeInfo.node_id.empty())
         m_Queue->ClearWorkerNode(m_WorkerNodeInfo.node_id);
     m_WorkerNodeInfo.port    = m_JobReq.port;
-    m_WorkerNodeInfo.node_id = m_JobReq.param1;
+    m_WorkerNodeInfo.node_id = m_JobReq.param1.substr(0, kMaxWorkerNodeIdSize);
     m_Queue->InitWorkerNode(m_WorkerNodeInfo);
     WriteOK();
 }
@@ -3103,7 +3118,7 @@ int CNetScheduleDApp::Run(void)
 #if defined(NCBI_OS_UNIX)
         if (params.is_daemon) {
             LOG_POST("Entering UNIX daemon mode...");
-            bool daemon = Daemonize(0, fDaemon_DontChroot);
+            bool daemon = CProcess::Daemonize(0, CProcess::fDontChroot);
             if (!daemon) {
                 return 0;
             }

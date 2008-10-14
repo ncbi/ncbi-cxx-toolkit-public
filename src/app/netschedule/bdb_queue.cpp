@@ -1711,7 +1711,7 @@ unsigned CQueue::Submit(CJob& job)
     }
 
     CNS_Transaction trans(q);
-    job.CheckAffinityToken(q, trans);
+    job.CheckAffinityToken(q, &trans);
     unsigned affinity_id = job.GetAffinityId();
     {{
         CQueueGuard guard(q, &trans);
@@ -1786,7 +1786,7 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
                 job.SetAffinityId(prev_aff_id);
             } else {
                 if (job.HasAffinityToken()) {
-                    job.CheckAffinityToken(q, trans);
+                    job.CheckAffinityToken(q, &trans);
                     batch_has_aff = true;
                     batch_aff_id = (i == 0 )? job.GetAffinityId() : 0;
                 } else {
@@ -2149,7 +2149,7 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
             }
 
             if (done_job_id) q->RemoveJobFromWorkerNode(node_info, done_job_id,
-                                                        eNSCDone);
+                                                        eNSCDone, ret_code);
             if (pending_job_id) q->AddJobToWorkerNode(node_info, rec_ctx_f,
                                                       pending_job_id,
                                                       curr + run_timeout);
@@ -2254,7 +2254,7 @@ void CQueue::FailJob(const SWorkerNodeInfo& node_info,
                      int                    ret_code)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    q->RemoveJobFromWorkerNode(node_info, job_id, eNSCFailed);
+    q->RemoveJobFromWorkerNode(node_info, job_id, eNSCFailed, ret_code);
     q->FailJob(job_id, err_msg, output, ret_code, &node_info.node_id);
 }
 
@@ -2268,8 +2268,8 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
 
     if (tm == 0) return;
 
-    time_t run_timeout;
-    time_t time_start;
+    time_t run_timeout = 0;
+    time_t time_start = 0;
 
     TJobStatus st = GetStatus(job_id);
     if (st != CNetScheduleAPI::eRunning)

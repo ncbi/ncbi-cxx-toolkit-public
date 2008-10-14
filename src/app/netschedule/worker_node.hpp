@@ -120,18 +120,20 @@ private:
 };
 
 
+// According to log system requirements, completion codes should follow
+// HTTP convention. 2xx - success, 400 - failure
 enum ENSCompletion {
-    eNSCDone = 0,
-    eNSCFailed,
-    eNSCReturned,
-    eNSCTimeout
+    eNSCDone     = 200,
+    eNSCFailed   = 400,
+    eNSCReturned = 201,
+    eNSCTimeout  = 401
 };
 
 
 class CQueueWorkerNodeList
 {
 public:
-    CQueueWorkerNodeList();
+    CQueueWorkerNodeList(const string& queue_name);
 
     // Register node with host, port and unique node id. If there was another
     // node with different id but the same (host, port) - append that node's
@@ -148,7 +150,7 @@ public:
     void UpdateJob(const string& node_id, TNSJobId job_id, time_t exp_time);
     // Remove job from worker node job list
     void RemoveJob(const string& node_id, TNSJobId job_id,
-                   ENSCompletion reason, bool log_job_state);
+                   ENSCompletion reason, int ret_code, bool log_job_state);
 
     // Returns true and adds entries to notify_list if it decides that it's OK to notify.
     bool GetNotifyList(bool unconditional, time_t curr,
@@ -178,11 +180,10 @@ private:
     void x_ClearNode(TWorkerNodeById::iterator& it, TJobList& jobs);
     void x_GenerateNodeId(string& node_id);
 
+    string          m_QueueName;
     time_t          m_LastNotifyTime;
-
     THostPortIdx    m_HostPortIdx;
     TWorkerNodeById m_WorkerNodeById;
-
     CAtomicCounter  m_GeneratedIdCounter;
     string          m_HostName;
     time_t          m_StartTime;

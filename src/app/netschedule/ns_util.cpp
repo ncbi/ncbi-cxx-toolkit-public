@@ -46,7 +46,7 @@ string NS_EncodeBitVector(TNSBitVector& bv)
     TNSBitVector::enumerator en(bv.first());
     unsigned range_cur = 0;
     int range_cnt = 0;
-    unsigned id;
+    unsigned id = 0;
     for (; en.valid(); ++en) {
         id = *en;
         if (range_cnt) {

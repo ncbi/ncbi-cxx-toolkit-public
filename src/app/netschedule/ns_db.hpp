@@ -90,7 +90,7 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldLString      input;           ///< Input data
     CBDB_FieldLString      output;          ///< Result data
 
-    CBDB_FieldString       progress_msg;    ///< Progress report message
+    CBDB_FieldLString     progress_msg;    ///< Progress report message
 
     SQueueDB()
     {
@@ -130,7 +130,7 @@ const unsigned kNetScheduleMaxOverflowSize = 1024*1024;
 struct SJobInfoDB : public CBDB_File
 {
     CBDB_FieldUint4        id;              ///< Job id
-    CBDB_FieldString       tags;            ///< Tags for the job
+    CBDB_FieldLString      tags;            ///< Tags for the job
     CBDB_FieldLString      input;           ///< Job input overflow
     CBDB_FieldLString      output;          ///< Job output overflow
 
@@ -152,16 +152,16 @@ const unsigned kMaxWorkerNodeIdSize = 64;
 /// actual attempts can be more than run_count.
 struct SRunsDB : public CBDB_File
 {
-    CBDB_FieldUint4  id;           ///< Job id
-    CBDB_FieldUint4  run;          ///< Job run
-    CBDB_FieldInt4   status;       ///< Final job status for this run
-    CBDB_FieldUint4  time_start;   ///< Start time (former time_run)
-    CBDB_FieldUint4  time_done;    ///< Result submission time
-    CBDB_FieldUint4  client_ip;    ///< IP of the client node (net byte order)
-    CBDB_FieldUint2  client_port;  ///< Client node's port
-    CBDB_FieldInt4   ret_code;     ///< Return code
-    CBDB_FieldString worker_node_id; ///< worker node id
-    CBDB_FieldString err_msg;      ///< Error message (exception::what())
+    CBDB_FieldUint4   id;           ///< Job id
+    CBDB_FieldUint4   run;          ///< Job run
+    CBDB_FieldInt4    status;       ///< Final job status for this run
+    CBDB_FieldUint4   time_start;   ///< Start time (former time_run)
+    CBDB_FieldUint4   time_done;    ///< Result submission time
+    CBDB_FieldUint4   client_ip;    ///< IP of the client node (net byte order)
+    CBDB_FieldUint2   client_port;  ///< Client node's port
+    CBDB_FieldInt4    ret_code;     ///< Return code
+    CBDB_FieldLString worker_node_id; ///< worker node id
+    CBDB_FieldLString err_msg;      ///< Error message (exception::what())
 
     SRunsDB()
     {
@@ -225,8 +225,8 @@ struct SAffinityIdx : public CBDB_BvStore<TNSBitVector>
 ///
 struct SAffinityDictDB : public CBDB_File
 {
-    CBDB_FieldUint4  aff_id;        ///< Affinity token id
-    CBDB_FieldString token;         ///< Affinity token
+    CBDB_FieldUint4   aff_id;        ///< Affinity token id
+    CBDB_FieldLString token;         ///< Affinity token
 
     SAffinityDictDB()
     {
@@ -242,7 +242,7 @@ struct SAffinityDictDB : public CBDB_File
 ///
 struct SAffinityDictTokenIdx : public CBDB_File
 {
-    CBDB_FieldString       token;
+    CBDB_FieldLString      token;
     CBDB_FieldUint4        aff_id;
 
     SAffinityDictTokenIdx()
@@ -260,8 +260,8 @@ struct SAffinityDictTokenIdx : public CBDB_File
 ///
 struct STagDB : public CBDB_BvStore<TNSBitVector>
 {
-    CBDB_FieldString key;
-    CBDB_FieldString val;
+    CBDB_FieldLString key;
+    CBDB_FieldLString val;
 
     typedef CBDB_BvStore<TNSBitVector> TParent;
 
@@ -280,11 +280,11 @@ struct STagDB : public CBDB_BvStore<TNSBitVector>
 ///
 struct SQueueDescriptionDB : public CBDB_File
 {
-    CBDB_FieldString queue;
-    CBDB_FieldUint4  kind; // static - 0 or dynamic - 1
-    CBDB_FieldUint4  pos;
-    CBDB_FieldString qclass;
-    CBDB_FieldString comment;
+    CBDB_FieldLString queue;
+    CBDB_FieldUint4   kind; // static - 0 or dynamic - 1
+    CBDB_FieldUint4   pos;
+    CBDB_FieldLString qclass;
+    CBDB_FieldLString comment;
     SQueueDescriptionDB()
     {
         DisableNull();

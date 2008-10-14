@@ -121,8 +121,8 @@ std::string CWorkerNode::AsString(time_t curr) const
 ///////////////////////////////////////////////////////////////////////
 // CQueueWorkerNodeList
 
-CQueueWorkerNodeList::CQueueWorkerNodeList()
-  : m_LastNotifyTime(0)
+CQueueWorkerNodeList::CQueueWorkerNodeList(const string& queue_name)
+  : m_QueueName(queue_name), m_LastNotifyTime(0)
 {
     m_HostName = CSocketAPI::gethostname();
     m_StartTime = time(0);
@@ -182,8 +182,11 @@ void CQueueWorkerNodeList::AddJob(const string& node_id,
     node->SetNotificationTimeout(curr, 0);
     if (log_job_state) {
         CDiagContext::SetRequestContext(req_ctx);
-        GetDiagContext().PrintRequestStart(string("Node ") +
-            node_id + " job " + NStr::IntToString(job_id));
+        GetDiagContext().PrintRequestStart("");
+        GetDiagContext().Extra()
+            .Print("node", node_id)
+            .Print("queue", m_QueueName)
+            .Print("job_id", NStr::IntToString(job_id));
     }
 }
 
@@ -208,6 +211,7 @@ void CQueueWorkerNodeList::UpdateJob(const string& node_id,
 void CQueueWorkerNodeList::RemoveJob(const string& node_id,
                                      TNSJobId job_id,
                                      ENSCompletion reason,
+                                     int ret_code,
                                      bool log_job_state)
 {
     time_t curr = time(0);
@@ -227,6 +231,8 @@ void CQueueWorkerNodeList::RemoveJob(const string& node_id,
         CDiagContext::SetRequestContext(req_ctx);
         CDiagContext::GetRequestContext().SetRequestStatus(int(reason));
         GetDiagContext().PrintRequestStop();
+        GetDiagContext().Extra()
+            .Print("ret_code", NStr::IntToString(ret_code));
     }
     if (req_ctx) {
         if (ji.factory) ji.factory->Return(req_ctx);
