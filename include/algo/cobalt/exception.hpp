@@ -47,7 +47,8 @@ class CMultiAlignerException : public CException
 public:
     enum EErrCode {
         eInvalidScoreMatrix,
-        eInvalidInput
+        eInvalidInput,
+	eInvalidOptions
     };
 
     NCBI_EXCEPTION_DEFAULT(CMultiAlignerException, CException);
