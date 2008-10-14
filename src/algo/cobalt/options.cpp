@@ -48,22 +48,28 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
 
-const CMultiAlignerOptions::EMode CMultiAlignerOptions::kQClustersModeMask
-= (CMultiAlignerOptions::EMode)(CMultiAlignerOptions::eNoQueryClusters 
-                        | CMultiAlignerOptions::eConservativeQueryClusters 
-                        | CMultiAlignerOptions::eMediumQueryClusters 
-                        | CMultiAlignerOptions::eLargeQueryClusters);
+const CMultiAlignerOptions::TMode CMultiAlignerOptions::kQClustersModeMask
+= (CMultiAlignerOptions::fNoQueryClusters 
+   | CMultiAlignerOptions::fConservativeQueryClusters 
+   | CMultiAlignerOptions::fMediumQueryClusters 
+   | CMultiAlignerOptions::fLargeQueryClusters);
 
 const int CMultiAlignerOptions::kDefaultGapOpen = BLAST_GAP_OPEN_PROT;
 const int CMultiAlignerOptions::kDefaultGapExtend = BLAST_GAP_EXTN_PROT;
 
-CMultiAlignerOptions::CMultiAlignerOptions(EMode mode)
+CMultiAlignerOptions::CMultiAlignerOptions(void)
+{
+    x_InitParams(CMultiAlignerOptions::fMediumQueryClusters
+                 | CMultiAlignerOptions::fNoRpsBlast);
+}
+
+CMultiAlignerOptions::CMultiAlignerOptions(TMode mode)
 {
     x_InitParams(mode);
 }
 
 CMultiAlignerOptions::CMultiAlignerOptions(const string& rps_db_name,
-                                           EMode mode)
+                                           TMode mode)
 {
     x_InitParams(mode);
     m_RpsDb = rps_db_name;
@@ -75,7 +81,7 @@ void CMultiAlignerOptions::SetUserConstraints(
 {
     m_UserHits.resize(constraints.size());
     copy(constraints.begin(), constraints.end(), m_UserHits.begin());
-    m_Mode = eNonStandard;
+    m_Mode = fNonStandard;
 }
 
 
@@ -84,7 +90,7 @@ void CMultiAlignerOptions::SetCddPatterns(const vector<char*>& patterns)
     m_Patterns.resize(patterns.size());
     copy(patterns.begin(), patterns.end(), m_Patterns.begin());
 
-    m_Mode = eNonStandard;
+    m_Mode = fNonStandard;
 }
 
 void CMultiAlignerOptions::AddCddPatterns(const vector<char*>& patterns)
@@ -95,14 +101,14 @@ void CMultiAlignerOptions::AddCddPatterns(const vector<char*>& patterns)
         m_Patterns[old_size + i] = patterns[i];
     }
 
-    m_Mode = eNonStandard;
+    m_Mode = fNonStandard;
 }
 
 bool CMultiAlignerOptions::Validate(void)
 {
     // Check whether m_UseQieryClusters and m_Mode are consistent
-    if (((m_Mode & kQClustersModeMask) != eNoQueryClusters) 
-        != m_UseQueryClusters && !(m_Mode & eNonStandard)) {
+    if (((m_Mode & kQClustersModeMask) != fNoQueryClusters) 
+        != m_UseQueryClusters && !(m_Mode & fNonStandard)) {
 
             NCBI_THROW(CMultiAlignerException, eInvalidOptions,
                        "Conflicting use query clusters setting");
@@ -126,7 +132,7 @@ bool CMultiAlignerOptions::Validate(void)
     }
 
     // Check if data base name is specified if option selected
-    if (!(m_Mode & eNoRpsBlast) && !(m_Mode & eNonStandard)
+    if (!(m_Mode & fNoRpsBlast) && !(m_Mode & fNonStandard)
         && m_RpsDb.empty()) {
 
         NCBI_THROW(CMultiAlignerException, eInvalidOptions,
@@ -146,7 +152,7 @@ bool CMultiAlignerOptions::Validate(void)
     }
 
     // Check if patterns are specified if option selected
-    if (!(m_Mode & eNoPatterns) && !(m_Mode & eNonStandard)
+    if (!(m_Mode & fNoPatterns) && !(m_Mode & fNonStandard)
         && (m_Patterns.size() == 0)) {
 
         NCBI_THROW(CMultiAlignerException, eInvalidOptions,
@@ -154,7 +160,7 @@ bool CMultiAlignerOptions::Validate(void)
     }
 
     // Check if pseudocount value allowed if iterative alignment is selected
-    if (!(m_Mode & eNoIterate) && !(m_Mode & eNonStandard)
+    if (!(m_Mode & fNoIterate) && !(m_Mode & fNonStandard)
         && m_Pseudocount < 0.0) {
 
         NCBI_THROW(CMultiAlignerException, eInvalidOptions,
@@ -171,26 +177,28 @@ bool CMultiAlignerOptions::Validate(void)
 }
 
 
-void CMultiAlignerOptions::x_InitParams(EMode mode)
+void CMultiAlignerOptions::x_InitParams(TMode mode)
 {
-    if (mode & eNonStandard) {
+    if (mode & fNonStandard) {
         NCBI_THROW(CMultiAlignerException, eInvalidOptions,
                    "Invalid options mode value");
     }
+
+    m_Mode = mode;
 
     // Query clusters
     m_UseQueryClusters = (mode & kQClustersModeMask) != 0;
 
     switch (mode & kQClustersModeMask) {
-    case eConservativeQueryClusters :
+    case fConservativeQueryClusters :
         m_MaxInClusterDist = 0.6;
         break;
 
-    case eMediumQueryClusters :
+    case fMediumQueryClusters :
         m_MaxInClusterDist = 0.85;
         break;
 
-    case eLargeQueryClusters :
+    case fLargeQueryClusters :
         m_MaxInClusterDist = 0.95;
         break;
 
@@ -210,12 +218,12 @@ void CMultiAlignerOptions::x_InitParams(EMode mode)
 
 
     // Patterns
-    if (!(mode & eNoPatterns)) {
+    if (!(mode & fNoPatterns)) {
         AssignDefaultPatterns(m_Patterns);
     }
 
     // Iterate
-    m_Iterate = !(mode & eNoIterate);
+    m_Iterate = !(mode & fNoIterate);
     m_ConservedCutoff = 0.67;
     m_Pseudocount = 2.0;
 

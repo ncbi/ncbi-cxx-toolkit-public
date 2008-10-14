@@ -92,44 +92,46 @@ public:
     enum EMode {
 
         // Qyery clusters 
-        eNoQueryClusters = 0, ///< No query clustering
+        fNoQueryClusters = 0, ///< No query clustering
                               ///< Expected very low percent identity between
                               ///< the most similar query sequeces.
 
-        eConservativeQueryClusters, ///< Query clusters with conservative
+        fConservativeQueryClusters, ///< Query clusters with conservative
                                     ///< allowed in-cluster distance
                                     ///< Use it if you expect many clusters of
                                     ///< very few (1 - 3) similar sequences.
 
 
-        eMediumQueryClusters,  ///< Query clusters with medium allowed 
+        fMediumQueryClusters,  ///< Query clusters with medium allowed 
                                ///< in-cluster distance.
                                ///< Should work for most query sets.
                                ///< Expected clusters of similar sequences
                                ///< (percent identity more than 50).
 
 
-        eLargeQueryClusters,  ///< Query clusters with large allowed
+        fLargeQueryClusters,  ///< Query clusters with large allowed
                               ///< in-cluster distance.
                               ///< For clusters of very similar sequences
                               ///< (ex. BLAST serch result)
 
 
         // RPS Blast search
-        eNoRpsBlast = 0x04,        ///< Do not use RPS Blast
+        fNoRpsBlast = 1<<2,        ///< Do not use RPS Blast
 
         // Regular expression patterns search
-        eNoPatterns = 0x08,        ///< Do not use conserved domain patterns
+        fNoPatterns = 1<<3,        ///< Do not use conserved domain patterns
 
         // Iterative alignment
-        eNoIterate = 0x010,          ///< Do not use Iterative alignment
+        fNoIterate = 1<<4,          ///< Do not use Iterative alignment
 
         
         // Other
-        eNonStandard = 0x080   ///< Not used as input, indicates that
+        fNonStandard = 1<<7   ///< Not used as input, indicates that
                                ///< non-standard settings were selected after
 
     };
+
+    typedef int TMode;
 
     /// Method for construction of guide tree for progressive alignment
     enum ETreeMethod {
@@ -137,18 +139,24 @@ public:
         eFastME   ///< Fast Minimum Evolution
     };
 
+
 public:
+    
+    /// Create options with default mode
+    ///
+    CMultiAlignerOptions(void);
+
     /// Create options with desired mode
     /// @param mode Desired mode of operation
     ///
-    CMultiAlignerOptions(EMode mode = eMediumQueryClusters | eNoRpsBlast);
+    CMultiAlignerOptions(TMode mode);
 
     /// Create options with RPS database and desired mode
     /// @param rps_db_name Name of RPS database
     /// @param mode Mode of operation
     ///
     CMultiAlignerOptions(const string& rps_db_name,
-                         EMode mode = eMediumQueryClusters);
+                         TMode mode = fMediumQueryClusters);
 
 
     // Turn on and off major options and set major parameters. Other parameter
@@ -164,7 +172,7 @@ public:
     /// @param use Option used if true [in]
     ///
     void SetUseQueryClusters(bool use)
-    {m_UseQueryClusters = use; m_Mode = eNonStandard;}
+    {m_UseQueryClusters = use; m_Mode = fNonStandard;}
 
 
     /// Check if query clustering option is on
@@ -184,7 +192,7 @@ public:
     /// @param use Option used if true, otherwise not used [in]
     ///
     void SetIterate(bool use)
-    {m_Iterate = use; m_Mode = eNonStandard;}
+    {m_Iterate = use; m_Mode = fNonStandard;}
 
 
     /// Check if iterative alignmnet option is used
@@ -205,7 +213,7 @@ public:
     /// @param dbname Path and name of RPS Blast data base [in]
     ///
     void SetRpsDb(const string& dbname)
-    {m_RpsDb = dbname; m_Mode = (EMode)(m_Mode & !eNoRpsBlast);}
+    {m_RpsDb = dbname; m_Mode = m_Mode & !fNoRpsBlast;}
 
 
     /// Get RPS Blast data base name
@@ -264,7 +272,7 @@ public:
     /// Set word size for creating word count vectors in query clustering
     /// @param len Number of letters in a word [in]
     ///
-    void SetKmerLength(int len) {m_KmerLength = len; m_Mode = eNonStandard;}
+    void SetKmerLength(int len) {m_KmerLength = len; m_Mode = fNonStandard;}
 
     /// Get word size for creating word count vectors
     /// @return Number of letters in a word
@@ -275,7 +283,7 @@ public:
     /// @param alph Alphabet [in]
     ///
     void SetKmerAlphabet(TKMethods::ECompressedAlphabet alph)
-    {m_KmerAlphabet = alph; m_Mode = eNonStandard;}
+    {m_KmerAlphabet = alph; m_Mode = fNonStandard;}
 
     /// Get alphabet used for creating word count vectors
     /// @return Alphabet
@@ -287,7 +295,7 @@ public:
     /// @param method Distance method [in]
     ///
     void SetKmerDistMeasure(TKMethods::EDistMeasures method)
-    {m_ClustDistMeasure = method; m_Mode = eNonStandard;}
+    {m_ClustDistMeasure = method; m_Mode = fNonStandard;}
     
 
     /// Get method for computing distance between word count vectors
@@ -301,7 +309,7 @@ public:
     /// @parsm dist Maximum allowed distance in cluster [in]
     ///
     void SetMaxInClusterDist(double dist)
-    {m_MaxInClusterDist = dist; m_Mode = eNonStandard;}
+    {m_MaxInClusterDist = dist; m_Mode = fNonStandard;}
 
     /// Get maximum allowed distance between sequences in a cluster
     /// @return Maxium allowed distance in cluster
@@ -315,7 +323,7 @@ public:
     /// @param evalue E-value for acceting RPS Blast hits [in]
     ///
     void SetRpsEvalue(double evalue)
-    {m_RpsEvalue = evalue; m_Mode = eNonStandard;}
+    {m_RpsEvalue = evalue; m_Mode = fNonStandard;}
 
     /// Get e-value threshold for accepting RPS Blast hits
     /// @return E-value for accepting RPS Blast hits
@@ -327,7 +335,7 @@ public:
     /// @param boost Boost for RPS residue frequencies [in]
     ///
     void SetDomainResFreqBoost(double boost) 
-    {m_DomainResFreqBoost = boost; m_Mode = eNonStandard;}
+    {m_DomainResFreqBoost = boost; m_Mode = fNonStandard;}
 
     /// Get boost for residue frequencies in conserved domains from RPS data
     /// base
@@ -338,7 +346,7 @@ public:
     /// Set use of precomputed RPS Blast hits
     /// @param use 
     void SetUsePreRpsHits(bool use)
-    {m_UsePreRpsHits = use; m_Mode = eNonStandard;}
+    {m_UsePreRpsHits = use; m_Mode = fNonStandard;}
 
     /// Get use of precomputed RPS Blast hits
     /// @return 
@@ -354,7 +362,7 @@ public:
     /// @param evalue E-value for accepting Blastp hits [in]
     ///
     void SetBlastpEvalue(double evalue)
-    {m_BlastpEvalue = evalue; m_Mode = eNonStandard;}
+    {m_BlastpEvalue = evalue; m_Mode = fNonStandard;}
 
     /// Get e-value for accepting Blastp hits
     /// @return E-value for accepting Blastp hits
@@ -368,7 +376,7 @@ public:
     /// @param score Cutoff score [in]
     ///
     void SetConservedCutoffScore(double score)
-    {m_ConservedCutoff = score; m_Mode = eNonStandard;}
+    {m_ConservedCutoff = score; m_Mode = fNonStandard;}
 
     /// Get cutoff score for conserved aligned columns
     /// @return Cutoff score
@@ -379,7 +387,7 @@ public:
     /// @param pseudocount Pseudocount [in]
     ///
     void SetPseudocount(double pseudocount)
-    {m_Pseudocount = pseudocount; m_Mode = eNonStandard;}
+    {m_Pseudocount = pseudocount; m_Mode = fNonStandard;}
 
     /// Get pseudocount for calculating column entropy
     /// @return Pseudocount
@@ -393,7 +401,7 @@ public:
     /// @param method Tree computation method [in]
     ///
     void SetTreeMethod(ETreeMethod method)
-    {m_TreeMethod = method; m_Mode = eNonStandard;}
+    {m_TreeMethod = method; m_Mode = fNonStandard;}
 
     /// Get method for creating tree that guides progressive alignment
     /// @return Tree method
@@ -405,7 +413,7 @@ public:
     /// @param boost Frequency boost [in]
     ///
     void SetLocalResFreqBoost(double boost)
-    {m_LocalResFreqBoost = boost; m_Mode =eNonStandard;}
+    {m_LocalResFreqBoost = boost; m_Mode =fNonStandard;}
 
     /// Get frequency boost for a letter that appears in query sequence in
     /// given position
@@ -420,7 +428,7 @@ public:
     /// @param matrix Score matrix name [in]
     ///
     void SetScoreMatrixName(const string& matrix)
-    {m_MatrixName = matrix; m_Mode = eNonStandard;}
+    {m_MatrixName = matrix; m_Mode = fNonStandard;}
 
     /// Get alignment score matrix name
     /// @return Score matrix name
@@ -432,7 +440,7 @@ public:
     /// @param penalty Gap open penalty [in]
     ///
     void SetGapOpenPenalty(TScore penalty)
-    {m_GapOpen = penalty; m_Mode = eNonStandard;}
+    {m_GapOpen = penalty; m_Mode = fNonStandard;}
 
     /// Get gap opening penalty for middle gaps in pairwise global alignment
     /// of profiles
@@ -445,7 +453,7 @@ public:
     /// @param penalty Gap extension penalty [in]
     ///
     void SetGapExtendPenalty(TScore penalty)
-    {m_GapExtend = penalty; m_Mode = eNonStandard;}
+    {m_GapExtend = penalty; m_Mode = fNonStandard;}
 
     /// Get gap extension penlaty for middle gaps in pairwise global alignment
     /// of profiles
@@ -458,7 +466,7 @@ public:
     /// @param penalty Gap open penalty [in]
     ///
     void SetEndGapOpenPenalty(TScore penalty)
-    {m_EndGapOpen = penalty; m_Mode = eNonStandard;}
+    {m_EndGapOpen = penalty; m_Mode = fNonStandard;}
 
     /// Get gap opening penalty for end gaps in pairwise global alignment
     /// of profiles
@@ -471,7 +479,7 @@ public:
     /// @param penalty Gap extension penalty [in]
     ///
     void SetEndGapExtendPenalty(TScore penalty)
-    {m_EndGapExtend = penalty; m_Mode = eNonStandard;}
+    {m_EndGapExtend = penalty; m_Mode = fNonStandard;}
 
     /// Get gap extension penalty for end gaps in pairwise global alignment
     /// of profiles
@@ -485,7 +493,7 @@ public:
     /// Get options mode
     /// @return Options mode
     ///
-    EMode GetMode(void) const {return m_Mode;}
+    TMode GetMode(void) const {return m_Mode;}
 
     /// Check whether parameter values belong to any of the standard modes
     ///
@@ -495,7 +503,7 @@ public:
     ///     True if parameter values belong to a stanard mode,
     ///     False otherwise
     ///
-    bool IsStandardMode(void) const {return !(m_Mode & eNonStandard);}
+    bool IsStandardMode(void) const {return !(m_Mode & fNonStandard);}
 
     /// Set verbose mode
     ///
@@ -531,7 +539,7 @@ private:
 
     /// Initiate parameter values based on the specified mode
     /// @param mode Mode
-    void x_InitParams(EMode mode);
+    void x_InitParams(TMode mode);
 
     /// Create default patterns for cdd search
     void x_CreateDefaultPatterns(void);
@@ -539,7 +547,7 @@ private:
 
 private:
 
-    EMode m_Mode;
+    TMode m_Mode;
 
     // Query clustering
     bool m_UseQueryClusters;
@@ -582,7 +590,7 @@ private:
 
     bool m_Verbose;
 
-    static const EMode kQClustersModeMask;
+    static const TMode kQClustersModeMask;
     static const int kDefaultGapOpen;
     static const int kDefaultGapExtend;
 };
