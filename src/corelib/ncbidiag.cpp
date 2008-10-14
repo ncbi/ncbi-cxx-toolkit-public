@@ -504,7 +504,7 @@ struct SRequestCtxWrapper
 inline Uint8 s_GetThreadId(void)
 {
     if (TPrintSystemTID::GetDefault()) {
-        return (Uint8)(CThreadSystemID::GetCurrent().m_ID);
+        return (Uint8)(CThreadSystemID::GetCurrent().m_ID); // GCC 3.4.6 gives warning - ignore it.
     } else {
         return CThread::GetSelf();
     }
