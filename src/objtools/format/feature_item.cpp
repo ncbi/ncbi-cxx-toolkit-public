@@ -4146,7 +4146,7 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(cultivar);
     DO_QUAL(isolate);
     DO_QUAL(isolation_source);
-    x_FormatQual(eSQ_spec_or_nat_host, "specific_host", qvec);
+    x_FormatQual(eSQ_spec_or_nat_host, "host", qvec);
     DO_QUAL(sub_species);
     DO_QUAL(specimen_voucher);
 
