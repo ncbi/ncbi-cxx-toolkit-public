@@ -788,25 +788,7 @@ public:
 };
 
 
-class CDbapiFtdsCF_ftds : public CDbapiFtdsCFBase
-{
-public:
-    CDbapiFtdsCF_ftds(void)
-    : CDbapiFtdsCFBase("ftds")
-    {
-    }
-};
-
-
 ///////////////////////////////////////////////////////////////////////////////
-void
-NCBI_EntryPoint_xdbapi_ftds(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
-{
-    CHostEntryPointImpl<CDbapiFtdsCF_ftds>::NCBI_EntryPointImpl( info_list, method );
-}
-
 void
 NCBI_EntryPoint_xdbapi_ftds8(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
@@ -817,9 +799,8 @@ NCBI_EntryPoint_xdbapi_ftds8(
 
 NCBI_DBAPIDRIVER_DBLIB_EXPORT
 void
-DBAPI_RegisterDriver_FTDS(void)
+DBAPI_RegisterDriver_FTDS8(void)
 {
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds8 );
 }
 
