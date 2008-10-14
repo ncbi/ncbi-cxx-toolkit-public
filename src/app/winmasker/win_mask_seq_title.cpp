@@ -49,8 +49,8 @@ USING_SCOPE(objects);
 
 
 //-------------------------------------------------------------------------
-const string CWinMaskSeqTitle::GetTitle( CSeq_entry_Handle & seh, 
-                                         const CBioseq & seq )
+const string CWinMaskSeqTitle::GetTitle( objects::CSeq_entry_Handle & seh, 
+                                         const objects::CBioseq & seq )
 {
     list< CRef< CSeq_id > > idlist = seq.GetId();
     string title, result( "UNKNOWN" );
@@ -68,8 +68,8 @@ const string CWinMaskSeqTitle::GetTitle( CSeq_entry_Handle & seh,
 }
 
 //-------------------------------------------------------------------------
-const string CWinMaskSeqTitle::GetId( CSeq_entry_Handle & seh, 
-                                      const CBioseq & seq )
+const string CWinMaskSeqTitle::GetId( objects::CSeq_entry_Handle & seh, 
+                                      const objects::CBioseq & seq )
 {
     string title( GetTitle( seh, seq ) );
     string::size_type pos = title.find_first_of( " \t" );

@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
-void CMaskWriterFasta::Print( CBioseq_Handle& bsh,
+void CMaskWriterFasta::Print( objects::CBioseq_Handle& bsh,
                               const CSeqMasker::TMaskList & mask,
                               bool match_id )
 {

@@ -78,7 +78,8 @@ InitSeqInfoSrc(CSeqDB* seqdb)
     return new CSeqDbSeqInfoSrc(seqdb);
 }
 
-CConstRef<CSeq_loc> CreateWholeSeqLocFromIds(const list< CRef<CSeq_id> > seqids)
+CConstRef<objects::CSeq_loc> 
+CreateWholeSeqLocFromIds(const list< CRef<objects::CSeq_id> > seqids)
 {
     _ASSERT(!seqids.empty());
     CRef<CSeq_loc> retval(new CSeq_loc);

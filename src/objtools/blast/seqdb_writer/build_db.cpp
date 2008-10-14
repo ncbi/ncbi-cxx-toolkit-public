@@ -426,7 +426,7 @@ CBuildDatabase::x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids)
 #endif
 
 void CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
-                                        CSeqVector         * sv)
+                                        objects::CSeqVector         * sv)
 {
     CRef<CBlast_def_line_set> headers =
         CWriteDB::ExtractBioseqDeflines(*bs);

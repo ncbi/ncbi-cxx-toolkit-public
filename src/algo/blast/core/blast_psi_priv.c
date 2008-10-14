@@ -2719,11 +2719,11 @@ static double s_columnSpecificPseudocounts(const _PSISequenceWeights *posSearch,
   double pseudoDenominator; /*intermediate term*/
   double returnValue;
   /* Constant values, were #defines in posit.c */
-  const double kPseudoMult = 500.0;
-  const double kPseudoNumerator = 0.052;  /*numerator of entropy-based method*/
-  const double kPseudoExponent = 1.0;  /*exponent of denominator*/
-  const double kPseudoSmallInitial = 1.5; /*small number of pseudocounts to
-                                        avoid 0 probabilities in entropy-based method*/
+  const double kPseudoMult = 500.0;  /* Was PSEUDO_MULTIPLIER */
+  const double kPseudoNumerator = 0.0457;  /*numerator of entropy-based method, was PSEUDO_NUMERATOR */
+  const double kPseudoExponent = 0.8;  /*exponent of denominator, was PSEUDO_EXPONENT */
+  const double kPseudoSmallInitial = 5.5; /*small number of pseudocounts to
+                              avoid 0 probabilities in entropy-based method, was PSEUDO_SMALL_INITIAL */
 
   s_fillColumnProbabilities(&(columnProbabilitiesInitial[0]), posSearch, columnNumber);
   s_adjustColumnProbabilities(&(columnProbabilitiesInitial[0]),

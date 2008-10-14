@@ -41,11 +41,10 @@ Author: Jason Papadopoulos
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
-#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/core/blast_stat.h>
 #include <objtools/blast_format/blastxml_format.hpp>
-#include <algo/blast/api/remote_services.hpp>   // for CRemoteServices
 #include <corelib/ncbiutil.hpp>                 // for FindBestChoice
+#include "blast_app_util.hpp"
 #include "blast_format.hpp"
 #include "data4xmlformat.hpp"
 
@@ -98,7 +97,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     if (m_IsBl2Seq) {
         m_SeqInfoSrc.Reset(db_adapter.MakeSeqInfoSrc());
     } else {
-        x_FillDbInfo(dbfilt_algorithms);
+        BlastFormat_GetBlastDbInfo(m_DbInfo, m_DbName, m_DbIsAA,
+                                   dbfilt_algorithms);
     }
     if (m_FormatType == CFormattingArgs::eXml) {
         m_AccumulatedQueries.Reset(new CBlastQueryVector());
@@ -106,113 +106,6 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     if (use_sum_statistics && m_IsUngappedSearch) {
         m_ShowLinkedSetSize = true;
     }
-}
-
-bool 
-CBlastFormat::x_FillDbInfoRemotely(const string& dbname,
-                                   CBlastFormatUtil::SDbInfo& info) const
-{
-    CRef<CBlast4_database> blastdb(new CBlast4_database);
-    blastdb->SetName(dbname);
-    blastdb->SetType() = m_DbIsAA
-        ? eBlast4_residue_type_protein : eBlast4_residue_type_nucleotide;
-    CRef<CBlast4_database_info> dbinfo = 
-        CRemoteServices().GetDatabaseInfo(blastdb);
-
-    info.name = dbname;
-    if ( !dbinfo ) {
-        return false;
-    }
-    info.definition = dbinfo->GetDescription();
-    if (info.definition.empty())
-        info.definition = info.name;
-    CTimeFormat tf("b d, Y H:m P", CTimeFormat::fFormat_Simple);
-    info.date = CTime(dbinfo->GetLast_updated()).AsString(tf);
-    info.total_length = dbinfo->GetTotal_length();
-    info.number_seqs = static_cast<int>(dbinfo->GetNum_sequences());
-    return true;
-}
-
-bool
-CBlastFormat::x_FillDbInfoLocally(const string& dbname,
-                                  CBlastFormatUtil::SDbInfo& info, 
-                                  const vector<int>& dbfilt_algorithms) const
-{
-    CRef<CSeqDB> seqdb(new CSeqDB(dbname, m_DbIsAA 
-                          ? CSeqDB::eProtein : CSeqDB::eNucleotide));
-    if ( !seqdb ) {
-        return false;
-    }
-    info.name = seqdb->GetDBNameList();
-    info.definition = seqdb->GetTitle();
-    if (info.definition.empty())
-        info.definition = info.name;
-    info.date = seqdb->GetDate();
-    info.total_length = seqdb->GetTotalLength();
-    info.number_seqs = seqdb->GetNumSeqs();
-
-    // Process the filtering algorithm IDs
-    info.algorithm_names.clear();
-    info.detailed_masking_info.clear();
-    if (dbfilt_algorithms.empty()) {
-        return true;
-    }
-
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
-    EBlast_filter_program filtering_algorithm;
-    string opts, filt_algo_name;
-    seqdb->GetMaskAlgorithmDetails(dbfilt_algorithms.front(), 
-                                   filtering_algorithm, filt_algo_name, opts);
-    info.algorithm_names += filt_algo_name;
-    size_t index = 1;
-    info.detailed_masking_info += 
-        NStr::IntToString(index) + ". " + filt_algo_name + ". Options: '" 
-        + opts + "'\n";
-    for (; index < dbfilt_algorithms.size(); index++) {
-        seqdb->GetMaskAlgorithmDetails(dbfilt_algorithms[index],
-                                       filtering_algorithm, filt_algo_name,
-                                       opts);
-        info.algorithm_names += ", " + filt_algo_name;
-        info.detailed_masking_info += "     " +
-            NStr::IntToString(index+1) + ". " + filt_algo_name + 
-            ". Options: '" + opts + "\n";
-    }
-#endif
-    return true;
-}
-
-void
-CBlastFormat::x_FillDbInfo(const vector<int>& dbfilt_algorithms)
-{
-    vector<string> dbnames;
-    NStr::Tokenize(m_DbName, " ", dbnames);
-
-    m_DbInfo.reserve(dbnames.size());
-    ITERATE(vector<string>, dbname, dbnames) {
-        CBlastFormatUtil::SDbInfo info;
-        info.is_protein = m_DbIsAA;
-        bool success = false;
-
-        if (m_IsRemoteSearch) {
-            success = x_FillDbInfoRemotely(*dbname, info);
-        } else {
-            success = x_FillDbInfoLocally(*dbname, info, dbfilt_algorithms);
-        }
-        if (success) {
-            m_DbInfo.push_back(info);
-        } else {
-            string msg("'");
-            msg += *dbname;
-            if (m_IsRemoteSearch)
-                msg += string("' not found on NCBI servers.\n");
-            else
-                msg += string("' not found.\n");
-            NCBI_THROW(CSeqDBException, eFileErr, msg);
-        }
-    }
-
-    return;
 }
 
 static const string kHTML_Prefix =
@@ -499,8 +392,8 @@ CBlastFormat::x_ComputeBlastTypePair() const
 }
 
 // Port of jzmisc.c's AddAlignInfoToSeqAnnotEx (CVS revision 6.11)
-CRef<CSeq_annot>
-CBlastFormat::x_WrapAlignmentInSeqAnnot(CConstRef<CSeq_align_set> alnset) const
+CRef<objects::CSeq_annot>
+CBlastFormat::x_WrapAlignmentInSeqAnnot(CConstRef<objects::CSeq_align_set> alnset) const
 {
     _ASSERT(alnset.NotEmpty());
     CRef<CSeq_annot> retval(new CSeq_annot);

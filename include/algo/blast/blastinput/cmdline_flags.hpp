@@ -179,8 +179,9 @@ struct SFormatSpec {
         : name(n), description(d), field(f) {}
 };
 
+/// Array containing the supported output formats for tabular output.
 NCBI_XBLAST_EXPORT extern const SFormatSpec sc_FormatSpecifiers[];
-/// Number of elements in the sc_FormatSpecifiers array
+/// Number of elements in the sc_FormatSpecifiers array.
 NCBI_XBLAST_EXPORT extern const size_t kNumTabularOutputFormatSpecifiers;
 
 /// Returns a string documenting the available format specifiers

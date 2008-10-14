@@ -37,9 +37,9 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 #include <objects/seq/Seq_annot.hpp>
-#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <util/tables/raw_scoremat.h>
 #include "blast_format.hpp"
+#include "blast_app_util.hpp"
 #include "data4xmlformat.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -53,7 +53,8 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
      const blast::CSearchResultSet& results,
      const blast::CBlastOptions& opts,
      const string& dbname, bool db_is_aa,
-     int qgencode, int dbgencode)
+     int qgencode, int dbgencode,
+     const vector<int>& dbfilt_algorithms /* = vector<int>() */)
 : m_Queries(queries), m_Options(opts), 
   m_DbName(dbname),
   m_QueryGeneticCode(qgencode), 
@@ -68,7 +69,8 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
         NCBI_THROW(CBlastException, eNotSupported,
                    "XML formatting is only supported for a database search");
     }
-    x_FillDbInfo(db_is_aa);
+    BlastFormat_GetBlastDbInfo(m_DbInfo, m_DbName, db_is_aa,
+                               dbfilt_algorithms);
 
     if (results.size() == 0) {
         m_NoHitsFound = true;
@@ -167,22 +169,6 @@ CCmdLineBlastXMLReportData::x_FillScoreMatrix(const char *matrix_name)
             }
         }
     }
-}
-
-void
-CCmdLineBlastXMLReportData::x_FillDbInfo(bool db_is_aa)
-{
-    CSeqDB seqdb(m_DbName, db_is_aa ? CSeqDB::eProtein : CSeqDB::eNucleotide);
-
-    m_DbInfo.is_protein = db_is_aa;
-    m_DbInfo.name = seqdb.GetDBNameList();
-    m_DbInfo.definition = seqdb.GetTitle();
-    if (m_DbInfo.definition.empty())
-        m_DbInfo.definition = m_DbInfo.name;
-    m_DbInfo.date = seqdb.GetDate();
-    m_DbInfo.total_length = seqdb.GetTotalLength();
-    m_DbInfo.number_seqs = seqdb.GetNumSeqs();
-    m_DbInfo.subset = false;
 }
 
 double

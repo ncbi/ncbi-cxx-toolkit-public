@@ -1,5 +1,5 @@
 APP = blast_formatter
-SRC = blast_formatter blast_format data4xmlformat
+SRC = blast_formatter blast_format data4xmlformat blast_app_util
 LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 

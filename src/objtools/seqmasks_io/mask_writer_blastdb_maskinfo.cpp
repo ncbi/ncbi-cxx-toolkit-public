@@ -47,7 +47,7 @@ CMaskWriterBlastDbMaskInfo::CMaskWriterBlastDbMaskInfo
     ( CNcbiOstream& arg_os, 
       const string & format,
       int algo_id,
-      EBlast_filter_program filt_program,
+      objects::EBlast_filter_program filt_program,
       const string & algo_options )
 : CMaskWriter( arg_os )
 {

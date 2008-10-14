@@ -74,7 +74,7 @@ CSDustMasker::~CSDustMasker(){}
 
 //------------------------------------------------------------------------------
 CSDustMasker::TMaskList * CSDustMasker::operator()( 
-    const CSeqVector & data, const TMaskList & exclude_ranges )
+    const objects::CSeqVector & data, const TMaskList & exclude_ranges )
 {
     TMaskList * res( new TMaskList );
     TMaskList::const_iterator e_it = exclude_ranges.begin();

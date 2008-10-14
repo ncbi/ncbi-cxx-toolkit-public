@@ -64,11 +64,12 @@ static char const rcsid[] =
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
-#endif
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 /// The main application class
 class CMakeBlastDBApp : public CNcbiApplication {
 public:
+    /// Convenience typedef
     typedef CFormatGuess::EFormat TFormat;
     
     /** @inheritDoc */
@@ -107,6 +108,13 @@ private:
     CRef<CMaskedRangeSet> m_Ranges;
 };
 
+/// Reads an object defined in a NCBI ASN.1 spec from a stream in multiple
+/// formats: binary and text ASN.1 and XML
+/// @param file stream to read the object from [in]
+/// @param fmt specifies the format in which the object is encoded [in]
+/// @param obj on input is an empty CRef<> object, on output it's populated
+/// with the object read [in|out]
+/// @param msg error message to display if reading fails [in]
 template<class TObj>
 void s_ReadObject(CNcbiIstream          & file,
                   CFormatGuess::EFormat   fmt,
@@ -133,6 +141,12 @@ void s_ReadObject(CNcbiIstream          & file,
     }
 }
 
+/// Overloaded version of s_ReadObject which uses CFormatGuess to determine
+/// the encoding of the object in the file
+/// @param file stream to read the object from [in]
+/// @param obj on input is an empty CRef<> object, on output it's populated
+/// with the object read [in|out]
+/// @param msg error message to display if reading fails [in]
 template<class TObj>
 void s_ReadObject(CNcbiIstream & file,
                   CRef<TObj>    & obj,
@@ -141,8 +155,11 @@ void s_ReadObject(CNcbiIstream & file,
     s_ReadObject(file, CFormatGuess().Format(file), obj, msg);
 }
 
+/// Command line flag to represent the input
 static const string kInput("in");
+/// Defines token separators when multiple inputs are present
 static const string kInputSeparators(" ");
+/// Command line flag to represent the output
 static const string kOutput("out");
 
 void CMakeBlastDBApp::Init()
@@ -222,6 +239,10 @@ void CMakeBlastDBApp::Init()
     SetupArgDescriptions(arg_desc.release());
 }
 
+/// Converts a Uint8 into a string which contains a data size (converse to
+/// NStr::StringToUInt8_DataSize)
+/// @param v value to convert [in]
+/// @param minprec minimum precision [in]
 static string Uint8ToString_DataSize(Uint8 v, unsigned minprec = 10)
 {
     static string kMods = "KMGTPEZY";
@@ -250,6 +271,7 @@ void CMakeBlastDBApp::x_AddFasta(CNcbiIstream & data)
 
 class CSeqEntrySource : public IBioseqSource {
 public:
+    /// Convenience typedef
     typedef CFormatGuess::EFormat TFormat;
     
     CSeqEntrySource(CNcbiIstream & is, TFormat fmt)

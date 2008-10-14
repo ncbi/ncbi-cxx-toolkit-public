@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
-void CMaskWriter::PrintId( CBioseq_Handle& bsh, bool match_id )
+void CMaskWriter::PrintId( objects::CBioseq_Handle& bsh, bool match_id )
 { 
     string id_str = ">";
 

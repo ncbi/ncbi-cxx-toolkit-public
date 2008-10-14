@@ -30,8 +30,10 @@
 #include <ncbi_pch.hpp>
 #include "masked_range_set.hpp"
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 CMaskedRangesVector &
 CMaskedRangeSet::GetRanges(const list< CRef<CSeq_id> > & idlist)

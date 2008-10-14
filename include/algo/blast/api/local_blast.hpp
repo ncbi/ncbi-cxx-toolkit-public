@@ -54,16 +54,31 @@ BEGIN_SCOPE(blast)
 class NCBI_XBLAST_EXPORT CLocalBlast : public CObject, public CThreadable
 {
 public:
+    /// Constructor with database description
+    /// @param query_factory query sequence(s) [in]
+    /// @param opts_handle BLAST options handle [in]
+    /// @param dbinfo description of BLAST database to search [in]
     CLocalBlast(CRef<IQueryFactory> query_factory,
                 CRef<CBlastOptionsHandle> opts_handle,
                 const CSearchDatabase& dbinfo);
+
+    /// Constructor with subject adapter (@sa CLocalDbAdapter)
+    /// @param query_factory query sequence(s) [in]
+    /// @param opts_handle BLAST options handle [in]
+    /// @param db subject adapter [in]
     CLocalBlast(CRef<IQueryFactory> query_factory,
                 CRef<CBlastOptionsHandle> opts_handle,
                 CRef<CLocalDbAdapter> db);
+
+    /// Constructor with database description
+    /// @param query_factory query sequence(s) [in]
+    /// @param opts_handle BLAST options handle [in]
+    /// @param seqsrc BlastSeqSrc object to search [in]
     CLocalBlast(CRef<IQueryFactory> query_factory,
                 CRef<CBlastOptionsHandle> opts_handle,
                 BlastSeqSrc* seqsrc);
     
+    /// Executes the search
     CRef<CSearchResultSet> Run();
     
 private:

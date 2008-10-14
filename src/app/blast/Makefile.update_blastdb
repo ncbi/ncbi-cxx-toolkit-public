@@ -1,0 +1,18 @@
+# $Id
+##################################
+
+include $(builddir)/Makefile.mk
+
+SCRIPT_NAME = update_blastdb.pl
+
+all:
+	@if [ '$(BINCOPY)' != '@:' -a -d $(bindir) -a -w $(bindir) -a $(srcdir) != . ]; then \
+	        echo $(BINCOPY) $(srcdir)/$(SCRIPT_NAME) $(bindir) && \
+	        $(BINCOPY) $(srcdir)/$(SCRIPT_NAME) $(bindir) || exit $? ; \
+	fi
+
+purge:
+	-$(RM) $(bindir)/$(SCRIPT_NAME)
+
+clean:
+

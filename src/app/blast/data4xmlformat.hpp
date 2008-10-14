@@ -61,11 +61,12 @@ public:
     ///                 (if applicable) [in]
     ///
     CCmdLineBlastXMLReportData(CRef<blast::CBlastQueryVector> queries,
-                               const blast::CSearchResultSet& results,
-                               const blast::CBlastOptions& opts, 
-                               const string& dbname, bool db_is_aa,
-                               int qgencode = BLAST_GENETIC_CODE,
-                               int dbgencode = BLAST_GENETIC_CODE);
+               const blast::CSearchResultSet& results,
+               const blast::CBlastOptions& opts, 
+               const string& dbname, bool db_is_aa,
+               int qgencode = BLAST_GENETIC_CODE,
+               int dbgencode = BLAST_GENETIC_CODE,
+               const vector<int>& dbfilt_algorithms = vector<int>());
 
     /// Destructor
     ~CCmdLineBlastXMLReportData();
@@ -148,12 +149,12 @@ public:
 
     /// @inheritDoc
     int GetDbNumSeqs(void) const {
-        return m_DbInfo.number_seqs;
+        return m_DbInfo.front().number_seqs;
     }
 
     /// @inheritDoc
     Int8 GetDbLength(void) const {
-        return m_DbInfo.total_length;
+        return m_DbInfo.front().total_length;
     }
 
     /// @inheritDoc
@@ -241,7 +242,7 @@ private:
     int *m_Matrix[kMatrixCols];
 
     /// internal representation of database information
-    CBlastFormatUtil::SDbInfo m_DbInfo;
+    vector<CBlastFormatUtil::SDbInfo> m_DbInfo;
 
     /// Initialize the score matrix to be used for formatting
     /// (if applicable)
@@ -249,9 +250,6 @@ private:
     ///                    BLOSUM62 [in]
     ///
     void x_FillScoreMatrix(const char *matrix_name = BLAST_DEFAULT_MATRIX);
-
-    /// Initialize database statistics
-    void x_FillDbInfo(bool db_is_aa);
 };
 
 END_NCBI_SCOPE

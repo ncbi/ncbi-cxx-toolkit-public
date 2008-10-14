@@ -317,7 +317,7 @@ CBlastOM::x_InitBlastDatabaseDataLoader(const string& dbname,
     try {
         if (location == eLocal) {
             m_BlastDbLoaderName = CBlastDbDataLoader::RegisterInObjectManager
-                (*m_ObjMgr, dbname, dbtype,
+                (*m_ObjMgr, dbname, dbtype, true,
                  CObjectManager::eNonDefault).GetLoader()->GetName();
         } else {
             m_BlastDbLoaderName = CRemoteBlastDataLoader::RegisterInObjectManager

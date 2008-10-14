@@ -58,7 +58,7 @@ CSegMasker::~CSegMasker()
 
 //------------------------------------------------------------------------------
 CSegMasker::TMaskList*
-CSegMasker::operator()(const CSeqVector & data)
+CSegMasker::operator()(const objects::CSeqVector & data)
 {
     if ( !data.IsProtein() ) {
         throw logic_error("SEG can only filter protein sequences");

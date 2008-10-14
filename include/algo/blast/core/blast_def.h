@@ -159,7 +159,7 @@ SSeqRange SSeqRangeNew(Int4 start, Int4 stop);
 
 /** Determine if two ranges intersect
  * @param a first range to compare [in]
- * @param a second range to compare [in]
+ * @param b second range to compare [in]
  * @return TRUE if they intersect, otherwise FALSE 
  */
 NCBI_XBLAST_EXPORT

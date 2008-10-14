@@ -42,6 +42,7 @@
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
+#include <objtools/blast_format/blastfmtutil.hpp>   // for CBlastFormatUtil
 
 BEGIN_NCBI_SCOPE
 
@@ -149,6 +150,16 @@ SaveSearchStrategy(const CArgs& args,
                    CRef<blast::CBlastOptionsHandle> opts_hndl,
                    CRef<objects::CPssmWithParameters> pssm 
                      = CRef<objects::CPssmWithParameters>());
+
+/// Retrieve BLAST database information for presentation in BLAST report
+/// @param dbname space-separated list of BLAST database names [in]
+/// @param is_protein are these databases protein? [in]
+/// @param dbfilt_algorithms BLAST database filtering algorithm IDs (if
+/// applicable) [in]
+void
+BlastFormat_GetBlastDbInfo(vector<CBlastFormatUtil::SDbInfo>& retval,
+                           const string& dbname, bool is_protein,
+                           const vector<int>& dbfilt_algorithms);
 
 END_NCBI_SCOPE
 

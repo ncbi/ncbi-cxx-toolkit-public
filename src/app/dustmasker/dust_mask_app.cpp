@@ -152,7 +152,7 @@ void CDustMaskApplication::Init(void)
 //-------------------------------------------------------------------------
 void CDustMaskApplication::interval_out_handler( 
         CNcbiOstream * output_stream, 
-        const CBioseq_Handle & bsh, 
+        const objects::CBioseq_Handle & bsh, 
         const duster_type::TMaskList & res )
 {
     if( output_stream != 0 ) {
@@ -172,7 +172,7 @@ void CDustMaskApplication::interval_out_handler(
 //-------------------------------------------------------------------------
 void CDustMaskApplication::acclist_out_handler( 
         CNcbiOstream * output_stream, 
-        const CBioseq_Handle & bsh, 
+        const objects::CBioseq_Handle & bsh, 
         const duster_type::TMaskList & res )
 {
     if( output_stream != 0 ) {
@@ -189,7 +189,7 @@ void CDustMaskApplication::acclist_out_handler(
 static const Uint4 LINE_WIDTH = 60;
 
 inline void CDustMaskApplication::write_normal( 
-        CNcbiOstream * output_stream, const CSeqVector & data, 
+        CNcbiOstream * output_stream, const objects::CSeqVector & data, 
         TSeqPos & start, TSeqPos & stop )
 {
     for( Uint4 count = start; count < stop; ++count ) {
@@ -202,7 +202,7 @@ inline void CDustMaskApplication::write_normal(
 }
 
 inline void CDustMaskApplication::write_lowerc( 
-        CNcbiOstream * output_stream, const CSeqVector & data,
+        CNcbiOstream * output_stream, const objects::CSeqVector & data,
         TSeqPos & start, TSeqPos & stop )
 {
     for( Uint4 count = start; count < stop; ++count ) {
@@ -217,7 +217,7 @@ inline void CDustMaskApplication::write_lowerc(
 //-------------------------------------------------------------------------
 void CDustMaskApplication::fasta_out_handler( 
         CNcbiOstream * output_stream, 
-        const CBioseq_Handle & bsh, 
+        const objects::CBioseq_Handle & bsh, 
         const duster_type::TMaskList & res )
 {
     if( output_stream != 0 ) {

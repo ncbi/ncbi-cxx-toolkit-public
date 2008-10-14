@@ -1216,20 +1216,19 @@ static Int2
 BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
 {
     Int2 status = 0;
-    SNCBIPackedScoreMatrix* psm;
     Int4** matrix = NULL;
     int i, j;   /* loop indices */
     int x_index, u_index, o_index;
 
     ASSERT(sbp);
+    const SNCBIPackedScoreMatrix* psm = NCBISM_GetStandardMatrix(sbp->name); 
+    if (psm == NULL)
+       return 1;
+
     ASSERT(sbp->alphabet_size == BLASTAA_SIZE);
     ASSERT(sbp->matrix);
     ASSERT(sbp->matrix->ncols == BLASTAA_SIZE);
     ASSERT(sbp->matrix->nrows == BLASTAA_SIZE);
-
-    psm = NCBISM_GetStandardMatrix(sbp->name); 
-    if (psm == NULL)
-       return 1;
 
     matrix = sbp->matrix->data;
 

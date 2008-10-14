@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //------------------------------------------------------------------------------
-bool CWinMaskUtil::consider( const CBioseq_Handle & bsh,
+bool CWinMaskUtil::consider( const objects::CBioseq_Handle & bsh,
                              const CWinMaskConfig::CIdSet * ids,
                              const CWinMaskConfig::CIdSet * exclude_ids )
 {

@@ -16,7 +16,7 @@ rpsblast \
 rpstblastn \
 blast_formatter
 
-USR_PROJ = legacy_blast
+USR_PROJ = legacy_blast update_blastdb
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

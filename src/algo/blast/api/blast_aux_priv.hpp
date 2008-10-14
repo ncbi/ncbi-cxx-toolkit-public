@@ -154,6 +154,15 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
                               BlastSeqSrc* seqsrc,
                               bool is_multi_threaded);
 
+/// Builds an CSearchResultSet::TAncillaryVector
+/// @param program BLAST program [in]
+/// @param query_ids the sequence identifiers for the queries [in]
+/// @param sbp BlastScoreBlk structure used during the search [in]
+/// @param qinfo BlastQueryInfo structure used during the search [in]
+/// @param alignments alignments that were the result of the search [in]
+/// @param result_type are these results for bl2seq or a database search? [in]
+/// @param retval the output of this function is returned through this
+/// parameter [in|out]
 void
 BuildBlastAncillaryData(EBlastProgramType program,
                         const vector< CConstRef<CSeq_id> >& query_ids,

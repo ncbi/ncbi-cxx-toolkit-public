@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(GetBlastDefline)
         kDbType(CBlastDbDataLoader::eNucleotide);
     CBlastDbDataLoader::RegisterInObjectManager(*obj, 
                                                 kDbName,
-                                                kDbType,
+                                                kDbType, true,
                                                 CObjectManager::eDefault);
     
     scope = new CScope(*obj);

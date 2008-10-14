@@ -265,8 +265,8 @@ CFastaExtractor::CFastaExtractor(TSeqPos line_width,
 /// Hacky function to replace ' >' for Ctrl-A's in the Bioseq's title
 static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)
 {
-    static const string kTarget(" >gi");
-    static const string kCtrlA = string(1, '\001') + string("gi");
+    static const string kTarget(" >gi|");
+    static const string kCtrlA = string(1, '\001') + string("gi|");
     NON_CONST_ITERATE(CSeq_descr::Tdata, desc, bioseq->SetDescr().Set()) {
         if ((*desc)->Which() == CSeqdesc::e_Title) {
             NStr::ReplaceInPlace((*desc)->SetTitle(), kTarget, kCtrlA);

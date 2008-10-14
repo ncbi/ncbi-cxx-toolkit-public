@@ -54,8 +54,10 @@
 
 #include "seg.hpp"
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 /////////////////////////////////////////////////////////////////////////////
 //  SegMaskerApplication::
@@ -72,13 +74,19 @@ public:
     }
 
 private:
+    /** @inheritDoc */
     virtual void Init(void);
+    /** @inheritDoc */
     virtual int  Run(void);
+    /** @inheritDoc */
     virtual void Exit(void);
 
+    /// Retrieves the sequence reader interface for the application
     CMaskReader* x_GetReader();
+    /// Retrieves the output writer interface for the application
     CMaskWriter* x_GetWriter();
 
+    /// Contains the description of this application
     static const char * const USAGE_LINE;
 };
 
@@ -240,9 +248,11 @@ void SegMaskerApplication::Exit(void)
 //  MAIN
 
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[])
 {
     // Execute main application function
     return SegMaskerApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+#endif /* SKIP_DOXYGEN_PROCESSING */
 

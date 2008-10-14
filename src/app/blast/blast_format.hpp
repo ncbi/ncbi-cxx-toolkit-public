@@ -217,31 +217,6 @@ private:
     /// @param summary The ancillary data to report [in]
     void x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary);
 
-    /// Initialize database information
-    /// @param dbfilt_algorithms filtering algorithm IDs used for this search
-    /// [in]
-    void x_FillDbInfo(const vector<int>& dbfilt_algorithms);
-
-    /// Initialize database statistics with data from BLAST servers
-    /// @param dbname name of a single BLAST database [in]
-    /// @param info structure to fill [in|out]
-    /// @return true if successfully filled, false otherwise (and a warning is
-    /// printed out)
-    bool x_FillDbInfoRemotely(const string& dbname, 
-                              CBlastFormatUtil::SDbInfo& info) const;
-
-    /// Initialize database statistics with data obtained from local BLAST
-    /// databases
-    /// @param dbname name of a single BLAST database [in]
-    /// @param info structure to fill [in|out]
-    /// @param dbfilt_algorithms filtering algorithm IDs used for this search
-    /// [in]
-    /// @return true if successfully filled, false otherwise (and a warning is
-    /// printed out)
-    bool x_FillDbInfoLocally(const string& dbname, 
-                             CBlastFormatUtil::SDbInfo& info,
-                             const vector<int>& dbfilt_algorithms) const;
-
     /// Display the BLAST deflines in the traditional BLAST report
     /// @param aln_set alignments to display [in]
     /// @param itr_num iteration number, if applicable, otherwise it should be

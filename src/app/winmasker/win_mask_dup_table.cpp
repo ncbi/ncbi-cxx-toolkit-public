@@ -246,7 +246,7 @@ inline bool operator==( const dup_lookup_table::sample_loc & lhs,
 
 //------------------------------------------------------------------------------
 void dup_lookup_table::add_seq_info( const string & seq_id, 
-                                     const CSeqVector & seq_data )
+                                     const objects::CSeqVector & seq_data )
 {
     static TSeqPos next_offset( 0 );
 

@@ -170,6 +170,7 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
         retval.insert("blastn-short");
         retval.insert("megablast");
         retval.insert("dc-megablast");
+        retval.insert("vecscreen");
     }
 
     if (choice == eProtProt || choice == eAll) {
@@ -202,6 +203,8 @@ CBlastOptionsFactory::GetDocumentation(const string& task_name)
     } else if (task == "blastn-short") {
         retval.assign("BLASTN program optimized for sequences shorter than ");
         retval += "50 bases";
+    } else if (task == "vecscreen") {
+        retval.assign("BLASTN with several options re-set for running Vecscreen");
     } else if (task == "blastp") {
         retval.assign("Traditional BLASTP to compare a protein query to a ");
         retval += "protein database";
@@ -248,7 +251,8 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     ThrowIfInvalidTask(lc_task);
 
     if (!NStr::CompareNocase(task, "blastn") || 
-        !NStr::CompareNocase(task, "blastn-short"))
+        !NStr::CompareNocase(task, "blastn-short") ||
+        !NStr::CompareNocase(task, "vecscreen"))
     {
         CBlastNucleotideOptionsHandle* opts = 
              dynamic_cast<CBlastNucleotideOptionsHandle*>
@@ -261,6 +265,17 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
              opts->SetEvalueThreshold(50);
              opts->SetWordSize(7);
              opts->ClearFilterOptions();
+        }
+        else if (!NStr::CompareNocase(task, "vecscreen"))
+        {
+            opts->SetGapOpeningCost(3);
+            opts->SetGapExtensionCost(3);
+            opts->SetFilterString("m D", true);
+            opts->SetMatchReward(1);
+            opts->SetMismatchPenalty(-5);
+            opts->SetEvalueThreshold(700);
+            opts->SetOptions().SetEffectiveSearchSpace(Int8(1.75e12));
+            // based on VSBlastOptionNew from tools/vecscrn.c
         }
         retval = opts;
     }
