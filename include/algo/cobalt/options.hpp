@@ -149,7 +149,7 @@ public:
     /// Create options with desired mode
     /// @param mode Desired mode of operation
     ///
-    CMultiAlignerOptions(TMode mode);
+    explicit CMultiAlignerOptions(TMode mode);
 
     /// Create options with RPS database and desired mode
     /// @param rps_db_name Name of RPS database
@@ -213,7 +213,7 @@ public:
     /// @param dbname Path and name of RPS Blast data base [in]
     ///
     void SetRpsDb(const string& dbname)
-    {m_RpsDb = dbname; m_Mode = m_Mode & !fNoRpsBlast;}
+    {m_RpsDb = dbname; m_Mode = m_Mode & ~fNoRpsBlast;}
 
 
     /// Get RPS Blast data base name
