@@ -310,16 +310,24 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     TAlnStats aln_stats(aln_id_map);
 
     CAlnUserOptions opts;
+
+    /// always merge both directions
+    opts.m_Direction = CAlnUserOptions::eBothDirections;
+
+    /// always merge all sequences
     opts.m_MergeAlgo = CAlnUserOptions::eMergeAllSeqs;
     if (m_PreserveRows) {
         opts.m_MergeAlgo = CAlnUserOptions::ePreserveRows;
     }
-    opts.m_Direction = CAlnUserOptions::eBothDirections;
 
+    /// we default to truncating overlaps
     CAlnUserOptions::TMergeFlags flags = CAlnUserOptions::fTruncateOverlaps;
+
+    /// we may allow translocations
     if (m_AllowTransloc) {
         flags |= CAlnUserOptions::fAllowTranslocation;
     }
+    /// we may disable soring by scores
     if ( !m_SortByScore ) {
         flags |= CAlnUserOptions::fSkipSortByScore;
     }
@@ -341,13 +349,13 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     ///
     /// create dense-segs and return
     ///
-    CRef<CSeq_align> ds_align =
-        CreateSeqAlignFromAnchoredAln(out_anchored_aln,
-                                      CSeq_align::TSegs::e_Denseg);
-    if (ds_align->CheckNumRows() > 2  &&  all_pairwise) {
-        CreatePairwiseFromMultiple(*ds_align, aligns_out);
-    } else {
-        aligns_out.push_back(ds_align);
+    vector< CRef<CSeq_align> > ds_aligns;
+    CreateSeqAlignFromEachPairwiseAln
+        (out_anchored_aln.GetPairwiseAlns(), out_anchored_aln.GetAnchorRow(),
+         ds_aligns, CSeq_align::TSegs::e_Denseg);
+
+    ITERATE (vector< CRef<CSeq_align> >, it, ds_aligns) {
+        aligns_out.push_back(*it);
     }
 
     /// fill unaligned regions
@@ -357,40 +365,6 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
             (*align_iter)->SetSegs().SetDenseg(*ds);
         }
     }
-
-#if 0
-    if (all_pairwise) {
-        /// Create individual Dense-segs (one per CPairwiseAln)
-        CAnchoredAln::TPairwiseAlnVector::const_iterator begin =
-            out_anchored_aln.GetPairwiseAlns().begin();
-
-        CAnchoredAln::TPairwiseAlnVector::const_iterator end =
-            out_anchored_aln.GetPairwiseAlns().end();
-
-        if ( !m_PreserveRows  &&  begin != end ) {
-            /// HACK:
-            /// the last row contains a dummy - alignment of a sequence to itself
-            /// trim it here
-            --end;
-        }
-
-        for ( ;  begin != end;  ++begin) {
-            CRef<CDense_seg> ds = 
-                CreateDensegFromPairwiseAln(**begin);
-            //ds = ds->FillUnaligned();
-            CRef<CSeq_align> aln(new CSeq_align);
-            aln->SetSegs().SetDenseg(*ds);
-            aln->SetType(CSeq_align::eType_partial);
-            aligns_out.push_back(aln);
-        }
-
-    } else {
-        CRef<CSeq_align> ds_align =
-            CreateSeqAlignFromAnchoredAln(out_anchored_aln,
-                                          CSeq_align::TSegs::e_Denseg);
-        aligns_out.push_back(ds_align);
-    }
-#endif
 }
 
 
