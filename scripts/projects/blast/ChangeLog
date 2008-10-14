@@ -1,3 +1,11 @@
+October 14, 2008 (SVN revision: 143045)
+* Added update_blastdb.pl script to distribution of BLAST+ command line 
+  applications.
+* Changed a few PSI-BLAST constants for pseudo-counts.
+* Bug fix in blastdbcmd to distinguish non-redundant sequence titles.
+* Bug fix to display BLAST database information remotely from outside NCBI for
+  XML output. 
+
 September 24, 2008 (SVN revision: 141260) 
 * Fix to prevent initial seed extension from going beyond context boundary.
 * Improvements to reduce memory usage when query splitting is applied.
