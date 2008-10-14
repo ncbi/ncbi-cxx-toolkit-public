@@ -150,7 +150,7 @@ void ExpandTildes(string& s, ETildeStyle style)
                 result += '~';
                 start = tilde + 2;
             } else {
-                result += '\n';
+                result += ";\n";
                 start = tilde + 1;
             }
             break;
