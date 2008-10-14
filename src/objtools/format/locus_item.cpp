@@ -432,6 +432,9 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
     case CMolInfo::eTech_htc:
         m_Division = "HTC";
         break;
+	case CMolInfo::eTech_tsa:
+		m_Division = "TSA";
+		break;
     default:
         break;
     }
