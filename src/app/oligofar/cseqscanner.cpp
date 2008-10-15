@@ -77,7 +77,7 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
 	int lastPos = -1;
 	ERangeType lastType = eType_skip;
 	// TODO: somewhere here a check on range length should be inserted
-	for( const char * z = a; y < A;  ) {
+	for( const char * z = a; y < A; ++y, ++z  ) {
 		ERangeType type = ( ambCount <= allowedMismatches ) ? eType_direct : ( ambCount < m_maxAmbiguities ) ? eType_iterate : eType_skip ;
 		if( lastType != type ) {
 			if( lastPos != -1 ) {
@@ -93,11 +93,15 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
 			lastPos = z - a;
 			lastType = type;
 		}
-        CNcbi8naBase bz( 0x0f & *z++ );
-        CNcbi8naBase by( 0x0f & *y++ );
-        if( bz.IsAmbiguous() ) ++ambCount;
-        if( by.IsAmbiguous() ) --ambCount;
+        CNcbi8naBase bz( 0x0f & *z );
+        CNcbi8naBase by( 0x0f & *y );
+        if( bz.IsAmbiguous() ) --ambCount;
+        if( by.IsAmbiguous() ) ++ambCount;
 	}
+    if( lastPos == -1 ) {
+        lastPos = 0;
+        lastType = ambCount > m_maxAmbiguities ? eType_skip : ambCount <= allowedMismatches ? eType_direct : eType_iterate;
+    }
 	rangeMap.push_back( make_pair( TRange( lastPos, A - a ), lastType ) );
 }
 
