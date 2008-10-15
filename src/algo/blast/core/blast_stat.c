@@ -1219,9 +1219,10 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
     Int4** matrix = NULL;
     int i, j;   /* loop indices */
     int x_index, u_index, o_index;
+    const SNCBIPackedScoreMatrix* psm;
 
     ASSERT(sbp);
-    const SNCBIPackedScoreMatrix* psm = NCBISM_GetStandardMatrix(sbp->name); 
+    psm = NCBISM_GetStandardMatrix(sbp->name); 
     if (psm == NULL)
        return 1;
 
