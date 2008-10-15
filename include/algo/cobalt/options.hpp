@@ -265,6 +265,19 @@ public:
     {return m_UserHits;}
 
 
+    /// Set score for user alignment constraints
+    /// @param score Score
+    ///
+    void SetUserConstraintsScore(double score)
+    {m_UserHitsScore = score; m_Mode = fNonStandard;}
+
+
+    /// Get score for user alignment constraints
+    /// @return Score for user alignmnet constraints
+    ///
+    double GetUserConstraintsScore(void) const {return m_UserHitsScore;}
+
+
     //--- Expert Methods ---
 
     //--- Query clustering ---
@@ -576,6 +589,7 @@ private:
 
     // User constraints
     vector<SConstraint> m_UserHits;
+    double m_UserHitsScore;
 
     // Progressive alignment
     ETreeMethod m_TreeMethod;
@@ -593,6 +607,7 @@ private:
     static const TMode kQClustersModeMask;
     static const int kDefaultGapOpen;
     static const int kDefaultGapExtend;
+    static const double kDefaultUserConstraintsScore;
 };
 
 END_SCOPE(cobalt)

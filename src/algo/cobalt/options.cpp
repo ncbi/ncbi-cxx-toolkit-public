@@ -56,6 +56,7 @@ const CMultiAlignerOptions::TMode CMultiAlignerOptions::kQClustersModeMask
 
 const int CMultiAlignerOptions::kDefaultGapOpen = BLAST_GAP_OPEN_PROT;
 const int CMultiAlignerOptions::kDefaultGapExtend = BLAST_GAP_EXTN_PROT;
+const double CMultiAlignerOptions::kDefaultUserConstraintsScore = 1000000;
 
 CMultiAlignerOptions::CMultiAlignerOptions(void)
 {
@@ -173,6 +174,23 @@ bool CMultiAlignerOptions::Validate(void)
                    "Invalid tree computation method for progressive alignment");
     }
 
+    // Check user constraints
+    ITERATE(vector<SConstraint>, it, m_UserHits) {
+
+        int range1 = it->seq1_stop - it->seq1_start;
+        int range2 = it->seq2_stop - it->seq2_start;
+
+        if (range1 < 0 || range2 < 0) {
+            NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                       "User constraint range is invalid");
+        }
+
+        if (range1 == 1 && range2 != 1 || range1 != 1 && range2 == 1) {
+            NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                       "Range specified by user constraints is degenerate");
+        }
+    }
+
     return true;
 }
 
@@ -229,6 +247,8 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
 
     m_TreeMethod = eNJ;
     m_LocalResFreqBoost = 1.0;
+
+    m_UserHitsScore = kDefaultUserConstraintsScore;
 
     m_MatrixName = "BLOSUM62";
     m_EndGapOpen = kDefaultGapOpen;
