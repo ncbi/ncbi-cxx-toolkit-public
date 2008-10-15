@@ -185,6 +185,7 @@ private:
     typedef map<string, bool> TDirectoryExistenceMap;
     static TDirectoryExistenceMap sm_DirExists;
     static bool x_DirExists(const string& dir_name);
+    string x_GetConfigureEntry(const string& entry) const;
 
     /// Prohibited to:
     CMsvcSite(void);

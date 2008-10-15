@@ -51,11 +51,10 @@ CMsvcSite::CMsvcSite(const string& reg_path)
 
     string str;
 
-//TODO: XCODE
     if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
         // MSWin
         // Provided requests
-        str = m_Registry.Get("Configure", "ProvidedRequests");
+        str = x_GetConfigureEntry("ProvidedRequests");
         list<string> provided;
         NStr::Split(str, LIST_SEPARATOR, provided);
         ITERATE (list<string>, it, provided) {
@@ -71,7 +70,7 @@ CMsvcSite::CMsvcSite(const string& reg_path)
         }
 
         // Not provided requests
-        str = m_Registry.Get("Configure", "NotProvidedRequests");
+        str = x_GetConfigureEntry("NotProvidedRequests");
         list<string> not_provided;
         NStr::Split(str, LIST_SEPARATOR, not_provided);
         ITERATE (list<string>, it, not_provided) {
@@ -103,7 +102,7 @@ CMsvcSite::CMsvcSite(const string& reg_path)
     }
 
     // Lib choices
-    str = m_Registry.Get("Configure", "LibChoices");
+    str = x_GetConfigureEntry("LibChoices");
     list<string> lib_choices_list;
     NStr::Split(str, LIST_SEPARATOR, lib_choices_list);
     ITERATE(list<string>, p, lib_choices_list) {
@@ -273,14 +272,14 @@ bool CMsvcSite::ResolveDefine(const string& define, string& resolved) const
 
 string CMsvcSite::GetConfigureDefinesPath(void) const
 {
-    return m_Registry.Get("Configure", "DefinesPath");
+    return x_GetConfigureEntry("DefinesPath");
 }
 
 
 void CMsvcSite::GetConfigureDefines(list<string>* defines) const
 {
     defines->clear();
-    NStr::Split(m_Registry.Get("Configure", "Defines"), LIST_SEPARATOR,
+    NStr::Split(x_GetConfigureEntry("Defines"), LIST_SEPARATOR,
                 *defines);
 }
 
@@ -486,25 +485,25 @@ void CMsvcSite::GetThirdPartyLibsToInstall(list<string>* libs) const
 {
     libs->clear();
 
-    string libs_str = m_Registry.Get("Configure", "ThirdPartyLibsToInstall");
+    string libs_str = x_GetConfigureEntry("ThirdPartyLibsToInstall");
     NStr::Split(libs_str, LIST_SEPARATOR, *libs);
 }
 
 
 string CMsvcSite::GetThirdPartyLibsBinPathSuffix(void) const
 {
-    return m_Registry.Get("Configure", "ThirdPartyLibsBinPathSuffix");
+    return x_GetConfigureEntry("ThirdPartyLibsBinPathSuffix");
 }
 
 string CMsvcSite::GetThirdPartyLibsBinSubDir(void) const
 {
-    return m_Registry.Get("Configure", "ThirdPartyLibsBinSubDir");
+    return x_GetConfigureEntry("ThirdPartyLibsBinSubDir");
 }
 
 void CMsvcSite::GetStandardFeatures(list<string>& features) const
 {
     features.clear();
-    NStr::Split(m_Registry.Get("Configure", "StandardFeatures"),
+    NStr::Split(x_GetConfigureEntry("StandardFeatures"),
                 LIST_SEPARATOR, features);
 }
 
@@ -518,6 +517,19 @@ bool CMsvcSite::x_DirExists(const string& dir_name)
             (TDirectoryExistenceMap::value_type(dir_name, exists)).first;
     }
     return it->second;
+}
+
+string CMsvcSite::x_GetConfigureEntry(const string& entry) const
+{
+    string str;
+    str = m_Registry.Get( CMsvc7RegSettings::GetMsvcSection(), entry);
+    if (str.empty()) {
+        str = m_Registry.Get( CMsvc7RegSettings::GetMsvcRegSection(), entry);
+        if (str.empty()) {
+            str = m_Registry.Get("Configure", entry);
+        }
+    }
+    return str;
 }
 
 bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
@@ -590,7 +602,7 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
 void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
 {
     list<string> macros;
-    NStr::Split(m_Registry.Get("Configure", "Macros"), LIST_SEPARATOR, macros);
+    NStr::Split(x_GetConfigureEntry("Macros"), LIST_SEPARATOR, macros);
 
     ITERATE(list<string>, m, macros) {
         const string& macro = *m;
