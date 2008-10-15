@@ -26,7 +26,8 @@
           << "\n" << TTYATTR(32m) << "In file "                         \
           << TTYATTR(33m) << __FILE__ << TTYATTR(32m) << " line "       \
           << TTYATTR(33m) << __LINE__ << TTYATTR(34m) << " " << #x      \
-          << TTYATTR(35m) << ": " << TTYATTR(36m) << m << TTYATTR(0m);  \
+          << TTYATTR(35m) << ": " << TTYATTR(36m) << m << TTYATTR(0m)   \
+          << "\n";                                                      \
         throw x(o.str());                                               \
     } while(0)
 
