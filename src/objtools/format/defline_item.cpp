@@ -33,6 +33,7 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/create_defline.hpp>
 
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
@@ -74,7 +75,11 @@ const string& CDeflineItem::GetDefline(void) const
 
 void CDeflineItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    m_Defline = sequence::GetTitle(ctx.GetHandle());
+
+    sequence::CDeflineGenerator Defliner;
+    CConstRef<CBioseq> bioseq = ctx.GetHandle().GetBioseqCore();
+    CScope& scope = ctx.GetScope();
+    m_Defline = Defliner.GenerateDefline( *bioseq, scope );
     ConvertQuotes(m_Defline);
     AddPeriod(m_Defline);
 }
