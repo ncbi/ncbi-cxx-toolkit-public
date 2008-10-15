@@ -200,6 +200,12 @@ CObjectInfo::CObjectInfo(TTypeInfo typeInfo)
 }
 
 inline
+CObjectInfo::CObjectInfo(const CObjectTypeInfo& typeInfo)
+    : CParent(typeInfo.GetTypeInfo()->Create(), typeInfo.GetTypeInfo())
+{
+}
+
+inline
 CObjectInfo::CObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo)
     : CParent(objectPtr, typeInfo)
 {

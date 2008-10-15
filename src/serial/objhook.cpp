@@ -80,6 +80,18 @@ CSkipObjectHook::~CSkipObjectHook(void)
 {
 }
 
+void CSkipObjectHook::DefaultRead(CObjectIStream& in,
+                                  const CObjectInfo& object)
+{
+    object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
+}
+
+void CSkipObjectHook::DefaultSkip(CObjectIStream& in,
+                                  const CObjectTypeInfo& type)
+{
+    type.GetTypeInfo()->DefaultSkipData(in);
+}
+
 CSkipClassMemberHook::~CSkipClassMemberHook(void)
 {
 }

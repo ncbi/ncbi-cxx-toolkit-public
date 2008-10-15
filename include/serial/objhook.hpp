@@ -166,8 +166,14 @@ public:
     
     virtual void SkipObject(CObjectIStream& stream,
                             const CObjectTypeInfo& type) = 0;
-//    void DefaultSkip(CObjectIStream& stream,
-//                     const CObjectTypeInfo& type);
+
+    // Default actions
+    /// Default read
+    void DefaultRead(CObjectIStream& in,
+                     const CObjectInfo& object);
+    /// Default skip
+    void DefaultSkip(CObjectIStream& in,
+                     const CObjectTypeInfo& type);
 };
 
 /// Skip hook for data member of a containing object (eg, SEQUENCE)

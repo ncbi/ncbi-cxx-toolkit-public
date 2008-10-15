@@ -92,6 +92,12 @@ public:
 
     CObjectTypeInfo(TTypeInfo typeinfo = 0);
 
+    /// Get type name
+    const string& GetName(void) const
+        {
+            return GetTypeInfo()->GetName();
+        }
+
     /// Get data type family
     ETypeFamily GetTypeFamily(void) const;
 
@@ -414,6 +420,7 @@ public:
                 ENonCObject nonCObject);
     /// Create CObjectInfo with new object
     explicit CObjectInfo(TTypeInfo typeInfo);
+    explicit CObjectInfo(const CObjectTypeInfo& type);
 
     /// Set CObjectInfo to point to another object
     CObjectInfo& operator=(pair<TObjectPtr, TTypeInfo> object);
