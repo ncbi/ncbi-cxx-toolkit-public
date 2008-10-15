@@ -132,7 +132,7 @@ public:
     bool AddQual (bool IsOrgMod, int subtype);
     bool RemoveQual (bool IsOrgMod, int subtype);
 
-    vector<CAutoDefModifierCombo *> ExpandByAllPresent();
+    vector<CAutoDefModifierCombo *> ExpandByAnyPresent();
 
 private:
     TSubSourceTypeVector m_SubSources;

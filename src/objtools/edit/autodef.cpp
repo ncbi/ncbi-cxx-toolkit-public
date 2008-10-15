@@ -187,6 +187,16 @@ unsigned int CAutoDef::GetNumAvailableModifiers()
 }
 
 
+struct SAutoDefModifierComboSort {
+    bool operator()(const CAutoDefModifierCombo& s1,
+                    const CAutoDefModifierCombo& s2) const
+    {
+        return (s1 < s2);
+    }
+};
+
+
+
 CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
 {
     CAutoDefModifierCombo *best = NULL;
@@ -213,7 +223,7 @@ CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
         it = combo_list.begin();
         add_list.clear();
         while (it != combo_list.end()) {
-            tmp = (*it)->ExpandByAllPresent ();
+            tmp = (*it)->ExpandByAnyPresent ();
             if (!tmp.empty()) {
                 stop = false;
                 for (k = 0; k < tmp.size(); k++) {
@@ -229,7 +239,7 @@ CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
             combo_list.push_back (new CAutoDefModifierCombo(add_list[k]));
         }
         add_list.clear();
-        std::sort (combo_list.begin(), combo_list.end());
+        std::sort (combo_list.begin(), combo_list.end(), SAutoDefModifierComboSort());
         if (combo_list[0]->GetMaxInGroup() == 1) {
             stop = true;
         }

@@ -108,6 +108,14 @@ bool CAutoDefSourceGroup::RemoveQual (bool IsOrgMod, int subtype)
 }
 
 
+struct SAutoDefSourceDescByStrings {
+    bool operator()(const CAutoDefSourceDescription& s1,
+                    const CAutoDefSourceDescription& s2) const
+    {
+        return (s1 < s2);
+    }
+};
+
 vector<CAutoDefSourceGroup *> CAutoDefSourceGroup::RemoveNonMatchingDescriptions ()
 {
     vector<CAutoDefSourceGroup *> group_list;
@@ -118,7 +126,7 @@ vector<CAutoDefSourceGroup *> CAutoDefSourceGroup::RemoveNonMatchingDescriptions
     if (m_SourceList.size() < 2) {
         return group_list;
     }
-    std::sort (m_SourceList.begin(), m_SourceList.end());
+    std::sort (m_SourceList.begin(), m_SourceList.end(), SAutoDefSourceDescByStrings());
     it = m_SourceList.begin();
     it++;
     while (it != m_SourceList.end() && (*it)->Compare (*m_SourceList[0]) == 0) {

@@ -238,10 +238,13 @@ void CAutoDefModifierCombo::GetAvailableModifiers (CAutoDefSourceDescription::TA
     modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_anamorph, true));
     modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_teleomorph, true));
     modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_breed, true));
+    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_bio_material, true));
+    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_culture_collection, true));
     modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_gb_acronym, true));
     modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_gb_anamorph, true));
     modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_gb_synonym, true));
     modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_other, true));
+
 
     // add subsource modifiers
     // map, fwd_primer_name, fwd_primer_seq, rev_primer_name, and rev_primer_seq are deliberately omitted
@@ -276,6 +279,9 @@ void CAutoDefModifierCombo::GetAvailableModifiers (CAutoDefSourceDescription::TA
     modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_collection_date, false));
     modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_collected_by, false));
     modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_identified_by, false));
+    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_mating_type, false));
+    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_linkage_group, false));
+    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_haplogroup, false));
     modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_other, false));
 
     for (k = 0; k < m_GroupList.size(); k++) {
@@ -624,6 +630,14 @@ int CAutoDefModifierCombo::Compare(const CAutoDefModifierCombo& other) const
 }
 
 
+struct SAutoDefSourceGroupByStrings {
+    bool operator()(const CAutoDefSourceGroup& s1,
+                    const CAutoDefSourceGroup& s2) const
+    {
+        return (s1 < s2);
+    }
+};
+
 
 bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype)
 {
@@ -654,7 +668,7 @@ bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype)
 
     if (rval) {
         m_Modifiers.push_back (CAutoDefSourceModifierInfo (IsOrgMod, subtype, ""));
-        std::sort (m_GroupList.begin(), m_GroupList.end());
+        std::sort (m_GroupList.begin(), m_GroupList.end(), SAutoDefSourceGroupByStrings());
         if (IsOrgMod) {
             m_OrgMods.push_back ((COrgMod_Base::ESubtype)subtype);
         } else {
@@ -677,7 +691,7 @@ bool CAutoDefModifierCombo::RemoveQual (bool IsOrgMod, int subtype)
 }
 
 
-vector<CAutoDefModifierCombo *> CAutoDefModifierCombo::ExpandByAllPresent()
+vector<CAutoDefModifierCombo *> CAutoDefModifierCombo::ExpandByAnyPresent()
 {
     CAutoDefSourceDescription::TModifierVector mods;
     vector<CAutoDefModifierCombo *> expanded;
@@ -687,7 +701,7 @@ vector<CAutoDefModifierCombo *> CAutoDefModifierCombo::ExpandByAllPresent()
         if ((*it)->GetSrcList().size() == 1) {
             break;
         }
-        mods = (*it)->GetModifiersPresentForAll();
+        mods = (*it)->GetModifiersPresentForAny();
         ITERATE (CAutoDefSourceDescription::TModifierVector, mod_it, mods) {
             expanded.push_back (new CAutoDefModifierCombo (this));
             if (!expanded[expanded.size() - 1]->AddQual (mod_it->IsOrgMod(), mod_it->GetSubtype())) {
