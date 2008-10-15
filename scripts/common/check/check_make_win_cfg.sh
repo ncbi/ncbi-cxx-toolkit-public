@@ -125,7 +125,7 @@ fi
 #//////////////////////////////////////////////////////////////////////////
 
 cat > $x_out <<EOF
-#! /bin/sh
+#! /bin/bash
 
 root_dir="$x_root_dir"
 build_dir="$x_build_dir"
@@ -188,7 +188,7 @@ case "\$method" in
    concat )
       rm -f "\$res_concat"
       ( 
-      cat \$res_log
+#      cat \$res_log
       test -f \$res_journal  ||  exit 0
       x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
       for x_file in \$x_files; do
@@ -204,7 +204,7 @@ case "\$method" in
    concat_err )
       rm -f "\$res_concat_err"
       ( 
-      egrep 'ERR \[|TO  -' \$res_log
+#      egrep 'ERR \[|TO  -' \$res_log
       test -f \$res_journal  ||  exit 0
       x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
       for x_file in \$x_files; do
@@ -469,7 +469,7 @@ for x_row in $x_tests; do
          x_copy="$x_src_dir/$i"
          if test -f "$x_copy"  -o  -d "$x_copy" ; then
             cp -prf "$x_copy" "$x_path"
-            find "$x_path/$i" -name .svn -print | xargs rm -rf
+            find "$x_path/$i" -name .svn -print 2> /dev/null | xargs rm -rf
          else
             echo "Warning:  \"$x_copy\" must be file or directory!"
          fi
