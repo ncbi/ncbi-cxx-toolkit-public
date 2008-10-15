@@ -542,13 +542,17 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
             return true;
         } else {
             product_name = m_MainFeat.GetNamedQual("product");
-            if (NStr::IsBlank(product_name)
-                && m_MainFeat.GetData().GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name) {
-                product_name = m_MainFeat.GetData().GetRna().GetExt().GetName();
-                return true;
-            } else {
-                return true;
+            if (NStr::IsBlank(product_name)) {
+                if (subtype == CSeqFeatData::eSubtype_otherRNA 
+                    || subtype == CSeqFeatData::eSubtype_misc_RNA) {
+                    if (m_MainFeat.CanGetComment()) {
+                        product_name = m_MainFeat.GetComment();
+                    }
+                } else if (m_MainFeat.GetData().GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name) {
+                    product_name = m_MainFeat.GetData().GetRna().GetExt().GetName();
+                }
             }
+            return true;
         }
     } else {
         string label;
@@ -996,6 +1000,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause)
         && subtype != CSeqFeatData::eSubtype_rRNA
         && subtype != CSeqFeatData::eSubtype_tRNA
         && subtype != CSeqFeatData::eSubtype_misc_RNA
+        && subtype != CSeqFeatData::eSubtype_otherRNA
         && subtype != CSeqFeatData::eSubtype_ncRNA
         && subtype != CSeqFeatData::eSubtype_precursor_RNA
         && !x_GetNoncodingProductFeatProduct(noncoding_product_name)) {
