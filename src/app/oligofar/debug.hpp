@@ -13,20 +13,20 @@
         }                                                               \
     } while(0)
 
+#ifdef _WIN32
+#define TTYATTR(a) ""
+#else
+#define TTYATTR(a) "\x1b[" #a 
+#endif
+
 #define THROW(x,m)                                                      \
     do {                                                                \
         std::ostringstream o;                                           \
-        if( isatty(2) ) o << "\x1b[31m";                                \
-        o << "\n" << CStackTrace(#x) << "\n";                           \
-        if( isatty(2) ) o << "\x1b[32m";                                \
-        o << "\nIn file "__FILE__" line " << __LINE__;                  \
-        if( isatty(2) ) o << "\x1b[33m";                                \
-        o << " " << #x;                                                 \
-        if( isatty(2) ) o << "\x1b[34m";                                \
-        o << ": ";                                                      \
-        if( isatty(2) ) o << "\x1b[35m";                                \
-        o << m;                                                         \
-        if( isatty(2) ) o << "\x1b[0m";                                 \
+        o << "\n" << TTYATTR(31m) << CStackTrace(#x) << "\n"            \
+          << "\n" << TTYATTR(32m) << "In file "                         \
+          << TTYATTR(33m) << __FILE__ << TTYATTR(32m) << " line "       \
+          << TTYATTR(33m) << __LINE__ << TTYATTR(34m) << " " << #x      \
+          << TTYATTR(35m) << ": " << TTYATTR(36m) << m << TTYATTR(0m);  \
         throw x(o.str());                                               \
     } while(0)
 
