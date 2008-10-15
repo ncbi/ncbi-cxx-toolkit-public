@@ -9,7 +9,6 @@
 #include "csnpdb.hpp"
 
 #include "string-util.hpp"
-#include "iupac-util.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -25,31 +24,14 @@
 USING_OLIGOFAR_SCOPES;
 
 #ifndef OLIGOFAR_VERSION
-#define OLIGOFAR_VERSION "3.25" 
+#define OLIGOFAR_VERSION "3.27" 
 #endif
-
-char COligoFarApp::HashTypeChar( int i ) const 
-{
-    return (m_hashType[i] == CQueryHash::eHash_vector ? 'v' : 
-            m_hashType[i] == CQueryHash::eHash_multimap ? 'm' : 
-            m_hashType[i] == CQueryHash::eHash_arraymap ? 'a' : '?' );
-}
-void COligoFarApp::SetHashType( int i, char type ) 
-{
-    switch( type ) {
-    case 'v': case 'V': m_hashType[i] = CQueryHash::eHash_vector; break;
-    case 'm': case 'M': m_hashType[i] = CQueryHash::eHash_multimap; break;
-    case 'a': case 'A': m_hashType[i] = CQueryHash::eHash_arraymap; break;
-    default: THROW( runtime_error, "Unknown hash type " << type );
-    }
-}
 
 COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     CApp( argc, argv ),
-    m_minHashMism( 1 ),
-    m_maxHashMism( 1 ),
-    m_maxHashAlt( 256 ),
-    m_maxFastaAlt( 256 ),
+    m_hashPass( 0 ),
+    m_maxHashAmb( 4 ),
+    m_maxFastaAmb( 4 ),
     m_strands( 0x03 ),
     m_readsPerRun( 250000 ),
     m_phrapSensitivity( 4 ),
@@ -62,7 +44,6 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_mismatchScore( -1.0 ),
     m_gapOpeningScore( -3.0 ),
     m_gapExtentionScore( -1.5 ),
-    m_rehashFactor( 0.3 ),
     m_minPair( 100 ),
     m_maxPair( 200 ),
     m_pairMargin( 20 ),
@@ -73,8 +54,6 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_memoryLimit( Uint8( sizeof(void*) == 4 ? 3 : 8 ) * int(kGigaByte) ),
     m_performTests( false ),
     m_colorSpace( false ),
-    m_run_old_scanning_code( false ),
-    m_ambiguifyPositions( false ),
     m_alignmentAlgo( eAlignment_fast ),
 #ifdef _WIN32
     //m_guideFile( "nul:" ),
@@ -86,8 +65,7 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_outputFlags( "m" ),
     m_geometry( "p" )
 {
-    m_windowLength[0] = m_windowLength[1];
-    m_hashType[0] = m_hashType[1] = CQueryHash::eHash_arraymap;
+    m_hashParam.push_back( CHashParam() );
 #ifndef _WIN32
     ifstream meminfo( "/proc/meminfo" );
     string buff;
@@ -140,16 +118,17 @@ void COligoFarApp::Help( const char * arg )
         }
     }
     if( flags & fSynopsis ) 
-        cout << "usage: [-hV] [--help[=full|brief|extended]] [-U version] [-C config]\n"
+        cout << "usage: [-hV] [--help[=full|brief|extended]] [-U version]\n"
              << "  [-i inputfile] [-d genomedb] [-b snpdb] [-g guidefile] [-l gilist]\n"
              << "  [-1 solexa1] [-2 solexa2] [-q 0|1] [-0 qbase] [-c +|-] [-o output]\n"
-             << "  [-O -eumxtadh] [-B batchsz] [-x 0|1|2] [-w [ini,]size]\n"
-             << "  [-k skipPos] [-n [minMism[-maxmism]] [-r f|s] [-H v|m|a[,v|m|a]]\n"
-             << "  [-f fraction] [-a maxalt] [-A maxalt] [-P phrap] [-F dust] [-s 1|2|3]\n"
+             << "  [-O -eumxtadh] [-B batchsz] [-x 0|1|2] [-s 1|2|3] [-k skipPos]\n"
+             << "  [--pass0] [-w win[/word]] [-n mism] [-e gaps] [-S stride] [-H bits]\n"
+             << "  [--pass1  [-w win[/word]] [-n mism] [-e gaps] [-S stride] [-H bits] ]\n"
+             << "  [-r f|s] [-a maxamb] [-A maxamb] [-P phrap] [-F dust]\n"
              << "  [-p cutoff] [-u topcnt] [-t toppct] [-X xdropoff] [-I idscore]\n"
              << "  [-M mismscore] [-G gapcore] [-Q gapextscore] [-D minPair[-maxPair]]\n"
              << "  [-m margin] [-R geometry] [-L memlimit] [-T +|-]\n";
-    if( flags & fDetails ) 
+    if( flags & fDetails ) {
         cout 
             << "\nFile options:\n" 
             << "  -i file       --input-file=file          short reads input file [" << m_readFile << "]\n"
@@ -167,19 +146,34 @@ void COligoFarApp::Help( const char * arg )
             << "  -0 +char      --quality-base=+char       base quality char (character representing phrap score 0) [+" << char(m_qualityBase) << "]\n"
             << "  -O flags      --output-flags=flags       add output flags (-huxmtdae) [" << m_outputFlags << "]\n"
             << "  -B count      --batch-size=count         how many short seqs to map at once [" << m_readsPerRun << "]\n"
-            << "  -C config     --config-file=file         take parameters from config file section `oligofar' and continue parsing commandline\n"
-            << "\nHashing and scanning options:\n"
-            << "  -w [ini,]size --window-size=[ini,]size   window size for first and for consecutive passes [" << m_windowLength[0] << "," << m_windowLength[1] << "]\n"
-            << "  -k pos[,...]  --window-skip=pos[,...]    skip window positions when hashing (1-based) [" << Join( ",", m_skipPositions ) << "]\n"
-            << "  -n [ini,]mism --input-mism=[ini,]mism    initial and final maximal number of mismatches in hash window [" << m_minHashMism << "," << m_maxHashMism << "]\n"
-            << "  -H v|m|a[,..] --hash-type=v|m|a[,..]     set hash type to vector, multimap, or arraymap [" 
-            << HashTypeChar() << (m_hashType[0] == m_hashType[1] ? string("") : string(",") + HashTypeChar(1) ) << "]\n"
-            << "  -f fraction   --rehash-fraction=fraction what fraction of reads should be rehashed for second pass to switch hash type [" << m_rehashFactor << "]\n"
-            << "  -a alt        --input-max-alt=alt        maximal number of alternatives in hash window [" << m_maxHashAlt << "]\n"
-            << "  -A alt        --fasta-max-alt=alt        maximal number of alternatives in fasta window [" << m_maxFastaAlt << "]\n"
+//            << "  -C config     --config-file=file         take parameters from config file section `oligofar' and continue parsing commandline\n"
+            << "\nGeneral hashing and scanning options:\n"
+            << "  -k pos[,...]  --window-skip=pos[,...]    skip read positions when hashing (1-based) [" << Join( ",", m_skipPositions ) << "]\n"
+            << "  -a amb        --input-max-amb=amb        maximal number of ambiguities in hash window [" << m_maxHashAmb << "]\n"
+            << "  -A amb        --fasta-max-amb=amb        maximal number of ambiguities in fasta window [" << m_maxFastaAmb << "]\n"
             << "  -P score      --phrap-cutoff=score       set maximal phrap score to consider base as ambiguous [" << m_phrapSensitivity << "]\n"
-            << "  -F simpl      --max-simplicity=val       low complexity filter cutoff for hash words [" << m_maxSimplicity << "]\n"
-            << "  -s 1|2|3      --strands=1|2|3            align strands [" << m_strands << "]\n"
+            << "  -F simpl      --max-simplicity=val       low complexity filter cutoff for hash window [" << m_maxSimplicity << "]\n"
+            << "  -s 1|2|3      --strands=1|2|3            hash and lookup for strands (bitmask: 1 for +, 2 for -, 3 for both) [" << m_strands << "]\n"
+            ;
+    
+        cout
+            << "\nPass-specific hashing and scanning options:\n";
+        for( unsigned i = 0; i < max( size_t(2), m_hashParam.size() ); ++i ) {
+            cout 
+                << "                --pass" << i << "                    following options will be used for pass " << i;
+            if( i >= m_hashParam.size() ) cout << " [off]\n";
+            else {
+                cout 
+                    << ":\n"
+                    << "  -w win[/word] --window-size=win[/word]   hash using window size and word size [" << m_hashParam[i].GetWindowSize() << "/" << m_hashParam[i].GetWordSize() << "]\n"
+                    << "  -S stride     --stride-size=stride       hash with given stride size [" << m_hashParam[i].GetStrideSize() << "]\n"
+                    << "  -n mismatch   --max-mism=mismatch        hash allowing up to given number of mismatches (0-2) [" << m_hashParam[i].GetHashMismatches() << "]\n"
+                    << "  -e indel      --max-indels=indel         hash allowing up to given number of indels (0-1) [" << m_hashParam[i].GetHashIndels() << "]\n"
+                    << "  -H bits       --index-bits=bits          set number of bits for index part of hash table [" << m_hashParam[i].GetHashBits() << "]\n"   
+                    ;
+            }
+        }
+        cout
             << "\nAlignment and scoring options:\n"
             << "  -r f|q|s      --algorithm=f|s            use alignment algoRithm (Fast or Smith-waterman) [" << char(m_alignmentAlgo) << "]\n"
             << "  -X value      --x-dropoff=value          set half band width for alignment [" << m_xdropoff << "]\n"
@@ -220,11 +214,10 @@ void COligoFarApp::Help( const char * arg )
             << "    e   print empty line after all hits of the read are reported\n"
             << "\nNB: although -L flag is optional, it is strongly recommended to use it!\n"
             ;
+    }
     if( flags & fExtended ) 
         cout << "\nExtended options:\n"
-             << "  --scan-old=true|false      Use older versions algorithms [" << (m_run_old_scanning_code?"true":"false") << "]\n"
              << "  --min-block-length=bases   Length for subject sequence to be scanned at once [" << m_minBlockLength << "]\n"
-             << "  --ambiguify-positions=true|false Use skip positions to make them ambiguous [" << (m_ambiguifyPositions?"true":"false") << "]\n"
              ;
 }
 
@@ -237,10 +230,9 @@ const option * COligoFarApp::GetLongOptions() const
         {"window-size", 1, 0, 'w'},
         {"window-skip",1,0,'k'},
         {"input-mism", 1, 0, 'n'},
-        {"hash-type", 1, 0, 'H'},
-        {"rehash-fraction", 1, 0, 'f'},
-        {"input-max-alt", 1, 0, 'a'},
-        {"fasta-max-alt", 1, 0, 'A'},
+        {"input-gaps", 1, 0, 'e'},
+        {"input-max-amb", 1, 0, 'a'},
+        {"fasta-max-amb", 1, 0, 'A'},
         {"colorspace", 1, 0, 'c'},
         {"input-file", 1, 0, 'i'},
         {"fasta-file", 1, 0, 'd'},
@@ -249,7 +241,7 @@ const option * COligoFarApp::GetLongOptions() const
         {"guide-file", 1, 0, 'g'},
         {"output-file", 1, 0, 'o'},
         {"output-flags", 1, 0, 'O'},
-        {"config-file", 1, 0, 'C'},
+//        {"config-file", 1, 0, 'C'},
         {"gi-list", 1, 0, 'l'},
         {"strands", 1, 0, 's'},
         {"batch-size", 1, 0, 'B'},
@@ -274,9 +266,10 @@ const option * COligoFarApp::GetLongOptions() const
         {"x-dropoff", 1, 0, 'X'},
         {"memory-limit", 1, 0, 'L'},
         {"test-suite", 1, 0, 'T'},
-        {"scan-old", 1, 0, kLongOpt_old },
+        {"index-bits", 1, 0, 'H'},
+        {"pass0", 0, 0, kLongOpt_pass0},
+        {"pass1", 0, 0, kLongOpt_pass1},
         {"min-block-length", 1, 0, kLongOpt_min_block_length },
-        {"ambiguify-positions", 1, 0, kLongOpt_ambiguifyPositions },
         {0,0,0,0}
     };
     return opt;
@@ -284,18 +277,17 @@ const option * COligoFarApp::GetLongOptions() const
 
 const char * COligoFarApp::GetOptString() const
 {
-    return "U:C:w:k:n:H:f:a:A:c:i:d:b:v:g:o:O:l:s:B:x:p:u:t:1:2:q:0:P:m:D:R:F:r:I:M:G:Q:X:L:T:";
+    return "U:H:S:w:k:n:e:a:A:c:i:d:b:v:g:o:O:l:s:B:x:p:u:t:1:2:q:0:P:m:D:R:F:r:I:M:G:Q:X:L:T:";
 }
 
 int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
 {
     switch( opt ) {
-    case kLongOpt_old: m_run_old_scanning_code = NStr::StringToBool( arg ); break;
     case kLongOpt_min_block_length: m_minBlockLength = NStr::StringToInt( arg ); break;
-    case kLongOpt_ambiguifyPositions: m_ambiguifyPositions = NStr::StringToBool( arg ); break;
+    case kLongOpt_pass0: m_hashPass = 0; break;
+    case kLongOpt_pass1: if( m_hashParam.size() < 2 ) m_hashParam.push_back( m_hashParam.back() ); m_hashPass = 1; break;
     case 'U': if( strcmp( arg, OLIGOFAR_VERSION ) ) THROW( runtime_error, "Expected oligofar version " << arg << ", called " OLIGOFAR_VERSION ); break;
-    case 'C': ParseConfig( arg ); break;
-    case 'w': ParseRange( m_windowLength[0], m_windowLength[1], arg, "," ); break;
+//    case 'C': ParseConfig( arg ); break;
     case 'k': 
         do {
             list<string> x;
@@ -303,11 +295,20 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
             ITERATE( list<string>, t, x ) m_skipPositions.insert( m_skipPositions.end(), NStr::StringToInt( *t ) );
         } while(0);
         break;
-    case 'n': ParseRange( m_minHashMism, m_maxHashMism, arg, ",-" ); break;
-    case 'H': SetHashType( 0, *arg ); if( arg[1] == ',' ) SetHashType( 1, arg[2] ); break;
-    case 'f': m_rehashFactor = NStr::StringToDouble( arg ); break;
-    case 'a': m_maxHashAlt = strtol( arg, 0, 10 ); break;
-    case 'A': m_maxFastaAlt = strtol( arg, 0, 10 ); break;
+    case 'w': 
+        do {
+            int win, word;
+            ParseRange( win, word, arg, "/" ); 
+            m_hashParam[m_hashPass].SetWindowSize( win );
+            m_hashParam[m_hashPass].SetWordSize( word );
+        } while(0);
+        break;
+    case 'H': m_hashParam[m_hashPass].SetHashBits( NStr::StringToInt( arg ) ); break;
+    case 'S': m_hashParam[m_hashPass].SetStrideSize( NStr::StringToInt( arg ) ); break;
+    case 'n': m_hashParam[m_hashPass].SetHashMismatches( NStr::StringToInt( arg ) ); break;
+    case 'e': m_hashParam[m_hashPass].SetHashIndels( NStr::StringToInt( arg ) ); break;
+    case 'a': m_maxHashAmb = strtol( arg, 0, 10 ); break;
+    case 'A': m_maxFastaAmb = strtol( arg, 0, 10 ); break;
     case 'c': m_colorSpace = *arg == '+' ? true : *arg == '-' ? false : NStr::StringToBool( arg ); break;
     case 'i': m_readFile = arg; break;
     case 'd': m_fastaFile = arg; break;
@@ -476,13 +477,13 @@ int COligoFarApp::ProcessData()
         default: THROW( runtime_error, "Quality channels supported in main input file columns are 0 or 1" );
     }
 
-    // TODO: this logic should be tweaked in future
+    for( unsigned p = 0; p < m_hashParam.size(); ++p ) {
+        string msg;
+        if( ! m_hashParam[p].ValidateParam( m_skipPositions, msg ) ) {
+            THROW( runtime_error, "Incompatible set of hash parameters for pass" << p << ( m_skipPositions.size() ? " with skip ppositions:" : ":" ) << msg );
+        }
+    }
     
-    if( m_windowLength[0] < 3 || m_windowLength[0] > 30 ) 
-        THROW( runtime_error, "Window length is set to " << m_windowLength[0] << " but should be in range of 3..30" );
-
-    if( m_windowLength[0] < m_windowLength[1] ) { m_windowLength[1] = m_windowLength[0]; }
-
     ofstream o( m_outputFile.c_str() );
     ifstream reads( m_readFile.c_str() ); // to format output
 
@@ -514,10 +515,21 @@ int COligoFarApp::ProcessData()
         THROW( runtime_error, "Unknown geometry `" << m_geometry << "'" );
     }
 
-    // TODO: change to better behaviour
-    ITERATE( TSkipPositions, k, m_skipPositions ) {
-        if( *k > 0 && *k <= int( m_windowLength[0] ) ) {
-            m_maxHashAlt *= 4;
+    for( vector<CHashParam>::iterator p = m_hashParam.begin(); p != m_hashParam.end(); ++p ) {
+        if( p->GetWindowSize() + p->GetStrideSize() - 1 + ( p->GetHashIndels() ? 0 : 1 ) > 32 ) {
+            THROW( runtime_error, "Sorry, constraint ($w + $S + $e - 1) <= 32 is violated, can't proceed ($w - winsz, $S - strides, $e - indels)" );
+        }
+        if( p->GetWordSize() * 2 < p->GetWindowSize() ) {
+            p->SetWordSize( ( p->GetWindowSize() + 1 ) / 2 );
+            cerr << "[" << GetProgramBasename() << "] WARNING: Increasing word size to " << p->GetWordSize() << " bases to cover window\n";
+        }
+        if( p->GetWordSize()*2 - 16 >= 32 ) {
+            p->SetWordSize( 23 );
+            cerr << "[" << GetProgramBasename() << "] WARNING: Decreasing word size to " << p->GetWordSize() << " as required for hashing algorithm\n";
+        }
+        if( p->GetWordSize()*2 - p->GetHashBits() > 16 ) {
+            p->SetHashBits( p->GetWordSize()*2 - 16 );
+            cerr << "[" << GetProgramBasename() << "] WARNING: Increasing hash bits to " << p->GetHashBits() << " to fit " << p->GetWordSize() << "-base word\n";
         }
     }
 
@@ -526,7 +538,7 @@ int COligoFarApp::ProcessData()
     CSeqVecProcessor seqVecProcessor;
     CSeqScanner seqScanner;
     COutputFormatter formatter( o, seqIds );
-    CQueryHash queryHash( m_hashType[0], m_windowLength[0], m_maxHashMism, m_maxHashAlt, m_maxSimplicity );
+    CQueryHash queryHash( 0, 0 ); // TODO: fix this
     CScoreTbl scoreTbl( m_identityScore, m_mismatchScore, m_gapOpeningScore, m_gapExtentionScore );
     CGuideFile guideFile( m_guideFile, filter, seqIds );
     CBatch batch( m_readsPerRun, m_fastaFile, queryHash, seqVecProcessor, filter, formatter, scoreTbl );
@@ -537,19 +549,16 @@ int COligoFarApp::ProcessData()
         seqScanner.SetSnpDb( &snpDb );
     }
 
-    batch.SetInitialWindowLength( m_windowLength[0] );
-    batch.SetRegularWindowLength( m_windowLength[1] );
-    batch.SetInitialAligner( CreateAligner( eAlignment_HSP,  &scoreTbl ), true );
-    batch.SetRegularAligner( CreateAligner( m_alignmentAlgo, &scoreTbl ), true );
-    batch.SetInitialHashType( m_hashType[0] );
-    batch.SetRegularHashType( m_hashType[1] );
-    batch.SetHashTypeChangeFraction( m_rehashFactor );
-
+    batch.SetAligner( CBatch::eAligner_noIndel, CreateAligner( eAlignment_HSP, &scoreTbl ), true );
+    batch.SetAligner( CBatch::eAligner_regular, CreateAligner( m_xdropoff ? m_alignmentAlgo : eAlignment_HSP, &scoreTbl ), true );
+    batch.SetHashParam( m_hashParam );
+    
     guideFile.SetMismatchPenalty( scoreTbl );
     guideFile.SetMaxMismatch( m_guideFilemaxMismatch );
 
     formatter.AssignFlags( GetOutputFlags() );
     formatter.SetGuideFile( guideFile );
+    formatter.SetAligner( batch.GetAligner( CBatch::eAligner_regular ) );
 
     filter.SetGeometryFlags( geometries[m_geometry] );
     filter.SetSeqIds( &seqIds );
@@ -559,28 +568,27 @@ int COligoFarApp::ProcessData()
     filter.SetTopCnt( m_topCnt );
     filter.SetScorePctCutoff( m_minPctid );
     filter.SetOutputFormatter( &formatter );
+    filter.SetAligner( batch.GetAligner( CBatch::eAligner_regular ) );
 
     if( m_minPctid > m_topPct ) {
         cerr << "[" << GetProgramBasename() << "] Warning: top% is greater then %cutoff ("
              << m_topPct << " < " << m_minPctid << ")\n";
     }
 
-    for( array_set<int>::iterator i = m_skipPositions.begin(); i != m_skipPositions.end(); ++i ) --*i; // 1-based to 0-based
+//    for( TSkipPositions::iterator i = m_skipPositions.begin(); i != m_skipPositions.end(); ++i ) --*i; // 1-based to 0-based
 
-    if( !m_ambiguifyPositions ) {
-        queryHash.SetSkipPositions( m_skipPositions );
-    }
     queryHash.SetStrands( m_strands );
-    queryHash.SetMinimalMaxMism( min( unsigned(queryHash.GetAbsoluteMaxMism()), m_minHashMism ) );
+    queryHash.SetSkipPositions( m_skipPositions );
+    queryHash.SetMaxSimplicity( m_maxSimplicity );
+    queryHash.SetMaxAmbiguities( m_maxHashAmb );
     queryHash.SetNcbipnaToNcbi4naScore( Uint2( 255 * pow( 10.0, double(m_phrapSensitivity)/10) ) );
     queryHash.SetNcbiqnaToNcbi4naScore( m_phrapSensitivity );
 
     seqScanner.SetFilter( &filter );
     seqScanner.SetQueryHash( &queryHash );
     seqScanner.SetSeqIds( &seqIds );
-    seqScanner.SetMaxAlternatives( m_maxFastaAlt );
+    seqScanner.SetMaxAmbiguities( m_maxFastaAmb );
     seqScanner.SetMaxSimplicity( m_maxSimplicity );
-    seqScanner.SetRunOldScanningCode( m_run_old_scanning_code );
     seqScanner.SetMinBlockLength( m_minBlockLength );
     seqScanner.SetInputChunk( batch.GetInputChunk() );
 
@@ -632,11 +640,9 @@ int COligoFarApp::ProcessData()
         }
         if( iline.fail() ) THROW( runtime_error, "Failed to parse line [" << buff << "]" );
         CQuery * query = new CQuery( qryCoding, id, fwd, rev, m_qualityBase );
-        if( m_ambiguifyPositions ) {
-            ITERATE( TSkipPositions, k, m_skipPositions ) {
-                query->MarkPositionAmbiguous( 0, *k - 1 );
-                query->MarkPositionAmbiguous( 1, *k - 1 );
-            }
+        ITERATE( TSkipPositions, k, m_skipPositions ) {
+            query->MarkPositionAmbiguous( 0, *k - 1 );
+            query->MarkPositionAmbiguous( 1, *k - 1 );
         }
         query->ComputeBestScore( scoreTbl, 0 );
         query->ComputeBestScore( scoreTbl, 1 );

@@ -21,7 +21,7 @@ public:
     typedef array_set <CHashAtom> TMatches;
 
     CSeqScanner() : 
-        m_maxAlternatives( 1024 ), m_maxSimplicity( 2.0 ), 
+        m_maxAmbiguities( 4 ), m_maxSimplicity( 2.0 ), 
         m_seqIds(0), m_snpDb(0), m_filter(0), m_queryHash(0), m_inputChunk(0), m_minBlockLength(1000),
         m_ord(-1), m_run_old_scanning_code(false) {}
     
@@ -30,7 +30,7 @@ public:
     virtual void SequenceEnd() {}
 
     void SetMaxSimplicity( double s ) { m_maxSimplicity = s; }
-    void SetMaxAlternatives( Uint8 a ) { m_maxAlternatives = a; }
+    void SetMaxAmbiguities( int a ) { m_maxAmbiguities = a; }
 
     void SetSnpDb( CSnpDb* snpdb ) { m_snpDb = snpdb; }
     void SetFilter( CFilter * filter ) { m_filter = filter; }
@@ -39,14 +39,11 @@ public:
     void SetInputChunk( const TInputChunk& ic ) { m_inputChunk = &ic; }
     void SetMinBlockLength( int l ) { m_minBlockLength = l; }
             
-    void SetRunOldScanningCode( bool to ) { m_run_old_scanning_code = to; }
-
 	enum ERangeType { eType_skip, eType_direct, eType_iterate };
 	typedef pair<int,int> TRange;
 	typedef list<pair<TRange,ERangeType> > TRangeMap; 
 
 protected:
-    void ScanSequenceBuffer( const char * a, const char * A, unsigned off, unsigned end ); // OLD!!!!! For performance tests only!!!
     void ScanSequenceBuffer( const char * a, const char * A, unsigned off, unsigned end, CSeqCoding::ECoding );
     void AssignTargetSequences( );
 	void CreateRangeMap( TRangeMap& rangeMap, const char * a, const char * A );
@@ -63,16 +60,17 @@ protected:
     class C_ScanImpl_Base 
     {
     public:
-        C_ScanImpl_Base( const CHashParam& hp, double maxSimpl ) : 
-            m_hashParam( hp ), m_maxSimplicity( maxSimpl ) {}
+        C_ScanImpl_Base( int winSize, int stride, double maxSimpl ) : 
+            m_windowSize( winSize ), m_strideSize( stride ), m_maxSimplicity( maxSimpl ) {}
         double GetComplexity() const { return m_complexityMeasure; }
         bool IsOk() const { return m_complexityMeasure <= m_maxSimplicity; }
         // CHashParam  API
-        int GetWindowLength() const { return m_hashParam.GetWindowLength(); }
-        int GetExtWordOffset() const { return m_hashParam.GetOffset(); }
-        int GetWordLength() const { return m_hashParam.GetWordLength(); }
+        int GetWindowSize() const { return m_windowSize; }
+        int GetStrideSize() const { return m_strideSize; }
+        
     protected:
-        const CHashParam& m_hashParam;
+        int m_windowSize;
+        int m_strideSize;
         double m_maxSimplicity;
         CComplexityMeasure m_complexityMeasure;
     };
@@ -80,8 +78,8 @@ protected:
     class C_LoopImpl_Ncbi8naNoAmbiguities : public C_ScanImpl_Base
     {
     public:
-        C_LoopImpl_Ncbi8naNoAmbiguities( const CHashParam& hp, double maxSimpl ) : 
-            C_ScanImpl_Base( hp, maxSimpl ), m_hashCode( hp.GetWindowLength() ) {}
+        C_LoopImpl_Ncbi8naNoAmbiguities( int ws, int ss, double maxSimpl ) : 
+            C_ScanImpl_Base( ws, ss, maxSimpl ), m_hashCode( GetWindowSize() ) {}
         template<class Callback>
         void RunCallback( Callback& );
         void Prepare( char a );
@@ -94,29 +92,29 @@ protected:
     class C_LoopImpl_Ncbi8naAmbiguities : public C_ScanImpl_Base
     {
     public:
-        C_LoopImpl_Ncbi8naAmbiguities( const CHashParam& hp, 
-                                       double maxSimpl, Uint8 maxAlt, Uint4 mask4, Uint8 mask8 ) : 
-            C_ScanImpl_Base( hp, maxSimpl ), 
-            m_hashGenerator( hp.GetWindowLength() ), 
-            m_maxAlternatives( maxAlt ), m_mask4( mask4 ), m_mask8( mask8 ) {}
+        C_LoopImpl_Ncbi8naAmbiguities( int ws, int ss,
+                                       double maxSimpl, int maxAmb, Uint8 mask8, UintH maskH ) : 
+            C_ScanImpl_Base( ws, ss, maxSimpl ), 
+            m_hashGenerator( GetWindowSize() ), 
+            m_maxAmbiguities( maxAmb ), m_mask8( mask8 ), m_maskH( maskH ) {}
         template<class Callback>
         void RunCallback( Callback& );
         void Prepare( char a );
         void Update( char a );
-        bool IsOk() const { return C_ScanImpl_Base::IsOk() && m_hashGenerator.GetAlternativesCount() <= m_maxAlternatives; }
+        bool IsOk() const { return C_ScanImpl_Base::IsOk() && m_hashGenerator.GetAmbiguityCount() <= m_maxAmbiguities; }
         const char * GetName() const { return "C_LoopImpl_Ncbi8naAmbiguities"; }
     protected:
         fourplanes::CHashGenerator m_hashGenerator;
-        Uint8 m_maxAlternatives;
-        Uint4 m_mask4;
+        int m_maxAmbiguities;
         Uint8 m_mask8;
+        UintH m_maskH;
     };
 
     class C_LoopImpl_ColorspNoAmbiguities : public C_LoopImpl_Ncbi8naNoAmbiguities
     {
     public:
-        C_LoopImpl_ColorspNoAmbiguities( const CHashParam& hp, double maxSimpl ) : 
-            C_LoopImpl_Ncbi8naNoAmbiguities( hp, maxSimpl ), m_lastBase(1) {}
+        C_LoopImpl_ColorspNoAmbiguities( int ws, int ss, double maxSimpl ) : 
+            C_LoopImpl_Ncbi8naNoAmbiguities( ws, ss, maxSimpl ), m_lastBase(1) {}
         void Prepare( char a );
         void Update( char a );
         const char * GetName() const { return "C_LoopImpl_ColorspNoAmbiguities"; }
@@ -127,9 +125,9 @@ protected:
     class C_LoopImpl_ColorspAmbiguities : public C_LoopImpl_Ncbi8naAmbiguities
     {
     public:
-        C_LoopImpl_ColorspAmbiguities( const CHashParam& hp, 
-                                       double maxSimpl, Uint8 maxAlt, Uint4 mask4, Uint8 mask8 ) : 
-            C_LoopImpl_Ncbi8naAmbiguities( hp, maxSimpl, maxAlt, mask4, mask8 ),m_lastBase(1) {}
+        C_LoopImpl_ColorspAmbiguities( int ws, int ss,
+                                       double maxSimpl, int maxAmb, Uint4 mask4, Uint8 mask8 ) : 
+            C_LoopImpl_Ncbi8naAmbiguities( ws, ss, maxSimpl, maxAmb, mask4, mask8 ),m_lastBase(1) {}
         void Prepare( char a );
         void Update( char a );
         const char * GetName() const { return "C_LoopImpl_ColorspAmbiguities"; }
@@ -139,7 +137,7 @@ protected:
 
 protected:
 //    unsigned m_windowLength;
-    Uint8 m_maxAlternatives;
+    int m_maxAmbiguities;
     double m_maxSimplicity;
     CSeqIds * m_seqIds;
     CSnpDb * m_snpDb;

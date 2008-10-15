@@ -117,6 +117,7 @@ public:
     CNcbi8naBase( const CColorTwoBase& b ) { THROW( logic_error, "CNcbi8naBase( CColorTwoBase ) should not be called" ); }
     CNcbi8naBase Complement() const;
 	CNcbi8naBase Get( EStrand strand ) const { return ( strand == eStrand_neg ) ? Complement() : *this; }
+    bool IsAmbiguous() const { return GetAltCount() > 1; }
     int GetAltCount() const { return s_altCount[(int)m_base]; }
     operator char () const { return m_base; }
 	static CNcbi8naBase Any() { return CNcbi8naBase( '\x0f' ); }

@@ -1,7 +1,6 @@
 #ifndef OLIGOFAR_CQUERY__HPP
 #define OLIGOFAR_CQUERY__HPP
 
-#include "iupac-util.hpp"
 #include "cseqcoding.hpp"
 #include "debug.hpp"
 #include "chit.hpp"
@@ -23,12 +22,32 @@ public:
 		fCoding_ncbipna = 0x02,
 		fCoding_colorsp = 0x03,
 		fCoding_BITS = fCoding_ncbi8na|fCoding_ncbipna|fCoding_colorsp,
+        fReject_short0 = 0x04,
+        fReject_short1 = 0x08,
+        fReject_short  = 0x0c,
+        fReject_loCompl0 = 0x10,
+        fReject_loCompl1 = 0x20,
+        fReject_loCompl = 0x30,
+        fReject_loQual0 = 0x40,
+        fReject_loQual1 = 0x80,
+        fReject_loQual  = 0xc0,
+        fReject_BITS = 0xfc,
+        fReject_BITS0 = 0x54,
+        fReject_BITS1 = 0xa8,
 		fNONE = 0
 	};
     static Uint4 GetCount() { return s_count; }
 
 	CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& data2 = "", int base = kDefaultQualityBase );
 	~CQuery() { delete m_topHit; delete [] m_data; --s_count; }
+
+    void SetRejectAsShort( int i, bool on = true ) { if( on ) m_flags |= (fReject_short0 << i ); else m_flags &= ~(fReject_short0 << i); }
+    void SetRejectAsLoQual( int i, bool on = true ) { if( on ) m_flags |= (fReject_loQual0 << i ); else m_flags &= ~(fReject_loQual0 << i); }
+    void SetRejectAsLoCompl( int i, bool on = true ) { if( on ) m_flags |= (fReject_loCompl0 << i ); else m_flags &= ~(fReject_loCompl0 << i); }
+    void ClearRejectFlags( int i ) { m_flags &= ~(fReject_BITS0 << i ); }
+
+    int GetRejectReasons() const { return m_flags & fReject_BITS; }
+    int GetRejectFlags( int i ) const { return m_flags & (fReject_BITS0 << i); }
 
 	bool IsPairedRead() const { return m_length[1] != 0; }
 	bool HasComponent( int i ) const { return GetLength( i ) != 0; }
@@ -60,6 +79,9 @@ protected:
 	void x_InitNcbipna( const string& id, const string& data1, const string& data2, int base );
 	void x_InitColorspace( const string& id, const string& data1, const string& data2, int base );
     unsigned x_ComputeInformativeLength( const string& seq ) const;
+
+    template<class iterator>
+    inline iterator Solexa2Ncbipna( iterator dest, const string& line, int );
 
 protected:
 	unsigned char * m_data; // contains id\0 data1 data2
@@ -155,12 +177,36 @@ inline void CQuery::x_InitNcbiqna( const string& id, const string& data1, const 
 		m_data[j++] = CNcbiqnaBase( CNcbi8naBase( CIupacnaBase( data2[i++] ) ), data2[k++] - base );
 }
 
+template<class iterator>
+inline iterator CQuery::Solexa2Ncbipna( iterator dest, const string& line, int )
+{
+    istringstream in( line );
+    while( !in.eof() ) {
+        int a,c,g,t;
+        in >> a >> c >> g >> t;
+        if( in.fail() ) throw runtime_error( "Bad solexa line format: [" + line + "]" );
+        double exp = max( max( a, c ), max( g, t ) );
+        double base = 255 / std::pow( 2., exp );
+        // TODO: correct
+        *dest++ = unsigned (base * std::pow(2., a));
+        *dest++ = unsigned (base * std::pow(2., c));
+        *dest++ = unsigned (base * std::pow(2., g));
+        *dest++ = unsigned (base * std::pow(2., t));
+        *dest++ = '\xff';
+    }
+    return dest;
+}
+
+
+
 inline void CQuery::x_InitNcbipna( const string& id, const string& data1, const string& data2, int base )
 {
 	m_flags &= ~fCoding_BITS;
 	m_flags |= fCoding_ncbipna;
 	vector<unsigned char> buff1, buff2;
+
     Solexa2Ncbipna( back_inserter( buff1 ), data1, base );
+
     if( data2.length() ) Solexa2Ncbipna( back_inserter( buff2 ), data2, base );
 	m_data = new unsigned char[id.length() + 1 + buff1.size() + buff2.size()];
     ASSERT( buff1.size()%5 == 0 );

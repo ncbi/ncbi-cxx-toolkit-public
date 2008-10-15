@@ -9,7 +9,7 @@ BEGIN_OLIGOFAR_SCOPES
 class CComplexityMeasure
 {
 public:
-    CComplexityMeasure( int windowSize = 0 );
+    CComplexityMeasure( int windowSize = 2 );
     operator double() const { return Get(); }
     void Add( int tripletId );
     void Del( int tripletId );
@@ -41,8 +41,8 @@ inline void CComplexityMeasure::Add( int tripletId )
         m_score -= tripletCount * ( tripletCount - 1 );
         m_score += tripletCount * ( tripletCount + 1 );
         tripletCount ++;
-        m_windowSize ++;
     }
+    m_windowSize ++;
 }
 
 inline void CComplexityMeasure::Del( int tripletId )
@@ -52,15 +52,15 @@ inline void CComplexityMeasure::Del( int tripletId )
         if( tripletCount <= 0 ) 
 			throw logic_error( "CComplexityMeasure::Del(int tripletId): Deleting non-existing triplet!" );
         tripletCount --;
-        m_windowSize -- ;
         m_score -= tripletCount * ( tripletCount + 1 );
         m_score += tripletCount * ( tripletCount - 1 );
     }
+    m_windowSize -- ;
 }
 
 inline void CComplexityMeasure::Reset()
 {
-    m_windowSize = 0;
+    m_windowSize = 2;
     m_score = 0;
     fill( m_tripletCounts, m_tripletCounts + 64, 0 );
 }

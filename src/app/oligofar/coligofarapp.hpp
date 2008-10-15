@@ -4,7 +4,7 @@
 #include "capp.hpp"
 #include "util.hpp"
 #include "array_set.hpp"
-#include "cqueryhash.hpp"
+#include "chashparam.hpp"
 #include <corelib/ncbireg.hpp>
 #include <string>
 #include <set>
@@ -27,15 +27,14 @@ public:
         eAlignment_HSP   = 'h',
         eAlignment_SW    = 's',
         eAlignment_fast  = 'f',
-        eAlignment_quick = 'q'
     };
     enum ELongOpt { 
         kLongOptBase = 0x100,
-        kLongOpt_old = kLongOptBase + 0x01,
-        kLongOpt_min_block_length = kLongOptBase + 0x02,
-        kLongOpt_ambiguifyPositions = kLongOptBase + 0x03
+        kLongOpt_pass0 = kLongOptBase + 0x00,
+        kLongOpt_pass1 = kLongOptBase + 0x01,
+        kLongOpt_min_block_length = kLongOptBase + 0x02
     };
-    typedef array_set<int> TSkipPositions;
+    typedef CHashParam::TSkipPositions TSkipPositions;
 
 protected:
     virtual void Help( const char * );
@@ -74,11 +73,10 @@ protected:
     }
 
 protected:
-    unsigned m_windowLength[2];
-    unsigned m_minHashMism;
-    unsigned m_maxHashMism;
-    unsigned m_maxHashAlt;
-    unsigned m_maxFastaAlt;
+    vector<CHashParam> m_hashParam;
+    unsigned m_hashPass;
+    unsigned m_maxHashAmb;
+    unsigned m_maxFastaAmb;
     unsigned m_strands;
     unsigned m_readsPerRun;
 	unsigned m_phrapSensitivity;
@@ -91,7 +89,6 @@ protected:
     double   m_mismatchScore;
     double   m_gapOpeningScore;
     double   m_gapExtentionScore;
-    double   m_rehashFactor;
     int      m_minPair;
     int      m_maxPair;
     int      m_pairMargin;
@@ -102,10 +99,7 @@ protected:
     Uint8    m_memoryLimit;
     bool     m_performTests;
 	bool     m_colorSpace;
-    bool     m_run_old_scanning_code;
-    bool     m_ambiguifyPositions;
 	EAlignmentAlgo m_alignmentAlgo;
-	CQueryHash::EHashType m_hashType[2];
     TSkipPositions m_skipPositions;
     string m_readFile;
     string m_gilistFile;

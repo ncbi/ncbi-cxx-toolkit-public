@@ -4,7 +4,6 @@
 #include "cseqvecprocessor.hpp"
 
 #include "string-util.hpp"
-#include "iupac-util.hpp"
 
 #include <iostream>
 #include <iomanip>

@@ -5,7 +5,7 @@
 #include "taligner_sw.hpp"
 #include "taligner_hsp.hpp"
 #include "taligner_fast.hpp"
-#include "taligner_quick.hpp"
+//#include "taligner_quick.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
 

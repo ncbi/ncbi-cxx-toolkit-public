@@ -1,6 +1,5 @@
 #include <ncbi_pch.hpp>
 #include "csnpdb.hpp"
-#include "iupac-util.hpp"
 
 USING_OLIGOFAR_SCOPES;
 
@@ -53,7 +52,7 @@ void CSnpDbBase::ParseSeqId( const string& id )
 bool CSnpDbCreator::Insert( const string& fullId, int pos, unsigned base, EStrand strand )
 {
     base &= 0x0f;
-    if( strand == eStrand_reverse ) base = Ncbi4naCompl( base ); // complement
+    if( strand == eStrand_reverse ) base = CNcbi8naBase( base ).Complement(); // complement
     return Insert( fullId, pos, 
                    base & 0x01 ? 1.0 : 0.0,
                    base & 0x02 ? 1.0 : 0.0,

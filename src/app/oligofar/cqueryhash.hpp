@@ -1,13 +1,12 @@
 #ifndef OLIGOFAR_CQUERYHASH__HPP
 #define OLIGOFAR_CQUERYHASH__HPP
 
+#include "uinth.hpp"
 #include "cquery.hpp"
-#include "hashtables.hpp"
 #include "fourplanes.hpp"
-#include "cpermutator4b.hpp"
+#include "cpermutator8b.hpp"
 #include "array_set.hpp"
-#include "chashparam.hpp"
-#include "chashatom.hpp"
+#include "cwordhash.hpp"
 
 #include <deque>
 
@@ -18,34 +17,100 @@ BEGIN_OLIGOFAR_SCOPES
 // 111010111111110111111 18 bits
 // aaaaaaaaaaa            9 bits
 //           bbbbbbbbbbb 10 bits
-
 class CHashPopulator;
-class CQueryHash : public CHashParam
+class CQueryHash
 {
 public:
     typedef array_set<Uint1> TSkipPositions;
+    typedef vector<CHashAtom> TMatchSet;
 
-    typedef AVectorTable<CHashAtom> CVectorTable;
-    typedef AMultimapTable<CHashAtom> CMultimapTable;
-    typedef AArraymapTable<CHashAtom> CArraymapTable;
-
-    //typedef CVectorTable THashTable;
-    //typedef CMultimapTable THashTable;
-    //typedef QUERY_HASH_IMPL THashTable;
+    enum EStatus {
+        eStatus_empty,
+        eStatus_dirty,
+        eStatus_ready
+    };
 
 	~CQueryHash();
-    CQueryHash( EHashType type, unsigned winlen, int maxmism, int maxalt, double maxsimpl );
+    CQueryHash( int maxm = 2, int maxa = 4 );
+
+    void SetWindowSize( int winSize );
+    void SetWordSize( int wordSz );
+    void SetStrideSize( int stride );
+    void SetMaxMismatches( int mismatches );
+    void SetMaxAmbiguities( int ambiguities );
+    void SetAllowIndel( bool indel );
+    void SetIndexBits( int bits );
+    void SetStrands( int strands );
+    void SetMaxSimplicity( double simpl );
+
+    void SetExpectedReadCount( int count ) { m_expectedCount = count; }
+
+    int  GetWindowSize() const { return m_windowSize; }
+    int  GetWordSize() const { return m_wordSize; }
+    int  GetWordOffset() const { return m_wordOffset; }
+    int  GetStrideSize() const { return m_strideSize; }
+    int  GetMaxMismatches() const { return m_maxMism; }
+    int  GetMaxAmbiguities() const { return m_maxAmb; }
+    bool GetAllowIndel() const { return m_allowIndel; }
+    int  GetIndexBits() const { return m_hashTable.GetIndexBits(); }
+    int  GetStrands() const { return m_strands; }
+    int  GetExpectedReadCount() const { return m_expectedCount; }
+    int  GetHashedQueriesCount() const { return m_hashedCount; }
+    double GetMaxSimplicity( double simpl ) { return m_maxSimplicity; }
+    
+    int GetAbsoluteMaxMism() const { return m_permutators.size() - 1; }
+    bool CanOptimizeOffset() const { return m_skipPositions.size() == 0; }
+
+    template<class iterator>  void SetSkipPositions( iterator begin, iterator end );
+    template<class container> void SetSkipPositions( container c );
+    
+    const TSkipPositions& GetSkipPositions() const { return m_skipPositions; }
+
+    void Clear() { m_status = eStatus_empty; m_hashedCount = 0; m_hashTable.Clear(); }
+    void Freeze() { m_hashTable.Sort(); m_status = eStatus_ready; }
 
     int AddQuery( CQuery * query );
-    int AddQuery( CQuery * query, int component );
 
-    int GetHashedQueriesCount() const { return m_hashedQueries; }
+    template<class Callback> void ForEach4( const UintH& ncbi4na, Callback& cbk ) const;
+    template<class Callback> void ForEach4( UintH hash, Callback& callback, Uint1 mask, Uint1 flags ) const;
+    template<class Callback> void ForEach2( const Uint8& ncbi2na, Callback& cbk ) const;
+    template<class Callback> void ForEach2( Uint8 hash, Callback& callback, Uint1 mask, Uint1 flags ) const;
 
-    void Clear();
-	void Freeze();
-    void Reserve( unsigned batch );
+    template<class Callback> void ForEach4( const UintH& ncbi4na, Callback& cbk ) {
+        if( m_status == eStatus_dirty ) Freeze();
+        ((const CQueryHash*)this)->ForEach4( ncbi4na, cbk );
+    }
+    template<class Callback> void ForEach2( const Uint8& ncbi2na, Callback& cbk ) {
+        if( m_status == eStatus_dirty ) Freeze();
+        ((const CQueryHash*)this)->ForEach2( ncbi2na, cbk );
+    }
 
-    typedef vector<CHashAtom> TMatchSet;
+    Uint8  ComputeEntryCountPerRead() const; // no ambiguities are allowed
+    int    ComputeHasherWindowLength();
+    int    ComputeScannerWindowLength();
+    UintH  ComputeAlternatives( UintH w, int l ) const; // used to optimize window
+    double ComputeComplexityNcbi8na( UintH w, int len, int& amb ) const;
+
+    void Compress( UintH& window ) const; // removes skip-positions
+
+    void SetNcbipnaToNcbi4naScore( Uint2 score ) { m_ncbipnaToNcbi4naScore = score; }
+    void SetNcbiqnaToNcbi4naScore( Uint2 score ) { m_ncbiqnaToNcbi4naScore = score; }
+
+protected:
+
+    template<class Callback>
+    class C_ScanCallback
+    {
+    public:
+        C_ScanCallback( const CQueryHash& caller, Callback& cbk, Uint1 mask, Uint1 flags ) : 
+            m_caller( caller ), m_callback( cbk ), m_mask( mask ), m_flags( flags ) {}
+        void operator () ( Uint8 hash, int mism, unsigned amb ) const;
+    protected:
+        const CQueryHash& m_caller;
+        Callback& m_callback;
+        Uint1 m_mask;
+        Uint1 m_flags;
+    };
 
     class C_ListInserter
     {
@@ -56,130 +121,56 @@ public:
         TMatchSet& m_matchSet;
     };
 
-    template<class Callback>
-    void ForEach( Uint8 hash, Callback& callback ) const;
-
-    bool CanOptimizeOffset() const { return m_skipPositions.size() == 0; }
-
-    int  GetNcbi4na( Uint8& window, CSeqCoding::ECoding, const unsigned char * data, unsigned length );
-    int  GetNcbi4na( Uint8& window, Uint8& windowx, CSeqCoding::ECoding, const unsigned char * data, unsigned length );
-
-    void SetNcbipnaToNcbi4naScore( Uint2 score ) { m_ncbipnaToNcbi4naScore = score; }
-    void SetNcbiqnaToNcbi4naScore( Uint2 score ) { m_ncbiqnaToNcbi4naScore = score; }
-    
-    void SetStrands( int s ) { m_strands = s; }
-
-	int GetAbsoluteMaxMism() const { return m_permutators.size() - 1; }
-	int GetMinimalMaxMism() const { return m_minMism; }
-	int GetMaxMism() const { return m_maxMism; }
-
-	void SetMaxMism( int i );
-	void SetMinimalMaxMism( int i );
-    
-    void SetHashType( EHashType, int win );
-    const char * GetHashTypeName() const {
-        switch( m_hashType ) {
-        case eHash_arraymap: return "arraymap"; 
-        case eHash_multimap: return "multimap"; 
-        case eHash_vector: return "vector"; 
-        default: return "UNKNOWN";
-        }
-    }
-
-    template <class Callback>
-    class C_ForEachFilter
-    {
-    public:
-        C_ForEachFilter( Callback& cbk, Uint2 mask, Uint2 flags ) : 
-            m_callback( cbk ), m_flags( flags & mask ), m_mask( mask ) {}
-        void operator () ( const CHashAtom& a ) {
-            if( (a.GetFlags() & m_mask) == m_flags ) m_callback( a );
-        }
-    protected:
-        Callback& m_callback;
-        Uint2 m_flags;
-        Uint2 m_mask;
-    };
-
-    template<class iterator>
-    void SetSkipPositions( iterator begin, iterator end ) {
-        m_skipPositions.clear();
-        copy( begin, end, inserter( m_skipPositions, m_skipPositions.end() ) );
-        ResetMasks();
-        SetMasks( begin, end );
-    }
-    
-    template<class container>
-    void SetSkipPositions( container c ) {
-        SetSkipPositions( c.begin(), c.end() );
-    }
-protected:
-	typedef Uint8 TCvt( const unsigned char *, int, unsigned short );
+	typedef UintH TCvt( const unsigned char *, int, unsigned short );
 	typedef Uint2 TDecr( Uint2 );
 
-    int x_GetNcbi4na_ncbi8na( Uint8& window, const unsigned char * data, unsigned length );
-    int x_GetNcbi4na_ncbipna( Uint8& window, const unsigned char * data, unsigned length );
-    int x_GetNcbi4na_ncbiqna( Uint8& window, const unsigned char * data, unsigned length );
-    int x_GetNcbi4na_colorsp( Uint8& window, const unsigned char * data, unsigned length );
-    int x_GetNcbi4na_quality( Uint8& window, const unsigned char * data, unsigned length, TCvt * fun, int incr, Uint2 score, TDecr * decr );
+    bool CheckWordConstraints();
+    bool CheckWordConstraints() const;
 
-    int x_GetNcbi4na_ncbi8na( Uint8& window, Uint8& windowx, const unsigned char * data, unsigned length );
-    int x_GetNcbi4na_ncbipna( Uint8& window, Uint8& windowx, const unsigned char * data, unsigned length );
-    int x_GetNcbi4na_ncbiqna( Uint8& window, Uint8& windowx, const unsigned char * data, unsigned length );
-    int x_GetNcbi4na_colorsp( Uint8& window, Uint8& windowx, const unsigned char * data, unsigned length );
-    int x_GetNcbi4na_quality( Uint8& window, Uint8& windowx, const unsigned char * data, unsigned length, TCvt * fun, int incr, Uint2 score, TDecr * decr );
+    int  AddQuery( CQuery * query, int component );
+    int  GetNcbi4na( UintH& window, CSeqCoding::ECoding, const unsigned char * data, unsigned length );
+
+    int x_GetNcbi4na_ncbi8na( UintH& window, const unsigned char * data, unsigned length );
+    int x_GetNcbi4na_colorsp( UintH& window, const unsigned char * data, unsigned length );
+    int x_GetNcbi4na_ncbipna( UintH& window, const unsigned char * data, unsigned length );
+    int x_GetNcbi4na_ncbiqna( UintH& window, const unsigned char * data, unsigned length );
+    int x_GetNcbi4na_quality( UintH& window, const unsigned char * data, unsigned length, TCvt * fun, int incr, unsigned short score, TDecr * decr );
 
 	static Uint2 x_UpdateNcbipnaScore( Uint2 score ) { return score /= 2; }
 	static Uint2 x_UpdateNcbiqnaScore( Uint2 score ) { return score - 1; }
 	static TCvt  x_Ncbipna2Ncbi4na;
 	static TCvt  x_Ncbiqna2Ncbi4na;
 
-    static Uint8 x_ComputeWordRetAmbcount( Uint8& window, const unsigned char * data, int len, TCvt * fun, unsigned short score ) {
-        if( len ) { window = fun( data, len, score ); return Ncbi4naAlternativeCount( window, len ); } else { window = 0; return 1; }
-    }
-
-    static bool x_AltcountOk( Uint8 ac, Uint8 acx, Uint8 limit ) { return ac < (Uint8(1) << 32) && acx < (Uint8(1) << 32)  && ac * acx <= limit; }
-    Uint8 x_MakeXword( Uint8 word, Uint8 ext ) const { return ( ext | (word << m_offset)) & ((1 << m_wordLen) - 1 ); }
-
-    int PopulateHash( int ext, CHashPopulator& hashPopulator );
-
-    enum EHashMasks {
-        eHashW0F,
-        eHashW0R,
-        eHashW1F,
-        eHashW1R,
-        kDefaultMask = ~Uint4(0)
-    };
-
-    template<class iterator>
-    void SetMasks( iterator begin, iterator end ); // 1-based
-    void ResetMasks() { fill( m_mask, m_mask + 4, kDefaultMask ); }
+//    template<class Callback> void ForEach( Uint8 ncbi2na, Callback& cbk, Uint1 mask, Uint1 flags );
 
 protected:
-    mutable TMatchSet m_listA, m_listB; // to keep memory space reserved between ForEach calls
-	
-	CVectorTable   m_hashTableV;
-	CMultimapTable m_hashTableM;
-	CArraymapTable m_hashTableA;
 
+    EStatus m_status;
+    int m_windowLength;
+    int m_windowSize;
+    int m_strideSize;
+    int m_wordSize;
+    int m_strands;
+    int m_expectedCount;
+    int m_hashedCount;
+    int m_maxAmb;
+    int m_maxMism;
+    bool m_allowIndel;
     double m_maxSimplicity;
-    
     Uint2 m_ncbipnaToNcbi4naScore;
 	Uint2 m_ncbiqnaToNcbi4naScore;
-    Uint2 m_strands;
-	Uint2 m_minMism;
-	Uint2 m_maxMism;
-	Uint2 m_maxAlt;
-
-    Uint4 m_mask[4];
     TSkipPositions m_skipPositions;
+    CWordHash m_hashTable;
+	vector<CPermutator8b*> m_permutators;
+    // all masks are ncbi2na, i.e. 2 bits per base
+    Uint8 m_wordMask; 
+    int m_wordOffset;
 
-    unsigned m_hashedQueries;
-	vector<CPermutator4b*> m_permutators;
+    mutable TMatchSet m_listA, m_listB; // to keep memory space reserved between ForEach calls
 };
 
 ////////////////////////////////////////////////////////////////////////
-// Implementation
+// inline implementation follows
 
 inline CQueryHash::~CQueryHash() 
 {
@@ -187,179 +178,274 @@ inline CQueryHash::~CQueryHash()
 		delete m_permutators[i];
 }
 
-inline CQueryHash::CQueryHash( EHashType type, unsigned winsize, int maxm, int maxa, double maxsimpl ) : 
-    CHashParam( type, winsize ),
-    m_hashTableV( type == eHash_vector   ? m_wordLen : 0, maxm, maxa ), 
-    m_hashTableM( type == eHash_multimap ? m_wordLen : 0, maxm, maxa ), 
-    m_hashTableA( type == eHash_arraymap ? m_wordLen : 0, maxm, maxa ), 
-    m_maxSimplicity( maxsimpl ), 
-	m_ncbipnaToNcbi4naScore( 0x7f ), m_ncbiqnaToNcbi4naScore( 3 ), m_strands( 3 ), 
-	m_minMism( 0 ), m_maxMism( 0 ), m_maxAlt( maxa ), 
-    m_hashedQueries( 0 ),
-    m_permutators( maxm + 1 )
+inline CQueryHash::CQueryHash( int maxm, int maxa ) :
+    m_status( eStatus_empty ),
+    m_windowLength( 22 ),
+    m_windowSize( 22 ),
+    m_strideSize( 1 ),
+    m_wordSize( 11 ),
+    m_strands( 3 ),
+    m_expectedCount( 1000000 ),
+    m_hashedCount( 0 ),
+    m_maxAmb( maxa ),
+    m_maxMism( min(1, maxm) ),
+    m_allowIndel( maxm ? true : false ),
+    m_maxSimplicity( 2.0 ),
+    m_ncbipnaToNcbi4naScore( 0x7f ),
+    m_ncbiqnaToNcbi4naScore( 3 ),
+    m_hashTable( m_wordSize*2 ),
+    m_wordMask( CBitHacks::WordFootprint<Uint8>( m_wordSize*2 ) ),
+    m_wordOffset( m_windowSize - m_wordSize )
 {
-    ResetMasks();
-	for( int i = 0; i <= maxm; ++i ) 
-		m_permutators[i] = new CPermutator4b( i, maxa );
+    SetMaxMismatches( maxm );
 }
 
-// TODO: check which is which
 template<class iterator>
-inline void CQueryHash::SetMasks( iterator begin, iterator end ) // 1-based 
+inline void CQueryHash::SetSkipPositions( iterator begin, iterator end ) 
 {
+    m_skipPositions.clear();
     for( ; begin != end ; ++begin ) {
-        int k = *begin;
-        if( k <= 0 ) continue;
-        if( k <= m_wordLen ) {
-            m_mask[eHashW0F] &= ~(Uint4(3) << (2*( k - 1 )));
-            m_mask[eHashW0R] &= ~(Uint4(3) << (2*( m_wordLen - k )));
-        }
-        k -= m_offset;
-        if( k <= 0 ) continue;
-        if( k <= m_wordLen ) {
-            m_mask[eHashW1F] &= ~(Uint4(3) << (2*( k - 1)));
-            m_mask[eHashW1R] &= ~(Uint4(3) << (2*( m_wordLen - k )));
-        }
+        if( *begin <= 0 ) continue;
+        m_skipPositions.insert( *begin );
     }
-//     cerr 
-//         << "MASK 0 F = " << hex << setw(32) << setfill('0') << m_mask[eHashW0F] << "\n"
-//         << "MASK 0 R = " << hex << setw(32) << setfill('0') << m_mask[eHashW0R] << "\n"
-//         << "MASK 1 F = " << hex << setw(32) << setfill('0') << m_mask[eHashW1F] << "\n"
-//         << "MASK 1 R = " << hex << setw(32) << setfill('0') << m_mask[eHashW1R] << "\n";
 }
-
-inline void CQueryHash::Clear()
+    
+template<class container>
+inline void CQueryHash::SetSkipPositions( container c ) 
 {
-    m_hashTableV.Clear();
-    m_hashTableM.Clear();
-    m_hashTableA.Clear();
-    m_hashedQueries = 0;
-}
-inline	void CQueryHash::Freeze() 
-{ 
-	m_hashTableV.Freeze(); 
-	m_hashTableM.Freeze(); 
-	m_hashTableA.Freeze(); 
+    SetSkipPositions( c.begin(), c.end() );
 }
 
-inline void CQueryHash::Reserve( unsigned batch ) 
+inline void CQueryHash::SetWindowSize( int winSize ) 
 { 
-	m_hashTableV.Reserve( batch ); 
-	m_hashTableM.Reserve( batch ); 
-	m_hashTableA.Reserve( batch ); 
+    ASSERT( m_status == eStatus_empty );
+    m_windowSize = winSize; 
+    if( m_wordSize > m_windowSize ) {
+        m_wordSize = m_windowSize;
+        m_wordMask = CBitHacks::WordFootprint<Uint8>( 2*m_wordSize );
+        m_wordOffset = 0;
+    } else m_wordOffset = m_windowSize - m_wordSize;
 }
 
-inline void CQueryHash::SetMaxMism( int i ) 
+inline void CQueryHash::SetWordSize( int wordSize ) 
 { 
-	ASSERT( i >= m_minMism );
-	ASSERT( i <= GetAbsoluteMaxMism() ); 
-	m_maxMism = i; 
-} 
+    ASSERT( m_status == eStatus_empty );
+    m_wordSize = wordSize; 
+    m_wordMask = CBitHacks::WordFootprint<Uint8>( 2*m_wordSize );
+    if( m_wordSize > m_windowSize ) m_windowSize = m_wordSize;
+    m_wordOffset = m_windowSize - m_wordSize;
+}
 
-inline void CQueryHash::SetMinimalMaxMism( int i ) 
+inline int CQueryHash::AddQuery( CQuery * query )
+{
+    if( m_status == eStatus_empty ) CheckWordConstraints();
+    
+    m_status = eStatus_dirty;
+    int ret = AddQuery( query, 0 );
+    if( query->HasComponent( 1 ) ) ret += AddQuery( query, 1 );
+    if( ret ) ++m_hashedCount;
+    return ret;
+}
+
+inline void CQueryHash::SetStrideSize( int stride ) 
 { 
-	ASSERT( i >= 0 );
-    ASSERT( i <= GetAbsoluteMaxMism() ); 
-	m_minMism = i; 
-	if( i > m_maxMism ) m_maxMism = i; 
+    ASSERT( m_status == eStatus_empty ); 
+    m_strideSize = stride; 
+}
+    
+inline void CQueryHash::SetMaxMismatches( int mismatches ) 
+{ 
+    ASSERT( m_status == eStatus_empty ); 
+    if( int(m_permutators.size()) <= mismatches ) {
+        int oldsz = m_permutators.size();
+        m_permutators.resize( mismatches + 1 );
+        for( int i = oldsz; i <= mismatches; ++i ) 
+            m_permutators[i] = new CPermutator8b( i, m_maxAmb );
+    }
+    m_maxMism = mismatches;
+}
+
+inline void CQueryHash::SetMaxAmbiguities( int ambiguities ) 
+{ 
+    ASSERT( m_status == eStatus_empty ); 
+    m_maxAmb = ambiguities; 
+}
+
+inline void CQueryHash::SetAllowIndel( bool indel )      
+{ 
+    ASSERT( m_status == eStatus_empty ); 
+    m_allowIndel = indel; 
+}
+
+inline void CQueryHash::SetIndexBits( int bits )         
+{ 
+    ASSERT( m_status == eStatus_empty ); m_hashTable.SetIndexBits( bits ); 
+}
+
+inline void CQueryHash::SetStrands( int strands )        
+{ 
+    ASSERT( m_status == eStatus_empty ); 
+    m_strands = strands; 
+}
+    
+inline void CQueryHash::SetMaxSimplicity( double simpl ) 
+{ 
+    ASSERT( m_status == eStatus_empty ); 
+    m_maxSimplicity = simpl; 
+}
+
+inline Uint8 CQueryHash::ComputeEntryCountPerRead() const
+{
+    Uint8 ret = m_wordSize;
+    if( m_maxMism > 0 ) ret += 3 * m_wordSize;
+    if( m_allowIndel )  {
+        Uint8 idc = (m_wordSize - 2)*4 + (m_wordSize - 1) - (m_wordSize - 3); // TODO: check last ???
+        if( m_maxMism > 0 ) ret *= idc;
+        else ret += idc;
+    }
+    if( m_maxMism > 1 ) {
+        ret += 9 * m_wordSize * ( m_wordSize - 1 )/2;
+        ASSERT( m_maxMism < 3 );
+    }
+    if( m_wordOffset ) ret *= 2; // for each word
+    if( (m_strands&3) == 3 ) ret *= 2; // for each strand
+    return ret;
+}
+
+inline int CQueryHash::ComputeHasherWindowLength()
+{
+    ASSERT( m_strideSize == 1 || m_skipPositions.size() == 0 );
+    m_windowLength = m_windowSize + m_strideSize - 1 + m_allowIndel;
+    ITERATE( TSkipPositions, p, m_skipPositions ) {
+        if( *p <= m_windowLength ) ++m_windowLength; // m_skipPositions are sorted, unique and > 0 (1-based)
+        else break;
+    }
+    return m_windowLength;
+}
+
+inline int CQueryHash::ComputeScannerWindowLength()
+{
+    ASSERT( m_strideSize == 1 || m_skipPositions.size() == 0 );
+    int winlen = m_windowSize; // indel and strides are taken into account in hash
+    ITERATE( TSkipPositions, p, m_skipPositions ) { // just extend window to allow skipping
+        if( *p <= winlen ) ++winlen; // m_skipPositions are sorted, unique and > 0 (1-based)
+        else break;
+    }
+    return winlen;
+}
+
+inline bool CQueryHash::CheckWordConstraints()
+{
+    ComputeHasherWindowLength();
+    return ((const CQueryHash*)this)->CQueryHash::CheckWordConstraints();
+}
+
+
+inline bool CQueryHash::CheckWordConstraints() const
+{
+    ASSERT( m_skipPositions.size() == 0 || m_strideSize == 1 );
+    ASSERT( m_strideSize < m_wordSize );
+    ASSERT( m_strideSize < m_wordOffset + 1|| m_wordOffset == 0 );
+    ASSERT( m_wordSize <= m_windowSize );
+    ASSERT( m_wordSize * 2 >= m_windowSize );
+    ASSERT( m_wordSize * 2 - m_hashTable.GetIndexBits() <= 16 ); // requirement is based on that CHashAtom may store only 16 bits
+    ASSERT( m_windowLength <= 32 );
+    return true;
 }
 
 template<class Callback>
-void CQueryHash::ForEach( Uint8 hash, Callback& callback ) const 
+void CQueryHash::ForEach4( const UintH& hash, Callback& callback ) const 
 { 
-    if( SingleHash() ) {
-        ASSERT( GetOffset() == 0 );
-        Uint4 h = Uint4( hash ); //>> ( GetOffset()*2 ) );
-        /*
-        if( ((hash >> GetOffset()*2) & ~CBitHacks::WordFootprint<Uint8>( 2*m_wordLen )) != 0 ) {
-            THROW( logic_error, NStr::UInt8ToString( hash, 0, 2 ) << " >> " << (GetOffset()*2) <<  " = " <<  NStr::UInt8ToString( hash >> (2*GetOffset()), 0, 2 ) 
-                   << "; wordLen = " << unsigned(m_wordLen) << ", ~footprint = " << NStr::UInt8ToString(~CBitHacks::WordFootprint<Uint8>( 2*m_wordLen ), 0, 2 ) );
-        }
-        */
-        if( m_skipPositions.size() == 0 ) {
-            C_ForEachFilter<Callback> cbk( callback, 0, 0 );
+    /* ........................................................................
+       We change strategy here: instead of putting logic on varying hash window 
+       by seqscanner, we to it in hash - so that hash is a black box
 
-            switch( GetHashType() ) {
-            case eHash_vector:   m_hashTableV.ForEach( h, cbk ); break;
-            case eHash_multimap: m_hashTableM.ForEach( h, cbk ); break;
-            case eHash_arraymap: m_hashTableA.ForEach( h, cbk ); break;
-            }
-        } else {
-            C_ForEachFilter<Callback> cbkp( callback, CHashAtom::fFlag_strands, CHashAtom::fFlag_strandPos );
-            C_ForEachFilter<Callback> cbkn( callback, CHashAtom::fFlag_strands, CHashAtom::fFlag_strandNeg );
+       Remember, that scanner WindowLength = either 
+        (a) WindowSize + 0 * (StrideSize + IndelAllowed) 
+       or
+        (b) WindowSize + (number of skip positions - self conjugated)
+       because it is not allowed to have strides and skip positions
 
-            Uint4 hp = h & m_mask[eHashW0F];
-            Uint4 hn = h & m_mask[eHashW0R];
+       That's the window scanner should use.
+       ........................................................................ */
+    ASSERT( m_status != eStatus_dirty );
 
-//             cerr 
-//                 << hex << setw(32) << setfill('0') << h << " (h)\n"
-//                 << hex << setw(32) << setfill('0') << m_mask[eHashW0F] << " (mf)\n"
-//                 << hex << setw(32) << setfill('0') << hp << " (hp)\n"
-//                 << hex << setw(32) << setfill('0') << m_mask[eHashW0R] << " (mr)\n"
-//                 << hex << setw(32) << setfill('0') << h << " (hn)\n";
+    if( m_strands == 3 ) 
+        ForEach4( hash, callback, 0, 0 );
+    else {
+        if( m_strands & 1 ) 
+            ForEach4( hash, callback, CHashAtom::fMask_strand, CHashAtom::fFlag_strandFwd );
+        if( m_strands & 2 ) 
+            ForEach4( hash, callback, CHashAtom::fMask_strand, CHashAtom::fFlag_strandRev );
+    }
+}
 
-            switch( GetHashType() ) {
-            case eHash_vector:   m_hashTableV.ForEach( hp, cbkp ); m_hashTableV.ForEach( hn, cbkn ); break;
-            case eHash_multimap: m_hashTableM.ForEach( hp, cbkp ); m_hashTableM.ForEach( hn, cbkn ); break;
-            case eHash_arraymap: m_hashTableA.ForEach( hp, cbkp ); m_hashTableA.ForEach( hn, cbkn ); break;
-            }
-        }
+template<class Callback>
+void CQueryHash::ForEach2( const Uint8& hash, Callback& callback ) const 
+{ 
+    /* ........................................................................
+       We change strategy here: instead of putting logic on varying hash window 
+       by seqscanner, we to it in hash - so that hash is a black box
+
+       Remember, that scanner WindowLength = either 
+        (a) WindowSize + 0 * (StrideSize + IndelAllowed) 
+       or
+        (b) WindowSize + (number of skip positions - self conjugated)
+       because it is not allowed to have strides and skip positions
+
+       That's the window scanner should use.
+       ........................................................................ */
+    ASSERT( m_status != eStatus_dirty );
+
+    if( m_strands == 3 ) 
+        ForEach2( hash, callback, 0, 0 );
+    else {
+        if( m_strands & 1 ) 
+            ForEach2( hash, callback, CHashAtom::fMask_strand, CHashAtom::fFlag_strandFwd );
+        if( m_strands & 2 )
+            ForEach2( hash, callback, CHashAtom::fMask_strand, CHashAtom::fFlag_strandRev );
+    }
+}
+
+template<class Callback>
+void CQueryHash::ForEach4( UintH hash, Callback& callback, Uint1 mask, Uint1 flags ) const
+{
+    Compress( hash );
+    C_ScanCallback<Callback> cbk( *this, callback, mask, flags );
+    m_permutators[0]->ForEach( m_windowSize, hash, cbk );
+}
+
+template<class Callback>
+void CQueryHash::C_ScanCallback<Callback>::operator () ( Uint8 hash, int, unsigned ) const
+{
+    m_caller.ForEach2( hash, m_callback, m_mask, m_flags );
+}
+
+template<class Callback>
+void CQueryHash::ForEach2( Uint8 hash, Callback& callback, Uint1 mask, Uint1 flags ) const
+{
+    if( GetWordOffset() == 0 ) {
+        m_hashTable.ForEach( hash, callback, mask, flags );
     } else {
+        mask |= CHashAtom::fMask_wordId;
+
+        Uint1 flags0 = flags | CHashAtom::fFlag_wordId0;
+        Uint1 flags1 = flags | CHashAtom::fFlag_wordId1;
+
         TMatchSet& listA( m_listA );
         TMatchSet& listB( m_listB );
 
         listA.resize(0);
         listB.resize(0);
 
-        Uint4 hashA = Uint4( hash >> (GetOffset()*2) );
-        Uint4 hashB = Uint4( hash & (( 1 << (2*GetWordLength())) - 1) );
+        Uint8 hashA = Uint8( hash >> ( GetWordOffset() * 2 ) );
+        Uint8 hashB = Uint8( hash & CBitHacks::WordFootprint<Uint8>( 2*GetWordSize() ) ); //( ( Uint8(1) << ( 2 * GetWordSize() )) - 1 ) );
 
         C_ListInserter iA( listA );
         C_ListInserter iB( listB );
-
-        if( m_skipPositions.size() == 0 ) {
-            C_ForEachFilter<C_ListInserter> cbk0( iA, CHashAtom::fFlag_words, CHashAtom::fFlag_word0 );
-            C_ForEachFilter<C_ListInserter> cbk1( iB, CHashAtom::fFlag_words, CHashAtom::fFlag_word1 );
-
-            switch( GetHashType() ) {
-            case eHash_vector:   m_hashTableV.ForEach( hashA, cbk0 ); m_hashTableV.ForEach( hashB, cbk1 ); break;
-            case eHash_multimap: m_hashTableM.ForEach( hashA, cbk0 ); m_hashTableM.ForEach( hashB, cbk1 ); break;
-            case eHash_arraymap: m_hashTableA.ForEach( hashA, cbk0 ); m_hashTableA.ForEach( hashB, cbk1 ); break;
-            }
-        } else {
-            unsigned flagmask = CHashAtom::fFlag_words|CHashAtom::fFlag_strands;
-            C_ForEachFilter<C_ListInserter> cbk0p( iA, flagmask, CHashAtom::fFlag_word0|CHashAtom::fFlag_strandPos );
-            C_ForEachFilter<C_ListInserter> cbk1p( iB, flagmask, CHashAtom::fFlag_word1|CHashAtom::fFlag_strandPos );
-            C_ForEachFilter<C_ListInserter> cbk0n( iA, flagmask, CHashAtom::fFlag_word0|CHashAtom::fFlag_strandNeg );
-            C_ForEachFilter<C_ListInserter> cbk1n( iB, flagmask, CHashAtom::fFlag_word1|CHashAtom::fFlag_strandNeg );
-
-            // TODO: check eHash??? values
-            Uint4 hashAp = hashA & m_mask[eHashW1F];
-            Uint4 hashAn = hashA & m_mask[eHashW1R];
-            Uint4 hashBp = hashA & m_mask[eHashW0F];
-            Uint4 hashBn = hashA & m_mask[eHashW0R];
-
-            switch( GetHashType() ) {
-            case eHash_vector:   
-                m_hashTableV.ForEach( hashAp, cbk0p ); 
-                m_hashTableV.ForEach( hashBp, cbk1p ); 
-                m_hashTableV.ForEach( hashAn, cbk0n ); 
-                m_hashTableV.ForEach( hashBn, cbk1n ); 
-                break;
-            case eHash_multimap: 
-                m_hashTableM.ForEach( hashAp, cbk0p ); 
-                m_hashTableM.ForEach( hashBp, cbk1p ); 
-                m_hashTableM.ForEach( hashAn, cbk0n ); 
-                m_hashTableM.ForEach( hashBn, cbk1n ); 
-                break;
-            case eHash_arraymap: 
-                m_hashTableA.ForEach( hashAp, cbk0p ); 
-                m_hashTableA.ForEach( hashBp, cbk1p ); 
-                m_hashTableA.ForEach( hashAn, cbk0n ); 
-                m_hashTableA.ForEach( hashBn, cbk1n ); 
-                break;
-            }
-        }
+        
+        m_hashTable.ForEach( hashA, iA, mask, flags0); 
+        m_hashTable.ForEach( hashB, iB, mask, flags1); 
 
         sort( listA.begin(), listA.end() );
         sort( listB.begin(), listB.end() );
@@ -372,7 +458,7 @@ void CQueryHash::ForEach( Uint8 hash, Callback& callback ) const
             if( *a < *b ) { ++a; continue; }
             if( *b < *a ) { ++b; continue; }
 
-            callback( a->GetStrand() == '+' ? *b : *a ); // one time is enough
+            callback( a->GetStrandId() == CHashAtom::fFlag_strandFwd ? *b : *a ); // one time is enough
 
             TMatchSet::const_iterator x = a; 
 

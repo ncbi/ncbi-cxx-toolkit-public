@@ -20,7 +20,7 @@ inline ostream& operator << ( ostream& o, const CNcbi8naPrinter& p )
 {
 	if( p.size() == 0 ) o.put('-'); 
 	else for( unsigned i = 0; i < p.size(); ++i ) {
-		o.put( Ncbi4naToIupac( p.data()[i] )[0] );
+		o.put( CIupacnaBase( CNcbi8naBase( p.data()[i] ) ) );
 	}
 	return o;
 }
@@ -139,7 +139,11 @@ void COutputFormatter::operator () ( const CQuery * query )
             m_out << (rank-1) << "\tmore\t" << query->GetId() << "\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\n";
         m_out << QuerySeparator();
     } else if( m_flags & fReportUnmapped ) {
-        m_out << "0\tnone\t"<< query->GetId() << "\t-\t0\t0\t-\t-\t0\t-\t-\t0\t*\t";
+        string reasons( "none" );
+        if( query->GetRejectReasons() & CQuery::fReject_short ) reasons += ",short";
+        if( query->GetRejectReasons() & CQuery::fReject_loQual ) reasons += ",qual";
+        if( query->GetRejectReasons() & CQuery::fReject_loCompl ) reasons += ",compl";
+        m_out << "0\t" << reasons << "\t"<< query->GetId() << "\t-\t0\t0\t-\t-\t0\t-\t-\t0\t*\t";
         
         if( query->GetCoding() == CSeqCoding::eCoding_ncbi8na ) {
             m_out << CNcbi8naPrinter( string(query->GetData(0), query->GetLength(0)) ) << "\t";

@@ -5,17 +5,28 @@
 #include <stdexcept>
 
 #define DISPLAY(a) "\t"#a" = [" << a << "]"
+
 #define ASSERT(a)                                                       \
     do {                                                                \
         if( !(a) ) {                                                    \
             THROW( std::logic_error, "Assertion failed: "#a" in file "__FILE__" line " << __LINE__ ); \
         }                                                               \
     } while(0)
+
 #define THROW(x,m)                                                      \
     do {                                                                \
         std::ostringstream o;                                           \
-        o << "In file "__FILE__" line " << __LINE__ << " " << #x << ": " << m; \
-        o << "\n" << CStackTrace(#x) << "\n";                            \
+        if( isatty(2) ) o << "\x1b[31m";                                \
+        o << "\n" << CStackTrace(#x) << "\n";                           \
+        if( isatty(2) ) o << "\x1b[32m";                                \
+        o << "\nIn file "__FILE__" line " << __LINE__;                  \
+        if( isatty(2) ) o << "\x1b[33m";                                \
+        o << " " << #x;                                                 \
+        if( isatty(2) ) o << "\x1b[34m";                                \
+        o << ": ";                                                      \
+        if( isatty(2) ) o << "\x1b[35m";                                \
+        o << m;                                                         \
+        if( isatty(2) ) o << "\x1b[0m";                                 \
         throw x(o.str());                                               \
     } while(0)
 

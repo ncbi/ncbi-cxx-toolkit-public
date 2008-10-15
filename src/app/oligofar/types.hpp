@@ -1,14 +1,13 @@
 #ifndef OLIGOFAR_TYPES__HPP
 #define OLIGOFAR_TYPES__HPP
 
-#include "defs.hpp"
+#include "cbithacks.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
 
-typedef Uint8 THashMask;
-typedef Uint8 THashValue;
-typedef Uint4 TPlaneMask;
-typedef Uint8 TAlternativesCount;
+typedef UintH THashMask;
+typedef UintH THashValue;
+typedef Uint8 TPlaneMask;
 
 END_OLIGOFAR_SCOPES
 

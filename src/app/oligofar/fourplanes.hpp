@@ -2,9 +2,7 @@
 #define OLIGOFAR_FOURPLANES__HPP
 
 #include "types.hpp"
-#include "cbithacks.hpp"
 #include "cseqcoding.hpp"
-//#include "iupac-util.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
 BEGIN_SCOPE( fourplanes )
@@ -24,20 +22,16 @@ public:
     THashValue GetPlane( int base ) const { return m_planes[base&0x03] & m_footprintMask; }
 //    THashValue GetPlanes( int base ) const;
     TPlaneMask GetAmbiguityMask() const { return m_ambiguityMask & m_footprintMask; }
-    TAlternativesCount GetAlternativesCount() const { return m_alternativesCount; }
     int   GetAmbiguityCount() const { return m_ambiguityCount; }
     int   GetWordSize() const { return m_wordSize; }
     
 	void AddIupacNa( CIupacnaBase c );
 	void AddBaseMask( CNcbi8naBase c );
 
-//    void AddIupacNa( char c );
-//    void AddBaseMask( int base );
     void Reset();
 protected:
     TPlaneMask m_footprintMask;
     int        m_wordSize;
-    TAlternativesCount m_alternativesCount;
     int        m_ambiguityCount;
     TPlaneMask m_ambiguityMask;
     TPlaneMask m_planes[4];
@@ -52,8 +46,8 @@ public:
 
     void Reset();
 
-    int GetOldestTriplet() const { return int( m_value & 0x3f ); }
-    int GetNewestTriplet() const { return int( (m_value >> ((m_wordSize - 3)*int(kBitsPerBase))) & 0x3f ); }
+    int GetOldestTriplet() const { return int( m_value & THashValue(0x3f) ); }
+    int GetNewestTriplet() const { return int( (m_value >> ((m_wordSize - 3)*int(kBitsPerBase))) & THashValue(0x3f) ); }
 
 //    void AddIupacNa( char c );
 //    void AddBaseCode( int code );
@@ -64,8 +58,8 @@ public:
     THashValue GetHashValue() const { return m_value & m_footprintMask; }
 
 protected:
+    int m_wordSize;
     THashValue m_value;
-    THashValue m_wordSize;
     THashMask  m_footprintMask;
 };
 
@@ -88,7 +82,6 @@ public:
     int   GetOldestTriplet() const { return m_hashCode.GetOldestTriplet(); }
     int   GetNewestTriplet() const { return m_hashCode.GetNewestTriplet(); }
     int   GetAmbiguityCount() const { return m_hashPlanes.GetAmbiguityCount(); }
-    TAlternativesCount GetAlternativesCount() const { return m_hashPlanes.GetAlternativesCount(); }
     THashValue GetPlane( int base ) const { return m_hashPlanes.GetPlane(base); }
     THashValue GetHashValue() const { return m_hashCode.GetHashValue(); }
 
@@ -175,10 +168,14 @@ inline void CHashIterator::x_ResetPosition()
 
 inline bool CHashIterator::x_NextBaseCallAtPosition()
 {
-    static const THashValue basePattern[4] = { 0x0000000000000000ULL, 0x5555555555555555ULL, 0xaaaaaaaaaaaaaaaaULL, 0xffffffffffffffffULL };
+    static const THashValue basePattern[4] = { 
+        THashValue(0x0000000000000000ULL,0x0000000000000000ULL), 
+        THashValue(0x5555555555555555ULL,0x5555555555555555ULL), 
+        THashValue(0xaaaaaaaaaaaaaaaaULL,0xaaaaaaaaaaaaaaaaULL),
+        THashValue(0xffffffffffffffffULL,0xffffffffffffffffULL) };
     
     while( ++m_status < 4 ) {
-        if( m_planeMask & m_generator.m_hashPlanes.GetPlane( m_status ) ) { 
+        if( m_planeMask & TPlaneMask(m_generator.m_hashPlanes.GetPlane( m_status )) ) { 
             m_value = (m_value & ~m_hashMask) | (basePattern[m_status] & m_hashMask);  // TODO: can be optimized
             return true;
         }
@@ -244,7 +241,6 @@ inline void CHashGenerator::AddBaseMask( CNcbi8naBase ncbi8na )
 inline CHashPlanes::CHashPlanes( int wordSize ) : 
     m_footprintMask( CBitHacks::WordFootprint<TPlaneMask>( wordSize*int(kBitsPerBase) ) ), 
     m_wordSize( wordSize ),
-    m_alternativesCount( TAlternativesCount(1) << (2 * m_wordSize) ), 
     m_ambiguityCount( wordSize ), 
     m_ambiguityMask( m_footprintMask ) 
 { 
@@ -290,11 +286,9 @@ inline void CHashPlanes::AddBaseMask( CNcbi8naBase base )
 //             m_planes[i] &= P;
         }
     }
-    if( d ) m_alternativesCount /= d;
-    if( c ) m_alternativesCount *= c;
     if( m_ambiguityMask & 1 ) { m_ambiguityCount--; }
     m_ambiguityMask >>= 1;
-    if( base.GetAltCount() > 1 ) { m_ambiguityMask |= p; m_ambiguityCount++; }
+    if( base.IsAmbiguous() ) { m_ambiguityMask |= p; m_ambiguityCount++; }
 //    else { m_ambiguityMask &= P; }
 }
 
@@ -302,7 +296,6 @@ inline void CHashPlanes::Reset()
 {
     fill( m_planes, m_planes + 4, m_footprintMask ); 
     m_ambiguityMask = m_footprintMask;
-    m_alternativesCount = TAlternativesCount(1) << (2 * m_wordSize);
     m_ambiguityCount = m_wordSize;
 }
 
@@ -310,7 +303,7 @@ inline void CHashPlanes::Reset()
 // CHashCode
 
 inline CHashCode::CHashCode( int wordSize ) :  
-    m_value( 0 ), m_wordSize( wordSize ),
+    m_wordSize( wordSize ), m_value( 0 ), 
     m_footprintMask( CBitHacks::WordFootprint<THashMask>( wordSize * int(kBitsPerBase) ) )
 {
 }

@@ -35,7 +35,8 @@ CHit * CFilter::SetHit( CHit * target, int pairmate, double score, int from, int
     target->m_to[pairmate] = to;
 	if( !CheckGeometry( target->m_from[0], target->m_to[0], target->m_from[1], target->m_to[1] ) ) {
 		// to make sure logic works same way
-		THROW( logic_error, "Checking geometry: " << DISPLAY( target->m_from[0] ) << DISPLAY( target->m_to[0] ) << DISPLAY( target->m_from[1] ) << DISPLAY( target->m_to[1] ) );
+        // TODO: actually, logic DOES NOT work same way - to be fixed
+		THROW( logic_error, "Checking geometry: " << DISPLAY( target->m_from[0] ) << DISPLAY( target->m_to[0] ) << DISPLAY( target->m_from[1] ) << DISPLAY( target->m_to[1] ) << DISPLAY( pairmate ) );
 	}
     return otherHit;
 }

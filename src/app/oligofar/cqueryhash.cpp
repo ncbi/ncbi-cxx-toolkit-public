@@ -1,148 +1,193 @@
 #include <ncbi_pch.hpp>
 #include "cqueryhash.hpp"
 #include "chashpopulator.hpp"
+#include "dust.hpp"
 
 USING_OLIGOFAR_SCOPES;
 
-int CQueryHash::PopulateHash( int , CHashPopulator& hashPopulator ) 
+double CQueryHash::ComputeComplexityNcbi8na( UintH w, int l, int& amb ) const
 {
-    switch( m_hashType ) {
-    case eHash_vector:   return hashPopulator.PopulateHash( m_hashTableV );
-    case eHash_multimap: return hashPopulator.PopulateHash( m_hashTableM );
-    case eHash_arraymap: return hashPopulator.PopulateHash( m_hashTableA );
+    CComplexityMeasure m;
+    int tripletid = 0;
+    amb = 0;
+    for( int i = 0; i < l; ++i, ( w >>= 4 ), (tripletid <<= 2) ) {
+        CNcbi8naBase b( char(( w.GetLo() ) & 0xf) );
+        amb += int( b.IsAmbiguous() );
+        tripletid |= b.GetSmallestNcbi2na();
+        if( i > 2 ) m.Add( tripletid & 0x3f );
     }
-    THROW( logic_error, "Unknown hash type " + string( GetHashTypeName() ) + "/" + NStr::IntToString( m_hashType ) + " in CQueryHash::PopulateHash" );
+    return double( m );
 }
 
-void CQueryHash::SetHashType( EHashType ht, int win )
+void CQueryHash::Compress( UintH& w ) const
 {
-    Clear();
-    *((CHashParam*)this) = CHashParam( ht, win );
-    switch( GetHashType() ) {
-    case eHash_arraymap: break;
-    case eHash_multimap: break;
-    case eHash_vector:   m_hashTableV.SetWinSize( GetWordLength() ); break;
+    int x = 0;
+    ITERATE( TSkipPositions, p, m_skipPositions ) {
+        if( *p > x ) CBitHacks::DeleteBits<UintH,4>( w, *p - ++x );
+        if( *p > m_windowLength ) break;
     }
-    SetMasks( m_skipPositions.begin(), m_skipPositions.end() );
 }
 
 int CQueryHash::AddQuery( CQuery * query, int component )
 {
     ASSERT( component == 0 || component == 1 );
+
     int len = query->GetLength( component );
     if( len == 0 ) return 0;
-    char flags = component ? CHashAtom::fFlag_matePair1 : CHashAtom::fFlag_matePair0;
-    if( SingleHash() ) {
-        Uint8 fwindow = 0;
-        flags |= CHashAtom::fFlag_word0;
-        int offset = GetNcbi4na( fwindow, query->GetCoding(), (unsigned char*)query->GetData( component ), len );
-    	if( offset < 0 ) return 0;
-	    CHashPopulator hashPopulator( *m_permutators[m_maxMism], m_wordLen, query, m_strands, offset, flags, m_maxSimplicity, fwindow, query->GetCoding() ); 
-        if( m_skipPositions.size() ) hashPopulator.SetMasks( m_mask[eHashW0F], m_mask[eHashW0R] );
-        return PopulateHash( 0, hashPopulator );
-    } else {
-        Uint8 fwindow = 0;
-        Uint8 fwindowx = 0;
-        int offset = GetNcbi4na( fwindow, fwindowx, query->GetCoding(), (unsigned char *)query->GetData( component ), len );
-        if( offset < 0 ) return 0;
-        int offsetx = offset + GetOffset();
-        int ca = 0;
-        int cb = 0;
-        if( m_strands & 0x1 ) {
-            CHashPopulator hashPopulator ( *m_permutators[m_maxMism], m_wordLen, query, 1, offsetx, flags | CHashAtom::fFlag_word0, m_maxSimplicity, fwindowx, query->GetCoding() );
-            CHashPopulator hashPopulatorX( *m_permutators[m_maxMism], m_wordLen, query, 1, offset , flags | CHashAtom::fFlag_word1, m_maxSimplicity, fwindow, query->GetCoding() );
-            if( m_skipPositions.size() ) {
-                // TODO: may want to switch m_mask indexes
-                hashPopulator .SetMasks( m_mask[eHashW1F], m_mask[eHashW1R] );
-                hashPopulatorX.SetMasks( m_mask[eHashW0F], m_mask[eHashW0R] );
-            }
-            ca += PopulateHash( 0, hashPopulator );
-            cb += PopulateHash( 1, hashPopulatorX );
-        }
-        if( m_strands & 0x2 ) {
-            CHashPopulator hashPopulator ( *m_permutators[m_maxMism], m_wordLen, query, 2, offsetx, flags | CHashAtom::fFlag_word1, m_maxSimplicity, fwindowx, query->GetCoding() );
-            CHashPopulator hashPopulatorX( *m_permutators[m_maxMism], m_wordLen, query, 2, offset,  flags | CHashAtom::fFlag_word0, m_maxSimplicity, fwindow, query->GetCoding() );
-            if( m_skipPositions.size() ) {
-                // TODO: may want to switch m_mask indexes
-                hashPopulator .SetMasks( m_mask[eHashW1F], m_mask[eHashW1R] );
-                hashPopulatorX.SetMasks( m_mask[eHashW0F], m_mask[eHashW0R] );
-            }
-            cb += PopulateHash( 1, hashPopulator );
-            ca += PopulateHash( 0, hashPopulatorX ); // since order of words changes to opposite
-        }
-        return min( ca, cb );
+    
+    if( len < m_windowLength ) {
+        query->SetRejectAsShort( component );
+        return 0; // too short read
     }
-	THROW( logic_error, "Unknown hash type " << m_hashType << " is set in CQueryHash::AddQuery" );
+
+    UintH fwindow = 0;
+    int ambiguities = 0;
+    int offset = GetNcbi4na( fwindow, query->GetCoding(), (unsigned char*)query->GetData( component ), len );
+
+    if( offset < 0 ) {
+        query->SetRejectAsLoQual( component );
+        return 0;
+    }
+    query->ClearRejectFlags( component );
+    if( ComputeComplexityNcbi8na( fwindow, m_windowLength, ambiguities ) > m_maxSimplicity ) 
+        query->SetRejectAsLoCompl( component );
+    if( ambiguities > m_maxAmb ) { query->SetRejectAsLoQual( component ); }
+
+    if( query->GetRejectFlags( component ) ) return 0;
+    
+    Compress( fwindow );
+
+    Uint8 reserve =  ComputeEntryCountPerRead() * ( Uint8( 1 ) << ( ambiguities * 2 ) );
+    CHashPopulator hashPopulator( m_windowSize, m_wordSize, m_strideSize, query, m_strands, offset, component );
+    hashPopulator.Reserve( reserve );
+    
+    if( GetAllowIndel() ) {
+        UintH maskH = CBitHacks::WordFootprint<UintH>( 4 * ( m_windowSize + m_strideSize - 1 ) );
+        int maxMism = max( 0, m_maxMism - 1 ); // don't allow as many mismatches if indels are allowed
+        hashPopulator.SetPermutator( m_permutators[maxMism] );
+        hashPopulator.SetIndel( CHashAtom::eInsertion );
+        for( int pos = 1; pos < m_windowSize - 1; ++pos ) {
+            UintH ifwindow = maskH & CBitHacks::InsertBits<UintH, 4, 0xf>( fwindow, pos ); // insert N at the position 
+            hashPopulator.PopulateHash( ifwindow );
+        }
+        hashPopulator.SetIndel( CHashAtom::eDeletion );
+        for( int pos = 1; pos < m_windowSize; ++pos ) {
+            UintH dfwindow = maskH & CBitHacks::DeleteBits<UintH, 4>( fwindow, pos ); // deletion at the position
+            hashPopulator.PopulateHash( dfwindow );
+        }
+        fwindow &= maskH; // remove extra base
+    }
+
+    // no indels, just mismatches
+    hashPopulator.SetIndel( CHashAtom::eNoIndel );
+    hashPopulator.SetPermutator( m_permutators[m_maxMism] );
+    hashPopulator.PopulateHash( fwindow );
+    hashPopulator.Unique();
+    
+    ITERATE( CHashPopulator, h, hashPopulator ) {
+        m_hashTable.AddEntry( h->first, h->second );
+    }
+
+    return hashPopulator.size();
 }
 
-int CQueryHash::AddQuery( CQuery * query )
-{
-    int hashcnt = AddQuery( query, 0 ) + AddQuery( query, 1 );
-    if( hashcnt ) m_hashedQueries++;
-    return hashcnt;
-}
-    
 // this procedure tries to trim left ambiguity characters unless this introduces more severe ambiguities
-int CQueryHash::x_GetNcbi4na_ncbi8na( Uint8& window, const unsigned char * data, unsigned length )
+int CQueryHash::x_GetNcbi4na_ncbi8na( UintH& window, const unsigned char * data, unsigned length )
 {
     int off = 0;
     const unsigned char * t = data;
-    for( int left = length - m_wordLen; CanOptimizeOffset() && left > 0; --left, ++off, ++t ) {
-        if( CNcbi8naBase( t[0] ).GetAltCount() <= CNcbi8naBase( t[m_wordLen] ).GetAltCount() )
+    unsigned wlen = m_windowLength;
+
+    ASSERT( wlen <= 32 );
+
+    for( int left = length - wlen; CanOptimizeOffset() && left > 0; --left, ++off, ++t ) {
+        if( CNcbi8naBase( t[0] ).GetAltCount() <= CNcbi8naBase( t[wlen] ).GetAltCount() )
             break; // there is no benefit in shifting right
     }
-    window = Ncbi8na2Ncbi4na( t, m_wordLen ); 
+    window = 0;
+
+    for( unsigned i = 0; i < wlen; ++i ) {
+        CNcbi8naBase b( t[i] );
+        UintH mask( b );
+        UintH smask( mask << int(i*4) );
+        window |= UintH( t[i] & 0x0f ) << int(i*4);
+    }
     return off;
 }
 
-int CQueryHash::x_GetNcbi4na_colorsp( Uint8& window, const unsigned char * data, unsigned length )
+int CQueryHash::x_GetNcbi4na_colorsp( UintH& window, const unsigned char * data, unsigned length )
 {
 	// this encoding does not support ambiguities, 
+    int off = 0;
+    const unsigned char * t = data;
+    unsigned wlen = m_windowLength;
+
+    ASSERT( wlen <= 32 );
+
+    for( int left = length - wlen; CanOptimizeOffset() && left > 0; --left, ++off, ++t ) {
+        if( CNcbi8naBase( t[0] ).GetAltCount() <= CNcbi8naBase( t[wlen] ).GetAltCount() )
+            break; // there is no benefit in shifting right
+    }
     window = 0;
     // to provide uniform hashing algo, conver colors to 4-channel 1-bit per channel sets
-    for( unsigned x = 0; x < m_wordLen; ++x ) 
-        window |= Uint8( "\x1\x2\x4\x8"[CColorTwoBase( data[x+1] ).GetColorOrd()] ) << (x*4); 
+    for( unsigned x = 0; x < wlen; ++x ) 
+        window |= UintH( "\x1\x2\x4\x8"[CColorTwoBase( data[x+1] ).GetColorOrd()] ) << int(x*4); 
+
     return 1; // always has offset of 1
 }
 
 // this procedure tries to perform optimization on number of alternatives 
 // if one is out of allowed range
-int CQueryHash::x_GetNcbi4na_ncbipna( Uint8& window, const unsigned char * data, unsigned length )
+int CQueryHash::x_GetNcbi4na_ncbipna( UintH& window, const unsigned char * data, unsigned length )
 {
 	return x_GetNcbi4na_quality( window, data, length, x_Ncbipna2Ncbi4na, 5, m_ncbipnaToNcbi4naScore, x_UpdateNcbipnaScore );
 }
 
-int CQueryHash::x_GetNcbi4na_ncbiqna( Uint8& window, const unsigned char * data, unsigned length )
+int CQueryHash::x_GetNcbi4na_ncbiqna( UintH& window, const unsigned char * data, unsigned length )
 {
 	return x_GetNcbi4na_quality( window, data, length, x_Ncbiqna2Ncbi4na, 1, m_ncbiqnaToNcbi4naScore, x_UpdateNcbiqnaScore );
 }
 
-int CQueryHash::x_GetNcbi4na_quality( Uint8& window, const unsigned char * data, unsigned length, TCvt * fun, int incr, unsigned short score, TDecr * decr )
+UintH CQueryHash::ComputeAlternatives( UintH w, int l ) const
+{
+    UintH alternatives = 1;
+    for( int i = 0; i < l; ++i, ( w >>= 4 ) ) {
+        CNcbi8naBase b( char(( w.GetLo() ) & 0xf) );
+        alternatives *= Uint1( b.GetAltCount() );
+    }
+    return alternatives;
+}
+
+int CQueryHash::x_GetNcbi4na_quality( UintH& window, const unsigned char * data, unsigned length, TCvt * fun, int incr, unsigned short score, TDecr * decr )
 {
     int off = 0;
     const unsigned char * t = data;
-    int left = length - m_wordLen;
+    int left = length - m_windowLength;
 	if( left < 0 ) return -1;
 
-    window = fun( t, m_wordLen, score );
-    Uint8 ac = Ncbi4naAlternativeCount( window, m_wordLen );
+    unsigned wlen = m_windowLength;
+    ASSERT( wlen <= 32 );
 
-    while( ac > m_maxAlt ) {
-        Uint8 aco = ~Uint8(0);
-        Uint8 acm = ~Uint8(0);
-        Uint8 owin = 0;
-        Uint8 mwin = 0;
+    window = fun( t, wlen, score );
+    UintH ac = ComputeAlternatives( window, wlen );
+    UintH maxAlt = Uint8( 1 ) << ( m_maxAmb * 4 );
+
+    while( ac > maxAlt ) {
+        UintH aco = ~UintH(0);
+        UintH acm = ~UintH(0);
+        UintH owin = 0;
+        UintH mwin = 0;
         if( CanOptimizeOffset() && left > 0 ) {
-            owin = fun( t + incr, m_wordLen, score );
-            aco  = Ncbi4naAlternativeCount( owin, m_wordLen );
+            owin = fun( t + incr, wlen, score );
+            aco  = ComputeAlternatives( owin, wlen );
         }
         if( score ) { 
-            mwin = fun( t, m_wordLen, decr( score ) );
-            acm  = Ncbi4naAlternativeCount( mwin, m_wordLen );
+            mwin = fun( t, wlen, decr( score ) );
+            acm  = ComputeAlternatives( mwin, wlen );
         }
-        if( aco == ~Uint8(0) && acm == ~Uint8(0) ) return off;
-        if( aco < m_maxAlt ) {
-            if( acm < m_maxAlt ) {
+        if( aco == ~UintH(0) && acm == ~UintH(0) ) return off;
+        if( aco < maxAlt ) {
+            if( acm < maxAlt ) {
                 if( acm >= aco ) {
                     window = mwin;
                     return off;
@@ -154,7 +199,7 @@ int CQueryHash::x_GetNcbi4na_quality( Uint8& window, const unsigned char * data,
                 window = owin;
                 return off + 1;
             }
-        } else if( acm < m_maxAlt ) {
+        } else if( acm < maxAlt ) {
             window = mwin;
             return off;
         } else if( acm <= aco ) {
@@ -173,7 +218,7 @@ int CQueryHash::x_GetNcbi4na_quality( Uint8& window, const unsigned char * data,
     return off;
 }
 
-int CQueryHash::GetNcbi4na( Uint8& window, CSeqCoding::ECoding coding,
+int CQueryHash::GetNcbi4na( UintH& window, CSeqCoding::ECoding coding,
                             const unsigned char * data, unsigned length ) 
 {
     switch( coding ) {
@@ -185,129 +230,23 @@ int CQueryHash::GetNcbi4na( Uint8& window, CSeqCoding::ECoding coding,
     }
 }
 
-
-int CQueryHash::GetNcbi4na( Uint8& window, Uint8& windowx, CSeqCoding::ECoding coding,
-                            const unsigned char * data, unsigned length ) 
-{
-    switch( coding ) {
-    case CSeqCoding::eCoding_ncbi8na: return x_GetNcbi4na_ncbi8na( window, windowx, data, length );
-    case CSeqCoding::eCoding_ncbiqna: return x_GetNcbi4na_ncbiqna( window, windowx, data, length );
-    case CSeqCoding::eCoding_ncbipna: return x_GetNcbi4na_ncbipna( window, windowx, data, length );
-    case CSeqCoding::eCoding_colorsp: return x_GetNcbi4na_colorsp( window, windowx, data, length );
-    default: THROW( logic_error, "Invalid query coding " << coding );
-    }
-}
-
-// this procedure tries to trim left ambiguity characters unless this introduces more severe ambiguities
-int CQueryHash::x_GetNcbi4na_ncbi8na( Uint8& window, Uint8& windowx, const unsigned char * data, unsigned length )
-{
-    int off = 0;
-    const unsigned char * t = data;
-    for( int left = length - m_winLen; CanOptimizeOffset() && left > 0; --left, ++off, ++t ) {
-        if( CNcbi8naBase( t[0] ).GetAltCount() <= CNcbi8naBase( t[m_winLen] ).GetAltCount() )
-            break; // there is no benefit in shifting right
-    }
-    window = Ncbi8na2Ncbi4na( t, m_wordLen ); 
-    if( GetOffset() ) 
-        windowx = Ncbi8na2Ncbi4na( t + GetOffset(), m_wordLen ); 
-    return off;
-}
-
-int CQueryHash::x_GetNcbi4na_colorsp( Uint8& window, Uint8& windowx, const unsigned char * data, unsigned length )
-{
-	// this encoding does not support ambiguities, 
-    window = windowx = 0;
-    // to provide uniform hashing algo, conver colors to 4-channel 1-bit per channel sets
-    for( unsigned x = 0; x < m_wordLen; ++x ) 
-        window |= Uint8( "\x1\x2\x4\x8"[CColorTwoBase( data[x+1] ).GetColorOrd()] ) << (x*4); 
-    for( unsigned x = GetOffset(), y = 0, X = GetOffset() + m_wordLen; x < X; ++x, ++y ) 
-        windowx |= Uint8( "\x1\x2\x4\x8"[CColorTwoBase( data[x+1] ).GetColorOrd()] ) << (y*4); 
-    return 1; // always has offset of 1
-}
-
-Uint8 CQueryHash::x_Ncbipna2Ncbi4na( const unsigned char * data, int len, unsigned short score ) { return Ncbipna2Ncbi4na( data, len, score ); }
-Uint8 CQueryHash::x_Ncbiqna2Ncbi4na( const unsigned char * data, int len, unsigned short score ) { return Ncbiqna2Ncbi4na( data, len, score ); }
-
-// this procedure tries to perform optimization on number of alternatives 
-// if one is out of allowed range
-int CQueryHash::x_GetNcbi4na_ncbipna( Uint8& window, Uint8& windowx, const unsigned char * data, unsigned length )
-{
-	return x_GetNcbi4na_quality( window, windowx, data, length, x_Ncbipna2Ncbi4na, 5, m_ncbipnaToNcbi4naScore, x_UpdateNcbipnaScore );
-}
-
-int CQueryHash::x_GetNcbi4na_ncbiqna( Uint8& window, Uint8& windowx, const unsigned char * data, unsigned length )
-{
-	return x_GetNcbi4na_quality( window, windowx, data, length, x_Ncbiqna2Ncbi4na, 1, m_ncbiqnaToNcbi4naScore, x_UpdateNcbiqnaScore );
-}
-
-int CQueryHash::x_GetNcbi4na_quality( Uint8& window, Uint8& windowx, const unsigned char * data, unsigned length, TCvt * fun, int incr, unsigned short score, TDecr * decr )
-{
-    int off = 0;
-    const unsigned char * t = data;
-    int left = length - m_winLen;
-	if( left < 0 ) return -1;
-
-    int wordDelta = m_winLen - m_wordLen; // should be same as GetOffset if words are symmetrical
-
-    window = fun( t, m_wordLen, score );
-    Uint8 ac = Ncbi4naAlternativeCount( window, m_winLen );
-    Uint8 acx = x_ComputeWordRetAmbcount( windowx, t + m_wordLen, wordDelta, fun, score );
-
-    while( x_AltcountOk( ac, acx, m_maxAlt ) ) {
-        Uint8 aco = ~Uint8(0), acxo = ~Uint8(0);
-        Uint8 acm = ~Uint8(0), acxm = ~Uint8(0);
-        Uint8 owin = 0, owinx = 0;
-        Uint8 mwin = 0, mwinx = 0;
-        if( CanOptimizeOffset() && left > 0 ) {
-            owin = fun( t + incr, m_wordLen, score );
-            aco  = Ncbi4naAlternativeCount( owin, m_wordLen );
-            acxo = x_ComputeWordRetAmbcount( owinx, t + incr + m_wordLen, wordDelta, fun, score );
-        }
-        if( score ) { 
-            mwin = fun( t, m_wordLen, decr( score ) );
-            acm  = Ncbi4naAlternativeCount( mwin, m_wordLen );
-            acxm = x_ComputeWordRetAmbcount( mwinx, t + m_wordLen, wordDelta, fun, score );
-        }
-        if( aco == ~Uint8(0) && acm == ~Uint8(0) ) return off;
-        if( x_AltcountOk( aco, acxo, m_maxAlt ) ) {
-            if( x_AltcountOk( acm, acxm, m_maxAlt ) ) {
-                if( acm*acxm >= aco*acxo ) {
-                    window = mwin;
-                    windowx = x_MakeXword( mwin, mwinx );
-                    return off;
-                } else {
-                    window = owin;
-                    windowx = x_MakeXword( owin, owinx );
-                    return off + 1;
-                }
-            } else {
-                window = owin;
-                windowx = x_MakeXword( owin, owinx );
-                return off + 1;
-            }
-        } else if( acm < m_maxAlt ) {
-            window = mwin;
-            windowx = x_MakeXword( mwin, mwinx );
-            return off;
-        } else if( acm <= aco ) {
-            score = decr( score );
-            window = mwin;
-            windowx = x_MakeXword( mwin, mwinx );
-            ac = acm;
-            acx = acxm;
-        } else {
-            ++off;
-            if( --left < 0 ) return off;
-            t += incr;
-            window = owin;
-            windowx = x_MakeXword( owin, owinx );
-            ac = aco;
-            acx = acxo;
-        }
-    }
+UintH CQueryHash::x_Ncbipna2Ncbi4na( const unsigned char * data, int len, unsigned short score ) 
+{ 
+    UintH ret = 0;
     
-    return off;
+    for( int x = 0; x < len; ++x )
+        ret |= UintH( CNcbi8naBase( CNcbipnaBase( data + 5*x ), score ) ) << (x*4);
+    
+    return ret;
 }
 
-
+UintH CQueryHash::x_Ncbiqna2Ncbi4na( const unsigned char * data, int len, unsigned short score ) 
+{ 
+    UintH ret = 0;
     
+    for( int x = 0; x < len; ++x )
+        ret |= UintH( CNcbi8naBase( CNcbiqnaBase( data[x] ), score ) ) << (x*4);
+    
+    return ret;
+}
+

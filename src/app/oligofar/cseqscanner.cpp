@@ -44,10 +44,7 @@ void CSeqScanner::SequenceBuffer( CSeqBuffer* buffer )
     }
 
     if( m_queryHash->GetHashedQueriesCount() != 0 ) 
-        if( m_run_old_scanning_code )
-            ScanSequenceBuffer( a, A, off, end );
-        else 
-            ScanSequenceBuffer( a, A, off, end, buffer->GetCoding() );
+        ScanSequenceBuffer( a, A, off, end, buffer->GetCoding() );
 
     if( m_inputChunk ) {
 		// set target for all reads 
@@ -66,27 +63,22 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
 {
     if( m_queryHash == 0 ) return;
     
-	Uint8 altCount = 1;
     int ambCount = 0;
-    int allowedMismatches = m_queryHash->GetMaxMism();
+    int allowedMismatches = m_queryHash->GetMaxMismatches();
     
 	const char * y = a;
 
-    int winLen = m_queryHash->GetWindowLength();
+    int winLen = m_queryHash->GetWindowSize();
 
 	for( const char * Y = a + winLen; y < Y; ++y ) {
         CNcbi8naBase b( *y & 0x0f );
-        int k = b.GetAltCount();
-        if( k > 1 ) {
-            altCount *= k;
-            ambCount++;
-        }
+        if( b.IsAmbiguous() ) ++ambCount;
 	}
 	int lastPos = -1;
 	ERangeType lastType = eType_skip;
 	// TODO: somewhere here a check on range length should be inserted
 	for( const char * z = a; y < A;  ) {
-		ERangeType type = ( altCount == 1 || ambCount <= allowedMismatches ) ? eType_direct : ( altCount < m_maxAlternatives ) ? eType_iterate : eType_skip ;
+		ERangeType type = ( ambCount <= allowedMismatches ) ? eType_direct : ( ambCount < m_maxAmbiguities ) ? eType_iterate : eType_skip ;
 		if( lastType != type ) {
 			if( lastPos != -1 ) {
 				if( lastType != eType_skip && rangeMap.back().second != eType_skip && 
@@ -103,10 +95,8 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
 		}
         CNcbi8naBase bz( 0x0f & *z++ );
         CNcbi8naBase by( 0x0f & *y++ );
-		altCount /= bz.GetAltCount();
-		altCount *= by.GetAltCount();
-        ambCount -= bz.GetAltCount() > 1 ? 1 : 0;
-        ambCount += by.GetAltCount() > 1 ? 1 : 0;
+        if( bz.IsAmbiguous() ) ++ambCount;
+        if( by.IsAmbiguous() ) --ambCount;
 	}
 	rangeMap.push_back( make_pair( TRange( lastPos, A - a ), lastType ) );
 }
@@ -122,14 +112,14 @@ inline void CSeqScanner::C_LoopImpl_Ncbi8naNoAmbiguities::RunCallback( Callback&
 template<class Callback>
 inline void CSeqScanner::C_LoopImpl_Ncbi8naAmbiguities::RunCallback( Callback& callback )
 {
-    for( CHashIterator h( m_hashGenerator, m_mask4, m_mask8 ); h; ++h ) {
-        callback( Uint8( *h ), 0, m_hashGenerator.GetAlternativesCount() );
+    for( CHashIterator h( m_hashGenerator, m_mask8, m_maskH ); h; ++h ) {
+        callback( Uint8( *h ), 0, m_hashGenerator.GetAmbiguityCount() );
     }
 }
 
 inline void CSeqScanner::C_LoopImpl_Ncbi8naNoAmbiguities::Prepare( char x )
 {
-    m_hashCode.AddBaseCode( Ncbi4na2Ncbi2na( x ) );
+    m_hashCode.AddBaseCode( CNcbi8naBase( x ).GetSmallestNcbi2na() );
     m_complexityMeasure.Add( m_hashCode.GetNewestTriplet() );
 }
 
@@ -163,7 +153,7 @@ inline void CSeqScanner::C_LoopImpl_ColorspNoAmbiguities::Prepare( char x )
 inline void CSeqScanner::C_LoopImpl_ColorspAmbiguities::Prepare( char x )
 {
     // todo: logic should be modified here to take care of previous bases
-    CNcbi8naBase z = CNcbi8naBase( x & 0xf ).GetAltCount() > 1 ? '\xf' : ( 1 << CColorTwoBase( x ).GetColorOrd() );
+    CNcbi8naBase z = CNcbi8naBase( x & 0xf ).IsAmbiguous() > 1 ? '\xf' : ( 1 << CColorTwoBase( x ).GetColorOrd() );
     m_hashGenerator.AddBaseMask( CColorTwoBase( CNcbi8naBase( m_lastBase ), z ).GetColorOrd() );
     m_complexityMeasure.Add( m_hashGenerator.GetNewestTriplet() );
     m_lastBase = x;
@@ -190,8 +180,7 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
                             int from, int toOpen, const char * a, const char * A, int off )
 {
     if( m_queryHash == 0 ) return;
-    int winLen = m_queryHash->GetWindowLength();
-//    cerr << __PRETTY_FUNCTION__ << DISPLAY( winLen ) << endl;
+    int winLen = m_queryHash->GetWindowSize();
     
     if( from < 0 ) from = 0;
     if( toOpen > A - a ) toOpen = A - a;
@@ -203,12 +192,11 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
     if( p ) p->SetCurrentValue( off + from );
     off -= winLen;
     for( const char * w = a + toOpen ; x < w ; ) {
-        if( loop.IsOk() ) {
+        if( ((x - a) % m_queryHash->GetStrideSize() == 0 ) && loop.IsOk() ) {
             matches.clear();
             loop.RunCallback( callback );
             int pos = x - a + off;
             ITERATE( TMatches, m, matches ) {
-//                cerr << DISPLAY( winLen ) << DISPLAY( m->strand ) << DISPLAY( int(m->offset) ) << endl;
                 switch( m->GetStrand() ) {
                 case '+': m_filter->Match( *m, a, A, pos - m->GetOffset() ); break;
                 case '-': m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 ); break;
@@ -225,22 +213,21 @@ template<class NoAmbiq, class Ambiq, class Callback>
 void CSeqScanner::x_RangemapLoop( const TRangeMap& rm, TMatches& matches,  Callback& cbk, CProgressIndicator*p, const char * a, const char * A, int off )
 {
     if( m_queryHash == 0 ) return;
-    int winLen = m_queryHash->GetWindowLength();
-//    cerr << __PRETTY_FUNCTION__ << DISPLAY( winLen ) << endl;
+    int winLen = m_queryHash->GetWindowSize();
 
-    Uint4 mask4 = CBitHacks::WordFootprint<Uint4>( 2 * winLen );
-    Uint8 mask8 = CBitHacks::WordFootprint<Uint8>( 4 * winLen );
+    Uint8 mask8 = CBitHacks::WordFootprint<Uint8>( 2 * winLen );
+    UintH maskH = CBitHacks::WordFootprint<UintH>( 4 * winLen );
     for( TRangeMap::const_iterator i = rm.begin(); i != rm.end(); ++i ) {
         if( i->second == eType_skip ) {
             if( p ) p->SetCurrentValue( i->first.second );
         } else if( i->second == eType_direct ) {
 
-            NoAmbiq impl( *m_queryHash, m_maxSimplicity );
+            NoAmbiq impl( m_queryHash->GetWindowSize(), m_queryHash->GetStrideSize(), m_maxSimplicity );
             x_MainLoop( impl, matches, cbk, p, i->first.first, i->first.second, a, A, off );
 
         } else { // eType_iterate
 
-            Ambiq impl( *m_queryHash, m_maxSimplicity, m_maxAlternatives, mask4, mask8 );
+            Ambiq impl( m_queryHash->GetWindowSize(), m_queryHash->GetStrideSize(), m_maxSimplicity, m_maxAmbiguities, mask8, maskH );
             x_MainLoop( impl, matches, cbk, p, i->first.first, i->first.second, a, A, off );
         }
     }
@@ -271,105 +258,5 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
 	m_filter->PurgeQueues();
     p.SetCurrentValue( A - a );
     p.Summary();
-}
-
-void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned off, unsigned end )
-{
-    cerr << "ATTENTION! OLD SEQUENCE SCANNER IS BEING USED! DON'T USE IT FOR PRODUCTION PURPOSES!\n";
-
-    if( m_queryHash == 0 ) return;
-    if( m_queryHash->GetOffset() ) THROW( runtime_error, "OLD SEQUENCE SCANNER DOES NOT SUPPORT LONG WINDOW SIZE!" );
-
-    unsigned winLen = m_queryHash->GetWindowLength();
-
-    TRangeMap rangeMap;
-    CreateRangeMap( rangeMap, a, A );
-
-    using namespace fourplanes;
-    typedef CScanCallback::TMatches TMatches;
-
-    TMatches matches;
-    CScanCallback callback( matches, *m_queryHash );
-    Uint8 mask = CBitHacks::WordFootprint<Uint8>( 2 * winLen );
-
-    string seqname;
-    if( m_seqIds ) {
-        seqname = m_seqIds->GetSeqDef( m_ord ).GetBestIdString();
-    }
-    else seqname = "sequence";
-
-    CProgressIndicator p( "Processing " + seqname, "bases" );
-    p.SetFinalValue( A - a );
-    
-    for( TRangeMap::const_iterator i = rangeMap.begin(); i != rangeMap.end(); ++i ) {
-        if( i->second == eType_skip ) {
-            p.SetCurrentValue( i->first.second );
-        } else if ( i->second == eType_direct ) {
-            CHashCode hashCode( winLen );
-            CComplexityMeasure complexity;
-            const char * x = a + i->first.first;
-            for( unsigned pos = 0 ; pos < winLen && x < A; ++pos ) {
-                hashCode.AddBaseCode( Ncbi4na2Ncbi2na( *x++ ) );
-                complexity.Add( hashCode.GetNewestTriplet() );
-            }
-            for( int pos = off + i->first.first, end = off + i->first.second - winLen; pos < end; ++pos ) {
-                ASSERT( (pos + a) < A );
-                
-                if( (pos + a + winLen) != x ) THROW( logic_error, " x - a - w = " << ( x - a - winLen ) << " while pos = " << pos << " and off = " << off );
-                if( complexity < m_maxSimplicity ) {
-                    matches.clear();
-                    callback( Uint4( hashCode.GetHashValue() ), 0, 1 );
-                    ITERATE( TMatches, m, matches ) {
-                        switch( m->GetStrand() ) {
-                        case '+': m_filter->Match( *m, a, A, pos - m->GetOffset() );
-                            break;
-                        case '-': m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 );
-                            break;
-                        default: THROW( logic_error, "Invalid strand " << m->GetStrand() );
-                        }
-                    }
-                }
-                complexity.Del( hashCode.GetOldestTriplet() );
-                hashCode.AddBaseCode( Ncbi4na2Ncbi2na( *x++ ) );
-                complexity.Add( hashCode.GetNewestTriplet() );
-                p.Increment();
-            }
-        } else {
-            // eType_iterate
-            CHashGenerator hashGen( winLen );
-            CComplexityMeasure complexity;
-            const char * x = a + i->first.first;
-            for( unsigned pos = 0 ; pos < winLen && x < A; ++pos ) {
-                hashGen.AddBaseMask( *x++ );
-                complexity.Add( hashGen.GetNewestTriplet() );
-            }
-    
-            for( int pos = off + i->first.first, end = off + i->first.second; pos < end; ++pos ) {
-                ASSERT( (pos + a) < A );
-                if( (pos + a + winLen) != x ) THROW( logic_error, " x - a - w = " << ( x - a - winLen ) << " while pos = " << pos << " and off = " << off );
-                if( hashGen.GetAlternativesCount() < m_maxAlternatives && complexity < m_maxSimplicity ) {
-                    matches.clear();
-                    for( CHashIterator h( hashGen, TPlaneMask( mask ), mask ); h; ++h ) {
-                        callback( Uint4( *h ), 0, hashGen.GetAlternativesCount() );
-                    }
-                    ITERATE( TMatches, m, matches ) {
-                        switch( m->GetStrand() ) {
-                        case '+': m_filter->Match( *m, a, A, pos - m->GetOffset() );
-                            break;
-                        case '-': m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 );
-                            break;
-                        default: THROW( logic_error, "Invalid strand " << m->GetStrand() );
-                        }
-                    }
-                }
-                complexity.Del( hashGen.GetOldestTriplet() );
-                hashGen.AddBaseMask( *x++ );
-                complexity.Add( hashGen.GetNewestTriplet() );
-                p.Increment();
-            }
-        }
-    }
-    p.Summary();
-    
 }
 

@@ -2,6 +2,7 @@
 #define OLIGOFAR_BITHACKS__HPP
 
 #include "defs.hpp"
+#include "uinth.hpp"
 #include <sstream>
 #include <iomanip>
 #include <iterator>
@@ -24,6 +25,7 @@ public:
     static int BitCount2( Uint2 x );
     static int BitCount4( Uint4 x );
     static int BitCount8( Uint8 x );
+    static int BitCountH( const UintH x ) { return BitCount8( x.GetHi() ) + BitCount8( x.GetLo() ); }
 
 //     static int BitCount( Uint1 );
 //     static int BitCount( Uint2 );
@@ -38,6 +40,7 @@ public:
     static Uint2 ReverseBits2( Uint2 x );
     static Uint4 ReverseBits4( Uint4 x );
     static Uint8 ReverseBits8( Uint8 x );
+    static UintH ReverseBitsH( UintH x ) { return UintH( ReverseBits8( x.GetLo() ), ReverseBits8( x.GetHi() ) ); }
 
     // can be used as reverse for ncbi2na, 
     // and ~ may be used as complement to ncbi2na
@@ -45,6 +48,7 @@ public:
     static Uint2 ReverseBitPairs2( Uint2 x );
     static Uint4 ReverseBitPairs4( Uint4 x );
     static Uint8 ReverseBitPairs8( Uint8 x );
+    static UintH ReverseBitPairsH( UintH x ) { return UintH( ReverseBitPairs8( x.GetLo() ), ReverseBitPairs8( x.GetHi() ) ); }
 
     // can be used as reverse for dibase colorspace represented as 4-channel 1-bit sets, 
     // and ~ may be used as complement to ncbi2na
@@ -52,9 +56,20 @@ public:
     static Uint2 ReverseBitQuads2( Uint2 x );
     static Uint4 ReverseBitQuads4( Uint4 x );
     static Uint8 ReverseBitQuads8( Uint8 x );
+    static UintH ReverseBitQuadsH( UintH x ) { return UintH( ReverseBitQuads8( x.GetLo() ), ReverseBitQuads8( x.GetHi() ) ); }
+
+    // inserts bits 0..(bitsperpos-1) from "bits" at position offset*bitsperpos shifting higher (above offset) part of value left by bitsperpos
+    template <class Uint, int bitsperpos, int bits> 
+    static Uint InsertBits( const Uint& value, int offset );
+
+    // deletes bitsperpos bits at position offset*bitsperpos, shifting higher (above offset+bitsperpos) part of value right by bitsperpos
+    template <class Uint, int bitsperpos>
+    static Uint DeleteBits( const Uint& value, int offset );
 
     template<class word, class output_iterator>
     static output_iterator AsBits( word m, int w, output_iterator );
+    template<class output_iterator>
+    static output_iterator AsBits( const UintH& m, int w, output_iterator o );
 
     template<class word>
     static string AsBits( word m, int w = kBitsPerByte*sizeof(word) );
@@ -313,6 +328,23 @@ inline Uint8 CBitHacks::ReverseBitQuads8( Uint8 x )
     return x_SwapBits( x, 0x20 );
 }
 
+template <class Uint, int bitsperpos, int bits>
+inline Uint CBitHacks::InsertBits( const Uint& value, int offset ) 
+{
+    Uint mask( WordFootprint<Uint>( bitsperpos * offset ) );
+    Uint right( value & mask );
+    Uint insert( Uint( bits ) << ( bitsperpos * offset ) );
+    Uint left( ( (~mask) & value ) << bitsperpos );
+    return left | right | insert;
+}
+
+template <class Uint, int bitsperpos>
+inline Uint CBitHacks::DeleteBits( const Uint& value, int offset ) 
+{
+    Uint mask( WordFootprint<Uint>( bitsperpos * offset ) );
+    return ( value & mask ) | ( (~mask) & ( value >> bitsperpos ) );
+}
+
 template<class word, class output_iterator>
 inline output_iterator CBitHacks::AsBits( word m,  int w, output_iterator dest ) 
 {
@@ -320,6 +352,13 @@ inline output_iterator CBitHacks::AsBits( word m,  int w, output_iterator dest )
         *dest++ = (m & k) ? '1':'0';
     }
     return dest;
+}
+
+template<class output_iterator>
+inline output_iterator CBitHacks::AsBits( const UintH& m,  int w, output_iterator dest ) 
+{
+    if( w < 64 ) return AsBits( m.GetLo(), w, dest );
+    else return AsBits( m.GetLo(), 64, AsBits( m.GetHi(), w - 64, dest ) );
 }
 
 template<class word>

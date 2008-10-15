@@ -4,6 +4,7 @@
 #include "cfilter.hpp"
 #include "cscoretbl.hpp"
 #include "cqueryhash.hpp"
+#include "chashparam.hpp"
 #include "cseqvecprocessor.hpp"
 #include "coutputformatter.hpp"
 
@@ -14,6 +15,7 @@ class CBatch
 {
 public:
     typedef vector<CQuery*> TInputChunk;
+    typedef vector<CHashParam> THashParamSet;
 
     // scoring is used to estimate number of mismathes for more iterative hashing
     CBatch( int readCount, const string& fastaFile, 
@@ -30,27 +32,29 @@ public:
     
     const TInputChunk& GetInputChunk() const { return m_inputChunk; }
 
-    void SetInitialWindowLength( int l ) { m_windowLength[1] = min( m_windowLength[1], m_windowLength[0] = l ); }
-    void SetRegularWindowLength( int l ) { m_windowLength[0] = max( m_windowLength[0], m_windowLength[1] = l ); }
-    void SetInitialHashType( CQueryHash::EHashType t ) { m_hashType[0] = t; }
-    void SetRegularHashType( CQueryHash::EHashType t ) { m_hashType[1] = t; }
-    void SetHashTypeChangeFraction( double fraction ) { m_fraction = fraction; }
-    void SetInitialAligner( IAligner * aligner, bool own ) { m_aligner[0] = aligner; m_ownAligner[0] = own; ASSERT( m_aligner[0] ); }
-    void SetRegularAligner( IAligner * aligner, bool own ) { m_aligner[1] = aligner; m_ownAligner[1] = own; ASSERT( m_aligner[1] ); }
+    template<class iterator>
+    void SetHashParam( iterator a, iterator b ) { m_hashParam.clear(); copy( a, b, back_inserter( m_hashParam ) ); }
+    template<class container>
+    void SetHashParam( const container& c ) { SetHashParam( c.begin(), c.end() ); }
 
-    IAligner * GetRegularAligner() const { return m_aligner[1]; }
-    IAligner * GetInitialAligner() const { return m_aligner[0]; }
+    enum EAlignerType {
+        eAligner_noIndel = 0,
+        eAligner_regular = 1
+    };
 
-    bool SinglePass() const { 
-        return m_windowLength[0] == m_windowLength[1] && 
-            m_queryHash.GetMinimalMaxMism() == m_queryHash.GetAbsoluteMaxMism();
-    }
+    void SetAligner( EAlignerType atype, IAligner * aligner, bool own ) { m_aligner[atype] = aligner; m_ownAligner[atype] = own; ASSERT( m_aligner[atype] ); }
+    IAligner * GetAligner( EAlignerType t ) const { return m_aligner[t]; }
+    IAligner * GetAligner() const;
+
+    bool SinglePass() const { return m_hashParam.size() < 2; }
 
 protected:
     int x_EstimateMismatchCount( const CQuery*, bool matepair ) const;
     void x_LoadSeqIds();
-    void x_Rehash( int mm, int pass );
+    void x_Rehash( unsigned pass );
+    void SetPass( unsigned );
 protected:
+    THashParamSet m_hashParam;
     int m_readsPerRun;
     int m_hashedReads;
     int m_guidedReads;
@@ -65,11 +69,9 @@ protected:
     CSeqVecProcessor & m_seqVecProcessor;
     COutputFormatter & m_formatter;
     CProgressIndicator * m_readProgressIndicator;
-    int m_windowLength[2];
-    CQueryHash::EHashType m_hashType[2];
     IAligner * m_aligner[2];
     bool m_ownAligner[2];
-    double m_fraction;
+    unsigned m_pass;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +89,9 @@ inline CBatch::CBatch( int readCount, const string& fastaFile,
 {
     ASSERT( m_mismatchPenalty > 0 );
     m_inputChunk.reserve( readCount );
-    m_queryHash.Reserve( readCount );
+    m_queryHash.SetExpectedReadCount( readCount );
+    m_aligner[0] = m_aligner[1] = 0;
+    m_ownAligner[0] = m_ownAligner[1] = 0;
 }
 
 END_OLIGOFAR_SCOPES

@@ -1,30 +1,32 @@
-oligoFAR 3.25                     7-AUG-2008                                1-NCBI
+oligoFAR 3.27                     15-SEP-2008                                1-NCBI
 
 NAME 
-    oligoFAR version 3.25 - global alignment of single or paired short reads
+    oligoFAR version 3.27 - global alignment of single or paired short reads
 
 SYNOPSIS
-    oligofar [-hV] [-C config] [-w [ini,]size] [-n [mismMin-]mismMax] 
-             [-a max-alt-qry] [-A max-alt-sbj] [-H v|m|a[,v|m|a]] 
-             [-D distMin[-distMax]] [-m distMargin] [-p minPct]
-             [-u topCnt] [-t topPct] [-F dust] [-s strands] [-f frac]
-             [-i input] [-d database] [-l gilist] [-b snpdb] [-x mis]
-             [-o output] [-O outflags] [-g guidefile] [-c +|-] [-k pos,...]
-             [-B batchSize] [-r algo] [-X dropoff] [-R geometry]
-             [-q qualChannels] [-0 qualBase] [-1 solexa1] [-2 solexa2] 
-             [-P phrap] [-I score] [-M score] [-G score] [-Q score] 
-             [-T test] [-L memlimit] [-U version] 
+        usage: [-hV] [--help[=full|brief|extended]] [-U version]
+          [-i inputfile] [-d genomedb] [-b snpdb] [-g guidefile] [-l gilist]
+          [-1 solexa1] [-2 solexa2] [-q 0|1] [-0 qbase] [-c +|-] [-o output]
+          [-O -eumxtadh] [-B batchsz] [-x 0|1|2] [-s 1|2|3] [-k skipPos]
+          [--pass0] [-w win[/word]] [-n mism] [-e gaps] [-S stride] [-H bits]
+          [--pass1  [-w win[/word]] [-n mism] [-e gaps] [-S stride] [-H bits] ]
+          [-r f|s] [-a maxamb] [-A maxamb] [-P phrap] [-F dust]
+          [-p cutoff] [-u topcnt] [-t toppct] [-X xdropoff] [-I idscore]
+          [-M mismscore] [-G gapcore] [-Q gapextscore] [-D minPair[-maxPair]]
+          [-m margin] [-R geometry] [-L memlimit] [-T +|-]
 
 EXAMPLES
-    oligofar -U 3.25 -C human-data.ini -C deep-search.ini -i my.reads -h
+    oligofar -U 3.27 -C human-data.ini -C deep-search.ini -i my.reads -h
 
     oligofar -i pairs.tbl -d contigs.fa -b snpdb.bdb -l gilist -g pairs.guide \
-             -w 20/12 -B 250000 -Hv -n2 -rf -p90 -D100-500 -m50 -Rp \
+             -w 20/12 -B 250000 -H32 -n2 -rf -p90 -D100-500 -m50 -Rp \
              -L16G -o output -Omx
 
 CHANGES
     Following parameters are new, have changed or have disappeared 
-    in version 3.25: -n, -w, -N, -z, -Z, -D, -m, -S, -x, -f, -k. 
+    in version 3.25: -n, -w, -N, -S, -x, -f, -R 
+    in version 3.26: -n, -w, -N, -z, -Z, -D, -m, -S, -x, -f, -k
+    in version 3.27: -n, -w, -e, -H, -S, -a, -A, --pass0, --pass1
 
 DESCRIPTION
     Performs global alignments of multiple single or paired short reads 
@@ -88,8 +90,8 @@ NOTE
     results.
 
     To save disk space and computational resources, oligoFAR ranks hits by
-    score and reports only the best hits and ties to the best hits. Certain 
-    options (like -S) may affect completeness of tie hits reported - in this 
+    score and reports only the best hits and ties to the best hits. 
+    In the two-pass mode tie hits may be incompletely reported - in this 
     case only hits of same score as the best are guarranteed to appear in 
     output no matter what value of -t is set.
 
@@ -113,24 +115,51 @@ PAIRED READS
     the pair produce the hit.
 
 MULTIPASS MODE
-    If two values for -w and/or -n are used (ex: -w 24,13 -n 0,2), oligoFAR
-    runs twice for each batch: first pass with longer window size and less
-    mismatches allowed in hash, and with no indels allowed, and all consecutive 
-    passes with shorter window, indels allowed (unless -X0 is explicitely set
-    in command line), more mismatches in hash window and possibly with
-    different hash immplementation (if specified with -H and -f options), 
-    but only for reads which did not have good enough hits in previous passes. 
-    As example, if user specifies:
+    By default oligoFAR aligns all reads just once, but if option --pass1 is 
+    used, oligoFAR switches to the two-pass mode. Parameters -w, -n, -e, -H 
+    and -S preceeding --pass1 or following --pass0 affect first run, same 
+    parameters when follow --pass1 are for the second run.  For the second run 
+    only reads (or pairs) having more mismatches or indels then allowed in 
+    parameters for the first pass will be hashed and aligned. So using something 
+    like:
 
-    oligoFAR -w 24,13 -n 0,2 -X2 -rf -Hv,a -f1
+    oligofar --pass0 -w22/22 -n0 -e0 --pass1 -w22/13 -n2 -e1 
 
-    it will run for some reads trice, with following options implied:
+    will pick up exact matches first, and then run search with less strict 
+    parameters only for those reads which did not have exact hits.
 
-    (1) -w24 -n0 -X0 -Hv
-    (2) -w13 -n1 -X2 -Ha -rf
-    (3) -w13 -n2 -X2 -Ha -rf
+WINDOW, STRIDE AND WORD
+    When hashing, oligoFAR first chooses some region on the read (called window).
+    If the stride is greater then 1, it extracts the "stride" windows with offset 
+    of 1 to each other. Then each window gets variated (with mismatches and/or 
+    indels). If word size is equal to window size, window is hashed as is. If 
+    word size is smaller then window, two possibly overlapping words are created
+    and added to hash: at the beginning of the window and at the end of the 
+    window.
 
-    (every time for smaller subset of reads).
+    Example:
+    
+    +-------------+  hashed region (should not exceed 32 bases)
+    ACGTGTTGATGACTActgatgatctgat
+    +-----------+    window size = 13
+    ACGTGTTGATGAC    window 1 \
+     CGTGTTGATGACT   window 2  } stride = 3
+      GTGTTGATGACTA  window 3 /
+    +-------+        word size = 9
+    ACGTGTTGA        word 1 of window 1
+        GTTGATGAC    word 2 of window 1
+     CGTGTTGAT       word 1 of window 2
+         TTGATGACT   word 2 of window 2
+      GTGTTGATG      word 1 of window 3
+          TGATGACTA  word 2 of window 3
+
+    If you allow indels to be hashed, hashed region is extended by 1 base. So 
+    for window of 24 and stride 4 with indels allowed reads should be at least
+    28 bases long (27 with no indels).
+
+    Words when hashing are splet in the two parts: index and supplement. 
+    Supplement can't have more then 16 bits. Index can't be more then 31bits.
+    Therefore maximal word size should fit in 47 bits and is 23 bases.
 
 OPTIONS
 
@@ -157,15 +186,6 @@ Service options
                 appears in commandline or in config file, the comparison is
                 performed, so each config file may contain this check
                 independently.  
-
-    --config-file=file
-    -C file     Parses config file and continues to parse commandline.  May
-                override values specified in commandline ahead, and may be
-                overriden by the values specified after.  May be used multiple
-                times with different files, each time new file will be parsed.
-                Config file is expected to contain section [oligofar] with
-                entries equal to long option names with no preceeding dashes.
-                All entries are optional.  See more in FILE FORMATS section.
 
     --test-suite=+|-
     -T +|-      Run internal tests for basic operations before doing anything
@@ -253,42 +273,33 @@ File options
                 small makes scan inefficient. 
 
 Hashing and scanning options
-    --window-size=[ini,]size
-    -w [ini,]size
-                Sets window size. If one value is set it is considered to be
-                used for all passes. If two values are used, it turns on
-                multipass-mode (see above), when on first pass the first
-                value is used for hash window, and for all the rest passes 
-                second value is used. Reasonable values are 3-26 for initial
-                run and 3-13 for other passes. 
-                
-                OligoFAR hashes one window per read, choosing it as close to 
-                5' end as possible, but may shift it to the right if the 5' 
-                end has too many low quality (ambiguous) bases.  
+    --pass0     Following -w, -n, -e, -S and -H options will apply to first
+                pass.
 
-    --input-mism=initial[-final]
-    -n ini[-fi] Sets maximal allowed number of mismatches within hashed word.
-                Reasonable values are 0 and 1, sometimes 2. OligoFAR will hash 
-                first with initial value as maximal number of mismatches, then
-                will iteratively rehash reads with that many or more mismatches
-                allowing extra mismatches in hash word until final value is 
-                exceeded.
+    --pass1     Turns on two-pass mode; following -w, -n, -e, -S and -H 
+                options will apply to the second pass.
 
-    --hash-type=v|m|a[,v|m|a]
-    -H v|m|a[,v|m|a]
-                Set hash type to v (vector), m (multimap) or a (arraymap) for 
-                the initial pass and optionally for consecutive passes.
-                Vector is the most memory consuming, but is the fastest for
-                batches of reads of tens of thousands or more. Multimap is not
-                practical (more intended for debugging). Arraymap is the least
-                memory consuming and is fast for small counts of reads.
-                Arraymap is the only practical in 32-bit application.
+    --window-size=window[/word]
+    -w window[/word]
+                Sets window and word size.
 
-    --rehash-fraction=value
-    -f value    In multipass move when -H specifies two different hash types
-                -f controls when to switch hash type from first to second. If
-                the fraction of reads rehashed (related to the batch size) is 
-                less then given value, the second hash type is used.
+    --input-mism=mism
+    -n mism     Sets maximal allowed number of mismatches within hashed word.
+                Reasonable values are 0 and 1, sometimes 2.
+
+    --input-gaps=[0,]0|1
+    -e [0,]0|1  Sets maximal number of indels per window. Allowed values are 
+                0 and 1.
+
+    --index-bits=bits
+    -H bits     Set number of bits in hash value to be used as an direct index.
+                The larger this value the more memory is used.
+
+    --stride-size=size
+    -S stride   Stride size. Minimum value is 1. Maximum is one base smaller 
+                then word size. The larger this value is, the more hash 
+                entries are created, but the less hash lookups are performed
+                (every "stride's" base of subject). 
 
     --window-skip=pos,...
     -k pos,...  Always skip certain positions of reads when hashing.
@@ -298,17 +309,16 @@ Hashing and scanning options
                 be changed in next release), just replaces appropriate bases
                 with `N's, then this option affects scoring as well.
 
-    --input-max-alt=count
-    -a count    Maximal number of alternative versions of window (based on
-                ambiguous bases) allowed for read to be hashed. If oligoFAR
-                fails to find window containing this or lower number of
-                alternatives for a read, the read is ignored. For example, 
-                ATSNAGATAG has 8 alternatives (4 [for N] * 2 [for S]).
+    --input-max-amb=count
+    -a count    Maximal number of ambiguous bases in a window allowed for read 
+                to be hashed. If oligoFAR fails to find window containing 
+                this or lower number of ambiguities for a read, the read is 
+                ignored. 
 
     --fasta-max-alt=count
-    -A count    Maximal number of alternative versions of a window (based on
-                ambiguous bases) on database side for the window to be used 
-                to perform hash lookup and seed an alignment. 
+    -A count    Maximal number of ambiguous bases in a window on a subject
+                side for the window to be used to perform hash lookup and 
+                seed an alignment. 
 
     --phrap-cutoff=score
     -P score    Phrap score for which and below bases are considered as
@@ -449,10 +459,10 @@ Config file
     Example:
 
         [oligofar]
-        assert-version = 3.25
+        assert-version = 3.27
         window-size = 12
         input-max-mism = 0
-        input-max-alt = 256
+        input-max-amb = 4
         phrap-score = 3
         config-file = alignment-scores.ini
 

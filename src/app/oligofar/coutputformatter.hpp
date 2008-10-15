@@ -46,8 +46,6 @@ protected:
     IAligner * m_aligner;
 };
 
-
-
 END_OLIGOFAR_SCOPES
 
 #endif

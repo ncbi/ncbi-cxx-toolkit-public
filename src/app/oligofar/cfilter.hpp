@@ -72,7 +72,7 @@ public:
     virtual void SequenceEnd();
 
     void SetSeqIds( CSeqIds* seqIds ) { m_seqIds = seqIds; }
-    void SetAligner( IAligner* aligner ) { m_aligner = aligner; ASSERT( m_aligner ); }
+    void SetAligner( IAligner* aligner ) { m_aligner = aligner; }
 	void SetOutputFormatter( COutputFormatter * f ) { m_outputFormatter = f; }
 
     void SetMaxDist( int d ) { m_maxDist = d; }
@@ -95,6 +95,9 @@ public:
 
 protected:
 	friend class CGuideFile;
+
+    explicit CFilter( const CFilter& );
+    CFilter& operator = ( const CFilter& );
 
     void PurgeHit( CHit *, bool setTarget = false );
 	TPendingHits::iterator x_ExpireOldHits( TPendingHits& pendingHits, int pos ) ;
