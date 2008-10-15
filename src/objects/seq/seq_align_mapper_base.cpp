@@ -914,8 +914,8 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                 }
             }
         }
-        left_shift += seg.m_Len*len_wid;
-        start += seg.m_Len*len_wid;
+        left_shift += mseg.m_Len*len_wid;
+        start += mseg.m_Len*len_wid;
         mapped = true;
     }
     if (align_flags == eAlign_MultiId  &&  m_AlignFlags == eAlign_Normal) {
