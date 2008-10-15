@@ -9,7 +9,7 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
-#include <getopt.h>
+#include "getopt.hpp"
 
 USING_OLIGOFAR_SCOPES;
 
