@@ -1228,6 +1228,9 @@ bool SLockedQueue::FailJob(unsigned      job_id,
 
         job.Flush(this);
     }}
+    if (node_id)
+        RemoveJobFromWorkerNode(*node_id, job, eNSCFailed);
+
 
     trans.Commit();
     js_guard.Commit();
@@ -1375,34 +1378,32 @@ void SLockedQueue::RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info)
 }
 
 
-void SLockedQueue::AddJobToWorkerNode(const SWorkerNodeInfo&  node_info,
+void SLockedQueue::AddJobToWorkerNode(const string&           node_id,
                                       CRequestContextFactory* rec_ctx_f,
                                       unsigned                job_id,
                                       time_t                  exp_time)
 {
     bool log_job_state = CQueueParamAccessor(*this).GetLogJobState();
-    m_WorkerNodeList.AddJob(node_info.node_id, job_id, exp_time,
+    m_WorkerNodeList.AddJob(node_id, job_id, exp_time,
                             rec_ctx_f, log_job_state);
     CountEvent(eStatGetEvent);
 }
 
 
-void SLockedQueue::UpdateWorkerNodeJob(const SWorkerNodeInfo& node_info,
+void SLockedQueue::UpdateWorkerNodeJob(const string&          node_id,
                                        unsigned               job_id,
                                        time_t                 exp_time)
 {
-    m_WorkerNodeList.UpdateJob(node_info.node_id, job_id, exp_time);
+    m_WorkerNodeList.UpdateJob(node_id, job_id, exp_time);
 }
 
 
-void SLockedQueue::RemoveJobFromWorkerNode(const SWorkerNodeInfo& node_info,
-                                           unsigned               job_id,
-                                           ENSCompletion          reason,
-                                           int                    ret_code)
+void SLockedQueue::RemoveJobFromWorkerNode(const string&          node_id,
+                                           const CJob&            job,
+                                           ENSCompletion          reason)
 {
     bool log_job_state = CQueueParamAccessor(*this).GetLogJobState();
-    m_WorkerNodeList.RemoveJob(node_info.node_id, job_id,
-        reason, ret_code, log_job_state);
+    m_WorkerNodeList.RemoveJob(node_id, job, reason, log_job_state);
     CountEvent(eStatPutEvent);
 }
 
@@ -1680,8 +1681,8 @@ SLockedQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
     status_tracker.SetStatus(job_id, new_status);
 
     if (status == CNetScheduleAPI::eRunning)
-        m_WorkerNodeList.RemoveJob(worker_node_id, job_id,
-                                   eNSCTimeout, 0, log_job_state);
+        m_WorkerNodeList.RemoveJob(worker_node_id, job,
+                                   eNSCTimeout, log_job_state);
 
     {{
         CTime tm(CTime::eCurrent);

@@ -407,17 +407,16 @@ public:
     // Is the unregistration final? True for old style nodes.
     bool UnRegisterNotificationListener(const string& node_id);
     void RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info);
-    void AddJobToWorkerNode(const SWorkerNodeInfo&  node_info,
+    void AddJobToWorkerNode(const string&           node_id,
                             CRequestContextFactory* rec_ctx_f,
                             unsigned                job_id,
                             time_t                  exp_time);
-    void UpdateWorkerNodeJob(const SWorkerNodeInfo& node_info,
+    void UpdateWorkerNodeJob(const string&          node_id,
                              unsigned               job_id,
                              time_t                 exp_time);
-    void RemoveJobFromWorkerNode(const SWorkerNodeInfo& node_info,
-                                 unsigned               job_id,
-                                 ENSCompletion          reason,
-                                 int                    ret_code=0);
+    void RemoveJobFromWorkerNode(const string&      node_id,
+                                 const CJob&        job,
+                                 ENSCompletion      reason);
     void x_FailJobsAtNodeClose(TJobList& jobs);
     //
 

@@ -209,17 +209,16 @@ void CQueueWorkerNodeList::UpdateJob(const string& node_id,
 
 
 void CQueueWorkerNodeList::RemoveJob(const string& node_id,
-                                     TNSJobId job_id,
+                                     const CJob&   job,
                                      ENSCompletion reason,
-                                     int ret_code,
-                                     bool log_job_state)
+                                     bool          log_job_state)
 {
     time_t curr = time(0);
     CWriteLockGuard guard(m_Lock);
     TWorkerNodeById::iterator it = m_WorkerNodeById.find(node_id);
     if (it == m_WorkerNodeById.end()) return;
     CWorkerNode* node = it->second;
-    CWorkerNode::TWNJobInfoMap::iterator it1 = node->m_Jobs.find(job_id);
+    CWorkerNode::TWNJobInfoMap::iterator it1 = node->m_Jobs.find(job.GetId());
     if (it1 == node->m_Jobs.end()) return;
     //
     SJobInfo& ji = it1->second;
@@ -231,8 +230,15 @@ void CQueueWorkerNodeList::RemoveJob(const string& node_id,
         CDiagContext::SetRequestContext(req_ctx);
         CDiagContext::GetRequestContext().SetRequestStatus(int(reason));
         GetDiagContext().PrintRequestStop();
-        GetDiagContext().Extra()
-            .Print("ret_code", NStr::IntToString(ret_code));
+        if (reason == eNSCDone || reason == eNSCFailed) {
+            int ret_code = 0;
+            const CJobRun* run = job.GetLastRun();
+            if (run) ret_code = run->GetRetCode();
+            GetDiagContext().Extra()
+                .Print("ret_code", NStr::IntToString(ret_code))
+                .Print("output", job.GetOutput())
+                .Print("err_msg", run ? run->GetErrorMsg() : "");
+        }
     }
     if (req_ctx) {
         if (ji.factory) ji.factory->Return(req_ctx);

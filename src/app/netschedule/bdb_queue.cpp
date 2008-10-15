@@ -2148,11 +2148,11 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
                 _ASSERT(0);
             }
 
-            if (done_job_id) q->RemoveJobFromWorkerNode(node_info, done_job_id,
-                                                        eNSCDone, ret_code);
-            if (pending_job_id) q->AddJobToWorkerNode(node_info, rec_ctx_f,
-                                                      pending_job_id,
-                                                      curr + run_timeout);
+            if (done_job_id)
+                q->RemoveJobFromWorkerNode(node_info.node_id, job, eNSCDone);
+            if (pending_job_id)
+                q->AddJobToWorkerNode(node_info.node_id, rec_ctx_f,
+                                      pending_job_id, curr + run_timeout);
             break;
         }
         catch (CBDB_ErrnoException& ex) {
@@ -2254,7 +2254,6 @@ void CQueue::FailJob(const SWorkerNodeInfo& node_info,
                      int                    ret_code)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    q->RemoveJobFromWorkerNode(node_info, job_id, eNSCFailed, ret_code);
     q->FailJob(job_id, err_msg, output, ret_code, &node_info.node_id);
 }
 
@@ -2324,7 +2323,7 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
     }}
 
     trans.Commit();
-    q->UpdateWorkerNodeJob(node_info, job_id, curr + tm);
+    q->UpdateWorkerNodeJob(node_info.node_id, job_id, curr + tm);
 
     exp_time = x_ComputeExpirationTime(time_start, run_timeout);
 
@@ -2398,7 +2397,7 @@ void CQueue::ReturnJob(const SWorkerNodeInfo& node_info, unsigned job_id)
     }}
     trans.Commit();
     js_guard.Commit();
-    q->RemoveJobFromWorkerNode(node_info, job_id, eNSCReturned);
+    q->RemoveJobFromWorkerNode(node_info.node_id, job, eNSCReturned);
     x_RemoveFromTimeLine(job_id);
 
     if (IsMonitoring()) {
