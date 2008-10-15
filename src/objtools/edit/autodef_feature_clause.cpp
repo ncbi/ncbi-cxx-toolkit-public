@@ -547,6 +547,12 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
                     || subtype == CSeqFeatData::eSubtype_misc_RNA) {
                     if (m_MainFeat.CanGetComment()) {
                         product_name = m_MainFeat.GetComment();
+                        if (!NStr::IsBlank(product_name)) {
+                            string::size_type pos = NStr::Find(product_name, ";");
+                            if (pos != NCBI_NS_STD::string::npos) {
+                                product_name = product_name.substr(0, pos);
+                            }
+                        }
                     }
                 } else if (m_MainFeat.GetData().GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name) {
                     product_name = m_MainFeat.GetData().GetRna().GetExt().GetName();
@@ -1265,6 +1271,13 @@ bool CAutoDefNcRNAClause::x_GetProductName(string &product_name)
     string ncrna_class = m_MainFeat.GetNamedQual("ncRNA_class");
     string ncrna_product = m_MainFeat.GetNamedQual("product");
 	string ncrna_comment = m_MainFeat.GetComment();
+    if (!NStr::IsBlank(ncrna_comment)) {
+        string::size_type pos = NStr::Find(ncrna_comment, ";");
+        if (pos != NCBI_NS_STD::string::npos) {
+            ncrna_comment = ncrna_comment.substr(0, pos);
+        }
+    }
+
     if (!NStr::IsBlank (ncrna_product)) {
         if (!NStr::IsBlank (ncrna_class) && !NStr::Equal (ncrna_class, "other")) {
             product_name = ncrna_product + " " + ncrna_class;
