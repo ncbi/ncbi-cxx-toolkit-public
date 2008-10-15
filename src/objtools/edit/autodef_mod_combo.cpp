@@ -168,9 +168,9 @@ bool CAutoDefModifierCombo::HasOrgMod(COrgMod::ESubtype st)
 }
 
 
-void CAutoDefModifierCombo::AddSource(const CBioSource& bs) 
+void CAutoDefModifierCombo::AddSource(const CBioSource& bs, string feature_clauses) 
 {
-    CAutoDefSourceDescription src(bs);
+    CAutoDefSourceDescription src(bs, feature_clauses);
     bool found = false;
 
     NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {

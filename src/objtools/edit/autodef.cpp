@@ -79,32 +79,23 @@ CAutoDef::~CAutoDef()
 {
 }
 
+
 void CAutoDef::AddSources (CSeq_entry_Handle se)
 {
     
     // add sources to modifier combination groups
     CBioseq_CI seq_iter(se, CSeq_inst::eMol_na);
     for ( ; seq_iter; ++seq_iter ) {
-        for (CSeqdesc_CI dit((*seq_iter), CSeqdesc::e_Source); dit;  ++dit) {
+        CSeqdesc_CI dit((*seq_iter), CSeqdesc::e_Source);
+        if (dit) {
+            string feature_clauses = x_GetFeatureClauses(*seq_iter);
             const CBioSource& bsrc = dit->GetSource();
-            m_OrigModCombo.AddSource(bsrc);
+            m_OrigModCombo.AddSource(bsrc, feature_clauses);
         }
     }
 
     // set default exclude_sp values
     m_OrigModCombo.SetExcludeSpOrgs (m_OrigModCombo.GetDefaultExcludeSp());
-}
-
-
-void CAutoDef::AddSources (CBioseq_Handle bh) 
-{
-    for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
-        const CBioSource& bsrc = dit->GetSource();
-        m_OrigModCombo.AddSource (bsrc);
-    }
-
-    // set default exclude_sp values
-    m_OrigModCombo.SetExcludeSpOrgs(m_OrigModCombo.GetDefaultExcludeSp());
 }
 
 

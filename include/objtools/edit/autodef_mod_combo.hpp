@@ -77,7 +77,7 @@ public:
     bool HasSubSource(CSubSource::ESubtype st);
     bool HasOrgMod(COrgMod::ESubtype st);
     
-    void AddSource(const CBioSource& bs);
+    void AddSource(const CBioSource& bs, string feature_clauses = "");
     
     void AddSubsource(CSubSource::ESubtype st);
     void AddOrgMod(COrgMod::ESubtype st);

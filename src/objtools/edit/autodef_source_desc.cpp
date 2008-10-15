@@ -47,8 +47,11 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CAutoDefSourceDescription::CAutoDefSourceDescription(const CBioSource& bs) : m_BS(bs)
+CAutoDefSourceDescription::CAutoDefSourceDescription(const CBioSource& bs, string feature_clauses) : m_BS(bs)
 {
+    // consider feature clauses when looking for uniqueness
+    m_DescStrings.push_back (feature_clauses);
+
     if (bs.CanGetOrg() && bs.GetOrg().CanGetTaxname()) {
         m_DescStrings.push_back (bs.GetOrg().GetTaxname());
     }
