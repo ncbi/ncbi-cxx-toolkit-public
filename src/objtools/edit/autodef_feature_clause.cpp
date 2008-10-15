@@ -1559,6 +1559,9 @@ CAutoDefParsedtRNAClause::CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq
     m_Typeword = "gene";
     m_TypewordChosen = true;
     m_GeneName = gene_name;
+    if (!NStr::IsBlank (m_GeneName)) {
+        m_HasGene = true;
+    }
     m_ProductName = product_name;
     m_ProductNameChosen = true;
 }
