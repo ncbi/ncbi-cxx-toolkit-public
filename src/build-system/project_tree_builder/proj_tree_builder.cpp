@@ -1696,7 +1696,6 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         }
         return;
     }
-//TODO: XCODE
     if (!is_root &&
         CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
         // on UNIX the build tree is already configured,
