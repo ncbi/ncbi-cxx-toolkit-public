@@ -31,9 +31,9 @@ public:
     UintH  operator -  () const { return ~(*this + ~UintH(0)); }
     UintH& operator -= ( const UintH& other ) { return *this += -other; }
     UintH& operator += ( const UintH& other ) { 
-        int ha = m_lo >> 63; 
-        int hb = other.m_lo >> 63; 
-        int hc = (m_lo += other.m_lo) >> 63;
+        int ha = int( m_lo >> 63 ); 
+        int hb = int( other.m_lo >> 63 ); 
+        int hc = int( (m_lo += other.m_lo) >> 63 );
         int carry = "\x0\x0\x1\x0\x1\x0\x1\x1"[(ha<<2)|(hb<<1)|(hc<<0)]; // TODO: check if carry flag computes right...
         m_hi += other.m_hi + carry;
         return *this;
@@ -69,15 +69,15 @@ public:
 
     operator bool () const { return m_lo || m_hi; }
 
-    operator Uint8 () const { return m_lo; }
-    operator Uint4 () const { return m_lo; }
-    operator Uint2 () const { return m_lo; }
-    operator Uint1 () const { return m_lo; }
+    operator Uint8 () const { return (Uint8)m_lo; }
+    operator Uint4 () const { return (Uint4)m_lo; }
+    operator Uint2 () const { return (Uint2)m_lo; }
+    operator Uint1 () const { return (Uint1)m_lo; }
     
-    operator Int8 () const { return m_lo; }
-    operator Int4 () const { return m_lo; }
-    operator Int2 () const { return m_lo; }
-    operator Int1 () const { return m_lo; }
+    operator Int8 () const { return (Int8)m_lo; }
+    operator Int4 () const { return (Int4)m_lo; }
+    operator Int2 () const { return (Int2)m_lo; }
+    operator Int1 () const { return (Int1)m_lo; }
 
 protected:
     Uint8 m_lo;

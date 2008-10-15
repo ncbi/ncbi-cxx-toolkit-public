@@ -72,14 +72,14 @@ int COligoFarApp::TestSuite()
              CBitHacks::AsBits( UintH( 0x0123456789abcdefULL, 0xfedcba9876543210ULL ) >> 96 ), 
              CBitHacks::AsBits( UintH( 0x0000000000000000ULL, 0x0000000001234567ULL ) ) );
     TESTVAL( string, 
-             CBitHacks::AsBits( CBitHacks::InsertBits<UintH,4,0xf>( UintH( 0x1248124812481248LLU, 0x1248124812481248LLU ), 4 ) ), 
-             CBitHacks::AsBits(                                     UintH( 0x2481248124812481LLU, 0x24812481248f1248LLU ) ) );
+             CBitHacks::AsBits( CBitHacks::InsertBits<UintH,4,0xf>( UintH( 0x1248124812481248ULL, 0x1248124812481248ULL ), 4 ) ), 
+             CBitHacks::AsBits(                                     UintH( 0x2481248124812481ULL, 0x24812481248f1248ULL ) ) );
     TESTVAL( string, 
-             CBitHacks::AsBits( CBitHacks::InsertBits<UintH,4,0xf>( UintH( 0x1248124812481248LLU, 0x1248124812481248LLU ), 7 ) ), 
-             CBitHacks::AsBits(                                     UintH( 0x2481248124812481LLU, 0x24812481f2481248LLU ) ) );
+             CBitHacks::AsBits( CBitHacks::InsertBits<UintH,4,0xf>( UintH( 0x1248124812481248ULL, 0x1248124812481248ULL ), 7 ) ), 
+             CBitHacks::AsBits(                                     UintH( 0x2481248124812481ULL, 0x24812481f2481248ULL ) ) );
     TESTVAL( string, 
-             CBitHacks::AsBits( CBitHacks::DeleteBits<UintH,4>( UintH( 0x1248124812481248LLU, 0x1248124812481248LLU ), 4 ) ), 
-             CBitHacks::AsBits(                                 UintH( 0x0124812481248124LLU, 0x8124812481241248LLU ) ) );
+             CBitHacks::AsBits( CBitHacks::DeleteBits<UintH,4>( UintH( 0x1248124812481248ULL, 0x1248124812481248ULL ), 4 ) ), 
+             CBitHacks::AsBits(                                 UintH( 0x0124812481248124ULL, 0x8124812481241248ULL ) ) );
     
     TESTVAL( UintH, UintH( 0 ) + UintH( 1 ), UintH( 1 ) );
     TESTVAL( UintH, UintH( 1, 0 ) + UintH( 1 ), UintH( 1, 1 ) );
