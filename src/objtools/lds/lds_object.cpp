@@ -292,33 +292,81 @@ public:
 };
 
 
-class CLDS_CollectSeq_idsReader : public CSkipObjectHook
+class CLDS_Seq_ids : public CObject
 {
 public:
     typedef vector<CRef<CSeq_id> > TIds;
+    typedef vector<int> TGis;
+    void clear()
+        {
+            m_Ids.clear();
+            m_Gis.clear();
+        }
+    void AddSeq_id(const CSeq_id& id)
+        {
+            if ( id.IsGi() ) {
+                AddGi(id.GetGi());
+            }
+            else if ( m_Ids.empty() || !m_Ids.back()->Equals(id) ) {
+                m_Ids.push_back(Ref(SerialClone(id)));
+            }
+        }
+    void AddGi(int gi)
+        {
+            if ( m_Gis.empty() || m_Gis.back() != gi ) {
+                m_Gis.push_back(gi);
+            }
+        }
+
+    TIds m_Ids;
+    TGis m_Gis;
+};
+
+class CLDS_CollectSeq_idsReader : public CSkipObjectHook
+{
+public:
     CLDS_CollectSeq_idsReader(void)
-        : m_Collect(0)
+        : m_Seq_id(new CSeq_id()), m_Collect(0)
         {
         }
 
     virtual void SkipObject(CObjectIStream& in,
                             const CObjectTypeInfo& type) {
         if ( m_Collect ) {
-            CRef<CSeq_id> id(new CSeq_id);
-            in.ReadSeparateObject(ObjectInfo(*id));
-            m_Collect->push_back(id);
+            DefaultRead(in, ObjectInfo(*m_Seq_id));
+            m_Collect->AddSeq_id(*m_Seq_id);
         }
         else {
-            type.GetTypeInfo()->DefaultSkipData(in);
+            DefaultSkip(in, type);
         }
     }
 
-    void Collect(TIds* ids) {
+    void Collect(CLDS_Seq_ids* ids) {
         m_Collect = ids;
     }
 
+    class CGuard
+    {
+    public:
+        CGuard(CLDS_CollectSeq_idsReader& reader, CLDS_Seq_ids& ids)
+            : m_Reader(reader)
+            {
+                reader.Collect(&ids);
+            }
+        ~CGuard()
+            {
+                m_Reader.Collect(0);
+            }
+    private:
+        CLDS_CollectSeq_idsReader& m_Reader;
+
+        CGuard(const CGuard&);
+        void operator=(const CGuard&);
+    };
+
 private:
-    TIds* m_Collect;
+    CRef<CSeq_id> m_Seq_id;
+    CLDS_Seq_ids* m_Collect;
 };
 
 
@@ -334,8 +382,7 @@ public:
 class CLDS_Seq_idsCollector : public CReadClassMemberHook
 {
 public:
-    typedef CLDS_CollectSeq_idsReader::TIds TIds;
-    typedef map<CObjectInfo, TIds, PLessObjectPtr> TIdsMap;
+    typedef map<CObjectInfo, CRef<CLDS_Seq_ids>, PLessObjectPtr> TIdsMap;
 
     CLDS_Seq_idsCollector(CLDS_CollectSeq_idsReader* collector)
         : m_Collector(collector)
@@ -344,14 +391,15 @@ public:
 
     virtual void ReadClassMember(CObjectIStream& in,
                                  const CObjectInfoMI& member) {
-        m_Collector->Collect(&m_Ids[member.GetClassObject()]);
+        CRef<CLDS_Seq_ids>& ids = m_Ids[member.GetClassObject()];
+        ids = new CLDS_Seq_ids();
+        CLDS_CollectSeq_idsReader::CGuard guard(*m_Collector, *ids);
         DefaultSkip(in, member);
-        m_Collector->Collect(0);
     }
 
-    const TIds* GetIds(const CObjectInfo& obj) const {
-        TIdsMap::const_iterator iter = m_Ids.find(obj);
-        return iter == m_Ids.end()? 0: &iter->second;
+    CLDS_Seq_ids* GetIds(const CObjectInfo& obj) {
+        TIdsMap::iterator iter = m_Ids.find(obj);
+        return iter == m_Ids.end()? 0: iter->second.GetPointer();
     }
     void ClearIds(void) {
         m_Ids.clear();
@@ -469,7 +517,7 @@ bool CLDS_Object::UpdateBinaryASNObject(CObjectIStream& in,
     objects.Reset();
     LOG_POST_X(4, Info 
                << "Trying ASN.1 binary top level object:" 
-               << type.GetTypeInfo()->GetName() );
+               << type.GetName() );
     CRef<CLDS_GBReleaseReadHook> hook;
     try {
         if ( m_GBReleaseMode != eNoGBRelease &&
@@ -478,19 +526,19 @@ bool CLDS_Object::UpdateBinaryASNObject(CObjectIStream& in,
             hook = new CLDS_GBReleaseReadHook(*this, objects);
             type.FindMember("seq-set").SetLocalReadHook(in, hook);
         }
-        CObjectInfo object_info(type.GetTypeInfo());
+        CObjectInfo object_info(type);
         CStopWatch sw(CStopWatch::eStart);
         in.Read(object_info);
         if ( hook && hook->Separate() ) {
             LOG_POST_X(5, Info 
                        << "Binary ASN.1 combined object found: "
-                       << type.GetTypeInfo()->GetName()
+                       << type.GetName()
                        << " in " << sw.Elapsed());
         }
         else {
             LOG_POST_X(5, Info 
                        << "Binary ASN.1 top level object found: "
-                       << type.GetTypeInfo()->GetName()
+                       << type.GetName()
                        << " in " << sw.Elapsed());
         }
         if ( hook ) {
@@ -755,7 +803,7 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
 
     }
 
-    const string& type_name = obj_info->info.GetTypeInfo()->GetName();
+    const string& type_name = obj_info->info.GetName();
 
     map<string, int>::const_iterator it = m_ObjTypeMap.find(type_name);
     if (it == m_ObjTypeMap.end()) {
@@ -819,17 +867,21 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
         // Set of seq ids referenced in the annotation
         //
         set<string> ref_seq_ids;
-        const CLDS_Seq_idsCollector::TIds *ids =
+        CLDS_Seq_ids *ids =
             m_Seq_idsCollector? m_Seq_idsCollector->GetIds(obj_info->info): 0;
         if ( ids ) {
-            const CSeq_id *last_id = 0;
-            ITERATE ( CLDS_Seq_idsCollector::TIds, it, *ids ) {
-                const CRef<CSeq_id>& id = *it;
-                if ( last_id && last_id->Equals(*id) ) {
-                    continue;
-                }
-                ref_seq_ids.insert(id->AsFastaString());
-                last_id = id;
+            ITERATE ( CLDS_Seq_ids::TIds, it, ids->m_Ids ) {
+                const CSeq_id& id = **it;
+                ref_seq_ids.insert(id.AsFastaString());
+            }
+
+            CLDS_Seq_ids::TGis& gis = ids->m_Gis;
+            sort(gis.begin(), gis.end());
+            gis.erase(unique(gis.begin(), gis.end()), gis.end());
+            CSeq_id id;
+            ITERATE ( CLDS_Seq_ids::TGis, it, gis ) {
+                id.SetGi(*it);
+                ref_seq_ids.insert(id.AsFastaString());
             }
             //LOG_POST_X(9, Info <<
             //           "Saving " << ref_seq_ids.size() <<
