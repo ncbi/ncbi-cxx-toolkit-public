@@ -149,6 +149,7 @@ void CDustMaskApplication::Init(void)
     SetupArgDescriptions( arg_desc.release() );
 }
 
+#if 0
 //-------------------------------------------------------------------------
 void CDustMaskApplication::interval_out_handler( 
         CNcbiOstream * output_stream, 
@@ -249,6 +250,7 @@ void CDustMaskApplication::fasta_out_handler(
         }
     }
 }
+#endif
 
 CMaskWriter*
 CDustMaskApplication::x_GetWriter()

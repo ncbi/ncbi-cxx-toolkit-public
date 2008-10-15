@@ -62,6 +62,7 @@ private:
 
     typedef CSymDustMasker duster_type;
     typedef duster_type::TMaskList::const_iterator it_type;
+#if 0
     typedef void (*out_handler_type)(
             CNcbiOstream *, 
             const objects::CBioseq_Handle &,
@@ -87,6 +88,7 @@ private:
             CNcbiOstream * output_stream,
             const objects::CSeqVector & data,
             TSeqPos & start, TSeqPos & stop );
+#endif
 };
 
 END_NCBI_SCOPE

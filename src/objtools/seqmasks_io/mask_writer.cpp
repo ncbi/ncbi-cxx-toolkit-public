@@ -65,6 +65,9 @@ void CMaskWriter::PrintId( objects::CBioseq_Handle& bsh, bool match_id )
         }
 
         id_str += " ";
+    } else {
+        id_str += CSeq_id::GetStringDescr(*bsh.GetCompleteBioseq(),
+                                          CSeq_id::eFormat_FastA) + " ";
     }
 
     id_str += sequence::GetTitle( bsh ) + "\n";
