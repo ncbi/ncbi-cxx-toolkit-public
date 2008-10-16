@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -390,7 +390,7 @@ extern EIO_Status CONN_Wait
     if (status != eIO_Success) {
         if (status != eIO_Timeout)
             CONN_LOG(14, eLOG_Error, "[CONN_Wait]  Error waiting on I/O");
-        else if (!timeout || timeout->sec || timeout->usec)
+        else if (!timeout  ||  timeout->sec  ||  timeout->usec)
             CONN_LOG(15, eLOG_Warning, "[CONN_Wait]  I/O timed out");
     }
 
@@ -441,14 +441,12 @@ static EIO_Status s_CONN_WritePersist
 
     assert(*n_written == 0);
 
-    for (;;) {
+    do {
         size_t x_written = 0;
         status = s_CONN_Write(conn, (char*) buf + *n_written,
                               size - *n_written, &x_written);
         *n_written += x_written;
-        if (*n_written == size  ||  status != eIO_Success)
-            break;
-    }
+    } while (*n_written != size  &&  status == eIO_Success);
 
     return status;
 }
@@ -540,6 +538,7 @@ static EIO_Status s_CONN_Read
  size_t*     n_read,
  int/*bool*/ peek)
 {
+    const STimeout* rto;
     EIO_Status status;
 
     assert(*n_read == 0);
@@ -563,10 +562,11 @@ static EIO_Status s_CONN_Read
     /* read data from the connection */
     {{
         size_t x_read = 0;
+        rto = (conn->r_timeout == kDefaultTimeout
+               ? conn->meta.default_timeout : conn->r_timeout);
         /* call current connector's "READ" method */
-        status = conn->meta.read(conn->meta.c_read, buf, size- *n_read,&x_read,
-                                 conn->r_timeout == kDefaultTimeout ?
-                                 conn->meta.default_timeout : conn->r_timeout);
+        status = conn->meta.read(conn->meta.c_read, buf, size - *n_read,
+                                 &x_read, rto);
         *n_read += x_read;
         if ( peek )  /* save data in the internal peek buffer */
             verify(BUF_Write(&conn->buf, buf, x_read));
@@ -577,8 +577,14 @@ static EIO_Status s_CONN_Read
             CONN_TRACE("[CONN_Read]  Read error");
             status = eIO_Success;
         } else if (size  &&  status != eIO_Closed) {
-            CONN_LOG(23, status == eIO_Timeout ? eLOG_Warning : eLOG_Error,
-                     "[CONN_Read]  Cannot read data");
+            ELOG_Level level;
+            if (status != eIO_Timeout  ||  conn->r_timeout == kDefaultTimeout)
+                level = eLOG_Error;
+            else if (rto  &&  (rto->sec | rto->usec))
+                level = eLOG_Warning;
+            else
+                level = eLOG_Trace;
+            CONN_LOG(23, level, "[CONN_Read]  Cannot read data");
         }
     }
     return status;
