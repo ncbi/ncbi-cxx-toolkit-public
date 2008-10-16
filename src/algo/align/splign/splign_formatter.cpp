@@ -667,7 +667,7 @@ const
                 sseg.SetProduct_length((*ii).m_QueryLen);
             }
 
-            if((*ii).m_PolyA > 0) {
+            if((*ii).m_PolyA > 0 && (*ii).m_PolyA < (*ii).m_QueryLen) {
                 sseg.SetPoly_a((*ii).m_PolyA);
             }
 
