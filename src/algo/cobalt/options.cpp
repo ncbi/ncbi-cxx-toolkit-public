@@ -48,16 +48,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
 
-const CMultiAlignerOptions::TMode CMultiAlignerOptions::kQClustersModeMask
-= (CMultiAlignerOptions::fNoQueryClusters 
-   | CMultiAlignerOptions::fConservativeQueryClusters 
-   | CMultiAlignerOptions::fMediumQueryClusters 
-   | CMultiAlignerOptions::fLargeQueryClusters);
-
-const int CMultiAlignerOptions::kDefaultGapOpen = -BLAST_GAP_OPEN_PROT;
-const int CMultiAlignerOptions::kDefaultGapExtend = -BLAST_GAP_EXTN_PROT;
-const double CMultiAlignerOptions::kDefaultUserConstraintsScore = 1000000;
-
 CMultiAlignerOptions::CMultiAlignerOptions(void)
 {
     x_InitParams(CMultiAlignerOptions::fMediumQueryClusters
