@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_CONNUTIL__H
 #define CONNECT___NCBI_CONNUTIL__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -154,11 +154,20 @@ typedef struct {
  */
 #define DEF_CONN_REG_SECTION      "CONN"
 
+#define REG_CONN_SCHEME           "SCHEME"
+#define DEF_CONN_SCHEME           0
+
+#define REG_CONN_USER             "USER"
+#define DEF_CONN_USER             ""
+
+#define REG_CONN_PASS             "PASS"
+#define DEF_CONN_PASS             ""
+
 #define REG_CONN_HOST             "HOST"
 #define DEF_CONN_HOST             "www.ncbi.nlm.nih.gov"
 
 #define REG_CONN_PORT             "PORT"
-#define DEF_CONN_PORT             80
+#define DEF_CONN_PORT             ""
 
 #define REG_CONN_PATH             "PATH"
 #define DEF_CONN_PATH             "/Service/dispd.cgi"
@@ -179,7 +188,7 @@ typedef struct {
 #define DEF_CONN_HTTP_PROXY_HOST  ""
 
 #define REG_CONN_HTTP_PROXY_PORT  "HTTP_PROXY_PORT"
-#define DEF_CONN_HTTP_PROXY_PORT  80
+#define DEF_CONN_HTTP_PROXY_PORT  ""
 
 #define REG_CONN_PROXY_HOST       "PROXY_HOST"
 #define DEF_CONN_PROXY_HOST       ""
@@ -197,7 +206,7 @@ typedef struct {
 #define DEF_CONN_LB_DISABLE       ""
 
 #define REG_CONN_HTTP_USER_HEADER "HTTP_USER_HEADER"
-#define DEF_CONN_HTTP_USER_HEADER 0
+#define DEF_CONN_HTTP_USER_HEADER ""
 
 #define REG_CONN_HTTP_REFERER     "HTTP_REFERER"
 #define DEF_CONN_HTTP_REFERER     0
@@ -260,11 +269,11 @@ extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Create
 
 
 /* Adjust the "host:port" to "proxy_host:proxy_port", and
- * "path" to "http://host:port/path" to connect through a HTTP proxy.
- * Return FALSE if already adjusted(see the NOTE), or if cannot adjust
- * (e.g. if "host" + "path" are too long).
+ * "path" to "http://host:port/path" to connect through an HTTP proxy.
+ * Return FALSE if cannot adjust (e.g. if "host" + "path" are too long).
  * NOTE:  it does nothing if applied more than once to the same "info"
- *        (or its clone), or when "http_proxy_host" is NULL.
+ *        (or its clone), or when "http_proxy_host" is empty, but
+ *        returns TRUE.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AdjustForHttpProxy
 (SConnNetInfo* info
@@ -416,16 +425,31 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
 
 
 
-/* Hit URL "http://host:port/path?args" with:
- *    {POST|GET} <path>?<args> HTTP/1.0\r\n
- *    <user_header\r\n>
- *    Content-Length: <content_length>\r\n\r\n
- * If "encode_args" is TRUE then URL-encode the "args".
- * "args" can be NULL/empty -- then the '?' symbol does not get added.
+/* Hit URL "http[s]://host[:port]/path?args" with the following
+ * request (argument substitution enclosed in angle brackets, with
+ * optional parts in square brackets):
+ *
+ *    {POST|GET} <path>[?<args>] HTTP/1.0\r\n
+ *    Host: <host>[:port]
+ *    [<user_header>]
+ *    Content-Length: <content_length>\r\n
+ *
+ * Request method eReqMethod_Any selects appropriate method depending on
+ * the passed value of "content_length":  GET when no content is expected
+ * (content_length==0), and POST when "content_length" provided non-zero. 
+ *
+ * If "port" is not specified (0) it will be assigned automatically
+ * to a well-known value depending on the setting of fSOCK_Secure in
+ * the passed "flags" parameter.
+ *
  * The "content_length" is mandatory, and it specifies an exact(!) amount of
  * data that you are planning to send to the resultant socket (0 if none).
- * If string "user_header" is not NULL/empty, then it must be terminated by a
- * single '\r\n'.
+ *
+ * If string "user_header" is not NULL/empty, then it *must* be terminated
+ * by a single '\r\n'.
+ *
+ * If "encode_args" is TRUE then URL-encode the "args".
+ * "args" can be NULL/empty -- then the '?' symbol does not get added.
  *
  * On success, return non-NULL handle of a socket.
  * ATTENTION:  due to the very essence of the HTTP connection, you may
@@ -442,17 +466,17 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  */
 
 extern NCBI_XCONNECT_EXPORT SOCK URL_Connect
-(const char*     host,
- unsigned short  port,
- const char*     path,
- const char*     args,
- EReqMethod      req_method,
+(const char*     host,            /* must be provided                        */
+ unsigned short  port,            /* may be 0, defaulted to either 80 or 443 */
+ const char*     path,            /* must be provided                        */
+ const char*     args,            /* may be NULL or empty                    */
+ EReqMethod      req_method,      /* ANY selects method by "content_length"  */
  size_t          content_length,
- const STimeout* c_timeout,       /* timeout for the CONNECT stage          */
- const STimeout* rw_timeout,      /* timeout for READ and WRITE             */
+ const STimeout* c_timeout,       /* timeout for the CONNECT stage           */
+ const STimeout* rw_timeout,      /* timeout for READ and WRITE              */
  const char*     user_header,
- int/*bool*/     encode_args,     /* URL-encode the "args", if any          */
- ESwitch         data_logging     /* sock.data log.; eDefault in most cases */
+ int/*bool*/     encode_args,     /* URL-encode the "args", if any           */
+ TSOCK_Flags     flags            /* additional socket requirements          */
  );
 
 

@@ -1,7 +1,7 @@
 #ifndef CONNECT___HTTP_CONNECTOR__H
 #define CONNECT___HTTP_CONNECTOR__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -119,6 +119,11 @@ extern "C" {
  *       the writes).  With this flag set, Flush() will result the data
  *       to be actually sent to server side, so the following write will form
  *       new request, and not get added to the previous one.
+ *  fHCC_InsecureRedirect --
+ *       for security reasons the following redirects comprise security risk
+ *       and, thus, are prohibited:  switching from https to http, and
+ *       re-posting data (regradless of the transport, either http or https).
+ *       This flag allows such redirects (if needed) to be honored.
  *
  * NOTE: the URL encoding/decoding (in the "fHCC_Url_*" cases and "info->args")
  *       is performed by URL_Encode() and URL_Decode() -- "ncbi_connutil.[ch]".
@@ -134,9 +139,10 @@ typedef enum {
     fHCC_UrlEncodeArgs    = 0x20, /* URL-encode "info->args"                 */
     fHCC_DropUnread       = 0x40, /* each microsession drops yet unread data */
     fHCC_NoUpread         = 0x80, /* do not use SOCK_ReadWhileWrite() at all */
-    fHCC_Flushable        = 0x100 /* connector will really flush on Flush()  */
+    fHCC_Flushable        = 0x100,/* connector will really flush on Flush()  */
+    fHCC_InsecureRedirect = 0x200 /* any redirect will be honored            */
 } EHCC_Flags;
-typedef int THCC_Flags;  /* binary OR of "EHttpCreateConnectorFlags"         */
+typedef unsigned int THCC_Flags;  /* bitwise OR of "EHCC_Flags"              */
 
 extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
 (const SConnNetInfo* net_info,
