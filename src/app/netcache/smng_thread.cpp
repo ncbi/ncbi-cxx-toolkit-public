@@ -62,7 +62,7 @@ void CSessionManagementThread::DoJob(void)
             time_t curr = time(0);   
             if (unsigned(curr - m_LastSessionExitTime) > 
                                         m_InactivityShutdownDelay) {
-                ERR_POST(
+                LOG_POST(
                   "Session inactivity timeout expired, shutting down.");
                 m_NC_Server.SetShutdownFlag();
                 m_ShutdownFlag = true;

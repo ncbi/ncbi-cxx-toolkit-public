@@ -294,7 +294,7 @@ void CNetCache_MessageHandler::OnCloseExt(EClosePeer peer)
 void CNetCache_MessageHandler::OnTimeout(void)
 {
     x_InitDiagnostics();
-    LOG_POST(Error << "Timeout, closing connection");
+    LOG_POST(Info << "Timeout, closing connection");
     x_DeinitDiagnostics();
 }
 
@@ -302,7 +302,7 @@ void CNetCache_MessageHandler::OnTimeout(void)
 void CNetCache_MessageHandler::OnOverflow(void)
 {
     // Max connection overflow
-    LOG_POST(Error << "Max number of connections reached, closing connection");
+    ERR_POST("Max number of connections reached, closing connection");
 }
 
 

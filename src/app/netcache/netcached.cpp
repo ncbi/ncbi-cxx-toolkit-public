@@ -267,7 +267,7 @@ void CNetCacheServer::MountICache(CConfig&                conf,
         catch (exception& ex)
         {
             ERR_POST("Error mounting local cache:" << cache_name << 
-                     ":\n" << ex.what()
+                     ": " << ex.what()
                     );
             throw;
         }
@@ -609,7 +609,7 @@ int CNetCacheDApp::Run(void)
             reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
         if (is_daemon) {
             LOG_POST("Entering UNIX daemon mode...");
-            bool daemon = Daemonize(0, fDaemon_DontChroot);
+            bool daemon = CProcess::Daemonize(0, fDaemon_DontChroot);
             if (!daemon) {
                 return 0;
             }
@@ -628,14 +628,12 @@ int CNetCacheDApp::Run(void)
         CListeningSocket lsock(port);
         if (lsock.GetStatus() != eIO_Success) {
             is_port_free = false;
-            ERR_POST(("Startup problem: listening port is busy. Port=" + 
-                                    NStr::IntToString(port)));
         }
         }}
 
         if (!is_port_free) {
-            LOG_POST(("Startup problem: listening port is busy. Port=" + 
-                NStr::IntToString(port)));
+            ERR_POST("Startup problem: listening port is busy. Port="
+                     << NStr::IntToString(port));
             return 1;
         }
 
@@ -661,7 +659,7 @@ int CNetCacheDApp::Run(void)
             reg.GetBool("server", "reinit", false, 0, CNcbiRegistry::eReturn);
 
             if (args["reinit"] || reinit) {  // Drop the database directory
-                LOG_POST(("Removing BDB database directory " + db_path));
+                LOG_POST("Removing BDB database directory " << db_path);
                 CDir dir(db_path);
                 dir.Remove();
             }
@@ -682,9 +680,9 @@ int CNetCacheDApp::Run(void)
                 bool drop_db = reg.GetBool("server", "drop_db", 
                                            true, 0, CNcbiRegistry::eReturn);
                 if (drop_db) {
-                    LOG_POST("Error initializing BDB ICache interface.");
-                    LOG_POST(ex.what());
-                    LOG_POST("Database directory will be droppped.");
+                    ERR_POST("Error initializing BDB ICache interface: "
+                             << ex.what());
+                    LOG_POST("Database directory will be dropped.");
 
                     CDir dir(db_path);
                     dir.Remove();
@@ -705,10 +703,8 @@ int CNetCacheDApp::Run(void)
 
 
         } else {
-            string msg = 
-                "Configuration error. Cannot init storage. Driver name:";
-            msg += kBDBCacheDriverName;
-            ERR_POST(msg);
+            ERR_POST("Configuration error. Cannot init storage. Driver name:"
+                     << kBDBCacheDriverName);
             return 1;
         }
 
@@ -724,7 +720,7 @@ int CNetCacheDApp::Run(void)
         unsigned network_timeout =
             reg.GetInt("server", "network_timeout", 10, 0, CNcbiRegistry::eReturn);
         if (network_timeout == 0) {
-            LOG_POST(Warning << 
+            ERR_POST(Warning << 
                 "INI file sets 0 sec. network timeout. Assume 10 seconds.");
             network_timeout =  10;
         } else {
@@ -792,12 +788,13 @@ int CNetCacheDApp::Run(void)
         }}
 
         //NcbiCerr << "Running server on port " << port << NcbiEndl;
-        LOG_POST(Info << "Running server on port " << port);
+        LOG_POST("Running server on port " << port);
         server->Run();
 
-        if (server->GetSignalCode())
-            LOG_POST(Info << "Server got " << server->GetSignalCode() <<
+        if (server->GetSignalCode()) {
+            LOG_POST("Server got " << server->GetSignalCode() <<
                      " signal.");
+        }
         LOG_POST(Info << "Server stopped. Closing storage.");
         // This place is suspicious. We already keep pointer to the cache in
         // 'cache' auto_ptr. So we call Close on this cache at least twice.
