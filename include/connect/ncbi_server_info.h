@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_SERVER_INFO__H
 #define CONNECT___NCBI_SERVER_INFO__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

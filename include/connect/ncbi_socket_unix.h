@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_SOCKET_UNIX__H
 #define CONNECT___NCBI_SOCKET_UNIX__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -48,20 +48,20 @@ extern "C" {
 
 
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateUNIX
-(const char*    path,    /* [in]  filename of the named socket to create */
- unsigned short backlog, /* [in]  maximal # of pending connections       */
- LSOCK*         lsock,   /* [out] handle of the created listening socket */
- ESwitch        log      /* [in]  whether to do logging on this socket   */
+(const char*     path,     /* [in]  path of the named socket to create       */
+ unsigned short  backlog,  /* [in]  maximal # of pending connections         */
+ LSOCK*          lsock,    /* [out] handle of the created listening socket   */
+ TSOCK_Flags     flags     /* [in]  socket properties                        */
  );
 
 
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateUNIX
-(const char*     file,     /* [in]  filename of the UNIX socket to connect to*/
+(const char*     path,     /* [in]  path of the UNIX socket to connect to    */
  const STimeout* timeout,  /* [in]  connection timeout (infinite if NULL)    */
  SOCK*           sock,     /* [out] handle of the created socket             */
  const void*     init_data,/* [in]  initial output data segment (may be NULL)*/
  size_t          init_size,/* [in]  size of initial data segment (may be 0)  */
- ESwitch         log       /* [in]  whether to do logging on this socket     */
+ TSOCK_Flags     flags     /* [in]  socket properties                        */
  );
 
 

@@ -1,7 +1,7 @@
 #ifndef CONNECT___SERVER_MONITOR__HPP
 #define CONNECT___SERVER_MONITOR__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

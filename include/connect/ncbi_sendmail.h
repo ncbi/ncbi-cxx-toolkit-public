@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_SENDMAIL__H
 #define CONNECT___NCBI_SENDMAIL__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

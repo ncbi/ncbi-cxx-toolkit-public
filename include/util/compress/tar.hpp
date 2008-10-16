@@ -1,7 +1,7 @@
 #ifndef UTIL_COMPRESS__TAR__HPP
 #define UTIL_COMPRESS__TAR__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

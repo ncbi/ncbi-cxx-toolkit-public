@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_MEMORY_CONNECTOR__H
 #define CONNECT___NCBI_MEMORY_CONNECTOR__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

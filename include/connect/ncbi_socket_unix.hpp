@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_SOCKET_UNIX__HPP
 #define CONNECT___NCBI_SOCKET_UNIX__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -49,16 +49,16 @@ class NCBI_XCONNECT_EXPORT CUNIXSocket : public CSocket
 {
 public:
     // Create unconnected socket
-    CUNIXSocket(void) { };
+    CUNIXSocket(void) { }
 
     CUNIXSocket(const string&   filename,
                 const STimeout* timeout = kInfiniteTimeout,
-                ESwitch         log     = eDefault);
+                TSOCK_Flags     flags   = fSOCK_LogDefault);
 
     // May be called on a socket, which is not connected yet
     EIO_Status Connect(const string&   filename,
                        const STimeout* timeout = kDefaultTimeout,
-                       ESwitch         log     = eDefault);
+                       TSOCK_Flags     flags   = fSOCK_LogDefault);
 
 private:
     // disable copy constructor and assignment
@@ -75,11 +75,11 @@ public:
 
     CUNIXListeningSocket(const string&  filename,
                          unsigned short backlog = 5,
-                         ESwitch        log     = eDefault);
+                         TSOCK_Flags    flags   = fSOCK_LogDefault);
 
     EIO_Status Listen(const string&  filename,
                       unsigned short backlog = 5,
-                      ESwitch        log     = eDefault);
+                      TSOCK_Flags    flags   = fSOCK_LogDefault);
 
 private:
     // disable copy constructor and assignment

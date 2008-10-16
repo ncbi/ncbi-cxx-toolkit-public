@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_USERHOST__HPP
 #define CONNECT___NCBI_USERHOST__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

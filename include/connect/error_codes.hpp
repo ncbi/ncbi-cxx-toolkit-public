@@ -1,7 +1,7 @@
 #ifndef CONNECT___ERROR_CODES__HPP
 #define CONNECT___ERROR_CODES__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

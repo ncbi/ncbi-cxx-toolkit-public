@@ -1,7 +1,7 @@
 #ifndef CONNECT___EMAIL_DIAG_HANDLER__HPP
 #define CONNECT___EMAIL_DIAG_HANDLER__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

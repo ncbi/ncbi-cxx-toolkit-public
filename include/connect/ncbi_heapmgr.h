@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_HEAPMGR__H
 #define CONNECT___NCBI_HEAPMGR__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

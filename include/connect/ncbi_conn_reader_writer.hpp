@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_CONN_READER_WRITER__HPP
 #define CONNECT___NCBI_CONN_READER_WRITER__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_TYPES__H
 #define CONNECT___NCBI_TYPES__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

@@ -1,7 +1,7 @@
 #ifndef CONNECT___CONNECT_EXPORT__H
 #define CONNECT___CONNECT_EXPORT__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
