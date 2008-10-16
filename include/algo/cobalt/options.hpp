@@ -244,6 +244,14 @@ public:
     void AddCddPatterns(const vector<char*>& patterns);
 
 
+    /// Set default patterns for identification of conserved domains.
+    ///
+    /// Regular expresion patterns will be used to find conserved domains.
+    /// Pairwise alignmnents will be constained to so that matching conserved
+    /// domains are aligned. Parameter ownership is transfered to options.
+    ///
+    void SetDefaultCddPatterns(void);
+
     /// Get regular expression patterns for identification of conserved domains
     /// @return List of conserved domain patterns
     ///

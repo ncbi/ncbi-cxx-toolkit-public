@@ -95,6 +95,13 @@ void CMultiAlignerOptions::AddCddPatterns(const vector<char*>& patterns)
     m_Mode = fNonStandard;
 }
 
+void CMultiAlignerOptions::SetDefaultCddPatterns(void)
+{
+    m_Patterns.clear();
+    AssignDefaultPatterns(m_Patterns);
+    m_Mode = fNonStandard;
+}
+
 bool CMultiAlignerOptions::Validate(void)
 {
     // Check whether m_UseQieryClusters and m_Mode are consistent
