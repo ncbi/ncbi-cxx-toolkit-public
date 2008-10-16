@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_CONN_STREAM__HPP
 #define CONNECT___NCBI_CONN_STREAM__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -451,7 +451,7 @@ public:
      const string&   pass     = "-none",  // "-" often helps make login quieter
      const string&   path     = kEmptyStr,
      unsigned short  port     = 0,
-     TFCDC_Flags     flag     = 0,
+     TFCDC_Flags     flags    = 0,
      streamsize      offset   = 0,
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize

@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_CONN_EXCEPTION__HPP
 #define CONNECT___NCBI_CONN_EXCEPTION__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

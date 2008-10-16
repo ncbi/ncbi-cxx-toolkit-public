@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_NAMEDPIPE__HPP
 #define CONNECT___NCBI_NAMEDPIPE__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

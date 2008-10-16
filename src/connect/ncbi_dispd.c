@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -369,7 +369,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
     if (!(data = (struct SDISPD_Data*) calloc(1, sizeof(*data))))
         return 0;
 
-    assert(net_info); /*must called with non-NULL*/
+    assert(net_info); /*must be called with non-NULL*/
     if ((data->net_info = ConnNetInfo_Clone(net_info)) != 0)
         data->net_info->service = iter->name; /* SetupStandardArgs() expects */
     if (!ConnNetInfo_SetupStandardArgs(data->net_info)) {
