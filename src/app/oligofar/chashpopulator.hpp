@@ -40,7 +40,7 @@ public:
         {}
     CHashPopulator& SetPermutator( const CPermutator8b * p ) { m_permutator = p; return *this; }
     CHashPopulator& SetIndel( CHashAtom::EIndel i ) { m_indel = i; return *this; }
-    CHashPopulator& Reserve( Uint8 count ) { m_data.reserve( count ); return *this; }
+    CHashPopulator& Reserve( size_t count ) { m_data.reserve( count ); return *this; }
     
     THashList& SetData() { return m_data; }
     const THashList& GetData() const { return m_data; }

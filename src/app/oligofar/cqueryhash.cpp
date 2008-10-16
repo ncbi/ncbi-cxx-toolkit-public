@@ -57,7 +57,9 @@ int CQueryHash::AddQuery( CQuery * query, int component )
     
     Compress( fwindow );
 
-    Uint8 reserve =  ComputeEntryCountPerRead() * ( Uint8( 1 ) << ( ambiguities * 2 ) );
+    size_t reserve = size_t( min( Uint8(numeric_limits<size_t>::max()), 
+                                  ComputeEntryCountPerRead() * ( Uint8( 1 ) << ( ambiguities * 2 ) ) ) );
+
     CHashPopulator hashPopulator( m_windowSize, m_wordSize, m_strideSize, query, m_strands, offset, component );
     hashPopulator.Reserve( reserve );
     
