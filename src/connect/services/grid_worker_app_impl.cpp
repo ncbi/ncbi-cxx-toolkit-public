@@ -31,9 +31,10 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbireg.hpp>
-#include <corelib/ncbi_config.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_config.hpp>
+#include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/blob_storage.hpp>
 
@@ -44,11 +45,6 @@
 #include <connect/services/grid_control_thread.hpp>
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/error_codes.hpp>
-
-
-#if defined(NCBI_OS_UNIX)
-# include <corelib/ncbi_os_unix.hpp>
-#endif
 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
@@ -490,8 +486,10 @@ int CGridWorkerApp_Impl::Run()
 #if defined(NCBI_OS_UNIX)
     if (is_daemon) {
         LOG_POST_X(53, "Entering UNIX daemon mode...");
-        bool daemon = Daemonize("/dev/null", fDaemon_DontChroot | fDaemon_KeepStdin |
-                                fDaemon_KeepStdout);
+        bool daemon = CProcess::Daemonize("/dev/null",
+                                          CProcess::fDontChroot |
+                                          CProcess::fKeepStdin  |
+                                          CProcess::fKeepStdout);
         if (!daemon) {
             return 0;
         }
