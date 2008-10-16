@@ -122,6 +122,12 @@ void CMacProjectGenerator::Generate(const string& solution)
         string proj_dependency(GetProjDependency(prj));
         string explicit_type( GetExplicitType( prj));
 
+        CProjectFileCollector prj_files( prj, m_Configs, m_SolutionDir+m_OutputDir);
+        if (!prj_files.CheckProjectConfigs()) {
+            continue;
+        }
+        prj_files.DoCollect();
+
         if (prj.m_ProjType == CProjKey::eLib || prj.m_ProjType == CProjKey::eDll) {
             AddString( *lib_dependencies, proj_dependency);
         } else if (prj.m_ProjType == CProjKey::eApp) {
@@ -132,8 +138,6 @@ void CMacProjectGenerator::Generate(const string& solution)
         AddString( *all_dependencies, proj_dependency);
         AddString( *targets, proj_target);
 
-        CProjectFileCollector prj_files( prj, m_Configs, m_SolutionDir+m_OutputDir);
-        prj_files.DoCollect();
         
         CRef<CArray> build_phases( new CArray);
         CRef<CArray> build_files( new CArray);
@@ -478,7 +482,7 @@ string CMacProjectGenerator::CreateProjectBuildConfigurations(
     string bld_cfg(      proj_id + "_Build_Configuration_");
     string bld_cfg_list( proj_id + "_Build_Configurations");
 
-    ITERATE(list<SConfigInfo>, cfg, m_Configs) {
+    ITERATE(list<SConfigInfo>, cfg, prj_files.GetEnabledConfigs()) {
         if (cfg->m_rtType == SConfigInfo::rtSingleThreaded ||
             cfg->m_rtType == SConfigInfo::rtSingleThreadedDebug ||
             cfg->m_rtType == SConfigInfo::rtUnknown) {

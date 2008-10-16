@@ -32,6 +32,7 @@
 #include "proj_builder_app.hpp"
 #include "prj_file_collector.hpp"
 #include "configurable_file.hpp"
+#include "ptb_err_codes.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -54,6 +55,60 @@ CProjectFileCollector::CProjectFileCollector(const CProjItem& prj,
 
 CProjectFileCollector::~CProjectFileCollector(void)
 {
+}
+
+bool CProjectFileCollector::CheckProjectConfigs(void)
+{
+    string str_log, req_log;
+    int failed=0;
+    m_EnabledConfigs.clear();
+    ITERATE(list<SConfigInfo>, p , m_Configs) {
+        const SConfigInfo& cfg_info = *p;
+        string unmet, unmet_req;
+        // Check config availability
+        if ( !m_ProjContext.IsConfigEnabled(cfg_info, &unmet, &unmet_req) ) {
+            str_log += " " + cfg_info.GetConfigFullName() + "(because of " + unmet + ")";
+        } else {
+            if (!unmet_req.empty()) {
+                ++failed;
+                req_log += " " + cfg_info.GetConfigFullName() + "(because of " + unmet_req + ")";
+            }
+            m_EnabledConfigs.push_back(cfg_info);
+        }
+    }
+    string path = CDirEntry::ConcatPath(m_ProjItem.m_SourcesBaseDir, "Makefile.");
+    path += m_ProjItem.m_Name;
+    switch (m_ProjItem.m_ProjType) {
+    case CProjKey::eApp:
+        path += ".app";
+        break;
+    case CProjKey::eLib:
+        path += ".lib";
+        break;
+    case CProjKey::eDll:
+        path += ".dll";
+        break;
+    default:
+        break;
+    }
+    if (!str_log.empty()) {
+        PTB_WARNING_EX(path, ePTB_ConfigurationError,
+                       "Disabled configurations: " << str_log);
+    }
+    if (!req_log.empty()) {
+        PTB_WARNING_EX(path, ePTB_ConfigurationError,
+                       "Invalid configurations: " << req_log);
+    }
+    if (m_EnabledConfigs.empty()) {
+        PTB_WARNING_EX(path, ePTB_ConfigurationError,
+                       "Disabled all configurations for project " << m_ProjItem.m_Name);
+    }
+    if (failed == m_Configs.size()) {
+//        m_ProjItem.m_MakeType = eMakeType_ExcludedByReq;
+        PTB_WARNING_EX(path, ePTB_ConfigurationError,
+                       "All build configurations are invalid, project excluded: " << m_ProjItem.m_Name);
+    }
+    return !m_EnabledConfigs.empty() && failed != m_Configs.size();
 }
 
 void CProjectFileCollector::DoCollect(void)

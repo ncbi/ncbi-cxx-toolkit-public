@@ -195,10 +195,7 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
             if (macro == "incdir") {
                 definition = GetApp().m_IncDir;
             } else {
-                definition = m_Registry.Get(CMsvc7RegSettings::GetMsvcSection(), macro);
-            }
-            if (definition.empty()) {
-                definition = m_Registry.Get("Configure", macro);
+                definition = x_GetConfigureEntry(macro);
             }
             if (definition.empty() && preserve_unresolved) {
                 // preserve unresolved macros

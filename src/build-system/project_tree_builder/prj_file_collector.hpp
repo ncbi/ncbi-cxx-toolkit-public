@@ -46,8 +46,13 @@ public:
         const list<SConfigInfo>& configs, const string& output_dir);
     ~CProjectFileCollector(void);
 
+    bool CheckProjectConfigs(void);
     void DoCollect(void);
     
+    const list<SConfigInfo>& GetEnabledConfigs(void) const
+    {
+        return m_EnabledConfigs;
+    }
     const CMsvcPrjProjectContext& GetProjectContext(void) const
     {
         return m_ProjContext;
@@ -87,6 +92,7 @@ private:
     const CProjItem& m_ProjItem;
     CMsvcPrjProjectContext m_ProjContext;
     list<SConfigInfo> m_Configs;
+    list<SConfigInfo> m_EnabledConfigs;
     string m_OutputDir;
     list<string> m_Sources;
     list<string> m_ConfigurableSources;
