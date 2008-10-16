@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_SOCKET_CONNECTOR__H
 #define CONNECT___NCBI_SOCKET_CONNECTOR__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -62,8 +62,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnector
 
 
 typedef enum {
-    eSCC_DebugPrintout  = 1,
-    eSCC_SetReadOnWrite = 2
+    fSCC_DebugPrintout  = fSOCK_LogOn,
+    fSCC_SetReadOnWrite = 0x10,
+    fSCC_Secure         = fSOCK_Secure
 } ESCC_Flags;
 typedef unsigned int TSCC_Flags;  /* bitwise OR of "ESCC_Flags */
 

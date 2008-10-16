@@ -632,7 +632,7 @@ static void TEST__server(unsigned short port)
     fprintf(log_fp, "[INFO] TEST__server(port = %hu)\n", port);
 
     /* Create listening socket */
-    status = LSOCK_CreateEx(port, 1, &lsock, fLSCE_LogDefault);
+    status = LSOCK_Create(port, 1, &lsock);
     assert(status == eIO_Success);
 
     /* Accept connections from clients and run test sessions */

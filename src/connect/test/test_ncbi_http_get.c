@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -32,6 +32,7 @@
 
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"
+#include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>
 #include <errno.h>
@@ -46,7 +47,6 @@
 
 int main(int argc, char* argv[])
 {
-    static const STimeout s_ZeroTmo = {0, 0};
     CONNECTOR     connector;
     SConnNetInfo* net_info;
     char          blk[512];
@@ -56,13 +56,12 @@ int main(int argc, char* argv[])
     FILE*         fp;
     time_t        t;
     size_t        n;
-    char*         s;
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    if (argc < 2 || !*argv[1])
+    if (argc < 2  ||  !*argv[1])
         CORE_LOG(eLOG_Fatal, "URL has to be supplied on the command line");
     if (argc > 3)
         CORE_LOG(eLOG_Fatal, "Command cannot take more than 2 arguments");
@@ -75,27 +74,39 @@ int main(int argc, char* argv[])
     } else
         fp = 0;
 
-    CORE_LOG(eLOG_Note, "Creating network info structure");
-    if (!(net_info = ConnNetInfo_Create(0)))
-        CORE_LOG(eLOG_Fatal, "Cannot create network info structure");
-    if ((s = getenv("CONN_TIMEOUT"))  &&  strcmp(s, "0") == 0) {
-        memcpy(&net_info->tmo, &s_ZeroTmo, sizeof(s_ZeroTmo));
-        net_info->timeout = &net_info->tmo;
-    }
-
-    CORE_LOGF(eLOG_Note,
-              ("Parsing URL \"%s\" into network info structure", argv[1]));
-    if (!ConnNetInfo_ParseURL(net_info, argv[1]))
-        CORE_LOG(eLOG_Fatal, "URL parsing failed");
-
-    if ((s = getenv("CONN_RECONNECT")) != 0 &&
-        (strcasecmp(s, "TRUE") == 0 || strcasecmp(s, "1") == 0)) {
+    ConnNetInfo_GetValue(0, "RECONNECT", blk, 32, "");
+    if (*blk  &&  (strcmp    (blk, "1")    == 0  ||
+                   strcasecmp(blk, "ON")   == 0  ||
+                   strcasecmp(blk, "YES")  == 0  ||
+                   strcasecmp(blk, "TRUE") == 0)) {
+        CORE_LOG(eLOG_Note, "Reconnect mode acknowledged");
         flags = fHCC_AutoReconnect;
-        CORE_LOG(eLOG_Note, "Reconnect mode will be used");
     } else
         flags = 0;
 
-    CORE_LOG(eLOG_Note, "Creating HTTP connector");
+    ConnNetInfo_GetValue(0, "USESSL", blk, 32, "");
+    if (*blk  &&  (strcmp    (blk, "1")    == 0  ||
+                   strcasecmp(blk, "ON")   == 0  ||
+                   strcasecmp(blk, "YES")  == 0  ||
+                   strcasecmp(blk, "TRUE") == 0)) {
+#ifdef HAVE_LIBGNUTLS
+        CORE_LOG(eLOG_Note,    "SSL request acknowledged");
+#else
+        CORE_LOG(eLOG_Warning, "SSL requested but may not be supported");
+#endif /*HAVE_LIBGNUTLS*/
+        SOCK_SetupSSL(NcbiSetupGnuTls);
+    }
+
+    CORE_LOG(eLOG_Note, "Creating network info structure");
+    if (!(net_info = ConnNetInfo_Create(0)))
+        CORE_LOG(eLOG_Fatal, "Cannot create network info structure");
+
+    CORE_LOGF(eLOG_Note, ("Parsing URL \"%s\"", argv[1]));
+    if (!ConnNetInfo_ParseURL(net_info, argv[1]))
+        CORE_LOG(eLOG_Fatal, "URL parse failed");
+
+    CORE_LOGF(eLOG_Note, ("Creating HTTP%s connector",
+                          &"S"[net_info->scheme != eURL_Https]));
     if (!(connector = HTTP_CreateConnector(net_info, 0, flags)))
         CORE_LOG(eLOG_Fatal, "Cannot create HTTP connector");
 
@@ -118,9 +129,9 @@ int main(int argc, char* argv[])
     do {
         status = CONN_Wait(conn, eIO_Read, net_info->timeout);
         if (status != eIO_Success) {
-            if (status == eIO_Closed)
+            if (status != eIO_Timeout)
                 break;
-            if ((unsigned long)(time(0) - t) > 30)
+            if ((unsigned long)(time(0) - t) > DEF_CONN_TIMEOUT)
                 CORE_LOG(eLOG_Fatal, "Timed out");
 #ifdef NCBI_OS_UNIX
             usleep(500);
@@ -129,15 +140,18 @@ int main(int argc, char* argv[])
         }
 
         status = CONN_ReadLine(conn, blk, sizeof(blk), &n);
+        if (status == eIO_Timeout)
+            continue;
         if (status != eIO_Success  &&  status != eIO_Closed)
             CORE_LOGF(eLOG_Fatal, ("Read error: %s", IO_StatusStr(status)));
         if (n == sizeof(blk))
             CORE_LOGF(eLOG_Warning, ("Line too long, continuing..."));
-        if (n)
+        if (n) {
             fwrite(blk, 1, n, stdout);
-        fputc('\n', stdout);
-        fflush(stdout);
-    } while (status == eIO_Success);
+            fputc('\n', stdout);
+            fflush(stdout);
+        }
+    } while (status == eIO_Success  ||  status == eIO_Timeout);
 
     ConnNetInfo_Destroy(net_info);
     CORE_LOG(eLOG_Note, "Closing connection");

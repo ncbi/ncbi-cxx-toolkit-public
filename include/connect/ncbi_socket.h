@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_SOCKET__H
 #define CONNECT___NCBI_SOCKET__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -26,8 +26,9 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Anton Lavrentiev
  *
+ * @file
  * File Description:
  *   Plain portable TCP/IP socket API for:  UNIX, MS-Win, MacOS
  *   Platform-specific library requirements:
@@ -125,6 +126,10 @@
  *  SOCK_GetLoopbackAddress
  *  SOCK_StringToHostPort
  *  SOCK_HostPortToString
+ *
+ *  Secure:
+ *
+ *  SOCK_SetupSSL
  *
  */
 
@@ -369,7 +374,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ShutdownAPI(void);
 
 /** Create an event trigger.
  * @param trigger
- *  [in|out]  a pointer to a location where to store a handle of the trigger
+ *  [in|out]  a pointer to a location where to store handle of the new trigger
  * @return
  *  eIO_Success on success; other status on error
  * @sa
@@ -438,18 +443,36 @@ extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Reset
 
 
 /******************************************************************************
- *  LISTENING SOCKET [SERVER-side]
+ *  SOCKET FLAGS
  */
 
 typedef enum {
-    fLSCE_LogOff      = eOff,    /** logging is inherited in Accept()ed SOCKs*/
-    fLSCE_LogOn       = eOn,     /**                    -"-                  */
-    fLSCE_LogDefault  = eDefault,/**                    -"-                  */
-    fLSCE_BindAny     = 0,       /** bind to 0.0.0.0 (i.e. any), default     */
-    fLSCE_BindLocal   = 0x10,    /** bind to 127.0.0.1 only                  */
-    fLSCE_CloseOnExec = 0x20
-} FLSCE_Flags;
-typedef unsigned int TLSCE_Flags;
+    fSOCK_LogOff       = eOff,   /** logging is inherited in Accept()ed SOCKs*/
+    fSOCK_LogOn        = eOn,
+    fSOCK_LogDefault   = eDefault,
+    fSOCK_BindAny      = 0,      /** bind to 0.0.0.0 (i.e. any), default     */
+    fSOCK_BindLocal    = 0x10,   /** bind to 127.0.0.1 only                  */
+    fSOCK_KeepOnExec   = 0x20,   /** can be applied to most sockets          */
+    fSOCK_CloseOnExec  = 0,      /** can be applied to most sockets          */
+    fSOCK_Secure       = 0x40,   /** subsumes CloseOnExec                    */
+    fSOCK_KeepOnClose  = 0x80,   /** do not close OS handle on SOCK_Close    */
+    fSOCK_CloseOnClose = 0       /** do     close OS handle on SOCK_Close    */
+} ESOCK_Flags;
+typedef unsigned int TSOCK_Flags;
+
+
+/******************************************************************************
+ *  LISTENING SOCKET [SERVER-side]
+ */
+
+typedef enum { /* DEPRECATED -- DON'T USE */
+    fLSCE_LogOff      = fSOCK_LogOff,
+    fLSCE_LogOn       = fSOCK_LogOn,
+    fLSCE_LogDefault  = fSOCK_LogDefault,
+    fLSCE_BindAny     = fSOCK_BindAny,
+    fLSCE_BindLocal   = fSOCK_BindLocal,
+    fLSCE_CloseOnExec = fSOCK_CloseOnExec
+} ELSCE_Flags;
 
 /** [SERVER-side]  Create and initialize the server-side(listening) socket
  * (socket() + bind() + listen())
@@ -470,12 +493,13 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
 (unsigned short port,    
  unsigned short backlog, 
  LSOCK*         lsock,   
- TLSCE_Flags    flags    
+ TSOCK_Flags    flags    
  );
 
 
 /** [SERVER-side]  Create and initialize the server-side(listening) socket
- * Same as LSOCK_CreateEx called with the last argument provided as 0.
+ * Same as LSOCK_CreateEx called with the last argument provided as
+ * fSOCK_LogDefault.
  * @param port
  *  [in]  the port to listen at
  * @param backlog
@@ -549,7 +573,39 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandle
 
 /** [CLIENT-side]  Connect client to another(server-side, listening) socket
  * (socket() + connect() [+ select()])
- * Equivalent to SOCK_CreateEx(host, port, timeout, sock, 0, 0, eDefault).
+ *
+ * @param host
+ *  [in]  host to connect to 
+ * @param port
+ *  [in]  port to connect to 
+ * @param timeout
+ *  [in]  the connect timeout (infinite if NULL)
+ * @param sock
+ *  [out] handle of the created socket
+ * @param init_data
+ *  [in]  initial output data segment (may be NULL)
+ * @param init_size
+ *  [in]  size of initial data segment (may be 0) 
+ * @param flags
+ *  [in]  additional socket requirements
+ * @sa
+ *  SOCK_Create, SOCK_Reconnect, SOCK_Close
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateEx
+(const char*     host,    
+ unsigned short  port,    
+ const STimeout* timeout,  
+ SOCK*           sock,     
+ const void*     init_data,
+ size_t          init_size,
+ TSOCK_Flags     flags
+ );
+
+
+/** [CLIENT-side]  Connect client to another(server-side, listening) socket
+ * (socket() + connect() [+ select()])
+ * Equivalent to
+ * SOCK_CreateEx(host, port, timeout, sock, 0, 0, fSOCK_LogDefault).
  *
  * @param host
  *  [in]  host to connect to 
@@ -570,65 +626,14 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  );
 
 
-/** [CLIENT-side]  Connect client to another(server-side, listening) socket
- * (socket() + connect() [+ select()])
- *
- * @param host
- *  [in]  host to connect to 
- * @param port
- *  [in]  port to connect to 
- * @param timeout
- *  [in]  the connect timeout (infinite if NULL)
- * @param sock
- *  [out] handle of the created socket
- * @param init_data
- *  [in]  initial output data segment (may be NULL)
- * @param init_size
- *  [in]  size of initial data segment (may be 0) 
- * @param log
- *  [in]  whether to do logging on this socket
- * @sa
- *  SOCK_Create, SOCK_Reconnect, SOCK_Close
- */
-extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateEx
-(const char*     host,    
- unsigned short  port,    
- const STimeout* timeout,  
- SOCK*           sock,     
- const void*     init_data,
- size_t          init_size,
- ESwitch         log       
- );
-
-
 /** SOCK_Close behavior for SOCKs created on top of OS handles.
  * @sa
  *  SOCK_Close, SOCK_CreateOnTop, SOCK_CreateOnTopEx
  */
-typedef enum {
-    eSCOT_KeepOnClose,    /** Do not close "handle" on SOCK_Close */
-    eSCOT_CloseOnClose    /** Do close "handle" on SOCK_Close     */
+typedef enum { /* DEPRECATED -- DON'T USE */
+    eSCOT_KeepOnClose  = fSOCK_KeepOnClose,
+    eSCOT_CloseOnClose = fSOCK_CloseOnClose
 } ESCOT_OnClose;
-
-
-/** [SERVER-side]  Create a socket on top of OS-dependent "handle".
- * Equivalent to SOCK_CreateOnTopEx(handle, handle_size, sock,
- *                                  0, 0, eDefault, eSCOT_CloseOnClose).
- * @param handle
- *  [in]  OS-dependent "handle" to be converted
- * @param handle_size
- *  [in]  "handle" size
- * @param sock
- *  [out] SOCK built on top of OS "handle"
- * @sa
- *  SOCK_CreateOnTopEx
- */
-extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
-(const void*   handle,      
- size_t        handle_size,                       
- SOCK*         sock         
- );
-
 
 /** [SERVER-side]  Create a socket on top of OS-dependent "handle"
  * (file descriptor on Unix, SOCKET on MS-Windows).  Returned socket
@@ -647,10 +652,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
  *  [in]  initial output data segment (may be NULL)
  * @param init_size
  *  [in]  size of the initial data segment (may be 0)
- * @param log
- *  [in]  data logging for the resulting SOCK 
- * @param on_close
- *  [in]  if to keep "handle" in SOCK_Close
+ * @param flags
+ *  [in]  additional socket requirements
  * @return 
  *  Return eIO_Success on success;  otherwise: eIO_Closed if the "handle"
  *  does not refer to an open socket [but e.g. to a normal file or a pipe];
@@ -659,13 +662,31 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
  *  SOCK_CreateOnTop, SOCK_Reconnect, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
-(const void*   handle,      
- size_t        handle_size, 
- SOCK*         sock,       
- const void*   init_data,   
- size_t        init_size,   
- ESwitch       log,         
- ESCOT_OnClose on_close     
+(const void*   handle,
+ size_t        handle_size,
+ SOCK*         sock,
+ const void*   init_data,
+ size_t        init_size,
+ TSOCK_Flags   flags
+ );
+
+
+/** [SERVER-side]  Create a socket on top of OS-dependent "handle".
+ * Equivalent to SOCK_CreateOnTopEx(handle, handle_size, sock,
+ *                                  0, 0, fSOCK_LogDefault|fSOCK_CloseOnClose).
+ * @param handle
+ *  [in]  OS-dependent "handle" to be converted
+ * @param handle_size
+ *  [in]  "handle" size
+ * @param sock
+ *  [out] SOCK built on top of OS "handle"
+ * @sa
+ *  SOCK_CreateOnTopEx
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
+(const void*   handle,
+ size_t        handle_size,
+ SOCK*         sock
  );
 
 
@@ -1283,12 +1304,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
 /**
  * @param sock
  *  [out] socket created
- * @param log
- *  [in] whether to log data activity
+ * @param flags
+ *  [in]  additional socket properties
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_CreateEx
 (SOCK*           sock,               
- ESwitch         log                 
+ TSOCK_Flags     flags
  );
 
 /**
@@ -1436,10 +1457,20 @@ extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsServerSide(SOCK sock);
  * @param sock
  *  [in]  socket handle 
  * @return
- *  Non-zero value if socket "sock" was created by LSOCK_Accept().
+ *  Non-zero value if socket "sock" is a UNIX family named socket
  *  Return zero otherwise.
  */
 extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsUNIX(SOCK sock);
+
+
+/**
+ * @param sock
+ *  [in]  socket handle 
+ * @return
+ *  Non-zero value if socket "sock" is using Secure Socket Layer (SSL).
+ *  Return zero otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsSecure(SOCK sock);
 
 
 
@@ -1638,6 +1669,23 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
  unsigned short port,
  char*          buf,
  size_t         buflen
+ );
+
+
+/******************************************************************************
+ *  Secure Socket Layer support
+ */
+
+/*fwdecl*/
+struct SOCKSSL_struct;
+typedef const struct SOCKSSL_struct* SOCKSSL;
+
+
+typedef SOCKSSL (*FSSLSetup)(void);
+
+
+extern NCBI_XCONNECT_EXPORT void SOCK_SetupSSL
+(FSSLSetup setup
  );
 
 

@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -149,8 +149,7 @@ static EIO_Status s_VT_Open
                 SOCK_Reconnect(xxx->sock, 0, 0, timeout) :
                 SOCK_CreateEx(xxx->host, xxx->port, timeout, &xxx->sock,
                               xxx->init_data, xxx->init_size,
-                              (xxx->flags & eSCC_DebugPrintout)
-                              ? eOn : eDefault);
+                              xxx->flags);
             if (xxx->init_data) {
                 free(xxx->init_data);
                 xxx->init_data = 0;
@@ -159,10 +158,8 @@ static EIO_Status s_VT_Open
             i++;
         }
 
-        if (status == eIO_Success) {
-            SOCK_SetReadOnWrite(xxx->sock,
-                                (xxx->flags & eSCC_SetReadOnWrite)
-                                ? eOn : eDefault);
+        if (status == eIO_Success  &&  (xxx->flags & fSCC_SetReadOnWrite)) {
+            SOCK_SetReadOnWrite(xxx->sock, eOn);
             break;
         }
         /* error: continue trying */

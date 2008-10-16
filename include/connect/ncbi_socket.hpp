@@ -1,7 +1,7 @@
 #ifndef CONNECT___NCBI_SOCKET__HPP
 #define CONNECT___NCBI_SOCKET__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -143,7 +143,7 @@ public:
     CSocket(const string&   host,
             unsigned short  port,
             const STimeout* timeout = kInfiniteTimeout,
-            ESwitch         log     = eDefault);
+            TSOCK_Flags     flags   = fSOCK_LogDefault);
 
     /// Variant of the above, which takes host as a binary value in 
     /// network b.o.
@@ -158,7 +158,7 @@ public:
     CSocket(unsigned int    host,
             unsigned short  port,
             const STimeout* timeout = kInfiniteTimeout,
-            ESwitch         log     = eDefault);
+            TSOCK_Flags     flags   = fSOCK_LogDefault);
 
     /// Call Close(), then self-destruct
     virtual ~CSocket(void);
@@ -188,7 +188,7 @@ public:
     EIO_Status Connect(const string&   host,
                        unsigned short  port,
                        const STimeout* timeout = kDefaultTimeout,
-                       ESwitch         log     = eDefault);
+                       TSOCK_Flags     flags   = fSOCK_LogDefault);
 
     /// Reconnect to the same address.
     /// @li <b>NOTE 1:</b>   the socket must not be closed by the time this
@@ -362,6 +362,7 @@ public:
     bool IsServerSide(void) const;
     bool IsDatagram  (void) const;
     bool IsUNIX      (void) const;
+    bool IsSecure    (void) const;
 
     /// Close the current underlying "SOCK" (if any, and if owned),
     /// and from now on use "sock" as the underlying "SOCK" instead.
@@ -424,7 +425,7 @@ public:
     ///
     /// @param do_log
     ///
-    CDatagramSocket(ESwitch do_log = eDefault);
+    CDatagramSocket(TSOCK_Flags flags = fSOCK_LogDefault);
 
     /// @param port
     ///
@@ -534,7 +535,7 @@ public:
     ///
     CListeningSocket(unsigned short port,
                      unsigned short backlog = 5,
-                     TLSCE_Flags    flags   = fLSCE_LogDefault);
+                     TSOCK_Flags    flags   = fSOCK_LogDefault);
 
     /// Call Close(), then self-destruct
     virtual ~CListeningSocket(void);
@@ -553,7 +554,7 @@ public:
     ///
     EIO_Status Listen(unsigned short port,
                       unsigned short backlog = 5,
-                      TLSCE_Flags    flags   = fLSCE_LogDefault);
+                      TSOCK_Flags    flags   = fSOCK_LogDefault);
 
     /// @li <b>NOTE:</b> the created "CSocket" will own its underlying "SOCK"
     ///
@@ -869,6 +870,12 @@ inline bool CSocket::IsDatagram(void) const
 inline bool CSocket::IsUNIX(void) const
 {
     return m_Socket && SOCK_IsUNIX(m_Socket) ? true : false;
+}
+
+
+inline bool CSocket::IsSecure(void) const
+{
+    return m_Socket && SOCK_IsSecure(m_Socket) ? true : false;
 }
 
 

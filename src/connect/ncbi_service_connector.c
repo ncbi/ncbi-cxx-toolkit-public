@@ -487,7 +487,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                               0/*data.size*/,
                                               net_info->debug_printout ==
                                               eDebugPrintout_Data
-                                              ? eSCC_DebugPrintout : 0);
+                                              ? fSCC_DebugPrintout : 0);
             }
             /* Otherwise, it will be a pass-thru connection via dispatcher */
             user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
@@ -622,7 +622,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                       sizeof(uuu->ticket),
                                       net_info->debug_printout ==
                                       eDebugPrintout_Data
-                                      ? eSCC_DebugPrintout : 0);
+                                      ? fSCC_DebugPrintout : 0);
     }
     return HTTP_CreateConnectorEx(net_info,
                                   (uuu->params.flags & fHCC_Flushable)
