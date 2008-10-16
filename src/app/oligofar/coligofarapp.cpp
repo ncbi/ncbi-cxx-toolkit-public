@@ -306,7 +306,7 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case 'H': m_hashParam[m_hashPass].SetHashBits( NStr::StringToInt( arg ) ); break;
     case 'S': m_hashParam[m_hashPass].SetStrideSize( NStr::StringToInt( arg ) ); break;
     case 'n': m_hashParam[m_hashPass].SetHashMismatches( NStr::StringToInt( arg ) ); break;
-    case 'e': m_hashParam[m_hashPass].SetHashIndels( NStr::StringToInt( arg ) ); break;
+    case 'e': m_hashParam[m_hashPass].SetHashIndels( NStr::StringToInt( arg ) > 0 ); break;
     case 'a': m_maxHashAmb = strtol( arg, 0, 10 ); break;
     case 'A': m_maxFastaAmb = strtol( arg, 0, 10 ); break;
     case 'c': m_colorSpace = *arg == '+' ? true : *arg == '-' ? false : NStr::StringToBool( arg ); break;

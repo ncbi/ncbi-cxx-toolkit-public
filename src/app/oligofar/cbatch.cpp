@@ -112,7 +112,7 @@ void CBatch::Purge()
 
     if( m_guidedReads && m_formatter.NeedSeqids() ) x_LoadSeqIds();
 
-    CProgressIndicator p( "Purging " + NStr::IntToString( CHit::GetCount() ) + " hits for " + NStr::IntToString( CQuery::GetCount() ) + " entries" );
+    CProgressIndicator p( "Purging " + NStr::Int8ToString( CHit::GetCount() ) + " hits for " + NStr::Int8ToString( CQuery::GetCount() ) + " entries" );
     ITERATE( TInputChunk, i, m_inputChunk ) {
         m_formatter( *i );
         p.Increment();
