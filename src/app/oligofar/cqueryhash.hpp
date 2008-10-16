@@ -344,8 +344,8 @@ inline bool CQueryHash::CheckWordConstraints()
 inline bool CQueryHash::CheckWordConstraints() const
 {
     ASSERT( m_skipPositions.size() == 0 || m_strideSize == 1 );
-    ASSERT( m_strideSize < m_wordSize );
-    ASSERT( m_strideSize < m_wordOffset + 1|| m_wordOffset == 0 );
+//    ASSERT( m_strideSize < m_wordSize );
+//    ASSERT( m_strideSize < m_wordOffset + 1|| m_wordOffset == 0 );
     ASSERT( m_wordSize <= m_windowSize );
     ASSERT( m_wordSize * 2 >= m_windowSize );
     ASSERT( m_wordSize * 2 - m_hashTable.GetIndexBits() <= 16 ); // requirement is based on that CHashAtom may store only 16 bits

@@ -93,7 +93,7 @@ protected:
     {
     public:
         C_LoopImpl_Ncbi8naAmbiguities( int ws, int ss,
-                                       double maxSimpl, int maxAmb, Uint8 mask8, UintH maskH ) : 
+                                       double maxSimpl, int maxAmb, Uint8 mask8, const UintH& maskH ) : 
             C_ScanImpl_Base( ws, ss, maxSimpl ), 
             m_hashGenerator( GetWindowSize() ), 
             m_maxAmbiguities( maxAmb ), m_mask8( mask8 ), m_maskH( maskH ) {}
@@ -126,8 +126,8 @@ protected:
     {
     public:
         C_LoopImpl_ColorspAmbiguities( int ws, int ss,
-                                       double maxSimpl, int maxAmb, Uint4 mask4, Uint8 mask8 ) : 
-            C_LoopImpl_Ncbi8naAmbiguities( ws, ss, maxSimpl, maxAmb, mask4, mask8 ),m_lastBase(1) {}
+                                       double maxSimpl, int maxAmb, Uint8 mask8, const UintH& maskH ) : 
+            C_LoopImpl_Ncbi8naAmbiguities( ws, ss, maxSimpl, maxAmb, mask8, maskH ),m_lastBase(1) {}
         void Prepare( char a );
         void Update( char a );
         const char * GetName() const { return "C_LoopImpl_ColorspAmbiguities"; }
