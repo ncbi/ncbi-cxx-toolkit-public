@@ -9,7 +9,7 @@
 #  - tests:      "test/*.*"
 #################################
 
-LIB_PROJ = connect xxconnect xconnect xthrserv 
+LIB_PROJ = connect connssl xxconnect xconnect xthrserv 
 SUB_PROJ = services ext daemons test
 
 srcdir = @srcdir@
