@@ -308,9 +308,9 @@ string CMacProjectGenerator::CreateProjectFileGroups(
         CRef<CArray>& cpps = hosted_cpps[ *hosted_lib];
         CRef<CArray>& hpps = hosted_hpps[ *hosted_lib];
         CRef<CArray>& srcs = hosted_srcs[ *hosted_lib];
-        string hosted_src(   *hosted_lib + "_src");
-        string hosted_inc(   *hosted_lib + "_include");
-        string hosted_group( *hosted_lib + "_sources");
+        string hosted_src(   *hosted_lib + "_hosted_src");
+        string hosted_inc(   *hosted_lib + "_hosted_include");
+        string hosted_group( *hosted_lib + "_hosted_sources");
         if (!cpps->Get().empty()) {
             cpps->Set().sort(s_String_less);
             AddString( *srcs, hosted_src);
