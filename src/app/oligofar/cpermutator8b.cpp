@@ -30,7 +30,7 @@ CPermutator8b::CPermutator8b( int maxMism, int maxAmb ) :
         }
     }
     for( unsigned ncbi4na = 1; ncbi4na <= 0x00ff; ++ncbi4na ) {
-        if( ncbi4na&0x000f == 0 || ncbi4na&0x00f0 == 0 ) continue;
+        if( ( ncbi4na & 0x000f ) == 0 || ( ncbi4na & 0x00f0 ) == 0 ) continue;
         int ambiguities = 
             int( CNcbi8naBase( ( ncbi4na >> 0 ) & 0x000f ).IsAmbiguous() ) +
             int( CNcbi8naBase( ( ncbi4na >> 4 ) & 0x000f ).IsAmbiguous() );
@@ -46,7 +46,7 @@ CPermutator8b::CPermutator8b( int maxMism, int maxAmb ) :
         }
     }
     for( unsigned ncbi4na = 1; ncbi4na <= 0x0fff; ++ncbi4na ) {
-        if( ncbi4na&0x000f == 0 || ncbi4na&0x00f0 == 0 || ncbi4na&0x0f00 == 0 ) continue;
+        if( ( ncbi4na & 0x000f ) == 0 || ( ncbi4na & 0x00f0 ) == 0 || ( ncbi4na & 0x0f00 ) == 0 ) continue;
         int ambiguities = 
             int( CNcbi8naBase( ( ncbi4na >> 0 ) & 0x000f ).IsAmbiguous() ) +
             int( CNcbi8naBase( ( ncbi4na >> 4 ) & 0x000f ).IsAmbiguous() ) +
@@ -63,7 +63,7 @@ CPermutator8b::CPermutator8b( int maxMism, int maxAmb ) :
         }
     }
     for( unsigned ncbi4na = 1; ncbi4na <= 0xffff; ++ncbi4na ) {
-        if( ncbi4na&0x000f == 0 || ncbi4na&0x00f0 == 0 || ncbi4na&0x0f00 == 0 || ncbi4na&0xf000 == 0 ) continue;
+        if( ( ncbi4na & 0x000f ) == 0 || ( ncbi4na & 0x00f0 ) == 0 || ( ncbi4na & 0x0f00 ) == 0 || ( ncbi4na & 0xf000 ) == 0 ) continue;
         int ambiguities = 
             int( CNcbi8naBase( ( ncbi4na >>  0 ) & 0x000f ).IsAmbiguous() ) +
             int( CNcbi8naBase( ( ncbi4na >>  4 ) & 0x000f ).IsAmbiguous() ) +
