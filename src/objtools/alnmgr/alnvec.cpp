@@ -385,9 +385,13 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
                          const CSeq_id& consensus_id) const
 {
     consensus_seq.Reset();
-    if ( !m_DS ) {
+    if ( !m_DS || m_NumRows < 1) {
         return CRef<CDense_seg>();
     }
+
+    bool isNucleotide = GetBioseqHandle(0).IsNucleotide();
+    bool isProtein = !isNucleotide;
+    const int numBases = isNucleotide ? 4 : 26;
 
     size_t i;
     size_t j;
@@ -428,8 +432,10 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
                         TSeqPos size = seq_vec.size();
                         seq_vec.GetSeqData(size - stop, size - start, segs[i]);
                     }
-                    for (size_t c = 0;  c < segs[i].length();  ++c) {
-                        segs[i][c] = FromIupac(segs[i][c]);
+                    if (isNucleotide) {
+                        for (size_t c = 0;  c < segs[i].length();  ++c) {
+                            segs[i][c] = FromIupac(segs[i][c]);
+                        }
                     }
                 }
             }
@@ -442,13 +448,15 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
             for (i = 0;  i < m_Lens[j];  ++i) {
                 // first, we record which bases occur and how often
                 // this is computed in NCBI4na notation
-                int base_count[4];
-                base_count[0] = base_count[1] =
-                    base_count[2] = base_count[3] = 0;
+                int base_count[26];
+                for (int pos = 0;  pos < numBases;  ++pos) {
+                    base_count[pos] = 0;
+                }
                 for (int row = 0;  row < m_NumRows;  ++row) {
                     if (segs[row] != "") {
-                        for (int pos = 0;  pos < 4;  ++pos) {
-                            if (segs[row][i] & (1<<pos)) {
+                        for (int pos = 0;  pos < numBases;  ++pos) {
+                            if (isNucleotide && (segs[row][i] & (1<<pos)) ||
+                                isProtein && segs[row][i] == pos+'A') {
                                 ++base_count[ pos ];
                             }
                         }
@@ -462,11 +470,11 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
                 // any base can have is 0.6
                 TRevMap rev_map;
 
-                for (int k = 0;  k < 4;  ++k) {
+                for (int k = 0;  k < numBases;  ++k) {
                     // this gets around a potentially tricky idiosyncrasy
                     // in some implementations of multimap.  depending on
                     // the library, the key may be const (or not)
-                    TRevMap::value_type p(base_count[k], (1<<k));
+                    TRevMap::value_type p(base_count[k], isNucleotide ? (1<<k) : k);
                     rev_map.insert(p);
                 }
 
@@ -479,7 +487,9 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
                 // we scan for the appropriate bases
                 if (rev_map.count(rev_map.begin()->first) == 1 &&
                     rev_map.begin()->first >= base_thresh) {
-                    consens[j][i] = ToIupac(rev_map.begin()->second);
+                        consens[j][i] = isNucleotide ?
+                            ToIupac(rev_map.begin()->second) :
+                            (rev_map.begin()->second+'A');
                 } else {
                     // now we need to make some guesses based on IUPACna
                     // notation
@@ -494,16 +504,36 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
                          ++curr, ++count) {
                         prev = curr;
                         freq += curr->first;
-                        c |= curr->second;
+                        if (isNucleotide) {
+                            c |= curr->second;
+                        } else {
+                            unsigned char cur_char = curr->second+'A';
+                            switch (c) {
+                                case 0x00:
+                                    c = cur_char;
+                                    break;
+                                case 'N': case 'D':
+                                    c = (cur_char == 'N' || cur_char == 'N') ? 'B' : 'X';
+                                    break;
+                                case 'Q': case 'E':
+                                    c = (cur_char == 'Q' || cur_char == 'E') ? 'Z' : 'X';
+                                    break;
+                                case 'I': case 'L':
+                                    c = (cur_char == 'I' || cur_char == 'L') ? 'J' : 'X';
+                                    break;
+                                default:
+                                    c = 'X';
+                            }
+                        }
                     }
 
                     //
                     // catchall
                     //
                     if (count > 2) {
-                        consens[j][i] = 'N';
+                        consens[j][i] = isNucleotide ? 'N' : 'X';
                     } else {
-                        consens[j][i] = ToIupac(c);
+                        consens[j][i] = isNucleotide ? ToIupac(c) : c;
                     }
                 }
             }
@@ -581,13 +611,17 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
          // the main one: Seq-inst
          CSeq_inst& inst = consensus_seq.SetInst();
          inst.SetRepr(CSeq_inst::eRepr_raw);
-         inst.SetMol(CSeq_inst::eMol_na);
+         inst.SetMol(isNucleotide ? CSeq_inst::eMol_na : CSeq_inst::eMol_aa);
          inst.SetLength(data.length());
 
          CSeq_data& seq_data = inst.SetSeq_data();
-         CIUPACna& na = seq_data.SetIupacna();
-         na = CIUPACna(data);
-
+         if (isNucleotide) {
+             CIUPACna& na = seq_data.SetIupacna();
+             na = CIUPACna(data);
+         } else {
+             CIUPACaa& aa = seq_data.SetIupacaa();
+             aa = CIUPACaa(data);
+         }
     }}
 
     consensus_row = new_ds->GetIds().size() - 1;
