@@ -657,7 +657,7 @@ void CMultiAligner::MultiAlignClusters(void)
             int num = 1;
 
             // combine all gaps before the same letter as one range
-            while (i < m_ClusterGapPositions[cluster_idx].size()
+            while (i < m_ClusterGapPositions[cluster_idx].size() - 1
                    && m_ClusterGapPositions[cluster_idx][i + 1] == letter) {
                 i++;
                 num++;
