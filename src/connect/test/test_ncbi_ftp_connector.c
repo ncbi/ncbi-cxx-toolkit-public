@@ -79,11 +79,11 @@ int main(int argc, char* argv[])
         if (     strcasecmp(env, "1")    == 0  ||
                  strcasecmp(env, "TRUE") == 0  ||
                  strcasecmp(env, "SOME") == 0)
-            flags |= eFCDC_LogControl;
+            flags |= fFCDC_LogControl;
         else if (strcasecmp(env, "DATA") == 0)
-            flags |= eFCDC_LogData;
+            flags |= fFCDC_LogData;
         else if (strcasecmp(env, "ALL")  == 0)
-            flags |= eFCDC_LogAll;
+            flags |= fFCDC_LogAll;
     }
 
     if (TEST_PORT) {
