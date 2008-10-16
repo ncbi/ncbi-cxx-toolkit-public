@@ -1,7 +1,7 @@
 #ifndef CONNECT___CONNECTION_POOL__HPP
 #define CONNECT___CONNECTION_POOL__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
