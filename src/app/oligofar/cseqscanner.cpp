@@ -195,11 +195,12 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
 
     if( p ) p->SetCurrentValue( off + from );
     off -= winLen;
-    for( const char * w = a + toOpen ; x < w ; ) {
-        if( ((x - a) % m_queryHash->GetStrideSize() == 0 ) && loop.IsOk() ) {
+    int pos = x - a + off, strideSize = m_queryHash->GetStrideSize();
+    for( const char * w = a + toOpen ; x < w ; ++pos ) {
+        if( (pos % strideSize == 0 ) && loop.IsOk() ) {
             matches.clear();
             loop.RunCallback( callback );
-            int pos = x - a + off;
+//            int pos = x - a + off;
             ITERATE( TMatches, m, matches ) {
                 switch( m->GetStrand() ) {
                 case '+': m_filter->Match( *m, a, A, pos - m->GetOffset() ); break;

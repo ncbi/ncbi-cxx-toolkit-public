@@ -38,7 +38,7 @@ public:
 
     void Sort() { for( Uint4 x = 0; x < m_table.size(); ++x ) { sort( m_table[x].begin(), m_table[x].end(), value_type::LessSubkey ); } m_sorted = true; }
 
-    void AddEntry( Uint4 key, const value_type& item ) { 
+    void AddEntry( Uint8 key, const value_type& item ) { 
         TArray& a( m_table[key & m_indexMask] );
         a.push_back( item ); 
         a.back().SetSubkey( key >> m_indexBits ); 
@@ -49,7 +49,7 @@ public:
     static string Bits(Uint i) { return CBitHacks::AsBits( i ); }
 
     template<typename Callback>
-    void ForEach( Uint4 key, Callback callback ) const {
+    void ForEach( Uint8 key, Callback callback ) const {
         ASSERT( m_sorted );
         const TArray& a = m_table[key & m_indexMask];
         Uint2 subkey = key >> m_indexBits;
@@ -58,7 +58,7 @@ public:
     }
 
     template<typename Callback>
-    void ForEach( Uint4 key, Callback callback, Uint1 mask, Uint1 flags ) const {
+    void ForEach( Uint8 key, Callback callback, Uint1 mask, Uint1 flags ) const {
         ASSERT( m_sorted );
         flags &= mask;
         const TArray& a = m_table[key & m_indexMask];

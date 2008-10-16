@@ -16,12 +16,10 @@ public:
 
     CHashPlanes( int wordSize );
 
-//    int GetBase( int i ) const;
-    
     TPlaneMask GetFootprintMask() const { return m_footprintMask; }
     THashValue GetPlane( int base ) const { return m_planes[base&0x03] & m_footprintMask; }
-//    THashValue GetPlanes( int base ) const;
     TPlaneMask GetAmbiguityMask() const { return m_ambiguityMask & m_footprintMask; }
+
     int   GetAmbiguityCount() const { return m_ambiguityCount; }
     int   GetWordSize() const { return m_wordSize; }
     
@@ -49,8 +47,6 @@ public:
     int GetOldestTriplet() const { return int( m_value & THashValue(0x3f) ); }
     int GetNewestTriplet() const { return int( (m_value >> ((m_wordSize - 3)*int(kBitsPerBase))) & THashValue(0x3f) ); }
 
-//    void AddIupacNa( char c );
-//    void AddBaseCode( int code );
 	void AddIupacNa( CIupacnaBase c );
 	void AddBaseCode( CNcbi2naBase c );
 
@@ -75,9 +71,6 @@ public:
 	void AddIupacNa( CIupacnaBase c );
 	void AddBaseMask( CNcbi8naBase c );
 
-//    void AddIupacNa( char iupacna );
-//    void AddBaseMask( char ncbi8na );
-    
     int   GetWordSize() const { return m_hashPlanes.GetWordSize(); }
     int   GetOldestTriplet() const { return m_hashCode.GetOldestTriplet(); }
     int   GetNewestTriplet() const { return m_hashCode.GetNewestTriplet(); }
@@ -247,22 +240,6 @@ inline CHashPlanes::CHashPlanes( int wordSize ) :
     fill( m_planes, m_planes + 4, m_footprintMask ); 
 }
 
-// inline int CHashPlanes::GetBase( int i ) const 
-// {
-//     TPlaneMask m(1 << i);
-//     int ret = 0;
-//     for( int x = 3; x >= 0; ++x ) { ret <<= 1; if( m_planes[x]&m ) ret |= 1; }
-//     return ret;
-// }
-
-// inline THashValue CHashPlanes::GetPlanes( int base ) const 
-// {
-//     THashValue ret = 0;
-//     int b = base;
-//     for( int i = 0; i < 4; ++i, b >>= 1 ) if( b & 1 ) ret |= m_planes[i];
-//     return ret;
-// }
-            
 inline void CHashPlanes::AddIupacNa( CIupacnaBase c ) 
 { 
     AddBaseMask( CNcbi8naBase( c ) ); 
