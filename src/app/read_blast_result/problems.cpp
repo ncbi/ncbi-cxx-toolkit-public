@@ -493,7 +493,27 @@ int CReadBlastApp::RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<
 //
 // case *: matching locus tag
 //
-    if(problem_seqs.find(loc_string) != problem_seqs.end()) del_feature=true;
+    if(problem_seqs.find(loc_string) != problem_seqs.end()) 
+      {
+      if((*feat)->GetData().IsImp() &&
+         (*feat)->GetData().GetImp().CanGetKey())
+         {
+         NcbiCerr << "RemoveProblems: INFO: feature " << loc_string << ": imp, key = " << (*feat)->GetData().GetImp().GetKey()  << NcbiEndl;
+         }
+      if((*feat)->GetData().IsImp() &&
+          (*feat)->CanGetComment() )
+         {
+         NcbiCerr << "RemoveProblems: INFO: feature " << loc_string << ": imp, comment = " << (*feat)->GetComment()  << NcbiEndl;
+         }
+
+      if((*feat)->GetData().IsImp() &&
+         (*feat)->GetData().GetImp().CanGetKey() &&
+         (*feat)->GetData().GetImp().GetKey() == "misc_feature" &&
+         (*feat)->CanGetComment() &&
+         (*feat)->GetComment().find("potential frameshift") != string::npos
+        ) del_feature = false; // this is a new feature, that we are not supposed to delete
+      else del_feature=true;
+      }
 
     if ( PrintDetails() )
       {

@@ -650,7 +650,7 @@ bool CReadBlastApp::overlaps
     if(complete_overlaps)
       {
       problem  = problemCO;
-      if(report->q_name_left.find("hypothetical"))
+      if(report->q_name_left.find("hypothetical")!=string::npos)
         {
         NcbiCerr << "CReadBlastApp::overlaps: WARNING: sequence of a hypothetical protein "
                  << "[" << qname << "]"
@@ -658,7 +658,7 @@ bool CReadBlastApp::overlaps
                  << NcbiEndl;
         m_diag[qname].problems.push_back(problemCOH);
         }
-      if(report->q_name_right.find("hypothetical"))
+      if(report->q_name_right.find("hypothetical")!=string::npos)
         {
         NcbiCerr << "CReadBlastApp::overlaps: WARNING: sequence of a hypothetical protein "
                  << "[" << qrname << "]"
