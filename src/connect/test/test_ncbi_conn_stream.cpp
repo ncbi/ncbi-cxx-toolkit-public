@@ -219,11 +219,11 @@ int main(int argc, const char* argv[])
         if (    strcasecmp(env, "1")    == 0  ||
                 strcasecmp(env, "TRUE") == 0  ||
                 strcasecmp(env, "SOME") == 0)
-            flag |= eFCDC_LogControl;
+            flag |= fFCDC_LogControl;
         else if (strcasecmp(env, "DATA") == 0)
-            flag |= eFCDC_LogData;
+            flag |= fFCDC_LogData;
         else if (strcasecmp(env, "ALL")  == 0)
-            flag |= eFCDC_LogAll;
+            flag |= fFCDC_LogAll;
     }
     CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
                                 "Misc/test_ncbi_conn_stream.FTP.data",

@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -428,9 +428,10 @@ static char* s_Ncbid_Write(size_t reserve, const USERV_Info* u)
     const SSERV_NcbidInfo* info = &u->ncbid;
     char* str = (char*) malloc(reserve + strlen(SERV_NCBID_ARGS(info))+3);
 
-    if (str)
+    if (str) {
         sprintf(str + reserve, "%s",
                 *SERV_NCBID_ARGS(info) ? SERV_NCBID_ARGS(info) : "''");
+    }
     return str;
 }
 
@@ -442,13 +443,14 @@ static SSERV_Info* s_Ncbid_Read(const char** str, size_t add)
 
     if (!(args = strdup(*str)))
         return 0;
-    for (c = args; *c; c++)
+    for (c = args; *c; c++) {
         if (isspace((unsigned char)(*c))) {
             *c++ = '\0';
             while (*c && isspace((unsigned char)(*c)))
                 c++;
             break;
         }
+    }
     if ((info = SERV_CreateNcbidInfoEx(0, 80, args, add)) != 0)
         *str += c - args;
     free(args);

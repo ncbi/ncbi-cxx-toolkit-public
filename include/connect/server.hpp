@@ -1,7 +1,7 @@
 #ifndef CONNECT___SERVER__HPP
 #define CONNECT___SERVER__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

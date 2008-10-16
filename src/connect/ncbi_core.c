@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -423,7 +423,7 @@ extern char* REG_Get
  size_t      value_size,
  const char* def_value)
 {
-    if (value_size <= 0  ||  !value)
+    if (!value  ||  value_size <= 0)
         return 0;
 
     if ( def_value )
