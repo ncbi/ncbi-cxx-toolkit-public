@@ -62,7 +62,7 @@ static EIO_Status  s_GnuTlsRead  (void* session,       void* buf,  size_t size,
                                   size_t* done, int* error);
 static EIO_Status  s_GnuTlsWrite (void* session, const void* data, size_t size,
                                   size_t* done, int* error);
-    static EIO_Status  s_GnuTlsClose (void* session, int how, int* error);
+static EIO_Status  s_GnuTlsClose (void* session, int how, int* error);
 static void        s_GnuTlsDelete(void* session);
 static void        s_GnuTlsExit  (void);
 static const char* s_GnuTlsError (void* session, int error);
