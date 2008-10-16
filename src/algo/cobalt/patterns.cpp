@@ -45,9 +45,8 @@ Contents: Default CDD patterns for CMultiAlignerOptions.
 #include <algo/cobalt/patterns.hpp>
 
 
-static const int kNumDefPatterns = 1319;
-
 static const char* kDefPatterns[] = {
+
     "C-x-[DN]-x(4)-[FY]-x-C-x-C",
 
     "[DEQGSTALMKRH]-[LIVMFYSTAC]-[GNQ]-[LIVMFYAG]-[DNEKHS]-S-[LIVMST]-{PCFY}-[S"
@@ -56,8 +55,9 @@ static const char* kDefPatterns[] = {
 
     "{DERK}(6)-[LIVMFWSTAG](2)-[LIVMFYSTAGCQ]-[AGS]-C",
 
-    "[KRHEQSTAG]-G-[FYLIVM]-[ST]-[LT]-[LIVP]-E-[LIVMFWSTAG](14)[AG]-x(4)-G-K-[S"
-    "T]",
+    "[KRHEQSTAG]-G-[FYLIVM]-[ST]-[LT]-[LIVP]-E-[LIVMFWSTAG](14)",
+
+    "[AG]-x(4)-G-K-[ST]",
 
     "[LIVM]-[VIC]-x-{H}-G-[DENQTA]-x-[GAC]-{L}-x-[LIVMFY](4)-x(2)-G",
 
@@ -82,7 +82,9 @@ static const char* kDefPatterns[] = {
     "D-x-[DNS]-{ILVFYW}-[DENSTG]-[DNQGHRK]-{GP}-[LIVMC]-[DENQSTAGC]-x(2)-[DE]-["
     "LIVMFYW]",
 
-    "C-x-C-x(5)-G-x(2)-CC-x-C-x(2)-[GP]-[FYW]-x(4,8)-C",
+    "C-x-C-x(5)-G-x(2)-C",
+
+    "C-x-C-x(2)-[GP]-[FYW]-x(4,8)-C",
 
     "[DEQN]-x-[DEQN](2)-C-x(3,14)-C-x(3,7)-C-x-[DN]-x(4)-[FY]-x-C",
 
@@ -131,7 +133,9 @@ static const char* kDefPatterns[] = {
 
     "C-G-G-x(4,7)-G-x(3)-C-x(4,5)-C-x(3,5)-[NHGS]-x-[FYWM]-x(2)-Q-C",
 
-    "C-x(4,5)-C-C-S-x(2)-G-x-C-G-x(3,4)-[FYW]-CC-G-[KR]-C-L-x-V-x-N",
+    "C-x(4,5)-C-C-S-x(2)-G-x-C-G-x(3,4)-[FYW]-C",
+
+    "C-G-[KR]-C-L-x-V-x-N",
 
     "V-[DN]-Y-[EQD]-F-V-[DN]-C",
 
@@ -168,7 +172,9 @@ static const char* kDefPatterns[] = {
     "H-x-[LIVMFYW]-x(8,11)-C-x(2)-C-x(3)-[LIVMFC]-x(5,10)-C-x(2)-C-x(4)-[HD]-x("
     "2)-C-x(5,9)-C",
 
-    "W-x-C-x(2,4)-C-x(3)-N-x(6)-C-x(2)-CC-x-H-x-[LIVMFY]-C-x(2)-C-[LIVMYA]",
+    "W-x-C-x(2,4)-C-x(3)-N-x(6)-C-x(2)-C",
+
+    "C-x-H-x-[LIVMFY]-C-x(2)-C-[LIVMYA]",
 
     "C-x(2)-C-x(4,8)-[RHDGSCV]-[YWFMVIL]-x-[CS]-x(2,5)-[CHEQ]-x-[DNSAGE]-[YFVLI"
     "]-x-[LIVFM]-C-x(2)-C",
@@ -184,7 +190,11 @@ static const char* kDefPatterns[] = {
     "[LIVMFYG]-[ASLVR]-x(2)-[LIVMSTACN]-x-[LIVM]-x(4)-[LIV]-[RKNQESTAIY]-[LIVFS"
     "TNKH]-W-[FYVC]-x-[NDQTAH]-x(5)-[RKNAIMW]",
 
-    "[LIVMFE]-[FY]-P-W-M-[KRQTA]L-M-A-[EQ]-G-L-Y-NR-P-C-x(11)-C-V-S",
+    "[LIVMFE]-[FY]-P-W-M-[KRQTA]",
+
+    "L-M-A-[EQ]-G-L-Y-N",
+
+    "R-P-C-x(11)-C-V-S",
 
     "[RKQ]-R-[LIM]-x-[LF]-G-[LIVMFY]-x-Q-x-[DNQ]-V-G",
 
@@ -218,15 +228,19 @@ static const char* kDefPatterns[] = {
 
     "W-x(2)-[LI]-[SAG]-x(4,5)-R-{RE}-x(3)-{AG}-x(3)-[YW]-x(3)-[LIVM]",
 
-    "M-C-N-S-S-C-[MV]-G-G-M-N-R-RC-V-S-E-x-I-S-F-[LIVM]-T-[SG]-E-A-[SC]-[DE]-[K"
-    "RQ]-C",
+    "M-C-N-S-S-C-[MV]-G-G-M-N-R-R",
 
-    "Y-V-N-A-K-Q-Y-x-R-I-L-K-R-R-x-A-R-A-K-L-EC-S-R-C-C-[DE]-[KR]-K-S-C",
+    "C-V-S-E-x-I-S-F-[LIVM]-T-[SG]-E-A-[SC]-[DE]-[KRQ]-C",
+
+    "Y-V-N-A-K-Q-Y-x-R-I-L-K-R-R-x-A-R-A-K-L-E",
+
+    "C-S-R-C-C-[DE]-[KR]-K-S-C",
 
     "[FYKH]-G-[FL]-[IL]-x(6,7)-[DER]-[LIVM]-[FQ]-x-H-x-[STKR]-x-[LIVMFYC]",
 
-    "R-K-R-K-Y-F-K-K-H-E-K-RC-x(2)-C-x(2)-H-x(8)-H-x(3,4)-C-x(4)-C-x-C-x(2,3)-C"
-    "",
+    "R-K-R-K-Y-F-K-K-H-E-K-R",
+
+    "C-x(2)-C-x(2)-H-x(8)-H-x(3,4)-C-x(4)-C-x-C-x(2,3)-C",
 
     "L-[FYW]-[QEDH]-F-[LI]-[LVQK]-{N}-[LI]-L",
 
@@ -268,8 +282,9 @@ static const char* kDefPatterns[] = {
 
     "S-x(2)-S-[PK]-[LIVMF]-[AG]-x-[SAGNE]-[LIVM]-[LIVY]-x(4)-[DNG]-[DE]",
 
-    "[LIVMF](2)-D-E-A-D-[RKEN]-x-[LIVMFYGSTN][GSAH]-x-[LIVMF](3)-D-E-[ALIV]-H-["
-    "NECR]",
+    "[LIVMF](2)-D-E-A-D-[RKEN]-x-[LIVMFYGSTN]",
+
+    "[GSAH]-x-[LIVMF](3)-D-E-[ALIV]-H-[NECR]",
 
     "[GST]-[LIVMAPKR]-[IVEAT]-[FY]-[GSAC]-[IV]-E-[FYV]-[SA]-x(0,1)-[REA]-x(2)-["
     "RQSFT]-[DEK]",
@@ -340,7 +355,9 @@ static const char* kDefPatterns[] = {
 
     "H-[FW]-x-[LIVM]-x-G-x(5)-[LV]-H-x(3)-[DE]",
 
-    "[LIVMFY]-[DH]-x-[LIVM]-[GA]-E-R-x(3)-[LIF]-[GDN]-x(2)-[PA]H-N-H-P-[SQ]-G",
+    "[LIVMFY]-[DH]-x-[LIVM]-[GA]-E-R-x(3)-[LIF]-[GDN]-x(2)-[PA]",
+
+    "H-N-H-P-[SQ]-G",
 
     "A-L-[KR]-[IF]-[FY]-[STA]-[STAD]-[LIVMQ]-R",
 
@@ -352,15 +369,22 @@ static const char* kDefPatterns[] = {
 
     "C-x(2)-C-x(3,5)-[STACD]-x(4)-C-x-[LIVFQ]-C-x(4)-[RD]-[NQDS]",
 
-    "[STAC]-G-[LIVM]-x-L-x-G-x-E-[LIVM]-[KQ]-[SA]-[LIVMA][AC]-G-L-x-F-P-V",
+    "[STAC]-G-[LIVM]-x-L-x-G-x-E-[LIVM]-[KQ]-[SA]-[LIVMA]",
+
+    "[AC]-G-L-x-F-P-V",
 
     "[KR]-E-[LIVM]-[EQ]-T-x(2)-[KR]-x-[LIVM](2)-x-[PAG]-[DE]-L-x-[KR]-H-A-[LIVM"
     "]-[STA]-E-G",
 
-    "K-A-P-R-K-[QH]-[LI]P-F-x-[RA]-L-[VA]-[KRQ]-[DEG]-[IV]G-A-K-R-H",
+    "K-A-P-R-K-[QH]-[LI]",
 
-    "[FI]-S-[KR]-K-C-x-[EK]-R-W-K-T-[MV][AT]-x(1,2)-[RK](2)-[GP]-R-G-R-P-[RK]-x"
-    "",
+    "P-F-x-[RA]-L-[VA]-[KRQ]-[DEG]-[IV]",
+
+    "G-A-K-R-H",
+
+    "[FI]-S-[KR]-K-C-x-[EK]-R-W-K-T-[MV]",
+
+    "[AT]-x(1,2)-[RK](2)-[GP]-R-G-R-P-[RK]-x",
 
     "[RQ]-R-S-A-[RS]-L-S-A-[RKM]-[PL]",
 
@@ -375,8 +399,11 @@ static const char* kDefPatterns[] = {
 
     "[LIVMFA]-[STAGC](2)-G-x-{TAV}-H-[STAGLI]-[LIVMFA]-{KI}-[LIVM]",
 
-    "[AV]-R-[NFY]-R-x(2,3)-[ST]-{S}-S-{NS}-SS-K-R-K-Y-R-KH-x(3)-H-S-[NS]-S-x-P-"
-    "Q-[SG]",
+    "[AV]-R-[NFY]-R-x(2,3)-[ST]-{S}-S-{NS}-S",
+
+    "S-K-R-K-Y-R-K",
+
+    "H-x(3)-H-S-[NS]-S-x-P-Q-[SG]",
 
     "K-x-R-K-x(2)-E-G-K-x(2)-K-[KR]-K",
 
@@ -482,8 +509,7 @@ static const char* kDefPatterns[] = {
 
     "[DE]-[LM]-G-[STALPD]-x(2)-[GK]-[KR]-x(6)-[LIVM]-x-[LIVM]-x-[DEN]-x-[GI]",
 
-    "[VI]-[KRWVI]-[LIV]-[DSAG]-x(2)-[LIV]-[NS]-x-[AKQEHFYLCT]-x-W-x-[KRQE]-[GS]"
-    "",
+    "[VI]-[KRWVI]-[LIV]-[DSAG]-x(2)-[LIV]-[NS]-x-[AKQEHFYLCT]-x-W-x-[KRQE]-[GS]",
 
     "F-x-R-x(4)-[KRL]-x(2)-[KRT]-[LIVMFT]-x(3,5)-W-R-[KR]-x(2)-G",
 
@@ -575,7 +601,9 @@ static const char* kDefPatterns[] = {
     "[QKRTE]-C-x(2)-C-x(6)-F-[GSDA]-x-[PSA]-x(5)-C-x(2)-C-[GSAQ]-x(2)-[LIV]-x(2"
     ")-[PS]-x-G",
 
-    "E-[ST]-[EA]-R-E-A-[RK]-x-[LI]G-F-R-G-E-[AG]-L",
+    "E-[ST]-[EA]-R-E-A-[RK]-x-[LI]",
+
+    "G-F-R-G-E-[AG]-L",
 
     "[STA]-[LIVMF]-x-[LIVM]-x-D-E-[LIVMFY]-[GCA]-[RKHAS]-[GS]-[GST]-x(4)-G",
 
@@ -611,13 +639,13 @@ static const char* kDefPatterns[] = {
     "A-x(3)-G-[LIVMFY]-[STAG]-x(2,3)-[DNS]-P-x(2)-D-[LIVM]-x-G-x-D-x(3)-K",
 
     "[GSA]-[ATIVS]-[LIVMYCAFST]-K-[DN]-[LIVM]-[LIVMFYT]-[GA]-x-[GACKMSI]-x-G-[A"
-    "LIVMF]-x(2)-[SGA]-[LIVMYERAKQFS]-x(0,1)-[TLIVMFYWAQ]-[ETGAS]-x(0,1)-[NDVS]"
-    "",
+    "LIVMF]-x(2)-[SGA]-[LIVMYERAKQFS]-x(0,1)-[TLIVMFYWAQ]-[ETGAS]-x(0,1)-[NDVS]",
 
     "[IV]-G-G-G-x(2)-G-[STACV]-G-x-[AT]-x-[DQ]-x(3)-[RAS]-G",
 
-    "G-G-K-x(2)-[GSTE]-Y-R-x(2)-A[LIVMY]-x-[FS]-x(2)-[STAGCV]-x-V-D-R-[IV]-x-[P"
-    "S]",
+    "G-G-K-x(2)-[GSTE]-Y-R-x(2)-A",
+
+    "[LIVMY]-x-[FS]-x(2)-[STAGCV]-x-V-D-R-[IV]-x-[PS]",
 
     "[IVT]-[DE]-x(2)-[AYEP]-G-[PT]-[ST]-E-[LIVST]-[LIVMAECGF]-[LIVMA]-[LIVMAYF]"
     "-[ACNDSTI]-x(3)-[ACNGVST]-x(4)-[LIVMA]-[AVLKI]-[SACLYWNRMT]-[DE]-[LIVMFC]-"
@@ -636,7 +664,9 @@ static const char* kDefPatterns[] = {
 
     "[LIVMFY](2)-G-L-G-x-[MQ]-G-x(2)-[MA]-[SAV]-x-[SNHR]",
 
-    "[RKH]-x(2)-{I}-x-{I}-x-D-x-M-G-x-N-x-[LIVMA][LIVM]-G-x-[LIVM]-G-G-[AG]-T",
+    "[RKH]-x(2)-{I}-x-{I}-x-D-x-M-G-x-N-x-[LIVMA]",
+
+    "[LIVM]-G-x-[LIVM]-G-G-[AG]-T",
 
     "A-[LIVM]-x-[STAN]-x(2)-[LI]-x-[KRNQ]-[GSA]-H-[LM]-x-[FYLH]",
 
@@ -651,7 +681,9 @@ static const char* kDefPatterns[] = {
     "[NSK]-[LIMYTV]-[FYDNH]-[GEA]-[DNGSTY]-[IMVYL]-x-[STGDN]-[DN]-x(1,2)-[SGAP]"
     "-x(3,4)-[GE]-[STG]-[LIVMPA]-[GA]-[LIVMF]",
 
-    "[LIVM]-x-[DG]-x(2)-[GAEHS]-[NQSD]-[KS]-G-[TE]-G-x-WD-H-Y-L-G-K-[EQK]",
+    "[LIVM]-x-[DG]-x(2)-[GAEHS]-[NQSD]-[KS]-G-[TE]-G-x-W",
+
+    "D-H-Y-L-G-K-[EQK]",
 
     "[LIVMT]-[RK]-[LIVM]-G-[LIVM]-G-x-G-[SRK]-[LIVMAT]-C-x-T",
 
@@ -682,8 +714,9 @@ static const char* kDefPatterns[] = {
 
     "[FYLVA]-x(2)-{DILV}-G-[QE]-{LPYG}-C-[LIVMGSTANC]-[AGCN]-x-[GSTADNEKR]",
 
-    "[LIVM]-[SADN]-x(2)-C-x-R-[LIVM]-x(4)-[GSC]-H-[STA][ASV]-S-C-[NT]-T-{S}-x-["
-    "LIM]",
+    "[LIVM]-[SADN]-x(2)-C-x-R-[LIVM]-x(4)-[GSC]-H-[STA]",
+
+    "[ASV]-S-C-[NT]-T-{S}-x-[LIM]",
 
     "[LIVMA]-[GSA]-x-[PA]-G-C-[FYN]-[AVP]-T-[GSAC]-x(3)-[GTAC]-[LIVMCA]-x-P",
 
@@ -703,8 +736,9 @@ static const char* kDefPatterns[] = {
     "K-x-[WQA]-[CA]-x(2)-[FYH](2)-x-[LIVM]-x-H-R-x-E-x-R-G-[LIVMT]-G-G-[LIVM]-F"
     "-[FY]-D",
 
-    "R-[ST]-H-[ST]-x(2)-A-x-G-G[GAC]-[LIVM]-[ST]-E-x(2)-[GSAN]-G-[ST]-D-x(2)-[G"
-    "SA]",
+    "R-[ST]-H-[ST]-x(2)-A-x-G-G",
+
+    "[GAC]-[LIVM]-[ST]-E-x(2)-[GSAN]-G-[ST]-D-x(2)-[GSA]",
 
     "[QDE]-x-{P}-G-[GS]-x-G-[LIVMFY]-x(2)-[DEN]-x(4)-[KR]-x(3)-[DEN]",
 
@@ -722,8 +756,9 @@ static const char* kDefPatterns[] = {
 
     "[LIVM]-[LIVMA]-[LIVMF]-x(4)-[ST]-x(2)-N-Y-[DE]-[YN]",
 
-    "T-x-[GS]-x(2)-H-[LIVMF]-x(3)-E-[DE]-x-PW-x-W-H-x-C-H-x-H-[YN]-H-S-[MI]-[DE"
-    "]",
+    "T-x-[GS]-x(2)-H-[LIVMF]-x(3)-E-[DE]-x-P",
+
+    "W-x-W-H-x-C-H-x-H-[YN]-H-S-[MI]-[DE]",
 
     "[PALF]-x(2,3)-[LIV]-x(3)-[LIVM]-[STAC]-[STV]-x-[GANK]-G-x-T-x(2)-[AG]-[LIV"
     "]-x(2)-[LMF]-[DENQK]",
@@ -758,9 +793,13 @@ static const char* kDefPatterns[] = {
 
     "G-[AM]-G-[AR]-Y-[LIVM]-C-G-[DE](2)-[STA](2)-[LIM](2)-[END]-S",
 
-    "E-[ST]-C-G-x-C-x-P-C-R-x-GP-x(2)-C-[YWSD]-x(7)-[GA]-x-C-R-x-C",
+    "E-[ST]-C-G-x-C-x-P-C-R-x-G",
 
-    "C-P-x-C-[DE]-x-[GS](2)-x-C-x-L-QR-C-[LIVM]-x-C-x-R-C-[LIVMT]-x-[LMFY]",
+    "P-x(2)-C-[YWSD]-x(7)-[GA]-x-C-R-x-C",
+
+    "C-P-x-C-[DE]-x-[GS](2)-x-C-x-L-Q",
+
+    "R-C-[LIVM]-x-C-x-R-C-[LIVMT]-x-[LMFY]",
 
     "[STV]-G-C-x(3)-C-x(6)-[DE]-[LIVMF]-[GAT]-[LIVMF]",
 
@@ -801,9 +840,13 @@ static const char* kDefPatterns[] = {
     "[LIVMF]-x-G-x-[LIVM]-x(4)-[GS]-x(2)-[LIVMA]-x(4)-[LIVM]-[DE]-[LIVMFYC]-x(6"
     ")-G-x-[FY]",
 
-    "G-G-S-[AN]-[GA]-Q-S-S-x(2)-Q[FY]-L-[DQ]-[DE]-[LIVM]-x(2)-Y-M-x(3)-H-[KR]",
+    "G-G-S-[AN]-[GA]-Q-S-S-x(2)-Q",
 
-    "P-H-H-D-[SA]-S-T-FC-x-H-R-[GAR]-x(7,8)-[GEKVI]-[NERAQ]-x(4,5)-C-x-[FY]-H",
+    "[FY]-L-[DQ]-[DE]-[LIVM]-x(2)-Y-M-x(3)-H-[KR]",
+
+    "P-H-H-D-[SA]-S-T-F",
+
+    "C-x-H-R-[GAR]-x(7,8)-[GEKVI]-[NERAQ]-x(4,5)-C-x-[FY]-H",
 
     "[GR]-C-[IV]-G-R-[ILS]-x-W",
 
@@ -811,11 +854,17 @@ static const char* kDefPatterns[] = {
 
     "H-P-[LIV]-[AG]-G-Q-G-x-N-x-G-x(2)-D",
 
-    "P-D-x(2)-H-[DE]-[LIVF]-[LIVMFY]-G-H-[LIVMC]-[PA]H-H-M-x(2)-F-x-C",
+    "P-D-x(2)-H-[DE]-[LIVF]-[LIVMFY]-G-H-[LIVMC]-[PA]",
 
-    "H-x-F-x(4)-H-T-H-x(2)-GH-x(4,5)-F-[LIVMFTP]-x-[FW]-H-R-x(2)-[LVM]-x(3)-E",
+    "H-H-M-x(2)-F-x-C",
 
-    "D-P-x-F-[LIVMFYW]-x(2)-H-x(3)-DG-E-x-[FYN]-H-N-[FY]-H-H-x-F-P-x-D-Y",
+    "H-x-F-x(4)-H-T-H-x(2)-G",
+
+    "H-x(4,5)-F-[LIVMFTP]-x-[FW]-H-R-x(2)-[LVM]-x(3)-E",
+
+    "D-P-x-F-[LIVMFYW]-x(2)-H-x(3)-D",
+
+    "G-E-x-[FYN]-H-N-[FY]-H-H-x-F-P-x-D-Y",
 
     "[ST]-[SA]-x(3)-[QR]-[LI]-x(5,6)-D-Y-x(2)-[LIVMFYW]-[LIVM]-[DE]",
 
@@ -825,7 +874,9 @@ static const char* kDefPatterns[] = {
 
     "[GA]-[IMFAT]-H-[LIVF]-H-x(2)-[GP]-[SDG]-x-[STAGDE]",
 
-    "G-[GN]-[SGA]-G-x-R-x-[SGA]-C-x(2)-[IV]D-x-[WF]-E-H-[STA]-[FY](2)",
+    "G-[GN]-[SGA]-G-x-R-x-[SGA]-C-x(2)-[IV]",
+
+    "D-x-[WF]-E-H-[STA]-[FY](2)",
 
     "W-x(2)-[LIVF]-x(6,7)-G-[LIVM]-[FYRA]-[NH]-x(3)-[STAQLIVM]-[ASC]-x(2)-[PA]",
 
@@ -836,10 +887,13 @@ static const char* kDefPatterns[] = {
 
     "[STANQ]-[ET]-C-x(5)-G-D-[DN]-[LIVMT]-x-[STAGR]-[LIVMFYST]",
 
-    "E-x-G-G-P-x(2)-[GA]-x-G-C-[AG]-GD-x-L-G-D-V-V-C-G-G-F-[AGSP]-x-P",
+    "E-x-G-G-P-x(2)-[GA]-x-G-C-[AG]-G",
 
-    "[RK]-x-[STA]-x(2)-S-x-C-Y-[SL][LIVM](2)-x-C-G-[STA]-x(2)-[STAG]-x(2)-T-x-["
-    "DNG]",
+    "D-x-L-G-D-V-V-C-G-G-F-[AGSP]-x-P",
+
+    "[RK]-x-[STA]-x(2)-S-x-C-Y-[SL]",
+
+    "[LIVM](2)-x-C-G-[STA]-x(2)-[STAG]-x(2)-T-x-[DNG]",
 
     "R-G-[LIVMF]-E-x(15)-[QESMP]-[RK]-x-C-[GR]-[LIVM]-C",
 
@@ -851,8 +905,9 @@ static const char* kDefPatterns[] = {
     "[NG]-x-[FYWV]-[LIVMF]-x-G-[AGC]-[GS]-[TA]-[HQT]-P-G-[STAV]-G-[LIVM]-x(5)-["
     "GS]",
 
-    "[STIV]-x-R-[IVT]-[CSA]-G-Y-x-[GACV]L-I-D-I-G-S-G-P-T-[IV]-Y-Q-[LV]-L-[SA]-"
-    "A-C",
+    "[STIV]-x-R-[IVT]-[CSA]-G-Y-x-[GACV]",
+
+    "L-I-D-I-G-S-G-P-T-[IV]-Y-Q-[LV]-L-[SA]-A-C",
 
     "[DN]-P-[PA]-R-x-G-x(14,16)-[LIVM](2)-Y-x-S-C-N-x(2)-T",
 
@@ -864,9 +919,13 @@ static const char* kDefPatterns[] = {
     "[LIVMA]-[LIVMFYW]-[DE]-x-G-[STAPVLCG]-G-x-[GA]-x-[LIVMF]-[ST]-x(2,3)-[LIVM"
     "A]-x(5,7)-[LIVMYF]-x-[STAGVLC]-[LIVMFYHCS]-E-x-D",
 
-    "[LIVMF]-P-C-H-R-[LIVMF](2)[LIVMAC]-[LIVFYWA]-{DYP}-[DN]-P-P-[FYW]",
+    "[LIVMF]-P-C-H-R-[LIVMF](2)",
 
-    "[LIVMF]-T-S-P-P-[FY][DENKS]-x-[FLIV]-x(2)-[GSTC]-x-P-C-x-{V}-[FYWLIM]-S",
+    "[LIVMAC]-[LIVFYWA]-{DYP}-[DN]-P-P-[FYW]",
+
+    "[LIVMF]-T-S-P-P-[FY]",
+
+    "[DENKS]-x-[FLIV]-x(2)-[GSTC]-x-P-C-x-{V}-[FYWLIM]-S",
 
     "[RKQGTF]-x(2)-G-N-[SA]-[LIVF]-x-[VIP]-x-[LVMT]-x(3)-[LIVM]-x(3)-[LIVM]",
 
@@ -901,8 +960,7 @@ static const char* kDefPatterns[] = {
     "[LIVMA]-x-[LIVM]-K-[LIVM]-[PAS]-x-[STC]-x-[DENQPAS]-[GC]-[LIVM]-x-[AGV]-x("
     "0,1)-[QEKRSTH]-x-[LIVMF]",
 
-    "[LI]-[PK]-x-[LVPQ]-P-[IVTAL]-P-x-[LIVMA]-x-[DENQAS]-[ST]-[LIVMA]-x(2)-[LY]"
-    "",
+    "[LI]-[PK]-x-[LVPQ]-P-[IVTAL]-P-x-[LIVMA]-x-[DENQAS]-[ST]-[LIVMA]-x(2)-[LY]",
 
     "R-[FYW]-x-[DA]-[KA]-x(0,1)-[LIVMFY]-x-[LIVMFY](2)-x(3)-[DNS]-[GSA]-x(6)-[D"
     "E]-[HS]-x(3)-[DE]-[GAC]",
@@ -924,7 +982,11 @@ static const char* kDefPatterns[] = {
     "R-[LIVMFYS]-x-[LIVM]-x-[QHG]-x-G-C-[FYNA]-[GAPV]-G-[GAC]-[STAVK]-x-[LIVMF]"
     "-[RAL]",
 
-    "[DE]-[IV]-N-F-L-C-x-H-KK-F-G-x-G-D-G[RHQ]-[ST]-W-[GSA]-G-A-R-P-E",
+    "[DE]-[IV]-N-F-L-C-x-H-K",
+
+    "K-F-G-x-G-D-G",
+
+    "[RHQ]-[ST]-W-[GSA]-G-A-R-P-E",
 
     "T-[STA]-H-x-[ST]-[LIVMA]-x(4)-G-[SN]-x-V-[STA]-x-T-x-T-[LIVM]-[NE]-x(1,2)-"
     "[FY]-G",
@@ -953,10 +1015,13 @@ static const char* kDefPatterns[] = {
 
     "E-x(5)-G-x-[SAG]-x(2)-[IV]-x-D-[LIV]-x(2)-[ST]-G-x-T-[LM]",
 
-    "[FY]-x-[FY]-K-x(2)-H-[FY]-x-L-[STI]-x-AG-R-x-[GA]-N-F-[LIVMF]-N-x-E-x(2)-G"
-    "",
+    "[FY]-x-[FY]-K-x(2)-H-[FY]-x-L-[STI]-x-A",
 
-    "[GN]-[AS]-G-D-Q-G-x(3)-G-[FYHG]G-[GA]-G-[ASC]-F-S-x-K-[DE]",
+    "G-R-x-[GA]-N-F-[LIVMF]-N-x-E-x(2)-G",
+
+    "[GN]-[AS]-G-D-Q-G-x(3)-G-[FYHG]",
+
+    "G-[GA]-G-[ASC]-F-S-x-K-[DE]",
 
     "[LIVM](2)-x-D-D-x(2,4)-D-x(4)-R-R-[GH]",
 
@@ -990,8 +1055,7 @@ static const char* kDefPatterns[] = {
 
     "G-x(3)-F-E-R-V-[FY]-x-A-[NQ]-x-N-C",
 
-    "[GS]-[LIVMFYTAC]-[GSTA]-K-x(2)-[GSALVN]-[LIVMFA]-x-[GNAR]-x-R-[LIVMA]-[GA]"
-    "",
+    "[GS]-[LIVMFYTAC]-[GSTA]-K-x(2)-[GSALVN]-[LIVMFA]-x-[GNAR]-x-R-[LIVMA]-[GA]",
 
     "T-[LIVMFYW]-[STAG]-K-[SAG]-[LIVMFYWR]-[SAG]-{ENKR}-{TNDR}-[SAG]",
 
@@ -1065,7 +1129,9 @@ static const char* kDefPatterns[] = {
     "[GSTNAD]-x(2)-[GAS]-x-G-[GC]-[IM]-x-[STAG]-K-[LIVMCT]-x-[SAI]-[TCAGFS]-x(2"
     ")-[GALVCMI]",
 
-    "C-P-x(0,1)-[ST]-N-[ILV]-G-TG-[LIVM]-H-[STAV]-R-[PAS]-[GSTA]-[STAMVN]",
+    "C-P-x(0,1)-[ST]-N-[ILV]-G-T",
+
+    "G-[LIVM]-H-[STAV]-R-[PAS]-[GSTA]-[STAMVN]",
 
     "[GSTADE]-[KREQSTIV]-x-{EPRK}-x(2)-[KRDN]-S-[LIVMF](2)-x-[LIVM]-{EATN}-x-[L"
     "IVM]-[GADE]",
@@ -1090,7 +1156,9 @@ static const char* kDefPatterns[] = {
 
     "P-[LIVM]-x(2)-D-[GA]-[ST]-[AC]-[SN]-[GA]-[LIVMFY]-Q",
 
-    "[LIVMF]-x-R-x(3)-K-x(2)-[LIVMF]-M-[PT]-x(2)-YY-[ST]-P-[ST]-S-P-[STANK]",
+    "[LIVMF]-x-R-x(3)-K-x(2)-[LIVMF]-M-[PT]-x(2)-Y",
+
+    "Y-[ST]-P-[ST]-S-P-[STANK]",
 
     "G-x-[KN]-[LIVMFA]-[STAC]-[GSTNR]-x-[HSTA]-[GSAI]-[QNH]-K-[GL]-[IVTEC]",
 
@@ -1131,7 +1199,9 @@ static const char* kDefPatterns[] = {
 
     "G-S-x-[AG]-[KRN]-x-T-x-L-[KRN]-x(3)-[DE]-x-[DET]-[LM]-[VI]-x-F",
 
-    "R-P-[VI]-I-L-D-P-x-[DE]-P-TD-G-x(2)-A-R-x(7,8)-G-x(3)-D-x(3)-D",
+    "R-P-[VI]-I-L-D-P-x-[DE]-P-T",
+
+    "D-G-x(2)-A-R-x(7,8)-G-x(3)-D-x(3)-D",
 
     "[KRA]-x(2)-[TIVK]-P-[ST]-[MGA]-[GA]-G-[LIVSA]-x-[LIVMF](2)",
 
@@ -1142,17 +1212,23 @@ static const char* kDefPatterns[] = {
     "[DEQSKN]-x-[LIVMF]-[SA]-[LIVMF]-G-[ST]-N-D-[LIVM]-x-Q-[LIVMFYGT]-[STALIV]-"
     "[LIVMFY]-[GAS]-x(2)-R",
 
-    "[FY]-x(3)-H-[LIV]-P-G-A-x(2)-[LIVF][AV]-x(2)-[FY]-[DEAP]-G-[GSA]-[WF]-x-E-"
-    "[FYW]",
+    "[FY]-x(3)-H-[LIV]-P-G-A-x(2)-[LIVF]",
 
-    "[DN]-[GN]-x(2)-[LIVMFA](3)-G-G-F-x(3)-G-x-P[LF]-[HQ]-S-E-N-G-[LIVF](2)-[GA"
-    "]",
+    "[AV]-x(2)-[FY]-[DEAP]-G-[GSA]-[WF]-x-E-[FYW]",
 
-    "[IVT]-[LIVMC]-[IVT]-[HS]-D-[SGAV]-[AV]-RC-C-{P}-x-H-{LGY}-x-C",
+    "[DN]-[GN]-x(2)-[LIVMFA](3)-G-G-F-x(3)-G-x-P",
+
+    "[LF]-[HQ]-S-E-N-G-[LIVF](2)-[GA]",
+
+    "[IVT]-[LIVMC]-[IVT]-[HS]-D-[SGAV]-[AV]-R",
+
+    "C-C-{P}-x-H-{LGY}-x-C",
 
     "[LIVMA]-C-{LIVMFYWPCST}-C-D-{GS}-x(3)-{QS}-C",
 
-    "[LIV]-{KG}-[LIVFY]-[LIVMST]-G-[HYWV]-S-{YAG}-G-[GSTAC]Y-x(2)-Y-Y-x-C-x-C",
+    "[LIV]-{KG}-[LIVFY]-[LIVMST]-G-[HYWV]-S-{YAG}-G-[GSTAC]",
+
+    "Y-x(2)-Y-Y-x-C-x-C",
 
     "[LIVMFYAG](4)-G-D-S-[LIVM]-x(1,2)-[TAG]-G",
 
@@ -1182,14 +1258,19 @@ static const char* kDefPatterns[] = {
     "[LIVMF]-x-[LIVMFAG]-x(2)-[STAGI]-H-D-[STANQ]-x-[LIVM]-x(2)-[LIVMFY]-x(2)-["
     "STA]",
 
-    "G-S-Y-P-S-G-H-T[LIVM]-x-[LIVM](2)-[HEA]-[TI]-x-D-x-H-[GSA]-x-[LIVMF]",
+    "G-S-Y-P-S-G-H-T",
+
+    "[LIVM]-x-[LIVM](2)-[HEA]-[TI]-x-D-x-H-[GSA]-x-[LIVMF]",
 
     "[FYPH]-x(4)-[LIVM]-G-N-H-E-F-[DN]",
 
-    "[AG]-[RK]-[LI]-x(1,2)-[LIV]-[FY]-E-x(2)-P-[LIVM]-[GSA][LIVMN]-[KR]-G-N-H-E"
-    "",
+    "[AG]-[RK]-[LI]-x(1,2)-[LIV]-[FY]-E-x(2)-P-[LIVM]-[GSA]",
 
-    "E-F-D-Y-L-K-S-L-E-I-E-E-K-I-NN-[AG]-H-[TA]-Y-H-I-N-S-I-S-[LIVM]-N-S-D",
+    "[LIVMN]-[KR]-G-N-H-E",
+
+    "E-F-D-Y-L-K-S-L-E-I-E-E-K-I-N",
+
+    "N-[AG]-H-[TA]-Y-H-I-N-S-I-S-[LIVM]-N-S-D",
 
     "[LIVMFY]-[LIVMFYA]-[GSAC]-[LIVM]-[FYC]-D-G-H-[GAV]",
 
@@ -1207,16 +1288,21 @@ static const char* kDefPatterns[] = {
 
     "[SAPG]-[LIVMST]-[CS]-[STACG]-P-[STA]-R-x(2)-[LIVMFW](2)-[TAR]-G",
 
-    "G-[YV]-x-[ST]-x(2)-[IVAS]-G-K-x(0,1)-[FYWMK]-[HL]G-x-T-L-x-H-E-H-[LIV]",
+    "G-[YV]-x-[ST]-x(2)-[IVAS]-G-K-x(0,1)-[FYWMK]-[HL]",
 
-    "A-x-A-x-A-x(4)-G-x-P-[LIVM]-x(2)-H[APF]-D-[LIVMF](2)-{T}-[LIVM]-Q-E-{G}-K",
+    "G-x-T-L-x-H-E-H-[LIV]",
+
+    "A-x-A-x-A-x(4)-G-x-P-[LIVM]-x(2)-H",
+
+    "[APF]-D-[LIVMF](2)-{T}-[LIVM]-Q-E-{G}-K",
 
     "D-[ST]-[FY]-[RP]-[KHQ]-x(7,8)-[FYWD]-[ST]-[FYW](2)",
 
     "N-x-G-x-R-[LIVM]-D-[LIVMFYH]-x-[LV]-x-S",
 
-    "H-[GSAD]-x-Y-[LIF]-[LIMN]-N-[LIVMFCAP]-[AGC][GSAR]-[LIVMF]-C-[LIVMFY]-D-T-"
-    "C-H",
+    "H-[GSAD]-x-Y-[LIF]-[LIMN]-N-[LIVMFCAP]-[AGC]",
+
+    "[GSAR]-[LIVMF]-C-[LIVMFY]-D-T-C-H",
 
     "[LIVMFW]-H-x-N-[DEG]-[SA]-x(4)-[GNAQ]-x(3)-D-x-H",
 
@@ -1239,21 +1325,27 @@ static const char* kDefPatterns[] = {
     "[LIVMFYSNAD]-x(2)-A-x(2)-R-[NH]-[KRQLYAT]-[LIVMFSA]-[KRA]-R-x-[LIVMTA]-[KR"
     "]",
 
-    "[FYWL]-x-[LIVM]-H-G-L-[WY]-P[LIVMF]-x(2)-[HDGTY]-[EQ]-[FYW]-x-[KR]-H-G-x-C"
-    "",
+    "[FYWL]-x-[LIVM]-H-G-L-[WY]-P",
 
-    "C-K-x(2)-N-T-FD-R-G-H-[QLIM]-x(3)-[AG]",
+    "[LIVMF]-x(2)-[HDGTY]-[EQ]-[FYW]-x-[KR]-H-G-x-C",
+
+    "C-K-x(2)-N-T-F",
+
+    "D-R-G-H-[QLIM]-x(3)-[AG]",
 
     "D-G-D-T-[LIVM]-x-[LIVMC]-x(9,10)-R-[LIVM]-x(2)-[LIVM]-D-x-P-E",
 
-    "D-[KR]-Y-[GQ]-R-x-[LV]-[GA]-x-[IV]-[FYW][LIVMFY](2)-D-[STA]-H-x-H-[LIVMFP]"
-    "-[DN]",
+    "D-[KR]-Y-[GQ]-R-x-[LV]-[GA]-x-[IV]-[FYW]",
+
+    "[LIVMFY](2)-D-[STA]-H-x-H-[LIVMFP]-[DN]",
 
     "P-[LIVM]-x-[LIVM]-H-x-R-x-[TA]-x-[DE]",
 
     "[LVSAT]-[LIVA]-x(2)-[LIVMT]-[PSD]-x(3)-[LI]-[LIVMT]-[LIVMST]-E-T-D-x-P",
 
-    "H-x-C-G-G-N-V-G-DG-x-[SA]-G-E-[LIVM]-R-Y-P-S-Y",
+    "H-x-C-G-G-N-V-G-D",
+
+    "G-x-[SA]-G-E-[LIVM]-R-Y-P-S-Y",
 
     "[STN]-[GP]-x(1,2)-[DE]-x-W-E-E-x(2)-[GS]",
 
@@ -1272,8 +1364,11 @@ static const char* kDefPatterns[] = {
 
     "G-[LIVMFY]-x(2)-[LIVMFY]-x-[LIVM]-D-[DF]-x(1,2)-W-x(3,7)-[RV]-[DNSF]",
 
-    "P-G-G-R-F-x-E-x-Y-x-W-D-x-YQ-W-D-x-P-x-[GAV]-W-[PAS]-PP-x(2)-L-x(3)-K-W-E-"
-    "x-C",
+    "P-G-G-R-F-x-E-x-Y-x-W-D-x-Y",
+
+    "Q-W-D-x-P-x-[GAV]-W-[PAS]-P",
+
+    "P-x(2)-L-x(3)-K-W-E-x-C",
 
     "[LIVMFSTC]-[LIVFYS]-[LIV]-[LIVMST]-E-N-G-[LIVMFAR]-[CSAGN]",
 
@@ -1284,8 +1379,7 @@ static const char* kDefPatterns[] = {
 
     "[DENQLF]-[KRVW]-N-[HRY]-[STAPV]-[SAC]-[LIVMFS](3)-W-[GS]-x(2,3)-N-E",
 
-    "[LIVM](2)-[KR]-x-[EQK]-x(4)-G-[LIVMFT]-[LIVT]-[LIVMF]-[ST]-D-x(2)-[SGADNI]"
-    "",
+    "[LIVM](2)-[KR]-x-[EQK]-x(4)-G-[LIVMFT]-[LIVT]-[LIVMF]-[ST]-D-x(2)-[SGADNI]",
 
     "P-x-[SA]-x-[LIVMFY](2)-[QN]-x(2)-N-P-x(4)-[TA]-x(9,10)-[KRD]-x-[LIV]-[GN]-"
     "x-C",
@@ -1320,9 +1414,13 @@ static const char* kDefPatterns[] = {
     "G-[AVP]-[DT]-[LIVMTAS]-[CG]-G-[FY]-x(3)-[ST]-x(3)-L-[CL]-x-R-W-x(2)-[LVMI]"
     "-[GSA]-[SA]-F-x-P-[FY]-x-R-[DN]",
 
-    "H-x(2)-P-x(4)-[LIVM]-N-D-P-N-GG-G-P-[LIVM](2)-x(2)-Q-x-E-N-E-[FY]",
+    "H-x(2)-P-x(4)-[LIVM]-N-D-P-N-G",
 
-    "W-x-F-E-x-W-N-E-P-[DN][STA]-T-R-Y-[FYW]-D-x(5)-[CA]",
+    "G-G-P-[LIVM](2)-x(2)-Q-x-E-N-E-[FY]",
+
+    "W-x-F-E-x-W-N-E-P-[DN]",
+
+    "[STA]-T-R-Y-[FYW]-D-x(5)-[CA]",
 
     "E-[DNQ]-x(8,17)-Y-x(7)-D-x-[RD]-[GP]-x-[TS]-x(3)-[AIVFLY]-G-x(5,11)-D",
 
@@ -1410,7 +1508,9 @@ static const char* kDefPatterns[] = {
     "[LIVMFGAC]-[LIVMTADN]-[LIVFSA]-D-[ST]-G-[STAV]-[STAPDENQ]-{GQ}-[LIVMFSTNC]"
     "-{EGK}-[LIVMFGTA]",
 
-    "W-T-D-x-S-x-H-P-x-TA-G-Y-Q-E-[ST]-R-[FYW]-S-[FYW]-[TN]-A-x-G-G-[ST]-Y",
+    "W-T-D-x-S-x-H-P-x-T",
+
+    "A-G-Y-Q-E-[ST]-R-[FYW]-S-[FYW]-[TN]-A-x-G-G-[ST]-Y",
 
     "[GSTALIVN]-{PCHR}-{KND}-H-E-[LIVMFYW]-{DEHRKP}-H-x-[LIVMFYWGSPQ]",
 
@@ -1442,7 +1542,9 @@ static const char* kDefPatterns[] = {
     "G-[GAV]-S-[GS](2)-G-x-[GSA]-[GSAVYCT]-x-[LIVMT]-[GSA]-x(6)-[GSAT]-x-[GA]-x"
     "-[DE]-x-[GA]-x-S-[LIVM]-R-x-P-[GSACT]",
 
-    "[LIVM]-x(2)-T-G-G-T-[IV]-[AGS][GA]-x-[LIVM]-x(2)-H-G-T-D-T-[LIVM]",
+    "[LIVM]-x(2)-T-G-G-T-[IV]-[AGS]",
+
+    "[GA]-x-[LIVM]-x(2)-H-G-T-D-T-[LIVM]",
 
     "T-[AY]-[GA]-[GATR]-[LIVM]-D-x-H-[LIVM]-H-x(3)-[PA]",
 
@@ -1453,13 +1555,15 @@ static const char* kDefPatterns[] = {
     "[GSTAI]-[SANQCVIT]-D-x-K-[GSACN]-x(1,2)-[LIVMA]-x(2)-[LIVMFY]-x(12,17)-[LI"
     "VM]-x-[LIVMF]-[LIVMSTAGC]-[LIVMFA]-x(2)-[DNGM]-E-E-x(0,1)-[GSTNE]",
 
-    "D-[LIVMFYWSAP]-H-[LIVA]-H-[LIVF]-[RN]-x-[PGANF][GAVS]-[ST]-D-x-A-P-H-x(4)-"
-    "K",
+    "D-[LIVMFYWSAP]-H-[LIVA]-H-[LIVF]-[RN]-x-[PGANF]",
+
+    "[GAVS]-[ST]-D-x-A-P-H-x(4)-K",
 
     "[FY]-x-[LIVMFY]-x-S-[TV]-x-K-x(3)-{T}-[AGLM]-{D}-x-[LC]",
 
-    "[FY]-E-[LIVM]-G-S-[LIVMG]-[SA]-K[PA]-x-S-[ST]-F-K-[LIV]-[PALV]-x-[STA]-[LI"
-    "]",
+    "[FY]-E-[LIVM]-G-S-[LIVMG]-[SA]-K",
+
+    "[PA]-x-S-[ST]-F-K-[LIV]-[PALV]-x-[STA]-[LI]",
 
     "[LI]-x-[STN]-[HN]-x-H-[GSTAD]-D-x(2)-G-[GP]-x(7,8)-[GS]",
 
@@ -1484,10 +1588,13 @@ static const char* kDefPatterns[] = {
 
     "G-[GAQ]-x(2)-C-[WA]-E-[NH]-x(2)-[PST]-[LIVMFYS]-x-[KR]",
 
-    "D-[SGDN]-D-[PE]-[LIVMF]-D-[LIVMGAC][LIV]-x-G-x-V-Q-G-V-x-[FM]-R",
+    "D-[SGDN]-D-[PE]-[LIVMF]-D-[LIVMGAC]",
 
-    "G-[FYW]-[AVC]-[KRQAM]-N-x(3)-G-x-V-x(5)-GP-[SAP]-[LIV]-[DNH]-x-{F}-{S}-S-x"
-    "-S",
+    "[LIV]-x-G-x-V-Q-G-V-x-[FM]-R",
+
+    "G-[FYW]-[AVC]-[KRQAM]-N-x(3)-G-x-V-x(5)-G",
+
+    "P-[SAP]-[LIV]-[DNH]-x-{F}-{S}-S-x-S",
 
     "[IV]-T-x-E-x(2)-[DE]-x(3)-G-A-x-[SAKR]",
 
@@ -1525,10 +1632,13 @@ static const char* kDefPatterns[] = {
 
     "[LIVMFTAR]-[LIVMF]-x-D-x-K-x(2)-D-[IV]-[ADGP]-x-T-[CLIVMNTA]",
 
-    "[VTI]-x-T-A-H-P-T-[EQ]-x(2)-R-[KRHAQ][IVLC]-M-[LIVM]-G-Y-S-D-S-x-K-[DF]-[S"
-    "TAG]-G",
+    "[VTI]-x-T-A-H-P-T-[EQ]-x(2)-R-[KRHAQ]",
 
-    "F-P-S-A-C-G-K-T-NL-I-G-D-D-E-H-x-W-x-[DEPKV]-x-[GV]-[IV]-x-N",
+    "[IVLC]-M-[LIVM]-G-Y-S-D-S-x-K-[DF]-[STAG]-G",
+
+    "F-P-S-A-C-G-K-T-N",
+
+    "L-I-G-D-D-E-H-x-W-x-[DEPKV]-x-[GV]-[IV]-x-N",
 
     "[SP]-[IVCLAM]-W-[LIVMFYC]-[LM]-R-[QR]-[AVS]-G-R",
 
@@ -1538,8 +1648,11 @@ static const char* kDefPatterns[] = {
     "[LIVMFY]-[LIVMC]-x-E-[LIVMFYC]-K-[KRSPQV]-[STAHKRYC]-S-P-[STRK]-x(3,4)-[LI"
     "VMFYST]",
 
-    "G-x-[DN]-F-x-K-x-D-E[SA]-[FY]-[LIV]-L-[STN]-E-S-S-[LIVMF]-F-[LIV]E-G-G-E-L"
-    "-G-Y",
+    "G-x-[DN]-F-x-K-x-D-E",
+
+    "[SA]-[FY]-[LIV]-L-[STN]-E-S-S-[LIVMF]-F-[LIV]",
+
+    "E-G-G-E-L-G-Y",
 
     "G-x(3)-D-x-P-x(2)-[LIVF]-x(3)-[LIVM]-x-G-D-G-E",
 
@@ -1549,23 +1662,29 @@ static const char* kDefPatterns[] = {
 
     "[LIVM]-E-x-E-[LIVM]-G-x(2)-[GM]-[GSTA]-x-E",
 
-    "[KR]-[DENQ]-[HN]-x(2)-G-L-N-x-G-x-W-D-Y-[LIVM]-FS-V-A-G-L-G-G-C-P-Y",
+    "[KR]-[DENQ]-[HN]-x(2)-G-L-N-x-G-x-W-D-Y-[LIVM]-F",
+
+    "S-V-A-G-L-G-G-C-P-Y",
 
     "N-x-[DN]-[IV]-E-G-[IV]-D-x(2)-N-A-C-[FY]-x-G",
 
-    "G-[FYA]-[GA]-H-x-[IV]-x(1,2)-[RKT]-x(2)-D-[PS]-RL-R-[DE]-G-x-Q-x(10)-K",
+    "G-[FYA]-[GA]-H-x-[IV]-x(1,2)-[RKT]-x(2)-D-[PS]-R",
 
-    "[LIVMFW]-x(2)-H-x-H-[DN]-D-x-G-x-[GAS]-x-[GASLI]G-[LIVM]-x(3)-E-[LIV]-T-[L"
-    "F]-R",
+    "L-R-[DE]-G-x-Q-x(10)-K",
 
-    "G-x(3)-[LIVMF]-K-[LF]-F-P-[SA]-x(3)-GK-[KR]-C-G-H-[LMQR]",
+    "[LIVMFW]-x(2)-H-x-H-[DN]-D-x-G-x-[GAS]-x-[GASLI]",
+
+    "G-[LIVM]-x(3)-E-[LIV]-T-[LF]-R",
+
+    "G-x(3)-[LIVMF]-K-[LF]-F-P-[SA]-x(3)-G",
+
+    "K-[KR]-C-G-H-[LMQR]",
 
     "[YV]-x-D-x(3)-M-S-[GA]-K-K-D-x-[LIVMF]-[LIVMAG]-x-[LIVM]-G-G",
 
     "T-G-x-P-[LIVM](2)-D-A-x-M-[RA]-x-[LIVM]",
 
-    "[DN]-R-x-R-[LIVM]-[LIVMN]-x-[STA]-[STAQ]-F-[LIVMFA]-x-K-x-L-x(2,3)-W-[KRQ]"
-    "",
+    "[DN]-R-x-R-[LIVM]-[LIVMN]-x-[STA]-[STAQ]-F-[LIVMFA]-x-K-x-L-x(2,3)-W-[KRQ]",
 
     "F-x-E-E-x-[LIVM](2)-R-R-E-L-x(2)-N-F",
 
@@ -1592,8 +1711,7 @@ static const char* kDefPatterns[] = {
 
     "[LIVM]-[NQHS]-G-P-N-[LVI]-x(2)-[LT]-G-x-R-[QED]-x(3)-[FY]-G",
 
-    "[LIVT]-[LIVP]-[LIV]-[KQ]-x-[ND]-Q-[INV]-G-[ST]-[LIV]-[STL]-[DERKAQG]-[STA]"
-    "",
+    "[LIVT]-[LIVP]-[LIV]-[KQ]-x-[ND]-Q-[INV]-G-[ST]-[LIV]-[STL]-[DERKAQG]-[STA]",
 
     "[DESH]-x(4,5)-[STVG]-{EVKD}-[AS]-[FYI]-K-[DLIFSA]-[RLVMF]-[GA]-[LIVMGA]",
 
@@ -1609,8 +1727,9 @@ static const char* kDefPatterns[] = {
 
     "[LIVMYAHQ]-x-[HPYNVF]-x-G-[STA]-H-K-x-N-x(2)-[LIVM]-x-[QEH]",
 
-    "G-x-D-x-[LIVM](2)-[IV]-K-P-[GSA]-x(2)-YR-D-H-x-D-x-[GS]-[GS]-x(2)-S-P-x-R-"
-    "E-T",
+    "G-x-D-x-[LIVM](2)-[IV]-K-P-[GSA]-x(2)-Y",
+
+    "R-D-H-x-D-x-[GS]-[GS]-x(2)-S-P-x-R-E-T",
 
     "[FY]-x-[LIVM]-x(2)-[LIVM]-x(5)-[DN]-x(5)-T-R-F-[LIVMW]-x-[LIVM]",
 
@@ -1635,16 +1754,18 @@ static const char* kDefPatterns[] = {
     "E-[KR]-x-[LIVMFAT]-x(3)-[LIVMFAC]-x-[GSALV]-[GSANHD]-C-x-[IVTACS]-[PLA]-[L"
     "IVMF]-[GSA]",
 
-    "[DQ]-[LIVMFY]-x(3)-[STAGCN]-[STAGCIL]-T-K-[FYWQI]-[LIVMF]-x-G-[HQD]-[SGNH]"
-    "",
+    "[DQ]-[LIVMFY]-x(3)-[STAGCN]-[STAGCIL]-T-K-[FYWQI]-[LIVMF]-x-G-[HQD]-[SGNH]",
 
     "[HQ]-[IVT]-x-[LIVFY]-x-[IV]-x(4)-{E}-[STA]-x(2)-F-[YM]-x(2,3)-[LMF]-G-[LMF"
     "]",
 
     "G-[NTKQ]-x(0,5)-[GA]-[LVFY]-[GH]-H-[IVF]-[CGA]-x-[STAGLE]-x(2)-[DNC]",
 
-    "H-N-x(2)-N-E-x(2)-W-[NQKRS]-x(4)-W-EP-F-D-R-H-D-WE-Y-F-G-[SA](2)-L-W-x-L-Y"
-    "-K",
+    "H-N-x(2)-N-E-x(2)-W-[NQKRS]-x(4)-W-E",
+
+    "P-F-D-R-H-D-W",
+
+    "E-Y-F-G-[SA](2)-L-W-x-L-Y-K",
 
     "Y-R-N-x-W-[NS]-E-[LIVM]-R-T-L-H-F-x-G",
 
@@ -1658,7 +1779,9 @@ static const char* kDefPatterns[] = {
     "R-[SHF]-D-[PSV]-[CSAVT]-x(4)-[SGAIVM]-x-[IVGSTAPM]-[LIVM]-x-E-[STAHNCG]-[L"
     "IVMA]",
 
-    "C-N-N-x(2)-G-H-G-H-N-YD-H-K-N-L-D-x-D",
+    "C-N-N-x(2)-G-H-G-H-N-Y",
+
+    "D-H-K-N-L-D-x-D",
 
     "[LIVMF]-[LIVMFC]-x-[ST]-x-H-[GS]-[LIVM]-P-x(4,5)-[DENQKRLHAFSTI]-x-[GN]-[D"
     "PC]-x(1,4)-[YA]",
@@ -1690,7 +1813,11 @@ static const char* kDefPatterns[] = {
 
     "[AVG]-[YLV]-E-P-[LIVMEPKST]-[WYEAS]-[SAL]-[IV]-[GN]-[TEKDVS]-[GKNAD]",
 
-    "[LI]-E-P-K-P-x(2)-P[FL]-H-D-{K}-D-[LIV]-x-[PD]-x-[GDE]Y-x-D-x-N-H-K-P-E",
+    "[LI]-E-P-K-P-x(2)-P",
+
+    "[FL]-H-D-{K}-D-[LIV]-x-[PD]-x-[GDE]",
+
+    "Y-x-D-x-N-H-K-P-E",
 
     "H-A-Y-[LIVM]-x-G-x(2)-[LIVM]-E-x-M-A-x-S-D-N-x-[LIVM]-R-A-G-x-T-P-K",
 
@@ -1703,8 +1830,9 @@ static const char* kDefPatterns[] = {
     "[LIVM]-x(3)-[GNH]-x(0,1)-[LITCRV]-x-[LIVWF]-x-[LIVMF]-x-[GS]-[LIVM]-G-x-[D"
     "ENV]-G-[HN]",
 
-    "[LIVM]-x-R-H-G-[EQ]-x-{Y}-x-N[GSA]-[LIVMF]-x-[LIVM]-[ST]-[PGA]-S-H-[NIC]-P"
-    "",
+    "[LIVM]-x-R-H-G-[EQ]-x-{Y}-x-N",
+
+    "[GSA]-[LIVMF]-x-[LIVM]-[ST]-[PGA]-S-H-[NIC]-P",
 
     "R-I-A-R-N-[TQ]-x(2)-[LIVMFY](2)-x-[EQH]-E-x(4)-[KRN]-x(2)-D-P-x-[GSA]-G-S",
 
@@ -1751,15 +1879,23 @@ static const char* kDefPatterns[] = {
 
     "[LIVMFY](2)-[EK]-x-G-[LIVM]-[GA]-G-x(2)-D-x-[GST]-x-[LIVM](2)",
 
-    "K-[AI]-[CL]-S-G-K-[FI]-x-[PQ]P-[LIVMG]-C-T-[LIVM]-[KRHA]-x-[FTNM]-P",
+    "K-[AI]-[CL]-S-G-K-[FI]-x-[PQ]",
+
+    "P-[LIVMG]-C-T-[LIVM]-[KRHA]-x-[FTNM]-P",
 
     "[FYWLSP]-H-[PC]-[NH]-[LIV]-x(3,4)-G-x-[LIV]-C-[LIV]-x-[LIV]",
 
-    "G-[LIVM]-K-G-G-A-A-G-G-G-YV-[AS]-T-[IV]-R-A-[LI]-K-x-[HN]-G-G",
+    "G-[LIVM]-K-G-G-A-A-G-G-G-Y",
 
-    "[QGF]-[WLCF]-G-D-E-[GA]-K-[GA]G-I-[GR]-P-x-Y-x(2)-K-x(2)-R",
+    "V-[AS]-T-[IV]-R-A-[LI]-K-x-[HN]-G-G",
 
-    "[ASL]-[FY]-S-G-G-[LV]-D-T-[ST]G-x-T-x-[KRM]-G-N-D-x(2)-R-F",
+    "[QGF]-[WLCF]-G-D-E-[GA]-K-[GA]",
+
+    "G-I-[GR]-P-x-Y-x(2)-K-x(2)-R",
+
+    "[ASL]-[FY]-S-G-G-[LV]-D-T-[ST]",
+
+    "G-x-T-x-[KRM]-G-N-D-x(2)-R-F",
 
     "R-[LF]-G-D-P-E-x-[EQIM]",
 
@@ -1777,8 +1913,9 @@ static const char* kDefPatterns[] = {
 
     "[IV]-G-[KR]-[ST]-G-x-[LIVM]-[STNK]-x-[VTLYF]-x(2)-[LVMF]-x-[PS]-[IV]",
 
-    "[RH]-G-x(2)-P-x-G(3)-x-[LIV]R-G-G-x(2)-T-[FYWCAH]-H-x(2)-[GH]-Q-x-[LIVMT]-"
-    "x-Y",
+    "[RH]-G-x(2)-P-x-G(3)-x-[LIV]",
+
+    "R-G-G-x(2)-T-[FYWCAH]-H-x(2)-[GH]-Q-x-[LIVMT]-x-Y",
 
     "[LMFYCVI]-[DN]-R-x(3)-[PGA]-L-[LIVMCA]-E-[LIVMT]-x-[STL]-x-[PA]",
 
@@ -1820,7 +1957,9 @@ static const char* kDefPatterns[] = {
     "[LV]-P-[VI]-[VTPI]-[NQLHT]-[FL]-[ATVS]-[AS]-G-G-[LIV]-[AT]-T-P-[AQS]-D-[AG"
     "VS]-[AS]-[LM]",
 
-    "[GA]-L-I-[LIV]-P-G-G-E-S-T-[STA][FY]-[LIVMK]-{I}-{Q}-H-P-[GA]-G",
+    "[GA]-L-I-[LIV]-P-G-G-E-S-T-[STA]",
+
+    "[FY]-[LIVMK]-{I}-{Q}-H-P-[GA]-G",
 
     "[LIV]-x-[ST]-[LIVF]-R-[FYW]-x(2)-[IVL]-H-[STGAV]-[LIV]-[STGA]-[IV]-P",
 
@@ -1841,13 +1980,17 @@ static const char* kDefPatterns[] = {
 
     "C-{C}-{C}-[GA]-{C}-C-[GAST]-{CPDEKRHFYW}-C",
 
-    "C-x(2)-[STAQ]-x-[STAMV]-C-[STA]-T-C-[HR]C-x-{P}-C-x(2)-C-{CP}-x(2)-C-[PEG]"
-    "",
+    "C-x(2)-[STAQ]-x-[STAMV]-C-[STA]-T-C-[HR]",
 
-    "C-x(6,9)-[LIVM]-x(3)-G-[YW]-C-x(2)-[FYW]C-[TK]-H-[LV]-G-C-[LIVSTP]",
+    "C-x-{P}-C-x(2)-C-{CP}-x(2)-C-[PEG]",
 
-    "C-P-C-H-{H}-[GSA][LIV]-[LIVFY]-[FY]-x-[ST]-{V}-x-[AGC]-x-T-{P}-x(2)-A-x(2)"
-    "-[LIV]",
+    "C-x(6,9)-[LIVM]-x(3)-G-[YW]-C-x(2)-[FYW]",
+
+    "C-[TK]-H-[LV]-G-C-[LIVSTP]",
+
+    "C-P-C-H-{H}-[GSA]",
+
+    "[LIV]-[LIVFY]-[FY]-x-[ST]-{V}-x-[AGC]-x-T-{P}-x(2)-A-x(2)-[LIV]",
 
     "[LIVM]-x-{G}-{R}-W-x-C-P-x-C-[AGD]",
 
@@ -1880,7 +2023,9 @@ static const char* kDefPatterns[] = {
 
     "H-F-x(2)-[EQ]-[ENQ]-x(2)-[LMF]-x(4,7)-[FY]-x(5,6)-H-x(3)-[HR]",
 
-    "Y-[FYW]-x-E-D-[LIVM]-x(2)-N-x(6)-H-x(3)-PT-x(2)-R-D-P-x-[FY]-[FYW]",
+    "Y-[FYW]-x-E-D-[LIVM]-x(2)-N-x(6)-H-x(3)-P",
+
+    "T-x(2)-R-D-P-x-[FY]-[FYW]",
 
     "[LIVNS]-x(2)-[LIVMFA]-x-C-x-[STAGCDNH]-C-x(3)-[LIVFG]-x(3)-[LIV]-x(9,11)-["
     "IVA]-x-[LVFYS]",
@@ -1974,15 +2119,17 @@ static const char* kDefPatterns[] = {
     "D-[FYWS]-[AS]-G-[GSC]-x(2)-[IV]-x(3)-[SAG](2)-x(2)-[SAG]-[LIVMF]-x(3)-[LIV"
     "MFYWA](2)-x-[GK]-x-R",
 
-    "[GSDNA]-W-T-[LIVM]-x-[FY]-W-x-W-WA-[LMF]-x-[GAT]-T-[LIVMF]-x-G-x-[LIVMF]-x"
-    "(7)-P",
+    "[GSDNA]-W-T-[LIVM]-x-[FY]-W-x-W-W",
+
+    "A-[LMF]-x-[GAT]-T-[LIVMF]-x-G-x-[LIVMF]-x(7)-P",
 
     "[KR]-G-N-[LIV](2)-D-[LIVM]-A-[LIVM]-[GA]-[LIVM](3)-G",
 
     "[LIVMA]-[LIVMY]-x-G-[GSTA]-[DES]-L-[FI]-[TN]-[GS]",
 
-    "[GA]-x(2)-[CA]-N-[LIVMFYW](2)-V-C-[LV]-AK-x-[NQEK]-[GT]-G-[DQ]-x-[LIVM]-x("
-    "3)-Q-S",
+    "[GA]-x(2)-[CA]-N-[LIVMFYW](2)-V-C-[LV]-A",
+
+    "K-x-[NQEK]-[GT]-G-[DQ]-x-[LIVM]-x(3)-Q-S",
 
     "N-P-K-[ST]-S-G-x-A-R",
 
@@ -1997,7 +2144,9 @@ static const char* kDefPatterns[] = {
     "[LIVM]-P-x-[PASIF]-V-[LIVMG]-[GF]-[GA]-x(4)-[LIVM]-[FY]-[GSA]-x-[LIVM]-x(3"
     ")-[GA]",
 
-    "F-G-G-[LIVM](2)-[KR]-D-[LIVM]-[RK]-R-R-Y[FI]-L-I-S-L-I-F-I-Y-E-T-F-x-K-L",
+    "F-G-G-[LIVM](2)-[KR]-D-[LIVM]-[RK]-R-R-Y",
+
+    "[FI]-L-I-S-L-I-F-I-Y-E-T-F-x-K-L",
 
     "[HNQA]-{D}-N-P-[STA]-[LIVMF]-[ST]-[LIVMF]-[GSTAFY]",
 
@@ -2010,9 +2159,13 @@ static const char* kDefPatterns[] = {
     "[YH]-x(2)-D-[SPCAD]-x-[STA]-x(3)-[TAG]-[KR]-[LIVMF]-[DNSTA]-[DNS]-x(4)-[GS"
     "TAN]-[LIVMA]-x-[LIVMY]",
 
-    "[GP]-C-[GSET]-[CE]-[CA]-x(2)-C-[ALP]-x(6)-CN-P-[AV]-P-[LF]-G-L-x-[GSA]-F",
+    "[GP]-C-[GSET]-[CE]-[CA]-x(2)-C-[ALP]-x(6)-C",
 
-    "G-Q-D-Q-T-K-Q-Q-I[FY]-[LIV]-[GV]-[DE]-E-[ARV]-[QLAH]-x(1,2)-[RKQ](2)-[GD]",
+    "N-P-[AV]-P-[LF]-G-L-x-[GSA]-F",
+
+    "G-Q-D-Q-T-K-Q-Q-I",
+
+    "[FY]-[LIV]-[GV]-[DE]-E-[ARV]-[QLAH]-x(1,2)-[RKQ](2)-[GD]",
 
     "W-[IVC]-[STAK]-[RK]-x-[DE]-Y-[DNE]-[DE]",
 
@@ -2021,11 +2174,15 @@ static const char* kDefPatterns[] = {
     "[TG]-[STV]-x(8)-[LIVMF]-x(2)-R-x(3)-[DEQNH]-x(2)-{S}-x(4)-[IFY]-x(7)-[LIVM"
     "F]-x(3)-[LIVMF]-x(5)-{I}-x(5)-[LIVMFA]-x(2)-[LIVMF]",
 
-    "F-E-D-[LV]-I-A-[DE]-[PA]F-L-A-[QH]-[QE]-E-S",
+    "F-E-D-[LV]-I-A-[DE]-[PA]",
+
+    "F-L-A-[QH]-[QE]-E-S",
 
     "[KR]-[DS]-x-[SE]-[KR]-[LIVMF]-[KR]-x-[LIVM]-[LIVMY]-[LIVM]-x-L-[KA]",
 
-    "C-K-P-C-L-K-x-T-CC-L-[RK]-M-[RK]-x-[EQ]-C-[ED]-K-C",
+    "C-K-P-C-L-K-x-T-C",
+
+    "C-L-[RK]-M-[RK]-x-[EQ]-C-[ED]-K-C",
 
     "C-[DNH]-[TL]-x-Q-P-G-C-x(2)-[VAI]-C-[FY]-D",
 
@@ -2042,40 +2199,67 @@ static const char* kDefPatterns[] = {
 
     "[GN]-[DNQPSA]-x-C-[GSTANK]-[GSTADNQ]-[STNQI]-[PTIV]-x-C-C-[DENQKPST]",
 
-    "[IV]-{K}-[TACI]-Y-[RKH]-{E}-[LM]-L-[DE]M-S-[QH]-Q-x-T-[LV]-P-V-T-[LV]",
+    "[IV]-{K}-[TACI]-Y-[RKH]-{E}-[LM]-L-[DE]",
+
+    "M-S-[QH]-Q-x-T-[LV]-P-V-T-[LV]",
 
     "[GSAT]-[KRHPSTQVME]-[LIVMFY]-x-[LIVMF]-[IVC]-[DN]-[LS]-[AH]-G-[SAN]-E",
 
     "[DEQR]-A-L-x(3)-[GEQ]-x(3)-G-x-[DNS]-x-P-x-V-A-x(3)-N-x-L-[AS]-x(5)-[QR]-x"
     "-[KR]-[FY]-x(2)-[AV]-x(4)-[HKNQ]",
 
-    "V-V-H-F-F-K-NS-[KR]-S-x-K-[AG]-x-[SA]-E-K-K-[STA]-KG-[MV]-A-L-F-C-G-C-G-H",
+    "V-V-H-F-F-K-N",
 
-    "C-x-[ST]-x-[DE]-x(3)-[ST]-[FY]-x-L-[FY]-I-x(4)-G-AM-L-C-C-[LIVM]-R-R",
+    "S-[KR]-S-x-K-[AG]-x-[SA]-E-K-K-[STA]-K",
 
-    "S-F-R-G-H-I-x-R-K-K-[LIVM][KQ]-x-[TA]-x(2)-[GA]-S-S-E-E-K",
+    "G-[MV]-A-L-F-C-G-C-G-H",
+
+    "C-x-[ST]-x-[DE]-x(3)-[ST]-[FY]-x-L-[FY]-I-x(4)-G-A",
+
+    "M-L-C-C-[LIVM]-R-R",
+
+    "S-F-R-G-H-I-x-R-K-K-[LIVM]",
+
+    "[KQ]-x-[TA]-x(2)-[GA]-S-S-E-E-K",
 
     "D-[GS]-V-P-F-[ST]-C-C-N-P-x-S-P-R-P-C",
 
-    "x(0,1)-[STA]-x(0,1)-W-[DENQH]-x-[YI]-x-[DEQ]I-P-C-C-P-VL-R-R-R-L-S-D-S",
+    "x(0,1)-[STA]-x(0,1)-W-[DENQH]-x-[YI]-x-[DEQ]",
+
+    "I-P-C-C-P-V",
+
+    "L-R-R-R-L-S-D-S",
 
     "G-H-A-H-[SA]-G-M-G-K-[IV]-K",
 
     "N-[LIVMF]-[DENST]-[KLN]-[VAI]-x-[DEQ]-R-x(2)-[KRN]-[LIVM]-[STDEA]-x-[LIVM]"
     "-x-[DEQG]-[KR]-[TAS]-[DEA]",
 
-    "L-S-V-[DE]-C-x-N-K-TL-K-[EAD]-A-E-x-R-A-[ET][SAG]-G-G-T-G-[SA]-GM-R-[DE]-["
-    "IL]",
+    "L-S-V-[DE]-C-x-N-K-T",
 
-    "G-S-x(2)-N-x(2)-H-x-[PA]-[AG]-G(2)[STAGDN]-Y-x-Y-E-{AV}-{L}-[DE]-[KR]-[STA"
-    "GCI]",
+    "L-K-[EAD]-A-E-x-R-A-[ET]",
 
-    "[VA]-H-[FY](2)-[ER]-[DEC]-[GV]-N-[VL]K-x-[LM]-R-R-x-L-P-[IV]-[NT]-R",
+    "[SAG]-G-G-T-G-[SA]-G",
 
-    "C-[DE]-[YF]-N-R-D[KR]-x-[LIVMF]-x(3)-[LIVMA]-x(2)-[LIVM]-x(6)-R-Q-Q-E-L",
+    "M-R-[DE]-[IL]",
 
-    "[LIVM]-x-[QA]-A-x(2)-W-[IL]-x-[DN]-PG-[VT]-[EK]-[FY]-V-C-C-PG-Y-E-N-P-T-Y-"
-    "[KR]",
+    "G-S-x(2)-N-x(2)-H-x-[PA]-[AG]-G(2)",
+
+    "[STAGDN]-Y-x-Y-E-{AV}-{L}-[DE]-[KR]-[STAGCI]",
+
+    "[VA]-H-[FY](2)-[ER]-[DEC]-[GV]-N-[VL]",
+
+    "K-x-[LM]-R-R-x-L-P-[IV]-[NT]-R",
+
+    "C-[DE]-[YF]-N-R-D",
+
+    "[KR]-x-[LIVMF]-x(3)-[LIVMA]-x(2)-[LIVM]-x(6)-R-Q-Q-E-L",
+
+    "[LIVM]-x-[QA]-A-x(2)-W-[IL]-x-[DN]-P",
+
+    "G-[VT]-[EK]-[FY]-V-C-C-P",
+
+    "G-Y-E-N-P-T-Y-[KR]",
 
     "[LIV]-x-[LIV]-x-D-x-N-D-[NH]-x-P",
 
@@ -2094,8 +2278,7 @@ static const char* kDefPatterns[] = {
     "[GTARYQ]-x-{R}-x(7)-[LIVMYSTA](2)-[GSTA]-[STADEN]-N-[LIVM]-[SAN]-N-x-[SADE"
     "NFR]-[STV]",
 
-    "[PA]-[AS]-[FY]-x-[LIVT]-[STH]-[EQ]-[LI]-x(2)-[GA]-F-[KREQ]-[IM]-[GV]-[LIF]"
-    "",
+    "[PA]-[AS]-[FY]-x-[LIVT]-[STH]-[EQ]-[LI]-x(2)-[GA]-F-[KREQ]-[IM]-[GV]-[LIF]",
 
     "P-[LIVMF]-K-[LIVMF](5)-x-[LIVMA]-[DNGS]-G-W",
 
@@ -2126,8 +2309,9 @@ static const char* kDefPatterns[] = {
 
     "R-Y-x-[DT]-W-x-[LIVMF]-[ST]-[TV]-P-[LIVM]-[LIVMNQ]-[LIVM]",
 
-    "[FYIV]-{ND}-[FYVG]-[LIVM]-D-[LIVMF]-x-[STA]-K-x-{K}-[FY][DN]-[LIV]-Y-x(3)-"
-    "Y-Y-R",
+    "[FYIV]-{ND}-[FYVG]-[LIVM]-D-[LIVMF]-x-[STA]-K-x-{K}-[FY]",
+
+    "[DN]-[LIV]-Y-x(3)-Y-Y-R",
 
     "G-x-H-x-N-[LIVM]-V-N-L-L-G-A-C-T",
 
@@ -2152,7 +2336,9 @@ static const char* kDefPatterns[] = {
     "C-x(4,6)-[FYH]-x(5,10)-C-x(0,2)-C-x(2,3)-C-x(7,11)-C-x(4,6)-[DNEQSKP]-{PD}"
     "-{CP}-C",
 
-    "[FYWS]-[RK]-x-G-F-F-x-RC-x-[GNQ]-x(1,3)-G-x-C-x-C-x(2)-C-x-C",
+    "[FYWS]-[RK]-x-G-F-F-x-R",
+
+    "C-x-[GNQ]-x(1,3)-G-x-C-x-C-x(2)-C-x-C",
 
     "G-P-x-C-x-Y-x-A-A-x-V-x-R-x(3)-H-W",
 
@@ -2195,8 +2381,9 @@ static const char* kDefPatterns[] = {
 
     "C-[KR]-[LIVM]-P-C-N-W-K-K-x-F-G-A-[DE]-C-K-Y-x-F-[EQ]-x-W-G-x-C",
 
-    "[GSR]-C-[KRL]-G-[LIV]-[DE]-x(3)-[YW]-x-S-x-CP-[PSR]-C-V-x(3)-R-C-[GSTA]-G-"
-    "C-C",
+    "[GSR]-C-[KRL]-G-[LIV]-[DE]-x(3)-[YW]-x-S-x-C",
+
+    "P-[PSR]-C-V-x(3)-R-C-[GSTA]-G-C-C",
 
     "C-x-C-[LIVM]-x(5,6)-[LIVMFY]-x(2)-[RKSEQ]-x-[LIVM]-x(2)-[LIVM]-x(5)-[STAG]"
     "-x(2)-C-x(3)-[EQ]-[LIVM](2)-x(9,10)-C-L-[DN]",
@@ -2221,7 +2408,9 @@ static const char* kDefPatterns[] = {
 
     "[LI]-x-E-[LIVM](2)-x(4,5)-[LIVM]-[TL]-x(5,7)-C-x(4)-[IVA]-x-[DNS]-[LIVMA]",
 
-    "C-x(9)-C-x(6)-G-L-x(2)-[FY]-x(3)-LN-x-[LAP]-[SCT]-F-L-K-x-L-L",
+    "C-x(9)-C-x(6)-G-L-x(2)-[FY]-x(3)-L",
+
+    "N-x-[LAP]-[SCT]-F-L-K-x-L-L",
 
     "[KQS]-x(4)-C-[QYC]-x(4)-[LIVM](2)-x-[FL]-[FYT]-[LMV]-x-[DERT]-[IV]-[LMF]",
 
@@ -2229,7 +2418,9 @@ static const char* kDefPatterns[] = {
 
     "[DE]-P-[CLV]-[APT]-x(3)-[LIVM]-x-S-[IS]-[GT]-x-[LIVM]-[GST]",
 
-    "Q-[LV]-[NT]-[FY]-[ST]-x(2)-WW-A-x-G-[SH]-[LF]-M",
+    "Q-[LV]-[NT]-[FY]-[ST]-x(2)-W",
+
+    "W-A-x-G-[SH]-[LF]-M",
 
     "C-[SAGDN]-[STN]-x(0,1)-[SA]-T-C-[VMA]-x(3)-[LYF]-x(3)-[LYF]",
 
@@ -2237,32 +2428,43 @@ static const char* kDefPatterns[] = {
 
     "[LIVM]-x(3)-C-[KR]-x-[DENGRH]-C-[FY]-x-[STN]-x(2)-F-x(2)-C",
 
-    "P-x(4)-C-D-x-R-[LIVM](2)-x-[KR]-x(14)-C[DE]-[SN]-L-[SAN]-{EGI}-{ELT}-[DE]-"
-    "x-E-L",
+    "P-x(4)-C-D-x-R-[LIVM](2)-x-[KR]-x(14)-C",
+
+    "[DE]-[SN]-L-[SAN]-{EGI}-{ELT}-[DE]-x-E-L",
 
     "C-[LIVM](2)-E-[LIVM](2)-S-[DN]-[STA]-L-x-K-x-[SN]-x(3)-[LIVM]-[STA]-x-E-C",
 
-    "G-W-T-L-N-S-A-G-Y-L-L-G-PY-x(0,1)-[GD]-[WH]-M-[DR]-F",
+    "G-W-T-L-N-S-A-G-Y-L-L-G-P",
+
+    "Y-x(0,1)-[GD]-[WH]-M-[DR]-F",
 
     "[YH]-[STAIVGD]-[DEQ]-[AGF]-[LIVMSTE]-[FYLR]-x-[DENSTAK]-[DENSTA]-[LIVMFYG]"
     "-x(8)-{K}-[KREQL]-[KRDENQL]-[LVFYWG]-[LIVQ]",
 
-    "C-x-G-C-C-[FY]-S-[RQS]-A-[FY]-P-T-PN-H-T-x-C-x-C-x-T-C-x(2)-H-K",
+    "C-x-G-C-C-[FY]-S-[RQS]-A-[FY]-P-T-P",
+
+    "N-H-T-x-C-x-C-x-T-C-x(2)-H-K",
 
     "C-[STAGM]-G-[HFYL]-C-x-[ST]",
 
     "[PA]-V-A-x(2)-C-x-C-x(2)-C-x(4)-[STDA]-[DEY]-C-x(6,8)-[PGSTAVMI]-x(2)-C",
 
-    "Q-[HY]-[FYW]-S-x(4)-P-GC-C-{P}-{P}-x-C-[STDNEKPI]-x(3)-[LIVMFS]-x(3)-C",
+    "Q-[HY]-[FYW]-S-x(4)-P-G",
 
-    "C-F-G-x(3)-[DEA]-[RH]-I-x(3)-S-x(2)-G-CC-[LIFY]-[LIFYV]-x-N-[CS]-P-x-G",
+    "C-C-{P}-{P}-x-C-[STDNEKPI]-x(3)-[LIVMFS]-x(3)-C",
+
+    "C-F-G-x(3)-[DEA]-[RH]-I-x(3)-S-x(2)-G-C",
+
+    "C-[LIFY]-[LIFYV]-x-N-[CS]-P-x-G",
 
     "F-[LIVMF]-F-R-P-R-N",
 
     "C-x(3)-C-x(2)-C-x(2)-[KRH]-x(6,7)-[LIF]-[DNS]-x(3)-C-x-[LIVM]-[EQ]-C-[EQ]-"
     "x(8)-W-x(2)-C",
 
-    "[FY]-x(3)-[LIVM]-x(2)-Y-x(3)-[LIVMFY]-x-R-x-R-[YF]V-S-E-x-Q-x(2)-H-x(2)-G",
+    "[FY]-x(3)-[LIVM]-x(2)-Y-x(3)-[LIVMFY]-x-R-x-R-[YF]",
+
+    "V-S-E-x-Q-x(2)-H-x(2)-G",
 
     "F-[GSTV]-P-R-L-[G]",
 
@@ -2272,16 +2474,23 @@ static const char* kDefPatterns[] = {
     "C-[LIVMFY]-{PT}-x-D-[LIVMFYSTA]-x(2)-{RK}-x(2)-[LIVMFY]-x(2)-[LIVMFYT]-x(2"
     ")-C",
 
-    "F-[IVFY]-G-[LM]-M-[G]L-[KR]-K-T-[DENT]-T-x(2)-K-N-[PT]-LC-F-W-K-Y-C",
+    "F-[IVFY]-G-[LM]-M-[G]",
 
-    "W-x(0,2)-[KDN]-x-{L}-K-[KRE]-[LI]-E-[RKN]C-x-C-x(3,5)-C-x(7)-G-x-C-x(9)-C-"
-    "C",
+    "L-[KR]-K-T-[DENT]-T-x(2)-K-N-[PT]-L",
+
+    "C-F-W-K-Y-C",
+
+    "W-x(0,2)-[KDN]-x-{L}-K-[KRE]-[LI]-E-[RKN]",
+
+    "C-x-C-x(3,5)-C-x(7)-G-x-C-x(9)-C-C",
 
     "C-x(2,3)-[HNS]-C-x(3,4)-[GR]-{A}-x-[GRQ]-[GA]-x-C-x(4,7)-C-x-C",
 
     "Y-x-[ED]-x-V-x-[RQ]-A-[LIVMA]-[DQG]-x-[LIVMFY]-N-[EQ]",
 
-    "F-x-[LIVM]-K-E-T-x-C-x(10)-C-x-F-[KR]-[KE]C-x-C-x(4)-D-x(2)-C-x(2)-[FY]-C",
+    "F-x-[LIVM]-K-E-T-x-C-x(10)-C-x-F-[KR]-[KE]",
+
+    "C-x-C-x(4)-D-x(2)-C-x(2)-[FY]-C",
 
     "C-[IV]-[KGR]-X(1,3)-[RG]-C-[NRP]-[AES]-X(0,2)-G-X(1,3)-C-C-S-X(2,4)-C-X(6,"
     "10)-C",
@@ -2300,10 +2509,13 @@ static const char* kDefPatterns[] = {
 
     "C-Q-C-C-x(2)-N-[GA]-[FY]-C-S",
 
-    "C-X(5)-W-C-X(4)-D-C-C-C-X(3)-C-X(2)-A-W-Y-X(5)-C-X(10,11)-CC-[IT]-P-S-G-Q-"
-    "P-C",
+    "C-X(5)-W-C-X(4)-D-C-C-C-X(3)-C-X(2)-A-W-Y-X(5)-C-X(10,11)-C",
 
-    "C-C-[GE]-[ML]-T-P-X-CC-{C}(6)-C-X(2)-C-C-X-C-C-X(4)-C-X(9,10)-C",
+    "C-[IT]-P-S-G-Q-P-C",
+
+    "C-C-[GE]-[ML]-T-P-X-C",
+
+    "C-{C}(6)-C-X(2)-C-C-X-C-C-X(4)-C-X(9,10)-C",
 
     "C-[KALRVG]-X-{M}-X(1,3)-C-X(4,6)-C-C-X(4,6)-C-X(4)-[ERK]-W-C",
 
@@ -2327,7 +2539,9 @@ static const char* kDefPatterns[] = {
 
     "C-{C}(6)-C-{C}(5)-C-C-{C}(1,3)-C-C-{C}(2,4)-C-{C}(3,10)-C",
 
-    "C-C-x(2)-C-C-x-P-A-C-x-G-C[KT]-x(2)-N-W-x(2)-T-[DN]-T",
+    "C-C-x(2)-C-C-x-P-A-C-x-G-C",
+
+    "[KT]-x(2)-N-W-x(2)-T-[DN]-T",
 
     "[LIVMA]-x-[LIVMSTA](2)-x-E-[SAGV]-[STAL]-R-[FY]-[RKNQST]-x-[LIVM]-[EQS]-x("
     "2)-[LIVMF]",
@@ -2336,11 +2550,15 @@ static const char* kDefPatterns[] = {
 
     "[LIVMA](4)-C-[LIVMFA]-T-[LIVMA](2)-x(4)-[LIVM]-x-[RG]-x(2)-L-[CY]",
 
-    "Y-G-G-[LIV]-T-x(4)-NK-x(2)-[LIVF]-x(4)-[LIVF]-D-x(3)-R-x(2)-L-x(5)-[LIV]-Y"
-    "",
+    "Y-G-G-[LIV]-T-x(4)-N",
 
-    "[RK]-E-C-T-G-L-x-W-E-W-W-[RK]Y-x(6)-[FY]-G-T-H-[FY]F-x(3)-G-C-x(6)-[FY]-x("
-    "5)-C",
+    "K-x(2)-[LIVF]-x(4)-[LIVF]-D-x(3)-R-x(2)-L-x(5)-[LIV]-Y",
+
+    "[RK]-E-C-T-G-L-x-W-E-W-W-[RK]",
+
+    "Y-x(6)-[FY]-G-T-H-[FY]",
+
+    "F-x(3)-G-C-x(6)-[FY]-x(5)-C",
 
     "C-x(5,6)-[DENQKRHSTA]-C-[PASTDH]-[PASTDK]-[ASTDV]-C-[NDEKS]-[DEKRHSTA]-C",
 
@@ -2353,8 +2571,9 @@ static const char* kDefPatterns[] = {
 
     "[FYW]-P-[EQH]-[LIV](2)-G-x(2)-[STAGV]-x(2)-A",
 
-    "C-P-x(5)-C-x(2)-[DN]-x-D-C-x(3)-C-x-CC-x-P-x(2,3)-G-x-H-P-x(4)-A-C-[ATD]-x"
-    "-L",
+    "C-P-x(5)-C-x(2)-[DN]-x-D-C-x(3)-C-x-C",
+
+    "C-x-P-x(2,3)-G-x-H-P-x(4)-A-C-[ATD]-x-L",
 
     "[GSTEQKRV]-Q-[LIVT]-[VAF]-[SAGQ]-G-{DG}-[LIVMNK]-{TK}-x-[LIVMFY]-x-[LIVMFY"
     "A]-[DENQKRHSIV]",
@@ -2377,15 +2596,18 @@ static const char* kDefPatterns[] = {
     "[LIVM]-[TS]-[NK]-[DN]-[GA]-[AVNHK]-[TAVC]-[LIVM](2)-x(2)-[LIVMA]-x-[LIVM]-"
     "x-[SNH]-[PQHA]",
 
-    "Q-[DEK]-x-x-[LIVMGTA]-[GA]-D-G-T[IV]-D-L-G-T-[ST]-x-[SC]",
+    "Q-[DEK]-x-x-[LIVMGTA]-[GA]-D-G-T",
+
+    "[IV]-D-L-G-T-[ST]-x-[SC]",
 
     "[LIVMF]-[LIVMFY]-[DN]-[LIVMFS]-G-[GSH]-[GS]-[AST]-x(3)-[ST]-[LIVM]-[LIVMFC"
     "]",
 
     "[LIVMY]-x-[LIVMF]-x-G-G-x-[ST]-{LS}-[LIVM]-P-x-[LIVM]-x-[DEQKRSTA]",
 
-    "Y-x-[NQH]-K-[DE]-[IVA]-F-[LM]-R-[ED]D-[AI]-[SGA]-N-[LIVMF](2)-K-[PT]-x-L-x"
-    "(2)-G",
+    "Y-x-[NQH]-K-[DE]-[IVA]-F-[LM]-R-[ED]",
+
+    "D-[AI]-[SGA]-N-[LIVMF](2)-K-[PT]-x-L-x(2)-G",
 
     "[RGT]-[LIVMFY]-[DN]-x-[ST]-E-[LIVMFY]-x-[ED]-[KRQEAS]-x-[STA]-x-[STAD]-[KR"
     "S]-[LIVM]-x-G-[STAP]",
@@ -2393,8 +2615,7 @@ static const char* kDefPatterns[] = {
     "[FY]-{GL}-x-[LIVMA]-{IP}-x(2)-[FYWHNT]-[DENQSA]-x-L-x-[DN]-x(3)-[KR]-x(2)-"
     "[FYI]",
 
-    "C-[DEGSTHKR]-x-C-x-G-x-[GK]-[AGSDM]-x(2)-[GSNKR]-x(4,6)-C-x(2,3)-C-x-G-x-G"
-    "",
+    "C-[DEGSTHKR]-x-C-x-G-x-[GK]-[AGSDM]-x(2)-[GSNKR]-x(4,6)-C-x(2,3)-C-x-G-x-G",
 
     "[FYLV]-[DNST]-[PHEAYVS]-x(2)-[HMACNQ]-x-[ALV]-[LIVMTNSF]-x(16,21)-[GYP]-[F"
     "Y]-x(3,4)-[DENGKS]-x(2,3)-[LIV]-[KRIV]-x-[STAG]-x-V-x(0,1)-[IV]",
@@ -2434,7 +2655,11 @@ static const char* kDefPatterns[] = {
 
     "Y-S-x-[KR]-Y-x-[DE](2)-x-[FY]-E-Y-R-H-V-x-[LV]-[PT]-[KRP]",
 
-    "H-x-P-E-x-H-[IV]-L-L-F-[KR]H-x-C-x-[ST]-W-x-[ST][FY]-{L}-C-x-[VA]-{LC}-H",
+    "H-x-P-E-x-H-[IV]-L-L-F-[KR]",
+
+    "H-x-C-x-[ST]-W-x-[ST]",
+
+    "[FY]-{L}-C-x-[VA]-{LC}-H",
 
     "A-G-A-A-A-A-G-A-V-V-G-G-L-G-G-Y",
 
@@ -2446,8 +2671,7 @@ static const char* kDefPatterns[] = {
     "[GSTA]-[LIVMF]-x-[LIVMAS]-x-[GSAVI]-[LIVM]-[DS]-x-[NSAED]-[HKRNS]-[VIT]-x-"
     "[LMYF]-[VIGAL]-x-[LIVMF]-x-[LIVM]-x(4)-F",
 
-    "[RKA]-C-[DE]-[RH]-x(3)-[LIVMF]-x(3)-[LIVM]-x-[SGAN]-[LIVMF]-x-K-[LIVMF](2)"
-    "",
+    "[RKA]-C-[DE]-[RH]-x(3)-[LIVMF]-x(3)-[LIVM]-x-[SGAN]-[LIVMF]-x-K-[LIVMF](2)",
 
     "P-[DES]-x-[SA]-x-[LIVMT]-[KR]-x-[KR]-[LIVM](2)-[YA]-[STA](3)-x(3)-[LIVMF]-"
     "[KRS]",
@@ -2500,7 +2724,9 @@ static const char* kDefPatterns[] = {
 
     "E-T-P-K(5)-x(0,1)-F-S-F-K-K-x-F-K-L-S-G-x-S-F-K-[KR]-[NS]-[KR]-K-E",
 
-    "P-[KRQ]-[KR](2)-[DE]-x-S-L-[EG]-EA-E-[KR]-R-E-H-E-[KR]-E-V",
+    "P-[KRQ]-[KR](2)-[DE]-x-S-L-[EG]-E",
+
+    "A-E-[KR]-R-E-H-E-[KR]-E-V",
 
     "D-[KRSTGANQFYW]-x(3)-E-[KRAQ]-x-[RKQD]-[GC]-[IVMK]-[ST]-[IV]-x(2)-[GSTACKR"
     "NQ]",
@@ -2524,8 +2750,7 @@ static const char* kDefPatterns[] = {
 
     "G-x-[LIVM]-x(2)-L-[KR]-[KRHNS]-x-K-x(5)-[LIVM]-x(2)-G-x-[DEN]-C-G",
 
-    "[KR]-[LIVM](2)-[DN]-[FY]-[GSTN]-[KR]-[LIVMFYS]-x-[FY]-[DEQTAHI]-x(2)-[KRQ]"
-    "",
+    "[KR]-[LIVM](2)-[DN]-[FY]-[GSTN]-[KR]-[LIVMFYS]-x-[FY]-[DEQTAHI]-x(2)-[KRQ]",
 
     "[ARH]-[STA]-x-G-x-G-G-Q-[HNGCSY]-[VI]-N-x(3)-[ST]-[AKG]-[IV]",
 
@@ -2536,11 +2761,15 @@ static const char* kDefPatterns[] = {
 
     "[LIVM]-x-[LS]-Q-[MASY]-G-[STY]-[NT]-[KRQ]-x(2)-[STN]-Q-x-G-x(3,4)-G",
 
-    "[LIVM](2)-x-R-L-[DE]-x(4)-R-L-ED-[LIVMFY]-x-E-x-[PA]-x-P-E-Q-[LIVMFY]-K",
+    "[LIVM](2)-x-R-L-[DE]-x(4)-R-L-E",
+
+    "D-[LIVMFY]-x-E-x-[PA]-x-P-E-Q-[LIVMFY]-K",
 
     "[KRHN]-x-[DEQN]-[DEQNK]-x(3)-C-G-G-[AG]-[FY]-[LIVM]-[KN]-[LIVMFY](2)",
 
-    "[LIVM](2)-F-G-P-D-x-C-[AG][IVM]-x-[DV]-x-[DENST]-x(2)-K-P-[DEH]-D-W-[DEN]",
+    "[LIVM](2)-F-G-P-D-x-C-[AG]",
+
+    "[IVM]-x-[DV]-x-[DENST]-x(2)-K-P-[DEH]-D-W-[DEN]",
 
     "[EQ]-[DE]-G-L-[DN]-F-P-x-Y-D-G-x-D-R-V",
 
@@ -2554,7 +2783,9 @@ static const char* kDefPatterns[] = {
     "[LIVM]-x(2)-G-[LM]-x(3)-[STGAV]-x-[LIVMT]-x-[LIVMTK]-[GE]-x-[KR]-x-[LIVMFY"
     "W](2)-x-[LIVMFYW](2)-[LIVMFYWK]",
 
-    "Y-[KR]-G-[AS]-[AE]-Y[ST]-x(3)-G-[DY]-G-[KR]-[IV]-[FW]-[LIVM]-x(2)-[LIVM]",
+    "Y-[KR]-G-[AS]-[AE]-Y",
+
+    "[ST]-x(3)-G-[DY]-G-[KR]-[IV]-[FW]-[LIVM]-x(2)-[LIVM]",
 
     "[RA]-N-L-[LIV]-S-[VG]-[GA]-Y-[KN]-N-[IVA]",
 
@@ -2571,7 +2802,9 @@ static const char* kDefPatterns[] = {
 
     "[DNSE]-x-F-x-Y-[DN]-x(2)-[STNR]-[LIVM]-[RQ]-x(2)-G",
 
-    "L-C-C-x-[KR]-C-x(4)-[DE]-x-N-x(4)-C-x-C-R-V-PC-x-H-C-G-C-[KRH]-G-C-[SA]",
+    "L-C-C-x-[KR]-C-x(4)-[DE]-x-N-x(4)-C-x-C-R-V-P",
+
+    "C-x-H-C-G-C-[KRH]-G-C-[SA]",
 
     "G-[PA]-E-x-[LIV]-[STAM]-G-S-[ST]-R-[LIVM]-K-[STGA](3)-x(2)-K",
 
@@ -2587,8 +2820,9 @@ static const char* kDefPatterns[] = {
 
     "[LIV]-x-[FL]-[IQ]-P-P-x-G-x-[LIVMFY]-x-[LV]-x(2)-Y",
 
-    "[LIVMC]-[LIVM]-Y-[KR]-x(4)-L-Y-F[VI]-x(3)-[DE]-L-x(2)-D-[FY]-x-[NS]-[PS]-I"
-    "-[DE]",
+    "[LIVMC]-[LIVM]-Y-[KR]-x(4)-L-Y-F",
+
+    "[VI]-x(3)-[DE]-L-x(2)-D-[FY]-x-[NS]-[PS]-I-[DE]",
 
     "[DE]-[SQLM]-[KAH]-[NT]-[QEK]-[SQ]-C-[SRKH]-x-[EQKM]-[STM]-L",
 
@@ -2606,7 +2840,9 @@ static const char* kDefPatterns[] = {
 
     "C-[DN]-[DE]-x(54)-C-H-x(9)-C-x(12,14)-C-x(17,19)-C-x(13)-C-x(2)-C",
 
-    "[ND]-x-L-E-T-x-C-H-x-L[LIV]-[STAG]-V-[DEQV]-[FLI]-D-[ST]",
+    "[ND]-x-L-E-T-x-C-H-x-L",
+
+    "[LIV]-[STAG]-V-[DEQV]-[FLI]-D-[ST]",
 
     "[LIV]-{LA}-[EDQ]-[FYWKR]-V-{VF}-[LIVF]-G-[LF]-[ST]",
 
@@ -2631,20 +2867,25 @@ static const char* kDefPatterns[] = {
 
     "S-Q-[IV]-[STGNH]-D-G-Q-[LIV]-Q-[AIV]-[STA]",
 
-    "[IVM]-x-G-Q-D-x-V-K-x(5)-[KN]-G-x(3)-[STLV][GSA]-Q-x-K-S-[FY]-x-Q-x-K-[SA]"
-    "",
+    "[IVM]-x-G-Q-D-x-V-K-x(5)-[KN]-G-x(3)-[STLV]",
 
-    "A-R-G-N-Y-[ED]-A-x-[QKR]-R-G-x-G-G-x-W-AC-G-x(2)-[LIY]-x(4)-G-x-I-x(9)-C-x"
-    "-W-T",
+    "[GSA]-Q-x-K-S-[FY]-x-Q-x-K-[SA]",
 
-    "C-x-K-E-x-[LIVM]-E-[LIVM]-x-[DE]-x(3)-[GSE]-x(5)-K-x-CP-W-Y-[ST](2)-R-L",
+    "A-R-G-N-Y-[ED]-A-x-[QKR]-R-G-x-G-G-x-W-A",
+
+    "C-G-x(2)-[LIY]-x(4)-G-x-I-x(9)-C-x-W-T",
+
+    "C-x-K-E-x-[LIVM]-E-[LIVM]-x-[DE]-x(3)-[GSE]-x(5)-K-x-C",
+
+    "P-W-Y-[ST](2)-R-L",
 
     "[KR]-Y-[DE]-F-[FY]-Q-x(2)-S-x-[LIVM]-G-G-L-L",
 
     "C-x(2)-C-x-G-[LIVM]-x(4)-P-C-x(2)-[FY]-C-x(2)-[LIVM]-x(2)-G-C",
 
-    "[FY]-R-[IM]-[KR]-K(2)-D-E-G-S-YW-K-x-K-C-x(2)-T-x-[DEN]-T-E-C-D-[LIVM]-T-D"
-    "-E",
+    "[FY]-R-[IM]-[KR]-K(2)-D-E-G-S-Y",
+
+    "W-K-x-K-C-x(2)-T-x-[DEN]-T-E-C-D-[LIVM]-T-D-E",
 
     "[IFAE]-[GA]-[GAS]-N-[PAK]-S-[GTA]-E-[GDEV]-[PAGEQV]-[DEQGAV]",
 
@@ -2653,15 +2894,18 @@ static const char* kDefPatterns[] = {
 
     "F-[KRHQ]-G-R-V-[ST]-x-A-S-V-K-N-F-Q",
 
-    "A-F-[AG]-I-[GSAC]-[LIVM]-[ST]-S-F-x-[GST]-K-x-A-C-EH-R-H-R-G-H-x(2)-[DE](7"
-    ")",
+    "A-F-[AG]-I-[GSAC]-[LIVM]-[ST]-S-F-x-[GST]-K-x-A-C-E",
+
+    "H-R-H-R-G-H-x(2)-[DE](7)",
 
     "A-G-Y-G-S-T-x-T",
 
     "[NV]-x(5)-[GTR]-[LIVMA]-x-P-[PTLIVME]-x-G-[LIVM]-x(3)-[LIVMFW](2)-S-[YSAQ]"
     "-G-G-[STN]-[SA]",
 
-    "G-[LIVMFY]-N-[LIVM]-K-Y-R-Y-E[FYW]-x(2)-G-x-G-Y-[KR]-F",
+    "G-[LIVMFY]-N-[LIVM]-K-Y-R-Y-E",
+
+    "[FYW]-x(2)-G-x-G-Y-[KR]-F",
 
     "[GS]-x(4)-[LIVM]-x(4)-[LIVMF]-x(2)-[CSAM]-[LMFY]-x(6)-[STC]-x(4,5)-[PAC]-x"
     "-[LIVMF]-x-[LIVMF]-x(8)-C-x(1,2)-[CH]",
@@ -2670,13 +2914,15 @@ static const char* kDefPatterns[] = {
 
     "A-R-P-x(3)-K-x-S-x-T-N-A-Y-N-V-T-T-x(2)-[DN]-G-x(3)-Y-G",
 
-    "N-G-x-[DE](2)-x-[LIVMF]-C-[ST]-x(11,12)-[PAG]-DC-X(0,1)-[ES]-S-C-V-[FYW]-I"
-    "-P-C",
+    "N-G-x-[DE](2)-x-[LIVMF]-C-[ST]-x(11,12)-[PAG]-D",
+
+    "C-X(0,1)-[ES]-S-C-V-[FYW]-I-P-C",
 
     "C-G-E-[ST]-C-[FTV]-[GLT]-G-[TSK]-C",
 
-    "S(5)-[DE]-x-[DE]-[GV]-x(1,4)-[GE]-x(0,1)-[KR](4)[KR]-[LIM]-K-[DE]-K-[LIM]-"
-    "P-G",
+    "S(5)-[DE]-x-[DE]-[GV]-x(1,4)-[GE]-x(0,1)-[KR](4)",
+
+    "[KR]-[LIM]-K-[DE]-K-[LIM]-P-G",
 
     "G-x(4)-H-x-H-P-x-[AGS]-x-E-[LIVM]",
 
@@ -2688,7 +2934,9 @@ static const char* kDefPatterns[] = {
     "G-x(2)-[LIVMF]-x(4)-E-x(2,3)-[CSTAENV]-x(8,9)-[GNDS]-[GS](2)-[CS]-x(2)-[KT"
     "]-x(4)-[FY]",
 
-    "[EQT]-G-x-V-Y-C-D-[TNP]-C-RG-x-[GF]-x-C-x-T-[GA]-D-C-x(1,2)-[GQ]-x(2,3)-C",
+    "[EQT]-G-x-V-Y-C-D-[TNP]-C-R",
+
+    "G-x-[GF]-x-C-x-T-[GA]-D-C-x(1,2)-[GQ]-x(2,3)-C",
 
     "W-x(2)-[LIVM]-D-[VFY]-[LIVM](3)-D-x-P-P-G-T-[GS]-D",
 
@@ -2717,13 +2965,16 @@ static const char* kDefPatterns[] = {
 
     "S-[DN]-[AS]-G-x-P-x-[LIV]-[SNC]-D-P-G",
 
-    "[GTAL]-x(2)-[IVT]-C-Y-D-[LIVM]-x-F-P-x(9)-[GD]E-[LIVM]-G-D-K-T-F-[LIVMF](2"
-    ")-A",
+    "[GTAL]-x(2)-[IVT]-C-Y-D-[LIVM]-x-F-P-x(9)-[GD]",
+
+    "E-[LIVM]-G-D-K-T-F-[LIVMF](2)-A",
 
     "D-x(8)-[GN]-[LFY]-x(4)-[DET]-[LY]-Y-x(3)-[ST]-x(7)-[IV]-x(2)-[PS]-x-[LIVM]"
     "-x-[LIVM]-x(3)-[DN]-D",
 
-    "D-P-[LIVMF]-C-G-[ST]-G-x(3)-[LI]-EC-K-x(2)-F-x(4)-E-x(22,23)-S-G-G-K-D",
+    "D-P-[LIVMF]-C-G-[ST]-G-x(3)-[LI]-E",
+
+    "C-K-x(2)-F-x(4)-E-x(22,23)-S-G-G-K-D",
 
     "[DEN]-x(2)-[LIVF]-[DE](2)-[LIV]-L-x(4)-[IV]-[FY]-x(4)-K-G",
 
@@ -2763,7 +3014,9 @@ static const char* kDefPatterns[] = {
 
     "[LIVF]-x-[STAC]-[LIVF](3)-P-[PF]-[LIVA]-[GAV]-[IV]-x(4)-[GKN]",
 
-    "G-[AV]-F-[STA]-x-R-[SA]-x(2)-R-P-ND-V-x(5)-H-I-[SA]-C-D-x(4)-S-E",
+    "G-[AV]-F-[STA]-x-R-[SA]-x(2)-R-P-N",
+
+    "D-V-x(5)-H-I-[SA]-C-D-x(4)-S-E",
 
     "L-x(3)-[GRS]-[LIVY]-x(2)-[STA]-x(2)-G-x(2)-G-G-[FYIV]-x-[LIF]",
 
@@ -2780,9 +3033,14 @@ BEGIN_SCOPE(cobalt)
 
 void AssignDefaultPatterns(vector<char*>& patterns)
 {
+    int num_patterns = 0;
+    while(kDefPatterns[num_patterns]) {
+        num_patterns++;
+    }
+
     patterns.clear();
-    patterns.resize(kNumDefPatterns);
-    for (int i=0;kDefPatterns[i] && i < kNumDefPatterns;i++) {
+    patterns.resize(num_patterns);
+    for (int i=0;kDefPatterns[i] && i < num_patterns;i++) {
         patterns[i] = (char*)kDefPatterns[i];
     }
 }
