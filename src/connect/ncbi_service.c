@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -573,16 +573,20 @@ static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
         const char* args = net_info->args;
         char        port[8];
 
-        if (net_info->port  &&  net_info->port != DEF_CONN_PORT)
+        if (net_info->port)
             sprintf(port, ":%hu", net_info->port);
         else
             *port = '\0';
-        if (!(referer = (char*) malloc(7 + 1 + 1 + strlen(host) + strlen(port)
+        if (!(referer = (char*) malloc(8 + 1 + 1 + strlen(host) + strlen(port)
                                        + strlen(path) + strlen(args)))) {
             return;
         }
-        strcat(strcat(strcpy(strcpy(referer, "http://")+7, host), port), path);
-        if (args[0])
+        if (net_info->scheme == eURL_Https)
+            strcpy(referer, "https://"/*8*/);
+        else
+            strcpy(referer, "http://"/*7*/);
+        strcat(strcat(strcat(referer, host), port), path);
+        if (*args)
             strcat(strcat(referer, "?"), args);
     } else if ((str = strdup(iter->op->name)) != 0) {
         const char* host = net_info->client_host;
