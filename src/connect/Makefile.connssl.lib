@@ -1,0 +1,8 @@
+# $Id$
+
+SRC      = ncbi_gnutls
+
+LIB      = connssl
+
+INCLUDE  = $(GNUTLS_INCLUDE) $(ORIG_INCLUDE)
+LIBS     = $(GNUTLS_LIBS) $(ORIG_LIBS)
