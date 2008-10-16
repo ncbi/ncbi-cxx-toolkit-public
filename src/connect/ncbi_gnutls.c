@@ -442,8 +442,12 @@ static const char* s_GnuTlsError(void* session/*unused*/, int error)
 }
 
 
+#endif /*HAVE_LIBGNUTLS*/
+
+
 extern SOCKSSL NcbiSetupGnuTls(void)
 {
+#ifdef HAVE_LIBGNUTLS
     static const struct SOCKSSL_struct kGnuTlsOps = {
         s_GnuTlsInit,
         s_GnuTlsCreate,
@@ -457,16 +461,7 @@ extern SOCKSSL NcbiSetupGnuTls(void)
     };
 
     return &kGnuTlsOps;
-}
-
-
 #else
-
-
-SOCKSSL NcbiInitGnuTls(void)
-{
     return 0;
-}
-
-
 #endif /*HAVE_LIBGNUTLS*/
+}
