@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -441,13 +441,13 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&   host,
                                                  const string&   pass,
                                                  const string&   path,
                                                  unsigned short  port,
-                                                 TFCDC_Flags     flag,
+                                                 TFCDC_Flags     flags,
                                                  streamsize      offset,
                                                  const STimeout* timeout,
                                                  streamsize      buf_size)
     : CConn_IOStream(FTP_CreateDownloadConnector(host.c_str(), port,
                                                  user.c_str(), pass.c_str(),
-                                                 path.c_str(), flag),
+                                                 path.c_str(), flags),
                      timeout, buf_size)
 {
     if (file != kEmptyStr) {
@@ -459,6 +459,7 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&   host,
         }
     }
 }
+
 
 const char* CIO_Exception::GetErrCodeString(void) const
 {
