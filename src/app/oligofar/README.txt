@@ -48,10 +48,10 @@ DESCRIPTION
     Reads to match are hashed (one window per read, preferrably at the 5' end)
     with a window size controlled by option -w. Option -n controls how many 
     mismatches are allowed within hashed values.  Option -a controls how many 
-    alternative readings (because of ambiguous bases) of same read may be hashed 
-    independently to mismatches allowed. Low quality 3' ends of the reads 
-    may be clipped. Low complexity (controlled by -F argument) and low quality
-    reads may be ignored.
+    ambiguous bases withing a window of a read may be hashed independently 
+    to mismatches allowed. Low quality 3' ends of the reads may be clipped. 
+    Low complexity (controlled by -F argument) and low quality reads may be 
+    ignored.
 
     OligoFAR may use different implementations of the hash table (see -H):
     vector (uses a lot of memory, but is faster for big batches) and
@@ -62,7 +62,7 @@ DESCRIPTION
     possible to limit scan to a number of gis with option -l. If snpdb is
     provided, all variants of alleles are used to compute hash values, as well
     as regular IUPACna ambiguities of the sequences in database. Option -A
-    controls maximum number of alternative readings of the same word.
+    controls maximum number of ambiguities in the same window.
 
     Alignments are seeded by hash and may be extended from 5' to 3' end by 
     one of the three algorithms:
@@ -315,7 +315,7 @@ Hashing and scanning options
                 this or lower number of ambiguities for a read, the read is 
                 ignored. 
 
-    --fasta-max-alt=count
+    --fasta-max-amb=count
     -A count    Maximal number of ambiguous bases in a window on a subject
                 side for the window to be used to perform hash lookup and 
                 seed an alignment. 
@@ -434,9 +434,6 @@ Extended options
     that may not supposed to be exposed in the future. These options should 
     not be used on production and are not guarranteed to be preserved.
 
-    --scan-old=true|false
-                Use old sequence scanning function (to test performance)
-
     --min-block-length=bases
                 Set minimal length of the subject sequence block to be 
                 processed as a whole with same algorithm (depending on 
@@ -445,26 +442,6 @@ Extended options
                 no difference with -A1.
 
 FILE FORMATS
-
-Config file
-    Config file is standrd NCBI registry file, containing section [oligofar].
-    When parsing config file, all entries spelled as oligofar command line 
-    long option names without two preceeding dashes are parsed as if they
-    appear in command line.  Thus, including of one config file into another 
-    is possible.  NB: no recursion checks are performed!!!  Order of entries
-    in config file does not matter.  Order of processing of included files is
-    not specified and may depend on option, so preferrably the files shoulde
-    be orthogonal  Only one file may be directly included in a config file.
-    
-    Example:
-
-        [oligofar]
-        assert-version = 3.27
-        window-size = 12
-        input-max-mism = 0
-        input-max-amb = 4
-        phrap-score = 3
-        config-file = alignment-scores.ini
 
 Input file
     Input file is two to five column whitespace-separated text file. Empty

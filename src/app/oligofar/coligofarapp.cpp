@@ -640,10 +640,12 @@ int COligoFarApp::ProcessData()
         }
         if( iline.fail() ) THROW( runtime_error, "Failed to parse line [" << buff << "]" );
         CQuery * query = new CQuery( qryCoding, id, fwd, rev, m_qualityBase );
+        /*
         ITERATE( TSkipPositions, k, m_skipPositions ) {
             query->MarkPositionAmbiguous( 0, *k - 1 );
             query->MarkPositionAmbiguous( 1, *k - 1 );
         }
+        */
         query->ComputeBestScore( scoreTbl, 0 );
         query->ComputeBestScore( scoreTbl, 1 );
         while( guideFile.NextHit( queriesTotal, query ) ); // add guided hits
