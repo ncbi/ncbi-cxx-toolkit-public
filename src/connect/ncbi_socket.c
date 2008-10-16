@@ -1293,10 +1293,10 @@ static EIO_Status s_IsConnected(SOCK                  sock,
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
         int  mtu;
         char _id[32];
-#  if defined(IP_MTU)  &&  defined(IP_MTU)
+#  if defined(SOL_IP)  &&  defined(IP_MTU)
         SOCK_socklen_t mtulen = (SOCK_socklen_t) sizeof(mtu);
         if (getsockopt(sock->sock, SOL_IP, IP_MTU, &mtu, &mtulen) != 0)
-#  endif
+#  endif /*SOL_IP && IP_MTU*/
             mtu = -1;
         if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
             CORE_TRACEF(("%sConnection established, MTU = %d",
