@@ -39,9 +39,9 @@ public:
     void Sort() { for( Uint4 x = 0; x < m_table.size(); ++x ) { sort( m_table[x].begin(), m_table[x].end(), value_type::LessSubkey ); } m_sorted = true; }
 
     void AddEntry( Uint8 key, const value_type& item ) { 
-        TArray& a( m_table[key & m_indexMask] );
+        TArray& a( m_table[ Uint4( key & m_indexMask) ] );
         a.push_back( item ); 
-        a.back().SetSubkey( key >> m_indexBits ); 
+        a.back().SetSubkey( Uint2( key >> m_indexBits ) ); 
         m_sorted = false;
     }
 
@@ -51,8 +51,8 @@ public:
     template<typename Callback>
     void ForEach( Uint8 key, Callback callback ) const {
         ASSERT( m_sorted );
-        const TArray& a = m_table[key & m_indexMask];
-        Uint2 subkey = key >> m_indexBits;
+        const TArray& a = m_table[ Uint4(key & m_indexMask) ];
+        Uint2 subkey = Uint2( key >> m_indexBits );
         TArray::const_iterator x = lower_bound( a.begin(), a.end(), value_type( subkey ), value_type::LessSubkey );
         for( ; x != a.end() && ! value_type::LessSubkey( subkey, x->GetSubkey() ) ; ++x ) callback( *x );
     }
