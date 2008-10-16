@@ -254,7 +254,6 @@ public:
     bool SrcQualsToNote      (void) const;
     bool HideEmptySource     (void) const;
     bool GoQualsToNote       (void) const;
-    bool GeneSynsToNote      (void) const;
     bool SelenocysteineToNote(void) const;
     bool ForGBRelease        (void) const;
     bool HideUnclassPartial  (void) const;

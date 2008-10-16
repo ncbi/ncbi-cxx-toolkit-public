@@ -126,7 +126,6 @@ MODE_FLAG_GET(SuppressSegLoc, 18);
 //MODE_FLAG_GET(SrcQualsToNote, 19);
 MODE_FLAG_GET(HideEmptySource, 20);
 MODE_FLAG_GET(GoQualsToNote, 21);
-//MODE_FLAG_GET(GeneSynsToNote, 22);
 //MODE_FLAG_GET(SelenocysteineToNote, 23);
 MODE_FLAG_GET(ForGBRelease, 24);
 MODE_FLAG_GET(HideUnclassPartial, 25);
@@ -137,11 +136,6 @@ MODE_FLAG_GET(CodonRecognizedToNote, 26);
 bool CFlatFileConfig::SrcQualsToNote(void) const 
 {
     return m_RefSeqConventions ? false : sm_ModeFlags[static_cast<size_t>(m_Mode)][19];
-}
-
-bool CFlatFileConfig::GeneSynsToNote(void) const 
-{
-    return !m_RefSeqConventions ? true : sm_ModeFlags[static_cast<size_t>(m_Mode)][22];
 }
 
 bool CFlatFileConfig::SelenocysteineToNote(void) const 

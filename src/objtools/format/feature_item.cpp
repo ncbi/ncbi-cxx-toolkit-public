@@ -2279,9 +2279,6 @@ void CFeatureItem::x_AddQualsGene(
         (gene_ref->IsSetLocus_tag()  &&  !NStr::IsBlank(gene_ref->GetLocus_tag())) ?
         &gene_ref->GetLocus_tag() : 0;
 
-    EFeatureQualifier syn_qual = ctx.Config().GeneSynsToNote()  ||  !ctx.IsRefSeq() ?
-        eFQ_gene_syn : eFQ_gene_syn_refseq;
-
     if ( !from_overlap  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
         if (locus != NULL) {
             m_Gene = *locus;
@@ -2293,7 +2290,7 @@ void CFeatureItem::x_AddQualsGene(
                 x_AddQual(eFQ_gene_desc, new CFlatStringQVal(*desc));
             }
             if (is_gene  &&  syn != NULL) {
-                x_AddQual(syn_qual, new CFlatGeneSynonymsQVal(*syn));
+                x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
         } else if (locus_tag != NULL) {
             x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag));
@@ -2301,13 +2298,13 @@ void CFeatureItem::x_AddQualsGene(
                 x_AddQual(eFQ_gene_desc, new CFlatStringQVal(*desc));
             }
             if (is_gene  &&  syn != NULL) {
-                x_AddQual(syn_qual, new CFlatGeneSynonymsQVal(*syn));
+                x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
         } else if (desc != NULL) {
             m_Gene = *desc;
             x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
             if (is_gene  &&  syn != NULL) {
-                x_AddQual(syn_qual, new CFlatGeneSynonymsQVal(*syn));
+                x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
         } else if (syn != NULL) {
             // add the first as the gene name ...
@@ -2317,7 +2314,7 @@ void CFeatureItem::x_AddQualsGene(
             syns.pop_front();
             // ... and the rest as synonyms
             if (is_gene  &&  !syns.empty() ) {
-                x_AddQual(syn_qual, new CFlatGeneSynonymsQVal(syns));
+                x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(syns));
             }
         }
     }
@@ -2768,9 +2765,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(locus_tag);
     DO_QUAL(old_locus_tag);
     x_FormatQual(eFQ_gene_syn_refseq, "synonym", qvec);
-    if ( ! cfg.GeneSynsToNote() ) {
-        DO_QUAL(gene_syn);
-    }
+    DO_QUAL(gene_syn);
     x_FormatQual(eFQ_gene_allele, "allele", qvec);
 
     DO_QUAL(operon);
@@ -2917,9 +2912,6 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     x_FormatNoteQual(eFQ_transcript_id_note, "tscpt_id_note", qvec);
     DO_NOTE(gene_desc);
 
-    if ( cfg.GeneSynsToNote() ) {
-        DO_NOTE(gene_syn);
-    }
     if ( cfg.CodonRecognizedToNote() ) {
         DO_NOTE(trna_codons);
     }

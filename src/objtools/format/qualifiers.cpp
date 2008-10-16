@@ -429,20 +429,13 @@ void CFlatGeneSynonymsQVal::Format
     if (GetValue().empty()) {
         return;
     }
-    string qual, syns;
-    if ( ! ctx.Config().GeneSynsToNote() ) {
-        qual = "synonym";
-        syns += NStr::Join(GetValue(), ", ");
-    }
-    else {
-        qual = "note";
-        syns = ( GetValue().size() == 1 ? "synonym: " : "synonyms: " );
-        syns += NStr::Join(GetValue(), ", ");
-    }
-    x_AddFQ(q, qual, syns, m_Style);
-    m_Suffix = &kSemicolon;
-}
 
+    string qual = "gene_synonym";
+    list<string> synonyms = GetValue();
+    for ( list<string>::iterator it = synonyms.begin(); it != synonyms.end(); it++ ) {
+        x_AddFQ( q, qual, *it, m_Style );
+    }
+}
 
 // === CFlatCodeBreakQVal ===================================================
 
