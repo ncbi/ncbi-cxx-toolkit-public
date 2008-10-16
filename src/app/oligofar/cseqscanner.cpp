@@ -157,7 +157,7 @@ inline void CSeqScanner::C_LoopImpl_ColorspNoAmbiguities::Prepare( char x )
 inline void CSeqScanner::C_LoopImpl_ColorspAmbiguities::Prepare( char x )
 {
     // todo: logic should be modified here to take care of previous bases
-    CNcbi8naBase z = CNcbi8naBase( x & 0xf ).IsAmbiguous() > 1 ? '\xf' : ( 1 << CColorTwoBase( x ).GetColorOrd() );
+    CNcbi8naBase z = CNcbi8naBase( x & 0xf ).IsAmbiguous() ? '\xf' : ( 1 << CColorTwoBase( x ).GetColorOrd() );
     m_hashGenerator.AddBaseMask( CColorTwoBase( CNcbi8naBase( m_lastBase ), z ).GetColorOrd() );
     m_complexityMeasure.Add( m_hashGenerator.GetNewestTriplet() );
     m_lastBase = x;
