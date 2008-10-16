@@ -1222,9 +1222,9 @@ static void s_FormatJournal
 
     CNcbiOstrstream jour;
 
-    if (ref.IsElectronic()  &&  !NStr::StartsWith(title, "(er")) {
-        jour << "(er) ";
-    }
+//    if (ref.IsElectronic()  &&  !NStr::StartsWith(title, "(er")) {
+//        jour << "(er) ";
+//    }
     jour << title;
 
     string issue, part_sup, part_supi;

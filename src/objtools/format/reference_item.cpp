@@ -1094,6 +1094,19 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                                 l.push_back("Erratum:[" + ret.GetExp() + "]");
                             }
                         }
+                        if ( imp.CanGetPubstatus() ) {
+                            CImprint::TPubstatus pubstatus = imp.GetPubstatus();
+                            switch ( pubstatus ) {
+                            case 3:
+                                l.push_back( "Publication Status: Online-Only" );
+                                break;
+                            case 10:
+                                l.push_back( "Publication Status: Available-Online prior to print" );
+                                break;
+                            default:
+                                break;
+                            }
+                        }
                     }
                 }
             } else if ( (*it)->IsSub() ) {
