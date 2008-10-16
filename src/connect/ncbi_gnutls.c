@@ -82,7 +82,11 @@ static const int kGnuTlsChiperPrio[] = {
     0
 };
 static const int kGnuTlsProtoPrio[] = {
+  /* These are enum values rather than macros, so direct
+     conditionalization isn't possible. */
+#ifdef LIBGNUTLS_VERSION_NUMBER
     GNUTLS_TLS1_1,
+#endif
     GNUTLS_TLS1,
     GNUTLS_SSL3,
     0
