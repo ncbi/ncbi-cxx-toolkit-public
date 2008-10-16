@@ -61,8 +61,8 @@ public:
     void ForEach( Uint8 key, Callback callback, Uint1 mask, Uint1 flags ) const {
         ASSERT( m_sorted );
         flags &= mask;
-        const TArray& a = m_table[key & m_indexMask];
-        Uint2 subkey = key >> m_indexBits;
+        const TArray& a = m_table[ Uint4(key & m_indexMask) ];
+        Uint2 subkey = Uint2( key >> m_indexBits );
         TArray::const_iterator x = lower_bound( a.begin(), a.end(), value_type( subkey ), value_type::LessSubkey ); 
         for( ; x != a.end() && ! value_type::LessSubkey( subkey, x->GetSubkey() ) ; ++x ) {
             if( x->GetFlags( mask ) == flags ) 
