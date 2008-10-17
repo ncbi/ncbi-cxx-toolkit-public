@@ -540,11 +540,13 @@ typedef void (*FREG_Get)
  * @param value
  *  Key value to associate with the key
  * @param storage
- *  How to store the new setting, temporarily or permanently.
+ *  How to store the new setting, temporarily or permanently
+ * @return
+ *  Non-zero if successful (including replacing a value with itself)
  * @sa
  *  REG_Create, REG_Reset, EREG_Storage
  */
-typedef void (*FREG_Set)
+typedef int (*FREG_Set)
 (void*        user_data,
  const char*  section,
  const char*  name,
@@ -570,6 +572,8 @@ typedef void (*FREG_Cleanup)
  *  MT_LOCK_Delete() will be called on it when this REG gets destroyed
  *  -- be aware of it (hence, if the lock is also to be used with something
  *  else, then call MT_LOCK_AddRef() on it before passing to REG_Create)!
+ * Passing NULL callbacks below causes limiting the functionality
+ * only to those operations that have the callbacks set.
  * @param user_data
  *  Unspecified data to call "set", "get" and "cleanup" with 
  * @param get
@@ -687,10 +691,12 @@ extern NCBI_XCONNECT_EXPORT char* REG_Get
  *  The value to store
  * @param storage
  *  Whether to store temporarily or permanently
+ * @return
+ *  Non-zero if successful (including replacing a value with itself)
  * @sa
  *  REG_Create, EREG_Storage, REG_Get
  */
-extern NCBI_XCONNECT_EXPORT void REG_Set
+extern NCBI_XCONNECT_EXPORT int REG_Set
 (REG          rg,
  const char*  section,
  const char*  name,

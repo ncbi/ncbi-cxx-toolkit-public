@@ -440,24 +440,29 @@ extern char* REG_Get
 
         REG_UNLOCK;
     }
+
     return value;
 }
 
 
-extern void REG_Set
+extern int/*bool*/ REG_Set
 (REG          rg,
  const char*  section,
  const char*  name,
  const char*  value,
  EREG_Storage storage)
 {
+    int result;
     if ( rg ) {
         REG_LOCK_READ;
         REG_VALID;
 
-        if ( rg->set )
-            rg->set(rg->user_data, section, name, value, storage);
+        result =
+            rg->set ? rg->set(rg->user_data, section, name, value, storage) : 0;
 
         REG_UNLOCK;
-    }
+    } else
+        result = 0;
+
+    return result;
 }

@@ -55,6 +55,8 @@ BEGIN_NCBI_SCOPE
  *                              Registry                               *
  ***********************************************************************/
 
+
+extern "C" {
 static void s_REG_Get(void* user_data,
                       const char* section, const char* name,
                       char* value, size_t value_size) THROWS_NONE
@@ -68,28 +70,35 @@ static void s_REG_Get(void* user_data,
     }
     NCBI_CATCH_ALL_X(1, "s_REG_Get() failed");
 }
+}
 
 
-static void s_REG_Set(void* user_data,
-                      const char* section, const char* name,
-                      const char* value, EREG_Storage storage) THROWS_NONE
+extern "C" {
+static int s_REG_Set(void* user_data,
+                     const char* section, const char* name,
+                     const char* value, EREG_Storage storage) THROWS_NONE
 {
+    int result = 0;
     try {
-        static_cast<IRWRegistry*> (user_data)->
+        result = static_cast<IRWRegistry*> (user_data)->
             Set(section, name, value ? string(value) : kEmptyStr,
                 (storage == eREG_Persistent ? CNcbiRegistry::ePersistent : 0) |
                 CNcbiRegistry::eOverride | CNcbiRegistry::eTruncate);
     }
     NCBI_CATCH_ALL_X(2, "s_REG_Set() failed");
+    return result;
+}
 }
 
 
+extern "C" {
 static void s_REG_Cleanup(void* user_data) THROWS_NONE
 {
     try {
         static_cast<IRegistry*> (user_data)->RemoveReference();
     }
     NCBI_CATCH_ALL_X(3, "s_REG_Cleanup() failed");
+}
 }
 
 
@@ -98,12 +107,10 @@ extern REG REG_cxx2c(IRWRegistry* reg, bool pass_ownership)
     if (pass_ownership  &&  reg) {
         reg->AddReference();
     }
-    return reg ? REG_Create
-        (static_cast<void*> (reg),
-         reinterpret_cast<FREG_Get> (s_REG_Get),
-         reinterpret_cast<FREG_Set> (s_REG_Set),
-         pass_ownership ? reinterpret_cast<FREG_Cleanup> (s_REG_Cleanup) : 0,
-         0) : 0;
+    return reg
+        ? REG_Create(static_cast<void*> (reg), s_REG_Get, s_REG_Set,
+                     pass_ownership ? s_REG_Cleanup : 0, 0)
+        : 0;
 }
 
 
@@ -111,6 +118,7 @@ extern REG REG_cxx2c(IRWRegistry* reg, bool pass_ownership)
  *                                Logger                               *
  ***********************************************************************/
 
+extern "C" {
 static void s_LOG_Handler(void*         /*user_data*/,
                           SLOG_Handler*   call_data) THROWS_NONE
 {
@@ -164,14 +172,12 @@ static void s_LOG_Handler(void*         /*user_data*/,
     }
     NCBI_CATCH_ALL_X(4, "s_LOG_Handler() failed");
 }
+}
 
 
 extern LOG LOG_cxx2c(void)
 {
-    return LOG_Create(0,
-                      reinterpret_cast<FLOG_Handler> (s_LOG_Handler),
-                      0,
-                      0);
+    return LOG_Create(0, s_LOG_Handler, 0, 0);
 }
 
 
@@ -179,7 +185,9 @@ extern LOG LOG_cxx2c(void)
  *                               MT-Lock                               *
  ***********************************************************************/
 
-static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how) THROWS_NONE
+extern "C" {
+static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how)
+    THROWS_NONE
 {
     try {
         CRWLock* lock = static_cast<CRWLock*> (user_data);
@@ -212,8 +220,10 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how) THROWS_NONE
     NCBI_CATCH_ALL_X(5, "s_LOCK_Handler() failed");
     return 0/*false*/;
 }
+}
 
 
+extern "C" {
 static void s_LOCK_Cleanup(void* user_data) THROWS_NONE
 {
     try {
@@ -221,15 +231,14 @@ static void s_LOCK_Cleanup(void* user_data) THROWS_NONE
     }
     NCBI_CATCH_ALL_X(6, "s_LOCK_Cleanup() failed");
 }
+}
 
 
 extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
 {
     return MT_LOCK_Create(static_cast<void*> (lock ? lock : new CRWLock),
-                          reinterpret_cast<FMT_LOCK_Handler> (s_LOCK_Handler),
-                          !lock  ||  pass_ownership ?
-                          reinterpret_cast<FMT_LOCK_Cleanup> (s_LOCK_Cleanup) :
-                          0);
+                          s_LOCK_Handler,
+                          !lock  ||  pass_ownership ? s_LOCK_Cleanup : 0);
 }
 
 
