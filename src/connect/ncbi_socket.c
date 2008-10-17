@@ -5065,7 +5065,7 @@ extern int SOCK_gethostname(char*  name,
     int/*bool*/ error;
 
     /* initialize internals */
-    if (s_InitAPI(0) == eIO_Success)
+    if (s_InitAPI(0) != eIO_Success)
         return eIO_NotSupported;
 
     error = 0/*false*/;
