@@ -352,8 +352,9 @@ int CServerTestApp::Run(void)
     {
         CListeningSocket listener;
 
-        while ((++port & 0xFFFF) != 0 && listener.Listen(port, 5,
-            fLSCE_BindAny | fLSCE_LogOff) != eIO_Success)
+        while ((++port & 0xFFFF) != 0
+               &&  listener.Listen(port, 5,
+                                   fSOCK_BindAny | fSOCK_LogOff) != eIO_Success)
             ;
 
         if (port == 0) {
