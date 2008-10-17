@@ -3,9 +3,11 @@
 #
 # Check netcached services
 
-services="`cat ./servers/netcache_check_services.lst`"
+services="`cat netcache_check_services.lst`"
+test $? -eq 0 || exit 1
 
-hosts="`cat ./servers/netcache_check_servers.lst`"
+hosts="`cat netcache_check_servers.lst`"
+test $? -eq 0 || exit 2
 
 # For Nagios test
 
