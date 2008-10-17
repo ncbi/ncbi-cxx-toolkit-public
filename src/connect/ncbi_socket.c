@@ -1517,12 +1517,13 @@ static EIO_Status s_Read(SOCK    sock,
                 break/*error*/;
             }
             status = sslread(sock->session, x_buf, n_todo, &x_read, &x_error);
+            assert((status == eIO_Success) == (x_read > 0));
 
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                s_DoLog(sock, eIO_Read, (status != eIO_Success
-                                         ? (void*) &x_error :
-                                         x_read > 0 ? x_buf : 0),
+                s_DoLog(sock, eIO_Read, x_read > 0 ? x_buf :
+                        status == eIO_Closed  &&  !x_error ? 0 :
+                        (void*) &x_error,
                         status != eIO_Success ? 0 : x_read, " [decrypt]");
             }
 
@@ -1899,7 +1900,7 @@ static EIO_Status s_WriteData(SOCK        sock,
                               size_t*     n_written,
                               int/*bool*/ oob)
 {
-    assert(sock->type == eSocket  &&  !sock->pending);
+    assert(sock->type == eSocket  &&  !sock->pending  &&  size > 0);
 
     if (sock->session) {
         int x_error;
@@ -1908,6 +1909,7 @@ static EIO_Status s_WriteData(SOCK        sock,
         if (!sslwrite)
             return eIO_NotSupported;
         status = sslwrite(sock->session, data, size, n_written, &x_error);
+        assert((status == eIO_Success) == (n_written > 0));
 
         /* statistics & logging */
         if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
@@ -2315,9 +2317,9 @@ static EIO_Status s_Close(SOCK sock, int abort)
     /* return */
     sock->sock = SOCK_INVALID;
 #ifdef NCBI_OS_MSWIN
-    if (sock->ev) {
-        CloseHandle(sock->ev);
-        sock->ev = 0;
+    if (sock->evenv) {
+        CloseHandle(sock->event);
+        sock->event = 0;
     }
 #endif /*NCBI_OS_MSWIN*/
     sock->myport = 0;
@@ -3021,7 +3023,7 @@ static EIO_Status s_CreateListening(const char*    path,
     if ( path )
         strcpy((*lsock)->path, path);
 #elif defined(NCBI_OS_MSWIN)
-	(*lsock)->ev       = event;
+	(*lsock)->event    = event;
 #endif /*NCBI_OS*/
 
     /* statistics & logging */
@@ -3250,7 +3252,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
     (*sock)->r_status = eIO_Success;
     (*sock)->w_status = eIO_Success;
 #ifdef NCBI_OS_MSWIN
-	(*sock)->ev       = event;
+	(*sock)->event    = event;
 #endif /*NCBI_OS_MSWIN*/
     /* all timeouts zeroed - infinite */
     BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
@@ -3354,7 +3356,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
     if (!lsock->keep  &&  lsock->path[0])
         remove(lsock->path);
 #elif defined(NCBI_OS_MSWIN)
-	CloseHandle(lsock->ev);
+	CloseHandle(lsock->event);
 #endif /*NCBI_OS*/
 
     free(lsock);
