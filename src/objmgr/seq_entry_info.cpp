@@ -278,7 +278,8 @@ void CSeq_entry_Info::x_ParentAttach(CBioseq_set_Info& parent)
     if ( parent.HasParent_Info() ) {
         CSeq_entry& entry = parent.GetParentSeq_entry_Info().x_GetObject();
         if ( m_Object->GetParentEntry() != &entry ) {
-            entry.ParentizeOneLevel();
+            m_Object->SetParentEntry(&entry);
+            //entry.ParentizeOneLevel(); this call is too slow
         }
         _ASSERT(m_Object->GetParentEntry() == &entry);
     }

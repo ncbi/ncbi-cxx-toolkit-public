@@ -68,6 +68,8 @@ public:
     void ParentizeOneLevel(void);
     // reset parent entry to NULL
     void ResetParentEntry(void);
+    // Set parent entry
+    void SetParentEntry(CSeq_entry* entry);
 
     // get parent of this.
     // NULL means that either this is top level Seq-entry,
@@ -102,7 +104,6 @@ private:
     CSeq_entry& operator= (const CSeq_entry& value);
 
     // Upper-level Seq-entry
-    void SetParentEntry(CSeq_entry* entry);
     CSeq_entry* m_ParentEntry;
 };
 
