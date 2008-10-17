@@ -83,7 +83,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="wsock32.lib dbghelp.lib"
+				AdditionalOptions="ws2_32.lib wsock32.lib dbghelp.lib"
 				OutputFile="$(OutDir)\datatool.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories=""
@@ -189,7 +189,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="wsock32.lib dbghelp.lib"
+				AdditionalOptions="ws2_32.lib wsock32.lib dbghelp.lib"
 				OutputFile="$(OutDir)\datatool.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories=""
