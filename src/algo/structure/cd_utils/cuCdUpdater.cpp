@@ -640,9 +640,10 @@ double CDUpdater::ComputePercentIdentity(const CRef< CSeq_align >& alignment, co
     CDense_seg::TLens lens = denseg.GetLens();
 
     for (i = 0; i < lens.size(); ++i) {
+        //  Do this check before implicit cast to unsigned int when assigning to qStart, sStart.
+        if (starts[2*i] < 0 || starts[2*i + 1] < 0) continue;  //  gap
         qStart = starts[2*i];
         sStart = starts[2*i + 1];
-        if (qStart < 0 || sStart < 0) continue;  //  gap
 
         qStop = qStart + lens[i] - 1;
         sStop = sStart + lens[i] - 1;
