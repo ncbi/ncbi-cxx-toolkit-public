@@ -1,6 +1,6 @@
 #!/bin/sh
 errors=''
-ok="0,0,0,0,0,0,0"
+ok="0,0,0,0,0,0,0,0"
 function run () {
 	echo -- "$@" >&2
 	"$@"
@@ -21,6 +21,11 @@ test "$x" = '     30 AGCCTTCCTCTGAGTCGCAGCCCCCCATGGAGGCCCAGTCT'
 errors="${errors},$?"
 x=$(run ./oligofar -i test2.reads -d NM_012345.fa -Ou -S6 -n2 -e1 | tee test2.reads.out | awk '{print $6}' | sort | uniq -c)
 test "$x" = '     22 100'
+errors="${errors},$?"
+for R in solexa outside solid decr opposite consecutive all ; do 
+	echo "R=$R" ; run ./oligofar -i test3.pairs -d NM_012345.fa -D400-600 -R $R |awk '($6>100)' ; 
+done > test3.pairs.out
+diff test3.pairs.ref test3.pairs.out > test3.pairs.diff
 errors="${errors},$?"
 if test "$errors" == "$ok" ; then
 	rm NM_012345.reads.{out,diff} NM_012345.pairs.{out,diff}
