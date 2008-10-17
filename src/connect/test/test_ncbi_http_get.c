@@ -91,9 +91,9 @@ int main(int argc, char* argv[])
                    strcasecmp(blk, "TRUE") == 0)) {
 #ifdef HAVE_LIBGNUTLS
         CORE_LOG(eLOG_Note,    "SSL request acknowledged");
+        SOCK_SetupSSL(NcbiSetupGnuTls);
 #else
         CORE_LOG(eLOG_Warning, "SSL requested but may not be supported");
-        SOCK_SetupSSL(NcbiSetupGnuTls);
 #endif /*HAVE_LIBGNUTLS*/
     }
 
