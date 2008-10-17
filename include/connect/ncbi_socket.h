@@ -454,7 +454,7 @@ typedef enum {
     fSOCK_BindLocal    = 0x10,   /** bind to 127.0.0.1 only                  */
     fSOCK_KeepOnExec   = 0x20,   /** can be applied to most sockets          */
     fSOCK_CloseOnExec  = 0,      /** can be applied to most sockets          */
-    fSOCK_Secure       = 0x40,   /** subsumes CloseOnExec                    */
+    fSOCK_Secure       = 0x40,   /** subsumes CloseOnExec regardless of Keep */
     fSOCK_KeepOnClose  = 0x80,   /** do not close OS handle on SOCK_Close    */
     fSOCK_CloseOnClose = 0       /** do     close OS handle on SOCK_Close    */
 } ESOCK_Flags;
