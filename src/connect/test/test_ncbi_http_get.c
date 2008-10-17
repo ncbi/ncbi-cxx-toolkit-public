@@ -93,8 +93,8 @@ int main(int argc, char* argv[])
         CORE_LOG(eLOG_Note,    "SSL request acknowledged");
 #else
         CORE_LOG(eLOG_Warning, "SSL requested but may not be supported");
-#endif /*HAVE_LIBGNUTLS*/
         SOCK_SetupSSL(NcbiSetupGnuTls);
+#endif /*HAVE_LIBGNUTLS*/
     }
 
     CORE_LOG(eLOG_Note, "Creating network info structure");
