@@ -101,7 +101,7 @@ public:
     virtual void Activate(void) {
         EIO_Status st = GetStatus();
         while (st != eIO_Success) {
-            if ((st = Listen(m_Port)) != eIO_Success) return;
+            if ((st = Listen(m_Port)) == eIO_Success) return;
             IServer_ConnectionFactory::EListenAction action =
                 m_Factory->OnFailure(&m_Port);
             if (action == IServer_ConnectionFactory::eLAFail)
