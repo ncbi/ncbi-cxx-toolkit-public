@@ -167,7 +167,7 @@ typedef struct {
 #define DEF_CONN_HOST             "www.ncbi.nlm.nih.gov"
 
 #define REG_CONN_PORT             "PORT"
-#define DEF_CONN_PORT             ""
+#define DEF_CONN_PORT             0
 
 #define REG_CONN_PATH             "PATH"
 #define DEF_CONN_PATH             "/Service/dispd.cgi"
