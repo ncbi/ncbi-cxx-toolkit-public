@@ -9,7 +9,8 @@
 #          It is used by release configurator.
 #
 
-APP: datatool
+APP: datatool+
+APP: missedOnPurpose1+ missedOnPurpose2+
 # APP: test_ncbi_disp -- not now
 
 # The -t key prevents inclusion of the tree builder into the release
