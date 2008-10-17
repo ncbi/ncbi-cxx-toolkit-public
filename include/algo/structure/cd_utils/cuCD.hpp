@@ -122,6 +122,15 @@ void SetConvertedSequencesForCD(CCdCore* cd, vector<string>& convertedSequences,
 NCBI_CDUTILS_EXPORT 
 void SetAlignedResiduesForCD(CCdCore* cd, char** & ppAlignedResidues, bool forceRecompute = false);
 
+//  Return strings containing the residues in each alignment column, in row order; pending rows are ignored.
+//  The index into the map is the zero-based position on the sequence corresponding to 'referenceRow'.
+//  If 'referenceRow' is not provided, or is out of range, the index will simply be the column number, 
+//  starting from zero.
+//  Assumes that the CCdCore object has the same block model on each row.  If that is not true,
+//  or other problems arise, 'columns' will be returned as an empty map.
+NCBI_CDUTILS_EXPORT 
+void GetAlignmentColumnsForCD(CCdCore* cd, map<unsigned int, string>& columns, unsigned int referenceRow = kMax_UInt);
+
 //  Returns '<cd->GetAccession> (<cd->GetName>)' w/o the angle brackets; 
 //  format used by the validator. 
 NCBI_CDUTILS_EXPORT 

@@ -128,7 +128,7 @@ bool Reorder(CCdCore* pCD, const vector<int> positions)
 	for(;lit != alignments.end(); lit++)
 	{
 		//sanity check
-		if (positions[row] >= temp.size())
+		if (positions[row] >= (int) temp.size())
 			return false;
 		temp[positions[row]] = *lit;
 		row++;
@@ -140,7 +140,7 @@ bool Reorder(CCdCore* pCD, const vector<int> positions)
     ReorderStructureAlignments(pCD, positions);
 
     alignments.clear();
-	for (int i = 0; i < temp.size(); i++)
+	for (unsigned int i = 0; i < temp.size(); i++)
 	{
 		alignments.push_back(temp[i]);
 	}
@@ -455,6 +455,96 @@ void SetAlignedResiduesForCD(CCdCore* cd, char** & ppAlignedResidues, bool force
             }
         }
     }
+}
+
+void GetAlignmentColumnsForCD(CCdCore* cd, map<unsigned int, string>& columns, unsigned int referenceRow)
+{
+    bool isOK = true, useRefRow = true;
+    int j;
+    unsigned int i, col, row, pos, mapIndex, nRows, nCols, nBlocks;
+    char** alignedResidues = NULL;
+    string rowString, colString;
+    //  Map column number to position on the selected reference row.
+    map<unsigned int, unsigned int> colToPos;
+    map<unsigned int, string> rowStrings;
+    vector<int> starts, lengths;
+    CRef< CSeq_align > seqAlign;
+
+    //  Empty the columns map first, as this is used as a way to flag problems.
+    columns.clear();
+
+    if (!cd) return;
+
+    //  Check if the block structure is consistent.
+    try {
+        MultipleAlignment* ma = new MultipleAlignment(cd);
+        if (!ma || ! ma->isBlockAligned()) {
+            delete ma;
+            ERR_POST("CD " << cd->GetAccession() << " must have a consistent block structure for column extraction.");
+            return;
+        }
+        delete ma;
+        ma = NULL;
+    } catch (...) {
+        ERR_POST("Could not extract columns for CD " << cd->GetAccession());
+    }
+
+    nCols = cd->GetAlignmentLength();
+    nRows = cd->GetNumRows();
+
+    //  Get a reference seq-align for mapping between alignment rows.
+    //  If the columns map index will simply be the column count, use the master, row 0.
+    if (referenceRow >= nRows) {
+        useRefRow = false;
+        referenceRow = 0;
+    } 
+    if (! cd->GetSeqAlign(referenceRow, seqAlign)) {
+        isOK = false;
+    }
+
+    //  Initialize the column # -> reference row position mapping.
+    //  If useRefRow is true, use the indicated row's coordinates as the position.
+    //  Otherwise, use the column number as the position.
+    if (isOK && GetBlockStarts(seqAlign, starts, (referenceRow == 0)) > 0 && GetBlockLengths(seqAlign, lengths) > 0) {
+        nBlocks = starts.size();
+        if (nBlocks == lengths.size()) {
+            for (i = 0, col = 0; i < nBlocks; ++i) {
+                pos = (useRefRow) ? starts[i] : col;
+                for (j = 0; j < lengths[i]; ++j, ++col, ++pos) {
+                    //  Not explicitly checking if 'pos' is aligned since above 
+                    //  we confirmed the CD has a valid block model.
+                    colToPos[col] = pos;
+                }
+            }
+        } else {
+            isOK = false;
+        }
+    } else {
+        isOK = false;
+    }
+
+    SetAlignedResiduesForCD(cd, alignedResidues, true);
+
+    //  Construct the columns as string objects.
+    if (isOK && alignedResidues) {
+        for (col = 0; col < nCols; ++col) {
+            colString.erase();
+            for (row = 0; row < nRows; ++row) {
+                colString += alignedResidues[row][col];
+            }
+            mapIndex = colToPos[col];
+            columns[mapIndex] = colString;
+        }
+    }
+
+    //  Clean up array of characters.
+    if (alignedResidues) {
+        for (row = 0; row < nRows; ++row) {
+            delete [] alignedResidues[row];
+        }
+        delete [] alignedResidues;
+    }
+
 }
 
 string GetVerboseNameStr(const CCdCore* cd) {
