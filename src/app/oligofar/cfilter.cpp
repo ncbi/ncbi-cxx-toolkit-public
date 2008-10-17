@@ -165,13 +165,13 @@ void CFilter::Match( double score, int seqFrom, int seqTo, CQuery * query, int p
 	int lookupFlags = pairmate == 0 ? fwd ? fRev2_Fwd1|fFwd2_Fwd1 : fFwd2_Rev1|fRev2_Rev1 : fwd ? fRev1_Fwd2|fFwd1_Fwd2 : fFwd1_Rev2|fRev1_Rev2;
 	int appendFlags = pairmate == 0 ? fwd ? fFwd1_Rev2|fFwd1_Fwd2 : fRev1_Fwd2|fRev1_Rev2 : fwd ? fFwd2_Rev1|fFwd2_Fwd1 : fRev2_Fwd1|fRev2_Rev1;
 	
-	if( m_geometryFlags & lookupFlags ) {
+	if( int flags = m_geometryFlags & lookupFlags ) {
         int maxPos = seqFrom - m_minDist;
 
-		if( m_geometryFlags && fLookupInFwd ) {
+		if( flags & fLookupInFwd ) {
 			found |= x_LookupInQueue( h0, m_pendingHits[0], fwd, pairmate, maxPos, score, seqFrom, seqTo, query );
 		}
-		if( m_geometryFlags && fLookupInRev ) {
+		if( flags & fLookupInRev ) {
 			found |= x_LookupInQueue( h1, m_pendingHits[1], fwd, pairmate, maxPos, score, seqFrom, seqTo, query );
 		}
 	} 
