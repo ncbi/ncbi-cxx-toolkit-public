@@ -2317,7 +2317,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
     /* return */
     sock->sock = SOCK_INVALID;
 #ifdef NCBI_OS_MSWIN
-    if (sock->evenv) {
+    if (sock->event) {
         CloseHandle(sock->event);
         sock->event = 0;
     }
