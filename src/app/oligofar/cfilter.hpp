@@ -80,7 +80,7 @@ public:
     void SetTopPct( double pct ) { m_topPct = pct; }
     void SetTopCnt( int cnt ) { m_topCnt = cnt; }
     void SetScorePctCutoff( double cutoff ) { m_scoreCutoff = cutoff; }
-	void SetGeometryFlags( int f ) { m_geometryFlags = f; }
+	void SetGeometryFlags( unsigned f ) { m_geometryFlags = f; }
 
 	bool CheckGeometry( int from1, int to1, int from2, int to2 ) const;
 	bool InRange( int dist ) const { return dist >= m_minDist && dist <= m_maxDist; }
@@ -92,6 +92,13 @@ public:
     CHit * SetHit( CHit * target, int pairmate, double score, int from, int to, bool allowCombinations = false );
 
     IAligner * GetAligner() const { return m_aligner; }
+
+    static unsigned GetLookupFlags( int pairmate, bool fwd ) {
+        return pairmate == 0 ? fwd ? fRev2_Fwd1|fFwd2_Fwd1 : fFwd2_Rev1|fRev2_Rev1 : fwd ? fRev1_Fwd2|fFwd1_Fwd2 : fFwd1_Rev2|fRev1_Rev2;
+    }
+    static unsigned GetAppendFlags( int pairmate, bool fwd ) {
+        return pairmate == 0 ? fwd ? fFwd1_Rev2|fFwd1_Fwd2 : fRev1_Fwd2|fRev1_Rev2 : fwd ? fFwd2_Rev1|fFwd2_Fwd1 : fRev2_Fwd1|fRev2_Rev1;
+    }
 
 protected:
 	friend class CGuideFile;
@@ -109,7 +116,7 @@ protected:
     int m_ord;
     const char * m_begin;
     const char * m_end;
-	int m_geometryFlags;
+	unsigned m_geometryFlags;
     int m_minDist;
     int m_maxDist;
     int m_topCnt;

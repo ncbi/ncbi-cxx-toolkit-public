@@ -36,44 +36,52 @@ CHit * CFilter::SetHit( CHit * target, int pairmate, double score, int from, int
 	if( !CheckGeometry( target->m_from[0], target->m_to[0], target->m_from[1], target->m_to[1] ) ) {
 		// to make sure logic works same way
         // TODO: actually, logic DOES NOT work same way - to be fixed
-		THROW( logic_error, "Checking geometry: " << DISPLAY( target->m_from[0] ) << DISPLAY( target->m_to[0] ) << DISPLAY( target->m_from[1] ) << DISPLAY( target->m_to[1] ) << DISPLAY( pairmate ) );
+        bool fwd = to > from;
+		THROW( logic_error, "Checking geometry: " << DISPLAY( target->m_from[0] ) << DISPLAY( target->m_to[0] ) << DISPLAY( target->m_from[1] ) << DISPLAY( target->m_to[1] ) << "\n"
+                << DISPLAY( pairmate ) << DISPLAY( fwd ) << DISPLAY( target->GetQuery()->GetId() ) << "\n"
+                << DISPLAY( CBitHacks::AsBits( m_geometryFlags) ) << "\n"
+                << DISPLAY( CBitHacks::AsBits( GetAppendFlags( pairmate, fwd ) ) ) << "\n"
+                << DISPLAY( CBitHacks::AsBits( GetLookupFlags( pairmate, fwd ) ) ) << "\n"
+                << DISPLAY( CBitHacks::AsBits( unsigned( fLookupInFwd ) ) ) << "\n"
+                << DISPLAY( CBitHacks::AsBits( unsigned( fLookupInRev ) ) ) << "\n"
+                );
 	}
     return otherHit;
 }
 
 bool CFilter::CheckGeometry( int from1, int to1, int from2, int to2 ) const
 {
-	if( from1 < to1 ) {
-		if( from2 < to2 ) {
-			if( to1 <= from2 ) {
+	if( from1 < to1 ) { // 1+
+		if( from2 < to2 ) { // 2+
+			if( to1 <= from2 ) { // 12
 				if( m_geometryFlags & fFwd1_Fwd2 ) return InRange( from1, to2 );
-			} else if( to2 <= from1 ) {
+			} else if( to2 <= from1 ) { // 21
 				if( m_geometryFlags & fFwd2_Fwd1 ) return InRange( from2, to1 );
 			} else {
 				if( m_geometryFlags & fForward ) return InRange( min( from1, from2 ), max( to1, to2 ) );
 			}
-		} else {
-			if( to1 <= to2 ) {
+		} else { // 2-
+			if( to1 <= to2 ) { // 12
 				if( m_geometryFlags & fFwd1_Rev2 ) return InRange( from1, from2 );
-			} else if( from2 <= from1 ) {
+			} else if( from2 <= from1 ) { // 21
 				if( m_geometryFlags & fRev2_Fwd1 ) return InRange( to2, to1 );
 			} else {
 				if( m_geometryFlags & fOppositeFwd1 ) return InRange( min( from1, to2 ), max( to1, from2 ) );
 			}
 		}
-	} else {
-		if( from2 < to2 ) {
-			if( from1 <= from2 ) {
+	} else { // 1-
+		if( from2 < to2 ) { // 2+
+			if( from1 <= from2 ) { // 12
 				if( m_geometryFlags & fRev1_Fwd2 ) return InRange( to1, to2 );
-			} else if( to2 <= to1 ) {
+			} else if( to2 <= to1 ) {  // 21
 				if( m_geometryFlags & fFwd2_Rev1 ) return InRange( from2, from1 );
 			} else {
 				if( m_geometryFlags & fOppositeRev1 ) return InRange( min( to1, from2 ), max( from1, to2 ) );
 			}
-		} else {
-			if( from1 <= to2 ) {
+		} else { // 2-
+			if( from1 <= to2 ) { // 12
 				if( m_geometryFlags & fRev1_Rev2 ) return InRange( to1, from2 );
-			} else if( from2 <= to1 ) {
+			} else if( from2 <= to1 ) { // 21
 				if( m_geometryFlags & fRev2_Rev1 ) return InRange( to2, from1 );
 			} else {
 				if( m_geometryFlags & fReverse ) return InRange( min( to1, to2 ), max( from1, from2 ) );
@@ -109,7 +117,7 @@ CFilter::TPendingHits::iterator CFilter::x_ExpireOldHits( TPendingHits& pendingH
 {
     TPendingHits::iterator h = pendingHits.begin();
     if( pendingHits.size() ) {
-        while( h != pendingHits.end() && h->first < p ) PurgeHit( h++->second );
+        while( h != pendingHits.end() && h->first <= p ) PurgeHit( h++->second );
         pendingHits.erase( pendingHits.begin(), h );
     }
 	return h;
@@ -162,10 +170,7 @@ void CFilter::Match( double score, int seqFrom, int seqTo, CQuery * query, int p
 	bool found = false;
 	///bool added = false;
 
-	int lookupFlags = pairmate == 0 ? fwd ? fRev2_Fwd1|fFwd2_Fwd1 : fFwd2_Rev1|fRev2_Rev1 : fwd ? fRev1_Fwd2|fFwd1_Fwd2 : fFwd1_Rev2|fRev1_Rev2;
-	int appendFlags = pairmate == 0 ? fwd ? fFwd1_Rev2|fFwd1_Fwd2 : fRev1_Fwd2|fRev1_Rev2 : fwd ? fFwd2_Rev1|fFwd2_Fwd1 : fRev2_Fwd1|fRev2_Rev1;
-	
-	if( int flags = m_geometryFlags & lookupFlags ) {
+	if( unsigned flags = m_geometryFlags & GetLookupFlags( pairmate, fwd ) ) {
         int maxPos = seqFrom - m_minDist;
 
 		if( flags & fLookupInFwd ) {
@@ -178,52 +183,13 @@ void CFilter::Match( double score, int seqFrom, int seqTo, CQuery * query, int p
 
 	// NB: logic here is a bit limited... it allows transitive hits, e.g. Fwd1...Fwd2...Fwd1 even with disallowed combinatorial explosion; 
 	// otherwise we may have a problem that Fwd2...Fwd1 part will be missed even if it is stronger then Fwd1...Fwd2 part of the triplet.
-	if( m_geometryFlags & appendFlags ) {
+	if( m_geometryFlags & GetAppendFlags( pairmate, fwd ) ) {
        	CHit * hh = new CHit( query, m_ord, pairmate, score, seqFrom, seqTo );
 		if( fwd ) m_pendingHits[0].insert( make_pair( seqFrom, hh ) );
 		else      m_pendingHits[1].insert( make_pair( seqTo,   hh ) );
 	} else if( !found ) {
         PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) );
     }
-
-	/*
-    if( seqFrom > seqTo ) { 
-        int P = seqFrom - m_minDist;
-        
-        // find pair in queue
-        bool found = false;
-        TPendingHits toAdd;
-        for( ; h != m_pendingHits.end() && h->first <= P ; ++h ) {
-            CHit * hh = h->second;
-
-            if( query != hh->GetQuery() ) continue;
-            if( !hh->HasPairTo( pairmate ) ) continue;
-            if( hh->IsRevCompl( !pairmate ) ) continue;
-
-            if( CHit * hit = SetHit( h->second, pairmate, score, seqFrom, seqTo ) ) {
-                if( hit->GetComponents() == 3 ) // this may create combinatorial explosion
-                    toAdd.insert( make_pair( h->first, hit ) ); 
-                else {
-                    ASSERT( hit->HasComponent( pairmate ) );
-                    ASSERT( hit->HasComponent( !pairmate ) == false );
-                    ASSERT( hit->GetFrom( pairmate ) > hit->GetTo( pairmate ) );
-                    PurgeHit( hit ); // this is in case when combinatorial explosio is forbidden
-                }
-            }
-            found = true;
-        }
-        copy( toAdd.begin(), toAdd.end(), inserter( m_pendingHits, m_pendingHits.end() ) );
-        if( !found ) {
-            PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) );
-        }
-    } else {
-        // positive strand of paired read - add the hit to queue
-        CHit * hh = new CHit( query, m_ord, pairmate, score, seqFrom, seqTo );
-        ASSERT( hh->IsRevCompl( pairmate ) == false );
-        ASSERT( hh->GetComponents() == CHit::GetComponentMask( pairmate ) );
-        m_pendingHits.insert( make_pair( seqFrom, hh ) );
-    } 
-	*/
 }
 
 void CFilter::SequenceBegin( const TSeqIds& id, int oid ) 
