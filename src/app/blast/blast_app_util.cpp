@@ -423,8 +423,9 @@ s_ImportSearchStrategy(CNcbiIstream* in,
     CRef<CBlast4_request> b4req;
     try { 
         b4req = ExtractBlast4Request(*in);
-    } catch (const CException& e) {
-        ERR_POST(Fatal << "Fail to read search strategy: " << e.GetMsg());
+    } catch (const CSerialException& e) {
+        NCBI_THROW(CInputException, eInvalidInput, 
+                   "Failed to read search strategy");
     }
 
     if (b4req->CanGetBody() && !b4req->GetBody().IsQueue_search() ) {

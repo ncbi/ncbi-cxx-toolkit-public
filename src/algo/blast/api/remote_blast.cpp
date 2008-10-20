@@ -40,6 +40,7 @@
 #include <objects/blast/blastclient.hpp>
 #include <objects/blast/blast__.hpp>
 #include <objects/blast/names.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
@@ -49,7 +50,6 @@
 #include "psiblast_aux_priv.hpp"    // For CPsiBlastValidate::Pssm()
 #include <util/format_guess.hpp>    // for CFormatGuess
 #include <serial/objistrxml.hpp>    // for CObjectIStreamXml
-#include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
 #include <algo/blast/api/objmgr_query_data.hpp>
 
 #if defined(NCBI_OS_UNIX)
@@ -2288,7 +2288,7 @@ ExtractBlast4Request(CNcbiIstream& in)
         break;
 
     default:
-        NCBI_THROW(CInputException, eInvalidInput, 
+        NCBI_THROW(CSerialException, eInvalidData, 
                    "Unrecognized input format ");
     }
 
