@@ -545,37 +545,76 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const string& name,
 {
     const char* s = 0;
     switch ( m_Biomol ) {
+
+    default:
+        break;
+
     case CMolInfo::eBiomol_unknown:
         switch ( m_Mol ) {
-        case CSeq_inst::eMol_dna:  s = "unassigned DNA"; break;
-        case CSeq_inst::eMol_rna:  s = "unassigned RNA"; break;
-        default:                   break;
+        case CSeq_inst::eMol_dna:  
+            s = "unassigned DNA"; 
+            break;
+        case CSeq_inst::eMol_rna:  
+            s = "unassigned RNA"; 
+            break;
+        default:                   
+            break;
         }
         break;
+
     case CMolInfo::eBiomol_genomic:
         switch ( m_Mol ) {
-        case CSeq_inst::eMol_dna:  s = "genomic DNA";  break;
-        case CSeq_inst::eMol_rna:  s = "genomic RNA";  break;
-        default:                   break;
+        case CSeq_inst::eMol_dna:  
+            s = "genomic DNA";  
+            break;
+        case CSeq_inst::eMol_rna:  
+            s = "genomic RNA";  
+            break;
+        default:                   
+            break;
         }
         break;
-    case CMolInfo::eBiomol_pre_RNA:  s = "pre-RNA";   break;
-    case CMolInfo::eBiomol_mRNA:     s = "mRNA";      break;
-    case CMolInfo::eBiomol_rRNA:     s = "rRNA";      break;
-    case CMolInfo::eBiomol_tRNA:     s = "tRNA";      break;
-    case CMolInfo::eBiomol_snRNA:    s = "snRNA";     break;
-    case CMolInfo::eBiomol_scRNA:    s = "scRNA";     break;
+
+    case CMolInfo::eBiomol_mRNA:     
+        s = "mRNA";      
+        break;
+
+    case CMolInfo::eBiomol_rRNA:     
+        s = "rRNA";      
+        break;
+    
+    case CMolInfo::eBiomol_tRNA:     
+        s = "tRNA";      
+        break;
+
+    case CMolInfo::eBiomol_pre_RNA:  
+    case CMolInfo::eBiomol_snRNA:    
+    case CMolInfo::eBiomol_scRNA:    
+    case CMolInfo::eBiomol_snoRNA:
+    case CMolInfo::eBiomol_ncRNA:
+    case CMolInfo::eBiomol_tmRNA:
+    case CMolInfo::eBiomol_transcribed_RNA:
+        s = "transcribed RNA";     
+        break;
+
     case CMolInfo::eBiomol_other_genetic:
     case CMolInfo::eBiomol_other:
         switch ( m_Mol ) {
-        case CSeq_inst::eMol_dna:  s = "other DNA";  break;
-        case CSeq_inst::eMol_rna:  s = "other RNA";  break;
-        default:                   break;
+        case CSeq_inst::eMol_dna:  
+            s = "other DNA";  
+            break;
+        case CSeq_inst::eMol_rna:  
+            s = "other RNA";  
+            break;
+        default:                   
+            break;
         }
         break;
+
     case CMolInfo::eBiomol_cRNA:
-    case CMolInfo::eBiomol_transcribed_RNA:  s = "other RNA";  break;
-    case CMolInfo::eBiomol_snoRNA:           s = "snoRNA";     break;
+        s = "viral cRNA";     
+        break;
+
     }
 
     if ( s == 0 ) {
