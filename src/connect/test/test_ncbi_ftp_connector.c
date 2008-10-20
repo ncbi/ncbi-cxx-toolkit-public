@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -33,12 +33,12 @@
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"
 #include <connect/ncbi_connection.h>
+#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_ftp_connector.h>
 #include <stdlib.h>
 #include <time.h>
 /* This header must go last */
 #include "test_assert.h"
-
 
 #define TEST_HOST "ftp.ncbi.nlm.nih.gov"
 #define TEST_PORT 0
@@ -51,16 +51,15 @@ int main(int argc, char* argv[])
 {
     static const char kChdir[] = "CWD /toolbox/ncbi_tools\n";
     static const char kFile[] = "RETR CURRENT/ncbi.tar.gz";
-    const char* env = getenv("CONN_DEBUG_PRINTOUT");
-    int/*bool*/ aborting = 0, first;
-    TFCDC_Flags flags = 0;
-    char        buf[1024];
-    CONNECTOR   connector;
-    FILE*       data_file;
-    size_t      size, n;
-    STimeout    timeout;
-    EIO_Status  status;
-    CONN        conn;
+    int/*bool*/   aborting = 0, first;
+    TFCDC_Flags   flag = 0;
+    SConnNetInfo* net_info;
+    char          buf[1024];
+    CONNECTOR     connector;
+    FILE*         data_file;
+    size_t        size, n;
+    EIO_Status    status;
+    CONN          conn;
 
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
@@ -72,19 +71,18 @@ int main(int argc, char* argv[])
     data_file = fopen("test_ncbi_ftp_connector.out", "wb");
     assert(data_file);
 
-    timeout.sec  = 5;
-    timeout.usec = 0;
-
-    if (env) {
-        if (     strcasecmp(env, "1")    == 0  ||
-                 strcasecmp(env, "TRUE") == 0  ||
-                 strcasecmp(env, "SOME") == 0)
-            flags |= fFCDC_LogControl;
-        else if (strcasecmp(env, "DATA") == 0)
-            flags |= fFCDC_LogData;
-        else if (strcasecmp(env, "ALL")  == 0)
-            flags |= fFCDC_LogAll;
+    assert((net_info = ConnNetInfo_Create(0)) != 0);
+    if (net_info->debug_printout == eDebugPrintout_Some)
+        flag |= fFCDC_LogControl;
+    else if (net_info->debug_printout == eDebugPrintout_Data)
+        flag |= fFCDC_LogData;
+    else {
+        char val[32];
+        ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val), "");
+        if (strcasecmp(val, "ALL") == 0)
+            flag |= fFCDC_LogAll;
     }
+    ConnNetInfo_Destroy(net_info);
 
     if (TEST_PORT) {
         sprintf(buf, ":%hu", TEST_PORT);
@@ -96,14 +94,17 @@ int main(int argc, char* argv[])
     /* Run the tests */
     connector = FTP_CreateDownloadConnector(TEST_HOST, TEST_PORT,
                                             TEST_USER, TEST_PASS,
-                                            TEST_PATH, flags);
+                                            TEST_PATH, flag);
 
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot create FTP download connection");
 
-    assert(CONN_SetTimeout(conn, eIO_Open,      &timeout) == eIO_Success);
-    assert(CONN_SetTimeout(conn, eIO_ReadWrite, &timeout) == eIO_Success);
-    assert(CONN_SetTimeout(conn, eIO_Close,     &timeout) == eIO_Success);
+    assert(CONN_SetTimeout(conn, eIO_Open,      net_info->timeout)
+           == eIO_Success);
+    assert(CONN_SetTimeout(conn, eIO_ReadWrite, net_info->timeout)
+           == eIO_Success);
+    assert(CONN_SetTimeout(conn, eIO_Close,     net_info->timeout)
+           == eIO_Success);
 
     if (CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain) != eIO_Closed)
         CORE_LOG(eLOG_Fatal, "Test failed in empty READ");
@@ -111,7 +112,7 @@ int main(int argc, char* argv[])
     if (CONN_Write(conn, "aaa", 3, &n, eIO_WritePlain) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot write FTP command");
 
-    if (CONN_Wait(conn, eIO_Read, &timeout) != eIO_Unknown)
+    if (CONN_Wait(conn, eIO_Read, net_info->timeout) != eIO_Unknown)
         CORE_LOG(eLOG_Fatal, "Test failed in waiting on READ");
     CORE_LOG(eLOG_Note, "Unrecognized command was correctly rejected");
 

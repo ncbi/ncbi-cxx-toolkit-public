@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -334,14 +334,13 @@ static int s_Client(int x_port, unsigned int max_try)
 
 int main(int argc, const char* argv[])
 {
-    unsigned int max_try = DEF_CONN_MAX_TRY;
-    const char*  env = getenv("CONN_DEBUG_PRINTOUT");
+    SConnNetInfo* net_info;
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    if (argc < 2 || argc > 5)
+    if (argc < 2  ||  argc > 5)
         return s_Usage(argv[0]);
 
     if (argc <= 4)
@@ -351,13 +350,10 @@ int main(int argc, const char* argv[])
     CORE_LOGF(eLOG_Note, ("Random SEED = %u", g_NCBI_ConnectRandomSeed));
     srand(g_NCBI_ConnectRandomSeed);
 
-    if (env && (strcasecmp(env, "1") == 0     ||
-                strcasecmp(env, "yes") == 0   ||
-                strcasecmp(env, "true") == 0  ||
-                strcasecmp(env, "some") == 0  ||
-                strcasecmp(env, "data") == 0)) {
+    assert((net_info = ConnNetInfo_Create(0)) != 0);
+    if (net_info->debug_printout != eDebugPrintout_None)
         SOCK_SetDataLoggingAPI(eOn);
-    }
+    ConnNetInfo_Destroy(net_info);
 
     if (argc > 3) {
         int mtu = atoi(argv[3]);
@@ -365,12 +361,10 @@ int main(int argc, const char* argv[])
             s_MTU = mtu - 32/*small protocol (IP/UDP) overhead*/;
     }
 
-    if (!(env = getenv("CONN_MAX_TRY"))  ||  !(max_try = atoi(env)))
-        max_try = DEF_CONN_MAX_TRY;
-
-    if (strcasecmp(argv[1], "client") == 0)
-        return s_Client(argv[2] ? atoi(argv[2]) : DEFAULT_PORT, max_try);
-
+    if (strcasecmp(argv[1], "client") == 0) {
+        return s_Client(argv[2] ? atoi(argv[2]) : DEFAULT_PORT,
+                        net_info->max_try);
+    }
     if (strcasecmp(argv[1], "server") == 0)
         return s_Server(argv[2] ? atoi(argv[2]) : DEFAULT_PORT);
 

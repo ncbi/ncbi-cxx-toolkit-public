@@ -33,11 +33,14 @@
 
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_assert.h"
+#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_socket.h>
+#include <connect/ncbi_util.h>
 #include <stdio.h>
-#include <stdlib.h>
 /* This header must go last */
 #include "test_assert.h"
+
+#define MIN_PORT 5001
 
 
 static FILE* s_LogFile;
@@ -54,6 +57,7 @@ static void s_DoServer(unsigned short port, int n_cycle)
     EIO_Status status;
 
     fprintf(s_LogFile, "DoServer(port = %hu, n_cycle = %u)\n", port, n_cycle);
+    fflush(s_LogFile);
 
     /* Create listening socket */
     status = LSOCK_Create(port, 1, &lsock);
@@ -86,6 +90,7 @@ static void s_DoServer(unsigned short port, int n_cycle)
                 fprintf(s_LogFile,
                         "Failed to write -- DoServer(n_cycle = %d): %s\n",
                         n_cycle, IO_StatusStr(status));
+                fflush(s_LogFile);
                 break;
             }
         }
@@ -104,52 +109,53 @@ static void s_DoServer(unsigned short port, int n_cycle)
 
 int main(int argc, const char* argv[])
 {
-    /* variables */
-#define MIN_PORT 5001
-    unsigned short port = 0;
+    SConnNetInfo* net_info;
     int n_cycle = 100;
     const char* env;
 
     /* logging */
     s_LogFile = fopen("socket_io_bouncer.log", "ab");
     assert(s_LogFile);
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    CORE_SetLOGFILE(s_LogFile, 1/*auto-close*/);
+
+    assert((net_info = ConnNetInfo_Create(0)) != 0);
 
     /* cmd.-line args */
     switch ( argc ) {
     case 3: {
-        if (sscanf(argv[2], "%d", &n_cycle) != 1  ||  n_cycle <= 0)
+        if (sscanf(argv[2], "%d", &n_cycle) != 1)
+            n_cycle = -1;
+        if (n_cycle <= 0)
             break;
     }
     case 2: {
-        int i_port = -1;
-        if (sscanf(argv[1], "%d", &i_port) != 1  ||
-            i_port < MIN_PORT  ||  65535 < i_port)
-            break;
-        port = (unsigned short) i_port;
+        int port;
+        if (sscanf(argv[1], "%d", &port) == 1  &&  0 <= port  &&  port <= 65535)
+            net_info->port = (unsigned short) port;
     }
     } /* switch */
 
-    if (port == 0) {
+    if (net_info->port < MIN_PORT  ||  n_cycle <= 0) {
         fprintf(stderr,
-                "Usage: %s <port> [n_cycle]\n where <port> not less than %d\n",
+                "Usage: %s <port> [n_cycle]\nwhere <port> not less than %d\n",
                 argv[0], (int) MIN_PORT);
         fprintf(s_LogFile,
-                "Usage: %s <port> [n_cycle]\n where <port> not less than %d\n",
+                "Usage: %s <port> [n_cycle]\nwhere <port> not less than %d\n",
                 argv[0], (int) MIN_PORT);
-        return 1;
+        return 1/*error*/;
     }
 
-    if ((env = getenv("CONN_DEBUG_PRINTOUT")) != 0 &&
-        (strcasecmp(env, "true") == 0 || strcasecmp(env, "1") == 0 ||
-         strcasecmp(env, "data") == 0 || strcasecmp(env, "all") == 0)) {
+    if (net_info->debug_printout != eDebugPrintout_None)
         SOCK_SetDataLoggingAPI(eOn);
-    }
 
     /* run */
-    s_DoServer(port, n_cycle);
+    s_DoServer(net_info->port, n_cycle);
 
     /* cleanup */
     verify(SOCK_ShutdownAPI() == eIO_Success);
-    fclose(s_LogFile);
+    ConnNetInfo_Destroy(net_info);
+    CORE_SetLOG(0);
     return 0;
 }

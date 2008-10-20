@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -59,9 +59,9 @@ static CNcbiRegistry* s_CreateRegistry(void)
     CNcbiRegistry* reg = new CNcbiRegistry;
 
     // Compose a test registry
-    reg->Set("ID1", "CONN_" REG_CONN_HOST, DEF_CONN_HOST);
-    reg->Set("ID1", "CONN_" REG_CONN_PATH, DEF_CONN_PATH);
-    reg->Set("ID1", "CONN_" REG_CONN_ARGS, DEF_CONN_ARGS);
+    reg->Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_HOST, DEF_CONN_HOST);
+    reg->Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
+    reg->Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,     "www.ncbi.nlm.nih.gov");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
@@ -82,7 +82,6 @@ int main(int argc, const char* argv[])
     TFCDC_Flags flag = 0;
     SConnNetInfo* net_info;
     size_t i, j, k, l, m, n, size;
-    const char* env = getenv("CONN_DEBUG_PRINTOUT");
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
@@ -215,14 +214,14 @@ int main(int argc, const char* argv[])
     LOG_POST("Test 2 of 6:  FTP download");
     if (!(net_info = ConnNetInfo_Create(0)))
         ERR_POST(Fatal << "Cannot create net info");
-    if (env) {
-        if (    strcasecmp(env, "1")    == 0  ||
-                strcasecmp(env, "TRUE") == 0  ||
-                strcasecmp(env, "SOME") == 0)
-            flag |= fFCDC_LogControl;
-        else if (strcasecmp(env, "DATA") == 0)
-            flag |= fFCDC_LogData;
-        else if (strcasecmp(env, "ALL")  == 0)
+    if (net_info->debug_printout == eDebugPrintout_Some)
+        flag |= fFCDC_LogControl;
+    else if (net_info->debug_printout == eDebugPrintout_Data)
+        flag |= fFCDC_LogData;
+    else {
+        char val[32];
+        ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val), "");
+        if (strcasecmp(val, "ALL") == 0)
             flag |= fFCDC_LogAll;
     }
     CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",

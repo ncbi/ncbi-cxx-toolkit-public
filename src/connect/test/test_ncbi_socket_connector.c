@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -34,30 +34,51 @@
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"
 #include <connect/ncbi_socket_connector.h>
-#include <connect/ncbi_util.h>
+#include <connect/ncbi_connutil.h>
 #include <stdlib.h>
 /* This header must go last */
 #include "test_assert.h"
 
+#define TEST_MAX_TRY 2
+#define TEST_TIMEOUT 5.123456
+
+#define MIN_PORT 5001
+
+#define _STR(n)      #n
+#define STRINGIFY(n) _STR(n)
+
+
+/*ARGSUSED*/
+static void s_REG_Get(void* unused, const char* section,
+                      const char* name, char* value, size_t value_size)
+{
+    if (strcasecmp(DEF_CONN_REG_SECTION, section) == 0) {
+        if      (strcasecmp(REG_CONN_HOST,    name) == 0)
+            *value = '\0';
+        if      (strcasecmp(REG_CONN_MAX_TRY, name) == 0)
+            strncpy0(value, STRINGIFY(TEST_MAX_TRY), value_size);
+        else if (strcasecmp(REG_CONN_TIMEOUT, name) == 0)
+            strncpy0(value, STRINGIFY(TEST_TIMEOUT), value_size);
+    }
+}
+
 
 int main(int argc, const char* argv[])
 {
-    STimeout  timeout;
-    CONNECTOR connector;
-    FILE*     data_file;
-#define MIN_PORT 5001
-    const char*    env;
-    const char*    host;
-    unsigned short port;
-    unsigned int   max_try;
-    SOCK           sock;
+    SConnNetInfo* net_info;
+    CONNECTOR     connector;
+    FILE*         data_file;
+    char          tmo[32];
+    SOCK          sock;
 
-    /* defaults */
-    host         = 0;
-    port         = 0;
-    max_try      = 2;
-    timeout.sec  = 5;
-    timeout.usec = 123456;
+    /* registry */
+    CORE_SetREG(REG_Create(0, s_REG_Get, 0, 0, 0));
+    /* log and data log streams */
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    CORE_SetLOGFILE(stderr, 0/*false*/);
+
+    assert((net_info = ConnNetInfo_Create(0)) != 0);
 
     /* parse cmd.-line args */
     switch ( argc ) {
@@ -65,81 +86,90 @@ int main(int argc, const char* argv[])
         float fff = 0;
         if (sscanf(argv[4], "%f", &fff) != 1  ||  fff < 0)
             break;
-        timeout.sec  = (unsigned int) fff;
-        timeout.usec = (unsigned int) ((fff - timeout.sec) * 1000000);
+        net_info->tmo.sec  = (unsigned int) fff;
+        net_info->tmo.usec = (unsigned int)(fff - net_info->tmo.sec) * 1000000;
+        net_info->timeout = &net_info->tmo;
     }
     case 4: { /* max_try  */
         long lll;
         if (sscanf(argv[3], "%ld", &lll) != 1  ||  lll <= 0)
             break;
-        max_try = (unsigned int) lll;
+        net_info->max_try = (unsigned int) lll;
     }
     case 3: { /* host, port */
         int iii;
-        if (sscanf(argv[2], "%d", &iii) != 1  ||
-            iii < MIN_PORT  ||  65535 <= iii)
+        if (sscanf(argv[2], "%d", &iii) != 1  ||  iii < 0  || 65535 < iii)
             break;
-        port = (unsigned short) iii;
+        net_info->port = (unsigned short) iii;
 
-        if ( !*argv[1] )
+        if (!*argv[1])
             break;
-        host = argv[1];
+        strncpy0(net_info->host, argv[1], sizeof(net_info->host) - 1);
     }
     default:
         break;
     }
 
     /* bad args? -- Usage */
-    if ( !host ) {
+    if (!*net_info->host  ||  net_info->port < MIN_PORT) {
         fprintf(stderr,
-                "Usage: %s <host> <port> [max_try [timeout]]\n  where"
-                "  <port> not less than %d; timeout is a float(in sec)\n",
-                argv[0], (int) MIN_PORT);
-        return 1 /*error*/;
+                "Usage: %s <host> <port> [max_try [timeout]]\n"
+                "where <port> not less than %s; timeout is a float(in sec)\n",
+                argv[0], STRINGIFY(MIN_PORT));
+        return 1/*error*/;
     }
 
-    /* log and data log streams */
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
-    CORE_SetLOGFILE(stderr, 0/*false*/);
     data_file = fopen("test_ncbi_socket_connector.log", "ab");
     assert(data_file);
 
-    if ((env = getenv("CONN_DEBUG_PRINTOUT")) != 0 &&
-        (strcasecmp(env, "true") == 0 || strcasecmp(env, "1") == 0 ||
-         strcasecmp(env, "data") == 0 || strcasecmp(env, "all") == 0)) {
+    if (net_info->debug_printout != eDebugPrintout_None)
         SOCK_SetDataLoggingAPI(eOn);
-    }
+    
+    if (net_info->timeout)
+        sprintf(tmo, "%u.%06u", net_info->timeout->sec,net_info->timeout->usec);
+    else
+        strcpy(tmo, "infinite");
 
     /* Tests for SOCKET CONNECTOR */
     fprintf(stderr,
             "Starting the SOCKET CONNECTOR test...\n"
-            "%s:%hu,  timeout = %u.%06u, max # of retry = %u\n",
-            host, port, timeout.sec, timeout.usec, max_try);
+            "%s:%hu, timeout = %s, max # of retries = %u\n",
+            net_info->host, net_info->port, tmo, net_info->max_try);
 
-    connector = SOCK_CreateConnector(host, port, max_try);
-    CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBouncePrint);
+    connector = SOCK_CreateConnector(net_info->host, net_info->port,
+                                     net_info->max_try);
+    CONN_TestConnector(connector, net_info->timeout,
+                       data_file, fTC_SingleBouncePrint);
 
-    connector = SOCK_CreateConnector(host, port, max_try);
-    CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBounceCheck);
+    connector = SOCK_CreateConnector(net_info->host, net_info->port,
+                                     net_info->max_try);
+    CONN_TestConnector(connector, net_info->timeout,
+                       data_file, fTC_SingleBounceCheck);
 
-    connector = SOCK_CreateConnector(host, port, max_try);
-    CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
+    connector = SOCK_CreateConnector(net_info->host, net_info->port,
+                                     net_info->max_try);
+    CONN_TestConnector(connector, net_info->timeout,
+                       data_file, fTC_Everything);
 
     /* Tests for OnTop SOCKET CONNECTOR connector */
     fprintf(stderr,
             "Starting the SOCKET CONNECTOR test for \"OnTop\" connectors...\n"
-            "%s:%hu,  timeout = %u.%06u, max # of retry = %u\n",
-            host, port, timeout.sec, timeout.usec, max_try);
+            "%s:%hu, timeout = %s, max # of retries = %u\n",
+            net_info->host, net_info->port, tmo, net_info->max_try);
 
-    if (SOCK_Create(host, port, &timeout, &sock) != eIO_Success)
+    if (SOCK_Create(net_info->host, net_info->port,
+                    net_info->timeout, &sock) != eIO_Success) {
         CORE_LOG(eLOG_Fatal, "Cannot create socket");
+    }
 
-    connector = SOCK_CreateConnectorOnTop(sock, max_try);
-    CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
+    connector = SOCK_CreateConnectorOnTop(sock, net_info->max_try);
+    CONN_TestConnector(connector, net_info->timeout,
+                       data_file, fTC_Everything);
 
     /* cleanup, exit */
+    ConnNetInfo_Destroy(net_info);
     fclose(data_file);
     CORE_SetLOG(0);
+    CORE_SetREG(0);
     return 0/*okay*/;
 }
