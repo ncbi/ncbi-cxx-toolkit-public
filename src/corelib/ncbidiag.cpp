@@ -2966,7 +2966,7 @@ bool SDiagMessage::x_ParseExtraArgs(const string& str, size_t pos)
     if (str.find('&', pos) == NPOS  &&  str.find('=', pos) == NPOS) {
         return false;
     }
-    CStringPairsParser parser("&", "=", new CExtraDecoder());
+    CStringPairs<TExtraArgs> parser("&", "=", new CExtraDecoder());
     try {
         parser.Parse(CTempString(str.c_str() + pos));
     }
@@ -2986,7 +2986,7 @@ bool SDiagMessage::x_ParseExtraArgs(const string& str, size_t pos)
             return false;
         }
     }
-    ITERATE(CStringPairsParser::TStrPairs, it, parser.GetPairs()) {
+    ITERATE(TExtraArgs, it, parser.GetPairs()) {
         if (it->first == kExtraTypeArgName) {
             m_TypedExtra = true;
         }
@@ -3515,27 +3515,39 @@ string SDiagMessage::x_GetModule(void) const
 }
 
 
-string SDiagMessage::FormatExtraMessage(void) const
+class CExtraEncoder : public IStringEncoder
 {
-    string msg;
-    ITERATE(TExtraArgs, it, m_ExtraArgs) {
-        if ( !msg.empty() ) {
-            msg += "&";
-        }
-        ITERATE(string, c, it->first) {
+public:
+    virtual string Encode(const string& src, EStringType stype) const;
+};
+
+
+string CExtraEncoder::Encode(const string& src, EStringType stype) const
+{
+    if (stype == eName) {
+        // Just check the source string, it may contain only valid chars
+        ITERATE(string, c, src) {
             const char* enc = s_ExtraEncodeChars[(unsigned char)(*c)];
             if (enc[1] != 0  ||  enc[0] != *c) {
                 NCBI_THROW(CCoreException, eInvalidArg,
-                    "Invalid char in extra args name: " + it->first);
+                    "Invalid char in extra args name: " + src);
             }
-            msg += *c;
         }
-        msg += "=";
-        ITERATE(string, c, it->second) {
-            msg += s_ExtraEncodeChars[(unsigned char)(*c)];
-        }
+        return src;
     }
-    return msg;
+    // Encode value
+    string dst;
+    ITERATE(string, c, src) {
+        dst += s_ExtraEncodeChars[(unsigned char)(*c)];
+    }
+    return dst;
+}
+
+
+string SDiagMessage::FormatExtraMessage(void) const
+{
+    return CStringPairs<TExtraArgs>::Merge(m_ExtraArgs,
+        "&", "=", new CExtraEncoder);
 }
 
 
