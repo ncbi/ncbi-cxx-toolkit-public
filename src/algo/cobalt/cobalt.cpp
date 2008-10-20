@@ -46,33 +46,89 @@ Contents: Implementation of CMultiAligner class
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
-CMultiAligner::CMultiAligner(const char *matrix_name,
-                             CNWAligner::TScore gap_open,
-                             CNWAligner::TScore gap_extend,
-                             CNWAligner::TScore end_gap_open,
-                             CNWAligner::TScore end_gap_extend,
-                             bool iterate,
-                             double blastp_evalue,
-                             double conserved_cutoff,
-                             double filler_res_boost,
-                             double pseudocount)
-    : m_BlastpEvalue(blastp_evalue),
-      m_LocalResFreqBoost(filler_res_boost),
-      m_MatrixName(matrix_name),
-      m_ConservedCutoff(conserved_cutoff),
-      m_Pseudocount(pseudocount),
-      m_GapOpen(gap_open),
-      m_GapExtend(gap_extend),
-      m_EndGapOpen(end_gap_open),
-      m_EndGapExtend(end_gap_extend),
-      m_Verbose(false),
-      m_Iterate(iterate),
-      m_UseClusters(false),
-      m_KmerLength(0),
-      m_MaxClusterDist(0.0),
-      m_ClustDistMeasure(TKMethods::eFractionCommonKmersGlobal)
+
+CMultiAligner::CMultiAligner(void) 
+    : m_Options(new CMultiAlignerOptions(
+                      CMultiAlignerOptions::fMediumQueryClusters
+                      | CMultiAlignerOptions::fNoRpsBlast))
 {
-    SetScoreMatrix(matrix_name);
+    x_InitParams();
+    x_InitAligner();
+}
+
+
+CMultiAligner::CMultiAligner(const string& rps_db)
+    : m_Options(new CMultiAlignerOptions(
+                            CMultiAlignerOptions::fMediumQueryClusters))
+{
+    x_InitParams();
+    x_InitAligner();
+}
+
+
+CMultiAligner::CMultiAligner(const CConstRef<CMultiAlignerOptions>& options)
+    : m_Options(options)
+{
+    x_InitParams();
+    x_InitAligner();
+}
+
+
+void CMultiAligner::x_InitParams(void)
+{
+    _ASSERT(!m_Options.Empty());
+
+    m_UseClusters = m_Options->GetUseQueryClusters();
+    m_KmerLength = m_Options->GetKmerLength();
+    m_MaxClusterDist = m_Options->GetMaxInClusterDist();
+    m_ClustDistMeasure = m_Options->GetKmerDistMeasure();
+    m_KmerAlphabet = m_Options->GetKmerAlphabet();
+
+    m_MatrixName = m_Options->GetScoreMatrixName().c_str();
+
+    if (!m_Options->GetRpsDb().empty()) {
+        m_RPSdb = m_Options->GetRpsDb();
+        m_Blockfile = m_Options->GetRpsDb() + ".blocks";
+        m_Freqfile = m_Options->GetRpsDb() + ".freq";
+    }
+    m_RPSEvalue = m_Options->GetRpsEvalue();
+    m_DomainResFreqBoost = m_Options->GetDomainResFreqBoost();
+
+    m_BlastpEvalue = m_Options->GetBlastpEvalue();
+    m_LocalResFreqBoost = m_Options->GetLocalResFreqBoost();
+
+    m_Iterate = m_Options->GetIterate();
+    m_ConservedCutoff = m_Options->GetConservedCutoffScore();
+    m_Pseudocount = m_Options->GetPseudocount();
+
+    m_FastMeTree = (m_Options->GetTreeMethod() == CMultiAlignerOptions::eFastME);
+
+    m_GapOpen = m_Options->GetGapOpenPenalty();
+    m_GapExtend = m_Options->GetGapExtendPenalty();
+    m_EndGapOpen = m_Options->GetEndGapOpenPenalty();
+    m_EndGapExtend = m_Options->GetEndGapExtendPenalty();
+
+    m_Verbose = m_Options->GetVerbose();
+
+    int score = m_Options->GetUserConstraintsScore();
+    m_UserHits.PurgeAllHits();
+    ITERATE(vector<CMultiAlignerOptions::SConstraint>, it,
+            m_Options->GetUserConstraints()) {
+
+        m_UserHits.AddToHitList(new CHit(it->seq1_index, it->seq2_index,
+                                         TRange(it->seq1_start, it->seq1_stop),
+                                         TRange(it->seq2_start, it->seq2_stop),
+                                         score, CEditScript()));
+
+    }
+
+    //Note: Patterns are kept in m_Options
+}
+
+
+void CMultiAligner::x_InitAligner(void)
+{
+    x_SetScoreMatrix(m_MatrixName);
     m_Aligner.SetWg(m_GapOpen);
     m_Aligner.SetWs(m_GapExtend);
     m_Aligner.SetStartWg(m_EndGapOpen);
@@ -82,9 +138,42 @@ CMultiAligner::CMultiAligner(const char *matrix_name,
 }
 
 
-CMultiAligner::~CMultiAligner()
+bool CMultiAligner::x_ValidateUserHits(void)
 {
+    for (int i = 0; i < m_UserHits.Size(); i++) {
+        CHit* hit = m_UserHits.GetHit(i);
+        if (hit->m_SeqIndex1 < 0 || hit->m_SeqIndex2 < 0 ||
+            hit->m_SeqIndex1 >= (int)m_QueryData.size() ||
+            hit->m_SeqIndex2 >= (int)m_QueryData.size()) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                        "Sequence specified by constraint is out of range");
+        }
+        int from1 = hit->m_SeqRange1.GetFrom();
+        int from2 = hit->m_SeqRange2.GetFrom();
+        int to1 = hit->m_SeqRange1.GetTo();
+        int to2 = hit->m_SeqRange2.GetTo();
+        int index1 = hit->m_SeqIndex1;
+        int index2 = hit->m_SeqIndex2;
+
+        if (from1 > to1 || from2 > to2) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                        "Range specified by constraint is invalid");
+        }
+        if (from1 >= m_QueryData[index1].GetLength() ||
+            to1 >= m_QueryData[index1].GetLength() ||
+            from2 >= m_QueryData[index2].GetLength() ||
+            to2 >= m_QueryData[index2].GetLength()) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                        "Constraint is out of range");
+        }
+    }
+
+    return true;
 }
+
+
+CMultiAligner::~CMultiAligner()
+{}
 
 
 void 
@@ -105,7 +194,7 @@ CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
 
 
 void
-CMultiAligner::SetScoreMatrix(const char *matrix_name)
+CMultiAligner::x_SetScoreMatrix(const char *matrix_name)
 {
     if (strcmp(matrix_name, "BLOSUM62") == 0)
         m_Aligner.SetScoreMatrix(&NCBISM_Blosum62);
@@ -126,50 +215,6 @@ CMultiAligner::SetScoreMatrix(const char *matrix_name)
     m_MatrixName = matrix_name;
 }
 
-void 
-CMultiAligner::SetUserHits(CHitList& hits)
-{
-    for (int i = 0; i < hits.Size(); i++) {
-        CHit *hit = hits.GetHit(i);
-        if (hit->m_SeqIndex1 < 0 || hit->m_SeqIndex2 < 0 ||
-            hit->m_SeqIndex1 >= (int)m_QueryData.size() ||
-            hit->m_SeqIndex2 >= (int)m_QueryData.size()) {
-            NCBI_THROW(CMultiAlignerException, eInvalidInput,
-                        "Sequence specified by constraint is out of range");
-        }
-        int index1 = hit->m_SeqIndex1;
-        int index2 = hit->m_SeqIndex2;
-
-        if ((hit->m_SeqRange1.GetLength() == 1 &&
-             hit->m_SeqRange2.GetLength() != 1) ||
-            (hit->m_SeqRange1.GetLength() != 1 &&
-             hit->m_SeqRange2.GetLength() == 1)) {
-            NCBI_THROW(CMultiAlignerException, eInvalidInput,
-                        "Range specified by constraint is degenerate");
-        }
-        int from1 = hit->m_SeqRange1.GetFrom();
-        int from2 = hit->m_SeqRange2.GetFrom();
-        int to1 = hit->m_SeqRange1.GetTo();
-        int to2 = hit->m_SeqRange2.GetTo();
-
-        if (from1 > to1 || from2 > to2) {
-            NCBI_THROW(CMultiAlignerException, eInvalidInput,
-                        "Range specified by constraint is invalid");
-        }
-        if (from1 >= m_QueryData[index1].GetLength() ||
-            to1 >= m_QueryData[index1].GetLength() ||
-            from2 >= m_QueryData[index2].GetLength() ||
-            to2 >= m_QueryData[index2].GetLength()) {
-            NCBI_THROW(CMultiAlignerException, eInvalidInput,
-                        "Constraint is out of range");
-        }
-    }
-
-    m_UserHits.PurgeAllHits();
-    m_UserHits.Append(hits);
-    for (int i = 0; i < m_UserHits.Size(); i++)
-        m_UserHits.GetHit(i)->m_Score = 1000000;
-}
 
 void
 CMultiAligner::Reset()
@@ -179,7 +224,6 @@ CMultiAligner::Reset()
     m_LocalHits.PurgeAllHits();
     m_PatternHits.PurgeAllHits();
     m_CombinedHits.PurgeAllHits();
-    m_UserHits.PurgeAllHits();
 }
 
 

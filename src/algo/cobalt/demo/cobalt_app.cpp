@@ -67,7 +67,7 @@ void CMultiApplication::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), 
-                              "COBALT multiple alignment utility");
+                             "COBALT multiple alignment utility");
 
     arg_desc->AddKey("i", "infile", "Query file name",
                      CArgDescriptions::eInputFile);
@@ -211,7 +211,8 @@ x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr)
 
 
 static void
-x_LoadConstraints(string constraintfile, CHitList& hitlist)
+x_LoadConstraints(string constraintfile,
+                  vector<CMultiAlignerOptions::SConstraint>& constr)
 {
     CNcbiIfstream f(constraintfile.c_str());
     if (f.bad() || f.fail())
@@ -221,23 +222,46 @@ x_LoadConstraints(string constraintfile, CHitList& hitlist)
     int seq1, seq1_start, seq1_end;
     int seq2, seq2_start, seq2_end;
 
+    constr.clear();
+
     f >> seq1 >> seq1_start >> seq1_end;
     f >> seq2 >> seq2_start >> seq2_end;
-    hitlist.AddToHitList(new CHit(seq1, seq2,
-                            TRange(seq1_start, seq1_end),
-                            TRange(seq2_start, seq2_end),
-                            0, CEditScript()));
+    CMultiAlignerOptions::SConstraint 
+        c(seq1, seq1_start, seq1_end, seq2, seq2_start, seq2_end);
+    constr.push_back(c);
 
     while (!f.eof()) {
         seq1 = -1;
 
         f >> seq1 >> seq1_start >> seq1_end;
         f >> seq2 >> seq2_start >> seq2_end;
-        if (seq1 >= 0)
-            hitlist.AddToHitList(new CHit(seq1, seq2,
-                                TRange(seq1_start, seq1_end),
-                                TRange(seq2_start, seq2_end),
-                                0, CEditScript()));
+        if (seq1 >= 0) {
+            constr.push_back(CMultiAlignerOptions::SConstraint(seq1,
+                          seq1_start, seq1_end, seq2, seq2_start, seq2_end));
+        }
+    }
+}
+
+
+static void
+x_LoadPatterns(string patternsfile,
+               vector<CMultiAlignerOptions::CPattern>& patterns)
+{
+    CNcbiIfstream f(patternsfile.c_str());
+    if (f.bad() || f.fail())
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "Cannot open patterns file");
+
+    patterns.clear();
+
+    while (!f.eof()) {
+        string single_pattern;
+
+        f >> single_pattern;
+
+        if (!single_pattern.empty()) {
+            patterns.push_back(single_pattern);
+        }
     }
 }
 
@@ -254,27 +278,64 @@ int CMultiApplication::Run(void)
     // Set up data loaders
     m_ObjMgr = CObjectManager::GetInstance();
 
-    CMultiAligner aligner(args["matrix"].AsString().c_str(),
-                          -args["g1"].AsInteger(),
-                          -args["e1"].AsInteger(),
-                          -args["g0"].AsInteger(),
-                          -args["e0"].AsInteger(),
-                          args["iter"].AsBoolean(),
-                          args["evalue2"].AsDouble(),
-                          args["ccc"].AsDouble(),
-                          args["ffb"].AsDouble(),
-                          args["pseudo"].AsDouble());
+    CRef<CMultiAlignerOptions> opts(
+               new CMultiAlignerOptions(CMultiAlignerOptions::fNoQueryClusters
+                                        | CMultiAlignerOptions::fNoIterate
+                                        | CMultiAlignerOptions::fNoPatterns
+                                        | CMultiAlignerOptions::fNoRpsBlast));
 
+
+    // PSSM aligner parameters
+    opts->SetGapOpenPenalty(-args["g1"].AsInteger());
+    opts->SetGapExtendPenalty(-args["e1"].AsInteger());
+    opts->SetEndGapOpenPenalty(-args["g0"].AsInteger());
+    opts->SetEndGapExtendPenalty(-args["e0"].AsInteger());
+    opts->SetScoreMatrixName(args["matrix"].AsString());
+
+    // RPS Blast parameters
+    if (args["db"]) {
+        opts->SetRpsDb(args["db"].AsString());
+    }
+    opts->SetRpsEvalue(args["evalue"].AsDouble());
+    opts->SetDomainResFreqBoost(args["dfb"].AsDouble());
+
+    // Blastp parameters
+    opts->SetBlastpEvalue(args["evalue2"].AsDouble());
+    opts->SetLocalResFreqBoost(args["ffb"].AsDouble());
+
+    // Patterns
+    if (args["p"]) {
+        x_LoadPatterns(args["p"].AsString(), opts->SetCddPatterns());
+    }
+
+    // User constraints
+    if (args["c"]) {
+        x_LoadConstraints(args["c"].AsString(), opts->SetUserConstraints());
+    }
+
+    // Progressive alignmenet params
+    if (args["fastme"].AsBoolean()) {
+        opts->SetTreeMethod(CMultiAlignerOptions::eFastME);
+    }
+
+    // Iterative alignment params
+    opts->SetIterate(args["iter"].AsBoolean());
+    opts->SetConservedCutoffScore(args["ccc"].AsDouble());
+    opts->SetPseudocount(args["pseudo"].AsDouble());
+
+    // Query clustering params
+    opts->SetUseQueryClusters(args["clusters"].AsBoolean());
+    opts->SetKmerLength(args["kmer_len"].AsInteger());
+    opts->SetMaxInClusterDist(args["max_dist"].AsDouble());
     CMultiAligner::TKMethods::EDistMeasures dist_measure 
                = CMultiAligner::TKMethods::eFractionCommonKmersGlobal;
-
     if (args["similarity"]) {
         string dist_arg = args["similarity"].AsString();
         if (dist_arg == "kfraction_local") {
             dist_measure = CMultiAligner::TKMethods::eFractionCommonKmersLocal;
         }
     }
-
+    opts->SetKmerDistMeasure(dist_measure);
     CMultiAligner::TKMethods::ECompressedAlphabet alph 
                                  = CMultiAligner::TKMethods::eRegular;
     if (args["comp_alph"]) {
@@ -284,47 +345,22 @@ int CMultiApplication::Run(void)
             alph = CMultiAligner::TKMethods::eSE_B15;
         }
     }
-    aligner.SetQueryClustersInfo(args["clusters"].AsBoolean(), 
-                                 (unsigned)args["kmer_len"].AsInteger(),
-                                 alph,
-                                 dist_measure,
-                                 args["max_dist"].AsDouble());
+    opts->SetKmerAlphabet(alph);
+
+    // Verbose level
+    opts->SetVerbose(args["v"].AsBoolean());
+
+    opts->Validate();
+
+    CMultiAligner aligner(opts);
 
     blast::TSeqLocVector queries = x_GetSeqLocFromStream(
                                               args["i"].AsInputFile(), 
                                               *m_ObjMgr);
 
     aligner.SetQueries(queries);
-    
-    if (args["norps"].AsBoolean() == false) {
-        if (!args["db"] || !args["b"]) {
-            printf("RPS database and block file must be specified "
-                   "(possibly with RPS frequency file)\n");
-            return -1;
-        }
-        string freqfile;
-        if (args["f"])
-            freqfile = args["f"].AsString();
 
-        aligner.SetDomainInfo(args["db"].AsString(),
-                              args["b"].AsString(),
-                              freqfile,
-                              args["evalue"].AsDouble(),
-                              args["dfb"].AsDouble());
-    }
 
-    if (args["p"]) {
-        aligner.SetPatternInfo(args["p"].AsString());
-    }
-
-    if (args["c"]) {
-        CHitList user_hits;
-        x_LoadConstraints(args["c"].AsString(), user_hits);
-        aligner.SetUserHits(user_hits);
-    }
-
-    aligner.SetVerbose(args["v"].AsBoolean());
-    aligner.SetFastmeTree(args["fastme"].AsBoolean());
 
     aligner.Run();
 

@@ -52,6 +52,7 @@ Contents: Interface for CMultiAligner
 #include <algo/cobalt/exception.hpp>
 #include <algo/cobalt/kmercounts.hpp>
 #include <algo/cobalt/clusterer.hpp>
+#include <algo/cobalt/options.hpp>
 
 /// @file cobalt.hpp
 /// Interface for CMultiAligner
@@ -67,6 +68,27 @@ public:
     typedef CSparseKmerCounts TKmerCounts;
     typedef TKmerMethods<TKmerCounts> TKMethods;
 
+public:
+
+    //------------------ Constructors ----------------------------
+
+    /// Create mutli aligner with default options
+    ///
+    CMultiAligner(void);
+
+    /// Create multi aligner with selected RPS data base and default options
+    /// @param rps_db RPS data base path [in]
+    ///
+    CMultiAligner(const string& rps_db);
+
+
+    /// Create mutli aligner with given options
+    /// @param options Parameters [in]
+    ///
+    CMultiAligner(const CConstRef<CMultiAlignerOptions>& options);
+
+
+    ////////////////////////////////////////////////////////////
 
 public:
 
@@ -75,47 +97,6 @@ public:
 
     /// Default gap extension penalty
     static const CNWAligner::TScore kDefaultGapExtend = -1;
-
-    /// Constructor; note that the actual sequences are 
-    /// loaded via SetQueries()
-    /// @param matrix_name The score matrix to use; limited to
-    ///                  the same list of matrices as blast [in]
-    /// @param gap_open Penalty for starting an internal gap [in]
-    /// @param gap_extend Penalty for extend an internal gap; a gap
-    ///                   of length 1 has (open + extension) penalty [in]
-    /// @param end_gap_open Penalty for starting a gap at the beginning 
-    ///                   or end of a sequence [in]
-    /// @param end_gap_extend Penalty for extending a gap at the 
-    ///                   beginning or end of a sequence [in]
-    /// @param iterate True if conserved columns should be detected and
-    ///                the alignment recomputed if any are found [in]
-    /// @param blastp_evalue When running blast on the input sequences,
-    ///                   keep hits that are this significant or better
-    ///                   (i.e. have e-value this much or lower) [in]
-    /// @param conserved_cutoff When looking for conserved columns, consider
-    ///                   a column conserved if it manages a score
-    ///                   of at least this much [in]
-    /// @param filler_resfreq_boost When assigning residue frequencies to 
-    ///                   portions of sequences not covered by domain
-    ///                   hits, upweight the frequency associated with the
-    ///                   actual residue at a given position by this much.
-    ///                   Values range from 0 to 1; 0 implies using only
-    ///                   background frequencies, 1 uses no background
-    ///                   frequencies at all [in]
-    /// @param pseudocount An additional factor that downweights the value
-    ///                    of actual sequence data when computing column-
-    ///                    wise scores (higher = more downweighting) [in]
-    CMultiAligner(const char *matrix_name = "BLOSUM62",
-                  CNWAligner::TScore gap_open = kDefaultGapOpen,
-                  CNWAligner::TScore gap_extend = kDefaultGapExtend,
-                  CNWAligner::TScore end_gap_open = kDefaultGapOpen,
-                  CNWAligner::TScore end_gap_extend = kDefaultGapExtend,
-                  bool iterate = false,
-                  double blastp_evalue = 0.01,
-                  double conserved_cutoff = 0.67,
-                  double filler_resfreq_boost = 1.0,
-                  double pseudocount = 2.0
-                  );
 
     /// Destructor
     ~CMultiAligner();
@@ -210,28 +191,8 @@ public:
     ///
     const TPhyTreeNode *GetTree() const { return m_Tree.GetTree(); }
 
-    /// Retrieve the current open penalty for internal gaps
-    /// @return The penalty
-    ///
-    CNWAligner::TScore GetGapOpen() const { return m_GapOpen; }
-
-    /// Retrieve the current extend penalty for internal gaps
-    /// @return The penalty
-    ///
-    CNWAligner::TScore GetGapExtend() const { return m_GapExtend; }
-
-    /// Retrieve the current open penalty for start / end gaps
-    /// @return The penalty
-    ///
-    CNWAligner::TScore GetEndGapOpen() const { return m_EndGapOpen; }
-
-    /// Retrieve the current extend penalty for start / end gaps
-    /// @return The penalty
-    ///
-    CNWAligner::TScore GetEndGapExtend() const { return m_EndGapExtend; }
 
     // ---------------------- Setters -----------------------------
-
 
     /// Load a new set of input sequences into the aligner.
     /// This automatically clears out the intermediate state
@@ -240,140 +201,6 @@ public:
     ///
     void SetQueries(const blast::TSeqLocVector& queries);
 
-    /// Load information needed for determining domain hits
-    /// @param dbname Name of RPS BLAST database [in]
-    /// @param blockfile Name of file containing the offset ranges of
-    ///                  conserved blocks in each RPS database sequence [in]
-    /// @param freqfile Name of file containing the residue frequencies
-    ///                  associated with the sequences of the RPS database [in]
-    /// @param rps_evalue When running RPS blast on the input sequences,
-    ///                   keep hits that are this significant or better
-    ///                   (i.e. have e-value this much or lower) [in]
-    /// @param domain_resfreq_boost When assigning residue frequencies to 
-    ///                   portions of sequences covered by domain
-    ///                   hits, upweight the frequency associated with the
-    ///                   actual residue at a given position by this much.
-    ///                   Values range from 0 to 1; 0 implies using only
-    ///                   the domain residue frequencies, 1 uses no domain
-    ///                   frequencies at all (essentially ignoring the
-    ///                   residue frequencies of domain hits) [in]
-    ///
-    void SetDomainInfo(const string& dbname, 
-                       const string& blockfile,
-                       const string& freqfile,
-                       double rps_evalue = 0.01,
-                       double domain_resfreq_boost = 0.5)
-    { 
-        m_RPSdb = dbname; 
-        m_Blockfile = blockfile; 
-        m_Freqfile = freqfile;
-        m_RPSEvalue = rps_evalue;
-        m_DomainResFreqBoost = domain_resfreq_boost;
-    }
-
-    /// Load information needed for determining PROSITE pattern hits
-    /// @param patternfile Name of file containing the list of PROSITE
-    ///                    regular expressions that will be applied to
-    ///                    all of the input sequences [in]
-    ///
-    void SetPatternInfo(const string& patternfile) 
-    { 
-        m_PatternFile = patternfile; 
-    }
-
-    /// Set the score matrix the aligner will use. NOTE that at present
-    /// any hits between sequences will always be scored using BLOSUM62;
-    /// the matrix chosen here is only used when forming the complete
-    /// alignment
-    /// @param matrix_name The score matrix to use; limited to
-    ///                  the same list of matrices as blast [in]
-    ///
-    void SetScoreMatrix(const char *matrix_name);
-
-    /// Set the list of user-specified constraints between the sequences
-    /// to be aligned
-    /// @param hits the list of user-specified constraints
-    ///
-    void SetUserHits(CHitList& hits);
-
-    /// Set the expect value to use for local hits. When running blast 
-    /// on the input sequences, keep hits that are this significant or better
-    ///                   (i.e. have e-value this much or lower)
-    /// @param evalue The expect value to use
-    ///
-    void SetBlastpEvalue(double evalue) { m_BlastpEvalue = evalue; }
-
-    /// Set the cutoff for conserved columns. When looking for conserved 
-    /// columns, consider a column conserved if it manages a per-residue
-    /// sum of pairs score of at least this much
-    /// @param cutoff The cutoff value
-    ///
-    void SetConservedCutoff(double cutoff) { m_ConservedCutoff = cutoff; }
-
-    /// Set the open penalty for internal gaps
-    /// @param score The penalty
-    ///
-    void SetGapOpen(CNWAligner::TScore score) { m_GapOpen = score; }
-
-    /// Set the extend penalty for internal gaps
-    /// @param score The penalty
-    ///
-    void SetGapExtend(CNWAligner::TScore score) { m_GapExtend = score; }
-
-    /// Set the open penalty for initial/terminal gaps
-    /// @param score The penalty
-    ///
-    void SetEndGapOpen(CNWAligner::TScore score) { m_EndGapOpen = score; }
-
-    /// Set the extend penalty for initial/terminal gaps
-    /// @param score The penalty
-    ///
-    void SetEndGapExtend(CNWAligner::TScore score) { m_EndGapExtend = score; }
-
-    /// Turn the output of internal aligner state on/off
-    /// @param verbose true to turn on verbose logging, false to turn it off
-    ///
-    void SetVerbose(bool verbose) { m_Verbose = verbose; }
-
-    /// Set the pseudocount factor to use
-    /// @param pseudocount The factor
-    ///
-    void SetPseudocount(double pseudocount) { m_Pseudocount = pseudocount; }
-
-    /// Turn iteration on or off
-    /// @param iterate True if iteration is allowed
-    ///
-    void SetIterate(bool iterate) { m_Iterate = iterate; }
-
-    /// Use the FastME algorithm to generate the tree
-    /// (default is to use neighbor-joining)
-    /// @param fastme True if FastME is used
-    ///
-    void SetFastmeTree(bool fastme) { m_FastMeTree = fastme; }
-
-    /// Set query clustering parameters
-    /// @param use_clusters Should query clustering be used
-    /// @param kmer_len K-mer length for calculation of distances between 
-    /// queries
-    /// @param alph Selection of regular or compressed alphabet for calculation
-    /// of distances between queries
-    /// @param dist Measure of distance between queries
-    /// @param max_dist Maximum cluster diameter
-    ///
-    void SetQueryClustersInfo(bool use_clusters, 
-                    unsigned kmer_len = 4,
-                    TKMethods::ECompressedAlphabet alph 
-                    = TKMethods::eRegular,
-                    TKMethods::EDistMeasures dist 
-                    = TKMethods::eFractionCommonKmersGlobal,
-                    double max_dist = 0.1)
-    {
-        m_UseClusters = use_clusters;
-        m_KmerLength = kmer_len;
-        m_ClustDistMeasure = dist;
-        m_MaxClusterDist = max_dist;
-        m_KmerAlphabet = alph;
-    }
 
     // ---------------- Running the aligner -----------------------
 
@@ -488,6 +315,7 @@ private:
         }
     };
 
+
 public:
     /// Column in an alignment used for combining result from multiple
     /// alignment and pair-wise in-cluster alignments
@@ -513,6 +341,9 @@ public:
 
 
 private:
+
+    CConstRef<CMultiAlignerOptions> m_Options;
+
     blast::TSeqLocVector m_tQueries;
     vector<CSequence> m_QueryData;
     vector<CSequence> m_Results;
@@ -543,7 +374,6 @@ private:
     CHitList m_CombinedHits;
 
     CHitList m_PatternHits;
-    string m_PatternFile;
 
     CHitList m_UserHits;
 
@@ -561,6 +391,27 @@ private:
     bool m_Verbose;
     bool m_Iterate;
     bool m_FastMeTree;
+
+
+    /// Initiate parameters using m_Options
+    void x_InitParams(void);
+
+    /// Initiate PSSM aligner parameters
+    void x_InitAligner(void);
+
+    /// Validate user constraints with queries. Throws if constraints do not
+    /// pass validation.
+    /// @return True if validation passed
+    bool x_ValidateUserHits(void);
+
+    /// Set the score matrix the aligner will use. NOTE that at present
+    /// any hits between sequences will always be scored using BLOSUM62;
+    /// the matrix chosen here is only used when forming the complete
+    /// alignment
+    /// @param matrix_name The score matrix to use; limited to
+    /// the same list of matrices as blast [in]
+    void x_SetScoreMatrix(const char *matrix_name);
+
 
     void x_LoadBlockBoundaries(string blockfile,
                       vector<SSegmentLoc>& blocklist);

@@ -64,19 +64,17 @@ void
 CMultiAligner::FindPatternHits()
 {
     size_t num_queries = m_QueryData.size();
-    char pattern[512];
 
-    if (m_PatternFile.empty())
+    const vector<CMultiAlignerOptions::CPattern>& patterns
+         = m_Options->GetCddPatterns();
+
+    if (patterns.size() == 0) {
         return;
+    }
 
     // empty out existing list
 
     m_PatternHits.PurgeAllHits();
-
-    CNcbiIfstream pattern_stream(m_PatternFile.c_str());
-    if (pattern_stream.bad() || pattern_stream.fail())
-        NCBI_THROW(blast::CBlastException, eInvalidArgument,
-                   "Cannot open PHI pattern file");
 
     BlastScoreBlk *sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
     SPHIPatternSearchBlk *phi_pattern;
@@ -84,20 +82,17 @@ CMultiAligner::FindPatternHits()
 
     // for each pattern
 
-    for (size_t i = 0; !pattern_stream.eof(); i++) {
+    for (size_t i=0;i < patterns.size();i++) {
 
         vector<SPatternHit> phi_hits;
 
         // precompile the pattern in preparation for running
         // all sequences through it
 
-        pattern[0] = 0;
-        pattern_stream >> pattern;
-        if (pattern[0] == 0)
-            break;
+        char* pattern = (char*)patterns[i].AsPointer();
+        _ASSERT(pattern);
 
-        SPHIPatternSearchBlkNew((char *)pattern,
-                                FALSE, sbp, &phi_pattern, NULL);
+        SPHIPatternSearchBlkNew(pattern, FALSE, sbp, &phi_pattern, NULL);
         _ASSERT(phi_pattern != NULL);
 
         // for each sequence
