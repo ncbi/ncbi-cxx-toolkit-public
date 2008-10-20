@@ -419,8 +419,14 @@ void CFlatSeqLoc::x_AddID
     if (!idp) {
         idp.Reset(&id);
     }
-
-    oss << idp->GetSeqIdString(true) << ':';
+    switch ( idp->Which() ) {
+    default:
+        oss << idp->GetSeqIdString(true) << ':';
+        break;
+    case CSeq_id::e_Gi:
+        oss << "gi|" << idp->GetSeqIdString(true) << ':';
+        break;
+    }
 }
 
 
