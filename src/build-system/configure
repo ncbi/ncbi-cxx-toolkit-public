@@ -19435,6 +19435,8 @@ else
    ncbi_rpath_sed=
 fi
 
+no_usr_lib='s,-L/usr/lib[^/ ]* ,,g; s,-L/lib[^/ ]* ,,g'
+
 if test "$with_z" != "no"; then
     case "$with_z" in
        yes | "" ) ;;
@@ -26119,7 +26121,7 @@ if test "$with_wxwidgets" != "no" ; then
          ;;
       * )
          baseflags=`$gtkconf --cflags 2>/dev/null`
-         basesed='s,-L/usr/lib[^/]* ,,g'
+         basesed=$no_usr_lib
          libsed=$basesed
          ;;
    esac
@@ -29505,13 +29507,13 @@ fi
       : ${FREETYPE_INCLUDE=`$freetype_config --cflags`}
       if test -z "${FREETYPE_LIBS+set}"; then
     if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    FREETYPE_LIBS=`$freetype_config --libs | sed -e "s,-L/usr/lib[^/]* ,,g"`
+    FREETYPE_LIBS=`$freetype_config --libs | sed -e "$no_usr_lib"`
  else
     FREETYPE_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in `$freetype_config --libs | sed -e "s,-L/usr/lib[^/]* ,,g"`; do
+    for x in `$freetype_config --libs | sed -e "$no_usr_lib"`; do
        case "$x" in
           -L*)
              FREETYPE_LIBS="$FREETYPE_LIBS${ncbi_rp_L_sep}$x"

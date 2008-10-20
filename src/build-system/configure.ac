@@ -3136,6 +3136,8 @@ else
    ncbi_rpath_sed=
 fi
 
+no_usr_lib='s,-L/usr/lib[[^/ ]]* ,,g; s,-L/lib[[^/ ]]* ,,g'
+
 NCBI_CHECK_THIRD_PARTY_LIB(z,
  [[AC_LANG_PROGRAM([#include <zlib.h>],
       [[gzFile fp; char buf[1024]; int n = gzread(fp, buf, sizeof(buf))]])]])
@@ -4604,7 +4606,7 @@ if test "$with_wxwidgets" != "no" ; then
          ;;
       * )
          baseflags=`$gtkconf --cflags 2>/dev/null`
-         basesed='s,-L/usr/lib[[^/]]* ,,g'
+         basesed=$no_usr_lib
          libsed=$basesed
          ;;
    esac
@@ -5321,7 +5323,7 @@ if test "$with_freetype" != "no" ; then
       : ${FREETYPE_BINPATH=`dirname $freetype_config`}
       : ${FREETYPE_INCLUDE=`$freetype_config --cflags`}
       NCBI_RPATHIFY_OUTPUT_COND(FREETYPE_LIBS, $freetype_config --libs,
-         [s,-L/usr/lib[[^/]]* ,,g])
+         [$no_usr_lib])
       AC_CACHE_CHECK([whether FREETYPE_INCLUDE needs doctoring],
                      ncbi_cv_lib_freetype_fix_include,
          [CPPFLAGS="$FREETYPE_INCLUDE $orig_CPPFLAGS"
