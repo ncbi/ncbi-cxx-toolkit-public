@@ -1672,8 +1672,9 @@ public:
                                   ///< spaces are converted to '+'
         eUrlEnc_PercentOnly,      ///< Convert all non-alphanum chars including
                                   ///< space and '%' to %## format
-        eUrlEnc_Path              ///< Same as ProcessMarkChars but preserves
+        eUrlEnc_Path,             ///< Same as ProcessMarkChars but preserves
                                   ///< valid path characters ('/', '.')
+        eUrlEnc_None              ///< Do not encode
     };
     /// URL decode flags
     enum EUrlDecode {
@@ -2536,72 +2537,18 @@ public:
 };
 
 
-class NCBI_XNCBI_EXPORT CStringPairsParser
+/// Encoder interface. Names and values can be encoded with different rules.
+class IStringEncoder
 {
 public:
-    /// Create parser using default values.
-    CStringPairsParser(void);
-    /// Create parser with the specified parameters.
-    ///
-    /// @param arg_sep
-    ///   Separator between name+value pairs
-    /// @param val_sep
-    ///   Separator between name and value
-    /// @param decoder
-    ///   String decoder (Url, Xml etc.)
-    /// @param own
-    ///   Decoder ownership flag
-    CStringPairsParser(const string& arg_sep,
-                       const string& val_sep,
-                       IStringDecoder* decoder = NULL,
-                       EOwnership own = eTakeOwnership);
-    /// Create parser with the specified decoder and default separators.
-    ///
-    /// @param decoder
-    ///   String decoder (Url, Xml etc.)
-    /// @param own
-    ///   Decoder ownership flag
-    CStringPairsParser(IStringDecoder* decoder,
-                       EOwnership own = eTakeOwnership);
-    virtual ~CStringPairsParser(void);
-
-    /// Set string decoder.
-    ///
-    /// @param decoder
-    ///   String decoder (Url, Xml etc.)
-    /// @param own
-    ///   Decoder ownership flag
-    void SetDecoder(IStringDecoder* decoder, EOwnership own = eTakeOwnership)
-        { m_Decoder.reset(decoder, own); }
-    /// Get decoder or NULL. Does not affect decoder ownership.
-    IStringDecoder* GetDecoder(void) { return m_Decoder.get(); }
-
-    /// Parse the string.
-    ///
-    /// @param str
-    ///   String to parse. The parser assumes the string is formatted like
-    ///   "name1<valsep>value1<argsep>name2<valsep>value2...". Each name and
-    ///   value is passed to the decoder (if not NULL) before storing the pair.
-    /// @param merge_argsep
-    ///   Flag for merging separators between pairs. By default the separators
-    ///   are merged to prevent pairs where both name and value are empty.
-    void Parse(const CTempString& str,
-               NStr::EMergeDelims merge_argsep = NStr::eMergeDelims);
-
-    // Do not use map or multimap to preserve order of arguments.
-    typedef pair<string, string> TStrPair;
-    typedef vector<TStrPair>     TStrPairs;
-
-    /// Read data
-    const TStrPairs& GetPairs(void) const { return m_Data; }
-    /// Get non-const data
-    TStrPairs& GetPairs(void) { return m_Data; }
-
-private:
-    string                  m_ArgSep;   // Separator between name+value pairs ("&")
-    string                  m_ValSep;   // Separator between name and value ("=")
-    AutoPtr<IStringDecoder> m_Decoder;  // String decoder (Url, Xml etc.)
-    TStrPairs               m_Data;     // Parsed data
+    /// Type of string to be decoded
+    enum EStringType {
+        eName,
+        eValue
+    };
+    /// Encode the string.
+    virtual string Encode(const string& src, EStringType stype) const = 0;
+    virtual ~IStringEncoder(void) {}
 };
 
 
@@ -2616,6 +2563,245 @@ public:
 private:
     NStr::EUrlDecode m_Flag;
 };
+
+
+/// URL-encoder for string pairs parser
+class NCBI_XNCBI_EXPORT CStringEncoder_Url : public IStringEncoder
+{
+public:
+    CStringEncoder_Url(NStr::EUrlEncode flag = NStr::eUrlEnc_SkipMarkChars);
+
+    virtual string Encode(const string& src, EStringType stype) const;
+
+private:
+    NStr::EUrlEncode m_Flag;
+};
+
+
+/// Template for parsing string into pairs of name and value or merging
+/// them back into a single string.
+/// The container class must hold pairs of strings (pair<string, string>).
+template<class TContainer>
+class CStringPairs
+{
+public:
+    typedef TContainer TStrPairs;
+    /// The container's value type must be pair<string, string>
+    /// or a compatible type.
+    typedef typename TContainer::value_type TStrPair;
+
+    /// Create parser with the specified decoder/encoder and default separators.
+    ///
+    /// @param decoder
+    ///   String decoder (Url, Xml etc.)
+    /// @param own_decoder
+    ///   Decoder ownership flag
+    /// @param decoder
+    ///   String encoder (Url, Xml etc.), optional
+    /// @param own_encoder
+    ///   Encoder ownership flag, optional
+    CStringPairs(IStringDecoder* decoder = NULL,
+                 EOwnership      own_decoder = eTakeOwnership,
+                 IStringEncoder* encoder = NULL,
+                 EOwnership      own_encoder = eTakeOwnership)
+        : m_ArgSep("&"),
+          m_ValSep("="),
+          m_Decoder(decoder, own_decoder),
+          m_Encoder(encoder, own_encoder)
+    {
+    }
+
+    /// Create parser with the specified parameters.
+    ///
+    /// @param arg_sep
+    ///   Separator between name+value pairs
+    /// @param val_sep
+    ///   Separator between name and value
+    /// @param decoder
+    ///   String decoder (Url, Xml etc.)
+    /// @param own_decoder
+    ///   Decoder ownership flag
+    /// @param encoder
+    ///   String encoder (Url, Xml etc.)
+    /// @param own_encoder
+    ///   Encoder ownership flag
+    CStringPairs(const string&   arg_sep,
+                 const string&   val_sep,
+                 IStringDecoder* decoder = NULL,
+                 EOwnership      own_decoder = eTakeOwnership,
+                 IStringEncoder* encoder = NULL,
+                 EOwnership      own_encoder = eTakeOwnership)
+        : m_ArgSep(arg_sep),
+          m_ValSep(val_sep),
+          m_Decoder(decoder, own_decoder),
+          m_Encoder(encoder, own_encoder)
+    {
+    }
+
+    /// Create parser with the selected URL-encoding/decoding options
+    /// and default separators.
+    ///
+    /// @param decode_flag
+    ///   URL-decoding flag
+    /// @param encode_flag
+    ///   URL-encoding flag
+    CStringPairs(NStr::EUrlDecode decode_flag,
+                 NStr::EUrlEncode encode_flag)
+        : m_ArgSep("&"),
+          m_ValSep("="),
+          m_Decoder(new CStringDecoder_Url(decode_flag), eTakeOwnership),
+          m_Encoder(new CStringEncoder_Url(encode_flag), eTakeOwnership)
+    {
+    }
+
+    virtual ~CStringPairs(void) {}
+
+    /// Set string decoder.
+    ///
+    /// @param decoder
+    ///   String decoder (Url, Xml etc.)
+    /// @param own
+    ///   Decoder ownership flag
+    void SetDecoder(IStringDecoder* decoder, EOwnership own = eTakeOwnership)
+        { m_Decoder.reset(decoder, own); }
+    /// Get decoder or NULL. Does not affect decoder ownership.
+    IStringDecoder* GetDecoder(void) { return m_Decoder.get(); }
+
+    /// Set string encoder.
+    ///
+    /// @param encoder
+    ///   String encoder (Url, Xml etc.)
+    /// @param own
+    ///   Encoder ownership flag
+    void SetEncoder(IStringEncoder* encoder, EOwnership own = eTakeOwnership)
+        { m_Encoder.reset(encoder, own); }
+    /// Get encoder or NULL. Does not affect encoder ownership.
+    IStringDecoder* GetEncoder(void) { return m_Encoder.get(); }
+
+    /// Parse the string.
+    ///
+    /// @param str
+    ///   String to parse. The parser assumes the string is formatted like
+    ///   "name1<valsep>value1<argsep>name2<valsep>value2...". Each name and
+    ///   value is passed to the decoder (if not NULL) before storing the pair.
+    /// @param merge_argsep
+    ///   Flag for merging separators between pairs. By default the separators
+    ///   are merged to prevent pairs where both name and value are empty.
+    void Parse(const CTempString& str,
+               NStr::EMergeDelims merge_argsep = NStr::eMergeDelims)
+    {
+        Parse(m_Data, str, m_ArgSep, m_ValSep,
+              m_Decoder.get(), eNoOwnership, merge_argsep);
+    }
+
+    /// Parse the string using the provided decoder, put data into the
+    /// container.
+    ///
+    /// @param pairs
+    ///   Container to be filled with the parsed name/value pairs
+    /// @param str
+    ///   String to parse. The parser assumes the string is formatted like
+    ///   "name1<valsep>value1<argsep>name2<valsep>value2...". Each name and
+    ///   value is passed to the decoder (if not NULL) before storing the pair.
+    /// @param decoder
+    ///   String decoder (Url, Xml etc.)
+    /// @param own
+    ///   Flag indicating if the decoder must be deleted by the function.
+    /// @param merge_argsep
+    ///   Flag for merging separators between pairs. By default the separators
+    ///   are merged to prevent pairs where both name and value are empty.
+    static void Parse(TStrPairs&         pairs,
+                      const CTempString& str,
+                      const string&      arg_sep,
+                      const string&      val_sep,
+                      IStringDecoder*    decoder = NULL,
+                      EOwnership         own = eTakeOwnership,
+                      NStr::EMergeDelims merge_argsep = NStr::eMergeDelims)
+    {
+        AutoPtr<IStringDecoder> decoder_guard(decoder, own);
+        list<string> lst;
+        NStr::Split(str, arg_sep, lst, merge_argsep);
+        pairs.clear();
+        ITERATE(list<string>, it, lst) {
+            string name, val;
+            NStr::SplitInTwo(*it, val_sep, name, val);
+            if ( decoder ) {
+                try {
+                    name = decoder->Decode(name, IStringDecoder::eName);
+                    val = decoder->Decode(val, IStringDecoder::eValue);
+                }
+                catch (CStringException) {
+                    // Discard all data
+                    pairs.clear();
+                    throw;
+                }
+            }
+            pairs.insert(pairs.end(), TStrPair(name, val));
+        }
+    }
+
+    /// Merge name-value pairs into a single string using the currently set
+    /// separators and the provided encoder if any. Delete the encoder if
+    /// the ownership flag allows it.
+    string Merge(void)
+    {
+        return Merge(m_Data, m_ArgSep, m_ValSep,
+                     m_Encoder.get(), eNoOwnership);
+    }
+
+    /// Merge name-value pairs from the provided container, separators
+    /// and encoder. Delete the encoder if the ownership flag allows.
+    ///
+    /// @param pairs
+    ///   Container with the name/value pairs to be merged.
+    /// @param arg_sep
+    ///   Separator to be inserted bewteen pairs.
+    /// @param val_sep
+    ///   Separator to be inserted bewteen name and value.
+    /// @param encoder
+    ///   String encoder (Url, Xml etc.)
+    /// @param own
+    ///   Flag indicating if the encoder must be deleted by the function.
+    static string Merge(const TStrPairs&      pairs,
+                        const string&         arg_sep,
+                        const string&         val_sep,
+                        IStringEncoder*       encoder = NULL,
+                        EOwnership            own = eTakeOwnership)
+    {
+        AutoPtr<IStringEncoder> encoder_guard(encoder, own);
+        string ret;
+        ITERATE(typename TStrPairs, it, pairs) {
+            if ( !ret.empty() ) {
+                ret += arg_sep;
+            }
+            if ( encoder ) {
+                ret += encoder->Encode(it->first, IStringEncoder::eName) +
+                    val_sep +
+                    encoder->Encode(it->second, IStringEncoder::eValue);
+            }
+            else {
+                ret += it->first + val_sep + it->second;
+            }
+        }
+        return ret;
+    }
+
+    /// Read data
+    const TStrPairs& GetPairs(void) const { return m_Data; }
+    /// Get non-const data
+    TStrPairs& GetPairs(void) { return m_Data; }
+
+private:
+    string                  m_ArgSep;   // Separator between name+value pairs ("&")
+    string                  m_ValSep;   // Separator between name and value ("=")
+    AutoPtr<IStringDecoder> m_Decoder;  // String decoder (Url, Xml etc.)
+    AutoPtr<IStringEncoder> m_Encoder;  // String encoder (Url, Xml etc.)
+    TStrPairs               m_Data;     // Parsed data
+};
+
+
+typedef vector<pair<string, string> > TStringPairsVector;
+typedef CStringPairs<TStringPairsVector> CStringPairsParser;
 
 
 /////////////////////////////////////////////////////////////////////////////

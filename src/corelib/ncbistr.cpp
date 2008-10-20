@@ -2525,6 +2525,8 @@ string NStr::URLEncode(const string& str, EUrlEncode flag)
     case eUrlEnc_Path:
         encode_table = s_EncodePath;
         break;
+    case eUrlEnc_None:
+        return str;
     default:
         _TROUBLE;
         // To keep off compiler warning
@@ -2643,6 +2645,8 @@ bool NStr::NeedsURLEncoding(const string& str, EUrlEncode flag)
     case eUrlEnc_Path:
         encode_table = s_EncodePath;
         break;
+    case eUrlEnc_None:
+        return false;
     default:
         _TROUBLE;
         // To keep off compiler warning
@@ -3108,65 +3112,7 @@ const char* CStringException::GetErrCodeString(void) const
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CStringPairsParser
-
-
-CStringPairsParser::CStringPairsParser(void)
-    : m_ArgSep("&"),
-      m_ValSep("=")
-{
-}
-
-
-CStringPairsParser::CStringPairsParser(const string& arg_sep,
-                                       const string& val_sep,
-                                       IStringDecoder* decoder,
-                                       EOwnership own)
-    : m_ArgSep(arg_sep),
-      m_ValSep(val_sep),
-      m_Decoder(decoder, own)
-{
-}
-
-
-CStringPairsParser::CStringPairsParser(IStringDecoder* decoder,
-                                       EOwnership own)
-    : m_ArgSep("&"),
-      m_ValSep("="),
-      m_Decoder(decoder, own)
-{
-}
-
-
-CStringPairsParser::~CStringPairsParser(void)
-{
-}
-
-
-void CStringPairsParser::Parse(const CTempString& str,
-                               NStr::EMergeDelims merge_argsep)
-{
-    list<string> lst;
-    NStr::Split(str, m_ArgSep, lst, merge_argsep);
-    m_Data.clear();
-    m_Data.reserve(lst.size());
-    ITERATE(list<string>, it, lst) {
-        string name, val;
-        NStr::SplitInTwo(*it, m_ValSep, name, val);
-        if ( m_Decoder.get() ) {
-            try {
-                name = m_Decoder->Decode(name, IStringDecoder::eName);
-                val = m_Decoder->Decode(val, IStringDecoder::eValue);
-            }
-            catch (CStringException) {
-                // Discard all data
-                m_Data.clear();
-                throw;
-            }
-        }
-        m_Data.push_back(TStrPair(name, val));
-    }
-}
+//  CStringPairsParser decoders and encoders
 
 
 CStringDecoder_Url::CStringDecoder_Url(NStr::EUrlDecode flag)
@@ -3179,6 +3125,19 @@ string CStringDecoder_Url::Decode(const string& src,
                                   EStringType ) const
 {
     return NStr::URLDecode(src, m_Flag);
+}
+
+
+CStringEncoder_Url::CStringEncoder_Url(NStr::EUrlEncode flag)
+    : m_Flag(flag)
+{
+}
+
+
+string CStringEncoder_Url::Encode(const string& src,
+                                  EStringType ) const
+{
+    return NStr::URLEncode(src, m_Flag);
 }
 
 
