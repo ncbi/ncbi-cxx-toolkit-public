@@ -171,7 +171,7 @@ void CFilter::Match( double score, int seqFrom, int seqTo, CQuery * query, int p
 	///bool added = false;
 
 	if( unsigned flags = m_geometryFlags & GetLookupFlags( pairmate, fwd ) ) {
-        int maxPos = seqFrom - m_minDist;
+        int maxPos = seqFrom - m_minDist + 1;
 
 		if( flags & fLookupInFwd ) {
 			found |= x_LookupInQueue( h0, m_pendingHits[0], fwd, pairmate, maxPos, score, seqFrom, seqTo, query );
