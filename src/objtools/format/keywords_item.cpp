@@ -211,6 +211,11 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         x_AddKeyword("BARCODE");
         break;
 
+    case CMolInfo::eTech_tsa:
+        x_AddKeyword("TSA");
+        x_AddKeyword("Transcriptome Shotgun Assembly");
+        break;
+
     case CMolInfo::eTech_unknown:
     case CMolInfo::eTech_standard:
     case CMolInfo::eTech_other:
