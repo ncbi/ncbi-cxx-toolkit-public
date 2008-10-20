@@ -227,6 +227,7 @@ public:
     /// @sa
     ///   GetMatch(), GetResult()
     string GetSub(const string& str, size_t idx = 0) const;
+    void   GetSub(const string& str, size_t idx, string& dst) const;
 
     /// Get number of patterns + subpatterns.
     ///

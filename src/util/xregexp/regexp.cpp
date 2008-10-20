@@ -38,7 +38,6 @@
 #include <memory>
 #include <stdlib.h>
 
-
 BEGIN_NCBI_SCOPE
 
 
@@ -139,15 +138,24 @@ void CRegexp::Set(const string& pattern, TCompile flags)
 }
 
 
-string CRegexp::GetSub(const string& str, size_t idx) const
+void CRegexp::GetSub(const string& str, size_t idx, string& dst) const
 {
     int start = m_Results[2 * idx];
     int end   = m_Results[2 * idx + 1];
 
     if ((int)idx >= m_NumFound  ||  start == -1  ||  end == -1) {
-        return kEmptyStr;
+        dst.erase();
+    } else {
+        dst.assign(start, end - start);
     }
-    return str.substr(start, end - start);
+}
+
+
+string CRegexp::GetSub(const string& str, size_t idx) const
+{
+    string s;
+    GetSub(str, idx, s);
+    return s;
 }
 
 
@@ -159,7 +167,7 @@ string CRegexp::GetMatch(
     bool          noreturn)
 {
     int x_flags = s_GetRealMatchFlags(flags);
-    m_NumFound = pcre_exec((pcre*)m_PReg, NULL, str.c_str(),
+    m_NumFound = pcre_exec((pcre*)m_PReg, NULL, str.data(),
                            (int)str.length(), (int)offset,
                            x_flags, m_Results,
                            (int)(kRegexpMaxSubPatterns +1) * 3);
