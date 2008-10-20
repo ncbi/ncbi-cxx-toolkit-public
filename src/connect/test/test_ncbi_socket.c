@@ -181,7 +181,7 @@ static void TEST__client_1(SOCK sock)
         free(blob);
     }}
 
-    /* Try to read more data (must hit EOF as the peer is shutdown) */
+    /* Try to read more data (must hit EOF as the peer is shut down) */
 #if !defined(NCBI_OS_MAC)
     assert(SOCK_Read(sock, buf, 1, &n_io_done, eIO_ReadPeek)
            == eIO_Closed);
@@ -997,9 +997,9 @@ extern int main(int argc, char** argv)
      */
     fprintf(log_fp,
             "\nUSAGE:\n"
-            "  Client: %s <srv_host> <port> [conn_timeout]\n"
-            "  Server: %s <port>\n"
-            " where <port> is greater than %d, and [conn_timeout] is double\n",
+            "Client: %s <srv_host> <port> [timeout]\n"
+            "Server: %s <port>\n"
+            "where <port> is greater than %d, and [timeout] is a double\n\n",
             argv[0], argv[0], (int)MIN_PORT);
     CORE_SetLOG(0);
     CORE_SetLOCK(0);

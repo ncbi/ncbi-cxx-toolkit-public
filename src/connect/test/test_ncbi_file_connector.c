@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -38,18 +38,15 @@
 /* This header must go last */
 #include "test_assert.h"
 
-
 #define OUT_FILE "test_ncbi_file_connector.out"
 
-static const char* s_ProgramName;
 
-static void Usage(const char* message)
+static void Usage(const char* progname, const char* message)
 {
     fprintf(stderr,
             "\nUsage: %s <input_file>\n"
             "  (copy <input_file> to \"" OUT_FILE "\")\n"
-            "\nERROR:  %s!\n",
-            s_ProgramName, message);
+            "\nERROR:  %s!\n", progname, message);
     abort();
 }
 
@@ -62,9 +59,8 @@ int main(int argc, const char* argv[])
     const char* inp_file;
 
     /* cmd.-line args */
-    s_ProgramName = argv[0];
     if (argc != 2) {
-        Usage("Must specify the input file name");
+        Usage(argv[0], "Must specify the input file name");
     }
     inp_file = argv[1];
 
@@ -80,7 +76,7 @@ int main(int argc, const char* argv[])
     /* create connector, and bind it to the connection */
     connector = FILE_CreateConnector(inp_file, OUT_FILE);
     if ( !connector ) {
-        Usage("Failed to create FILE connector");
+        Usage(argv[0], "Failed to create FILE connector");
     }
 
     verify(CONN_Create(connector, &conn) == eIO_Success);
