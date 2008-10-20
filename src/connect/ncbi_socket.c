@@ -731,9 +731,9 @@ static void s_ShowDataLayout(void)
 
     assert(offsetof(SOCK_struct, type)    == offsetof(TRIGGER_struct, type));
     assert(offsetof(SOCK_struct, type)    == offsetof(LSOCK_struct,   type));
-    assert(offsetof(SOCK_struct, session) == offsetof(LSOCK_struct,   context));
+    assert(offsetof(SOCK_struct, session) == offsetof(LSOCK_struct,  context));
 #ifdef NCBI_OS_MSWIN
-    assert(offsetof(SOCK_struct, event)   == offsetof(LSOCK_struct,   event));
+    assert(offsetof(SOCK_struct, event)   == offsetof(LSOCK_struct,  event));
 #endif /*NCBI_OS_MSWIN*/
 }
 
@@ -1348,9 +1348,11 @@ static EIO_Status s_IsConnected(SOCK                  sock,
 
 
 /* Read as many as "size" bytes of data from the socket.  Return eIO_Success
- * if at least one byte has been read.  Otherwise (nothing read), return an
- * error code to indicate the problem.
- * NOTE: This call is for stream sockets only.
+ * if at least one byte has been read or EOF has been reached (0 bytes read).
+ * Otherwise (nothing read), return an error code to indicate the problem.
+ * NOTE: This call is for stream sockets only.  Also, it can return the
+ * above mentioned EOF indicator only once, with all successive calls to
+ * return an error (usually, eIO_Closed).
  */
 static EIO_Status s_Recv(SOCK    sock,
                          void*   buf,
@@ -1365,7 +1367,7 @@ static EIO_Status s_Recv(SOCK    sock,
         return eIO_Closed;
 
     /* read from the socket */
-    for(;;) { /* optionally retry if interrupted by a signal */
+    for (;;) { /* optionally retry if interrupted by a signal */
         int x_read = recv(sock->sock, buf, size, 0);
         int x_error;
 
@@ -1377,21 +1379,21 @@ static EIO_Status s_Recv(SOCK    sock,
                               x_error                == SOCK_ECONNABORTED  ||
                               x_error                == SOCK_ENETRESET))) {
             /* statistics & logging */
-            if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)) {
-                if (!sock->session  ||  x_read <= 0  ||  flag) {
+            if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
+                if (!sock->session  ||  x_read <= 0  ||  flag > 0) {
                     s_DoLog(sock, eIO_Read, (x_read < 0 ? (void*) &x_error :
-                                             x_read > 0 ? buf              : 0),
+                                             x_read > 0 ? buf              :0),
                             (size_t)(x_read < 0 ? 0 : x_read), 0);
                 }
             }
 
             if (x_read <= 0) {
                 /* catch EOF/failure */
+                sock->eof = 1/*true*/;
                 if (x_read)
                     sock->r_status = sock->w_status = eIO_Closed;
                 else
                     sock->r_status = eIO_Success;
-                sock->eof = 1/*true*/;
             } else {
                 assert((size_t) x_read <= size);
                 sock->r_status = eIO_Success;
@@ -1399,13 +1401,11 @@ static EIO_Status s_Recv(SOCK    sock,
                 *n_read       = x_read;
             }
             break;
-        }
+        } else if (flag < 0)
+            break;
 
-        /* don't want to handle all possible errors... let them be "unknown" */
-        sock->r_status = eIO_Unknown;
-
-        /* blocked -- wait for data to come;  return if timeout/error */
         if (x_error == SOCK_EWOULDBLOCK  ||  x_error == SOCK_EAGAIN) {
+            /* blocked -- wait for data to come;  return if timeout/error */
             const struct timeval* tv = sock->r_timeout;
             EIO_Status status;
             SSOCK_Poll poll;
@@ -1418,27 +1418,28 @@ static EIO_Status s_Recv(SOCK    sock,
             status = s_Select(1, &poll, tv);
             if (status != eIO_Success)
                 return status;
-            if (poll.revent == eIO_Close)
-                break/*unknown*/;
-            assert(poll.event == eIO_Read  &&  poll.revent == eIO_Read);
-            continue;
-        }
-
-        if (x_error != SOCK_EINTR) {
-            char _id[32];
+            if (poll.revent != eIO_Close) {
+                assert(poll.event == eIO_Read  &&  poll.revent == eIO_Read);
+                continue/*read again*/;
+            }
+        } else if (x_error == SOCK_EINTR) {
+            if (sock->i_on_sig == eOn  ||
+                (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
+                sock->r_status = eIO_Interrupt;
+                break/*interrupt*/;
+            }
+            continue/*read again*/;
+        } else {
             /* catch unknown error */
+            char _id[32];
             CORE_LOGF_ERRNO_EXX(7, eLOG_Trace,
                                 x_error, SOCK_STRERROR(x_error),
                                 ("%s[SOCK::Recv]  Failed recv()",
                                  s_ID(sock, _id)));            
-            break/*unknown*/;
         }
-
-        if (sock->i_on_sig == eOn  ||
-            (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
-            sock->r_status = eIO_Interrupt;
-            break/*interrupt*/;
-        }
+        /* don't want to handle all possible errors... let them be "unknown" */
+        sock->r_status = eIO_Unknown;
+        break/*unknown*/;
     }
 
     return (EIO_Status) sock->r_status;
@@ -1450,8 +1451,7 @@ static EIO_Status s_WritePending(SOCK, const struct timeval*, int, int);
 
 
 /* Read/Peek data from the socket.  Return eIO_Success if some data have been
- * read without problems.  Return other (error) code if an error occurred
- * (but there could have also been some data read -- so check "*n_read").
+ * read.  Return other (error) code if an error/EOF occurred (zero bytes read).
  * (MSG_PEEK is not implemented on Mac, and it is poorly implemented
  * on Win32, so we had to implement this feature by ourselves.)
  * NB:  peek = {-1=upread, 0=read, 1=peek}
@@ -1470,7 +1470,7 @@ static EIO_Status s_Read(SOCK    sock,
         status = s_WritePending(sock, sock->r_timeout, 0, 0);
         if (sock->pending)
             return status;
-        if (!size)
+        if (!size  &&  peek >= 0)
             return s_Status(sock, eIO_Read);
     }
 
@@ -1496,13 +1496,13 @@ static EIO_Status s_Read(SOCK    sock,
         return eIO_Closed;
     }
 
-    assert(peek >= 0  ||  !(buf  ||  size));
+    assert((peek >= 0  &&  size)  ||  (peek < 0  &&  !(buf  ||  size)));
     do {
         char*  x_buf;
         size_t n_todo;
         size_t x_read;
 
-        if (peek < 0/*internal upread*/  ||  !buf/*skipping*/  ||
+        if (!buf/*internal upread/skipping*/  ||
             ((n_todo = size - *n_read) < sizeof(xx_buf))) {
             n_todo   = sizeof(xx_buf);
             x_buf    =        xx_buf;
@@ -1517,33 +1517,30 @@ static EIO_Status s_Read(SOCK    sock,
                 break/*error*/;
             }
             status = sslread(sock->session, x_buf, n_todo, &x_read, &x_error);
-            assert((status == eIO_Success) == (x_read > 0));
+            assert(status == eIO_Success  ||  x_error);
+            assert(status == eIO_Success  ||  !x_read);
 
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
                 s_DoLog(sock, eIO_Read, x_read > 0 ? x_buf :
-                        status == eIO_Closed  &&  !x_error ? 0 :
-                        (void*) &x_error,
+                        status == eIO_Success ? 0 : (void*) &x_error,
                         status != eIO_Success ? 0 : x_read, " [decrypt]");
             }
-
-            if (status != eIO_Success) {
-                if (status == eIO_Closed  &&  x_error) {
-                    /* bad error */
-                    sock->eof = 1/*true*/;
-                    sock->r_status = eIO_Closed;
-                }
-                break/*EOF/error*/;
+            if (status == eIO_Closed) {
+                sock->r_status = eIO_Closed;
+                sock->eof = 1/*true*/;
+                break/*bad error*/;
             }
         } else {
             x_read = 0;
-            status = s_Recv(sock, x_buf, n_todo, &x_read, 0);
-            if (status != eIO_Success)
-                break/*error*/;
-            if (!x_read) {
-                status = eIO_Closed;
-                break/*EOF*/;
-            }
+            status = s_Recv(sock, x_buf, n_todo, &x_read, peek < 0 ? -1 : 0);
+            assert(status == eIO_Success  ||  !x_read);
+        }
+        if (status != eIO_Success)
+            break/*error*/;
+        if (!x_read) {
+            status = eIO_Closed;
+            break/*EOF*/;
         }
         assert(status == eIO_Success  &&  0 < x_read  &&  x_read <= n_todo);
 
@@ -1580,8 +1577,8 @@ static EIO_Status s_Read(SOCK    sock,
             break;
 
     } while (peek < 0  ||  (!buf  &&  *n_read < size));
-    
-    return status;
+
+    return *n_read ? eIO_Success : status;
 }
 
 
@@ -1910,15 +1907,14 @@ static EIO_Status s_WriteData(SOCK        sock,
             return eIO_NotSupported;
         status = sslwrite(sock->session, data, size, n_written, &x_error);
         assert((status == eIO_Success) == (n_written > 0));
+        assert(status == eIO_Success  ||  x_error);
 
         /* statistics & logging */
         if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
-            s_DoLog(sock, eIO_Write, (status != eIO_Success
-                                      ? (void*) &x_error :
-                                      *n_written > 0 ? data : 0),
-                    status != eIO_Success ? 0 : *n_written, " [encrypt]");
+            s_DoLog(sock, eIO_Write,
+                    status == eIO_Success ? data : (void*) &x_error,
+                    status != eIO_Success ? 0    : *n_written, " [encrypt]");
         }
-
         if (status == eIO_Closed)
             sock->w_status = eIO_Closed;
         return status;
@@ -2041,7 +2037,7 @@ static EIO_Status s_Write(SOCK        sock,
     }
 
     status = s_WritePending(sock, sock->w_timeout, 0, oob);
-    if (status != eIO_Success) {
+    if (status != eIO_Success  ||  !size) {
         *n_written = 0;
         if (status == eIO_Timeout  ||  status == eIO_Closed)
             return status;
@@ -2049,7 +2045,7 @@ static EIO_Status s_Write(SOCK        sock,
     }
 
     assert(sock->w_len == 0);
-    return size ? s_WriteData(sock, data, size, n_written, oob) : eIO_Success;
+    return s_WriteData(sock, data, size, n_written, oob);
 }
 
 
@@ -2860,7 +2856,7 @@ static EIO_Status s_CreateListening(const char*    path,
     assert(!path ^ !port);
 
     if (flags & fSOCK_Secure) {
-        /*FIXME:  Add this support later*/
+        /*FIXME:  Add secure support later*/
         return eIO_NotSupported;
     }
 

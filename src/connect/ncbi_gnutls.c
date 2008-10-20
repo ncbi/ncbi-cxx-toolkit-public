@@ -84,9 +84,9 @@ static const int kGnuTlsChiperPrio[] = {
 static const int kGnuTlsProtoPrio[] = {
   /* These are enum values rather than macros, so direct
      conditionalization isn't possible. */
-#ifdef LIBGNUTLS_VERSION_NUMBER
+#  ifdef LIBGNUTLS_VERSION_NUMBER
     GNUTLS_TLS1_1,
-#endif
+#  endif
     GNUTLS_TLS1,
     GNUTLS_SSL3,
     0
@@ -126,6 +126,7 @@ static FSSLPush                         s_Push;
 
 static void x_GnuTlsLogger(int level, const char* message)
 {
+    /* do some basic filtering and EOL cut-offs */
     int len = message ? strlen(message) : 0;
     if (!len  ||  *message == '\n')
         return;
@@ -134,6 +135,61 @@ static void x_GnuTlsLogger(int level, const char* message)
     if (message[len - 1] == '\n')
         len--;
     CORE_LOGF(eLOG_Note, ("GNUTLS%d: %.*s", level, len, message));
+}
+
+
+#  ifdef __GNUC__
+inline
+#  endif /*__GNUC__*/
+static int x_GnuTlsStatusToError(EIO_Status status, const struct timeval* to)
+{
+    assert(status != eIO_Success);
+
+    switch (status) {
+    case eIO_Closed:
+        return SOCK_ENOTCONN;
+    case eIO_Timeout:
+        if (!to  ||  (to->tv_sec | to->tv_usec))
+            return SOCK_ETIMEDOUT;
+#  ifdef NCBI_OS_MSWIN
+        return SOCK_EWOULDBLOCK;
+#  else
+        return SOCK_EAGAIN;
+#  endif /*NCBI_OS_MSWIN*/
+    case eIO_Unknown:
+        return 0/*keep*/;
+    case eIO_NotSupported:
+#  if   defined(ENOSYS)
+        return ENOSYS;
+#  elif defined(ENOTSUP)
+        return ENOTSUP;
+#  else
+        /*FALLTHRU*/
+#  endif /*not implemented*/
+    default:
+        break;
+    }
+    return EINVAL;
+}
+
+
+#  ifdef __GNUC__
+inline
+#  endif /*__GNUC__*/
+static EIO_Status x_GnuTlsErrorToStatus(int error)
+{
+    assert(error <= 0);
+
+    if (!error)
+        return eIO_Success;
+    else if (error == GNUTLS_E_INTERRUPTED)
+        return eIO_Interrupt;
+    else if (error == GNUTLS_E_AGAIN)
+        return eIO_Timeout;
+    else if (error  &&  !gnutls_error_is_fatal(error))
+        return eIO_Unknown;
+    else
+        return eIO_Closed;
 }
 
 
@@ -179,24 +235,6 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, int* error)
 }
 
 
-#  ifdef __GNUC__
-inline
-#  endif /*__GNUC__*/
-static EIO_Status x_GnuTlsErrorToStatus(int error)
-{
-    assert(error <= 0);
-
-    if      (error == GNUTLS_E_INTERRUPTED)
-        return eIO_Interrupt;
-    else if (error == GNUTLS_E_AGAIN)
-        return eIO_Timeout;
-    else if (error  &&  !gnutls_error_is_fatal(error))
-        return eIO_Unknown;
-    else
-        return eIO_Closed;
-}
-
-
 static EIO_Status s_GnuTlsOpen(void* session, int* error)
 {
     EIO_Status status;
@@ -209,41 +247,6 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error)
         status = eIO_Success;
 
     return status;
-}
-
-
-#  ifdef __GNUC__
-inline
-#  endif /*__GNUC__*/
-static int x_GnuTlsStatusToError(EIO_Status status, const struct timeval* to)
-{
-    assert(status != eIO_Success);
-
-    switch (status) {
-    case eIO_Closed:
-        return SOCK_ENOTCONN;
-    case eIO_Timeout:
-        if (!to  ||  (to->tv_sec | to->tv_usec))
-            return SOCK_ETIMEDOUT;
-#  ifdef NCBI_OS_MSWIN
-        return SOCK_EWOULDBLOCK;
-#  else
-        return SOCK_EAGAIN;
-#  endif /*NCBI_OS_MSWIN*/
-    case eIO_Unknown:
-        return 0/*keep*/;
-    case eIO_NotSupported:
-#  if   defined(ENOSYS)
-        return ENOSYS;
-#  elif defined(ENOTSUP)
-        return ENOTSUP;
-#  else
-        /*FALLTHRU*/
-#  endif /*not implemented*/
-    default:
-        break;
-    }
-    return EINVAL;
 }
 
 
