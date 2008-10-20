@@ -146,7 +146,7 @@ void CRegexp::GetSub(const string& str, size_t idx, string& dst) const
     if ((int)idx >= m_NumFound  ||  start == -1  ||  end == -1) {
         dst.erase();
     } else {
-        dst.assign(start, end - start);
+        dst.assign(str, start, end - start);
     }
 }
 
@@ -182,7 +182,7 @@ string CRegexp::GetMatch(
 bool CRegexp::IsMatch(const string& str, TMatch flags)
 {
     int x_flags = s_GetRealMatchFlags(flags);
-    m_NumFound = pcre_exec((pcre*)m_PReg, NULL, str.c_str(),
+    m_NumFound = pcre_exec((pcre*)m_PReg, NULL, str.data(),
                            (int)str.length(),  0, x_flags, m_Results,
                            (int)(kRegexpMaxSubPatterns +1) * 3);
     return m_NumFound > 0;
