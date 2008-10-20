@@ -32046,6 +32046,10 @@ if test "$with_flat_makefile" = "yes"; then
    if $real_srcdir/scripts/common/impl/create_flat_makefile.sh "$build_root" \
        -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then
       build_flat="Alternatively, cd $builddir && make -f Makefile.flat"
+   else
+      { { echo "$as_me:$LINENO: error: flat makefile generation failed." >&5
+echo "$as_me: error: flat makefile generation failed." >&2;}
+   { (exit 1); exit 1; }; }
    fi
 fi
 
@@ -32056,7 +32060,8 @@ if test -n "$with_extra_action" ; then
    eval $with_extra_action
    exit_code="$?"
    if test $exit_code -ne 0 ; then
-      echo "WARNING! non-zero exit code ($exit_code):  $with_extra_action"
+      { echo "$as_me:$LINENO: WARNING: non-zero exit code ($exit_code):  $with_extra_action" >&5
+echo "$as_me: WARNING: non-zero exit code ($exit_code):  $with_extra_action" >&2;}
    fi
    echo
 fi

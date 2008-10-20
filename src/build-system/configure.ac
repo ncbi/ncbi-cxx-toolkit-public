@@ -6085,6 +6085,8 @@ if test "$with_flat_makefile" = "yes"; then
    if $real_srcdir/scripts/common/impl/create_flat_makefile.sh "$build_root" \
        -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then
       build_flat="Alternatively, cd $builddir && make -f Makefile.flat"
+   else
+      AC_MSG_ERROR([flat makefile generation failed.])
    fi
 fi
 
@@ -6096,7 +6098,7 @@ if test -n "$with_extra_action" ; then
    eval $with_extra_action
    exit_code="$?"
    if test $exit_code -ne 0 ; then
-      echo "WARNING! non-zero exit code ($exit_code):  $with_extra_action"
+      AC_MSG_WARN([non-zero exit code ($exit_code):  $with_extra_action])
    fi
    echo
 fi
