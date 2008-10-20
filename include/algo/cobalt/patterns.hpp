@@ -42,6 +42,7 @@ Contents: Interface for default CDD patterns
 
 
 #include <corelib/ncbistl.hpp>
+#include <algo/cobalt/options.hpp>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -50,7 +51,7 @@ BEGIN_SCOPE(cobalt)
 /// Asignes default patterns to a given vector
 /// @param patterns Vector of patterns [out]
 ///
-void AssignDefaultPatterns(vector<char*>& patterns);
+void AssignDefaultPatterns(vector<CMultiAlignerOptions::CPattern>& patterns);
 
 END_SCOPE(cobalt)
 END_NCBI_SCOPE

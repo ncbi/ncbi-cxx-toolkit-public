@@ -44,7 +44,6 @@ Contents: Default CDD patterns for CMultiAlignerOptions.
 #include <corelib/ncbistl.hpp>
 #include <algo/cobalt/patterns.hpp>
 
-
 static const char* kDefPatterns[] = {
 
     "C-x-[DN]-x(4)-[FY]-x-C-x-C",
@@ -3031,7 +3030,7 @@ static const char* kDefPatterns[] = {
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
-void AssignDefaultPatterns(vector<char*>& patterns)
+    void AssignDefaultPatterns(vector<CMultiAlignerOptions::CPattern>& patterns)
 {
     int num_patterns = 0;
     while(kDefPatterns[num_patterns]) {
