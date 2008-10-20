@@ -3,7 +3,6 @@
 # Meta-makefile ("homologene" library)
 #################################
 
-LIB_PROJ = homologene
 ASN_PROJ = homologene
 
 srcdir = @srcdir@
