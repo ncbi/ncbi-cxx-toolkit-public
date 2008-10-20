@@ -20224,9 +20224,9 @@ fi
 
 ## SSL/TLS libraries
 case "$with_gnutls" in
-   no )       ;;
-   yes | '' ) : ${GNUTLS_PATH=$NCBI/gnutls} ;;
-   * )        GNUTLS_PATH=$with_gnutls      ;;
+   no )       ac_cv_path_LIBGNUTLS_CONFIG=no ;;
+   yes | '' ) : ${GNUTLS_PATH=$NCBI/gnutls}  ;;
+   * )        GNUTLS_PATH=$with_gnutls       ;;
 esac
 if test -d "$GNUTLS_PATH"; then
    ncbi_fix_dir_tmp=`if cd $GNUTLS_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
@@ -20284,7 +20284,7 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-if test -x "$LIBGNUTLS_CONFIG"; then
+if test "x$with_gnutls" != xno -a -x "$LIBGNUTLS_CONFIG"; then
    if test -z "$GNUTLS_PATH"; then
       p=`libgnutls-config --prefix`
       test "x$p" = "x/usr"  ||  GNUTLS_PATH=$p
@@ -20458,13 +20458,13 @@ _ACEOF
 
 if test -n "$GNUTLS_CONFIG_LIBS"; then
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    GNUTLS_LIBS=`echo $GNUTLS_CONFIG_LIBS | sed -e ""`
+    GNUTLS_LIBS=`echo $GNUTLS_CONFIG_LIBS | sed -e "$no_usr_lib"`
  else
     GNUTLS_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in `echo $GNUTLS_CONFIG_LIBS | sed -e ""`; do
+    for x in `echo $GNUTLS_CONFIG_LIBS | sed -e "$no_usr_lib"`; do
        case "$x" in
           -L*)
              GNUTLS_LIBS="$GNUTLS_LIBS${ncbi_rp_L_sep}$x"
