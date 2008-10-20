@@ -67,40 +67,13 @@ CMultiAlignerOptions::CMultiAlignerOptions(const string& rps_db_name,
 }
 
 
-void CMultiAlignerOptions::SetUserConstraints(
-                               const vector<SConstraint>& constraints)
-{
-    m_UserHits.resize(constraints.size());
-    copy(constraints.begin(), constraints.end(), m_UserHits.begin());
-    m_Mode = fNonStandard;
-}
-
-
-void CMultiAlignerOptions::SetCddPatterns(const vector<char*>& patterns)
-{
-    m_Patterns.resize(patterns.size());
-    copy(patterns.begin(), patterns.end(), m_Patterns.begin());
-
-    m_Mode = fNonStandard;
-}
-
-void CMultiAlignerOptions::AddCddPatterns(const vector<char*>& patterns)
-{
-    size_t old_size = m_Patterns.size();
-    m_Patterns.resize(m_Patterns.size() + patterns.size());
-    for (size_t i=0; i < m_Patterns.size();i++) {
-        m_Patterns[old_size + i] = patterns[i];
-    }
-
-    m_Mode = fNonStandard;
-}
-
 void CMultiAlignerOptions::SetDefaultCddPatterns(void)
 {
     m_Patterns.clear();
     AssignDefaultPatterns(m_Patterns);
     m_Mode = fNonStandard;
 }
+
 
 bool CMultiAlignerOptions::Validate(void)
 {
@@ -155,6 +128,14 @@ bool CMultiAlignerOptions::Validate(void)
 
         NCBI_THROW(CMultiAlignerException, eInvalidOptions,
                    "CDD patterns not specified");
+    }
+
+    // Check whether all cdd patterns are not empty
+    ITERATE(vector<CPattern>, it, m_Patterns) {
+        if (it->IsEmpty()) {
+            NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                       "CDD pattern is empty");
+        }
     }
 
     // Check if pseudocount value allowed if iterative alignment is selected

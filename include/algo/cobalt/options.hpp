@@ -58,6 +58,97 @@ public:
     typedef CNWAligner::TScore TScore;
     typedef TKmerMethods<CSparseKmerCounts> TKMethods;
 
+    /// Representation of CDD pattern 
+    ///
+    /// Pattern is represented either as string or pointer in order
+    /// to avoid copying large blocks if patterns are already in memory.
+    /// Representation is selected by the use of constructor. String
+    /// constructor creates a copy of the argument, pointer one does not.
+    class CPattern
+    {
+    public:
+
+        /// Create empty pattern
+        CPattern(void)
+            : m_Pattern((char*)NULL), m_IsPointer(true) {}
+
+        /// Create pattern as pointer. Referenced memory is not copied.
+        /// @param pattern Pattern
+        CPattern(char* pattern)
+            : m_Pattern(pattern), m_IsPointer(true) {}
+
+        /// Create pattern as string. The argument is copied.
+        /// @param pattern Pattern
+        CPattern(const string& pattern)
+            : m_Pattern(pattern), m_IsPointer(false) {}
+
+        /// Create copy of a pattern
+        /// @param pattern Pattern
+        CPattern(const CPattern& pattern)
+        {
+            if (pattern.m_IsPointer) {
+                m_Pattern.pointer = pattern.m_Pattern.pointer;
+            }
+            else {
+                m_Pattern.str = pattern.m_Pattern.str;
+            }
+            m_IsPointer = pattern.m_IsPointer;
+        }
+
+        /// Assignment operator
+        /// @param pattern Pattern
+        CPattern& operator=(const CPattern& pattern)
+        {
+            if (pattern.m_IsPointer) {
+                m_Pattern.pointer = pattern.m_Pattern.pointer;
+            }
+            else {
+                m_Pattern.str = pattern.m_Pattern.str;
+            }
+            m_IsPointer = pattern.m_IsPointer;
+
+            return *this;
+        }
+            
+        /// Get pattern as pointer
+        /// @return Pointer to a pattern
+        const char* AsPointer(void) const
+        {return (m_IsPointer ? m_Pattern.pointer 
+                 : m_Pattern.str.c_str());}
+
+        /// Get a copy of a pattern as string
+        /// @return Copy of pattern
+        string AsString(void) const
+        {return (m_IsPointer ? (string)m_Pattern.pointer : m_Pattern.str);}
+
+        /// Check if pattern is stored as pointer
+        /// @return
+        ///     True if pattern is stored as pointer,
+        ///     False otherwise
+        bool IsPointer(void) const {return m_IsPointer;}
+
+        /// Check if pattern is empty
+        /// @return 
+        ///    True if patter is empty,
+        ///    False otherwise
+        bool IsEmpty(void) const
+        {return m_IsPointer ? !m_Pattern.pointer : m_Pattern.str.empty();}
+
+    private:
+        typedef struct SPattern {
+            char* pointer; 
+            string str;
+
+            SPattern(void) : pointer(NULL) {}
+            SPattern(char* ptr) : pointer(ptr) {}
+            SPattern(string s) : pointer(NULL), str(s) {}
+        } SPattern;
+
+        SPattern m_Pattern;
+        bool m_IsPointer;
+    };
+
+
     /// Structure for representing single user constraint for pair-wise
     /// alignment
     typedef struct SConstraint {
@@ -228,20 +319,10 @@ public:
     /// Regular expresion patterns will be used to find conserved domains.
     /// Pairwise alignmnents will be constained to so that matching conserved
     /// domains are aligned. Parameter ownership is transfered to options.
-    /// @param patterns List of conserved domain patterns [in]
+    /// @return Reference to the list of conserved domain patterns
     ///
-    void SetCddPatterns(const vector<char*>& patterns);
-
-
-    /// Add regular expression patterns for identification of conserved domains
-    /// without removing exising patterns
-    ///
-    /// Regular expresion patterns will be used to find conserved domains.
-    /// Pairwise alignmnents will be constained to so that matching conserved
-    /// domains are aligned. Parameter ownership is transfered to options.
-    /// @param patterns List of conserved domain patterns [in]
-    /// 
-    void AddCddPatterns(const vector<char*>& patterns);
+    vector<CPattern>& SetCddPatterns(void)
+    {m_Mode = fNonStandard; return m_Patterns;}
 
 
     /// Set default patterns for identification of conserved domains.
@@ -252,18 +333,20 @@ public:
     ///
     void SetDefaultCddPatterns(void);
 
+
     /// Get regular expression patterns for identification of conserved domains
     /// @return List of conserved domain patterns
     ///
-    const vector<char*>& GetCddPatterns(void) const {return m_Patterns;}
+    const vector<CPattern>& GetCddPatterns(void) const {return m_Patterns;}
 
 
     /// Set user constraints.
     ///
     /// The constraits are used in progressive alignment.
-    /// @param constr List of user constraints [in]
+    /// @return Reference to the list of user constraints
     ///
-    void SetUserConstraints(const vector<SConstraint>& constr);
+    vector<SConstraint>& SetUserConstraints(void)
+    {m_Mode = fNonStandard; return m_UserHits;}
 
 
     /// Get user constraints
@@ -562,9 +645,6 @@ private:
     /// @param mode Mode
     void x_InitParams(TMode mode);
 
-    /// Create default patterns for cdd search
-    void x_CreateDefaultPatterns(void);
-
 
 private:
 
@@ -588,7 +668,7 @@ private:
     double m_BlastpEvalue;
 
     // Patterns
-    vector<char*> m_Patterns;
+    vector<CPattern> m_Patterns;
 
     // Iterative alignmnet
     bool m_Iterate;
