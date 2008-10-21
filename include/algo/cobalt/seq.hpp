@@ -66,15 +66,14 @@ public:
     CSequence() {}
 
     /// Build a sequence
-    /// @param seq The input sequence. The seqloc within 'seq'
-    ///            must be of type 'whole' [in]
+    /// @param seq The input sequence.
     ///
-    CSequence(const blast::SSeqLoc& seq);
+    CSequence(const objects::CSeq_loc& seq, objects::CScope& scope);
 
     /// Replace the sequence represented by a CSequence object
     /// @param seq The new sequence [in]
     ///
-    void Reset(const blast::SSeqLoc& seq);
+    void Reset(const objects::CSeq_loc& seq, objects::CScope& scope);
 
     /// Replace the sequence with sequence of gaps of given length
     /// @param length Number of gaps [in]

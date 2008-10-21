@@ -85,14 +85,14 @@ CSequence::GetPrintableLetter(int pos) const
 }
 
 void 
-CSequence::Reset(const blast::SSeqLoc& seq_in)
+CSequence::Reset(const objects::CSeq_loc& seq_in, objects::CScope& scope)
 {
-    if (!seq_in.seqloc->IsWhole() && !seq_in.seqloc->IsInt()) {
+    if (!seq_in.IsWhole() && !seq_in.IsInt()) {
         NCBI_THROW(CMultiAlignerException, eInvalidInput,
                    "Unsupported SeqLoc encountered");
     }
 
-    objects::CSeqVector sv(*seq_in.seqloc, *seq_in.scope);
+    objects::CSeqVector sv(seq_in, scope);
 
     if (!sv.IsProtein()) {
         NCBI_THROW(CMultiAlignerException, eInvalidInput,
@@ -124,9 +124,9 @@ CSequence::Reset(int length)
 }
 
 
-CSequence::CSequence(const blast::SSeqLoc& sl) 
+CSequence::CSequence(const objects::CSeq_loc& sl, objects::CScope& scope) 
 {
-    Reset(sl);
+    Reset(sl, scope);
 }
 
 

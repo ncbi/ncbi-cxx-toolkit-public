@@ -38,8 +38,10 @@ Contents: Interface for k-mer counting
 
 
 #include <util/math/matrix.hpp>
-#include <algo/blast/api/sseqloc.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objmgr/scope.hpp>
 #include <algo/cobalt/base.hpp>
+#include <algo/blast/core/blast_encoding.h>
 #include <vector>
 #include <stack>
 
@@ -92,13 +94,15 @@ public:
     /// Create k-mer counts vector from SSeqLoc with defalut k-mer length and
     /// alphabet size
     /// @param seq The sequence to be represented as k-mer counts [in]
+    /// @param scope Scope
     ///
-    CSparseKmerCounts(const blast::SSeqLoc& seq);
+    CSparseKmerCounts(const objects::CSeq_loc& seq,
+                      objects::CScope& scope);
 
     /// Reset the counts vector
     /// @param seq Sequence
     ///
-    void Reset(const blast::SSeqLoc& seq);
+    void Reset(const objects::CSeq_loc& seq, objects::CScope& scope);
 
     /// Get sequence length
     /// @return Sequence length
@@ -334,13 +338,14 @@ public:
     /// @param seqs List of sequences [in]
     /// @param counts List of k-mer counts vectors [out]
     ///
-    static void ComputeCounts(const blast::TSeqLocVector& seqs, 
+    static void ComputeCounts(const vector< CRef<objects::CSeq_loc> >& seqs,
+                              objects::CScope& scope,
                               vector<TKmerCounts>& counts)
     {
         counts.clear();
     
-        ITERATE(blast::TSeqLocVector, it, seqs) {
-            counts.push_back(TKmerCounts(*it));
+        ITERATE(vector< CRef<objects::CSeq_loc> >, it, seqs) {
+            counts.push_back(TKmerCounts(**it, scope));
         }
     }
 

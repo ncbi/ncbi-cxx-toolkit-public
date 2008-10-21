@@ -41,6 +41,7 @@ Contents: Interface for CMultiAlignerOptions
 /// Options for CMultiAligner
 
 #include <corelib/ncbiobj.hpp>
+#include <algo/blast/core/blast_options.h>
 #include <algo/cobalt/kmercounts.hpp>
 #include <algo/align/nw/nw_pssm_aligner.hpp>
 

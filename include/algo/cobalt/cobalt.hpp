@@ -38,9 +38,10 @@ Contents: Interface for CMultiAligner
 
 #include <util/math/matrix.hpp>
 #include <corelib/ncbifile.hpp>
-#include <algo/blast/api/sseqloc.hpp>
+//#include <algo/blast/api/sseqloc.hpp>
 #include <algo/align/nw/nw_pssm_aligner.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 #include <algo/cobalt/base.hpp>
 #include <algo/cobalt/resfreq.hpp>
@@ -76,6 +77,7 @@ public:
     ///
     CMultiAligner(void);
 
+
     /// Create multi aligner with selected RPS data base and default options
     /// @param rps_db RPS data base path [in]
     ///
@@ -87,6 +89,38 @@ public:
     ///
     CMultiAligner(const CConstRef<CMultiAlignerOptions>& options);
 
+
+    //------------------ Sequences to align --------------------------
+
+    /// Set query sequences.
+    /// This automatically clears out the intermediate state
+    /// of the last alignment.
+    /// @param queries List of query sequences or seq-ids [in]
+    /// @param scope Scope object [in]
+    ///
+    void SetQueries(const vector< CRef<objects::CSeq_loc> >& queries,
+                    CRef<objects::CScope> scope);
+
+    /// Set query sequences.
+    /// This automatically clears out the intermediate state
+    /// of the last alignment.
+    /// @param queries List of query sequences [in]
+    ///
+    void SetQueries(const vector<objects::CBioseq>& queries);
+
+
+    /// Get query sequences
+    /// @return List of seq-ids and locations [in]
+    ///
+    const vector< CRef<objects::CSeq_loc> >& GetQueries(void) const
+    {return m_tQueries;}
+
+
+    /// Get scope
+    /// @return Scope
+    ///
+    CRef<objects::CScope> GetScope(void) {return m_Scope;}
+    
 
     ////////////////////////////////////////////////////////////
 
@@ -140,11 +174,6 @@ public:
     ///
     const vector<CSequence>& GetResults() const { return m_Results; }
 
-    /// Retrieve the unaligned input sequences
-    /// @return The input sequences
-    ///
-    const blast::TSeqLocVector& GetSeqLocs() const { return m_tQueries; }
-
     /// Retrieve the current list of domain hits. Each CHit
     /// corresponds to one domain hit; sequence 1 of the hit
     /// has the index of the input protein sequence (0...num_inputs - 1), 
@@ -191,15 +220,6 @@ public:
     ///
     const TPhyTreeNode *GetTree() const { return m_Tree.GetTree(); }
 
-
-    // ---------------------- Setters -----------------------------
-
-    /// Load a new set of input sequences into the aligner.
-    /// This automatically clears out the intermediate state
-    /// of the last alignment
-    /// @param queries The list of new query sequences
-    ///
-    void SetQueries(const blast::TSeqLocVector& queries);
 
 
     // ---------------- Running the aligner -----------------------
@@ -344,10 +364,11 @@ private:
 
     CConstRef<CMultiAlignerOptions> m_Options;
 
-    blast::TSeqLocVector m_tQueries;
+    vector< CRef<objects::CSeq_loc> > m_tQueries;
     vector<CSequence> m_QueryData;
     vector<CSequence> m_Results;
 
+    CRef<objects::CScope> m_Scope;
     
     bool m_UseClusters;
     TKMethods::ECompressedAlphabet m_KmerAlphabet;
@@ -356,7 +377,7 @@ private:
     double m_MaxClusterDist;
     TKMethods::EDistMeasures m_ClustDistMeasure;
     vector<CSequence> m_AllQueryData;
-    blast::TSeqLocVector m_AllQueries;
+    vector< CRef<objects::CSeq_loc> > m_AllQueries;
     CClusterer m_Clusterer;
     vector< vector<Uint4> > m_ClusterGapPositions;
 
@@ -424,15 +445,15 @@ private:
                              CProfileData& profile_data);
     void x_AssignDefaultResFreqs();
 
-    void x_AddNewSegment(blast::TSeqLocVector& loc_list, 
-                         blast::SSeqLoc& query, 
-                         TOffset from, 
-                         TOffset to, 
+    void x_AddNewSegment(vector< CRef<objects::CSeq_loc> >& loc_list, 
+                         const CRef<objects::CSeq_loc>& query, 
+                         TOffset from, TOffset to, 
                          vector<SSegmentLoc>& seg_list,
                          int query_index);
-    void x_MakeFillerBlocks(blast::TSeqLocVector& filler_locs,
+
+    void x_MakeFillerBlocks(vector< CRef<objects::CSeq_loc> >& filler_locs,
                             vector<SSegmentLoc>& filler_segs);
-    void x_AlignFillerBlocks(blast::TSeqLocVector& filler_locs, 
+    void x_AlignFillerBlocks(vector< CRef<objects::CSeq_loc> >& filler_locs, 
                              vector<SSegmentLoc>& filler_segs);
 
     void x_FindConsistentHitSubset();

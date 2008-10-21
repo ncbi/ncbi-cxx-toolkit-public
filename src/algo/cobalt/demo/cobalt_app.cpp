@@ -173,10 +173,13 @@ void CMultiApplication::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-static blast::TSeqLocVector
-x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr)
+void
+x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr,
+                      vector< CRef<objects::CSeq_loc> >& seqs,
+                      CRef<objects::CScope>& scope)
 {
-    blast::TSeqLocVector retval;
+    seqs.clear();
+    scope.Reset(new CScope(objmgr));
 
     // read one query at a time, and use a separate seq_entry,
     // scope, and lowercase mask for each query. This lets different
@@ -190,7 +193,6 @@ x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr)
                               CFastaReader::fNoParseID);
 
     while (!line_reader.AtEOF()) {
-        CRef<CScope> scope(new CScope(objmgr));
 
         scope->AddDefaults();
         CRef<CSeq_entry> entry = fasta_reader.ReadOneSeq();
@@ -203,10 +205,8 @@ x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr)
         CTypeConstIterator<CBioseq> itr(ConstBegin(*entry));
         CRef<CSeq_loc> seqloc(new CSeq_loc());
         seqloc->SetWhole().Assign(*itr->GetId().front());
-        blast::SSeqLoc sl(seqloc, scope);
-        retval.push_back(sl);
+        seqs.push_back(seqloc);
     }
-    return retval;
 }
 
 
@@ -354,11 +354,12 @@ int CMultiApplication::Run(void)
 
     CMultiAligner aligner(opts);
 
-    blast::TSeqLocVector queries = x_GetSeqLocFromStream(
-                                              args["i"].AsInputFile(), 
-                                              *m_ObjMgr);
+    vector< CRef<objects::CSeq_loc> > queries;
+    CRef<objects::CScope> scope;
+    x_GetSeqLocFromStream(args["i"].AsInputFile(), *m_ObjMgr, queries, scope);
+    _ASSERT(!scope.Empty());
 
-    aligner.SetQueries(queries);
+    aligner.SetQueries(queries, scope);
 
 
 
@@ -366,9 +367,8 @@ int CMultiApplication::Run(void)
 
     const vector<CSequence>& results(aligner.GetResults());
     for (int i = 0; i < (int)results.size(); i++) {
-        CBioseq_Handle bhandle = queries[i].scope->GetBioseqHandle(
-                                              queries[i].seqloc->GetWhole(),
-                                              CScope::eGetBioseq_All);
+        CBioseq_Handle bhandle = scope->GetBioseqHandle(queries[i]->GetWhole(),
+                                                       CScope::eGetBioseq_All);
 
         printf(">%s\n", sequence::GetTitle(bhandle).c_str());
         for (int j = 0; j < results[i].GetLength(); j++) {

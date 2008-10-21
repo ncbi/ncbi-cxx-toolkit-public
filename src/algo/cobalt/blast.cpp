@@ -67,9 +67,11 @@ USING_SCOPE(objects);
 /// @param query_index Ordinal ID of 'query'
 ///
 void 
-CMultiAligner::x_AddNewSegment(TSeqLocVector& loc_list, SSeqLoc& query, 
-                TOffset from, TOffset to, vector<SSegmentLoc>& seg_list,
-                int query_index)
+CMultiAligner::x_AddNewSegment(vector< CRef<objects::CSeq_loc> >& loc_list,
+                               const CRef<objects::CSeq_loc>& query,
+                               TOffset from, TOffset to,
+                               vector<SSegmentLoc>& seg_list,
+                               int query_index)
 {
     // Note that all offsets are zero-based
 
@@ -77,10 +79,8 @@ CMultiAligner::x_AddNewSegment(TSeqLocVector& loc_list, SSeqLoc& query,
     seqloc->SetInt().SetFrom(from);
     seqloc->SetInt().SetTo(to);
     seqloc->SetInt().SetStrand(eNa_strand_unknown);
-    seqloc->SetInt().SetId().Assign(sequence::GetId(*query.seqloc, 
-                                                  query.scope));
-    SSeqLoc sl(seqloc, query.scope);
-    loc_list.push_back(sl);
+    seqloc->SetInt().SetId().Assign(sequence::GetId(*query, m_Scope));
+    loc_list.push_back(seqloc);
 
     seg_list.push_back(SSegmentLoc(query_index, from, to));
 }
@@ -92,8 +92,9 @@ CMultiAligner::x_AddNewSegment(TSeqLocVector& loc_list, SSeqLoc& query,
 /// @param filler_segs Simplified representation of filler_locs [out]
 ///
 void
-CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
-                                  vector<SSegmentLoc>& filler_segs)
+CMultiAligner::x_MakeFillerBlocks(
+                               vector< CRef<objects::CSeq_loc> >& filler_locs,
+                               vector<SSegmentLoc>& filler_segs)
 {
     int num_queries = m_QueryData.size();
     vector<CRangeCollection<TOffset> > sorted_segs(num_queries);
@@ -134,8 +135,7 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
         // Handle the last fragment; this could actually
         // envelop the entire sequence
 
-        int seq_length = sequence::GetLength(*m_tQueries[i].seqloc,
-                                             m_tQueries[i].scope);
+        int seq_length = sequence::GetLength(*m_tQueries[i], m_Scope);
 
         if (seq_length - seg_start > CHit::kMinHitSize) {
             x_AddNewSegment(filler_locs, m_tQueries[i], seg_start,
@@ -161,8 +161,9 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
 /// @param filler_segs Simplified representation of filler_locs [in]
 ///
 void
-CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs, 
-                                   vector<SSegmentLoc>& filler_segs)
+CMultiAligner::x_AlignFillerBlocks(
+                               vector< CRef<objects::CSeq_loc> >& filler_locs, 
+                               vector<SSegmentLoc>& filler_segs)
 {
     const int kBlastBatchSize = 10000;
     int num_full_queries = m_tQueries.size();
@@ -180,6 +181,11 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
 
     // use blast on one batch of filler segments at a time
 
+    TSeqLocVector queries(m_tQueries.size());
+    for (size_t i=0;i < m_tQueries.size();i++) {
+        queries[i] = SSeqLoc(*m_tQueries[i], *m_Scope);
+    }
+
     int batch_start = 0; 
     while (batch_start < (int)filler_locs.size()) {
 
@@ -187,17 +193,17 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
         int batch_size = 0;
 
         for (int i = batch_start; i < (int)filler_locs.size(); i++) {
-            const CSeq_loc& curr_loc = *filler_locs[i].seqloc;
+            const CSeq_loc& curr_loc = *filler_locs[i];
             int fragment_size = curr_loc.GetInt().GetTo() -
                                 curr_loc.GetInt().GetFrom() + 1;
             if (batch_size + fragment_size >= kBlastBatchSize)
                 break;
 
-            curr_batch.push_back(filler_locs[i]);
+            curr_batch.push_back(SSeqLoc(*filler_locs[i], *m_Scope));
             batch_size += fragment_size;
         }
 
-        CBl2Seq blaster(curr_batch, m_tQueries, blastp_opts);
+        CBl2Seq blaster(curr_batch, queries, blastp_opts);
         TSeqAlignVector v = blaster.Run();
 
         // Convert each resulting HSP into a CHit object
@@ -309,7 +315,7 @@ CMultiAligner::FindLocalHits()
     // filler regions against each other and add any new HSPs to
     // 'results'
 
-    TSeqLocVector filler_locs;
+    vector< CRef<objects::CSeq_loc> > filler_locs;
     vector<SSegmentLoc> filler_segs;
     x_MakeFillerBlocks(filler_locs, filler_segs);
     x_AlignFillerBlocks(filler_locs, filler_segs);

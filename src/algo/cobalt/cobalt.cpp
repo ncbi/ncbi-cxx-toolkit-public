@@ -37,6 +37,7 @@ Contents: Implementation of CMultiAligner class
 
 
 #include <ncbi_pch.hpp>
+#include <objmgr/object_manager.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/cobalt/cobalt.hpp>
 
@@ -177,19 +178,62 @@ CMultiAligner::~CMultiAligner()
 
 
 void 
-CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
+CMultiAligner::SetQueries(const vector< CRef<objects::CSeq_loc> >& queries,
+                          CRef<objects::CScope> scope)
 {
     if (queries.size() < 2) {
         NCBI_THROW(CMultiAlignerException, eInvalidInput,
                    "Aligner requires at least two input sequences");
     }
 
-    Reset();
-    m_tQueries = queries;
+    m_Scope = scope;
+
+    m_tQueries.resize(queries.size());
+    copy(queries.begin(), queries.end(), m_tQueries.begin());
+
     m_QueryData.clear();
-    ITERATE(blast::TSeqLocVector, itr, queries) {
-        m_QueryData.push_back(CSequence(*itr));
+    ITERATE(vector< CRef<objects::CSeq_loc> >, itr, m_tQueries) {
+        m_QueryData.push_back(CSequence(**itr, *m_Scope));
     }
+
+    Reset();
+}
+
+
+void 
+CMultiAligner::SetQueries(const vector<objects::CBioseq>& queries)
+{
+    if (queries.size() < 2) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "Aligner requires at least two input sequences");
+    }
+
+    CRef<objects::CObjectManager> objmgr
+        = objects::CObjectManager::GetInstance();
+
+    m_Scope.Reset(new objects::CScope(*objmgr));
+    m_Scope->AddDefaults();
+
+    vector<objects::CBioseq_Handle> bioseq_handles;
+    ITERATE(vector<objects::CBioseq>, it, queries) {
+        bioseq_handles.push_back(m_Scope->AddBioseq(*it));
+    }
+
+    m_tQueries.clear();
+    ITERATE(vector<objects::CBioseq_Handle>, it, bioseq_handles) {
+        CRef<objects::CSeq_loc> 
+            seq_loc(new objects::CSeq_loc(objects::CSeq_loc::e_Whole));
+
+        seq_loc->SetId(*it->GetSeqId());
+        m_tQueries.push_back(seq_loc);
+    }
+
+    m_QueryData.clear();
+    ITERATE(vector< CRef<objects::CSeq_loc> >, itr, m_tQueries) {
+        m_QueryData.push_back(CSequence(**itr, *m_Scope));
+    }
+
+    Reset();
 }
 
 
@@ -319,7 +363,7 @@ CMultiAligner::FindQueryClusters()
 
     vector<TKmerCounts> kmer_counts;
     TKMethods::SetParams(m_KmerLength, m_KmerAlphabet);
-    TKMethods::ComputeCounts(m_tQueries, kmer_counts);
+    TKMethods::ComputeCounts(m_tQueries, *m_Scope, kmer_counts);
     auto_ptr<CClusterer::TDistMatrix> dmat
         = TKMethods::ComputeDistMatrix(kmer_counts, m_ClustDistMeasure);
 
@@ -384,7 +428,7 @@ CMultiAligner::FindQueryClusters()
         }
     }
 
-    blast::TSeqLocVector cluster_prototypes;
+    vector< CRef<objects::CSeq_loc> > cluster_prototypes;
     ITERATE(CClusterer::TClusters, cluster_it, m_Clusterer.GetClusters()) {
         cluster_prototypes.push_back(m_tQueries[cluster_it->GetPrototype()]);
         m_AllQueryData.push_back(m_QueryData[cluster_it->GetPrototype()]);

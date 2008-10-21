@@ -80,7 +80,7 @@ CMultiAligner::x_GetSeqalign(vector<CSequence>& align,
 
     vector<int> seq_off(num_queries, 0);
     for (int i = 0; i < num_queries; i++) {
-        const CSeq_loc& seqloc = *m_tQueries[indices[i]].seqloc;
+        const CSeq_loc& seqloc = *m_tQueries[indices[i]];
         if (seqloc.IsWhole()) {
 
             // the seqloc is const, but the constructor wants a

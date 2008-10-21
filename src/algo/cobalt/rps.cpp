@@ -403,7 +403,14 @@ CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
     // run RPS blast
 
     BlastSeqSrc * seq_src(SeqDbBlastSeqSrcInit(m_RPSdb, TRUE));
-    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(m_tQueries));
+
+    CBlastQueryVector query_vector;
+    ITERATE(vector< CRef<objects::CSeq_loc> >, it, m_tQueries) {
+        CRef<CBlastSearchQuery> sq(new CBlastSearchQuery(**it, *m_Scope));
+        query_vector.AddQuery(sq);
+    }
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_vector));
+
     CLocalBlast blaster(query_factory, opts, seq_src);
     CSearchResultSet results = *blaster.Run();
 

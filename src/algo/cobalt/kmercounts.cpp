@@ -59,9 +59,10 @@ bool CSparseKmerCounts::sm_UseCompressed = false;
 static const Uint1 kXaa = 21;
 
 
-CSparseKmerCounts::CSparseKmerCounts(const blast::SSeqLoc& seq)
+CSparseKmerCounts::CSparseKmerCounts(const objects::CSeq_loc& seq,
+                                     objects::CScope& scope)
 {
-    Reset(seq);
+    Reset(seq, scope);
 }
 
 // Initializes position bit vector for k-mer counting
@@ -105,7 +106,8 @@ static void MarkUsed(Uint4 pos, vector<Uint4>& entries, int chunk)
 }
 
 
-void CSparseKmerCounts::Reset(const blast::SSeqLoc& seq)
+void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
+                              objects::CScope& scope)
 {
     unsigned int kmer_len = sm_KmerLength;
     unsigned int alphabet_size = sm_AlphabetSize;
@@ -114,12 +116,12 @@ void CSparseKmerCounts::Reset(const blast::SSeqLoc& seq)
     _ASSERT(sm_UseCompressed && !sm_TransTable.empty() 
            || !sm_UseCompressed && sm_TransTable.empty());
 
-    if (!seq.seqloc->IsWhole() && !seq.seqloc->IsInt()) {
+    if (!seq.IsWhole() && !seq.IsInt()) {
         NCBI_THROW(CKmerCountsException, eUnsupportedSeqLoc, 
                    "Unsupported SeqLoc encountered");
     }
 
-    objects::CSeqVector sv(*seq.seqloc, *seq.scope);
+    objects::CSeqVector sv(seq, scope);
 
     unsigned int num_elements;
     unsigned int seq_len = sv.size();
