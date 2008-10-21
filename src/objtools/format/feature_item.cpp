@@ -1455,6 +1455,7 @@ void CFeatureItem::x_AddQualsRna(
     bool pseudo )
 //  ----------------------------------------------------------------------------
 {
+
     CSeqFeatData::ESubtype subtype = m_Feat->GetData().GetSubtype();
     const CRNA_ref& rna = feat.GetData().GetRna();
     const CFlatFileConfig& cfg = ctx.Config();
@@ -2265,8 +2266,6 @@ void CFeatureItem::x_AddQualsGene(
         return;
     }
 
-    const CBioseqContext& ctx = *GetContext();
-
     bool is_gene = (subtype == CSeqFeatData::eSubtype_gene);
 
     const string* locus = (gene_ref->IsSetLocus()  &&  !NStr::IsBlank(gene_ref->GetLocus())) ?
@@ -2289,7 +2288,7 @@ void CFeatureItem::x_AddQualsGene(
             if (is_gene  &&  desc != NULL) {
                 x_AddQual(eFQ_gene_desc, new CFlatStringQVal(*desc));
             }
-            if (is_gene  &&  syn != NULL) {
+            if (syn != NULL) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
         } else if (locus_tag != NULL) {
@@ -2297,13 +2296,13 @@ void CFeatureItem::x_AddQualsGene(
             if (is_gene  &&  desc != NULL) {
                 x_AddQual(eFQ_gene_desc, new CFlatStringQVal(*desc));
             }
-            if (is_gene  &&  syn != NULL) {
+            if (syn != NULL) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
         } else if (desc != NULL) {
             m_Gene = *desc;
             x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
-            if (is_gene  &&  syn != NULL) {
+            if (syn != NULL) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
         } else if (syn != NULL) {
@@ -2313,7 +2312,7 @@ void CFeatureItem::x_AddQualsGene(
             x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
             syns.pop_front();
             // ... and the rest as synonyms
-            if (is_gene  &&  !syns.empty() ) {
+            if (syn != NULL) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(syns));
             }
         }
