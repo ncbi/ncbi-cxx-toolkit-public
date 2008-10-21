@@ -999,7 +999,7 @@ static int/*bool*/ s_IsSmallerTimeout(const struct timeval* v1,
     if (!v1/*inf*/)
         return 0;
     if (!v2/*inf*/)
-        return !!v1;
+        return 1;
     if (v1->tv_sec > v2->tv_sec)
         return 0;
     if (v1->tv_sec < v2->tv_sec)
@@ -1167,15 +1167,15 @@ static EIO_Status s_Select(size_t                n,
             return eIO_Success;
 
         if (!tv  ||  s_IsSmallerTimeout(s_SelectTimeout, &x_tv)) {
-            if ( s_SelectTimeout ) {
+            if (s_SelectTimeout)
                 xx_tv = *s_SelectTimeout;
-            }
         } else
             xx_tv = x_tv;
 
         n_fds = select(SOCK_NFDS((TSOCK_Handle) n_fds),
-                       write_only ? 0 : &r_fds, read_only ? 0 : &w_fds,
-                       &e_fds, tv || s_SelectTimeout ? &xx_tv : 0);
+                       write_only ? 0 : &r_fds,
+                       read_only  ? 0 : &w_fds, &e_fds,
+                       tv  ||  s_SelectTimeout ? &xx_tv : 0);
 
         /* timeout has expired */
         if (n_fds == 0) {
@@ -1360,8 +1360,7 @@ static EIO_Status s_Recv(SOCK    sock,
                          size_t* n_read,
                          int     flag)
 {
-    assert(sock->type == eSocket);
-    assert(buf  &&  size > 0  &&  !*n_read);
+    assert(sock->type == eSocket  &&  buf  &&  size > 0  &&  !*n_read);
 
     if (sock->r_status == eIO_Closed  ||  sock->eof)
         return eIO_Closed;
@@ -2106,7 +2105,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
             }
 
             if (sock->session  &&  !sock->pending) {
-                FSSLClose sslclose = s_SSL  &&  s_SSL->Close ? s_SSL->Close : 0;
+                FSSLClose sslclose = s_SSL  &&  s_SSL->Close? s_SSL->Close : 0;
                 if (sslclose) {
                     const struct timeval* wtv = sock->w_timeout;
                     const struct timeval* rtv = sock->r_timeout;
@@ -2209,7 +2208,8 @@ static EIO_Status s_Close(SOCK sock, int abort)
             }
             if (lgr.l_onoff
                 &&  setsockopt(sock->sock, SOL_SOCKET, SO_LINGER,
-                               (char*) &lgr, sizeof(lgr)) != 0  &&  abort >= 0){
+                               (char*) &lgr, sizeof(lgr)) != 0
+                &&  abort >= 0  &&  sock->connected) {
                 x_error = SOCK_ERRNO;
                 CORE_LOGF_ERRNO_EXX(17, eLOG_Trace,
                                     x_error, SOCK_STRERROR(x_error),
@@ -2221,7 +2221,8 @@ static EIO_Status s_Close(SOCK sock, int abort)
             if (abort  ||  (tv  &&  !(tv->tv_sec | tv->tv_usec))) {
                 int no = -1;
                 if (setsockopt(sock->sock, IPPROTO_TCP, TCP_LINGER2,
-                               (char*) &no, sizeof(no)) != 0  &&  !abort) {
+                               (char*) &no, sizeof(no)) != 0
+                    &&  !abort  &&  sock->connected) {
                     x_error = SOCK_ERRNO;
                     CORE_LOGF_ERRNO_EXX(18, eLOG_Trace,
                                         x_error, SOCK_STRERROR(x_error),
@@ -2235,14 +2236,14 @@ static EIO_Status s_Close(SOCK sock, int abort)
 #endif /*(NCBI_OS_UNIX && !NCBI_OS_BEOS) || NCBI_OS_MSWIN*/
 
         if (!abort) {
-            /* shutdown in both directions */
+            /* orderly shutdown in both directions */
             s_Shutdown(sock, eIO_ReadWrite, sock->c_timeout);
         } else
             sock->r_status = sock->w_status = eIO_Closed;
 
         /* set the socket back to blocking mode */
         if (s_Initialized > 0
-            &&  !s_SetNonblock(sock->sock, 0/*false*/)  &&  !abort){
+            &&  !s_SetNonblock(sock->sock, 0/*false*/)  &&  !abort) {
             x_error = SOCK_ERRNO;
             CORE_LOGF_ERRNO_EXX(19, eLOG_Trace,
                                 x_error, SOCK_STRERROR(x_error),
