@@ -124,7 +124,7 @@ string CEUtils_Request::GetQueryString(void) const
             args += "&";
         }
         args += "WebEnv=" +
-            URL_EncodeString(webenv, eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(webenv, NStr::eUrlEnc_ProcessMarkChars);
     }
     string qk = GetQueryKey();
     if ( !qk.empty() ) {
@@ -139,7 +139,7 @@ string CEUtils_Request::GetQueryString(void) const
             args += "&";
         }
         args += "tool=" +
-            URL_EncodeString(tool, eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(tool, NStr::eUrlEnc_ProcessMarkChars);
     }
     const string& email = GetConnContext()->GetEmail();
     if ( !email.empty() ) {
@@ -147,14 +147,14 @@ string CEUtils_Request::GetQueryString(void) const
             args += "&";
         }
         args += "email=" +
-            URL_EncodeString(email, eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(email, NStr::eUrlEnc_ProcessMarkChars);
     }
     ITERATE(TRequestArgs, it, m_Args) {
         if ( !args.empty() ) {
             args += "&";
         }
         args += it->first + "=" +
-            URL_EncodeString(it->second, eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(it->second, NStr::eUrlEnc_ProcessMarkChars);
     }
     return args;
 }
@@ -226,8 +226,8 @@ string CEUtils_IdGroup::AsQueryString(void) const
     string ret;
     ITERATE(TIdList, it, m_Ids) {
         ret += ret.empty() ?
-            "id=" : URL_EncodeString(",", eUrlEncode_ProcessMarkChars);
-        ret += URL_EncodeString(*it, eUrlEncode_ProcessMarkChars);
+            "id=" : NStr::URLEncode(",", NStr::eUrlEnc_ProcessMarkChars);
+        ret += NStr::URLEncode(*it, NStr::eUrlEnc_ProcessMarkChars);
     }
     return ret;
 }

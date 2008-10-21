@@ -80,7 +80,7 @@ string CELink_Request::GetQueryString(void) const
     string args = TParent::GetQueryString();
     if ( !m_DbFrom.empty() ) {
         args += "&dbfrom=" +
-            URL_EncodeString(m_DbFrom, eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(m_DbFrom, NStr::eUrlEnc_ProcessMarkChars);
     }
     string ids = m_IdGroups.AsQueryString();
     if ( !ids.empty() ) {
@@ -88,20 +88,20 @@ string CELink_Request::GetQueryString(void) const
     }
     if ( !m_Term.empty() ) {
         args += "&term=" +
-            URL_EncodeString(m_Term, eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(m_Term, NStr::eUrlEnc_ProcessMarkChars);
     }
     if ( m_RelDate ) {
         args += "&reldate" + NStr::IntToString(m_RelDate);
     }
     if ( !m_MinDate.IsEmpty() ) {
         args += "&mindate=" +
-            URL_EncodeString(m_MinDate.AsString("M/D/Y"),
-            eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(m_MinDate.AsString("M/D/Y"),
+            NStr::eUrlEnc_ProcessMarkChars);
     }
     if ( !m_MaxDate.IsEmpty() ) {
         args += "&maxdate=" +
-            URL_EncodeString(m_MaxDate.AsString("M/D/Y"),
-            eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(m_MaxDate.AsString("M/D/Y"),
+            NStr::eUrlEnc_ProcessMarkChars);
     }
     if ( !m_DateType.empty() ) {
         args += "&datetype=" + m_DateType;
@@ -116,15 +116,15 @@ string CELink_Request::GetQueryString(void) const
     }
     if ( !m_LinkName.empty() ) {
         args += "&linkname=";
-        args += URL_EncodeString(m_LinkName, eUrlEncode_ProcessMarkChars);
+        args += NStr::URLEncode(m_LinkName, NStr::eUrlEnc_ProcessMarkChars);
     }
     if ( !m_Holding.empty() ) {
         args += "&holding=";
-        args += URL_EncodeString(m_Holding, eUrlEncode_ProcessMarkChars);
+        args += NStr::URLEncode(m_Holding, NStr::eUrlEnc_ProcessMarkChars);
     }
     if ( !m_Version.empty() ) {
         args += "&version=";
-        args += URL_EncodeString(m_Version, eUrlEncode_ProcessMarkChars);
+        args += NStr::URLEncode(m_Version, NStr::eUrlEnc_ProcessMarkChars);
     }
     return args;
 }

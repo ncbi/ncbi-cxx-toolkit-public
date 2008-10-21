@@ -54,7 +54,7 @@ string CEGQuery_Request::GetQueryString(void) const
     string args = TParent::GetQueryString();
     if ( !m_Term.empty() ) {
         args += "&term=" +
-            URL_EncodeString(m_Term, eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(m_Term, NStr::eUrlEnc_ProcessMarkChars);
     }
     return args;
 }

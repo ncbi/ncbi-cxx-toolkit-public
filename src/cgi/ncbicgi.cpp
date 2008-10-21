@@ -183,9 +183,9 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os,
     if (wmethod == eHTTPResponse) {
         os << "Set-Cookie: ";
 
-        os << URL_EncodeString(m_Name, flag).c_str() << '=';
+        os << NStr::URLEncode(m_Name, NStr::EUrlEncode(flag)).c_str() << '=';
         if ( !m_Value.empty() )
-            os << URL_EncodeString(m_Value, flag).c_str();
+            os << NStr::URLEncode(m_Value, NStr::EUrlEncode(flag)).c_str();
 
         if ( !m_Domain.empty() )
             os << "; domain="  << m_Domain.c_str();
@@ -200,9 +200,9 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os,
         os << HTTP_EOL;
 
     } else {
-        os << URL_EncodeString(m_Name, flag).c_str() << '=';
+        os << NStr::URLEncode(m_Name, NStr::EUrlEncode(flag)).c_str() << '=';
         if ( !m_Value.empty() )
-            os << URL_EncodeString(m_Value, flag).c_str();
+            os << NStr::URLEncode(m_Value, NStr::EUrlEncode(flag)).c_str();
     }
     return os;
 }
@@ -402,7 +402,9 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             string name = str.substr(pos_beg);
             switch ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
             case eCheck_Valid:
-                Add(URL_DecodeString(name, m_EncodeFlag),
+                Add(NStr::URLDecode(name,
+                    m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
+                    NStr::eUrlDec_Percent : NStr::eUrlDec_All),
                     kEmptyStr, on_bad_cookie);
                 break;
             case eCheck_StoreInvalid:
@@ -422,7 +424,9 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             string name = str.substr(pos_beg, pos_mid - pos_beg);
             switch ( x_CheckField(name, " ,;=", on_bad_cookie) ) {
             case eCheck_Valid:
-                Add(URL_DecodeString(name, m_EncodeFlag),
+                Add(NStr::URLDecode(name,
+                    m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
+                    NStr::eUrlDec_Percent : NStr::eUrlDec_All),
                     kEmptyStr, on_bad_cookie);
                 break;
             case eCheck_StoreInvalid:
@@ -457,8 +461,12 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
         ECheckResult valid_name = x_CheckField(name, " ,;=", on_bad_cookie);
         ECheckResult valid_value = x_CheckField(val, " ;", on_bad_cookie);
         if ( valid_name == eCheck_Valid  &&  valid_value == eCheck_Valid ) {
-            Add(URL_DecodeString(name, m_EncodeFlag),
-                URL_DecodeString(val, m_EncodeFlag),
+            Add(NStr::URLDecode(name,
+                m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
+                NStr::eUrlDec_Percent : NStr::eUrlDec_All),
+                NStr::URLDecode(val,
+                m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
+                NStr::eUrlDec_Percent : NStr::eUrlDec_All),
                 on_bad_cookie);
         }
         else if ( valid_name != eCheck_SkipInvalid  &&
@@ -1361,12 +1369,12 @@ string CCgiRequest::GetCGIEntriesStr(void) const
         if ( !args.empty() ) {
             args += "&";
         }
-        args += URL_EncodeString(entry->first, eUrlEncode_ProcessMarkChars);
+        args += NStr::URLEncode(entry->first, NStr::eUrlEnc_ProcessMarkChars);
         args += "=";
-        args += URL_EncodeString(lim >= 0 ?
-                                 entry->second.substr(0, lim) :
-                                 string(entry->second),
-                                 eUrlEncode_ProcessMarkChars);
+        args += NStr::URLEncode(lim >= 0 ?
+                                entry->second.substr(0, lim) :
+                                string(entry->second),
+                                NStr::eUrlEnc_ProcessMarkChars);
     }
     return args;
 }

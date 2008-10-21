@@ -1479,7 +1479,7 @@ string CBlastFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid,
         gnl[0] = '\0';
     }
     
-    str = URL_EncodeString(dbtmp == NULL ? (char*) "nr" : dbtmp);
+    str = NStr::URLEncode(dbtmp == NULL ? (char*) "nr" : dbtmp);
 
     if (user_url.find("?") == string::npos){
         link += user_url + "?" + "db=" + str + "&na=" + (db_is_na? "1" : "0");
@@ -1491,13 +1491,13 @@ string CBlastFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid,
     }
     
     if (gnl[0] != '\0'){
-        str = URL_EncodeString(gnl);
+        str = NStr::URLEncode(gnl);
         link += "&gnl=";
         link += str;
     }
     if (gi > 0){
         link += "&gi=" + NStr::IntToString(gi);
-        link += "&term=" + NStr::IntToString(gi) + URL_EncodeString("[gi]");
+        link += "&term=" + NStr::IntToString(gi) + NStr::URLEncode("[gi]");
     }
     if(taxid > 0){
         link += "&taxid=" + NStr::IntToString(taxid);
@@ -1613,23 +1613,23 @@ void CBlastFormatUtil::BuildFormatQueryString(CCgiContext& ctx, string& cgi_quer
 
     if (ctx.GetRequestValue("FORMAT_EQ_TEXT").GetValue() != NcbiEmptyString) {
         cgi_query += "&FORMAT_EQ_TEXT=" +
-            URL_EncodeString(NStr::TruncateSpaces(ctx.
-                                                  GetRequestValue("FORMAT_EQ_TEXT").
-                                                  GetValue())); 
+            NStr::URLEncode(NStr::TruncateSpaces(ctx.
+            GetRequestValue("FORMAT_EQ_TEXT").
+            GetValue())); 
     }
 
     if (ctx.GetRequestValue("FORMAT_EQ_OP").GetValue() != NcbiEmptyString) {
         cgi_query += "&FORMAT_EQ_OP=" +
-            URL_EncodeString(NStr::TruncateSpaces(ctx.
-                                                  GetRequestValue("FORMAT_EQ_OP").
-                                                  GetValue())); 
+            NStr::URLEncode(NStr::TruncateSpaces(ctx.
+            GetRequestValue("FORMAT_EQ_OP").
+            GetValue())); 
     }
 
     if (ctx.GetRequestValue("FORMAT_EQ_MENU").GetValue() != NcbiEmptyString) {
         cgi_query += "&FORMAT_EQ_MENU=" +
-            URL_EncodeString(NStr::TruncateSpaces(ctx.
-                                                  GetRequestValue("FORMAT_EQ_MENU").
-                                                  GetValue())); 
+            NStr::URLEncode(NStr::TruncateSpaces(ctx.
+            GetRequestValue("FORMAT_EQ_MENU").
+            GetValue())); 
     }
 
     cgi_query += "&EXPECT_LOW=" + ctx.GetRequestValue("EXPECT_LOW").GetValue();

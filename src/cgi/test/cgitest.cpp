@@ -180,13 +180,13 @@ static void TestCgi_Cookies(void)
     string enc_name ="name%20%21%22%23";
     string enc_val = "val%25%26%27";
     cookies.Add(enc_name + "=" + enc_val);
-    assert( cookies.Find(URL_DecodeString(enc_name))->GetValue() ==
-        URL_DecodeString(enc_val));
+    assert( cookies.Find(NStr::URLDecode(enc_name))->GetValue() ==
+        NStr::URLDecode(enc_val));
     enc_name ="name with bad chars;";
     enc_val = "value with bad chars;";
     cookies.Add(enc_name, enc_val);
-    assert( cookies.Find(URL_DecodeString(enc_name))->GetValue() ==
-        URL_DecodeString(enc_val));
+    assert( cookies.Find(NStr::URLDecode(enc_name))->GetValue() ==
+        NStr::URLDecode(enc_val));
 
     NcbiCerr << "\n\nCookies:\n\n" << cookies << NcbiEndl;
 
@@ -415,32 +415,32 @@ static void TestCgiMisc(void)
     const string str("_ _%_;_\n_:_'_*_\\_\"_");
     {{
         string url = "qwerty";
-        url = URL_EncodeString(str);
+        url = NStr::URLEncode(str);
         NcbiCout << str << NcbiEndl << url << NcbiEndl;
         assert( url.compare("_+_%25_%3B_%0A_%3A_'_*_%5C_%22_") == 0 );
 
-        string str1 = URL_DecodeString(url);
+        string str1 = NStr::URLDecode(url);
         assert( str1 == str );
 
-        string url1 = URL_EncodeString(str1);
+        string url1 = NStr::URLEncode(str1);
         assert( url1 == url );
     }}
     {{
         string url = "qwerty";
-        url = URL_EncodeString(str, eUrlEncode_ProcessMarkChars);
+        url = NStr::URLEncode(str, NStr::eUrlEnc_ProcessMarkChars);
         NcbiCout << str << NcbiEndl << url << NcbiEndl;
         assert( url.compare("%5F+%5F%25%5F%3B%5F%0A%5F%3A%5F%27%5F%2A%5F%5C%5F%22%5F") == 0 );
 
-        string str1 = URL_DecodeString(url);
+        string str1 = NStr::URLDecode(url);
         assert( str1 == str );
 
-        string url1 = URL_EncodeString(str1, eUrlEncode_ProcessMarkChars);
+        string url1 = NStr::URLEncode(str1, NStr::eUrlEnc_ProcessMarkChars);
         assert( url1 == url );
     }}
 
     const string bad_url("%ax");
     try {
-        URL_DecodeString(bad_url);
+        NStr::URLDecode(bad_url);
     } STD_CATCH("%ax");
 }
 

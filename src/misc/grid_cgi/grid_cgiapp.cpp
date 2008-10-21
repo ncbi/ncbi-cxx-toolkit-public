@@ -75,7 +75,7 @@ string CGridCgiContext::GetSelfURL() const
             }
             else
                 url += '&';
-            url += name + '=' + URL_EncodeString(value);
+            url += name + '=' + NStr::URLEncode(value);
         }
     }
     return url;

@@ -85,24 +85,24 @@ string CESearch_Request::GetQueryString(void) const
     }
     if ( !m_Term.empty() ) {
         args += "&term=" +
-            URL_EncodeString(m_Term, eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(m_Term, NStr::eUrlEnc_ProcessMarkChars);
     }
     if ( !m_Field.empty() ) {
         args += "&field=" +
-            URL_EncodeString(m_Field, eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(m_Field, NStr::eUrlEnc_ProcessMarkChars);
     }
     if ( m_RelDate ) {
         args += "&reldate" + NStr::IntToString(m_RelDate);
     }
     if ( !m_MinDate.IsEmpty() ) {
         args += "&mindate=" +
-            URL_EncodeString(m_MinDate.AsString("M/D/Y"),
-            eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(m_MinDate.AsString("M/D/Y"),
+            NStr::eUrlEnc_ProcessMarkChars);
     }
     if ( !m_MaxDate.IsEmpty() ) {
         args += "&maxdate=" +
-            URL_EncodeString(m_MaxDate.AsString("M/D/Y"),
-            eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(m_MaxDate.AsString("M/D/Y"),
+            NStr::eUrlEnc_ProcessMarkChars);
     }
     if ( !m_DateType.empty() ) {
         args += "&datetype=" + m_DateType;
@@ -119,8 +119,8 @@ string CESearch_Request::GetQueryString(void) const
     }
     if ( m_Sort != eSort_none ) {
         args += "&sort=";
-        args += URL_EncodeString(x_GetSortName(),
-            eUrlEncode_ProcessMarkChars);
+        args += NStr::URLEncode(x_GetSortName(),
+            NStr::eUrlEnc_ProcessMarkChars);
     }
     return args;
 }

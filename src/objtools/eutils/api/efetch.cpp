@@ -77,8 +77,8 @@ string CEFetch_Request::GetQueryString(void) const
     }
     if ( m_RetMode != eRetMode_none ) {
         args += "&retmode=" +
-            URL_EncodeString(x_GetRetModeName(),
-            eUrlEncode_ProcessMarkChars);
+            NStr::URLEncode(x_GetRetModeName(),
+            NStr::eUrlEnc_ProcessMarkChars);
     }
     return args;
 }

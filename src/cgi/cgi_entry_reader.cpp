@@ -377,19 +377,8 @@ void CCgiEntryReaderContext::x_ReadURLEncodedEntry(string& name, string& value)
         value = name.substr(name_len + 1);
         name.resize(name_len);
     }
-    SIZE_TYPE error_pos = URL_DecodeInPlace(name);
-    if (error_pos > 0) {
-        NCBI_THROW2(CCgiParseException, eEntry,
-                    CCER "malformatted URL-encoded parameter " + name,
-                    input_pos + error_pos - 1);
-    }
-    error_pos = URL_DecodeInPlace(value);
-    if (error_pos > 0) {
-        NCBI_THROW2(CCgiParseException, eEntry,
-                    CCER "malformatted URL-encoded value for " + name
-                    + ": " + value,
-                    input_pos + name_len + error_pos);
-    }
+    NStr::URLDecodeInPlace(name);
+    NStr::URLDecodeInPlace(value);
 }
 
 

@@ -172,8 +172,8 @@ CNcbiOstream& WriteMap(CNcbiOstream& os, const TMap& cont)
     ITERATE(typename TMap, it, cont) {
         if (it != cont.begin())
             ostr << '&';
-        ostr << URL_EncodeString(TKeyConverter  ::ToString(it->first)) << '='
-             << URL_EncodeString(TValueConverter::ToString(it->second));
+        ostr << NStr::URLEncode(TKeyConverter::ToString(it->first)) << '='
+             << NStr::URLEncode(TValueConverter::ToString(it->second));
     }
     ostr.flush(true);
     return os;
@@ -201,8 +201,8 @@ CNcbiIstream& ReadMap(CNcbiIstream& is, TMap& cont)
         string value;
         NStr::SplitInTwo(*it, "=", key, value);
         cont.insert(typename TMap::value_type(
-                    TKeyConverter::FromString(URL_DecodeString(key)),
-                    TValueConverter::FromString(URL_DecodeString(value)))
+                    TKeyConverter::FromString(NStr::URLDecode(key)),
+                    TValueConverter::FromString(NStr::URLDecode(value)))
                    );
     }
 
@@ -221,7 +221,7 @@ CNcbiOstream& WriteContainer(CNcbiOstream& os, const TCont& cont)
     ITERATE(typename TCont, it, cont) {
         if (it != cont.begin())
             ostr << '&';
-        ostr << URL_EncodeString(TValueConverter::ToString(*it));
+        ostr << NStr::URLEncode(TValueConverter::ToString(*it));
     }
     ostr.flush(true);
     return os;
@@ -243,7 +243,7 @@ CNcbiIstream& ReadContainer(CNcbiIstream& is, TCont& cont)
 
     cont.clear();
     ITERATE(vector<string>, it, vstrings) {
-        cont.push_back( TValueConverter::FromString(URL_DecodeString(*it)));
+        cont.push_back( TValueConverter::FromString(NStr::URLDecode(*it)));
     }
 
     return is;

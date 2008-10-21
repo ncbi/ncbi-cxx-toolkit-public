@@ -98,9 +98,9 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
     cgi_request.Serialize(job_os);
     string job_key = job_submitter.Submit();
     string url = s_GetCgiTunnel2GridUrl(cgi_request);
-    url += "?ctg_project=" + URL_EncodeString(project_name);
+    url += "?ctg_project=" + NStr::URLEncode(project_name);
     url += "&job_key=" + job_key;
-    url += "&ctg_error_url=" + URL_EncodeString(return_url);                   
+    url += "&ctg_error_url=" + NStr::URLEncode(return_url);                   
     url += "&ctg_time=" + s_GetElapsedTime();
     os << "<html><head><<META HTTP-EQUIV=Refresh CONTENT=\"0;" 
        << url << "\"></head><body></body></html>";
