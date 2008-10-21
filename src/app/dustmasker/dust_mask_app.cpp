@@ -53,6 +53,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <objtools/seqmasks_io/mask_fasta_reader.hpp>
 
 #include "dust_mask_app.hpp"
 
@@ -139,6 +140,8 @@ void CDustMaskApplication::Init(void)
     arg_desc->AddDefaultKey( kOutputFormat, "output_format",
                              "output format",
                              CArgDescriptions::eString, *kOutputFormats );
+    arg_desc->AddFlag      ( "parse_seqids",
+                             "Parse Seq-ids in FASTA input", true );
     CArgAllow_Strings* strings_allowed = new CArgAllow_Strings();
     for (size_t i = 0; i < kNumOutputFormats; i++) {
         strings_allowed->Allow(kOutputFormats[i]);
@@ -319,7 +322,10 @@ int CDustMaskApplication::Run (void)
     CRef< CSeq_entry > aSeqEntry( 0 );
     auto_ptr<CMaskWriter> writer(x_GetWriter());
 
-    while( (aSeqEntry = GetNextSequence( input_stream )).NotEmpty() )
+    CMaskFastaReader * reader = 
+        new CMaskFastaReader( *input_stream, true, GetArgs()["parse_seqids"] );
+
+    while( (aSeqEntry = reader->GetNextSequence()).NotEmpty() )
     {
         CScope scope( *om );
         CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry( *aSeqEntry );
