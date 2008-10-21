@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
-<!DOCTYPE MSModSpecSet PUBLIC "-//NCBI//OMSSA/EN" "OMSSA.dtd">
+<MSModSpecSet
+    xmlns="http://www.ncbi.nlm.nih.gov"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+    xs:schemaLocation="http://www.ncbi.nlm.nih.gov OMSSA.xsd"
+>
 <MSModSpecSet>
   <MSModSpec>
     <MSModSpec_mod>
