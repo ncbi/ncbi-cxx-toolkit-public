@@ -244,8 +244,9 @@ void CQueueWorkerNodeList::RemoveJob(const string& node_id,
         GetDiagContext().PrintRequestStop();
     }
     if (req_ctx) {
+        CDiagContext::SetRequestContext(0);
         if (ji.factory) ji.factory->Return(req_ctx);
-        // else DISASTER
+        else _ASSERT(0);
     }
     node->m_Jobs.erase(it1);
 }

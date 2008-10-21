@@ -883,8 +883,7 @@ void CNetScheduleHandler::OnOverflow()
 class CRequestContextGuard
 {
 public:
-    CRequestContextGuard(CRequestContextFactory& factory)
-        : m_Factory(factory)
+    CRequestContextGuard()
     {
         m_Ctx = &CDiagContext::GetRequestContext();
     }
@@ -893,10 +892,8 @@ public:
         CRequestContext* ctx = &CDiagContext::GetRequestContext();
         if (ctx == m_Ctx) return;
         CDiagContext::SetRequestContext(m_Ctx);
-        m_Factory.Return(ctx);
     }
 private:
-    CRequestContextFactory& m_Factory;
     CRequestContext*        m_Ctx;
 };
 
@@ -907,7 +904,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         WriteErr("NetSchedule server is shutting down. Session aborted.");
         return;
     }
-    CRequestContextGuard guard(m_RequestContextFactory);
+    CRequestContextGuard guard();
     try {
         (this->*m_ProcessMessage)(buffer);
     }
