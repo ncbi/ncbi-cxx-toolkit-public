@@ -130,12 +130,14 @@ CDemoApp::Run(void)
             for( int i = 0; i < nBlobSize; i++)
                 *(p++) = i;
 
-            auto_ptr<CDB_LangCmd>
-                lcmd(con->LangCmd("insert into tmp_t1 values"
-                                  "(1, '2002-11-25 12:45:59', 'Hello, world', 'SOME TEXT', 3.1415, '"
-                                  ));
-            lcmd->More( reinterpret_cast<CMySQL_LangCmd*>(lcmd.get())->EscapeString( buff.get(), nBlobSize));
-            lcmd->More( "')");
+            auto_ptr<CDB_LangCmd> tmp_cmd(con->LangCmd("tmp"));
+
+            string sql = "insert into tmp_t1 values";
+            sql += "(1, '2002-11-25 12:45:59', 'Hello, world', 'SOME TEXT', 3.1415, '";
+            sql += reinterpret_cast<CMySQL_LangCmd*>(tmp_cmd.get())->EscapeString( buff.get(), nBlobSize);
+            sql += ")";
+
+            auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(sql));
             lcmd->Send();
             cout << "Data inserted " << lcmd->RowCount() << " row(s) affected" << endl;
         }
