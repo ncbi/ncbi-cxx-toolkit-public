@@ -448,6 +448,9 @@ static void s_FixPages( string& pages )
         // anything other than a dash then we take what we got and give up on the rest.
         // Likewise if we __are__ at a dash but nothing follows:
         //
+        if ( it == pages.end() ) {
+            return;
+        }
         if ( it != pages.end() || *it != '-' ) {
             return;
         }
