@@ -51,7 +51,7 @@ BEGIN_SCOPE(cobalt)
 
 /// Options and parameters for multiple alignement
 ///
-class CMultiAlignerOptions : public CObject
+class NCBI_COBALT_EXPORT CMultiAlignerOptions : public CObject
 {
 
 public:
