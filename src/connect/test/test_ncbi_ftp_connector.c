@@ -82,7 +82,6 @@ int main(int argc, char* argv[])
         if (strcasecmp(val, "ALL") == 0)
             flag |= fFCDC_LogAll;
     }
-    ConnNetInfo_Destroy(net_info);
 
     if (TEST_PORT) {
         sprintf(buf, ":%hu", TEST_PORT);
@@ -210,6 +209,7 @@ int main(int argc, char* argv[])
     }
 
     CORE_LOG(eLOG_Note, "Test completed");
+    ConnNetInfo_Destroy(net_info);
     CORE_SetLOG(0);
     return 0;
 }
