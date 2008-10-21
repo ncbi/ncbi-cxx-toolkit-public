@@ -170,19 +170,20 @@ string CJobRun::GetField(int index) const
 // CJob implementation
 
 CJob::CJob() :
-m_New(true), m_Deleted(false), m_Dirty(0),
-m_Id(0),
-m_Status(CNetScheduleAPI::ePending),
-m_TimeSubmit(0),
-m_Timeout(0),
-m_RunTimeout(0),
-m_SubmAddr(0),
-m_SubmPort(0),
-m_SubmTimeout(0),
-m_RunCount(0),
-m_ReadGroup(0),
-m_AffinityId(0),
-m_Mask(0)
+    m_New(true), m_Deleted(false), m_Dirty(0),
+    m_Id(0),
+    m_Status(CNetScheduleAPI::ePending),
+    m_TimeSubmit(0),
+    m_Timeout(0),
+    m_RunTimeout(0),
+    m_SubmAddr(0),
+    m_SubmPort(0),
+    m_SubmTimeout(0),
+    m_RunCount(0),
+    m_ReadGroup(0),
+    m_AffinityId(0),
+    m_Mask(0),
+    m_ClientIP(0)
 {
 }
 
@@ -286,6 +287,20 @@ void CJob::SetMask(unsigned mask)
 }
 
 
+void CJob::SetClientIP(unsigned client_ip)
+{
+    m_ClientIP = client_ip;
+    m_Dirty |= fJobPart;
+}
+
+
+void CJob::SetClientSID(const string& client_sid)
+{
+    m_ClientSID = client_sid;
+    m_Dirty |= fJobPart;
+}
+
+
 void CJob::SetRuns(const vector<CJobRun>& runs)
 {
     m_Runs = runs;
@@ -357,6 +372,8 @@ static const char* s_JobFieldNames[] = {
     "read_group",
     "affinity",
     "mask",
+    "client_ip",
+    "client_sid"
     "runs",
     "input",
     "output",
@@ -398,13 +415,17 @@ string CJob::GetField(int index) const
         return m_AffinityToken;
     case 11: // mask
         return NStr::IntToString(m_Mask);
-    case 12: // runs
+    case 12: // client_ip
+        return NStr::IntToString(m_ClientIP);
+    case 13: // client_sid
+        return m_ClientSID;
+    case 14: // runs
         return NStr::IntToString(m_Runs.size());
-    case 13: // input
+    case 15: // input
         return m_Input;
-    case 14: // output
+    case 16: // output
         return m_Output;
-    case 15: // progress_msg
+    case 17: // progress_msg
         return m_ProgressMsg;
     }
     return "NULL";
@@ -482,6 +503,9 @@ CJob::EJobFetchResult CJob::Fetch(SLockedQueue* queue)
     // to load token here rather than require separate FetchAffinityToken
     m_AffinityToken.clear();
     m_Mask        = job_db.mask;
+
+    m_ClientIP    = job_db.client_ip;
+    m_ClientSID   = job_db.client_sid;
 
     if (!(char) job_db.input_overflow)
         job_db.input.ToString(m_Input);
@@ -587,10 +611,13 @@ bool CJob::Flush(SLockedQueue* queue)
         job_db.subm_port    = m_SubmPort;
         job_db.subm_timeout = m_SubmTimeout;
 
-        job_db.run_counter = m_RunCount;
-        job_db.read_group  = m_ReadGroup;
-        job_db.aff_id = m_AffinityId;
-        job_db.mask = m_Mask;
+        job_db.run_counter  = m_RunCount;
+        job_db.read_group   = m_ReadGroup;
+        job_db.aff_id       = m_AffinityId;
+        job_db.mask         = m_Mask;
+
+        job_db.client_ip    = m_ClientIP;
+        job_db.client_sid   = m_ClientSID;
 
         if (!input_overflow) {
             job_db.input_overflow = 0;

@@ -55,6 +55,7 @@
 BEGIN_NCBI_SCOPE
 
 const unsigned kNetScheduleSplitSize = 64;
+const unsigned kMaxSessionIdSize = 64;
 
 /// BDB table to store queue
 ///
@@ -85,12 +86,15 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldUint4        aff_id;
     CBDB_FieldUint4        mask;
 
+    CBDB_FieldUint4        client_ip;       ///< IP address came from CGI client
+
     CBDB_FieldChar         input_overflow;  ///< Is input in JobInfo table
     CBDB_FieldChar         output_overflow; ///< Is output in JobInfo table
     CBDB_FieldLString      input;           ///< Input data
     CBDB_FieldLString      output;          ///< Result data
 
-    CBDB_FieldLString     progress_msg;    ///< Progress report message
+    CBDB_FieldLString      client_sid;      ///< CGI session ID
+    CBDB_FieldLString      progress_msg;    ///< Progress report message
 
     SQueueDB()
     {
@@ -110,14 +114,17 @@ struct SQueueDB : public CBDB_File
         BindData("run_counter",  &run_counter);
         BindData("read_group",   &read_group);
 
-        BindData("aff_id", &aff_id);
-        BindData("mask",   &mask);
+        BindData("aff_id",       &aff_id);
+        BindData("mask",         &mask);
+
+        BindData("client_ip",    &client_ip);
 
         BindData("input_overflow",  &input_overflow);
         BindData("output_overflow", &output_overflow);
-        BindData("input",           &input,        kNetScheduleSplitSize);
-        BindData("output",          &output,       kNetScheduleSplitSize);
-        BindData("progress_msg",    &progress_msg, kNetScheduleMaxDBDataSize);
+        BindData("input",           &input,          kNetScheduleSplitSize);
+        BindData("output",          &output,         kNetScheduleSplitSize);
+        BindData("client_sid",      &client_sid,     kMaxSessionIdSize);
+        BindData("progress_msg",    &progress_msg,   kNetScheduleMaxDBDataSize);
     }
 };
 

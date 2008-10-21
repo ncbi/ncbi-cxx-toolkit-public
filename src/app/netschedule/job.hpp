@@ -158,6 +158,11 @@ public:
 
     unsigned       GetMask() const
     { return m_Mask; }
+    unsigned       GetClientIP() const
+    { return m_ClientIP; }
+    const string&  GetClientSID() const
+    { return m_ClientSID; }
+
     const vector<CJobRun>& GetRuns() const
     { return m_Runs; }
     const TNSTagList& GetTags() const
@@ -184,6 +189,9 @@ public:
     void           SetAffinityToken(const string& aff_token);
     void           SetMask(unsigned mask);
 
+    void           SetClientIP(unsigned client_ip);
+    void           SetClientSID(const string& client_sid);
+
     void           SetRuns(const vector<CJobRun>& runs);
     void           SetTags(const TNSTagList& tags);
     void           SetTags(const string& strtags);
@@ -191,8 +199,7 @@ public:
     void           SetOutput(const string& output);
 
     // generic access via field name
-    static
-        int            GetFieldIndex(const string& name);
+    static int     GetFieldIndex(const string& name);
     string         GetField(int index) const;
 
     // manipulators
@@ -250,6 +257,9 @@ private:
     string          m_AffinityToken;
 
     unsigned        m_Mask;
+
+    unsigned        m_ClientIP;
+    string          m_ClientSID;
 
     // Resides in SRunsDB table
     vector<CJobRun> m_Runs;

@@ -120,4 +120,12 @@ void NS_FormatIPAddress(unsigned int ipaddr, string& str_addr)
 }
 
 
+string NS_FormatIPAddress(unsigned int ipaddr)
+{
+    string str_addr;
+    NS_FormatIPAddress(ipaddr, str_addr);
+    return str_addr;
+}
+
+
 END_NCBI_SCOPE

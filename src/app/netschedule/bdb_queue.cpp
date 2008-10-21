@@ -1654,21 +1654,15 @@ void CQueue::PrintWNodeHosts(CNcbiOstream& out) const
 }
 
 
-static CDiagContext_Extra& s_PrintTags(CDiagContext_Extra& extra,
-                                       const TNSTagList& tags)
-{
-    ITERATE(TNSTagList, it, tags) {
-        extra.Print(string("tag_")+it->first, it->second);
-    }
-    return extra;
-}
-
-
 static void s_LogSubmit(SLockedQueue& q, 
                         CJob& job,
                         SQueueDescription& qdesc)
 {
-    s_PrintTags(GetDiagContext().Extra().SetType("submit")
+    CRequestContext& ctx =CDiagContext::GetRequestContext();
+    ctx.SetClientIP(NS_FormatIPAddress(job.GetClientIP()));
+    ctx.SetSessionID(job.GetClientSID());
+
+    CDiagContext_Extra extra = GetDiagContext().Extra().SetType("submit")
         .Print("queue", q.GetQueueName())
         .Print("job_id", NStr::UIntToString(job.GetId()))
         .Print("input", job.GetInput())
@@ -1677,8 +1671,10 @@ static void s_LogSubmit(SLockedQueue& q,
         .Print("progress_msg", job.GetProgressMsg())
         .Print("subm_addr", FormatHostName(job.GetSubmAddr(), &qdesc))
         .Print("subm_port", NStr::UIntToString(job.GetSubmPort()))
-        .Print("subm_timeout", NStr::UIntToString(job.GetSubmTimeout())),
-        job.GetTags());
+        .Print("subm_timeout", NStr::UIntToString(job.GetSubmTimeout()));
+    ITERATE(TNSTagList, it, job.GetTags()) {
+        extra.Print(string("tag_")+it->first, it->second);
+    }
 }
 
 
@@ -1735,9 +1731,6 @@ unsigned CQueue::Submit(CJob& job)
     q->status_tracker.SetStatus(job_id, CNetScheduleAPI::ePending);
     if (log_job_state) {
         CRequestContext rq;
-        string client_ip;
-        // NS_FormatIPAddress(m_PeerAddr, client_ip);
-        // rq.SetClientIP(client_ip);
         rq.SetRequestID(CRequestContext::GetNextRequestID());
 
         CDiagContext::SetRequestContext(&rq);
@@ -2152,7 +2145,7 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
                 q->RemoveJobFromWorkerNode(node_info.node_id, job, eNSCDone);
             if (pending_job_id)
                 q->AddJobToWorkerNode(node_info.node_id, rec_ctx_f,
-                                      pending_job_id, curr + run_timeout);
+                                      *new_job, curr + run_timeout);
             break;
         }
         catch (CBDB_ErrnoException& ex) {

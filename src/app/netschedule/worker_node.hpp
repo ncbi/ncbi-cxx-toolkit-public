@@ -144,7 +144,7 @@ public:
     void ClearNode(const string& node_id, TJobList& jobs);
     
     // Add job to worker node job list
-    void AddJob(const string& node_id, TNSJobId job_id, time_t exp_time,
+    void AddJob(const string& node_id, const CJob& job, time_t exp_time,
                 CRequestContextFactory* req_ctx_f,
                 bool log_job_state);
     // Update job expiration time

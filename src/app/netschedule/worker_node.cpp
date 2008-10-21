@@ -164,7 +164,7 @@ void CQueueWorkerNodeList::ClearNode(const string& node_id, TJobList& jobs)
 
 
 void CQueueWorkerNodeList::AddJob(const string& node_id,
-                                  TNSJobId job_id,
+                                  const CJob& job,
                                   time_t exp_time,
                                   CRequestContextFactory* req_ctx_f,
                                   bool log_job_state)
@@ -175,9 +175,12 @@ void CQueueWorkerNodeList::AddJob(const string& node_id,
     if (it == m_WorkerNodeById.end()) return;
     CWorkerNode* node = it->second;
     CRequestContext* req_ctx = 0;
-    if (log_job_state && req_ctx_f)
+    if (log_job_state && req_ctx_f) {
         req_ctx = req_ctx_f->Get();
-    node->m_Jobs[job_id] = SJobInfo(exp_time, req_ctx, req_ctx_f);
+        req_ctx->SetClientIP(NS_FormatIPAddress(job.GetClientIP()));
+        req_ctx->SetSessionID(job.GetClientSID());
+    }
+    node->m_Jobs[job.GetId()] = SJobInfo(exp_time, req_ctx, req_ctx_f);
     node->UpdateValidityTime();
     node->SetNotificationTimeout(curr, 0);
     if (log_job_state) {
@@ -186,7 +189,7 @@ void CQueueWorkerNodeList::AddJob(const string& node_id,
         GetDiagContext().Extra()
             .Print("node", node_id)
             .Print("queue", m_QueueName)
-            .Print("job_id", NStr::IntToString(job_id));
+            .Print("job_id", NStr::IntToString(job.GetId()));
     }
 }
 
@@ -229,16 +232,16 @@ void CQueueWorkerNodeList::RemoveJob(const string& node_id,
     if (log_job_state && req_ctx) {
         CDiagContext::SetRequestContext(req_ctx);
         CDiagContext::GetRequestContext().SetRequestStatus(int(reason));
-        GetDiagContext().PrintRequestStop();
         if (reason == eNSCDone || reason == eNSCFailed) {
-            int ret_code = 0;
+            CDiagContext_Extra extra = GetDiagContext().Extra();
+            extra.Print("output", job.GetOutput());
             const CJobRun* run = job.GetLastRun();
-            if (run) ret_code = run->GetRetCode();
-            GetDiagContext().Extra()
-                .Print("ret_code", NStr::IntToString(ret_code))
-                .Print("output", job.GetOutput())
-                .Print("err_msg", run ? run->GetErrorMsg() : "");
+            if (run) {
+                extra.Print("ret_code", NStr::IntToString(run->GetRetCode()))
+                     .Print("err_msg", run->GetErrorMsg());
+            }
         }
+        GetDiagContext().PrintRequestStop();
     }
     if (req_ctx) {
         if (ji.factory) ji.factory->Return(req_ctx);

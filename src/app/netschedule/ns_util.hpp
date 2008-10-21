@@ -40,6 +40,7 @@ BEGIN_NCBI_SCOPE
 string NS_EncodeBitVector(TNSBitVector& bv);
 TNSBitVector NS_DecodeBitVector(const string& s);
 void NS_FormatIPAddress(unsigned int ipaddr, string& str_addr);
+string NS_FormatIPAddress(unsigned int ipaddr);
 
 class CRequestContext;
 class CRequestContextFactory

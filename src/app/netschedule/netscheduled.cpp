@@ -110,6 +110,8 @@ enum ENSRequestField {
     eNSRF_Port,
     eNSRF_Timeout,
     eNSRF_JobMask,
+    eNSRF_ClientIP,
+    eNSRF_ClientSID,
     eNSRF_Count,
     eNSRF_ErrMsg,
     eNSRF_Option,
@@ -189,6 +191,7 @@ struct SJS_Request
             job_mask = s_TokenToInt(val, size);
             break;
         case eNSRF_Count:
+        case eNSRF_ClientIP:
             count = s_TokenToInt(val, size);
             break;
         case eNSRF_ErrMsg:
@@ -204,6 +207,7 @@ struct SJS_Request
             break;
         case eNSRF_QueueClass:
         case eNSRF_Action:
+        case eNSRF_ClientSID:
             param2.erase(); param2.append(val, eff_size);
             break;
         case eNSRF_QueueComment:
@@ -345,7 +349,7 @@ public:
         const char*     dflt;
         const char*     key; // for eNST_KeyId and eNST_KeyInt
     };
-    enum { kMaxArgs = 8 };
+    enum { kMaxArgs = 9 };
     struct SCommandMap {
         const char*   cmd;
         FProcessor    processor;
@@ -749,7 +753,7 @@ private:
     CAtomicCounter          m_LogFlag;
     /// Quick local timer
     CFastLocalTime          m_LocalTimer;
-    /// Pool of RequestContext
+    /// Pool of RequestContexts
     CResourcePool<CRequestContext, CFastMutex, CRequestContextPoolFactory>
         m_RequestContextPool;
 
@@ -792,7 +796,6 @@ void CNSRequestContextFactory::SetClientIP(const string& client_ip)
 CRequestContext* CNSRequestContextFactory::Get()
 {
     CRequestContext* req_ctx = m_Server->GetRequestContextFromPool();
-    req_ctx->SetClientIP(m_ClientIP);
     req_ctx->SetRequestID(CRequestContext::GetNextRequestID());
     return req_ctx;
 }
@@ -852,9 +855,7 @@ void CNetScheduleHandler::OnOpen(void)
         m_PeerAddr = CSocketAPI::GetLoopbackAddress();
     }
     m_WorkerNodeInfo.host = m_PeerAddr;
-    string client_ip;
-    NS_FormatIPAddress(m_PeerAddr, client_ip);
-    m_RequestContextFactory.SetClientIP(client_ip);
+    m_RequestContextFactory.SetClientIP(NS_FormatIPAddress(m_PeerAddr));
 
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgAuth;
     m_DelayedOutput = NULL;
@@ -1325,6 +1326,8 @@ void CNetScheduleHandler::ProcessSubmit()
     job.SetSubmPort(m_JobReq.port);
     job.SetSubmTimeout(m_JobReq.timeout);
     job.SetProgressMsg(m_JobReq.param1);
+    job.SetClientIP(CSocketAPI::HostToNetLong(m_JobReq.count));
+    job.SetClientSID(m_JobReq.param2);
 
     unsigned job_id = m_Queue->Submit(job);
                         
@@ -1350,6 +1353,8 @@ void CNetScheduleHandler::ProcessSubmit()
 
 void CNetScheduleHandler::ProcessSubmitBatch()
 {
+    // unsigned client_ip = m_JobReq.count;
+    // string& client_sid = m_JobReq.param2;
     WriteOK("Batch submit ready");
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgBatchHeader;
 }
@@ -2467,7 +2472,9 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { eNSA_Optional, eNST_Int,     eNSRF_Timeout },
           { eNSA_Optional, eNST_KeyStr,  eNSRF_AffinityToken, "", "aff" },
           { eNSA_Optional, eNST_KeyInt,  eNSRF_JobMask, "0", "msk" },
-          { eNSA_Optional, eNST_KeyStr,  eNSRF_Tags, "", "tags" }, sm_End } },
+          { eNSA_Optional, eNST_KeyStr,  eNSRF_Tags, "", "tags" },
+          { eNSA_Optional, eNST_KeyInt,  eNSRF_ClientIP, "0", "ip" },
+          { eNSA_Optional, eNST_KeyStr,  eNSRF_ClientSID, "", "sid" }, sm_End } },
     // CANCEL job_key : id
     { "CANCEL",   &CNetScheduleHandler::ProcessCancel, eNSCR_Submitter,
         { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
@@ -2535,13 +2542,14 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         NO_ARGS },
     { "QLST",     &CNetScheduleHandler::ProcessQList, eNSCR_Any, NO_ARGS },
     { "BSUB",     &CNetScheduleHandler::ProcessSubmitBatch, eNSCR_Submitter,
-        NO_ARGS },
+        { { eNSA_Optional, eNST_KeyInt,  eNSRF_ClientIP, "0", "ip" },
+          { eNSA_Optional, eNST_KeyStr,  eNSRF_ClientSID, "", "sid" }, sm_End } },
     // JXCG [ job_key : id job_return_code : int output : str ]
     //      [affinity_list : keystr(aff) ]
     { "JXCG",     &CNetScheduleHandler::ProcessJobExchange, eNSCR_Worker,
-        { { eNSA_Optchain, eNST_Id,  eNSRF_JobKey },
-          { eNSA_Optchain, eNST_Int, eNSRF_JobReturnCode },
-          { eNSA_Optchain, eNST_Str, eNSRF_Output },
+        { { eNSA_Optchain, eNST_Id,     eNSRF_JobKey },
+          { eNSA_Optchain, eNST_Int,    eNSRF_JobReturnCode },
+          { eNSA_Optchain, eNST_Str,    eNSRF_Output },
           { eNSA_Optional, eNST_KeyStr, eNSRF_AffinityToken, "", "aff" },
           sm_End } },
     // REGC port : uint
@@ -2904,9 +2912,14 @@ void CNetScheduleHandler::x_MakeGetAnswer(const CJob& job)
     answer.append(job.GetInput());
     answer.append("\"");
 
+    // We can re-use old jout and jerr job parameters for affinity and
+    // session id/client ip respectively.
     answer.append(" \"");
     answer.append(job.GetAffinityToken());
-    answer.append("\" \"\""); // to keep compat. with jout & jerr
+    answer.append("\" \"");
+    answer.append(NS_FormatIPAddress(job.GetClientIP()) + " " +
+                  job.GetClientSID());
+    answer.append("\""); // to keep compat. with jout & jerr
 
     answer.append(" ");
     answer.append(NStr::UIntToString(job.GetMask()));

@@ -409,7 +409,7 @@ public:
     void RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info);
     void AddJobToWorkerNode(const string&           node_id,
                             CRequestContextFactory* rec_ctx_f,
-                            unsigned                job_id,
+                            const CJob&             job,
                             time_t                  exp_time);
     void UpdateWorkerNodeJob(const string&          node_id,
                              unsigned               job_id,
