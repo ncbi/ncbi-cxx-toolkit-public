@@ -2950,7 +2950,7 @@ static EIO_Status s_CreateListening(const char*    path,
         return eIO_Unknown;
 	}
 
-	if (!WSAEventSelect(x_lsock, event, FD_ACCEPT)) {
+	if (WSAEventSelect(x_lsock, event, FD_ACCEPT) != 0) {
         DWORD err = GetLastError();
 		char* strerr = s_WinStrerror(err);
         CORE_LOGF_ERRNO_EXX(119, eLOG_Error,
@@ -3161,12 +3161,12 @@ static EIO_Status s_Accept(LSOCK           lsock,
         return eIO_Unknown;
 	}
 
-	if (!WSAEventSelect(x_sock, event, FD_READ | FD_WRITE | FD_OOB | FD_CLOSE)){
+	if (WSAEventSelect(x_sock, event, FD_READ | FD_WRITE | FD_OOB | FD_CLOSE)){
         DWORD err = GetLastError();
 		char* strerr = s_WinStrerror(err);
         CORE_LOGF_ERRNO_EXX(121, eLOG_Error,
 			                err, strerr ? strerr : SOCK_STRERROR(err),
-                            ("SOCK#%u[%u]: [LSOCK::Create]  Failed "
+                            ("SOCK#%u[%u]: [LSOCK::Accept]  Failed "
                              "to bind IO event", x_id,
 							 (unsigned int) x_sock));
 		if (strerr)
