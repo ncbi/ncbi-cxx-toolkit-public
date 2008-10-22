@@ -2,28 +2,33 @@
 # $Id$
 
 exit_code=0
+client_log=test_ncbi_socket_connector.log
+server_log=socket_io_bouncer.log
+
+rm -f $client_log $server_log
+
+CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
+
 port="575`expr $$ % 100`"
-rm -f socket_io_bouncer.log test_ncbi_socket_connector.log
 
-CONN_DEBUG_PRINTOUT=ALL; export CONN_DEBUG_PRINTOUT
-
-socket_io_bouncer $port >>socket_io_bouncer.log 2>&1 &
-server_pid=$!
-trap 'kill -9 $server_pid' 0 1 2 15
+socket_io_bouncer $port >>$server_log 2>&1 &
+spid=$!
+trap 'kill -9 $spid' 0 1 2 15
 
 sleep 1
-$CHECK_EXEC test_ncbi_socket_connector localhost $port >>test_ncbi_socket_connector.log 2>&1  ||  exit_code=1
+$CHECK_EXEC test_ncbi_socket_connector localhost $port >>client_log 2>&1  ||  exit_code=1
 
-kill $server_pid  ||  exit_code=2
-( kill -9 $server_pid ) >/dev/null 2>&1
+kill $spid  ||  exit_code=2
+( kill -9 $spid ) >/dev/null 2>&1
+
 if [ $exit_code != 0 ]; then
-  if [ -s socket_io_bouncer.log ]; then
-    echo '=== socket_io_bouncer.log ==='
-    cat socket_io_bouncer.log
+  if [ -s $client_log ]; then
+    echo "=== $client_log ==="
+    cat $client_log
   fi
-  if [ -s test_ncbi_socket_connector.log ]; then
-    echo '=== test_ncbi_socket_connector.log ==='
-    cat test_ncbi_socket_connector.log
+  if [ -s $server_log ]; then
+    echo "=== $server_log ==="
+    cat $server_log
   fi
 fi
 
