@@ -46,14 +46,14 @@
 
 /* Standard logging message
  */
-#define CONN_LOG_EX(subcode, level, message, status)            \
-  CORE_LOGF_X(subcode, level,                                   \
-              ("%s (connector \"%s\", error \"%s\")", message,  \
-               conn->meta.get_type                              \
-               ? conn->meta.get_type(conn->meta.c_get_type)     \
+#define CONN_LOG_EX(subcode, level, message, status)                \
+  CORE_LOGF_X(subcode, level,                                       \
+              ("%s (connector \"%s\", status \"%s\")", message,     \
+               conn->meta.get_type                                  \
+               ? conn->meta.get_type(conn->meta.c_get_type)         \
                : "Unknown", IO_StatusStr(status)))
 
-#define CONN_LOG(subcode, level, descr)   \
+#define CONN_LOG(subcode, level, descr)         \
     CONN_LOG_EX(subcode, level, descr, status)
 
 #ifdef _DEBUG
@@ -390,7 +390,7 @@ extern EIO_Status CONN_Wait
     if (status != eIO_Success) {
         if (status != eIO_Timeout)
             CONN_LOG(14, eLOG_Error, "[CONN_Wait]  Error waiting on I/O");
-        else if (!timeout  ||  timeout->sec  ||  timeout->usec)
+        else if (!timeout  ||  (timeout->sec | timeout->usec))
             CONN_LOG(15, eLOG_Warning, "[CONN_Wait]  I/O timed out");
     }
 
@@ -404,6 +404,7 @@ static EIO_Status s_CONN_Write
  size_t      size,
  size_t*     n_written)
 {
+    const STimeout* wto;
     EIO_Status status;
 
     assert(*n_written == 0);
@@ -416,16 +417,24 @@ static EIO_Status s_CONN_Write
     }
 
     /* call current connector's "WRITE" method */
-    status = conn->meta.write(conn->meta.c_write, buf, size, n_written,
-                              conn->w_timeout == kDefaultTimeout ?
-                              conn->meta.default_timeout : conn->w_timeout);
+    wto = (conn->w_timeout == kDefaultTimeout
+           ? conn->meta.default_timeout : conn->w_timeout);
+    status = conn->meta.write(conn->meta.c_write, buf, size, n_written, wto);
 
     if (status != eIO_Success) {
         if ( *n_written ) {
             CONN_TRACE("[CONN_Write]  Write error");
             status = eIO_Success;
-        } else if ( size )
-            CONN_LOG(17, eLOG_Error, "[CONN_Write]  Cannot write data");
+        } else if ( size ) {
+            ELOG_Level level;
+            if (status != eIO_Timeout  ||  conn->w_timeout == kDefaultTimeout)
+                level = eLOG_Error;
+            else if (wto  &&  (wto->sec | wto->usec))
+                level = eLOG_Warning;
+            else
+                level = eLOG_Trace;
+            CONN_LOG(17, level, "[CONN_Write]  Cannot write data");
+        }
     }
     return status;
 }
@@ -568,8 +577,12 @@ static EIO_Status s_CONN_Read
         status = conn->meta.read(conn->meta.c_read, buf, size - *n_read,
                                  &x_read, rto);
         *n_read += x_read;
-        if ( peek )  /* save data in the internal peek buffer */
-            verify(BUF_Write(&conn->buf, buf, x_read));
+
+        /* save data in the internal peek buffer */
+        if (peek  &&  !BUF_Write(&conn->buf, buf, x_read)) {
+            CONN_LOG_EX(32, eLOG_Error, "[CONN_Read]  Cannot save peek data",
+                        eIO_Unknown);
+        }
     }}
 
     if (status != eIO_Success) {

@@ -205,7 +205,7 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 /* Here are only error codes used in C sources. For error codes used in
  * C++ sources (in C++ Toolkit) see include/connect/error_codes.hpp.
  */
-NCBI_C_DEFINE_ERRCODE_X(Connect_Connection, 301,  31);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Connection, 301,  32);
 NCBI_C_DEFINE_ERRCODE_X(Connect_MetaConn,   302,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Util,       303,  12);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,      304,   2);
