@@ -822,6 +822,8 @@ void s_Exit(int status, int fd)
 // and errno is set appropriately.
 
 static const char* kShell = "/bin/sh";
+// CAUTION (security):  current directory is in the path on purpose,
+//                      to be in-sync with default behavior of MS-Win.
 static const char* kPathDefault = ":/bin:/usr/bin";
 
 static int s_ExecShell(const char *file, char *const argv[], char *const envp[])
@@ -1139,7 +1141,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             close(status_pipe[1]);
         }
         // Close all opened file descriptors (close timeout doesn't apply here)
-        Close(0,0);
+        Close(0, 0);
         ERR_POST_X(5, what);
         return eIO_Unknown;
     }

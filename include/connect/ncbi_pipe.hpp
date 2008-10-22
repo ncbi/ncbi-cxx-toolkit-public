@@ -167,19 +167,20 @@ public:
     ///
     /// @param cmd
     ///   Command name to execute.
-    ///   Be aware if the command contains relative path and 'current_dir'
-    ///   parameter is specified. Because on moment of execution the current
-    ///   directory is undefined, and can be still the same as in the parent
-    ///   process or already be changed to 'current_dir'. So, using absolute
-    ///   path is recommended in this case.
+    ///   Note when specifying both "cmd" with relative path and non-empty
+    ///   "current_dir":  in run-time the current directory must be considered
+    ///   undefined, as it may still be the same of the parent process that
+    ///   issues the call, or it can already be changed to the specified
+    ///   "current_dir".  So, using the absolute path for "cmd" is always
+    ///   recommended in such cases.
     /// @param args
     ///   Vector of string arguments for the command (argv[0] excluded).
     /// @param create_flags
     ///   Specifies options to be applied when creating the pipe.
     /// @current_dir
     ///   Current directory for the new process.
-    ///   The string must be an absolute path. On MS Windows it should
-    ///   also contains drive letter. If this parameter is empty, the new
+    ///   The string must be the absolute path.  On MS Windows it should
+    ///   also contain drive letter. If this parameter is empty, the new
     ///   process will have the same current directory as the calling process.
     /// @param env
     ///   Pointer to vector with environment variables which will be used
