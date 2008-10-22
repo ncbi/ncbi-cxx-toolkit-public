@@ -802,7 +802,7 @@ CMultiAligner::x_RealignSequences(
     // list all the sequences in the tree
 
     vector<CTree::STreeLeaf> full_seq_list;
-    CTree::ListTreeLeaves(GetTree(), full_seq_list, 0.0);
+    CTree::ListTreeLeaves(x_GetTree(), full_seq_list, 0.0);
 
     // list the sequence that form one of the clusters to align
 
@@ -1073,7 +1073,7 @@ CMultiAligner::x_BuildAlignmentIterative(
 
     // perform the initial progressive alignment
 
-    x_AlignProgressive(GetTree(), tmp_aligned, 
+    x_AlignProgressive(x_GetTree(), tmp_aligned, 
                        pair_info, iteration);
 
     while (1) {
@@ -1191,7 +1191,7 @@ CMultiAligner::x_BuildAlignmentIterative(
 
         // do the next progressive alignment
 
-        x_AlignProgressive(GetTree(), tmp_aligned, 
+        x_AlignProgressive(x_GetTree(), tmp_aligned, 
                            pair_info, iteration);
     }
 
@@ -1222,7 +1222,7 @@ CMultiAligner::BuildAlignment()
     // write down all the tree edges, along with their weight
 
     vector<CTree::STreeEdge> edges;
-    CTree::ListTreeEdges(GetTree(), edges);
+    CTree::ListTreeEdges(x_GetTree(), edges);
     sort(edges.begin(), edges.end(), compare_tree_edge_descending());
     int num_edges = edges.size();
 

@@ -39,6 +39,7 @@ Contents: Implementation of CMultiAligner class
 #include <ncbi_pch.hpp>
 #include <objmgr/object_manager.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include <algo/phy_tree/dist_methods.hpp>
 #include <algo/cobalt/cobalt.hpp>
 
 /// @file cobalt.cpp
@@ -236,6 +237,19 @@ CMultiAligner::SetQueries(const vector<objects::CBioseq>& queries)
     Reset();
 }
 
+
+CRef<objects::CBioTreeContainer> CMultiAligner::GetTree(void) const
+{
+    if (!m_Tree.GetTree()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "No tree to return");
+    }
+
+    CRef<objects::CBioTreeContainer> btc
+         = MakeBioTreeContainer(m_Tree.GetTree());
+
+    return btc;
+}
 
 void
 CMultiAligner::x_SetScoreMatrix(const char *matrix_name)

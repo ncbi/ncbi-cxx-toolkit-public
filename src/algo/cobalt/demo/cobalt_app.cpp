@@ -365,7 +365,7 @@ int CMultiApplication::Run(void)
 
     aligner.Run();
 
-    const vector<CSequence>& results(aligner.GetResults());
+    const vector<CSequence>& results(aligner.GetSeqResults());
     for (int i = 0; i < (int)results.size(); i++) {
         CBioseq_Handle bhandle = scope->GetBioseqHandle(queries[i]->GetWhole(),
                                                        CScope::eGetBioseq_All);
@@ -377,7 +377,7 @@ int CMultiApplication::Run(void)
         printf("\n");
     }
     if (args["seqalign"]) {
-        CRef<CSeq_align> sa = aligner.GetSeqalignResults();
+        CRef<CSeq_align> sa = aligner.GetResults();
         CNcbiOstream& out = args["seqalign"].AsOutputFile();
         out << MSerial_AsnText << *sa;
     }

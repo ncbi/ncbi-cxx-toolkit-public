@@ -57,8 +57,8 @@ USING_SCOPE(objects);
 /// @return The generated seqalign
 ///
 CRef<CSeq_align>
-CMultiAligner::x_GetSeqalign(vector<CSequence>& align,
-                             vector<int>& indices)
+CMultiAligner::x_GetSeqalign(const vector<CSequence>& align,
+                             vector<int>& indices) const
 {
     int num_queries = align.size();
     int length = align[0].GetLength();
@@ -156,8 +156,7 @@ CMultiAligner::x_GetSeqalign(vector<CSequence>& align,
 
 
 CRef<CSeq_align>
-CMultiAligner::GetSeqalignResults(CSeq_align& align,
-                                  vector<int>& indices)
+CMultiAligner::GetSeqalignResults(CSeq_align& align, vector<int>& indices)
 {
     if (align.GetType() != CSeq_align::eType_global ||
         !align.IsSetSegs() || !align.GetSegs().IsDenseg()) {
@@ -256,8 +255,13 @@ CMultiAligner::GetSeqalignResults(CSeq_align& align,
 }
 
 CRef<CSeq_align>
-CMultiAligner::GetSeqalignResults()
+CMultiAligner::GetResults(void) const
 {
+    if (m_Results.empty()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "Results were not computed");
+    }
+
     int num_queries = m_Results.size();
     vector<int> indices(num_queries);
 
@@ -271,7 +275,7 @@ CMultiAligner::GetSeqalignResults()
 
 
 CRef<CSeq_align>
-CMultiAligner::GetSeqalignResults(vector<int>& indices)
+CMultiAligner::GetResults(vector<int>& indices) const
 {
     int num_selected = indices.size();
     vector<CSequence> new_align(num_selected);

@@ -38,10 +38,10 @@ Contents: Interface for CMultiAligner
 
 #include <util/math/matrix.hpp>
 #include <corelib/ncbifile.hpp>
-//#include <algo/blast/api/sseqloc.hpp>
 #include <algo/align/nw/nw_pssm_aligner.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/biotree/BioTreeContainer.hpp>
 
 #include <algo/cobalt/base.hpp>
 #include <algo/cobalt/resfreq.hpp>
@@ -100,7 +100,6 @@ public:
     ///
     void SetQueries(const vector< CRef<objects::CSeq_loc> >& queries,
                     CRef<objects::CScope> scope);
-
     /// Set query sequences.
     /// This automatically clears out the intermediate state
     /// of the last alignment.
@@ -108,19 +107,72 @@ public:
     ///
     void SetQueries(const vector<objects::CBioseq>& queries);
 
-
     /// Get query sequences
     /// @return List of seq-ids and locations [in]
     ///
     const vector< CRef<objects::CSeq_loc> >& GetQueries(void) const
     {return m_tQueries;}
 
-
     /// Get scope
     /// @return Scope
     ///
     CRef<objects::CScope> GetScope(void) {return m_Scope;}
     
+
+    //------------------ Options --------------------------
+
+    /// Get mutli aligner parameters
+    /// @return Options
+    ///
+    CConstRef<CMultiAlignerOptions> GetOptions(void) const {return m_Options;}
+
+
+    // ---------------- Running the aligner -----------------------
+
+    /// Align the current set of input sequences (reset any existing
+    /// alignment information).
+    ///
+    /// This function handles the generation of all internal state in the
+    /// correct order. It is sufficient for 'black box' applications that
+    /// only want a final answer without tweaking internal state.
+    ///
+    void Run(void);
+
+    /// Clear out the state left by the previous alignment operation
+    ///
+    void Reset(void);
+
+
+    // ---------------- Results -----------------------
+
+    /// Retrieve the current aligned results in Seq-align format.
+    /// The Seq-align is of global type, with a single denseg
+    /// @return The results
+    ///
+    CRef<objects::CSeq_align> GetResults(void) const;
+
+    /// Retrieve a selection of the current aligned results, 
+    /// in Seq-align format. The Seq-align is of global type, 
+    /// with a single denseg. Columns that have gaps in all the
+    /// selected sequences are removed
+    /// @param indices List of ordinal IDs of sequences that the
+    ///                Seq-align will contain. Indices may appear
+    ///                in any order and may be repeated
+    /// @return The results
+    ///
+    CRef<objects::CSeq_align> GetResults(vector<int>& indices) const;
+
+    /// Get tree used as guide in progressive alignment
+    /// @return Tree
+    ///
+    CRef<objects::CBioTreeContainer> GetTree(void) const;
+
+    /// Get clusters of query sequences
+    /// @return Query clusters
+    ///
+    const CClusterer::TClusters& GetQueryClusters(void) const
+    {return m_Clusterer.GetClusters();}
+
 
     ////////////////////////////////////////////////////////////
 
@@ -138,22 +190,6 @@ public:
     // ----------------- Getters -----------------------------
 
 
-    /// Retrieve the current aligned results in Seq-align format.
-    /// The Seq-align is of global type, with a single denseg
-    /// @return The results
-    ///
-    CRef<objects::CSeq_align> GetSeqalignResults();
-
-    /// Retrieve a selection of the current aligned results, 
-    /// in Seq-align format. The Seq-align is of global type, 
-    /// with a single denseg. Columns that have gaps in all the
-    /// selected sequences are removed
-    /// @param indices List of ordinal IDs of sequences that the
-    ///                Seq-align will contain. Indices may appear
-    ///                in any order and may be repeated
-    /// @return The results
-    ///
-    CRef<objects::CSeq_align> GetSeqalignResults(vector<int>& indices);
 
     /// Retrieve a selection of an input Seq_align,
     /// in Seq-align format. The output Seq-align is of global type, 
@@ -172,7 +208,7 @@ public:
     /// Retrieve the current aligned results in CSequence format.
     /// @return The results, on CSequence for each input sequence
     ///
-    const vector<CSequence>& GetResults() const { return m_Results; }
+    const vector<CSequence>& GetSeqResults() const { return m_Results; }
 
     /// Retrieve the current list of domain hits. Each CHit
     /// corresponds to one domain hit; sequence 1 of the hit
@@ -212,29 +248,9 @@ public:
     ///
     const CHitList& GetUserHits() const { return m_UserHits; }
 
-    /// Retrieve the current internally generated phylogenetic tree.
-    /// Tree leaves each contain the index of the query sequence at that
-    /// leaf. The tree is strictly binary, and the tree root is not
-    /// associated with any sequence
-    /// @return The tree
-    ///
-    const TPhyTreeNode *GetTree() const { return m_Tree.GetTree(); }
 
 
 
-    // ---------------- Running the aligner -----------------------
-
-    /// Clear out the state left by the previous alignment operation
-    ///
-    void Reset();
-
-    /// Align the current set of input sequences (reset any existing
-    /// alignment information). This function handles the generation
-    /// of all internal state in the correct order. It is sufficient 
-    /// for 'black box' applications that only want a final
-    /// answer without tweaking internal state
-    ///
-    void Run();
 
     /// Run RPS blast on the input sequences and postprocess the results.
     /// Intended for applications that want fine-grained control of the 
@@ -291,6 +307,17 @@ public:
     /// cluster prototypes
     ///
     void MultiAlignClusters();
+
+
+protected:
+
+    /// Retrieve the current internally generated phylogenetic tree.
+    /// Tree leaves each contain the index of the query sequence at that
+    /// leaf. The tree is strictly binary, and the tree root is not
+    /// associated with any sequence
+    /// @return The tree
+    ///
+    const TPhyTreeNode* x_GetTree(void) const {return m_Tree.GetTree();}
 
 
 
@@ -488,8 +515,8 @@ private:
                             int col);
     double x_GetScore(vector<CSequence>& align);
 
-    CRef<objects::CSeq_align> x_GetSeqalign(vector<CSequence>& align,
-                                            vector<int>& indices);
+    CRef<objects::CSeq_align> x_GetSeqalign(const vector<CSequence>& align,
+                                            vector<int>& indices) const;
 };
 
 END_SCOPE(cobalt)
