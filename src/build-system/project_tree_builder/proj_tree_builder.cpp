@@ -703,12 +703,41 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     }
     
     const CSimpleMakeFileContents& makefile = m->second;
-    string full_makefile_name = "Makefile." + proj_name + ".app";
-    string full_makefile_path =
-        CDirEntry::ConcatPath(applib_mfilepath, full_makefile_name);
+    string full_makefile_name = CDirEntry(applib_mfilepath).GetName();
+    string full_makefile_path = applib_mfilepath;
 
-    CSimpleMakeFileContents::TContents::const_iterator k = 
-        makefile.m_Contents.find("SRC");
+    CSimpleMakeFileContents::TContents::const_iterator k;
+    //project id
+    k = makefile.m_Contents.find("APP");
+    if (k == makefile.m_Contents.end()  ||  k->second.empty()) {
+        if (GetApp().IsScanningWholeTree()) {
+            PTB_WARNING_EX(full_makefile_path, ePTB_InvalidMakefile,
+                        "APP is not specified: " << full_makefile_name);
+        } else {
+            PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
+                        "APP is not specified: " << full_makefile_name);
+        }
+        return CProjKey();
+    }
+    string proj_id = k->second.front();
+    {{
+        CProjKey proj_key(CProjKey::eApp, proj_id);
+        if (tree->m_Projects.find(proj_key) != tree->m_Projects.end()) {
+            if (GetApp().IsScanningWholeTree()) {
+                PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
+                            "Application " << proj_id << " already defined at "
+                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                return CProjKey();
+            } else {
+                GetApp().SetFail();
+                PTB_ERROR_EX(full_makefile_path, ePTB_ConfigurationError,
+                            "Application " << proj_id << " already defined at "
+                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
+            }
+        }
+    }}
+
+    k = makefile.m_Contents.find("SRC");
     if (k == makefile.m_Contents.end()) {
         if (GetApp().IsScanningWholeTree()) {
             PTB_WARNING_EX(full_makefile_path, ePTB_InvalidMakefile,
@@ -774,20 +803,6 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     if (k != makefile.m_Contents.end()) {
         project_makefile.Redefine(k->second,requires);        
     }
-
-    //project name
-    k = makefile.m_Contents.find("APP");
-    if (k == makefile.m_Contents.end()  ||  k->second.empty()) {
-        if (GetApp().IsScanningWholeTree()) {
-            PTB_WARNING_EX(full_makefile_path, ePTB_InvalidMakefile,
-                        "APP is not specified: " << full_makefile_name);
-        } else {
-            PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
-                        "APP is not specified: " << full_makefile_name);
-        }
-        return CProjKey();
-    }
-    string proj_id = k->second.front();
 
     //LIBS
     list<string> libs_3_party;
@@ -956,12 +971,49 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         return CProjKey();
     }
 
-    CSimpleMakeFileContents::TContents::const_iterator k = 
-        m->second.m_Contents.find("SRC");
-    string full_makefile_name = "Makefile." + proj_name + ".lib";
-    string full_makefile_path =
-        CDirEntry::ConcatPath(applib_mfilepath, full_makefile_name);
+    string full_makefile_name = CDirEntry(applib_mfilepath).GetName();
+    string full_makefile_path = applib_mfilepath;
 
+    CSimpleMakeFileContents::TContents::const_iterator k;
+    //project name
+    k = m->second.m_Contents.find("LIB");
+    if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
+        CSimpleMakeFileContents::TContents::const_iterator tmp_k =
+            m->second.m_Contents.find("STATIC_LIB");
+        if (tmp_k != m->second.m_Contents.end()) {
+            k = tmp_k;
+        }
+    }
+    if (k == m->second.m_Contents.end()  ||  
+                                           k->second.empty()) {
+        if (GetApp().IsScanningWholeTree()) {
+            PTB_WARNING_EX(full_makefile_path, ePTB_InvalidMakefile,
+                        "LIB is not specified: " << full_makefile_name);
+        } else {
+            PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
+                        "LIB is not specified: " << full_makefile_name);
+        }
+        return CProjKey();
+    }
+    string proj_id = k->second.front();
+    {{
+        CProjKey proj_key(CProjKey::eLib, proj_id);
+        if (tree->m_Projects.find(proj_key) != tree->m_Projects.end()) {
+            if (GetApp().IsScanningWholeTree()) {
+                PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
+                            "Library " << proj_id << " already defined at "
+                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                return CProjKey();
+            } else {
+                GetApp().SetFail();
+                PTB_ERROR_EX(full_makefile_path, ePTB_ConfigurationError,
+                            "Library " << proj_id << " already defined at "
+                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
+            }
+        }
+    }}
+
+    k = m->second.m_Contents.find("SRC");
     if (k == m->second.m_Contents.end()) {
         if (GetApp().IsScanningWholeTree()) {
             PTB_WARNING_EX(full_makefile_path, ePTB_InvalidMakefile,
@@ -996,28 +1048,6 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
             source_base_dir, CreateMsvcProjectMakefileName(proj_name, CProjKey::eLib)));
         project_makefile.Redefine(k->second,requires);        
     }
-
-    //project name
-    k = m->second.m_Contents.find("LIB");
-    if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
-        CSimpleMakeFileContents::TContents::const_iterator tmp_k =
-            m->second.m_Contents.find("STATIC_LIB");
-        if (tmp_k != m->second.m_Contents.end()) {
-            k = tmp_k;
-        }
-    }
-    if (k == m->second.m_Contents.end()  ||  
-                                           k->second.empty()) {
-        if (GetApp().IsScanningWholeTree()) {
-            PTB_WARNING_EX(full_makefile_path, ePTB_InvalidMakefile,
-                        "LIB is not specified: " << full_makefile_name);
-        } else {
-            PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
-                        "LIB is not specified: " << full_makefile_name);
-        }
-        return CProjKey();
-    }
-    string proj_id = k->second.front();
 
     //LIBS
     list<string> libs_3_party;
@@ -1159,6 +1189,25 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
         return CProjKey();
     }
     string proj_id = k->second.front();
+    {{
+        CProjKey proj_key(CProjKey::eDll, proj_id);
+        if (tree->m_Projects.find(proj_key) != tree->m_Projects.end()) {
+            const CProjItem& item = tree->m_Projects[proj_key];
+            if (item.m_HostedLibs.size() != 1 || item.m_HostedLibs.front() != proj_id) {
+                string full_makefile_path = applib_mfilepath;
+                if (GetApp().IsScanningWholeTree()) {
+                    PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
+                                "DLL " << proj_id << " already defined at "
+                                << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                } else {
+                    GetApp().SetFail();
+                    PTB_ERROR_EX(full_makefile_path, ePTB_ConfigurationError,
+                                "DLL " << proj_id << " already defined at "
+                                << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                }
+            }
+        }
+    }}
 
     //CPPFLAGS
     list<string> include_dirs;
@@ -1489,9 +1538,37 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
         return CProjKey();
     }
 
+    CSimpleMakeFileContents::TContents::const_iterator k;
+    //project id
+    k = m->second.m_Contents.find("MSVC_PROJ");
+    if (k == m->second.m_Contents.end()  ||  
+                                           k->second.empty()) {
+
+        LOG_POST(Info << "No MSVC_PROJ specified in Makefile: project " << proj_name
+                      << "  at " << applib_mfilepath);
+        return CProjKey();
+    }
+    string proj_id = k->second.front();
+    {{
+        CProjKey proj_key(CProjKey::eMsvc, proj_id);
+        if (tree->m_Projects.find(proj_key) != tree->m_Projects.end()) {
+            string full_makefile_path = applib_mfilepath;
+            if (GetApp().IsScanningWholeTree()) {
+                PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
+                            "MSVC project " << proj_id << " already defined at "
+                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                return CProjKey();
+            } else {
+                GetApp().SetFail();
+                PTB_ERROR_EX(full_makefile_path, ePTB_ConfigurationError,
+                            "MSVC project " << proj_id << " already defined at "
+                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
+            }
+        }
+    }}
+
     // VCPROJ - will map to src
-    CSimpleMakeFileContents::TContents::const_iterator k = 
-        m->second.m_Contents.find("VCPROJ");
+    k = m->second.m_Contents.find("VCPROJ");
     if (k == m->second.m_Contents.end()) {
 
         LOG_POST(Info << "No VCPROJ specified in Makefile: project " << proj_name
@@ -1549,17 +1626,6 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
             source_base_dir, CreateMsvcProjectMakefileName(proj_name, CProjKey::eMsvc)));
         project_makefile.Redefine(k->second,requires);        
     }
-
-    //project id
-    k = m->second.m_Contents.find("MSVC_PROJ");
-    if (k == m->second.m_Contents.end()  ||  
-                                           k->second.empty()) {
-
-        LOG_POST(Info << "No MSVC_PROJ specified in Makefile: project " << proj_name
-                      << "  at " << applib_mfilepath);
-        return CProjKey();
-    }
-    string proj_id = k->second.front();
 
     list<string> libs_3_party;
     list<string> include_dirs;

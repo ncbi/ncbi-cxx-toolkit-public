@@ -365,7 +365,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,6,4) );
+    SetVersion( CVersionInfo(1,6,5) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -374,6 +374,7 @@ CProjBulderApp::CProjBulderApp(void)
     m_TweakVTuneD = false;
     m_CurrentBuildTree = 0;
     m_ConfirmCfg = false;
+    m_ExitCode = 0;
 }
 
 
@@ -574,6 +575,13 @@ int CProjBulderApp::Run(void)
     CCyclicDepends::FindCyclesNew(prj_tree.m_Projects, &cycles);
     s_ReportDependenciesStatus(cycles,projects_tree.m_Projects);
 
+    if (m_ExitCode != 0) {
+        string subtree = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, m_Subtree);
+        if (CDirEntry(subtree).IsFile()) {
+            return m_ExitCode;
+        }
+        m_ExitCode = 0;
+    }
     PTB_INFO("Creating projects...");
     if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         GenerateMsvcProjects(prj_tree);
@@ -586,7 +594,7 @@ int CProjBulderApp::Run(void)
     }
     //
     PTB_INFO("Done.  Elapsed time = " << sw.Elapsed() << " seconds");
-    return 0;
+    return m_ExitCode;
 }
 
 void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)

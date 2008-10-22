@@ -103,6 +103,7 @@ private:
     set<string>  m_AllowedTags;
     set<string>  m_DisallowedTags;
     bool m_ScanningWholeTree;
+    int m_ExitCode;
 
 public:
 
@@ -164,6 +165,7 @@ public:
     void   LoadProjectTags(const string& filename);
     string ProcessLocationMacros(string data);
     bool IsScanningWholeTree(void) const {return m_ScanningWholeTree;}
+    void SetFail(int exit_code=1) {m_ExitCode=exit_code;}
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
