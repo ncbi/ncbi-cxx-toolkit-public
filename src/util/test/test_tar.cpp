@@ -81,7 +81,8 @@ CTarTest::CTarTest()
     : m_Flags(0)
 {
     SetDiagPostLevel(eDiag_Warning);
-    SetDiagPostAllFlags(eDPF_DateTime | eDPF_Severity | eDPF_ErrorID);
+    SetDiagPostAllFlags(eDPF_DateTime    | eDPF_Severity |
+                        eDPF_OmitInfoSev | eDPF_ErrorID);
     DisableArgDescriptions(fDisableStdArgs);
     HideStdArgs(-1/*everything*/);
 }

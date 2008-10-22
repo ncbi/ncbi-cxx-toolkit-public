@@ -1495,11 +1495,13 @@ static void s_Dump(const string& file, Uint8 pos, size_t recsize,
                    Uint8 datasize)
 {
     unsigned long blocks = (unsigned long) BLOCK_OF(datasize + (kBlockSize-1));
-    LOG_POST_X(2, s_PositionAsString(file, pos, recsize, entryname)
+    EDiagSev level = SetDiagPostLevel(eDiag_Info);
+    ERR_POST(Info << '\n' + s_PositionAsString(file, pos, recsize, entryname)
              + s_DumpHeader(h, fmt) + '\n'
              + (blocks
                 ? "Blocks of data: " + NStr::UIntToString(blocks) + '\n'
                 : kEmptyStr));
+    SetDiagPostLevel(level);
 }
 
 
@@ -1792,16 +1794,18 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                             m_Current.GetType() == CTarEntryInfo::eGNULongName
                             ? "Long name:      \""
                             : "Long link name: \"");
-                LOG_POST_X(3, what +
-                           NStr::PrintableString(buffer,
+                EDiagSev level = SetDiagPostLevel(eDiag_Info);
+                ERR_POST(Info << Message << '\n' + what
+                         + NStr::PrintableString(buffer,
                                                  m_Current.GetType()
                                                  == CTarEntryInfo::ePAXHeader
                                                  ? NStr::fNewLine_Passthru
                                                  : NStr::fNewLine_Quote) +
-                           (m_Current.GetType() == CTarEntryInfo::ePAXHeader ?
-                            buffer.size()  &&  buffer[buffer.size()-1] == '\n'
-                            ? kEmptyStr : "\n"
-                            : "\"\n"));
+                         (m_Current.GetType() == CTarEntryInfo::ePAXHeader ?
+                          buffer.size()  &&  buffer[buffer.size()-1] == '\n'
+                          ? kEmptyStr : "\n"
+                          : "\"\n"));
+                SetDiagPostLevel(level);
             }
             // Reset size because the data blocks have been all read
             hsize = (size_t) m_Current.GetSize();
@@ -2416,7 +2420,7 @@ void CTar::x_SkipArchive(size_t size)
                 continue;
             }
             if (m_FileStream) {
-                TAR_POST(84, Warning,
+                TAR_POST(2, Warning,
                          "Cannot fast skip in file archive '" +
                          m_FileName + "', reverting to slow skip");
             }
@@ -2916,7 +2920,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     case CDirEntry::eDoor:
     case CDirEntry::eSocket:
         // Tar does not have any provisions to store this kind of entry
-        TAR_POST(83, Warning,
+        TAR_POST(3, Warning,
                  "Skipping non-archiveable "
                  + string(type == CDirEntry::eSocket ? "socket" : "door")
                  + " entry '" + path + '\'');
