@@ -40,7 +40,7 @@
  *                THIS_FILE, THIS_MODULE,
  *                LOG_WRITE_ERRNO()
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
- *    methods:    LOG_ComposeMessage(), LOG_ToFILE(), MessagePlusErrno(),
+ *    methods:    LOG_ComposeMessage(), LOG_ToFILE(), NcbiMessagePlusError(),
  *                CORE_SetLOCK(), CORE_GetLOCK(),
  *                CORE_SetLOG(),  CORE_GetLOG(),
  *                CORE_SetLOGFILE[_Ex](), CORE_SetLOGFILE_NAME[_Ex]()
@@ -298,14 +298,14 @@ extern NCBI_XCONNECT_EXPORT void LOG_ToFILE
  );
 
 
-/** Add current "errno" (and maybe its description) to the message:
- * <message>[ {errno=[<errno>][,][<descr>]}]
+/** Add current "error" (and maybe its description) to the message:
+ * <message>[ {error=[<error>][,][<descr>]}]
  * @param message
  *  [in]  message text (can be NULL)
- * @param x_errno
+ * @param error
  *  [in]  error code (if it is zero, then use "descr" only)
  * @param descr
- *  [in]  error description (if NULL, then use "strerror(x_errno)")
+ *  [in]  error description (if NULL, then use "strerror(error)" if error!=0)
  * @param buf
  *  [out] buffer to put the composed message to
  * @param buf_size
@@ -315,9 +315,9 @@ extern NCBI_XCONNECT_EXPORT void LOG_ToFILE
  * @sa
  *  LOG_ComposeMessage
  */
-extern NCBI_XCONNECT_EXPORT const char* MessagePlusErrno
+extern NCBI_XCONNECT_EXPORT const char* NcbiMessagePlusError
 (const char*  message,
- int          x_errno,
+ int          error,
  const char*  descr,
  char*        buf,
  size_t       buf_size
@@ -326,17 +326,17 @@ extern NCBI_XCONNECT_EXPORT const char* MessagePlusErrno
 
 /** Special log writing macro that makes use of a specified error number,
  * and an optional description thereof.
- * NOTE: Pass x_descr as 0 to get a standard error description that
- * corresponds to the passed x_errno.
+ * NOTE: Pass descr as NULL to get the standard errno description that
+ * corresponds to the passed error value.
  */
 #define LOG_WRITE_ERRNO(lg, code, subcode, level, message,              \
-                        x_errno, x_descr)                               \
+                        error, descr)                                   \
 do {                                                                    \
     if ((lg)  ||  (level) == eLOG_Fatal) {                              \
         char _buf[1024];                                                \
         LOG_WRITE(lg, code, subcode, level,                             \
-                  MessagePlusErrno(message, x_errno, x_descr,           \
-                                   _buf, sizeof(_buf)));                \
+                  NcbiMessagePlusError(message, error, descr,           \
+                                       _buf, sizeof(_buf)));            \
     }                                                                   \
 } while (0)
 

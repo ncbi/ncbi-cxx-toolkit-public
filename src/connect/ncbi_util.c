@@ -476,9 +476,9 @@ static int/*bool*/ s_SafeCopy(const char* src, size_t len,
 }
 
 
-extern const char* MessagePlusErrno
+extern const char* NcbiMessagePlusError
 (const char*  message,
- int          x_errno,
+ int          error,
  const char*  descr,
  char*        buf,
  size_t       buf_size)
@@ -488,7 +488,7 @@ extern const char* MessagePlusErrno
     char*  end;
 
     /* Check for an empty result */
-    if (!x_errno  &&  (!descr  ||  !*descr))
+    if (!error  &&  (!descr  ||  !*descr))
         return !message  ||  !*message ? "" : message;
 
     /* Check and init */
@@ -500,15 +500,13 @@ extern const char* MessagePlusErrno
         return buf;  /* empty */
 
     /* Adjust the description, if necessary and possible */
-    if (x_errno  &&  !descr) {
-        descr = strerror(x_errno);
-        if ( !descr ) {
-            static const char s_UnknownErrno[] = "Error code is out of range";
-            descr = s_UnknownErrno;
-        }
+    if (error  &&  !descr) {
+        descr = error > 0 ? strerror(error) : 0;
+        if (!descr  ||  !*descr)
+            descr = "Error code is out of range";
     }
 
-    /* Compose:   <message> {errno=<x_errno>,<descr>} */
+    /* Compose:   <message> {error=<error>,<descr>} */
     beg = buf;
     end = buf + buf_size - 1;
 
@@ -516,27 +514,27 @@ extern const char* MessagePlusErrno
     if (message  &&  s_SafeCopy(message, strlen(message), &beg, end))
         return buf;
 
-    /* {errno=<x_errno>,<descr>} */
-    if (!x_errno  &&  (!descr  ||  !*descr))
+    /* {error=<error>,<descr>} */
+    if (!error  &&  (!descr  ||  !*descr))
         return buf;
 
-    /* "{errno=" */
-    if (s_SafeCopy(" {errno=", 8, &beg, end - 3))
+    /* "{error=" */
+    if (s_SafeCopy(" {error=", 8, &beg, end - 3))
         return buf;
 
-    /* <x_errno> */
-    if (x_errno) {
+    /* <error> */
+    if (error) {
         /* calculate length */
         int/*bool*/ neg;
         int         mod;
 
-        if (x_errno < 0) {
+        if (error < 0) {
             neg = 1/*true*/;
-            x_errno = -x_errno;
+            error = -error;
         } else
             neg = 0/*false*/;
 
-        for (len = 1, mod = 1;  (x_errno / mod) > 9;  len++, mod *= 10)
+        for (len = 1, mod = 1;  (error / mod) > 9;  len++, mod *= 10)
             continue;
         if (neg)
             len++;
@@ -553,9 +551,9 @@ extern const char* MessagePlusErrno
 
         /* print error code */
         for ( ;  mod;  mod /= 10) {
-            assert(x_errno / mod < 10);
-            *beg++ = '0' + x_errno / mod;
-            x_errno %= mod;
+            assert(error / mod < 10);
+            *beg++ = '0' + error / mod;
+            error %= mod;
         }
         /* "," before "<descr>" */
         if (descr  &&  *descr  &&  beg < end)
