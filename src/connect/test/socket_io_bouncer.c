@@ -132,7 +132,7 @@ int main(int argc, const char* argv[])
     }
     case 2: {
         int port;
-        if (sscanf(argv[1], "%d", &port) == 1  &&  0 <= port  &&  port <= 65535)
+        if (sscanf(argv[1], "%d", &port) == 1  &&  0 <= port && port <= 65535)
             net_info->port = (unsigned short) port;
     }
     } /* switch */
