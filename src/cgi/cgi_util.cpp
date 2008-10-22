@@ -526,8 +526,7 @@ const CCgiArgs& CUrl::GetArgs(void) const
 
 extern SIZE_TYPE URL_DecodeInPlace(string& str, EUrlDecode decode_flag)
 {
-    NStr::URLDecodeInPlace(str, decode_flag == eUrlDecode_All ?
-        NStr::eUrlDec_All : NStr::eUrlDec_Percent);
+    NStr::URLDecodeInPlace(str, NStr::EUrlDecode(decode_flag));
     return 0;
 }
 
@@ -546,23 +545,7 @@ extern string URL_DecodeString(const string& str,
 extern string URL_EncodeString(const string& str,
                                EUrlEncode encode_flag)
 {
-    NStr::EUrlEncode enc = NStr::eUrlEnc_SkipMarkChars;
-    switch (encode_flag) {
-    case eUrlEncode_None:
-        return str;
-    case eUrlEncode_ProcessMarkChars:
-        enc = NStr::eUrlEnc_ProcessMarkChars;
-        break;
-    case eUrlEncode_PercentOnly:
-        enc = NStr::eUrlEnc_PercentOnly;
-        break;
-    case eUrlEncode_Path:
-        enc = NStr::eUrlEnc_Path;
-        break;
-    default:
-        break;
-    }
-    return NStr::URLEncode(str, enc);
+    return NStr::URLEncode(str, NStr::EUrlEncode(encode_flag));
 }
 
 

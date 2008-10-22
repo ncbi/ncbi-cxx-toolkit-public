@@ -48,28 +48,26 @@
 
 BEGIN_NCBI_SCOPE
 
-
 /// URL encode flags
 enum EUrlEncode {
-    eUrlEncode_None,             ///< Do not encode/decode string
-    eUrlEncode_SkipMarkChars,    ///< Do not convert chars like '!', '(' etc.
-    eUrlEncode_ProcessMarkChars, ///< Convert all non-alphanum chars,
-                                 ///< spaces are converted to '+'
-    eUrlEncode_PercentOnly,      ///< Convert all non-alphanum chars including
-                                 ///< space and '%' to %## format
-    eUrlEncode_Path              ///< Same as ProcessMarkChars but preserves
-                                 ///< valid path characters ('/', '.')
+    eUrlEncode_None             = NStr::eUrlEnc_None,
+    eUrlEncode_SkipMarkChars    = NStr::eUrlEnc_SkipMarkChars,
+    eUrlEncode_ProcessMarkChars = NStr::eUrlEnc_ProcessMarkChars,
+    eUrlEncode_PercentOnly      = NStr::eUrlEnc_PercentOnly,
+    eUrlEncode_Path             = NStr::eUrlEnc_Path
 };
 
 /// URL decode flags
 enum EUrlDecode {
-    eUrlDecode_All,
-    eUrlDecode_Percent
+    eUrlDecode_All              = NStr::eUrlDec_All,
+    eUrlDecode_Percent          = NStr::eUrlDec_Percent
 };
 
 
 /// Decode the URL-encoded string "str";  return the result of decoding
 /// If "str" format is invalid then throw CParseException
+/// @deprecated Use NStr::URLDecode()
+NCBI_DEPRECATED
 NCBI_XCGI_EXPORT
 extern string
 URL_DecodeString(const string& str,
@@ -77,12 +75,16 @@ URL_DecodeString(const string& str,
 
 /// URL-decode string "str" into itself
 /// Return 0 on success;  otherwise, return 1-based error position
+/// @deprecated Use NStr::URLDecodeInPlace()
+NCBI_DEPRECATED
 NCBI_XCGI_EXPORT
 extern SIZE_TYPE
 URL_DecodeInPlace(string& str, EUrlDecode decode_flag = eUrlDecode_All);
 
 /// URL-encode a string "str" to the "x-www-form-urlencoded" form;
 /// return the result of encoding. If 
+/// @deprecated Use NStr::URLEncode()
+NCBI_DEPRECATED
 NCBI_XCGI_EXPORT
 extern string
 URL_EncodeString(const      string& str,
@@ -160,21 +162,25 @@ class NCBI_XCGI_EXPORT CDefaultUrlEncoder : public CEmptyUrlEncoder
 {
 public:
     CDefaultUrlEncoder(EUrlEncode encode = eUrlEncode_SkipMarkChars)
-        : m_Encode(encode) { return; }
+        : m_Encode(NStr::EUrlEncode(encode)) { return; }
     virtual string EncodePath(const string& path) const
-        { return URL_EncodeString(path, eUrlEncode_Path); }
+        { return NStr::URLEncode(path, NStr::eUrlEnc_Path); }
     virtual string DecodePath(const string& path) const
-        { return URL_DecodeString(path, eUrlEncode_Path); }
+        { return NStr::URLDecode(path); }
     virtual string EncodeArgName(const string& name) const
-        { return URL_EncodeString(name, m_Encode); }
+        { return NStr::URLEncode(name, m_Encode); }
     virtual string DecodeArgName(const string& name) const
-        { return URL_DecodeString(name, m_Encode); }
+        { return NStr::URLDecode(name,
+            m_Encode == NStr::eUrlEnc_PercentOnly ?
+            NStr::eUrlDec_Percent : NStr::eUrlDec_All); }
     virtual string EncodeArgValue(const string& value) const
-        { return URL_EncodeString(value, m_Encode); }
+        { return NStr::URLEncode(value, m_Encode); }
     virtual string DecodeArgValue(const string& value) const
-        { return URL_DecodeString(value, m_Encode); }
+        { return NStr::URLDecode(value,
+            m_Encode == NStr::eUrlEnc_PercentOnly ?
+            NStr::eUrlDec_Percent : NStr::eUrlDec_All); }
 private:
-    EUrlEncode m_Encode;
+    NStr::EUrlEncode m_Encode;
 };
 
 
