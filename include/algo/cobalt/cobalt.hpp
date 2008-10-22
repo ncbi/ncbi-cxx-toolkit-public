@@ -354,6 +354,9 @@ private:
               path_next(0), best_score(0.0) {}
     
     } SGraphNode;
+
+    class compare_sseg_db_idx;
+    friend class compare_sseg_db_idx;
     
     class compare_sseg_db_idx {
     public:
