@@ -83,6 +83,9 @@ extern int TEST_StreamPushback(iostream&    ios,
     size_t i, j, k;
     vector<CT_CHAR_TYPE*> v;
 
+    GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Err,
+                                      (unsigned int)(-1));
+
     unsigned int seed = seed_in ? seed_in : (unsigned int) time(0);
     LOG_POST("Seed = " << seed);
     srand(seed);
