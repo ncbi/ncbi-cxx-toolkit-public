@@ -405,8 +405,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
         char value[32];
         s_GnuTlsCredAnon = acred;
         s_GnuTlsCredCert = xcred;
-        ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL",
-                             value, sizeof(value), "");
+        ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL", value, sizeof(value), "");
         if (*value) {
             int level = atoi(value);
             s_GnuTlsLogLevel = level < 0 ? 0 : level;
