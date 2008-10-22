@@ -141,11 +141,17 @@ bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool* 
                 include_ok =  true;
                 break;
             } else if (weak) {
-                string pd = "^" + proj_dir + ".*";
-                CRegexp px(pd);
-                *weak = px.IsMatch(str);
-                if (*weak) {
-                    return false;
+                list<string> splitmask, splitdir;
+                NStr::Split( str, "/", splitmask);
+                NStr::Split( proj_dir, "/", splitdir);
+                if (splitmask.size() > splitdir.size()) {
+                    splitmask.resize(splitdir.size());
+                    string reduced( NStr::Join(splitmask,"/"));
+                    CRegexp r("^" + reduced);
+                    if (r.IsMatch(proj_dir)) {
+                        *weak = true;
+                        return false;
+                    }
                 }
             }
         }
