@@ -40,30 +40,156 @@
 
 BEGIN_NCBI_SCOPE
 
-static string sc_Tokens;
-static string sc_Lower;
+
+/**
+static bool sc_IsTokenStop[256];
+static char sc_Lower[256];
 static const string sc_ClauseStop(".?!;:\"{}[]()");
+**/
+
+
+enum {
+    eAlpha        = 0x0100,
+    eNumeric      = 0x0200,
+    ePunctuation  = 0x0400,
+    ePrintable    = 0x0800,
+    eSpace        = 0x1000,
+    eClauseEnd    = 0x2000
+};
+static Uint2 sc_Tokens[256];
 
 struct SLoadTokens
 {
     SLoadTokens()
     {
-        if (sc_Tokens.empty()) {
-            sc_Tokens = "\n\r\t !@#$%^&()_+|~`-=\\[{]};:\",<.>/?*";
-            for (int i = 128;  i < 256;  ++i) {
-                sc_Tokens += (unsigned char)i;
+        /**
+        int isalnum(int c);
+        int isalpha(int c);
+        int isascii(int c);
+        int isblank(int c);
+        int iscntrl(int c);
+        int isdigit(int c);
+        int isgraph(int c);
+        int islower(int c);
+        int isprint(int c);
+        int ispunct(int c);
+        int isspace(int c);
+        int isupper(int c);
+        int isxdigit(int c);
+        **/
+
+
+
+        /// seed our tokens with their lower-case equivalents
+        /// by default all tokens are considered clause stops
+        for (int i = 0;  i < 256;  ++i) {
+            sc_Tokens[i] = tolower(i);
+
+            /// add additional properties
+            if (isprint(i)) {
+                sc_Tokens[i] |= ePrintable;
+            }
+            if (isalpha(i)) {
+                sc_Tokens[i] |= eAlpha;
+            }
+            if (isdigit(i)) {
+                sc_Tokens[i] |= eNumeric;
+            }
+            if (ispunct(i)) {
+                sc_Tokens[i] |= ePunctuation;
+            }
+            if (isspace(i)) {
+                sc_Tokens[i] |= eSpace;
             }
         }
 
-        if (sc_Lower.empty()) {
-            sc_Lower.resize(256);
-            for (int i = 0;  i < 256;  ++i) {
-                sc_Lower[i] = tolower(i);
-            }
+        /// other special pieces: clause ends
+        string clause_ends(".?!;:\"{}[]()");
+        ITERATE (string, it, clause_ends) {
+            sc_Tokens[(unsigned char)*it] |= eClauseEnd;
         }
+
+        /// funkyness: "'" counts as an alphanumeric
+        sc_Tokens['\''] |= eAlpha;
     }
 };
 static SLoadTokens s_ForceTokenLoad;
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+
+static bool s_IsAlphaNumeric(unsigned char c)
+{
+    return (sc_Tokens[c] & (eAlpha|eNumeric));
+}
+
+static bool s_IsAlpha(unsigned char c)
+{
+    return (sc_Tokens[c] & (eAlpha));
+}
+
+static bool s_IsNumeric(unsigned char c)
+{
+    return (sc_Tokens[c] & (eNumeric));
+}
+
+static bool s_IsNumeric(const string& s)
+{
+    bool is_alpha = false;
+    ITERATE (string, i, s) {
+        is_alpha |= !s_IsNumeric(*i);
+        if (is_alpha) {
+            break;
+        }
+    }
+    return !is_alpha;
+}
+
+static bool s_IsPrintable(unsigned char c)
+{
+    return (sc_Tokens[c] & (ePrintable));
+}
+
+static char s_ToLower(unsigned char c)
+{
+    return sc_Tokens[c] & 0xff;
+}
+
+static string::size_type s_NextTokenStart(const string& s,
+                                          string::size_type i)
+{
+    for ( ;  i < s.size();  ++i) {
+        if (s_IsAlphaNumeric(s[i])) {
+            break;
+        }
+    }
+    return (i == s.size() ? string::npos : i);
+}
+
+static string::size_type s_NextTokenStop(const string& s,
+                                         string::size_type i)
+{
+    for ( ;  i < s.size();  ++i) {
+        if ( !s_IsAlphaNumeric(s[i]) ) {
+            break;
+        }
+    }
+    return (i == s.size() ? string::npos : i);
+}
+
+static string::size_type s_NextClauseStop(const string& s,
+                                          string::size_type i)
+{
+    for ( ;  i < s.size();  ++i) {
+        if (sc_Tokens[(unsigned char)s[i]] & eClauseEnd) {
+            break;
+        }
+    }
+    return (i == s.size() ? string::npos : i);
+}
+
+//////////////////////////////////////////////////////////////////////////////
 
 
 /// split a set of word frequencies into phrase and non-phrase frequencies
@@ -86,8 +212,7 @@ void CTextUtil::AddWordFrequencies(TWordFreq& freq, const TWordFreq& wf,
                                     TFlags flags)
 {
     ITERATE (TWordFreq, iter, wf) {
-        if (flags & fNoNumeric  &&
-            iter->first.find_first_not_of("0123456789") == string::npos) {
+        if ((flags & fNoNumeric)  &&  s_IsNumeric(iter->first)) {
             continue;
         }
         freq.Add(iter->first, iter->second);
@@ -103,8 +228,7 @@ void CTextUtil::AddWordFrequencies(TWordFreq& freq, const TWordFreq& wf,
         if (iter->first.find_first_of(":") != string::npos) {
             continue;
         }
-        if (flags & fNoNumeric  &&
-            iter->first.find_first_not_of("0123456789") == string::npos) {
+        if ((flags & fNoNumeric)  &&  s_IsNumeric(iter->first)) {
             continue;
         }
         freq.Add(prefix + ": " + iter->first, iter->second);
@@ -151,6 +275,9 @@ string s_ValToString(const string& i)
 template <class T>
 void s_NumericToFreq(const T& val, CTextUtil::TWordFreq& freq)
 {
+    freq.Add(s_ValToString(val), 1);
+
+    /**
     const size_t kNumericStringLimit = 40;
     string str = s_ValToString(val);
     if (str.size() <= kNumericStringLimit) {
@@ -160,13 +287,13 @@ void s_NumericToFreq(const T& val, CTextUtil::TWordFreq& freq)
         string::const_iterator it2 = str.begin() + kNumericStringLimit;
         for ( ;  ;  ++it1, ++it2) {
             string s(it1, it2);
-            LOG_POST(Info << "input: " << val << "  chunk: " << s);
             freq.Add(s, 1);
             if (it2 == str.end()) {
                 break;
             }
         }
     }
+    **/
 }
 
 
@@ -207,8 +334,8 @@ void CTextUtil::GetWordFrequencies(float i, TWordFreq& freq)
 
 
 void CTextUtil::GetWordFrequencies(const string& text,
-                                    TWordFreq& freq,
-                                    TFlags flags)
+                                   TWordFreq& freq,
+                                   TFlags flags)
 {
     _TRACE("CTextUtil::GetWordFrequencies(): text = " << text);
     string::size_type clause_start = 0;
@@ -222,8 +349,7 @@ void CTextUtil::GetWordFrequencies(const string& text,
     /// we process one clause at a time
     while (clause_start != clause_end) {
         clause_end = text.size();
-        string::size_type pos =
-            text.find_first_of(sc_ClauseStop, clause_start);
+        string::size_type pos = s_NextClauseStop(text, clause_start);
         if (pos != string::npos) {
             clause_end = pos;
         }
@@ -233,14 +359,14 @@ void CTextUtil::GetWordFrequencies(const string& text,
         for ( ;  clause_start != clause_end;  clause_start = pos) {
             /// find the current starting point
             clause_start =
-                min(clause_end,
-                    text.find_first_not_of(sc_Tokens, clause_start));
+                min(clause_end, s_NextTokenStart(text, clause_start));
             if (clause_start == clause_end) {
                 break;
             }
 
             /// determine the next word end boundary
-            pos = min(clause_end, text.find_first_of(sc_Tokens, clause_start));
+            pos = min(clause_end,
+                      s_NextTokenStop(text, clause_start));
 
             ///
             /// we've found a word
@@ -266,7 +392,7 @@ void CTextUtil::GetWordFrequencies(const string& text,
                 if (*copy_from == '\'') {
                     continue;
                 }
-                *copy_to++ = sc_Lower[*copy_from];
+                *copy_to++ = s_ToLower(*copy_from);
             }
             if (copy_to != word.end()) {
                 word.erase(copy_to, word.end());
@@ -338,9 +464,15 @@ void CTextUtil::GetWordFrequencies(const string& text,
                         if ( !(flags & fPhrase_NoPrefix) ) {
                             phrase  = "phrase: ";
                         }
-                        phrase += *pit;
-                        phrase += " ";
-                        phrase += *end;
+                        if (*pit < *end) {
+                            phrase += *pit;
+                            phrase += " ";
+                            phrase += *end;
+                        } else {
+                            phrase += *end;
+                            phrase += " ";
+                            phrase += *pit;
+                        }
                         _TRACE("    phrase: |" << phrase << "|");
 
                         freq.Add(phrase, 1);
@@ -359,7 +491,7 @@ void CTextUtil::GetWordFrequencies(const string& text,
 
         _TRACE("clause end");
 
-        clause_start = text.find_first_not_of(sc_Tokens, clause_end);
+        clause_start = s_NextTokenStart(text, clause_start);
         if (clause_start == string::npos) {
             break;
         }
