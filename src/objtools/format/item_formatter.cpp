@@ -67,7 +67,7 @@ BEGIN_SCOPE(objects)
 // static members
 const string CFlatItemFormatter::s_GenbankMol[] = {
     "    ", "DNA ", "RNA ", "mRNA", "rRNA", "tRNA", "snRNA",
-    "scRNA", " AA ", "DNA ", "DNA ", "RNA ", "snoRNA", "RNA "
+    "scRNA", " AA ", "DNA ", "DNA ", "cRNA", "snoRNA", "RNA "
 };
 
 
