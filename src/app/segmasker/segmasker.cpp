@@ -221,7 +221,8 @@ int SegMaskerApplication::Run(void)
             CSeqVector sequence_data = 
                 bioseq_handle.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
             auto_ptr<CSegMasker::TMaskList> masks(masker(sequence_data));
-            writer->Print(bioseq_handle, *masks);
+            writer->Print(bioseq_handle, *masks, GetArgs()["parse_seqids"]);
+            // writer->Print(bioseq_handle, *masks);
 
         }
 

@@ -405,7 +405,8 @@ int CWinMaskApplication::Run (void)
                     CSeqMasker::MergeMaskInfo( mask_info.get(), dust_info.get() );
                 }
 
-                theWriter.Print( bsh, *mask_info, aConfig.MatchId() );
+                // theWriter.Print( bsh, *mask_info, aConfig.MatchId() );
+                theWriter.Print( bsh, *mask_info, GetArgs()["parse_seqids"] );
 
                 for( CSeqMasker::TMaskList::const_iterator i = mask_info->begin();
                      i != mask_info->end(); ++i )

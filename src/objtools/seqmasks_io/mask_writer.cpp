@@ -51,10 +51,11 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
-void CMaskWriter::PrintId( objects::CBioseq_Handle& bsh, bool match_id )
+void CMaskWriter::PrintId( objects::CBioseq_Handle& bsh, bool parsed_id )
 { 
     string id_str = ">";
 
+    /*
     if( match_id ) {
         const CBioseq_Handle::TId & ids = bsh.GetId();
 
@@ -66,6 +67,8 @@ void CMaskWriter::PrintId( objects::CBioseq_Handle& bsh, bool match_id )
 
         id_str += " ";
     } else {
+    */
+    if( parsed_id ) {
         id_str += CSeq_id::GetStringDescr(*bsh.GetCompleteBioseq(),
                                           CSeq_id::eFormat_FastA) + " ";
     }

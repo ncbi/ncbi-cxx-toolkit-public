@@ -72,6 +72,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
+/*
 static CRef< CSeq_entry > GetNextSequence( CNcbiIstream * input_stream )
 {
     if( input_stream == 0 )
@@ -109,6 +110,7 @@ static CRef< CSeq_entry > GetNextSequence( CNcbiIstream * input_stream )
 
     return CRef< CSeq_entry >( 0 );
 }
+*/
 
 //-------------------------------------------------------------------------
 const char * const CDustMaskApplication::USAGE_LINE 
@@ -343,7 +345,7 @@ int CDustMaskApplication::Run (void)
                 = bsh.GetSeqVector( CBioseq_Handle::eCoding_Iupac );
             std::auto_ptr< duster_type::TMaskList > res = duster( data );
             if (res.get()) {
-                writer->Print(bsh, *res);
+                writer->Print(bsh, *res, GetArgs()["parse_seqids"] );
             }
 
             NcbiCerr << "." << flush;

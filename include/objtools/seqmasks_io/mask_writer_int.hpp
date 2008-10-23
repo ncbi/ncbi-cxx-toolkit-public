@@ -73,12 +73,12 @@ public:
      **
      **\param bsh the bioseq handle
      **\param mask the resulting list of masked intervals
-     **\param match_id use CSeq_id objects instead of strings
+     **\param parsed_id bioseq id was parsed by CMaskReader.
      **
      **/
     virtual void Print( objects::CBioseq_Handle& bsh,
                         const CSeqMasker::TMaskList & mask,
-                        bool match_id = false );
+                        bool parsed_id = false );
 };
 
 END_NCBI_SCOPE

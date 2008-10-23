@@ -80,12 +80,12 @@ public:
      **
      **\param bsh the bioseq handle
      **\param mask the resulting list of masked intervals
-     **\param match_id match by actual id object, not id string
+     **\param parsed_id bioseq id was parsed by CMaskReader.
      **
      **/
     virtual void Print( objects::CBioseq_Handle & bsh,
                         const CSeqMasker::TMaskList & mask,
-                        bool match_id = false ) = 0;
+                        bool parsed_id = false ) = 0;
 
 protected:
 
@@ -97,10 +97,10 @@ protected:
      ** method.
      **
      **\param bsh the bioseq handle
-     **\param match_id match by actual id object, not id string
+     **\param parsed_id bioseq id was parsed by CMaskReader.
      **
      **/
-    virtual void PrintId( objects::CBioseq_Handle& bsh, bool match_id );
+    virtual void PrintId( objects::CBioseq_Handle& bsh, bool parsed_id );
 
     /**
      **\brief the standard C++ ostream object 
