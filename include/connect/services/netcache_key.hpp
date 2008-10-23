@@ -40,6 +40,8 @@
 #include <connect/connect_export.h>
 #include <corelib/ncbistl.hpp>
 
+#include <string>
+
 BEGIN_NCBI_SCOPE
 
 
