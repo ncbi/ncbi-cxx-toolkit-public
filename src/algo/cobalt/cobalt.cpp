@@ -238,7 +238,7 @@ CMultiAligner::SetQueries(const vector<objects::CBioseq>& queries)
 }
 
 
-CRef<objects::CBioTreeContainer> CMultiAligner::GetTree(void) const
+CRef<objects::CBioTreeContainer> CMultiAligner::GetTreeContainer(void) const
 {
     if (!m_Tree.GetTree()) {
         NCBI_THROW(CMultiAlignerException, eInvalidInput,

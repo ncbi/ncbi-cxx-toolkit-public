@@ -162,10 +162,15 @@ public:
     ///
     CRef<objects::CSeq_align> GetResults(vector<int>& indices) const;
 
-    /// Get tree used as guide in progressive alignment
+    /// Get ree used guide in progressive alignment
     /// @return Tree
     ///
-    CRef<objects::CBioTreeContainer> GetTree(void) const;
+    const TPhyTreeNode* GetTree(void) const {return m_Tree.GetTree();}
+
+    /// Get serializable tree used as guide in progressive alignment
+    /// @return Tree
+    ///
+    CRef<objects::CBioTreeContainer> GetTreeContainer(void) const;
 
     /// Get clusters of query sequences
     /// @return Query clusters
