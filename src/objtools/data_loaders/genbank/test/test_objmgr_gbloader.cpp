@@ -51,6 +51,8 @@
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/seqref.hpp>
+#include <objtools/data_loaders/genbank/readers.hpp>
+#include <dbapi/driver/drivers.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -80,7 +82,10 @@ int CTestApplication::Run()
     CORE_SetLOG(LOG_cxx2c());
 
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
-
+#ifdef HAVE_PUBSEQ_OS
+    DBAPI_RegisterDriver_CTLIB();
+    GenBankReaders_Register_Pubseq();
+#endif
     CRef<CGBDataLoader> pLoader(CGBDataLoader::RegisterInObjectManager(*pOm)
         .GetLoader());
 

@@ -42,6 +42,8 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/readers.hpp>
+#include <dbapi/driver/drivers.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>
@@ -62,29 +64,29 @@ using namespace objects;
 class CTestThread : public CThread
 {
 public:
-  CTestThread(unsigned id, CObjectManager& objmgr, CScope& scope,int start,int stop);
-  virtual ~CTestThread();
+    CTestThread(unsigned id, CObjectManager& objmgr, CScope& scope,int start,int stop);
+    virtual ~CTestThread();
   
 protected:
     virtual void* Main(void);
 
 private:
-  unsigned        m_mode;
-  CScope         *m_Scope;
-  CObjectManager *m_ObjMgr;
-  int             m_Start;
-  int             m_Stop;
+    unsigned        m_mode;
+    CScope         *m_Scope;
+    CObjectManager *m_ObjMgr;
+    int             m_Start;
+    int             m_Stop;
 };
 
 CTestThread::CTestThread(unsigned id, CObjectManager& objmgr, CScope& scope,int start,int stop)
     : m_mode(id), m_Scope(&scope), m_ObjMgr(&objmgr), m_Start(start), m_Stop(stop)
 {
-  LOG_POST("Thread " << start << " - " << stop << " - started");
+    LOG_POST("Thread " << start << " - " << stop << " - started");
 }
 
 CTestThread::~CTestThread()
 {
-  LOG_POST("Thread " << m_Start << " - " << m_Stop << " - completed");
+    LOG_POST("Thread " << m_Start << " - " << m_Stop << " - completed");
 }
 
 void* CTestThread::Main(void)
@@ -150,37 +152,37 @@ const unsigned c_GI_count = c_TestTo - c_TestFrom;
 
 int CTestApplication::Test(const unsigned test_mode,const unsigned thread_count)
 {
-  int step= c_GI_count/thread_count;
-  CRef<CObjectManager> pOm = CObjectManager::GetInstance();
-  CScope         scope(*pOm);
-  typedef CTestThread* CTestThreadPtr;
+    int step= c_GI_count/thread_count;
+    CRef<CObjectManager> pOm = CObjectManager::GetInstance();
+    CScope         scope(*pOm);
+    typedef CTestThread* CTestThreadPtr;
   
-  CTestThreadPtr  *thr = new CTestThreadPtr[thread_count];
+    CTestThreadPtr  *thr = new CTestThreadPtr[thread_count];
 
-  CGBDataLoader::RegisterInObjectManager(*pOm);
-  scope.AddDefaults();
+    CGBDataLoader::RegisterInObjectManager(*pOm);
+    scope.AddDefaults();
     
-  for (unsigned i=0; i<thread_count; ++i)
-    {
-      thr[i] = new CTestThread(test_mode, *pOm, scope,c_TestFrom+i*step,c_TestFrom+(i+1)*step);
-      thr[i]->Run(CThread::fRunAllowST);
+    for (unsigned i=0; i<thread_count; ++i)
+        {
+            thr[i] = new CTestThread(test_mode, *pOm, scope,c_TestFrom+i*step,c_TestFrom+(i+1)*step);
+            thr[i]->Run(CThread::fRunAllowST);
+        }
+    
+    for (unsigned i=0; i<thread_count; i++) {
+        LOG_POST("Thread " << i << " @join");
+        thr[i]->Join();
     }
     
-  for (unsigned i=0; i<thread_count; i++) {
-    LOG_POST("Thread " << i << " @join");
-    thr[i]->Join();
-  }
-    
 #if 0 
-  // Destroy all threads : has already been destroyed by join
-  for (unsigned i=0; i<thread_count; i++) {
-    LOG_POST("Thread " << i << " @delete");
-    delete thr[i];
-  }
+    // Destroy all threads : has already been destroyed by join
+    for (unsigned i=0; i<thread_count; i++) {
+        LOG_POST("Thread " << i << " @delete");
+        delete thr[i];
+    }
 #endif
     
-  delete [] thr;
-  return 0;
+    delete [] thr;
+    return 0;
 }
 
 const char* const kGlobalOMTags[] = { "local ", "global" };
@@ -189,52 +191,56 @@ const char* const kGlobalScopeTags[]
 
 int CTestApplication::Run()
 {
-  unsigned timing[4/*threads*/][2/*om*/][3/*scope*/];
-  unsigned tc = sizeof(timing)/sizeof(*timing);
+    unsigned timing[4/*threads*/][2/*om*/][3/*scope*/];
+    unsigned tc = sizeof(timing)/sizeof(*timing);
 
-  memset(timing,0,sizeof(timing));
+    memset(timing,0,sizeof(timing));
   
-  CORE_SetLOCK(MT_LOCK_cxx2c());
-  CORE_SetLOG(LOG_cxx2c());
-
-  {
-#if defined(HAVE_PUBSEQ_OS)
-    time_t x = time(0);
-    LOG_POST("START: " << time(0) );
-    CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
-    LOG_POST("CTLIB loaded: " << time(0)-x  );
+    CORE_SetLOCK(MT_LOCK_cxx2c());
+    CORE_SetLOG(LOG_cxx2c());
+#ifdef HAVE_PUBSEQ_OS
+    DBAPI_RegisterDriver_CTLIB();
+    GenBankReaders_Register_Pubseq();
 #endif
-  }
+
+    {
+#if defined(HAVE_PUBSEQ_OS)
+        time_t x = time(0);
+        LOG_POST("START: " << time(0) );
+        CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
+        LOG_POST("CTLIB loaded: " << time(0)-x  );
+#endif
+    }
   
-  for(unsigned thr=tc,i=0 ; thr > 0 ; --thr)
-    for(unsigned global_om=0;global_om<=(thr>1U?1U:0U); ++global_om)
-      for(unsigned global_scope=0;global_scope<=(thr==1U?1U:(global_om==0U?1U:2U)); ++global_scope)
-        {
-          unsigned mode = (global_om<<2) + global_scope ;
-          LOG_POST("TEST: threads:" << thr <<
-                   ", om=" << kGlobalOMTags[global_om] <<
-                   ", scope=" << kGlobalScopeTags[global_scope]);
-          time_t start=time(0);
-          Test(mode,thr);
-          timing[thr-1][global_om][global_scope] = time(0)-start ;
-          LOG_POST("==================================================");
-          LOG_POST("Test(" << i++ << ") completed  ===============");
-        }
+    for(unsigned thr=tc,i=0 ; thr > 0 ; --thr)
+        for(unsigned global_om=0;global_om<=(thr>1U?1U:0U); ++global_om)
+            for(unsigned global_scope=0;global_scope<=(thr==1U?1U:(global_om==0U?1U:2U)); ++global_scope)
+                {
+                    unsigned mode = (global_om<<2) + global_scope ;
+                    LOG_POST("TEST: threads:" << thr <<
+                             ", om=" << kGlobalOMTags[global_om] <<
+                             ", scope=" << kGlobalScopeTags[global_scope]);
+                    time_t start=time(0);
+                    Test(mode,thr);
+                    timing[thr-1][global_om][global_scope] = time(0)-start ;
+                    LOG_POST("==================================================");
+                    LOG_POST("Test(" << i++ << ") completed  ===============");
+                }
   
-  for(unsigned global_om=0;global_om<=1; ++global_om)
-    for(unsigned global_scope=0;global_scope<=2; ++global_scope)
-      for(unsigned thr=0; thr < tc ; ++thr)
-        {
-          if(timing[thr][global_om][global_scope]==0) continue;
-          if(timing[thr][global_om][global_scope]>0)
-          LOG_POST("TEST: threads:" << (thr + 1) <<
-                   ", om=" << kGlobalOMTags[global_om] <<
-                   ", scope=" << kGlobalScopeTags[global_scope] <<
-                   " ==>> " << timing[thr][global_om][global_scope] << " sec");
-        }
+    for(unsigned global_om=0;global_om<=1; ++global_om)
+        for(unsigned global_scope=0;global_scope<=2; ++global_scope)
+            for(unsigned thr=0; thr < tc ; ++thr)
+                {
+                    if(timing[thr][global_om][global_scope]==0) continue;
+                    if(timing[thr][global_om][global_scope]>0)
+                        LOG_POST("TEST: threads:" << (thr + 1) <<
+                                 ", om=" << kGlobalOMTags[global_om] <<
+                                 ", scope=" << kGlobalScopeTags[global_scope] <<
+                                 " ==>> " << timing[thr][global_om][global_scope] << " sec");
+                }
   
-  LOG_POST("Tests completed");
-  return 0;
+    LOG_POST("Tests completed");
+    return 0;
 }
 
 END_NCBI_SCOPE
@@ -251,5 +257,5 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
-  return CTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }

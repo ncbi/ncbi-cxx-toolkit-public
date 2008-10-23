@@ -627,7 +627,7 @@ CRef<CPluginManager<CReader> > CGBDataLoader::x_GetReaderManager(void)
         GenBankReaders_Register_Id2();
         GenBankReaders_Register_Cache();
 # ifdef HAVE_PUBSEQ_OS
-        GenBankReaders_Register_Pubseq();
+        //GenBankReaders_Register_Pubseq();
 # endif
     }
 #endif

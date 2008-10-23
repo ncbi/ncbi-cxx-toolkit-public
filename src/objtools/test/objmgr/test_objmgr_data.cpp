@@ -48,6 +48,8 @@
 #include <objmgr/prefetch_manager.hpp>
 #include <objmgr/prefetch_actions.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/readers.hpp>
+#include <dbapi/driver/drivers.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 #include <serial/serial.hpp>
@@ -773,6 +775,10 @@ bool CTestOM::TestApp_Init(void)
     m_get_ids = args["get_ids"];
 
     m_ObjMgr = CObjectManager::GetInstance();
+#ifdef HAVE_PUBSEQ_OS
+    DBAPI_RegisterDriver_CTLIB();
+    GenBankReaders_Register_Pubseq();
+#endif
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 
     return true;

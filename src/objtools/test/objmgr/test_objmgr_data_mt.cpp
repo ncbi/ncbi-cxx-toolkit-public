@@ -48,7 +48,11 @@
 #include <objmgr/prefetch_manager.hpp>
 #include <objmgr/prefetch_actions.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/readers.hpp>
+#include <dbapi/driver/drivers.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
+#include <objtools/data_loaders/lds/lds_dataloader.hpp>
+#include <objtools/lds/lds_manager.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 #include <serial/serial.hpp>
@@ -121,10 +125,14 @@ protected:
     bool m_keep_handles;
     bool m_verbose;
     bool m_release_all_memory;
+    int m_max_errors;
     bool m_blastdb;
+    string m_lds_dir;
     
+    void InitOM();
     CRef<CScope> CreateScope(void);
-    
+
+    CRef<CObjectManager> m_om;
     CRef<CPrefetchManager> m_prefetch_manager;
     CRef<CScope> m_single_scope;
 
@@ -226,7 +234,7 @@ void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
 }
 
 
-CRef<CScope> CTestOM::CreateScope(void)
+void CTestOM::InitOM(void)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     if ( m_blastdb ) {
@@ -234,8 +242,24 @@ CRef<CScope> CTestOM::CreateScope(void)
             (*om, "nr", CBlastDbDataLoader::eProtein, true,
              CObjectManager::eDefault, 88);
     }
+    if ( !m_lds_dir.empty() ) {
+        CLDS_Manager manager(m_lds_dir);
+        CLDS_DataLoader::RegisterInObjectManager
+            (*om, *manager.ReleaseDB(),
+             CObjectManager::eDefault, 77);
+    }
+#ifdef HAVE_PUBSEQ_OS
+    DBAPI_RegisterDriver_CTLIB();
+    GenBankReaders_Register_Pubseq();
+#endif
     CGBDataLoader::RegisterInObjectManager(*om);
-    CRef<CScope> scope(new CScope(*om));
+    m_om = om;
+}
+
+
+CRef<CScope> CTestOM::CreateScope(void)
+{
+    CRef<CScope> scope(new CScope(*m_om));
     scope->AddDefaults();
     return scope;
 }
@@ -287,7 +311,6 @@ bool CTestOM::Thread_Run(int idx)
                                                   ids, sel));
         }
 
-        const int kMaxErrorCount = 3;
         static int error_count = 0;
         TFeats feats;
         for ( size_t i = 0; i < ids.size(); ++i ) {
@@ -481,7 +504,7 @@ bool CTestOM::Thread_Run(int idx)
                 if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
                     break;
                 }
-                if ( ++error_count > kMaxErrorCount ) {
+                if ( ++error_count > m_max_errors ) {
                     break;
                 }
             }
@@ -492,8 +515,9 @@ bool CTestOM::Thread_Run(int idx)
                 }
                 LOG_POST("T" << idx << ": id = " << sih.AsString() <<
                          ": EXCEPTION = " << e.what());
-                ok = false;
-                if ( ++error_count > kMaxErrorCount ) {
+                if ( m_lds_dir.empty() ) ok = false;
+                if ( ++error_count > m_max_errors ) {
+                    ok = false;
                     break;
                 }
             }
@@ -542,6 +566,12 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
                  "Use single CScope obeject for all threads");
     args.AddFlag("blastdb",
                  "Use BLAST data loader");
+    args.AddOptionalKey("lds", "lds",
+                        "Use LDS data loader from dir",
+                        CArgDescriptions::eString);
+    args.AddDefaultKey("max_errors", "max_errors",
+                       "Maxumum number of errors to pass the test",
+                       CArgDescriptions::eInteger, "3");
     return true;
 }
 
@@ -614,8 +644,13 @@ bool CTestOM::TestApp_Init(void)
     m_keep_handles = args["keep_handles"];
     m_verbose = args["verbose"];
     m_release_all_memory = args["release_all_memory"];
+    m_max_errors = args["max_errors"].AsInteger();
     m_blastdb = args["blastdb"];
+    if ( args["lds"] ) {
+        m_lds_dir = args["lds"].AsString();
+    }
 
+    InitOM();
     if ( args["single_scope"] ) {
         m_single_scope = CreateScope();
     }
