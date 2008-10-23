@@ -38,6 +38,7 @@
 #include <corelib/ncbimisc.hpp>
 
 #include <connect/services/netcache_client.hpp>
+#include <connect/services/netcache_key.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
 #include <connect/ncbi_core_cxx.hpp>
@@ -599,9 +600,9 @@ return 1;
         NcbiCout << key << NcbiEndl;
         assert(!key.empty());
 
-        unsigned id = CNetCache_Key::GetBlobId(key);
-        CNetCache_Key pk(key);
-        assert(pk.id == id);
+        unsigned id = CNetCacheKey::GetBlobId(key);
+        CNetCacheKey pk(key);
+        assert(pk.GetId() == id);
 
     }}
 

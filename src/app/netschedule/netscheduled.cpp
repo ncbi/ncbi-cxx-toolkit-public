@@ -1284,11 +1284,11 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_BatchEndMap[] = {
 };
 
 SNSProtoArgument CNetScheduleHandler::sm_BatchArgs[] = {
-    { "input", eNSPT_Str, eNSPA_Required }, // eNSRF_Input
-    { "affp",  eNSPT_Id,  eNSPA_Optional | fNSPA_Or | fNSPA_Match, "" }, // eNSRF_AffinityPrev
-    { "aff",   eNSPT_Str, eNSPA_Optional, "" }, // eNSRF_AffinityToken
-    { "msk",   eNSPT_Int, eNSPA_Optional, "0" }, // eNSRF_JobMask
-    { "tags",  eNSPT_Str, eNSPA_Optional, "" }, // eNSRF_Tags
+    { "input", eNSPT_Str, eNSPA_Required },
+    { "affp",  eNSPT_Id,  eNSPA_Optional | fNSPA_Or | fNSPA_Match, "" },
+    { "aff",   eNSPT_Str, eNSPA_Optional, "" },
+    { "msk",   eNSPT_Int, eNSPA_Optional, "0" },
+    { "tags",  eNSPT_Str, eNSPA_Optional, "" },
     { NULL }
 };
 
@@ -2408,152 +2408,152 @@ void CNetScheduleHandler::ProcessClearWorkerNode()
 CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     // SST job_key : id -- submitter fast status, changes timestamp
     { "SST",      &CNetScheduleHandler::ProcessFastStatusS, eNSCR_Submitter,
-        { { "job_key", eNSPT_Id, eNSPA_Required } /* eNSRF_JobKey */ } },
+        { { "job_key", eNSPT_Id, eNSPA_Required } } },
     // WST job_key : id -- worker node fast status, does not change timestamp
     { "WST",      &CNetScheduleHandler::ProcessFastStatusW, eNSCR_Worker,
-        { { "job_key", eNSPT_Id, eNSPA_Required } /* eNSRF_JobKey */ } },
+        { { "job_key", eNSPT_Id, eNSPA_Required } } },
     // SUBMIT input : str [ progress_msg : str ] [ port : uint [ timeout : uint ]]
     //        [ affinity_token : keystr(aff) ] [ job_mask : keyint(msk) ]
     //        [ tags : keystr(tags) ]
     { "SUBMIT",   &CNetScheduleHandler::ProcessSubmit, eNSCR_Submitter,
-        { { "input",        eNSPT_Str, eNSPA_Required }, // eNSRF_Input
-          { "progress_msg", eNSPT_Str, eNSPA_Optional }, // eNSRF_ProgressMsg
-          { "port",         eNSPT_Int, eNSPA_Optional }, // eNSRF_Port
-          { "timeout",      eNSPT_Int, eNSPA_Optional }, // eNSRF_Timeout
-          { "aff",          eNSPT_Str, eNSPA_Optional, "" }, // eNSRF_AffinityToken
-          { "msk",          eNSPT_Int, eNSPA_Optional, "0" }, // eNSRF_JobMask
-          { "tags",         eNSPT_Str, eNSPA_Optional, "" }, // eNSRF_Tags
-          { "ip",           eNSPT_Int, eNSPA_Optional, "0" }, // eNSRF_ClientIP
-          { "sid",          eNSPT_Str, eNSPA_Optional, "" } /* eNSRF_ClientSID */ } },
+        { { "input",        eNSPT_Str, eNSPA_Required },
+          { "progress_msg", eNSPT_Str, eNSPA_Optional },
+          { "port",         eNSPT_Int, eNSPA_Optional },
+          { "timeout",      eNSPT_Int, eNSPA_Optional },
+          { "aff",          eNSPT_Str, eNSPA_Optional, "" },
+          { "msk",          eNSPT_Int, eNSPA_Optional, "0" },
+          { "tags",         eNSPT_Str, eNSPA_Optional, "" },
+          { "ip",           eNSPT_Int, eNSPA_Optional, "0" },
+          { "sid",          eNSPT_Str, eNSPA_Optional, "" } } },
     // CANCEL job_key : id
     { "CANCEL",   &CNetScheduleHandler::ProcessCancel, eNSCR_Submitter,
-        { { "job_key", eNSPT_Id, eNSPA_Required } /* eNSRF_JobKey */ } },
+        { { "job_key", eNSPT_Id, eNSPA_Required } } },
     // STATUS job_key : id
     { "STATUS",   &CNetScheduleHandler::ProcessStatus, eNSCR_Queue,
-        { { "job_key", eNSPT_Id, eNSPA_Required } /* eNSRF_JobKey */ } },
+        { { "job_key", eNSPT_Id, eNSPA_Required } } },
     // GET [ port : int ] [affinity_list : keystr(aff) ]
     { "GET",      &CNetScheduleHandler::ProcessGetJob, eNSCR_Worker,
-        { { "port", eNSPT_Id,  eNSPA_Optional }, // eNSRF_Port
-          { "aff",  eNSPT_Str, eNSPA_Optional, "" } /* eNSRF_AffinityToken */ } },
+        { { "port", eNSPT_Id,  eNSPA_Optional },
+          { "aff",  eNSPT_Str, eNSPA_Optional, "" } } },
     // PUT job_key : id  job_return_code : int  output : str
     { "PUT",      &CNetScheduleHandler::ProcessPut, eNSCR_Worker,
-        { { "job_key",         eNSPT_Id,  eNSPA_Required }, // eNSRF_JobKey
-          { "job_return_code", eNSPT_Id,  eNSPA_Required }, // eNSRF_JobReturnCode
-          { "output",          eNSPT_Str, eNSPA_Required } /* eNSRF_Output */ } },
+        { { "job_key",         eNSPT_Id,  eNSPA_Required },
+          { "job_return_code", eNSPT_Id,  eNSPA_Required },
+          { "output",          eNSPT_Str, eNSPA_Required } } },
     // RETURN job_key : id
     { "RETURN",   &CNetScheduleHandler::ProcessReturn, eNSCR_Worker,
-        { { "job_key", eNSPT_Id, eNSPA_Required } /* eNSRF_JobKey */ } },
+        { { "job_key", eNSPT_Id, eNSPA_Required } } },
     { "SHUTDOWN", &CNetScheduleHandler::ProcessShutdown, eNSCR_Admin },
     { "VERSION",  &CNetScheduleHandler::ProcessVersion, eNSCR_Any },
     // LOG option : id -- "ON" or "OFF"
     { "LOG",      &CNetScheduleHandler::ProcessLog, eNSCR_Any, // ?? Admin
-        { { "option", eNSPT_Id, eNSPA_Required } /* eNSRF_Option */ } },
+        { { "option", eNSPT_Id, eNSPA_Required } } },
     // STAT [ option : id ] -- "ALL"
     { "STAT",     &CNetScheduleHandler::ProcessStatistics, eNSCR_Queue,
-        { { "option", eNSPT_Id, eNSPA_Optional } /* eNSRF_Option */ } },
+        { { "option", eNSPT_Id, eNSPA_Optional } } },
     { "QUIT",     &CNetScheduleHandler::ProcessQuitSession, eNSCR_Any },
     { "DROPQ",    &CNetScheduleHandler::ProcessDropQueue, eNSCR_QueueAdmin },
     // WGET port : uint  timeout : uint
     //      [affinity_list : keystr(aff) ]
     { "WGET",     &CNetScheduleHandler::ProcessWaitGet, eNSCR_Worker,
-        { { "port",    eNSPT_Int, eNSPA_Required }, // eNSRF_Port
-          { "timeout", eNSPT_Int, eNSPA_Required }, // eNSRF_Timeout
-          { "aff",     eNSPT_Str, eNSPA_Optional, "" }, /* eNSRF_AffinityToken */ } },
+        { { "port",    eNSPT_Int, eNSPA_Required },
+          { "timeout", eNSPT_Int, eNSPA_Required },
+          { "aff",     eNSPT_Str, eNSPA_Optional, "" } } },
     // JRTO job_key : id  timeout : uint     OBSOLETE, throws exception
     { "JRTO",     &CNetScheduleHandler::ProcessJobRunTimeout, eNSCR_Worker,
-        { { "job_key", eNSPT_Id,  eNSPA_Required }, // eNSRF_JobKey
-          { "timeout", eNSPT_Int, eNSPA_Required } /* eNSRF_Timeout */ } },
+        { { "job_key", eNSPT_Id,  eNSPA_Required },
+          { "timeout", eNSPT_Int, eNSPA_Required } } },
     // DROJ job_key : id
     { "DROJ",     &CNetScheduleHandler::ProcessDropJob, eNSCR_Submitter,
-        { { "job_key", eNSPT_Id, eNSPA_Required } /* eNSRF_JobKey */ } },
+        { { "job_key", eNSPT_Id, eNSPA_Required } } },
     // FPUT job_key : id  err_msg : str  output : str  job_return_code : int
     { "FPUT",     &CNetScheduleHandler::ProcessPutFailure, eNSCR_Worker,
-        { { "job_key",         eNSPT_Id,  eNSPA_Required }, // eNSRF_JobKey
-          { "err_msg",         eNSPT_Str, eNSPA_Required }, // eNSRF_ErrMsg
-          { "output",          eNSPT_Str, eNSPA_Required }, // eNSRF_Output
-          { "job_return_code", eNSPT_Int, eNSPA_Required } /* eNSRF_JobReturnCode */ } },
+        { { "job_key",         eNSPT_Id,  eNSPA_Required },
+          { "err_msg",         eNSPT_Str, eNSPA_Required },
+          { "output",          eNSPT_Str, eNSPA_Required },
+          { "job_return_code", eNSPT_Int, eNSPA_Required } } },
     // MPUT job_key : id  progress_msg : str
     { "MPUT",     &CNetScheduleHandler::ProcessPutMessage, eNSCR_Queue,
-        { { "job_key",      eNSPT_Id, eNSPA_Required }, // eNSRF_JobKey
-          { "progress_msg", eNSPT_Str, eNSPA_Required } /* eNSRF_ProgressMsg */ } },
+        { { "job_key",      eNSPT_Id, eNSPA_Required },
+          { "progress_msg", eNSPT_Str, eNSPA_Required } } },
     // MGET job_key : id
     { "MGET",     &CNetScheduleHandler::ProcessGetMessage, eNSCR_Queue,
-        { { "job_key", eNSPT_Id, eNSPA_Required } /* eNSRF_JobKey */ } },
+        { { "job_key", eNSPT_Id, eNSPA_Required } } },
     { "MONI",     &CNetScheduleHandler::ProcessMonitor, eNSCR_Queue },
     // DUMP [ job_key : id ]
     { "DUMP",     &CNetScheduleHandler::ProcessDump, eNSCR_Queue,
-        { { "job_key", eNSPT_Id, eNSPA_Optional } /* eNSRF_JobKey */ } },
+        { { "job_key", eNSPT_Id, eNSPA_Optional } } },
     { "RECO",     &CNetScheduleHandler::ProcessReloadConfig, eNSCR_Any }, // ?? Admin
     { "QLST",     &CNetScheduleHandler::ProcessQList, eNSCR_Any },
     { "BSUB",     &CNetScheduleHandler::ProcessSubmitBatch, eNSCR_Submitter,
-        { { "ip",  eNSPT_Int, eNSPA_Optional, "0" }, // eNSRF_ClientIP
-          { "sid", eNSPT_Str, eNSPA_Optional, "" } /* eNSRF_ClientSID */ } },
+        { { "ip",  eNSPT_Int, eNSPA_Optional, "0" },
+          { "sid", eNSPT_Str, eNSPA_Optional, "" } } },
     // JXCG [ job_key : id [ job_return_code : int [ output : str ] ] ]
     //      [affinity_list : keystr(aff) ]
     { "JXCG",     &CNetScheduleHandler::ProcessJobExchange, eNSCR_Worker,
-        { { "job_key",         eNSPT_Id,  eNSPA_Optchain }, // eNSRF_JobKey
-          { "job_return_code", eNSPT_Int, eNSPA_Optchain }, // eNSRF_JobReturnCode
-          { "output",          eNSPT_Str, eNSPA_Optional }, // eNSRF_Output
-          { "aff",             eNSPT_Str, eNSPA_Optional, "" } /* eNSRF_AffinityToken */ } },
+        { { "job_key",         eNSPT_Id,  eNSPA_Optchain },
+          { "job_return_code", eNSPT_Int, eNSPA_Optchain },
+          { "output",          eNSPT_Str, eNSPA_Optional },
+          { "aff",             eNSPT_Str, eNSPA_Optional, "" } } },
     // REGC port : uint
     { "REGC",     &CNetScheduleHandler::ProcessRegisterClient, eNSCR_Worker,
-        { { "port", eNSPT_Int, eNSPA_Required } /* eNSRF_Port */ } },
+        { { "port", eNSPT_Int, eNSPA_Required } } },
     // URGC port : uint
     { "URGC",     &CNetScheduleHandler::ProcessUnRegisterClient, eNSCR_Worker,
-        { { "port", eNSPT_Int, eNSPA_Required } /* eNSRF_Port */ } },
+        { { "port", eNSPT_Int, eNSPA_Required } } },
     // QPRT status : id
     { "QPRT",     &CNetScheduleHandler::ProcessPrintQueue, eNSCR_Queue,
-        { { "status", eNSPT_Id, eNSPA_Required } /* eNSRF_Status */ } },
+        { { "status", eNSPT_Id, eNSPA_Required } } },
     // FRES job_key : id
     { "FRES",     &CNetScheduleHandler::ProcessForceReschedule, eNSCR_Submitter,
-        { { "job_key", eNSPT_Id, eNSPA_Required } /* eNSRF_JobKey */ } },
+        { { "job_key", eNSPT_Id, eNSPA_Required } } },
     // JDEX job_key : id timeout : uint
     { "JDEX",     &CNetScheduleHandler::ProcessJobDelayExpiration, eNSCR_Worker,
-        { { "job_key", eNSPT_Id,  eNSPA_Required }, // eNSRF_JobKey
-          { "timeout", eNSPT_Int, eNSPA_Required } /* eNSRF_Timeout */ } },
+        { { "job_key", eNSPT_Id,  eNSPA_Required },
+          { "timeout", eNSPT_Int, eNSPA_Required } } },
     // STSN [ affinity_token : keystr(aff) ]
     { "STSN",     &CNetScheduleHandler::ProcessStatusSnapshot, eNSCR_Queue,
-        { { "aff", eNSPT_Str, eNSPA_Optional, "" } /* eNSRF_AffinityToken */ } },
+        { { "aff", eNSPT_Str, eNSPA_Optional, "" } } },
     // QCRE qname : id  qclass : id [ comment : str ]
     { "QCRE",     &CNetScheduleHandler::ProcessCreateQueue, eNSAC_DynClassAdmin,
-        { { "qname",   eNSPT_Id,  eNSPA_Required }, // eNSRF_QueueName
-          { "qclass",  eNSPT_Id,  eNSPA_Required }, // eNSRF_QueueClass
-          { "comment", eNSPT_Str, eNSPA_Optional } /* eNSRF_QueueComment */ } },
+        { { "qname",   eNSPT_Id,  eNSPA_Required },
+          { "qclass",  eNSPT_Id,  eNSPA_Required },
+          { "comment", eNSPT_Str, eNSPA_Optional } } },
     // QDEL qname : id
     { "QDEL",     &CNetScheduleHandler::ProcessDeleteQueue, eNSAC_DynQueueAdmin,
-        { { "qname", eNSPT_Id, eNSPA_Required } /* eNSRF_QueueName */ } },
+        { { "qname", eNSPT_Id, eNSPA_Required } } },
     { "QINF",     &CNetScheduleHandler::ProcessQueueInfo, eNSCR_Any,
-        { { "qname", eNSPT_Id, eNSPA_Required } /* eNSRF_QueueName */ } },
+        { { "qname", eNSPT_Id, eNSPA_Required } } },
     { "QERY",     &CNetScheduleHandler::ProcessQuery, eNSCR_Queue,
-        { { "where",  eNSPT_Str, eNSPA_Required }, // eNSRF_Where
-          { "action", eNSPT_Id,  eNSPA_Optional, "COUNT" }, // eNSRF_Action
-          { "fields", eNSPT_Str, eNSPA_Optional } /* eNSRF_Fields */ } },
+        { { "where",  eNSPT_Str, eNSPA_Required },
+          { "action", eNSPT_Id,  eNSPA_Optional, "COUNT" },
+          { "fields", eNSPT_Str, eNSPA_Optional } } },
     { "QSEL",     &CNetScheduleHandler::ProcessSelectQuery, eNSCR_Queue,
-        { { "select", eNSPT_Str, eNSPA_Required } /* eNSRF_Select */ } },
+        { { "select", eNSPT_Str, eNSPA_Required } } },
     { "GETP",     &CNetScheduleHandler::ProcessGetParam, eNSCR_Queue },
     { "GETC",     &CNetScheduleHandler::ProcessGetConfiguration, eNSCR_Queue },
     // READ limit : int [ timeout : int ] -> group : int jobs : str (encoded_vec)
     { "READ",     &CNetScheduleHandler::ProcessReading, eNSCR_Submitter,
-        { { "count",   eNSPT_Int, eNSPA_Required }, // eNSRF_Count
-          { "timeout", eNSPT_Int, eNSPA_Optional, "0" } /* eNSRF_Timeout */ } },
+        { { "count",   eNSPT_Int, eNSPA_Required },
+          { "timeout", eNSPT_Int, eNSPA_Optional, "0" } } },
     // CFRM group : int jobs : str
     { "CFRM",     &CNetScheduleHandler::ProcessConfirm, eNSCR_Submitter,
-        { { "count",  eNSPT_Int, eNSPA_Required }, // eNSRF_Count
-          { "output", eNSPT_Str, eNSPA_Required } /* eNSRF_Output */ } },
+        { { "count",  eNSPT_Int, eNSPA_Required },
+          { "output", eNSPT_Str, eNSPA_Required } } },
     // FRED group : int jobs : str [ message : str ]
     { "FRED",     &CNetScheduleHandler::ProcessReadFailed, eNSCR_Submitter,
-        { { "count",   eNSPT_Int, eNSPA_Required }, // eNSRF_Count
-          { "output",  eNSPT_Str, eNSPA_Required }, // eNSRF_Output
-          { "err_msg", eNSPT_Str, eNSPA_Optional } /* eNSRF_ErrMsg */ } },
+        { { "count",   eNSPT_Int, eNSPA_Required },
+          { "output",  eNSPT_Str, eNSPA_Required },
+          { "err_msg", eNSPT_Str, eNSPA_Optional } } },
     // AFLS
     { "AFLS",     &CNetScheduleHandler::ProcessGetAffinityList, eNSCR_Worker },
     // INIT port : uint id : string
     { "INIT",     &CNetScheduleHandler::ProcessInitWorkerNode, eNSCR_Worker,
-        { { "port", eNSPT_Int, eNSPA_Required }, // eNSRF_Port
-          { "guid", eNSPT_Str, eNSPA_Required } /* eNSRF_Guid */ } },
+        { { "port", eNSPT_Int, eNSPA_Required },
+          { "guid", eNSPT_Str, eNSPA_Required } } },
     // CLRN id : string
     { "CLRN",     &CNetScheduleHandler::ProcessClearWorkerNode, eNSCR_Any,
-        { { "guid", eNSPT_Str, eNSPA_Required } /* eNSRF_Guid */ } },
+        { { "guid", eNSPT_Str, eNSPA_Required } } },
     { NULL },
 };
 
