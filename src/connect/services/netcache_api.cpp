@@ -112,7 +112,7 @@ CNetServerConnection CNetCacheAPI::x_GetConnection(const string& bid)
         return GetBest(s_GetFallbackServer());
 
     CNetCacheKey key(bid);
-    return GetSpecific(key.host, key.port);
+    return GetSpecific(key.GetHost(), key.GetPort());
 }
 
 void CNetCacheAPI::x_SendAuthetication(CNetServerConnection& conn) const

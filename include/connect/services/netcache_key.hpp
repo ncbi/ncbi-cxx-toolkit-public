@@ -38,7 +38,6 @@
 ///
 
 #include <connect/connect_export.h>
-//#include <connect/ncbi_connutil.h>
 #include <corelib/ncbistl.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -56,21 +55,87 @@ BEGIN_NCBI_SCOPE
 struct NCBI_XCONNECT_EXPORT CNetCacheKey
 {
 public:
-    CNetCacheKey(unsigned _id, const string& _host, unsigned _port, unsigned ver = 1)
-        : id(_id), host(_host), port(_port), version(ver) {}
+    CNetCacheKey(unsigned int  _id,
+                 const string& _host,
+                 unsigned int  _port,
+                 unsigned int  ver = 1);
     /// Create the key out of string
     /// @sa ParseBlobKey()
     explicit CNetCacheKey(const string& key_str);
 
-
     operator string() const;
 
-    unsigned     id;        ///< BLOB id
-    string       host;      ///< server name
-    unsigned     port;      ///< TCP/IP port number
-    unsigned     version;   ///< Key version
+    /// Parse blob key string into a CNetCache_Key structure
+    bool ParseBlobKey(const string& key_str);
+
+    /// Generate blob key string
+    ///
+    /// Please note that "id" is an integer issued by the NetCache server.
+    /// Clients should not use this function with custom ids.
+    /// Otherwise it may disrupt the inter-server communication.
+    static
+    void GenerateBlobKey(string*        key,
+                         unsigned int   id,
+                         const string&  host,
+                         unsigned short port);
+
+    /// Parse blob key, extract id
+    static
+    unsigned int GetBlobId(const string& key_str);
+
+    static
+    bool IsValidKey(const string& key_str);
+
+    unsigned int  GetId     (void) const;
+    const string& GetHost   (void) const;
+    unsigned int  GetPort   (void) const;
+    unsigned int  GetVersion(void) const;
+
+private:
+    CNetCacheKey(void);
+
+    unsigned int m_Id;        ///< BLOB id
+    string       m_Host;      ///< server name
+    unsigned int m_Port;      ///< TCP/IP port number
+    unsigned int m_Version;   ///< Key version
 };
 
+
+//////////////////////////////////////////////////////////////////////////
+// Inline functions
+//////////////////////////////////////////////////////////////////////////
+
+inline
+CNetCacheKey::CNetCacheKey(unsigned int  _id,
+                           const string& _host,
+                           unsigned int  _port,
+                           unsigned int  ver)
+    : m_Id(_id), m_Host(_host), m_Port(_port), m_Version(ver)
+{}
+
+inline unsigned int
+CNetCacheKey::GetId(void) const
+{
+    return m_Id;
+}
+
+inline const string&
+CNetCacheKey::GetHost(void) const
+{
+    return m_Host;
+}
+
+inline unsigned int
+CNetCacheKey::GetPort(void) const
+{
+    return m_Port;
+}
+
+inline unsigned int
+CNetCacheKey::GetVersion(void) const
+{
+    return m_Version;
+}
 
 
 /* @} */

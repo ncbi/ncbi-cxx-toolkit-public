@@ -86,8 +86,6 @@ public:
     int GetIntParam(size_t param_num) const;
     unsigned int GetUIntParam(size_t param_num) const;
 
-    bool IsParamNCKey(size_t param_num) const;
-
     void ShiftParams(void);
 
 private:
@@ -179,22 +177,6 @@ inline unsigned int
 CNCRequestParser::GetUIntParam(size_t param_num) const
 {
     return static_cast<unsigned int>(GetIntParam(param_num));
-}
-
-inline bool
-CNCRequestParser::IsParamNCKey(size_t param_num) const
-{
-    bool is_key;
-    try
-    {
-        CNetCache_Key key(GetParam(param_num));
-        is_key = true;
-    }
-    catch (CException&)
-    {
-    	is_key = false;
-    }
-    return is_key;
 }
 
 inline void

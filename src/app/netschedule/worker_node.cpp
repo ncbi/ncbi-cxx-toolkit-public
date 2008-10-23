@@ -401,13 +401,13 @@ void CQueueWorkerNodeList::x_ClearNode(TWorkerNodeById::iterator& it,
     ITERATE(CWorkerNode::TWNJobInfoMap, jobinfo_it, node->m_Jobs) {
         jobs.push_back(jobinfo_it->first);
     }
-    m_WorkerNodeById.erase(it);
-    NON_CONST_ITERATE(THostPortIdx, hostposrt_it, m_HostPortIdx) {
-        if (hostposrt_it->second == node->m_Id) {
-            m_HostPortIdx.erase(hostposrt_it);
+    NON_CONST_ITERATE(THostPortIdx, hostport_it, m_HostPortIdx) {
+        if (hostport_it->second == node->m_Id) {
+            m_HostPortIdx.erase(hostport_it);
             return;
         }
     }
+    m_WorkerNodeById.erase(it);
 }
 
 

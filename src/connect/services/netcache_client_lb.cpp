@@ -35,6 +35,7 @@
 #include "../ncbi_servicep.h"
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netcache_client.hpp>
+#include <connect/services/netcache_key.hpp>
 #include <connect/services/error_codes.hpp>
 #include <connect/services/netservice_params.hpp>
 #include <memory>
@@ -262,11 +263,11 @@ string CNetCacheClient_LB::PutData(const string& key,
                                    unsigned int  time_to_live)
 {
     if (!key.empty()) {
-        CNetCache_Key blob_key(key);
+        CNetCacheKey blob_key(key);
         //CNetCache_ParseBlobKey(&blob_key, key);
 
-        if ((blob_key.hostname == m_Host) &&
-            (blob_key.port == m_Port)) {
+        if ((blob_key.GetHost() == m_Host) &&
+            (blob_key.GetPort() == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
             string k = TParent::PutData(key, buf, size, time_to_live);
@@ -292,11 +293,11 @@ string CNetCacheClient_LB::PutData(const string& key,
 IWriter* CNetCacheClient_LB::PutData(string* key, unsigned int time_to_live)
 {
     if (!key->empty()) {
-        CNetCache_Key blob_key(*key);
+        CNetCacheKey blob_key(*key);
 //        CNetCache_ParseBlobKey(&blob_key, *key);
 
-        if ((blob_key.hostname == m_Host) &&
-            (blob_key.port == m_Port)) {
+        if ((blob_key.GetHost() == m_Host) &&
+            (blob_key.GetPort() == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
             ++m_Requests;
@@ -349,13 +350,13 @@ IReader* CNetCacheClient_LB::GetData(const string& key,
                                      ELockMode     lock_mode)
 {
     if (!key.empty()) {
-        CNetCache_Key blob_key(key);
+        CNetCacheKey blob_key(key);
 
         size_t bsize = 0;
         IReader* rdr;
 
-        if ((blob_key.hostname == m_Host) &&
-            (blob_key.port == m_Port)) {
+        if ((blob_key.GetHost() == m_Host) &&
+            (blob_key.GetPort() == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
             rdr = TParent::GetData(key, &bsize, lock_mode);
@@ -396,10 +397,10 @@ CNetCacheClient_LB::GetData(const string& key, SBlobData& blob_to_read)
 bool CNetCacheClient_LB::IsLocked(const string& key)
 {
     if (!key.empty()) {
-        CNetCache_Key blob_key(key);
+        CNetCacheKey blob_key(key);
         ++m_Requests;
-        if ((blob_key.hostname == m_Host) &&
-            (blob_key.port == m_Port)) {
+        if ((blob_key.GetHost() == m_Host) &&
+            (blob_key.GetPort() == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
             return TParent::IsLocked(key);
@@ -418,10 +419,10 @@ bool CNetCacheClient_LB::IsLocked(const string& key)
 string CNetCacheClient_LB::GetOwner(const string& key)
 {
     if (!key.empty()) {
-        CNetCache_Key blob_key(key);
+        CNetCacheKey blob_key(key);
         ++m_Requests;
-        if ((blob_key.hostname == m_Host) &&
-            (blob_key.port == m_Port)) {
+        if ((blob_key.GetHost() == m_Host) &&
+            (blob_key.GetPort() == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
             return TParent::GetOwner(key);
@@ -440,9 +441,9 @@ string CNetCacheClient_LB::GetOwner(const string& key)
 void CNetCacheClient_LB::Remove(const string& key)
 {
     if (!key.empty()) {
-        CNetCache_Key blob_key(key);
-        if ((blob_key.hostname == m_Host) &&
-            (blob_key.port == m_Port)) {
+        CNetCacheKey blob_key(key);
+        if ((blob_key.GetHost() == m_Host) &&
+            (blob_key.GetPort() == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
             TParent::Remove(key);
@@ -464,10 +465,10 @@ CNetCacheClient_LB::GetData(const string&  key,
                     size_t*        blob_size)
 {
     if (!key.empty()) {
-        CNetCache_Key blob_key(key);
+        CNetCacheKey blob_key(key);
 
-        if ((blob_key.hostname == m_Host) &&
-            (blob_key.port == m_Port)) {
+        if ((blob_key.GetHost() == m_Host) &&
+            (blob_key.GetPort() == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
             size_t bsize = 0;

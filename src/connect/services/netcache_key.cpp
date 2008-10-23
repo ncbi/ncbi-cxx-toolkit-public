@@ -36,8 +36,6 @@
 #include <connect/services/netcache_key.hpp>
 #include <connect/services/netcache_api_expt.hpp>
 
-#include <memory>
-
 
 BEGIN_NCBI_SCOPE
 
@@ -47,80 +45,127 @@ const string kNetCache_KeyPrefix = "NCID";
 
 CNetCacheKey::CNetCacheKey(const string& key_str)
 {
+    if (!ParseBlobKey(key_str)) {
+        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
+    }
+}
+
+inline
+CNetCacheKey::CNetCacheKey(void)
+{
+    // Do not initialize anything - it's private
+}
+
+CNetCacheKey::operator string() const
+{
+    string key;
+    GenerateBlobKey(&key, m_Id, m_Host, m_Port);
+    return key;
+}
+
+bool
+CNetCacheKey::ParseBlobKey(const string& key_str)
+{
     // NCID_01_1_MYHOST_9000
 
     const char* ch = key_str.c_str();
-    string prefix;
+    m_Host = kEmptyStr;
 
     // prefix
-
+    string prefix;
     for (;*ch && *ch != '_'; ++ch) {
         prefix += *ch;
     }
-    if (*ch == 0) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
+    if (*ch != '_') {
+        return false;
     }
     ++ch;
 
     if (prefix != kNetCache_KeyPrefix) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError,
-                                       "Key syntax error. Invalid prefix.");
+        return false;
     }
 
     // version
-    version = atoi(ch);
-    while (*ch && *ch != '_') {
+    m_Version = atoi(ch);
+    while (*ch && *ch != '_' && isdigit(*ch)) {
         ++ch;
     }
-    if (*ch == 0) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
+    if (*ch != '_') {
+        return false;
     }
     ++ch;
 
     // id
-    id = atoi(ch);
-    while (*ch && *ch != '_') {
+    m_Id = atoi(ch);
+    while (*ch && *ch != '_' && isdigit(*ch)) {
         ++ch;
     }
-    if (*ch == 0) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
+    if (*ch != '_') {
+        return false;
     }
     ++ch;
 
-    // host
+    // hostname
     for (;*ch && *ch != '_'; ++ch) {
-        host += *ch;
+        m_Host += *ch;
     }
-    if (*ch == 0) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
+    if (*ch != '_') {
+        return false;
     }
     ++ch;
 
     // port
-    port = atoi(ch);
+    m_Port = atoi(ch);
+    while (*ch && isdigit(*ch)) {
+        ++ch;
+    }
+    if (*ch) {
+        return false;
+    }
+
+    return true;
 }
 
 
-CNetCacheKey::operator string() const
+void
+CNetCacheKey::GenerateBlobKey(string*        key,
+                              unsigned int   id,
+                              const string&  host,
+                              unsigned short port)
 {
     string tmp;
-    string key = "NCID_01";    // NetCacheId prefix plus version
+    *key = kNetCache_KeyPrefix;
+    *key += "_01";    // NetCacheId version
 
     NStr::IntToString(tmp, id);
-    key += "_";
-    key += tmp;
+    *key += "_";
+    *key += tmp;
 
-    key += "_";
-    key += host;
+    *key += "_";
+    *key += host;
 
     NStr::IntToString(tmp, port);
-    key += "_";
-    key += tmp;
+    *key += "_";
+    *key += tmp;
 
     NStr::IntToString(tmp, (long) time(0));
-    key += "_";
-    key += tmp;
-    return key;
+    *key += "_";
+    *key += tmp;
+}
+
+
+unsigned int
+CNetCacheKey::GetBlobId(const string& key_str)
+{
+    CNetCacheKey key(key_str);
+    return key.m_Id;
+}
+
+bool
+CNetCacheKey::IsValidKey(const string& key_str)
+{
+    CNetCacheKey key;
+    return key.ParseBlobKey(key_str);
 }
 
 

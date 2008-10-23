@@ -440,45 +440,6 @@ private:
 NCBI_DECLARE_INTERFACE_VERSION(CNetCacheClient,  "xnetcache", 1, 1, 0);
 
 
-/// Meaningful information encoded in the NetCache key
-///
-/// @sa CNetCache_ParseBlobKey
-///
-class NCBI_XCONNECT_EXPORT CNetCache_Key
-{
-public:
-    /// Create the key out of string
-    /// @sa ParseBlobKey()
-    CNetCache_Key(const string& key_str);
-
-    /// Parse blob key string into a CNetCache_Key structure
-    void ParseBlobKey(const string& key_str);
-
-    /// Generate blob key string
-    ///
-    /// Please note that "id" is an integer issued by the NetCache server.
-    /// Clients should not use this function with custom ids.
-    /// Otherwise it may disrupt the interserver communication.
-    static
-    void GenerateBlobKey(string*        key,
-                         unsigned int   id,
-                         const string&  host,
-                         unsigned short port);
-
-    /// Parse blob key, extract id
-    static
-    unsigned int GetBlobId(const string& key_str);
-
-public:
-    string       prefix;    ///< Key prefix
-    unsigned     version;   ///< Key version
-    unsigned     id;        ///< BLOB id
-    string       hostname;  ///< server name
-    unsigned     port;      ///< TCP/IP port number
-};
-
-
-
 /// IReader/IWriter implementation
 ///
 /// @internal

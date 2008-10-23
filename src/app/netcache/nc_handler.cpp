@@ -30,6 +30,8 @@
  */
 #include <ncbi_pch.hpp>
 
+#include <connect/services/netcache_key.hpp>
+
 #include "nc_handler.hpp"
 #include "netcache_version.hpp"
 
@@ -78,11 +80,11 @@ CNetCacheHandler::x_CheckBlobIdParam(const string& req_id)
     }
 
     try {
-        CNetCache_Key blob_id(req_id);
-        if (blob_id.version != 1     ||
-            blob_id.hostname.empty() ||
-            blob_id.id == 0          ||
-            blob_id.port == 0) 
+        CNetCacheKey blob_id(req_id);
+        if (blob_id.GetVersion() != 1  ||
+            blob_id.GetHost().empty()  ||
+            blob_id.GetId() == 0       ||
+            blob_id.GetPort() == 0) 
         {
             NCBI_THROW(CNCReqParserException, eWrongParams,
                        "BLOB id format error.");
@@ -90,7 +92,7 @@ CNetCacheHandler::x_CheckBlobIdParam(const string& req_id)
     }
     catch (CNetCacheException& ex) {
         NCBI_THROW(CNCReqParserException, eWrongParams,
-                   "BLOB id format error: " + ex.GetMsg());
+                   string("BLOB id format error: ") + ex.what());
     }
 }
 
@@ -348,7 +350,7 @@ CNetCacheHandler::ProcessGet(const CNCRequestParser& parser,
     ba_descr.buf = 0;
     ba_descr.buf_size = 0;
 
-    unsigned blob_id = CNetCache_Key::GetBlobId(req_id);
+    unsigned blob_id = CNetCacheKey::GetBlobId(req_id);
 
     CBDB_Cache* bdb_cache = m_Server->GetCache();
     for (int repeats = 0; repeats < 1000; ++repeats) {
@@ -426,11 +428,10 @@ CNetCacheHandler::ProcessPut2(const CNCRequestParser& parser,
     string rid;
     if (params_cnt > param_ind) {
         rid = parser.GetParam(param_ind);
-        try {
-            CNetCache_Key key(rid);
+        if (CNetCacheKey::IsValidKey(rid)) {
             ++param_ind;
         }
-        catch (CNetCacheException&) {
+        else {
             rid.clear();
         }
     }
@@ -446,11 +447,11 @@ CNetCacheHandler::ProcessPut2(const CNCRequestParser& parser,
         CTimeGuard time_guard(stat.db_elapsed, &stat);
         id = bdb_cache->GetNextBlobId(do_id_lock);
         time_guard.Stop();
-        CNetCache_Key::GenerateBlobKey(&rid, id,
+        CNetCacheKey::GenerateBlobKey(&rid, id,
             m_Server->GetHost(), m_Server->GetPort());
         do_id_lock = false;
     } else {
-        id = CNetCache_Key::GetBlobId(rid);
+        id = CNetCacheKey::GetBlobId(rid);
     }
     stat.blob_id = rid;
     _TRACE("Got id " << id);
@@ -564,7 +565,7 @@ CNetCacheHandler::ProcessIsLock(const CNCRequestParser& parser,
     const string& req_id = parser.GetParam(0);
     x_CheckBlobIdParam(req_id);
 
-    if (m_Server->GetCache()->IsLocked(CNetCache_Key::GetBlobId(req_id))) {
+    if (m_Server->GetCache()->IsLocked(CNetCacheKey::GetBlobId(req_id))) {
         WriteMsg(GetSocket(), "OK:", "1");
     } else {
         WriteMsg(GetSocket(), "OK:", "0");

@@ -446,9 +446,9 @@ int CTestNetCacheClient::Run(void)
         NcbiCout << key << NcbiEndl;
         assert(!key.empty());
 
-        unsigned id = CNetCacheKey(key).id;
+        unsigned id = CNetCacheKey(key).m_Id;
         CNetCacheKey pk(key);
-        assert(pk.id == id);
+        assert(pk.m_Id == id);
 
     }}
 
