@@ -23,7 +23,7 @@ cp -p $SCRIPTDIR/ncbi_blast _stage/private/etc/paths.d
 # This is needed because the binary ncbi-blast.pmproj has this string hard
 # coded
 cp -p $INSTALLDIR/LICENSE ./license.txt
-for f in large-Blue_ncbi_logo.tiff ncbi-blast.pmdoc welcome.txt; do
+for f in uninstall_ncbi_blast.zip large-Blue_ncbi_logo.tiff ncbi-blast.pmdoc welcome.txt; do
     echo copying $f to local directory
     cp -rp $SCRIPTDIR/$f .
 done
