@@ -111,7 +111,6 @@ int main(int argc, const char* argv[])
 {
     SConnNetInfo* net_info;
     int n_cycle = 100;
-    const char* env;
 
     /* logging */
     s_LogFile = fopen("socket_io_bouncer.log", "ab");
