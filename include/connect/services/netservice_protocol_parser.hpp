@@ -33,8 +33,8 @@
  *
  */
 
+#include <corelib/tempstr.hpp>
 #include <connect/connect_export.h>
-
 
 BEGIN_NCBI_SCOPE
 
