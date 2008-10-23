@@ -53,7 +53,8 @@ public:
 };
 
 /// Reallocable memory buffer (no memory copy overhead)
-/// Mimics vector<unsigned char>
+/// Mimics vector<>, without the overhead of explicit initialization of all
+/// items
 ///
 
 template <typename T = unsigned char,
@@ -67,29 +68,37 @@ public:
     explicit CSimpleBufferT(size_type size=0) 
     {
         if (size) {
-            m_Buffer = new value_type[size];
+            m_Buffer = x_Allocate(size);
         } else {
             m_Buffer = 0;
         }
         m_Size = m_Capacity = size;
     }
-    ~CSimpleBufferT() { delete [] m_Buffer; }
+    ~CSimpleBufferT()
+    {
+        x_Deallocate();
+    }
 
     CSimpleBufferT(const CSimpleBufferT& sb) 
     {
-        m_Buffer = new value_type[sb.capacity()];
-        m_Capacity = sb.capacity();
+        size_type new_size = sb.capacity();
+        m_Buffer = x_Allocate(new_size);
+        m_Capacity = new_size;
         m_Size = sb.size();
         memcpy(m_Buffer, sb.data(), m_Size*sizeof(value_type));
     }
+
     CSimpleBufferT& operator=(const CSimpleBufferT& sb) 
     {
         if (this != &sb) {
             if (sb.size() <= m_Capacity) {
+                if (sb.size() < m_Size) {
+                    x_Fill(m_Buffer + m_Size, 0xcd, m_Capacity - m_Size);
+                }
                 m_Size = sb.size();
             } else {
                 x_Deallocate();
-                m_Buffer = new value_type[sb.capacity()];
+                m_Buffer = x_Allocate(sb.capacity());
                 m_Capacity = sb.capacity();
                 m_Size = sb.size();
             }
@@ -104,7 +113,7 @@ public:
     void reserve(size_type new_size)
     {
         if (new_size > m_Capacity) {
-            value_type* new_buffer = new value_type[new_size];
+            value_type* new_buffer = x_Allocate(new_size);
             if (m_Size) {
                 memcpy(new_buffer, m_Buffer, m_Size*sizeof(value_type));
             }
@@ -116,11 +125,16 @@ public:
 
     void resize(size_type new_size)
     {
+        _ASSERT(m_Size <= m_Capacity);
         if (new_size <= m_Capacity) {
+            if (new_size < m_Size) {
+                x_Fill(m_Buffer + new_size, 0xcd, m_Capacity - new_size);
+            }
             m_Size = new_size;
         } else {
-            size_t new_capacity = ResizeStrategy::GetNewCapacity(m_Capacity,new_size);
-            value_type* new_buffer = new value_type[new_capacity];
+            size_t new_capacity =
+                ResizeStrategy::GetNewCapacity(m_Capacity,new_size);
+            value_type* new_buffer = x_Allocate(new_capacity);
             if (m_Size) {
                 memcpy(new_buffer, m_Buffer, m_Size*sizeof(value_type));
             }
@@ -135,14 +149,24 @@ public:
     void resize_mem(size_type new_size)
     {
         if (new_size <= m_Capacity) {
+            if (new_size < m_Size) {
+                x_Fill(m_Buffer + new_size, 0xcd, m_Capacity - new_size);
+            }
             m_Size = new_size;
         } else {
             x_Deallocate();
             size_t new_capacity = ResizeStrategy::GetNewCapacity(m_Capacity,new_size);
-            m_Buffer = new value_type[new_capacity];
+            m_Buffer = x_Allocate(new_capacity);
             m_Capacity = new_capacity;
             m_Size = new_size;
         }
+    }
+
+    void swap(CSimpleBufferT<T>& other)
+    {
+        swap(m_Buffer, other.m_Buffer);
+        swap(m_Size, other.m_Size);
+        swap(m_Capacity, other.m_Capacity);
     }
 
     /// Reserve memory. No data preservation guarantees.
@@ -150,14 +174,15 @@ public:
     {
         if (new_size > m_Capacity) {
             x_Deallocate();
-            m_Buffer = new value_type[new_size];
+            m_Buffer = x_Allocate(new_size);
             m_Capacity = new_size;
+            x_Fill(m_Buffer, 0xcd, m_Capacity);
         }
     }
 
     void clear()
     {
-        x_Deallocate();
+        resize(0);
     }
 
     const value_type& operator[](size_type i) const
@@ -185,12 +210,30 @@ public:
     }
 
 private:
+    void x_Fill(value_type* buffer, char value, size_t elem)
+    {
+#ifdef _DEBUG
+        memset(buffer, value, elem * sizeof(value_type));
+#endif
+    }
+
     void x_Deallocate()
     {
-        delete [] m_Buffer; 
+        if (m_Buffer) {
+            x_Fill(m_Buffer, 0xfd, m_Capacity);
+            delete [] m_Buffer; 
+        }
         m_Buffer = NULL;
         m_Size = m_Capacity = 0;
     }
+
+    value_type* x_Allocate(size_t elem)
+    {
+        value_type* buf = new value_type[elem];
+        x_Fill(buf, 0xcd, elem);
+        return buf;
+    }
+
 private:
     value_type* m_Buffer;
     size_type   m_Size;
