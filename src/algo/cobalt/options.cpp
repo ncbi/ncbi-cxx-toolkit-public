@@ -233,6 +233,8 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
     m_EndGapExtend = kDefaultGapExtend;
     m_GapOpen = kDefaultGapOpen;
     m_GapExtend = kDefaultGapExtend;
+
+    m_Verbose = false;
 }
 
 END_SCOPE(cobalt)
