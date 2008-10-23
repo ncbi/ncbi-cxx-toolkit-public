@@ -52,34 +52,37 @@
 USING_NCBI_SCOPE;
 
 
-const int    kTestResult =      99;   // Tests exit code
-const size_t kBufferSize = 10*1024;   // I/O buffer size
+// Test exit code
+const int    kTestResult = 99;
+
+// Use oddly-sized buffers that cross internal block boundaries
+const size_t kBufferSize = 1234;
 
 
 ////////////////////////////////
 // Auxiliary functions
 //
 
-// Read from pipe
+// Read from pipe (up to "size" bytes)
 static EIO_Status s_ReadPipe(CPipe& pipe, void* buf, size_t size,
-                             size_t* n_read) 
+                             size_t* n_read)
 {
     size_t     total = 0;
-    size_t     cnt   = 0;
     EIO_Status status;
     
     do {
-        status = pipe.Read((char*)buf + total, size - total, &cnt);
-        cerr << "Read from pipe: " << cnt << endl;
-        cerr.write((char*)buf + total, cnt);
+        size_t cnt;
+        status = pipe.Read((char*) buf + total, size - total, &cnt);
+        cerr << cnt << " byte(s) read from pipe:" << endl;
         if ( cnt ) {
+            cerr.write((char*) buf + total, cnt);
             cerr << endl;
         }
         total += cnt;
     } while (status == eIO_Success  &&  total < size);    
     
     *n_read = total;
-    cerr << "Read from pipe " << total << " bytes." << endl;
+    cerr << "Total read from pipe: " << total << " bytes." << endl;
     return status;
 }
 
@@ -89,75 +92,95 @@ static EIO_Status s_WritePipe(CPipe& pipe, const void* buf, size_t size,
                               size_t* n_written) 
 {
     size_t     total = 0;
-    size_t     cnt   = 0;
     EIO_Status status;
     
     do {
-        status = pipe.Write((char*)buf + total, size - total, &cnt);
-        cerr << "Written to pipe: " << cnt << endl;
-        cerr.write((char*)buf + total, cnt);
+        size_t cnt;
+        status = pipe.Write((char*) buf + total, size - total, &cnt);
+        cerr << cnt << " byte(s) written to pipe:" << endl;
         if ( cnt ) {
+            cerr.write((char*) buf + total, cnt);
             cerr << endl;
         }
         total += cnt;
     } while (status == eIO_Success  &&  total < size);
     
     *n_written = total;
-    cerr << "Written to pipe " << total << " bytes." << endl;
+    cerr << "Total written to pipe: " << total << " byte(s)." << endl;
     return status;
 }
 
 
 // Read from file stream
-static string s_ReadFile(FILE* fs) 
+// CAUTION:  read(2) can short read
+static string s_ReadLine(FILE* fs) 
 {
-    char   buf[kBufferSize];
-    size_t cnt = read(fileno(fs), buf, kBufferSize - 1);
-    buf[cnt] = 0;
-    string str = buf;
-    cerr << "Read from file stream " << cnt << " bytes:" << endl;
-    cerr.write(buf, cnt);
-    if ( cnt ) {
-        cerr << endl;
+    string str;
+    for (;;) {
+        char    c;
+        ssize_t cnt = read(fileno(fs), &c, 1);
+        cerr << (cnt > 0 ? cnt : 0) << " byte(s) read from file:" << endl;
+        if (cnt > 0) {
+            assert(cnt == 1);
+            cerr.write(&c, cnt);
+            cerr << endl;
+            if (c == '\n')
+                break;
+            str += c;
+        } else {
+            break;
+        }
     }
     return str;
 }
 
 
 // Write to file stream
-static void s_WriteFile(FILE* fs, string message) 
+// CAUTION:  write(2) can short write
+static void s_WriteLine(FILE* fs, string str)
 {
-    write(fileno(fs), message.c_str(), message.length());
-    cerr << "Written to file stream " << message.length() << " bytes:" << endl;
-    cerr << message << endl;
+    size_t      written = 0;
+    size_t      size = str.size();
+    const char* data = str.c_str();
+    do { 
+        ssize_t cnt = write(fileno(fs), data + written, size - written);
+        cerr << (cnt > 0 ? cnt : 0) << " byte(s) written to file:" << endl;
+        if (cnt > 0) {
+            cerr.write(data, cnt);
+            cerr << endl;
+            written += cnt;
+        } else {
+            break;
+        }
+    } while (written < size);
+    if (written == size) {
+        static const char eol[] = { '\n' };
+        write(fileno(fs), eol, sizeof(eol));
+    }
 }
 
 
-// Read from iostream
-static string s_ReadStream(istream& ios)
+// Soak up from istream until EOF, dump into cerr
+static void s_ReadStream(istream& ios)
 {
-    char   buf[kBufferSize];
     size_t total = 0;
-    size_t size  = kBufferSize - 1;
+
     for (;;) {
-        ios.read(buf + total, size);
+        char   buf[kBufferSize];
+        ios.read(buf, sizeof(buf));
         size_t cnt = ios.gcount();
-        cerr << "Read from iostream: " << cnt << endl;
-        cerr.write(buf + total, cnt);
+        cerr << "Read from istream: " << cnt << " byte(s):" << endl;
+        cerr.write(buf, cnt);
         if ( cnt ) {
             cerr << endl;
         }
         total += cnt;
-        size  -= cnt;
-        if (size == 0  ||  (cnt == 0  &&  ios.eof())) {
+        if (cnt == 0  &&  ios.eof()) {
             break;
         }
         ios.clear();
     }
-    buf[total] = 0;
-    string str = buf;
-    cerr << "Read from iostream " << total << " bytes." << endl;
-    return str;
+    cerr << "Total read from istream " << total << " byte(s)." << endl;
 }
 
 
@@ -186,10 +209,11 @@ int CTest::Run(void)
 {
     // Initialization of variables and structures
     const string app = GetArguments().GetProgramName();
-    string str;
+    string cmd, str;
     vector<string> args;
 
     char           buf[kBufferSize];
+    size_t         total     = 0;
     size_t         n_read    = 0;
     size_t         n_written = 0;
     int            exitcode  = 0;
@@ -206,35 +230,27 @@ int CTest::Run(void)
     assert(pipe.SetTimeout(eIO_Write, &io_timeout)    == eIO_Success);
     assert(pipe.SetTimeout(eIO_Close, &close_timeout) == eIO_Success);
 
+    // Pipe for reading (direct from pipe)
 #if defined(NCBI_OS_UNIX)
-    // Pipe for reading (direct from pipe)
+    cmd = "ls";
     args.push_back("-l");
-    assert(pipe.Open("ls", args, CPipe::fStdIn_Close) == eIO_Success);
-    assert(s_WritePipe(pipe, buf, kBufferSize, &n_written) == eIO_Unknown);
-    assert(n_written == 0);
-    status = s_ReadPipe(pipe, buf, kBufferSize, &n_read);
-    assert(status == eIO_Success  ||  status == eIO_Closed);
-    assert(n_read > 0);
-    assert(pipe.Close(&exitcode) == eIO_Success);
-    assert(exitcode == 0);
-
-    // Pipe for reading (iostream)
-    CConn_PipeStream ios("ls", args, CPipe::fStdIn_Close);
-    s_ReadStream(ios);
-    assert(ios.GetPipe().Close(&exitcode) == eIO_Success);
-    assert(exitcode == 0);
-
 #elif defined (NCBI_OS_MSWIN)
-    string cmd = GetEnvironment().Get("COMSPEC");
-    // Pipe for reading (direct from pipe)
+    cmd = GetEnvironment().Get("COMSPEC");
     args.push_back("/c");
     args.push_back("dir *.*");
+#endif
+
     assert(pipe.Open(cmd.c_str(), args, CPipe::fStdIn_Close) == eIO_Success);
+
     assert(s_WritePipe(pipe, buf, kBufferSize, &n_written) == eIO_Unknown);
     assert(n_written == 0);
-    status = s_ReadPipe(pipe, buf, kBufferSize, &n_read);
-    assert(status == eIO_Success  ||  status == eIO_Closed);
-    assert(n_read > 0);
+    total = 0;
+    do {
+        status = s_ReadPipe(pipe, buf, kBufferSize, &n_read);
+        total += n_read;
+    } while (status == eIO_Success);
+    assert(status == eIO_Closed);
+    assert(total > 0);
     assert(pipe.Close(&exitcode) == eIO_Success);
     assert(exitcode == 0);
 
@@ -243,14 +259,15 @@ int CTest::Run(void)
     s_ReadStream(ios);
     assert(ios.GetPipe().Close(&exitcode) == eIO_Success);
     assert(exitcode == 0);
-#endif
 
 
     // Pipe for writing (direct to pipe)
 
     args.clear();
     args.push_back("1");
+
     assert(pipe.Open(app.c_str(), args, CPipe::fStdOut_Close) == eIO_Success);
+
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Unknown);
     assert(n_read == 0);
     message = "Child, are you ready?";
@@ -265,14 +282,16 @@ int CTest::Run(void)
 
     args.clear();
     args.push_back("2");
+
     assert(pipe.Open(app.c_str(), args) == eIO_Success);
+
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Timeout);
     assert(n_read == 0);
-    message = "Child, are you ready again?";
+    message = "Child, are you ready again?\n";
     assert(s_WritePipe(pipe, message.c_str(), message.length(),
                        &n_written) == eIO_Success);
     assert(n_written == message.length());
-    message = "Ok. Test 2 running.";
+    message = "Ok. Test 2 running.\n";
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
     assert(n_read == message.length());
     assert(memcmp(buf, message.c_str(), n_read) == 0);
@@ -290,7 +309,9 @@ int CTest::Run(void)
 
     args.clear();
     args.push_back("3");
+
     CConn_PipeStream ps(app.c_str(), args, CPipe::fStdErr_Open);
+
     cout << endl;
     for (int i = 5; i<=10; i++) {
         int value; 
@@ -316,6 +337,7 @@ int CTest::Run(void)
     args.push_back("4");
     
     assert(pipe.Open(app.c_str(), args, CPipe::fKeepOnClose) == eIO_Success);
+
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
     assert(pipe.Close(&exitcode) == eIO_Timeout);
@@ -330,7 +352,8 @@ int CTest::Run(void)
     args.clear();
     args.push_back("4");
 
-    assert(pipe.Open(app.c_str(), args, CPipe::fKillOnClose | CPipe::fNewGroup) == eIO_Success);
+    assert(pipe.Open(app.c_str(), args,
+                     CPipe::fKillOnClose | CPipe::fNewGroup) == eIO_Success);
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
     assert(pipe.Close(&exitcode) == eIO_Success);
@@ -352,8 +375,9 @@ int CTest::Run(void)
         assert(!process.IsAlive());
     }}
 
+
     // Done
-    cout << "\nTEST execution completed successfully!\n";
+    cout << "\nTEST completed successfully." << endl;
 
     return 0;
 }
@@ -385,7 +409,7 @@ int main(int argc, const char* argv[])
     case 1:
     {
         cerr << endl << "--- CPipe unidirectional test ---" << endl;
-        command = s_ReadFile(stdin);
+        command = s_ReadLine(stdin);
         _TRACE("read back >>" << command << "<<");
         assert(command == "Child, are you ready?");
         cerr << "Ok. Test 1 running." << endl;
@@ -395,9 +419,9 @@ int main(int argc, const char* argv[])
     case 2:
     {
         cerr << endl << "--- CPipe bidirectional test (pipe) ---" << endl;
-        command = s_ReadFile(stdin);
+        command = s_ReadLine(stdin);
         assert(command == "Child, are you ready again?");
-        s_WriteFile(stdout, "Ok. Test 2 running.");
+        s_WriteLine(stdout, "Ok. Test 2 running.");
         exit(kTestResult);
     }
     // Spawned process for bidirectional test (iostream)
