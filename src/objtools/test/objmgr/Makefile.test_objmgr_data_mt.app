@@ -5,7 +5,7 @@
 
 APP = test_objmgr_data_mt
 SRC = test_objmgr_data_mt
-LIB = test_mt ncbi_xloader_blastdb seqdb blastdb ncbi_xloader_lds lds bdb xobjread xobjutil $(OBJMGR_LIBS) ncbi_xdbapi_ctlib$(STATIC) dbapi_driver$(STATIC)
+LIB = test_mt ncbi_xloader_blastdb seqdb blastdb ncbi_xloader_lds lds bdb xobjread xobjutil $(OBJMGR_LIBS) $(DBAPI_CTLIB:%=%$(STATIC)) dbapi_driver$(STATIC)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(SYBASE_LIBS) $(ORIG_LIBS)
 

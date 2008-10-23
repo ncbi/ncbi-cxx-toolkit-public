@@ -6,7 +6,7 @@ REQUIRES = bdb
 
 APP = test_objmgr_gbloader
 SRC = test_objmgr_gbloader
-LIB = $(BDB_CACHE_LIB) $(BDB_LIB) $(OBJMGR_LIBS) ncbi_xdbapi_ctlib$(STATIC) dbapi_driver$(STATIC)
+LIB = $(BDB_CACHE_LIB) $(BDB_LIB) $(OBJMGR_LIBS) $(DBAPI_CTLIB:%=%$(STATIC)) dbapi_driver$(STATIC)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(SYBASE_LIBS) $(ORIG_LIBS)
 
