@@ -54,6 +54,7 @@ CMultiAligner::CMultiAligner(void)
                       CMultiAlignerOptions::fMediumQueryClusters
                       | CMultiAlignerOptions::fNoRpsBlast))
 {
+    x_Init();
     x_InitParams();
     x_InitAligner();
 }
@@ -63,6 +64,7 @@ CMultiAligner::CMultiAligner(const string& rps_db)
     : m_Options(new CMultiAlignerOptions(
                             CMultiAlignerOptions::fMediumQueryClusters))
 {
+    x_Init();
     x_InitParams();
     x_InitAligner();
 }
@@ -71,6 +73,7 @@ CMultiAligner::CMultiAligner(const string& rps_db)
 CMultiAligner::CMultiAligner(const CConstRef<CMultiAlignerOptions>& options)
     : m_Options(options)
 {
+    x_Init();
     x_InitParams();
     x_InitAligner();
 }
@@ -299,6 +302,8 @@ CMultiAligner::ComputeTree()
     // of those can change independently, calculate the
     // Karlin parameters right now
 
+    m_ProgressMonitor.stage = eTreeComputation;
+
     Blast_KarlinBlk karlin_blk;
     if (Blast_KarlinBlkGappedLoadFromTables(&karlin_blk, -m_GapOpen,
                                 -m_GapExtend, m_MatrixName) != 0) {
@@ -340,6 +345,12 @@ CMultiAligner::ComputeTree()
         CTree::PrintTree(m_Tree.GetTree());
     }
     //--------------------------------
+
+    // check for interrupt
+    if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+        NCBI_THROW(CMultiAlignerException, eInterrupt,
+                   "Alignment interrupted");
+    }
 }
 
 void 
@@ -374,6 +385,7 @@ CMultiAligner::Run()
 bool
 CMultiAligner::FindQueryClusters()
 {
+    m_ProgressMonitor.stage = eQueryClustering;
 
     vector<TKmerCounts> kmer_counts;
     TKMethods::SetParams(m_KmerLength, m_KmerAlphabet);
@@ -667,6 +679,12 @@ void CMultiAligner::AlignInClusters(void)
             }
             //------------------------------------------------------------
         }
+
+        // check for interrupt
+        if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+            NCBI_THROW(CMultiAlignerException, eInterrupt,
+                       "Alignement Interrupted");
+        }
     }
     //--------------------------------------------------------------------
     if (m_Verbose) {
@@ -785,6 +803,12 @@ void CMultiAligner::MultiAlignClusters(void)
 
             // extend the length of the sequences by added ranges
             new_length += num;
+            
+            // check for interrupt
+            if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+                NCBI_THROW(CMultiAlignerException, eInterrupt,
+                           "Alignment interrupted");
+            }
         }
     }
 
@@ -848,6 +872,12 @@ void CMultiAligner::MultiAlignClusters(void)
 
         }
         col += it->number;
+
+        // check for interrupt
+        if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+            NCBI_THROW(CMultiAlignerException, eInterrupt,
+                       "Alignment interrupted");
+        }
     }
 
 
@@ -942,6 +972,12 @@ void CMultiAligner::MakeClusterResidueFrequencies(void)
             _ASSERT(offset == m_ClusterGapPositions[cluster_idx].size()
                     || m_ClusterGapPositions[cluster_idx][gap_idx] 
                     == (Uint4)prototype.GetLength());
+        }
+
+        // check for interrupt
+        if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+            NCBI_THROW(CMultiAlignerException, eInterrupt,
+                       "Alignment interrupted");
         }
 
     }

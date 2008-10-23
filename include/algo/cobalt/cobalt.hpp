@@ -69,6 +69,31 @@ public:
     typedef CSparseKmerCounts TKmerCounts;
     typedef TKmerMethods<TKmerCounts> TKMethods;
 
+    enum EAlignmentStage {
+        eBegin,
+        eQueryClustering,
+        eDomainHitsSearch,
+        eLocalHitsSearch,
+        ePatternHitsSearch,
+        eTreeComputation,
+        eProgressiveAlignment,
+        eIterativeAlignment
+    };
+
+    /// Structure for reporting alignment progress
+    typedef struct SProgress {
+        EAlignmentStage stage;
+        void* user_data;
+
+        SProgress(void) : stage(eBegin), user_data(NULL) {}
+    };
+
+
+    /// Prototype for function pointer to dertermine whether alignment should
+    /// proceed of be interrupted. If this function returns true, all
+    /// processing stops
+    typedef bool(*FInterruptFn)(SProgress* progress);
+
 public:
 
     //------------------ Constructors ----------------------------
@@ -177,6 +202,34 @@ public:
     ///
     const CClusterer::TClusters& GetQueryClusters(void) const
     {return m_Clusterer.GetClusters();}
+
+
+    // ---------------- Interrupt ---------------------------
+
+    /// Set a function callback to be invoked by multi aligner to allow
+    /// interrupting alignment in progress
+    /// @param fnptr Pointer to callback function [in]
+    /// @param user_data user data to be attached to progress structure [in]
+    /// @return Previously set callback function
+    ///
+    FInterruptFn SetInterruptCallback(FInterruptFn fnptr,
+                                      void* user_data = NULL);
+
+
+    // -------------- Errors/Warnings -----------------------
+
+    /// Get Error/Warning messages
+    ///
+    /// Errors are reported by exceptions, hence the messages will be mostly
+    /// warnings.
+    /// @return Messages
+    ///
+    const vector<string>& GetMessages(void) const {return m_Messages;}
+
+    /// Check whether there are any error/warning messages
+    /// @return True if there are messages, false otherwise
+    ///
+    bool IsMessage(void) const {return !m_Messages.empty();}
 
 
     ////////////////////////////////////////////////////////////
@@ -399,6 +452,9 @@ private:
 
     CConstRef<CMultiAlignerOptions> m_Options;
 
+    FInterruptFn m_Interrupt;
+    SProgress m_ProgressMonitor;
+
     vector< CRef<objects::CSeq_loc> > m_tQueries;
     vector<CSequence> m_QueryData;
     vector<CSequence> m_Results;
@@ -448,6 +504,8 @@ private:
     bool m_Iterate;
     bool m_FastMeTree;
 
+    vector<string> m_Messages;
+
 
     /// Initiate parameters using m_Options
     void x_InitParams(void);
@@ -468,6 +526,9 @@ private:
     /// the same list of matrices as blast [in]
     void x_SetScoreMatrix(const char *matrix_name);
 
+    /// Initiate class attributes that are not alignment parameters
+    void x_Init(void)
+    {m_Interrupt = NULL;}
 
     void x_LoadBlockBoundaries(string blockfile,
                       vector<SSegmentLoc>& blocklist);

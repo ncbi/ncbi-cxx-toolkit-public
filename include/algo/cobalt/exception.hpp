@@ -48,7 +48,8 @@ public:
     enum EErrCode {
         eInvalidScoreMatrix,
         eInvalidInput,
-	eInvalidOptions
+        eInvalidOptions,
+        eInterrupt
     };
 
     NCBI_EXCEPTION_DEFAULT(CMultiAlignerException, CException);

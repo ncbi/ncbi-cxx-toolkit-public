@@ -368,6 +368,12 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
         else {
             rps_hits.SetKeepHit(i, false);
         }
+
+        // check for interrupt
+        if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+            NCBI_THROW(CMultiAlignerException, eInterrupt,
+                       "Alignment interrupted");
+        }
     }
 
     // remove RPS hits that do not have block alignments,
@@ -456,6 +462,12 @@ CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
                 rps_hits.AddToHitList(new CHit(i, db_oid, 
                                                align_score, denseg));
             }
+
+        // check for interrupt
+        if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+            NCBI_THROW(CMultiAlignerException, eInterrupt,
+                       "Alignment interrupted");
+        }
     }
 
 
@@ -551,6 +563,12 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
                 }
             }
         }
+
+        // check for interrupt
+        if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+            NCBI_THROW(CMultiAlignerException, eInterrupt,
+                       "Alignment interrupted");
+        }
     }
 }
 
@@ -577,6 +595,12 @@ CMultiAligner::x_AssignDefaultResFreqs()
                                    std_freqs->prob[k];
             }
             matrix(j, query.GetLetter(j)) += m_LocalResFreqBoost;
+        }
+
+        // check for interrupt
+        if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+            NCBI_THROW(CMultiAlignerException, eInterrupt,
+                       "Alignment interrupted");
         }
     }
 
@@ -609,6 +633,8 @@ CMultiAligner::FindDomainHits()
         return;
     }
 
+    m_ProgressMonitor.stage = eDomainHitsSearch;
+
     // empty previously found hits
 
     m_DomainHits.PurgeAllHits();
@@ -617,6 +643,12 @@ CMultiAligner::FindDomainHits()
     // run RPS blast
 
     x_FindRPSHits(m_DomainHits);
+
+    // check for interrupt
+    if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+        NCBI_THROW(CMultiAlignerException, eInterrupt,
+                   "Alignment interrupted");
+    }
         
     vector<SSegmentLoc> blocklist;
     x_LoadBlockBoundaries(m_Blockfile, blocklist);

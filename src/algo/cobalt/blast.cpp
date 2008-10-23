@@ -206,6 +206,12 @@ CMultiAligner::x_AlignFillerBlocks(
         CBl2Seq blaster(curr_batch, queries, blastp_opts);
         TSeqAlignVector v = blaster.Run();
 
+        // check for interrupt
+        if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+            NCBI_THROW(CMultiAlignerException, eInterrupt,
+                       "Alignment interrupted");
+        }
+
         // Convert each resulting HSP into a CHit object
 
         // iterate over query sequence fragments for the current batch
@@ -297,6 +303,8 @@ CMultiAligner::x_AlignFillerBlocks(
 void
 CMultiAligner::FindLocalHits()
 {
+    m_ProgressMonitor.stage = eLocalHitsSearch;
+
     // Clear off previous state if it exists
 
     m_LocalHits.PurgeAllHits();

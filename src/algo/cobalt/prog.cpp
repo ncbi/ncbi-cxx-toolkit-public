@@ -306,6 +306,12 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
                 }
                 profile_hitlist.AddToHitList(new_hit);
             }
+
+            // check for interrupt
+            if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+                NCBI_THROW(CMultiAlignerException, eInterrupt,
+                           "Alignment interrupted");
+            }
         }
     }
 
@@ -326,6 +332,12 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
             CHit *subhit = *subitr;
             x_ExpandRange(subhit->m_SeqRange1, alignment[subhit->m_SeqIndex1]);
             x_ExpandRange(subhit->m_SeqRange2, alignment[subhit->m_SeqIndex2]);
+        }
+
+        // check for interrupt
+        if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+            NCBI_THROW(CMultiAlignerException, eInterrupt,
+                       "Alignment interrupted");
         }
     }
 
@@ -415,6 +427,12 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
 
         if (i == (int)graph.size())
             graph.push_back(SGraphNode(hit, j));
+
+        // check for interrupt
+        if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+            NCBI_THROW(CMultiAlignerException, eInterrupt,
+                       "Alignment interrupted");
+        }
     }
 
     if (graph.empty())
@@ -494,6 +512,11 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
 
             graph[i].best_score = graph[i].hit->m_Score * 
                                   list1.size() * list2.size();
+            // check for interrupt
+            if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+                NCBI_THROW(CMultiAlignerException, eInterrupt,
+                           "Alignment interrupted");
+            }
         }
     }
     else {
@@ -909,6 +932,12 @@ CMultiAligner::x_AlignProgressive(
 
     x_AlignProfileProfile(node_list1, node_list2,
                           query_data, pair_info, iteration);
+
+    // check for interrupt
+    if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+        NCBI_THROW(CMultiAlignerException, eInterrupt,
+                   "Alignment interrupted");
+    }
 }
 
 /// Create a list of constraints that reflect conserved columns
@@ -1140,6 +1169,8 @@ CMultiAligner::x_BuildAlignmentIterative(
 
             if (!m_Iterate)
                 break;
+
+            m_ProgressMonitor.stage = eIterativeAlignment;
         }
 
         // if iteration is allowed: recompute the conserved 
@@ -1219,6 +1250,8 @@ public:
 void 
 CMultiAligner::BuildAlignment()
 {
+    m_ProgressMonitor.stage = eProgressiveAlignment;
+
     // write down all the tree edges, along with their weight
 
     vector<CTree::STreeEdge> edges;

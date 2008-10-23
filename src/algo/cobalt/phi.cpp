@@ -63,6 +63,8 @@ typedef struct SPatternHit {
 void
 CMultiAligner::FindPatternHits()
 {
+    m_ProgressMonitor.stage = ePatternHitsSearch;
+
     size_t num_queries = m_QueryData.size();
 
     const vector<CMultiAlignerOptions::CPattern>& patterns
@@ -132,6 +134,12 @@ CMultiAligner::FindPatternHits()
         // clean up the current pattern
 
         phi_pattern = SPHIPatternSearchBlkFree(phi_pattern);
+
+        // check for interrupt
+        if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
+            NCBI_THROW(CMultiAlignerException, eInterrupt,
+                       "Alignment Interrupted");
+        }
     }
 
     sbp = BlastScoreBlkFree(sbp);
