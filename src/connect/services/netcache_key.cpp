@@ -87,7 +87,7 @@ CNetCacheKey::ParseBlobKey(const string& key_str)
 
     // version
     m_Version = atoi(ch);
-    while (*ch && *ch != '_' && isdigit(*ch)) {
+    while (*ch && isdigit(*ch)) {
         ++ch;
     }
     if (*ch != '_') {
@@ -97,7 +97,7 @@ CNetCacheKey::ParseBlobKey(const string& key_str)
 
     // id
     m_Id = atoi(ch);
-    while (*ch && *ch != '_' && isdigit(*ch)) {
+    while (*ch && isdigit(*ch)) {
         ++ch;
     }
     if (*ch != '_') {
@@ -119,7 +119,7 @@ CNetCacheKey::ParseBlobKey(const string& key_str)
     while (*ch && isdigit(*ch)) {
         ++ch;
     }
-    if (*ch) {
+    if (*ch && ch != '_') {
         return false;
     }
 
