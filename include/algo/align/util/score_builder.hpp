@@ -90,6 +90,8 @@ public:
 
     int GetIdentityCount  (CScope& scope, const CSeq_align& align);
     int GetMismatchCount  (CScope& scope, const CSeq_align& align);
+    void GetMismatchCount  (CScope& scope, const CSeq_align& align,
+                            int& identities, int& mismatches);
     int GetBlastScore     (CScope& scope, const CSeq_align& align);
     double GetBlastBitScore(CScope& scope, const CSeq_align& align);
     double GetBlastEValue (CScope& scope, const CSeq_align& align);

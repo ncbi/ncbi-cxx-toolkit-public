@@ -366,6 +366,13 @@ int CScoreBuilder::GetMismatchCount(CScope& scope, const CSeq_align& align)
 }
 
 
+void CScoreBuilder::GetMismatchCount(CScope& scope, const CSeq_align& align,
+                                     int& identities, int& mismatches)
+{
+    s_GetCountIdentityMismatch(scope, align, &identities, &mismatches);
+}
+
+
 int CScoreBuilder::GetGapCount(const CSeq_align& align)
 {
     return align.GetNumGapOpenings();
