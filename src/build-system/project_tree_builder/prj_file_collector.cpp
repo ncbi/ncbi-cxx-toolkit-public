@@ -126,7 +126,9 @@ void CProjectFileCollector::CollectSources(void)
         string src_path = CDirEntry::NormalizePath(
             CDirEntry::ConcatPath(m_ProjItem.m_SourcesBaseDir, *p));
         string ext(GetFileExtension(src_path));
-        if (ext.empty() && IsProducedByDatatool(m_ProjItem,src_path)) {
+        if (ext.empty() && 
+            (IsProducedByDatatool(m_ProjItem,src_path) ||
+             IsInsideDatatoolSourceDir(src_path))) {
             ext = ".cpp";
         }
         if (!ext.empty()) {
@@ -287,6 +289,24 @@ bool CProjectFileCollector::IsProducedByDatatool(
             return true;
     }
     return false;
+}
+
+bool CProjectFileCollector::IsInsideDatatoolSourceDir(
+    const string& file)
+{
+    string dir_name;
+    CDirEntry::SplitPath(file, &dir_name);
+
+    //This files must be inside datatool src dir
+    CDir dir(dir_name);
+    if ( dir.GetEntries("*.module").empty() ) 
+        return false;
+    if ( dir.GetEntries("*.asn").empty() &&
+         dir.GetEntries("*.dtd").empty() &&
+         dir.GetEntries("*.xsd").empty() ) 
+        return false;
+
+    return true;
 }
 
 #endif
