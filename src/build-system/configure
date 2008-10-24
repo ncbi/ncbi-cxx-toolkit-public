@@ -32047,6 +32047,8 @@ if test "$with_flat_makefile" = "yes"; then
        -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then
       build_flat="Alternatively, cd $builddir && make -f Makefile.flat"
    else
+      echo '[...]'
+      tail $builddir/Flat.configuration_log
       { { echo "$as_me:$LINENO: error: flat makefile generation failed." >&5
 echo "$as_me: error: flat makefile generation failed." >&2;}
    { (exit 1); exit 1; }; }
