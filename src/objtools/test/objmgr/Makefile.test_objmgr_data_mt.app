@@ -2,6 +2,7 @@
 # $Id$
 #################################
 
+REQUIRES = bdb dbapi
 
 APP = test_objmgr_data_mt
 SRC = test_objmgr_data_mt
