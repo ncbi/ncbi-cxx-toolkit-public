@@ -49,6 +49,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CSeq_align;
+
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_SEQALIGN_EXPORT CSpliced_seg : public CSpliced_seg_Base
 {
@@ -77,6 +79,9 @@ public:
 
     /// Get strand (the first one if segments have different strands).
     ENa_strand      GetSeqStrand(TDim row) const;
+
+    /// Convert this alignment to a discontinuous segment
+    CRef<CSeq_align> AsDiscSeg() const;
 
 private:
     // Prohibit copy constructor and assignment operator
