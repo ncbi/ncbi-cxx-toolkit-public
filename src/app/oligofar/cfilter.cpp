@@ -39,12 +39,12 @@ void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, 
         int seqMin = reverse ? seqTo : seqFrom;
         int seqMax = reverse ? seqFrom : seqTo;
         
-        int bottomPos = seqMax - m_maxDist;
-        int topPos = seqMax - m_minDist; // just to be safe... reads can't be longer then 256
+        int bottomPos = seqMax - m_maxDist + 1;
+        int topPos = seqMax - m_minDist + 1; // just to be safe... reads can't be longer then 256
         // Here we try to find a pair for this match
         
         // First clear queue
-        PurgeQueue( bottomPos );
+        PurgeQueue( bottomPos - 1 );
 
         TPendingHits toAdd;
         TPendingHits::iterator phit =  m_pendingHits.begin();
@@ -54,7 +54,7 @@ void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, 
 
         bool found = false;
 
-        for( ; phit != m_pendingHits.end() && phit->first < topPos ; ++phit ) {
+        for( ; phit != m_pendingHits.end() && phit->first <= topPos ; ++phit ) {
             if( phit->second->IsPurged() ) {
                 cerr << DISPLAY( CBitHacks::AsBits( phit->second->GetGeometryNumber() ) ) << "\n"
                      << DISPLAY( CBitHacks::AsBits( phit->second->GetGeometryFlag() ) ) << "\n"
