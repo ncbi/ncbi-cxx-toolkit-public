@@ -744,7 +744,7 @@ void CNcbiApplication::SetStdioFlags(TStdioSetupFlags stdio_flags)
 
 void CNcbiApplication::x_SetupStdio(void)
 {
-#if !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 411
+#if 0//!defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 411
     // CAUTION:  http://gcc.gnu.org/bugzilla/show_bug.cgi?id=26777
     //           fix applied Mar 29, 2006, scheduled for 4.1.1
     if ((m_StdioFlags & fDefault_SyncWithStdio) == 0) {
