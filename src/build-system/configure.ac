@@ -3702,10 +3702,10 @@ if test "$with_bdb" != "no" ; then
       : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
    fi
    if test -z "${BERKELEYDB_LIBPATH}"; then
-      for d in "${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}" \
-               "${compiler_pfx}${DEBUG_SFX}${bit64_sfx}" \
-               "${DEBUG_SFX}${bit64_sfx}" "lib${bit64_sfx}" lib; do
-         for sfx in "$bit64_sfx$mt_sfx" "$bit64_sfx" "$mt_sfx" ""; do
+      for d in "${compiler_vpfx}${DEBUG_SFX}" "${compiler_pfx}${DEBUG_SFX}" \
+               "${DEBUG_SFX}" lib; do
+         for sfx in "$mt_sfx$bit64_sfx" "$bit64_sfx$mt_sfx" "$bit64_sfx" \
+                    "$mt_sfx" ""; do
             BERKELEYDB_LIBPATH=${BERKELEYDB_PATH}/$d$sfx
             test -d "${BERKELEYDB_LIBPATH}"  &&  break
          done
