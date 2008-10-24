@@ -84,7 +84,7 @@ static void Client(STimeout timeout)
 }
 
 
-// The server just bounce all incoming data back to the client
+// The server just bounces all incoming data back to the client
 static void Server(STimeout timeout, int n_cycle)
 {
     EIO_Status status;
@@ -106,7 +106,7 @@ static void Server(STimeout timeout, int n_cycle)
     assert(pipe.SetTimeout(eIO_Write, &timeout) == eIO_Success);
 
     // Accept connections from clients and run test sessions
-    while ( n_cycle-- ) {
+    do {
         size_t  n_read, n_written;
         char    buf[kBufferSize];
 
@@ -116,15 +116,15 @@ static void Server(STimeout timeout, int n_cycle)
         status = pipe.Listen();
         switch (status) {
         case eIO_Success:
-            LOG_POST("Client is connected...");
+            LOG_POST("Client connected...");
 
             // Bounce all incoming data back to the client
             do {
                 status = pipe.Read(buf, kBufferSize, &n_read);
 
                 // Dump received data
-                LOG_POST("Read " + NStr::UIntToString(n_read) + " bytes" +
-                         (n_read ? ": " : IO_StatusStr(status)));
+                LOG_POST(NStr::UIntToString(n_read) + " byte(s) read: " +
+                         (n_read ? "" : IO_StatusStr(status)));
                 NcbiCout.write(buf, n_read);
                 assert(NcbiCout.good());
                 NcbiCout.flush();
@@ -134,22 +134,25 @@ static void Server(STimeout timeout, int n_cycle)
                 while (n_total < n_read) {
                     status = pipe.Write(buf + n_total, n_read - n_total,
                                         &n_written);
-                    if (status != eIO_Success) {
-                        LOG_POST("Failed to write " +
-                                 NStr::UIntToString(n_read) +
-                                 " bytes, status = " +
-                                 IO_StatusStr(status));
+                    if (!n_written) {
+                        assert(status != eIO_Success);
+                        LOG_POST("Failed to write "
+                                 + NStr::UIntToString(n_read)
+                                 + " byte(s): "
+                                 + IO_StatusStr(status));
                         break;
                     }
                     n_total += n_written;
-                    LOG_POST("Written " + NStr::UIntToString(n_written) +
-                             ", remains " +
-                             NStr::UIntToString(n_read - n_total) + " bytes");
+                    LOG_POST(NStr::UIntToString(n_written)
+                             + " byte(s) written, "
+                             + NStr::UIntToString(n_read - n_total)
+                             + " remaining (status: "
+                             + IO_StatusStr(status)
+                             + ')');
                 }
             } while (status == eIO_Success);
             assert(status == eIO_Timeout  ||  status == eIO_Closed);
 
-            // Disconnect client
             LOG_POST("Disconnect client...");
             assert(pipe.Disconnect() == eIO_Success);
             break;
@@ -161,7 +164,7 @@ static void Server(STimeout timeout, int n_cycle)
         default:
             _TROUBLE;
         }
-    }
+    } while (--n_cycle > 0);
     // Close named pipe
     status = pipe.Close();
     assert(status == eIO_Success  ||  status == eIO_Closed);

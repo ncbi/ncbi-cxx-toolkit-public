@@ -273,7 +273,7 @@ void CTest::Server(void)
         EIO_Status status = pipe.Listen();
         switch (status) {
         case eIO_Success:
-            LOG_POST("Client is connected...");
+            LOG_POST("Client connected...");
 
             // "Hello" test
             {{
