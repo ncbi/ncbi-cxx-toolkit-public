@@ -148,7 +148,7 @@ int CTest::Run(void)
     cmd = "ls";
     args.push_back("-l");
 #elif defined (NCBI_OS_MSWIN)
-    string cmd = GetEnvironment().Get("COMSPEC");
+    cmd = GetEnvironment().Get("COMSPEC");
     args.push_back("/c");
     args.push_back("dir *.*");
 #endif
