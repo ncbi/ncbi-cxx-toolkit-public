@@ -207,22 +207,21 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
-    // Initialization of variables and structures
     const string app = GetArguments().GetProgramName();
-    string cmd, str;
-    vector<string> args;
 
+    string         cmd, str;
+    vector<string> args;
     char           buf[kBufferSize];
-    size_t         total     = 0;
-    size_t         n_read    = 0;
-    size_t         n_written = 0;
-    int            exitcode  = 0;
-    string         message;
+    size_t         total;
+    size_t         n_read;
+    size_t         n_written;
+    int            exitcode;
     EIO_Status     status;
     TProcessHandle handle;
 
     // Create pipe object
     CPipe pipe;
+
     STimeout io_timeout    = {2,0};
     STimeout close_timeout = {1,0};
 
@@ -270,10 +269,10 @@ int CTest::Run(void)
 
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Unknown);
     assert(n_read == 0);
-    message = "Child, are you ready?";
-    assert(s_WritePipe(pipe, message.c_str(), message.length(),
+    str = "Child, are you ready?";
+    assert(s_WritePipe(pipe, str.c_str(), str.length(),
                        &n_written) == eIO_Success);
-    assert(n_written == message.length());
+    assert(n_written == str.length());
     assert(pipe.Close(&exitcode) == eIO_Success);
     assert(exitcode == kTestResult);
 
@@ -287,14 +286,14 @@ int CTest::Run(void)
 
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Timeout);
     assert(n_read == 0);
-    message = "Child, are you ready again?\n";
-    assert(s_WritePipe(pipe, message.c_str(), message.length(),
+    str = "Child, are you ready again?\n";
+    assert(s_WritePipe(pipe, str.c_str(), str.length(),
                        &n_written) == eIO_Success);
-    assert(n_written == message.length());
-    message = "Ok. Test 2 running.\n";
+    assert(n_written == str.length());
+    str = "Ok. Test 2 running.";
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
-    assert(n_read == message.length());
-    assert(memcmp(buf, message.c_str(), n_read) == 0);
+    assert(n_read >= str.length());  // do not count EOL in
+    assert(memcmp(buf, str.c_str(), str.length()) == 0);
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
     assert(n_read == 0);
     assert(pipe.Close(&exitcode) == eIO_Success);

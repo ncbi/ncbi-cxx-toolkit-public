@@ -64,26 +64,42 @@ const STimeout kTimeout     = {2, 0};  // I/O timeout
 // Auxiliary functions
 //
 
-// Reading from file stream
-static string s_ReadFile(FILE* fs) 
+// Read from file stream
+// CAUTION:  read(2) can short read
+static string s_ReadLine(FILE* fs) 
 {
-    char buf[kBufferSize];
-    size_t cnt = read(fileno(fs), buf, kBufferSize-1);
-    buf[cnt] = 0;
-    string str = buf;
-    cerr << "Read from file stream " << cnt << " bytes:" << endl;
-    cerr.write(buf, cnt);
-    cerr << endl;
+    string str;
+    for (;;) {
+        char    c;
+        ssize_t cnt = read(fileno(fs), &c, 1);
+        if (cnt <= 0)
+            break;
+        assert(cnt == 1);
+        if (c == '\n')
+            break;
+        str += c;
+    }
     return str;
 }
 
 
-// Writing to file stream
-static void s_WriteFile(FILE* fs, string message) 
+// Write to file stream
+// CAUTION:  write(2) can short write
+static void s_WriteLine(FILE* fs, string str)
 {
-    write(fileno(fs), message.c_str(), message.length());
-    cerr << "Written to file stream " << message.length() << " bytes:" << endl;
-    cerr << message << endl;
+    size_t      written = 0;
+    size_t      size = str.size();
+    const char* data = str.c_str();
+    do { 
+        ssize_t cnt = write(fileno(fs), data + written, size - written);
+        if (!cnt)
+            break;
+        written += size;
+    } while (written < size);
+    if (written == size) {
+        static const char eol[] = { '\n' };
+        write(fileno(fs), eol, sizeof(eol));
+    }
 }
 
 
@@ -116,94 +132,102 @@ int CTest::Run(void)
     CONN        conn;
     CONNECTOR   connector;
     char        buf[kBufferSize];
-    size_t      n_read    = 0;
-    size_t      n_written = 0;
-    string      message;
+    size_t      n_read;
+    size_t      n_written;
     EIO_Status  status;
 
     // Run the test
     LOG_POST("Starting the PIPE CONNECTOR test...\n");
 
-    // Initialization of variables and structures
     const string app = GetArguments().GetProgramName();
-    string str;
+    string cmd, str;
     vector<string> args;
 
     // Pipe connector for reading
 #if defined(NCBI_OS_UNIX)
+    cmd = "ls";
     args.push_back("-l");
-    connector = PIPE_CreateConnector("ls", args, CPipe::fStdIn_Close);
 #elif defined (NCBI_OS_MSWIN)
     string cmd = GetEnvironment().Get("COMSPEC");
     args.push_back("/c");
     args.push_back("dir *.*");
-    connector = PIPE_CreateConnector(cmd, args, CPipe::fStdIn_Close);
 #endif
+    connector = PIPE_CreateConnector(cmd, args, CPipe::fStdIn_Close);
     assert(connector);
+
     assert(CONN_Create(connector, &conn) == eIO_Success);
     CONN_SetTimeout(conn, eIO_Read,  &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
     status = CONN_Write(conn, buf, kBufferSize, &n_written, eIO_WritePersist);
     assert(status == eIO_Unknown);
     assert(n_written == 0);
-    size_t n_read_total = 0;
+
+    size_t total = 0;
     do {
         status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPersist);
-        n_read_total += n_read;
+        total += n_read;
         NcbiCout.write(buf, n_read);
     } while (n_read > 0);
     NcbiCout << endl;
     NcbiCout.flush();
-    assert(n_read_total > 0); 
+    assert(total > 0); 
     assert(status == eIO_Closed);
     assert(CONN_Close(conn) == eIO_Success);
+
 
     // Pipe connector for writing
     args.clear();
     args.push_back("one");
     connector = PIPE_CreateConnector(app, args, CPipe::fStdOut_Close);
     assert(connector);
+
     assert(CONN_Create(connector, &conn) == eIO_Success);
     CONN_SetTimeout(conn, eIO_Write, &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
     status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
     assert(status == eIO_Unknown);
     assert(n_read == 0);
-    message = "Child, are you ready?";
-    status = CONN_Write(conn, message.c_str(), message.length(),
+
+    str = "Child, are you ready?";
+    status = CONN_Write(conn, str.c_str(), str.length(),
                         &n_written, eIO_WritePersist);
     assert(status == eIO_Success);
-    assert(n_written == message.length());
+    assert(n_written == str.length());
     assert(CONN_Close(conn) == eIO_Success);
-   
+
+
     // Bidirectional pipe
     args.clear();
     args.push_back("one");
     args.push_back("two");
     connector = PIPE_CreateConnector(app, args);
     assert(connector);
+
     assert(CONN_Create(connector, &conn) == eIO_Success);
     CONN_SetTimeout(conn, eIO_ReadWrite, &kTimeout);
     CONN_SetTimeout(conn, eIO_Close,     &kTimeout);
     status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
     assert(status == eIO_Timeout);
     assert(n_read == 0);
-    message = "Child, are you ready again?";
-    status = CONN_Write(conn, message.c_str(), message.length(),
+
+    str = "Child, are you ready again?\n";
+    status = CONN_Write(conn, str.c_str(), str.length(),
                         &n_written, eIO_WritePersist);
     assert(status == eIO_Success);
-    assert(n_written == message.length());
-    message = "Ok. Test 2 running.";
-    status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
+    assert(n_written == str.length());
+
+    str = "Ok. Test 2 running.";
+    status = CONN_ReadLine(conn, buf, kBufferSize, &n_read);
     assert(status == eIO_Success);
-    assert(n_read == message.length());
-    assert(memcmp(buf, message.c_str(), n_read) == 0);
+    assert(n_read == str.length());
+    assert(memcmp(buf, str.c_str(), n_read) == 0);
+
     status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
     assert(status == eIO_Closed);
     assert(n_read == 0);
     assert(CONN_Close(conn) == eIO_Success);
 
-    LOG_POST("\nTEST execution completed successfully!\n");
+    LOG_POST("\nTEST completed successfully.\n");
     CORE_SetLOG(0);
 
     return 0;
@@ -224,7 +248,7 @@ int main(int argc, const char* argv[])
     // Spawned process for unidirectional test
     if (argc == 2) {
         cerr << endl << "--- CPipe unidirectional test ---" << endl;
-        string command = s_ReadFile(stdin);
+        string command = s_ReadLine(stdin);
         _TRACE("read back >>" << command << "<<");
         assert(command == "Child, are you ready?");
         NcbiCout << "Ok. Test 1 running." << endl;
@@ -234,9 +258,9 @@ int main(int argc, const char* argv[])
     // Spawned process for bidirectional test (direct from pipe)
     if (argc == 3) {
         cerr << endl << "--- CPipe bidirectional test (pipe) ---" << endl;
-        string command = s_ReadFile(stdin);
+        string command = s_ReadLine(stdin);
         assert(command == "Child, are you ready again?");
-        s_WriteFile(stdout, "Ok. Test 2 running.");
+        s_WriteLine(stdout, "Ok. Test 2 running.");
         exit(0);
     }
 
