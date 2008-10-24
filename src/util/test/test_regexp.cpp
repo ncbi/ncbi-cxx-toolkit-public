@@ -104,18 +104,23 @@ int CRegexApplication::Run(void)
     // Set new pattern and ignore case
 
     pattern.Set("t\\w*e", CRegexp::fCompile_ignore_case);
-    // Find all matches to pattern
+    // Find all matches to pattern.
     size_t start = 0;
     while (start != string::npos) {
         string match = pattern.GetMatch(text, start);
         if (pattern.NumFound() > 0) {
             LOG_POST(match);
-            start = text.find(match, start) + 1;            
+            start = text.find(match, start) + 1;
         } else {
             break;
         }
     }
     LOG_POST(string(33, '-'));
+    // Note: This loop works only with this regular expression
+    // and test string. The text.find() can give incorrect results for
+    // other input data and regular expression. Usually, it is better
+    // to use GetResults() method, if you need to get offset of the found
+    // string, as shown below.
 
     // Same as above but using GetResults() instead of return string
 

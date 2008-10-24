@@ -171,6 +171,10 @@ public:
     /// the entire search to be performed again. If you want to retrieve
     /// a different pattern/subpattern from an already performed search,
     /// it is more efficient to use GetSub() or GetResults().
+    /// If you need to get numeric offset of the found pattern or subpattern,
+    /// that use GetResults() method. Doo not use functions like strstr(), or
+    /// string's find() method and etc, because in general they give you
+    /// wrong results. This is very dependent from used regular expression.
     /// @param str
     ///   String to search.
     /// @param offset
