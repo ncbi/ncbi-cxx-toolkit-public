@@ -10,13 +10,15 @@ if [ $# -ne 3 ] ; then
     exit 1;
 fi
 
-BLAST_BINS="blastn blastp blastx tblastn tblastx psiblast rpsblast rpstblastn legacy_blast.pl"
+BLAST_BINS="blastn blastp blastx tblastn tblastx psiblast rpsblast rpstblastn legacy_blast.pl update_blastdb.pl"
 MASKING_BINS="windowmasker dustmasker segmasker"
 DB_BINS="blastdbcmd makeblastdb makembindex"
 ALL_BINS="$BLAST_BINS $MASKING_BINS $DB_BINS"
 
 rm -rf $PRODUCT.dmg $PRODUCT _stage $INSTALLDIR/installer
 mkdir -p _stage/usr/local/ncbi/blast/bin _stage/usr/local/ncbi/blast/doc _stage/private/etc/paths.d
+
+ftp -o _stage/usr/local/ncbi/blast/doc/user_manual.pdf "http://web.ncbi.nlm.nih.gov/bookshelf/picrender.fcgi?book=helpblast&&partid=1763&blobtype=pdf"
 
 cp -p $SCRIPTDIR/ncbi_blast _stage/private/etc/paths.d
 
