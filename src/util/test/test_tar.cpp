@@ -80,6 +80,11 @@ protected:
 CTarTest::CTarTest()
     : m_Flags(0)
 {
+#if !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 411
+    // sync_with_stdion(false) is 100% buggy in GCC < 4.1.1 and Solaris STL
+    // when stdin's positioning methods (failing or not) get called...
+    SetStdioFlags(fDefault_SyncWithStdio);
+#endif // NCBI_COMPILER_GCC && NCBI_COMPILER_VERSION >= 411
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostAllFlags(eDPF_DateTime    | eDPF_Severity |
                         eDPF_OmitInfoSev | eDPF_ErrorID);
