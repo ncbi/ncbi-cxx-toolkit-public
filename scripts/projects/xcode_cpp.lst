@@ -1,8 +1,11 @@
-corelib$
-util$
-util/regexp$
-util/xregexp$
-serial/datatool$
+corelib
+util
+serial
+build-system
+connect
+cgi
+html
+objects
 #objects/general$
 #objects/biblio$
 #objects/medlars$
@@ -18,5 +21,4 @@ serial/datatool$
 #objects/cn3d$
 #objects/mmdb$
 #objects/ncbimime$
-build-system/project_tree_builder$
 
