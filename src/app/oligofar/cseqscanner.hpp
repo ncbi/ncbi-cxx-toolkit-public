@@ -23,7 +23,7 @@ public:
     CSeqScanner() : 
         m_maxAmbiguities( 4 ), m_maxSimplicity( 2.0 ), 
         m_seqIds(0), m_snpDb(0), m_filter(0), m_queryHash(0), m_inputChunk(0), m_minBlockLength(1000),
-        m_ord(-1), m_run_old_scanning_code(false) {}
+        m_ord(-1), m_bisulfiteCuration(false) {}
     
     virtual void SequenceBegin( const TSeqIds& seqIds, int oid );
     virtual void SequenceBuffer( CSeqBuffer* iupacna );
@@ -31,6 +31,8 @@ public:
 
     void SetMaxSimplicity( double s ) { m_maxSimplicity = s; }
     void SetMaxAmbiguities( int a ) { m_maxAmbiguities = a; }
+
+    void SetSodiumBisulfateCuration( bool on ) { m_bisulfiteCuration = on; }
 
     void SetSnpDb( CSnpDb* snpdb ) { m_snpDb = snpdb; }
     void SetFilter( CFilter * filter ) { m_filter = filter; }
@@ -136,6 +138,9 @@ protected:
     };
 
 protected:
+    void PerformSodiumBisulfiteCuration( char * dest, const char * src, size_t length, CSeqCoding::EStrand strand );
+
+protected:
 //    unsigned m_windowLength;
     int m_maxAmbiguities;
     double m_maxSimplicity;
@@ -146,7 +151,7 @@ protected:
     const TInputChunk * m_inputChunk;
     int m_minBlockLength;
 	int m_ord;
-    bool m_run_old_scanning_code;
+    bool m_bisulfiteCuration;
 };
 
 END_OLIGOFAR_SCOPES

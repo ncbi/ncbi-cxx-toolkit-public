@@ -16,14 +16,14 @@ public:
     typedef multimap<int,CHit*> TPendingHits;
 
 	enum EGeometryFlags {
-		fFwd1_Rev2 = 0x01,
-		fFwd2_Rev1 = 0x02,
-		fRev1_Fwd2 = 0x04,
-		fRev2_Fwd1 = 0x08,
-		fFwd1_Fwd2 = 0x10,
-		fFwd2_Fwd1 = 0x20,
-		fRev1_Rev2 = 0x40,
-		fRev2_Rev1 = 0x80,
+		fFwd1_Rev2 = CHit::fGeometry_Fwd1_Rev2, 
+		fFwd2_Rev1 = CHit::fGeometry_Fwd2_Rev1, 
+		fRev1_Fwd2 = CHit::fGeometry_Rev1_Fwd2, 
+		fRev2_Fwd1 = CHit::fGeometry_Rev2_Fwd1, 
+		fFwd1_Fwd2 = CHit::fGeometry_Fwd1_Fwd2, 
+		fFwd2_Fwd1 = CHit::fGeometry_Fwd2_Fwd1, 
+		fRev1_Rev2 = CHit::fGeometry_Rev1_Rev2, 
+		fRev2_Rev1 = CHit::fGeometry_Rev2_Rev1, 
 		fInside = fFwd1_Rev2|fFwd2_Rev1,
 		fOutside = fRev1_Fwd2|fRev2_Fwd1,
 		fInOrder = fFwd1_Fwd2|fRev2_Rev1,
@@ -32,26 +32,7 @@ public:
 		fSOLiD  = fInOrder, 
 		fOpposite = fFwd1_Rev2|fFwd2_Rev1|fRev1_Fwd2|fRev2_Fwd1,
 		fConsecutive = fFwd1_Fwd2|fFwd2_Fwd1|fRev1_Rev2|fRev2_Rev1,
-		fAll  = 0xff,
-		// following flags are needed for implementation
-		fPutFwd1 = fFwd1_Rev2|fFwd1_Fwd2,
-		fPutFwd2 = fFwd2_Rev1|fFwd2_Fwd1,
-		fPutRev1 = fRev1_Fwd2|fRev1_Rev2,
-		fPutRev2 = fRev2_Fwd1|fRev2_Rev1,
-		fLookupInFwd = fFwd1_Rev2|fFwd2_Rev1|fFwd1_Fwd2|fFwd2_Fwd1,
-		fLookupInRev = fRev1_Fwd2|fRev2_Fwd1|fRev1_Rev2|fRev2_Rev1,
-		fLookupForFwd = fRev1_Fwd2|fRev2_Fwd1|fFwd1_Fwd2|fFwd2_Fwd1,
-		fLookupForRev = fFwd1_Rev2|fFwd2_Rev1|fRev1_Rev2|fRev2_Rev1,
-		fLookupFor1 = fFwd2_Rev1|fRev2_Fwd1|fFwd2_Fwd1|fRev2_Rev1,
-		fLookupFor2 = fFwd1_Rev2|fRev1_Fwd2|fFwd1_Fwd2|fRev1_Rev2,
-		fCheckFwd1 = fFwd1_Rev2|fRev2_Fwd1|fFwd1_Fwd2|fFwd2_Fwd1,
-		fCheckFwd2 = fFwd2_Rev1|fRev1_Fwd2|fFwd1_Fwd2|fFwd2_Fwd1,
-		fCheckRev1 = fFwd2_Rev1|fRev1_Fwd2|fRev1_Rev2|fRev2_Rev1,
-		fCheckRev2 = fFwd1_Rev2|fRev2_Fwd1|fRev1_Rev2|fRev2_Rev1,
-		fForward = fFwd1_Fwd2|fFwd2_Fwd1,
-		fReverse = fRev1_Rev2|fRev2_Rev1,
-		fOppositeFwd1 = fFwd1_Rev2|fRev2_Fwd1,
-		fOppositeRev1 = fFwd2_Rev1|fRev1_Fwd2,
+		fAll  = fOpposite|fConsecutive,
 		fNONE = 0
 	};
 
@@ -62,10 +43,7 @@ public:
                 m_topCnt( 10 ), m_topPct( 10 ), 
                 m_scoreCutoff( 80 ), m_outputFormatter( 0 ) {}
 
-    void Match( double score, int seqFrom, int seqTo, CQuery * query, int pairmate );
     void Match( const CHashAtom& , const char * seqBegin, const char * seqEnd, int pos );
-
-	void PurgeQueues();
 
     virtual void SequenceBegin( const TSeqIds&, int oid );
     virtual void SequenceBuffer( CSeqBuffer* );
@@ -82,33 +60,38 @@ public:
     void SetScorePctCutoff( double cutoff ) { m_scoreCutoff = cutoff; }
 	void SetGeometryFlags( unsigned f ) { m_geometryFlags = f; }
 
-	bool CheckGeometry( int from1, int to1, int from2, int to2 ) const;
-	bool InRange( int dist ) const { return dist >= m_minDist && dist <= m_maxDist; }
-	bool InRange( int from, int to ) const { return InRange( to - from + 1 ); }
-
     int GetMaxDist() const { return m_maxDist; }
     int GetMinDist() const { return m_minDist; }
     
-    CHit * SetHit( CHit * target, int pairmate, double score, int from, int to, bool allowCombinations = false );
-
     IAligner * GetAligner() const { return m_aligner; }
 
-    static unsigned GetLookupFlags( int pairmate, bool fwd ) {
-        return pairmate == 0 ? fwd ? fRev2_Fwd1|fFwd2_Fwd1 : fFwd2_Rev1|fRev2_Rev1 : fwd ? fRev1_Fwd2|fFwd1_Fwd2 : fFwd1_Rev2|fRev1_Rev2;
+    bool CheckGeometry( int from1, int to1, int from2, int to2 ) const {
+        return m_geometryFlags & CHit::ComputeGeometry( from1, to1, from2, to2 );
     }
-    static unsigned GetAppendFlags( int pairmate, bool fwd ) {
-        return pairmate == 0 ? fwd ? fFwd1_Rev2|fFwd1_Fwd2 : fRev1_Fwd2|fRev1_Rev2 : fwd ? fFwd2_Rev1|fFwd2_Fwd1 : fRev2_Fwd1|fRev2_Rev1;
-    }
+
+    bool InRange( int from, int to ) const { ASSERT( to > from ); return InRange( to - from + 1 ); }
+    bool InRange( int length ) const { ASSERT( length > 0 ); return length >= m_minDist && length <= m_maxDist ; }
+
+	void PurgeQueueToTheEnd();
+
+private:
+    explicit CFilter( const CFilter& );
+    CFilter& operator = ( const CFilter& );
 
 protected:
 	friend class CGuideFile;
 
-    explicit CFilter( const CFilter& );
-    CFilter& operator = ( const CFilter& );
+    enum EHitUpdateMode {
+        eExtend = 0x01,
+        eChain = 0x02
+    };
 
     void PurgeHit( CHit *, bool setTarget = false );
-	TPendingHits::iterator x_ExpireOldHits( TPendingHits& pendingHits, int pos ) ;
-	bool x_LookupInQueue( TPendingHits::iterator begin, TPendingHits& pendingHits, bool fwd, int pairmate, int maxPos, double score, int seqFrom, int seqTo, CQuery * );
+    void ProcessMatch( double score, int from, int to, bool reverse, CQuery * query, int pairmate );
+
+    bool SingleHitSetPair( int seqFrom, int seqTo, bool reverse, int pairmate, double score, CHit * hit, TPendingHits& toAdd );
+    bool PairedHitSetPair( int seqFrom, int seqTo, bool reverse, int pairmate, double score, CHit * hit, TPendingHits& toAdd, EHitUpdateMode );
+    void PurgeQueue( int bottomPos );
 
 protected:
     CSeqIds * m_seqIds;
@@ -122,7 +105,7 @@ protected:
     int m_topCnt;
     double m_topPct;
     double m_scoreCutoff;
-    TPendingHits m_pendingHits[2];
+    TPendingHits m_pendingHits;
 	COutputFormatter * m_outputFormatter;
 };
 

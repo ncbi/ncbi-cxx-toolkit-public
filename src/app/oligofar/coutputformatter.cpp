@@ -74,9 +74,9 @@ void COutputFormatter::FormatCore( const CHit * hit ) const
 	m_out 
         << hit->GetQuery()->GetId() << "\t"
         << GetSubjectId( hit->GetSeqOrd() ) << "\t" 
-        << hit->GetComponents() << "\t"
+        << (hit->GetComponentFlags() >> CHit::kComponents_bit) << "\t"
         << hit->GetTotalScore() << "\t";
-	if( hit->GetComponents() & 1 ) {
+	if( hit->GetComponentFlags() & CHit::fComponent_1 ) {
 		m_out 
 	        << hit->GetFrom(0) + 1 << "\t"
             << hit->GetTo(0) + 1 << "\t"
@@ -84,7 +84,7 @@ void COutputFormatter::FormatCore( const CHit * hit ) const
 	} else {
 		m_out << "-\t-\t-\t";
 	}
-	if( hit->GetComponents() & 2 ) {
+	if( hit->GetComponentFlags() & CHit::fComponent_2 ) {
 		m_out 
 	        << hit->GetFrom(1) + 1 << "\t"
             << hit->GetTo(1) + 1 << "\t"
@@ -193,7 +193,7 @@ void COutputFormatter::FormatDifferences( int rank, const CHit * hit, int matepa
     int length = target.length();
     const int aflags = CAlignerBase::fComputePicture | CAlignerBase::fComputeScore | CAlignerBase::fPictureSubjectStrand;
 	m_aligner->SetBestPossibleQueryScore( query->GetBestScore( matepair ) );
-    if( hit->IsRevCompl( matepair ) == false ) {
+    if( hit->IsReverseStrand( matepair ) == false ) {
         m_aligner->Align( query->GetCoding(),
                           query->GetData( matepair ),
                           query->GetLength( matepair ),
@@ -212,7 +212,7 @@ void COutputFormatter::FormatDifferences( int rank, const CHit * hit, int matepa
     
  	if( flags & fReportAlignment ) {
  		m_out 
- 			<< "# " << ( hit->IsRevCompl( matepair )?3:5 ) << "'=" << abase.GetQueryString() << "=" << ( hit->IsRevCompl( matepair )?5:3 ) << "' query[" << (matepair + 1) << "]\n"
+ 			<< "# " << ( hit->IsReverseStrand( matepair )?3:5 ) << "'=" << abase.GetQueryString() << "=" << ( hit->IsReverseStrand( matepair )?5:3 ) << "' query[" << (matepair + 1) << "]\n"
  			<< "#    " << abase.GetAlignmentString() << "    i:" << abase.GetIdentityCount() << ", m:" << abase.GetMismatchCount() << ", g:" << abase.GetIndelCount() << "\n"
  			<< "# 5'=" << abase.GetSubjectString() << "=3' subject\n"; 
  	}
@@ -240,7 +240,7 @@ void COutputFormatter::FormatDifference( int rank, const CHit * hit, int matepai
 		<< rank << "\tdiff\t" 
 		<< hit->GetQuery()->GetId() << "\t" 
 		<< GetSubjectId( hit->GetSeqOrd() ) << "\t" 
-		<< hit->GetComponents() << "\t" 
+		<< (hit->GetComponentFlags() >> CHit::kComponents_bit) << "\t" 
 		<< hit->GetTotalScore() << "\t";
 
 	if( matepair != 0 ) m_out << "-\t-\t-\t";

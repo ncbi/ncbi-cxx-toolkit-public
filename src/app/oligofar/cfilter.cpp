@@ -6,91 +6,6 @@
 
 USING_OLIGOFAR_SCOPES;
 
-CHit * CFilter::SetHit( CHit * target, int pairmate, double score, int from, int to, bool allowCombinations ) {
-    ASSERT( ! target->IsNull() );
-    ASSERT( target->m_seqOrd != ~0U );
-    ASSERT( target->HasPairTo( pairmate ) );
-    CHit * otherHit = 0;
-    if( target->HasComponent( pairmate ) ) {
-        if( allowCombinations ) {
-            otherHit = new CHit( target->m_query, target->m_seqOrd, pairmate, score, from, to );
-            ASSERT( otherHit == 0 || otherHit->IsNull() == false );
-            if( target->HasPairTo( pairmate ) ) {
-                ASSERT( otherHit );
-                SetHit( otherHit, !pairmate, target->GetScore( !pairmate ), target->GetFrom( !pairmate ), target->GetTo( !pairmate ) );
-            }
-            return otherHit;
-        } else { // allowCombinations
-            if( target->GetScore( pairmate ) >= score ) {
-                return new CHit( target->m_query, target->m_seqOrd, pairmate, score, from, to );
-            } else {
-                otherHit = new CHit( target->m_query, target->m_seqOrd, pairmate, 
-                                     target->GetScore( pairmate ), target->GetFrom( pairmate ), target->GetTo( pairmate ) );
-            }
-        }
-    }
-    target->m_components |= target->GetComponentMask( pairmate );
-    target->m_score[pairmate] = float( score );
-    target->m_from[pairmate] = from;
-    target->m_to[pairmate] = to;
-	if( !CheckGeometry( target->m_from[0], target->m_to[0], target->m_from[1], target->m_to[1] ) ) {
-		// to make sure logic works same way
-        // TODO: actually, logic DOES NOT work same way - to be fixed
-        bool fwd = to > from;
-		THROW( logic_error, "Checking geometry: " << DISPLAY( target->m_from[0] ) << DISPLAY( target->m_to[0] ) << DISPLAY( target->m_from[1] ) << DISPLAY( target->m_to[1] ) << "\n"
-                << DISPLAY( pairmate ) << DISPLAY( fwd ) << DISPLAY( target->GetQuery()->GetId() ) << "\n"
-                << DISPLAY( CBitHacks::AsBits( m_geometryFlags) ) << "\n"
-                << DISPLAY( CBitHacks::AsBits( GetAppendFlags( pairmate, fwd ) ) ) << "\n"
-                << DISPLAY( CBitHacks::AsBits( GetLookupFlags( pairmate, fwd ) ) ) << "\n"
-                << DISPLAY( CBitHacks::AsBits( unsigned( fLookupInFwd ) ) ) << "\n"
-                << DISPLAY( CBitHacks::AsBits( unsigned( fLookupInRev ) ) ) << "\n"
-                );
-	}
-    return otherHit;
-}
-
-bool CFilter::CheckGeometry( int from1, int to1, int from2, int to2 ) const
-{
-	if( from1 < to1 ) { // 1+
-		if( from2 < to2 ) { // 2+
-			if( to1 <= from2 ) { // 12
-				if( m_geometryFlags & fFwd1_Fwd2 ) return InRange( from1, to2 );
-			} else if( to2 <= from1 ) { // 21
-				if( m_geometryFlags & fFwd2_Fwd1 ) return InRange( from2, to1 );
-			} else {
-				if( m_geometryFlags & fForward ) return InRange( min( from1, from2 ), max( to1, to2 ) );
-			}
-		} else { // 2-
-			if( to1 <= to2 ) { // 12
-				if( m_geometryFlags & fFwd1_Rev2 ) return InRange( from1, from2 );
-			} else if( from2 <= from1 ) { // 21
-				if( m_geometryFlags & fRev2_Fwd1 ) return InRange( to2, to1 );
-			} else {
-				if( m_geometryFlags & fOppositeFwd1 ) return InRange( min( from1, to2 ), max( to1, from2 ) );
-			}
-		}
-	} else { // 1-
-		if( from2 < to2 ) { // 2+
-			if( from1 <= from2 ) { // 12
-				if( m_geometryFlags & fRev1_Fwd2 ) return InRange( to1, to2 );
-			} else if( to2 <= to1 ) {  // 21
-				if( m_geometryFlags & fFwd2_Rev1 ) return InRange( from2, from1 );
-			} else {
-				if( m_geometryFlags & fOppositeRev1 ) return InRange( min( to1, from2 ), max( from1, to2 ) );
-			}
-		} else { // 2-
-			if( from1 <= to2 ) { // 12
-				if( m_geometryFlags & fRev1_Rev2 ) return InRange( to1, from2 );
-			} else if( from2 <= to1 ) { // 21
-				if( m_geometryFlags & fRev2_Rev1 ) return InRange( to2, from1 );
-			} else {
-				if( m_geometryFlags & fReverse ) return InRange( min( to1, to2 ), max( from1, from2 ) );
-			}
-		}
-	}
-	return false;
-}
-
 void CFilter::Match( const CHashAtom& m, const char * a, const char * A, int pos ) // always start at pos
 {
 	ASSERT( m_aligner );
@@ -106,90 +21,156 @@ void CFilter::Match( const CHashAtom& m, const char * a, const char * A, int pos
     const CAlignerBase& abase = m_aligner->GetAlignerBase();
     double score = abase.GetScore();
     if( score >= m_scoreCutoff ) {
-        switch( m.GetStrand() ) {
-        case '+': Match( score, pos, pos + abase.GetSubjectAlignedLength() - 1, m.GetQuery(), m.GetPairmate() ); break;
-        case '-': Match( score, pos, pos - abase.GetSubjectAlignedLength() + 1, m.GetQuery(), m.GetPairmate() ); break;
+        if( m.IsReverseStrand() ) {
+            ProcessMatch( score, pos, pos - abase.GetSubjectAlignedLength() + 1, true,  m.GetQuery(), m.GetPairmate() );
+        } else {
+            ProcessMatch( score, pos, pos + abase.GetSubjectAlignedLength() - 1, false, m.GetQuery(), m.GetPairmate() );
         }
 	}
 }
 
-CFilter::TPendingHits::iterator CFilter::x_ExpireOldHits( TPendingHits& pendingHits, int p ) 
+void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, CQuery * query, int pairmate )
 {
-    TPendingHits::iterator h = pendingHits.begin();
-    if( pendingHits.size() ) {
-        while( h != pendingHits.end() && h->first <= p ) PurgeHit( h++->second );
-        pendingHits.erase( pendingHits.begin(), h );
-    }
-	return h;
-}
-
-bool CFilter::x_LookupInQueue( TPendingHits::iterator h, TPendingHits& pendingHits, bool fwd, int pairmate, int maxPos, double score, int seqFrom, int seqTo, CQuery * query )
-{
-   	TPendingHits toAdd;
-	bool found = false;
-   	for( ; h != pendingHits.end() && h->first <= maxPos ; ++h ) {
-		CHit * hh = h->second;
-
-	    if( query != hh->GetQuery() ) continue;
-    	if( !hh->HasPairTo( pairmate ) ) continue;
-		// TODO: one more check here on strand
-		if( ( ( fwd == true  ) && ( m_geometryFlags & fLookupForFwd ) ) ||
-			( ( fwd == false ) && ( m_geometryFlags & fLookupForRev ) ) ) {
-
-            if( CHit * hit = SetHit( h->second, pairmate, score, seqFrom, seqTo ) ) {
-                if( hit->GetComponents() == 3 ) // this may create combinatorial explosion
-                    toAdd.insert( make_pair( h->first, hit ) ); 
-                else {
-                    PurgeHit( hit ); // this is in case when combinatorial explosion is forbidden
-                }
-            }
-            found = true;
-		}
-	}
-    copy( toAdd.begin(), toAdd.end(), inserter( pendingHits, pendingHits.end() ) );
-	return found;
-}
-
-void CFilter::Match( double score, int seqFrom, int seqTo, CQuery * query, int pairmate )
-{
-    int p = seqFrom - m_maxDist;
-    
     ASSERT( query );
     ASSERT( m_ord >= 0 );
-
-    // expire old hits
-	TPendingHits::iterator h0 = x_ExpireOldHits( m_pendingHits[0], p );
-	TPendingHits::iterator h1 = x_ExpireOldHits( m_pendingHits[1], p );
-    
     if( query->IsPairedRead() == false ) {
         PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) );
-        return;
-    } 
+    } else { 
+        int seqMin = reverse ? seqTo : seqFrom;
+        int seqMax = reverse ? seqFrom : seqTo;
+        
+        int bottomPos = seqMax - m_maxDist;
+        int topPos = seqMax - m_minDist; // just to be safe... reads can't be longer then 256
+        // Here we try to find a pair for this match
+        
+        // First clear queue
+        PurgeQueue( bottomPos );
 
-	bool fwd = seqFrom < seqTo;
-	bool found = false;
-	///bool added = false;
+        TPendingHits toAdd;
+        TPendingHits::iterator phit =  m_pendingHits.begin();
 
-	if( unsigned flags = m_geometryFlags & GetLookupFlags( pairmate, fwd ) ) {
-        int maxPos = seqFrom - m_minDist + 1;
+        Uint2 matchFlags = (reverse << CHit::kRead1_reverse_bit) << pairmate;
+        if( !pairmate ) matchFlags |= CHit::fOrder_reverse;
 
-		if( flags & fLookupInFwd ) {
-			found |= x_LookupInQueue( h0, m_pendingHits[0], fwd, pairmate, maxPos, score, seqFrom, seqTo, query );
-		}
-		if( flags & fLookupInRev ) {
-			found |= x_LookupInQueue( h1, m_pendingHits[1], fwd, pairmate, maxPos, score, seqFrom, seqTo, query );
-		}
-	} 
+        bool found = false;
 
-	// NB: logic here is a bit limited... it allows transitive hits, e.g. Fwd1...Fwd2...Fwd1 even with disallowed combinatorial explosion; 
-	// otherwise we may have a problem that Fwd2...Fwd1 part will be missed even if it is stronger then Fwd1...Fwd2 part of the triplet.
-	if( m_geometryFlags & GetAppendFlags( pairmate, fwd ) ) {
-       	CHit * hh = new CHit( query, m_ord, pairmate, score, seqFrom, seqTo );
-		if( fwd ) m_pendingHits[0].insert( make_pair( seqFrom, hh ) );
-		else      m_pendingHits[1].insert( make_pair( seqTo,   hh ) );
-	} else if( !found ) {
-        PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) );
+        for( ; phit != m_pendingHits.end() && phit->first < topPos ; ++phit ) {
+            if( phit->second->IsPurged() ) {
+                cerr << DISPLAY( CBitHacks::AsBits( phit->second->GetGeometryNumber() ) ) << "\n"
+                     << DISPLAY( CBitHacks::AsBits( phit->second->GetGeometryFlag() ) ) << "\n"
+                     << DISPLAY( CBitHacks::AsBits( m_geometryFlags ) ) << "\n"
+                     << DISPLAY( CBitHacks::AsBits( phit->second->ComputeChainedGeometryFlags() ) ) << "\n"
+                     << DISPLAY( CBitHacks::AsBits( phit->second->ComputeExtentionGeometryFlags() ) ) << "\n"
+                     << DISPLAY( phit->second->GetFrom() ) << DISPLAY( phit->second->GetTo() ) << "\n"
+                     << DISPLAY( seqFrom ) << DISPLAY( seqTo ) << "\n"
+                     << DISPLAY( bottomPos ) << DISPLAY( topPos ) << "\n"
+                    ;
+                abort();
+            }
+            
+            // TODO: here: try to attach new hit to the existing hits, which may 
+            // produce new hits which may be either purged or put in queue (for the latter 
+            // they are to be added to toAdd queue and after the loop moved to main queue
+            if( phit->second->GetQuery() != query ) continue;
+            Uint2 geometry = 1 << (phit->second->GetGeometryNumber() | matchFlags);
+            if( ( geometry & m_geometryFlags ) == 0 ) continue;
+
+            switch( phit->second->GetComponentFlags() ) {
+            case CHit::fPairedHit: 
+                // Let's go here for combinatorial explosion for now...
+                if( geometry & phit->second->ComputeExtentionGeometryFlags() & m_geometryFlags ) {
+                    if( InRange( phit->second->GetFrom(), seqMax ) ) {
+                        if( PairedHitSetPair( seqFrom, seqTo, reverse, pairmate, score, phit->second, toAdd, eExtend ) ) break;
+                        found = true;
+                    }
+                }
+                if( geometry & phit->second->ComputeChainedGeometryFlags() & m_geometryFlags ) {
+                    if( InRange( phit->second->GetUpperHitMinPos(), seqMax ) ) {
+                        found |= PairedHitSetPair( seqFrom, seqTo, reverse, pairmate, score, phit->second, toAdd, eChain );
+                    }
+                }
+                break;
+            case CHit::fComponent_1: 
+                if( pairmate == 1 ) found |= SingleHitSetPair( seqFrom, seqTo, reverse, pairmate, score, phit->second, toAdd );
+                continue;
+            case CHit::fComponent_2: 
+                if( pairmate == 0 ) found |= SingleHitSetPair( seqFrom, seqTo, reverse, pairmate, score, phit->second, toAdd );
+                continue;
+            default: THROW( logic_error, "Ooops here!" );
+            }
+        }
+        // TODO: here: add toAdd hits to the new queue
+        copy( toAdd.begin(), toAdd.end(), inserter( m_pendingHits, m_pendingHits.end() ) );
+
+        // TODO: here: if it was not attached, put it in queue
+        if( !found ) 
+            m_pendingHits.insert( make_pair( seqMin, new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) ) );
     }
+}
+
+void CFilter::PurgeQueue( int bottomPos )
+{
+    // TODO: get back to optimized purging, no assertions
+    TPendingHits::iterator phit = m_pendingHits.begin();
+    set<CHit*> purged;
+    for( ; phit != m_pendingHits.end() && phit->first < bottomPos ; ++phit ) {
+        // decide should this hit be purged
+        if( phit->second->GetComponentFlags() != CHit::fPairedHit ) purged.insert( phit->second ); //PurgeHit( phit->second );
+        else if( phit->second->GetUpperHitMinPos() < bottomPos ) purged.insert( phit->second ); // PurgeHit( phit->second );
+        else if( ( phit->second->ComputeChainedGeometryFlags() & m_geometryFlags ) == 0 ) purged.insert( phit->second ); //PurgeHit( phit->second );
+    }
+    m_pendingHits.erase( m_pendingHits.begin(), phit );
+    ITERATE( TPendingHits, h, m_pendingHits ) {
+        if( purged.find( h->second ) != purged.end() ) {
+            cerr << h->second->GetQuery()->GetId() << "\t"
+                 << h->second->GetFrom() << "\t"
+                 << h->second->GetTo() << "\n";
+            purged.erase( h->second );
+        } 
+    }
+    ITERATE( set<CHit*>, h, purged ) PurgeHit( *h );        
+}
+
+void CFilter::PurgeQueueToTheEnd()
+{
+    // TODO: get back to optimized purging, no assertions
+    set<CHit*> purged;
+    for( TPendingHits::const_iterator i = m_pendingHits.begin(); i != m_pendingHits.end(); ++i ) {
+        //PurgeHit( i->second, true );
+        purged.insert( i->second );
+    }
+    ITERATE( set<CHit*>, i, purged ) PurgeHit( *i ); 
+   	m_pendingHits.clear();
+}
+
+bool CFilter::SingleHitSetPair( int seqFrom, int seqTo, bool reverse, int pairmate, double score, CHit * hit, TPendingHits& toAdd )
+{
+    int maxPos = reverse ? seqFrom : seqTo;
+    int minPos = reverse ? seqTo : seqFrom;
+    if( InRange( hit->GetFrom(), maxPos ) && minPos > hit->GetFrom() && maxPos > hit->GetTo() ) {
+        hit->SetPairmate( pairmate, score, seqFrom, seqTo );
+        if( hit->ComputeChainedGeometryFlags() & m_geometryFlags )
+            toAdd.insert( make_pair( minPos, hit ) );
+        return true;
+    }
+    else return false;
+}
+
+bool CFilter::PairedHitSetPair( int seqFrom, int seqTo, bool reverse, int pairmate, double score, CHit * hit, TPendingHits& toAdd, EHitUpdateMode mode )
+{
+    CHit * newHit = new CHit( hit->GetQuery(), m_ord, !pairmate, hit->GetScore( !pairmate ), hit->GetFrom( !pairmate ), hit->GetTo( !pairmate ) );
+    newHit->SetPairmate( pairmate, score, seqFrom, seqTo );
+    bool ok = false;
+    if( mode == eExtend && newHit->ComputeExtentionGeometryFlags() & m_geometryFlags ) {
+        ok = true;
+        toAdd.insert( make_pair( newHit->GetFrom(), newHit ) );
+    }
+    if( newHit->ComputeChainedGeometryFlags() & m_geometryFlags ) {
+        ok = true;
+        toAdd.insert( make_pair( newHit->GetUpperHitMinPos(), newHit ) );
+    }
+//    ASSERT( ok );
+    return ok;
 }
 
 void CFilter::SequenceBegin( const TSeqIds& id, int oid ) 
@@ -205,20 +186,9 @@ void CFilter::SequenceBuffer( CSeqBuffer* buffer )
     m_end = buffer->GetEndPtr();
 }
 
-void CFilter::PurgeQueues()
-{
-	for( unsigned int q = 0; q < sizeof( m_pendingHits )/sizeof( m_pendingHits[0] ); ++q ) {
-	    for( TPendingHits::const_iterator i = m_pendingHits[q].begin(); i != m_pendingHits[q].end(); ++i ) {
-    	    PurgeHit( i->second, true );
-		}
-    }
-}
-
 void CFilter::SequenceEnd()
 {
-	for( unsigned int q = 0; q < sizeof( m_pendingHits )/sizeof( m_pendingHits[0] ); ++q ) {
-    	m_pendingHits[q].clear();
-	}
+    PurgeQueueToTheEnd();
     m_begin = m_end = 0;
 }
 
@@ -227,8 +197,10 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
     if( hit == 0 ) return;
     CQuery * q = hit->GetQuery();
     ASSERT( q );
-    ASSERT( hit->m_next == 0 );
-    ASSERT( hit->GetComponents() );
+    ASSERT( hit->IsPurged() == false );
+    ASSERT( hit->GetNextHit() == 0 );
+    ASSERT( hit->GetComponentFlags() );
+    CHit::C_NextCtl( hit ).SetPurged();
     if( CHit * tih = q->GetTopHit() ) {
         double hscore = hit->GetTotalScore();
         double tscore = tih->GetTotalScore();
@@ -236,16 +208,17 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
         if( cscore > hscore ) { delete hit; return; }
         int topcnt = m_topCnt;
         if( tscore <= hscore ) {
-            hit->m_next = tih;
+            CHit::C_NextCtl( hit ).SetNext( tih );
             q->m_topHit = hit;
 			cscore = ( tscore = hscore ) * m_topPct/100;
         } else {
 			// trying to insert hit somewhere in the list
             bool weak = true;
-            for( ; weak && tih->m_next && topcnt > 0; (tih = tih->m_next), --topcnt ) {
-                if( tih->m_next->IsNull() || tih->m_next->GetTotalScore() < hscore ) {
-                    hit->m_next = tih->m_next;
-                    tih->m_next = hit;
+            for( ; weak && tih->GetNextHit() && topcnt > 0; (tih = tih->GetNextHit()), --topcnt ) {
+                if( tih->GetNextHit()->IsNull() || tih->GetNextHit()->GetTotalScore() < hscore ) {
+                    // keep chain linked
+                    CHit::C_NextCtl( hit ).SetNext( tih->GetNextHit() );
+                    CHit::C_NextCtl( tih ).SetNext( hit );
                     weak = false;
                 }
             }
@@ -255,14 +228,13 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
                 return;
             }
         }
-        for( tih = hit; topcnt > 0 && tih->m_next && tih->m_next->GetTotalScore() >= cscore; tih = tih->m_next, --topcnt );
-        if( tih->m_next && !tih->m_next->IsNull() ) {
-            delete tih->m_next;
-            tih->m_next = ( topcnt ? new CHit( q ) : 0 ); // if we clipped by score, we need to restore terminator
+        for( tih = hit; topcnt > 0 && tih->GetNextHit() && tih->GetNextHit()->GetTotalScore() >= cscore; tih = tih->GetNextHit(), --topcnt );
+        if( tih->GetNextHit() && !tih->GetNextHit()->IsNull() ) {
+            CHit::C_NextCtl( tih ).SetNext( topcnt ? new CHit( q ) : 0 ); // if we clipped by score, we need to restore terminator
         }
     } else {
         q->m_topHit = hit;
-        hit->m_next = new CHit( q );
+        CHit::C_NextCtl( hit ).SetNext( new CHit( q ) );
     }
 	bool fmt = m_outputFormatter && m_outputFormatter->ShouldFormatAllHits();
 	if( fmt || setTarget ) {
