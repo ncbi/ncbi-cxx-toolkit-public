@@ -119,7 +119,7 @@ CNetCacheKey::ParseBlobKey(const string& key_str)
     while (*ch && isdigit(*ch)) {
         ++ch;
     }
-    if (*ch && ch != '_') {
+    if (*ch && *ch != '_') {
         return false;
     }
 
