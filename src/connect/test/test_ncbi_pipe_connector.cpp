@@ -219,8 +219,8 @@ int CTest::Run(void)
     str = "Ok. Test 2 running.";
     status = CONN_ReadLine(conn, buf, kBufferSize, &n_read);
     assert(status == eIO_Success);
-    assert(n_read == str.length());
-    assert(memcmp(buf, str.c_str(), n_read) == 0);
+    assert(n_read >= str.length());  // do not count EOL in
+    assert(memcmp(buf, str.c_str(), str.length()) == 0);
 
     status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
     assert(status == eIO_Closed);
