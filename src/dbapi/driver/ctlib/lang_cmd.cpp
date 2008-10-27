@@ -159,7 +159,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     }}
 
 
-    CS_RETCODE ret_code;
+    CS_RETCODE ret_code = CS_FAIL;
 
     // We HAVE to pass correct data type even in case of NULL value.
     switch ( param.GetType() ) {
