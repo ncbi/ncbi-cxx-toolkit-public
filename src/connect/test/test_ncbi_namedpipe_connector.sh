@@ -20,7 +20,7 @@ $CHECK_EXEC test_ncbi_namedpipe_connector client >>$client_log 2>&1  ||  exit_co
 kill $spid  ||  exit_code=2
 ( kill -9 $spid ) >/dev/null 2>&1
 
-if [ $exit_code != 0 ]; then
+if [ ${exit_code:-0} != 0 ]; then
   if [ -s $client_log ]; then
     echo "=== $client_log ==="
     cat $client_log
