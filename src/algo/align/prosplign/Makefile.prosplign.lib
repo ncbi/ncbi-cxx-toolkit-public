@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seq
+ASN_DEP = seqset
 
 SRC = prosplign scoring PSeq NSeq Ali  AliSeqAlign Info nucprot intron AlignInfo compartments
 
