@@ -125,9 +125,10 @@ int main(int argc, const char* argv[])
     if (net_info->debug_printout != eDebugPrintout_None)
         SOCK_SetDataLoggingAPI(eOn);
     
-    if (net_info->timeout)
-        sprintf(tmo, "%u.%06u", net_info->timeout->sec,net_info->timeout->usec);
-    else
+    if (net_info->timeout) {
+        sprintf(tmo, "%u.%06u",
+                net_info->timeout->sec, net_info->timeout->usec);
+    } else
         strcpy(tmo, "infinite");
 
     /* Tests for SOCKET CONNECTOR */
