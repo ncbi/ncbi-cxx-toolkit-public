@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
     const Uint2 value_Uint2 = 64000;
     const Int2 value_Int2 = -32768;
     const Uint4 value_Uint4 = 4000000000;
-    const Int4 value_Int4 = -2147483647;
+    const Int4 value_Int4 = -2147483520;
     const Uint8 value_Uint8 = 9223372036854775808ULL;
     const Int8 value_Int8 = -9223372036854775807LL;
     const float value_float = float(21.4);
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
     const string str_Uint2("64000");
     const string str_Int2("-32768");
     const string str_Uint4("4000000000");
-    const string str_Int4("-2147483647");
+    const string str_Int4("-2147483520");
     const string str_Uint8("9223372036854775808");
     const string str_Int8("-9223372036854775807");
     const string str_bool("true");
@@ -1151,7 +1151,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
     const Uint2 value_Uint2 = 64000;
     const Int2 value_Int2 = -32768;
     const Uint4 value_Uint4 = 4000000000;
-    const Int4 value_Int4 = -2147483647;
+    const Int4 value_Int4 = -2147483520;
     const Uint8 value_Uint8 = 9223372036854775809ULL;
     const Int8 value_Int8 = -9223372036854775807LL;
     const float value_float = float(21.4);
@@ -1167,7 +1167,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
     const string str_Uint2("64000");
     const string str_Int2("-32768");
     const string str_Uint4("4000000000");
-    const string str_Int4("-2147483647");
+    const string str_Int4("-2147483520");
     const string str_Uint8("9223372036854775809");
     const string str_Int8("-9223372036854775807");
     const string str_bool("true");
