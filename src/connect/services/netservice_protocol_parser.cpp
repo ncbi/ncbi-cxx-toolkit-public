@@ -172,7 +172,7 @@ CNetServProtoParserBase::ParseCommand(CTempString          command,
     const char* s = command.data();
     const char* token;
     const char* cache_name = NULL;
-    size_t tsize, cache_name_sz;
+    size_t tsize, cache_name_sz = 0;
     ENSProtoTokenType ttype;
 
     ttype = x_GetToken(&s, &token, &tsize);

@@ -1274,7 +1274,7 @@ void CNetScheduleHandler::ProcessSubmitBatch()
 CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_BatchHeaderMap[] = {
     { "BTCH", &CNetScheduleHandler::ProcessBatchStart, 0,
         { { "size", eNSPT_Int, eNSPA_Required } } },
-    { "ENDS", &CNetScheduleHandler::ProcessBatchSequenceEnd },
+    { "ENDS", &CNetScheduleHandler::ProcessBatchSequenceEnd, 0 },
     { NULL }
 };
 
