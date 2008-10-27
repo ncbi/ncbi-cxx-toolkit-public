@@ -252,6 +252,6 @@ void CBlastDemoApplication::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CBlastDemoApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CBlastDemoApplication().AppMain(argc, argv);
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */

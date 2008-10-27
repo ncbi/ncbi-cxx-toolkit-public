@@ -227,5 +227,5 @@ int CSampleNetScheduleClient::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CSampleNetScheduleClient().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CSampleNetScheduleClient().AppMain(argc, argv);
 }

@@ -155,5 +155,5 @@ int CSampleObjectsApplication::Run(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CSampleObjectsApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CSampleObjectsApplication().AppMain(argc, argv);
 }

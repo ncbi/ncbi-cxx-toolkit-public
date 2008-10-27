@@ -170,5 +170,5 @@ int CSampleNetCacheClient::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CSampleNetCacheClient().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CSampleNetCacheClient().AppMain(argc, argv);
 }

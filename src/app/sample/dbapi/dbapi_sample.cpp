@@ -830,5 +830,5 @@ void CDbapiTest::Exit()
 
 int main(int argc, const char* argv[])
 {
-    return CDbapiTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CDbapiTest().AppMain(argc, argv);
 }

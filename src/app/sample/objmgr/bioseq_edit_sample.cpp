@@ -765,5 +765,5 @@ void CEditBioseqSampleApp::x_RunCheck(const CSeq_id& seq_id,
 
 int main(int argc, const char* argv[])
 {
-    return CEditBioseqSampleApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CEditBioseqSampleApp().AppMain(argc, argv);
 }

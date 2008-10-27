@@ -364,7 +364,7 @@ string CGridCgiSampleApplication::VectorToString( const vector<double>& vec)
 //
 int main(int argc, const char* argv[])
 {
-    int result = CGridCgiSampleApplication().AppMain(argc, argv, 0, eDS_Default);
+    int result = CGridCgiSampleApplication().AppMain(argc, argv);
     _TRACE("back to normal diags");
     return result;
 }

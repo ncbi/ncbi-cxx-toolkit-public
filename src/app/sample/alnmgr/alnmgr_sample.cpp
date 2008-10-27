@@ -192,5 +192,5 @@ int CSampleAlnmgrApplication::Run(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CSampleAlnmgrApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CSampleAlnmgrApplication().AppMain(argc, argv);
 }

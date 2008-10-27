@@ -263,5 +263,5 @@ int CSampleObjmgrApplication::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CSampleObjmgrApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CSampleObjmgrApplication().AppMain(argc, argv);
 }

@@ -199,5 +199,5 @@ int CSampleNetScheduleNode::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CSampleNetScheduleNode().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CSampleNetScheduleNode().AppMain(argc, argv);
 }

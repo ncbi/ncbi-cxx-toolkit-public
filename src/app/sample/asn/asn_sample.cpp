@@ -95,5 +95,5 @@ int CSampleAsnApplication::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CSampleAsnApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CSampleAsnApplication().AppMain(argc, argv);
 }
