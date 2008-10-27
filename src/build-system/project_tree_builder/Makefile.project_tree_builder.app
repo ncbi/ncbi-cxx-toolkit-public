@@ -35,3 +35,7 @@ DATATOOL_SRC = msvc71_project property_list
 LIB = xutil xncbi xregexp $(PCRE_LIB)
 
 LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
+
+# Build even --without-exe, to avoid breaking --with-flat-makefile
+# configurations unable to locate a suitable prebuilt copy.
+APP_OR_NULL = app
