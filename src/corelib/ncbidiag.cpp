@@ -1012,6 +1012,7 @@ bool CDiagContext::ApproveMessage(SDiagMessage& msg,
                 *show_warning = !m_TraceLogSuspended;
                 m_TraceLogSuspended = true;
             }
+            break;
         default:
             approved = m_ErrLogRC->Approve();
             if ( approved ) {
