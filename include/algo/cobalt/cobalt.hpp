@@ -88,11 +88,11 @@ public:
         SProgress(void) : stage(eBegin), user_data(NULL) {}
     };
 
-
     /// Prototype for function pointer to dertermine whether alignment should
     /// proceed of be interrupted. If this function returns true, all
     /// processing stops
     typedef bool(*FInterruptFn)(SProgress* progress);
+
 
 public:
 
@@ -187,6 +187,12 @@ public:
     ///
     CRef<objects::CSeq_align> GetResults(vector<int>& indices) const;
 
+    /// Retrieve the current aligned results in CSequence format. Included 
+    /// for backward compatibility with previous API.
+    /// @return The results, on CSequence for each input sequence
+    ///
+    const vector<CSequence>& GetSeqResults(void) const {return m_Results;}
+
     /// Get ree used guide in progressive alignment
     /// @return Tree
     ///
@@ -242,142 +248,72 @@ public:
     /// Default gap extension penalty
     static const CNWAligner::TScore kDefaultGapExtend = -1;
 
-    /// Destructor
-    ~CMultiAligner();
-
-    // ----------------- Getters -----------------------------
 
 
+protected:
 
-    /// Retrieve a selection of an input Seq_align,
-    /// in Seq-align format. The output Seq-align is of global type, 
-    /// with a single denseg. Columns that have gaps in all the
-    /// selected sequences are removed
-    /// @param indices List of ordinal IDs of sequences that the
-    ///                Seq-align will contain. Indices may appear
-    ///                in any order and may be repeated
-    /// @return The results
+    /// Validate user constraints with queries. Throws if constraints do not
+    /// pass validation.
+    /// @return True if validation passed
     ///
-
-    static CRef<objects::CSeq_align> GetSeqalignResults(
-                                  objects::CSeq_align& align, 
-                                  vector<int>& indices);
-
-    /// Retrieve the current aligned results in CSequence format.
-    /// @return The results, on CSequence for each input sequence
-    ///
-    const vector<CSequence>& GetSeqResults() const { return m_Results; }
-
-    /// Retrieve the current list of domain hits. Each CHit
-    /// corresponds to one domain hit; sequence 1 of the hit
-    /// has the index of the input protein sequence (0...num_inputs - 1), 
-    /// and sequence 2 gives the OID of the database sequence to which 
-    /// the hit refers. Each domain hit contains block alignments
-    /// as subhits, each of which means a conserved region
-    /// @return The list of hits 
-    ///
-    const CHitList& GetDomainHits() const { return m_DomainHits; }
-
-    /// Retrieve the current list of local hits. Each CHit
-    /// represents a pairwise alignment between two input sequences
-    /// @return The list of hits 
-    ///
-    const CHitList& GetLocalHits() const { return m_LocalHits; }
-
-    /// Retrieve the current list of combined domain and local hits. 
-    /// Each CHit represents a pairwise alignment between two input 
-    /// sequences. If the CHit came from a domain hit that was matched up
-    /// between two sequences, the matched up block alignments will be
-    /// present as subhits
-    /// @return The list of hits 
-    ///
-    const CHitList& GetCombinedHits() const { return m_CombinedHits; }
-
-    /// Retrieve the current list of pattern hits. Each CHit
-    /// represents a pairwise alignment between two input sequences,
-    /// corresponding to a match to the same PROSITE pattern
-    /// @return The list of hits 
-    ///
-    const CHitList& GetPatternHits() const { return m_PatternHits; }
-
-    /// Retrieve the current list of user-defined constraints. Each CHit
-    /// represents a pairwise alignment between two input sequences,
-    /// @return The list of constraints 
-    ///
-    const CHitList& GetUserHits() const { return m_UserHits; }
-
-
-
-
+    bool x_ValidateUserHits(void);
 
     /// Run RPS blast on the input sequences and postprocess the results.
     /// Intended for applications that want fine-grained control of the 
     /// alignment process
     ///
-    void FindDomainHits();
+    void x_FindDomainHits();
 
     /// Run blast on the input sequences and postprocess the results.
     /// Intended for applications that want fine-grained control of the 
     /// alignment process
     ///
-    void FindLocalHits();
+    void x_FindLocalHits();
 
     /// Find PROSITE pattern hits on the input sequences.
     /// Intended for applications that want fine-grained control of the 
     /// alignment process
     ///
-    void FindPatternHits();
+    void x_FindPatternHits();
 
     /// Given the current list of domain and local hits, generate a 
     /// phylogenetic tree that clusters the current input sequences.
     /// Intended for applications that want fine-grained control of the 
     /// alignment process
     ///
-    void ComputeTree();
+    void x_ComputeTree();
 
     /// Given the current domain, local, pattern and user hits, along with
     /// the current tree, compute a multiple alignment of the input sequences.
     /// Intended for applications that want fine-grained control of the 
     /// alignment process
     ///
-    void BuildAlignment();
+    void x_BuildAlignment();
 
-
-    // ---------------- Clustering queries -----------------------
 
     /// Find clusters of similar queries, select cluster representative 
     /// sequences, and prepare input to multiple alignement composed of 
     /// only representatives
     /// @return True if at least one cluster was found, false otherwise
     ///
-    bool FindQueryClusters();
+    bool x_FindQueryClusters();
 
     /// Pair-wise align each cluster sequence to cluster representative
     ///
-    void AlignInClusters();
+    void x_AlignInClusters();
 
     /// Compute profile residue frequencies for clusters. Frequencies are not
     /// normalized.
     ///
-    void MakeClusterResidueFrequencies();
+    void x_MakeClusterResidueFrequencies();
 
     /// Combine pair-wise in-cluster alignements with multiple alignments of
     /// cluster prototypes
     ///
-    void MultiAlignClusters();
+    void x_MultiAlignClusters();
 
 
 protected:
-
-    /// Retrieve the current internally generated phylogenetic tree.
-    /// Tree leaves each contain the index of the query sequence at that
-    /// leaf. The tree is strictly binary, and the tree root is not
-    /// associated with any sequence
-    /// @return The tree
-    ///
-    const TPhyTreeNode* x_GetTree(void) const {return m_Tree.GetTree();}
-
-
 
     typedef struct SSegmentLoc {
         int seq_index;
@@ -424,7 +360,6 @@ private:
     };
 
 
-public:
     /// Column in an alignment used for combining result from multiple
     /// alignment and pair-wise in-cluster alignments
     typedef struct SColumn {
@@ -448,75 +383,13 @@ public:
     } SColumn;
 
 
+
 private:
-
-    CConstRef<CMultiAlignerOptions> m_Options;
-
-    FInterruptFn m_Interrupt;
-    SProgress m_ProgressMonitor;
-
-    vector< CRef<objects::CSeq_loc> > m_tQueries;
-    vector<CSequence> m_QueryData;
-    vector<CSequence> m_Results;
-
-    CRef<objects::CScope> m_Scope;
-    
-    bool m_UseClusters;
-    TKMethods::ECompressedAlphabet m_KmerAlphabet;
-
-    unsigned int m_KmerLength;
-    double m_MaxClusterDist;
-    TKMethods::EDistMeasures m_ClustDistMeasure;
-    vector<CSequence> m_AllQueryData;
-    vector< CRef<objects::CSeq_loc> > m_AllQueries;
-    CClusterer m_Clusterer;
-    vector< vector<Uint4> > m_ClusterGapPositions;
-
-    CHitList m_DomainHits;
-    string m_RPSdb;
-    string m_Blockfile;
-    string m_Freqfile;
-    double m_RPSEvalue;
-    double m_DomainResFreqBoost;
-
-    CHitList m_LocalHits;
-    double m_BlastpEvalue;
-    double m_LocalResFreqBoost;
-
-    CHitList m_CombinedHits;
-
-    CHitList m_PatternHits;
-
-    CHitList m_UserHits;
-
-    const char *m_MatrixName;
-
-    CTree m_Tree;
-    CPSSMAligner m_Aligner;
-    double m_ConservedCutoff;
-    double m_Pseudocount;
-    CNWAligner::TScore m_GapOpen;
-    CNWAligner::TScore m_GapExtend;
-    CNWAligner::TScore m_EndGapOpen;
-    CNWAligner::TScore m_EndGapExtend;
-
-    bool m_Verbose;
-    bool m_Iterate;
-    bool m_FastMeTree;
-
-    vector<string> m_Messages;
-
-
     /// Initiate parameters using m_Options
     void x_InitParams(void);
 
     /// Initiate PSSM aligner parameters
     void x_InitAligner(void);
-
-    /// Validate user constraints with queries. Throws if constraints do not
-    /// pass validation.
-    /// @return True if validation passed
-    bool x_ValidateUserHits(void);
 
     /// Set the score matrix the aligner will use. NOTE that at present
     /// any hits between sequences will always be scored using BLOSUM62;
@@ -586,6 +459,74 @@ private:
 
     CRef<objects::CSeq_align> x_GetSeqalign(const vector<CSequence>& align,
                                             vector<int>& indices) const;
+
+    static void x_InitColumn(vector<SColumn>::iterator& it, size_t len);
+
+    static void x_InitInsertColumn(vector<SColumn>::iterator& it, size_t len,
+                                   int num, int cluster);
+
+
+
+
+private:
+
+    CConstRef<CMultiAlignerOptions> m_Options;
+
+    FInterruptFn m_Interrupt;
+    SProgress m_ProgressMonitor;
+
+    vector< CRef<objects::CSeq_loc> > m_tQueries;
+    vector<CSequence> m_QueryData;
+    vector<CSequence> m_Results;
+
+    CRef<objects::CScope> m_Scope;
+    
+    bool m_UseClusters;
+    TKMethods::ECompressedAlphabet m_KmerAlphabet;
+
+    unsigned int m_KmerLength;
+    double m_MaxClusterDist;
+    TKMethods::EDistMeasures m_ClustDistMeasure;
+    vector<CSequence> m_AllQueryData;
+    vector< CRef<objects::CSeq_loc> > m_AllQueries;
+    CClusterer m_Clusterer;
+    vector< vector<Uint4> > m_ClusterGapPositions;
+
+    CHitList m_DomainHits;
+    string m_RPSdb;
+    string m_Blockfile;
+    string m_Freqfile;
+    double m_RPSEvalue;
+    double m_DomainResFreqBoost;
+
+    CHitList m_LocalHits;
+    double m_BlastpEvalue;
+    double m_LocalResFreqBoost;
+
+    CHitList m_CombinedHits;
+
+    CHitList m_PatternHits;
+
+    CHitList m_UserHits;
+
+    const char *m_MatrixName;
+
+    CTree m_Tree;
+    CPSSMAligner m_Aligner;
+    double m_ConservedCutoff;
+    double m_Pseudocount;
+    CNWAligner::TScore m_GapOpen;
+    CNWAligner::TScore m_GapExtend;
+    CNWAligner::TScore m_EndGapOpen;
+    CNWAligner::TScore m_EndGapExtend;
+
+    bool m_Verbose;
+    bool m_Iterate;
+    bool m_FastMeTree;
+
+    vector<string> m_Messages;
+
+
 };
 
 END_SCOPE(cobalt)

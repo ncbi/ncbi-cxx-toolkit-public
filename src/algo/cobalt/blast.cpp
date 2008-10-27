@@ -301,7 +301,7 @@ CMultiAligner::x_AlignFillerBlocks(
 }
 
 void
-CMultiAligner::FindLocalHits()
+CMultiAligner::x_FindLocalHits()
 {
     m_ProgressMonitor.stage = eLocalHitsSearch;
 

@@ -617,7 +617,7 @@ CMultiAligner::x_AssignDefaultResFreqs()
             }
         }
 
-        MakeClusterResidueFrequencies();
+        x_MakeClusterResidueFrequencies();
     }
 
     Blast_ResFreqFree(std_freqs);
@@ -626,7 +626,7 @@ CMultiAligner::x_AssignDefaultResFreqs()
 
 
 void
-CMultiAligner::FindDomainHits()
+CMultiAligner::x_FindDomainHits()
 {
     if (m_RPSdb.empty() || 
         m_Blockfile.empty()) {

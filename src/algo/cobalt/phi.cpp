@@ -61,7 +61,7 @@ typedef struct SPatternHit {
 } SPatternHit;
 
 void
-CMultiAligner::FindPatternHits()
+CMultiAligner::x_FindPatternHits()
 {
     m_ProgressMonitor.stage = ePatternHitsSearch;
 

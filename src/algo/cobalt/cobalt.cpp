@@ -177,10 +177,6 @@ bool CMultiAligner::x_ValidateUserHits(void)
 }
 
 
-CMultiAligner::~CMultiAligner()
-{}
-
-
 void 
 CMultiAligner::SetQueries(const vector< CRef<objects::CSeq_loc> >& queries,
                           CRef<objects::CScope> scope)
@@ -254,6 +250,16 @@ CRef<objects::CBioTreeContainer> CMultiAligner::GetTreeContainer(void) const
     return btc;
 }
 
+CMultiAligner::FInterruptFn CMultiAligner::SetInterruptCallback(
+                                             CMultiAligner::FInterruptFn fnptr,
+                                             void* user_data)
+{
+    FInterruptFn prev_fun = m_Interrupt;
+    m_Interrupt = fnptr;
+    m_ProgressMonitor.user_data = user_data;
+    return prev_fun;
+}
+
 void
 CMultiAligner::x_SetScoreMatrix(const char *matrix_name)
 {
@@ -289,7 +295,7 @@ CMultiAligner::Reset()
 
 
 void 
-CMultiAligner::ComputeTree()
+CMultiAligner::x_ComputeTree()
 {
     // Convert the current collection of pairwise
     // hits into a distance matrix. This is the only
@@ -359,8 +365,8 @@ CMultiAligner::Run()
     bool is_cluster_found = false;
 
     if (m_UseClusters) {
-        if ((is_cluster_found = FindQueryClusters())) {
-            AlignInClusters();
+        if ((is_cluster_found = x_FindQueryClusters())) {
+            x_AlignInClusters();
             // No multiple alignment is done for one cluster
             if (m_Clusterer.GetClusters().size() == 1) {
                 m_tQueries.swap(m_AllQueries);
@@ -369,21 +375,21 @@ CMultiAligner::Run()
         }
     }
 
-    FindDomainHits();
-    FindLocalHits();
-    FindPatternHits();
+    x_FindDomainHits();
+    x_FindLocalHits();
+    x_FindPatternHits();
     x_FindConsistentHitSubset();
-    ComputeTree();
-    BuildAlignment();
+    x_ComputeTree();
+    x_BuildAlignment();
 
     if (is_cluster_found) {
-        MultiAlignClusters();
+        x_MultiAlignClusters();
     }
 }
 
 
 bool
-CMultiAligner::FindQueryClusters()
+CMultiAligner::x_FindQueryClusters()
 {
     m_ProgressMonitor.stage = eQueryClustering;
 
@@ -558,7 +564,7 @@ CMultiAligner::FindQueryClusters()
     return true;
 }
 
-void CMultiAligner::AlignInClusters(void)
+void CMultiAligner::x_AlignInClusters(void)
 {
     const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
     m_ClusterGapPositions.clear();
@@ -712,7 +718,7 @@ void CMultiAligner::AlignInClusters(void)
 }
 
 // Initiate regular column of multiple alignment
-static void s_InitColumn(vector<CMultiAligner::SColumn>::iterator& it,
+void CMultiAligner::x_InitColumn(vector<CMultiAligner::SColumn>::iterator& it,
                          size_t len)
 {
     it->insert = false;
@@ -727,8 +733,9 @@ static void s_InitColumn(vector<CMultiAligner::SColumn>::iterator& it,
 
 // Initiate a range from in-cluster alignment for insertion into multiple
 // alignment
-static void s_InitInsertColumn(vector<CMultiAligner::SColumn>::iterator& it,
-                               size_t len, int num, int cluster)
+void CMultiAligner::x_InitInsertColumn(
+                                vector<CMultiAligner::SColumn>::iterator& it,
+                                size_t len, int num, int cluster)
 {
     it->insert = true;
     it->letters.resize(len);
@@ -739,7 +746,7 @@ static void s_InitInsertColumn(vector<CMultiAligner::SColumn>::iterator& it,
     it->cluster = cluster;
 }
 
-void CMultiAligner::MultiAlignClusters(void)
+void CMultiAligner::x_MultiAlignClusters(void)
 {
     const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
 
@@ -753,7 +760,7 @@ void CMultiAligner::MultiAlignClusters(void)
     // sequences (n-th letter)
     int col = 0;
     NON_CONST_ITERATE(vector<SColumn>, it, columns) {
-        s_InitColumn(it, num_seqs);
+        x_InitColumn(it, num_seqs);
         for (size_t j=0;j < clusters.size();j++) {
             if (m_Results[j].GetLetter(col) != CSequence::kGapChar) {
                 it->letters[clusters[j].GetPrototype()] = letter_inds[j]++;
@@ -793,7 +800,7 @@ void CMultiAligner::MultiAlignClusters(void)
 
             // insert the range in all cluster sequences
             it = columns.insert(it, SColumn());
-            s_InitInsertColumn(it, num_seqs, num, cluster_idx);
+            x_InitInsertColumn(it, num_seqs, num, cluster_idx);
             ITERATE(CClusterer::TSingleCluster, elem, clusters[cluster_idx]) {
 
                 // for insert ranges leter index is absolute index in 
@@ -928,7 +935,7 @@ void CMultiAligner::MultiAlignClusters(void)
 
 
 // Frequencies are not normalized
-void CMultiAligner::MakeClusterResidueFrequencies(void) 
+void CMultiAligner::x_MakeClusterResidueFrequencies(void) 
 {
     // Iterate over all clusters
     const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
