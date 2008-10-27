@@ -40,7 +40,7 @@ void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, 
         int seqMax = reverse ? seqFrom : seqTo;
         
         int bottomPos = seqMax - m_maxDist + 1;
-        int topPos = seqMax - m_minDist + 1; // just to be safe... reads can't be longer then 256
+        int topPos = min( seqMax - m_minDist + 1, seqMin - 1 ); // just to be safe... reads can't be longer then 256
         // Here we try to find a pair for this match
         
         // First clear queue
@@ -158,19 +158,40 @@ bool CFilter::SingleHitSetPair( int seqFrom, int seqTo, bool reverse, int pairma
 
 bool CFilter::PairedHitSetPair( int seqFrom, int seqTo, bool reverse, int pairmate, double score, CHit * hit, TPendingHits& toAdd, EHitUpdateMode mode )
 {
-    CHit * newHit = new CHit( hit->GetQuery(), m_ord, !pairmate, hit->GetScore( !pairmate ), hit->GetFrom( !pairmate ), hit->GetTo( !pairmate ) );
-    newHit->SetPairmate( pairmate, score, seqFrom, seqTo );
-    bool ok = false;
-    if( mode == eExtend && newHit->ComputeExtentionGeometryFlags() & m_geometryFlags ) {
-        ok = true;
-        toAdd.insert( make_pair( newHit->GetFrom(), newHit ) );
+    if( score <= hit->GetScore( pairmate ) ) return false;
+    int badPos = min( hit->GetFrom( pairmate ), hit->GetTo( pairmate ) );
+    CHit * newHit = new CHit( hit->GetQuery(), m_ord, pairmate, hit->GetScore( pairmate ), hit->GetFrom( pairmate ), hit->GetTo( pairmate ) );
+    try {
+        hit->SetPairmate( pairmate, score, seqFrom, seqTo );
+    } catch(...) {
+        cerr 
+            << DISPLAY( hit->GetFrom(0) ) 
+            << DISPLAY( hit->GetTo(0) ) 
+            << DISPLAY( hit->GetFrom(1) )
+            << DISPLAY( hit->GetTo(1) ) 
+            << endl
+            << DISPLAY( newHit->GetFrom(0) ) 
+            << DISPLAY( newHit->GetTo(0) ) 
+            << DISPLAY( newHit->GetFrom(1) )
+            << DISPLAY( newHit->GetTo(1) ) 
+            << endl
+            << DISPLAY( seqFrom ) 
+            << DISPLAY( seqTo )
+            << DISPLAY( pairmate ) << endl;
+        throw;
     }
-    if( newHit->ComputeChainedGeometryFlags() & m_geometryFlags ) {
-        ok = true;
-        toAdd.insert( make_pair( newHit->GetUpperHitMinPos(), newHit ) );
+    bool toBeAdded = bool( newHit->ComputeExtentionGeometryFlags() | m_geometryFlags );
+    bool added = false;
+    for( TPendingHits::iterator i = m_pendingHits.find( badPos ); i != m_pendingHits.end() && i->first == badPos ; ++i ) {
+        if( i->second == hit ) {
+            i->second = toBeAdded ? newHit : 0;
+            added = true;
+        }
     }
-//    ASSERT( ok );
-    return ok;
+    if( toBeAdded && !added ) toAdd.insert( make_pair( badPos, newHit ) );
+    if( hit->ComputeExtentionGeometryFlags() & m_geometryFlags )
+        toAdd.insert( make_pair( min( seqFrom, seqTo ), hit ) );
+    return true;
 }
 
 void CFilter::SequenceBegin( const TSeqIds& id, int oid ) 
