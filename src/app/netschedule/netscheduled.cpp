@@ -87,7 +87,7 @@ struct SJS_Request
 {
     string    input;
     string    output;
-    char      affinity_token[kNetScheduleMaxDBDataSize];
+    string    affinity_token;
     string    job_key;
     int       job_return_code;
     unsigned  port;
@@ -102,8 +102,8 @@ struct SJS_Request
 
     void Init()
     {
-        affinity_token[0] = 0;
         input.erase(); output.erase();
+        affinity_token.erase();
         job_key.erase(); err_msg.erase();
         param1.erase(); param2.erase(); param3.erase();
         job_return_code = port = timeout = job_mask = 0;
@@ -124,7 +124,7 @@ struct SJS_Request
             switch (key[0]) {
             case 'a':
                 if (key == "aff") {
-                    strcpy(affinity_token, val.data());
+                    affinity_token = val;
                 }
                 else if (key == "affp") {
                     param1 = val;
@@ -161,7 +161,7 @@ struct SJS_Request
                     input = val;
                 }
                 else if (key == "ip") {
-                    count = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
+                    param3 = val;
                 }
                 break;
             case 'j':
@@ -242,12 +242,10 @@ class CNSRequestContextFactory : public CRequestContextFactory
 {
 public:
     CNSRequestContextFactory(CNetScheduleServer* server);
-    void SetClientIP(const string& client_ip);
     virtual CRequestContext* Get();
     virtual void Return(CRequestContext*);
 private:
     CNetScheduleServer* m_Server;
-    string              m_ClientIP;
 };
 
 
@@ -748,12 +746,6 @@ CNSRequestContextFactory::CNSRequestContextFactory(CNetScheduleServer* server)
 }
 
 
-void CNSRequestContextFactory::SetClientIP(const string& client_ip)
-{
-    m_ClientIP = client_ip;
-}
-
-
 CRequestContext* CNSRequestContextFactory::Get()
 {
     CRequestContext* req_ctx = m_Server->GetRequestContextFromPool();
@@ -817,7 +809,6 @@ void CNetScheduleHandler::OnOpen(void)
         m_PeerAddr = CSocketAPI::GetLoopbackAddress();
     }
     m_WorkerNodeInfo.host = m_PeerAddr;
-    m_RequestContextFactory.SetClientIP(NS_FormatIPAddress(m_PeerAddr));
 
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgAuth;
     m_DelayedOutput = NULL;
@@ -1237,7 +1228,7 @@ void CNetScheduleHandler::ProcessSubmit()
     job.SetSubmPort(m_JobReq.port);
     job.SetSubmTimeout(m_JobReq.timeout);
     job.SetProgressMsg(m_JobReq.param1);
-    job.SetClientIP(CSocketAPI::HostToNetLong(m_JobReq.count));
+    job.SetClientIP(m_JobReq.param3);
     job.SetClientSID(m_JobReq.param2);
 
     unsigned job_id = m_Queue->Submit(job);
@@ -1264,8 +1255,8 @@ void CNetScheduleHandler::ProcessSubmit()
 
 void CNetScheduleHandler::ProcessSubmitBatch()
 {
-    // unsigned client_ip = m_JobReq.count;
-    // string& client_sid = m_JobReq.param2;
+    string client_ip  = m_JobReq.param3;
+    string client_sid = m_JobReq.param2;
     WriteOK("Batch submit ready");
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgBatchHeader;
 }
@@ -1356,10 +1347,8 @@ void CNetScheduleHandler::ProcessMsgBatchJob(BUF buffer)
     // Expecting:
     // "input" [affp|aff="affinity_token"] [msk=1]
     //         [tags="key1\tval1\tkey2\t\tkey3\tval3"]
-    size_t size = BUF_Size(buffer);
     string msg;
     s_ReadBufToString(buffer, msg);
-    const char* data = msg.data();
 
     CJob& job = m_BatchJobs[m_BatchPos];
 
@@ -1523,13 +1512,12 @@ void CNetScheduleHandler::ProcessJobDelayExpiration()
 
 void CNetScheduleHandler::ProcessStatusSnapshot()
 {
-    const char* aff_token = m_JobReq.affinity_token;
     CJobStatusTracker::TStatusSummaryMap st_map;
 
-    bool aff_exists = m_Queue->CountStatus(&st_map, aff_token);
+    bool aff_exists = m_Queue->CountStatus(&st_map, m_JobReq.affinity_token);
     if (!aff_exists) {
         WriteErr(string("eProtocolSyntaxError:Unknown affinity token \"")
-                 + aff_token + "\"");
+                 + m_JobReq.affinity_token + "\"");
         return;
     }
     ITERATE(CJobStatusTracker::TStatusSummaryMap, it, st_map) {
@@ -2416,15 +2404,15 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     //        [ affinity_token : keystr(aff) ] [ job_mask : keyint(msk) ]
     //        [ tags : keystr(tags) ]
     { "SUBMIT",   &CNetScheduleHandler::ProcessSubmit, eNSCR_Submitter,
-        { { "input",        eNSPT_Str, eNSPA_Required },
-          { "progress_msg", eNSPT_Str, eNSPA_Optional },
+        { { "input",        eNSPT_Str, eNSPA_Required },        // input
+          { "progress_msg", eNSPT_Str, eNSPA_Optional },        // param1
           { "port",         eNSPT_Int, eNSPA_Optional },
           { "timeout",      eNSPT_Int, eNSPA_Optional },
-          { "aff",          eNSPT_Str, eNSPA_Optional, "" },
+          { "aff",          eNSPT_Str, eNSPA_Optional, "" },    // affinity_token
           { "msk",          eNSPT_Int, eNSPA_Optional, "0" },
-          { "tags",         eNSPT_Str, eNSPA_Optional, "" },
-          { "ip",           eNSPT_Int, eNSPA_Optional, "0" },
-          { "sid",          eNSPT_Str, eNSPA_Optional, "" } } },
+          { "tags",         eNSPT_Str, eNSPA_Optional, "" },    // tags
+          { "ip",           eNSPT_Str, eNSPA_Optional, "" },    // param3
+          { "sid",          eNSPT_Str, eNSPA_Optional, "" } } },// param2
     // CANCEL job_key : id
     { "CANCEL",   &CNetScheduleHandler::ProcessCancel, eNSCR_Submitter,
         { { "job_key", eNSPT_Id, eNSPA_Required } } },
@@ -2486,7 +2474,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "RECO",     &CNetScheduleHandler::ProcessReloadConfig, eNSCR_Any }, // ?? Admin
     { "QLST",     &CNetScheduleHandler::ProcessQList, eNSCR_Any },
     { "BSUB",     &CNetScheduleHandler::ProcessSubmitBatch, eNSCR_Submitter,
-        { { "ip",  eNSPT_Int, eNSPA_Optional, "0" },
+        { { "ip",  eNSPT_Str, eNSPA_Optional, "" },
           { "sid", eNSPT_Str, eNSPA_Optional, "" } } },
     // JXCG [ job_key : id [ job_return_code : int [ output : str ] ] ]
     //      [affinity_list : keystr(aff) ]
@@ -2663,8 +2651,7 @@ void CNetScheduleHandler::x_MakeGetAnswer(const CJob& job)
     answer.append(" \"");
     answer.append(job.GetAffinityToken());
     answer.append("\" \"");
-    answer.append(NS_FormatIPAddress(job.GetClientIP()) + " " +
-                  job.GetClientSID());
+    answer.append(job.GetClientIP() + " " + job.GetClientSID());
     answer.append("\""); // to keep compat. with jout & jerr
 
     answer.append(" ");

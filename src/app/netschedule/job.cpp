@@ -182,8 +182,7 @@ CJob::CJob() :
     m_RunCount(0),
     m_ReadGroup(0),
     m_AffinityId(0),
-    m_Mask(0),
-    m_ClientIP(0)
+    m_Mask(0)
 {
 }
 
@@ -287,7 +286,7 @@ void CJob::SetMask(unsigned mask)
 }
 
 
-void CJob::SetClientIP(unsigned client_ip)
+void CJob::SetClientIP(const string& client_ip)
 {
     m_ClientIP = client_ip;
     m_Dirty |= fJobPart;
@@ -416,7 +415,7 @@ string CJob::GetField(int index) const
     case 11: // mask
         return NStr::IntToString(m_Mask);
     case 12: // client_ip
-        return NStr::IntToString(m_ClientIP);
+        return m_ClientIP;
     case 13: // client_sid
         return m_ClientSID;
     case 14: // runs

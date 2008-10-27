@@ -118,7 +118,7 @@ struct SQueueParameters
     unsigned max_output_size;
     bool deny_access_violations;
     bool log_access_violations;
-    bool log_job_state;
+    unsigned log_job_state;
     string subm_hosts;
     string wnode_hosts;
     // This parameter is not reconfigurable
@@ -135,7 +135,7 @@ struct SQueueParameters
         max_output_size(kNetScheduleMaxDBDataSize),
         deny_access_violations(false),
         log_access_violations(true),
-        log_job_state(false),
+        log_job_state(0),
         run_timeout_precision(3600)
     { }
     ///
@@ -296,7 +296,7 @@ public:
     /// count status snapshot for affinity token
     /// returns false if affinity token not found
     bool CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
-                     const char*                           affinity_token);
+                     const string&                         affinity_token);
 
     // Set UDP port for notifications
     void SetPort(unsigned short port);
@@ -562,7 +562,7 @@ private:
     unsigned                     m_MaxOutputSize;
     bool                         m_DenyAccessViolations;
     bool                         m_LogAccessViolations;
-    bool                         m_LogJobState;
+    unsigned                     m_LogJobState;
     /// Client program version control
     CQueueClientInfoList         m_ProgramVersionList;
     /// Host access list for job submission
@@ -590,7 +590,7 @@ public:
     unsigned GetMaxOutputSize() { return m_Queue.m_MaxOutputSize; }
     bool GetDenyAccessViolations() { return m_Queue.m_DenyAccessViolations; }
     bool GetLogAccessViolations() { return m_Queue.m_LogAccessViolations; }
-    bool GetLogJobState() { return m_Queue.m_LogJobState; }
+    unsigned GetLogJobState() { return m_Queue.m_LogJobState; }
     const CQueueClientInfoList& GetProgramVersionList()
         { return m_Queue.m_ProgramVersionList; }
     const CNetSchedule_AccessList& GetSubmHosts()
@@ -636,7 +636,7 @@ public:
         case 9:  return NStr::IntToString(m_Queue.m_MaxOutputSize);
         case 10: return m_Queue.m_DenyAccessViolations ? "true" : "false";
         case 11: return m_Queue.m_LogAccessViolations ? "true" : "false";
-        case 12: return m_Queue.m_LogJobState ? "true" : "false";
+        case 12: return NStr::IntToString(m_Queue.m_LogJobState);
         case 13: return m_Queue.m_ProgramVersionList.Print();
         case 14: return m_Queue.m_SubmHosts.Print();
         case 15: return m_Queue.m_WnodeHosts.Print();

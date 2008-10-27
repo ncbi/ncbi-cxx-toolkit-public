@@ -81,7 +81,7 @@ public:
 
     /// Get affinity token id
     /// Returns 0 if token does not exist
-    unsigned GetTokenId(const char* aff_token);
+    unsigned GetTokenId(const string& aff_token);
 
     /// Get affinity string by id
     string GetAffToken(unsigned aff_id);

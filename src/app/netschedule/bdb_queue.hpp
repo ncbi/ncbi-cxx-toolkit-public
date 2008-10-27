@@ -175,7 +175,7 @@ public:
     /// count status snapshot for affinity token
     /// returns false if affinity token not found
     bool CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
-                     const char*                           affinity_token);
+                     const string&                         affinity_token);
 
     /// Prolong job expiration timeout
     /// @param tm

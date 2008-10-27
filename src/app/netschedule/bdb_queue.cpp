@@ -1659,7 +1659,8 @@ static void s_LogSubmit(SLockedQueue& q,
                         SQueueDescription& qdesc)
 {
     CRequestContext& ctx =CDiagContext::GetRequestContext();
-    ctx.SetClientIP(NS_FormatIPAddress(job.GetClientIP()));
+    if (!job.GetClientIP().empty())
+        ctx.SetClientIP(job.GetClientIP());
     ctx.SetSessionID(job.GetClientSID());
 
     CDiagContext_Extra extra = GetDiagContext().Extra().SetType("submit")
@@ -1683,7 +1684,7 @@ unsigned CQueue::Submit(CJob& job)
     CRef<SLockedQueue> q(x_GetLQueue());
 
     unsigned max_input_size;
-    bool log_job_state;
+    unsigned log_job_state;
     {{
         CQueueParamAccessor qp(*q);
         log_job_state = qp.GetLogJobState();
@@ -1729,7 +1730,7 @@ unsigned CQueue::Submit(CJob& job)
 
     trans.Commit();
     q->status_tracker.SetStatus(job_id, CNetScheduleAPI::ePending);
-    if (log_job_state) {
+    if (log_job_state >= 1) {
         CRequestContext rq;
         rq.SetRequestID(CRequestContext::GetNextRequestID());
 
@@ -2560,7 +2561,7 @@ TJobStatus CQueue::GetStatus(unsigned job_id) const
 
 
 bool CQueue::CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
-                         const char*                           affinity_token)
+                         const string&                         affinity_token)
 {
     _ASSERT(status_map);
     CRef<SLockedQueue> q(x_GetLQueue());

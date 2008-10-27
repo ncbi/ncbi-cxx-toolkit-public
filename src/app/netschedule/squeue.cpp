@@ -243,8 +243,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
         0, IRegistry::eReturn);
     log_access_violations  = reg.GetBool(sname, "log_access_violations", true,
         0, IRegistry::eReturn);
-    log_job_state          = reg.GetBool(sname, "log_job_state", false,
-        0, IRegistry::eReturn);
+    log_job_state          = GetIntNoErr("log_job_state", 0);
 
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
     wnode_hosts = reg.GetString(sname, "wnode_host", kEmptyStr);
@@ -311,7 +310,8 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     m_MaxInputSize(kNetScheduleMaxDBDataSize),
     m_MaxOutputSize(kNetScheduleMaxDBDataSize),
     m_DenyAccessViolations(false),
-    m_LogAccessViolations(true)
+    m_LogAccessViolations(true),
+    m_LogJobState(0)
 {
     _ASSERT(!queue_name.empty());
     q_notif.append(queue_name);
@@ -390,13 +390,7 @@ void SLockedQueue::SetParameters(const SQueueParameters& params)
 
 unsigned SLockedQueue::LoadStatusMatrix()
 {
-    unsigned queue_run_timeout;
-    bool log_job_state;
-    {{
-        CQueueParamAccessor qp(*this);
-        queue_run_timeout = qp.GetRunTimeout();
-        log_job_state = qp.GetLogJobState();
-    }}
+    unsigned queue_run_timeout = CQueueParamAccessor(*this).GetRunTimeout();
     EBDB_ErrCode err;
 
     static EVectorId all_ids[] = { eVIJob, eVITag, eVIAffinity };
@@ -508,11 +502,11 @@ SLockedQueue::GetJobStatus(unsigned job_id) const
 
 bool
 SLockedQueue::CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
-                          const char*                           affinity_token)
+                          const string&                         affinity_token)
 {
     unsigned aff_id = 0;
     TNSBitVector aff_jobs;
-    if (affinity_token && *affinity_token) {
+    if (!affinity_token.empty()) {
         aff_id = m_AffinityDict.GetTokenId(affinity_token);
         if (!aff_id)
             return false;
@@ -1383,7 +1377,7 @@ void SLockedQueue::AddJobToWorkerNode(const string&           node_id,
                                       const CJob&             job,
                                       time_t                  exp_time)
 {
-    bool log_job_state = CQueueParamAccessor(*this).GetLogJobState();
+    unsigned log_job_state = CQueueParamAccessor(*this).GetLogJobState();
     m_WorkerNodeList.AddJob(node_id, job, exp_time,
                             rec_ctx_f, log_job_state);
     CountEvent(eStatGetEvent);
@@ -1402,7 +1396,7 @@ void SLockedQueue::RemoveJobFromWorkerNode(const string&          node_id,
                                            const CJob&            job,
                                            ENSCompletion          reason)
 {
-    bool log_job_state = CQueueParamAccessor(*this).GetLogJobState();
+    unsigned log_job_state = CQueueParamAccessor(*this).GetLogJobState();
     m_WorkerNodeList.RemoveJob(node_id, job, reason, log_job_state);
     CountEvent(eStatPutEvent);
 }
@@ -1608,7 +1602,7 @@ void
 SLockedQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
                                       unsigned job_id, time_t curr_time)
 {
-    bool log_job_state = CQueueParamAccessor(*this).GetLogJobState();
+    unsigned log_job_state = CQueueParamAccessor(*this).GetLogJobState();
     TJobStatus status = GetJobStatus(job_id);
 
     TJobStatus new_status, run_status;

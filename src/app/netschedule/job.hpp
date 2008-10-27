@@ -158,7 +158,7 @@ public:
 
     unsigned       GetMask() const
     { return m_Mask; }
-    unsigned       GetClientIP() const
+    const string&  GetClientIP() const
     { return m_ClientIP; }
     const string&  GetClientSID() const
     { return m_ClientSID; }
@@ -189,7 +189,7 @@ public:
     void           SetAffinityToken(const string& aff_token);
     void           SetMask(unsigned mask);
 
-    void           SetClientIP(unsigned client_ip);
+    void           SetClientIP(const string& client_ip);
     void           SetClientSID(const string& client_sid);
 
     void           SetRuns(const vector<CJobRun>& runs);
@@ -258,7 +258,7 @@ private:
 
     unsigned        m_Mask;
 
-    unsigned        m_ClientIP;
+    string          m_ClientIP;
     string          m_ClientSID;
 
     // Resides in SRunsDB table

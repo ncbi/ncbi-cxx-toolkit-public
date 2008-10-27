@@ -218,7 +218,7 @@ unsigned CAffinityDict::CheckToken(const char*       aff_token,
     return aff_id;
 }
 
-unsigned CAffinityDict::GetTokenId(const char* aff_token)
+unsigned CAffinityDict::GetTokenId(const string& aff_token)
 {
     unsigned aff_id;
 

@@ -146,12 +146,12 @@ public:
     // Add job to worker node job list
     void AddJob(const string& node_id, const CJob& job, time_t exp_time,
                 CRequestContextFactory* req_ctx_f,
-                bool log_job_state);
+                unsigned log_job_state);
     // Update job expiration time
     void UpdateJob(const string& node_id, TNSJobId job_id, time_t exp_time);
     // Remove job from worker node job list
     void RemoveJob(const string& node_id, const CJob& job,
-                   ENSCompletion reason, bool log_job_state);
+                   ENSCompletion reason, unsigned log_job_state);
 
     // Returns true and adds entries to notify_list if it decides that it's OK to notify.
     bool GetNotifyList(bool unconditional, time_t curr,
