@@ -6086,8 +6086,7 @@ if test "$with_flat_makefile" = "yes"; then
        -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then
       build_flat="Alternatively, cd $builddir && make -f Makefile.flat"
    else
-      echo '[[...]]'
-      tail $builddir/Flat.configuration_log
+      grep 'already defined' $builddir/Flat.configuration_log
       AC_MSG_ERROR([flat makefile generation failed.])
    fi
 fi
