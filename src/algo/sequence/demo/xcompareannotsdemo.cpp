@@ -60,12 +60,17 @@
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
+#include <objtools/data_loaders/genbank/readers.hpp>
+
 #include <objtools/alnmgr/alnmix.hpp>
 
 #include <test/test_assert.h> 
 
 #include <algo/sequence/loc_mapper.hpp>
 #include <algo/sequence/compare_feats.hpp>
+
+#include <bdb/bdb_blobcache.hpp>
+#include <dbapi/driver/drivers.hpp>
 
 #include <limits>
 
@@ -879,6 +884,11 @@ void CXcompareAnnotsApplication::Init(void)
         
     
     m_mapping_ranges.Reset(new CMappingRanges);
+/*
+    DBAPI_RegisterDriver_CTLIB();
+    GenBankReaders_Register_Pubseq2();
+    BDB_Register_Cache();
+*/
     CPluginManager_DllResolver::EnableGlobally(true); //to allow handling of dlls as specified in conffile
 }
  
@@ -1405,12 +1415,48 @@ void CXcompareAnnotsApplication::x_ProcessComparison(
                 NcbiCout << cf->GetMappedIdentity() << "\t";
                 NcbiCout << cf->GetComparison()->GetRelativeOverlap() << "\t";
                 NcbiCout << cf->GetComparison()->GetSymmetricalOverlap() << "\t";
+
+
+                float shared_sites_score(0.0f);
+                int loc1_intervals(0);
+                int loc2_intervals(0);
+                cf->GetComparison()->GetSplicingSimilarity(shared_sites_score, &loc1_intervals, &loc2_intervals);
+                NcbiCout << loc1_intervals << "\t";
+                NcbiCout << loc2_intervals << "\t";
+                NcbiCout << shared_sites_score << "\t";
+                
             } else {
-                //should have moved mappedIdentity column earlier
-                NcbiCout << "\t\t" << cf->GetMappedIdentity() << "\t\t\t";
+                //should have moved mappedIdentity column earlier - hence the awkwardness
+
+                //we don't have Comparison object because there's no comparison, but there was a request to
+                //report exon counts anyway, so here we compute them "manually"
+                
+                int loc1_intervals(0);
+                if(!cf->GetFeatQ().IsNull()) {
+                    for (CSeq_loc_CI ci(*cf->GetSelfLocQ()); ci; ++ci) {
+                        loc1_intervals++;
+                    }
+                }
+
+                
+                int loc2_intervals(0);
+                if(!cf->GetFeatT().IsNull()) {
+                    for (CSeq_loc_CI ci(*cf->GetSelfLocT()); ci; ++ci) {
+                        loc2_intervals++;
+                    }
+                }
+
+                NcbiCout << "\t\t" //no evidence and comment
+                         << cf->GetMappedIdentity() << "\t"
+                         << "\t\t" //no overlaps
+                         <<  (loc1_intervals ? NStr::IntToString(loc1_intervals) : "") << "\t"
+                         <<  (loc2_intervals ? NStr::IntToString(loc2_intervals) : "") << "\t"
+                         << "\t" //no shared splices score
+                         ;
             }
-            
-            
+
+
+
             int qry_gene_id = (cf->GetFeatQ().IsNull() ? 0 : CCompareSeqRegions::s_GetGeneId(*cf->GetFeatQ()));
             int tgt_gene_id = (cf->GetFeatT().IsNull() ? 0 : CCompareSeqRegions::s_GetGeneId(*cf->GetFeatT()));
             
@@ -1629,6 +1675,9 @@ int CXcompareAnnotsApplication::Run(void)
              << "Mapped_identity\t"
              << "Relative_overlap\t"
              << "Symmetric_overlap\t"
+             << "Qry_exons\t"
+             << "Tgt_exons\t"
+             << "Splicing_similarity\t"
              << "Aln_q_length\t"
              << "Qry_LocusID\t"
              << "Tgt_LocusID\t"
