@@ -1790,7 +1790,7 @@ static EIO_Status s_Send(SOCK        sock,
             /* special kludge for Windows */
             if (x_error == WSAENOBUFS) {
                 s_AddTimeout(&timeout, no_buffer_wait);
-                if (s_IsSmallerTimeout(sock->w_status, &timeout))
+                if (s_IsSmallerTimeout(sock->w_timeout, &timeout))
                     return eIO_Timeout;
                 if (no_buffer_wait)
                     Sleep(no_buffer_wait);
@@ -1905,7 +1905,7 @@ static EIO_Status s_WriteData(SOCK        sock,
         if (!sslwrite)
             return eIO_NotSupported;
         status = sslwrite(sock->session, data, size, n_written, &x_error);
-        assert((status == eIO_Success) == (n_written > 0));
+        assert((status == eIO_Success) == (*n_written > 0));
         assert(status == eIO_Success  ||  x_error);
 
         /* statistics & logging */
