@@ -1316,11 +1316,11 @@ void CBDB_Cache::Open(const string& cache_path,
         {
         case eUseTrans:
             {
-            CBDB_Env::TEnvOpenFlags env_flags = CBDB_Env::eThreaded;
+            CBDB_Env::TEnvOpenFlags env_flags = CBDB_Env::eThreaded | CBDB_Env::ePrivate;
             if (needs_recovery) {
                 env_flags |= CBDB_Env::eRunRecovery;
             }
-            m_Env->SetMaxLocks(50000);
+            m_Env->SetMaxLocks(1000000);
             m_Env->OpenWithTrans(cache_path, env_flags);
             }
             break;

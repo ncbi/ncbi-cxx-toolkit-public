@@ -33,8 +33,12 @@
  *
  */
 
+#include <corelib/ncbiexpt.hpp>
 #include <corelib/tempstr.hpp>
 #include <connect/connect_export.h>
+
+#include <map>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -115,7 +119,8 @@ public:
         eWrongCommand,
         eBadToken,
         eArgumentsLack,
-        eWrongMap
+        eWrongMap,
+        eWrongParams
     };
 
     virtual const char* GetErrCodeString(void) const;

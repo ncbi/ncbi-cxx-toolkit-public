@@ -32,6 +32,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <corelib/ncbistl.hpp>
+
 #include <connect/services/netservice_protocol_parser.hpp>
 #include <connect/services/netcache_key.hpp>
 
@@ -315,7 +317,7 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
         s_SafeSetDefault(params, arg_descr);
         ++arg_descr;
     }
-    
+
     if (arg_descr->flags != eNSPA_None) {
         NCBI_THROW(CNSProtoParserException, eArgumentsLack,
                    "Not all required parameters given. "

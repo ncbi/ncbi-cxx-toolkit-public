@@ -25,13 +25,16 @@
  *
  * ===========================================================================
  *
- * Authors:  Victor Joukov
+ * Authors:  Victor Joukov, Pavel Ivanov
  *
  * File Description: Network cache daemon
  *
  */
+
 #include <connect/server.hpp>
-#include "request_handler.hpp"
+#include <connect/services/netservice_protocol_parser.hpp>
+
+#include "netcached.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -40,8 +43,7 @@ BEGIN_NCBI_SCOPE
 // message handling functionality does not expose socket Read
 // method. We need to surround this method by timing accounting,
 // so we duplicated this code here with timing added.
-class CNetCache_MessageHandler : public IServer_ConnectionHandler,
-    public CNetCache_RequestHandlerHost
+class CNetCache_MessageHandler : public IServer_ConnectionHandler
 {
 public:
     CNetCache_MessageHandler(CNetCacheServer* server);
@@ -68,11 +70,6 @@ public:
     // CNetCache_RequestHandlerHost protocol
     virtual void BeginReadTransmission();
     virtual void BeginDelayedWrite();
-    virtual CNetCacheServer* GetServer();
-    virtual SNetCache_RequestStat* GetStat();
-    virtual const string* GetAuth();
-    virtual void SetDiagParameters(const string& client_ip,
-                                   const string& session_id);
 
 protected:
     void WriteMsg(const string& prefix, const string& msg)
@@ -98,11 +95,63 @@ protected:
                          const string& comment,
                          const string& request);
 
+public:
+    typedef void (CNetCache_MessageHandler::*TProcessor)(void);
+    struct SCommandExtra {
+        TProcessor    processor;
+    };
+    typedef SNSProtoCmdDef<SCommandExtra>      SCommandDef;
+    typedef SNSProtoParsedCmd<SCommandExtra>   SParsedCmd;
+    typedef CNetServProtoParser<SCommandExtra> TProtoParser;
+
+    // Command processors
+    void ProcessAlive(void);
+    void ProcessOK(void);
+    void ProcessMoni(void);
+    void ProcessSessionReg(void);
+    void ProcessSessionUnreg(void);
+    void ProcessPut(void);
+    void ProcessPut2(void);
+    void ProcessPut3(void);
+    void ProcessGet(void);
+    void ProcessVersion(void);
+    void ProcessLog(void);
+    void ProcessStat(void);
+    void ProcessRemove(void);
+    void ProcessRemove2(void);
+    void ProcessShutdown(void);
+    void ProcessGetConfig(void);
+    void ProcessDropStat(void);
+    void ProcessHasBlob(void);
+    void ProcessGetBlobOwner(void);
+    void ProcessGetStat(void);
+    void ProcessIsLock(void);
+    void ProcessGetSize(void);
+    void Process_IC_SetTimeStampPolicy(void);
+    void Process_IC_GetTimeStampPolicy(void);
+    void Process_IC_SetVersionRetention(void);
+    void Process_IC_GetVersionRetention(void);
+    void Process_IC_GetTimeout(void);
+    void Process_IC_IsOpen(void);
+    void Process_IC_Store(void);
+    void Process_IC_StoreBlob(void);
+    void Process_IC_GetSize(void);
+    void Process_IC_GetBlobOwner(void);
+    void Process_IC_Read(void);
+    void Process_IC_Remove(void);
+    void Process_IC_RemoveKey(void);
+    void Process_IC_GetAccessTime(void);
+    void Process_IC_HasBlobs(void);
+    void Process_IC_Purge1(void);
+
 private:
     // Phase of connection - login, queue, command, batch submit etc.
     void (CNetCache_MessageHandler::*m_ProcessMessage)(BUF buffer);
 
-    void ProcessSM(const CNCRequestParser& parser);
+    void x_AssignParams(const map<string, string>& params);
+    bool x_ProcessWriteAndReport(unsigned int  blob_size,
+                                 const string* req_id = 0);
+    void x_ProcessSM(bool reg);
 
     /// Init diagnostics Client IP and Session ID for proper logging
     void x_InitDiagnostics(void);
@@ -132,9 +181,6 @@ private:
     //
     string m_Auth;
 
-    auto_ptr<CNetCache_RequestHandler> m_ICHandler;
-    auto_ptr<CNetCache_RequestHandler> m_NCHandler;
-
     /// Continuous read flag
     bool m_InTransmission;
     /// Delayed write flag
@@ -145,13 +191,25 @@ private:
     /// Session ID for current request. It will be set in diagnostics for
     /// proper logging.
     string m_SessionID;
-    // By original design, connection can process a mix of commands from
-    // both NC and IC subsets. Commands that require Read Transmission or
-    // DelayedWrite are processed in more than one request, and we need to
-    // know which handler new request should be redirected to.
-    // For this purpose we introduced m_LastHandler.
-    CNetCache_RequestHandler*          m_LastHandler;
+    string m_Host;
+    unsigned int m_Port;
+    string m_ReqId;
+    string m_ValueParam;
+    ICache* m_ICache;
+    unsigned int m_Policy;
+    unsigned int m_MaxTimeout;
+    unsigned int m_Timeout;
+    string m_Key;
+    unsigned int m_Version;
+    string m_SubKey;
 
+    TProtoParser      m_Parser;
+
+    auto_ptr<IWriter> m_Writer;
+    auto_ptr<IReader> m_Reader;
+    bool              m_PutOK;
+    bool              m_SizeKnown;
+    size_t            m_BlobSize;
 };
 
 
