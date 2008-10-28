@@ -5,7 +5,8 @@ SRC = test_ncbistr
 LIB = test_boost xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
-PRE_LIBS = $(BOOST_LIBS)
+PRE_LIBS = $(BOOST_TEST_LIBS)
+
 REQUIRES = Boost.Test
 
 CHECK_CMD =

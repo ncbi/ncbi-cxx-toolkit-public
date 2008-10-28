@@ -11,7 +11,7 @@ SRC = unit_test_alt_sample
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = test_boost xncbi
-PRE_LIBS = $(BOOST_LIBS)
+PRE_LIBS = $(BOOST_TEST_LIBS)
 
 REQUIRES = Boost.Test
 
