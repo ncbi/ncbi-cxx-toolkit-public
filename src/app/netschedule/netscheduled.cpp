@@ -432,6 +432,10 @@ private:
     unsigned                    m_BatchPos;
     CStopWatch                  m_BatchStopWatch;
     vector<CJob>                m_BatchJobs;
+    unsigned                    m_BatchSubmPort;
+    unsigned                    m_BatchSubmTimeout;
+    string                      m_BatchClientIP;
+    string                      m_BatchClientSID;
 
     // For projection writer
     auto_ptr<TNSBitVector>      m_SelectedIds;
@@ -1255,8 +1259,10 @@ void CNetScheduleHandler::ProcessSubmit()
 
 void CNetScheduleHandler::ProcessSubmitBatch()
 {
-    string client_ip  = m_JobReq.param3;
-    string client_sid = m_JobReq.param2;
+    m_BatchSubmPort    = m_JobReq.port;
+    m_BatchSubmTimeout = m_JobReq.timeout;
+    m_BatchClientIP    = m_JobReq.param3;
+    m_BatchClientSID   = m_JobReq.param2;
     WriteOK("Batch submit ready");
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgBatchHeader;
 }
@@ -1374,10 +1380,43 @@ void CNetScheduleHandler::ProcessMsgBatchJob(BUF buffer)
 
     job.SetMask(m_JobReq.job_mask);
     job.SetSubmAddr(m_PeerAddr);
+    job.SetSubmPort(m_BatchSubmPort);
+    job.SetSubmTimeout(m_BatchSubmTimeout);
+    job.SetClientIP(m_BatchClientIP);
+    job.SetClientSID(m_BatchClientSID);
 
     if (++m_BatchPos >= m_BatchSize)
         m_ProcessMessage = &CNetScheduleHandler::ProcessMsgBatchSubmit;
 }
+
+
+class CRequestContextSubmitGuard
+{
+public:
+    CRequestContextSubmitGuard(CNetScheduleServer* server,
+                               const string& client_ip,
+                               const string& session_id)
+      : m_Server(server)
+    {
+        m_Ctx = &CDiagContext::GetRequestContext();
+        CRequestContext* ctx = m_Server->GetRequestContextFromPool();
+        if (!client_ip.empty())
+            ctx->SetClientIP(client_ip);
+        ctx->SetSessionID(session_id);
+        ctx->SetRequestID(CRequestContext::GetNextRequestID());
+        CDiagContext::SetRequestContext(ctx);
+    }
+    ~CRequestContextSubmitGuard()
+    {
+        CRequestContext* ctx = &CDiagContext::GetRequestContext();
+        if (ctx == m_Ctx) return;
+        CDiagContext::SetRequestContext(m_Ctx);
+        m_Server->ReturnRequestContextToPool(ctx);
+    }
+private:
+    CNetScheduleServer* m_Server;
+    CRequestContext*    m_Ctx;
+};
 
 
 void CNetScheduleHandler::ProcessMsgBatchSubmit(BUF buffer)
@@ -1407,7 +1446,8 @@ void CNetScheduleHandler::ProcessMsgBatchSubmit(BUF buffer)
     double comm_elapsed = m_BatchStopWatch.Elapsed();
 
     // we have our batch now
-
+    CRequestContextSubmitGuard req_guard(m_Server,
+        m_BatchClientIP, m_BatchClientSID);
     CStopWatch sw(CStopWatch::eStart);
     unsigned job_id =
         m_Queue->SubmitBatch(m_BatchJobs);
@@ -2474,8 +2514,10 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "RECO",     &CNetScheduleHandler::ProcessReloadConfig, eNSCR_Any }, // ?? Admin
     { "QLST",     &CNetScheduleHandler::ProcessQList, eNSCR_Any },
     { "BSUB",     &CNetScheduleHandler::ProcessSubmitBatch, eNSCR_Submitter,
-        { { "ip",  eNSPT_Str, eNSPA_Optional, "" },
-          { "sid", eNSPT_Str, eNSPA_Optional, "" } } },
+        { { "port",         eNSPT_Int, eNSPA_Optional },
+          { "timeout",      eNSPT_Int, eNSPA_Optional },
+          { "ip",           eNSPT_Str, eNSPA_Optional, "" },
+          { "sid",          eNSPT_Str, eNSPA_Optional, "" } } },
     // JXCG [ job_key : id [ job_return_code : int [ output : str ] ] ]
     //      [affinity_list : keystr(aff) ]
     { "JXCG",     &CNetScheduleHandler::ProcessJobExchange, eNSCR_Worker,

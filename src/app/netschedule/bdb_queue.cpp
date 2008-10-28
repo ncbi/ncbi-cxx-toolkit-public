@@ -1658,12 +1658,13 @@ static void s_LogSubmit(SLockedQueue& q,
                         CJob& job,
                         SQueueDescription& qdesc)
 {
-    CRequestContext& ctx =CDiagContext::GetRequestContext();
+    CRequestContext& ctx = CDiagContext::GetRequestContext();
     if (!job.GetClientIP().empty())
         ctx.SetClientIP(job.GetClientIP());
     ctx.SetSessionID(job.GetClientSID());
 
-    CDiagContext_Extra extra = GetDiagContext().Extra().SetType("submit")
+    CDiagContext_Extra extra = GetDiagContext().Extra()
+        .Print("action", "submit")
         .Print("queue", q.GetQueueName())
         .Print("job_id", NStr::UIntToString(job.GetId()))
         .Print("input", job.GetInput())
@@ -1749,7 +1750,22 @@ unsigned CQueue::Submit(CJob& job)
 unsigned CQueue::SubmitBatch(vector<CJob>& batch)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    unsigned max_input_size = CQueueParamAccessor(*q).GetMaxInputSize();
+    unsigned max_input_size;
+    unsigned log_job_state;
+    {{
+        CQueueParamAccessor qp(*q);
+        log_job_state = qp.GetLogJobState();
+        max_input_size = qp.GetMaxInputSize();
+    }}
+
+    SQueueDescription qdesc;
+
+    if (log_job_state >= 1) {
+        GetDiagContext().PrintRequestStart("");
+        GetDiagContext().Extra()
+            .Print("action", "submit_batch")
+            .Print("size", NStr::UIntToString(batch.size()));
+    }
 
     bool was_empty = !q->status_tracker.AnyPending();
 
@@ -1810,6 +1826,9 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
             it->Flush(q);
 
             q->AppendTags(tag_map, it->GetTags(), cur_job_id);
+            if (log_job_state >= 2) {
+                s_LogSubmit(*q, *it, qdesc);
+            }
         }
         q->CountEvent(SLockedQueue::eStatDBWriteEvent,
             batch.size() + aux_inserts);
@@ -1829,6 +1848,8 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
     }}
     trans.Commit();
     q->status_tracker.AddPendingBatch(job_id, job_id + batch.size() - 1);
+    if (log_job_state >= 1)
+        GetDiagContext().PrintRequestStop();
 
     // This case is a bit complicated. If whole batch has the same
     // affinity, we include it in notification broadcast.
