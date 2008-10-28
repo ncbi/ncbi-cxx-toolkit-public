@@ -111,13 +111,13 @@ void s_AssignEntryValue(const string& name,
         string name = value.substr(pos + 2, pos_end - pos - 2);
         TCgiEntriesCI ci = old_entries.find(name);
         if (ci != old_entries.end()) {
-            s.replace(pos, pos_end - pos + 1, URL_EncodeString((ci->second).GetValue()));
+            s.replace(pos, pos_end - pos + 1, NStr::URLEncode((ci->second).GetValue()));
         } else {
             s.erase(pos, pos_end - pos + 1);
         }
         pos++;
     }
-    s = URL_DecodeString(s);
+    s = NStr::URLDecode(s);
     CCgiEntry entry(s);
     new_entries.insert(TCgiEntries::value_type(name, entry));
 }
@@ -154,7 +154,7 @@ int CCgiRedirectApplication::ProcessRequest(CCgiContext& ctx)
         url += i->first;
         if ( !(i->second).empty() ) {
             url += '=';
-            url += URL_EncodeString(i->second);
+            url += NStr::URLEncode(i->second);
         }
         // Map each entry.
         m_Page.AddTagMap(i->first, new CHTMLText(i->second));
