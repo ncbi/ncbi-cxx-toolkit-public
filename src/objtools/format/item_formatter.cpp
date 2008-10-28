@@ -962,9 +962,13 @@ static void s_FormatPatent
     //  the application oriented slots are used.
     //  Recognize pre grant publications by using of app-number and app-date, and
     //  by specifying the doc-type as "".
+    //  And of course, it must not have a number--- otherwise it would be a patent
+    //  already...
     //
-    bool use_pre_grant_formatting = pat.CanGetApp_number() && pat.CanGetApp_date() && 
-        pat.CanGetDoc_type() && NStr::IsBlank( pat.GetDoc_type() );
+    bool use_pre_grant_formatting = ! pat.CanGetNumber();
+    use_pre_grant_formatting &= ( 
+        pat.CanGetApp_number() && pat.CanGetApp_date() && 
+        (pat.CanGetDoc_type() && NStr::IsBlank( pat.GetDoc_type()) ) );
     //
     //  2006-01-26:
     //  Pre grant formatting currently only in non-release mode until quarantine
