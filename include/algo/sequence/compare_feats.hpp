@@ -137,6 +137,21 @@ public:
         
         return (denom == 0) ? 0.0 : (static_cast<double>(m_len_seqloc_overlap) / denom);  
     }
+
+    void GetSplicingSimilarity(float& score, int* loc1_intervals = NULL, int* loc2_intervals = NULL) const
+    {
+        if(!m_cachedOverlapValues) {
+            x_ComputeOverlapValues();
+        }
+
+        score = m_shared_sites_score;
+        if(loc1_intervals) {
+            *loc1_intervals = m_loc1_interval_count;
+        }
+        if(loc2_intervals) {
+            *loc2_intervals = m_loc2_interval_count;
+        }
+    }
     
     
     /// str_out will contain human-readable summary of the internal comparison
@@ -269,8 +284,6 @@ private:
     FCompareLocs x_CompareInts(const CSeq_loc& loc1, const CSeq_loc& loc2) const;
     
     
-    
-    
     ResultCounts m_counts;
     bool m_sameStrand;
     bool m_sameBioseq;
@@ -279,6 +292,9 @@ private:
     mutable TSeqPos m_len_seqloc_overlap;
     mutable TSeqPos m_len_seqloc1;
     mutable TSeqPos m_len_seqloc2;
+    mutable int m_loc1_interval_count;
+    mutable int m_loc2_interval_count;
+    mutable float m_shared_sites_score;
     
     
     vector<SIntervalComparisonResult> m_IntComparisons;
