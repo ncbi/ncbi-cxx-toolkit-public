@@ -52,27 +52,16 @@ public:
     static void Delete(Value* v) { delete v; }
 };
 
- /// C-array oriented class factory for resource pool (delete [])
- /// 
-template<class Value>
-struct CResoursePool_NewArrayClassFactory
-{
-public:
-    static Value* Create() { return new Value; }
-    static void Delete(Value* v) { delete [] v; }
-};
-
-
-
+ 
 /// General purpose resource pool (base class, sans default
 /// constructor arguments for maximum versatility).
 ///
 /// Intended use is to store reusable objects.
 /// Pool frees all vacant objects only upon pools destruction.
 /// Subsequent Get/Put calls does not result in objects reallocations and
-/// reinitializations. (So the prime target is performance optimization).
+/// re-initializations. (So the prime target is performance optimization).
 /// 
-/// Class can be used syncronized across threads 
+/// Class can be used synchronized across threads 
 /// (use CFastMutex as Lock parameter)
 ///
 /// Default creation/destruction protocol is C++ new/delete.

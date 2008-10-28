@@ -10,8 +10,10 @@ util/math$ update-only
 connect$
 connect/services$
 bdb$
+app$
 app/netschedule$
 app/netschedule/test$
 dll
+misc$
 misc/third_party
 misc/third_party_static
