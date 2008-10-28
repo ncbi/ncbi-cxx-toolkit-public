@@ -45,8 +45,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 /// Comparison functor for pqueue storing related comparisons
-/// A comparison of the same subtypes (e.g. mRNA vs. mRNA as opposed to mRNA vs. CDS)
-/// is always preferable; Otherwise a better-overlapping comparison is preferable.
 struct SCompareFeats_OpLess : public binary_function<CRef<CCompareFeats>&, CRef<CCompareFeats>&, bool>
 {
 public:
@@ -75,40 +73,60 @@ public:
         bool c2_sameType = c2->IsSameType();
         if(c1_sameType && !c2_sameType) return false;
         if(!c1_sameType && c2_sameType) return true;
+
+
+        //same product is better
+        try {
+            bool c1_same_product = !c1->GetFeatQ().IsNull() && c1->GetFeatQ()->CanGetProduct() 
+                                && !c1->GetFeatT().IsNull() && c1->GetFeatT()->CanGetProduct()
+                                &&  sequence::IsSameBioseq(
+                                        sequence::GetId(c1->GetFeatQ()->GetProduct(), NULL),
+                                        sequence::GetId(c1->GetFeatT()->GetProduct(), NULL),
+                                        NULL);
+            bool c2_same_product = !c2->GetFeatQ().IsNull() && c2->GetFeatQ()->CanGetProduct() 
+                                && !c2->GetFeatT().IsNull() && c2->GetFeatT()->CanGetProduct()
+                                &&  sequence::IsSameBioseq(
+                                        sequence::GetId(c2->GetFeatQ()->GetProduct(), NULL),
+                                        sequence::GetId(c2->GetFeatT()->GetProduct(), NULL),
+                                        NULL);
         
-        //larger symmetrical overlap is better
-        double overlap1 = c1->GetComparison()->GetSymmetricalOverlap();
-        double overlap2 = c2->GetComparison()->GetSymmetricalOverlap();
-        if(overlap1 < overlap2) return true;
-        if(overlap1 > overlap2) return false;
-        
-        //larger relative overlap is better
-        overlap1 = c1->GetComparison()->GetRelativeOverlap();
-        overlap2 = c2->GetComparison()->GetRelativeOverlap();
-        if(overlap1 < overlap2) return true;
-        if(overlap1 > overlap2) return false;
-        
-        
+            if(c1_same_product && !c2_same_product) return false;
+            if(!c1_same_product && c2_same_product) return true;
+        } catch(CException& e) {
+            ;
+        }
+
+
+        //the similarity score is a composite of the score based on shared sites, and the symmetrical overlap.
+        //(both are 0..1). The constant below is used to give more weight to shared sites score
+        const float k = 0.8;
+
+        float score1(0.0f);
+        float score2(0.0f);
+        c1->GetComparison()->GetSplicingSimilarity(score1);
+        c2->GetComparison()->GetSplicingSimilarity(score2);
+
+        score1 = k * score1 + (1.0 - k) * c1->GetComparison()->GetSymmetricalOverlap();
+        score2 = k * score2 + (1.0 - k) * c2->GetComparison()->GetSymmetricalOverlap();
+
+        if(score1 < score2) return true;
+        if(score2 > score1) return false;
+
         //same subtype is better than different subtypes (I bet we NEVER get to this point)
         bool c1_sameSubtype = c1->IsSameSubtype();
         bool c2_sameSubtype = c2->IsSameSubtype();
         if(c1_sameSubtype && !c2_sameSubtype) return false;
         if(!c1_sameSubtype && c2_sameSubtype) return true;
         
-        
-        //smaller difference in TypeSortingOrder is better 
-        unsigned c1_typeSortingOrderDiff = abs(c1->GetFeatQ()->GetTypeSortingOrder() - c1->GetFeatT()->GetTypeSortingOrder());
-        unsigned c2_typeSortingOrderDiff = abs(c2->GetFeatQ()->GetTypeSortingOrder() - c2->GetFeatT()->GetTypeSortingOrder());
-        if(c1_typeSortingOrderDiff < c2_typeSortingOrderDiff) return false;
-        if(c1_typeSortingOrderDiff > c2_typeSortingOrderDiff) return true;
-        
-        
-        
         return false;    
     }
 private:
 
 };
+
+
+
+
 
 
 CNcbiOstream& operator<<(CNcbiOstream& out, const CCompareFeats& cf)
@@ -425,8 +443,6 @@ void CCompareSeq_locs::x_ComputeOverlapValues() const
     }   
     
 
-
-
     CRef<CSeq_loc> subtr_loc1 = sequence::Seq_loc_Subtract(*merged_loc1, *merged_loc2, CSeq_loc::fMerge_All, m_scope_t);
     
     TSeqPos subtr_len;
@@ -449,6 +465,67 @@ void CCompareSeq_locs::x_ComputeOverlapValues() const
     }
 
     m_len_seqloc_overlap = m_len_seqloc1 - subtr_len;
+
+
+
+    //Compute shared sites score
+    m_shared_sites_score = 0.0f;
+    m_loc1_interval_count = 0;
+    m_loc2_interval_count = 0;
+
+    try { 
+        merged_loc1->ChangeToMix();
+        merged_loc2->ChangeToMix();
+        
+        TSeqPos terminal_start = min(sequence::GetStart(*merged_loc1, NULL), sequence::GetStart(*merged_loc2, NULL));
+        TSeqPos terminal_stop = max(sequence::GetStop(*merged_loc1, NULL), sequence::GetStop(*merged_loc2, NULL));
+
+        //if splice site matches exactly, it gets the score of 1.
+        //if it is not exact, it linearly drops down to zero at thr.
+        const float terminal_jitter_thr = 20.0f;
+        const float splice_jitter_thr = 5.0f;
+
+        for(CSeq_loc_CI ci1(*m_loc1); ci1; ++ci1) {
+            TSeqPos seg1_start = sequence::GetStart(ci1.GetSeq_loc(), NULL);
+            TSeqPos seg1_stop = sequence::GetStop(ci1.GetSeq_loc(), NULL);
+            float best_match_start = 0.0f;
+            float best_match_stop = 0.0f;
+            m_loc1_interval_count++;
+            for(CSeq_loc_CI ci2(*merged_loc2); ci2; ++ci2) {
+                if(m_loc1_interval_count == 1) {
+                    m_loc2_interval_count++; //compute only once in this loop
+                }
+                ENa_strand strand1 = sequence::GetStrand(ci1.GetSeq_loc(), NULL);
+                ENa_strand strand2 = sequence::GetStrand(ci2.GetSeq_loc(), NULL);
+                bool same_strand = strand1 == strand2
+                               || strand1 == eNa_strand_both
+                               || strand2 == eNa_strand_both
+                               || (strand1 == eNa_strand_unknown  && strand2 != eNa_strand_minus)
+                               || (strand2 == eNa_strand_unknown  && strand1 != eNa_strand_minus);
+                if(!same_strand) {
+                    continue;
+                }
+                
+                TSeqPos seg2_start = sequence::GetStart(ci2.GetSeq_loc(), NULL);
+                TSeqPos seg2_stop = sequence::GetStop(ci2.GetSeq_loc(), NULL);
+                
+                float thr = (seg1_start == terminal_start
+                          || seg1_stop == terminal_stop
+                          || seg2_start == terminal_start
+                          || seg2_stop == terminal_stop ) ? terminal_jitter_thr : splice_jitter_thr;
+                float match_start = max(0.0f, 1.0f - abs((long)seg1_start - (long)seg2_start) / thr);
+                best_match_start = max(match_start, best_match_start);
+                float match_stop = max(0.0f, 1.0f - abs((long)seg1_stop - (long)seg2_stop) / thr);
+                best_match_stop = max(match_stop, best_match_stop);
+            }   
+            m_shared_sites_score += best_match_start;
+            m_shared_sites_score += best_match_stop;
+        }   
+
+        m_shared_sites_score = 0.5*m_shared_sites_score / (m_loc1_interval_count + m_loc2_interval_count - (0.5*m_shared_sites_score));
+    } catch (CException& e) {
+        ;
+    }
 
     m_cachedOverlapValues = true;
 }
