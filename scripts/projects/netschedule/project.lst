@@ -11,6 +11,7 @@ connect$
 connect/services$
 bdb$
 app/netschedule$
+app/netschedule/test$
 dll
 misc/third_party
 misc/third_party_static
