@@ -575,6 +575,15 @@ int CProjBulderApp::Run(void)
     CCyclicDepends::FindCyclesNew(prj_tree.m_Projects, &cycles);
     s_ReportDependenciesStatus(cycles,projects_tree.m_Projects);
 
+    if (!m_SuspiciousProj.empty()) {
+        ITERATE( set<CProjKey>, key, m_SuspiciousProj) {
+            if (prj_tree.m_Projects.find(*key) != prj_tree.m_Projects.end()) {
+                PTB_ERROR(prj_tree.m_Projects.find(*key)->second.GetPath(),
+                    "More than one target with this name");
+                m_ExitCode = 1;
+            }
+        }
+    }
     if (m_ExitCode != 0) {
         string subtree = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, m_Subtree);
         if (CDirEntry(subtree).IsFile()) {
@@ -1521,6 +1530,11 @@ string CProjBulderApp::ProcessLocationMacros(string raw_data)
         }
     }
     return data;
+}
+
+void CProjBulderApp::RegisterSuspiciousProject(const CProjKey& proj)
+{
+    m_SuspiciousProj.insert(proj);
 }
 
 CProjBulderApp& GetApp(void)

@@ -28,6 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
 #include "proj_item.hpp"
 #include "msvc_prj_utils.hpp"
 
@@ -194,6 +195,29 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_ExportHeaders     = item.m_ExportHeaders;
     m_CheckInfo         = item.m_CheckInfo;
     m_CheckConfigs      = item.m_CheckConfigs;
+}
+
+string CProjItem::GetPath(void) const
+{
+    string path = CDirEntry::ConcatPath(m_SourcesBaseDir, "Makefile.");
+    path += m_Name;
+    switch (m_ProjType) {
+    case CProjKey::eApp:
+        path += ".app";
+        break;
+    case CProjKey::eLib:
+        path += ".lib";
+        break;
+    case CProjKey::eDll:
+        path += ".dll";
+        break;
+    case CProjKey::eMsvc:
+        path += ".msvc";
+        break;
+    default:
+        break;
+    }
+    return path;
 }
 
 

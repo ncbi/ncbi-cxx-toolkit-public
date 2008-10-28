@@ -68,21 +68,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         }
     }
 
-    string path = CDirEntry::ConcatPath(prj.m_SourcesBaseDir, "Makefile.");
-    path += prj.m_Name;
-    switch (prj.m_ProjType) {
-    case CProjKey::eApp:
-        path += ".app";
-        break;
-    case CProjKey::eLib:
-        path += ".lib";
-        break;
-    case CProjKey::eDll:
-        path += ".dll";
-        break;
-    default:
-        break;
-    }
+    string path = prj.GetPath();
     if (!str_log.empty()) {
         PTB_WARNING_EX(path, ePTB_ConfigurationError,
                        "Disabled configurations: " << str_log);

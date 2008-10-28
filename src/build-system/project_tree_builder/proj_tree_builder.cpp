@@ -723,16 +723,13 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     {{
         CProjKey proj_key(CProjKey::eApp, proj_id);
         if (tree->m_Projects.find(proj_key) != tree->m_Projects.end()) {
+            PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
+                        "Application " << proj_id << " already defined at "
+                        << tree->m_Projects[proj_key].m_SourcesBaseDir);
             if (GetApp().IsScanningWholeTree()) {
-                PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
-                            "Application " << proj_id << " already defined at "
-                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
                 return CProjKey();
             } else {
-                GetApp().SetFail();
-                PTB_ERROR_EX(full_makefile_path, ePTB_ConfigurationError,
-                            "Application " << proj_id << " already defined at "
-                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                GetApp().RegisterSuspiciousProject(proj_key);
             }
         }
     }}
@@ -999,16 +996,13 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     {{
         CProjKey proj_key(CProjKey::eLib, proj_id);
         if (tree->m_Projects.find(proj_key) != tree->m_Projects.end()) {
+            PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
+                        "Library " << proj_id << " already defined at "
+                        << tree->m_Projects[proj_key].m_SourcesBaseDir);
             if (GetApp().IsScanningWholeTree()) {
-                PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
-                            "Library " << proj_id << " already defined at "
-                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
                 return CProjKey();
             } else {
-                GetApp().SetFail();
-                PTB_ERROR_EX(full_makefile_path, ePTB_ConfigurationError,
-                            "Library " << proj_id << " already defined at "
-                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                GetApp().RegisterSuspiciousProject(proj_key);
             }
         }
     }}
@@ -1195,15 +1189,13 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
             const CProjItem& item = tree->m_Projects[proj_key];
             if (item.m_HostedLibs.size() != 1 || item.m_HostedLibs.front() != proj_id) {
                 string full_makefile_path = applib_mfilepath;
+                PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
+                            "DLL " << proj_id << " already defined at "
+                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
                 if (GetApp().IsScanningWholeTree()) {
-                    PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
-                                "DLL " << proj_id << " already defined at "
-                                << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                    return CProjKey();
                 } else {
-                    GetApp().SetFail();
-                    PTB_ERROR_EX(full_makefile_path, ePTB_ConfigurationError,
-                                "DLL " << proj_id << " already defined at "
-                                << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                    GetApp().RegisterSuspiciousProject(proj_key);
                 }
             }
         }
@@ -1553,16 +1545,13 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
         CProjKey proj_key(CProjKey::eMsvc, proj_id);
         if (tree->m_Projects.find(proj_key) != tree->m_Projects.end()) {
             string full_makefile_path = applib_mfilepath;
+            PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
+                        "MSVC project " << proj_id << " already defined at "
+                        << tree->m_Projects[proj_key].m_SourcesBaseDir);
             if (GetApp().IsScanningWholeTree()) {
-                PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
-                            "MSVC project " << proj_id << " already defined at "
-                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
                 return CProjKey();
             } else {
-                GetApp().SetFail();
-                PTB_ERROR_EX(full_makefile_path, ePTB_ConfigurationError,
-                            "MSVC project " << proj_id << " already defined at "
-                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                GetApp().RegisterSuspiciousProject(proj_key);
             }
         }
     }}

@@ -104,6 +104,7 @@ private:
     set<string>  m_DisallowedTags;
     bool m_ScanningWholeTree;
     int m_ExitCode;
+    set<CProjKey> m_SuspiciousProj;
 
 public:
 
@@ -166,6 +167,7 @@ public:
     string ProcessLocationMacros(string data);
     bool IsScanningWholeTree(void) const {return m_ScanningWholeTree;}
     void SetFail(int exit_code=1) {m_ExitCode=exit_code;}
+    void RegisterSuspiciousProject(const CProjKey& proj);
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
