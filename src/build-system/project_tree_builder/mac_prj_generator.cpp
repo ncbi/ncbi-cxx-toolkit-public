@@ -116,7 +116,7 @@ void CMacProjectGenerator::Generate(const string& solution)
     ITERATE(CProjectItemsTree::TProjects, p, m_Projects_tree.m_Projects) {
 
         const CProjItem& prj(p->second);
-        string proj_id(       GetProjId(       prj));
+
         string proj_target(   GetProjTarget(   prj));
         string proj_product(  GetProjProduct(  prj));
         string proj_dependency(GetProjDependency(prj));
@@ -341,7 +341,7 @@ string CMacProjectGenerator::CreateProjectFileGroups(
         AddString( *prj_sources, proj_specs);
         AddGroupDict( dict_objects, proj_specs,   specs, datatool_files);
     }
-    AddGroupDict( dict_objects, src_group_name, prj_sources, proj_id);
+    AddGroupDict( dict_objects, src_group_name, prj_sources, GetTargetName(prj));
     return src_group_name;
 }
 
@@ -434,8 +434,8 @@ string CMacProjectGenerator::CreateProjectTarget(
     ITERATE( list<CProjKey>, d, prj.m_Depends) {
         CProjectItemsTree::TProjects::const_iterator
             dp = m_Projects_tree.m_Projects.find( *d);
-        if (dp != m_Projects_tree.m_Projects.end() &&
-            dp->first.Id() != prj.m_ID) {
+        if ( dp != m_Projects_tree.m_Projects.end() &&
+            (dp->first.Id() != prj.m_ID || dp->first.Type() != prj.m_ProjType)) {
             AddString( *dependencies, GetProjDependency(dp->second));
         }
     }
@@ -653,8 +653,8 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         ITERATE( list<CProjKey>, d, prj.m_Depends) {
             CProjectItemsTree::TProjects::const_iterator
                 dp = m_Projects_tree.m_Projects.find( *d);
-            if (dp != m_Projects_tree.m_Projects.end() &&
-                dp->first.Id() != prj.m_ID &&
+            if ( dp != m_Projects_tree.m_Projects.end() &&
+                (dp->first.Id() != prj.m_ID || dp->first.Type() != prj.m_ProjType) &&
                 (dp->first.Type() == CProjKey::eLib || dp->first.Type() == CProjKey::eDll)) {
                 ldlibs.push_back(dp->second);
             }
@@ -662,7 +662,7 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         ldlibs.sort(s_ProjItem_less);
         string ldlib;
         ITERATE( list<CProjItem>, d, ldlibs) {
-            ldlib += string(" -l") + GetProjId( *d);
+            ldlib += string(" -l") + GetTargetName(*d);
         }
         string add = prj_files.GetProjectContext().GetMsvcProjectMakefile().GetLinkerOpt("OTHER_LDFLAGS",cfg);
         if (!add.empty()) {
@@ -951,27 +951,35 @@ string CMacProjectGenerator::GetRelativePath(const string& name, const string* f
 
 string CMacProjectGenerator::GetProjId( const CProjItem& prj)
 {
-    return prj.m_ID;
+    string id(prj.m_ID);
+    if (prj.m_ProjType == CProjKey::eLib) {
+        id += "_ar";
+    } else if (prj.m_ProjType == CProjKey::eDll) {
+        id += "_dylib";
+    } else if (prj.m_ProjType == CProjKey::eApp) {
+        id += "_exe";
+    }
+    return id;
 }
 string CMacProjectGenerator::GetProjTarget(const CProjItem& prj)
 {
-    return prj.m_ID + "_target";
+    return GetProjId(prj) + "_target";
 }
 string CMacProjectGenerator::GetProjBuild(const CProjItem& prj)
 {
-    return prj.m_ID + "_build";
+    return GetProjId(prj) + "_build";
 }
 string CMacProjectGenerator::GetProjProduct(const CProjItem& prj)
 {
-    return prj.m_ID + "_product";
+    return GetProjId(prj) + "_product";
 }
 string CMacProjectGenerator::GetProjHeaders(const CProjItem& prj)
 {
-    return prj.m_ID + "_headers";
+    return GetProjId(prj) + "_headers";
 }
 string CMacProjectGenerator::GetProjDependency(  const CProjItem& prj)
 {
-    return prj.m_ID + "_dependency";
+    return GetProjId(prj) + "_dependency";
 }
 string CMacProjectGenerator::GetTargetName( const CProjItem& prj)
 {
