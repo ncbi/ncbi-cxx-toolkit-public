@@ -38,7 +38,9 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_connssl.h"
 #include "ncbi_priv.h"
-#include <corelib/ncbiatomic.h>
+#ifdef NCBI_CXX_TOOLKIT
+#  include <corelib/ncbiatomic.h>
+#endif /*NCBI_CXX_TOOLKIT*/
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_socket_unix.h>
 
