@@ -168,7 +168,7 @@ property xvalidate : {name:"xvalidate", path:"objtools:validator"}
 property xobjmanip : {name:"xobjmanip", path:"objtools:manip"}
 property xobjread : {name:"xobjread", path:"objtools:readers"}
 property xobjedit : {name:"xobjedit", path:"objtools:edit"}
-property seqdb : {name:"seqdb", path:"objtools:readers:seqdb"}
+property seqdb : {name:"seqdb", path:"objtools:blast:seqdb_reader"}
 property xformat : {name:"xformat", path:"objtools:format"}
 property xblastformat : {name:"xblastformat", path:"objtools:blast_format"}
 property xobjsimple : {name:"xobjsimple", path:"objtools:simple"}
