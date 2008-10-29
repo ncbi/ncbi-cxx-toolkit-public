@@ -172,7 +172,7 @@ typedef struct TRIGGER_tag {
     unsigned int     id;        /* the internal ID (cf. "s_ID_Counter")      */
 
     volatile int     isset;     /* trigger state (UNIX only, otherwise MBZ)  */
-    unsigned int     out;       /* UNIX only, otherwise MBZ                  */
+    volatile int     isset_;    /* CAUTION: "isset" pointer protrusion area! */
 
     /* type, status, EOF, log, read-on-write etc bit-field indicators */
     TSOCK_Type          type;   /* eTrigger                                  */
@@ -186,6 +186,10 @@ typedef struct TRIGGER_tag {
     EBIO_Status     w_status:3; /* MBZ (NB: eIO_Success)                     */
     unsigned/*bool*/ pending:1; /* MBZ                                       */
     unsigned        reserved:8; /* MBZ                                       */
+
+#ifdef NCBI_OS_UNIX
+    int              out;       /* write end of the pipe                     */
+#endif /*NCBI_OS_UNIX*/
 } TRIGGER_struct;
 
 
