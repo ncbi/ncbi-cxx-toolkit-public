@@ -174,7 +174,7 @@ void CdPssmInput::Process()
 	if (m_useConsensus)
 	{
 		//add consensus
-		for (int i = 0; i < m_msaDimensions.query_length; i++)
+		for (unsigned int i = 0; i < m_msaDimensions.query_length; i++)
 		{
 			m_msa->data[0][i].letter = m_query[i];
 			m_msa->data[0][i].is_aligned = true;
@@ -199,9 +199,9 @@ void CdPssmInput::unalignLeadingTrailingGaps()
 	char gap = ColumnResidueProfile::getNcbiStdCode('-');
 	//row 0 is the query; does not have gaps
 	//so we start at row 1
-	for (int row = 1; row <= m_msaDimensions.num_seqs; row++)
+	for (unsigned int row = 1; row <= m_msaDimensions.num_seqs; row++)
 	{
-		int i = 0;
+		unsigned int i = 0;
 		for (; i < m_msaDimensions.query_length; i++)
 		{
 			if (m_msa->data[row][i].letter == gap)
@@ -209,7 +209,7 @@ void CdPssmInput::unalignLeadingTrailingGaps()
 			else
 				break;
 		}
-		for (int j = m_msaDimensions.query_length - 1; j > i; j--)
+		for (unsigned int j = m_msaDimensions.query_length - 1; j > i; j--)
 		{
 			if (m_msa->data[row][j].letter == gap)
 				m_msa->data[row][j].is_aligned = false;
@@ -224,7 +224,7 @@ void CdPssmInput::moveUpLongestRow()
 	int longestRow = 1;
 	int maxLen = countResiduesInRow(longestRow);
 
-	for (int row = 2; row <= m_msaDimensions.num_seqs; row++)
+	for (int row = 2; row <= (int) m_msaDimensions.num_seqs; row++)
 	{
 		int len = countResiduesInRow(row);
 		if (len > maxLen)
@@ -245,7 +245,7 @@ void CdPssmInput::moveUpLongestRow()
 
 void CdPssmInput::copyRow(PSIMsaCell* src, PSIMsaCell* dest)
 {
-	for (int i = 0; i < m_msaDimensions.query_length; i++)
+	for (unsigned int i = 0; i < m_msaDimensions.query_length; i++)
 	{
 		dest[i].is_aligned = src[i].is_aligned;
 		dest[i].letter = src[i].letter;
@@ -256,7 +256,7 @@ void CdPssmInput::copyRow(PSIMsaCell* src, PSIMsaCell* dest)
 int CdPssmInput::countResiduesInRow(int row)
 {
 	int count = 0;
-	for (int i = 0; i < m_msaDimensions.query_length; i++)
+	for (unsigned int i = 0; i < m_msaDimensions.query_length; i++)
 	{
 		if (m_msa->data[row][i].is_aligned)
 			count++;
@@ -351,7 +351,7 @@ CRef<CPssmWithParameters> PssmMaker::make()
 	}
 	m_pssmInput = new CdPssmInput (m_conMaker->getResidueProfiles(), m_config,m_useConsensus);
 	if (!m_useConsensus)
-		for(int i = 0 ; i < m_pssmInput->GetQueryLength(); i++)
+		for(unsigned int i = 0 ; i < m_pssmInput->GetQueryLength(); i++)
 			m_trunctMaster.push_back(m_pssmInput->GetQuery()[i]);
 	CPssmEngine pssmEngine(m_pssmInput);
 	m_pseudoCount = m_pssmInput->GetOptions()->pseudo_count;
@@ -425,7 +425,7 @@ CRef<CPssmWithParameters> PssmMaker::makeDefaultPssm()
 		freqs = &(pssm.SetIntermediateData().SetFreqRatios());
 	}
 	list< int > & scores = pssm.SetFinalData().SetScores();
-	for (int col = 0; col < consensus.size(); col++)
+	for (unsigned int col = 0; col < consensus.size(); col++)
 	{
 		char c1 = consensus.at(col);
 		for (char row = 0; row < numRows; row++)
@@ -447,6 +447,8 @@ CRef<CPssmWithParameters> PssmMaker::makeDefaultPssm()
 
 void PssmMaker::modifyQuery(CRef< CSeq_entry > query)
 {
+    static const string commaSpace(", ");
+    static const string periodSpaceSpace(".  ");
 	CBioseq& bioseq = query->SetSeq();
 	bioseq.ResetId();
 	list< CRef< CSeq_id > > & ids = bioseq.SetId();
@@ -479,9 +481,27 @@ void PssmMaker::modifyQuery(CRef< CSeq_entry > query)
 	//add a decr field
 	list< CRef< CSeqdesc > >& descList = bioseq.SetDescr().Set();
 	CRef< CSeqdesc > desc(new CSeqdesc);
-	string title(m_cd->GetAccession());
-	title += ", ";
-	title += m_cd->GetName();
+
+    //  Get the CD title.  
+    //  Chop leading/trailing spaces, and terminating '.' characters.
+    string cdTitle(m_cd->GetTitle());
+    NStr::TruncateSpacesInPlace(cdTitle);
+    if (cdTitle.length() > 0) {
+        while (NStr::EndsWith(cdTitle, '.')) {
+            cdTitle = cdTitle.substr(0, cdTitle.length() - 1);
+        }
+    }
+
+	string seqDescTitle(m_cd->GetAccession());
+	seqDescTitle += commaSpace;
+	seqDescTitle += m_cd->GetName();
+
+    //  If this is a consensus sequence, prepend the title to any comment.
+    //  Do this here in case there are no comments.
+    if (m_useConsensus && cdTitle.length() > 0) {
+        seqDescTitle += commaSpace + cdTitle + periodSpaceSpace;
+    }
+
 	list< CRef< CCdd_descr > >& cddescList = m_cd->SetDescription().Set();
 	list< CRef< CCdd_descr > >::iterator lit = cddescList.begin();
 	
@@ -489,13 +509,19 @@ void PssmMaker::modifyQuery(CRef< CSeq_entry > query)
 	{
 		if ((*lit)->IsComment())
 		{
-			title += ", ";
-			title += (*lit)->GetComment();
-			title += '.';
-			break; //only take the first comment
+            if (!m_useConsensus || cdTitle.length() == 0) {
+                seqDescTitle += commaSpace;
+            }
+			seqDescTitle += (*lit)->GetComment();
+            if (!NStr::EndsWith(seqDescTitle, '.')) {
+                seqDescTitle += '.';
+            }
+
+            //  only take the first comment
+			break; 
 		}
 	}
-	desc->SetTitle(title);
+	desc->SetTitle(seqDescTitle);
 	list< CRef< CSeqdesc > >::iterator it = descList.begin();
 	for(; it != descList.end(); it++)
 		if ( (*it)->IsTitle() ) {
@@ -542,7 +568,7 @@ void PssmMaker::printAlignment(string& fileName)
 	const vector< CRef< CSeq_id > >& seqIds = m_conMaker->getResidueProfiles().getSeqIdsByRow();
 	if (!IsConsensus(seqIds[0]))
 		seqIdStr.push_back(seqIds[0]->AsFastaString());
-	for (int i = 1; i < seqIds.size(); i++)
+	for (unsigned int i = 1; i < seqIds.size(); i++)
 	{
 		seqIdStr.push_back(seqIds[i]->AsFastaString());
 	}
