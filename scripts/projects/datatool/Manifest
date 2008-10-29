@@ -9,6 +9,9 @@
 #          It is used by release configurator.
 #
 
+
+USE_DEFAULT_COMPONENTS
+
 APP: datatool
 # APP: test_ncbi_disp -- not now
 
