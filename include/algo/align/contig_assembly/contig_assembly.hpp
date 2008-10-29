@@ -108,6 +108,7 @@ public:
                                      objects::ENa_strand& strand,
                                      unsigned int& diag);
 
+
     /// Do a banded global alignment using an arbitrary band.
     static CRef<objects::CDense_seg>
     BandedGlobalAlignment(const objects::CSeq_id& id0,

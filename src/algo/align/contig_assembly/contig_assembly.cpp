@@ -315,25 +315,6 @@ void CContigAssembly::FindDiagFromAlignSet(const CSeq_align_set& align_set,
 }
 
 
-void CContigAssembly::FindReverseDiagFromAlignSet(const CSeq_align_set& align_set,
-                                           CScope& scope,
-                                           unsigned int window_size,
-                                           ENa_strand& strand,
-                                           unsigned int& diag)
-{
-    CSeq_align_set reverse_set;
-    ITERATE (CSeq_align_set::Tdata, aln, align_set.Get()) {
-        CRef<CSeq_align> reversed(new CSeq_align);
-        reversed->Assign(**aln);
-        reversed->Reverse();
-        reverse_set.Set().push_back(reversed);
-    }
-
-    FindDiagFromAlignSet(reverse_set, scope, window_size, strand, diag);
-}
-
-
-
 // Fake a banded NW alignment around an arbitrary diagonal.
 // diag is specified using same convention as returned by
 // FindDiagFromAlignSet.
@@ -964,7 +945,8 @@ bool CContigAssembly::x_IsAllowedStrands(const CDense_seg& ds,
         align_strands[0] = ds.GetSeqStrand(0);
         align_strands[1] = ds.GetSeqStrand(1);
     }
-
+if(align_strands[1] == eNa_strand_minus)
+    cout << "strand[1] == eNa_strand_minus " << endl;
     if(strand0 == align_strands[0] || strand0 == eNa_strand_unknown)
         matches[0] = true;
     if(strand1 == align_strands[1] || strand1 == eNa_strand_unknown)
