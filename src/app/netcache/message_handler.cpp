@@ -240,6 +240,7 @@ CNetCache_MessageHandler::CNetCache_MessageHandler(CNetCacheServer* server)
       m_SeenCR(false),
       m_InTransmission(false),
       m_DelayedWrite(false),
+      m_StartPrinted(false),
       m_Parser(s_CommandMap),
       m_PutOK(false),
       m_SizeKnown(false)
@@ -356,6 +357,20 @@ CNetCache_MessageHandler::OnOpen(void)
     }
 }
 
+inline void
+CNetCache_MessageHandler::x_InitDiagnostics(void)
+{
+    if (m_Context.NotNull()) {
+        CDiagContext::SetRequestContext(m_Context);
+    }
+}
+
+inline void
+CNetCache_MessageHandler::x_DeinitDiagnostics(void)
+{
+    CDiagContext::SetRequestContext(NULL);
+}
+
 void
 CNetCache_MessageHandler::OnRead(void)
 {
@@ -367,6 +382,9 @@ CNetCache_MessageHandler::OnRead(void)
     size_t n_read;
 
     if (!m_InRequest) {
+        m_Context.Reset(new CRequestContext());
+        m_Context->SetRequestID();
+        x_InitDiagnostics();
         m_Stat.InitRequest();
         m_InRequest = true;
     }
@@ -560,15 +578,25 @@ NCBI_PARAM_DECL(double, server, log_threshold);
 static NCBI_PARAM_TYPE(server, log_threshold) s_LogThreshold;
 NCBI_PARAM_DEF(double, server, log_threshold, 1.0);
 
+enum ELogRequests {
+    eLogAllReqs,
+    eDoNotLogHasBlob,
+    eDoNotLogRequests
+};
+
+NCBI_PARAM_ENUM_DECL(ELogRequests, server, log_requests);
+typedef NCBI_PARAM_TYPE(server, log_requests) TLogRequests;
+NCBI_PARAM_ENUM_ARRAY(ELogRequests, server, log_requests) {
+    { "all",      eLogAllReqs },
+    { "not_hasb", eDoNotLogHasBlob },
+    { "no",       eDoNotLogRequests }
+};
+NCBI_PARAM_ENUM_DEF(ELogRequests, server, log_requests, eLogAllReqs);
+
 
 void
 CNetCache_MessageHandler::OnRequestEnd()
 {
-    m_Stat.EndRequest();
-    m_InRequest = false;
-    m_ClientIP.clear();
-    m_SessionID.clear();
-
     int level = m_Server->GetLogLevel();
     if (level >= CNetCacheServer::kLogLevelRequest ||
         (level >= CNetCacheServer::kLogLevelBase &&
@@ -640,6 +668,13 @@ CNetCache_MessageHandler::OnRequestEnd()
 
         MonitorPost(msg);
     }
+
+    if (m_StartPrinted) {
+        GetDiagContext().PrintRequestStop();
+    }
+    m_Stat.EndRequest();
+    m_InRequest = false;
+    m_Context.Reset();
 }
 
 void
@@ -701,8 +736,6 @@ CNetCache_MessageHandler::ReportException(const CException& ex,
 void
 CNetCache_MessageHandler::ProcessMsgTransmission(BUF buffer)
 {
-    x_InitDiagnostics();
-
     string data;
     s_ReadBufToString(buffer, data);
 
@@ -761,34 +794,6 @@ CNetCache_MessageHandler::ProcessMsgTransmission(BUF buffer)
     if (!m_InTransmission) {
         m_ProcessMessage = &CNetCache_MessageHandler::ProcessMsgRequest;
     }
-
-    x_DeinitDiagnostics();
-}
-
-void
-CNetCache_MessageHandler::x_InitDiagnostics(void)
-{
-    CRequestContext& req = CDiagContext::GetRequestContext();
-    if (m_ClientIP.empty()) {
-        req.UnsetClientIP();
-    }
-    else {
-        req.SetClientIP(m_ClientIP);
-    }
-    if (m_SessionID.empty()) {
-        req.UnsetSessionID();
-    }
-    else {
-        req.SetSessionID(m_SessionID);
-    }
-}
-
-void
-CNetCache_MessageHandler::x_DeinitDiagnostics(void)
-{
-    CRequestContext& req = CDiagContext::GetRequestContext();
-    req.UnsetClientIP();
-    req.UnsetSessionID();
 }
 
 void
@@ -825,7 +830,10 @@ CNetCache_MessageHandler::x_AssignParams(const map<string, string>& params)
             break;
         case 'i':
             if (key == "ip") {
-                m_ClientIP = val;
+                _ASSERT(m_Context.NotNull());
+                if (!val.empty()) {
+                    m_Context->SetClientIP(val);
+                }
             }
             else if (key == "id") {
                 m_ReqId = val;
@@ -859,7 +867,10 @@ CNetCache_MessageHandler::x_AssignParams(const map<string, string>& params)
             break;
         case 's':
             if (key == "sid") {
-                m_SessionID = NStr::URLDecode(val);
+                _ASSERT(m_Context.NotNull());
+                if (!val.empty()) {
+                    m_Context->SetSessionID(NStr::URLDecode(val));
+                }
             }
             else if (key == "subkey") {
                 m_SubKey = val;
@@ -902,10 +913,21 @@ CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
     try {
         SParsedCmd cmd = m_Parser.ParseCommand(request);
         x_AssignParams(cmd.params);
+        if (TLogRequests::GetDefault() == eLogAllReqs
+            ||  TLogRequests::GetDefault() == eDoNotLogHasBlob
+                &&  NStr::CompareCase(cmd.command->cmd, "HASB") != 0)
+        {
+            CDiagContext_Extra extra = GetDiagContext().PrintRequestStart();
+            extra.Print("cmd", cmd.command->cmd);
+            typedef map<string, string> TMap;
+            ITERATE(TMap, it, cmd.params) {
+                extra.Print(it->first, it->second);
+            }
 
-        _TRACE("Processing request " << request.substr(0, 100));
+            m_StartPrinted = true;
+        }
+
         m_Stat.request = request;
-
         (this->*cmd.command->extra.processor)();
     } 
     catch (CNSProtoParserException& ex)
@@ -951,8 +973,6 @@ CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
         ReportException(ex, "NC std::exception: ", request);
         m_Server->RegisterInternalErr(m_Stat.op_code, m_Auth);
     }
-
-    x_DeinitDiagnostics();
 }
 
 void

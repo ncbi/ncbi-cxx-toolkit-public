@@ -31,6 +31,7 @@
  *
  */
 
+#include <corelib/request_ctx.hpp>
 #include <connect/server.hpp>
 #include <connect/services/netservice_protocol_parser.hpp>
 
@@ -185,12 +186,10 @@ private:
     bool m_InTransmission;
     /// Delayed write flag
     bool m_DelayedWrite;
-    /// Client IP for current request. It will be set in diagnostics for
-    /// proper logging.
-    string m_ClientIP;
-    /// Session ID for current request. It will be set in diagnostics for
-    /// proper logging.
-    string m_SessionID;
+
+    CRef<CRequestContext> m_Context;
+    bool                  m_StartPrinted;
+
     string m_Host;
     unsigned int m_Port;
     string m_ReqId;
