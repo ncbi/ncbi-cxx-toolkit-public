@@ -20,9 +20,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
-				ReBuildCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
-				CleanCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
+				BuildCommandLine="nmake -f &quot;..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
 				Output="gbench-install-internal.exe"/>
 		</Configuration>
 		<Configuration
@@ -32,9 +32,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
-				ReBuildCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
-				CleanCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
+				BuildCommandLine="nmake -f &quot;..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
 				Output="gbench-install-internal.exe"/>
 		</Configuration>
 		<Configuration
@@ -44,9 +44,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
-				ReBuildCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
-				CleanCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
+				BuildCommandLine="nmake -f &quot;..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
 				Output="gbench-install-internal.exe"/>
 		</Configuration>
 		<Configuration
@@ -56,9 +56,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
-				ReBuildCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
-				CleanCommandLine="nmake -f &quot;gbench_install_internal.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
+				BuildCommandLine="nmake -f &quot;..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
 				Output="gbench-install-internal.exe"/>
 		</Configuration>
 	</Configurations>
@@ -66,7 +66,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\gbench_install_internal.mak">
+			RelativePath=".\..\..\..\..\..\..\..\src\internal\gbench\install\gbench_install_internal.win32.mak">
 		</File>
 	</Files>
 	<Globals>

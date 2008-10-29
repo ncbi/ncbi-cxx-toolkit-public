@@ -18,9 +18,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
-				ReBuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
-				CleanCommandLine="nmake -f gbench_install.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
+                BuildCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
+                ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
+                CleanCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -30,17 +30,17 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
-				ReBuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
-				CleanCommandLine="nmake -f gbench_install.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
+                BuildCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
+                ReBuildCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
+                CleanCommandLine="nmake -f ..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 	</Configurations>
-	<References>
+	References>
 	</References>
 	<Files>
 		<File
-			RelativePath="gbench_install.mak">
+            RelativePath="..\..\..\..\..\..\src\gui\app\gbench_install\gbench_install.win32.mak">
 		</File>
 	</Files>
 	<Globals>
