@@ -64,7 +64,7 @@ USING_SCOPE(objects);
     if (have_strand) { \
         BOOST_CHECK_EQUAL((loc).GetStrand(), strand); \
     } \
-    if (fuzz_from != CInt_fuzz::e_not_set) { \
+    if (fuzz_from != CInt_fuzz::eLim_unk) { \
         BOOST_CHECK((loc).IsSetFuzz_from()); \
         BOOST_CHECK_EQUAL((loc).GetFuzz_from().Which(), CInt_fuzz::e_Lim); \
         BOOST_CHECK_EQUAL((loc).GetFuzz_from().GetLim(), fuzz_from); \
@@ -72,7 +72,7 @@ USING_SCOPE(objects);
     else { \
         BOOST_CHECK(!(loc).IsSetFuzz_from()); \
     } \
-    if (fuzz_to != CInt_fuzz::e_not_set) { \
+    if (fuzz_to != CInt_fuzz::eLim_unk) { \
         BOOST_CHECK((loc).IsSetFuzz_to()); \
         BOOST_CHECK_EQUAL((loc).GetFuzz_to().Which(), CInt_fuzz::e_Lim); \
         BOOST_CHECK_EQUAL((loc).GetFuzz_to().GetLim(), fuzz_to); \
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Simple)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 115, 189, false, eNa_strand_unknown,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Simple)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 115, 199, false, eNa_strand_unknown,
-            CInt_fuzz::e_not_set, CInt_fuzz::eLim_gt);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
     }}
 
     {{
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Simple)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 115, 189, true, eNa_strand_minus,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Simple)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 115, 199, true, eNa_strand_minus,
-            CInt_fuzz::e_not_set, CInt_fuzz::eLim_gt);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
     }}
 }
 
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 120, 194, true, eNa_strand_minus,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 110, 194, true, eNa_strand_minus,
-            CInt_fuzz::eLim_lt, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 120, 194, true, eNa_strand_plus,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 110, 194, true, eNa_strand_plus,
-            CInt_fuzz::eLim_lt, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
     }}
 }
 
@@ -238,7 +238,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 135, 179, false, eNa_strand_unknown,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 135, 389, false, eNa_strand_unknown,
-            CInt_fuzz::e_not_set, CInt_fuzz::eLim_gt);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
     }}
 
     {{
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 135, 179, true, eNa_strand_minus,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -274,7 +274,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 135, 389, true, eNa_strand_minus,
-            CInt_fuzz::e_not_set, CInt_fuzz::eLim_gt);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
     }}
 }
 
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc_Reverse)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 240, 374, true, eNa_strand_minus,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc_Reverse)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 120, 374, true, eNa_strand_minus,
-            CInt_fuzz::eLim_lt, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -319,7 +319,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc_Reverse)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 330, 374, true, eNa_strand_plus,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -331,7 +331,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_ProtToNuc_Reverse)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 5, 120, 374, true, eNa_strand_plus,
-            CInt_fuzz::eLim_lt, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
     }}
 }
 
@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 6, 105, 119, false, eNa_strand_unknown,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -363,7 +363,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt)
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 6, 105, 199, false, eNa_strand_unknown,
-            CInt_fuzz::e_not_set, CInt_fuzz::eLim_gt);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
     }}
 
     {{
@@ -375,7 +375,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt)
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         // !!! This is wrong! Protein strand can not be negative!
         CHECK_SEQ_INT(mapped->GetInt(), 6, 105, 119, true, eNa_strand_minus,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -387,7 +387,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt)
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         // !!! This is wrong! Protein strand can not be negative!
         CHECK_SEQ_INT(mapped->GetInt(), 6, 105, 199, true, eNa_strand_minus,
-            CInt_fuzz::e_not_set, CInt_fuzz::eLim_gt);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
     }}
 
     {{
@@ -396,11 +396,10 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt)
         s_InitInterval(loc.SetInt(), 5, 46, 88);
         CRef<CSeq_loc> mapped = mapper.Map(loc);
         BOOST_CHECK(mapped && mapped->IsInt());
-        const CSeq_interval& mi = mapped->GetInt();
         BOOST_CHECK(mapped);
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         CHECK_SEQ_INT(mapped->GetInt(), 6, 105, 119, false, eNa_strand_unknown,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 }
 
@@ -422,7 +421,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt_Reverse)
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         // !!! This is wrong! Protein strand can not be negative!
         CHECK_SEQ_INT(mapped->GetInt(), 6, 180, 194, true, eNa_strand_minus,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -434,7 +433,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt_Reverse)
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         // !!! This is wrong! Protein strand can not be negative!
         CHECK_SEQ_INT(mapped->GetInt(), 6, 100, 194, true, eNa_strand_minus,
-            CInt_fuzz::eLim_lt, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -446,7 +445,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt_Reverse)
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         // !!! This is wrong! Protein can not have strand!
         CHECK_SEQ_INT(mapped->GetInt(), 6, 180, 194, true, eNa_strand_plus,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -458,7 +457,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt_Reverse)
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         // !!! This is wrong! Protein can not have strand!
         CHECK_SEQ_INT(mapped->GetInt(), 6, 100, 194, true, eNa_strand_plus,
-            CInt_fuzz::eLim_lt, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
     }}
 
     {{
@@ -470,7 +469,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_NucToProt_Reverse)
         BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Int);
         // !!! This is wrong! Protein strand can not be negative!
         CHECK_SEQ_INT(mapped->GetInt(), 6, 180, 194, true, eNa_strand_minus,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
     }}
 }
 
@@ -525,11 +524,11 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Mix)
         ++it;
         BOOST_CHECK(*it);
         CHECK_SEQ_INT(**it, 5, 200, 214, false, eNa_strand_unknown,
-            CInt_fuzz::eLim_lt, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
         ++it;
         BOOST_CHECK(*it);
         CHECK_SEQ_INT(**it, 5, 300, 314, false, eNa_strand_unknown,
-            CInt_fuzz::e_not_set, CInt_fuzz::eLim_gt);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
     }}
 
     {{
@@ -545,15 +544,15 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Mix)
         // Check all ranges
         BOOST_CHECK(*it);
         CHECK_SEQ_INT(**it, 5, 300, 308, true, eNa_strand_minus,
-            CInt_fuzz::e_not_set, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
         ++it;
         BOOST_CHECK(*it);
         CHECK_SEQ_INT(**it, 5, 200, 214, true, eNa_strand_minus,
-            CInt_fuzz::eLim_lt, CInt_fuzz::e_not_set);
+            CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
         ++it;
         BOOST_CHECK(*it);
         CHECK_SEQ_INT(**it, 5, 105, 109, true, eNa_strand_minus,
-            CInt_fuzz::e_not_set, CInt_fuzz::eLim_gt);
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_gt);
     }}
 }
 
