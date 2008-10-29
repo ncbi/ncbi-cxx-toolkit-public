@@ -289,18 +289,18 @@ static void TEST__server_1(SOCK sock)
 
     /* Shutdown on write */
 #ifdef NCBI_OS_MSWIN
-    assert(SOCK_Shutdown(sock, eIO_ReadWrite)    == eIO_Success);
+    assert(SOCK_Shutdown(sock, eIO_ReadWrite) == eIO_Success);
 #else
-    assert(SOCK_Shutdown(sock, eIO_Write)        == eIO_Success);
+    assert(SOCK_Shutdown(sock, eIO_Write)     == eIO_Success);
 #endif
-    assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Write)     == eIO_Closed);
     assert(SOCK_Write   (sock, 0, 0, &n_io_done, eIO_WritePersist)
-                                                 == eIO_Closed);
-    assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
+                                              == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Write)     == eIO_Closed);
 #ifdef NCBI_OS_MSWIN
-    assert(SOCK_Status  (sock, eIO_Read)         == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Read)      == eIO_Closed);
 #else
-    assert(SOCK_Status  (sock, eIO_Read)         == eIO_Success);
+    assert(SOCK_Status  (sock, eIO_Read)      == eIO_Success);
 #endif
 }
 
