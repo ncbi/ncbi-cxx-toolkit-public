@@ -1505,8 +1505,9 @@ void CDiagContext::PrintExtra(const string& message)
 }
 
 
-CDiagContext_Extra::CDiagContext_Extra(void)
-    : m_Args(0),
+CDiagContext_Extra::CDiagContext_Extra(SDiagMessage::EEventType event_type)
+    : m_EventType(event_type),
+      m_Args(0),
       m_Counter(new int(1)),
       m_Typed(false)
 {
@@ -1514,7 +1515,8 @@ CDiagContext_Extra::CDiagContext_Extra(void)
 
 
 CDiagContext_Extra::CDiagContext_Extra(const CDiagContext_Extra& args)
-    : m_Args(const_cast<CDiagContext_Extra&>(args).m_Args),
+    : m_EventType(const_cast<CDiagContext_Extra&>(args).m_EventType),
+      m_Args(const_cast<CDiagContext_Extra&>(args).m_Args),
       m_Counter(const_cast<CDiagContext_Extra&>(args).m_Counter),
       m_Typed(args.m_Typed)
 {
@@ -1532,6 +1534,10 @@ void CDiagContext_Extra::Flush(void)
         return;
     }
 
+    if (m_EventType == SDiagMessage::eEvent_RequestStart) {
+        CDiagContext::x_StartRequest();
+    }
+
     SDiagMessage mess(eDiag_Info,
                       "", 0, // no message
                       0, 0, // file, line
@@ -1540,7 +1546,7 @@ void CDiagContext_Extra::Flush(void)
                       0, 0, // err code/subcode
                       NULL,
                       0, 0, 0); // module/class/function
-    mess.m_Event = SDiagMessage::eEvent_Extra;
+    mess.m_Event = m_EventType;
     mess.m_ExtraArgs = *m_Args;
     mess.m_TypedExtra = m_Typed;
     m_Args->clear();
@@ -1747,6 +1753,20 @@ void RequestStopWatchTlsCleanup(CStopWatch* value, void* /*cleanup_data*/)
 }
 
 
+void CDiagContext::x_StartRequest(void)
+{
+    // Reset properties
+    CRequestContext& ctx = GetRequestContext();
+    if ( ctx.IsRunning() ) {
+        // The request is already running -
+        // duplicate request start or missing request stop
+        ERR_POST_ONCE(
+            "Duplicate request-start or missing request-stop");
+    }
+    ctx.StartRequest();
+}
+
+
 void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                                   const string&            message)
 {
@@ -1764,15 +1784,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
         break;
     case SDiagMessage::eEvent_RequestStart:
         {
-            // Reset properties
-            CRequestContext& ctx = GetRequestContext();
-            if ( ctx.IsRunning() ) {
-                // The request is already running -
-                // duplicate request start or missing request stop
-                ERR_POST_ONCE(
-                    "Duplicate request-start or missing request-stop");
-            }
-            ctx.StartRequest();
+            x_StartRequest();
             break;
         }
     case SDiagMessage::eEvent_Stop:
@@ -3811,7 +3823,7 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
     }
 
     if ( IsSetDiagPostFlag(eDPF_AppLog, m_Flags) ) {
-        if ( m_Event == eEvent_Extra  &&  !m_ExtraArgs.empty() ) {
+        if ( !m_ExtraArgs.empty() ) {
             if ( m_BufferLen ) {
                 os << ' ';
             }

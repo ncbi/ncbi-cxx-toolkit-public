@@ -1684,15 +1684,16 @@ private:
     void x_Release(void);
 
     // Can be created only by CDiagContext.
-    CDiagContext_Extra(void);
+    CDiagContext_Extra(SDiagMessage::EEventType event_type);
     friend class CDiagContext;
 
     typedef SDiagMessage::TExtraArg  TExtraArg;
     typedef SDiagMessage::TExtraArgs TExtraArgs;
 
-    TExtraArgs* m_Args;
-    int*        m_Counter;
-    bool        m_Typed;
+    SDiagMessage::EEventType m_EventType;
+    TExtraArgs*              m_Args;
+    int*                     m_Counter;
+    bool                     m_Typed;
 };
 
 
@@ -1817,10 +1818,20 @@ public:
     /// Create a temporary CDiagContext_Extra object. The object will print
     /// arguments automatically from destructor. Can be used like:
     ///   Extra().Print(name1, val1).Print(name2, val2);
-    CDiagContext_Extra Extra(void) { return CDiagContext_Extra(); }
+    CDiagContext_Extra Extra(void)
+    {
+        return CDiagContext_Extra(SDiagMessage::eEvent_Extra);
+    }
 
     /// Print request start message (for request-driven applications)
     void PrintRequestStart(const string& message);
+    /// Create a temporary CDiagContext_Extra object. The object will print
+    /// arguments automatically from destructor. Can be used like:
+    ///   PrintRequestStart().Print(name1, val1).Print(name2, val2);
+    CDiagContext_Extra PrintRequestStart(void)
+    {
+        return CDiagContext_Extra(SDiagMessage::eEvent_RequestStart);
+    }
 
     /// Print request stop message (for request-driven applications)
     void PrintRequestStop(void);
@@ -1962,6 +1973,8 @@ private:
     // Write message to the log using current handler
     void x_PrintMessage(SDiagMessage::EEventType event,
                         const string&            message);
+    // Start request or report error if one is already running
+    static void x_StartRequest(void);
 
     typedef map<string, string> TProperties;
     friend void ThreadDataTlsCleanup(CDiagContextThreadData* value,
