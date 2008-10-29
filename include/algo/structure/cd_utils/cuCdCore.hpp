@@ -218,6 +218,24 @@ public:
     bool   GetOldRoot(int Index, string& Accession, int& Version);
     int    GetNumIdsInOldRoot();
 
+    /*  CD annotations */
+    //  These add a specific type of Cdd-descr to the CD.
+    //  Typically, duplicates will not be added; functions return
+    //  'false' when attempting to add a duplicate description.
+    bool AddComment(const string& comment);
+    bool AddOthername(const string& othername);
+    bool AddTitle(const string& title);
+    bool AddPmidReference(unsigned int pmid);
+    bool AddSource(const string& source, bool removeExistingSources = true);
+    bool AddCreateDate();  //  uses the current time
+
+    //  Return the first title in the list of CCdd_descrs; by convention there should
+    //  be at most one.  If there is no title, an empty string is returned.
+    string GetTitle() const;
+
+    //  Removes any CCdd_descr of the specified choice type.
+    bool RemoveCddDescrsOfType(int cddDescrChoice);
+
 
     /*  Alignment & structure annotation methods  */
     bool   AllResiduesInRangeAligned(int rowId, int from, int to) const;
@@ -241,11 +259,18 @@ public:
     bool   SetClassicalParentAccessionNew(string Parent, int Version);// set accession and version of parent
     /*  Deprecated:  uses the old 'parent' field in the spec  */
     void   SetClassicalParentAccession(string Parent, int Version);// set accession and version of parent
+
+protected:
+
+    //  Return true only if 'descr' was added.
+    bool AddCddDescr(CRef< CCdd_descr >& descr);
+
 private:
 
     bool GetBioseqWithSeqid(CSeq_id& seqid, const list< CRef< CSeq_entry > >& bsset, const CBioseq*& bioseq) const;
     bool IsNoEvidenceFor(list<int>& MmdbIds, list< CRef< CFeature_evidence > >::iterator& FeatureIterator);
     list< CRef< CFeature_evidence > >& GetFeatureSet(list<int>& MmdbIds);
+
     // Prohibit copy constructor and assignment operator
     CCdCore(const CCdCore& value);
     CCdCore& operator=(const CCdCore& value);

@@ -81,16 +81,6 @@ public:
     //  the missing data will not work.
     bool ImportAlignmentData(const string& fastaFile, bool cleanUp = false);
 
-    //  These add a specific type of Cdd-descr to the CD.
-    //  Typically, duplicates will not be added; functions return
-    //  'false' when attempting to add a duplicate description.
-    bool AddComment(const string& comment);
-    bool AddOthername(const string& othername);
-    bool AddTitle(const string& title);
-    bool AddPmidReference(unsigned int pmid);
-    bool AddSource(const string& source, bool removeExistingSources = true);
-    bool AddCreateDate();  //  uses the current time
-
     // update any existing source-ids with this one
     bool UpdateSourceId(const string& sourceId, int version = 0);  
 
@@ -156,12 +146,6 @@ private:
 
     //  Also sets the accession and shortname.
     void InitializeParameters(const Fasta2CdParams* params = NULL);
-
-    //  Return true only if 'descr' was added.
-    bool AddCddDescr(CRef< CCdd_descr >& descr);
-
-    //  Removes any CCdd_descr of the specified choice type.
-    bool RemoveCddDescrsOfType(int cddDescrChoice);
 
     unsigned int GetColumnsReadFromFile(map<unsigned int, string>& columns, bool skipGappedColumns) const;
 

@@ -37,8 +37,6 @@
 
 #include <corelib/ncbifile.hpp>
 
-#include <objects/biblio/PubMedId.hpp>
-#include <objects/pub/Pub.hpp>
 #include <algo/structure/cd_utils/cuCD.hpp>
 #include <algo/structure/cd_utils/cuCdReadWriteASN.hpp>
 #include <algo/structure/cd_utils/cuReadFastaWrapper.hpp>
@@ -326,132 +324,6 @@ unsigned int CCdFromFasta::GetColumnsReadFromFile(map<unsigned int, string>& col
     return columns.size();
 }
 
-
-bool CCdFromFasta::AddComment(const string& comment)
-{
-    bool result = (comment.length() > 0);
-
-    //  Don't add an identical comment.
-    if (result && IsSetDescription()) {
-        for (TDescription::Tdata::const_iterator cit = GetDescription().Get().begin(); result && cit != GetDescription().Get().end(); ++cit) {
-            if ((*cit)->IsComment() && (*cit)->GetComment() == comment) {
-                result = false;
-            }
-        }
-    }
-
-    if (result) {
-        CRef<CCdd_descr> descr(new CCdd_descr);
-        descr->SetComment(comment);
-        result = AddCddDescr(descr);
-    }
-    return result;
-}
-
-bool CCdFromFasta::AddOthername(const string& othername)
-{
-    bool result = (othername.length() > 0);
-
-    //  Don't add an identical othername.
-    if (result && IsSetDescription()) {
-        for (TDescription::Tdata::const_iterator cit = GetDescription().Get().begin(); result && cit != GetDescription().Get().end(); ++cit) {
-            if ((*cit)->IsOthername() && (*cit)->GetOthername() == othername) {
-                result = false;
-            }
-        }
-    }
-
-    if (result) {
-        CRef<CCdd_descr> descr(new CCdd_descr);
-        descr->SetOthername(othername);
-        result = AddCddDescr(descr);
-    }
-    return result;
-}
-
-bool CCdFromFasta::AddTitle(const string& title)
-{
-    bool result = (title.length() > 0);
-
-    //  Don't add an identical title.
-    if (result && IsSetDescription()) {
-        for (TDescription::Tdata::const_iterator cit = GetDescription().Get().begin(); result && cit != GetDescription().Get().end(); ++cit) {
-            if ((*cit)->IsTitle() && (*cit)->GetTitle() == title) {
-                result = false;
-            }
-        }
-    }
-
-    if (result) {
-        CRef<CCdd_descr> descr(new CCdd_descr);
-        descr->SetTitle(title);
-        result = AddCddDescr(descr);
-    }
-    return result;
-}
-
-bool CCdFromFasta::AddPmidReference(unsigned int pmid)
-{
-    //  Don't add a duplicate PMID.
-    if (IsSetDescription()) {
-        for (TDescription::Tdata::const_iterator cit = GetDescription().Get().begin(); cit != GetDescription().Get().end(); ++cit) {
-            if ((*cit)->IsReference() && (*cit)->GetReference().IsPmid()) {
-                if (pmid == (unsigned int) (*cit)->GetReference().GetPmid()) {
-                    return false;
-                }
-            }
-        }
-    }
-
-    //  validate the pmid???
-    CRef<CPub> pub(new CPub);
-    pub->SetPmid((CPub::TPmid) pmid);
-
-    CRef<CCdd_descr> descr(new CCdd_descr);
-    descr->SetReference(*pub);
-    return AddCddDescr(descr);
-}
-
-bool CCdFromFasta::RemoveCddDescrsOfType(int cddDescrChoice)
-{
-    if (cddDescrChoice <= CCdd_descr::e_not_set || cddDescrChoice >= CCdd_descr::e_MaxChoice) return false;
-
-    unsigned int count = 0;
-    bool reachedEnd = false;
-    CCdd_descr_set::Tdata::iterator i, iEnd;
-    if (IsSetDescription()) {
-        while (!reachedEnd) {
-            i = SetDescription().Set().begin();
-            iEnd = SetDescription().Set().end();
-            for (; i != iEnd; i++) {
-                if ((*i)->Which() == cddDescrChoice) {
-                    ++count;
-                    SetDescription().Set().erase(i);
-                    break;
-                }
-            }
-            reachedEnd = (i == iEnd);
-        }
-    }
-    return (count > 0);
-}
-
-
-bool CCdFromFasta::AddSource(const string& source, bool removeExisting)
-{
-    bool result = (source.length() > 0);
-
-    if (result) {
-        if (removeExisting)
-            RemoveCddDescrsOfType(CCdd_descr::e_Source);
-
-        CRef<CCdd_descr> descr(new CCdd_descr);
-        descr->SetSource(source);
-        result = AddCddDescr(descr);
-    }
-    return result;
-}
-
 bool CCdFromFasta::UpdateSourceId(const string& sourceId, int version)
 {
     bool foundExisting = false;
@@ -488,30 +360,6 @@ bool CCdFromFasta::UpdateSourceId(const string& sourceId, int version)
     }
     return result;
 }
-
-bool CCdFromFasta::AddCreateDate()  
-{
-    return SetCreationDate(this);
-}
-
-
-bool CCdFromFasta::AddCddDescr(CRef< CCdd_descr >& descr)
-{
-    if (!IsSetDescription()) {
-        CCdd_descr_set* newDescrSet = new CCdd_descr_set();
-        if (newDescrSet) 
-            SetDescription(*newDescrSet);
-        else 
-            return false;
-    }
-
-    if (descr.NotEmpty()) {
-        SetDescription().Set().push_back(descr);
-        return true;
-    }
-    return false;
-}
-
 
 
 bool CCdFromFasta::WriteToFile(const string& outputFile) const

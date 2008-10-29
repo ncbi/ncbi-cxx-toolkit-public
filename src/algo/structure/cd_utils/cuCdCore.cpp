@@ -39,6 +39,8 @@
 #include <ncbi_pch.hpp>
 
 #include <algorithm>
+#include <objects/biblio/PubMedId.hpp>
+#include <objects/pub/Pub.hpp>
 #include <algo/structure/cd_utils/cuSort.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 #include <algo/structure/cd_utils/cuAlign.hpp>
@@ -1032,7 +1034,7 @@ bool CCdCore::EraseOtherRows(const std::vector<int>& KeepRows) {
     for (j=NumRows-1; j>0; j--) {
       // see if row is in KeepRows
         FoundIt = false;
-        for (k=0; k<KeepRows.size(); k++) {
+        for (k=0; k<(int)KeepRows.size(); k++) {
             if (KeepRows[k] == j) {
                 FoundIt = true;
             break;
@@ -2434,6 +2436,171 @@ void CCdCore::SetClassicalParentAccession(string Parent, int Version) {
     SetParent(*pID);
     */
 }
+
+bool CCdCore::AddComment(const string& comment)
+{
+    bool result = (comment.length() > 0);
+
+    //  Don't add an identical comment.
+    if (result && IsSetDescription()) {
+        for (TDescription::Tdata::const_iterator cit = GetDescription().Get().begin(); result && cit != GetDescription().Get().end(); ++cit) {
+            if ((*cit)->IsComment() && (*cit)->GetComment() == comment) {
+                result = false;
+            }
+        }
+    }
+
+    if (result) {
+        CRef<CCdd_descr> descr(new CCdd_descr);
+        descr->SetComment(comment);
+        result = AddCddDescr(descr);
+    }
+    return result;
+}
+
+bool CCdCore::AddOthername(const string& othername)
+{
+    bool result = (othername.length() > 0);
+
+    //  Don't add an identical othername.
+    if (result && IsSetDescription()) {
+        for (TDescription::Tdata::const_iterator cit = GetDescription().Get().begin(); result && cit != GetDescription().Get().end(); ++cit) {
+            if ((*cit)->IsOthername() && (*cit)->GetOthername() == othername) {
+                result = false;
+            }
+        }
+    }
+
+    if (result) {
+        CRef<CCdd_descr> descr(new CCdd_descr);
+        descr->SetOthername(othername);
+        result = AddCddDescr(descr);
+    }
+    return result;
+}
+
+bool CCdCore::AddTitle(const string& title)
+{
+    bool result = (title.length() > 0);
+
+    //  Don't add an identical title.
+    if (result && IsSetDescription()) {
+        for (TDescription::Tdata::const_iterator cit = GetDescription().Get().begin(); result && cit != GetDescription().Get().end(); ++cit) {
+            if ((*cit)->IsTitle() && (*cit)->GetTitle() == title) {
+                result = false;
+            }
+        }
+    }
+
+    if (result) {
+        CRef<CCdd_descr> descr(new CCdd_descr);
+        descr->SetTitle(title);
+        result = AddCddDescr(descr);
+    }
+    return result;
+}
+
+string CCdCore::GetTitle() const
+{
+    string result = kEmptyStr;
+
+    if (IsSetDescription()) {
+        TDescription::Tdata::const_iterator cit = GetDescription().Get().begin();
+        TDescription::Tdata::const_iterator cend = GetDescription().Get().end();
+        while (cit != cend) {
+            if ((*cit)->IsTitle()) { 
+                result = (*cit)->GetTitle();
+            }
+            ++cit;
+        }
+    }
+
+    return result;
+}
+
+bool CCdCore::AddPmidReference(unsigned int pmid)
+{
+    //  Don't add a duplicate PMID.
+    if (IsSetDescription()) {
+        for (TDescription::Tdata::const_iterator cit = GetDescription().Get().begin(); cit != GetDescription().Get().end(); ++cit) {
+            if ((*cit)->IsReference() && (*cit)->GetReference().IsPmid()) {
+                if (pmid == (unsigned int) (*cit)->GetReference().GetPmid()) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    //  validate the pmid???
+    CRef<CPub> pub(new CPub);
+    pub->SetPmid((CPub::TPmid) pmid);
+
+    CRef<CCdd_descr> descr(new CCdd_descr);
+    descr->SetReference(*pub);
+    return AddCddDescr(descr);
+}
+
+bool CCdCore::AddSource(const string& source, bool removeExisting)
+{
+    bool result = (source.length() > 0);
+
+    if (result) {
+        if (removeExisting)
+            RemoveCddDescrsOfType(CCdd_descr::e_Source);
+
+        CRef<CCdd_descr> descr(new CCdd_descr);
+        descr->SetSource(source);
+        result = AddCddDescr(descr);
+    }
+    return result;
+}
+
+bool CCdCore::AddCreateDate()  
+{
+    return SetCreationDate(this);
+}
+
+bool CCdCore::AddCddDescr(CRef< CCdd_descr >& descr)
+{
+    if (!IsSetDescription()) {
+        CCdd_descr_set* newDescrSet = new CCdd_descr_set();
+        if (newDescrSet) 
+            SetDescription(*newDescrSet);
+        else 
+            return false;
+    }
+
+    if (descr.NotEmpty()) {
+        SetDescription().Set().push_back(descr);
+        return true;
+    }
+    return false;
+}
+
+bool CCdCore::RemoveCddDescrsOfType(int cddDescrChoice)
+{
+    if (cddDescrChoice <= CCdd_descr::e_not_set || cddDescrChoice >= CCdd_descr::e_MaxChoice) return false;
+
+    unsigned int count = 0;
+    bool reachedEnd = false;
+    CCdd_descr_set::Tdata::iterator i, iEnd;
+    if (IsSetDescription()) {
+        while (!reachedEnd) {
+            i = SetDescription().Set().begin();
+            iEnd = SetDescription().Set().end();
+            for (; i != iEnd; i++) {
+                if ((*i)->Which() == cddDescrChoice) {
+                    ++count;
+                    SetDescription().Set().erase(i);
+                    break;
+                }
+            }
+            reachedEnd = (i == iEnd);
+        }
+    }
+    return (count > 0);
+}
+
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE

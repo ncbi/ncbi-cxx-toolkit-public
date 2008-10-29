@@ -478,7 +478,10 @@ void GetAlignmentColumnsForCD(CCdCore* cd, map<unsigned int, string>& columns, u
     //  Check if the block structure is consistent.
     try {
         MultipleAlignment* ma = new MultipleAlignment(cd);
-        if (!ma || ! ma->isBlockAligned()) {
+        if (!ma) {
+            ERR_POST("Creation of MultipleAlignment object failed for CD " << cd->GetAccession() << ".");
+            return;
+        } else if (! ma->isBlockAligned()) {
             delete ma;
             ERR_POST("CD " << cd->GetAccession() << " must have a consistent block structure for column extraction.");
             return;
