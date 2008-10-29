@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -70,10 +70,10 @@ public:
     /// @param max_delay
     ///  Maximum (artificial) per-request processing time, in
     ///  milliseconds.
-    CTestServer(int max_number_of_clients, unsigned int max_delay) :
-        m_MaxNumberOfClients(max_number_of_clients),
-        m_MaxDelay(max_delay),
-        m_ShutdownRequested(false)
+    CTestServer(int max_number_of_clients, unsigned int max_delay)
+        : m_MaxNumberOfClients(max_number_of_clients),
+          m_MaxDelay(max_delay),
+          m_ShutdownRequested(false)
     {
         m_ClientCount.Set(0);
     }
@@ -87,15 +87,15 @@ public:
 
     /// Increment the count of client connections received, and return
     /// the new value.
-    int  RegisterClient() { return m_ClientCount.Add(1); }
+    int  RegisterClient(void) { return m_ClientCount.Add(1); }
 
     /// Return the (cumulative) connection limit originally supplied
     /// to the constructor.
-    int  GetMaxNumberOfClients() const { return m_MaxNumberOfClients; }
+    int  GetMaxNumberOfClients(void) const { return m_MaxNumberOfClients; }
 
     /// Return a randomized "processing time" up to the limit
     /// originally supplied to the constructor.
-    unsigned int GetRandomDelay() const;
+    unsigned int GetRandomDelay(void) const;
 
 private:
     int                m_MaxNumberOfClients;   ///< Limit on total connections
@@ -131,8 +131,8 @@ class CTestConnectionHandler : public IServer_LineMessageHandler
 {
 public:
     /// Constructor.
-    CTestConnectionHandler(CTestServer* server) :
-        m_Server(server), m_AlarmTime(CTime::eEmpty, CTime::eGmt)
+    CTestConnectionHandler(CTestServer* server)
+        : m_Server(server), m_AlarmTime(CTime::eEmpty, CTime::eGmt)
     {
     }
 
@@ -178,7 +178,7 @@ void CTestConnectionHandler::OnOpen(void)
     unsigned int delay = m_Server->GetRandomDelay();
     m_AlarmTime.SetCurrent();
     m_AlarmTime.AddTimeSpan(CTimeSpan(delay / 1000,
-        (delay % 1000) * 1000 * 1000));
+                                      (delay % 1000) * 1000 * 1000));
     m_State = Delay;
 }
 
@@ -210,8 +210,8 @@ void CTestConnectionHandler::OnMessage(BUF buf)
     int this_client_number = m_Server->RegisterClient();
     int max_number_of_clients = m_Server->GetMaxNumberOfClients();
 
-    ERR_POST(Info << "Processed " << this_client_number <<
-        "/" << max_number_of_clients);
+    ERR_POST(Info << "Processed " << this_client_number
+             << "/" << max_number_of_clients);
 
     if (this_client_number == max_number_of_clients) {
         ERR_POST(Info << "All clients processed");
@@ -232,8 +232,8 @@ void CTestConnectionHandler::OnWrite(void)
 class CTestConnectionFactory : public IServer_ConnectionFactory
 {
 public:
-    CTestConnectionFactory(CTestServer* server) :
-        m_Server(server)
+    CTestConnectionFactory(CTestServer* server)
+        : m_Server(server)
     {
     }
 
@@ -256,7 +256,8 @@ private:
 class CConnectionRequest : public CStdRequest
 {
 public:
-    CConnectionRequest(unsigned short port) : m_Port(port)
+    CConnectionRequest(unsigned short port)
+        : m_Port(port)
     {
     }
 
@@ -294,33 +295,33 @@ public:
 
 void CServerTestApp::Init(void)
 {
-    CORE_SetLOG(LOG_cxx2c());
     CORE_SetLOCK(MT_LOCK_cxx2c());
+    CORE_SetLOG(LOG_cxx2c());
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-        "CServer test application");
+                              "CServer test application");
 
     arg_desc->AddDefaultKey("srvthreads", "N",
-        "Initial number of server threads",
-        CArgDescriptions::eInteger, "5");
+                            "Initial number of server threads",
+                            CArgDescriptions::eInteger, "5");
 
     arg_desc->AddDefaultKey("maxsrvthreads", "N",
-        "Maximum number of server threads",
-        CArgDescriptions::eInteger, "10");
+                            "Maximum number of server threads",
+                            CArgDescriptions::eInteger, "10");
 
     arg_desc->AddDefaultKey("clthreads", "N",
-        "Initial number of client threads",
-        CArgDescriptions::eInteger, "5");
+                            "Initial number of client threads",
+                            CArgDescriptions::eInteger, "5");
 
     arg_desc->AddDefaultKey("maxclthreads", "N",
-        "Maximum number of client threads",
-        CArgDescriptions::eInteger, "10");
+                            "Maximum number of client threads",
+                            CArgDescriptions::eInteger, "10");
 
     arg_desc->AddDefaultKey("requests", "N",
-        "Number of requests to make",
-        CArgDescriptions::eInteger, "100");
+                            "Number of requests to make",
+                            CArgDescriptions::eInteger, "100");
 
     CArgAllow* constraint = new CArgAllow_Integers(1, 999);
 
@@ -332,8 +333,8 @@ void CServerTestApp::Init(void)
     arg_desc->SetConstraint("requests", constraint);
 
     arg_desc->AddDefaultKey("maxdelay", "N",
-        "Maximum delay in milliseconds",
-        CArgDescriptions::eInteger, "1000");
+                            "Maximum delay in milliseconds",
+                            CArgDescriptions::eInteger, "1000");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -352,13 +353,13 @@ int CServerTestApp::Run(void)
     {
         CListeningSocket listener;
 
-        while ((++port & 0xFFFF) != 0
-               &&  listener.Listen(port, 5,
-                                   fSOCK_BindAny | fSOCK_LogOff) != eIO_Success)
-            ;
-
+        while (++port & 0xFFFF) {
+            if (listener.Listen(port, 5, fSOCK_BindAny | fSOCK_LogOff)
+                == eIO_Success)
+                break;
+        }
         if (port == 0) {
-            ERR_POST("CServer test: unable to find a free port to listen to");
+            ERR_POST("CServer test: unable to find a free port to listen on");
             return 2;
         }
     }
@@ -377,15 +378,13 @@ int CServerTestApp::Run(void)
     server.StartListening();
 
     CStdPoolOfThreads pool(args["maxclthreads"].AsInteger(),
-        max_number_of_clients);
+                           max_number_of_clients);
 
     pool.Spawn(args["clthreads"].AsInteger());
 
-    int i = max_number_of_clients;
-
-    while (--i >= 0) {
-        pool.AcceptRequest(CRef<ncbi::CStdRequest>(
-            new CConnectionRequest(port)));
+    for (int i = max_number_of_clients;  i > 0;  i--) {
+        pool.AcceptRequest(CRef<ncbi::CStdRequest>
+                           (new CConnectionRequest(port)));
     }
 
     server.Run();
