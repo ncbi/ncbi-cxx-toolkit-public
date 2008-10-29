@@ -64,15 +64,24 @@ public:
     /// to help migrate code to the newer spec
     /// @{
 
+    typedef TAcceptor_before_exon TSplice_5_prime;
+    typedef TDonor_after_exon     TSplice_3_prime;
+
     NCBI_DEPRECATED const TAcceptor_before_exon& GetSplice_5_prime() const;
     NCBI_DEPRECATED TAcceptor_before_exon& SetSplice_5_prime();
     NCBI_DEPRECATED void SetSplice_5_prime(TAcceptor_before_exon& splice);
+    NCBI_DEPRECATED bool IsSetSplice_5_prime() const;
+    NCBI_DEPRECATED bool CanGetSplice_5_prime() const;
+    NCBI_DEPRECATED void ResetSplice_5_prime();
 
     NCBI_DEPRECATED const TDonor_after_exon& GetSplice_3_prime() const;
     NCBI_DEPRECATED TDonor_after_exon& SetSplice_3_prime();
     NCBI_DEPRECATED void SetSplice_3_prime(TDonor_after_exon& splice);
+    NCBI_DEPRECATED bool IsSetSplice_3_prime() const;
+    NCBI_DEPRECATED bool CanGetSplice_3_prime() const;
+    NCBI_DEPRECATED void ResetSplice_3_prime();
 
-        /// @}
+    /// @}
 
 private:
     // Prohibit copy constructor and assignment operator

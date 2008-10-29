@@ -66,6 +66,22 @@ void CSpliced_exon::SetSplice_5_prime(CSpliced_exon::TAcceptor_before_exon& spli
     SetAcceptor_before_exon(splice);
 }
 
+bool CSpliced_exon::IsSetSplice_5_prime() const
+{
+    return IsSetAcceptor_before_exon();
+}
+
+bool CSpliced_exon::CanGetSplice_5_prime() const
+{
+    return CanGetAcceptor_before_exon();
+}
+
+void CSpliced_exon::ResetSplice_5_prime()
+{
+    ResetAcceptor_before_exon();
+}
+
+
 const CSpliced_exon::TDonor_after_exon& CSpliced_exon::GetSplice_3_prime() const
 {
     return GetDonor_after_exon();
@@ -81,6 +97,20 @@ void CSpliced_exon::SetSplice_3_prime(CSpliced_exon::TDonor_after_exon& splice)
     SetDonor_after_exon(splice);
 }
 
+bool CSpliced_exon::IsSetSplice_3_prime() const
+{
+    return IsSetDonor_after_exon();
+}
+
+bool CSpliced_exon::CanGetSplice_3_prime() const
+{
+    return CanGetDonor_after_exon();
+}
+
+void CSpliced_exon::ResetSplice_3_prime()
+{
+    ResetDonor_after_exon();
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
