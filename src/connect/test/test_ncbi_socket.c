@@ -382,7 +382,7 @@ static void TEST__client_2(SOCK sock)
                 CORE_LOG(eLOG_Fatal, "TC2::write: connection closed");
 
             CORE_LOGF(eLOG_Note,
-                      ("TC2::write"
+                      ("TC2::write:"
                        " i=%d, status=%7s, n_io=%5lu, n_io_done=%5lu"
                        " timeout(%d): %5lu sec, %6lu msec",
                        (int)i, IO_StatusStr(status),
@@ -544,7 +544,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
             switch ( status ) {
             case eIO_Success:
                 CORE_LOGF(eLOG_Note,
-                          ("TS2::write"
+                          ("TS2::write:"
                            " [%lu], status=%7s, n_io=%5lu, n_io_done=%5lu",
                            (unsigned long)i, IO_StatusStr(status),
                            (unsigned long)n_io, (unsigned long)n_io_done));
@@ -555,8 +555,8 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
                 return;
             case eIO_Timeout:
                 CORE_LOGF(eLOG_Note,
-                          ("TS2::write "
-                           "[%lu] timeout expired: %5u sec, %6u usec",
+                          ("TS2::write:"
+                           " [%lu] timeout expired: %5u sec, %6u usec",
                            (unsigned long)i, w_to.sec, w_to.usec));
                 assert(n_io_done == 0);
                 s_DoubleTimeout(&w_to);
