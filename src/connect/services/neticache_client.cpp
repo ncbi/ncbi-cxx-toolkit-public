@@ -55,14 +55,12 @@ BEGIN_NCBI_SCOPE
 
 void s_MakeCommand(string* cmd)
 {
-    if (s_GetNetCacheCompatVersion() != eNC_Pre406) {
-        CRequestContext& req = CDiagContext::GetRequestContext();
-        cmd->append(" \"");
-        cmd->append(req.GetClientIP());
-        cmd->append("\" \"");
-        cmd->append(req.GetSessionID());
-        cmd->append("\"");
-    }
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    cmd->append(" \"");
+    cmd->append(req.GetClientIP());
+    cmd->append("\" \"");
+    cmd->append(req.GetSessionID());
+    cmd->append("\"");
 }
 
 

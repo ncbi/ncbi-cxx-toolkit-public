@@ -71,39 +71,6 @@ static TServerAddress* s_GetFallbackServer()
 }
 
 
-NCBI_PARAM_DEF(string, netcache_api, compatibility_version, "4.0.5");
-
-ENCCompatVersion s_GetNetCacheCompatVersion(void)
-{
-    string version = TNetCache_CompatVersion::GetDefault();
-    int vers[3];
-    if (version[1] == '.'  &&  version[3] == '.') {
-        vers[0] = version[0] - '0';
-        vers[1] = version[2] - '0';
-        vers[2] = atoi(&version[4]);
-    }
-    else {
-        ERR_POST_X_ONCE(12, Warning
-                            << "Invalid format of "
-                               "[netcache_api]compatibility_version: \""
-                            << version << "\"");
-        vers[0] = 4;
-        vers[1] = 0;
-        vers[2] = 5;
-    }
-
-    ENCCompatVersion result;
-    if (vers[0] < 4  ||  vers[0] == 4 && vers[1] == 0 && vers[2] <= 5) {
-        result = eNC_Pre406;
-    }
-    else {
-        result = eNC_406;
-    }
-
-    return result;
-}
-
-
 /****************************************************************/
 
 CNetServerConnection CNetCacheAPI::x_GetConnection(const string& bid)
@@ -126,14 +93,12 @@ string CNetCacheAPI::x_MakeCommand(const string& cmd) const
 {
     string command(cmd);
 
-    if (s_GetNetCacheCompatVersion() != eNC_Pre406) {
-        CRequestContext& req = CDiagContext::GetRequestContext();
-        command += " \"";
-        command += req.GetClientIP();
-        command += "\" \"";
-        command += req.GetSessionID();
-        command += "\"";
-    }
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    command += " \"";
+    command += req.GetClientIP();
+    command += "\" \"";
+    command += req.GetSessionID();
+    command += "\"";
 
     return command;
 }
