@@ -46,7 +46,6 @@
 #include <bdb/bdb_blobcache.hpp>
 
 #if defined(NCBI_OS_UNIX)
-# include <corelib/ncbi_os_unix.hpp>
 # include <signal.h>
 #endif
 
@@ -73,7 +72,7 @@ USING_NCBI_SCOPE;
 const unsigned int kObjectTimeout = 60 * 60; ///< Default timeout in seconds
 
 /// General purpose NetCache Mutex
-DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex);
+//DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex);
 
 /// Mutex to guard vector of busy IDs 
 //DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex_ID);
@@ -609,7 +608,7 @@ int CNetCacheDApp::Run(void)
             reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
         if (is_daemon) {
             LOG_POST("Entering UNIX daemon mode...");
-            bool daemon = CProcess::Daemonize(0, fDaemon_DontChroot);
+            bool daemon = CProcess::Daemonize(0, CProcess::fDontChroot);
             if (!daemon) {
                 return 0;
             }
