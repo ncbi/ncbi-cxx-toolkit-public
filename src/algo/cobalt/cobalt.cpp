@@ -615,9 +615,6 @@ void CMultiAligner::x_AlignInClusters(void)
                     m_Aligner.SetStartWs(m_EndGapExtend / 2);
                     m_Aligner.SetEndWs(m_EndGapExtend / 2); 
                 }
-                if (len1 > 1.5 * len2 || len2 > 1.5 * len1) {
-                    m_Aligner.SetEndSpaceFree(true, true, true, true);
-                }
 
                 // Run aligner
                 m_Aligner.Run();
