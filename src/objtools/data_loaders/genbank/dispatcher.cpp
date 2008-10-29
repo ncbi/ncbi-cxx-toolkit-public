@@ -796,10 +796,21 @@ namespace {
 
         bool IsDone(void)
             {
+                CReaderRequestResult& result = GetResult();
                 ITERATE(TIds, id, m_Ids) {
-                    CLoadLockBlob_ids blob_ids(GetResult(), *id, 0);
+                    CLoadLockBlob_ids blob_ids(result, *id, 0);
                     if ( !blob_ids.IsLoaded() ) {
                         return false;
+                    }
+                    ITERATE ( CLoadInfoBlob_ids, it, *blob_ids ) {
+                        const CBlob_Info& info = it->second;
+                        if ( (info.GetContentsMask() & fBlobHasCore) == 0 ) {
+                            continue; // skip this blob
+                        }
+                        CLoadLockBlob blob(result, *it->first);
+                        if ( !blob.IsLoaded() ) {
+                            return false;
+                        }
                     }
                 }
                 return true;

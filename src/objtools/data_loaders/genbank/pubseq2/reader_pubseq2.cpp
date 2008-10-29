@@ -497,7 +497,7 @@ CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
     }}
     CDB_VarChar service("ID2");
     CDB_VarChar short_asn;
-    CDB_LongBinary long_asn;
+    CDB_LongBinary long_asn(size);
     if ( LONG_REQUESTS ) {
         long_asn.SetValue(buffer, size);
     }

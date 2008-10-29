@@ -1485,6 +1485,21 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
 
 CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
 {
+    TBioseqHandles ret;
+    if ( ids.size() > 200 ) {
+        // split batch into smaller pieces to avoid problems with GC
+        ret.reserve(ids.size());
+        TIds ids1;
+        for ( size_t pos = 0; pos < ids.size(); ) {
+            size_t cnt = ids.size() - pos;
+            if ( cnt > 150 ) cnt = 100;
+            ids1.assign(ids.begin()+pos, ids.begin()+pos+cnt);
+            TBioseqHandles ret1 = GetBioseqHandles(ids1);
+            ret.insert(ret.end(), ret1.begin(), ret1.end());
+            pos += cnt;
+        }
+        return ret;
+    }
     // Keep locks to prevent cleanup of the loaded TSEs.
     typedef CDataSource_ScopeInfo::TSeqMatchMap TSeqMatchMap;
     TSeqMatchMap match_map;
@@ -1494,7 +1509,6 @@ CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         it->GetBlobs(match_map);
     }
-    TBioseqHandles ret;
     ITERATE(TIds, id, ids) {
         TSeqMatchMap::iterator match = match_map.find(*id);
         if (match != match_map.end()  &&  match->second) {
