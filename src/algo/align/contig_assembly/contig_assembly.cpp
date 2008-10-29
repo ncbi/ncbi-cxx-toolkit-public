@@ -315,6 +315,25 @@ void CContigAssembly::FindDiagFromAlignSet(const CSeq_align_set& align_set,
 }
 
 
+void CContigAssembly::FindReverseDiagFromAlignSet(const CSeq_align_set& align_set,
+                                           CScope& scope,
+                                           unsigned int window_size,
+                                           ENa_strand& strand,
+                                           unsigned int& diag)
+{
+    CSeq_align_set reverse_set;
+    ITERATE (CSeq_align_set::Tdata, aln, align_set.Get()) {
+        CRef<CSeq_align> reversed(new CSeq_align);
+        reversed->Assign(**aln);
+        reversed->Reverse();
+        reverse_set.Set().push_back(reversed);
+    }
+
+    FindDiagFromAlignSet(reverse_set, scope, window_size, strand, diag);
+}
+
+
+
 // Fake a banded NW alignment around an arbitrary diagonal.
 // diag is specified using same convention as returned by
 // FindDiagFromAlignSet.
@@ -396,6 +415,7 @@ CContigAssembly::BandedGlobalAlignment(const CSeq_id& id0, const CSeq_id& id1,
 
     return ds;
 }
+
 
 
 bool CContigAssembly::IsDovetail(const CDense_seg& ds,
@@ -619,7 +639,6 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
 //    cerr << "Blast Count Total: " << alns->Get().size() << endl;
     vector<CRef<CSeq_align> > good_alns;
     NON_CONST_ITERATE (CSeq_align_set::Tdata, aln, alns->Set()) {
-        x_OrientAlign((*aln)->SetSegs().SetDenseg(), scope);
 //double Ident = FracIdent((*aln)->GetSegs().GetDenseg(), scope);
 //bool Dovetail = IsDovetail((*aln)->GetSegs().GetDenseg(), max_end_slop, scope);
 //int Len = x_DensegLength((*aln)->GetSegs().GetDenseg());
@@ -628,6 +647,7 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
             && FracIdent((*aln)->GetSegs().GetDenseg(), scope) >= min_ident
             && x_IsAllowedStrands((*aln)->GetSegs().GetDenseg(), strand0, strand1)
             && x_DensegLength((*aln)->GetSegs().GetDenseg()) >= min_align_length ) {
+            x_OrientAlign((*aln)->SetSegs().SetDenseg(), scope);
             good_alns.push_back(*aln);
         }
     }
@@ -653,6 +673,7 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
         ENa_strand strand;
         unsigned int diag;
         FindDiagFromAlignSet(*alns, scope, diag_finding_window, strand, diag);
+
         CRef<CDense_seg> local_ds;
         ITERATE(vector<unsigned int>, band_halfwidth, band_halfwidths) {
             if (ostr) {
@@ -680,7 +701,6 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
             }
 
             local_ds = BestLocalSubAlignment(*global_ds, scope);
-            x_OrientAlign(*local_ds, scope);
             double frac_ident = FracIdent(*local_ds, scope);
             if (ostr) {
                 *ostr << "Fraction identity: " << frac_ident << endl;
@@ -692,6 +712,7 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
                 if (ostr) {
                     *ostr << "Alignment acceptable (full dovetail)" << endl;
                 }
+                x_OrientAlign(*local_ds, scope);
                 CRef<CSeq_align> aln(new CSeq_align);
                 aln->SetSegs().SetDenseg(*local_ds);
                 aln->SetType(aln->eType_partial);
@@ -706,13 +727,14 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
         // Check for any half-dovetails (including contained)
         // in blast results
         good_alns.clear();
-        ITERATE (CSeq_align_set::Tdata, aln, alns->Get()) {
+        NON_CONST_ITERATE (CSeq_align_set::Tdata, aln, alns->Set()) {
             if (IsAtLeastHalfDovetail((*aln)->GetSegs().GetDenseg(),
                                       max_end_slop, scope)
                 && FracIdent((*aln)->GetSegs().GetDenseg(), scope) >= min_ident
                 && x_IsAllowedStrands((*aln)->GetSegs().GetDenseg(), strand0, strand1)
                 && x_DensegLength((*aln)->GetSegs().GetDenseg()) >= min_align_length
                 ) {
+                x_OrientAlign((*aln)->SetSegs().SetDenseg(), scope);
                 good_alns.push_back(*aln);
             }
         }
@@ -741,6 +763,7 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
                     *ostr << "Banded alignment acceptable ("
                           << dovetail_string << ")" << endl;
                 }
+                x_OrientAlign(*local_ds, scope);
                 CRef<CSeq_align> aln(new CSeq_align);
                 aln->SetSegs().SetDenseg(*local_ds);
                 aln->SetType(aln->eType_partial);
@@ -918,6 +941,7 @@ void CContigAssembly::GatherAlignStats(const CSeq_align& aln,
 
 void CContigAssembly::x_OrientAlign(CDense_seg& ds, CScope& scope)
 {
+    //return;
     SAlignStats stats;
     CAlnVec avec(ds, scope);
     s_GetTails(avec, stats.tails);
@@ -945,6 +969,13 @@ bool CContigAssembly::x_IsAllowedStrands(const CDense_seg& ds,
         matches[0] = true;
     if(strand1 == align_strands[1] || strand1 == eNa_strand_unknown)
         matches[1] = true;
+
+    if(!(matches[0] & matches[1])) {
+        if(strand0 == align_strands[1] || strand0 == eNa_strand_unknown)
+            matches[0] = true;
+        if(strand1 == align_strands[0] || strand1 == eNa_strand_unknown)
+            matches[1] = true;
+    }
 
     return (matches[0] & matches[1]);
 }
