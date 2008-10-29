@@ -297,8 +297,8 @@ private:
                                      const char*   banned_symbols,
                                      EOnBadCookie  on_bad_cookie);
 
-    EUrlEncode m_EncodeFlag;
-    TSet       m_Cookies;
+    NStr::EUrlEncode m_EncodeFlag;
+    TSet             m_Cookies;
 
     /// prohibit default initialization and assignment
     CCgiCookies(const CCgiCookies&);
@@ -925,14 +925,14 @@ inline void CCgiCookie::ResetInvalid(TInvalidFlag flag)
 //
 
 inline CCgiCookies::CCgiCookies(void)
-    : m_EncodeFlag(eUrlEncode_SkipMarkChars),
+    : m_EncodeFlag(NStr::eUrlEnc_SkipMarkChars),
       m_Cookies()
 {
     return;
 }
 
 inline CCgiCookies::CCgiCookies(EUrlEncode encode_flag)
-    : m_EncodeFlag(encode_flag),
+    : m_EncodeFlag(NStr::EUrlEncode(encode_flag)),
       m_Cookies()
 {
     return;
@@ -941,7 +941,7 @@ inline CCgiCookies::CCgiCookies(EUrlEncode encode_flag)
 inline CCgiCookies::CCgiCookies(const string& str,
                                 EOnBadCookie on_bad_cookie,
                                 EUrlEncode   encode_flag)
-    : m_EncodeFlag(encode_flag),
+    : m_EncodeFlag(NStr::EUrlEncode(encode_flag)),
       m_Cookies()
 {
     Add(str, on_bad_cookie);
@@ -950,13 +950,13 @@ inline CCgiCookies::CCgiCookies(const string& str,
 inline
 EUrlEncode CCgiCookies::GetUrlEncodeFlag() const
 {
-    return m_EncodeFlag;
+    return EUrlEncode(m_EncodeFlag);
 }
 
 inline
 void CCgiCookies::SetUrlEncodeFlag(EUrlEncode encode_flag)
 {
-    m_EncodeFlag = encode_flag;
+    m_EncodeFlag = NStr::EUrlEncode(encode_flag);
 }
 
 inline bool CCgiCookies::Empty(void) const

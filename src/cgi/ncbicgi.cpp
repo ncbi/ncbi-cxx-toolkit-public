@@ -493,7 +493,7 @@ CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os,
     ITERATE (TSet, cookie, m_Cookies) {
         if (wmethod == CCgiCookie::eHTTPRequest && cookie != m_Cookies.begin())
             os << "; ";
-        (*cookie)->Write(os, wmethod, m_EncodeFlag);
+        (*cookie)->Write(os, wmethod, EUrlEncode(m_EncodeFlag));
         //        os << **cookie;
     }
     return os;
