@@ -126,16 +126,24 @@ void CMacProjectGenerator::Generate(const string& solution)
         if (!prj_files.CheckProjectConfigs()) {
             continue;
         }
-        prj_files.DoCollect();
-
-        if (prj.m_ProjType == CProjKey::eLib || prj.m_ProjType == CProjKey::eDll) {
-            AddString( *lib_dependencies, proj_dependency);
-        } else if (prj.m_ProjType == CProjKey::eApp) {
-            AddString( *app_dependencies, proj_dependency);
-        } else {
+        if (prj.m_MakeType == eMakeType_ExcludedByReq) {
+            PTB_WARNING_EX(prj.m_ID, ePTB_ProjectExcluded,
+                           "Excluded due to unmet requirements");
             continue;
         }
-        AddString( *all_dependencies, proj_dependency);
+        bool excluded = (prj.m_MakeType == eMakeType_Excluded);
+
+        prj_files.DoCollect();
+        if (!excluded) {
+            if (prj.m_ProjType == CProjKey::eLib || prj.m_ProjType == CProjKey::eDll) {
+                AddString( *lib_dependencies, proj_dependency);
+            } else if (prj.m_ProjType == CProjKey::eApp) {
+                AddString( *app_dependencies, proj_dependency);
+            } else {
+                continue;
+            }
+            AddString( *all_dependencies, proj_dependency);
+        }
         AddString( *targets, proj_target);
 
         
