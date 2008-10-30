@@ -564,7 +564,7 @@ static const CSeq_feat* s_GetBestProtFeature(const CBioseq_Handle& seq)
     //  The best protein feature is defined as the one that has the most overlap
     //  with the given DNA.
     //  If there is a tie between two protein features in overlap then the one with
-    //  the higher processing status is declared the winner.
+    //  the lesser processing status is declared the winner.
     //
     SAnnotSelector sel(CSeqFeatData::e_Prot);
     sel.SetLimitTSE(seq.GetTSE_Handle());
@@ -594,7 +594,7 @@ static const CSeq_feat* s_GetBestProtFeature(const CBioseq_Handle& seq)
                 best_processed = current_processed;
                 best.Reset(&it->GetOriginalFeature());
 
-            } else if ( (best_overlap == current_overlap) && (best_processed < current_processed) ) {
+            } else if ( (best_overlap == current_overlap) && (best_processed > current_processed) ) {
             
                 best_processed = current_processed;
                 best.Reset(&it->GetOriginalFeature());
