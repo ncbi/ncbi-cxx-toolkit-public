@@ -184,28 +184,7 @@ public:
     enum EMode {
 
         // Qyery clusters 
-        fNoQueryClusters = 0, ///< No query clustering
-                              ///< Expected very low percent identity between
-                              ///< the most similar query sequeces.
-
-        fConservativeQueryClusters, ///< Query clusters with conservative
-                                    ///< allowed in-cluster distance
-                                    ///< Use it if you expect many clusters of
-                                    ///< very few (1 - 3) similar sequences.
-
-
-        fMediumQueryClusters,  ///< Query clusters with medium allowed 
-                               ///< in-cluster distance.
-                               ///< Should work for most query sets.
-                               ///< Expected clusters of similar sequences
-                               ///< (percent identity more than 50).
-
-
-        fLargeQueryClusters,  ///< Query clusters with large allowed
-                              ///< in-cluster distance.
-                              ///< For clusters of very similar sequences
-                              ///< (ex. BLAST serch result)
-
+        fNoQueryClusters = 1, ///< No query clustering
 
         // RPS Blast search
         fNoRpsBlast = 1<<2,        ///< Do not use RPS Blast
@@ -224,6 +203,9 @@ public:
     };
 
     typedef int TMode;
+
+    /// Default options mode
+    static const TMode kDefaultMode = 0;
 
     /// Method for construction of guide tree for progressive alignment
     enum ETreeMethod {
@@ -247,8 +229,7 @@ public:
     /// @param rps_db_name Name of RPS database
     /// @param mode Mode of operation
     ///
-    CMultiAlignerOptions(const string& rps_db_name,
-                         TMode mode = fMediumQueryClusters);
+    CMultiAlignerOptions(const string& rps_db_name, TMode mode = kDefaultMode);
 
 
     // Turn on and off major options and set major parameters. Other parameter
@@ -696,12 +677,6 @@ private:
     static const int kDefaultGapOpen = -BLAST_GAP_OPEN_PROT;
     static const int kDefaultGapExtend = -BLAST_GAP_EXTN_PROT;
     static const int kDefaultUserConstraintsScore = 1000000;
-
-    static const TMode kQClustersModeMask = fNoQueryClusters 
-                          | fConservativeQueryClusters | fMediumQueryClusters 
-                          | fLargeQueryClusters;
-
-
 };
 
 END_SCOPE(cobalt)

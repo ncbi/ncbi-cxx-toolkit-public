@@ -50,8 +50,7 @@ BEGIN_SCOPE(cobalt)
 
 CMultiAlignerOptions::CMultiAlignerOptions(void)
 {
-    x_InitParams(CMultiAlignerOptions::fMediumQueryClusters
-                 | CMultiAlignerOptions::fNoRpsBlast);
+    x_InitParams(CMultiAlignerOptions::fNoRpsBlast);
 }
 
 CMultiAlignerOptions::CMultiAlignerOptions(TMode mode)
@@ -78,8 +77,8 @@ void CMultiAlignerOptions::SetDefaultCddPatterns(void)
 bool CMultiAlignerOptions::Validate(void)
 {
     // Check whether m_UseQieryClusters and m_Mode are consistent
-    if (((m_Mode & kQClustersModeMask) != fNoQueryClusters) 
-        != m_UseQueryClusters && !(m_Mode & fNonStandard)) {
+    if (!(m_Mode & fNoQueryClusters) != m_UseQueryClusters
+         && !(m_Mode & fNonStandard)) {
 
             NCBI_THROW(CMultiAlignerException, eInvalidOptions,
                        "Conflicting use query clusters setting");
@@ -183,23 +182,8 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
     m_Mode = mode;
 
     // Query clusters
-    m_UseQueryClusters = (mode & kQClustersModeMask) != 0;
-
-    switch (mode & kQClustersModeMask) {
-    case fConservativeQueryClusters :
-        m_MaxInClusterDist = 0.6;
-        break;
-
-    case fMediumQueryClusters :
-        m_MaxInClusterDist = 0.85;
-        break;
-
-    case fLargeQueryClusters :
-        m_MaxInClusterDist = 0.95;
-        break;
-
-    // Do noting for eNoQueryClusters
-    }
+    m_UseQueryClusters = !(mode & fNoQueryClusters);
+    m_MaxInClusterDist = 0.85;
     m_KmerLength = 6;
     m_KmerAlphabet = TKMethods::eSE_B15;
     m_ClustDistMeasure = TKMethods::eFractionCommonKmersGlobal;
@@ -211,7 +195,6 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
 
     // Blatp
     m_BlastpEvalue = 0.01;
-
 
     // Patterns
     if (!(mode & fNoPatterns)) {

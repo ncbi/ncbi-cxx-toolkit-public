@@ -50,9 +50,8 @@ BEGIN_SCOPE(cobalt)
 
 
 CMultiAligner::CMultiAligner(void) 
-    : m_Options(new CMultiAlignerOptions(
-                      CMultiAlignerOptions::fMediumQueryClusters
-                      | CMultiAlignerOptions::fNoRpsBlast))
+    : m_Options(new CMultiAlignerOptions(CMultiAlignerOptions::kDefaultMode
+                                         | CMultiAlignerOptions::fNoRpsBlast))
 {
     x_Init();
     x_InitParams();
@@ -61,8 +60,7 @@ CMultiAligner::CMultiAligner(void)
 
 
 CMultiAligner::CMultiAligner(const string& rps_db)
-    : m_Options(new CMultiAlignerOptions(
-                            CMultiAlignerOptions::fMediumQueryClusters))
+    : m_Options(new CMultiAlignerOptions(CMultiAlignerOptions::kDefaultMode))
 {
     x_Init();
     x_InitParams();

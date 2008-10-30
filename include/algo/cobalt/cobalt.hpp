@@ -470,49 +470,61 @@ private:
 
 private:
 
+    // Input sequences
+
     CConstRef<CMultiAlignerOptions> m_Options;
+
+    vector< CRef<objects::CSeq_loc> > m_tQueries;
+    CRef<objects::CScope> m_Scope;
+
+    vector<CSequence> m_QueryData;
+    vector<CSequence> m_Results;
+
+    // Server classes
+
+    CPSSMAligner m_Aligner;
+    CTree m_Tree;
+    CClusterer m_Clusterer;
+
+    // Intermediate results
+
+    CHitList m_DomainHits;
+    CHitList m_LocalHits;
+    CHitList m_CombinedHits;
+    CHitList m_PatternHits;
+
+    vector< vector<Uint4> > m_ClusterGapPositions;
+    vector< CRef<objects::CSeq_loc> > m_AllQueries;
+    vector<CSequence> m_AllQueryData;
+
+    // Running and monitoring
 
     FInterruptFn m_Interrupt;
     SProgress m_ProgressMonitor;
 
-    vector< CRef<objects::CSeq_loc> > m_tQueries;
-    vector<CSequence> m_QueryData;
-    vector<CSequence> m_Results;
+    vector<string> m_Messages;
 
-    CRef<objects::CScope> m_Scope;
+    // Alignment Parameters (initilized using m_Options)
     
     bool m_UseClusters;
     TKMethods::ECompressedAlphabet m_KmerAlphabet;
-
     unsigned int m_KmerLength;
     double m_MaxClusterDist;
     TKMethods::EDistMeasures m_ClustDistMeasure;
-    vector<CSequence> m_AllQueryData;
-    vector< CRef<objects::CSeq_loc> > m_AllQueries;
-    CClusterer m_Clusterer;
-    vector< vector<Uint4> > m_ClusterGapPositions;
 
-    CHitList m_DomainHits;
     string m_RPSdb;
     string m_Blockfile;
     string m_Freqfile;
     double m_RPSEvalue;
     double m_DomainResFreqBoost;
 
-    CHitList m_LocalHits;
     double m_BlastpEvalue;
     double m_LocalResFreqBoost;
-
-    CHitList m_CombinedHits;
-
-    CHitList m_PatternHits;
 
     CHitList m_UserHits;
 
     const char *m_MatrixName;
 
-    CTree m_Tree;
-    CPSSMAligner m_Aligner;
     double m_ConservedCutoff;
     double m_Pseudocount;
     CNWAligner::TScore m_GapOpen;
@@ -520,13 +532,10 @@ private:
     CNWAligner::TScore m_EndGapOpen;
     CNWAligner::TScore m_EndGapExtend;
 
-    bool m_Verbose;
     bool m_Iterate;
     bool m_FastMeTree;
 
-    vector<string> m_Messages;
-
-
+    bool m_Verbose;
 };
 
 END_SCOPE(cobalt)
