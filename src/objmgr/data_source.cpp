@@ -303,12 +303,8 @@ void CDataSource::x_Map(const CObject* obj, const CTSE_Info_Object* info)
 void CDataSource::x_Unmap(const CObject* obj, const CTSE_Info_Object* info)
 {
     TInfoMap::iterator iter = m_InfoMap.find(obj);
-    if ( iter != m_InfoMap.end() ) {
-        _ASSERT(iter->second == info);
+    if ( iter != m_InfoMap.end() && iter->second == info ) {
         m_InfoMap.erase(iter);
-    }
-    else {
-        abort();
     }
 }
 
@@ -1315,7 +1311,17 @@ void CDataSource::SetLoaded(CTSE_LoadLock& lock)
         _ASSERT(!IsLoaded(*lock));
         _ASSERT(lock.m_LoadLock);
         _ASSERT(!lock->HasDataSource());
-        lock->x_DSAttach(*this);
+        try {
+            lock->x_DSAttach(*this);
+        }
+        catch (...) {
+            try {
+                lock->x_DSDetach(*this);
+            }
+            catch (...) {
+            }
+            throw;
+        }
     }}
     {{
         TMainLock::TWriteLockGuard guard2(m_DSCacheLock);

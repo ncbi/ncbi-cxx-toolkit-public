@@ -321,6 +321,8 @@ void CTSE_Info::SetSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info)
             m_Object.Reset();
             m_Split.Reset();
             m_RequestedId.Reset();
+            m_Removed_Bioseq_sets.clear();
+            m_Removed_Bioseqs.clear();
             m_AnnotIdsFlags = 0;
         }
     }
