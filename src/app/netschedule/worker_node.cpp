@@ -186,8 +186,7 @@ void CQueueWorkerNodeList::AddJob(const string& node_id,
     node->SetNotificationTimeout(curr, 0);
     if (log_job_state >= 1) {
         CDiagContext::SetRequestContext(req_ctx);
-        GetDiagContext().PrintRequestStart("");
-        GetDiagContext().Extra()
+        GetDiagContext().PrintRequestStart()
             .Print("node", node_id)
             .Print("queue", m_QueueName)
             .Print("job_id", NStr::IntToString(job.GetId()));

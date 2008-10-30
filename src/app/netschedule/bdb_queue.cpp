@@ -1761,8 +1761,7 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
     SQueueDescription qdesc;
 
     if (log_job_state >= 1) {
-        GetDiagContext().PrintRequestStart("");
-        GetDiagContext().Extra()
+        GetDiagContext().PrintRequestStart()
             .Print("action", "submit_batch")
             .Print("size", NStr::UIntToString(batch.size()));
     }
