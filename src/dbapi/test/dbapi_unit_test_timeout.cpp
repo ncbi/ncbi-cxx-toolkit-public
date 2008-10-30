@@ -286,8 +286,16 @@ BOOST_AUTO_TEST_CASE(Test_Timeout2)
 BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
 {
     try {
+        auto_ptr<IConnection> conn;
+
+        I_DriverContext* dc = GetDS().GetDriverContext();
+        unsigned int timeout = dc->GetTimeout();
+        dc->SetTimeout(2);
+
+        conn.reset(GetDS().CreateConnection());
+
         // Heavy bulk-insert
-        s_HugeTableSelect(GetConnection());
+        s_HugeTableSelect(*conn);
 
         string table_name = "#test_heavy_load";
         enum {num_tests = 30000};
@@ -301,14 +309,14 @@ BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
                 "txt_field text"
                 ")";
 
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
             auto_stmt->ExecuteUpdate( sql );
         }
 
         // Heavy insert with parameters
         {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
-            auto_ptr<IStatement> auto_stmt2( GetConnection().GetStatement() );
+            auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt2( conn->GetStatement() );
 
             string sql = "INSERT INTO " + table_name +
                 " VALUES(@int_field, @flt_field, @date_field, "
@@ -350,7 +358,7 @@ BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
 
         // Heavy select
         {
-            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+            auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
 
             string sql = "select * from " + table_name;
 
@@ -374,6 +382,8 @@ BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
 
             LOG_POST( "Select finished in " << timer.Elapsed() << " sec." );
         }
+
+        dc->SetTimeout(timeout);
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
