@@ -143,8 +143,7 @@
 /* Minimal size of the data buffer chunk in the socket internal buffer(s) */
 #define SOCK_BUF_CHUNK_SIZE 4096
 
-
-/* Macro #def for the platform-dependent constants, error codes and functions
+/* Macros for platform-dependent constants, error codes and functions
  */
 #if defined(NCBI_OS_MSWIN)
 
@@ -201,6 +200,7 @@
 #  undef sun
 #endif
 
+#define SESSION_INVALID       ((void*)(-1L))
 
 #if defined(HAVE_SOCKLEN_T)  ||  defined(_SOCKLEN_T)
 typedef socklen_t  SOCK_socklen_t;
@@ -406,9 +406,10 @@ static const char* s_StrError(SOCK sock, int error)
     if (!error)
         return "";
     if (sock) {
-        FSSLError sslerror = s_SSL  &&  s_SSL->Error ? s_SSL->Error : 0;
+        FSSLError sslerror = s_SSL ? s_SSL->Error : 0;
         if (sslerror) {
-            const char* err = sslerror(sock->session, error);
+            const char* err= sslerror(sock->session == SESSION_INVALID
+                                      ? 0 : sock->session, error);
             if (err  &&  *err)
                 return err;
         }
@@ -845,7 +846,7 @@ extern EIO_Status SOCK_ShutdownAPI(void)
     if (s_SSL) {
         FSSLExit sslexit = s_SSL->Exit;
         s_SSLSetup = 0;
-        s_SSL = 0;
+        s_SSL      = 0;
         if (sslexit)
             sslexit();
     }
@@ -1024,7 +1025,7 @@ static int/*bool*/ s_IsSmallerTimeout(const struct timeval* v1,
  *
  * This function always checks datagram and listening sockets, and triggers
  * exactly as they are requested (according to "event").  For stream sockets,
- * the call behaves differently only if there are two or more entries passed:
+ * the call behaves differently only if the last parameter is passed non-zero:
  *
  * If "eIO_Write" event is inquired on a stream socket, and the socket is
  * marked for upread, then returned "revent" may also include "eIO_Read" to
@@ -1036,7 +1037,7 @@ static int/*bool*/ s_IsSmallerTimeout(const struct timeval* v1,
  *
  * Return "eIO_Success" when at least one socket is found either ready 
  * (including "eIO_Read" event on "eIO_Write" for upreadable sockets, and/or
- * "eIO_Write" on "eIO_Read" for sockets in pending state when "n!=1")
+ * "eIO_Write" on "eIO_Read" for sockets in pending state when "asis!=0")
  * or failing ("revent" contains "eIO_Close").
  *
  * Return "eIO_Timeout", if timeout expired before any socket was capable
@@ -1044,25 +1045,10 @@ static int/*bool*/ s_IsSmallerTimeout(const struct timeval* v1,
  */
 static EIO_Status s_Select(size_t                n,
                            SSOCK_Poll            polls[],
-                           const struct timeval* tv)
+                           const struct timeval* tv,
+                           int/*bool*/           asis)
 {
 #if 0/*defined(NCBI_OS_MSWIN)  &&  defined(NCBI_CXX_TOOLKIT)*/
-
-	if (WSAEventSelect(x_sock, event, )){
-        DWORD err = GetLastError();
-		char* strerr = s_WinStrerror(err);
-        CORE_LOGF_ERRNO_EXX(, eLOG_Error,
-			                err, strerr ? strerr : SOCK_STRERROR(err),
-                            ("SOCK#%u[%u]: [LSOCK::Accept]  Failed "
-                             "to bind IO event", x_id,
-							 (unsigned int) x_sock));
-		if (strerr)
-			LocalFree(strerr);
-        SOCK_ABORT(x_sock);
-		CloseHandle(event);
-        return eIO_Unknown;
-	}
-
 #else
     int/*bool*/    write_only = 1;
     int/*bool*/    read_only = 1;
@@ -1142,21 +1128,24 @@ static EIO_Status s_Select(size_t                n,
 
             type = (ESOCK_Type) polls[i].sock->type;
             if (type == eTrigger && *((void**) &polls[i].sock->host/*isset*/)){
-                polls[i].revent = event;
+                polls[i].revent = polls[i].event;
                 ready = 1;
                 continue;
             }
 
-            switch (type & eSocket ? event : eIO_Read) {
+            if (!(type & eSocket))
+                event = (EIO_Event)(event & ~eIO_Write);
+            switch (event) {
             case eIO_Write:
             case eIO_ReadWrite:
+                assert(type & eSocket);
                 if (type == eDatagram
                     ||  polls[i].sock->w_status != eIO_Closed) {
                     read_only = 0;
                     FD_SET(fd, &w_fds);
                 }
                 if (event == eIO_Write  &&
-                    (type == eDatagram  ||  n == 1
+                    (type == eDatagram  ||  asis
                      ||  (polls[i].sock->r_on_w == eOff
                           ||  (polls[i].sock->r_on_w == eDefault
                                &&  s_ReadOnWrite != eOn)))) {
@@ -1171,7 +1160,7 @@ static EIO_Status s_Select(size_t                n,
                     write_only = 0;
                     FD_SET(fd, &r_fds);
                 }
-                if (type != eSocket  ||  event != eIO_Read  ||  n == 1
+                if (type != eSocket  ||  asis  ||  event != eIO_Read
                     ||  polls[i].sock->w_status == eIO_Closed
                     ||  !(polls[i].sock->pending | polls[i].sock->w_len)) {
                     break;
@@ -1323,7 +1312,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
         poll.sock   = sock;
         poll.event  = eIO_Write;
         poll.revent = eIO_Open;
-        status      = s_Select(1, &poll, tv);
+        status = s_Select(1, &poll, tv, 1/*asis*/);
         if (status == eIO_Timeout)
             return status;
 #ifdef NCBI_OS_MSWIN
@@ -1385,7 +1374,8 @@ static EIO_Status s_IsConnected(SOCK                  sock,
 
     if (sock->pending) {
         if (sock->session) {
-            FSSLOpen sslopen = s_SSL  &&  s_SSL->Open ? s_SSL->Open : 0;
+            FSSLOpen sslopen = s_SSL ? s_SSL->Open : 0;
+            assert(sock->session != SESSION_INVALID);
             if (sslopen) {
                 const struct timeval* wtv = sock->w_timeout;
                 const struct timeval* rtv = sock->r_timeout;
@@ -1480,7 +1470,7 @@ static EIO_Status s_Recv(SOCK    sock,
             poll.sock   = sock;
             poll.event  = eIO_Read;
             poll.revent = eIO_Open;
-            status = s_Select(1, &poll, tv);
+            status = s_Select(1, &poll, tv, 1/*asis*/);
             if (status != eIO_Success)
                 return status;
             if (poll.revent != eIO_Close) {
@@ -1576,7 +1566,8 @@ static EIO_Status s_Read(SOCK    sock,
 
         if (sock->session) {
             int x_error;
-            FSSLRead sslread = s_SSL  &&  s_SSL->Read ? s_SSL->Read : 0;
+            FSSLRead sslread = s_SSL ? s_SSL->Read : 0;
+            assert(sock->session != SESSION_INVALID);
             if (!sslread) {
                 status = eIO_NotSupported;
                 break/*error*/;
@@ -1663,104 +1654,84 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                                     const struct timeval* tv,
                                     size_t*               n_ready)
 {
-    SSOCK_Poll  xx_polls[2];
-    SSOCK_Poll* x_polls;
-    int/*bool*/ pending;
-    EIO_Status  status;
-    size_t      i, j;
-    size_t      x_n;
+    size_t i, k;
 
     assert(!n  ||  polls);
 
-    if (n == 1) {
-        xx_polls[0] = polls[0];
-        xx_polls[1].sock = 0;
-        x_polls = xx_polls;
-        x_n = 2;
-    } else {
-        x_polls = polls;
-        x_n = n;
-    }
+    for (;;) {
+        int/*bool*/ pending;
+        EIO_Status  status;
 
-    if ((status = s_Select(x_n, x_polls, tv)) != eIO_Success) {
-        if (n_ready)
-            *n_ready = 0;
-        return status;
-    }
-
-    j = 0;
-    pending = 0;
-    for (i = 0;  i < n;  i++) {
-        if (x_polls[i].revent == eIO_Close)
-            break;
-        if (x_polls[i].revent & x_polls[i].event)
-            break;
-        if (x_polls[i].revent != eIO_Open  &&  !pending) {
-            pending = 1;
-            j = i;
+        status = s_Select(n, polls, tv, 0);
+        if (status != eIO_Success) {
+            if (n_ready)
+                *n_ready = 0;
+            return status;
         }
-    }
 
-    if (i >= n  &&  pending) {
-        /* all sockets are not ready for the requested events */
+        k = 0;
         pending = 0;
-        for (i = j;  i < n;  i++) {
+        for (i = 0;  i < n;  i++) {
+            if (polls[i].revent == eIO_Close)
+                break;
+            if (polls[i].revent & polls[i].event)
+                break;
+            if (polls[i].revent != eIO_Open  &&  !pending) {
+                pending = 1;
+                k = i;
+            }
+        }
+        if (i < n/*ready*/)
+            break;
+
+        /* all sockets are not ready for the requested events */
+        assert(pending);
+        for (i = k;  i < n;  i++) {
+            static const struct timeval zero = { 0 };
             /* try to push pending writes */
-            if (x_polls[i].event  == eIO_Read  &&
-                x_polls[i].revent == eIO_Write) {
-                assert(x_polls[i].sock                          &&
-                       x_polls[i].sock->sock != SOCK_INVALID    &&
-                       x_polls[i].sock->type == eSocket         &&
-                       x_polls[i].sock->w_status != eIO_Closed  &&
-                       (x_polls[i].sock->pending  ||  x_polls[i].sock->w_len));
-                status = s_WritePending(x_polls[i].sock, tv, 1/*writeable*/,0);
-                if (status == eIO_Success  ||  status == eIO_Timeout) {
-                    x_polls[i].revent = eIO_Open;
-                    pending = 1;
-                } else
-                    x_polls[i].revent = eIO_Close;
+            if (polls[i].event == eIO_Read  &&  polls[i].revent == eIO_Write) {
+                assert(polls[i].sock                          &&
+                       polls[i].sock->sock != SOCK_INVALID    &&
+                       polls[i].sock->type == eSocket         &&
+                       polls[i].sock->w_status != eIO_Closed  &&
+                       (polls[i].sock->pending  ||  polls[i].sock->w_len));
+                s_WritePending(polls[i].sock, &zero, 1/*w*/, 0);
+                polls[i].revent = eIO_Open;
                 continue;
             }
             /* try to upread immediately readable sockets */
-            if (x_polls[i].event  == eIO_Write  &&
-                x_polls[i].revent == eIO_Read) {
+            if (polls[i].event == eIO_Write  &&  polls[i].revent == eIO_Read) {
                 size_t dummy;
-                assert(x_polls[i].sock                          &&
-                       x_polls[i].sock->sock != SOCK_INVALID    &&
-                       x_polls[i].sock->type == eSocket         &&
-                       x_polls[i].sock->w_status != eIO_Closed  &&
-                       x_polls[i].sock->r_status != eIO_Closed  &&
-                       !x_polls[i].sock->eof                    &&
-                       !x_polls[i].sock->pending                &&
-                       (x_polls[i].sock->r_on_w == eOn
-                        ||  (x_polls[i].sock->r_on_w == eDefault
+                assert(polls[i].sock                          &&
+                       polls[i].sock->sock != SOCK_INVALID    &&
+                       polls[i].sock->type == eSocket         &&
+                       polls[i].sock->w_status != eIO_Closed  &&
+                       polls[i].sock->r_status != eIO_Closed  &&
+                       !polls[i].sock->eof                    &&
+                       !polls[i].sock->pending                &&
+                       (polls[i].sock->r_on_w == eOn
+                        ||  (polls[i].sock->r_on_w == eDefault
                              &&  s_ReadOnWrite == eOn)));
-                s_Read(x_polls[i].sock, 0, 0, &dummy, -1/*upread*/);
-                x_polls[i].revent = eIO_Open;
-                pending = 1;
+                s_Read(polls[i].sock, 0, 0, &dummy, -1/*upread*/);
+                polls[i].revent = eIO_Open;
             }
         }
-        /* then poll again if ready:  if pending some revents eIO_Open here */
-        status = pending ? s_Select(x_n, x_polls, tv) : eIO_Timeout;
     }
 
-    j = 0;
+    k = 0;
     for (i = 0;  i < n;  i++) {
-        if (x_polls[i].revent != eIO_Close) {
-            x_polls[i].revent = (EIO_Event)
-                (x_polls[i].revent & x_polls[i].event);
-            if (x_polls[i].revent != eIO_Open)
-                j++;
-        } else
-            j++;
+        if (polls[i].revent != eIO_Close) {
+            polls[i].revent = (EIO_Event)(polls[i].revent & polls[i].event);
+            if (!polls[i].revent)
+                continue;
+        }
+        k++;
     }
 
     if (n_ready)
-        *n_ready = j;
-    if (n == 1)
-        polls[0].revent = xx_polls[0].revent;
+        *n_ready = k;
 
-    return j ? eIO_Success : status == eIO_Success ? eIO_Timeout : status;
+    return k ? eIO_Success : eIO_Timeout;
 }
 
 
@@ -1989,7 +1960,8 @@ static EIO_Status s_WriteData(SOCK        sock,
     if (sock->session) {
         int x_error;
         EIO_Status status;
-        FSSLWrite sslwrite = s_SSL  &&  s_SSL->Write ? s_SSL->Write : 0;
+        FSSLWrite sslwrite = s_SSL ? s_SSL->Write : 0;
+        assert(sock->session != SESSION_INVALID);
         if (!sslwrite)
             return eIO_NotSupported;
         status = sslwrite(sock->session, data, size, n_written, &x_error);
@@ -2101,9 +2073,9 @@ static EIO_Status s_Write(SOCK        sock,
     EIO_Status status;
 
     if (sock->type == eDatagram) {
-        if ( sock->eof )
+        if (sock->eof)
             s_WipeWBuf(sock);
-        if ( BUF_Write(&sock->w_buf, data, size) ) {
+        if (BUF_Write(&sock->w_buf, data, size)) {
             *n_written = size;
             sock->w_status = eIO_Success;
         } else {
@@ -2114,7 +2086,7 @@ static EIO_Status s_Write(SOCK        sock,
     }
 
     if (sock->w_status == eIO_Closed) {
-        if (size != 0) {
+        if (size) {
             CORE_DEBUG_ARG(char _id[32]);
             CORE_TRACEF(("%s[SOCK::Write]  Socket has already"
                          " been shut down for writing", s_ID(sock, _id)));
@@ -2193,7 +2165,8 @@ static EIO_Status s_Shutdown(SOCK                  sock,
             }
 
             if (sock->session  &&  !sock->pending) {
-                FSSLClose sslclose = s_SSL  &&  s_SSL->Close? s_SSL->Close : 0;
+                FSSLClose sslclose = s_SSL ? s_SSL->Close : 0;
+                assert(sock->session != SESSION_INVALID);
                 if (sslclose) {
                     const struct timeval* wtv = sock->w_timeout;
                     const struct timeval* rtv = sock->r_timeout;
@@ -2206,7 +2179,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                         CORE_LOGF_ERRNO_EXX(125, eLOG_Trace,
                                             x_error, s_StrError(sock, x_error),
                                             ("%s[SOCK::Shutdown]  Failed"
-                                             " TLS bye", s_ID(sock, _id)));
+                                             " SSL bye", s_ID(sock, _id)));
                     }
                 }
             }
@@ -2349,10 +2322,11 @@ static EIO_Status s_Close(SOCK sock, int abort)
     }
     sock->w_len = 0;
 
-    if (sock->session) {
-        if (s_SSL  &&  s_SSL->Delete)
-            s_SSL->Delete(sock->session);
-        /* keep session non-zero (but defunct) for logging just a bit later */
+    if (sock->session  &&  sock->session != SESSION_INVALID) {
+        FSSLDelete ssldelete = s_SSL ? s_SSL->Delete : 0;
+        if (ssldelete)
+            ssldelete(sock->session);
+        sock->session = SESSION_INVALID;
     }
 
     if (abort >= 0) {
@@ -2366,8 +2340,6 @@ static EIO_Status s_Close(SOCK sock, int abort)
             s_DoLog(sock, eIO_Close, 0, 0, abort ? "Aborting" : 0);
     } else
         abort = 1;
-
-    sock->session = 0;
 
     status = eIO_Success;
     if (abort  ||  !sock->keep) {
@@ -2421,7 +2393,7 @@ static EIO_Status s_Connect(SOCK            sock,
                             const char*     host,
                             unsigned short  port,
                             const STimeout* timeout,
-                            TSOCK_Flags     flags)
+                            int/*bool*/     secure)
 {
     union {
         struct sockaddr    sa;
@@ -2441,23 +2413,26 @@ static EIO_Status s_Connect(SOCK            sock,
     assert(sock->type == eSocket  &&  sock->side == eSOCK_Client);
 
     /* initialize internals */
-    if (s_InitAPI(flags & fSOCK_Secure) != eIO_Success)
+    if (s_InitAPI(secure) != eIO_Success)
         return eIO_NotSupported;
 
-    assert(!sock->session);
-    if (flags & fSOCK_Secure) {
-        FSSLCreate sslcreate = s_SSL  &&  s_SSL->Create ? s_SSL->Create : 0;
-        if (sslcreate)
-            sock->session = sslcreate(eSOCK_Client, sock, &x_error);
-        else
+    if (secure) {
+        FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
+        void* session;
+        if (!sslcreate) {
+            session = 0;
             x_error = 0;
-        if (!sock->session) {
+        } else
+            session = sslcreate(eSOCK_Client, sock, &x_error);
+        if (!session) {
             CORE_LOGF_ERRNO_EXX(129, eLOG_Error,
                                 x_error, s_StrError(sock, x_error),
                                 ("%s[SOCK::Connect]  Failed to initialize"
                                  " secure session", s_ID(sock, _id)));
             return eIO_NotSupported;
         }
+        assert(session != SESSION_INVALID);
+        sock->session = session;
     }
 
     memset(&addr, 0, sizeof(addr));
@@ -2510,7 +2485,7 @@ static EIO_Status s_Connect(SOCK            sock,
         DWORD err = GetLastError();
 		char* strerr = s_WinStrerror(err);
         CORE_LOGF_ERRNO_EXX(121, eLOG_Error,
-			                err, strerr ? strerr : SOCK_STRERROR(err),
+			                err, strerr ? strerr : "Unknown error",
 							("%s[SOCK::Connect]  Failed "
                              "to create IO event", s_ID(sock, _id)));
 		if (strerr)
@@ -2533,8 +2508,7 @@ static EIO_Status s_Connect(SOCK            sock,
 #endif
 
 #ifdef NCBI_OS_UNIX
-    if ((!(flags & fSOCK_KeepOnExec)  ||  (flags & fSOCK_Secure))
-        &&  !s_SetCloexec(x_sock, 1/*true*/)){
+    if ((!sock->keep  ||  secure)  &&  !s_SetCloexec(x_sock, 1/*true*/)){
         x_error = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EXX(126, eLOG_Warning,
                             x_error, SOCK_STRERROR(x_error),
@@ -2624,12 +2598,14 @@ static EIO_Status s_Create(const char*     host,
     /* allocate memory for the internal socket structure */
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + x_n)))
         return eIO_Unknown;
-    x_sock->sock  = SOCK_INVALID;
-    x_sock->id    = x_id;
-    x_sock->type  = eSocket;
-    x_sock->log   = flags;
-    x_sock->side  = eSOCK_Client;
-    x_sock->keep  = flags & fSOCK_KeepOnClose ? eSOCK_Keep : eSOCK_Close;
+    x_sock->sock     = SOCK_INVALID;
+    x_sock->id       = x_id;
+    x_sock->type     = eSocket;
+    x_sock->log      = flags;
+    x_sock->side     = eSOCK_Client;
+    x_sock->keep     = flags & fSOCK_KeepOnClose ? eSOCK_Keep : eSOCK_Close;
+    x_sock->r_on_w   = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
+    x_sock->i_on_sig = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
 
 #ifdef NCBI_OS_UNIX
     if (!port)
@@ -2651,16 +2627,12 @@ static EIO_Status s_Create(const char*     host,
 
 
     /* connect */
-    if ((status= s_Connect(x_sock, host, port, timeout, flags)) !=eIO_Success){
+    status = s_Connect(x_sock, host, port, timeout, flags & fSOCK_Secure);
+    if (status != eIO_Success)
         SOCK_Close(x_sock);
-        return status;
-    }
-
-    /* success */
-    x_sock->r_on_w   = eDefault;
-    x_sock->i_on_sig = eDefault;
-    *sock = x_sock;
-    return eIO_Success;
+    else
+        *sock = x_sock;
+    return status;
 }
 
 
@@ -2750,14 +2722,14 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
 	{{
         HANDLE event = CreateEvent(NULL, TRUE, FALSE, NULL);
         if (!event) {
-			DWORD err = GetLastError();
-			char* strerr = s_WinStrerror(err);
-			CORE_LOGF_ERRNO_EXX(14, eLOG_Error, err,
-				                strerr ? strerr : SOCK_STRERROR(err),
+            DWORD err = GetLastError();
+            char* strerr = s_WinStrerror(err);
+            CORE_LOGF_ERRNO_EXX(14, eLOG_Error, err,
+                                strerr ? strerr : "Unknown error",
                                 ("TRIGGER#%u: [TRIGGER::Create] "
                                  " Cannot create event object", x_id));
-			if (strerr)
-			    LocalFree(strerr);
+            if (strerr)
+                LocalFree(strerr);
             return eIO_Closed;
         }
         if (!(*trigger = (TRIGGER) calloc(1, sizeof(**trigger)))) {
@@ -2770,7 +2742,7 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
         (*trigger)->log      = log;
         (*trigger)->i_on_sig = eDefault;
 
-		/* statistics & logging */
+        /* statistics & logging */
         if (log == eOn  ||  (log == eDefault  &&  s_Log == eOn)) {
             CORE_TRACEF(("TRIGGER#%u: Ready", x_id));
         }
@@ -3049,29 +3021,26 @@ static EIO_Status s_CreateListening(const char*    path,
 #ifdef NCBI_OS_MSWIN
 	if (!(event = CreateEvent(NULL, TRUE, FALSE, NULL))) {
         DWORD err = GetLastError();
-		char* strerr = s_WinStrerror(err);
+        char* strerr = s_WinStrerror(err);
         CORE_LOGF_ERRNO_EXX(118, eLOG_Error,
-			                err, strerr ? strerr : SOCK_STRERROR(err),
+                            err, strerr ? strerr : "Unknown error",
                             ("LSOCK#%u[%u]: [LSOCK::Create]  Failed "
                              "to create IO event", x_id,
-							 (unsigned int) x_lsock));
-		if (strerr)
-			LocalFree(strerr);
+                             (unsigned int) x_lsock));
+        if (strerr)
+            LocalFree(strerr);
         SOCK_CLOSE(x_lsock);
         return eIO_Unknown;
 	}
 	if (WSAEventSelect(x_lsock, event, FD_ACCEPT | FD_CLOSE) != 0) {
-        DWORD err = GetLastError();
-		char* strerr = s_WinStrerror(err);
+        int x_error = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EXX(119, eLOG_Error,
-			                err, strerr ? strerr : SOCK_STRERROR(err),
+                            x_error, SOCK_STRERROR(x_error),
                             ("LSOCK#%u[%u]: [LSOCK::Create]  Failed "
-							"to bind IO event", x_id,
-							 (unsigned int) x_lsock));
-		if (strerr)
-			LocalFree(strerr);
+                             "to bind IO event", x_id,
+                             (unsigned int) x_lsock));
         SOCK_CLOSE(x_lsock);
-		CloseHandle(event);
+        CloseHandle(event);
         return eIO_Unknown;
 	}
 #endif /*NCBI_OS_MSWIN*/
@@ -3125,16 +3094,16 @@ static EIO_Status s_CreateListening(const char*    path,
     (*lsock)->log      = flags;
     (*lsock)->side     = eSOCK_Server;
     (*lsock)->keep     = flags & fSOCK_KeepOnClose ? eSOCK_Keep : eSOCK_Close;
-    (*lsock)->i_on_sig = eDefault;
+    (*lsock)->i_on_sig = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
 #if   defined(NCBI_OS_UNIX)
-    if ( path )
+    if (path)
         strcpy((*lsock)->path, path);
 #elif defined(NCBI_OS_MSWIN)
 	(*lsock)->event    = event;
 #endif /*NCBI_OS*/
 
     /* statistics & logging */
-    if ((*lsock)->log == eOn  ||  ((*lsock)->log == eDefault && s_Log == eOn)) {
+    if ((*lsock)->log == eOn  ||  ((*lsock)->log == eDefault && s_Log == eOn)){
         CORE_LOGF_X(115, eLOG_Trace,
                     ("LSOCK#%u[%u]: Listening on %s",
                      x_id, (unsigned int) x_lsock, c));
@@ -3223,7 +3192,8 @@ static EIO_Status s_Accept(LSOCK           lsock,
         poll.sock   = (SOCK) lsock;
         poll.event  = eIO_Read;
         poll.revent = eIO_Open;
-        if ((status = s_Select(1, &poll, s_to2tv(timeout,&tv))) != eIO_Success)
+        status = s_Select(1, &poll, s_to2tv(timeout, &tv), 1/*asis*/);
+        if (status != eIO_Success)
             return status;
         if (poll.revent == eIO_Close)
             return eIO_Unknown;
@@ -3261,12 +3231,12 @@ static EIO_Status s_Accept(LSOCK           lsock,
         DWORD err = GetLastError();
 		char* strerr = s_WinStrerror(err);
         CORE_LOGF_ERRNO_EXX(120, eLOG_Error,
-			                err, strerr ? strerr : SOCK_STRERROR(err),
-							("SOCK#%u[%u]: [LSOCK::Accept]  Failed "
-                             "to create IO event", x_id,
-							 (unsigned int) x_sock));
-		if (strerr)
-			LocalFree(strerr);
+                            err, strerr ? strerr : "Unknown error",
+                            ("SOCK#%u[%u]: [LSOCK::Accept]  Failed"
+                             " to create IO event", x_id,
+                             (unsigned int) x_sock));
+        if (strerr)
+            LocalFree(strerr);
         SOCK_ABORT(x_sock);
         return eIO_Unknown;
 	}
@@ -3316,7 +3286,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
     else
 #endif /*NCBI_OS_UNIX*/
         addrlen = 0;
-    if ( !(*sock = (SOCK) calloc(1, sizeof(**sock) + addrlen)) ) {
+    if (!(*sock = (SOCK) calloc(1, sizeof(**sock) + addrlen))) {
 		SOCK_ABORT(x_sock);
 #ifdef NCBI_OS_MSWIN
 		CloseHandle(event);
@@ -3340,8 +3310,8 @@ static EIO_Status s_Accept(LSOCK           lsock,
     (*sock)->log       = flags;
     (*sock)->side      = eSOCK_Server;
     (*sock)->keep      = flags & fSOCK_KeepOnClose ? eSOCK_Keep : eSOCK_Close;
-    (*sock)->r_on_w    = eDefault;
-    (*sock)->i_on_sig  = eDefault;
+    (*sock)->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
+    (*sock)->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
     (*sock)->r_status  = eIO_Success;
     (*sock)->w_status  = eIO_Success;
     (*sock)->connected = 1/*true*/;
@@ -3663,8 +3633,8 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     x_sock->log      = flags;
     x_sock->side     = eSOCK_Server;
     x_sock->keep     = flags & fSOCK_KeepOnClose ? eSOCK_Keep : eSOCK_Close;
-    x_sock->r_on_w   = eDefault;
-    x_sock->i_on_sig = eDefault;
+    x_sock->r_on_w   = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
+    x_sock->i_on_sig = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
     x_sock->r_status = eIO_Success;
     x_sock->w_status = eIO_Success;
     x_sock->pending  = 1/*have to check at the nearest I/O*/;
@@ -3674,12 +3644,14 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     x_sock->w_len    = datalen;
 
     if (flags & fSOCK_Secure) {
-        FSSLCreate sslcreate = s_SSL  &&  s_SSL->Create ? s_SSL->Create : 0;
-        if (sslcreate)
-            x_sock->session = sslcreate(eSOCK_Client, x_sock, &x_error);
-        else
+        FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
+        void* session;
+        if (!sslcreate) {
+            session = 0;
             x_error = 0;
-        if (!x_sock->session) {
+        } else
+            session = sslcreate(eSOCK_Client, x_sock, &x_error);
+        if (!session) {
             CORE_LOGF_ERRNO_EXX(130, eLOG_Error,
                                 x_error, s_StrError(x_sock, x_error),
                                 ("%s[SOCK::CreateOnTop]  Failed to initialize"
@@ -3688,6 +3660,8 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
             SOCK_Close(x_sock);
             return eIO_NotSupported;
         }
+        assert(session != SESSION_INVALID);
+        x_sock->session = session;
     }
 
     /* set to non-blocking mode */
@@ -3727,20 +3701,6 @@ static EIO_Status s_Reconnect(SOCK            sock,
                               unsigned short  port,
                               const STimeout* timeout)
 {
-    TSOCK_Flags flags = fSOCK_LogDefault;
-
-    /* close the socket if necessary */
-    if (sock->sock != SOCK_INVALID) {
-        flags = sock->log;
-#ifdef NCBI_OS_UNIX
-        if (!(fcntl(sock->sock, F_GETFD, 0) & FD_CLOEXEC))
-            flags |= fSOCK_KeepOnExec;
-#endif /*NCBI_OS_UNIX*/
-        if (sock->session)
-            flags |= fSOCK_Secure;
-        s_Close(sock, 0/*orderly*/);
-    }
-
     /* special treatment for server-side socket */
     if (sock->side == eSOCK_Server) {
         char _id[32];
@@ -3751,14 +3711,18 @@ static EIO_Status s_Reconnect(SOCK            sock,
                          " its peer address", s_ID(sock, _id)));
             return eIO_InvalidArg;
         }
-        sock->side = eSOCK_Client;
     }
+
+    /* close the socket if necessary */
+    if (sock->sock != SOCK_INVALID)
+        s_Close(sock, 0/*orderly*/);
 
     /* connect */
     sock->id++;
+    sock->side      = eSOCK_Client;
     sock->n_read    = 0;
     sock->n_written = 0;
-    return s_Connect(sock, host, port, timeout, flags);
+    return s_Connect(sock, host, port, timeout, sock->session ? 1 : 0);
 }
 
 
@@ -3934,15 +3898,15 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
     assert(sock->type == eSocket);
     /* do wait */
     {{
-        struct timeval        tv;
-        SSOCK_Poll            poll;
-        EIO_Status            status;
-        const struct timeval* x_tv = s_to2tv(timeout, &tv);
+        struct timeval tv;
+        SSOCK_Poll     poll;
+        EIO_Status     status;
 
         poll.sock   = sock;
         poll.event  = event;
         poll.revent = eIO_Open;
-        if ((status = s_SelectStallsafe(1, &poll, x_tv, 0)) != eIO_Success)
+        status = s_SelectStallsafe(1, &poll, s_to2tv(timeout, &tv), 0);
+        if (status != eIO_Success)
             return status;
         if (poll.revent == eIO_Close)
             return eIO_Unknown;
@@ -4596,8 +4560,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     (*sock)->log      = flags;
     (*sock)->side     = eSOCK_Client;
     (*sock)->keep     = flags & fSOCK_KeepOnClose ? eSOCK_Keep : eSOCK_Close;
-    (*sock)->r_on_w   = eOff;
-    (*sock)->i_on_sig = eDefault;
+    (*sock)->i_on_sig = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
     (*sock)->r_status = eIO_Success;
     (*sock)->w_status = eIO_Success;
     /* all timeouts cleared - infinite */
@@ -4830,7 +4793,8 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
             poll.sock   = sock;
             poll.event  = eIO_Write;
             poll.revent = eIO_Open;
-            if ((status = s_Select(1, &poll, sock->w_timeout)) != eIO_Success)
+            status = s_Select(1, &poll, sock->w_timeout, 1/*asis*/);
+            if (status != eIO_Success)
                 break;
             if (poll.revent == eIO_Close) {
                 status = eIO_Unknown;
@@ -4965,10 +4929,11 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
             poll.sock   = sock;
             poll.event  = eIO_Read;
             poll.revent = eIO_Open;
-            if ((status = s_Select(1, &poll, sock->r_timeout)) != eIO_Success)
+            status = s_Select(1, &poll, sock->r_timeout, 1/*asis*/);
+            if (status != eIO_Success)
                 break;
             if (poll.revent == eIO_Close) {
-                status = eIO_Closed;
+                status = eIO_Unknown;
                 break;
             }
             assert(poll.event == eIO_Read  &&  poll.revent == eIO_Read);
@@ -5014,12 +4979,11 @@ extern EIO_Status DSOCK_WaitMsg(SOCK sock, const STimeout* timeout)
     poll.sock   = sock;
     poll.event  = eIO_Read;
     poll.revent = eIO_Open;
-    if ((status = s_Select(1, &poll, s_to2tv(timeout, &tv))) != eIO_Success
-        ||  poll.revent == eIO_Read) {
+    status = s_Select(1, &poll, s_to2tv(timeout, &tv), 1/*asis*/);
+    if (status != eIO_Success  ||  poll.revent == eIO_Read)
         return status;
-    }
     assert(poll.revent == eIO_Close);
-    return eIO_Closed;
+    return eIO_Unknown;
 }
 
 
