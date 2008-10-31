@@ -61,13 +61,11 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnector
  );
 
 
-typedef enum {
+typedef enum { /* DEPRECATED -- DON'T USE! */
     fSCC_DebugPrintout  = fSOCK_LogOn,
-    fSCC_SetReadOnWrite = 0x10,
-    fSCC_Secure         = fSOCK_Secure
+    fSCC_Secure         = fSOCK_Secure,
+    fSCC_SetReadOnWrite = fSOCK_ReadOnWrite
 } ESCC_Flags;
-typedef unsigned int TSCC_Flags;  /* bitwise OR of "ESCC_Flags */
-
 
 /* Create new CONNECTOR structure to handle connection to a socket.
  * Make up to "max_try" attempts to connect to the "host:port" before
@@ -83,7 +81,7 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorEx
  unsigned int   max_try,   /* max.number of attempts to establish connection */
  const void*    init_data, /* data to send to server on connect              */
  size_t         init_size, /* size of the "init_data" buffer                 */
- TSCC_Flags     flags      /* bitwise OR of additional flags: see above      */
+ TSOCK_Flags    flags      /* bitwise OR of additional flags: see above      */
  );
 
 
@@ -108,7 +106,7 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTop
 extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTopEx
 (SOCK         sock,      /* socket object                                    */
  unsigned int max_try,   /* max.# of tries to reconnect if disconnected      */
- TSCC_Flags   flags      /* bitwise OR of additional flags: see above        */
+ TSOCK_Flags  flags      /* bitwise OR of additional flags: see above        */
  );
 
 

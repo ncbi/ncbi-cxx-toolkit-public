@@ -55,7 +55,7 @@ typedef struct {
     unsigned int   max_try;   /* max.number of attempts to establish conn */
     void*          init_data; /* data to send to the server on connect    */
     size_t         init_size; /* size of the "inst_str" buffer            */
-    TSCC_Flags     flags;     /* see SOCK_CreateConnectorEx               */
+    TSOCK_Flags    flags;     /* see socket flags in ncbi_socket.h        */
 } SSockConnector;
 
 
@@ -129,7 +129,7 @@ static EIO_Status s_VT_Open
     unsigned int i = 0;
 
     do {
-        if (xxx->sock && !xxx->host) {
+        if (xxx->sock  &&  !xxx->host) {
             /* on-top (connected) connector for the 1st time - only once here*/
             unsigned int   host;
             unsigned short port;
@@ -142,7 +142,7 @@ static EIO_Status s_VT_Open
             xxx->port = port;
             status = eIO_Success;
         } else {
-            if ( !xxx->max_try )
+            if (!xxx->max_try)
                 break;
             /* connect/reconnect */
             status = xxx->sock ?
@@ -157,13 +157,7 @@ static EIO_Status s_VT_Open
             }
             i++;
         }
-
-        if (status == eIO_Success  &&  (xxx->flags & fSCC_SetReadOnWrite)) {
-            SOCK_SetReadOnWrite(xxx->sock, eOn);
-            break;
-        }
-        /* error: continue trying */
-    } while (i < xxx->max_try);
+    } while (status != eIO_Success  &&  i < xxx->max_try);
 
     return status;
 }
@@ -290,13 +284,13 @@ static CONNECTOR s_Init
  unsigned int   max_try,
  const void*    init_data,
  size_t         init_size,
- TSCC_Flags     flags)
+ TSOCK_Flags    flags)
 {
     CONNECTOR       ccc = (SConnector    *) malloc(sizeof(SConnector));
     SSockConnector* xxx = (SSockConnector*) malloc(sizeof(*xxx));
 
     /* parameter check: either sock or host/port, not both */
-    assert((!sock && host && port) || (sock && !host && !port));
+    assert((!sock && host && port)  ||  (sock && !host && !port));
     assert(!init_size || init_data);
     /* initialize internal data structures */
     xxx->sock        = sock;
@@ -335,7 +329,7 @@ extern CONNECTOR SOCK_CreateConnector
  unsigned short port,
  unsigned int   max_try)
 {
-    return s_Init(0, host, port, max_try, 0, 0, 0);
+    return s_Init(0, host, port, max_try, 0, 0, fSOCK_LogDefault);
 }
 
 
@@ -345,7 +339,7 @@ extern CONNECTOR SOCK_CreateConnectorEx
  unsigned int   max_try,
  const void*    init_data,
  size_t         init_size,
- TSCC_Flags     flags)
+ TSOCK_Flags    flags)
 {
     return s_Init(0, host, port, max_try, init_data, init_size, flags);
 }
@@ -355,14 +349,14 @@ extern CONNECTOR SOCK_CreateConnectorOnTop
 (SOCK         sock,
  unsigned int max_try)
 {
-    return s_Init(sock, 0, 0, max_try, 0, 0, 0);
+    return s_Init(sock, 0, 0, max_try, 0, 0, fSOCK_LogDefault);
 }
 
 
 extern CONNECTOR SOCK_CreateConnectorOnTopEx
 (SOCK         sock,
  unsigned int max_try,
- TSCC_Flags   flags)
+ TSOCK_Flags  flags)
 {
     return s_Init(sock, 0, 0, max_try, 0, 0, flags);
 }

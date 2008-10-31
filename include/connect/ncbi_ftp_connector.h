@@ -58,7 +58,7 @@ typedef enum {
 } EFCDC_Flags;
 typedef unsigned int TFCDC_Flags;
 
-typedef enum { /* DEPRECATED -- DON'T USE */
+typedef enum { /* DEPRECATED -- DON'T USE! */
     eFCDC_LogControl = fFCDC_LogControl,
     eFCDC_LogData    = fFCDC_LogData,
     eFCDC_LogAll     = fFCDC_LogAll

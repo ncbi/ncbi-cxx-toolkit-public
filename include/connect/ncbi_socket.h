@@ -456,7 +456,9 @@ typedef enum {
     fSOCK_CloseOnExec  = 0,      /** can be applied to most sockets          */
     fSOCK_Secure       = 0x40,   /** subsumes CloseOnExec regardless of Keep */
     fSOCK_KeepOnClose  = 0x80,   /** do not close OS handle on SOCK_Close    */
-    fSOCK_CloseOnClose = 0       /** do     close OS handle on SOCK_Close    */
+    fSOCK_CloseOnClose = 0,      /** do     close OS handle on SOCK_Close    */
+    fSOCK_ReadOnWrite       = 0x100,
+    fSOCK_InterruptOnSignal = 0x200
 } ESOCK_Flags;
 typedef unsigned int TSOCK_Flags;
 
@@ -465,7 +467,7 @@ typedef unsigned int TSOCK_Flags;
  *  LISTENING SOCKET [SERVER-side]
  */
 
-typedef enum { /* DEPRECATED -- DON'T USE */
+typedef enum { /* DEPRECATED -- DON'T USE! */
     fLSCE_LogOff      = fSOCK_LogOff,
     fLSCE_LogOn       = fSOCK_LogOn,
     fLSCE_LogDefault  = fSOCK_LogDefault,
