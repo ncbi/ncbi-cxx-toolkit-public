@@ -99,31 +99,33 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
         return eRW_Success;
 
     if (m_BlobOstr)
-        return x_WriteToStream(buf,count, &written);
-    //cerr << "before " << m_Data.size() << " " <<count << endl;
-    if (m_Data.size()+count > m_MaxBuffSize) {
-        _ASSERT(!m_BlobOstr);
-        string tmp(m_Data.begin() + s_FlagsLen, m_Data.end());
-        m_Data = "";
-        string key;
-        m_BlobOstr = &m_Storage.CreateOStream(key);
-        m_Data = s_Flags[1] + key;
-        ERW_Result ret = eRW_Success;
-        if (tmp.size() > 0) {
-            ret = x_WriteToStream(&*tmp.begin(), tmp.size());
-            if( ret != eRW_Success ) {
-                m_Storage.Reset();
-                m_Data = s_Flags[0] + tmp;
-                m_BlobOstr = NULL;
-                return ret;
-            }
-        }
-        return x_WriteToStream(buf,count, &written);
+        return x_WriteToStream(buf, count, &written);
+
+    if (m_Data.size() + count <= m_MaxBuffSize) {
+        m_Data.append((const char*) buf, count);
+
+        written = count;
+        return eRW_Success;
     }
-    m_Data.append( (const char*)buf, count);
-    //cerr << "after " << m_Data.size() << " " <<count << endl;
-    written = count;
-    return eRW_Success;
+
+    string key;
+    m_BlobOstr = &m_Storage.CreateOStream(key);
+
+    if (m_Data.size() > s_FlagsLen) {
+        ERW_Result ret = x_WriteToStream(
+            &*m_Data.begin() + s_FlagsLen,
+            m_Data.size() - s_FlagsLen);
+
+        if (ret != eRW_Success) {
+            m_Storage.Reset();
+            m_BlobOstr = NULL;
+            return ret;
+        }
+    }
+
+    m_Data = s_Flags[1] + key;
+
+    return x_WriteToStream(buf, count, &written);
 }
 
 ERW_Result CStringOrBlobStorageWriter::Flush(void)
