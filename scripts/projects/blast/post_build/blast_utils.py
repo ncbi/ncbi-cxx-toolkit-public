@@ -7,7 +7,7 @@ import os
 from subprocess import call
 from shutil import move
 
-BLAST_VERSION = "2.2.18" 
+BLAST_VERSION = "2.2.19" 
         
 # URL from the test Bookshelf server to download the User Manual
 MANUAL_URL = "http://web.ncbi.nlm.nih.gov/bookshelf/picrender.fcgi?"

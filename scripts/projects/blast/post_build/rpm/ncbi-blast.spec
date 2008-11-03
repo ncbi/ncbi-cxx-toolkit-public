@@ -1,6 +1,6 @@
 Name:        ncbi-blast
 Version:     BLAST_VERSION+
-Release:     5
+Release:     1
 Source0:     %{name}-%{version}.tgz
 Summary:     NCBI BLAST finds regions of similarity between biological sequences. 
 Exclusiveos: linux
@@ -40,6 +40,5 @@ rm -rf $RPM_BUILD_ROOT
 %_bindir/*
 
 %changelog
-* Mon Jul 21 2008 Christiam Camacho <camacho@ncbi.nlm.nih.gov>
-- First release
+See ChangeLog file
 
