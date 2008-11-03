@@ -452,11 +452,11 @@ typedef enum {
     fSOCK_LogDefault   = eDefault,
     fSOCK_BindAny      = 0,      /** bind to 0.0.0.0 (i.e. any), default     */
     fSOCK_BindLocal    = 0x10,   /** bind to 127.0.0.1 only                  */
-    fSOCK_KeepOnExec   = 0x20,   /** can be applied to most sockets          */
-    fSOCK_CloseOnExec  = 0,      /** can be applied to most sockets          */
+    fSOCK_KeepOnExec   = 0x20,   /** can be applied to all sockets           */
+    fSOCK_CloseOnExec  = 0,      /** can be applied to all sockets           */
     fSOCK_Secure       = 0x40,   /** subsumes CloseOnExec regardless of Keep */
-    fSOCK_KeepOnClose  = 0x80,   /** do not close OS handle on SOCK_Close    */
-    fSOCK_CloseOnClose = 0,      /** do     close OS handle on SOCK_Close    */
+    fSOCK_KeepOnClose  = 0x80,   /** do not close OS handle on SOCK_Close[Ex]*/
+    fSOCK_CloseOnClose = 0,      /** do     close OS handle on SOCK_Close[Ex]*/
     fSOCK_ReadOnWrite       = 0x100,
     fSOCK_InterruptOnSignal = 0x200
 } ESOCK_Flags;
@@ -1123,6 +1123,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
  * Break actual connection if any was established.
  * Do not attempt to send anything upon SOCK_Close().
  * This call is available for stream sockets only.
+ * NB:  Even though the underlying OS socket handle may have been marked for
+ *      preservation via fSOCK_KeepOnClose, this call always and unconditially
+ *      closes and destroys the actual OS handle.
  * @param sock
  * Socket handle
  */

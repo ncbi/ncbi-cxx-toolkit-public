@@ -146,12 +146,10 @@ typedef int TRIGGER_Handle;
 typedef ESwitch    EBSwitch;
 typedef EIO_Status EBIO_Status;
 typedef ESOCK_Side EBSOCK_Side;
-typedef ESOCK_Keep EBSOCK_Keep;
 #else
 typedef unsigned   EBSwitch;
 typedef unsigned   EBIO_Status;
 typedef unsigned   EBSOCK_Side;
-typedef unsigned   EBSOCK_Keep;
 #endif
 
 
@@ -178,7 +176,7 @@ typedef struct TRIGGER_tag {
     TSOCK_Type          type;   /* eTrigger                                  */
     EBSwitch             log:2; /* how to log events                         */
     EBSOCK_Side         side:1; /* MBZ                                       */
-    EBSOCK_Keep         keep:1; /* MBZ                                       */
+    unsigned/*bool*/    keep:1; /* MBZ                                       */
     EBSwitch          r_on_w:2; /* MBZ                                       */
     EBSwitch        i_on_sig:2; /* eDefault                                  */
     EBIO_Status     r_status:3; /* MBZ (NB: eIO_Success)                     */
@@ -191,14 +189,6 @@ typedef struct TRIGGER_tag {
     int              out;       /* write end of the pipe                     */
 #endif /*NCBI_OS_UNIX*/
 } TRIGGER_struct;
-
-
-/* OS handle preservation selector
- */
-typedef enum {
-    eSOCK_Close = 0,
-    eSOCK_Keep  = 1
-} ESOCK_Keep;
 
 
 /* Listening socket [must be in one-2-one binary correspondene with TRIGGER]
@@ -215,7 +205,7 @@ typedef struct LSOCK_tag {
     TSOCK_Type          type;   /* eListening                                */
     EBSwitch             log:2; /* how to log events and data for this socket*/
     EBSOCK_Side         side:1; /* MBZ                                       */
-    EBSOCK_Keep         keep:1; /* whether to keep OS handle open close      */
+    unsigned/*bool*/    keep:1; /* MBZ                                       */
     EBSwitch          r_on_w:2; /* MBZ                                       */
     EBSwitch        i_on_sig:2; /* eDefault                                  */
     EBIO_Status     r_status:3; /* MBZ (NB: eIO_Success)                     */
@@ -259,7 +249,7 @@ typedef struct SOCK_tag {
     TSOCK_Type          type;   /* |= eSocket ({ eSocket | eDatagram })      */
     EBSwitch             log:2; /* how to log events and data for this socket*/
     EBSOCK_Side         side:1; /* socket side: client- or server-side       */
-    EBSOCK_Keep         keep:1; /* whether to keep OS handle upon close      */
+    unsigned/*bool*/    keep:1; /* whether to keep OS handle upon close      */
     EBSwitch          r_on_w:2; /* enable/disable automatic read-on-write    */
     EBSwitch        i_on_sig:2; /* enable/disable I/O restart on signals     */
 
@@ -274,7 +264,8 @@ typedef struct SOCK_tag {
     unsigned       writeable:1; /* =1 if known to be writeable               */
     unsigned        reserved:6; /* MBZ                                       */
 #else
-    unsigned        reserved:7; /* MBZ                                       */
+    unsigned        reserved:6; /* MBZ                                       */
+    unsigned       crossexec:1; /* =1 if close-on-exec must NOT be set       */
 #endif /*NCBI_OS_MSWIN*/
 
 #ifdef NCBI_OS_MSWIN
