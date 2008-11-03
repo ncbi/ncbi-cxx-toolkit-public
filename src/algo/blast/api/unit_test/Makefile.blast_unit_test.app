@@ -8,7 +8,7 @@ SRC = test_objmgr blast_test_util blast_unit_test bl2seq_unit_test \
 	uniform_search_unit_test remote_blast_unit_test aascan_unit_test \
 	ntscan_unit_test version_reference_unit_test aalookup_unit_test
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I../
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I.. -I$(srcdir)/..
 
 LIB_ = $(BLAST_LIBS) xobjsimple $(OBJMGR_LIBS) \
 xalgowinmask
