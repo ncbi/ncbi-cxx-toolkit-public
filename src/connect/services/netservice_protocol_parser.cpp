@@ -319,7 +319,7 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
     }
 
     if (arg_descr->flags != eNSPA_None) {
-        NCBI_THROW(CNSProtoParserException, eArgumentsLack,
+        NCBI_THROW(CNSProtoParserException, eArgumentsMissing,
                    "Not all required parameters given. "
                    "Next parameter needed - '"
                    + string(arg_descr->key) + "'");
