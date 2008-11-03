@@ -1063,7 +1063,7 @@ void CQueue::x_PrintJobStat(const CJob&   job,
 
     int node_num = 1;
     ITERATE(vector<CJobRun>, it, job.GetRuns()) {
-        unsigned addr = it->GetClientIp();
+        unsigned addr = it->GetNodeAddr();
         string node_name = "worker_node" + NStr::IntToString(node_num++) + ": ";
         out << NS_PFNAME(node_name)
             << (addr ? CSocketAPI::gethostbyaddr(addr) : kEmptyStr) << fsp;
@@ -1524,7 +1524,7 @@ void CQueue::PrepareFields(SFieldsDescription& field_descr,
         if (i >= 0) {
             if (field_name == "id") {
                 formatter = FormatNSId;
-            } else if (field_name == "client_ip" ||
+            } else if (field_name == "node_addr" ||
                        field_name == "subm_addr") {
                 formatter = FormatHostName;
             }
@@ -2500,9 +2500,9 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
         // We're setting host:port here using node_info. It is faster
         // than looking up this info by node_id in worker node list and
         // should provide exactly same info.
-        run.SetWorkerNodeId(node_info.node_id);
-        run.SetClientIp(node_info.host);
-        run.SetClientPort(node_info.port);
+        run.SetNodeId(node_info.node_id);
+        run.SetNodeAddr(node_info.host);
+        run.SetNodePort(node_info.port);
 
         job.SetStatus(CNetScheduleAPI::eRunning);
         job.SetRunTimeout(0);

@@ -118,7 +118,7 @@ public:
         eNoCommand,
         eWrongCommand,
         eBadToken,
-        eArgumentsLack,
+        eArgumentsMissing,
         eWrongMap,
         eWrongParams
     };

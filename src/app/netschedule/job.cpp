@@ -59,8 +59,8 @@ m_Dirty(false),
 m_Status(CNetScheduleAPI::eJobNotFound),
 m_TimeStart(0),
 m_TimeDone(0),
-m_ClientIp(0),
-m_ClientPort(0),
+m_NodeAddr(0),
+m_NodePort(0),
 m_RetCode(0)
 {
 }
@@ -87,17 +87,17 @@ void CJobRun::SetTimeDone(unsigned t)
 }
 
 
-void CJobRun::SetClientIp(unsigned node_ip)
+void CJobRun::SetNodeAddr(unsigned node_ip)
 {
     m_Dirty = true;
-    m_ClientIp = node_ip;
+    m_NodeAddr = node_ip;
 }
 
 
-void CJobRun::SetClientPort(unsigned short port)
+void CJobRun::SetNodePort(unsigned short port)
 {
     m_Dirty = true;
-    m_ClientPort = port;
+    m_NodePort = port;
 }
 
 
@@ -108,10 +108,10 @@ void CJobRun::SetRetCode(int retcode)
 }
 
 
-void CJobRun::SetWorkerNodeId(const string& node_id)
+void CJobRun::SetNodeId(const string& node_id)
 {
     m_Dirty = true;
-    m_WorkerNodeId = node_id.substr(0, kMaxWorkerNodeIdSize);
+    m_NodeId = node_id.substr(0, kMaxWorkerNodeIdSize);
 }
 
 
@@ -126,10 +126,10 @@ static const char* s_RunFieldNames[] = {
     "run_status",
     "time_start",
     "time_done",
-    "client_ip",
-    "client_port",
+    "node_addr",
+    "node_port",
     "ret_code",
-    "worker_node_id",
+    "node_id",
     "err_msg"
 };
 
@@ -151,14 +151,14 @@ string CJobRun::GetField(int index) const
         return FormatTime(m_TimeStart);
     case 2: // time_done
         return FormatTime(m_TimeDone);
-    case 3: // client_ip
-        return NStr::IntToString(m_ClientIp);
-    case 4: // client_port
-        return NStr::IntToString(m_ClientPort);
+    case 3: // node_addr
+        return NStr::IntToString(m_NodeAddr);
+    case 4: // node_port
+        return NStr::IntToString(m_NodePort);
     case 5: // ret_code
         return NStr::IntToString(m_RetCode);
-    case 6: // worker_node_id
-        return m_WorkerNodeId;
+    case 6: // node_id
+        return m_NodeId;
     case 7: // err_msg
         return m_ErrorMsg;
     }
@@ -540,10 +540,10 @@ CJob::EJobFetchResult CJob::Fetch(SLockedQueue* queue)
         run.m_Status     = TJobStatus(int(runs_db.status));
         run.m_TimeStart  = runs_db.time_start;
         run.m_TimeDone   = runs_db.time_done;
-        run.m_ClientIp   = runs_db.client_ip;
-        run.m_ClientPort = runs_db.client_port;
+        run.m_NodeAddr   = runs_db.node_addr;
+        run.m_NodePort   = runs_db.node_port;
         run.m_RetCode    = runs_db.ret_code;
-        runs_db.worker_node_id.ToString(run.m_WorkerNodeId);
+        runs_db.node_id.ToString(run.m_NodeId);
         runs_db.err_msg.ToString(run.m_ErrorMsg);
         run.m_Dirty = false;
     }
@@ -673,10 +673,10 @@ bool CJob::Flush(SLockedQueue* queue)
             runs_db.status      = int(run.m_Status);
             runs_db.time_start  = run.m_TimeStart;
             runs_db.time_done   = run.m_TimeDone;
-            runs_db.client_ip   = run.m_ClientIp;
-            runs_db.client_port = run.m_ClientPort;
+            runs_db.node_addr   = run.m_NodeAddr;
+            runs_db.node_port   = run.m_NodePort;
             runs_db.ret_code    = run.m_RetCode;
-            runs_db.worker_node_id = run.m_WorkerNodeId;
+            runs_db.node_id     = run.m_NodeId;
             runs_db.err_msg     = run.m_ErrorMsg;
             runs_db.UpdateInsert();
             run.m_Dirty = false;

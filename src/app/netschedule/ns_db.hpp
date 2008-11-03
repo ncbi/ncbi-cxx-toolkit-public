@@ -164,10 +164,10 @@ struct SRunsDB : public CBDB_File
     CBDB_FieldInt4    status;       ///< Final job status for this run
     CBDB_FieldUint4   time_start;   ///< Start time (former time_run)
     CBDB_FieldUint4   time_done;    ///< Result submission time
-    CBDB_FieldUint4   client_ip;    ///< IP of the client node (net byte order)
-    CBDB_FieldUint2   client_port;  ///< Client node's port
+    CBDB_FieldUint4   node_addr;    ///< IP of the worker node (net byte order)
+    CBDB_FieldUint2   node_port;    ///< Node's port
     CBDB_FieldInt4    ret_code;     ///< Return code
-    CBDB_FieldLString worker_node_id; ///< worker node id
+    CBDB_FieldLString node_id;      ///< worker node id
     CBDB_FieldLString err_msg;      ///< Error message (exception::what())
 
     SRunsDB()
@@ -177,10 +177,10 @@ struct SRunsDB : public CBDB_File
         BindData("status",      &status);
         BindData("time_start",  &time_start);
         BindData("time_done",   &time_done);
-        BindData("client_ip",   &client_ip);
-        BindData("client_port", &client_port);
+        BindData("node_addr",   &node_addr);
+        BindData("node_port",   &node_port);
         BindData("ret_code",    &ret_code);
-        BindData("worker_node_id", &worker_node_id, kMaxWorkerNodeIdSize);
+        BindData("node_id",     &node_id, kMaxWorkerNodeIdSize);
         BindData("err_msg",     &err_msg, kNetScheduleMaxDBErrSize);
     }
 };

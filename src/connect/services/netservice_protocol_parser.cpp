@@ -46,12 +46,12 @@ CNSProtoParserException::GetErrCodeString(void) const
 {
     switch (GetErrCode())
     {
-    case eNoCommand:     return "eNoCommand";
-    case eWrongCommand:  return "eWrongCommand";
-    case eBadToken:      return "eBadToken";
-    case eArgumentsLack: return "eArgumentsLack";
-    case eWrongMap:      return "eWrongMap";
-    default:             return CException::GetErrCodeString();
+    case eNoCommand:        return "eNoCommand";
+    case eWrongCommand:     return "eWrongCommand";
+    case eBadToken:         return "eBadToken";
+    case eArgumentsMissing: return "eArgumentsMissing";
+    case eWrongMap:         return "eWrongMap";
+    default:                return CException::GetErrCodeString();
     }
 }
 

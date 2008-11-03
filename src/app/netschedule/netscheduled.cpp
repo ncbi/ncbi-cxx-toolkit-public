@@ -873,6 +873,14 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         x_WriteErrorToMonitor(msg);
         throw;
     }
+    catch (CNSProtoParserException &ex)
+    {
+        WriteErr(string(ex.GetErrCodeString()) + ":" + ex.GetMsg());
+        string msg = x_FormatErrorMessage("Server error", ex.what());
+        ERR_POST(msg);
+        x_WriteErrorToMonitor(msg);
+        throw;
+    }
     catch (CNetServiceException &ex)
     {
         WriteErr(string(ex.GetErrCodeString()) + ":" + ex.GetMsg());
@@ -1010,38 +1018,33 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     }
 
     m_JobReq.Init();
-    try {
-        SParsedCmd cmd = m_ReqParser.ParseCommand(m_Request);
-        const SCommandExtra& extra = cmd.command->extra;
+    SParsedCmd cmd = m_ReqParser.ParseCommand(m_Request);
+    const SCommandExtra& extra = cmd.command->extra;
 
-        x_CheckAccess(extra.role);
-        m_JobReq.SetParamFields(cmd.params);
+    x_CheckAccess(extra.role);
+    m_JobReq.SetParamFields(cmd.params);
 
-        if (extra.processor == &CNetScheduleHandler::ProcessQuitSession) {
-            ProcessQuitSession();
+    if (extra.processor == &CNetScheduleHandler::ProcessQuitSession) {
+        ProcessQuitSession();
+        return;
+    }
+
+    // program version control
+    if (m_VersionControl &&
+        // we want status request to be fast, skip version control
+        (extra.processor != &CNetScheduleHandler::ProcessStatus) &&
+        // bypass for admin tools
+        (m_Incaps & eNSAC_Admin)) {
+        if (!x_CheckVersion()) {
+            WriteErr("eInvalidClientOrVersion:");
+            CSocket& socket = GetSocket();
+            socket.Close();
             return;
         }
-
-        // program version control
-        if (m_VersionControl &&
-            // we want status request to be fast, skip version control
-            (extra.processor != &CNetScheduleHandler::ProcessStatus) &&
-            // bypass for admin tools
-            (m_Incaps & eNSAC_Admin)) {
-            if (!x_CheckVersion()) {
-                WriteErr("eInvalidClientOrVersion:");
-                CSocket& socket = GetSocket();
-                socket.Close();
-                return;
-            }
-            // One check per session is enough
-            m_VersionControl = false;
-        }
-        (this->*extra.processor)();
+        // One check per session is enough
+        m_VersionControl = false;
     }
-    catch (const CException& ex) {
-        ProcessError(ex);
-    }
+    (this->*extra.processor)();
 }
 
 

@@ -61,24 +61,24 @@ public:
     { return m_TimeStart; }
     unsigned GetTimeDone() const
     { return m_TimeDone; }
-    unsigned GetClientIp() const
-    { return m_ClientIp; }
-    unsigned short GetClientPort() const
-    { return m_ClientPort; }
+    unsigned GetNodeAddr() const
+    { return m_NodeAddr; }
+    unsigned short GetNodePort() const
+    { return m_NodePort; }
     int      GetRetCode() const
     { return m_RetCode; }
-    const string& GetWorkerNodeId() const
-    { return m_WorkerNodeId; }
+    const string& GetNodeId() const
+    { return m_NodeId; }
     const string& GetErrorMsg() const
     { return m_ErrorMsg; }
 
     void SetStatus(TJobStatus status);
     void SetTimeStart(unsigned t);
     void SetTimeDone(unsigned t);
-    void SetClientIp(unsigned node_ip);
-    void SetClientPort(unsigned short port);
+    void SetNodeAddr(unsigned node_ip);
+    void SetNodePort(unsigned short port);
     void SetRetCode(int retcode);
-    void SetWorkerNodeId(const string& node_id);
+    void SetNodeId(const string& node_id);
     void SetErrorMsg(const string& msg);
 
     // generic access via field name
@@ -96,10 +96,10 @@ private:
     TJobStatus m_Status;      ///< final job status for this run
     unsigned   m_TimeStart;   ///< job start time
     unsigned   m_TimeDone;    ///< job result submission time
-    unsigned   m_ClientIp;    ///< IP of a client (typically, worker node)
-    unsigned short m_ClientPort; ///< Notification port of a client
+    unsigned   m_NodeAddr;    ///< IP of a client (typically, worker node)
+    unsigned short m_NodePort; ///< Notification port of a client
     int        m_RetCode;     ///< Return code
-    string     m_WorkerNodeId; //
+    string     m_NodeId;      //
     string     m_ErrorMsg;    ///< Error message (exception::what())
 };
 

@@ -477,9 +477,9 @@ unsigned SLockedQueue::LoadStatusMatrix()
         // be failed (or retried) on another node registration with the
         // same host:port, or for the new style nodes with same node id,
         // auth will be fixed on the INIT command.
-        wni.node_id = run->GetWorkerNodeId();
-        wni.host    = run->GetClientIp();
-        wni.port    = run->GetClientPort();
+        wni.node_id = run->GetNodeId();
+        wni.host    = run->GetNodeAddr();
+        wni.port    = run->GetNodePort();
         TJobList jobs;
         m_WorkerNodeList.RegisterNode(wni, jobs);
         unsigned run_timeout = job.GetRunTimeout();
@@ -613,7 +613,7 @@ void SLockedQueue::ReadJobs(unsigned peer_addr,
             CJobRun& run = job.AppendRun();
             run.SetStatus(CNetScheduleAPI::eReading);
             run.SetTimeStart(curr);
-            run.SetClientIp(peer_addr);
+            run.SetNodeAddr(peer_addr);
             job.SetStatus(CNetScheduleAPI::eReading);
             job.SetRunTimeout(timeout);
             job.SetRunCount(run_count);
@@ -1621,7 +1621,7 @@ SLockedQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
 
     unsigned time_start, run_timeout;
     time_t   exp_time;
-    string worker_node_id;
+    string node_id;
     {{
         CQueueGuard guard(this, &trans);
 
@@ -1665,7 +1665,7 @@ SLockedQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
         run->SetStatus(run_status);
         run->SetTimeDone(curr_time);
 
-        worker_node_id = run->GetWorkerNodeId();
+        node_id = run->GetNodeId();
 
         job.Flush(this);
     }}
@@ -1675,7 +1675,7 @@ SLockedQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
     status_tracker.SetStatus(job_id, new_status);
 
     if (status == CNetScheduleAPI::eRunning)
-        m_WorkerNodeList.RemoveJob(worker_node_id, job,
+        m_WorkerNodeList.RemoveJob(node_id, job,
                                    eNSCTimeout, log_job_state);
 
     {{
