@@ -79,35 +79,35 @@ public:
     }
     operator Uint1(void) const
     {
-        return MakeCP<CP>(NStr::StringToUInt(m_Value));
+        return MakeCP<CP>(NStr::StringToUInt(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Int1(void) const
     {
-        return MakeCP<CP>(NStr::StringToInt(m_Value));
+        return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Uint2(void) const
     {
-        return MakeCP<CP>(NStr::StringToUInt(m_Value));
+        return MakeCP<CP>(NStr::StringToUInt(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Int2(void) const
     {
-        return MakeCP<CP>(NStr::StringToInt(m_Value));
+        return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Uint4(void) const
     {
-        return MakeCP<CP>(NStr::StringToUInt(m_Value));
+        return MakeCP<CP>(NStr::StringToUInt(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Int4(void) const
     {
-        return MakeCP<CP>(NStr::StringToInt(m_Value));
+        return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Uint8(void) const
     {
-        return MakeCP<CP>(NStr::StringToUInt8(m_Value));
+        return MakeCP<CP>(NStr::StringToUInt8(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Int8(void) const
     {
-        return MakeCP<CP>(NStr::StringToInt8(m_Value));
+        return MakeCP<CP>(NStr::StringToInt8(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator float(void) const
     {
