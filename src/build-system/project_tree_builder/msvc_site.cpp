@@ -257,7 +257,8 @@ bool CMsvcSite::ResolveDefine(const string& define, string& resolved) const
     if (m_UnixMakeDef.GetValue(define,resolved)) {
         return true;
     }
-    resolved = m_Registry.Get("Defines", define);
+//    resolved = m_Registry.Get("Defines", define);
+    resolved = x_GetDefinesEntry(define);
     if (resolved.empty()) {
         return m_Registry.HasEntry("Defines");
     }
@@ -522,6 +523,19 @@ string CMsvcSite::x_GetConfigureEntry(const string& entry) const
         str = m_Registry.Get( CMsvc7RegSettings::GetMsvcRegSection(), entry);
         if (str.empty()) {
             str = m_Registry.Get("Configure", entry);
+        }
+    }
+    return str;
+}
+
+string CMsvcSite::x_GetDefinesEntry(const string& entry) const
+{
+    string str;
+    str = m_Registry.Get( CMsvc7RegSettings::GetMsvcSection(), entry);
+    if (str.empty()) {
+        str = m_Registry.Get( CMsvc7RegSettings::GetMsvcRegSection(), entry);
+        if (str.empty()) {
+            str = m_Registry.Get("Defines", entry);
         }
     }
     return str;

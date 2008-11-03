@@ -691,7 +691,6 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
     AddString( *settings, "PRODUCT_NAME", GetTargetName(prj));
 
 // preprocessor definitions    
-#if 1
     list<string> tmp_list = prj.m_Defines;
     string tmp_str = metamake.GetCompilerOpt("GCC_PREPROCESSOR_DEFINITIONS", cfg);
     NStr::Split(tmp_str, LIST_SEPARATOR, tmp_list);
@@ -706,7 +705,6 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
     ITERATE( list<string>, a, tmp_list) {
         AddString( *preproc, *a);
     }
-#endif
 
 // precompiled header
     if (metamake.IsPchEnabled()) {

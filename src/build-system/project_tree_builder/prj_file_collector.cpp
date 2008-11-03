@@ -212,6 +212,11 @@ void CProjectFileCollector::CollectIncludeDirs(void)
         m_IncludeDirs.push_back(
             CDirEntry::AddTrailingPathSeparator(internal_inc) );
     }
+    
+// project specific
+    ITERATE( list<string>, i, m_ProjItem.m_IncludeDirs) {
+        m_IncludeDirs.push_back( *i);
+    }
 }
 
 void CProjectFileCollector::CollectDataSpecs(void)

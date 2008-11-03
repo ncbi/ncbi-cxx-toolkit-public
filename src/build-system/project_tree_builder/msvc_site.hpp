@@ -186,6 +186,7 @@ private:
     static TDirectoryExistenceMap sm_DirExists;
     static bool x_DirExists(const string& dir_name);
     string x_GetConfigureEntry(const string& entry) const;
+    string x_GetDefinesEntry(const string& entry) const;
 
     /// Prohibited to:
     CMsvcSite(void);
