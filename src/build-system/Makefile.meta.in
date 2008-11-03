@@ -170,10 +170,17 @@ check:     check.needs-reqs
 check_add: check_add.needs-reqs
 
 
-all.real: configurables
+all.real: configurables all.usr
+	@$(MAKE) $(MFLAGS_NR) all.nonusr
+all.usr:
 	@-rm -f .built .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
 	@$(USRP_BRA) all   $(USRP_KET)
+	@-rm -f .building
+	@echo "`date`: local build succeeded in `pwd`" > .built
+all.nonusr:
+	@-rm -f .built .built_r
+	@-echo "`date`: starting to build in `pwd`" > .building
 	@$(ASNP_BRA) all   $(ASNP_KET)
 	@$(DTDP_BRA) all   $(DTDP_KET)
 	@$(XSDP_BRA) all   $(XSDP_KET)
@@ -181,22 +188,31 @@ all.real: configurables
 	@$(APPP_BRA) all   $(APPP_KET)
 	@-rm -f .building
 	@echo "`date`: local build succeeded in `pwd`" > .built
-clean.real:
+
+clean.real: clean.usr clean.nonusr
+clean.usr:
 	@-rm -f .building .built .built_r
 	@$(USRP_BRA) clean $(USRP_KET)
+clean.nonusr:
+	@-rm -f .building .built .built_r
 #	@$(ASNP_BRA) clean_sources $(ASNP_KET)
 #	@$(DTDP_BRA) clean_sources $(DTDP_KET)
 #	@$(XSDP_BRA) clean_sources $(XSDP_KET)
 	@$(LIBP_BRA) clean $(LIBP_KET)
 	@$(APPP_BRA) clean $(APPP_KET)
-purge.real:
+
+purge.real: purge.usr purge.nonusr
+purge.usr:
 	@-rm -f .building .built .built_r
 	@$(USRP_BRA) purge $(USRP_KET)
+purge.nonusr:
+	@-rm -f .building .built .built_r
 #	@$(ASNP_BRA) purge_sources $(ASNP_KET)
 #	@$(DTDP_BRA) purge_sources $(DTDP_KET)
 #	@$(XSDP_BRA) purge_sources $(XSDP_KET)
 	@$(LIBP_BRA) purge $(LIBP_KET)
 	@$(APPP_BRA) purge $(APPP_KET)
+
 sources:
 	@$(ASNP_BRA) all   $(ASNP_KET)
 	@$(DTDP_BRA) all   $(DTDP_KET)
@@ -224,11 +240,12 @@ requirements: $(reqs)
 	    basename "$$f" .enabled ; \
 	  fi ; \
 	done ; \
-	case "$*:$(USR_PROJ:%=%_x):$$skip" in \
+	case "$*:$$skip" in \
 	    *:true ) ;; \
 	    check* ) $(RWL) -base $* $(MAKE) $(MFLAGS_NR) $*.real ;; \
 	    *_?:*  ) $(RWL) $(MAKE) $(MFLAGS_NR) $*.real ;; \
-	    *      ) $(RWL) $(MAKE) $(MFLAGS_NR) $*.real \
+	    *      ) $(RWL) $(MAKE) $(MFLAGS_NR) $*.usr  && \
+	             $(RWL) $(MAKE) $(MFLAGS_NR) $*.nonusr \
 	                 APP_PROJ='$(APP_PROJ)' LIB_PROJ='$(LIB_PROJ)' ;; \
 	esac
 
