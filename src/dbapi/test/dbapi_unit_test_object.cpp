@@ -311,6 +311,628 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
+{
+    try {
+        string sql;
+
+        // Int8   Int8_value = 0;
+        // Uint8  Uint8_value = 0;
+        Int4   Int4_value = 0;
+        // Uint4  Uint4_value = 0;
+        Int2   Int2_value = 0;
+        // Uint2  Uint2_value = 0;
+        // Int1   Int1_value = 0;
+        Uint1  Uint1_value = 0;
+        float  float_value = 0.0;
+        double double_value = 0.0;
+        bool   bool_value = false;
+
+        // First test ...
+        {
+
+
+            // bit
+            {
+                sql = "select Convert(bit, 1)";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_Bit db_obj;
+
+                        rs->GetItem(&db_obj);
+                        bool_value = db_obj.Value();
+
+                        BOOST_CHECK_EQUAL(bool_value, true);
+                    }
+                }
+            }
+
+            // tinyint
+            {
+                sql = "select Convert(tinyint, 1)";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_TinyInt db_obj;
+
+                        rs->GetItem(&db_obj);
+                        Uint1_value = db_obj.Value();
+
+                        BOOST_CHECK_EQUAL(Uint1_value, 1);
+                    }
+                }
+            }
+
+            // smallint
+            {
+                sql = "select Convert(smallint, 1)";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_SmallInt db_obj;
+
+                        rs->GetItem(&db_obj);
+                        Int2_value = db_obj.Value();
+
+                        BOOST_CHECK_EQUAL(Int2_value, 1);
+                    }
+                }
+            }
+
+            // int
+            {
+                sql = "select Convert(int, 1)";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_Int db_obj;
+
+                        rs->GetItem(&db_obj);
+                        Int4_value = db_obj.Value();
+
+                        BOOST_CHECK_EQUAL(Int4_value, 1);
+                    }
+                }
+            }
+
+            // numeric
+            if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
+            {
+                //
+                {
+                    sql = "select Convert(numeric(38, 0), 1)";
+
+                    auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                    BOOST_CHECK( auto_stmt.get() != NULL );
+                    bool rc = auto_stmt->Send();
+                    BOOST_CHECK( rc );
+
+                    while (auto_stmt->HasMoreResults()) {
+                        auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                        if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                            continue;
+                        }
+
+                        while (rs->Fetch()) {
+                            if ((GetArgs().GetDriverName() == ftds8_driver 
+                                || GetArgs().GetDriverName() == ftds_dblib_driver
+                                )
+                                && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
+                                CDB_Double db_obj;
+
+                                rs->GetItem(&db_obj);
+                                double_value = db_obj.Value();
+
+                                BOOST_CHECK_EQUAL(double_value, 1);
+                            } else {
+                                CDB_Numeric db_obj;
+
+                                rs->GetItem(&db_obj);
+                                string string_value = db_obj.Value();
+
+                                BOOST_CHECK_EQUAL(string_value, "1");
+                            }
+                        }
+                    }
+                }
+
+                //
+                {
+                    sql = "select Convert(numeric(18, 2), 2843113322)";
+
+                    auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                    BOOST_CHECK( auto_stmt.get() != NULL );
+                    bool rc = auto_stmt->Send();
+                    BOOST_CHECK( rc );
+
+                    while (auto_stmt->HasMoreResults()) {
+                        auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                        if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                            continue;
+                        }
+
+                        while (rs->Fetch()) {
+                            if ((GetArgs().GetDriverName() == ftds8_driver 
+                                || GetArgs().GetDriverName() == ftds_dblib_driver)
+                                && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
+                                CDB_Double db_obj;
+
+                                rs->GetItem(&db_obj);
+                                double_value = db_obj.Value();
+
+                                BOOST_CHECK_EQUAL(double_value, 2843113322.00);
+                            } else if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                                CDB_Numeric db_obj;
+
+                                rs->GetItem(&db_obj);
+                                string string_value = db_obj.Value();
+
+                                BOOST_CHECK_EQUAL(string_value, "2843113322");
+                            } else {
+                                CDB_Numeric db_obj;
+
+                                rs->GetItem(&db_obj);
+                                string string_value = db_obj.Value();
+
+                                BOOST_CHECK_EQUAL(string_value, "2843113322.00");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // decimal
+            if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
+            {
+                sql = "select Convert(decimal(38, 0), 1)";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                            if ((GetArgs().GetDriverName() == ftds8_driver 
+                                || GetArgs().GetDriverName() == ftds_dblib_driver)
+                                && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
+                            CDB_Double db_obj;
+
+                            rs->GetItem(&db_obj);
+                            double_value = db_obj.Value();
+
+                            BOOST_CHECK_EQUAL(double_value, 1);
+                        } else {
+                            CDB_Numeric db_obj;
+
+                            rs->GetItem(&db_obj);
+                            string string_value = db_obj.Value();
+
+                            BOOST_CHECK_EQUAL(string_value, "1");
+                        }
+                    }
+                }
+            }
+
+            // float
+            {
+                sql = "select Convert(float(4), 1)";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_Float db_obj;
+
+                        rs->GetItem(&db_obj);
+                        float_value = db_obj.Value();
+
+                        BOOST_CHECK_EQUAL(float_value, 1);
+                    }
+                }
+            }
+
+            // double
+            {
+                sql = "select Convert(double precision, 1)";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_Double db_obj;
+
+                        rs->GetItem(&db_obj);
+                        double_value = db_obj.Value();
+
+                        BOOST_CHECK_EQUAL(double_value, 1);
+                    }
+                }
+            }
+
+            // real
+            {
+                sql = "select Convert(real, 1)";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_Float db_obj;
+
+                        rs->GetItem(&db_obj);
+                        float_value = db_obj.Value();
+
+                        BOOST_CHECK_EQUAL(float_value, 1);
+                    }
+                }
+            }
+
+            // smalldatetime
+            /*
+               {
+               sql = "select Convert(smalldatetime, 'January 1, 1900')";
+
+               auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+               BOOST_CHECK( auto_stmt.get() != NULL );
+               bool rc = auto_stmt->Send();
+               BOOST_CHECK( rc );
+
+               while (auto_stmt->HasMoreResults()) {
+               auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+               if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+               continue;
+               }
+
+               while (rs->Fetch()) {
+               const CTime& CTime_value = Convert(*rs);
+               BOOST_CHECK_EQUAL(CTime_value, CTime("January 1, 1900"));
+               }
+               }
+               }
+
+            // datetime
+            {
+            sql = "select Convert(datetime, 'January 1, 1753')";
+
+            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            BOOST_CHECK( auto_stmt.get() != NULL );
+            bool rc = auto_stmt->Send();
+            BOOST_CHECK( rc );
+
+            while (auto_stmt->HasMoreResults()) {
+            auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+            if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+            continue;
+            }
+
+            while (rs->Fetch()) {
+            const CTime& CTime_value = Convert(*rs);
+            BOOST_CHECK_EQUAL(CTime_value, CTime("January 1, 1753"));
+            }
+            }
+            }
+            */
+
+            // char
+            {
+                sql = "select Convert(char(32), '12345')";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_Char db_obj(32);
+
+                        rs->GetItem(&db_obj);
+                        string string_value = string(db_obj.Value(), db_obj.Size());
+
+                        BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), "12345");
+                    }
+                }
+            }
+
+            // varchar
+            {
+                sql = "select Convert(varchar(32), '12345')";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_VarChar db_obj;
+
+                        rs->GetItem(&db_obj);
+                        string string_value = db_obj.Value();
+
+                        BOOST_CHECK_EQUAL(string_value, "12345");
+                    }
+                }
+            }
+
+            // nchar
+            {
+                sql = "select Convert(nchar(32), '12345')";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_Char db_obj(32);
+
+                        rs->GetItem(&db_obj);
+                        string string_value = string(db_obj.Value(), db_obj.Size());
+
+                        BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), "12345");
+                    }
+                }
+            }
+
+            // nvarchar
+            {
+                sql = "select Convert(nvarchar(32), '12345')";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_VarChar db_obj;
+
+                        rs->GetItem(&db_obj);
+                        string string_value = db_obj.Value();
+
+                        BOOST_CHECK_EQUAL(string_value, "12345");
+                    }
+                }
+            }
+
+            // binary
+            {
+                sql = "select Convert(binary(32), '12345')";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_Binary db_obj(32);
+
+                        rs->GetItem(&db_obj);
+                        string string_value = string(static_cast<const char*>(db_obj.Value()), db_obj.Size());
+
+                        BOOST_CHECK_EQUAL(string_value.substr(0, 5), "12345");
+                    }
+                }
+            }
+
+            // varbinary
+            // A problem with ftds8 driver !!!!
+            if (GetArgs().GetDriverName() != ftds8_driver)
+            {
+                sql = "select Convert(varbinary(32), '12345')";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_VarBinary db_obj;
+
+                        rs->GetItem(&db_obj);
+                        string string_value = string(static_cast<const char*>(db_obj.Value()), db_obj.Size());
+
+                        BOOST_CHECK_EQUAL(string_value, "12345");
+                    }
+                }
+            }
+
+            // text
+            if (GetArgs().GetDriverName() != ftds_dblib_driver)
+            {
+                sql = "select Convert(text, '12345')";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_Text db_obj;
+
+                        rs->GetItem(&db_obj);
+
+                        string string_value;
+                        string_value.resize(db_obj.Size());
+                        db_obj.Read(const_cast<void*>(static_cast<const void*>(string_value.c_str())),
+                                db_obj.Size()
+                                );
+
+                        BOOST_CHECK_EQUAL(string_value, "12345");
+                    }
+                }
+            }
+
+            // image
+            if (GetArgs().GetDriverName() != ftds_dblib_driver)
+            {
+                sql = "select Convert(image, '12345')";
+
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+                BOOST_CHECK( auto_stmt.get() != NULL );
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while (auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    while (rs->Fetch()) {
+                        CDB_Image db_obj;
+
+                        rs->GetItem(&db_obj);
+
+                        string string_value;
+                        string_value.resize(db_obj.Size());
+                        db_obj.Read(const_cast<void*>(static_cast<const void*>(string_value.c_str())),
+                                db_obj.Size()
+                                );
+
+                        BOOST_CHECK_EQUAL(string_value, "12345");
+                    }
+                }
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_Variant)
 {
     const Uint1 value_Uint1 = 1;
