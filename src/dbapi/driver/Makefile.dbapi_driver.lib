@@ -5,7 +5,9 @@ SRC = handle_stack numeric_convert parameters exception interfaces \
       dbapi_driver_conn_mgr dbapi_conn_factory dbapi_svc_mapper \
       dbapi_driver_utils dbapi_impl_cmd dbapi_impl_connection \
       dbapi_impl_context dbapi_impl_result dbapi_driver_conn_params \
-      dbapi_driver_exception_storage
+      dbapi_driver_exception_storage dbapi_object_convert \
+      dbapi_driver_convert
+
 
 LIB      = dbapi_driver
 
