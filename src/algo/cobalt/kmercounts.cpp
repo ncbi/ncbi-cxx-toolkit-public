@@ -121,7 +121,7 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
                    "Unsupported SeqLoc encountered");
     }
 
-    objects::CSeqVector sv(seq, scope);
+    objects::CSeqVector sv = scope.GetBioseqHandle(seq).GetSeqVector();
 
     unsigned int num_elements;
     unsigned int seq_len = sv.size();
