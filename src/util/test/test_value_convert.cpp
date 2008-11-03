@@ -147,11 +147,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             // Requires more than one conversion ...
             BOOST_CHECK_THROW(value = ConvertSafe(str_bool), CException);
 
-            // Won't convert at run-time ...
-            BOOST_CHECK_THROW(value = ConvertSafe(str_float), CException);
+            value = ConvertSafe(str_float);
+            BOOST_CHECK_EQUAL(value, Int8(value_float));
 
-            // Won't convert at run-time ...
-            BOOST_CHECK_THROW(value = ConvertSafe(str_double), CException);
+            value = ConvertSafe(str_double);
+            BOOST_CHECK_EQUAL(value, Int8(value_double));
         }
 
         // Uint8
@@ -200,11 +200,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             // Won't convert at run-time ...
             BOOST_CHECK_THROW(value = ConvertSafe(str_bool), CException);
 
-            // Won't convert at run-time ...
-            BOOST_CHECK_THROW(value = ConvertSafe(str_float), CException);
+            value = ConvertSafe(str_float);
+            BOOST_CHECK_EQUAL(value, Uint8(value_float));
 
-            // Won't convert at run-time ...
-            BOOST_CHECK_THROW(value = ConvertSafe(str_double), CException);
+            value = ConvertSafe(str_double);
+            BOOST_CHECK_EQUAL(value, Uint8(value_double));
         }
 
         // Int4
@@ -265,11 +265,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             // Requires more than one conversion ...
             BOOST_CHECK_THROW(value = ConvertSafe(str_bool), CException);
 
-            // Won't convert at run-time ...
-            BOOST_CHECK_THROW(value = ConvertSafe(str_float), CException);
+            value = ConvertSafe(str_float);
+            BOOST_CHECK_EQUAL(value, Int4(value_float));
 
-            // Won't convert at run-time ...
-            BOOST_CHECK_THROW(value = ConvertSafe(str_double), CException);
+            value = ConvertSafe(str_double);
+            BOOST_CHECK_EQUAL(value, Int4(value_double));
         }
 
         // Uint4
@@ -315,11 +315,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             // Won't convert at run-time ...
             BOOST_CHECK_THROW(value = ConvertSafe(str_bool), CException);
 
-            // Won't convert at run-time ...
-            BOOST_CHECK_THROW(value = ConvertSafe(str_float), CException);
+            value = ConvertSafe(str_float);
+            BOOST_CHECK_EQUAL(value, Uint4(value_float));
 
-            // Won't convert at run-time ...
-            BOOST_CHECK_THROW(value = ConvertSafe(str_double), CException);
+            value = ConvertSafe(str_double);
+            BOOST_CHECK_EQUAL(value, Uint4(value_double));
         }
 
         // Int2
@@ -1241,11 +1241,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // Won't Convert at run-time ...
             BOOST_CHECK_THROW(value = Convert(str_bool), CException);
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_float), CException);
+            value = Convert(str_float);
+            BOOST_CHECK_EQUAL(value, Int8(value_float));
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_double), CException);
+            value = Convert(str_double);
+            BOOST_CHECK_EQUAL(value, Int8(value_double));
         }
 
         // Uint8
@@ -1298,11 +1298,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // Won't Convert at run-time ...
             BOOST_CHECK_THROW(value = Convert(str_bool), CException);
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_float), CException);
+            value = Convert(str_float);
+            BOOST_CHECK_EQUAL(value, Uint8(value_float));
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_double), CException);
+            value = Convert(str_double);
+            BOOST_CHECK_EQUAL(value, Uint8(value_double));
         }
 
         // Int4
@@ -1365,11 +1365,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // Won't Convert at run-time ...
             BOOST_CHECK_THROW(value = Convert(str_bool), CException);
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_float), CException);
+            value = Convert(str_float);
+            BOOST_CHECK_EQUAL(value, Int4(value_float));
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_double), CException);
+            value = Convert(str_double);
+            BOOST_CHECK_EQUAL(value, Int4(value_double));
         }
 
         // Uint4
@@ -1422,11 +1422,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // Won't Convert at run-time ...
             BOOST_CHECK_THROW(value = Convert(str_bool), CException);
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_float), CException);
+            value = Convert(str_float);
+            BOOST_CHECK_EQUAL(value, Uint4(value_float));
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_double), CException);
+            value = Convert(str_double);
+            BOOST_CHECK_EQUAL(value, Uint4(value_double));
         }
 
         // Int2
@@ -1482,11 +1482,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // Won't Convert at run-time ...
             BOOST_CHECK_THROW(value = Convert(str_bool), CException);
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_float), CException);
+            value = Convert(str_float);
+            BOOST_CHECK_EQUAL(value, Int2(value_float));
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_double), CException);
+            value = Convert(str_double);
+            BOOST_CHECK_EQUAL(value, Int2(value_double));
         }
 
         // Uint2
@@ -1537,11 +1537,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // Won't Convert at run-time ...
             BOOST_CHECK_THROW(value = Convert(str_bool), CException);
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_float), CException);
+            value = Convert(str_float);
+            BOOST_CHECK_EQUAL(value, Uint2(value_float));
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_double), CException);
+            value = Convert(str_double);
+            BOOST_CHECK_EQUAL(value, Uint2(value_double));
         }
 
         // Int1
@@ -1591,11 +1591,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // Won't Convert at run-time ...
             BOOST_CHECK_THROW(value = Convert(str_bool), CException);
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_float), CException);
+            value = Convert(str_float);
+            BOOST_CHECK_EQUAL(value, Int1(value_float));
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_double), CException);
+            value = Convert(str_double);
+            BOOST_CHECK_EQUAL(value, Int1(value_double));
         }
 
         // Uint1
@@ -1652,11 +1652,11 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             // Won't Convert at run-time ...
             BOOST_CHECK_THROW(value = Convert(str_bool), CException);
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_float), CException);
+            value = Convert(str_float);
+            BOOST_CHECK_EQUAL(value, Uint1(value_float));
 
-            // Won't Convert at run-time ...
-            BOOST_CHECK_THROW(value = Convert(str_double), CException);
+            value = Convert(str_double);
+            BOOST_CHECK_EQUAL(value, Uint1(value_double));
         }
 
         // bool
