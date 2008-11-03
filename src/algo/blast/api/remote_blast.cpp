@@ -1502,7 +1502,7 @@ x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
 }
 
 CRef<objects::CBlast4_request> CRemoteBlast::
-x_BuildGetSeqPartsRequest(objects::CSeq_id & seqid,     // in
+x_BuildGetSeqPartsRequest(const objects::CSeq_id & seqid,     // in
                           const string     & database,  // in
                           char               seqtype,   // 'p' or 'n'
                           bool               get_meta,  // in
@@ -1553,7 +1553,7 @@ x_BuildGetSeqPartsRequest(objects::CSeq_id & seqid,     // in
     // Other request data; the id, meta flag, and start/end
     // coordinates.
     
-    req.SetId(seqid);
+    req.SetId(const_cast<CSeq_id&>(seqid));
     
     req.SetNeed_meta_data(get_meta);
     
@@ -1735,7 +1735,7 @@ CRemoteBlast::GetSequences(vector< CRef<objects::CSeq_id> > & seqids,   // in
 }
 
 void CRemoteBlast::
-GetSequenceInfo(objects::CSeq_id                 & seqid,     // in
+GetSequenceInfo(const objects::CSeq_id                 & seqid,     // in
                 const string                     & database,  // in
                 char                               seqtype,   // 'p' or 'n'
                 bool                               get_meta,  // in
@@ -1746,7 +1746,8 @@ GetSequenceInfo(objects::CSeq_id                 & seqid,     // in
                 int                              & length,    // out
                 CRef<objects::CSeq_data>         & seq_data,  // out
                 string                           & errors,    // out
-                string                           & warnings)  // out
+                string                           & warnings,  // out
+                bool                               verbose)   // in
 {
     // Build the request
     
@@ -1762,6 +1763,9 @@ GetSequenceInfo(objects::CSeq_id                 & seqid,     // in
     if (request.Empty()) {
         return;
     }
+    if (verbose) {
+        NcbiCout << MSerial_AsnText << *request << endl;
+    }
     
     CRef<CBlast4_reply> reply(new CBlast4_reply);
     
@@ -1774,6 +1778,9 @@ GetSequenceInfo(objects::CSeq_id                 & seqid,     // in
                    "No response from server, cannot complete request.");
     }
     
+    if (verbose) {
+        NcbiCout << MSerial_AsnText << *reply << endl;
+    }
     x_GetPartsFromReply(reply,
                         bioseq,
                         ids,

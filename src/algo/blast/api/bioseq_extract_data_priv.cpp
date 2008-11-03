@@ -340,6 +340,38 @@ CBlastQuerySourceBioseqSet::GetLength(int index) const
     return m_Bioseqs[index]->GetInst().GetLength();
 }
 
+// Lifted from s_GetFastaTitle in objmgr/util/sequence.cpp as this needs to be
+// object manager free :(
+string
+CBlastQuerySourceBioseqSet::GetTitle(int index) const
+{
+    string retval(kEmptyStr);
+    CConstRef<CBioseq> bioseq = m_Bioseqs[index];
+    if ( !bioseq->CanGetDescr() ) {
+        return retval;
+    }
+    const CSeq_descr::Tdata& descr = bioseq->GetDescr().Get();
+    string title(kEmptyStr);
+    bool has_molinfo = false;
+    ITERATE(CSeq_descr::Tdata, desc, descr) {
+        if ((*desc)->Which() == CSeqdesc::e_Title && title == kEmptyStr) {
+            title = (*desc)->GetTitle();
+        }
+        if ((*desc)->Which() == CSeqdesc::e_Molinfo) {
+            has_molinfo = true;
+        }
+    }
+
+    if (title != kEmptyStr && !has_molinfo) {
+        while (NStr::EndsWith(title, ".") || NStr::EndsWith(title, " ")) {
+            title.erase(title.end() - 1);
+        }
+        retval.assign(title);
+    }
+
+    return retval;
+}
+
 void 
 CBlastQuerySourceBioseqSet::x_BioseqSanityCheck(const objects::CBioseq& bs) 
 {

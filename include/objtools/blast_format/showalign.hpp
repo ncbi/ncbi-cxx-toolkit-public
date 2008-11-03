@@ -88,7 +88,7 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
     };
 
     ///structure for store feature display info
-    struct FeatureInfo {
+    struct FeatureInfo : public CObject {
         CConstRef < CSeq_loc > seqloc;  // must be seqloc int
         char feature_char;               // Character for feature
         string feature_id;               // ID for feature
@@ -333,14 +333,15 @@ private:
  
     ///internal insert information
     ///aln_start. insert right after this position
-    struct SInsertInformation {
+    struct SInsertInformation : public CObject {
         int aln_start;              
         int seq_start;
         int insert_len;
     };
+    typedef list< CRef<SInsertInformation> > TSInsertInformationList;
     
     /// store alnvec and score info
-    struct SAlnInfo {               
+    struct SAlnInfo : public CObject {               
         CRef < CAlnVec > alnvec;
         int score;
         double bits;
@@ -351,12 +352,13 @@ private:
     };
 
     ///store feature information
-    struct SAlnFeatureInfo {
-        FeatureInfo *feature;
+    struct SAlnFeatureInfo : public CObject {
+        CRef<FeatureInfo> feature;
         string feature_string;
         list<TSeqPos> feature_start;
         CRange < TSignedSeqPos > aln_range;
     };
+    typedef list< CRef<SAlnFeatureInfo> > TSAlnFeatureInfoList;
     
     ///store seqloc info
     struct SAlnSeqlocInfo : public CObject {
@@ -480,7 +482,7 @@ private:
     ///@param feat_seq_strand: strand to be filled corresponding to feat_seq_range
     ///@param fill_feat_range: to fill feat_seq_range?
     ///
-    void x_GetFeatureInfo(list < SAlnFeatureInfo * >&feature, CScope & scope,
+    void x_GetFeatureInfo(TSAlnFeatureInfoList& feature, CScope & scope,
                           CSeqFeatData::E_Choice choice, int row,
                           string& sequence,
                           list<list<CRange<TSeqPos> > >& feat_seq_range,
@@ -498,7 +500,7 @@ private:
     void x_FillInserts(int row, CAlnMap::TSignedRange& aln_range, 
                        int aln_start, list < string >& inserts, 
                        string& insert_pos_string,
-                       list < SInsertInformation * >& insert_list) const;
+                       TSInsertInformationList& insert_list) const;
     
     ///recusively fill the insert for anchored view
     ///@param row: the row number
@@ -508,7 +510,7 @@ private:
     ///@param inserts: inserts strings to be inserted
     ///
     void x_DoFills(int row, CAlnMap::TSignedRange& aln_range, int aln_start,
-                   list < SInsertInformation * >&insert_list,
+                   TSInsertInformationList& insert_list,
                    list < string > &inserts) const;
     
     ///segments starts and stops used for map viewer, etc
@@ -539,7 +541,7 @@ private:
     ///@param pattern_id: the pattern id to show
     ///@param alternative_feat_str: use this as feature string instead
     ///
-    void x_SetFeatureInfo(SAlnFeatureInfo* feat_info, const CSeq_loc& seqloc,
+    void x_SetFeatureInfo(CRef<SAlnFeatureInfo> feat_info, const CSeq_loc& seqloc,
                           int aln_from, int aln_to, int aln_stop,
                           char pattern_char,  string pattern_id,
                           string& alternative_feat_str) const;
@@ -556,7 +558,7 @@ private:
     ///@param insert_length: insert length info
     ///@param line_aln_stop: alignment stop for this row
     ///
-    void x_GetInserts(list < SInsertInformation * >&insert_list,
+    void x_GetInserts(TSInsertInformationList& insert_list,
                       CAlnMap::TSeqPosList& insert_aln_start,
                       CAlnMap::TSeqPosList& insert_seq_start,
                       CAlnMap::TSeqPosList& insert_length, 
@@ -594,9 +596,9 @@ private:
     ///get external query feature info such as phi blast pattern
     ///@param row_num: row number
     ///@param aln_stop: the stop position for the whole alignment
-    ///
-    list<SAlnFeatureInfo*>* x_GetQueryFeatureList(int row_num, 
-                                                 int aln_stop) const;
+    ///@param features the return value for this method
+    void x_GetQueryFeatureList(int row_num, int aln_stop, 
+                               vector<TSAlnFeatureInfoList>& features) const;
     ///make the appropriate seqid
     ///@param id: the id to be filled
     ///@param row: row number
@@ -615,7 +617,7 @@ private:
     ///@param master_feat_str: the feature for master seq
     ///@param out: the out stream
     ///
-    void x_PrintFeatures(list<SAlnFeatureInfo*> feature,
+    void x_PrintFeatures(TSAlnFeatureInfoList& feature,
                          int row, 
                          CAlnMap::TSignedRange alignment_range,
                          int aln_start,

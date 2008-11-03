@@ -506,9 +506,9 @@ static void
 s_DupSequencesTest(const TIdList & ids,
                    bool            is_protein,
                    bool            raw_data,
-                   string          src_name,
-                   string          dst_name,
-                   string          title,
+                   const string &          src_name,
+                   const string &          dst_name,
+                   const string &          title,
                    int             cutpoint = 99)
 {
     CWrapperUpper wrap;
@@ -671,22 +671,28 @@ static void s_NuclBioseqDupSwitch(int cutpoint)
     
     CHECK_CUTPOINT(0);
     
+    const string srcname("nt");
+    const string dstname("w-nucl-bs");
+    const string title("bioseq nucleotide dup");
+
     s_DupSequencesTest(ids,
                        false,
                        false,
-                       "nt",
-                       "w-nucl-bs",
-                       "bioseq nucleotide dup",
+                       srcname,
+                       dstname,
+                       title,
                        cutpoint);
     
     CHECK_CUTPOINT(13);
     
+    const string dstname2("w-nucl-raw");
+    const string title2("raw nucleotide dup");
     s_DupSequencesTest(ids,
                        false,
                        true,
-                       "nt",
-                       "w-nucl-raw",
-                       "raw nucleotide dup",
+                       srcname,
+                       dstname2,
+                       title2,
                        cutpoint);
     
     CHECK_CUTPOINT(14);

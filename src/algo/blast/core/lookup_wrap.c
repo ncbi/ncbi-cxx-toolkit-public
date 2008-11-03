@@ -58,6 +58,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
 {
    Int2 status = 0;
    LookupTableWrap* lookup_wrap;
+   EBoneType bone_type;
 
    if (error_msg)
       *error_msg = NULL;
@@ -83,7 +84,9 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
        ((BlastAaLookupTable*)lookup_wrap->lut)->use_pssm = has_pssm;
        BlastAaLookupIndexQuery( (BlastAaLookupTable*) lookup_wrap->lut, matrix, 
                                  query, lookup_segments, 0);
-       BlastAaLookupFinalize((BlastAaLookupTable*) lookup_wrap->lut);
+       /* if query length less than 64k, we can save cache by using small bone */
+       bone_type = ( query->length >= INT2_MAX*2) ? eBackbone: eSmallbone;      
+       BlastAaLookupFinalize((BlastAaLookupTable*) lookup_wrap->lut, bone_type);
        }
       break;
 

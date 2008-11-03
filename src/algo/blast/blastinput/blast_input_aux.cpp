@@ -39,12 +39,14 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include <serial/iterator.hpp>  // for CTypeConstIterator
 /* for CBlastFastaInputSource */
 #include <algo/blast/blastinput/blast_fasta_input.hpp>  
 #include <algo/blast/blastinput/psiblast_args.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Seq_ext.hpp>
+#include <objmgr/util/seq_loc_util.hpp>     // for sequence::GetLength
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -199,6 +201,11 @@ HasRawSequenceData(const objects::CBioseq& bioseq)
 {
      if (CBlastBioseqMaker::IsEmptyBioseq(bioseq))
          return false;
+     // CFastaReader returns empty Bioseqs with the following traits, assume it
+     // has sequence data so it can be processed by the BLAST engine.
+     else if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_virtual &&
+              bioseq.GetLength() == 0)
+         return true;
      else if (bioseq.GetInst().CanGetSeq_data() == true)
          return true;
      else if (bioseq.GetInst().IsSetExt())
@@ -217,6 +224,115 @@ HasRawSequenceData(const objects::CBioseq& bioseq)
          }
      }
      return false;
+}
+
+void
+CheckForEmptySequences(CRef<CBlastQueryVector> sequences, string& warnings)
+{
+    warnings.clear();
+
+    if (sequences.Empty() || sequences->Empty()) {
+        NCBI_THROW(CInputException, eEmptyUserInput, "No sequences provided");
+    }
+
+    vector<string> empty_sequence_ids;
+    bool all_empty = true;
+
+    ITERATE(CBlastQueryVector, query, *sequences) {
+        if ((*query)->GetLength() == 0) {
+            empty_sequence_ids.
+                push_back((*query)->GetQuerySeqLoc()->GetId()->AsFastaString());
+        } else {
+            all_empty = false;
+        }
+    }
+
+    if (all_empty) {
+        NCBI_THROW(CInputException, eEmptyUserInput, 
+                   "Query contains no sequence data");
+    }
+
+    if (!empty_sequence_ids.empty())
+    {
+        warnings.assign("The following sequences had no sequence data:");
+        warnings += empty_sequence_ids.front();
+        for (TSeqPos i = 1; i < empty_sequence_ids.size(); i++) {
+            warnings += ", " + empty_sequence_ids[i];
+        }
+    }
+}
+
+void
+CheckForEmptySequences(const TSeqLocVector& sequences, string& warnings)
+{
+    warnings.clear();
+
+    if (sequences.empty()) {
+        NCBI_THROW(CInputException, eEmptyUserInput, "No sequences provided");
+    }
+
+    vector<string> empty_sequence_ids;
+    bool all_empty = true;
+
+    ITERATE(TSeqLocVector, query, sequences) {
+        if (sequence::GetLength(*query->seqloc, query->scope) == 0) {
+            empty_sequence_ids.
+                push_back(query->seqloc->GetId()->AsFastaString());
+        } else {
+            all_empty = false;
+        }
+    }
+
+    if (all_empty) {
+        NCBI_THROW(CInputException, eEmptyUserInput, 
+                   "Query contains no sequence data");
+    }
+
+    if (!empty_sequence_ids.empty())
+    {
+        warnings.assign("The following sequences had no sequence data:");
+        warnings += empty_sequence_ids.front();
+        for (TSeqPos i = 1; i < empty_sequence_ids.size(); i++) {
+            warnings += ", " + empty_sequence_ids[i];
+        }
+    }
+}
+
+void
+CheckForEmptySequences(CRef<CBioseq_set> sequences, string& warnings)
+{
+    warnings.clear();
+
+    if (sequences.Empty()) {
+        NCBI_THROW(CInputException, eEmptyUserInput, "No sequences provided");
+    }
+
+    vector<string> empty_sequence_ids;
+    bool all_empty = true;
+
+    CTypeConstIterator<CBioseq> itr(ConstBegin(*sequences, eDetectLoops));
+    for (; itr; ++itr) {
+        if (!itr->IsSetLength() || itr->GetLength() == 0) {
+            empty_sequence_ids.
+                push_back(itr->GetFirstId()->AsFastaString());
+        } else {
+            all_empty = false;
+        }
+    }
+
+    if (all_empty) {
+        NCBI_THROW(CInputException, eEmptyUserInput, 
+                   "Query contains no sequence data");
+    }
+
+    if (!empty_sequence_ids.empty())
+    {
+        warnings.assign("The following sequences had no sequence data:");
+        warnings += empty_sequence_ids.front();
+        for (TSeqPos i = 1; i < empty_sequence_ids.size(); i++) {
+            warnings += ", " + empty_sequence_ids[i];
+        }
+    }
 }
 
 END_SCOPE(blast)

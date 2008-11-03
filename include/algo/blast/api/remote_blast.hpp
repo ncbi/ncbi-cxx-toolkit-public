@@ -416,8 +416,9 @@ public:
     /// @param seq_data  Sequence data in CSeq_data format. [out]
     /// @param errors    An error message (if any). [out]
     /// @param warnings  A warning (if any). [out]
+    /// @param verbose Produce verbose output. [in]
     static void
-    GetSequenceInfo(objects::CSeq_id                 & seqid,     // in
+    GetSequenceInfo(const objects::CSeq_id                 & seqid,     // in
                     const string                     & database,  // in
                     char                               seqtype,   // 'p' or 'n'
                     bool                               get_meta,  // in
@@ -428,7 +429,8 @@ public:
                     int                              & length,    // out
                     CRef<objects::CSeq_data>         & seq_data,  // out
                     string                           & errors,    // out
-                    string                           & warnings); // out
+                    string                           & warnings,  // out
+                    bool                             verbose = false);// in
     
     /// Get the database used by the search.
     ///
@@ -659,7 +661,7 @@ private:
     /// @return
     ///     The blast4 sequence fetching request object.
     static CRef<objects::CBlast4_request>
-    x_BuildGetSeqPartsRequest(objects::CSeq_id & seqid,     // in
+    x_BuildGetSeqPartsRequest(const objects::CSeq_id & seqid,     // in
                               const string     & database,  // in
                               char               seqtype,   // 'p' or 'n'
                               bool               get_meta,  // in

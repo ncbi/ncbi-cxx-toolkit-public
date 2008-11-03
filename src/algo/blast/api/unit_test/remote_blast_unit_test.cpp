@@ -496,7 +496,10 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
 BOOST_AUTO_TEST_CASE(SetFilteringOptions) {
     CBlastProteinOptionsHandle prot_opts(CBlastOptions::eRemote);
     prot_opts.SetSegFiltering(false);
-    BOOST_REQUIRE(prot_opts.GetFilterString() == NULL);
+    {
+        TAutoCharPtr tmp = prot_opts.GetFilterString();
+        BOOST_REQUIRE_EQUAL(string("F"), string(tmp.get()));
+    }
 
     CRemoteBlast rmt_blaster(&prot_opts);
     rmt_blaster.SetDatabase("alu");
@@ -983,8 +986,11 @@ BOOST_AUTO_TEST_CASE(SearchOptionsFromRID)
         BOOST_REQUIRE_EQUAL((Int8) 0, (Int8) cboh->GetDbLength());
         BOOST_REQUIRE_EQUAL((Int8) 0, (Int8) cboh->GetEffectiveSearchSpace());
         BOOST_REQUIRE_EQUAL(10.0, cboh->GetEvalueThreshold());
-        BOOST_REQUIRE_EQUAL(string("L;R -d repeat/repeat_9606;m;"),
-                             string(cboh->GetFilterString()));
+        {
+            TAutoCharPtr tmp = cboh->GetFilterString();
+            BOOST_REQUIRE_EQUAL(string("L;R -d repeat/repeat_9606;m;"),
+                                string(tmp.get()));
+        }
         BOOST_REQUIRE_EQUAL(100, cboh->GetHitlistSize());
         BOOST_REQUIRE_EQUAL(0.0, cboh->GetPercentIdentity());
         BOOST_REQUIRE_EQUAL(true, cboh->GetGappedMode());
@@ -1003,7 +1009,10 @@ BOOST_AUTO_TEST_CASE(SearchOptionsFromRID)
         BOOST_REQUIRE_EQUAL((Int8) 0, (Int8) cboh->GetDbLength());
         BOOST_REQUIRE_EQUAL((Int8) 0, (Int8) cboh->GetEffectiveSearchSpace());
         BOOST_REQUIRE_EQUAL(13.0, cboh->GetEvalueThreshold());
-        BOOST_REQUIRE_EQUAL(string("L;"), string(cboh->GetFilterString()));
+        {
+            TAutoCharPtr tmp = cboh->GetFilterString();
+            BOOST_REQUIRE_EQUAL(string("L;"), string(tmp.get()));
+        }
         BOOST_REQUIRE_EQUAL(500, cboh->GetHitlistSize());
         BOOST_REQUIRE_EQUAL(0.0, cboh->GetPercentIdentity());
         BOOST_REQUIRE_EQUAL(true, cboh->GetGappedMode());
@@ -1089,7 +1098,7 @@ BOOST_AUTO_TEST_CASE(CheckDuplicateOptions)
 BOOST_AUTO_TEST_CASE(GetSearchStrategy_FullQuery) {
     CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 555));
     auto_ptr<blast::SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(*id));
-    TSeqLocVector queries(1, *sl.release());
+    TSeqLocVector queries(1, *sl.get());
     CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(queries));
     const string kDbName("nt");
     const CSearchDatabase target_db(kDbName,
@@ -1151,7 +1160,7 @@ BOOST_AUTO_TEST_CASE(GetSearchStrategy_QueryWithRange) {
     TSeqRange query_range(1,200);
     auto_ptr<blast::SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(*id,
                                 query_range));
-    TSeqLocVector queries(1, *sl.release());
+    TSeqLocVector queries(1, *sl.get());
     CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(queries));
     const string kDbName("nt");
     const CSearchDatabase target_db(kDbName,

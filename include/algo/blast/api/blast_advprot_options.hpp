@@ -90,6 +90,9 @@ protected:
     /// Overrides  SetGappedExtensionDefaults for advanced blastp options
     void  SetGappedExtensionDefaults();
 
+    /// Overrides SetQueryOptionDefaults for advanced blastp options to disable filtering
+    void SetQueryOptionDefaults();
+
 private:
     /// Disallow copy constructor
     CBlastAdvancedProteinOptionsHandle(const CBlastAdvancedProteinOptionsHandle& rhs);

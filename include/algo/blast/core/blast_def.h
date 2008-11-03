@@ -205,6 +205,8 @@ typedef struct BLAST_SequenceBlk {
                                sequence as that byte is a NULL sentinel byte.*/
    Int4     length;         /**< Length of sequence. */
    Int2 frame; /**< Frame of the query, needed for translated searches */
+   Int2 subject_strand; /**< Strand of the subject sequence for translated searches. 
+                          Uses the same values as ENa_strand. */
    Int4 oid; /**< The ordinal id of the current sequence */
    Boolean sequence_allocated; /**< TRUE if memory has been allocated for 
                                   sequence */

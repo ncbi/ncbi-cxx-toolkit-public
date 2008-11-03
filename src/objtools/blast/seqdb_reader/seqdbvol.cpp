@@ -2776,16 +2776,14 @@ CSeqDBVol::GetSeqData(int              oid,
         length = x_GetAmbigSeq(oid,
                                & buffer,
                                nucl_code,
-                               eAtlas,
+                               eNew,
                                & slice,
                                locked);
         
-        if ((begin >= end) || (end > length)) {
-            NCBI_THROW(CSeqDBException,
-                       eArgErr,
-                       "Begin and end offsets are not valid.");
-        }
-        
+        // validity of begin, end, and length has already been checked by 
+        // overloaded x_GetSequence()
+        // note: length has been redefined to be end - begin
+
         vector<char> v4;
         v4.reserve((length+1)/2);
         
@@ -2802,6 +2800,7 @@ CSeqDBVol::GetSeqData(int              oid,
         }
         
         seq_data->SetNcbi4na().Set().swap(v4);
+        delete [] buffer;
     }
     
     return seq_data;

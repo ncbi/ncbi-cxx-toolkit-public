@@ -2169,6 +2169,13 @@ BOOST_AUTO_TEST_CASE(ExpertTaxInfo)
     CHECK_EQUAL((string)info.common_name,     string("noisy night monkey"));
     CHECK_EQUAL((string)info.blast_name,      string("primates"));
     CHECK_EQUAL((string)info.s_kingdom,       string("E"));
+
+    db.GetTaxInfo(562, info);
+    CHECK_EQUAL(info.taxid,           562);
+ 
+    CHECK_THROW_SEQDB(db.GetTaxInfo(6490, info));
+    CHECK_THROW_SEQDB(db.GetTaxInfo(0, info));
+    CHECK_THROW_SEQDB(db.GetTaxInfo(-3, info));
 }
 
 BOOST_AUTO_TEST_CASE(ExpertRawData)
@@ -3053,6 +3060,20 @@ BOOST_AUTO_TEST_CASE(EmptyVolume)
     CHECK_NO_THROW(db.GetTaxInfo(taxid, info));
     
     CHECK_THROW_SEQDB(db.GetSeqData(0, 10, 20));
+}
+
+BOOST_AUTO_TEST_CASE(GetSeqData_Protein)
+{
+    CSeqDB db("data/seqp", CSeqDB::eProtein);
+    CRef<CSeq_data> sd = db.GetSeqData(0, 10, 20);
+    BOOST_REQUIRE(!sd.Empty());
+}
+
+BOOST_AUTO_TEST_CASE(GetSeqData_Nucleotide)
+{
+    CSeqDB db("data/seqn", CSeqDB::eNucleotide);
+    CRef<CSeq_data> sd = db.GetSeqData(0, 10, 20);
+    BOOST_REQUIRE(!sd.Empty());
 }
 
 BOOST_AUTO_TEST_CASE(OidRewriting)

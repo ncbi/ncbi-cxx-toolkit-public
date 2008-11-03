@@ -739,7 +739,6 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                 BlastInitHitList * init_hitlist)
 {
     Int4 index;
-    Uint4 query_length = query->length;
     Uint4 subject_length = subject->length;
     Uint1 *q_start = query->sequence;
     Uint1 *s_start = subject->sequence;
@@ -893,7 +892,6 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                        BlastInitHitList * init_hitlist)
 {
     Int4 index;
-    Uint4 query_length = query->length;
     Uint4 subject_length = subject->length;
     Uint1 *q_start = query->sequence;
     Uint1 *s_start = subject->sequence;
@@ -1095,7 +1093,6 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
 {
     BlastSmallNaLookupTable *lut = (BlastSmallNaLookupTable *) lookup_wrap->lut;
     Int4 i;
-    Int4 query_length = query->length;
     Int4 subject_length = subject->length;
     Uint1 *q = query->compressed_nuc_seq;
     Uint1 *s = subject->sequence;

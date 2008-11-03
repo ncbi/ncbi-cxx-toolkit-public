@@ -175,6 +175,10 @@ public:
     /// @param index index of the sequence in the sequence container [in]
     virtual TSeqPos GetLength(int index) const;
 
+    /// Return the title of a sequence
+    /// @param index index of the sequence in the sequence container [in]
+    virtual string GetTitle(int index) const;
+
 private:
     /// True if the data contained in this object is protein
     bool m_IsProt;

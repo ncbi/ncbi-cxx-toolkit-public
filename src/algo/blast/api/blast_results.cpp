@@ -113,14 +113,14 @@ CBlastAncillaryData::CBlastAncillaryData(pair<double, double> lambda,
   m_PsiGappedKarlinBlk(0), m_SearchSpace(0)
 {
     m_GappedKarlinBlk = Blast_KarlinBlkNew();
-    m_GappedKarlinBlk->Lambda = lambda.first;
-    m_GappedKarlinBlk->K = k.first;
-    m_GappedKarlinBlk->H = h.first;
+    m_GappedKarlinBlk->Lambda = lambda.second;
+    m_GappedKarlinBlk->K = k.second;
+    m_GappedKarlinBlk->H = h.second;
 
     m_UngappedKarlinBlk = Blast_KarlinBlkNew();
-    m_UngappedKarlinBlk->Lambda = lambda.second;
-    m_UngappedKarlinBlk->K = k.second;
-    m_UngappedKarlinBlk->H = h.second;
+    m_UngappedKarlinBlk->Lambda = lambda.first;
+    m_UngappedKarlinBlk->K = k.first;
+    m_UngappedKarlinBlk->H = h.first;
 
     m_SearchSpace = effective_search_space;
 }

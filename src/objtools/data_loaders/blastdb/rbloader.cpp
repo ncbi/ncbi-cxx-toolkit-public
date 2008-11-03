@@ -35,7 +35,6 @@ static char const rcsid[] = "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
-#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objtools/data_loaders/blastdb/rbloader.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
 #include <objects/seq/seq__.hpp>

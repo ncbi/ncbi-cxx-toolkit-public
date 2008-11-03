@@ -45,6 +45,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
+#include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -764,6 +765,99 @@ BOOST_AUTO_TEST_CASE(ReadEmptyUserInput)
     }
 }
 
+BOOST_AUTO_TEST_CASE(ReadEmptyUserInput_OnlyTitle)
+{
+    CTmpFile tmpfile;
+    const string kUserInput(">mygene\n");
+    CNcbiOfstream out(tmpfile.GetFileName().c_str());
+    out << kUserInput;
+    out.close();
+   
+
+    const bool is_protein(false);
+    CScope scope(*CObjectManager::GetInstance());
+    CBlastInputSourceConfig iconfig(is_protein);
+    bool caught_exception(false);
+    string warnings;
+    {
+        CNcbiIfstream infile(tmpfile.GetFileName().c_str());
+        CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+
+        blast::TSeqLocVector query_vector;
+        try { CheckForEmptySequences(query_vector, warnings); }
+        catch (const CInputException& e) {
+            BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
+        }
+
+        query_vector = source->GetAllSeqLocs(scope); 
+        try { CheckForEmptySequences(query_vector, warnings); }
+        catch (const CInputException& e) {
+            string msg(e.what());
+            BOOST_REQUIRE(msg.find("Query contains no sequence data") != NPOS);
+            BOOST_REQUIRE(warnings.empty());
+            BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
+            caught_exception = true;
+        }
+        CHECK(caught_exception);
+        CHECK(query_vector.empty() == false);
+
+        CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
+        BOOST_CHECK(!bioseqs.Empty());
+        caught_exception = false;
+        try { CheckForEmptySequences(bioseqs, warnings); }
+        catch (const CInputException& e) {
+            string msg(e.what());
+            BOOST_REQUIRE(msg.find("Query contains no sequence data") != NPOS);
+            BOOST_REQUIRE(warnings.empty());
+            BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
+            caught_exception = true;
+        }
+        CHECK(caught_exception);
+    }
+
+    {
+        CNcbiIfstream infile(tmpfile.GetFileName().c_str());
+        CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+
+        caught_exception = false;
+        CRef<blast::CBlastQueryVector> queries = source->GetAllSeqs(scope); 
+        try { CheckForEmptySequences(queries, warnings); }
+        catch (const CInputException& e) {
+            string msg(e.what());
+            BOOST_REQUIRE(msg.find("Query contains no sequence data") != NPOS);
+            BOOST_REQUIRE(warnings.empty());
+            BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
+            caught_exception = true;
+        }
+        CHECK(caught_exception);
+        CHECK(!queries.Empty());
+    }
+
+    // Read from buffer
+    {
+        const string empty;
+        CRef<CObjectManager> om(CObjectManager::GetInstance());
+        CRef<CBlastInput> source(s_DeclareBlastInput(kUserInput, iconfig));
+        CRef<blast::CBlastQueryVector> queries;
+        try { CheckForEmptySequences(queries, warnings); }
+        catch (const CInputException& e) {
+            BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
+        }
+        
+        caught_exception = false;
+        queries = source->GetAllSeqs(scope);
+        try { CheckForEmptySequences(queries, warnings); }
+        catch (const CInputException& e) {
+            string msg(e.what());
+            BOOST_REQUIRE(msg.find("Query contains no sequence data") != NPOS);
+            BOOST_REQUIRE(warnings.empty());
+            BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
+            caught_exception = true;
+        }
+        CHECK(caught_exception);
+    }
+}
+
 BOOST_AUTO_TEST_CASE(ReadSingleAccession)
 {
     CNcbiIfstream infile("data/accession.txt");
@@ -1190,6 +1284,44 @@ BOOST_AUTO_TEST_CASE(ReadMultipleSequencesFromSequencer)
     blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
     CHECK_EQUAL(kNumQueries, query_vector.size());
     BOOST_REQUIRE(blast::IsLocalId(query_vector.front().seqloc->GetId()));
+}
+
+// This input file contains several sequences in FASTA format, but one of them
+// is empty, this should proceed with no problems
+BOOST_AUTO_TEST_CASE(ReadMultipleSequences_OneEmpty)
+{
+    CNcbiIfstream infile("data/nt.multiple_queries.one.empty");
+    const bool is_protein(false);
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    const size_t kNumQueries(6);
+
+    CHECK(source->End() == false);
+
+    CScope scope(*CObjectManager::GetInstance());
+    blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
+    CHECK_EQUAL(kNumQueries, query_vector.size());
+    CHECK(source->End() == true);
+    TSeqPos query_lengths[] = { 1920, 1, 130, 0, 2, 1553 };
+    int i = 0;
+    ITERATE(blast::TSeqLocVector, q, query_vector) {
+        BOOST_REQUIRE(blast::IsLocalId(query_vector[i].seqloc->GetId()));
+        BOOST_REQUIRE_EQUAL(query_lengths[i], 
+                            sequence::GetLength(*query_vector[i].seqloc, 
+                                                query_vector[i].scope));
+        i++;
+    }
+
+    string warnings;
+    CheckForEmptySequences(query_vector, warnings);
+    BOOST_REQUIRE(warnings.find("following sequences had no sequence data:")
+                  != NPOS);
+
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
+    warnings.clear();
+    CheckForEmptySequences(bioseqs, warnings);
+    BOOST_REQUIRE(warnings.find("following sequences had no sequence data:")
+                  != NPOS);
 }
 
 BOOST_AUTO_TEST_CASE(ReadMultipleTis)
@@ -2094,8 +2226,8 @@ BOOST_AUTO_TEST_CASE(CheckDiscoMegablast) {
     // test the setting of an invalid word size for disco. megablast
     s2a.Reset("-db ecoli -word_size 32 -template_type optimal -template_length 16");
     BOOST_CHECK_NO_THROW(args.reset(s2a.CreateCArgs(blastn_args)));
-    CRef<CBlastOptionsHandle> opts = blastn_args.SetOptions(*args);
-    BOOST_CHECK_THROW(opts->Validate(), CBlastException);
+    CRef<CBlastOptionsHandle> opts;
+    BOOST_CHECK_THROW(blastn_args.SetOptions(*args), CInputException);
 }
 
 BOOST_AUTO_TEST_CASE(CheckPercentIdentity) {
@@ -2118,14 +2250,10 @@ BOOST_AUTO_TEST_CASE(CheckNoGreedyExtension) {
 
     CString2Args s2a("-db ecoli -no_greedy");
     BOOST_CHECK_NO_THROW(args.reset(s2a.CreateCArgs(blast_args)));
-    CRef<CBlastOptionsHandle> opts = blast_args.SetOptions(*args);
-
-    BOOST_CHECK(opts->GetOptions().GetGapExtnAlgorithm() != eGreedyScoreOnly);
-    BOOST_CHECK(opts->GetOptions().GetGapTracebackAlgorithm() != 
-                eGreedyTbck);
+    CRef<CBlastOptionsHandle> opts;
     // this throws because non-affine gapping costs must be provided for
     // non-greedy extension
-    BOOST_CHECK_THROW(opts->Validate(), CBlastException);
+    BOOST_CHECK_THROW(blast_args.SetOptions(*args), CInputException);
 }
 
 BOOST_AUTO_TEST_CASE(CheckCulling) {

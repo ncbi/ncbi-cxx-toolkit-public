@@ -101,6 +101,8 @@ CRef<CSeq_data> CRemoteDb::x_FetchData(SRemoteDb_SeqData & sdata,
     CRef<CBioseq> bioseq;
     string errors;   // not used
     string warnings; // not used
+    const bool kVerbose = false;
+    const bool kGetMetaData = false;
     
     // This doesn't get any sequence data from the server side.
     
@@ -111,7 +113,7 @@ CRef<CSeq_data> CRemoteDb::x_FetchData(SRemoteDb_SeqData & sdata,
     ncbi::blast::CRemoteBlast::GetSequenceInfo(*sdata.id,
                                                m_Dbname,
                                                seqtype,
-                                               false,
+                                               kGetMetaData,
                                                begin,
                                                end,
                                                bioseq, // these wont..
@@ -119,7 +121,8 @@ CRef<CSeq_data> CRemoteDb::x_FetchData(SRemoteDb_SeqData & sdata,
                                                seq_length,
                                                seq_data,
                                                errors,
-                                               warnings);
+                                               warnings,
+                                               kVerbose);
     
     // probably should throw an exception, instead... and possibly the
     // caller should run this method two or three times if there is an

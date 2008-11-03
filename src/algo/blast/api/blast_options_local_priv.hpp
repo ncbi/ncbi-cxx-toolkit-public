@@ -88,7 +88,7 @@ public:
     void SetMBTemplateType(unsigned char type);
 
     /******************* Query setup options ************************/
-    const char* GetFilterString() const;
+    char* GetFilterString() const;
     void SetFilterString(const char* f);
 
     bool GetMaskAtHash() const;
@@ -480,10 +480,15 @@ CBlastOptionsLocal::SetMBTemplateType(unsigned char type)
 
 /******************* Query setup options ************************/
 
-inline const char*
+inline char*
 CBlastOptionsLocal::GetFilterString() const
 {
-    return m_QueryOpts->filter_string;
+    if (m_QueryOpts->filter_string == NULL) {
+        // Don't cache this in case the filtering options are changed
+        return BlastFilteringOptionsToString(m_QueryOpts->filtering_options);
+    }
+    _ASSERT(m_QueryOpts->filter_string != NULL);
+    return strdup(m_QueryOpts->filter_string);
 }
 inline void
 CBlastOptionsLocal::SetFilterString(const char* f)

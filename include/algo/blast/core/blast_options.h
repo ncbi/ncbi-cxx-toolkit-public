@@ -550,6 +550,14 @@ typedef enum EFilterOptions {
 NCBI_XBLAST_EXPORT
 Int2 SBlastFilterOptionsNew(SBlastFilterOptions* *filter_options, EFilterOptions type);
 
+/** Queries whether no masking is required
+ * @param filter_options the object to be queried [in]
+ * @return TRUE if no filtering is required or argument is NULL, FALSE
+ * otherwise
+ */
+NCBI_XBLAST_EXPORT
+Boolean SBlastFilterOptionsNoFiltering(const SBlastFilterOptions* filter_options);
+
 /** Queries whether masking should be done only for the lookup table or for the entire search.
  * @param filter_options the object to be queried [in]
  * @return TRUE or FALSE, FALSE if filter_options is NULL.

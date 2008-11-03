@@ -435,6 +435,10 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
 
     // Get the sequence length
     const TSeqPos seqlen = seq_entry->GetSeq().GetInst().GetLength();
+    //if (seqlen == 0) {
+    //    NCBI_THROW(CInputException, eEmptyUserInput, 
+    //               "Query contains no sequence data");
+    //}
     _ASSERT(seqlen != numeric_limits<TSeqPos>::max());
     if (to > 0 && to < from) {
         NCBI_THROW(CInputException, eInvalidRange, 

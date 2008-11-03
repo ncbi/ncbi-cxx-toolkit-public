@@ -297,11 +297,141 @@ s_ParseSegOptions(const char *ptr, Int4* window, double* locut, double* hicut)
 	return 0;
 }
 
+/// Wrapper around strcat to ensure we don't do buffer overflows :)
+/// @param dest string to concatenate to [in|out]
+/// @param dest_size size of the dest array, modified if dest is grown [in|out]
+/// @param string2append string to append to dest [in]
+/// @return the concatenated string or NULL if we run out of memory
+static char*
+s_SafeStrCat(char** dest, unsigned int* dest_size, const char* string2append)
+{
+    size_t dest_length = strlen(*dest);
+    size_t string2append_length = strlen(string2append);
+    if ((dest_length + string2append_length + 1) > *dest_size) {
+        size_t target_size = MAX(string2append_length, dest_length) * 2;
+        *dest = (char*)realloc((void*)*dest, target_size);
+        if (*dest) {
+            (*dest_size) = target_size;
+        } else {
+            sfree(*dest);
+            return 0;
+        }
+    }
+    strcat(*dest, string2append);
+    return *dest;
+}
 
+char*
+BlastFilteringOptionsToString(const SBlastFilterOptions* filtering_options)
+{
+    char* retval = NULL;
+    unsigned int retval_size = 0;
+
+    if (filtering_options == NULL) {
+        return strdup("F");
+    }
+
+    retval_size = 64;   /* Usually this will suffice */
+    retval = (char*) calloc(retval_size, sizeof(char));
+
+    if (filtering_options->dustOptions) {
+        if (filtering_options->dustOptions->level == kDustLevel &&
+            filtering_options->dustOptions->window == kDustWindow &&
+            filtering_options->dustOptions->linker == kDustLinker) {
+            if (!s_SafeStrCat(&retval, &retval_size, "L;")) {
+                return 0;
+            }
+        } else {
+            char buffer[24] = { '\0' };
+            snprintf(buffer, sizeof(buffer), "D %d %d %d;",
+                     filtering_options->dustOptions->level,
+                     filtering_options->dustOptions->window,
+                     filtering_options->dustOptions->linker);
+            if (!s_SafeStrCat(&retval, &retval_size, buffer)) {
+                return 0;
+            }
+        }
+    }
+
+    if (filtering_options->segOptions) {
+        if (filtering_options->segOptions->window == kSegWindow &&
+            filtering_options->segOptions->locut == kSegLocut &&
+            filtering_options->segOptions->hicut == kSegHicut) {
+            if (!s_SafeStrCat(&retval, &retval_size, "L;")) {
+                return 0;
+            }
+        } else {
+            char buffer[24] = { '\0' };
+            snprintf(buffer, sizeof(buffer), "S %d %1.1f %1.1f;",
+                     filtering_options->segOptions->window,
+                     filtering_options->segOptions->locut,
+                     filtering_options->segOptions->hicut);
+            if (!s_SafeStrCat(&retval, &retval_size, buffer)) {
+                return 0;
+            }
+        }
+    }
+
+    if (filtering_options->repeatFilterOptions) {
+        if (filtering_options->repeatFilterOptions->database) {
+            if (!s_SafeStrCat(&retval, &retval_size, "R -d ")) {
+                return 0;
+            }
+            if (!s_SafeStrCat(&retval, &retval_size,  
+                         filtering_options->repeatFilterOptions->database)) {
+                return 0;
+            }
+            if (!s_SafeStrCat(&retval, &retval_size, ";")) {
+                return 0;
+            }
+        } else {
+            if (!s_SafeStrCat(&retval, &retval_size, "R;")) {
+                return 0;
+            }
+        }
+    }
+
+    if (filtering_options->windowMaskerOptions) {
+        if (filtering_options->windowMaskerOptions->taxid != 0) {
+            char buffer[24] = { '\0' };
+            snprintf(buffer, sizeof(buffer), "W -t %d;",
+                     filtering_options->windowMaskerOptions->taxid);
+            if (!s_SafeStrCat(&retval, &retval_size, buffer)) {
+                return 0;
+            }
+        } else if (filtering_options->windowMaskerOptions->database) {
+            if (!s_SafeStrCat(&retval, &retval_size, "W -d ")) {
+                return 0;
+            }
+            if (!s_SafeStrCat(&retval, &retval_size, 
+                         filtering_options->windowMaskerOptions->database)) {
+                return 0;
+            }
+            if (!s_SafeStrCat(&retval, &retval_size, ";")) {
+                return 0;
+            }
+        }
+    }
+
+    /* Mask at hash is a modifier for other filtering options, as such it
+     * doesn't make sense to apply it by itself */
+    if (SBlastFilterOptionsMaskAtHash(filtering_options) && 
+        strlen(retval) != 0 ) {
+        if (!s_SafeStrCat(&retval, &retval_size, "m;")) {
+            return 0;
+        }
+    }
+
+    return strlen(retval) == 0 
+        ? s_SafeStrCat(&retval, &retval_size, "F") 
+        : retval;
+}
 
 Int2
-BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* instructions, 
-       SBlastFilterOptions* *filtering_options, Blast_Message* *blast_message)
+BlastFilteringOptionsFromString(EBlastProgramType program_number, 
+                                const char* instructions, 
+                                SBlastFilterOptions* *filtering_options, 
+                                Blast_Message* *blast_message)
 {
         Boolean mask_at_hash = FALSE; /* the default. */
         char* buffer;

@@ -253,7 +253,9 @@ Int4 BlastAaLookupTableNew(const LookupTableOptions * opt,
         (Int4 **) calloc(lookup->backbone_size, sizeof(Int4 *));
     ASSERT(lookup->thin_backbone != NULL);
 
+    lookup->thick_backbone = NULL;
     lookup->overflow = NULL;
+    lookup->pv = NULL;
     return 0;
 }
 
@@ -268,114 +270,42 @@ BlastAaLookupTable *BlastAaLookupTableDestruct(BlastAaLookupTable * lookup)
 }
 
 
-Int4 BlastAaLookupFinalize(BlastAaLookupTable * lookup)
+Int4 BlastAaLookupFinalize(BlastAaLookupTable * lookup, EBoneType bone_type)
 {
-    Int4 i;
+    Int4 i,j;
     Int4 overflow_cells_needed = 0;
     Int4 overflow_cursor = 0;
     Int4 longest_chain = 0;
     PV_ARRAY_TYPE *pv;
+    AaLookupBackboneCell  *bbc;
+    AaLookupSmallboneCell *sbc;
 #ifdef LOOKUP_VERBOSE
     Int4 backbone_occupancy = 0;
     Int4 thick_backbone_occupancy = 0;
     Int4 num_overflows = 0;
 #endif
 
-/* allocate the new lookup table */
-    lookup->thick_backbone = (AaLookupBackboneCell *)
-        calloc(lookup->backbone_size, sizeof(AaLookupBackboneCell));
-    ASSERT(lookup->thick_backbone != NULL);
-
-    /* allocate the pv_array */
-    pv = lookup->pv = (PV_ARRAY_TYPE *) calloc(
-                                  (lookup->backbone_size >> PV_ARRAY_BTS) + 1,
-                                  sizeof(PV_ARRAY_TYPE));
-    ASSERT(pv != NULL);
-
     /* find out how many cells need the overflow array */
     for (i = 0; i < lookup->backbone_size; i++) {
-        if (lookup->thin_backbone[i] != NULL) {
-            if (lookup->thin_backbone[i][1] > AA_HITS_PER_CELL)
+        if (lookup->thin_backbone[i]) {
+#ifdef LOOKUP_VERBOSE
+            backbone_occupancy++;
+#endif
+            if (lookup->thin_backbone[i][1] > AA_HITS_PER_CELL){
+#ifdef LOOKUP_VERBOSE
+                ++num_overflows;
+#endif
                 overflow_cells_needed += lookup->thin_backbone[i][1];
-
+            }
             if (lookup->thin_backbone[i][1] > longest_chain)
                 longest_chain = lookup->thin_backbone[i][1];
         }
     }
-
+    lookup->overflow_size = overflow_cells_needed;
     lookup->longest_chain = longest_chain;
 
-    /* allocate the overflow array */
-    if (overflow_cells_needed > 0) {
-        lookup->overflow =
-            (Int4 *) calloc(overflow_cells_needed, sizeof(Int4));
-        ASSERT(lookup->overflow != NULL);
-    }
-
-/* for each position in the lookup table backbone, */
-    for (i = 0; i < lookup->backbone_size; i++) {
-        /* if there are hits there, */
-        if (lookup->thin_backbone[i] != NULL) {
-            /* set the corresponding bit in the pv_array */
-            PV_SET(pv, i, PV_ARRAY_BTS);
 #ifdef LOOKUP_VERBOSE
-            backbone_occupancy++;
-#endif
-
-            /* if there are three or fewer hits, */
-            if ((lookup->thin_backbone[i])[1] <= AA_HITS_PER_CELL)
-                /* copy them into the thick_backbone cell */
-            {
-                Int4 j;
-#ifdef LOOKUP_VERBOSE
-                thick_backbone_occupancy++;
-#endif
-
-                lookup->thick_backbone[i].num_used =
-                    lookup->thin_backbone[i][1];
-
-                for (j = 0; j < lookup->thin_backbone[i][1]; j++)
-                    lookup->thick_backbone[i].payload.entries[j] =
-                        lookup->thin_backbone[i][j + 2];
-            } else
-                /* more than three hits; copy to overflow array */
-            {
-                Int4 j;
-
-#ifdef LOOKUP_VERBOSE
-                num_overflows++;
-#endif
-
-                lookup->thick_backbone[i].num_used =
-                    lookup->thin_backbone[i][1];
-                lookup->thick_backbone[i].payload.overflow_cursor =
-                    overflow_cursor;
-                for (j = 0; j < lookup->thin_backbone[i][1]; j++) {
-                    lookup->overflow[overflow_cursor] =
-                        lookup->thin_backbone[i][j + 2];
-                    overflow_cursor++;
-                }
-            }
-
-            /* done with this chain- free it */
-            sfree(lookup->thin_backbone[i]);
-            lookup->thin_backbone[i] = NULL;
-        }
-
-        else
-            /* no hits here */
-        {
-            lookup->thick_backbone[i].num_used = 0;
-        }
-    }                           /* end for */
-
-    lookup->overflow_size = overflow_cursor;
-
-/* done copying hit info- free the backbone */
-    sfree(lookup->thin_backbone);
-    lookup->thin_backbone = NULL;
-
-#ifdef LOOKUP_VERBOSE
+    thick_backbone_occupancy =  backbone_occupancy - num_overflows;
     printf("backbone size: %d\n", lookup->backbone_size);
     printf("backbone occupancy: %d (%f%%)\n", backbone_occupancy,
            100.0 * backbone_occupancy / lookup->backbone_size);
@@ -388,6 +318,100 @@ Int4 BlastAaLookupFinalize(BlastAaLookupTable * lookup)
     printf("exact matches: %d\n", lookup->exact_matches);
     printf("neighbor matches: %d\n", lookup->neighbor_matches);
 #endif
+
+    /* bone-dependent lookup table filling-up */
+    lookup->bone_type = bone_type;
+
+    /* backbone using Int4 as storage unit */
+    if(bone_type==eBackbone){
+      /* allocate new lookup table */
+      lookup->thick_backbone = 
+            calloc(lookup->backbone_size, sizeof(AaLookupBackboneCell));
+      ASSERT(lookup->thick_backbone != NULL);
+      bbc = (AaLookupBackboneCell *) lookup->thick_backbone;
+      /* allocate the pv_array */
+      pv = lookup->pv = (PV_ARRAY_TYPE *) calloc(
+            (lookup->backbone_size >> PV_ARRAY_BTS) + 1,
+             sizeof(PV_ARRAY_TYPE));
+      ASSERT(pv != NULL);
+      /* allocate the overflow array */
+      if (overflow_cells_needed > 0) {
+          lookup->overflow =
+                 calloc(overflow_cells_needed, sizeof(Int4));
+          ASSERT(lookup->overflow != NULL);
+      }
+      /* fill the lookup table */
+      for (i = 0; i < lookup->backbone_size; i++) {
+        /* if there are hits there, */
+        if (lookup->thin_backbone[i] ) {
+            /* set the corresponding bit in the pv_array */
+            PV_SET(pv, i, PV_ARRAY_BTS);
+            bbc[i].num_used = lookup->thin_backbone[i][1];
+            Int4 * dest;
+            /* if there are three or fewer hits, */
+            if (lookup->thin_backbone[i][1] <= AA_HITS_PER_CELL)
+                /* copy them into the thick_backbone cell */
+                dest = bbc[i].payload.entries;
+            else /* more than three hits; copy to overflow array */
+            {
+                bbc[i].payload.overflow_cursor = overflow_cursor;
+                dest = (Int4 *) lookup->overflow;
+                dest += overflow_cursor;
+                overflow_cursor += lookup->thin_backbone[i][1];
+            }
+            for (j=0; j <lookup->thin_backbone[i][1]; j++) 
+                dest[j] = lookup->thin_backbone[i][j + 2];
+            /* done with this chain- free it */
+            sfree(lookup->thin_backbone[i]);
+            lookup->thin_backbone[i] = NULL;
+        }
+        else /* no hits here */
+            bbc[i].num_used = 0;
+      }                           /* end for */
+    } /* end of original scheme*/
+    /* Smallbone, using Uint2 as storage unit */
+    else{
+      /* allocate new lookup table */
+      lookup->thick_backbone = 
+            calloc(lookup->backbone_size, sizeof(AaLookupSmallboneCell));
+      ASSERT(lookup->thick_backbone != NULL);
+      sbc = (AaLookupSmallboneCell *) lookup->thick_backbone;
+      /* allocate the pv_array */
+      pv = lookup->pv = (PV_ARRAY_TYPE *) calloc(
+            (lookup->backbone_size >> PV_ARRAY_BTS) + 1,
+             sizeof(PV_ARRAY_TYPE));
+      ASSERT(pv != NULL);
+      /* allocate the overflow array */
+      if (overflow_cells_needed > 0) {
+          lookup->overflow =
+                 calloc(overflow_cells_needed, sizeof(Uint2));
+          ASSERT(lookup->overflow != NULL);
+      }
+      /* fill the lookup table */
+      for (i = 0; i < lookup->backbone_size; i++) {
+        if (lookup->thin_backbone[i] ) {
+            PV_SET(pv, i, PV_ARRAY_BTS);
+            sbc[i].num_used = lookup->thin_backbone[i][1];
+            Uint2 * dest;
+            if ((lookup->thin_backbone[i])[1] <= AA_HITS_PER_CELL)
+                 dest=sbc[i].payload.entries;
+            else{
+                sbc[i].payload.overflow_cursor = overflow_cursor;
+                dest=((Uint2 *) (lookup->overflow))+overflow_cursor;
+                overflow_cursor += lookup->thin_backbone[i][1];
+            }
+            for (j=0; j <lookup->thin_backbone[i][1]; j++) 
+                dest[j] = lookup->thin_backbone[i][j + 2];
+            sfree(lookup->thin_backbone[i]);
+            lookup->thin_backbone[i] = NULL;
+        }
+        else sbc[i].num_used = 0;
+      }                           /* end for */
+    }  /* end of the small backbone */
+
+    /* done copying hit info- free the backbone */
+    sfree(lookup->thin_backbone);
+    lookup->thin_backbone = NULL;
 
     return 0;
 }

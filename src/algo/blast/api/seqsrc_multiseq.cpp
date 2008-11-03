@@ -120,9 +120,43 @@ inline BLAST_SequenceBlk* CMultiSeqInfo::GetSeqBlk(int index)
 CMultiSeqInfo::CMultiSeqInfo(TSeqLocVector& seq_vector, 
                              EBlastProgramType program)
 {
-	m_ibIsProt = Blast_SubjectIsProtein(program) ? true : false;
+    m_ibIsProt = Blast_SubjectIsProtein(program) ? true : false;
     
-    SetupSubjects(seq_vector, program, &m_ivSeqBlkVec, &m_iMaxLength);
+    // Fix subject location for tblast[nx].  
+    if (Blast_SubjectIsTranslated(program))
+    {
+        TSeqLocVector temp_slv;
+        vector<Int2> strand_v;
+        ITERATE(TSeqLocVector, iter, seq_vector)
+        {
+            strand_v.push_back((Int2) (*iter).seqloc->GetStrand());
+            CRef<CSeq_loc> sl(new CSeq_loc);
+            sl->Assign(*((*iter).seqloc));
+            sl->SetStrand(eNa_strand_both);
+            if ((*iter).mask) 
+            {
+                CRef<CSeq_loc> mask_sl(new CSeq_loc);
+                mask_sl->Assign(*((*iter).mask));
+            	SSeqLoc sseq_loc(*sl, *((*iter).scope), *mask_sl);
+            	temp_slv.push_back(sseq_loc);
+            }
+            else
+            {
+                SSeqLoc sseq_loc(*sl, *((*iter).scope));
+            	temp_slv.push_back(sseq_loc);
+            }
+        }
+
+        SetupSubjects(temp_slv, program, &m_ivSeqBlkVec, &m_iMaxLength);
+
+        int index=0;
+        ITERATE(vector<Int2>, s_iter, strand_v)
+        {
+        	m_ivSeqBlkVec[index++]->subject_strand = *s_iter;
+        }
+    }
+    else
+    	SetupSubjects(seq_vector, program, &m_ivSeqBlkVec, &m_iMaxLength);
 
     // Do not set right away
     m_iAvgLength = 0;

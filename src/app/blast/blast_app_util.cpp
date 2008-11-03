@@ -423,7 +423,7 @@ s_ImportSearchStrategy(CNcbiIstream* in,
     CRef<CBlast4_request> b4req;
     try { 
         b4req = ExtractBlast4Request(*in);
-    } catch (const CSerialException& e) {
+    } catch (const CSerialException&) {
         NCBI_THROW(CInputException, eInvalidInput, 
                    "Failed to read search strategy");
     }

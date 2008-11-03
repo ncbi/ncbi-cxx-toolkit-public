@@ -3095,6 +3095,24 @@ Int2 BLAST_GetNucleotideGapExistenceExtendParams(Int4 reward,
    return status;
 }
 
+Boolean BLAST_CheckRewardPenaltyScores(Int4 reward, Int4 penalty)
+{
+    int array_size = 0; /* dummy parameter. */
+    array_of_8* normal = NULL; /* dummy parameter */
+    array_of_8* non_affine = NULL; /* dummy parameter */
+    Boolean round_down = FALSE;
+    int gap_existence_max = 0;
+    int gap_extension_max = 0;
+    Int2 status = s_GetNuclValuesArray(reward, penalty, &array_size, &normal,
+                                       &non_affine, &gap_existence_max,
+                                       &gap_extension_max, &round_down, NULL);
+
+    sfree(normal);
+    sfree(non_affine);
+
+    return status == 0;
+}
+
 /** Fills in error_return with strings describing the allowed values.
  * @param matrix_name name of the matrix [in]
  * @param error_return object to be filled in [in|out]

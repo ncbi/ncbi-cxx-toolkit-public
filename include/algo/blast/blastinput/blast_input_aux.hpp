@@ -210,6 +210,36 @@ CalculateFormattingParams(TSeqPos max_target_seqs,
 NCBI_XBLAST_EXPORT 
 bool HasRawSequenceData(const objects::CBioseq& bioseq);
 
+/// Inspect the sequences parameter for empty sequences.
+/// Returns a non-empty string in the warnings parameter
+/// if there are empty sequence(s) in its first parameter.
+/// @param sequences sequence set to inspect [in]
+/// @param warnings populated if empty sequence(s) are found
+/// among non-empty sequences [in|out]
+/// @throw CInputException if there is only 1 empty sequence
+NCBI_XBLAST_EXPORT void
+CheckForEmptySequences(const TSeqLocVector& sequences, string& warnings);
+
+/// Inspect the sequences parameter for empty sequences.
+/// Returns a non-empty string in the warnings parameter
+/// if there are empty sequence(s) in its first parameter.
+/// @param sequences sequence set to inspect [in]
+/// @param warnings populated if empty sequence(s) are found
+/// among non-empty sequences [in|out]
+/// @throw CInputException if there is only 1 empty sequence
+NCBI_XBLAST_EXPORT void
+CheckForEmptySequences(CRef<CBlastQueryVector> sequences, string& warnings);
+
+/// Inspect the sequences parameter for empty sequences.
+/// Returns a non-empty string in the warnings parameter
+/// if there are empty sequence(s) in its first parameter.
+/// @param sequences sequence set to inspect [in]
+/// @param warnings populated if empty sequence(s) are found
+/// among non-empty sequences [in|out]
+/// @throw CInputException if there is only 1 empty sequence
+NCBI_XBLAST_EXPORT void
+CheckForEmptySequences(CRef<CBioseq_set> sequences, string& warnings);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

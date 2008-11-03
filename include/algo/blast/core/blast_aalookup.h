@@ -65,7 +65,31 @@ typedef struct AaLookupBackboneCell {
                      present or a pointer to where the hits are stored 
                      (off-backbone). */
 } AaLookupBackboneCell;
-    
+
+/** structure defining one cell of the small (i.e., use short) lookup table */
+typedef struct AaLookupSmallboneCell {
+    Uint2 num_used;       /**< number of hits stored for this cell */
+
+    union {
+      Int4 overflow_cursor; /**< integer offset into the overflow array
+                                 where the list of hits for this cell begins */
+      Uint2 entries[AA_HITS_PER_CELL];  /**< if the number of hits for this
+                                            cell is AA_HITS_PER_CELL or less,
+                                            the hits are all stored directly in
+                                            the cell */
+    } payload;  /**< union that specifies either entries stored right on 
+                     the backbone if fewer than AA_HITS_PER_CELL are 
+                     present or a pointer to where the hits are stored 
+                     (off-backbone). */
+} AaLookupSmallboneCell;
+
+
+/** types of cells */
+typedef enum {
+    eBackbone  = 0,
+    eSmallbone = 1 
+} EBoneType;
+
 /** The basic lookup table structure for blastp searches
  */
 typedef struct BlastAaLookupTable {
@@ -83,13 +107,20 @@ typedef struct BlastAaLookupTable {
     Int4 ** thin_backbone; /**< the "thin" backbone. for each index cell, 
                                 maintain a pointer to a dynamically-allocated 
                                 chain of hits. */
-    AaLookupBackboneCell * thick_backbone; /**< the "thick" backbone. after 
-                                              queries are indexed, compact the 
-                                              backbone to put at most 
-                                              AA_HITS_PER_CELL hits on the 
-                                              backbone, otherwise point to 
-                                              some overflow storage */
-    Int4 * overflow;       /**< the overflow array for the compacted 
+    EBoneType bone_type;   /**< type of bone used:
+                                0:  normal backbone (using Int4)
+                                1:  small backbone  (using Uint2)
+                                will be determined in Finalize call */
+    void * thick_backbone; /**< may point to BackboneCell, SmallboneCell,
+                                or TinyboneCell. 
+                                the "thick" backbone. after 
+                                queries are indexed, compact the 
+                                backbone to put at most 
+                                AA_HITS_PER_CELL hits on the 
+                                backbone, otherwise point to 
+                                some overflow storage  */
+    void * overflow;       /**< may point to Int4 or Uint2,
+                                the overflow array for the compacted 
                                 lookup table */
     Int4  overflow_size;   /**< Number of elements in the overflow array */
     PV_ARRAY_TYPE *pv;     /**< Presence vector bitfield; bit positions that
@@ -114,7 +145,7 @@ typedef struct BlastAaLookupTable {
  * @param lookup the lookup table [in]
  * @return Zero.
  */
-Int4 BlastAaLookupFinalize(BlastAaLookupTable* lookup);
+Int4 BlastAaLookupFinalize(BlastAaLookupTable* lookup, EBoneType bone_type);
 
 /** Create a new protein lookup table.
   * @param opt pointer to lookup table options structure [in]

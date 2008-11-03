@@ -56,7 +56,16 @@ CBlastAdvancedProteinOptionsHandle::SetGappedExtensionDefaults()
     CBlastProteinOptionsHandle::SetGappedExtensionDefaults();
     m_Opts->SetCompositionBasedStats(eCompositionMatrixAdjust);
     m_Opts->SetSmithWatermanMode(false);
+    _ASSERT(!m_Opts->GetSegFiltering());
 }
+
+void
+CBlastAdvancedProteinOptionsHandle::SetQueryOptionDefaults()
+{
+    CBlastProteinOptionsHandle::SetQueryOptionDefaults();
+    SetSegFiltering(false); // disable SEG filtering because of eCompositionMatrixAdjust mode
+}
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

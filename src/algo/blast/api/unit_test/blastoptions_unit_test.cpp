@@ -1230,4 +1230,17 @@ BOOST_AUTO_TEST_CASE( testRemoteFilterString)
        BOOST_CHECK_EQUAL(true, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
 }
 
+BOOST_AUTO_TEST_CASE( testNewFilteringDefaults )
+{
+    CRef<CBlastOptionsHandle> opts;
+    
+    opts = CBlastOptionsFactory::Create(eTblastn);
+    BOOST_REQUIRE(opts.NotEmpty());
+    BOOST_CHECK_EQUAL("F", opts->GetFilterString());
+
+    opts = CBlastOptionsFactory::Create(eBlastp);
+    BOOST_REQUIRE(opts.NotEmpty());
+    BOOST_CHECK_EQUAL("F", opts->GetFilterString());
+}
+
 #endif /* SKIP_DOXYGEN_PROCESSING */

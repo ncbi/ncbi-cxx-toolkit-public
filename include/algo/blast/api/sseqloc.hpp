@@ -38,6 +38,7 @@
 #include <objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <algo/blast/api/blast_aux.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -226,6 +227,10 @@ public:
         mask.push_back(sli);
     }
     
+    /// Get the length of the sequence represented by this object
+    TSeqPos GetLength() const {
+        return objects::sequence::GetLength(*seqloc, scope);
+    }
 private:
     /// The Seq-loc representing the query.
     CConstRef<objects::CSeq_loc> seqloc;

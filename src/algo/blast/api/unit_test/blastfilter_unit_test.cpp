@@ -1440,12 +1440,35 @@ BOOST_AUTO_TEST_CASE(ConvertTranslatedFilterOffsets)
 
 }
 
+BOOST_AUTO_TEST_CASE(FilterOptionsToStringFromNULL)
+{
+    TAutoCharPtr retval = BlastFilteringOptionsToString(NULL);
+    BOOST_REQUIRE(strcmp(retval.get(), "F") == 0);
+}
+    
+BOOST_AUTO_TEST_CASE(FilterOptionsToStringLargeData)
+{
+    const EBlastProgramType kProgram = eBlastTypeBlastn;
+    SBlastFilterOptions filtering_options = { '\0' };
+    SDustOptionsNew(&filtering_options.dustOptions);
+    filtering_options.dustOptions->window *= 2;
+    SRepeatFilterOptionsResetDB(&filtering_options.repeatFilterOptions,
+                                string(4096, 'X').c_str());
+
+    TAutoCharPtr retval = BlastFilteringOptionsToString(&filtering_options);
+    SDustOptionsFree(filtering_options.dustOptions);
+    SRepeatFilterOptionsFree(filtering_options.repeatFilterOptions);
+    //cerr << "FilterStr ='" << retval.get() << "'" << endl;
+    BOOST_REQUIRE(NStr::StartsWith(string(retval.get()), 
+                                   "D 20 128 1;R -d XXXXXXXXXXXXXXXXXXXX"));
+}
     
 BOOST_AUTO_TEST_CASE(FilterOptionsFromNULLString)
 {
     const EBlastProgramType kProgram = eBlastTypeBlastn;
     SBlastFilterOptions* filtering_options;
-    Int2 status = BlastFilteringOptionsFromString(kProgram, NULL, &filtering_options, NULL);
+    Int2 status = BlastFilteringOptionsFromString(kProgram, NULL, 
+                                                  &filtering_options, NULL);
     BOOST_REQUIRE(status == 0);
     BOOST_REQUIRE(filtering_options != NULL);
     BOOST_REQUIRE_EQUAL(false, !!filtering_options->mask_at_hash);
@@ -1458,11 +1481,16 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringDustMaskAtHash)
 {
     const EBlastProgramType kProgram = eBlastTypeBlastn;
     SBlastFilterOptions* filtering_options;
-    Int2 status = BlastFilteringOptionsFromString(kProgram, (char*) "m D", &filtering_options, NULL);
+    Int2 status = BlastFilteringOptionsFromString(kProgram, (char*) "m D",
+                                                  &filtering_options, NULL);
     BOOST_REQUIRE(status == 0);
     BOOST_REQUIRE_EQUAL(true, !!filtering_options->mask_at_hash);
     BOOST_REQUIRE(filtering_options->dustOptions);
     BOOST_REQUIRE(filtering_options->segOptions == NULL);
+
+    TAutoCharPtr retval = BlastFilteringOptionsToString(filtering_options);
+    BOOST_REQUIRE_EQUAL(string("L;m;"), string(retval.get()));
+
     filtering_options = SBlastFilterOptionsFree(filtering_options);
 }
 
@@ -1470,11 +1498,16 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringDust)
 {
     const EBlastProgramType kProgram = eBlastTypeBlastn;
     SBlastFilterOptions* filtering_options;
-    Int2 status = BlastFilteringOptionsFromString(kProgram, (char*) "D", &filtering_options, NULL);
+    Int2 status = BlastFilteringOptionsFromString(kProgram, (char*) "D",
+                                                  &filtering_options, NULL);
     BOOST_REQUIRE(status == 0);
     BOOST_REQUIRE_EQUAL(false, !!filtering_options->mask_at_hash);
     BOOST_REQUIRE(filtering_options->dustOptions);
     BOOST_REQUIRE(filtering_options->segOptions == NULL);
+
+    TAutoCharPtr retval = BlastFilteringOptionsToString(filtering_options);
+    BOOST_REQUIRE(strcmp(retval.get(), "L;") == 0);
+
     filtering_options = SBlastFilterOptionsFree(filtering_options);
 }
 
@@ -1490,6 +1523,10 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringSEGWithParams)
     BOOST_REQUIRE_EQUAL(10, filtering_options->segOptions->window);
     BOOST_REQUIRE_CLOSE(1.0, filtering_options->segOptions->locut, 0.01);
     BOOST_REQUIRE_CLOSE(1.5, filtering_options->segOptions->hicut, 0.01);
+
+    TAutoCharPtr retval = BlastFilteringOptionsToString(filtering_options);
+    BOOST_REQUIRE(strcmp(retval.get(), "S 10 1.0 1.5;") == 0);
+
     filtering_options = SBlastFilterOptionsFree(filtering_options);
 }
 
@@ -1512,6 +1549,10 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringBlastnL)
     BOOST_REQUIRE_EQUAL(false, !!filtering_options->mask_at_hash);
     BOOST_REQUIRE(filtering_options->dustOptions);
     BOOST_REQUIRE(filtering_options->segOptions == NULL);
+
+    TAutoCharPtr retval = BlastFilteringOptionsToString(filtering_options);
+    BOOST_REQUIRE(strcmp(retval.get(), "L;") == 0);
+
     filtering_options = SBlastFilterOptionsFree(filtering_options);
 }
 BOOST_AUTO_TEST_CASE(FilterOptionsFromStringBlastpL)
@@ -1523,6 +1564,10 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringBlastpL)
     BOOST_REQUIRE_EQUAL(false, !!filtering_options->mask_at_hash);
     BOOST_REQUIRE(filtering_options->dustOptions == NULL);
     BOOST_REQUIRE(filtering_options->segOptions);
+
+    TAutoCharPtr retval = BlastFilteringOptionsToString(filtering_options);
+    BOOST_REQUIRE(strcmp(retval.get(), "L;") == 0);
+
     filtering_options = SBlastFilterOptionsFree(filtering_options);
 }
 BOOST_AUTO_TEST_CASE(FilterOptionsFromStringBlastnW)
@@ -1536,6 +1581,10 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringBlastnW)
     BOOST_REQUIRE(! filtering_options->segOptions);
     BOOST_REQUIRE(! filtering_options->repeatFilterOptions);
     BOOST_REQUIRE(filtering_options->windowMaskerOptions);
+
+    TAutoCharPtr retval = BlastFilteringOptionsToString(filtering_options);
+    BOOST_REQUIRE(strcmp(retval.get(), "W -t 9606;") == 0);
+
     filtering_options = SBlastFilterOptionsFree(filtering_options);
 }
 

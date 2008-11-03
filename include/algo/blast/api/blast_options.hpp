@@ -147,9 +147,20 @@ public:
 
     /******************* Query setup options ************************/
     void ClearFilterOptions();
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
-    const char* GetFilterString() const;
-    void SetFilterString(const char* f, bool clear = true);
+    /// Return the filtering string used
+    /// @return copy of the filtering options string, caller must free() the
+    /// return value
+    /// @deprecated Do not use this method, instead use the various methods to
+    /// retrieve filtering options
+    /// @sa GetMaskAtHash, GetDustFiltering, GetDustFilteringLevel,
+    /// GetDustFilteringWindow, GetDustFilteringWindow, GetSegFiltering,
+    /// GetSegFilteringWindow, GetSegFilteringLocut, GetSegFilteringHicut
+    /// GetRepeatFiltering, GetRepeatFilteringDB
+    NCBI_DEPRECATED char* GetFilterString() const;
+#ifndef SKIP_DOXYGEN_PROCESSING
+    NCBI_DEPRECATED void SetFilterString(const char* f, bool clear = true);
 
     bool GetMaskAtHash() const;
     void SetMaskAtHash(bool val = true);

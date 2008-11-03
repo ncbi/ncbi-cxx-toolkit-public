@@ -82,8 +82,25 @@ Blast4-finish-params-request ::= SEQUENCE {
     params                  Blast4-parameters OPTIONAL
 }
 
+-- This type allows the specification of what result types are desired
+Blast4-result-types ::= ENUMERATED {
+    -- Default retrieves the following result types (if available): alignments,
+    -- phi-alignments masks, ka-blocks, search-stats and pssm
+    default                 (63),
+    alignments              (1),
+    phi-alignments          (2),
+    masks                   (4),
+    ka-blocks               (8),
+    search-stats            (16),
+    pssm                    (32),
+    simple-results          (64)
+}
+
 Blast4-get-search-results-request ::= SEQUENCE {
-    request-id              VisibleString
+    -- The request ID of the BLAST search
+    request-id              VisibleString,
+    -- Logical OR of Blast4-result-types, assumes default if absent
+    result-types            INTEGER OPTIONAL
 }
 
 Blast4-get-sequences-request ::= SEQUENCE {

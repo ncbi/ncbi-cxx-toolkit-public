@@ -36,6 +36,7 @@ static char const rcsid[] =
     "$Id$";
 #endif                          /* SKIP_DOXYGEN_PROCESSING */
 
+
 /** 
  * @brief Determines the scanner's offsets taking the database masking
  * restrictions into account (if any). This function should be called from the
@@ -131,10 +132,15 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
     Int4 totalhits = 0;         /* cumulative number of hits found */
     PV_ARRAY_TYPE *pv;
     BlastAaLookupTable *lookup;
+    AaLookupBackboneCell *bbc;
+    Int4 *ovfl;
 
     ASSERT(lookup_wrap->lut_type == eAaLookupTable);
     lookup = (BlastAaLookupTable *) lookup_wrap->lut;
+    ASSERT(lookup->bone_type == eBackbone);
     pv = lookup->pv;
+    bbc = (AaLookupBackboneCell *) lookup->thick_backbone;
+    ovfl = (Int4 *) lookup->overflow;
 
     if (!s_DetermineScanningOffsets(subject, offset, lookup->word_length,
                                     &s_first, &s_last)) {
@@ -153,7 +159,7 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
 
         /* if there are hits... */
         if (PV_TEST(pv, index, PV_ARRAY_BTS)) {
-            numhits = lookup->thick_backbone[index].num_used;
+            numhits = bbc[index].num_used;
 
             ASSERT(numhits != 0);
 
@@ -162,22 +168,19 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
                 /* ...then copy the hits to the destination */
             {
                 Int4 *src;
-                Int4 i;
                 if (numhits <= AA_HITS_PER_CELL)
                     /* hits live in thick_backbone */
-                    src = lookup->thick_backbone[index].payload.entries;
+                    src = bbc[index].payload.entries;
                 else
                     /* hits live in overflow array */
-                    src =
-                        &(lookup->
-                          overflow[lookup->thick_backbone[index].payload.
-                                   overflow_cursor]);
+                    src = &(ovfl[bbc[index].payload.overflow_cursor]);
 
                 /* copy the hits. */
+                Int4 i;
+                Int4 s_off = s - subject->sequence;
                 for (i = 0; i < numhits; i++) {
                     offset_pairs[i + totalhits].qs_offsets.q_off = src[i];
-                    offset_pairs[i + totalhits].qs_offsets.s_off =
-                        s - subject->sequence;
+                    offset_pairs[i + totalhits].qs_offsets.s_off = s_off;
                 }
 
                 totalhits += numhits;
@@ -194,7 +197,90 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
 
     /* if we get here, we fell off the end of the sequence */
     *offset = s - subject->sequence;
+    return totalhits;
+}
 
+/** same function for small lookup table */
+static Int4 s_BlastSmallAaScanSubject(const LookupTableWrap * lookup_wrap,
+                                 const BLAST_SequenceBlk * subject,
+                                 Int4 * offset,
+                                 BlastOffsetPair * NCBI_RESTRICT offset_pairs,
+                                 Int4 array_size)
+{
+    Int4 index;
+    Uint1 *s;
+    Uint1 *s_first;
+    Uint1 *s_last;
+    Int4 numhits = 0;           /* number of hits found for a given subject
+                                   offset */
+    Int4 totalhits = 0;         /* cumulative number of hits found */
+    PV_ARRAY_TYPE *pv;
+    BlastAaLookupTable *lookup;
+    AaLookupSmallboneCell *bbc;
+    Uint2 *ovfl;
+
+    ASSERT(lookup_wrap->lut_type == eAaLookupTable);
+    lookup = (BlastAaLookupTable *) lookup_wrap->lut;
+    ASSERT(lookup->bone_type == eSmallbone);
+    pv = lookup->pv;   
+    bbc = (AaLookupSmallboneCell *) lookup->thick_backbone;
+    ovfl = (Uint2 *) lookup->overflow;
+
+    if (!s_DetermineScanningOffsets(subject, offset, lookup->word_length,
+                                    &s_first, &s_last)) {
+        return 0;
+    }
+
+    /* prime the index */
+    index = ComputeTableIndex(lookup->word_length - 1,
+                              lookup->charsize, s_first);
+
+    for (s = s_first; s <= s_last; s++) {
+        /* compute the index value */
+        index = ComputeTableIndexIncremental(lookup->word_length, 
+                                             lookup->charsize,
+                                             lookup->mask, s, index);
+
+        /* if there are hits... */
+        if (PV_TEST(pv, index, PV_ARRAY_BTS)) {
+            numhits = bbc[index].num_used;
+
+            ASSERT(numhits != 0);
+
+            /* ...and there is enough space in the destination array, */
+            if (numhits <= (array_size - totalhits))
+                /* ...then copy the hits to the destination */
+            {
+                Uint2 *src;
+                if (numhits <= AA_HITS_PER_CELL)
+                    /* hits live in thick_backbone */
+                    src = bbc[index].payload.entries;
+                else
+                    /* hits live in overflow array */
+                    src = &(ovfl[bbc[index].payload.overflow_cursor]);
+
+                /* copy the hits. */
+                Int4 i;
+                Int4 s_off = s - subject->sequence;
+                for (i = 0; i < numhits; i++) {
+                    offset_pairs[i + totalhits].qs_offsets.q_off = src[i];
+                    offset_pairs[i + totalhits].qs_offsets.s_off = s_off;
+                }
+
+                totalhits += numhits;
+            } else
+                /* not enough space in the destination array; return early */
+            {
+                break;
+            }
+        } else
+            /* no hits found */
+        {
+        }
+    }
+
+    /* if we get here, we fell off the end of the sequence */
+    *offset = s - subject->sequence;
     return totalhits;
 }
 
@@ -546,7 +632,12 @@ void BlastChooseProteinScanSubject(LookupTableWrap *lookup_wrap)
 {
     if (lookup_wrap->lut_type == eAaLookupTable) {
         BlastAaLookupTable *lut = (BlastAaLookupTable *)(lookup_wrap->lut);
-        lut->scansub_callback = (void *)s_BlastAaScanSubject;
+        /* normal backbone */
+        if(lut->bone_type == eBackbone)
+           lut->scansub_callback = (void *)s_BlastAaScanSubject;
+        /* small bone*/
+        else
+           lut->scansub_callback = (void *)s_BlastSmallAaScanSubject;
     }
     else if (lookup_wrap->lut_type == eCompressedAaLookupTable) {
         BlastCompressedAaLookupTable *lut = 

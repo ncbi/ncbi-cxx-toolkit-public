@@ -183,9 +183,14 @@ SBlastFilterOptions* SBlastFilterOptionsFree(SBlastFilterOptions* filter_options
 {
     if (filter_options)
     {
-        filter_options->dustOptions = SDustOptionsFree(filter_options->dustOptions);
-        filter_options->segOptions = SSegOptionsFree(filter_options->segOptions);
-        filter_options->repeatFilterOptions = SRepeatFilterOptionsFree(filter_options->repeatFilterOptions);
+        filter_options->dustOptions = 
+            SDustOptionsFree(filter_options->dustOptions);
+        filter_options->segOptions = 
+            SSegOptionsFree(filter_options->segOptions);
+        filter_options->repeatFilterOptions = 
+            SRepeatFilterOptionsFree(filter_options->repeatFilterOptions);
+        filter_options->windowMaskerOptions =
+            SWindowMaskerOptionsFree(filter_options->windowMaskerOptions);
         sfree(filter_options);
     }
 
@@ -390,7 +395,16 @@ Int2 SBlastFilterOptionsMerge(SBlastFilterOptions** combined, const SBlastFilter
      return 0;
 }
 
-
+Boolean SBlastFilterOptionsNoFiltering(const SBlastFilterOptions* filter_options)
+{
+       if (filter_options == NULL)
+          return TRUE;
+      
+       return filter_options->dustOptions == NULL &&
+           filter_options->segOptions == NULL &&
+           filter_options->repeatFilterOptions == NULL &&
+           filter_options->windowMaskerOptions == NULL;
+}
 
 Boolean SBlastFilterOptionsMaskAtHash(const SBlastFilterOptions* filter_options)
 {
@@ -819,6 +833,14 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
                             "BLASTN penalty must be negative");
 			return BLASTERR_OPTION_VALUE_INVALID;
 		}
+
+        if (!BLAST_CheckRewardPenaltyScores(options->reward, options->penalty))
+        {
+			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
+                            "BLASTN reward/penalty combination not supported");
+			return BLASTERR_OPTION_VALUE_INVALID;
+        }
+
                 if (options->gapped_calculation && options->gap_open > 0 && options->gap_extend == 0) 
                 {
                         Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,

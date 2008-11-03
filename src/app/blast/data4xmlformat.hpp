@@ -119,8 +119,8 @@ public:
 
     /// @inheritDoc
     string GetFilterString(void) const {
-        const char *tmp = m_Options.GetFilterString();
-        return tmp == NULL ? string() : string(tmp);
+        blast::TAutoCharPtr tmp = m_Options.GetFilterString();
+        return tmp.get() == NULL ? NcbiEmptyString : string(tmp.get());
     }
 
     /// @inheritDoc

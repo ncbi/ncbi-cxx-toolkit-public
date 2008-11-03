@@ -447,11 +447,11 @@ void testBlastHitCounts(CBl2Seq& blaster, EBl2seqTest test_id)
         BOOST_CHECK_EQUAL(2, gapped_stats->good_extensions);
         break;
     case eBlastp_multi_q:
-        BOOST_CHECK_EQUAL(1803, (int)ungapped_stats->lookup_hits);
-        BOOST_CHECK_EQUAL(56, ungapped_stats->init_extends);
-        BOOST_CHECK_EQUAL(13, ungapped_stats->good_init_extends);
-        BOOST_CHECK_EQUAL(7, gapped_stats->extensions);
-        BOOST_CHECK_EQUAL(7, gapped_stats->good_extensions);
+        BOOST_CHECK_EQUAL(2129, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(78, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(14, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(8, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(8, gapped_stats->good_extensions);
         break;
     case eBlastn_multi_q:
         BOOST_CHECK_EQUAL(963, (int)ungapped_stats->lookup_hits);
@@ -473,9 +473,13 @@ void testBlastHitCounts(CBl2Seq& blaster, EBl2seqTest test_id)
         BOOST_CHECK_EQUAL(3580, (int)ungapped_stats->lookup_hits);
         BOOST_CHECK_EQUAL(140, ungapped_stats->init_extends);
 #endif
-        BOOST_CHECK_EQUAL(47, ungapped_stats->good_init_extends); 
-        BOOST_CHECK_EQUAL(24, gapped_stats->extensions);  
-        BOOST_CHECK_EQUAL(23, gapped_stats->good_extensions);
+        // Note: Seg is not enabled for this case anymore
+        // (changed blastp defaults)
+        BOOST_CHECK_EQUAL(3939, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(159, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(59, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(25, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(24, gapped_stats->good_extensions);
         break;
     case eTblastn_oof:
         BOOST_CHECK_EQUAL(2666, (int)ungapped_stats->lookup_hits);
@@ -568,18 +572,22 @@ BOOST_AUTO_TEST_CASE(TBlastn2Seqs)
     CBl2Seq blaster(*query, *subj, eTblastn);
     TSeqAlignVector sav(blaster.Run());
     CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+
+#if 0
+    ofstream o("1.asn");
+    o << MSerial_AsnText << *sar ;
+    o.close();
+#endif
+
     BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
     testBlastHitCounts(blaster, eTblastn_129295_555);
     testRawCutoffs(blaster, eTblastn, eTblastn_129295_555);
 
-    int num_ident = 0;
-    sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
-#if 0
-ofstream o("1.asn");
-o << MSerial_AsnText << *sar ;
-o.close();
-#endif
-    BOOST_CHECK_EQUAL(5, num_ident);
+    int score = 0, comp_adj = 0;
+    sar->GetNamedScore(CSeq_align::eScore_Score, score);
+    sar->GetNamedScore(CSeq_align::eScore_CompAdjMethod, comp_adj);
+    BOOST_CHECK_EQUAL(26, score);
+    BOOST_CHECK_EQUAL(2, comp_adj);
 
     // Check the ancillary results
     CSearchResultSet::TAncillaryVector ancillary_data;
@@ -590,6 +598,52 @@ o.close();
     BOOST_CHECK( ancillary_data.front()->GetUngappedKarlinBlk() != NULL );
     BOOST_CHECK( ancillary_data.front()->GetSearchSpace() != (Int8)0 );
 }
+
+BOOST_AUTO_TEST_CASE(TBlastn2SeqsRevStrand1)
+{
+    CSeq_id qid("gi|1945390");
+    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    pair<TSeqPos, TSeqPos> range(150000, 170000);
+    CSeq_id sid("gi|4755212");
+    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid, range, eNa_strand_minus));
+
+    CBl2Seq blaster(*query, *subj, eTblastn);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_CHECK_EQUAL(12, (int) sav[0]->Get().size());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
+    vector < CRef< CSeq_loc > > locs = sar->GetSegs().GetStd().front()->GetLoc();
+    BOOST_CHECK_EQUAL(eNa_strand_minus, (int) (locs[1])->GetStrand());
+#if 0
+ofstream o("minus1.asn");
+o << MSerial_AsnText << *sar ;
+o.close();
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(TBlastn2SeqsRevStrand2)
+{
+    CSeq_id qid("gi|1945390");
+    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CSeq_id sid("gi|1945388");
+    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_minus));
+
+    CBl2Seq blaster(*query, *subj, eTblastn);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_CHECK_EQUAL(2, (int) sav[0]->Get().size());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
+    vector < CRef< CSeq_loc > > locs = sar->GetSegs().GetStd().front()->GetLoc();
+    BOOST_CHECK_EQUAL(eNa_strand_minus, (int) (locs[1])->GetStrand());
+#if 0
+ofstream o("minus2.asn");
+o << MSerial_AsnText << *sar ;
+o.close();
+#endif
+}
+
 
 BOOST_AUTO_TEST_CASE(TBlastn2SeqsCompBasedStats)
 {
@@ -642,6 +696,7 @@ BOOST_AUTO_TEST_CASE(TBlastn2SeqsLargeWord)
     opts->SetOptions().SetLookupTableType(eCompressedAaLookupTable);
     opts->SetOptions().SetWordThreshold(21.69);
     opts->SetOptions().SetWindowSize(0);
+    opts->SetOptions().SetCompositionBasedStats(eNoCompositionBasedStats);
 
     CBl2Seq blaster(*query, *subj, *opts);
     TSeqAlignVector sav(blaster.Run());
@@ -1472,7 +1527,7 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
         CBl2Seq blaster(*sl, *sl, eTblastx);
         TSeqAlignVector sav(blaster.Run());
         CRef<CSeq_align> sar = *(sav[0]->Get().begin());
-        BOOST_REQUIRE_EQUAL(19, (int)sar->GetSegs().GetStd().size());
+        BOOST_REQUIRE_EQUAL(11, (int)sar->GetSegs().GetStd().size());
     }
 
     BOOST_AUTO_TEST_CASE(TBlastx2Seqs_QueryMinusStrand) {
@@ -1483,7 +1538,7 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
         CBl2Seq blaster(*sl, *sl, eTblastx);
         TSeqAlignVector sav(blaster.Run());
         CRef<CSeq_align> sar = *(sav[0]->Get().begin());
-        BOOST_REQUIRE_EQUAL(20, (int)sar->GetSegs().GetStd().size());
+        BOOST_REQUIRE_EQUAL(12, (int)sar->GetSegs().GetStd().size());
     }
 
 
@@ -1668,21 +1723,39 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
 
         CBl2Seq blaster(sequences, sequences, eBlastp);
         TSeqAlignVector seqalign_v = blaster.Run();
-        BOOST_REQUIRE_EQUAL(4, (int) seqalign_v.size());
 
+        BOOST_REQUIRE_EQUAL(4, (int)seqalign_v.size());
         BOOST_REQUIRE_EQUAL(2, (int)sequences.size());
-        CRef<CSeq_align> sar = *(seqalign_v[0]->Get().begin());
+
+        CRef<CSeq_align> sar;
+        
+        BOOST_REQUIRE_EQUAL(1, seqalign_v[0]->Get().size());
+        sar = *(seqalign_v[0]->Get().begin());
         BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+        BOOST_REQUIRE_EQUAL(2, seqalign_v[1]->Get().size());
+        sar = *(seqalign_v[1]->Get().begin());
+        BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+        sar = *(++(seqalign_v[1]->Get().begin()));
+        BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+        BOOST_REQUIRE_EQUAL(2, seqalign_v[2]->Get().size());
+        sar = *(seqalign_v[2]->Get().begin());
+        BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+        sar = *(++(seqalign_v[2]->Get().begin()));
+        BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+        BOOST_REQUIRE_EQUAL(1, seqalign_v[3]->Get().size());
+        sar = *(seqalign_v[3]->Get().begin());
+        BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
 
         /* DEBUG OUTPUT
         for (size_t i = 0; i < seqalign_v.size(); i++)
             cerr << "\n<" << i << ">\n"
                 << MSerial_AsnText << seqalign_v[i].GetObject() << endl;
         */
-
-        // in older version this was seqalign_v[1], order has changed
-        BOOST_REQUIRE(seqalign_v[2]->IsEmpty() == true);
-
+        
         testBlastHitCounts(blaster, eBlastp_multi_q);
         testRawCutoffs(blaster, eBlastp, eBlastp_multi_q);
 
@@ -1816,6 +1889,7 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
         opts.SetFrameShiftPenalty(10);
         opts.SetFilterString("m;L");
         opts.SetEvalueThreshold(0.01);
+        opts.SetCompositionBasedStats(eNoCompositionBasedStats);
 
         CBl2Seq blaster(*query, *subj, opts);
         TSeqAlignVector sav(blaster.Run());
@@ -1838,6 +1912,8 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
         CTBlastnOptionsHandle opts;
         opts.SetOutOfFrameMode();
         opts.SetFrameShiftPenalty(5);
+        opts.SetCompositionBasedStats(eNoCompositionBasedStats);
+        opts.SetFilterString("L");
 
         CBl2Seq blaster(*query, *subj, opts);
         TSeqAlignVector sav(blaster.Run());

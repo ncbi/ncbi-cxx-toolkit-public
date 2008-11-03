@@ -78,14 +78,7 @@ public:
     virtual size_t GetSeqLength(size_t index) = 0;
 
     /// Compute the sum of all the sequence's lengths
-    size_t GetSumOfSequenceLengths() {
-        if (m_SumOfSequenceLengths == 0) {
-            for (size_t i = 0; i < GetNumQueries(); i++) {
-                m_SumOfSequenceLengths += GetSeqLength(i);
-            }
-        }
-        return m_SumOfSequenceLengths;
-    }
+    size_t GetSumOfSequenceLengths();
 
     /// Retrieve all error/warning messages
     void GetMessages(TSearchMessages& messages) const;

@@ -151,6 +151,11 @@ public:
     /// Return the length of a sequence
     /// @param index index of the sequence in the sequence container [in]
     virtual TSeqPos GetLength(int index) const = 0;
+
+    /// Return the title of a sequence
+    /// @param index index of the sequence in the sequence container [in]
+    /// @return the sequence title or kEmptyStr if not available
+    virtual string GetTitle(int index) const = 0;
 };
 
 /// Choose between a Seq-loc specified query strand and the strand obtained
@@ -182,7 +187,7 @@ public:
         TSeqPos retval = x_Size();
         if (retval == 0) {
             NCBI_THROW(CBlastException, eInvalidArgument, 
-                       "Sequence with 0 length");
+                       "Sequence contains no data");
         }
         return retval;
     }

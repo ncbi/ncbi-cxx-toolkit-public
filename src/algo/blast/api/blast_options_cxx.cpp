@@ -940,7 +940,7 @@ CBlastOptions::ClearFilterOptions()
     return;
 }
 
-const char* 
+char* 
 CBlastOptions::GetFilterString() const
 {
     if (! m_Local) {
@@ -952,7 +952,7 @@ void
 CBlastOptions::SetFilterString(const char* f, bool clear)
 {
     // Clear if clear is true or filtering set to FALSE.
-    if (clear == true || strcmp("F", f) == 0 || strcmp("f", f) == 0) {
+    if (clear == true || NStr::CompareNocase("F", f) == 0) {
         ClearFilterOptions();
     }
     
@@ -974,7 +974,7 @@ CBlastOptions::SetFilterString(const char* f, bool clear)
         //    handle the set of options handled here.
         // 
         // 4. CRemoteBlast and CRemoteBlastService's handling of
-        //    filtering options (CBlastOptionBuilder) should
+        //    filtering options (CBlastOptionsBuilder) should
         //    include all of these elements.
         // 
         // 5. Libnet2blast should deal with all of these filtering

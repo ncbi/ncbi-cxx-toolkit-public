@@ -107,6 +107,20 @@ ILocalQueryData::IsValidQuery(size_t index)
     return all_contexts_valid;
 }
 
+size_t
+ILocalQueryData::GetSumOfSequenceLengths()
+{
+    if (m_SumOfSequenceLengths == 0) {
+        for (size_t i = 0; i < GetNumQueries(); i++) {
+            try { m_SumOfSequenceLengths += GetSeqLength(i); }
+            catch (const CBlastException&) {
+                ; // ignore errors if the length could not be retrieved
+            }
+        }
+    }
+    return m_SumOfSequenceLengths;
+}
+
 bool
 ILocalQueryData::IsAtLeastOneQueryValid()
 {

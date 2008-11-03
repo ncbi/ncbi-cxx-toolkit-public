@@ -339,6 +339,22 @@ CBlastQuerySourceOM::GetLength(int i) const
     return rv;
 }
 
+string
+CBlastQuerySourceOM::GetTitle(int i) const
+{
+    CConstRef<CSeq_loc> seqloc = GetSeqLoc(i);
+    CRef<CScope> scope;
+    if (m_QueryVector.NotEmpty()) {
+        scope = m_QueryVector->GetScope(i);
+    } else if (! m_TSeqLocVector->empty()) {
+        scope = (*m_TSeqLocVector)[i].scope;
+    }
+    _ASSERT(seqloc.NotEmpty());
+    _ASSERT(scope.NotEmpty());
+    CBioseq_Handle bh = scope->GetBioseqHandle(*seqloc);
+    return bh ? sequence::GetTitle(bh) : kEmptyStr;
+}
+
 TSeqPos
 CBlastQuerySourceOM::Size() const
 {

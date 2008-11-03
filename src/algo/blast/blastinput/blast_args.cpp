@@ -308,6 +308,10 @@ CFilteringArgs::x_TokenizeFilteringArgs(const string& filtering_args,
 {
     output.clear();
     NStr::Tokenize(filtering_args, " ", output);
+    if (output.size() != 3) {
+        NCBI_THROW(CInputException, eInvalidInput,
+                   "Invalid number of arguments to filtering option");
+    }
 }
 
 void
@@ -319,31 +323,38 @@ CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
 
     vector<string> tokens;
 
-    if (m_QueryIsProtein && args[kArgSegFiltering]) {
-        const string& seg_opts = args[kArgSegFiltering].AsString();
-        if (seg_opts == kDfltArgNoFiltering) {
-            opt.SetSegFiltering(false);
-        } else if (seg_opts == kDfltArgApplyFiltering) {
-            opt.SetSegFiltering(true);
-        } else {
-            x_TokenizeFilteringArgs(seg_opts, tokens);
-            opt.SetSegFilteringWindow(NStr::StringToInt(tokens[0]));
-            opt.SetSegFilteringLocut(NStr::StringToDouble(tokens[1]));
-            opt.SetSegFilteringHicut(NStr::StringToDouble(tokens[2]));
+    try {
+        if (m_QueryIsProtein && args[kArgSegFiltering]) {
+            const string& seg_opts = args[kArgSegFiltering].AsString();
+            if (seg_opts == kDfltArgNoFiltering) {
+                opt.SetSegFiltering(false);
+            } else if (seg_opts == kDfltArgApplyFiltering) {
+                opt.SetSegFiltering(true);
+            } else {
+                x_TokenizeFilteringArgs(seg_opts, tokens);
+                opt.SetSegFilteringWindow(NStr::StringToInt(tokens[0]));
+                opt.SetSegFilteringLocut(NStr::StringToDouble(tokens[1]));
+                opt.SetSegFilteringHicut(NStr::StringToDouble(tokens[2]));
+            }
         }
-    }
 
-    if ( !m_QueryIsProtein && args[kArgDustFiltering]) {
-        const string& dust_opts = args[kArgDustFiltering].AsString();
-        if (dust_opts == kDfltArgNoFiltering) {
-            opt.SetDustFiltering(false);
-        } else if (dust_opts == kDfltArgApplyFiltering) {
-            opt.SetDustFiltering(true);
-        } else {
-            x_TokenizeFilteringArgs(dust_opts, tokens);
-            opt.SetDustFilteringLevel(NStr::StringToInt(tokens[0]));
-            opt.SetDustFilteringWindow(NStr::StringToInt(tokens[1]));
-            opt.SetDustFilteringLinker(NStr::StringToInt(tokens[2]));
+        if ( !m_QueryIsProtein && args[kArgDustFiltering]) {
+            const string& dust_opts = args[kArgDustFiltering].AsString();
+            if (dust_opts == kDfltArgNoFiltering) {
+                opt.SetDustFiltering(false);
+            } else if (dust_opts == kDfltArgApplyFiltering) {
+                opt.SetDustFiltering(true);
+            } else {
+                x_TokenizeFilteringArgs(dust_opts, tokens);
+                opt.SetDustFilteringLevel(NStr::StringToInt(tokens[0]));
+                opt.SetDustFilteringWindow(NStr::StringToInt(tokens[1]));
+                opt.SetDustFilteringLinker(NStr::StringToInt(tokens[2]));
+            }
+        }
+    } catch (const CStringException& e) {
+        if (e.GetErrCode() == CStringException::eConvert) {
+            NCBI_THROW(CInputException, eInvalidInput,
+                       "Invalid input for filtering parameters");
         }
     }
     
@@ -1487,9 +1498,8 @@ CDebugArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */
     m_RmtDebugOutput = static_cast<bool>(args["remote_verbose"]);
     if (args["use_test_remote_service"]) {
         IRWRegistry& reg = CNcbiApplication::Instance()->GetConfig();
-        reg.Set("BLAST4", string(DEF_CONN_REG_SECTION) + " " +
-                string(REG_CONN_SERVICE_NAME),
-                "blast4test");
+        reg.Set("BLAST4", DEF_CONN_REG_SECTION "_" REG_CONN_SERVICE_NAME,
+                "blast4_test");
     }
 #endif /* DEBUG */
 }
@@ -1706,6 +1716,10 @@ CBlastAppArgs::SetOptions(const CArgs& args)
         if (CBlastDatabaseArgs::HasBeenSet(args)) {
             m_BlastDbArgs->ExtractAlgorithmOptions(args, opts);
         }
+        try { m_OptsHandle->Validate(); }
+        catch (const CBlastException& e) {
+            NCBI_THROW(CInputException, eInvalidInput, e.GetMsg());
+        }
         return m_OptsHandle;
     }
 
@@ -1720,12 +1734,17 @@ CBlastAppArgs::SetOptions(const CArgs& args)
         locality = CBlastOptions::eBoth;
     }
 
-    CRef<CBlastOptionsHandle> handle(x_CreateOptionsHandle(locality, args));
-    CBlastOptions& opts = handle->SetOptions();
+    CRef<CBlastOptionsHandle> retval(x_CreateOptionsHandle(locality, args));
+    CBlastOptions& opts = retval->SetOptions();
     NON_CONST_ITERATE(TBlastCmdLineArgs, arg, m_Args) {
         (*arg)->ExtractAlgorithmOptions(args, opts);
     }
-    return handle;
+
+    try { retval->Validate(); }
+    catch (const CBlastException& e) {
+        NCBI_THROW(CInputException, eInvalidInput, e.GetMsg());
+    }
+    return retval;
 }
 
 void CBlastAppArgs::SetTask(const string& task)

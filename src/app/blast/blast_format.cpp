@@ -547,11 +547,11 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     }
 
     if (results.HasErrors()) {
-        m_Outfile << "\n" << results.GetErrorStrings() << "\n";
+        ERR_POST(Error << results.GetErrorStrings());
         return; // errors are deemed fatal
     }
     if (results.HasWarnings()) {
-        m_Outfile << "\n" << results.GetWarningStrings() << "\n";
+        ERR_POST(Warning << results.GetWarningStrings());
     }
 
     if (m_FormatType == CFormattingArgs::eTabular ||

@@ -81,8 +81,8 @@ static char const rcsid[] =
 
 NCBI_XBLAST_EXPORT const int   kBlastMajorVersion = 2;
 NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 2;
-NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 18;
-NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "Mar-02-2008";
+NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 19;
+NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "Nov-02-2008";
 
 /** Structure to be passed to s_BlastSearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */
@@ -593,6 +593,17 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
             orig_length, subject->gen_code_string, &translation_buffer,
             &frame_offsets, NULL);
          frame_offsets_a = frame_offsets;
+         /* The following limits the search to plus or minus strand if desired. */
+         if (subject->subject_strand == 1)
+         {
+             first_context = 0;
+             last_context = 2;
+         }
+         else if (subject->subject_strand == 2)
+         {
+             first_context = 3;
+             last_context = 5;
+         }
       }
    } else if (kNucleotide) {
       first_context = 1;

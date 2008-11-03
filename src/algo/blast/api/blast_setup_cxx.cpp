@@ -582,7 +582,12 @@ SetupQueries_OMF(IBlastQuerySource& queries,
             
             // Set the id if this is possible
             if (const CSeq_id* id = queries.GetSeqId(index)) {
-                messages[index].SetQueryId(id->AsFastaString());
+                const string kTitle = queries.GetTitle(index);
+                string query_id = id->AsFastaString();
+                if (kTitle != kEmptyStr) {
+                    query_id += " " + kTitle;
+                }
+                messages[index].SetQueryId(query_id);
             }
 
             SBlastSequence sequence;
@@ -667,18 +672,16 @@ SetupQueries_OMF(IBlastQuerySource& queries,
 
             TSeqPos qlen = BlastQueryInfoGetQueryLength(qinfo, prog, index);
             
-            s_AddMask(prog, mask, index, *frame_to_bsl, strand, qlen);
-            
-            // AddMask releases the elements of frame_to_bsl that it uses;
+            // s_AddMask releases the elements of frame_to_bsl that it uses;
             // the rest are freed by frame_to_bsl in the destructor.
+            s_AddMask(prog, mask, index, *frame_to_bsl, strand, qlen);
         
         } catch (const CException& e) {
             // FIXME: is index this the right value for the 2nd arg? Also, how
             // to determine whether the message should contain a warning or
             // error?
             CRef<CSearchMessage> m
-                (new CSearchMessage(eBlastSevWarning, index, 
-                                    e.what()));
+                (new CSearchMessage(eBlastSevWarning, index, e.GetMsg()));
             messages[index].push_back(m);
             s_InvalidateQueryContexts(qinfo, index);
         }

@@ -145,6 +145,10 @@ public:
     virtual TSeqPos GetLength(int i) const;
     /// Return the number of elements in the sequence container
     virtual TSeqPos Size() const;
+
+    /// Return the title of a sequence
+    /// @param index index of the sequence in the sequence container [in]
+    virtual string GetTitle(int index) const;
     
 protected:
     /// Reference to input CBlastQueryVector (or empty if not used)
