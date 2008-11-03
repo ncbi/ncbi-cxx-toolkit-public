@@ -1,3 +1,10 @@
+November 3, 2008 (SVN revision: 144798)
+* First 2.2.19 release
+* Made sequence ID/title display uniform in sequence filtering applications.
+* Fixed incorrect display of filtering options in XML output.
+* Fixed handling of empty sequences in BLAST input. 
+* Fixed negative strand handling for tblastn/tblastx.
+
 October 14, 2008 (SVN revision: 143045)
 * Added update_blastdb.pl script to distribution of BLAST+ command line 
   applications.
@@ -22,4 +29,4 @@ September 24, 2008 (SVN revision: 141260)
 * Bug fix for merging masking locations.
 
 August 21, 2008 (SVN revision: 138123)
-First internal release
+* First internal release
