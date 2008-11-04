@@ -632,6 +632,10 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+    operator time_t(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
     operator Uint8(void) const
     {
         return MakeCP<CP>(m_Value);
@@ -791,6 +795,10 @@ public:
         return MakeCP<CP>(m_Value);
     }
     operator Int4(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator time_t(void) const
     {
         return MakeCP<CP>(m_Value);
     }
@@ -956,6 +964,10 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+    operator time_t(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
     operator Uint8(void) const
     {
         return MakeCP<CP>(m_Value);
@@ -1037,6 +1049,10 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+    operator time_t(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
     operator Uint8(void) const
     {
         return MakeCP<CP>(m_Value);
@@ -1114,6 +1130,10 @@ public:
         return MakeCP<CP>(m_Value);
     }
     operator Int4(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator time_t(void) const
     {
         return MakeCP<CP>(m_Value);
     }
