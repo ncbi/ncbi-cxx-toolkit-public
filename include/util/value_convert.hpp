@@ -1009,6 +1009,10 @@ public:
 
 public:
 #if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
+    operator bool(void) const
+    { 
+        return m_Value != 0.0F;
+    }
     operator Uint1(void) const
     {
         return MakeCP<CP>(m_Value);
@@ -1085,6 +1089,10 @@ public:
 
 public:
 #if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
+    operator bool(void) const
+    { 
+        return m_Value != 0.0;
+    }
     operator Uint1(void) const
     {
         return MakeCP<CP>(m_Value);
@@ -1161,6 +1169,10 @@ public:
 
 public:
 #if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
+    operator bool(void) const
+    { 
+        return m_Value != 0.0L;
+    }
     operator Uint1(void) const
     {
         return MakeCP<CP>(m_Value);
