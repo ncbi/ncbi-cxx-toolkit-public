@@ -1236,11 +1236,11 @@ BOOST_AUTO_TEST_CASE( testNewFilteringDefaults )
     
     opts = CBlastOptionsFactory::Create(eTblastn);
     BOOST_REQUIRE(opts.NotEmpty());
-    BOOST_CHECK_EQUAL("F", opts->GetFilterString());
+    BOOST_CHECK_EQUAL(string("F"), opts->GetFilterString());
 
     opts = CBlastOptionsFactory::Create(eBlastp);
     BOOST_REQUIRE(opts.NotEmpty());
-    BOOST_CHECK_EQUAL("F", opts->GetFilterString());
+    BOOST_CHECK_EQUAL(string("F"), opts->GetFilterString());
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
