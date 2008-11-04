@@ -672,7 +672,12 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         ITERATE( list<CProjItem>, d, ldlibs) {
             ldlib += string(" -l") + GetTargetName(*d);
         }
-        string add = prj_files.GetProjectContext().GetMsvcProjectMakefile().GetLinkerOpt("OTHER_LDFLAGS",cfg);
+        string add;
+        add = prj_files.GetProjectContext().GetMsvcProjectMakefile().GetLinkerOpt("OTHER_LDFLAGS",cfg);
+        if (!add.empty()) {
+            ldlib += " " + add;
+        }
+        add = prj_files.GetProjectContext().AdditionalLinkerOptions(cfg);
         if (!add.empty()) {
             ldlib += " " + add;
         }
@@ -685,6 +690,9 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
 
     CRef<CArray> inc_dirs( AddArray( *settings, "HEADER_SEARCH_PATHS"));
     ITERATE ( list<string>, f, prj_files.GetIncludeDirs()) {
+        if (CSymResolver::HasDefine(*f)) {
+            continue;
+        }
         AddString( *inc_dirs, GetRelativePath( *f));
     }
     AddString( *inc_dirs, "/sw/include");

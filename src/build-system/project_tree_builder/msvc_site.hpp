@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 
 struct SLibInfo
 {
+    bool valid;
     list<string> m_IncludeDir;
     list<string> m_LibDefines;
     string       m_LibPath;
@@ -56,7 +57,8 @@ struct SLibInfo
 
     bool IsEmpty(void) const
     {
-        return m_IncludeDir.empty() &&
+        return valid &&
+               m_IncludeDir.empty() &&
                m_LibDefines.empty() &&
                m_LibPath.empty()    && 
                m_Libs.empty()       &&
@@ -66,6 +68,7 @@ struct SLibInfo
     }
     void Clear(void)
     {
+        valid = false;
         m_IncludeDir.clear();
         m_LibDefines.clear();
         m_LibPath.erase();
@@ -91,7 +94,7 @@ public:
     CMsvcSite(const string& reg_path);
 
     // Is REQUIRES provided?
-    bool IsProvided(const string& thing) const;
+    bool IsProvided(const string& thing, bool deep=true) const;
 
     /// Get components from site
     void GetComponents(const string& entry, list<string>* components) const;

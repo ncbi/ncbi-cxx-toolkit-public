@@ -120,19 +120,22 @@ CMsvcSite::CMsvcSite(const string& reg_path)
 }
 
 
-bool CMsvcSite::IsProvided(const string& thing) const
+bool CMsvcSite::IsProvided(const string& thing, bool deep) const
 {
     if (thing.empty()) {
         return true;
     }
     if (thing[0] == '-') {
-        return !IsProvided( thing.c_str() + 1);
+        return !IsProvided( thing.c_str() + 1, deep);
     }
     if ( m_NotProvidedThing.find(thing) != m_NotProvidedThing.end() ) {
         return false;
     }
     if ( m_ProvidedThing.find(thing) != m_ProvidedThing.end() ) {
         return true;
+    }
+    if (!deep) {
+        return false;
     }
 
     bool res = 
@@ -211,26 +214,36 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
 void CMsvcSite::GetLibInfo(const string& lib, 
                            const SConfigInfo& config, SLibInfo* libinfo) const
 {
+    string section(lib);
+    if (CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
+        section += '.';
+        section += CMsvc7RegSettings::GetMsvcRegSection();
+    }
     libinfo->Clear();
+    libinfo->valid = IsDescribed(section);
+    if (!libinfo->valid) {
+        libinfo->valid = IsProvided(lib, false);
+        return;
+    }
 
-    string include_str    = ProcessMacros(GetOpt(m_Registry, lib, "INCLUDE", config));
+    string include_str    = ProcessMacros(GetOpt(m_Registry, section, "INCLUDE", config));
     NStr::Split(include_str, LIST_SEPARATOR, libinfo->m_IncludeDir);
     
-    string defines_str    = GetOpt(m_Registry, lib, "DEFINES", config);
+    string defines_str    = GetOpt(m_Registry, section, "DEFINES", config);
     NStr::Split(defines_str, LIST_SEPARATOR, libinfo->m_LibDefines);
 
-    libinfo->m_LibPath    = ProcessMacros(GetOpt(m_Registry, lib, "LIBPATH", config));
+    libinfo->m_LibPath    = ProcessMacros(GetOpt(m_Registry, section, "LIBPATH", config));
 
-    string libs_str = GetOpt(m_Registry, lib, "LIB", config);
+    string libs_str = GetOpt(m_Registry, section, "LIB", config);
     NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs);
 
-    libs_str = GetOpt(m_Registry, lib, "STDLIB", config);
+    libs_str = GetOpt(m_Registry, section, "STDLIB", config);
     NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_StdLibs);
 
-    string macro_str = GetOpt(m_Registry, lib, "MACRO", config);
+    string macro_str = GetOpt(m_Registry, section, "MACRO", config);
     NStr::Split(macro_str, LIST_SEPARATOR, libinfo->m_Macro);
 
-    string files_str    = ProcessMacros(GetOpt(m_Registry, lib, "FILES", config));
+    string files_str    = ProcessMacros(GetOpt(m_Registry, section, "FILES", config));
     NStr::Split(files_str, LIST_SEPARATOR, libinfo->m_Files);
 }
 
@@ -238,7 +251,15 @@ void CMsvcSite::GetLibInfo(const string& lib,
 bool CMsvcSite::IsLibEnabledInConfig(const string&      lib, 
                                      const SConfigInfo& config) const
 {
-    string enabled_configs_str = m_Registry.Get(lib, "CONFS");
+    string section(lib);
+    if (CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
+        section += '.';
+        section += CMsvc7RegSettings::GetMsvcRegSection();
+    }
+    if (!m_Registry.HasEntry(section)) {
+        return false;
+    }
+    string enabled_configs_str = m_Registry.Get(section, "CONFS");
     if (enabled_configs_str.empty()) {
         return true;
     }
@@ -543,7 +564,7 @@ string CMsvcSite::x_GetDefinesEntry(const string& entry) const
 
 bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
 {
-    if ( lib_info.IsEmpty() )
+    if ( !lib_info.valid || lib_info.IsEmpty() )
         return false;
     if ( !lib_info.m_IncludeDir.empty() ) {
         ITERATE(list<string>, i, lib_info.m_IncludeDir) {
