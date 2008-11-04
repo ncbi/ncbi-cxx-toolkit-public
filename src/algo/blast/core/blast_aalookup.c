@@ -344,10 +344,10 @@ Int4 BlastAaLookupFinalize(BlastAaLookupTable * lookup, EBoneType bone_type)
       for (i = 0; i < lookup->backbone_size; i++) {
         /* if there are hits there, */
         if (lookup->thin_backbone[i] ) {
+            Int4 * dest = NULL;
             /* set the corresponding bit in the pv_array */
             PV_SET(pv, i, PV_ARRAY_BTS);
             bbc[i].num_used = lookup->thin_backbone[i][1];
-            Int4 * dest;
             /* if there are three or fewer hits, */
             if (lookup->thin_backbone[i][1] <= AA_HITS_PER_CELL)
                 /* copy them into the thick_backbone cell */
@@ -390,9 +390,9 @@ Int4 BlastAaLookupFinalize(BlastAaLookupTable * lookup, EBoneType bone_type)
       /* fill the lookup table */
       for (i = 0; i < lookup->backbone_size; i++) {
         if (lookup->thin_backbone[i] ) {
+            Uint2 * dest = NULL;
             PV_SET(pv, i, PV_ARRAY_BTS);
             sbc[i].num_used = lookup->thin_backbone[i][1];
-            Uint2 * dest;
             if ((lookup->thin_backbone[i])[1] <= AA_HITS_PER_CELL)
                  dest=sbc[i].payload.entries;
             else{

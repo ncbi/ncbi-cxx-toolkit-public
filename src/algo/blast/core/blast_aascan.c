@@ -124,9 +124,9 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
                                  Int4 array_size)
 {
     Int4 index;
-    Uint1 *s;
-    Uint1 *s_first;
-    Uint1 *s_last;
+    Uint1 *s = NULL;
+    Uint1 *s_first = NULL;
+    Uint1 *s_last = NULL;
     Int4 numhits = 0;           /* number of hits found for a given subject
                                    offset */
     Int4 totalhits = 0;         /* cumulative number of hits found */
@@ -176,11 +176,13 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
                     src = &(ovfl[bbc[index].payload.overflow_cursor]);
 
                 /* copy the hits. */
+                {
                 Int4 i;
                 Int4 s_off = s - subject->sequence;
                 for (i = 0; i < numhits; i++) {
                     offset_pairs[i + totalhits].qs_offsets.q_off = src[i];
                     offset_pairs[i + totalhits].qs_offsets.s_off = s_off;
+                }
                 }
 
                 totalhits += numhits;
@@ -208,9 +210,9 @@ static Int4 s_BlastSmallAaScanSubject(const LookupTableWrap * lookup_wrap,
                                  Int4 array_size)
 {
     Int4 index;
-    Uint1 *s;
-    Uint1 *s_first;
-    Uint1 *s_last;
+    Uint1 *s = NULL;
+    Uint1 *s_first = NULL;
+    Uint1 *s_last = NULL;
     Int4 numhits = 0;           /* number of hits found for a given subject
                                    offset */
     Int4 totalhits = 0;         /* cumulative number of hits found */
@@ -260,11 +262,13 @@ static Int4 s_BlastSmallAaScanSubject(const LookupTableWrap * lookup_wrap,
                     src = &(ovfl[bbc[index].payload.overflow_cursor]);
 
                 /* copy the hits. */
+                {
                 Int4 i;
                 Int4 s_off = s - subject->sequence;
                 for (i = 0; i < numhits; i++) {
                     offset_pairs[i + totalhits].qs_offsets.q_off = src[i];
                     offset_pairs[i + totalhits].qs_offsets.s_off = s_off;
+                }
                 }
 
                 totalhits += numhits;
@@ -308,9 +312,9 @@ static Int4 s_BlastCompressedAaScanSubject(
 {
     Int4 index=0;
     Int4 preshift; /* used for 2-stage index calculation */
-    Uint1 *s;
-    Uint1 *s_first;
-    Uint1 *s_last;
+    Uint1 *s = NULL;
+    Uint1 *s_first = NULL;
+    Uint1 *s_last = NULL;
     Int4 numhits = 0;     /* number of hits found for one subject offset */
     Int4 totalhits = 0;         /* cumulative number of hits found */
     PV_ARRAY_TYPE *pv;
