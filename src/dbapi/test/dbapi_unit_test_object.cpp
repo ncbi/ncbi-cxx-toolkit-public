@@ -476,7 +476,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                                 rs->GetItem(&db_obj);
                                 string string_value = db_obj.Value();
 
-                                BOOST_CHECK_EQUAL(string_value, "1");
+                                BOOST_CHECK_EQUAL(string_value, string("1"));
                             }
                         }
                     }
@@ -514,14 +514,14 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                                 rs->GetItem(&db_obj);
                                 string string_value = db_obj.Value();
 
-                                BOOST_CHECK_EQUAL(string_value, "2843113322");
+                                BOOST_CHECK_EQUAL(string_value, string("2843113322"));
                             } else {
                                 CDB_Numeric db_obj;
 
                                 rs->GetItem(&db_obj);
                                 string string_value = db_obj.Value();
 
-                                BOOST_CHECK_EQUAL(string_value, "2843113322.00");
+                                BOOST_CHECK_EQUAL(string_value, string("2843113322.00"));
                             }
                         }
                     }
@@ -561,7 +561,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                             rs->GetItem(&db_obj);
                             string string_value = db_obj.Value();
 
-                            BOOST_CHECK_EQUAL(string_value, "1");
+                            BOOST_CHECK_EQUAL(string_value, string("1"));
                         }
                     }
                 }
@@ -718,7 +718,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         rs->GetItem(&db_obj);
                         string string_value = string(db_obj.Value(), db_obj.Size());
 
-                        BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), "12345");
+                        BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
                     }
                 }
             }
@@ -745,7 +745,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         rs->GetItem(&db_obj);
                         string string_value = db_obj.Value();
 
-                        BOOST_CHECK_EQUAL(string_value, "12345");
+                        BOOST_CHECK_EQUAL(string_value, string("12345"));
                     }
                 }
             }
@@ -772,7 +772,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         rs->GetItem(&db_obj);
                         string string_value = string(db_obj.Value(), db_obj.Size());
 
-                        BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), "12345");
+                        BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
                     }
                 }
             }
@@ -799,7 +799,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         rs->GetItem(&db_obj);
                         string string_value = db_obj.Value();
 
-                        BOOST_CHECK_EQUAL(string_value, "12345");
+                        BOOST_CHECK_EQUAL(string_value, string("12345"));
                     }
                 }
             }
@@ -826,7 +826,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         rs->GetItem(&db_obj);
                         string string_value = string(static_cast<const char*>(db_obj.Value()), db_obj.Size());
 
-                        BOOST_CHECK_EQUAL(string_value.substr(0, 5), "12345");
+                        BOOST_CHECK_EQUAL(string_value.substr(0, 5), string("12345"));
                     }
                 }
             }
@@ -855,7 +855,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         rs->GetItem(&db_obj);
                         string string_value = string(static_cast<const char*>(db_obj.Value()), db_obj.Size());
 
-                        BOOST_CHECK_EQUAL(string_value, "12345");
+                        BOOST_CHECK_EQUAL(string_value, string("12345"));
                     }
                 }
             }
@@ -888,7 +888,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                                 db_obj.Size()
                                 );
 
-                        BOOST_CHECK_EQUAL(string_value, "12345");
+                        BOOST_CHECK_EQUAL(string_value, string("12345"));
                     }
                 }
             }
@@ -921,7 +921,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                                 db_obj.Size()
                                 );
 
-                        BOOST_CHECK_EQUAL(string_value, "12345");
+                        BOOST_CHECK_EQUAL(string_value, string("12345"));
                     }
                 }
             }

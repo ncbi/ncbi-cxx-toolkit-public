@@ -1665,7 +1665,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
                     while (rs->Fetch()) {
                         string string_value = Convert(*rs).operator string();
-                        BOOST_CHECK_EQUAL(string_value, "1");
+                        BOOST_CHECK_EQUAL(string_value, string("1"));
                     }
                 }
             }
@@ -1713,7 +1713,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
                 while (rs->Fetch()) {
                     string string_value = Convert(*rs).operator string();
-                    BOOST_CHECK_EQUAL(string_value, "1");
+                    BOOST_CHECK_EQUAL(string_value, string("1"));
                 }
             }
         }
@@ -1853,7 +1853,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
                 while (rs->Fetch()) {
                     string string_value = Convert(*rs);
-                    BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), "12345");
+                    BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
                 }
             }
         }
@@ -1876,7 +1876,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
                 while (rs->Fetch()) {
                     string string_value = Convert(*rs);
-                    BOOST_CHECK_EQUAL(string_value, "12345");
+                    BOOST_CHECK_EQUAL(string_value, string("12345"));
                 }
             }
         }
@@ -1899,7 +1899,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
                 while (rs->Fetch()) {
                     string string_value = Convert(*rs);
-                    BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), "12345");
+                    BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
                 }
             }
         }
@@ -1922,7 +1922,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
                 while (rs->Fetch()) {
                     string string_value = Convert(*rs);
-                    BOOST_CHECK_EQUAL(string_value, "12345");
+                    BOOST_CHECK_EQUAL(string_value, string("12345"));
                 }
             }
         }
@@ -1945,7 +1945,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
                 while (rs->Fetch()) {
                     string string_value = Convert(*rs);
-                    BOOST_CHECK_EQUAL(string_value.substr(0, 5), "12345");
+                    BOOST_CHECK_EQUAL(string_value.substr(0, 5), string("12345"));
                 }
             }
         }
@@ -1970,7 +1970,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
                 while (rs->Fetch()) {
                     string string_value = Convert(*rs);
-                    BOOST_CHECK_EQUAL(string_value, "12345");
+                    BOOST_CHECK_EQUAL(string_value, string("12345"));
                 }
             }
         }
@@ -1994,7 +1994,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
                 while (rs->Fetch()) {
                     string string_value = Convert(*rs).operator string();
-                    BOOST_CHECK_EQUAL(string_value, "12345");
+                    BOOST_CHECK_EQUAL(string_value, string("12345"));
                 }
             }
         }
@@ -2018,7 +2018,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
                 while (rs->Fetch()) {
                     string string_value = Convert(*rs).operator string();
-                    BOOST_CHECK_EQUAL(string_value, "12345");
+                    BOOST_CHECK_EQUAL(string_value, string("12345"));
                 }
             }
         }
@@ -2426,7 +2426,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
 
                 while (rs->Fetch()) {
                     string string_value = ConvertSafe(*rs);
-                    BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), "12345");
+                    BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
                 }
             }
         }
@@ -2449,7 +2449,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
 
                 while (rs->Fetch()) {
                     string string_value = ConvertSafe(*rs);
-                    BOOST_CHECK_EQUAL(string_value, "12345");
+                    BOOST_CHECK_EQUAL(string_value, string("12345"));
                 }
             }
         }
@@ -2472,7 +2472,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
 
                 while (rs->Fetch()) {
                     string string_value = ConvertSafe(*rs);
-                    BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), "12345");
+                    BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
                 }
             }
         }
@@ -2495,7 +2495,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
 
                 while (rs->Fetch()) {
                     string string_value = ConvertSafe(*rs);
-                    BOOST_CHECK_EQUAL(string_value, "12345");
+                    BOOST_CHECK_EQUAL(string_value, string("12345"));
                 }
             }
         }
@@ -2524,9 +2524,9 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
                         || GetArgs().GetDriverName() == dblib_driver
                         || GetArgs().GetDriverName() == ftds_dblib_driver
                         ) {
-                        BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), "12345");
+                        BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
                     } else {
-                        BOOST_CHECK_EQUAL(string_value, "12345");
+                        BOOST_CHECK_EQUAL(string_value, string("12345"));
                     }
                 }
             }
@@ -2554,7 +2554,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
 
                 while (rs->Fetch()) {
                     string string_value = ConvertSafe(*rs);
-                    BOOST_CHECK_EQUAL(string_value, "12345");
+                    BOOST_CHECK_EQUAL(string_value, string("12345"));
                 }
             }
         }
