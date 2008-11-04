@@ -28,7 +28,7 @@
 *
 * Author:  Yuri Kapustin
 *
-* File Description:
+* File Description: Multiple-sequence alignment uniquification algorithms.
 *
 */
 
@@ -38,6 +38,13 @@
 #include <numeric>
 #include <vector>
 #include <set>
+
+
+/** @addtogroup AlgoAlignRoot
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -52,6 +59,10 @@ public:
     typedef CRef<THit>    THitRef;
     typedef typename THit::TCoord  TCoord;
 
+    /// Create the object; specify the accumulation sequence
+    ///
+    /// @param where
+    ///    Accumulation source sequence (0 = query, 1 = subject)
     CHitCoverageAccumulator(Uint1 where): 
         m_Where(where),  
         m_Finish(0)
@@ -66,6 +77,12 @@ public:
         }
     }
 
+    /// Overloaded function call operator to be used with std::accumulate()
+    ///
+    /// @param iVal
+    ///    Accumulation target
+    /// @return
+    ///    Updated accumulation target
     TCoord operator() (TCoord iVal, const THitRef& ph)
     {
         const TCoord box [] = { ph->GetQueryMin(), ph->GetQueryMax(),
@@ -91,6 +108,14 @@ private:
 /////////////////////////////////////////////
 /////////////////////////////////////////////
 
+// The multiple-sequence alignment uniquification algorithm.
+// The algorithm ensures that every residue on each sequence is either aligned 
+// uniquely, or not at all (unless the residue is covered alignments overlapping 
+// by longer than retain_overlap).In the process of resolving ambiguities 
+// in the input alignments, the algorithm starts from the highest-scoring hit.
+// This is a greedy algorithm so no claim is made as of optimality of the overall 
+// alignment.
+
 template<class THit>
 class CHitFilter: public CObject
 {
@@ -100,6 +125,17 @@ public:
     typedef vector<THitRef>         THitRefs;
     typedef typename THit::TCoord   TCoord;
 
+    /// Collect coverage for the range of hits on the specified source sequence
+    ///
+    /// @param where
+    ///    Accumulation source sequence (0 = query, 1 = subject)
+    /// @param from
+    ///    Hit range start
+    /// @param to
+    ///    Hit range stop
+    /// @return
+    ///    The number of residues on the source sequences covered by at least one
+    ///    alignment
     static  TCoord s_GetCoverage(Uint1 where, 
                                  typename THitRefs::const_iterator from,
                                  typename THitRefs::const_iterator to)
@@ -130,7 +166,12 @@ public:
                           CHitCoverageAccumulator<THit>(where));
     }
 
-    // 0 = query min, 1 = query max, 2 = subj min, 3 = subj max
+    /// Get sequence span for a set of alignments (hits).
+    ///
+    /// @param hitrefs
+    ///    Source hits
+    /// @param span
+    ///    Destination array (0=query min, 1=query max, 2=subj min, 3=subj max)
     static void s_GetSpan(const THitRefs& hitrefs, TCoord span [4]) 
     {      
         span[0] = span[2] = kMax_UInt; 
@@ -166,7 +207,23 @@ public:
         return n > 0? n: 0;
     }
     
-    // The Multiple Greedy Reconciliation algorithm
+    /// Multiple-sequences greedy alignment uniquification algorithm
+    ///
+    /// @param hri_begin
+    ///    Input hit range start
+    /// @param hri_end
+    ///    Input hit range stop
+    /// @param phits_new
+    ///    An external hit vector to keep any extra hits created during the call
+    /// @param min_hit_len
+    ///    Minimum alignment length to keep
+    /// @param min_hit_idty
+    ///    Minimum alignment identity to keep
+    /// @param margin
+    ///    Speed/memory trade-off (0 will use max memory; >0 will slow down a bit but 
+    //     reduce memory requirements)
+    /// @retain_overlap
+    ///    Minimum length of overlaps to keep (0 = no overlaps)
 
     static void s_RunGreedy(typename THitRefs::iterator hri_beg, 
                             typename THitRefs::iterator hri_end,
@@ -910,5 +967,8 @@ protected:
 
 
 END_NCBI_SCOPE
+
+
+/* @} */
 
 #endif /* ALGO_ALIGN_UTIL_HITFILTER__HPP */
