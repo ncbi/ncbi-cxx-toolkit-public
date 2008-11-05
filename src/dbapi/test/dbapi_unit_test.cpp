@@ -2501,7 +2501,9 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         }
 
         // binary
-        if (GetArgs().GetDriverName() != ftds_odbc_driver)
+        if (GetArgs().GetDriverName() != ftds_odbc_driver
+            && GetArgs().GetDriverName() != odbc_driver
+            )
         {
             sql = "select Convert(binary(32), '12345')";
 
@@ -2536,6 +2538,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         // A problem with ftds8 driver !!!!
         if (GetArgs().GetDriverName() != ftds8_driver
             && GetArgs().GetDriverName() != ftds_odbc_driver
+            && GetArgs().GetDriverName() != odbc_driver
             )
         {
             sql = "select Convert(varbinary(32), '12345')";

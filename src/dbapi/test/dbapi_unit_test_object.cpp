@@ -508,7 +508,9 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                                 double_value = db_obj.Value();
 
                                 BOOST_CHECK_EQUAL(double_value, 2843113322.00);
-                            } else if (GetArgs().GetDriverName() == ftds_odbc_driver) {
+                            } else if (GetArgs().GetDriverName() == ftds_odbc_driver
+                                       || GetArgs().GetDriverName() == odbc_driver
+                                ) {
                                 CDB_Numeric db_obj;
 
                                 rs->GetItem(&db_obj);
