@@ -302,6 +302,7 @@ static void TEST__server_1(SOCK sock)
 #else
     assert(SOCK_Status  (sock, eIO_Read)      == eIO_Success);
 #endif
+    assert(SOCK_Close   (sock)                == eIO_Success);
 }
 
 
@@ -507,12 +508,14 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
         case eIO_Closed:
             CORE_LOG(eLOG_Note, "TS2::read: connection closed");
             assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
+            /* close connection */
+            status = SOCK_Close(sock);
+            assert(status == eIO_Success  ||  status == eIO_Closed);
             /* reconnect */
             if ( !lsock )
                 return;
 
             CORE_LOG(eLOG_Note, "TS2::reconnect");
-            SOCK_Close(sock);
             if ((status = LSOCK_Accept(lsock, &rc_to, &sock)) != eIO_Success)
                 return;
             assert(SOCK_Status(sock, eIO_Read) == eIO_Success);
@@ -566,8 +569,6 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
             default:
                 CORE_LOGF(eLOG_Fatal,
                           ("TS2::write: status = %d", (int) status));
-                assert(0);
-                return;
             } /* switch */
 
             n_io  -= n_io_done;
@@ -634,8 +635,8 @@ static void TEST__server(unsigned short port)
 
     /* Accept connections from clients and run test sessions */
     for (;;) {
-        /* Accept connection */
         SOCK sock;
+
         status = LSOCK_Accept(lsock, NULL, &sock);
         assert(status == eIO_Success);
 
@@ -644,6 +645,9 @@ static void TEST__server(unsigned short port)
          *      "TEST__[client|server]_1(SOCK sock)"
          */
         TEST__server_1(sock);
+
+        status = LSOCK_Accept(lsock, NULL, &sock);
+        assert(status == eIO_Success);
 
         /* Test a more complex case
          * The two peer functions are:
@@ -654,10 +658,6 @@ static void TEST__server(unsigned short port)
 #else
         TEST__server_2(sock, 0);
 #endif
-
-        /* Close connection */
-        status = SOCK_Close(sock);
-        assert(status == eIO_Success  ||  status == eIO_Closed);
 
 #ifdef TEST_SRV1_ONCE
         /* Close listening socket */
