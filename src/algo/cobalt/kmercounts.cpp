@@ -65,8 +65,13 @@ CSparseKmerCounts::CSparseKmerCounts(const objects::CSeq_loc& seq,
     Reset(seq, scope);
 }
 
-// Initializes position bit vector for k-mer counting
-// modifies index
+// Initialize position bit vector for k-mer counting
+// @param sv Sequence [in]
+// @param pos Index of the k-mer count [out]
+// @param index Index of letter in sequence [in|out]
+// @param num_bits Number of bits per letter in pos [in]
+// @param kmer_len K-mer length [in]
+// @return True if a valid k-mer was found, false otherwise
 bool CSparseKmerCounts::InitPosBits(const objects::CSeqVector& sv, Uint4& pos,
                                      unsigned int& index,
                                      Uint4 num_bits, Uint4 kmer_len)
@@ -113,8 +118,12 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
     unsigned int alphabet_size = sm_AlphabetSize;
 
     _ASSERT(kmer_len > 0 && alphabet_size > 0);
-    _ASSERT(sm_UseCompressed && !sm_TransTable.empty() 
-           || !sm_UseCompressed && sm_TransTable.empty());
+
+    if (sm_UseCompressed && sm_TransTable.empty()) {
+        NCBI_THROW(CKmerCountsException, eInvalidOptions,
+                   "Compressed alphabet selected, but translation table not"
+                   " specified");
+    }
 
     if (!seq.IsWhole() && !seq.IsInt()) {
         NCBI_THROW(CKmerCountsException, eUnsupportedSeqLoc, 
@@ -128,8 +137,12 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
     TCount* counts = NULL;
 
     m_SeqLength = sv.size();
-
     m_Counts.clear();
+
+    if (m_SeqLength < kmer_len) {
+        NCBI_THROW(CKmerCountsException, eBadSequence,
+                   "Sequence shorter than desired k-mer length");
+    }
 
     // Compute number of bits needed to represent all letters
     unsigned int mask = 1;
@@ -161,27 +174,37 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
         Uint4 i = 0;
         Uint4 pos;
         bool is_pos = InitPosBits(sv, pos, i, kNumBits, kmer_len);
-        counts[pos]++;
-        MarkUsed(pos, used_entries, kBitChunk);
-
-        //for each next kmer
-        for (;i < seq_len && is_pos;i++) {
-
-            // Kmers that contain unspecified amino acid X are not considered
-            if (sv[i] == kXaa) {
-                i++;
-                is_pos = InitPosBits(sv, pos, i, kNumBits, kmer_len);
-
-                if (i >= seq_len || !is_pos) {
-                    break;
-                }
-            }
-
-            pos <<= kNumBits;
-            pos &= kMask;
-            pos |= GetAALetter(sv[i]);
+        if (is_pos) {
+            _ASSERT(pos < num_elements);
             counts[pos]++;
             MarkUsed(pos, used_entries, kBitChunk);
+
+            //for each next kmer
+            for (;i < seq_len && is_pos;i++) {
+
+                if (GetAALetter(sv[i]) >= alphabet_size) {
+                    NCBI_THROW(CKmerCountsException, eBadSequence,
+                               "Letter out of alphabet in sequnece");
+                }
+
+                // Kmers that contain unspecified amino acid X are not 
+                // considered
+                if (sv[i] == kXaa) {
+                    i++;
+                    is_pos = InitPosBits(sv, pos, i, kNumBits, kmer_len);
+
+                    if (i >= seq_len || !is_pos) {
+                        break;
+                    }
+                }
+
+                pos <<= kNumBits;
+                pos &= kMask;
+                pos |= GetAALetter(sv[i]);
+                _ASSERT(pos < num_elements);
+                counts[pos]++;
+                MarkUsed(pos, used_entries, kBitChunk);
+            }
         }
 
         // Convert to sparse vector
@@ -344,17 +367,13 @@ unsigned int CSparseKmerCounts::CountCommonKmers(
 }
 
 
-CNcbiOstream& operator<<(CNcbiOstream& ostr, CSparseKmerCounts& cv)
+CNcbiOstream& CSparseKmerCounts::Print(CNcbiOstream& ostr) const
 {
-    for (CSparseKmerCounts::TNonZeroCounts_CI it=cv.BeginNonZero();
-         it != cv.EndNonZero();++it) {
+    for (CSparseKmerCounts::TNonZeroCounts_CI it=BeginNonZero();
+         it != EndNonZero();++it) {
         ostr << it->position << ":" << (int)it->value << " ";
     }
     ostr << NcbiEndl;
 
     return ostr;
 }
-
-
-
-

@@ -130,6 +130,12 @@ public:
     ///
     TNonZeroCounts_CI EndNonZero(void) const {return m_Counts.end();}
 
+    /// Print counts
+    /// @param ostr Output stream [in|out]
+    /// @return Output stream
+    ///
+    CNcbiOstream& Print(CNcbiOstream& ostr) const;
+
     /// Set default k-mer length
     /// @param len Default k-mer length [in]
     ///
@@ -192,7 +198,10 @@ public:
                      bool repetitions = true);
 private:
     static Uint4 GetAALetter(Uint1 letter)
-    {return (Uint4)(sm_UseCompressed ? sm_TransTable[(int)letter] : letter);}
+    {
+        _ASSERT(!sm_UseCompressed || letter < sm_TransTable.size());
+        return (Uint4)(sm_UseCompressed ? sm_TransTable[(int)letter] : letter);
+    }
 
     /// Initializes element index as bit vector for first k letters, 
     /// skipping Xaa
@@ -220,20 +229,17 @@ protected:
 };
 
 
-CNcbiOstream& operator<<(CNcbiOstream& ostr, CSparseKmerCounts& cv);
-
 
 /// Exception class for Kmer counts
 class CKmerCountsException : public CException
 {
 public:
     enum EErrCode {
-        eUnsupportedSeqLoc = 1, eUnsuportedDistMethod
+        eUnsupportedSeqLoc = 1,
+        eUnsuportedDistMethod,
+        eInvalidOptions,
+        eBadSequence
     };
-
-    virtual const char* GetErrCodeString(void) const {
-        return "eUnsupportedSeqLoc";
-    }
 
     NCBI_EXCEPTION_DEFAULT(CKmerCountsException, CException);
 };
