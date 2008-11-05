@@ -18,8 +18,14 @@ sleep 1
 cpid=$!
 trap 'kill -9 $spid $cpid' 0 1 2 15
 
+n="`expr $$ % 3`"
 while kill -0 $cpid; do
-  $CHECK_EXEC test_ncbi_socket localhost $port >/dev/null 2>&1 &
+  i=0
+  while [ $i -le $n ]; do
+    $CHECK_EXEC test_ncbi_socket localhost $port >/dev/null 2>&1 &
+    n="`expr $! % 3`"
+    i="`expr $i + 1`"
+  done
   sleep 1
 done
 
