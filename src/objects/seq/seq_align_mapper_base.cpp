@@ -578,6 +578,9 @@ void CSeq_align_Mapper_Base::x_Init(const CSpliced_seg& spliced)
         else {
             ERR_POST_X(15, Warning << "Missing product id in spliced-seg");
         }
+        if ( ex.IsSetParts()  &&  !ex.GetParts().empty() ) {
+            alnseg.m_Parts = ex.GetParts();
+        }
     }
 }
 
@@ -724,6 +727,108 @@ void CSeq_align_Mapper_Base::x_ConvertRow(CSeq_loc_Mapper_Base& mapper,
 }
 
 
+TSeqPos GetPartLength(const CSpliced_exon_chunk& part)
+{
+    switch ( part.Which() ) {
+    case CSpliced_exon_chunk::e_Match:
+        return part.GetMatch();
+    case CSpliced_exon_chunk::e_Mismatch:
+        return part.GetMismatch();
+    case CSpliced_exon_chunk::e_Diag:
+        return part.GetDiag();
+    case CSpliced_exon_chunk::e_Product_ins:
+        return part.GetProduct_ins();
+    case CSpliced_exon_chunk::e_Genomic_ins:
+        return part.GetGenomic_ins();
+    default:
+        ERR_POST_X(21, Warning << "Unsupported CSpliced_exon_chunk type: " <<
+            part.SelectionName(part.Which()) << ", ignoring the chunk.");
+    }
+    return 0;
+}
+
+
+void SetPartLength(const CSpliced_exon_chunk& src_part,
+                   CSpliced_exon_chunk&       dst_part,
+                   TSeqPos                    new_len)
+{
+    switch ( src_part.Which() ) {
+    case CSpliced_exon_chunk::e_Match:
+        dst_part.SetMatch(new_len);
+        break;
+    case CSpliced_exon_chunk::e_Mismatch:
+        dst_part.SetMismatch(new_len);
+        break;
+    case CSpliced_exon_chunk::e_Diag:
+        dst_part.SetDiag(new_len);
+        break;
+    case CSpliced_exon_chunk::e_Product_ins:
+        dst_part.SetProduct_ins(new_len);
+        break;
+    case CSpliced_exon_chunk::e_Genomic_ins:
+        dst_part.SetGenomic_ins(new_len);
+        break;
+    default:
+        break;
+    }
+}
+
+
+void CopyPart(TSeqPos&                   pos,
+              const CSpliced_exon_chunk& src_part,
+              const SAlignment_Segment&  src_seg,
+              SAlignment_Segment&        dst_seg,
+              TSeqPos                    from)
+{
+    TSeqPos len = GetPartLength(src_part);
+    TSeqPos to = from + dst_seg.m_Len;
+    ENa_strand dst_strand = dst_seg.m_Rows[1].m_IsSetStrand ?
+        dst_seg.m_Rows[1].m_Strand : eNa_strand_unknown;
+    if (pos + len >= from  &&  pos < to) {
+        TSeqPos new_from = pos < from ? from : pos;
+        TSeqPos new_to = pos + len > to ? to : pos + len;
+        if (new_from < new_to) {
+            CRef<CSpliced_exon_chunk> new_part(new CSpliced_exon_chunk);
+            SetPartLength(src_part, *new_part, new_to - new_from);
+            if ( !IsReverse(dst_strand) ) {
+                dst_seg.m_Parts.push_back(new_part);
+            }
+            else {
+                dst_seg.m_Parts.push_front(new_part);
+            }
+        }
+    }
+    pos += len;
+}
+
+
+void CSeq_align_Mapper_Base::x_CopyParts(const SAlignment_Segment& src,
+                                         SAlignment_Segment&       dst,
+                                         TSeqPos                   from)
+{
+    if ( src.m_Parts.empty() ) {
+        return;
+    }
+    _ASSERT(src.m_Rows.size() > 1);
+    TSeqPos pos = 0;
+    TSeqPos to = from + dst.m_Len;
+    ENa_strand src_strand = src.m_Rows[1].m_IsSetStrand ?
+        src.m_Rows[1].m_Strand : eNa_strand_unknown;
+    if ( !IsReverse(src_strand) ) {
+        SAlignment_Segment::TParts::const_iterator it = src.m_Parts.begin();
+        for ( ; it != src.m_Parts.end()  &&  pos < to; it++) {
+            CopyPart(pos, **it, src, dst, from);
+        }
+    }
+    else {
+        SAlignment_Segment::TParts::const_reverse_iterator it = src.m_Parts.rbegin();
+        for ( ; it != src.m_Parts.rend()  &&  pos < to; it++) {
+            CopyPart(pos, **it, src, dst, from);
+        }
+    }
+}
+
+
 CSeq_id_Handle
 CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                                          CSeq_loc_Mapper_Base& mapper,
@@ -857,6 +962,8 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                     }
                 }
             }
+            // Copy parts to the new segment
+            x_CopyParts(seg, lseg, start);
         }
         start += dl;
         left_shift += dl;
@@ -867,6 +974,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
             // copy scores if there's no truncation
             mseg.SetScores(seg.m_Scores);
         }
+        ENa_strand dst_strand = eNa_strand_unknown;
         for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
             SAlignment_Segment::SAlignment_Row& mrow =
                 mseg.CopyRow(r, seg.m_Rows[r]);
@@ -874,7 +982,6 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                 // translate id and coords
                 CMappingRange::TRange mapped_rg =
                     mapping->Map_Range(start, stop - dr);
-                ENa_strand dst_strand = eNa_strand_unknown;
                 mapping->Map_Strand(
                     aln_row.m_IsSetStrand,
                     aln_row.m_Strand,
@@ -914,6 +1021,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                 }
             }
         }
+        x_CopyParts(seg, mseg, start);
         left_shift += mseg.m_Len*len_wid;
         start += mseg.m_Len*len_wid;
         mapped = true;
@@ -950,6 +1058,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                 }
             }
         }
+        x_CopyParts(seg, rseg, start);
     }
     m_Segs.erase(old_it);
     return align_flags == eAlign_MultiId ? CSeq_id_Handle() : dst_id;
@@ -1343,6 +1452,9 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
         }
         else {
             single_prod_str &= prod_strand == eNa_strand_unknown;
+        }
+        if ( !seg->m_Parts.empty() ) {
+            ex->SetParts() = seg->m_Parts;
         }
         spliced.SetExons().push_back(ex);
     }

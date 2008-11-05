@@ -38,6 +38,7 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -89,7 +90,8 @@ struct NCBI_SEQ_EXPORT SAlignment_Segment
                            int                   width,
                            int                   frame);
 
-    typedef vector< CRef<CScore> >     TScores;
+    typedef vector< CRef<CScore> > TScores;
+    typedef CSpliced_exon::TParts  TParts;
 
     void SetScores(const TScores& scores);
 
@@ -97,6 +99,7 @@ struct NCBI_SEQ_EXPORT SAlignment_Segment
     TRows     m_Rows;
     bool      m_HaveStrands;
     TScores   m_Scores;
+    TParts    m_Parts; // Used in splised-seg to store chunks
 };
 
 
@@ -164,6 +167,9 @@ private:
 
     typedef vector<ENa_strand> TStrands;
     void x_FillKnownStrands(TStrands& strands) const;
+    void x_CopyParts(const SAlignment_Segment& src,
+                     SAlignment_Segment&       dst,
+                     TSeqPos                   from);
 
     void x_GetDstDendiag(CRef<CSeq_align>& dst) const;
     void x_GetDstDenseg(CRef<CSeq_align>& dst) const;

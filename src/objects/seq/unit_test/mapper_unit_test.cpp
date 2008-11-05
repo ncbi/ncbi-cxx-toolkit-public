@@ -982,3 +982,363 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Prot2Nuc_Denseg)
         BOOST_CHECK_EQUAL(*wid, 1);
     }}
 }
+
+
+BOOST_AUTO_TEST_CASE(s_TestMapping_SplicedProd)
+{
+    CSeq_loc src, dst;
+    s_InitInterval(src.SetInt(), 4, 10, 99);
+    s_InitInterval(dst.SetInt(), 5, 110, 199);
+    CSeq_loc_Mapper_Base mapper(src, dst);
+    CSeq_align aln;
+    aln.SetType(CSeq_align::eType_global);
+    aln.SetDim(2);
+    {{
+        CSpliced_seg& spl = aln.SetSegs().SetSpliced();
+        spl.SetProduct_id().SetGi(4);
+        spl.SetGenomic_id().SetGi(3);
+        spl.SetProduct_strand(eNa_strand_plus);
+        spl.SetGenomic_strand(eNa_strand_plus);
+        spl.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+        spl.SetProduct_length(100);
+        {{
+            CRef<CSpliced_exon> ex(new CSpliced_exon);
+            ex->SetProduct_start().SetNucpos(0);
+            ex->SetProduct_end().SetNucpos(99);
+            ex->SetGenomic_start(0);
+            ex->SetGenomic_end(99);
+            {{
+                CRef<CSpliced_exon_chunk> part(new CSpliced_exon_chunk);
+                part->SetMatch(50);
+                ex->SetParts().push_back(part);
+            }}
+            {{
+                CRef<CSpliced_exon_chunk> part(new CSpliced_exon_chunk);
+                part->SetMismatch(50);
+                ex->SetParts().push_back(part);
+            }}
+            spl.SetExons().push_back(ex);
+        }}
+    }}
+    CRef<CSeq_align> mapped = mapper.Map(aln);
+    BOOST_CHECK(mapped);
+    BOOST_CHECK(mapped->GetSegs().IsSpliced());
+    const CSpliced_seg& spl = mapped->GetSegs().GetSpliced();
+    CHECK_GI(spl.GetProduct_id(), 5);
+    CHECK_GI(spl.GetGenomic_id(), 3);
+    BOOST_CHECK_EQUAL(spl.GetProduct_strand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(spl.GetGenomic_strand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(spl.GetProduct_type(),
+        CSpliced_seg::eProduct_type_transcript);
+    BOOST_CHECK_EQUAL(spl.GetProduct_length(), 90);
+    
+    BOOST_CHECK_EQUAL(spl.GetExons().size(), 1);
+    const CSpliced_exon& ex = **spl.GetExons().begin();
+    BOOST_CHECK(ex.GetProduct_start().IsNucpos());
+    BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 110);
+    BOOST_CHECK(ex.GetProduct_end().IsNucpos());
+    BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 199);
+    BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 10);
+    BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 99);
+    BOOST_CHECK_EQUAL(ex.GetParts().size(), 2);
+    CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
+    BOOST_CHECK((*part)->IsMatch());
+    BOOST_CHECK_EQUAL((*part)->GetMatch(), 40);
+    part++;
+    BOOST_CHECK((*part)->IsMismatch());
+    BOOST_CHECK_EQUAL((*part)->GetMismatch(), 50);
+}
+
+
+BOOST_AUTO_TEST_CASE(s_TestMapping_SplicedProd_Nuc2Prot)
+{
+    CSeq_loc src, dst;
+    s_InitInterval(src.SetInt(), 4, 10, 99);
+    s_InitInterval(dst.SetInt(), 6, 110, 139);
+    CSeq_loc_Mapper_Base mapper(src, dst);
+    CSeq_align aln;
+    aln.SetType(CSeq_align::eType_global);
+    aln.SetDim(2);
+    {{
+        CSpliced_seg& spl = aln.SetSegs().SetSpliced();
+        spl.SetProduct_id().SetGi(4);
+        spl.SetGenomic_id().SetGi(3);
+        spl.SetProduct_strand(eNa_strand_plus);
+        spl.SetGenomic_strand(eNa_strand_plus);
+        spl.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+        spl.SetProduct_length(100);
+        {{
+            CRef<CSpliced_exon> ex(new CSpliced_exon);
+            ex->SetProduct_start().SetNucpos(0);
+            ex->SetProduct_end().SetNucpos(99);
+            ex->SetGenomic_start(0);
+            ex->SetGenomic_end(99);
+            {{
+                CRef<CSpliced_exon_chunk> part(new CSpliced_exon_chunk);
+                part->SetMatch(50);
+                ex->SetParts().push_back(part);
+            }}
+            {{
+                CRef<CSpliced_exon_chunk> part(new CSpliced_exon_chunk);
+                part->SetMismatch(50);
+                ex->SetParts().push_back(part);
+            }}
+            spl.SetExons().push_back(ex);
+        }}
+    }}
+    CRef<CSeq_align> mapped = mapper.Map(aln);
+    BOOST_CHECK(mapped);
+    BOOST_CHECK(mapped->GetSegs().IsSpliced());
+    const CSpliced_seg& spl = mapped->GetSegs().GetSpliced();
+    CHECK_GI(spl.GetProduct_id(), 6);
+    CHECK_GI(spl.GetGenomic_id(), 3);
+    BOOST_CHECK_EQUAL(spl.GetProduct_strand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(spl.GetGenomic_strand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(spl.GetProduct_type(),
+        CSpliced_seg::eProduct_type_protein);
+    BOOST_CHECK_EQUAL(spl.GetProduct_length(), 30);
+    
+    BOOST_CHECK_EQUAL(spl.GetExons().size(), 1);
+    const CSpliced_exon& ex = **spl.GetExons().begin();
+    BOOST_CHECK(ex.GetProduct_start().IsProtpos());
+    BOOST_CHECK_EQUAL(ex.GetProduct_start().GetProtpos().GetAmin(), 110);
+    BOOST_CHECK(ex.GetProduct_end().IsProtpos());
+    BOOST_CHECK_EQUAL(ex.GetProduct_end().GetProtpos().GetAmin(), 139);
+    BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 10);
+    BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 99);
+    BOOST_CHECK_EQUAL(ex.GetParts().size(), 2);
+    CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
+    BOOST_CHECK((*part)->IsMatch());
+    BOOST_CHECK_EQUAL((*part)->GetMatch(), 40);
+    part++;
+    BOOST_CHECK((*part)->IsMismatch());
+    BOOST_CHECK_EQUAL((*part)->GetMismatch(), 50);
+}
+
+
+BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse_SplicedProd_Nuc2Prot_MinusProd)
+{
+    CSeq_loc src, dst;
+    s_InitInterval(src.SetInt(), 4, 10, 99, eNa_strand_minus);
+    s_InitInterval(dst.SetInt(), 6, 110, 139);
+    CSeq_loc_Mapper_Base mapper(src, dst);
+    CSeq_align aln;
+    aln.SetType(CSeq_align::eType_global);
+    aln.SetDim(2);
+    {{
+        CSpliced_seg& spl = aln.SetSegs().SetSpliced();
+        spl.SetProduct_id().SetGi(4);
+        spl.SetGenomic_id().SetGi(3);
+        spl.SetProduct_strand(eNa_strand_minus);
+        spl.SetGenomic_strand(eNa_strand_plus);
+        spl.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+        spl.SetProduct_length(100);
+        {{
+            CRef<CSpliced_exon> ex(new CSpliced_exon);
+            ex->SetProduct_start().SetNucpos(0);
+            ex->SetProduct_end().SetNucpos(99);
+            ex->SetGenomic_start(0);
+            ex->SetGenomic_end(99);
+            {{
+                CRef<CSpliced_exon_chunk> part(new CSpliced_exon_chunk);
+                part->SetMatch(50);
+                ex->SetParts().push_back(part);
+            }}
+            {{
+                CRef<CSpliced_exon_chunk> part(new CSpliced_exon_chunk);
+                part->SetMismatch(50);
+                ex->SetParts().push_back(part);
+            }}
+            spl.SetExons().push_back(ex);
+        }}
+    }}
+    CRef<CSeq_align> mapped = mapper.Map(aln);
+    BOOST_CHECK(mapped);
+    BOOST_CHECK(mapped->GetSegs().IsSpliced());
+    const CSpliced_seg& spl = mapped->GetSegs().GetSpliced();
+    CHECK_GI(spl.GetProduct_id(), 6);
+    CHECK_GI(spl.GetGenomic_id(), 3);
+    BOOST_CHECK_EQUAL(spl.GetProduct_strand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(spl.GetGenomic_strand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(spl.GetProduct_type(),
+        CSpliced_seg::eProduct_type_protein);
+    BOOST_CHECK_EQUAL(spl.GetProduct_length(), 30);
+    
+    BOOST_CHECK_EQUAL(spl.GetExons().size(), 1);
+    const CSpliced_exon& ex = **spl.GetExons().begin();
+    BOOST_CHECK(ex.GetProduct_start().IsProtpos());
+    BOOST_CHECK_EQUAL(ex.GetProduct_start().GetProtpos().GetAmin(), 110);
+    BOOST_CHECK(ex.GetProduct_end().IsProtpos());
+    BOOST_CHECK_EQUAL(ex.GetProduct_end().GetProtpos().GetAmin(), 139);
+    BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 0);
+    BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 89);
+    BOOST_CHECK_EQUAL(ex.GetParts().size(), 2);
+    CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
+    BOOST_CHECK((*part)->IsMismatch());
+    BOOST_CHECK_EQUAL((*part)->GetMismatch(), 40);
+    part++;
+    BOOST_CHECK((*part)->IsMatch());
+    BOOST_CHECK_EQUAL((*part)->GetMatch(), 50);
+}
+
+
+BOOST_AUTO_TEST_CASE(s_TestMapping_Multirange_Spliced)
+{
+    CSeq_loc src, dst;
+    {{
+        CRef<CSeq_loc> sub;
+        // Source:
+        // a) 10-19
+        // b) 30-39
+        // c) 50-59
+        // d) 70-79
+        for (TSeqPos p = 10; p < 80; p += 20) {
+            sub = new CSeq_loc;
+            s_InitInterval(sub->SetInt(), 4, p, p + 9);
+            src.SetMix().Set().push_back(sub);
+        }
+        // Destination:
+        // (a) => 100-110
+        sub = new CSeq_loc;
+        s_InitInterval(sub->SetInt(), 5, 100, 109);
+        dst.SetMix().Set().push_back(sub);
+        // (b) + start of (c) => 200-214
+        sub = new CSeq_loc;
+        s_InitInterval(sub->SetInt(), 5, 200, 214);
+        dst.SetMix().Set().push_back(sub);
+        // end of (c) + (d) => 300-314
+        sub = new CSeq_loc;
+        s_InitInterval(sub->SetInt(), 5, 300, 314);
+        dst.SetMix().Set().push_back(sub);
+    }}
+    CSeq_loc_Mapper_Base mapper(src, dst);
+    CSeq_align aln;
+    aln.SetType(CSeq_align::eType_global);
+    aln.SetDim(2);
+    {{
+        CSpliced_seg& spl = aln.SetSegs().SetSpliced();
+        spl.SetProduct_id().SetGi(4);
+        spl.SetGenomic_id().SetGi(3);
+        spl.SetProduct_strand(eNa_strand_plus);
+        spl.SetGenomic_strand(eNa_strand_plus);
+        spl.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+        spl.SetProduct_length(100);
+        {{
+            CRef<CSpliced_exon> ex(new CSpliced_exon);
+            ex->SetProduct_start().SetNucpos(0);
+            ex->SetProduct_end().SetNucpos(99);
+            ex->SetGenomic_start(0);
+            ex->SetGenomic_end(99);
+            {{
+                CRef<CSpliced_exon_chunk> part(new CSpliced_exon_chunk);
+                part->SetMatch(52);
+                ex->SetParts().push_back(part);
+            }}
+            {{
+                CRef<CSpliced_exon_chunk> part(new CSpliced_exon_chunk);
+                part->SetMismatch(48);
+                ex->SetParts().push_back(part);
+            }}
+            spl.SetExons().push_back(ex);
+        }}
+    }}
+    CRef<CSeq_align> mapped = mapper.Map(aln);
+    BOOST_CHECK(mapped);
+    BOOST_CHECK(mapped->GetSegs().IsSpliced());
+    const CSpliced_seg& spl = mapped->GetSegs().GetSpliced();
+    CHECK_GI(spl.GetProduct_id(), 5);
+    CHECK_GI(spl.GetGenomic_id(), 3);
+    BOOST_CHECK_EQUAL(spl.GetProduct_strand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(spl.GetGenomic_strand(), eNa_strand_plus);
+    BOOST_CHECK_EQUAL(spl.GetProduct_type(),
+        CSpliced_seg::eProduct_type_transcript);
+    BOOST_CHECK_EQUAL(spl.GetProduct_length(), 40);
+    
+    BOOST_CHECK_EQUAL(spl.GetExons().size(), 5);
+    CSpliced_seg::TExons::const_iterator ex_it = spl.GetExons().begin();
+    {{
+        const CSpliced_exon& ex = **ex_it;
+        BOOST_CHECK(ex.GetProduct_start().IsNucpos());
+        BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 100);
+        BOOST_CHECK(ex.GetProduct_end().IsNucpos());
+        BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 109);
+        BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 10);
+        BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 19);
+        BOOST_CHECK_EQUAL(ex.GetParts().size(), 1);
+        CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
+        BOOST_CHECK((*part)->IsMatch());
+        BOOST_CHECK_EQUAL((*part)->GetMatch(), 10);
+    }}
+    ex_it++;
+    {{
+        const CSpliced_exon& ex = **ex_it;
+        BOOST_CHECK(ex.GetProduct_start().IsNucpos());
+        BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 200);
+        BOOST_CHECK(ex.GetProduct_end().IsNucpos());
+        BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 209);
+        BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 30);
+        BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 39);
+        BOOST_CHECK_EQUAL(ex.GetParts().size(), 1);
+        CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
+        BOOST_CHECK((*part)->IsMatch());
+        BOOST_CHECK_EQUAL((*part)->GetMatch(), 10);
+    }}
+    ex_it++;
+    {{
+        const CSpliced_exon& ex = **ex_it;
+        BOOST_CHECK(ex.GetProduct_start().IsNucpos());
+        BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 210);
+        BOOST_CHECK(ex.GetProduct_end().IsNucpos());
+        BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 214);
+        BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 50);
+        BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 54);
+        BOOST_CHECK_EQUAL(ex.GetParts().size(), 2);
+        CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
+        BOOST_CHECK((*part)->IsMatch());
+        BOOST_CHECK_EQUAL((*part)->GetMatch(), 2);
+        part++;
+        BOOST_CHECK((*part)->IsMismatch());
+        BOOST_CHECK_EQUAL((*part)->GetMismatch(), 3);
+    }}
+    ex_it++;
+    {{
+        const CSpliced_exon& ex = **ex_it;
+        BOOST_CHECK(ex.GetProduct_start().IsNucpos());
+        BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 300);
+        BOOST_CHECK(ex.GetProduct_end().IsNucpos());
+        BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 304);
+        BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 55);
+        BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 59);
+        BOOST_CHECK_EQUAL(ex.GetParts().size(), 1);
+        CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
+        BOOST_CHECK((*part)->IsMismatch());
+        BOOST_CHECK_EQUAL((*part)->GetMismatch(), 5);
+    }}
+    ex_it++;
+    {{
+        const CSpliced_exon& ex = **ex_it;
+        BOOST_CHECK(ex.GetProduct_start().IsNucpos());
+        BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 305);
+        BOOST_CHECK(ex.GetProduct_end().IsNucpos());
+        BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 314);
+        BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 70);
+        BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 79);
+        BOOST_CHECK_EQUAL(ex.GetParts().size(), 1);
+        CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
+        BOOST_CHECK((*part)->IsMismatch());
+        BOOST_CHECK_EQUAL((*part)->GetMismatch(), 10);
+    }}
+}
+
+
+/*#################
+Need to test:
+- truncation of parts
+- mapping nuc-to-prot and back
+- with different strand combinations (gen, prod, mapping)
+- creation of new segments (map through a multi-segment location)
+- check product length for all cases
+- align with nuc+prot - check parts' lengths
+- mapping between nuc and prot (both ways)
+- range merging (are the parts merged?)
+###################*/
