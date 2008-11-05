@@ -678,12 +678,10 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
     size_t x_ready;
     EIO_Status status = POLLABLE_Poll(x_n, x_polls, timeout, &x_ready);
 
-    if (status == eIO_Success) {
-        for (size_t i = 0;  i < x_n;  i++)
-            polls[i].m_REvent = x_polls[i].revent;
-    }
+    for (size_t i = 0;  i < x_n;  i++)
+        polls[i].m_REvent = x_polls[i].revent;
 
-    if ( n_ready )
+    if (n_ready)
         *n_ready = x_ready;
 
     delete[] x_polls;
