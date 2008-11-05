@@ -128,7 +128,7 @@ public:
         _ASSERT(m_Size <= m_Capacity);
         if (new_size <= m_Capacity) {
             if (new_size < m_Size) {
-                x_Fill(m_Buffer + new_size, 0xcd, m_Capacity - new_size);
+                x_Fill(m_Buffer + new_size, (char)0xcd, m_Capacity - new_size);
             }
             m_Size = new_size;
         } else {
@@ -150,7 +150,7 @@ public:
     {
         if (new_size <= m_Capacity) {
             if (new_size < m_Size) {
-                x_Fill(m_Buffer + new_size, 0xcd, m_Capacity - new_size);
+                x_Fill(m_Buffer + new_size, (char)0xcd, m_Capacity - new_size);
             }
             m_Size = new_size;
         } else {
@@ -220,7 +220,7 @@ private:
     void x_Deallocate()
     {
         if (m_Buffer) {
-            x_Fill(m_Buffer, 0xfd, m_Capacity);
+            x_Fill(m_Buffer, (char)0xfd, m_Capacity);
             delete [] m_Buffer; 
         }
         m_Buffer = NULL;
@@ -230,7 +230,7 @@ private:
     value_type* x_Allocate(size_t elem)
     {
         value_type* buf = new value_type[elem];
-        x_Fill(buf, 0xcd, elem);
+        x_Fill(buf, (char)0xcd, elem);
         return buf;
     }
 

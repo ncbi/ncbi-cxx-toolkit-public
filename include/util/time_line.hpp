@@ -277,8 +277,8 @@ unsigned CTimeLine<BV>::x_TimeLineSlot(time_t tm) const
     if (tm <= m_TimeLineHead)
         return 0;
 
-    unsigned interval_head = (tm / m_DiscrFactor) * m_DiscrFactor;
-    unsigned diff = interval_head - m_TimeLineHead;
+    unsigned interval_head = (unsigned)((tm / m_DiscrFactor) * m_DiscrFactor);
+    unsigned diff = (unsigned)(interval_head - m_TimeLineHead);
     return diff / m_DiscrFactor;
 }
 

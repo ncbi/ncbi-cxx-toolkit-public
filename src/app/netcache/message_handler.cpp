@@ -106,11 +106,13 @@ CNetCache_MessageHandler::SCommandDef s_CommandMap[] = {
     { "PUT2",     &CNetCache_MessageHandler::ProcessPut2,
         { { "timeout", eNSPT_Int,  eNSPA_Optional },
           { "id",      eNSPT_NCID, eNSPA_Optional },
+          { "wait",    eNSPT_Str,  eNSPA_Optional, "no" },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "PUT3",     &CNetCache_MessageHandler::ProcessPut3,
         { { "timeout", eNSPT_Int,  eNSPA_Optional },
           { "id",      eNSPT_NCID, eNSPA_Optional },
+          { "wait",    eNSPT_Str,  eNSPA_Optional, "no" },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "HASB",     &CNetCache_MessageHandler::ProcessHasBlob,
@@ -243,6 +245,7 @@ CNetCache_MessageHandler::CNetCache_MessageHandler(CNetCacheServer* server)
       m_StartPrinted(false),
       m_Parser(s_CommandMap),
       m_PutOK(false),
+      m_PutID(false),
       m_SizeKnown(false)
 {
 }
@@ -769,21 +772,37 @@ CNetCache_MessageHandler::ProcessMsgTransmission(BUF buffer)
             ||  m_SizeKnown  &&  m_BlobSize == 0)
         {
             _TRACE("Flushing transmission, socket " << &GetSocket());
-            {{
-                CTimeGuard time_guard(m_Stat.db_elapsed, &m_Stat);
-                m_Writer->Flush();
-                m_Writer.reset(0);
-            }}
+            try {
+                {{
+                    CTimeGuard time_guard(m_Stat.db_elapsed, &m_Stat);
+                    m_Writer->Flush();
+                    m_Writer.reset(0);
+                }}
 
-            if (m_SizeKnown && (m_BlobSize != 0)) {
-                WriteMsg("ERR:", "eCommunicationError:Unexpected EOF");
+                if (m_SizeKnown && (m_BlobSize != 0)) {
+                    WriteMsg("ERR:", "eCommunicationError:Unexpected EOF");
+                }
+                if (m_PutOK) {
+                    _TRACE("OK, socket " << &GetSocket());
+                    CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
+                    WriteMsg("OK:", "");
+                    m_PutOK = false;
+                }
+                if (m_PutID) {
+                    CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
+                    WriteMsg("ID:", m_ReqId);
+                    m_PutID = false;
+                }
             }
-            if (m_PutOK) {
-                _TRACE("OK, socket " << &GetSocket());
-                CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
-                WriteMsg("OK:", "");
-                m_PutOK = false;
+            catch (CException& ex) {
+                // We should successfully restore after exception
+                ERR_POST(ex);
+                if (m_PutOK  ||  m_SizeKnown  ||  m_PutID) {
+                    WriteMsg("ERR:", "Error writing blob: " + NStr::Replace(ex.what(), "\n", "; "));
+                    m_PutOK = m_PutID = false;
+                }
             }
+
             // Forcibly close transmission - client is not going
             // to send us EOT
             m_InTransmission = false;
@@ -890,6 +909,16 @@ CNetCache_MessageHandler::x_AssignParams(const map<string, string>& params)
             }
             else if (key == "version") {
                 m_Version = NStr::StringToUInt(val);
+            }
+            break;
+        case 'w':
+            if (key == "wait") {
+                if (val == "yes") {
+                    m_Policy = 1;
+                }
+                else /*if (val == "no")*/ {
+                    m_Policy = 0;
+                }
             }
             break;
         default:
@@ -1261,7 +1290,7 @@ CNetCache_MessageHandler::ProcessPut2(void)
     _TRACE("Got id " << id);
 
     // BLOB already locked, it is safe to return BLOB id
-    if (!do_id_lock) {
+    if (!m_Policy /* !m_WaitForWriting */  &&  !do_id_lock) {
         CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
         WriteMsg("ID:", m_ReqId);
     }
@@ -1276,9 +1305,12 @@ CNetCache_MessageHandler::ProcessPut2(void)
                                       m_Timeout, m_Auth));
     }}
 
-    if (do_id_lock) {
+    if (!m_Policy /* !m_WaitForWriting */  &&  do_id_lock) {
         CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
         WriteMsg("ID:", m_ReqId);
+    }
+    else if (m_Policy /* m_WaitForWriting */) {
+        m_PutID = true;
     }
 
     _TRACE("Begin read transmission");

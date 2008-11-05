@@ -75,7 +75,7 @@ BEGIN_NCBI_SCOPE
 //
 //
 
-
+const char* kBDBCacheStartedFileName = "__ncbi_cache_started__";
 
 		
 static void s_MakeOverflowFileName(string& buf,
@@ -659,8 +659,8 @@ void SBDB_CacheUnitStatistics::AddToHistogram(TBlobSizeHistogram* hist,
 static
 void s_GetDayHour(time_t time_in_secs, unsigned* day, unsigned* hour)
 {
-    *day = time_in_secs / (24 * 60 * 60);
-    unsigned secs_in_day = time_in_secs % (24 * 60 * 60);
+    *day = static_cast<unsigned>(time_in_secs / (24 * 60 * 60));
+    unsigned secs_in_day = static_cast<unsigned>(time_in_secs % (24 * 60 * 60));
     *hour = secs_in_day / 3600;
 }
 
@@ -1225,14 +1225,32 @@ void CBDB_Cache::Open(const string& cache_path,
         }
     }}
 
-    CDir dir(m_Path);
-    CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
-
-
     m_Env = new CBDB_Env();
 
     string err_file = m_Path + "err" + string(cache_name) + ".log";
     m_Env->OpenErrFile(err_file.c_str());
+
+    CDir dir(m_Path);
+    CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
+    CFile fl_clean(CDirEntry::MakePath(m_Path, kBDBCacheStartedFileName));
+
+    static set<string> s_OpenedDirs;
+
+    if ((!fl.empty()  ||  fl_clean.Exists())
+        &&  s_OpenedDirs.count(m_Path) == 0)
+    {
+        // Opening db with recover flags is unreliable.
+        LOG_POST("Running recovery...");
+        BDB_RecoverEnv(m_Path, false);
+        fl_clean.Remove();
+    }
+
+    if (!fl_clean.Exists()) {
+        CFileWriter writer(fl_clean.GetPath());
+        string pid = NStr::UIntToString(CProcess::GetCurrentPid());
+        writer.Write(pid.data(), pid.size());
+        s_OpenedDirs.insert(m_Path);
+    }
 
     m_JoinedEnv = false;
     bool needs_recovery = false;
@@ -1316,11 +1334,11 @@ void CBDB_Cache::Open(const string& cache_path,
         {
         case eUseTrans:
             {
-            CBDB_Env::TEnvOpenFlags env_flags = CBDB_Env::eThreaded | CBDB_Env::ePrivate;
+            CBDB_Env::TEnvOpenFlags env_flags = CBDB_Env::eThreaded;
             if (needs_recovery) {
                 env_flags |= CBDB_Env::eRunRecovery;
             }
-            m_Env->SetMaxLocks(1000000);
+            m_Env->SetMaxLocks(50000);
             m_Env->OpenWithTrans(cache_path, env_flags);
             }
             break;
@@ -1607,6 +1625,9 @@ void CBDB_Cache::Close()
     }
 
     delete m_Env; m_Env = 0;
+
+    CFile fl_clean(CDirEntry::MakePath(m_Path, kBDBCacheStartedFileName));
+    fl_clean.Remove();
 }
 
 void CBDB_Cache::CleanLog()
@@ -1818,7 +1839,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
                 m_CacheAttrDB->time_stamp = (unsigned)curr;
                 m_CacheAttrDB->overflow = 1;
                 m_CacheAttrDB->ttl = time_to_live;
-                m_CacheAttrDB->max_time = ComputeMaxTime(curr);
+                m_CacheAttrDB->max_time = (Uint4)ComputeMaxTime(curr);
                 unsigned upd_count = m_CacheAttrDB->upd_count;
                 ++upd_count;
                 m_CacheAttrDB->upd_count = upd_count;
@@ -1840,7 +1861,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
             m_CacheAttrDB->time_stamp = (unsigned)curr;
             m_CacheAttrDB->overflow = 1;
             m_CacheAttrDB->ttl = time_to_live;
-            m_CacheAttrDB->max_time = ComputeMaxTime(curr);
+            m_CacheAttrDB->max_time = (Uint4)ComputeMaxTime(curr);
             m_CacheAttrDB->upd_count  = 0;
             m_CacheAttrDB->read_count = 0;
             m_CacheAttrDB->owner_name = owner;
@@ -2094,7 +2115,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
                     m_CacheAttrDB->time_stamp = (unsigned)curr;
                     m_CacheAttrDB->overflow = overflow;
                     m_CacheAttrDB->ttl = time_to_live;
-                    m_CacheAttrDB->max_time = ttl_max;
+                    m_CacheAttrDB->max_time = (Uint4)ttl_max;
                     unsigned upd_count = m_CacheAttrDB->upd_count;
                     m_CacheAttrDB->upd_count = ++upd_count;
                     m_CacheAttrDB->owner_name = owner;
@@ -2131,7 +2152,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
 
         {{
             time_t exp_time = 
-                x_ComputeExpTime(curr, time_to_live, GetTimeout());
+                x_ComputeExpTime((int)curr, time_to_live, GetTimeout());
 
             CFastMutexGuard guard(m_TimeLine_Lock);
             m_TimeLine->AddObject(exp_time, blob_id);
@@ -2141,7 +2162,6 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
         // FIXME: locks, correct statistics, etc
         unsigned blob_updated = 0;
         unsigned blob_stored  = 0;
-        EBlobAccessType access_type;
 
         if (check_res == eBlobCheckIn_Found) {
             blob_updated = 1;
@@ -2239,7 +2259,7 @@ bool CBDB_Cache::GetSizeEx(const string&  key,
 
         if (!entry.Exists())
             return false;
-        blob_size = entry.GetLength();
+        blob_size = (size_t)entry.GetLength();
     } else {
         // Regular inline BLOB
         if (blob_id == 0) return false;
@@ -3428,8 +3448,9 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
             if (m_Monitor && m_Monitor->IsActive()) {
                 string msg = "Purge: Timeline evaluation skiped ";
                 msg += "(early wakeup for this precision) remains=";
-                msg += NStr::UIntToString(m_TimeLine->GetDiscrFactor() - 
-                                       (curr - m_LastTimeLineCheck));
+                msg += NStr::UIntToString(
+                        (unsigned long)(m_TimeLine->GetDiscrFactor() - 
+                                        (curr - m_LastTimeLineCheck)));
                 msg += " precision=";
                 msg += NStr::UIntToString(m_TimeLine->GetDiscrFactor());
                 msg += "\n";
@@ -3800,7 +3821,7 @@ purge_start:
         //
         if (gc_start < (m_NextExpTime + (time_t)precision)) {
             if (m_Monitor && m_Monitor->IsActive()) {
-                unsigned remains = (m_NextExpTime + precision) - gc_start;
+                unsigned remains = (unsigned)((m_NextExpTime + precision) - gc_start);
                 unsigned rc = 0;
                 {{
                     CFastMutexGuard guard(m_CARO2_Lock);
@@ -4145,7 +4166,7 @@ void CBDB_Cache::Purge(const string&    key,
     time_t curr = time(0); // (int)time_stamp.GetTimeT();
     int timeout = GetTimeout();
     if (access_timeout && access_timeout < timeout) {
-        timeout = access_timeout;
+        timeout = (int)access_timeout;
     }
 
     while (cur.Fetch() == eBDB_Ok) {
@@ -4342,7 +4363,7 @@ void CBDB_Cache::x_UpdateAccessTime(const string&  key,
         return;
     }
 
-    unsigned   timeout = time(0);
+    unsigned   timeout = (unsigned)time(0);
     {{
         CBDB_FileCursor cur(*m_CacheAttrDB, trans,
                             CBDB_FileCursor::eReadModifyUpdate);
@@ -4822,7 +4843,7 @@ CBDB_Cache::BlobCheckIn(unsigned         blob_id_ext,
                 m_CacheAttrDB->key = key;
                 m_CacheAttrDB->version = version;
 	            m_CacheAttrDB->subkey = subkey;
-                m_CacheAttrDB->time_stamp = time(0)+1;
+                m_CacheAttrDB->time_stamp = Uint4(time(0)+1);
                 m_CacheAttrDB->overflow = 0;
                 m_CacheAttrDB->ttl = 77;  
                 m_CacheAttrDB->max_time = 77;
