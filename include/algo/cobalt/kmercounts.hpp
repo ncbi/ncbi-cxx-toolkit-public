@@ -89,7 +89,7 @@ public:
 public:
     /// Create empty counts vector
     ///
-    CSparseKmerCounts(void) : m_SeqLength(0) {}
+    CSparseKmerCounts(void) : m_SeqLength(0), m_NumCounts(0) {}
 
     /// Create k-mer counts vector from SSeqLoc with defalut k-mer length and
     /// alphabet size
@@ -108,6 +108,11 @@ public:
     /// @return Sequence length
     ///
     unsigned int GetSeqLength(void) const {return m_SeqLength;}
+
+    /// Get number of all k-mers found in the sequence
+    /// @return Number of all k-mers
+    ///
+    unsigned int GetNumCounts(void) const {return m_NumCounts;}
 
     /// Get default kmer length
     /// @return Default k-mer length
@@ -165,8 +170,8 @@ public:
     /// Computes 1 - F(v1, v2), where 
     /// F(x, y) = \sum_{t} \min \{n_x(t), n_y(t)\} / (\min \{L_x, L_y\} 
     /// - k + 1), where
-    /// t - k-mer, n_x(t) - number of k-mer t in x, L_x - length of x, 
-    /// k - k-mer length
+    /// t - k-mer, n_x(t) - number of k-mer t in x, L_x - length of x 
+    ///  excluding Xaa, k - k-mer length
     /// F(x, y) is described in RC Edgar, BMC Bioinformatics 5:113, 2004
     static double FractionCommonKmersDist(const CSparseKmerCounts& vect1, 
                       const CSparseKmerCounts& vect2);
@@ -180,8 +185,8 @@ public:
     /// Computes 1 - F(v1, v2), where 
     /// F(x, y) = \sum_{t} \min \{n_x(t), n_y(t)\} / (\max \{L_x, L_y\} 
     /// - k + 1), where
-    /// t - k-mer, n_x(t) - number of k-mer t in x, L_x - length of x, 
-    /// k - k-mer length
+    /// t - k-mer, n_x(t) - number of k-mer t in x, L_x - length of x
+    /// excluding Xaa, k - k-mer length
     /// F(x, y) is modified version of measure presented 
     /// RC Edgar, BMC Bioinformatics 5:113, 2004
     static double FractionCommonKmersGlobalDist(const CSparseKmerCounts& v1,
@@ -222,6 +227,7 @@ private:
 protected:
     vector<SVectorElement> m_Counts;
     unsigned int m_SeqLength;
+    unsigned int m_NumCounts;
     static unsigned int sm_KmerLength;
     static unsigned int sm_AlphabetSize;
     static vector<Uint1> sm_TransTable;

@@ -138,6 +138,7 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
 
     m_SeqLength = sv.size();
     m_Counts.clear();
+    m_NumCounts = 0;
 
     if (m_SeqLength < kmer_len) {
         NCBI_THROW(CKmerCountsException, eBadSequence,
@@ -178,6 +179,7 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
             _ASSERT(pos < num_elements);
             counts[pos]++;
             MarkUsed(pos, used_entries, kBitChunk);
+            m_NumCounts++;
 
             //for each next kmer
             for (;i < seq_len && is_pos;i++) {
@@ -204,6 +206,7 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
                 _ASSERT(pos < num_elements);
                 counts[pos]++;
                 MarkUsed(pos, used_entries, kBitChunk);
+                m_NumCounts++;
             }
         }
 
@@ -270,6 +273,7 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
                 _ASSERT(GetAALetter(sv[i + j]) <= alphabet_size);
             }
             counts[pos]++;
+            m_NumCounts++;
         }
 
         unsigned int ind = 0;
@@ -295,11 +299,15 @@ double CSparseKmerCounts::FractionCommonKmersDist(
 
     unsigned int num_common = CountCommonKmers(v1, v2, true);
     
-    unsigned int len_seq1 = v1.GetSeqLength();
-    unsigned int len_seq2 = v2.GetSeqLength();
-    unsigned int smaller_len =  len_seq1 < len_seq2 ? len_seq1 : len_seq2;
-    return 1.0 - (double) num_common/ (double)(smaller_len - GetKmerLength()
-                                                + 1);    
+    unsigned int num_counts1 = v1.GetNumCounts();
+    unsigned int num_counts2 = v2.GetNumCounts();
+    unsigned int fewer_counts
+        =  num_counts1 < num_counts2 ? num_counts1 : num_counts2;
+
+    // In RC Edgar, BMC Bioinformatics 5:113, 2004 the denominator is
+    // SeqLen - k + 1 that is equal to number of counts only if sequence
+    // does not contain Xaa.
+    return 1.0 - (double)num_common / (double)fewer_counts;
 }
 
 
@@ -311,11 +319,15 @@ double CSparseKmerCounts::FractionCommonKmersGlobalDist(
 
     unsigned int num_common = CountCommonKmers(v1, v2, true);
     
-    unsigned int len_seq1 = v1.GetSeqLength();
-    unsigned int len_seq2 = v2.GetSeqLength();
-    unsigned int larger_len =  len_seq1 > len_seq2 ? len_seq1 : len_seq2;
-    return 1.0 - (double) num_common/ (double)(larger_len - GetKmerLength()
-                                                + 1);    
+    unsigned int num_counts1 = v1.GetNumCounts();
+    unsigned int num_counts2 = v2.GetNumCounts();
+    unsigned int more_counts
+        = num_counts1 > num_counts2 ? num_counts1 : num_counts2;
+
+    // In RC Edgar, BMC Bioinformatics 5:113, 2004 the denominator is
+    // SeqLen - k + 1 that is equal to number of counts only if sequence
+    // does not contain Xaa.
+    return 1.0 - (double)num_common / (double)more_counts;
 }
 
 
