@@ -257,7 +257,7 @@ bool CMsvcSite::IsLibEnabledInConfig(const string&      lib,
         section += CMsvc7RegSettings::GetMsvcRegSection();
     }
     if (!m_Registry.HasEntry(section)) {
-        return false;
+        return true;
     }
     string enabled_configs_str = m_Registry.Get(section, "CONFS");
     if (enabled_configs_str.empty()) {

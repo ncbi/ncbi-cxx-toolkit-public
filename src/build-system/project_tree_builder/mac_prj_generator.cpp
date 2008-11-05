@@ -765,6 +765,7 @@ string CMacProjectGenerator::AddAggregateTarget(
     CRef<CDict> dict_target( AddDict( dict_objects, proj_target));
     AddString( *dict_target, "buildConfigurationList", configs_prj);
     AddArray(  *dict_target, "buildPhases");
+    AddString( *dict_target, "comments", NStr::UIntToString(dependencies->Get().size()) + " targets");
     AddArray(  *dict_target, "dependencies", dependencies);
     AddString( *dict_target, "isa", "PBXAggregateTarget");
     AddString( *dict_target, "name", target_name);

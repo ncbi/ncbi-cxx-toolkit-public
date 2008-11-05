@@ -395,7 +395,7 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
                     back_inserter(additional_libs));
             }
         } else {
-            if (!lib_info.IsEmpty() && requires != MSVC_DEFAULT_LIBS_TAG) {
+            if (!lib_info.IsEmpty() && !lib_info.m_Libs.empty()) {
                 PTB_WARNING_EX(lib_info.m_LibPath, ePTB_FileNotFound,
                                requires << "|" << cfg_info.GetConfigFullName()
                                << " unavailable: missing additional libraries: "
