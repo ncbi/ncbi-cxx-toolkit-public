@@ -480,7 +480,8 @@ START_SUBTYPE(gene)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
-    ADD_QUAL(gene);	
+    ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -509,7 +510,9 @@ START_SUBTYPE(cdregion)
     ADD_QUAL(experiment);
     ADD_QUAL(exception);
     ADD_QUAL(function);
+    ADD_QUAL(gdb_xref);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -537,6 +540,7 @@ START_SUBTYPE(prot)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -558,6 +562,7 @@ START_SUBTYPE(preprotein)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -579,6 +584,7 @@ START_SUBTYPE(mat_peptide_aa)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -599,6 +605,7 @@ START_SUBTYPE(sig_peptide_aa)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -619,6 +626,7 @@ START_SUBTYPE(transit_peptide_aa)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -638,6 +646,7 @@ START_SUBTYPE(preRNA)
     ADD_QUAL(db_xref);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -659,6 +668,7 @@ START_SUBTYPE(mRNA)
     ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -670,6 +680,7 @@ START_SUBTYPE(mRNA)
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
+    ADD_QUAL(transcript_id);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -681,6 +692,7 @@ START_SUBTYPE(tRNA)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -702,6 +714,7 @@ START_SUBTYPE(rRNA)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -723,6 +736,7 @@ START_SUBTYPE(snRNA)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -743,6 +757,7 @@ START_SUBTYPE(scRNA)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -763,6 +778,7 @@ START_SUBTYPE(snoRNA)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -807,6 +823,7 @@ START_SUBTYPE(otherRNA)  //  a.k.a. misc_RNA
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -840,6 +857,7 @@ START_SUBTYPE(attenuator)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -858,6 +876,7 @@ START_SUBTYPE(C_region)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -877,6 +896,7 @@ START_SUBTYPE(CAAT_signal)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -898,6 +918,7 @@ START_SUBTYPE(Imp_CDS)
     ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -924,6 +945,7 @@ START_SUBTYPE(conflict)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -941,6 +963,7 @@ START_SUBTYPE(D_loop)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -957,6 +980,7 @@ START_SUBTYPE(D_segment)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -976,6 +1000,7 @@ START_SUBTYPE(enhancer)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -995,6 +1020,7 @@ START_SUBTYPE(exon)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1015,6 +1041,7 @@ START_SUBTYPE(GC_signal)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1032,6 +1059,7 @@ START_SUBTYPE(iDNA)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1052,6 +1080,7 @@ START_SUBTYPE(intron)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1071,6 +1100,7 @@ START_SUBTYPE(J_segment)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1091,6 +1121,7 @@ START_SUBTYPE(LTR)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1110,6 +1141,7 @@ START_SUBTYPE(mat_peptide)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1132,6 +1164,7 @@ START_SUBTYPE(misc_binding)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1150,6 +1183,7 @@ START_SUBTYPE(misc_difference)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1170,6 +1204,7 @@ START_SUBTYPE(misc_feature)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1191,6 +1226,7 @@ START_SUBTYPE(misc_recomb)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1210,6 +1246,7 @@ START_SUBTYPE(misc_RNA)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1230,6 +1267,7 @@ START_SUBTYPE(misc_signal)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1250,6 +1288,7 @@ START_SUBTYPE(misc_structure)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1268,6 +1307,7 @@ START_SUBTYPE(modified_base)
     ADD_QUAL(experiment);
     ADD_QUAL(frequency);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1288,6 +1328,7 @@ START_SUBTYPE(N_region)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1308,6 +1349,7 @@ START_SUBTYPE(old_sequence)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1325,6 +1367,7 @@ START_SUBTYPE(polyA_signal)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1341,6 +1384,7 @@ START_SUBTYPE(polyA_site)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1358,6 +1402,7 @@ START_SUBTYPE(precursor_RNA)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1379,6 +1424,7 @@ START_SUBTYPE(prim_transcript)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1398,6 +1444,7 @@ START_SUBTYPE(primer_bind)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1416,6 +1463,7 @@ START_SUBTYPE(promoter)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1438,6 +1486,7 @@ START_SUBTYPE(protein_bind)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1455,6 +1504,7 @@ START_SUBTYPE(RBS)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1473,6 +1523,7 @@ START_SUBTYPE(repeat_region)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(insertion_seq);
     ADD_QUAL(label);
@@ -1486,6 +1537,7 @@ START_SUBTYPE(repeat_region)
     ADD_QUAL(rpt_unit);
     ADD_QUAL(rpt_unit_range);
     ADD_QUAL(rpt_unit_seq);
+    ADD_QUAL(satellite);
     ADD_QUAL(standard_name);
     ADD_QUAL(transposon);
     ADD_QUAL(usedin);
@@ -1499,6 +1551,7 @@ START_SUBTYPE(repeat_unit)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1521,6 +1574,7 @@ START_SUBTYPE(rep_origin)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1538,6 +1592,7 @@ START_SUBTYPE(S_region)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1557,6 +1612,7 @@ START_SUBTYPE(satellite)
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1580,6 +1636,7 @@ START_SUBTYPE(sig_peptide)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1594,14 +1651,21 @@ START_SUBTYPE(sig_peptide)
 END_SUBTYPE
 
 START_SUBTYPE(source)
+    ADD_QUAL(bio_material);
     ADD_QUAL(cell_line);
     ADD_QUAL(cell_type);
+    ADD_QUAL(chloroplast);
+    ADD_QUAL(chromoplast);
     ADD_QUAL(chromosome);
     ADD_QUAL(citation);
     ADD_QUAL(clone);
     ADD_QUAL(clone_lib);
+    ADD_QUAL(collected_by);
+    ADD_QUAL(collection_date);
     ADD_QUAL(country);
     ADD_QUAL(cultivar);
+    ADD_QUAL(culture_collection);
+    ADD_QUAL(cyanelle);
     ADD_QUAL(db_xref);
     ADD_QUAL(dev_stage);
     ADD_QUAL(ecotype);
@@ -1610,25 +1674,33 @@ START_SUBTYPE(source)
     ADD_QUAL(frequency);
     ADD_QUAL(germline);
     ADD_QUAL(haplotype);
+    ADD_QUAL(host);
+    ADD_QUAL(identified_by);
     ADD_QUAL(isolate);
     ADD_QUAL(isolation_source);
+    ADD_QUAL(kinetoplast);
     ADD_QUAL(lab_host);
     ADD_QUAL(label);
+    ADD_QUAL(lat_lon);
     ADD_QUAL(macronuclear);
     ADD_QUAL(map);
+    ADD_QUAL(mating_type);
+    ADD_QUAL(metagenomic);
+    ADD_QUAL(mitochondrion);
     ADD_QUAL(mol_type);
     ADD_QUAL(note);
     ADD_QUAL(organelle);
     ADD_QUAL(organism);
+    ADD_QUAL(PCR_primers);
     ADD_QUAL(plasmid);
     ADD_QUAL(pop_variant);
     ADD_QUAL(proviral);
     ADD_QUAL(rearranged);
     ADD_QUAL(segment);
+    ADD_QUAL(sequenced_mol);
     ADD_QUAL(serotype);
     ADD_QUAL(serovar);
     ADD_QUAL(sex);
-    ADD_QUAL(specific_host);
     ADD_QUAL(specimen_voucher);
     ADD_QUAL(strain);
     ADD_QUAL(sub_clone);
@@ -1637,6 +1709,7 @@ START_SUBTYPE(source)
     ADD_QUAL(tissue_lib);
     ADD_QUAL(tissue_type);
     ADD_QUAL(transgenic);
+    ADD_QUAL(transposon);
     ADD_QUAL(usedin);
     ADD_QUAL(variety);
     ADD_QUAL(virion);
@@ -1649,6 +1722,7 @@ START_SUBTYPE(stem_loop)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1666,6 +1740,7 @@ START_SUBTYPE(STS)
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1682,6 +1757,7 @@ START_SUBTYPE(TATA_signal)
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1697,6 +1773,7 @@ START_SUBTYPE(terminator)
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1715,6 +1792,7 @@ START_SUBTYPE(transit_peptide)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1734,6 +1812,7 @@ START_SUBTYPE(unsure)
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1750,6 +1829,7 @@ START_SUBTYPE(V_region)
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1768,6 +1848,7 @@ START_SUBTYPE(V_segment)
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1788,6 +1869,7 @@ START_SUBTYPE(variation)
     ADD_QUAL(experiment);
     ADD_QUAL(frequency);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1810,6 +1892,7 @@ START_SUBTYPE(3clip)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1827,6 +1910,7 @@ START_SUBTYPE(3UTR)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1845,6 +1929,7 @@ START_SUBTYPE(5clip)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1862,6 +1947,7 @@ START_SUBTYPE(5UTR)
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1879,6 +1965,7 @@ START_SUBTYPE(10_signal)
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1896,6 +1983,7 @@ START_SUBTYPE(35_signal)
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1938,6 +2026,7 @@ START_SUBTYPE(oriT)
     ADD_QUAL(direction);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1962,6 +2051,7 @@ START_SUBTYPE(region)
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1982,6 +2072,7 @@ START_SUBTYPE(comment)  // same as misc_feature
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -2003,6 +2094,7 @@ START_SUBTYPE(bond)  // same as misc_feature
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -2024,6 +2116,7 @@ START_SUBTYPE(site)  //  same as misc_feature
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -2057,6 +2150,7 @@ START_SUBTYPE(psec_str)  //  same as misc_feature
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -2081,6 +2175,7 @@ START_SUBTYPE(het)  //  same as misc_feature
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -2179,6 +2274,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_gene, "gene"),
     TQualPair(CSeqFeatData::eQual_germline, "germline"),
     TQualPair(CSeqFeatData::eQual_haplotype, "haplotype"),
+    TQualPair(CSeqFeatData::eQual_host, "host"),
     TQualPair(CSeqFeatData::eQual_inference, "inference"),
     TQualPair(CSeqFeatData::eQual_insertion_seq, "insertion_seq"),
     TQualPair(CSeqFeatData::eQual_isolate, "isolate"),
@@ -2216,11 +2312,10 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_rpt_unit_range, "rpt_unit_range" ),
     TQualPair(CSeqFeatData::eQual_rpt_unit_seq, "rpt_unit_seq" ),
     TQualPair(CSeqFeatData::eQual_segment, "segment"),
-    TQualPair(CSeqFeatData::eQual_sequence_mol, "sequence_mol"),
+    TQualPair(CSeqFeatData::eQual_sequenced_mol, "sequenced_mol"),
     TQualPair(CSeqFeatData::eQual_serotype, "serotype"),
     TQualPair(CSeqFeatData::eQual_serovar, "serovar"),
     TQualPair(CSeqFeatData::eQual_sex, "sex"),
-    TQualPair(CSeqFeatData::eQual_specific_host, "specific_host"),
     TQualPair(CSeqFeatData::eQual_specimen_voucher, "specimen_voucher"),
     TQualPair(CSeqFeatData::eQual_standard_name, "standard_name"),
     TQualPair(CSeqFeatData::eQual_strain, "strain"),
