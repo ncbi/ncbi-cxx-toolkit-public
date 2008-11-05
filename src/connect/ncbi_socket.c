@@ -497,12 +497,12 @@ static void s_DoLog(const SOCK  sock, EIO_Event event,
     switch (event) {
     case eIO_Open:
         if (sock->type == eDatagram) {
-            if ( !sa ) {
+            if (!sa) {
                 strcpy(head, "Datagram socket created");
                 *tail = 0;
             } else {
                 const struct sockaddr_in* sin = (const struct sockaddr_in*) sa;
-                if ( data ) {
+                if (data) {
                     strcpy(head, "Datagram socket connected to ");
                     SOCK_HostPortToString(sin->sin_addr.s_addr,
                                           ntohs(sin->sin_port),
@@ -515,7 +515,7 @@ static void s_DoLog(const SOCK  sock, EIO_Event event,
         } else {
             if (sock->side == eSOCK_Client)
                 strcpy(head, "Connecting to ");
-            else if ( data )
+            else if (data)
                 strcpy(head, "Connected to ");
             else
                 strcpy(head, "Accepted from ");
@@ -783,7 +783,7 @@ extern EIO_Status SOCK_InitializeAPI(void)
 #ifdef NCBI_OS_MSWIN
     {{
         static int/*bool*/ s_AtExitSet = 0;
-        if ( !s_AtExitSet ) {
+        if (!s_AtExitSet) {
             atexit((void (*)(void)) SOCK_ShutdownAPI);
             s_AtExitSet = 1;
         }
@@ -951,7 +951,7 @@ static int/*bool*/ s_SetReuseAddress(TSOCK_Handle x_sock, int/*bool*/ on_off)
 static EIO_Status s_Status(SOCK sock, EIO_Event direction)
 {
     assert(sock  &&  sock->sock != SOCK_INVALID);
-    switch ( direction ) {
+    switch (direction) {
     case eIO_Read:
         return sock->type != eDatagram  &&  sock->eof
             ? eIO_Closed : (EIO_Status) sock->r_status;
@@ -1065,14 +1065,15 @@ static EIO_Status s_Select(size_t                n,
             HANDLE     handle;
             EIO_Event  event;
             ESOCK_Type type;
+            SOCK       sock;
 
-            if (!polls[i].sock) {
+            if (!(sock = polls[i].sock)) {
                 polls[i].revent = eIO_Open;
                 continue;
             }
 
             event     = polls[i].event;
-            writeable = polls[i].sock->writeable ? eIO_Write : eIO_Open;
+            writeable = sock->writeable ? eIO_Write : eIO_Open;
 
             if (!bad  &&  (polls[i].revent
                            ||  ((event & eIO_Write)  &&  writeable))) {
@@ -1094,7 +1095,7 @@ static EIO_Status s_Select(size_t                n,
                 continue;
             }
 
-            if (polls[i].sock->sock == SOCK_INVALID) {
+            if (sock->sock == SOCK_INVALID) {
                 polls[i].revent = eIO_Close;
                 if (!bad)
                     ready = 1;
@@ -1109,7 +1110,7 @@ static EIO_Status s_Select(size_t                n,
                 continue;
             }
 
-            type = (ESOCK_Type) polls[i].sock->type;
+            type = (ESOCK_Type) sock->type;
             if (type & eSocket) {
                 long mask = 0;
 
@@ -1117,14 +1118,15 @@ static EIO_Status s_Select(size_t                n,
                 case eIO_Write:
                 case eIO_ReadWrite:
                     if (type == eDatagram
-                        ||  (!writeable
-                             &&  polls[i].sock->w_status != eIO_Closed)) {
+                        ||  (!writeable  &&  sock->w_status != eIO_Closed)) {
                         mask |= FD_WRITE;
+                        if (!sock->connected)
+                            mask |= FD_CONNECT;
                     }
                     if (event == eIO_Write  &&
                         (type == eDatagram  ||  asis
-                         ||  (polls[i].sock->r_on_w == eOff
-                              ||  (polls[i].sock->r_on_w == eDefault
+                         ||  (sock->r_on_w == eOff
+                              ||  (sock->r_on_w == eDefault
                                    &&  s_ReadOnWrite != eOn)))) {
                         break;
                     }
@@ -1132,16 +1134,15 @@ static EIO_Status s_Select(size_t                n,
 
                 case eIO_Read:
                     if (type != eSocket
-                        ||  (polls[i].sock->r_status != eIO_Closed
-                             &&  !polls[i].sock->eof)) {
+                        ||  (sock->r_status != eIO_Closed  &&  !sock->eof)) {
                         mask |= FD_READ;
                         if (type == eSocket)
                             mask |= FD_OOB;
                     }
                     if (type != eSocket  ||  asis  ||  event != eIO_Read
                         ||  writeable
-                        ||  polls[i].sock->w_status == eIO_Closed
-                        ||  !(polls[i].sock->pending | polls[i].sock->w_len)) {
+                        ||  sock->w_status == eIO_Closed
+                        ||  !(sock->pending | sock->w_len)) {
                         break;
                     }
                     mask |= FD_WRITE;
@@ -1152,15 +1153,15 @@ static EIO_Status s_Select(size_t                n,
                 }
 
                 mask |= FD_CLOSE;
-                handle = polls[i].sock->event;
+                handle = sock->event;
                 ResetEvent(handle);
-                if (WSAEventSelect(polls[i].sock->sock, handle, mask) != 0) {
+                if (WSAEventSelect(sock->sock, handle, mask) != 0) {
                     int x_error = SOCK_ERRNO;
                     CORE_LOGF_ERRNO_EXX(131, eLOG_Trace,
                                         x_error, SOCK_STRERROR(x_error),
                                         ("%s[SOCK::Select]  Failed"
                                          " to bind IO event",
-                                         s_ID(polls[i].sock, _id)));
+                                         s_ID(sock, _id)));
                     errno = x_error;
                     ready = -1;
                     bad   =  1;
@@ -1170,13 +1171,13 @@ static EIO_Status s_Select(size_t                n,
                 if (!(event & eIO_Read))
                     continue;
                 /* event is already been bound */
-                handle = polls[i].sock->event;
+                handle = sock->event;
             } else if (type != eTrigger) {
                 ready = 0;
                 bad   = 1;
                 continue;
             } else
-                handle = ((TRIGGER) polls[i].sock)->fd;
+                handle = ((TRIGGER) sock)->fd;
 
             what[count++] = handle;
         }
@@ -1239,11 +1240,12 @@ static EIO_Status s_Select(size_t                n,
                     SOCK sock = polls[j].sock;
                     if (!sock)
                         continue;
-                    if (sock->type == eTrigger  &&  ((TRIGGER) sock)->fd == what[i]) {
+                    if (sock->type == eTrigger
+                        &&  ((TRIGGER) sock)->fd == what[i]) {
                         polls[j].revent = polls[j].event;
                         ready = 1;
                         break;
-                    } else if (polls[j].sock->event == what[i]) {
+                    } else if (sock->event == what[i]) {
                         WSANETWORKEVENTS e;
                         if (WSAEnumNetworkEvents(sock->sock, what[i], &e)) {
                             int x_error = SOCK_ERRNO;
@@ -1258,7 +1260,7 @@ static EIO_Status s_Select(size_t                n,
                             (FD_READ | FD_OOB | FD_ACCEPT | FD_CLOSE)) {
                             polls[j].revent |= eIO_Read;
                             ready = 1;
-                        } else if (e.lNetworkEvents & FD_WRITE) {
+                        } else if (e.lNetworkEvents & (FD_WRITE | FD_CONNECT)){
                             polls[j].revent |= eIO_Write;
                             assert(sock->type & eSocket);
                             sock->writeable = 1/*true*/;
@@ -1323,6 +1325,7 @@ static EIO_Status s_Select(size_t                n,
         struct timeval xx_tv;
         EIO_Event      event;
         ESOCK_Type     type;
+        SOCK           sock;
         TSOCK_Handle   fd;
 
         n_fds = 0;
@@ -1333,7 +1336,7 @@ static EIO_Status s_Select(size_t                n,
         read_only = 1;
 
         for (i = 0;  i < n;  i++) {
-            if (!polls[i].sock) {
+            if (!(sock = polls[i].sock)) {
                 polls[i].revent = eIO_Open;
                 continue;
             }
@@ -1359,7 +1362,7 @@ static EIO_Status s_Select(size_t                n,
                 continue;
             }
 
-            if ((fd = polls[i].sock->sock) == SOCK_INVALID) {
+            if ((fd = sock->sock) == SOCK_INVALID) {
                 polls[i].revent = eIO_Close;
                 if (!bad)
                     ready = 1;
@@ -1371,18 +1374,18 @@ static EIO_Status s_Select(size_t                n,
 
 #  if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
             if (fd >= FD_SETSIZE) {
-                if (!x_TryLowerSockFileno(polls[i].sock)) {
+                if (!x_TryLowerSockFileno(sock)) {
                     polls[i].revent = eIO_Close;
                     ready = bad = 1;
                     continue;
                 }
-                fd = polls[i].sock->sock;
+                fd = sock->sock;
                 assert(fd < FD_SETSIZE);
             }
 #  endif /*!NCBI_MSWIN && FD_SETSIZE*/
 
-            type = (ESOCK_Type) polls[i].sock->type;
-            if (type == eTrigger && *((void**) &polls[i].sock->host/*isset*/)){
+            type = (ESOCK_Type) sock->type;
+            if (type == eTrigger  &&  *((void**) sock->host/*isset*/)) {
                 polls[i].revent = polls[i].event;
                 ready = 1;
                 continue;
@@ -1394,15 +1397,14 @@ static EIO_Status s_Select(size_t                n,
             case eIO_Write:
             case eIO_ReadWrite:
                 assert(type & eSocket);
-                if (type == eDatagram
-                    ||  polls[i].sock->w_status != eIO_Closed) {
+                if (type == eDatagram  ||  sock->w_status != eIO_Closed) {
                     read_only = 0;
                     FD_SET(fd, &w_fds);
                 }
                 if (event == eIO_Write  &&
                     (type == eDatagram  ||  asis
-                     ||  (polls[i].sock->r_on_w == eOff
-                          ||  (polls[i].sock->r_on_w == eDefault
+                     ||  (sock->r_on_w == eOff
+                          ||  (sock->r_on_w == eDefault
                                &&  s_ReadOnWrite != eOn)))) {
                     break;
                 }
@@ -1410,14 +1412,13 @@ static EIO_Status s_Select(size_t                n,
 
             case eIO_Read:
                 if (type != eSocket
-                    ||  (polls[i].sock->r_status != eIO_Closed
-                         &&  !polls[i].sock->eof)) {
+                    ||  (sock->r_status != eIO_Closed  &&  !sock->eof)) {
                     write_only = 0;
                     FD_SET(fd, &r_fds);
                 }
                 if (type != eSocket  ||  asis  ||  event != eIO_Read
-                    ||  polls[i].sock->w_status == eIO_Closed
-                    ||  !(polls[i].sock->pending | polls[i].sock->w_len)) {
+                    ||  sock->w_status == eIO_Closed
+                    ||  !(sock->pending | sock->w_len)) {
                     break;
                 }
                 read_only = 0;
@@ -1570,8 +1571,10 @@ static EIO_Status s_IsConnected(SOCK                  sock,
         poll.event  = eIO_Write;
         poll.revent = eIO_Open;
         status = s_Select(1, &poll, tv, 1/*asis*/);
+        assert(poll.event == eIO_Write);
         if (status == eIO_Timeout)
             return status;
+        assert(poll.revent == eIO_Write  ||  poll.revent == eIO_Close);
 #ifdef NCBI_OS_MSWIN
         sock->writeable = 1/*true*/;
 #endif /*NCBI_OS_MSWIN*/
@@ -1699,18 +1702,18 @@ static EIO_Status s_Recv(SOCK    sock,
                 }
             }
 
-            if (x_read <= 0) {
+            if (x_read > 0) {
+                assert((size_t) x_read <= size);
+                sock->r_status = eIO_Success;
+                sock->n_read += x_read;
+                *n_read       = x_read;
+            } else {
                 /* catch EOF/failure */
                 sock->eof = 1/*true*/;
                 if (x_read)
                     sock->r_status = sock->w_status = eIO_Closed;
                 else
                     sock->r_status = eIO_Success;
-            } else {
-                assert((size_t) x_read <= size);
-                sock->r_status = eIO_Success;
-                sock->n_read += x_read;
-                *n_read       = x_read;
             }
             break;
         } else if (flag < 0)
@@ -1728,30 +1731,30 @@ static EIO_Status s_Recv(SOCK    sock,
             poll.event  = eIO_Read;
             poll.revent = eIO_Open;
             status = s_Select(1, &poll, tv, 1/*asis*/);
+            assert(poll.event == eIO_Read);
             if (status != eIO_Success)
                 return status;
-            if (poll.revent != eIO_Close) {
-                assert(poll.event == eIO_Read  &&  poll.revent == eIO_Read);
-                continue/*read again*/;
-            }
-        } else if (x_error == SOCK_EINTR) {
-            if (sock->i_on_sig == eOn  ||
-                (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
-                sock->r_status = eIO_Interrupt;
-                break/*interrupt*/;
-            }
+            assert(poll.revent == eIO_Read  ||  poll.revent == eIO_Close);
             continue/*read again*/;
-        } else {
-            /* catch unknown error */
+        }
+
+        if (x_error != SOCK_EINTR) {
             char _id[32];
             CORE_LOGF_ERRNO_EXX(7, eLOG_Trace,
                                 x_error, SOCK_STRERROR(x_error),
                                 ("%s[SOCK::Recv]  Failed recv()",
                                  s_ID(sock, _id)));            
+            /* don't want to handle all possible errors...
+               let them be "unknown" */
+            sock->r_status = eIO_Unknown;
+            break/*unknown*/;
         }
-        /* don't want to handle all possible errors... let them be "unknown" */
-        sock->r_status = eIO_Unknown;
-        break/*unknown*/;
+
+        if (sock->i_on_sig == eOn  ||
+            (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
+            sock->r_status = eIO_Interrupt;
+            break/*interrupt*/;
+        }
     }
 
     return (EIO_Status) sock->r_status;
@@ -2068,28 +2071,38 @@ static EIO_Status s_Send(SOCK        sock,
         int x_error;
         int x_written = send(sock->sock, (void*) data, size,
                              flag < 0 ? MSG_OOB : 0);
-        if (x_written > 0) {
+        if (x_written > 0  ||
+            (x_written < 0  &&  ((x_error= SOCK_ERRNO) == SOCK_EPIPE       ||
+                                 x_error               == SOCK_ENOTCONN    ||
+                                 x_error               == SOCK_ETIMEDOUT   ||
+                                 x_error               == SOCK_ECONNRESET  ||
+                                 x_error               == SOCK_ENETRESET   ||
+                                 x_error               == SOCK_ECONNABORTED))){
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                if (!sock->session  ||  flag > 0) {
-                    s_DoLog(sock, eIO_Write, data,
-                            (size_t) x_written, flag < 0 ? "" : 0);
+                if (!sock->session  ||  x_written < 0  ||  flag > 0) {
+                    s_DoLog(sock, eIO_Write, (x_written < 0
+                                              ? (void*) &x_error : data),
+                            (size_t)(x_written < 0 ? 0 : x_written),
+                            flag < 0 ? "" : 0);
                 }
             }
 
-            sock->w_status = eIO_Success;
-            sock->n_written += x_written;
-            *n_written       = x_written;
-            break/*success*/;
+            if (x_written > 0) {
+                sock->w_status = eIO_Success;
+                sock->n_written += x_written;
+                *n_written       = x_written;
+            } else
+                sock->r_status = eIO_Closed;
+            break;
         }
 
 #ifdef NCBI_OS_MSWIN
         sock->writeable = 0/*false*/;
 #endif /*NCBI_OS_MSWIN*/
-        /* don't want to handle all possible errors... let them be "unknown" */
-        sock->w_status = eIO_Unknown;
+
         if (flag < 0/*OOB*/  ||  !x_written)
-            break/*unknown*/;
+            return eIO_Unknown;
 
         x_error = SOCK_ERRNO;
 
@@ -2125,39 +2138,23 @@ static EIO_Status s_Send(SOCK        sock,
             poll.revent = eIO_Open;
             /* stall protection:  try pulling incoming data from the socket */
             status = s_SelectStallsafe(1, &poll, sock->w_timeout, 0);
+            assert(poll.event == eIO_Write);
             if (status != eIO_Success)
                 return status;
-            if (poll.revent == eIO_Close)
-                break/*unknown*/;
-            assert(poll.event == eIO_Write  &&  poll.revent == eIO_Write);
-            continue;
+            assert(poll.event == eIO_Write  ||  poll.revent == eIO_Close);
+            continue/*write again*/;
         }
 
         if (x_error != SOCK_EINTR) {
-            /* forcibly closed by peer or shut down? */
-            if (x_error != SOCK_EPIPE         &&
-                x_error != SOCK_ENOTCONN      &&
-                x_error != SOCK_ETIMEDOUT     &&
-                x_error != SOCK_ECONNRESET    &&
-                x_error != SOCK_ECONNABORTED  &&
-                x_error != SOCK_ENETRESET) {
-                char _id[32];
-                CORE_LOGF_ERRNO_EXX(11, eLOG_Trace,
-                                    x_error, SOCK_STRERROR(x_error),
-                                    ("%s[SOCK::Send]  Failed send()",
-                                     s_ID(sock, _id)));
-                break;
-            }
-            sock->w_status = eIO_Closed;
-            if (x_error != SOCK_EPIPE)
-                sock->r_status = eIO_Closed;
-
-            /* statistics & logging */
-            if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                s_DoLog(sock, eIO_Write, &x_error, 0, 0);
-            }
-
-            break/*closed*/;
+            char _id[32];
+            CORE_LOGF_ERRNO_EXX(11, eLOG_Trace,
+                                x_error, SOCK_STRERROR(x_error),
+                                ("%s[SOCK::Send]  Failed send()",
+                                 s_ID(sock, _id)));
+            /* don't want to handle all possible errors...
+               let them be "unknown" */
+            sock->w_status = eIO_Unknown;
+            break/*unknown*/;
         }
 
         if (sock->i_on_sig == eOn  ||
@@ -2312,7 +2309,7 @@ static EIO_Status s_WritePending(SOCK                  sock,
             break;
         sock->w_len -= n_written;
         off         += n_written;
-    } while ( sock->w_len );
+    } while (sock->w_len);
     sock->w_timeout = x_tv;
 
     assert((sock->w_len != 0) == (status != eIO_Success));
@@ -3457,11 +3454,12 @@ static EIO_Status s_Accept(LSOCK           lsock,
         poll.event  = eIO_Read;
         poll.revent = eIO_Open;
         status = s_Select(1, &poll, s_to2tv(timeout, &tv), 1/*asis*/);
+        assert(poll.event == eIO_Read);
         if (status != eIO_Success)
             return status;
         if (poll.revent == eIO_Close)
             return eIO_Unknown;
-        assert(poll.event == eIO_Read  &&  poll.revent == eIO_Read);
+        assert(poll.revent == eIO_Read);
     }}
 
     x_id = (lsock->id * 1000 + ++s_ID_Counter) * 1000;
@@ -4054,10 +4052,10 @@ extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
     if (s_Initialized <= 0) {
         sock->sock = SOCK_INVALID;
         status = eIO_Success;
-    } else if (sock->sock == SOCK_INVALID) {
-        status = eIO_Closed;
-    } else
+    } else if (sock->sock != SOCK_INVALID) {
         status = s_Close(sock, 0/*orderly*/);
+    } else
+        status = eIO_Closed;
 
     if (destroy) {
         BUF_Destroy(sock->r_buf);
@@ -4177,11 +4175,12 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
         poll.event  = event;
         poll.revent = eIO_Open;
         status = s_SelectStallsafe(1, &poll, s_to2tv(timeout, &tv), 0);
+        assert(poll.event == event);
         if (status != eIO_Success)
             return status;
         if (poll.revent == eIO_Close)
             return eIO_Unknown;
-        assert(poll.event == poll.revent);
+        assert(poll.revent == event);
         return status/*success*/;
     }}
 }
@@ -4347,7 +4346,7 @@ extern EIO_Status SOCK_Read(SOCK           sock,
     char       _id[32];
 
     if (sock->sock != SOCK_INVALID) {
-        switch ( how ) {
+        switch (how) {
         case eIO_ReadPlain:
             status = s_Read(sock, buf, size, &x_read, 0/*read*/);
             break;
@@ -4383,7 +4382,7 @@ extern EIO_Status SOCK_Read(SOCK           sock,
         status = eIO_Closed;
     }
 
-    if ( n_read )
+    if (n_read)
         *n_read = x_read;
     return status;
 }
@@ -4416,9 +4415,9 @@ static EIO_Status s_ReadLine(SOCK    sock,
         if (!x_size  ||  x_size > sizeof(w) - cr_seen)
             x_size = sizeof(w) - cr_seen;
         status = s_Read(sock, x_buf + cr_seen, x_size, &x_size, 0/*read*/);
-        if ( !x_size )
+        if (!x_size)
             done = 1/*true*/;
-        else if ( cr_seen )
+        else if (cr_seen)
             x_size++;
         i = cr_seen;
         while (i < x_size  &&  len < size) {
@@ -4463,7 +4462,7 @@ static EIO_Status s_ReadLine(SOCK    sock,
 
     if (len < size)
         line[len] = '\0';
-    if ( n_read )
+    if (n_read)
         *n_read = len;
 
     return status;
@@ -4512,7 +4511,7 @@ extern EIO_Status SOCK_Write(SOCK            sock,
     size_t     x_written;
     
     if (sock->sock != SOCK_INVALID) {
-        switch ( how ) {
+        switch (how) {
         case eIO_WriteOutOfBand:
             if (sock->type == eDatagram) {
                 CORE_LOGF_X(68, eLOG_Error,
@@ -4557,7 +4556,7 @@ extern EIO_Status SOCK_Write(SOCK            sock,
         status = eIO_Closed;
     }
 
-    if ( n_written )
+    if (n_written)
         *n_written = x_written;
     return status;
 }
@@ -5000,7 +4999,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
 
     x_port = port ? htons(port) : sock->port;
     if (host  &&  *host) {
-        if ( !(x_host = SOCK_gethostbyname(host)) ) {
+        if (!(x_host = SOCK_gethostbyname(host))) {
             CORE_LOGF_X(88, eLOG_Error,
                         ("%s[DSOCK::SendMsg]  Failed "
                          "SOCK_gethostbyname(\"%.64s\")",
@@ -5020,7 +5019,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
     if ((x_msgsize = BUF_Size(sock->w_buf)) != 0) {
         if (x_msgsize <= sizeof(w))
             x_msg = w;
-        else if ( !(x_msg = malloc(x_msgsize)) )
+        else if (!(x_msg = malloc(x_msgsize)))
             return eIO_Unknown;
         verify(BUF_Peek(sock->w_buf, x_msg, x_msgsize) == x_msgsize);
     } else
@@ -5059,8 +5058,6 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
             break;
         }
 
-        /* don't want to handle all possible errors... let them be "unknown" */
-        sock->w_status = status = eIO_Unknown;
         x_error = SOCK_ERRNO;
 
         /* blocked -- retry if unblocked before the timeout expires */
@@ -5070,29 +5067,29 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
             poll.event  = eIO_Write;
             poll.revent = eIO_Open;
             status = s_Select(1, &poll, sock->w_timeout, 1/*asis*/);
+            assert(poll.event == eIO_Write);
             if (status != eIO_Success)
                 break;
-            if (poll.revent == eIO_Close) {
-                status = eIO_Unknown;
+            if (poll.revent != eIO_Close) {
+                assert(poll.revent == eIO_Write);
+                continue;
+            }
+        } else if (x_error == SOCK_EINTR) {
+            if (sock->i_on_sig == eOn  ||
+                (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
+                sock->w_status = status = eIO_Interrupt;
                 break;
             }
-            assert(poll.revent == eIO_Write);
             continue;
-        }
-
-        if (x_error != SOCK_EINTR) {
+        } else {
             CORE_LOGF_ERRNO_EXX(91, eLOG_Trace,
                                 x_error, SOCK_STRERROR(x_error),
                                 ("%s[DSOCK::SendMsg] "
                                  " Failed sendto()", s_ID(sock, w)));
-            break;
         }
-
-        if (sock->i_on_sig == eOn  ||
-            (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
-            sock->w_status = status = eIO_Interrupt;
-            break;
-        }
+        /* don't want to handle all possible errors... let them be "unknown" */
+        sock->w_status = status = eIO_Unknown;
+        break;
     }
 
     if (x_msg  &&  x_msg != w)
@@ -5189,41 +5186,37 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         }
 
         x_error = SOCK_ERRNO;
-        sock->r_status = status = eIO_Unknown;
-        if (x_error != SOCK_EWOULDBLOCK  &&  x_error != SOCK_EAGAIN
-            &&  x_error != SOCK_EINTR) {
-            /* catch unknown ERROR */
-            CORE_LOGF_ERRNO_EXX(94, eLOG_Trace,
-                                x_error, SOCK_STRERROR(x_error),
-                                ("%s[DSOCK::RecvMsg] "
-                                 " Failed recvfrom()", s_ID(sock, w)));
-            break;
-        }
 
+        /* blocked -- retry if unblocked before the timeout expires */
         if (x_error == SOCK_EWOULDBLOCK  ||  x_error == SOCK_EAGAIN) {
             SSOCK_Poll poll;
             poll.sock   = sock;
             poll.event  = eIO_Read;
             poll.revent = eIO_Open;
             status = s_Select(1, &poll, sock->r_timeout, 1/*asis*/);
+            assert(poll.event == eIO_Read);
             if (status != eIO_Success)
                 break;
-            if (poll.revent == eIO_Close) {
-                status = eIO_Unknown;
+            if (poll.revent != eIO_Close) {
+                assert(poll.revent == eIO_Read);
+                continue;
+            }
+        } else if (x_error == SOCK_EINTR) {
+            if (sock->i_on_sig == eOn  ||
+                (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
+                sock->r_status = status = eIO_Interrupt;
                 break;
             }
-            assert(poll.event == eIO_Read  &&  poll.revent == eIO_Read);
             continue;
+        } else {
+            CORE_LOGF_ERRNO_EXX(94, eLOG_Trace,
+                                x_error, SOCK_STRERROR(x_error),
+                                ("%s[DSOCK::RecvMsg] "
+                                 " Failed recvfrom()", s_ID(sock, w)));
         }
-
-        if (x_error != SOCK_EINTR)
-            break;
-
-        if (sock->i_on_sig == eOn  ||
-            (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
-            status = eIO_Interrupt;
-            break;
-        }
+        /* don't want to handle all possible errors... let them be "unknown" */
+        sock->r_status = status = eIO_Unknown;
+        break;
     }
 
     if (x_msgsize > buflen && x_msg != w)
@@ -5256,6 +5249,7 @@ extern EIO_Status DSOCK_WaitMsg(SOCK sock, const STimeout* timeout)
     poll.event  = eIO_Read;
     poll.revent = eIO_Open;
     status = s_Select(1, &poll, s_to2tv(timeout, &tv), 1/*asis*/);
+    assert(poll.event == eIO_Read);
     if (status != eIO_Success  ||  poll.revent == eIO_Read)
         return status;
     assert(poll.revent == eIO_Close);
@@ -5397,13 +5391,13 @@ extern int SOCK_gethostname(char*  name,
                            x_error, SOCK_STRERROR(x_error),
                            "[SOCK_gethostname]  Failed gethostname()");
         error = 1/*true*/;
-    } else if ( name[namelen - 1] ) {
+    } else if (name[namelen - 1]) {
         CORE_LOG_X(104, eLOG_Error,
                    "[SOCK_gethostname]  Buffer too small");
         error = 1/*true*/;
     }
 
-    if ( !error )
+    if (!error)
         return 0/*success*/;
 
     name[0] = '\0';
@@ -5531,9 +5525,8 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
             }
             host = 0;
         }
-        if ( out ) {
+        if (out)
             freeaddrinfo(out);
-        }
 #else /* use some variant of gethostbyname */
         struct hostent* he;
 #  ifdef HAVE_GETHOSTBYNAME_R
@@ -5569,7 +5562,7 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
             memcpy(&host, he->h_addr, sizeof(host));
         } else {
             host = 0;
-            if ( he )
+            if (he)
                 x_error = EINVAL;
         }
 
