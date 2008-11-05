@@ -122,6 +122,7 @@ public:
 
         eBoolean,
         eInteger,
+        eBigInt,
         eDouble,
         eBase64Binary
     };

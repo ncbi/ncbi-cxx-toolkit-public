@@ -265,6 +265,8 @@ bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
             || IsValue("unsignedInt") || IsValue("unsignedShort")
             || IsValue("unsignedByte") ) {
         attrib.SetType(DTDAttribute::eInteger);
+    } else if (IsValue("long") || IsValue("unsignedLong")) {
+        attrib.SetType(DTDAttribute::eBigInt);
     } else if (IsValue("float") || IsValue("double") || IsValue("decimal")) {
         attrib.SetType(DTDAttribute::eDouble);
     } else if (IsValue("base64Binary")) {

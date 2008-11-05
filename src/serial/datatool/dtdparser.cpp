@@ -1272,6 +1272,9 @@ CDataType* DTDParser::x_AttribType(const DTDAttribute& att)
     case DTDAttribute::eInteger:
         type = new CIntDataType();
         break;
+    case DTDAttribute::eBigInt:
+        type = new CBigIntDataType();
+        break;
     case DTDAttribute::eDouble:
         type = new CRealDataType();
         break;
@@ -1313,6 +1316,7 @@ CDataValue* DTDParser::x_AttribValue(const DTDAttribute& att,
         break;
     case DTDAttribute::eIntEnum:
     case DTDAttribute::eInteger:
+    case DTDAttribute::eBigInt:
         value = new CIntDataValue(NStr::StringToInt(defvalue));
         break;
     case DTDAttribute::eDouble:
@@ -1522,8 +1526,9 @@ void DTDParser::PrintAttribute(const DTDAttribute& attrib, bool indent/*=true*/)
     case DTDAttribute::eEntities: cout << "eEntities"; break;
     case DTDAttribute::eNotation: cout << "eNotation"; break;
 
-    case DTDAttribute::eBoolean:     cout << "boolean";   break;
+    case DTDAttribute::eBoolean:     cout << "boolean";  break;
     case DTDAttribute::eInteger:     cout << "integer";  break;
+    case DTDAttribute::eBigInt:      cout << "BigInt";   break;
     case DTDAttribute::eDouble:      cout << "double";   break;
     }
     {
