@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Vladimir Ivanov, Anton Lavrentiev
+ * Author:  Anton Lavrentiev, Vladimir Ivanov
  *
  * File Description:  Test program for CTrigger
  *
@@ -31,24 +31,27 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_socket.hpp>
-#include <connect/ncbi_conn_stream.hpp>
+#include <stdlib.h>
 #include <common/test_assert.h>  // This header must go last
+
+
+#define _STR(s)      #s
+#define STRINGIFY(s) _STR(s)
+
+#define DEFAULT_PORT    5001
+#define DEFAULT_TIMEOUT 30
 
 
 USING_NCBI_SCOPE;
 
-// Number of sockets and starting port number
-unsigned short kCount = 2;
-unsigned short kStartPort = 4000;
 
 // Trigger object
 static CTrigger s_Trigger;
-
 
 
 ////////////////////////////////
@@ -58,40 +61,73 @@ static CTrigger s_Trigger;
 class CTest : public CNcbiApplication
 {
 public:
+    CTest();
+
     virtual void Init(void);
     virtual int  Run(void);
-private:
+
+protected:
     void Client(void);
     void Server(void);
+
+private:
+    unsigned short m_Port;
+    unsigned int   m_Delay;
 };
 
 
-void CTest::Init(void)
+CTest::CTest()
+    : m_Port(DEFAULT_PORT), m_Delay(0)
 {
-    // Set error posting and tracing on maximum
+    // Set error posting and tracing to maximum
     SetDiagTrace(eDT_Enable);
     SetDiagPostFlag(eDPF_All);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
     UnsetDiagPostFlag(eDPF_LongFilename);
-    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostLevel(eDiag_Warning);
+    SetDiagPostAllFlags(eDPF_DateTime    | eDPF_Severity |
+                        eDPF_OmitInfoSev | eDPF_ErrorID);
+    DisableArgDescriptions(fDisableStdArgs);
+    HideStdArgs(-1/*everything*/);
+}
+
+
+void CTest::Init(void)
+{
+    CONNECT_Init(&GetConfig());
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    arg_desc->PrintUsageIfNoArgs();
+    if (arg_desc->Exist("h")) {
+        arg_desc->Delete("h");
+    }
+    if (arg_desc->Exist("xmlhelp")) {
+        arg_desc->Delete("xmlhelp");
+    }
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Test named pipes API");
+                              "Test TRIGGER API");
 
-    // Describe the expected command-line arguments
-    arg_desc->AddPositional 
-        ("mode", "Test mode",
-         CArgDescriptions::eString);
-    arg_desc->SetConstraint
-        ("mode", &(*new CArgAllow_Strings, "client", "server"));
-    arg_desc->AddDefaultPositional
-        ("postfix", "Unique string that will be added to the base pipe name",
-         CArgDescriptions::eString, "");
+    // Describe expected command-line arguments
+    arg_desc->AddDefaultKey("port", "port_no",
+                            "Port to listen on / connect to",
+                            CArgDescriptions::eInteger,
+                            STRINGIFY(DEFAULT_PORT));
+    arg_desc->SetConstraint("port",
+                            new CArgAllow_Integers(DEFAULT_PORT,
+                                                   (1 << 16) - 1));
+    arg_desc->AddOptionalKey("delay", "delay_time_ms",
+                             "Delay (ms) before flipping the trigger",
+                             CArgDescriptions::eInteger);
+    arg_desc->SetConstraint("delay",
+                            new CArgAllow_Integers(0, DEFAULT_TIMEOUT*1000));
+    arg_desc->AddPositional("mode", "Test mode",
+                            CArgDescriptions::eString);
+    arg_desc->SetConstraint("mode",
+                            &(*new CArgAllow_Strings, "client", "server"));
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -101,6 +137,12 @@ void CTest::Init(void)
 int CTest::Run(void)
 {
     CArgs args = GetArgs();
+
+    m_Port = (unsigned short) args["port"].AsInteger();
+
+    if (args["delay"].HasValue()) {
+        m_Delay = args["delay"].AsInteger();
+    }
 
     if (args["mode"].AsString() == "client") {
         SetDiagPostPrefix("Client");
@@ -124,34 +166,51 @@ int CTest::Run(void)
 class CTriggerThread : public CThread
 {
 public:
-    CTriggerThread(void) {}
+    CTriggerThread(unsigned int delay)
+        : m_Delay(delay)
+    { }
+
 protected:
-    ~CTriggerThread() {}
-    virtual void* Main();
+    virtual ~CTriggerThread() { }
+    virtual void* Main(void);
+
+private:
+    unsigned int m_Delay;
 };
+
 
 void* CTriggerThread::Main(void)
 {
-    SleepSec(10);
+    SleepMilliSec(m_Delay);
     assert(s_Trigger.IsSet() == eIO_Closed);
-    assert(s_Trigger.Set() == eIO_Success);
+    assert(s_Trigger.Set()   == eIO_Success);
     return 0;
 }
 
 
 /////////////////////////////////
-// Named pipe client
+// Client reads until EOF
 //
 
 void CTest::Client()
 {
-    unsigned short port = kStartPort;// + 10;
-    CConn_SocketStream stream("localhost", port);
+    LOG_POST("\nClient started...\n");
 
-    string junk;
-    stream >> junk;
-    stream << "Hello!" << endl;
-    stream >> junk;
+    CSocket socket("localhost", m_Port);
+
+    size_t n_read = 0;
+    // the client is greedy but slow
+    for (int ok = 0;  ; ok = 1) {
+        size_t x_read;
+        char buf[12345];
+        EIO_Status status = socket.Read(buf, sizeof(buf), &x_read);
+        _ASSERT(status == eIO_Success  ||  ok);
+        n_read += x_read;
+        if (status == eIO_Closed)
+            break;
+        SleepMilliSec(100);
+    }
+    LOG_POST("Bytes received: " << n_read);
 }
 
 
@@ -161,75 +220,109 @@ void CTest::Client()
 
 void CTest::Server(void)
 {
-    LOG_POST("\nStart server...\n");
+    LOG_POST("\nServer started...\n");
 
-    // Create listening sockets
-    vector<CListeningSocket*> lsocks;
-    lsocks.resize(kCount+1);
-    for (int i=0; i<kCount; i++) {
-        lsocks[i] = new CListeningSocket;
-        assert(lsocks[i]->Listen(kStartPort+i) == eIO_Success);
-    }
+    // Create listening socket
+    CListeningSocket lsock;
+    _ASSERT(lsock.Listen(m_Port) == eIO_Success);
 
-    // Create polls
-    vector<CSocketAPI::SPoll> polls;
-/*
-    polls.resize(kCount+1);
-    for (int i=0; i<kCount; i++) {
-        polls[i].m_Pollable = lsocks[i];
-        polls[i].m_Event    = eIO_Read;
-        polls[i].m_REvent   = eIO_Open;
-    }
-    polls[kCount].m_Pollable = &s_Trigger;
-    polls[kCount].m_Event    = eIO_Read;
-    polls[kCount].m_REvent   = eIO_Open;
-*/
-    polls.resize(1);
-    polls[0].m_Pollable = &s_Trigger;
-    polls[0].m_Event    = eIO_Read;
-    polls[0].m_REvent   = eIO_Open;
-
-    // Spawn test thread to activate trigger.
-    // Allow thread to run even in single thread environment.
-    CTriggerThread* thr = new CTriggerThread();
+    // Spawn test thread to activate the trigger
+    // (allow thread to run even in single thread environment).
+    CTriggerThread* thr = new CTriggerThread(m_Delay);
     thr->Run(CThread::fRunAllowST);
 
+    vector<CSocketAPI::SPoll> polls;
+    polls.push_back(CSocketAPI::SPoll(&s_Trigger, eIO_ReadWrite));
+    polls.push_back(CSocketAPI::SPoll(&lsock,     eIO_ReadWrite));
 
-    // Poll
+    for (;;) {
+        size_t n;
+        static const STimeout kTimeout = {DEFAULT_TIMEOUT, 123};
+        EIO_Status status = CSocketAPI::Poll(polls, &kTimeout, &n);
+        if (status == eIO_Timeout) {
+            _ASSERT(!n);
+            break;
+        }
+        _ASSERT(status == eIO_Success  &&  n);
+        for (size_t i = 0;  i < polls.size();  i++) {
+            CSocket* sock;
 
-    size_t   count   = 0;
-    STimeout timeout = {30,0};
-
-    LOG_POST("Listening...");
-    EIO_Status status = ncbi::CSocketAPI::Poll(polls, &timeout, &count);
-    cout << "status = " << status << endl;
-    cout << "count  = " << count << endl;
-
-    switch (status) {
-    case eIO_Success:
-        LOG_POST("Client is connected...");
-        for (int i=0; i<kCount; i++) {
-            if (polls[i].m_REvent == eIO_Read) {
-                LOG_POST("Port = " << kStartPort + i);
-                break;
+            if (polls[i].m_REvent == eIO_Open)
+                continue;
+            if (polls[i].m_REvent == eIO_Close) {
+                _ASSERT(i > 1);
+                delete polls[i].m_Pollable;
+                LOG_POST("Client disconnected (while polling)...");
+                polls[i].m_Pollable = 0;
+                continue;
+            }
+            if (polls[i].m_REvent & eIO_Read) {
+                static const STimeout kZero = {0, 0};
+                switch (i) {
+                case 0:
+                    _ASSERT(polls[i].m_Pollable == &s_Trigger);
+                    _ASSERT(polls[i].m_REvent == eIO_ReadWrite);
+                    LOG_POST("Trigger activated...");
+                    polls.resize(1);
+                    _ASSERT(s_Trigger.Reset() == eIO_Success);
+                    _ASSERT(CSocketAPI::Poll(polls, &kZero) == eIO_Timeout);
+                    LOG_POST("Now exiting...");
+                    return;
+                case 1:
+                    _ASSERT(polls[i].m_Pollable == &lsock);
+                    _ASSERT(polls[i].m_REvent == eIO_Read);
+                    status = lsock.Accept(sock, &kTimeout);
+                    _ASSERT(status == eIO_Success);
+                    LOG_POST("Client connected...");
+                    sock->SetTimeout(eIO_ReadWrite, &kZero);
+                    for (n = i + 1;  n < polls.size();  n++) {
+                        if (!polls[n].m_Pollable) {
+                            polls[n].m_Pollable = sock;
+                            polls[n].m_Event = eIO_ReadWrite;
+                            break;
+                        }
+                    }
+                    if (n == polls.size())
+                        polls.push_back(CSocketAPI::SPoll(sock,eIO_ReadWrite));
+                    continue;
+                default:
+                    break;
+                }
+            }
+            _ASSERT(i > 1);
+            sock = dynamic_cast<CSocket*>(polls[i].m_Pollable);
+            _ASSERT(sock);
+            if (polls[i].m_REvent & eIO_Read) {
+                char buf[12345];
+                //LOG_POST("Client is sending...");
+                status = sock->Read(buf, sizeof(buf));
+                if (status == eIO_Closed) {
+                    delete sock;
+                    LOG_POST("Client disconnected (while reading)...");
+                    polls[i].m_Pollable = 0;
+                    continue;
+                }
+                _ASSERT(status == eIO_Success);
+            }
+            if (polls[i].m_REvent & eIO_Write) {
+                char buf[1023];
+                buf[0] = 'S';
+                buf[1] = '1';
+                buf[2] = '\0';
+                for (n = 3;  n < sizeof(buf);  n++)
+                    buf[n] = rand() & 0xFF;
+                //LOG_POST("Client is receiving...");
+                status = sock->Write(buf, sizeof(buf));
+                if (status == eIO_Closed) {
+                    delete sock;
+                    LOG_POST("Client disconnected (while writing)...");
+                    polls[i].m_Pollable = 0;
+                    continue;
+                }
+                _ASSERT(status == eIO_Success);
             }
         }
-        if (polls[kCount].m_REvent == eIO_Read) {
-            LOG_POST("Trigger activated");
-        }
-        break;
-    case eIO_Timeout:
-        LOG_POST("Timeout detected...");
-        break;
-    default:
-        _TROUBLE;
     }
-
-
-    if (status == eIO_Success  &&  count > 0) {
-        cout << "Ok!" << endl;
-    }
-
 }
 
 
