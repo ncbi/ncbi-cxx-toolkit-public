@@ -563,6 +563,8 @@ extern const char* NcbiMessagePlusError
     /* "<descr>" */
     if (descr) {
         len = strlen(descr);
+        while (len  &&  isspace((unsigned char) descr[len - 1]))
+            len--;
         if (len > 1  &&  descr[len - 1] == '.')
             len--;
         if (s_SafeCopy(descr, len, &beg, end))
