@@ -632,10 +632,12 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+#if NCBI_PLATFORM_BITS == 32
     operator time_t(void) const
     {
         return MakeCP<CP>(m_Value);
     }
+#endif
     operator Uint8(void) const
     {
         return MakeCP<CP>(m_Value);
@@ -798,10 +800,12 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+#if NCBI_PLATFORM_BITS == 32
     operator time_t(void) const
     {
         return MakeCP<CP>(m_Value);
     }
+#endif
     operator Uint8(void) const
     {
         return MakeCP<CP>(m_Value);
@@ -964,10 +968,12 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+#if NCBI_PLATFORM_BITS == 32
     operator time_t(void) const
     {
         return MakeCP<CP>(m_Value);
     }
+#endif
     operator Uint8(void) const
     {
         return MakeCP<CP>(m_Value);
@@ -1049,10 +1055,12 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+#if NCBI_PLATFORM_BITS == 32
     operator time_t(void) const
     {
         return MakeCP<CP>(m_Value);
     }
+#endif
     operator Uint8(void) const
     {
         return MakeCP<CP>(m_Value);
@@ -1133,10 +1141,12 @@ public:
     {
         return MakeCP<CP>(m_Value);
     }
+#if NCBI_PLATFORM_BITS == 32
     operator time_t(void) const
     {
         return MakeCP<CP>(m_Value);
     }
+#endif
     operator Uint8(void) const
     {
         return MakeCP<CP>(m_Value);
