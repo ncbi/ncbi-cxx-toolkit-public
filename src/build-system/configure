@@ -4555,7 +4555,7 @@ case "$host_os:$compiler" in
 
  cygwin*:GCC )
    with_dll="no"
-   NETWORK_LIBS=${NETWORK_LIBS:="-lwsock32"}
+   : ${NETWORK_LIBS:="-lws2_32"}
    CONF_exe_ext=".exe"
    ;;
 
