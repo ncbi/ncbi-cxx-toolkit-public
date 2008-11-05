@@ -1329,16 +1329,3 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Multirange_Spliced)
         BOOST_CHECK_EQUAL((*part)->GetMismatch(), 10);
     }}
 }
-
-
-/*#################
-Need to test:
-- truncation of parts
-- mapping nuc-to-prot and back
-- with different strand combinations (gen, prod, mapping)
-- creation of new segments (map through a multi-segment location)
-- check product length for all cases
-- align with nuc+prot - check parts' lengths
-- mapping between nuc and prot (both ways)
-- range merging (are the parts merged?)
-###################*/
