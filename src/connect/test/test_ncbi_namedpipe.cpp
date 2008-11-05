@@ -140,7 +140,7 @@ void CTest::Init(void)
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Test named pipes API");
+                              "Test named pipe API");
 
     // Describe the expected command-line arguments
     arg_desc->AddPositional 
@@ -165,7 +165,7 @@ int CTest::Run(void)
     if ( !args["postfix"].AsString().empty() ) {
         m_PipeName += "_" + args["postfix"].AsString();
     }
-    LOG_POST("Used pipe name: " + m_PipeName);
+    LOG_POST("Using pipe name: " + m_PipeName);
 
     if (args["mode"].AsString() == "client") {
         SetDiagPostPrefix("Client");
