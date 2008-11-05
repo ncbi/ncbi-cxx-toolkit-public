@@ -63,10 +63,10 @@ class NCBI_XCONNECT_EXPORT CPollable
 public:
     virtual
     EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const = 0;
+    virtual ~CPollable() { }
 
 protected:
-    CPollable(void) { };
-    virtual ~CPollable() { };
+    CPollable(void) { }
 
 private:
     /// disable copy constructor and assignment
@@ -659,7 +659,8 @@ public:
         EIO_Event  m_REvent;
 
         SPoll(CPollable* pollable = 0, EIO_Event event = eIO_Open)
-            : m_Pollable(pollable), m_Event(event) { m_REvent = eIO_Open; }
+            : m_Pollable(pollable), m_Event(event), m_REvent(eIO_Open)
+        { }
     };
     static EIO_Status Poll(vector<SPoll>&  polls,
                            const STimeout* timeout,
