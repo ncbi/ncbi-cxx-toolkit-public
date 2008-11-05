@@ -20,6 +20,7 @@ html$
 misc/grid_cgi$
 bdb$
 app/netschedule
-app/sample/netschedule$
-app/sample/netcache$
+app/sample/netschedule
+app/sample/netcache
 app/netcache
+app/grid
