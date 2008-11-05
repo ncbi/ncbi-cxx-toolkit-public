@@ -91,7 +91,7 @@ tds_set_param_type(TDSSOCKET * tds, TDSCOLUMN * curcol, TDS_SERVER_TYPE type)
 			break;
 		}
 	}
-    else {
+    else if (tds->product_name && strcmp(tds->product_name, "OpenServer") != 0) {
 		switch (type) {
 		case SYBVARCHAR:
 		case SYBCHAR:
