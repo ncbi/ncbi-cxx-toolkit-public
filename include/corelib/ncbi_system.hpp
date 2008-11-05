@@ -160,16 +160,16 @@ extern bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared);
 /// [UNIX & Windows]
 
 NCBI_XNCBI_EXPORT
-extern void SleepSec(unsigned long sec, 
+extern void SleepSec(unsigned long sec,
                      EInterruptOnSignal onsignal = eRestartOnSignal);
 
 NCBI_XNCBI_EXPORT
 extern void SleepMilliSec(unsigned long ml_sec,
-                     EInterruptOnSignal onsignal = eRestartOnSignal);
+                          EInterruptOnSignal onsignal = eRestartOnSignal);
 
 NCBI_XNCBI_EXPORT
 extern void SleepMicroSec(unsigned long mc_sec,
-                     EInterruptOnSignal onsignal = eRestartOnSignal);
+                          EInterruptOnSignal onsignal = eRestartOnSignal);
 
 
 
