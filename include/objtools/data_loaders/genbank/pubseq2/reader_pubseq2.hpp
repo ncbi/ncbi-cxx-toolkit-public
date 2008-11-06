@@ -42,15 +42,18 @@ class I_BaseCmd;
 
 BEGIN_SCOPE(objects)
 
+class CId2ReaderBase;
+
 class NCBI_XREADER_PUBSEQOS2_EXPORT CPubseq2Reader : public CId2ReaderBase
 {
 public:
     CPubseq2Reader(int max_connections = 0,
-                  const string& server = kEmptyStr,
-                  const string& user = kEmptyStr,
-                  const string& pswd = kEmptyStr);
+                   const string& server = kEmptyStr,
+                   const string& user = kEmptyStr,
+                   const string& pswd = kEmptyStr,
+                   const string& dbapi_driver = kEmptyStr);
     CPubseq2Reader(const TPluginManagerParamTree* params,
-                  const string& driver_name);
+                   const string& driver_name);
 
     ~CPubseq2Reader();
 
@@ -82,6 +85,7 @@ private:
     string                    m_Server;
     string                    m_User;
     string                    m_Password;
+    string                    m_DbapiDriver;
 
     I_DriverContext*          m_Context;
 

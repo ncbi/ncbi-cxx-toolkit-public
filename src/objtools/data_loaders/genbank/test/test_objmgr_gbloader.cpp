@@ -83,7 +83,7 @@ int CTestApplication::Run()
 
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
 #ifdef HAVE_PUBSEQ_OS
-    DBAPI_RegisterDriver_CTLIB();
+    DBAPI_RegisterDriver_FTDS();
     GenBankReaders_Register_Pubseq();
 #endif
     CRef<CGBDataLoader> pLoader(CGBDataLoader::RegisterInObjectManager(*pOm)

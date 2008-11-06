@@ -77,6 +77,7 @@
 #define DEFAULT_DB_SERVER   "PUBSEQ_OS_PUBLIC"
 #define DEFAULT_DB_USER     "anyone"
 #define DEFAULT_DB_PASSWORD "allowed"
+#define DEFAULT_DB_DRIVER   "ftds;ctlib"
 #define MAX_MT_CONN         5
 #define DEFAULT_NUM_CONN    2
 
@@ -92,10 +93,12 @@ static CAtomicCounter s_pubseq_readers;
 
 
 CPubseq2Reader::CPubseq2Reader(int max_connections,
-                             const string& server,
-                             const string& user,
-                             const string& pswd)
+                               const string& server,
+                               const string& user,
+                               const string& pswd,
+                               const string& dbapi_driver)
     : m_Server(server) , m_User(user), m_Password(pswd),
+      m_DbapiDriver(dbapi_driver),
       m_Context(0)
 {
     if ( max_connections == 0 ) {
@@ -109,6 +112,9 @@ CPubseq2Reader::CPubseq2Reader(int max_connections,
     }
     if ( m_Password.empty() ) {
         m_Password = DEFAULT_DB_PASSWORD;
+    }
+    if ( m_DbapiDriver.empty() ) {
+        m_DbapiDriver = DEFAULT_DB_DRIVER;
     }
 
 #if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
@@ -144,6 +150,11 @@ CPubseq2Reader::CPubseq2Reader(const TPluginManagerParamTree* params,
         NCBI_GBLOADER_READER_PUBSEQ2_PARAM_PASSWORD,
         CConfig::eErr_NoThrow,
         DEFAULT_DB_PASSWORD);
+    m_DbapiDriver = conf.GetString(
+        driver_name,
+        NCBI_GBLOADER_READER_PUBSEQ2_PARAM_DRIVER,
+        CConfig::eErr_NoThrow,
+        DEFAULT_DB_DRIVER);
 #if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
     if ( s_pubseq_readers.Add(1) > 1 ) {
         s_pubseq_readers.Add(-1);
@@ -264,28 +275,36 @@ void CPubseq2Reader::x_SetCurrentResult(TConn conn,
 CDB_Connection* CPubseq2Reader::x_NewConnection(TConn conn_)
 {
     WaitBeforeNewConnection(conn_);
+
     if ( !m_Context ) {
         DBLB_INSTALL_DEFAULT();
         C_DriverMgr drvMgr;
-        //DBAPI_RegisterDriver_CTLIB(drvMgr);
-        //DBAPI_RegisterDriver_DBLIB(drvMgr);
         map<string,string> args;
         args["packet"]="3584"; // 7*512
-        string errmsg;
-        m_Context = drvMgr.GetDriverContext("ctlib", &errmsg, &args);
-        if ( !m_Context ) {
-            LOG_POST_X(2, errmsg);
-#if defined(NCBI_THREADS)
-            NCBI_THROW(CLoaderException, eNoConnection,
-                       "Cannot create dbapi context");
-#else
-            m_Context = drvMgr.GetDriverContext("dblib", &errmsg, &args);
-            if ( !m_Context ) {
-                LOG_POST_X(3, errmsg);
-                NCBI_THROW(CLoaderException, eNoConnection,
-                           "Cannot create dbapi context");
+        args["version"]="125"; // for correct connection to OpenServer
+        vector<string> driver_list;
+        NStr::Tokenize(m_DbapiDriver, ";", driver_list);
+        size_t driver_count = driver_list.size();
+        vector<string> errmsg(driver_count);
+        for ( size_t i = 0; i < driver_count; ++i ) {
+            try {
+                m_Context = drvMgr.GetDriverContext(driver_list[i],
+                                                    &errmsg[i], &args);
+                if ( m_Context )
+                    break;
             }
-#endif
+            catch ( CException& exc ) {
+                errmsg[i] = exc.what();
+            }
+        }
+        if ( !m_Context ) {
+            for ( size_t i = 0; i < driver_count; ++i ) {
+                LOG_POST_X(2, "Failed to create dbapi context with driver '"
+                           <<driver_list[i]<<"': "<<errmsg[i]);
+            }
+            NCBI_THROW(CLoaderException, eNoConnection,
+                       "Cannot create dbapi context with driver '"+
+                       m_DbapiDriver+"'");
         }
     }
 

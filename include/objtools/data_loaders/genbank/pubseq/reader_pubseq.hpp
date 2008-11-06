@@ -47,7 +47,8 @@ public:
     CPubseqReader(int max_connections = 0,
                   const string& server = kEmptyStr,
                   const string& user = kEmptyStr,
-                  const string& pswd = kEmptyStr);
+                  const string& pswd = kEmptyStr,
+                  const string& dbapi_driver = kEmptyStr);
     CPubseqReader(const TPluginManagerParamTree* params,
                   const string& driver_name);
 
@@ -109,8 +110,10 @@ private:
     string                    m_Server;
     string                    m_User;
     string                    m_Password;
+    string                    m_DbapiDriver;
 
     I_DriverContext*          m_Context;
+
     typedef map< TConn, AutoPtr<CDB_Connection> > TConnections;
     TConnections              m_Connections;
 

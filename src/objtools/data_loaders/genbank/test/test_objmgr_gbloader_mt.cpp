@@ -199,7 +199,7 @@ int CTestApplication::Run()
     CORE_SetLOCK(MT_LOCK_cxx2c());
     CORE_SetLOG(LOG_cxx2c());
 #ifdef HAVE_PUBSEQ_OS
-    DBAPI_RegisterDriver_CTLIB();
+    DBAPI_RegisterDriver_FTDS();
     GenBankReaders_Register_Pubseq();
 #endif
 
@@ -208,7 +208,7 @@ int CTestApplication::Run()
         time_t x = time(0);
         LOG_POST("START: " << time(0) );
         CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
-        LOG_POST("CTLIB loaded: " << time(0)-x  );
+        LOG_POST("Loader started: " << time(0)-x  );
 #endif
     }
   
