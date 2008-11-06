@@ -125,12 +125,20 @@ public:
     ///
     void SetQueries(const vector< CRef<objects::CSeq_loc> >& queries,
                     CRef<objects::CScope> scope);
+
     /// Set query sequences.
     /// This automatically clears out the intermediate state
     /// of the last alignment.
     /// @param queries List of query sequences [in]
     ///
     void SetQueries(const vector<objects::CBioseq>& queries);
+
+    /// Set query sequences.
+    /// This automatically clears out the intermediate state
+    /// of the last alignment.
+    /// @param queries List of query sequences [in]
+    ///
+    void SetQueries(const blast::TSeqLocVector& queries);
 
     /// Get query sequences
     /// @return List of seq-ids and locations [in]

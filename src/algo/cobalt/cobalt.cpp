@@ -235,6 +235,37 @@ CMultiAligner::SetQueries(const vector<objects::CBioseq>& queries)
 }
 
 
+void CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
+{
+    if (queries.size() < 2) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "Aligner requires at least two input sequences");
+    }
+
+    m_Scope = queries[0].scope;
+
+    m_tQueries.resize(queries.size());
+    for (size_t i=0;i < queries.size();i++) {
+        m_tQueries[i].Reset(new objects::CSeq_loc());
+        try {
+            m_tQueries[i]->Assign(*queries[i].seqloc);
+        }
+        catch (...) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput, "Bad SSeqLoc");
+        }
+        if (i > 0) {
+            m_Scope->AddScope(*queries[i].scope);
+        }
+    }
+
+    m_QueryData.clear();
+    ITERATE(vector< CRef<objects::CSeq_loc> >, itr, m_tQueries) {
+        m_QueryData.push_back(CSequence(**itr, *m_Scope));
+    }
+
+    Reset();
+}
+
 CRef<objects::CBioTreeContainer> CMultiAligner::GetTreeContainer(void) const
 {
     if (!m_Tree.GetTree()) {
