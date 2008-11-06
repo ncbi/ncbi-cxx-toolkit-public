@@ -232,7 +232,7 @@ void CTest::Server(void)
 
     for (;;) {
         size_t n;
-        static const STimeout kTimeout = {DEFAULT_TIMEOUT, 123};
+        static const STimeout kTimeout = {DEFAULT_TIMEOUT - 1, 123456};
         EIO_Status status = CSocketAPI::Poll(polls, &kTimeout, &n);
         if (status == eIO_Timeout) {
             _ASSERT(!n);
@@ -266,7 +266,7 @@ void CTest::Server(void)
                 case 1:
                     _ASSERT(polls[i].m_Pollable == &lsock);
                     _ASSERT(polls[i].m_REvent == eIO_Read);
-                    status = lsock.Accept(sock, &kTimeout);
+                    status = lsock.Accept(sock, &kZero);
                     _ASSERT(status == eIO_Success);
                     ERR_POST(Info << "Client connected...");
                     sock->SetTimeout(eIO_ReadWrite, &kZero);
@@ -329,5 +329,5 @@ int main(int argc, const char* argv[])
 {
     CDiagContext::SetOldPostFormat(true);
     // Execute main application function
-    return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTest().AppMain(argc, argv, 0, eDS_ToStderr, 0);
 }
