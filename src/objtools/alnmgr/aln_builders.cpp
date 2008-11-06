@@ -430,39 +430,46 @@ BuildAln(TAnchoredAlnVec& in_alns,
             TIdMergedMap id_merged_map;
             TMergedVec merged_vec;
 
-            CRef<CMergedPairwiseAln> merged_anchor;
 #ifdef _TRACE_MergeAlnRngColl
-                static int aln_idx;
+            static int aln_idx;
 #endif
+            CRef<CMergedPairwiseAln> merged_anchor(new CMergedPairwiseAln(CAlnUserOptions::fTruncateOverlaps));
             ITERATE(TAnchoredAlnVec, anchored_it, in_alns) {
-                for (TDim row = 0; row < (*anchored_it)->GetDim(); ++row) {
+                const CAnchoredAln&       anchored_aln = **anchored_it;
+                const CAnchoredAln::TDim& anchor_row   = anchored_aln.GetAnchorRow();
 
-                    CRef<CMergedPairwiseAln>& merged = id_merged_map[(*anchored_it)->GetId(row)];
-                    if (merged.Empty()) {
-                        // first time we are dealing with this id.
-                        merged.Reset
-                            (new CMergedPairwiseAln(row == (*anchored_it)->GetAnchorRow() ?
-                                                    CAlnUserOptions::fTruncateOverlaps :
-                                                    options.m_MergeFlags));
-                        if (row == (*anchored_it)->GetAnchorRow()) {
-                            // if anchor
-                            if (anchored_it == in_alns.begin()) {
-                                merged_anchor.Reset(merged);
-                            }
-                        } else {
-                            // else add to the out vectors
+                /// Anchor first (important, to insert anchor id in
+                /// id_merged_map before any possible self-aligned seq
+                /// gets there first).
+#ifdef _TRACE_MergeAlnRngColl
+                cerr << endl;
+                cerr << *merged_anchor << endl;
+                cerr << "inserting aln " << aln_idx << ", anchor row (" << anchor_row << ")" << endl;
+                cerr << *anchored_aln.GetPairwiseAlns()[anchor_row] << endl;
+#endif
+                merged_anchor->insert(anchored_aln.GetPairwiseAlns()[anchor_row]);
+                if (anchored_it == in_alns.begin()) {
+                    id_merged_map[anchored_aln.GetId(anchor_row)].Reset(merged_anchor);
+                }
+
+                /// Then other rows:
+                for (TDim row = anchored_aln.GetDim() - 1; row >=0; --row) {
+                    if (row != anchor_row) {
+                        CRef<CMergedPairwiseAln>& merged = id_merged_map[anchored_aln.GetId(row)];
+                        if (merged.Empty()) {
+                            // first time we are dealing with this id.
+                            merged.Reset
+                                (new CMergedPairwiseAln(options.m_MergeFlags));
+                            // and add to the out vectors
                             merged_vec.push_back(merged);
                         }
-
-                    }
 #ifdef _TRACE_MergeAlnRngColl
-                    cerr << endl;
-                    cerr << "anchor row " << (*anchored_it)->GetAnchorRow() << endl;
-                    cerr << *merged << endl;
-                    cerr << "inserting aln " << aln_idx << ", row " << row << endl;
-                    cerr << *(*anchored_it)->GetPairwiseAlns()[row] << endl;
+                        cerr << *merged << endl;
+                        cerr << "inserting aln " << aln_idx << ", row " << row << endl;
+                        cerr << *anchored_aln.GetPairwiseAlns()[row] << endl;
 #endif
-                    merged->insert((*anchored_it)->GetPairwiseAlns()[row]);
+                        merged->insert(anchored_aln.GetPairwiseAlns()[row]);
+                    }
                 }
 #ifdef _TRACE_MergeAlnRngColl
                 ++aln_idx;
