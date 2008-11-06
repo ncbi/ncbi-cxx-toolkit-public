@@ -79,13 +79,8 @@ private:
 CTest::CTest()
     : m_Port(DEFAULT_PORT), m_Delay(0)
 {
-    // Set error posting and tracing to maximum
-    SetDiagTrace(eDT_Enable);
-    SetDiagPostFlag(eDPF_All);
-    UnsetDiagPostFlag(eDPF_Line);
-    UnsetDiagPostFlag(eDPF_File);
-    UnsetDiagPostFlag(eDPF_LongFilename);
-    SetDiagPostLevel(eDiag_Warning);
+    //SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Info);
     SetDiagPostAllFlags(eDPF_DateTime    | eDPF_Severity |
                         eDPF_OmitInfoSev | eDPF_ErrorID);
     DisableArgDescriptions(fDisableStdArgs);
@@ -194,7 +189,7 @@ void* CTriggerThread::Main(void)
 
 void CTest::Client()
 {
-    LOG_POST("\nClient started...\n");
+    ERR_POST(Info << "Client started...\n");
 
     CSocket socket("localhost", m_Port);
 
@@ -210,7 +205,7 @@ void CTest::Client()
             break;
         SleepMilliSec(100);
     }
-    LOG_POST("Bytes received: " << n_read);
+    ERR_POST(Info << "Bytes received: " << n_read);
 }
 
 
@@ -220,7 +215,7 @@ void CTest::Client()
 
 void CTest::Server(void)
 {
-    LOG_POST("\nServer started...\n");
+    ERR_POST(Info << "Server started...\n");
 
     // Create listening socket
     CListeningSocket lsock;
@@ -252,7 +247,7 @@ void CTest::Server(void)
             if (polls[i].m_REvent == eIO_Close) {
                 _ASSERT(i > 1);
                 delete polls[i].m_Pollable;
-                LOG_POST("Client disconnected (while polling)...");
+                ERR_POST(Info << "Client disconnected (while polling)...");
                 polls[i].m_Pollable = 0;
                 continue;
             }
@@ -262,18 +257,18 @@ void CTest::Server(void)
                 case 0:
                     _ASSERT(polls[i].m_Pollable == &s_Trigger);
                     _ASSERT(polls[i].m_REvent == eIO_ReadWrite);
-                    LOG_POST("Trigger activated...");
+                    ERR_POST(Info << "Trigger activated...");
                     polls.resize(1);
                     _ASSERT(s_Trigger.Reset() == eIO_Success);
                     _ASSERT(CSocketAPI::Poll(polls, &kZero) == eIO_Timeout);
-                    LOG_POST("Now exiting...");
+                    ERR_POST(Info << "Now exiting...");
                     return;
                 case 1:
                     _ASSERT(polls[i].m_Pollable == &lsock);
                     _ASSERT(polls[i].m_REvent == eIO_Read);
                     status = lsock.Accept(sock, &kTimeout);
                     _ASSERT(status == eIO_Success);
-                    LOG_POST("Client connected...");
+                    ERR_POST(Info << "Client connected...");
                     sock->SetTimeout(eIO_ReadWrite, &kZero);
                     for (n = i + 1;  n < polls.size();  n++) {
                         if (!polls[n].m_Pollable) {
@@ -294,11 +289,11 @@ void CTest::Server(void)
             _ASSERT(sock);
             if (polls[i].m_REvent & eIO_Read) {
                 char buf[12345];
-                //LOG_POST("Client is sending...");
+                //ERR_POST(Info << "Client is sending...");
                 status = sock->Read(buf, sizeof(buf));
                 if (status == eIO_Closed) {
                     delete sock;
-                    LOG_POST("Client disconnected (while reading)...");
+                    ERR_POST(Info << "Client disconnected (while reading)...");
                     polls[i].m_Pollable = 0;
                     continue;
                 }
@@ -311,11 +306,11 @@ void CTest::Server(void)
                 buf[2] = '\0';
                 for (n = 3;  n < sizeof(buf);  n++)
                     buf[n] = rand() & 0xFF;
-                //LOG_POST("Client is receiving...");
+                //ERR_POST(Info << "Client is receiving...");
                 status = sock->Write(buf, sizeof(buf));
                 if (status == eIO_Closed) {
                     delete sock;
-                    LOG_POST("Client disconnected (while writing)...");
+                    ERR_POST(Info << "Client disconnected (while writing)...");
                     polls[i].m_Pollable = 0;
                     continue;
                 }
@@ -332,6 +327,7 @@ void CTest::Server(void)
 
 int main(int argc, const char* argv[])
 {
+    CDiagContext::SetOldPostFormat(true);
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
