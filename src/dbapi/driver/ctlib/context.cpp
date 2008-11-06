@@ -1431,8 +1431,13 @@ CS_INT GetCtlibTdsVersion(int version)
     int fallback_version = (version == NCBI_CTLIB_TDS_VERSION) ?
         NCBI_CTLIB_TDS_FALLBACK_VERSION : NCBI_CTLIB_TDS_VERSION;
 
-    ERR_POST_X(5, Warning <<
-               "The version " << version << " of TDS protocol for "
+    ERR_POST_X(5,
+#ifdef FTDS_IN_USE
+               Info
+#else
+               Warning
+#endif
+               << "The version " << version << " of TDS protocol for "
                "the DBAPI CTLib driver is not supported. Falling back to "
                "the TDS protocol version " << fallback_version << ".");
 
