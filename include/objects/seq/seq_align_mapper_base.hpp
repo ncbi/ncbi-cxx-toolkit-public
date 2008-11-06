@@ -39,6 +39,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
