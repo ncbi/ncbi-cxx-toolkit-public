@@ -1398,6 +1398,12 @@ NCBI_PARAM_DEF_EX(int, ctlib, TDS_VERSION,
 typedef NCBI_PARAM_TYPE(ctlib, TDS_VERSION) TCtlibTdsVersion;
 
 
+#ifdef FTDS_IN_USE
+# define FTDS_VERSION_ERR_LEVEL Info
+#else
+# define FTDS_VERSION_ERR_LEVEL Warning
+#endif
+
 CS_INT GetCtlibTdsVersion(int version)
 {
     if (version == 0) {
@@ -1431,12 +1437,7 @@ CS_INT GetCtlibTdsVersion(int version)
     int fallback_version = (version == NCBI_CTLIB_TDS_VERSION) ?
         NCBI_CTLIB_TDS_FALLBACK_VERSION : NCBI_CTLIB_TDS_VERSION;
 
-    ERR_POST_X(5,
-#ifdef FTDS_IN_USE
-               Info
-#else
-               Warning
-#endif
+    ERR_POST_X(5, FTDS_VERSION_ERR_LEVEL
                << "The version " << version << " of TDS protocol for "
                "the DBAPI CTLib driver is not supported. Falling back to "
                "the TDS protocol version " << fallback_version << ".");
