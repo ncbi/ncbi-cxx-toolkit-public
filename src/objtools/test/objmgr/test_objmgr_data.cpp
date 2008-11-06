@@ -776,7 +776,7 @@ bool CTestOM::TestApp_Init(void)
 
     m_ObjMgr = CObjectManager::GetInstance();
 #ifdef HAVE_PUBSEQ_OS
-    DBAPI_RegisterDriver_CTLIB();
+    DBAPI_RegisterDriver_FTDS();
     GenBankReaders_Register_Pubseq();
 #endif
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);

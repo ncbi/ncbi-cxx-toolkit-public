@@ -249,7 +249,7 @@ void CTestOM::InitOM(void)
              CObjectManager::eDefault, 77);
     }
 #ifdef HAVE_PUBSEQ_OS
-    DBAPI_RegisterDriver_CTLIB();
+    DBAPI_RegisterDriver_FTDS();
     GenBankReaders_Register_Pubseq();
 #endif
     CGBDataLoader::RegisterInObjectManager(*om);
