@@ -1133,12 +1133,12 @@ static EIO_Status s_Select(size_t                n,
                 switch (event) {
                 case eIO_Write:
                 case eIO_ReadWrite:
-                    if (writable) {
+                    if (!writable) {
                         polls[i].revent |= eIO_Write;
                         ready = 1;
                         break;
-                    }
-                    if (type == eDatagram  ||  sock->w_status != eIO_Closed) {
+                    } else if (type == eDatagram
+                               ||  sock->w_status != eIO_Closed) {
                         mask |= FD_WRITE;   
                         if (!sock->connected)
                             mask |= FD_CONNECT;
@@ -1157,9 +1157,9 @@ static EIO_Status s_Select(size_t                n,
                         polls[i].revent |= eIO_Read;
                         ready = 1;
                         break;
-                    }
-                    if (type != eSocket
-                        ||  (sock->r_status != eIO_Closed  &&  !sock->eof)) {
+                    } else  if (type != eSocket
+                                ||  (sock->r_status != eIO_Closed
+                                     &&  !sock->eof)) {
                         mask |= FD_READ;
                         if (type == eSocket)
                             mask |= FD_OOB;
