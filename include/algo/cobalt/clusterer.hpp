@@ -167,8 +167,6 @@ public:
     ///
     void ComputeClusters(double max_diam);
 
-    //    void ComputeClustersEx(double max_diam);
-
     /// Get list of elements of a specified cluster
     /// @param index Cluster index
     /// @return list of element indeces that belong to the cluster
