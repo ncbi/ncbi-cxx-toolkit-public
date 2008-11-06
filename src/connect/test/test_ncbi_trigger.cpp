@@ -215,7 +215,7 @@ void CTest::Client()
 
 void CTest::Server(void)
 {
-    ERR_POST(Info << "Server started...\n");
+    ERR_POST(Info << "Server started on port " << m_Port << "...\n");
 
     // Create listening socket
     CListeningSocket lsock;
