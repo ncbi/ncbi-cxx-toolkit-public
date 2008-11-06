@@ -13,8 +13,8 @@ port="595`expr $$ % 100`"
 
 test_ncbi_trigger -delay 20000 -port $port server >>$server_log 2>&1 &
 spid=$!
-test_ncbi_trigger              -port $port client >>$client_log 2>&1 &
 sleep 1
+test_ncbi_trigger              -port $port client >>$client_log 2>&1 &
 cpid=$!
 trap 'kill -9 $spid $cpid' 0 1 2 15
 
