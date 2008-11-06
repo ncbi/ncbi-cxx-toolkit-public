@@ -1481,7 +1481,7 @@ static EIO_Status s_Select(size_t                n,
                 return eIO_Success;
             if (!tv)
                 continue;
-            if (s_IsSmallerTimeout(s_SelectTmeout, &x_tv)) {
+            if (s_IsSmallerTimeout(s_SelectTimeout, &x_tv)) {
                 x_tv.tv_sec -= s_SelectTimeout->tv_sec;
                 if (x_tv.tv_usec < s_SelectTimeout->tv_usec) {
                     x_tv.tv_sec--;
