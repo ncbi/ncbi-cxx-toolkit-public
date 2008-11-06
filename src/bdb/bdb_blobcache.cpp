@@ -3630,6 +3630,19 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
                 CBDB_Transaction trans(*m_Env,
                                        CBDB_Transaction::eTransASync, // async!
                                        CBDB_Transaction::eNoAssociation);
+
+                if (m_Monitor && m_Monitor->IsActive()) {
+                    string msg = CTime(CTime::eCurrent).AsString();
+                    msg += " Purge: DELETING \"";
+                    msg += blob_descr.key;
+                    msg += "\"-";
+                    msg += NStr::UIntToString(blob_descr.version);
+                    msg += "-\"";
+                    msg += blob_descr.subkey;
+                    msg += "\"\n";
+                    m_Monitor->Send(msg);
+                }
+
                 bool blob_deleted =
                     DropBlobWithExpCheck(blob_descr.key,
                                          blob_descr.version,
@@ -4004,6 +4017,18 @@ purge_start:
                                             CBDB_Transaction::eTransASync, // async!
                                             CBDB_Transaction::eNoAssociation);
 
+                    if (m_Monitor && m_Monitor->IsActive()) {
+                        string msg = CTime(CTime::eCurrent).AsString();
+                        msg += " Purge: DELETING \"";
+                        msg += it.key;
+                        msg += "\"-";
+                        msg += NStr::UIntToString(it.version);
+                        msg += "-\"";
+                        msg += it.subkey;
+                        msg += "\"\n";
+                        m_Monitor->Send(msg);
+                    }
+
                     {{
                         DropBlobWithExpCheck(it.key,
                                              it.version,
@@ -4026,14 +4051,6 @@ purge_start:
                     }} // m_DB_Lock
                     */
                     trans.Commit();
-
-                    if (m_Monitor && m_Monitor->IsActive()) {
-                        string msg = 
-                            "Purge: DELETE \"" + 
-                            it.key + "\"-" + NStr::UIntToString(it.version) + 
-                            "-\"" + it.subkey + "\"\n";
-                        m_Monitor->Send(msg);
-                    }
                 }
                 catch (CBDB_ErrnoException& ex)
                 {
@@ -4087,6 +4104,12 @@ purge_start:
 
 
     ++m_PurgeCount;
+
+    if (m_CleanLogOnPurge) {
+        if ((m_PurgeCount % m_CleanLogOnPurge) == 0) {
+            m_Env->CleanLog();
+        }
+    }
 
     if (IsSaveStatistics()) {
         CFastMutexGuard guard(m_DB_Lock);

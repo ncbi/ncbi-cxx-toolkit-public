@@ -354,7 +354,7 @@ CNetCache_MessageHandler::OnOpen(void)
         msg += " ";
         msg += m_Stat.peer_address;
         msg += "\n\t";
-        msg + "Connection is opened.";
+        msg += "Connection is opened.";
 
         MonitorPost(msg);
     }
@@ -648,9 +648,9 @@ CNetCache_MessageHandler::OnRequestEnd()
     //
     if (IsMonitoring()) {
         string msg, tmp;
-        msg += m_Stat.req_time.AsString();
-        msg += " (finish - ";
         msg += CTime(CTime::eCurrent).AsString();
+        msg += " (start - ";
+        msg += m_Stat.req_time.AsString();
         msg += ")\n\t";
         msg += m_Auth;
         msg += " \"";
@@ -659,7 +659,9 @@ CNetCache_MessageHandler::OnRequestEnd()
         msg += m_Stat.peer_address;
         msg += "\n\t";
         msg += "ConnTime=" + m_Stat.conn_time.AsString();
-        msg += " BLOB size=";
+        msg += " BLOB key=";
+        msg += m_ReqId;
+        msg += " size=";
         NStr::UInt8ToString(tmp, m_Stat.blob_size);
         msg += tmp;
         msg += " elapsed=";
