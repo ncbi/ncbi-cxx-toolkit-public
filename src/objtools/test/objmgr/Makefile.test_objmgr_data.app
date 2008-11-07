@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-REQUIRES = dbapi
+REQUIRES = dbapi FreeTDS
 
 APP = test_objmgr_data
 SRC = test_objmgr_data

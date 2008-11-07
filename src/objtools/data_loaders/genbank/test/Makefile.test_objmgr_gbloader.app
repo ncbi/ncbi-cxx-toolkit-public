@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-REQUIRES = bdb dbapi
+REQUIRES = bdb dbapi FreeTDS
 
 APP = test_objmgr_gbloader
 SRC = test_objmgr_gbloader
