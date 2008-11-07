@@ -653,7 +653,7 @@ void CMasterContext::x_SetBaseName(void)
         parent_name.length() == seg_name.length()  &&
         NStr::EndsWith(parent_name, '1')) {
         size_t pos  = parent_name.length() - 2;
-        for ( /*noop*/; pos >= 0; --pos) {
+        for ( /*noop*/; pos > 0; --pos) {
             if (parent_name[pos] != '0') {
                 break;
             }
