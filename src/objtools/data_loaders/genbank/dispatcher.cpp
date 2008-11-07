@@ -128,6 +128,7 @@ int CReadDispatcher::CollectStatistics(void)
 
 CReadDispatcher::CReadDispatcher(void)
 {
+    CollectStatistics();
     CProcessor::RegisterAllProcessors(*this);
 }
 
