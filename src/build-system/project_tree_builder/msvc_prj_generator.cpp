@@ -168,6 +168,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
             BIND_TOOLS(conf, msvc_tool.Configuration(), IntermediateDirectory);
             BIND_TOOLS(conf, msvc_tool.Configuration(), ConfigurationType);
             BIND_TOOLS(conf, msvc_tool.Configuration(), CharacterSet);
+            BIND_TOOLS(conf, msvc_tool.Configuration(), BuildLogFile);
         }}
        
         // Compiler

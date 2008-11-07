@@ -39,6 +39,7 @@
  <!ATTLIST Configuration    ATLMinimizesCRunTimeLibraryUsage    CDATA #IMPLIED>
  <!ATTLIST Configuration    CharacterSet                        CDATA #IMPLIED>
  <!ATTLIST Configuration    ManagedExtensions                   CDATA #IMPLIED>
+ <!ATTLIST Configuration    BuildLogFile                        CDATA #IMPLIED>
 
 
  <!ATTLIST Tool	Name                            CDATA #REQUIRED>

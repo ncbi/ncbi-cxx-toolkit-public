@@ -80,6 +80,10 @@ public:
     {
 	    return "2";
     }
+    virtual string BuildLogFile(void) const
+    {
+	    return "$(IntDir)\\BuildLog_$(TargetName).htm";
+    }
 
 
 private:
