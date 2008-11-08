@@ -619,6 +619,8 @@ static void TEST__client(const char*     server_host,
     /* Close connection and exit */
     status = SOCK_Close(sock);
     assert(status == eIO_Success  ||  status == eIO_Closed);
+
+    CORE_LOG(eLOG_Note, "TEST COMPLETED");
 }
 
 
