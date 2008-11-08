@@ -216,7 +216,13 @@ typedef struct LSOCK_tag {
     EBIO_Status     w_status:3; /* MBZ (NB: eIO_Success)                     */
     unsigned/*bool*/ pending:1; /* MBZ                                       */
 
-    unsigned        reserved:8; /* MBZ                                       */
+    unsigned          unused:1; /* MBZ                                       */
+#ifdef NCBI_OS_MSWIN
+    unsigned        readable:1; /* =1 if known to have a pending accept      */
+    unsigned        reserved:6; /* MBZ                                       */
+#else
+    unsigned        reserved:7; /* MBZ                                       */
+#endif /*NCBI_OS_MSWIN*/
 
 #ifdef NCBI_OS_MSWIN
 	WSAEVENT         event;     /* event bound to I/O                        */
@@ -264,12 +270,14 @@ typedef struct SOCK_tag {
     unsigned/*bool*/ pending:1; /* =1 if connection is still initing         */
 
     unsigned       connected:1; /* =1 if remote end-point is fully connected */
-#ifdef NCBI_OS_UNIX
-    unsigned       crossexec:1; /* =1 if close-on-exec must NOT be set       */
-    unsigned        reserved:6; /* MBZ                                       */
+#ifdef NCBI_OS_MSWIN
+    unsigned        readable:1; /* =1 if known to be readable                */
+    unsigned        writable:1; /* =1 if known to be writeable               */
+    unsigned        reserved:5; /* MBZ                                       */
 #else
-    unsigned        reserved:7; /* MBZ                                       */
-#endif /*NCBI_OS_UNIX*/
+    unsigned        reserved:6; /* MBZ                                       */
+    unsigned       crossexec:1; /* =1 if close-on-exec must NOT be set       */
+#endif /*NCBI_OS_MSWIN*/
 
 #ifdef NCBI_OS_MSWIN
 	WSAEVENT         event;     /* event bound to I/O                        */

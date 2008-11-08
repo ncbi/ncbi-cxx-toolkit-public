@@ -297,7 +297,6 @@ void CTest::Server(void)
                     polls[i].m_Pollable = 0;
                     continue;
                 }
-                _ASSERT(status == eIO_Success);
             }
             if (polls[i].m_REvent & eIO_Write) {
                 char buf[1023];
@@ -314,7 +313,6 @@ void CTest::Server(void)
                     polls[i].m_Pollable = 0;
                     continue;
                 }
-                _ASSERT(status == eIO_Success);
             }
         }
     }
