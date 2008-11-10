@@ -1448,7 +1448,6 @@ BOOST_AUTO_TEST_CASE(FilterOptionsToStringFromNULL)
     
 BOOST_AUTO_TEST_CASE(FilterOptionsToStringLargeData)
 {
-    const EBlastProgramType kProgram = eBlastTypeBlastn;
     SBlastFilterOptions filtering_options = { '\0' };
     SDustOptionsNew(&filtering_options.dustOptions);
     filtering_options.dustOptions->window *= 2;
