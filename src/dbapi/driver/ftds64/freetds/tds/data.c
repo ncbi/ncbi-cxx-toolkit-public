@@ -91,7 +91,7 @@ tds_set_param_type(TDSSOCKET * tds, TDSCOLUMN * curcol, TDS_SERVER_TYPE type)
 			break;
 		}
 	}
-    else if (tds->product_name && strcmp(tds->product_name, "OpenServer") != 0) {
+    else if (!IS_TDS_OS(tds)) {
 		switch (type) {
 		case SYBVARCHAR:
 		case SYBCHAR:
@@ -207,7 +207,7 @@ tds_get_varint_size(TDSSOCKET * tds, int datatype)
 	case SYBUINT8:
 		return 0;
     case SYBLONGBINARY:
-        return 5;
+        return IS_TDS_OS(tds)? 4: 5;
     }
 
     if (IS_TDS7_PLUS(tds)) {
