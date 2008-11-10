@@ -33,7 +33,7 @@ POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $plat
 
 # ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
 # that
-Linux32     : plain : ICC.sh            --without-debug --with-mt --with-flat-makefile
+Linux32     : plain : ICC.sh            --without-debug --with-mt --with-flat-makefile --without-dll LDFLAGS=-static-libcxa
 Linux64     : plain : ICC.sh            --without-debug --with-mt --with-flat-makefile
 
 Win32       : plain : msvc800_prj   static  32  ReleaseDLL
