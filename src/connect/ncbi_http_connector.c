@@ -210,9 +210,11 @@ static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
 static EIO_Status s_Connect(SHttpConnector* uuu,
                             EReadMode       read_mode)
 {
+    EIO_Status status;
+
     assert(!uuu->sock);
     if (uuu->can_connect == eCC_None) {
-        CORE_LOG_X(5, eLOG_Error, "[HTTP]  Connector is no longer usable");
+        CORE_LOG_X(5, eLOG_Error, "[HTTP]  Connector no longer usable");
         return eIO_Closed;
     }
 
@@ -243,32 +245,32 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                  ? fSOCK_LogOn : fSOCK_LogDefault);
         if (uuu->net_info->scheme == eURL_Https)
             flags |= fSOCK_Secure;
+        if (!(uuu->flags & fHCC_NoUpread))
+            flags |= fSOCK_ReadOnWrite;
         /* connect & send HTTP header */
-        uuu->sock = URL_Connect
-            (uuu->net_info->host,       uuu->net_info->port,
-             uuu->net_info->path,       uuu->net_info->args,
-             uuu->net_info->req_method, uuu->w_len,
-             uuu->o_timeout,            uuu->w_timeout,
-             uuu->net_info->http_user_header,
-             (int/*bool*/)(uuu->flags & fHCC_UrlEncodeArgs),
-             flags);
+        if ((status = URL_ConnectEx
+             (uuu->net_info->host,       uuu->net_info->port,
+              uuu->net_info->path,       uuu->net_info->args,
+              uuu->net_info->req_method, uuu->w_len,
+              uuu->o_timeout,            uuu->w_timeout,
+              uuu->net_info->http_user_header,
+              (int/*bool*/)(uuu->flags & fHCC_UrlEncodeArgs),
+              flags, &uuu->sock)) != eIO_Success) {
+            uuu->sock = 0;
+        }
         if (reset_user_header) {
             ConnNetInfo_SetUserHeader(uuu->net_info, 0);
             uuu->net_info->http_user_header = http_user_header;
         }
-
-        if (uuu->sock) {
-            if (!(uuu->flags & fHCC_NoUpread))
-                SOCK_SetReadOnWrite(uuu->sock, eOn);
-            return eIO_Success;
-        }
+        if (uuu->sock)
+            break/*success*/;
 
         /* connection failed, no socket was created */
         if (!s_Adjust(uuu, &null, read_mode))
-            break;
+            break/*closed*/;
     }
 
-    return eIO_Closed;
+    return status;
 }
 
 
@@ -330,14 +332,13 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
             break;
         }
 
-        if (status == eIO_Timeout &&  uuu->w_timeout  &&
-            !uuu->w_timeout->sec  &&  !uuu->w_timeout->usec) {
+        if (status == eIO_Timeout  &&  uuu->w_timeout  &&
+            !(uuu->w_timeout->sec | uuu->w_timeout->usec)) {
             break;
         }
-
         CORE_LOGF_X(6, eLOG_Error,
                     ("[HTTP]  Error writing body at offset %lu (%s)",
-                     (unsigned long) (BUF_Size(uuu->w_buf) - uuu->w_len),
+                     (unsigned long)(BUF_Size(uuu->w_buf) - uuu->w_len),
                      IO_StatusStr(status)));
 
         /* write failed; close and try to use another server */
@@ -528,7 +529,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         char* s;
         for (s = strchr(header, '\n');  s  &&  *s;  s = strchr(s + 1, '\n')) {
             if (strncasecmp(s + (redirect == eRetry_Authenticate ? 4 : 6),
-                            kAuthenticateTag, sizeof(kAuthenticateTag)-1) == 0){
+                            kAuthenticateTag, sizeof(kAuthenticateTag)-1)==0){
                 if ((redirect == eRetry_Authenticate
                      &&  strncasecmp(s, "\nWWW",   4) != 0)  ||
                     (redirect == eRetry_ProxyAuthenticate
@@ -623,7 +624,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
             break;
         }
         if (status != eIO_Success) {
-            if (status != eIO_Timeout ||
+            if (status != eIO_Timeout  ||
                 status == SOCK_Status(uuu->sock, eIO_Read)/*pending*/)
                 break;
         }

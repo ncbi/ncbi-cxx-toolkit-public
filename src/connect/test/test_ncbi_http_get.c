@@ -131,7 +131,9 @@ int main(int argc, char* argv[])
         if (status != eIO_Success) {
             if (status != eIO_Timeout)
                 break;
-            if ((unsigned long)(time(0) - t) > DEF_CONN_TIMEOUT)
+            if ((net_info->timeout  &&
+                 (net_info->timeout->sec | net_info->timeout->usec))
+                ||  (unsigned long)(time(0) - t) > DEF_CONN_TIMEOUT)
                 CORE_LOG(eLOG_Fatal, "Timed out");
 #ifdef NCBI_OS_UNIX
             usleep(500);
