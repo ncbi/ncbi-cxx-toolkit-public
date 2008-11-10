@@ -74,7 +74,8 @@ public:
         eQueriesError,  ///< Error related to query sequences occured
         eDatabaseError, ///< Error related to RPS database occured
         eInternalError, ///< Unexpected error occured
-        eInterrupt      ///< Alignment interruped through callback function
+        eInterrupt,     ///< Alignment interruped through callback function
+        eLimitsExceeded ///< Processing limits exceeded
     };
 
     typedef int TStatus;
