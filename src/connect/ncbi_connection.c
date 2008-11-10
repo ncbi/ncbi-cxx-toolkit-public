@@ -388,12 +388,16 @@ extern EIO_Status CONN_Wait
         : eIO_NotSupported;
 
     if (status != eIO_Success) {
-        if (status != eIO_Timeout)
-            CONN_LOG(14, eLOG_Error, "[CONN_Wait]  Error waiting on I/O");
-        else if (!timeout  ||  (timeout->sec | timeout->usec))
-            CONN_LOG(15, eLOG_Warning, "[CONN_Wait]  I/O timed out");
+        if (status != eIO_Timeout) {
+            CONN_LOG(14, eLOG_Error, event == eIO_Read
+                     ? "[CONN_Wait]  Error waiting on read"
+                     : "[CONN_Wait]  Error waiting on write");
+        } else if (!timeout  ||  (timeout->sec | timeout->usec)) {
+            CONN_LOG(15, eLOG_Warning, event == eIO_Read
+                     ? "[CONN_Wait]  Read timed out"
+                     : "[CONN_Wait]  Write timed out");
+        }
     }
-
     return status;
 }
 
