@@ -1117,7 +1117,7 @@ static EIO_Status s_Select(size_t                n,
                     continue;
                 assert((EIO_Event)
                        (polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
-                event &= ~polls[i].revent;
+                event = (EIO_Event)(event & ~polls[i].revent);
             }
 
             if (bad)
@@ -1293,12 +1293,12 @@ static EIO_Status s_Select(size_t                n,
                         sock->readable = 1/*true*/;
                     want[i] &= e.lNetworkEvents;
                     if (want[i] & (FD_ACCEPT | FD_READ | FD_OOB | FD_CLOSE)) {
-                        polls[j].revent |= eIO_Read;
+                        polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Read);
                         ready = 1;
                     }
                     if (want[i] & (FD_CONNECT  | FD_WRITE)) {
                         assert(sock->type & eSocket);
-                        polls[j].revent |= eIO_Write;
+                        polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Write);
                         ready = 1;
                     }
                     if (!polls[j].revent) {
@@ -1400,7 +1400,7 @@ static EIO_Status s_Select(size_t                n,
                     continue;
                 assert((EIO_Event)
                        (polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
-                event &= ~polls[i].revent;
+                event = (EIO_Event)(event & ~polls[i].revent);
             }
 
             if (bad)
@@ -1554,13 +1554,13 @@ static EIO_Status s_Select(size_t                n,
             }
             if (polls[i].revent != eIO_Close) {
                 if (!write_only  &&  FD_ISSET(fd, &r_fds)) {
-                    polls[i].revent |= eIO_Read;
+                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Read);
 #  ifdef NCBI_OS_MSWIN
                     sock->readable = 1/*true*/;
 #  endif /*NCBI_OS_MSWIN*/
                 }
                 if (!read_only   &&  FD_ISSET(fd, &w_fds)) {
-                    polls[i].revent |= eIO_Write;
+                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
 #  ifdef NCBI_OS_MSWIN
                     sock->writable = 1/*true*/;
 #  endif /*NCBI_OS_MSWIN*/
@@ -2885,14 +2885,17 @@ static EIO_Status s_Connect(SOCK            sock,
 
     if (!x_error  ||  !timeout  ||  (timeout->sec | timeout->usec)) {
         struct timeval tv;
+        const struct timeval* x_tv = s_to2tv(timeout, &tv);
 
-        status = s_IsConnected(sock, s_to2tv(timeout, &tv), &x_error,!x_error);
+        status = s_IsConnected(sock, x_tv, &x_error, !x_error);
         if (status != eIO_Success) {
             const char* reason;
             if (status == eIO_Timeout) {
-                assert(timeout);
+                assert(x_tv/*it is also normalized*/);
                 sprintf(buf + sizeof(buf)/2, "%s[%u.%06u]",
-                        IO_StatusStr(status), timeout->sec, timeout->usec);
+                        IO_StatusStr(status),
+                        (unsigned int) x_tv->tv_sec,
+                        (unsigned int) x_tv->tv_usec);
                 reason = buf + sizeof(buf)/2;
                 assert(strlen(reason) < sizeof(buf)/2);
             } else
