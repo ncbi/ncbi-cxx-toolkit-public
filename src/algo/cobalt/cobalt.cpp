@@ -388,32 +388,81 @@ CMultiAligner::x_ComputeTree()
     }
 }
 
-void 
-CMultiAligner::Run()
+CMultiAligner::TStatus CMultiAligner::Run()
 {
-    bool is_cluster_found = false;
+    EStatus status = eSuccess;
 
-    if (m_UseClusters) {
-        if ((is_cluster_found = x_FindQueryClusters())) {
-            x_AlignInClusters();
-            // No multiple alignment is done for one cluster
-            if (m_Clusterer.GetClusters().size() == 1) {
-                m_tQueries.swap(m_AllQueries);
-                return;
+    try {
+        bool is_cluster_found = false;
+
+        if (m_UseClusters) {
+            if ((is_cluster_found = x_FindQueryClusters())) {
+                x_AlignInClusters();
+                // No multiple alignment is done for one cluster
+                if (m_Clusterer.GetClusters().size() == 1) {
+                    m_tQueries.swap(m_AllQueries);
+                    return (TStatus)(IsMessage() ? eWarnings : eSuccess);
+                }
             }
         }
+
+        x_FindDomainHits();
+        x_FindLocalHits();
+        x_FindPatternHits();
+        x_FindConsistentHitSubset();
+        x_ComputeTree();
+        x_BuildAlignment();
+
+        if (is_cluster_found) {
+            x_MultiAlignClusters();
+        }
+    }
+    catch (CMultiAlignerException e) {
+        CMultiAlignerException::EErrCode err_code
+            = (CMultiAlignerException::EErrCode)e.GetErrCode();
+
+        switch (err_code) {
+        case CMultiAlignerException::eInvalidScoreMatrix:
+        case CMultiAlignerException::eInvalidOptions:
+            status = eOptionsError;
+            break;
+
+        case CMultiAlignerException::eInvalidInput:
+            status = eQueriesError;
+            break;
+
+        case CMultiAlignerException::eInterrupt:
+            status = eInterrupt;
+            break;
+
+        default:
+            status = eInternalError;
+        }
+
+        m_Messages.push_back(e.GetMsg());
+    }
+    catch (blast::CBlastException e) {
+        blast::CBlastException::EErrCode err_code
+            = (blast::CBlastException::EErrCode)e.GetErrCode();
+
+        status = (err_code == blast::CBlastException::eInvalidArgument 
+                  ? eDatabaseError : eInternalError);
+
+        m_Messages.push_back(e.GetMsg());
+    }
+    catch (CException e) {
+        status = eInternalError;
+        m_Messages.push_back(e.GetMsg());
+    }
+    catch (...) {
+        status = eInternalError;
     }
 
-    x_FindDomainHits();
-    x_FindLocalHits();
-    x_FindPatternHits();
-    x_FindConsistentHitSubset();
-    x_ComputeTree();
-    x_BuildAlignment();
-
-    if (is_cluster_found) {
-        x_MultiAlignClusters();
+    if (status == eSuccess && IsMessage()) {
+        status = eWarnings;
     }
+
+    return (TStatus)status;
 }
 
 

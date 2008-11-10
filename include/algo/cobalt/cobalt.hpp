@@ -66,8 +66,18 @@ class NCBI_COBALT_EXPORT CMultiAligner : public CObject
 {
 public:
 
-    typedef CSparseKmerCounts TKmerCounts;
-    typedef TKmerMethods<TKmerCounts> TKMethods;
+    /// Return status
+    enum EStatus {
+        eSuccess = 0,   ///< Alignment successfully completed
+        eWarnings = 1,  ///< Alignment completed with warnings
+        eOptionsError,  ///< Error related to options occured
+        eQueriesError,  ///< Error related to query sequences occured
+        eDatabaseError, ///< Error related to RPS database occured
+        eInternalError, ///< Unexpected error occured
+        eInterrupt      ///< Alignment interruped through callback function
+    };
+
+    typedef int TStatus;
 
     enum EAlignmentStage {
         eBegin,
@@ -93,6 +103,8 @@ public:
     /// processing stops
     typedef bool(*FInterruptFn)(SProgress* progress);
 
+    typedef CSparseKmerCounts TKmerCounts;
+    typedef TKmerMethods<TKmerCounts> TKMethods;
 
 public:
 
@@ -168,8 +180,9 @@ public:
     /// This function handles the generation of all internal state in the
     /// correct order. It is sufficient for 'black box' applications that
     /// only want a final answer without tweaking internal state.
+    /// @return Computation status: success (0), warnings (1), error (>1)
     ///
-    void Run(void);
+    TStatus Run(void);
 
     /// Clear out the state left by the previous alignment operation
     ///
