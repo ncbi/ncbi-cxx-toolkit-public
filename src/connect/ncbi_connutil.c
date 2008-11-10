@@ -187,7 +187,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         info->timeout = 0;
     } else {
         info->timeout = &info->tmo;
-        if (!*str || (dbl = atof(str)) < 0.0)
+        if (!*str  ||  (dbl = atof(str)) < 0.0)
             dbl = DEF_CONN_TIMEOUT;
         info->timeout->sec  = (unsigned int) dbl;
         info->timeout->usec = (unsigned int)
@@ -206,8 +206,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         /* yes, use the specified HTTP proxy server */
         REG_VALUE(REG_CONN_HTTP_PROXY_PORT, str, DEF_CONN_HTTP_PROXY_PORT);
         errno = 0;
-        if (*str  &&  (val = strtoul(str, &e, 10)) > 0  &&  !errno
-            &&  !*e  &&  val < (1 << 16)) {
+        if (*str  &&  (val = strtoul(str, &e, 10)) > 0
+            &&  !errno  &&  !*e  &&  val < (1 << 16)) {
             info->http_proxy_port = val;
         } else
             info->http_proxy_port = 0/*default*/;
@@ -1030,7 +1030,7 @@ extern void ConnNetInfo_Destroy(SConnNetInfo* info)
  */
 
 
-extern SOCK URL_Connect
+extern EIO_Status URL_ConnectEx
 (const char*     host,
  unsigned short  port,
  const char*     path,
@@ -1041,7 +1041,8 @@ extern SOCK URL_Connect
  const STimeout* rw_timeout,
  const char*     user_hdr,
  int/*bool*/     encode_args,
- TSOCK_Flags     flags)
+ TSOCK_Flags     flags,
+ SOCK*           sock)
 {
     static const char X_REQ_Q[] = "?";
     static const char X_REQ_E[] = " HTTP/1.0\r\n";
@@ -1049,20 +1050,19 @@ extern SOCK URL_Connect
 
     EIO_Status  st;
     BUF         buf;
-    SOCK        sock;
     char*       header;
+    size_t      hdrsize;
     char        strbuf[80];
-    size_t      headersize;
     const char* x_args = 0;
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
     const char* x_req_r; /* "POST "/"GET " */
 
     /* check the args */
-    if (!host  ||  !*host  ||
+    if (!sock  ||  !host  ||  !*host  ||
         (user_hdr  &&  *user_hdr  &&  user_hdr[user_hdr_len - 1] != '\n')) {
         CORE_LOG_X(2, eLOG_Error, "[URL_Connect]  Bad arguments");
         assert(0);
-        return 0/*error*/;
+        return eIO_InvalidArg;
     }
 
     /* select request method and its verbal representation */
@@ -1082,10 +1082,10 @@ extern SOCK URL_Connect
         break;
     default:
         CORE_LOGF_X(4, eLOG_Error,
-                    ("[URL_Connect]  Unrecognized request method (%d)",
-                     (int) req_method));
+                    ("[URL_Connect]  Unrecognized request method (#%u)",
+                     (unsigned int) req_method));
         assert(0);
-        return 0/*error*/;
+        return eIO_InvalidArg;
     }
 
     /* URL-encode "args", if any specified */
@@ -1095,8 +1095,12 @@ extern SOCK URL_Connect
             size_t dst_size = 3 * src_size;
             size_t src_read, dst_written;
             char* xx_args = (char*) malloc(dst_size + 1);
-            if (!xx_args)
-                return 0/*failure: no memory*/;
+            if (!xx_args) {
+                CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
+                                  ("[URL_Connect]  Out of memory (%d)",
+                                   dst_size + 1));
+                return eIO_Unknown;
+            }
             URL_Encode(args,    src_size, &src_read,
                        xx_args, dst_size, &dst_written);
             xx_args[dst_written] = '\0';
@@ -1140,51 +1144,64 @@ extern SOCK URL_Connect
               !BUF_Write(&buf, strbuf, strlen(strbuf))))      ||
 
         !BUF_Write(&buf, "\r\n", 2)) {
-        CORE_LOGF_X(5, eLOG_Error,
-                    ("[URL_Connect]  Error composing HTTP header for"
-                     " %s:%hu%s%s", host, port, errno ? ": " : "",
-                     errno ? strerror(errno) : ""));
+        int x_errno = errno;
+        CORE_LOGF_ERRNO_X(5, eLOG_Error, x_errno,
+                          ("[URL_Connect]  Error building HTTP header for"
+                           " %s:%hu", host, port));
         BUF_Destroy(buf);
         if (x_args  &&  x_args != args)
             free((void*) x_args);
-        return 0/*error*/;
+        return eIO_Unknown;
     }
     if (x_args  &&  x_args != args)
         free((void*) x_args);
 
-    if (!(header = (char*) malloc(headersize = BUF_Size(buf))) ||
-        BUF_Read(buf, header, headersize) != headersize) {
-        CORE_LOGF_X(6, eLOG_Error,
-                    ("[URL_Connect]  Error storing HTTP header for"
-                     " %s:%hu: %s", host, port,
-                     errno ? strerror(errno) : "Unknown error"));
+    if (!(header = (char*) malloc(hdrsize = BUF_Size(buf)))
+        ||  BUF_Read(buf, header, hdrsize) != hdrsize) {
+        int x_errno = errno;
+        CORE_LOGF_ERRNO_X(6, eLOG_Error, x_errno,
+                          ("[URL_Connect]  Error storing HTTP header for"
+                           " %s:%hu", host, port));
         if (header)
             free(header);
         BUF_Destroy(buf);
-        return 0/*error*/;
+        return eIO_Unknown;
     }
     BUF_Destroy(buf);
 
     /* connect to HTTPD */
-    st = SOCK_CreateEx(host, port, c_timeout, &sock, header, headersize, flags);
+    st = SOCK_CreateEx(host, port, c_timeout, sock, header, hdrsize, flags);
     free(header);
     if (st != eIO_Success) {
+        assert(!*sock);
         CORE_LOGF_X(7, eLOG_Error,
                     ("[URL_Connect]  Socket connect to %s:%hu failed: %s",
                      host, port, IO_StatusStr(st)));
-        return 0/*error*/;
-    }
+    } else
+        verify(SOCK_SetTimeout(*sock, eIO_ReadWrite, rw_timeout)==eIO_Success);
+    return st;
+}
 
-    /* setup I/O timeout for the connection */
-    if (SOCK_SetTimeout(sock, eIO_ReadWrite, rw_timeout) != eIO_Success) {
-        CORE_LOG_X(8, eLOG_Error,
-                   "[URL_Connect]  Cannot set connection timeout");
-        SOCK_Close(sock);
-        return 0/*error*/;
-    }
 
-    /* success */
-    return sock;
+extern SOCK URL_Connect
+(const char*     host,
+ unsigned short  port,
+ const char*     path,
+ const char*     args,
+ EReqMethod      req_method,
+ size_t          content_length,
+ const STimeout* c_timeout,
+ const STimeout* rw_timeout,
+ const char*     user_hdr,
+ int/*bool*/     encode_args,
+ TSOCK_Flags     flags)
+{
+    SOCK sock;
+    EIO_Status st = URL_ConnectEx(host, port, path, args,
+                                  req_method, content_length,
+                                  c_timeout, rw_timeout,
+                                  user_hdr, encode_args, flags, &sock);
+    return st == eIO_Success ? sock : 0;
 }
 
 

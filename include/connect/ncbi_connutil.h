@@ -55,12 +55,11 @@
  *       #define DEF_CONN_***
  *
  *    2.Make a connection to an URL:
- *       URL_Connect()
+ *       URL_Connect[Ex]()
  *       
  *    3.Perform URL encoding/decoding of data:
  *       URL_Encode()
- *       URL_Decode()
- *       URL_DecodeEx()
+ *       URL_Decode[Ex]()
  *
  *    5.Compose or parse NCBI-specific Content-Type's:
  *       EMIME_Type
@@ -451,12 +450,14 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  * If "encode_args" is TRUE then URL-encode the "args".
  * "args" can be NULL/empty -- then the '?' symbol does not get added.
  *
- * On success, return non-NULL handle of a socket.
+ * On success, return eIO_Success and non-NULL handle of a socket via last
+ * parameter.
  * ATTENTION:  due to the very essence of the HTTP connection, you may
  *             perform only one { WRITE, ..., WRITE, READ, ..., READ } cycle.
  * Returned socket must be closed exipicitly by "ncbi_socket.h:SOCK_Close()"
  * when no longer needed.
- * On error, return NULL.
+ * On error, return specific code (last parameter may not be updated),
+ * no socket gets created.
  *
  * NOTE: Returned socket may not be immediately readable/writeable if open
  *       and/or read/write timeouts were passed as {0,0}, meaning that both
@@ -465,6 +466,23 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  *       analyze the actual socket state in this case (see "ncbi_socket.h").
  */
 
+extern NCBI_XCONNECT_EXPORT EIO_Status URL_ConnectEx
+(const char*     host,            /* must be provided                        */
+ unsigned short  port,            /* may be 0, defaulted to either 80 or 443 */
+ const char*     path,            /* must be provided                        */
+ const char*     args,            /* may be NULL or empty                    */
+ EReqMethod      req_method,      /* ANY selects method by "content_length"  */
+ size_t          content_length,
+ const STimeout* c_timeout,       /* timeout for the CONNECT stage           */
+ const STimeout* rw_timeout,      /* timeout for READ and WRITE              */
+ const char*     user_header,
+ int/*bool*/     encode_args,     /* URL-encode the "args", if any           */
+ TSOCK_Flags     flags,           /* additional socket requirements          */
+ SOCK*           sock             /* returned socket (on eIO_Success only)   */
+ );
+
+/* Equivalent to the above except that it returns non-NULL socket handle
+ * on success, and NULL on error without providing a reason for the failure. */
 extern NCBI_XCONNECT_EXPORT SOCK URL_Connect
 (const char*     host,            /* must be provided                        */
  unsigned short  port,            /* may be 0, defaulted to either 80 or 443 */
@@ -478,7 +496,6 @@ extern NCBI_XCONNECT_EXPORT SOCK URL_Connect
  int/*bool*/     encode_args,     /* URL-encode the "args", if any           */
  TSOCK_Flags     flags            /* additional socket requirements          */
  );
-
 
 
 /* Discard all input data before(and including) the first occurrence of
