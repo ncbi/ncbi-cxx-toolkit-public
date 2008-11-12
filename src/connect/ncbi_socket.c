@@ -1610,7 +1610,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
         assert(poll.event == eIO_Write);
         if (status == eIO_Timeout)
             return status;
-        assert(poll.revent == eIO_Write  ||  poll.revent == eIO_Close);
+        assert(poll.revent == eIO_Write  ||  status != eIO_Success);
     } else {
         status      = eIO_Success;
         poll.revent = eIO_Write;
@@ -1628,8 +1628,13 @@ static EIO_Status s_IsConnected(SOCK                  sock,
 #endif /*NCBI_OS_UNIX || NCBI_OS_MSWIN*/
 
     if (status != eIO_Success  ||  poll.revent != eIO_Write) {
-        if (!*error)
+        if (!*error) {
             *error = SOCK_ERRNO;
+#  ifdef NCBI_OS_MSWIN
+            if (!*error)
+                *error = errno;
+#  endif /*NCBI_OS_MSWIN*/
+        }
         if (*error == SOCK_ECONNREFUSED  ||  *error == SOCK_ETIMEDOUT)
             sock->r_status = sock->w_status = status = eIO_Closed;
         else if (status == eIO_Success)
