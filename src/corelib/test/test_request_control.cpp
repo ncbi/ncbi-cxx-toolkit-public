@@ -79,6 +79,8 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
+    double e;
+
     START(1);
     {{
         // Forbid zero requests per any time
@@ -87,6 +89,7 @@ int CTest::Run(void)
         assert( !mgr.Approve() );
     }}
     DONE;
+
     START(2);
     {{
         // Allow only 1 request per any period of time
@@ -97,6 +100,7 @@ int CTest::Run(void)
 
     }}
     DONE;
+
     START(3);
     {{
         // Allow any number of requests with frequency 1 request per second
@@ -108,6 +112,7 @@ int CTest::Run(void)
         assert( mgr.Approve() );
     }}
     DONE;
+
     START(4);
     {{
         // Allow 2 request per second with any frequency
@@ -122,6 +127,7 @@ int CTest::Run(void)
         assert( !mgr.Approve() );
     }}
     DONE;
+
     START(5);
     {{
         // Allow 2 request per 3 seconds with frequency 1 request per second
@@ -141,7 +147,6 @@ int CTest::Run(void)
 
     // eSleep
 
-    double e;
     START(6);
     {{
         // Allow any number of requests with frequency 1 request per second
@@ -157,6 +162,7 @@ int CTest::Run(void)
         assert( e > 1.8); 
     }}
     DONE;
+
     START(7);
     {{
         // Allow 2 request per 3 seconds with frequency 1 request per second
@@ -187,6 +193,19 @@ int CTest::Run(void)
     }}
     DONE;
 
+    START(8);
+    {{
+        // Allow any number of requests (throtling is disabled)
+        CRequestRateControl mgr(CRequestRateControl::kNoLimit);
+        CStopWatch sw(CStopWatch::eStart);
+        for (int i=0; i<1000; i++) {
+            assert( mgr.Approve() );
+        }
+        ELAPSED;
+        assert( e < 0.1); 
+    }}
+    DONE;
+ 
     return 0;
 }
 

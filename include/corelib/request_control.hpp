@@ -33,7 +33,7 @@
  *
  */
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbitime.hpp>
 #include <deque>
 
@@ -90,6 +90,15 @@ public:
         eDefault     ///< in c-tor: eSleep;  in Wait() -- value set in c-tor
     };
 
+    /// Special value for maximum number of allowed requests per period.
+    /// Disable any kind of request throttling.
+    /// 
+    /// @sa 
+    ///   Reset
+    enum {
+        kNoLimit = kMax_UInt
+    };
+
     /// Constructor.
     ///
     /// Construct class object. Run Reset() method.
@@ -109,6 +118,8 @@ public:
     ///
     /// @param num_requests_allowed
     ///   Maximum number of allowed requests per 'per_period'.
+    ///   Can be kNoLimit for unlimited number of requests (throttler is disabled,
+    ///   Approve() always returns TRUE).
     /// @param per_period
     ///   Time span in which only 'num_requests_allowed' requests can be
     ///   approved.
@@ -116,6 +127,8 @@ public:
     ///   Minimum time between two succesful consecutive requests.
     /// @param throttle_action
     ///   Set throttle action by default. The eDefault means eSleep here.
+    /// @sa
+    ///   Approve
     void Reset(unsigned int     num_requests_allowed,
                CTimeSpan        per_period                = CTimeSpan(1,0),
                CTimeSpan        min_time_between_requests = CTimeSpan(0,0),
@@ -131,6 +144,8 @@ public:
     ///   Return TRUE if everything meet to established requirements.
     ///   Return FALSE if some requirements are not passed, or
     ///   throw exception if throttle action was set to eException.
+    /// @sa
+    ///   Reset
     bool Approve(EThrottleAction action = eDefault);
 
     /// Lock/unlock functions for use by generic RAII guard CGuard.

@@ -74,6 +74,12 @@ void CRequestRateControl::Reset(
 
 bool CRequestRateControl::Approve(EThrottleAction action)
 {
+    // Is throttler disabled?
+    if ( m_NumRequests == kNoLimit ) {
+        // Approve request
+        return true;
+    }
+
     // Get current time
     CTime now(CTime::eCurrent, CTime::eGmt);
 
