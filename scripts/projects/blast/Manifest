@@ -43,3 +43,5 @@ SunOSx86    : plain : WorkShop59.sh 64  --without-debug --with-mt --with-flat-ma
 SunOSSparc  : plain : WorkShop59.sh 64  --without-debug --with-mt --with-flat-makefile
 
 IntelMAC    : universal : GCC.sh        --without-debug --with-mt --with-flat-makefile --with-universal --with-ncbi-public
+
+USE_COMPONENTS 

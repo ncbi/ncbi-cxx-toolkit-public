@@ -1,0 +1,113 @@
+[components]
+infrastructure  3.0.0
+core            3.0.0
+dbase           3.0.0
+web             3.0.0
+objects         3.0.0
+objtools        3.0.0
+algo            3.0.0
+misc            3.0.0
+
+[repository: https://svn.ncbi.nlm.nih.gov/repos/toolkit]
+src/dll                     trunk/c++/src/dll                     -r140909
+src/app                     trunk/c++/src/app                     -r140909
+src/app/netcache            trunk/c++/src/app/netcache            -r141887
+src/app/netschedule         trunk/c++/src/app/netschedule         -r140923
+
+[repository: https://svn.ncbi.nlm.nih.gov/repos/gbench]
+src/gui                              branches/c++-toolkit/src/gui                              -r17853
+include/gui                          branches/c++-toolkit/include/gui                          -r17853
+src/internal/gbench                  branches/c++-toolkit/src/internal/gbench                  -r17853
+src/internal/gbench/install          branches/c++-toolkit/src/internal/gbench/install          -r17853
+src/internal/gbench/app/sviewer      branches/c++-toolkit/src/internal/gbench/app/sviewer      -r17853
+include/internal/gbench              branches/c++-toolkit/include/internal/gbench              -r17853
+include/internal/gbench/app/sviewer  branches/c++-toolkit/include/internal/gbench/app/sviewer  -r17853
+
+[repository: https://svn.ncbi.nlm.nih.gov/repos/toolkit]
+src/internal/third_party/affy                           trunk/internal/c++/src/internal/third_party/affy                          -r140909
+include/internal/third_party/affy                       trunk/internal/c++/include/internal/third_party/affy                      -r140909
+
+src/internal/objects                                    trunk/internal/c++/src/internal/objects                                   -r140909
+include/internal/objects                                trunk/internal/c++/include/internal/objects                               -r140909
+
+src/internal/misc/dbapi_driver_wrap_s                   trunk/internal/c++/src/internal/misc/dbapi_driver_wrap_s                  -r140909
+include/internal/misc/dbapi_driver_wrap_s               trunk/internal/c++/include/internal/misc/dbapi_driver_wrap_s              -r140909
+
+src/internal/egene                                      trunk/internal/c++/src/internal/egene                                     -r140909
+include/internal/egene                                  trunk/internal/c++/include/internal/egene                                 -r140909
+
+src/internal/ID/utils                                   trunk/internal/c++/src/internal/ID/utils                                  -r140909
+include/internal/ID/utils                               trunk/internal/c++/include/internal/ID/utils                              -r140909
+
+src/internal/align_model                                trunk/internal/c++/src/internal/align_model                               -r140909
+include/internal/align_model                            trunk/internal/c++/include/internal/align_model                           -r140909
+
+src/internal/geo                                        trunk/internal/c++/src/internal/geo                                       -r140909
+include/internal/geo                                    trunk/internal/c++/include/internal/geo                                   -r140909
+
+src/internal/pubmedxml/Common/XmlDocument               trunk/internal/c++/src/internal/pubmedxml/Common/XmlDocument              -r140909
+src/internal/pubmedxml/Libs/PubmedServer                trunk/internal/c++/src/internal/pubmedxml/Libs/PubmedServer               -r140909
+src/internal/pubmedxml/Libs/TServer                     trunk/internal/c++/src/internal/pubmedxml/Libs/TServer                    -r140909
+include/internal/pubmedxml/include                      trunk/internal/c++/include/internal/pubmedxml/include                     -r140909
+include/internal/pubmedxml/jrsrv2                       trunk/internal/c++/include/internal/pubmedxml/jrsrv2                      -r140909
+
+src/internal/pubmedxml/xmldb                            trunk/internal/c++/src/internal/pubmedxml/xmldb                           -r142121
+include/internal/pubmedxml/xmldb                        trunk/internal/c++/include/internal/pubmedxml/xmldb                       -r142121
+
+src/internal/idx                                        trunk/internal/c++/src/internal/idx                                       -r140909
+include/internal/idx                                    trunk/internal/c++/include/internal/idx                                   -r140909
+
+src/internal/idxall                                     trunk/internal/c++/src/internal/idxall                                    -r140909
+
+src/internal/ilink                                      trunk/internal/c++/src/internal/ilink                                     -r140909
+include/internal/ilink                                  trunk/internal/c++/include/internal/ilink                                 -r140909
+
+src/internal/skycgh                                     trunk/internal/c++/src/internal/skycgh                                    -r140909
+include/internal/skycgh                                 trunk/internal/c++/include/internal/skycgh                                -r140909
+
+src/internal/homologene                                 trunk/internal/c++/src/internal/homologene                                -r140909
+include/internal/homologene                             trunk/internal/c++/include/internal/homologene                            -r140909
+
+src/internal/idxext                                     trunk/internal/c++/src/internal/idxext                                    -r142121
+src/internal/idxext/taxonomy/apps/t2index/Idx_Taxonomy  trunk/internal/c++/src/internal/idxext/taxonomy/apps/t2index/Idx_Taxonomy -r142896
+include/internal/idxext                                 trunk/internal/c++/include/internal/idxext                                -r142121
+
+src/internal/comm                                       trunk/internal/c++/src/internal/comm                                      -r140909
+include/internal/comm                                   trunk/internal/c++/include/internal/comm                                  -r140909
+
+src/internal/history                                    trunk/internal/c++/src/internal/history                                   -r142121
+include/internal/history                                trunk/internal/c++/include/internal/history                               -r142121
+
+src/internal/portal/backend/HTB                         trunk/internal/c++/src/internal/portal/backend/HTB                        -r140909
+include/internal/portal/backend                         trunk/internal/c++/include/internal/portal/backend                        -r140909
+
+src/internal/a1/u2                                      trunk/internal/c++/src/internal/a1/u2                                     -r140909
+src/internal/a1/idfetch                                 trunk/internal/c++/src/internal/a1/idfetch                                -r140909
+
+src/internal/util/testipub                              trunk/internal/c++/src/internal/util/testipub                             -r140909
+src/internal/util/pstub                                 trunk/internal/c++/src/internal/util/pstub                                -r140910
+
+src/internal/vftp/fgi                                   trunk/internal/c++/src/internal/vftp/fgi                                  -r140909
+include/internal/vftp/fgi                               trunk/internal/c++/include/internal/vftp/fgi                              -r140909
+
+src/internal/myncbi                                     trunk/internal/c++/src/internal/myncbi                                    -r140909
+include/internal/myncbi                                 trunk/internal/c++/include/internal/myncbi                                -r140909
+
+src/internal/mapview/objects                            trunk/internal/c++/src/internal/mapview/objects                           -r140909
+include/internal/mapview/objects                        trunk/internal/c++/include/internal/mapview/objects                       -r140909
+
+src/internal/blast                                      trunk/internal/c++/src/internal/blast                                     -r142457
+include/internal/blast                                  trunk/internal/c++/include/internal/blast                                 -r142457
+
+src/internal/qall                                       trunk/internal/c++/src/internal/qall                                      -r140909
+
+src/internal/spell                                      trunk/internal/c++/src/internal/spell                                     -r140909
+include/internal/spell                                  trunk/internal/c++/include/internal/spell                                 -r140909
+
+include/internal/contigdb                               trunk/internal/c++/include/internal/contigdb                              -r140909
+src/internal/contigdb                                   trunk/internal/c++/src/internal/contigdb                                  -r140909
+
+[repository: https://svn.ncbi.nlm.nih.gov/repos/sssdev]
+src/internal/sss     trunk/sss     -r8111
+src/internal/ssssrv  trunk/ssssrv  -r8111
+src/internal/stax    trunk/stax    -r8111
