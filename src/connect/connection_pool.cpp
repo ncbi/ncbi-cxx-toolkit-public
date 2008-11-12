@@ -186,9 +186,9 @@ void CServer_ConnectionPool::Clean(void)
             if (info.expiration <= now) {
                 _TRACE("Timeout on " << dynamic_cast<TConnBase *>(it->first));
                 it->first->OnTimeout();
+                conn->OnSocketEvent(eServIO_OurClose);
             } else {
                 _TRACE("Closed " << dynamic_cast<TConnBase *>(it->first));
-                conn->OnSocketEvent(eServIO_OurClose);
             }
             to_delete.push_back(it->first);
         }
