@@ -537,6 +537,8 @@ CDiagContextThreadData::CDiagContextThreadData(void)
       m_DefaultRequestCtx(new SRequestCtxWrapper)
 {
     m_RequestCtx->m_Ctx = m_DefaultRequestCtx->m_Ctx = new CRequestContext;
+    m_RequestCtx->m_Ctx->SetAutoIncRequestIDOnPost(
+        CRequestContext::GetDefaultAutoIncRequestIDOnPost());
 }
 
 
@@ -1777,6 +1779,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     CNcbiOstrstream ostr;
     string prop;
     bool need_space = false;
+    CRequestContext& ctx = GetRequestContext();
 
     switch ( event ) {
     case SDiagMessage::eEvent_Start:
@@ -1797,7 +1800,6 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
         break;
     case SDiagMessage::eEvent_RequestStop:
         {
-            CRequestContext& ctx = GetRequestContext();
             if ( !ctx.IsRunning() ) {
                 // The request is not running -
                 // duplicate request stop or missing request start
@@ -1831,7 +1833,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     ostr.rdbuf()->freeze(false);
     // Now it's safe to reset the request context
     if (event == SDiagMessage::eEvent_RequestStop) {
-        GetRequestContext().StopRequest();
+        ctx.StopRequest();
     }
 }
 
@@ -2659,9 +2661,13 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
     CDiagContext& ctx = GetDiagContext();
     CDiagContextThreadData& thr_data =
         CDiagContextThreadData::GetThreadData();
+    CRequestContext& rq_ctx = thr_data.GetRequestContext();
     m_PID = ctx.GetPID();
     m_TID = thr_data.GetTID();
-    m_RequestId = thr_data.GetRequestContext().GetRequestID();
+    if ( rq_ctx.GetAutoIncRequestIDOnPost() ) {
+        rq_ctx.SetRequestID();
+    }
+    m_RequestId = rq_ctx.GetRequestID();
     m_ProcPost = ctx.GetProcessPostNumber(ePostNumber_Increment);
     m_ThrPost = thr_data.GetThreadPostNumber(ePostNumber_Increment);
 }

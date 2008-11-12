@@ -141,6 +141,17 @@ public:
     /// Get all properties (non-const)
     TProperties&       GetProperties(void) { return m_Properties; }
 
+    /// Auto-increment request ID with every posted message
+    void SetAutoIncRequestIDOnPost(bool enable) { m_AutoIncOnPost = enable; }
+    /// Get auto-increment state
+    bool GetAutoIncRequestIDOnPost(void) const { return m_AutoIncOnPost; }
+    /// Set default auto-increment flag used for each default request context.
+    /// Contexts created by users do not check this flag.
+    /// The flag is not MT-protected.
+    static void SetDefaultAutoIncRequestIDOnPost(bool enable);
+    /// Get default auto-increment flag.
+    static bool GetDefaultAutoIncRequestIDOnPost(void);
+
 private:
     // Prohibit copying
     CRequestContext(const CRequestContext&);
@@ -173,6 +184,8 @@ private:
     void x_SetProp(EProperty prop);
     void x_UnsetProp(EProperty prop);
 
+    static bool& sx_GetDefaultAutoIncRequestIDOnPost(void);
+
     int            m_RequestID;
     EDiagAppState  m_AppState;
     string         m_ClientIP;
@@ -185,6 +198,7 @@ private:
     TProperties    m_Properties;
     TPropSet       m_PropSet;
     bool           m_IsRunning;
+    bool           m_AutoIncOnPost;
 };
 
 

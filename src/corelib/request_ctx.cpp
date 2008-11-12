@@ -46,7 +46,8 @@ CRequestContext::CRequestContext(void)
       m_BytesRd(0),
       m_BytesWr(0),
       m_PropSet(0),
-      m_IsRunning(false)
+      m_IsRunning(false),
+      m_AutoIncOnPost(false)
 {
 }
 
@@ -165,6 +166,25 @@ void CRequestContext::StopRequest(void)
 {
     Reset();
     m_IsRunning = false;
+}
+
+
+bool& CRequestContext::sx_GetDefaultAutoIncRequestIDOnPost(void)
+{
+    static bool s_DefaultAutoIncRequestIDOnPostFlag = false;
+    return s_DefaultAutoIncRequestIDOnPostFlag;
+}
+
+
+void CRequestContext::SetDefaultAutoIncRequestIDOnPost(bool enable)
+{
+    sx_GetDefaultAutoIncRequestIDOnPost() = enable;
+}
+
+
+bool CRequestContext::GetDefaultAutoIncRequestIDOnPost(void)
+{
+    return sx_GetDefaultAutoIncRequestIDOnPost();
 }
 
 
