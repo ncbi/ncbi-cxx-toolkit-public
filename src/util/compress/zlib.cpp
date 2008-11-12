@@ -393,67 +393,84 @@ bool CZipCompression::DecompressBuffer(
     }
     LIMIT_SIZE_PARAM_U(dst_size);
 
-    size_t header_len = 0;
-    int    errcode    = Z_OK;
-    
-    // Check file header
-    if ( F_ISSET(fCheckFileHeader) ) {
-        // Check gzip header in the buffer
-        header_len = s_CheckGZipHeader(src_buf, src_len);
-    }
-    STREAM->next_in  = (unsigned char*)src_buf + header_len;
-    STREAM->avail_in = (unsigned int)(src_len - header_len);
-    // Check for source > 64K on 16-bit machine:
-    if ( STREAM->avail_in != src_len - header_len ) {
-        SetError(Z_BUF_ERROR, zError(Z_BUF_ERROR));
-        ERR_COMPRESS(57, FormatErrorMessage("CZipCompression::DecompressBuffer"));
-        return false;
-    }
-    STREAM->next_out = (unsigned char*)dst_buf;
-    STREAM->avail_out = (unsigned int)dst_size;
-    if ( STREAM->avail_out != dst_size ) {
-        SetError(Z_BUF_ERROR, zError(Z_BUF_ERROR));
-        ERR_COMPRESS(58, FormatErrorMessage("CZipCompression::DecompressBuffer"));
-        return false;
-    }
+    //
+    bool is_gzip = false;
+    bool check_header = true;
+    int  errcode = Z_OK;
 
-    STREAM->zalloc = (alloc_func)0;
-    STREAM->zfree  = (free_func)0;
+    // Pointers to current positions in src and dst buffers
+    unsigned char* src = (unsigned char*)src_buf;
+    unsigned char* dst = (unsigned char*)dst_buf;
 
-    // "window bits" is passed < 0 to tell that there is no zlib header.
-    // Note that in this case inflate *requires* an extra "dummy" byte
-    // after the compressed stream in order to complete decompression and
-    // return Z_STREAM_END. Here the gzip CRC32 ensures that 4 bytes are
-    // present after the compressed stream.
-        
-    errcode = inflateInit2_(STREAM, header_len ? -m_WindowBits :m_WindowBits,
-                            ZLIB_VERSION, (int)sizeof(z_stream));
+    do {
+        // Check file header
+        size_t header_len = 0;
+        if ( F_ISSET(fCheckFileHeader)  &&  check_header) {
+            // Check gzip header in the buffer
+            header_len = s_CheckGZipHeader(src_buf, src_len);
+            src += header_len;
+            src_len -= header_len;
+        }
+        STREAM->next_in   = src;
+        STREAM->avail_in  = (unsigned int)src_len;
+        STREAM->next_out  = dst;
+        STREAM->avail_out = (unsigned int)dst_size;
+        STREAM->zalloc    = (alloc_func)0;
+        STREAM->zfree     = (free_func)0;
 
-    if (errcode == Z_OK) {
+        // "window bits" is passed < 0 to tell that there is no zlib header.
+        // Note that in this case inflate *requires* an extra "dummy" byte
+        // after the compressed stream in order to complete decompression and
+        // return Z_STREAM_END. Here the gzip CRC32 ensures that 4 bytes are
+        // present after the compressed stream.
+            
+        errcode = inflateInit2_(STREAM, header_len ? -m_WindowBits :m_WindowBits,
+                                ZLIB_VERSION, (int)sizeof(z_stream));
+
+        if (errcode != Z_OK) {
+            break;
+        }
         errcode = inflate(STREAM, Z_FINISH);
-        *dst_len = STREAM->total_out;
+        *dst_len += STREAM->total_out;
+
+        // Is decompresion sucess?
         if (errcode == Z_STREAM_END) {
+            is_gzip = (header_len > 0);
+            check_header = F_ISSET(fCheckFileHeader | fAllowConcatenatedGZip);
+            if ( check_header ) {
+                src      = STREAM->next_in + 8;
+                src_len  = (STREAM->avail_in < 8) ? 0 : (STREAM->avail_in - 8);
+                dst      += STREAM->total_out;
+                dst_size = STREAM->avail_out;
+            } else {
+                src_len = 0;
+            }
             errcode = inflateEnd(STREAM);
         } else {
-            // Error: finalize decompression
+            // Error -- end decompression
             inflateEnd(STREAM);
             if ( errcode == Z_OK ) {
+                // Possible incomplete input data
                 errcode = Z_BUF_ERROR;
             } else {
                 // Decompression error
-                if ( F_ISSET(fAllowTransparentRead) ) {
+                if (!is_gzip  &&  F_ISSET(fAllowTransparentRead)) {
                     // But transparent read is allowed
                     *dst_len = (dst_size < src_len) ? dst_size : src_len;
                     memcpy(dst_buf, src_buf, *dst_len);
                     return (dst_size >= src_len);
                 }
+                // Error
+                break;
             }
         }
-    }
+    } while (is_gzip  &&  src_len);
+
     // Decompression results processing
     SetError(errcode, zError(errcode));
     if ( errcode != Z_OK ) {
-        ERR_COMPRESS(59, FormatErrorMessage("CZipCompression::DecompressBuffer"));
+        ERR_COMPRESS(59, FormatErrorMessage("CZipCompression::DecompressBuffer",
+                                            STREAM->next_in - (unsigned char*)src_buf));
         return false;
     }
     return true;
@@ -622,15 +639,14 @@ bool CZipCompression::DecompressFileIntoDir(const string& src_file,
 
 
 string CZipCompression::FormatErrorMessage(string where,
-                                           bool use_stream_data) const
+                                           unsigned long pos) const
 {
     string str = "[" + where + "]  " + GetErrorDescription();
-    if ( use_stream_data ) {
-        str += ";  error code = " +
-               NStr::IntToString(GetErrorCode()) +
-               ", number of processed bytes = " +
-               NStr::UIntToString(STREAM->total_in);
+    if ( !pos ) {
+        pos = STREAM->total_in;
     }
+    str += ";  error code = " + NStr::IntToString(GetErrorCode()) +
+           ", number of processed bytes = " + NStr::UIntToString(pos);
     return str + ".";
 }
 
@@ -649,7 +665,7 @@ CZipCompressionFile::CZipCompressionFile(
       m_Mode(eMode_Read), m_File(0), m_Zip(0)
 {
     // For backward compatibility -- use gzip file format by default
-    SetFlags(GetFlags() | fCheckFileHeader | fWriteGZipFormat);
+    SetFlags(GetFlags() | fGZip);
 
     if ( !Open(file_name, mode) ) {
         const string smode = (mode == eMode_Read) ? "reading" : "writing";
@@ -667,7 +683,7 @@ CZipCompressionFile::CZipCompressionFile(
       m_Mode(eMode_Read), m_File(0), m_Zip(0)
 {
     // For backward compatibility -- use gzip file format by default
-    SetFlags(GetFlags() | fCheckFileHeader | fWriteGZipFormat);
+    SetFlags(GetFlags() | fGZip);
     return;
 }
 
@@ -877,7 +893,7 @@ CCompressionProcessor::EStatus CZipCompressor::Init(void)
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
-    ERR_COMPRESS(60, FormatErrorMessage("CZipCompressor::Init"));
+    ERR_COMPRESS(60, FormatErrorMessage("CZipCompressor::Init", GetProcessedSize()));
     return eStatus_Error;
 }
 
@@ -891,7 +907,7 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
     *out_avail = 0;
     if (in_len > kMax_UInt) {
         SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
-        ERR_COMPRESS(61, FormatErrorMessage("CZipCompressor::Process"));
+        ERR_COMPRESS(61, FormatErrorMessage("CZipCompressor::Process", GetProcessedSize()));
         return eStatus_Error;
     }
     if ( !out_size ) {
@@ -906,7 +922,7 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
         header_len = s_WriteGZipHeader(out_buf, out_size, &m_FileInfo);
         if (!header_len) {
             SetError(-1, "Cannot write gzip header");
-            ERR_COMPRESS(62, FormatErrorMessage("CZipCompressor::Process"));
+            ERR_COMPRESS(62, FormatErrorMessage("CZipCompressor::Process", GetProcessedSize()));
             return eStatus_Error;
         }
         m_NeedWriteHeader = false;
@@ -932,7 +948,7 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
-    ERR_COMPRESS(63, FormatErrorMessage("CZipCompressor::Process"));
+    ERR_COMPRESS(63, FormatErrorMessage("CZipCompressor::Process", GetProcessedSize()));
     return eStatus_Error;
 }
 
@@ -963,7 +979,7 @@ CCompressionProcessor::EStatus CZipCompressor::Flush(
         }
         return eStatus_Success;
     }
-    ERR_COMPRESS(64, FormatErrorMessage("CZipCompressor::Flush"));
+    ERR_COMPRESS(64, FormatErrorMessage("CZipCompressor::Flush", GetProcessedSize()));
     return eStatus_Error;
 }
 
@@ -1005,7 +1021,7 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
         }
         return eStatus_EndOfData;
     }
-    ERR_COMPRESS(66, FormatErrorMessage("CZipCompressor::Finish"));
+    ERR_COMPRESS(66, FormatErrorMessage("CZipCompressor::Finish", GetProcessedSize()));
     return eStatus_Error;
 }
 
@@ -1019,7 +1035,7 @@ CCompressionProcessor::EStatus CZipCompressor::End(void)
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
-    ERR_COMPRESS(67, FormatErrorMessage("CZipCompressor::End"));
+    ERR_COMPRESS(67, FormatErrorMessage("CZipCompressor::End", GetProcessedSize()));
     return eStatus_Error;
 }
 
@@ -1033,7 +1049,7 @@ CCompressionProcessor::EStatus CZipCompressor::End(void)
 
 CZipDecompressor::CZipDecompressor(int window_bits, TFlags flags)
     : CZipCompression(eLevel_Default, window_bits, 0, 0),
-      m_NeedCheckHeader(true)
+      m_NeedCheckHeader(true), m_IsGZ(false), m_SkipInput(0)
 {
     SetFlags(flags);
 }
@@ -1054,6 +1070,8 @@ CCompressionProcessor::EStatus CZipDecompressor::Init(void)
     Reset();
     SetBusy();
     m_NeedCheckHeader = true;
+    m_IsGZ = false;
+    m_SkipInput = 0;
     m_Cache.erase();
     m_Cache.reserve(kMaxHeaderSize);
 
@@ -1068,7 +1086,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Init(void)
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
-    ERR_COMPRESS(68, FormatErrorMessage("CZipDecompressor::Init"));
+    ERR_COMPRESS(68, FormatErrorMessage("CZipDecompressor::Init", GetProcessedSize()));
     return eStatus_Error;
 }
 
@@ -1082,7 +1100,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
     *out_avail = 0;
     if (in_len > kMax_UInt) {
         SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
-        ERR_COMPRESS(69, FormatErrorMessage("CZipDecompressor::Process"));
+        ERR_COMPRESS(69, FormatErrorMessage("CZipDecompressor::Process", GetProcessedSize()));
         return eStatus_Error;
     }
     if ( !out_size ) {
@@ -1101,10 +1119,32 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
 
     // If data is compressed, or the read mode is undefined yet
     if ( m_DecompressMode != eMode_TransparentRead ) {
-        STREAM->next_in   = (unsigned char*)const_cast<char*>(in_buf);
-        STREAM->avail_in  = (unsigned int)in_len;
-        STREAM->next_out  = (unsigned char*)out_buf;
-        STREAM->avail_out = (unsigned int)out_size;
+
+        // Need to skip some bytes from input stream?
+        // (in case of concatenated .gz files only)
+        if ( m_SkipInput ) {
+            // Skip from cache if present
+            if ( m_Cache.size() ) {
+                size_t n = min(m_Cache.size(), m_SkipInput);
+                m_Cache.erase(0, n);
+                m_SkipInput -= n;
+                IncreaseProcessedSize(n);
+            }
+            // And/or from input stream also
+            if ( m_SkipInput ) {
+                size_t n = min(x_in_len, m_SkipInput);
+                x_in_buf += n;
+                x_in_len -= n;
+                m_SkipInput -= n;
+                IncreaseProcessedSize(n);
+                if ( m_SkipInput ) {
+                    // Data block is very small... and was skipped.
+                    *in_avail  = x_in_len;
+                    *out_avail = 0;
+                    return eStatus_Success;
+                }
+            }
+        }
 
         bool   from_cache   = false;
         size_t old_avail_in = 0;
@@ -1113,13 +1153,20 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
         if ( F_ISSET(fCheckFileHeader) ) {
             size_t header_len = 0;
             if ( m_NeedCheckHeader ) {
+                if (!x_in_buf  &&  !m_Cache.size()) {
+                    // Possible Flush(), but we should refill the cache
+                    // to perform header check -- so, just ignore.
+                    *in_avail  = 0;
+                    *out_avail = 0;
+                    return eStatus_Success;
+                }
                 if (x_in_buf  &&  m_Cache.size() < kMaxHeaderSize) {
-                    size_t n = min(kMaxHeaderSize - m_Cache.size(), in_len);
-                    m_Cache.append(in_buf, n);
+                    size_t n = min(kMaxHeaderSize - m_Cache.size(), x_in_len);
+                    m_Cache.append(x_in_buf, n);
                     x_in_buf += n;
                     x_in_len -= n;
                     if (m_Cache.size() < kMaxHeaderSize) {
-                        // Data block is very small and was cached.
+                        // Data block is very small and was fully cached.
                         *in_avail  = 0;
                         *out_avail = 0;
                         return eStatus_Success;
@@ -1128,35 +1175,42 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
                 // Check gzip header in the buffer
                 header_len = s_CheckGZipHeader(m_Cache.data(), m_Cache.size());
                 _ASSERT(header_len < kMaxHeaderSize);
+
                 // If gzip header found, skip it
                 if ( header_len ) {
                     m_Cache.erase(0, header_len);
-                    inflateEnd(STREAM);
                     m_DecompressMode = eMode_Decompress;
-                    int errcode = inflateInit2_(STREAM,
-                                                header_len ? -m_WindowBits :
-                                                              m_WindowBits,
-                                                ZLIB_VERSION,
-                                                (int)sizeof(z_stream));
-                    SetError(errcode, zError(errcode));
-                    if ( errcode != Z_OK ) {
-                        return eStatus_Error;
-                    }
+                    m_IsGZ = true;
+                }
+                // Reinit decompression stream
+                inflateEnd(STREAM);
+                int errcode = inflateInit2_(STREAM,
+                                            m_IsGZ ? -m_WindowBits : m_WindowBits,
+                                            ZLIB_VERSION,
+                                            (int)sizeof(z_stream));
+                SetError(errcode, zError(errcode));
+                if ( errcode != Z_OK ) {
+                    return eStatus_Error;
                 }
                 // Already skipped, or we don't have header here
-                if (header_len  ||  x_in_buf) {
-                    m_NeedCheckHeader = false;
-                }
+                m_NeedCheckHeader = false;
             }
-            // Have some cached unprocessed data
-            if ( m_Cache.size() ) {
-                STREAM->next_in   = (unsigned char*)(m_Cache.data());
-                STREAM->avail_in  = (unsigned int)m_Cache.size();
-                STREAM->next_out  = (unsigned char*)out_buf;
-                STREAM->avail_out = (unsigned int)out_size;
-                from_cache        = true;
-                old_avail_in      = STREAM->avail_in;
-            }
+        }
+
+        // Prepare STREAM for decompressing
+        if ( m_Cache.size() ) {
+            // Possible, we have some unprocessed data in the cache
+            STREAM->next_in   = (unsigned char*)(m_Cache.data());
+            STREAM->avail_in  = (unsigned int)m_Cache.size();
+            STREAM->next_out  = (unsigned char*)out_buf;
+            STREAM->avail_out = (unsigned int)out_size;
+            from_cache        = true;
+            old_avail_in      = STREAM->avail_in; // = m_Cache.size()
+        } else {
+            STREAM->next_in   = (unsigned char*)x_in_buf;
+            STREAM->avail_in  = (unsigned int)x_in_len;
+            STREAM->next_out  = (unsigned char*)out_buf;
+            STREAM->avail_out = (unsigned int)out_size;
         }
 
         // Try to decompress data
@@ -1164,7 +1218,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
 
         if ( m_DecompressMode == eMode_Unknown ) {
             // The flag fAllowTransparentRead is set
-            _VERIFY(F_ISSET(fAllowTransparentRead));
+            _ASSERT(F_ISSET(fAllowTransparentRead));
             // Determine decompression mode for following operations
             if (errcode == Z_OK  ||  errcode == Z_STREAM_END) {
                 m_DecompressMode = eMode_Decompress;
@@ -1174,6 +1228,22 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
         }
         if ( m_DecompressMode == eMode_Decompress ) {
             SetError(errcode, zError(errcode));
+
+            // Concatenated file? Try to process next .gz chunk, if present
+            if ((errcode == Z_STREAM_END)  &&  m_IsGZ) {
+                // Skip .gz file footer (8 bytes)
+                if (STREAM->avail_in < 8) {
+                    m_SkipInput = 8 - STREAM->avail_in;
+                    STREAM->avail_in = 0;
+                } else {
+                    STREAM->avail_in -= 8;
+                }
+                if ( F_ISSET(fAllowConcatenatedGZip) ) {
+                    m_NeedCheckHeader = true;
+                    errcode = Z_OK;
+                }
+            }
+            // Update count of processed data
             if ( from_cache ) {
                 m_Cache.erase(0, old_avail_in - STREAM->avail_in);
                 *in_avail = x_in_len;
@@ -1182,28 +1252,41 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
                 *in_avail = STREAM->avail_in;
                 IncreaseProcessedSize(x_in_len - *in_avail);
             }
+            // In case of concatenated .gz files:
+            // Possible, we already skipped some bytes from cache, 
+            // and it should be empty now. If needed, try to skip some
+            // bytes from the input stream also.
+            if ( m_SkipInput ) {
+                _ASSERT(m_Cache.size() == 0);
+                size_t n = min(x_in_len, m_SkipInput);
+                x_in_len -= n;
+                m_SkipInput -= n;
+                *in_avail = x_in_len;
+                IncreaseProcessedSize(n);
+            }
             *out_avail = out_size - STREAM->avail_out;
             IncreaseOutputSize(*out_avail);
 
+            // Analize decompressor status
             switch (errcode) {
             case Z_OK:
                 if ( from_cache  &&  
                      STREAM->avail_in > 0  &&  *out_avail == 0) {
-                    return eStatus_Overflow;
+                     return m_NeedCheckHeader ? eStatus_Repeat : eStatus_Overflow;
                 }
                 return eStatus_Success;
             case Z_STREAM_END:
                 return eStatus_EndOfData;
             }
-            ERR_COMPRESS(70, FormatErrorMessage("CZipDecompressor::Process"));
+            ERR_COMPRESS(70, FormatErrorMessage("CZipDecompressor::Process", GetProcessedSize()));
             return eStatus_Error;
         }
-        /* else eMode_ThansparentRead :  see below */
+        /* else: eMode_ThansparentRead (see below) */
     }
 
     // Transparent read
 
-    _VERIFY(m_DecompressMode == eMode_TransparentRead);
+    _ASSERT(m_DecompressMode == eMode_TransparentRead);
     size_t total = 0;
     if ( m_Cache.size() ) {
         total = min(m_Cache.size(), out_size);
@@ -1246,7 +1329,12 @@ CCompressionProcessor::EStatus CZipDecompressor::Finish(
     }
     // Do not check here on eMode_Unknown. It will be processed below.
     size_t in_avail;
-    return Process(0, 0, out_buf, out_size, &in_avail, out_avail);
+    CCompressionProcessor::EStatus status = Process(0, 0, out_buf, out_size, &in_avail, out_avail);
+    if (status == eStatus_Success  &&  *out_avail == 0) {
+        // Possible case with .gz files only (check on concatenated files)
+        return eStatus_EndOfData;
+    }
+    return status;
 }
 
 
@@ -1258,7 +1346,7 @@ CCompressionProcessor::EStatus CZipDecompressor::End(void)
          errcode == Z_OK ) {
         return eStatus_Success;
     }
-    ERR_COMPRESS(71, FormatErrorMessage("CZipDecompressor::End"));
+    ERR_COMPRESS(71, FormatErrorMessage("CZipDecompressor::End", GetProcessedSize()));
     return eStatus_Error;
 }
 

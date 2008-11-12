@@ -118,18 +118,27 @@ public:
         ///< In some cases decompressor can produce output data on invalid 
         ///< compressed data. So, this is not recommended to use this flag
         ///< with old zlib versions.
-        fAllowTransparentRead = (1<<0), 
+        fAllowTransparentRead  = (1<<0), 
         ///< Check (and skip) file header for decompression stream
-        fCheckFileHeader      = (1<<1), 
+        fCheckFileHeader       = (1<<1), 
         ///< Use gzip (.gz) file format to write into compression stream
         ///< (the archive also can store file name and file modification
         ///< date in this format)
-        fWriteGZipFormat      = (1<<2),
+        fWriteGZipFormat       = (1<<2),
+        ///< Allow concatenated gzip files.
+        ///< Multiple compressed files can be concatenated into one file.
+        ///< In this case, decompressor will try to extract all members
+        ///< at once. But note, that better compression can be usually
+        ///< obtained if all members are decompressed and then recompressed
+        ///< in a single step. 
+        fAllowConcatenatedGZip = (1<<3),
+        /// Set of flags for gzip file support.
+        fGZip = fCheckFileHeader | fWriteGZipFormat | fAllowConcatenatedGZip,
         ///< This flag can be used only with DecompressFile[IntoDir]().
         ///< It allow to restore the original file name and/or time stamp stored
         ///< in the file header, if present.
         ///< @sa DecompressFile, DecompressFileIntoDir
-        fRestoreFileAttr      = (1<<3)
+        fRestoreFileAttr       = (1<<4)
     };
 
     /// Constructor.
@@ -179,10 +188,15 @@ public:
         /* out */            size_t* dst_len
     );
 
-    /// Compress data in the buffer.
+    /// Decompress data in the buffer.
     ///
-    /// Altogether, the total size of the destination buffer must be little
-    /// more then size of the source buffer.
+    /// @note
+    ///   The decompressor stops and returns TRUE, if it find logical
+    ///   end in the compressed data, even not all compressed data was processed. 
+    ///   Only for case of decompressing concatenated gzip files in memory.
+    ///   it try to decompress data behind of logical end of recurrent gzip chunk,
+    ///   to check on next portion of data. See fCheckFileHeader,
+    ///   fAllowConcatenatedGZip and fGZip flags description. 
     /// @param src_buf
     ///   Source buffer.
     /// @param src_len
@@ -192,12 +206,12 @@ public:
     /// @param dst_size
     ///   Size of destination buffer.
     /// @param dst_len
-    ///   Size of compressed data in destination buffer.
+    ///   Size of decompressed data in destination buffer.
     /// @return
     ///   Return TRUE if operation was succesfully or FALSE otherwise.
-    ///   On success, 'dst_buf' contains compressed data of dst_len size.
+    ///   On success, 'dst_buf' contains decompressed data of dst_len size.
     /// @sa
-    ///   CompressBuffer
+    ///   CompressBuffer, EFlags
     virtual bool DecompressBuffer(
         const void* src_buf, size_t  src_len,
         void*       dst_buf, size_t  dst_size,
@@ -310,8 +324,9 @@ public:
     };
 
 protected:
-    /// Format string with last error description
-    string FormatErrorMessage(string where, bool use_stream_data =true) const;
+    /// Format string with last error description.
+    /// If pos equl to 0, that use internal m_Stream's position to report.
+    string FormatErrorMessage(string where, unsigned long pos = 0) const;
 
 protected:
     void*  m_Stream;     ///< Compressor stream.
@@ -513,8 +528,11 @@ protected:
     virtual EStatus End    (void);
 
 private:
-    bool   m_NeedCheckHeader; ///< Is TRUE if needed to check at file header.
-    string m_Cache;           ///< Buffer to cache small pieces of data.
+    bool    m_NeedCheckHeader;  ///< TRUE if needed to check to file header.
+    bool    m_IsGZ;             ///< TRUE if data have gzip format.
+    size_t  m_SkipInput;        ///< Number of bytes to skip from input stream.
+                                ///< Used to process concatenated .gz files.
+    string  m_Cache;            ///< Buffer to cache small pieces of data.
 };
 
 

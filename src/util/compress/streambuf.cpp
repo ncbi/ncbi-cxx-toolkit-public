@@ -217,7 +217,8 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
     }
     if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
         // Flush underlying stream (on write)
-        if (dir == CCompressionStream::eWrite  &&  !WriteOutBufToStream(true /*force write*/)) {
+        if (dir == CCompressionStream::eWrite  &&  
+            !WriteOutBufToStream(true /*force write*/)) {
             return -1;
         }
         // End of data, nothing to do
@@ -268,14 +269,17 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
                 return -1;
             }
         }
-    } while (out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow);
+    } while (sp->m_LastStatus == CP::eStatus_Repeat  ||
+            (out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow));
 
-    if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
-        // Flush underlying stream (on write)
-        if (dir == CCompressionStream::eWrite  &&  !WriteOutBufToStream(true /*force write*/)) {
-            return -1;
+    // Flush underlying stream (on write)
+    if (dir == CCompressionStream::eWrite) {
+        if ( sp->m_LastStatus == CP::eStatus_EndOfData  ||
+            (sp->m_State == CCompressionStreamProcessor::eFinalize && !out_avail)) {
+            if ( !WriteOutBufToStream(true /*force write*/) ) {
+                return -1;
+            }
         }
-        // End of data, nothing to do
     }
     return 0;
 }
@@ -345,12 +349,12 @@ bool CCompressionStreambuf::ProcessStreamRead()
         in_avail  = 0;
         out_avail = 0;
         out_size  = m_Reader->m_OutBuf + m_Reader->m_OutBufSize - egptr();
-        
+
         // Refill the output buffer if necessary
         if ( m_Reader->m_LastStatus != CP::eStatus_Overflow ) {
+
             // Refill the input buffer if necessary
-            if ( m_Reader->m_Begin == m_Reader->m_End  ||
-                 !m_Reader->m_LastOutAvail) {
+            if ( m_Reader->m_Begin == m_Reader->m_End ) {
                 n_read = m_Stream->rdbuf()->sgetn(m_Reader->m_InBuf,
                                                   m_Reader->m_InBufSize);
                 if ( !n_read ) {
@@ -368,14 +372,6 @@ bool CCompressionStreambuf::ProcessStreamRead()
             m_Reader->m_LastStatus = m_Reader->m_Processor->Process(
                                 m_Reader->m_Begin, in_len, egptr(), out_size,
                                 &in_avail, &out_avail);
-            if ( m_Reader->m_LastStatus == CP::eStatus_Error ) {
-                return false;
-            }
-            // No more data -- automaticaly finalize stream
-            if ( m_Reader->m_LastStatus == CP::eStatus_EndOfData ) {
-                m_Reader->m_State = CCompressionStreamProcessor::eFinalize;
-            }
-            m_Reader->m_LastOutAvail = out_avail;
         } else {
             // Check available space in the output buffer
             if ( !out_size ) {
@@ -384,22 +380,25 @@ bool CCompressionStreambuf::ProcessStreamRead()
             // Get unprocessed data size
             in_len = m_Reader->m_End - m_Reader->m_Begin;
             in_avail = in_len;
-        }
-        
-        // Try to flush the compressor if it has not produced a data
-        // via Process()
-        if ( !out_avail ) { 
             m_Reader->m_LastStatus = 
                 m_Reader->m_Processor->Flush(egptr(), out_size, &out_avail);
-            if ( m_Reader->m_LastStatus == CP::eStatus_Error ) {
-                return false;
-            }
-            m_Reader->m_LastOutAvail = out_avail;
         }
+        if ( m_Reader->m_LastStatus == CP::eStatus_Error ) {
+            return false;
+        }
+        // No more data -- automaticaly finalize stream
+        if ( m_Reader->m_LastStatus == CP::eStatus_EndOfData ) {
+            m_Reader->m_State = CCompressionStreamProcessor::eFinalize;
+        }
+
         // Update pointer to an unprocessed data
         m_Reader->m_Begin += (in_len - in_avail);
         // Update the get's pointers
         setg(m_Reader->m_OutBuf, gptr(), egptr() + out_avail);
+
+        if ( m_Reader->m_LastStatus == CP::eStatus_EndOfData   &&  !out_avail ) { 
+            return false;
+        }
 
     } while ( !out_avail );
 

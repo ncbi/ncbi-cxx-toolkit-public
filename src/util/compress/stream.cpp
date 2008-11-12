@@ -80,7 +80,6 @@ void CCompressionStreamProcessor::Init(void)
     }
     m_InBuf         = 0;
     m_OutBuf        = 0;
-    m_LastOutAvail  = 0;
     m_Begin         = 0;
     m_End           = 0;
     m_LastStatus    = CCompressionProcessor::eStatus_Success;

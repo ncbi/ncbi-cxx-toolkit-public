@@ -280,20 +280,22 @@ protected:
 class NCBI_XUTIL_EXPORT CCompressionProcessor
 {
 public:
-    // Type of the result of all basic functions
+    /// Type of the result of all basic functions
     enum EStatus {
-        // Everything is fine, no errors occurred
+        /// Everything is fine, no errors occurred
         eStatus_Success,
-        // Special case of eStatus_Success.
-        // Logical end of (compressed) stream is detected, no errors occurred.
-        // All subsequent inquiries about data processing should be ignored.
+        /// Special case of eStatus_Success.
+        /// Logical end of (compressed) stream is detected, no errors occurred.
+        /// All subsequent inquiries about data processing should be ignored.
         eStatus_EndOfData,
-        // Error has occurred. The error code can be acquired by GetErrorCode.
+        /// Error has occurred. The error code can be acquired by GetErrorCode().
         eStatus_Error,
-        // Output buffer overflow - not enough output space.
-        // Buffer must be emptied and the last action repeated.
+        /// Output buffer overflow - not enough output space.
+        /// Buffer must be emptied and the last action repeated.
         eStatus_Overflow,
-        // Special value, status is undefined
+        /// Special value. Just need to repeat last action.
+        eStatus_Repeat,
+        /// Special value, status is undefined.
         eStatus_Unknown
     };
 

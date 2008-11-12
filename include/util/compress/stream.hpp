@@ -202,8 +202,6 @@ private:
     streamsize             m_InBufSize;   ///< Unprocessed data buffer size.
     CT_CHAR_TYPE*          m_OutBuf;      ///< Buffer of processed data.
     streamsize             m_OutBufSize;  ///< Processed data buffer size.
-    streamsize             m_LastOutAvail;///< The size of last data received
-                                          ///< from compression processor.
     CT_CHAR_TYPE*          m_Begin;       ///< Begin and end of the pre/post
     CT_CHAR_TYPE*          m_End;         ///< processed data in the buffer.
     EDeleteProcessor       m_NeedDelete;  ///< m_Processor auto-deleting flag.
