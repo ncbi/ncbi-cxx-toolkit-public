@@ -348,7 +348,7 @@ void CRequestContext::UnsetRequestStatus(void)
 inline
 bool CRequestContext::x_IsSetProp(EProperty prop) const
 {
-    return m_PropSet & prop;
+    return m_PropSet & prop ? true : false;
 }
 
 
