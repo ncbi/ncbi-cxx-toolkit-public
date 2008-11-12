@@ -34,7 +34,7 @@
 #include <dbapi/driver/dbapi_object_convert.hpp>
 #include <dbapi/driver/exception.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE 
