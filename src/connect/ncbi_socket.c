@@ -1135,14 +1135,15 @@ static EIO_Status s_Select(size_t                n,
                 switch (type & eSocket ? event : event & eIO_Read) {
                 case eIO_Write:
                 case eIO_ReadWrite:
-                    if (writable) {
-                        polls[i].revent |= eIO_Write;
-                        ready = 1;
-                    } else if (type == eDatagram
-                               ||  sock->w_status != eIO_Closed) {
-                        mask     |= FD_WRITE;
-                        if (!sock->connected)
-                            mask |= FD_CONNECT;
+                    if (type == eDatagram  ||  sock->w_status != eIO_Closed) {
+                        if (writable) {
+                            polls[i].revent |= eIO_Write;
+                            ready = 1;
+                        } else {
+                            mask     |= FD_WRITE;
+                            if (!sock->connected)
+                                mask |= FD_CONNECT;
+                        }
                     }
                     if (event == eIO_Write  &&
                         (type == eDatagram  ||  asis
@@ -1154,13 +1155,12 @@ static EIO_Status s_Select(size_t                n,
                     /*FALLTHRU*/
 
                 case eIO_Read:
-                    if (readable) {
-                        polls[i].revent |= eIO_Read;
-                        ready = 1;
-                    } else if (type != eSocket
-                               ||  (sock->r_status != eIO_Closed
-                                    &&  !sock->eof)) {
-                        if (type & eSocket) {
+                    if (type != eSocket
+                        ||  (sock->r_status != eIO_Closed  &&  !sock->eof)) {
+                        if (readable) {
+                            polls[i].revent |= eIO_Read;
+                            ready = 1;
+                        } else if (type & eSocket) {
                             mask     |= FD_READ;
                             if (type == eSocket)
                                 mask |= FD_OOB;
@@ -1218,6 +1218,7 @@ static EIO_Status s_Select(size_t                n,
             do {
                 size_t j;
                 DWORD  m = count - (DWORD) i;
+                /*printf("Entering wait for %d\n", (int) m);*/
                 r = WaitForMultipleObjects(m,
                                            what + i,
                                            FALSE/*any*/,
@@ -1295,11 +1296,11 @@ static EIO_Status s_Select(size_t                n,
                     } else if (mask & (FD_ACCEPT | FD_READ | FD_OOB))
                         sock->readable = 1/*true*/;
                     mask &= want[i];
-                    if (mask & (FD_ACCEPT | FD_READ | FD_OOB | FD_CLOSE)) {
+                    if ((mask & (FD_ACCEPT | FD_READ))  &&  sock->readable) {
                         polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Read);
                         ready = 1;
                     }
-                    if (mask & (FD_CONNECT  | FD_WRITE)) {
+                    if ((mask & (FD_CONNECT | FD_WRITE))  &&  sock->writable) {
                         assert(sock->type & eSocket);
                         polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Write);
                         ready = 1;
@@ -1307,7 +1308,8 @@ static EIO_Status s_Select(size_t                n,
                     if (!polls[j].revent) {
                         int k;
                         for (k = 0;  k < FD_MAX_EVENTS;  k++) {
-                            if (e.iErrorCode[k]) {
+                            if ((e.lNetworkEvents & (1 << k)) &&  e.iErrorCode[k]) {
+                                errno = e.iErrorCode[k];
                                 polls[j].revent = eIO_Close;
                                 ready = 1;
                                 break;
@@ -1643,7 +1645,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
             sock->r_status = sock->w_status = status = eIO_Closed;
         else if (status == eIO_Success)
             status = eIO_Unknown;
-        return status/*failure*/;
+        return status;
     }
   
     if (!sock->connected) {
