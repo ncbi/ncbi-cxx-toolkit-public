@@ -1270,7 +1270,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
             ResetBuffer(EstimateCompressionBufferSize(m_BlockSize, 
                                                       m_BlockSize,
                                                       m_HeaderFlags),
-                        m_BlockSize);
+                                                      m_BlockSize);
             // Move unprocessed data from cache to begin of the buffer.
             m_InLen = m_Cache.size() - header_len;
             memmove(m_InBuf, m_Cache.data() + header_len, m_InLen);
