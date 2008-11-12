@@ -1218,7 +1218,6 @@ static EIO_Status s_Select(size_t                n,
             do {
                 size_t j;
                 DWORD  m = count - (DWORD) i;
-                /*printf("Entering wait for %d\n", (int) m);*/
                 r = WaitForMultipleObjects(m,
                                            what + i,
                                            FALSE/*any*/,
@@ -1309,8 +1308,8 @@ static EIO_Status s_Select(size_t                n,
                         int k;
                         for (k = 0;  k < FD_MAX_EVENTS;  k++) {
                             if ((e.lNetworkEvents & (1 << k)) &&  e.iErrorCode[k]) {
-                                errno = e.iErrorCode[k];
                                 polls[j].revent = eIO_Close;
+                                errno = e.iErrorCode[k];
                                 ready = 1;
                                 break;
                             }
@@ -1319,7 +1318,7 @@ static EIO_Status s_Select(size_t                n,
                     break;
                 }
                 assert(j < n);
-                if (ready  ||  !slice)
+                if (ready)
                     i++;
             } while (i < (size_t) count);
 
