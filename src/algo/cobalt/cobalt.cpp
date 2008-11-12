@@ -406,10 +406,17 @@ CMultiAligner::TStatus CMultiAligner::Run()
             }
         }
 
-        x_FindDomainHits();
-        x_FindLocalHits();
-        x_FindPatternHits();
+        blast::TSeqLocVector blast_queries;
+        vector<int> indices;
+        x_CreateBlastQueries(blast_queries, indices);
+        x_FindDomainHits(blast_queries, indices);
+        x_FindLocalHits(blast_queries, indices);
+
+        vector<const CSequence*> pattern_queries;
+        x_CreatePatternQueries(pattern_queries, indices);
+        x_FindPatternHits(pattern_queries, indices);
         x_FindConsistentHitSubset();
+
         x_ComputeTree();
         x_BuildAlignment();
 
@@ -1064,6 +1071,33 @@ void CMultiAligner::x_MakeClusterResidueFrequencies(void)
 
     }
 
+}
+
+void CMultiAligner::x_CreateBlastQueries(blast::TSeqLocVector& queries,
+                                        vector<int>& indices)
+{
+    queries.clear();
+    indices.clear();
+    ITERATE(vector< CRef<objects::CSeq_loc> >, it, m_tQueries) {
+        blast::SSeqLoc sl(**it, *m_Scope);
+        queries.push_back(sl);
+    }
+    indices.resize(m_tQueries.size());
+    for (int i=0;i < (int)m_tQueries.size();i++) {
+        indices[i] = i;
+    }
+}
+
+
+void CMultiAligner::x_CreatePatternQueries(vector<const CSequence*>& queries,
+                                           vector<int>& indices)
+{
+    queries.resize(m_QueryData.size());
+    indices.resize(m_QueryData.size());
+    for (size_t i=0;i < m_QueryData.size();i++) {
+        queries[i] = &m_QueryData[i];
+        indices[i] = i;
+    }
 }
 
 

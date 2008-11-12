@@ -90,7 +90,12 @@ public:
     /// Access the raw sequence data, in ncbistdaa format
     /// @return Pointer to array of sequence data
     ///
-    unsigned char *GetSequence() { return &m_Sequence[0]; }
+    unsigned char* GetSequence() { return &m_Sequence[0]; }
+
+    /// Get the raw sequence data in ncbistdaa format
+    /// @return Pointer to array of sequence data
+    ///
+    const unsigned char* GetSequence() const { return &m_Sequence[0]; }
 
     /// Access the sequence letter at a specified position
     /// @param pos Position to access [in]

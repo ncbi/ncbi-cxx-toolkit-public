@@ -280,23 +280,35 @@ protected:
     ///
     bool x_ValidateUserHits(void);
 
-    /// Run RPS blast on the input sequences and postprocess the results.
-    /// Intended for applications that want fine-grained control of the 
-    /// alignment process
+    /// Run RPS blast on seletced input sequences and postprocess the
+    /// results. Intended for applications that want fine-grained control of
+    /// the alignment process.
+    /// @param queries Queries for RPS Blast search [in]
+    /// @param indices Index of each RPS Blast query in the array of input
+    /// sequences [in]
     ///
-    void x_FindDomainHits();
+    void x_FindDomainHits(blast::TSeqLocVector& queries,
+                          const vector<int>& indices);
 
-    /// Run blast on the input sequences and postprocess the results.
+    /// Run blast on selected input sequences and postprocess the results.
     /// Intended for applications that want fine-grained control of the 
     /// alignment process
+    /// @param queries Queries for Blast alignment [in]
+    /// @param indices Index of each Blast query in the array of input
+    /// sequences [in]
     ///
-    void x_FindLocalHits();
+    void x_FindLocalHits(const blast::TSeqLocVector& queries,
+                         const vector<int>& indices);
 
-    /// Find PROSITE pattern hits on the input sequences.
+    /// Find PROSITE pattern hits on selected input sequences.
     /// Intended for applications that want fine-grained control of the 
     /// alignment process
+    /// @param queries Queries for PROSITE patter search [in]
+    /// @param indices Index of each PROSITE pattern search query in the
+    /// array of input sequences [in]
     ///
-    void x_FindPatternHits();
+    void x_FindPatternHits(const vector<const CSequence*>& queries,
+                           const vector<int>& indices);
 
     /// Given the current list of domain and local hits, generate a 
     /// phylogenetic tree that clusters the current input sequences.
@@ -311,7 +323,6 @@ protected:
     /// alignment process
     ///
     void x_BuildAlignment();
-
 
     /// Find clusters of similar queries, select cluster representative 
     /// sequences, and prepare input to multiple alignement composed of 
@@ -334,6 +345,27 @@ protected:
     ///
     void x_MultiAlignClusters();
 
+    /// Create query set for RPS Blast and Blastp searches along with indices
+    /// in multiple alignment queries array.
+    ///
+    /// Searches for conserved regions can be performed for a subset of
+    /// multiple alignment queries (typically to reduce computation time).
+    /// @param queries Queries for RPS Blast and Blastp searches [out]
+    /// @param indices Indexes of each query in m_tQueries [out]
+    ///
+    void x_CreateBlastQueries(blast::TSeqLocVector& queries,
+                              vector<int>& indices);
+
+    /// Create query set for PROSITE pattern search along with indices
+    /// in multiple alignment queries array.
+    ///
+    /// Searches for conserved regions can be performed for a subset of
+    /// multiple alignment queries (typically to reduce computation time).
+    /// @param queries Queries for PROSITE patterns searches [out]
+    /// @param indices Indexes of each query in m_tQueries [out]
+    ///
+    void x_CreatePatternQueries(vector<const CSequence*>& queries,
+                                vector<int>& indices);
 
 protected:
 
@@ -388,7 +420,7 @@ private:
         /// Is the column an insertion from in-cluster alignment
         bool insert;
         
-        /// Indeces of letters in this column
+        /// Indices of letters in this column
         /// for regular column: index of a letter in input sequence 
         /// (n-th letter)
         /// for inserted column: index of a letter in in-cluster alignment
@@ -427,7 +459,8 @@ private:
 
     void x_LoadBlockBoundaries(string blockfile,
                       vector<SSegmentLoc>& blocklist);
-    void x_FindRPSHits(CHitList& rps_hits);
+    void x_FindRPSHits(blast::TSeqLocVector& queries,
+                       const vector<int>& indices, CHitList& rps_hits);
 
     void x_RealignBlocks(CHitList& rps_hits,
                          vector<SSegmentLoc>& blocklist,
@@ -442,9 +475,13 @@ private:
                          vector<SSegmentLoc>& seg_list,
                          int query_index);
 
-    void x_MakeFillerBlocks(vector< CRef<objects::CSeq_loc> >& filler_locs,
+    void x_MakeFillerBlocks(const vector<int>& indices,
+                            vector< CRef<objects::CSeq_loc> >& filler_locs,
                             vector<SSegmentLoc>& filler_segs);
-    void x_AlignFillerBlocks(vector< CRef<objects::CSeq_loc> >& filler_locs, 
+
+    void x_AlignFillerBlocks(const blast::TSeqLocVector& queries,
+                             const vector<int>& indices,
+                             vector< CRef<objects::CSeq_loc> >& filler_locs, 
                              vector<SSegmentLoc>& filler_segs);
 
     void x_FindConsistentHitSubset();

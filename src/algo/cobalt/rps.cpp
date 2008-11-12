@@ -393,9 +393,13 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
 
 
 void
-CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
+CMultiAligner::x_FindRPSHits(TSeqLocVector& queries,
+                             const vector<int>& indices,
+                             CHitList& rps_hits)
 {
-    int num_queries = m_tQueries.size();
+    _ASSERT(queries.size() == indices.size());
+
+    int num_queries = queries.size();
 
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eRPSBlast));
 
@@ -409,13 +413,7 @@ CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
     // run RPS blast
 
     BlastSeqSrc * seq_src(SeqDbBlastSeqSrcInit(m_RPSdb, TRUE));
-
-    CBlastQueryVector query_vector;
-    ITERATE(vector< CRef<objects::CSeq_loc> >, it, m_tQueries) {
-        CRef<CBlastSearchQuery> sq(new CBlastSearchQuery(**it, *m_Scope));
-        query_vector.AddQuery(sq);
-    }
-    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_vector));
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(queries));
 
     CLocalBlast blaster(query_factory, opts, seq_src);
     CSearchResultSet results = *blaster.Run();
@@ -459,7 +457,7 @@ CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
 
                 int db_oid;
                 seqdb.SeqidToOid(*denseg.GetIds()[1], db_oid);
-                rps_hits.AddToHitList(new CHit(i, db_oid, 
+                rps_hits.AddToHitList(new CHit(indices[i], db_oid, 
                                                align_score, denseg));
             }
 
@@ -626,7 +624,8 @@ CMultiAligner::x_AssignDefaultResFreqs()
 
 
 void
-CMultiAligner::x_FindDomainHits()
+CMultiAligner::x_FindDomainHits(TSeqLocVector& queries,
+                                const vector<int>& indices)
 {
     if (m_RPSdb.empty() || 
         m_Blockfile.empty()) {
@@ -642,7 +641,7 @@ CMultiAligner::x_FindDomainHits()
 
     // run RPS blast
 
-    x_FindRPSHits(m_DomainHits);
+    x_FindRPSHits(queries, indices, m_DomainHits);
 
     // check for interrupt
     if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {

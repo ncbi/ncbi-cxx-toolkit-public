@@ -61,11 +61,14 @@ typedef struct SPatternHit {
 } SPatternHit;
 
 void
-CMultiAligner::x_FindPatternHits()
+CMultiAligner::x_FindPatternHits(const vector<const CSequence*>& queries,
+                                 const vector<int>& indices)
 {
     m_ProgressMonitor.stage = ePatternHitsSearch;
 
-    size_t num_queries = m_QueryData.size();
+    _ASSERT(queries.size() == indices.size());
+
+    size_t num_queries = queries.size();
 
     const vector<CMultiAlignerOptions::CPattern>& patterns
          = m_Options->GetCddPatterns();
@@ -105,12 +108,13 @@ CMultiAligner::x_FindPatternHits()
             // saving any hits found
 
             Int4 twice_num_hits = ::FindPatternHits(hit_offsets, 
-                                  (const Uint1 *)(m_QueryData[j].GetSequence()),
-                                  m_QueryData[j].GetLength(),
+                                  (const Uint1 *)(queries[j]->GetSequence()),
+                                  queries[j]->GetLength(),
                                   FALSE, phi_pattern);
             for (size_t k = 0; k < (size_t)twice_num_hits; k += 2) {
-                phi_hits.push_back(SPatternHit(j, TRange(hit_offsets[k+1],
-                                                         hit_offsets[k])));
+                phi_hits.push_back(SPatternHit(indices[j], 
+                                               TRange(hit_offsets[k+1],
+                                                      hit_offsets[k])));
             }
         }
 

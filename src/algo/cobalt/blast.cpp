@@ -85,14 +85,16 @@ CMultiAligner::x_AddNewSegment(vector< CRef<objects::CSeq_loc> >& loc_list,
     seg_list.push_back(SSegmentLoc(query_index, from, to));
 }
 
-/// Turn all fragments of query sequence not already covered by
+/// Turn all fragments of selected query sequence not already covered by
 /// a domain hit into a separate query sequence, used as input
 /// to a blast search
+/// @param blastp_indices Indices of query sequences selected for blastp
+/// search [in]
 /// @param filler_locs List of generated sequences [out]
 /// @param filler_segs Simplified representation of filler_locs [out]
 ///
 void
-CMultiAligner::x_MakeFillerBlocks(
+CMultiAligner::x_MakeFillerBlocks(const vector<int>& blastp_indices,
                                vector< CRef<objects::CSeq_loc> >& filler_locs,
                                vector<SSegmentLoc>& filler_segs)
 {
@@ -117,7 +119,9 @@ CMultiAligner::x_MakeFillerBlocks(
     // For each query sequence, mark off the regions
     // not covered by a domain hit
 
-    for (int i = 0; i < num_queries; i++) {
+    ITERATE(vector<int>, it, blastp_indices) {
+        int i = *it;
+
         CRangeCollection<TOffset>& collection(sorted_segs[i]);
         TOffset seg_start = 0;
 
@@ -157,16 +161,20 @@ CMultiAligner::x_MakeFillerBlocks(
 
 /// Run blastp, aligning the collection of filler fragments
 /// against the entire input dataset
+/// @param queries List of queries selected for blastp alignment [in]
+/// @param indices List of indices of each selected query in the queries
+/// array [in]
 /// @param filler_locs List of generated sequences [in]
 /// @param filler_segs Simplified representation of filler_locs [in]
 ///
 void
-CMultiAligner::x_AlignFillerBlocks(
-                               vector< CRef<objects::CSeq_loc> >& filler_locs, 
-                               vector<SSegmentLoc>& filler_segs)
+CMultiAligner::x_AlignFillerBlocks(const TSeqLocVector& queries,
+                                   const vector<int>& indices,
+                                   vector< CRef<CSeq_loc> >& filler_locs, 
+                                   vector<SSegmentLoc>& filler_segs)
 {
     const int kBlastBatchSize = 10000;
-    int num_full_queries = m_tQueries.size();
+    int num_full_queries = indices.size();
 
     if (filler_locs.empty())
         return;
@@ -180,11 +188,6 @@ CMultiAligner::x_AlignFillerBlocks(
     blastp_opts.SetSegFiltering(false);
 
     // use blast on one batch of filler segments at a time
-
-    TSeqLocVector queries(m_tQueries.size());
-    for (size_t i=0;i < m_tQueries.size();i++) {
-        queries[i] = SSeqLoc(*m_tQueries[i], *m_Scope);
-    }
 
     int batch_start = 0; 
     while (batch_start < (int)filler_locs.size()) {
@@ -224,7 +227,7 @@ CMultiAligner::x_AlignFillerBlocks(
 
                 // skip hits that map to the same query sequence
 
-                if (list1_oid == j)
+                if (list1_oid == indices[j])
                     continue;
 
                 // iterate over hitlists
@@ -255,7 +258,7 @@ CMultiAligner::x_AlignFillerBlocks(
                         if (evalue > m_BlastpEvalue)
                             continue;
             
-                        m_LocalHits.AddToHitList(new CHit(list1_oid, j,
+                        m_LocalHits.AddToHitList(new CHit(list1_oid, indices[j],
                                                       align_score, denseg));
                     }
                     else if (s.GetSegs().Which() == 
@@ -287,8 +290,8 @@ CMultiAligner::x_AlignFillerBlocks(
                             if (evalue > m_BlastpEvalue)
                                 continue;
                 
-                            m_LocalHits.AddToHitList(new CHit(list1_oid, j,
-                                                    align_score, dendiag));
+                            m_LocalHits.AddToHitList(new CHit(list1_oid,
+                                             indices[j], align_score, dendiag));
                         }
                     }
                 }
@@ -301,7 +304,8 @@ CMultiAligner::x_AlignFillerBlocks(
 }
 
 void
-CMultiAligner::x_FindLocalHits()
+CMultiAligner::x_FindLocalHits(const TSeqLocVector& queries,
+                               const vector<int>& indices)
 {
     m_ProgressMonitor.stage = eLocalHitsSearch;
 
@@ -325,8 +329,8 @@ CMultiAligner::x_FindLocalHits()
 
     vector< CRef<objects::CSeq_loc> > filler_locs;
     vector<SSegmentLoc> filler_segs;
-    x_MakeFillerBlocks(filler_locs, filler_segs);
-    x_AlignFillerBlocks(filler_locs, filler_segs);
+    x_MakeFillerBlocks(indices, filler_locs, filler_segs);
+    x_AlignFillerBlocks(queries, indices, filler_locs, filler_segs);
 
     //-------------------------------------------------------
     if (m_Verbose) {
