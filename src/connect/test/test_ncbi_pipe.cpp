@@ -356,7 +356,7 @@ int CTest::Run(void)
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
     assert(pipe.Close(&exitcode) == eIO_Success);
-    assert(exitcode == -1 );
+    assert(exitcode == -1);
     {{
         CProcess process(handle, CProcess::eHandle);
         assert(!process.IsAlive());
