@@ -13,7 +13,8 @@ public:
     CHashParam() : 
         m_windowSize( 22 ), 
         m_wordSize( 11 ), 
-        m_strideSize( 1 ), 
+        m_strideSize( 1 ),
+        m_windowCount( 1 ),
         m_hashBits( 22 ),
         m_hashMismatches( 1 ), 
         m_hashIndels( 0 ) {}
@@ -21,12 +22,14 @@ public:
     int  GetWindowSize() const { return m_windowSize; }
     int  GetWordSize() const { return m_wordSize; }
     int  GetStrideSize() const { return m_strideSize; }
+    int  GetWindowCount() const { return m_windowCount; }
     int  GetHashBits() const { return m_hashBits; }
     int  GetHashMismatches() const { return m_hashMismatches; }
     bool GetHashIndels() const { return m_hashIndels; }
 
     void SetWindowSize( int x ) { m_windowSize = x; }
     void SetWordSize( int x ) { m_wordSize = x; }
+    void SetWindowCount( int x ) { m_windowCount = x; }
     void SetStrideSize( int x ) { m_strideSize = x; }
     void SetHashBits( int x ) { m_hashBits = x; }
     void SetHashMismatches( int x ) { m_hashMismatches = x; }
@@ -38,6 +41,7 @@ protected:
     int  m_windowSize;
     int  m_wordSize;
     int  m_strideSize;
+    int  m_windowCount;
     int  m_hashBits;
     int  m_hashMismatches;
     bool m_hashIndels;

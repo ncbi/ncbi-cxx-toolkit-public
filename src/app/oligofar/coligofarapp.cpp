@@ -116,7 +116,7 @@ void COligoFarApp::Version( const char * )
 // k        skipPos     K
 // l        gilist      L       memLimit
 // m        margin      M       mismScore
-// n        maxMism     N
+// n        maxMism     N       maxWindows
 // o        output      O       outputFmt
 // p        pctCutoff   P       phrapScore
 // q        qualChn     Q       gapExtScore
@@ -201,6 +201,7 @@ void COligoFarApp::Help( const char * arg )
                     << ":\n"
                     << "  -w win[/word] --window-size=win[/word]   hash using window size and word size [" << m_hashParam[i].GetWindowSize() << "/" << m_hashParam[i].GetWordSize() << "]\n"
                     << "  -S stride     --stride-size=stride       hash with given stride size [" << m_hashParam[i].GetStrideSize() << "]\n"
+                    << "  -N count      --max-windows=count        hash using maximum number of consecutive windows [" << m_hashParam[i].GetWindowCount() << "]\n"
                     << "  -n mismatch   --max-mism=mismatch        hash allowing up to given number of mismatches (0-2) [" << m_hashParam[i].GetHashMismatches() << "]\n"
                     << "  -e indel      --max-indels=indel         hash allowing up to given number of indels (0-1) [" << m_hashParam[i].GetHashIndels() << "]\n"
                     << "  -H bits       --index-bits=bits          set number of bits for index part of hash table [" << m_hashParam[i].GetHashBits() << "]\n"   
@@ -233,9 +234,6 @@ void COligoFarApp::Help( const char * arg )
             << "    f|centrifugal|outside               reads are oriented so that vectors 5'->3' are pointing outside\n"
             << "    i|incr|incremental|solid            reads are on same strand, first preceeds second on this strand\n"
             << "    d|decr|decremental                  reads are on same strand, first succeeds second on this strand\n"
-            << "    o|opposite                          reads are on opposite strands (combination of p and f)\n"
-            << "    c|consecutive                       reads are on same strand (combination of i and d)\n"
-            << "    a|all|any                           any orientation, no constraints are applied\n"
             << "\nOutput flags (for -O):\n"
             << "    -   reset all flags\n"
             << "    h   report all hits before ranking\n"
@@ -263,6 +261,7 @@ const option * COligoFarApp::GetLongOptions() const
         {"assert-version", 1, 0, 'U'},
         {"window-size", 1, 0, 'w'},
         {"window-skip",1,0,'k'},
+        {"max-windows",1,0,'N'},
         {"input-mism", 1, 0, 'n'},
         {"input-gaps", 1, 0, 'e'},
         {"input-max-amb", 1, 0, 'a'},
@@ -312,7 +311,7 @@ const option * COligoFarApp::GetLongOptions() const
 
 const char * COligoFarApp::GetOptString() const
 {
-    return "U:H:S:w:k:n:e:a:A:c:i:d:b:v:g:o:O:l:y:s:B:x:p:u:t:1:2:q:0:P:m:D:R:F:r:I:M:G:Q:X:L:T:";
+    return "U:H:S:w:N:k:n:e:a:A:c:i:d:b:v:g:o:O:l:y:s:B:x:p:u:t:1:2:q:0:P:m:D:R:F:r:I:M:G:Q:X:L:T:";
 }
 
 int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
@@ -338,6 +337,7 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
             m_hashParam[m_hashPass].SetWordSize( word );
         } while(0);
         break;
+    case 'N': m_hashParam[m_hashPass].SetWindowCount( NStr::StringToInt( arg ) ); break;
     case 'H': m_hashParam[m_hashPass].SetHashBits( NStr::StringToInt( arg ) ); break;
     case 'S': m_hashParam[m_hashPass].SetStrideSize( NStr::StringToInt( arg ) ); break;
     case 'n': m_hashParam[m_hashPass].SetHashMismatches( NStr::StringToInt( arg ) ); break;
@@ -482,28 +482,21 @@ int COligoFarApp::GetOutputFlags() const
 
 void COligoFarApp::SetupGeometries( map<string,int>& geometries )
 {
-    geometries.insert( make_pair("p",CFilter::fInside) );
-    geometries.insert( make_pair("centripetal",CFilter::fInside) );
-    geometries.insert( make_pair("inside",CFilter::fInside) );
-    geometries.insert( make_pair("pcr",CFilter::fInside) );
-    geometries.insert( make_pair("solexa",CFilter::fInside) );
-    geometries.insert( make_pair("f",CFilter::fOutside) );
-    geometries.insert( make_pair("centrifugal",CFilter::fOutside) );
-    geometries.insert( make_pair("outside",CFilter::fOutside) );
-    geometries.insert( make_pair("i",CFilter::fInOrder) );
-    geometries.insert( make_pair("incr",CFilter::fInOrder) );
-    geometries.insert( make_pair("incremental",CFilter::fInOrder) );
-    geometries.insert( make_pair("solid",CFilter::fInOrder) );
-    geometries.insert( make_pair("d",CFilter::fBackOrder) );
-    geometries.insert( make_pair("decr",CFilter::fBackOrder) );
-    geometries.insert( make_pair("decremental",CFilter::fBackOrder) );
-    geometries.insert( make_pair("o",CFilter::fInside|CFilter::fOutside) );
-    geometries.insert( make_pair("opposite",CFilter::fInside|CFilter::fOutside) );
-    geometries.insert( make_pair("c",CFilter::fInOrder|CFilter::fBackOrder) );
-    geometries.insert( make_pair("consecutive",CFilter::fInOrder|CFilter::fBackOrder) );
-    geometries.insert( make_pair("a",CFilter::fAll) );
-    geometries.insert( make_pair("all",CFilter::fAll) );
-    geometries.insert( make_pair("any",CFilter::fAll) );
+    geometries.insert( make_pair("p",CFilter::eCentripetal) );
+    geometries.insert( make_pair("centripetal",CFilter::eCentripetal) );
+    geometries.insert( make_pair("inside",CFilter::eCentripetal) );
+    geometries.insert( make_pair("pcr",CFilter::eCentripetal) );
+    geometries.insert( make_pair("solexa",CFilter::eCentripetal) );
+    geometries.insert( make_pair("f",CFilter::eCentrifugal) );
+    geometries.insert( make_pair("centrifugal",CFilter::eCentrifugal) );
+    geometries.insert( make_pair("outside",CFilter::eCentrifugal) );
+    geometries.insert( make_pair("i",CFilter::eIncremental) );
+    geometries.insert( make_pair("incr",CFilter::eIncremental) );
+    geometries.insert( make_pair("incremental",CFilter::eIncremental) );
+    geometries.insert( make_pair("solid",CFilter::eIncremental) );
+    geometries.insert( make_pair("d",CFilter::eDecremental) );
+    geometries.insert( make_pair("decr",CFilter::eDecremental) );
+    geometries.insert( make_pair("decremental",CFilter::eDecremental) );
 }
 
 int COligoFarApp::ProcessData()
@@ -596,7 +589,7 @@ int COligoFarApp::ProcessData()
     formatter.SetGuideFile( guideFile );
     formatter.SetAligner( batch.GetAligner( CBatch::eAligner_regular ) );
 
-    filter.SetGeometryFlags( geometries[m_geometry] );
+    filter.SetGeometry( geometries[m_geometry] );
     filter.SetSeqIds( &seqIds );
     filter.SetMaxDist( m_maxPair + m_pairMargin );
     filter.SetMinDist( m_minPair - m_pairMargin );

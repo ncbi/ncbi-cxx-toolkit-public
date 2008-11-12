@@ -10,18 +10,19 @@ void CFilter::Match( const CHashAtom& m, const char * a, const char * A, int pos
 {
 	ASSERT( m_aligner );
 	m_aligner->SetBestPossibleQueryScore( m.GetQuery()->GetBestScore( m.GetPairmate() ) );
-    if( m.GetStrand() == '-' && m.GetQuery()->GetCoding() == CSeqCoding::eCoding_colorsp ) --pos;
+    bool reverseStrand = m.IsReverseStrand();
+    if( reverseStrand && m.GetQuery()->GetCoding() == CSeqCoding::eCoding_colorsp ) --pos;
     m_aligner->Align( m.GetQuery()->GetCoding(),
                       m.GetQuery()->GetData( m.GetPairmate() ),
                       m.GetQuery()->GetLength( m.GetPairmate() ),
                       CSeqCoding::eCoding_ncbi8na,
                       a + pos,
-                      m.GetStrand() == '+' ? A - a - pos : -pos,
+                      reverseStrand ? -pos : A - a - pos,
                       CAlignerBase::fComputeScore );
     const CAlignerBase& abase = m_aligner->GetAlignerBase();
     double score = abase.GetScore();
     if( score >= m_scoreCutoff ) {
-        if( m.IsReverseStrand() ) {
+        if( reverseStrand ) {
             ProcessMatch( score, pos, pos - abase.GetSubjectAlignedLength() + 1, true,  m.GetQuery(), m.GetPairmate() );
         } else {
             ProcessMatch( score, pos, pos + abase.GetSubjectAlignedLength() - 1, false, m.GetQuery(), m.GetPairmate() );
@@ -36,162 +37,121 @@ void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, 
     if( query->IsPairedRead() == false ) {
         PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) );
     } else { 
-        int seqMin = reverse ? seqTo : seqFrom;
-        int seqMax = reverse ? seqFrom : seqTo;
+        Uint4 componentGeometry = reverse | ( pairmate << 1 );
+        ASSERT( (m_geometry & ~3) == 0 );
+        ASSERT( (componentGeometry & ~3) == 0 );
+
+        enum EAction { eAction_Append = 'A', eAction_Lookup = 'L' };
+        switch( "ALALLALALLAAAALL"[ (componentGeometry << 2) | m_geometry ] ) {
+        default: THROW( logic_error, "Invalid action here!" );
+        case eAction_Append:
+            m_pendingHits.insert( make_pair( reverse ? seqTo : seqFrom, new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) ) );
+            break;
+        case eAction_Lookup:
+            do {
+                TPendingHits toAdd;
+                if( ! LookupInQueue( score, seqFrom, seqTo, reverse, query, pairmate, toAdd, true ) )
+                    PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) );
+                copy( toAdd.begin(), toAdd.end(), inserter( m_pendingHits, m_pendingHits.end() ) );
+            } while(0);
+            break;
+            break;
+        }
+    }
+}
+
+bool CFilter::LookupInQueue( double score, int seqFrom, int seqTo, bool reverse, CQuery * query, int pairmate, TPendingHits& toAdd, bool canPurgeQueue )
+{
+    int seqMin = reverse ? seqTo : seqFrom;
+    int seqMax = reverse ? seqFrom : seqTo;
+    int bottomPos = seqMax - m_maxDist + 1;
+    int topPos = min( seqMax - m_minDist + 1, seqMin - 1 ); // just to be safe... reads can't be longer then 256
+    // First clear queue
+    if( canPurgeQueue )
+        PurgeQueue( bottomPos - 1 - m_reserveDist );
+    
+    TPendingHits::iterator phit =  m_pendingHits.begin();
+    
+    bool found = false;
+    int lastPos = -1;
+
+    for( ; phit != m_pendingHits.end() && phit->first <  bottomPos ; ++phit );
+    for( ; phit != m_pendingHits.end() && phit->first <= topPos ; ++phit ) {
+        CHit * hit = phit->second;
+        if( hit->IsPurged() ) 
+            THROW( logic_error, "Attempt to use purged hit here!"
+                 << DISPLAY( CBitHacks::AsBits( hit->GetGeometry() ) ) << "\n"
+                 << DISPLAY( CBitHacks::AsBits( m_geometry ) ) << "\n"
+                 << DISPLAY( hit->GetFrom() ) << DISPLAY( hit->GetTo() ) << "\n"
+                 << DISPLAY( seqFrom ) << DISPLAY( seqTo ) << "\n"
+                 << DISPLAY( bottomPos ) << DISPLAY( topPos ) << "\n" );
         
-        int bottomPos = seqMax - m_maxDist + 1;
-        int topPos = min( seqMax - m_minDist + 1, seqMin - 1 ); // just to be safe... reads can't be longer then 256
-        // Here we try to find a pair for this match
-        
-        // First clear queue
-        PurgeQueue( bottomPos - 1 );
-
-        TPendingHits toAdd;
-        TPendingHits::iterator phit =  m_pendingHits.begin();
-
-        Uint2 matchFlags = (reverse << CHit::kRead1_reverse_bit) << pairmate;
-        if( !pairmate ) matchFlags |= CHit::fOrder_reverse;
-
-        bool found = false;
-
-        for( ; phit != m_pendingHits.end() && phit->first <= topPos ; ++phit ) {
-            if( phit->second->IsPurged() ) {
-                cerr << DISPLAY( CBitHacks::AsBits( phit->second->GetGeometryNumber() ) ) << "\n"
-                     << DISPLAY( CBitHacks::AsBits( phit->second->GetGeometryFlag() ) ) << "\n"
-                     << DISPLAY( CBitHacks::AsBits( m_geometryFlags ) ) << "\n"
-                     << DISPLAY( CBitHacks::AsBits( phit->second->ComputeChainedGeometryFlags() ) ) << "\n"
-                     << DISPLAY( CBitHacks::AsBits( phit->second->ComputeExtentionGeometryFlags() ) ) << "\n"
-                     << DISPLAY( phit->second->GetFrom() ) << DISPLAY( phit->second->GetTo() ) << "\n"
-                     << DISPLAY( seqFrom ) << DISPLAY( seqTo ) << "\n"
-                     << DISPLAY( bottomPos ) << DISPLAY( topPos ) << "\n"
-                    ;
-                abort();
+        if( hit->GetQuery() != query ) continue;
+        if( !hit->HasComponent( !pairmate ) ) continue;
+        if( !hit->HasComponent( pairmate ) ) {
+            hit->SetPairmate( pairmate, score, seqFrom, seqTo );
+            found = true;
+            /*
+        } else if( score > phit->GetScore( pairmate ) ) {
+            double s = hit->GetScore( pairmate );
+            double f = hit->GetFrom( pairmate );
+            double t = hit->GetTo( pairmate );
+            bool r = hit->IsReverseStrans( pairmate );
+            phit->SetPairmate( pairmate, score, from, to );
+            Uint2 g = hit->GetGeometry();
+            if( g & CHit::fOrder_reverse ) g = (~g)&3;
+            ASSERT( g == m_geometry );
+            if( ! LookupInQueue( s, f, t, r, query, pairmate, toAdd, false ) ) {
+                PurgeHit( new CHit( query, m_ord, pairmate, s, f, t ) );
             }
-            
-            // TODO: here: try to attach new hit to the existing hits, which may 
-            // produce new hits which may be either purged or put in queue (for the latter 
-            // they are to be added to toAdd queue and after the loop moved to main queue
-            if( phit->second->GetQuery() != query ) continue;
-            Uint2 geometry = 1 << (phit->second->GetGeometryNumber() | matchFlags);
-            if( ( geometry & m_geometryFlags ) == 0 ) continue;
-
-            switch( phit->second->GetComponentFlags() ) {
-            case CHit::fPairedHit: 
-                // Let's go here for combinatorial explosion for now...
-                if( geometry & phit->second->ComputeExtentionGeometryFlags() & m_geometryFlags ) {
-                    if( InRange( phit->second->GetFrom(), seqMax ) ) {
-                        if( PairedHitSetPair( seqFrom, seqTo, reverse, pairmate, score, phit->second, toAdd, eExtend ) ) break;
-                        found = true;
-                    }
-                }
-                if( geometry & phit->second->ComputeChainedGeometryFlags() & m_geometryFlags ) {
-                    if( InRange( phit->second->GetUpperHitMinPos(), seqMax ) ) {
-                        found |= PairedHitSetPair( seqFrom, seqTo, reverse, pairmate, score, phit->second, toAdd, eChain );
-                    }
-                }
-                break;
-            case CHit::fComponent_1: 
-                if( pairmate == 1 ) found |= SingleHitSetPair( seqFrom, seqTo, reverse, pairmate, score, phit->second, toAdd );
-                continue;
-            case CHit::fComponent_2: 
-                if( pairmate == 0 ) found |= SingleHitSetPair( seqFrom, seqTo, reverse, pairmate, score, phit->second, toAdd );
-                continue;
-            default: THROW( logic_error, "Ooops here!" );
+        } else if( score == phit->GetScore( pairmate ) ) {
+        */
+        } else {
+            // this hit is not good enough
+            if( lastPos != phit->first ) {
+                lastPos = phit->first;
+                toAdd.insert( make_pair( lastPos, pairmate ? 
+                             new CHit( query, m_ord, hit->GetScore(0), hit->GetFrom(0), hit->GetTo(0), score, seqFrom, seqTo ) :
+                             new CHit( query, m_ord, score, seqFrom, seqTo, hit->GetScore(1), hit->GetFrom(1), hit->GetTo(1) ) ) );
+                found = true;
             }
         }
-        // TODO: here: add toAdd hits to the new queue
-        copy( toAdd.begin(), toAdd.end(), inserter( m_pendingHits, m_pendingHits.end() ) );
-
-        // TODO: here: if it was not attached, put it in queue
-        if( !found ) 
-            m_pendingHits.insert( make_pair( seqMin, new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) ) );
     }
+    return found;
 }
 
 void CFilter::PurgeQueue( int bottomPos )
 {
-    // TODO: get back to optimized purging, no assertions
     TPendingHits::iterator phit = m_pendingHits.begin();
-    set<CHit*> purged;
     for( ; phit != m_pendingHits.end() && phit->first < bottomPos ; ++phit ) {
-        // decide should this hit be purged
-        if( phit->second->GetComponentFlags() != CHit::fPairedHit ) purged.insert( phit->second ); //PurgeHit( phit->second );
-        else if( phit->second->GetUpperHitMinPos() < bottomPos ) purged.insert( phit->second ); // PurgeHit( phit->second );
-        else if( ( phit->second->ComputeChainedGeometryFlags() & m_geometryFlags ) == 0 ) purged.insert( phit->second ); //PurgeHit( phit->second );
+        PurgeHit( phit->second );
     }
     m_pendingHits.erase( m_pendingHits.begin(), phit );
-    ITERATE( TPendingHits, h, m_pendingHits ) {
-        if( purged.find( h->second ) != purged.end() ) {
-            cerr << h->second->GetQuery()->GetId() << "\t"
-                 << h->second->GetFrom() << "\t"
-                 << h->second->GetTo() << "\n";
-            purged.erase( h->second );
-        } 
-    }
-    ITERATE( set<CHit*>, h, purged ) PurgeHit( *h );        
 }
 
 void CFilter::PurgeQueueToTheEnd()
 {
-    // TODO: get back to optimized purging, no assertions
     set<CHit*> purged;
     for( TPendingHits::const_iterator i = m_pendingHits.begin(); i != m_pendingHits.end(); ++i ) {
-        //PurgeHit( i->second, true );
-        purged.insert( i->second );
+        PurgeHit( i->second, true );
     }
-    ITERATE( set<CHit*>, i, purged ) PurgeHit( *i ); 
    	m_pendingHits.clear();
 }
 
-bool CFilter::SingleHitSetPair( int seqFrom, int seqTo, bool reverse, int pairmate, double score, CHit * hit, TPendingHits& toAdd )
+bool CFilter::CheckGeometry( int from1, int to1, int from2, int to2 ) const
 {
-    int maxPos = reverse ? seqFrom : seqTo;
-    int minPos = reverse ? seqTo : seqFrom;
-    if( InRange( hit->GetFrom(), maxPos ) && minPos > hit->GetFrom() && maxPos > hit->GetTo() ) {
-        hit->SetPairmate( pairmate, score, seqFrom, seqTo );
-        if( hit->ComputeChainedGeometryFlags() & m_geometryFlags )
-            toAdd.insert( make_pair( minPos, hit ) );
-        return true;
+    int geo = CHit::ComputeGeometry( from1, to1, from2, to2 );
+    switch( geo ) {
+    case CHit::fGeometry_Fwd1_Fwd2: return InRange( from1, to2 );
+    case CHit::fGeometry_Fwd1_Rev2: return InRange( from1, from2 );
+    case CHit::fGeometry_Rev1_Fwd2: return InRange( to1, to2 );
+    case CHit::fGeometry_Rev1_Rev2: return InRange( to1, from2 );
+    case CHit::fGeometry_Fwd2_Fwd1: return InRange( from2, to1 );
+    case CHit::fGeometry_Fwd2_Rev1: return InRange( from2, from1 );
+    case CHit::fGeometry_Rev2_Fwd1: return InRange( to2, to1 );
+    case CHit::fGeometry_Rev2_Rev1: return InRange( to2, from1 );
+    default: return false;
     }
-    else return false;
-}
-
-bool CFilter::PairedHitSetPair( int seqFrom, int seqTo, bool reverse, int pairmate, double score, CHit * hit, TPendingHits& toAdd, EHitUpdateMode mode )
-{
-    if( score <= hit->GetScore( pairmate ) ) return false;
-    int badPos = min( hit->GetFrom( pairmate ), hit->GetTo( pairmate ) );
-    CHit * newHit = new CHit( hit->GetQuery(), m_ord, pairmate, hit->GetScore( pairmate ), hit->GetFrom( pairmate ), hit->GetTo( pairmate ) );
-    try {
-        hit->SetPairmate( pairmate, score, seqFrom, seqTo );
-    } catch(...) {
-        cerr 
-            << DISPLAY( hit->GetFrom(0) ) 
-            << DISPLAY( hit->GetTo(0) ) 
-            << DISPLAY( hit->GetFrom(1) )
-            << DISPLAY( hit->GetTo(1) ) 
-            << endl
-            << DISPLAY( newHit->GetFrom(0) ) 
-            << DISPLAY( newHit->GetTo(0) ) 
-            << DISPLAY( newHit->GetFrom(1) )
-            << DISPLAY( newHit->GetTo(1) ) 
-            << endl
-            << DISPLAY( seqFrom ) 
-            << DISPLAY( seqTo )
-            << DISPLAY( pairmate ) << endl;
-        throw;
-    }
-    bool toBeAdded = bool( newHit->ComputeExtentionGeometryFlags() | m_geometryFlags );
-    bool added = false;
-    for( TPendingHits::iterator i = m_pendingHits.find( badPos ); i != m_pendingHits.end() && i->first == badPos ; ++i ) {
-        if( i->second == hit ) {
-            i->second = toBeAdded ? newHit : 0;
-            added = true;
-        }
-    }
-    if( toBeAdded && !added ) toAdd.insert( make_pair( badPos, newHit ) );
-    if( hit->ComputeExtentionGeometryFlags() & m_geometryFlags )
-        toAdd.insert( make_pair( min( seqFrom, seqTo ), hit ) );
-    return true;
 }
 
 void CFilter::SequenceBegin( const TSeqIds& id, int oid ) 
@@ -229,6 +189,7 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
         if( cscore > hscore ) { delete hit; return; }
         int topcnt = m_topCnt;
         if( tscore <= hscore ) {
+            if( tih->Equals( hit ) ) { delete hit; return; } // uniqueing hits
             CHit::C_NextCtl( hit ).SetNext( tih );
             q->m_topHit = hit;
 			cscore = ( tscore = hscore ) * m_topPct/100;
@@ -237,6 +198,7 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
             bool weak = true;
             for( ; weak && tih->GetNextHit() && topcnt > 0; (tih = tih->GetNextHit()), --topcnt ) {
                 if( tih->GetNextHit()->IsNull() || tih->GetNextHit()->GetTotalScore() < hscore ) {
+                    if( tih->Equals( hit ) ) { delete hit; return; }
                     // keep chain linked
                     CHit::C_NextCtl( hit ).SetNext( tih->GetNextHit() );
                     CHit::C_NextCtl( tih ).SetNext( hit );

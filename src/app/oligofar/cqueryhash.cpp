@@ -40,57 +40,70 @@ int CQueryHash::AddQuery( CQuery * query, int component )
         return 0; // too short read
     }
 
-    UintH fwindow = 0;
-    int ambiguities = 0;
-    int offset = GetNcbi4na( fwindow, query->GetCoding(), (unsigned char*)query->GetData( component ), len );
+    int ret = 0, off = 0, maxWinCnt = m_skipPositions.size() ? 1 : m_maxWindowCount;
 
-    if( offset < 0 ) {
-        query->SetRejectAsLoQual( component );
-        return 0;
-    }
-    query->ClearRejectFlags( component );
-    if( ComputeComplexityNcbi8na( fwindow, m_windowLength, ambiguities ) > m_maxSimplicity ) 
-        query->SetRejectAsLoCompl( component );
-    if( ambiguities > m_maxAmb ) { query->SetRejectAsLoQual( component ); }
+    for( int i = 0; i < maxWinCnt; ++i, (off += m_windowLength) ) {
+        UintH fwindow = 0;
+        int ambiguities = 0;
+        if( len - off < m_windowLength ) continue;
 
-    if( query->GetRejectFlags( component ) ) return 0;
-    
-    Compress( fwindow );
+        int offset = GetNcbi4na( fwindow, query->GetCoding(), (unsigned char*)query->GetData( component, off ), len - off );
 
-    size_t reserve = size_t( min( Uint8(numeric_limits<size_t>::max()), 
-                                  ComputeEntryCountPerRead() * ( Uint8( 1 ) << ( ambiguities * 2 ) ) ) );
-
-    CHashPopulator hashPopulator( m_windowSize, m_wordSize, m_strideSize, query, m_strands, offset, component );
-    hashPopulator.Reserve( reserve );
-    
-    if( GetAllowIndel() ) {
-        UintH maskH = CBitHacks::WordFootprint<UintH>( 4 * ( m_windowSize + m_strideSize - 1 ) );
-        int maxMism = max( 0, m_maxMism - 1 ); // don't allow as many mismatches if indels are allowed
-        hashPopulator.SetPermutator( m_permutators[maxMism] );
-        hashPopulator.SetIndel( CHashAtom::eInsertion );
-        for( int pos = 1; pos < m_windowSize - 1; ++pos ) {
-            UintH ifwindow = maskH & CBitHacks::InsertBits<UintH, 4, 0xf>( fwindow, pos ); // insert N at the position 
-            hashPopulator.PopulateHash( ifwindow );
+        if( offset < 0 ) {
+            query->SetRejectAsLoQual( component );
+            continue; 
         }
-        hashPopulator.SetIndel( CHashAtom::eDeletion );
-        for( int pos = 1; pos < m_windowSize; ++pos ) {
-            UintH dfwindow = maskH & CBitHacks::DeleteBits<UintH, 4>( fwindow, pos ); // deletion at the position
-            hashPopulator.PopulateHash( dfwindow );
+
+        query->ClearRejectFlags( component );
+        if( ComputeComplexityNcbi8na( fwindow, m_windowLength, ambiguities ) > m_maxSimplicity ) {
+            query->SetRejectAsLoCompl( component );
+            offset = -1;
         }
-        fwindow &= maskH; // remove extra base
+        if( ambiguities > m_maxAmb ) { query->SetRejectAsLoQual( component ); offset = -1; }
+
+        if( offset == -1 ) continue;
+        offset += off;
+        
+        Compress( fwindow );
+
+        size_t reserve = size_t( min( Uint8(numeric_limits<size_t>::max()), 
+                                      ComputeEntryCountPerRead() * ( Uint8( 1 ) << ( ambiguities * 2 ) ) ) );
+
+        CHashPopulator hashPopulator( m_windowSize, m_wordSize, m_strideSize, query, m_strands, offset, component );
+        hashPopulator.Reserve( reserve );
+        
+        if( GetAllowIndel() ) {
+            UintH maskH = CBitHacks::WordFootprint<UintH>( 4 * ( m_windowSize + m_strideSize - 1 ) );
+            int maxMism = max( 0, m_maxMism - 1 ); // don't allow as many mismatches if indels are allowed
+            hashPopulator.SetPermutator( m_permutators[maxMism] );
+            hashPopulator.SetIndel( CHashAtom::eInsertion );
+            for( int pos = 1; pos < m_windowSize - 1; ++pos ) {
+                UintH ifwindow = maskH & CBitHacks::InsertBits<UintH, 4, 0xf>( fwindow, pos ); // insert N at the position 
+                hashPopulator.PopulateHash( ifwindow );
+            }
+            hashPopulator.SetIndel( CHashAtom::eDeletion );
+            for( int pos = 1; pos < m_windowSize; ++pos ) {
+                UintH dfwindow = maskH & CBitHacks::DeleteBits<UintH, 4>( fwindow, pos ); // deletion at the position
+                hashPopulator.PopulateHash( dfwindow );
+            }
+            fwindow &= maskH; // remove extra base
+        }
+
+        // no indels, just mismatches
+        hashPopulator.SetIndel( CHashAtom::eNoIndel );
+        hashPopulator.SetPermutator( m_permutators[m_maxMism] );
+        hashPopulator.PopulateHash( fwindow );
+        hashPopulator.Unique();
+        
+        ITERATE( CHashPopulator, h, hashPopulator ) {
+            m_hashTable.AddEntry( h->first, h->second );
+        }
+
+        ret += hashPopulator.size();
     }
 
-    // no indels, just mismatches
-    hashPopulator.SetIndel( CHashAtom::eNoIndel );
-    hashPopulator.SetPermutator( m_permutators[m_maxMism] );
-    hashPopulator.PopulateHash( fwindow );
-    hashPopulator.Unique();
-    
-    ITERATE( CHashPopulator, h, hashPopulator ) {
-        m_hashTable.AddEntry( h->first, h->second );
-    }
-
-    return hashPopulator.size();
+    if( ret ) query->ClearRejectFlags( component );
+    return ret;
 }
 
 // this procedure tries to trim left ambiguity characters unless this introduces more severe ambiguities

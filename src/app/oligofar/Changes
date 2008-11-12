@@ -15,4 +15,23 @@
 	* Now -A1 -n1 allows one ambiguity per hash word on subject side - it gets considered as miamatch
 	* Option -W is added, now window may be longer then 15 bases (may be up to 24).
 
-	
+3.28	2008/11/12
+	* A lot of chages:
+	 -w window/word    sets window size and word size (window may include two words)
+	 -H bits           now sets index part of hash, rest is hashed as sorted list
+	 -S stride         sets stride size
+	 -N count          sets maximal number of consecutive windows to hash
+	 -e 0|1            may allow indels to be hashed
+	 -k pos[,...]      allows to force certain positions of all reads to be skipped
+	 -x cnt            allows to reuse guide file hits having mismatches
+	 -R type           allows only four mutual orientations now
+	 -D min[-max]      now sets paired read range (instead of -z -Z)
+	 -m value          sets fuzz for -D values
+	 -a count          sets maximal number of ambiguities in window on read side now
+	 -A count          sets maximal number of ambiguities in window on subject side now
+	 -y seqid [-y ...] add seqid to the list of allowed subject ids to scan
+	 --pass0, --pass1  allow to select pass for which -w, -H, -S, -N, -e, -n will be applied
+	 -f                removed
+	 -z				   removed
+	 -Z                removed
+

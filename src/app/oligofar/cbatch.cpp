@@ -26,6 +26,7 @@ void CBatch::SetPass( unsigned pass )
     m_pass = pass;
     m_filter.SetAligner( GetAligner() );
     m_queryHash.SetWindowSize( m_hashParam[pass].GetWindowSize() );
+    m_queryHash.SetMaxWindowCount( m_hashParam[pass].GetWindowCount() );
     m_queryHash.SetStrideSize( m_hashParam[pass].GetStrideSize() );
     m_queryHash.SetWordSize( m_hashParam[pass].GetWordSize() );
     m_queryHash.SetIndexBits( m_hashParam[pass].GetHashBits() );

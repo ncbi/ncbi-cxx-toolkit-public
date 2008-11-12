@@ -1,7 +1,7 @@
-oligoFAR 3.27                     15-SEP-2008                                1-NCBI
+oligoFAR 3.28                     15-NOV-2008                                1-NCBI
 
 NAME 
-    oligoFAR version 3.27 - global alignment of single or paired short reads
+    oligoFAR version 3.28 - global alignment of single or paired short reads
 
 SYNOPSIS
         usage: [-hV] [--help[=full|brief|extended]] [-U version]
@@ -10,13 +10,13 @@ SYNOPSIS
           [-O -eumxtadh] [-B batchsz] [-x 0|1|2] [-s 1|2|3] [-k skipPos]
           [--pass0] [-w win[/word]] [-n mism] [-e gaps] [-S stride] [-H bits]
           [--pass1  [-w win[/word]] [-n mism] [-e gaps] [-S stride] [-H bits] ]
-          [-r f|s] [-a maxamb] [-A maxamb] [-P phrap] [-F dust]
+          [-r f|s] [-a maxamb] [-A maxamb] [-y seqid [-y ...]] [-P phrap] [-F dust]
           [-p cutoff] [-u topcnt] [-t toppct] [-X xdropoff] [-I idscore]
           [-M mismscore] [-G gapcore] [-Q gapextscore] [-D minPair[-maxPair]]
           [-m margin] [-R geometry] [-L memlimit] [-T +|-]
 
 EXAMPLES
-    oligofar -U 3.27 -C human-data.ini -C deep-search.ini -i my.reads -h
+    oligofar -U 3.28 -C human-data.ini -C deep-search.ini -i my.reads -h
 
     oligofar -i pairs.tbl -d contigs.fa -b snpdb.bdb -l gilist -g pairs.guide \
              -w 20/12 -B 250000 -H32 -n2 -rf -p90 -D100-500 -m50 -Rp \
@@ -27,6 +27,7 @@ CHANGES
     in version 3.25: -n, -w, -N, -S, -x, -f, -R 
     in version 3.26: -n, -w, -N, -z, -Z, -D, -m, -S, -x, -f, -k
     in version 3.27: -n, -w, -e, -H, -S, -a, -A, --pass0, --pass1
+    in version 3.28: -y, -R, -N
 
 DESCRIPTION
     Performs global alignments of multiple single or paired short reads 
@@ -224,6 +225,12 @@ File options
     -l filename Sets file with list of gis to which scan of database should be
                 limited. Works only if database is in blastdb.
 
+    --only-seqid=seqid
+    -y seqid    Limits database lookup to this seqid. May appear multiple
+                times - then list of seqids is used. Does not work with -l.
+                Comparison is pretty strict, so lcl| or .2 are required in
+                'lcl|chr12' and 'NM_012345.2'. 
+
     --qual-1-file=filename
     -1 filename Sets file with 4-channel scores for the first component of
                 paired reads or for single reads. Should contain data in
@@ -282,6 +289,12 @@ Hashing and scanning options
     --window-size=window[/word]
     -w window[/word]
                 Sets window and word size.
+
+    --max-windows=count
+    -N count    Set maximal number of consecutive windows to hash.
+                Should be 1 (default) if used with -k. Actual number of words
+                will be multiplied by stride size. Also alternatives, indels 
+                and mismatches will extend this number independently.
 
     --input-mism=mism
     -n mism     Sets maximal allowed number of mismatches within hashed word.
@@ -410,23 +423,12 @@ Filtering and ranking options
                                             ex: >>>2>>>   >>>1>>>
                                             or: <<<1<<<   <<<2<<<
 
-        o|opposite                          reads are on opposite strands 
-                                            (combination of p and f)
-                                            ex: >>>>>>>   <<<<<<<
-                                            or: <<<<<<<   >>>>>>>
-
-        c|consecutive                       reads are on same strand 
-                                            (combination of i and d)
-                                            ex: >>>>>>>   >>>>>>>
-                                            or: <<<<<<<   <<<<<<<
-
-        a|all|any                           any orientation, no constraints 
-                                            are applied
-
                 In examples above the pattern >>>1>>> means first component of 
                 the paired read on plus strand, <<<2<<< means second component 
-                on reverse complement strand; if the digit is not set than 
+                on reverse complement strand; if the digit is not set then the
                 component number does not matter for the example.
+
+                Combinations of the values are not allowed.
 
 Extended options
     These options are supposed more for development cycle - they may choose 

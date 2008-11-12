@@ -42,9 +42,11 @@ public:
     void SetIndexBits( int bits );
     void SetStrands( int strands );
     void SetMaxSimplicity( double simpl );
+    void SetMaxWindowCount( int windows );
 
     void SetExpectedReadCount( int count ) { m_expectedCount = count; }
 
+    int  GetMaxWindowCount() const { return m_maxWindowCount; }
     int  GetWindowSize() const { return m_windowSize; }
     int  GetWordSize() const { return m_wordSize; }
     int  GetWordOffset() const { return m_wordOffset; }
@@ -150,6 +152,7 @@ protected:
     int m_windowSize;
     int m_strideSize;
     int m_wordSize;
+    int m_maxWindowCount;
     int m_strands;
     int m_expectedCount;
     int m_hashedCount;
@@ -184,6 +187,7 @@ inline CQueryHash::CQueryHash( int maxm, int maxa ) :
     m_windowSize( 22 ),
     m_strideSize( 1 ),
     m_wordSize( 11 ),
+    m_maxWindowCount( 1 ),
     m_strands( 3 ),
     m_expectedCount( 1000000 ),
     m_hashedCount( 0 ),
@@ -224,6 +228,15 @@ inline void CQueryHash::SetWindowSize( int winSize )
         m_wordSize = m_windowSize;
         m_wordMask = CBitHacks::WordFootprint<Uint8>( 2*m_wordSize );
         m_wordOffset = 0;
+    } else m_wordOffset = m_windowSize - m_wordSize;
+}
+
+inline void CQueryHash::SetMaxWindowCount( int winCnt ) 
+{ 
+    ASSERT( m_status == eStatus_empty );
+    m_maxWindowCount = winCnt; 
+    if( m_skipPositions.size() ) {
+        m_skipPositions.clear();
     } else m_wordOffset = m_windowSize - m_wordSize;
 }
 

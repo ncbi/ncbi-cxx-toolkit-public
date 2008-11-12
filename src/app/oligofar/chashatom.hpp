@@ -44,6 +44,7 @@ public:
     Uint2 GetSubkey() const { return m_subkey; }
     CQuery * GetQuery() const { return m_query; }
     bool IsReverseStrand() const { return bool(GetStrandId() >> eBit_strand); }
+    bool IsForwardStrand() const { return !IsReverseStrand(); }
     char GetStrandId() const  { return m_flags&fMask_strand; } // for sort
     char GetStrand() const  { return "+-"[(int)IsReverseStrand()]; }
     int GetOffset() const   { return m_offset; }

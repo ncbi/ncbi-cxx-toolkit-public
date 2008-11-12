@@ -55,21 +55,22 @@ public:
         fPairedHit       = 0x30,
         fPurged          = 0x80,
         fMaskGeometry    = fRead1_reverse|fRead2_reverse|fOrder_reverse, 
-        kRead1_reverse_bit = 0,
-        kOrder_reverse_bit = 2,
+        kRead1_strand_bit = 0,
+        kRead2_strand_bit = 1,
+        kOrder_strand_bit = 2,
         kComponents_bit  = 4,
         fNONE            = 0x00
     };
 
     enum EGeometry {
-        fGeometry_Fwd1_Fwd2 = 1 << (fRead1_forward|fRead2_forward|fOrder_forward),
-        fGeometry_Fwd1_Rev2 = 1 << (fRead1_forward|fRead2_reverse|fOrder_forward),
-        fGeometry_Rev1_Fwd2 = 1 << (fRead1_reverse|fRead2_forward|fOrder_forward),
-        fGeometry_Rev1_Rev2 = 1 << (fRead1_reverse|fRead2_reverse|fOrder_forward),
-        fGeometry_Fwd2_Fwd1 = 1 << (fRead1_forward|fRead2_forward|fOrder_reverse),
-        fGeometry_Rev2_Fwd1 = 1 << (fRead1_forward|fRead2_reverse|fOrder_reverse),
-        fGeometry_Fwd2_Rev1 = 1 << (fRead1_reverse|fRead2_forward|fOrder_reverse),
-        fGeometry_Rev2_Rev1 = 1 << (fRead1_reverse|fRead2_reverse|fOrder_reverse),
+        fGeometry_Fwd1_Fwd2 = (fRead1_forward|fRead2_forward|fOrder_forward),
+        fGeometry_Fwd1_Rev2 = (fRead1_forward|fRead2_reverse|fOrder_forward),
+        fGeometry_Rev1_Fwd2 = (fRead1_reverse|fRead2_forward|fOrder_forward),
+        fGeometry_Rev1_Rev2 = (fRead1_reverse|fRead2_reverse|fOrder_forward),
+        fGeometry_Fwd2_Fwd1 = (fRead1_forward|fRead2_forward|fOrder_reverse),
+        fGeometry_Rev2_Fwd1 = (fRead1_forward|fRead2_reverse|fOrder_reverse),
+        fGeometry_Fwd2_Rev1 = (fRead1_reverse|fRead2_forward|fOrder_reverse),
+        fGeometry_Rev2_Rev1 = (fRead1_reverse|fRead2_reverse|fOrder_reverse),
         fGeometry_NOT_SET = 0
     };
     
@@ -82,6 +83,8 @@ public:
     int  GetFrom( int pairmate ) const;
     int  GetTo( int pairmate ) const;
     int  GetLength( int pairmate ) const { return m_length[pairmate]; }
+    
+    bool Equals( const CHit * other ) const;
     
     bool IsReverseStrand( int pairmate ) const { return bool( m_flags & ( pairmate ? fRead2_reverse : fRead1_reverse ) ); }
     bool HasComponent( int pairmate ) const { return bool( m_length[pairmate] ); }
@@ -97,10 +100,7 @@ public:
     bool IsReverseOrder() const { return m_flags & fOrder_reverse; }
     bool IsOverlap() const { return m_flags & fReads_overlap; } // NB: overlap hits are BAD, one can't say individual reads positions
 
-    Uint2 GetGeometryNumber() const { return fMaskGeometry & m_flags; }
-    Uint2 GetGeometryFlag() const { return 1<<(fMaskGeometry & m_flags); }
-    Uint2 ComputeChainedGeometryFlags() const; // what flags could be if upper hit is paired to new hit
-    Uint2 ComputeExtentionGeometryFlags() const; // what flags could be if lower hit is paired to new hit
+    Uint2 GetGeometry() const { return fMaskGeometry & m_flags; }
     static Uint2 ComputeGeometry( int from1, int to1, int from2, int to2 );
 
     int GetUpperHitMinPos() const;

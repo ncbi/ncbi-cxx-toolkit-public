@@ -29,7 +29,7 @@ x=$(run "Strides" ./oligofar -i test2.reads -d NM_012345.fa -Ou -S6 -n2 -e1 | te
 test "$x" = '     22 100'
 errors="${errors},$?"
 
-for R in solexa outside solid decr opposite consecutive all ; do 
+for R in solexa outside solid decr ; do 
 	echo "R=$R" ; run "Pairs $R" ./oligofar -i test3.pairs -d NM_012345.fa -D400-600 -R $R |awk '($6>100)' ; 
 done > test3.pairs.out
 diff test3.pairs.ref test3.pairs.out > test3.pairs.diff

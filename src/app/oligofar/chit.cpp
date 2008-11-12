@@ -47,6 +47,7 @@ CHit::CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int t
     } else {
         m_length[pairmate] = to - from + 1;
     }
+    if( pairmate ) m_flags |= fOrder_reverse;
     m_score[pairmate] = float( score );
     m_score[!pairmate] = 0;
     m_target[0] = m_target[1] = 0;
@@ -88,7 +89,7 @@ void CHit::SetPairmate( int pairmate, double score, int from, int to )
     ASSERT( m_score[pairmate] <= score );
     ASSERT( (pairmate&~1) == 0 );
     if( m_length[pairmate] == 0 ) {
-        ASSERT( (m_flags & (fOrder_reverse|fReads_overlap)) == 0 );
+        //ASSERT( (m_flags & (fOrder_reverse|fReads_overlap)) == 0 );
         m_flags |= fComponent_1 << pairmate;
         if( from > to ) {
             m_flags |= pairmate ? fRead2_reverse : fRead1_reverse;
@@ -113,7 +114,7 @@ void CHit::SetPairmate( int pairmate, double score, int from, int to )
         // 3) the mate hit to the new one is at the upper bound
         ASSERT( (m_flags & fReads_overlap) == 0 ); // case (1); to handle it we need to store offset
         // first reset all flags except other's strand
-        if( pairmate ^ bool(m_flags&fOrder_reverse) ) { // case (2): r1 && 21 || r2 && 12
+        if( pairmate ^ ((m_flags&fOrder_reverse) >> kOrder_strand_bit) ) { // case (2): r1 && 21 || r2 && 12
             if( from > to ) {
                 m_flags |= pairmate ? fRead2_reverse : fRead1_reverse;
                 m_length[pairmate] = from - to + 1;
@@ -189,23 +190,9 @@ int CHit::ComputeRangeLength( int a, int b, int c, int d )
     return max( a, d );
 }
 
-Uint2 CHit::ComputeChainedGeometryFlags() const
-{
-    Uint2 altFlags = (m_flags^fOrder_reverse)&fMaskGeometry;
-    Uint2 retFlags = (1 << altFlags)|(1 << (altFlags^(fRead1_reverse << ((m_flags&fOrder_reverse) >> kOrder_reverse_bit))));
-    return retFlags;
-}
-
-Uint2 CHit::ComputeExtentionGeometryFlags() const
-{
-    Uint2 altFlags = (m_flags)&fMaskGeometry;
-    Uint2 retFlags = (1 << altFlags)|(1 << (altFlags^(fRead2_reverse >> ((m_flags&fOrder_reverse) >> kOrder_reverse_bit))));
-    return retFlags;
-}
-
 int CHit::GetUpperHitMinPos() const
 {
-    return m_fullTo - m_length[( m_flags & fOrder_reverse )>>kOrder_reverse_bit] + 1;
+    return m_fullTo - m_length[( m_flags & fOrder_reverse )>>kOrder_strand_bit] + 1;
 }
 
 Uint2 CHit::ComputeGeometry( int from1, int to1, int from2, int to2 )
@@ -215,7 +202,15 @@ Uint2 CHit::ComputeGeometry( int from1, int to1, int from2, int to2 )
     if( from2 > to2 ) { rc |= fRead2_reverse; swap( from2, to2 ); }
     if( from1 < from2 && to1 < to2 );
     else if ( from2 < from1 && to2 < to1 ) rc |= fOrder_reverse;
-    else return 0; // overlapping
-    return 1 << rc;
+    else return fReads_overlap; // overlapping
+    return rc;
 }
 
+bool CHit::Equals( const CHit * other ) const 
+{
+    return m_query == other->m_query &&
+        m_fullFrom == other->m_fullFrom &&
+        m_fullTo   == other->m_fullTo &&
+        m_score[0] == other->m_score[0] &&
+        m_score[1] == other->m_score[1];
+}

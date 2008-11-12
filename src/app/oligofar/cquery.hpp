@@ -54,9 +54,11 @@ public:
 
 	const char* GetId() const { return (const char*)m_data; }
 	const char* GetData( int i ) const { return (const char*)m_data + m_offset[i]; }
+	const char* GetData( int i, int p ) const { return (const char*)m_data + m_offset[i] + p * GetBytesPerBase(); }
 
 	unsigned GetLength( int i ) const { return m_length[i]; }
-	unsigned GetDataSize( int i ) const { return ( GetCoding() == CSeqCoding::eCoding_ncbipna ? 5 : 1 ) * m_length[i]; }
+	unsigned GetDataSize( int i ) const { return GetBytesPerBase() * m_length[i]; }
+    unsigned GetBytesPerBase() const { return GetCoding() == CSeqCoding::eCoding_ncbipna ? 5 : 1; }
 
 	CSeqCoding::ECoding GetCoding() const;
     CHit * GetTopHit() const { return m_topHit; }
