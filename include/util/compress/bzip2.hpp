@@ -81,9 +81,11 @@ BEGIN_NCBI_SCOPE
 
 
 //////////////////////////////////////////////////////////////////////////////
-//
-// CBZip2Compression
-//
+///
+/// CBZip2Compression --
+///
+/// Define a base methods for compression/decompression memory buffers
+/// and files.
 
 class NCBI_XUTIL_EXPORT CBZip2Compression : public CCompression 
 {
@@ -112,13 +114,14 @@ public:
     /// Return name and version of the compression library.
     virtual CVersionInfo GetVersion(void) const;
 
-    // Get compression level.
-    // NOTE: BZip2 algorithm do not support zero level compression.
-    //       So the "eLevel_NoCompression" will be translated to
-    //       "eLevel_Lowest".
+    /// Get compression level.
+    ///
+    /// NOTE: BZip2 algorithm do not support zero level compression.
+    ///       So the "eLevel_NoCompression" will be translated to
+    ///       "eLevel_Lowest".
     virtual ELevel GetLevel(void) const;
 
-    // Return default compression level for a BZip compression algorithm
+    /// Return default compression level for a compression algorithm
     virtual ELevel GetDefaultLevel(void) const
         { return eLevel_VeryHigh; };
 
@@ -126,28 +129,84 @@ public:
     // Utility functions 
     //
 
-    // (De)compress the source buffer into the destination buffer.
-    // Return TRUE if operation was succesfully or FALSE otherwise.
-    // Notice that altogether the total size of the destination buffer
-    // must be little more then size of the source buffer. 
+    /// Compress data in the buffer.
+    ///
+    /// Altogether, the total size of the destination buffer must be little
+    /// more then size of the source buffer.
+    /// @param src_buf
+    ///   [in] Source buffer.
+    /// @param src_len
+    ///   [in] Size of data in source  buffer.
+    /// @param dst_buf
+    ///   [in] Destination buffer.
+    /// @param dst_size
+    ///   [in] Size of destination buffer.
+    /// @param dst_len
+    ///   [out] Size of compressed data in destination buffer.
+    /// @return
+    ///   Return TRUE if operation was succesfully or FALSE otherwise.
+    ///   On success, 'dst_buf' contains compressed data of dst_len size.
+    /// @sa
+    ///   DecompressBuffer
     virtual bool CompressBuffer(
         const void* src_buf, size_t  src_len,
         void*       dst_buf, size_t  dst_size,
         /* out */            size_t* dst_len
     );
+
+    /// Decompress data in the buffer.
+    ///
+    /// @param src_buf
+    ///   Source buffer.
+    /// @param src_len
+    ///   Size of data in source buffer.
+    /// @param dst_buf
+    ///   Destination buffer.
+    /// @param dst_len
+    ///   Size of destination buffer.
+    /// @param dst_len
+    ///   Size of decompressed data in destination buffer.
+    /// @return
+    ///   Return TRUE if operation was succesfully or FALSE otherwise.
+    ///   On success, 'dst_buf' contains decompressed data of dst_len size.
+    /// @sa
+    ///   CompressBuffer
     virtual bool DecompressBuffer(
         const void* src_buf, size_t  src_len,
         void*       dst_buf, size_t  dst_size,
         /* out */            size_t* dst_len
     );
 
-    // (De)compress file "src_file" and put result to "dst_file".
-    // Return TRUE on success, FALSE on error.
+    /// Compress file.
+    ///
+    /// @param src_file
+    ///   File name of source file.
+    /// @param dst_file
+    ///   File name of result file.
+    /// @param buf_size
+    ///   Buffer size used to read/write files.
+    /// @return
+    ///   Return TRUE on success, FALSE on error.
+    /// @sa
+    ///   DecompressFile
     virtual bool CompressFile(
         const string& src_file,
         const string& dst_file,
         size_t        buf_size = kCompressionDefaultBufSize
     );
+
+    /// Decompress file.
+    ///
+    /// @param src_file
+    ///   File name of source file.
+    /// @param dst_file
+    ///   File name of result file.
+    /// @param buf_size
+    ///   Buffer size used to read/write files.
+    /// @return
+    ///   Return TRUE on success, FALSE on error.
+    /// @sa
+    ///   CompressFile
     virtual bool DecompressFile(
         const string& src_file,
         const string& dst_file, 
@@ -155,26 +214,26 @@ public:
     );
 
 protected:
-    // Get error description for specified error code
+    /// Get error description for specified error code.
     const char* GetBZip2ErrorDescription(int errcode);
 
-    // Format string with last error description
+    /// Format string with last error description.
     string FormatErrorMessage(string where, bool use_stream_data = true) const;
 
 protected:
-    void*  m_Stream;          // Compressor stream
-    int    m_Verbosity;       // Verbose monitoring/debugging output level
-    int    m_WorkFactor;      // See description above
-    int    m_SmallDecompress; // Use memory-frugal decompression algorithm
+    void*  m_Stream;          ///< Compressor stream
+    int    m_Verbosity;       ///< Verbose monitoring/debugging output level
+    int    m_WorkFactor;      ///< See description above
+    int    m_SmallDecompress; ///< Use memory-frugal decompression algorithm
 };
 
 
 
 //////////////////////////////////////////////////////////////////////////////
-//
-// CBZip2CompressionFile class
-//
-// Throw exceptions on critical errors.
+///
+/// CBZip2CompressionFile class --
+///
+/// Throw exceptions on critical errors.
 
 class NCBI_XUTIL_EXPORT CBZip2CompressionFile : public CBZip2Compression,
                                                 public CCompressionFile
@@ -190,6 +249,7 @@ public:
         int           work_factor      = 0,
         int           small_decompress = 0 
     );
+
     /// Conventional constructor.
     /// For a special parameters description see CBZip2Compression.
     CBZip2CompressionFile(
@@ -198,24 +258,58 @@ public:
         int           work_factor      = 0,
         int           small_decompress = 0 
     );
+
+    /// Destructor.
     ~CBZip2CompressionFile(void);
 
-    // Open a compressed file for reading or writing.
-    // Return TRUE if file was opened succesfully or FALSE otherwise.
+    /// Opens a compressed file for reading or writing.
+    ///
+    /// @param file_name
+    ///   File name of the file to open.
+    /// @param mode
+    ///   File open mode.
+    /// @return
+    ///   TRUE if file was opened succesfully or FALSE otherwise.
+    /// @sa
+    ///   CBZip2Compression, Read, Write, Close
     virtual bool Open(const string& file_name, EMode mode);
 
-    // Read up to "len" uncompressed bytes from the compressed file "file"
-    // into the buffer "buf". Return the number of bytes actually read
-    // (0 for end of file, -1 for error).
-    // The number of really readed bytes can be less than requested.
+    /// Read data from compressed file.
+    /// 
+    /// Read up to "len" uncompressed bytes from the compressed file "file"
+    /// into the buffer "buf". 
+    /// @param buf
+    ///    Buffer for requested data.
+    /// @param len
+    ///    Number of bytes to read.
+    /// @return
+    ///   Number of bytes actually read (0 for end of file, -1 for error).
+    ///   The number of really readed bytes can be less than requested.
+    /// @sa
+    ///   Open, Write, Close
     virtual long Read(void* buf, size_t len);
 
-    // Writes the given number of uncompressed bytes into the compressed file.
-    // Return the number of bytes actually written or -1 for error.
+    /// Write data to compressed file.
+    /// 
+    /// Writes the given number of uncompressed bytes from the buffer
+    /// into the compressed file.
+    /// @param buf
+    ///    Buffer with written data.
+    /// @param len
+    ///    Number of bytes to write.
+    /// @return
+    ///   Number of bytes actually written or -1 for error.
+    /// @sa
+    ///   Open, Read, Close
     virtual long Write(const void* buf, size_t len);
 
-    // Flushes all pending output if necessary, closes the compressed file.
-    // Return TRUE on success, FALSE on error.
+    /// Close compressed file.
+    ///
+    /// Flushes all pending output if necessary, closes the compressed file.
+    /// @return
+    ///   TRUE on success, FALSE on error.
+    /// @sa
+    ///   Open, Read, Write
     virtual bool Close(void);
 
 protected:
@@ -243,6 +337,8 @@ public:
         int                  work_factor = 0,           // [0..250] 
         CCompression::TFlags flags       = 0
     );
+
+    /// Destructor.
     virtual ~CBZip2Compressor(void);
 
 protected:
@@ -296,14 +392,17 @@ protected:
 
 
 //////////////////////////////////////////////////////////////////////////////
-//
-// Compression/decompression stream processors (for details see "stream.hpp")
-//
+///
+/// CBZip2StreamCompressor -- bzip2 based compression stream processor
+///
+/// See util/compress/stream.hpp for details.
+/// @sa CCompressionStreamProcessor
 
 class NCBI_XUTIL_EXPORT CBZip2StreamCompressor
     : public CCompressionStreamProcessor
 {
 public:
+    /// Constructor.
     CBZip2StreamCompressor(
         CCompression::ELevel level       = CCompression::eLevel_Default,
         streamsize           in_bufsize  = kCompressionDefaultBufSize,
@@ -320,11 +419,18 @@ public:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CLZOStreamDecompressor -- bzip2 based decompression stream processor
+///
+/// See util/compress/stream.hpp for details.
+/// @sa CCompressionStreamProcessor
+
 class NCBI_XUTIL_EXPORT CBZip2StreamDecompressor
     : public CCompressionStreamProcessor
 {
 public:
-    /// Full constructor
+    /// Full constructor.
     CBZip2StreamDecompressor(
         streamsize           in_bufsize,
         streamsize           out_bufsize,
@@ -337,7 +443,7 @@ public:
              eDelete, in_bufsize, out_bufsize)
     {}
 
-    /// Conventional constructor
+    /// Conventional constructor.
     CBZip2StreamDecompressor(CCompression::TFlags flags = 0)
         : CCompressionStreamProcessor( 
               new CBZip2Decompressor(0, 0, flags),

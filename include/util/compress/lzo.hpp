@@ -127,7 +127,7 @@ public:
         fChecksum             = (1<<1),
         ///< Use stream compatible format for data compression.
         ///< This flag have an effect only for CompressBuffer/DecompressBuffer.
-        ///< File and stream oriented compressors always use it by default.
+        ///< File and stream based compressors always use it by default.
         ///< Use this flag with DecompressBuffer() to decompress data,
         ///< compressed using streams, or compress data with CompressBuffer(),
         ///< that can be decompressed using decompression stream.
@@ -213,10 +213,8 @@ public:
         /* out */            size_t* dst_len
     );
 
-    /// Compress data in the buffer.
+    /// Decompress data in the buffer.
     ///
-    /// Altogether, the total size of the destination buffer must be little
-    /// more then size of the source buffer.
     /// @param src_buf
     ///   Source buffer.
     /// @param src_len
@@ -226,10 +224,10 @@ public:
     /// @param dst_len
     ///   Size of destination buffer.
     /// @param dst_len
-    ///   Size of compressed data in destination buffer.
+    ///   Size of decompressed data in destination buffer.
     /// @return
     ///   Return TRUE if operation was succesfully or FALSE otherwise.
-    ///   On success, 'dst_buf' contains compressed data of dst_len size.
+    ///   On success, 'dst_buf' contains decompressed data of dst_len size.
     /// @sa
     ///   CompressBuffer
     virtual bool DecompressBuffer(
@@ -317,7 +315,7 @@ protected:
     /// Get error description for specified error code.
     const char* GetLZOErrorDescription(int errcode);
 
-    /// Format string with last error description
+    /// Format string with last error description.
     string FormatErrorMessage(string where) const;
 
     /// Compress block of data.
@@ -362,10 +360,10 @@ protected:
 
 
 //////////////////////////////////////////////////////////////////////////////
-//
-// CLZOCompressionFile class
-//
-// Throw exceptions on critical errors.
+///
+/// CLZOCompressionFile class --
+///
+/// Throw exceptions on critical errors.
 
 class NCBI_XUTIL_EXPORT CLZOCompressionFile : public CLZOCompression,
                                               public CCompressionFile
@@ -597,9 +595,9 @@ private:
 
 
 //////////////////////////////////////////////////////////////////////////////
-//
-// Compression/decompression stream processors (for details see "stream.hpp")
-//
+///
+/// CLZOStreamCompressor -- zlib based compression stream processor
+///
 /// See util/compress/stream.hpp for details.
 /// @sa CCompressionStreamProcessor
 
@@ -607,7 +605,7 @@ class NCBI_XUTIL_EXPORT CLZOStreamCompressor
     : public CCompressionStreamProcessor
 {
 public:
-    /// Constructor
+    /// Constructor.
     CLZOStreamCompressor(
         CCompression::ELevel level       = CCompression::eLevel_Default,
         streamsize           in_bufsize  = kCompressionDefaultBufSize,
