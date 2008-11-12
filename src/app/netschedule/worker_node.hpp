@@ -138,7 +138,7 @@ public:
 
     // Register node with host, port and unique node id. If there was another
     // node with different id but the same (host, port) - append that node's
-    // jobs to job_list, so that they can be safely failed and possibly retried.
+    // jobs to 'jobs', so that they can be safely failed and possibly retried.
     void RegisterNode(const SWorkerNodeInfo& node_info, TJobList& jobs);
     // Unregister node, return its jobs
     void ClearNode(const string& node_id, TJobList& jobs);

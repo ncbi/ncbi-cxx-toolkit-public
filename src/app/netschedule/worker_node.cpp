@@ -289,7 +289,7 @@ void CQueueWorkerNodeList::GetNodesInfo(time_t curr,
             nodes_info.push_back(node.AsString(curr));
         } else {
             // DEBUG
-            nodes_info.push_back(node.AsString(curr)+" invalid");
+            //nodes_info.push_back(node.AsString(curr)+" invalid");
         }
     }
 }
@@ -393,6 +393,7 @@ void CQueueWorkerNodeList::x_ClearNode(const string& node_id, TJobList& jobs)
     if (it == m_WorkerNodeById.end()) return;
     x_ClearNode(it, jobs);
 }
+
 
 void CQueueWorkerNodeList::x_ClearNode(TWorkerNodeById::iterator& it,
                                        TJobList& jobs)
