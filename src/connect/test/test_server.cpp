@@ -44,6 +44,8 @@
 #include <util/random_gen.hpp>
 #include <util/thread_pool.hpp>
 
+#include <common/test_assert.h>  // This header must go last
+
 
 BEGIN_NCBI_SCOPE
 
