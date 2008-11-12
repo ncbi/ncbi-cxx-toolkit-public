@@ -113,13 +113,13 @@ void CHit::SetPairmate( int pairmate, double score, int from, int to )
         // 3) the mate hit to the new one is at the upper bound
         ASSERT( (m_flags & fReads_overlap) == 0 ); // case (1); to handle it we need to store offset
         // first reset all flags except other's strand
-        m_flags &= ( (!pairmate) ? fRead2_reverse : fRead1_reverse ) | fOther;
         if( pairmate ^ bool(m_flags&fOrder_reverse) ) { // case (2): r1 && 21 || r2 && 12
             if( from > to ) {
                 m_flags |= pairmate ? fRead2_reverse : fRead1_reverse;
                 m_length[pairmate] = from - to + 1;
                 x_SetValues( m_fullFrom, m_fullFrom + m_length[!pairmate] - 1, to, from );
             } else {
+                m_flags &= pairmate ? ~fRead2_reverse : ~fRead1_reverse;
                 m_length[pairmate] = to - from + 1;
                 x_SetValues( m_fullFrom, m_fullFrom + m_length[!pairmate] - 1, from, to );
             }
@@ -129,6 +129,7 @@ void CHit::SetPairmate( int pairmate, double score, int from, int to )
                 m_length[pairmate] = from - to + 1;
                 x_SetValues( m_fullTo - m_length[!pairmate] + 1, m_fullTo, to, from );
             } else {
+                m_flags &= pairmate ? ~fRead2_reverse : ~fRead1_reverse;
                 m_length[pairmate] = to - from + 1;
                 x_SetValues( m_fullTo - m_length[!pairmate] + 1, m_fullTo, from, to );
             }
@@ -144,6 +145,7 @@ void CHit::x_SetValues( int min1, int max1, int min2, int max2 )
     if( min1 < min2 && max1 < max2 ) {
         m_fullFrom = min1;
         m_fullTo = max2;
+        m_flags &= ~fOrder_reverse;
     } else if ( min2 < min1 && max2 < max1 ) {
         m_fullFrom = min2;
         m_fullTo = max1;

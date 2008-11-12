@@ -112,6 +112,7 @@ protected:
 	string m_read1qualityFile;
 	string m_read2qualityFile;
 	string m_geometry;
+    list<string> m_seqIds;
 };
 
 END_OLIGOFAR_SCOPES

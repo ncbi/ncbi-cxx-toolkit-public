@@ -102,6 +102,39 @@ void COligoFarApp::Version( const char * )
     cout << GetProgramBasename() << " ver " OLIGOFAR_VERSION " (Rev:" << RevNo() << ") " NCBI_SIGNATURE << endl;
 }
 
+// letter   lower       letter  upper
+// a        ambCnt      A       ambCnt
+// b        snpdb       B       batchSz
+// c        colorsp     C       /config/
+// d        database    D       pairRange
+// e        maxGaps     E
+// f                    F       dustScore
+// g        guidefile   G       gapScore
+// h        help        H       hashBits
+// i        input       I       idScore
+// j                    J       
+// k        skipPos     K
+// l        gilist      L       memLimit
+// m        margin      M       mismScore
+// n        maxMism     N
+// o        output      O       outputFmt
+// p        pctCutoff   P       phrapScore
+// q        qualChn     Q       gapExtScore
+// r        alignAlgo   R       geometry
+// s        strands     S       stride
+// t        topPct      T       runTests
+// u        topCnt      U       assertVer
+// v                    V       version
+// w        win/word    W       POSIX 
+// x        guideMism   X       xDropoff
+// y        onlySeqid   Y
+// z                    Z
+// 0        baseQual    5
+// 1        solexa1     6
+// 2        solexa2     7
+// 3                    8
+// 4                    9
+
 void COligoFarApp::Help( const char * arg )
 {
     enum EFlags {
@@ -127,7 +160,7 @@ void COligoFarApp::Help( const char * arg )
              << "  [-r f|s] [-a maxamb] [-A maxamb] [-P phrap] [-F dust]\n"
              << "  [-p cutoff] [-u topcnt] [-t toppct] [-X xdropoff] [-I idscore]\n"
              << "  [-M mismscore] [-G gapcore] [-Q gapextscore] [-D minPair[-maxPair]]\n"
-             << "  [-m margin] [-R geometry] [-L memlimit] [-T +|-]\n";
+             << "  [-m margin] [-R geometry] [-y seqID] [-L memlimit] [-T +|-]\n";
     if( flags & fDetails ) {
         cout 
             << "\nFile options:\n" 
@@ -139,6 +172,7 @@ void COligoFarApp::Help( const char * arg )
             << "  -1 file       --qual-1-file=file         read 1 4-channel quality file [" << m_read1qualityFile << "]\n"
             << "  -2 file       --qual-2-file=file         read 2 4-channel quality file [" << m_read2qualityFile << "]\n"
             << "  -o output     --output-file=output       set output file [" << m_outputFile << "]\n"
+            << "  -y seqId      --only-seqid=seqId         make database scan only seqIds indicated here [" << Join( ", ", m_seqIds ) << "]\n"
             << "  -x count      --guide-max-mism=count     set maximal number of mismatches for hits in guide file [" << m_guideFilemaxMismatch << "]\n"
             << "  -c +|-        --colorspace=+|-          *reads are set in dibase colorspace [" << (m_colorSpace?"yes":"no") << "]\n"
             << "  -q 0|1        --quality-channels=cnt     number of channels in input file quality columns [" << m_qualityChannels << "]\n"
@@ -242,6 +276,7 @@ const option * COligoFarApp::GetLongOptions() const
         {"output-file", 1, 0, 'o'},
         {"output-flags", 1, 0, 'O'},
 //        {"config-file", 1, 0, 'C'},
+        {"only-seqid", 1, 0, 'y'},
         {"gi-list", 1, 0, 'l'},
         {"strands", 1, 0, 's'},
         {"batch-size", 1, 0, 'B'},
@@ -277,7 +312,7 @@ const option * COligoFarApp::GetLongOptions() const
 
 const char * COligoFarApp::GetOptString() const
 {
-    return "U:H:S:w:k:n:e:a:A:c:i:d:b:v:g:o:O:l:s:B:x:p:u:t:1:2:q:0:P:m:D:R:F:r:I:M:G:Q:X:L:T:";
+    return "U:H:S:w:k:n:e:a:A:c:i:d:b:v:g:o:O:l:y:s:B:x:p:u:t:1:2:q:0:P:m:D:R:F:r:I:M:G:Q:X:L:T:";
 }
 
 int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
@@ -318,6 +353,7 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
     case 'o': m_outputFile = arg; break;
     case 'O': m_outputFlags += arg; if( const char * m = strrchr( m_outputFlags.c_str(), '-' ) ) m_outputFlags = m + 1; break;
     case 'l': m_gilistFile = arg; break;
+    case 'y': m_seqIds.push_back( CSeq_id( arg ).AsFastaString() ); break;
     case 's': m_strands = strtol( arg, 0, 10 ); break;
     case 'B': m_readsPerRun = strtol( arg, 0, 10 ); break;
     case 'x': m_guideFilemaxMismatch = strtol( arg, 0, 10 ); break;
@@ -596,6 +632,7 @@ int COligoFarApp::ProcessData()
     seqVecProcessor.AddCallback( 1, &filter );
     seqVecProcessor.AddCallback( 0, &seqScanner );
 
+    if( m_seqIds.size() ) seqVecProcessor.SetSeqIdList( m_seqIds );
     if( m_gilistFile.length() ) seqVecProcessor.SetGiListFile( m_gilistFile );
 
     string buff;

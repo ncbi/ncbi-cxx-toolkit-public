@@ -54,6 +54,9 @@ public:
     virtual CSeqDBGiList * CreateGiList();
 
     void SetGiListFile( const string& gilistfile );
+    template<class container>
+    void SetSeqIdList( const container& c ) { copy( c.begin(), c.end(), inserter( m_seqid, m_seqid.end() ) ); }
+    void CleanSeqIdList() { m_seqid.clear(); }
     // call order 
     // - SequenceBegin (from higher to lower)
     // - SequenceBuffer (from higher to lower)
@@ -69,6 +72,7 @@ protected:
     string m_giListFile;
 	int    m_oid;
     CSeqCoding::ECoding m_tgtCoding;
+    set<string> m_seqid;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -143,6 +147,15 @@ inline void CSeqVecProcessor::Process( const CBioseq& bioseq, int oid, CSeqDBGiL
 				if( oid == -1 ) {
 					if( !gilist->SeqIdToOid( **i, oid ) ) oid = -1;
 				}
+				break; 
+			}
+		}
+        if( !found ) return;
+    } else if( m_seqid.size() ) {
+        bool found = false;
+        for( TSeqIds::const_iterator i = ids.begin(); i != ids.end(); ++i ) {
+            if( m_seqid.find((*i)->AsFastaString()) != m_seqid.end() ) { 
+				found = true; 
 				break; 
 			}
 		}
