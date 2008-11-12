@@ -1129,9 +1129,9 @@ static EIO_Status s_Select(size_t                n,
             }
 
             if (type != eTrigger) {
+                long mask = 0;
                 EIO_Event writable = sock->writable ? eIO_Write : eIO_Open;
                 EIO_Event readable = sock->readable ? eIO_Read  : eIO_Open;
-                want[count] = 0;
                 switch (type & eSocket ? event : event & eIO_Read) {
                 case eIO_Write:
                 case eIO_ReadWrite:
@@ -1140,9 +1140,9 @@ static EIO_Status s_Select(size_t                n,
                         ready = 1;
                     } else if (type == eDatagram
                                ||  sock->w_status != eIO_Closed) {
-                        want[count]     |= FD_WRITE;
+                        mask     |= FD_WRITE;
                         if (!sock->connected)
-                            want[count] |= FD_CONNECT;
+                            mask |= FD_CONNECT;
                     }
                     if (event == eIO_Write  &&
                         (type == eDatagram  ||  asis
@@ -1161,11 +1161,11 @@ static EIO_Status s_Select(size_t                n,
                                ||  (sock->r_status != eIO_Closed
                                     &&  !sock->eof)) {
                         if (type & eSocket) {
-                            want[count]     |= FD_READ;
+                            mask     |= FD_READ;
                             if (type == eSocket)
-                                want[count] |= FD_OOB;
+                                mask |= FD_OOB;
                         } else
-                            want[count]     |= FD_ACCEPT;
+                            mask     |= FD_ACCEPT;
                     }
                     if (type != eSocket  ||  asis  ||  event != eIO_Read
                         ||  sock->w_status == eIO_Closed
@@ -1176,7 +1176,7 @@ static EIO_Status s_Select(size_t                n,
                         polls[i].revent |= eIO_Write;
                         ready = 1;
                     } else
-                        want[count] |= FD_WRITE;
+                        mask |= FD_WRITE;
                     break;
 
                 default:
@@ -1184,9 +1184,9 @@ static EIO_Status s_Select(size_t                n,
                     continue;
                 }
 
-                if (!want[count])
+                if (!mask)
                     continue;
-                want[count]  |= FD_CLOSE;
+                want[count]   = mask | FD_CLOSE;
                 what[count++] = sock->event;
             } else
                 what[count++] = ((TRIGGER) sock)->fd;
@@ -1245,10 +1245,11 @@ static EIO_Status s_Select(size_t                n,
                 }
                 i += (size_t)(r - WAIT_OBJECT_0);
 
-                /* something must be ready */
+                /* something must be ready (NB: the loop always broken) */
                 for (j = i;  j < n;  j++) {
-                    WSANETWORKEVENTS e;
                     SOCK sock = polls[j].sock;
+                    WSANETWORKEVENTS e;
+                    long mask;
                     if (!sock)
                         continue;
                     if (sock->type == eTrigger) {
@@ -1261,6 +1262,7 @@ static EIO_Status s_Select(size_t                n,
                     if (what[i] != sock->event)
                         continue;
                     assert(polls[j].revent != eIO_Close);
+                    /* reset well before re-enabling API call occurs */
                     if (!ResetEvent(what[i])) {
                         sock->r_status = sock->w_status = eIO_Closed;
                         polls[j].revent = eIO_Close;
@@ -1278,25 +1280,26 @@ static EIO_Status s_Select(size_t                n,
                         ready = 1;
                         break;
                     }
-                    if (e.lNetworkEvents & (FD_CONNECT | FD_WRITE)) {
+                    mask = e.lNetworkEvents;
+                    if (mask & (FD_CONNECT | FD_WRITE)) {
                         assert(sock->type & eSocket);
                         sock->writable = 1/*true*/;
                     }
-                    if (e.lNetworkEvents & FD_CLOSE) {
+                    if (mask & FD_CLOSE) {
                         if (!(sock->type & eSocket)) {
                             polls[j].revent = eIO_Close;
                             ready = 1;
                             break;
                         }
                         sock->readable = 1/*true*/;
-                    } else if (e.lNetworkEvents & (FD_ACCEPT|FD_READ|FD_OOB))
+                    } else if (mask & (FD_ACCEPT | FD_READ | FD_OOB))
                         sock->readable = 1/*true*/;
-                    want[i] &= e.lNetworkEvents;
-                    if (want[i] & (FD_ACCEPT | FD_READ | FD_OOB | FD_CLOSE)) {
+                    mask &= want[i];
+                    if (mask & (FD_ACCEPT | FD_READ | FD_OOB | FD_CLOSE)) {
                         polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Read);
                         ready = 1;
                     }
-                    if (want[i] & (FD_CONNECT  | FD_WRITE)) {
+                    if (mask & (FD_CONNECT  | FD_WRITE)) {
                         assert(sock->type & eSocket);
                         polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Write);
                         ready = 1;
@@ -1313,6 +1316,7 @@ static EIO_Status s_Select(size_t                n,
                     }
                     break;
                 }
+                assert(j < n);
                 if (ready  ||  !slice)
                     i++;
             } while (i < (size_t) count);
