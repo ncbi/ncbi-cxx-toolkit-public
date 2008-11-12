@@ -460,7 +460,7 @@ bool CProcess::Kill(unsigned long timeout) const
         return res == 0;
     }
     SleepMilliSec(kWaitPrecision);
-    // Rip the zombie (if child) up from the system
+    // Reap the zombie (if child) up from the system
     waitpid(pid, 0, WNOHANG);
     // Check whether the process cannot be killed (most likely due
     // to a kernel problem)
@@ -705,7 +705,7 @@ bool CProcess::KillGroup(unsigned long timeout) const
 #if defined(NCBI_OS_UNIX)
     TPid pgid = getpgid((TPid)m_Process);
     if (pgid == -1) {
-        // TRUE if PID does not match ay process
+        // TRUE if PID does not match any process
         return errno == ESRCH;
     }
     return KillGroupById(pgid, timeout);
