@@ -95,9 +95,7 @@ public:
     /// 
     /// @sa 
     ///   Reset
-    enum {
-        kNoLimit = kMax_UInt
-    };
+    const static unsigned int kNoLimit = kMax_UInt;
 
     /// Constructor.
     ///
