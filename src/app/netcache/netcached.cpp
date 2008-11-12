@@ -817,6 +817,10 @@ int CNetCacheDApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    GetDiagContext().SetOldPostFormat(false);
+    CDiagContext::SetOldPostFormat(false);
+    CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
+    // Main thread request context already created, so is not affected
+    // by just set default, so set it manually.
+    CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
     return CNetCacheDApp().AppMain(argc, argv, 0, eDS_ToStdlog);
 }
