@@ -322,6 +322,7 @@ inline Uint8 CQueryHash::ComputeEntryCountPerRead() const
     }
     if( m_wordOffset ) ret *= 2; // for each word
     if( (m_strands&3) == 3 ) ret *= 2; // for each strand
+    ret *= m_maxWindowCount;
     return ret;
 }
 
