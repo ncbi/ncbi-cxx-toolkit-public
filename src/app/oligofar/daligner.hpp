@@ -11,10 +11,14 @@ class CAligner_ ## ALGO : public IAligner \
 public: \
     virtual void Align( CSeqCoding::ECoding qc, const char * q, int qlen,  \
                         CSeqCoding::ECoding sc, const char * s, int slen, int flags ); \
-    typedef TSeqRef<CNcbi8naBase,+1,CSeqCoding::eCoding_ncbi8na> TQueryNcbi8naRef; \
-    typedef TSeqRef<CNcbipnaBase,+5,CSeqCoding::eCoding_ncbipna> TQueryNcbipnaRef; \
-    typedef TSeqRef<CNcbiqnaBase,+1,CSeqCoding::eCoding_ncbiqna> TQueryNcbiqnaRef; \
-    typedef TSeqRef<CColorTwoBase,+1,CSeqCoding::eCoding_colorsp> TQueryColorspRef; \
+    typedef TSeqRef<CNcbi8naBase,+1,CSeqCoding::eCoding_ncbi8na> TQueryNcbi8naFwd; \
+    typedef TSeqRef<CNcbipnaBase,+5,CSeqCoding::eCoding_ncbipna> TQueryNcbipnaFwd; \
+    typedef TSeqRef<CNcbiqnaBase,+1,CSeqCoding::eCoding_ncbiqna> TQueryNcbiqnaFwd; \
+    typedef TSeqRef<CColorTwoBase,+1,CSeqCoding::eCoding_colorsp> TQueryColorspFwd; \
+    typedef TSeqRef<CNcbi8naBase,-1,CSeqCoding::eCoding_ncbi8na> TQueryNcbi8naRev; \
+    typedef TSeqRef<CNcbipnaBase,-5,CSeqCoding::eCoding_ncbipna> TQueryNcbipnaRev; \
+    typedef TSeqRef<CNcbiqnaBase,-1,CSeqCoding::eCoding_ncbiqna> TQueryNcbiqnaRev; \
+    typedef TSeqRef<CColorTwoBase,-1,CSeqCoding::eCoding_colorsp> TQueryColorspRev; \
     typedef TSeqRef<CNcbi8naBase,+1,CSeqCoding::eCoding_ncbi8na> TSbjNcbi8naRefFwd; \
     typedef TSeqRef<CNcbi8naBase,-1,CSeqCoding::eCoding_ncbi8na> TSbjNcbi8naRefRev; \
     typedef TSeqRef<CColorTwoBase,+1,CSeqCoding::eCoding_colorsp> TSbjColorspRefFwd; \
@@ -38,13 +42,22 @@ protected: \
 inline void CAligner_ ## ALGO::Align( CSeqCoding::ECoding qc, const char * q, int qlen, \
                                       CSeqCoding::ECoding sc, const char * s, int slen, int flags ) \
 { \
-    ASSERT( qlen >= 0 ); \
-    switch( qc ) { \
-    case CSeqCoding::eCoding_colorsp: AlignC<TQueryColorspRef>( q, qlen, s, slen, flags ); break; \
-    case CSeqCoding::eCoding_ncbiqna: AlignQ<TQueryNcbiqnaRef>( q, qlen, s, slen, flags ); break; \
-    case CSeqCoding::eCoding_ncbipna: AlignQ<TQueryNcbipnaRef>( q, qlen, s, slen, flags ); break; \
-    case CSeqCoding::eCoding_ncbi8na: AlignQ<TQueryNcbi8naRef>( q, qlen, s, slen, flags ); break; \
-    default: THROW( logic_error, "Query coding other then ncbi8na, ncbiqna or ncbipna is not implemented" ); \
+    if( qlen > 0 ) { \
+        switch( qc ) { \
+        case CSeqCoding::eCoding_colorsp: AlignC<TQueryColorspFwd>( q, qlen, s, slen, flags ); break; \
+        case CSeqCoding::eCoding_ncbiqna: AlignQ<TQueryNcbiqnaFwd>( q, qlen, s, slen, flags ); break; \
+        case CSeqCoding::eCoding_ncbipna: AlignQ<TQueryNcbipnaFwd>( q, qlen, s, slen, flags ); break; \
+        case CSeqCoding::eCoding_ncbi8na: AlignQ<TQueryNcbi8naFwd>( q, qlen, s, slen, flags ); break; \
+        default: THROW( logic_error, "Query coding other then ncbi8na, ncbiqna or ncbipna is not implemented" ); \
+        } \
+    } else { \
+        switch( qc ) { \
+        case CSeqCoding::eCoding_colorsp: AlignC<TQueryColorspRev>( q, qlen, s, slen, flags ); break; \
+        case CSeqCoding::eCoding_ncbiqna: AlignQ<TQueryNcbiqnaRev>( q, qlen, s, slen, flags ); break; \
+        case CSeqCoding::eCoding_ncbipna: AlignQ<TQueryNcbipnaRev>( q, qlen, s, slen, flags ); break; \
+        case CSeqCoding::eCoding_ncbi8na: AlignQ<TQueryNcbi8naRev>( q, qlen, s, slen, flags ); break; \
+        default: THROW( logic_error, "Query coding other then ncbi8na, ncbiqna or ncbipna is not implemented" ); \
+        } \
     } \
 } \
  \

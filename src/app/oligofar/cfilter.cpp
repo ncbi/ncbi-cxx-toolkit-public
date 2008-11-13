@@ -9,25 +9,54 @@ USING_OLIGOFAR_SCOPES;
 void CFilter::Match( const CHashAtom& m, const char * a, const char * A, int pos ) // always start at pos
 {
 	ASSERT( m_aligner );
-	m_aligner->SetBestPossibleQueryScore( m.GetQuery()->GetBestScore( m.GetPairmate() ) );
+    double bestScore = m.GetQuery()->GetBestScore( m.GetPairmate() );
+	m_aligner->SetBestPossibleQueryScore( bestScore );
     bool reverseStrand = m.IsReverseStrand();
     if( reverseStrand && m.GetQuery()->GetCoding() == CSeqCoding::eCoding_colorsp ) --pos;
-    m_aligner->Align( m.GetQuery()->GetCoding(),
-                      m.GetQuery()->GetData( m.GetPairmate() ),
-                      m.GetQuery()->GetLength( m.GetPairmate() ),
-                      CSeqCoding::eCoding_ncbi8na,
-                      a + pos,
-                      reverseStrand ? -pos : A - a - pos,
-                      CAlignerBase::fComputeScore );
     const CAlignerBase& abase = m_aligner->GetAlignerBase();
-    double score = abase.GetScore();
-    if( score >= m_scoreCutoff ) {
-        if( reverseStrand ) {
-            ProcessMatch( score, pos, pos - abase.GetSubjectAlignedLength() + 1, true,  m.GetQuery(), m.GetPairmate() );
-        } else {
-            ProcessMatch( score, pos, pos + abase.GetSubjectAlignedLength() - 1, false, m.GetQuery(), m.GetPairmate() );
-        }
-	}
+    if( /*false &&*/ m.GetOffset() >= 3 ) {
+        int one = reverseStrand ? -1 : 1;
+        int off = m.GetOffset() * one;
+        const CAlignerBase& abase = m_aligner->GetAlignerBase();
+        m_aligner->Align( m.GetQuery()->GetCoding(),
+                          m.GetQuery()->GetData( m.GetPairmate() ) + m.GetOffset(),
+                          - m.GetOffset() - 1,
+                          CSeqCoding::eCoding_ncbi8na,
+                          a + pos + off,
+                          reverseStrand ? A - a - pos : -pos,
+                          CAlignerBase::fComputeScore );
+        double score = abase.GetRawScore();
+        int from = pos + off - one * (abase.GetSubjectAlignedLength() - 1);
+
+        m_aligner->Align( m.GetQuery()->GetCoding(),
+                          m.GetQuery()->GetData( m.GetPairmate() ) + m.GetOffset() + 1,
+                          m.GetQuery()->GetLength( m.GetPairmate() ) - m.GetOffset() - 1,
+                          CSeqCoding::eCoding_ncbi8na,
+                          a + pos + off + one,
+                          reverseStrand ? -pos : A - a - pos,
+                          CAlignerBase::fComputeScore );
+        score += abase.GetRawScore();
+        int to = pos + off + one * (abase.GetSubjectAlignedLength());
+
+        score *= 100.0/bestScore;
+        if( score >= m_scoreCutoff ) { ProcessMatch( score, from, to, reverseStrand,  m.GetQuery(), m.GetPairmate() ); }
+    } else {
+        m_aligner->Align( m.GetQuery()->GetCoding(),
+                          m.GetQuery()->GetData( m.GetPairmate() ),
+                          m.GetQuery()->GetLength( m.GetPairmate() ),
+                          CSeqCoding::eCoding_ncbi8na,
+                          a + pos,
+                          reverseStrand ? -pos : A - a - pos,
+                          CAlignerBase::fComputeScore );
+        double score = abase.GetScore();
+        if( score >= m_scoreCutoff ) {
+            if( reverseStrand ) {
+                ProcessMatch( score, pos, pos - abase.GetSubjectAlignedLength() + 1, true,  m.GetQuery(), m.GetPairmate() );
+            } else {
+                ProcessMatch( score, pos, pos + abase.GetSubjectAlignedLength() - 1, false, m.GetQuery(), m.GetPairmate() );
+            }
+		}
+    }
 }
 
 void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, CQuery * query, int pairmate )
@@ -54,7 +83,6 @@ void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, 
                     PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) );
                 copy( toAdd.begin(), toAdd.end(), inserter( m_pendingHits, m_pendingHits.end() ) );
             } while(0);
-            break;
             break;
         }
     }
@@ -92,11 +120,14 @@ bool CFilter::LookupInQueue( double score, int seqFrom, int seqTo, bool reverse,
             found = true;
         } else {
             int pos = phit->first;
-            toAdd.insert( make_pair( pos, pairmate ? 
-                         new CHit( query, m_ord, hit->GetScore(0), hit->GetFrom(0), hit->GetTo(0), score, seqFrom, seqTo ) :
-                         new CHit( query, m_ord, score, seqFrom, seqTo, hit->GetScore(1), hit->GetFrom(1), hit->GetTo(1) ) ) );
+            CHit * nhit = pairmate ? 
+                new CHit( query, m_ord, hit->GetScore(0), hit->GetFrom(0), hit->GetTo(0), score, seqFrom, seqTo ) :
+                new CHit( query, m_ord, score, seqFrom, seqTo, hit->GetScore(1), hit->GetFrom(1), hit->GetTo(1) );
+
+            toAdd.insert( make_pair( pos, nhit ) );
             found = true;
             while( phit != m_pendingHits.end() && phit->first == pos ) ++phit; // to prevent multiplication of existing hits
+            if( phit == m_pendingHits.end() ) break;
         }
     }
     return found;
