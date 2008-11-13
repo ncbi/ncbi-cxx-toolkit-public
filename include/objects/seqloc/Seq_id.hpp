@@ -595,9 +595,6 @@ int CSeq_id::BaseBestRankScore(void) const
     case e_Gpipe:                                 return 68;
     case e_Patent:                                return 67;
     case e_Other:                                 return 65;
-#if 0 // The C Toolkit yields this value, but I suspect it's a typo.
-    case e_Tpd:                                   return 62; // !
-#endif
     case e_Gi:                                    return 51;
     default:                                      return 60;
     }
