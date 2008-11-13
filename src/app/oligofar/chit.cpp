@@ -73,6 +73,7 @@ CHit::CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, double s
     } else {
         m_length[1] = to2 - from2 + 1;
     }
+    ASSERT( (m_flags&fReads_overlap) == 0 );
     switch( m_flags & (fRead2_reverse|fRead1_reverse) ) {
     case fRead1_forward|fRead2_forward: x_SetValues( from1, to1, from2, to2 ); break;
     case fRead1_reverse|fRead2_forward: x_SetValues( to1, from1, from2, to2 ); break;
@@ -80,7 +81,7 @@ CHit::CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, double s
     case fRead1_reverse|fRead2_reverse: x_SetValues( to1, from1, to2, from2 ); break;
     default: THROW( logic_error, "Oops here!" );
     }
-    ASSERT( (m_flags&fReads_overlap) == 0 );
+    //ASSERT( (m_flags&fReads_overlap) == 0 );
     ++s_count;
 }
 
@@ -155,6 +156,7 @@ void CHit::x_SetValues( int min1, int max1, int min2, int max2 )
         m_fullFrom = min( min1, min2 );
         m_fullTo = max( max1, max2 );
         m_flags |= fReads_overlap;
+        cerr << "\n\x1b[31mA reads-to overlap!\x1b[0m\n";
     }
 }
 
@@ -208,9 +210,58 @@ Uint2 CHit::ComputeGeometry( int from1, int to1, int from2, int to2 )
 
 bool CHit::Equals( const CHit * other ) const 
 {
-    return m_query == other->m_query &&
+    return m_query == other->m_query && EqualsSameQ( other );
+}
+
+bool CHit::EqualsSameQ( const CHit * other ) const
+{
+    return
+        m_seqOrd   == other->m_seqOrd &&
         m_fullFrom == other->m_fullFrom &&
         m_fullTo   == other->m_fullTo &&
         m_score[0] == other->m_score[0] &&
         m_score[1] == other->m_score[1];
 }
+
+bool CHit::ClustersWith( const CHit * other ) const
+{
+    return m_query == other->m_query && ClustersWithSameQ( other );
+}
+
+bool CHit::ClustersWithSameS( const CHit * other ) const
+{
+    return m_query == other->m_query && ClustersWithSameQS( other );
+}
+
+bool CHit::ClustersWithSameQ( const CHit * other ) const
+{
+    return m_seqOrd == other->m_seqOrd && ClustersWithSameQS( other );
+}
+
+bool CHit::ClustersWithSameQS( const CHit * other ) const
+{
+    return false;
+}
+
+void CHit::PrintDebug( ostream& out ) const 
+{
+    out << m_query->GetId() << " on seq#" << m_seqOrd << "\t";
+    if( m_length[0] == 0 ) {
+        out << "2" << (m_flags & fRead2_reverse ? "-" : "+") 
+            << "[" << m_fullFrom << ".." << m_fullTo << "]=" << GetTotalScore();
+    } else if( m_length[1] == 0 ) {
+        out << "1" << (m_flags & fRead1_reverse ? "-" : "+") 
+            << "[" << m_fullFrom << ".." << m_fullTo << "]=" << GetTotalScore();
+    } else {
+        out << ( m_flags & fOrder_reverse ? "2" : "1" )
+            << ( m_flags & fOrder_reverse ? m_flags & fRead2_reverse ? "-" : "+" : m_flags & fRead1_reverse ? "-" : "+" )
+            << "[" << m_fullFrom << ".." << ( m_fullFrom + m_length[ m_flags & fOrder_reverse ? 1 : 0 ] - 1 ) << "]=" 
+            << m_score[m_flags & fOrder_reverse ? 1 : 0] << "\t";
+        out << ( m_flags & fOrder_reverse ? "1" : "2" )
+            << ( m_flags & fOrder_reverse ? m_flags & fRead1_reverse ? "-" : "+" : m_flags & fRead2_reverse ? "-" : "+" )
+            << "[" << ( m_fullTo - m_length[ m_flags & fOrder_reverse ? 0 : 1 ] + 1 ) << ".." << m_fullTo << "]="
+            << m_score[m_flags & fOrder_reverse ? 0 : 1] << "\t";
+        out << GetTotalScore();
+    }
+}
+

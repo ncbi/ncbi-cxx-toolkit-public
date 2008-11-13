@@ -85,6 +85,12 @@ public:
     int  GetLength( int pairmate ) const { return m_length[pairmate]; }
     
     bool Equals( const CHit * other ) const;
+    bool EqualsSameQ( const CHit * other ) const;
+
+    bool ClustersWith( const CHit * other ) const;
+    bool ClustersWithSameQ( const CHit * other ) const;
+    bool ClustersWithSameS( const CHit * other ) const;
+    bool ClustersWithSameQS( const CHit * other ) const;
     
     bool IsReverseStrand( int pairmate ) const { return bool( m_flags & ( pairmate ? fRead2_reverse : fRead1_reverse ) ); }
     bool HasComponent( int pairmate ) const { return bool( m_length[pairmate] ); }
@@ -100,10 +106,13 @@ public:
     bool IsReverseOrder() const { return m_flags & fOrder_reverse; }
     bool IsOverlap() const { return m_flags & fReads_overlap; } // NB: overlap hits are BAD, one can't say individual reads positions
 
+    Uint2 GetFilterGeometry() const { return (fOrder_reverse & m_flags ? ~m_flags : m_flags) & fMaskGeometry; }
     Uint2 GetGeometry() const { return fMaskGeometry & m_flags; }
     static Uint2 ComputeGeometry( int from1, int to1, int from2, int to2 );
 
     int GetUpperHitMinPos() const;
+
+    void PrintDebug( ostream& out ) const;
 
     class C_NextCtl
     {

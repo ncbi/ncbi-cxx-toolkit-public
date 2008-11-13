@@ -117,18 +117,43 @@ bool CFilter::LookupInQueue( double score, int seqFrom, int seqTo, bool reverse,
         if( !hit->HasComponent( !pairmate ) ) continue;
         if( !hit->HasComponent( pairmate ) ) {
             hit->SetPairmate( pairmate, score, seqFrom, seqTo );
+            if( hit->IsOverlap() || hit->GetFilterGeometry() != m_geometry ) {
+                cerr << "\n\033[32mUpdated hit: " << ( hit->IsOverlap() ? "reads overlap" : "wrong geometry" ) << " {\x1b[032m";
+                hit->PrintDebug( cerr );
+                cerr << "\x1b[32m}\033[0m\n";
+                cerr << DISPLAY( hit->GetFilterGeometry() ) << DISPLAY( m_geometry ) << endl;
+                cerr << hit->GetLength(0) << ", " << hit->GetLength(1) << "\n";
+                ASSERT( hit->GetComponentFlags() == CHit::fPairedHit );
+            }
             found = true;
-        } else {
+        } else if( hit->IsReverseStrand( pairmate ) == reverse ) { // the strict criterion on mutual orientation suggests this
             int pos = phit->first;
             CHit * nhit = pairmate ? 
                 new CHit( query, m_ord, hit->GetScore(0), hit->GetFrom(0), hit->GetTo(0), score, seqFrom, seqTo ) :
                 new CHit( query, m_ord, score, seqFrom, seqTo, hit->GetScore(1), hit->GetFrom(1), hit->GetTo(1) );
-
-            toAdd.insert( make_pair( pos, nhit ) );
-            found = true;
-            while( phit != m_pendingHits.end() && phit->first == pos ) ++phit; // to prevent multiplication of existing hits
-            if( phit == m_pendingHits.end() ) break;
-        }
+            if( nhit->IsOverlap() || nhit->GetFilterGeometry() != m_geometry ) {
+                cerr << "\n\033[35mDEBUG: Ignoring " << ( hit->IsOverlap() ? "reads overlap" : "wrong geometry" ) << " {\x1b[36m";
+                nhit->PrintDebug( cerr );
+                cerr << "\x1b[35m}\033[0m\n";
+                cerr << "\n\033[35m                       old hit {\x1b[36m";
+                hit->PrintDebug( cerr );
+                cerr << "\x1b[35m}\033[0m\n";
+                cerr << DISPLAY( nhit->GetFilterGeometry() ) << DISPLAY( m_geometry ) << DISPLAY( pairmate ) << endl;
+                cerr << "scoreCutoff = " << m_scoreCutoff << "\n";
+                if( pairmate ) {
+                    cerr << hit->GetFrom(0) << "->" << hit->GetTo(0) << "\t" << seqFrom << "=>" << seqTo << "\n";
+                } else {
+                    cerr << seqFrom << "=>" << seqTo << "\t" << hit->GetFrom(1) << "->" << hit->GetTo(1) << "\n";
+                }
+                cerr << "\n";
+                delete nhit;
+            } else {
+                toAdd.insert( make_pair( pos, nhit ) );
+                found = true;
+                while( phit != m_pendingHits.end() && phit->first == pos ) ++phit; // to prevent multiplication of existing hits
+                if( phit == m_pendingHits.end() ) break;
+            }
+        } // else it is ignored
     }
     return found;
 }
@@ -202,7 +227,7 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
         if( cscore > hscore ) { delete hit; return; }
         int topcnt = m_topCnt;
         if( tscore <= hscore ) {
-            if( tih->Equals( hit ) ) { delete hit; return; } // uniqueing hits
+            if( tih->EqualsSameQ( hit ) ) { delete hit; return; } // uniqueing hits
             CHit::C_NextCtl( hit ).SetNext( tih );
             q->m_topHit = hit;
 			cscore = ( tscore = hscore ) * m_topPct/100;
@@ -211,7 +236,7 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
             bool weak = true;
             for( ; weak && tih->GetNextHit() && topcnt > 0; (tih = tih->GetNextHit()), --topcnt ) {
                 if( tih->GetNextHit()->IsNull() || tih->GetNextHit()->GetTotalScore() < hscore ) {
-                    if( tih->Equals( hit ) ) { delete hit; return; }
+                    if( tih->EqualsSameQ( hit ) ) { delete hit; return; }
                     // keep chain linked
                     CHit::C_NextCtl( hit ).SetNext( tih->GetNextHit() );
                     CHit::C_NextCtl( tih ).SetNext( hit );

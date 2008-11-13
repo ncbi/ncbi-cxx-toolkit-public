@@ -18,8 +18,8 @@ public:
     const CAlignerBase& GetAlignerBase() const { return *m_alignerBase; }
 
     TSelf& SetAlignerBase( CAlignerBase * abase ) { m_alignerBase = abase; return *this; }
-    TSelf& SetQuery( const char * query, int length ) {  m_query = m_alignerBase->m_qbegin = query; m_alignerBase->m_qend = query + length; return *this; }
-    TSelf& SetSubject( const char * subject, int length ) { m_subject = m_alignerBase->m_sbegin = subject; m_alignerBase->m_send = subject + length; return *this; }
+    TSelf& SetQuery( const char * query, int length );
+    TSelf& SetSubject( const char * subject, int length );
     TSelf& ResetScores() { m_alignerBase->ResetScores(); return *this; }
 
     const CQuery& GetQueryCursor() const { return m_query; }
@@ -129,6 +129,34 @@ inline void TAlignerBase<CQuery,CSubject>::ReverseStringsIfNeeded( int flags )
             reverse( m_alignerBase->m_subjectString.begin(), m_alignerBase->m_subjectString.end() );
             reverse( m_alignerBase->m_alignmentString.begin(), m_alignerBase->m_alignmentString.end() );
         }
+}
+
+template<class CQuery,class CSubject>
+TAlignerBase<CQuery,CSubject>& TAlignerBase<CQuery,CSubject>::SetQuery( const char * query, int length ) 
+{ 
+    m_query = m_alignerBase->m_qbegin = query; 
+    m_alignerBase->m_qend = query + length; 
+    /*
+    cerr << "QUERY: ";
+    for( CQuery q( m_query ); q != m_alignerBase->m_qend; ++q )
+        cerr << CIupacnaBase( *q );
+    cerr << "\n";
+    */
+    return *this; 
+}
+
+template<class CQuery,class CSubject>
+TAlignerBase<CQuery,CSubject>& TAlignerBase<CQuery,CSubject>::SetSubject( const char * subject, int length ) 
+{ 
+    m_subject = m_alignerBase->m_sbegin = subject; 
+    m_alignerBase->m_send = subject + length; 
+    /*
+    cerr << "SBJCT: ";
+    for( CSubject s( m_subject ); s != m_alignerBase->m_send; ++s )
+        cerr << CIupacnaBase( *s );
+    cerr << "\n";
+    */
+    return *this; 
 }
 
 END_OLIGOFAR_SCOPES
