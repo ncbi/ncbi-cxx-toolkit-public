@@ -35,16 +35,29 @@ void CSeqScanner::SequenceBuffer( CSeqBuffer* buffer )
     unsigned off = buffer->GetBeginPos();
     unsigned end = buffer->GetEndPos();
     
-    if( m_snpDb ) {
-        for( ; m_snpDb->Ok() ; m_snpDb->Next() ) {
-            unsigned p = m_snpDb->GetPos();
-            if( p < off || p >= end ) continue;
-            a[p - off] = m_snpDb->GetBase();
+    if( m_queryHash->GetHashedQueriesCount() != 0 ) {
+        if( m_snpDb ) {
+            for( ; m_snpDb->Ok() ; m_snpDb->Next() ) {
+                unsigned p = m_snpDb->GetPos();
+                if( p < off || p >= end ) continue;
+                a[p - off] = m_snpDb->GetBase();
+            }
+        }
+        if( m_bisulfiteCuration ) {
+            char * buff = new char[A - a];
+            if( m_queryHash == 0 || m_queryHash->GetStrands() & 0x1 ) {
+                PerformSodiumBisulfiteCuration( buff, a, A - a, CSeqCoding::eStrand_pos );
+                ScanSequenceBuffer( buff, buff + (A - a), off, end, buffer->GetCoding() );
+            }
+            if( m_queryHash == 0 || m_queryHash->GetStrands() & 0x2 ) {
+                PerformSodiumBisulfiteCuration( buff, a, A - a, CSeqCoding::eStrand_neg );
+                ScanSequenceBuffer( buff, buff + (A - a), off, end, buffer->GetCoding() );
+            }
+            delete[] buff;
+        } else {
+            ScanSequenceBuffer( a, A, off, end, buffer->GetCoding() );
         }
     }
-
-    if( m_queryHash->GetHashedQueriesCount() != 0 ) 
-        ScanSequenceBuffer( a, A, off, end, buffer->GetCoding() );
 
     if( m_inputChunk ) {
 		// set target for all reads 

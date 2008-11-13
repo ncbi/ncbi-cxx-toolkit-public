@@ -28,6 +28,7 @@ CHANGES
     in version 3.26: -n, -w, -N, -z, -Z, -D, -m, -S, -x, -f, -k
     in version 3.27: -n, -w, -e, -H, -S, -a, -A, --pass0, --pass1
     in version 3.28: -y, -R, -N
+    in version 3.29: --NaHSO3
 
 DESCRIPTION
     Performs global alignments of multiple single or paired short reads 
@@ -115,6 +116,21 @@ PAIRED READS
     have individual ID, although report provides info which component(s) of 
     the pair produce the hit.
 
+SODIUM BISULFITE TREATMENT
+    To discover methylation state of DNA sodium bisulfite curation may be
+    used before producing reads.  In order to simulate this procedure
+    oligoFAR has special mode, which may be turned on by:
+    
+        --NaHSO3=true
+
+    In this case oligoFAR for each subject sequence replaces all Cs with Ts, 
+    except CG duplets which get converted to YG to allow alignment to this 
+    region both as if it was methylated and unmethylated.  For obvious reasons 
+    this operation is strand-specific, so in this mode each subject sequence 
+    gets scanned twice.  
+
+    This mode is not tested as of 2008/11/13.
+
 MULTIPASS MODE
     By default oligoFAR aligns all reads just once, but if option --pass1 is 
     used, oligoFAR switches to the two-pass mode. Parameters -w, -n, -e, -H 
@@ -138,29 +154,41 @@ WINDOW, STRIDE AND WORD
     and added to hash: at the beginning of the window and at the end of the 
     window.
 
-    Example:
+    Example for case -N2 -w13/9 -S3 -e0:
     
-    +-------------+  hashed region (should not exceed 32 bases)
-    ACGTGTTGATGACTActgatgatctgat
-    +-----------+    window size = 13
-    ACGTGTTGATGAC    window 1 \
-     CGTGTTGATGACT   window 2  } stride = 3
-      GTGTTGATGACTA  window 3 /
-    +-------+        word size = 9
-    ACGTGTTGA        word 1 of window 1
-        GTTGATGAC    word 2 of window 1
-     CGTGTTGAT       word 1 of window 2
-         TTGATGACT   word 2 of window 2
-      GTGTTGATG      word 1 of window 3
-          TGATGACTA  word 2 of window 3
+    +-------------+               hashed region 1 (should not exceed 32 bases)
+                 +-------------+  hashed region 2 (should not exceed 32 bases)
+    ACGTGTTGATGACTACTGATGATCTGATccat
+    +-----------+                 window group 1
+    ACGTGTTGATGAC                 window 1 \
+     CGTGTTGATGACT                window 2  } stride = 3
+      GTGTTGATGACTA               window 3 /
+                 +-----------+    window group 2
+                 TACTGATGATCTG    window 4 \
+                  ACTGATGATCTGA   window 5  } stride = 3
+                   CTGATGATCTGAT  window 6 /
+    +-------+                     word size = 9
+    ACGTGTTGA                     word 1 of window 1
+        GTTGATGAC                 word 2 of window 1
+     CGTGTTGAT                    word 1 of window 2
+         TTGATGACT                word 2 of window 2
+      GTGTTGATG                   word 1 of window 3
+          TGATGACTA               word 2 of window 3
+                 +-------+        word size = 9
+                 TACTGATGA        word 1 of window 4
+                     GATGATCTG    word 2 of window 4
+                  ACTGATGAT       word 1 of window 5
+                      ATGATCTGA   word 2 of window 5
+                   CTGATGATC      word 1 of window 6
+                       TGATCTGAT  word 2 of window 6
 
     If you allow indels to be hashed, hashed region is extended by 1 base. So 
     for window of 24 and stride 4 with indels allowed reads should be at least
     28 bases long (27 with no indels).
 
-    Words when hashing are splet in the two parts: index and supplement. 
+    Words when hashing are splet into the two parts: index and supplement. 
     Supplement can't have more then 16 bits. Index can't be more then 31bits.
-    Therefore maximal word size should fit in 47 bits and is 23 bases.
+    Therefore maximal word size should fit in 47 bits which is 23 bases.
 
 OPTIONS
 
@@ -259,6 +287,10 @@ File options
     -c +|-      Input is in di-base colorspace encoding. Hashing and alignment 
                 will be performed in the colorspace encoding. 
                 Not compatible with -q, -1, -2 parameters.
+
+    --NaHSO3=+|-
+                Turns sodium bisulfite treatment simulation mode on or off.
+                Make sure to use reasonable value for -A.
 
     --output-flags=-eumxtadh
     -O-eumxtadh Controls what types of records should be produced on output.

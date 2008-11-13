@@ -24,7 +24,7 @@
 USING_OLIGOFAR_SCOPES;
 
 #ifndef OLIGOFAR_VERSION
-#define OLIGOFAR_VERSION "3.28" 
+#define OLIGOFAR_VERSION "3.29" 
 #endif
 
 COligoFarApp::COligoFarApp( int argc, char ** argv ) :
@@ -54,6 +54,7 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_memoryLimit( Uint8( sizeof(void*) == 4 ? 3 : 8 ) * int(kGigaByte) ),
     m_performTests( false ),
     m_colorSpace( false ),
+    m_sodiumBisulfiteCuration( false ),
     m_alignmentAlgo( eAlignment_fast ),
 #ifdef _WIN32
     //m_guideFile( "nul:" ),
@@ -113,7 +114,7 @@ void COligoFarApp::Version( const char * )
 // h        help        H       hashBits
 // i        input       I       idScore
 // j                    J       
-// k        skipPos     K
+// k        skipPos     K       
 // l        gilist      L       memLimit
 // m        margin      M       mismScore
 // n        maxMism     N       maxWindows
@@ -164,30 +165,31 @@ void COligoFarApp::Help( const char * arg )
     if( flags & fDetails ) {
         cout 
             << "\nFile options:\n" 
-            << "  -i file       --input-file=file          short reads input file [" << m_readFile << "]\n"
-            << "  -d file       --fasta-file=file          database (fasta or basename of blastdb) file [" << m_fastaFile << "]\n"
-            << "  -b file       --snpdb-file=file          snp database subject file [" << m_snpdbFile << "]\n"
-            << "  -g file       --guide-file=file          guide file (output of sr-search [" << m_guideFile << "]\n"
-            << "  -l file       --gi-list=file             gi list to use for the blast db [" << m_gilistFile << "]\n"
-            << "  -1 file       --qual-1-file=file         read 1 4-channel quality file [" << m_read1qualityFile << "]\n"
-            << "  -2 file       --qual-2-file=file         read 2 4-channel quality file [" << m_read2qualityFile << "]\n"
-            << "  -o output     --output-file=output       set output file [" << m_outputFile << "]\n"
-            << "  -y seqId      --only-seqid=seqId         make database scan only seqIds indicated here [" << Join( ", ", m_seqIds ) << "]\n"
-            << "  -x count      --guide-max-mism=count     set maximal number of mismatches for hits in guide file [" << m_guideFilemaxMismatch << "]\n"
-            << "  -c +|-        --colorspace=+|-          *reads are set in dibase colorspace [" << (m_colorSpace?"yes":"no") << "]\n"
-            << "  -q 0|1        --quality-channels=cnt     number of channels in input file quality columns [" << m_qualityChannels << "]\n"
-            << "  -0 value      --quality-base=value       base quality number (ASCII value for character representing phrap score 0) [" << m_qualityBase << "]\n"
-            << "  -0 +char      --quality-base=+char       base quality char (character representing phrap score 0) [+" << char(m_qualityBase) << "]\n"
-            << "  -O flags      --output-flags=flags       add output flags (-huxmtdae) [" << m_outputFlags << "]\n"
-            << "  -B count      --batch-size=count         how many short seqs to map at once [" << m_readsPerRun << "]\n"
+            << "   --input-file=file         -i file       short reads input file [" << m_readFile << "]\n"
+            << "   --fasta-file=file         -d file       database (fasta or basename of blastdb) file [" << m_fastaFile << "]\n"
+            << "   --snpdb-file=file         -b file       snp database subject file [" << m_snpdbFile << "]\n"
+            << "   --guide-file=file         -g file       guide file (output of sr-search [" << m_guideFile << "]\n"
+            << "   --gi-list=file            -l file       gi list to use for the blast db [" << m_gilistFile << "]\n"
+            << "   --qual-1-file=file        -1 file       read 1 4-channel quality file [" << m_read1qualityFile << "]\n"
+            << "   --qual-2-file=file        -2 file       read 2 4-channel quality file [" << m_read2qualityFile << "]\n"
+            << "   --output-file=output      -o output     set output file [" << m_outputFile << "]\n"
+            << "   --only-seqid=seqId        -y seqId      make database scan only seqIds indicated here [" << Join( ", ", m_seqIds ) << "]\n"
+            << "   --guide-max-mism=count    -x count      set maximal number of mismatches for hits in guide file [" << m_guideFilemaxMismatch << "]\n"
+            << "   --colorspace=+|-          -c +|-       *reads are set in dibase colorspace [" << (m_colorSpace?"yes":"no") << "]\n"
+            << "   --quality-channels=cnt    -q 0|1        number of channels in input file quality columns [" << m_qualityChannels << "]\n"
+            << "   --quality-base=value      -0 value      base quality number (ASCII value for character representing phrap score 0) [" << m_qualityBase << "]\n"
+            << "   --quality-base=+char      -0 +char      base quality char (character representing phrap score 0) [+" << char(m_qualityBase) << "]\n"
+            << "   --output-flags=flags      -O flags      add output flags (-huxmtdae) [" << m_outputFlags << "]\n"
+            << "   --batch-size=count        -B count      how many short seqs to map at once [" << m_readsPerRun << "]\n"
+            << "   --NaHSO3=+|-                            subject sequences sodium bisulfite curation [" << (m_sodiumBisulfiteCuration?"yes":"no") << "]\n"
 //            << "  -C config     --config-file=file         take parameters from config file section `oligofar' and continue parsing commandline\n"
             << "\nGeneral hashing and scanning options:\n"
-            << "  -k pos[,...]  --window-skip=pos[,...]    skip read positions when hashing (1-based) [" << Join( ",", m_skipPositions ) << "]\n"
-            << "  -a amb        --input-max-amb=amb        maximal number of ambiguities in hash window [" << m_maxHashAmb << "]\n"
-            << "  -A amb        --fasta-max-amb=amb        maximal number of ambiguities in fasta window [" << m_maxFastaAmb << "]\n"
-            << "  -P score      --phrap-cutoff=score       set maximal phrap score to consider base as ambiguous [" << m_phrapSensitivity << "]\n"
-            << "  -F simpl      --max-simplicity=val       low complexity filter cutoff for hash window [" << m_maxSimplicity << "]\n"
-            << "  -s 1|2|3      --strands=1|2|3            hash and lookup for strands (bitmask: 1 for +, 2 for -, 3 for both) [" << m_strands << "]\n"
+            << "   --window-skip=pos[,...]   -k pos[,...]  skip read positions when hashing (1-based) [" << Join( ",", m_skipPositions ) << "]\n"
+            << "   --input-max-amb=amb       -a amb        maximal number of ambiguities in hash window [" << m_maxHashAmb << "]\n"
+            << "   --fasta-max-amb=amb       -A amb        maximal number of ambiguities in fasta window [" << m_maxFastaAmb << "]\n"
+            << "   --phrap-cutoff=score      -P score      set maximal phrap score to consider base as ambiguous [" << m_phrapSensitivity << "]\n"
+            << "   --max-simplicity=val      -F simpl      low complexity filter cutoff for hash window [" << m_maxSimplicity << "]\n"
+            << "   --strands=1|2|3           -s 1|2|3      hash and lookup for strands (bitmask: 1 for +, 2 for -, 3 for both) [" << m_strands << "]\n"
             ;
     
         cout
@@ -199,57 +201,57 @@ void COligoFarApp::Help( const char * arg )
             else {
                 cout 
                     << ":\n"
-                    << "  -w win[/word] --window-size=win[/word]   hash using window size and word size [" << m_hashParam[i].GetWindowSize() << "/" << m_hashParam[i].GetWordSize() << "]\n"
-                    << "  -S stride     --stride-size=stride       hash with given stride size [" << m_hashParam[i].GetStrideSize() << "]\n"
-                    << "  -N count      --max-windows=count        hash using maximum number of consecutive windows [" << m_hashParam[i].GetWindowCount() << "]\n"
-                    << "  -n mismatch   --max-mism=mismatch        hash allowing up to given number of mismatches (0-2) [" << m_hashParam[i].GetHashMismatches() << "]\n"
-                    << "  -e indel      --max-indels=indel         hash allowing up to given number of indels (0-1) [" << m_hashParam[i].GetHashIndels() << "]\n"
-                    << "  -H bits       --index-bits=bits          set number of bits for index part of hash table [" << m_hashParam[i].GetHashBits() << "]\n"   
+                    << "   --window-size=win[/word] -w win[/word]  hash using window size and word size [" << m_hashParam[i].GetWindowSize() << "/" << m_hashParam[i].GetWordSize() << "]\n"
+                    << "   --stride-size=stride     -S stride      hash with given stride size [" << m_hashParam[i].GetStrideSize() << "]\n"
+                    << "   --max-windows=count      -N count       hash using maximum number of consecutive windows [" << m_hashParam[i].GetWindowCount() << "]\n"
+                    << "   --max-mism=mismatch      -n mismatch    hash allowing up to given number of mismatches (0-2) [" << m_hashParam[i].GetHashMismatches() << "]\n"
+                    << "   --max-indels=indel       -e indel       hash allowing up to given number of indels (0-1) [" << m_hashParam[i].GetHashIndels() << "]\n"
+                    << "   --index-bits=bits        -H bits        set number of bits for index part of hash table [" << m_hashParam[i].GetHashBits() << "]\n"   
                     ;
             }
         }
         cout
             << "\nAlignment and scoring options:\n"
-            << "  -r f|q|s      --algorithm=f|s            use alignment algoRithm (Fast or Smith-waterman) [" << char(m_alignmentAlgo) << "]\n"
-            << "  -X value      --x-dropoff=value          set half band width for alignment [" << m_xdropoff << "]\n"
-            << "  -I score      --identity-score=score     set identity score [" << m_identityScore << "]\n"
-            << "  -M score      --mismatch-score=score     set mismatch score [" << m_mismatchScore << "]\n"
-            << "  -G score      --gap-opening-score=score  set gap opening score [" << m_gapOpeningScore << "]\n"
-            << "  -Q score      --gap-extention-score=val  set gap extention score [" << m_gapExtentionScore << "]\n"
+            << "   --algorithm=f|s           -r f|q|s      use alignment algoRithm (Fast or Smith-waterman) [" << char(m_alignmentAlgo) << "]\n"
+            << "   --x-dropoff=value         -X value      set half band width for alignment [" << m_xdropoff << "]\n"
+            << "   --identity-score=score    -I score      set identity score [" << m_identityScore << "]\n"
+            << "   --mismatch-score=score    -M score      set mismatch score [" << m_mismatchScore << "]\n"
+            << "   --gap-opening-score=score -G score      set gap opening score [" << m_gapOpeningScore << "]\n"
+            << "   --gap-extention-score=val -Q score      set gap extention score [" << m_gapExtentionScore << "]\n"
             << "\nFiltering and ranking options:\n"
-            << "  -p pctid      --min-pctid=pctid          set global percent identity cutoff [" << m_minPctid << "]\n"
-            << "  -u topcnt     --top-count=val            maximal number of top hits per read [" << m_topCnt << "]\n"
-            << "  -t toppct     --top-percent=val          maximal score of hit (in % to best) to be reported [" << m_topPct << "]\n"
-            << "  -D min[-max]  --pair-distance=min[-max]  pair distance [" << m_minPair << "-" << m_maxPair << "]\n"
-            << "  -m dist       --pair-margin=len          pair distance margin [" << m_pairMargin << "]\n"
-            << "  -R value      --geometry=value           restrictions on relative hit orientation and order for paired hits [" << (m_geometry) << "]\n"
+            << "   --min-pctid=pctid         -p pctid      set global percent identity cutoff [" << m_minPctid << "]\n"
+            << "   --top-count=val           -u topcnt     maximal number of top hits per read [" << m_topCnt << "]\n"
+            << "   --top-percent=val         -t toppct     maximal score of hit (in % to best) to be reported [" << m_topPct << "]\n"
+            << "   --pair-distance=min[-max] -D min[-max]  pair distance [" << m_minPair << "-" << m_maxPair << "]\n"
+            << "   --pair-margin=len         -m dist       pair distance margin [" << m_pairMargin << "]\n"
+            << "   --geometry=value          -R value      restrictions on relative hit orientation and order for paired hits [" << (m_geometry) << "]\n"
             << "\nOther options:\n"
-            << "  -h            --help=[brief|full|ext]    print help with current parameter values and exit after parsing cmdline\n"
-            << "  -V            --version                  print version and exit after parsing cmdline\n"
-            << "  -U version    --assert-version=version   make sure that the oligofar version is what expected [" OLIGOFAR_VERSION "]\n"
-            << "  -L value      --memory-limit=value       set rlimit for the program (k|M|G suffix is allowed) [" << m_memoryLimit << "]\n"
-            << "  -T +|-        --test-suite=+|-           turn test suite on/off [" << (m_performTests?"on":"off") << "]\n"
+            << "   --help=[brief|full|ext]   -h            print help with current parameter values and exit after parsing cmdline\n"
+            << "   --version                 -V            print version and exit after parsing cmdline\n"
+            << "   --assert-version=version  -U version    make sure that the oligofar version is what expected [" OLIGOFAR_VERSION "]\n"
+            << "   --memory-limit=value      -L value      set rlimit for the program (k|M|G suffix is allowed) [" << m_memoryLimit << "]\n"
+            << "   --test-suite=+|-          -T +|-        turn test suite on/off [" << (m_performTests?"on":"off") << "]\n"
             << "\nRelative orientation flags recognized:\n"
-            << "    p|centripetal|inside|pcr|solexa     reads are oriented so that vectors 5'->3' pointing to each other\n"
-            << "    f|centrifugal|outside               reads are oriented so that vectors 5'->3' are pointing outside\n"
-            << "    i|incr|incremental|solid            reads are on same strand, first preceeds second on this strand\n"
-            << "    d|decr|decremental                  reads are on same strand, first succeeds second on this strand\n"
+            << "     p|centripetal|inside|pcr|solexa       reads are oriented so that vectors 5'->3' pointing to each other\n"
+            << "     f|centrifugal|outside                 reads are oriented so that vectors 5'->3' are pointing outside\n"
+            << "     i|incr|incremental|solid              reads are on same strand, first preceeds second on this strand\n"
+            << "     d|decr|decremental                    reads are on same strand, first succeeds second on this strand\n"
             << "\nOutput flags (for -O):\n"
-            << "    -   reset all flags\n"
-            << "    h   report all hits before ranking\n"
-            << "    u   report unmapped reads\n"
-            << "    x   indicate that there are more reads of this rank\n"
-            << "    m   indicate that there are more reads of lower ranks\n"
-            << "    t   indicate that there were no more hits\n"
-            << "    d   report differences between query and subject\n"
-            << "    a   report alignment details\n"
-            << "    e   print empty line after all hits of the read are reported\n"
+            << "     -   reset all flags\n"
+            << "     h   report all hits before ranking\n"
+            << "     u   report unmapped reads\n"
+            << "     x   indicate that there are more reads of this rank\n"
+            << "     m   indicate that there are more reads of lower ranks\n"
+            << "     t   indicate that there were no more hits\n"
+            << "     d   report differences between query and subject\n"
+            << "     a   report alignment details\n"
+            << "     e   print empty line after all hits of the read are reported\n"
             << "\nNB: although -L flag is optional, it is strongly recommended to use it!\n"
             ;
     }
     if( flags & fExtended ) 
         cout << "\nExtended options:\n"
-             << "  --min-block-length=bases   Length for subject sequence to be scanned at once [" << m_minBlockLength << "]\n"
+             << "   --min-block-length=bases   Length for subject sequence to be scanned at once [" << m_minBlockLength << "]\n"
              ;
 }
 
@@ -267,6 +269,7 @@ const option * COligoFarApp::GetLongOptions() const
         {"input-max-amb", 1, 0, 'a'},
         {"fasta-max-amb", 1, 0, 'A'},
         {"colorspace", 1, 0, 'c'},
+        {"NaHSO3", 1, 0, kLongOpt_NaHSO3},
         {"input-file", 1, 0, 'i'},
         {"fasta-file", 1, 0, 'd'},
         {"snpdb-file", 1, 0, 'b'},
@@ -318,6 +321,7 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
 {
     switch( opt ) {
     case kLongOpt_min_block_length: m_minBlockLength = NStr::StringToInt( arg ); break;
+    case kLongOpt_NaHSO3: m_sodiumBisulfiteCuration = *arg == '+' ? true : *arg == '-' ? false : NStr::StringToBool( arg ); break;
     case kLongOpt_pass0: m_hashPass = 0; break;
     case kLongOpt_pass1: if( m_hashParam.size() < 2 ) m_hashParam.push_back( m_hashParam.back() ); m_hashPass = 1; break;
     case 'U': if( strcmp( arg, OLIGOFAR_VERSION ) ) THROW( runtime_error, "Expected oligofar version " << arg << ", called " OLIGOFAR_VERSION ); break;
@@ -620,6 +624,7 @@ int COligoFarApp::ProcessData()
     seqScanner.SetMaxSimplicity( m_maxSimplicity );
     seqScanner.SetMinBlockLength( m_minBlockLength );
     seqScanner.SetInputChunk( batch.GetInputChunk() );
+    seqScanner.SetSodiumBisulfateCuration( m_sodiumBisulfiteCuration );
 
     seqVecProcessor.SetTargetCoding( sbjCoding );
     seqVecProcessor.AddCallback( 1, &filter );

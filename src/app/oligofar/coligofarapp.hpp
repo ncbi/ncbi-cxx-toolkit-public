@@ -32,7 +32,8 @@ public:
         kLongOptBase = 0x100,
         kLongOpt_pass0 = kLongOptBase + 0x00,
         kLongOpt_pass1 = kLongOptBase + 0x01,
-        kLongOpt_min_block_length = kLongOptBase + 0x02
+        kLongOpt_min_block_length = kLongOptBase + 0x02,
+        kLongOpt_NaHSO3 = kLongOptBase + 0x03
     };
     typedef CHashParam::TSkipPositions TSkipPositions;
 
@@ -99,6 +100,7 @@ protected:
     Uint8    m_memoryLimit;
     bool     m_performTests;
 	bool     m_colorSpace;
+    bool     m_sodiumBisulfiteCuration;
 	EAlignmentAlgo m_alignmentAlgo;
     TSkipPositions m_skipPositions;
     string m_readFile;
