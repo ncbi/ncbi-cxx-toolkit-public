@@ -1097,8 +1097,8 @@ extern EIO_Status URL_ConnectEx
             char* xx_args = (char*) malloc(dst_size + 1);
             if (!xx_args) {
                 CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
-                                  ("[URL_Connect]  Out of memory (%d)",
-                                   dst_size + 1));
+                                  ("[URL_Connect]  Out of memory (%lu)",
+                                   (unsigned long)(dst_size + 1)));
                 return eIO_Unknown;
             }
             URL_Encode(args,    src_size, &src_read,
