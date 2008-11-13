@@ -240,6 +240,17 @@ bool CHit::ClustersWithSameQ( const CHit * other ) const
 
 bool CHit::ClustersWithSameQS( const CHit * other ) const
 {
+    if( m_flags != other->m_flags ) return false;
+    int delta = 0;
+    switch( m_flags & fPairedHit ) {
+    case 0: THROW( logic_error, "It is a bad idea to compare null reads" );
+    case fComponent_1: delta = min( m_length[0], other->m_length[0] ); break;
+    case fComponent_2: delta = min( m_length[1], other->m_length[1] ); break;
+    case fPairedHit:   delta = min( min( m_length[0], other->m_length[0] ), min( m_length[1], other->m_length[1] ) ); break;
+    default: THROW( logic_error, "Oops here!" );
+    }
+    delta /= 2;
+    if( abs( m_fullFrom - other->m_fullFrom ) < delta && abs( m_fullTo - other->m_fullTo ) < delta ) return true;
     return false;
 }
 

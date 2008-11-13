@@ -152,15 +152,15 @@ void COligoFarApp::Help( const char * arg )
     }
     if( flags & fSynopsis ) 
         cout << "usage: [-hV] [--help[=full|brief|extended]] [-U version]\n"
-             << "  [-i inputfile] [-d genomedb] [-b snpdb] [-g guidefile] [-l gilist]\n"
+             << "  [-i inputfile] [-d genomedb] [-b snpdb] [-g guidefile] [-l gilist|-y seqID]\n"
              << "  [-1 solexa1] [-2 solexa2] [-q 0|1] [-0 qbase] [-c +|-] [-o output]\n"
              << "  [-O -eumxtadh] [-B batchsz] [-x 0|1|2] [-s 1|2|3] [-k skipPos]\n"
-             << "  [--pass0] [-w win[/word]] [-n mism] [-e gaps] [-S stride] [-H bits]\n"
-             << "  [--pass1  [-w win[/word]] [-n mism] [-e gaps] [-S stride] [-H bits] ]\n"
+             << "  [--pass0] [-w win[/word]] [-N wcnt] [-n mism] [-e gaps] [-S stride] [-H bits]\n"
+             << "  [--pass1  [-w win[/word]] [-N wcnt] [-n mism] [-e gaps] [-S stride] [-H bits] ]\n"
              << "  [-r f|s] [-a maxamb] [-A maxamb] [-P phrap] [-F dust]\n"
-             << "  [-p cutoff] [-u topcnt] [-t toppct] [-X xdropoff] [-I idscore]\n"
-             << "  [-M mismscore] [-G gapcore] [-Q gapextscore] [-D minPair[-maxPair]]\n"
-             << "  [-m margin] [-R geometry] [-y seqID] [-L memlimit] [-T +|-]\n";
+             << "  [-X xdropoff] [-I idscore] [-M mismscore] [-G gapcore] [-Q gapextscore]\n"
+             << "  [-D minPair[-maxPair]] [-m margin] [-R geometry]\n"
+             << "  [-p cutoff] [-u topcnt] [-t toppct] [-L memlimit] [-T +|-]\n";
     if( flags & fDetails ) {
         cout 
             << "\nFile options:\n" 

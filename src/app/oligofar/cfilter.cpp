@@ -211,6 +211,14 @@ void CFilter::SequenceEnd()
     m_begin = m_end = 0;
 }
 
+inline ostream& operator << ( ostream& o, CHit * h ) 
+{
+    o << "\x033[32mhit\x033[33m{\x033[34m";
+    h->PrintDebug( o );
+    o << "\x033[33m}\x033[0m";
+    return o;
+}
+
 void CFilter::PurgeHit( CHit * hit, bool setTarget )
 {
     if( hit == 0 ) return;
@@ -226,8 +234,18 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
         double cscore = tscore * m_topPct/100;
         if( cscore > hscore ) { delete hit; return; }
         int topcnt = m_topCnt;
-        if( tscore <= hscore ) {
-            if( tih->EqualsSameQ( hit ) ) { delete hit; return; } // uniqueing hits
+
+        if( tih->ClustersWithSameQ( hit ) ) {
+            if( tscore <= hscore ) {
+                q->m_topHit = hit;
+                CHit::C_NextCtl( hit ).SetNext( tih->GetNextHit() );
+                CHit::C_NextCtl( tih ).SetNext( 0 );
+                delete tih;
+                tih = 0;
+            } else {
+                delete hit; return; 
+            }
+        } else if( tscore < hscore ) {
             CHit::C_NextCtl( hit ).SetNext( tih );
             q->m_topHit = hit;
 			cscore = ( tscore = hscore ) * m_topPct/100;
@@ -235,8 +253,18 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
 			// trying to insert hit somewhere in the list
             bool weak = true;
             for( ; weak && tih->GetNextHit() && topcnt > 0; (tih = tih->GetNextHit()), --topcnt ) {
-                if( tih->GetNextHit()->IsNull() || tih->GetNextHit()->GetTotalScore() < hscore ) {
-                    if( tih->EqualsSameQ( hit ) ) { delete hit; return; }
+                CHit * nih = tih->GetNextHit();
+                if( nih->ClustersWithSameQ( hit ) ) {
+                    if( nih->GetTotalScore() >= hit->GetTotalScore() ) {
+                        delete hit; 
+                    } else {
+                        CHit::C_NextCtl( tih ).SetNext( hit );
+                        CHit::C_NextCtl( hit ).SetNext( nih->GetNextHit() );
+                        CHit::C_NextCtl( nih ).SetNext( 0 );
+                        delete nih;
+                    }
+                    return;
+                } else if( tih->GetNextHit()->IsNull() || tih->GetNextHit()->GetTotalScore() < hscore ) {
                     // keep chain linked
                     CHit::C_NextCtl( hit ).SetNext( tih->GetNextHit() );
                     CHit::C_NextCtl( tih ).SetNext( hit );
@@ -249,7 +277,13 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
                 return;
             }
         }
-        for( tih = hit; topcnt > 0 && tih->GetNextHit() && tih->GetNextHit()->GetTotalScore() >= cscore; tih = tih->GetNextHit(), --topcnt );
+        for( tih = hit; topcnt > 0 && tih->GetNextHit() && tih->GetNextHit()->GetTotalScore() >= cscore; tih = tih->GetNextHit(), --topcnt ) { 
+            /*
+            CHit * nih = tih->GetNextHit();
+            if( nih->ClustersWithSameQ( hit ) ) {
+            }
+            */
+        }
         if( tih->GetNextHit() && !tih->GetNextHit()->IsNull() ) {
             CHit::C_NextCtl( tih ).SetNext( topcnt ? new CHit( q ) : 0 ); // if we clipped by score, we need to restore terminator
         }
