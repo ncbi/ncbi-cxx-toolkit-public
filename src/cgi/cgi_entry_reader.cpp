@@ -368,11 +368,10 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
 
 void CCgiEntryReaderContext::x_ReadURLEncodedEntry(string& name, string& value)
 {
-    SIZE_TYPE input_pos = m_BytePos;
     if (x_DelimitedRead(name) == eRT_EOF  ||  m_In.eof()) {
         m_ContentType = eCT_Null;
     }
-    SIZE_TYPE   name_len = name.find('=');
+    SIZE_TYPE name_len = name.find('=');
     if (name_len != NPOS) {
         value = name.substr(name_len + 1);
         name.resize(name_len);
