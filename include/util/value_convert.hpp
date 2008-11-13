@@ -1825,12 +1825,28 @@ Convert(const FROM& value)
     return value_slice::CValueConvert<value_slice::SRunTimeCP, FROM>(value);
 }
 
+template <typename FROM>
+inline
+const value_slice::CValueConvert<value_slice::SRunTimeCP, FROM> 
+Convert(FROM& value)
+{
+    return value_slice::CValueConvert<value_slice::SRunTimeCP, FROM>(value);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Safe (compile-time) conversion ...
 template <typename FROM>
 inline
 const value_slice::CValueConvert<value_slice::SSafeCP, FROM> 
 ConvertSafe(const FROM& value)
+{
+    return value_slice::CValueConvert<value_slice::SSafeCP, FROM>(value);
+}
+
+template <typename FROM>
+inline
+const value_slice::CValueConvert<value_slice::SSafeCP, FROM> 
+ConvertSafe(FROM& value)
 {
     return value_slice::CValueConvert<value_slice::SSafeCP, FROM>(value);
 }
