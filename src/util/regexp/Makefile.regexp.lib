@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = chartables get maketables pcre pcreposix study
+SRC = get maketables pcre pcreposix study
 LIB = regexp
 
 CPPFLAGS = -I$(includedir)/util/regexp $(ORIG_CPPFLAGS)
