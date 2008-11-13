@@ -1032,8 +1032,11 @@ public:
     bool Lock(const TQueue* pqueue, const CTimeSpan* timeout = NULL)
     {
         Unlock();
-        m_Queue = pqueue;
-        return m_Queue->x_Lock(timeout);
+        bool result = pqueue->x_Lock(timeout);
+        if (result) {
+            m_Queue = pqueue;
+        }
+        return result;
     }
 
     /// Unlock the queue
@@ -1076,6 +1079,22 @@ CSyncQueue<Type, Container>::CSyncQueue(TSize max_size)
 
     m_CntWaitNotEmpty.Set(0);
     m_CntWaitNotFull.Set(0);
+}
+
+
+template <class Type, class Container>
+inline
+bool CSyncQueue<Type, Container>::IsEmpty(void) const
+{
+    return m_Size == 0;
+}
+
+
+template <class Type, class Container>
+inline
+bool CSyncQueue<Type, Container>::IsFull(void) const
+{
+    return m_Size >= m_MaxSize;
 }
 
 
@@ -1272,22 +1291,6 @@ bool CSyncQueue<Type, Container>::x_IsGuarded(void) const
     return
         m_CurGuardTID != kThreadID_None  &&
         m_CurGuardTID == CThread::GetSelf();
-}
-
-
-template <class Type, class Container>
-inline
-bool CSyncQueue<Type, Container>::IsEmpty(void) const
-{
-    return m_Size == 0;
-}
-
-
-template <class Type, class Container>
-inline
-bool CSyncQueue<Type, Container>::IsFull(void) const
-{
-    return m_Size >= m_MaxSize;
 }
 
 
