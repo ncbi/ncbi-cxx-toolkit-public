@@ -51,7 +51,7 @@ REG     g_CORE_Registry          = 0;
 
 extern int g_NCBI_ConnectSrandAddend(void)
 {
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
     return (int) getpid(); 
 #elif defined(NCBI_OS_MSWIN)
     return (int) GetCurrentProcessId();
