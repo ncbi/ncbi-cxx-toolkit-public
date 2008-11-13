@@ -73,7 +73,6 @@ bool CFilter::LookupInQueue( double score, int seqFrom, int seqTo, bool reverse,
     TPendingHits::iterator phit =  m_pendingHits.begin();
     
     bool found = false;
-    int lastPos = -1;
 
     for( ; phit != m_pendingHits.end() && phit->first <  bottomPos ; ++phit );
     for( ; phit != m_pendingHits.end() && phit->first <= topPos ; ++phit ) {
@@ -91,30 +90,13 @@ bool CFilter::LookupInQueue( double score, int seqFrom, int seqTo, bool reverse,
         if( !hit->HasComponent( pairmate ) ) {
             hit->SetPairmate( pairmate, score, seqFrom, seqTo );
             found = true;
-            /*
-        } else if( score > phit->GetScore( pairmate ) ) {
-            double s = hit->GetScore( pairmate );
-            double f = hit->GetFrom( pairmate );
-            double t = hit->GetTo( pairmate );
-            bool r = hit->IsReverseStrans( pairmate );
-            phit->SetPairmate( pairmate, score, from, to );
-            Uint2 g = hit->GetGeometry();
-            if( g & CHit::fOrder_reverse ) g = (~g)&3;
-            ASSERT( g == m_geometry );
-            if( ! LookupInQueue( s, f, t, r, query, pairmate, toAdd, false ) ) {
-                PurgeHit( new CHit( query, m_ord, pairmate, s, f, t ) );
-            }
-        } else if( score == phit->GetScore( pairmate ) ) {
-        */
         } else {
-            // this hit is not good enough
-            if( lastPos != phit->first ) {
-                lastPos = phit->first;
-                toAdd.insert( make_pair( lastPos, pairmate ? 
-                             new CHit( query, m_ord, hit->GetScore(0), hit->GetFrom(0), hit->GetTo(0), score, seqFrom, seqTo ) :
-                             new CHit( query, m_ord, score, seqFrom, seqTo, hit->GetScore(1), hit->GetFrom(1), hit->GetTo(1) ) ) );
-                found = true;
-            }
+            int pos = phit->first;
+            toAdd.insert( make_pair( pos, pairmate ? 
+                         new CHit( query, m_ord, hit->GetScore(0), hit->GetFrom(0), hit->GetTo(0), score, seqFrom, seqTo ) :
+                         new CHit( query, m_ord, score, seqFrom, seqTo, hit->GetScore(1), hit->GetFrom(1), hit->GetTo(1) ) ) );
+            found = true;
+            while( phit != m_pendingHits.end() && phit->first == pos ) ++phit; // to prevent multiplication of existing hits
         }
     }
     return found;
