@@ -462,7 +462,7 @@ CBDB_Env* BDB_CreateEnv(const CNcbiRegistry& reg,
         }
         if (checkpoint_min) {
             s_LogEnvParam("BDB checkpoint minitues", checkpoint_min);
-            env->SetCheckPointKB(checkpoint_min);
+            env->SetCheckPointMin(checkpoint_min);
         }
         env->EnableCheckPoint(enable_checkpoint);
 
