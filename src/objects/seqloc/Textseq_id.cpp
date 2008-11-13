@@ -205,11 +205,11 @@ int CTextseq_id::Compare(const CTextseq_id& tsip2) const
 
 
 // format the contents FASTA string style
-ostream& CTextseq_id::AsFastaString(ostream& s) const
+ostream& CTextseq_id::AsFastaString(ostream& s, bool allow_version) const
 {
     if (IsSetAccession()) {
         s << GetAccession(); // no Upcase per Ostell - Karl 7/2001
-        if ( IsSetVersion() ) {
+        if (allow_version  &&  IsSetVersion()) {
             int version = GetVersion();
             if (version) {
                 s << '.' << version;

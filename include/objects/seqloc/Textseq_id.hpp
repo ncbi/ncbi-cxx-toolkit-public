@@ -83,7 +83,7 @@ public:
     bool operator<(const CTextseq_id& tsip2) const;
 
     /// Format the contents FASTA string style
-    ostream& AsFastaString(ostream& s) const;
+    ostream& AsFastaString(ostream& s, bool allow_version = true) const;
 
 private:
     // Prohibit copy constructor & assignment operator.
