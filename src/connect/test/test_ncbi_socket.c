@@ -632,7 +632,7 @@ static void TEST__server(unsigned short port)
     CORE_LOGF(eLOG_Note, ("TEST__server(port = %hu)", port));
 
     /* Create listening socket */
-    status = LSOCK_Create(port, 1, &lsock);
+    status = LSOCK_CreateEx(port, 1, &lsock, fSOCK_LogOn);
     assert(status == eIO_Success);
 
     /* Accept connections from clients and run test sessions */
@@ -918,14 +918,6 @@ extern int main(int argc, char** argv)
     argc = 3;
 #endif
 
-    /* Try to set various fake MT safety locks
-     */
-    CORE_SetLOCK( MT_LOCK_Create(0, TEST_LockHandler, TEST_LockCleanup) );
-    CORE_SetLOCK(0);
-    CORE_SetLOCK(0);
-    CORE_SetLOCK( MT_LOCK_Create(&TEST_LockUserData,
-                                 TEST_LockHandler, TEST_LockCleanup) );
-
     /* Printout local hostname
      */
     {{
@@ -952,7 +944,6 @@ extern int main(int argc, char** argv)
         TEST__server((unsigned short) port);
         assert(SOCK_ShutdownAPI() == eIO_Success);
         CORE_SetLOG(0);
-        CORE_SetLOCK(0);
         return 0;
     }
 
@@ -989,11 +980,17 @@ extern int main(int argc, char** argv)
         TEST__client(server_host, (unsigned short) server_port, timeout);
         assert(SOCK_ShutdownAPI() == eIO_Success);
         CORE_SetLOG(0);
-        CORE_SetLOCK(0);
         return 0;
     }
     } /* switch */
 
+    /* Try to set various fake MT safety locks
+     */
+    CORE_SetLOCK( MT_LOCK_Create(0, TEST_LockHandler, TEST_LockCleanup) );
+    CORE_SetLOCK(0);
+    CORE_SetLOCK(0);
+    CORE_SetLOCK( MT_LOCK_Create(&TEST_LockUserData,
+                                 TEST_LockHandler, TEST_LockCleanup) );
 
     TEST_gethostby();
 
@@ -1005,7 +1002,7 @@ extern int main(int argc, char** argv)
             "Server: %s <port>\n"
             "where <port> is greater than %d, and [timeout] is a double\n\n",
             argv[0], argv[0], MIN_PORT);
-    CORE_SetLOG(0);
     CORE_SetLOCK(0);
+    CORE_SetLOG(0);
     return 0;
 }
