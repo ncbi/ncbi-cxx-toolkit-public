@@ -505,13 +505,18 @@ int CReadBlastApp::RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<
          {
          NcbiCerr << "RemoveProblems: INFO: feature " << loc_string << ": imp, comment = " << (*feat)->GetComment()  << NcbiEndl;
          }
-
+/*
       if((*feat)->GetData().IsImp() &&
          (*feat)->GetData().GetImp().CanGetKey() &&
          (*feat)->GetData().GetImp().GetKey() == "misc_feature" &&
          (*feat)->CanGetComment() &&
          (*feat)->GetComment().find("potential frameshift") != string::npos
         ) del_feature = false; // this is a new feature, that we are not supposed to delete
+*/
+      if((*feat)->GetData().IsImp() &&
+         (*feat)->GetData().GetImp().CanGetKey() &&
+         (*feat)->GetData().GetImp().GetKey() == "misc_feature"
+        ) del_feature = false; // this is a new feature, we do not delete them
       else del_feature=true;
       }
 
@@ -620,13 +625,14 @@ int CReadBlastApp::RemoveInterim(void)
    for(CTypeIterator<CBioseq> seq=Begin(); seq; ++seq)
      {
      if(seq->IsSetAnnot() && seq->IsAa()) nremoved+= RemoveInterim(seq->SetAnnot());
+     if(seq->IsSetAnnot() && seq->IsNa()) nremoved+= RemoveInterim2(seq->SetAnnot());
      }
 
    PopVerbosity();
    if(PrintDetails()) NcbiCerr << "RemoveInterim: end" << NcbiEndl;
    return nremoved;
 }
-
+// protein sequence annotations
 int CReadBlastApp::RemoveInterim(CBioseq::TAnnot& annots)
 {
    int nremoved=0;
@@ -666,6 +672,55 @@ int CReadBlastApp::RemoveInterim(CBioseq::TAnnot& annots)
 
   return nremoved;
 }
+
+// nucleotide sequence annotations
+int CReadBlastApp::RemoveInterim2(CBioseq::TAnnot& annots)
+{
+   int nremoved=0;
+
+   NON_CONST_ITERATE(CBioseq::TAnnot, gen_feature, annots)
+     {
+     bool erased = false;
+     if ( !(*gen_feature)->GetData().IsFtable() ) continue;
+     int dremoved=0;
+     map<string,bool> feat_defined;
+//     map<const CSeq_feat&, bool> feat_defined;
+     CSeq_annot::C_Data::TFtable& table = (*gen_feature)->SetData().SetFtable();
+     for(CSeq_annot::C_Data::TFtable::iterator feat_end = table.end(), feat = table.begin(); feat != feat_end;)
+       {
+       const CSeq_feat& featr = **feat;
+       strstream buff;
+       // auto_ptr<CObjectOStream> out (CObjectOStream::Open(eSerial_AsnText, buff));
+       // out << featr;
+       // string bundle = "bundle";
+       // NcbiCerr << MSerial_AsnText  << featr; // compiles
+       // if(PrintDetails()) NcbiCerr << "RemoveInterim2: writing feature in ASN format to buff" << NcbiEndl;
+       buff << MSerial_AsnText  << featr;
+       // NcbiCerr << "DEBUG: featr" << NcbiEndl;
+       // NcbiCerr << featr << NcbiEndl;
+       buff << '\0';
+       // if(false)
+       if(feat_defined.find(buff.str()) != feat_defined.end()) // dupe
+       // if(feat_defined.find(featr) != feat_defined.end()) // dupe
+         {
+         feat=table.erase(feat);
+         }
+       else 
+         {
+         feat_defined[buff.str()]=true;
+         // feat_defined[featr]=true;
+         feat++;
+         }
+       }
+     
+     }
+
+  return nremoved;
+}
+
+
+
+
 string diagName(const string& type, const string& value)
 {         
    return type + "|" + value;
@@ -722,11 +777,12 @@ void CReadBlastApp::append_misc_feature(CBioseq_set::TSeq_set& seqs, const strin
     NON_CONST_ITERATE(CBioseq::TAnnot, gen_feature, (*na)->SetSeq().SetAnnot())
       {
       if ( !(*gen_feature)->GetData().IsFtable() ) continue;
-      map<EProblem, bool> problem_misced;
+      typedef map<string, bool> Tmessage_misced;
+      typedef map<EProblem, Tmessage_misced> Tproblem_misced;
+      Tproblem_misced problem_misced; // list of problems fixed
       ITERATE(list<problemStr>, problem, m_diag[name].problems)
         {
         if ( !(problem->type & problem_type) ) continue;
-        if(problem_misced.find(problem->type) != problem_misced.end() ) continue;
         int from=-1, to=-1;
 //        string lt1, lt2;
         ENa_strand strand;
@@ -742,6 +798,10 @@ void CReadBlastApp::append_misc_feature(CBioseq_set::TSeq_set& seqs, const strin
         strand = problem->strand;
         message = problem->misc_feat_message;
         if(message.size()==0) continue; // do not print empty misc_feat, they are empty for a reason
+        if(problem_misced.find(problem->type) != problem_misced.end() &&
+           problem_misced[problem->type].find(message) != problem_misced[problem->type].end()
+          ) continue;
+        else problem_misced[problem->type][message] = true;
         SIZE_TYPE pos;
         while((pos=message.find_first_of("\n\r"))!=string::npos)
           {
@@ -756,7 +816,6 @@ void CReadBlastApp::append_misc_feature(CBioseq_set::TSeq_set& seqs, const strin
         feat->SetLocation().SetInt().SetId(**na_id.begin());
         feat->SetLocation().SetInt().SetStrand(strand);
         (*gen_feature)->SetData().SetFtable().push_back(feat);
-        problem_misced[problem->type] = true;
         }
 
       }

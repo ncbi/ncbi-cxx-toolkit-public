@@ -321,7 +321,8 @@ private:
 
 
     int RemoveInterim(void);
-    int RemoveInterim(CBioseq::TAnnot& annots);
+    int RemoveInterim(CBioseq::TAnnot& annots); // proteins
+    int RemoveInterim2(CBioseq::TAnnot& annots); // nucleotides
 
 
     void processFeature ( CSeq_annot::C_Data::TFtable::iterator& feat, TranStrMap3& tranStrMap );

@@ -271,24 +271,32 @@ bool CReadBlastApp::overlaps_prot_na
        char bufferchar[20480];  memset(bufferchar, 0, 20480);
        strstream buffer(bufferchar, 20480, IOS_BASE::out);
        printOverlapReport(report, buffer);
-       strstream buffer2;
-       buffer2 << "potential RNA location " << printed_range(**f1)
-            // << " (" << trna_type << ")"
-            << " (" << name1 << ")"
-            << " and potential protein location " << printed_range(seq)
-            << " (" << get_title(seq) << ")"
-            << " overlap by " << overlap
-            << "bp"
-            << NcbiEndl << '\0';
 
-       strstream misc_feat;
-       misc_feat << buffer2.str() << '\0';
-       if(PrintDetails()) NcbiCerr << "overlaps_prot_na[seq,feats]: created buffer: " << buffer2.str() << "\n";
+       strstream buff_misc_feat_rna;
+       buff_misc_feat_rna
+            << "potential RNA location (" 
+            << name1 << ") that overlaps potential protein (" << get_title(seq) << ")" << '\0';
+
+       strstream buff_misc_feat_protein;
+       buff_misc_feat_protein
+            << "potential protein location ("
+            << get_title(seq) << ") that overlaps potential RNA (" << name1 << ")" << '\0';
+
+
+       strstream misc_feat_rna;
+       misc_feat_rna << buff_misc_feat_rna.str() << '\0';
+       strstream misc_feat_protein;
+       misc_feat_protein << buff_misc_feat_protein.str() << '\0';
+
+       if(PrintDetails()) NcbiCerr << "overlaps_prot_na[seq,feats]: created RNA buffer: "     << buff_misc_feat_rna.str()     << "\n";
+       if(PrintDetails()) NcbiCerr << "overlaps_prot_na[seq,feats]: created protein buffer: " << buff_misc_feat_protein.str() << "\n";
+/*
        problemStr problem = {eRnaOverlap,  buffer.str(), misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };
        m_diag[n1].problems.push_back(problem);
+*/
        bool removeit=false;
        string removen = "";
-       problemStr problemCOH = {eRemoveOverlap, "", misc_feat.str(), "", "", mint, maxt, eNa_strand_unknown };
+//       problemStr problemCOH = {eRemoveOverlap, "", misc_feat.str(), "", "", mint, maxt, eNa_strand_unknown };
        if      (rna_feat_type == eMyFeatureType_pseudo_tRNA && seq_type != eMyFeatureType_hypo_CDS)
          {
          NcbiCerr << "overlaps_prot_na[seq,feats]: WARNING: RNA location "
@@ -318,11 +326,20 @@ bool CReadBlastApp::overlaps_prot_na
          }
        if(removeit)
          {
+         if(removen == n1) // RNA location is deleted
+           {
+           problemStr problemCOH = {eRemoveOverlap, "", misc_feat_rna.str(), "", "", min1, max1, strand1};
+           m_diag[removen].problems.push_back(problemCOH);
+           }
+         else // protein location is deleted
+           {
+           problemStr problemCOH = {eRemoveOverlap, "", misc_feat_protein.str(), "", "", min2, max2, strand2};
+           m_diag[removen].problems.push_back(problemCOH);
+           }
          if(PrintDetails())  NcbiCerr << "overlaps_prot_na[seq,feats]: sequence " 
                   << "[" << removen << "]" 
                   << " is marked for removal"
                   << NcbiEndl;
-         m_diag[removen].problems.push_back(problemCOH);
          try
            {
            CBioseq_set::TSeq_set* seqs = get_parent_seqset(seq);
@@ -634,29 +651,43 @@ bool CReadBlastApp::overlaps
     char bufferchar[20480];  memset(bufferchar, 0, 20480);
     strstream buffer(bufferchar, 20480, IOS_BASE::out);
     printOverlapReport(report, buffer);
+/*
     strstream misc_feat;
-    misc_feat << "potential protein locations " << printed_range(left)
-            << " and " << printed_range(right)
+    misc_feat << "potential protein locations )" << GetProtName(left)
+            << ") and " << printed_range(right)
             << " overlap by " << scratch_overlap
             << "bp"
             << NcbiEndl << '\0';
+*/
+    strstream misc_feat_left;
+    misc_feat_left 
+       << "potential protein location (" << GetProtName(left) 
+       << ") that overlaps potential protein (" << GetProtName(right) << ")" << NcbiEndl << '\0';
 
-    problemStr problemCO = {eCompleteOverlap, buffer.str(), misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };
-    problemStr problemO = {eOverlap, buffer.str(), misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };
-    problemStr problem;
-    problemStr problemCOH = {eRemoveOverlap   , "", misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };
+    strstream misc_feat_right;
+    misc_feat_right
+       << "potential protein location (" << GetProtName(right) 
+       << ") that overlaps potential protein (" << GetProtName(left) << ")" << NcbiEndl << '\0';
+
+    // problemStr problemCO = {eCompleteOverlap, buffer.str(), misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };
+    // problemStr problemO = {eOverlap, buffer.str(), misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };
+    // problemStr problem;
+    // problemStr problemCOH = {eRemoveOverlap   , "", misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };
 
 
     if(complete_overlaps)
       {
-      problem  = problemCO;
+      // problem  = problemCO;
       if(report->q_name_left.find("hypothetical")!=string::npos)
         {
         NcbiCerr << "CReadBlastApp::overlaps: WARNING: sequence of a hypothetical protein "
                  << "[" << qname << "]"
                  << " is marked for removal because of a complete overlap"
                  << NcbiEndl;
+        problemStr problemCOH = {eRemoveOverlap   , "", misc_feat_left.str(), "", "", -1, -1, eNa_strand_unknown };
+        problemStr problemCO = {eCompleteOverlap, buffer.str(), misc_feat_left.str(), "", "", -1, -1, eNa_strand_unknown };
         m_diag[qname].problems.push_back(problemCOH);
+        m_diag[qname].problems.push_back(problemCO);
         }
       if(report->q_name_right.find("hypothetical")!=string::npos)
         {
@@ -664,11 +695,19 @@ bool CReadBlastApp::overlaps
                  << "[" << qrname << "]"
                  << " is marked for removal because of a complete overlap"
                  << NcbiEndl;
+        problemStr problemCOH = {eRemoveOverlap   , "", misc_feat_right.str(), "", "", -1, -1, eNa_strand_unknown };
+        problemStr problemCO = {eCompleteOverlap, buffer.str(), misc_feat_right.str(), "", "", -1, -1, eNa_strand_unknown };
         m_diag[qrname].problems.push_back(problemCOH);
+        m_diag[qrname].problems.push_back(problemCO);
         }
       }
-    else                 problem  = problemO;
-    m_diag[qname].problems.push_back(problem);
+    else                 
+      {
+      problemStr problemO_l = {eOverlap, buffer.str(), misc_feat_left.str(), "", "", -1, -1, eNa_strand_unknown };
+      problemStr problemO_r = {eOverlap, "", misc_feat_right.str(), "", "", -1, -1, eNa_strand_unknown };
+      m_diag[qname].problems.push_back(problemO_l);
+      m_diag[qrname].problems.push_back(problemO_r);
+      }
     delete report;
     }
   return result;

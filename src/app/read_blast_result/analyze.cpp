@@ -112,9 +112,11 @@ int CReadBlastApp::AnalyzeSeqsViaBioseqs(CBioseq& left,
       else
         {
         string name = GetStringDescr((*right)->GetSeq());
+/*
         if(PrintDetails()) NcbiCerr << "AnalyzeSeqsViaBioseqs(left, against_seqs, against_prot): "
            << "right seq entry "
            << name << "\n";
+*/
         if(   ( against_prot &&  is_prot_entry((*right)->GetSeq())) ||
               (!against_prot && !is_prot_entry((*right)->GetSeq()))
             )
@@ -125,11 +127,13 @@ int CReadBlastApp::AnalyzeSeqsViaBioseqs(CBioseq& left,
 }
 int CReadBlastApp::AnalyzeSeqsViaBioseqs(CBioseq& left, CBioseq& right)
 {
+/*
   if(PrintDetails()) NcbiCerr << "AnalyzeSeqsViaBioseqs(left, right): "
     << GetStringDescr(left) << ", " << GetStringDescr(right) << NcbiEndl;
+*/
   if(is_prot_entry(left) && !is_prot_entry(right))
     {
-    if(PrintDetails()) NcbiCerr << "AnalyzeSeqsViaBioseqs(left, right): going for overlaps\n";
+//    if(PrintDetails()) NcbiCerr << "AnalyzeSeqsViaBioseqs(left, right): going for overlaps\n";
     overlaps_prot_na(left, right.GetAnnot());
     }
 

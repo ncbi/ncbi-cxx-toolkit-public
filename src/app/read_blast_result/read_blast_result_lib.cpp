@@ -454,9 +454,9 @@ void CReadBlastApp::check_alignment
 bool CReadBlastApp::is_prot_entry(const CBioseq& seq)
 {
     bool result;
-    if(PrintDetails()) NcbiCerr << "is_prot_entry?"  << NcbiEndl;
+    // if(PrintDetails()) NcbiCerr << "is_prot_entry?"  << NcbiEndl;
     result=seq.GetInst().IsAa();
-    if(PrintDetails()) NcbiCerr << result  << NcbiEndl;
+    // if(PrintDetails()) NcbiCerr << result  << NcbiEndl;
     return result;
 }
 
@@ -533,12 +533,12 @@ bool CReadBlastApp::less_pair(const pair<int,int>& first,
 bool CReadBlastApp::less_seq(const CRef<CSeq_entry>& first,
                              const CRef<CSeq_entry>& second)
 {
-  if(PrintDetails()) NcbiCerr << "less_seq start" << NcbiEndl;
+  // if(PrintDetails()) NcbiCerr << "less_seq start" << NcbiEndl;
   if (first->IsSet() || second->IsSet()) 
      { 
      return false;
      }
-  if(PrintDetails()) NcbiCerr << "less_seq both seqs" << NcbiEndl;
+  // if(PrintDetails()) NcbiCerr << "less_seq both seqs" << NcbiEndl;
   if (!hasGenomicLocation(first->GetSeq())) 
     {
     if(first->GetSeq().IsAa()) 
@@ -551,7 +551,7 @@ bool CReadBlastApp::less_seq(const CRef<CSeq_entry>& first,
       NcbiCerr << "less_seq second does not have genomic location or is nucleotide seq" << NcbiEndl;
     return false;
     }
-  if(PrintDetails()) NcbiCerr << "less_seq both have genomic locations" << NcbiEndl;
+  // if(PrintDetails()) NcbiCerr << "less_seq both have genomic locations" << NcbiEndl;
   const CSeq_loc& left_genomic_int = getGenomicLocation(first->GetSeq());
   const CSeq_loc& right_genomic_int = getGenomicLocation(second->GetSeq());
   TSeqPos from1, to1, from2, to2;
@@ -561,10 +561,12 @@ bool CReadBlastApp::less_seq(const CRef<CSeq_entry>& first,
 
   getFromTo(left_genomic_int, from1, to1, strand1);
   getFromTo(right_genomic_int, from2, to2, strand2);
+/*
   if(PrintDetails()) NcbiCerr << "less_seq comparing" 
     << ": " << GetStringDescr( first->GetSeq()) << " = " << from1 << "-" << to1
     << ", " << GetStringDescr(second->GetSeq()) << " = " << from2 << "-" << to2
     << NcbiEndl;
+*/
   return from1 < from2;
 } // less_seq
 
