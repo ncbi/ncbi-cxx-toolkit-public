@@ -120,7 +120,7 @@ typedef enum {
     eIO_Read      = 0x1,
     eIO_Write     = 0x2,
     eIO_ReadWrite = 0x3, /**< eIO_Read | eIO_Write                           */
-    eIO_Close     = 0x4  /**< also serves as error indicator in SOCK_Poll    */
+    eIO_Close     = 0x4  /**< also serves as an error indicator in SOCK_Poll */
 } EIO_Event;
 
 
