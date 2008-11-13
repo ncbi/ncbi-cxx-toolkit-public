@@ -1451,10 +1451,9 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
             str = tsid->GetName();
         }
 
-        if ( !str.empty() ) {
-            if ( (flags & CSeq_id::fLabel_Version)  &&  tsid->IsSetVersion()) {
-                str += "." + NStr::IntToString(tsid->GetVersion());
-            }
+        if ((flags & CSeq_id::fLabel_Version)  &&  !id.IsGpipe()
+            &&  !str.empty()  &&  tsid->IsSetVersion()) {
+            str += "." + NStr::IntToString(tsid->GetVersion());
         }
         *label += str;
 
@@ -1659,7 +1658,7 @@ void CSeq_id::WriteAsFasta(ostream& out)
         GetTpd().AsFastaString(out);
         break;
     case e_Gpipe:
-        GetGpipe().AsFastaString(out);
+        GetGpipe().AsFastaString(out, false); // suppress version
         break;
     case e_Named_annot_track:
         GetNamed_annot_track().AsFastaString(out);
