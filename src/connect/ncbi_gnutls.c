@@ -211,18 +211,18 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, int* error)
     if ((*error = gnutls_init(&session, end)) != GNUTLS_E_SUCCESS/*0*/)
         return 0;
 
-    if ((err = gnutls_set_default_priority(session))                     != 0 ||
-        (err = gnutls_cipher_set_priority(session, kGnuTlsChiperPrio))   != 0 ||
-        (err = gnutls_compression_set_priority(session, kGnuTlsCompPrio))!= 0 ||
+    if ((err = gnutls_set_default_priority(session))                     !=0 ||
+        (err = gnutls_cipher_set_priority(session, kGnuTlsChiperPrio))   !=0 ||
+        (err = gnutls_compression_set_priority(session, kGnuTlsCompPrio))!=0 ||
         (err = gnutls_certificate_type_set_priority(session,
-                                                    kGnuTlsCertPrio))    != 0 ||
-        (err = gnutls_protocol_set_priority(session, kGnuTlsProtoPrio))  != 0 ||
-        (err = gnutls_mac_set_priority(session, kGnuTlsMacPrio))         != 0 ||
-        (err = gnutls_kx_set_priority(session, kGnuTlsKxPrio))           != 0 ||
+                                                    kGnuTlsCertPrio))    !=0 ||
+        (err = gnutls_protocol_set_priority(session, kGnuTlsProtoPrio))  !=0 ||
+        (err = gnutls_mac_set_priority(session, kGnuTlsMacPrio))         !=0 ||
+        (err = gnutls_kx_set_priority(session, kGnuTlsKxPrio))           !=0 ||
         (err = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE,
-                                      s_GnuTlsCredCert))                 != 0 ||
+                                      s_GnuTlsCredCert))                 !=0 ||
         (err = gnutls_credentials_set(session, GNUTLS_CRD_ANON,
-                                      s_GnuTlsCredAnon))                 != 0) {
+                                      s_GnuTlsCredAnon))                 !=0) {
         gnutls_deinit(session);
         *error = err;
         return 0;
@@ -259,7 +259,7 @@ static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
 
     if (s_Pull) {
         size_t x_read = 0;
-        status = s_Pull(sock, buf, size, &x_read, s_GnuTlsLogLevel > 7 ? 1 : 0);
+        status = s_Pull(sock, buf, size, &x_read, s_GnuTlsLogLevel > 7);
         if (x_read > 0  ||  status == eIO_Success) {
 #  ifdef LIBGNUTLS_VERSION_NUMBER
             gnutls_transport_set_errno(sock->session, 0);
@@ -290,7 +290,7 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
 
     if (s_Push) {
         size_t x_written = 0;
-        status = s_Push(sock, data, size, &x_written, s_GnuTlsLogLevel > 7?1:0);
+        status = s_Push(sock, data, size, &x_written, s_GnuTlsLogLevel > 7);
         if (x_written  ||  (!size  &&  status == eIO_Success)) {
 #  ifdef LIBGNUTLS_VERSION_NUMBER
             gnutls_transport_set_errno(sock->session, 0);
