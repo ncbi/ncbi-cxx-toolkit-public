@@ -74,7 +74,9 @@ void CBDB_CheckPointThread::DoJob(void)
 {
     try {
         if (m_Env.IsTransactional() && 
-           (m_Flags & CBDB_Env::eBackground_Checkpoint)) {
+           (m_Flags & CBDB_Env::eBackground_Checkpoint))
+        {
+            LOG_POST(Info << "Running transaction checkpoint");
             m_Env.TransactionCheckpoint();
         }
 

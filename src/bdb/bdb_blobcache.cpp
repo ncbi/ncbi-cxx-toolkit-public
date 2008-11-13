@@ -1498,8 +1498,8 @@ void CBDB_Cache::Open(const string& cache_path,
                 CBDB_Env::eBackground_Checkpoint   |
                 CBDB_Env::eBackground_DeadLockDetect;
             //_TRACE("Running background writer with delay " << m_PurgeThreadDelay);
-            m_Env->RunBackgroundWriter(flags, 
-                                       m_PurgeThreadDelay, 
+            m_Env->RunBackgroundWriter(flags,
+                                       m_CheckPointDelay,
                                        m_MempTrickle);
         }
 # else
@@ -5124,6 +5124,7 @@ static const char* kCFParam_purge_batch_sleep  = "purge_batch_sleep";
 static const char* kCFParam_purge_clean_log    = "purge_clean_log";
 static const char* kCFParam_purge_thread       = "purge_thread";
 static const char* kCFParam_purge_thread_delay = "purge_thread_delay";
+static const char* kCFParam_checkpoint_delay   = "checkpoint_delay";
 static const char* kCFParam_checkpoint_bytes   = "checkpoint_bytes";
 static const char* kCFParam_log_file_max       = "log_file_max";
 static const char* kCFParam_overflow_limit     = "overflow_limit";
@@ -5206,6 +5207,10 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         GetParamDataSize(params, kCFParam_checkpoint_bytes,
                          false, 24 * 1024 * 1024);
     drv->SetCheckpoint(checkpoint_bytes);
+
+    unsigned checkpoint_delay =
+        GetParamInt(params, kCFParam_checkpoint_delay, false, 15);
+    drv->SetCheckpointDelay(checkpoint_delay);
 
     unsigned log_file_max = (unsigned)
         GetParamDataSize(params, kCFParam_log_file_max,

@@ -458,6 +458,9 @@ public:
     /// log file are written.
     void SetCheckpoint(unsigned int bytes) { m_CheckPointInterval = bytes; }
 
+    /// Checkpoint the database every 'delay' minutes.
+    void SetCheckpointDelay(unsigned int delay) { m_CheckPointDelay = delay; }
+
     void SetOverflowLimit(unsigned limit);
     unsigned GetOverflowLimit() const { return m_OverflowLimit; }
 
@@ -938,6 +941,8 @@ private:
     unsigned                   m_PurgeThreadDelay;
     /// Trnasaction checkpoint interval (bytes)
     unsigned                   m_CheckPointInterval;
+    /// Trnasaction checkpoint interval (minutes)
+    unsigned                   m_CheckPointDelay;
     /// Overflow limit (objects lower than that stored as BLOBs)
     unsigned                   m_OverflowLimit;
     /// Number of m_MaxTimeout values object lives (read-prolongation)
