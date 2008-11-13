@@ -577,7 +577,7 @@ int CSeq_id::BaseTextScore(void) const
     case e_Giim:    case e_Gi:                     return 20;
     case e_General: case e_Gibbsq: case e_Gibbmt:  return 15;
     case e_Local:   case e_Patent:                 return 10;
-    case e_Gpipe:                                  return 9;
+    case e_Gpipe:   case e_Named_annot_track:      return 9;
     case e_Other:                                  return 8;
     default:                                       return 5;
     }
@@ -591,9 +591,13 @@ int CSeq_id::BaseBestRankScore(void) const
     case e_not_set:                               return 83;
     case e_General: case e_Local:                 return 80;
     case e_Gibbsq: case e_Gibbmt: case e_Giim:    return 70;
+    case e_Named_annot_track:                     return 69;
     case e_Gpipe:                                 return 68;
     case e_Patent:                                return 67;
     case e_Other:                                 return 65;
+#if 0 // The C Toolkit yields this value, but I suspect it's a typo.
+    case e_Tpd:                                   return 62; // !
+#endif
     case e_Gi:                                    return 51;
     default:                                      return 60;
     }
