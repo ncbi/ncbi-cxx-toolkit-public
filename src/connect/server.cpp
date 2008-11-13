@@ -31,6 +31,7 @@
 /// Framework for a multithreaded network server
 
 #include <ncbi_pch.hpp>
+#include <connect/server.hpp>
 #include "connection_pool.hpp"
 #include <connect/ncbi_buffer.h>
 #include <connect/error_codes.hpp>
@@ -402,8 +403,13 @@ void CServer::Run(void)
                 timeout = &timer_timeout;
 
 //            _TRACE("Poll with vector of length " << NStr::IntToString(polls.size()));
-            CSocketAPI::Poll(polls, timeout, &count);
+            EIO_Status status = CSocketAPI::Poll(polls, timeout, &count);
 //            _TRACE("Poll returned");
+
+            if (status != eIO_Success  &&  status != eIO_Timeout) {
+                ERR_POST_X(8, Critical << "Poll failed with status " << status);
+                continue;
+            }
 
             if (count == 0) {
                 if (timeout != &timer_timeout) {
@@ -480,7 +486,7 @@ void CServer::CreateRequest(CStdPoolOfThreads& threadPool,
         } catch (CBlockingQueueException&) {
             // The size of thread pool queue is set to kMax_UInt, so
             // this is impossible event, but we handle it gently
-            LOG_POST_X(1, Critical << "Thread pool queue full");
+            ERR_POST_X(1, Critical << "Thread pool queue full");
             CServer_Request* req =
                 dynamic_cast<CServer_Request*>(request.GetPointer());
             _ASSERT(req);
