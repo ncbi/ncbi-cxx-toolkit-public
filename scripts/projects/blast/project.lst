@@ -2,6 +2,7 @@ corelib$
 serial$
 serial/impl$
 serial/datatool
+algo$
 algo/blast
 algo/dustmask$
 algo/winmask$
@@ -24,9 +25,11 @@ util/sequtil$
 util/bitset$
 util/math$
 util/cache$
+objtools$
 objtools/alnmgr$
 objtools/readers$
 objtools/seqmasks_io$
+objtools/blast$
 objtools/blast/seqdb_reader$
 objtools/blast/gene_info_reader$
 objtools/cleanup$
@@ -45,6 +48,7 @@ objmgr
 objtools/data_loaders/genbank
 -objtools/data_loaders/genbank/test
 objtools/data_loaders/blastdb$
+app$
 app/blast
 app/blastdb
 app/winmasker$
