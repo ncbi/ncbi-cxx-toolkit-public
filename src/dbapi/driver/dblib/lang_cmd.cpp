@@ -32,6 +32,7 @@
 
 #include <dbapi/driver/dblib/interfaces.hpp>
 #include <dbapi/driver/dblib/interfaces_p.hpp>
+#include <dbapi/driver/dbapi_object_convert.hpp>
 #include <dbapi/error_codes.hpp>
 
 #include <stdio.h>
@@ -358,8 +359,7 @@ bool CDBL_LangCmd::x_AssignParams()
                 break;
             }
             case eDB_BigInt: {
-                CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
-                string s8 = NStr::Int8ToString(val.Value());
+                string s8 = Convert(param);
                 s8.copy(val_buffer, s8.size());
                 val_buffer[s8.size()] = '\0';
                 break;

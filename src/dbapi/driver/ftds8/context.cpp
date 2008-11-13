@@ -47,6 +47,8 @@
 #include <dbapi/driver/util/numeric_convert.hpp>
 #include <dbapi/error_codes.hpp>
 
+#include <util/value_convert.hpp>
+
 #include <algorithm>
 
 #ifdef NCBI_FTDS
@@ -726,7 +728,7 @@ CDbapiFtdsCFBase::CreateInstance(
                         return g_pTDSContext;
                     }
                 } else if ( v.id == "version" ) {
-                    int value = NStr::StringToInt( v.value );
+                    int value = Convert( v.value );
 
                     switch ( value ) {
                     case 42 :
@@ -746,7 +748,7 @@ CDbapiFtdsCFBase::CreateInstance(
                         break;
                     }
                 } else if ( v.id == "packet" ) {
-                    page_size = NStr::StringToInt( v.value );
+                    page_size = Convert( v.value );
                 } else if ( v.id == "client_charset" ) {
                     client_charset = v.value;
                 } else if ( v.id == "buffer_size" ) {
@@ -770,7 +772,7 @@ CDbapiFtdsCFBase::CreateInstance(
 
         // Set buffer size ...
         if ( !buffer_size.empty() ) {
-            drv->SetBufferSize(NStr::StringToUInt(buffer_size));
+            drv->SetBufferSize(Convert(buffer_size));
         }
     }
 

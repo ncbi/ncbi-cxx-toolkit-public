@@ -31,9 +31,13 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/types.hpp>
 #include <dbapi/error_codes.hpp>
+
+#include <util/value_convert.hpp>
+
 #include <stdio.h>
 #include <string.h>
 
@@ -141,10 +145,11 @@ void CODBC_Connection::x_Connect(
         string conn_str_suffix;
 
         if (params.GetHost() && params.GetPort()) {
+            const string port_str = Convert(NStr::IntToString(params.GetPort()));
             conn_str_suffix =
                 ";SERVER=" + server_name +
                 ";ADDRESS=" + server_name +
-                "," + NStr::IntToString(params.GetPort()) +
+                "," + port_str +
                 ";NETWORK=DBMSSOCN" +
                 ";UID=" + params.GetUserName() +
                 ";PWD=" + params.GetPassword()

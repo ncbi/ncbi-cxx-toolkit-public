@@ -33,7 +33,9 @@
 #include <ncbi_pch.hpp>
 
 #include "dbapi_driver_sample_base.hpp"
+
 #include <corelib/ncbiargs.hpp>
+#include <util/value_convert.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -112,7 +114,7 @@ CDbapiDriverSampleApp::Init()
     arg_desc->AddDefaultKey("v", "version",
                             "TDS protocol version",
                             CArgDescriptions::eInteger,
-                            NStr::IntToString(m_DefaultTDSVersion));
+                            Convert(m_DefaultTDSVersion));
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());

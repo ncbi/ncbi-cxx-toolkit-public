@@ -29,12 +29,16 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/rwstream.hpp>
+
 #include <util/compress/stream.hpp>
 #include <util/compress/zlib.hpp>
 #include <util/compress/bzip2.hpp>
+
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include <dbapi/driver/util/blobstore.hpp>
+
+#include <util/value_convert.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -553,8 +557,8 @@ CBlobStoreBase::SetTableDescr(const string& tableName,
 void
 CBlobStoreBase::SetTextSizeServerSide(CDB_Connection* pConn, size_t textSize)
 {
-    string s("set TEXTSIZE ");
-    s += NStr::UIntToString(textSize);
+    const string text_size_str = Convert(textSize);
+    const string s = "set TEXTSIZE " + text_size_str;
     auto_ptr<CDB_LangCmd> lcmd(pConn->LangCmd(s.c_str()));
 
     if(!lcmd->Send())

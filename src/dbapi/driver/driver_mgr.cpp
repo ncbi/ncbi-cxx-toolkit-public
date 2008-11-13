@@ -40,6 +40,8 @@
 
 #include <dbapi/driver/driver_mgr.hpp>
 
+#include <util/value_convert.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -107,7 +109,7 @@ MakePluginManagerParamTree(const CDBConnParams& params)
 
     if (params.GetProtocolVersion() != 0) {
         tr->AddNode(CConfig::TParamValue("version" , 
-                    NStr::IntToString(params.GetProtocolVersion())));
+                    Convert(params.GetProtocolVersion())));
     }
 
     switch (params.GetEncoding()) {

@@ -36,6 +36,8 @@
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 
+#include <util/value_convert.hpp>
+
 #include <dbapi/error_codes.hpp>
 
 #include <algorithm>
@@ -103,9 +105,9 @@ CConnection::CConnection(CDriverContext& dc,
 , m_User(params.GetUserName())
 , m_Passwd(params.GetPassword())
 , m_Pool(params.GetParam("pool_name"))
-, m_Reusable(params.GetParam("is_pooled") == "true")
+, m_Reusable(ConvertSafe(params.GetParam("is_pooled")))
 , m_BCPable(isBCPable)
-, m_SecureLogin(params.GetParam("secure_login") == "true")
+, m_SecureLogin(ConvertSafe(params.GetParam("secure_login")))
 , m_Opened(false)
 {
     _ASSERT(m_MsgHandlers.GetSize() == dc.GetConnHandlerStack().GetSize());

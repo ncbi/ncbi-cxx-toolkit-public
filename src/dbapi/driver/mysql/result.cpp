@@ -33,10 +33,28 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
 
+#include <util/value_convert.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
+////////////////////////////////////////////////////////////////////////////////
+#if defined(NCBI_COMPILER_MSVC)
 
+namespace value_slice
+{
+
+template <>
+struct STypeMap<long>
+{
+    typedef Int4 type;
+};
+
+}
+
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
 static EDB_Type s_GetDataType(enum_field_types type)
 {
     switch ( type ) {
@@ -190,16 +208,16 @@ static CDB_Object* s_GetItem(I_Result::EGetItem policy,
     case eDB_TinyInt:
     case eDB_SmallInt:
     case eDB_Int:
-        int_val = NStr::StringToLong(d_ptr);
+        int_val = Convert(d_ptr);
         break;
 
     case eDB_BigInt:
-        int8_val = NStr::StringToLong(d_ptr);
+        int8_val = Convert(d_ptr);
         break;
 
     case eDB_Float:
     case eDB_Double:
-        double_val = NStr::StringToDouble(d_ptr);
+        double_val = Convert(d_ptr);
         break;
     default:
         break;

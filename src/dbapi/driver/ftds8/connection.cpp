@@ -35,6 +35,9 @@
 
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/error_codes.hpp>
+
+#include <util/value_convert.hpp>
+
 #include <string.h>
 
 #include <algorithm>
@@ -91,7 +94,7 @@ CTDS_Connection::CTDS_Connection(CTDSContext& cntx,
     BCP_SETL(m_Login, TRUE);
 
     string server_name;
-    string port_str = NStr::IntToString(params.GetPort());
+    const string port_str = Convert(params.GetPort());
 
     if (params.GetHost()) {
         server_name = impl::ConvertN2A(params.GetHost());

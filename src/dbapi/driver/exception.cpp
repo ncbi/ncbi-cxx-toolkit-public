@@ -30,9 +30,11 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <corelib/ncbi_safe_static.hpp>
+
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/error_codes.hpp>
-#include <corelib/ncbi_safe_static.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Dbapi_DrvrExcepts

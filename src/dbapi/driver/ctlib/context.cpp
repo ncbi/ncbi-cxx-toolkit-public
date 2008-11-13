@@ -45,6 +45,8 @@
 #include <dbapi/driver/util/pointer_pot.hpp>
 #include <dbapi/error_codes.hpp>
 
+#include <util/value_convert.hpp>
+
 #include <algorithm>
 
 #if defined(NCBI_OS_MSWIN)
@@ -63,6 +65,22 @@
 
 
 BEGIN_NCBI_SCOPE
+
+/////////////////////////////////////////////////////////////////////////////
+#if defined(NCBI_COMPILER_MSVC)
+
+namespace value_slice
+{
+
+template <>
+struct STypeMap<CS_INT>
+{
+    typedef int type;
+};
+
+}
+
+#endif
 
 #ifdef FTDS_IN_USE
 namespace ftds64_ctlib
@@ -283,7 +301,8 @@ bool Connection::Open(const CDBConnParams& params)
         if (params.GetHost()) {
             server_name = impl::ConvertN2A(params.GetHost());
             if (params.GetPort()) {
-                server_name += ":" + NStr::IntToString(params.GetPort());
+                const string port_str = Convert(params.GetPort());
+                server_name += ":" + port_str;
             }
         } else {
             server_name = params.GetServerName();
@@ -297,7 +316,8 @@ bool Connection::Open(const CDBConnParams& params)
         if (params.GetHost()) {
             server_name = impl::ConvertN2A(params.GetHost());
             if (params.GetPort()) {
-                server_name += " " + NStr::IntToString(params.GetPort());
+                const string port_str = Convert(params.GetPort());
+                server_name += " " + port_str;
             }
 
             GetCTLContext().Check(ct_con_props(GetNativeHandle(),
@@ -1528,10 +1548,10 @@ CDbapiCtlibCFBase::CreateInstance(
                 if ( v.id == "reuse_context" ) {
                     reuse_context = (v.value != "false");
                 } else if ( v.id == "version" ) {
-                    tds_version = NStr::StringToInt(v.value);
+                    tds_version = Convert(v.value);
                     _TRACE("WARNING: user manually set TDS version to " << tds_version);
                 } else if ( v.id == "packet" ) {
-                    page_size = NStr::StringToInt(v.value);
+                    page_size = Convert(v.value);
                 } else if ( v.id == "prog_name" ) {
                     prog_name = v.value;
                 } else if ( v.id == "host_name" ) {
@@ -1539,7 +1559,7 @@ CDbapiCtlibCFBase::CreateInstance(
                 } else if ( v.id == "client_charset" ) {
                     client_charset = v.value;
                 } else if ( v.id == "max_connect" ) {
-                    max_connect = NStr::StringToInt(v.value);;
+                    max_connect = Convert(v.value);;
                 }
             }
         }

@@ -44,6 +44,8 @@
 #include <dbapi/error_codes.hpp>
 #include "../ncbi_win_hook.hpp"
 
+#include <util/value_convert.hpp>
+
 #include <algorithm>
 
 #ifdef HAVE_ODBCSS_H
@@ -553,9 +555,9 @@ CDbapiOdbcCFBase::CreateInstance(
                 if ( v.id == "use_dsn" ) {
                     use_dsn = (v.value != "false");
                 } else if ( v.id == "version" ) {
-                    tds_version = NStr::StringToInt( v.value );
+                    tds_version = Convert( v.value );
                 } else if ( v.id == "packet" ) {
-                    page_size = NStr::StringToInt( v.value );
+                    page_size = Convert( v.value );
                 } else if ( v.id == "client_charset" ) {
                     client_charset = v.value;
                 }

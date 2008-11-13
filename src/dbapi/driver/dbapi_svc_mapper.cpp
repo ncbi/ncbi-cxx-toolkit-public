@@ -31,8 +31,10 @@
 
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <dbapi/driver/exception.hpp>
+
 #include <corelib/ncbiapp.hpp>
 // #include <connect/ncbi_socket.h>
+
 #include <algorithm>
 
 

@@ -30,8 +30,11 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/error_codes.hpp>
+
+#include <util/value_convert.hpp>
 
 #include <stdio.h>
 
@@ -847,7 +850,7 @@ bool CTL_CursorCmdExpl::x_AssignParams()
             case eDB_BigInt: {
 				// May have problems similar to Test_Procedure2.
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
-                string s8 = NStr::Int8ToString(val.Value());
+                string s8 = Convert(val.Value());
                 s8.copy(val_buffer, s8.size());
                 val_buffer[s8.size()] = '\0';
                 break;

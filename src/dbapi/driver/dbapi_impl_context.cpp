@@ -34,6 +34,7 @@
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 
 #include <corelib/ncbifile.hpp>
+#include <util/value_convert.hpp>
 
 #include <algorithm>
 
@@ -204,7 +205,7 @@ void CDriverContext::ResetEnvSybase(void)
     try {
         if (!env.Get("SYBASE").empty()) {
             string reset = env.Get("RESET_SYBASE");
-            if ( !reset.empty() && NStr::StringToBool(reset)) {
+            if ( !reset.empty() && Convert(reset)) {
                 return;
             }
         }
@@ -306,7 +307,7 @@ CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection)
 CDB_Connection*
 CDriverContext::MakePooledConnection(const CDBConnParams& params)
 {
-    if (params.GetParam("is_pooled") == "true") {
+    if (ConvertSafe(params.GetParam("is_pooled"))) {
         CMutexGuard mg(m_CtxMtx);
 
         if (!m_NotInUse.empty()) {
@@ -374,7 +375,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
         }
     }
 
-    if (params.GetParam("do_not_connect") == "true") {
+    if (ConvertSafe(params.GetParam("do_not_connect"))) {
         return NULL;
     }
 
@@ -439,7 +440,7 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
             *this,
             params);
 
-    if((!t_con && params.GetParam("do_not_connect") == "true")) {
+    if((!t_con && ConvertSafe(params.GetParam("do_not_connect")))) {
         return NULL;
     }
 
