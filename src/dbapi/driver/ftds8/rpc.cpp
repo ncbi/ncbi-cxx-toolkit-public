@@ -32,7 +32,6 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
-#include <dbapi/driver/dbapi_object_convert.hpp>
 #include <dbapi/error_codes.hpp>
 
 
@@ -258,7 +257,8 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
             break;
         }
         case eDB_BigInt: {
-            const string s8 = Convert(param);
+            const CDB_BigInt& val = dynamic_cast<const CDB_BigInt&> (param);
+            string s8 = NStr::Int8ToString(val.Value());
             s8.copy(val_buffer, s8.size());
             val_buffer[s8.size()] = '\0';
             break;

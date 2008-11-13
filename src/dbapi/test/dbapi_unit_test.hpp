@@ -218,6 +218,7 @@ Int8 GetIdentity(const auto_ptr<IStatement>& auto_stmt);
 bool CommonInit(void);
 void CommonFini(void);
 
+
 ///////////////////////////////////////////////////////////////////////////
 class CDBSetConnParams : public CDBConnParamsDelegate
 {

@@ -29,12 +29,9 @@
 
 #include <ncbi_pch.hpp>
 
-#include <util/value_convert.hpp>
+#include <corelib/ncbifile.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
-
-#include <corelib/ncbifile.hpp>
-
 
 BEGIN_NCBI_SCOPE
 
@@ -48,9 +45,9 @@ CDBConnParamsBase::CDBConnParamsBase(void)
 , m_Host(0)
 , m_PortNumber(0)
 {
-	SetParam("secure_login", ConvertSafe(false));
-	SetParam("is_pooled", ConvertSafe(false));
-	SetParam("do_not_connect", ConvertSafe(false));
+	SetParam("secure_login", "false");
+	SetParam("is_pooled", "false");
+	SetParam("do_not_connect", "false");
 }
 
 CDBConnParamsBase::~CDBConnParamsBase(void)
@@ -252,17 +249,17 @@ CDBDefaultConnParams::CDBDefaultConnParams(
 
     SetParam(
 		"secure_login", 
-		ConvertSafe((mode & I_DriverContext::fPasswordEncrypted) != 0)
+		((mode & I_DriverContext::fPasswordEncrypted) != 0) ? "true" : "false"
 		);
 
     SetParam(
 		"is_pooled", 
-		ConvertSafe(reusable)
+		reusable ? "true" : "false"
 		);
 
     SetParam(
 		"do_not_connect", 
-		ConvertSafe((mode & I_DriverContext::fDoNotConnect) != 0)
+		(mode & I_DriverContext::fDoNotConnect) != 0 ? "true" : "false"
 		);
 }
 
@@ -362,7 +359,7 @@ void CDBUriConnParams::ParseServer(const string& params, size_t cur_pos)
 
                 if (pos != string::npos) {
                     string port = params.substr(cur_pos, pos - cur_pos);
-                    SetPort(Convert(port));
+                    SetPort(static_cast<Uint2>(NStr::StringToInt(port)));
 
                     switch (params[pos]) {
                         case '/':
@@ -376,7 +373,7 @@ void CDBUriConnParams::ParseServer(const string& params, size_t cur_pos)
                     }
                 } else {
                     string port = params.substr(cur_pos);
-                    SetPort(Convert(port));
+                    SetPort(static_cast<Uint2>(NStr::StringToInt(port)));
                 }
 
                 break;
@@ -485,7 +482,7 @@ void CDB_ODBC_ConnParams::x_MapPairToParam(const string& key, const string& valu
         NStr::TruncateSpacesInPlace(port);
 
         // SetHost(host);
-        SetPort(Convert(port));
+        SetPort(static_cast<Uint2>(NStr::StringToInt(port)));
     } else {
 		SetParam(key, value);
 	}
@@ -663,7 +660,7 @@ CDBInterfacesFileConnParams::CDBInterfacesFileConnParams(
                     b[2] = NStr::StringToUInt(arr_param[2]);
                     b[3] = NStr::StringToUInt(arr_param[3]);
 
-                    m_Records[key] = SIRecord(host, Convert(port_str));
+                    m_Records[key] = SIRecord(host, NStr::StringToUInt(port_str));
                 }
             }
 

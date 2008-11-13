@@ -33,6 +33,8 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbiargs.hpp>
+//#include <corelib/ncbithr.hpp>
+#include <corelib/expr.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
 #ifdef HAVE_LIBCONNEXT
@@ -2102,44 +2104,118 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
     }
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-template <typename T>
-void DoTest_CDBResultConvertSafe(const string& sql, const T& v)
-{
-    auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
-    BOOST_CHECK( auto_stmt.get() != NULL );
-    bool rc = auto_stmt->Send();
-    BOOST_CHECK( rc );
-
-    while (auto_stmt->HasMoreResults()) {
-        auto_ptr<CDB_Result> rs(auto_stmt->Result());
-
-        if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
-            continue;
-        }
-
-        while (rs->Fetch()) {
-            T value = ConvertSafe(*rs);
-            BOOST_CHECK_EQUAL(value, v);
-        }
-    }
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
 {
     string sql;
 
+    // Int8   Int8_value = 0;
+    // Uint8  Uint8_value = 0;
+    Int4   Int4_value = 0;
+    // Uint4  Uint4_value = 0;
+    Int2   Int2_value = 0;
+    // Uint2  Uint2_value = 0;
+    // Int1   Int1_value = 0;
+    Uint1  Uint1_value = 0;
+    float  float_value = 0.0;
+    double double_value = 0.0;
+    bool   bool_value = false;
+
     // First test ...
     {
-        DoTest_CDBResultConvertSafe<bool>("select Convert(bit, 1)", true);
-        DoTest_CDBResultConvertSafe<Uint1>("select Convert(tinyint, 1)", 1);
-        DoTest_CDBResultConvertSafe<Int2>("select Convert(smallint, 1)", 1);
-        DoTest_CDBResultConvertSafe<Int4>("select Convert(int, 1)", 1);
-        DoTest_CDBResultConvertSafe<float>("select Convert(float(4), 1)", 1);
-        DoTest_CDBResultConvertSafe<float>("select Convert(real, 1)", 1);
-        DoTest_CDBResultConvertSafe<double>("select Convert(double precision, 1)", 1);
+
+
+        // bit
+        {
+            sql = "select Convert(bit, 1)";
+
+            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            BOOST_CHECK( auto_stmt.get() != NULL );
+            bool rc = auto_stmt->Send();
+            BOOST_CHECK( rc );
+
+            while (auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+
+                while (rs->Fetch()) {
+                    bool_value = ConvertSafe(*rs);
+                    BOOST_CHECK_EQUAL(bool_value, true);
+                }
+            }
+        }
+
+        // tinyint
+        {
+            sql = "select Convert(tinyint, 1)";
+
+            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            BOOST_CHECK( auto_stmt.get() != NULL );
+            bool rc = auto_stmt->Send();
+            BOOST_CHECK( rc );
+
+            while (auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+
+                while (rs->Fetch()) {
+                    Uint1_value = ConvertSafe(*rs);
+                    BOOST_CHECK_EQUAL(Uint1_value, 1);
+                }
+            }
+        }
+
+        // smallint
+        {
+            sql = "select Convert(smallint, 1)";
+
+            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            BOOST_CHECK( auto_stmt.get() != NULL );
+            bool rc = auto_stmt->Send();
+            BOOST_CHECK( rc );
+
+            while (auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+
+                while (rs->Fetch()) {
+                    Int2_value = ConvertSafe(*rs);
+                    BOOST_CHECK_EQUAL(Int2_value, 1);
+                }
+            }
+        }
+
+        // int
+        {
+            sql = "select Convert(int, 1)";
+
+            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            BOOST_CHECK( auto_stmt.get() != NULL );
+            bool rc = auto_stmt->Send();
+            BOOST_CHECK( rc );
+
+            while (auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+
+                while (rs->Fetch()) {
+                    Int4_value = ConvertSafe(*rs);
+                    BOOST_CHECK_EQUAL(Int4_value, 1);
+                }
+            }
+        }
 
         // numeric
         /* Drivers do not support conversion from *nymeric* to string ...
@@ -2214,6 +2290,75 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
             }
         }
         */
+
+        // float
+        {
+            sql = "select Convert(float(4), 1)";
+
+            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            BOOST_CHECK( auto_stmt.get() != NULL );
+            bool rc = auto_stmt->Send();
+            BOOST_CHECK( rc );
+
+            while (auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+
+                while (rs->Fetch()) {
+                    float_value = ConvertSafe(*rs);
+                    BOOST_CHECK_EQUAL(float_value, 1);
+                }
+            }
+        }
+
+        // double
+        {
+            sql = "select Convert(double precision, 1)";
+
+            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            BOOST_CHECK( auto_stmt.get() != NULL );
+            bool rc = auto_stmt->Send();
+            BOOST_CHECK( rc );
+
+            while (auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+
+                while (rs->Fetch()) {
+                    double_value = ConvertSafe(*rs);
+                    BOOST_CHECK_EQUAL(double_value, 1);
+                }
+            }
+        }
+
+        // real
+        {
+            sql = "select Convert(real, 1)";
+
+            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
+            BOOST_CHECK( auto_stmt.get() != NULL );
+            bool rc = auto_stmt->Send();
+            BOOST_CHECK( rc );
+
+            while (auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+
+                while (rs->Fetch()) {
+                    float_value = ConvertSafe(*rs);
+                    BOOST_CHECK_EQUAL(float_value, 1);
+                }
+            }
+        }
 
         // smalldatetime
         /*
@@ -2499,457 +2644,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         }
     }
 }
-
-////////////////////////////////////////////////////////////////////////////////
-template <typename T>
-void DoTest_CDBCmdConvertSafe(const string& sql, const T& v)
-{
-    // By pointer (acquire ownership) ...
-    {
-        T value = ConvertSafe(GetConnection().GetCDB_Connection()->LangCmd(sql));
-        BOOST_CHECK_EQUAL(value, v);
-    }
-
-    // By reference ...
-    {
-        auto_ptr<CDB_LangCmd> cmd(GetConnection().GetCDB_Connection()->LangCmd(sql));
-
-        T value = ConvertSafe(*cmd);
-        BOOST_CHECK_EQUAL(value, v);
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_CASE(Test_CDBCmdConvertSafe)
-{
-    if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer)) {
-        DoTest_CDBCmdConvertSafe<Uint1>("select Convert(tinyint, 1), 2.0, '3'", 1);
-        DoTest_CDBCmdConvertSafe<Int2>("select Convert(smallint, 1), 2.0, '3'", 1);
-        DoTest_CDBCmdConvertSafe<Int4>("select 1, 2.0, '3'", 1);
-        if (!((GetArgs().GetDriverName() == dblib_driver || 
-                GetArgs().GetDriverName() == ftds_driver || 
-                GetArgs().GetDriverName() == ftds8_driver || 
-                GetArgs().GetDriverName() == ftds_dblib_driver || 
-                GetArgs().GetDriverName() == ctlib_driver)
-            && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
-            )
-        {
-            DoTest_CDBCmdConvertSafe<Int8>("select Convert(bigint, 1), 2.0, '3'", 1);
-        }
-        DoTest_CDBCmdConvertSafe<float>("select Convert(real, 1), 2.0, '3'", 1);
-        DoTest_CDBCmdConvertSafe<double>("select Convert(float, 1), 2.0, '3'", 1);
-        DoTest_CDBCmdConvertSafe<double>("select Convert(double precision, 1), 2.0, '3'", 1);
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_CASE(Test_CDBCmdConvertSafe2)
-{
-    string sql;
-
-    // LangCmd ...
-    {
-        // pair ...
-        {
-            sql = "select Convert(tinyint, 1), Convert(real, 2.0), '3'";
-
-            pair<Uint1, float> value = ConvertSafe(GetConnection().GetCDB_Connection()->LangCmd(sql));
-
-            BOOST_CHECK_EQUAL(value.first, 1);
-            BOOST_CHECK_EQUAL(value.second, 2);
-        }
-
-        // vector ...
-        {
-            sql = "select * from sysusers";
-
-            vector<Int4> value_int = ConvertSafe(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // set ...
-        {
-            sql = "select * from sysusers";
-
-            set<Int4> value_int = ConvertSafe(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // stack ...
-        {
-            sql = "select * from sysusers";
-
-            stack<Int4> value_int = ConvertSafe(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // map ...
-        {
-            sql = "select * from sysusers";
-
-            map<Int4, Int4> value_int = ConvertSafe(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-    }
-
-    // RPC
-    if (!(GetArgs().GetDriverName() == ftds_dblib_driver && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer))
-    {
-        // pair ...
-        {
-            sql = "sp_server_info";
-
-            pair<Int4, string> value = ConvertSafe(GetConnection().GetCDB_Connection()->RPC(sql));
-
-            BOOST_CHECK_EQUAL(value.first, 1);
-            BOOST_CHECK_EQUAL(value.second, string("DBMS_NAME"));
-        }
-
-        // vector ...
-        {
-            sql = "sp_server_info";
-
-            vector<Int4> value_int = ConvertSafe(GetConnection().GetCDB_Connection()->RPC(sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // set ...
-        {
-            sql = "sp_server_info";
-
-            set<Int4> value_int = ConvertSafe(GetConnection().GetCDB_Connection()->RPC(sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // stack ...
-        {
-            sql = "sp_server_info";
-
-            stack<Int4> value_int = ConvertSafe(GetConnection().GetCDB_Connection()->RPC(sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // map ...
-        {
-            sql = "sp_server_info";
-
-            map<Int4, string> value_int = ConvertSafe(GetConnection().GetCDB_Connection()->RPC(sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-    }
-
-
-    // CursorCMD
-    {
-        // pair ...
-        {
-            sql = "select Convert(tinyint, 1), Convert(real, 2.0), '3'";
-
-            pair<Uint1, float> value = ConvertSafe(GetConnection().GetCDB_Connection()->Cursor("c1", sql));
-
-            BOOST_CHECK_EQUAL(value.first, 1);
-            BOOST_CHECK_EQUAL(value.second, 2);
-        }
-
-        // vector ...
-        {
-            sql = "select * from sysusers";
-
-            vector<Int4> value_int = ConvertSafe(GetConnection().GetCDB_Connection()->Cursor("c2", sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // set ...
-        {
-            sql = "select * from sysusers";
-
-            set<Int4> value_int = ConvertSafe(GetConnection().GetCDB_Connection()->Cursor("c3", sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // stack ...
-        {
-            sql = "select * from sysusers";
-
-            stack<Int4> value_int = ConvertSafe(GetConnection().GetCDB_Connection()->Cursor("c4", sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // map ...
-        {
-            sql = "select * from sysusers";
-
-            map<Int4, Int4> value_int = ConvertSafe(GetConnection().GetCDB_Connection()->Cursor("c5", sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert2)
-{
-    string sql;
-
-    // LangCmd ...
-    {
-        // pair ...
-        if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer))
-        {
-            sql = "select 1, 2.0, '3'";
-
-            pair<Uint1, float> value1 = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK_EQUAL(value1.first, 1);
-            BOOST_CHECK_EQUAL(value1.second, 2);
-
-            pair<Int1, Int1> value2 = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK_EQUAL(value2.first, 1);
-            BOOST_CHECK_EQUAL(value2.second, 2);
-        }
-
-        // vector ...
-        {
-            sql = "select * from sysusers";
-
-            vector<Int4> value_int = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_int.size() > 0);
-
-            vector<string> value_str = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_str.size() > 0);
-
-            vector<float> value_float = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_float.size() > 0);
-        }
-
-        // set ...
-        {
-            sql = "select * from sysusers";
-
-            set<Int4> value_int = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_int.size() > 0);
-
-            set<string> value_str = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_str.size() > 0);
-
-            set<float> value_float = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_float.size() > 0);
-        }
-
-        // stack ...
-        {
-            sql = "select * from sysusers";
-
-            stack<Int4> value_int = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_int.size() > 0);
-
-            stack<string> value_str = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_str.size() > 0);
-
-            stack<float> value_float = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_float.size() > 0);
-        }
-
-        // map ...
-        {
-            sql = "select * from sysusers";
-
-            map<Int4, string> value_int = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_int.size() > 0);
-
-            map<string, string> value_str = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_str.size() > 0);
-
-            map<float, string> value_float = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-            BOOST_CHECK(value_float.size() > 0);
-        }
-    }
-
-    // RPC
-    if (!(GetArgs().GetDriverName() == ftds_dblib_driver && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer))
-    {
-        // pair ...
-        {
-            sql = "sp_server_info";
-
-            pair<Int4, string> value = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
-
-            BOOST_CHECK_EQUAL(value.first, 1);
-            BOOST_CHECK_EQUAL(value.second, string("DBMS_NAME"));
-        }
-
-        // vector ...
-        {
-            sql = "sp_server_info";
-
-            vector<Int4> value_int = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // set ...
-        {
-            sql = "sp_server_info";
-
-            set<Int4> value_int = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // stack ...
-        {
-            sql = "sp_server_info";
-
-            stack<Int4> value_int = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // map ...
-        {
-            sql = "sp_server_info";
-
-            map<Int4, string> value_int = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-    }
-
-    // CursorCMD
-    {
-        // pair ...
-        {
-            sql = "select Convert(tinyint, 1), Convert(real, 2.0), '3'";
-
-            pair<Uint1, float> value = Convert(GetConnection().GetCDB_Connection()->Cursor("c11", sql));
-
-            BOOST_CHECK_EQUAL(value.first, 1);
-            BOOST_CHECK_EQUAL(value.second, 2);
-        }
-
-        // vector ...
-        {
-            sql = "select * from sysusers";
-
-            vector<Int4> value_int = Convert(GetConnection().GetCDB_Connection()->Cursor("c21", sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // set ...
-        {
-            sql = "select * from sysusers";
-
-            set<Int4> value_int = Convert(GetConnection().GetCDB_Connection()->Cursor("c31", sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // stack ...
-        {
-            sql = "select * from sysusers";
-
-            stack<Int4> value_int = Convert(GetConnection().GetCDB_Connection()->Cursor("c41", sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-
-        // map ...
-        {
-            sql = "select * from sysusers";
-
-            map<Int4, string> value_int = Convert(GetConnection().GetCDB_Connection()->Cursor("c51", sql));
-            BOOST_CHECK(value_int.size() > 0);
-        }
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-template <typename T>
-void DoTest_CDBCmdConvert(const string& sql, const T& v)
-{
-    // By pointer (acquire ownership) ...
-    {
-        T value = Convert(GetConnection().GetCDB_Connection()->LangCmd(sql));
-        BOOST_CHECK_EQUAL(value, v);
-    }
-
-    // By reference ...
-    {
-        auto_ptr<CDB_LangCmd> cmd(GetConnection().GetCDB_Connection()->LangCmd(sql));
-
-        T value = Convert(*cmd);
-        BOOST_CHECK_EQUAL(value, v);
-    }
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert)
-{
-    if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer))
-    {
-        DoTest_CDBCmdConvert<Uint1>("select Convert(tinyint, 1), 2.0, '3'", 1);
-        DoTest_CDBCmdConvert<Int2>("select Convert(smallint, 1), 2.0, '3'", 1);
-        DoTest_CDBCmdConvert<Int4>("select 1, 2.0, '3'", 1);
-        if (!((GetArgs().GetDriverName() == dblib_driver || 
-                GetArgs().GetDriverName() == ftds_driver || 
-                GetArgs().GetDriverName() == ftds8_driver || 
-                GetArgs().GetDriverName() == ftds_dblib_driver || 
-                GetArgs().GetDriverName() == ctlib_driver) 
-            && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
-            )
-        {
-            DoTest_CDBCmdConvert<Int8>("select Convert(bigint, 1), 2.0, '3'", 1);
-        }
-        DoTest_CDBCmdConvert<float>("select Convert(real, 1), 2.0, '3'", 1);
-        DoTest_CDBCmdConvert<double>("select Convert(float, 1), 2.0, '3'", 1);
-        DoTest_CDBCmdConvert<double>("select Convert(double precision, 1), 2.0, '3'", 1);
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Safe (compile-time) conversion ...
-/*
-template <typename FROM>
-inline
-const value_slice::CValueConvert<value_slice::SSafeCP, FROM> 
-ConvertSafeSQL(const FROM& value)
-{
-    return value_slice::CValueConvert<value_slice::SSafeCP, FROM>(value);
-}
-
-template <typename FROM>
-inline
-const value_slice::CValueConvert<value_slice::SSafeCP, FROM> 
-ConvertSafeSQL(FROM& value)
-{
-    return value_slice::CValueConvert<value_slice::SSafeCP, FROM>(value);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-template <typename T>
-void DoTest_DbapiConvertSafe(const string& sql, const T& v)
-{
-    // By pointer (acquire ownership) ...
-    {
-        T value = ConvertSafe(GetConnection().GetCDB_Connection()->LangCmd(sql));
-        BOOST_CHECK_EQUAL(value, v);
-    }
-
-    // By reference ...
-    {
-        auto_ptr<CDB_LangCmd> cmd(GetConnection().GetCDB_Connection()->LangCmd(sql));
-
-        T value = ConvertSafe(*cmd);
-        BOOST_CHECK_EQUAL(value, v);
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_CASE(Test_DbapiConvertSafe)
-{
-    DoTest_DbapiConvertSafe<Uint1>("select Convert(tinyint, 1), 2.0, '3'", 1);
-    DoTest_DbapiConvertSafe<Int2>("select Convert(smallint, 1), 2.0, '3'", 1);
-    DoTest_DbapiConvertSafe<Int4>("select 1, 2.0, '3'", 1);
-    DoTest_DbapiConvertSafe<Int8>("select Convert(bigint, 1), 2.0, '3'", 1);
-    DoTest_DbapiConvertSafe<float>("select Convert(real, 1), 2.0, '3'", 1);
-    DoTest_DbapiConvertSafe<double>("select Convert(float, 1), 2.0, '3'", 1);
-    DoTest_DbapiConvertSafe<double>("select Convert(double precision, 1), 2.0, '3'", 1);
-}
-*/
 
 ///////////////////////////////////////////////////////////////////////////////
 NCBITEST_INIT_TREE()

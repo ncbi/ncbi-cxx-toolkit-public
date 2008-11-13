@@ -33,8 +33,6 @@
 
 #include "ctlib_utils.hpp"
 
-#include <util/value_convert.hpp>
-
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/error_codes.hpp>
 
@@ -265,7 +263,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                             CS_UNUSED,
                             NULL));
 
-    if (ConvertSafe(params.GetParam("secure_login"))) {
+    if (params.GetParam("secure_login") == "true") {
         GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_SEC_ENCRYPTION,

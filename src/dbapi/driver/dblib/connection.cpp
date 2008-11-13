@@ -36,8 +36,6 @@
 #include <dbapi/driver/dblib/interfaces_p.hpp>
 #include <dbapi/error_codes.hpp>
 
-#include <util/value_convert.hpp>
-
 #include <string.h>
 
 #include <algorithm>
@@ -97,7 +95,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     BCP_SETL(m_Login, TRUE);
 
 #ifndef MS_DBLIB_IN_USE
-    if (ConvertSafe(params.GetParam("secure_login")))
+    if (params.GetParam("secure_login") == "true")
         DBSETLENCRYPT(m_Login, TRUE);
 #endif
 
@@ -108,8 +106,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     if (params.GetHost()) {
         server_name = impl::ConvertN2A(params.GetHost());
         if (params.GetPort()) {
-            const string port_str = Convert(params.GetPort());
-            server_name += ":" + port_str;
+            server_name += ":" + NStr::IntToString(params.GetPort());
         }
     } else {
         server_name = params.GetServerName();

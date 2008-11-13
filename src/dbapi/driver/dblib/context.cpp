@@ -48,8 +48,6 @@
 #include <dbapi/driver/util/numeric_convert.hpp>
 #include <dbapi/error_codes.hpp>
 
-#include <util/value_convert.hpp>
-
 #if defined(NCBI_OS_MSWIN)
 #  include <winsock2.h>
 #  include "../ncbi_win_hook.hpp"
@@ -62,24 +60,8 @@
 
 BEGIN_NCBI_SCOPE
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#if defined(NCBI_COMPILER_MSVC)
 
-namespace value_slice
-{
-
-template <>
-struct STypeMap<CS_INT>
-{
-    typedef int type;
-};
-
-}
-
-#endif
-
-
-//////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 inline
 CDiagCompileInfo GetBlankCompileInfo(void)
 {
@@ -874,7 +856,7 @@ CDbapiFtdsCFBase::CreateInstance(
                         return g_pContext;
                     }
                 } else if ( v.id == "version" ) {
-                    int value = Convert( v.value );
+                    int value = NStr::StringToInt( v.value );
 
                     switch ( value ) {
                     case 42 :
@@ -894,7 +876,7 @@ CDbapiFtdsCFBase::CreateInstance(
                         break;
                     }
                 } else if ( v.id == "packet" ) {
-                    page_size = Convert( v.value );
+                    page_size = NStr::StringToInt( v.value );
                 } else if ( v.id == "client_charset" ) {
                     client_charset = v.value;
                 }
@@ -1056,7 +1038,7 @@ CDbapiDblibCF2::CreateInstance(
                         return g_pContext;
                     }
                 } else if ( v.id == "version" ) {
-                    int value = Convert( v.value );
+                    int value = NStr::StringToInt( v.value );
                     switch ( value ) {
                     case 46 :
                         db_version = DBVERSION_46;
@@ -1065,7 +1047,7 @@ CDbapiDblibCF2::CreateInstance(
                         db_version = DBVERSION_100;
                     }
                 } else if ( v.id == "packet" ) {
-                    page_size = Convert( v.value );
+                    page_size = NStr::StringToInt( v.value );
                 } else if ( v.id == "client_charset" ) {
                     client_charset = v.value;
                 }
