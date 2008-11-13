@@ -3179,13 +3179,13 @@ void CEncodedString::SetString(const string& s,
 CTempString::CTempString(const char* str, size_type pos, size_type len)
     : m_String(str+pos), m_Length(len)
 {
-}
+} // NCBI_FAKE_WARNING
 
 
 CTempString::CTempString(const string& str, size_type len)
     : m_String(str.data()), m_Length(min(len, str.size()))
 {
-}
+} // NCBI_FAKE_WARNING
 
 
 END_NCBI_SCOPE

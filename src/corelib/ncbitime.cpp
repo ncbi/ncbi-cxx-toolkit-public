@@ -2455,7 +2455,7 @@ int CFastLocalTime::GetLocalTimezone(void)
 //=============================================================================
 
 // deprecated
-CStopWatch::CStopWatch(bool start)
+CStopWatch::CStopWatch(bool start) // NCBI_FAKE_WARNING
 {
     m_Total = 0;
     m_State = eStop;
