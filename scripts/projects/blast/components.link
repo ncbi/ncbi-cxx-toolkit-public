@@ -7,6 +7,7 @@ objects         3.0.0
 objtools        3.0.0
 algo            3.0.0
 misc            3.0.0
+blast           3.0.1
 
 [repository: https://svn.ncbi.nlm.nih.gov/repos/toolkit]
 src/dll                     trunk/c++/src/dll                     -r140909
