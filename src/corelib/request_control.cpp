@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov, Vladimir Ivanov
+ * Authors:  Denis Vakatov, Vladimir Ivanov, Victor Joukov
  *
  * File Description:
  *   Test for request test control classes.
@@ -64,7 +64,11 @@ void CRequestRateControl::Reset(
     m_NumRequestsAllowed     = num_requests_allowed;
     m_PerPeriod              = per_period;
     m_MinTimeBetweenRequests = min_time_between_requests;
-    m_ThrottleAction         = throttle_action;
+    if ( throttle_action == eDefault ) {
+        m_ThrottleAction     = eSleep;
+    } else {
+        m_ThrottleAction     = throttle_action;
+    }
 
     m_NumRequests = 0;
     m_LastApproved.Clear();
@@ -168,16 +172,7 @@ bool CRequestRateControl::Approve(EThrottleAction action)
     // eSleep case
     
     if ( !sleep_time.IsEmpty()  &&  sleep_time > CTimeSpan(0,0) ) {
-        long sec = sleep_time.GetCompleteSeconds();
-        // We cannot sleep that much milliseconds, round it to seconds
-        if (sec > long(kMax_ULong / kMicroSecondsPerSecond)) {
-            SleepSec(sec);
-        } else {
-            unsigned long ms;
-            ms = sec * kMicroSecondsPerSecond +
-	            (sleep_time.GetNanoSecondsAfterSecond() + 500)/ 1000;
-            SleepMicroSec(ms);
-        }
+        Sleep(sleep_time);
         now.SetCurrent();
     }
 
@@ -190,6 +185,87 @@ bool CRequestRateControl::Approve(EThrottleAction action)
 
     // Approve request
     return true;
+}
+
+
+CTimeSpan CRequestRateControl::ApproveTime()
+{
+    // Is throttler disabled?
+    if ( m_NumRequests == kNoLimit ) {
+        // Approve request
+        return CTimeSpan(0, 0);
+    }
+
+    // Get current time
+    CTime now(CTime::eCurrent, CTime::eGmt);
+
+    bool empty_period  = m_PerPeriod.IsEmpty();
+    bool empty_between = m_MinTimeBetweenRequests.IsEmpty();
+    CTimeSpan sleep_time;
+
+    // Check maximum number of requests at all (if times not specified)
+    if ( !m_NumRequestsAllowed  ||  (empty_period  &&  empty_between) ){
+        if ( m_NumRequests >= m_NumRequestsAllowed ) {
+            NCBI_THROW(
+                CRequestRateControlException, eNumRequestsMax, 
+                "CRequestRateControl::Approve(): "
+                "Maximum number of requests exceeded"
+                );
+        }
+    }
+
+    // Check number of requests per period
+    if ( !empty_period ) {
+        x_CleanTimeLine(now);
+        if ( m_TimeLine.size() >= m_NumRequestsAllowed ) {
+            CTime next(*m_TimeLine.front() + m_PerPeriod);
+            sleep_time = next - now;
+        }
+    }
+
+    // Check time between two consecutive requests
+    if ( !empty_between  &&  !m_LastApproved.IsEmpty() ) {
+        if ( now - m_LastApproved < m_MinTimeBetweenRequests ) {
+            CTime next(m_LastApproved + m_MinTimeBetweenRequests);
+            CTimeSpan st(next - now);
+            // Get max of two sleep times
+            if ( st > sleep_time ) {
+                sleep_time = st;
+            }
+        }
+    }
+
+    if ( sleep_time > CTimeSpan(0,0) ) {
+        return sleep_time;
+    }
+
+    // Update stored information
+    if ( !empty_period ) {
+        x_AddToTimeLine(now);
+    }
+    m_LastApproved = now;
+    m_NumRequests++;
+
+    // Approve request
+    return CTimeSpan(0, 0);
+}
+
+
+void CRequestRateControl::Sleep(CTimeSpan sleep_time)
+{
+    if ( sleep_time <= CTimeSpan(0, 0) ) {
+        return;
+    }
+    long sec = sleep_time.GetCompleteSeconds();
+    // We cannot sleep that much milliseconds, round it to seconds
+    if (sec > long(kMax_ULong / kMicroSecondsPerSecond)) {
+        SleepSec(sec);
+    } else {
+        unsigned long ms;
+        ms = sec * kMicroSecondsPerSecond +
+            (sleep_time.GetNanoSecondsAfterSecond() + 500) / 1000;
+        SleepMicroSec(ms);
+    }
 }
 
 

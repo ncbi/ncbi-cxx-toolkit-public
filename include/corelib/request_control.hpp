@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov, Vladimir Ivanov
+ * Authors:  Denis Vakatov, Vladimir Ivanov, Victor Joukov
  *
  * File Description:
  *   Manage request rate to some shared resource
@@ -87,7 +87,7 @@ public:
         eSleep,      ///< Sleep till the rate requirements are met & return
         eErrCode,    ///< Return immediately with err code == FALSE
         eException,  ///< Throw an exception
-        eDefault     ///< in c-tor: eSleep;  in Wait() -- value set in c-tor
+        eDefault     ///< in c-tor: eSleep;  in Approve() -- value set in c-tor
     };
 
     /// Special value for maximum number of allowed requests per period.
@@ -143,8 +143,30 @@ public:
     ///   Return FALSE if some requirements are not passed, or
     ///   throw exception if throttle action was set to eException.
     /// @sa
-    ///   Reset
+    ///   Reset, ApproveTime
     bool Approve(EThrottleAction action = eDefault);
+
+    /// Get a time span in which request can be approved.
+    ///
+    /// You should call this method until it returns zero time span, otherwise
+    /// you should sleep (using Sleep method) for indicated time.
+    ///
+    /// @return
+    ///   Returns time to wait until actual request, zero if can proceed
+    ///   immediately.
+    ///   If you use this method with absolute limitation (no time period and
+    ///   no minimum between requests) and the limitation is exhausted it will
+    ///   throw an exception.
+    /// @sa
+    ///   Reset, Approve
+    CTimeSpan ApproveTime();
+
+    /// Sleep for CTimeSpan.
+    ///
+    /// @param sleep_time
+    ///   For how long to sleep. If it's impossible to sleep to that long in
+    ///   millisecond range, rounds up sleep time to the whole seconds.
+    static void Sleep(CTimeSpan sleep_time);
 
     /// Lock/unlock functions for use by generic RAII guard CGuard.
     /// See 'corelib/guard.hpp' for details.
