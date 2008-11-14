@@ -1465,7 +1465,7 @@ CValueConvert<SRunTimeCP, CTime>::operator bool(void) const
 
 } // namespace value_slice
 
-#if defined(NCBI_COMPILER_MSVC)
+#if defined(NCBI_COMPILER_MSVC) && (_MSC_VER < 1400)
 
 namespace value_slice
 {
@@ -1656,12 +1656,28 @@ Convert(const FROM& value)
     return value_slice::STypeProxy<value_slice::SRunTimeCP, FROM>(value);
 }
 
+template <typename FROM>
+inline
+const value_slice::STypeProxy<value_slice::SRunTimeCP, FROM> 
+Convert(FROM& value)
+{
+    return value_slice::STypeProxy<value_slice::SRunTimeCP, FROM>(value);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Safe (compile-time) conversion ...
 template <typename FROM>
 inline
 const value_slice::STypeProxy<value_slice::SSafeCP, FROM> 
 ConvertSafe(const FROM& value)
+{
+    return value_slice::STypeProxy<value_slice::SSafeCP, FROM>(value);
+}
+
+template <typename FROM>
+inline
+const value_slice::STypeProxy<value_slice::SSafeCP, FROM> 
+ConvertSafe(FROM& value)
 {
     return value_slice::STypeProxy<value_slice::SSafeCP, FROM>(value);
 }
