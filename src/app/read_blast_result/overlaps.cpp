@@ -275,12 +275,12 @@ bool CReadBlastApp::overlaps_prot_na
        strstream buff_misc_feat_rna;
        buff_misc_feat_rna
             << "potential RNA location (" 
-            << name1 << ") that overlaps potential protein (" << get_title(seq) << ")" << '\0';
+            << name1 << ") that overlaps protein (" << get_title(seq) << ")" << '\0';
 
        strstream buff_misc_feat_protein;
        buff_misc_feat_protein
             << "potential protein location ("
-            << get_title(seq) << ") that overlaps potential RNA (" << name1 << ")" << '\0';
+            << get_title(seq) << ") that overlaps RNA (" << name1 << ")" << '\0';
 
 
        strstream misc_feat_rna;
@@ -662,12 +662,12 @@ bool CReadBlastApp::overlaps
     strstream misc_feat_left;
     misc_feat_left 
        << "potential protein location (" << GetProtName(left) 
-       << ") that overlaps potential protein (" << GetProtName(right) << ")" << NcbiEndl << '\0';
+       << ") that overlaps protein (" << GetProtName(right) << ")" << NcbiEndl << '\0';
 
     strstream misc_feat_right;
     misc_feat_right
        << "potential protein location (" << GetProtName(right) 
-       << ") that overlaps potential protein (" << GetProtName(left) << ")" << NcbiEndl << '\0';
+       << ") that overlaps protein (" << GetProtName(left) << ")" << NcbiEndl << '\0';
 
     // problemStr problemCO = {eCompleteOverlap, buffer.str(), misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };
     // problemStr problemO = {eOverlap, buffer.str(), misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };
