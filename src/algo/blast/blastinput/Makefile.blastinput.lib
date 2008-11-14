@@ -22,6 +22,9 @@ LIB = blastinput
 
 DLL_LIB = xblast $(OBJMGR_LIBS)
 
+# should be redundant, given the above :-/
+ASN_DEP = seqset
+
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
