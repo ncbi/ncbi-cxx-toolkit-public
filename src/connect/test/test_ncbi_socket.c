@@ -44,10 +44,10 @@
 #include <string.h>
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
-#  define X_SLEEP(x) ((void) sleep(x))
+#  define X_SLEEP(x) /*((void) sleep(x))*/
 #elif defined(NCBI_OS_MSWIN)
 #  include <windows.h>
-#  define X_SLEEP(x) ((void) Sleep(1000 * x))
+#  define X_SLEEP(x) /*((void) Sleep(1000 * x))*/
 #else
 #  define X_SLEEP(x) ((void) 0)
 #endif
@@ -360,8 +360,9 @@ static void TEST__client_2(SOCK sock)
             do {
                 status = SOCK_Reconnect(sock, 0, 0, 0);
                 CORE_LOGF(eLOG_Note,
-                          ("TEST__client_2::reconnect: i=%lu, status=%s",
-                           (unsigned long)i, IO_StatusStr(status)));
+                          ("TEST__client_2::reconnect: i=%lu, j=%lu, status=%s",
+                           (unsigned long) i, (unsigned long) j,
+                           IO_StatusStr(status)));
                 assert(status == eIO_Success);
                 assert(SOCK_Status(sock, eIO_Read)  == eIO_Success);
                 assert(SOCK_Status(sock, eIO_Write) == eIO_Success);
@@ -632,7 +633,7 @@ static void TEST__server(unsigned short port)
     CORE_LOGF(eLOG_Note, ("TEST__server(port = %hu)", port));
 
     /* Create listening socket */
-    status = LSOCK_CreateEx(port, 1, &lsock, fSOCK_LogOn);
+    status = LSOCK_CreateEx(port, N_RECONNECT * 10, &lsock, fSOCK_LogOn);
     assert(status == eIO_Success);
 
     /* Accept connections from clients and run test sessions */

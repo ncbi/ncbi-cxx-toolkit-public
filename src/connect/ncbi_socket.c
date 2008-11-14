@@ -228,9 +228,6 @@ static int/*bool*/ s_Initialized = 0/*-1=deinited;0=uninited;1=inited*/;
 /* SOCK counter */
 static unsigned int s_ID_Counter = 0;
 
-/* Cached IP address of local host */
-static unsigned int s_LocalHostAddress = 0;
-
 /* Read-while-writing switch */
 static ESwitch s_ReadOnWrite = eOff;        /* no read-on-write by default   */
 
@@ -509,14 +506,17 @@ static void s_DoLog(const SOCK  sock, EIO_Event event,
                 *tail = 0;
             } else {
                 const struct sockaddr_in* sin = (const struct sockaddr_in*) sa;
-                if (data) {
-                    strcpy(head, "Datagram socket connected to ");
+                if (!data) {
+                    strcpy(head, "Datagram socket bound to port :");
+                    sprintf(tail, "%hu", ntohs(sin->sin_port));
+                } else if (sin->sin_family == AF_INET) {
+                    strcpy(head, "Datagram socket associated with ");
                     SOCK_HostPortToString(sin->sin_addr.s_addr,
                                           ntohs(sin->sin_port),
                                           tail, sizeof(tail));
                 } else {
-                    strcpy(head, "Datagram socket bound to port :");
-                    sprintf(tail, "%hu", ntohs(sin->sin_port));
+                    strcpy(head, "Datagram socket disassociated");
+                    *tail = '\0';
                 }
             }
         } else {
@@ -554,61 +554,71 @@ static void s_DoLog(const SOCK  sock, EIO_Event event,
                 : (sock->type != eDatagram  &&  !size
                    ? s_StrError(sock, *((int*) data)) : "Written"));
         n = (int) strlen(what);
-        if (n > (int) sizeof(head) / 2)
-            n = (int) sizeof(head) / 2;
-        else if (n > 1  &&  what[n - 1] == '.')
+        while (n  &&  isspace((unsigned char) what[n - 1]))
+            n--;
+        if (n > 1  &&  what[n - 1] == '.')
             n--;
         if (sock->type == eDatagram) {
             const struct sockaddr_in* sin = (const struct sockaddr_in*) sa;
             assert(sa  &&  sa->sa_family == AF_INET);
-            SOCK_HostPortToString(sin->sin_addr.s_addr,
-                                  ntohs(sin->sin_port),
-                                  tail, sizeof(tail));
-            sprintf(tail + strlen(tail), ", msg# %u",
+            SOCK_HostPortToString(sin->sin_addr.s_addr, ntohs(sin->sin_port),
+                                  head, sizeof(head));
+            sprintf(tail, ", msg# %u",
                     (unsigned)(event == eIO_Read ? sock->n_in : sock->n_out));
-            ptr = 0;
-        } else if (!ptr  ||  !*((char*)ptr)) {
-            sprintf(tail, " at offset %lu",
+        } else if (!ptr  ||  !*((char*) ptr)) {
+            sprintf(head, " at offset %lu",
                     (unsigned long)(event == eIO_Read
                                     ? sock->n_read : sock->n_written));
-        } else
+            strcpy(tail, ptr ? " [OOB]" : "");
+        } else {
+            strncpy0(head, (const char*) ptr, sizeof(head));
             *tail = '\0';
+        }
 
-        sprintf(head, "%s%.*s%s%s%s%s", s_ID(sock, _id), n, what,
-                sock->type == eDatagram  ||  size ? "" :
-                (event == eIO_Read ? " while reading" : " while writing"),
-                sock->type == eDatagram
-                ? (event == eIO_Read ? " from " : " to ")
-                : "", tail, !ptr
-                ? "" : !*((const char*) ptr) ? "[OOB]" : (const char*) ptr);
-        CORE_DATA_X(109, data, size, head);
+        CORE_DATAF_EXX(109, !size  &&  data ? eLOG_Error : eLOG_Trace,
+                       data, size,
+                       ("%s%.*s%s%s%s", s_ID(sock, _id), n, what,
+                        sock->type == eDatagram
+                        ? (event == eIO_Read ? " from " : " to ")
+                        : !size
+                        ? (event == eIO_Read
+                           ? " while reading" : " while writing")
+                        : "",
+                        head, tail));
         break;
 
     case eIO_Close:
-        n = sprintf(head, "%lu byte%s",
+        n = sprintf(tail, "%lu byte%s",
                     (unsigned long) sock->n_written,
                     sock->n_written == 1 ? "" : "s");
         if (sock->type == eDatagram  ||
             sock->n_out != sock->n_written) {
-            sprintf(head + n, "/%lu %s%s",
+            sprintf(tail + n, "/%lu %s%s",
                     (unsigned long) sock->n_out,
                     sock->type == eDatagram ? "msg" : "total byte",
                     sock->n_out == 1 ? "" : "s");
         }
-        n = sprintf(tail, "%lu byte%s",
+        n = sprintf(tail + sizeof(tail)/2, "%lu byte%s",
                     (unsigned long) sock->n_read,
                     sock->n_read == 1 ? "" : "s");
         if (sock->type == eDatagram  ||
             sock->n_in != sock->n_read) {
-            sprintf(tail + n, "/%lu %s%s",
+            sprintf(tail + sizeof(tail)/2 + n, "/%lu %s%s",
                     (unsigned long) sock->n_in,
                     sock->type == eDatagram ? "msg" : "total byte",
                     sock->n_in == 1 ? "" : "s");
         }
+        if (sock->type != eDatagram) {
+            head[0] = ' ';
+            SOCK_HostPortToString(sock->host, sock->port,
+                                  head + 1, sizeof(head) - 1);
+        } else
+            *head = '\0';
         CORE_LOGF_X(113, eLOG_Trace,
-                    ("%s%s (out: %s, in: %s)", s_ID(sock, _id),
+                    ("%s%s%s (out: %s, in: %s)", s_ID(sock, _id),
                      ptr ? (const char*) ptr :
-                     sock->keep ? "Leaving" : "Closing", head, tail));
+                     sock->keep ? "Leaving" : "Closing", head,
+                     tail, tail + sizeof(tail)/2));
         break;
 
     default:
@@ -1139,11 +1149,10 @@ static EIO_Status s_Select(size_t                n,
                         if (writable) {
                             polls[i].revent |= eIO_Write;
                             ready = 1;
-                        } else {
-                            mask     |= FD_WRITE;
-                            if (!sock->connected)
-                                mask |= FD_CONNECT;
                         }
+                        mask     |= FD_WRITE;
+                        if (!sock->connected)
+                            mask |= FD_CONNECT;
                     }
                     if (event == eIO_Write  &&
                         (type == eDatagram  ||  asis
@@ -1160,7 +1169,8 @@ static EIO_Status s_Select(size_t                n,
                         if (readable) {
                             polls[i].revent |= eIO_Read;
                             ready = 1;
-                        } else if (type & eSocket) {
+                        }
+                        if (type & eSocket) {
                             mask     |= FD_READ;
                             if (type == eSocket)
                                 mask |= FD_OOB;
@@ -1175,8 +1185,8 @@ static EIO_Status s_Select(size_t                n,
                     if (writable) {
                         polls[i].revent |= eIO_Write;
                         ready = 1;
-                    } else
-                        mask |= FD_WRITE;
+                    }
+                    mask |= FD_WRITE;
                     break;
 
                 default:
@@ -1184,8 +1194,7 @@ static EIO_Status s_Select(size_t                n,
                     continue;
                 }
 
-                if (!mask)
-                    continue;
+                assert(mask);
                 want[count]   = mask | FD_CLOSE;
                 what[count++] = sock->event;
             } else
@@ -1280,10 +1289,14 @@ static EIO_Status s_Select(size_t                n,
                         ready = 1;
                         break;
                     }
-                    mask = e.lNetworkEvents;
-                    if (mask & (FD_CONNECT | FD_WRITE)) {
-                        assert(sock->type & eSocket);
-                        sock->writable = 1/*true*/;
+                    if (!(mask = e.lNetworkEvents)) {
+                        if (sock->type == eListening) {
+                            CORE_LOG_X(141, eLOG_Warning,
+                                       "%s[SOCK::Select] "
+                                        " Possible connection throttling has"
+                                        " been detected");
+                        }
+                        break;
                     }
                     if (mask & FD_CLOSE) {
                         if (!(sock->type & eSocket)) {
@@ -1292,8 +1305,15 @@ static EIO_Status s_Select(size_t                n,
                             break;
                         }
                         sock->readable = 1/*true*/;
-                    } else if (mask & (FD_ACCEPT | FD_READ | FD_OOB))
-                        sock->readable = 1/*true*/;
+                        sock->writable = 1/*true*/;
+                    } else {
+                        if (mask & (FD_CONNECT | FD_WRITE)) {
+                            assert(sock->type & eSocket);
+                            sock->writable = 1/*true*/;
+                        }
+                        if (mask & (FD_ACCEPT | FD_READ | FD_OOB))
+                            sock->readable = 1/*true*/;
+                    }
                     mask &= want[i];
                     if ((mask & (FD_ACCEPT | FD_READ))  &&  sock->readable) {
                         polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Read);
@@ -1307,7 +1327,9 @@ static EIO_Status s_Select(size_t                n,
                     if (!polls[j].revent) {
                         int k;
                         for (k = 0;  k < FD_MAX_EVENTS;  k++) {
-                            if ((e.lNetworkEvents & (1 << k)) &&  e.iErrorCode[k]) {
+                            if (!(e.lNetworkEvents & (1 << k)))
+                                continue;
+                            if (e.iErrorCode[k]) {
                                 polls[j].revent = eIO_Close;
                                 errno = e.iErrorCode[k];
                                 ready = 1;
@@ -1318,25 +1340,23 @@ static EIO_Status s_Select(size_t                n,
                     break;
                 }
                 assert(j < n);
-                if (ready)
+                if (ready  ||  !slice)
                     i++;
             } while (i < (size_t) count);
 
-            if (r == WAIT_TIMEOUT) {
-                if (ready)
-                    return eIO_Success;
-                if (wait == INFINITE)
-                    continue;
+            if (ready)
+                break;
+
+            if (r == WAIT_FAILED)
+                return eIO_Unknown;
+
+            if (wait != INFINITE) {
                 if (slice < wait) {
                     wait -= slice;
                     continue;
                 }
                 return eIO_Timeout;
             }
-
-            if (r != WAIT_FAILED  ||  ready)
-                break;
-            return eIO_Unknown;
         } else if (!ready) {
             Sleep(slice);
         } else
@@ -1590,6 +1610,46 @@ static EIO_Status s_Select(size_t                n,
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static const char* x_ConnPoint(const SOCK sock, char* buf, size_t bufsize)
+{
+#ifdef NCBI_OS_UNIX
+    if (*sock->path) {
+        size_t      pathlen = strlen(sock->path);
+        int/*bool*/ trunc;
+        if (pathlen > bufsize - 3) {
+            bufsize -= 6;
+            trunc = 1;
+        } else
+            trunc = 0;
+        sprintf(buf, "\"%s%.*s\"", trunc ? "..."   : "", 
+                (int)(trunc ? bufsize : pathlen),
+                sock->path + (trunc ? pathlen - bufsize : 0));
+    } else
+#endif /*NCBI_OS_UNIX*/
+        SOCK_HostPortToString(sock->host, sock->port, buf, bufsize);
+    return buf;
+}
+
+
+static unsigned short x_GetLocalPort(TSOCK_Handle fd)
+{
+    struct sockaddr_in addr;
+    SOCK_socklen_t addrlen = (SOCK_socklen_t) sizeof(addr);
+    memset(&addr, 0, sizeof(addr));
+#ifdef HAVE_SIN_LEN
+    addr.sin_len = addrlen;
+#endif /*HAVE_SIN_LEN*/
+    if (getsockname(fd, (struct sockaddr*) &addr, &addrlen) == 0) {
+        assert(addr.sin_family == AF_INET);
+        return ntohs(addr.sin_port);
+    }
+    return 0;
+}
+
+
 /* connect() could be async/interrupted by a signal or just cannot
  * establish connection immediately;  yet, it must have been in progress
  * (asynchronous), so wait here for it to succeed (become writeable).
@@ -1650,15 +1710,26 @@ static EIO_Status s_IsConnected(SOCK                  sock,
     if (!sock->connected) {
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
         int  mtu;
+        char buf[80];
         char _id[32];
 #  if defined(SOL_IP)  &&  defined(IP_MTU)
         SOCK_socklen_t mtulen = (SOCK_socklen_t) sizeof(mtu);
         if (getsockopt(sock->sock, SOL_IP, IP_MTU, &mtu, &mtulen) != 0)
 #  endif /*SOL_IP && IP_MTU*/
             mtu = -1;
+#  ifdef NCBI_OS_UNIX
+        if (*sock->path)
+            x_ConnPoint(sock, buf, sizeof(buf));
+        else
+#  endif /*NCBI_OS_UNIX*/
+        {
+            if (!sock->myport)
+                sock->myport = x_GetLocalPort(sock->sock);
+            sprintf(buf, ":%hu", sock->myport);
+        }
         if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
-            CORE_TRACEF(("%sConnection established, MTU = %d",
-                         s_ID(sock, _id), mtu));
+            CORE_TRACEF(("%sConnection established at %s, MTU = %d",
+                         s_ID(sock, _id), buf, mtu));
         }
 #endif /*_DEBUG && !NDEBUG*/
         if (s_ReuseAddress
@@ -1742,27 +1813,28 @@ static EIO_Status s_Recv(SOCK    sock,
                               x_error                == SOCK_ECONNABORTED  ||
                               x_error                == SOCK_ENETRESET))) {
             /* statistics & logging */
-            if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                if (!sock->session  ||  x_read <= 0  ||  flag > 0) {
-                    s_DoLog(sock, eIO_Read, (x_read < 0 ? (void*) &x_error :
-                                             x_read > 0 ? buf              :0),
-                            (size_t)(x_read < 0 ? 0 : x_read), 0);
-                }
+            if (x_read < 0  ||
+                ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
+                 &&  (!sock->session  ||  flag > 0))) {
+                s_DoLog(sock, eIO_Read, (x_read < 0 ? (void*) &x_error :
+                                         x_read > 0 ? buf              :0),
+                        (size_t)(x_read < 0 ? 0 : x_read), 0);
             }
 
             if (x_read > 0) {
                 assert((size_t) x_read <= size);
-                sock->r_status = eIO_Success;
                 sock->n_read += x_read;
                 *n_read       = x_read;
             } else {
                 /* catch EOF/failure */
                 sock->eof = 1/*true*/;
-                if (x_read)
+                if (x_read) {
                     sock->r_status = sock->w_status = eIO_Closed;
-                else
-                    sock->r_status = eIO_Success;
+                    break;
+                    /*return eIO_Unknown;*/
+                }
             }
+            sock->r_status = eIO_Success;
             break;
         } else if (flag < 0)
             break;
@@ -1928,7 +2000,8 @@ static EIO_Status s_Read(SOCK    sock,
             if ((size_t) x_read > n_todo)
                 x_read = n_todo;
             if (error) {
-                CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
+                int x_error = errno;
+                CORE_LOGF_ERRNO_X(8, eLOG_Error, x_error,
                                   ("%s[SOCK::Read]  Cannot store data in"
                                    " peek buffer", s_ID(sock, xx_buf)));
                 sock->eof      = 1/*failure*/;
@@ -1997,34 +2070,44 @@ static EIO_Status s_SelectStallsafe(size_t                n,
         assert(pending);
         for (i = k;  i < n;  i++) {
             static const struct timeval zero = { 0 };
+            SOCK sock = polls[i].sock;
             /* try to push pending writes */
             if (polls[i].event == eIO_Read  &&  polls[i].revent == eIO_Write) {
-                assert(polls[i].sock                          &&
-                       polls[i].sock->sock != SOCK_INVALID    &&
-                       polls[i].sock->type == eSocket         &&
-                       polls[i].sock->w_status != eIO_Closed  &&
-                       (polls[i].sock->pending  ||  polls[i].sock->w_len));
-                s_WritePending(polls[i].sock, &zero, 1/*w*/, 0);
-                polls[i].revent = eIO_Open;
+                assert(sock                          &&
+                       sock->sock != SOCK_INVALID    &&
+                       sock->type == eSocket         &&
+                       sock->w_status != eIO_Closed  &&
+                       (sock->pending  ||  sock->w_len));
+                s_WritePending(sock, &zero, 1/*writable*/, 0);
+                if (s_Status(sock, eIO_Read) == eIO_Closed) {
+                    polls[i].revent = eIO_Read;
+                    pending = 0;
+                } else
+                    polls[i].revent = eIO_Open;
                 continue;
             }
             /* try to upread immediately readable sockets */
             if (polls[i].event == eIO_Write  &&  polls[i].revent == eIO_Read) {
                 size_t dummy;
-                assert(polls[i].sock                          &&
-                       polls[i].sock->sock != SOCK_INVALID    &&
-                       polls[i].sock->type == eSocket         &&
-                       polls[i].sock->w_status != eIO_Closed  &&
-                       polls[i].sock->r_status != eIO_Closed  &&
-                       !polls[i].sock->eof                    &&
-                       !polls[i].sock->pending                &&
-                       (polls[i].sock->r_on_w == eOn
-                        ||  (polls[i].sock->r_on_w == eDefault
+                assert(sock                          &&
+                       sock->sock != SOCK_INVALID    &&
+                       sock->type == eSocket         &&
+                       sock->w_status != eIO_Closed  &&
+                       sock->r_status != eIO_Closed  &&
+                       !sock->eof  && !sock->pending &&
+                       (sock->r_on_w == eOn
+                        ||  (sock->r_on_w == eDefault
                              &&  s_ReadOnWrite == eOn)));
-                s_Read(polls[i].sock, 0, 0, &dummy, -1/*upread*/);
-                polls[i].revent = eIO_Open;
+                s_Read(sock, 0, 0, &dummy, -1/*upread*/);
+                if (s_Status(sock, eIO_Write) == eIO_Closed) {
+                    polls[i].revent = eIO_Write;
+                    pending = 0;
+                } else
+                    polls[i].revent = eIO_Open;
             }
         }
+        if (!pending)
+            break;
     }
 
     k = 0;
@@ -2115,6 +2198,9 @@ static EIO_Status s_Send(SOCK        sock,
 
     assert(sock->type == eSocket  &&  data  &&  size > 0  &&  !*n_written);
 
+    if (sock->w_status == eIO_Closed)
+        return eIO_Closed;
+
     for (;;) { /* optionally auto-resume if interrupted */
         int x_error;
         int x_written = send(sock->sock, (void*) data, size,
@@ -2127,24 +2213,25 @@ static EIO_Status s_Send(SOCK        sock,
                                  x_error               == SOCK_ENETRESET   ||
                                  x_error               == SOCK_ECONNABORTED))){
             /* statistics & logging */
-            if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                if (!sock->session  ||  x_written < 0  ||  flag > 0) {
-                    s_DoLog(sock, eIO_Write, (x_written < 0
-                                              ? (void*) &x_error : data),
-                            (size_t)(x_written < 0 ? 0 : x_written),
-                            flag < 0 ? "" : 0);
-                }
+            if (x_written < 0  ||
+                ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
+                 &&  (!sock->session  ||  flag > 0))) {
+                s_DoLog(sock, eIO_Write, (x_written < 0
+                                          ? (void*) &x_error : data),
+                        (size_t)(x_written < 0 ? 0 : x_written),
+                        flag < 0 ? "" : 0);
             }
 
-            if (x_written > 0) {
-                sock->w_status = eIO_Success;
-                sock->n_written += x_written;
-                *n_written       = x_written;
-            } else {
+            if (x_written < 0) {
                 sock->w_status = eIO_Closed;
                 if (x_error != SOCK_EPIPE)
                     sock->r_status = eIO_Closed;
+                break;
+                /*return eIO_Unknown;*/
             }
+            sock->n_written += x_written;
+            *n_written       = x_written;
+            sock->w_status = eIO_Success;
             break;
         }
 
@@ -2292,30 +2379,6 @@ static EIO_Status s_WriteData(SOCK        sock,
 }
 
 
-#ifdef __GNUC__
-inline
-#endif /*__GNUC__*/
-static const char* x_ConnPoint(const SOCK sock, char* buf, size_t bufsize)
-{
-#ifdef NCBI_OS_UNIX
-    if (*sock->path) {
-        size_t      pathlen  = strlen(sock->path);
-        int/*bool*/ trunc;
-        if (pathlen > bufsize - 3) {
-            bufsize -= 6;
-            trunc = 1;
-        } else
-            trunc = 0;
-        sprintf(buf, "\"%s%.*s\"", trunc ? "..."   : "", 
-                (int)(trunc ? bufsize : pathlen),
-                sock->path + (trunc ? pathlen - bufsize : 0));
-    } else
-#endif /*NCBI_OS_UNIX*/
-        SOCK_HostPortToString(sock->host, ntohs(sock->port), buf, bufsize);
-    return buf;
-}
-
-
 static EIO_Status s_WritePending(SOCK                  sock,
                                  const struct timeval* tv,
                                  int/*bool*/           writeable,
@@ -2359,11 +2422,9 @@ static EIO_Status s_WritePending(SOCK                  sock,
         size_t n_written;
         size_t n_write = BUF_PeekAt(sock->w_buf, off, buf, sizeof(buf));
         status = s_WriteData(sock, buf, n_write, &n_written, 0);
-        if (status != eIO_Success)
-            break;
         sock->w_len -= n_written;
         off         += n_written;
-    } while (sock->w_len);
+    } while (sock->w_len  &&  status == eIO_Success);
     sock->w_timeout = x_tv;
 
     assert((sock->w_len != 0) == (status != eIO_Success));
@@ -2770,11 +2831,11 @@ static EIO_Status s_Connect(SOCK            sock,
         }
         /* set the port to connect to (same port if "port" is zero) */
         if (port)
-            sock->port = htons(port);
+            sock->port = port;
         addrlen = (SOCK_socklen_t) sizeof(addr.sin);
         addr.sin.sin_family = AF_INET;
-        addr.sin.sin_addr.s_addr = sock->host;
-        addr.sin.sin_port        = sock->port;
+        addr.sin.sin_addr.s_addr =       sock->host;
+        addr.sin.sin_port        = htons(sock->port);
 #ifdef HAVE_SIN_LEN
         addr.sin.sin_len = addrlen;
 #endif /*HAVE_SIN_LEN*/
@@ -2813,7 +2874,7 @@ static EIO_Status s_Connect(SOCK            sock,
 	}
     if (WSAEventSelect(sock->sock, sock->event, SOCK_EVENTS) != 0) {
         int x_error = SOCK_ERRNO;
-        CORE_LOGF_ERRNO_EXX(123, eLOG_Trace,
+        CORE_LOGF_ERRNO_EXX(123, eLOG_Error,
                             x_error, SOCK_STRERROR(x_error),
                             ("%s[SOCK::Connect] "
                              " Failed to bind IO event",
@@ -2867,9 +2928,10 @@ static EIO_Status s_Connect(SOCK            sock,
             break;
         }
         x_error = SOCK_ERRNO;
-        if (x_error != SOCK_EINTR  ||  sock->i_on_sig == eOn  ||
-            (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal))
+        if (x_error != SOCK_EINTR  ||  sock->i_on_sig == eOn
+            ||  (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal)) {
             break;
+        }
     }
 
     if (x_error) {
@@ -2939,7 +3001,7 @@ static EIO_Status s_Connect(SOCK            sock,
 }
 
 
-static EIO_Status s_Create(const char*     host,
+static EIO_Status s_Create(const char*     hostpath,
                            unsigned short  port,
                            const STimeout* timeout,
                            SOCK*           sock,
@@ -2947,8 +3009,8 @@ static EIO_Status s_Create(const char*     host,
                            size_t          datalen,
                            TSOCK_Flags     flags)
 {
+    size_t       x_n = port ? 0 : strlen(hostpath);
     unsigned int x_id = ++s_ID_Counter * 1000;
-    size_t       x_n = port ? 0 : strlen(host);
     char         _id[32];
     EIO_Status   status;
     SOCK         x_sock;
@@ -2970,7 +3032,7 @@ static EIO_Status s_Create(const char*     host,
 #ifdef NCBI_OS_UNIX
     x_sock->crossexec = flags & fSOCK_KeepOnExec ? 1/*true*/ : 0/*false*/;
     if (!port)
-        strcpy(x_sock->path, host);
+        strcpy(x_sock->path, hostpath);
 #endif /*NCBI_OS_UNIX*/
 
     /* setup the I/O data buffer properties */
@@ -2978,7 +3040,8 @@ static EIO_Status s_Create(const char*     host,
     if (datalen) {
         if (!BUF_SetChunkSize(&x_sock->w_buf, datalen) ||
             !BUF_Write(&x_sock->w_buf, data, datalen)) {
-            CORE_LOGF_ERRNO_X(27, eLOG_Error, errno,
+            int x_error = errno;
+            CORE_LOGF_ERRNO_X(27, eLOG_Error, x_error,
                               ("%s[SOCK::Create]  Cannot store initial data",
                                s_ID(x_sock, _id)));
             SOCK_Close(x_sock);
@@ -2988,7 +3051,7 @@ static EIO_Status s_Create(const char*     host,
 
 
     /* connect */
-    status = s_Connect(x_sock, host, port, timeout, flags & fSOCK_Secure);
+    status = s_Connect(x_sock, hostpath, port, timeout, flags & fSOCK_Secure);
     if (status != eIO_Success)
         SOCK_Close(x_sock);
     else
@@ -3037,7 +3100,8 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
         int fd[2];
 
         if (pipe(fd) < 0) {
-            CORE_LOGF_ERRNO_X(28, eLOG_Error, errno,
+            int x_error = errno;
+            CORE_LOGF_ERRNO_X(28, eLOG_Error, x_error,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Cannot create pipe", x_id));
             return eIO_Closed;
@@ -3045,14 +3109,16 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
 
         if (!s_SetNonblock(fd[0], 1/*true*/)  ||
             !s_SetNonblock(fd[1], 1/*true*/)) {
-            CORE_LOGF_ERRNO_X(29, eLOG_Warning, errno,
+            int x_error = errno;
+            CORE_LOGF_ERRNO_X(29, eLOG_Warning, x_error,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Failed to set non-blocking mode", x_id));
         }
 
         if (!s_SetCloexec(fd[0], 1/*true*/)  ||
             !s_SetCloexec(fd[1], 1/*true*/)) {
-            CORE_LOGF_ERRNO_X(30, eLOG_Warning, errno,
+            int x_error = errno;
+            CORE_LOGF_ERRNO_X(30, eLOG_Warning, x_error,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Failed to set close-on-exec", x_id));
         }
@@ -3355,16 +3421,16 @@ static EIO_Status s_CreateListening(const char*    path,
     } else
 #endif /*NCBI_OS_UNIX*/
     {
-        unsigned int ip =
-            flags & fSOCK_BindLocal ? INADDR_LOOPBACK : INADDR_ANY;
+        unsigned int host =
+            htonl(flags & fSOCK_BindLocal ? INADDR_LOOPBACK : INADDR_ANY);
         addrlen = sizeof(addr.sin);
         addr.sin.sin_family      = AF_INET;
-        addr.sin.sin_addr.s_addr = htonl(ip);
+        addr.sin.sin_addr.s_addr =       host;
         addr.sin.sin_port        = htons(port);
 #ifdef HAVE_SIN_LEN
         addr.sin.sin_len         = addrlen;
 #endif /*HAVE_SIN_LEN*/
-        SOCK_HostPortToString(htonl(ip), port, s, sizeof(s));
+        SOCK_HostPortToString(host, port, s, sizeof(s));
         c = s;
     }
     if (bind(x_lsock, &addr.sa, addrlen) != 0) {
@@ -3615,7 +3681,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
 	}
     if (WSAEventSelect(x_sock, event, SOCK_EVENTS) != 0) {
         int x_error = SOCK_ERRNO;
-        CORE_LOGF_ERRNO_EXX(121, eLOG_Trace,
+        CORE_LOGF_ERRNO_EXX(121, eLOG_Error,
                             x_error, SOCK_STRERROR(x_error),
                             ("SOCK#%u[%u]: [LSOCK::Accept] "
                              " Failed to bind IO event",
@@ -3661,9 +3727,10 @@ static EIO_Status s_Accept(LSOCK           lsock,
     } else
 #endif /*NCBI_OS_UNIX*/
     {
-        (*sock)->host = addr.sin.sin_addr.s_addr;
-        (*sock)->port = addr.sin.sin_port;
+        (*sock)->host =       addr.sin.sin_addr.s_addr;
+        (*sock)->port = ntohs(addr.sin.sin_port);
     }
+    (*sock)->myport    = lsock->port;
     (*sock)->sock      = x_sock;
     (*sock)->id        = x_id;
     (*sock)->type      = eSocket;
@@ -4008,7 +4075,8 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     /* store initial data */
     if (datalen  &&  (!BUF_SetChunkSize(&w_buf, datalen)  ||
                       !BUF_Write(&w_buf, data, datalen))) {
-        CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
+        int x_error = errno;
+        CORE_LOGF_ERRNO_X(49, eLOG_Error, x_error,
                           ("SOCK#%u[%u]: [SOCK::CreateOnTop]  Cannot store"
                            " initial data", x_id, (unsigned int) fd));
         BUF_Destroy(w_buf);
@@ -4023,15 +4091,14 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     x_sock->sock      = fd;
     x_sock->id        = x_id;
 #ifdef NCBI_OS_UNIX
-    if (peer.sa.sa_family != AF_UNIX) {
-        x_sock->host  = peer.in.sin_addr.s_addr;
-        x_sock->port  = peer.in.sin_port;
-    } else
+    if (peer.sa.sa_family == AF_UNIX)
         strcpy(x_sock->path, peer.un.sun_path);
-#else
-    x_sock->host      = peer.in.sin_addr.s_addr;
-    x_sock->port      = peer.in.sin_port;
+    else
 #endif /*NCBI_OS_UNIX*/
+    {
+        x_sock->host  =       peer.in.sin_addr.s_addr;
+        x_sock->port  = ntohs(peer.in.sin_port);
+    }
     x_sock->type      = eSocket;
     x_sock->log       = flags;
     x_sock->side      = eSOCK_Server;
@@ -4773,19 +4840,8 @@ extern unsigned short SOCK_GetLocalPort(SOCK          sock,
         return 0/*UNIX socket*/;
 #endif /*NCBI_OS_UNIX*/
 
-    if (!sock->myport) {
-        struct sockaddr_in addr;
-        SOCK_socklen_t addrlen = (SOCK_socklen_t) sizeof(addr);
-        memset(&addr, 0, sizeof(addr));
-#  ifdef HAVE_SIN_LEN
-        addr.sin_len = addrlen;
-#  endif /*HAVE_SIN_LEN*/
-        if (getsockname(sock->sock,
-                        (struct sockaddr*) &addr, &addrlen) == 0) {
-            assert(addr.sin_family == AF_INET);
-            sock->myport = ntohs(addr.sin_port);
-        }
-    }
+    if (!sock->myport)
+        sock->myport = x_GetLocalPort(sock->sock);
     return byte_order != eNH_HostByteOrder? htons(sock->myport) : sock->myport;
 }
 
@@ -4801,7 +4857,7 @@ extern void SOCK_GetPeerAddress(SOCK            sock,
     }
     if (port) {
         *port = (unsigned short)
-            (byte_order != eNH_HostByteOrder ? sock->port : ntohs(sock->port));
+            (byte_order == eNH_HostByteOrder ? sock->port : ntohs(sock->port));
     }
 }
 
@@ -4817,7 +4873,7 @@ extern char* SOCK_GetPeerAddressString(SOCK   sock,
         strncpy0(buf, sock->path, buflen - 1);
     else
 #endif /*NCBI_OS_UNIX*/
-        SOCK_HostPortToString(sock->host, ntohs(sock->port), buf, buflen);
+        SOCK_HostPortToString(sock->host, sock->port, buf, buflen);
     return buf;
 }
 
@@ -5080,6 +5136,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
                              s_ID(sock,_id), port));
         return x_error == SOCK_EADDRINUSE ? eIO_Closed : eIO_Unknown;
     }
+    sock->myport = port;
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
@@ -5090,9 +5147,10 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
 
 
 extern EIO_Status DSOCK_Connect(SOCK sock,
-                                const char* host, unsigned short port)
+                                const char* hostname, unsigned short port)
 {
     struct sockaddr_in peer;
+    unsigned int host;
     char _id[32];
 
     if (sock->type != eDatagram) {
@@ -5113,43 +5171,56 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     s_WipeWBuf(sock);
     sock->id++;
 
-    /* obtain host and port of the peer */
-    if (port)
-        sock->port = htons(port);
-    if (host  &&  *host) {
-        if ((sock->host = SOCK_gethostbyname(host)) == 0) {
+    if (hostname  &&  *hostname) {
+        host = SOCK_gethostbyname(hostname);
+        if (!host) {
             CORE_LOGF_X(83, eLOG_Error,
                         ("%s[DSOCK::Connect] "
                          " Failed SOCK_gethostbyname(\"%.64s\")",
-                         s_ID(sock, _id), host));
+                         s_ID(sock, _id), hostname));
             return eIO_Unknown;
         }
-    }
-    if (!sock->host  ||  !sock->port) {
+    } else
+        host = 0;
+
+    if (!host != !port) {
         CORE_LOGF_X(84, eLOG_Error,
                     ("%s[DSOCK::Connect] "
-                     " Address incomplete", s_ID(sock, _id)));
+                     " Address incomplete, missing %s", s_ID(sock, _id),
+                     port ? "host" : "port"));
         return eIO_InvalidArg;
     }
 
-    /* connect */
+    /* connect (non-empty address) or drop association (on empty address) */
     memset(&peer, 0, sizeof(peer));
-    peer.sin_family      = AF_INET;
-    peer.sin_addr.s_addr = sock->host;
-    peer.sin_port        = sock->port;
+    if (host/*  &&  port*/) {
+        peer.sin_family      = AF_INET;
+        peer.sin_addr.s_addr =       host;
+        peer.sin_port        = htons(port);
+    }
+#ifdef AF_UNSPEC
+    else
+        peer.sin_family      = AF_UNSPEC;
+#endif /*AF_UNSPEC*/
 #ifdef HAVE_SIN_LEN
-    peer.sin_len         = sizeof(peer);
+    peer.sin_len             = sizeof(peer);
 #endif /*HAVE_SIN_LEN*/
     if (connect(sock->sock, (struct sockaddr*) &peer, sizeof(peer)) != 0) {
         char addr[80];
         int x_error = SOCK_ERRNO;
-        SOCK_HostPortToString(sock->host, ntohs(sock->port),addr,sizeof(addr));
+        if (host)
+            SOCK_HostPortToString(host, port, addr, sizeof(addr));
+        else
+            *addr = '\0';
         CORE_LOGF_ERRNO_EXX(85, eLOG_Error,
                             x_error, SOCK_STRERROR(x_error),
-                            ("%s[DSOCK::Connect]  Failed connect() to %s",
-                             s_ID(sock, _id), addr));
+                            ("%s[DSOCK::Connect]  Failed %sconnect%s%s%s",
+                             s_ID(sock, _id), *addr ? "" : "to dis",
+                             &"("[!*addr], addr, &")"[!*addr]));
         return eIO_Unknown;
     }
+    sock->host = host;
+    sock->port = port;
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
@@ -5159,11 +5230,11 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
 }
 
 
-extern EIO_Status DSOCK_SendMsg(SOCK            sock,
-                                const char*     host,
-                                unsigned short  port,
-                                const void*     data,
-                                size_t          datalen)
+extern EIO_Status DSOCK_SendMsg(SOCK           sock,
+                                const char*    host,
+                                unsigned short port,
+                                const void*    data,
+                                size_t         datalen)
 {
     size_t             x_msgsize;
     char               w[1536];
@@ -5192,7 +5263,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
     }
     sock->eof = 1/*true - finalized message*/;
 
-    x_port = port ? htons(port) : sock->port;
+    x_port = port ? port : sock->port;
     if (host  &&  *host) {
         if (!(x_host = SOCK_gethostbyname(host))) {
             CORE_LOGF_X(88, eLOG_Error,
@@ -5207,8 +5278,9 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
     if (!x_host  ||  !x_port) {
         CORE_LOGF_X(89, eLOG_Error,
                     ("%s[DSOCK::SendMsg] "
-                     " Address incomplete", s_ID(sock, w)));
-        return eIO_Unknown;
+                     " Address incomplete, missing %s", s_ID(sock, w),
+                     x_port ? "host" : &"host:port"[x_host ? 5 : 0]));
+         return eIO_Unknown;
     }
 
     if ((x_msgsize = BUF_Size(sock->w_buf)) != 0) {
@@ -5222,8 +5294,8 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family      = AF_INET;
-    addr.sin_addr.s_addr = x_host;
-    addr.sin_port        = x_port;
+    addr.sin_addr.s_addr =       x_host;
+    addr.sin_port        = htons(x_port);
 #ifdef HAVE_SIN_LEN
     addr.sin_len         = sizeof(addr);
 #endif /*HAVE_SIN_LEN*/
@@ -5246,7 +5318,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
                 sock->w_status = status = eIO_Closed;
                 CORE_LOGF_X(90, eLOG_Error,
                             ("%s[DSOCK::SendMsg] "
-                             " Partial datagram sent",s_ID(sock,w)));
+                             " Partial datagram sent", s_ID(sock, w)));
                 break;
             }
             sock->w_status = status = eIO_Success;
@@ -5367,7 +5439,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
                 if (msglen)
                     *msglen = x_read;
                 if (sender_addr)
-                    *sender_addr = addr.sin_addr.s_addr;
+                    *sender_addr =       addr.sin_addr.s_addr;
                 if (sender_port)
                     *sender_port = ntohs(addr.sin_port);
                 if ((size_t) x_read > buflen  &&
@@ -5931,9 +6003,13 @@ extern unsigned int SOCK_GetLoopbackAddress(void)
 
 extern unsigned int SOCK_GetLocalHostAddress(ESwitch reget)
 {
+    /* cached IP address of local host */
+    static unsigned int s_LocalHostAddress = 0;
     if (reget == eOn  ||  (!s_LocalHostAddress  &&  reget != eOff))
         s_LocalHostAddress = SOCK_gethostbyname(0);
-    return s_LocalHostAddress;
+    if (s_LocalHostAddress)
+        return s_LocalHostAddress;
+    return reget == eDefault ? SOCK_GetLoopbackAddress() : 0;
 }
 
 

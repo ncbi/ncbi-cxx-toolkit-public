@@ -201,8 +201,8 @@ typedef struct LSOCK_tag {
     unsigned int     id;        /* the internal ID (see also "s_ID_Counter") */
 
     unsigned int     n_accept;  /* total number of accepted clients          */
-    unsigned short   port;      /* port on which listening (host byte order) */
     unsigned short   backlog;   /* (unused)                                  */
+    unsigned short   port;      /* port on which listening (host byte order) */
 
     /* type, status, EOF, log, read-on-write etc bit-field indicators */
     TSOCK_Type          type;   /* eListening                                */
@@ -251,8 +251,8 @@ typedef struct SOCK_tag {
     unsigned int     id;        /* the internal ID (see also "s_ID_Counter") */
 
     /* connection point */
-    unsigned int     host;      /* peer host (in the network byte order)     */
-    unsigned short   port;      /* peer port (in the network byte order)     */
+    unsigned int     host;      /* peer host (network byte order)            */
+    unsigned short   port;      /* peer port (host byte order)               */
     unsigned short   myport;    /* this socket's port number, host byte order*/
 
     /* type, status, EOF, log, read-on-write etc bit-field indicators */
