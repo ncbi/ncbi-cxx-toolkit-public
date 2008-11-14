@@ -4,7 +4,7 @@ SRC = reader_cache writer_cache
 
 LIB = ncbi_xreader_cache
 
-ASN_DEP = seq seqset
+ASN_DEP = seqsplit
 
 # Build shared version when possible
 LIB_OR_DLL = both
