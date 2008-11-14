@@ -4,7 +4,7 @@ SRC = gbloader gbload_util
 
 LIB = ncbi_xloader_genbank
 
-ASN_DEP = seq
+ASN_DEP = seqsplit
 
 # Build shared version when possible
 LIB_OR_DLL = both
