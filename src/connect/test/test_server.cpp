@@ -36,6 +36,7 @@
 #include <corelib/ncbicntr.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/request_control.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -258,8 +259,12 @@ private:
 class CConnectionRequest : public CStdRequest
 {
 public:
-    CConnectionRequest(unsigned short port)
-        : m_Port(port)
+    CConnectionRequest(unsigned short port,
+                       CRequestRateControl& rate_control,
+                       CFastMutex& mutex)
+        : m_Port(port),
+          m_RateControl(rate_control),
+          m_Mutex(mutex)
     {
     }
 
@@ -268,10 +273,20 @@ protected:
 
 private:
     unsigned short m_Port;
+    CRequestRateControl& m_RateControl;
+    CFastMutex& m_Mutex;
 };
 
 void CConnectionRequest::Process(void)
 {
+    CTimeSpan sleep_time;
+    do {
+        {{
+            CFastMutexGuard guard(m_Mutex);
+            sleep_time = m_RateControl.ApproveTime();
+        }}
+        m_RateControl.Sleep(sleep_time);
+    } while (!sleep_time.IsEmpty());
     CConn_SocketStream stream("localhost", m_Port);
 
     string junk;
@@ -348,6 +363,13 @@ int CServerTestApp::Run(void)
 {
     SetDiagPostLevel(eDiag_Info);
 
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+    CRequestRateControl rate_control(6);
+#else
+    CRequestRateControl rate_control(CRequestRateControl::kNoLimit);
+#endif
+    CFastMutex rate_mutex;
+
     const CArgs& args = GetArgs();
 
     unsigned short port = 4096;
@@ -386,7 +408,7 @@ int CServerTestApp::Run(void)
 
     for (int i = max_number_of_clients;  i > 0;  i--) {
         pool.AcceptRequest(CRef<ncbi::CStdRequest>
-                           (new CConnectionRequest(port)));
+            (new CConnectionRequest(port, rate_control, rate_mutex)));
     }
 
     server.Run();
