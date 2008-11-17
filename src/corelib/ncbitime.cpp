@@ -2455,14 +2455,14 @@ int CFastLocalTime::GetLocalTimezone(void)
 //=============================================================================
 
 // deprecated
-CStopWatch::CStopWatch(bool start) // NCBI_FAKE_WARNING
+CStopWatch::CStopWatch(bool start)
 {
     m_Total = 0;
     m_State = eStop;
     if ( start ) {
         Start();
     }
-}
+} // NCBI_FAKE_WARNING
 
 double CStopWatch::GetTimeMark()
 {
