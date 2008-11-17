@@ -89,7 +89,7 @@ public:
     /// @param dist Maximum distance
     ///
     void SetMaxDistance(double dist) {m_Diameter = dist;}
-	
+        
     /// Get maximum distance in cluster
     /// @return Maximum distance in cluster
     ///
@@ -188,9 +188,19 @@ public:
     ///
     void SetPrototypes(void);
 
+    /// Get distance matrix for elements of a selected cluster
+    /// @param index Cluster index [in]
+    /// @param mat Distance matrix for cluster elements [out]
+    ///
+    void GetClusterDistMatrix(int index, TDistMatrix& mat) const;
+
     /// Delete distance matrix
     ///
     void PurgeDistMatrix(void) {m_DistMatrix.reset();}
+
+    /// Clear clusters and distance matrix
+    ///
+    void Reset(void);
 
 protected:
     auto_ptr<TDistMatrix> m_DistMatrix;

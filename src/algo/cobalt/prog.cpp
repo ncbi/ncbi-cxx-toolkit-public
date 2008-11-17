@@ -892,6 +892,34 @@ CMultiAligner::x_RealignSequences(
     return score;
 }
 
+
+/// Find locations of gaps in cluster prototype
+/// @param cluster Cluster [in]
+/// @param query_data Current alignment of input sequences [in]
+/// @param gaps List of gap range locations [out]
+static void x_GetClusterGapLocations(const CClusterer::CSingleCluster& cluster,
+                                     const vector<CSequence>& query_data,
+                                     vector<TRange>& gaps)
+{
+    gaps.clear();
+
+    const CSequence& seq = query_data[cluster.GetPrototype()];
+    for (int i=0;i < seq.GetLength();i++) {
+        if (seq.GetLetter(i) == CSequence::kGapChar) {
+            TRange range;
+            range.SetFrom(i);
+            while (i < seq.GetLength()
+                   && seq.GetLetter(i) == CSequence::kGapChar) {
+
+                i++;
+            }
+            i--;
+            range.SetTo(i);
+            gaps.push_back(range);
+        }
+    }
+}
+
 /// Main driver for progressive alignment
 /// @param tree Alignment guide tree [in]
 /// @param query_data The sequences to align. The first call assumes
@@ -938,7 +966,91 @@ CMultiAligner::x_AlignProgressive(
         NCBI_THROW(CMultiAlignerException, eInterrupt,
                    "Alignment interrupted");
     }
+
+    // If root of a cluster tree then set RPS frequencies for cluster seuquences
+    // Node id > 10000 denotes root of a cluster tree
+    // TO DO: Marking root of cluster tree should be done in a better way
+    if (tree->GetValue().GetId() >= 10000
+        && m_Options->GetInClustAlnMethod() == CMultiAlignerOptions::eMulti) {
+
+        int index = tree->GetValue().GetId() - 10000;
+        const CClusterer::CSingleCluster& cluster
+            = m_Clusterer.GetClusters()[index];
+
+        vector<TRange> gaps;
+        x_GetClusterGapLocations(cluster, query_data, gaps);
+        x_AddRpsFreqsToCluster(cluster, query_data, gaps);
+    }
 }
+
+
+void
+CMultiAligner::x_AddRpsFreqsToCluster(const CClusterer::CSingleCluster& cluster,
+                                      vector<CSequence>& query_data,
+                                      const vector<TRange>& gaps)
+{
+    // Cdd frequencies must be added to all cluster sequencies, because
+    // at each profile-to-profile alignment frequencies are taken from
+    // individual sequences
+
+    // Get RPS frequencies for cluster prototype
+    CSequence& prot = m_QueryData[cluster.GetPrototype()];
+    CSequence::TFreqMatrix& rps_freqs = prot.GetFreqs();
+
+    int prot_idx = cluster.GetPrototype();
+
+    int offset = 0;
+    vector<TRange>::const_iterator gap_it(gaps.begin());
+
+    // For each location with RPS frequencies
+    ITERATE(vector<int>, it, prot.GetRPSLocs()) {
+
+        // update difference between unaligned and aligned locations in 
+        // prototype sequence
+        while (gap_it != gaps.end() && gap_it->GetFrom() < *it + offset) {
+            offset += gap_it->GetTo() - gap_it->GetFrom() + 1;
+            gap_it++;
+        }
+
+        // for each cluster element
+        ITERATE(CClusterer::CSingleCluster, elem, cluster) {
+            if (*elem == prot_idx) {
+                continue;
+            }
+
+            CSequence& seq = query_data[*elem];
+            CSequence::TFreqMatrix& matrix = seq.GetFreqs();
+
+            // assign RPS frequencies
+            for (int j=0;j < (int)matrix.GetCols();j++) {
+                
+                if (seq.GetLetter(*it + offset) != CSequence::kGapChar) {
+                    _ASSERT(rps_freqs(*it, j) >= 0.0);
+
+                    matrix(*it + offset, j) = rps_freqs(*it, j);
+                }
+            }
+ 
+            // if cluster sequence has different letter than prototype
+            if (seq.GetLetter(*it + offset) != prot.GetLetter(*it)) {
+
+                // remove domain frequency boost assigned to prototype
+                matrix(*it + offset, prot.GetLetter(*it))
+                    -= m_DomainResFreqBoost;
+            
+                // assign conserved domain frequency boost
+                if (seq.GetLetter(*it + offset) != CSequence::kGapChar
+                    /*&& *elem != prot_idx*/) { //domain boost for prototype
+                                                //is already in the rps_freqs
+                    matrix(*it + offset, seq.GetLetter(*it + offset))
+                        += m_DomainResFreqBoost;
+                }
+            }
+            
+        }
+    }
+}
+
 
 /// Create a list of constraints that reflect conserved columns
 /// in a multiple alignment

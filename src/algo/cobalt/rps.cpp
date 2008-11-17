@@ -531,6 +531,8 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
 
         CSequence& query = m_QueryData[hit->m_SeqIndex1];
         CSequence::TFreqMatrix& matrix = query.GetFreqs();
+        vector<int>& rps_locs = query.GetRPSLocs();
+        rps_locs.clear();
 
         double **ref_freqs = profile_data.GetResFreqs() + 
                              (profile_data.GetSeqOffsets())[hit->m_SeqIndex2];
@@ -556,6 +558,8 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
                     for (int m = 0; m < kAlphabetSize; m++) {
                         matrix(q+k, m) = 
                               (1 - m_DomainResFreqBoost) * ref_freqs[s+k][m];
+
+                        rps_locs.push_back(q+k);
                     }
                     matrix(q+k, query.GetLetter(q+k)) += m_DomainResFreqBoost; 
                 }
@@ -602,7 +606,9 @@ CMultiAligner::x_AssignDefaultResFreqs()
         }
     }
 
-    if (m_UseClusters) {
+    if (m_UseClusters 
+        && m_ClustAlnMethod == CMultiAlignerOptions::eToPrototype) {
+
         for (size_t i = 0; i < m_AllQueryData.size(); i++) {
             CSequence& query = m_AllQueryData[i];
             CSequence::TFreqMatrix& matrix = query.GetFreqs();

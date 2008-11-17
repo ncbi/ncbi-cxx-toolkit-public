@@ -82,6 +82,8 @@ void CMultiAligner::x_InitParams(void)
     _ASSERT(!m_Options.Empty());
 
     m_UseClusters = m_Options->GetUseQueryClusters();
+    m_ClustAlnMethod = m_UseClusters ? m_Options->GetInClustAlnMethod()
+       : CMultiAlignerOptions::eNone;
     m_KmerLength = m_Options->GetKmerLength();
     m_MaxClusterDist = m_Options->GetMaxInClusterDist();
     m_ClustDistMeasure = m_Options->GetKmerDistMeasure();
@@ -324,7 +326,7 @@ CMultiAligner::Reset()
 
 
 void 
-CMultiAligner::x_ComputeTree()
+CMultiAligner::x_ComputeTree(void)
 {
     // Convert the current collection of pairwise
     // hits into a distance matrix. This is the only
@@ -346,10 +348,30 @@ CMultiAligner::x_ComputeTree()
                      "Cannot generate Karlin block");
     }
 
-    CDistances distances(m_QueryData, 
-                         m_CombinedHits, 
+    CDistances distances(m_QueryData,
+                         m_CombinedHits,
                          m_Aligner.GetMatrix(),
                          karlin_blk);
+
+    CDistMethods::TMatrix dmat;
+
+    if (m_ClustAlnMethod == CMultiAlignerOptions::eMulti) {
+        const CDistMethods::TMatrix& bigmat = distances.GetMatrix();
+
+        const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
+        dmat.Resize(clusters.size(), clusters.size(), 0.0);
+        for (size_t i=0;i < clusters.size() - 1;i++) {
+            for (size_t j=i+1;j < clusters.size();j++) {
+                dmat(i, j) = bigmat(clusters[i].GetPrototype(),
+                                    clusters[j].GetPrototype());
+                dmat(j, i) = dmat(i, j);
+            }
+        }
+    }
+    else {
+        dmat = distances.GetMatrix();
+    }
+
 
     //--------------------------------
     if (m_Verbose) {
@@ -373,7 +395,7 @@ CMultiAligner::x_ComputeTree()
 
     // build the phylo tree associated with the matrix
 
-    m_Tree.ComputeTree(distances.GetMatrix(), m_FastMeTree);
+    m_Tree.ComputeTree(dmat, m_FastMeTree);
 
     //--------------------------------
     if (m_Verbose) {
@@ -388,20 +410,29 @@ CMultiAligner::x_ComputeTree()
     }
 }
 
+
 CMultiAligner::TStatus CMultiAligner::Run()
 {
     EStatus status = eSuccess;
 
     try {
         bool is_cluster_found = false;
+        vector<TPhyTreeNode*> cluster_trees;
 
         if (m_UseClusters) {
             if ((is_cluster_found = x_FindQueryClusters())) {
-                x_AlignInClusters();
-                // No multiple alignment is done for one cluster
-                if (m_Clusterer.GetClusters().size() == 1) {
-                    m_tQueries.swap(m_AllQueries);
-                    return (TStatus)(IsMessage() ? eWarnings : eSuccess);
+                
+                if (m_ClustAlnMethod == CMultiAlignerOptions::eToPrototype) {
+
+                    x_AlignInClusters();
+                    // No multiple alignment is done for one cluster
+                    if (m_Clusterer.GetClusters().size() == 1) {
+                        m_tQueries.swap(m_AllQueries);
+                        return (TStatus)(IsMessage() ? eWarnings : eSuccess);
+                    }
+                }
+                else {
+                    x_ComputeClusterTrees(cluster_trees);
                 }
             }
         }
@@ -417,10 +448,26 @@ CMultiAligner::TStatus CMultiAligner::Run()
         x_FindPatternHits(pattern_queries, indices);
         x_FindConsistentHitSubset();
 
-        x_ComputeTree();
+        if (m_ClustAlnMethod == CMultiAlignerOptions::eMulti
+            && m_Clusterer.GetClusters().size() == 1) {
+
+            m_Tree.SetTree(cluster_trees[0]);
+        }
+        else {
+            x_ComputeTree();
+        }
+
+        if (m_Clusterer.GetClusters().size() > 1
+            && m_ClustAlnMethod == CMultiAlignerOptions::eMulti) {
+
+            x_BuildFullTree(cluster_trees);
+        }
+
         x_BuildAlignment();
 
-        if (is_cluster_found) {
+        if (is_cluster_found
+            && m_ClustAlnMethod == CMultiAlignerOptions::eToPrototype) {
+
             x_MultiAlignClusters();
         }
     }
@@ -520,6 +567,8 @@ CMultiAligner::x_FindQueryClusters()
         }
         //-----------------------------------------------------------------
 
+        m_Clusterer.Reset();
+        m_ClustAlnMethod = CMultiAlignerOptions::eNone;
         return false;
     }
 
@@ -545,16 +594,18 @@ CMultiAligner::x_FindQueryClusters()
         }
     }
 
-    vector< CRef<objects::CSeq_loc> > cluster_prototypes;
-    ITERATE(CClusterer::TClusters, cluster_it, m_Clusterer.GetClusters()) {
-        cluster_prototypes.push_back(m_tQueries[cluster_it->GetPrototype()]);
-        m_AllQueryData.push_back(m_QueryData[cluster_it->GetPrototype()]);
-    }
-
     // Rearrenging input sequences to consider cluster information
-    m_tQueries.swap(cluster_prototypes);
-    cluster_prototypes.swap(m_AllQueries);
-    m_QueryData.swap(m_AllQueryData);
+    vector< CRef<objects::CSeq_loc> > cluster_prototypes;
+    if (m_ClustAlnMethod == CMultiAlignerOptions::eToPrototype) {
+        ITERATE(CClusterer::TClusters, cluster_it, m_Clusterer.GetClusters()) {
+            cluster_prototypes.push_back(m_tQueries[cluster_it->GetPrototype()]);
+            m_AllQueryData.push_back(m_QueryData[cluster_it->GetPrototype()]);
+        }
+
+        m_tQueries.swap(cluster_prototypes);
+        cluster_prototypes.swap(m_AllQueries);
+        m_QueryData.swap(m_AllQueryData);
+    }
 
     //-------------------------------------------------------
     if (m_Verbose) {
@@ -644,7 +695,10 @@ CMultiAligner::x_FindQueryClusters()
     //-------------------------------------------------------
 
     // Distance matrix is not needed any more, release memory
-    m_Clusterer.PurgeDistMatrix();
+    if (m_ClustAlnMethod == CMultiAlignerOptions::eToPrototype) {
+
+        m_Clusterer.PurgeDistMatrix();
+    }
 
     return true;
 }
@@ -1078,26 +1132,427 @@ void CMultiAligner::x_CreateBlastQueries(blast::TSeqLocVector& queries,
 {
     queries.clear();
     indices.clear();
-    ITERATE(vector< CRef<objects::CSeq_loc> >, it, m_tQueries) {
-        blast::SSeqLoc sl(**it, *m_Scope);
-        queries.push_back(sl);
+
+    switch (m_ClustAlnMethod) {
+
+    case CMultiAlignerOptions::eNone:
+    case CMultiAlignerOptions::eToPrototype:
+        ITERATE(vector< CRef<objects::CSeq_loc> >, it, m_tQueries) {
+            blast::SSeqLoc sl(**it, *m_Scope);
+            queries.push_back(sl);
+        }
+        indices.resize(m_tQueries.size());
+        for (int i=0;i < (int)m_tQueries.size();i++) {
+            indices[i] = i;
+        }
+        break;
+
+    case CMultiAlignerOptions::eMulti:
+        ITERATE(CClusterer::TClusters, it, m_Clusterer.GetClusters()) {
+            int index = it->GetPrototype();
+            blast::SSeqLoc sl(*m_tQueries[index], *m_Scope);
+            queries.push_back(sl);
+            indices.push_back(index);
+        }
+        break;
+
+    default:
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "Invalid in-cluster alignment method");
     }
-    indices.resize(m_tQueries.size());
-    for (int i=0;i < (int)m_tQueries.size();i++) {
-        indices[i] = i;
-    }
+
 }
 
 
 void CMultiAligner::x_CreatePatternQueries(vector<const CSequence*>& queries,
                                            vector<int>& indices)
 {
-    queries.resize(m_QueryData.size());
-    indices.resize(m_QueryData.size());
-    for (size_t i=0;i < m_QueryData.size();i++) {
-        queries[i] = &m_QueryData[i];
-        indices[i] = i;
+
+    switch (m_ClustAlnMethod) {
+
+    case CMultiAlignerOptions::eNone:
+    case CMultiAlignerOptions::eToPrototype:
+        queries.resize(m_QueryData.size());
+        indices.resize(m_QueryData.size());
+        for (size_t i=0;i < m_QueryData.size();i++) {
+            queries[i] = &m_QueryData[i];
+            indices[i] = i;
+        }
+        break;
+
+    case CMultiAlignerOptions::eMulti:
+        {
+            const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
+            queries.resize(clusters.size());
+            indices.resize(clusters.size());
+            for (size_t i=0;i < clusters.size();i++) {
+                int index = clusters[i].GetPrototype();
+                queries[i] = &m_QueryData[index];
+                indices[i] = index;
+            }
+        }
+        break;
+
+    default:
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "Invalid in-cluster alignment method");
     }
+
+}
+
+/// Create phylogenetic tree for two sequences. This will be root and two
+/// children.
+/// @param ids Indices of the sequences in the array of queries [in]
+/// @param distance Distance between the sequences [in]
+/// @return Root of computed phylogenetic tree
+static TPhyTreeNode* s_MakeTwoLeafTree(const CClusterer::CSingleCluster& ids,
+                                       double distance)
+{
+    _ASSERT(ids.size() == 2);
+
+    TPhyTreeNode *root = new TPhyTreeNode();
+    root->GetValue().SetDist(0.0);
+    double node_dist = distance / 2.0;
+
+    // so that edges can be scaled later
+    if (node_dist <= 0.0) {
+        node_dist = 1.0;
+    }
+
+    TPhyTreeNode* node = new TPhyTreeNode();
+    node->GetValue().SetId(ids[0]);
+    node->GetValue().SetDist(node_dist);
+    root->AddNode(node);
+
+    node = new TPhyTreeNode();
+    node->GetValue().SetId(ids[1]);
+    node->GetValue().SetDist(node_dist);
+    root->AddNode(node);
+
+    return root;
+}
+
+/// Change ids of leaf nodes in a given tree to desired values (recursive).
+/// Function assumes that current leaf ids are 0,...,number of lefs. Each id i
+/// will be changed to i-th element of the given array.
+/// @param node Tree root [in|out]
+/// @param ids List of desired ids [in]
+static void s_SetLeafIds(TPhyTreeNode* node,
+                       const CClusterer::CSingleCluster& ids)
+{
+    if (node->IsLeaf()) {
+        _ASSERT(node->GetValue().GetId() < (int)ids.size());
+        node->GetValue().SetId(ids[node->GetValue().GetId()]);
+
+        return;
+    }
+    
+    TPhyTreeNode::TNodeList_CI child(node->SubNodeBegin());
+    while (child != node->SubNodeEnd()) {
+
+        s_SetLeafIds(*child, ids);
+        child++;
+    }
+}
+
+void CMultiAligner::x_ComputeClusterTrees(vector<TPhyTreeNode*>& trees) const
+{
+    const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
+    trees.resize(clusters.size());
+
+    for (int clust_idx=0;clust_idx < (int)clusters.size();clust_idx++) {
+        const CClusterer::CSingleCluster& cluster = clusters[clust_idx];
+
+        // Tree root == NULL indicates one-elemet cluster
+        if (cluster.size() == 1) {
+            trees[clust_idx] = NULL;
+            continue;
+        }
+
+        if (cluster.size() == 2) {
+            trees[clust_idx] = s_MakeTwoLeafTree(cluster,
+                       (m_Clusterer.GetDistMatrix())(cluster[0], cluster[1]));
+
+            continue;
+        }
+
+        CClusterer::TDistMatrix mat;
+        m_Clusterer.GetClusterDistMatrix(clust_idx, mat);
+        CTree single_tree(mat);
+        TPhyTreeNode* root = single_tree.ReleaseTree();
+
+        // Set node id's that correspoding to cluster sequences
+        s_SetLeafIds(root, cluster);
+
+        trees[clust_idx] = root;
+    }
+
+    //----------------------------------------------------------------
+    if (m_Verbose) {
+        for (size_t i=0;i < trees.size();i++) {
+            if (trees[i]) {
+                printf("Tree for cluster %d:\n", (int)i);
+                CTree::PrintTree(trees[i]);
+                printf("\n");
+            }
+        }
+    }
+    //----------------------------------------------------------------
+}
+
+
+/// Compute length of the edge or distance from root for each leaf (recursive).
+/// @param tree Tree root [in]
+/// @param dist_from_root Current distance from root, used for recurence [in]
+/// @param leaf_dists Leaf distances, vector must be allocated [out]
+/// @param leaf_nodes Pointers to leaf nodes. Need to be initialized to NULLs
+/// [out]
+/// @param last_edge_only If true, length of last edge is returned for each
+///        leaf, distance from root otherwise [in]
+static void s_FindLeafDistances(TPhyTreeNode* tree, double dist_from_root,
+                                vector<double>& leaf_dists,
+                                vector<TPhyTreeNode*>& leaf_nodes,
+                                bool last_edge_only = false)
+{
+    _ASSERT(!tree->GetParent() || tree->GetValue().IsSetDist());
+
+    if (tree->IsLeaf()) {
+
+        int id = tree->GetValue().GetId();
+        double dist = tree->GetValue().GetDist();
+        if (!last_edge_only) {
+            dist += dist_from_root;
+        }
+        
+        _ASSERT(id < (int)leaf_dists.size());
+        leaf_dists[id] = dist;
+
+
+        _ASSERT(id < (int)leaf_nodes.size() && !leaf_nodes[id]);
+        leaf_nodes[id] = tree;
+
+        return;
+    }
+
+    double dist;
+    if (tree->GetParent() && tree->GetValue().IsSetDist() && !last_edge_only) {
+        dist = tree->GetValue().GetDist();
+    }
+    else {
+        dist = 0.0;
+    }
+
+    TPhyTreeNode::TNodeList_CI it = tree->SubNodeBegin();
+    while (it != tree->SubNodeEnd()) {
+        s_FindLeafDistances(*it, dist_from_root + dist, leaf_dists, leaf_nodes,
+                            last_edge_only);
+        it++;
+    }
+}
+
+/// Find distance from root for selected node (recursive).
+/// @param node Tree root [in]
+/// @param id Node id for selected node [in]
+/// @param dist_from_root Current distance from root, for recurrence [in]
+/// @return Distance from root for node with given id, or -1.0 if node not
+/// found
+static double s_FindNodeDistance(const TPhyTreeNode* node, int id,
+                                 double dist_from_root)
+{
+    _ASSERT(!node->GetParent() || node->GetValue().IsSetDist());
+
+    if (node->GetValue().GetId() == id) {
+        return dist_from_root + node->GetValue().GetDist();
+    }
+
+    if (node->IsLeaf()) {
+        return -1.0;
+    }
+
+    double dist;
+    if (!node->GetParent()) {
+        dist = 0.0;
+    }
+    else {
+        dist = node->GetValue().GetDist();
+    }
+
+    TPhyTreeNode::TNodeList_CI it = node->SubNodeBegin();
+
+    double result = -1.0;
+    while (it != node->SubNodeEnd() && result <= -1.0) {
+        result = s_FindNodeDistance(*it, id, dist_from_root + dist);
+        it++;
+    }
+
+    return result;
+}
+
+/// Scale all tree edges by given factor (recursive).
+/// @param node Tree root [in|out]
+/// @param scale Scaling factor [in]
+static void s_ScaleTreeEdges(TPhyTreeNode* node, double scale)
+{
+    _ASSERT(!node->GetParent() || node->GetValue().IsSetDist());
+
+    node->GetValue().SetDist(node->GetValue().GetDist() * scale);
+
+    if (node->IsLeaf()) {
+        return;
+    }
+
+    TPhyTreeNode::TNodeList_I it = node->SubNodeBegin();
+    while (it != node->SubNodeEnd()) {
+        s_ScaleTreeEdges(*it, scale);
+        it++;
+    }
+}
+
+/// Rescale tree so that node with given id has desired distance from root
+/// @param tree Tree root [in|out]
+/// @param id Id of node that is to have desired distance from root [in]
+/// @param dist Desired distance from root for desired node [in]
+static void s_RescaleTree(TPhyTreeNode* tree, int id, double dist)
+{
+    // Find current distance from root
+    double curr_dist = s_FindNodeDistance(tree, id, 0.0);
+
+    _ASSERT(dist > 0.0);
+
+    // Find scale
+    double scale;
+    if (curr_dist > 0.0) {
+        scale = dist / curr_dist;
+    }
+    else {
+        scale = dist;
+    }
+
+    // Scale all edges of the tree
+    s_ScaleTreeEdges(tree, scale);
+}
+
+void CMultiAligner::x_AttachClusterTrees(
+                                   const vector<TPhyTreeNode*>& cluster_trees,
+                                   const vector<TPhyTreeNode*>& cluster_leaves)
+{
+    ITERATE(vector<TPhyTreeNode*>, it, cluster_leaves) {
+        // For each leaf here
+        TPhyTreeNode* node = *it;
+
+        _ASSERT(node && node->IsLeaf());
+        _ASSERT(node->GetValue().IsSetDist());
+
+        // find query cluster it represents and get cluster subtree
+        int cluster_id = node->GetValue().GetId();
+        TPhyTreeNode* subtree = cluster_trees[cluster_id];
+
+        // NULL pointer indicates one-element cluster
+        // there is no subtree to attach, but node id must be changed from
+        // cluster id to sequence id
+        if (!subtree) {
+            const CClusterer::CSingleCluster& cluster
+                = m_Clusterer.GetClusters()[cluster_id];
+            int seq_id = cluster[0];
+
+            node->GetValue().SetId(seq_id);
+
+            continue;
+        }
+
+        // id > 10000 denotes root of cluster subtree (for now)
+        node->GetValue().SetId(10000 + cluster_id);
+
+        // Detach subtree children and attach them to the leaf node.
+        // This prevents problems in recursion
+        vector<TPhyTreeNode*> children;
+        TPhyTreeNode::TNodeList_I child(subtree->SubNodeBegin());
+        while (child != subtree->SubNodeEnd()) {
+            children.push_back(*child);
+            child++;
+        }
+        ITERATE(vector<TPhyTreeNode*>, it, children) {
+            subtree->DetachNode(*it);
+            node->AddNode(*it);
+        }
+        delete subtree;
+
+        // node replaces root of the subtree
+        node->GetValue().SetDist(0.0);
+
+    }
+}
+
+void CMultiAligner::x_BuildFullTree(const vector<TPhyTreeNode*>& cluster_trees)
+{
+    _ASSERT(m_Tree.GetTree());
+
+    const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
+    _ASSERT(cluster_trees.size() == clusters.size());
+
+    // Find leaf nodes and lengths of leaf edges in the tree of cluster
+    // prototypes
+    vector<double> cluster_dists(clusters.size(), 0.0);
+    vector<TPhyTreeNode*> cluster_leaves(clusters.size(), NULL);
+    s_FindLeafDistances(m_Tree.GetTree(), 0.0, cluster_dists, cluster_leaves,
+                      true);
+    //------------------------------------------------------------
+    if (m_Verbose) {
+        vector<TPhyTreeNode*> dummy_vect(clusters.size(), NULL);
+        vector<double>d(cluster_dists.size());
+        s_FindLeafDistances(m_Tree.GetTree(), 0.0, d, dummy_vect, false);
+        for (size_t i=0;i < d.size();i++) {
+            printf("%d:%f ", (int)i, d[i]);
+        }
+        printf("\n");
+    }
+    //------------------------------------------------------------
+
+    // For each cluster tree
+    for (size_t i=0;i < cluster_trees.size();i++) {
+
+        // skip one-element clusters
+        if (!cluster_trees[i]) {
+            continue;
+        }
+
+        const CClusterer::CSingleCluster& cluster = clusters[i];
+
+        // if the length of leaf edge is non-positive, set it to a small value
+        if (cluster_dists[i] <= 0.0) {
+            cluster_dists[i] = 1e-5;
+        }
+
+        // rescale cluster tree so that distance from root to cluster
+        // representative is the same as leaf edge in the tree of cluster
+        // prototypes
+        s_RescaleTree(cluster_trees[i], cluster.GetPrototype(),
+                      cluster_dists[i]);
+    }
+
+    // Attach cluster trees to the guide tree
+    x_AttachClusterTrees(cluster_trees, cluster_leaves);
+
+    //------------------------------------------------------------
+    if (m_Verbose) {
+        vector<TPhyTreeNode*> dummy_vect(m_QueryData.size(), NULL);
+        cluster_dists.resize(m_QueryData.size(), 0.0);
+        s_FindLeafDistances(m_Tree.GetTree(), 0.0, cluster_dists, dummy_vect,
+                          false);
+        for (size_t i=0;i < cluster_dists.size();i++) {
+            printf("%d:%f ", (int)i, cluster_dists[i]);
+        }
+        printf("\n");
+    }
+
+    if (m_Verbose) {
+        printf("Full tree:\n");
+        CTree::PrintTree(m_Tree.GetTree());
+        printf("\n");
+    }
+    //------------------------------------------------------------
+
+
 }
 
 

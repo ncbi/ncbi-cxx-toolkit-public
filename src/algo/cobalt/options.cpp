@@ -99,6 +99,11 @@ bool CMultiAlignerOptions::Validate(void)
             NCBI_THROW(CMultiAlignerException, eInvalidOptions,
                        "Invalid distance measure for query clustering");
         }
+
+        if (m_InClustAlnMethod == eNone) {
+            NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                       "Method for in-cluster alignment not selected");
+        }
     }
 
     // Check if data base name is specified if option selected
@@ -187,6 +192,7 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
     m_KmerLength = 6;
     m_KmerAlphabet = TKMethods::eSE_B15;
     m_ClustDistMeasure = TKMethods::eFractionCommonKmersGlobal;
+    m_InClustAlnMethod = m_UseQueryClusters ? eMulti : eNone;
 
     // RPS Blast
     m_UsePreRpsHits = true;

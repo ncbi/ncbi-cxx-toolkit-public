@@ -166,26 +166,26 @@ void CClusterer::ComputeClusters(double max_diam)
     while (true) {
 
         // Find first used dist matrix entries
-	size_t min_i = 0;
-	size_t min_j;
-	do {
-	    while (!used_entry[min_i] && min_i < num_elements) {
-		min_i++;
-	    }
-	
-	    min_j = min_i + 1;
-	    while (!used_entry[min_j] && min_j < num_elements) {
-		min_j++;
-	    }
+        size_t min_i = 0;
+        size_t min_j;
+        do {
+            while (!used_entry[min_i] && min_i < num_elements) {
+                min_i++;
+            }
+        
+            min_j = min_i + 1;
+            while (!used_entry[min_j] && min_j < num_elements) {
+                min_j++;
+            }
 
-	    if (min_j >= num_elements) {
-		min_i++;
-	    }
-	} while (min_j >= num_elements && min_i < num_elements);
+            if (min_j >= num_elements) {
+                min_i++;
+            }
+        } while (min_j >= num_elements && min_i < num_elements);
 
-	// A distance larger than max_diam exists in the dist matrix,
-	// then there always should be at least two used entires in dist matrix
-	_ASSERT(min_i < num_elements && min_j < num_elements);
+        // A distance larger than max_diam exists in the dist matrix,
+        // then there always should be at least two used entires in dist matrix
+        _ASSERT(min_i < num_elements && min_j < num_elements);
 
         // Find smallest distance entry
         for (size_t i=0;i < num_elements - 1;i++) {
@@ -270,6 +270,30 @@ void CClusterer::SetPrototypes(void) {
     NON_CONST_ITERATE(TClusters, cluster, m_Clusters) {
         cluster->SetPrototype(cluster->FindCenterElement(*m_DistMatrix));
     }
+}
+
+
+void CClusterer::GetClusterDistMatrix(int index, TDistMatrix& mat) const
+{
+    _ASSERT(index < (int)m_Clusters.size());
+
+    const CSingleCluster& cluster = m_Clusters[index];
+
+    mat.Resize(cluster.size(), cluster.size(), 0.0);
+    for (size_t i=0;i < cluster.size() - 1;i++) {
+        for (size_t j=i+1;j < cluster.size();j++) {
+            _ASSERT(cluster[i] < (int)m_DistMatrix->GetRows());
+            _ASSERT(cluster[j] < (int)m_DistMatrix->GetRows());
+
+            mat(i, j) = mat(j, i) = (*m_DistMatrix)(cluster[i], cluster[j]);
+        }
+    }
+}
+
+void CClusterer::Reset(void)
+{
+    m_Clusters.clear();
+    PurgeDistMatrix();
 }
 
 

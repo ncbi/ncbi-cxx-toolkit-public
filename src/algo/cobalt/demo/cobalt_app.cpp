@@ -44,6 +44,7 @@ Contents: C++ driver for COBALT multiple alignment algorithm
 #include <serial/iterator.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/alnmgr/alnvec.hpp>
 
 #include <algo/cobalt/cobalt.hpp>
 
@@ -170,8 +171,15 @@ void CMultiApplication::Init(void)
     arg_desc->SetConstraint("comp_alph", &(*new CArgAllow_Strings, "se-v10", 
                        "se-b15"));
 
+    arg_desc->AddDefaultKey("inclust", "name",
+                            "Method for within-cluster alignment of sequences",
+                            CArgDescriptions::eString, "toprot");
+    arg_desc->SetConstraint("inclust", &(*new CArgAllow_Strings, "toprot",
+                                         "multi"));
+
     SetupArgDescriptions(arg_desc.release());
 }
+
 
 void
 x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr,
@@ -180,6 +188,7 @@ x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr,
 {
     seqs.clear();
     scope.Reset(new CScope(objmgr));
+    scope->AddDefaults();
 
     // read one query at a time, and use a separate seq_entry,
     // scope, and lowercase mask for each query. This lets different
@@ -194,7 +203,6 @@ x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr,
 
     while (!line_reader.AtEOF()) {
 
-        scope->AddDefaults();
         CRef<CSeq_entry> entry = fasta_reader.ReadOneSeq();
 
         if (entry == 0) {
@@ -208,7 +216,6 @@ x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr,
         seqs.push_back(seqloc);
     }
 }
-
 
 static void
 x_LoadConstraints(string constraintfile,
@@ -347,6 +354,15 @@ int CMultiApplication::Run(void)
     }
     opts->SetKmerAlphabet(alph);
 
+    CMultiAlignerOptions::EInClustAlnMethod in_clust_aln;
+    if (args["inclust"].AsString() == "toprot") {
+        in_clust_aln = CMultiAlignerOptions::eToPrototype;
+    }
+    else {
+        in_clust_aln = CMultiAlignerOptions::eMulti;
+    }
+    opts->SetInClustAlnMethod(in_clust_aln);
+
     // Verbose level
     opts->SetVerbose(args["v"].AsBoolean());
 
@@ -360,9 +376,6 @@ int CMultiApplication::Run(void)
     _ASSERT(!scope.Empty());
 
     aligner.SetQueries(queries, scope);
-
-
-
     aligner.Run();
 
     const vector<CSequence>& results(aligner.GetSeqResults());
@@ -376,6 +389,7 @@ int CMultiApplication::Run(void)
         }
         printf("\n");
     }
+
     if (args["seqalign"]) {
         CRef<CSeq_align> sa = aligner.GetResults();
         CNcbiOstream& out = args["seqalign"].AsOutputFile();

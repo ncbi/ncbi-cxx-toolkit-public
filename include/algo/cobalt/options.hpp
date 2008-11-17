@@ -213,6 +213,14 @@ public:
         eFastME   ///< Fast Minimum Evolution
     };
 
+    enum EInClustAlnMethod {
+        eNone = 0,     ///< No clustering
+        eToPrototype,  ///< All cluster elements are aligner to cluster 
+                       ///< prototype
+
+        eMulti         ///< Alignment guide tree for each cluster is attached
+                       ///< to the main alignment guide tree
+    };
 
 public:
     
@@ -606,6 +614,12 @@ public:
     ///   - false otherwise
     bool GetVerbose(void) const {return m_Verbose;}
 
+    void SetInClustAlnMethod(EInClustAlnMethod method)
+    {m_InClustAlnMethod = method;}
+
+    EInClustAlnMethod GetInClustAlnMethod(void) const
+    {return m_InClustAlnMethod;}
+
 
     //--- Options validation ---
 
@@ -638,6 +652,7 @@ private:
     unsigned int m_KmerLength;
     double m_MaxInClusterDist;
     TKMethods::EDistMeasures m_ClustDistMeasure;
+    EInClustAlnMethod m_InClustAlnMethod;
 
     // RPS Blast
     bool m_UseRpsBlast;

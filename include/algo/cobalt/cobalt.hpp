@@ -280,6 +280,28 @@ protected:
     ///
     bool x_ValidateUserHits(void);
 
+    /// Create query set for RPS Blast and Blastp searches along with indices
+    /// in multiple alignment queries array.
+    ///
+    /// Searches for conserved regions can be performed for a subset of
+    /// multiple alignment queries (typically to reduce computation time).
+    /// @param queries Queries for RPS Blast and Blastp searches [out]
+    /// @param indices Indexes of each query in m_tQueries [out]
+    ///
+    void x_CreateBlastQueries(blast::TSeqLocVector& queries,
+                              vector<int>& indices);
+
+    /// Create query set for PROSITE pattern search along with indices
+    /// in multiple alignment queries array.
+    ///
+    /// Searches for conserved regions can be performed for a subset of
+    /// multiple alignment queries (typically to reduce computation time).
+    /// @param queries Queries for PROSITE patterns searches [out]
+    /// @param indices Indexes of each query in m_tQueries [out]
+    ///
+    void x_CreatePatternQueries(vector<const CSequence*>& queries,
+                                vector<int>& indices);
+
     /// Run RPS blast on seletced input sequences and postprocess the
     /// results. Intended for applications that want fine-grained control of
     /// the alignment process.
@@ -345,27 +367,33 @@ protected:
     ///
     void x_MultiAlignClusters();
 
-    /// Create query set for RPS Blast and Blastp searches along with indices
-    /// in multiple alignment queries array.
+    /// Compute independent phylogenetic trees each cluster.
+    /// @param Array of tree roots. Each array element corresponds to
+    /// the cluster. One element clusters yield NULL tree. [out]
     ///
-    /// Searches for conserved regions can be performed for a subset of
-    /// multiple alignment queries (typically to reduce computation time).
-    /// @param queries Queries for RPS Blast and Blastp searches [out]
-    /// @param indices Indexes of each query in m_tQueries [out]
-    ///
-    void x_CreateBlastQueries(blast::TSeqLocVector& queries,
-                              vector<int>& indices);
+    void x_ComputeClusterTrees(vector<TPhyTreeNode*>& trees) const;
 
-    /// Create query set for PROSITE pattern search along with indices
-    /// in multiple alignment queries array.
+    /// Replace leaves in the alignment guide tree of clusters with cluster
+    /// trees.
+    /// @param cluster_trees List of phylogenetic trees computed for each
+    /// cluster of input sequences [in]
+    /// @param cluster_leaves List of pointers to leaves of the alignment guide
+    /// tree computed for clusters [in]
     ///
-    /// Searches for conserved regions can be performed for a subset of
-    /// multiple alignment queries (typically to reduce computation time).
-    /// @param queries Queries for PROSITE patterns searches [out]
-    /// @param indices Indexes of each query in m_tQueries [out]
+    void x_AttachClusterTrees(const vector<TPhyTreeNode*>& cluster_trees,
+                              const vector<TPhyTreeNode*>& cluster_leaves);
+
+    /// Combine alignment guide tree computed for clusters with guide trees
+    /// computed for each cluster. 
     ///
-    void x_CreatePatternQueries(vector<const CSequence*>& queries,
-                                vector<int>& indices);
+    /// Leaves of the guide tree computed for cluster prototypes are replaced
+    /// with clusters trees. Cluster trees are rescaled so that distance from
+    /// root to cluster prototype in cluster tree is the same as length of
+    /// the leaf edge in the alignment guide tree (for cluster prototypes).
+    /// @param cluster_trees List of cluster trees [in]
+    ///
+    void x_BuildFullTree(const vector<TPhyTreeNode*>& cluster_trees);
+
 
 protected:
 
@@ -524,7 +552,9 @@ private:
     static void x_InitInsertColumn(vector<SColumn>::iterator& it, size_t len,
                                    int num, int cluster);
 
-
+    void x_AddRpsFreqsToCluster(const CClusterer::CSingleCluster& cluster,
+                                vector<CSequence>& query_data,
+                                const vector<TRange>& gaps);
 
 
 private:
@@ -556,6 +586,9 @@ private:
     vector< CRef<objects::CSeq_loc> > m_AllQueries;
     vector<CSequence> m_AllQueryData;
 
+    // Modified by x_FindQueryClusters() if no clusters found
+    CMultiAlignerOptions::EInClustAlnMethod m_ClustAlnMethod;
+
     // Running and monitoring
 
     FInterruptFn m_Interrupt;
@@ -564,7 +597,7 @@ private:
     vector<string> m_Messages;
 
     // Alignment Parameters (initilized using m_Options)
-    
+
     bool m_UseClusters;
     TKMethods::ECompressedAlphabet m_KmerAlphabet;
     unsigned int m_KmerLength;
