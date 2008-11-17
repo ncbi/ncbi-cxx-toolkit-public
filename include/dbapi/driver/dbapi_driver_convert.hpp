@@ -413,7 +413,7 @@ template <typename CP>
 class CValueConvert<CP, CDB_LangCmd>
 {
 public: 
-    typedef CDB_LangCmd TObj;
+    typedef typename CDB_LangCmd TObj;
 
     CValueConvert(const CValueConvert<CP, TObj>& other)
     : m_Stmt(other.m_Stmt)
@@ -465,7 +465,7 @@ template <typename CP>
 class CValueConvert<CP, CDB_LangCmd*>
 {
 public: 
-    typedef CDB_LangCmd TObj;
+    typedef typename CDB_LangCmd TObj;
 
     CValueConvert(const CValueConvert<CP, TObj*>& other)
     : m_Stmt(other.m_Stmt)
@@ -697,6 +697,82 @@ private:
     mutable auto_ptr<CDB_Result> m_RS;
 };
 
+#if defined(NCBI_COMPILER_MSVC)
+
+//
+// Workarounds for MSVC compilers ...
+//
+
+template <typename CP>
+struct STypeProxy<CP, CDB_LangCmd>
+{
+    typedef CDB_LangCmd TObj;
+
+    STypeProxy(TObj& value)
+    : m_Value(&value)
+    {
+    }
+
+    template <typename TO>
+    operator TO(void) const
+    {
+        typedef STypeMap<TO>::type T;
+
+        return static_cast<T>(CValueConvert<CP, TObj>(*m_Value));
+        // return CValueConvert<CP, TObj>(*m_Value).operator T();
+    }
+
+private:
+    TObj* m_Value;
+};
+
+template <typename CP>
+struct STypeProxy<CP, CDB_RPCCmd>
+{
+    typedef CDB_RPCCmd TObj;
+
+    STypeProxy(TObj& value)
+    : m_Value(&value)
+    {
+    }
+
+    template <typename TO>
+    operator TO(void) const
+    {
+        typedef STypeMap<TO>::type T;
+
+        return static_cast<T>(CValueConvert<CP, TObj>(*m_Value));
+        // return CValueConvert<CP, TObj>(*m_Value).operator T();
+    }
+
+private:
+    TObj* m_Value;
+};
+
+template <typename CP>
+struct STypeProxy<CP, CDB_CursorCmd>
+{
+    typedef CDB_CursorCmd TObj;
+
+    STypeProxy(CDB_LangCmd& value)
+    : m_Value(&value)
+    {
+    }
+
+    template <typename TO>
+    operator TO(void) const
+    {
+        typedef STypeMap<TO>::type T;
+
+        return static_cast<T>(CValueConvert<CP, TObj>(*m_Value));
+        // return CValueConvert<CP, TObj>(*m_Value).operator T();
+    }
+
+private:
+    TObj* m_Value;
+};
+
+#endif
 
 } // namespace value_slice
 
