@@ -40,5 +40,6 @@ rm -rf $RPM_BUILD_ROOT
 %_bindir/*
 
 %changelog
-See ChangeLog file
+* Mon Jul 21 2008 Christiam Camacho <camacho@ncbi.nlm.nih.gov>
+- See ChangeLog file
 
