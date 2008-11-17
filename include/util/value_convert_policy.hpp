@@ -169,6 +169,19 @@ struct SNumericLimits<T, false> : public std::numeric_limits<T>
 {
 }; 
 
+template <>
+struct SNumericLimits<bool, false> : public std::numeric_limits<bool>
+{
+    static unsigned char min(void)
+    {
+        return static_cast<unsigned char>(std::numeric_limits<bool>::min());
+    }
+    static unsigned char max(void)
+    {
+        return static_cast<unsigned char>(std::numeric_limits<bool>::max());
+    }
+}; 
+
 
 ////////////////////////////////////////////////////////////////////////////////
 template <bool to_is_integer, bool from_is_integer>
