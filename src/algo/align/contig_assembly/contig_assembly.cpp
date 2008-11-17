@@ -188,18 +188,6 @@ void CContigAssembly::DiagCounts(const CSeq_align_set& align_set, CScope& scope,
                                  vector<unsigned int>& plus_vec,
                                  vector<unsigned int>& minus_vec)
 {
-    vector<CConstRef<CDense_seg> > plus_densegs;
-    vector<CConstRef<CDense_seg> > minus_densegs;
-    ITERATE (CSeq_align_set::Tdata, aln, align_set.Get()) {
-        if ((*aln)->GetSeqStrand(0) == eNa_strand_minus) {
-            minus_densegs.push_back(CConstRef<CDense_seg>
-                                    (&(*aln)->GetSegs().GetDenseg()));
-        } else {
-            plus_densegs.push_back(CConstRef<CDense_seg>
-                                   (&(*aln)->GetSegs().GetDenseg()));
-        }
-    }
-
     const CSeq_id& id0 =
         *align_set.Get().front()->GetSegs().GetDenseg().GetIds()[0];
     const CSeq_id& id1 =
@@ -208,34 +196,39 @@ void CContigAssembly::DiagCounts(const CSeq_align_set& align_set, CScope& scope,
     TSeqPos len0 = scope.GetBioseqHandle(id0).GetBioseqLength();
     TSeqPos len1 = scope.GetBioseqHandle(id1).GetBioseqLength();
 
-    vector<unsigned int> new_plus_vec(len0 + len1);
-    swap(plus_vec, new_plus_vec);
-    ITERATE (vector<CConstRef<CDense_seg> >, ds, plus_densegs) {
-        for (int i = 0; i < (*ds)->GetNumseg(); ++i) {
-            TSignedSeqPos start0 = (*ds)->GetStarts()[2 * i];
-            TSignedSeqPos start1 = (*ds)->GetStarts()[2 * i + 1];
-            if (start0 == -1 || start1 == -1) {
-                // do nothing with gaps
-                continue;
+    plus_vec.clear();
+    plus_vec.resize(len0 + len1);
+
+    minus_vec.clear();
+    minus_vec.resize(len0 + len1);
+
+    ITERATE (CSeq_align_set::Tdata, aln, align_set.Get()) {
+        if ((*aln)->GetSeqStrand(0) == eNa_strand_minus) {
+            const CDense_seg& ds = (*aln)->GetSegs().GetDenseg();
+            for (int i = 0; i < ds.GetNumseg(); ++i) {
+                TSignedSeqPos start0 = ds.GetStarts()[2 * i];
+                TSignedSeqPos start1 = ds.GetStarts()[2 * i + 1];
+                if (start0 == -1 || start1 == -1) {
+                    // do nothing with gaps
+                    continue;
+                }
+                TSeqPos seg_len = ds.GetLens()[i];
+                TSeqPos diag = (start0 + seg_len - 1) + start1;
+                minus_vec[diag] += seg_len;
             }
-            TSeqPos seg_len = (*ds)->GetLens()[i];
-            TSeqPos diag = start1 - start0 + len0 - 1 ;
-            plus_vec[diag] += seg_len;
-        }
-    }
-    vector<unsigned int> new_minus_vec(len0 + len1);
-    swap(minus_vec, new_minus_vec);
-    ITERATE (vector<CConstRef<CDense_seg> >, ds, minus_densegs) {
-        for (int i = 0; i < (*ds)->GetNumseg(); ++i) {
-            TSignedSeqPos start0 = (*ds)->GetStarts()[2 * i];
-            TSignedSeqPos start1 = (*ds)->GetStarts()[2 * i + 1];
-            if (start0 == -1 || start1 == -1) {
-                // do nothing with gaps
-                continue;
+        } else {
+            const CDense_seg& ds = (*aln)->GetSegs().GetDenseg();
+            for (int i = 0; i < ds.GetNumseg(); ++i) {
+                TSignedSeqPos start0 = ds.GetStarts()[2 * i];
+                TSignedSeqPos start1 = ds.GetStarts()[2 * i + 1];
+                if (start0 == -1 || start1 == -1) {
+                    // do nothing with gaps
+                    continue;
+                }
+                TSeqPos seg_len = ds.GetLens()[i];
+                TSeqPos diag = start1 - start0 + len0 - 1 ;
+                plus_vec[diag] += seg_len;
             }
-            TSeqPos seg_len = (*ds)->GetLens()[i];
-            TSeqPos diag = (start0 + seg_len - 1) + start1;
-            minus_vec[diag] += seg_len;
         }
     }
 }
@@ -244,25 +237,29 @@ void CContigAssembly::DiagCounts(const CSeq_align_set& align_set, CScope& scope,
 void CContigAssembly::FindMaxRange(const vector<unsigned int>& vec,
                                    unsigned int window,
                                    unsigned int& max,
-                                   vector<unsigned int>& max_range)
+                                   vector<TRange>& max_range)
 {
     unsigned int running_sum = 0;
-    for (unsigned int i = 0; i < window; ++i) {
+    unsigned int i;
+    for (i = 0; i < window; ++i) {
         running_sum += vec[i];
     }
     max = running_sum;
     max_range.clear();
-    max_range.push_back(window - 1);
-    for (unsigned int i = window; i < vec.size();  ++i) {
-        running_sum = running_sum - vec[i - window] + vec[i];
+    max_range.push_back(TRange(window - 1, window - 1));
+    
+    for (i = window; i < vec.size();  ++i) {
+        running_sum -= vec[i - window];
+        running_sum += vec[i];
         if (running_sum >= max) {
-            if (running_sum == max) {
-                max_range.push_back(i);
-            }
             if (running_sum > max) {
-                max = running_sum;
                 max_range.clear();
-                max_range.push_back(i);
+                max = running_sum;
+            }
+            if (max_range.size()  &&  max_range.back().GetFrom() == i - 1) {
+                max_range.back().SetFrom(i);
+            } else {
+                max_range.push_back(TRange(i, i));
             }
         }
     }
@@ -280,38 +277,28 @@ void CContigAssembly::FindDiagFromAlignSet(const CSeq_align_set& align_set,
     DiagCounts(align_set, scope, plus_vec, minus_vec);
 
     unsigned int plus_count;
-    vector<unsigned int> plus_range;
+    vector<TRange> plus_range;
     FindMaxRange(plus_vec, window_size, plus_count, plus_range);
+
     unsigned int minus_count;
-    vector<unsigned int> minus_range;
+    vector<TRange> minus_range;
     FindMaxRange(minus_vec, window_size, minus_count, minus_range);
+
     unsigned int count;
-    vector<unsigned int> r;
+    vector<TRange>* r = NULL;
     if (plus_count > minus_count) {
         strand = eNa_strand_plus;
         count = plus_count;
-        r = plus_range;
+        r = &plus_range;
     } else {
         strand = eNa_strand_minus;
         count = minus_count;
-        r = minus_range;
+        r = &minus_range;
     }
 
-    // check that range is continuous; if not, use first continuous range
-    if (r.back() - r.front() + 1 != r.size()) {
-        cerr << "Warning: strips with max count not contiguous; "
-            "using first contiguous set only" << endl;
-        vector<unsigned int> new_r(1, r[0]);
-        for (unsigned int i = 1; i < r.size(); ++i) {
-            if (r[i] != r[i - 1] + 1) {
-                break;
-            }
-            new_r.push_back(r[i]);
-        }
-        swap(r, new_r);
-    }
-
-    diag = (r.back() + r.front() + 1) / 2 - window_size / 2;
+    // use first continuous range
+    diag =
+        (r->front().GetFrom() + r->front().GetTo() + 1) / 2 - window_size / 2;
 }
 
 

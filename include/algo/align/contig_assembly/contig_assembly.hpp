@@ -32,6 +32,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seqloc/Na_strand_.hpp>
+#include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -134,10 +135,11 @@ public:
 
     /// Find the range (or more than one tied range) containing
     /// the maximal diagonal count, summed over a window.
+    typedef CRange<unsigned int> TRange;
     static void FindMaxRange(const vector<unsigned int>& vec,
                              unsigned int window,
                              unsigned int& max,
-                             vector<unsigned int>& max_range);
+                             vector<TRange>& max_range);
 
     static bool IsDovetail(const objects::CDense_seg& ds,
                            unsigned int slop, objects::CScope& scope);

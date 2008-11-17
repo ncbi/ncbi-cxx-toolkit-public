@@ -4,6 +4,7 @@
 #################################
 
 LIB_PROJ = xalgocontig_assembly
+SUB_PROJ = demo
 
 REQUIRES = objects
 
