@@ -684,24 +684,14 @@ int CReadBlastApp::RemoveInterim2(CBioseq::TAnnot& annots)
      if ( !(*gen_feature)->GetData().IsFtable() ) continue;
      int dremoved=0;
      map<string,bool> feat_defined;
-//     map<const CSeq_feat&, bool> feat_defined;
      CSeq_annot::C_Data::TFtable& table = (*gen_feature)->SetData().SetFtable();
      for(CSeq_annot::C_Data::TFtable::iterator feat_end = table.end(), feat = table.begin(); feat != feat_end;)
        {
        const CSeq_feat& featr = **feat;
        strstream buff;
-       // auto_ptr<CObjectOStream> out (CObjectOStream::Open(eSerial_AsnText, buff));
-       // out << featr;
-       // string bundle = "bundle";
-       // NcbiCerr << MSerial_AsnText  << featr; // compiles
-       // if(PrintDetails()) NcbiCerr << "RemoveInterim2: writing feature in ASN format to buff" << NcbiEndl;
        buff << MSerial_AsnText  << featr;
-       // NcbiCerr << "DEBUG: featr" << NcbiEndl;
-       // NcbiCerr << featr << NcbiEndl;
        buff << '\0';
-       // if(false)
        if(feat_defined.find(buff.str()) != feat_defined.end()) // dupe
-       // if(feat_defined.find(featr) != feat_defined.end()) // dupe
          {
          feat=table.erase(feat);
          }
