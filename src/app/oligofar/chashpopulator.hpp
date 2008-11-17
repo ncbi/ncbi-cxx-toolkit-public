@@ -55,6 +55,9 @@ public:
 
     void operator() ( Uint8 hash, int mism, int amb );
 
+    void Print( ostream& o ) const;
+    static void Print( ostream& o, const value_type& );
+
 protected:
 	CQuery * m_query;
     int m_windowSize;
@@ -80,6 +83,21 @@ inline CHashPopulator& CHashPopulator::Unique()
     return *this;
 }
 
+inline void CHashPopulator::Print( ostream& o, const value_type& v )
+{
+    o << setw(32) << hex << setfill('0') << v.first << dec << "\t"
+      << v.second.GetOffset() << "\t"
+      << v.second.GetWordId() << "\t"
+      << v.second.GetStrand() << "\t"
+      << v.second.GetIndel() << "\t"
+      << v.second.GetMismatches();
+}
+
+inline void CHashPopulator::Print( ostream& o ) const
+{
+    ITERATE( THashList, l, m_data ) { Print( o, *l ); o << "\n"; }
+}
+
 inline bool CHashPopulator::Less( const value_type& a, const value_type& b ) 
 {
     ASSERT( a.second.GetQuery() == b.second.GetQuery() );
@@ -91,6 +109,8 @@ inline bool CHashPopulator::Less( const value_type& a, const value_type& b )
     if( a.second.GetOffset() > b.second.GetOffset() ) return false;
     if( a.second.GetStrandId() < b.second.GetStrandId() ) return true;
     if( a.second.GetStrandId() > b.second.GetStrandId() ) return false;
+    if( a.second.GetWordId() < b.second.GetWordId() ) return true;
+    if( a.second.GetWordId() > b.second.GetWordId() ) return false;
     if( a.second.GetIndel() < b.second.GetIndel() ) return true;
     if( a.second.GetIndel() > b.second.GetIndel() ) return false;
     if( a.second.GetMismatches() < b.second.GetMismatches() ) return true;
@@ -104,6 +124,7 @@ inline bool CHashPopulator::Same( const value_type& a, const value_type& b )
     return 
         a.first == b.first && 
         a.second.GetOffset() == b.second.GetOffset() && 
+        a.second.GetWordId() == b.second.GetWordId() && 
         a.second.GetStrandId() == b.second.GetStrandId() &&
         a.second.GetIndel() == b.second.GetIndel()
         ;
