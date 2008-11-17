@@ -37,6 +37,8 @@
 
 #include <dbapi/driver/util/blobstore.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
 
 BEGIN_NCBI_SCOPE
 

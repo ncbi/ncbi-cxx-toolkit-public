@@ -34,10 +34,10 @@
 
 #include <corelib/ncbithr.hpp>
 
-//#include <dbapi/driver/impl/dbapi_driver_utils.hpp>
-
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
+
+#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
