@@ -1121,6 +1121,7 @@ void SBDB_CacheStatistics::PrintStatistics(CNcbiOstream& out) const
 CBDB_Cache::CBDB_Cache()
 : m_PidGuard(0),
   m_ReadOnly(false),
+  m_InitIfDirty(false),
   m_JoinedEnv(false),
   m_LockTimeout(20 * 1000),
   m_Env(0),
@@ -1217,19 +1218,6 @@ void CBDB_Cache::Open(const string& cache_path,
     m_Path = CDirEntry::AddTrailingPathSeparator(cache_path);
     m_Name = cache_name;
 
-    // Make sure our directory exists
-    {{
-        CDir dir(m_Path);
-        if ( !dir.Exists() ) {
-            dir.Create();
-        }
-    }}
-
-    m_Env = new CBDB_Env();
-
-    string err_file = m_Path + "err" + string(cache_name) + ".log";
-    m_Env->OpenErrFile(err_file.c_str());
-
     CDir dir(m_Path);
     CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
     CFile fl_clean(CDirEntry::MakePath(m_Path, kBDBCacheStartedFileName));
@@ -1239,10 +1227,23 @@ void CBDB_Cache::Open(const string& cache_path,
     if ((!fl.empty()  ||  fl_clean.Exists())
         &&  s_OpenedDirs.count(m_Path) == 0)
     {
-        // Opening db with recover flags is unreliable.
-        LOG_POST("Running recovery...");
-        BDB_RecoverEnv(m_Path, false);
-        fl_clean.Remove();
+        if (m_InitIfDirty) {
+            LOG_POST("Database was closed uncleanly. Removing directory "
+                     << m_Path);
+            dir.Remove();
+        }
+        else {
+            // Opening db with recover flags is unreliable.
+            LOG_POST("Database was closed uncleanly. Running recovery...");
+            BDB_RecoverEnv(m_Path, false);
+            fl_clean.Remove();
+        }
+    }
+
+
+    // Make sure our directory exists
+    if ( !dir.Exists() ) {
+        dir.Create();
     }
 
     if (!fl_clean.Exists()) {
@@ -1251,6 +1252,11 @@ void CBDB_Cache::Open(const string& cache_path,
         writer.Write(pid.data(), pid.size());
         s_OpenedDirs.insert(m_Path);
     }
+
+    m_Env = new CBDB_Env();
+
+    string err_file = m_Path + "err" + string(cache_name) + ".log";
+    m_Env->OpenErrFile(err_file.c_str());
 
     m_JoinedEnv = false;
     bool needs_recovery = false;
@@ -5105,6 +5111,7 @@ public:
 
 static const char* kCFParam_path               = "path";
 static const char* kCFParam_name               = "name";
+static const char* kCFParam_drop_if_dirty      = "drop_if_dirty";
 
 static const char* kCFParam_lock               = "lock";
 static const char* kCFParam_lock_default       = "no_lock";
@@ -5196,6 +5203,8 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     if (overflow_limit) {
         drv->SetOverflowLimit(overflow_limit);
     }
+
+    drv->SetInitIfDirty(GetParamBool(params, kCFParam_drop_if_dirty, false, false));
 
     Uint8 mem_size =
         GetParamDataSize(params, kCFParam_mem_size, false, 0);

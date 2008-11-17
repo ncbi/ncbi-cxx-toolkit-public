@@ -431,6 +431,8 @@ public:
         m_LogDir = log_dir;
     }
 
+    void SetInitIfDirty(bool value) { m_InitIfDirty = value; }
+
     /// Number of records in scanned at once by Purge
     /// Cache is exclusively locks an internal mutex while
     /// scanning the batch and all other threads is getting locked.
@@ -890,6 +892,7 @@ private:
     CPIDGuard*              m_PidGuard;     ///< Cache lock
     bool                    m_ReadOnly;     ///< read-only flag
 
+    bool                    m_InitIfDirty;  ///< Delete DB if it wasn't closed clean
     bool                    m_JoinedEnv;    ///< Joined environment
     TLockVector             m_LockVector;   ///< BLOB lock vector
     unsigned                m_LockTimeout;  ///< Lock timeout (ms)
