@@ -2150,3 +2150,50 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
     }
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+typedef long CS_LONG;
+
+#if defined(NCBI_COMPILER_MSVC)
+namespace ncbi {
+namespace value_slice
+{
+    template <>
+    struct STypeMap<CS_LONG>
+    {
+        typedef Int4 type;
+    };
+
+}
+}
+#endif 
+
+////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(TypeProxy)
+{
+    try {
+        {
+            typedef Int4 MyInt4;
+
+            MyInt4 value = Convert(string("1"));
+            BOOST_CHECK_EQUAL(value, 1);
+        }
+
+        {
+            typedef int CS_INT;
+
+            CS_INT value = Convert(string("1"));
+            BOOST_CHECK_EQUAL(value, 1);
+        }
+
+        {
+            CS_LONG value = Convert(string("1"));
+            BOOST_CHECK_EQUAL(value, 1);
+        }
+
+    }
+    catch(const CException& ex) {
+        BOOST_FAIL(ex.what());
+    }
+}
+
