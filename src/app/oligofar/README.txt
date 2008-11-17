@@ -1,7 +1,7 @@
-oligoFAR 3.28                     15-NOV-2008                                1-NCBI
+oligoFAR 3.29                     15-NOV-2008                                1-NCBI
 
 NAME 
-    oligoFAR version 3.28 - global alignment of single or paired short reads
+    oligoFAR version 3.29 - global alignment of single or paired short reads
 
 SYNOPSIS
         usage: [-hV] [--help[=full|brief|extended]] [-U version]
@@ -16,7 +16,7 @@ SYNOPSIS
           [-m margin] [-R geometry] [-L memlimit] [-T +|-]
 
 EXAMPLES
-    oligofar -U 3.28 -C human-data.ini -C deep-search.ini -i my.reads -h
+    oligofar -U 3.29 -C human-data.ini -C deep-search.ini -i my.reads -h
 
     oligofar -i pairs.tbl -d contigs.fa -b snpdb.bdb -l gilist -g pairs.guide \
              -w 20/12 -B 250000 -H32 -n2 -rf -p90 -D100-500 -m50 -Rp \
