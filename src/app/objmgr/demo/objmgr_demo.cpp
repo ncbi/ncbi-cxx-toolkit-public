@@ -63,6 +63,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/annot_ci.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
@@ -78,6 +79,8 @@
 #include <objmgr/table_field.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/readers.hpp>
+#include <dbapi/driver/drivers.hpp>
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
@@ -246,6 +249,10 @@ void CDemoApp::Init(void)
                       "include features from unnamed Seq-annots");
     arg_desc->AddOptionalKey("named", "NamedAnnots",
                              "include features from named Seq-annots "
+                             "(comma separated list)",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("named_acc", "NamedAnnotAccession",
+                             "include features with named annot accession "
                              "(comma separated list)",
                              CArgDescriptions::eString);
     arg_desc->AddFlag("allnamed",
@@ -421,25 +428,17 @@ int CDemoApp::Run(void)
     bool get_synonyms = false;
     bool get_ids = 1;
     bool get_blob_id = true;
-    set<string> include_named;
+    list<string> include_named;
     if ( args["named"] ) {
-        string names = args["named"].AsString();
-        size_t comma_pos;
-        while ( (comma_pos = names.find(',')) != NPOS ) {
-            include_named.insert(names.substr(0, comma_pos));
-            names.erase(0, comma_pos+1);
-        }
-        include_named.insert(names);
+        NStr::Split(args["named"].AsString(), ",", include_named);
     }
-    set<string> exclude_named;
+    list<string> exclude_named;
     if ( args["exclude_named"] ) {
-        string names = args["exclude_named"].AsString();
-        size_t comma_pos;
-        while ( (comma_pos = names.find(',')) != NPOS ) {
-            exclude_named.insert(names.substr(0, comma_pos));
-            names.erase(0, comma_pos+1);
-        }
-        exclude_named.insert(names);
+        NStr::Split(args["exclude_named"].AsString(), ",", exclude_named);
+    }
+    list<string> include_named_accs;
+    if ( args["named_acc"] ) {
+        NStr::Split(args["named_acc"].AsString(), ",", include_named_accs);
     }
     bool scan_seq_map = args["seq_map"];
     bool get_seg_labels = args["seg_labels"];
@@ -457,6 +456,10 @@ int CDemoApp::Run(void)
             // Create genbank data loader and register it with the OM.
             // The last argument "eDefault" informs the OM that the loader
             // must be included in scopes during the CScope::AddDefaults() call
+#ifdef HAVE_PUBSEQ_OS
+            DBAPI_RegisterDriver_FTDS();
+            GenBankReaders_Register_Pubseq();
+#endif
             gb_loader = CGBDataLoader::RegisterInObjectManager
                 (*pOm, genbank_readers).GetLoader();
         }
@@ -532,7 +535,7 @@ int CDemoApp::Run(void)
         if ( used_memory_check ) {
             exit(0);
         }
-        added_entry = scope.AddTopLevelSeqEntry(*entry);
+        added_entry = scope.AddTopLevelSeqEntry(const_cast<CSeq_entry&>(*entry));
     }
     if ( args["bfile"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
@@ -552,6 +555,9 @@ int CDemoApp::Run(void)
 
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
     if ( get_ids ) {
+        NcbiCout << "Best id: "
+                 << sequence::GetId(idh, scope, sequence::eGetId_Best).AsString()
+                 << NcbiEndl;;
         NcbiCout << "Ids:" << NcbiEndl;
         //scope.GetBioseqHandle(idh);
         vector<CSeq_id_Handle> ids = scope.GetIds(idh);
@@ -662,8 +668,10 @@ int CDemoApp::Run(void)
         
         // get handle again, check for scope TSE locking
         handle = scope.GetBioseqHandle(idh);
-        //handle.GetEditHandle();
-        //scope.RemoveFromHistory(handle.GetTSE_Handle()); break;
+        if ( !handle ) {
+            ERR_POST("Cannot resolve "<<idh.AsString());
+            continue;
+        }
 
         if ( get_seg_labels ) {
             TSeqPos range_length =
@@ -830,13 +838,16 @@ int CDemoApp::Run(void)
         if ( include_unnamed ) {
             base_sel.AddUnnamedAnnots();
         }
-        ITERATE ( set<string>, it, include_named ) {
+        ITERATE ( list<string>, it, include_named ) {
             base_sel.AddNamedAnnots(*it);
+        }
+        ITERATE ( list<string>, it, include_named_accs ) {
+            base_sel.IncludeNamedAnnotAccession(*it);
         }
         if ( nosnp ) {
             base_sel.ExcludeNamedAnnots("SNP");
         }
-        ITERATE ( set<string>, it, exclude_named ) {
+        ITERATE ( list<string>, it, exclude_named ) {
             base_sel.ExcludeNamedAnnots(*it);
         }
         if ( noexternal ) {
@@ -868,15 +879,34 @@ int CDemoApp::Run(void)
                 }
             }
             if ( get_names ) {
-                CFeat_CI it(scope, *range_loc, base_sel.SetCollectNames());
-                ITERATE ( CFeat_CI::TAnnotNames, i, it.GetAnnotNames() ) {
-                    if ( i->IsNamed() ) {
-                        NcbiCout << "Named annot: " << i->GetName() <<NcbiEndl;
+                {{
+                    NcbiCout << "Annot names:" << NcbiEndl;
+                    set<string> annot_names =
+                        gb_loader->GetNamedAnnotAccessions(idh);
+                    ITERATE ( set<string>, i, annot_names ) {
+                        NcbiCout << "Named annot: " << *i
+                                 << NcbiEndl;
                     }
-                    else {
-                        NcbiCout << "Unnamed annot" <<NcbiEndl;
+                }}
+                {{
+                    NcbiCout << "Feature names:" << NcbiEndl;
+                    SAnnotSelector sel = base_sel;
+                    sel.SetCollectNames();
+                    if ( !sel.IsIncludedAnyNamedAnnotAccession() ) {
+                        sel.IncludeNamedAnnotAccession("NA*");
                     }
-                }
+                    CFeat_CI it(scope, *range_loc, sel);
+                    ITERATE ( CFeat_CI::TAnnotNames, i, it.GetAnnotNames() ) {
+                        if ( i->IsNamed() ) {
+                            NcbiCout << "Named annot: " << i->GetName()
+                                     << NcbiEndl;
+                        }
+                        else {
+                            NcbiCout << "Unnamed annot"
+                                     << NcbiEndl;
+                        }
+                    }
+                }}
             }
             continue;
         }
@@ -1337,8 +1367,13 @@ int CDemoApp::Run(void)
             exit(0);
         }
 
+        if ( handle ) {
+            scope.RemoveFromHistory(handle);
+            _ASSERT(!handle);
+        }
+        
         handle.Reset();
-        //scope.ResetHistory();
+        scope.ResetHistory();
     }
     if ( modify ) {
         handle = scope.GetBioseqHandle(idh);
