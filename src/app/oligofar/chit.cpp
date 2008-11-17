@@ -108,11 +108,11 @@ void CHit::SetPairmate( int pairmate, double score, int from, int to )
         THROW( logic_error, "CHit::SetPairmate( ... ) is not supposed for hit replacement" );
     } else {
         ASSERT( (m_flags & fPairedHit) == fPairedHit );
-        // replace hit
+        // clone hit
         // we have three cases:
         // 1) hits overlap - this is ERROR case
         // 2) the mate hit to the new one is at the lower bound
-        // 3) the mate hit to the new one is at the upper bound
+        // 3) the mate hit to the new one is at the upper bound - should never happen
         ASSERT( (m_flags & fReads_overlap) == 0 ); // case (1); to handle it we need to store offset
         // first reset all flags except other's strand
         if( pairmate ^ ((m_flags&fOrder_reverse) >> kOrder_strand_bit) ) { // case (2): r1 && 21 || r2 && 12

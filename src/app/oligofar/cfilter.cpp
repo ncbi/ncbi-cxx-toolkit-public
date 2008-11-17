@@ -8,9 +8,9 @@ USING_OLIGOFAR_SCOPES;
 
 void CFilter::Match( const CHashAtom& m, const char * a, const char * A, int pos ) // always start at pos
 {
-	ASSERT( m_aligner );
+    ASSERT( m_aligner );
     double bestScore = m.GetQuery()->GetBestScore( m.GetPairmate() );
-	m_aligner->SetBestPossibleQueryScore( bestScore );
+    m_aligner->SetBestPossibleQueryScore( bestScore );
     bool reverseStrand = m.IsReverseStrand();
     if( reverseStrand && m.GetQuery()->GetCoding() == CSeqCoding::eCoding_colorsp ) --pos;
     const CAlignerBase& abase = m_aligner->GetAlignerBase();
@@ -55,7 +55,7 @@ void CFilter::Match( const CHashAtom& m, const char * a, const char * A, int pos
             } else {
                 ProcessMatch( score, pos, pos + abase.GetSubjectAlignedLength() - 1, false, m.GetQuery(), m.GetPairmate() );
             }
-		}
+        }
     }
 }
 
@@ -173,7 +173,7 @@ void CFilter::PurgeQueueToTheEnd()
     for( TPendingHits::const_iterator i = m_pendingHits.begin(); i != m_pendingHits.end(); ++i ) {
         PurgeHit( i->second, true );
     }
-   	m_pendingHits.clear();
+    m_pendingHits.clear();
 }
 
 bool CFilter::CheckGeometry( int from1, int to1, int from2, int to2 ) const
@@ -194,8 +194,8 @@ bool CFilter::CheckGeometry( int from1, int to1, int from2, int to2 ) const
 
 void CFilter::SequenceBegin( const TSeqIds& id, int oid ) 
 {
-	ASSERT( oid >= 0 );
-	ASSERT( m_seqIds );
+    ASSERT( oid >= 0 );
+    ASSERT( m_seqIds );
     m_ord = m_seqIds->Register( id, oid );
 }
 
@@ -248,15 +248,15 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
         } else if( tscore < hscore ) {
             CHit::C_NextCtl( hit ).SetNext( tih );
             q->m_topHit = hit;
-			cscore = ( tscore = hscore ) * m_topPct/100;
+            cscore = ( tscore = hscore ) * m_topPct/100;
         } else {
-			// trying to insert hit somewhere in the list
+            // trying to insert hit somewhere in the list
             bool weak = true;
             for( ; weak && tih->GetNextHit() && topcnt > 0; (tih = tih->GetNextHit()), --topcnt ) {
                 CHit * nih = tih->GetNextHit();
                 if( nih->ClustersWithSameQ( hit ) ) {
                     if( nih->GetTotalScore() >= hit->GetTotalScore() ) {
-                        delete hit; 
+                        delete hit;
                     } else {
                         CHit::C_NextCtl( tih ).SetNext( hit );
                         CHit::C_NextCtl( hit ).SetNext( nih->GetNextHit() );
@@ -264,41 +264,45 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
                         delete nih;
                     }
                     return;
-                } else if( tih->GetNextHit()->IsNull() || tih->GetNextHit()->GetTotalScore() < hscore ) {
+                } else if( nih->IsNull() || nih->GetTotalScore() < hscore ) {
                     // keep chain linked
-                    CHit::C_NextCtl( hit ).SetNext( tih->GetNextHit() );
+                    CHit::C_NextCtl( hit ).SetNext( nih );
                     CHit::C_NextCtl( tih ).SetNext( hit );
                     weak = false;
                 }
             }
-			// oops - the hit is too weak, ignore it 
+            // oops - the hit is too weak, ignore it 
             if( weak ) {
                 delete hit;
                 return;
             }
         }
         for( tih = hit; topcnt > 0 && tih->GetNextHit() && tih->GetNextHit()->GetTotalScore() >= cscore; tih = tih->GetNextHit(), --topcnt ) { 
-            /*
             CHit * nih = tih->GetNextHit();
             if( nih->ClustersWithSameQ( hit ) ) {
+                CHit::C_NextCtl( tih ).SetNext( nih->GetNextHit() );
+                CHit::C_NextCtl( nih ).SetNext( 0 );
+                delete nih;
+                ++topcnt;
             }
-            */
         }
         if( tih->GetNextHit() && !tih->GetNextHit()->IsNull() ) {
-            CHit::C_NextCtl( tih ).SetNext( topcnt ? new CHit( q ) : 0 ); // if we clipped by score, we need to restore terminator
+            delete tih->GetNextHit();
+            CHit::C_NextCtl( tih ).SetNext( topcnt > 0 ? new CHit( q ) : 0 ); // if we clipped by score, we need to restore terminator
         }
     } else {
         q->m_topHit = hit;
+        ASSERT( hit->GetNextHit() == 0 );
         CHit::C_NextCtl( hit ).SetNext( new CHit( q ) );
     }
-	bool fmt = m_outputFormatter && m_outputFormatter->ShouldFormatAllHits();
-	if( fmt || setTarget ) {
-		hit->SetTarget( 0, m_begin, m_end );
-		hit->SetTarget( 1, m_begin, m_end );
-	}
-	if( fmt ) {
-		m_outputFormatter->FormatHit( hit );
-	}
+    bool fmt = m_outputFormatter && m_outputFormatter->ShouldFormatAllHits();
+    if( fmt || setTarget ) {
+        hit->SetTarget( 0, m_begin, m_end );
+        hit->SetTarget( 1, m_begin, m_end );
+    }
+    if( fmt ) {
+        m_outputFormatter->FormatHit( hit );
+    }
 }
 
 
