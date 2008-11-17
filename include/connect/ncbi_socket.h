@@ -33,7 +33,7 @@
  *   Plain portable TCP/IP socket API for:  UNIX, MS-Win, MacOS
  *   Platform-specific library requirements:
  *     [UNIX ]   -DNCBI_OS_UNIX     -lresolv -lsocket -lnsl
- *     [MSWIN]   -DNCBI_OS_MSWIN    wsock32.lib
+ *     [MSWIN]   -DNCBI_OS_MSWIN    ws2_32.lib
  *     [MacOS]   -DNCBI_OS_MAC      NCSASOCK -- BSD-style socket emulation lib
  *
  *********************************

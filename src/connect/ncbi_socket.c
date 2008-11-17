@@ -28,7 +28,7 @@
  * File Description:
  *   Plain portable TCP/IP socket API for:  UNIX, MS-Win, MacOS
  *     [UNIX ]   -DNCBI_OS_UNIX     -lresolv -lsocket -lnsl
- *     [MSWIN]   -DNCBI_OS_MSWIN    ws2_32.lib wsock32.lib
+ *     [MSWIN]   -DNCBI_OS_MSWIN    ws2_32.lib
  *     [MacOS]   -DNCBI_OS_MAC      NCSASOCK -- BSD-style socket emulation lib
  *
  */
