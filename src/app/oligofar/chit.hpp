@@ -76,9 +76,9 @@ public:
     
     static int ComputeRangeLength( int , int, int, int );
     static int GetOtherComponent( int pairmate ) { return !pairmate; }
-    static Uint4 GetCount() { return s_count; }
+    static Uint8 GetCount() { return s_count; }
 
-    bool IsPurged() const { return m_flags & fPurged; }
+    bool IsPurged() const { return ( m_flags & fPurged ) != 0; }
 
     int  GetFrom( int pairmate ) const;
     int  GetTo( int pairmate ) const;
@@ -92,8 +92,8 @@ public:
     bool ClustersWithSameS( const CHit * other ) const;
     bool ClustersWithSameQS( const CHit * other ) const;
     
-    bool IsReverseStrand( int pairmate ) const { return bool( m_flags & ( pairmate ? fRead2_reverse : fRead1_reverse ) ); }
-    bool HasComponent( int pairmate ) const { return bool( m_length[pairmate] ); }
+    bool IsReverseStrand( int pairmate ) const { return ( m_flags & ( pairmate != 0 ? fRead2_reverse : fRead1_reverse ) ) != 0; }
+    bool HasComponent( int pairmate ) const { return m_length[pairmate] != 0 ; }
     bool HasPairTo( int pairmate ) const { return HasComponent( GetOtherComponent( pairmate ) ); }
 
     int  GetComponentFlags() const { return m_flags&fPairedHit; }
@@ -103,8 +103,8 @@ public:
     int GetTo() const { return m_fullTo; }
     int GetRangeLength() const { return m_fullTo - m_fullFrom + 1; }
 
-    bool IsReverseOrder() const { return m_flags & fOrder_reverse; }
-    bool IsOverlap() const { return m_flags & fReads_overlap; } // NB: overlap hits are BAD, one can't say individual reads positions
+    bool IsReverseOrder() const { return (m_flags & fOrder_reverse) != 0; }
+    bool IsOverlap() const { return (m_flags & fReads_overlap) != 0; } // NB: overlap hits are BAD, one can't say individual reads positions
 
     Uint2 GetFilterGeometry() const { return (fOrder_reverse & m_flags ? ~m_flags : m_flags) & fMaskGeometry; }
     Uint2 GetGeometry() const { return fMaskGeometry & m_flags; }

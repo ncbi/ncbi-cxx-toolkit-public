@@ -137,7 +137,7 @@ void CHit::SetPairmate( int pairmate, double score, int from, int to )
             }
         }
     }
-    m_score[pairmate] = score;
+    m_score[pairmate] = float( score );
     ASSERT( (m_flags&fReads_overlap) == 0 );
 }
 

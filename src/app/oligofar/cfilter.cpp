@@ -66,7 +66,7 @@ void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, 
     if( query->IsPairedRead() == false ) {
         PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) );
     } else { 
-        Uint4 componentGeometry = reverse | ( pairmate << 1 );
+        Uint4 componentGeometry = Uint4( reverse ) | ( pairmate << 1 );
         ASSERT( (m_geometry & ~3) == 0 );
         ASSERT( (componentGeometry & ~3) == 0 );
 
