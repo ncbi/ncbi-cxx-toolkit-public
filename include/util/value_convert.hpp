@@ -1465,7 +1465,7 @@ CValueConvert<SRunTimeCP, CTime>::operator bool(void) const
 
 } // namespace value_slice
 
-#if defined(NCBI_COMPILER_MSVC) && (_MSC_VER < 1400)
+#if defined(NCBI_COMPILER_MSVC)
 
 namespace value_slice
 {
@@ -1494,10 +1494,10 @@ struct STypeProxy
     template <typename TO>
     operator TO(void) const
     {
-        typedef STypeMap<TO>::type type;
+        typedef STypeMap<TO>::type T;
 
-        return static_cast<type>(CValueConvert<CP, FROM>(*m_Value));
-        // return CValueConvert<CP, FROM>(*m_Value).operator type();
+        return static_cast<T>(CValueConvert<CP, FROM>(*m_Value));
+        // return CValueConvert<CP, FROM>(*m_Value).operator T();
     }
 
 private:
@@ -1651,7 +1651,7 @@ string& operator+=(string& s, const value_slice::STypeProxy<CP, FROM>& value)
 template <typename FROM>
 inline
 const value_slice::STypeProxy<value_slice::SRunTimeCP, FROM> 
-Convert(const FROM& value)
+Convert(FROM& value)
 {
     return value_slice::STypeProxy<value_slice::SRunTimeCP, FROM>(value);
 }
@@ -1659,7 +1659,7 @@ Convert(const FROM& value)
 template <typename FROM>
 inline
 const value_slice::STypeProxy<value_slice::SRunTimeCP, FROM> 
-Convert(FROM& value)
+Convert(const FROM& value)
 {
     return value_slice::STypeProxy<value_slice::SRunTimeCP, FROM>(value);
 }
@@ -1669,7 +1669,7 @@ Convert(FROM& value)
 template <typename FROM>
 inline
 const value_slice::STypeProxy<value_slice::SSafeCP, FROM> 
-ConvertSafe(const FROM& value)
+ConvertSafe(FROM& value)
 {
     return value_slice::STypeProxy<value_slice::SSafeCP, FROM>(value);
 }
@@ -1677,7 +1677,7 @@ ConvertSafe(const FROM& value)
 template <typename FROM>
 inline
 const value_slice::STypeProxy<value_slice::SSafeCP, FROM> 
-ConvertSafe(FROM& value)
+ConvertSafe(const FROM& value)
 {
     return value_slice::STypeProxy<value_slice::SSafeCP, FROM>(value);
 }
