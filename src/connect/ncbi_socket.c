@@ -153,7 +153,7 @@
 #  define SOCK_CLOSE(s)       closesocket(s)
 #  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
 #  define SOCK_STRERROR(err)  s_StrError(0, err)
-#  define SOCK_EVENTS         FD_CONNECT|FD_WRITE|FD_READ|FD_OOB|FD_CLOSE
+#  define SOCK_EVENTS         FD_CLOSE/*X*/|FD_CONNECT/*C*/|FD_OOB/*O*/|FD_WRITE/*W*/|FD_READ/*R*/
 /* NCBI_OS_MSWIN */
 
 #elif defined(NCBI_OS_UNIX)
@@ -1150,9 +1150,9 @@ static EIO_Status s_Select(size_t                n,
                             polls[i].revent |= eIO_Write;
                             ready = 1;
                         }
-                        mask     |= FD_WRITE;
                         if (!sock->connected)
-                            mask |= FD_CONNECT;
+                            mask |= FD_CONNECT/*C*/;
+                        mask     |= FD_WRITE/*W*/;
                     }
                     if (event == eIO_Write  &&
                         (type == eDatagram  ||  asis
@@ -1171,11 +1171,11 @@ static EIO_Status s_Select(size_t                n,
                             ready = 1;
                         }
                         if (type & eSocket) {
-                            mask     |= FD_READ;
                             if (type == eSocket)
-                                mask |= FD_OOB;
+                                mask |= FD_OOB/*O*/;
+                            mask     |= FD_READ/*R*/;
                         } else
-                            mask     |= FD_ACCEPT;
+                            mask     |= FD_ACCEPT/*A*/;
                     }
                     if (type != eSocket  ||  asis  ||  event != eIO_Read
                         ||  sock->w_status == eIO_Closed
@@ -1186,7 +1186,7 @@ static EIO_Status s_Select(size_t                n,
                         polls[i].revent |= eIO_Write;
                         ready = 1;
                     }
-                    mask |= FD_WRITE;
+                    mask |= FD_WRITE/*W*/;
                     break;
 
                 default:
@@ -1195,7 +1195,7 @@ static EIO_Status s_Select(size_t                n,
                 }
 
                 assert(mask);
-                want[count]   = mask | FD_CLOSE;
+                want[count]   = mask | FD_CLOSE/*X*/;
                 what[count++] = sock->event;
             } else
                 what[count++] = ((TRIGGER) sock)->fd;
@@ -1289,6 +1289,7 @@ static EIO_Status s_Select(size_t                n,
                         ready = 1;
                         break;
                     }
+                    /* NB: the bits are XCAOWR */
                     if (!(mask = e.lNetworkEvents)) {
                         if (sock->type == eListening) {
                             CORE_LOG_X(141, eLOG_Warning,
@@ -1298,7 +1299,7 @@ static EIO_Status s_Select(size_t                n,
                         }
                         break;
                     }
-                    if (mask & FD_CLOSE) {
+                    if (mask & FD_CLOSE/*X*/) {
                         if (!(sock->type & eSocket)) {
                             polls[j].revent = eIO_Close;
                             ready = 1;
@@ -1307,15 +1308,15 @@ static EIO_Status s_Select(size_t                n,
                         sock->readable = 1/*true*/;
                         sock->writable = 1/*true*/;
                     } else {
-                        if (mask & (FD_CONNECT | FD_WRITE)) {
+                        if (mask & (FD_CONNECT/*C*/ | FD_WRITE/*W*/)) {
                             assert(sock->type & eSocket);
                             sock->writable = 1/*true*/;
                         }
-                        if (mask & (FD_ACCEPT | FD_READ | FD_OOB))
+                        if (mask & (FD_ACCEPT/*A*/ | FD_OOB/*O*/ | FD_READ/*R*/))
                             sock->readable = 1/*true*/;
                     }
                     mask &= want[i];
-                    if ((mask & (FD_ACCEPT | FD_READ))  &&  sock->readable) {
+                    if ((mask & (FD_ACCEPT | FD_OOB | FD_READ))  &&  sock->readable) {
                         polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Read);
                         ready = 1;
                     }
@@ -1326,7 +1327,10 @@ static EIO_Status s_Select(size_t                n,
                     }
                     if (!polls[j].revent) {
                         int k;
-                        for (k = 0;  k < FD_MAX_EVENTS;  k++) {
+                        if ((mask & FD_CLOSE)  &&  !e.iErrorCode[FD_CLOSE_BIT]) {
+                            polls[j].revent = polls[j].event;
+                            ready = 1;
+                        } else for (k = 0;  k < FD_MAX_EVENTS;  k++) {
                             if (!(e.lNetworkEvents & (1 << k)))
                                 continue;
                             if (e.iErrorCode[k]) {
@@ -3459,7 +3463,7 @@ static EIO_Status s_CreateListening(const char*    path,
         SOCK_CLOSE(x_lsock);
         return eIO_Unknown;
     }
-    if (WSAEventSelect(x_lsock, event, FD_ACCEPT | FD_CLOSE) != 0) {
+    if (WSAEventSelect(x_lsock, event, FD_CLOSE/*X*/ | FD_ACCEPT/*A*/) != 0) {
         int x_error = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EXX(119, eLOG_Error,
                             x_error, SOCK_STRERROR(x_error),
