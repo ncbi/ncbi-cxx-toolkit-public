@@ -46,15 +46,18 @@ void CSeqScanner::SequenceBuffer( CSeqBuffer* buffer )
         if( m_bisulfiteCuration ) {
             char * buff = new char[A - a];
             if( m_queryHash == 0 || m_queryHash->GetStrands() & 0x1 ) {
+                m_strands = 0x1;
                 PerformSodiumBisulfiteCuration( buff, a, A - a, CSeqCoding::eStrand_pos );
                 ScanSequenceBuffer( buff, buff + (A - a), off, end, buffer->GetCoding() );
             }
             if( m_queryHash == 0 || m_queryHash->GetStrands() & 0x2 ) {
+                m_strands = 0x2;
                 PerformSodiumBisulfiteCuration( buff, a, A - a, CSeqCoding::eStrand_neg );
                 ScanSequenceBuffer( buff, buff + (A - a), off, end, buffer->GetCoding() );
             }
             delete[] buff;
         } else {
+            m_strands = 0x3;
             ScanSequenceBuffer( a, A, off, end, buffer->GetCoding() );
         }
     }
@@ -247,8 +250,8 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
 //            int pos = x - a + off;
             ITERATE( TMatches, m, matches ) {
                 switch( m->GetStrand() ) {
-                case '+': m_filter->Match( *m, a, A, pos - m->GetOffset() ); break;
-                case '-': m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 ); break;
+                case '+': if( m_strands & 0x1 ) m_filter->Match( *m, a, A, pos - m->GetOffset() ); break;
+                case '-': if( m_strands & 0x2 ) m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 ); break;
                 default: THROW( logic_error, "Invalid strand " << m->GetStrand() );
                 }
             }

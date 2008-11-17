@@ -149,9 +149,10 @@ protected:
     CFilter * m_filter;
     CQueryHash * m_queryHash;
     const TInputChunk * m_inputChunk;
-    int m_minBlockLength;
-	int m_ord;
+    int  m_minBlockLength;
+	int  m_ord;
     bool m_bisulfiteCuration;
+    int  m_strands;
 };
 
 END_OLIGOFAR_SCOPES
