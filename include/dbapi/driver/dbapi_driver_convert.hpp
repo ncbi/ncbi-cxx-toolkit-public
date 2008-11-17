@@ -413,7 +413,7 @@ template <typename CP>
 class CValueConvert<CP, CDB_LangCmd>
 {
 public: 
-    typedef typename CDB_LangCmd TObj;
+    typedef CDB_LangCmd TObj;
 
     CValueConvert(const CValueConvert<CP, TObj>& other)
     : m_Stmt(other.m_Stmt)
@@ -465,7 +465,7 @@ template <typename CP>
 class CValueConvert<CP, CDB_LangCmd*>
 {
 public: 
-    typedef typename CDB_LangCmd TObj;
+    typedef CDB_LangCmd TObj;
 
     CValueConvert(const CValueConvert<CP, TObj*>& other)
     : m_Stmt(other.m_Stmt)
