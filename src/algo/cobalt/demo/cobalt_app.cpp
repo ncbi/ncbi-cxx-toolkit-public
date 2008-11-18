@@ -173,7 +173,7 @@ void CMultiApplication::Init(void)
 
     arg_desc->AddDefaultKey("inclust", "name",
                             "Method for within-cluster alignment of sequences",
-                            CArgDescriptions::eString, "toprot");
+                            CArgDescriptions::eString, "multi");
     arg_desc->SetConstraint("inclust", &(*new CArgAllow_Strings, "toprot",
                                          "multi"));
 
