@@ -355,6 +355,23 @@ public:
 };
 
 template <typename CP, typename T> 
+class CConvertTO<CP, deque<T> >
+{
+public:
+    typedef deque<T> TValue;
+
+    static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
+    {
+        typedef CValueConvert<CP, CDB_Result> TResult;
+
+        TResult result(*rs);
+        while (rs->Fetch()) {
+            value.push_back(result);
+        }
+    }
+};
+
+template <typename CP, typename T> 
 class CConvertTO<CP, set<T> >
 {
 public:
@@ -447,11 +464,13 @@ public:
         while (m_Stmt->HasMoreResults()) {
             auto_ptr<CDB_Result> rs(m_Stmt->Result());
 
-            if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+            if (rs.get() == NULL) {
                 continue;
             }
 
             CConvertTO<CP, TO>::Convert(rs, result);
+
+			break;
         }
 
         return result;
@@ -499,11 +518,13 @@ public:
         while (m_Stmt->HasMoreResults()) {
             auto_ptr<CDB_Result> rs(m_Stmt->Result());
 
-            if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+            if (rs.get() == NULL) {
                 continue;
             }
 
             CConvertTO<CP, TO>::Convert(rs, result);
+
+			break;
         }
 
         return result;
@@ -552,11 +573,13 @@ public:
         while (m_Stmt->HasMoreResults()) {
             auto_ptr<CDB_Result> rs(m_Stmt->Result());
 
-            if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+            if (rs.get() == NULL) {
                 continue;
             }
 
             CConvertTO<CP, TO>::Convert(rs, result);
+
+			break;
         }
 
         return result;
@@ -604,11 +627,13 @@ public:
         while (m_Stmt->HasMoreResults()) {
             auto_ptr<CDB_Result> rs(m_Stmt->Result());
 
-            if (rs.get() == NULL || rs->ResultType() != eDB_RowResult) {
+            if (rs.get() == NULL) {
                 continue;
             }
 
             CConvertTO<CP, TO>::Convert(rs, result);
+
+			break;
         }
 
         return result;
