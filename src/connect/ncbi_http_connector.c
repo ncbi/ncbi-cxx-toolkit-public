@@ -285,7 +285,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
     EIO_Status status;
 
     for (;;) {
-        char*  null = 0;
+        char* null = 0;
 
         if (!uuu->sock) {
             if ((status = s_Connect(uuu, read_mode)) != eIO_Success)
@@ -474,7 +474,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                         }
                     } else {
                         s_MessageIssued = -1;
-                        CORE_LOGF_X(10, eLOG_Warning,
+                        CORE_LOGF_X(10, eLOG_Critical,
                                     ("[NCBI-MESSAGE]  %.*s",
                                      (int)(s - message), message));
                     }
@@ -1152,7 +1152,7 @@ static CONNECTOR s_CreateConnector
         ConnNetInfo_OverrideUserHeader(xxx, user_header);
     s_AddReferer(xxx);
 
-    ConnNetInfo_GetValue(0, "HTTP_INSECURE_REDIRECT", value, sizeof(value), "");
+    ConnNetInfo_GetValue(0, "HTTP_INSECURE_REDIRECT", value, sizeof(value),"");
     if (*value  &&  (strcmp    (value, "1")    == 0  ||
                      strcasecmp(value, "true") == 0  ||
                      strcasecmp(value, "yes")  == 0  ||
@@ -1170,17 +1170,17 @@ static CONNECTOR s_CreateConnector
 
     uuu->flags            = flags;
     uuu->reserved         = 0;
-    uuu->can_connect      = eCC_Once;         /* will be properly set at open */
+    uuu->can_connect      = eCC_Once;         /* will be properly set at open*/
 
-    ConnNetInfo_GetValue(0, "HTTP_ERROR_HEADER_ONLY", value, sizeof(value), "");
+    ConnNetInfo_GetValue(0, "HTTP_ERROR_HEADER_ONLY", value, sizeof(value),"");
     uuu->error_header = (*value  &&  (strcmp    (value, "1")    == 0  ||
                                       strcasecmp(value, "true") == 0  ||
                                       strcasecmp(value, "yes")  == 0  ||
                                       strcasecmp(value, "on")   == 0));
 
     uuu->sock             = 0;
-    uuu->o_timeout        = kDefaultTimeout;  /* deliberately bad values --   */
-    uuu->w_timeout        = kDefaultTimeout;  /* must be reset prior to use   */
+    uuu->o_timeout        = kDefaultTimeout;  /* deliberately bad values --  */
+    uuu->w_timeout        = kDefaultTimeout;  /* must be reset prior to use  */
     uuu->http             = 0;
     uuu->r_buf            = 0;
     uuu->w_buf            = 0;
