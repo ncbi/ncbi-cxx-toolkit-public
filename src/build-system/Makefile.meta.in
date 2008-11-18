@@ -170,9 +170,9 @@ check:     check.needs-reqs
 check_add: check_add.needs-reqs
 
 
-all.real: configurables all.usr
+all.real: all.usr
 	@$(MAKE) $(MFLAGS_NR) all.nonusr
-all.usr:
+all.usr: configurables
 	@-rm -f .built .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
 	@$(USRP_BRA) all   $(USRP_KET)
