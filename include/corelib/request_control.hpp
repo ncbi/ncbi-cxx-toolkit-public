@@ -87,7 +87,7 @@ public:
         eSleep,      ///< Sleep till the rate requirements are met & return
         eErrCode,    ///< Return immediately with err code == FALSE
         eException,  ///< Throw an exception
-        eDefault     ///< in c-tor: eSleep;  in Approve() -- value set in c-tor
+        eDefault     ///< in c-tor -- eSleep;  in Approve() -- value set in c-tor
     };
 
     /// Special value for maximum number of allowed requests per period.
@@ -149,7 +149,7 @@ public:
     /// Get a time span in which request can be approved.
     ///
     /// You should call this method until it returns zero time span, otherwise
-    /// you should sleep (using Sleep method) for indicated time.
+    /// you should sleep (using Sleep() method) for indicated time.
     ///
     /// @return
     ///   Returns time to wait until actual request, zero if can proceed
@@ -159,7 +159,7 @@ public:
     ///   throw an exception.
     /// @sa
     ///   Reset, Approve
-    CTimeSpan ApproveTime();
+    CTimeSpan ApproveTime(void);
 
     /// Sleep for CTimeSpan.
     ///
@@ -175,32 +175,55 @@ public:
     void Unlock() { /* do nothing */ }
 
 private:
-    /// Add time of approve to time line
-    void x_AddToTimeLine(const CTime& now);
+    typedef double TTime;
+
+    ///
+    bool x_Approve(EThrottleAction action, CTimeSpan *sleeptime);
 
     /// Remove from the list of approved requests all expared items.
-    void x_CleanTimeLine(CTime& now);
+    void x_CleanTimeLine(TTime now);
 
 private:
     // Saved parameters
     unsigned int     m_NumRequestsAllowed;
-    CTimeSpan        m_PerPeriod;
-    CTimeSpan        m_MinTimeBetweenRequests;
+    TTime            m_PerPeriod;
+    TTime            m_MinTimeBetweenRequests;
     EThrottleAction  m_ThrottleAction;
 
-    CTime            m_LastApproved;   ///< Last approve time
+    CStopWatch       m_StopWatch;      ///< Stopwatch to measure elapsed time
+    typedef deque<TTime> TTimeLine;
+    TTimeLine        m_TimeLine;       ///< Vector of times of approvals
+    TTime            m_LastApproved;   ///< Last approve time
     unsigned int     m_NumRequests;    ///< Num requests per period
-
-    typedef AutoPtr<CTime> TTime;
-    typedef deque<TTime>   TTimeLine;
-
-    TTimeLine       m_TimeLine;        ///< Vector of times of approvals
 };
 
 
-/* @} */
+//////////////////////////////////////////////////////////////////////////////
+//
+// Inline
+//
+
+inline
+bool CRequestRateControl::Approve(EThrottleAction action)
+{
+    return x_Approve(action, 0);
+}
+
+inline
+CTimeSpan CRequestRateControl::ApproveTime()
+{
+    CTimeSpan sleeptime;
+    bool res = x_Approve(eSleep, &sleeptime);
+    if ( !res ) {
+        return sleeptime;
+    }
+    // Approve request
+    return CTimeSpan(0, 0);
+}
 
 
 END_NCBI_SCOPE
+
+/* @} */
 
 #endif  /* CORELIB___REQUEST_CONTROL__HPP */
