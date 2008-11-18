@@ -103,7 +103,8 @@ public:
     }
 #if SIZEOF_LONG == 4  &&  \
     ((defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 400)  ||  \
-     defined(NCBI_COMPILER_ICC)  ||  defined(NCBI_COMPILER_WORKSHOP))
+     defined(NCBI_COMPILER_ICC)  ||  defined(NCBI_COMPILER_WORKSHOP) || \
+     defined(NCBI_COMPILER_MSVC))
     operator long(void) const
     {
         return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
@@ -192,35 +193,44 @@ public:
     }
     operator Uint1(void) const
     {
-        return MakeCP<CP>(NStr::StringToUInt(m_Value));
+        return MakeCP<CP>(NStr::StringToUInt(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Int1(void) const
     {
-        return MakeCP<CP>(NStr::StringToInt(m_Value));
+        return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Uint2(void) const
     {
-        return MakeCP<CP>(NStr::StringToUInt(m_Value));
+        return MakeCP<CP>(NStr::StringToUInt(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Int2(void) const
     {
-        return MakeCP<CP>(NStr::StringToInt(m_Value));
+        return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Uint4(void) const
     {
-        return MakeCP<CP>(NStr::StringToUInt(m_Value));
+        return MakeCP<CP>(NStr::StringToUInt(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Int4(void) const
     {
-        return MakeCP<CP>(NStr::StringToInt(m_Value));
+        return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
     }
+#if SIZEOF_LONG == 4  &&  \
+    ((defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 400)  ||  \
+     defined(NCBI_COMPILER_ICC)  ||  defined(NCBI_COMPILER_WORKSHOP) || \
+     defined(NCBI_COMPILER_MSVC))
+    operator long(void) const
+    {
+        return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
+    }
+#endif
     operator Uint8(void) const
     {
-        return MakeCP<CP>(NStr::StringToUInt8(m_Value));
+        return MakeCP<CP>(NStr::StringToUInt8(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator Int8(void) const
     {
-        return MakeCP<CP>(NStr::StringToInt8(m_Value));
+        return MakeCP<CP>(NStr::StringToInt8(m_Value, NStr::fAllowTrailingSymbols));
     }
     operator float(void) const
     {
@@ -1473,226 +1483,8 @@ CValueConvert<SRunTimeCP, CTime>::operator bool(void) const
 
 } // namespace value_slice
 
-#if defined(NCBI_COMPILER_MSVC)
-
-namespace value_slice
-{
-
-////////////////////////////////////////////////////////////////////////////////
-// Operators.
-// Several compilers, including MSVC, cannot deduce data type in case of 
-// logical expressions.
-
-////////////////////////////////////////////////////////////////////////////////
-template <typename T>
-struct STypeMap
-{
-    typedef typename T type;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-template <typename CP, typename FROM>
-struct STypeProxy
-{
-    STypeProxy(const FROM& value)
-    : m_Value(&value)
-    {
-    }
-
-    template <typename TO>
-    operator TO(void) const
-    {
-        typedef STypeMap<TO>::type T;
-
-        return static_cast<T>(CValueConvert<CP, FROM>(*m_Value));
-        // return CValueConvert<CP, FROM>(*m_Value).operator T();
-    }
-
-private:
-    const FROM* m_Value;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-template <typename CP, typename FROM>
-inline
-bool operator !(STypeProxy<CP, FROM> const& value)
-{
-    const bool bool_expr = value;
-    return !bool_expr;
-}
-
-template <
-    typename CP1, 
-    typename CP2, 
-    typename FROM1,
-    typename FROM2
-    >
-inline
-bool operator &&(STypeProxy<CP1, FROM1> const& l, STypeProxy<CP2, FROM2> const& r)
-{
-    const bool l_expr = l;
-
-    if (!l) {
-        return false;
-    }
-
-    return r;
-}
-
-template <
-    typename CP1, 
-    typename CP2, 
-    typename FROM1,
-    typename FROM2
-    >
-inline
-bool operator ||(STypeProxy<CP1, FROM1> const& l, STypeProxy<CP2, FROM2> const& r)
-{
-    const bool l_expr = l;
-
-    if (l) {
-        return true;
-    }
-
-    return r;
-}
-
-template <typename CP, typename FROM>
-inline
-bool operator &&(bool l, STypeProxy<CP, FROM> const& r)
-{
-    if (!l) {
-        return false;
-    }
-
-    return r;
-}
-
-template <typename CP, typename FROM>
-inline
-bool operator &&(STypeProxy<CP, FROM> const& l, bool r)
-{
-    const bool l_expr = l;
-    return l_expr && r;
-}
-
-template <typename CP, typename FROM>
-inline
-bool operator ||(bool l, STypeProxy<CP, FROM> const& r)
-{
-    if (l) {
-        return true;
-    }
-
-    return r;
-}
-
-template <typename CP, typename FROM>
-inline
-bool operator ||(STypeProxy<CP, FROM> const& l, bool r)
-{
-    const bool l_expr = l;
-    return l_expr || r;
-}
-
-} // namespace value_slice
-
-////////////////////////////////////////////////////////////////////////////////
-template <typename CP, typename FROM>
-inline
-string operator+(const string& s, const value_slice::STypeProxy<CP, FROM>& value)
-{
-    string str_value(s);
-
-    str_value += value.operator string();
-    return str_value;
-}
-
-template <typename CP, typename FROM>
-inline
-string operator+(const value_slice::STypeProxy<CP, FROM>& value, const string& s)
-{
-    string str_value = value;
-
-    str_value += s;
-    return str_value;
-}
-
-template <typename CP, typename FROM>
-inline
-string operator+(const char* s, const value_slice::STypeProxy<CP, FROM>& value)
-{
-    string str_value;
-
-    if (s) {
-        str_value += s;
-    }
-
-    str_value += value.operator string();
-    
-    return str_value;
-}
-
-template <typename CP, typename FROM>
-inline
-string operator+(const value_slice::STypeProxy<CP, FROM>& value, const char* s)
-{
-    string str_value = value;
-
-    if (s) {
-        str_value += s;
-    }
-
-    return str_value;
-}
-
-template <typename CP, typename FROM>
-inline
-string& operator+=(string& s, const value_slice::STypeProxy<CP, FROM>& value)
-{
-    s += value.operator string();
-    return s;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// A limited case ...
-template <typename FROM>
-inline
-const value_slice::STypeProxy<value_slice::SRunTimeCP, FROM> 
-Convert(FROM& value)
-{
-    return value_slice::STypeProxy<value_slice::SRunTimeCP, FROM>(value);
-}
-
-template <typename FROM>
-inline
-const value_slice::STypeProxy<value_slice::SRunTimeCP, FROM> 
-Convert(const FROM& value)
-{
-    return value_slice::STypeProxy<value_slice::SRunTimeCP, FROM>(value);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Safe (compile-time) conversion ...
-template <typename FROM>
-inline
-const value_slice::STypeProxy<value_slice::SSafeCP, FROM> 
-ConvertSafe(FROM& value)
-{
-    return value_slice::STypeProxy<value_slice::SSafeCP, FROM>(value);
-}
-
-template <typename FROM>
-inline
-const value_slice::STypeProxy<value_slice::SSafeCP, FROM> 
-ConvertSafe(const FROM& value)
-{
-    return value_slice::STypeProxy<value_slice::SSafeCP, FROM>(value);
-}
-
-#else
-
-#if defined(NCBI_COMPILER_WORKSHOP)
+#if defined(NCBI_COMPILER_WORKSHOP) || \
+    (defined(NCBI_COMPILER_MSVC) && (_MSC_VER < 1400))
 namespace value_slice
 {
 
@@ -1874,8 +1666,6 @@ ConvertSafe(FROM& value)
 {
     return value_slice::CValueConvert<value_slice::SSafeCP, FROM>(value);
 }
-
-#endif
 
 END_NCBI_SCOPE
 
