@@ -535,7 +535,7 @@ bool CTL_BCPInCmd::Send(void)
                 {
                     len = par.Read(buff + invalid_len, sizeof(buff) - invalid_len);
 
-                    valid_len = CStringUTF8::GetValidBytesCount(buff, len);
+                    valid_len = len;//CStringUTF8::GetValidBytesCount(buff, len);
                     invalid_len = len - valid_len;
 
 #if 0 //  #if defined(HAVE_WSTRING)
