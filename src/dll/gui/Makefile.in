@@ -1,6 +1,7 @@
 # $Id$
 
 SUB_PROJ =  \
+			ncbi_xcache_sqlite3 \
 			gui_utils \
 			gui_objects \
 			gui_config \
