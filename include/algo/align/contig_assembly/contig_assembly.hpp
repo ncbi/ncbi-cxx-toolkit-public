@@ -1,3 +1,5 @@
+#ifndef ALGO_ALIGN_CONTIG_ASSEMBLY___CONTIG_ASSEMBLY__HPP
+#define ALGO_ALIGN_CONTIG_ASSEMBLY___CONTIG_ASSEMBLY__HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -222,3 +224,6 @@ double CContigAssembly::CAlnStats::GetFracIdentity() const
 
 
 END_NCBI_SCOPE
+
+#endif  // ALGO_ALIGN_CONTIG_ASSEMBLY___CONTIG_ASSEMBLY__HPP
+
