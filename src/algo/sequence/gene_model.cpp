@@ -38,6 +38,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -53,9 +54,6 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objtools/alnmgr/alnmix.hpp>
-#include <objtools/alnmgr/alnmap.hpp>
-#include <objtools/alnmgr/alnvec.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -81,38 +79,22 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                                           CBioseq_set& seqs,
                                           TGeneModelCreateFlags flags)
 {
-    /// first, merge the alignment
-    /// this is necessary as the input may be (will likely be)
-    /// a discontinuous segment
-    CConstRef<CDense_seg> ds;
-    if (align.GetSegs().IsDenseg()) {
-        ds.Reset(&align.GetSegs().GetDenseg());
-    } else {
-        CAlnMix mix(scope);
-        mix.Add(align);
-        mix.Merge(CAlnMix::fGapJoin);
-
-        ds.Reset(&mix.GetDenseg());
-    }
-
+    size_t num_rows = align.CheckNumRows();
     /// make sure we only have two rows
     /// anything else represents a mixed-strand case or more than
     /// two sequences
-    if (ds->GetIds().size() != 2) {
+    if (num_rows != 2) {
         NCBI_THROW(CException, eUnknown,
             "CreateGeneModelFromAlign(): failed to create consistent alignment");
     }
-
-    /// we use CAlnMap, not CAlnVec, to avoid some overhead
-    /// from the object manager
-    CAlnMap alnmgr(*ds);
 
     /// there should ideally be one genomic sequence; find it, and record
     /// both ID and row
     CRef<CSeq_id> target_id;
     size_t target_row = 0;
-    for (int i = 0;  i < alnmgr.GetNumRows();  ++i) {
-        CBioseq_Handle handle = scope.GetBioseqHandle(alnmgr.GetSeqId(i));
+    for (size_t i = 0;  i < num_rows;  ++i) {
+        const CSeq_id& id = align.GetSeq_id(i);
+        CBioseq_Handle handle = scope.GetBioseqHandle(id);
         if ( !handle ) {
             continue;
         }
@@ -121,7 +103,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         if (info  &&  info->IsSetBiomol()  &&
             info->GetBiomol() == CMolInfo::eBiomol_genomic) {
             target_id.Reset(new CSeq_id);
-            target_id->Assign(alnmgr.GetSeqId(i));
+            target_id->Assign(id);
             target_row = i;
             break;
         }
@@ -129,8 +111,9 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
 
     if ( !target_id ) {
         TSeqPos max_len = 0;
-        for (int i = 0;  i < alnmgr.GetNumRows();  ++i) {
-            CBioseq_Handle handle = scope.GetBioseqHandle(alnmgr.GetSeqId(i));
+        for (size_t i = 0;  i < num_rows;  ++i) {
+            const CSeq_id& id = align.GetSeq_id(i);
+            CBioseq_Handle handle = scope.GetBioseqHandle(id);
             if ( !handle ) {
                 continue;
             }
@@ -139,11 +122,12 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 continue;
             }
 
+            max_len = handle.GetBioseqLength();
             switch (handle.GetInst_Mol()) {
             case CSeq_inst::eMol_na:
             case CSeq_inst::eMol_dna:
                 target_id.Reset(new CSeq_id);
-                target_id->Assign(alnmgr.GetSeqId(i));
+                target_id->Assign(id);
                 target_row = i;
                 break;
 
@@ -158,40 +142,29 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
             "CreateGeneModelFromAlign(): failed to find genomic sequence");
     }
 
-    /// anchor on the genomic sequence
-    alnmgr.SetAnchor(target_row);
-    TSignedSeqRange range(alnmgr.GetAlnStart(), alnmgr.GetAlnStop());
-
     CSeq_loc_Mapper::TMapOptions opts = 0;
     if (flags & fDensegAsExon) {
         opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
     }
 
     /// now, for each row, create a feature
-    for (int row = 0;  row < alnmgr.GetNumRows();  ++row) {
+    CTime time(CTime::eCurrent);
+    for (size_t row = 0;  row < num_rows;  ++row) {
         if (row == target_row) {
             continue;
         }
-        CBioseq_Handle handle = scope.GetBioseqHandle(alnmgr.GetSeqId(row));
-        CSeq_loc_Mapper mapper(align, *target_id, &scope, opts);
 
-        /// use the strand as reported by the alignment manager
-        /// if a sequence has mixed-strand alignments, each will
-        /// appear as a separate row
-        /// thus, we will not mix strands in our features
-        ENa_strand strand = eNa_strand_plus;
-        if (alnmgr.IsNegativeStrand(row)) {
-            strand = eNa_strand_minus;
-        }
+        const CSeq_id& id = align.GetSeq_id(row);
+        CBioseq_Handle handle = scope.GetBioseqHandle(id);
+        CSeq_loc_Mapper mapper(align, *target_id, &scope, opts);
 
         /// we always need the mRNA location as a reference
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().Assign(alnmgr.GetSeqId(row));
+        loc->SetWhole().Assign(id);
         loc = mapper.Map(*loc);
 
         static CAtomicCounter counter;
         size_t model_num = counter.Add(1);
-        CTime time(CTime::eCurrent);
 
         ///
         /// create our mRNA feature
@@ -234,6 +207,10 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 .SetName(sequence::GetTitle(handle));
 
             mrna_feat->SetLocation(*loc);
+            if (loc->IsPartialStart(eExtreme_Positional)  ||
+                loc->IsPartialStop(eExtreme_Positional)) {
+                mrna_feat->SetPartial(true);
+            }
 
             if (flags & fForceTranscribeMrna) {
                 /// create a new bioseq for this mRNA
@@ -264,7 +241,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
 
                 seqs.SetSeq_set().push_back(entry);
             } else {
-                mrna_feat->SetProduct().SetWhole().Assign(alnmgr.GetSeqId(row));
+                mrna_feat->SetProduct().SetWhole().Assign(id);
             }
         }
 
@@ -292,7 +269,8 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     if (mrna_feat  &&
                         !mrna_feat->IsSetDbxref()  &&
                         gene_feat->IsSetDbxref()) {
-                        ITERATE (CSeq_feat::TDbxref, xref_it, gene_feat->GetDbxref()) {
+                        ITERATE (CSeq_feat::TDbxref, xref_it,
+                                 gene_feat->GetDbxref()) {
                             CRef<CDbtag> tag(new CDbtag);
                             tag->Assign(**xref_it);
                             mrna_feat->SetDbxref().push_back(tag);
@@ -316,6 +294,9 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
             }
 
             if (gene_feat) {
+                if (mrna_feat->IsSetPartial()  &&  mrna_feat->GetPartial()) {
+                    gene_feat->SetPartial(true);
+                }
                 annot.SetData().SetFtable().push_back(gene_feat);
             }
         }
@@ -337,10 +318,17 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     mapper.Map(feat_iter->GetLocation());
                 cds_feat->SetLocation(*new_loc);
 
+                if (new_loc->IsPartialStart(eExtreme_Positional)  ||
+                    new_loc->IsPartialStop(eExtreme_Positional)) {
+                    cds_feat->SetPartial(true);
+                }
+
+
                 /// copy any existing dbxrefs
                 if (cds_feat  &&  gene_feat  &&
                     !cds_feat->IsSetDbxref()  &&  gene_feat->IsSetDbxref()) {
-                    ITERATE (CSeq_feat::TDbxref, xref_it, gene_feat->GetDbxref()) {
+                    ITERATE (CSeq_feat::TDbxref, xref_it,
+                             gene_feat->GetDbxref()) {
                         CRef<CDbtag> tag(new CDbtag);
                         tag->Assign(**xref_it);
                         cds_feat->SetDbxref().push_back(tag);
@@ -349,8 +337,10 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
 
                 /// also copy the code break if it exists
                 if (cds_feat->GetData().GetCdregion().IsSetCode_break()) {
-                    CSeqFeatData::TCdregion& cds = cds_feat->SetData().SetCdregion();
-                    NON_CONST_ITERATE(CCdregion::TCode_break, it, cds.SetCode_break()) {
+                    CSeqFeatData::TCdregion& cds =
+                        cds_feat->SetData().SetCdregion();
+                    NON_CONST_ITERATE(CCdregion::TCode_break, it,
+                                      cds.SetCode_break()) {
                         CRef<CSeq_loc> new_cb_loc = mapper.Map((*it)->GetLoc());
                         (*it)->SetLoc(*new_cb_loc);
                     }
