@@ -231,8 +231,8 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             size_t n       = (size_t) m;
             size_t n_avail = (size_t) (egptr() - gptr());
             size_t n_read  = (n <= n_avail) ? n : n_avail;
-            // if (buf != gptr()) // can happen but no harm not to check
-            memcpy(buf, gptr(), n_read);
+            if (buf != gptr()) // either equal or non-overlapping
+                memcpy(buf, gptr(), n_read);
             gbump((int) n_read);
             m       -= (streamsize) n_read;
             buf     += (streamsize) n_read;
