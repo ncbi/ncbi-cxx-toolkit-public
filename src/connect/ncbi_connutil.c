@@ -905,7 +905,7 @@ static const char* s_PortStr(unsigned short port, char buf[])
         sprintf(buf, "%hu", port);
         return buf;
     }
-    return 0;
+    return "<default>";
 }
 
 static void s_SaveStringQuot(char* s, const char* name,
@@ -922,6 +922,11 @@ static void s_SaveString(char* s, const char* name, const char* str)
     s_SaveStringQuot(s, name, str, 1);
 }
 
+static void s_SaveKeyval(char* s, const char* name, const char* str)
+{
+    s_SaveStringQuot(s, name, str, 0);
+}
+
 static void s_SaveULong(char* s, const char* name, unsigned long lll)
 {
     sprintf(s + strlen(s), "%-16.16s: %lu\n", name, lll);
@@ -932,11 +937,24 @@ static void s_SaveBool(char* s, const char* name, int/*bool*/ bbb)
     sprintf(s + strlen(s), "%-16.16s: %s\n", name, bbb ? "TRUE" : "FALSE");
 }
 
+static void s_SaveUserHeader(char* s, const char* name,
+                             const char* uh, size_t uhlen)
+{
+    s += strlen(s);
+    s += sprintf(s, "%-16.16s: ", name);
+    if (uh) {
+        *s++ = '"';
+        memcpy(UTIL_PrintableString(uh, uhlen, s, 0/*reduce*/), "\"\n", 3);
+    } else
+        memcpy(s, "NULL\n", 6);
+}
+
 extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
 {
-    char scheme[32];
-    char port[16];
-    char* s;
+    char   scheme[32];
+    char   port[16];
+    size_t uhlen;
+    char*  s;
 
     if (!lg)
         return;
@@ -947,10 +965,12 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
         return;
     }
 
-    if (!(s = (char*) malloc(sizeof(*info) + 4096 +
+    uhlen = info->http_user_header ? strlen(info->http_user_header) : 0;
+       
+    if (!(s = (char*) malloc(sizeof(*info) + 1024/*slack for all labels*/ +
                              (info->service ? strlen(info->service) : 0) +
-                             (info->http_user_header
-                              ? strlen(info->http_user_header) : 0) +
+                             UTIL_PrintableStringSize(info->http_user_header,
+                                                      uhlen) +
                              (info->http_referer
                               ? strlen(info->http_referer) : 0)))) {
         LOG_WRITE(lg, NCBI_C_ERRCODE_X, 11, eLOG_Error,
@@ -961,35 +981,36 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
     strcpy(s, "ConnNetInfo_Log\n"
            "#################### [BEGIN] SConnNetInfo:\n");
     s_SaveString    (s, "service",         info->service);
-    s_SaveStringQuot(s, "client_host",     (*info->client_host
-                                            ? info->client_host
-                                            : "<default>"), 0);
+    if (*info->client_host)
+        s_SaveString(s, "client_host",     info->client_host);
+    else
+        s_SaveKeyval(s, "client_host",     "<default>");
     s_SaveString    (s, "scheme",          s_SchemeStr(info->scheme, scheme));
     s_SaveString    (s, "user",            info->user);
     s_SaveString    (s, "pass",            info->pass);
     s_SaveString    (s, "host",            info->host);
-    s_SaveStringQuot(s, "port",            s_PortStr(info->port, port), 0);
+    s_SaveKeyval    (s, "port",            s_PortStr(info->port, port));
     s_SaveString    (s, "path",            info->path);
     s_SaveString    (s, "args",            info->args);
-    s_SaveStringQuot(s, "req_method",     (info->req_method == eReqMethod_Any
+    s_SaveKeyval    (s, "req_method",     (info->req_method == eReqMethod_Any
                                            ? "ANY"
                                            : (info->req_method
                                               == eReqMethod_Get
                                               ? "GET"
                                               : (info->req_method
                                                  == eReqMethod_Post
-                                                 ? "POST" : "<unknown>"))), 0);
+                                                 ? "POST" : "<unknown>"))));
     if (info->timeout) {
         s_SaveULong (s, "timeout(sec)",    info->timeout->sec);
         s_SaveULong (s, "timeout(usec)",   info->timeout->usec);
     } else
-        s_SaveString(s, "timeout",         "infinite");
+        s_SaveKeyval(s, "timeout",         "INFINITE");
     s_SaveULong     (s, "max_try",         info->max_try);
     s_SaveString    (s, "http_proxy_host", info->http_proxy_host);
-    s_SaveStringQuot(s, "http_proxy_port", s_PortStr(info->http_proxy_port,
-                                                     port), 0);
+    s_SaveKeyval    (s, "http_proxy_port", s_PortStr(info->http_proxy_port,
+                                                     port));
     s_SaveString    (s, "proxy_host",      info->proxy_host);
-    s_SaveStringQuot(s, "debug_printout", (info->debug_printout
+    s_SaveKeyval    (s, "debug_printout", (info->debug_printout
                                            == eDebugPrintout_None
                                            ? "NONE"
                                            : (info->debug_printout
@@ -997,11 +1018,11 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
                                               ? "SOME"
                                               : (info->debug_printout
                                                  == eDebugPrintout_Data
-                                                 ? "DATA" : "<unknown>"))), 0);
+                                                 ? "DATA" : "<unknown>"))));
     s_SaveBool      (s, "stateless",       info->stateless);
     s_SaveBool      (s, "firewall",        info->firewall);
     s_SaveBool      (s, "lb_disable",      info->lb_disable);
-    s_SaveString    (s, "http_user_header",info->http_user_header);
+    s_SaveUserHeader(s, "http_user_header",info->http_user_header, uhlen);
     s_SaveString    (s, "http_referer",    info->http_referer);
     s_SaveBool      (s, "proxy_adjusted",  info->http_proxy_adjusted);
     strcat(s, "#################### [END] SConnNetInfo\n");

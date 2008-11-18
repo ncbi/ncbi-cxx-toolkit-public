@@ -185,6 +185,102 @@ static int/*bool*/ s_IsQuoted(unsigned char c)
 }
 
 
+extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
+{
+    const unsigned char* c;
+    size_t retval;
+    if (!data)
+        return 0;
+    if (!size)
+        size = strlen(data);
+    retval = size;
+    for (c = (const unsigned char*) data;  size;  size--, c++) {
+        if (s_IsQuoted(*c)) {
+            retval++;
+        } else if (!isprint(*c)) {
+            retval += 3;
+        }
+    }
+    return retval;
+}
+
+
+extern char* UTIL_PrintableString(const char* data, size_t size,
+                                  char* buf, int/*bool*/ full_octal)
+{
+    const unsigned char* s;
+    unsigned char* d;
+
+    if (!data  ||  !buf)
+        return 0;
+    if (!size)
+        size = strlen(data);
+
+    d = (unsigned char*) buf;
+    for (s = (const unsigned char*) data;  size;  size--, s++) {
+        switch (*s) {
+        case '\t':
+            *d++ = '\\';
+            *d++ = 't';
+            continue;
+        case '\v':
+            *d++ = '\\';
+            *d++ = 'v';
+            continue;
+        case '\b':
+            *d++ = '\\';
+            *d++ = 'b';
+            continue;
+        case '\r':
+            *d++ = '\\';
+            *d++ = 'r';
+            continue;
+        case '\f':
+            *d++ = '\\';
+            *d++ = 'f';
+            continue;
+        case '\a':
+            *d++ = '\\';
+            *d++ = 'a';
+            continue;
+        case '\n':
+        case '\\':
+        case '\'':
+        case '"':
+            *d++ = '\\';
+            break;
+        default:
+            if (!isprint(*s)) {
+                int/*bool*/ reduce;
+                unsigned char v;
+                if (full_octal)
+                    reduce = 0/*false*/;
+                else {
+                    reduce = (size == 1       ||  s_IsQuoted(s[1])  ||
+                              !isprint(s[1])  ||  s[1] < '0'  ||  s[1] > '7');
+                }
+                *d++ = '\\';
+                v =  *s >> 6;
+                if (v  ||  !reduce) {
+                    *d++ = '0' + v;
+                    reduce = 0;
+                }
+                v = (*s >> 3) & 7;
+                if (v  ||  !reduce)
+                    *d++ = '0' + v;
+                v =  *s & 7;
+                *d++ =     '0' + v;
+                continue;
+            }
+            break;
+        }
+        *d++ = (char) *s;
+    }
+
+    return (char*) d;
+}
+
+
 extern char* LOG_ComposeMessage
 (const SLOG_Handler* call_data,
  TLOG_FormatFlags    format_flags)
@@ -270,17 +366,10 @@ extern char* LOG_ComposeMessage
     }
 
     if ( call_data->raw_size ) {
-        const unsigned char* d = (const unsigned char*) call_data->raw_data;
-        size_t i = call_data->raw_size;
-        for (data_len = 0;  i;  i--, d++) {
-            if (s_IsQuoted(*d)) {
-                data_len++;
-            } else if (!isprint(*d)) {
-                data_len += 3;
-            }
-        }
-        data_len += (sizeof(kRawData_Begin) + 20 + call_data->raw_size +
-                     sizeof(kRawData_End));
+        data_len = (sizeof(kRawData_Begin) + 20
+                    + UTIL_PrintableStringSize(call_data->raw_data,
+                                               call_data->raw_size) +
+                    sizeof(kRawData_End));
     }
 
     /* Allocate memory for the resulting message */
@@ -319,72 +408,13 @@ extern char* LOG_ComposeMessage
         s += message_len;
     }
     if ( data_len ) {
-        const unsigned char* d;
-        size_t i;
-
-        s += sprintf(s, kRawData_Begin, (unsigned long) call_data->raw_size,
+        s += sprintf(s, kRawData_Begin,
+                     (unsigned long) call_data->raw_size,
                      &"s"[call_data->raw_size == 1]);
 
-        d = (const unsigned char*) call_data->raw_data;
-        for (i = call_data->raw_size;  i;  i--, d++) {
-            switch (*d) {
-            case '\t':
-                *s++ = '\\';
-                *s++ = 't';
-                continue;
-            case '\v':
-                *s++ = '\\';
-                *s++ = 'v';
-                continue;
-            case '\b':
-                *s++ = '\\';
-                *s++ = 'b';
-                continue;
-            case '\r':
-                *s++ = '\\';
-                *s++ = 'r';
-                continue;
-            case '\f':
-                *s++ = '\\';
-                *s++ = 'f';
-                continue;
-            case '\a':
-                *s++ = '\\';
-                *s++ = 'a';
-                continue;
-            case '\n':
-            case '\\':
-            case '\'':
-            case '"':
-                *s++ = '\\';
-                break;
-            default:
-                if (!isprint(*d)) {
-                    int/*bool*/ reduce;
-                    unsigned char v;
-                    if (format_flags & fLOG_FullOctal)
-                        reduce = 0/*false*/;
-                    else {
-                        reduce = (i == 1         || s_IsQuoted(d[1]) ||
-                                  !isprint(d[1]) || d[1] < '0' || d[1] > '7');
-                    }
-                    *s++ = '\\';
-                    v =  *d >> 6;
-                    if (v  ||  !reduce) {
-                        *s++ = '0' + v;
-                        reduce = 0;
-                    }
-                    v = (*d >> 3) & 7;
-                    if (v  ||  !reduce)
-                        *s++ = '0' + v;
-                    v =  *d & 7;
-                    *s++ =     '0' + v;
-                    continue;
-                }
-                break;
-            }
-            *s++ = (char) *d;
-        }
+        s = UTIL_PrintableString(call_data->raw_data,
+                                 call_data->raw_size,
+                                 s, format_flags & fLOG_FullOctal);
 
         memcpy(s, kRawData_End, sizeof(kRawData_End));
     } else

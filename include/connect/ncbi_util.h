@@ -57,6 +57,7 @@
  * 4. Miscellaneous:
  *       UTIL_MatchesMask[Ex]()
  *       UTIL_NcbiLocalHostName()
+ *       UTIL_PrintableString[Size]()
  *
  */
 
@@ -498,6 +499,51 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMask
  */
 extern char* UTIL_NcbiLocalHostName
 (char*       hostname
+ );
+
+
+/** Calculate size of buffer needed to store printable representation of the
+ * block of data of the specified size (or, if size is 0, strlen(data)).
+ * NOTE:  The calculated size does not include terminating '\0'.
+ * @param data
+ *  Block of data (NULL causes 0 to return regardless of "size")
+ * @param size
+ *  Size of block (0 causes strlen(data) to be used)
+ * @return the buffer size needed (0 for NULL or empty (size==0) block).
+ * @sa UTIL_PrintableString
+ */
+extern size_t UTIL_PrintableStringSize
+(const char* data,
+ size_t      size
+ );
+
+
+/** Create printable representation of the block of data of the specified size
+ * (or, if size is 0, strlen(data), and return buffer pointer past the last
+ * stored character (non '\0'-terminated).
+ * NOTE:  The input buffer "buf" where to store the printable representation
+ * is assumed to be of adequate size to hold the resultant string.
+ * Non-printable characters can be represented in a reduced octal form
+ * as long as the result is unambiguous (unless "full" passed true (non-zero),
+ * in which case all non-printable characters get represented by full
+ * octal tetrads).  NB: Hexadecimal output is not used because it is
+ * ambiguous by the standard (can contain undefined number of hex digits).
+ * @param data
+ *  Block of data (NULL causes NULL to return regardless of "size" or "buf")
+ * @param size
+ *  Size of block (0 causes strlen(data) to be used)
+ * @buf
+ *  Buffer to store the result (NULL always causes NULL to return)
+ * @full
+ *  Whether to print full octal representation of non-printable characters
+ * @return next position in the buffer past the last stored character.
+ * @sa UTIL_PrintableStringSize
+ */
+extern char* UTIL_PrintableString
+(const char* data,
+ size_t      size,
+ char*       buf,
+ int         full
  );
 
 
