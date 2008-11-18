@@ -970,7 +970,7 @@ CMultiAligner::x_AlignProgressive(
     // If root of a cluster tree then set RPS frequencies for cluster seuquences
     // Node id > 10000 denotes root of a cluster tree
     // TO DO: Marking root of cluster tree should be done in a better way
-    if (tree->GetValue().GetId() >= 10000
+    if (iteration == 0 && tree->GetValue().GetId() >= 10000
         && m_Options->GetInClustAlnMethod() == CMultiAlignerOptions::eMulti) {
 
         int index = tree->GetValue().GetId() - 10000;
