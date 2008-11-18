@@ -1271,7 +1271,7 @@ static EIO_Status s_Select(size_t                n,
                     if (what[i] != sock->event)
                         continue;
                     assert(polls[j].revent != eIO_Close);
-                    /* reset well before re-enabling API call occurs */
+                    /* reset well before a re-enabling WSA API call occurs */
                     if (!ResetEvent(what[i])) {
                         sock->r_status = sock->w_status = eIO_Closed;
                         polls[j].revent = eIO_Close;
@@ -1308,26 +1308,29 @@ static EIO_Status s_Select(size_t                n,
                         sock->readable = 1/*true*/;
                         sock->writable = 1/*true*/;
                     } else {
-                        if (mask & (FD_CONNECT/*C*/ | FD_WRITE/*W*/)) {
+                        if (mask & (FD_CONNECT | FD_WRITE)) {
                             assert(sock->type & eSocket);
                             sock->writable = 1/*true*/;
                         }
-                        if (mask & (FD_ACCEPT/*A*/ | FD_OOB/*O*/ | FD_READ/*R*/))
+                        if (mask & (FD_ACCEPT | FD_OOB | FD_READ))
                             sock->readable = 1/*true*/;
                     }
                     mask &= want[i];
-                    if ((mask & (FD_ACCEPT | FD_OOB | FD_READ))  &&  sock->readable) {
+                    if ((mask & (FD_ACCEPT | FD_OOB | FD_READ))
+                        &&  sock->readable) {
                         polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Read);
                         ready = 1;
                     }
-                    if ((mask & (FD_CONNECT | FD_WRITE))  &&  sock->writable) {
+                    if ((mask & (FD_CONNECT | FD_WRITE))
+                        &&  sock->writable) {
                         assert(sock->type & eSocket);
                         polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Write);
                         ready = 1;
                     }
                     if (!polls[j].revent) {
                         int k;
-                        if ((mask & FD_CLOSE)  &&  !e.iErrorCode[FD_CLOSE_BIT]) {
+                        if ((mask & FD_CLOSE)
+                            &&  !e.iErrorCode[FD_CLOSE_BIT]) {
                             polls[j].revent = polls[j].event;
                             ready = 1;
                         } else for (k = 0;  k < FD_MAX_EVENTS;  k++) {
