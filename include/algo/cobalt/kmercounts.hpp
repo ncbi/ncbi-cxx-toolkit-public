@@ -100,7 +100,8 @@ public:
                       objects::CScope& scope);
 
     /// Reset the counts vector
-    /// @param seq Sequence
+    /// @param seq Sequence [in]
+    /// @param scope Scope [in]
     ///
     void Reset(const objects::CSeq_loc& seq, objects::CScope& scope);
 
@@ -201,6 +202,17 @@ public:
     static unsigned int CountCommonKmers(const CSparseKmerCounts& v1, 
                      const CSparseKmerCounts& v2, 
                      bool repetitions = true);
+
+    /// Perform preparations before k-mer counting common to all sequences.
+    /// Allocate buffer for storing temporary counts
+    ///
+    static void PreCount(void);
+
+    /// Perform post-kmer counting tasks. Free buffer.
+    ///
+    static void PostCount(void);
+
+
 private:
     static Uint4 GetAALetter(Uint1 letter)
     {
@@ -232,6 +244,7 @@ protected:
     static unsigned int sm_AlphabetSize;
     static vector<Uint1> sm_TransTable;
     static bool sm_UseCompressed;
+    static TCount* sm_Buffer;
 };
 
 
@@ -355,10 +368,14 @@ public:
                               vector<TKmerCounts>& counts)
     {
         counts.clear();
-    
+
+        TKmerCounts::PreCount();
+
         ITERATE(vector< CRef<objects::CSeq_loc> >, it, seqs) {
             counts.push_back(TKmerCounts(**it, scope));
         }
+
+        TKmerCounts::PostCount();
     }
 
     /// Compute matrix of distances between given counts vectors

@@ -55,6 +55,7 @@ unsigned int CSparseKmerCounts::sm_KmerLength = 4;
 unsigned int CSparseKmerCounts::sm_AlphabetSize = kAlphabetSize;
 vector<Uint1> CSparseKmerCounts::sm_TransTable;
 bool CSparseKmerCounts::sm_UseCompressed = false;
+CSparseKmerCounts::TCount* CSparseKmerCounts::sm_Buffer = NULL;
 
 static const Uint1 kXaa = 21;
 
@@ -162,7 +163,8 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
 
         num_elements = 1 << (kNumBits * kmer_len);
         const Uint4 kMask = num_elements - (1 << kNumBits);
-        counts = new TCount[num_elements];
+        counts = sm_Buffer ? sm_Buffer : new TCount[num_elements];
+
         _ASSERT(counts);
         memset(counts, 0, num_elements * sizeof(TCount));
 
@@ -211,6 +213,7 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
         }
 
         // Convert to sparse vector
+        m_Counts.reserve(m_SeqLength - kmer_len + 1);
         size_t ind = 0;
         Uint4 num_bit_chunks = num_elements / kBitChunk + 1;
         while (ind < num_elements / kBitChunk + 1) {
@@ -245,26 +248,32 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
         _ASSERT(pow((double)alphabet_size, (double)kmer_len) 
                 < numeric_limits<Uint4>::max());
 
-
         AutoArray<double> base(kmer_len);
         for (Uint4 i=0;i < kmer_len;i++) {
             base[i] = pow((double)alphabet_size, (double)i);
         }
    
         num_elements = (Uint4)pow((double)alphabet_size, (double)kmer_len);
-        counts = new TCount[num_elements];
+
+        counts = sm_Buffer ? sm_Buffer : new TCount[num_elements];
+
         _ASSERT(counts);
         memset(counts, 0, num_elements * sizeof(TCount));
 
+        // Vector indicating non-zero elements
+        const int kBitChunk = sizeof(Uint4) * 8;
+        vector<Uint4> used_entries(num_elements / kBitChunk + 1);
+
+        Uint4 pos;
         for (unsigned i=0;i < seq_len - kmer_len + 1;i++) {
 
             // Kmers that contain unspecified amino acid X are not considered
             if (sv[i + kmer_len - 1] == kXaa) {
-                i += kmer_len - 1;
+                i += kmer_len;
                 continue;
             }
 
-            Uint4 pos = GetAALetter(sv[i]) - 1;
+            pos = GetAALetter(sv[i]) - 1;
             _ASSERT(pos >= 0);
             _ASSERT(GetAALetter(sv[i]) <= alphabet_size);
             for (Uint4 j=1;j < kmer_len;j++) {
@@ -273,19 +282,43 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
                 _ASSERT(GetAALetter(sv[i + j]) <= alphabet_size);
             }
             counts[pos]++;
+            MarkUsed(pos, used_entries, kBitChunk);
             m_NumCounts++;
         }
 
-        unsigned int ind = 0;
-        for (Uint4 i=0;i < num_elements;i++) {
-            if (counts[i] > 0) {
-                m_Counts.push_back(SVectorElement(i, counts[i]));
+        // Convert to sparse vector
+        m_Counts.reserve(m_SeqLength - kmer_len + 1);
+        size_t ind = 0;
+        Uint4 num_bit_chunks = num_elements / kBitChunk + 1;
+        while (ind < num_elements / kBitChunk + 1) {
+
+            // find next chunk with at least one non-zero count
+            while (ind < num_bit_chunks && used_entries[ind] == 0) {
+                ind++;
             }
+
+            if (ind == num_bit_chunks) {
+                break;
+            }
+
+            // find the set bit and get position in the counts vector
+            for (Uint4 mask=0x80000000,j=0;used_entries[ind] != 0;
+                 j++, mask>>=1) {
+                _ASSERT(j < 32);
+                if ((used_entries[ind] & mask) != 0) {
+                    pos = ind * kBitChunk + j;
+
+                    _ASSERT(counts[pos] > 0);
+                    m_Counts.push_back(SVectorElement(pos, counts[pos]));
+
+                    used_entries[ind] ^= mask;
+                }
+            }
+            ind++;
         }
-        m_Counts.resize(ind);
     }
 
-    if (counts) {
+    if (!sm_Buffer && counts) {
         delete [] counts;
     }
     
@@ -376,6 +409,35 @@ unsigned int CSparseKmerCounts::CountCommonKmers(
     } while (it1 != vect1.m_Counts.end() && it2 != vect2.m_Counts.end());
 
     return result;
+}
+
+
+void CSparseKmerCounts::PreCount(void)
+{
+    // Compute number of bits needed to represent all letters
+    unsigned int mask = 1;
+    int num_bits = 0;
+    while (sm_AlphabetSize > mask) {
+        mask <<= 1;
+        num_bits++;
+    }
+
+    int num_elements;
+    if (sm_KmerLength * num_bits < 32) {
+        num_elements = 1 << (num_bits * sm_KmerLength);
+    }
+    else {
+        num_elements = (int)pow((double)sm_AlphabetSize, (double)sm_KmerLength);
+    }
+
+    sm_Buffer = new TCount[num_elements];
+}
+
+void CSparseKmerCounts::PostCount(void)
+{
+    if (sm_Buffer) {
+        delete [] sm_Buffer;
+    }
 }
 
 
