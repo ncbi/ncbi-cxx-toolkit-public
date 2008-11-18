@@ -101,6 +101,14 @@ public:
     {
         return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
     }
+#if SIZEOF_LONG == 4  &&  \
+    ((defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 400)  ||  \
+     defined(NCBI_COMPILER_ICC)  ||  defined(NCBI_COMPILER_WORKSHOP))
+    operator long(void) const
+    {
+        return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
+    }
+#endif
     operator Uint8(void) const
     {
         return MakeCP<CP>(NStr::StringToUInt8(m_Value, NStr::fAllowTrailingSymbols));
