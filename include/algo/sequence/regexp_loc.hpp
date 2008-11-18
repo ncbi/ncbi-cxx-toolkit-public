@@ -38,7 +38,7 @@
 
 
 #include <corelib/ncbistd.hpp>
-#include <util/regexp.hpp>
+#include <util/xregexp/regexp.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
