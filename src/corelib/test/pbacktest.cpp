@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include "pbacktest.hpp"
 #include <corelib/ncbidbg.hpp>
+#include <corelib/request_control.hpp>
 #include <corelib/stream_utils.hpp>
 #include <vector>
 #include <stdlib.h>
@@ -83,14 +84,18 @@ extern int TEST_StreamPushback(iostream&    ios,
     size_t i, j, k;
     vector<CT_CHAR_TYPE*> v;
 
+    // Warnings, errors, etc
     GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Err,
-                                      (unsigned int)(-1));
+                                      CRequestRateControl::kNoLimit);
+    // Infos and traces only
+    GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Trace,
+                                      CRequestRateControl::kNoLimit);
 
     unsigned int seed = seed_in ? seed_in : (unsigned int) time(0);
-    LOG_POST("Seed = " << seed);
+    ERR_POST(Info << "Seed = " << seed);
     srand(seed);
 
-    LOG_POST("Generating array of random data");
+    ERR_POST(Info << "Generating array of random data");
     char *buf1 = new char[kBufferSize + 1];
     char *buf2 = new char[kBufferSize + 2];
     for (j = 0; j < kBufferSize/1024; j++) {
@@ -100,7 +105,7 @@ extern int TEST_StreamPushback(iostream&    ios,
     }
     buf1[kBufferSize] = '\0';
 
-    LOG_POST("Sending data down the stream");
+    ERR_POST(Info << "Sending data down the stream");
     if (!(ios << buf1)) {
         ERR_POST("Could not send data");
         return 1;
@@ -108,7 +113,7 @@ extern int TEST_StreamPushback(iostream&    ios,
     if (rewind)
         ios.seekg(0);
 
-    LOG_POST("Doing random reads and {push|step}backs of the reply");
+    ERR_POST(Info << "Doing random reads and {push|step}backs of the reply");
     int d = 0;
     char c = 0;
     size_t busy = 0;
@@ -124,7 +129,7 @@ extern int TEST_StreamPushback(iostream&    ios,
 
         if (buflen + i > kBufferSize + 1)
             i = kBufferSize + 1 - buflen;
-        LOG_POST(Info << "Reading " << i << " byte" << (i == 1 ? "" : "s"));
+        ERR_POST(Info << "Reading " << i << " byte" << (i == 1 ? "" : "s"));
         // Force at least minimal blocking, since Readsome might not
         // block at all and accepting 0-byte reads could lead to spinning.
         ios.peek();
@@ -134,25 +139,25 @@ extern int TEST_StreamPushback(iostream&    ios,
             return 2;
         }
         if (j != i)
-            LOG_POST("Received " << j << " byte" << (j == 1 ? "" : "s"));
+            ERR_POST(Info << "Received " << j << " byte" << &"s"[j == 1]);
         assert(j > 0);
         if (c  &&  c != buf2[buflen]) {
-            LOG_POST(Error <<
-                     "Mismatch, putback: " << c << ", read: " << buf2[buflen]);
+            ERR_POST("Mismatch, putback: " << c << ", read: " << buf2[buflen]);
             return 2;
         } else
             c = 0;
         buflen += j;
-        LOG_POST("Obtained so far " << buflen << " out of " << kBufferSize);
+        ERR_POST(Info << "Obtained so far " << buflen
+                 << " out of " << kBufferSize);
 
         bool pback = false;
         if (rewind  &&  rand() % 7 == 0  &&  buflen < kBufferSize) {
             if (rand() & 1) {
-                LOG_POST(Info << "Testing pre-seekg(" << buflen << ", "
+                ERR_POST(Info << "Testing pre-seekg(" << buflen << ", "
                          << STR(IOS_BASE) "::beg)");
                 ios.seekg(buflen, IOS_BASE::beg);
             } else {
-                LOG_POST(Info << "Testing pre-seekg(" << buflen << ')');
+                ERR_POST(Info << "Testing pre-seekg(" << buflen << ')');
                 ios.seekg(buflen);
             }
             if (!ios.good()) {
@@ -165,10 +170,10 @@ extern int TEST_StreamPushback(iostream&    ios,
 #endif
                 c = buf2[--buflen];
                 if (rand() & 1) {
-                    LOG_POST(Info << "Putback ('" << c << "')");
+                    ERR_POST(Info << "Putback ('" << c << "')");
                     ios.putback(c);
                 } else {
-                    LOG_POST(Info << "Unget ('" << c << "')");
+                    ERR_POST(Info << "Unget ('" << c << "')");
                     ios.unget();
                 }
                 if (!ios.good()) {
@@ -206,7 +211,7 @@ extern int TEST_StreamPushback(iostream&    ios,
                 memcpy(p + slack, buf2 + buflen, i);
             } else
                 passthru = 0;
-            LOG_POST(Info << (pushback ? "Pushing" : "Stepping") << " back "
+            ERR_POST(Info << (pushback ? "Pushing" : "Stepping") << " back "
                      << i << " byte" << &"s"[i == 1]
                      << (!longform
                          ? (original
@@ -256,10 +261,10 @@ extern int TEST_StreamPushback(iostream&    ios,
                 c = 0;
             }
             if (rand() & 1) {
-                LOG_POST(Info << "Tesing post-seekg(" << buflen << ')');
+                ERR_POST(Info << "Tesing post-seekg(" << buflen << ')');
                 ios.seekg(buflen);
             } else {
-                LOG_POST(Info << "Tesing post-seekg(" << buflen << ", "
+                ERR_POST(Info << "Tesing post-seekg(" << buflen << ", "
                          << STR(IOS_BASE) << "::beg)");
                 ios.seekg(buflen, IOS_BASE::beg);
             }
@@ -269,10 +274,10 @@ extern int TEST_StreamPushback(iostream&    ios,
             }
         }
 
-        //LOG_POST(Info << "Obtained " << buflen << " of " << kBufferSize);
+        //ERR_POST(Info << "Obtained " << buflen << " of " << kBufferSize);
     }
 
-    LOG_POST(Info << buflen << " bytes obtained in " << k << " iteration(s)" <<
+    ERR_POST(Info << buflen << " bytes obtained in " << k << " iteration(s)" <<
              (ios.eof() ? " (EOF)" : ""));
     buf2[buflen] = '\0';
 
@@ -291,7 +296,7 @@ extern int TEST_StreamPushback(iostream&    ios,
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
         return 1;
     } else
-        LOG_POST(Info << "Test passed");
+        ERR_POST(Info << "Test passed");
 
     delete[] buf1;
     delete[] buf2;

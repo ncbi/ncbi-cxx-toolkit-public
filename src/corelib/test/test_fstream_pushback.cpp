@@ -45,7 +45,8 @@ int main(int argc, char* argv[])
 
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
-    SetDiagPostFlag(eDPF_All);
+    SetDiagPostAllFlags(eDPF_DateTime    | eDPF_Severity |
+                        eDPF_OmitInfoSev | eDPF_ErrorID);
 
     CNcbiFstream fs(filename,
                     IOS_BASE::in    | IOS_BASE::out   |
