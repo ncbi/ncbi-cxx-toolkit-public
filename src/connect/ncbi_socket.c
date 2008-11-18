@@ -797,7 +797,7 @@ extern EIO_Status SOCK_InitializeAPI(void)
 #endif /*platform-specific init*/
 
     s_Initialized = 1/*inited*/;
-#ifdef NCBI_OS_MSWIN
+#ifndef NCBI_OS_MSWIN
     {{
         static int/*bool*/ s_AtExitSet = 0;
         if (!s_AtExitSet) {
@@ -2628,7 +2628,6 @@ static EIO_Status s_Close(SOCK sock, int abort)
             const struct timeval* tv = sock->c_timeout;
             struct linger lgr;
 
-            lgr.l_onoff = 0;
             if (abort) {
                 lgr.l_linger = 0;   /* RFC 793, Abort */
                 lgr.l_onoff  = 1;
@@ -2640,8 +2639,10 @@ static EIO_Status s_Close(SOCK sock, int abort)
                 if (tmo) {
                     lgr.l_linger = tmo;
                     lgr.l_onoff  = 1;
-                }
-            }
+                } else
+                    lgr.l_onoff = 0;
+            } else
+                lgr.l_onoff = 0;
             if (lgr.l_onoff
                 &&  setsockopt(sock->sock, SOL_SOCKET, SO_LINGER,
                                (char*) &lgr, sizeof(lgr)) != 0
