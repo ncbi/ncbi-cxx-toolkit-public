@@ -411,65 +411,88 @@ CMultiAligner::x_ComputeTree(void)
 }
 
 
+void CMultiAligner::x_Run(void)
+{
+    bool is_cluster_found = false;
+    vector<TPhyTreeNode*> cluster_trees;
+
+    switch (m_ClustAlnMethod) {
+    case CMultiAlignerOptions::eNone:
+
+        break;
+
+    case CMultiAlignerOptions::eToPrototype:
+        if (is_cluster_found = x_FindQueryClusters()) {
+            x_AlignInClusters();
+
+            // No multiple alignment is done for one cluster
+            if (m_Clusterer.GetClusters().size() == 1) {
+                m_tQueries.swap(m_AllQueries);
+                return;
+            }
+        }
+        break;
+
+    case CMultiAlignerOptions::eMulti:
+        if (is_cluster_found = x_FindQueryClusters()) {
+            x_ComputeClusterTrees(cluster_trees);
+        }
+        break;
+
+    default:
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "Invalid clustering option");
+    }
+
+    blast::TSeqLocVector blast_queries;
+    vector<int> indices;
+    x_CreateBlastQueries(blast_queries, indices);
+    x_FindDomainHits(blast_queries, indices);
+    x_FindLocalHits(blast_queries, indices);
+    
+    vector<const CSequence*> pattern_queries;
+    x_CreatePatternQueries(pattern_queries, indices);
+    x_FindPatternHits(pattern_queries, indices);
+    x_FindConsistentHitSubset();
+
+    switch (m_ClustAlnMethod) {
+    case CMultiAlignerOptions::eNone:
+        x_ComputeTree();
+        x_BuildAlignment();
+	break;
+
+    case CMultiAlignerOptions::eToPrototype:
+        x_ComputeTree();
+        x_BuildAlignment();
+        if (is_cluster_found) {
+             x_MultiAlignClusters();
+        }
+        break;
+
+    case CMultiAlignerOptions::eMulti:
+        if (m_Clusterer.GetClusters().size() == 1) {
+            m_Tree.SetTree(cluster_trees[0]);
+        }
+        else {
+            x_ComputeTree();
+            x_BuildFullTree(cluster_trees);
+        }
+        x_BuildAlignment();
+        break;
+
+    default:
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "Invalid clustering option");
+    }
+
+}
+
 CMultiAligner::TStatus CMultiAligner::Run()
 {
     EStatus status = eSuccess;
 
     try {
-        bool is_cluster_found = false;
-        vector<TPhyTreeNode*> cluster_trees;
-
-        if (m_UseClusters) {
-            if ((is_cluster_found = x_FindQueryClusters())) {
-                
-                if (m_ClustAlnMethod == CMultiAlignerOptions::eToPrototype) {
-
-                    x_AlignInClusters();
-                    // No multiple alignment is done for one cluster
-                    if (m_Clusterer.GetClusters().size() == 1) {
-                        m_tQueries.swap(m_AllQueries);
-                        return (TStatus)(IsMessage() ? eWarnings : eSuccess);
-                    }
-                }
-                else {
-                    x_ComputeClusterTrees(cluster_trees);
-                }
-            }
-        }
-
-        blast::TSeqLocVector blast_queries;
-        vector<int> indices;
-        x_CreateBlastQueries(blast_queries, indices);
-        x_FindDomainHits(blast_queries, indices);
-        x_FindLocalHits(blast_queries, indices);
-
-        vector<const CSequence*> pattern_queries;
-        x_CreatePatternQueries(pattern_queries, indices);
-        x_FindPatternHits(pattern_queries, indices);
-        x_FindConsistentHitSubset();
-
-        if (m_ClustAlnMethod == CMultiAlignerOptions::eMulti
-            && m_Clusterer.GetClusters().size() == 1) {
-
-            m_Tree.SetTree(cluster_trees[0]);
-        }
-        else {
-            x_ComputeTree();
-        }
-
-        if (m_Clusterer.GetClusters().size() > 1
-            && m_ClustAlnMethod == CMultiAlignerOptions::eMulti) {
-
-            x_BuildFullTree(cluster_trees);
-        }
-
-        x_BuildAlignment();
-
-        if (is_cluster_found
-            && m_ClustAlnMethod == CMultiAlignerOptions::eToPrototype) {
-
-            x_MultiAlignClusters();
-        }
+        x_Run();
     }
     catch (CMultiAlignerException e) {
         CMultiAlignerException::EErrCode err_code

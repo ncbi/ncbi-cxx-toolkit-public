@@ -181,6 +181,7 @@ public:
     /// This function handles the generation of all internal state in the
     /// correct order. It is sufficient for 'black box' applications that
     /// only want a final answer without tweaking internal state.
+    /// x_Run() is called for computing alignment.
     /// @return Computation status: success (0), warnings (1), error (>1)
     ///
     TStatus Run(void);
@@ -394,6 +395,14 @@ protected:
     ///
     void x_BuildFullTree(const vector<TPhyTreeNode*>& cluster_trees);
 
+    /// Align the current set of input sequences (reset any existing
+    /// alignment information).
+    ///
+    /// This function handles the generation of all internal state in the
+    /// correct order. It is sufficient for 'black box' applications that
+    /// only want a final answer without tweaking internal state.
+    ///
+    void x_Run(void);
 
 protected:
 
