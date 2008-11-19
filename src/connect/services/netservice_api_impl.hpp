@@ -76,7 +76,7 @@ struct SNetServiceImpl : public CNetObject
     // Construct a new object. If needed, this constructor
     // can be 'published' in the CNetService component (as
     // the CNetService::Create() method).
-    SNetServiceImpl::SNetServiceImpl(
+    SNetServiceImpl(
         const std::string& service_name,
         const std::string& client_name);
 
