@@ -8,7 +8,7 @@
 ########### Arguments
 
 script="$0"
-cfgs="${1:-DebugDLL Debug ReleaseDLL Release}"
+cfgs="${1:-DebugDLL ReleaseDLL Release}"
  
 ########### Global variables
 
