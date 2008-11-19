@@ -69,8 +69,8 @@ void CRequestRateControl::Reset(
     } else {
         m_ThrottleAction = throttle_action;
     }
-    m_NumRequests  = 0;
-    m_LastApproved = 0;
+    m_NumRequests  =  0;
+    m_LastApproved = -1;
     m_TimeLine.clear();
     m_StopWatch.Restart();
 }
@@ -94,7 +94,7 @@ bool CRequestRateControl::x_Approve(EThrottleAction action, CTimeSpan *sleeptime
     bool empty_between = (m_MinTimeBetweenRequests <= 0);
 
     // Check maximum number of requests at all (if times not specified)
-    if ( !m_NumRequestsAllowed  ||  (empty_period  &&  empty_between) ){
+    if ( !m_NumRequestsAllowed  ||  (empty_period  &&  empty_between) ) {
         if ( m_NumRequests >= m_NumRequestsAllowed ) {
             switch(action) {
                 case eErrCode:
@@ -143,7 +143,7 @@ bool CRequestRateControl::x_Approve(EThrottleAction action, CTimeSpan *sleeptime
         }
     }
     // Check time between two consecutive requests
-    if ( !empty_between  &&  (m_LastApproved > 0) ) {
+    if ( !empty_between  &&  (m_LastApproved >= 0) ) {
         if ( now - m_LastApproved < m_MinTimeBetweenRequests ) {
             switch(action) {
                 case eSleep:
