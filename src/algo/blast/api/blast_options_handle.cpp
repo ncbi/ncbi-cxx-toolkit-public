@@ -85,6 +85,18 @@ CBlastOptionsHandle::Validate() const
     return m_Opts->Validate();
 }
 
+char*
+CBlastOptionsHandle::GetFilterString() const
+{ 
+    return m_Opts->GetFilterString(); /* NCBI_FAKE_WARNING */
+}
+
+void 
+CBlastOptionsHandle::SetFilterString(const char* f, bool clear /* = true */) 
+{
+    m_Opts->SetFilterString(f, clear); /* NCBI_FAKE_WARNING */
+}
+
 CBlastOptionsHandle*
 CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
 {

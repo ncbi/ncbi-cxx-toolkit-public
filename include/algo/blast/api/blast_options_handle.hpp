@@ -186,14 +186,10 @@ public:
     /// Clears the filtering options
     void ClearFilterOptions() { m_Opts->ClearFilterOptions(); }
     /// Returns FilterString
-    char* GetFilterString() const { 
-        return m_Opts->GetFilterString(); /* NCBI_FAKE_WARNING */
-    }
+    char* GetFilterString() const;
     /// Sets FilterString
     /// @param f FilterString [in]
-    void SetFilterString(const char* f, bool clear = true) { 
-        m_Opts->SetFilterString(f, clear); /* NCBI_FAKE_WARNING */
-    }
+    void SetFilterString(const char* f, bool clear = true);
 
     /// Returns whether masking should only be done for lookup table creation.
     bool GetMaskAtHash() const { return m_Opts->GetMaskAtHash(); }
