@@ -300,6 +300,227 @@ private:
     obj_type* m_Value; 
 };
 
+///////////////////////////////////////////////////////////////////////////////
+template <typename CP, typename R, typename S>
+class CMakeObject
+{
+public:
+    static R Make(S& source)
+    {
+        return R();
+    }
+};
+
+template <typename CP, typename R>
+class CMakeObject<CP, R, CDB_Result>
+{
+public:
+    static R Make(CDB_Result& source)
+    {
+        typedef CValueConvert<CP, CDB_Result> TResult;
+
+        return TResult(source);
+    }
+};
+
+template <typename T1, typename T2>
+class CMakeObject<SRunTimeCP, pair<T1, T2>, CDB_Result>
+{
+public:
+    typedef pair<T1, T2> TValue;
+    typedef SRunTimeCP CP;
+
+    static TValue Make(CDB_Result& source)
+    {
+        typedef CValueConvert<CP, CDB_Result> TResult;
+
+        TResult result(source);
+
+        // We may get an error at run-time ...
+        T1 v1 = CMakeObject<CP, T1, CDB_Result>::Make(source);
+        T2 v2 = CMakeObject<CP, T2, CDB_Result>::Make(source);
+
+        return TValue(v1, v2);
+    }
+};
+
+template <typename T1, typename T2>
+class CMakeObject<SSafeCP, pair<T1, T2>, CDB_Result>
+{
+public:
+    typedef pair<T1, T2> TValue;
+    typedef SSafeCP CP;
+
+    static TValue Make(CDB_Result& source)
+    {
+        typedef CValueConvert<CP, CDB_Result> TResult;
+
+        TResult result(source);
+
+        /* Not all data types have default constructor. */
+        const unsigned int n = source.NofItems();
+
+        T1 v1 = T1();
+        T2 v2 = T2();
+
+        if (static_cast<unsigned int>(source.CurrentItemNo()) < n) {
+            v1 = CMakeObject<CP, T1, CDB_Result>::Make(source);
+        }
+
+        if (static_cast<unsigned int>(source.CurrentItemNo()) < n) {
+            v2 = CMakeObject<CP, T2, CDB_Result>::Make(source);
+        }
+
+        return TValue(v1, v2);
+    }
+};
+
+template <typename CP, typename T>
+class CMakeObject<CP, vector<T>, CDB_Result>
+{
+public:
+    typedef vector<T> TValue;
+
+    static TValue Make(CDB_Result& source)
+    {
+        typedef CValueConvert<CP, CDB_Result> TResult;
+
+        TResult result(source);
+        const unsigned int n = source.NofItems();
+        TValue res_val;
+        
+        for (unsigned int i = source.CurrentItemNo(); i < n; i = source.CurrentItemNo()) {
+            res_val.push_back(CMakeObject<CP, T, CDB_Result>::Make(source));
+        }
+
+        return res_val;
+    }
+};
+
+template <typename CP, typename T>
+class CMakeObject<CP, stack<T>, CDB_Result>
+{
+public:
+    typedef stack<T> TValue;
+
+    static TValue Make(CDB_Result& source)
+    {
+        typedef CValueConvert<CP, CDB_Result> TResult;
+
+        TResult result(source);
+        const unsigned int n = source.NofItems();
+        TValue res_val;
+        
+        for (unsigned int i = source.CurrentItemNo(); i < n; i = source.CurrentItemNo()) {
+            res_val.push(CMakeObject<CP, T, CDB_Result>::Make(source));
+        }
+
+        return res_val;
+    }
+};
+
+template <typename CP, typename T>
+class CMakeObject<CP, deque<T>, CDB_Result>
+{
+public:
+    typedef deque<T> TValue;
+
+    static TValue Make(CDB_Result& source)
+    {
+        typedef CValueConvert<CP, CDB_Result> TResult;
+
+        TResult result(source);
+        const unsigned int n = source.NofItems();
+        TValue res_val;
+        
+        for (unsigned int i = source.CurrentItemNo(); i < n; i = source.CurrentItemNo()) {
+            res_val.push_back(CMakeObject<CP, T, CDB_Result>::Make(source));
+        }
+
+        return res_val;
+    }
+};
+
+template <typename CP, typename T>
+class CMakeObject<CP, set<T>, CDB_Result>
+{
+public:
+    typedef set<T> TValue;
+
+    static TValue Make(CDB_Result& source)
+    {
+        typedef CValueConvert<CP, CDB_Result> TResult;
+
+        TResult result(source);
+        const unsigned int n = source.NofItems();
+        TValue res_val;
+        
+        for (unsigned int i = source.CurrentItemNo(); i < n; i = source.CurrentItemNo()) {
+            res_val.insert(CMakeObject<CP, T, CDB_Result>::Make(source));
+        }
+
+        return res_val;
+    }
+};
+
+template <typename K, typename V>
+class CMakeObject<SRunTimeCP, map<K, V>, CDB_Result>
+{
+public:
+    typedef map<K, V> TValue;
+    typedef SRunTimeCP CP;
+
+    static TValue Make(CDB_Result& source)
+    {
+        typedef CValueConvert<CP, CDB_Result> TResult;
+
+        TResult result(source);
+        const unsigned int n = source.NofItems();
+        TValue res_val;
+        
+        for (unsigned int i = source.CurrentItemNo(); i < n; i = source.CurrentItemNo()) {
+            // We may get an error at run-time ...
+            K k = CMakeObject<CP, K, CDB_Result>::Make(source);
+            V v = CMakeObject<CP, V, CDB_Result>::Make(source);
+
+            res_val.insert(pair<K, V>(k, v));
+        }
+
+        return res_val;
+    }
+};
+
+template <typename K, typename V>
+class CMakeObject<SSafeCP, map<K, V>, CDB_Result>
+{
+public:
+    typedef map<K, V> TValue;
+    typedef SSafeCP CP;
+
+    static TValue Make(CDB_Result& source)
+    {
+        typedef CValueConvert<CP, CDB_Result> TResult;
+
+        TResult result(source);
+        const unsigned int n = source.NofItems();
+        TValue res_val;
+        
+        for (unsigned int i = source.CurrentItemNo(); i < n; i = source.CurrentItemNo()) {
+            /* Not all data types have default constructor ... */
+            K k = CMakeObject<CP, K, CDB_Result>::Make(source);
+            V v = V();
+
+            if (static_cast<unsigned int>(source.CurrentItemNo()) < n) {
+                v = CMakeObject<CP, V, CDB_Result>::Make(source);
+            } 
+
+            res_val.insert(pair<K, V>(k, v));
+        }
+
+        return res_val;
+    }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 template <typename CP, typename TO> 
 class CConvertTO
@@ -309,30 +530,8 @@ public:
 
     static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
     {
-        typedef CValueConvert<CP, CDB_Result> TResult;
-
         if (rs->Fetch()) {
-             value = TResult(*rs);
-        }
-    }
-};
-
-template <typename CP, typename T1, typename T2> 
-class CConvertTO<CP, pair<T1, T2> >
-{
-public:
-    typedef pair<T1, T2> TValue;
-
-    static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
-    {
-        typedef CValueConvert<CP, CDB_Result> TResult;
-
-        if (rs->Fetch()) {
-            TResult result(*rs);
-            T1 v1 = result;
-            T2 v2 = result;
-
-            value = pair<T1, T2>(v1, v2);
+             value = CMakeObject<CP, TValue, CDB_Result>::Make(*rs);
         }
     }
 };
@@ -345,11 +544,8 @@ public:
 
     static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
     {
-        typedef CValueConvert<CP, CDB_Result> TResult;
-
-        TResult result(*rs);
         while (rs->Fetch()) {
-            value.push_back(result);
+            value.push_back(CMakeObject<CP, T, CDB_Result>::Make(*rs));
         }
     }
 };
@@ -362,11 +558,8 @@ public:
 
     static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
     {
-        typedef CValueConvert<CP, CDB_Result> TResult;
-
-        TResult result(*rs);
         while (rs->Fetch()) {
-            value.push_back(result);
+            value.push_back(CMakeObject<CP, T, CDB_Result>::Make(*rs));
         }
     }
 };
@@ -379,11 +572,8 @@ public:
 
     static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
     {
-        typedef CValueConvert<CP, CDB_Result> TResult;
-
-        TResult result(*rs);
         while (rs->Fetch()) {
-            value.insert(result);
+            value.insert(CMakeObject<CP, T, CDB_Result>::Make(*rs));
         }
     }
 };
@@ -396,11 +586,8 @@ public:
 
     static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
     {
-        typedef CValueConvert<CP, CDB_Result> TResult;
-
-        TResult result(*rs);
         while (rs->Fetch()) {
-            value.push(result);
+            value.push(CMakeObject<CP, T, CDB_Result>::Make(*rs));
         }
     }
 };
@@ -413,14 +600,11 @@ public:
 
     static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
     {
-        typedef CValueConvert<CP, CDB_Result> TResult;
-
-        TResult result(*rs);
         while (rs->Fetch()) {
-            K k = result;
-            V v = result;
+            K k = CMakeObject<CP, K, CDB_Result>::Make(*rs);
+            V v = CMakeObject<CP, V, CDB_Result>::Make(*rs);
 
-            value.insert(make_pair(k, v));
+            value.insert(pair<K, V>(k, v));
         }
     }
 };
