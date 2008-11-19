@@ -557,7 +557,7 @@ static EIO_Status s_CONN_Read
     assert(*n_read == 0);
 
     /* check if the read method is specified at all */
-    if ( !conn->meta.read ) {
+    if (!conn->meta.read) {
         status = eIO_NotSupported;
         CONN_LOG(22, eLOG_Error, "[CONN_Read]  Unable to read data");
         return status;
@@ -628,7 +628,7 @@ static EIO_Status s_CONN_ReadPersist
         if (*n_read == size  ||  status != eIO_Success)
             break;
         /* flush the unwritten output data (if any) */
-        if ( conn->meta.flush ) {
+        if (conn->meta.flush) {
             conn->meta.flush(conn->meta.c_flush,
                              conn->r_timeout == kDefaultTimeout ?
                              conn->meta.default_timeout : conn->r_timeout);
@@ -712,7 +712,7 @@ extern EIO_Status CONN_ReadLine
     if (status == eIO_Success) {
         assert(conn->state == eCONN_Open  &&  conn->meta.list != 0);
         /* flush the unwritten output data (if any) */
-        if ( conn->meta.flush ) {
+        if (conn->meta.flush) {
             conn->meta.flush(conn->meta.c_flush,
                              conn->r_timeout == kDefaultTimeout ?
                              conn->meta.default_timeout : conn->r_timeout);
@@ -769,7 +769,7 @@ extern EIO_Status CONN_Status(CONN conn, EIO_Event dir)
     if (conn->state == eCONN_Closed)
         return eIO_Closed;
 
-    if ( !conn->meta.status )
+    if (!conn->meta.status)
         return eIO_NotSupported;
 
     return conn->meta.status(conn->meta.c_status, dir);
@@ -790,10 +790,10 @@ extern EIO_Status CONN_Close(CONN conn)
     /* allow close CB only once */
     memset(&conn->cbs[eCONN_OnClose], 0, sizeof(conn->cbs[eCONN_OnClose]));
     /* call it! */
-    if ( func )
-        (*func)(conn, eCONN_OnClose, data);
+    if (func)
+        func(conn, eCONN_OnClose, data);
     /* now close the connection - this also makes it "eCONN_Unusable" */
-    if ( conn->meta.list )
+    if (conn->meta.list)
         CONN_ReInit(conn, 0);
     BUF_Destroy(conn->buf);
     conn->buf = 0;
