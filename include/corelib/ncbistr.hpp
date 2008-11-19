@@ -36,6 +36,7 @@
 
 
 #include <corelib/tempstr.hpp>
+#include <corelib/ncbi_limits.hpp>
 #ifdef NCBI_OS_OSF1
 #  include <strings.h>
 #endif
@@ -1903,6 +1904,12 @@ public:
 }; // class NStr
 
 
+/// Type for character in UCS-2 encoding
+typedef Uint2 TCharUCS2;
+/// Type for string in UCS-2 encoding
+typedef basic_string<TCharUCS2> TStringUCS2;
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -1915,7 +1922,7 @@ public:
 ///   Supported encodings:
 ///      ISO 8859-1 (Latin1)
 ///      Microsoft Windows code page 1252
-///      UCS-2/UTF-16 (no surrogates)
+///      UCS-2, UCS-4 (no surrogates)
 
 enum EEncoding {
     eEncoding_Unknown,
@@ -1990,25 +1997,23 @@ public:
         x_Append(src, encoding, validate);
     }
 
-#if defined(HAVE_WSTRING)
-    /// Constructor from a wstring (UTF-16).
-    ///
-    /// Defined only if wstring is supported by the compiler.
-    CStringUTF8(const wstring& src)
+    /// Constructor from any string (ISO8859-1, USC-2 or USC-4,
+    /// depending on the size of TChar).
+    template <class T>
+    CStringUTF8(const basic_string<T>& src)
         : string()
     {
-        x_Append( src.c_str());
+        x_Append(src.c_str());
     }
 
-    /// Constructor from a whcar_t* (UTF-16).
-    ///
-    /// Defined only if wstring is supported by the compiler.
-    CStringUTF8(const wchar_t* src)
+    /// Constructor from any character sequence (ISO8859-1, USC-2 or USC-4,
+    /// depending on the size of TChar).
+    template <typename TChar>
+    CStringUTF8(const TChar* src)
         : string()
     {
         x_Append(src);
     }
-#endif // HAVE_WSTRING
 
     /// Assign to UTF8 string
     CStringUTF8& operator= (const CStringUTF8& src)
@@ -2017,43 +2022,25 @@ public:
         return *this;
     }
 
-    /// Assign to C++ string in Latin1 encoding.
-    CStringUTF8& operator= (const string& src)
+    /// Assign to C++ string in ISO8859-1, USC-2 or USC-4 (depending on the
+    /// size of TChar)
+    template <typename TChar>
+    CStringUTF8& operator= (const basic_string<TChar>& src)
     {
         erase();
         x_Append(src.c_str());
         return *this;
     }
 
-    /// Assign to C string in Latin1 encoding.
-    CStringUTF8& operator= (const char* src)
+    /// Assign to C string in ISO8859-1, USC-2 or USC-4 (depending on the
+    /// size of TChar)
+    template <typename TChar>
+    CStringUTF8& operator= (const TChar* src)
     {
         erase();
         x_Append(src);
         return *this;
     }
-
-#if defined(HAVE_WSTRING)
-    /// Assign to C++ wstring in UTF16 encoding
-    ///
-    /// Defined only if wstring is supported by the compiler.
-    CStringUTF8& operator= (const wstring& src)
-    {
-        erase();
-        x_Append(src.c_str());
-        return *this;
-    }
-
-    /// Assign to wide-char C string in UTF16 encoding
-    ///
-    /// Defined only if wstring is supported by the compiler.
-    CStringUTF8& operator= (const wchar_t* src)
-    {
-        erase();
-        x_Append(src);
-        return *this;
-    }
-#endif // HAVE_WSTRING
 
     /// Append a string in UTF8 encoding
     CStringUTF8& operator+= (const CStringUTF8& src)
@@ -2062,40 +2049,24 @@ public:
         return *this;
     }
 
-    /// Append a C++ string in Latin1 encoding
-    CStringUTF8& operator+= (const string& src)
+    /// Append a C++ string in ISO8859-1, USC-2 or USC-4 (depending on the
+    /// size of TChar)
+    template <typename TChar>
+    CStringUTF8& operator+= (const basic_string<TChar>& src)
     {
         x_Append(src.c_str());
         return *this;
     }
 
-    /// Append a C string in Latin1 encoding
-    CStringUTF8& operator+= (const char* src)
+    /// Append a C string in ISO8859-1, USC-2 or USC-4 (depending on the
+    /// size of TChar)
+    template <typename TChar>
+    CStringUTF8& operator+= (const TChar* src)
     {
         x_Append(src);
         return *this;
     }
 
-#if defined(HAVE_WSTRING)
-    /// Append a C++ wstring in UTF-16 encoding
-    ///
-    /// Defined only if wstring is supported by the compiler.
-    CStringUTF8& operator+= (const wstring& src)
-    {
-        x_Append(src.c_str());
-        return *this;
-    }
-
-    /// Append a wide-char C string in UTF-16 encoding
-    ///
-    /// Defined only if wstring is supported by the compiler.
-    CStringUTF8& operator+= (const wchar_t* src)
-    {
-        x_Append(src);
-        return *this;
-    }
-#endif // HAVE_WSTRING
-    
     /// Assign to C++ string
     ///
     /// @param src
@@ -2127,6 +2098,32 @@ public:
     {
         erase();
         x_Append(src, encoding, validate);
+        return *this;
+    }
+
+    /// Assign to C++ string in ISO8859-1, USC-2 or USC-4 (depending on the
+    /// size of TChar)
+    ///
+    /// @param src
+    ///   Source string
+    template <typename TChar>
+    CStringUTF8& Assign(const basic_string<TChar>& src)
+    {
+        erase();
+        x_Append(src.c_str());
+        return *this;
+    }
+
+    /// Assign to C string in ISO8859-1, USC-2 or USC-4 (depending on the
+    /// size of TChar)
+    ///
+    /// @param src
+    ///   Source zero-terminated character buffer
+    template <typename TChar>
+    CStringUTF8& Assign(const TChar* src)
+    {
+        erase();
+        x_Append(src);
         return *this;
     }
 
@@ -2173,6 +2170,30 @@ public:
                         EValidate validate = eNoValidate)
     {
         x_Append(src, encoding, validate);
+        return *this;
+    }
+
+    /// Append a C++ string in ISO8859-1, USC-2 or USC-4 (depending on the
+    /// size of TChar)
+    ///
+    /// @param src
+    ///   Source string
+    template <typename TChar>
+    CStringUTF8& Append(const basic_string<TChar>& src)
+    {
+        x_Append(src.c_str());
+        return *this;
+    }
+
+    /// Append a C string in ISO8859-1, USC-2 or USC-4 (depending on the
+    /// size of TChar)
+    ///
+    /// @param src
+    ///   Source zero-terminated character buffer
+    template <typename TChar>
+    CStringUTF8& Append(const TChar* src)
+    {
+        x_Append(src);
         return *this;
     }
 
@@ -2253,13 +2274,26 @@ public:
     string AsSingleByteString(EEncoding encoding) const;
 
 #if defined(HAVE_WSTRING)
-    /// Convert to Unicode (UTF-16 with no surrogates).
+    /// Convert to Unicode (UCS-2 with no surrogates where
+    /// sizeof(wchar_t) == 2 and UCS-4 where sizeof(wchar_t) == 4).
     ///
     /// Can throw a CStringException if the conversion is impossible
     /// or the string has invalid UTF-8 format.
     /// Defined only if wstring is supported by the compiler.
-    wstring AsUnicode(void) const;
+    wstring AsUnicode(void) const
+    {
+        return x_AsBasicString<wchar_t>();
+    }
 #endif // HAVE_WSTRING
+
+    /// Convert to UCS-2 for all platforms
+    ///
+    /// Can throw a CStringException if the conversion is impossible
+    /// or the string has invalid UTF-8 format.
+    TStringUCS2 AsUCS2(void) const
+    {
+        return x_AsBasicString<TCharUCS2>();
+    }
 
     /// Guess the encoding of the C string
     ///
@@ -2364,6 +2398,10 @@ private:
         return AsLatin1();
     }
 
+    /// Conversion to basic_string with any base type we need
+    template <typename TChar>
+    basic_string<TChar> x_AsBasicString(void) const;
+
     void   x_Validate(void) const;
     /// Convert Unicode code point into UTF8 and append
     void   x_AppendChar(TUnicodeSymbol ch);
@@ -2371,10 +2409,13 @@ private:
     void   x_Append(const char* src,
                     EEncoding encoding = eEncoding_ISO8859_1,
                     EValidate validate = eNoValidate);
-#if defined(HAVE_WSTRING)
+
     /// Convert Unicode character sequence into UTF8 and append
-    void x_Append(const wchar_t* src);
-#endif // HAVE_WSTRING
+    /// Sequence can be in UCS-4 (TChar == (U)Int4), UCS-2 (TChar == (U)Int2)
+    /// or in ISO8859-1 (TChar == char)
+    template <typename TChar>
+    void x_Append(const TChar* src);
+
     /// Check how many bytes is needed to represent the code point in UTF8
     static SIZE_TYPE x_BytesNeeded(TUnicodeSymbol ch);
     /// Check if the character is valid first code unit of UTF8
@@ -3382,6 +3423,52 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
                              const string& prefix1)
 {
     return WrapList(l, width, delim, arr, flags, &prefix, &prefix1);
+}
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CStringUTF8::
+//
+
+template <typename TChar>
+inline
+basic_string<TChar> CStringUTF8::x_AsBasicString(void) const
+{
+    TUnicodeSymbol max_char = (TUnicodeSymbol)numeric_limits<TChar>::max();
+    basic_string<TChar> result;
+    result.reserve( GetSymbolCount()+1 );
+    for (const char* src = c_str(); *src; ++src) {
+        TUnicodeSymbol ch = Decode(src);
+        if (ch > max_char) {
+            NCBI_THROW2(CStringException, eConvert,
+                "Failed to convert symbol to wide character",
+                (SIZE_TYPE)(src - c_str()));
+        }
+        result.append(1, (TChar)ch);
+    }
+    return result;
+}
+
+
+template <typename TChar>
+inline
+void CStringUTF8::x_Append(const TChar* src)
+{
+    const TChar* srcBuf;
+    SIZE_TYPE needed = 0;
+
+    for (srcBuf = src; *srcBuf; ++srcBuf) {
+        needed += x_BytesNeeded( *srcBuf );
+    }
+    if ( !needed ) {
+        return;
+    }
+    reserve(max(capacity(),length()+needed+1));
+    for (srcBuf = src; *srcBuf; ++srcBuf) {
+        x_AppendChar( *srcBuf );
+    }
 }
 
 

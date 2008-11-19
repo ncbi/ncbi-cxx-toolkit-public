@@ -2765,26 +2765,6 @@ string CStringUTF8::AsSingleByteString(EEncoding encoding) const
 }
 
 
-#if defined(HAVE_WSTRING)
-wstring CStringUTF8::AsUnicode(void) const
-{
-    TUnicodeSymbol maxw = (TUnicodeSymbol)numeric_limits<wchar_t>::max();
-    wstring result;
-    result.reserve( GetSymbolCount()+1 );
-    for (const char* src = c_str(); *src; ++src) {
-        TUnicodeSymbol ch = Decode(src);
-        if (ch > maxw) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "Failed to convert symbol to wide character",
-                        s_DiffPtr(src, c_str()));
-        }
-        result.append(1, ch);
-    }
-    return result;
-}
-#endif // HAVE_WSTRING
-
-
 EEncoding CStringUTF8::GuessEncoding( const char* src)
 {
     SIZE_TYPE more = 0;
@@ -2978,26 +2958,6 @@ void CStringUTF8::x_Append(const char* src,
         x_AppendChar( CharToSymbol( *srcBuf, encoding ) );
     }
 }
-
-
-#if defined(HAVE_WSTRING)
-void CStringUTF8::x_Append(const wchar_t* src)
-{
-    const wchar_t* srcBuf;
-    SIZE_TYPE needed = 0;
-
-    for (srcBuf = src; *srcBuf; ++srcBuf) {
-        needed += x_BytesNeeded( *srcBuf );
-    }
-    if ( !needed ) {
-        return;
-    }
-    reserve(max(capacity(),length()+needed+1));
-    for (srcBuf = src; *srcBuf; ++srcBuf) {
-        x_AppendChar( *srcBuf );
-    }
-}
-#endif // HAVE_WSTRING
 
 
 SIZE_TYPE CStringUTF8::x_BytesNeeded(TUnicodeSymbol c)
