@@ -182,7 +182,7 @@ public:
     ///    Time worker node needs to execute the job (in seconds)
     void JobDelayExpiration(SWorkerNodeInfo& node_info,
                             unsigned         job_id,
-                            unsigned         tm);
+                            time_t           tm);
 
     /// Check jobs for expiry and if expired, delete up to batch_size jobs
     /// @return

@@ -2273,13 +2273,13 @@ void CQueue::FailJob(const SWorkerNodeInfo& node_info,
 
 
 void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
-                                unsigned job_id,
-                                unsigned tm)
+                                unsigned         job_id,
+                                time_t           tm)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
 
-    if (tm == 0) return;
+    if (tm <= 0) return;
 
     time_t run_timeout = 0;
     time_t time_start = 0;
@@ -2308,7 +2308,7 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
                            << q->DecorateJobId(job_id));
             // Fix it
             run = &job.AppendRun();
-    		job_updated = true;
+            job_updated = true;
         }
 
         time_start = run->GetTimeStart();
@@ -2320,7 +2320,7 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
             // Fix it just in case
             time_start = curr;
             run->SetTimeStart(curr);
-    		job_updated = true;
+            job_updated = true;
         }
         run_timeout = job.GetRunTimeout();
         if (run_timeout == 0) run_timeout = queue_run_timeout;
@@ -2328,7 +2328,7 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
         if (time_start + run_timeout > curr + tm) {
             // Old timeout is enough to cover this request, keep it.
             // If we already changed job object (fixing it), we flush it.
-    		if (job_updated) job.Flush(q);
+            if (job_updated) job.Flush(q);
             return;
         }
 
@@ -2468,7 +2468,7 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
 
         _ASSERT(timeout);
         // check if job already expired
-        if (timeout && (time_submit + timeout < (unsigned) curr)) {
+        if (timeout && (time_submit + timeout < curr)) {
             // Job expired, fail it
             CJobRun& run = job.AppendRun();
             run.SetStatus(CNetScheduleAPI::eFailed);
