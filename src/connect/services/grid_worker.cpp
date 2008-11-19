@@ -30,16 +30,20 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/ncbi_system.hpp>
-#include <corelib/ncbi_safe_static.hpp>
-#include <connect/ncbi_socket.hpp>
+
 #include <connect/services/grid_worker.hpp>
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_debug_context.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
 #include <connect/services/error_codes.hpp>
+
+#include <connect/ncbi_socket.hpp>
+
 #include <util/thread_pool.hpp>
+
+#include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include "grid_thread_context.hpp"
 
@@ -345,7 +349,6 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
 {
     m_SharedNSClient.reset(client_factory.CreateInstance());
     m_SharedNSClient->SetProgramVersion(m_JobFactory.GetJobVersion());
-    m_SharedNSClient->SetConnMode(CNetServiceAPI_Base::eKeepConnection);
 }
 
 
@@ -630,7 +633,7 @@ bool CGridWorkerNode::x_AreMastersBusy() const
         CNcbiOstrstream os;
         os << GetJobVersion() << endl;
         os << GetNSClient().GetQueueName()  <<";"
-           << GetNSClient().GetServiceName();
+           << GetNSClient().GetService().GetServiceName();
         os << endl;
         os << "GETLOAD" << ends;
         if (socket.Write(os.str(), os.pcount()) != eIO_Success) {

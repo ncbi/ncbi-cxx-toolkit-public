@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov, Maxim Didenko, Victor Joukov
+ * Authors:  Anatoliy Kuznetsov, Maxim Didenko, Victor Joukov, Dmitry Kazimirov
  *
  * File Description:
  *   NetSchedule client API.
@@ -34,16 +34,16 @@
  */
 
 
-/// @file netschedule_client.hpp
+/// @file netschedule_api.hpp
 /// NetSchedule client specs.
 ///
-
-#include <connect/services/netservice_api.hpp>
-#include <corelib/plugin_manager.hpp>
 
 #include <connect/services/netschedule_key.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
 #include <connect/services/netschedule_api_const.hpp>
+#include <connect/services/netservice_api.hpp>
+
+#include <corelib/plugin_manager.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -53,31 +53,13 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
-template<typename T> struct ToStr { static string Convert(T t); };
-
-template<> struct ToStr<string> {
-    static string Convert(const string& val) {
-        return '\"' + NStr::PrintableString(val) + '\"';
-    }
-};
-template<> struct ToStr<unsigned int> {
-    static string Convert(unsigned int val) {
-        return NStr::UIntToString(val);
-    }
-};
-
-template<> struct ToStr<int> {
-    static string Convert(int val) {
-        return NStr::IntToString(val);
-    }
-};
-
 class CNetScheduleSubmitter;
 class CNetScheduleExecuter;
 class CNetScheduleAdmin;
 
 struct CNetScheduleJob;
 
+struct SNetScheduleAPIImpl;
 
 /// Client API for NCBI NetSchedule server
 ///
@@ -88,9 +70,9 @@ struct CNetScheduleJob;
 /// @sa CNetServiceException, CNetScheduleException
 ///
 
-class NCBI_XCONNECT_EXPORT CNetScheduleAPI : public CNetServiceAPI_Base
+class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 {
-public:
+    NET_COMPONENT(NetScheduleAPI);
 
     /// Construct the client without linking it to any particular
     /// server. Actual server (host and port) will be extracted from the
@@ -107,21 +89,19 @@ public:
                     const string& client_name,
                     const string& queue_name);
 
-    virtual ~CNetScheduleAPI();
-
     /// Set program version (like: MyProgram v. 1.2.3)
     ///
     /// Program version is passed to NetSchedule queue so queue
     /// controls versions and does not allow obsolete clients
     /// to connect and submit or execute jobs
     ///
-    void SetProgramVersion(const string& pv) { m_ProgramVersion = pv; }
+    void SetProgramVersion(const string& pv);
 
     /// Get program version string
-    const string& GetProgramVersion() const { return m_ProgramVersion; }
+    const string& GetProgramVersion() const;
 
     /// Return Queue name
-    const string& GetQueueName() const { return m_Queue; }
+    const string& GetQueueName() const;
     // -----------------------------------------------------------------
 
     /// Job status codes
@@ -165,7 +145,7 @@ public:
     ///
     enum EJobMask {
         eEmptyMask    = 0,
-        /// Exlcusive job - the node executes only this job, even if
+        /// Exclusive job - the node executes only this job, even if
         /// there are processor resources
         eExclusiveJob = (1 << 0),
         // Not implemented yet ---v
@@ -190,6 +170,8 @@ public:
     CNetScheduleExecuter  GetExecuter();
     CNetScheduleAdmin     GetAdmin();
 
+    CNetService GetService();
+
     struct SServerParams {
         size_t max_input_size;
         size_t max_output_size;
@@ -205,65 +187,29 @@ public:
 
     void GetProgressMsg(CNetScheduleJob& job);
 
-    virtual void ProcessServerError(string& response, ETrimErr trim_err) const;
+    void SetCommunicationTimeout(const STimeout& to)
+        {GetService().SetCommunicationTimeout(to);}
 
-private:
-    friend class CNetScheduleSubmitter;
-    friend class CNetScheduleExecuter;
-    friend class CNetScheduleAdmin;
+    /// Connection management options
+    enum EConnectionMode {
+        /// Close connection after each call.
+        /// This mode frees server side resources, but reconnection can be
+        /// costly because of the network overhead
+        eCloseConnection,
 
-    CNetScheduleAPI(const CNetScheduleAPI&);
-    CNetScheduleAPI& operator=(const CNetScheduleAPI&);
+        /// Keep connection open (default).
+        /// This mode occupies server side resources(session thread),
+        /// use this mode very carefully
+        eKeepConnection
+    };
 
-    string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)
+    /// Set connection mode
+    /// @sa GetConnMode
+    void SetConnMode(EConnectionMode conn_mode)
     {
-        return SendCmdWaitResponse(x_GetConnection(job_key), cmd + ' ' + job_key);
+        GetService().SetPermanentConnection(
+            conn_mode == eCloseConnection ? eOff : eOn);
     }
-    template<typename Arg1>
-    string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key, Arg1 arg1)
-    {
-        string tmp = cmd;
-        if (!job_key.empty())
-            tmp += ' ' + job_key + ' ';
-        tmp += ToStr<Arg1>::Convert(arg1);
-        return SendCmdWaitResponse(x_GetConnection(job_key), tmp);
-    }
-    template<typename Arg1, typename Arg2>
-    string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key,
-                                    Arg1 arg1, Arg2 arg2)
-    {
-        string tmp = cmd;
-        if (!job_key.empty())
-            tmp += ' ' + job_key + ' ';
-        tmp += ToStr<Arg1>::Convert(arg1) + ' ' + ToStr<Arg2>::Convert(arg2);
-        return SendCmdWaitResponse(x_GetConnection(job_key), tmp);
-    }
-    template<typename Arg1, typename Arg2, typename Arg3>
-    string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key,
-                                    Arg1 arg1, Arg2 arg2, Arg3 arg3)
-    {
-        string tmp = cmd;
-        if (!job_key.empty())
-            tmp += ' ' + job_key + ' ';
-        tmp += ToStr<Arg1>::Convert(arg1) + ' '
-            + ToStr<Arg2>::Convert(arg2) + ' ' + ToStr<Arg3>::Convert(arg3);
-        return SendCmdWaitResponse(x_GetConnection(job_key), tmp);
-    }
-
-    CNetServerConnection x_GetConnection(const string& job_key = kEmptyStr);
-
-    virtual void x_SendAuthetication(CNetServerConnection& conn) const;
-
-    EJobStatus x_GetJobStatus(const string& job_key, bool submitter);
-
-private:
-    static CNetScheduleExceptionMap sm_ExceptionMap;
-    string            m_Queue;
-    string            m_ProgramVersion;
-
-    mutable auto_ptr<SServerParams> m_ServerParams;
-    mutable long m_ServerParamsAskCount;
-    mutable CFastMutex m_ServerParamsMutex;
 };
 
 
@@ -312,9 +258,11 @@ struct CNetScheduleJob
     string    progress_msg;
 };
 
+struct SNetScheduleSubmitterImpl;
+
 class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
 {
-public:
+    NET_COMPONENT(NetScheduleSubmitter);
 
     /// Submit job.
     /// @note on success job.job_id will be set.
@@ -331,8 +279,8 @@ public:
     /// Submit job to server and wait for the result.
     /// This function should be used if we expect that job execution
     /// infrastructure is capable of finishing job in the specified
-    /// time frame. This method can save a lot of roundtrips with the
-    /// netschedule server (comparing to series of GetStatus calls).
+    /// time frame. This method can save a lot of round trips with the
+    /// NetSchedule server (comparing to series of GetStatus calls).
     ///
     /// @param job
     ///    NetSchedule job description structure
@@ -348,7 +296,7 @@ public:
     /// @return job status
     ///
     /// @note the result fields of the job description structure will be set
-    ///    if the job is fininshed during specified time.
+    ///    if the job is finished during specified time.
     ///
     CNetScheduleAPI:: EJobStatus SubmitJobAndWait(CNetScheduleJob& job,
                                                   unsigned       wait_time,
@@ -379,29 +327,16 @@ public:
     CNetScheduleAPI::EJobStatus GetJobDetails(CNetScheduleJob& job);
 
     const CNetScheduleAPI::SServerParams& GetServerParams();
-
-
-private:
-    friend class CNetScheduleAPI;
-
-    CNetScheduleSubmitter(CNetScheduleAPI* api) : m_API(api) {}
-
-    string SubmitJobImpl(CNetScheduleJob& job,
-        unsigned short udp_port, unsigned wait_time) const;
-
-    CNetScheduleAPI* m_API;
 };
-
-inline string CNetScheduleSubmitter::SubmitJob(CNetScheduleJob& job) const
-{
-    return SubmitJobImpl(job, 0, 0);
-}
 
 /////////////////////////////////////////////////////////////////////////////////////
 ////
+struct SNetScheduleExecuterImpl;
+
 class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
 {
-public:
+    NET_COMPONENT(NetScheduleExecuter);
+
     /// Get a pending job.
     /// When function returns TRUE and job_key job receives running status,
     /// client(worker node) becomes responsible for execution or returning
@@ -441,7 +376,7 @@ public:
     /// NetSchedule server sends UDP packets with queue notification
     /// information. This is unreliable protocol, some notification may be
     /// lost. WaitJob internally makes an attempt to connect the server using
-    /// reliable statefull TCP/IP, so even if some UDP notifications are
+    /// reliable stateful TCP/IP, so even if some UDP notifications are
     /// lost jobs will be still delivered (with a delay).
     ///
     /// When new job arrives to the queue server may not send the notification
@@ -515,7 +450,7 @@ public:
     ///
     /// @param job
     ///     NetSchedule job description structure. its error_msg
-    ///     and optionaly ret_code and output fields should be set
+    ///     and optionally ret_code and output fields should be set
     ///
     void PutFailure(const CNetScheduleJob& job) const;
 
@@ -555,7 +490,6 @@ public:
     /// prolong job execution timeout, so job server does not try to
     /// reschedule.
     ///
-    ///
     /// @param runtime_inc
     ///    Estimated time in seconds(from the current moment) to
     ///    finish the job.
@@ -583,35 +517,27 @@ public:
     const string& GetQueueName() const;
     const string& GetClientName() const;
     const string& GetServiceName() const;
-
-private:
-    friend class CNetScheduleAPI;
-    CNetScheduleExecuter(CNetScheduleAPI* api) : m_API(api) {}
-
-    CNetScheduleAPI* m_API;
-
-    bool GetJobImpl(const string& cmd, CNetScheduleJob& job) const;
-
-    void x_RegUnregClient(const string& cmd, unsigned short udp_port) const;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////
 ////
 
+struct SNetScheduleAdminImpl;
+
 class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 {
-public:
+    NET_COMPONENT(NetScheduleAdmin);
 
     /// Status map, shows number of jobs in each status
     typedef map<CNetScheduleAPI::EJobStatus, unsigned> TStatusMap;
 
-    /// Returns statuses for a given affnity token
+    /// Returns statuses for a given affinity token
     /// @param status_map
     ///    Status map (status to job count)
     /// @param affinity_token
     ///    Affinity token (optional)
     void StatusSnapshot(TStatusMap& status_map,
-                        const string& affinity_token) const;
+        const string& affinity_token) const;
 
 
     /// Delete job
@@ -627,8 +553,11 @@ public:
     ///    Name of the queue to create
     /// @param qclass
     ///    Parameter set described in config file in qclass_* section
-    void CreateQueue(const string& qname, const string& qclass,
-                     const string& comment = kEmptyStr, ECreateQueueFlags flags = eIgnoreDuplicateName) const;
+    void CreateQueue(
+        const string& qname,
+        const string& qclass,
+        const string& comment = kEmptyStr,
+        ECreateQueueFlags flags = eIgnoreDuplicateName) const;
 
     /// Delete queue
     /// Applicable only to queues, created through CreateQueue method
@@ -643,7 +572,7 @@ public:
         eNoShutdown = 0,    ///< No Shutdown was requested
         eNormalShutdown,    ///< Normal shutdown was requested
         eShutdownImmediate, ///< Urgent shutdown was requested
-        eDie                ///< Somethig wrong has happend, so server should kill itself
+        eDie                ///< Something wrong has happened, so server should kill itself
     };
 
     /// Shutdown the server daemon.
@@ -668,141 +597,53 @@ public:
 
     //////////////////////////////////////////////////////
     /// Print version string
-    void GetServerVersion(CNetServiceAPI_Base::ISink& sink) const;
+    void PrintServerVersion(CNcbiOstream& output_stream) const;
+
+    struct SWorkerNodeInfo {
+        string name;
+        string prog;
+        string host;
+        unsigned short port;
+        CTime last_access;
+    };
+
+    void GetWorkerNodes(std::list<SWorkerNodeInfo>& worker_nodes) const;
 
     enum EStatisticsOptions
     {
         eStatisticsAll,
-        eStaticticsBrief
+        eStatisticsBrief
     };
 
-    void GetServerStatistics(CNetServiceAPI_Base::ISink& sink, EStatisticsOptions opt = eStaticticsBrief) const;
+    void PrintServerStatistics(CNcbiOstream& output_stream,
+        EStatisticsOptions opt = eStatisticsBrief) const;
 
-    void DumpQueue(CNetServiceAPI_Base::ISink& sink) const;
+    void DumpQueue(CNcbiOstream& output_stream) const;
 
-    void PrintQueue(CNetServiceAPI_Base::ISink& sink, CNetScheduleAPI::EJobStatus status) const;
+    void PrintQueue(CNcbiOstream& output_stream,
+        CNetScheduleAPI::EJobStatus status) const;
 
     void Monitor(CNcbiOstream& out) const;
 
-    /// ";" delimited list of server queues
-    void GetQueueList(CNetServiceAPI_Base::ISink& sink) const;
-    //////////////////////////////////////////////////////
+    struct SServerQueueList {
+        CNetServer server;
+        std::list<std::string> queues;
+
+        SServerQueueList(SNetServerImpl* server_impl) : server(server_impl) {}
+    };
+
+    typedef std::list<SServerQueueList> TQueueList;
+
+    void GetQueueList(TQueueList& result) const;
 
     /// Query by tags
     unsigned long Count(const string& query) const;
-    void Cancel(const string& query) const;
-    void Drop(const string& query) const;
     void Query(const string& query, const vector<string>& fields, CNcbiOstream& os) const;
     void Select(const string& select_stmt, CNcbiOstream& os) const;
 
-    template <typename TBVector>
-    void RetrieveKeys(const string& query, CNetScheduleKeys<TBVector>& ids) const;
-
-    typedef map<pair<string,unsigned int>, string> TIDsMap;
-private:
-    friend class CNetScheduleAPI;
-    CNetScheduleAdmin(CNetScheduleAPI* api) : m_API(api) {}
-
-    TIDsMap x_QueueIDs(const string& queury) const;
-
-    CNetScheduleAPI* m_API;
+    void RetrieveKeys(const string& query, CNetScheduleKeys_Base& ids) const;
 };
 
-/////////////////////////////////////////////////////////
-
-
-inline CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
-{
-    DiscoverLowPriorityServers(eOff);
-    return CNetScheduleSubmitter(this);
-}
-inline CNetScheduleExecuter CNetScheduleAPI::GetExecuter()
-{
-    DiscoverLowPriorityServers(eOn);
-    return CNetScheduleExecuter(this);
-}
-inline CNetScheduleAdmin CNetScheduleAPI::GetAdmin()
-{
-    DiscoverLowPriorityServers(eOff);
-    return CNetScheduleAdmin(this);
-}
-
-inline
-CNetServerConnection CNetScheduleAPI::x_GetConnection(const string& job_key)
-{
-    if (job_key.empty())
-        return GetBest();
-
-    CNetScheduleKey nskey(job_key);
-    return GetSpecific(nskey.host, nskey.port);
-}
-
-
-inline CNetScheduleAPI::EJobStatus
-CNetScheduleSubmitter::GetJobStatus(const string& job_key)
-{
-    return m_API->x_GetJobStatus(job_key, true);
-}
-
-inline CNetScheduleAPI::EJobStatus
-CNetScheduleSubmitter::GetJobDetails(CNetScheduleJob& job)
-{
-    return m_API->GetJobDetails(job);
-}
-
-inline void CNetScheduleSubmitter::GetProgressMsg(CNetScheduleJob& job)
-{
-    m_API->GetProgressMsg(job);
-}
-inline
-const CNetScheduleAPI::SServerParams& CNetScheduleSubmitter::GetServerParams()
-{
-    return m_API->GetServerParams();
-}
-
-
-/////////////////////////////////////////////////////////////////////////
-inline CNetScheduleAPI::EJobStatus
-CNetScheduleExecuter::GetJobStatus(const string& job_key)
-{
-    return m_API->x_GetJobStatus(job_key, false);
-}
-inline void CNetScheduleExecuter::GetProgressMsg(CNetScheduleJob& job)
-{
-    m_API->GetProgressMsg(job);
-}
-
-inline const string& CNetScheduleExecuter::GetQueueName() const
-{
-    return m_API->GetQueueName();
-}
-inline const string& CNetScheduleExecuter::GetClientName() const
-{
-    return m_API->GetClientName();
-}
-inline const string& CNetScheduleExecuter::GetServiceName() const
-{
-    return m_API->GetServiceName();
-}
-
-inline
-const CNetScheduleAPI::SServerParams& CNetScheduleExecuter::GetServerParams() const
-{
-    return m_API->GetServerParams();
-}
-
-template <typename BVAlloc>
-void CNetScheduleAdmin::RetrieveKeys(const string& query,
-                                     CNetScheduleKeys<BVAlloc>& ids) const
-{
-    TIDsMap  inter_ids = x_QueueIDs(query);
-    ids.x_Clear();
-    ITERATE(TIDsMap, it, inter_ids) {
-        ids.x_Add(it->first, it->second);
-    }
-}
-
-///////////////////////////////////////////////////////////////////////
 
 NCBI_DECLARE_INTERFACE_VERSION(CNetScheduleAPI,  "xnetschedule_api", 1,0, 0);
 
@@ -811,14 +652,9 @@ NCBI_DECLARE_INTERFACE_VERSION(CNetScheduleAPI,  "xnetschedule_api", 1,0, 0);
 extern NCBI_XCONNECT_EXPORT const char* kNetScheduleAPIDriverName;
 
 
-//extern "C" {
-
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
      CPluginManager<CNetScheduleAPI>::TDriverInfoList&   info_list,
      CPluginManager<CNetScheduleAPI>::EEntryPointRequest method);
-
-
-//} // extern C
 
 
 /* @} */

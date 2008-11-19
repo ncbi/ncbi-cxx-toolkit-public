@@ -30,13 +30,14 @@
 *
 */
 
+#include "mgrres.hpp"
+#include "mgrlogic.hpp"
+
 #include <cgi/ncbires.hpp>
+
 #include <html/html.hpp>
 
 #include <set>
-
-#include "mgrres.hpp"
-#include "mgrlogic.hpp"
 
 BEGIN_NCBI_SCOPE
 class CHTMLPage;

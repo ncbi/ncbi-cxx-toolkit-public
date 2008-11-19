@@ -31,10 +31,10 @@
  *
  */
 
+#include <connect/connect_export.h>
+
 #include <corelib/blob_storage.hpp>
 #include <corelib/reader_writer.hpp>
-
-#include <connect/connect_export.h>
 
 BEGIN_NCBI_SCOPE
 

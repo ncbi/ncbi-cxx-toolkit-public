@@ -32,12 +32,12 @@
 
 #include <ncbi_pch.hpp>
 
-#include <corelib/blob_storage.hpp>
-#include <corelib/rwstream.hpp>
+#include "info_collector.hpp"
 
 #include <connect/services/grid_rw_impl.hpp>
 
-#include "info_collector.hpp"
+#include <corelib/blob_storage.hpp>
+#include <corelib/rwstream.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -108,7 +108,6 @@ void CNSJobInfo::x_Load()
 
     CNetScheduleAPI& cln = m_Collector.x_GetAPI();
     m_Status = cln.GetJobDetails(m_Job);
-    cln.GetProgressMsg(m_Job);
 }
 void CNSJobInfo::x_Load() const
 {
@@ -147,34 +146,13 @@ CRemoteAppResult& CNSJobInfo::x_GetResult() const
 
 ///////////////////////////////////////////////////////////////////
 //
-CWNodeInfo::CWNodeInfo(const string& name, const string& prog,
-               const string& host, unsigned short port,
-               const CTime& last_access)
-    : m_Name(name), m_Prog(prog), m_Host(host), m_Port(port), 
-      m_LastAccess(last_access)
-{
-}
-
-CWNodeInfo::~CWNodeInfo()
-{
-}
-
-void CWNodeInfo::Shutdown(CNetScheduleAdmin::EShutdownLevel level) const
-{
-    CNetScheduleAPI cln(m_Host+":"+NStr::UIntToString(m_Port), "netschedule_admin", "noname");
-    cln.GetAdmin().ShutdownServer(level);
-}
-
-///////////////////////////////////////////////////////////////////
-//
 CNSInfoCollector::CNSInfoCollector(const string& queue, 
                                    const string& service_name,
                                    CBlobStorageFactory& factory)
     : m_Services(new CNetScheduleAPI(service_name, "netschedule_admin", queue)), 
       m_Factory(factory)
 {
-    m_Services->DiscoverLowPriorityServers(eOn);
-    m_Services->SetConnMode(CNetScheduleAPI::eKeepConnection);
+    m_Services->GetService().DiscoverLowPriorityServers(eOn);
 }
 
 CNSInfoCollector::CNSInfoCollector(CBlobStorageFactory& factory)
@@ -183,65 +161,31 @@ CNSInfoCollector::CNSInfoCollector(CBlobStorageFactory& factory)
 }
 
 
-class ISimpleSink : public CNetServiceAPI_Base::ISink
-{
-public:
-    ISimpleSink() : m_Str(new CNcbiStrstream) {}
-    virtual ~ISimpleSink() {}
-
-    virtual CNcbiOstream& GetOstream(CNetServerConnection conn)
-    {
-        return *m_Str;
-    }
-    virtual void EndOfData(CNetServerConnection conn)
-    {
-        ParseStream(*m_Str, conn);
-        m_Str.reset(new CNcbiStrstream);
-    }
-    
-private:
-
-    virtual void ParseStream(CNcbiIstream& strm, CNetServerConnection conn) = 0;
-
-    auto_ptr<CNcbiStrstream> m_Str;
-    
-};
-
-
-class CJobsSink : public ISimpleSink
-{
-public:
-    CJobsSink(CNSInfoCollector::IAction<CNSJobInfo>& action,
-                CNSInfoCollector& collector) 
-        : m_Action(action), m_Collector(collector)
-    {}
-    virtual ~CJobsSink() {}
-
-private:
-    CNSInfoCollector::IAction<CNSJobInfo>& m_Action;
-    CNSInfoCollector& m_Collector;
-    
-    virtual void ParseStream(CNcbiIstream& str, CNetServerConnection)
-    {
-        while (str.good()) {
-            string line;
-            NcbiGetlineEOL(str, line);
-            if (line.empty())
-                continue;
-            string jid, rest;
-            NStr::SplitInTwo(line, " \t", jid, rest);
-            CNSJobInfo job_info(jid, m_Collector);
-            m_Action(job_info);
-        }
-    }
-};
-
-
-void CNSInfoCollector::TraverseJobs(CNetScheduleAPI::EJobStatus status, 
+void CNSInfoCollector::TraverseJobs(CNetScheduleAPI::EJobStatus status,
                                     IAction<CNSJobInfo>& action)
 {
-    CJobsSink sink(action, *this);
-    x_GetAPI().GetAdmin().PrintQueue(sink, status);
+    CNetScheduleAPI& api = x_GetAPI();
+    CNetServerGroup servers = api.GetService().DiscoverServers();
+
+    int i = servers.GetCount();
+
+    while (--i >= 0) {
+        CNetServerConnection conn = servers.GetServer(i).Connect();
+
+        CNetServerCmdOutput output = conn.ExecMultiline("QPRT " +
+                CNetScheduleAPI::StatusToString(status));
+
+        string response;
+
+        while (output.ReadLine(response)) {
+            if (response.empty())
+                continue;
+            string jid, rest;
+            NStr::SplitInTwo(response, " \t", jid, rest);
+            CNSJobInfo job_info(jid, *this);
+            action(job_info);
+        }
+    }
 }
 
 CNSJobInfo* CNSInfoCollector::CreateJobInfo(const string& job_id)
@@ -272,102 +216,22 @@ CNcbiIstream& CNSInfoCollector::GetBlobContent(const string& blob_id,
 }
 
 
-class CQueuesSink : public ISimpleSink
+void CNSInfoCollector::GetQueues(CNetScheduleAdmin::TQueueList& queues)
 {
-public:
-    CQueuesSink(CNSInfoCollector::TQueueCont& queues) :  m_Queues(queues) {}
-    virtual ~CQueuesSink() {}
-
-private:
-    CNSInfoCollector::TQueueCont& m_Queues;
-    
-    virtual void ParseStream(CNcbiIstream& str, CNetServerConnection conn)
-    {
-        string line;
-        NcbiGetlineEOL(str, line);
-        if (line.empty())
-            return;
-        CNSInfoCollector::TQueueCont::key_type key
-            (conn.GetHost(), conn.GetPort());
-        list<string>& qlist = m_Queues[key];
-        NStr::Split(line, ",;", qlist);        
-    }
-};
-
-
-void CNSInfoCollector::GetQueues(TQueueCont& queues)
-{
-    CQueuesSink sink(queues);
-    x_GetAPI().GetAdmin().GetQueueList(sink);
+    x_GetAPI().GetAdmin().GetQueueList(queues);
 }
 
 
-class CNodesSink : public ISimpleSink
+void CNSInfoCollector::TraverseNodes(
+    IAction<CNetScheduleAdmin::SWorkerNodeInfo>& action)
 {
-public:
-    CNodesSink(CNSInfoCollector::IAction<CWNodeInfo>& action,
-               CNSInfoCollector& collector) 
-        : m_Action(action), m_Collector(collector)
-    {}
-    virtual ~CNodesSink() {}
+    std::list<CNetScheduleAdmin::SWorkerNodeInfo> worker_nodes;
 
-private:
-    CNSInfoCollector::IAction<CWNodeInfo>& m_Action;
-    CNSInfoCollector& m_Collector;
-    std::set<pair<string, unsigned short> > m_Unique;
-    
-    virtual void ParseStream(CNcbiIstream& ios, CNetServerConnection conn)
-    {
-        bool nodes_info = false;        
-        string str;
-        while ( NcbiGetlineEOL(ios, str) ) {
-            if ( NStr::StartsWith( str, "[Configured")) {
-                break;
-            }
-            if ( !nodes_info ) {
-                if( NStr::Compare( str, "[Worker node statistics]:") == 0)
-                    nodes_info = true;
-                else
-                    continue;
-            } else {
-                if (str.empty())
-                    continue;
+    x_GetAPI().GetAdmin().GetWorkerNodes(worker_nodes);
 
-                string name;
-                NStr::SplitInTwo(str, " ", name, str);
-                NStr::TruncateSpacesInPlace(str);
-                string prog;
-                NStr::SplitInTwo(str, "@", prog, str);           
-                NStr::TruncateSpacesInPlace(str);
-                prog = prog.substr(6,prog.size()-8);
-                string host;
-                NStr::SplitInTwo(str, " ", host, str);
-                //string::size_type pos = host.find_first_of(".");
-                //if (pos != string::npos) {
-                //    host.erase(pos, host.size());
-                //}
-                if( NStr::Compare(host, "localhost") == 0)
-                    host = CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(conn.GetHost()));
-                NStr::TruncateSpacesInPlace(str);
-                string sport, stime;
-                NStr::SplitInTwo(str, " ", sport, stime);
-                NStr::SplitInTwo(sport, ":", str, sport);
-                NStr::TruncateSpacesInPlace(stime);
-                unsigned short port = (unsigned short)NStr::StringToInt(sport);
-                if (m_Unique.insert(make_pair(host,port)).second) {
-                    CWNodeInfo info(name, prog,host, port, CTime(stime, "M/D/Y h:m:s"));
-                    m_Action(info);
-                }
-            }
-        }
+    ITERATE(std::list<CNetScheduleAdmin::SWorkerNodeInfo>, it, worker_nodes) {
+        action(*it);
     }
-};
-
-
-void CNSInfoCollector::TraverseNodes(IAction<CWNodeInfo>& action)
-{
-    CNodesSink sink(action,*this);
-    x_GetAPI().GetAdmin().GetServerStatistics(sink, CNetScheduleAdmin::eStaticticsBrief);
 }
 
 void CNSInfoCollector::DropQueue()

@@ -32,6 +32,7 @@
  */
 
 #include <cgi/cgiapp.hpp>
+
 #include <html/commentdiag.hpp>
 
 #define GRIDMGR_VERSION_MAJOR 1

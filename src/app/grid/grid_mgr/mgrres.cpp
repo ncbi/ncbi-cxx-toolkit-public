@@ -28,10 +28,12 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include "mgrres.hpp"
 #include "mgrcmd.hpp"
 
 #include <cgi/cgictx.hpp>
+
 #include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE

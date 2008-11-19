@@ -187,7 +187,7 @@ void CNSInfoRenderer::RenderJobByStatus(CNetScheduleAPI::EJobStatus status,
     attrs.push_back(ITagWriter::TAttribute
                     ("Status", CNetScheduleAPI::StatusToString(status) ));
 
-    STagGuard guard(m_Writer,"Jobs", attrs);    
+    STagGuard guard(m_Writer,"Jobs", attrs);
     CNSJobListRenderAction action(*this, flags & ~eStatus);
     m_Collector.TraverseJobs(status,action);
 }
@@ -290,26 +290,29 @@ void CNSInfoRenderer::x_RenderStream(const string& name, CNcbiIstream& is)
     }
 }
 
-void CNSInfoRenderer::RenderWNode(const CWNodeInfo& info, TFlags flags)
+void CNSInfoRenderer::RenderWNode(
+    const CNetScheduleAdmin::SWorkerNodeInfo& info,
+    TFlags flags)
 {
     ITagWriter::TAttributes attrs;
-    attrs.push_back(ITagWriter::TAttribute("Host", info.GetHost()));
-    attrs.push_back(ITagWriter::TAttribute
-                    ("Port", NStr::IntToString(info.GetPort())));
+    attrs.push_back(ITagWriter::TAttribute("Host", info.host));
+    attrs.push_back(ITagWriter::TAttribute("Port",
+        NStr::IntToString(info.port)));
     if (flags <= eMinimal) {
         m_Writer.WriteTag("WNode", attrs);
         return;
     }
     STagGuard guard(m_Writer,"WNode", attrs);
     if (flags <= eStandard) {
-        x_RenderString("Name", info.GetName());
-        x_RenderString("Prog", info.GetProgName());
-        x_RenderString("LastAccess", info.GetLastAccess().AsString("M/D/Y h:m:s"));
+        x_RenderString("Name", info.name);
+        x_RenderString("Prog", info.prog);
+        x_RenderString("LastAccess", info.last_access.AsString("M/D/Y h:m:s"));
     }
 
 }
 
-class CWNodeListRenderAction : public  CNSInfoCollector::IAction<CWNodeInfo>
+class CWNodeListRenderAction :
+    public CNSInfoCollector::IAction<CNetScheduleAdmin::SWorkerNodeInfo>
 {
 public:
     CWNodeListRenderAction(CNSInfoRenderer& renderer,
@@ -319,7 +322,7 @@ public:
 
     virtual ~CWNodeListRenderAction() {};
 
-    virtual void operator()(const CWNodeInfo& info)
+    virtual void operator()(const CNetScheduleAdmin::SWorkerNodeInfo& info)
     {
         m_Renderer.RenderWNode(info, m_Flags);
     }
@@ -328,36 +331,38 @@ private:
     CNSInfoRenderer::TFlags m_Flags;
 };
 
-
 void CNSInfoRenderer::RenderWNodes(TFlags flags)
 {
-    STagGuard guard(m_Writer,"WNodes");    
+    STagGuard guard(m_Writer, "WNodes");
     CWNodeListRenderAction action(*this, flags);
     m_Collector.TraverseNodes(action);
 }
 
 void CNSInfoRenderer::RenderQueueList()
 {
-    STagGuard guard(m_Writer,"Queues");
-    CNSInfoCollector::TQueueCont queues;
+    STagGuard guard(m_Writer, "Queues");
+
+    CNetScheduleAdmin::TQueueList queues;
+
     m_Collector.GetQueues(queues);
-    for( CNSInfoCollector::TQueueCont::const_iterator it = queues.begin();
-         it != queues.end(); ++it) {
-        if (it->second.empty())
-            continue;
+
+    for (CNetScheduleAdmin::TQueueList::const_iterator it = queues.begin();
+        it != queues.end(); ++it) {
 
         ITagWriter::TAttributes attrs;
-        attrs.push_back(ITagWriter::TAttribute("Host", 
-            CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(it->first.first))));
-        attrs.push_back(ITagWriter::TAttribute
-                        ("Port", NStr::UIntToString(it->first.second)));
-        
+        attrs.push_back(ITagWriter::TAttribute("Host",
+            CSocketAPI::gethostbyaddr(
+                CSocketAPI::gethostbyname(it->server.GetHost()))));
+
+        attrs.push_back(ITagWriter::TAttribute("Port",
+            NStr::UIntToString(it->server.GetPort())));
+
         STagGuard guard(m_Writer,"NSServer", attrs);
-        ITERATE(list<string>, itl, it->second) {
+
+        ITERATE(list<string>, itl, it->queues) {
             x_RenderString("Queue", *itl);
         }
     }
-        
 }
 ///////////////////////////////////////////////////////
 //

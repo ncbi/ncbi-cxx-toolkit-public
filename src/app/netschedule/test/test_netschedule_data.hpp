@@ -1,6 +1,3 @@
-#ifndef TEST_NETSCHEDULE_DATA_HPP
-#define TEST_NETSCHEDULE_DATA_HPP
-
 /*  $Id$
  * ===========================================================================
  *
@@ -31,6 +28,11 @@
  * File Description: Data for NetSchedule tests
  *
  */
+
+#ifndef TEST_NETSCHEDULE_DATA_HPP
+#define TEST_NETSCHEDULE_DATA_HPP
+
+#include <corelib/ncbi_system.hpp>
 
 static const char output_buffer_seed[] =
     "AZBYCXDWEVFUGTHSIRJQKPLOMNNMOLPKQJRISHTGUFVEWDXCYB\n"

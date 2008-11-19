@@ -90,56 +90,6 @@ void CNetScheduleCheck::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-class CQueueFinder : public CNetServiceAPI_Base::ISink
-{
-public:
-    typedef map<string, int> TQueueCounter;
-
-    CQueueFinder(const string& requested_queue) 
-        : m_ServerCounter(0), m_RequestedQueue(requested_queue) {}
-    virtual ~CQueueFinder() {}
-
-    virtual CNcbiOstream& GetOstream(CNetServerConnection conn)
-    {
-        ++m_ServerCounter;
-        m_Strm.reset(new CNcbiOstrstream);
-        return *m_Strm;
-    }
-    virtual void EndOfData(CNetServerConnection conn)
-    {
-        string squeues = string(CNcbiOstrstreamToString(*m_Strm));
-        m_Strm.release();
-        list<string> queues;
-        NStr::Split(squeues, ";",queues);
-        ITERATE(list<string>, it, queues) {
-            if(m_QueueCounter.find(*it) == m_QueueCounter.end())
-                m_QueueCounter[*it] = 1;
-            else
-                m_QueueCounter[*it]++;
-        }
-    }
-
-    string GetQueueClass() const
-    {
-        TQueueCounter::const_iterator i = m_QueueCounter.find(m_RequestedQueue);  
-        if ( i != m_QueueCounter.end() ) {
-            if ( i->second == m_ServerCounter )
-                return m_RequestedQueue;
-        }
-        ITERATE(TQueueCounter, it, m_QueueCounter) {
-            if (it->second == m_ServerCounter)
-                return it->first;
-        }
-        return kEmptyStr; 
-    }
-
-private: 
-    TQueueCounter m_QueueCounter;
-    auto_ptr<CNcbiOstrstream> m_Strm;
-    int m_ServerCounter;
-    string m_RequestedQueue;
-};
-
 int CNetScheduleCheck::Run(void)
 {
     const CArgs& args = GetArgs();
@@ -155,15 +105,52 @@ int CNetScheduleCheck::Run(void)
     if (args["qclass"]) {  
         queue = args["qclass"].AsString(); 
     }
-    CQueueFinder finder(queue);
-
 
     CNetScheduleAPI cln1(service, "netschedule_admin", queue);
     CNetScheduleAdmin admin = cln1.GetAdmin();
-    admin.GetQueueList(finder);
-    string qclass = finder.GetQueueClass();
-    if( qclass.empty()) {
-        ERR_POST("Could not find siutable qclass for the given NetSchedule service: " << service);
+
+    CNetScheduleAdmin::TQueueList queues;
+
+    admin.GetQueueList(queues);
+
+    typedef std::map<std::string, int> TQueueCounter;
+
+    TQueueCounter queue_counter;
+    int server_counter = 0;
+
+    for (CNetScheduleAdmin::TQueueList::const_iterator it = queues.begin();
+        it != queues.end(); ++it) {
+
+        ++server_counter;
+
+        ITERATE(std::list<std::string>, itl, it->queues) {
+            if(queue_counter.find(*itl) == queue_counter.end())
+                queue_counter[*itl] = 1;
+            else
+                queue_counter[*itl]++;
+        }
+    }
+
+    string qclass = kEmptyStr;
+
+    TQueueCounter::const_iterator i = queue_counter.find(queue);
+
+    if (i != queue_counter.end() && i->second == server_counter) {
+        qclass = queue;
+    }
+    else {
+        ITERATE(TQueueCounter, it, queue_counter) {
+            if (it->second == server_counter) {
+                qclass = it->first;
+                break;
+            }
+        }
+    }
+
+    if (qclass.empty()) {
+        ERR_POST("Queue '" << queue <<
+            "' is not available on all servers of '" << service << "'.");
+
         return 1;
     }
 

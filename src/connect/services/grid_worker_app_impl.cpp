@@ -30,13 +30,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbireg.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbitime.hpp>
-#include <corelib/ncbi_config.hpp>
-#include <corelib/ncbi_process.hpp>
-#include <corelib/ncbi_system.hpp>
-#include <corelib/blob_storage.hpp>
 
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/netschedule_client.hpp>
@@ -45,6 +38,14 @@
 #include <connect/services/grid_control_thread.hpp>
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/error_codes.hpp>
+
+#include <corelib/ncbireg.hpp>
+#include <corelib/ncbithr.hpp>
+#include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_config.hpp>
+#include <corelib/ncbi_process.hpp>
+#include <corelib/ncbi_system.hpp>
+#include <corelib/blob_storage.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode

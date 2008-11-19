@@ -150,13 +150,13 @@ public:
 
 protected:
 
-    virtual const IWorkerNodeInitContext&  GetInitContext() const;
+    const IWorkerNodeInitContext& GetInitContext();
 
 private:
     void Construct(CGridWorkerApp_Impl* impl,
         ESignalHandling signal_handling = eStandardSignalHandling);
 
-    mutable auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
+    auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
 
     auto_ptr<CGridWorkerApp_Impl> m_AppImpl;
 

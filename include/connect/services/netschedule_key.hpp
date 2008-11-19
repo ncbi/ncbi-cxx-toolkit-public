@@ -36,11 +36,12 @@
 
 #include <connect/connect_export.h>
 #include <connect/ncbi_connutil.h>
-#include <corelib/ncbistl.hpp>
 
 #include <util/bitset/ncbi_bitset.hpp>
 #include <util/bitset/bmserial.h>
 #include <util/bitset/bmfwd.h>
+
+#include <corelib/ncbistl.hpp>
 
 #include <string>
 #include <map>
@@ -83,19 +84,19 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleKey
 ////
 class CNetScheduleAdmin;
 
-template <typename TBVector = bm::bvector<> >
-class CNetScheduleKeys
+class CNetScheduleKeys_Base
 {
 public:
+    typedef bm::bvector<> TBVector;
     typedef map<pair<string,unsigned int>, TBVector> TKeysMap;
 
-    CNetScheduleKeys() {}
+    CNetScheduleKeys_Base() {}
 
     class const_iterator
     {
     public:
-        typedef typename CNetScheduleKeys<TBVector>::TKeysMap TKeysMap;
-        typedef typename TBVector::enumerator TBVEnumerator;
+        typedef CNetScheduleKeys_Base::TKeysMap TKeysMap;
+        typedef TBVector::enumerator TBVEnumerator;
 
         const_iterator(const TKeysMap& keys, bool end) : m_Keys(&keys)
         {
@@ -147,7 +148,7 @@ public:
         }
     private:
         const TKeysMap* m_Keys;
-        typename TKeysMap::const_iterator m_SrvIter;
+        TKeysMap::const_iterator m_SrvIter;
         TBVEnumerator m_BVEnum;
     };
 
@@ -175,10 +176,14 @@ private:
         bm::deserialize(bv, &dst_buf[0]);
     }
 
-    CNetScheduleKeys(const CNetScheduleKeys&);
-    CNetScheduleKeys& operator=(const CNetScheduleKeys&);
+    CNetScheduleKeys_Base(const CNetScheduleKeys_Base&);
+    CNetScheduleKeys_Base& operator=(const CNetScheduleKeys_Base&);
 };
 
+template <typename TBVector = bm::bvector<> >
+class CNetScheduleKeys : public CNetScheduleKeys_Base
+{
+};
 
 /* @} */
 

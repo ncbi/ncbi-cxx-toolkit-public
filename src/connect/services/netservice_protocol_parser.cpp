@@ -32,10 +32,10 @@
 
 #include <ncbi_pch.hpp>
 
-#include <corelib/ncbistl.hpp>
-
 #include <connect/services/netservice_protocol_parser.hpp>
 #include <connect/services/netcache_key.hpp>
+
+#include <corelib/ncbistl.hpp>
 
 
 BEGIN_NCBI_SCOPE

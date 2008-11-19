@@ -32,10 +32,10 @@
  *
  */
 
+#include "info_collector.hpp"
+
 #include <corelib/ncbimisc.hpp>
 #include <connect/ncbi_types.h>
-
-#include "info_collector.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -159,7 +159,9 @@ public:
     void RenderBlob(const string& blob_id);
 
     void RenderWNodes(TFlags flags = eMinimal);
-    void RenderWNode(const CWNodeInfo& info, TFlags flags = eMinimal);
+    void RenderWNode(
+        const CNetScheduleAdmin::SWorkerNodeInfo& info,
+        TFlags flags = eMinimal);
 
     void RenderQueueList();
     //    void RenderQueueList(const CNSServerInfo& info);

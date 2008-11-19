@@ -30,10 +30,10 @@
  *
  */
 
-#include <corelib/ncbimisc.hpp>
-
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/grid_worker.hpp>
+
+#include <corelib/ncbimisc.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -78,8 +78,16 @@ private:
     unsigned int m_MaxJobsAllowed;
     unsigned int m_MaxFailuresAllowed;
     unsigned int m_InfinitLoopTime;
+    struct SJobActivity {
+        CStopWatch elasped_time;
+        bool flag;
+        SJobActivity(CStopWatch elapsed_time_val, bool flag_val) :
+            elasped_time(elapsed_time_val), flag(flag_val) {}
+        SJobActivity() :
+            elasped_time(CStopWatch(CStopWatch::eStart)), flag(false) {}
+    };
 
-    typedef map<const CWorkerNodeJobContext*, pair<CStopWatch, bool> > TActiveJobs;
+    typedef map<const CWorkerNodeJobContext*, SJobActivity> TActiveJobs;
     TActiveJobs    m_ActiveJobs;
     mutable CMutex m_ActiveJobsMutex;
 

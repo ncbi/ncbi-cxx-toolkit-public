@@ -37,10 +37,12 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_types.h>
+
+#include <connect/services/blob_storage_netcache.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -75,38 +77,35 @@ void CTestNetScheduleStress::Init(void)
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "NetSchedule stress test prog='test 1.0.1'");
+                              "NetSchedule stress test prog='test 1.2'");
     
-    arg_desc->AddPositional("hostname", 
-                            "NetSchedule host name.", 
-                            CArgDescriptions::eString);
+    arg_desc->AddKey("service", 
+                     "service_name",
+                     "NetSchedule service name (format: host:port or servcie_name).", 
+                     CArgDescriptions::eString);
 
-    arg_desc->AddPositional("port",
-                            "Port number.", 
-                            CArgDescriptions::eInteger);
-
-    arg_desc->AddPositional("queue", 
-                            "NetSchedule queue name (like: noname).",
-                            CArgDescriptions::eString);
+    arg_desc->AddKey("queue", 
+                     "queue_name",
+                     "NetSchedule queue name (like: noname).",
+                     CArgDescriptions::eString);
 
 
-    arg_desc->AddOptionalKey("jcount", 
-                             "jcount",
+    arg_desc->AddOptionalKey("jobs", 
+                             "jobs",
                              "Number of jobs to submit",
                              CArgDescriptions::eInteger);
 
     arg_desc->AddDefaultKey("batch", "batch",
                             "Test batch submit",
                             CArgDescriptions::eBoolean,
-                            "false",
+                            "true",
                             0);
 
-    
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
 
-
+/*
 void TestRunTimeout(const string&  host, 
                     unsigned short port, 
                     const string&  queue)
@@ -164,44 +163,6 @@ void TestRunTimeout(const string&  host,
     NcbiCout <<  NcbiEndl << "Test end." << NcbiEndl;
 }
 
-void TestNetscheduleLB(const string&  queue)
-{
-    NcbiCout << "Load balancing client test" << NcbiEndl;
-
-    CNetScheduleClient_LB cl("stress_test prog='test 1.0.0'", "NC_test", queue, 1, 50);
-    cl.AddServiceAddress("didimo", 9100);
-    cl.AddServiceAddress("icoremake2", 9100);
-
-    string job_key;
-    const string input = "Hello " + queue;
-
-    unsigned jcount = 70;
-    NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
-
-    for (unsigned i = 0; i < jcount; ++i) {
-        job_key = cl.SubmitJob(input);
-        NcbiCout << job_key << " ";
-    }
-    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
-
-
-    NcbiCout << NcbiEndl << "Take jobs..." << NcbiEndl;
-    string input_str;
-    unsigned cnt = 0;
-    for (; true; ++cnt) {
-        bool job_exists = cl.WaitJob(&job_key, &input_str, 600, 9111);
-        if (!job_exists)
-            break;
-        cl.SetRunTimeout(job_key, 5);
-        NcbiCout << job_key << " ";
-    }
-    NcbiCout << "Jobs count " << cnt << NcbiEndl;
-    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
-
-
-    NcbiCout <<  NcbiEndl << "Test end." << NcbiEndl;
-}
-
 
 void TestNetwork(const string host, unsigned port, const string& queue_name)
 {
@@ -230,55 +191,79 @@ void TestNetwork(const string host, unsigned port, const string& queue_name)
     NcbiCout << "Rate: "           << rate        << " cmd/sec." << NcbiEndl;
 
 }
+*/
 
-void TestBatchSubmit(const string host, unsigned port,
+struct SPeriodicTag
+{
+    int   period;
+    int   run;
+    char *name;
+};
+
+
+SPeriodicTag tags[] = {
+    { 35, 3, "scaffold" },
+    { 51, 4, "transcript" },
+    { -1 }
+};
+
+
+void TestBatchSubmit(const string& service,
                      const string& queue_name, unsigned jcount)
 {
-    CNetScheduleClient cl(host, port, "stress_test", queue_name);
+    CNetScheduleAPI cl(service, "stress_test", queue_name);
     cl.SetProgramVersion("test 1.0.0");
-    
-    CNetScheduleClient::SJobBatch jobs;
+   
+    typedef vector<CNetScheduleJob> TJobs;
+    TJobs jobs;
 
     for (unsigned i = 0; i < jcount; ++i) {
-        jobs.job_list.push_back(CNetScheduleClient::SBatchSubm("HELLO BSUBMIT"));
+        CNetScheduleJob job("HELLO BSUBMIT", "affinity", CNetScheduleAPI::eExclusiveJob);
+        for (int j = 0; tags[j].period > 0; j++) {
+            int period = tags[j].period;
+            int run    = tags[j].run;
+            job.tags.push_back(CNetScheduleAPI::TJobTag(tags[j].name,
+                            NStr::UIntToString((i / run) % period)));
+        }
+        jobs.push_back(job);
     }
     
     {{
-    NcbiCout << "Submit " << jobs.job_list.size() << " jobs..." << NcbiEndl;
+    NcbiCout << "Submit " << jobs.size() << " jobs..." << NcbiEndl;
 
+    CNetScheduleSubmitter submitter = cl.GetSubmitter();
     CStopWatch sw(CStopWatch::eStart);
-    cl.SubmitJobBatch(jobs);
+    submitter.SubmitJobBatch(jobs);
 
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
     double elapsed = sw.Elapsed();
-    double rate = jobs.job_list.size() / elapsed;
+    double rate = jobs.size() / elapsed;
 
     NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
     NcbiCout << "Elapsed: "  << elapsed << " sec." << NcbiEndl;
     NcbiCout << "Rate: "     << rate    << " jobs/sec." << NcbiEndl;
     }}
 
-    ITERATE(CNetScheduleClient::TBatchSubmitJobList, it, jobs.job_list) {
-        _ASSERT(it->job_id);
+    ITERATE(TJobs, it, jobs) {
+        _ASSERT(!it->job_id.empty());
     }
 
     NcbiCout << "Get Jobs with permanent connection... " << NcbiEndl;
 
     // Fetch it back
 
-    cl.SetConnMode(CNetScheduleClient::eKeepConnection);
-    cl.ActivateRequestRateControl(false);
-    cl.SetCommunicationTimeout().sec = 20;
+    //    cl.SetCommunicationTimeout().sec = 20;
 
     {{
     unsigned cnt = 0;
-    string job_key, input;
-    string out = "DONE";
+    CNetScheduleJob job("INPUT");
+    job.output = "DONE";
 
     CStopWatch sw(CStopWatch::eStart);
+    CNetScheduleExecuter executer = cl.GetExecuter();
 
     for (;1;++cnt) {
-        bool job_exists = cl.PutResultGetJob(job_key, 0, out, &job_key, &input);
+        bool job_exists = executer.PutResultGetJob(job, job);
         if (!job_exists) {
             break;
         }
@@ -297,71 +282,84 @@ void TestBatchSubmit(const string host, unsigned port,
 
 int CTestNetScheduleStress::Run(void)
 {
-    CArgs args = GetArgs();
-    const string&  host  = args["hostname"].AsString();
-    unsigned short port = args["port"].AsInteger();
-    const string&  queue_name = args["queue"].AsString();
+    const CArgs& args = GetArgs();
+    const string&  service  = args["service"].AsString();
+    const string&  queue = args["queue"].AsString();
     bool batch = args["batch"].AsBoolean();
-    string output;
-    int ret_code;
 
     unsigned jcount = 10000;
-    if (args["jcount"]) {
-        jcount = args["jcount"].AsInteger();
+    if (args["jobs"]) {
+        jcount = args["jobs"].AsInteger();
     }
 
     //    TestRunTimeout(host, port, queue_name);
-//    TestNetscheduleLB(queue_name);
-
 //    TestNetwork(host, port, queue_name);
+
     if (batch) {
-        TestBatchSubmit(host, port, queue_name, jcount);
+        TestBatchSubmit(service, queue, jcount);
         return 0;
     }
 
-    CNetScheduleClient::EJobStatus status;
-    CNetScheduleClient cl(host, port, "client_test", queue_name);
-    cl.ActivateRequestRateControl(false);
-    cl.SetProgramVersion("test 1.0.0");
+    CNetScheduleAPI::EJobStatus status;
+    CNetScheduleAPI cl(service, "stress_test", queue);
+    cl.SetProgramVersion("test wn 1.0.1");
 
-    const string input = "Hello " + queue_name;
+    {
+        CNetScheduleAdmin admin = cl.GetAdmin();
+        admin.PrintServerVersion(NcbiCout);
+    }
+    //        SleepSec(40);
+    //        return 0;
+    string input = "Hello " + queue;
 
-    string job_key = cl.SubmitJob(input, "pmsg");
-    NcbiCout << job_key << NcbiEndl;
-    string pmsg = cl.GetProgressMsg(job_key);
-    _ASSERT(pmsg == "pmsg");
+    CNetScheduleSubmitter submitter = cl.GetSubmitter();
+    CNetScheduleExecuter executer = cl.GetExecuter();
+
+    CNetScheduleJob job(input);
+    job.progress_msg = "pmsg";
+    submitter.SubmitJob(job);
+    NcbiCout << job.job_id << NcbiEndl;
+    submitter.GetProgressMsg(job);
+    _ASSERT(job.progress_msg == "pmsg");
 
     // test progress message
-    string progress_msg = "progress report message";
-    cl.PutProgressMsg(job_key, progress_msg);
+    job.progress_msg = "progress report message";
+    executer.PutProgressMsg(job);
 
-    pmsg = cl.GetProgressMsg(job_key);
+    string pmsg = job.progress_msg;
+    job.progress_msg = "";
+    submitter.GetProgressMsg(job);
     NcbiCout << pmsg << NcbiEndl;
-    _ASSERT(pmsg == progress_msg);
+    _ASSERT(pmsg == job.progress_msg);
 
 
-    string err = "test error\r\nmessage";
-    cl.PutFailure(job_key, err);
-    string err_msg;
-    status = cl.GetStatus(job_key, &ret_code, &output, &err_msg);
-    if (status != CNetScheduleClient::eFailed) {
-        NcbiCerr << "Job " << job_key << " succeeded!" << NcbiEndl;
+    job.error_msg = "test error\r\nmessage";
+    executer.PutFailure(job);
+    status = cl.GetJobDetails(job);
+    
+    //    _ASSERT(status == CNetScheduleAPI::eFailed);
+    //    NcbiCout << err_msg << NcbiEndl;
+    //    _ASSERT(err_msg == err);
+
+    //> ?????????? How should it really work??????????????
+    if (status != CNetScheduleAPI::eFailed) {
+        NcbiCerr << "Job " << job.job_id << " succeeded!" << NcbiEndl;
     } else {
-        NcbiCout << err_msg << NcbiEndl;
-        if (err_msg != err) {
-            NcbiCerr << "Incorrect error message: " << err_msg << NcbiEndl;
+        NcbiCout << job.error_msg << NcbiEndl;
+        /*
+        if (job.error_msg != err) {
+            NcbiCerr << "Incorrect error message: " << job.error_msg << NcbiEndl;
         }
+        */
     }
+    //< ?????????? How should it really work??????????????
 
-    cl.DropJob(job_key);
-    status = cl.GetStatus(job_key, &ret_code, &output);
+    CNetScheduleAdmin admin = cl.GetAdmin();
+    
+    admin.DropJob(job.job_id);
+    status = executer.GetJobStatus(job.job_id);
 
-    if (status != CNetScheduleClient::eJobNotFound) {
-        NcbiCerr << "Job " << job_key << " still exists!" << NcbiEndl;
-    } else {
-        NcbiCout << "Job " << job_key << " has been deleted." << NcbiEndl;
-    }
-
+    _ASSERT(status == CNetScheduleAPI::eJobNotFound);
 
     vector<string> jobs;
     jobs.reserve(jcount);
@@ -372,8 +370,9 @@ int CTestNetScheduleStress::Run(void)
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
 
     for (unsigned i = 0; i < jcount; ++i) {
-        job_key = cl.SubmitJob(input);
-        jobs.push_back(job_key);
+        CNetScheduleJob job(input);
+        submitter.SubmitJob(job);
+        jobs.push_back( job.job_id );
         if (i % 1000 == 0) {
             NcbiCout << "." << flush;
         }
@@ -402,8 +401,8 @@ int CTestNetScheduleStress::Run(void)
     unsigned i = 0;
     NON_CONST_ITERATE(vector<string>, it, jobs) {
         const string& jk = *it;
-        int ret_code;
-        status = cl.GetStatus(jk, &ret_code, &output);
+        status = executer.GetJobStatus(jk);
+        //status = cl.GetStatus(jk, &ret_code, &output);
         if (i++ % 1000 == 0) {
             NcbiCout << "." << flush;
         }
@@ -435,12 +434,13 @@ int CTestNetScheduleStress::Run(void)
 
     unsigned cnt = 0;
     for (; cnt < jcount/2; ++cnt) {
-        bool job_exists = cl.WaitJob(&job_key, &input, 60, 9111);
+        CNetScheduleJob job;
+        bool job_exists = executer.WaitJob(job, 60, 9111);
 //        bool job_exists = cl.GetJob(&job_key, &input);
         if (!job_exists)
             break;
-        cl.ReturnJob(job_key);
-        jobs_returned.push_back(job_key);
+        executer.ReturnJob(job.job_id);
+        jobs_returned.push_back(job.job_id);
     }
     NcbiCout << "Returned " << cnt << " jobs." << NcbiEndl;
 
@@ -468,21 +468,21 @@ int CTestNetScheduleStress::Run(void)
 
     {{
     NcbiCout << NcbiEndl << "Processing..." << NcbiEndl;
-    SleepMilliSec(8000);
+    SleepMilliSec(8 * 1000);
     CStopWatch sw(CStopWatch::eStart);
     
     unsigned cnt = 0;
-    string input;
-    string out = "DONE " + queue_name;
 
     for (; 1; ++cnt) {
-        bool job_exists = cl.GetJob(&job_key, &input);
+        CNetScheduleJob job;
+        bool job_exists = executer.GetJob(job);
         if (!job_exists)
             break;
 
-        jobs_processed.push_back(job_key);
+        jobs_processed.push_back(job.job_id);
 
-        cl.PutResult(job_key, 0, out);
+        job.output = "DONE " + queue;
+        executer.PutResult(job);
     }
     double elapsed = sw.Elapsed();
 
@@ -500,19 +500,17 @@ int CTestNetScheduleStress::Run(void)
 
     {{
     NcbiCout << NcbiEndl << "Check returned jobs..." << NcbiEndl;
-    SleepMilliSec(5000);
+    SleepMilliSec(5 * 1000);
     CStopWatch sw(CStopWatch::eStart);
 
-    string output;
     NON_CONST_ITERATE(vector<string>, it, jobs_returned) {
         const string& jk = *it;
-        int ret_code;
-        status = cl.GetStatus(jk, &ret_code, &output);
+        status = submitter.GetJobStatus(jk);
         switch (status) {
-        case CNetScheduleClient::ePending:
+        case CNetScheduleAPI::ePending:
             NcbiCout << "Job pending: " << jk << NcbiEndl;
             break;
-        case CNetScheduleClient::eReturned:
+        case CNetScheduleAPI::eReturned:
             NcbiCout << "Job returned: " << jk << NcbiEndl;
             break;
         default:
@@ -522,8 +520,7 @@ int CTestNetScheduleStress::Run(void)
 
     }}
 
-
-    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+    NcbiCout << NcbiEndl << "Done." << NcbiEndl;   
     return 0;
 }
 

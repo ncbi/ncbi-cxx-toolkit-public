@@ -31,23 +31,26 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include "netcache_api_impl.hpp"
+
+#include <connect/services/srv_connections_expt.hpp>
+#include <connect/services/netservice_params.hpp>
+#include <connect/services/error_codes.hpp>
+
+#include <connect/ncbi_conn_exception.hpp>
+
 #include <corelib/ncbitime.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/ncbi_safe_static.hpp>
-#include <connect/ncbi_conn_exception.hpp>
-#include <connect/services/netcache_rw.hpp>
-#include <connect/services/netservice_params.hpp>
-#include <connect/services/error_codes.hpp>
+
 #include <memory>
 
 
 #define NCBI_USE_ERRCODE_X  ConnServ_NetCache
 
 BEGIN_NCBI_SCOPE
-
-
-/****************************************************************/
 
 static bool s_FallbackServer_Initialized = false;
 static CSafeStaticPtr<auto_ptr<TServerAddress> > s_FallbackServer;
@@ -71,25 +74,41 @@ static TServerAddress* s_GetFallbackServer()
 }
 
 
-/****************************************************************/
-
-CNetServerConnection CNetCacheAPI::x_GetConnection(const string& bid)
+CNetServerConnection SNetCacheAPIImpl::x_GetConnection(const string& bid)
 {
-    if (bid.empty())
-        return GetBest(s_GetFallbackServer());
+    if (bid.empty()) {
+        try {
+            return m_Service.GetBestConnection();
+        } catch (CNetSrvConnException& e) {
+            TServerAddress* backup = s_GetFallbackServer();
 
-    CNetCacheKey key(bid);
-    return GetSpecific(key.GetHost(), key.GetPort());
+            ERR_POST_X(3, "Could not connect to " <<
+                m_Service.GetServiceName() << ":" << e.what() <<
+                ". Connecting to backup server " <<
+                backup->first << ":" << backup->second << ".");
+
+            return m_Service.GetSpecificConnection(
+                backup->first, backup->second);
+        }
+    } else {
+        CNetCacheKey key(bid);
+        return m_Service.GetSpecificConnection(key.GetHost(), key.GetPort());
+    }
 }
 
-void CNetCacheAPI::x_SendAuthetication(CNetServerConnection& conn) const
+SNetCacheAPIImpl::CNetCacheServerListener::CNetCacheServerListener(
+    const std::string& client_name)
 {
-    string auth = GetClientName();
-    CheckClientNameNotEmpty(&auth);
-    conn.WriteStr(auth + "\r\n");
+    m_Auth = client_name;
 }
 
-string CNetCacheAPI::x_MakeCommand(const string& cmd) const
+void SNetCacheAPIImpl::CNetCacheServerListener::OnConnected(
+    CNetServerConnection conn)
+{
+    conn->WriteLine(m_Auth);
+}
+
+string SNetCacheAPIImpl::x_MakeCommand(const string& cmd) const
 {
     string command(cmd);
 
@@ -103,25 +122,32 @@ string CNetCacheAPI::x_MakeCommand(const string& cmd) const
     return command;
 }
 
+void SNetCacheAPIImpl::CNetCacheServerListener::OnError(string& err_msg)
+{
+    if (NStr::strncmp(err_msg.c_str(), "BLOB not found", 14) == 0)
+        NCBI_THROW(CNetCacheException, eBlobNotFound, err_msg);
 
+    if (NStr::strncmp(err_msg.c_str(), "BLOB locked", 11) == 0)
+        NCBI_THROW(CNetCacheException, eBlobLocked, "Server error:" + err_msg);
 
-CNetCacheAPI::CNetCacheAPI(const string&  client_name)
-    : CNetServiceAPI_Base(kEmptyStr, client_name), m_NoHasBlob(false)
+    NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
+}
+
+void SNetCacheAPIImpl::CNetCacheServerListener::OnDisconnected()
+{
+}
+
+CNetCacheAPI::CNetCacheAPI(const string& client_name) :
+    m_Impl(new SNetCacheAPIImpl(kEmptyStr, client_name))
 {
 }
 
 
-CNetCacheAPI::CNetCacheAPI(const string&  service,
-                           const string&  client_name)
-    : CNetServiceAPI_Base(service, client_name), m_NoHasBlob(false)
+CNetCacheAPI::CNetCacheAPI(const string& service, const string& client_name) :
+    m_Impl(new SNetCacheAPIImpl(service, client_name))
 {
 }
 
-
-
-CNetCacheAPI::~CNetCacheAPI()
-{
-}
 
 
 string CNetCacheAPI::PutData(const void*  buf,
@@ -133,7 +159,7 @@ string CNetCacheAPI::PutData(const void*  buf,
 
 
 
-CNetServerConnection CNetCacheAPI::x_PutInitiate(
+CNetServerConnection SNetCacheAPIImpl::x_PutInitiate(
     string*   key, unsigned  time_to_live)
 {
     _ASSERT(key);
@@ -144,7 +170,7 @@ CNetServerConnection CNetCacheAPI::x_PutInitiate(
     request += *key;
 
     CNetServerConnection conn = x_GetConnection(*key);
-    *key = SendCmdWaitResponse(conn, x_MakeCommand(request));
+    *key = conn.Exec(x_MakeCommand(request));
 
     if (NStr::FindCase(*key, "ID:") != 0) {
         // Answer is not in "ID:....." format
@@ -168,7 +194,8 @@ string  CNetCacheAPI::PutData(const string& key,
                               unsigned int  time_to_live)
 {
     string k(key);
-    CNetServerConnection conn = x_PutInitiate(&k, time_to_live);
+
+    CNetServerConnection conn = m_Impl->x_PutInitiate(&k, time_to_live);
     CNetCacheWriter writer(*this, conn, CTransmissionWriter::eSendEofPacket);
 
     const char* buf_ptr = (const char*)buf;
@@ -191,24 +218,24 @@ string  CNetCacheAPI::PutData(const string& key,
 
 IWriter* CNetCacheAPI::PutData(string* key, unsigned int time_to_live)
 {
-    CNetServerConnection conn = x_PutInitiate(key, time_to_live);
+    CNetServerConnection conn = m_Impl->x_PutInitiate(key, time_to_live);
     return new CNetCacheWriter(*this, conn, CTransmissionWriter::eSendEofPacket);
 }
 
 
 bool CNetCacheAPI::HasBlob(const string& key)
 {
-    if (m_NoHasBlob)
+    if (m_Impl->m_NoHasBlob)
         return !GetOwner(key).empty();
     string request = "HASB " + key;
     try {
-        return SendCmdWaitResponse(x_GetConnection(key),
-                                   x_MakeCommand(request))[0] == '1';
+        return m_Impl->x_GetConnection(key).
+            Exec(m_Impl->x_MakeCommand(request))[0] == '1';
     } catch (CNetServiceException& e) {
         if (e.GetErrCode() != CNetServiceException::eCommunicationError ||
             e.GetMsg() != "Unknown request")
             throw;
-        m_NoHasBlob = true;
+        m_Impl->m_NoHasBlob = true;
         return !GetOwner(key).empty();
     }
 }
@@ -218,13 +245,12 @@ void CNetCacheAPI::Remove(const string& key)
 {
     string request = "RMV2 " + key;
 
-    CNetServerConnection conn = x_GetConnection(key);
+    CNetServerConnection conn = m_Impl->x_GetConnection(key);
     try {
-        SendCmdWaitResponse(conn, x_MakeCommand(request));
+        conn.Exec(m_Impl->x_MakeCommand(request));
     } catch (...) {
-        // ignore the error???
+        // TODO log the error
     }
-
 }
 
 
@@ -233,13 +259,10 @@ bool CNetCacheAPI::IsLocked(const string& key)
 
     string request = "ISLK " + key;
 
-    CNetServerConnection conn = x_GetConnection(key);
+    CNetServerConnection conn = m_Impl->x_GetConnection(key);
 
     try {
-        string answer = SendCmdWaitResponse(conn, x_MakeCommand(request));
-        if ( answer[0] == '1' )
-            return true;
-        return false;
+        return conn.Exec(m_Impl->x_MakeCommand(request))[0] == '1';
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return false;
@@ -252,10 +275,9 @@ string CNetCacheAPI::GetOwner(const string& key)
 {
     string request = "GBOW " + key;
 
-    CNetServerConnection conn = x_GetConnection(key);
+    CNetServerConnection conn = m_Impl->x_GetConnection(key);
     try {
-        string answer = SendCmdWaitResponse(conn, x_MakeCommand(request));
-        return answer;
+        return conn.Exec(m_Impl->x_MakeCommand(request));
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return kEmptyStr;
@@ -281,11 +303,11 @@ IReader* CNetCacheAPI::GetData(const string& key,
     }
 
     size_t bsize = 0;
-    CNetServerConnection conn = x_GetConnection(key);
+    CNetServerConnection conn = m_Impl->x_GetConnection(key);
 
     string answer;
     try {
-        answer = SendCmdWaitResponse(conn, x_MakeCommand(request));
+        answer = conn.Exec(m_Impl->x_MakeCommand(request));
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return NULL;
@@ -323,7 +345,8 @@ CNetCacheAPI::GetData(const string&  key,
     if (blob_size)
         *blob_size = x_blob_size;
 
-    return CNetCacheAPI::x_ReadBuffer(*reader, buf, buf_size, n_read, x_blob_size);
+    return m_Impl->x_ReadBuffer(*reader,
+        buf, buf_size, n_read, x_blob_size);
 }
 
 CNetCacheAPI::EReadResult
@@ -336,17 +359,27 @@ CNetCacheAPI::GetData(const string& key, CSimpleBuffer& buffer)
         return eNotFound;
 
     buffer.resize_mem(x_blob_size);
-    return CNetCacheAPI::x_ReadBuffer(*reader, buffer.data(), x_blob_size, NULL, x_blob_size);
+    return m_Impl->x_ReadBuffer(*reader,
+        buffer.data(), x_blob_size, NULL, x_blob_size);
+}
 
+CNetCacheAdmin CNetCacheAPI::GetAdmin()
+{
+    return CNetCacheAdmin(new SNetCacheAdminImpl(m_Impl));
+}
+
+CNetService CNetCacheAPI::GetService()
+{
+    return m_Impl->m_Service;
 }
 
 /* static */
-CNetCacheAPI::EReadResult
-CNetCacheAPI::x_ReadBuffer( IReader& reader,
-                            void*          buf,
-                            size_t         buf_size,
-                            size_t*        n_read,
-                            size_t         blob_size)
+CNetCacheAPI::EReadResult SNetCacheAPIImpl::x_ReadBuffer(
+    IReader& reader,
+    void* buf,
+    size_t buf_size,
+    size_t* n_read,
+    size_t blob_size)
 {
     size_t x_read = 0;
     size_t buf_avail = buf_size;
@@ -373,26 +406,8 @@ CNetCacheAPI::x_ReadBuffer( IReader& reader,
     if (n_read)
         *n_read = x_read;
 
-    if (x_read == blob_size) {
-        return eReadComplete;
-    }
-
-    return eReadPart;
-}
-
-void CNetCacheAPI::ProcessServerError(string& response, ETrimErr trim_err) const
-{
-    if (trim_err == eTrimErr)
-        CNetServiceAPI_Base::TrimErr(response);
-
-    if (NStr::strncmp(response.c_str(), "BLOB not found", 14) == 0)
-        NCBI_THROW(CNetCacheException, eBlobNotFound, response);
-
-    if (NStr::strncmp(response.c_str(), "BLOB locked", 11) == 0)
-        NCBI_THROW(CNetCacheException, eBlobLocked, "Server error:" + response);
-
-    NCBI_THROW(CNetServiceException, eCommunicationError, response);
-
+    return x_read == blob_size ?
+        CNetCacheAPI::eReadComplete : CNetCacheAPI::eReadPart;
 }
 
 
@@ -457,11 +472,8 @@ public:
                 STimeout tm = { communication_timeout, 0 };
                 drv->SetCommunicationTimeout(tm);
 
-                drv->SetRebalanceStrategy(
-                    CreateSimpleRebalanceStrategy(conf, m_DriverName),
-                               eTakeOwnership);
-
-                drv->SetConnMode(CNetServiceAPI_Base::eKeepConnection);
+                drv->GetService().SetRebalanceStrategy(
+                    CreateSimpleRebalanceStrategy(conf, m_DriverName));
             }
         }
         return drv;

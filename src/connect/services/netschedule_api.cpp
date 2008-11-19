@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anatoliy Kuznetsov, Maxim Didenko
+ * Author:  Anatoliy Kuznetsov, Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *   Implementation of NetSchedule API.
@@ -31,11 +31,15 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include "netschedule_api_impl.hpp"
+
+#include <connect/ncbi_conn_exception.hpp>
+
 #include <corelib/ncbi_system.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/request_control.hpp>
-#include <connect/ncbi_conn_exception.hpp>
-#include <connect/services/netschedule_api.hpp>
+
 #include <memory>
 #include <stdio.h>
 
@@ -43,25 +47,86 @@
 BEGIN_NCBI_SCOPE
 
 
-#define SERVER_PARAMS_ASK_MAX_COUNT 100
 /**********************************************************************/
 
-CNetScheduleExceptionMap CNetScheduleAPI::sm_ExceptionMap;
+SNetScheduleAPIImpl::CNetScheduleServerListener::CNetScheduleServerListener(
+    const std::string& client_name,
+    const std::string& queue_name)
+{
+    m_Auth = client_name;
+    m_Auth += "\r\n";
 
-CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
-                                 const string& client_name,
-                                 const string& queue_name)
-    : CNetServiceAPI_Base(service_name,client_name),
-      m_Queue(queue_name),
-      m_ServerParamsAskCount(SERVER_PARAMS_ASK_MAX_COUNT)
+    m_Auth += queue_name;
+}
+
+void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
+    const std::string& client_name,
+    const std::string& program_version,
+    const std::string& queue_name)
+{
+    std::string auth = client_name;
+    if (!program_version.empty()) {
+        auth += " prog='";
+        auth += program_version;
+        auth += '\'';
+    }
+    auth += "\r\n";
+
+    auth += queue_name;
+
+    m_Auth = auth;
+}
+
+void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
+    CNetServerConnection conn)
+{
+    conn->WriteLine(m_Auth);
+}
+
+void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(string& err_msg)
+{
+    string code;
+    string msg;
+    if (NStr::SplitInTwo(err_msg, ":", code, msg)) {
+        // Map code into numeric value
+        CException::TErrCode n_code = sm_ExceptionMap.GetCode(code);
+        if (n_code != CException::eInvalid) {
+            NCBI_THROW(CNetScheduleException, EErrCode(n_code), msg);
+        }
+    }
+    NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
+}
+
+void SNetScheduleAPIImpl::CNetScheduleServerListener::OnDisconnected()
 {
 }
 
+CNetScheduleExceptionMap SNetScheduleAPIImpl::sm_ExceptionMap;
 
-CNetScheduleAPI::~CNetScheduleAPI()
+CNetScheduleAPI::CNetScheduleAPI(
+    const string& service_name,
+    const string& client_name,
+    const string& queue_name) :
+    m_Impl(new SNetScheduleAPIImpl(service_name, client_name, queue_name))
 {
 }
 
+void CNetScheduleAPI::SetProgramVersion(const string& pv)
+{
+    m_Impl->m_ProgramVersion = pv;
+    m_Impl->m_Listener->SetAuthString(
+        m_Impl->m_Service.GetClientName(), pv, m_Impl->m_Queue);
+}
+
+const string& CNetScheduleAPI::GetProgramVersion() const
+{
+    return m_Impl->m_ProgramVersion;
+}
+
+const string& CNetScheduleAPI::GetQueueName() const
+{
+    return m_Impl->m_Queue;
+}
 
 string CNetScheduleAPI::StatusToString(EJobStatus status)
 {
@@ -143,20 +208,31 @@ CNetScheduleAPI::StringToStatus(const string& status_str)
     return eJobNotFound;
 }
 
-void CNetScheduleAPI::x_SendAuthetication(CNetServerConnection& conn) const
+CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
 {
-    string auth = GetClientName();
-    CheckClientNameNotEmpty(&auth);
-    if (!m_ProgramVersion.empty()) {
-        auth += " prog='" + m_ProgramVersion + '\'';
-    }
-    conn.WriteStr(auth + "\r\n");
-    conn.WriteStr(m_Queue + "\r\n");
+    m_Impl->m_Service.DiscoverLowPriorityServers(eOff);
+    return CNetScheduleSubmitter(new SNetScheduleSubmitterImpl(m_Impl));
 }
 
+CNetScheduleExecuter CNetScheduleAPI::GetExecuter()
+{
+    m_Impl->m_Service.DiscoverLowPriorityServers(eOn);
+    return CNetScheduleExecuter(new SNetScheduleExecuterImpl(m_Impl));
+}
+
+CNetScheduleAdmin CNetScheduleAPI::GetAdmin()
+{
+    m_Impl->m_Service.DiscoverLowPriorityServers(eOff);
+    return CNetScheduleAdmin(new SNetScheduleAdminImpl(m_Impl));
+}
+
+CNetService CNetScheduleAPI::GetService()
+{
+    return m_Impl->m_Service;
+}
 
 CNetScheduleAPI::EJobStatus
-CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job)
+    CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job)
 {
 
     /// These attributes are not supported yet
@@ -166,7 +242,7 @@ CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job)
     job.tags.clear();
     ///
 
-    string resp = x_SendJobCmdWaitResponse("STATUS" , job.job_id);
+    string resp = m_Impl->x_SendJobCmdWaitResponse("STATUS" , job.job_id);
 
     const char* str = resp.c_str();
 
@@ -245,8 +321,8 @@ CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job)
     return status;
 }
 
-CNetScheduleAPI::EJobStatus
-CNetScheduleAPI::x_GetJobStatus(const string& job_key, bool submitter)
+CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::x_GetJobStatus(
+    const string& job_key, bool submitter)
 {
     string cmd = "STATUS";
     if (GetServerParams().fast_status) {
@@ -256,33 +332,39 @@ CNetScheduleAPI::x_GetJobStatus(const string& job_key, bool submitter)
     string resp = x_SendJobCmdWaitResponse(cmd, job_key);
     const char* str = resp.c_str();
     int st = atoi(str);
-    return (EJobStatus) st;
+    return (CNetScheduleAPI::EJobStatus) st;
 }
 
-struct SNetScheduleParamsGetter
+const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
 {
-    SNetScheduleParamsGetter(const CNetScheduleAPI& api, CNetScheduleAPI::SServerParams& params)
-        : m_API(api), m_Params(params), m_WasCalled(false)
-    {
-        m_Params.max_input_size = kMax_UInt;
-        m_Params.max_output_size = kMax_UInt;
-        m_Params.fast_status = true;
-    }
-    ~SNetScheduleParamsGetter()
-    {
-        if (m_Params.max_input_size == kMax_UInt)
-            m_Params.max_input_size = kNetScheduleMaxDBDataSize / 4;
-        if (m_Params.max_output_size == kMax_UInt)
-            m_Params.max_output_size = kNetScheduleMaxDBDataSize / 4;
-        if (!m_WasCalled)
-            m_Params.fast_status = false;
-    }
-    void operator()(CNetServerConnection conn)
-    {
-        if (!m_WasCalled) m_WasCalled = true;
+    CFastMutexGuard g(m_ServerParamsMutex);
+
+    if (!m_ServerParams.get())
+        m_ServerParams.reset(new CNetScheduleAPI::SServerParams);
+    else
+        if (m_ServerParamsAskCount-- > 0)
+            return *m_ServerParams;
+
+    m_ServerParamsAskCount = SERVER_PARAMS_ASK_MAX_COUNT;
+
+    m_ServerParams->max_input_size = kMax_UInt;
+    m_ServerParams->max_output_size = kMax_UInt;
+    m_ServerParams->fast_status = true;
+
+    TDiscoveredServers servers;
+
+    m_Service->DiscoverServers(servers);
+
+    bool was_called = false;
+
+    ITERATE(TDiscoveredServers, it, servers) {
+        CNetServerConnection conn = m_Service->GetConnection(*it);
+
+        was_called = true;
+
         string resp;
         try {
-            resp = m_API.SendCmdWaitResponse(conn, "GETP");
+            resp = conn.Exec("GETP");
         } catch (CNetScheduleException& ex) {
             if (ex.GetErrCode() != CNetScheduleException::eProtocolSyntaxError)
                 throw;
@@ -296,61 +378,40 @@ struct SNetScheduleParamsGetter
             NStr::SplitInTwo(*it,"=",n,v);
             if (n == "max_input_size") {
                 size_t val = NStr::StringToInt(v) / 4;
-                if (m_Params.max_input_size > val)
-                    m_Params.max_input_size = val ;
+                if (m_ServerParams->max_input_size > val)
+                    m_ServerParams->max_input_size = val ;
             } else if (n == "max_output_size") {
                 size_t val = NStr::StringToInt(v) / 4;
-                if (m_Params.max_output_size > val)
-                    m_Params.max_output_size = val;
+                if (m_ServerParams->max_output_size > val)
+                    m_ServerParams->max_output_size = val;
             } else if (n == "fast_status" && v == "1") {
                 fast_status = true;
             }
         }
-        if (m_Params.fast_status) m_Params.fast_status = fast_status;
+        if (m_ServerParams->fast_status)
+            m_ServerParams->fast_status = fast_status;
     }
-    const CNetScheduleAPI& m_API;
-    CNetScheduleAPI::SServerParams& m_Params;
-    bool m_WasCalled;
-};
 
-const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams()
-{
-    CFastMutexGuard g(m_ServerParamsMutex);
-    if (m_ServerParams.get() && m_ServerParamsAskCount-- > 0) {
-        return *m_ServerParams;
-    }
-    if (!m_ServerParams.get())
-        m_ServerParams.reset(new SServerParams);
-    m_ServerParamsAskCount = SERVER_PARAMS_ASK_MAX_COUNT;
-
-    ForEach(SNetScheduleParamsGetter(*this, *m_ServerParams));
+    if (m_ServerParams->max_input_size == kMax_UInt)
+        m_ServerParams->max_input_size = kNetScheduleMaxDBDataSize / 4;
+    if (m_ServerParams->max_output_size == kMax_UInt)
+        m_ServerParams->max_output_size = kNetScheduleMaxDBDataSize / 4;
+    if (!was_called)
+        m_ServerParams->fast_status = false;
 
     return *m_ServerParams;
 }
 
+const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams()
+{
+    return m_Impl->GetServerParams();
+}
 
 void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
 {
-    string resp = x_SendJobCmdWaitResponse("MGET", job.job_id);
+    string resp = m_Impl->x_SendJobCmdWaitResponse("MGET", job.job_id);
     job.progress_msg = NStr::ParseEscapes(resp);
 }
-
-void CNetScheduleAPI::ProcessServerError(string& response, ETrimErr trim_err) const
-{
-    if (trim_err == eTrimErr)
-        CNetServiceAPI_Base::TrimErr(response);
-    string code;
-    string msg;
-    if (NStr::SplitInTwo(response, ":", code, msg)) {
-        // Map code into numeric value
-        CException::TErrCode n_code = sm_ExceptionMap.GetCode(code);
-        if (n_code != CException::eInvalid) {
-            NCBI_THROW(CNetScheduleException, EErrCode(n_code), msg);
-        }
-    }
-    CNetServiceAPI_Base::ProcessServerError(response, eNoTrimErr);
-}
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -397,75 +458,34 @@ public:
         if (params && (driver.empty() || driver == m_DriverName)) {
             if (version.Match(NCBI_INTERFACE_VERSION(IFace))
                                 != CVersionInfo::eNonCompatible) {
+                CConfig conf(params);
 
-            CConfig conf(params);
-            string client_name =
-                conf.GetString(m_DriverName,
-                               "client_name", CConfig::eErr_Throw, "noname");
-            string queue_name =
-                conf.GetString(m_DriverName,
-                               "queue_name", CConfig::eErr_Throw, "noname");
-            string service =
-                conf.GetString(m_DriverName,
-                               "service", CConfig::eErr_NoThrow, "");
-            NStr::TruncateSpacesInPlace(service);
+                string client_name = conf.GetString(m_DriverName,
+                    "client_name", CConfig::eErr_Throw, "noname");
 
-            if (!service.empty()) {
-                unsigned int communication_timeout = conf.GetInt(m_DriverName,
-                                                              "communication_timeout",
-                                                              CConfig::eErr_NoThrow, 12);
+                string queue_name = conf.GetString(m_DriverName,
+                    "queue_name", CConfig::eErr_Throw, "noname");
 
-                drv.reset(new CNetScheduleAPI(service,
-                                              client_name,
-                                              queue_name) );
-                STimeout tm = { communication_timeout, 0 };
-                drv->SetCommunicationTimeout(tm);
+                string service = conf.GetString(m_DriverName,
+                    "service", CConfig::eErr_NoThrow, "");
 
-                drv->SetRebalanceStrategy(
-                    CreateSimpleRebalanceStrategy(conf, m_DriverName),
-                               eTakeOwnership);
+                NStr::TruncateSpacesInPlace(service);
 
-                //bool permanent_conntction =
-                //   conf.GetBool(m_DriverName, "use_permanent_connection",
-                //                 CConfig::eErr_NoThrow, true);
+                if (!service.empty()) {
+                    unsigned int communication_timeout =
+                        conf.GetInt(m_DriverName, "communication_timeout",
+                            CConfig::eErr_NoThrow, 12);
 
-                //if( permanent_conntction )
-                drv->SetConnMode(CNetServiceAPI_Base::eKeepConnection);
+                    drv.reset(new CNetScheduleAPI(service,
+                        client_name, queue_name));
 
+                    STimeout tm = {communication_timeout, 0};
 
-                //                                                rebalance_time,
-                //                              rebalance_requests);
-                /*
-                unsigned max_retry = conf.GetInt(m_DriverName,
-                                                 "max_retry",
-                                                 CConfig::eErr_NoThrow, 0);
-                if (max_retry) {
-                    lb_drv->SetMaxRetry(max_retry);
+                    drv->SetCommunicationTimeout(tm);
+
+                    drv->GetService().SetRebalanceStrategy(
+                        CreateSimpleRebalanceStrategy(conf, m_DriverName));
                 }
-
-                bool discover_lp_servers =
-                    conf.GetBool(m_DriverName, "discover_low_priority_servers",
-                                CConfig::eErr_NoThrow, false);
-
-                lb_drv->DiscoverLowPriorityServers(discover_lp_servers);
-
-                string services_list = conf.GetString(m_DriverName,
-                                                "sevices_list",
-                                                 CConfig::eErr_NoThrow, kEmptyStr);
-                vector<string> services;
-                NStr::Tokenize(services_list, ",;", services);
-                for(vector<string>::const_iterator it = services.begin();
-                                                   it != services.end(); ++it) {
-                    string host, sport;
-                    if (NStr::SplitInTwo(*it,":",host,sport)) {
-                        try {
-                            unsigned int port = NStr::StringToUInt(sport);
-                            lb_drv->AddServiceAddress(host, port);
-                        } catch(CStringException&) {}
-                    }
-                }
-                */
-            }
             }
         }
         return drv.release();

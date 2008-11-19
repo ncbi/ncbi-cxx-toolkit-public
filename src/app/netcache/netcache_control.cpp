@@ -109,26 +109,6 @@ void CNetCacheControl::Init(void)
 }
 
 
-class CSimpleSink : public CNetServiceAPI_Base::ISink
-{
-public:
-    CSimpleSink(CNcbiOstream& os) : m_Os(os) {}
-    ~CSimpleSink() {}
-    
-    virtual CNcbiOstream& GetOstream(CNetServerConnection conn)
-    {
-        m_Os << conn.GetHost() << ":" << conn.GetPort() << endl;
-        return m_Os;
-    }
-    virtual void EndOfData(CNetServerConnection conn)
-    {
-        m_Os << endl;
-    }
-private:
-    CNcbiOstream& m_Os;
-};
-
-
 int CNetCacheControl::Run(void)
 {
     const CArgs& args = GetArgs();
@@ -170,16 +150,14 @@ int CNetCacheControl::Run(void)
 
 
     if (args["getconf"]) {  // config
-        CSimpleSink sink(NcbiCout);
-        admin.PrintConfig(sink);
+        admin.PrintConfig(NcbiCout);
     }
     if (args["monitor"]) {  // monitor
         admin.Monitor(NcbiCout);
     }
 
     if (args["stat"]) {  // statistics
-        CSimpleSink sink(NcbiCout);
-        admin.PrintStat(sink);
+        admin.PrintStat(NcbiCout);
     }
     if (args["dropstat"]) {  // drop stat
         admin.DropStat();
@@ -187,8 +165,7 @@ int CNetCacheControl::Run(void)
     }
 
     if (args["ver"]) {
-        CSimpleSink sink(NcbiCout);
-        admin.GetServerVersion(sink);
+        admin.GetServerVersion(NcbiCout);
     }
 
     if (args["shutdown"]) {  // shutdown

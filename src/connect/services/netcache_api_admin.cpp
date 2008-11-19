@@ -31,77 +31,75 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistr.hpp>
 
-#include <connect/services/netcache_api.hpp>
+#include "netcache_api_impl.hpp"
+
+#include <connect/services/netcache_admin.hpp>
 #include <connect/services/netcache_api_expt.hpp>
-
-
 
 BEGIN_NCBI_SCOPE
 
-
 void CNetCacheAdmin::ShutdownServer()
 {
-    if (m_API->IsLoadBalanced()) {
+    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
         NCBI_THROW(CNetCacheException, eCommandIsNotAllowed,
                    "This command is allowed only for non-loadbalance client.");
     }
-    CNetServerConnection conn = m_API->x_GetConnection();
-    m_API->SendCmdWaitResponse(conn, m_API->x_MakeCommand("SHUTDOWN"));
+    m_Impl->m_API->x_GetConnection().Exec(
+        m_Impl->m_API->x_MakeCommand("SHUTDOWN"));
 }
 
 void CNetCacheAdmin::Logging(bool on_off) const
 {
-    if (m_API->IsLoadBalanced()) {
+    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
         NCBI_THROW(CNetCacheException, eCommandIsNotAllowed,
                    "This command is allowed only for non-loadbalance client.");
     }
-    string cmd = "LOG ";
-    cmd += on_off ? "ON" : "OFF";
-    CNetServerConnection conn = m_API->x_GetConnection();
-    m_API->SendCmdWaitResponse(conn, m_API->x_MakeCommand(cmd));
+    m_Impl->m_API->x_GetConnection().Exec(
+        m_Impl->m_API->x_MakeCommand(on_off ? "LOG ON" : "LOG OFF"));
 }
 
-void CNetCacheAdmin::PrintConfig(CNetServiceAPI_Base::ISink& sink) const
+void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream) const
 {
-    m_API->x_CollectStreamOutput(m_API->x_MakeCommand("GETCONF"),
-                                 sink, CNetServiceAPI_Base::ePrintServerOut);
+    m_Impl->m_API->m_Service->PrintCmdOutput(
+        m_Impl->m_API->x_MakeCommand("GETCONF"),
+        output_stream, eMultilineOutput_NetCacheStyle);
 }
 
-void CNetCacheAdmin::PrintStat(CNetServiceAPI_Base::ISink& sink) const
+void CNetCacheAdmin::PrintStat(CNcbiOstream& output_stream) const
 {
-    m_API->x_CollectStreamOutput(m_API->x_MakeCommand("GETSTAT"),
-                                 sink, CNetServiceAPI_Base::ePrintServerOut);
+    m_Impl->m_API->m_Service->PrintCmdOutput(
+        m_Impl->m_API->x_MakeCommand("GETSTAT"),
+        output_stream, eMultilineOutput_NetCacheStyle);
 }
 
-void CNetCacheAdmin::GetServerVersion(CNetServiceAPI_Base::ISink& sink) const
+void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream) const
 {
-    m_API->x_CollectStreamOutput(m_API->x_MakeCommand("VERSION"),
-                                 sink, CNetServiceAPI_Base::eSendCmdWaitResponse);
+    m_Impl->m_API->m_Service->PrintCmdOutput(
+        m_Impl->m_API->x_MakeCommand("VERSION"),
+        output_stream, eSingleLineOutput);
 }
 
 void CNetCacheAdmin::DropStat() const
 {
-    if (m_API->IsLoadBalanced()) {
+    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
         NCBI_THROW(CNetCacheException, eCommandIsNotAllowed,
                    "This command is allowed only for non-loadbalance client.");
     }
-    CNetServerConnection conn = m_API->x_GetConnection();
-    m_API->SendCmdWaitResponse(conn, m_API->x_MakeCommand("DROPSTAT"));
+    m_Impl->m_API->x_GetConnection().Exec(
+        m_Impl->m_API->x_MakeCommand("DROPSTAT"));
 }
 
 void CNetCacheAdmin::Monitor(CNcbiOstream & out) const
 {
-    if (m_API->IsLoadBalanced()) {
+    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
         NCBI_THROW(CNetCacheException, eCommandIsNotAllowed,
                    "This command is allowed only for non-loadbalance client.");
     }
-    CNetServerConnection conn = m_API->x_GetConnection();
-    conn.WriteStr(m_API->x_MakeCommand("MONI") + "\r\n");
+    CNetServerConnection conn = m_Impl->m_API->x_GetConnection();
+    conn->WriteLine(m_Impl->m_API->x_MakeCommand("MONI"));
     conn.Telnet(&out, NULL);
 }
 
 
 END_NCBI_SCOPE
-

@@ -34,9 +34,10 @@
  *
  */
 
+#include <connect/ncbi_types.h>
+
 #include <corelib/ncbi_param.hpp>
 
-#include <connect/ncbi_types.h>
 
 BEGIN_NCBI_SCOPE
 

@@ -30,20 +30,24 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbimisc.hpp>
+
+#include <misc/grid_cgi/grid_cgiapp.hpp>
+
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_serial.hpp>
-#include <connect/email_diag_handler.hpp>
+
 #include <html/commentdiag.hpp>
 #include <html/html.hpp>
 #include <html/page.hpp>
 
-#include <misc/grid_cgi/grid_cgiapp.hpp>
+#include <connect/email_diag_handler.hpp>
 
+#include <corelib/ncbistr.hpp>
+#include <corelib/ncbimisc.hpp>
 
 #include <vector>
+
 
 #define CGITUNNEL2GRID_VERSION_MAJOR 1
 #define CGITUNNEL2GRID_VERSION_MINOR 0

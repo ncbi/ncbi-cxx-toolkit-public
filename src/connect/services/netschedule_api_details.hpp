@@ -32,9 +32,10 @@
  * File Description:
  */
 
-#include <connect/ncbi_socket.hpp>
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/error_codes.hpp>
+
+#include <connect/ncbi_socket.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_NetSchedule
@@ -109,8 +110,8 @@ struct SNSSendCmd
     };
     typedef int TFlags;
 
-    SNSSendCmd(const CNetScheduleAPI& api, const string& cmd, TFlags flags)
-        : m_API(&api), m_Cmd(cmd), m_Flags(flags)
+    SNSSendCmd(CNetScheduleAPI api, const string& cmd, TFlags flags)
+        : m_API(api), m_Cmd(cmd), m_Flags(flags)
     {}
     virtual ~SNSSendCmd() {}
 
@@ -118,7 +119,7 @@ struct SNSSendCmd
     {
         string resp;
         try {
-           resp = m_API->SendCmdWaitResponse(conn, m_Cmd);
+            resp = conn.Exec(m_Cmd);
         } catch (CNetScheduleException& ex) {
             if (m_Flags & eLogExceptions) {
                 ERR_POST_X(11, conn.GetHost() << ":" << conn.GetPort()
@@ -141,7 +142,7 @@ struct SNSSendCmd
     virtual void ProcessResponse(const string& /* resp */,
         CNetServerConnection /* conn */) {}
 
-    const CNetScheduleAPI* m_API;
+    CNetScheduleAPI m_API;
     string m_Cmd;
     TFlags m_Flags;
 };

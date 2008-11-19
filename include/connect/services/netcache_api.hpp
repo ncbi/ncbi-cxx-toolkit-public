@@ -37,12 +37,16 @@
 /// NetCache client specs.
 ///
 
+#include "netcache_admin.hpp"
+
 #include <connect/services/netservice_api.hpp>
 #include <connect/services/netcache_api_expt.hpp>
 #include <connect/services/netcache_key.hpp>
+
+#include <util/simple_buffer.hpp>
+
 #include <corelib/plugin_manager.hpp>
 #include <corelib/reader_writer.hpp>
-#include <util/simple_buffer.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -54,7 +58,7 @@ BEGIN_NCBI_SCOPE
  */
 
 
-class CNetCacheAdmin;
+struct SNetCacheAPIImpl;
 
 /// Client API for NetCache server
 ///
@@ -62,18 +66,15 @@ class CNetCacheAdmin;
 /// is closed (part of NetCache protocol implemenation)
 ///
 ///
-class NCBI_XCONNECT_EXPORT CNetCacheAPI : public CNetServiceAPI_Base
+class NCBI_XCONNECT_EXPORT CNetCacheAPI
 {
-public:
+    NET_COMPONENT(NetCacheAPI);
 
     explicit CNetCacheAPI(const string&  client_name);
 
     /// Construct client, working with the specified service
     CNetCacheAPI(const string& service,
                  const string&  client_name);
-
-    virtual ~CNetCacheAPI();
-
 
     /// Put BLOB to server
     ///
@@ -169,7 +170,7 @@ public:
                         size_t*        blob_size = 0);
 
     /// Retrieve BLOB from server by key
-    /// This method retrives BLOB size, allocates memory and gets all
+    /// This method retrieves BLOB size, allocates memory and gets all
     /// the data from the server.
     ///
     /// Blob size and binary data is placed into blob_to_read structure.
@@ -196,78 +197,34 @@ public:
     void Remove(const string& key);
 
 
-    CNetCacheAdmin     GetAdmin();
+    CNetCacheAdmin GetAdmin();
 
-protected:
-    virtual void ProcessServerError(string& response, ETrimErr trim_err) const;
+    CNetService GetService();
 
-private:
-    friend class CNetCacheAdmin;
+    void SetCommunicationTimeout(const STimeout& to)
+        {GetService().SetCommunicationTimeout(to);}
 
-    virtual void x_SendAuthetication(CNetServerConnection& conn) const;
+    /// Connection management options
+    enum EConnectionMode {
+        /// Close connection after each call.
+        /// This mode frees server side resources, but reconnection can be
+        /// costly because of the network overhead
+        eCloseConnection,
 
-    static EReadResult x_ReadBuffer( IReader& reader,
-                                     void*          buf,
-                                     size_t         buf_size,
-                                     size_t*        n_read,
-                                     size_t         blob_size);
+        /// Keep connection open (default).
+        /// This mode occupies server side resources(session thread),
+        /// use this mode very carefully
+        eKeepConnection
+    };
 
-    CNetServerConnection x_GetConnection(
-        const string& bid = kEmptyStr);
-    CNetServerConnection x_PutInitiate(
-        string*  key, unsigned  time_to_live);
-
-    string x_MakeCommand(const string& cmd) const;
-
-    CNetCacheAPI(const CNetCacheAPI&);
-    CNetCacheAPI& operator=(const CNetCacheAPI&);
-
-private:
-    mutable bool m_NoHasBlob;
+    /// Set connection mode
+    /// @sa GetConnMode
+    void SetConnMode(EConnectionMode conn_mode)
+    {
+        GetService().SetPermanentConnection(
+            conn_mode == eCloseConnection ? eOff : eOn);
+    }
 };
-
-//////////////////////////////////////////////////////////////////////////////////////
-//
-class NCBI_XCONNECT_EXPORT CNetCacheAdmin
-{
-public:
-    /// Shutdown the server daemon.
-    ///
-    /// @note
-    ///  Protected to avoid a temptation to call it from time to time. :)
-    void ShutdownServer();
-
-    /// Turn server-side logging on(off)
-    ///
-    void Logging(bool on_off) const;
-
-    /// Print ini file
-    void PrintConfig(CNetServiceAPI_Base::ISink& sink) const;
-
-    /// Print server statistics
-    void PrintStat(CNetServiceAPI_Base::ISink& sink) const;
-
-    /// Reinit server side statistics collector
-    void DropStat() const;
-
-    void Monitor(CNcbiOstream & out) const;
-
-    void GetServerVersion(CNetServiceAPI_Base::ISink& sink) const;
-
-private:
-    friend class CNetCacheAPI;
-    explicit CNetCacheAdmin(CNetCacheAPI* api) : m_API(api) {}
-
-    CNetCacheAPI* m_API;
-};
-
-/////////////////////////////////////////////////////////////////////////////////////
-
-inline CNetCacheAdmin CNetCacheAPI::GetAdmin()
-{
-    return CNetCacheAdmin(this);
-}
-
 
 NCBI_DECLARE_INTERFACE_VERSION(CNetCacheAPI,  "xnetcacheapi", 1, 1, 0);
 

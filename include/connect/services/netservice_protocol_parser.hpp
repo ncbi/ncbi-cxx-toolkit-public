@@ -33,9 +33,10 @@
  *
  */
 
+#include <connect/connect_export.h>
+
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/tempstr.hpp>
-#include <connect/connect_export.h>
 
 #include <map>
 

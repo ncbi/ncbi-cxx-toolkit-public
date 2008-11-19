@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <connect/services/grid_worker_app.hpp>
 
 #if defined(NCBI_OS_UNIX)
@@ -121,7 +122,7 @@ void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
     CNcbiApplication::SetupArgDescriptions(arg_desc);
 }
 
-const IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext() const
+const IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext()
 {
     if ( !m_WorkerNodeInitContext.get() )
         m_WorkerNodeInitContext.reset(

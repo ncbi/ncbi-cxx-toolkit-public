@@ -30,62 +30,99 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include "srv_connections_impl.hpp"
+
 #include <connect/services/srv_connections_expt.hpp>
-#include <connect/services/srv_connections.hpp>
+#include <connect/services/netservice_api_expt.hpp>
 #include <connect/services/netservice_params.hpp>
+
 #include <connect/ncbi_conn_exception.hpp>
+
 #include <corelib/ncbi_system.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
-
-struct SNetServerConnectionImpl
+inline string GetHostDNSName(const string& host)
 {
-    SNetServerConnectionImpl(CNetServerConnectionPool* pool);
+    return CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(host));
+}
 
-    void AddRef();
-    void Release();
+///////////////////////////////////////////////////////////////////////////
+SNetServerCmdOutputImpl::~SNetServerCmdOutputImpl()
+{
+    if (!m_ReadCompletely)
+        m_Connection->Close();
+}
 
-    bool IsConnected();
-    void SetDisconnectedState();
+bool CNetServerCmdOutput::ReadLine(std::string& output)
+{
+    _ASSERT(!m_Impl->m_ReadCompletely);
 
-    void Close();
-    void Abort();
+    if (!m_Impl->m_NetCacheCompatMode)
+        output = m_Impl->m_Connection->ReadCmdOutputLine();
+    else {
+        try {
+            output = m_Impl->m_Connection->ReadCmdOutputLine();
+        }
+        catch (CNetServiceException& e) {
+            if (e.GetErrCode() != CNetServiceException::eCommunicationError)
+                throw;
 
-    ~SNetServerConnectionImpl();
+            m_Impl->m_ReadCompletely = true;
+            return false;
+        }
+    }
 
-    CAtomicCounter m_Refs;
-
-    CNetServerConnectionPool* m_ConnectionPool;
-    SNetServerConnectionImpl* m_NextFree;
-
-    CSocket m_Socket;
-    bool m_Connected;
-};
+    if (output != "END")
+        return true;
+    else {
+        m_Impl->m_ReadCompletely = true;
+        return false;
+    }
+}
 
 inline SNetServerConnectionImpl::SNetServerConnectionImpl(
-    CNetServerConnectionPool* pool) :
+    SNetServerConnectionPoolImpl* pool) :
         m_ConnectionPool(pool),
         m_NextFree(NULL),
         m_Connected(false)
 {
-    m_Refs.Set(0);
     if (TServConn_UserLinger2::GetDefault()) {
         STimeout zero = {0,0};
         m_Socket.SetTimeout(eIO_Close,&zero);
     }
 }
 
-inline void SNetServerConnectionImpl::AddRef()
+void SNetServerConnectionImpl::Delete()
 {
-    m_Refs.Add(1);
+    m_ConnectionPool->Put(this); // may result in 'delete this'
 }
 
-inline void SNetServerConnectionImpl::Release()
+std::string SNetServerConnectionImpl::ReadCmdOutputLine()
 {
-    if (m_Refs.Add(-1) == 0)
-        m_ConnectionPool->Put(this);
+    string result;
+    if (!ReadLine(result)) {
+        Abort();
+        NCBI_THROW(CNetServiceException, eCommunicationError,
+                   "Communication error reading from server " +
+                   GetHostDNSName(m_ConnectionPool->m_Host) + ":" +
+                   NStr::UIntToString(m_ConnectionPool->m_Port) + ".");
+    }
+    CheckServerOK(result);
+    return result;
+}
+
+void SNetServerConnectionImpl::CheckServerOK(string& response)
+{
+    if (NStr::StartsWith(response, "OK:")) {
+        response.erase(0, sizeof("OK:") - 1);
+    } else if (NStr::StartsWith(response, "ERR:")) {
+        response.erase(0, sizeof("ERR:") - 1);
+        response = NStr::ParseEscapes(response);
+        m_ConnectionPool->m_EventListener->OnError(response);
+    }
 }
 
 bool SNetServerConnectionImpl::IsConnected()
@@ -128,12 +165,8 @@ bool SNetServerConnectionImpl::IsConnected()
 
 void SNetServerConnectionImpl::SetDisconnectedState()
 {
-    if (m_Connected) {
-        INetServerConnectionListener* listener =
-            m_ConnectionPool->GetEventListener();
-
-        if (listener)
-            listener->OnDisconnected(m_ConnectionPool);
+    if (m_Connected && m_ConnectionPool->m_EventListener) {
+        m_ConnectionPool->m_EventListener->OnDisconnected();
 
         m_Connected = false;
     }
@@ -163,50 +196,22 @@ SNetServerConnectionImpl::~SNetServerConnectionImpl()
     }
 }
 
-
-CNetServerConnection::CNetServerConnection(SNetServerConnectionImpl* impl) :
-    m_ConnectionImpl(impl)
+bool SNetServerConnectionImpl::ReadLine(string& str)
 {
-    m_ConnectionImpl->AddRef();
-}
-
-CNetServerConnection::CNetServerConnection(const CNetServerConnection& src)
-{
-    (m_ConnectionImpl = src.m_ConnectionImpl)->AddRef();
-}
-
-CNetServerConnection& CNetServerConnection::operator =(
-    const CNetServerConnection& src)
-{
-    src.m_ConnectionImpl->AddRef();
-    m_ConnectionImpl->Release();
-    m_ConnectionImpl = src.m_ConnectionImpl;
-    return *this;
-}
-
-CNetServerConnection::~CNetServerConnection()
-{
-    m_ConnectionImpl->Release();
-}
-
-bool CNetServerConnection::ReadStr(string& str)
-{
-    if (!m_ConnectionImpl->IsConnected())
+    if (!IsConnected())
         return false;
 
-    EIO_Status io_st = m_ConnectionImpl->m_Socket.ReadLine(str);
+    EIO_Status io_st = m_Socket.ReadLine(str);
     switch (io_st)
     {
     case eIO_Success:
         return true;
     case eIO_Timeout:
-        m_ConnectionImpl->Abort();
+        Abort();
         NCBI_THROW(CNetSrvConnException, eReadTimeout,
             "Communication timeout reading from server " +
-            GetHostDNSName(m_ConnectionImpl->
-                m_ConnectionPool->GetHost()) + ":" +
-            NStr::UIntToString(m_ConnectionImpl->
-                m_ConnectionPool->GetPort()) + ".");
+            GetHostDNSName(m_ConnectionPool->m_Host) + ":" +
+            NStr::UIntToString(m_ConnectionPool->m_Port) + ".");
         break;
     default: // invalid socket or request, bailing out
         return false;
@@ -214,96 +219,96 @@ bool CNetServerConnection::ReadStr(string& str)
     return true;
 }
 
-void CNetServerConnection::WriteStr(const string& str)
-{
-    WriteBuf(str.data(), str.size());
-}
-
-void CNetServerConnection::WriteBuf(const void* buf, size_t len)
+void SNetServerConnectionImpl::WriteBuf(const char* buf, size_t len)
 {
     CheckConnect();
-    const char* buf_ptr = (const char*)buf;
-    size_t size_to_write = len;
-    while (size_to_write) {
+
+    while (len > 0) {
         size_t n_written;
 
-        EIO_Status io_st = m_ConnectionImpl->m_Socket.Write(
-            buf_ptr, size_to_write, &n_written);
+        EIO_Status io_st = m_Socket.Write(buf, len, &n_written);
 
         if (io_st != eIO_Success) {
-            m_ConnectionImpl->Abort();
+            Abort();
 
             CIO_Exception io_ex(DIAG_COMPILE_INFO, 0,
                 (CIO_Exception::EErrCode) io_st, "IO error.");
 
-            CNetServerConnectionPool* pool = m_ConnectionImpl->m_ConnectionPool;
-
             NCBI_THROW(CNetSrvConnException, eWriteFailure,
                 "Failed to write to server " +
-                GetHostDNSName(pool->GetHost()) + ":" +
-                NStr::UIntToString(pool->GetPort()) +
+                GetHostDNSName(m_ConnectionPool->m_Host) + ":" +
+                NStr::UIntToString(m_ConnectionPool->m_Port) +
                     ". Reason: " + string(io_ex.what()));
         }
-        size_to_write -= n_written;
-        buf_ptr += n_written;
-    } // while
-}
-
-// if wait_sec is set to 0 m_Timeout will be used
-void CNetServerConnection::WaitForServer(unsigned int wait_sec)
-{
-    _ASSERT(m_ConnectionImpl->IsConnected());
-
-    STimeout to = {wait_sec, 0};
-
-    CNetServerConnectionPool* pool = m_ConnectionImpl->m_ConnectionPool;
-
-    if (wait_sec == 0)
-        to = pool->GetCommunicationTimeout();
-
-    EIO_Status io_st = m_ConnectionImpl->m_Socket.Wait(eIO_Read, &to);
-
-    if (io_st == eIO_Timeout) {
-        m_ConnectionImpl->Abort();
-
-        NCBI_THROW(CNetSrvConnException, eResponseTimeout,
-            "No response from the server " +
-                GetHostDNSName(pool->GetHost()) + ":" +
-                NStr::UIntToString(pool->GetPort()) + ".");
+        len -= n_written;
+        buf += n_written;
     }
 }
 
-
-CSocket* CNetServerConnection::GetSocket()
+// if wait_sec is set to 0 m_Timeout will be used
+void SNetServerConnectionImpl::WaitForServer(unsigned int wait_sec)
 {
-    _ASSERT(m_ConnectionImpl->IsConnected());
-    return &m_ConnectionImpl->m_Socket;
+    _ASSERT(IsConnected());
+
+    STimeout to = {wait_sec, 0};
+
+    SNetServerConnectionPoolImpl* pool = m_ConnectionPool;
+
+    if (wait_sec == 0)
+        to = pool->m_Timeout;
+
+    EIO_Status io_st = m_Socket.Wait(eIO_Read, &to);
+
+    if (io_st == eIO_Timeout) {
+        Abort();
+
+        NCBI_THROW(CNetSrvConnException, eResponseTimeout,
+            "No response from the server " +
+                GetHostDNSName(pool->m_Host) + ":" +
+                NStr::UIntToString(pool->m_Port) + ".");
+    }
 }
 
-void CNetServerConnection::CheckConnect()
+std::string CNetServerConnection::Exec(const string& cmd)
 {
-    if (m_ConnectionImpl->IsConnected())
+    m_Impl->WriteLine(cmd);
+    m_Impl->WaitForServer();
+
+    return m_Impl->ReadCmdOutputLine();
+}
+
+CNetServerCmdOutput CNetServerConnection::ExecMultiline(const std::string& cmd)
+{
+    m_Impl->WriteLine(cmd);
+    m_Impl->WaitForServer();
+
+    return CNetServerCmdOutput(new SNetServerCmdOutputImpl(m_Impl));
+}
+
+void SNetServerConnectionImpl::CheckConnect()
+{
+    if (IsConnected())
         return;
 
-    CNetServerConnectionPool* pool = m_ConnectionImpl->m_ConnectionPool;
+    SNetServerConnectionPoolImpl* pool = m_ConnectionPool;
 
-    INetServerConnectionListener* listener = pool->GetEventListener();
+    CNetObjectRef<INetServerConnectionListener> listener(pool->m_EventListener);
 
-    if (m_ConnectionImpl->m_Connected) {
+    if (m_Connected) {
         if (listener)
-            listener->OnDisconnected(pool);
+            listener->OnDisconnected();
 
-        m_ConnectionImpl->m_Connected = false;
+        m_Connected = false;
     }
 
     unsigned conn_repeats = 0;
 
-    CSocket* the_socket = &m_ConnectionImpl->m_Socket;
+    CSocket* the_socket = &m_Socket;
 
     EIO_Status io_st;
 
-    while ((io_st = the_socket->Connect(pool->GetHost(), pool->GetPort(),
-        &pool->GetCommunicationTimeout(), eOn)) != eIO_Success) {
+    while ((io_st = the_socket->Connect(pool->m_Host, pool->m_Port,
+        &pool->m_Timeout, eOn)) != eIO_Success) {
 
         if (io_st == eIO_Unknown) {
 
@@ -312,14 +317,14 @@ void CNetServerConnection::CheckConnect()
             // most likely this is an indication we have too many
             // open ports on the client side
             // (this kernel limitation manifests itself on Linux)
-            if (++conn_repeats > pool->GetCreateSocketMaxRetries()) {
+            if (++conn_repeats > pool->m_MaxRetries) {
                 if (io_st != eIO_Success) {
                     CIO_Exception io_ex(DIAG_COMPILE_INFO,
                         0, (CIO_Exception::EErrCode)io_st, "IO error.");
                     NCBI_THROW(CNetSrvConnException, eConnectionFailure,
                         "Failed to connect to server " +
-                        GetHostDNSName(pool->GetHost()) + ":" +
-                        NStr::UIntToString(pool->GetPort()) +
+                        GetHostDNSName(pool->m_Host) + ":" +
+                        NStr::UIntToString(pool->m_Port) +
                             ". Reason: " + string(io_ex.what()));
                 }
             }
@@ -330,40 +335,31 @@ void CNetServerConnection::CheckConnect()
             CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
             NCBI_THROW(CNetSrvConnException, eConnectionFailure,
                 "Failed to connect to server " +
-                GetHostDNSName(pool->GetHost()) + ":" +
-                NStr::UIntToString(pool->GetPort()) +
+                GetHostDNSName(pool->m_Host) + ":" +
+                NStr::UIntToString(pool->m_Port) +
                 ". Reason: " + string(io_ex.what()));
         }
     }
 
     the_socket->SetDataLogging(eDefault);
-    the_socket->SetTimeout(eIO_ReadWrite, &pool->GetCommunicationTimeout());
+    the_socket->SetTimeout(eIO_ReadWrite, &pool->m_Timeout);
     the_socket->DisableOSSendDelay();
     the_socket->SetReuseAddress(eOn);
 
     if (listener)
-        listener->OnConnected(*this);
+        listener->OnConnected(CNetServerConnection(this));
 
-    m_ConnectionImpl->m_Connected = true;
+    m_Connected = true;
 }
 
-void CNetServerConnection::Close()
+void CNetServerConnection::Telnet(CNcbiOstream* out,
+    CNetServerConnection::IStringProcessor* processor)
 {
-    m_ConnectionImpl->Close();
-}
-
-void CNetServerConnection::Abort()
-{
-    m_ConnectionImpl->Abort();
-}
-
-void CNetServerConnection::Telnet(CNcbiOstream* out,  CNetServerConnection::IStringProcessor* processor)
-{
-    _ASSERT(m_ConnectionImpl->IsConnected());
+    _ASSERT(m_Impl->IsConnected());
 
     STimeout rto = {1, 0};
 
-    CSocket* the_socket = &m_ConnectionImpl->m_Socket;
+    CSocket* the_socket = &m_Impl->m_Socket;
 
     the_socket->SetTimeout(eIO_Read, &rto);
 
@@ -382,27 +378,26 @@ void CNetServerConnection::Telnet(CNcbiOstream* out,  CNetServerConnection::IStr
             }
         }
     }
-    m_ConnectionImpl->Close();
+    m_Impl->Close();
 }
 
 const string& CNetServerConnection::GetHost() const
 {
-    return m_ConnectionImpl->m_ConnectionPool->GetHost();
+    return m_Impl->m_ConnectionPool->m_Host;
 }
 
 unsigned int CNetServerConnection::GetPort() const
 {
-    return m_ConnectionImpl->m_ConnectionPool->GetPort();
+    return m_Impl->m_ConnectionPool->m_Port;
 }
 
 
 /*************************************************************************/
-CNetServerConnectionPool::CNetServerConnectionPool(const string& host,
-    unsigned short port, INetServerConnectionListener* listener) :
+SNetServerConnectionPoolImpl::SNetServerConnectionPoolImpl(
+    const string& host, unsigned short port) :
         m_Host(host),
         m_Port(port),
         m_Timeout(s_GetDefaultCommTimeout()),
-        m_EventListener(listener),
         m_MaxRetries(TServConn_ConnMaxRetries::GetDefault()),
         m_FreeConnectionListHead(NULL),
         m_FreeConnectionListSize(0),
@@ -410,7 +405,14 @@ CNetServerConnectionPool::CNetServerConnectionPool(const string& host,
 {
 }
 
-void CNetServerConnectionPool::Put(SNetServerConnectionImpl* impl)
+inline void SNetServerConnectionPoolImpl::DeleteConnection(
+    SNetServerConnectionImpl* impl)
+{
+    delete impl;
+    Release();
+}
+
+void SNetServerConnectionPoolImpl::Put(SNetServerConnectionImpl* impl)
 {
     if (m_PermanentConnection != eOn)
         impl->Close();
@@ -437,40 +439,84 @@ void CNetServerConnectionPool::Put(SNetServerConnectionImpl* impl)
             }
         }
 
-    delete impl;
+    DeleteConnection(impl);
 }
 
-CNetServerConnection CNetServerConnectionPool::GetConnection()
-{
-    TFastMutexGuard guard(m_FreeConnectionListLock);
-
-    SNetServerConnectionImpl* impl;
-
-    if (m_FreeConnectionListSize == 0)
-        impl = new SNetServerConnectionImpl(this);
-    else {
-        impl = m_FreeConnectionListHead;
-        m_FreeConnectionListHead = impl->m_NextFree;
-        --m_FreeConnectionListSize;
-    }
-
-    return CNetServerConnection(impl);
-}
-
-CNetServerConnectionPool::~CNetServerConnectionPool()
+SNetServerConnectionPoolImpl::~SNetServerConnectionPoolImpl()
 {
     // No need to lock the mutex in the destructor.
     SNetServerConnectionImpl* impl = m_FreeConnectionListHead;
     while (impl != NULL) {
         SNetServerConnectionImpl* next_impl = impl->m_NextFree;
-        delete impl;
+        DeleteConnection(impl);
         impl = next_impl;
     }
 }
 
+const string& CNetServerConnectionPool::GetHost() const
+{
+    return m_Impl->m_Host;
+}
+
+unsigned short CNetServerConnectionPool::GetPort() const
+{
+    return m_Impl->m_Port;
+}
+
+void CNetServerConnectionPool::SetEventListener(
+    INetServerConnectionListener* listener)
+{
+    m_Impl->m_EventListener = listener;
+}
+
+CNetObjectRef<INetServerConnectionListener>
+    CNetServerConnectionPool::GetEventListener() const
+{
+    return m_Impl->m_EventListener;
+}
+
+const STimeout& CNetServerConnectionPool::GetCommunicationTimeout() const
+{
+    return m_Impl->m_Timeout;
+}
+
+void CNetServerConnectionPool::SetCreateSocketMaxRetries(unsigned int retries)
+{
+    m_Impl->m_MaxRetries = retries;
+}
+
+unsigned int CNetServerConnectionPool::GetCreateSocketMaxRetries() const
+{
+    return m_Impl->m_MaxRetries;
+}
+
+void CNetServerConnectionPool::PermanentConnection(ESwitch type)
+{
+    m_Impl->m_PermanentConnection = type;
+}
+
+CNetServerConnection CNetServerConnectionPool::GetConnection()
+{
+    TFastMutexGuard guard(m_Impl->m_FreeConnectionListLock);
+
+    SNetServerConnectionImpl* impl;
+
+    if (m_Impl->m_FreeConnectionListSize == 0)
+        impl = new SNetServerConnectionImpl(m_Impl);
+    else {
+        impl = m_Impl->m_FreeConnectionListHead;
+        m_Impl->m_FreeConnectionListHead = impl->m_NextFree;
+        --m_Impl->m_FreeConnectionListSize;
+    }
+
+    m_Impl->AddRef();
+
+    return CNetServerConnection(impl);
+}
+
 void CNetServerConnectionPool::SetCommunicationTimeout(const STimeout& to)
 {
-    m_Timeout = to;
+    m_Impl->m_Timeout = to;
 }
 
 /* static */

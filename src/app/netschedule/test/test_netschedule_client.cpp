@@ -30,17 +30,12 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbireg.hpp>
-#include <corelib/ncbi_system.hpp>
-#include <corelib/ncbimisc.hpp>
-
-#include <connect/services/netschedule_api.hpp>
-#include <connect/ncbi_types.h>
 
 #include "test_netschedule_data.hpp"
+
+#include <connect/services/netschedule_api.hpp>
+
+#include <connect/ncbi_core_cxx.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -117,7 +112,6 @@ int CTestNetScheduleClient::Run(void)
     }
     CNetScheduleAPI::EJobStatus status;
     CNetScheduleAPI cl(service, "client_test", queue_name);
-    cl.SetConnMode(CNetScheduleAPI::eKeepConnection);
 
     CNetScheduleSubmitter submitter = cl.GetSubmitter();
     CNetScheduleAdmin admin = cl.GetAdmin();

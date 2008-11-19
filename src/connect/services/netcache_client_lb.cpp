@@ -33,11 +33,14 @@
 #include <ncbi_pch.hpp>
 
 #include "../ncbi_servicep.h"
-#include <connect/ncbi_conn_exception.hpp>
+
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/netcache_key.hpp>
 #include <connect/services/error_codes.hpp>
 #include <connect/services/netservice_params.hpp>
+
+#include <connect/ncbi_conn_exception.hpp>
+
 #include <memory>
 
 

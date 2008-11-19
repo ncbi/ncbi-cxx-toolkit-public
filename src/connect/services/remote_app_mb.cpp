@@ -30,16 +30,17 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbifile.hpp>
-#include <corelib/blob_storage.hpp>
-#include <corelib/rwstream.hpp>
-#include <corelib/ncbifile.hpp>
+
+#include "remote_app_impl.hpp"
 
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/remote_app_mb.hpp>
 #include <connect/services/error_codes.hpp>
 
-#include "remote_app_impl.hpp"
+#include <corelib/ncbifile.hpp>
+#include <corelib/blob_storage.hpp>
+#include <corelib/rwstream.hpp>
+#include <corelib/ncbifile.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Remote

@@ -1,6 +1,3 @@
-#ifndef CONNECT_SERVICES__NETSCHEDULE_STORAGE_HPP
-#define CONNECT_SERVICES__NETSCHEDULE_STORAGE_HPP
-
 /*  $Id$
  * ===========================================================================
  *
@@ -12,7 +9,7 @@
  *  the author's official duties as a United States Government employee and
  *  thus cannot be copyrighted.  This software/database is freely available
  *  to the public for use. The National Library of Medicine and the U.S.
- *  Government have not placed any restriction on its use or reproduction.
+ *   Government have not placed any restriction on its use or reproduction.
  *
  *  Although all reasonable efforts have been taken to ensure the accuracy
  *  and reliability of the software and data, the NLM and the U.S.
@@ -26,22 +23,28 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didneko, Anatoliy Kuznetsov
+ * Authors:  Dmitry Kazimirov
  *
  * File Description:
- *      DEPRECATED
  *
  */
 
-#include <corelib/blob_storage.hpp>
-#include <connect/services/ns_client_factory.hpp>
+#include <ncbi_pch.hpp>
+
+#include <connect/services/netobject.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
-typedef IBlobStorage INetScheduleStorage;
-typedef IBlobStorageFactory INetScheduleStorageFactory;
-typedef CBlobStorageException CNetScheduleStorageException;
+
+CNetObject::~CNetObject()
+{
+}
+
+void CNetObject::Delete()
+{
+    delete this;
+}
+
 
 END_NCBI_SCOPE
-
-#endif // CONNECT_SERVICES__NETSCHEDULE_STORAGE_HPP

@@ -30,11 +30,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbimisc.hpp>
-#include <corelib/ncbi_system.hpp>
-#include <corelib/blob_storage.hpp>
 
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
@@ -42,11 +37,15 @@
 #include <connect/services/grid_client.hpp>
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/netcache_client.hpp>
-#include <connect/services/remote_app.hpp>
-
 #include <connect/services/blob_storage_netcache.hpp>
 #include <connect/services/ra_dispatcher_client.hpp>
 #include <connect/services/remote_app.hpp>
+
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbistre.hpp>
+#include <corelib/ncbimisc.hpp>
+#include <corelib/ncbi_system.hpp>
+#include <corelib/blob_storage.hpp>
 
 #define PROGRAM_NAME "RemoteAppDispatcher"
 #define PROGRAM_VERSION "1.0.0"

@@ -33,8 +33,9 @@
  *    NetSchedule Worker Node implementation
  */
 
-#include <corelib/ncbimisc.hpp>
 #include <connect/server.hpp>
+
+#include <corelib/ncbimisc.hpp>
 
 #include <map>
 

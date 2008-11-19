@@ -37,13 +37,15 @@
 /// Network service utilities.
 ///
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbimtx.hpp>
+#include <connect/services/netservice_api.hpp> // for CNetServiceException
+
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_core_cxx.hpp>
+
 #include <util/resource_pool.hpp>
 
-#include <connect/services/netservice_api.hpp> // for CNetServiceException
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -162,16 +164,10 @@ protected:
     void CreateSocket(const string& hostname, unsigned port);
     void WaitForServer(unsigned wait_sec=0);
     /// Remove "ERR:" prefix
-    static
-    void TrimErr(string* err_msg);
     void PrintServerOut(CNcbiOstream & out);
     /// Error processing
     void CheckServerOK(string* response);
-    enum ETrimErr {
-        eNoTrimErr,
-        eTrimErr
-    };
-    virtual void ProcessServerError(string* response, ETrimErr trim_err);
+    virtual void ProcessServerError(string* response);
 
     /// @internal
     class CSockGuard

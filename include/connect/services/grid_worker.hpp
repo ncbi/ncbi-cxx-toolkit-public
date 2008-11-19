@@ -38,17 +38,19 @@
 /// NetSchedule Framework specs.
 ///
 
+#include <connect/services/ns_client_factory.hpp>
+#include <connect/services/error_codes.hpp>
+
+#include <connect/connect_export.h>
+
+#include <util/thread_pool.hpp>
+
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/blob_storage.hpp>
-#include <connect/connect_export.h>
-#include <connect/services/ns_client_factory.hpp>
-//#nclude <connect/services/ns_client_wrappers.hpp>
-#include <connect/services/error_codes.hpp>
-#include <util/thread_pool.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -562,7 +564,7 @@ private:
     IBlobStorageFactory&         m_NSStorageFactory;
     IWorkerNodeJobWatcher*       m_JobWatcher;
 
-    mutable auto_ptr<CNetScheduleAPI>    m_SharedNSClient;
+    auto_ptr<CNetScheduleAPI>    m_SharedNSClient;
 
     auto_ptr<CStdPoolOfThreads>  m_ThreadsPool;
     unsigned int                 m_UdpPort;
@@ -635,12 +637,12 @@ inline const string& CGridWorkerNode::GetQueueName() const
 
 inline const string& CGridWorkerNode::GetClientName() const
 {
-    return GetNSClient().GetClientName();
+    return GetNSClient().GetService().GetClientName();
 }
 
 inline const string& CGridWorkerNode::GetServiceName() const
 {
-    return GetNSClient().GetServiceName();
+    return GetNSClient().GetService().GetServiceName();
 }
 
 inline CNetScheduleAPI& CGridWorkerNode::GetNSClient() const

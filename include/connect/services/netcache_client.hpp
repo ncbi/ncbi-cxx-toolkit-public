@@ -37,12 +37,15 @@
 /// NetCache client specs.
 ///
 
-#include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netservice_client.hpp>
 #include <connect/services/netcache_api_expt.hpp>
+
+#include <connect/ncbi_conn_reader_writer.hpp>
+
+#include <util/transmissionrw.hpp>
+
 #include <corelib/plugin_manager.hpp>
 #include <corelib/version.hpp>
-#include <util/transmissionrw.hpp>
 
 
 BEGIN_NCBI_SCOPE

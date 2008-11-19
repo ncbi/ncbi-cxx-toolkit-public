@@ -29,16 +29,19 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include "mgrres.hpp"
 #include "mgrcmd.hpp"
 
-#include <corelib/ncbistd.hpp>
 #include <cgi/cgictx.hpp>
-#include <corelib/ncbireg.hpp>
+
 #include <html/page.hpp>
 #include <html/html.hpp>
 
 #include <connect/services/blob_storage_netcache.hpp>
+
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbireg.hpp>
 
 #include <memory>
 #include <list>

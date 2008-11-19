@@ -31,21 +31,17 @@
 
 #include <ncbi_pch.hpp>
 
-#include <corelib/ncbistre.hpp>
-#include <corelib/stream_utils.hpp>
-#include <corelib/ncbifile.hpp>
-#include <corelib/ncbireg.hpp>
-#include <corelib/ncbi_system.hpp>
-#include <corelib/ncbifile.hpp>
-#include <corelib/rwstream.hpp>
-#include <connect/ncbi_pipe.hpp>
+#include "exec_helpers.hpp"
+
 #include <connect/services/grid_worker.hpp>
+
+#include <connect/ncbi_pipe.hpp>
+
+#include <corelib/rwstream.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #include <fcntl.h>
 #endif
-
-#include "exec_helpers.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -225,8 +221,6 @@ public:
             m_RunningTime.reset(new CStopWatch(CStopWatch::eStart));
     }
     
-    virtual ~CPipeProcessWatcher_Base() {}
-
     virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle /*pid*/) 
     {
         if (m_RunningTime.get()) {

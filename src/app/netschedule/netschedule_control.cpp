@@ -227,25 +227,6 @@ void CNetScheduleControl::Init(void)
 }
 
 
-class CSimpleSink : public CNetServiceAPI_Base::ISink
-{
-public:
-    CSimpleSink(CNcbiOstream& os) : m_Os(os) {}
-    ~CSimpleSink() {}
-
-    virtual CNcbiOstream& GetOstream(CNetServerConnection conn)
-    {
-        m_Os << conn.GetHost() << ":" << conn.GetPort() << endl;
-        return m_Os;
-    }
-    virtual void EndOfData(CNetServerConnection conn)
-    {
-        m_Os << endl;
-    }
-private:
-    CNcbiOstream& m_Os;
-};
-
 int CNetScheduleControl::Run(void)
 {
     const CArgs& args = GetArgs();
@@ -366,8 +347,7 @@ int CNetScheduleControl::Run(void)
             jid = args["jid"].AsString();
             ctl->GetAdmin().DumpJob(os,jid);
         } else {
-            CSimpleSink sink(os);
-            ctl->GetAdmin().DumpQueue(sink);
+            ctl->GetAdmin().DumpQueue(os);
         }
     }
     else if (args["reschedule"]) {
@@ -378,22 +358,37 @@ int CNetScheduleControl::Run(void)
     }
     else if (args["ver"]) {
         ctl.reset(x_CreateNewClient(false));
-        CSimpleSink sink(os);
-        ctl->GetAdmin().GetServerVersion(sink);
+        ctl->GetAdmin().PrintServerVersion(os);
     }
     else if (args["qlist"]) {
         ctl.reset(x_CreateNewClient(false));
-        CSimpleSink sink(os);
-        ctl->GetAdmin().GetQueueList(sink);
+
+        CNetScheduleAdmin::TQueueList queues;
+
+        ctl->GetAdmin().GetQueueList(queues);
+
+        for (CNetScheduleAdmin::TQueueList::const_iterator it = queues.begin();
+            it != queues.end(); ++it) {
+
+            os << '[' << CSocketAPI::gethostbyaddr(
+                CSocketAPI::gethostbyname(it->server.GetHost())) <<
+                ':' << NStr::UIntToString(it->server.GetPort()) << ']' <<
+                std::endl;
+
+            ITERATE(std::list<std::string>, itl, it->queues) {
+                os << *itl << std::endl;
+            }
+
+            os << std::endl;
+        }
     }
     else if (args["stat"]) {
         string sstatus = args["stat"].AsString();
-        CNetScheduleAdmin::EStatisticsOptions st = CNetScheduleAdmin::eStaticticsBrief;
+        CNetScheduleAdmin::EStatisticsOptions st = CNetScheduleAdmin::eStatisticsBrief;
         if (NStr::CompareNocase(sstatus, "all") == 0)
             st = CNetScheduleAdmin::eStatisticsAll;
         ctl.reset(x_CreateNewClient(true));
-        CSimpleSink sink(os);
-        ctl->GetAdmin().GetServerStatistics(sink, st);
+        ctl->GetAdmin().PrintServerStatistics(os, st);
     }
     else if (args["qprint"]) {
         string sstatus = args["qprint"].AsString();
@@ -404,8 +399,7 @@ int CNetScheduleControl::Run(void)
             return 1;
         }
         ctl.reset(x_CreateNewClient(true));
-        CSimpleSink sink(os);
-        ctl->GetAdmin().PrintQueue(sink, status);
+        ctl->GetAdmin().PrintQueue(os, status);
     }
     else if (args["affstat"]) {
         string affinity = args["affstat"].AsString();

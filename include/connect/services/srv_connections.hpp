@@ -32,13 +32,8 @@
  *
  */
 
-#include <corelib/ncbimisc.hpp>
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbimtx.hpp>
+#include "netobject.hpp"
 
-#include <connect/ncbi_core_cxx.hpp>
-#include <connect/connect_export.h>
 #include <connect/ncbi_socket.hpp>
 
 
@@ -47,20 +42,32 @@ BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////
 //
+struct SNetServerCmdOutputImpl;
+
+class NCBI_XCONNECT_EXPORT CNetServerCmdOutput
+{
+    NET_COMPONENT(NetServerCmdOutput);
+
+    bool ReadLine(std::string& output);
+};
+
+///////////////////////////////////////////////////////////////////////////
+//
 struct SNetServerConnectionImpl;
 
 class NCBI_XCONNECT_EXPORT CNetServerConnection
 {
-public:
-    explicit CNetServerConnection(SNetServerConnectionImpl* impl);
-    CNetServerConnection(const CNetServerConnection& src);
-    CNetServerConnection& operator =(const CNetServerConnection& src);
+    NET_COMPONENT(NetServerConnection);
 
-    bool ReadStr(string& str);
-    void WriteStr(const string& str);
-    void WriteBuf(const void* buf, size_t len);
-     // if wait_sec is set to 0 m_Timeout will be used
-    void WaitForServer(unsigned int wait_sec = 0);
+    // Execute remote command 'cmd', check if the reply
+    // starts with 'OK:', and return the remaining
+    // characters of the reply as a string.
+    std::string Exec(const std::string& cmd);
+
+    // Execute remote command 'cmd' and return a smart
+    // pointer to a stream object for reading multiline
+    // output of the command.
+    CNetServerCmdOutput ExecMultiline(const std::string& cmd);
 
     class IStringProcessor {
     public:
@@ -71,87 +78,51 @@ public:
      // out and processor can be NULL
     void Telnet(CNcbiOstream* out,  IStringProcessor* processor);
 
-    CSocket* GetSocket();
-    void CheckConnect();
-    void Close();
-    void Abort();
-
     const string& GetHost() const;
     unsigned int GetPort() const;
-
-    ~CNetServerConnection();
-
-private:
-    SNetServerConnectionImpl* m_ConnectionImpl;
 };
 
 
 ///////////////////////////////////////////////////////////////////////////
 //
-class CNetServerConnectionPool;
+class INetServerConnectionListener;
 
-class INetServerConnectionListener
-{
-public:
-    virtual void OnConnected(CNetServerConnection) = 0;
-    virtual void OnDisconnected(CNetServerConnectionPool*) = 0;
+struct SNetServerConnectionPoolImpl;
 
-    virtual ~INetServerConnectionListener() {}
-};
-
-
-///////////////////////////////////////////////////////////////////////////
-//
 class NCBI_XCONNECT_EXPORT CNetServerConnectionPool
 {
-public:
-    CNetServerConnectionPool(const string& host, unsigned short port,
-                         INetServerConnectionListener* listener = NULL);
+    NET_COMPONENT(NetServerConnectionPool);
 
-    const string& GetHost() const { return m_Host; }
-    unsigned short GetPort() const { return m_Port; }
+    const string& GetHost() const;
+    unsigned short GetPort() const;
 
-    INetServerConnectionListener* GetEventListener() const { return m_EventListener; }
+    void SetEventListener(INetServerConnectionListener* listener);
+    CNetObjectRef<INetServerConnectionListener> GetEventListener() const;
 
     static void SetDefaultCommunicationTimeout(const STimeout& to);
     void SetCommunicationTimeout(const STimeout& to);
-    const STimeout& GetCommunicationTimeout() const { return m_Timeout; }
+    const STimeout& GetCommunicationTimeout() const;
 
     static void SetDefaultCreateSocketMaxReties(unsigned int retires);
-    void SetCreateSocketMaxRetries(unsigned int retries) { m_MaxRetries = retries; }
-    unsigned int GetCreateSocketMaxRetries() const { return m_MaxRetries; }
+    void SetCreateSocketMaxRetries(unsigned int retries);
+    unsigned int GetCreateSocketMaxRetries() const;
 
-    void PermanentConnection(ESwitch type) { m_PermanentConnection = type; }
+    void PermanentConnection(ESwitch type);
 
     CNetServerConnection GetConnection();
-
-    ~CNetServerConnectionPool();
-
-private:
-    friend struct SNetServerConnectionImpl;
-
-    void Put(SNetServerConnectionImpl* impl);
-
-    string m_Host;
-    unsigned short m_Port;
-
-    STimeout m_Timeout;
-    INetServerConnectionListener* m_EventListener;
-    unsigned int m_MaxRetries;
-
-    SNetServerConnectionImpl* m_FreeConnectionListHead;
-    int m_FreeConnectionListSize;
-    CFastMutex m_FreeConnectionListLock;
-
-    ESwitch m_PermanentConnection;
 };
 
 
 ///////////////////////////////////////////////////////////////////////////
-inline string GetHostDNSName(const string& host)
+//
+class INetServerConnectionListener : public CNetObject
 {
-    return CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(host));
-}
+public:
+    virtual void OnConnected(CNetServerConnection) = 0;
+    virtual void OnError(string& err_msg) = 0;
+    virtual void OnDisconnected() = 0;
+};
+
 
 END_NCBI_SCOPE
 

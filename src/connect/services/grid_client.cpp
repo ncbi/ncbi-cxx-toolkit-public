@@ -30,10 +30,11 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/rwstream.hpp>
 
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/grid_client.hpp>
+
+#include <corelib/rwstream.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -291,7 +292,7 @@ CNcbiIstream& CGridJobStatus::GetIStream(IBlobStorage::ELockMode mode)
     return *m_RStream;
 }
 
-string CGridJobStatus::GetProgressMessage() const
+string CGridJobStatus::GetProgressMessage()
 {
     if (m_UseProgress) {
         m_GridClient.GetNSClient().GetProgressMsg(m_Job);
@@ -310,7 +311,7 @@ void CGridJobStatus::x_SetJobKey(const string& job_key)
     m_JobDetailsRead = false;
 }
 
-void CGridJobStatus::x_GetJobDetails() const
+void CGridJobStatus::x_GetJobDetails()
 {
     if (m_JobDetailsRead)
         return;
@@ -318,24 +319,24 @@ void CGridJobStatus::x_GetJobDetails() const
     m_JobDetailsRead = true;
 }
 
-const string& CGridJobStatus::GetJobOutput() const
+const string& CGridJobStatus::GetJobOutput()
 {
     x_GetJobDetails();
     return m_Job.output;
 }
 
-const string& CGridJobStatus::GetJobInput() const
+const string& CGridJobStatus::GetJobInput()
 {
     x_GetJobDetails();
     return m_Job.input;
 }
-int CGridJobStatus::GetReturnCode() const
+int CGridJobStatus::GetReturnCode()
 {
     x_GetJobDetails();
     return m_Job.ret_code;
 }
 
-const string& CGridJobStatus::GetErrorMessage() const
+const string& CGridJobStatus::GetErrorMessage()
 {
     x_GetJobDetails();
     return m_Job.error_msg;

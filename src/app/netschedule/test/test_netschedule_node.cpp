@@ -280,8 +280,6 @@ int CTestNetScheduleNode::Run(void)
 
     CNetScheduleAPI ns_api(service, program_name, queue_name);
 
-    ns_api.SetConnMode(CNetScheduleAPI::eKeepConnection);
-
     CNetScheduleExecuter ns_exec = ns_api.GetExecuter();
 
     string job_key;

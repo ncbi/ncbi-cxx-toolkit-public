@@ -31,12 +31,16 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbitime.hpp>
-#include <corelib/plugin_manager_impl.hpp>
-#include <connect/ncbi_conn_exception.hpp>
+
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/netcache_key.hpp>
 #include <connect/services/error_codes.hpp>
+
+#include <connect/ncbi_conn_exception.hpp>
+
+#include <corelib/ncbitime.hpp>
+#include <corelib/plugin_manager_impl.hpp>
+
 #include <memory>
 
 
@@ -867,7 +871,10 @@ void CNetCache_WriterErrCheck::CheckInputMessage()
                 goto closed_err;
             }
             if (!msg.empty()) {
-                CNetCacheClient::TrimErr(&msg);
+                if (msg.find("ERR:") == 0) {
+                    msg.erase(0, 4);
+                    msg = NStr::ParseEscapes(msg);
+                }
                 goto throw_err_msg;
             }
         }

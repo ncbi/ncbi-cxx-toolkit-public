@@ -32,9 +32,9 @@
  *
  */
 
-#include <corelib/ncbistre.hpp>
-
 #include <connect/connect_export.h>
+
+#include <corelib/ncbistre.hpp>
 
 #include <vector>
 

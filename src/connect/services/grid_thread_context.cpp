@@ -30,8 +30,8 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/rwstream.hpp>
+
+#include "grid_thread_context.hpp"
 
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_debug_context.hpp>
@@ -39,7 +39,8 @@
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/error_codes.hpp>
 
-#include "grid_thread_context.hpp"
+#include <corelib/ncbiexpt.hpp>
+#include <corelib/rwstream.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode

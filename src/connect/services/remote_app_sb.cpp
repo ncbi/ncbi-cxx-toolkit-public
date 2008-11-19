@@ -30,12 +30,13 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbifile.hpp>
+
+#include "remote_app_impl.hpp"
 
 #include <connect/services/remote_app_sb.hpp>
 #include <connect/services/error_codes.hpp>
 
-#include "remote_app_impl.hpp"
+#include <corelib/ncbifile.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Remote

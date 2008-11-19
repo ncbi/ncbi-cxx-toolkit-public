@@ -26,168 +26,70 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Dmitry Kazimirov, Maxim Didenko
  *
  * File Description:
  *   Network client for ICache (NetCache).
  *
  */
 
-#include <corelib/ncbiapp.hpp>
-
-#include <connect/services/srv_discovery.hpp>
-#include <connect/services/srv_connections.hpp>
+#include "srv_discovery.hpp"
 
 BEGIN_NCBI_SCOPE
 
-class CNetSrvAuthenticator;
+struct SNetServerImpl;
 
-class NCBI_XCONNECT_EXPORT CNetServiceAPI_Base
+class NCBI_XCONNECT_EXPORT CNetServer
 {
-public:
-    CNetServiceAPI_Base(const string& service_name, const string& client_name);
-    virtual ~CNetServiceAPI_Base();
+    NET_COMPONENT(NetServer);
 
-    typedef map<TServerAddress,
-        CNetServerConnectionPool*> TServerAddressToConnectionPool;
+    std::string GetHost() const;
+    unsigned short GetPort() const;
 
-    CNetServerConnection GetBest(const TServerAddress* backup = NULL,
-        const string& hit = "");
-    CNetServerConnection GetSpecific(const string& host, unsigned int port);
+    CNetServerConnection Connect();
+};
+
+struct SNetServerGroupImpl;
+
+class NCBI_XCONNECT_EXPORT CNetServerGroup
+{
+    NET_COMPONENT(NetServerGroup);
+
+    int GetCount() const;
+
+    CNetServer GetServer(int index);
+};
+
+struct SNetServiceImpl;
+
+class NCBI_XCONNECT_EXPORT CNetService
+{
+    NET_COMPONENT(NetService);
+
+    const string& GetClientName() const;
+    const string& GetServiceName() const;
+
+    CNetServerConnection GetBestConnection();
+    CNetServerConnection GetSpecificConnection(
+        const string& host,
+        unsigned int port);
+
+    CNetServerGroup DiscoverServers();
+
+    bool IsLoadBalanced() const;
+
+    void SetPermanentConnection(ESwitch type);
+
+    void DiscoverLowPriorityServers(ESwitch on_off);
+
+    void SetRebalanceStrategy(IRebalanceStrategy* strategy);
 
     void SetCommunicationTimeout(const STimeout& to);
     const STimeout& GetCommunicationTimeout() const;
 
     void SetCreateSocketMaxRetries(unsigned int retries);
     unsigned int GetCreateSocketMaxRetries() const;
-
-    void PermanentConnection(ESwitch type);
-
-    bool IsLoadBalanced() const { return m_IsLoadBalanced; }
-
-    template<class Func>
-    Func ForEach(Func func) {
-        TDiscoveredServers servers;
-        DiscoverServers(servers);
-        NON_CONST_ITERATE(TDiscoveredServers, it, servers) {
-            func(GetConnection(*it));
-        }
-        return func;
-    }
-
-    void DiscoverLowPriorityServers(ESwitch on_off);
-
-    /// Connection management options
-    enum EConnectionMode {
-        /// Close connection after each call (default).
-        /// This mode frees server side resources, but reconnection can be
-        /// costly because of the network overhead
-        eCloseConnection,
-
-        /// Keep connection open.
-        /// This mode occupies server side resources(session thread),
-        /// use this mode very carefully
-        eKeepConnection
-    };
-    /// Returns current connection mode
-    /// @sa SetConnMode
-    EConnectionMode GetConnMode() const;
-
-    /// Set connection mode
-    /// @sa GetConnMode
-    void SetConnMode(EConnectionMode conn_mode);
-
-    const string& GetClientName() const { return m_ClientName; }
-    const string& GetServiceName() const { return m_ServiceName; }
-
-    void SetRebalanceStrategy( IRebalanceStrategy* strategy,
-                               EOwnership owner = eTakeOwnership);
-
-    string WaitResponse(CNetServerConnection conn) const;
-    string SendCmdWaitResponse(CNetServerConnection conn,
-        const string& cmd) const;
-
-    //protected:
-    void CheckServerOK(string& response) const;
-
-    //protected:
-    static void TrimErr(string& err_msg);
-
-
-    class ISink
-    {
-    public:
-        virtual ~ISink() {};
-        virtual CNcbiOstream& GetOstream(CNetServerConnection conn) = 0;
-        virtual void EndOfData(CNetServerConnection /* conn */) = 0;
-    };
-    enum EStreamCollectorType {
-        eSendCmdWaitResponse,
-        ePrintServerOut
-    };
-    void x_CollectStreamOutput(const string& cmd, ISink& sink, EStreamCollectorType type);
-    void PrintServerOut(CNetServerConnection conn,
-        CNcbiOstream& out) const;
-
-    CNetServerConnection GetConnection(const TServerAddress& srv);
-
-protected:
-    enum ETrimErr {
-        eNoTrimErr,
-        eTrimErr
-    };
-
-    virtual void ProcessServerError(string& response, ETrimErr trim_err) const;
-
-    void DiscoverServers(TDiscoveredServers& servers);
-
-    void CheckClientNameNotEmpty(string* client_name) const;
-
-private:
-    friend class CNetServiceAuthenticator;
-    void DoAuthenticate(CNetServerConnection& conn) const {
-        x_SendAuthetication(conn);
-    }
-    virtual void x_SendAuthetication(CNetServerConnection& conn) const = 0;
-
-    string m_ServiceName;
-    string m_ClientName;
-
-    auto_ptr<INetServerConnectionListener> m_Authenticator;
-    EConnectionMode m_ConnMode;
-    IRebalanceStrategy* m_RebalanceStrategy;
-    auto_ptr<IRebalanceStrategy> m_RebalanceStrategyGuard;
-
-    CNetServiceAPI_Base(const CNetServiceAPI_Base&);
-    CNetServiceAPI_Base& operator=(const CNetServiceAPI_Base&);
-
-    TDiscoveredServers m_Servers;
-    CRWLock m_ServersLock;
-    mutable TServerAddressToConnectionPool m_ServerAddressToConnectionPool;
-    mutable CFastMutex m_ConnectionMutex;
-
-    bool    m_IsLoadBalanced;
-    ESwitch m_DiscoverLowPriorityServers;
-
-    STimeout                          m_Timeout;
-    unsigned int                      m_MaxRetries;
-    ESwitch                           m_PermanentConnection;
 };
-
-
-
-
-inline void
-CNetServiceAPI_Base::CheckClientNameNotEmpty(string* client_name) const
-{
-    if (client_name->empty()
-        ||  NStr::FindNoCase(*client_name, "sample")  != NPOS
-        ||  NStr::FindNoCase(*client_name, "unknown") != NPOS)
-    {
-        *client_name = CNcbiApplication::Instance()->GetProgramDisplayName();
-    }
-}
-
 
 END_NCBI_SCOPE
 

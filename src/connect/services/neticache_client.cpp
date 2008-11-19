@@ -255,7 +255,11 @@ void CNetICacheClient::CheckOK(string* str) const
     if (str->find("OK:") != 0) {
         // Answer is not in "OK:....." format
         string msg = "Server error:";
-        TrimErr(str);
+
+        if (str->find("ERR:") == 0) {
+            str->erase(0, 4);
+            *str = NStr::ParseEscapes(*str);
+        }
 
         if (str->find("Cache unknown") != string::npos) {
             NCBI_THROW(CNetCacheException, eUnknnownCache, *str);

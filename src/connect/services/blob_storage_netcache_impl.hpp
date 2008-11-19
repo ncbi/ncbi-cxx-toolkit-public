@@ -30,11 +30,13 @@
  *
  */
 
-#include <corelib/ncbireg.hpp>
-#include <corelib/ncbi_config.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/blob_storage.hpp>
 #include <connect/services/error_codes.hpp>
+#include <connect/services/netcache_api_expt.hpp>
+#include <connect/services/netcache_key.hpp>
+
+#include <corelib/ncbi_system.hpp>
+#include <corelib/blob_storage.hpp>
+#include <corelib/rwstream.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -142,8 +144,8 @@ private:
     string   m_CreatedBlobId;
     string   m_TempDir;
 
-    CBlobStorage_NetCache_Impl(const CBlobStorage_NetCache&);
-    CBlobStorage_NetCache_Impl& operator=(CBlobStorage_NetCache&);
+    CBlobStorage_NetCache_Impl(const CBlobStorage_NetCache_Impl&);
+    CBlobStorage_NetCache_Impl& operator=(CBlobStorage_NetCache_Impl&);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////

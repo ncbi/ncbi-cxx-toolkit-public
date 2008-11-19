@@ -29,9 +29,11 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include "mgrapp.hpp"
 #include "mgrres.hpp"
 #include "mgrcmd.hpp"
+
 #include <cgi/cgictx.hpp>
 
 

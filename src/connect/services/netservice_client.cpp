@@ -31,12 +31,16 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_system.hpp>
-#include <corelib/ncbi_safe_static.hpp>
-#include <connect/ncbi_conn_exception.hpp>
+
 #include <connect/services/netservice_client.hpp>
 #include <connect/services/netservice_api_expt.hpp>
 #include <connect/services/netservice_params.hpp>
+
+#include <connect/ncbi_conn_exception.hpp>
+
+#include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_safe_static.hpp>
+
 #include <memory>
 
 
@@ -316,16 +320,6 @@ void CNetServiceClient::WaitForServer(unsigned wait_sec)
 }
 
 
-void CNetServiceClient::TrimErr(string* err_msg)
-{
-    _ASSERT(err_msg);
-    if (err_msg->find("ERR:") == 0) {
-        err_msg->erase(0, 4);
-        *err_msg = NStr::ParseEscapes(*err_msg);
-    }
-}
-
-
 void CNetServiceClient::PrintServerOut(CNcbiOstream & out)
 {
     WaitForServer();
@@ -345,15 +339,15 @@ void CNetServiceClient::CheckServerOK(string* response)
     if (NStr::StartsWith(*response, "OK:")) {
         m_Tmp.erase(0, 3); // "OK:"
     } else if (NStr::StartsWith(*response, "ERR:")) {
-        ProcessServerError(response, eTrimErr);
+        response->erase(0, 4);
+        *response = NStr::ParseEscapes(*response);
+        ProcessServerError(response);
     }
 }
 
 
-void CNetServiceClient::ProcessServerError(string* response, ETrimErr trim_err)
+void CNetServiceClient::ProcessServerError(string* response)
 {
-    if (trim_err == eTrimErr)
-        TrimErr(response);
     NCBI_THROW(CNetServiceException, eCommunicationError, *response);
 }
 

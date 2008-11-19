@@ -31,10 +31,11 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistr.hpp>
 
 #include <connect/services/netcache_key.hpp>
 #include <connect/services/netcache_api_expt.hpp>
+
+#include <corelib/ncbistr.hpp>
 
 
 BEGIN_NCBI_SCOPE

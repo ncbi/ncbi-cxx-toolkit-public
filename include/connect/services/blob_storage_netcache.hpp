@@ -30,12 +30,13 @@
  *
  */
 
+#include <connect/services/netcache_api.hpp>
+#include <connect/services/netcache_client.hpp>
+
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/blob_storage.hpp>
-#include <connect/services/netcache_api.hpp>
-#include <connect/services/netcache_client.hpp>
 
 
 BEGIN_NCBI_SCOPE

@@ -32,10 +32,12 @@
 
 #include "mgrlogic.hpp"
 
-#include <corelib/ncbistr.hpp>
 #include <connect/services/netschedule_client.hpp>
 #include <connect/services/netcache_client.hpp>
+
 #include <connect/ncbi_conn_stream.hpp>
+
+#include <corelib/ncbistr.hpp>
 
 #include <functional>
 #include <algorithm>

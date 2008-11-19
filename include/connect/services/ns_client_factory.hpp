@@ -30,11 +30,12 @@
  *
  */
 
+#include <connect/services/netschedule_api.hpp>
+
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbiexpt.hpp>
-#include <connect/services/netschedule_api.hpp>
 
 
 BEGIN_NCBI_SCOPE

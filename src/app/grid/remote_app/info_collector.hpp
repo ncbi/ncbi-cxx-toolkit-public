@@ -32,11 +32,11 @@
  *
  */
 
-#include <corelib/ncbimisc.hpp>
-#include <corelib/blob_storage.hpp>
-
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/remote_job.hpp>
+
+#include <corelib/ncbimisc.hpp>
+#include <corelib/blob_storage.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -86,34 +86,6 @@ private:
 
 //////////////////////////////////////////////////////////////////////
 ///
-class CWNodeInfo
-{
-public:
-    CWNodeInfo(const string& name, const string& prog,
-               const string& host, unsigned short port,
-               const CTime& last_access);
-    ~CWNodeInfo();
-    
-    const string& GetName() const { return m_Host; }
-    const string& GetProgName() const { return m_Prog; }
-    const string& GetHost() const { return m_Host; }
-    unsigned short GetPort() const { return m_Port; }
-    const CTime& GetLastAccess() const { return m_LastAccess; }
-
-    void Shutdown(CNetScheduleAdmin::EShutdownLevel level) const;
-
-private:
-    
-    string m_Name;
-    string m_Prog;
-    string m_Host;
-    unsigned short m_Port;
-    CTime m_LastAccess;
-        
-};
-
-//////////////////////////////////////////////////////////////////////
-///
 class CNSInfoCollector
 {
 public:
@@ -128,13 +100,11 @@ public:
         virtual void operator()(const TInfo& info) = 0;
     };
 
-    typedef map<pair<string,unsigned int>, list<string> > TQueueCont;
-
     void TraverseJobs(CNetScheduleAPI::EJobStatus, IAction<CNSJobInfo>&);
-    void TraverseNodes(IAction<CWNodeInfo>&);
+    void TraverseNodes(IAction<CNetScheduleAdmin::SWorkerNodeInfo>&);
     void DropQueue();
 
-    void GetQueues(TQueueCont& queues);
+    void GetQueues(CNetScheduleAdmin::TQueueList& queues);
 
     CNSJobInfo* CreateJobInfo(const string& job_id);
 

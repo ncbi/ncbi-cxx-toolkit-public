@@ -32,8 +32,10 @@
  *
  */
 
-#include <connect/ncbi_types.h>
 #include <connect/services/remote_app_sb.hpp>
+
+#include <connect/ncbi_types.h>
+
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiexpt.hpp>
 

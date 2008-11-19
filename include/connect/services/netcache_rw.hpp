@@ -40,6 +40,7 @@
 #include <connect/connect_export.h>
 #include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netcache_api.hpp>
+
 #include <util/transmissionrw.hpp>
 
 
@@ -84,7 +85,7 @@ private:
 class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IWriter
 {
 public:
-    CNetCacheWriter(const CNetCacheAPI& api,
+    CNetCacheWriter(CNetCacheAPI& api,
                     CNetServerConnection connection,
                     CTransmissionWriter::ESendEofPacket send_eof =
                             CTransmissionWriter::eDontSendEofPacket);
@@ -101,7 +102,7 @@ public:
     void Close();
 
 private:
-    const CNetCacheAPI& m_API;
+    CNetCacheAPI& m_API;
     CNetServerConnection m_Connection;
     auto_ptr<CTransmissionWriter> m_Writer;
     string m_LastError;
@@ -111,7 +112,6 @@ private:
 
     CNetCacheWriter(const CNetCacheWriter&);
     CNetCacheWriter& operator= (const CNetCacheWriter&);
-
 };
 
 

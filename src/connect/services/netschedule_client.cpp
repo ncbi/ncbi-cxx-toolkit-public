@@ -31,11 +31,15 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <connect/services/netschedule_client.hpp>
+
+#include <connect/ncbi_conn_exception.hpp>
+
+#include <corelib/request_control.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_safe_static.hpp>
-#include <connect/ncbi_conn_exception.hpp>
-#include <connect/services/netschedule_client.hpp>
-#include <corelib/request_control.hpp>
+
 #include <memory>
 #include <stdio.h>
 
@@ -1796,10 +1800,8 @@ void CNetScheduleClient::TrimPrefix(string* str)
 }
 
 
-void CNetScheduleClient::ProcessServerError(string* response, ETrimErr trim_err)
+void CNetScheduleClient::ProcessServerError(string* response)
 {
-    if (trim_err == eTrimErr)
-        TrimErr(response);
     string code;
     string msg;
     if (NStr::SplitInTwo(*response, ":", code, msg)) {
@@ -1809,7 +1811,7 @@ void CNetScheduleClient::ProcessServerError(string* response, ETrimErr trim_err)
             NCBI_THROW(CNetScheduleException, EErrCode(n_code), msg);
         }
     }
-    CNetServiceClient::ProcessServerError(response, eNoTrimErr);
+    CNetServiceClient::ProcessServerError(response);
 }
 
 

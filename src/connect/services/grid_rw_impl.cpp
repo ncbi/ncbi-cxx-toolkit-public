@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/error_codes.hpp>
 
@@ -38,7 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static const int s_FlagsLen = 2;
+static const unsigned s_FlagsLen = 2;
 static const char *s_Flags[s_FlagsLen] = {
     "D ",
     "K " };

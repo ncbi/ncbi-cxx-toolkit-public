@@ -30,6 +30,13 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <connect/services/netbvstore_client.hpp>
+
+#include <connect/ncbi_socket.hpp>
+#include <connect/ncbi_types.h>
+#include <connect/ncbi_core_cxx.hpp>
+
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -37,10 +44,6 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/netbvstore_client.hpp>
-#include <connect/ncbi_socket.hpp>
-#include <connect/ncbi_types.h>
-#include <connect/ncbi_core_cxx.hpp>
 #include <common/test_assert.h>  /* This header must go last */
 
 

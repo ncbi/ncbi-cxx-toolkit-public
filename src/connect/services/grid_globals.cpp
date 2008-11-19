@@ -30,11 +30,13 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <connect/services/grid_globals.hpp>
+#include <connect/services/error_codes.hpp>
+
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbidiag.hpp>
-#include <connect/services/grid_globals.hpp>
-#include <connect/services/error_codes.hpp>
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
 
@@ -62,7 +64,7 @@ void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
     case eJobStarted :
         {
             CMutexGuard guard(m_ActiveJobsMutex);
-            m_ActiveJobs[&job] = make_pair(CStopWatch(CStopWatch::eStart), false);
+            m_ActiveJobs[&job] = SJobActivity();
             ++m_JobsStarted;
             if (m_MaxJobsAllowed > 0 && m_JobsStarted > m_MaxJobsAllowed - 1) {
                 LOG_POST_X(1, CTime(CTime::eCurrent).AsString()
@@ -120,9 +122,9 @@ void CWNJobsWatcher::Print(CNcbiOstream& os) const
     os << "Jobs Running: " << m_ActiveJobs.size() << endl;
     ITERATE(TActiveJobs, it, m_ActiveJobs) {
         os << it->first->GetJobKey() << " " << it->first->GetJobInput()
-           << " -- running for " << (int)it->second.first.Elapsed()
+           << " -- running for " << (int)it->second.elasped_time.Elapsed()
            << " seconds.";
-        if (it->second.second)
+        if (it->second.flag)
             os << "!!! INFINIT LOOP !!!";
         os << endl;
     }
@@ -134,12 +136,12 @@ void CWNJobsWatcher::CheckInfinitLoop()
         size_t count = 0;
         CMutexGuard guard(m_ActiveJobsMutex);
         NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
-            if (!it->second.second) {
-                if ( it->second.first.Elapsed() > m_InfinitLoopTime) {
+            if (!it->second.flag) {
+                if ( it->second.elasped_time.Elapsed() > m_InfinitLoopTime) {
                     ERR_POST_X(3, CTime(CTime::eCurrent).AsString()
                                   << " An infinit loop is detected in job "
                                   << it->first->GetJobKey());
-                    it->second.second = true;
+                    it->second.flag = true;
                     CGridGlobals::GetInstance().
                         RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
                 }
@@ -159,13 +161,13 @@ void CWNJobsWatcher::x_KillNode(CGridWorkerNode& worker)
 {
     CMutexGuard guard(m_ActiveJobsMutex);
     NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
-        if (!it->second.second) {
+        if (!it->second.flag) {
             worker.x_ReturnJob(it->first->GetJobKey());
         } else {
             worker.x_FailJob(it->first->GetJobKey(),
-                             "An infinit loop has been detected after "
-                             + NStr::IntToString((int)it->second.first.Elapsed())
-                             + " seconds of execution.");
+                "An infinit loop has been detected after " +
+                NStr::IntToString((int)it->second.elasped_time.Elapsed()) +
+                " seconds of execution.");
         }
     }
     TPid cpid = CProcess::GetCurrentPid();

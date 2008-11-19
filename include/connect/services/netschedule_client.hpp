@@ -38,9 +38,10 @@
 ///
 
 #include <connect/services/netservice_client.hpp>
-#include <corelib/plugin_manager.hpp>
 #include <connect/services/netschedule_api_expt.hpp> // for CNetScheduleException
 #include <connect/services/netschedule_api_const.hpp>
+
+#include <corelib/plugin_manager.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -704,7 +705,7 @@ protected:
     void TrimPrefix(string* str);
 
     /// Error processing
-    virtual void ProcessServerError(string* response, ETrimErr trim_err);
+    virtual void ProcessServerError(string* response);
 
     void CommandInitiate(const string& command,
                          const string& job_key,

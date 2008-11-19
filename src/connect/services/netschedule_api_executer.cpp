@@ -31,9 +31,11 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <connect/ncbi_conn_exception.hpp>
+
+#include "netschedule_api_impl.hpp"
 #include "netschedule_api_details.hpp"
 
+#include <connect/ncbi_conn_exception.hpp>
 
 #define NCBI_USE_ERRCODE_X   ConnServ_NetSchedule
 
@@ -146,14 +148,14 @@ void s_ParseGetJobResponse(string*        job_key,
 void CNetScheduleExecuter::SetRunTimeout(const string& job_key,
                                          unsigned      time_to_run) const
 {
-    m_API->x_SendJobCmdWaitResponse("JRTO" , job_key, time_to_run);
+    m_Impl->m_API->x_SendJobCmdWaitResponse("JRTO" , job_key, time_to_run);
 }
 
 
 void CNetScheduleExecuter::JobDelayExpiration(const string& job_key,
                                               unsigned      runtime_inc) const
 {
-    m_API->x_SendJobCmdWaitResponse("JDEX" , job_key, runtime_inc);
+    m_Impl->m_API->x_SendJobCmdWaitResponse("JDEX" , job_key, runtime_inc);
 }
 
 
@@ -167,7 +169,7 @@ bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job,
         cmd += NStr::IntToString(udp_port);
     }
 
-    return GetJobImpl(cmd, job);
+    return m_Impl->GetJobImpl(cmd, job);
 }
 
 
@@ -182,13 +184,13 @@ bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
     cmd += ' ';
     cmd += NStr::IntToString(wait_time);
 
-    if (GetJobImpl(cmd, job))
+    if (m_Impl->GetJobImpl(cmd, job))
         return true;
 
     if (wait_mode != eWaitNotification)
         return false;
 
-    WaitNotification(m_API->GetQueueName(), wait_time, udp_port);
+    WaitNotification(m_Impl->m_API.GetQueueName(), wait_time, udp_port);
 
     // no matter is WaitResult we re-try the request
     // using reliable comm.level and notify server that
@@ -242,11 +244,11 @@ void static s_ChechOutputSize(const string& output, size_t max_output_size)
 
 void CNetScheduleExecuter::PutResult(const CNetScheduleJob& job) const
 {
-    size_t max_output_size = m_API->GetServerParams().max_output_size;
-    s_ChechOutputSize(job.output, max_output_size);
+    s_ChechOutputSize(job.output,
+        m_Impl->m_API->GetServerParams().max_output_size);
 
-    m_API->x_SendJobCmdWaitResponse("PUT" , job.job_id, job.ret_code, job.output);
-
+    m_Impl->m_API->x_SendJobCmdWaitResponse("PUT",
+        job.job_id, job.ret_code, job.output);
 }
 
 
@@ -256,15 +258,17 @@ bool CNetScheduleExecuter::PutResultGetJob(const CNetScheduleJob& done_job,
     if (done_job.job_id.empty())
         return GetJob(new_job, 0);
 
-    size_t max_output_size = m_API->GetServerParams().max_output_size;
-    s_ChechOutputSize(done_job.output, max_output_size);
+    s_ChechOutputSize(done_job.output,
+        m_Impl->m_API->GetServerParams().max_output_size);
 
-    string resp = m_API->x_SendJobCmdWaitResponse("JXCG" , done_job.job_id, done_job.ret_code, done_job.output);
+    string resp = m_Impl->m_API->x_SendJobCmdWaitResponse("JXCG",
+        done_job.job_id, done_job.ret_code, done_job.output);
 
     if (!resp.empty()) {
         new_job.mask = CNetScheduleAPI::eEmptyMask;
         string tmp;
-        s_ParseGetJobResponse(&new_job.job_id, &new_job.input, &tmp, &tmp, &new_job.mask, resp);
+        s_ParseGetJobResponse(&new_job.job_id, &new_job.input,
+            &tmp, &tmp, &new_job.mask, resp);
         _ASSERT(!new_job.job_id.empty());
         return true;
     }
@@ -278,36 +282,45 @@ void CNetScheduleExecuter::PutProgressMsg(const CNetScheduleJob& job) const
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Progress message too long");
     }
-    m_API->x_SendJobCmdWaitResponse("MPUT" , job.job_id, job.progress_msg);
+    m_Impl->m_API->x_SendJobCmdWaitResponse("MPUT" , job.job_id, job.progress_msg);
 }
 
+void CNetScheduleExecuter::GetProgressMsg(CNetScheduleJob& job)
+{
+    m_Impl->m_API.GetProgressMsg(job);
+}
 
 void CNetScheduleExecuter::PutFailure(const CNetScheduleJob& job) const
 {
-    size_t max_output_size = m_API->GetServerParams().max_output_size;
-    s_ChechOutputSize(job.output, max_output_size);
+    s_ChechOutputSize(job.output,
+        m_Impl->m_API->GetServerParams().max_output_size);
 
     if (job.error_msg.length() >= kNetScheduleMaxErrSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Error message too long");
     }
 
-    m_API->x_SendJobCmdWaitResponse("FPUT" , job.job_id, job.error_msg, job.output, job.ret_code);
+    m_Impl->m_API->x_SendJobCmdWaitResponse("FPUT",
+        job.job_id, job.error_msg, job.output, job.ret_code);
 }
 
-
+CNetScheduleAPI::EJobStatus
+    CNetScheduleExecuter::GetJobStatus(const string& job_key)
+{
+    return m_Impl->m_API->x_GetJobStatus(job_key, false);
+}
 
 void CNetScheduleExecuter::ReturnJob(const string& job_key) const
 {
-    m_API->x_SendJobCmdWaitResponse("RETURN" , job_key);
+    m_Impl->m_API->x_SendJobCmdWaitResponse("RETURN" , job_key);
 }
 
-bool CNetScheduleExecuter::GetJobImpl(const string& cmd, CNetScheduleJob& job) const
+bool SNetScheduleExecuterImpl::GetJobImpl(
+    const string& cmd, CNetScheduleJob& job) const
 {
-    TDiscoveredServers servers;
-    m_API->DiscoverServers(servers);
+    CNetServerGroup servers = m_API->m_Service.DiscoverServers();
 
-    size_t servers_size = servers.size();
+    size_t servers_size = servers.GetCount();
 
     if (servers_size == 0)
         return false;
@@ -322,11 +335,10 @@ bool CNetScheduleExecuter::GetJobImpl(const string& cmd, CNetScheduleJob& job) c
     bool had_comm_err = false;
 
     for (; current < last; ++current) {
-        const TServerAddress& srv = servers[current % servers_size];
+        CNetServer srv = servers.GetServer(current % servers_size);
 
         try {
-            string resp =
-                m_API->SendCmdWaitResponse(m_API->GetConnection(srv), cmd);
+            string resp = srv.Connect().Exec(cmd);
 
             if (!resp.empty()) {
                 job.mask = CNetScheduleAPI::eEmptyMask;
@@ -337,8 +349,8 @@ bool CNetScheduleExecuter::GetJobImpl(const string& cmd, CNetScheduleJob& job) c
             }
         }
         catch (CNetServiceException& ex) {
-            ERR_POST_X(9, srv.first << ":" << srv.second
-                          << " returned error: \"" << ex.what() << "\"");
+            ERR_POST_X(9, srv.GetHost() << ":" << srv.GetPort()
+                << " returned error: \"" << ex.what() << "\"");
 
             if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
                 throw;
@@ -346,8 +358,8 @@ bool CNetScheduleExecuter::GetJobImpl(const string& cmd, CNetScheduleJob& job) c
             had_comm_err = true;
         }
         catch (CIO_Exception& ex) {
-            ERR_POST_X(10, srv.first << ":" << srv.second
-                           << " returned error: \"" << ex.what() << "\"");
+            ERR_POST_X(10, srv.GetHost() << ":" << srv.GetPort()
+                << " returned error: \"" << ex.what() << "\"");
 
             had_comm_err = true;
         }
@@ -361,24 +373,44 @@ bool CNetScheduleExecuter::GetJobImpl(const string& cmd, CNetScheduleJob& job) c
 }
 
 
-void CNetScheduleExecuter::x_RegUnregClient(const string&  cmd,
-                                            unsigned short udp_port) const
+void SNetScheduleExecuterImpl::x_RegUnregClient(
+    const string& cmd, unsigned short udp_port) const
 {
     string tmp = cmd + ' ' + NStr::IntToString(udp_port);
-    m_API->ForEach(SNSSendCmd(*m_API, tmp, SNSSendCmd::eLogExceptions | SNSSendCmd::eIgnoreCommunicationError));
+
+    m_API->m_Service->ForEach(SNSSendCmd(m_API, tmp,
+        SNSSendCmd::eLogExceptions | SNSSendCmd::eIgnoreCommunicationError));
 }
 
 
 void CNetScheduleExecuter::RegisterClient(unsigned short udp_port) const
 {
-    x_RegUnregClient("REGC", udp_port);
+    m_Impl->x_RegUnregClient("REGC", udp_port);
+}
+
+const CNetScheduleAPI::SServerParams& CNetScheduleExecuter::GetServerParams() const
+{
+    return m_Impl->m_API->GetServerParams();
 }
 
 void CNetScheduleExecuter::UnRegisterClient(unsigned short udp_port) const
 {
-    x_RegUnregClient("URGC", udp_port);
+    m_Impl->x_RegUnregClient("URGC", udp_port);
 }
 
+const string& CNetScheduleExecuter::GetQueueName() const
+{
+    return m_Impl->m_API.GetQueueName();
+}
 
+const string& CNetScheduleExecuter::GetClientName() const
+{
+    return m_Impl->m_API->m_Service.GetClientName();
+}
+
+const string& CNetScheduleExecuter::GetServiceName() const
+{
+    return m_Impl->m_API->m_Service.GetServiceName();
+}
 
 END_NCBI_SCOPE

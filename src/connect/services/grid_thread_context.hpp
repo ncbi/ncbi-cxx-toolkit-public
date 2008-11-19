@@ -33,9 +33,9 @@
  *    NetSchedule Worker Node implementation
  */
 
-#include <corelib/request_control.hpp>
-
 #include <connect/services/grid_worker.hpp>
+
+#include <corelib/request_control.hpp>
 
 
 BEGIN_NCBI_SCOPE

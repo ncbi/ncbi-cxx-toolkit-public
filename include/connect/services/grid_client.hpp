@@ -35,11 +35,12 @@
 ///
 
 
-#include <corelib/ncbistre.hpp>
-#include <corelib/blob_storage.hpp>
+#include <connect/services/netschedule_api.hpp>
 
 #include <connect/connect_export.h>
-#include <connect/services/netschedule_api.hpp>
+
+#include <corelib/ncbistre.hpp>
+#include <corelib/blob_storage.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -185,19 +186,19 @@ public:
     ///    (NetCache)  In this case use GetIStream method to get a stream with
     ///    a job's result.
     ///
-    const string& GetJobOutput() const;
+    const string& GetJobOutput();
 
     /// Get a job's input sting
-    const string& GetJobInput() const;
+    const string& GetJobInput();
 
     /// Get a job's return code
     //
-    int           GetReturnCode() const;
+    int           GetReturnCode();
 
     /// If something bad has happend this method will return an
     /// explanation
     ///
-    const string& GetErrorMessage() const;
+    const string& GetErrorMessage();
 
     /// Get a job status
     ///
@@ -219,22 +220,22 @@ public:
     /// @param data_key
     ///     Blob key
     ///
-    string GetProgressMessage() const;
+    string GetProgressMessage();
 
 private:
     /// Only CGridClient can create an instnce of this class
     friend class CGridClient;
     CGridJobStatus(CGridClient&, bool auto_cleanup, bool use_progress);
     void x_SetJobKey(const string& job_key);
-    void x_GetJobDetails() const;
+    void x_GetJobDetails();
 
     CGridClient& m_GridClient;
-    mutable CNetScheduleJob m_Job;
+    CNetScheduleJob m_Job;
     size_t       m_BlobSize;
     bool         m_AutoCleanUp;
     bool         m_UseProgress;
     auto_ptr<CNcbiIstream> m_RStream;
-    mutable bool         m_JobDetailsRead;
+    bool         m_JobDetailsRead;
 
     /// The copy constructor and the assignment operator
     /// are prohibited

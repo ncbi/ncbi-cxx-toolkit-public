@@ -41,6 +41,7 @@
 #include <connect/ncbi_socket.hpp>
 
 #include <corelib/ncbi_config.hpp>
+#include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -110,7 +111,7 @@ private:
 };
 
 
-IRebalanceStrategy*
+CNetObjectRef<IRebalanceStrategy>
     CreateSimpleRebalanceStrategy(CConfig& conf, const string& driver_name)
 {
     return new CSimpleRebalanceStrategy(
@@ -120,13 +121,13 @@ IRebalanceStrategy*
             CConfig::eErr_NoThrow, 10));
 }
 
-IRebalanceStrategy*
+CNetObjectRef<IRebalanceStrategy>
     CreateSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time)
 {
     return new CSimpleRebalanceStrategy(rebalance_requests, rebalance_time);
 }
 
-IRebalanceStrategy* CreateDefaultRebalanceStrategy()
+CNetObjectRef<IRebalanceStrategy> CreateDefaultRebalanceStrategy()
 {
     return new CSimpleRebalanceStrategy(50, 10);
 }

@@ -32,9 +32,10 @@
  *
  */
 
+#include <connect/services/remote_app.hpp>
+
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <connect/services/remote_app.hpp>
 
 BEGIN_NCBI_SCOPE
 

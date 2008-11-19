@@ -39,10 +39,12 @@
 ///
 
 
+#include <connect/services/grid_worker.hpp>
+
+#include <connect/connect_export.h>
+
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <connect/connect_export.h>
-#include <connect/services/grid_worker.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -95,8 +97,8 @@ private:
     auto_ptr<INetScheduleClientFactory>  m_ClientFactory;
     auto_ptr<CWorkerNodeJobWatchers>     m_JobWatchers;
 
-    auto_ptr<CGridWorkerNode>                m_WorkerNode;
-    mutable auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
+    auto_ptr<CGridWorkerNode> m_WorkerNode;
+    auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
 
     CRef<CWorkerNodeIdleThread>  m_IdleThread;
 

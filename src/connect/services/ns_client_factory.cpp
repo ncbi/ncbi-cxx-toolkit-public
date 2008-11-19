@@ -31,6 +31,14 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
+
+#ifdef _MSC_VER
+// Disable warning C4191: 'type cast' :
+//     unsafe conversion from 'ncbi::CDll::FEntryPoint'
+//     to 'void (__cdecl *)(...)' [comes from plugin_manager.hpp]
+#pragma warning (disable: 4191)
+#endif
+
 #include <connect/services/ns_client_factory.hpp>
 
 BEGIN_NCBI_SCOPE

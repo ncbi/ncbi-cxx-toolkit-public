@@ -1,5 +1,5 @@
-#ifndef CONNECT_SERVICES___SRV_DISCOVERY__HPP
-#define CONNECT_SERVICES___SRV_DISCOVERY__HPP
+#ifndef CONN___NETCACHE_ADMIN__HPP
+#define CONN___NETCACHE_ADMIN__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,48 +26,62 @@
  *
  * ===========================================================================
  *
- * File Description:
- *   Contains definitions related to server discovery by the load balancer.
+ * Authors:  Dmitry Kazimirov
  *
- * Authors:
- *   Dmitry Kazimirov
+ * File Description:
+ *   Administrative API for NetCache.
  *
  */
 
-#include "srv_connections.hpp"
+/// @file netcache_admin.hpp
+/// Administrative API for NetCache.
+///
+
+#include "netobject.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
-// A host:port pair.
-typedef std::pair<std::string, unsigned short> TServerAddress;
-typedef std::vector<TServerAddress> TDiscoveredServers;
 
-NCBI_XCONNECT_EXPORT void QueryLoadBalancer(
-    const std::string& service,
-    TDiscoveredServers& servers,
-    bool include_suppressed);
+/** @addtogroup NetCacheClient
+ *
+ * @{
+ */
 
-///////////////////////////////////////////////////////////////////////////
-//
-class IRebalanceStrategy : public CNetObject
+
+struct SNetCacheAdminImpl;
+
+class NCBI_XCONNECT_EXPORT CNetCacheAdmin
 {
-public:
-    virtual bool NeedRebalance() = 0;
-    virtual void OnResourceRequested() = 0;
-    virtual void Reset() = 0;
+    NET_COMPONENT(NetCacheAdmin);
+
+    /// Shutdown the server daemon.
+    ///
+    /// @note
+    ///  Protected to avoid a temptation to call it from time to time. :)
+    void ShutdownServer();
+
+    /// Turn server-side logging on(off)
+    ///
+    void Logging(bool on_off) const;
+
+    /// Print contents of the configuration file
+    void PrintConfig(CNcbiOstream& output_stream) const;
+
+    /// Print server statistics
+    void PrintStat(CNcbiOstream& output_stream) const;
+
+    /// Reinitialize server-side statistics collector
+    void DropStat() const;
+
+    void Monitor(CNcbiOstream & out) const;
+
+    void GetServerVersion(CNcbiOstream& output_stream) const;
 };
 
-class CConfig;
+/* @} */
 
-NCBI_XCONNECT_EXPORT CNetObjectRef<IRebalanceStrategy>
-    CreateSimpleRebalanceStrategy(CConfig& conf, const string& driver_name);
-
-NCBI_XCONNECT_EXPORT CNetObjectRef<IRebalanceStrategy>
-    CreateSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time);
-
-NCBI_XCONNECT_EXPORT CNetObjectRef<IRebalanceStrategy>
-    CreateDefaultRebalanceStrategy();
 
 END_NCBI_SCOPE
 
-#endif  /* CONNECT_SERVICES___SRV_DISCOVERY__HPP */
+#endif  /* CONN___NETCACHE_ADMIN__HPP */

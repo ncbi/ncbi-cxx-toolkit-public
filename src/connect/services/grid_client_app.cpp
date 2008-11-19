@@ -31,12 +31,12 @@
 
 #include <ncbi_pch.hpp>
 
-#include <corelib/blob_storage.hpp>
-#include <corelib/ncbireg.hpp>
-
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
 #include <connect/services/ns_client_factory.hpp>
+
+#include <corelib/blob_storage.hpp>
+#include <corelib/ncbireg.hpp>
 
 BEGIN_NCBI_SCOPE
 

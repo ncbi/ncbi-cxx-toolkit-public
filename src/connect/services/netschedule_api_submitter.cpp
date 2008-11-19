@@ -31,9 +31,11 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <connect/services/netschedule_api.hpp>
 
+#include "netschedule_api_impl.hpp"
 #include "netschedule_api_details.hpp"
+
+#include <connect/services/netschedule_api.hpp>
 
 #include <stdio.h>
 
@@ -105,7 +107,12 @@ void static s_CheckInputSize(const string& input, size_t max_input_size)
     }
 }
 
-string CNetScheduleSubmitter::SubmitJobImpl(CNetScheduleJob& job,
+string CNetScheduleSubmitter::SubmitJob(CNetScheduleJob& job) const
+{
+    return m_Impl->SubmitJobImpl(job, 0, 0);
+}
+
+string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
     unsigned short udp_port, unsigned wait_time) const
 {
     size_t max_input_size = m_API->GetServerParams().max_input_size;
@@ -116,7 +123,7 @@ string CNetScheduleSubmitter::SubmitJobImpl(CNetScheduleJob& job,
     string aff_prev;
     s_SerializeJob(cmd, job, udp_port, wait_time, aff_prev);
 
-    job.job_id = m_API->SendCmdWaitResponse(m_API->x_GetConnection(), cmd);
+    job.job_id = m_API->x_GetConnection().Exec(cmd);
 
     if (job.job_id.empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -128,17 +135,18 @@ string CNetScheduleSubmitter::SubmitJobImpl(CNetScheduleJob& job,
 
 void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
 {
-    // veryfy the input data
-    size_t max_input_size = m_API->GetServerParams().max_input_size;
+    // verify the input data
+    size_t max_input_size = m_Impl->m_API->GetServerParams().max_input_size;
+
     ITERATE(vector<CNetScheduleJob>, it, jobs) {
         const string& input = it->input;
         s_CheckInputSize(input, max_input_size);
     }
 
-    CNetServerConnection conn = m_API->x_GetConnection();
+    CNetServerConnection conn = m_Impl->m_API->x_GetConnection();
 
     // batch command
-    m_API->SendCmdWaitResponse(conn, "BSUB");
+    conn.Exec("BSUB");
 
     string cmd;
     cmd.reserve(max_input_size * 6);
@@ -158,7 +166,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
         cmd = "BTCH ";
         cmd.append(NStr::UIntToString(batch_size));
 
-        conn.WriteStr(cmd +"\r\n");
+        conn->WriteLine(cmd);
 
 
         unsigned batch_start = i;
@@ -167,10 +175,10 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
             cmd.erase();
             s_SerializeJob(cmd, jobs[i], 0, 0, aff_prev);
 
-            conn.WriteStr(cmd + "\r\n");
+            conn->WriteLine(cmd);
         }
 
-        string resp = m_API->SendCmdWaitResponse(conn, "ENDB");
+        string resp = conn.Exec("ENDB");
 
         if (resp.empty()) {
             NCBI_THROW(CNetServiceException, eProtocolError,
@@ -232,7 +240,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
 
     } // for
 
-    m_API->SendCmdWaitResponse(conn, "ENDS");
+    conn.Exec("ENDS");
 }
 
 struct SWaitJobPred {
@@ -264,22 +272,46 @@ CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
     _ASSERT(wait_time);
     _ASSERT(udp_port);
 
-    SubmitJobImpl(job, udp_port, wait_time);
+    m_Impl->SubmitJobImpl(job, udp_port, wait_time);
 
     CNetScheduleKey key(job.job_id);
 
     s_WaitNotification(wait_time, udp_port, SWaitJobPred(key.id));
 
     CNetScheduleAPI::EJobStatus status = GetJobStatus(job.job_id);
-    if ( status == CNetScheduleAPI::eDone || status == CNetScheduleAPI::eFailed)
-        m_API->GetJobDetails(job);
+
+    if (status == CNetScheduleAPI::eDone ||
+        status == CNetScheduleAPI::eFailed)
+        m_Impl->m_API.GetJobDetails(job);
+
     return status;
 }
 
 void CNetScheduleSubmitter::CancelJob(const string& job_key) const
 {
-    m_API->x_SendJobCmdWaitResponse("CANCEL", job_key);
+    m_Impl->m_API->x_SendJobCmdWaitResponse("CANCEL", job_key);
 }
 
+CNetScheduleAPI::EJobStatus
+    CNetScheduleSubmitter::GetJobStatus(const string& job_key)
+{
+    return m_Impl->m_API->x_GetJobStatus(job_key, true);
+}
+
+CNetScheduleAPI::EJobStatus
+    CNetScheduleSubmitter::GetJobDetails(CNetScheduleJob& job)
+{
+    return m_Impl->m_API.GetJobDetails(job);
+}
+
+void CNetScheduleSubmitter::GetProgressMsg(CNetScheduleJob& job)
+{
+    m_Impl->m_API.GetProgressMsg(job);
+}
+
+const CNetScheduleAPI::SServerParams& CNetScheduleSubmitter::GetServerParams()
+{
+    return m_Impl->m_API->GetServerParams();
+}
 
 END_NCBI_SCOPE

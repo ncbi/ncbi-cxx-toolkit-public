@@ -33,11 +33,13 @@
  *
  */
 
-#include <corelib/ncbimisc.hpp>
-#include <corelib/ncbiapp.hpp>
 #include <connect/services/grid_client.hpp>
 #include <connect/services/netschedule_client.hpp>
-#include <connect/services/netschedule_storage.hpp>
+#include <connect/services/ns_client_factory.hpp>
+
+#include <corelib/ncbimisc.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/blob_storage.hpp>
 
 
 /// @file grid_client_app.hpp

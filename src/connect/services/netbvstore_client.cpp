@@ -31,10 +31,14 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <connect/services/netbvstore_client.hpp>
+
+#include <connect/ncbi_conn_exception.hpp>
+
 #include <corelib/ncbitime.hpp>
 #include <corelib/plugin_manager_impl.hpp>
-#include <connect/ncbi_conn_exception.hpp>
-#include <connect/services/netbvstore_client.hpp>
+
 #include <memory>
 
 

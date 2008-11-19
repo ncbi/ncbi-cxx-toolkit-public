@@ -30,17 +30,18 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include "info_collector.hpp"
+#include "renderer.hpp"
+
+#include <connect/services/remote_job.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
+
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/blob_storage.hpp>
-
-#include <connect/services/remote_job.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
-
-#include "info_collector.hpp"
-#include "renderer.hpp"
 
 #define REMOTEJOBCTL_VERSION_MAJOR 1
 #define REMOTEJOBCTL_VERSION_MINOR 0
@@ -171,7 +172,8 @@ void CNSRemoveJobControlApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-class CWNodeShutdownAction : public  CNSInfoCollector::IAction<CWNodeInfo>
+class CWNodeShutdownAction :
+    public CNSInfoCollector::IAction<CNetScheduleAdmin::SWorkerNodeInfo>
 {
 public:
     CWNodeShutdownAction(CNetScheduleAdmin::EShutdownLevel level)
@@ -179,9 +181,12 @@ public:
 
     virtual ~CWNodeShutdownAction() {};
 
-    virtual void operator()(const CWNodeInfo& info)
+    virtual void operator()(const CNetScheduleAdmin::SWorkerNodeInfo& info)
     {
-        info.Shutdown(m_Level);
+        CNetScheduleAPI cln(info.host + ":" + NStr::UIntToString(info.port),
+            "netschedule_admin", "noname");
+
+        cln.GetAdmin().ShutdownServer(m_Level);
     }
 private:
     CNetScheduleAdmin::EShutdownLevel m_Level;

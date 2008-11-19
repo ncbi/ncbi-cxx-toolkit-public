@@ -30,10 +30,10 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbireg.hpp>
-
 #include <corelib/blob_storage.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
