@@ -1140,8 +1140,8 @@ static EIO_Status s_Select(size_t                n,
 
             if (type != eTrigger) {
                 long mask = 0;
-                EIO_Event writable = sock->writable ? eIO_Write : eIO_Open;
                 EIO_Event readable = sock->readable ? eIO_Read  : eIO_Open;
+                EIO_Event writable = sock->writable ? eIO_Write : eIO_Open;
                 switch (type & eSocket ? event : event & eIO_Read) {
                 case eIO_Write:
                 case eIO_ReadWrite:
@@ -1306,7 +1306,6 @@ static EIO_Status s_Select(size_t                n,
                             break;
                         }
                         sock->readable = 1/*true*/;
-                        sock->writable = 1/*true*/;
                         sock->closeing = 1/*true*/;
                     } else {
                         if (mask & (FD_CONNECT | FD_WRITE)) {
@@ -2086,7 +2085,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                        sock->type == eSocket         &&
                        sock->w_status != eIO_Closed  &&
                        (sock->pending  ||  sock->w_len));
-                s_WritePending(sock, &zero, 1/*writable*/, 0);
+                s_WritePending(sock, &zero, 1/*writeable*/, 0);
                 if (s_Status(sock, eIO_Read) == eIO_Closed) {
                     polls[i].revent = eIO_Read;
                     pending = 0;
@@ -2929,6 +2928,7 @@ static EIO_Status s_Connect(SOCK            sock,
     sock->connected = 0;
 #ifdef NCBI_OS_MSWIN
     sock->readable = 0;
+    sock->closeing = 0;
     sock->writable = 0;
 #endif /*NCBI_OS_MSWIN*/
     for (n = 0; ; n = 1) { /* optionally auto-resume if interrupted */
@@ -5336,7 +5336,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
 
 #ifdef NCBI_OS_MSWIN
         /* special sendto()'s semantics of IO recording reset */
-        sock->writable = sock->closeing;
+        sock->writable = 0/*false*/;
 #endif /*NCBI_OS_MSWIN*/
 
         x_error = SOCK_ERRNO;

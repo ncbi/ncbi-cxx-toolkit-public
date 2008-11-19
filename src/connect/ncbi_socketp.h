@@ -272,8 +272,8 @@ typedef struct SOCK_tag {
     unsigned       connected:1; /* =1 if remote end-point is fully connected */
 #ifdef NCBI_OS_MSWIN
     unsigned        readable:1; /* =1 if known to be readable                */
+    unsigned        closeing:1; /* =1 if FD_CLOSE posted (as ugly as spelled)*/
     unsigned        writable:1; /* =1 if known to be writeable               */
-    unsigned        closeing:1; /* =1 if FD_CLOSE notified/as ugly as spelled*/
     unsigned        reserved:4; /* MBZ                                       */
 #else
     unsigned        reserved:6; /* MBZ                                       */
