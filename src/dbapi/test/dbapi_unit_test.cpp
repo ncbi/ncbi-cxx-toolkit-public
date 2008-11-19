@@ -2692,6 +2692,9 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert2)
 {
     string sql;
 
+#if !(defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550)
+// WorkShop 5.5 seems to have problems with destroying of temporary objects.
+
     // LangCmd ...
     {
         // pair ...
@@ -2764,6 +2767,8 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert2)
             BOOST_CHECK(value_float.size() > 0);
         }
     }
+#endif
+
 
     // RPC
     if (!(GetArgs().GetDriverName() == ftds_dblib_driver && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer))
@@ -2917,6 +2922,9 @@ public:
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+#if !(defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550)
+// WorkShop 5.5 seems to have problems with destroying of temporary objects.
+
 BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert3)
 {
     string sql;
@@ -2973,6 +2981,8 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert3)
         }
     }
 }
+#endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 template <typename T>
