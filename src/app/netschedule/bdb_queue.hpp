@@ -339,8 +339,8 @@ private:
     void x_Assume(CRef<SLockedQueue> slq) { m_LQueue = slq; }
 
     //
-    time_t x_ComputeExpirationTime(unsigned time_run,
-                                   unsigned run_timeout) const;
+    time_t x_ComputeExpirationTime(time_t time_run,
+                                   time_t run_timeout) const;
 
     void x_PrintJobStat(const CJob&   job,
                         unsigned      queue_run_timeout,

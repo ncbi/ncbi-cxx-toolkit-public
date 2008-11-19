@@ -585,7 +585,7 @@ public:
     int GetRunTimeoutPrecision() { return m_Queue.m_RunTimeoutPrecision; }
     unsigned GetFailedRetries() { return m_Queue.m_FailedRetries; }
     time_t GetBlacklistTime() { return m_Queue.m_BlacklistTime; }
-    int GetEmptyLifetime() { return m_Queue.m_EmptyLifetime; }
+    time_t GetEmptyLifetime() { return m_Queue.m_EmptyLifetime; }
     unsigned GetMaxInputSize() { return m_Queue.m_MaxInputSize; }
     unsigned GetMaxOutputSize() { return m_Queue.m_MaxOutputSize; }
     bool GetDenyAccessViolations() { return m_Queue.m_DenyAccessViolations; }
@@ -630,8 +630,8 @@ public:
         case 3:  return NStr::IntToString(m_Queue.m_RunTimeout);
         case 4:  return NStr::IntToString(m_Queue.m_RunTimeoutPrecision);
         case 5:  return NStr::IntToString(m_Queue.m_FailedRetries);
-        case 6:  return NStr::IntToString(m_Queue.m_BlacklistTime);
-        case 7:  return NStr::IntToString(m_Queue.m_EmptyLifetime);
+        case 6:  return NStr::Int8ToString(m_Queue.m_BlacklistTime);
+        case 7:  return NStr::Int8ToString(m_Queue.m_EmptyLifetime);
         case 8:  return NStr::IntToString(m_Queue.m_MaxInputSize);
         case 9:  return NStr::IntToString(m_Queue.m_MaxOutputSize);
         case 10: return m_Queue.m_DenyAccessViolations ? "true" : "false";

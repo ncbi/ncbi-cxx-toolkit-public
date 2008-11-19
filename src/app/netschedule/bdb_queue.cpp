@@ -1017,7 +1017,7 @@ bool CQueue::IsExpired(void)
 
 #define NS_PRINT_TIME(msg, t) \
     do \
-    { unsigned tt = t; \
+    { time_t tt = t; \
       CTime _t(tt); _t.ToLocalTime(); \
       out << msg << (tt ? _t.AsString() : kEmptyStr) << fsp; \
     } while(0)
@@ -2291,7 +2291,7 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
     CJob job;
     CNS_Transaction trans(q);
 
-    unsigned exp_time = 0;
+    time_t exp_time = 0;
     time_t curr = time(0);
 
     bool job_updated = false;
@@ -2357,9 +2357,9 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
         msg += " new_expiration_time=";
         msg += tmp_t.AsString();
         msg += " job_timeout(sec)=";
-        msg += NStr::IntToString(run_timeout);
+        msg += NStr::Int8ToString(run_timeout);
         msg += " job_timeout(minutes)=";
-        msg += NStr::IntToString(run_timeout/60);
+        msg += NStr::Int8ToString(run_timeout/60);
 
         MonitorPost(msg);
     }
@@ -2462,8 +2462,8 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
             return eGetJobUpdate_JobStopped;
         }
 
-        unsigned time_submit = job.GetTimeSubmit();
-        unsigned timeout = job.GetTimeout();
+        time_t time_submit = job.GetTimeSubmit();
+        time_t timeout = job.GetTimeout();
         if (timeout == 0) timeout = queue_timeout;
 
         _ASSERT(timeout);
@@ -2773,7 +2773,7 @@ void CQueue::CheckExecutionTimeout()
 
 
 time_t 
-CQueue::x_ComputeExpirationTime(unsigned time_run, unsigned run_timeout) const
+CQueue::x_ComputeExpirationTime(time_t time_run, time_t run_timeout) const
 {
     if (run_timeout == 0) return 0;
     return time_run + run_timeout;

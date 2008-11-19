@@ -73,8 +73,8 @@ public:
     { return m_ErrorMsg; }
 
     void SetStatus(TJobStatus status);
-    void SetTimeStart(unsigned t);
-    void SetTimeDone(unsigned t);
+    void SetTimeStart(time_t t);
+    void SetTimeDone(time_t t);
     void SetNodeAddr(unsigned node_ip);
     void SetNodePort(unsigned short port);
     void SetRetCode(int retcode);
@@ -128,9 +128,9 @@ public:
     { return m_Id; }
     TJobStatus     GetStatus() const 
     { return m_Status; }
-    unsigned       GetTimeSubmit() const
+    time_t         GetTimeSubmit() const
     { return m_TimeSubmit; }
-    unsigned       GetTimeout() const
+    time_t         GetTimeout() const
     { return m_Timeout; }
     unsigned       GetRunTimeout() const
     { return m_RunTimeout; }
@@ -174,9 +174,9 @@ public:
 
     void           SetId(unsigned id);
     void           SetStatus(TJobStatus status);
-    void           SetTimeSubmit(unsigned t);
-    void           SetTimeout(unsigned t);
-    void           SetRunTimeout(unsigned t);
+    void           SetTimeSubmit(time_t t);
+    void           SetTimeout(time_t t);
+    void           SetRunTimeout(time_t t);
 
     void           SetSubmAddr(unsigned addr);
     void           SetSubmPort(unsigned short port);

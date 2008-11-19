@@ -88,7 +88,7 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
         tag_db.RevSplitOff();
         tag_db.Open(fname, CBDB_RawFile::eReadWriteCreate);
 
-    } catch (CBDB_ErrnoException& ex) {
+    } catch (CBDB_ErrnoException&) {
         throw;
     }
 }
@@ -530,7 +530,7 @@ void SLockedQueue::SetPort(unsigned short port)
 
 bool SLockedQueue::IsExpired()
 {
-    int empty_lifetime = CQueueParamAccessor(*this).GetEmptyLifetime();
+    time_t empty_lifetime = CQueueParamAccessor(*this).GetEmptyLifetime();
     CQueueGuard guard(this);
     if (m_Kind && empty_lifetime > 0) {
         unsigned cnt = status_tracker.Count();
@@ -1154,7 +1154,7 @@ bool SLockedQueue::FailJob(unsigned      job_id,
 {
     unsigned failed_retries;
     unsigned max_output_size;
-    unsigned blacklist_time;
+    time_t   blacklist_time;
     {{
         CQueueParamAccessor qp(*this);
         failed_retries  = qp.GetFailedRetries();

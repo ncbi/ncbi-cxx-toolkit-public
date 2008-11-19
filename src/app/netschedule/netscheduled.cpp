@@ -2927,7 +2927,7 @@ int CNetScheduleDApp::Run(void)
 
         LOG_POST(Info << "Running execution control every " 
                       << min_run_timeout << " seconds");
-        min_run_timeout = min_run_timeout >= 0 ? min_run_timeout : 2;
+        min_run_timeout = min_run_timeout > 0 ? min_run_timeout : 2;
 
 
         qdb->RunExecutionWatcherThread(min_run_timeout);

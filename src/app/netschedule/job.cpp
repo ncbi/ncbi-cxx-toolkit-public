@@ -73,17 +73,19 @@ void CJobRun::SetStatus(TJobStatus status)
 }
 
 
-void CJobRun::SetTimeStart(unsigned t)
+void CJobRun::SetTimeStart( time_t t )
 {
     m_Dirty = true;
-    m_TimeStart = t;
+    // Will suffice until 2038
+    m_TimeStart = (unsigned) t;
 }
 
 
-void CJobRun::SetTimeDone(unsigned t)
+void CJobRun::SetTimeDone( time_t t )
 {
     m_Dirty = true;
-    m_TimeDone = t;
+    // Will suffice until 2038
+    m_TimeDone = (unsigned) t;
 }
 
 
@@ -201,23 +203,26 @@ void CJob::SetStatus(TJobStatus status)
 }
 
 
-void CJob::SetTimeSubmit(unsigned t)
+void CJob::SetTimeSubmit(time_t t)
 {
-    m_TimeSubmit = t;
+    // Will suffice until 2038
+    m_TimeSubmit = (unsigned) t;
     m_Dirty |= fJobPart;
 }
 
 
-void CJob::SetTimeout(unsigned t)
+void CJob::SetTimeout(time_t t)
 {
-    m_Timeout = t;
+    // Will suffice until 2038
+    m_Timeout = (unsigned) t;
     m_Dirty |= fJobPart;
 }
 
 
-void CJob::SetRunTimeout(unsigned t)
+void CJob::SetRunTimeout(time_t t)
 {
-    m_RunTimeout = t;
+    // Will suffice until 2038
+    m_RunTimeout = (unsigned) t;
     m_Dirty |= fJobPart;
 }
 
@@ -693,7 +698,7 @@ bool CJob::Flush(SLockedQueue* queue)
 bool CJob::ShouldNotify(time_t curr)
 {
     return m_TimeSubmit && m_SubmTimeout && m_SubmAddr && m_SubmPort &&
-        (m_TimeSubmit + m_SubmTimeout >= (unsigned)curr);
+        (m_TimeSubmit + m_SubmTimeout >= (unsigned) curr);
 }
 
 

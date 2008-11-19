@@ -108,7 +108,7 @@ std::string CWorkerNode::AsString(time_t curr) const
     }
     s += lv_time.ToLocalTime().AsString();
     s += " (";
-    s += NStr::IntToString(ValidityTime() - curr);
+    s += NStr::Int8ToString(ValidityTime() - curr);
     s += ") jobs:";
     ITERATE(TWNJobInfoMap, it, m_Jobs) {
         s += " ";
