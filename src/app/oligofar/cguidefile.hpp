@@ -41,42 +41,42 @@ class CScoring;
 class CGuideFile 
 {
 public:
-	typedef map<string,int> TId2Ord;
-	typedef deque<string> TIdList;
+    typedef map<string,int> TId2Ord;
+    typedef deque<string> TIdList;
 
-	CGuideFile( const string& fileName, CFilter& filter, CSeqIds& seqIds );
+    CGuideFile( const string& fileName, CFilter& filter, CSeqIds& seqIds );
     
     bool NextHit( Uint8 ordinal, CQuery * query );
     void SetMaxMismatch( int mm ) { m_maxMismatch = mm; }
     void SetMismatchPenalty( const CScoring& sc );
     
 protected:
-	typedef pair<int,int> TRange;
+    typedef pair<int,int> TRange;
 
-	void AdjustInput( int& fwd, char dir, int& p1, int which ) const;
-	TRange ComputeRange( bool fwd, int pos, int length ) const;
+    void AdjustInput( int& fwd, char dir, int& p1, int which ) const;
+    TRange ComputeRange( bool fwd, int pos, int length ) const;
     int x_CountMismatches( const string& smposx ) const;
 
 protected:
     ifstream m_in;
     string m_buff;
-	CFilter * m_filter;
-	CSeqIds * m_seqIds;
-	Uint8 m_lastQord;
+    CFilter * m_filter;
+    CSeqIds * m_seqIds;
+    Uint8 m_lastQord;
     int m_maxMismatch;
     double m_mismatchPenalty;
 };
 
 inline CGuideFile::CGuideFile( const string& fileName, CFilter& filter, CSeqIds& seqIds )
-	: m_filter( &filter ), m_seqIds( &seqIds ), m_lastQord( 0 ), m_maxMismatch( 0 ), m_mismatchPenalty( 10000 )
+    : m_filter( &filter ), m_seqIds( &seqIds ), m_lastQord( 0 ), m_maxMismatch( 0 ), m_mismatchPenalty( 10000 )
 {
-	ASSERT( m_filter );
-	ASSERT( m_seqIds );
-	if( fileName.length() ) {
-	    m_in.open( fileName.c_str() );
-		if( m_in.fail() ) THROW( runtime_error, "Failed to open file " << fileName << ": " << strerror(errno) );
-	    getline( m_in, m_buff );
-	}
+    ASSERT( m_filter );
+    ASSERT( m_seqIds );
+    if( fileName.length() ) {
+        m_in.open( fileName.c_str() );
+        if( m_in.fail() ) THROW( runtime_error, "Failed to open file " << fileName << ": " << strerror(errno) );
+        getline( m_in, m_buff );
+    }
 }
 
 END_OLIGOFAR_SCOPES

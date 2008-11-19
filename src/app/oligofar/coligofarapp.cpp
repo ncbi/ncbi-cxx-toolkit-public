@@ -24,7 +24,7 @@
 USING_OLIGOFAR_SCOPES;
 
 #ifndef OLIGOFAR_VERSION
-#define OLIGOFAR_VERSION "3.29" 
+#define OLIGOFAR_VERSION "3.29a" 
 #endif
 
 COligoFarApp::COligoFarApp( int argc, char ** argv ) :
@@ -196,7 +196,7 @@ void COligoFarApp::Help( const char * arg )
             << "\nPass-specific hashing and scanning options:\n";
         for( unsigned i = 0; i < max( size_t(2), m_hashParam.size() ); ++i ) {
             cout 
-                << "                --pass" << i << "                    following options will be used for pass " << i;
+                << "   --pass" << i << "                                 following options will be used for pass " << i;
             if( i >= m_hashParam.size() ) cout << " [off]\n";
             else {
                 cout 

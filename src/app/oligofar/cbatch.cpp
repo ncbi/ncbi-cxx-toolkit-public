@@ -123,14 +123,14 @@ void CBatch::Purge()
     m_inputChunk.clear();
     m_hashedReads = 0;
     m_guidedReads = 0;
-	m_ignoredReads = 0;
-	m_hashEntries = 0;
+    m_ignoredReads = 0;
+    m_hashEntries = 0;
 }
 
 void CBatch::x_LoadSeqIds()
 {
-	cerr << "Loading seq ids for guided hits..." << flush;
+    cerr << "Loading seq ids for guided hits..." << flush;
     m_queryHash.Clear();
     m_seqVecProcessor.Process( m_fastaFile );
-	cerr << "\b\b\b: OK\n";
+    cerr << "\b\b\b: OK\n";
 }

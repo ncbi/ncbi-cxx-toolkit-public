@@ -23,27 +23,27 @@ protected:
     virtual const char * GetOptString() const;
     virtual int ParseArg( int, const char *, int );
 protected:
-	void Process( istream&, ostream& );
-	void Process( const string& seqid, string& sequence, ostream& );
-	void GeneratePair( const string& seqid, const string& sequence, int, ostream& );
-	void GenerateRead( const string& seqid, const string& sequence, int, ostream& );
-	void ModifyRead( string& read, int& cnt, int& gcnt );
-	void UpdateReadStrand( string& read, bool& revcompl, int s );
+    void Process( istream&, ostream& );
+    void Process( const string& seqid, string& sequence, ostream& );
+    void GeneratePair( const string& seqid, const string& sequence, int, ostream& );
+    void GenerateRead( const string& seqid, const string& sequence, int, ostream& );
+    void ModifyRead( string& read, int& cnt, int& gcnt );
+    void UpdateReadStrand( string& read, bool& revcompl, int s );
     void RecodeRead( string& read ) const;
     void FormatRead( string& read ) const;
-	bool DiceStrand( int s ) const;
+    bool DiceStrand( int s ) const;
 
-	int m_strands;
-	int m_readlen;
-	int m_pairlen;
-	int m_margin;
-	int m_pairStrands;
+    int m_strands;
+    int m_readlen;
+    int m_pairlen;
+    int m_margin;
+    int m_pairStrands;
     bool m_colorspace;
-	double m_prbMismatch;
-	double m_prbIndel;
-	double m_coverage;
-	double m_qualityDegradation;
-	string m_output;
+    double m_prbMismatch;
+    double m_prbIndel;
+    double m_coverage;
+    double m_qualityDegradation;
+    string m_output;
 };
 
 END_OLIGOFAR_SCOPES

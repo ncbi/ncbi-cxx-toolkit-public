@@ -15,37 +15,37 @@ protected:
     public:
         unsigned char GetHash() const { return m_hash; }
         unsigned char GetMismatches() const { return m_mismatches; }
-		bool operator < ( const C_Atom& a ) const { return GetMismatches() < a.GetMismatches(); }
+        bool operator < ( const C_Atom& a ) const { return GetMismatches() < a.GetMismatches(); }
         C_Atom( unsigned char hash, unsigned char mismatches ) 
-			: m_hash( hash ), m_mismatches( mismatches ) {}
+            : m_hash( hash ), m_mismatches( mismatches ) {}
     protected:
         unsigned char m_hash;
         unsigned char m_mismatches;
     };
-	
-	class C_Entry
-	{
-	public:
-		typedef C_Atom value_type;
-		typedef vector<value_type>::const_iterator const_iterator;
-		C_Entry() : m_ambiguities(0) { m_atoms.reserve(16*12); }
+    
+    class C_Entry
+    {
+    public:
+        typedef C_Atom value_type;
+        typedef vector<value_type>::const_iterator const_iterator;
+        C_Entry() : m_ambiguities(0) { m_atoms.reserve(16*12); }
         int GetAmbiguities() const { return m_ambiguities; }
-		const_iterator begin() const { return m_atoms.begin(); }
-		const_iterator end() const { return m_atoms.end(); }
-		size_t size() const { return m_atoms.size(); }
-		void Sort() { sort( m_atoms.begin(), m_atoms.end() ); }
-		void SetAmbiguities( unsigned a ) { m_ambiguities = a; }
-		void push_back( const C_Atom& a ) { m_atoms.push_back( a ); }
-	protected:
+        const_iterator begin() const { return m_atoms.begin(); }
+        const_iterator end() const { return m_atoms.end(); }
+        size_t size() const { return m_atoms.size(); }
+        void Sort() { sort( m_atoms.begin(), m_atoms.end() ); }
+        void SetAmbiguities( unsigned a ) { m_ambiguities = a; }
+        void push_back( const C_Atom& a ) { m_atoms.push_back( a ); }
+    protected:
         int m_ambiguities;
-		vector<value_type> m_atoms;
-	};
+        vector<value_type> m_atoms;
+    };
 
     typedef C_Entry TEntry;
     typedef vector<TEntry> TTable;
         
 protected:
-	TEntry& SetEntry( unsigned short ncbi4na, int bases = 4 ) { return m_data[--bases&3][ncbi4na]; }
+    TEntry& SetEntry( unsigned short ncbi4na, int bases = 4 ) { return m_data[--bases&3][ncbi4na]; }
 public:
 
     CPermutator8b( int maxMism = 1, int maxAmb = 4 );
@@ -54,14 +54,14 @@ public:
     unsigned GetMaxAmbiguities() const { return m_maxAmb; }
     
     typedef TEntry::const_iterator const_iterator;
-	
-	const TEntry& GetEntry( unsigned short ncbi4na, int bases = 4 ) const { return m_data[--bases&3][ncbi4na]; }
+    
+    const TEntry& GetEntry( unsigned short ncbi4na, int bases = 4 ) const { return m_data[--bases&3][ncbi4na]; }
 
     const_iterator begin( unsigned short ncbi4na, int bases = 4 ) const { return GetEntry( ncbi4na, bases ).begin(); }
     const_iterator end( unsigned short ncbi4na, int bases = 4 ) const { return GetEntry( ncbi4na, bases ).end(); }
     size_t size( unsigned short ncbi4na, int bases = 4 ) const { return GetEntry( ncbi4na, bases ).size(); }
 
-	unsigned GetAmbiquities( unsigned short ncbi4na, int bases = 4 ) const { return GetEntry( ncbi4na, bases ).GetAmbiguities(); }
+    unsigned GetAmbiquities( unsigned short ncbi4na, int bases = 4 ) const { return GetEntry( ncbi4na, bases ).GetAmbiguities(); }
 
     template<class Callback>
     void ForEachQuad( int quad, unsigned w, const UintH& ncbi4na, Callback& callback,

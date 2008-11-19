@@ -22,7 +22,7 @@ inline ostream& CProgressIndicator::FormatBigNumber( ostream&o, double number )
         o << round(number/1e5 )/10 << "M";
     } else if( number >= 1e3 ) {
         o << round(number/1e2 )/10 << "k";
-	} else {
+    } else {
         o << round( number*10 )/10;
     }
     return o;
@@ -35,7 +35,7 @@ void CProgressIndicator::Format( EIndicate i, time_t t2 )
     char buffer[4096];
     strftime( buffer, sizeof( buffer ), "\r\x1b[K[%H:%M:%S,%F] ", localtime( &t2 ) );
 
-	double range = m_currentValue - m_initialValue;
+    double range = m_currentValue - m_initialValue;
     ostringstream o;
     o << buffer << " ";
 
@@ -44,7 +44,7 @@ void CProgressIndicator::Format( EIndicate i, time_t t2 )
     FormatBigNumber( o, memUsed );
     o << "b ";
 #endif
-	o << m_message << ": ";
+    o << m_message << ": ";
     FormatBigNumber( o, range );
     if( m_units.length() ) o << " " << m_units;
     if( m_initialValue/m_increment < m_finalValue/m_increment ) {
@@ -76,7 +76,7 @@ void CProgressIndicator::Format( EIndicate i, time_t t2 )
 #ifndef _WIN32
     write( 2, o.str().c_str(), o.str().length() );
 #else
-	fwrite( o.str().c_str(), 1, o.str().length(), stderr );
+    fwrite( o.str().c_str(), 1, o.str().length(), stderr );
 #endif
     m_t1 = time(0);
 }

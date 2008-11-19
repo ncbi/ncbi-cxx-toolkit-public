@@ -17,7 +17,7 @@ class COligoFarApp : public CApp
 {
 public:
     COligoFarApp( int argc, char ** argv );
-	static int RevNo();
+    static int RevNo();
     enum {
         kKiloByte = 1024,
         kMegaByte = 1024*kKiloByte,
@@ -46,12 +46,12 @@ protected:
     int RunTestSuite();
     int SetLimits();
     int ProcessData();
-	void ParseConfig( const string& cfg );
-	void ParseConfig( IRegistry * );
+    void ParseConfig( const string& cfg );
+    void ParseConfig( IRegistry * );
 
     int GetOutputFlags() const;
 
-	IAligner * CreateAligner( EAlignmentAlgo, CScoreTbl * tbl ) const;
+    IAligner * CreateAligner( EAlignmentAlgo, CScoreTbl * tbl ) const;
 
     virtual const option * GetLongOptions() const;
     virtual const char * GetOptString() const;
@@ -80,7 +80,7 @@ protected:
     unsigned m_maxFastaAmb;
     unsigned m_strands;
     unsigned m_readsPerRun;
-	unsigned m_phrapSensitivity;
+    unsigned m_phrapSensitivity;
     unsigned m_xdropoff;
     unsigned m_topCnt;
     double   m_topPct;
@@ -93,27 +93,27 @@ protected:
     int      m_minPair;
     int      m_maxPair;
     int      m_pairMargin;
-	int      m_qualityChannels;
-	int      m_qualityBase;
+    int      m_qualityChannels;
+    int      m_qualityBase;
     int      m_minBlockLength;
     int      m_guideFilemaxMismatch;
     Uint8    m_memoryLimit;
     bool     m_performTests;
-	bool     m_colorSpace;
+    bool     m_colorSpace;
     bool     m_sodiumBisulfiteCuration;
-	EAlignmentAlgo m_alignmentAlgo;
+    EAlignmentAlgo m_alignmentAlgo;
     TSkipPositions m_skipPositions;
     string m_readFile;
     string m_gilistFile;
     string m_fastaFile;
     string m_snpdbFile;
     string m_vardbFile;
-	string m_guideFile;
+    string m_guideFile;
     string m_outputFile;
     string m_outputFlags;
-	string m_read1qualityFile;
-	string m_read2qualityFile;
-	string m_geometry;
+    string m_read1qualityFile;
+    string m_read2qualityFile;
+    string m_geometry;
     list<string> m_seqIds;
 };
 

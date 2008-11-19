@@ -192,8 +192,8 @@ int COligoFarApp::TestSuite()
 
 //     TESTVAL( string, Ncbi4naToIupac( rwindow8, 15 ), "NBDKHYWTVSRGMCA" );
 
-// 	Uint4 fwindow4 = 0;
-// 	Uint4 rwindow4 = 0;
+//  Uint4 fwindow4 = 0;
+//  Uint4 rwindow4 = 0;
 
 //     fwindow4 = Iupacna2Ncbi2na( (const unsigned char*)"ACGTATCGGCTATGCA", 15 );
 

@@ -26,12 +26,12 @@ protected:
     double m_gapOpening;
     double m_gapExtention;
 protected:
-	void x_Verify() {
-		ASSERT( m_identity > 0 );
-		ASSERT( m_mismatch <= 0 );
-		ASSERT( m_gapOpening <= 0 );
-		ASSERT( m_gapExtention <= 0 );
-	}
+    void x_Verify() {
+        ASSERT( m_identity > 0 );
+        ASSERT( m_mismatch <= 0 );
+        ASSERT( m_gapOpening <= 0 );
+        ASSERT( m_gapExtention <= 0 );
+    }
 };
 
 END_OLIGOFAR_SCOPES

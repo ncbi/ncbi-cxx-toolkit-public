@@ -26,7 +26,7 @@ public:
             
     CHit * GetNextHit() const { return m_next; }
 
-	bool TargetNotSet() const { return m_target[0] == 0 && m_target[1] == 0; }
+    bool TargetNotSet() const { return m_target[0] == 0 && m_target[1] == 0; }
     void SetTarget( int pairmate, const char * from, const char * to );
 
     const char * GetTarget( int pairmate ) const { if( char * x = m_target[pairmate] ) return x; else return ""; }

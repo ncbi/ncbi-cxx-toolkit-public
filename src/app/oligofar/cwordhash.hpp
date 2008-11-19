@@ -27,7 +27,6 @@ public:
         m_indexBits = bits;
         m_indexMask = CBitHacks::WordFootprint<Uint4>( bits );
         Clear();
-//        cerr << "Setting index bits: " << int( m_indexBits ) << " mask " << hex << m_indexMask << dec << " table size " << m_table.size() << endl;
     }
 
     void Clear() {

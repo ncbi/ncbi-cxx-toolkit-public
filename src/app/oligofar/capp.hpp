@@ -11,34 +11,34 @@ BEGIN_OLIGOFAR_SCOPES
 class CApp
 {
 public:
-	CApp( int argc, char ** argv );
-	virtual ~CApp();
-	virtual int Run();
+    CApp( int argc, char ** argv );
+    virtual ~CApp();
+    virtual int Run();
 protected:
-	virtual int  ParseArgs();
+    virtual int  ParseArgs();
 
-	// normally following virtual functions should be reimplemented in subclasses
-	virtual int  Execute() = 0;
-	virtual void Version( const char * );
-	virtual void Help( const char * );
+    // normally following virtual functions should be reimplemented in subclasses
+    virtual int  Execute() = 0;
+    virtual void Version( const char * );
+    virtual void Help( const char * );
 
-	virtual const option * GetLongOptions() const;
-	virtual const char * GetOptString() const;
+    virtual const option * GetLongOptions() const;
+    virtual const char * GetOptString() const;
 
-	// following function normally should be called as fallback in subclass::ParseArgs()
-	virtual int ParseArg( int opt, const char * arg, int longindex );
-	
-	const char * GetProgramName() const;
-	const char * GetProgramBasename() const;
-	
-	int GetArgCount() const;
-	int GetArgIndex() const;
-	char ** GetArgVector() const;
-	char *  GetArg(int i) const;
+    // following function normally should be called as fallback in subclass::ParseArgs()
+    virtual int ParseArg( int opt, const char * arg, int longindex );
+    
+    const char * GetProgramName() const;
+    const char * GetProgramBasename() const;
+    
+    int GetArgCount() const;
+    int GetArgIndex() const;
+    char ** GetArgVector() const;
+    char *  GetArg(int i) const;
 protected:
-	int m_argc;
-	char ** m_argv;
-	bool m_done;
+    int m_argc;
+    char ** m_argv;
+    bool m_done;
 };
 
 END_OLIGOFAR_SCOPES

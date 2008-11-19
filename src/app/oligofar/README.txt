@@ -28,7 +28,7 @@ CHANGES
     in version 3.26: -n, -w, -N, -z, -Z, -D, -m, -S, -x, -f, -k
     in version 3.27: -n, -w, -e, -H, -S, -a, -A, --pass0, --pass1
     in version 3.28: -y, -R, -N
-    in version 3.29: --NaHSO3
+    in version 3.29: --NaHSO3 (Development)
 
 DESCRIPTION
     Performs global alignments of multiple single or paired short reads 
@@ -116,7 +116,7 @@ PAIRED READS
     have individual ID, although report provides info which component(s) of 
     the pair produce the hit.
 
-SODIUM BISULFITE TREATMENT
+SODIUM BISULFITE TREATMENT (Development)
     To discover methylation state of DNA sodium bisulfite curation may be
     used before producing reads.  In order to simulate this procedure
     oligoFAR has special mode, which may be turned on by:
@@ -288,7 +288,7 @@ File options
                 will be performed in the colorspace encoding. 
                 Not compatible with -q, -1, -2 parameters.
 
-    --NaHSO3=+|-
+    --NaHSO3=+|- (Development)
                 Turns sodium bisulfite treatment simulation mode on or off.
                 Make sure to use reasonable value for -A.
 

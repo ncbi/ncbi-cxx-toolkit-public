@@ -14,9 +14,9 @@ USING_SCOPE(fourplanes);
 void CSeqScanner::SequenceBegin( const TSeqIds& seqIds, int oid )
 {
     if( m_seqIds ) {
-		ASSERT( oid >= 0 );
-		m_ord = m_seqIds->Register( seqIds, oid );
-	}
+        ASSERT( oid >= 0 );
+        m_ord = m_seqIds->Register( seqIds, oid );
+    }
     if( m_snpDb ) {
         for( TSeqIds::const_iterator i = seqIds.begin(); i != seqIds.end(); ++i ) {
             if( (*i)->IsGi() ) {
@@ -63,13 +63,13 @@ void CSeqScanner::SequenceBuffer( CSeqBuffer* buffer )
     }
 
     if( m_inputChunk ) {
-		// set target for all reads 
+        // set target for all reads 
         ITERATE( TInputChunk, q, (*m_inputChunk) ) {
             for( CHit * h = (*q)->GetTopHit(); h; h = h->GetNextHit() ) {
-				if( (int)h->GetSeqOrd() == m_ord && h->TargetNotSet() ) {
-                	h->SetTarget( 0, a, A );
-                	h->SetTarget( 1, a, A );
-				}
+                if( (int)h->GetSeqOrd() == m_ord && h->TargetNotSet() ) {
+                    h->SetTarget( 0, a, A );
+                    h->SetTarget( 1, a, A );
+                }
             }
         }
     }
@@ -113,43 +113,43 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
     int ambCount = 0;
     int allowedMismatches = m_queryHash->GetMaxMismatches();
     
-	const char * y = a;
+    const char * y = a;
 
     int winLen = m_queryHash->GetWindowSize();
 
-	for( const char * Y = a + winLen; y < Y; ++y ) {
+    for( const char * Y = a + winLen; y < Y; ++y ) {
         CNcbi8naBase b( *y & 0x0f );
         if( b.IsAmbiguous() ) ++ambCount;
-	}
-	int lastPos = -1;
-	ERangeType lastType = eType_skip;
-	// TODO: somewhere here a check on range length should be inserted
-	for( const char * z = a; y < A; ++y, ++z  ) {
-		ERangeType type = ( ambCount <= allowedMismatches ) ? eType_direct : ( ambCount < m_maxAmbiguities ) ? eType_iterate : eType_skip ;
-		if( lastType != type ) {
-			if( lastPos != -1 ) {
-				if( lastType != eType_skip && rangeMap.back().second != eType_skip && 
-					rangeMap.back().first.second - rangeMap.back().first.first + z - a - lastPos < m_minBlockLength ) {
-					// merge too short blocks
-					rangeMap.back().first.second = z - a;
-					rangeMap.back().second = eType_iterate; // whatever it is - we drive it to larger of the two
-				} else {
-					rangeMap.push_back( make_pair( TRange( lastPos, z - a ), lastType ) );
-				}
-			}
-			lastPos = z - a;
-			lastType = type;
-		}
+    }
+    int lastPos = -1;
+    ERangeType lastType = eType_skip;
+    // TODO: somewhere here a check on range length should be inserted
+    for( const char * z = a; y < A; ++y, ++z  ) {
+        ERangeType type = ( ambCount <= allowedMismatches ) ? eType_direct : ( ambCount < m_maxAmbiguities ) ? eType_iterate : eType_skip ;
+        if( lastType != type ) {
+            if( lastPos != -1 ) {
+                if( lastType != eType_skip && rangeMap.size() && rangeMap.back().second != eType_skip && 
+                    rangeMap.back().first.second - rangeMap.back().first.first + z - a - lastPos < m_minBlockLength ) {
+                    // merge too short blocks
+                    rangeMap.back().first.second = z - a;
+                    rangeMap.back().second = eType_iterate; // whatever it is - we drive it to larger of the two
+                } else {
+                    rangeMap.push_back( make_pair( TRange( lastPos, z - a ), lastType ) );
+                }
+            }
+            lastPos = z - a;
+            lastType = type;
+        }
         CNcbi8naBase bz( 0x0f & *z );
         CNcbi8naBase by( 0x0f & *y );
         if( bz.IsAmbiguous() ) --ambCount;
         if( by.IsAmbiguous() ) ++ambCount;
-	}
+    }
     if( lastPos == -1 ) {
         lastPos = 0;
         lastType = ambCount > m_maxAmbiguities ? eType_skip : ambCount <= allowedMismatches ? eType_direct : eType_iterate;
     }
-	rangeMap.push_back( make_pair( TRange( lastPos, A - a ), lastType ) );
+    rangeMap.push_back( make_pair( TRange( lastPos, A - a ), lastType ) );
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -232,7 +232,7 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
 {
     if( m_queryHash == 0 ) return;
     int winLen = m_queryHash->GetWindowSize();
-    
+
     if( from < 0 ) from = 0;
     if( toOpen > A - a ) toOpen = A - a;
     if( toOpen - from < int( winLen ) ) return;
@@ -276,7 +276,6 @@ void CSeqScanner::x_RangemapLoop( const TRangeMap& rm, TMatches& matches,  Callb
 
             NoAmbiq impl( m_queryHash->GetWindowSize(), m_queryHash->GetStrideSize(), m_maxSimplicity );
             x_MainLoop( impl, matches, cbk, p, i->first.first, i->first.second, a, A, off );
-
         } else { // eType_iterate
 
             Ambiq impl( m_queryHash->GetWindowSize(), m_queryHash->GetStrideSize(), m_maxSimplicity, m_maxAmbiguities, mask8, maskH );
@@ -307,7 +306,7 @@ void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned o
     default: THROW( logic_error, "Subject may be represented exclusively in ncbi8na or colorspace encoding, got " << coding );
     }
 
-	m_filter->PurgeQueueToTheEnd();
+    m_filter->PurgeQueueToTheEnd();
     p.SetCurrentValue( A - a );
     p.Summary();
 }

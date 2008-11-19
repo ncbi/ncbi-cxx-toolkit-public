@@ -31,7 +31,7 @@ protected:
     CSeqCoding::ECoding m_coding;
 
 protected:
-	explicit CSeqBuffer( const CSeqBuffer& ) { THROW( logic_error, "CSeqBuffer copy constructor is prohibited!" ); } 
+    explicit CSeqBuffer( const CSeqBuffer& ) { THROW( logic_error, "CSeqBuffer copy constructor is prohibited!" ); } 
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -46,7 +46,7 @@ inline CSeqBuffer::CSeqBuffer( const objects::CSeqVector& vect, CSeqCoding::ECod
 {
     string s; 
     vect.GetSeqData( 0, vect.size(), s ); 
-	const char * a = s.c_str();
+    const char * a = s.c_str();
     char * b = m_begin;
     switch( tgtCoding ) {
     case CSeqCoding::eCoding_colorsp: 

@@ -132,7 +132,7 @@ int CQueryHash::x_GetNcbi4na_ncbi8na( UintH& window, const unsigned char * data,
 
 int CQueryHash::x_GetNcbi4na_colorsp( UintH& window, const unsigned char * data, unsigned length )
 {
-	// this encoding does not support ambiguities, 
+    // this encoding does not support ambiguities, 
     int off = 0;
     const unsigned char * t = data;
     unsigned wlen = m_windowLength;
@@ -155,12 +155,12 @@ int CQueryHash::x_GetNcbi4na_colorsp( UintH& window, const unsigned char * data,
 // if one is out of allowed range
 int CQueryHash::x_GetNcbi4na_ncbipna( UintH& window, const unsigned char * data, unsigned length )
 {
-	return x_GetNcbi4na_quality( window, data, length, x_Ncbipna2Ncbi4na, 5, m_ncbipnaToNcbi4naScore, x_UpdateNcbipnaScore );
+    return x_GetNcbi4na_quality( window, data, length, x_Ncbipna2Ncbi4na, 5, m_ncbipnaToNcbi4naScore, x_UpdateNcbipnaScore );
 }
 
 int CQueryHash::x_GetNcbi4na_ncbiqna( UintH& window, const unsigned char * data, unsigned length )
 {
-	return x_GetNcbi4na_quality( window, data, length, x_Ncbiqna2Ncbi4na, 1, m_ncbiqnaToNcbi4naScore, x_UpdateNcbiqnaScore );
+    return x_GetNcbi4na_quality( window, data, length, x_Ncbiqna2Ncbi4na, 1, m_ncbiqnaToNcbi4naScore, x_UpdateNcbiqnaScore );
 }
 
 UintH CQueryHash::ComputeAlternatives( UintH w, int l ) const
@@ -178,7 +178,7 @@ int CQueryHash::x_GetNcbi4na_quality( UintH& window, const unsigned char * data,
     int off = 0;
     const unsigned char * t = data;
     int left = length - m_windowLength;
-	if( left < 0 ) return -1;
+    if( left < 0 ) return -1;
 
     unsigned wlen = m_windowLength;
     ASSERT( wlen <= 32 );

@@ -35,7 +35,7 @@ CPermutator8b::CPermutator8b( int maxMism, int maxAmb ) :
             int( CNcbi8naBase( ( ncbi4na >> 0 ) & 0x000f ).IsAmbiguous() ) +
             int( CNcbi8naBase( ( ncbi4na >> 4 ) & 0x000f ).IsAmbiguous() );
         TEntry& e = SetEntry( ncbi4na, 2 );
-		e.SetAmbiguities( ambiguities );
+        e.SetAmbiguities( ambiguities );
         if( ambiguities > m_maxAmb ) continue; // should be AFTER e.SetAmbiguities()
         for( unsigned ncbi2na = 0; ncbi2na <= 0x0f; ++ncbi2na ) {
             int mism = 2 - CBitHacks::BitCount4( s_ncbi2na_ncbi4na_4bases[ncbi2na] & ncbi4na );
@@ -52,7 +52,7 @@ CPermutator8b::CPermutator8b( int maxMism, int maxAmb ) :
             int( CNcbi8naBase( ( ncbi4na >> 4 ) & 0x000f ).IsAmbiguous() ) +
             int( CNcbi8naBase( ( ncbi4na >> 8 ) & 0x000f ).IsAmbiguous() );
         TEntry& e = SetEntry( ncbi4na, 3 );
-		e.SetAmbiguities( ambiguities );
+        e.SetAmbiguities( ambiguities );
         if( ambiguities > m_maxAmb ) continue; // should be AFTER e.SetAmbiguities()
         for( unsigned ncbi2na = 0; ncbi2na <= 0x3f; ++ncbi2na ) {
             int mism = 3 - CBitHacks::BitCount4( s_ncbi2na_ncbi4na_4bases[ncbi2na] & ncbi4na );
@@ -70,7 +70,7 @@ CPermutator8b::CPermutator8b( int maxMism, int maxAmb ) :
             int( CNcbi8naBase( ( ncbi4na >>  8 ) & 0x000f ).IsAmbiguous() ) +
             int( CNcbi8naBase( ( ncbi4na >> 12 ) & 0x000f ).IsAmbiguous() );
         TEntry& e = SetEntry( ncbi4na, 4 );
-		e.SetAmbiguities( ambiguities );
+        e.SetAmbiguities( ambiguities );
         if( ambiguities > m_maxAmb ) continue; // should be AFTER e.SetAmbiguities()
         for( unsigned ncbi2na = 0; ncbi2na <= 0xff; ++ncbi2na ) {
             int mism = 4 - CBitHacks::BitCount4( s_ncbi2na_ncbi4na_4bases[ncbi2na] & ncbi4na );
@@ -80,22 +80,22 @@ CPermutator8b::CPermutator8b( int maxMism, int maxAmb ) :
             }
         }
     }
-	for( int i = 0; i < 4; ++i ) {
-		for( TTable::iterator e = m_data[i].begin(); e != m_data[i].end(); ++e ) {
-			e->Sort();
-		}
-	}
+    for( int i = 0; i < 4; ++i ) {
+        for( TTable::iterator e = m_data[i].begin(); e != m_data[i].end(); ++e ) {
+            e->Sort();
+        }
+    }
     pi->Summary();
 }
 
 bool CPermutator8b::x_InitStaticTables()
 {
-	for( int i = 0, k = 0; i < 16; ++i ) {
-		unsigned h1 = (s_ncbi2na_ncbi4na_2bases[i] << 8);
-		for( int j = 0; j < 16; ++j, ++k ) {
-			s_ncbi2na_ncbi4na_4bases[k] = h1 | s_ncbi2na_ncbi4na_2bases[j];
-		}
-	}
+    for( int i = 0, k = 0; i < 16; ++i ) {
+        unsigned h1 = (s_ncbi2na_ncbi4na_2bases[i] << 8);
+        for( int j = 0; j < 16; ++j, ++k ) {
+            s_ncbi2na_ncbi4na_4bases[k] = h1 | s_ncbi2na_ncbi4na_2bases[j];
+        }
+    }
     return true;
 }
 

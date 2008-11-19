@@ -178,11 +178,11 @@ void CHit::SetTarget( int pairmate, const char * begin, const char * end )
         s = b + l - (end - begin);
         l -= s;
     }
-	if( l < 0 || l > 2*(int)m_query->GetLength( pairmate ) ) {
-		m_target[pairmate] = gsx_CopyStr( "\xf" ); // indication of bad alignment
-	} else {
-    	m_target[pairmate] = gsx_CopyStr( string( p, '\xf' ) + string( b + begin, l ) + string( s, '\xf' ) );
-	}
+    if( l < 0 || l > 2*(int)m_query->GetLength( pairmate ) ) {
+        m_target[pairmate] = gsx_CopyStr( "\xf" ); // indication of bad alignment
+    } else {
+        m_target[pairmate] = gsx_CopyStr( string( p, '\xf' ) + string( b + begin, l ) + string( s, '\xf' ) );
+    }
 }
 
 int CHit::ComputeRangeLength( int a, int b, int c, int d ) 

@@ -30,7 +30,7 @@ public:
         eStatus_ready
     };
 
-	~CQueryHash();
+    ~CQueryHash();
     CQueryHash( int maxm = 2, int maxa = 4 );
 
     void SetWindowSize( int winSize );
@@ -123,8 +123,8 @@ protected:
         TMatchSet& m_matchSet;
     };
 
-	typedef UintH TCvt( const unsigned char *, int, unsigned short );
-	typedef Uint2 TDecr( Uint2 );
+    typedef UintH TCvt( const unsigned char *, int, unsigned short );
+    typedef Uint2 TDecr( Uint2 );
 
     bool CheckWordConstraints();
     bool CheckWordConstraints() const;
@@ -138,10 +138,10 @@ protected:
     int x_GetNcbi4na_ncbiqna( UintH& window, const unsigned char * data, unsigned length );
     int x_GetNcbi4na_quality( UintH& window, const unsigned char * data, unsigned length, TCvt * fun, int incr, unsigned short score, TDecr * decr );
 
-	static Uint2 x_UpdateNcbipnaScore( Uint2 score ) { return score /= 2; }
-	static Uint2 x_UpdateNcbiqnaScore( Uint2 score ) { return score - 1; }
-	static TCvt  x_Ncbipna2Ncbi4na;
-	static TCvt  x_Ncbiqna2Ncbi4na;
+    static Uint2 x_UpdateNcbipnaScore( Uint2 score ) { return score /= 2; }
+    static Uint2 x_UpdateNcbiqnaScore( Uint2 score ) { return score - 1; }
+    static TCvt  x_Ncbipna2Ncbi4na;
+    static TCvt  x_Ncbiqna2Ncbi4na;
 
 //    template<class Callback> void ForEach( Uint8 ncbi2na, Callback& cbk, Uint1 mask, Uint1 flags );
 
@@ -161,10 +161,10 @@ protected:
     bool m_allowIndel;
     double m_maxSimplicity;
     Uint2 m_ncbipnaToNcbi4naScore;
-	Uint2 m_ncbiqnaToNcbi4naScore;
+    Uint2 m_ncbiqnaToNcbi4naScore;
     TSkipPositions m_skipPositions;
     CWordHash m_hashTable;
-	vector<CPermutator8b*> m_permutators;
+    vector<CPermutator8b*> m_permutators;
     // all masks are ncbi2na, i.e. 2 bits per base
     Uint8 m_wordMask; 
     int m_wordOffset;
@@ -177,8 +177,8 @@ protected:
 
 inline CQueryHash::~CQueryHash() 
 {
-	for( int i = 0; i < int( m_permutators.size() ); ++i )
-		delete m_permutators[i];
+    for( int i = 0; i < int( m_permutators.size() ); ++i )
+        delete m_permutators[i];
 }
 
 inline CQueryHash::CQueryHash( int maxm, int maxa ) :

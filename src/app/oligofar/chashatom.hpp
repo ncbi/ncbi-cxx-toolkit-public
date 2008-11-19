@@ -73,6 +73,7 @@ public:
     bool operator == ( const CHashAtom& other ) const { return EqualQueryReadWord( *this, other ); }
     bool operator <  ( const CHashAtom& other ) const { return LessQueryReadWord( *this, other ); }
 
+    void PrintDebug( ostream& o ) const;
 protected:
     friend class CWordHash;
     CHashAtom( Uint2 subkey ) : 
@@ -82,10 +83,21 @@ protected:
     CQuery * m_query;
     Uint2 m_subkey;
     Uint1 m_offset;
-    int m_flags:4;
-    int m_mism:2;
-    int m_gaps:2;
+    unsigned m_flags:4;
+    unsigned m_mism:2;
+    unsigned m_gaps:2;
 };
+
+inline void CHashAtom::PrintDebug( ostream& o ) const
+{
+    o << hex << setw(4) << setfill('0') << GetSubkey() << dec << "\t" 
+        << GetQuery()->GetId() << ":" << GetPairmate() << "\t"
+        << GetStrand() << "\t"
+        << GetOffset() << "(o)\t"
+        << GetWordId() << "(w)\t"
+        << GetMismatches() << "(m)\t"
+        << "=>id"[GetIndel()] << "(i)";
+}
 
 END_OLIGOFAR_SCOPES
 

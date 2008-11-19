@@ -15,7 +15,7 @@ class CFilter : public CSeqVecProcessor::ICallback
 public:
     typedef multimap<int,CHit*> TPendingHits;
 
-	enum EGeometryFlags {
+    enum EGeometryFlags {
         eFF = CHit::fGeometry_Fwd1_Fwd2,
         eRF = CHit::fGeometry_Rev1_Fwd2,
         eFR = CHit::fGeometry_Fwd1_Rev2,
@@ -27,7 +27,7 @@ public:
         eSolexa = eCentripetal,
         eSOLiD  = eIncremental,
         eBAD = -1
-	};
+    };
 
     // Note: it is essential that geometry does not allow mixed cases. 
     // Each individual component hit should either be added to 
@@ -36,13 +36,13 @@ public:
 
     CFilter() : m_seqIds( 0 ), m_aligner( 0 ), 
                 m_ord( -1 ), m_begin( 0 ), m_end( 0 ), 
-				m_geometry( eSolexa ), 
+                m_geometry( eSolexa ), 
                 m_minDist( 100 ), m_maxDist( 300 ), m_reserveDist( 255 ),
                 m_topCnt( 10 ), m_topPct( 10 ), 
                 m_scoreCutoff( 80 ), m_outputFormatter( 0 ) {}
 
     void Match( const CHashAtom& , const char * seqBegin, const char * seqEnd, int pos );
-	void PurgeQueueToTheEnd();
+    void PurgeQueueToTheEnd();
 
     virtual void SequenceBegin( const TSeqIds&, int oid );
     virtual void SequenceBuffer( CSeqBuffer* );
@@ -50,7 +50,7 @@ public:
 
     void SetSeqIds( CSeqIds* seqIds ) { m_seqIds = seqIds; }
     void SetAligner( IAligner* aligner ) { m_aligner = aligner; }
-	void SetOutputFormatter( COutputFormatter * f ) { m_outputFormatter = f; }
+    void SetOutputFormatter( COutputFormatter * f ) { m_outputFormatter = f; }
 
     void SetMaxDist( int d ) { m_maxDist = d; }
     void SetMinDist( int d ) { m_minDist = d; }
@@ -58,7 +58,7 @@ public:
     void SetTopPct( double pct ) { m_topPct = pct; }
     void SetTopCnt( int cnt ) { m_topCnt = cnt; }
     void SetScorePctCutoff( double cutoff ) { m_scoreCutoff = cutoff; }
-	void SetGeometry( unsigned g ) { m_geometry = g; }
+    void SetGeometry( unsigned g ) { m_geometry = g; }
 
     bool CheckGeometry( int from1, int to1, int from2, int to2 ) const;
     bool InRange( int a, int b ) const { return InRange( b - a + 1 ); }
@@ -74,7 +74,7 @@ private:
     CFilter& operator = ( const CFilter& );
 
 protected:
-	friend class CGuideFile;
+    friend class CGuideFile;
 
     void PurgeHit( CHit *, bool setTarget = false );
     void ProcessMatch( double score, int from, int to, bool reverse, CQuery * query, int pairmate );
@@ -87,7 +87,7 @@ protected:
     int m_ord;
     const char * m_begin;
     const char * m_end;
-	unsigned m_geometry;
+    unsigned m_geometry;
     int m_minDist;
     int m_maxDist;
     int m_reserveDist; // extra distance to keep hits in queue: should take into account stride, window count....
@@ -95,7 +95,7 @@ protected:
     double m_topPct;
     double m_scoreCutoff;
     TPendingHits m_pendingHits;
-	COutputFormatter * m_outputFormatter;
+    COutputFormatter * m_outputFormatter;
 };
 
 END_OLIGOFAR_SCOPES

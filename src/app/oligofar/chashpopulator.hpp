@@ -51,7 +51,7 @@ public:
     const_iterator end() const { return m_data.end(); }
     size_t size() const { return m_data.size(); }
 
-	void PopulateHash( const UintH& window );
+    void PopulateHash( const UintH& window );
 
     void operator() ( Uint8 hash, int mism, int amb );
 
@@ -59,7 +59,7 @@ public:
     static void Print( ostream& o, const value_type& );
 
 protected:
-	CQuery * m_query;
+    CQuery * m_query;
     int m_windowSize;
     int m_wordSize;
     int m_strideSize;
@@ -70,9 +70,9 @@ protected:
     UintH m_rwindow;
     UintH m_windowMask; // 4bpp
     Uint8 m_wordMask;   // 2bpp
-	const CPermutator8b * m_permutator;
+    const CPermutator8b * m_permutator;
     CHashAtom::EIndel m_indel;
-	Uint1 m_flags;
+    Uint1 m_flags;
     THashList m_data;
 };
 
@@ -85,12 +85,12 @@ inline CHashPopulator& CHashPopulator::Unique()
 
 inline void CHashPopulator::Print( ostream& o, const value_type& v )
 {
-    o << setw(32) << hex << setfill('0') << v.first << dec << "\t"
-      << v.second.GetOffset() << "\t"
-      << v.second.GetWordId() << "\t"
-      << v.second.GetStrand() << "\t"
-      << v.second.GetIndel() << "\t"
-      << v.second.GetMismatches();
+    o << setw(16) << hex << setfill('0') << v.first << dec << "\t"
+      << v.second.GetOffset() << "[o]\t"
+      << v.second.GetWordId() << "[w]\t"
+      << v.second.GetStrand() << "[s]\t"
+      << v.second.GetIndel() << "[i]\t"
+      << v.second.GetMismatches() << "[m]";
 }
 
 inline void CHashPopulator::Print( ostream& o ) const
