@@ -1245,8 +1245,8 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
         m_MsvcRegSettings->m_ProjectsSubdir  = 
             GetConfig().GetString(section, "Projects", "build");
 
-        m_MsvcRegSettings->m_MetaMakefile = 
-            GetConfig().Get(section, "MetaMakefile");
+        m_MsvcRegSettings->m_MetaMakefile = CDirEntry::ConvertToOSPath(
+            GetConfig().Get(section, "MetaMakefile"));
 
         m_MsvcRegSettings->m_DllInfo = 
             GetConfig().Get(section, "DllInfo");
@@ -1303,7 +1303,8 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     PTB_INFO("Project tree root: " << m_Root);
 
     // all possible project tags
-    const string& tagsfile = GetConfig().Get("ProjectTree", "ProjectTags");
+    const string& tagsfile = CDirEntry::ConvertToOSPath(
+        GetConfig().Get("ProjectTree", "ProjectTags"));
     if (!tagsfile.empty()) {
         LoadProjectTags(
             CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, tagsfile));
@@ -1359,8 +1360,8 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     }
 
     /// <projects> branch of tree (scripts\projects)
-    const string& projects = 
-        GetConfig().Get("ProjectTree", "projects");
+    const string& projects = CDirEntry::ConvertToOSPath(
+        GetConfig().Get("ProjectTree", "projects"));
     m_ProjectTreeInfo->m_Projects = 
             CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
                                   projects);

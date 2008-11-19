@@ -1659,7 +1659,8 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
     CSymResolver resolver;
     resolver += GetApp().GetSite().GetMacros();
     ITERATE(list<string>, p, metadata_files) {
-	    resolver += CSymResolver(CDirEntry::ConcatPath(root_src_path, *p));
+	    resolver += CSymResolver( CDirEntry::ConcatPath(
+	               root_src_path, CDirEntry::ConvertToOSPath(*p)));
 	}
     ResolveDefs(resolver, subtree_makefiles);
 

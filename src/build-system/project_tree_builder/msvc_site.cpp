@@ -226,13 +226,15 @@ void CMsvcSite::GetLibInfo(const string& lib,
         return;
     }
 
-    string include_str    = ProcessMacros(GetOpt(m_Registry, section, "INCLUDE", config));
+    string include_str    = ToOSPath(
+        ProcessMacros(GetOpt(m_Registry, section, "INCLUDE", config)));
     NStr::Split(include_str, LIST_SEPARATOR, libinfo->m_IncludeDir);
     
     string defines_str    = GetOpt(m_Registry, section, "DEFINES", config);
     NStr::Split(defines_str, LIST_SEPARATOR, libinfo->m_LibDefines);
 
-    libinfo->m_LibPath    = ProcessMacros(GetOpt(m_Registry, section, "LIBPATH", config));
+    libinfo->m_LibPath    = ToOSPath(
+        ProcessMacros(GetOpt(m_Registry, section, "LIBPATH", config)));
 
     string libs_str = GetOpt(m_Registry, section, "LIB", config);
     NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs);
@@ -244,7 +246,11 @@ void CMsvcSite::GetLibInfo(const string& lib,
     NStr::Split(macro_str, LIST_SEPARATOR, libinfo->m_Macro);
 
     string files_str    = ProcessMacros(GetOpt(m_Registry, section, "FILES", config));
-    NStr::Split(files_str, LIST_SEPARATOR, libinfo->m_Files);
+    list<string> tmp;
+    NStr::Split(files_str, LIST_SEPARATOR, tmp);
+    ITERATE( list<string>, f, tmp) {
+        libinfo->m_Files.push_back( ToOSPath(*f));
+    }
 }
 
 
@@ -514,7 +520,7 @@ string CMsvcSite::GetThirdPartyLibsBinPathSuffix(void) const
 
 string CMsvcSite::GetThirdPartyLibsBinSubDir(void) const
 {
-    return x_GetConfigureEntry("ThirdPartyLibsBinSubDir");
+    return ToOSPath(x_GetConfigureEntry("ThirdPartyLibsBinSubDir"));
 }
 
 void CMsvcSite::GetStandardFeatures(list<string>& features) const
@@ -675,6 +681,19 @@ void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
             m_Macros.AddDefinition(macro, m_Registry.Get(macro, "DefValue"));
         }
     }
+}
+
+string CMsvcSite::ToOSPath(const string& path)
+{
+    string xpath(path);
+    char separator = CDirEntry::GetPathSeparator();
+    for (size_t i = 0; i < xpath.length(); i++) {
+        char c = xpath[i];
+        if ( (c == '\\' || c == '/') && c != separator) {
+            xpath[i] = separator;
+        }
+    }
+    return xpath;
 }
 
 

@@ -173,6 +173,9 @@ public:
     }
 
     static bool IsLibOk(const SLibInfo& lib_info, bool silent = false);
+
+    static string ToOSPath(const string& path);
+
 private:
     CPtbRegistry m_Registry;
     CSimpleMakeFileContents m_UnixMakeDef;
