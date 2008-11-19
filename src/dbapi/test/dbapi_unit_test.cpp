@@ -2858,6 +2858,123 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert2)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+class CServerInfo2
+{
+public:
+    CServerInfo2(const string& name, const string value)
+    : m_Name(name)
+    , m_Value(value)
+    {
+    }
+
+private:
+    string m_Name;
+    string m_Value;
+};
+
+struct SServerInfo3
+{
+    Uint4 id;
+    string name;
+    string value;
+};
+
+namespace value_slice
+{
+
+template <typename CP>
+class CMakeObject<CP, CServerInfo2, CDB_Result>
+{
+public:
+    static CServerInfo2 Make(CDB_Result& source)
+    {
+        typedef CValueConvert<CP, CDB_Result> TResult;
+
+        TResult result(source);
+
+        return CServerInfo2(result, result);
+    }
+};
+
+template <typename CP>
+class CMakeObject<CP, SServerInfo3, CDB_Result>
+{
+public:
+    static SServerInfo3 Make(CDB_Result& source)
+    {
+        typedef CValueConvert<CP, CDB_Result> TResult;
+        SServerInfo3 res_val;
+
+        TResult result(source);
+        res_val.id = result;
+        res_val.name = static_cast<string>(result);
+        res_val.value = static_cast<string>(result);
+
+        return res_val;
+    }
+};
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert3)
+{
+    string sql;
+
+    if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer) &&
+        !(GetArgs().GetDriverName() == ftds_dblib_driver && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
+        )
+    {
+        // vector ...
+        {
+            sql = "sp_server_info";
+
+            vector<SServerInfo3> value = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
+            BOOST_CHECK(value.size() > 0);
+
+            vector<pair<Uint4, string> > value_pair = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
+            BOOST_CHECK(value_pair.size() > 0);
+
+            vector<pair<Uint4, pair<string, string> > > value_pair2 = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
+            BOOST_CHECK(value_pair2.size() > 0);
+
+            vector<pair<Uint4, CServerInfo2> > value_pair3 = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
+            BOOST_CHECK(value_pair3.size() > 0);
+
+            vector<vector<string> > value_pair4 = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
+            BOOST_CHECK(value_pair4.size() > 0);
+
+            // Error. Recordset has only three columns.
+            // vector<map<string, string> > value_pair5 = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
+            // BOOST_CHECK(value_pair5.size() > 0);
+
+            vector<map<int, map<string, string> > > value_pair6 = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
+            BOOST_CHECK(value_pair6.size() > 0);
+        }
+
+        // map ...
+        {
+            sql = "sp_server_info";
+
+            map<Int4, CServerInfo2> value = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
+            BOOST_CHECK(value.size() > 0);
+
+            map<pair<Uint4, string>, string> value_pair = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
+            BOOST_CHECK(value_pair.size() > 0);
+
+            map<Int4, pair<string, string> > value_pair2 = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
+            BOOST_CHECK(value_pair2.size() > 0);
+
+            map<Int4, vector<string> > value_pair3 = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
+            BOOST_CHECK(value_pair3.size() > 0);
+
+            map<Int4, map<string, string> > value_pair4 = Convert(GetConnection().GetCDB_Connection()->RPC(sql));
+            BOOST_CHECK(value_pair4.size() > 0);
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 template <typename T>
 void DoTest_CDBCmdConvert(const string& sql, const T& v)
 {
