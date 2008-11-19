@@ -158,6 +158,9 @@ void CSeq_annot_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
 
 void CSeq_annot_Info::x_TSEAttachContents(CTSE_Info& tse)
 {
+    if ( tse.GetName().IsNamed() ) {
+        m_Name = tse.GetName();
+    }
     CRef<CSeq_annot_SNP_Info> snp_info = tse.x_GetSNP_Info(m_Object);
     if ( snp_info ) {
         _ASSERT(!m_SNP_Info);
@@ -189,13 +192,16 @@ void CSeq_annot_Info::x_TSEDetachContents(CTSE_Info& tse)
 
 const CAnnotName& CSeq_annot_Info::GetName(void) const
 {
-    return m_Name.IsNamed()? m_Name:
-        HasTSE_Info() ? GetTSE_Info().GetName() : m_Name;
+    return m_Name;
 }
 
 
 void CSeq_annot_Info::x_UpdateName(void)
 {
+    if ( HasTSE_Info() && GetTSE_Info().GetName().IsNamed() ) {
+        m_Name = GetTSE_Info().GetName();
+        return;
+    }
     const CSeq_annot& annot = *m_Object;
     if ( annot.IsSetId() ) {
         const CSeq_annot::TId& ids = annot.GetId();
