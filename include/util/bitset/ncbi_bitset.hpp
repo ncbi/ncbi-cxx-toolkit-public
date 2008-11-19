@@ -34,6 +34,8 @@
 /// @file ncbi_bitset.hpp
 /// Compressed bitset (entry point to bm.h)
 
+#include <corelib/ncbistd.hpp>
+
 #define BM_ASSERT _ASSERT
 
 #ifdef NCBI_RESTRICT
