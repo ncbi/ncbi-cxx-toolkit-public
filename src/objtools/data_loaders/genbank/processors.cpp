@@ -1850,24 +1850,23 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
     string db_name;
     switch ( blob_id.GetSubSat() ) {
     case eSubSat_SNP:
-        blob->SetName("SNP");
         name.SetNamed("SNP");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_variation);
         db_name = "Annot:SNP";
         break;
     case eSubSat_CDD:
-        name.SetNamed("CDDSearch");
+        name.SetNamed("CDD");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_region);
         more_types.push_back(SAnnotTypeSelector(CSeqFeatData::eSubtype_site));
         db_name = "Annot:CDD";
         break;
     case eSubSat_SNP_graph:
-        blob->SetName("SNP");
         name.SetNamed("SNP");
         type.SetAnnotType(CSeq_annot::C_Data::e_Graph);
         db_name = "Annot:SNP graph";
         break;
     case eSubSat_MGC:
+        name.SetNamed("MGC");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_misc_difference);
         db_name = "Annot:MGC";
         break;
@@ -1877,10 +1876,12 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
         db_name = "Annot:tRNA";
         break;
     case eSubSat_STS:
+        name.SetNamed("STS");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_STS);
         db_name = "Annot:STS";
         break;
     case eSubSat_Exon:
+        name.SetNamed("Exon");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_exon);
         db_name = "Annot:Exon";
         break;
@@ -1889,6 +1890,9 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
         break;
     }
     _ASSERT(!db_name.empty());
+    if ( name.IsNamed() ) {
+        blob->SetName(name);
+    }
 
     int gi = blob_id.GetSatKey();
     CSeq_id_Handle gih = CSeq_id_Handle::GetGiHandle(gi);
