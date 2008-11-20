@@ -497,42 +497,44 @@ bool CDataTool::ProcessData(void)
 
 bool CDataTool::GenerateCode(void)
 {
-    const CArgs& args = GetArgs();
-
-    // load generator config
-    if ( const CArgValue& od = args["od"] )
-        generator.LoadConfig(od.AsString(), args["odi"], args["odw"]);
+    string opt;
+    {
+        const CArgs& args = GetArgs();
+        // load generator config
+        if ( const CArgValue& od = args["od"] )
+            generator.LoadConfig(od.AsString(), args["odi"], args["odw"]);
+    }
     //if ( const CArgValue& oD = args["oD"] )
     //    generator.AddConfigLine(oD.AsString());
 
     // set list of types for generation
-    if ( args["oX"] )
+    if ( generator.GetOpt("oX") )
         generator.ExcludeRecursion();
-    if ( args["oA"] )
+    if ( generator.GetOpt("oA") )
         generator.IncludeAllMainTypes();
-    if ( const CArgValue& ot = args["ot"] )
-        generator.IncludeTypes(ot.AsString());
-    if ( const CArgValue& ox = args["ox"] )
-        generator.ExcludeTypes(ox.AsString());
+    if ( generator.GetOpt("ot", &opt) )
+        generator.IncludeTypes(opt);
+    if ( generator.GetOpt("ox", &opt) )
+        generator.ExcludeTypes(opt);
 
     if ( !generator.HaveGenerateTypes() )
         return true;
 
     // set the export specifier, if provided
-    if ( const CArgValue& oex = args["oex"] ) {
+    if ( generator.GetOpt("oex", &opt) ) {
         string ex;
         ex = generator.GetConfig().Get("-","_export");
         if (ex.empty()) {
-            ex = oex.AsString();
+            ex = opt;
         }
         CClassCode::SetExportSpecifier(ex);
     }
     // define the Doxygen group
     {
-        if ( args["oDc"] ) {
+        if ( generator.GetOpt("oDc") ) {
             CClassCode::SetDoxygenComments(true);
-            if ( const CArgValue& odx = args["odx"] ) {
-                string root = odx.AsString();
+            if ( generator.GetOpt("odx", &opt) ) {
+                string root = opt;
                 if (root.empty()) {
                     // default
                     root = "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source";
@@ -553,41 +555,41 @@ bool CDataTool::GenerateCode(void)
     // prepare generator
     
     // set namespace
-    if ( const CArgValue& on = args["on"] )
-        generator.SetDefaultNamespace(on.AsString());
+    if ( generator.GetOpt("on", &opt) )
+        generator.SetDefaultNamespace(opt);
     
     // set output files
-    if ( const CArgValue& oc = args["oc"] ) {
-        const string& fileName = oc.AsString();
+    if ( generator.GetOpt("oc", &opt) ) {
+        const string& fileName = opt;
         generator.SetCombiningFileName(fileName);
         generator.SetFileListFileName(fileName+".files");
     }
-    if ( const CArgValue& of = args["of"] )
-        generator.SetFileListFileName(of.AsString());
+    if ( generator.GetOpt("of", &opt) )
+        generator.SetFileListFileName(opt);
     
     // set directories
-    if ( const CArgValue& oph = args["oph"] )
-        generator.SetHPPDir(oph.AsString());
-    if ( const CArgValue& opc = args["opc"] )
-        generator.SetCPPDir(opc.AsString());
+    if ( generator.GetOpt("oph", &opt) )
+        generator.SetHPPDir(opt);
+    if ( generator.GetOpt("opc", &opt) )
+        generator.SetCPPDir(opt);
     
     // set file names prefixes
-    if ( const CArgValue& orF = args["or"] )
-        generator.SetFileNamePrefix(orF.AsString());
-    if ( args["orq"] )
+    if ( generator.GetOpt("or", &opt) )
+        generator.SetFileNamePrefix(opt);
+    if ( generator.GetOpt("orq") )
         generator.UseQuotedForm(true);
-    if ( args["ocvs"] )
+    if ( generator.GetOpt("ocvs") )
         generator.CreateCvsignore(true);
-    if ( args["ors"] )
+    if ( generator.GetOpt("ors") )
         generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
-    if ( args["orm"] )
+    if ( generator.GetOpt("orm") )
         generator.SetFileNamePrefixSource(eFileName_FromModuleName);
-    if ( args["orA"] )
+    if ( generator.GetOpt("orA") )
         generator.SetFileNamePrefixSource(eFileName_UseAllPrefixes);
 
     // precompiled header
-    if ( const CArgValue& pch = args["pch"] )
-        CFileCode::SetPchHeader(pch.AsString());
+    if ( generator.GetOpt("pch", &opt) )
+        CFileCode::SetPchHeader(opt);
     
     // generate code
     generator.GenerateCode();
@@ -646,7 +648,7 @@ SourceFile::EType CDataTool::LoadDefinitions(
             case SourceFile::eASN:
                 {
                     ASNLexer lexer(fName,name);
-                    lexer.AllowIDsEndingWithMinus(GetArgs()["lax_syntax"]);
+                    lexer.AllowIDsEndingWithMinus(generator.GetOpt("lax_syntax"));
                     ASNParser parser(lexer);
                     fileSet.AddFile(parser.Modules(name));
                 }

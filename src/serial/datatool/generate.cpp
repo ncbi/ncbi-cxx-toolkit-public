@@ -1128,5 +1128,31 @@ const CDataTypeModule* CCodeGenerator::FindModuleByName(const string& name) cons
     return 0;
 }
 
+bool CCodeGenerator::GetOpt(const string& opt, string* value)
+{
+    string result;
+    string key("-");
+    string xopt = key + opt;
+    if (m_Config.HasEntry(key, xopt)) {
+        result = m_Config.Get(key, xopt);
+        if (result != key) {
+            if (value) {
+                *value = result;
+            }
+            return true;
+        }
+        return false;
+    }
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+    const CArgValue& argv = args[opt];
+    if (argv.HasValue()) {
+        if (value) {
+            *value = argv.AsString();
+        }
+        return true;
+    }
+    return false;
+}
+
 
 END_NCBI_SCOPE

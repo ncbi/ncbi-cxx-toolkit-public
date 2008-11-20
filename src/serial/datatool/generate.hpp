@@ -174,6 +174,8 @@ public:
     void ResolveImportRefs(CDataTypeModule& head, const CDataTypeModule* ref);
     const CDataTypeModule* FindModuleByName(const string& name) const;
 
+    bool GetOpt(const string& opt, string* value=0);
+
 protected:
 
     static void GetTypes(TTypeNames& typeNames, const string& name);
