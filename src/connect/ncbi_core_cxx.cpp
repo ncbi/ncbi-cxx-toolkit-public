@@ -62,10 +62,9 @@ static void s_REG_Get(void* user_data,
                       char* value, size_t value_size) THROWS_NONE
 {
     try {
-        string result = static_cast<IRegistry*> (user_data)->
-            Get(section, name);
+        string result(static_cast<IRegistry*> (user_data)->Get(section, name));
 
-        if ( !result.empty() )
+        if (!result.empty())
             strncpy0(value, result.c_str(), value_size - 1);
     }
     NCBI_CATCH_ALL_X(1, "s_REG_Get() failed");
@@ -119,12 +118,12 @@ extern REG REG_cxx2c(IRWRegistry* reg, bool pass_ownership)
  ***********************************************************************/
 
 extern "C" {
-static void s_LOG_Handler(void*         /*user_data*/,
-                          SLOG_Handler*   call_data) THROWS_NONE
+static void s_LOG_Handler(void*       /*user_data*/,
+                          SLOG_Handler* call_data) THROWS_NONE
 {
     try {
         EDiagSev level;
-        switch ( call_data->level ) {
+        switch (call_data->level) {
         case eLOG_Trace:
             level = eDiag_Trace;
             break;
@@ -159,7 +158,7 @@ static void s_LOG_Handler(void*         /*user_data*/,
         }
         diag << ErrCode(call_data->err_code, call_data->err_subcode)
              << call_data->message;
-        if ( call_data->raw_size ) {
+        if (call_data->raw_size) {
             diag <<
                 "\n#################### [BEGIN] Raw Data (" <<
                 call_data->raw_size <<
@@ -191,7 +190,7 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how)
 {
     try {
         CRWLock* lock = static_cast<CRWLock*> (user_data);
-        switch ( how ) {
+        switch (how) {
         case eMT_Lock:
             lock->WriteLock();
             break;
