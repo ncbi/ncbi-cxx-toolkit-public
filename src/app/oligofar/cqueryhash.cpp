@@ -28,6 +28,47 @@ void CQueryHash::Compress( UintH& w ) const
     }
 }
 
+
+int CQueryHash::PopulateWindow( UintH fwindow, int offset, int ambiguities, CQuery * query, int component )
+{
+    Compress( fwindow );
+
+    size_t reserve = size_t( min( Uint8(numeric_limits<size_t>::max()), 
+                                  ComputeEntryCountPerRead() * ( Uint8( 1 ) << ( ambiguities * 2 ) ) ) );
+
+    CHashPopulator hashPopulator( m_windowSize, m_wordSize, m_strideSize, query, m_strands, offset, component );
+    hashPopulator.Reserve( reserve );
+    
+    if( GetAllowIndel() ) {
+        UintH maskH = CBitHacks::WordFootprint<UintH>( 4 * ( m_windowSize + m_strideSize - 1 ) );
+        int maxMism = max( 0, m_maxMism - 1 ); // don't allow as many mismatches if indels are allowed
+        hashPopulator.SetPermutator( m_permutators[maxMism] );
+        hashPopulator.SetIndel( CHashAtom::eInsertion );
+        for( int pos = 1; pos < m_windowSize - 1; ++pos ) {
+            UintH ifwindow = maskH & CBitHacks::InsertBits<UintH, 4, 0xf>( fwindow, pos ); // insert N at the position 
+            hashPopulator.PopulateHash( ifwindow );
+        }
+        hashPopulator.SetIndel( CHashAtom::eDeletion );
+        for( int pos = 1; pos < m_windowSize; ++pos ) {
+            UintH dfwindow = maskH & CBitHacks::DeleteBits<UintH, 4>( fwindow, pos ); // deletion at the position
+            hashPopulator.PopulateHash( dfwindow );
+        }
+        fwindow &= maskH; // remove extra base
+    }
+
+    // no indels, just mismatches
+    hashPopulator.SetIndel( CHashAtom::eNoIndel );
+    hashPopulator.SetPermutator( m_permutators[m_maxMism] );
+    hashPopulator.PopulateHash( fwindow );
+    hashPopulator.Unique();
+    
+    ITERATE( CHashPopulator, h, hashPopulator ) {
+        m_hashTable.AddEntry( h->first, h->second );
+    }
+
+    return hashPopulator.size();
+}
+
 int CQueryHash::AddQuery( CQuery * query, int component )
 {
     ASSERT( component == 0 || component == 1 );
@@ -64,42 +105,16 @@ int CQueryHash::AddQuery( CQuery * query, int component )
         if( offset == -1 ) continue;
         offset += off;
         
-        Compress( fwindow );
-
-        size_t reserve = size_t( min( Uint8(numeric_limits<size_t>::max()), 
-                                      ComputeEntryCountPerRead() * ( Uint8( 1 ) << ( ambiguities * 2 ) ) ) );
-
-        CHashPopulator hashPopulator( m_windowSize, m_wordSize, m_strideSize, query, m_strands, offset, component );
-        hashPopulator.Reserve( reserve );
-        
-        if( GetAllowIndel() ) {
-            UintH maskH = CBitHacks::WordFootprint<UintH>( 4 * ( m_windowSize + m_strideSize - 1 ) );
-            int maxMism = max( 0, m_maxMism - 1 ); // don't allow as many mismatches if indels are allowed
-            hashPopulator.SetPermutator( m_permutators[maxMism] );
-            hashPopulator.SetIndel( CHashAtom::eInsertion );
-            for( int pos = 1; pos < m_windowSize - 1; ++pos ) {
-                UintH ifwindow = maskH & CBitHacks::InsertBits<UintH, 4, 0xf>( fwindow, pos ); // insert N at the position 
-                hashPopulator.PopulateHash( ifwindow );
-            }
-            hashPopulator.SetIndel( CHashAtom::eDeletion );
-            for( int pos = 1; pos < m_windowSize; ++pos ) {
-                UintH dfwindow = maskH & CBitHacks::DeleteBits<UintH, 4>( fwindow, pos ); // deletion at the position
-                hashPopulator.PopulateHash( dfwindow );
-            }
-            fwindow &= maskH; // remove extra base
+        if( m_nahso3mode ) {
+            ret += PopulateWindow(
+                    x_Convert4( fwindow, m_windowLength, UintH( 0x8888888888888888ULL, 0x8888888888888888ULL ), +2 ),
+                    offset, ambiguities, query, component );
+            ret += PopulateWindow(
+                    x_Convert4( fwindow, m_windowLength, UintH( 0x1111111111111111ULL, 0x1111111111111111ULL ), -2 ),
+                    offset, ambiguities, query, component );
+        } else {
+            ret += PopulateWindow( fwindow, offset, ambiguities, query, component );
         }
-
-        // no indels, just mismatches
-        hashPopulator.SetIndel( CHashAtom::eNoIndel );
-        hashPopulator.SetPermutator( m_permutators[m_maxMism] );
-        hashPopulator.PopulateHash( fwindow );
-        hashPopulator.Unique();
-        
-        ITERATE( CHashPopulator, h, hashPopulator ) {
-            m_hashTable.AddEntry( h->first, h->second );
-        }
-
-        ret += hashPopulator.size();
     }
 
     if( ret ) query->ClearRejectFlags( component );

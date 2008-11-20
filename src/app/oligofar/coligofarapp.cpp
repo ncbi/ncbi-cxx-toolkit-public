@@ -24,7 +24,7 @@
 USING_OLIGOFAR_SCOPES;
 
 #ifndef OLIGOFAR_VERSION
-#define OLIGOFAR_VERSION "3.29a" 
+#define OLIGOFAR_VERSION "3.30" 
 #endif
 
 COligoFarApp::COligoFarApp( int argc, char ** argv ) :
@@ -616,6 +616,7 @@ int COligoFarApp::ProcessData()
     queryHash.SetMaxAmbiguities( m_maxHashAmb );
     queryHash.SetNcbipnaToNcbi4naScore( Uint2( 255 * pow( 10.0, double(m_phrapSensitivity)/10) ) );
     queryHash.SetNcbiqnaToNcbi4naScore( m_phrapSensitivity );
+    queryHash.SetNaHSO3mode( m_sodiumBisulfiteCuration );
 
     seqScanner.SetFilter( &filter );
     seqScanner.SetQueryHash( &queryHash );
@@ -624,7 +625,6 @@ int COligoFarApp::ProcessData()
     seqScanner.SetMaxSimplicity( m_maxSimplicity );
     seqScanner.SetMinBlockLength( m_minBlockLength );
     seqScanner.SetInputChunk( batch.GetInputChunk() );
-    seqScanner.SetSodiumBisulfateCuration( m_sodiumBisulfiteCuration );
 
     seqVecProcessor.SetTargetCoding( sbjCoding );
     seqVecProcessor.AddCallback( 1, &filter );

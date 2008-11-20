@@ -43,6 +43,7 @@ public:
     void SetStrands( int strands );
     void SetMaxSimplicity( double simpl );
     void SetMaxWindowCount( int windows );
+    void SetNaHSO3mode( bool on = true );
 
     void SetExpectedReadCount( int count ) { m_expectedCount = count; }
 
@@ -54,6 +55,7 @@ public:
     int  GetMaxMismatches() const { return m_maxMism; }
     int  GetMaxAmbiguities() const { return m_maxAmb; }
     bool GetAllowIndel() const { return m_allowIndel; }
+    bool GetNaHSO3mode() const { return m_nahso3mode; }
     int  GetIndexBits() const { return m_hashTable.GetIndexBits(); }
     int  GetStrands() const { return m_strands; }
     int  GetExpectedReadCount() const { return m_expectedCount; }
@@ -73,18 +75,20 @@ public:
 
     int AddQuery( CQuery * query );
 
+    template<class Callback> void ForEach4gnl( const UintH& ncbi4na, Callback& cbk ) const;
     template<class Callback> void ForEach4( const UintH& ncbi4na, Callback& cbk ) const;
     template<class Callback> void ForEach4( UintH hash, Callback& callback, Uint1 mask, Uint1 flags ) const;
+    template<class Callback> void ForEach2gnl( const Uint8& ncbi2na, Callback& cbk ) const;
     template<class Callback> void ForEach2( const Uint8& ncbi2na, Callback& cbk ) const;
     template<class Callback> void ForEach2( Uint8 hash, Callback& callback, Uint1 mask, Uint1 flags ) const;
 
     template<class Callback> void ForEach4( const UintH& ncbi4na, Callback& cbk ) {
         if( m_status == eStatus_dirty ) Freeze();
-        ((const CQueryHash*)this)->ForEach4( ncbi4na, cbk );
+        ((const CQueryHash*)this)->ForEach4gnl( ncbi4na, cbk );
     }
     template<class Callback> void ForEach2( const Uint8& ncbi2na, Callback& cbk ) {
         if( m_status == eStatus_dirty ) Freeze();
-        ((const CQueryHash*)this)->ForEach2( ncbi2na, cbk );
+        ((const CQueryHash*)this)->ForEach2gnl( ncbi2na, cbk );
     }
 
     Uint8  ComputeEntryCountPerRead() const; // no ambiguities are allowed
@@ -130,6 +134,7 @@ protected:
     bool CheckWordConstraints() const;
 
     int  AddQuery( CQuery * query, int component );
+    int  PopulateWindow( UintH fwindow, int offset, int ambiguities, CQuery * query, int component );
     int  GetNcbi4na( UintH& window, CSeqCoding::ECoding, const unsigned char * data, unsigned length );
 
     int x_GetNcbi4na_ncbi8na( UintH& window, const unsigned char * data, unsigned length );
@@ -142,6 +147,9 @@ protected:
     static Uint2 x_UpdateNcbiqnaScore( Uint2 score ) { return score - 1; }
     static TCvt  x_Ncbipna2Ncbi4na;
     static TCvt  x_Ncbiqna2Ncbi4na;
+
+    static Uint8 x_Convert2( Uint8 word, unsigned len, Uint8 from, Uint8 to );
+    static UintH x_Convert4( UintH word, unsigned len, UintH mask, int shr );
 
 //    template<class Callback> void ForEach( Uint8 ncbi2na, Callback& cbk, Uint1 mask, Uint1 flags );
 
@@ -159,6 +167,7 @@ protected:
     int m_maxAmb;
     int m_maxMism;
     bool m_allowIndel;
+    bool m_nahso3mode;
     double m_maxSimplicity;
     Uint2 m_ncbipnaToNcbi4naScore;
     Uint2 m_ncbiqnaToNcbi4naScore;
@@ -290,6 +299,12 @@ inline void CQueryHash::SetAllowIndel( bool indel )
     m_allowIndel = indel; 
 }
 
+inline void CQueryHash::SetNaHSO3mode( bool on )      
+{ 
+    ASSERT( m_status == eStatus_empty ); 
+    m_nahso3mode = on; 
+}
+
 inline void CQueryHash::SetIndexBits( int bits )         
 { 
     ASSERT( m_status == eStatus_empty ); m_hashTable.SetIndexBits( bits ); 
@@ -368,6 +383,17 @@ inline bool CQueryHash::CheckWordConstraints() const
 }
 
 template<class Callback>
+void CQueryHash::ForEach4gnl( const UintH& hash, Callback& callback ) const 
+{ 
+    if( m_nahso3mode ) {
+        ForEach4<Callback>( x_Convert4( hash, m_windowSize, UintH( 0x8888888888888888ULL, 0x8888888888888888ULL ), +2 ), callback );
+        ForEach4<Callback>( x_Convert4( hash, m_windowSize, UintH( 0x1111111111111111ULL, 0x1111111111111111ULL ), -2 ), callback );
+    } else {
+        ForEach4<Callback>( hash, callback );
+    }
+}
+
+template<class Callback>
 void CQueryHash::ForEach4( const UintH& hash, Callback& callback ) const 
 { 
     /* ........................................................................
@@ -384,13 +410,24 @@ void CQueryHash::ForEach4( const UintH& hash, Callback& callback ) const
        ........................................................................ */
     ASSERT( m_status != eStatus_dirty );
 
-    if( m_strands == 3 ) 
+    if( m_strands == 3 )
         ForEach4( hash, callback, 0, 0 );
     else {
         if( m_strands & 1 ) 
             ForEach4( hash, callback, CHashAtom::fMask_strand, CHashAtom::fFlag_strandFwd );
         if( m_strands & 2 ) 
             ForEach4( hash, callback, CHashAtom::fMask_strand, CHashAtom::fFlag_strandRev );
+    }
+}
+
+template<class Callback>
+void CQueryHash::ForEach2gnl( const Uint8& hash, Callback& callback ) const 
+{ 
+    if( m_nahso3mode ) {
+        ForEach2<Callback>( x_Convert2( hash, m_windowSize, 0xffffffffffffffffULL, 0x5555555555555555ULL ), callback );
+        ForEach2<Callback>( x_Convert2( hash, m_windowSize, 0x0000000000000000ULL, 0xaaaaaaaaaaaaaaaaULL ), callback );
+    } else {
+        ForEach2<Callback>( hash, callback );
     }
 }
 
@@ -480,6 +517,26 @@ void CQueryHash::ForEach2( Uint8 hash, Callback& callback, Uint1 mask, Uint1 fla
             do if( ! ( ++b < B ) ) return; while( *b == *x );
         }
     }
+}
+
+inline Uint8 CQueryHash::x_Convert2( Uint8 word, unsigned len, Uint8 from, Uint8 to )
+{
+    Uint8 mask = 3;
+    for( unsigned i = 0; i < len; ++i, (mask <<= 2) ) {
+        if( ( word & mask ) == ( from & mask ) ) {
+            word = (word & ~mask) | ( to & mask );
+        }
+    }
+    return word;
+}
+
+inline UintH CQueryHash::x_Convert4( UintH word, unsigned len, UintH mask, int shr )
+{
+    if( shr > 0 )
+        word = (( word & mask ) >> (+shr) ) | ( word & ~mask );
+    else
+        word = (( word & mask ) << (-shr) ) | ( word & ~mask );
+    return word;
 }
 
 END_OLIGOFAR_SCOPES

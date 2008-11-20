@@ -1,7 +1,7 @@
-oligoFAR 3.29                     15-NOV-2008                                1-NCBI
+oligoFAR 3.30                     15-NOV-2008                                1-NCBI
 
 NAME 
-    oligoFAR version 3.29 - global alignment of single or paired short reads
+    oligoFAR version 3.30 - global alignment of single or paired short reads
 
 SYNOPSIS
         usage: [-hV] [--help[=full|brief|extended]] [-U version]
@@ -16,7 +16,7 @@ SYNOPSIS
           [-m margin] [-R geometry] [-L memlimit] [-T +|-]
 
 EXAMPLES
-    oligofar -U 3.29 -C human-data.ini -C deep-search.ini -i my.reads -h
+    oligofar -U 3.30 -C human-data.ini -C deep-search.ini -i my.reads -h
 
     oligofar -i pairs.tbl -d contigs.fa -b snpdb.bdb -l gilist -g pairs.guide \
              -w 20/12 -B 250000 -H32 -n2 -rf -p90 -D100-500 -m50 -Rp \
@@ -123,13 +123,10 @@ SODIUM BISULFITE TREATMENT (Development)
     
         --NaHSO3=true
 
-    In this case oligoFAR for each subject sequence replaces all Cs with Ts, 
-    except CG duplets which get converted to YG to allow alignment to this 
-    region both as if it was methylated and unmethylated.  For obvious reasons 
-    this operation is strand-specific, so in this mode each subject sequence 
-    gets scanned twice.  
-
-    This mode is not tested as of 2008/11/13.
+    It is advised to use longer words and windows in this mode for better
+    performance. 
+    
+    This code is under development. 
 
 MULTIPASS MODE
     By default oligoFAR aligns all reads just once, but if option --pass1 is 

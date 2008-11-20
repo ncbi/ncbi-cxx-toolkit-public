@@ -43,6 +43,7 @@ void CSeqScanner::SequenceBuffer( CSeqBuffer* buffer )
                 a[p - off] = m_snpDb->GetBase();
             }
         }
+        /*
         if( m_bisulfiteCuration ) {
             char * buff = new char[A - a];
             if( m_queryHash == 0 || m_queryHash->GetStrands() & 0x1 ) {
@@ -57,9 +58,10 @@ void CSeqScanner::SequenceBuffer( CSeqBuffer* buffer )
             }
             delete[] buff;
         } else {
-            m_strands = 0x3;
+        */
+        //    m_strands = 0x3;
             ScanSequenceBuffer( a, A, off, end, buffer->GetCoding() );
-        }
+        //}
     }
 
     if( m_inputChunk ) {
@@ -75,6 +77,7 @@ void CSeqScanner::SequenceBuffer( CSeqBuffer* buffer )
     }
 }
 
+/*
 void CSeqScanner::PerformSodiumBisulfiteCuration( char * dest, const char * src, size_t length, CSeqCoding::EStrand strand )
 {
     // genome is expected to be sodium bisulfate curated, which means that all Cs on each strand ***independently*** get 
@@ -102,9 +105,10 @@ void CSeqScanner::PerformSodiumBisulfiteCuration( char * dest, const char * src,
                 }
             } else *--dest = *end;
         }
-        //*--dest = *end;
+        // *--dest = *end;
     }
 }
+*/
 
 void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const char * A )
 {
@@ -250,8 +254,8 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
 //            int pos = x - a + off;
             ITERATE( TMatches, m, matches ) {
                 switch( m->GetStrand() ) {
-                case '+': if( m_strands & 0x1 ) m_filter->Match( *m, a, A, pos - m->GetOffset() ); break;
-                case '-': if( m_strands & 0x2 ) m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 ); break;
+                case '+': /*if( m_strands & 0x1 )*/ m_filter->Match( *m, a, A, pos - m->GetOffset() ); break;
+                case '-': /*if( m_strands & 0x2 )*/ m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 ); break;
                 default: THROW( logic_error, "Invalid strand " << m->GetStrand() );
                 }
             }
