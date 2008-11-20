@@ -41,6 +41,11 @@ namespace value_slice
 {
 
 ////////////////////////////////////////////////////////////////////////////////
+// Conversion policies.
+struct SSafeSqlCP {};
+struct SRunTimeSqlCP {};
+
+////////////////////////////////////////////////////////////////////////////////
 template <>
 class NCBI_DBAPIDRIVER_EXPORT CValueConvert<SSafeCP, CDB_Object>
 {
@@ -67,7 +72,73 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 template <>
+class NCBI_DBAPIDRIVER_EXPORT CValueConvert<SSafeSqlCP, CDB_Object>
+{
+public: 
+    typedef const CDB_Object obj_type;
+
+    CValueConvert(const obj_type& value);
+
+public:
+    operator bool(void) const;
+    operator Uint1(void) const;
+    operator Int2(void) const;
+    operator Int4(void) const;
+    operator Int8(void) const;
+    operator float(void) const;
+    operator double(void) const;
+    operator string(void) const;
+    // operator CTime(void) const;
+    operator const CTime&(void) const;
+
+private:
+    mutable obj_type& m_Value; 
+};
+
+////////////////////////////////////////////////////////////////////////////////
+template <>
 class NCBI_DBAPIDRIVER_EXPORT CValueConvert<SRunTimeCP, CDB_Object>
+{
+public: 
+    typedef const CDB_Object obj_type;
+
+    CValueConvert(const obj_type& value);
+
+public:
+    operator bool(void) const;
+    operator Int1(void) const
+    {
+        return Convert(this->operator Int2());
+    }
+    operator Uint1(void) const;
+    operator Int2(void) const;
+    operator Uint2(void) const
+    {
+        return Convert(this->operator Uint4());
+    }
+    operator Int4(void) const;
+    operator Uint4(void) const
+    {
+        return Convert(this->operator Uint8());
+    }
+    operator Int8(void) const;
+    operator Uint8(void) const
+    {
+        return Convert(this->operator Int8());
+    }
+    operator float(void) const;
+    operator double(void) const;
+    operator string(void) const;
+    // operator CTime(void) const;
+    operator const CTime&(void) const;
+
+private:
+    mutable obj_type& m_Value; 
+};
+
+////////////////////////////////////////////////////////////////////////////////
+template <>
+class NCBI_DBAPIDRIVER_EXPORT CValueConvert<SRunTimeSqlCP, CDB_Object>
 {
 public: 
     typedef const CDB_Object obj_type;
@@ -447,6 +518,42 @@ private:
 // Still missing CDB_VarBinary, CDB_Binary, CDB_LongBinary, CDB_Stream, CDB_Text, CDB_Text, 
 
 } // namespace value_slice
+
+////////////////////////////////////////////////////////////////////////////////
+// A limited case ...
+template <typename FROM>
+inline
+const value_slice::CValueConvert<value_slice::SRunTimeSqlCP, FROM> 
+ConvertSQL(const FROM& value)
+{
+    return value_slice::CValueConvert<value_slice::SRunTimeSqlCP, FROM>(value);
+}
+
+template <typename FROM>
+inline
+const value_slice::CValueConvert<value_slice::SRunTimeSqlCP, FROM> 
+ConvertSQL(FROM& value)
+{
+    return value_slice::CValueConvert<value_slice::SRunTimeSqlCP, FROM>(value);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Safe (compile-time) conversion ...
+template <typename FROM>
+inline
+const value_slice::CValueConvert<value_slice::SSafeSqlCP, FROM> 
+ConvertSQLSafe(const FROM& value)
+{
+    return value_slice::CValueConvert<value_slice::SSafeSqlCP, FROM>(value);
+}
+
+template <typename FROM>
+inline
+const value_slice::CValueConvert<value_slice::SSafeSqlCP, FROM> 
+ConvertSQLSafe(FROM& value)
+{
+    return value_slice::CValueConvert<value_slice::SSafeSqlCP, FROM>(value);
+}
 
 END_NCBI_SCOPE
 

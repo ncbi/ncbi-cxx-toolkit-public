@@ -146,67 +146,6 @@ public:
     operator string(void) const;
     operator CTime(void) const;
 
-    /* Template version of type conversion operator.
-    template <typename TO>
-    operator TO(void) const
-    {
-        const int item_num = m_Value->CurrentItemNo();
-        const EDB_Type db_type = m_Value->ItemDataType(item_num);
-
-        switch (db_type) {
-        case eDB_Int:
-            return ConvertFrom<TO, CDB_Int>();
-        case eDB_SmallInt:
-            return ConvertFrom<TO, CDB_SmallInt>();
-        case eDB_TinyInt:
-            return ConvertFrom<TO, CDB_TinyInt>();
-        case eDB_BigInt:
-            return ConvertFrom<TO, CDB_BigInt>();
-        case eDB_VarChar:
-            return ConvertFromStr<TO, CDB_VarChar>();
-        case eDB_Char:
-            return ConvertFromChar<TO, CDB_Char>(item_num);
-        case eDB_VarBinary:
-            return ConvertFromStr<TO, CDB_VarBinary>();
-        case eDB_Binary:
-            return ConvertFromChar<TO, CDB_Binary>(item_num);
-        case eDB_Float:
-            return ConvertFrom<TO, CDB_Float>();
-        case eDB_Double:
-            return ConvertFrom<TO, CDB_Double>();
-        // case eDB_DateTime:
-        //     return ConvertFrom<TO, CDB_DateTime>();
-        // case eDB_SmallDateTime:
-        //     return ConvertFrom<TO, CDB_SmallDateTime>();
-        case eDB_Text:
-            return ConvertFromLOB<TO, CDB_Text>();
-        case eDB_Image:
-            return ConvertFromLOB<TO, CDB_Image>();
-        case eDB_Bit: 
-            return ConvertFrom<TO, CDB_Bit>();
-        case eDB_Numeric:
-            return ConvertFrom<TO, CDB_Numeric>();
-        case eDB_LongChar:
-            return ConvertFromChar<TO, CDB_LongChar>(item_num);
-        case eDB_LongBinary:
-            {
-                CDB_LongBinary db_obj(m_Value->ItemMaxSize(item_num));
-
-                const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
-                if (db_obj.IsNULL()) {
-                    throw CInvalidConversionException();
-                }
-
-                return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.DataSize()));
-            }
-        default:
-            throw CInvalidConversionException();
-        }
-
-        return TO();
-    }
-    */
-
 private:
     /* future development ...
     template <typename TO, typename FROM>
@@ -294,6 +233,79 @@ private:
         }
 
         return CTime(time_t(Convert(db_obj.Value())));
+    }
+
+    template <typename TO>
+    void ReadCDBObject(TO& value) const
+    {
+        const int item_num = m_Value->CurrentItemNo();
+        const EDB_Type db_type = m_Value->ItemDataType(item_num);
+
+        switch (db_type) {
+            case eDB_Int:
+                value = ConvertFrom<TO, CDB_Int>();
+                break;
+            case eDB_SmallInt:
+                value = ConvertFrom<TO, CDB_SmallInt>();
+                break;
+            case eDB_TinyInt:
+                value = ConvertFrom<TO, CDB_TinyInt>();
+                break;
+            case eDB_BigInt:
+                value = ConvertFrom<TO, CDB_BigInt>();
+                break;
+            case eDB_VarChar:
+                value = ConvertFromStr<TO, CDB_VarChar>();
+                break;
+            case eDB_Char:
+                value = ConvertFromChar<TO, CDB_Char>(item_num);
+                break;
+            case eDB_VarBinary:
+                value = ConvertFromStr<TO, CDB_VarBinary>();
+                break;
+            case eDB_Binary:
+                value = ConvertFromChar<TO, CDB_Binary>(item_num);
+                break;
+            case eDB_Float:
+                value = ConvertFrom<TO, CDB_Float>();
+                break;
+            case eDB_Double:
+                value = ConvertFrom<TO, CDB_Double>();
+                break;
+                // case eDB_DateTime:
+                //     value = ConvertFrom<TO, CDB_DateTime>();
+                // case eDB_SmallDateTime:
+                //     value = ConvertFrom<TO, CDB_SmallDateTime>();
+            case eDB_Text:
+                value = ConvertFromLOB<TO, CDB_Text>();
+                break;
+            case eDB_Image:
+                value = ConvertFromLOB<TO, CDB_Image>();
+                break;
+            case eDB_Bit: 
+                value = ConvertFrom<TO, CDB_Bit>();
+                break;
+            case eDB_Numeric:
+                value = ConvertFrom<TO, CDB_Numeric>();
+                break;
+            case eDB_LongChar:
+                value = ConvertFromChar<TO, CDB_LongChar>(item_num);
+                break;
+            case eDB_LongBinary:
+                {
+                    CDB_LongBinary db_obj(m_Value->ItemMaxSize(item_num));
+
+                    const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
+                    if (db_obj.IsNULL()) {
+                        throw CInvalidConversionException();
+                    }
+
+                    value = Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.DataSize()));
+                }
+                break;
+            default:
+                throw CInvalidConversionException();
+        }
     }
 
 private:
