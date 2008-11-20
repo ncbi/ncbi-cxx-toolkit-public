@@ -120,6 +120,15 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///    True, if the BLOB exists; false otherwise.
     bool HasBlob(const string& key);
 
+    /// Returns the size of the BLOB identified by the "key" parameter.
+    ///
+    /// @param key
+    ///    The key of the BLOB the size of which to be returned.
+    ///
+    /// @return
+    ///    Size of the BLOB in bytes.
+    size_t GetBlobSize(const string& key);
+
     /// BLOB locking mode
     enum ELockMode {
         eLockWait,   ///< waits for BLOB to become available

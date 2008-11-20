@@ -241,6 +241,13 @@ bool CNetCacheAPI::HasBlob(const string& key)
 }
 
 
+size_t CNetCacheAPI::GetBlobSize(const string& key)
+{
+    return (size_t) NStr::StringToULong(m_Impl->x_GetConnection(key).
+        Exec(m_Impl->x_MakeCommand("GSIZ " + key)));
+}
+
+
 void CNetCacheAPI::Remove(const string& key)
 {
     string request = "RMV2 " + key;

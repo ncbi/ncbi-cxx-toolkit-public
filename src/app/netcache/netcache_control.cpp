@@ -61,13 +61,13 @@ USING_NCBI_SCOPE;
 class CNetCacheControl : public CNcbiApplication
 {
 public:
-    void Init(void);
-    int Run(void);
+    void Init();
+    int Run();
 };
 
 
 
-void CNetCacheControl::Init(void)
+void CNetCacheControl::Init()
 {
     // Setup command line arguments and parameters
 
@@ -79,7 +79,6 @@ void CNetCacheControl::Init(void)
     arg_desc->AddDefaultPositional("service", 
         "NetCache service name.", CArgDescriptions::eString, "");
 
-
     arg_desc->AddFlag("shutdown",      "Shutdown server");
     arg_desc->AddFlag("version-full",  "Version");
     arg_desc->AddFlag("ver",           "Server version");
@@ -88,28 +87,23 @@ void CNetCacheControl::Init(void)
     arg_desc->AddFlag("dropstat",      "Drop server statistics");
     arg_desc->AddFlag("monitor",       "Monitor server");
 
-    arg_desc->AddOptionalKey("fetch",
-                     "key",
-                     "Retrieve data by key",
-                     CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("fetch", "key",
+        "Retrieve data by key", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("log",
-                             "server_logging",
-                             "Switch server side logging",
-                             CArgDescriptions::eBoolean);
+    arg_desc->AddOptionalKey("log", "server_logging",
+        "Switch server side logging", CArgDescriptions::eBoolean);
 
+    arg_desc->AddOptionalKey("owner", "owner",
+        "Get BLOB's owner", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("owner",
-                             "owner",
-                             "Get BLOB's owner",
-                             CArgDescriptions::eString);
-
+    arg_desc->AddOptionalKey("size", "key",
+        "Get BLOB size", CArgDescriptions::eString);
 
     SetupArgDescriptions(arg_desc.release());
 }
 
 
-int CNetCacheControl::Run(void)
+int CNetCacheControl::Run()
 {
     const CArgs& args = GetArgs();
     const string& service  = args["service"].AsString();
@@ -119,7 +113,7 @@ int CNetCacheControl::Run(void)
         return 0;
     }
 
-    CNetCacheAPI nc_client(service,"netcache_control");
+    CNetCacheAPI nc_client(service, "netcache_control");
     CNetCacheAdmin admin = nc_client.GetAdmin();
 
     if (args["fetch"]) {
@@ -142,33 +136,33 @@ int CNetCacheControl::Run(void)
                  << (on_off ? "ON" : "OFF") << " on the server" << NcbiEndl;
     }
 
-    if (args["owner"]) {  // BLOB's owner
-        string key = args["owner"].AsString();
-        string owner = nc_client.GetOwner(key);
-        NcbiCout << "BLOB belongs to: [" << owner << "]" << NcbiEndl;
-    }
+    if (args["owner"])
+        NcbiCout << "BLOB belongs to: [" <<
+            nc_client.GetOwner(args["owner"].AsString()) << "]" << NcbiEndl;
 
+    if (args["size"])
+        NcbiCout << "BLOB size: " <<
+            nc_client.GetBlobSize(args["size"].AsString()) << NcbiEndl;
 
-    if (args["getconf"]) {  // config
+    if (args["getconf"])
         admin.PrintConfig(NcbiCout);
-    }
-    if (args["monitor"]) {  // monitor
+
+    if (args["monitor"])
         admin.Monitor(NcbiCout);
-    }
 
-    if (args["stat"]) {  // statistics
+    if (args["stat"])
         admin.PrintStat(NcbiCout);
-    }
-    if (args["dropstat"]) {  // drop stat
+
+    if (args["dropstat"]) {
         admin.DropStat();
-        NcbiCout << "Drop statistics request has been sent to server" << NcbiEndl;
+        NcbiCout <<
+            "Drop statistics request has been sent to server" << NcbiEndl;
     }
 
-    if (args["ver"]) {
+    if (args["ver"])
         admin.GetServerVersion(NcbiCout);
-    }
 
-    if (args["shutdown"]) {  // shutdown
+    if (args["shutdown"]) {
         admin.ShutdownServer();
         NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
         return 0;
