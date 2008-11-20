@@ -123,19 +123,19 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
 }
 
 
-CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle top_level_seq,
+CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq,
                                  ESeqMapDirection direction)
-    : m_Scope(&top_level_seq.GetScope())
+    : m_Scope(&target_seq.GetScope())
 {
-    CConstRef<CSeq_id> top_level_id = top_level_seq.GetSeqId();
+    CConstRef<CSeq_id> top_level_id = target_seq.GetSeqId();
     if ( !top_level_id ) {
         // Bioseq handle has no id, try to get one.
-        CConstRef<CSynonymsSet> syns = top_level_seq.GetSynonyms();
+        CConstRef<CSynonymsSet> syns = target_seq.GetSynonyms();
         if ( !syns->empty() ) {
             top_level_id = syns->GetSeq_id_Handle(syns->begin()).GetSeqId();
         }
     }
-    x_InitializeBioseq(top_level_seq,
+    x_InitializeBioseq(target_seq,
                        top_level_id.GetPointerOrNull(),
                        direction);
     if (direction == eSeqMap_Up) {
@@ -157,6 +157,49 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
     : m_Scope(scope)
 {
     x_InitializeSeqMap(seq_map, top_level_id, direction);
+    x_PreserveDestinationLocs();
+}
+
+
+CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle   target_seq,
+                                 ESeqMapDirection direction,
+                                 SSeqMapSelector  selector)
+    : m_Scope(&target_seq.GetScope())
+{
+    CConstRef<CSeq_id> top_id = target_seq.GetSeqId();
+    if ( !top_id ) {
+        // Bioseq handle has no id, try to get one.
+        CConstRef<CSynonymsSet> syns = target_seq.GetSynonyms();
+        if ( !syns->empty() ) {
+            top_id = syns->GetSeq_id_Handle(syns->begin()).GetSeqId();
+        }
+    }
+    selector.SetFlags(CSeqMap::fFindRef).SetLinkUsedTSE();
+    x_InitializeSeqMap(CSeqMap_CI(target_seq, selector), top_id, direction);
+    if (direction == eSeqMap_Up) {
+        // Ignore seq-map destination ranges, map whole sequence to itself,
+        // use unknown strand only.
+        m_DstRanges.resize(1);
+        m_DstRanges[0].clear();
+        m_DstRanges[0][CSeq_id_Handle::GetHandle(*top_id)]
+            .push_back(TRange::GetWhole());
+    }
+    x_PreserveDestinationLocs();
+}
+
+
+CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
+                                 ESeqMapDirection direction,
+                                 SSeqMapSelector  selector,
+                                 const CSeq_id*   top_level_id,
+                                 CScope*          scope)
+    : m_Scope(scope)
+{
+    selector.SetFlags(CSeqMap::fFindRef).SetLinkUsedTSE();
+    x_InitializeSeqMap(CSeqMap_CI(ConstRef(&seq_map),
+                       m_Scope.GetScopeOrNull(), selector),
+                       top_level_id,
+                       direction);
     x_PreserveDestinationLocs();
 }
 

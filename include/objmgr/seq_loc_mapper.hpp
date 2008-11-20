@@ -59,6 +59,7 @@ class CScope;
 class CBioseq_Handle;
 class CSeqMap;
 class CSeqMap_CI;
+struct SSeqMapSelector;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -114,7 +115,7 @@ public:
                     TMapOptions       opts = 0);
 
     /// Mapping between segments and the top level sequence.
-    /// @param top_level_seq
+    /// @param target_seq
     ///  Top level bioseq
     /// @param direction
     ///  Direction of mapping: up (from segments to master) or down.
@@ -158,6 +159,35 @@ public:
     CSeq_loc_Mapper(size_t           depth,
                     const CSeqMap&   top_level_seq,
                     ESeqMapDirection direction,
+                    const CSeq_id*   top_level_id = 0,
+                    CScope*          scope = 0);
+
+    /// Mapping between segments and the top level sequence.
+    /// @param target_seq
+    ///  Top level bioseq
+    /// @param direction
+    ///  Direction of mapping: up (from segments to master) or down.
+    /// @param selector
+    ///  Seq-map selector with additional restrictions (range, strand etc.).
+    ///  Some properties of the selector are always adjusted by the mapper.
+    CSeq_loc_Mapper(CBioseq_Handle   target_seq,
+                    ESeqMapDirection direction,
+                    SSeqMapSelector  selector);
+
+    /// Mapping through a seq-map.
+    /// @param seq_map
+    ///  Sequence map defining the mapping
+    /// @param direction
+    ///  Direction of mapping: up (from segments to master) or down.
+    /// @param selector
+    ///  Seq-map selector with additional restrictions (range, strand etc.).
+    ///  Some properties of the selector are always adjusted by the mapper.
+    /// @param top_level_id
+    ///  Explicit destination id when mapping up, may be used with
+    ///  seq-maps constructed from a seq-loc with multiple ids.
+    CSeq_loc_Mapper(const CSeqMap&   seq_map,
+                    ESeqMapDirection direction,
+                    SSeqMapSelector  selector,
                     const CSeq_id*   top_level_id = 0,
                     CScope*          scope = 0);
 

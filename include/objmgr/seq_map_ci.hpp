@@ -126,6 +126,15 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
             return *this;
         }
 
+    typedef CRange<TSeqPos> TRange;
+    /// Set range for iterator - CRange<> version
+    SSeqMapSelector& SetRange(const TRange& range)
+        {
+            m_Position = range.GetFrom();
+            m_Length = range.GetLength();
+            return *this;
+        }
+
     /// Set strand to iterate over
     SSeqMapSelector& SetStrand(ENa_strand strand)
         {
