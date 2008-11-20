@@ -143,7 +143,7 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME_Ex
  ELOG_Level  cut_off)
 {
     FILE* fp = fopen(filename, "a");
-    if ( !fp ) {
+    if (!fp) {
         CORE_LOGF_ERRNO_X(9, eLOG_Error, errno,
                           ("Cannot open \"%s\"", filename));
         return 0/*false*/;
@@ -365,7 +365,7 @@ extern char* LOG_ComposeMessage
         message_len = strlen(call_data->message);
     }
 
-    if ( call_data->raw_size ) {
+    if (call_data->raw_size) {
         data_len = (sizeof(kRawData_Begin) + 20
                     + UTIL_PrintableStringSize(call_data->raw_data,
                                                call_data->raw_size) +
@@ -382,32 +382,32 @@ extern char* LOG_ComposeMessage
 
     s = str;
     /* Compose the message */
-    if ( datetime_len ) {
+    if (datetime_len) {
         memcpy(s, datetime, datetime_len);
         s += datetime_len;
     }
-    if ( file_line_len ) {
+    if (file_line_len) {
         s += sprintf(s, "\"%s\", line %d: ",
                      call_data->file, (int) call_data->line);
     }
-    if ( module_len ) {
+    if (module_len) {
         *s++ = '[';
         memcpy(s, call_data->module, module_len -= 3);
         s += module_len;
         *s++ = ']';
         *s++ = ' ';
     }
-    if ( level_len ) {
+    if (level_len) {
         memcpy(s, level, level_len -= 2);
         s += level_len;
         *s++ = ':';
         *s++ = ' ';
     }
-    if ( message_len ) {
+    if (message_len) {
         memcpy(s, call_data->message, message_len);
         s += message_len;
     }
-    if ( data_len ) {
+    if (data_len) {
         s += sprintf(s, kRawData_Begin,
                      (unsigned long) call_data->raw_size,
                      &"s"[call_data->raw_size == 1]);
@@ -441,7 +441,7 @@ static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data)
 
     if (call_data->level >= data->cut_off  ||  call_data->level == eLOG_Fatal){
         char* str = LOG_ComposeMessage(call_data, s_LogFormatFlags);
-        if ( str ) {
+        if (str) {
             fprintf(data->fp, "%s\n", str);
             fflush(data->fp);
             free(str);
@@ -472,7 +472,7 @@ extern void LOG_ToFILE_Ex
  )
 {
     SLogData* data = (SLogData*)(fp ? malloc(sizeof(*data)) : 0);
-    if ( data ) {
+    if (data) {
         data->fp         = fp;
         data->cut_off    = cut_off;
         data->auto_close = auto_close;
