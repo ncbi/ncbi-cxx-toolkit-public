@@ -1,0 +1,14 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author:
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+
+USE_COMPONENTS
+
