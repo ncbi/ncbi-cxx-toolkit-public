@@ -233,11 +233,16 @@ bool CDataTool::ProcessModules(void)
 {
     const CArgs& args = GetArgs();
 
-    list<string> modulesPath;
+    // load generator config
+    if ( const CArgValue& od = args["od"] )
+        generator.LoadConfig(od.AsString(), args["odi"], args["odw"]);
 
-    if ( const CArgValue& oR = args["oR"] ) {
+    list<string> modulesPath;
+    string opt;
+
+    if ( generator.GetOpt("oR", &opt) ) {
         // NCBI directory tree
-        const string& rootDir = oR.AsString();
+        const string& rootDir = opt;
         generator.SetRootDir(rootDir);
         generator.SetHPPDir(Path(rootDir, "include"));
         string srcDir = Path(rootDir, "src");
@@ -247,9 +252,9 @@ bool CDataTool::ProcessModules(void)
         generator.SetDefaultNamespace("NCBI_NS_NCBI::objects");
     }
     
-    if ( const CArgValue& opm = args["opm"] ) {
+    if ( generator.GetOpt("opm", &opt) ) {
 //        modulesPath.clear();
-        NStr::Split(opm.AsString(), ",", modulesPath);
+        NStr::Split(opt, ",", modulesPath);
     }
     
     SourceFile::EType srctype =
@@ -498,12 +503,6 @@ bool CDataTool::ProcessData(void)
 bool CDataTool::GenerateCode(void)
 {
     string opt;
-    {
-        const CArgs& args = GetArgs();
-        // load generator config
-        if ( const CArgValue& od = args["od"] )
-            generator.LoadConfig(od.AsString(), args["odi"], args["odw"]);
-    }
     //if ( const CArgValue& oD = args["oD"] )
     //    generator.AddConfigLine(oD.AsString());
 
@@ -555,8 +554,12 @@ bool CDataTool::GenerateCode(void)
     // prepare generator
     
     // set namespace
-    if ( generator.GetOpt("on", &opt) )
+    opt = "";
+    if ( generator.GetOpt("on", &opt) ) {
         generator.SetDefaultNamespace(opt);
+    } else if (opt == "-") {
+        generator.ResetDefaultNamespace();
+    }
     
     // set output files
     if ( generator.GetOpt("oc", &opt) ) {

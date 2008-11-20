@@ -122,6 +122,11 @@ void CCodeGenerator::SetDefaultNamespace(const string& ns)
     m_DefaultNamespace = ns;
 }
 
+void CCodeGenerator::ResetDefaultNamespace(void)
+{
+    m_DefaultNamespace.Reset();
+}
+
 void CCodeGenerator::LoadConfig(CNcbiIstream& in)
 {
     m_Config.Read(in);
@@ -1135,13 +1140,10 @@ bool CCodeGenerator::GetOpt(const string& opt, string* value)
     string xopt = key + opt;
     if (m_Config.HasEntry(key, xopt)) {
         result = m_Config.Get(key, xopt);
-        if (result != key) {
-            if (value) {
-                *value = result;
-            }
-            return true;
+        if (value) {
+            *value = result;
         }
-        return false;
+        return (result != key);
     }
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     const CArgValue& argv = args[opt];

@@ -152,6 +152,7 @@ public:
                                const string& typeName) const;
 
     void SetDefaultNamespace(const string& ns);
+    void ResetDefaultNamespace(void);
     const CNamespace& GetNamespace(void) const;
 
     CDataType* ExternalResolve(const string& module, const string& type,
