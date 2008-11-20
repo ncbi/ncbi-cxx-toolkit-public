@@ -817,6 +817,7 @@ static const char * kBuiltInGuide[] = {
     "3+6  NT_      refseq_contig",
     "3+6  NW_      refseq_wgs_intermed",
     "3+9  NW_      refseq_wgs_intermed",
+    "5+6  NZ_??    refseq_contig",
     "7+8  NZ_????  refseq_wgs_nuc",
     "3+6  XM_      refseq_mrna_predicted",
     "3+9  XM_      refseq_mrna_predicted",
