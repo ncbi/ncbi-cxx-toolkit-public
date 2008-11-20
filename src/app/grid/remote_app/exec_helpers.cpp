@@ -194,7 +194,7 @@ struct STmpDirGuard
     { 
         if (m_RemovePath && !m_Path.empty()) {
             try {
-                if (!CDir(m_Path).Remove()) {
+                if (!CDir(m_Path).Remove(CDirEntry::eRecursiveIgnoreMissing)) {
                    ERR_POST("Could not delete temp directory \"" << m_Path <<"\"");
                 }
                 //cerr << "Deleted " << m_Path << endl;
