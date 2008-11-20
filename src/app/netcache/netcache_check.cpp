@@ -38,7 +38,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/netcache_client.hpp>
+#include <connect/services/netcache_api.hpp>
 #include <connect/ncbi_socket.hpp>
 
 #include <common/ncbi_package_ver.h>
@@ -98,26 +98,13 @@ int CNetCacheCheck::Run(void)
         return 0;
     }
 
-    const string& service_addr = args["service_address"].AsString();
-
-    auto_ptr<CNetCacheClient> cl;
-
-    string host, port_str;
-    if (NStr::SplitInTwo(service_addr, ":", host, port_str)) {
-        unsigned short port = (unsigned short)NStr::StringToInt(port_str);
-        cl.reset(new CNetCacheClient(host, port, "netcache_check"));
-    } else { // LB service name
-        CNetCacheClient_LB* cl_lb = 
-            new CNetCacheClient_LB("netcache_check", service_addr);
-        cl.reset(cl_lb);
-        cl_lb->EnableServiceBackup(CNetCacheClient_LB::ENoBackup);
-    }
+    CNetCacheAPI cl(args["service_address"].AsString(), "netcache_check");
 
     // functionality test
 
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
     const char test_data2[] = "Test 2.";
-    string key = cl->PutData(test_data, sizeof(test_data));
+    string key = cl.PutData(test_data, sizeof(test_data));
 
     if (key.empty()) {
         NcbiCerr << "Failed to put data. " << NcbiEndl;
@@ -127,12 +114,14 @@ int CNetCacheCheck::Run(void)
 
     char data_buf[1024];
     size_t blob_size;
-    
-    auto_ptr<IReader> reader(cl->GetData(key, &blob_size));
+
+    auto_ptr<IReader> reader(cl.GetData(key, &blob_size));
+
     if (reader.get() == 0) {
         NcbiCerr << "Failed to read data." << NcbiEndl;
         return 1;
     }
+
     reader->Read(data_buf, 1024);
     int res = strcmp(data_buf, test_data);
     if (res != 0) {
@@ -144,7 +133,7 @@ int CNetCacheCheck::Run(void)
     reader.reset(0);
 
     
-    auto_ptr<IWriter> wrt(cl->PutData(&key));
+    auto_ptr<IWriter> wrt(cl.PutData(&key));
     size_t bytes_written;
     //ERW_Result wres = 
         wrt->Write(test_data2, sizeof(test_data2), &bytes_written);
@@ -153,7 +142,7 @@ int CNetCacheCheck::Run(void)
     SleepMilliSec(3000);
 
     memset(data_buf, 0xff, sizeof(data_buf));
-    reader.reset(cl->GetData(key, &blob_size));
+    reader.reset(cl.GetData(key, &blob_size));
     reader->Read(data_buf, 1024);
     res = strcmp(data_buf, test_data2);
     if (res != 0) {
