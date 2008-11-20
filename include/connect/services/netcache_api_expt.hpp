@@ -33,8 +33,8 @@
  *
  */
 
-/// @file netcache_client.hpp
-/// NetCache client specs.
+/// @file netcache_api_expt.hpp
+/// NetCache API exception declarations.
 ///
 
 #include <connect/services/netservice_api_expt.hpp>
