@@ -625,6 +625,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
     static const char kUsedServerInfo[] = "Used-Server-Info: ";
     static const char kServerCount[] = "Server-Count: ";
     static const char kSkipInfo[] = "Skip-Info-%u: ";
+    static const char kAffinity[] = "Affinity: ";
     char buffer[128], *str;
     size_t buflen, i;
     TSERV_Type t;
@@ -663,12 +664,23 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
                 return 0;
             }
         }
-        /* How many server-infos for the dispatcher to send to us */
         if (iter->ismask  ||  (iter->pref  &&  iter->host)) {
+            /* How many server-infos for the dispatcher to send to us */
             if (!BUF_Write(&buf, kServerCount, sizeof(kServerCount) - 1)  ||
                 !BUF_Write(&buf,
                            iter->ismask ? "10" : "ALL",
                            iter->ismask ?   2  :    3)                    ||
+                !BUF_Write(&buf, "\r\n", 2)) {
+                BUF_Destroy(buf);
+                return 0;
+            }
+        }
+        if (iter->arglen) {
+            /* Affinity */
+            if (!BUF_Write(&buf, kAffinity, sizeof(kAffinity) - 1)           ||
+                !BUF_Write(&buf, iter->arg, iter->arglen)                    ||
+                (iter->val  &&  (!BUF_Write(&buf, "=", 1)                    ||
+                                 !BUF_Write(&buf, iter->val, iter->vallen))) ||
                 !BUF_Write(&buf, "\r\n", 2)) {
                 BUF_Destroy(buf);
                 return 0;
@@ -689,11 +701,11 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
             } else
                 buflen = sprintf(buffer, kSkipInfo, (unsigned) i + 1); 
             assert(buflen < sizeof(buffer) - 1);
-            if (!BUF_Write(&buf, buffer, buflen)
-                ||  (name  &&  !BUF_Write(&buf, name, strlen(name)))
-                ||  (name  &&  *name  &&  !BUF_Write(&buf, " ", 1))
-                ||  !BUF_Write(&buf, str, strlen(str))
-                ||  !BUF_Write(&buf, "\r\n", 2)) {
+            if (!BUF_Write(&buf, buffer, buflen)                  ||
+                (name  &&  !BUF_Write(&buf, name, strlen(name)))  ||
+                (name  &&  *name  &&  !BUF_Write(&buf, " ", 1))   ||
+                !BUF_Write(&buf, str, strlen(str))                ||
+                !BUF_Write(&buf, "\r\n", 2)) {
                 free(str);
                 break;
             }
