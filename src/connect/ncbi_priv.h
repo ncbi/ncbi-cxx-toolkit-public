@@ -92,7 +92,8 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 #endif
 ;
 
-#define DO_CORE_LOG_X(macro, level, params)  do {                       \
+#define DO_CORE_LOG_X(macro, level, params)                             \
+    do {                                                                \
         if (g_CORE_Log  ||  (level) == eLOG_Fatal) {                    \
             CORE_LOCK_READ;                                             \
             macro params;  /* parentheses already in params */          \

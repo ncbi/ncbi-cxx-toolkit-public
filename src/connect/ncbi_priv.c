@@ -63,15 +63,15 @@ extern int g_NCBI_ConnectSrandAddend(void)
 
 extern const char* g_CORE_Sprintf(const char* fmt, ...)
 {
-  va_list args;
-  static char str[4096];
+    static char str[4096];
+    va_list args;
 
-  va_start(args, fmt);
-  *str = '\0';
-  vsprintf(str, fmt, args);
-  assert(strlen(str) < sizeof(str));
-  va_end(args);
-  return str;
+    va_start(args, fmt);
+    *str = '\0';
+    vsprintf(str, fmt, args);
+    assert(strlen(str) < sizeof(str));
+    va_end(args);
+    return str;
 }
 
 
