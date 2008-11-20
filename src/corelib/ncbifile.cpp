@@ -1891,7 +1891,11 @@ bool CDirEntry::Remove(EDirRemoveMode mode) const
     }
     // Other entries
     if ( remove(GetPath().c_str()) != 0 ) {
-        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::Remove(): Could not remove " << GetPath());
+        if (mode == eRecursiveIgnoreMissing && errno == ENOENT)
+            return true;
+
+        LOG_ERROR_AND_RETURN_ERRNO(
+            "CDirEntry::Remove(): Could not remove " << GetPath());
     }
     return true;
 }
@@ -3223,7 +3227,8 @@ bool CDir::Remove(EDirRemoveMode mode) const
     // Remove directory as empty
     if ( mode == eOnlyEmpty ) {
         if ( rmdir(GetPath().c_str()) != 0 ) {
-            LOG_ERROR_AND_RETURN_ERRNO("CDir::Remove(): Cannot remove (by implication empty) directory " << GetPath());
+            LOG_ERROR_AND_RETURN_ERRNO("CDir::Remove(): Cannot "
+                "remove (by implication empty) directory " << GetPath());
         }
         return true;
     }
@@ -3240,8 +3245,8 @@ bool CDir::Remove(EDirRemoveMode mode) const
         // Get entry item with full pathname
         CDirEntry item(GetPath() + GetPathSeparator() + name);
 
-        if ( mode == eRecursive ) {
-            if ( !item.Remove(eRecursive) ) {
+        if (mode == eRecursive || mode == eRecursiveIgnoreMissing) {
+            if (!item.Remove(mode)) {
                 return false;
             }
         } else if ( item.IsDir(eIgnoreLinks) ) {
@@ -3696,9 +3701,9 @@ CFileDeleteList::~CFileDeleteList()
     ITERATE (TNames, name, m_Names) {
         CDirEntry entry(*name);
         if ( entry.IsDir()) {
-            CDir(*name).Remove(CDir::eRecursive);
+            CDir(*name).Remove(CDir::eRecursiveIgnoreMissing);
         } else {
-            entry.Remove();        
+            entry.Remove();
         }
     }
 }

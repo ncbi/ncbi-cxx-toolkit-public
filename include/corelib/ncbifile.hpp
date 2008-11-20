@@ -581,8 +581,12 @@ public:
                         ///< remove non-empty subdirectories and files in them
                         ///< (it removes empty child directories though)
         eRecursive,     ///< Remove all files and subdirectories
-        eTopDirOnly     ///< Same as eNonRecursive but preserves
+        eTopDirOnly,    ///< Same as eNonRecursive but preserves
                         ///< empty child directories
+        eRecursiveIgnoreMissing ///< Remove all files and subdirectories;
+                                ///< do not report an error for disappeared
+                                ///< files (e.g. if the same directory is
+                                ///< being removed in a parallel thread)
     };
 
     /// Remove a directory entry.
