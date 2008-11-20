@@ -1469,13 +1469,13 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     if ( proj_id.Id().empty() )
         return CProjKey();
     
-    TProjects::iterator p = tree->m_Projects.find(proj_id);
-    if (p == tree->m_Projects.end()) {
+    TProjects::iterator pid = tree->m_Projects.find(proj_id);
+    if (pid == tree->m_Projects.end()) {
         LOG_POST(Error << "ASN project not found: " << proj_id.Id()
                        << " at " << applib_mfilepath);
         return CProjKey();
     }
-    CProjItem& project = p->second;
+    CProjItem& project = pid->second;
 
     // Adjust created proj item
     //SRC - 
@@ -1959,10 +1959,10 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
 */
 
     // Process subproj ( e.t. subdirs )
-    map<string, EMakeFileType>::const_iterator p;
-    for (p = subprojects_dirs.begin(); p != subprojects_dirs.end(); ++p) {
-        const string& subproject_dir = p->first;
-        ProcessDir(subproject_dir, false, filter, makefiles, p->second);
+    map<string, EMakeFileType>::const_iterator ps;
+    for (ps = subprojects_dirs.begin(); ps != subprojects_dirs.end(); ++ps) {
+        const string& subproject_dir = ps->first;
+        ProcessDir(subproject_dir, false, filter, makefiles, ps->second);
     }
 
 }
