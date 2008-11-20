@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov, Victor Joukov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov, Dmitry Kazimirov
  *
  * File Description:  Check NetCache service (functionality).
  *
@@ -113,7 +113,13 @@ int CNetCacheCheck::Run(void)
     NcbiCout << key << NcbiEndl;
 
     char data_buf[1024];
-    size_t blob_size;
+
+    size_t blob_size = cl.GetBlobSize(key);
+
+    if (blob_size != sizeof(test_data)) {
+        NcbiCerr << "Failed to retrieve data size." << NcbiEndl;
+        return 1;
+    }
 
     auto_ptr<IReader> reader(cl.GetData(key, &blob_size));
 
