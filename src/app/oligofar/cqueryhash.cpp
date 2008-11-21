@@ -29,14 +29,14 @@ void CQueryHash::Compress( UintH& w ) const
 }
 
 
-int CQueryHash::PopulateWindow( UintH fwindow, int offset, int ambiguities, CQuery * query, int component )
+int CQueryHash::PopulateWindow( UintH fwindow, int offset, int ambiguities, CQuery * query, int component, CHashAtom::EConv conv )
 {
     Compress( fwindow );
 
     size_t reserve = size_t( min( Uint8(numeric_limits<size_t>::max()), 
                                   ComputeEntryCountPerRead() * ( Uint8( 1 ) << ( ambiguities * 2 ) ) ) );
 
-    CHashPopulator hashPopulator( m_windowSize, m_wordSize, m_strideSize, query, m_strands, offset, component );
+    CHashPopulator hashPopulator( m_windowSize, m_wordSize, m_strideSize, query, m_strands, offset, component, conv );
     hashPopulator.Reserve( reserve );
     
     if( GetAllowIndel() ) {
@@ -106,14 +106,16 @@ int CQueryHash::AddQuery( CQuery * query, int component )
         offset += off;
         
         if( m_nahso3mode ) {
-            ret += PopulateWindow(
-                    x_Convert4( fwindow, m_windowLength, UintH( 0x8888888888888888ULL, 0x8888888888888888ULL ), +2 ),
-                    offset, ambiguities, query, component );
-            ret += PopulateWindow(
-                    x_Convert4( fwindow, m_windowLength, UintH( 0x1111111111111111ULL, 0x1111111111111111ULL ), -2 ),
-                    offset, ambiguities, query, component );
+            UintH tcwin = x_Convert4( fwindow, m_windowLength, UintH( 0x8888888888888888ULL, 0x8888888888888888ULL ), +2 );
+            UintH agwin = x_Convert4( fwindow, m_windowLength, UintH( 0x1111111111111111ULL, 0x1111111111111111ULL ), -2 );
+            if( tcwin != agwin ) {
+                ret += PopulateWindow( tcwin, offset, ambiguities, query, component, CHashAtom::eConvTC );
+                ret += PopulateWindow( agwin, offset, ambiguities, query, component, CHashAtom::eConvAG );
+            } else {
+                ret += PopulateWindow( fwindow, offset, ambiguities, query, component, CHashAtom::eConvEq );
+            }
         } else {
-            ret += PopulateWindow( fwindow, offset, ambiguities, query, component );
+            ret += PopulateWindow( fwindow, offset, ambiguities, query, component, CHashAtom::eNoConv );
         }
     }
 

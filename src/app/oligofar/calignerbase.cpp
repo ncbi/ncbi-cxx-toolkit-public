@@ -5,7 +5,7 @@ USING_OLIGOFAR_SCOPES;
 
 CScoreTbl CAlignerBase::s_defaultScoreTbl( 1, -1, -3, -1.5 );
 
-CAlignerBase::CAlignerBase( const CScoreTbl& scoretbl ) :
+CAlignerBase::CAlignerBase( CScoreTbl& scoretbl ) :
     m_scoreTbl( 0 ),
     m_qbegin( 0 ),
     m_sbegin( 0 ),

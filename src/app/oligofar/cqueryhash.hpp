@@ -134,7 +134,7 @@ protected:
     bool CheckWordConstraints() const;
 
     int  AddQuery( CQuery * query, int component );
-    int  PopulateWindow( UintH fwindow, int offset, int ambiguities, CQuery * query, int component );
+    int  PopulateWindow( UintH fwindow, int offset, int ambiguities, CQuery * query, int component, CHashAtom::EConv );
     int  GetNcbi4na( UintH& window, CSeqCoding::ECoding, const unsigned char * data, unsigned length );
 
     int x_GetNcbi4na_ncbi8na( UintH& window, const unsigned char * data, unsigned length );

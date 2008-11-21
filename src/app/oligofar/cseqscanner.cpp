@@ -43,25 +43,7 @@ void CSeqScanner::SequenceBuffer( CSeqBuffer* buffer )
                 a[p - off] = m_snpDb->GetBase();
             }
         }
-        /*
-        if( m_bisulfiteCuration ) {
-            char * buff = new char[A - a];
-            if( m_queryHash == 0 || m_queryHash->GetStrands() & 0x1 ) {
-                m_strands = 0x1;
-                PerformSodiumBisulfiteCuration( buff, a, A - a, CSeqCoding::eStrand_pos );
-                ScanSequenceBuffer( buff, buff + (A - a), off, end, buffer->GetCoding() );
-            }
-            if( m_queryHash == 0 || m_queryHash->GetStrands() & 0x2 ) {
-                m_strands = 0x2;
-                PerformSodiumBisulfiteCuration( buff, a, A - a, CSeqCoding::eStrand_neg );
-                ScanSequenceBuffer( buff, buff + (A - a), off, end, buffer->GetCoding() );
-            }
-            delete[] buff;
-        } else {
-        */
-        //    m_strands = 0x3;
-            ScanSequenceBuffer( a, A, off, end, buffer->GetCoding() );
-        //}
+        ScanSequenceBuffer( a, A, off, end, buffer->GetCoding() );
     }
 
     if( m_inputChunk ) {
@@ -76,39 +58,6 @@ void CSeqScanner::SequenceBuffer( CSeqBuffer* buffer )
         }
     }
 }
-
-/*
-void CSeqScanner::PerformSodiumBisulfiteCuration( char * dest, const char * src, size_t length, CSeqCoding::EStrand strand )
-{
-    // genome is expected to be sodium bisulfate curated, which means that all Cs on each strand ***independently*** get 
-    // converted to Ts, except methylated ones, which always precede Gs (but not all Cs preceding Gs are methylated,
-    // and our goal is to detect which ones are, so we make them ambiguous)
-    if( strand == CSeqCoding::eStrand_pos ) {
-        for( const char * end = src + length - 1; src < end; ++src ) {
-            if( *src == '\x02' ) { // is C
-                if( src[1] == '\x04' ) { // is G
-                    *dest++ = '\x0a'; // C{me}->C or C->T  ( Y )
-                } else {
-                    *dest++ = '\x08'; // C -> T
-                }
-            } else *dest++ = *src;
-        }
-        *dest = *src;
-    } else {
-        dest += length;
-        for( const char * end = src + length - 1; src < end; --end ) {
-            if( *end == '\x04' ) { // is G
-                if( end[-1] == '\x02' ) { // is C
-                    *--dest = '\x05'; // C{me}->C or C->T  rev compl (G->[GA]=R)
-                } else {
-                    *--dest = '\x01'; // C->T rev compl (G->A)
-                }
-            } else *--dest = *end;
-        }
-        // *--dest = *end;
-    }
-}
-*/
 
 void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const char * A )
 {
@@ -254,8 +203,8 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
 //            int pos = x - a + off;
             ITERATE( TMatches, m, matches ) {
                 switch( m->GetStrand() ) {
-                case '+': /*if( m_strands & 0x1 )*/ m_filter->Match( *m, a, A, pos - m->GetOffset() ); break;
-                case '-': /*if( m_strands & 0x2 )*/ m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 ); break;
+                case '+': m_filter->Match( *m, a, A, pos - m->GetOffset() ); break;
+                case '-': m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 ); break;
                 default: THROW( logic_error, "Invalid strand " << m->GetStrand() );
                 }
             }

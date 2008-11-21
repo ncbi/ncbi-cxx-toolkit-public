@@ -1,7 +1,7 @@
-oligoFAR 3.30                     15-NOV-2008                                1-NCBI
+oligoFAR 3.31                     15-NOV-2008                                1-NCBI
 
 NAME 
-    oligoFAR version 3.30 - global alignment of single or paired short reads
+    oligoFAR version 3.31 - global alignment of single or paired short reads
 
 SYNOPSIS
         usage: [-hV] [--help[=full|brief|extended]] [-U version]
@@ -16,7 +16,7 @@ SYNOPSIS
           [-m margin] [-R geometry] [-L memlimit] [-T +|-]
 
 EXAMPLES
-    oligofar -U 3.30 -C human-data.ini -C deep-search.ini -i my.reads -h
+    oligofar -U 3.31 -C human-data.ini -C deep-search.ini -i my.reads -h
 
     oligofar -i pairs.tbl -d contigs.fa -b snpdb.bdb -l gilist -g pairs.guide \
              -w 20/12 -B 250000 -H32 -n2 -rf -p90 -D100-500 -m50 -Rp \
@@ -126,6 +126,8 @@ SODIUM BISULFITE TREATMENT (Development)
     It is advised to use longer words and windows in this mode for better
     performance. 
     
+    This mode is not compatible with colorspace computations.
+
     This code is under development. 
 
 MULTIPASS MODE

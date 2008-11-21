@@ -14,7 +14,8 @@ public:
 	virtual void Align( CSeqCoding::ECoding qenc, const char * qseq, int qlen, 
 						CSeqCoding::ECoding send, const char * sseq, int slen, int flags ) = 0; 
 	const CAlignerBase& GetAlignerBase() const { return m_alignerBase; }
-	void SetScoreTbl( const CScoreTbl& scoreTbl ) { m_alignerBase.SetScoreTbl( scoreTbl ); }
+	void SetScoreTbl( CScoreTbl& scoreTbl ) { m_alignerBase.SetScoreTbl( scoreTbl ); }
+    void SelectBasicScoreTables( int tbl ) { m_alignerBase.SelectBasicScoreTables( tbl ); }
 	void SetBestPossibleQueryScore( double s ) { m_bestQueryScore = s; }
 	double GetBestPossibleQueryScore() const { return m_bestQueryScore; }
 protected:

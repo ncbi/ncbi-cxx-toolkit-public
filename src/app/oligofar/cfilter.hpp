@@ -62,7 +62,7 @@ public:
 
     bool CheckGeometry( int from1, int to1, int from2, int to2 ) const;
     bool InRange( int a, int b ) const { return InRange( b - a + 1 ); }
-    bool InRange( int d ) const { return d < m_maxDist && d >= m_minDist; }
+    bool InRange( int d ) const { return d <= m_maxDist && d >= m_minDist; }
 
     int GetMaxDist() const { return m_maxDist; }
     int GetMinDist() const { return m_minDist; }
@@ -80,6 +80,7 @@ protected:
     void ProcessMatch( double score, int from, int to, bool reverse, CQuery * query, int pairmate );
     bool LookupInQueue( double score, int from, int to, bool reverse, CQuery * query, int pairmate, TPendingHits& toAdd, bool canPurgeQueue );
     void PurgeQueue( int bottomPos );
+    void MatchConv( const CHashAtom& , const char * seqBegin, const char * seqEnd, int pos );
 
 protected:
     CSeqIds * m_seqIds;

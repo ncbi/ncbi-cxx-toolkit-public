@@ -24,7 +24,7 @@
 USING_OLIGOFAR_SCOPES;
 
 #ifndef OLIGOFAR_VERSION
-#define OLIGOFAR_VERSION "3.30" 
+#define OLIGOFAR_VERSION "3.31" 
 #endif
 
 COligoFarApp::COligoFarApp( int argc, char ** argv ) :
@@ -516,6 +516,9 @@ int COligoFarApp::ProcessData()
             THROW( runtime_error, "Incompatible set of hash parameters for pass" << p << ( m_skipPositions.size() ? " with skip ppositions:" : ":" ) << msg );
         }
     }
+
+    if( m_colorSpace && m_sodiumBisulfiteCuration ) 
+        THROW( runtime_error, "Sorry, can't use colorspace reads with NaHSO3 treatment" );
     
     ofstream o( m_outputFile.c_str() );
     ifstream reads( m_readFile.c_str() ); // to format output

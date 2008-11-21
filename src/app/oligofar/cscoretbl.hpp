@@ -10,7 +10,7 @@ class CScoreTbl : public CScoring
 {
 public:
     CScoreTbl() { x_InitScoretbl(); }
-    CScoreTbl( double id, double mm, double go, double ge ) : CScoring( id, mm, go, ge ) { x_InitScoretbl(); }
+    CScoreTbl( double id, double mm, double go, double ge ) : CScoring( id, mm, go, ge ), m_ncbi4naSelector(0) { x_InitScoretbl(); }
 
     ////////////////////////////////////////////////////////////////////////    
     // TSeqRef<C*naBase,incr,CSeqCoding::eCoding_*na> API
@@ -30,9 +30,15 @@ public:
         return s.IsReverse() ? CNcbi8naBase((s - 1).GetBase() & 0x0f) : CNcbi8naBase(char(*s) & 0x0f);
     }
     */
+    enum ETableSelector {
+        eSel_NoConv = 0,
+        eSel_ConvTC = 1,
+        eSel_ConvAG = 2
+    };
+    void SelectBasicScoreTables( unsigned tbl ) { ASSERT( tbl < 3 ); m_ncbi4naSelector = tbl; }
 
     template<class QryRef, class SbjRef>
-    static bool MatchRef( const QryRef& q, const SbjRef& s, int qp, int ) {
+    bool MatchRef( const QryRef& q, const SbjRef& s, int qp, int ) const {
         if( q.GetCoding() == CSeqCoding::eCoding_colorsp ) 
             if( s.GetCoding() == CSeqCoding::eCoding_colorsp ) 
                 return CColorTwoBase( char(*q) ).GetColor() == CColorTwoBase( char(*s) ).GetColor();
@@ -41,8 +47,10 @@ public:
                     return CColorTwoBase( char(*q) ).GetColor() == CColorTwoBase( s[-1], s[0] ).GetColor(); 
                 else 
                     return (char(q.GetBase()) & CNcbi8naBase( s.GetBase() )) != 0;
-        else
-            return ( CNcbi8naBase( q.GetBase() ) & CNcbi8naBase( s.GetBase() ) ) != 0;
+        else {
+            return m_ncbi4naMatchTbl[m_ncbi4naSelector][CNcbi8naBase( q.GetBase() )][CNcbi8naBase( s.GetBase() )];
+//            return ( CNcbi8naBase( q.GetBase() ) & CNcbi8naBase( s.GetBase() ) ) != 0;
+        }
     }
     
     template<class QryRef, class SbjRef>
@@ -61,7 +69,9 @@ public:
         case CSeqCoding::eCoding_ncbiqna: 
             do {
                 CNcbiqnaBase qry( q.GetBase() );
-                return CNcbi8naBase( qry ) & sbj ? ProbScore( s_phrapProbTbl[qry.GetPhrapScore()] * s_probtbl[sbj] ) : m_mismatch;
+                return m_ncbi4naMatchTbl[m_ncbi4naSelector][CNcbi8naBase( qry )][sbj] ?
+                    ProbScore( s_phrapProbTbl[qry.GetPhrapScore()] * s_probtbl[sbj] ) : m_mismatch;
+//                return CNcbi8naBase( qry ) & sbj ? ProbScore( s_phrapProbTbl[qry.GetPhrapScore()] * s_probtbl[sbj] ) : m_mismatch;
 //              return CNcbi8naBase( qry ) & sbj ? m_phraptbl[sbj][qry.GetPhrapScore()] : m_mismatch;
             } while(0); break;
         case CSeqCoding::eCoding_colorsp: 
@@ -71,7 +81,8 @@ public:
         default:
             do {
                 CNcbi8naBase qry( q.GetBase() );
-                return qry & sbj ? m_scoretbl[int( sbj )] : m_mismatch;
+                return m_ncbi4naScoreTbl[m_ncbi4naSelector][qry][sbj];
+//                return qry & sbj ? m_scoretbl[int( sbj )] : m_mismatch;
             } while(0); break;
         }
     }
@@ -82,6 +93,9 @@ public:
 protected:
     double m_scoretbl[16];
     double m_phraptbl[16][64];
+    double m_ncbi4naScoreTbl[3][16][16];
+    bool   m_ncbi4naMatchTbl[3][16][16];
+    int    m_ncbi4naSelector;
 protected:
     static double * x_InitProbTbl();
     void x_InitScoretbl() {
@@ -93,6 +107,26 @@ protected:
         for( int i = 0; i < 16; ++i ) {
             for( int j = 0; j < 64; ++j ) 
                 m_phraptbl[i][j] = ProbScore( s_phrapProbTbl[j] * s_probtbl[i] );
+        }
+        x_InitNcbi4naTables( eSel_NoConv, 0,  0 );
+        x_InitNcbi4naTables( eSel_ConvTC, 8, +2 );
+        x_InitNcbi4naTables( eSel_ConvAG, 1, -2 );
+    }
+    static Uint1 x_Convert( Uint1 x, Uint1 mask, int shr ) {
+        return 
+            shr > 0 ? ( x & ~mask ) | ((x & mask) >> (+shr)) :
+            shr < 0 ? ( x & ~mask ) | ((x & mask) << (-shr)) :
+            x;
+    }
+    void x_InitNcbi4naTables( int which, Uint1 mask, int shr ) {
+        for( unsigned a = 0; a < 16; ++a ) {
+            unsigned A = x_Convert( a, mask, shr );
+            for( unsigned b = 0; b < 16; ++b ) {
+//                unsigned B = x_Convert( b, mask, shr );
+                unsigned B = b; // genome is unchanged!
+                m_ncbi4naMatchTbl[which][a][b] = (A&B) ? true : false;
+                m_ncbi4naScoreTbl[which][a][b] = (A&B) ? m_scoretbl[int( B )] : m_mismatch;
+            }
         }
     }
     static double * s_probtbl;

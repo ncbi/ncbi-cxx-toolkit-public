@@ -6,15 +6,34 @@
 
 USING_OLIGOFAR_SCOPES;
 
+static const bool gsx_allowReverseAlignment = true;
+
 void CFilter::Match( const CHashAtom& m, const char * a, const char * A, int pos ) // always start at pos
 {
     ASSERT( m_aligner );
+    if( int conv = m.GetConv() ) {
+        if( conv & CHashAtom::fFlags_convTC ) {
+            m_aligner->SelectBasicScoreTables( m.IsForwardStrand() ? CScoreTbl::eSel_ConvTC : CScoreTbl::eSel_ConvTC );
+            MatchConv( m, a, A, pos );
+        }
+        if( conv & CHashAtom::fFlags_convAG ) {
+            m_aligner->SelectBasicScoreTables( m.IsForwardStrand() ? CScoreTbl::eSel_ConvAG : CScoreTbl::eSel_ConvAG );
+            MatchConv( m, a, A, pos );
+        }
+    } else {
+        m_aligner->SelectBasicScoreTables( CScoreTbl::eSel_NoConv );
+        MatchConv( m, a, A, pos );
+    }
+}
+
+void CFilter::MatchConv( const CHashAtom& m, const char * a, const char * A, int pos ) // always start at pos
+{
     double bestScore = m.GetQuery()->GetBestScore( m.GetPairmate() );
     m_aligner->SetBestPossibleQueryScore( bestScore );
     bool reverseStrand = m.IsReverseStrand();
     if( reverseStrand && m.GetQuery()->GetCoding() == CSeqCoding::eCoding_colorsp ) --pos;
     const CAlignerBase& abase = m_aligner->GetAlignerBase();
-    if( /*false &&*/ m.GetOffset() >= 3 ) {
+    if( gsx_allowReverseAlignment && m.GetOffset() >= 3 ) {
         int one = reverseStrand ? -1 : 1;
         int off = m.GetOffset() * one;
         const CAlignerBase& abase = m_aligner->GetAlignerBase();
@@ -233,7 +252,7 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
         double tscore = tih->GetTotalScore();
         double cscore = tscore * m_topPct/100;
         if( cscore > hscore ) { delete hit; return; }
-        int topcnt = m_topCnt;
+        int topcnt = m_topCnt - 1;
 
         if( tih->ClustersWithSameQ( hit ) ) {
             if( tscore <= hscore ) {

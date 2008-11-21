@@ -25,7 +25,8 @@ public:
                     CQuery * query,
                     int strands,
                     int offset,
-                    int component ) :
+                    int component,
+                    CHashAtom::EConv conv ) :
         m_query( query ),
         m_windowSize( windowSize ),
         m_wordSize( wordSize ),
@@ -36,7 +37,7 @@ public:
         m_wordMask( CBitHacks::WordFootprint<Uint8>( 2 * wordSize ) ),
         m_permutator( 0 ),
         m_indel( CHashAtom::eNoIndel ),
-        m_flags( component ? CHashAtom::fFlag_pairMate1 : CHashAtom::fFlag_pairMate0 )
+        m_flags( conv | ( component ? CHashAtom::fFlag_pairMate1 : CHashAtom::fFlag_pairMate0 ) )
         {}
     CHashPopulator& SetPermutator( const CPermutator8b * p ) { m_permutator = p; return *this; }
     CHashPopulator& SetIndel( CHashAtom::EIndel i ) { m_indel = i; return *this; }
@@ -85,12 +86,8 @@ inline CHashPopulator& CHashPopulator::Unique()
 
 inline void CHashPopulator::Print( ostream& o, const value_type& v )
 {
-    o << setw(16) << hex << setfill('0') << v.first << dec << "\t"
-      << v.second.GetOffset() << "[o]\t"
-      << v.second.GetWordId() << "[w]\t"
-      << v.second.GetStrand() << "[s]\t"
-      << v.second.GetIndel() << "[i]\t"
-      << v.second.GetMismatches() << "[m]";
+    o << setw(16) << hex << setfill('0') << v.first << dec << "\t";
+    v.second.PrintDebug( o );
 }
 
 inline void CHashPopulator::Print( ostream& o ) const
@@ -111,11 +108,14 @@ inline bool CHashPopulator::Less( const value_type& a, const value_type& b )
     if( a.second.GetStrandId() > b.second.GetStrandId() ) return false;
     if( a.second.GetWordId() < b.second.GetWordId() ) return true;
     if( a.second.GetWordId() > b.second.GetWordId() ) return false;
+    if( a.second.GetConv() < b.second.GetConv() ) return true;
+    if( a.second.GetConv() > b.second.GetConv() ) return false;
+    /*
     if( a.second.GetIndel() < b.second.GetIndel() ) return true;
     if( a.second.GetIndel() > b.second.GetIndel() ) return false;
     if( a.second.GetMismatches() < b.second.GetMismatches() ) return true;
     if( a.second.GetMismatches() > b.second.GetMismatches() ) return false;
-    
+    */
     return false;
 }
 
@@ -125,9 +125,10 @@ inline bool CHashPopulator::Same( const value_type& a, const value_type& b )
         a.first == b.first && 
         a.second.GetOffset() == b.second.GetOffset() && 
         a.second.GetWordId() == b.second.GetWordId() && 
+        a.second.GetConv() == b.second.GetConv() && 
         a.second.GetStrandId() == b.second.GetStrandId() &&
-        a.second.GetIndel() == b.second.GetIndel()
-        ;
+     //   a.second.GetIndel() == b.second.GetIndel()
+        true ;
 }
 
 inline void CHashPopulator::PopulateHash( const UintH& window )

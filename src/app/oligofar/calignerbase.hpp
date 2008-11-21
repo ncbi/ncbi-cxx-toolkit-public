@@ -21,10 +21,10 @@ public:
         fPictureSubjectStrand = 0x00
     };
 
-    static const CScoreTbl& GetDefaultScoreTbl() { return s_defaultScoreTbl; } 
+    static CScoreTbl& GetDefaultScoreTbl() { return s_defaultScoreTbl; } 
 
-    CAlignerBase( const CScoreTbl& scoretbl = GetDefaultScoreTbl() );
-    CAlignerBase& SetScoreTbl( const CScoreTbl& scoretbl ) { m_scoreTbl = &scoretbl; return *this; }
+    CAlignerBase( CScoreTbl& scoretbl = GetDefaultScoreTbl() );
+    CAlignerBase& SetScoreTbl( CScoreTbl& scoretbl ) { m_scoreTbl = &scoretbl; return *this; }
 
     int GetQueryAlignedLength() const { return m_qaligned; }
     int GetSubjectAlignedLength() const { return m_saligned; }
@@ -48,6 +48,7 @@ public:
     const string& GetSubjectString() const { return m_subjectString; }
     const string& GetAlignmentString() const { return m_alignmentString; }
 
+    void SelectBasicScoreTables( unsigned tbl ) { m_scoreTbl->SelectBasicScoreTables( tbl ); }
     void ParseConfig( const string& file );
 
     CAlignerBase& ResetScores();
@@ -58,7 +59,7 @@ public:
 protected:
     static CScoreTbl s_defaultScoreTbl;
 
-    const CScoreTbl * m_scoreTbl;
+    CScoreTbl * m_scoreTbl;
     const char * m_qbegin;
     const char * m_sbegin;
     const char * m_qend;

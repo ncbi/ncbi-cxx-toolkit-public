@@ -192,6 +192,7 @@ void COutputFormatter::FormatDifferences( int rank, const CHit * hit, int matepa
     const char * s = target.data();
     int length = target.length();
     const int aflags = CAlignerBase::fComputePicture | CAlignerBase::fComputeScore | CAlignerBase::fPictureSubjectStrand;
+    m_aligner->SelectBasicScoreTables( CScoreTbl::eSel_NoConv );
     m_aligner->SetBestPossibleQueryScore( query->GetBestScore( matepair ) );
     if( hit->IsReverseStrand( matepair ) == false ) {
         m_aligner->Align( query->GetCoding(),
