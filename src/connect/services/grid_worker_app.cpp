@@ -96,6 +96,8 @@ void CGridWorkerApp::Init(void)
     //    SetupDiag(eDS_ToStdout);
     CNcbiApplication::Init();
 
+    CFileAPI::SetLogging(eOn);
+
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
