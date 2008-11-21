@@ -2343,7 +2343,13 @@ double CStopWatch::Elapsed() const
     if ( m_State == eStop ) {
         return m_Total;
     }
-    return m_Total + GetTimeMark() - m_Start;
+    // Workaround for -0 (negative zero) values,
+    // that can occur at subtraction of very close doubles.
+    double mark = GetTimeMark() - m_Start;
+    if (mark < 0.0) {
+        mark = 0.0;
+    }
+    return m_Total + mark;
 }
 
 
@@ -2353,7 +2359,11 @@ void CStopWatch::Stop()
     if ( m_State == eStop ) {
         return;
     }
-    m_Total += GetTimeMark() - m_Start;
+    double mark = GetTimeMark() - m_Start;
+    if (mark < 0.0) {
+        mark = 0.0;
+    }
+    m_Total += mark;
     m_State = eStop;
 }
 
@@ -2362,7 +2372,14 @@ inline
 double CStopWatch::Restart()
 {
     double previous = m_Start;
-    double elapsed = m_Total + (m_Start = GetTimeMark()) - previous;
+    m_Start = GetTimeMark();
+    // Workaround for -0 (negative zero) values,
+    // that can occur at subtraction of very close doubles.
+    double diff = m_Start - previous;
+    if (diff < 0.0) {
+        diff = 0.0;
+    }
+    double elapsed = m_Total + diff;
     m_Total = 0;
     m_State = eStart;
     return elapsed;
