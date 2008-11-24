@@ -45,22 +45,25 @@ BEGIN_NCBI_SCOPE
 
 
 CRequestRateControl::CRequestRateControl(
-    unsigned int    num_requests_allowed,
-    CTimeSpan       per_period,
-    CTimeSpan       min_time_between_requests,
-    EThrottleAction throttle_action)
+        unsigned int    num_requests_allowed,
+        CTimeSpan       per_period,
+        CTimeSpan       min_time_between_requests,
+        EThrottleAction throttle_action,
+        EThrottleMode   throttle_mode)
 {
     Reset(num_requests_allowed, per_period, min_time_between_requests,
-          throttle_action);
+          throttle_action, throttle_mode);
 }
 
 
 void CRequestRateControl::Reset(
-    unsigned int    num_requests_allowed,
-    CTimeSpan       per_period,
-    CTimeSpan       min_time_between_requests,
-    EThrottleAction throttle_action)
+        unsigned int    num_requests_allowed,
+        CTimeSpan       per_period,
+        CTimeSpan       min_time_between_requests,
+        EThrottleAction throttle_action,
+        EThrottleMode   throttle_mode)
 {
+    // Save parameters
     m_NumRequestsAllowed     = num_requests_allowed;
     m_PerPeriod              = per_period.GetAsDouble();
     m_MinTimeBetweenRequests = min_time_between_requests.GetAsDouble();
@@ -69,6 +72,9 @@ void CRequestRateControl::Reset(
     } else {
         m_ThrottleAction = throttle_action;
     }
+    m_Mode = throttle_mode;
+
+    // Reset internal state
     m_NumRequests  =  0;
     m_LastApproved = -1;
     m_TimeLine.clear();
@@ -127,6 +133,7 @@ bool CRequestRateControl::x_Approve(EThrottleAction action, CTimeSpan *sleeptime
             switch(action) {
                 case eSleep:
                     // Get sleep time
+                    _ASSERT(m_TimeLine.size() > 0);
                     x_sleeptime = m_TimeLine.front() + m_PerPeriod - now;
                     break;
                 case eErrCode:
@@ -218,16 +225,28 @@ void CRequestRateControl::Sleep(CTimeSpan sleep_time)
 
 void CRequestRateControl::x_CleanTimeLine(TTime now)
 {
-    // Find first non expired item
-    TTimeLine::iterator current;
-    for ( current = m_TimeLine.begin(); current != m_TimeLine.end();
-          ++current) {
-        if ( now - *current < m_PerPeriod) {
-            break;
+    if ( m_Mode == eContinuous ) {
+        // Find first non-expired item
+        TTimeLine::iterator current;
+        for ( current = m_TimeLine.begin(); current != m_TimeLine.end();
+            ++current) {
+            if ( now - *current < m_PerPeriod) {
+                break;
+            }
+        }
+        // Erase all expired items
+        m_TimeLine.erase(m_TimeLine.begin(), current);
+
+    } else {
+        _ASSERT(m_Mode == eDiscrete);
+        if (m_TimeLine.size() > 0) {
+            if (now - m_TimeLine.front() > m_PerPeriod) {
+                // Period ends, remove all restrictions
+                m_LastApproved = -1;
+                m_TimeLine.clear();
+            }
         }
     }
-    // Erase all expired items
-    m_TimeLine.erase(m_TimeLine.begin(), current);
 }
 
 

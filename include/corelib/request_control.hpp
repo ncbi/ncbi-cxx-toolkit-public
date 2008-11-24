@@ -82,14 +82,6 @@ public:
 class NCBI_XNCBI_EXPORT CRequestRateControl
 {
 public:
-    /// What to do if exceeded the rate limits
-    enum EThrottleAction {
-        eSleep,      ///< Sleep till the rate requirements are met & return
-        eErrCode,    ///< Return immediately with err code == FALSE
-        eException,  ///< Throw an exception
-        eDefault     ///< in c-tor -- eSleep;  in Approve() -- value set in c-tor
-    };
-
     /// Special value for maximum number of allowed requests per period.
     /// Disable any kind of request throttling.
     /// 
@@ -97,17 +89,49 @@ public:
     ///   Reset
     const static unsigned int kNoLimit = kMax_UInt;
 
+    /// What to do if exceeded the rate limits.
+    enum EThrottleAction {
+        eSleep,      ///< Sleep till the rate requirements are met & return
+        eErrCode,    ///< Return immediately with err code == FALSE
+        eException,  ///< Throw an exception
+        eDefault     ///< in c-tor -- eSleep;  in Approve() -- value set in c-tor
+    };
+
+    /// Throttle mode.
+    ///
+    /// In case if number of requests and time period are specified,
+    /// it is possible to select between two modes for request throttler.
+    /// First mode is eContinuous. It use internal time line to check number
+    /// of requests in the past period of time, using current time as ending
+    /// point for that period. Starting point determinates with ordinary
+    /// subtraction of "per_period" time, specified in object's constructor,
+    /// from current time. So the controlled time frame moves continuously
+    /// in time.
+    /// Contrary to continuos mode, eDiscrete mode have fixed starting point
+    /// for period of time, where throttler checks number of incoming
+    /// requests. First time period starts when CRequestRateControl object
+    /// creates. Each next period starts with interval of "per_period",
+    /// or from first approved request in case of long period of inactivity.
+    /// When each new period starts, the throttler drops all restrictions,
+    /// and starts to count number of allowed requests per period from zero.
+    /// Usually eDiscrete mode is a little bit faster and less memory consuming.
+    enum EThrottleMode {
+        eContinuous, ///< Uses float time frame to check number of requests
+        eDiscrete    ///< Uses fixed time frame to check number of requests
+    };
+
     /// Constructor.
     ///
     /// Construct class object. Run Reset() method.
     ///
     /// @sa 
-    ///   Reset
+    ///   Reset, EThrottleAction, EThrottleMode
     CRequestRateControl
               (unsigned int     num_requests_allowed,
                CTimeSpan        per_period                = CTimeSpan(1,0),
                CTimeSpan        min_time_between_requests = CTimeSpan(0,0),
-               EThrottleAction  throttle_action           = eDefault);
+               EThrottleAction  throttle_action           = eDefault,
+               EThrottleMode    throttle_mode             = eContinuous);
 
     /// Set new restriction for throttling mechanism.
     ///
@@ -125,12 +149,16 @@ public:
     ///   Minimum time between two succesful consecutive requests.
     /// @param throttle_action
     ///   Set throttle action by default. The eDefault means eSleep here.
+    /// @param throttle_mode
+    ///   Set throttle action by default. The eDefault means eSleep here.
+    /// For backward compatibility, use eContinuous mode by default.
     /// @sa
-    ///   Approve
+    ///   Approve, ApproveTime
     void Reset(unsigned int     num_requests_allowed,
                CTimeSpan        per_period                = CTimeSpan(1,0),
                CTimeSpan        min_time_between_requests = CTimeSpan(0,0),
-               EThrottleAction  throttle_action           = eDefault);
+               EThrottleAction  throttle_action           = eDefault,
+               EThrottleMode    throttle_mode             = eContinuous);
 
     /// Approve a request.
     ///
@@ -185,6 +213,7 @@ private:
 
 private:
     // Saved parameters
+    EThrottleMode    m_Mode;
     unsigned int     m_NumRequestsAllowed;
     TTime            m_PerPeriod;
     TTime            m_MinTimeBetweenRequests;
