@@ -1,6 +1,0 @@
-# $Id$
-
-LIB = ncbi_xloader_remoteblast
-SRC = rbloader remotedb
-
-ASN_DEP = seq seqset seqdb xnetblast

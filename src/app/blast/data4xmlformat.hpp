@@ -119,7 +119,8 @@ public:
 
     /// @inheritDoc
     string GetFilterString(void) const {
-        blast::TAutoCharPtr tmp = m_Options.GetFilterString();
+        blast::TAutoCharPtr tmp = 
+            m_Options.GetFilterString(); /* NCBI_FAKE_WARNING */
         return tmp.get() == NULL ? NcbiEmptyString : string(tmp.get());
     }
 

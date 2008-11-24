@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(ProteinBlastSelfHit)
     o << MSerial_AsnText << *sar ;
     o.close();
 #endif
-    BOOST_CHECK_EQUAL(0, num_ident);
+    BOOST_CHECK_EQUAL(232, num_ident);
 
     // calculate the number of identities using the BLAST formatter
 /*
@@ -671,7 +671,7 @@ o.close();
 #endif
     // N.B.: because we used composition based statistics, this field was not
     // calculated as it's not implemented
-    BOOST_CHECK_EQUAL(0, num_ident);
+    BOOST_CHECK_EQUAL(229, num_ident);
 
     // Check the ancillary results
     CSearchResultSet::TAncillaryVector ancillary_data;
@@ -737,7 +737,7 @@ BOOST_AUTO_TEST_CASE(IdenticalProteins)
     o << MSerial_AsnText << *sar ;
     o.close();
 #endif
-    BOOST_CHECK_EQUAL(0, num_ident);
+    BOOST_CHECK_EQUAL(377, num_ident);
 
     // calculate the number of identities using the BLAST formatter
 /*
@@ -1306,7 +1306,7 @@ BOOST_AUTO_TEST_CASE(ProteinCompBasedStats) {
     CBlastProteinOptionsHandle opts_handle;
     opts_handle.SetWordSize(2);
     opts_handle.SetEvalueThreshold(20000);
-    opts_handle.SetFilterString("F");
+    opts_handle.SetFilterString("F");/* NCBI_FAKE_WARNING */
     opts_handle.SetMatrixName("PAM30");
     opts_handle.SetGapOpeningCost(9);
     opts_handle.SetGapExtensionCost(1);
@@ -1887,7 +1887,7 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
         CTBlastnOptionsHandle opts;
         opts.SetOutOfFrameMode();
         opts.SetFrameShiftPenalty(10);
-        opts.SetFilterString("m;L");
+        opts.SetFilterString("m;L");/* NCBI_FAKE_WARNING */
         opts.SetEvalueThreshold(0.01);
         opts.SetCompositionBasedStats(eNoCompositionBasedStats);
 
@@ -1913,7 +1913,7 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
         opts.SetOutOfFrameMode();
         opts.SetFrameShiftPenalty(5);
         opts.SetCompositionBasedStats(eNoCompositionBasedStats);
-        opts.SetFilterString("L");
+        opts.SetFilterString("L");/* NCBI_FAKE_WARNING */
 
         CBl2Seq blaster(*query, *subj, opts);
         TSeqAlignVector sav(blaster.Run());
@@ -1945,7 +1945,7 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
         CBlastxOptionsHandle opts;
         opts.SetOutOfFrameMode();
         opts.SetFrameShiftPenalty(10);
-        opts.SetFilterString("m;L");
+        opts.SetFilterString("m;L");/* NCBI_FAKE_WARNING */
         opts.SetEvalueThreshold(0.01);
 
         CBl2Seq blaster(*query, *subj, opts);

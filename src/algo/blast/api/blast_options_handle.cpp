@@ -282,7 +282,7 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
         {
             opts->SetGapOpeningCost(3);
             opts->SetGapExtensionCost(3);
-            opts->SetFilterString("m D", true);
+            opts->SetFilterString("m D", true);/* NCBI_FAKE_WARNING */
             opts->SetMatchReward(1);
             opts->SetMismatchPenalty(-5);
             opts->SetEvalueThreshold(700);

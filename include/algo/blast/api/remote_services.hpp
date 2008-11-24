@@ -51,8 +51,13 @@ BEGIN_SCOPE(blast)
 class NCBI_XBLAST_EXPORT CRemoteServices : public CObject
 {
 public:
-    /// Use the specified RID to get results for an existing search.
-    CRemoteServices();
+    /// Default constructor
+    CRemoteServices() {}
+
+    /// Returns true if the BLAST database specified exists in the NCBI servers
+    /// @param dbname BLAST database name [in]
+    /// @param is_protein is this a protein database? [in]
+    bool IsValidBlastDb(const string& dbname, bool is_protein);
     
     /// Retrieve detailed information for a given BLAST database
     ///

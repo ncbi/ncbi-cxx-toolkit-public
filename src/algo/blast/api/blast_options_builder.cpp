@@ -200,7 +200,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         
     case 'F':
         if (B4Param_FilterString.Match(p)) {
-            opts.SetFilterString(v.GetString().c_str(), true);  
+            opts.SetFilterString(v.GetString().c_str(), true);  /* NCBI_FAKE_WARNING */
         } else if (B4Param_FinalDbSeq.Match(p)) {
             m_FinalDbSeq = v.GetInteger();
         } else if (B4Param_FirstDbSeq.Match(p)) {

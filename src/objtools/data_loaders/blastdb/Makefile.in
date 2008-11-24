@@ -3,7 +3,7 @@
 # Meta-makefile (ncbi_xloader_blastdb)
 ##################################
 
-LIB_PROJ = ncbi_xloader_blastdb ncbi_xloader_remoteblast
+LIB_PROJ = ncbi_xloader_blastdb
 SUB_PROJ = unit_test
 
 srcdir = @srcdir@

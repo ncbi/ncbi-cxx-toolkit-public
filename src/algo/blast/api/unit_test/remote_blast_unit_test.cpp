@@ -46,6 +46,7 @@
 #include <algo/blast/api/disc_nucl_options.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
+#include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
 #include <serial/exception.hpp>
@@ -104,7 +105,7 @@ BOOST_AUTO_TEST_CASE(MaskedQueryRegions) {
         CBlastOptionsFactory::Create(eBlastn, CBlastOptions::eRemote));
     oh->SetDbLength(5000000);
     // only our masking specified below should be used
-    oh->SetFilterString("F");
+    oh->SetFilterString("F");/* NCBI_FAKE_WARNING */
 
     CRemoteBlast rmt_blast(oh);
     //rmt_blast.SetVerbose();
@@ -497,7 +498,7 @@ BOOST_AUTO_TEST_CASE(SetFilteringOptions) {
     CBlastProteinOptionsHandle prot_opts(CBlastOptions::eRemote);
     prot_opts.SetSegFiltering(false);
     {
-        TAutoCharPtr tmp = prot_opts.GetFilterString();
+        TAutoCharPtr tmp = prot_opts.GetFilterString();/* NCBI_FAKE_WARNING */
         BOOST_REQUIRE_EQUAL(string("F"), string(tmp.get()));
     }
 
@@ -600,7 +601,8 @@ private:
 };
 
 BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
-    CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
     const string rid("1214512158-10611-186074495131.BLASTQ23"); // Permanent RID
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
@@ -619,7 +621,8 @@ BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
 
 // This tests an expired/invalid RID
 BOOST_AUTO_TEST_CASE(RetrieveInvalidRID) {
-    CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
     const string non_existent_rid("1068741992-11111-263425.BLASTQ3");
     CRemoteBlast rmt_blaster(non_existent_rid);
     //rmt_blaster.SetVerbose();
@@ -634,7 +637,8 @@ BOOST_AUTO_TEST_CASE(RetrieveInvalidRID) {
 }
 
 BOOST_AUTO_TEST_CASE(RetrieveRIDWithError) {
-    CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
     const string rid("1213977851-19717-200807286580.BLASTQ23");
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
@@ -649,7 +653,8 @@ BOOST_AUTO_TEST_CASE(RetrieveRIDWithError) {
 }
 
 BOOST_AUTO_TEST_CASE(RetrieveRIDWithSIGXCPU) {
-    CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
     const string rid("1219425735-25988-94487186920.BLASTQ1");
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
@@ -784,6 +789,13 @@ BOOST_AUTO_TEST_CASE(GetRequestInfo)
 
 }
 
+BOOST_AUTO_TEST_CASE(GetInformationAboutInvalidBlastDatabaseRemotely)
+{
+    CRemoteServices remote_svc;
+    bool found = remote_svc.IsValidBlastDb("dummy", true);
+    BOOST_REQUIRE(found == false);
+}
+
 BOOST_AUTO_TEST_CASE(GetRepeatsFilteringDatabases)
 {
     CRemoteServices remote_svc;
@@ -907,8 +919,41 @@ BOOST_AUTO_TEST_CASE(GetDatabaseInfo)
     //BOOST_REQUIRE(dbinfo->GetDescription().find("cdd.v") != NPOS);
 }
 
+BOOST_AUTO_TEST_CASE(FetchQuerySequence_NonExistentDb)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    CRemoteBlast::TBioseqVector results;
+    string errors, warnings;
+    CRemoteBlast::TSeqIdVector queries;
+    queries.push_back(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Gi, 555)));
+
+    CRemoteBlast::GetSequences(queries, "junk", 'p', results, errors,
+                               warnings/*, true*/);
+    const string kExpectedError("Failed to open databases: [junk]");
+    BOOST_REQUIRE_EQUAL(kExpectedError, errors);
+    BOOST_REQUIRE(warnings.empty());
+    BOOST_REQUIRE(results.empty());
+}
+
+BOOST_AUTO_TEST_CASE(FetchQuerySequence_NoQueries)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    CRemoteBlast::TBioseqVector results;
+    string errors, warnings;
+    CRemoteBlast::TSeqIdVector queries;
+    CRemoteBlast::GetSequences(queries, "nt", 'p', results, errors, warnings);
+    BOOST_REQUIRE_EQUAL(string("Error: no sequences requested."), errors);
+    BOOST_REQUIRE(warnings.empty());
+    BOOST_REQUIRE(results.empty());
+}
+
 BOOST_AUTO_TEST_CASE(FetchQuerySequence)
 {
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+
     // This RID refers to a search by Seq-loc - this tests the
     // ability of the CRemoteBlast class to fetch the query
     // sequence (data) associated with the described sequence,
@@ -947,13 +992,13 @@ BOOST_AUTO_TEST_CASE(FetchQuerySequence)
     
     CRef<CSeq_id> seqid(& query1->SetWhole());
     
-    vector< CRef<CSeq_id> > getseq_queries;
+    CRemoteBlast::TSeqIdVector getseq_queries;
     getseq_queries.push_back(seqid);
     
     // Now fetch the sequence.
     
     string warnings, errors;
-    vector< CRef< CBioseq > > results;
+    CRemoteBlast::TBioseqVector results;
     
     CRemoteBlast::GetSequences(getseq_queries,
                                db_name,
@@ -969,6 +1014,410 @@ BOOST_AUTO_TEST_CASE(FetchQuerySequence)
     int length = results[0]->GetInst().GetLength();
     
     BOOST_REQUIRE_EQUAL(length, 320);
+}
+
+BOOST_AUTO_TEST_CASE(FetchQuerySequence_NotFound)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    const int kGi(129295);
+    CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, kGi));
+    CRemoteBlast::TSeqIdVector getseq_queries;
+    getseq_queries.push_back(seqid);
+    
+    string warnings, errors;
+    CRemoteBlast::TBioseqVector results;
+    
+    CRemoteBlast::GetSequences(getseq_queries, "nr", 'n',
+                               results,   // out
+                               errors,    // out
+                               warnings/*,  // out
+                               true*/); // out
+    
+    BOOST_REQUIRE(results.empty());
+    BOOST_REQUIRE( !errors.empty() );
+    BOOST_REQUIRE( errors.find("Failed to fetch sequence") != NPOS );
+    BOOST_REQUIRE( errors.find(NStr::IntToString(kGi)) != NPOS );
+    BOOST_REQUIRE(warnings.empty());
+}
+
+BOOST_AUTO_TEST_CASE(FetchMultipleSequences)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    const string kDbName("ecoli");
+    const char kSeqType('n');
+    int ecoli_gis[] = { 1786181, 1786192, 2367095, 1786217, 1786230, 1786240,
+        1786250, 1786262, 1786283, 1786298 };
+
+    CRemoteBlast::TSeqIdVector queries;
+    size_t i = 0;
+    for (i = 0; i < sizeof(ecoli_gis)/sizeof(*ecoli_gis); i++) {
+        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, ecoli_gis[i]));
+        queries.push_back(id);
+    }
+
+    string warnings, errors;
+    CRemoteBlast::TBioseqVector results;
+
+    CRemoteBlast::GetSequences(queries, kDbName, kSeqType, results, errors,
+                               warnings/*, true*/);
+    BOOST_REQUIRE_EQUAL(queries.size(), results.size());
+    BOOST_REQUIRE(errors.empty());
+    BOOST_REQUIRE(warnings.empty());
+
+    i = 0;
+    ITERATE(CRemoteBlast::TBioseqVector, bs, results) {
+        const CBioseq::TId& ids = (*bs)->GetId();
+        ITERATE(CBioseq::TId, id, ids) {
+            if ((*id)->IsGi()) {
+                BOOST_REQUIRE_EQUAL(ecoli_gis[i++], (*id)->GetGi());
+                break;
+            }
+        }
+        BOOST_REQUIRE(HasRawSequenceData(**bs));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(FetchMultipleSequences_NotFound)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    const string kDbName("ecoli");
+    const char kSeqType('n');
+    const int kGiNotFound(555); // this GI shouldn't be found in ecoli
+    int ecoli_gis[] = { 1786181, 1786192, kGiNotFound, 1786217, 1786230,
+        1786240, 1786250, 1786262, 1786283, 1786298 };
+
+    CRemoteBlast::TSeqIdVector queries;
+    for (size_t i = 0; i < sizeof(ecoli_gis)/sizeof(*ecoli_gis); i++) {
+        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, ecoli_gis[i]));
+        queries.push_back(id);
+    }
+
+    string warnings, errors;
+    CRemoteBlast::TBioseqVector results;
+
+    CRemoteBlast::GetSequences(queries, kDbName, kSeqType, results, errors,
+                               warnings/*, true*/);
+    BOOST_REQUIRE_EQUAL(queries.size() - 1, results.size());
+    BOOST_REQUIRE( !errors.empty() );
+    BOOST_REQUIRE( errors.find("Failed to fetch sequence") != NPOS );
+    BOOST_REQUIRE( errors.find(NStr::IntToString(kGiNotFound)) != NPOS );
+    BOOST_REQUIRE(warnings.empty());
+}
+
+BOOST_AUTO_TEST_CASE(FetchQuerySequenceInfo_NonExistentDb)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    CRemoteBlast::TBioseqVector results;
+    string errors, warnings;
+    CRemoteBlast::TSeqIdVector queries;
+    queries.push_back(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Gi, 555)));
+
+    CRemoteBlast::GetSequencesInfo(queries, "junk", 'p', results, errors,
+                               warnings/*, true*/);
+    const string kExpectedError("Failed to open databases: [junk]");
+    BOOST_REQUIRE_EQUAL(kExpectedError, errors);
+    BOOST_REQUIRE(warnings.empty());
+    BOOST_REQUIRE(results.empty());
+}
+
+BOOST_AUTO_TEST_CASE(FetchQuerySequenceInfo_NoQueries)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    CRemoteBlast::TBioseqVector results;
+    string errors, warnings;
+    CRemoteBlast::TSeqIdVector queries;
+    CRemoteBlast::GetSequencesInfo(queries, "nt", 'p', results, errors,
+                                   warnings);
+    BOOST_REQUIRE_EQUAL(string("Error: no sequences requested."), errors);
+    BOOST_REQUIRE(warnings.empty());
+    BOOST_REQUIRE(results.empty());
+}
+
+BOOST_AUTO_TEST_CASE(FetchQuerySequenceInfo)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+
+    CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, 129295));
+    CRemoteBlast::TSeqIdVector getseq_queries;
+    getseq_queries.push_back(seqid);
+    
+    // Now fetch the sequence.
+    
+    string warnings, errors;
+    CRemoteBlast::TBioseqVector results;
+    
+    CRemoteBlast::GetSequencesInfo(getseq_queries, "nr", 'p', results, errors,
+                                   warnings);
+    
+    BOOST_REQUIRE_EQUAL(getseq_queries.size(), results.size());
+    BOOST_REQUIRE(results[0].NotEmpty());
+    int length = results[0]->GetLength();
+    BOOST_REQUIRE_EQUAL(232, length);
+    BOOST_REQUIRE(!HasRawSequenceData(*results[0]));
+}
+
+BOOST_AUTO_TEST_CASE(FetchQuerySequenceInfo_NotFound)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    const int kGi(129295);
+    CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, kGi));
+    CRemoteBlast::TSeqIdVector getseq_queries;
+    getseq_queries.push_back(seqid);
+    
+    string warnings, errors;
+    CRemoteBlast::TBioseqVector results;
+    
+    CRemoteBlast::GetSequencesInfo(getseq_queries, "nr", 'n',
+                               results,   // out
+                               errors,    // out
+                               warnings/*,  // out
+                               true*/); // out
+    
+    BOOST_REQUIRE(results.empty());
+    BOOST_REQUIRE( !errors.empty() );
+    BOOST_REQUIRE( errors.find("Failed to fetch sequence") != NPOS );
+    BOOST_REQUIRE( errors.find(NStr::IntToString(kGi)) != NPOS );
+    BOOST_REQUIRE(warnings.empty());
+}
+
+BOOST_AUTO_TEST_CASE(FetchMultipleSequencesInfo)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    const string kDbName("ecoli");
+    const char kSeqType('n');
+    int ecoli_gis[] = { 1786181, 1786192, 2367095, 1786217, 1786230, 1786240,
+        1786250, 1786262, 1786283, 1786298 };
+
+    CRemoteBlast::TSeqIdVector queries;
+    size_t i = 0;
+    for (i = 0; i < sizeof(ecoli_gis)/sizeof(*ecoli_gis); i++) {
+        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, ecoli_gis[i]));
+        queries.push_back(id);
+    }
+
+    string warnings, errors;
+    CRemoteBlast::TBioseqVector results;
+
+    CRemoteBlast::GetSequencesInfo(queries, kDbName, kSeqType, results, errors,
+                               warnings/*, true*/);
+    BOOST_REQUIRE_EQUAL(queries.size(), results.size());
+    BOOST_REQUIRE(errors.empty());
+    BOOST_REQUIRE(warnings.empty());
+
+    i = 0;
+    ITERATE(CRemoteBlast::TBioseqVector, bs, results) {
+        const CBioseq::TId& ids = (*bs)->GetId();
+        ITERATE(CBioseq::TId, id, ids) {
+            if ((*id)->IsGi()) {
+                BOOST_REQUIRE_EQUAL(ecoli_gis[i++], (*id)->GetGi());
+                break;
+            }
+        }
+        BOOST_REQUIRE( !HasRawSequenceData(**bs) );
+    }
+}
+
+BOOST_AUTO_TEST_CASE(FetchMultipleSequencesInfo_NotFound)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    const string kDbName("ecoli");
+    const char kSeqType('n');
+    const int kGiNotFound(555); // this GI shouldn't be found in ecoli
+    int ecoli_gis[] = { 1786181, 1786192, kGiNotFound, 1786217, 1786230,
+        1786240, 1786250, 1786262, 1786283, 1786298 };
+
+    CRemoteBlast::TSeqIdVector queries;
+    for (size_t i = 0; i < sizeof(ecoli_gis)/sizeof(*ecoli_gis); i++) {
+        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, ecoli_gis[i]));
+        queries.push_back(id);
+    }
+
+    string warnings, errors;
+    CRemoteBlast::TBioseqVector results;
+
+    CRemoteBlast::GetSequencesInfo(queries, kDbName, kSeqType, results, errors,
+                               warnings/*, true*/);
+    BOOST_REQUIRE_EQUAL(queries.size() - 1, results.size());
+    BOOST_REQUIRE( !errors.empty() );
+    BOOST_REQUIRE( errors.find("Failed to fetch sequence") != NPOS );
+    BOOST_REQUIRE( errors.find(NStr::IntToString(kGiNotFound)) != NPOS );
+    BOOST_REQUIRE(warnings.empty());
+}
+
+BOOST_AUTO_TEST_CASE(FetchQuerySequenceParts_NonExistentDb)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    CRemoteBlast::TSeqIntervalVector queries;
+    CRemoteBlast::TSeqDataVector results;
+    string errors, warnings;
+    CRemoteBlast::TSeqIdVector ids;
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 555));
+    queries.push_back(CRef<CSeq_interval>(new CSeq_interval(*id, 0, 2)));
+
+    CRemoteBlast::GetSequenceParts(queries, "junk", 'p', ids, results, errors,
+                               warnings/*, true*/);
+    const string kExpectedError("Failed to open databases: [junk]");
+    BOOST_REQUIRE_EQUAL(kExpectedError, errors);
+    BOOST_REQUIRE(warnings.empty());
+    BOOST_REQUIRE(results.empty());
+    BOOST_REQUIRE(ids.empty());
+}
+
+BOOST_AUTO_TEST_CASE(FetchQuerySequenceParts_NoQueries)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    CRemoteBlast::TSeqIntervalVector queries;
+    CRemoteBlast::TSeqDataVector results;
+    string errors, warnings;
+    CRemoteBlast::TSeqIdVector ids;
+
+    CRemoteBlast::GetSequenceParts(queries, "nt", 'n', ids, results, errors,
+                                   warnings);
+    BOOST_REQUIRE_EQUAL(string("Error: no sequences requested."), errors);
+    BOOST_REQUIRE(warnings.empty());
+    BOOST_REQUIRE(results.empty());
+    BOOST_REQUIRE(ids.empty());
+}
+
+BOOST_AUTO_TEST_CASE(FetchQuerySequenceParts)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+
+    CRemoteBlast::TSeqIntervalVector queries;
+    CRemoteBlast::TSeqDataVector results;
+    string errors, warnings;
+    CRemoteBlast::TSeqIdVector ids;
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 556));
+    const TSeqRange range(100,200);
+    queries.push_back(CRef<CSeq_interval>(new CSeq_interval(*id, 
+                                                            range.GetFrom(),
+                                                            range.GetTo())));
+
+    CRemoteBlast::GetSequenceParts(queries, "nt", 'n', ids, results, errors,
+                                   warnings);
+    
+    BOOST_REQUIRE(results.size());
+    BOOST_REQUIRE(results[0].NotEmpty());
+    BOOST_REQUIRE(results[0]->IsNcbi4na());
+    BOOST_REQUIRE_EQUAL((TSeqPos)range.GetLength()/2,
+                        results[0]->GetNcbi4na().Get().size());
+}
+
+BOOST_AUTO_TEST_CASE(FetchQuerySequenceParts_NotFound)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    const int kGi(129295);
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, kGi));
+    const TSeqRange range(50, 300);
+    CRemoteBlast::TSeqIntervalVector queries;
+    queries.push_back(CRef<CSeq_interval>(new CSeq_interval(*id, 
+                                                            range.GetFrom(),
+                                                            range.GetTo())));
+    CRemoteBlast::TSeqIdVector ids;
+    string warnings, errors;
+    CRemoteBlast::TSeqDataVector results;
+    
+    CRemoteBlast::GetSequenceParts(queries, "nr", 'n', ids, results, errors,
+                                   warnings);
+    
+    BOOST_REQUIRE(results.empty());
+    BOOST_REQUIRE( !errors.empty() );
+    BOOST_REQUIRE( errors.find("Failed to fetch sequence") != NPOS );
+    BOOST_REQUIRE( errors.find(NStr::IntToString(kGi)) != NPOS );
+    BOOST_REQUIRE(warnings.empty());
+    BOOST_REQUIRE(ids.empty());
+}
+
+BOOST_AUTO_TEST_CASE(FetchMultipleSequencesParts)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    const string kDbName("ecoli");
+    const char kSeqType('p');
+    int ecoli_gis[] = { 1786182, 1786183, 1786184, 1786185, 1786186, 1786187,
+        1786188, 1786189, 1786190, 1786191
+    };
+    CRemoteBlast::TSeqIntervalVector queries;
+    const TSeqRange range(0, 20); // all queries are at least 20 residues
+
+    size_t i = 0;
+    for (i = 0; i < sizeof(ecoli_gis)/sizeof(*ecoli_gis); i++) {
+        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, ecoli_gis[i]));
+        CRef<CSeq_interval> val(new CSeq_interval(*id, range.GetFrom(),
+                                                  range.GetTo()));
+        queries.push_back(val);
+    }
+
+    string warnings, errors;
+    CRemoteBlast::TSeqDataVector results;
+    CRemoteBlast::TSeqIdVector ids;
+
+    CRemoteBlast::GetSequenceParts(queries, kDbName, kSeqType, ids, 
+                                   results, errors, warnings/*, true*/);
+    BOOST_REQUIRE_EQUAL(queries.size(), results.size());
+    BOOST_REQUIRE(errors.empty());
+    BOOST_REQUIRE(warnings.empty());
+
+    ITERATE(CRemoteBlast::TSeqDataVector, seq_data, results) {
+        BOOST_REQUIRE(seq_data->NotEmpty());
+        BOOST_REQUIRE((*seq_data)->IsNcbistdaa());
+        BOOST_REQUIRE_EQUAL(range.GetLength() - 1,
+                            (*seq_data)->GetNcbistdaa().Get().size());
+    }
+    i = 0;
+    ITERATE(CRemoteBlast::TSeqIdVector, id, ids) {
+        if ((*id)->IsGi()) {
+            BOOST_REQUIRE_EQUAL(ecoli_gis[i++], (*id)->GetGi());
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(FetchMultipleSequencesParts_NotFound)
+{
+    // Uncomment to redirect to test system
+    //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    const string kDbName("ecoli");
+    const char kSeqType('n');
+    const int kGiNotFound(555); // this GI shouldn't be found in ecoli
+    int ecoli_gis[] = { 1786181, 1786192, kGiNotFound, 1786217, 1786230,
+        1786240, 1786250, 1786262, 1786283, 1786298 };
+
+    CRemoteBlast::TSeqIntervalVector queries;
+    const TSeqRange range(0, 20); // all queries are at least 20 residues
+
+    size_t i = 0;
+    for (i = 0; i < sizeof(ecoli_gis)/sizeof(*ecoli_gis); i++) {
+        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, ecoli_gis[i]));
+        CRef<CSeq_interval> val(new CSeq_interval(*id, range.GetFrom(),
+                                                  range.GetTo()));
+        queries.push_back(val);
+    }
+
+    string warnings, errors;
+    CRemoteBlast::TSeqDataVector results;
+    CRemoteBlast::TSeqIdVector ids;
+
+    CRemoteBlast::GetSequenceParts(queries, kDbName, kSeqType, ids, 
+                                   results, errors, warnings/*, true*/);
+    BOOST_REQUIRE_EQUAL(queries.size() - 1, results.size());
+    BOOST_REQUIRE_EQUAL(results.size(), ids.size());
+    BOOST_REQUIRE( !errors.empty());
+    BOOST_REQUIRE( errors.find("Failed to fetch sequence") != NPOS );
+    BOOST_REQUIRE( errors.find(NStr::IntToString(kGiNotFound)) != NPOS );
+    BOOST_REQUIRE(warnings.empty());
 }
 
 BOOST_AUTO_TEST_CASE(SearchOptionsFromRID)
@@ -987,7 +1436,7 @@ BOOST_AUTO_TEST_CASE(SearchOptionsFromRID)
         BOOST_REQUIRE_EQUAL((Int8) 0, (Int8) cboh->GetEffectiveSearchSpace());
         BOOST_REQUIRE_EQUAL(10.0, cboh->GetEvalueThreshold());
         {
-            TAutoCharPtr tmp = cboh->GetFilterString();
+            TAutoCharPtr tmp = cboh->GetFilterString();/* NCBI_FAKE_WARNING */
             BOOST_REQUIRE_EQUAL(string("L;R -d repeat/repeat_9606;m;"),
                                 string(tmp.get()));
         }
@@ -1010,7 +1459,7 @@ BOOST_AUTO_TEST_CASE(SearchOptionsFromRID)
         BOOST_REQUIRE_EQUAL((Int8) 0, (Int8) cboh->GetEffectiveSearchSpace());
         BOOST_REQUIRE_EQUAL(13.0, cboh->GetEvalueThreshold());
         {
-            TAutoCharPtr tmp = cboh->GetFilterString();
+            TAutoCharPtr tmp = cboh->GetFilterString();/* NCBI_FAKE_WARNING */
             BOOST_REQUIRE_EQUAL(string("L;"), string(tmp.get()));
         }
         BOOST_REQUIRE_EQUAL(500, cboh->GetHitlistSize());

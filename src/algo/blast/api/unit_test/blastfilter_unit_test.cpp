@@ -122,14 +122,15 @@ static void x_TestGetSeqLocInfoVector(EBlastProgramType program,
                                "Failed on " + kProgName);
         size_t context = 0;
         ITERATE(TMaskedQueryRegions, itr, *query_masks_list) {
-            stringstream ss;
+            CNcbiOstrstream ss;
             ss << "Error in query number " << qindex << ", context " 
                << context << " ('" << kProgName << "')";
             // Validate the frame
             int frame = program == eBlastTypeBlastn
                 ? CSeqLocInfo::eFrameNotSet
                 : BLAST_ContextToFrame(program, context);
-            BOOST_REQUIRE_MESSAGE(frame == (*itr)->GetFrame(), ss.str());
+            BOOST_REQUIRE_MESSAGE(frame == (*itr)->GetFrame(), 
+                                  CNcbiOstrstreamToString(ss));
 
             // Validate the artificially built offsets of the mask
             const BlastSeqLoc* loc = 
@@ -138,10 +139,10 @@ static void x_TestGetSeqLocInfoVector(EBlastProgramType program,
             TSeqRange offsets(loc->ssr->left, loc->ssr->right);;
             BOOST_REQUIRE_MESSAGE
                 (offsets.GetFrom() == (*itr)->GetInterval().GetFrom(), 
-                 ss.str());
+                                  CNcbiOstrstreamToString(ss));
             BOOST_REQUIRE_MESSAGE
                 (offsets.GetTo() == (*itr)->GetInterval().GetTo(),
-                 ss.str());
+                                  CNcbiOstrstreamToString(ss));
             ++context;
         }
         BOOST_REQUIRE_EQUAL(kNumMasks, context);
@@ -778,7 +779,7 @@ BOOST_AUTO_TEST_CASE(RepeatsFilterWithMissingParameter) {
 
     CBlastNucleotideOptionsHandle nucl_handle;
     // note the missing argument to the repeats database
-    nucl_handle.SetFilterString("m L; R -d ");
+    nucl_handle.SetFilterString("m L; R -d ");/* NCBI_FAKE_WARNING */
     BOOST_REQUIRE_THROW(Blast_FindRepeatFilterLoc(query_v, &nucl_handle),
                         CBlastException);
 }
@@ -791,7 +792,7 @@ BOOST_AUTO_TEST_CASE(WindowMaskerWithMissingParameter) {
 
     CBlastNucleotideOptionsHandle nucl_handle;
     // note the missing argument to the repeats database
-    nucl_handle.SetFilterString("m L; W -d ");
+    nucl_handle.SetFilterString("m L; W -d ");/* NCBI_FAKE_WARNING */
     BOOST_REQUIRE_THROW(Blast_FindWindowMaskerLoc(query_v, &nucl_handle),
                         CBlastException);
 }
@@ -1407,14 +1408,19 @@ BOOST_AUTO_TEST_CASE(ConvertTranslatedFilterOffsets)
           386, 2, 2, 1 };
 
     for (int index = 0; index < kNumContexts; ++index) {
-        ostringstream os;
-        os << "Context " << index << " has no mask!";
-        BOOST_REQUIRE_MESSAGE(mask_loc->seqloc_array[index], os.str());
+        {{
+            CNcbiOstrstream os;
+            os << "Context " << index << " has no mask!";
+            BOOST_REQUIRE_MESSAGE(mask_loc->seqloc_array[index], 
+                                  CNcbiOstrstreamToString(os));
+        }}
         const SSeqRange* range = mask_loc->seqloc_array[index]->ssr;
-        os.str("");
+        CNcbiOstrstream os;
         os << "Context " << index;
-        BOOST_REQUIRE_MESSAGE(kProtStarts[index] == range->left, os.str());
-        BOOST_REQUIRE_MESSAGE(kProtEnds[index] == range->right, os.str());
+        BOOST_REQUIRE_MESSAGE(kProtStarts[index] == range->left,
+                              CNcbiOstrstreamToString(os));
+        BOOST_REQUIRE_MESSAGE(kProtEnds[index] == range->right,
+                              CNcbiOstrstreamToString(os));
     }
 
     BlastMaskLocProteinToDNA(mask_loc, query_info);
@@ -1428,14 +1434,19 @@ BOOST_AUTO_TEST_CASE(ConvertTranslatedFilterOffsets)
           1159, 1160, 1163, 1162, 1161 };
 
     for (int index = 0; index < kNumContexts; ++index) {
-        ostringstream os;
-        os << "Context " << index << " has no mask!";
-        BOOST_REQUIRE_MESSAGE(mask_loc->seqloc_array[index], os.str());
+        {{
+            CNcbiOstrstream os;
+            os << "Context " << index << " has no mask!";
+            BOOST_REQUIRE_MESSAGE(mask_loc->seqloc_array[index],
+                                  CNcbiOstrstreamToString(os));
+        }}
         const SSeqRange* range = mask_loc->seqloc_array[index]->ssr;
-        os.str("");
+        CNcbiOstrstream os;
         os << "Context " << index;
-        BOOST_REQUIRE_MESSAGE(kNuclStarts[index] == range->left, os.str());
-        BOOST_REQUIRE_MESSAGE(kNuclEnds[index] == range->right, os.str());
+        BOOST_REQUIRE_MESSAGE(kNuclStarts[index] == range->left,
+                              CNcbiOstrstreamToString(os));
+        BOOST_REQUIRE_MESSAGE(kNuclEnds[index] == range->right,
+                              CNcbiOstrstreamToString(os));
     }
 
 }
@@ -1633,7 +1644,7 @@ BOOST_AUTO_TEST_CASE(FilterMerge)
 BOOST_AUTO_TEST_CASE(FilterStringFalse)
 {
     CBlastNucleotideOptionsHandle nucl_handle;
-    nucl_handle.SetFilterString("F");
+    nucl_handle.SetFilterString("F");/* NCBI_FAKE_WARNING */
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetMaskAtHash());
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetDustFiltering());
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetWindowMaskerTaxId());
@@ -1643,7 +1654,7 @@ BOOST_AUTO_TEST_CASE(FilterStringFalse)
 BOOST_AUTO_TEST_CASE(MergeOptionHandle) {
  
     CBlastNucleotideOptionsHandle nucl_handle;
-    nucl_handle.SetFilterString("R -d repeat/repeat_9606");
+    nucl_handle.SetFilterString("R -d repeat/repeat_9606");/* NCBI_FAKE_WARNING */
     nucl_handle.SetMaskAtHash(true);
     nucl_handle.SetDustFiltering(true);
     BOOST_REQUIRE_EQUAL(true, nucl_handle.GetMaskAtHash());
@@ -1652,14 +1663,14 @@ BOOST_AUTO_TEST_CASE(MergeOptionHandle) {
 
 BOOST_AUTO_TEST_CASE(OptionsHandleNotClear) {
     CBlastNucleotideOptionsHandle nucl_handle;
-    nucl_handle.SetFilterString("R -d repeat/repeat_9606", false);
+    nucl_handle.SetFilterString("R -d repeat/repeat_9606", false);/* NCBI_FAKE_WARNING */
     BOOST_REQUIRE_EQUAL(true, nucl_handle.GetDustFiltering());
     BOOST_REQUIRE_EQUAL(true, nucl_handle.GetRepeatFiltering());
 }
 
 BOOST_AUTO_TEST_CASE(OptionsHandleClear) {
     CBlastNucleotideOptionsHandle nucl_handle;
-    nucl_handle.SetFilterString("R -d repeat/repeat_9606");
+    nucl_handle.SetFilterString("R -d repeat/repeat_9606");/* NCBI_FAKE_WARNING */
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetDustFiltering());
     BOOST_REQUIRE_EQUAL(true, nucl_handle.GetRepeatFiltering());
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetWindowMaskerTaxId());

@@ -333,10 +333,9 @@ class NCBI_XBLAST_EXPORT CBlastBioseqMaker : public CObject
 {
 public:
     /// Constructor
-    /// @param dlconfig Configuration object for the data loaders used in
-    /// CBlastScopeSource [in]
+    /// @param scope scope object to use as a source for sequence data [in]
     ///
-    CBlastBioseqMaker(const SDataLoaderConfig& dlconfig);
+    CBlastBioseqMaker(CRef<CScope> scope) : m_scope(scope) {}
 
     /// Creates a Bioseq given a SeqId
     /// @param id Reference to the SeqId object identifying the sequence [in]

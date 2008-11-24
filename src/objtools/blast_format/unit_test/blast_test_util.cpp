@@ -315,15 +315,14 @@ CBlastOM::x_InitBlastDatabaseDataLoader(const string& dbname,
                                         ELocation location)
 {
     try {
-        if (location == eLocal) {
-            m_BlastDbLoaderName = CBlastDbDataLoader::RegisterInObjectManager
-                (*m_ObjMgr, dbname, dbtype, true,
-                 CObjectManager::eNonDefault).GetLoader()->GetName();
-        } else {
-            m_BlastDbLoaderName = CRemoteBlastDataLoader::RegisterInObjectManager
-                (*m_ObjMgr, dbname, (CRemoteBlastDataLoader::EDbType)dbtype,
-                 CObjectManager::eNonDefault).GetLoader()->GetName();
-        }
+        CBlastDbDataLoader::ESource blastdb_source = (location == eLocal)
+            ? CBlastDbDataLoader::eLocal
+            : CBlastDbDataLoader::eRemote;
+        m_BlastDbLoaderName = CBlastDbDataLoader::RegisterInObjectManager
+            (*m_ObjMgr, dbname, dbtype, true,
+             CObjectManager::eNonDefault,
+             CObjectManager::kPriority_NotSet,
+             blastdb_source).GetLoader()->GetName();
     } catch (const CSeqDBException& e) {
 
         // if the database isn't found, ignore the exception as the Genbank
@@ -347,6 +346,13 @@ CRef<CScope> CBlastOM::NewScope()
         retval->AddDataLoader(m_GbLoaderName, 2);
     }
     return retval;
+}
+
+void CBlastOM::RevokeBlastDbDataLoader()
+{
+    if (!m_BlastDbLoaderName.empty()) {
+        CObjectManager::GetInstance()->RevokeDataLoader(m_BlastDbLoaderName);
+    }
 }
 
 }

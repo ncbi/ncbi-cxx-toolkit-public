@@ -39,6 +39,7 @@
 
 #include <objects/entrez2/entrez2_client.hpp>
 #include <objmgr/seq_vector.hpp>
+#include "auto_envvar.hpp"
 
 #ifndef BOOST_AUTO_TEST_CASE
 #  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
@@ -55,6 +56,29 @@ USING_SCOPE(blast);
 USING_SCOPE(objects);
 using boost::unit_test::test_suite;
 
+/// RAII class for the CBlastScopeSource. It revokes the BLAST database data
+/// loader upon destruction to reset the environment for other unit tests
+class CBlastScopeSourceWrapper {
+public:
+    CBlastScopeSourceWrapper() {
+        m_ScopeSrc.Reset(new CBlastScopeSource);
+    }
+    CBlastScopeSourceWrapper(SDataLoaderConfig dlconfig) {
+        m_ScopeSrc.Reset(new CBlastScopeSource(dlconfig));
+    }
+    CRef<CScope> NewScope() { return m_ScopeSrc->NewScope(); }
+    string GetBlastDbLoaderName() const { 
+        return m_ScopeSrc->GetBlastDbLoaderName(); 
+    }
+    ~CBlastScopeSourceWrapper() {
+        m_ScopeSrc->RevokeBlastDbDataLoader();
+        m_ScopeSrc.Reset();
+    }
+
+private:
+    CRef<CBlastScopeSource> m_ScopeSrc;
+};
+
 /// Auxiliary class to write temporary NCBI configuration files in the local
 /// directory for the purpose of testing the CBlastScopeSource configuration
 /// class via this file
@@ -66,8 +90,7 @@ public:
     typedef SDataLoaderConfig::EConfigOpts EConfigOpts;
 
     CAutoNcbiConfigFile(EConfigOpts opts = SDataLoaderConfig::eDefault) {
-        CMetaRegistry::SEntry sentry =
-            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+        m_Sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
 
         string value;
         if (opts & SDataLoaderConfig::eUseBlastDbDataLoader) {
@@ -79,14 +102,23 @@ public:
         if (opts & SDataLoaderConfig::eUseNoDataLoaders) {
             value += "none";
         }
-        sentry.registry->Set(kSection, kName, value);
+        m_Sentry.registry->Set(kSection, kName, value);
+    }
+
+    void RemoveBLASTDBEnvVar() {
+        m_BlastDb = m_Sentry.registry->Get(kSection, "BLASTDB");
+        m_Sentry.registry->Set(kSection, "BLASTDB", "/dev/null");
     }
 
     ~CAutoNcbiConfigFile() {
-        CMetaRegistry::SEntry sentry =
-            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-        sentry.registry->Set(kSection, kName, kEmptyStr);
+        m_Sentry.registry->Set(kSection, kName, kEmptyStr);
+        if ( !m_BlastDb.empty() ) {
+            m_Sentry.registry->Set(kSection, "BLASTDB", m_BlastDb);
+        }
     }
+private:
+    CMetaRegistry::SEntry m_Sentry;
+    string m_BlastDb;
 };
 
 const char* CAutoNcbiConfigFile::kSection = "BLAST";
@@ -101,8 +133,10 @@ BOOST_AUTO_TEST_CASE(RetrieveFromBlastDb_TestSequenceData)
 "QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMMCMNNSFNVATLPAEKMKILELPFASGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEEKYNLTSVLMALGMTDLFIPSANLTGISSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFLFLIKHNPTNTIVYFGRYWSP";
 
     SDataLoaderConfig dlconfig("nr", true);
-    CBlastScopeSource scope_source(dlconfig);
+    CBlastScopeSourceWrapper scope_source(dlconfig);
     CRef<CScope> scope = scope_source.NewScope();
+    BOOST_REQUIRE_EQUAL(string("BLASTDB_nrProtein"), 
+                        scope_source.GetBlastDbLoaderName());
 
     CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
@@ -125,8 +159,10 @@ BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromBlastDb_TestSequenceData)
     SDataLoaderConfig dlconfig("nr", true);
     BOOST_CHECK(dlconfig.m_UseBlastDbs == true);
     BOOST_CHECK(dlconfig.m_UseGenbank == false);
-    CBlastScopeSource scope_source(dlconfig);
+    CBlastScopeSourceWrapper scope_source(dlconfig);
     CRef<CScope> scope = scope_source.NewScope();
+    BOOST_REQUIRE_EQUAL(string("BLASTDB_nrProtein"), 
+                        scope_source.GetBlastDbLoaderName());
 
     CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
@@ -149,8 +185,9 @@ BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromGenbank_TestSequenceData)
     SDataLoaderConfig dlconfig("nr", true);
     BOOST_CHECK(dlconfig.m_UseBlastDbs == false);
     BOOST_CHECK(dlconfig.m_UseGenbank == true);
-    CBlastScopeSource scope_source(dlconfig);
+    CBlastScopeSourceWrapper scope_source(dlconfig);
     CRef<CScope> scope = scope_source.NewScope();
+    BOOST_REQUIRE(scope_source.GetBlastDbLoaderName() == kEmptyStr);
 
     CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
@@ -170,8 +207,9 @@ BOOST_AUTO_TEST_CASE(ConfigFileTest_UseNoDataLoaders)
     SDataLoaderConfig dlconfig("nr", true);
     BOOST_CHECK(dlconfig.m_UseBlastDbs == false);
     BOOST_CHECK(dlconfig.m_UseGenbank == false);
-    CBlastScopeSource scope_source(dlconfig);
+    CBlastScopeSourceWrapper scope_source(dlconfig);
     CRef<CScope> scope = scope_source.NewScope();
+    BOOST_REQUIRE(scope_source.GetBlastDbLoaderName() == kEmptyStr);
 
     CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
     BOOST_CHECK(bh.State_NoData());
@@ -188,7 +226,7 @@ void s_RetrieveSequenceLength(int gi,
     SDataLoaderConfig dlconfig(dbname, is_prot);
     BOOST_CHECK(dlconfig.m_UseBlastDbs == true);
     BOOST_CHECK(dlconfig.m_UseGenbank == true);
-    CBlastScopeSource scope_source(dlconfig);
+    CBlastScopeSourceWrapper scope_source(dlconfig);
 
     CRef<CScope> scope = scope_source.NewScope();
     TSeqPos length = sequence::GetLength(seqid, scope);
@@ -221,14 +259,15 @@ BOOST_AUTO_TEST_CASE(RetrieveFromGenbank_NewlyAddedSequenceToGenbank) {
     }
 
     const CSeq_id seqid(CSeq_id::e_Gi, results.front());
-    TSeqPos length = sequence::GetLength(seqid,
-                                         CBlastScopeSource().NewScope());
+    CBlastScopeSourceWrapper scope_source;
+
+    TSeqPos length = sequence::GetLength(seqid, scope_source.NewScope());
     s_RetrieveSequenceLength(results.front(), "nt", false, length);
 }
 
 BOOST_AUTO_TEST_CASE(RetrieveFromGenbank_NoBlastDbDataLoader) {
     const CSeq_id seqid(CSeq_id::e_Gi, 7450545);
-    CBlastScopeSource scope_source;
+    CBlastScopeSourceWrapper scope_source;
     CRef<CScope> scope = scope_source.NewScope();
     TSeqPos length = sequence::GetLength(seqid, scope);
     const TSeqPos kExpectedLength = 443;
@@ -240,6 +279,19 @@ BOOST_AUTO_TEST_CASE(RetrieveFromGenbank_IncorrectBlastDbType) {
 }
 
 BOOST_AUTO_TEST_CASE(InvalidBlastDatabase) {
+    try {
+        s_RetrieveSequenceLength(129295, "dummy", true, 232);
+    } catch (const CException& e) {
+        const string kExpectedMsg(" BLAST database 'dummy' does not exist in");
+        BOOST_CHECK(e.GetMsg().find(kExpectedMsg) != NPOS);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(ForceRemoteBlastDbLoader) {
+    CAutoEnvironmentVariable env("BLASTDB", kEmptyStr);
+    CAutoNcbiConfigFile acf(SDataLoaderConfig::eUseBlastDbDataLoader);
+    acf.RemoveBLASTDBEnvVar();
+
     // Make sure to post warnings
     SetDiagPostLevel(eDiag_Info);
     CNcbiOstream* diag_stream = GetDiagStream();
@@ -248,15 +300,28 @@ BOOST_AUTO_TEST_CASE(InvalidBlastDatabase) {
     CNcbiOstrstream error_stream;
     SetDiagStream(&error_stream); 
 
-    s_RetrieveSequenceLength(129295, "dummy", true, 232);
+    const CSeq_id seqid(CSeq_id::e_Gi, 129295);
+
+    SDataLoaderConfig dlconfig("nr", true);
+    dlconfig.m_UseGenbank = false;
+    BOOST_CHECK(dlconfig.m_UseBlastDbs == true);
+    CBlastScopeSourceWrapper scope_source(dlconfig);
+
+    CRef<CScope> scope = scope_source.NewScope();
+    TSeqPos length = sequence::GetLength(seqid, scope);
+    const TSeqPos kExpectedLength = 232;
+    BOOST_CHECK_EQUAL(kExpectedLength, length);
 
     const string kWarnings = error_stream.str();
-    const string kExpectedMsg("No alias or index file found");
+    const string kExpectedMsg("Error initializing local BLAST database data");
     BOOST_CHECK(kWarnings.find(kExpectedMsg) != NPOS);
 
     // restore the diagnostic stream
     SetDiagStream(diag_stream);
     SetDiagPostLevel(eDiag_Warning);
+
+    BOOST_REQUIRE_EQUAL(string("REMOTE_BLASTDB_nrProtein"), 
+                        scope_source.GetBlastDbLoaderName());
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

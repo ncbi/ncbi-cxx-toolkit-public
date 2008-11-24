@@ -1454,10 +1454,11 @@ s_SeqTypeToResidue(char p, string & errors)
 }
 
 CRef<objects::CBlast4_request> CRemoteBlast::
-x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
-                     const string                     & database, // in
-                     char                               seqtype,  // 'p' or 'n'
-                     string                           & errors)   // out
+x_BuildGetSeqRequest(TSeqIdVector& seqids,   // in
+                     const string& database, // in
+                     char          seqtype,  // 'p' or 'n'
+                     bool    skip_seq_data,  // in
+                     string&       errors)  // out
 {
     // This will be returned in an Empty() state if an error occurs.
     CRef<CBlast4_request> request;
@@ -1483,6 +1484,7 @@ x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
     
     request->SetBody(*body);
     body->SetGet_sequences().SetDatabase(*db);
+    body->SetGet_sequences().SetSkip_seq_data(skip_seq_data);
     
     // Fill in db values
     
@@ -1494,7 +1496,7 @@ x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
     list< CRef< CSeq_id > > & seqid_list =
         body->SetGet_sequences().SetSeq_ids();
     
-    ITERATE(vector< CRef<CSeq_id> >, iter, seqids) {
+    ITERATE(TSeqIdVector, iter, seqids) {
         seqid_list.push_back(*iter);
     }
     
@@ -1502,13 +1504,10 @@ x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
 }
 
 CRef<objects::CBlast4_request> CRemoteBlast::
-x_BuildGetSeqPartsRequest(const objects::CSeq_id & seqid,     // in
-                          const string     & database,  // in
-                          char               seqtype,   // 'p' or 'n'
-                          bool               get_meta,  // in
-                          int                start_pos, // in
-                          int                end_pos,   // in
-                          string           & errors)    // out
+x_BuildGetSeqPartsRequest(const TSeqIntervalVector & seqids,    // in
+                          const string             & database,  // in
+                          char                       seqtype,   // 'p' or 'n'
+                          string                   & errors)    // out
 {
     errors.erase();
     
@@ -1525,9 +1524,8 @@ x_BuildGetSeqPartsRequest(const objects::CSeq_id & seqid,     // in
         errors = "Error: database name may not be blank.";
         return request;
     }
-    
-    if ((! get_meta) && (start_pos == end_pos)) {
-        errors = "Error: no information requested.";
+    if (seqids.empty()) {
+        errors = "Error: no sequences requested.";
         return request;
     }
     
@@ -1542,26 +1540,13 @@ x_BuildGetSeqPartsRequest(const objects::CSeq_id & seqid,     // in
     
     CBlast4_get_seq_parts_request & req =
         body->SetGet_sequence_parts();
+    copy(seqids.begin(), seqids.end(), back_inserter(req.SetSeq_locations()));
     
     req.SetDatabase(*db);
     
     // Fill in db values
-    
     db->SetName(database);
     db->SetType(rtype);
-    
-    // Other request data; the id, meta flag, and start/end
-    // coordinates.
-    
-    req.SetId(const_cast<CSeq_id&>(seqid));
-    
-    req.SetNeed_meta_data(get_meta);
-    
-    if (start_pos != 0 || end_pos != start_pos) {
-        req.SetStart(start_pos);
-        req.SetEnd(end_pos);
-    }
-    
     return request;
 }
 
@@ -1612,10 +1597,10 @@ s_ProcessErrorsFromReply(CRef<objects::CBlast4_reply> reply,
 }
 
 void
-CRemoteBlast::x_GetSeqsFromReply(CRef<objects::CBlast4_reply>       reply,
-                                 vector< CRef<objects::CBioseq> > & bioseqs,  // out
-                                 string                           & errors,   // out
-                                 string                           & warnings) // out
+CRemoteBlast::x_GetSeqsFromReply(CRef<objects::CBlast4_reply> reply,
+                                 TBioseqVector                & bioseqs,  // out
+                                 string                       & errors,   // out
+                                 string                       & warnings) // out
 {
     // Read the data from the reply into the output arguments.
     
@@ -1638,86 +1623,76 @@ CRemoteBlast::x_GetSeqsFromReply(CRef<objects::CBlast4_reply>       reply,
 
 void
 CRemoteBlast::
-x_GetPartsFromReply(CRef<objects::CBlast4_reply>       reply,    // in
-                    CRef<objects::CBioseq>           & bioseq,   // out
-                    vector< CRef<objects::CSeq_id> > & ids,      // out
-                    int                              & length,   // out
-                    CRef<objects::CSeq_data>         & seq_data, // out
-                    string                           & errors,   // out
-                    string                           & warnings) // out
+x_GetPartsFromReply(CRef<objects::CBlast4_reply>   reply,    // in
+                    TSeqIdVector                 & ids,      // out
+                    TSeqDataVector               & seq_data, // out
+                    string                       & errors,   // out
+                    string                       & warnings) // out
 {
-    // Read the data from the reply into the output arguments.
-    
-    bioseq.Reset();
-    seq_data.Reset();
+    seq_data.clear();
     ids.clear();
-    length = 0;
     
-    static const string no_msg("<no message>");
-    
-    if (reply->CanGetErrors() && (! reply->GetErrors().empty())) {
-        ITERATE(list< CRef< CBlast4_error > >, iter, reply->GetErrors()) {
-            
-            // Determine the message source and destination.
-            
-            const string & message((*iter)->CanGetMessage()
-                                   ? (*iter)->GetMessage()
-                                   : no_msg);
-            
-            string & dest
-                (((*iter)->GetCode() & eBlast4_error_flags_warning)
-                 ? warnings
-                 : errors);
-            
-            // Attach the message (and possibly delimiter) to dest.
-            
-            if (! dest.empty()) {
-                dest += "\n";
-            }
-            
-            dest += message;
-        }
-    }
-    
+    s_ProcessErrorsFromReply(reply, errors, warnings);
+
     if (reply->CanGetBody() && reply->GetBody().IsGet_sequence_parts()) {
-        CBlast4_get_seq_parts_reply & parts_rep =
-            reply->SetBody().SetGet_sequence_parts();
+        CBlast4_get_seq_parts_reply::Tdata& parts_rep =
+            reply->SetBody().SetGet_sequence_parts().Set();
+        ids.reserve(parts_rep.size());
+        seq_data.reserve(parts_rep.size());
         
-        if (parts_rep.CanGetBioseq()) {
-            bioseq.Reset(& parts_rep.SetBioseq());
-        }
-        
-        if (parts_rep.CanGetIds()) {
-            list< CRef<CSeq_id> > & seqids = parts_rep.SetIds();
-            ids.clear();
-            copy(seqids.begin(), seqids.end(), back_inserter(ids));
-        }
-        
-        if (parts_rep.CanGetLength()) {
-            length = parts_rep.GetLength();
-        }
-        
-        if (parts_rep.CanGetData()) {
-            seq_data.Reset(& parts_rep.SetData());
+        NON_CONST_ITERATE(CBlast4_get_seq_parts_reply::Tdata, itr, parts_rep) {
+            ids.push_back(CRef<CSeq_id>(&(*itr)->SetId()));
+            seq_data.push_back(CRef<CSeq_data>(&(*itr)->SetData()));
         }
     }
 }
 
+void 
+CRemoteBlast::GetSequences(TSeqIdVector & seqids,   // in
+                           const string & database, // in
+                           char           seqtype,  // 'p' or 'n'
+                           TBioseqVector& bioseqs,  // out
+                           string       & errors,   // out
+                           string       & warnings, // out
+                           bool           verbose)  // in
+{
+    x_GetSequences(seqids, database, seqtype, false, bioseqs, errors, warnings,
+                   verbose);
+}
+
+void 
+CRemoteBlast::GetSequencesInfo(TSeqIdVector & seqids,   // in
+                               const string & database, // in
+                               char           seqtype,  // 'p' or 'n'
+                               TBioseqVector& bioseqs,  // out
+                               string       & errors,   // out
+                               string       & warnings, // out
+                               bool           verbose)  // in
+{
+    x_GetSequences(seqids, database, seqtype, true, bioseqs, errors, warnings,
+                   verbose);
+}
+
 void
-CRemoteBlast::GetSequences(vector< CRef<objects::CSeq_id> > & seqids,   // in
-                           const string                     & database, // in
-                           char                               seqtype,  // 'p' or 'n'
-                           vector< CRef<objects::CBioseq> > & bioseqs,  // out
-                           string                           & errors,   // out
-                           string                           & warnings) // out
+CRemoteBlast::x_GetSequences(TSeqIdVector & seqids,
+                             const string & database,
+                             char           seqtype,
+                             bool           skip_seq_data,
+                             TBioseqVector& bioseqs,
+                             string       & errors,
+                             string       & warnings,
+                             bool           verbose)
 {
     // Build the request
     
     CRef<CBlast4_request> request =
-        x_BuildGetSeqRequest(seqids, database, seqtype, errors);
+        x_BuildGetSeqRequest(seqids, database, seqtype, skip_seq_data, errors);
     
     if (request.Empty()) {
         return;
+    }
+    if (verbose) {
+        NcbiCout << MSerial_AsnText << *request << endl;
     }
     
     CRef<CBlast4_reply> reply(new CBlast4_reply);
@@ -1731,34 +1706,26 @@ CRemoteBlast::GetSequences(vector< CRef<objects::CSeq_id> > & seqids,   // in
                    "No response from server, cannot complete request.");
     }
     
+    if (verbose) {
+        NcbiCout << MSerial_AsnText << *reply << endl;
+    }
     x_GetSeqsFromReply(reply, bioseqs, errors, warnings);
 }
 
 void CRemoteBlast::
-GetSequenceInfo(const objects::CSeq_id                 & seqid,     // in
-                const string                     & database,  // in
-                char                               seqtype,   // 'p' or 'n'
-                bool                               get_meta,  // in
-                int                                start_pos, // in
-                int                                end_pos,   // in
-                CRef<objects::CBioseq>           & bioseq,    // out
-                vector< CRef<objects::CSeq_id> > & ids,       // out
-                int                              & length,    // out
-                CRef<objects::CSeq_data>         & seq_data,  // out
-                string                           & errors,    // out
-                string                           & warnings,  // out
-                bool                               verbose)   // in
+GetSequenceParts(const TSeqIntervalVector  & seqids,    // in
+                 const string              & database,  // in
+                 char                        seqtype,   // 'p' or 'n'
+                 TSeqIdVector              & ids,       // out
+                 TSeqDataVector            & seq_data,  // out
+                 string                    & errors,    // out
+                 string                    & warnings,  // out
+                 bool                        verbose)   // in
 {
     // Build the request
     
     CRef<CBlast4_request> request =
-            x_BuildGetSeqPartsRequest(seqid,
-                                      database,
-                                      seqtype,
-                                      get_meta,
-                                      start_pos,
-                                      end_pos,
-                                      errors);
+            x_BuildGetSeqPartsRequest(seqids, database, seqtype, errors);
     
     if (request.Empty()) {
         return;
@@ -1781,13 +1748,7 @@ GetSequenceInfo(const objects::CSeq_id                 & seqid,     // in
     if (verbose) {
         NcbiCout << MSerial_AsnText << *reply << endl;
     }
-    x_GetPartsFromReply(reply,
-                        bioseq,
-                        ids,
-                        length,
-                        seq_data,
-                        errors,
-                        warnings);
+    x_GetPartsFromReply(reply, ids, seq_data, errors, warnings);
 }
 
 static const string 

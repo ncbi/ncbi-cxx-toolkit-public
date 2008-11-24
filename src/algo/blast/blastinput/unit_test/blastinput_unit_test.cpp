@@ -56,6 +56,7 @@
 #include <algo/blast/blastinput/tblastn_args.hpp>
 #include <algo/blast/blastinput/tblastx_args.hpp>
 #include <algo/blast/blastinput/psiblast_args.hpp>
+#include "auto_envvar.hpp"
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
@@ -522,28 +523,6 @@ BOOST_AUTO_TEST_CASE(RawFastaNoSpaces)
 
     CHECK(!ssl.mask);
 }
-
-class CAutoEnvironmentVariable
-{
-public:
-    CAutoEnvironmentVariable(const char* var_name) 
-        : m_VariableName(var_name)
-    {
-        _ASSERT(var_name);
-        string var(m_VariableName);
-        string value("1");
-        CNcbiEnvironment env(0);
-        env.Set(var, value);
-    }
-
-    ~CAutoEnvironmentVariable() {
-        string var(m_VariableName);
-        CNcbiEnvironment env(0);
-        env.Set(var, kEmptyStr);
-    }
-private:
-    const char* m_VariableName;
-};
 
 BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN_ReadDeltaSeq)
 {

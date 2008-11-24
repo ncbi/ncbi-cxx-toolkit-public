@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE( RemoteOptionsTest )
      BOOST_CHECK_NO_THROW(opts.SetSegFiltering());
      BOOST_CHECK_NO_THROW(opts.SetRepeatFiltering());
      BOOST_CHECK_NO_THROW(opts.SetRepeatFilteringDB("repeat/repeat_9606"));
-     BOOST_CHECK_NO_THROW(opts.SetFilterString("m L", false));
+     BOOST_CHECK_NO_THROW(opts.SetFilterString("m L", false)); /* NCBI_FAKE_WARNING */
 }
 
 BOOST_AUTO_TEST_CASE( BogusProgramWithCreate )
@@ -1197,36 +1197,36 @@ BOOST_AUTO_TEST_CASE( testRemoteFilterString)
        CBlastOptions opts(CBlastOptions::eRemote);
 
        opts.SetProgram(eBlastn);
-       opts.SetFilterString("F", true);
+       opts.SetFilterString("F", true);/* NCBI_FAKE_WARNING */
        // cerr << "dust filter" << (int) blast4_opts->GetParamByName("DustFiltering")->GetValue().GetBoolean() << '\n';
        BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("DustFiltering")->GetValue().GetBoolean());
        BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("RepeatFiltering")->GetValue().GetBoolean());
-       opts.SetFilterString("T", true);
+       opts.SetFilterString("T", true);/* NCBI_FAKE_WARNING */
        BOOST_CHECK_EQUAL(true, opts.GetBlast4AlgoOpts()->GetParamByName("DustFiltering")->GetValue().GetBoolean());
        BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("RepeatFiltering")->GetValue().GetBoolean());
 
        opts.SetProgram(eBlastp);
-       opts.SetFilterString("F", true);
+       opts.SetFilterString("F", true);/* NCBI_FAKE_WARNING */
        BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
-       opts.SetFilterString("T", true);
+       opts.SetFilterString("T", true);/* NCBI_FAKE_WARNING */
        BOOST_CHECK_EQUAL(true, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
 
        opts.SetProgram(eBlastx);
-       opts.SetFilterString("F", true);
+       opts.SetFilterString("F", true);/* NCBI_FAKE_WARNING */
        BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
-       opts.SetFilterString("T", true);
+       opts.SetFilterString("T", true);/* NCBI_FAKE_WARNING */
        BOOST_CHECK_EQUAL(true, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
 
        opts.SetProgram(eTblastn);
-       opts.SetFilterString("F", true);
+       opts.SetFilterString("F", true);/* NCBI_FAKE_WARNING */
        BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
-       opts.SetFilterString("T", true);
+       opts.SetFilterString("T", true);/* NCBI_FAKE_WARNING */
        BOOST_CHECK_EQUAL(true, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
 
        opts.SetProgram(eTblastx);
-       opts.SetFilterString("F", true);
+       opts.SetFilterString("F", true);/* NCBI_FAKE_WARNING */
        BOOST_CHECK_EQUAL(false, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
-       opts.SetFilterString("T", true);
+       opts.SetFilterString("T", true);/* NCBI_FAKE_WARNING */
        BOOST_CHECK_EQUAL(true, opts.GetBlast4AlgoOpts()->GetParamByName("SegFiltering")->GetValue().GetBoolean());
 }
 
@@ -1236,11 +1236,11 @@ BOOST_AUTO_TEST_CASE( testNewFilteringDefaults )
     
     opts = CBlastOptionsFactory::Create(eTblastn);
     BOOST_REQUIRE(opts.NotEmpty());
-    BOOST_CHECK_EQUAL(string("F"), opts->GetFilterString());
+    BOOST_CHECK_EQUAL(string("F"), string(opts->GetFilterString()));/* NCBI_FAKE_WARNING */
 
     opts = CBlastOptionsFactory::Create(eBlastp);
     BOOST_REQUIRE(opts.NotEmpty());
-    BOOST_CHECK_EQUAL(string("F"), opts->GetFilterString());
+    BOOST_CHECK_EQUAL(string("F"), string(opts->GetFilterString()));/* NCBI_FAKE_WARNING */
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

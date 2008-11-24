@@ -204,11 +204,6 @@ CBlastInput::GetAllSeqs(CScope& scope)
     return retval;
 }
 
-CBlastBioseqMaker::CBlastBioseqMaker(const SDataLoaderConfig& dlconfig)
-{
-    m_scope = CBlastScopeSource(dlconfig).NewScope();
-}
-
 CRef<CBioseq> CBlastBioseqMaker::
         CreateBioseqFromId(CConstRef<CSeq_id> id, bool retrieve_seq_data)
 {

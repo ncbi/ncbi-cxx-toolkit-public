@@ -45,9 +45,17 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-
-CRemoteServices::CRemoteServices()
-{}
+bool
+CRemoteServices::IsValidBlastDb(const string& dbname, bool is_protein)
+{
+    CRef<CBlast4_database> blastdb(new CBlast4_database);
+    blastdb->SetName(dbname);
+    blastdb->SetType(is_protein 
+                     ? eBlast4_residue_type_protein 
+                     : eBlast4_residue_type_nucleotide);
+    CRef<CBlast4_database_info> result = GetDatabaseInfo(blastdb);
+    return result.NotEmpty();
+}
 
 CRef<objects::CBlast4_database_info>
 CRemoteServices::x_FindDbInfoFromAvailableDatabases

@@ -171,7 +171,7 @@ void CSeqAlignFilter::FilterBySeqDB(const CSeq_align_set& full_aln,
                                     CRef<CSeqDB> db,
                                     CSeq_align_set& filtered_aln)
 {
-    IBlastSeqInfoSrc* seqinfo = new CSeqDbSeqInfoSrc(db);
+    CRef<IBlastSeqInfoSrc> seqinfo(new CSeqDbSeqInfoSrc(db));
     filtered_aln.Set().clear();
 
     ITERATE(CSeq_align_set::Tdata, iter_aln, full_aln.Get()) { 

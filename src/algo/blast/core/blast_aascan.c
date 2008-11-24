@@ -177,12 +177,12 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
 
                 /* copy the hits. */
                 {
-                Int4 i;
-                Int4 s_off = s - subject->sequence;
-                for (i = 0; i < numhits; i++) {
-                    offset_pairs[i + totalhits].qs_offsets.q_off = src[i];
-                    offset_pairs[i + totalhits].qs_offsets.s_off = s_off;
-                }
+                    Int4 i;
+                    Int4 s_off = s - subject->sequence;
+                    for (i = 0; i < numhits; i++) {
+                        offset_pairs[i + totalhits].qs_offsets.q_off = src[i];
+                        offset_pairs[i + totalhits].qs_offsets.s_off = s_off;
+                    }
                 }
 
                 totalhits += numhits;
@@ -263,12 +263,12 @@ static Int4 s_BlastSmallAaScanSubject(const LookupTableWrap * lookup_wrap,
 
                 /* copy the hits. */
                 {
-                Int4 i;
-                Int4 s_off = s - subject->sequence;
-                for (i = 0; i < numhits; i++) {
-                    offset_pairs[i + totalhits].qs_offsets.q_off = src[i];
-                    offset_pairs[i + totalhits].qs_offsets.s_off = s_off;
-                }
+                    Int4 i;
+                    Int4 s_off = s - subject->sequence;
+                    for (i = 0; i < numhits; i++) {
+                        offset_pairs[i + totalhits].qs_offsets.q_off = src[i];
+                        offset_pairs[i + totalhits].qs_offsets.s_off = s_off;
+                    }
                 }
 
                 totalhits += numhits;

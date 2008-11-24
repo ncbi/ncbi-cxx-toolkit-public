@@ -42,6 +42,7 @@ IMPORTS
     Bioseq-set              FROM NCBI-Seqset
     PssmWithParameters      FROM NCBI-ScoreMat
     Seq-id,
+    Seq-interval,
     Seq-loc                 FROM NCBI-Seqloc
     Seq-align,
     Seq-align-set           FROM NCBI-Seqalign;
@@ -101,11 +102,6 @@ Blast4-get-search-results-request ::= SEQUENCE {
     request-id              VisibleString,
     -- Logical OR of Blast4-result-types, assumes default if absent
     result-types            INTEGER OPTIONAL
-}
-
-Blast4-get-sequences-request ::= SEQUENCE {
-    database                Blast4-database,
-    seq-ids                 SEQUENCE OF Seq-id
 }
 
 -- If a PSSM is used (ie. for PSI-Blast), it must contain a "query"
@@ -191,21 +187,27 @@ Blast4-get-search-strategy-request ::= SEQUENCE {
 -- Blast4-queue-search-request, an object used to submit the search)
 Blast4-get-search-strategy-reply ::= Blast4-request
 
--- Fetch parts of a sequences a-la cart.
--- To retrieve full sequences use Blast4-get-sequences-request,
-
-Blast4-get-seq-parts-request ::= SEQUENCE {
+-- Fetch sequence data from a BLAST database
+Blast4-get-sequences-request ::= SEQUENCE {
+    -- Name of the BLAST database from which to retrieve the sequence data
     database                Blast4-database,
-    id                      Seq-id,
-    need-meta-data          BOOLEAN,
-    
-    -- If end is 0, no data will be fetched.  If end is past the
-    -- length of the sequence, it will be adjusted to the end of
-    -- the sequence (this allows fetching of the first chunk in
+    -- Sequence identifiers for the sequence to get
+    seq-ids                 SEQUENCE OF Seq-id,
+    -- Determines whether the returned Bioseqs should contain the sequence data
+    -- or not
+    skip-seq-data           BOOLEAN DEFAULT FALSE
+}
+
+-- Fetch parts of sequences from a BLAST database
+Blast4-get-seq-parts-request ::= SEQUENCE {
+    -- Name of the BLAST database from which to retrieve the sequence data
+    database                Blast4-database,
+    -- Allows the specification of ranges of sequence data needed.
+    -- If the sequence(s) interval's end is 0, no data will be fetched. 
+    -- If end is past the length of the sequence, it will be adjusted to the
+    -- end of the sequence (this allows fetching of the first chunk in
     -- cases where the length is not yet known).
-    
-    start                   INTEGER OPTIONAL,
-    end                     INTEGER OPTIONAL
+    seq-locations           SEQUENCE OF Seq-interval
 }
 
 
@@ -265,6 +267,15 @@ Blast4-get-search-results-reply ::= SEQUENCE {
 }
 
 Blast4-get-sequences-reply ::= SEQUENCE OF Bioseq
+-- Bundles Seq-ids and sequence data to fulfill requests of type
+-- Blast4-get-seq-parts-request
+Blast4-seq-part-data ::= SEQUENCE {
+    -- Sequence identifier
+    id      Seq-id,
+    -- Its sequence data (may be partial)
+    data    Seq-data
+}
+Blast4-get-seq-parts-reply ::= SEQUENCE OF Blast4-seq-part-data
 
 Blast4-queue-search-reply ::= SEQUENCE {
     request-id              VisibleString OPTIONAL
@@ -272,14 +283,6 @@ Blast4-queue-search-reply ::= SEQUENCE {
 
 Blast4-get-queries-reply ::= SEQUENCE {
     queries                 Blast4-queries
-}
-
-Blast4-get-seq-parts-reply ::= SEQUENCE {
-    -- will be populated if Blast4-get-seq-parts-request::need-meta-data is TRUE
-    bioseq                  Bioseq OPTIONAL,
-    ids                     SEQUENCE OF Seq-id OPTIONAL,
-    length                  INTEGER OPTIONAL,
-    data                    Seq-data OPTIONAL
 }
 
 --  --------------------------------------------------------------------

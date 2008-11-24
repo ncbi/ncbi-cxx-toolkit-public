@@ -119,23 +119,24 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(const string& dbname,
     if ( !m_Config.m_UseBlastDbs ) {
         return;
     }
-
     try {
-
         m_BlastDbLoaderName = CBlastDbDataLoader::RegisterInObjectManager
                 (*m_ObjMgr, dbname, dbtype, m_Config.m_UseFixedSizeSlices,
-                 CObjectManager::eNonDefault).GetLoader()->GetName();
-
+                 CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet,
+                 CBlastDbDataLoader::eLocal).GetLoader()->GetName();
+        _ASSERT( !m_BlastDbLoaderName.empty() );
     } catch (const CSeqDBException& e) {
-
-        // if the database isn't found, ignore the exception as the Genbank
-        // data loader will be the fallback (just issue a warning)
-
+        // if the database isn't found, ignore the exception as the
+        // remote BLAST database data loader will be tried next
         if (e.GetMsg().find("No alias or index file found ") != NPOS) {
-            ERR_POST(Info << "Error initializing local BLAST database data "
-                          << "loader: '" << e.GetMsg() << "'");
+            ERR_POST(Info << "Error initializing local BLAST database "
+                          << "data loader: '" << e.GetMsg() << "'");
         }
-
+        m_BlastDbLoaderName = CBlastDbDataLoader::RegisterInObjectManager
+                (*m_ObjMgr, dbname, dbtype, m_Config.m_UseFixedSizeSlices,
+                 CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet,
+                 CBlastDbDataLoader::eRemote).GetLoader()->GetName();
+        _ASSERT( !m_BlastDbLoaderName.empty() );
     }
 }
 
@@ -154,14 +155,32 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(CRef<CSeqDB> db_handle)
             m_BlastDbLoaderName = CBlastDbDataLoader::RegisterInObjectManager
                     (*m_ObjMgr, db_handle, m_Config.m_UseFixedSizeSlices,
                      CObjectManager::eNonDefault).GetLoader()->GetName();
+            _ASSERT( !m_BlastDbLoaderName.empty() );
 
         } catch (const exception& e) {
 
             // in case of error when initializing the BLAST database, just
-            // ignore the exception as the Genbank data loader will be the 
-            // fallback (just issue a warning)
+            // ignore the exception as the remote BLAST database data loader
+            // will be the fallback (just issue a warning)
             ERR_POST(Info << "Error initializing local BLAST database data "
                              << "loader: '" << e.what() << "'");
+            const CBlastDbDataLoader::EDbType dbtype = 
+                db_handle->GetSequenceType() == CSeqDB::eProtein
+                ? CBlastDbDataLoader::eProtein
+                : CBlastDbDataLoader::eNucleotide;
+            try {
+                m_BlastDbLoaderName =
+                    CBlastDbDataLoader::RegisterInObjectManager
+                        (*m_ObjMgr, db_handle->GetDBNameList(), dbtype,
+                         m_Config.m_UseFixedSizeSlices,
+                         CObjectManager::eNonDefault,
+                         CObjectManager::kPriority_NotSet,
+                         CBlastDbDataLoader::eRemote).GetLoader()->GetName();
+                _ASSERT( !m_BlastDbLoaderName.empty() );
+            } catch (const CSeqDBException& e) {
+                ERR_POST(Info << "Error initializing remote BLAST database "
+                              << "data loader: " << e.GetMsg());
+            }
         }
     }
 }
@@ -186,15 +205,28 @@ CBlastScopeSource::x_InitGenbankDataLoader()
     }
 }
 
+/// Counts the number of BLAST database data loaders registered in the object
+/// manager. This is needed so that the priorities of the BLAST databases can
+/// be adjusted accordingly when multiple BLAST database data loaders are added
+/// to CScope objects (@sa AddDataLoaders)
+static int s_CountBlastDbDataLoaders()
+{
+    int retval = 0;
+    CObjectManager::TRegisteredNames loader_names;
+    CObjectManager::GetInstance()->GetRegisteredNames(loader_names);
+    ITERATE(CObjectManager::TRegisteredNames, loader_name, loader_names) {
+        if (NStr::Find(*loader_name, "BLASTDB") != NPOS) {
+            retval++;
+        }
+    }
+    return retval;
+}
+
 void 
 CBlastScopeSource::AddDataLoaders(CRef<objects::CScope> scope)
 {
-    int blastdb_loader_priority = 0;
-    if (m_Config.m_IsLoadingProteins) {
-        blastdb_loader_priority = kProtBlastDbLoaderPriority;
-    } else {
-        blastdb_loader_priority = kNuclBlastDbLoaderPriority;
-    }
+    const int blastdb_loader_priority = 
+        kBlastDbLoaderPriority + (s_CountBlastDbDataLoaders() - 1);
 
     // Note that these priorities are needed so that the CScope::AddXXX methods
     // don't need a specific priority (the default will be fine).
@@ -218,6 +250,7 @@ CBlastScopeSource::RevokeBlastDbDataLoader()
 {
     if (!m_BlastDbLoaderName.empty()) {
         CObjectManager::GetInstance()->RevokeDataLoader(m_BlastDbLoaderName);
+        m_BlastDbLoaderName.clear();
     }
 }
 

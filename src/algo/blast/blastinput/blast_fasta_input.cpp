@@ -177,6 +177,13 @@ public:
         return CFastaReader::ReadOneSeq();
     }
 
+    /// Retrieves the CBlastScopeSource object used to fetch the query
+    /// sequence(s) if these were provided as Seq-ids so that its data
+    /// loader(s) can be added to the CScope that contains it.
+    CRef<CBlastScopeSource> GetQueryScopeSource() const {
+        return m_QueryScopeSource;
+    }
+
 private:
     /// Configuration options for the CBlastScopeSource
     const SDataLoaderConfig& m_DLConfig;
@@ -186,6 +193,8 @@ private:
     bool m_RetrieveSeqData;
     /// The object that creates Bioseqs given SeqIds
     CRef<CBlastBioseqMaker> m_BioseqMaker;
+    /// The source of CScope objects to fetch sequences if given by Seq-id
+    CRef<CBlastScopeSource> m_QueryScopeSource;
 
     /// Performs sanity checks to make sure that the sequence requested is of
     /// the expected type. If the tests fail, an exception is thrown.
@@ -219,7 +228,9 @@ private:
     CRef<CBioseq> x_CreateBioseq(CRef<CSeq_id> id)
     {
         if (m_BioseqMaker.Empty()) {
-            m_BioseqMaker.Reset(new CBlastBioseqMaker(m_DLConfig));
+            m_QueryScopeSource.Reset(new CBlastScopeSource(m_DLConfig));
+            m_BioseqMaker.Reset
+                (new CBlastBioseqMaker(m_QueryScopeSource->NewScope()));
         }
 
         x_ValidateMoleculeType(id);
@@ -397,10 +408,11 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
     CRef<CSeq_loc> retval(new CSeq_loc());
 
     if ( !blast::HasRawSequenceData(*itr) ) {
-        if (query_scope_source.Empty()) {
-            query_scope_source.Reset
-                (new CBlastScopeSource(m_Config.GetDataLoaderConfig()));
-        }
+        CBlastInputReader* blast_reader = 
+            dynamic_cast<CBlastInputReader*>(m_InputReader.get());
+        _ASSERT(blast_reader);
+        CRef<CBlastScopeSource> query_scope_source =
+            blast_reader->GetQueryScopeSource();
         query_scope_source->AddDataLoaders(CRef<CScope>(&scope));
     }
 

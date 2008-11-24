@@ -933,8 +933,12 @@ sub handle_bl2seq
         die "-i and -j are required in bl2seq\n";
     }
 
-    $retval .= "/$opt_p"                  if (defined $opt_p);
-    $retval .= &add_exe_extension();
+    if (defined $opt_p) {
+        $retval .= "/$opt_p";
+        $retval .= &add_exe_extension();
+    } else {
+        die "Program must be specified via the -p option\n";
+    }
     unless (defined $opt_A) {
         $retval .= "-query $opt_i "             if (defined $opt_i);
         $retval .= "-subject $opt_j "           if (defined $opt_j);

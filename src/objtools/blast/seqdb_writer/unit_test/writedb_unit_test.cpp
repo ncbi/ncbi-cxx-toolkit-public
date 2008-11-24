@@ -2028,7 +2028,7 @@ BOOST_AUTO_TEST_CASE(TooManyAlgoId)
     // Ensure that the IDs were assigned in increasing order
     CHECK_EQUAL(kMaxNumSupportedAlgorithmVariants, algo_ids.size());
     for (size_t i = 0; i < algo_ids.size(); i++) {
-        CHECK_EQUAL((masking_algorithm + i), algo_ids[i]);
+        CHECK_EQUAL((int)(masking_algorithm + i), (int)algo_ids[i]);
     }
 }
 

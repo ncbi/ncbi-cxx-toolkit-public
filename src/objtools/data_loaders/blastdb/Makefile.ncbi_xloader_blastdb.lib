@@ -1,7 +1,7 @@
 # $Id$
 
 LIB = ncbi_xloader_blastdb
-SRC = bdbloader
+SRC = bdbloader cached_sequence local_blastdb_adapter remote_blastdb_adapter
 
-ASN_DEP = seq seqset seqdb blastdb
+ASN_DEP = seq seqset seqdb blastdb xnetblast
 

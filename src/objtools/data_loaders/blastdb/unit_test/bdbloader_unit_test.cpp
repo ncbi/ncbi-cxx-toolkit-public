@@ -39,6 +39,9 @@
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>   // for SeqDB_ReadGiList
 #include <corelib/ncbithr.hpp>                      // for CThread
 #include <util/random_gen.hpp>
+#include <objmgr/seq_vector.hpp>        // for CSeqVector
+#include <objects/seq/Seq_ext.hpp>
+#include <corelib/ncbi_limits.hpp>
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
@@ -60,14 +63,22 @@ USING_SCOPE(objects);
 class CAutoRegistrar {
 public:
     CAutoRegistrar(const string& dbname, bool is_protein,
-                   bool use_fixed_slice_size) {
+                   bool use_fixed_slice_size, 
+                   bool use_remote_blast_db_loader = false) {
         CRef<CObjectManager> om = CObjectManager::GetInstance();
+        CBlastDbDataLoader::ESource blastdb_source =
+            use_remote_blast_db_loader 
+            ? CBlastDbDataLoader::eRemote 
+            : CBlastDbDataLoader::eLocal;
         loader_name = CBlastDbDataLoader::RegisterInObjectManager
                     (*om, dbname, is_protein 
                      ? CBlastDbDataLoader::eProtein
                      : CBlastDbDataLoader::eNucleotide,
                      use_fixed_slice_size,
-                     CObjectManager::eDefault).GetLoader()->GetName();
+                     CObjectManager::eDefault, 
+                     CObjectManager::kPriority_NotSet,
+                     blastdb_source).GetLoader()->GetName();
+        om->SetLoaderOptions(loader_name, CObjectManager::eDefault);
     }
 
     void RegisterGenbankDataLoader() {
@@ -89,7 +100,25 @@ private:
     string gbloader_name;
 };
 
-BOOST_AUTO_TEST_CASE(RetrieveGi555WithTimeOut)
+/// This function tests the ways in which the sequence data is populated in a
+/// CBioseq loaded by the object manager via its data loaders
+void TestCSeq_inst(const CBioseq& bioseq) {
+    BOOST_REQUIRE(bioseq.CanGetInst());
+    switch (bioseq.GetInst().GetRepr()) {
+    case CSeq_inst::eRepr_raw:
+        BOOST_REQUIRE(bioseq.GetInst().CanGetSeq_data());
+        break;
+    case CSeq_inst::eRepr_delta:
+        BOOST_REQUIRE( !bioseq.GetInst().CanGetSeq_data() );
+        BOOST_REQUIRE( bioseq.GetInst().CanGetExt() );
+        BOOST_REQUIRE( bioseq.GetInst().GetExt().IsDelta() );
+        break;
+    default:
+        break;
+    }
+}
+
+void RetrieveGi555WithTimeOut(bool is_remote)
 {
     const time_t kTimeMax = 5;
     const CSeq_id id(CSeq_id::e_Gi, 555);
@@ -97,17 +126,21 @@ BOOST_AUTO_TEST_CASE(RetrieveGi555WithTimeOut)
     const string db("nt");
     const bool is_protein = false;
     const bool use_fixed_slice_size = true;
-    CAutoRegistrar reg(db, is_protein, use_fixed_slice_size);
+    CAutoRegistrar reg(db, is_protein, use_fixed_slice_size, is_remote);
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     scope->AddDefaults();
     time_t start_time = CTime(CTime::eCurrent).GetTimeT();
     TSeqPos len = sequence::GetLength(id, scope);
-    BOOST_REQUIRE_EQUAL((TSeqPos)624, len);
+    const TSeqPos kLength(624);
+    BOOST_REQUIRE_EQUAL(kLength, len);
 
     CBioseq_Handle bh = scope->GetBioseqHandle(id);
     CRef<CBioseq> retval(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
     time_t end_time = CTime(CTime::eCurrent).GetTimeT();
+    BOOST_REQUIRE_EQUAL(kLength, retval->GetLength());
+    BOOST_REQUIRE(retval->CanGetInst());
+    TestCSeq_inst(*retval);
 
     ostringstream os;
     os << "Fetching " << id.AsFastaString() << " took " 
@@ -116,34 +149,206 @@ BOOST_AUTO_TEST_CASE(RetrieveGi555WithTimeOut)
     BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
 }
 
-#ifndef _DEBUG
-/* Only execute this in release mode as debug might be too slow */
-BOOST_AUTO_TEST_CASE(RetrieveLargeChromosomeWithTimeOut)
+BOOST_AUTO_TEST_CASE(RetrieveGi555WithTimeOut_Local)
 {
+    RetrieveGi555WithTimeOut(false);
+}
+
+BOOST_AUTO_TEST_CASE(RetrieveGi555WithTimeOut_Remote)
+{
+    RetrieveGi555WithTimeOut(true);
+}
+
+void RetrieveLargeProteinWithTimeOut(bool is_remote)
+{
+#ifdef _DEBUG
+    const time_t kTimeMax = 60*5;   // 5 minutes
+#else
     const time_t kTimeMax = 15;
+#endif /* _DEBUG */
+    const CSeq_id id(CSeq_id::e_Gi, 1212992);
+
+    const string db("nr");
+    const bool is_protein = true;
+    const bool use_fixed_slice_size = false;
+    CAutoRegistrar reg(db, is_protein, use_fixed_slice_size, is_remote);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    scope->AddDefaults();
+    time_t start_time = CTime(CTime::eCurrent).GetTimeT();
+    TSeqPos len = sequence::GetLength(id, scope);
+    const TSeqPos kLength(26926);
+    BOOST_REQUIRE_EQUAL(kLength, len);
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(id);
+    CRef<CBioseq> retval(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
+    time_t end_time = CTime(CTime::eCurrent).GetTimeT();
+    BOOST_REQUIRE_EQUAL(kLength, retval->GetLength());
+    BOOST_REQUIRE(retval->CanGetInst());
+    TestCSeq_inst(*retval);
+
+    ostringstream os;
+    os << "Fetching " << id.AsFastaString() << " took " 
+       << end_time-start_time << " seconds, i.e.: more than the "
+       << kTimeMax << " second timeout";
+    BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
+}
+
+BOOST_AUTO_TEST_CASE(RetrieveLargeProteinWithTimeOut_Local)
+{
+    RetrieveLargeProteinWithTimeOut(false);
+}
+
+BOOST_AUTO_TEST_CASE(RetrieveLargeProteinWithTimeOut_Remote)
+{
+    RetrieveLargeProteinWithTimeOut(true);
+}
+
+void RetrieveLargeNuclSequence(bool is_remote)
+{
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 110349718));
+
+    const string db("nucl_dbs");
+    const bool is_protein = false;
+    const bool use_fixed_slice_size = false;
+    CAutoRegistrar reg(db, is_protein, use_fixed_slice_size, is_remote);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    scope->AddDefaults();
+    TSeqPos len = sequence::GetLength(*id, scope);
+    const TSeqPos kLength(101519);
+    BOOST_REQUIRE_EQUAL(kLength, len);
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(*id);
+    CRef<CBioseq> retval(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
+    BOOST_REQUIRE_EQUAL(kLength, retval->GetLength());
+    TestCSeq_inst(*retval);
+}
+
+BOOST_AUTO_TEST_CASE(RetrieveLargeNuclSequence_Local)
+{
+    RetrieveLargeNuclSequence(false);
+}
+
+#ifdef USE_WITH_TEST_SYSTEM /* temporarily disabled until blast4 is updated in production */
+BOOST_AUTO_TEST_CASE(RetrieveLargeNuclSequence_Remote)
+{
+    RetrieveLargeNuclSequence(true);
+}
+#endif
+
+void RetrievePartsOfLargeChromosome(bool is_remote)
+{
+    const string kAccession("NC_000001");
+    CRef<CSeq_id> id(new CSeq_id(kAccession));
+    const TSeqRange kRange(100, 500);
+    CRef<CSeq_loc> sl(new CSeq_loc(*id, kRange.GetFrom(), kRange.GetTo()));
+
+    const string db("nucl_dbs");
+    const bool is_protein = false;
+    const bool use_fixed_slice_size = true;
+    CAutoRegistrar reg(db, is_protein, use_fixed_slice_size, is_remote);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    scope->AddDefaults();
+
+    const TSeqPos kLength(247249719);
+    TSeqPos len = sequence::GetLength(*id, scope);
+    BOOST_REQUIRE_EQUAL(kLength, len);
+    len = sequence::GetLength(*sl, scope);
+    const TSeqRange kTestRange = sl->GetTotalRange();
+    BOOST_REQUIRE_EQUAL(kRange, kTestRange);
+    BOOST_REQUIRE_EQUAL(kTestRange.GetLength(), len);
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(*sl);
+    BOOST_REQUIRE(bh);
+    BOOST_REQUIRE_EQUAL(is_protein, bh.IsAa());
+    // N.B.: don't call GetCompleteBioseq or you'll fetch the whole enchilada!
+    CRef<CBioseq> retval(const_cast<CBioseq*>(&*bh.GetBioseqCore()));
+    BOOST_REQUIRE(retval->IsSetLength());
+    BOOST_REQUIRE_EQUAL(kLength, retval->GetLength());
+    BOOST_REQUIRE(retval->CanGetInst());
+    BOOST_REQUIRE(retval->GetInst().CanGetSeq_data() == false);
+    //{ofstream o("junk.asn"); o << MSerial_AsnText << *retval;}
+
+    CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    BOOST_REQUIRE(sv.size() == kLength);
+    string buffer;
+    // N.B.: GetSeqData's stop argument is exclusive
+    sv.GetSeqData(kTestRange.GetFrom(), kTestRange.GetTo(), buffer);
+    BOOST_REQUIRE_EQUAL(kTestRange.GetLength() - 1 , buffer.size());
+
+    // Obtained with the following command:
+    // blastdbcmd -db nucl_dbs -entry NC_000001 -range 100-500 -outfmt %s
+    char seq_data[] = 
+"CCTAACCCAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCCTAACCCTAACCCTAACCCTAACCCTAACCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCCTAACCCTAACCCTAAACCCTAAACCCTAACCCTAACCCTAACCCTAACCCTAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCTAACCCCTAACCCTAACCCTAACCCTACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCCTAACCCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCCTAACCCTAACCCTAACCCTAACCCTCGCGGTACCCTCAGCCGGCCCGCCCGCCCGGG";
+    BOOST_REQUIRE_EQUAL(sizeof(seq_data)/sizeof(seq_data[0]),
+                        buffer.size()+1);
+    for (size_t i = 0; i <= buffer.size(); i++) {
+        const string ref(1, seq_data[i]);
+        const string test(1, buffer[i]);
+        string msg("Unexpected base at position ");
+        msg += NStr::IntToString(i+kRange.GetFrom()) + ": '" + ref + "' vs. '";
+        msg += test + "'";
+        BOOST_REQUIRE_MESSAGE(ref == test, msg);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(RetrievePartsOfLargeChromosome_Local)
+{
+    RetrievePartsOfLargeChromosome(false);
+}
+
+BOOST_AUTO_TEST_CASE(RetrievePartsOfLargeChromosome_Remote)
+{
+    RetrievePartsOfLargeChromosome(true);
+}
+
+/* Only execute this in release mode as debug might be too slow */
+void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
+{
+#ifndef _DEBUG
+    const time_t kTimeMax = 15;
+#else
+    const time_t kTimeMax = 60*15;       // 15 minutes
+#endif /* _DEBUG */
     const string kAccession("NC_000001");
 
     const string db("nucl_dbs");
     const bool is_protein = false;
     const bool use_fixed_slice_size = false;
-    CAutoRegistrar reg(db, is_protein, use_fixed_slice_size);
+    CAutoRegistrar reg(db, is_protein, use_fixed_slice_size, is_remote);
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     scope->AddDefaults();
-    CSeq_id id(kAccession);
+    CRef<CSeq_id> id(new CSeq_id(kAccession));
     time_t start_time = CTime(CTime::eCurrent).GetTimeT();
-    TSeqPos len = sequence::GetLength(id, scope);
-    BOOST_REQUIRE_EQUAL((TSeqPos)247249719, len);
+    TSeqPos len = sequence::GetLength(*id, scope);
+    const TSeqPos kLength(247249719);
+    BOOST_REQUIRE_EQUAL(kLength, len);
 
-    CBioseq_Handle bh = scope->GetBioseqHandle(id);
+    CBioseq_Handle bh = scope->GetBioseqHandle(*id);
     CRef<CBioseq> retval(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
     time_t end_time = CTime(CTime::eCurrent).GetTimeT();
+    BOOST_REQUIRE_EQUAL(kLength, retval->GetLength());
+    TestCSeq_inst(*retval);
 
     ostringstream os;
     os << "Fetching " << kAccession << " took " 
        << end_time-start_time << " seconds, i.e.: more than the "
        << kTimeMax << " second timeout";
     BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
+}
+
+#ifndef _DEBUG  // don't run this in debug mode... takes too long!
+BOOST_AUTO_TEST_CASE(RetrieveLargeChromosomeWithTimeOut_Local)
+{
+    RetrieveLargeChromosomeWithTimeOut(false);
+}
+
+BOOST_AUTO_TEST_CASE(RetrieveLargeChromosomeWithTimeOut_Remote)
+{
+    RetrieveLargeChromosomeWithTimeOut(true);
 }
 #endif /* _DEBUG */
 
@@ -165,9 +370,13 @@ public:
                 continue;
             }
             CBioseq_Handle bh = m_Scope->GetBioseqHandle(id);
-            BOOST_REQUIRE(bh);
+            _ASSERT(bh);
+            // Replace BOOST macros for _ASSERT's to avoid MT-safe problems
+            //BOOST_REQUIRE(bh);
             CConstRef<CBioseq> bioseq = bh.GetCompleteBioseq();
-            BOOST_REQUIRE_EQUAL(len, bioseq->GetInst().GetLength());
+            //BOOST_REQUIRE_EQUAL(len, bioseq->GetInst().GetLength());
+            _ASSERT(len == bioseq->GetInst().GetLength());
+            //TestCSeq_inst(*bioseq);
             m_Scope->ResetHistory();
         }
         return (void*)0;
@@ -178,7 +387,7 @@ private:
     const vector<int>& m_Gis2Find;
 };
 
-BOOST_AUTO_TEST_CASE(MultiThreadedAccess)
+void MultiThreadedAccess(bool is_remote)
 {
     vector<int> gis;
     SeqDB_ReadGiList("data/ecoli.gis", gis);
@@ -186,8 +395,8 @@ BOOST_AUTO_TEST_CASE(MultiThreadedAccess)
     const string db("ecoli");
     const bool is_protein = true;
     const bool use_fixed_slice_size = true;
-    CAutoRegistrar reg(db, is_protein, use_fixed_slice_size);
-    reg.RegisterGenbankDataLoader();
+    CAutoRegistrar reg(db, is_protein, use_fixed_slice_size, is_remote);
+    //reg.RegisterGenbankDataLoader();
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     scope->AddDefaults();
@@ -211,6 +420,42 @@ BOOST_AUTO_TEST_CASE(MultiThreadedAccess)
         BOOST_REQUIRE_EQUAL(0L, result);
     }
 }
-#endif
 
+BOOST_AUTO_TEST_CASE(MultiThreadedAccess_Local)
+{
+    MultiThreadedAccess(false);
+}
+
+BOOST_AUTO_TEST_CASE(MultiThreadedAccess_Remote)
+{
+    MultiThreadedAccess(true);
+}
+#endif  /* NCBI_THREADS */
+
+void TestDataNotFound(bool is_remote)
+{
+    const CSeq_id id(CSeq_id::e_Gi, 555);
+
+    const string db("pataa");
+    const bool is_protein = true;
+    const bool use_fixed_slice_size = true;
+    CAutoRegistrar reg(db, is_protein, use_fixed_slice_size, is_remote);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    scope->AddDefaults();
+    TSeqPos len = sequence::GetLength(id, scope);
+    BOOST_REQUIRE_EQUAL(numeric_limits<TSeqPos>::max(), len);
+    CBioseq_Handle bh = scope->GetBioseqHandle(id);
+    BOOST_REQUIRE( !bh );
+}
+
+BOOST_AUTO_TEST_CASE(TestDataNotFound_Local)
+{
+    TestDataNotFound(false);
+}
+
+BOOST_AUTO_TEST_CASE(TestDataNotFound_Remote)
+{
+    TestDataNotFound(true);
+}
 #endif /* SKIP_DOXYGEN_PROCESSING */

@@ -428,24 +428,23 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
     return status == 0 ? 0 : -1;
 }
 
-#if 0
 /** Compute the number of identities for the HSPs in the hsp_list
- * @note this only works for blastp right now and it's not currently being used
- * because we cannot reliably calculate the number of identities for queries
- * that have hard masking applied to them (which is the default).
+ * @note Should work for blastp and tblastn now.
  * 
  * @param query_blk the query sequence data [in]
  * @param query_info structure describing the query_blk structure [in]
  * @param seq_src source of subject sequence data [in]
  * @param hsp_list list of HSPs to be processed [in|out]
  * @param scoring_options scoring options [in]
+ * @gen_code_string Genetic code for tblastn [in]
  */
 static void
 s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
                        const BlastQueryInfo* query_info,
                        const BlastSeqSrc* seq_src,
                        BlastHSPList* hsp_list,
-                       const BlastScoringOptions* scoring_options)
+                       const BlastScoringOptions* scoring_options,
+                       const Uint1* gen_code_string)
 {
     Uint1* query = NULL;
     Uint1* subject = NULL;
@@ -453,12 +452,15 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
     const Boolean kIsOutOfFrame = scoring_options->is_ooframe;
     const EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
     BlastSeqSrcGetSeqArg seq_arg;
+    BLAST_SequenceBlk* subject_blk = NULL;
     Int2 status = 0;
     int i;
+    Uint1* translation_buffer = NULL;
+    Int4* frame_offsets = NULL;
+    Boolean partial_translation = FALSE;
 
-    if ( !hsp_list || program_number != eBlastTypeBlastp ) {
+    if ( !hsp_list || (program_number != eBlastTypeBlastp && program_number != eBlastTypeTblastn)) 
         return;
-    }
 
     /* Initialize the subject */
     {
@@ -467,10 +469,19 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
         seq_arg.encoding = encoding;
         status = BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg);
         ASSERT(status == 0);
+    }
+
+    if (program_number == eBlastTypeTblastn) {
+        subject_blk = seq_arg.seq;
+	Blast_SetUpSubjectTranslation(subject_blk, gen_code_string,
+            &translation_buffer, &frame_offsets, &partial_translation);
+    }
+    else {
         subject = seq_arg.seq->sequence;
     }
 
     for (i = 0; i < hsp_list->hspcnt; i++) {
+        Int4 start_shift = 0;
         BlastHSP* hsp = hsp_list->hsp_array[i];
 
         /* Initialize the query */
@@ -483,14 +494,33 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
                 query_info->contexts[hsp->context].query_offset;
         }
 
-        status = Blast_HSPGetNumIdentities(query, subject, hsp, 
-                                           scoring_options, 0);
+        /* Translate subject if needed. */
+        if (program_number == eBlastTypeTblastn) {
+            if (partial_translation) {
+            	Int4 subject_length = 0; /* Dummy variable */
+            	Blast_HSPGetPartialSubjectTranslation(subject_blk, hsp, FALSE,
+               		gen_code_string, &translation_buffer, &subject,
+               		&subject_length, &start_shift);
+            } else {
+            	Int4 subject_context = BLAST_FrameToContext(hsp->subject.frame, program_number);
+            	subject = translation_buffer + frame_offsets[subject_context] + 1;
+            }
+        }
+
+        status = Blast_HSPGetNumIdentities(query, subject, hsp, scoring_options, 0);
+
+        /* If partial translation was done and subject sequence was shifted,
+        shift back offsets in the HSP structure. */
+        if (start_shift != 0)
+             Blast_HSPAdjustSubjectOffset(hsp, start_shift);
+
         ASSERT(status == 0);
     }
+    sfree(translation_buffer);
+    sfree(frame_offsets);
     BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
     BlastSequenceBlkFree(seq_arg.seq);
 }
-#endif
 
 
 /**
@@ -2038,6 +2068,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     /* which test function do we use to see if a composition-adjusted
        p-value is desired; value needs to be passed in eventually*/
     int compositionTestIndex = extendParams->options->unifiedP;
+    Uint1* genetic_code_string = GenCodeSingletonFind(default_db_genetic_code);
 
     ASSERT(program_number == eBlastTypeBlastp ||
            program_number == eBlastTypeTblastn ||
@@ -2264,10 +2295,9 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                     s_HSPListNormalizeScores(hsp_list,
                                              kbp->Lambda, kbp->logK,
                                              localScalingFactor);
-                    /* currently commented out, see function definition for
-                      explanation
                      s_ComputeNumIdentities(queryBlk, queryInfo, seqSrc,
-                                           hsp_list, scoringParams->options);*/
+                                           hsp_list, scoringParams->options,
+ 						genetic_code_string);
                     status_code =
                         BlastCompo_HeapInsert(&redoneMatches[query_index],
                                               hsp_list, bestEvalue,

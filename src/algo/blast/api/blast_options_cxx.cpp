@@ -946,7 +946,7 @@ CBlastOptions::GetFilterString() const
     if (! m_Local) {
         x_Throwx("Error: GetFilterString() not available.");
     }
-    return m_Local->GetFilterString();
+    return m_Local->GetFilterString();/* NCBI_FAKE_WARNING */
 }
 void 
 CBlastOptions::SetFilterString(const char* f, bool clear)
@@ -957,7 +957,7 @@ CBlastOptions::SetFilterString(const char* f, bool clear)
     }
     
     if (m_Local) {
-        m_Local->SetFilterString(f);
+        m_Local->SetFilterString(f);/* NCBI_FAKE_WARNING */
     }
     
     if (m_Remote) {

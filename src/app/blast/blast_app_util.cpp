@@ -162,6 +162,7 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
     db_adapter.Reset();
 
     _ASSERT(db_args.NotEmpty());
+    CRef<CSearchDatabase> search_db = db_args->GetSearchDatabase();
 
     // Initialize the scope... 
     if (is_remote_search) {
@@ -169,6 +170,9 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
             Blast_SubjectIsProtein(opts_hndl->GetOptions().GetProgramType())
 			? true : false;
         SDataLoaderConfig config(is_protein);
+        if (search_db.NotEmpty()) {
+            config.m_BlastDbName = search_db->GetDatabaseName();
+        }
         CBlastScopeSource scope_src(config);
         // configure scope to fetch sequences remotely for formatting
         if (scope.NotEmpty()) {
@@ -184,7 +188,6 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
     _ASSERT(scope.NotEmpty());
 
     // ... and then the subjects
-    CRef<CSearchDatabase> search_db = db_args->GetSearchDatabase();
     CRef<IQueryFactory> subjects;
     if ( (subjects = db_args->GetSubjects(scope)) ) {
         _ASSERT(search_db.Empty());

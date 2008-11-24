@@ -53,7 +53,6 @@
 #include <algo/blast/api/blast_exception.hpp>
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
-#include <objtools/data_loaders/blastdb/rbloader.hpp>
 
 // forward declarations
 namespace ncbi {
@@ -205,6 +204,9 @@ public:
     /// loader for the BLAST database specified in the constructor (if found),
     /// then set to the Genbank data loader
     ncbi::CRef<ncbi::objects::CScope> NewScope();
+
+    /// Removes the BLAST database data loader from the object manager.
+    void RevokeBlastDbDataLoader();
 
 private:
     ncbi::CRef<ncbi::objects::CObjectManager> m_ObjMgr;

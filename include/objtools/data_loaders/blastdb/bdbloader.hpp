@@ -1,5 +1,5 @@
-#ifndef BDBLOADER_HPP
-#define BDBLOADER_HPP
+#ifndef OBJTOOLS_DATA_LOADERS_BLASTDB___BDBLOADER__HPP
+#define OBJTOOLS_DATA_LOADERS_BLASTDB___BDBLOADER__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -28,28 +28,21 @@
 *
 *  Author: Christiam Camacho
 *
-*  File Description:
-*   Data loader implementation that uses the blast databases
-*
 * ===========================================================================
 */
 
+/** @file bdbloader.hpp
+  * Data loader implementation that uses the blast databases
+  */
+
 #include <corelib/ncbistd.hpp>
 #include <objmgr/data_loader.hpp>
-#include <objtools/blast/seqdb_reader/seqdb.hpp>
+#include <objtools/data_loaders/blastdb/blastdb_adapter.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
-#include <objects/seq/Seq_literal.hpp>
-#include <objects/seq/Seq_descr.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-/////////////////////////////////////////////////////////////////////////////////
-//
-// CBlastDbDataLoader
-//   Data loader implementation that uses the blast databases.
-//
 
 // Parameter names used by loader factory
 
@@ -59,14 +52,7 @@ const string kCFParam_BlastDb_DbType = "DbType"; // = EDbType (e.g. "Protein")
 
 class NCBI_XLOADER_BLASTDB_EXPORT CBlastDbDataLoader : public CDataLoader
 {
-    /// The sequence data will sliced into pieces of this size by default
-    enum {
-        kFastSequenceLoadSize = 1024,
-        kSequenceSliceSize    = 65536
-    };
-    
 public:
-
     /// Describes the type of blast database to use
     enum EDbType {
         eNucleotide = 0,    ///< nucleotide database
@@ -74,21 +60,27 @@ public:
         eUnknown = 2        ///< protein is attempted first, then nucleotide
     };
 
+    /// Describes which BLAST databases to use to fulfull the data requests
+    enum ESource {
+        eLocal,     ///< Retrieve data from local BLAST databases
+        eRemote     ///< Retrieve data from remote BLAST databases at NCBI
+    };
+
     struct NCBI_XLOADER_BLASTDB_EXPORT SBlastDbParam
     {
         SBlastDbParam(const string& db_name = "nr",
                       EDbType       dbtype = eUnknown,
-                      bool          use_fixed_size_slices = true)
-            : m_DbName(db_name), m_DbType(dbtype),
-              m_UseFixedSizeSlices(use_fixed_size_slices), m_BlastDbHandle(0) {}
+                      bool          use_fixed_size_slices = true,
+                      ESource       blastdb_source = eLocal);
 
         SBlastDbParam(CRef<CSeqDB> db_handle,
-                      bool          use_fixed_size_slices = true);
+                      bool         use_fixed_size_slices = true);
 
         string          m_DbName;
         EDbType         m_DbType;
         bool            m_UseFixedSizeSlices;
         CRef<CSeqDB>    m_BlastDbHandle;
+        ESource         m_BlastDbSource;
     };
 
     typedef SRegisterLoaderInfo<CBlastDbDataLoader> TRegisterLoaderInfo;
@@ -98,7 +90,8 @@ public:
         const EDbType dbtype = eUnknown,
         bool use_fixed_size_slices = true,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet,
+        ESource blastdb_source = eLocal);
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         CRef<CSeqDB> db_handle,
@@ -122,7 +115,6 @@ public:
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice);
     /// Load a description or data chunk.
     virtual void GetChunk(TChunk chunk);
-
 
     /// Gets the blob id for a given sequence.
     ///
@@ -159,6 +151,9 @@ public:
     ///   The returned data.
     virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
     
+    /// A mapping from sequence identifier to blob ids.
+    typedef map< CSeq_id_Handle, int > TIds;
+
     /// @note this is added to temporarily comply with the toolkit's stable
     /// components rule of having backwards compatible APIs
     NCBI_DEPRECATED
@@ -180,13 +175,10 @@ private:
     /// TPlace is a Seq-id or an integer id, this data loader uses the former.
     typedef CTSE_Chunk_Info::TPlace         TPlace;
     
-    /// A list of 'chunk' objects, generic sequence related data elements.
-    typedef vector< CRef<CTSE_Chunk_Info> > TChunks;
-    
     typedef CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam> TMaker;
     friend class CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam>;
 
-    CBlastDbDataLoader(const string&        loader_name,
+    CBlastDbDataLoader(const string& loader_name, 
                        const SBlastDbParam& param);
     
     /// Prevent automatic copy constructor generation
@@ -195,182 +187,11 @@ private:
     /// Prevent automatic assignment operator generation
     CBlastDbDataLoader & operator=(const CBlastDbDataLoader &);
 
-public:    
-    /// Manages a chunk of sequence data.
-    class CSeqChunkData {
-    public:
-        /// Construct a chunk of sequence data.
-        ///
-        /// This constructor stores the components needed to build a
-        /// range of sequence data (the Seq-literal).  The literal is
-        /// not built here, and will not be built until/unless the
-        /// user requests the indicated portion of the sequence.
-        /// 
-        /// @param seqdb
-        ///   A reference to the CSeqDB database.
-        /// @param sih
-        ///   Identifies the original sequence to build a piece of.
-        /// @param oid
-        ///   Locates the sequence within the CSeqDB database.
-        /// @param begin
-        ///   The coordinate of the start of the region to build.
-        /// @param end
-        ///   The coordinate of the end of the region to build.
-        CSeqChunkData(CRef<CSeqDB>     seqdb,
-                      const CSeq_id_Handle & sih,
-                      int              oid,
-                      TSeqPos          begin,
-                      TSeqPos          end)
-            : m_SeqDB(seqdb), m_OID(oid), m_SIH(sih), m_Begin(begin), m_End(end)
-        {
-        }
-        
-        /// Default constructor; required by std::map.
-        CSeqChunkData()
-            : m_Begin(kInvalidSeqPos)
-        {
-        }
-        
-        /// Test whether the Seq-literal has already been built.
-        /// @return
-        ///   true if the literal is present here.
-        bool HasLiteral()
-        {
-            return m_Literal.NotEmpty();
-        }
-        
-        /// Code to actually build the literal.
-        void BuildLiteral();
-        
-        /// Fetch the Seq-literal, which must already exist.
-        /// @return
-        ///   The sequence literal.
-        CRef<CSeq_literal> GetLiteral()
-        {
-            _ASSERT(m_Literal.NotEmpty());
-            return m_Literal;
-        }
-        
-        /// Get the Seq-id-handle identifying this sequence.
-        CSeq_id_Handle GetSeqIdHandle()
-        {
-            return m_SIH;
-        }
-        
-        /// Get the starting offset of this sequence.
-        TSeqPos GetPosition()
-        {
-            return m_Begin;
-        }
-        
-    private:
-        /// A reference to the CSeqDB database.
-        CRef<CSeqDB>       m_SeqDB;
-        
-        /// Locates the sequence within the CSeqDB database.
-        int                m_OID;
-        
-        /// Identifies the original sequence to build a piece of.
-        CSeq_id_Handle     m_SIH;
-        
-        /// The coordinate of the start of the region to build.
-        TSeqPos            m_Begin;
-        
-        /// The coordinate of the end of the region to build.
-        TSeqPos            m_End;
-        
-        /// Holds the sequence literal once it is built.
-        CRef<CSeq_literal> m_Literal;
-    };
+    /// Gets the OID from m_Ids cache or the BLAST databases
+    int x_GetOid(const CSeq_id_Handle& idh);
+    /// Gets the OID from a TBlobId (see typedef in bdbloader.cpp)
+    int x_GetOid(const TBlobId& blob_id) const;
     
-    /// A mapping from sequence identifier to blob ids.
-    typedef map< CSeq_id_Handle, int > TIds;
-    
-    int GetOid(const CSeq_id_Handle& idh);
-    int GetOid(const TBlobId& blob_id) const;
-    
-    /// Manages a sequence and its subordinate chunks.
-    class CCachedSeqData : public CObject {
-    public:
-        /// Construct and process the sequence.
-        ///
-        /// This constructor starts the processing of the specified
-        /// sequence.  It loads the bioseq (minus sequence data) and
-        /// caches the sequence length.
-        ///
-        /// @param idh
-        ///   A handle to the sequence identifier.
-        /// @param seqdb
-        ///   The sequence database containing the original sequence.
-        /// @param oid
-        ///   Locates the sequence within the CSeqDB database.
-        CCachedSeqData(CSeqDB & seqdb, const CSeq_id_Handle& idh, int oid);
-        
-        /// Get the top-level seq-entry.
-        CRef<CSeq_entry> GetTSE()
-        {
-            return m_TSE;
-        }
-        
-        /// Get the sequence identification.
-        CSeq_id_Handle & GetSeqIdHandle()
-        {
-            return m_SIH;
-        }
-        
-        /// Get the length of the sequence.
-        TSeqPos GetLength()
-        {
-            return m_Length;
-        }
-        
-        /// Build an object representing a range of sequence data.
-        ///
-        /// An object will be constructed to represent a range of this
-        /// sequence's data.  This ids of the objects returned from
-        /// this method are stored in this (CCachedSeqData) object.
-        ///
-        /// @param id
-        ///   The chunk id for the new chunk.
-        /// @param begin
-        ///   The offset into the sequence of the start of this chunk.
-        /// @param end
-        ///   The offset into the sequence of the end of this chunk.
-        /// @return
-        ///   An object representing the specified range of sequence data.
-        CSeqChunkData BuildDataChunk(int id, TSeqPos begin, TSeqPos end);
-
-        /// Add an the entire sequence data to this object's TSE as raw data in 
-        /// its Seq-data field
-        void AddSeq_data(void);
-
-        /// Add this sequence's identifiers to a lookup table.
-        ///
-        /// This method adds identifiers from this sequence to a
-        /// lookup table so that the OID of the sequence can be found
-        /// quickly during future processing of the same sequence.
-        ///
-        /// @param idmap
-        ///   A map from CSeq_id_Handle to OID.
-        void RegisterIds(TIds & idmap);
-        
-    private:
-        /// SeqID handle
-        CSeq_id_Handle m_SIH;
-        
-        /// Seq entry
-        CRef<CSeq_entry> m_TSE;
-        
-        /// Sequence length in bases
-        TSeqPos m_Length;
-
-        /// Database reference
-        CRef<CSeqDB> m_SeqDB;
-        
-        /// Locates this sequence within m_SeqDB.
-        int m_OID;
-    };
-private:
     /// Load sequence data from cache or from the database.
     ///
     /// This checks the OID cache and loads the sequence data from
@@ -387,41 +208,16 @@ private:
     ///   Information about the sequence data is returned here.
     void x_LoadData(const CSeq_id_Handle& idh, int oid, CTSE_LoadLock & lock);
     
-    /// Split the sequence data.
-    ///
-    /// The sequence data is stored and a list of the available ranges
-    /// of data is returned via the 'chunks' parameter.  These do not
-    /// contain sequence data, but merely indicate what is available.
-    ///
-    /// @param chunks
-    ///   The sequence data chunks will be returned here.
-    /// @param seqdata
-    ///   Object managing all data pieces for this sequence.
-    void x_SplitSeqData(TChunks & chunks, CCachedSeqData & seqdata);
-    
-    /// Add a chunk of sequence data
-    ///
-    /// This method builds a description of a specific range of
-    /// sequence data, returning it via the 'chunks' parameter.  The
-    /// actual data is not built, just a description that identifies
-    /// the sequence and the range of that sequence's data represented
-    /// by this chunk.
-    void x_AddSplitSeqChunk(TChunks&              chunks,
-                            const CSeq_id_Handle& id,
-                            TSeqPos               begin,
-                            TSeqPos               end);
-    
     const string    m_DBName;      ///< Blast database name
     EDbType         m_DBType;      ///< Is this database protein or nucleotide?
-    CRef<CSeqDB>    m_SeqDB;       ///< The sequence database
+    CRef<IBlastDbAdapter> m_BlastDb;       ///< The sequence database
 
     TIds            m_Ids;         ///< ID to OID translation
 
-    /// Determines whether sequences should be fetched in fixed size slices or
-    /// in incrementally larger sizes. The latter improves performance on
-    /// full sequence retrieval of large sequences, but degrades the
-    /// performance of retrieval of small sequence segments of large sequences
+    /// Configuration value specified to the CCachedSequence
     bool            m_UseFixedSizeSlices;
+    /// Specifies where to get the data from
+    ESource         m_BlastDbSource;    
 };
 
 END_SCOPE(objects)
@@ -447,4 +243,4 @@ void NCBI_EntryPoint_xloader_blastdb(
 
 END_NCBI_SCOPE
 
-#endif
+#endif /* OBJTOOLS_DATA_LOADERS_BLASTDB___BDBLOADER__HPP */

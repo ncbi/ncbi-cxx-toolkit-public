@@ -41,16 +41,20 @@ BEGIN_objects_SCOPE
 static const string kAsnDeflineObjLabel = "ASN1_BlastDefLine";
 static const string kTaxDataObjLabel    = "TaxNamesData";
 
+/* Bit field for the "links" element of Blast-def-line. 
+See ASN.1 spec. in src/objects/blastdb/blastdb.asn. */
 enum LinkoutTypes {
-  eLocuslink              = (1<<0),
-  eUnigene                = (1<<1),
-  eStructure              = (1<<2),
-  eGeo                    = (1<<3),
-  eGene                   = (1<<4),
-  eHitInMapviewer         = (1<<5),
-  eAnnotatedInMapviewer   = (1<<6),
-  eGenomicSeq             = (1<<7),
-  eBioAssay               = (1<<8)
+  eLocuslink              = (1<<0),  // Defunct, LocusLink link-out
+  eUnigene                = (1<<1),  // Add Linkout for UniGene
+  eStructure              = (1<<2),  // Add Linkout for structure.
+  eGeo                    = (1<<3),  // Add Linkout for Geo
+  eGene                   = (1<<4),  // Add Linkout for Gene
+  eHitInMapviewer         = (1<<5),  // The link in the BLAST report goes to the mapviewer and not to entrez.  
+                                     // Generally the case for contigs (i.e., NT, NW, etc) found in the mapviewer. 
+  eAnnotatedInMapviewer   = (1<<6),  // The main blast link goes to entrez but we put on a linkout icon that goes to mapviewer.
+  eGenomicSeq             = (1<<7),  // Is a genomic sequence.  Used for the genome+transcript database to show the genomic 
+                                     // and transcript sequences separately.
+  eBioAssay               = (1<<8)   // Add Linkout for BioAssay (structure group resource)
 };
 
 /// Structure describing filtered regions created using a particular sequence

@@ -367,6 +367,11 @@ public:
     /// produces a great deal of output, none of which is expected to be
     /// useful to the end-user.
     void SetVerbose(EDebugMode verb = eDebug);
+
+    /// Defines a std::vector of CRef<CSeq_id>
+    typedef vector< CRef<objects::CSeq_id> > TSeqIdVector;
+    /// Defines a std::vector of CRef<CBioseq>
+    typedef vector< CRef<objects::CBioseq> > TBioseqVector;
     
     /// Get a set of Bioseqs given an input set of Seq-ids.
     ///
@@ -388,49 +393,73 @@ public:
     /// @param database A list of databases from which to get the sequences.
     /// @param seqtype  The residue type, 'p' from protein, 'n' for nucleotide.
     /// @param bioseqs  The vector used to return the requested Bioseqs.
-    /// @param errors   A null-seperated list of errors.
-    /// @param warnings A null-seperated list of warnings.
+    /// @param errors   A null-separated list of errors.
+    /// @param warnings A null-separated list of warnings.
+    /// @param verbose  Produce verbose output. [in]
+    /// @todo FIXME: Add retry logic in case of transient errors
     static void
-    GetSequences(vector< CRef<objects::CSeq_id> > & seqids,    // in
-                 const string                     & database,  // in
-                 char                               seqtype,   // 'p' or 'n'
-                 vector< CRef<objects::CBioseq> > & bioseqs,   // out
-                 string                           & errors,    // out
-                 string                           & warnings); // out
+    GetSequences(TSeqIdVector& seqids,      // in
+                 const string& database,    // in
+                 char seqtype,              // 'p' or 'n'
+                 TBioseqVector& bioseqs,    // out
+                 string& errors,            // out
+                 string& warnings,          // out
+                 bool verbose = false);     // in
     
-    /// Get meta data and parts of Bioseqs from the remote server.
-    /// 
-    /// This retrieves information from the blast server about one Bioseq.
-    /// Different parts of the CBioseq can be fetched, including the meta
-    /// data, and part of the sequence data.
-    /// 
-    /// @param seqid     A vector of Seq-ids for which Bioseqs are requested. [in]
-    /// @param database  A list of databases from which to get the sequences. [in]
-    /// @param seqtype   The residue type, 'p' from protein, 'n' for nucleotide. [in]
-    /// @param get_meta  True if meta-data should be retrieved. [in]
-    /// @param start_pos Start coordinate of data to fetch (or zero if none). [in]
-    /// @param end_pos   End coordinate of data to fetch (or zero if none). [in]
-    /// @param bioseq    The requested Bioseq (minus data) or NULL. [out]
-    /// @param ids       The Seq-ids for this sequence, or an empty list. [out]
-    /// @param length    The length of the sequence (or -1). [out]
-    /// @param seq_data  Sequence data in CSeq_data format. [out]
-    /// @param errors    An error message (if any). [out]
-    /// @param warnings  A warning (if any). [out]
-    /// @param verbose Produce verbose output. [in]
+    /// Get a set of Bioseqs without their sequence data given an input set of
+    /// Seq-ids.
+    ///
+    /// @param seqids   A vector of Seq-ids for which Bioseqs are requested.
+    /// @param database A list of databases from which to get the sequences.
+    /// @param seqtype  The residue type, 'p' from protein, 'n' for nucleotide.
+    /// @param bioseqs  The vector used to return the requested Bioseqs.
+    /// @param errors   A null-separated list of errors.
+    /// @param warnings A null-separated list of warnings.
+    /// @param verbose  Produce verbose output. [in]
+    /// @todo FIXME: Add retry logic in case of transient errors
     static void
-    GetSequenceInfo(const objects::CSeq_id                 & seqid,     // in
-                    const string                     & database,  // in
-                    char                               seqtype,   // 'p' or 'n'
-                    bool                               get_meta,  // in
-                    int                                start_pos, // in
-                    int                                end_pos,   // in
-                    CRef<objects::CBioseq>           & bioseq,    // out
-                    vector< CRef<objects::CSeq_id> > & ids,       // out
-                    int                              & length,    // out
-                    CRef<objects::CSeq_data>         & seq_data,  // out
-                    string                           & errors,    // out
-                    string                           & warnings,  // out
-                    bool                             verbose = false);// in
+    GetSequencesInfo(TSeqIdVector& seqids,      // in
+                     const string& database,    // in
+                     char seqtype,              // 'p' or 'n'
+                     TBioseqVector& bioseqs,    // out
+                     string& errors,            // out
+                     string& warnings,          // out
+                     bool verbose = false);     // in
+
+    /// Defines a std::vector of CRef<CSeq_interval>
+    typedef vector< CRef<objects::CSeq_interval> > TSeqIntervalVector;
+    /// Defines a std::vector of CRef<CSeq_data>
+    typedef vector< CRef<objects::CSeq_data> > TSeqDataVector;
+
+    /// This retrieves (partial) sequence data from the remote BLAST server.
+    /// 
+    /// @param seqid     
+    ///     A vector of Seq-ids for which sequence data are requested. [in]
+    /// @param database  
+    ///     A list of databases from which to get the sequences. [in]
+    /// @param seqtype   
+    ///     The residue type, 'p' from protein, 'n' for nucleotide. [in]
+    /// @param ids
+    ///     The sequence IDs for those sequences which the seq data was
+    //      obtained successfully [out]
+    /// @param seq_data  
+    ///     Sequence data in CSeq_data format. [out]
+    /// @param errors    
+    ///     An error message (if any). [out]
+    /// @param warnings  
+    ///     A warning (if any). [out]
+    /// @param verbose 
+    ///     Produce verbose output. [in]
+    /// @todo FIXME: Add retry logic in case of transient errors
+    static void
+    GetSequenceParts(const TSeqIntervalVector   & seqids,    // in
+                     const string               & database,  // in
+                     char                         seqtype,   // 'p' or 'n'
+                     TSeqIdVector               & ids,       // out
+                     TSeqDataVector             & seq_data,  // out
+                     string                     & errors,    // out
+                     string                     & warnings,  // out
+                     bool                         verbose = false);// in
     
     /// Get the database used by the search.
     ///
@@ -617,6 +646,33 @@ private:
     /// Poll until results are found, error occurs, or timeout expires.
     void x_PollUntilDone(EImmediacy poll_immed, int seconds);
     
+    /// Main function to issue a Blast4-get-sequences-request and collect its
+    /// results from the remote BLAST server.
+    /// 
+    /// @param seqids
+    ///     The seqids of the sequences to fetch. [in]
+    /// @param database
+    ///     The database or databases containing the desired sequences. [in]
+    /// @param seqtype
+    ///     Either 'p' or 'n' for protein or nucleotide. [in]
+    /// @param bioseqs  
+    ///     The vector used to return the requested Bioseqs. [out]
+    /// @param errors
+    ///     Returned string containing any errors encountered. [out]
+    /// @param warnings 
+    ///     A null-separated list of warning. [out]
+    /// @param skip_seq_data
+    ///     If true, the sequence data will NOT be fetched [in]
+    /// @param verbose  Produce verbose output. [in]
+    static void x_GetSequences(TSeqIdVector & seqids,
+                               const string & database,
+                               char           seqtype,
+                               bool           skip_seq_data,
+                               TBioseqVector& bioseqs,
+                               string       & errors,
+                               string       & warnings,
+                               bool           verbose);
+
     /// Build Sequence Fetching Request
     ///
     /// This method builds a blast4 request designed to fetch a list
@@ -630,44 +686,37 @@ private:
     ///     Either 'p' or 'n' for protein or nucleotide.
     /// @param errors
     ///     Returned string containing any errors encountered.
+    /// @param skip_seq_data
+    ///     If true, the sequence data will NOT be fetched
     /// @return
     ///     The blast4 sequence fetching request object.
     static CRef<objects::CBlast4_request>
-    x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
-                         const string                     & database, // in
-                         char                               seqtype,  // 'p' or 'n'
-                         string                           & errors);  // out
+    x_BuildGetSeqRequest(TSeqIdVector& seqids,      // in
+                         const string& database,    // in
+                         char seqtype,              // 'p' or 'n'
+                         bool skip_seq_data,        // in
+                         string & errors);          // out
     
     /// Build Sequence Parts Fetching Request
     ///
-    /// This method builds a blast4 request designed to fetch various
-    /// information about a sequence, optionally including meta-data
-    /// and/or sequence data.
+    /// This method builds a blast4 request designed to fetch sequence
+    /// data
     ///
     /// @param seqids
-    ///     The seqids of the sequences to fetch.
+    ///     The seqids and ranges of the sequences to fetch.
     /// @param database
     ///     The database or databases containing the desired sequences.
     /// @param seqtype
     ///     Either 'p' or 'n' for protein or nucleotide.
-    /// @param get_meta
-    ///     Specify true to fetch Seq-ids, sequence length, and Bioseq.
-    /// @param start_pos
-    ///     Start of the sequence data to get or zero.
-    /// @param end_pos
-    ///     End position (post notation) of the data to get or zero.
     /// @param errors
     ///     Returned string containing any errors encountered.
     /// @return
     ///     The blast4 sequence fetching request object.
     static CRef<objects::CBlast4_request>
-    x_BuildGetSeqPartsRequest(const objects::CSeq_id & seqid,     // in
-                              const string     & database,  // in
-                              char               seqtype,   // 'p' or 'n'
-                              bool               get_meta,  // in
-                              int                start_pos, // in
-                              int                end_pos,   // in
-                              string           & errors);   // out
+    x_BuildGetSeqPartsRequest(const TSeqIntervalVector & seqid,     // in
+                              const string             & database,  // in
+                              char                       seqtype,   // 'p' or 'n'
+                              string                   & errors);   // out
     
     /// Get bioseqs from a sequence fetching reply.
     ///
@@ -684,24 +733,20 @@ private:
     ///     Returned string containing any warnigns encountered.
     static void
     x_GetSeqsFromReply(CRef<objects::CBlast4_reply>       reply,
-                       vector< CRef<objects::CBioseq> > & bioseqs,   // out
+                       TBioseqVector                    & bioseqs,   // out
                        string                           & errors,    // out
                        string                           & warnings); // out
     
     /// Extract information from the get-seq-parts reply object.
     /// @param reply The reply object from blast4.
-    /// @param bioseq The returned Bioseq object.
-    /// @param ids All Seq-ids for the requested sequence.
-    /// @param length The requested sequence's length.
-    /// @param seq_data Seq_data for the sequence in question.
+    /// @param ids All Seq-ids for the requested sequences.
+    /// @param seq_data Seq_data for the sequences in question.
     /// @param errors Any error messages found in the reply.
     /// @param warnings Any warnings found in the reply.
     static void
     x_GetPartsFromReply(CRef<objects::CBlast4_reply>       reply,     // in
-                        CRef<objects::CBioseq>           & bioseq,    // out
-                        vector< CRef<objects::CSeq_id> > & ids,       // out
-                        int                              & length,    // out
-                        CRef<objects::CSeq_data>         & seq_data,  // out
+                        TSeqIdVector                     & ids,       // out
+                        TSeqDataVector                   & seq_data,  // out
                         string                           & errors,    // out
                         string                           & warnings); // out
     

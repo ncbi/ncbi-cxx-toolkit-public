@@ -134,7 +134,10 @@ private:
 
 /// Class whose purpose is to create CScope objects which have data loaders
 /// added with different priorities, so that the BLAST database data loader is
-/// used first, then the Genbank data loader.
+/// used first, then the Genbank data loader. By default, this object tries to 
+/// initialize the local BLAST database data loader first, if this cannot be
+/// initialized, the remote BLAST database loader is initialized; then the
+/// Genbank data loader is initialized.
 /// The selection of data loaders can be configured via the SDataLoaderConfig
 /// object and the DATA_LOADERS entry of the BLAST section of an NCBI
 /// configuration file, the latter setting trumping the selection of the
@@ -173,6 +176,10 @@ public:
     /// Removes the BLAST database data loader from the object manager.
     void RevokeBlastDbDataLoader();
 
+    /// Retrieves the BLAST database data loader name initialized by this
+    /// instance
+    string GetBlastDbLoaderName() const { return m_BlastDbLoaderName; }
+
 private:
     /// Our reference to the object manager
     CRef<objects::CObjectManager> m_ObjMgr;
@@ -193,10 +200,10 @@ private:
     /// Initialize the Genbank data loader
     void x_InitGenbankDataLoader();
 
-    /// Data loader priority for protein BLAST database data loader
-    static const int kProtBlastDbLoaderPriority = 80;
-    /// Data loader priority for nucleotide BLAST database data loader
-    static const int kNuclBlastDbLoaderPriority = 85;
+    /// Data loader priority for BLAST database data loader (if multiple BLAST
+    /// database data loaders are registered, they are added in decreasing
+    /// priority)
+    static const int kBlastDbLoaderPriority = 80;
     /// Data loader priority for Genbank data loader
     static const int kGenbankLoaderPriority = 99;
 };
