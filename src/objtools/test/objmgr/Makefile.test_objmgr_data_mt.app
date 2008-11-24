@@ -6,7 +6,8 @@ REQUIRES = bdb dbapi FreeTDS
 
 APP = test_objmgr_data_mt
 SRC = test_objmgr_data_mt
-LIB = test_mt ncbi_xloader_blastdb seqdb blastdb ncbi_xloader_lds lds bdb xobjread xobjutil $(OBJMGR_LIBS) ncbi_xdbapi_ftds $(FTDS64_CTLIB_LIB) dbapi_driver$(STATIC)
+LIB = ncbi_xloader_lds lds bdb xobjread xobjutil ncbi_xdbapi_ftds \
+      $(FTDS64_CTLIB_LIB) dbapi_driver$(STATIC) test_mt $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(ORIG_LIBS)
 

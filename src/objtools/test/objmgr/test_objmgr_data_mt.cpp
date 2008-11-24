@@ -50,7 +50,6 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <dbapi/driver/drivers.hpp>
-#include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
 #include <objtools/lds/lds_manager.hpp>
 #include <connect/ncbi_core_cxx.hpp>
@@ -126,7 +125,6 @@ protected:
     bool m_verbose;
     bool m_release_all_memory;
     int m_max_errors;
-    bool m_blastdb;
     string m_lds_dir;
     
     void InitOM();
@@ -237,11 +235,6 @@ void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
 void CTestOM::InitOM(void)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
-    if ( m_blastdb ) {
-        CBlastDbDataLoader::RegisterInObjectManager
-            (*om, "nr", CBlastDbDataLoader::eProtein, true,
-             CObjectManager::eDefault, 88);
-    }
     if ( !m_lds_dir.empty() ) {
         CLDS_Manager manager(m_lds_dir);
         CLDS_DataLoader::RegisterInObjectManager
@@ -564,8 +557,6 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
                  "Do not keep any objects to check memory leaks");
     args.AddFlag("single_scope",
                  "Use single CScope obeject for all threads");
-    args.AddFlag("blastdb",
-                 "Use BLAST data loader");
     args.AddOptionalKey("lds", "lds",
                         "Use LDS data loader from dir",
                         CArgDescriptions::eString);
@@ -645,7 +636,6 @@ bool CTestOM::TestApp_Init(void)
     m_verbose = args["verbose"];
     m_release_all_memory = args["release_all_memory"];
     m_max_errors = args["max_errors"].AsInteger();
-    m_blastdb = args["blastdb"];
     if ( args["lds"] ) {
         m_lds_dir = args["lds"].AsString();
     }
