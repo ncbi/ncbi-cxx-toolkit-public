@@ -17,4 +17,5 @@ REQUIRES = objects
 CHECK_CMD = bdbloader_unit_test
 CHECK_COPY = data
 CHECK_AUTHORS = blastsoft
+CHECK_TIMEOUT = 600
 
