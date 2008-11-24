@@ -3029,6 +3029,64 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+template <typename T>
+inline
+void DoTest_CDBObjectConvertSql(const string& sql, const T& v)
+{
+    T value = ConvertSQL(GetConnection().GetCDB_Connection()->LangCmd(sql));
+    BOOST_CHECK_EQUAL(value, v);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_CDBObjectConvertSql)
+{
+    string sql;
+    
+    sql = "SELECT null";
+
+    DoTest_CDBObjectConvertSql<bool>(sql, bool());
+    DoTest_CDBObjectConvertSql<Int1>(sql, 0);
+    DoTest_CDBObjectConvertSql<Uint1>(sql, 0);
+    DoTest_CDBObjectConvertSql<Int2>(sql, 0);
+    DoTest_CDBObjectConvertSql<Uint2>(sql, 0);
+    DoTest_CDBObjectConvertSql<Int4>(sql, 0);
+    DoTest_CDBObjectConvertSql<Uint4>(sql, 0);
+    DoTest_CDBObjectConvertSql<Int8>(sql, 0);
+    DoTest_CDBObjectConvertSql<Uint8>(sql, 0);
+    DoTest_CDBObjectConvertSql<float>(sql, 0.0);
+    DoTest_CDBObjectConvertSql<double>(sql, 0.0);
+    DoTest_CDBObjectConvertSql<string>(sql, kEmptyStr);
+    DoTest_CDBObjectConvertSql<CTime>(sql, CTime());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template <typename T>
+inline
+void DoTest_CDBObjectConvertSqlSafe(const string& sql, const T& v)
+{
+    T value = ConvertSQLSafe(GetConnection().GetCDB_Connection()->LangCmd(sql));
+    BOOST_CHECK_EQUAL(value, v);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_CDBObjectConvertSqlSafe)
+{
+    string sql;
+    
+    sql = "SELECT null";
+
+    DoTest_CDBObjectConvertSqlSafe<bool>(sql, bool());
+    DoTest_CDBObjectConvertSqlSafe<Uint1>(sql, 0);
+    DoTest_CDBObjectConvertSqlSafe<Int2>(sql, 0);
+    DoTest_CDBObjectConvertSqlSafe<Int4>(sql, 0);
+    DoTest_CDBObjectConvertSqlSafe<Int8>(sql, 0);
+    DoTest_CDBObjectConvertSqlSafe<float>(sql, 0.0);
+    DoTest_CDBObjectConvertSqlSafe<double>(sql, 0.0);
+    DoTest_CDBObjectConvertSqlSafe<string>(sql, kEmptyStr);
+    DoTest_CDBObjectConvertSqlSafe<CTime>(sql, CTime());
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Safe (compile-time) conversion ...
 /*
 template <typename FROM>

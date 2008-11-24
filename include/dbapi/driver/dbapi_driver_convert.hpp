@@ -52,6 +52,7 @@ class CValueConvert<SSafeCP, CDB_Result>
 {
 public: 
     typedef const CDB_Result obj_type;
+    typedef SSafeCP CP;
 
     CValueConvert(obj_type& value)
     : m_Value(&value)
@@ -115,6 +116,151 @@ private:
         if (db_obj.IsNULL()) {
             throw CInvalidConversionException();
         }
+        return MakeCP<CP>(db_obj.Value());
+    }
+
+private:
+    obj_type* m_Value; 
+};
+
+////////////////////////////////////////////////////////////////////////////////
+template <>
+class CValueConvert<SSafeSqlCP, CDB_Result>
+{
+public: 
+    typedef const CDB_Result obj_type;
+    typedef SSafeSqlCP CP;
+
+    CValueConvert(const CValueConvert<CP, CDB_Result>& value)
+    : m_Value(value.m_Value)
+    {
+    }
+    CValueConvert(obj_type& value)
+    : m_Value(&value)
+    {
+    }
+
+public:
+    operator bool(void) const
+    {
+        const int item_num = m_Value->CurrentItemNo();
+        const EDB_Type db_type = m_Value->ItemDataType(item_num);
+
+        // *null* is reported as eDB_Int by several drivers.
+        // That means that *null* can be checked using Int4 type only.
+        // List of *special* drivers: ftds64, ctlib, ftds_odbc.
+        if (db_type == eDB_Int) {
+            CDB_Int db_obj_int;
+
+            const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj_int);
+            if (db_obj_int.IsNULL()) {
+                return bool();
+            }
+            
+            throw CInvalidConversionException();
+        }
+
+        CDB_Bit db_obj;
+        const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
+
+        if (db_obj.IsNULL()) {
+            return bool();
+        }
+
+        return db_obj.Value() != 0;
+    }
+    operator Uint1(void) const
+    {
+        return ConvertFrom<Uint1, CDB_TinyInt>();
+    }
+    operator Int2(void) const
+    {
+        return ConvertFrom<Int2, CDB_SmallInt>();
+    }
+    operator Int4(void) const
+    {
+        CDB_Int db_obj;
+        const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
+
+        if (db_obj.IsNULL()) {
+            return Int4();
+        }
+
+        // We are using SSafeCP intentionally here ...
+        return MakeCP<SSafeCP>(db_obj.Value());
+    }
+    operator Int8(void) const
+    {
+        return ConvertFrom<Int8, CDB_BigInt>();
+    }
+    operator float(void) const
+    {
+        return ConvertFrom<float, CDB_Float>();
+    }
+    operator double(void) const
+    {
+        return ConvertFrom<double, CDB_Double>();
+    }
+    operator string(void) const
+    {
+        const int item_num = m_Value->CurrentItemNo();
+        const EDB_Type db_type = m_Value->ItemDataType(item_num);
+
+        // *null* is reported as eDB_Int by several drivers.
+        // That means that *null* can be checked using Int4 type only.
+        // List of *special* drivers: ftds64, ctlib, ftds_odbc.
+        CDB_Int db_obj_int;
+        if (db_type == eDB_Int) {
+
+            const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj_int);
+            if (db_obj_int.IsNULL()) {
+                return string();
+            }
+
+            throw CInvalidConversionException();
+        }
+
+        CDB_VarChar db_obj;
+        const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
+        if (db_obj.IsNULL()) {
+            return string();
+        }
+        return string(db_obj.Value(), db_obj.Size());
+    }
+    operator CTime(void) const
+    {
+        return ConvertFrom<CTime, CDB_DateTime>();
+    }
+
+private:
+    template <typename TO, typename FROM>
+    TO ConvertFrom(void) const
+    {
+        const int item_num = m_Value->CurrentItemNo();
+        const EDB_Type db_type = m_Value->ItemDataType(item_num);
+
+        // *null* is reported as eDB_Int by several drivers.
+        // That means that *null* can be checked using Int4 type only.
+        // List of *special* drivers: ftds64, ctlib, ftds_odbc.
+        if (db_type == eDB_Int) {
+            CDB_Int db_obj_int;
+
+            const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj_int);
+            if (db_obj_int.IsNULL()) {
+                return TO();
+            }
+
+            throw CInvalidConversionException();
+        }
+
+        FROM db_obj;
+        const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
+
+        if (db_obj.IsNULL()) {
+            return TO();
+        }
+
+        // We are using SSafeCP intentionally here ...
         return MakeCP<SSafeCP>(db_obj.Value());
     }
 
@@ -298,6 +444,179 @@ private:
                     const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
                     if (db_obj.IsNULL()) {
                         throw CInvalidConversionException();
+                    }
+
+                    value = Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.DataSize()));
+                }
+                break;
+            default:
+                throw CInvalidConversionException();
+        }
+    }
+
+private:
+    obj_type* m_Value; 
+};
+
+////////////////////////////////////////////////////////////////////////////////
+template <>
+class NCBI_DBAPIDRIVER_EXPORT CValueConvert<SRunTimeSqlCP, CDB_Result>
+{
+public: 
+    typedef const CDB_Result obj_type;
+
+    CValueConvert(obj_type& value);
+
+public:
+    operator bool(void) const;
+    operator Int1(void) const;
+    operator Uint1(void) const;
+    operator Int2(void) const;
+    operator Uint2(void) const;
+    operator Int4(void) const;
+    operator Uint4(void) const;
+    operator Int8(void) const;
+    operator Uint8(void) const;
+    operator float(void) const;
+    operator double(void) const;
+    operator string(void) const;
+    operator CTime(void) const;
+
+private:
+    template <typename TO, typename FROM>
+    TO ConvertFrom(void) const
+    {
+        FROM db_obj;
+
+        const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
+        if (db_obj.IsNULL()) {
+            return TO();
+        }
+
+        return Convert(db_obj.Value());
+    }
+
+    template <typename TO, typename FROM>
+    TO ConvertFromStr(void) const
+    {
+        FROM db_obj;
+
+        const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
+        if (db_obj.IsNULL()) {
+            return TO();
+        }
+
+        return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.Size()));
+    }
+
+    template <typename TO, typename FROM>
+    TO ConvertFromChar(const int item_num) const
+    {
+        FROM db_obj(m_Value->ItemMaxSize(item_num));
+
+        const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
+        if (db_obj.IsNULL()) {
+            return TO();
+        }
+
+        return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.Size()));
+    }
+
+    template <typename TO, typename FROM>
+    TO ConvertFromLOB(void) const
+    {
+        FROM db_obj;
+        string result;
+
+        const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
+        if (db_obj.IsNULL()) {
+            return TO();
+        }
+
+        result.resize(db_obj.Size());
+        db_obj.Read(const_cast<void*>(static_cast<const void*>(result.c_str())),
+                db_obj.Size()
+                );
+
+        return Convert(result);
+    }
+
+    template <typename TO, typename FROM>
+    TO Convert2CTime(void) const
+    {
+        FROM db_obj;
+
+        const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
+        if (db_obj.IsNULL()) {
+            return TO();
+        }
+
+        return CTime(time_t(Convert(db_obj.Value())));
+    }
+
+    template <typename TO>
+    void ReadCDBObject(TO& value) const
+    {
+        const int item_num = m_Value->CurrentItemNo();
+        const EDB_Type db_type = m_Value->ItemDataType(item_num);
+
+        switch (db_type) {
+            case eDB_Int:
+                value = ConvertFrom<TO, CDB_Int>();
+                break;
+            case eDB_SmallInt:
+                value = ConvertFrom<TO, CDB_SmallInt>();
+                break;
+            case eDB_TinyInt:
+                value = ConvertFrom<TO, CDB_TinyInt>();
+                break;
+            case eDB_BigInt:
+                value = ConvertFrom<TO, CDB_BigInt>();
+                break;
+            case eDB_VarChar:
+                value = ConvertFromStr<TO, CDB_VarChar>();
+                break;
+            case eDB_Char:
+                value = ConvertFromChar<TO, CDB_Char>(item_num);
+                break;
+            case eDB_VarBinary:
+                value = ConvertFromStr<TO, CDB_VarBinary>();
+                break;
+            case eDB_Binary:
+                value = ConvertFromChar<TO, CDB_Binary>(item_num);
+                break;
+            case eDB_Float:
+                value = ConvertFrom<TO, CDB_Float>();
+                break;
+            case eDB_Double:
+                value = ConvertFrom<TO, CDB_Double>();
+                break;
+                // case eDB_DateTime:
+                //     value = ConvertFrom<TO, CDB_DateTime>();
+                // case eDB_SmallDateTime:
+                //     value = ConvertFrom<TO, CDB_SmallDateTime>();
+            case eDB_Text:
+                value = ConvertFromLOB<TO, CDB_Text>();
+                break;
+            case eDB_Image:
+                value = ConvertFromLOB<TO, CDB_Image>();
+                break;
+            case eDB_Bit: 
+                value = ConvertFrom<TO, CDB_Bit>();
+                break;
+            case eDB_Numeric:
+                value = ConvertFrom<TO, CDB_Numeric>();
+                break;
+            case eDB_LongChar:
+                value = ConvertFromChar<TO, CDB_LongChar>(item_num);
+                break;
+            case eDB_LongBinary:
+                {
+                    CDB_LongBinary db_obj(m_Value->ItemMaxSize(item_num));
+
+                    const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
+                    if (db_obj.IsNULL()) {
+                        value = TO();
                     }
 
                     value = Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.DataSize()));
