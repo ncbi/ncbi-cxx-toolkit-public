@@ -33,10 +33,10 @@ CHit::CHit( CQuery* q ) :
 //        ++s_count;
 }
 
-CHit::CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int to ) : 
+CHit::CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int to, int convTbl ) : 
     m_query( q ), m_next( 0 ), m_seqOrd( seqOrd ), 
     m_fullFrom( from ), m_fullTo( to ),
-    m_flags( fComponent_1 << pairmate )
+    m_flags( ( fComponent_1 << pairmate ) | ( (3&convTbl) << kAlign_convTbl1_bit ) )
 {
     ASSERT( ( pairmate & ~1 ) == 0 );
     m_length[!pairmate] = 0;
@@ -54,8 +54,8 @@ CHit::CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int t
     ++s_count;
 }
 
-CHit::CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, double score2, int from2, int to2 ) : 
-    m_query( q ), m_next( 0 ), m_seqOrd( seqOrd ), m_flags( fPairedHit )
+CHit::CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, int convTbl1, double score2, int from2, int to2, int convTbl2 ) : 
+    m_query( q ), m_next( 0 ), m_seqOrd( seqOrd ), m_flags( fPairedHit | ((3&convTbl1) << kAlign_convTbl1_bit) | ((3&convTbl2) << kAlign_convTbl2_bit))
 {
     ASSERT( m_seqOrd != ~0U );
     m_score[0] = float( score1 );
@@ -85,10 +85,12 @@ CHit::CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, double s
     ++s_count;
 }
 
-void CHit::SetPairmate( int pairmate, double score, int from, int to )
+void CHit::SetPairmate( int pairmate, double score, int from, int to, int convTbl )
 {
     ASSERT( m_score[pairmate] <= score );
     ASSERT( (pairmate&~1) == 0 );
+    convTbl &= 3;
+    m_flags |= pairmate ? ((3&convTbl) << kAlign_convTbl2_bit) : ((2&convTbl) << kAlign_convTbl1_bit);
     if( m_length[pairmate] == 0 ) {
         //ASSERT( (m_flags & (fOrder_reverse|fReads_overlap)) == 0 );
         m_flags |= fComponent_1 << pairmate;

@@ -114,9 +114,11 @@ template<class CQuery,class CSubject>
 inline void TAligner_fast<CQuery,CSubject>::DoIdentity( CQuery& q, CSubject& s )
 {
 	if( m_flags & CAlignerBase::fComputePicture ) {
-		TSuper::SetQueryString() += TSuper::GetIupacnaQuery( q, m_flags );
-		TSuper::SetSubjectString() += TSuper::GetIupacnaSubject( s, m_flags );
-		TSuper::SetAlignmentString() += '|';
+        char qb = TSuper::GetIupacnaQuery( q, m_flags );
+        char sb = TSuper::GetIupacnaSubject( s, m_flags );
+		TSuper::SetQueryString() += qb;
+        TSuper::SetSubjectString() += sb;
+		TSuper::SetAlignmentString() += qb == sb ? '|' : ':';
 	}
 	if( m_flags & CAlignerBase::fComputeScore ) {
 		TSuper::SetScore() += Score( q, s );

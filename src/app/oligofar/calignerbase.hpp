@@ -48,6 +48,7 @@ public:
     const string& GetSubjectString() const { return m_subjectString; }
     const string& GetAlignmentString() const { return m_alignmentString; }
 
+    int  GetBasicScoreTables() const { return m_scoreTbl->GetBasicScoreTables(); }
     void SelectBasicScoreTables( unsigned tbl ) { m_scoreTbl->SelectBasicScoreTables( tbl ); }
     void ParseConfig( const string& file );
 

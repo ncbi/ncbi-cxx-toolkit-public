@@ -163,14 +163,13 @@ inline void TAligner_SW<CQuery,CSubject>::x_BackTrace( int flags )
         int b = s - q + xdropOff;
         const TValue& val = SetMatrix()[b][q];
         
-        if( flags & CAlignerBase::fComputePicture ) 
-            TSuper::SetAlignmentString() += ( val.second == eIdentity ? '|' : ' ' );
 
         switch( val.second ) {
         case eDeletion: 
             if( flags & CAlignerBase::fComputePicture ) {
                 TSuper::SetQueryString() += '-';
                 TSuper::SetSubjectString() += TSuper::GetIupacnaSubject( subject + s + 1, flags );
+                TSuper::SetAlignmentString() += ' ';
             }
             --s; ++TSuper::SetDeletions(); 
             break;
@@ -178,13 +177,18 @@ inline void TAligner_SW<CQuery,CSubject>::x_BackTrace( int flags )
             if( flags & CAlignerBase::fComputePicture ) {
                 TSuper::SetQueryString() += TSuper::GetIupacnaQuery( query + q + 1, flags );
                 TSuper::SetSubjectString() += '-';
+                TSuper::SetAlignmentString() += ' ';
             }
             --q;  ++TSuper::SetInsertions(); 
             break;
         default: --s, --q;  
             if( flags & CAlignerBase::fComputePicture ) {
-                TSuper::SetQueryString() += TSuper::GetIupacnaQuery( query + q + 1, flags );
-                TSuper::SetSubjectString() += TSuper::GetIupacnaSubject( subject + s + 1, flags );
+
+                char qb = TSuper::GetIupacnaQuery( query + q + 1, flags );
+                char sb = TSuper::GetIupacnaSubject( subject + s + 1, flags );
+                TSuper::SetQueryString()   += qb;
+                TSuper::SetSubjectString() += sb;
+                TSuper::SetAlignmentString() += ( val.second == eIdentity ? qb == sb ? '|' : ':' : ' ' );
             }
             ++( val.second == eIdentity ? TSuper::SetIdentities() : TSuper::SetMismatches() ); 
             break;

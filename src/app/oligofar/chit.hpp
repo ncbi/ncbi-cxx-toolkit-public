@@ -12,10 +12,10 @@ public:
     ~CHit();
 
     CHit( CQuery* q );
-    CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int to );
-    CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, double score2, int from2, int to2 );
+    CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int to, int convtbl );
+    CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, int convTbl1, double score2, int from2, int to2, int convTbl2 );
 
-    void SetPairmate( int pairmate, double score, int from, int to );
+    void SetPairmate( int pairmate, double score, int from, int to, int convTbl );
     bool IsNull() const { return m_length[0] == 0 && m_length[1] == 0; }
 
     Uint4 GetSeqOrd() const { return m_seqOrd; }
@@ -58,6 +58,8 @@ public:
         kRead1_strand_bit = 0,
         kRead2_strand_bit = 1,
         kOrder_strand_bit = 2,
+        kAlign_convTbl1_bit = 8,
+        kAlign_convTbl2_bit = 10,
         kComponents_bit  = 4,
         fNONE            = 0x00
     };
@@ -83,6 +85,7 @@ public:
     int  GetFrom( int pairmate ) const;
     int  GetTo( int pairmate ) const;
     int  GetLength( int pairmate ) const { return m_length[pairmate]; }
+    int  GetConvTbl( int pairmate ) const { return 3 & (m_flags >> ( pairmate ? kAlign_convTbl2_bit : kAlign_convTbl1_bit )); } 
     
     bool Equals( const CHit * other ) const;
     bool EqualsSameQ( const CHit * other ) const;

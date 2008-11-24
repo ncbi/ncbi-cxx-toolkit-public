@@ -35,3 +35,8 @@
 	 -z				   removed
 	 -Z                removed
 
+3.32	2008/11/24
+	* Added multiple windows option -N (affected by --pass?)
+	* Added --NaHSO3=+|- to process sodium bisulfite treated data
+	* Fixed some errors
+

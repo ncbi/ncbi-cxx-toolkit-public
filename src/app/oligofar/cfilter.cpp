@@ -13,11 +13,13 @@ void CFilter::Match( const CHashAtom& m, const char * a, const char * A, int pos
     ASSERT( m_aligner );
     if( int conv = m.GetConv() ) {
         if( conv & CHashAtom::fFlags_convTC ) {
-            m_aligner->SelectBasicScoreTables( m.IsForwardStrand() ? CScoreTbl::eSel_ConvTC : CScoreTbl::eSel_ConvTC );
+            int tbl = m.IsForwardStrand() ? CScoreTbl::eSel_ConvTC : CScoreTbl::eSel_ConvTC ;
+            m_aligner->SelectBasicScoreTables( tbl );
             MatchConv( m, a, A, pos );
         }
         if( conv & CHashAtom::fFlags_convAG ) {
-            m_aligner->SelectBasicScoreTables( m.IsForwardStrand() ? CScoreTbl::eSel_ConvAG : CScoreTbl::eSel_ConvAG );
+            int tbl = m.IsForwardStrand() ? CScoreTbl::eSel_ConvAG : CScoreTbl::eSel_ConvAG ;
+            m_aligner->SelectBasicScoreTables( tbl );
             MatchConv( m, a, A, pos );
         }
     } else {
@@ -83,7 +85,7 @@ void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, 
     ASSERT( query );
     ASSERT( m_ord >= 0 );
     if( query->IsPairedRead() == false ) {
-        PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) );
+        PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo, m_aligner->GetBasicScoreTables() ) );
     } else { 
         Uint4 componentGeometry = Uint4( reverse ) | ( pairmate << 1 );
         ASSERT( (m_geometry & ~3) == 0 );
@@ -93,13 +95,13 @@ void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, 
         switch( "ALALLALALLAAAALL"[ (componentGeometry << 2) | m_geometry ] ) {
         default: THROW( logic_error, "Invalid action here!" );
         case eAction_Append:
-            m_pendingHits.insert( make_pair( reverse ? seqTo : seqFrom, new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) ) );
+            m_pendingHits.insert( make_pair( reverse ? seqTo : seqFrom, new CHit( query, m_ord, pairmate, score, seqFrom, seqTo, m_aligner->GetBasicScoreTables() ) ) );
             break;
         case eAction_Lookup:
             do {
                 TPendingHits toAdd;
                 if( ! LookupInQueue( score, seqFrom, seqTo, reverse, query, pairmate, toAdd, true ) )
-                    PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo ) );
+                    PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo, m_aligner->GetBasicScoreTables() ) );
                 copy( toAdd.begin(), toAdd.end(), inserter( m_pendingHits, m_pendingHits.end() ) );
             } while(0);
             break;
@@ -135,7 +137,7 @@ bool CFilter::LookupInQueue( double score, int seqFrom, int seqTo, bool reverse,
         if( hit->GetQuery() != query ) continue;
         if( !hit->HasComponent( !pairmate ) ) continue;
         if( !hit->HasComponent( pairmate ) ) {
-            hit->SetPairmate( pairmate, score, seqFrom, seqTo );
+            hit->SetPairmate( pairmate, score, seqFrom, seqTo, m_aligner->GetBasicScoreTables() );
             if( hit->IsOverlap() || hit->GetFilterGeometry() != m_geometry ) {
                 cerr << "\n\033[32mUpdated hit: " << ( hit->IsOverlap() ? "reads overlap" : "wrong geometry" ) << " {\x1b[032m";
                 hit->PrintDebug( cerr );
@@ -148,8 +150,8 @@ bool CFilter::LookupInQueue( double score, int seqFrom, int seqTo, bool reverse,
         } else if( hit->IsReverseStrand( pairmate ) == reverse ) { // the strict criterion on mutual orientation suggests this
             int pos = phit->first;
             CHit * nhit = pairmate ? 
-                new CHit( query, m_ord, hit->GetScore(0), hit->GetFrom(0), hit->GetTo(0), score, seqFrom, seqTo ) :
-                new CHit( query, m_ord, score, seqFrom, seqTo, hit->GetScore(1), hit->GetFrom(1), hit->GetTo(1) );
+                new CHit( query, m_ord, hit->GetScore(0), hit->GetFrom(0), hit->GetTo(0), hit->GetConvTbl(0), score, seqFrom, seqTo, m_aligner->GetBasicScoreTables() ) :
+                new CHit( query, m_ord, score, seqFrom, seqTo, m_aligner->GetBasicScoreTables(), hit->GetScore(1), hit->GetFrom(1), hit->GetTo(1), hit->GetConvTbl(1) );
             if( nhit->IsOverlap() || nhit->GetFilterGeometry() != m_geometry ) {
                 cerr << "\n\033[35mDEBUG: Ignoring " << ( hit->IsOverlap() ? "reads overlap" : "wrong geometry" ) << " {\x1b[36m";
                 nhit->PrintDebug( cerr );

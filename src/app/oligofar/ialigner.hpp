@@ -18,6 +18,7 @@ public:
     void SelectBasicScoreTables( int tbl ) { m_alignerBase.SelectBasicScoreTables( tbl ); }
 	void SetBestPossibleQueryScore( double s ) { m_bestQueryScore = s; }
 	double GetBestPossibleQueryScore() const { return m_bestQueryScore; }
+    int GetBasicScoreTables() const { return m_alignerBase.GetBasicScoreTables(); }
 protected:
 	CAlignerBase m_alignerBase;
 	double m_bestQueryScore;

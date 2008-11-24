@@ -36,9 +36,10 @@ public:
         eSel_ConvAG = 2
     };
     void SelectBasicScoreTables( unsigned tbl ) { ASSERT( tbl < 3 ); m_ncbi4naSelector = tbl; }
+    int  GetBasicScoreTables() const { return m_ncbi4naSelector; }
 
     template<class QryRef, class SbjRef>
-    bool MatchRef( const QryRef& q, const SbjRef& s, int qp, int ) const {
+    bool MatchRef( const QryRef& q, const SbjRef& s, int qp, int, ETableSelector sel ) const {
         if( q.GetCoding() == CSeqCoding::eCoding_colorsp ) 
             if( s.GetCoding() == CSeqCoding::eCoding_colorsp ) 
                 return CColorTwoBase( char(*q) ).GetColor() == CColorTwoBase( char(*s) ).GetColor();
@@ -48,9 +49,19 @@ public:
                 else 
                     return (char(q.GetBase()) & CNcbi8naBase( s.GetBase() )) != 0;
         else {
-            return m_ncbi4naMatchTbl[m_ncbi4naSelector][CNcbi8naBase( q.GetBase() )][CNcbi8naBase( s.GetBase() )];
+            return m_ncbi4naMatchTbl[sel][CNcbi8naBase( q.GetBase() )][CNcbi8naBase( s.GetBase() )];
 //            return ( CNcbi8naBase( q.GetBase() ) & CNcbi8naBase( s.GetBase() ) ) != 0;
         }
+    }
+    
+    template<class QryRef, class SbjRef>
+    bool MarkSameRef( const QryRef& q, const SbjRef& s, int qp, int qs ) const {
+        return MatchRef( q, s, qp, qs, eSel_NoConv );
+    }
+    
+    template<class QryRef, class SbjRef>
+    bool MatchRef( const QryRef& q, const SbjRef& s, int qp, int qs ) const {
+        return MatchRef( q, s, qp, qs, ETableSelector(m_ncbi4naSelector) );
     }
     
     template<class QryRef, class SbjRef>
@@ -114,8 +125,8 @@ protected:
     }
     static Uint1 x_Convert( Uint1 x, Uint1 mask, int shr ) {
         return 
-            shr > 0 ? ( x & ~mask ) | ((x & mask) >> (+shr)) :
-            shr < 0 ? ( x & ~mask ) | ((x & mask) << (-shr)) :
+            shr > 0 ? ( x /*& ~mask*/ ) | ((x & mask) >> (+shr)) :
+            shr < 0 ? ( x /*& ~mask*/ ) | ((x & mask) << (-shr)) :
             x;
     }
     void x_InitNcbi4naTables( int which, Uint1 mask, int shr ) {

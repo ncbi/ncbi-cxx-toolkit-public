@@ -33,9 +33,11 @@ inline void TAligner_HSP<CQuery,CSubject>::Align( int flags )
             ++( Match( query, subject ) ? TSuper::SetIdentities() : TSuper::SetMismatches() );
         }
         if( flags & CAlignerBase::fComputePicture ) {
-            TSuper::SetQueryString() += TSuper::GetIupacnaQuery( query, flags );
-            TSuper::SetSubjectString() += TSuper::GetIupacnaSubject( subject, flags );
-            TSuper::SetAlignmentString() += Match( query, subject ) ? '|' : ' ';
+            char qb = TSuper::GetIupacnaQuery( query, flags );
+            char sb = TSuper::GetIupacnaSubject( subject, flags );
+            TSuper::SetQueryString()   += qb;
+            TSuper::SetSubjectString() += sb;
+            TSuper::SetAlignmentString() += Match( query, subject ) ? qb == sb ? '|' : ':' : ' ';
         }
     }
     TSuper::m_query = query;

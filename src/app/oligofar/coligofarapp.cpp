@@ -24,7 +24,7 @@
 USING_OLIGOFAR_SCOPES;
 
 #ifndef OLIGOFAR_VERSION
-#define OLIGOFAR_VERSION "3.31" 
+#define OLIGOFAR_VERSION "3.32" 
 #endif
 
 COligoFarApp::COligoFarApp( int argc, char ** argv ) :
