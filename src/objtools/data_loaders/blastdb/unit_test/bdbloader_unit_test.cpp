@@ -230,12 +230,10 @@ BOOST_AUTO_TEST_CASE(RetrieveLargeNuclSequence_Local)
     RetrieveLargeNuclSequence(false);
 }
 
-#ifdef USE_WITH_TEST_SYSTEM /* temporarily disabled until blast4 is updated in production */
 BOOST_AUTO_TEST_CASE(RetrieveLargeNuclSequence_Remote)
 {
     RetrieveLargeNuclSequence(true);
 }
-#endif
 
 void RetrievePartsOfLargeChromosome(bool is_remote)
 {
@@ -304,14 +302,11 @@ BOOST_AUTO_TEST_CASE(RetrievePartsOfLargeChromosome_Remote)
     RetrievePartsOfLargeChromosome(true);
 }
 
+#ifndef _DEBUG
 /* Only execute this in release mode as debug might be too slow */
 void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
 {
-#ifndef _DEBUG
-    const time_t kTimeMax = 15;
-#else
-    const time_t kTimeMax = 60*15;       // 15 minutes
-#endif /* _DEBUG */
+    const time_t kTimeMax = is_remote ? 330 : 15;	// timeout in seconds
     const string kAccession("NC_000001");
 
     const string db("nucl_dbs");
@@ -340,7 +335,6 @@ void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
     BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
 }
 
-#ifndef _DEBUG  // don't run this in debug mode... takes too long!
 BOOST_AUTO_TEST_CASE(RetrieveLargeChromosomeWithTimeOut_Local)
 {
     RetrieveLargeChromosomeWithTimeOut(false);
