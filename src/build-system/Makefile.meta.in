@@ -39,8 +39,12 @@ check_add = $(abs_top_srcdir)/scripts/common/check/check_add.sh
 NOTK_BRA = test "$$expendable" = true || case "$(MFLAGS)" in *k*) ;; *)
 NOTK_KET = ;; esac
 
-# Non-redundant flags (avoid --jobserver-fds=* proliferation)
-MFLAGS_NR = $(MFLAGS:--jobserver-fds%=)
+# Non-redundant flags (will be overridden for GNU Make to avoid
+# --jobserver-fds=* proliferation)
+MFLAGS_NR = $(MFLAGS)
+
+include $(top_srcdir)/src/build-system/Makefile.is_gmake
+include $(top_srcdir)/src/build-system/Makefile.meta.$(is_gmake)
 
 deactivate = unlink
 @IF_DEACTIVATING@ deactivate = deactivate

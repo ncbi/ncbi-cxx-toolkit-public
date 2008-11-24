@@ -1,0 +1,9 @@
+# $Id$
+
+# Work around GNU Make's tendency to double its automatic
+# --jobserver-fds=* flag's usage with each level of recursion, by
+# constructing an alternate MFLAGS_NR variable that limits its
+# occurrence to a single instance.  (Stripping it altogether backfires
+# with the patched make Mac OS X 10.5 ships.)
+
+MFLAGS_NR = $(filter-out --jobserver-fds=%,$(MFLAGS)) $(word 1,$(filter --jobserver-fds=%,$(MFLAGS)))
