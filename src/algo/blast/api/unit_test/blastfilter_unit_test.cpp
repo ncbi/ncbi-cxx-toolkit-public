@@ -130,7 +130,7 @@ static void x_TestGetSeqLocInfoVector(EBlastProgramType program,
                 ? CSeqLocInfo::eFrameNotSet
                 : BLAST_ContextToFrame(program, context);
             BOOST_REQUIRE_MESSAGE(frame == (*itr)->GetFrame(), 
-                                  CNcbiOstrstreamToString(ss));
+                                  (string)CNcbiOstrstreamToString(ss));
 
             // Validate the artificially built offsets of the mask
             const BlastSeqLoc* loc = 
@@ -139,10 +139,10 @@ static void x_TestGetSeqLocInfoVector(EBlastProgramType program,
             TSeqRange offsets(loc->ssr->left, loc->ssr->right);;
             BOOST_REQUIRE_MESSAGE
                 (offsets.GetFrom() == (*itr)->GetInterval().GetFrom(), 
-                                  CNcbiOstrstreamToString(ss));
+                 (string)CNcbiOstrstreamToString(ss));
             BOOST_REQUIRE_MESSAGE
                 (offsets.GetTo() == (*itr)->GetInterval().GetTo(),
-                                  CNcbiOstrstreamToString(ss));
+                 (string)CNcbiOstrstreamToString(ss));
             ++context;
         }
         BOOST_REQUIRE_EQUAL(kNumMasks, context);
@@ -1412,15 +1412,15 @@ BOOST_AUTO_TEST_CASE(ConvertTranslatedFilterOffsets)
             CNcbiOstrstream os;
             os << "Context " << index << " has no mask!";
             BOOST_REQUIRE_MESSAGE(mask_loc->seqloc_array[index], 
-                                  CNcbiOstrstreamToString(os));
+                                  (string)CNcbiOstrstreamToString(os));
         }}
         const SSeqRange* range = mask_loc->seqloc_array[index]->ssr;
         CNcbiOstrstream os;
         os << "Context " << index;
         BOOST_REQUIRE_MESSAGE(kProtStarts[index] == range->left,
-                              CNcbiOstrstreamToString(os));
+                              (string)CNcbiOstrstreamToString(os));
         BOOST_REQUIRE_MESSAGE(kProtEnds[index] == range->right,
-                              CNcbiOstrstreamToString(os));
+                              (string)CNcbiOstrstreamToString(os));
     }
 
     BlastMaskLocProteinToDNA(mask_loc, query_info);
@@ -1438,15 +1438,15 @@ BOOST_AUTO_TEST_CASE(ConvertTranslatedFilterOffsets)
             CNcbiOstrstream os;
             os << "Context " << index << " has no mask!";
             BOOST_REQUIRE_MESSAGE(mask_loc->seqloc_array[index],
-                                  CNcbiOstrstreamToString(os));
+                                  (string)CNcbiOstrstreamToString(os));
         }}
         const SSeqRange* range = mask_loc->seqloc_array[index]->ssr;
         CNcbiOstrstream os;
         os << "Context " << index;
         BOOST_REQUIRE_MESSAGE(kNuclStarts[index] == range->left,
-                              CNcbiOstrstreamToString(os));
+                              (string)CNcbiOstrstreamToString(os));
         BOOST_REQUIRE_MESSAGE(kNuclEnds[index] == range->right,
-                              CNcbiOstrstreamToString(os));
+                              (string)CNcbiOstrstreamToString(os));
     }
 
 }
