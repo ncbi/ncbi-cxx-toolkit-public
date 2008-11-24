@@ -290,8 +290,9 @@ public:
         eAcc_prf = e_Prf | eAcc_other | fAcc_prot,
         eAcc_pdb = e_Pdb | eAcc_other, // not necessarily protein!
 
-        eAcc_gb_tpa_nuc  = e_Tpg | eAcc_other | fAcc_nuc,    // BK
-        eAcc_gb_tpa_prot = e_Tpg | eAcc_other | fAcc_prot,   // DAA
+        eAcc_gb_tpa_nuc     = e_Tpg | eAcc_other | fAcc_nuc,  // BK
+        eAcc_gb_tpa_prot    = e_Tpg | eAcc_other | fAcc_prot, // DAA
+        eAcc_gb_tpa_wgs_nuc = e_Tpg | eAcc_other | fAcc_nuc,  // DAAA
 
         eAcc_embl_tpa_nuc  = e_Tpe | eAcc_other | fAcc_nuc,  // BN
         eAcc_embl_tpa_prot = e_Tpe | eAcc_other | fAcc_prot, // CAD29848
