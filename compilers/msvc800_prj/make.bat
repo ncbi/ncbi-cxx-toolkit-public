@@ -151,6 +151,15 @@ SET CHECKSH=%LIBDLL%/build/%SOLUTION%.check/%CFG%/check.sh
 bash -c "%CHECKSH% run; exit $?"
 IF ERRORLEVEL 1 SET ERRORLEV=1
 bash -c "cp %CHECKSH%.journal check.sh.%LIBDLL%_%CFG%.journal; cp %CHECKSH%.log check.sh.%LIBDLL%_%CFG%.log"
+
+REM Load testsuite results into DB works only if NCBI_AUTOMATED_BUILD is set to 1
+IF .%NCBI_AUTOMATED_BUILD% == .1 GOTO LOADDB
+GOTO NOLOADDB
+:LOADDB
+bash -c "%CHECKSH% load_to_db; exit $?"
+IF ERRORLEVEL 1 SET ERRORLEV=1
+:NOLOADDB
+
 SHIFT
 IF _%5% == _ GOTO CHECKEND
 SET CFG=%5%
