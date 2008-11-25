@@ -290,10 +290,8 @@ bool CReadBlastApp::overlaps_prot_na
 
        if(PrintDetails()) NcbiCerr << "overlaps_prot_na[seq,feats]: created RNA buffer: "     << buff_misc_feat_rna.str()     << "\n";
        if(PrintDetails()) NcbiCerr << "overlaps_prot_na[seq,feats]: created protein buffer: " << buff_misc_feat_protein.str() << "\n";
-/*
-       problemStr problem = {eRnaOverlap,  buffer.str(), misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };
+       problemStr problem = {eRnaOverlap,  buffer.str(), "", "", "", -1, -1, eNa_strand_unknown };
        m_diag[n1].problems.push_back(problem);
-*/
        bool removeit=false;
        string removen = "";
 //       problemStr problemCOH = {eRemoveOverlap, "", misc_feat.str(), "", "", mint, maxt, eNa_strand_unknown };
