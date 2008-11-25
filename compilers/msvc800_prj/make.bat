@@ -1,17 +1,17 @@
 @ECHO OFF
 REM $Id$
 REM ===========================================================================
-REM 
+REM
 REM                            PUBLIC DOMAIN NOTICE
 REM               National Center for Biotechnology Information
-REM 
+REM
 REM  This software/database is a "United States Government Work" under the
 REM  terms of the United States Copyright Act.  It was written as part of
 REM  the author's official duties as a United States Government employee and
 REM  thus cannot be copyrighted.  This software/database is freely available
 REM  to the public for use. The National Library of Medicine and the U.S.
 REM  Government have not placed any restriction on its use or reproduction.
-REM 
+REM
 REM  Although all reasonable efforts have been taken to ensure the accuracy
 REM  and reliability of the software and data, the NLM and the U.S.
 REM  Government do not and cannot warrant the performance or results that
@@ -19,11 +19,11 @@ REM  may be obtained by using this software or data. The NLM and the U.S.
 REM  Government disclaim all warranties, express or implied, including
 REM  warranties of performance, merchantability or fitness for any particular
 REM  purpose.
-REM 
+REM
 REM  Please cite the author in any work or product based on this material.
-REM  
+REM
 REM ===========================================================================
-REM 
+REM
 REM Author:  Vladimir Ivanov
 REM
 REM Configure/build/check NCBI C++ tree in specified configuration(s)
@@ -47,6 +47,9 @@ SET SOLUTION=%2%
 SET LIBDLL=%3%
 SET ARCH=%4%
 SET CFG=%5%
+
+SET COMPILER=msvc8
+IF _%SRV_NAME% == _ SET SRV_NAME=%COMPUTERNAME%
 
 IF _%CMD% == _      GOTO USAGE
 IF _%SOLUTION% == _ GOTO USAGE
