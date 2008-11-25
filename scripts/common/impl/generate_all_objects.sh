@@ -22,6 +22,7 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/build-system/project_tree_builder/msvc71_project.dtd \
   src/app/sample/asn/sample_asn.asn src/app/sample/soap/soap_dataobj.xsd \
   src/internal/objects/*/*.asn src/internal/mapview/objects/*/*.asn \
+  src/internal/ncbi_ls/asn/*.asn \
   src/internal/gbench/app/sviewer/objects/*.asn \
   src/internal/gbench/plugins/radar/lib/*.asn \
   src/internal/blast/SplitDB/asn*/*.asn \

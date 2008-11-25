@@ -4730,6 +4730,9 @@ if test "$with_sss" != "no" ; then
       NCBI_SSS_INCLUDE="\$(incdir)/sss"
       NCBI_SSS_LIBPATH="\$(libdir)"
       NCBI_PACKAGE(LocalSSS)
+      if test -f "$local_sss/../ncbi_ls/asn/login.asn"; then
+         NCBI_PACKAGE(LocalNCBILS)
+      fi
    else
       with_included_sss=no
    fi
