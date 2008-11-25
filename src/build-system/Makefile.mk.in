@@ -582,6 +582,9 @@ BLAST_FORMATTER_MINIMAL_LIBS = xblastformat gene_info xalnmgr blastxml xcgi \
     xhtml
 # BLAST_FORMATTER_LIBS = $(BLAST_FORMATTER_MINIMAL_LIBS)
 BLAST_FORMATTER_LIBS = $(BLAST_INPUT_LIBS)
+# Enable this definition of BLAST_INPUT_LIBS after the toolkit is stabilized
+#BLAST_INPUT_LIBS = blastinput xregexp $(PCRE_LIB) ncbi_xloader_blastdb \
+#    ncbi_xloader_blastdb_rmt $(BLAST_FORMATTER_MINIMAL_LIBS)
 BLAST_INPUT_LIBS = blastinput xregexp $(PCRE_LIB) ncbi_xloader_blastdb \
     $(BLAST_FORMATTER_MINIMAL_LIBS)
 
