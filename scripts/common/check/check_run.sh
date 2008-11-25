@@ -90,9 +90,8 @@ esac
 $CHECK_RUN_FILE run
 result=$?
 
-if test $result -eq 0 -a -n "$NCBI_AUTOMATED_BUILD"; then
+if test -n "$NCBI_AUTOMATED_BUILD"; then
    $CHECK_RUN_FILE load_to_db
-   result=$?
 fi
 
 
