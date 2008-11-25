@@ -43,6 +43,9 @@
 #include <objects/seq/Seq_ext.hpp>
 #include <corelib/ncbi_limits.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
+
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
 #  undef numeric_limits
