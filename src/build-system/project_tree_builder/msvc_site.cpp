@@ -170,7 +170,9 @@ bool CMsvcSite::IsProvided(const string& thing, bool deep) const
 
 bool CMsvcSite::IsDescribed(const string& section) const
 {
-    return m_Registry.HasEntry(section);
+    return m_Registry.HasEntry(section) ||
+           m_Registry.HasEntry(section + "." +
+                CMsvc7RegSettings::GetMsvcRegSection());
 }
 
 
@@ -218,6 +220,9 @@ void CMsvcSite::GetLibInfo(const string& lib,
     if (CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
         section += '.';
         section += CMsvc7RegSettings::GetMsvcRegSection();
+        if (!IsDescribed(section)) {
+            section = lib;
+        }
     }
     libinfo->Clear();
     libinfo->valid = IsDescribed(section);
@@ -592,16 +597,36 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
         return false;
     }
     if ( !lib_info.m_LibPath.empty()) {
-        ITERATE(list<string>, p, lib_info.m_Libs) {
-            const string& lib = *p;
-            string lib_path_abs = CDirEntry::ConcatPath(lib_info.m_LibPath, lib);
-            if ( !lib_path_abs.empty() &&
-                 !x_DirExists(lib_path_abs) ) {
-                if (!silent) {
-                    PTB_WARNING_EX(lib_path_abs, ePTB_PathNotFound,
-                                   "LIB path not found");
+        if (CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
+            ITERATE(list<string>, p, lib_info.m_Libs) {
+                string lib = *p;
+                if (NStr::StartsWith(lib, "-l")) {
+                    NStr::ReplaceInPlace(lib, "-l", "lib");
+                    string lib_path_abs = CDirEntry::ConcatPath(lib_info.m_LibPath, lib);
+                    if ( !lib_path_abs.empty() &&
+                        !x_DirExists(lib_path_abs+".a") &&
+                        !x_DirExists(lib_path_abs+".dylib") ) {
+                        if (!silent) {
+                            PTB_WARNING_EX(lib_path_abs, ePTB_PathNotFound,
+                                        "LIB path not found");
+                        }
+                        return false;
+                    }
+                    
                 }
-                return false;
+            }
+        } else {
+            ITERATE(list<string>, p, lib_info.m_Libs) {
+                const string& lib = *p;
+                string lib_path_abs = CDirEntry::ConcatPath(lib_info.m_LibPath, lib);
+                if ( !lib_path_abs.empty() &&
+                    !x_DirExists(lib_path_abs) ) {
+                    if (!silent) {
+                        PTB_WARNING_EX(lib_path_abs, ePTB_PathNotFound,
+                                    "LIB path not found");
+                    }
+                    return false;
+                }
             }
         }
     }
@@ -687,6 +712,9 @@ string CMsvcSite::ToOSPath(const string& path)
 {
     string xpath(path);
     char separator = CDirEntry::GetPathSeparator();
+#ifdef PSEUDO_XCODE
+    separator = '/';
+#endif
     for (size_t i = 0; i < xpath.length(); i++) {
         char c = xpath[i];
         if ( (c == '\\' || c == '/') && c != separator) {

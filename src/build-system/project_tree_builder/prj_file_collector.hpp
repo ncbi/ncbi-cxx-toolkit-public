@@ -69,10 +69,8 @@ public:
     {
         return m_Headers;
     }
-    const list<string>& GetIncludeDirs(void) const
-    {
-        return m_IncludeDirs;
-    }
+    bool GetIncludeDirs(list<string>& dirs, const SConfigInfo& cfg) const;
+    bool GetLibraryDirs(list<string>& dirs, const SConfigInfo& cfg) const;
     const list<string>& GetDataSpecs(void) const
     {
         return m_DataSpecs;
@@ -87,7 +85,6 @@ public:
 private:
     void CollectSources(void);
     void CollectHeaders(void);
-    void CollectIncludeDirs(void);
     void CollectDataSpecs(void);
 
     const CProjItem& m_ProjItem;
@@ -98,7 +95,6 @@ private:
     list<string> m_Sources;
     list<string> m_ConfigurableSources;
     list<string> m_Headers;
-    list<string> m_IncludeDirs;
     list<string> m_DataSpecs;
 };
 #endif

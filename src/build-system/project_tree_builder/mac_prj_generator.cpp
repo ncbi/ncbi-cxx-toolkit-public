@@ -611,13 +611,22 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
 {
     const CMsvcMetaMakefile& metamake( GetApp().GetMetaMakefile());
     bool dll_build = GetApp().GetBuildType().GetType() == CBuildType::eDll;
-    string lib_paths(m_OutputDir + "lib/$(CONFIGURATION)");
+    string def_lib_path(m_OutputDir + "lib/$(CONFIGURATION)");
     string libs_out(m_OutputDir + "lib/$(CONFIGURATION)");
     string bins_out(m_OutputDir + "bin/$(CONFIGURATION)");
     string proj_dir("$(PROJECT_DIR)/");
 //    string temp_dir("$(BUILD_DIR)/$(CONFIGURATION)");
     string temp_dir("$(OBJROOT)/$(CONFIGURATION)");
 
+    CRef<CArray> lib_paths(new CArray);
+    AddString(*lib_paths, def_lib_path);
+    list<string> prj_lib_dirs;
+    if (prj_files.GetLibraryDirs(prj_lib_dirs, cfg)) {
+        ITERATE ( list<string>, f, prj_lib_dirs) {
+            AddString( *lib_paths, GetRelativePath( *f));
+        }
+    }
+    
     CRef<CDict> settings( AddDict( dict_cfg, "buildSettings"));
     AddString( dict_cfg, "isa", "XCBuildConfiguration");
     AddString( dict_cfg, "name", cfg.m_Name);
@@ -642,7 +651,7 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddString( *settings, "INSTALL_PATH", proj_dir + libs_out);
         AddString( *settings, "OBJROOT", m_OutputDir + "build");
 
-        AddString( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
+        AddArray( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
         AddString( *settings, "EXECUTABLE_PREFIX", "lib");
 
     } else if (prj.m_ProjType == CProjKey::eApp) {
@@ -652,7 +661,7 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddString( *settings, "INSTALL_PATH", proj_dir + bins_out);
         AddString( *settings, "OBJROOT", m_OutputDir + "build");
 
-        AddString( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
+        AddArray( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
         AddString( *settings, "MACH_O_TYPE", "mh_execute");
     }
 // library dependencies
@@ -689,11 +698,14 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
     }
 
     CRef<CArray> inc_dirs( AddArray( *settings, "HEADER_SEARCH_PATHS"));
-    ITERATE ( list<string>, f, prj_files.GetIncludeDirs()) {
-        if (CSymResolver::HasDefine(*f)) {
-            continue;
+    list<string> prj_inc_dirs;
+    if (prj_files.GetIncludeDirs(prj_inc_dirs, cfg)) {
+        ITERATE ( list<string>, f, prj_inc_dirs) {
+            if (CSymResolver::HasDefine(*f)) {
+                continue;
+            }
+            AddString( *inc_dirs, GetRelativePath( *f));
         }
-        AddString( *inc_dirs, GetRelativePath( *f));
     }
     AddString( *inc_dirs, "/sw/include");
     AddString( *settings, "PRODUCT_NAME", GetTargetName(prj));
@@ -722,12 +734,14 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         if (!pch_name.empty()) {
             string pch_path;
             // find header (MacOS requires? path)
-            ITERATE ( list<string>, f, prj_files.GetIncludeDirs()) {
-                if (pch_path.empty()) {
-                    string t = CDirEntry::ConcatPath( *f, pch_name);
-                    if (CDirEntry(t).IsFile()) {
-                        pch_path = t;
-                        break;
+            if (prj_files.GetIncludeDirs(prj_inc_dirs, cfg)) {
+                ITERATE ( list<string>, f, prj_inc_dirs) {
+                    if (pch_path.empty()) {
+                        string t = CDirEntry::ConcatPath( *f, pch_name);
+                        if (CDirEntry(t).IsFile()) {
+                            pch_path = t;
+                            break;
+                        }
                     }
                 }
             }

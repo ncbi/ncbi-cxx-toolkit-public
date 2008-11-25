@@ -270,9 +270,11 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     list<string> dirs;
     string dir;
 
-    string config_inc = CDirEntry::AddTrailingPathSeparator(GetApp().m_IncDir);
-    config_inc = CDirEntry::CreateRelativePath(m_ProjectDir, config_inc);
-    add_include_dirs_list.push_back( config_inc );
+    if (!GetApp().m_IncDir.empty()) {
+        string config_inc = CDirEntry::AddTrailingPathSeparator(GetApp().m_IncDir);
+        config_inc = CDirEntry::CreateRelativePath(m_ProjectDir, config_inc);
+        add_include_dirs_list.push_back( config_inc );
+    }
 
     // project dir
     string tree_inc = CDirEntry::CreateRelativePath(m_ProjectDir, 

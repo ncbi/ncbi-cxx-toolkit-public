@@ -33,6 +33,7 @@
 #include "prj_file_collector.hpp"
 #include "configurable_file.hpp"
 #include "ptb_err_codes.hpp"
+#include "msvc_prj_defines.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -115,7 +116,6 @@ void CProjectFileCollector::DoCollect(void)
 {
     CollectSources();
     CollectHeaders();
-    CollectIncludeDirs();
     CollectDataSpecs();
 }
 
@@ -199,26 +199,6 @@ void CProjectFileCollector::CollectHeaders(void)
     m_Headers.sort(s_Name_less);
 }
 
-void CProjectFileCollector::CollectIncludeDirs(void)
-{
-// root
-    string root_inc( CDirEntry::AddTrailingPathSeparator(
-        GetApp().GetProjectTreeInfo().m_Include));
-    m_IncludeDirs.push_back(root_inc);
-
-// internal, if present
-    string internal_inc = CDirEntry::ConcatPath(root_inc,"internal");
-    if (CDirEntry(internal_inc).IsDir()) {
-        m_IncludeDirs.push_back(
-            CDirEntry::AddTrailingPathSeparator(internal_inc) );
-    }
-    
-// project specific
-    ITERATE( list<string>, i, m_ProjItem.m_IncludeDirs) {
-        m_IncludeDirs.push_back( *i);
-    }
-}
-
 void CProjectFileCollector::CollectDataSpecs(void)
 {
     m_DataSpecs.clear();
@@ -226,6 +206,52 @@ void CProjectFileCollector::CollectDataSpecs(void)
         m_DataSpecs.push_back(CDirEntry::ConcatPath(d->m_SourceBaseDir, d->m_SourceFile));
             NStr::Join(d->m_ImportModules, " ");
     }
+}
+
+bool CProjectFileCollector::GetIncludeDirs(list<string>& inc_dirs, const SConfigInfo& cfg) const
+{
+    inc_dirs.clear();
+    string alldirs = m_ProjContext.AdditionalIncludeDirectories(cfg);
+    list<string> dirs;
+    NStr::Split(alldirs, LIST_SEPARATOR, dirs);
+    ITERATE( list<string>, i, dirs) {
+        string dir;
+#ifdef PSEUDO_XCODE
+        if (NStr::StartsWith(*i, '/')) {
+#else
+        if (CDirEntry::IsAbsolutePath(*i)) {
+#endif
+            dir = *i;
+        } else {
+            dir = CDirEntry::NormalizePath(
+                CDirEntry::ConcatPath( m_ProjContext.ProjectDir(), *i));
+        }
+        inc_dirs.push_back( dir);
+    }
+    return !inc_dirs.empty();
+}
+
+bool CProjectFileCollector::GetLibraryDirs(list<string>& lib_dirs, const SConfigInfo& cfg) const
+{
+    lib_dirs.clear();
+    string alldirs = m_ProjContext.AdditionalLibraryDirectories(cfg);
+    list<string> dirs;
+    NStr::Split(alldirs, LIST_SEPARATOR, dirs);
+    ITERATE( list<string>, i, dirs) {
+        string dir;
+#ifdef PSEUDO_XCODE
+        if (NStr::StartsWith(*i, '/')) {
+#else
+        if (CDirEntry::IsAbsolutePath(*i)) {
+#endif
+            dir = *i;
+        } else {
+            dir = CDirEntry::NormalizePath(
+                CDirEntry::ConcatPath( m_ProjContext.ProjectDir(), *i));
+        }
+        lib_dirs.push_back( dir);
+    }
+    return !lib_dirs.empty();
 }
 
 string CProjectFileCollector::GetDataSpecImports(const string& spec) const
