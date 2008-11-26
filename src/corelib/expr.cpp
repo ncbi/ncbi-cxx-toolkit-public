@@ -26,7 +26,7 @@
  * Author: Sergey Sikorskiy
  *
  * File Description: 
- *      Expresiion parsing and evaluation.
+ *      Expression parsing and evaluation.
  *
  * ===========================================================================
  */
