@@ -132,6 +132,18 @@ NCBI_PARAM_DECL(string, NCBI, TmpDir);
 NCBI_PARAM_DEF (string, NCBI, TmpDir, kEmptyStr);
 
 
+// Define how read-only files are treated on Windows.
+// Registry file:
+//     [NCBI]
+//     DeleteReadOnlyFiles = true/false
+// Environment variable:
+//     NCBI_CONFIG__DeleteReadOnlyFiles
+//
+NCBI_PARAM_DECL(bool, NCBI, DeleteReadOnlyFiles);
+NCBI_PARAM_DEF_EX(bool, NCBI, DeleteReadOnlyFiles, false,
+    eParam_NoThread, NCBI_CONFIG__DeleteReadOnlyFiles);
+
+
 // Declare the parameter to turn on logging from CFile,
 // CDirEntry, etc. classes.
 // Registry file:
@@ -1891,8 +1903,23 @@ bool CDirEntry::Remove(EDirRemoveMode mode) const
     }
     // Other entries
     if ( remove(GetPath().c_str()) != 0 ) {
-        if (mode == eRecursiveIgnoreMissing && errno == ENOENT)
-            return true;
+        switch (errno) {
+        case ENOENT:
+            if (mode == eRecursiveIgnoreMissing)
+                return true;
+            break;
+
+#if defined(NCBI_OS_MSWIN)
+        case EACCES:
+            if (NCBI_PARAM_TYPE(NCBI, DeleteReadOnlyFiles)::GetDefault()) {
+                if (!SetMode(eDefault))
+                    return false;
+
+                if (remove(GetPath().c_str()) == 0)
+                    return true;
+            }
+#endif
+        }
 
         LOG_ERROR_AND_RETURN_ERRNO(
             "CDirEntry::Remove(): Could not remove " << GetPath());
@@ -5448,5 +5475,10 @@ void CFileAPI::SetLogging(ESwitch on_off_default)
             on_off_default != eOff : DEFAULT_LOGGING_VALUE);
 }
 
+void CFileAPI::SetDeleteReadOnlyFiles(ESwitch on_off_default)
+{
+    NCBI_PARAM_TYPE(NCBI, DeleteReadOnlyFiles)::SetDefault(
+        on_off_default == eOn);
+}
 
 END_NCBI_SCOPE

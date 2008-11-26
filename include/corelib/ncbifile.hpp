@@ -188,6 +188,15 @@ public:
     ///   Switch between logging enabled (eOn), disabled (eOff),
     ///   or reset to the default state (currently disabled).
     static void SetLogging(ESwitch on_off_default);
+
+    /// Specify whether read-only files can be deleted via
+    /// CDirEntry::Remove() on Windows.
+    ///
+    /// @param on_off_default
+    ///   When set to eOn, allows read-only files to be deleted.
+    ///   Otherwise, an attempt to delete a read-only files will
+    ///   return an error (EACCES).
+    static void SetDeleteReadOnlyFiles(ESwitch on_off_default);
 };
 
 
