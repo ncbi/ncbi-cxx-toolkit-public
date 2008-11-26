@@ -95,12 +95,13 @@ for ((i = 0; i < 7; ++i)); do
     fi
 
     PLATF_DIR="${PLATF_FILE%%.tar.gz}"
-    mkdir -p "${PLATF_DIR}"
+    PLATF_SRC_DIR="${PLATF_SRC_FILE%%.tar.gz}"
     PLATF_ATTIC_DIR="${ATTIC_DIR}/${PLATF_DIR_NAMES[$i]}"
     mkdir -p "${PLATF_ATTIC_DIR}"
-    tar -zxf "${PLATF_FILE}" -C "${PLATF_DIR}" || exit 6
+    tar -zxf "${PLATF_FILE}" || exit 6
+    tar -zxf "${PLATF_SRC_FILE}" || exit 16
 
-    tar -zxf "${PLATF_SRC_FILE}" -C "${ATTIC_SRC_DIR}" || exit 16
+    mv "${PLATF_SRC_DIR}"/* "${ATTIC_SRC_DIR}" || exit 17
 
     EXE=""
     if [[ "${PLATF_FILE_MASKS[$i]}" == *"Win64"* ]]; then
