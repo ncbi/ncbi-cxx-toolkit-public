@@ -10,8 +10,7 @@ SRC = remote_blast_demo
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-BLAST_INPUT_LIBS = blastinput xregexp $(PCRE_LIB)
-LIB_ = $(BLAST_INPUT_LIBS) ncbi_xloader_blastdb $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB_ = $(BLAST_INPUT_LIBS) ncbi_xloader_blastdb_rmt $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(PCRE_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

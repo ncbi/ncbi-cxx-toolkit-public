@@ -1,0 +1,7 @@
+# $Id$
+
+LIB = ncbi_xloader_blastdb_rmt
+SRC = remote_blastdb_adapter
+
+ASN_DEP = seq seqset seqdb blastdb xnetblast
+

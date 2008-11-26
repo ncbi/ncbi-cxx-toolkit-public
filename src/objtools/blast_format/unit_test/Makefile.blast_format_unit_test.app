@@ -9,7 +9,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-LIB_ = $(BLAST_FORMATTER_LIBS) ncbi_xloader_remoteblast $(BLAST_LIBS) \
+LIB_ = $(BLAST_FORMATTER_LIBS) ncbi_xloader_blastdb_rmt $(BLAST_LIBS) \
 	$(OBJMGR_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC))
