@@ -101,7 +101,8 @@ for ((i = 0; i < 7; ++i)); do
     tar -zxf "${PLATF_FILE}" || exit 6
     tar -zxf "${PLATF_SRC_FILE}" || exit 16
 
-    mv "${PLATF_SRC_DIR}"/* "${ATTIC_SRC_DIR}" || exit 17
+    cp -R "${PLATF_SRC_DIR}"/* "${ATTIC_SRC_DIR}" || exit 17
+    rm -rf "${PLATF_SRC_DIR}"
 
     EXE=""
     if [[ "${PLATF_FILE_MASKS[$i]}" == *"Win64"* ]]; then
