@@ -976,10 +976,10 @@ BOOST_AUTO_TEST_CASE(s_Split)
     for (size_t i = 0; i < sizeof(s_SplitStr) / sizeof(s_SplitStr[0]); i++) {
         NStr::Split(s_SplitStr[i], s_SplitDelim[i], split);
     }
-    size_t i = 0;
+    size_t j = 0;
     ITERATE(list<string>, it, split) {
-        BOOST_CHECK(i < sizeof(split_result) / sizeof(split_result[0]));
-        BOOST_CHECK(NStr::Compare(*it, split_result[i++]) == 0);
+        BOOST_CHECK(j < sizeof(split_result) / sizeof(split_result[0]));
+        BOOST_CHECK(NStr::Compare(*it, split_result[j++]) == 0);
     }
     OK;
 }
