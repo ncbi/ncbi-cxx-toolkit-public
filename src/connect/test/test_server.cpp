@@ -101,12 +101,12 @@ public:
     unsigned int GetRandomDelay(void) const;
 
 private:
-    int                m_MaxNumberOfClients;   ///< Limit on total connections
-    CAtomicCounter     m_ClientCount;          ///< Number of connections so far
-    unsigned int       m_MaxDelay;             ///< Max processing time, in ms
-    volatile bool      m_ShutdownRequested;    ///< Done with the last client?
-    mutable CRandom    m_Rng;                  ///< Random delay generator
-    mutable CFastMutex m_RngMutex;             ///< Ensure RNG thread-safety
+    int                m_MaxNumberOfClients;  ///< Limit on total connections
+    CAtomicCounter     m_ClientCount;         ///< Number of connections so far
+    unsigned int       m_MaxDelay;            ///< Max processing time, in ms
+    volatile bool      m_ShutdownRequested;   ///< Done with the last client?
+    mutable CRandom    m_Rng;                 ///< Random delay generator
+    mutable CFastMutex m_RngMutex;            ///< Ensure RNG thread-safety
 };
 
 
@@ -193,13 +193,13 @@ void CTestConnectionHandler::OnTimer(void)
 void CTestConnectionHandler::OnMessage(BUF buf)
 {
     char data[1024];
-    CSocket &socket = GetSocket();
+    CSocket& socket = GetSocket();
 
     size_t msg_size = BUF_Read(buf, data, sizeof(data));
     if (msg_size > 0) {
-        ERR_POST(Info << "got \"" << string(data, msg_size) << "\"");
+        ERR_POST(Info << "Got \"" << string(data, msg_size) << "\"");
     } else {
-        ERR_POST(Info << "got empty line");
+        ERR_POST(Info << "Got empty line");
     }
 
     if (m_State != Read) {
@@ -291,6 +291,7 @@ void CConnectionRequest::Process(void)
 
     string junk;
 
+    // FIXME: May not be always possible to read here (eg connection refused)
     stream >> junk;
 
     stream << "Hello!" << endl;
@@ -306,7 +307,8 @@ class CServerTestApp : public CNcbiApplication
 {
 public:
     virtual void Init(void);
-    virtual int  Run(void);
+    virtual int  Run (void);
+    virtual void Exit(void);
 };
 
 
@@ -356,12 +358,19 @@ void CServerTestApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
+void CServerTestApp::Exit(void)
+{
+    CORE_SetLOG(0);
+    CORE_SetLOCK(0);
+}
+
 // Check for shutdown request every second
 static STimeout kAcceptTimeout = { 1, 0 };
 
 int CServerTestApp::Run(void)
 {
     SetDiagPostLevel(eDiag_Info);
+    SetDiagPostAllFlags(eDPF_Severity | eDPF_OmitInfoSev | eDPF_ErrorID);
 
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
     CRequestRateControl rate_control(6);

@@ -63,26 +63,33 @@ extern int g_NCBI_ConnectSrandAddend(void)
 
 extern const char* g_CORE_Sprintf(const char* fmt, ...)
 {
-    static char str[4096];
+    char*   buf;
     va_list args;
 
+    if (!(buf = (char*) malloc(4096)))
+        return 0;
+    *buf = '\0';
+
     va_start(args, fmt);
-    *str = '\0';
-    vsprintf(str, fmt, args);
-    assert(strlen(str) < sizeof(str));
+#ifdef HAVE_VSNPRINTF
+    vsnprintf(buf, 4096, fmt, args);
+#else
+    vsprintf (buf,       fmt, args);
+#endif /*HAVE_VSNPRINTF*/
+    assert(strlen(buf) < sizeof(buf));
     va_end(args);
-    return str;
+    return buf;
 }
 
 
-extern char* g_CORE_RegistryGET
+extern const char* g_CORE_RegistryGET
 (const char* section,
  const char* name,
  char*       value,
  size_t      value_size,
  const char* def_value)
 {
-    char* ret_value;
+    const char* ret_value;
     CORE_LOCK_READ;
     ret_value = REG_Get(g_CORE_Registry,
                         section, name, value, value_size, def_value);

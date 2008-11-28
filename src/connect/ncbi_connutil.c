@@ -961,7 +961,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
 
     if (!info) {
         LOG_Write(lg, NCBI_C_ERRCODE_X, 10, eLOG_Trace, 0, 0, 0,
-                  "ConnNetInfo_Log: NULL info");
+                  "ConnNetInfo_Log: NULL info", 0, 0);
         return;
     }
 
@@ -974,7 +974,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
                              (info->http_referer
                               ? strlen(info->http_referer) : 0)))) {
         LOG_WRITE(lg, NCBI_C_ERRCODE_X, 11, eLOG_Error,
-                  "ConnNetInfo_Log: Cannot alloc temp buffer");
+                  "ConnNetInfo_Log: Cannot allocate temporary buffer");
         return;
     }
 
@@ -1027,7 +1027,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
     s_SaveBool      (s, "proxy_adjusted",  info->http_proxy_adjusted);
     strcat(s, "#################### [END] SConnNetInfo\n");
 
-    LOG_Write(lg, NCBI_C_ERRCODE_X, 12, eLOG_Trace, 0, 0, 0, s);
+    LOG_Write(lg, NCBI_C_ERRCODE_X, 12, eLOG_Trace, 0, 0, 0, s, 0, 0);
     free(s);
 }
 

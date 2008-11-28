@@ -104,34 +104,22 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
  */
 
 
-/** Slightly customized LOG_WriteInternal() -- to distinguish between
- * logging only a message vs logging a message with some data.
- * @sa
- *  LOG_WriteInternal
- */
-#define LOG_Write(lg,code,subcode,level,module,file,line,message)       \
-  LOG_WriteInternal(lg,level,module,file,line,message,0,0,code,subcode)
-
-#define LOG_Data(lg,code,subcode,level,module,file,line,data,size,message) \
-  LOG_WriteInternal(lg,level,module,file,line,message,data,size,code,subcode)
-
-
 /** Auxiliary plain macros to write message (maybe, with raw data) to the log.
  * @sa
- *   LOG_Write, LOG_Data
+ *   LOG_Write
  */
 #define  LOG_WRITE(lg, code, subcode, level, message)                   \
-  LOG_Write(lg, code, subcode, level, THIS_MODULE, THIS_FILE, __LINE__, \
-            message)
+    LOG_Write(lg, code, subcode, level, THIS_MODULE, THIS_FILE, __LINE__, \
+              message, 0, 0)
 
 #ifdef   LOG_DATA
 /* AIX's <pthread.h> defines LOG_DATA to be an integer constant;
    we must explicitly drop such definitions to avoid trouble */
 #  undef LOG_DATA
 #endif
-#define  LOG_DATA(lg, code, subcode, level, data, size, message)       \
-  LOG_Data(lg, code, subcode, level, THIS_MODULE, THIS_FILE, __LINE__, \
-           data, size, message)
+#define  LOG_DATA(lg, code, subcode, level, data, size, message)        \
+    LOG_Write(lg, code, subcode, level, THIS_MODULE, THIS_FILE, __LINE__, \
+              message, data, size)
 
 
 /** Defaults for the THIS_FILE and THIS_MODULE macros (used by LOG_WRITE).
@@ -300,46 +288,31 @@ extern NCBI_XCONNECT_EXPORT void LOG_ToFILE
 
 
 /** Add current "error" (and maybe its description) to the message:
- * <message>[ {error=[<error>][,][<descr>]}]
+ * <message>[ {error=[[<error>][,]][<descr>]}]
  * @param message
  *  [in]  message text (can be NULL)
+ * @param dynamic
+ *  [in]  non-zero means message was allocated from heap
  * @param error
  *  [in]  error code (if it is zero, then use "descr" only)
  * @param descr
  *  [in]  error description (if NULL, then use "strerror(error)" if error!=0)
- * @param buf
- *  [out] buffer to put the composed message to
- * @param buf_size
- *  [in]  buffer size available for use
+ * @param alloced
+ *  [out] non-zero if the resultant message has been allocated from heap
  * @return
- *  Return "buf" if composition occurred, else "message" (if non-empty) or ""
+ *  Always non-NULL message (perhaps, "") and set *alloced as appropriate.
+ * @li <b>NOTE:</b>  this routine calls "free(message)" if it had
+ * to reallocate the original message that was dynamically allocated.
  * @sa
  *  LOG_ComposeMessage
  */
 extern NCBI_XCONNECT_EXPORT const char* NcbiMessagePlusError
 (const char*  message,
+ int/*bool*/  dynamic,
  int          error,
  const char*  descr,
- char*        buf,
- size_t       buf_size
+ int*/*bool*/ alloced
  );
-
-
-/** Special log writing macro that makes use of a specified error number,
- * and an optional description thereof.
- * NOTE: Pass descr as NULL to get the standard errno description that
- * corresponds to the passed error value.
- */
-#define LOG_WRITE_ERRNO(lg, code, subcode, level, message,              \
-                        error, descr)                                   \
-do {                                                                    \
-    if ((lg)  ||  (level) == eLOG_Fatal) {                              \
-        char _buf[1024];                                                \
-        LOG_WRITE(lg, code, subcode, level,                             \
-                  NcbiMessagePlusError(message, error, descr,           \
-                                       _buf, sizeof(_buf)));            \
-    }                                                                   \
-} while (0)
 
 
 /* Several defines brought here from ncbidiag.hpp. Names of macros slightly

@@ -281,6 +281,68 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
 }
 
 
+extern const char* NcbiMessagePlusError
+(const char*  message,
+ int/*bool*/  dynamic,
+ int          error,
+ const char*  descr,
+ int*/*bool*/ alloced)
+{
+    char*  buf;
+    size_t mlen;
+    size_t dlen;
+
+    /* Check for an empty result */
+    if (!error  &&  (!descr  ||  !*descr)) {
+        if (!message) {
+            *alloced = 0/*false*/;
+            message = "";
+        } else
+            *alloced = dynamic;
+        return message;
+    }
+
+    /* Adjust the description, if necessary and possible */
+    if (error  &&  !descr) {
+        descr = error > 0 ? strerror(error) : 0;
+        if (!descr  ||  !*descr)
+            descr = "Error code is out of range";
+    }
+    dlen = strlen(descr);
+    while (dlen  &&  isspace((unsigned char) descr[dlen - 1]))
+        dlen--;
+    if (dlen > 1  &&  descr[dlen - 1] == '.')
+        dlen--;
+
+    mlen = message ? strlen(message) : 0;
+
+    if (!(buf = (char*)(dynamic  &&  message
+                        ? realloc((void*) message, mlen + dlen + 32)
+                        : malloc (                 mlen + dlen + 32)))) {
+        if (dynamic  &&  message)
+            free((void*) message);
+        *alloced = 0;
+        return "Ouch! Out of memory";
+    }
+    *alloced = 1;
+
+    if (message) {
+        if (!dynamic)
+            memcpy(buf, message, mlen);
+        buf[mlen++] = ' ';
+    }
+    memcpy(buf + mlen, "{error=", 7);
+    mlen += 7;
+
+    if (error)
+        mlen += sprintf(buf + mlen, "%d%s", error, "," + !*descr);
+
+    memcpy((char*) memcpy(buf + mlen, descr, dlen) + dlen, "}", 2);
+
+    return buf;
+}
+
+
 extern char* LOG_ComposeMessage
 (const SLOG_Handler* call_data,
  TLOG_FormatFlags    format_flags)
@@ -490,124 +552,6 @@ extern void LOG_ToFILE
  )
 {
     LOG_ToFILE_Ex(lg, fp, eLOG_Trace, auto_close);
-}
-
-
-/* Return non-zero value if "*beg" has reached the "end"
- */
-static int/*bool*/ s_SafeCopy(const char* src, size_t len,
-                              char** beg, const char* end)
-{
-    assert(src);
-    for ( ;  len > 0  &&  *src  &&  *beg < end;  len--, src++, (*beg)++)
-        **beg = *src;
-    **beg = '\0';
-    return (*beg >= end);
-}
-
-
-extern const char* NcbiMessagePlusError
-(const char*  message,
- int          error,
- const char*  descr,
- char*        buf,
- size_t       buf_size)
-{
-    size_t len;
-    char*  beg;
-    char*  end;
-
-    /* Check for an empty result */
-    if (!error  &&  (!descr  ||  !*descr))
-        return !message  ||  !*message ? "" : message;
-
-    /* Check and init */
-    if (!buf  ||  !buf_size)
-        return 0;
-
-    buf[0] = '\0';
-    if (buf_size < 2)
-        return buf;  /* empty */
-
-    /* Adjust the description, if necessary and possible */
-    if (error  &&  !descr) {
-        descr = error > 0 ? strerror(error) : 0;
-        if (!descr  ||  !*descr)
-            descr = "Error code is out of range";
-    }
-
-    /* Compose:   <message> {error=<error>,<descr>} */
-    beg = buf;
-    end = buf + buf_size - 1;
-
-    /* <message> */
-    if (message  &&  s_SafeCopy(message, strlen(message), &beg, end))
-        return buf;
-
-    /* {error=<error>,<descr>} */
-    if (!error  &&  (!descr  ||  !*descr))
-        return buf;
-
-    /* "{error=" */
-    if (s_SafeCopy(" {error=", 8, &beg, end - 3))
-        return buf;
-
-    /* <error> */
-    if (error) {
-        /* calculate length */
-        int/*bool*/ neg;
-        int         mod;
-
-        if (error < 0) {
-            neg = 1/*true*/;
-            error = -error;
-        } else
-            neg = 0/*false*/;
-
-        for (len = 1, mod = 1;  (error / mod) > 9;  len++, mod *= 10)
-            continue;
-        if (neg)
-            len++;
-
-        /* ? not enough space */
-        if (beg + len >= end) {
-            s_SafeCopy("...", 3, &beg, end);
-            return buf;
-        }
-
-        /* ? add sign */ 
-        if (neg)
-            *beg++ = '-';
-
-        /* print error code */
-        for ( ;  mod;  mod /= 10) {
-            assert(error / mod < 10);
-            *beg++ = '0' + error / mod;
-            error %= mod;
-        }
-        /* "," before "<descr>" */
-        if (descr  &&  *descr  &&  beg < end)
-            *beg++ = ',';
-    }
-
-    /* "<descr>" */
-    if (descr) {
-        len = strlen(descr);
-        while (len  &&  isspace((unsigned char) descr[len - 1]))
-            len--;
-        if (len > 1  &&  descr[len - 1] == '.')
-            len--;
-        if (s_SafeCopy(descr, len, &beg, end))
-            return buf;
-    }
-
-    /* "}\0" */
-    assert(beg <= end);
-    if (beg < end)
-        *beg++ = '}';
-    *beg = '\0';
-
-    return buf;
 }
 
 

@@ -308,8 +308,14 @@ extern NCBI_XCONNECT_EXPORT const char* LOG_LevelStr(ELOG_Level level);
 /** Message and miscellaneous data to pass to log post callback FLOG_Handler.
  * @param message
  *  A message to post, can be NULL
+ * @param dynamic
+ *  if non-zero then LOG_WriteInternal() will call free(message) before return
  * @param level
  *  A message level
+ * @param error
+ *  An error code (if non-zero)
+ * @param descr
+ *  An error description (iff error != 0, defaults to strerror() if NULL)
  * @param module
  *  A module string to post, can be NULL
  * @param file
@@ -325,13 +331,16 @@ extern NCBI_XCONNECT_EXPORT const char* LOG_LevelStr(ELOG_Level level);
  * @param err_subcode
  *  Error subcode of the message
  * @sa
- *  FLOG_Handler, LOG_Create, LOG_WriteInternal
+ *  FLOG_Handler, LOG_Create, LOG_WriteInternal, LOG_Write
  */
 typedef struct {
     const char* message;
+    int/*bool*/ dynamic;
     ELOG_Level  level;
-    const char* module;  
-    const char* file;  
+    int         error;
+    const char* descr;
+    const char* module;
+    const char* file;
     int         line;
     const void* raw_data;
     size_t      raw_size;
@@ -434,12 +443,30 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
 
 
 /** Write message (perhaps with raw data attached) to the log by doing
- * "lg->handler(lg->user_data, SLOG_Handler*)".
+ * "lg->handler(lg->user_data, call_data)".
  * @par <b>NOTE:</b>
  *  Do not call this function directly, if possible.
  *  Instead, use LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
  * @param lg
  *  A log handle previously obtained from LOG_Create
+ * @sa
+ *  LOG_Create, ELOG_Level, FLOG_Handler, LOG_WRITE, LOG_DATA
+ */
+extern NCBI_XCONNECT_EXPORT void LOG_WriteInternal
+(LOG           lg,
+ SLOG_Handler* call_data
+ );
+
+
+/** Write message (perhaps with raw data attached) to the log by calling
+ * LOG_WriteInternal() upon filling up SLOG_Handler data from parameters.
+ * @par <b>NOTE:</b>
+ *  Do not call this function directly, if possible.
+ *  Instead, use LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
+ * @param code
+ *  Error code of the message
+ * @param subcode
+ *  Error subcode of the message
  * @param level
  *  The message severity
  * @param module
@@ -454,26 +481,21 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
  *  Raw data to log (can be NULL)
  * @param raw_size
  *  Size of the raw data (can be zero)
- * @param err_code
- *  Error code of the message
- * @param err_subcode
- *  Error subcode of the message
  * @sa
- *  LOG_Create, ELOG_Level, FLOG_Handler, LOG_WRITE, LOG_DATA
+ *  LOG_Create, ELOG_Level, FLOG_Handler, LOG_WriteInternal
  */
-extern NCBI_XCONNECT_EXPORT void LOG_WriteInternal
+extern NCBI_XCONNECT_EXPORT void LOG_Write
 (LOG         lg,   
+ int         code,
+ int         subcode,
  ELOG_Level  level,
  const char* module,
  const char* file, 
- int         line,  
+ int         line,
  const char* message,
  const void* raw_data,
- size_t      raw_size,
- int         err_code,
- int         err_subcode
+ size_t      raw_size
 );
-
 
 
 /******************************************************************************
@@ -669,7 +691,7 @@ extern NCBI_XCONNECT_EXPORT REG REG_Delete(REG rg);
  * @sa
  *  REG_Create, REG_Set
  */
-extern NCBI_XCONNECT_EXPORT char* REG_Get
+extern NCBI_XCONNECT_EXPORT const char* REG_Get
 (REG         rg, 
  const char* section,
  const char* name,
