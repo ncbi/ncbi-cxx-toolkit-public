@@ -37,7 +37,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/scope.hpp>
-#include <algo/seqqa/seqtest.hpp>
+//#include <algo/seqqa/seqtest.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
