@@ -76,7 +76,7 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
 #else
     vsprintf (buf,       fmt, args);
 #endif /*HAVE_VSNPRINTF*/
-    assert(strlen(buf) < sizeof(buf));
+    assert(strlen(buf) < 4096);
     va_end(args);
     return buf;
 }
