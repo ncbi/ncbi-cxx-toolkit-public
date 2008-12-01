@@ -47,6 +47,7 @@
 // Object manager includes
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objtools/data_loaders/blastdb/bdbloader_rmt.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
 
@@ -315,14 +316,17 @@ CBlastOM::x_InitBlastDatabaseDataLoader(const string& dbname,
                                         ELocation location)
 {
     try {
-        CBlastDbDataLoader::ESource blastdb_source = (location == eLocal)
-            ? CBlastDbDataLoader::eLocal
-            : CBlastDbDataLoader::eRemote;
+        if (location == eLocal) {
         m_BlastDbLoaderName = CBlastDbDataLoader::RegisterInObjectManager
             (*m_ObjMgr, dbname, dbtype, true,
              CObjectManager::eNonDefault,
-             CObjectManager::kPriority_NotSet,
-             blastdb_source).GetLoader()->GetName();
+                 CObjectManager::kPriority_NotSet).GetLoader()->GetName();
+        } else {
+            m_BlastDbLoaderName = CRemoteBlastDbDataLoader::RegisterInObjectManager
+                (*m_ObjMgr, dbname, dbtype, true,
+                 CObjectManager::eNonDefault,
+                 CObjectManager::kPriority_NotSet).GetLoader()->GetName();
+        }
     } catch (const CSeqDBException& e) {
 
         // if the database isn't found, ignore the exception as the Genbank

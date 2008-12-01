@@ -60,18 +60,11 @@ public:
         eUnknown = 2        ///< protein is attempted first, then nucleotide
     };
 
-    /// Describes which BLAST databases to use to fulfull the data requests
-    enum ESource {
-        eLocal,     ///< Retrieve data from local BLAST databases
-        eRemote     ///< Retrieve data from remote BLAST databases at NCBI
-    };
-
     struct NCBI_XLOADER_BLASTDB_EXPORT SBlastDbParam
     {
         SBlastDbParam(const string& db_name = "nr",
                       EDbType       dbtype = eUnknown,
-                      bool          use_fixed_size_slices = true,
-                      ESource       blastdb_source = eLocal);
+                      bool          use_fixed_size_slices = true);
 
         SBlastDbParam(CRef<CSeqDB> db_handle,
                       bool         use_fixed_size_slices = true);
@@ -80,7 +73,6 @@ public:
         EDbType         m_DbType;
         bool            m_UseFixedSizeSlices;
         CRef<CSeqDB>    m_BlastDbHandle;
-        ESource         m_BlastDbSource;
     };
 
     typedef SRegisterLoaderInfo<CBlastDbDataLoader> TRegisterLoaderInfo;
@@ -90,8 +82,7 @@ public:
         const EDbType dbtype = eUnknown,
         bool use_fixed_size_slices = true,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet,
-        ESource blastdb_source = eLocal);
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         CRef<CSeqDB> db_handle,
@@ -171,15 +162,15 @@ public:
         CRef<CSeqDB> db_handle,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
-private:
+protected:
     /// TPlace is a Seq-id or an integer id, this data loader uses the former.
     typedef CTSE_Chunk_Info::TPlace         TPlace;
     
     typedef CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam> TMaker;
     friend class CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam>;
 
-    CBlastDbDataLoader(const string& loader_name, 
-                       const SBlastDbParam& param);
+    CBlastDbDataLoader() {}
+    CBlastDbDataLoader(const string& loader_name, const SBlastDbParam& param);
     
     /// Prevent automatic copy constructor generation
     CBlastDbDataLoader(const CBlastDbDataLoader &);
@@ -206,9 +197,10 @@ private:
     ///   Object id in BLAST DB
     /// @param lock
     ///   Information about the sequence data is returned here.
-    void x_LoadData(const CSeq_id_Handle& idh, int oid, CTSE_LoadLock & lock);
+    void x_LoadData(const CSeq_id_Handle& idh, int oid, CTSE_LoadLock & lock,
+                    int slice_size);
     
-    const string    m_DBName;      ///< Blast database name
+    string          m_DBName;      ///< Blast database name
     EDbType         m_DBType;      ///< Is this database protein or nucleotide?
     CRef<IBlastDbAdapter> m_BlastDb;       ///< The sequence database
 
@@ -216,8 +208,6 @@ private:
 
     /// Configuration value specified to the CCachedSequence
     bool            m_UseFixedSizeSlices;
-    /// Specifies where to get the data from
-    ESource         m_BlastDbSource;    
 };
 
 END_SCOPE(objects)

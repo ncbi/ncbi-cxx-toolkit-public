@@ -44,7 +44,6 @@ static char const rcsid[] = "$Id$";
 #include <corelib/plugin_manager_impl.hpp>
 #include "cached_sequence.hpp"
 #include "local_blastdb_adapter.hpp"
-#include "remote_blastdb_adapter.hpp"
 
 //=======================================================================
 // BlastDbDataLoader Public interface 
@@ -60,10 +59,9 @@ CBlastDbDataLoader::RegisterInObjectManager(
     const EDbType dbtype,
     bool use_fixed_size_slices,
     CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority priority,
-    CBlastDbDataLoader::ESource blastdb_source)
+    CObjectManager::TPriority priority)
 {
-    SBlastDbParam param(dbname, dbtype, use_fixed_size_slices, blastdb_source);
+    SBlastDbParam param(dbname, dbtype, use_fixed_size_slices);
     TMaker maker(param);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
@@ -139,37 +137,30 @@ CBlastDbDataLoader::EDbType SeqTypeToDbType(CSeqDB::ESeqType seq_type)
 CBlastDbDataLoader::SBlastDbParam::SBlastDbParam(const string& db_name,
                                                  CBlastDbDataLoader::EDbType
                                                  db_type,
-                                                 bool use_fixed_size_slices,
-                                                 CBlastDbDataLoader::ESource
-                                                 blastdb_source)
+                                                 bool use_fixed_size_slices)
 : m_DbName(db_name), m_DbType(db_type),
-  m_UseFixedSizeSlices(use_fixed_size_slices), m_BlastDbHandle(0),
-  m_BlastDbSource(blastdb_source)
+  m_UseFixedSizeSlices(use_fixed_size_slices), m_BlastDbHandle(0)
 {}
 
 CBlastDbDataLoader::SBlastDbParam::SBlastDbParam(CRef<CSeqDB> db_handle,
                                                  bool use_fixed_size_slices)
 {
     m_BlastDbHandle = db_handle;
-    m_BlastDbSource = eLocal;   // the only logical choice
     m_UseFixedSizeSlices = use_fixed_size_slices;
     m_DbName.assign(db_handle->GetDBNameList());
     m_DbType = SeqTypeToDbType(db_handle->GetSequenceType());
 }
 
+static const string kPrefix = "BLASTDB_";
 string CBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& param)
 {
-    _ASSERT(param.m_BlastDbSource == eLocal || 
-            param.m_BlastDbSource == eRemote);
-    const string kPrefix = (param.m_BlastDbSource == eLocal) 
-        ? "BLASTDB_" : "REMOTE_BLASTDB_";
     return kPrefix + param.m_DbName + DbTypeToStr(param.m_DbType);
 }
 
 string CBlastDbDataLoader::GetLoaderNameFromArgs(CConstRef<CSeqDB> db_handle)
 {
     _ASSERT(db_handle.NotEmpty());
-    return "BLASTDB_" + db_handle->GetDBNameList() + 
+    return kPrefix + db_handle->GetDBNameList() + 
         DbTypeToStr(SeqTypeToDbType(db_handle->GetSequenceType()));
 }
 
@@ -184,16 +175,10 @@ CBlastDbDataLoader::CBlastDbDataLoader(const string        & loader_name,
 {
     if (param.m_BlastDbHandle.NotEmpty()) {
         m_BlastDb.Reset(new CLocalBlastDbAdapter(param.m_BlastDbHandle));
-        _ASSERT(param.m_BlastDbSource == eLocal);
     }
     if (m_BlastDb.Empty() && !m_DBName.empty()) {
         const CSeqDB::ESeqType dbtype = DbTypeToSeqType(m_DBType);
-        if (param.m_BlastDbSource == eLocal) {
             m_BlastDb.Reset(new CLocalBlastDbAdapter(m_DBName, dbtype));
-        } else {
-            _ASSERT(param.m_BlastDbSource == eRemote);
-            m_BlastDb.Reset(new CRemoteBlastDbAdapter(m_DBName, dbtype));
-        }
     }
     if (m_BlastDb.Empty() && m_DBName.empty()) {
         NCBI_THROW(CSeqDBException, eArgErr, "Empty BLAST database handle");
@@ -258,18 +243,16 @@ DEFINE_STATIC_FAST_MUTEX(s_Oid_Mutex);
 
 void CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh,
                                     int oid,
-                                    CTSE_LoadLock& lock)
+                                    CTSE_LoadLock& lock,
+                                    int slice_size)
 {
     _ASSERT(oid != -1);
     _ASSERT(lock);
     _ASSERT(!lock.IsLoaded());
 
-    const TSeqPos kSliceSize = (m_BlastDbSource == eLocal) 
-        ? kSequenceSliceSize
-        : kRmtSequenceSliceSize;
     CRef<CCachedSequence> cached(new CCachedSequence(*m_BlastDb, idh, oid,
                                                      m_UseFixedSizeSlices,
-                                                     kSliceSize));
+                                                     slice_size));
     {
         CFastMutexGuard guard(s_Oid_Mutex);
         cached->RegisterIds(m_Ids);
@@ -391,7 +374,7 @@ CBlastDbDataLoader::GetBlobById(const TBlobId& blob_id)
     if ( !lock.IsLoaded() ) {
         const TBlastDbId& id =
             dynamic_cast<const CBlobIdBlastDb&>(*blob_id).GetValue();
-        x_LoadData(id.second, id.first, lock);
+        x_LoadData(id.second, id.first, lock, kSequenceSliceSize);
     }
     return lock;
 }
@@ -406,8 +389,6 @@ CBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     DebugDumpValue(ddc,"m_DBName", m_DBName);
     DebugDumpValue(ddc,"m_DBType", m_DBType);
     DebugDumpValue(ddc,"m_UseFixedSizeSlices", m_UseFixedSizeSlices);
-    DebugDumpValue(ddc,"m_BlastDbSource", m_BlastDbSource);
-   
 }
 
 END_SCOPE(objects)

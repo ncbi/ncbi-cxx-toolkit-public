@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
+#include <objtools/data_loaders/blastdb/bdbloader_rmt.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -69,18 +70,25 @@ public:
                    bool use_fixed_slice_size, 
                    bool use_remote_blast_db_loader = false) {
         CRef<CObjectManager> om = CObjectManager::GetInstance();
-        CBlastDbDataLoader::ESource blastdb_source =
-            use_remote_blast_db_loader 
-            ? CBlastDbDataLoader::eRemote 
-            : CBlastDbDataLoader::eLocal;
+        if (use_remote_blast_db_loader) {
+            loader_name = CRemoteBlastDbDataLoader::RegisterInObjectManager
+                        (*om, dbname, is_protein 
+                         ? CBlastDbDataLoader::eProtein
+                         : CBlastDbDataLoader::eNucleotide,
+                         use_fixed_slice_size,
+                         CObjectManager::eDefault, 
+                         CObjectManager::kPriority_NotSet)
+                        .GetLoader()->GetName();
+        } else {
         loader_name = CBlastDbDataLoader::RegisterInObjectManager
                     (*om, dbname, is_protein 
                      ? CBlastDbDataLoader::eProtein
                      : CBlastDbDataLoader::eNucleotide,
                      use_fixed_slice_size,
                      CObjectManager::eDefault, 
-                     CObjectManager::kPriority_NotSet,
-                     blastdb_source).GetLoader()->GetName();
+                         CObjectManager::kPriority_NotSet)
+                        .GetLoader()->GetName();
+        }
         om->SetLoaderOptions(loader_name, CObjectManager::eDefault);
     }
 

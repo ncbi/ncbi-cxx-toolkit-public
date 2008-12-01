@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/blastdb/bdbloader_rmt.hpp>
 #include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -122,8 +123,8 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(const string& dbname,
     try {
         m_BlastDbLoaderName = CBlastDbDataLoader::RegisterInObjectManager
                 (*m_ObjMgr, dbname, dbtype, m_Config.m_UseFixedSizeSlices,
-                 CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet,
-                 CBlastDbDataLoader::eLocal).GetLoader()->GetName();
+                 CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet)
+                 .GetLoader()->GetName();
         _ASSERT( !m_BlastDbLoaderName.empty() );
     } catch (const CSeqDBException& e) {
         // if the database isn't found, ignore the exception as the
@@ -132,10 +133,10 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(const string& dbname,
             ERR_POST(Info << "Error initializing local BLAST database "
                           << "data loader: '" << e.GetMsg() << "'");
         }
-        m_BlastDbLoaderName = CBlastDbDataLoader::RegisterInObjectManager
+        m_BlastDbLoaderName = CRemoteBlastDbDataLoader::RegisterInObjectManager
                 (*m_ObjMgr, dbname, dbtype, m_Config.m_UseFixedSizeSlices,
-                 CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet,
-                 CBlastDbDataLoader::eRemote).GetLoader()->GetName();
+                 CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet)
+                 .GetLoader()->GetName();
         _ASSERT( !m_BlastDbLoaderName.empty() );
     }
 }
@@ -170,12 +171,12 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(CRef<CSeqDB> db_handle)
                 : CBlastDbDataLoader::eNucleotide;
             try {
                 m_BlastDbLoaderName =
-                    CBlastDbDataLoader::RegisterInObjectManager
+                    CRemoteBlastDbDataLoader::RegisterInObjectManager
                         (*m_ObjMgr, db_handle->GetDBNameList(), dbtype,
                          m_Config.m_UseFixedSizeSlices,
                          CObjectManager::eNonDefault,
-                         CObjectManager::kPriority_NotSet,
-                         CBlastDbDataLoader::eRemote).GetLoader()->GetName();
+                         CObjectManager::kPriority_NotSet)
+                         .GetLoader()->GetName();
                 _ASSERT( !m_BlastDbLoaderName.empty() );
             } catch (const CSeqDBException& e) {
                 ERR_POST(Info << "Error initializing remote BLAST database "
