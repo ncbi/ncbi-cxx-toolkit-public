@@ -255,6 +255,9 @@ public:
 };
 
 
+vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool suppress_locus_tags);
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

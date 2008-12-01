@@ -304,7 +304,7 @@ string CAutoDef::GetOneSourceDescription(CBioseq_Handle bh)
 }
 
 
-
+#if 0
 CAutoDefParsedtRNAClause *CAutoDef::x_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, string comment, bool is_first, bool is_last) 
 {
     string product_name = "";
@@ -384,14 +384,13 @@ vector<CAutoDefFeatureClause *> CAutoDef::x_GetIntergenicSpacerClauseList (strin
     }
     
     bool bad_phrase = false;
-    bool alternating = true;
     bool names_correct = true;
     int last_type = 0;
 
 
     CAutoDefParsedtRNAClause *gene = NULL;
 
-    for (size_t j = 0; j < parts.size() && alternating && names_correct && !bad_phrase; j++) {
+    for (size_t j = 0; j < parts.size() && names_correct && !bad_phrase; j++) {
         NStr::TruncateSpacesInPlace(parts[j]);
         if (NStr::StartsWith (parts[j], "and ")) {
             parts[j] = parts[j].substr(4);
@@ -403,9 +402,7 @@ vector<CAutoDefFeatureClause *> CAutoDef::x_GetIntergenicSpacerClauseList (strin
             if (spacer == NULL) {
                 bad_phrase = true;
             } else {
-                if (last_type == kParsedTrnaSpacer) {
-                    alternating = false;
-                } else if (last_type == kParsedTrnaGene) {
+                if (last_type == kParsedTrnaGene) {
                     // spacer names and gene names must agree
                     string gene_name = gene->GetGeneName();
                     string description = spacer->GetDescription();
@@ -423,9 +420,7 @@ vector<CAutoDefFeatureClause *> CAutoDef::x_GetIntergenicSpacerClauseList (strin
                 bad_phrase = true;
             } else {
                 // must alternate between genes and spacers
-                if (last_type == kParsedTrnaGene) {
-                    alternating = false;
-                } else if (last_type == kParsedTrnaSpacer) {
+                if (last_type == kParsedTrnaSpacer) {
                     // spacer names and gene names must agree
                     string gene_name = gene->GetGeneName();
                     if (!NStr::EndsWith (parts[j - 1], "-" + gene_name + " intergenic spacer")) {
@@ -439,7 +434,7 @@ vector<CAutoDefFeatureClause *> CAutoDef::x_GetIntergenicSpacerClauseList (strin
         }
     }
 
-    if (bad_phrase || !alternating || !names_correct) {
+    if (bad_phrase || !names_correct) {
         for (size_t i = 0; i < clause_list.size(); i++) {
             delete clause_list[i];
         }
@@ -447,7 +442,7 @@ vector<CAutoDefFeatureClause *> CAutoDef::x_GetIntergenicSpacerClauseList (strin
     }
     return clause_list;
 }
-
+#endif
 
 bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
 {
@@ -467,11 +462,6 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
         comment = comment.substr(0, pos);
     }
 
-    pos = NStr::Find(comment, "intergenic spacer");
-    if (pos == NCBI_NS_STD::string::npos) {
-        return false;
-    }
-
     bool is_region = false;
     
     // ignore "contains " at beginning of comment
@@ -482,7 +472,7 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
         is_region = true;
     }
     
-    vector<CAutoDefFeatureClause *> clause_list = x_GetIntergenicSpacerClauseList (comment, bh, cf, mapped_loc, suppress_locus_tags);
+    vector<CAutoDefFeatureClause *> clause_list = GetIntergenicSpacerClauseList (comment, bh, cf, mapped_loc, suppress_locus_tags);
 
     if (clause_list.size() > 0) {
         if (is_region) {
