@@ -198,6 +198,8 @@ string CReadBlastApp::ProblemType(const EProblem type)
       result =  "RNA is missing in the list of annotated RNAs in the input";
    else if(type == eTRNABadStrand)
       result =  "RNA is present at the wrong strand";
+   else if(type == eTRNAUndefStrand)
+      result =  "RNA is present with undefined strand";
    else if(type == eTRNAComMismatch)
       result =  "tRNA is a complete mismatch";
    else if(type == eTRNAMismatch)
@@ -238,6 +240,74 @@ void CReadBlastApp::reportProblemSequenceName(const string& name, ostream& out)
       << " "
       << "====="
       << NcbiEndl;
+}
+
+int CReadBlastApp::FixStrands(void)
+{
+  TProblem_locs problem_locs;
+  if(PrintDetails()) NcbiCerr << "FixStrands: start " << NcbiEndl;
+
+// relevant problems
+  CollectRNAFeatures(problem_locs);
+
+// first, count features matching each range
+  for(CTypeIterator<CSeq_feat> feat=Begin(); feat; ++feat)
+    {
+    if (!feat->GetData().IsRna() && !feat->GetData().IsGene()) continue;
+    const CSeq_loc&  loc = feat->GetLocation();
+    ENa_strand strand;
+    TSeqPos from, to;
+    getFromTo(loc, from, to, strand); 
+    string range = printed_range(from, to);
+    if(PrintDetails()) NcbiCerr << "FixStrands: rna or gene [" << range << "]" << NcbiEndl;
+    
+    if(problem_locs.find(range)==problem_locs.end()) continue; // not relevant
+    if(PrintDetails()) NcbiCerr << "FixStrands: range: " << range << NcbiEndl;
+    problem_locs[range].count++;
+    if(feat->GetData().IsRna()) problem_locs[range].rnacount++;
+    if(feat->GetData().IsGene()) problem_locs[range].genecount++;
+    }
+// now fix
+  for(CTypeIterator<CSeq_feat> feat=Begin(); feat; ++feat)
+    {
+    if (!feat->GetData().IsRna() && !feat->GetData().IsGene()) continue;
+    if(PrintDetails()) NcbiCerr << "FixStrands: rna or gene for fixing" << NcbiEndl;
+    CSeq_loc&  loc = feat->SetLocation();
+    ENa_strand strand;
+    TSeqPos from, to;
+    getFromTo(loc, from, to, strand);
+    string range = printed_range(from, to);
+    if(problem_locs.find(range)==problem_locs.end()) continue; // not relevant
+    if(PrintDetails()) NcbiCerr << "FixStrands: range for fix: " << range << NcbiEndl;
+    if(   problem_locs[range].count!=2 
+       || problem_locs[range].rnacount!=1 
+       || problem_locs[range].genecount!=1 
+      )
+      {
+      // no touching
+      // warning
+      NcbiCerr << "CReadBlastApp::FixStrands: "
+               << "WARNING: "
+               << "location found, but the number of features with that location is confusing, "
+               << "no fixing for "
+               << "[" << problem_locs[range].name << "]"
+               << "(" << range << ")"
+               << NcbiEndl;
+      continue;
+      }
+// over all intervals
+    int ninter=0; 
+    for(CTypeIterator<CSeq_interval> inter = ::Begin(loc);  inter; ++inter, ++ninter)
+      {
+      inter->SetStrand(problem_locs[range].strand);
+      NcbiCerr << "CReadBlastApp::FixStrands: "
+               << "[" << problem_locs[range].name << "] "
+               << "fixed"
+               << NcbiEndl;
+      }
+    NcbiCerr << "CReadBlastApp::FixStrands: ninters= " << ninter  << NcbiEndl;
+    } // for(CTypeIterator<CSeq_feat>
+  if(PrintDetails()) NcbiCerr << "FixStrands: end" << NcbiEndl;
 }
 
 int CReadBlastApp::RemoveProblems(void)
@@ -344,7 +414,7 @@ void CReadBlastApp::NormalizeSeqentry(CSeq_entry& entry)
 // 2.  move CBioseq under the CSeq_entr
   CRef<CBioseq> pseq (&seq);
   entry.SetSeq(*pseq);
-  NcbiCerr << "RemoveProblems(CSeq_entry...): "
+  NcbiCerr << "NormalizeSeqentry(CSeq_entry...): "
            << "WARNING: "
            << "converted sequence set to sequence"
            << NcbiEndl;
@@ -725,6 +795,41 @@ int addProblems(list<problemStr>& dest, const list<problemStr>& src)
      n++;
      } 
   return n;
+}
+
+int CReadBlastApp::CollectRNAFeatures(TProblem_locs& problem_locs)
+{
+  ITERATE( diagMap, feat, m_diag)
+    {
+    ITERATE(list<problemStr>, problem, feat->second.problems)
+      {
+      bool added = false;
+      string name = feat->first;
+      string::size_type ipos = name.rfind('|'); if(ipos!=string::npos) name.erase(0, ipos+1);
+      ipos = name.rfind('_'); if(ipos!=string::npos) ipos= name.rfind('_', ipos-1);
+      if(ipos!=string::npos) name.erase(0, ipos+1);
+      string range = printed_range(problem->i1, problem->i2);
+      if( 
+          (problem->type & eTRNABadStrand || problem->type & eTRNAUndefStrand)   // irrelevant problem
+         && !problem->misc_feat_message.empty()
+       )
+        { 
+        problem_locs[range].strand = problem->strand;
+        problem_locs[range].name = name;
+        problem_locs[range].count = 
+        problem_locs[range].rnacount = 
+        problem_locs[range].genecount =  0;
+        added=true; 
+        }
+      if(PrintDetails()) 
+        NcbiCerr << "CReadBlastApp::CollectRNAFeatures: " << feat->first
+        << "[" << range << "]: "
+        << "(" << name << ")"
+        << (added ? "added" : "skipped")  << NcbiEndl;
+      }
+    }
+  return problem_locs.size();
+
 }
 
 int CReadBlastApp::CollectFrameshiftedSeqs(map<string,string>& problem_names)

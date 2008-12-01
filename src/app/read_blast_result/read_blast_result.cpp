@@ -491,6 +491,18 @@ int CReadBlastApp::Run(void)
 
     PushVerbosity();
     {
+    string sout  = base + ".tRNA.undef.strand.log";
+    CNcbiOfstream out( sout.c_str() );
+    if(PrintDetails()) NcbiCerr << "Run: before reportProblems: routine start: "
+                                << eTRNAUndefStrand
+                                << "(eTRNAUndefStrand)"
+                                << NcbiEndl;
+    reportProblems(report_and_forget, m_diag, out, eTRNAUndefStrand);
+    } 
+    PopVerbosity();
+
+    PushVerbosity();
+    {
     string sout  = base + ".tRNA.complete.mismatch.log";
     CNcbiOfstream out( sout.c_str() );
     if(PrintDetails()) NcbiCerr << "Run: before reportProblems: routine start: "
@@ -531,6 +543,10 @@ int CReadBlastApp::Run(void)
 
     PushVerbosity();
     RemoveProblems(); // 
+    PopVerbosity();
+
+    PushVerbosity();
+    FixStrands(); // 
     PopVerbosity();
 
     PushVerbosity();

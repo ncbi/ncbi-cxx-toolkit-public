@@ -146,9 +146,11 @@ enum EProblem
      eTRNAMismatch       = (1<<9),
      eTRNAAbsent         = (1<<10),
      eRemoveOverlap      = (1<<11),
+     eTRNAUndefStrand    = (1<<12),
      eRelFrameShift = eFrameShift | eMayBeNotFrameShift,
      eTRNAProblems  =  eTRNAMissing
         | eTRNABadStrand
+        | eTRNAUndefStrand
         | eTRNAAbsent   
         | eTRNAComMismatch
         | eTRNAMismatch
@@ -188,6 +190,15 @@ typedef struct
      {
      list<problemStr> problems;
      } diagStr; // argument to seq
+
+typedef struct
+     {
+     ENa_strand strand;
+     int count, rnacount, genecount;
+     string name;
+     } TProblem_loc;
+
+typedef map<string, TProblem_loc> TProblem_locs;
 
 
 typedef map < string , diagStr > diagMap;
@@ -308,7 +319,9 @@ private:
 
 
     int CollectFrameshiftedSeqs(map<string,string>& problem_names);
+    int CollectRNAFeatures(TProblem_locs& problem_locs);
     int RemoveProblems(void);
+    int FixStrands(void);
     int RemoveProblems(CSeq_entry& entry, const map<string, string>& problem_seqs);
     int RemoveProblems(CBioseq_set& setseq, const map<string, string>& problem_seqs);
     int RemoveProblems(CBioseq& seq, const map<string, string>& problem_seqs);

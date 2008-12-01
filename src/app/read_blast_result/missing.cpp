@@ -163,8 +163,8 @@ int CReadBlastApp::simple_overlaps()
      {
      int from, to;
      from = ext_rna->exons[0].from;  
-     ENa_strand strand = ext_rna->exons[0].strand;
      to = ext_rna->exons[ext_rna->exons.size()-1].to;
+     ENa_strand strand = ext_rna->exons[0].strand;
      int range_scale = to - from;
      int max_distance = get_max_distance(range_scale);
      string type2 = ext_rna->name;
@@ -198,6 +198,11 @@ int CReadBlastApp::simple_overlaps()
        absent =  absent && !overlap; // Absent
        bool bad_strand =  (overlap>0 && ext_rna->type == seq2->type &&  strand != seq2->exons[0].strand); // BadStrand
        if(!bad_strand) continue;
+       int from2, to2;
+       from2 = seq2->exons[0].from;  
+       to2 = seq2->exons[seq2->exons.size()-1].to;
+       ENa_strand strand2 = seq2->exons[0].strand;
+       bool undef_strand = seq2->exons[0].strand == eNa_strand_unknown;
        if(!bufferstr.size())
          {
          if(PrintDetails())
@@ -217,16 +222,19 @@ int CReadBlastApp::simple_overlaps()
          }
        strstream misc_feat;
        string seq_range = printed_range(seq);
+       EProblem trnaStrandProblem = undef_strand ? eTRNAUndefStrand : eTRNABadStrand;
        misc_feat << "RNA does not match strand for feature located at " << seq_range << NcbiEndl;
        misc_feat << '\0';
-       problemStr problem = {eTRNABadStrand, "", misc_feat.str(), "", "", from, to, strand};
+// this goes to the misc_feat, has to be original
+       problemStr problem = {trnaStrandProblem, bufferstr, misc_feat.str(), "", "", from2, to2, strand};
        m_diag[diag_name].problems.push_back(problem);
        if(PrintDetails()) NcbiCerr << "simple_overlaps: adding problem:" << "\t"
                << diag_name << "\t"
                << "eTRNABadStrand" << "\t"
                << bufferstr << "\t"
                << NcbiEndl; 
-       problemStr problem2 = {eTRNABadStrand , bufferstr, "", "", "", -1, -1, strand};
+// this goes to the log, has to be original
+       problemStr problem2 = {trnaStrandProblem, bufferstr, "", "", "", from, to, strand};
        m_diag[diag_name].problems.push_back(problem2);
 
        } // best_Seq iteration NON_CONST_ITERATE(TSimpleSeqs, seq2, best_seq)
