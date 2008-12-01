@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <algo/align/contig_assembly/contig_assembly.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -247,7 +248,7 @@ void CContigAssembly::FindMaxRange(const vector<unsigned int>& vec,
     max = running_sum;
     max_range.clear();
     max_range.push_back(TRange(window - 1, window - 1));
-    
+
     for (i = window; i < vec.size();  ++i) {
         running_sum -= vec[i - window];
         running_sum += vec[i];
@@ -330,6 +331,11 @@ CContigAssembly::BandedGlobalAlignment(const CSeq_id& id0, const CSeq_id& id1,
 
     CBandAligner alnr(seq0, seq1, 0, half_width);
     alnr.SetEndSpaceFree(true, true, true, true);
+#ifdef __LP64__
+    Uint8 phys_ram = GetPhysicalMemorySize();
+    if(phys_ram > 0)
+        alnr.SetSpaceLimit(phys_ram);
+#endif
     // Translate shift from one convention (lower left corner is zero)
     // to another (upper left is zero, direction of shift given separately)
     Uint1 direction;
@@ -932,8 +938,7 @@ bool CContigAssembly::x_IsAllowedStrands(const CDense_seg& ds,
         align_strands[0] = ds.GetSeqStrand(0);
         align_strands[1] = ds.GetSeqStrand(1);
     }
-if(align_strands[1] == eNa_strand_minus)
-    cout << "strand[1] == eNa_strand_minus " << endl;
+
     if(strand0 == align_strands[0] || strand0 == eNa_strand_unknown)
         matches[0] = true;
     if(strand1 == align_strands[1] || strand1 == eNa_strand_unknown)
