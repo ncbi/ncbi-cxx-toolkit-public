@@ -360,8 +360,7 @@ protected:
     //! calculate the evalues of the top hits and sort
     void CalcNSort(TScoreList& ScoreList,  //<! the list of top hits to the spectrum
                    double Threshold,       //!< the noise threshold to apply to the peaks
-                   CMSPeak* Peaks,         //!< the spectrum to be scored
-                   bool NewScore           //!< use the new scoring
+                   CMSPeak* Peaks         //!< the spectrum to be scored
                    );
 
     /**

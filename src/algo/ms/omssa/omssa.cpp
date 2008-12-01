@@ -1538,7 +1538,7 @@ void CSearch::SetResult(CRef<CMSPeakSet> PeakSet)
             // now calculate scores and sort
             for (Threshold = ThreshStart; Threshold <= ThreshEnd; 
                 Threshold += ThreshInc) {
-                CalcNSort(ScoreList, Threshold, Peaks, false);
+                CalcNSort(ScoreList, Threshold, Peaks);
                 if (!ScoreList.empty()) {
                     _TRACE("Threshold = " << Threshold <<
                            "EVal = " << ScoreList.begin()->first);
@@ -1553,8 +1553,7 @@ void CSearch::SetResult(CRef<CMSPeakSet> PeakSet)
         _TRACE("Min Threshold = " << MinThreshold);
         CalcNSort(ScoreList,
                   MinThreshold,
-                  Peaks,
-                  !UseRankScore );
+                  Peaks);
 
         // if iterative search, check to see if hitset needs to be replaced
         if (GetIterative() && !ScoreList.empty()) {
@@ -1855,8 +1854,7 @@ void CSearch::DoubleCompare(list<CMSMatchedPeakSet *> &SingleForward,
 
 void CSearch::CalcNSort(TScoreList& ScoreList,
                         double Threshold,
-                        CMSPeak* Peaks,
-                        bool NewScore
+                        CMSPeak* Peaks
                        )
 {
     int iCharges;
@@ -1949,7 +1947,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                 (GetSettings()->GetZdep() * (Charge - 1) + 1) *
                 GetSettings()->GetPseudocount();
 
-            if (NewScore) {
+            if (!UseRankScore) {
                 int High, Low, NumPeaks, NumLo, NumHi;
                 Peaks->HighLow(High, Low, NumPeaks, tempMass, Charge, Threshold, NumLo, NumHi);
 
