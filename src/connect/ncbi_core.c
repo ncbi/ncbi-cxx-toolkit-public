@@ -171,8 +171,8 @@ extern const char* LOG_LevelStr(ELOG_Level level)
         "NOTE",
         "WARNING",
         "ERROR",
-        "CRITICAL_ERROR",
-        "FATAL_ERROR"
+        "CRITICAL",
+        "FATAL"
     };
     return s_PostSeverityStr[level];
 }
@@ -198,7 +198,7 @@ extern LOG LOG_Create
 }
 
 
-extern void LOG_Reset
+extern LOG LOG_Reset
 (LOG          lg,
  void*        user_data,
  FLOG_Handler handler,
@@ -215,6 +215,7 @@ extern void LOG_Reset
     lg->cleanup   = cleanup;
 
     LOG_UNLOCK;
+    return lg;
 }
 
 
@@ -261,18 +262,19 @@ extern void LOG_WriteInternal
  SLOG_Handler* call_data
  )
 {
+    assert(!call_data->raw_size  ||  call_data->raw_data);
+
     if (lg) {
         LOG_LOCK_READ;
         LOG_VALID;
-        assert(!call_data->raw_size  ||  call_data->raw_data);
 
         if (lg->handler)
             lg->handler(lg->user_data, call_data);
 
+        LOG_UNLOCK;
+
         if (call_data->dynamic  &&  call_data->message)
             free((void*) call_data->message);
-
-        LOG_UNLOCK;
     }
 
     /* unconditional exit/abort on fatal error */
@@ -301,9 +303,9 @@ extern void LOG_Write
 {
     SLOG_Handler call_data;
 
-    call_data.level       = level;
-    call_data.message     = message;
     call_data.dynamic     = 0;
+    call_data.message     = message;
+    call_data.level       = level;
     call_data.module      = module;
     call_data.file        = file;
     call_data.line        = line;

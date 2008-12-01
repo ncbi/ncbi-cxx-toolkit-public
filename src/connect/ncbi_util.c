@@ -282,31 +282,27 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
 
 
 extern const char* NcbiMessagePlusError
-(const char*  message,
- int/*bool*/  dynamic,
+(int*/*bool*/ dynamic,
+ const char*  message,
  int          error,
- const char*  descr,
- int*/*bool*/ alloced)
+ const char*  descr)
 {
     char*  buf;
     size_t mlen;
     size_t dlen;
 
-    /* Check for an empty result */
+    /* Check for an empty addition */
     if (!error  &&  (!descr  ||  !*descr)) {
-        if (!message) {
-            *alloced = 0/*false*/;
-            message = "";
-        } else
-            *alloced = dynamic;
-        return message;
+        if (message)
+            return message;
+        *dynamic = 0/*false*/;
+        return "";
     }
 
-    /* Adjust the description, if necessary and possible */
+    /* Adjust description, if necessary and possible */
     if (error  &&  !descr) {
-        descr = error > 0 ? strerror(error) : 0;
-        if (!descr  ||  !*descr)
-            descr = "Error code is out of range";
+        if (error < 0  ||  !(descr = strerror(error)))
+            descr = "";
     }
     dlen = strlen(descr);
     while (dlen  &&  isspace((unsigned char) descr[dlen - 1]))
@@ -316,18 +312,17 @@ extern const char* NcbiMessagePlusError
 
     mlen = message ? strlen(message) : 0;
 
-    if (!(buf = (char*)(dynamic  &&  message
-                        ? realloc((void*) message, mlen + dlen + 32)
-                        : malloc (                 mlen + dlen + 32)))) {
-        if (dynamic  &&  message)
+    if (!(buf = (char*)(*dynamic  &&  message
+                        ? realloc((void*) message, mlen + dlen + 40)
+                        : malloc (                 mlen + dlen + 40)))) {
+        if (*dynamic  &&  message)
             free((void*) message);
-        *alloced = 0;
-        return "Ouch! Out of memory";
+        *dynamic = 0;
+        return "<Ouch! Out of memory>";
     }
-    *alloced = 1;
 
     if (message) {
-        if (!dynamic)
+        if (!*dynamic)
             memcpy(buf, message, mlen);
         buf[mlen++] = ' ';
     }
@@ -339,6 +334,7 @@ extern const char* NcbiMessagePlusError
 
     memcpy((char*) memcpy(buf + mlen, descr, dlen) + dlen, "}", 2);
 
+    *dynamic = 1/*true*/;
     return buf;
 }
 

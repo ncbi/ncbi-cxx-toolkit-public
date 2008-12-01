@@ -306,16 +306,12 @@ extern NCBI_XCONNECT_EXPORT const char* LOG_LevelStr(ELOG_Level level);
 
 
 /** Message and miscellaneous data to pass to log post callback FLOG_Handler.
- * @param message
- *  A message to post, can be NULL
  * @param dynamic
  *  if non-zero then LOG_WriteInternal() will call free(message) before return
+ * @param message
+ *  A message to post, can be NULL
  * @param level
  *  A message level
- * @param error
- *  An error code (if non-zero)
- * @param descr
- *  An error description (iff error != 0, defaults to strerror() if NULL)
  * @param module
  *  A module string to post, can be NULL
  * @param file
@@ -334,11 +330,9 @@ extern NCBI_XCONNECT_EXPORT const char* LOG_LevelStr(ELOG_Level level);
  *  FLOG_Handler, LOG_Create, LOG_WriteInternal, LOG_Write
  */
 typedef struct {
-    const char* message;
     int/*bool*/ dynamic;
+    const char* message;
     ELOG_Level  level;
-    int         error;
-    const char* descr;
     const char* module;
     const char* file;
     int         line;
@@ -411,10 +405,12 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Create
  *  New log post callback
  * @param cleanup
  *  New cleanup callback
+ * @return
+ *  lg (as passed in the first parameter)
  * @sa
  *  LOG_Create
  */
-extern NCBI_XCONNECT_EXPORT void LOG_Reset
+extern NCBI_XCONNECT_EXPORT LOG LOG_Reset
 (LOG          lg,     
  void*        user_data,
  FLOG_Handler handler,
@@ -442,7 +438,7 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_AddRef(LOG lg);
 extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
 
 
-/** Write message (perhaps with raw data attached) to the log by doing
+/** Write message (perhaps with raw data attached) to the log by calling
  * "lg->handler(lg->user_data, call_data)".
  * @par <b>NOTE:</b>
  *  Do not call this function directly, if possible.

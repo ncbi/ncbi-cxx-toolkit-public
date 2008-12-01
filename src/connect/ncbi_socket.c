@@ -408,21 +408,21 @@ static const char* s_StrError(SOCK sock, int error)
     size_t i;
 
     if (!error)
-        return "";
+        return 0;
     if (sock) {
         FSSLError sslerror = s_SSL ? s_SSL->Error : 0;
         if (sslerror) {
-            const char* err= sslerror(sock->session == SESSION_INVALID
-                                      ? 0 : sock->session, error);
-            if (err  &&  *err)
-                return err;
+            const char* strerr = sslerror(sock->session == SESSION_INVALID
+                                          ? 0 : sock->session, error);
+            if (strerr)
+                return strerr;
         }
     }
     for (i = 0;  i < sizeof(errmap) / sizeof(errmap[0]) -1/*dummy*/;  i++) {
         if (errmap[i].errnum == error)
             return errmap[i].errtxt;
     }
-    return strerror(error);
+    return error > 0 ? strerror(error) : "";
 }
 
 
@@ -1235,7 +1235,7 @@ static EIO_Status s_Select(size_t                n,
                     DWORD err = GetLastError();
                     char* strerr = s_WinStrerror(err);
                     CORE_LOGF_ERRNO_EXX(133, eLOG_Error,
-                                        err, strerr ? strerr : "Unknown error",
+                                        err, strerr ? strerr : "",
                                         ("[SOCK::Select]  Failed"
                                          " WaitForMultipleObjects"));
                     if (strerr)
@@ -2007,8 +2007,7 @@ static EIO_Status s_Read(SOCK    sock,
             if ((size_t) x_read > n_todo)
                 x_read = n_todo;
             if (error) {
-                int x_error = errno;
-                CORE_LOGF_ERRNO_X(8, eLOG_Error, x_error,
+                CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
                                   ("%s[SOCK::Read]  Cannot store data in"
                                    " peek buffer", s_ID(sock, xx_buf)));
                 sock->eof      = 1/*failure*/;
@@ -2871,7 +2870,7 @@ static EIO_Status s_Connect(SOCK            sock,
         DWORD err = GetLastError();
 		char* strerr = s_WinStrerror(err);
         CORE_LOGF_ERRNO_EXX(122, eLOG_Error,
-                            err, strerr ? strerr : "Unknown error",
+                            err, strerr ? strerr : "",
                             ("%s[SOCK::Connect] "
                              " Failed to create IO event",
                              s_ID(sock, _id)));
@@ -3049,8 +3048,7 @@ static EIO_Status s_Create(const char*     hostpath,
     if (datalen) {
         if (!BUF_SetChunkSize(&x_sock->w_buf, datalen) ||
             !BUF_Write(&x_sock->w_buf, data, datalen)) {
-            int x_error = errno;
-            CORE_LOGF_ERRNO_X(27, eLOG_Error, x_error,
+            CORE_LOGF_ERRNO_X(27, eLOG_Error, errno,
                               ("%s[SOCK::Create]  Cannot store initial data",
                                s_ID(x_sock, _id)));
             SOCK_Close(x_sock);
@@ -3109,8 +3107,7 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
         int fd[2];
 
         if (pipe(fd) < 0) {
-            int x_error = errno;
-            CORE_LOGF_ERRNO_X(28, eLOG_Error, x_error,
+            CORE_LOGF_ERRNO_X(28, eLOG_Error, errno,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Cannot create pipe", x_id));
             return eIO_Closed;
@@ -3118,16 +3115,14 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
 
         if (!s_SetNonblock(fd[0], 1/*true*/)  ||
             !s_SetNonblock(fd[1], 1/*true*/)) {
-            int x_error = errno;
-            CORE_LOGF_ERRNO_X(29, eLOG_Warning, x_error,
+            CORE_LOGF_ERRNO_X(29, eLOG_Warning, errno,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Failed to set non-blocking mode", x_id));
         }
 
         if (!s_SetCloexec(fd[0], 1/*true*/)  ||
             !s_SetCloexec(fd[1], 1/*true*/)) {
-            int x_error = errno;
-            CORE_LOGF_ERRNO_X(30, eLOG_Warning, x_error,
+            CORE_LOGF_ERRNO_X(30, eLOG_Warning, errno,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Failed to set close-on-exec", x_id));
         }
@@ -3161,7 +3156,7 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
             DWORD err = GetLastError();
             char* strerr = s_WinStrerror(err);
             CORE_LOGF_ERRNO_EXX(14, eLOG_Error, err,
-                                strerr ? strerr : "Unknown error",
+                                strerr ? strerr : "",
                                 ("TRIGGER#%u: [TRIGGER::Create] "
                                  " Cannot create event object", x_id));
             if (strerr)
@@ -3459,7 +3454,7 @@ static EIO_Status s_CreateListening(const char*    path,
         DWORD err = GetLastError();
         char* strerr = s_WinStrerror(err);
         CORE_LOGF_ERRNO_EXX(118, eLOG_Error,
-                            err, strerr ? strerr : "Unknown error",
+                            err, strerr ? strerr : "",
                             ("LSOCK#%u[%u]: [LSOCK::Create] "
                              " Failed to create IO event",
                              x_id, (unsigned int) x_lsock));
@@ -3679,7 +3674,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
         DWORD err = GetLastError();
 		char* strerr = s_WinStrerror(err);
         CORE_LOGF_ERRNO_EXX(120, eLOG_Error,
-                            err, strerr ? strerr : "Unknown error",
+                            err, strerr ? strerr : "",
                             ("SOCK#%u[%u]: [LSOCK::Accept] "
                              " Failed to create IO event",
                              x_id, (unsigned int) x_sock));
@@ -4084,8 +4079,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     /* store initial data */
     if (datalen  &&  (!BUF_SetChunkSize(&w_buf, datalen)  ||
                       !BUF_Write(&w_buf, data, datalen))) {
-        int x_error = errno;
-        CORE_LOGF_ERRNO_X(49, eLOG_Error, x_error,
+        CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
                           ("SOCK#%u[%u]: [SOCK::CreateOnTop]  Cannot store"
                            " initial data", x_id, (unsigned int) fd));
         BUF_Destroy(w_buf);
@@ -5025,7 +5019,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
         DWORD err = GetLastError();
         char* strerr = s_WinStrerror(err);
         CORE_LOGF_ERRNO_EXX(139, eLOG_Error,
-                            err, strerr ? strerr : "Unknown error",
+                            err, strerr ? strerr : "",
                             ("DSOCK#%u[%u]: [DSOCK::Create] "
                              " Failed to create IO event",
                              x_id, (unsigned int) x_sock));

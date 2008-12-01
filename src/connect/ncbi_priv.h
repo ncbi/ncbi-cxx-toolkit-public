@@ -97,11 +97,11 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
     do {                                                                \
         if (g_CORE_Log  ||  (_level) == eLOG_Fatal) {                   \
             SLOG_Handler _mess;                                         \
-            _mess.message     = NcbiMessagePlusError(_message,          \
-                                                     _dynamic,          \
+            _mess.dynamic     = _dynamic;                               \
+            _mess.message     = NcbiMessagePlusError(&_mess.dynamic,    \
+                                                     _message,          \
                                                      _error,            \
-                                                     _descr,            \
-                                                     &_mess.dynamic);   \
+                                                     _descr);           \
             _mess.level       = (_level);                               \
             _mess.module      = THIS_MODULE;                            \
             _mess.file        = THIS_FILE;                              \

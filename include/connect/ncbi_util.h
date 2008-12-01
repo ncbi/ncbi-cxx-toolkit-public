@@ -38,7 +38,6 @@
  *    macros:     LOG_Write(), LOG_Data(),
  *                LOG_WRITE(), LOG_DATA(),
  *                THIS_FILE, THIS_MODULE,
- *                LOG_WRITE_ERRNO()
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
  *    methods:    LOG_ComposeMessage(), LOG_ToFILE(), NcbiMessagePlusError(),
  *                CORE_SetLOCK(), CORE_GetLOCK(),
@@ -289,35 +288,33 @@ extern NCBI_XCONNECT_EXPORT void LOG_ToFILE
 
 /** Add current "error" (and maybe its description) to the message:
  * <message>[ {error=[[<error>][,]][<descr>]}]
- * @param message
- *  [in]  message text (can be NULL)
  * @param dynamic
- *  [in]  non-zero means message was allocated from heap
+ *  [inout] non-zero pointed value means message was allocated from heap
+ * @param message
+ *  [in]    message text (can be NULL)
  * @param error
- *  [in]  error code (if it is zero, then use "descr" only)
+ *  [in]    error code (if it is zero, then use "descr" only if non-NULL/empty)
  * @param descr
- *  [in]  error description (if NULL, then use "strerror(error)" if error!=0)
- * @param alloced
- *  [out] non-zero if the resultant message has been allocated from heap
+ *  [in]    error description (if NULL, then use "strerror(error)" if error!=0)
  * @return
- *  Always non-NULL message (perhaps, "") and set *alloced as appropriate.
- * @li <b>NOTE:</b>  this routine calls "free(message)" if it had
- * to reallocate the original message that was dynamically allocated.
+ *  Always non-NULL message (perhaps, "") and re-set "*dynamic" as appropriate.
+ * @li <b>NOTE:</b>  this routine may call "free(message)" if it had
+ * to reallocate the original message that had been allocated dynamically
+ * before the call (and "*dynamic" thus had been passed non-zero).
  * @sa
  *  LOG_ComposeMessage
  */
 extern NCBI_XCONNECT_EXPORT const char* NcbiMessagePlusError
-(const char*  message,
- int/*bool*/  dynamic,
+(int*/*bool*/ dynamic,
+ const char*  message,
  int          error,
- const char*  descr,
- int*/*bool*/ alloced
+ const char*  descr
  );
 
 
-/* Several defines brought here from ncbidiag.hpp. Names of macros slightly
- * changed (added _C) because some sources include this header and
- * ncbidiag.hpp simultaneously
+/* Several macros brought here from ncbidiag.hpp.  The names slightly
+ * changed (added _C) because some sources can include this header and
+ * ncbidiag.hpp simultaneously.
  */
 
 /** Defines global error code name with given value (err_code)

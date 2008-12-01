@@ -39,6 +39,7 @@
 #  include <connect/ncbi_socket.h>
 #endif /*NCBI_OS_...*/
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 
 
@@ -63,20 +64,21 @@ extern int g_NCBI_ConnectSrandAddend(void)
 
 extern const char* g_CORE_Sprintf(const char* fmt, ...)
 {
+    static const size_t buf_size = 4096;
     char*   buf;
     va_list args;
 
-    if (!(buf = (char*) malloc(4096)))
+    if (!(buf = (char*) malloc(buf_size)))
         return 0;
     *buf = '\0';
 
     va_start(args, fmt);
 #ifdef HAVE_VSNPRINTF
-    vsnprintf(buf, 4096, fmt, args);
+    vsnprintf(buf, buf_size, fmt, args);
 #else
-    vsprintf (buf,       fmt, args);
+    vsprintf (buf,           fmt, args);
 #endif /*HAVE_VSNPRINTF*/
-    assert(strlen(buf) < 4096);
+    assert(strlen(buf) < buf_size);
     va_end(args);
     return buf;
 }
