@@ -43,7 +43,7 @@ BEGIN_SCOPE(blast)
 
 /// Class to constrain the values of an argument to those greater than or equal
 /// to the value specified in the constructor
-class NCBI_XBLAST_EXPORT CArgAllowValuesGreaterThanOrEqual : public CArgAllow
+class NCBI_BLASTINPUT_EXPORT CArgAllowValuesGreaterThanOrEqual : public CArgAllow
 {
 public:
     /// Constructor taking an integer
@@ -68,7 +68,7 @@ private:
 
 /// Class to constrain the values of an argument to those less than or equal
 /// to the value specified in the constructor
-class NCBI_XBLAST_EXPORT CArgAllowValuesLessThanOrEqual : public CArgAllow
+class NCBI_BLASTINPUT_EXPORT CArgAllowValuesLessThanOrEqual : public CArgAllow
 {
 public:
     /// Constructor taking an integer
@@ -100,7 +100,7 @@ private:
  * @param String2DataTypeFn Conversion function from a string to DataType [in]
  */
 #define DEFINE_CARGALLOW_SET_CLASS(ClassName, DataType, String2DataTypeFn)  \
-class NCBI_XBLAST_EXPORT ClassName : public CArgAllow                       \
+class NCBI_BLASTINPUT_EXPORT ClassName : public CArgAllow                       \
 {                                                                           \
 public:                                                                     \
     ClassName(const set<DataType>& values)                                  \
@@ -148,7 +148,7 @@ DEFINE_CARGALLOW_SET_CLASS(CArgAllowStringSet, string, string);
  * @return properly constructed range if parsing succeeded
  * @throw CStringException or CBlastException with error code eInvalidArgument
  * if parsing fails */
-NCBI_XBLAST_EXPORT
+NCBI_BLASTINPUT_EXPORT
 TSeqRange
 ParseSequenceRange(const string& range_str, const char* error_msg = NULL);
 
@@ -160,14 +160,14 @@ ParseSequenceRange(const string& range_str, const char* error_msg = NULL);
  * 
  * @return a CArgDescriptions object with the command line options set
  */
-NCBI_XBLAST_EXPORT
+NCBI_BLASTINPUT_EXPORT
 CArgDescriptions* 
 SetUpCommandLineArguments(TBlastCmdLineArgs& args);
 
 /** Retrieve the appropriate batch size for the specified task 
  * @param program BLAST task [in]
  */
-NCBI_XBLAST_EXPORT
+NCBI_BLASTINPUT_EXPORT
 int
 GetQueryBatchSize(EProgram program);
 
@@ -181,7 +181,7 @@ GetQueryBatchSize(EProgram program);
  * @param sequences output will be placed here [in|out]
  * @return CScope object which contains all the sequences read
  */
-NCBI_XBLAST_EXPORT
+NCBI_BLASTINPUT_EXPORT
 CRef<objects::CScope>
 ReadSequencesToBlast(CNcbiIstream& in, 
                      bool read_proteins, 
@@ -197,7 +197,7 @@ ReadSequencesToBlast(CNcbiIstream& in,
 /// @param num_alignments the number of alignments to show [out]
 /// @param num_overview the number of sequences to show in the overview image
 /// displayed in the BLAST report on the web [out]
-NCBI_XBLAST_EXPORT
+NCBI_BLASTINPUT_EXPORT
 void
 CalculateFormattingParams(TSeqPos max_target_seqs, 
                           TSeqPos* num_descriptions, 
@@ -207,7 +207,7 @@ CalculateFormattingParams(TSeqPos max_target_seqs,
 /// Returns true if the Bioseq passed as argument has the full, raw sequence
 /// data in its Seq-inst field
 /// @param bioseq Bioseq to examine [in]
-NCBI_XBLAST_EXPORT 
+NCBI_BLASTINPUT_EXPORT 
 bool HasRawSequenceData(const objects::CBioseq& bioseq);
 
 /// Inspect the sequences parameter for empty sequences.
@@ -217,7 +217,7 @@ bool HasRawSequenceData(const objects::CBioseq& bioseq);
 /// @param warnings populated if empty sequence(s) are found
 /// among non-empty sequences [in|out]
 /// @throw CInputException if there is only 1 empty sequence
-NCBI_XBLAST_EXPORT void
+NCBI_BLASTINPUT_EXPORT void
 CheckForEmptySequences(const TSeqLocVector& sequences, string& warnings);
 
 /// Inspect the sequences parameter for empty sequences.
@@ -227,7 +227,7 @@ CheckForEmptySequences(const TSeqLocVector& sequences, string& warnings);
 /// @param warnings populated if empty sequence(s) are found
 /// among non-empty sequences [in|out]
 /// @throw CInputException if there is only 1 empty sequence
-NCBI_XBLAST_EXPORT void
+NCBI_BLASTINPUT_EXPORT void
 CheckForEmptySequences(CRef<CBlastQueryVector> sequences, string& warnings);
 
 /// Inspect the sequences parameter for empty sequences.
@@ -237,7 +237,7 @@ CheckForEmptySequences(CRef<CBlastQueryVector> sequences, string& warnings);
 /// @param warnings populated if empty sequence(s) are found
 /// among non-empty sequences [in|out]
 /// @throw CInputException if there is only 1 empty sequence
-NCBI_XBLAST_EXPORT void
+NCBI_BLASTINPUT_EXPORT void
 CheckForEmptySequences(CRef<CBioseq_set> sequences, string& warnings);
 
 END_SCOPE(blast)

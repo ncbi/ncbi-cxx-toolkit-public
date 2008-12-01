@@ -49,7 +49,7 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 
 /// Configuration structure for the CBlastScopeSource
-struct NCBI_XBLAST_EXPORT SDataLoaderConfig {
+struct NCBI_BLASTINPUT_EXPORT SDataLoaderConfig {
 
     /// Default protein BLAST database to use for the BLAST DB data loader
     static const char* kDefaultProteinBlastDb;
@@ -143,7 +143,7 @@ private:
 /// configuration file, the latter setting trumping the selection of the
 /// SDataLoaderConfig object.
 /// @note all data loaders are registered as non-default data loaders
-class NCBI_XBLAST_EXPORT CBlastScopeSource : public CObject 
+class NCBI_BLASTINPUT_EXPORT CBlastScopeSource : public CObject 
 {
 public:
     /// Convenience typedef

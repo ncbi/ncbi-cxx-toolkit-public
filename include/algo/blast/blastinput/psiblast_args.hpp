@@ -41,7 +41,7 @@ BEGIN_SCOPE(blast)
 
 /// Handle command line arguments for psiblast binary
 /// Programs supported: psiblast, phi-blastn, phi-blastp
-class NCBI_XBLAST_EXPORT CPsiBlastAppArgs : public CBlastAppArgs
+class NCBI_BLASTINPUT_EXPORT CPsiBlastAppArgs : public CBlastAppArgs
 {
 public:
     /// PSI-BLAST can only run one query at a time

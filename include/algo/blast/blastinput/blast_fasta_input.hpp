@@ -45,7 +45,7 @@ BEGIN_SCOPE(blast)
 /// Class representing a text file containing sequences
 /// in fasta format
 ///
-class NCBI_XBLAST_EXPORT CBlastFastaInputSource : public CBlastInputSource
+class NCBI_BLASTINPUT_EXPORT CBlastFastaInputSource : public CBlastInputSource
 {
 public:
 

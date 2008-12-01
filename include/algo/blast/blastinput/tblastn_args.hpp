@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Handles command line arguments for blastx binary
-class NCBI_XBLAST_EXPORT CTblastnAppArgs : public CBlastAppArgs
+class NCBI_BLASTINPUT_EXPORT CTblastnAppArgs : public CBlastAppArgs
 {
 public:
     /// Constructor

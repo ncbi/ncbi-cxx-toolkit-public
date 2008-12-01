@@ -76,7 +76,7 @@ BEGIN_SCOPE(blast)
 
 /** Interface definition for a generic command line option for BLAST
  */
-class NCBI_XBLAST_EXPORT IBlastCmdLineArgs : public CObject
+class NCBI_BLASTINPUT_EXPORT IBlastCmdLineArgs : public CObject
 {
 public:
     /** Our virtual destructor */
@@ -102,7 +102,7 @@ public:
 /** Argument class to retrieve input and output streams for a command line
  * program.
  */
-class NCBI_XBLAST_EXPORT CStdCmdLineArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CStdCmdLineArgs : public IBlastCmdLineArgs
 {
 public:
     /** Default constructor */
@@ -129,7 +129,7 @@ private:
 };
 
 /** Argument class to populate an application's name and description */
-class NCBI_XBLAST_EXPORT CProgramDescriptionArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CProgramDescriptionArgs : public IBlastCmdLineArgs
 {
 public:
     /** 
@@ -149,7 +149,7 @@ private:
 };
 
 /// Argument class to specify the supported tasks a given program
-class NCBI_XBLAST_EXPORT CTaskCmdLineArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CTaskCmdLineArgs : public IBlastCmdLineArgs
 {
 public:
     /** Constructor 
@@ -174,7 +174,7 @@ private:
 
 /** Argument class to retrieve and set the window size BLAST algorithm 
  * option */
-class NCBI_XBLAST_EXPORT CWindowSizeArg : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CWindowSizeArg : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -188,7 +188,7 @@ public:
 
 /** Argument class to retrieve and set the word threshold BLAST algorithm 
  * option */
-class NCBI_XBLAST_EXPORT CWordThresholdArg : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CWordThresholdArg : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -202,7 +202,7 @@ public:
 
 /** Argument class to retrieve and set the scoring matrix name BLAST algorithm
  * option */
-class NCBI_XBLAST_EXPORT CMatrixNameArg : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CMatrixNameArg : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -216,7 +216,7 @@ public:
  * penalties, query filter string, ungapped x-drop, initial and final gapped 
  * x-drop, word size, percent identity, and effective search space
  */
-class NCBI_XBLAST_EXPORT CGenericSearchArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CGenericSearchArgs : public IBlastCmdLineArgs
 {
 public:
     /** 
@@ -245,7 +245,7 @@ private:
 };
 
 /** Argument class for collecting filtering options */
-class NCBI_XBLAST_EXPORT CFilteringArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CFilteringArgs : public IBlastCmdLineArgs
 {
 public:
     /** 
@@ -280,7 +280,7 @@ private:
 
 /// Defines values for match and mismatch in nucleotide comparisons as well as
 /// non-greedy extension
-class NCBI_XBLAST_EXPORT CNuclArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CNuclArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -291,7 +291,7 @@ public:
 };
 
 /// Argument class to retrieve discontiguous megablast arguments
-class NCBI_XBLAST_EXPORT CDiscontiguousMegablastArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CDiscontiguousMegablastArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -309,7 +309,7 @@ public:
 };
 
 /** Argument class for collecting composition based statistics options */
-class NCBI_XBLAST_EXPORT CCompositionBasedStatsArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CCompositionBasedStatsArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -320,7 +320,7 @@ public:
 };
 
 /** Argument class for collecting gapped options */
-class NCBI_XBLAST_EXPORT CGappedArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CGappedArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -331,7 +331,7 @@ public:
 };
 
 /** Argument class for collecting the largest intron size */
-class NCBI_XBLAST_EXPORT CLargestIntronSizeArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CLargestIntronSizeArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -342,7 +342,7 @@ public:
 };
 
 /// Argument class to collect the frame shift penalty for out-of-frame searches
-class NCBI_XBLAST_EXPORT CFrameShiftArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CFrameShiftArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -353,7 +353,7 @@ public:
 };
 
 /// Argument class to collect the genetic code for all queries/subjects
-class NCBI_XBLAST_EXPORT CGeneticCodeArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CGeneticCodeArgs : public IBlastCmdLineArgs
 {
 public:
     /// Enumeration defining which sequences the genetic code applies to
@@ -381,7 +381,7 @@ private:
 };
 
 /// Argument class to retrieve the gap trigger option
-class NCBI_XBLAST_EXPORT CGapTriggerArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CGapTriggerArgs : public IBlastCmdLineArgs
 {
 public:
     /** 
@@ -401,7 +401,7 @@ private:
 };
 
 /// Argument class to collect PSSM engine options
-class NCBI_XBLAST_EXPORT CPssmEngineArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CPssmEngineArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -412,7 +412,7 @@ public:
 };
 
 /// Argument class to import/export the search strategy
-class NCBI_XBLAST_EXPORT CSearchStrategyArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CSearchStrategyArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -428,7 +428,7 @@ public:
 };
 
 /// Argument class to collect options specific to PSI-BLAST
-class NCBI_XBLAST_EXPORT CPsiBlastArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CPsiBlastArgs : public IBlastCmdLineArgs
 {
 public:
     /// Enumeration to determine the molecule type of the database
@@ -503,7 +503,7 @@ private:
 };
 
 /// Argument class to collect options specific to PHI-BLAST
-class NCBI_XBLAST_EXPORT CPhiBlastArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CPhiBlastArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -517,7 +517,7 @@ public:
 // Input options
 
 /// Argument class to collect query options
-class NCBI_XBLAST_EXPORT CQueryOptionsArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CQueryOptionsArgs : public IBlastCmdLineArgs
 {
 public:
     /** 
@@ -567,7 +567,7 @@ private:
 };
 
 /// Argument class to collect database/subject arguments
-class NCBI_XBLAST_EXPORT CBlastDatabaseArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CBlastDatabaseArgs : public IBlastCmdLineArgs
 {
 public:
     /// The default priority for subjects, should be used for
@@ -667,7 +667,7 @@ private:
 
 /// Argument class to collect formatting options, use this to create a 
 /// CBlastFormat object
-class NCBI_XBLAST_EXPORT CFormattingArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CFormattingArgs : public IBlastCmdLineArgs
 {
 public:
     /// Defines the output formats supported by our command line formatter
@@ -760,7 +760,7 @@ private:
 };
 
 /// Argument class to collect multi-threaded arguments
-class NCBI_XBLAST_EXPORT CMTArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CMTArgs : public IBlastCmdLineArgs
 {
 public:
     /// Default Constructor
@@ -778,7 +778,7 @@ private:
 };
 
 /// Argument class to collect remote vs. local execution
-class NCBI_XBLAST_EXPORT CRemoteArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CRemoteArgs : public IBlastCmdLineArgs
 {
 public:
     /// Default constructor
@@ -799,7 +799,7 @@ private:
 
 /// Argument class to collect debugging options.
 /// Only show in command line if compiled with _DEBUG
-class NCBI_XBLAST_EXPORT CDebugArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CDebugArgs : public IBlastCmdLineArgs
 {
 public:
     /// Default constructor
@@ -825,7 +825,7 @@ private:
 };
 
 /// Argument class to retrieve calling options
-class NCBI_XBLAST_EXPORT CCullingArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CCullingArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -836,7 +836,7 @@ public:
 };
 
 /// Argument class to retrieve megablast database indexing options
-class NCBI_XBLAST_EXPORT CMbIndexArgs : public IBlastCmdLineArgs
+class NCBI_BLASTINPUT_EXPORT CMbIndexArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -851,7 +851,7 @@ typedef vector< CRef<IBlastCmdLineArgs> > TBlastCmdLineArgs;
 
 
 /// Base command line argument class for a generic BLAST command line binary
-class NCBI_XBLAST_EXPORT CBlastAppArgs : public CObject
+class NCBI_BLASTINPUT_EXPORT CBlastAppArgs : public CObject
 {
 public:
     /// Default constructor

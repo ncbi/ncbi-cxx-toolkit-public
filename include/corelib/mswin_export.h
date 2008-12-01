@@ -206,6 +206,11 @@
 #  define NCBI_THREADER_EXPORTS
 #endif
 
+/* Definitions for NCBI_BLASTINPUT.DLL
+ */
+#ifdef NCBI_XALGO_BLASTINPUT_EXPORTS
+#  define NCBI_BLASTINPUT_EXPORT
+#endif
 
 /* ------------------------------------------------- */
 
@@ -283,6 +288,14 @@
 #  define NCBI_BLASTDB_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_BLASTDB_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library blastinput
+ */
+#ifdef NCBI_BLASTINPUT_EXPORTS
+#  define NCBI_BLASTINPUT_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_BLASTINPUT_EXPORT __declspec(dllimport)
 #endif
 
 /* Export specifier for library blastxml
@@ -1213,6 +1226,7 @@
 #  define NCBI_BIBLIO_EXPORT
 #  define NCBI_BIOTREE_EXPORT
 #  define NCBI_BLASTDB_EXPORT
+#  define NCBI_BLASTINPUT_EXPORT
 #  define NCBI_BLASTXML_EXPORT
 #  define NCBI_BLAST_EXPORT
 #  define NCBI_BLOBSTORAGE_NETCACHE_EXPORT

@@ -45,7 +45,7 @@ BEGIN_SCOPE(blast)
 /// Class that centralizes the configuration data for
 /// sequences to be converted
 ///
-class NCBI_XBLAST_EXPORT CBlastInputSourceConfig {
+class NCBI_BLASTINPUT_EXPORT CBlastInputSourceConfig {
 
 public:
 
@@ -232,7 +232,7 @@ public:
 
 /// Base class representing a source of biological sequences
 ///
-class NCBI_XBLAST_EXPORT CBlastInputSource : public CObject
+class NCBI_BLASTINPUT_EXPORT CBlastInputSource : public CObject
 {
 protected:
     /// Destructor
@@ -260,7 +260,7 @@ protected:
 
 /// Generalized converter from an abstract source of
 /// biological sequence data to collections of blast input
-class NCBI_XBLAST_EXPORT CBlastInput : public CObject
+class NCBI_BLASTINPUT_EXPORT CBlastInput : public CObject
 {
 public:
 
@@ -329,7 +329,7 @@ private:
 };
 
 /// Auxiliary class for creating Bioseqs given SeqIds
-class NCBI_XBLAST_EXPORT CBlastBioseqMaker : public CObject
+class NCBI_BLASTINPUT_EXPORT CBlastBioseqMaker : public CObject
 {
 public:
     /// Constructor
