@@ -123,7 +123,7 @@ private:
 
 /** This class allows retrieval of sequence data from BLAST databases at NCBI.
  */
-class NCBI_XLOADER_BLASTDB_EXPORT CRemoteBlastDbAdapter : public IBlastDbAdapter
+class CRemoteBlastDbAdapter : public IBlastDbAdapter
 {
 public:
     /// Constructor
