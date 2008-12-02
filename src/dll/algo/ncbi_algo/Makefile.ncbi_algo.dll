@@ -19,7 +19,6 @@ HOSTED_LIBS    = \
                  xalgoalignutil         \
                  \
                  blast                  \
-                 blastinput             \
                  cobalt                 \
                  composition_adjustment \
                  xalgoblastdbindex      \
