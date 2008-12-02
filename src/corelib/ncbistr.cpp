@@ -2287,8 +2287,23 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         pos = best_pos;
         pfx = prefix;
 
-        if ( best_score == eSpace  ||  best_score == eNewline ) {
-            ++pos;
+        if (do_flat) {
+            if (best_score == eSpace) {
+                while (str[pos] == ' ') {
+                    ++pos;
+                }
+                if (str[pos] == '\n') {
+                    ++pos;
+                }
+            }
+            if (best_score == eNewline) {
+                ++pos;
+            }
+        }
+        else {
+            if ( best_score == eSpace  ||  best_score == eNewline ) {
+                ++pos;
+            }
         }
         while (pos < len  &&  str[pos] == '\b') {
             ++pos;
