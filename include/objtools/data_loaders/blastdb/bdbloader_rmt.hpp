@@ -74,8 +74,17 @@ public:
 private:
     typedef CParamLoaderMaker<CRemoteBlastDbDataLoader, SBlastDbParam> TMaker;
     friend class CParamLoaderMaker<CRemoteBlastDbDataLoader, SBlastDbParam>;
+    /// Parametrized constructor
+    /// @param loader_name name of this data loader [in]
+    /// @param param parameters to initialize this data loader [in]
     CRemoteBlastDbDataLoader(const string& loader_name, 
-                       const SBlastDbParam& param);
+                             const SBlastDbParam& param);
+
+    /// Prevent automatic copy constructor generation
+    CRemoteBlastDbDataLoader(const CRemoteBlastDbDataLoader &);
+    
+    /// Prevent automatic assignment operator generation
+    CRemoteBlastDbDataLoader & operator=(const CRemoteBlastDbDataLoader &);
 };
 
 END_SCOPE(objects)

@@ -169,7 +169,11 @@ protected:
     typedef CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam> TMaker;
     friend class CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam>;
 
+    /// Default (no-op) constructor
     CBlastDbDataLoader() {}
+    /// Parametrized constructor
+    /// @param loader_name name of this data loader [in]
+    /// @param param parameters to initialize this data loader [in]
     CBlastDbDataLoader(const string& loader_name, const SBlastDbParam& param);
     
     /// Prevent automatic copy constructor generation
