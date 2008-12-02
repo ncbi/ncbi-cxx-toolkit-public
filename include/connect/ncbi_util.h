@@ -305,7 +305,7 @@ extern NCBI_XCONNECT_EXPORT void LOG_ToFILE
  *  LOG_ComposeMessage
  */
 extern NCBI_XCONNECT_EXPORT const char* NcbiMessagePlusError
-(int*/*bool*/ dynamic,
+(int* /*bool*/ dynamic,
  const char*  message,
  int          error,
  const char*  descr
