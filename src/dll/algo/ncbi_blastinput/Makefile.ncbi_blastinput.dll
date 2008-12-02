@@ -4,8 +4,7 @@ DLL = ncbi_blastinput
 
 HOSTED_LIBS    = blastinput
 
-DEPENDENCIES   = \
-                 ncbi_core ncbi_general ncbi_misc \
+DEPENDENCIES   = ncbi_core ncbi_algo ncbi_general ncbi_misc \
                  ncbi_seq ncbi_misc ncbi_seqext  \
                  ncbi_xloader_genbank ncbi_xloader_blastdb ncbi_xreader \
                  ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_cache \
