@@ -443,8 +443,10 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
         }
     }
 
-    additional_libs.sort();
-    additional_libs.unique();
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+        additional_libs.sort();
+        additional_libs.unique();
+    }
     return NStr::Join(additional_libs, " ");
 }
 
