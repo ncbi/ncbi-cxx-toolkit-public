@@ -60,7 +60,7 @@ enum {
 /** Interface that provides a common interface to retrieve sequence data from
  * local vs. remote BLAST databases.
  */
-class NCBI_XLOADER_BLASTDB_EXPORT IBlastDbAdapter : public CObject
+class IBlastDbAdapter : public CObject
 {
 public:
     /// Virtual destructor

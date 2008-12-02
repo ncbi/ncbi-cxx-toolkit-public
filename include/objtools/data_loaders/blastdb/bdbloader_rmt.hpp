@@ -42,7 +42,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class NCBI_XLOADER_BLASTDB_EXPORT CRemoteBlastDbDataLoader 
+class CRemoteBlastDbDataLoader 
     : public CBlastDbDataLoader
 {
 public:
@@ -90,17 +90,15 @@ private:
 END_SCOPE(objects)
 
 
-extern NCBI_XLOADER_BLASTDB_EXPORT const string kDataLoader_RmtBlastDb_DriverName;
+extern const string kDataLoader_RmtBlastDb_DriverName;
 
 extern "C"
 {
 
-NCBI_XLOADER_BLASTDB_EXPORT
 void NCBI_EntryPoint_DataLoader_RmtBlastDb(
     CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
     CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
 
-NCBI_XLOADER_BLASTDB_EXPORT
 void NCBI_EntryPoint_xloader_blastdb_rmt(
     CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
     CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
