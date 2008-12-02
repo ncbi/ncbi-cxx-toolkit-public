@@ -292,7 +292,7 @@
 
 /* Export specifier for library blastinput
  */
-#ifdef NCBI_BLASTINPUT_EXPORTS
+#ifdef NCBI_XALGO_BLASTINPUT_EXPORTS
 #  define NCBI_BLASTINPUT_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_BLASTINPUT_EXPORT __declspec(dllimport)
