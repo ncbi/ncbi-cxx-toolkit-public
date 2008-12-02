@@ -21,7 +21,6 @@ util
 -./include/connect/daemons
 -./include/connect/ext
 -./include/dbapi/driver/gateway
--./include/internal
 -./include/objtools/data_loaders/genbank/pubseq
 -./include/objtools/data_loaders/genbank/pubseq2
 -connect/daemons
