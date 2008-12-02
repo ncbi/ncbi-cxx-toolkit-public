@@ -27,7 +27,7 @@
  *      Lou Friedman, Victor Sapojnikov
  *
  * File Description:
- *      Checks that use component Accession, Length and Taxid info from GenBank.
+ *      Check component Accession, Length and Taxid using info from GenBank.
  *
  */
 
@@ -60,8 +60,6 @@
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
-// #include "db.hpp"
-
 using namespace ncbi;
 using namespace objects;
 
@@ -69,7 +67,6 @@ BEGIN_NCBI_SCOPE
 
 static CRef<CObjectManager> m_ObjectManager;
 static CRef<CScope> m_Scope;
-static int x_GetTaxid(CBioseq_Handle& bioseq_handle, const string& comp_id);
 
 
 void CAltValidator::Init(void)
@@ -100,13 +97,12 @@ void CAltValidator::Init(void)
   m_Scope->AddDefaults();
 }
 
-// Returns GI
-int CAltValidator::ValidateAccession( const string& acc, int* missing_ver )
-{
-  CSeq_id seq_id;
-  int gi=0;
-  if(missing_ver) *missing_ver=0; // not missing
+// Returns GI // int* missing_ver
 
+int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_data )
+{
+
+  CSeq_id seq_id;
   try {
     seq_id.Set(acc);
   }
@@ -116,42 +112,36 @@ int CAltValidator::ValidateAccession( const string& acc, int* missing_ver )
     return 0;
   }
 
+
+  CBioseq_Handle bioseq_handle;
   try {
-    CBioseq_Handle bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
+    bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
     if( !bioseq_handle ) {
       agpErr.Msg(CAgpErrEx::G_NotInGenbank, string(": ")+acc);
       return 0;
     }
 
-    //// Warn if no version was supplied and GenBank version is > 1
-    SIZE_TYPE pos_ver = NStr::Find( acc, "."); //, 0, NPOS, NStr::EOccurrence::eLast);
-    if(pos_ver==NPOS) {
-      string acc_ver = sequence::GetAccessionForId(seq_id, *m_Scope);
-      pos_ver = NStr::Find( acc_ver, "."); //, 0, NPOS, NStr::EOccurrence::eLast);
-      if(pos_ver==NPOS) {
-        cerr << "FATAL: cannot get version for " << acc << "\n";
-        exit(1);
+    if(acc_data.gi<=0) {
+      try {
+        CSeq_id_Handle seq_id_handle = sequence::GetId(
+          bioseq_handle, sequence::eGetId_ForceGi
+        );
+        acc_data.gi=seq_id_handle.GetGi();
       }
-      int ver = NStr::StringToInt( acc_ver.substr(pos_ver+1) );
-      if(ver>1) {
-        agpErr.Msg(CAgpErrEx::G_NeedVersion,
-          acc + string(" (current version ")+acc_ver+")",
-          CAgpErr::fAtThisLine);
+      catch (...) {
+        agpErr.Msg(CAgpErrEx::G_DataError,
+          string(" - cannot get GI for ") + acc);
+        return 0;
       }
-
-      if(missing_ver) *missing_ver=ver;
     }
 
-    try {
-      CSeq_id_Handle seq_id_handle = sequence::GetId(
-        bioseq_handle, sequence::eGetId_ForceGi
-      );
-      gi=seq_id_handle.GetGi();
-    }
-    catch (...) {
-      agpErr.Msg(CAgpErrEx::G_DataError,
-        string(" - cannot get GI for ") + acc);
-      return 0;
+    if(m_check_len_taxid) {
+      acc_data.len   = (int) bioseq_handle.GetInst_Length();
+      acc_data.taxid =  sequence::GetTaxId(bioseq_handle);;\
+      if(acc_data.taxid<=0) {
+        agpErr.Msg(CAgpErrEx::G_DataError,
+          " - cannot retrieve taxonomic id for "+acc);
+      }
     }
 
   }
@@ -161,8 +151,7 @@ int CAltValidator::ValidateAccession( const string& acc, int* missing_ver )
     return 0;
   }
 
-
-  return gi;
+  return acc_data.gi;
 }
 
 void CAltValidator::ValidateLength(
@@ -179,62 +168,6 @@ void CAltValidator::ValidateLength(
 
     agpErr.Msg(CAgpErrEx::G_CompEndGtLength, details );
   }
-}
-
-void CAltValidator::ValidateLine(
-  const string& comp_id,
-  int line_num, int comp_end)
-{
-  //// Check the accession
-  CSeq_id seq_id;
-  try {
-      seq_id.Set(comp_id);
-  }
-  //    catch (CSeqIdException::eFormat)
-  catch (...) {
-    agpErr.Msg(CAgpErrEx::G_InvalidCompId, string(": ")+comp_id);
-    return;
-  }
-
-  CBioseq_Handle bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
-  if( !bioseq_handle ) {
-    agpErr.Msg(CAgpErrEx::G_NotInGenbank, string(": ")+comp_id);
-    return;
-  }
-
-  m_GenBankCompLineCount++; // component_id is a valid GenBank accession
-
-  //// Warn if no version was supplied and GenBank version is > 1
-  SIZE_TYPE pos_ver = NStr::Find( comp_id, "."); //, 0, NPOS, NStr::EOccurrence::eLast);
-  if(pos_ver==NPOS) {
-    string acc_ver = sequence::GetAccessionForId(seq_id, *m_Scope);
-    pos_ver = NStr::Find( acc_ver, "."); //, 0, NPOS, NStr::EOccurrence::eLast);
-    if(pos_ver==NPOS) {
-      cerr << "FATAL: cannot get version for " << comp_id << "\n";
-      exit(1);
-    }
-    int ver = NStr::StringToInt( acc_ver.substr(pos_ver+1) );
-    if(ver>1) {
-      agpErr.Msg(CAgpErrEx::G_NeedVersion,
-        comp_id + string(" (current version is ")+acc_ver+")",
-        CAgpErr::fAtThisLine);
-    }
-  }
-
-  if(m_check_len_taxid==false) return;
-
-  // Component out of bounds check
-  ValidateLength(
-    comp_id, comp_end,
-    (int) bioseq_handle.GetInst_Length()
-  );
-
-  // Taxid check
-  int taxid = x_GetTaxid(bioseq_handle, comp_id);
-  if(m_SpeciesLevelTaxonCheck) {
-    taxid = x_GetSpecies(taxid);
-  }
-  x_AddToTaxidMap(taxid, comp_id, line_num);
 }
 
 void CAltValidator::PrintTotals()
@@ -259,45 +192,6 @@ void CAltValidator::PrintTotals()
   }
 }
 
-int x_GetTaxid(
-  CBioseq_Handle& bioseq_handle, const string& comp_id)
-{
-  int taxid = 0;
-  string docsum_taxid = "";
-
-  taxid = sequence::GetTaxId(bioseq_handle);
-
-  if (taxid == 0) {
-    try {
-      CSeq_id_Handle seq_id_handle = sequence::GetId(
-        bioseq_handle, sequence::eGetId_ForceGi
-      );
-      int gi = seq_id_handle.GetGi();
-      CEntrez2Client entrez;
-      CRef<CEntrez2_docsum_list> docsums =
-        entrez.GetDocsums(gi, "Nucleotide");
-
-      ITERATE(CEntrez2_docsum_list::TList, it,
-        docsums->GetList()
-      ) {
-        docsum_taxid = (*it)->GetValue("TaxId");
-
-        if (docsum_taxid != "") {
-          taxid = NStr::StringToInt(docsum_taxid);
-          break;
-        }
-      }
-    }
-    catch(...) {
-      agpErr.Msg(CAgpErrEx::G_DataError,
-        string(" - cannot retrieve taxonomic id for ") +
-        comp_id);
-      return 0;
-    }
-  }
-
-  return taxid;
-}
 
 int CAltValidator::x_GetSpecies(int taxid)
 {
@@ -436,6 +330,7 @@ void CAltValidator::CheckTaxids()
           << " - Taxid " << taxid << "\n";
     }
   }
+  cerr << "\n";
 }
 
 //// Batch processing using queue
@@ -443,15 +338,14 @@ void CAltValidator::QueueLine(
   const string& orig_line, const string& comp_id,
   int line_num, int comp_end)
 {
-  //int gi = ValidateAccession(comp_id);
-  //if(gi==0) return false;
-
   SLineData ld;
   ld.orig_line = orig_line;
   ld.comp_id = comp_id;
   ld.line_num = line_num;
   ld.comp_end = comp_end;
   lineQueue.push_back(ld);
+
+  accessions.insert(comp_id);
 }
 
 void CAltValidator::QueueLine(const string& orig_line)
@@ -462,172 +356,134 @@ void CAltValidator::QueueLine(const string& orig_line)
   lineQueue.push_back(ld);
 }
 
+// In: accessions; Out: mapAccData.
+void CAltValidator::QueryAccessions()
+{
+  string query;
+  for(set<string>::iterator it = accessions.begin();  it != accessions.end(); ++it) {
+    query+=*it;
+    query+="[PACC] OR ";
+  }
+  if(query.size()==0) return;
+  query.resize( query.size()-4 );
+
+  CEntrez2Client entrez;
+  vector<int> gis;
+  entrez.Query(query, "Nucleotide", gis);
+
+  CRef<CEntrez2_docsum_list> cref_docsums = entrez.GetDocsums(gis, "Nucleotide");
+  const CEntrez2_docsum_list::TList& docsums = cref_docsums->GetList();
+
+  for(CEntrez2_docsum_list::TList::const_iterator it_docsum = docsums.begin();
+      it_docsum!=docsums.end(); it_docsum++
+  ) {
+    string acc  = (*it_docsum)->GetValue("Caption"); // accession, no version
+    SGiVerLenTaxid& gvt = mapAccData[acc];
+
+    gvt.gi=(*it_docsum)->GetUid();
+
+    string s = (*it_docsum)->GetValue("Extra");   // gi|...|accession.ver...
+    SIZE_TYPE pos=s.find("|"+acc+".");
+    if(pos!=NPOS) gvt.ver=atoi(s.c_str()+pos+2+acc.size());
+
+    gvt.len   = NStr::StringToNumeric( (*it_docsum)->GetValue("Slen" ) );
+    gvt.taxid = NStr::StringToNumeric( (*it_docsum)->GetValue("TaxId") );
+  }
+}
+
 void CAltValidator::ProcessQueue()
 {
-  //// Collect GIs, accession-related errors and warnings
-  vector<int> uids;
+  int entrez_count=0;
+  int objman_count=0;
+  //cerr << "before QueryAccessions" << endl;
+  QueryAccessions(); // In: accessions; Out: mapAccData.
+  //cerr << "after QueryAccessions" << endl;
+
   for(TLineQueue::iterator it=lineQueue.begin();
       it != lineQueue.end(); ++it
   ) {
-
-    if(it->comp_id.size()==0) {
+    string& acc=it->comp_id;
+    if(acc.size()==0) {
       // a line to be printed verbatim and not to be processed
       if(m_out) {
         *m_out << it->orig_line << "\n";
       }
-      continue;
     }
+    else {
+      SIZE_TYPE pos_ver = acc.find('.');
+      int ver=0;
+      if(pos_ver!=NPOS) ver=NStr::StringToNumeric( acc.substr(pos_ver+1) );
+      string acc_nover= acc.substr(0, pos_ver );
 
-    int missing_ver;
-    int gi = ValidateAccession(it->comp_id, &missing_ver);
-
-    if(m_out) {
-      if(missing_ver==1) {
-        // add missing version 1
-        SIZE_TYPE pos =
-          it->orig_line.find( "\t", 1+
-          it->orig_line.find( "\t", 1+
-          it->orig_line.find( "\t", 1+
-          it->orig_line.find( "\t", 1+
-          it->orig_line.find( "\t", 1+
-          it->orig_line.find( "\t") )))));
-        *m_out << it->orig_line.substr(0, pos);
-        if(pos!=NPOS) *m_out << ".1" << it->orig_line.substr(pos);
+      SGiVerLenTaxid acc_data;
+      TMapAccData::const_iterator itAccData = mapAccData.find( acc_nover );
+      if( itAccData!=mapAccData.end() && itAccData->second.MatchesVersion_HasAllData(ver, m_check_len_taxid) ) {
+        acc_data = itAccData->second;
+        entrez_count++;
       }
       else {
-        *m_out << it->orig_line;
-        if(missing_ver!=0) *m_out << "#current version " << it->comp_id << "." << missing_ver;
+        // a fallback
+        GetAccDataFromObjMan(acc, acc_data);
+        objman_count++;
       }
-      *m_out << "\n";
-    }
 
-    if( agpErr.m_messages->pcount() ) {
-      // Error or warning when converting comp_id to GI.
-      // Save to print later.
-      it->messages = agpErr.m_messages;
-      agpErr.m_messages =  new CNcbiOstrstream();
-    }
-
-    it->gi = gi;
-    if(gi) {
-      uids.push_back(gi);
-      // component_id is a valid GenBank accession
-      m_GenBankCompLineCount++;
-    }
-
-    // // temporary code for testing how the queue functions
-    // // (with no performance improvement, absent the batch Entrez retrieval)
-    // ValidateLine(it->comp_id, it->line_num, it->comp_end);
-    // agpErr.LineDone(it->orig_line, it->line_num);
-  }
-
-  //// Get docsums for the collected GIs, validate lengths and taxids,
-  //// print messages to cerr.
-  if( uids.size() ) {
-
-    // Retrieve docsums
-    CEntrez2Client entrez;
-    CRef<CEntrez2_docsum_list> cref_docsums = entrez.GetDocsums(uids, "Nucleotide");
-    const CEntrez2_docsum_list::TList& docsums = cref_docsums->GetList();
-
-    // Walk through both doscums and lineQueue
-    CEntrez2_docsum_list::TList::const_iterator
-      it_docsum =   docsums.begin();
-    TLineQueue::iterator
-      it_line   = lineQueue.begin();
-
-    // it_docsum != docsums.end() &&
-    while(it_line != lineQueue.end() ) {
-
-      if(it_line->messages) {
-        // ASSERT(agpErr.m_messages.pcount()==0)
-        delete(agpErr.m_messages);
-        agpErr.m_messages = it_line->messages; // Accession without version
-      }
-      string orig_line = it_line->orig_line;
-      int line_num = it_line->line_num;
-
-      if( it_line->gi == 0 ) {
-        // Assume it_line->messages contains the appropriate complaint
-        it_line++;
-      }
-      // CRef<CEntrez2_docsum> docsum = *it_docsums;
-      else if( it_line->gi == (*it_docsum)->GetUid() ) {
-        // To do: validate length and taxid using (*it_docsum)
-
-        // try{} ?
-
-        int taxid_from_handle = 0;
-        // Component out of bounds check
-        string docsum_slen = (*it_docsum)->GetValue("Slen");
-        if(docsum_slen != "") {
-          int slen = NStr::StringToInt(docsum_slen);
-          if(slen==0) {
-            // A workaround for a possible Entrez bug/feature:
-            // 0 taxid and length for replaced seqs
-            CSeq_id seq_id(CSeq_id::e_Gi, it_line->gi);
-            CBioseq_Handle bioseq_handle = m_Scope->GetBioseqHandle(seq_id);
-
-            slen = (int) bioseq_handle.GetInst_Length();
-            taxid_from_handle = x_GetTaxid(bioseq_handle, it_line->comp_id);
-          }
-          ValidateLength( it_line->comp_id, it_line->comp_end, slen );
+      if(m_out) {
+        if(ver==0 && acc_data.ver==1) {
+          // add missing version 1
+          SIZE_TYPE pos =
+            it->orig_line.find( "\t", 1+
+            it->orig_line.find( "\t", 1+
+            it->orig_line.find( "\t", 1+
+            it->orig_line.find( "\t", 1+
+            it->orig_line.find( "\t", 1+
+            it->orig_line.find( "\t") )))));
+          *m_out << it->orig_line.substr(0, pos);
+          if(pos!=NPOS) *m_out << ".1" << it->orig_line.substr(pos);
         }
         else {
-          agpErr.Msg(CAgpErrEx::G_DataError,
-            string(" - cannot retrieve sequence length for ") +
-            it_line->comp_id);
-        }
-
-        // Taxid check
-        string docsum_taxid = (*it_docsum)->GetValue("TaxId");
-        if (docsum_taxid != "") {
-          int taxid = NStr::StringToInt(docsum_taxid);
-          if(taxid==0) {
-            // A workaround for possible Entrez bug/feature
-            if(taxid_from_handle) {
-              taxid = taxid_from_handle;
+          *m_out << it->orig_line;
+          if(ver<=0) {
+            if(acc_data.ver) {
+              *m_out << "#current version " << acc << "." << acc_data.ver;
             }
-            else {
-              CSeq_id seq_id(CSeq_id::e_Gi, it_line->gi);
-              CBioseq_Handle bioseq_handle = m_Scope->GetBioseqHandle(seq_id);
-              taxid = x_GetTaxid(bioseq_handle, it_line->comp_id);
+            else if(acc_data.gi==0){
+              *m_out << "#component_id not in GenBank";
             }
           }
-          if(m_SpeciesLevelTaxonCheck) {
-            taxid = x_GetSpecies(taxid);
+        }
+        *m_out << "\n";
+      }
+
+      if(acc_data.gi) {
+        // component_id is a valid GenBank accession
+        m_GenBankCompLineCount++;
+
+        // Warn if no version was supplied and GenBank version is > 1
+        if(ver==0 && acc_data.ver>1) agpErr.Msg(CAgpErrEx::G_NeedVersion,
+          acc + " (current version " + NStr::IntToString(acc_data.ver) + ")",
+          CAgpErr::fAtThisLine);
+
+        if(m_check_len_taxid) {
+          // Component out of bounds check
+          ValidateLength( acc, it->comp_end, acc_data.len );
+
+          // Taxid check
+          int taxid = acc_data.taxid;
+          if(taxid) {
+            if(m_SpeciesLevelTaxonCheck) {
+              taxid = x_GetSpecies(taxid);
+            }
+            x_AddToTaxidMap(taxid, acc, it->line_num);
           }
-          x_AddToTaxidMap(taxid, it_line->comp_id, it_line->line_num);
         }
-        else {
-          agpErr.Msg(CAgpErrEx::G_DataError,
-            string(" - cannot retrieve taxonomic id for ") +
-            it_line->comp_id);
-        }
-
-        it_docsum++;
-        it_line++;
       }
-      else {
-        // Assume that it_line->gi did not have docsum (weird)
-        agpErr.Msg(CAgpErrEx::G_DataError,
-          string(" - cannot retrieve docsum for ") + it_line->comp_id +
-          string(", GI=")+ NStr::IntToString(it_line->gi) );
-
-        it_line++;
-      }
-
-      agpErr.LineDone(orig_line, line_num);
-    }
-    if( it_docsum != docsums.end() ) {
-      cerr<< "Data transfer error: unexpected GI " << (*it_docsum)->GetUid()
-          << " in CEntrez2_docsum_list\n";
-      exit(1);
     }
 
+    agpErr.LineDone(it->orig_line, it->line_num);
   }
 
   lineQueue.clear();
+  //cerr << "entrez_count=" << entrez_count << " objman_count=" << objman_count << endl;
 }
 
 string ExtractAccession(const string& long_acc)

@@ -120,7 +120,6 @@ public:
     "OPTIONS:\n"
     "  -alt       Check component Accessions, Lengths and Taxonomy ID using GenBank data.\n"
     "             This can be very time-consuming, and is done separately from most other checks.\n"
-    "  -a         Check component Accessions (not lengths or taxids); slightly faster than \"-alt\".\n"
     "  -species   Allow components from different subspecies during Taxid checks (implies -alt).\n"
     "  -out FILE  Save the AGP file, adding missing version 1 to the component accessions\n"
     "             (use with -a or -alt).\n"
@@ -170,9 +169,7 @@ void CAgpValidateApplication::Init(void)
 
   // component_id  checks that involve GenBank: Accession Length Taxid
   arg_desc->AddFlag("alt", "");
-  //arg_desc->AddFlag("al" , "");
-  //arg_desc->AddFlag("at" , "");
-  arg_desc->AddFlag("a" , "");
+  //arg_desc->AddFlag("a" , "");
 
   arg_desc->AddFlag("g" , "");
 
@@ -257,11 +254,7 @@ int CAgpValidateApplication::Run(void)
 
   if( args["alt"].HasValue() || args["species"].HasValue() )
     m_ValidationType = VT_AccLenTaxid;
-  /*
-  else if( args["al" ].HasValue() ) m_ValidationType = VT_AccLen;
-  else if( args["at" ].HasValue() ) m_ValidationType = VT_AccTaxid;
-  */
-  else if( args["a"  ].HasValue() ) m_ValidationType = VT_Acc;
+  //else if( args["a"  ].HasValue() ) m_ValidationType = VT_Acc;
   else {
     m_ValidationType = VT_Context;
     bool checkCompNames=args["g"].HasValue();
@@ -467,7 +460,7 @@ void CAgpValidateApplication::x_ValidateFile(
       }
       if(
         !valid ||
-        m_AltValidator->QueueSize() >= 150
+        m_AltValidator->QueueSize() >= 1000
       ) {
         // process the batch now so that error lines are printed in the correct order
         CNcbiOstrstream* tmp_messages = agpErr.m_messages;

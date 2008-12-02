@@ -10,3 +10,8 @@ include @builddir@/Makefile.meta
 test : agp_validate
 	sh -c "./agp_validate $(srcdir)/test/bad_test.agp >bad_test.out 2>&1"
 	diff $(srcdir)/test/bad_test.out bad_test.out
+
+alt_test : agp_validate
+	sh -c "./agp_validate -alt $(srcdir)/test/alt_bad_test.agp >alt_bad_test.out 2>&1"
+	diff $(srcdir)/test/alt_bad_test.out alt_bad_test.out
+

@@ -34,9 +34,9 @@
  *
  */
 
-//#include "LineValidator.hpp"
 #include <objtools/readers/agp_util.hpp>
 #include "AgpErrEx.hpp"
+#include <set>
 
 BEGIN_NCBI_SCOPE
 extern CAgpErrEx agpErr;
@@ -54,35 +54,29 @@ public:
 
   bool m_SpeciesLevelTaxonCheck;
 
-  // The next few structures are used to keep track
-  //  of the taxids used in the AGP files. A map of
-  //  taxid to a vector of AGP file lines is maintained.
+  // taxids used in the AGP files: taxid -> vector of AGP lines
   struct SAgpLineInfo {
       int    file_num;
       int    line_num;
       string component_id;
   };
-
   typedef vector<SAgpLineInfo> TAgpInfoList;
   typedef map<int, TAgpInfoList> TTaxidMap;
   typedef pair<TTaxidMap::iterator, bool> TTaxidMapRes;
   TTaxidMap m_TaxidMap;
+
   int m_TaxidComponentTotal;
 
   typedef map<int, int> TTaxidSpeciesMap;
   TTaxidSpeciesMap m_TaxidSpeciesMap;
   int m_GenBankCompLineCount;
 
-  // Methods
   void Init();
-  void ValidateLine(
-    const string& comp_id,
-    int line_num, int comp_end);
+  //void ValidateLine( const string& comp_id, int line_num, int comp_end);
   void CheckTaxids();
   void PrintTotals();
 
   /// missing_ver: assign 0 if not missing, else the latest version
-  static int ValidateAccession( const string& acc, int* missing_ver=NULL );
   static void ValidateLength(const string& comp_id, int comp_end, int comp_len);
 
   void x_AddToTaxidMap(int taxid, const string& comp_id, int line_num);
@@ -109,20 +103,44 @@ protected:
     }
   };
 
+
   typedef vector<SLineData> TLineQueue;
   TLineQueue lineQueue;
 
+  set<string> accessions; // with or without versions (as given in the AGP file)
+  struct SGiVerLenTaxid
+  {
+    int gi, ver, len, taxid;
+    SGiVerLenTaxid()
+    {
+      gi=ver=len=taxid=0;
+    }
+    bool MatchesVersion_HasAllData(int ver1, bool check_len_taxid) const
+    {
+      if(gi==0 || (ver1!=0 && ver1!=ver)) return false;
+      if(check_len_taxid && len<=0 && taxid<=0) return false;
+      return true;
+    }
+  };
+  typedef map<string, SGiVerLenTaxid> TMapAccData; // key = accession with no version
+  TMapAccData mapAccData;
+
 public:
+  int GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_data );
+
   void QueueLine(
     const string& orig_line, const string& comp_id,
     int line_num, int comp_end);
-  // line for m_out that needs not be processed - comment, gap, invalid line, etc
+
+  // for the lines that are not processed, such as: comment, gap, invalid line
   void QueueLine(const string& orig_line);
   int QueueSize()
   {
     return lineQueue.size();
   }
   void ProcessQueue();
+
+  void QueryAccessions();
 };
 
 // This really should be in agp_validate.cpp, but gcc inexplicably balks, saying:
