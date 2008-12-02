@@ -452,8 +452,12 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
             if (!found) {
                 string path = CDirEntry::ConcatPath(project.m_SourcesBaseDir, project.m_ID);
                 if (!SMakeProjectT::IsConfigurableDefine(depend_id.Id())) {
-                    PTB_WARNING_EX(path, ePTB_ProjectNotFound,
-                                "Depends on missing project: " << depend_id.Id());
+                    if (GetApp().m_AddMissingLibs) {
+                        new_depends.push_back(depend_id);
+                    } else {
+                        PTB_WARNING_EX(path, ePTB_ProjectNotFound,
+                                    "Depends on missing project: " << depend_id.Id());
+                    }
                 }
 
             }
