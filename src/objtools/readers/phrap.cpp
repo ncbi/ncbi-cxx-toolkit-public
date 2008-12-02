@@ -2114,7 +2114,7 @@ void CPhrapReader::x_ReadContig(void)
     contig->ReadData(m_Stream);
     m_Contigs.push_back(contig);
     m_Seqs[contig->GetName()] = contig;
-    for (EPhrapTag tag = x_GetTag(); tag != ePhrap_eof; tag = x_GetTag()) {
+    for (tag = x_GetTag(); tag != ePhrap_eof; tag = x_GetTag()) {
         switch ( tag ) {
         case ePhrap_BQ:
             contig->ReadBaseQualities(m_Stream);
