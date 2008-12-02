@@ -31,9 +31,9 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <connect/ncbi_socket.h>
-#include <connect/ncbi_userhost.hpp>
 #include <connect/ncbi_util.h>
+#include <connect/ncbi_socket.hpp>
+#include <connect/ncbi_userhost.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -45,20 +45,19 @@ void SetDiagUserAndHost(TDiagUserAndHost flags)
     if ((flags & fDiag_AddUser) != 0  &&
         ((flags & fDiag_OverrideExisting) != 0) ||
         ctx.GetUsername().empty()) {
-        const int buf_len = 256;
-        char buf[buf_len];
-        CORE_GetUsername(buf, buf_len);
-        if ( *buf ) {
-            GetDiagContext().SetUsername(buf);
+        const int user_len = 256;
+        char user[user_len];
+        CORE_GetUsername(user, user_len);
+        if ( *user ) {
+            GetDiagContext().SetUsername(user);
         }
     }
     if ((flags & fDiag_AddHost) != 0  &&
         ((flags & fDiag_OverrideExisting) != 0)  ||
         ctx.GetHostname().empty()) {
-        const int buf_len = 256;
-        char buf[buf_len];
-        if (SOCK_gethostname(buf, buf_len) == 0) {
-            GetDiagContext().SetHostname(buf);
+        const string& host = CSocketAPI::gethostname();
+        if ( !host.empty() ) {
+            GetDiagContext().SetHostname(host);
         }
     }
 }
