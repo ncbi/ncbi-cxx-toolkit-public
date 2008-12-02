@@ -16,4 +16,24 @@ objmgr
 objtools
 serial
 util
+-./include/cgi/caf_encoded.hpp
+-./include/cgi/caf_plain.hpp
+-./include/connect/daemons
+-./include/connect/ext
+-./include/dbapi/driver/gateway
+-./include/internal
+-./include/objtools/data_loaders/genbank/pubseq
+-./include/objtools/data_loaders/genbank/pubseq2
+-connect/daemons
+-connect/ext
+-connect/ncbi_lbsm.c
+-connect/ncbi_lbsm.h
+-connect/ncbi_lbsm_ipc.c
+-connect/ncbi_lbsm_ipc.h
+-connect/ncbi_lbsmd.c
+-dbapi/driver/gateway
+-internal
+-objtools/data_loaders/genbank/pubseq
+-objtools/data_loaders/genbank/pubseq2
+-./scripts/internal
 
