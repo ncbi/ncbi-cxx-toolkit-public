@@ -196,7 +196,7 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
 /* Server specification consists of the following:
  * TYPE [host][:port] [server-specific_parameters] [tags]
  *
- * TYPE := { STANDALONE | NCBID | HTTP{|_GET|_POST} | FIREWALL | DNS }
+ * TYPE := { STANDALONE | NCBID | HTTP[{_GET|_POST}] | FIREWALL | DNS }
  *
  * Host should be specified as either an IP address (in dotted notation),
  * or as a host name (using domain notation if necessary).
