@@ -409,7 +409,6 @@ property gbench : {name:"Genome Workbench", path:"gui:app:gbench", dep:"ncbi_cor
 property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:app:gbench_plugin_scan", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs ncbi_image ncbi_validator gui_config gui_widgets ncbi_misc ncbi_general ncbi_pub" & FI_LIBS, req:true}
 property gbench_monitor : {name:"gbench_monitor", path:"gui:app:gbench_monitor", dep:"ncbi_core ncbi_xcache_netcache", req:true}
 property gbench_feedback_agent : {name:"gbench_feedback_agent", path:"gui:app:gbench_feedback_agent", dep:"gui_dialogs ncbi_image ncbi_pub ncbi_validator ncbi_seq ncbi_seqext gui_config ncbi_misc ncbi_core ncbi_general gui_core gui_utils gui_widgets" & FI_LIBS, fworks:"Carbon", req:true}
-property gbench_cache_agent : {name:"gbench_cache_agent", path:"gui:app:gbench_cache_agent", dep:"ncbi_core ncbi_bdb ncbi_xcache_bdb ncbi_xcache_netcache db", req:true}
 (* ====================================================================================================== *)
 
 
@@ -419,7 +418,7 @@ property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_xcache_
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
-property allCTools : {datatool, gbench_plugin_scan, gbench_feedback_agent, gbench_monitor, gbench_cache_agent, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, test_validator, test_basic_cleanup, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo, ini2reg, omssacl, omssamerge, streamtest}
+property allCTools : {datatool, gbench_plugin_scan, gbench_feedback_agent, gbench_monitor, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, test_validator, test_basic_cleanup, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo, ini2reg, omssacl, omssamerge, streamtest}
 --property allCTools : {tests}
 
 
