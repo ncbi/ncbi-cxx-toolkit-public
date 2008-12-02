@@ -443,8 +443,7 @@ NCBI_CS_ITERATE( \
     (Seq).IsSetAnnot(), \
     CSeq_entry::TAnnot, \
     Iter, \
-    (Seq).GetAnnot(), \
-    (Seq).SetAnnot())
+    (Seq).GetAnnot())
 
 /// EDIT_EACH_ANNOT_ON_SEQENTRY
 // Takes const CSeq_entry& as input and makes iterator to const CSeq_annot&
