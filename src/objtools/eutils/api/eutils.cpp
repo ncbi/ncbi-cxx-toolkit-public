@@ -34,6 +34,7 @@
 #include <objtools/eutils/api/eutils.hpp>
 #include <cgi/cgi_util.hpp>
 #include <corelib/stream_utils.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <serial/objistr.hpp>
 
 
@@ -66,13 +67,33 @@ void CEUtils_Request::SetConnContext(const CRef<CEUtils_ConnContext>& ctx)
 }
 
 
-static const string kEUtils_Base_URL =
+static const string kDefaultEUtils_Base_URL =
     "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/";
+
+
+NCBI_PARAM_DECL(string, EUtils, Base_URL);
+NCBI_PARAM_DEF_EX(string, EUtils, Base_URL,
+                  kDefaultEUtils_Base_URL,
+                  eParam_NoThread,
+                  EUTILS_BASE_URL);
+typedef NCBI_PARAM_TYPE(EUtils, Base_URL) TEUtilsBaseURLParam;
+
+
+string CEUtils_Request::GetBaseURL(void)
+{
+    return TEUtilsBaseURLParam::GetDefault();
+}
+
+
+void CEUtils_Request::SetBaseURL(const string& url)
+{
+    TEUtilsBaseURLParam::SetDefault(url);
+}
 
 
 void CEUtils_Request::Connect(void)
 {
-    string url = kEUtils_Base_URL + GetScriptName();
+    string url = GetBaseURL() + GetScriptName();
     string body = GetQueryString();
     if ( m_Method == eHttp_Post ) {
         m_Stream.reset(new CConn_HttpStream(

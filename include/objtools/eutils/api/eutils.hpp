@@ -183,6 +183,11 @@ public:
     /// Set HTTP method
     void SetRequestMethod(ERequestMethod method) { m_Method = method; }
 
+    /// Get base url for all e-utils requests
+    static string GetBaseURL(void);
+    /// Set new base url for all e-utils requests
+    static void SetBaseURL(const string& url);
+
 private:
     typedef map<string, string> TRequestArgs;
 
