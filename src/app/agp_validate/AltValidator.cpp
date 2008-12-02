@@ -367,28 +367,45 @@ void CAltValidator::QueryAccessions()
   if(query.size()==0) return;
   query.resize( query.size()-4 );
 
-  CEntrez2Client entrez;
-  vector<int> gis;
-  entrez.Query(query, "Nucleotide", gis);
+  try{
+    CEntrez2Client entrez;
+    vector<int> gis;
+    entrez.Query(query, "Nucleotide", gis);
 
-  CRef<CEntrez2_docsum_list> cref_docsums = entrez.GetDocsums(gis, "Nucleotide");
-  const CEntrez2_docsum_list::TList& docsums = cref_docsums->GetList();
+    CRef<CEntrez2_docsum_list> cref_docsums = entrez.GetDocsums(gis, "Nucleotide");
+    const CEntrez2_docsum_list::TList& docsums = cref_docsums->GetList();
 
-  for(CEntrez2_docsum_list::TList::const_iterator it_docsum = docsums.begin();
-      it_docsum!=docsums.end(); it_docsum++
-  ) {
-    string acc  = (*it_docsum)->GetValue("Caption"); // accession, no version
-    SGiVerLenTaxid& gvt = mapAccData[acc];
+    for(CEntrez2_docsum_list::TList::const_iterator it_docsum = docsums.begin();
+        it_docsum!=docsums.end(); it_docsum++
+    ) {
+      string acc  = (*it_docsum)->GetValue("Caption"); // accession, no version
+      SGiVerLenTaxid& gvt = mapAccData[acc];
 
-    gvt.gi=(*it_docsum)->GetUid();
+      gvt.gi=(*it_docsum)->GetUid();
 
-    string s = (*it_docsum)->GetValue("Extra");   // gi|...|accession.ver...
-    SIZE_TYPE pos=s.find("|"+acc+".");
-    if(pos!=NPOS) gvt.ver=atoi(s.c_str()+pos+2+acc.size());
+      string s = (*it_docsum)->GetValue("Extra");   // gi|...|accession.ver...
+      SIZE_TYPE pos=s.find("|"+acc+".");
+      if(pos!=NPOS) gvt.ver=atoi(s.c_str()+pos+2+acc.size());
 
-    gvt.len   = NStr::StringToNumeric( (*it_docsum)->GetValue("Slen" ) );
-    gvt.taxid = NStr::StringToNumeric( (*it_docsum)->GetValue("TaxId") );
+      gvt.len   = NStr::StringToNumeric( (*it_docsum)->GetValue("Slen" ) );
+      gvt.taxid = NStr::StringToNumeric( (*it_docsum)->GetValue("TaxId") );
+    }
   }
+  catch(CException e){
+    cerr << "Note: temporary Entrez2 problems; falling back to Object Manager for this batch:\n  ";
+
+    // first 3 ... last 3 (total count)
+    int count_accessions = accessions.size();
+    int i=0;
+    for(set<string>::iterator it = accessions.begin();  it != accessions.end(); ++it) {
+      ++i;
+      if(i<=3 || i>=count_accessions-3 || (i==4 && count_accessions==7) ) cerr << *it << " ";
+      else if(i==4 && count_accessions>7) cerr << "... ";
+    }
+    if(count_accessions>7) cerr << "(total " << count_accessions << ")";
+    cerr << "\nPLEASE IGNORE any (Timeout) warnings above!\n";
+  }
+  accessions.clear();
 }
 
 void CAltValidator::ProcessQueue()
