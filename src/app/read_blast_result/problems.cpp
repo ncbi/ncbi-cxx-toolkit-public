@@ -308,7 +308,7 @@ int CReadBlastApp::FixStrands(void)
     NcbiCerr << "CReadBlastApp::FixStrands: ninters= " << ninter  << NcbiEndl;
     } // for(CTypeIterator<CSeq_feat>
   if(PrintDetails()) NcbiCerr << "FixStrands: end" << NcbiEndl;
-    return 0;
+  return 1;
 }
 
 int CReadBlastApp::RemoveProblems(void)
