@@ -656,13 +656,11 @@ CReader::TBlobVersion
 CId1Reader::x_ResolveId(CID1server_back& reply,
                         const CID1server_request& request)
 {
-    {{
-        CConn conn(this);
-        x_SendRequest(conn, request);
-        x_ReceiveReply(conn, reply);
-        conn.Release();
-    }}
+    CConn conn(this);
+    x_SendRequest(conn, request);
+    x_ReceiveReply(conn, reply);
     if ( !reply.IsError() ) {
+        conn.Release();
         return 0;
     }
     TBlobState state = 0;
@@ -688,6 +686,7 @@ CId1Reader::x_ResolveId(CID1server_back& reply,
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        "unknown ID1server-back.error "<<error);
     }
+    conn.Release();
     return state;
 }
 
