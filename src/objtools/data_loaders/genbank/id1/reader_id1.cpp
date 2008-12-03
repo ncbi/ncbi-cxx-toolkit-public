@@ -529,29 +529,17 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
     }}
     
     CID1server_back id1_reply;
-    x_ResolveId(id1_reply, id1_request);
+    TBlobState state = x_ResolveId(id1_reply, id1_request);
 
     if ( !id1_reply.IsGotblobinfo() ) {
         CBlob_id blob_id;
         blob_id.SetSat(kSat_BlobError);
         blob_id.SetSatKey(gi);
         ids.AddBlob_id(blob_id, CBlob_Info(0));
-        CTSE_Info::TBlobState state = CBioseq_Handle::fState_other_error|
-                                      CBioseq_Handle::fState_no_data;
-        if ( id1_reply.IsError() ) {
-            switch ( id1_reply.GetError() ) {
-            case 1:
-                state = CBioseq_Handle::fState_withdrawn|
-                        CBioseq_Handle::fState_no_data;
-                break;
-            case 2:
-                state = CBioseq_Handle::fState_confidential|
-                        CBioseq_Handle::fState_no_data;
-                break;
-            case 10:
-                state = CBioseq_Handle::fState_no_data;
-                break;
-            }
+        if ( !state ) {
+            state = 
+                CBioseq_Handle::fState_other_error|
+                CBioseq_Handle::fState_no_data;
         }
         ids->SetState(state);
         SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids);
@@ -632,10 +620,9 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
     x_SetParams(id1_request.SetGetblobinfo(), blob_id);
     
     CID1server_back    reply;
-    x_ResolveId(reply, id1_request);
+    TBlobState state = x_ResolveId(reply, id1_request);
 
     TBlobVersion version = -1;
-    TBlobState blob_state = 0;
     switch ( reply.Which() ) {
     case CID1server_back::e_Gotblobinfo:
         version = abs(reply.GetGotblobinfo().GetBlob_state());
@@ -644,32 +631,8 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
         version = abs(reply.GetGotsewithinfo().GetBlob_info().GetBlob_state());
         break;
     case CID1server_back::e_Error:
-    {{
         version = 0;
-        int error = reply.GetError();
-        switch ( error ) {
-        case 1:
-            blob_state |=
-                CBioseq_Handle::fState_withdrawn|
-                CBioseq_Handle::fState_no_data;
-            break;
-        case 2:
-            blob_state |=
-                CBioseq_Handle::fState_confidential|
-                CBioseq_Handle::fState_no_data;
-            break;
-        case 10:
-            blob_state |= CBioseq_Handle::fState_no_data;
-            break;
-        default:
-            ERR_POST_X(4, "CId1Reader::GetBlobVersion: "
-                          "ID1server-back.error "<<error);
-            NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                           "CId1Reader::GetBlobVersion: "
-                           "ID1server-back.error "<<error);
-        }
         break;
-    }}
     default:
         ERR_POST_X(5, "CId1Reader::GetBlobVersion: "
                       "invalid ID1server-back.");
@@ -682,15 +645,16 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
     if ( version >= 0 ) {
         SetAndSaveBlobVersion(result, blob_id, blob, version);
     }
-    if ( blob_state ) {
-        blob.SetBlobState(blob_state);
+    if ( state ) {
+        blob.SetBlobState(state);
         SetAndSaveNoBlob(result, blob_id, CProcessor::kMain_ChunkId, blob);
     }
 }
 
 
-void CId1Reader::x_ResolveId(CID1server_back& reply,
-                             const CID1server_request& request)
+CReader::TBlobVersion
+CId1Reader::x_ResolveId(CID1server_back& reply,
+                        const CID1server_request& request)
 {
     {{
         CConn conn(this);
@@ -698,6 +662,33 @@ void CId1Reader::x_ResolveId(CID1server_back& reply,
         x_ReceiveReply(conn, reply);
         conn.Release();
     }}
+    if ( !reply.IsError() ) {
+        return 0;
+    }
+    TBlobState state = 0;
+    int error = reply.GetError();
+    switch ( error ) {
+    case 1:
+        state =
+            CBioseq_Handle::fState_withdrawn|
+            CBioseq_Handle::fState_no_data;
+        break;
+    case 2:
+        state =
+            CBioseq_Handle::fState_confidential|
+            CBioseq_Handle::fState_no_data;
+        break;
+    case 10:
+        state = CBioseq_Handle::fState_no_data;
+        break;
+    case 100:
+        NCBI_THROW_FMT(CLoaderException, eConnectionFailed,
+                       "ID1server-back.error "<<error);
+    default:
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "unknown ID1server-back.error "<<error);
+    }
+    return state;
 }
 
 

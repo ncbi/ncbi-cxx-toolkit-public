@@ -98,8 +98,9 @@ protected:
     CConn_IOStream* x_GetConnection(TConn conn);
     CConn_IOStream* x_NewConnection(TConn conn);
 
-    void x_ResolveId(CID1server_back& id1_reply,
-                     const CID1server_request& id1_request);
+    // returns error blob state parsed from ID1server-back.error
+    TBlobState x_ResolveId(CID1server_back& id1_reply,
+                           const CID1server_request& id1_request);
 
     void x_SendRequest(TConn conn, const CID1server_request& request);
     void x_ReceiveReply(TConn conn, CID1server_back& reply);

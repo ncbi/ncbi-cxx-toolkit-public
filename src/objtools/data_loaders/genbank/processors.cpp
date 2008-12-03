@@ -622,8 +622,12 @@ CRef<CSeq_entry> CProcessor_ID1::GetSeq_entry(CReaderRequestResult& result,
         case 10:
             blob_state |= CBioseq_Handle::fState_no_data;
             break;
+        case 100:
+            NCBI_THROW_FMT(CLoaderException, eConnectionFailed,
+                           "ID1server-back.error "<<error);
         default:
-            ERR_POST_X(1, "CId1Reader::GetMainBlob: ID1server-back.error "<<error);
+            ERR_POST_X(1, "CId1Reader::GetMainBlob: "
+                       "ID1server-back.error "<<error);
             NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                            "CProcessor_ID1::GetSeq_entry: "
                            "ID1server-back.error "<<error);
