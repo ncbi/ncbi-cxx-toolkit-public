@@ -473,8 +473,15 @@ bool CContigAssembly::IsContained(const CDense_seg& ds,
 
 double CContigAssembly::FracIdent(const CDense_seg& ds, CScope& scope)
 {
-    double Ident = CAlnStats(ds, scope).GetFracIdentity();
-    //cerr << "Calc'ed Ident: " << Ident << endl;
+    double Ident;
+    // This is from the old way to calculate percent identity.
+    // It was only ever used internally to filter overlaps
+    //Ident = CAlnStats(ds, scope).GetFracIdentity();
+    // This way uses the same calculation as the exposed GatherAlignStats()
+    // functions.
+    SAlignStats stats;
+    GatherAlignStats(ds, scope, stats);
+    Ident = stats.pct_identity;
     return Ident;
 }
 
