@@ -43,6 +43,7 @@
 #include <objtools/alnmgr/alnexception.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
+#include <objtools/alnmgr/aln_stats.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -119,134 +120,16 @@ void SeqLocMapperToPairwiseAligns(const objects::CSeq_loc_Mapper_Base& mapper,
 
 
 /// Create an anchored alignment from Seq-align using hints
-template <class TAlnStats>
 CRef<CAnchoredAln> 
-CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
-                         size_t aln_idx,                 ///< which input alignment
-                         const CAlnUserOptions& options) ///< user options
-{
-    typedef typename TAlnStats::TDim TDim;
-    TDim dim = aln_stats.GetDimForAln(aln_idx);
-
-    size_t anchor_id_idx;
-    if (aln_stats.CanBeAnchored()) {
-        if (options.GetAnchorId()) {
-            // if anchor was chosen by the user
-            typedef typename TAlnStats::TIdMap TIdMap;
-            typename TIdMap::const_iterator it = aln_stats.GetAnchorIdMap().find(options.GetAnchorId());
-            if (it == aln_stats.GetAnchorIdMap().end()) {
-                NCBI_THROW(CAlnException, eInvalidRequest,
-                           "Invalid options.GetAnchorId()");
-            }
-            anchor_id_idx = it->second[0];
-        } else {
-            // if not explicitly chosen, just choose the first potential
-            // anchor that is preferably not aligned to itself
-            for (size_t i = 0; i < aln_stats.GetAnchorIdVec().size(); ++i) {
-                const TAlnSeqIdIRef& anchor_id = aln_stats.GetAnchorIdVec()[i];
-                if (aln_stats.GetAnchorIdMap().find(anchor_id)->second.size() > 1) {
-                    // this potential anchor is aligned to itself, not
-                    // the best choice
-                    if (i == 0) {
-                        // but still, keep the first one in case all
-                        // are bad
-                        anchor_id_idx = aln_stats.GetAnchorIdxVec()[i];
-                    }
-                } else {
-                    // perfect: the first anchor that is not aligned
-                    // to itself
-                    anchor_id_idx = aln_stats.GetAnchorIdxVec()[i];
-                    break;
-                }
-            }
-        }
-    } else {
-        NCBI_THROW(CAlnException, eInvalidRequest,
-                   "Alignments cannot be anchored.");
-    }
-
-    /// Anchor row
-    TDim anchor_row = 
-        aln_stats.GetRowVecVec()[anchor_id_idx][aln_idx];
-    _ASSERT(anchor_row >= 0);
-
-    TDim target_row;
-    TDim target_anchor_row = dim - 1; ///< anchor row goes at the last row (TODO: maybe a candidate for a user option?)
-
-    CRef<CAnchoredAln> anchored_aln(new CAnchoredAln);
-
-    typedef typename TAlnStats::TIdVec TIdVec;
-    TIdVec ids = aln_stats.GetSeqIdsForAln(aln_idx);
-
-    anchored_aln->SetDim(dim);
-
-    int anchor_flags =
-        CPairwiseAln::fKeepNormalized;
-//        CPairwiseAln::fAllowAbutting;
-
-    int flags = 
-        CPairwiseAln::fKeepNormalized | 
-        CPairwiseAln::fAllowMixedDir;
-        //CPairwiseAln::fAllowOverlap |
-        //CPairwiseAln::fAllowAbutting;
-
-    for (TDim row = 0;  row < dim;  ++row) {
-        /// Determine where the row goes to (in the target anchored
-        /// alignment)
-        if (row < anchor_row) {
-            target_row = row < target_anchor_row ? row : row + 1;
-        } else if (row > anchor_row) {
-            target_row = row > target_anchor_row ? row : row - 1;
-        } else { // row == anchor_row
-            target_row = target_anchor_row; 
-        }
-
-        /// Create a pairwise
-        CRef<CPairwiseAln> pairwise_aln
-            (new CPairwiseAln(ids[anchor_row],
-                              ids[row],
-                              row == anchor_row ? anchor_flags : flags));
-
-        ConvertSeqAlignToPairwiseAln
-            (*pairwise_aln,
-             *aln_stats.GetAlnVec()[aln_idx],
-             anchor_row,
-             row,
-             options.m_Direction);
-
-        anchored_aln->SetPairwiseAlns()[target_row].Reset(pairwise_aln);
-    }
-    anchored_aln->SetAnchorRow(target_anchor_row);
-    return anchored_aln;
-}
+CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,      ///< input
+                         size_t aln_idx,                  ///< which input alignment
+                         const CAlnUserOptions& options); ///< user options
 
 
-template <class TAlnStats>
 void 
-CreateAnchoredAlnVec(TAlnStats& aln_stats,           ///< input
-                     TAnchoredAlnVec& out_vec,       ///< output
-                     const CAlnUserOptions& options) ///< user options
-{
-    _ASSERT(out_vec.empty());
-    out_vec.resize(aln_stats.GetAlnCount());
-    for (size_t aln_idx = 0;  
-         aln_idx < aln_stats.GetAlnCount();
-         ++aln_idx) {
-
-        out_vec[aln_idx] = 
-            CreateAnchoredAlnFromAln(aln_stats, aln_idx, options);
-
-        CAnchoredAln& anchored_aln = *out_vec[aln_idx];
-
-        /// Calc scores
-        for (typename TAlnStats::TDim row = 0; row < anchored_aln.GetDim(); ++row) {
-            ITERATE(CPairwiseAln, rng_it, *anchored_aln.GetPairwiseAlns()[row]) {
-                anchored_aln.SetScore() += rng_it->GetLength();
-            }
-        }
-        anchored_aln.SetScore() /= anchored_aln.GetDim();
-    }
-}
+CreateAnchoredAlnVec(TAlnStats& aln_stats,            ///< input
+                     TAnchoredAlnVec& out_vec,        ///< output
+                     const CAlnUserOptions& options); ///< user options
                                  
 
 END_NCBI_SCOPE
