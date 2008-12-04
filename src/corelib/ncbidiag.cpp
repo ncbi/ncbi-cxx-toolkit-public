@@ -1531,8 +1531,8 @@ const TDiagPostFlags kApplogDiagPostFlags =
 
 void CDiagContext_Extra::Flush(void)
 {
-    CDiagContext& ctx = GetDiagContext();
-    if ( !m_Args  ||  m_Args->empty()  ||  ctx.IsSetOldPostFormat() ) {
+    if ( !m_Args  ||  m_Args->empty()  ||
+        CDiagContext::IsSetOldPostFormat() ) {
         return;
     }
 
@@ -1775,7 +1775,6 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     if ( IsSetOldPostFormat() ) {
         return;
     }
-    CDiagBuffer& buf = GetDiagBuffer();
     CNcbiOstrstream ostr;
     string prop;
     bool need_space = false;
@@ -1829,7 +1828,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                       NULL,
                       0, 0, 0); // module/class/function
     mess.m_Event = event;
-    buf.DiagHandler(mess);
+    CDiagBuffer::DiagHandler(mess);
     ostr.rdbuf()->freeze(false);
     // Now it's safe to reset the request context
     if (event == SDiagMessage::eEvent_RequestStop) {
@@ -2658,17 +2657,16 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
     m_Class      = nclass;
     m_Function   = function;
 
-    CDiagContext& ctx = GetDiagContext();
     CDiagContextThreadData& thr_data =
         CDiagContextThreadData::GetThreadData();
     CRequestContext& rq_ctx = thr_data.GetRequestContext();
-    m_PID = ctx.GetPID();
+    m_PID = CDiagContext::GetPID();
     m_TID = thr_data.GetTID();
     if ( rq_ctx.GetAutoIncRequestIDOnPost() ) {
         rq_ctx.SetRequestID();
     }
     m_RequestId = rq_ctx.GetRequestID();
-    m_ProcPost = ctx.GetProcessPostNumber(ePostNumber_Increment);
+    m_ProcPost = CDiagContext::GetProcessPostNumber(ePostNumber_Increment);
     m_ThrPost = thr_data.GetThreadPostNumber(ePostNumber_Increment);
 }
 
