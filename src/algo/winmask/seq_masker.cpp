@@ -263,19 +263,19 @@ CSeqMasker::DoMask(
                                  unit_size, data, *this ) );
 
         Int4 count = 0;
-        TMList::iterator i = masked.begin();
+        TMList::iterator ii = masked.begin();
         TMList::iterator j = unmasked.begin();
-        TMList::iterator k = i, l = i;
+        TMList::iterator k = ii, l = ii;
         --k; ++l;
 
-        for( ; i != masked.end(); k = l = i, --k, ++l )
+        for( ; ii != masked.end(); k = l = ii, --k, ++l )
         {
-            Uint4 ldist = (i != masked.begin())
-                ? i->start - k->end - 1 : 0;
-	    TMList::iterator tmpend = masked.end();
+            Uint4 ldist = (ii != masked.begin())
+                ? ii->start - k->end - 1 : 0;
+            TMList::iterator tmpend = masked.end();
             --tmpend;
-            Uint4 rdist = (i != tmpend)
-                ? l->start - i->end - 1 : 0;
+            Uint4 rdist = (ii != tmpend)
+                ? l->start - ii->end - 1 : 0;
             double lavg = 0.0, ravg = 0.0;
             bool can_go_left =  count && ldist
                 && ldist <= mean_merge_cutoff_dist;
@@ -291,7 +291,7 @@ CSeqMasker::DoMask(
 
             if( can_go_right )
             {
-                ravg = MergeAvg( i, j, unit_size );
+                ravg = MergeAvg( ii, j, unit_size );
                 can_go_right = can_go_right && (ravg >= merge_cutoff_score);
             }
 
@@ -302,7 +302,7 @@ CSeqMasker::DoMask(
                     if( ravg >= lavg )
                     {
                         ++count;
-                        ++i;
+                        ++ii;
                         ++j;
                     }
                     else // count must be greater than 0.
@@ -312,22 +312,22 @@ CSeqMasker::DoMask(
                         _TRACE( "Merging " 
                                 << k->start << " - " << k->end
                                 << " and " 
-                                << i->start << " - " << i->end );
+                                << ii->start << " - " << ii->end );
                         Merge( masked, k, unmasked, j );
 
                         if( count )
                         {
-                            i = --k;
+                            ii = --k;
                             --j;
                             --count;
                         }
-                        else i = k;
+                        else ii = k;
                     }
                 }
                 else
                 {
                     ++count;
-                    ++i;
+                    ++ii;
                     ++j;
                 }
             }
@@ -338,46 +338,46 @@ CSeqMasker::DoMask(
                 _TRACE( "Merging " 
                         << k->start << " - " << k->end
                         << " and " 
-                        << i->start << " - " << i->end );
+                        << ii->start << " - " << ii->end );
                 Merge( masked, k, unmasked, j );
 
                 if( count )
                 {
-                    i = --k;
+                    ii = --k;
                     --j;
                     --count;
                 }
-                else i = k;
+                else ii = k;
             }
             else
             {
-                ++i;
+                ++ii;
                 ++j;
                 count = 0;
             }
         }
 
-        for( i = masked.begin(), j = unmasked.begin(), k = i++; 
-             i != masked.end(); (k = i++), j++ )
+        for( ii = masked.begin(), j = unmasked.begin(), k = ii++; 
+             ii != masked.end(); (k = ii++), j++ )
         {
-            if( k->end + abs_merge_cutoff_dist >= i->start )
+            if( k->end + abs_merge_cutoff_dist >= ii->start )
             {
                 _TRACE( "Unconditionally merging " 
                         << k->start << " - " << k->end
                         << " and " 
-                        << i->start << " - " << i->end );
+                        << ii->start << " - " << ii->end );
                 k->avg = MergeAvg( k, j, unit_size );
                 Merge( masked, k, unmasked, j );
-                i = k; 
+                ii = k; 
 
-                if( ++i == masked.end() ) break;
+                if( ++ii == masked.end() ) break;
             }
         }
 
         mask->clear();
 
-        for( TMList::const_iterator ii = masked.begin(); ii != masked.end(); ++ii )
-            mask->push_back( TMaskedInterval( ii->start, ii->end ) );
+        for( TMList::const_iterator iii = masked.begin(); iii != masked.end(); ++iii )
+            mask->push_back( TMaskedInterval( iii->start, iii->end ) );
     }
 
     return mask.release();
