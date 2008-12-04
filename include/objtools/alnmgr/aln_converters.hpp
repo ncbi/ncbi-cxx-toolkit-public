@@ -120,12 +120,14 @@ void SeqLocMapperToPairwiseAligns(const objects::CSeq_loc_Mapper_Base& mapper,
 
 
 /// Create an anchored alignment from Seq-align using hints
+NCBI_XALNMGR_EXPORT
 CRef<CAnchoredAln> 
 CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,      ///< input
                          size_t aln_idx,                  ///< which input alignment
                          const CAlnUserOptions& options); ///< user options
 
 
+NCBI_XALNMGR_EXPORT
 void 
 CreateAnchoredAlnVec(TAlnStats& aln_stats,            ///< input
                      TAnchoredAlnVec& out_vec,        ///< output
