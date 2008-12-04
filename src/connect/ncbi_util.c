@@ -282,7 +282,7 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
 
 
 extern const char* NcbiMessagePlusError
-(int*/*bool*/ dynamic,
+(int/*bool*/ *dynamic,
  const char*  message,
  int          error,
  const char*  descr)
