@@ -48,6 +48,8 @@
 
 #include <objtools/validator/validator.hpp>
 
+#include <objects/misc/sequence_macros.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
