@@ -44,9 +44,6 @@
 #include <objects/seq/Seq_ext.hpp>
 #include <corelib/ncbi_limits.hpp>
 
-#include <common/test_assert.h>  /* This header must go last */
-
-
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
 #  undef numeric_limits
@@ -58,6 +55,10 @@
 #ifndef BOOST_AUTO_TEST_CASE
 #  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
 #endif
+
+
+#include <common/test_assert.h>  /* This header must go last */
+
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
