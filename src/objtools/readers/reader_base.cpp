@@ -79,6 +79,7 @@
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp>
 #include <objtools/readers/microarray_reader.hpp>
+#include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
@@ -102,6 +103,9 @@ CReaderBase::GetReader(
     }
     if ( format == "microarray" || format == "bed15" ) {
         return new CMicroArrayReader( flags );
+    }
+    if ( format == "wiggle" || format == "wig" ) {
+        return new CWiggleReader( flags );
     }
     return 0;
 }
