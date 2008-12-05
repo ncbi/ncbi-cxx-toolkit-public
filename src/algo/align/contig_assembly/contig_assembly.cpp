@@ -459,7 +459,7 @@ bool CContigAssembly::IsAtLeastHalfDovetail(const CDense_seg& ds,
 bool CContigAssembly::IsContained(const CDense_seg& ds,
                                   unsigned int slop, CScope& scope)
 {
-    const CSeq_id& id0 = *ds.GetIds()[0];
+/*    const CSeq_id& id0 = *ds.GetIds()[0];
     const CSeq_id& id1 = *ds.GetIds()[1];
     TSeqPos len0 = scope.GetBioseqHandle(id0).GetBioseqLength();
     TSeqPos len1 = scope.GetBioseqHandle(id1).GetBioseqLength();
@@ -468,6 +468,20 @@ bool CContigAssembly::IsContained(const CDense_seg& ds,
             ||
             (ds.GetSeqStart(1) <= slop
              && len1 - ds.GetSeqStop(1) - 1 <= slop);
+*/
+    SAlignStats stats;
+    CAlnVec avec(ds, scope);
+    s_GetTails(avec, stats.tails);
+
+    bool FirstContainsSecond;
+    bool SecondContainsFirst;
+
+    FirstContainsSecond = (abs(int(stats.tails[0].left)-int(stats.tails[1].left)) > slop &&
+                           abs(int(stats.tails[0].right)-int(stats.tails[1].right)) > slop);
+    SecondContainsFirst = (abs(int(stats.tails[1].left)-int(stats.tails[0].left)) > slop &&
+                           abs(int(stats.tails[1].right)-int(stats.tails[0].right)) > slop);
+
+    return (FirstContainsSecond | SecondContainsFirst);
 }
 
 
