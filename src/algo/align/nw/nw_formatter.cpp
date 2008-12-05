@@ -95,12 +95,8 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
     // add dynprog score
     if(flags & eSAFF_DynProgScore) {
         CRef<CScore> score (new CScore);
-        CRef<CObject_id> id (new CObject_id);
-        id->SetStr("global_score");
-        score->SetId(*id);
-        CRef< CScore::C_Value > val (new CScore::C_Value);
-        val->SetInt(m_aligner->GetScore());
-        score->SetValue(*val);
+        score->SetId().SetStr("global_score");
+        score->SetValue().SetInt(m_aligner->GetScore());
         scorelist.push_back(score);
     }
 
@@ -116,17 +112,13 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
 
         const double idty = double(matches) / transcript.size();
         CRef<CScore> score (new CScore);
-        CRef<CObject_id> id (new CObject_id);
-        id->SetStr("identity");
-        score->SetId(*id);
-        CRef< CScore::C_Value > val (new CScore::C_Value);
-        val->SetReal(idty);
-        score->SetValue(*val);
+        score->SetId().SetStr("identity");
+        score->SetValue().SetReal(idty);
         scorelist.push_back(score);
     }
 
     // create segments and add them to this seq-align
-    CRef< CSeq_align::C_Segs > segs (new CSeq_align::C_Segs);
+    CRef< CSeq_align::C_Segs > segs(&seqalign->SetSegs());
     CDense_seg& ds = segs->SetDenseg();
 
     ds.FromTranscript(query_start, query_strand,
@@ -216,7 +208,6 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
 
 #endif
 
-    seqalign->SetSegs(*segs);
     return seqalign;
 }
 
