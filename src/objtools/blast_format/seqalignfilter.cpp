@@ -468,15 +468,9 @@ bool CSeqAlignFilter::x_AddUseGiEntryInSeqalign(CRef<CSeq_align> sa, int new_gi)
 {
     // add a "use this gi" entry with the new gi to the score section of the alignment
 
-    CRef<CObject_id> id_entry(new CObject_id);
-    id_entry->SetStr("use_this_gi");
-
-    CRef<CScore::C_Value> val_entry(new CScore::C_Value);
-    val_entry->SetInt(new_gi);
-
     CRef<CScore> score_entry(new CScore);
-    score_entry->SetId(*id_entry);
-    score_entry->SetValue(*val_entry);
+    score_entry->SetId().SetStr("use_this_gi");
+    score_entry->SetValue().SetInt(new_gi);
 
     sa->SetScore().push_back(score_entry);
 
