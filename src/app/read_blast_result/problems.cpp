@@ -311,13 +311,11 @@ int CReadBlastApp::FixStrands(void)
   return 1;
 }
 
-int CReadBlastApp::RemoveProblems(void)
+int CReadBlastApp::RemoveProblems(map<string,string>& problem_names, LocMap& loc_map)
 {
    if(PrintDetails()) NcbiCerr << "RemoveProblems: start " << NcbiEndl;
 
-   map<string,string> problem_names;
    PushVerbosity();
-   CollectFrameshiftedSeqs(problem_names);
    if(IsSubmit())
      { 
      if ( m_Submit.GetData().IsEntrys()) 
@@ -326,7 +324,7 @@ int CReadBlastApp::RemoveProblems(void)
            entry != m_Submit.SetData().SetEntrys().end();)
        // NON_CONST_ITERATE(CSeq_submit::C_Data::TEntrys, entry, m_Submit.SetData().SetEntrys())
          {
-         int removeme = RemoveProblems(**entry, problem_names);
+         int removeme = RemoveProblems(**entry, problem_names, loc_map);
          if(PrintDetails())
             NcbiCerr
                  << "RemoveProblems(void): doing entry: removeme =  "
@@ -353,7 +351,7 @@ int CReadBlastApp::RemoveProblems(void)
          NcbiCerr
                  << "RemoveProblems(void): case is single entry "
                  << NcbiEndl;
-     RemoveProblems(m_Entry, problem_names);
+     RemoveProblems(m_Entry, problem_names, loc_map);
      }
 
    PopVerbosity();
@@ -361,12 +359,12 @@ int CReadBlastApp::RemoveProblems(void)
    return 1;
 }
 
-int CReadBlastApp::RemoveProblems(CSeq_entry& entry, const map<string, string>& problem_seqs)
+int CReadBlastApp::RemoveProblems(CSeq_entry& entry, map<string, string>& problem_seqs, LocMap& loc_map)
 {
    int removeme=0;
    if(entry.IsSeq()) 
      {
-     removeme=RemoveProblems(entry.SetSeq(), problem_seqs);
+     removeme=RemoveProblems(entry.SetSeq(), problem_seqs, loc_map);
      if(PrintDetails())
          NcbiCerr
                  << "RemoveProblems(CSeq_entry)(seq case): removeme = "
@@ -377,7 +375,7 @@ int CReadBlastApp::RemoveProblems(CSeq_entry& entry, const map<string, string>& 
    else //several seqs
      {
      CBioseq_set& bioset = entry.SetSet();
-     removeme=RemoveProblems(bioset, problem_seqs);
+     removeme=RemoveProblems(bioset, problem_seqs, loc_map);
      CBioseq_set::TSeq_set& entries =  bioset.SetSeq_set();
      int size=0;
      for (CTypeConstIterator<CBioseq> seq = ::ConstBegin(entry);  seq;  ++seq, size++);
@@ -422,19 +420,19 @@ void CReadBlastApp::NormalizeSeqentry(CSeq_entry& entry)
   return;
 }
 
-int CReadBlastApp::RemoveProblems(CBioseq_set& setseq, const map<string, string>& problem_seqs)
+int CReadBlastApp::RemoveProblems(CBioseq_set& setseq, map<string, string>& problem_seqs, LocMap& loc_map)
 {
    bool noseqs=false;
    bool noannot=false;
    int removeme=0;
    if(setseq.IsSetSeq_set())
      {
-     int all_entries_removed = RemoveProblems(setseq.SetSeq_set(), problem_seqs);
+     int all_entries_removed = RemoveProblems(setseq.SetSeq_set(), problem_seqs, loc_map);
      if(all_entries_removed > 0) {/* mandatory, no deletion */; noseqs=true;}
      }
    if(setseq.IsSetAnnot())
      {
-     int all_annot_removed = RemoveProblems(setseq.SetAnnot(), problem_seqs);
+     int all_annot_removed = RemoveProblems(setseq.SetAnnot(), problem_seqs, loc_map);
      if(all_annot_removed > 0) {setseq.ResetAnnot(); noannot=true;}
      }
    if(noseqs ) removeme = 1;
@@ -451,14 +449,14 @@ int CReadBlastApp::RemoveProblems(CBioseq_set& setseq, const map<string, string>
    return removeme;
 }
 
-int CReadBlastApp::RemoveProblems(CBioseq& seq, const map<string, string>& problem_seqs)
+int CReadBlastApp::RemoveProblems(CBioseq& seq, map<string, string>& problem_seqs, LocMap& loc_map)
 {      
    int remove=0;
    if(!seq.IsAa())  // nucleotide sequnce
      {           
      if(seq.IsSetAnnot())
        {
-       int annotations_removed = RemoveProblems(seq.SetAnnot(), problem_seqs);
+       int annotations_removed = RemoveProblems(seq.SetAnnot(), problem_seqs, loc_map);
        if(annotations_removed) seq.ResetAnnot();
        }
      }           
@@ -499,13 +497,13 @@ int CReadBlastApp::RemoveProblems(CBioseq& seq, const map<string, string>& probl
 }          
 
 
-int CReadBlastApp::RemoveProblems(CBioseq_set::TSeq_set& entries, const map<string, string>& problem_seqs)
+int CReadBlastApp::RemoveProblems(CBioseq_set::TSeq_set& entries, map<string, string>& problem_seqs, LocMap& loc_map)
 {
    IncreaseVerbosity();
    int remove=0;
    for(CBioseq_set::TSeq_set::iterator entries_end = entries.end(), entry=entries.begin(); entry != entries_end; )
      {
-     int removeseq=RemoveProblems(**entry, problem_seqs);
+     int removeseq=RemoveProblems(**entry, problem_seqs, loc_map);
      if(PrintDetails())
          NcbiCerr
                  << "RemoveProblems(CBioseq_set::TSeq_set): removeseq = "
@@ -526,13 +524,13 @@ int CReadBlastApp::RemoveProblems(CBioseq_set::TSeq_set& entries, const map<stri
    return remove;
 }
 
-int CReadBlastApp::RemoveProblems(CBioseq::TAnnot& annots, const map<string, string>& problem_seqs)
+int CReadBlastApp::RemoveProblems(CBioseq::TAnnot& annots, map<string, string>& problem_seqs, LocMap& loc_map)
 {
   int remove=0;
   for(CBioseq::TAnnot::iterator annot=annots.begin(); annot!=annots.end(); )
     {
     int removeme=0;
-    if( (*annot)->GetData().IsFtable()) removeme=RemoveProblems((*annot)->SetData().SetFtable(), problem_seqs);
+    if( (*annot)->GetData().IsFtable()) removeme=RemoveProblems((*annot)->SetData().SetFtable(), problem_seqs, loc_map);
     if(removeme) 
       {
       NcbiCerr << "RemoveProblems(annots, problem_seqs): "
@@ -548,11 +546,10 @@ int CReadBlastApp::RemoveProblems(CBioseq::TAnnot& annots, const map<string, str
   return remove;
 }
 
-int CReadBlastApp::RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<string, string>& problem_seqs)
+int CReadBlastApp::RemoveProblems(CSeq_annot::C_Data::TFtable& table, map<string, string>& problem_seqs, LocMap& loc_map)
 // this one needs cleaning
 {
   int removeme=0;
-  LocMap loc_map;
   GetLocMap(loc_map, table);
   for(CSeq_annot::C_Data::TFtable::iterator feat_end = table.end(), feat = table.begin(); feat != feat_end;)
     {
@@ -560,6 +557,8 @@ int CReadBlastApp::RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<
     gene = (*feat)->GetData().IsGene();
     cdregion = (*feat)->GetData().IsCdregion();
     bool del_feature=false;
+    string real_loc_string = GetLocationString((*feat)->GetLocation());
+
     string loc_string = GetLocusTag(**feat, loc_map); // more general, returns location string
 //
 // case *: matching locus tag
@@ -675,6 +674,13 @@ int CReadBlastApp::RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<
         else
            NcbiCerr << "stays";
         NcbiCerr << NcbiEndl;
+        }
+      }
+    if(del_feature)
+      {
+      if(problem_seqs.find(real_loc_string) == problem_seqs.end()) 
+        {
+        problem_seqs[real_loc_string]=problem_seqs[loc_string]; // saving for later
         }
       }
     if(del_feature) feat=table.erase(feat);

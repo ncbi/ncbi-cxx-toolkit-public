@@ -320,14 +320,14 @@ private:
 
     int CollectFrameshiftedSeqs(map<string,string>& problem_names);
     int CollectRNAFeatures(TProblem_locs& problem_locs);
-    int RemoveProblems(void);
+    int RemoveProblems(map<string, string>& problem_seqs, LocMap& loc_map);
     int FixStrands(void);
-    int RemoveProblems(CSeq_entry& entry, const map<string, string>& problem_seqs);
-    int RemoveProblems(CBioseq_set& setseq, const map<string, string>& problem_seqs);
-    int RemoveProblems(CBioseq& seq, const map<string, string>& problem_seqs);
-    int RemoveProblems(CBioseq_set::TSeq_set& seqs, const map<string, string>& problem_seqs);
-    int RemoveProblems(CBioseq::TAnnot& annots, const map<string, string>& problem_seqs);
-    int RemoveProblems(CSeq_annot::C_Data::TFtable& table, const map<string, string>& problem_seqs);
+    int RemoveProblems(CSeq_entry& entry, map<string, string>& problem_seqs, LocMap& loc_map);
+    int RemoveProblems(CBioseq_set& setseq, map<string, string>& problem_seqs, LocMap& loc_map);
+    int RemoveProblems(CBioseq& seq, map<string, string>& problem_seqs, LocMap& loc_map);
+    int RemoveProblems(CBioseq_set::TSeq_set& seqs, map<string, string>& problem_seqs, LocMap& loc_map);
+    int RemoveProblems(CBioseq::TAnnot& annots, map<string, string>& problem_seqs, LocMap& loc_map);
+    int RemoveProblems(CSeq_annot::C_Data::TFtable& table, map<string, string>& problem_seqs, LocMap& loc_map);
 
 // reshuffles seq entry, when it has only one sequence
     void NormalizeSeqentry(CSeq_entry& entry);

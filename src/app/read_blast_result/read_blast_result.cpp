@@ -542,7 +542,11 @@ int CReadBlastApp::Run(void)
     PopVerbosity();
 
     PushVerbosity();
-    RemoveProblems(); // 
+    LocMap loc_map;
+    map<string,string> problem_names;
+    CollectFrameshiftedSeqs(problem_names);
+    RemoveProblems(problem_names, loc_map); // 
+    RemoveProblems(problem_names, loc_map); // second run to do whatever was not picked up by the first run
     PopVerbosity();
 
     PushVerbosity();

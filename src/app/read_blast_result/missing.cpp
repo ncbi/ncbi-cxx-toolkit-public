@@ -198,6 +198,7 @@ int CReadBlastApp::simple_overlaps()
        absent =  absent && !overlap; // Absent
        bool bad_strand =  (overlap>0 && ext_rna->type == seq2->type &&  strand != seq2->exons[0].strand); // BadStrand
        if(!bad_strand) continue;
+       string diag_name2 = seq2->name;
        int from2, to2;
        from2 = seq2->exons[0].from;  
        to2 = seq2->exons[seq2->exons.size()-1].to;
@@ -225,15 +226,15 @@ int CReadBlastApp::simple_overlaps()
        EProblem trnaStrandProblem = undef_strand ? eTRNAUndefStrand : eTRNABadStrand;
        misc_feat << "RNA does not match strand for feature located at " << seq_range << NcbiEndl;
        misc_feat << '\0';
-// this goes to the misc_feat, has to be original
+// this goes to the misc_feat, has to be original location, and name, corrected strand
        problemStr problem = {trnaStrandProblem, bufferstr, misc_feat.str(), "", "", from2, to2, strand};
-       m_diag[diag_name].problems.push_back(problem);
+       m_diag[diag_name2].problems.push_back(problem);
        if(PrintDetails()) NcbiCerr << "simple_overlaps: adding problem:" << "\t"
                << diag_name << "\t"
                << "eTRNABadStrand" << "\t"
                << bufferstr << "\t"
                << NcbiEndl; 
-// this goes to the log, has to be original
+// this goes to the log, has to be new
        problemStr problem2 = {trnaStrandProblem, bufferstr, "", "", "", from, to, strand};
        m_diag[diag_name].problems.push_back(problem2);
 
