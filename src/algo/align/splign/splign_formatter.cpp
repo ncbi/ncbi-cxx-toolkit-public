@@ -543,26 +543,18 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
       
       // add dynprog score
       CRef<CScore> score (new CScore);
-      CRef<CObject_id> id (new CObject_id);
-      id->SetStr("splign");
-      score->SetId(*id);
-      CRef< CScore::C_Value > val (new CScore::C_Value);
-      val->SetReal(scores[i]);
-      score->SetValue(*val);
+      score->SetId().SetStr("splign");
+      score->SetValue().SetReal(scores[i]);
       CSeq_align::TScore& scorelist = sa->SetScore();
       scorelist.push_back(score);
 
       // add percent identity
       CRef<CScore> idty (new CScore);
-      CRef<CObject_id> id_idty (new CObject_id);
-      id_idty->SetStr("idty");
-      idty->SetId(*id_idty);
-      CRef< CScore::C_Value > val_idty (new CScore::C_Value);
-      val_idty->SetReal(CalcIdentity(transcripts[i]));
-      idty->SetValue(*val_idty);
+      idty->SetId().SetStr("idty");
+      idty->SetValue().SetReal(CalcIdentity(transcripts[i]));
       scorelist.push_back(idty);
 
-      CRef<CSeq_align::C_Segs> segs (new CSeq_align::C_Segs);
+      CRef<CSeq_align::C_Segs> segs (&sa->SetSegs());
       CDense_seg& ds = segs->SetDenseg();
 
       const size_t* box = &(*(boxes.begin() + i*4));
@@ -589,12 +581,9 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
       id_subj->Assign(*m_SubjId);
       ids.push_back(id_subj);
 
-      sa->SetSegs(*segs);
       sas_data.push_back(sa);
     }
     
-    sa->SetSegs(*segs);
-
     return sa;
 }
 
