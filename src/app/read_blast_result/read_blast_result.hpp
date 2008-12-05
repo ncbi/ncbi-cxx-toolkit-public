@@ -170,6 +170,8 @@ enum EMyFeatureType
   eMyFeatureType_pseudo_tRNA ,
   eMyFeatureType_atypical_tRNA,
   eMyFeatureType_normal_tRNA,
+  eMyFeatureType_rRNA,
+  eMyFeatureType_miscRNA,
   eMyFeatureType_hypo_CDS,
   eMyFeatureType_normal_CDS,
   };

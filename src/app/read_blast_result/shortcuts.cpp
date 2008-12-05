@@ -235,6 +235,14 @@ EMyFeatureType get_my_feat_type(const CSeq_feat& feat, const LocMap& loc_map)
                               << ", type= " << feat_type
                               << NcbiEndl;
           }
+        } // if(rna_type == CRNA_ref::eType_tRNA)
+      else if (rna_type == CRNA_ref::eType_rRNA)
+        {
+        feat_type = eMyFeatureType_rRNA;
+        }
+      else if (rna_type == CRNA_ref::eType_miscRNA)
+        {
+        feat_type = eMyFeatureType_miscRNA;
         }
       }
     }
