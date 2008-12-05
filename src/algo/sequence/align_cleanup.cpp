@@ -271,9 +271,9 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
 
     /// Types we use here:
     typedef CSeq_align::TDim TDim;
-    typedef CAlnSeqIdsExtract<CAlnSeqId> TIdExtract;
-    typedef CAlnIdMap<vector< CConstRef<CSeq_align> >, TIdExtract> TAlnIdMap;
-    typedef CAlnStats<TAlnIdMap> TAlnStats;
+    //typedef CAlnSeqIdsExtract<CAlnSeqId> TIdExtract;
+    //typedef CAlnIdMap<vector< CConstRef<CSeq_align> >, TIdExtract> TAlnIdMap;
+    //typedef CAlnStats<TAlnIdMap> TAlnStats;
 
 
     /// Create a vector of seq-ids per seq-align
