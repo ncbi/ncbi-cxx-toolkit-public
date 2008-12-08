@@ -385,11 +385,11 @@ bool CGeneModel::CdsInvariant(bool check_start_stop) const
     }
 
     _ASSERT( !HasStart() || mrnamap.FShiftedLen(GetCdsInfo().Start(), false)==3 );
-    _ASSERT( mrnamap.FShiftedLen(ReadingFrame(), true)%3==0 );
+    _ASSERT( mrnamap.FShiftedLen(GetCdsInfo().Start()+ReadingFrame()+GetCdsInfo().Stop(), false)%3==0 );
     _ASSERT( !HasStop() || mrnamap.FShiftedLen(GetCdsInfo().Stop(), false)==3 );
 
-    _ASSERT( GetCdsInfo().ProtReadingFrame().Empty() ||
-             mrnamap.FShiftedLen(GetCdsInfo().ProtReadingFrame(), true)%3==0 );
+    //    _ASSERT( GetCdsInfo().ProtReadingFrame().Empty() ||
+    //             mrnamap.FShiftedLen(GetCdsInfo().ProtReadingFrame(), true)%3==0 );
 
     if (GetCdsInfo().MaxCdsLimits().GetFrom() < Limits().GetFrom())
         _ASSERT( GetCdsInfo().MaxCdsLimits().GetFrom()==TSignedSeqRange::GetWholeFrom() );
@@ -419,8 +419,8 @@ void CGeneModel::CombineCdsInfo(const CGeneModel& a, bool ensure_cds_invariant)
 void CGeneModel::CombineCdsInfo(const CCDSInfo& cds_info, bool ensure_cds_invariant)
 {
     _ASSERT( cds_info.ReadingFrame().Empty() || Include(Limits(),cds_info.ReadingFrame()) );
-    //This assert is problem when when cds_info.ReadingFrame() touches a fs
-    //    _ASSERT( cds_info.ReadingFrame().Empty() || FShiftedLen(cds_info.ReadingFrame(), true)%3==0 );
+    //This assert is problem when when cds_info.ReadingFrame() touches a fs  ????
+    _ASSERT( cds_info.ReadingFrame().Empty() || FShiftedLen(cds_info.Start()+cds_info.ReadingFrame()+cds_info.Stop(), false)%3==0 );
 
     m_cds_info.CombineWith(cds_info);
 
@@ -587,6 +587,25 @@ int CGeneModel::isCompatible(const CGeneModel& a) const
 
     _ASSERT( b.Strand() == a.Strand() );
 
+
+    /*
+    if((a.Status()&CGeneModel::ePolyA) != 0) {    // a has PolyA
+        if(a.Strand() == ePlus && b.Limits().GetTo() > a.Limits().GetTo()) 
+            return 0;
+        if(a.Strand() == eMinus && b.Limits().GetFrom() < a.Limits().GetFrom()) 
+            return 0;
+    }
+
+    if((b.Status()&CGeneModel::ePolyA) != 0) {    // b has PolyA
+        if(b.Strand() == ePlus && a.Limits().GetTo() > b.Limits().GetTo()) 
+            return 0;
+        if(b.Strand() == eMinus && a.Limits().GetFrom() < b.Limits().GetFrom()) 
+            return 0;
+    }
+    */
+        
+
+   
     if((a.Status()&CGeneModel::ePolyA) != (b.Status()&CGeneModel::ePolyA)) {   // one has PolyA another doesn't
         if(a.Strand() == ePlus) {
             int polya = (a.Status()&CGeneModel::ePolyA) != 0 ? a.Limits().GetTo() : b.Limits().GetTo();
@@ -598,6 +617,7 @@ int CGeneModel::isCompatible(const CGeneModel& a) const
                 return 0;
         }
     }
+   
 
     TSignedSeqRange intersect(a.Limits() & b.Limits());
     if(intersect.GetLength() <= 1) return 0;     // intersection with 1 base is not legit
@@ -1254,7 +1274,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
     if ((a.Status()&CGeneModel::eSkipped)!=0) mrna.attributes["flags"] += ",Skip";
 
     if (a.ReadingFrame().NotEmpty()) {
-        _ASSERT( a.FShiftedLen(a.ReadingFrame(), true)%3==0 );
+        _ASSERT( a.FShiftedLen(a.GetCdsInfo().Start()+a.ReadingFrame()+a.GetCdsInfo().Stop(), false)%3==0 );
 
         if (a.MaxCdsLimits()!=a.RealCdsLimits()) {
             mrna.attributes["maxCDS"] = NStr::IntToString(a.MaxCdsLimits().GetFrom()+1)+" "+NStr::IntToString(a.MaxCdsLimits().GetTo()+1);

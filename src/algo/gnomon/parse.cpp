@@ -508,11 +508,12 @@ void AddSupport(const TGeneModelList& align_list, TSignedSeqRange inside_range, 
     if (!support.Exons().empty()) {
         _ASSERT( supporting_align != NULL );
         gene.FrameShifts() = support.FrameShifts();
-        CCDSInfo cds_info;
-        cds_info.SetReadingFrame(reading_frame);
-        gene.SetCdsInfo(cds_info);
+        //        CCDSInfo cds_info;
+        //        cds_info.SetReadingFrame(reading_frame);
+        //        gene.SetCdsInfo(cds_info);
 
-        gene.Extend(support, support.Continuous());
+        //        gene.Extend(support, support.Continuous());
+        gene.Extend(support, false);
         gene.Support() = support.Support();
         if ( Include(support.Limits(),gene.Limits()) && support.Continuous() ) {
             if (gene.Support().size()==1)

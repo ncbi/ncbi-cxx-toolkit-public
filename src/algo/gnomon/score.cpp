@@ -411,7 +411,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
             }
         }
         
-        _ASSERT(align.FShiftedLen(align.ReadingFrame(), true)%3==0);
+        _ASSERT(align.FShiftedLen(align.ReadingFrame(), false)%3==0);
 
         if(align.MaxCdsLimits().NotEmpty()) {
             limits = align.MaxCdsLimits();
