@@ -163,7 +163,7 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
 
         num_elements = 1 << (kNumBits * kmer_len);
         const Uint4 kMask = num_elements - (1 << kNumBits);
-        counts = sm_Buffer ? sm_Buffer : new TCount[num_elements];
+        counts = sm_Buffer ? sm_Buffer : (new TCount[num_elements]);
 
         _ASSERT(counts);
         memset(counts, 0, num_elements * sizeof(TCount));
@@ -438,6 +438,7 @@ void CSparseKmerCounts::PostCount(void)
     if (sm_Buffer) {
         delete [] sm_Buffer;
     }
+    sm_Buffer = NULL;
 }
 
 
