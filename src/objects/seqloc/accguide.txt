@@ -201,7 +201,7 @@ version  1 # of file format
 2+6  DJ  ddbj_patent
 2+6  DK  ddbj_est
 2+6  DL  ddbj_patent
-2+6  DM  ddbj_other_nuc
+2+6  DM  ddbj_patent
 2+6  DN  gb_est
 2+6  DO  unreserved_nuc
 2+6  DP  gb_htgs
