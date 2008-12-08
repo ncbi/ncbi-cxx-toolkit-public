@@ -284,7 +284,7 @@ public:
     bool GetIterate(void) const {return m_Iterate;}
 
 
-    /// Use given RPS Blast with given database
+    /// Use RPS Blast with given database
     ///
     /// RPS Blast will be used to find conserved domains in query sequences.
     /// Pairwise alignments are constrainted so that matching conserved domains
@@ -301,6 +301,12 @@ public:
     /// @return RPS Blast data base name
     ///
     string GetRpsDb(void) const {return m_RpsDb;}
+
+
+    /// Determine if RPS Blast is to be used
+    /// @return True if RPS Blast will be used, false otherwise
+    ///
+    bool GetUseRpsBlast(void) const {return !m_RpsDb.empty();}
 
 
     /// Set regular expression patterns for identification of conserved domains.
@@ -655,7 +661,6 @@ private:
     EInClustAlnMethod m_InClustAlnMethod;
 
     // RPS Blast
-    bool m_UseRpsBlast;
     string m_RpsDb;
     double m_RpsEvalue;
     double m_DomainResFreqBoost;

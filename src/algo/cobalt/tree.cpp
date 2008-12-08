@@ -101,15 +101,19 @@ CTree::x_FindLargestEdge(TPhyTreeNode *node,
 
 void
 CTree::ListTreeEdges(const TPhyTreeNode *node, 
-                     vector<STreeEdge>& edge_list)
+                     vector<STreeEdge>& edge_list, int max_id)
 {
     if (node->GetParent()) {
         edge_list.push_back(STreeEdge(node, node->GetValue().GetDist()));
     }
+    // check whether to traverse the tree below this node
+    if (max_id >= 0 && node->GetValue().GetId() > max_id) {
+        return;
+    }
 
     TPhyTreeNode::TNodeList_CI child(node->SubNodeBegin());
     while (child != node->SubNodeEnd()) {
-        ListTreeEdges(*child, edge_list);
+        ListTreeEdges(*child, edge_list, max_id);
         child++;
     }
 }

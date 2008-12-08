@@ -87,10 +87,7 @@ public:
     ///
     TFreqMatrix& GetFreqs() { return m_Freqs; }
 
-    /// Access the list of locations of frequencies assigned from RPS database
-    /// @return List of RPS locations
-    ///
-    vector<int>& GetRPSLocs() {return m_RPSFreqLocs;}
+    const TFreqMatrix& GetFreqs() const { return m_Freqs; }
 
     /// Access the raw sequence data, in ncbistdaa format
     /// @return Pointer to array of sequence data
@@ -162,9 +159,6 @@ private:
     vector<unsigned char> m_Sequence;  ///< The sequence (ncbistdaa format)
     TFreqMatrix m_Freqs;               ///< Position-specific frequency 
                                        ///  profile corresponding to sequence
-    vector<int> m_RPSFreqLocs;         ///< List of position where frequencies
-                                       ///  where assigned to values from 
-                                       ///  RPS database
 };
 
 END_SCOPE(cobalt)

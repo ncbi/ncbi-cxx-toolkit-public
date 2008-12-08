@@ -156,9 +156,12 @@ public:
     /// edge is also saved
     /// @param node The root of the tree to traverse [in]
     /// @param node_list List of edges encountered [out]
+    /// @param max_id If non-negative, tree is not traversed below nodes with
+    /// id greater or equal to max_id [in]
     ///
     static void ListTreeEdges(const TPhyTreeNode *node,
-                              vector<STreeEdge>& edge_list);
+                              vector<STreeEdge>& edge_list,
+                              int max_id = -1);
 
     /// Debug routine to recursively print out a tree
     /// @param node Root of tree [in]

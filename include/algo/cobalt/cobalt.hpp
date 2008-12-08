@@ -323,6 +323,14 @@ protected:
     void x_FindLocalHits(const blast::TSeqLocVector& queries,
                          const vector<int>& indices);
 
+    /// Run blast on sequences from each cluster subtree. Each tree is
+    /// traversed. Blast is run for pairs of most similar sequences such that
+    /// each belongs to different subtree. Indented for use with query
+    /// clustering for faster in-cluster pair-wise alignments.
+    /// @param cluster_trees List of query cluster trees [in]
+    ///
+    void x_FindLocalInClusterHits(const vector<TPhyTreeNode*>& cluster_trees);
+
     /// Find PROSITE pattern hits on selected input sequences.
     /// Intended for applications that want fine-grained control of the 
     /// alignment process
@@ -532,7 +540,7 @@ private:
     void x_AlignProgressive(const TPhyTreeNode *tree,
                             vector<CSequence>& query_data,
                             CNcbiMatrix<CHitList>& pair_info,
-                            int iteration);
+                            int iteration, bool is_cluster);
     double x_RealignSequences(const TPhyTreeNode *input_cluster,
                               vector<CSequence>& alignment,
                               CNcbiMatrix<CHitList>& pair_info,
@@ -543,12 +551,24 @@ private:
                                vector<CSequence>& alignment,
                                CNcbiMatrix<CHitList>& pair_info,
                                int iteration);
+    void x_AlignProfileProfileUsingHit(vector<CTree::STreeLeaf>& node_list1,
+                                       vector<CTree::STreeLeaf>& node_list2,
+                                       vector<CSequence>& alignment,
+                                       CNcbiMatrix<CHitList>& pair_info,
+                                       int iteration);
     void x_FindConstraints(vector<size_t>& constraint,
                            vector<CSequence>& alignment,
                            vector<CTree::STreeLeaf>& node_list1,
                            vector<CTree::STreeLeaf>& node_list2,
                            CNcbiMatrix<CHitList>& pair_info,
                            int iteration);
+    void x_FindInClusterConstraints(auto_ptr<CHit>& hit,
+                                    vector<CSequence>& alignment,
+                                    vector<CTree::STreeLeaf>& node_list1,
+                                    vector<CTree::STreeLeaf>& node_list2,
+                                    CNcbiMatrix<CHitList>& pair_info,
+                                    vector< pair<int, int> >& gaps1,
+                                    vector< pair<int, int> >& gaps2) const;
     double x_GetScoreOneCol(vector<CSequence>& align, 
                             int col);
     double x_GetScore(vector<CSequence>& align);
@@ -564,6 +584,17 @@ private:
     void x_AddRpsFreqsToCluster(const CClusterer::CSingleCluster& cluster,
                                 vector<CSequence>& query_data,
                                 const vector<TRange>& gaps);
+
+    auto_ptr< vector<int> > x_AlignClusterQueries(const TPhyTreeNode* node);
+
+    void x_ComputeProfileRangeAlignment(
+                                vector<CTree::STreeLeaf>& node_list1,
+                                vector<CTree::STreeLeaf>& node_list2,
+                                vector<CSequence>& alignment,
+                                vector<size_t>& constraints,
+                                TRange range1, TRange range2,
+                                CNWAligner::TTranscript& t);
+
 
 
 private:
@@ -590,10 +621,14 @@ private:
     CHitList m_LocalHits;
     CHitList m_CombinedHits;
     CHitList m_PatternHits;
+    CHitList m_LocalInClusterHits;
 
     vector< vector<Uint4> > m_ClusterGapPositions;
     vector< CRef<objects::CSeq_loc> > m_AllQueries;
     vector<CSequence> m_AllQueryData;
+
+    // Ranges of conserved domains in query sequences identified by RPS Blast
+    vector< vector<TRange> > m_RPSLocs;
 
     // Modified by x_FindQueryClusters() if no clusters found
     CMultiAlignerOptions::EInClustAlnMethod m_ClustAlnMethod;
@@ -637,6 +672,9 @@ private:
     bool m_FastMeTree;
 
     bool m_Verbose;
+
+    // Minimum tree node id for root of cluster subtree
+    static const int kClusterNodeId = 10000;
 };
 
 END_SCOPE(cobalt)

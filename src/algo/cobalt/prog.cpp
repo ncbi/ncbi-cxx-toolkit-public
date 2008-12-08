@@ -109,18 +109,24 @@ static void x_HitToConstraints(vector<size_t>& constraint,
 }
 
 
-/// Compute the residue frequencies of a collection of sequences
+/// Compute the residue frequencies for a specified range of a collection 
+/// of sequences
 /// @param freq_data The computed frequencies [out]
 /// @param query_data List of all sequences [in]
 /// @param node_list List of suubset of sequences in query_data 
 ///                 that will contribute to the final residue 
 ///                 frequencies [in]
+/// @param range Sequnece range for computation of frequencies, full sequence
+///              if range limits are smaller than zero [in]
 ///
 static void
 x_FillResidueFrequencies(double **freq_data,
-                    vector<CSequence>& query_data,
-                    vector<CTree::STreeLeaf>& node_list)
+                         vector<CSequence>& query_data,
+                         vector<CTree::STreeLeaf>& node_list,
+                         TRange range = TRange(-1, -1))
 {
+    _ASSERT(range.GetFrom() < 0 || range.GetTo() >= range.GetFrom());
+
     double sum = 0.0;
 
     // sum all the distances from the (implicit) tree root
@@ -149,12 +155,16 @@ x_FillResidueFrequencies(double **freq_data,
         else
             weight = node_list[i].distance / sum;
 
-        int size = query_data[index].GetLength();
+        int start = range.GetFrom() >= 0 ? range.GetFrom() : 0;
+        int size = range.GetFrom() >= 0 ? range.GetTo() - range.GetFrom() + 1
+            : query_data[index].GetLength();
+
         CSequence::TFreqMatrix& matrix = query_data[index].GetFreqs();
 
         // add in the residue frequencies
 
-        for (int j = 0; j < size; j++) {
+        _ASSERT(start + size <= query_data[index].GetLength());
+        for (int j = start; j < size; j++) {
             if (query_data[index].GetLetter(j) == CSequence::kGapChar) {
                 freq_data[j][0] += weight;
             }
@@ -233,6 +243,58 @@ x_ExpandRange(TRange& range,
     _ASSERT(i < len);
 }
 
+
+/// Convert a sequence range to reflect gaps added to the
+/// underlying sequence and record gap locations
+/// @param range [in][out]
+/// @param seq The sequence [in]
+/// @param gaps Locations of gaps within the range, pair: (location: gaps 
+/// after n-th letter, number of gaps) [out]
+///
+static void 
+x_ExpandRange(TRange& range, CSequence& seq, vector< pair<int, int> >& gaps)
+{
+    int len = seq.GetLength();
+    int i, offset;
+
+    // convert range.From
+
+    offset = -1;
+    for (i = 0; i < len; i++) {
+        if (seq.GetLetter(i) != CSequence::kGapChar)
+            offset++;
+        if (offset == range.GetFrom()) {
+            range.SetFrom(i);
+            break;
+        }
+    }
+
+    // convert range.To and record gaps
+
+    if (offset == range.GetTo()) {
+        range.SetTo(i);
+        return;
+    }
+    for (i++; i < len; i++) {
+        if (seq.GetLetter(i) != CSequence::kGapChar) {
+            offset++;
+        }
+        else if (offset < range.GetTo()) {
+            pair<int, int> g(offset, 0);
+            while (i < len && seq.GetLetter(i) == CSequence::kGapChar) {
+                i++;
+                g.second++;
+            }
+            i--;
+            gaps.push_back(g);
+        }
+        if (offset == range.GetTo()) {
+            range.SetTo(i);
+            break;
+        }
+    }
+    _ASSERT(i < len);
+}
 
 /// Find the set of constraints to use for a profile-profile
 /// alignment. This routine considers only constraints between
@@ -555,6 +617,94 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
 }
 
 
+/// Find constraint to use for profile to profile alignment in clusters
+/// @param hit_constr Hit representing constraint [out]
+/// @param alignment Current multiple alignment of sequences [in]
+/// @param node_list1 List of sequences in first collection [in]
+/// @param node_list2 List of sequences in second collection [in]
+/// @param pair_info List of pairwise constraints (between sequences) [in]
+/// @param gaps1 Positions of gaps palced in sequence representing profile 1
+/// prior to this alignment [out]
+/// @param gaps2 Positions of gaps palced in sequence representing profile 2
+/// prior to this alignment [out]
+void CMultiAligner::x_FindInClusterConstraints(auto_ptr<CHit>& hit_constr,
+                                     vector<CSequence>& alignment,
+                                     vector<CTree::STreeLeaf>& node_list1,
+                                     vector<CTree::STreeLeaf>& node_list2,
+                                     CNcbiMatrix<CHitList>& pair_info,
+                                     vector< pair<int, int> >& gaps1,
+                                     vector< pair<int, int> >& gaps2) const
+{
+    // Find the pair of most similar sequences, each from another subtree
+    const CClusterer::TDistMatrix& dmat = m_Clusterer.GetDistMatrix();
+    
+    int seq1 = -1, seq2 = -1;
+    double dist = 0.0;
+    for (size_t i=0;i < node_list1.size();i++) {
+        for (size_t j=0;j < node_list2.size();j++) {
+            if (dist > dmat(node_list1[i].query_idx, node_list2[j].query_idx)
+                || seq1 < 0) {
+
+                seq1 = node_list1[i].query_idx;
+                seq2 = node_list2[j].query_idx;
+                dist = dmat(seq1, seq2);
+            }
+        }
+    }
+    _ASSERT(seq1 != seq2);
+    
+    // Exit if no contraints found 
+    if (pair_info(seq1, seq2).Size() == 0) {
+        return;
+    }
+
+    CHit* hit = pair_info(seq1, seq2).GetHit(0);
+    for (int k=1;k < pair_info(seq1, seq2).Size();k++) {
+        if (pair_info(seq1, seq2).GetHit(k)->m_Score > hit->m_Score) {
+            hit = pair_info(seq1, seq2).GetHit(k);
+        }
+    }
+
+    // Convert hit ranges to current alignment
+    CHit* new_hit = new CHit(hit->m_SeqIndex1, hit->m_SeqIndex2,
+                             hit->m_SeqRange1, hit->m_SeqRange2,
+                             hit->m_Score, hit->GetEditScript());
+
+    if (seq1 != hit->m_SeqIndex1) {
+        swap(new_hit->m_SeqIndex1, new_hit->m_SeqIndex2);
+        swap(new_hit->m_SeqRange1, new_hit->m_SeqRange2);
+        new_hit->GetEditScript().ReverseEditScript();
+    }
+
+    gaps1.clear();
+    gaps2.clear();
+
+    // the first entry in gaps lists denotes begining of hit range disregarding
+    // gaps in the sequecne - this is for reference to indicate position of
+    // gaps that are in the sequences prior to the alignment
+    gaps1.push_back(pair<int, int>(new_hit->m_SeqRange1.GetFrom(), 0));
+    gaps2.push_back(pair<int, int>(new_hit->m_SeqRange2.GetFrom(), 0));
+
+    x_ExpandRange(new_hit->m_SeqRange1, alignment[new_hit->m_SeqIndex1], gaps1);
+    x_ExpandRange(new_hit->m_SeqRange2, alignment[new_hit->m_SeqIndex2], gaps2);
+
+    hit_constr.reset(new_hit);
+    
+    //--------------------------------------
+    if (m_Verbose) {
+        printf("possible constraints (offsets wrt input profiles):\n");
+        printf("query %3d %4d - %4d query %3d %4d - %4d score %d %c\n",
+               new_hit->m_SeqIndex1, 
+               new_hit->m_SeqRange1.GetFrom(), hit->m_SeqRange1.GetTo(),
+               new_hit->m_SeqIndex2, 
+               new_hit->m_SeqRange2.GetFrom(), hit->m_SeqRange2.GetTo(),
+               new_hit->m_Score,
+               new_hit->HasSubHits() ? 'd' : 'f');
+    }
+    //--------------------------------------
+}
+
+
 /// Align two collections of sequences. All sequences within
 /// a single collection begin with the same size
 /// @param node_list1 List of sequence number in first collection [in]
@@ -619,15 +769,16 @@ CMultiAligner::x_AlignProfileProfile(
                          (const double**)freq2_data, freq2_size, kScale);
     m_Aligner.SetEndSpaceFree(false, false, false, false); 
 
-    // List the query sequences that participate in
-    // each profile
-
     vector<size_t> constraint;
 
     // determine the list of constraints to use
 
     x_FindConstraints(constraint, alignment, node_list1,
                       node_list2, pair_info, iteration);
+
+    // List the query sequences that participate in
+    // each profile
+
 
     //-------------------------------
     if (m_Verbose) {
@@ -693,6 +844,365 @@ CMultiAligner::x_AlignProfileProfile(
 
     //-------------------------------------------
     if (m_Verbose) {
+        printf("      ");
+        for (int i = 0; i < (int)t.size() / 10; i++)
+            printf("%10d", i + 1);
+        printf("\n     ");
+        for (int i = 0; i < (int)t.size(); i++)
+            printf("%d", i % 10);
+        printf("\n\n");
+
+        for (int i = 0; i < (int)node_list1.size(); i++) {
+            int index = node_list1[i].query_idx;
+            CSequence& query = alignment[index];
+            printf("%3d: ", index);
+            for (int j = 0; j < query.GetLength(); j++) {
+                printf("%c", query.GetPrintableLetter(j));
+            }
+            printf("\n");
+        }
+        printf("\n");
+        for (int i = 0; i < (int)node_list2.size(); i++) {
+            int index = node_list2[i].query_idx;
+            CSequence& query = alignment[index];
+            printf("%3d: ", index);
+            for (int j = 0; j < query.GetLength(); j++) {
+                printf("%c", query.GetPrintableLetter(j));
+            }
+            printf("\n");
+        }
+    }
+    //-------------------------------------------
+}
+
+
+/// Compute profile profile alignmnet for a ranges of given profiles.
+/// Resambles x_AlignProfileProfile, but works on sequence ranges, 
+/// does not allow end space free for large sequence lengths difference, 
+/// returns transcript, and does not update the vector of input sequences.
+/// @param node_list1 List of sequence numbers in first collecton [in]
+/// @param node_list2 List of sequence numbers in second collection [in]
+/// @param alignment List of sequences [in]
+/// @param constraints Constraints for alignment [in]
+/// @param range1 Range for alignment of the first profile [in]
+/// @param range2 Range for alignment of the second profile [in]
+/// @param t Alignmet transcript [out]
+void CMultiAligner::x_ComputeProfileRangeAlignment(
+                                     vector<CTree::STreeLeaf>& node_list1,
+                                     vector<CTree::STreeLeaf>& node_list2,
+                                     vector<CSequence>& alignment,
+                                     vector<size_t>& constraints,
+                                     TRange range1, TRange range2,
+                                     CNWAligner::TTranscript& t)
+{
+        double **freq1_data;
+        double **freq2_data;
+        const int kScale = CMultiAligner::kRpsScaleFactor;
+
+        int freq1_size = range1.GetTo() - range1.GetFrom() + 1;
+        int freq2_size = range2.GetTo() - range2.GetFrom() + 1;
+
+        // build a set of residue frequencies for the
+        // sequences in the left subtree
+        freq1_data = new double* [freq1_size];
+        freq1_data[0] = new double[kAlphabetSize * freq1_size];
+
+        for (int i = 1; i < freq1_size; i++)
+            freq1_data[i] = freq1_data[0] + kAlphabetSize * i;
+
+        memset(freq1_data[0], 0, kAlphabetSize * freq1_size * sizeof(double));
+        x_FillResidueFrequencies(freq1_data, alignment, node_list1, range1);
+        x_NormalizeResidueFrequencies(freq1_data, freq1_size);
+    
+        // build a set of residue frequencies for the
+        // sequences in the right subtree
+        freq2_data = new double* [freq2_size];
+        freq2_data[0] = new double[kAlphabetSize * freq2_size];
+
+        for (int i = 1; i < freq2_size; i++) {
+            freq2_data[i] = freq2_data[0] + kAlphabetSize * i;
+        }
+
+        memset(freq2_data[0], 0, kAlphabetSize * freq2_size * sizeof(double));
+        x_FillResidueFrequencies(freq2_data, alignment, node_list2, range2);
+        x_NormalizeResidueFrequencies(freq2_data, freq2_size);
+    
+        // Perform dynamic programming global alignment
+        m_Aligner.SetSequences((const double**)freq1_data, freq1_size, 
+                               (const double**)freq2_data, freq2_size, kScale);
+        m_Aligner.SetEndSpaceFree(false, false, false, false);
+        m_Aligner.SetPattern(constraints);
+
+        // if there is a large length disparity between the two
+        // profiles, reduce or eliminate end gap penalties. Also 
+        // scale up the gap penalties to match those of the score matrix
+        m_Aligner.SetWg(m_GapOpen * kScale);
+        m_Aligner.SetStartWg(m_EndGapOpen * kScale);
+        m_Aligner.SetEndWg(m_EndGapOpen * kScale);
+        m_Aligner.SetWs(m_GapExtend * kScale);
+        m_Aligner.SetStartWs(m_EndGapExtend * kScale);
+        m_Aligner.SetEndWs(m_EndGapExtend * kScale);
+
+        // run the aligner, scale the penalties back down
+        m_Aligner.Run();
+        m_Aligner.SetWg(m_GapOpen);
+        m_Aligner.SetStartWg(m_EndGapOpen);
+        m_Aligner.SetEndWg(m_EndGapOpen);
+        m_Aligner.SetWs(m_GapExtend);
+        m_Aligner.SetStartWs(m_EndGapExtend);
+        m_Aligner.SetEndWs(m_EndGapExtend);
+
+        delete [] freq1_data[0];
+        delete [] freq1_data;
+        delete [] freq2_data[0];
+        delete [] freq2_data;
+
+        t = m_Aligner.GetTranscript();
+}
+
+void CMultiAligner::x_AlignProfileProfileUsingHit(
+                                        vector<CTree::STreeLeaf>& node_list1,
+                                        vector<CTree::STreeLeaf>& node_list2,
+                                        vector<CSequence>& alignment,
+                                        CNcbiMatrix<CHitList>& pair_info,
+                                        int iteration)
+{
+    // CPSSMAligner will be used to align parts of the sequences outside
+    // of the hit if their lengths are larger than kMinMargin. Otherwise gaps
+    // will be placed in positions corresponding to letter in the other profile.
+    const int kMinMargin = 0;
+    
+    //---------------------------
+    if (m_Verbose) {
+        printf("\nalign profile (size %d) with profile (size %d)\n",
+               alignment[node_list1[0].query_idx].GetLength(),
+               alignment[node_list2[0].query_idx].GetLength());
+    }
+    //---------------------------
+
+    // Find pair-wise constraints
+    auto_ptr<CHit> hit;
+    vector< pair<int, int> > gaps1, gaps2;
+    x_FindInClusterConstraints(hit, alignment, node_list1, node_list2,
+                               pair_info, gaps1, gaps2);
+
+    // Perform standard profile-profile alignment if no constraints are found
+    if (!hit.get()) {
+        x_AlignProfileProfile(node_list1, node_list2, alignment, pair_info,
+                              iteration);
+        string message = "No in-cluster hits were found for subtrees: ";
+        ITERATE(vector<CTree::STreeLeaf>, it, node_list1) {
+            message += NStr::IntToString(it->query_idx) + ", ";
+        }
+        message += " and ";
+        ITERATE(vector<CTree::STreeLeaf>, it, node_list2) {
+            message += NStr::IntToString(it->query_idx) + ", ";
+        }
+        m_Messages.push_back(message);
+
+        return;
+    }
+
+    // Align sequences using edit script from that constraint
+    // retrieve the traceback information from the local hit
+    CNWAligner::TTranscript transcr;
+    vector<TOffsetPair> match_regions(
+                                   hit->GetEditScript().ListMatchRegions(
+                                     TOffsetPair(hit->m_SeqRange1.GetFrom(),
+                                                 hit->m_SeqRange2.GetFrom())));
+
+    _ASSERT(match_regions.size() >= 2);
+    _ASSERT(match_regions[1].first - match_regions[0].first
+            == match_regions[1].second - match_regions[0].second);
+
+    vector< pair<int, int> >::iterator gaps1_it = gaps1.begin();
+    vector< pair<int, int> >::iterator gaps2_it = gaps2.begin();
+
+    // Retrieve letter positions for begining of the hit range
+    // it is stored in the first elements of the gaps lists
+    _ASSERT(gaps1_it->first >= 0 && gaps1_it->second == 0);
+    _ASSERT(gaps2_it->first >= 0 && gaps2_it->second == 0);
+    int letters1 = gaps1_it->first - 1;
+    int letters2 = gaps2_it->first - 1;
+    gaps1_it++;
+    gaps2_it++;
+
+    // for the first matching region
+    for (int j=match_regions[0].first;j < match_regions[1].first;j++) {
+
+        // put matching transcript elements
+        transcr.push_back(CNWAligner::eTS_Match);
+        letters1++;
+        letters2++;
+
+        // if gaps exist in one sequence, puth them in the other
+        if (gaps1_it != gaps1.end() && letters1 == gaps1_it->first) {
+            _ASSERT(gaps1_it->second > 0);
+            for (int k=0;k < gaps1_it->second;k++) {
+                transcr.push_back(CNWAligner::eTS_Delete);
+            }
+            gaps1_it++;
+        }
+        if (gaps2_it != gaps2.end() && letters2 == gaps2_it->first) {
+            _ASSERT(gaps2_it->second > 0);
+            for (int k=0;k < gaps2_it->second;k++) {
+                transcr.push_back(CNWAligner::eTS_Insert);
+            }
+            gaps2_it++;
+        }
+    }
+
+    // for the remaining matching regions
+    for (size_t i=2;i < match_regions.size();i+=2) {
+        TOffsetPair& start_pair = match_regions[i];
+        TOffsetPair& stop_pair = match_regions[i+1];
+        TOffsetPair& last_stop_pair = match_regions[i-1];
+
+        _ASSERT(stop_pair.first - start_pair.first
+                == stop_pair.second - start_pair.second);
+
+        // check for deletions between matching regions
+        for (int j=last_stop_pair.first;j < start_pair.first;j++) {
+
+            transcr.push_back(CNWAligner::eTS_Delete);
+            letters1++;
+
+            if (gaps1_it != gaps1.end() && letters1 == gaps1_it->first) {
+                for (int k=0;k < gaps1_it->second;k++) {
+                    transcr.push_back(CNWAligner::eTS_Delete);
+                }
+                gaps1_it++;
+            }
+        }
+
+        // check for insertions between matching regions
+        for (int j=last_stop_pair.second;j < start_pair.second;j++) {
+
+            transcr.push_back(CNWAligner::eTS_Insert);
+            letters2++;
+
+            if (gaps2_it != gaps2.end() && letters2 == gaps2_it->first) {
+                for (int k=0;k < gaps2_it->second;k++) {
+                    transcr.push_back(CNWAligner::eTS_Insert);
+                }
+                gaps2_it++;
+            }
+        }
+
+        // for matching region
+        for (int j=start_pair.first;j < stop_pair.first;j++) {
+
+            transcr.push_back(CNWAligner::eTS_Match);
+            letters1++;
+            letters2++;
+
+            if (gaps1_it != gaps1.end() && letters1 == gaps1_it->first) {
+                for (int k=0;k < gaps1_it->second;k++) {
+                    transcr.push_back(CNWAligner::eTS_Delete);
+                }
+                gaps1_it++;
+            }
+            if (gaps2_it != gaps2.end() && letters2 == gaps2_it->first) {
+                for (int k=0;k < gaps2_it->second;k++) {
+                    transcr.push_back(CNWAligner::eTS_Insert);
+                }
+                gaps2_it++;
+            }
+        }
+    }    
+    _ASSERT(gaps1_it == gaps1.end() && gaps2_it == gaps2.end());
+
+    //-------------------------------
+    if (m_Verbose) {
+        printf("constraints: ");
+        printf("(seq1 %d seq2 %d)->(seq1 %d seq2 %d)", 
+               hit->m_SeqRange1.GetFrom(), hit->m_SeqRange2.GetFrom(),
+               hit->m_SeqRange1.GetTo(), hit->m_SeqRange2.GetTo());
+        printf("\n");
+    }
+    //-------------------------------
+        
+    // Align sequence margins parts outside of the hit
+
+    int seq1_length = alignment[hit->m_SeqIndex1].GetLength();
+    int seq2_length = alignment[hit->m_SeqIndex2].GetLength();
+
+    // Left margin
+    // if margin length exceeds threshold than align profiles for than margin
+    // otherwise make margins insertions and deletions
+    if (hit->m_SeqRange1.GetFrom() > kMinMargin 
+        && hit->m_SeqRange2.GetFrom() > kMinMargin) {
+
+        TRange seq1_range(0, hit->m_SeqRange1.GetFrom() - 1);
+        TRange seq2_range(0, hit->m_SeqRange2.GetFrom() - 1);
+        vector<size_t> constr;
+        CNWAligner::TTranscript t;
+        x_ComputeProfileRangeAlignment(node_list1, node_list2, alignment,
+                                       constr, seq1_range, seq2_range, t);
+        
+        transcr.swap(t);
+        transcr.reserve(transcr.size() + t.size());
+        ITERATE(CNWAligner::TTranscript, it, t) {
+            transcr.push_back(*it);
+        }
+    }
+    else {
+        // Put gaps
+        int len1 = hit->m_SeqRange1.GetFrom();
+        int len2 = hit->m_SeqRange2.GetFrom();
+
+        for (int i=0; i < len1;i++) {
+            transcr.insert(transcr.begin(), CNWAligner::eTS_Delete);
+        }
+        for (int i=0; i < len2;i++) {
+            transcr.insert(transcr.begin(), CNWAligner::eTS_Insert);
+        }
+    }
+
+    // Right margin
+    // if margin length exceeds threshold than align profiles for than margin
+    // otherwise make margins insertions and deletions
+    if (seq1_length - hit->m_SeqRange1.GetTo() - 1 > kMinMargin
+        && seq2_length - hit->m_SeqRange2.GetTo() - 1 > kMinMargin) {
+
+        TRange seq1_range(hit->m_SeqRange1.GetTo() + 1, seq1_length - 1);
+        TRange seq2_range(hit->m_SeqRange2.GetTo() + 1, seq2_length - 1);
+        vector<size_t> constr;
+        CNWAligner::TTranscript t;
+        x_ComputeProfileRangeAlignment(node_list1, node_list2, alignment,
+                                       constr, seq1_range, seq2_range, t);
+
+        ITERATE(CNWAligner::TTranscript, it, t) {
+            transcr.push_back(*it);
+        }
+    }
+    else {
+
+        // Put gaps
+        int len1 = seq1_length - hit->m_SeqRange1.GetTo() - 1;
+        int len2 = seq2_length - hit->m_SeqRange2.GetTo() - 1;
+
+        for (int i=0; i < len1;i++) {
+            transcr.push_back(CNWAligner::eTS_Delete);
+        }
+        for (int i=0; i < len2;i++) {
+            transcr.push_back(CNWAligner::eTS_Insert);
+        }
+    }
+
+    // Propagate gaps in all profile sequences
+    for (int i=0;i < (int)node_list1.size();i++) {
+        alignment[node_list1[i].query_idx].PropagateGaps(transcr, 
+                                                 CNWAligner::eTS_Insert);
+    }
+    for (int i=0;i < (int)node_list2.size();i++) {
+        alignment[node_list2[i].query_idx].PropagateGaps(transcr,
+                                                  CNWAligner::eTS_Delete);
+    }
+
+    //-------------------------------------------
+    if (m_Verbose) {
+        CNWAligner::TTranscript& t = transcr;
         printf("      ");
         for (int i = 0; i < (int)t.size() / 10; i++)
             printf("%10d", i + 1);
@@ -929,13 +1439,21 @@ static void x_GetClusterGapLocations(const CClusterer::CSingleCluster& cluster,
 ///               the aligned version of all sequences [in][out]
 /// @param pair_info List of alignment constraints [in]
 /// @param iteration The iteration number [in]
+/// @param is_cluster Is the curretly traversed node inside a cluster 
+/// subtree [in]
 void
 CMultiAligner::x_AlignProgressive(
                  const TPhyTreeNode *tree,
                  vector<CSequence>& query_data,
                  CNcbiMatrix<CHitList>& pair_info,
-                 int iteration)
+                 int iteration, bool is_cluster)
 {
+
+    // Nodes with id >= kClusterNodeId are roots of cluster subtrees
+    if (tree->GetValue().GetId() >= kClusterNodeId) {
+        is_cluster = true;
+    }
+
     TPhyTreeNode::TNodeList_CI child(tree->SubNodeBegin());
 
     // recursively convert each subtree into a multiple alignment
@@ -943,12 +1461,12 @@ CMultiAligner::x_AlignProgressive(
     const TPhyTreeNode *left_child = *child++;
     if (!left_child->IsLeaf())
         x_AlignProgressive(left_child, query_data, 
-                           pair_info, iteration);
+                           pair_info, iteration, is_cluster);
 
     const TPhyTreeNode *right_child = *child;
     if (!right_child->IsLeaf())
         x_AlignProgressive(right_child, query_data, 
-                           pair_info, iteration);
+                           pair_info, iteration, is_cluster);
 
     // align the two subtrees
 
@@ -958,9 +1476,16 @@ CMultiAligner::x_AlignProgressive(
     CTree::ListTreeLeaves(right_child, node_list2, 
                          right_child->GetValue().GetDist());
 
-    x_AlignProfileProfile(node_list1, node_list2,
-                          query_data, pair_info, iteration);
-
+    // Use different alignment procedure inside clusters
+    if (is_cluster && iteration == 0) {
+        x_AlignProfileProfileUsingHit(node_list1, node_list2,
+                                      query_data, pair_info, iteration);
+    }
+    else {
+        x_AlignProfileProfile(node_list1, node_list2,
+                              query_data, pair_info, iteration);
+    }
+    
     // check for interrupt
     if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
         NCBI_THROW(CMultiAlignerException, eInterrupt,
@@ -968,12 +1493,10 @@ CMultiAligner::x_AlignProgressive(
     }
 
     // If root of a cluster tree then set RPS frequencies for cluster seuquences
-    // Node id > 10000 denotes root of a cluster tree
-    // TO DO: Marking root of cluster tree should be done in a better way
-    if (iteration == 0 && tree->GetValue().GetId() >= 10000
-        && m_Options->GetInClustAlnMethod() == CMultiAlignerOptions::eMulti) {
+    // Node id > kClusterNodeId denotes root of a cluster tree
+    if (tree->GetValue().GetId() >= kClusterNodeId && !m_DomainHits.Empty()) {
 
-        int index = tree->GetValue().GetId() - 10000;
+        int index = tree->GetValue().GetId() - kClusterNodeId;
         const CClusterer::CSingleCluster& cluster
             = m_Clusterer.GetClusters()[index];
 
@@ -991,62 +1514,64 @@ CMultiAligner::x_AddRpsFreqsToCluster(const CClusterer::CSingleCluster& cluster,
 {
     // Cdd frequencies must be added to all cluster sequencies, because
     // at each profile-to-profile alignment frequencies are taken from
-    // individual sequences
+    // individual sequences    
+
+    _ASSERT(cluster.GetPrototype() < (int)m_RPSLocs.size());
 
     // Get RPS frequencies for cluster prototype
-    CSequence& prot = m_QueryData[cluster.GetPrototype()];
-    CSequence::TFreqMatrix& rps_freqs = prot.GetFreqs();
-
-    int prot_idx = cluster.GetPrototype();
+    const CSequence& prot = m_QueryData[cluster.GetPrototype()];
+    const CSequence::TFreqMatrix& rps_freqs = prot.GetFreqs();
 
     int offset = 0;
     vector<TRange>::const_iterator gap_it(gaps.begin());
 
-    // For each location with RPS frequencies
-    ITERATE(vector<int>, it, prot.GetRPSLocs()) {
+    // For each range with RPS frequencies
+    ITERATE(vector<TRange>, it, m_RPSLocs[cluster.GetPrototype()]) {
 
-        // update difference between unaligned and aligned locations in 
-        // prototype sequence
-        while (gap_it != gaps.end() && gap_it->GetFrom() < *it + offset) {
-            offset += gap_it->GetTo() - gap_it->GetFrom() + 1;
-            gap_it++;
-        }
+        // iterate through each specific location
+        for (int i=it->GetFrom();i < it->GetTo();i++) {
 
-        // for each cluster element
-        ITERATE(CClusterer::CSingleCluster, elem, cluster) {
-            if (*elem == prot_idx) {
-                continue;
+            // update difference between unaligned and aligned locations in 
+            // prototype sequence
+            while (gap_it != gaps.end() && gap_it->GetFrom() < i + offset) {
+                offset += gap_it->GetTo() - gap_it->GetFrom() + 1;
+                gap_it++;
             }
 
-            CSequence& seq = query_data[*elem];
-            CSequence::TFreqMatrix& matrix = seq.GetFreqs();
-
-            // assign RPS frequencies
-            for (int j=0;j < (int)matrix.GetCols();j++) {
-                
-                if (seq.GetLetter(*it + offset) != CSequence::kGapChar) {
-                    _ASSERT(rps_freqs(*it, j) >= 0.0);
-
-                    matrix(*it + offset, j) = rps_freqs(*it, j);
+            // for each cluster element except for cluster prototype
+            ITERATE(CClusterer::CSingleCluster, elem, cluster) {
+                if (*elem == cluster.GetPrototype()) {
+                    continue;
                 }
-            }
+
+                CSequence& seq = query_data[*elem];
+                CSequence::TFreqMatrix& matrix = seq.GetFreqs();
+                _ASSERT(rps_freqs.GetRows() + offset <= matrix.GetRows());
+
+                // assign RPS frequencies
+                for (int j=0;j < (int)matrix.GetCols();j++) {
+
+                    if (seq.GetLetter(i + offset) != CSequence::kGapChar) {
+                    _ASSERT(rps_freqs(i, j) >= 0.0);
+
+                    matrix(i + offset, j) = rps_freqs(i, j);
+                    }
+                }
  
-            // if cluster sequence has different letter than prototype
-            if (seq.GetLetter(*it + offset) != prot.GetLetter(*it)) {
+                // if cluster sequence has different letter than prototype
+                if (seq.GetLetter(i + offset) != prot.GetLetter(i)) {
 
-                // remove domain frequency boost assigned to prototype
-                matrix(*it + offset, prot.GetLetter(*it))
-                    -= m_DomainResFreqBoost;
+                    // remove domain frequency boost assigned to prototype
+                    matrix(i + offset, prot.GetLetter(i))
+                        -= m_DomainResFreqBoost;
             
-                // assign conserved domain frequency boost
-                if (seq.GetLetter(*it + offset) != CSequence::kGapChar
-                    /*&& *elem != prot_idx*/) { //domain boost for prototype
-                                                //is already in the rps_freqs
-                    matrix(*it + offset, seq.GetLetter(*it + offset))
-                        += m_DomainResFreqBoost;
+                    // assign conserved domain frequency boost
+                    if (seq.GetLetter(i + offset) != CSequence::kGapChar) {
+                        matrix(i + offset, seq.GetLetter(i + offset))
+                            += m_DomainResFreqBoost;
+                    }
                 }
             }
-            
         }
     }
 }
@@ -1194,7 +1719,7 @@ CMultiAligner::x_BuildAlignmentIterative(
 
     // the initial list of constraints consists of the
     // filtered list of blast alignments plus any user-defined
-    // constraints
+    // constraints and in-cluster constraints
 
     CNcbiMatrix<CHitList> pair_info(num_queries, num_queries, CHitList());
     for (int i = 0; i < m_CombinedHits.Size(); i++) {
@@ -1207,6 +1732,11 @@ CMultiAligner::x_BuildAlignmentIterative(
         pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
         pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
     }
+    for (int i = 0; i < m_LocalInClusterHits.Size();i++) {
+        CHit* hit = m_LocalInClusterHits.GetHit(i);
+        pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
+        pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
+    }
     CHitList conserved_regions;
 
     conserved_cols = 0;
@@ -1215,7 +1745,7 @@ CMultiAligner::x_BuildAlignmentIterative(
     // perform the initial progressive alignment
 
     x_AlignProgressive(GetTree(), tmp_aligned, 
-                       pair_info, iteration);
+                       pair_info, iteration, false);
 
     while (1) {
 
@@ -1285,6 +1815,10 @@ CMultiAligner::x_BuildAlignmentIterative(
             m_ProgressMonitor.stage = eIterativeAlignment;
         }
 
+        if (m_ClustAlnMethod == CMultiAlignerOptions::eMulti && iteration >= 1) {
+            break;
+        }
+
         // if iteration is allowed: recompute the conserved 
         // columns based on the new alignment first remove 
         // the last batch of conserved regions
@@ -1335,7 +1869,7 @@ CMultiAligner::x_BuildAlignmentIterative(
         // do the next progressive alignment
 
         x_AlignProgressive(GetTree(), tmp_aligned, 
-                           pair_info, iteration);
+                           pair_info, iteration, false);
     }
 
     // clean up the constraints
@@ -1364,10 +1898,15 @@ CMultiAligner::x_BuildAlignment()
 {
     m_ProgressMonitor.stage = eProgressiveAlignment;
 
+    // Nodes with id larger of equal to kClusterNodeId are considered root of
+    // query cluster subtrees.
+    _ASSERT((int)m_QueryData.size() < kClusterNodeId);
+
     // write down all the tree edges, along with their weight
+    // skip edges inside query clusters
 
     vector<CTree::STreeEdge> edges;
-    CTree::ListTreeEdges(GetTree(), edges);
+    CTree::ListTreeEdges(GetTree(), edges, kClusterNodeId);
     sort(edges.begin(), edges.end(), compare_tree_edge_descending());
     int num_edges = edges.size();
 

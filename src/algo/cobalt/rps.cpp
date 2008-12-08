@@ -531,8 +531,8 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
 
         CSequence& query = m_QueryData[hit->m_SeqIndex1];
         CSequence::TFreqMatrix& matrix = query.GetFreqs();
-        vector<int>& rps_locs = query.GetRPSLocs();
-        rps_locs.clear();
+        _ASSERT(hit->m_SeqIndex1 < m_RPSLocs.size());
+        m_RPSLocs[hit->m_SeqIndex1].clear();
 
         double **ref_freqs = profile_data.GetResFreqs() + 
                              (profile_data.GetSeqOffsets())[hit->m_SeqIndex2];
@@ -559,10 +559,12 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
                         matrix(q+k, m) = 
                               (1 - m_DomainResFreqBoost) * ref_freqs[s+k][m];
 
-                        rps_locs.push_back(q+k);
                     }
                     matrix(q+k, query.GetLetter(q+k)) += m_DomainResFreqBoost; 
                 }
+                // mark range as RPS-identified conserved domain
+                m_RPSLocs[hit->m_SeqIndex1].push_back(TRange(start_pair.first,
+                                                             stop_pair.first));
             }
         }
 
@@ -698,6 +700,7 @@ CMultiAligner::x_FindDomainHits(TSeqLocVector& queries,
     // RPS hits onto the query sequences
 
     if (!m_Freqfile.empty()) {
+        m_RPSLocs.resize(m_tQueries.size());
         profile_data.Load(CProfileData::eGetResFreqs, m_RPSdb, m_Freqfile);
         x_AssignRPSResFreqs(m_DomainHits, profile_data);
         profile_data.Clear();

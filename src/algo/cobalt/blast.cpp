@@ -353,5 +353,165 @@ CMultiAligner::x_FindLocalHits(const TSeqLocVector& queries,
     m_CombinedHits.Append(m_LocalHits);
 }
 
+
+
+auto_ptr< vector<int> > CMultiAligner::x_AlignClusterQueries(
+                                                     const TPhyTreeNode* node)
+{
+    // Traverse cluster tree
+
+    // if leaf node, then create one-element list of node id
+    if (node->IsLeaf()) {
+        auto_ptr< vector<int> > result(new vector<int>());
+        result->push_back(node->GetValue().GetId());
+        return result;
+    }
+
+    // Traverse left and right subtree and gather node ids in the subtrees
+    TPhyTreeNode::TNodeList_CI child(node->SubNodeBegin());
+    
+    auto_ptr< vector<int> > left_inds = x_AlignClusterQueries(*child);
+    child++;
+
+    _ASSERT(*child);
+    auto_ptr< vector<int> > right_inds = x_AlignClusterQueries(*child);
+    child++;
+    _ASSERT(child == node->SubNodeEnd());
+
+    // Get most similar sequences from different subtrees
+    const CClusterer::TDistMatrix& dmat = m_Clusterer.GetDistMatrix();
+    
+    int left = -1, right = -1;
+    double dist = 0.0;
+    for (size_t i=0;i < left_inds->size();i++) {
+        for (size_t j=0;j < right_inds->size();j++) {
+            if (dist > dmat((*left_inds)[i], (*right_inds)[j]) || left < 0) {
+                left = (*left_inds)[i];
+                right = (*right_inds)[j];
+                dist = dmat(left, right);
+            }
+        }
+    }
+    _ASSERT(left != right);
+    
+    // Align the found pair of sequences - one from each subtree
+    CBlastProteinOptionsHandle blastp_opts;
+    // deliberately set the cutoff e-value too high
+    blastp_opts.SetEvalueThreshold(max(m_BlastpEvalue, 10.0));
+    blastp_opts.SetSegFiltering(false);
+
+    SSeqLoc left_query(*m_tQueries[left], *m_Scope);
+    SSeqLoc right_query(*m_tQueries[right], *m_Scope);
+
+    CBl2Seq blaster(left_query, right_query, blastp_opts);
+    CRef<CSearchResultSet> v = blaster.RunEx();
+
+    // Add hit to hitlist
+    ITERATE(CSeq_align_set::Tdata, itr, v->GetResults(0, 0).GetSeqAlign()->Get()) {
+        
+        // iterate over hits
+
+        const CSeq_align& s = **itr;
+
+        if (s.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg) {
+            // Dense-seg (1 hit)
+
+            const CDense_seg& denseg = s.GetSegs().GetDenseg();
+            int align_score = 0;
+            double evalue = 0;
+            
+            ITERATE(CSeq_align::TScore, score_itr, s.GetScore()) {
+                const CScore& curr_score = **score_itr;
+                if (curr_score.GetId().GetStr() == "score")
+                    align_score = curr_score.GetValue().GetInt();
+                else if (curr_score.GetId().GetStr() == "e_value")
+                    evalue = curr_score.GetValue().GetReal();
+            }
+            
+            // check if the hit is worth saving
+            if (evalue > m_BlastpEvalue)
+                continue;
+            
+            m_LocalInClusterHits.AddToHitList(new CHit(left, right, align_score,
+                                                       denseg));
+        }
+        else if (s.GetSegs().Which() == CSeq_align::C_Segs::e_Dendiag) {
+            // Dense-diag (all hits)
+            
+            ITERATE(CSeq_align::C_Segs::TDendiag, diag_itr, 
+                    s.GetSegs().GetDendiag()) {
+                const CDense_diag& dendiag = **diag_itr;
+                int align_score = 0;
+                double evalue = 0;
+                
+                // compute the score of the hit
+              
+                ITERATE(CDense_diag::TScores, score_itr, dendiag.GetScores()) {
+                    const CScore& curr_score = **score_itr;
+                    if (curr_score.GetId().GetStr() == "score") {
+                        align_score = 
+                            curr_score.GetValue().GetInt();
+                    }
+                    else if (curr_score.GetId().GetStr() == 
+                             "e_value") {
+                        evalue = curr_score.GetValue().GetReal();
+                    }
+                }
+                
+                // check if the hit is worth saving
+                if (evalue > m_BlastpEvalue)
+                    continue;
+                
+                m_LocalInClusterHits.AddToHitList(new CHit(left, right,
+                                                   align_score, dendiag));
+            }
+        }
+    }
+
+
+    // Return sequences from this subtree
+    ITERATE(vector<int>, it, *right_inds) {
+        left_inds->push_back(*it);
+    }
+    return left_inds;
+}
+
+
+
+void CMultiAligner::x_FindLocalInClusterHits(
+                                     const vector<TPhyTreeNode*>& cluster_trees)
+{
+    m_LocalInClusterHits.PurgeAllHits();
+
+    // Traverse cluster trees and find local constraints for each left and
+    // right subtree of each substree
+    ITERATE(vector<TPhyTreeNode*>, it, cluster_trees) {
+        // NULL trees denore one-element clusters, nothing to do in such cases
+        if (*it) {
+            x_AlignClusterQueries(*it);
+        }
+    }
+
+    //-------------------------------------------------------
+    if (m_Verbose) {
+        printf("in-cluster blastp hits:\n");
+        for (int i = 0; i < m_LocalInClusterHits.Size(); i++) {
+            CHit *hit = m_LocalInClusterHits.GetHit(i);
+            printf("query %d %4d - %4d query %d %4d - %4d score %d\n",
+                         hit->m_SeqIndex1, 
+                         hit->m_SeqRange1.GetFrom(), 
+                         hit->m_SeqRange1.GetTo(),
+                         hit->m_SeqIndex2,
+                         hit->m_SeqRange2.GetFrom(), 
+                         hit->m_SeqRange2.GetTo(),
+                         hit->m_Score);
+        }
+        printf("\n\n");
+    }
+    //-------------------------------------------------------
+}
+
+                                  
+
 END_SCOPE(cobalt)
 END_NCBI_SCOPE

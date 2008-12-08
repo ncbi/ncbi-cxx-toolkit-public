@@ -375,7 +375,7 @@ CMultiAligner::x_ComputeTree(void)
 
     //--------------------------------
     if (m_Verbose) {
-        const CDistMethods::TMatrix& matrix = distances.GetMatrix();
+        const CDistMethods::TMatrix& matrix = dmat;
         printf("distance matrix:\n");
         printf("    ");
         for (int i = matrix.GetCols() - 1; i > 0; i--)
@@ -413,6 +413,12 @@ CMultiAligner::x_ComputeTree(void)
 
 void CMultiAligner::x_Run(void)
 {
+    if ((int)m_tQueries.size() >= kClusterNodeId) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   (string)"Number of queries exceeds maximum of "
+                   + NStr::IntToString(kClusterNodeId - 1));
+    }
+
     bool is_cluster_found = false;
     vector<TPhyTreeNode*> cluster_trees;
 
@@ -436,6 +442,7 @@ void CMultiAligner::x_Run(void)
     case CMultiAlignerOptions::eMulti:
         if (is_cluster_found = x_FindQueryClusters()) {
             x_ComputeClusterTrees(cluster_trees);
+            x_FindLocalInClusterHits(cluster_trees);
         }
         break;
 
@@ -449,7 +456,7 @@ void CMultiAligner::x_Run(void)
     x_CreateBlastQueries(blast_queries, indices);
     x_FindDomainHits(blast_queries, indices);
     x_FindLocalHits(blast_queries, indices);
-    
+
     vector<const CSequence*> pattern_queries;
     x_CreatePatternQueries(pattern_queries, indices);
     x_FindPatternHits(pattern_queries, indices);
@@ -459,7 +466,7 @@ void CMultiAligner::x_Run(void)
     case CMultiAlignerOptions::eNone:
         x_ComputeTree();
         x_BuildAlignment();
-	break;
+        break;
 
     case CMultiAlignerOptions::eToPrototype:
         x_ComputeTree();
@@ -548,6 +555,7 @@ CMultiAligner::x_FindQueryClusters()
 {
     m_ProgressMonitor.stage = eQueryClustering;
 
+    // Compute k-mer counts and distances between query sequences
     vector<TKmerCounts> kmer_counts;
     TKMethods::SetParams(m_KmerLength, m_KmerAlphabet);
     TKMethods::ComputeCounts(m_tQueries, *m_Scope, kmer_counts);
@@ -573,6 +581,25 @@ CMultiAligner::x_FindQueryClusters()
     }
     //-------------------------------------------------------
 
+    // TO DO: If clustering constraints can be formulated the below step
+    // can be moved to k-mer distances computation and some time can be saved
+
+    // Set maximum distance between sequences with large length disparity
+    // so that they cannot be clustered together
+    for (int i=0;i < (int)dmat->GetRows() - 1;i++) {
+        for (int j=i+1;j < (int)dmat->GetRows();j++) {
+            int len_i = m_QueryData[i].GetLength();
+            int len_j = m_QueryData[j].GetLength();
+            if (len_i > len_j) {
+                swap(len_i, len_j);
+            }
+            if ((double)len_i / (double)len_j < 0.6){
+                (*dmat)(i, j) = (*dmat)(j, i) = 1.0;
+            }
+        }
+    }
+
+    // Compute query clusters
     m_Clusterer.SetDistMatrix(dmat);
     m_Clusterer.ComputeClusters(m_MaxClusterDist);
 
@@ -632,6 +659,9 @@ CMultiAligner::x_FindQueryClusters()
 
     //-------------------------------------------------------
     if (m_Verbose) {
+        const vector<CSequence>& q =
+            (m_ClustAlnMethod == CMultiAlignerOptions::eToPrototype)
+            ? m_AllQueryData : m_QueryData;
         printf("Query clusters:\n");
         int cluster_idx = 0;
         int num_in_clusters = 0;
@@ -640,7 +670,7 @@ CMultiAligner::x_FindQueryClusters()
             printf("(prototype: %3d) ", it_cl->GetPrototype());
             
             ITERATE(CClusterer::TSingleCluster, it_el, *it_cl) {
-                printf("%d, ", *it_el);
+                printf("%d (%d), ", *it_el, q[*it_el].GetLength());
             }
             printf("\n");
             if (it_cl->size() > 1) {
@@ -1483,8 +1513,8 @@ void CMultiAligner::x_AttachClusterTrees(
             continue;
         }
 
-        // id > 10000 denotes root of cluster subtree (for now)
-        node->GetValue().SetId(10000 + cluster_id);
+        // id > kClusterNodeId denotes root of cluster subtree
+        node->GetValue().SetId(kClusterNodeId + cluster_id);
 
         // Detach subtree children and attach them to the leaf node.
         // This prevents problems in recursion
