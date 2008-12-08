@@ -583,7 +583,16 @@ template <class Vec>
 void CAlignMap::EditedSequence(const Vec& original_sequence, Vec& edited_sequence, bool includeholes) const
 {
     edited_sequence.clear();
-    int l = includeholes ? m_edited_ranges.front().GetFrom() : m_edited_ranges.front().GetExtraFrom();
+
+    int l = 0;
+    if(includeholes) {
+        if(m_orientation == ePlus)
+            l = m_edited_ranges.front().GetFrom();
+        else
+            l = CAlignMap::TargetLen()-m_edited_ranges.back().GetTo()-1;
+    } else {
+        l = m_edited_ranges.front().GetExtraFrom();
+    }
     edited_sequence.insert(edited_sequence.end(),l,res_traits<typename Vec::value_type>::_fromACGT('N'));    
     for(int range = 0; range < (int)m_orig_ranges.size(); ++range) {
         int a = m_orig_ranges[range].GetFrom();
@@ -600,7 +609,14 @@ void CAlignMap::EditedSequence(const Vec& original_sequence, Vec& edited_sequenc
                 l = m_edited_ranges[range].GetExtraTo();                                                  // indel inside exon
 
         } else {
-            l = includeholes ? CAlignMap::TargetLen()-m_edited_ranges.back().GetTo()-1 : m_edited_ranges.back().GetExtraTo();
+            if(includeholes) {
+                if(m_orientation == ePlus) 
+                    l = CAlignMap::TargetLen()-m_edited_ranges.back().GetTo()-1;
+                else
+                    l = m_edited_ranges.front().GetFrom();
+            } else {
+                l = m_edited_ranges.back().GetExtraTo();
+            }
         }
         edited_sequence.insert(edited_sequence.end(),l,res_traits<typename Vec::value_type>::_fromACGT('N'));
     }
@@ -724,24 +740,26 @@ TSignedSeqPos CAlignMap::MapAtoB(const vector<CAlignMap::SMapRange>& a, const ve
     if(p > a[num].GetTo()) {                                      //  between ranges (insertion or intron in a), num+1 exists
         switch(move_mode) {
         case eLeftEnd:
-            _ASSERT(p == a[num+1].GetExtendedFrom());             // exon doesn't start from a middle of insertion
+            //            _ASSERT(p == a[num+1].GetExtendedFrom());       CDS may do it      // exon doesn't start from a middle of insertion
             return b[num+1].GetExtendedFrom();
         case eRightEnd:
-            _ASSERT(p == a[num].GetExtendedTo());                 // exon doesn't stop in a middle of insertion
+            //            _ASSERT(p == a[num].GetExtendedTo());                 // exon doesn't stop in a middle of insertion
             return b[num].GetExtendedTo();
         default:
             return -1;
         }
     } else if(p == a[num].GetTo()) {
         if(move_mode == eRightEnd) {
-            _ASSERT(a[num].GetExtraTo() == 0);                 // exon doesn't stop in a middle of insertion
+            //            _ASSERT(a[num].GetExtraTo() == 0);                 // exon doesn't stop in a middle of insertion
             return b[num].GetExtendedTo();
+        } else if(p == a[num].GetFrom() && move_mode == eLeftEnd) {          // one base interval
+            return b[num].GetExtendedFrom();
         } else {
             return b[num].GetTo();
         }
     } else if(p == a[num].GetFrom()) {
         if(move_mode == eLeftEnd) {
-            _ASSERT(a[num].GetExtraFrom() == 0);               // exon doesn't start from a middle of insertion
+            //            _ASSERT(a[num].GetExtraFrom() == 0);               // exon doesn't start from a middle of insertion
             return b[num].GetExtendedFrom();
         } else {
             return b[num].GetFrom();
