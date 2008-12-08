@@ -483,7 +483,7 @@ typedef enum { /* DEPRECATED -- DON'T USE! */
  * @param backlog
  *  [in]  maximal # of pending connections
  *  <b>NOTE:</b> on some systems, "backlog" can be silently limited
- *  down to 128 (or 5).
+ *  down to 128 (or 5), or completely ignored whatsoever.
  * @param lsock
  *  [out] handle of the created listening socket
  * @param flags
@@ -507,7 +507,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
  * @param backlog
  *  [in]  maximal # of pending connections
  *  <b>NOTE:</b> on some systems, "backlog" can be silently limited
- *  down to 128 (or 5).
+ *  down to 128 (or 5), or completely ignored whatsoever.
  * @param lsock
  *  [out] handle of the created listening socket
  * @sa
