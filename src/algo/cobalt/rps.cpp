@@ -531,7 +531,7 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
 
         CSequence& query = m_QueryData[hit->m_SeqIndex1];
         CSequence::TFreqMatrix& matrix = query.GetFreqs();
-        _ASSERT(hit->m_SeqIndex1 < m_RPSLocs.size());
+        _ASSERT(hit->m_SeqIndex1 < (int)m_RPSLocs.size());
         m_RPSLocs[hit->m_SeqIndex1].clear();
 
         double **ref_freqs = profile_data.GetResFreqs() + 
