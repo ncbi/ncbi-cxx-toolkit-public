@@ -3057,6 +3057,7 @@ NCBI_CHECK_LIBS(CRYPT, crypt crypt_i, setkey)
 AC_LANG_POP(C)
 case "$host_os:$compiler" in
      solaris*:GCC ) ac_cv_search_dlopen="-ldl" ;;
+     darwin*      ) ac_cv_search_iconv="-liconv" ;;
 esac
 NCBI_CHECK_LIBS(DL, dl, dlopen)
 # libc's stubs aren't always sufficient...
