@@ -1074,6 +1074,11 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     if (k != m->second.m_Contents.end()) {
         lib_or_dll = k->second.front();
     }
+    bool isbundle = false;
+    k = m->second.m_Contents.find("DLL_TYPE");
+    if (k != m->second.m_Contents.end() && k->second.front() == "plugin") {
+        isbundle = true;
+    }
     string dll_host;
 //TODO: XCODE
     if (!lib_or_dll.empty() ||
@@ -1153,6 +1158,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         item_dll.m_MakeType = maketype;
         item_dll.m_HostedLibs.push_back(proj_id);
         item_dll.m_GUID  = IdentifySlnGUID(source_base_dir, proj_dll);
+        item_dll.m_IsBundle = isbundle;
         tree->m_Projects[proj_dll] = item_dll;
     }
     return proj_key;
@@ -1243,6 +1249,10 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
     k = m->second.m_Contents.find("HOSTED_LIBS");
     if (k != m->second.m_Contents.end()) {
         tree->m_Projects[proj_key].m_HostedLibs = k->second;
+    }
+    k = m->second.m_Contents.find("DLL_TYPE");
+    if (k != m->second.m_Contents.end() && k->second.front() == "plugin") {
+        tree->m_Projects[proj_key].m_IsBundle = true;
     }
     return proj_key;
 }

@@ -154,7 +154,8 @@ CProjItem::CProjItem(TProjType type,
     m_IncludeDirs(include_dirs),
     m_Defines (defines),
     m_MakeType(maketype),
-    m_GUID(guid)
+    m_GUID(guid),
+    m_IsBundle(false)
 {
 }
 
@@ -169,6 +170,7 @@ void CProjItem::Clear(void)
 {
     m_ProjType = CProjKey::eNoProj;
     m_MakeType = eMakeType_Undefined;
+    m_IsBundle = false;
 }
 
 
@@ -195,6 +197,8 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_ExportHeaders     = item.m_ExportHeaders;
     m_CheckInfo         = item.m_CheckInfo;
     m_CheckConfigs      = item.m_CheckConfigs;
+    
+    m_IsBundle = item.m_IsBundle;
 }
 
 string CProjItem::GetPath(void) const

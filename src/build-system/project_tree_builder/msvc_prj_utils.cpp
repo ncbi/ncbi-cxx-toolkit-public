@@ -1237,7 +1237,19 @@ bool SameRootDirs(const string& dir1, const string& dir2)
         return false;
     if ( dir2.empty() )
         return false;
-    return dir1[0] == dir2[0];
+#if NCBI_COMPILER_MSVC
+        return tolower((unsigned char)(dir1[0])) == tolower((unsigned char)(dir2[0]));
+//        return dir1[0] == dir2[0];
+#else
+    if (dir1[0] == '/' && dir2[0] == '/') {
+        string::size_type n1= dir1.find_first_of('/', 1);
+        string::size_type n2= dir2.find_first_of('/', 1);
+        if (n1 != string::npos && n1 == n2) {
+           return dir1.compare(0,n1,dir2,0,n2) == 0;
+        }
+    }
+#endif
+    return false;
 }
 
 

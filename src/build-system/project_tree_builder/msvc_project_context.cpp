@@ -326,9 +326,6 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     list<string> libs_list;
     CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
-        if ( *p == string(MSVC_DEFAULT_LIBS_TAG)) {
-            continue;
-        }
         GetApp().GetSite().GetLibInclude(*p, cfg_info, &dirs);
         for (list<string>::const_iterator i = dirs.begin(); i != dirs.end(); ++i) {
             dir = *i;

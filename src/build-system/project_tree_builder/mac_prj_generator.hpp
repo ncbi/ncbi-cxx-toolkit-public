@@ -126,6 +126,8 @@ private:
     static string GetProjHeaders(  const CProjItem& prj);
     static string GetProjDependency(  const CProjItem& prj);
     static string GetTargetName(   const CProjItem& prj);
+
+    static string GetMachOType(    const CProjItem& prj);
     static string GetProductType(  const CProjItem& prj);
     static string GetExplicitType( const CProjItem& prj);
 

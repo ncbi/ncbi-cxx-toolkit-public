@@ -617,6 +617,7 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
     string proj_dir("$(PROJECT_DIR)/");
 //    string temp_dir("$(BUILD_DIR)/$(CONFIGURATION)");
     string temp_dir("$(OBJROOT)/$(CONFIGURATION)");
+    string objroot(m_OutputDir + "build");
 
     CRef<CArray> lib_paths(new CArray);
     AddString(*lib_paths, def_lib_path);
@@ -640,16 +641,20 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddString( *settings, "CONFIGURATION_BUILD_DIR", libs_out);
         AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
         AddString( *settings, "INSTALL_PATH", proj_dir + libs_out);
-        AddString( *settings, "OBJROOT", m_OutputDir + "build");
+        AddString( *settings, "OBJROOT", objroot);
 
     } else if (prj.m_ProjType == CProjKey::eDll) {
 
+        string bld_out(libs_out);
+        if (prj.m_IsBundle) {
+            bld_out = bins_out;
+        }
         AddString( *settings, "GCC_SYMBOLS_PRIVATE_EXTERN", "NO");
 
-        AddString( *settings, "CONFIGURATION_BUILD_DIR", libs_out);
+        AddString( *settings, "CONFIGURATION_BUILD_DIR", bld_out);
         AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
-        AddString( *settings, "INSTALL_PATH", proj_dir + libs_out);
-        AddString( *settings, "OBJROOT", m_OutputDir + "build");
+        AddString( *settings, "INSTALL_PATH", proj_dir + bld_out);
+        AddString( *settings, "OBJROOT", objroot);
 
         AddArray( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
         AddString( *settings, "EXECUTABLE_PREFIX", "lib");
@@ -659,11 +664,12 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddString( *settings, "CONFIGURATION_BUILD_DIR", bins_out);
         AddString( *settings, "CONFIGURATION_TEMP_DIR", temp_dir);
         AddString( *settings, "INSTALL_PATH", proj_dir + bins_out);
-        AddString( *settings, "OBJROOT", m_OutputDir + "build");
+        AddString( *settings, "OBJROOT", objroot);
 
         AddArray( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
-        AddString( *settings, "MACH_O_TYPE", "mh_execute");
     }
+    AddString( *settings, "MACH_O_TYPE", GetMachOType(prj));
+
 // library dependencies
     if (prj.m_ProjType == CProjKey::eDll || prj.m_ProjType == CProjKey::eApp) {
         list<CProjItem> ldlibs;
@@ -707,7 +713,6 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
             AddString( *inc_dirs, GetRelativePath( *f));
         }
     }
-    AddString( *inc_dirs, "/sw/include");
     AddString( *settings, "PRODUCT_NAME", GetTargetName(prj));
 
 // preprocessor definitions    
@@ -965,6 +970,9 @@ string CMacProjectGenerator::GetRelativePath(const string& name, const string* f
     if (!from) {
         from = &m_SolutionDir;
     }
+    if (!SameRootDirs(name, *from)) {
+        return name;
+    }
     string file_path;
     try {
         file_path = CDirEntry::CreateRelativePath(*from, name);
@@ -1017,6 +1025,28 @@ string CMacProjectGenerator::GetTargetName( const CProjItem& prj)
     }
     return prj.m_ID;
 }
+
+string CMacProjectGenerator::GetMachOType(  const CProjItem& prj)
+{
+    if (prj.m_ProjType == CProjKey::eLib) {
+        return "staticlib";
+    } else if (prj.m_ProjType == CProjKey::eDll) {
+/*
+        if (prj.m_IsBundle) {
+            return "mh_bundle";
+        }
+*/
+        return "mh_dylib";
+    } else if (prj.m_ProjType == CProjKey::eApp) {
+        if (prj.m_IsBundle) {
+            return "mh_bundle";
+        }
+//        return "mh_executable";
+        return "mh_execute";
+    }
+    return "";
+}
+
 string CMacProjectGenerator::GetProductType( const CProjItem& prj)
 {
     if (prj.m_ProjType == CProjKey::eLib) {

@@ -577,6 +577,7 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
 {
     if ( !lib_info.valid || lib_info.IsEmpty() )
         return false;
+#ifndef PSEUDO_XCODE
     if ( !lib_info.m_IncludeDir.empty() ) {
         ITERATE(list<string>, i, lib_info.m_IncludeDir) {
             if (!x_DirExists(*i) ) {
@@ -588,6 +589,7 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
             }
         }
     }
+#endif
     if ( !lib_info.m_LibPath.empty() &&
          !x_DirExists(lib_info.m_LibPath) ) {
         if (!silent) {
