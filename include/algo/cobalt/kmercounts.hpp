@@ -389,8 +389,8 @@ public:
         
     {
         dmat.Resize(counts.size(), counts.size(), 0.0);
-        for (size_t i=0;i < counts.size() - 1;i++) {
-            for (size_t j=i+1;j < counts.size();j++) {
+        for (int i=0;i < (int)counts.size() - 1;i++) {
+            for (int j=i+1;j < (int)counts.size();j++) {
                 dmat(i, j) = fsim(counts[i], counts[j]);
                 dmat(j, i) = dmat(i, j);
             }
