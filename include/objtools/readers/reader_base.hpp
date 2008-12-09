@@ -77,6 +77,9 @@ public:
     virtual void Read( 
         CNcbiIstream&, 
         CRef<CSeq_annot>& ) { return; };
+        
+    virtual void Dump(
+        CNcbiOstream& ) { return; };
 };
 
 END_objects_SCOPE

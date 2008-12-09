@@ -36,11 +36,11 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
-
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CWiggleSet;
 
 //  ----------------------------------------------------------------------------
 enum CWiggleLineType
@@ -141,6 +141,9 @@ public:
         CNcbiIstream&, 
         CRef<CSeq_annot>& );
 
+    virtual void Dump(
+        CNcbiOstream& );
+        
     //
     //  class interface:
     //
@@ -177,12 +180,15 @@ protected:
     void x_AddGraph(
          CSeq_annot::TData::TGraph& );
 
+    void x_UpdateWiggleSet();
+    
     //
     //  data:
     //
 protected:
     CWiggleTrackData m_trackdata;
     CWiggleGraphData m_graphdata;
+    CWiggleSet* m_pSet;
 };
 
 END_objects_SCOPE
