@@ -107,7 +107,7 @@ CTree::ListTreeEdges(const TPhyTreeNode *node,
         edge_list.push_back(STreeEdge(node, node->GetValue().GetDist()));
     }
     // check whether to traverse the tree below this node
-    if (max_id >= 0 && node->GetValue().GetId() > max_id) {
+    if (max_id >= 0 && node->GetValue().GetId() >= max_id) {
         return;
     }
 
