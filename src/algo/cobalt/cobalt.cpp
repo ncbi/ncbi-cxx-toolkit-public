@@ -581,24 +581,6 @@ CMultiAligner::x_FindQueryClusters()
     }
     //-------------------------------------------------------
 
-    // TO DO: If clustering constraints can be formulated the below step
-    // can be moved to k-mer distances computation and some time can be saved
-
-    // Set maximum distance between sequences with large length disparity
-    // so that they cannot be clustered together
-    for (int i=0;i < (int)dmat->GetRows() - 1;i++) {
-        for (int j=i+1;j < (int)dmat->GetRows();j++) {
-            int len_i = m_QueryData[i].GetLength();
-            int len_j = m_QueryData[j].GetLength();
-            if (len_i > len_j) {
-                swap(len_i, len_j);
-            }
-            if ((double)len_i / (double)len_j < 0.6){
-                (*dmat)(i, j) = (*dmat)(j, i) = 1.0;
-            }
-        }
-    }
-
     // Compute query clusters
     m_Clusterer.SetDistMatrix(dmat);
     m_Clusterer.ComputeClusters(m_MaxClusterDist);
