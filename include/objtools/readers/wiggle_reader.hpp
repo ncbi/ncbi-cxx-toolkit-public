@@ -141,8 +141,10 @@ public:
         CNcbiIstream&, 
         CRef<CSeq_annot>& );
 
+#if 0 // not yet defined
     virtual void Dump(
         CNcbiOstream& );
+#endif
         
     //
     //  class interface:
