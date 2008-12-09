@@ -168,7 +168,7 @@ public:
     list<string> m_CheckInfo;
     set<string> m_CheckConfigs;
     
-    bool m_IsBundle;
+    mutable bool m_IsBundle;
 private:
     void Clear(void);
     void SetFrom(const CProjItem& item);

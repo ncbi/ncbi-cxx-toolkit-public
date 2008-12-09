@@ -186,7 +186,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
     map<string,string> defs_resolved;
     NON_CONST_ITERATE(CProjectTreeBuilder::TFiles, p, files) {
 
-        CMsvcProjectMakefile msvc_prj(p->first + ".msvc");
+        CMsvcProjectMakefile msvc_prj(p->first + "." + GetApp().GetRegSettings().m_MakefilesExt);
         bool msvc_empty = msvc_prj.IsEmpty();
 
 	    NON_CONST_ITERATE(CSimpleMakeFileContents::TContents, 

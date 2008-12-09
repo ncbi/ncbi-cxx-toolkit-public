@@ -146,6 +146,13 @@ void CMacProjectGenerator::Generate(const string& solution)
         }
         AddString( *targets, proj_target);
 
+        if (prj.m_ProjType == CProjKey::eApp) {
+            string app_type = prj_files.GetProjectContext().GetMsvcProjectMakefile().GetLinkerOpt("APP_TYPE",SConfigInfo());
+            if (app_type == "application") {
+                prj.m_IsBundle = true;
+                explicit_type = GetExplicitType( prj);
+            }
+        }
         
         CRef<CArray> build_phases( new CArray);
         CRef<CArray> build_files( new CArray);
@@ -1038,9 +1045,11 @@ string CMacProjectGenerator::GetMachOType(  const CProjItem& prj)
 */
         return "mh_dylib";
     } else if (prj.m_ProjType == CProjKey::eApp) {
+/*
         if (prj.m_IsBundle) {
             return "mh_bundle";
         }
+*/
 //        return "mh_executable";
         return "mh_execute";
     }
@@ -1054,10 +1063,11 @@ string CMacProjectGenerator::GetProductType( const CProjItem& prj)
     } else if (prj.m_ProjType == CProjKey::eDll) {
         return "com.apple.product-type.library.dynamic";
     } else if (prj.m_ProjType == CProjKey::eApp) {
-//        return "com.apple.product-type.application";
+        if (prj.m_IsBundle) {
+            return "com.apple.product-type.application";
+        }
         return "com.apple.product-type.tool";
     }
-//  "com.apple.product-type.tool" ?
     return "";
 }
 string CMacProjectGenerator::GetExplicitType( const CProjItem& prj)
@@ -1067,9 +1077,12 @@ string CMacProjectGenerator::GetExplicitType( const CProjItem& prj)
     } else if (prj.m_ProjType == CProjKey::eDll) {
         return "compiled.mach-o.dylib";
     } else if (prj.m_ProjType == CProjKey::eApp) {
+        if (prj.m_IsBundle) {
+            return "wrapper.application";
+        }
         return "compiled.mach-o.executable";
     }
-    return "wrapper.application";
+    return "";
 }
 
 

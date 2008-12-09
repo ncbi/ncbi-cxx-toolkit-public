@@ -315,7 +315,8 @@ struct PIsExcludedByProjectMakefile
         // implicitly included into build
         if (prj_context.GetMsvcProjectMakefile().IsExcludeProject(false)) {
             LOG_POST(Warning << "Excluded:  project " << project.m_Name
-                        << " by Makefile." << project.m_Name << ".*.msvc");
+                        << " by Makefile." << project.m_Name << ".*."
+                        << GetApp().GetRegSettings().m_MakefilesExt);
             return true;
         }
         return false;

@@ -518,8 +518,6 @@ void CMsvcPrjProjectContext::CreateLibsList(list<string>* libs_list) const
     libs_list->clear();
     // We'll build libs list.
     *libs_list = m_Requires;
-    //take into account default libs from site:
-    libs_list->push_back(MSVC_DEFAULT_LIBS_TAG);
     //and LIBS from Makefiles:
     ITERATE(list<string>, p, m_ProjectLibs) {
         const string& lib = *p;
@@ -531,6 +529,8 @@ void CMsvcPrjProjectContext::CreateLibsList(list<string>* libs_list) const
     }
     libs_list->sort();
     libs_list->unique();
+    //take into account default libs from site:
+    libs_list->push_back(MSVC_DEFAULT_LIBS_TAG);
 }
 
 const CMsvcCombinedProjectMakefile& 

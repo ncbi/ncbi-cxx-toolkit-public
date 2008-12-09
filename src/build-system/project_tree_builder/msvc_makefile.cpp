@@ -499,7 +499,7 @@ static string s_CreateRuleMakefileFilename(CProjItem::TProjType project_type,
     default:
         break;
     }
-    return name + ".msvc";
+    return name + "." + GetApp().GetRegSettings().m_MakefilesExt;
 }
 
 CMsvcCombinedProjectMakefile::CMsvcCombinedProjectMakefile
