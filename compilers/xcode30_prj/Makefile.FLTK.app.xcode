@@ -1,0 +1,5 @@
+[Rule]
+Priority  = 127
+
+[Linker]
+APP_TYPE = application
