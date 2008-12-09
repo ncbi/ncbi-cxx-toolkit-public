@@ -62,9 +62,6 @@ void CAlignCleanup::CreatePairwiseFromMultiple(const CSeq_align& multiple,
 
     /// Types we use here:
     typedef CSeq_align::TDim TDim;
-    typedef CAlnSeqIdsExtract<CAlnSeqId> TIdExtract;
-    typedef CAlnIdMap<vector< CConstRef<CSeq_align> >, TIdExtract> TAlnIdMap;
-    typedef CAlnStats<TAlnIdMap> TAlnStats;
 
     /// Create a vector of seq-ids per seq-align
     TIdExtract id_extract;
@@ -107,7 +104,6 @@ void CAlignCleanup::CreatePairwiseFromMultiple(const CSeq_align& multiple,
     ///
     /// create a set of anchored alignments
     ///
-    typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVec;
     TAnchoredAlnVec anchored_aln_vec;
     CreateAnchoredAlnVec(aln_stats, anchored_aln_vec, opts);
 
@@ -271,10 +267,6 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
 
     /// Types we use here:
     typedef CSeq_align::TDim TDim;
-    //typedef CAlnSeqIdsExtract<CAlnSeqId> TIdExtract;
-    //typedef CAlnIdMap<vector< CConstRef<CSeq_align> >, TIdExtract> TAlnIdMap;
-    //typedef CAlnStats<TAlnIdMap> TAlnStats;
-
 
     /// Create a vector of seq-ids per seq-align
     TIdExtract id_extract;
@@ -336,7 +328,6 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     ///
     /// create a set of anchored alignments
     ///
-    typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVec;
     TAnchoredAlnVec anchored_aln_vec;
     CreateAnchoredAlnVec(aln_stats, anchored_aln_vec, opts);
 
