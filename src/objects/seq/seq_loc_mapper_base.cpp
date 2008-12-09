@@ -37,6 +37,7 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
+#include <objects/seqres/seqres__.hpp>
 #include <objects/misc/error_codes.hpp>
 #include <algorithm>
 
@@ -137,6 +138,7 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
                 fuzz->first->GetLim() == CInt_fuzz::eLim_lt;
         }
         if (to < m_Src_to  &&  m_Src_to - to < 3) {
+            // used_rg.SetLength(used_rg.GetLength() - (m_Src_to - to));
             to = m_Src_to;
         }
     }
@@ -1504,10 +1506,12 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
     TSeqPos right = src_rg.GetTo();
     bool partial_left = false;
     bool partial_right = false;
+    TRange used_rg = TRange(0, src_rg.GetLength() - 1);
 
     bool reverse = IsReverse(src_strand);
 
     if (left < cvt.m_Src_from) {
+        used_rg.SetFrom(cvt.m_Src_from - left);
         left = cvt.m_Src_from;
         if ( !reverse ) {
             // Partial if there's gap between left and last_src_to
@@ -1520,6 +1524,7 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
         }
     }
     if (right > cvt.m_Src_to) {
+        used_rg.SetLength(cvt.m_Src_to - left + 1);
         right = cvt.m_Src_to;
         if ( !reverse ) {
             // Partial if there's gap between right and next cvt. left end
@@ -1584,6 +1589,12 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
     x_PushMappedRange(cvt.m_Dst_id_Handle,
                       STRAND_TO_INDEX(is_set_dst_strand, dst_strand),
                       rg, mapped_fuzz);
+    if ( m_GraphRanges  &&  !used_rg.Empty() ) {
+        m_GraphRanges->AddRange(used_rg);
+        if ( !src_rg.IsWhole() ) {
+            m_GraphRanges->IncOffset(src_rg.GetLength());
+        }
+    }
     return true;
 }
 
@@ -1608,9 +1619,21 @@ bool CSeq_loc_Mapper_Base::x_MapInterval(const CSeq_id&   src_id,
                                          TRangeFuzz       orig_fuzz)
 {
     bool res = false;
-    if (m_UseWidth  &&
-        m_Widths[CSeq_id_Handle::GetHandle(src_id)] & fWidthProtToNuc) {
-        src_rg = TRange(src_rg.GetFrom()*3, src_rg.GetTo()*3 + 2);
+    if ( m_UseWidth ) {
+        TWidthById::const_iterator wit =
+            m_Widths.find(CSeq_id_Handle::GetHandle(src_id));
+        if (wit != m_Widths.end()) {
+            if (wit->second & fWidthProtToNuc) {
+                src_rg = TRange(src_rg.GetFrom()*3, src_rg.GetTo()*3 + 2);
+            }
+        }
+        else if ( m_GraphRanges ) {
+            // Missing width for the range, don't know how much of the graph
+            // data to skip.
+            NCBI_THROW(CAnnotMapperException, eOtherError,
+                       "Can not map graph data - unknown sequence type "
+                       "in the source location.");
+        }
     }
 
     CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(src_id);
@@ -1629,6 +1652,7 @@ bool CSeq_loc_Mapper_Base::x_MapInterval(const CSeq_id&   src_id,
         sort(mappings.begin(), mappings.end(), CMappingRangeRef_Less());
     }
     TSeqPos last_src_to = 0;
+    TSeqPos graph_offset = m_GraphRanges ? m_GraphRanges->GetOffset() : 0;
     for (size_t idx = 0; idx < mappings.size(); ++idx) {
         if ( x_MapNextRange(src_rg,
                             is_set_strand, src_strand,
@@ -1637,9 +1661,15 @@ bool CSeq_loc_Mapper_Base::x_MapInterval(const CSeq_id&   src_id,
                             &last_src_to) ) {
             res = true;
         }
+        if ( m_GraphRanges ) {
+            m_GraphRanges->SetOffset(graph_offset);
+        }
     }
     if ( !res ) {
         x_SetLastTruncated();
+    }
+    if ( m_GraphRanges ) {
+        m_GraphRanges->IncOffset(src_rg.GetLength());
     }
     return res;
 }
@@ -2292,6 +2322,112 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
     m_MappedLocs.clear();
     OptimizeSeq_loc(dst_loc);
     return dst_loc;
+}
+
+
+template<class TData> void CopyGraphData(const TData& src,
+                                         TData&       dst,
+                                         TSeqPos      from,
+                                         TSeqPos      to)
+{
+    _ASSERT(from < src.size()  &&  to <= src.size());
+    dst.insert(dst.end(), src.begin() + from, src.begin() + to);
+}
+
+
+CRef<CSeq_graph> CSeq_loc_Mapper_Base::Map(const CSeq_graph& src_graph)
+{
+    // Make sure range collection is null
+    // Create range collection
+    // Map the location
+    // Create mapped graph with data
+    // Reset range collection
+    CRef<CSeq_graph> ret;
+    m_GraphRanges.Reset(new CGraphRanges);
+    CRef<CSeq_loc> mapped_loc = Map(src_graph.GetLoc());
+    if ( !mapped_loc ) {
+        return ret;
+    }
+    ret.Reset(new CSeq_graph);
+    ret->Assign(src_graph);
+    ret->SetLoc(*mapped_loc);
+
+    CSeq_graph::TGraph& dst_data = ret->SetGraph();
+    dst_data.Reset();
+    const CSeq_graph::TGraph& src_data = src_graph.GetGraph();
+
+    TSeqPos comp = (src_graph.IsSetComp()  &&  src_graph.GetComp()) ?
+        src_graph.GetComp() : 1;
+    TSeqPos comp_div = comp;
+    if ( m_UseWidth ) {
+        if (m_Dst_width == 3) {
+            comp *= 3;
+            comp_div = comp;
+        }
+        else if (comp % 3 == 0) {
+            comp /= 3;
+        }
+        else {
+            NCBI_THROW(CAnnotMapperException, eOtherError,
+                       "Can not map seq-graph data between "
+                       "different sequence types.");
+        }
+    }
+    ret->SetComp(comp);
+    TSeqPos numval = 0;
+
+    typedef CGraphRanges::TGraphRanges TGraphRanges;
+    const TGraphRanges& ranges = m_GraphRanges->GetRanges();
+    switch ( src_data.Which() ) {
+    case CSeq_graph::TGraph::e_Byte:
+        dst_data.SetByte().SetMin(src_data.GetByte().GetMin());
+        dst_data.SetByte().SetMax(src_data.GetByte().GetMax());
+        dst_data.SetByte().SetAxis(src_data.GetByte().GetAxis());
+        dst_data.SetByte().SetValues();
+        ITERATE(TGraphRanges, it, ranges) {
+            TSeqPos from = it->GetFrom()/comp_div;
+            TSeqPos to = it->GetTo()/comp_div + 1;
+            CopyGraphData(src_data.GetByte().GetValues(),
+                dst_data.SetByte().SetValues(),
+                from, to);
+            numval += to - from;
+        }
+        break;
+    case CSeq_graph::TGraph::e_Int:
+        dst_data.SetInt().SetMin(src_data.GetInt().GetMin());
+        dst_data.SetInt().SetMax(src_data.GetInt().GetMax());
+        dst_data.SetInt().SetAxis(src_data.GetInt().GetAxis());
+        dst_data.SetInt().SetValues();
+        ITERATE(TGraphRanges, it, ranges) {
+            TSeqPos from = it->GetFrom()/comp_div;
+            TSeqPos to = it->GetTo()/comp_div + 1;
+            CopyGraphData(src_data.GetInt().GetValues(),
+                dst_data.SetInt().SetValues(),
+                from, to);
+            numval += to - from;
+        }
+        break;
+    case CSeq_graph::TGraph::e_Real:
+        dst_data.SetReal().SetMin(src_data.GetReal().GetMin());
+        dst_data.SetReal().SetMax(src_data.GetReal().GetMax());
+        dst_data.SetReal().SetAxis(src_data.GetReal().GetAxis());
+        dst_data.SetReal().SetValues();
+        ITERATE(TGraphRanges, it, ranges) {
+            TSeqPos from = it->GetFrom()/comp_div;
+            TSeqPos to = it->GetTo()/comp_div + 1;
+            CopyGraphData(src_data.GetReal().GetValues(),
+                dst_data.SetReal().SetValues(),
+                from, to);
+            numval += to - from;
+        }
+        break;
+    default:
+        break;
+    }
+    ret->SetNumval(numval);
+
+    m_GraphRanges.Reset();
+    return ret;
 }
 
 

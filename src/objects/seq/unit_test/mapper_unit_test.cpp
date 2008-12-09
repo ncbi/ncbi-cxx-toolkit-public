@@ -40,6 +40,7 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seq/seq_loc_mapper_base.hpp>
 #include <objects/seq/seq_align_mapper_base.hpp>
+#include <objects/seqres/seqres__.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/test_boost.hpp>
@@ -1327,5 +1328,210 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Multirange_Spliced)
         CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
         BOOST_CHECK((*part)->IsMismatch());
         BOOST_CHECK_EQUAL((*part)->GetMismatch(), 10);
+    }}
+}
+
+
+BOOST_AUTO_TEST_CASE(s_TestMapping_Graph_Simple)
+{
+    // Basic mapping
+    CSeq_loc src, dst;
+    s_InitInterval(src.SetInt(), 4, 10, 19);
+    s_InitInterval(dst.SetInt(), 5, 110, 119);
+    CSeq_loc_Mapper_Base mapper(src, dst);
+
+    {{
+        // Simple graph
+        CSeq_graph graph;
+        s_InitInterval(graph.SetLoc().SetInt(), 4, 8, 28);
+        graph.SetNumval(20);
+        CInt_graph& int_graph = graph.SetGraph().SetInt();
+        int_graph.SetMax(100);
+        int_graph.SetMin(0);
+        int_graph.SetAxis(0);
+        for (int i = 0; i < 20; i++) {
+            int_graph.SetValues().push_back(i);
+        }
+        CRef<CSeq_graph> mapped = mapper.Map(graph);
+        BOOST_CHECK(mapped);
+        BOOST_CHECK_EQUAL(mapped->GetLoc().Which(), CSeq_loc::e_Int);
+        CHECK_SEQ_INT(mapped->GetLoc().GetInt(), 5, 110, 119, false,
+            eNa_strand_unknown, CInt_fuzz::eLim_lt, CInt_fuzz::eLim_gt);
+        BOOST_CHECK_EQUAL(mapped->GetComp(), 1);
+        BOOST_CHECK_EQUAL(mapped->GetNumval(), 10);
+        BOOST_CHECK_EQUAL(mapped->GetGraph().Which(),
+            CSeq_graph::C_Graph::e_Int);
+        const CInt_graph& int_mapped = mapped->GetGraph().GetInt();
+        BOOST_CHECK_EQUAL(int_mapped.GetMax(), 100);
+        BOOST_CHECK_EQUAL(int_mapped.GetMin(), 0);
+        BOOST_CHECK_EQUAL(int_mapped.GetAxis(), 0);
+        BOOST_CHECK_EQUAL(int_mapped.GetValues().size(), 10);
+        for (int i = 0; i < int_mapped.GetValues().size(); i++) {
+            BOOST_CHECK_EQUAL(int_mapped.GetValues()[i], i + 2);
+        }
+    }}
+
+    {{
+        // Partial - skip a range in the middle
+        CSeq_graph graph;
+        {{
+            CRef<CSeq_interval> loc_int(new CSeq_interval);
+            s_InitInterval(*loc_int, 4, 5, 14);
+            graph.SetLoc().SetPacked_int().Set().push_back(loc_int);
+            loc_int.Reset(new CSeq_interval);
+            s_InitInterval(*loc_int, 999, 105, 114);
+            graph.SetLoc().SetPacked_int().Set().push_back(loc_int);
+            loc_int.Reset(new CSeq_interval);
+            s_InitInterval(*loc_int, 4, 15, 24);
+            graph.SetLoc().SetPacked_int().Set().push_back(loc_int);
+        }}
+        graph.SetNumval(30);
+        CInt_graph& int_graph = graph.SetGraph().SetInt();
+        int_graph.SetMax(100);
+        int_graph.SetMin(0);
+        int_graph.SetAxis(0);
+        for (int i = 0; i < 30; i++) {
+            int_graph.SetValues().push_back(i);
+        }
+        CRef<CSeq_graph> mapped = mapper.Map(graph);
+        BOOST_CHECK(mapped);
+        BOOST_CHECK_EQUAL(mapped->GetLoc().Which(), CSeq_loc::e_Packed_int);
+        const CPacked_seqint::Tdata& data =
+            mapped->GetLoc().GetPacked_int().Get();
+        BOOST_CHECK_EQUAL(data.size(), 2);
+        CPacked_seqint::Tdata::const_iterator it = data.begin();
+        CHECK_SEQ_INT(**it, 5, 110, 114, false,
+            eNa_strand_unknown, CInt_fuzz::eLim_lt, CInt_fuzz::eLim_tr);
+        it++;
+        CHECK_SEQ_INT(**it, 5, 115, 119, false,
+            eNa_strand_unknown, CInt_fuzz::eLim_tl, CInt_fuzz::eLim_gt);
+        BOOST_CHECK_EQUAL(mapped->GetComp(), 1);
+        BOOST_CHECK_EQUAL(mapped->GetNumval(), 10);
+        BOOST_CHECK_EQUAL(mapped->GetGraph().Which(),
+            CSeq_graph::C_Graph::e_Int);
+        const CInt_graph& int_mapped = mapped->GetGraph().GetInt();
+        BOOST_CHECK_EQUAL(int_mapped.GetMax(), 100);
+        BOOST_CHECK_EQUAL(int_mapped.GetMin(), 0);
+        BOOST_CHECK_EQUAL(int_mapped.GetAxis(), 0);
+        BOOST_CHECK_EQUAL(int_mapped.GetValues().size(), 10);
+        for (int i = 0, val = 5; i < int_mapped.GetValues().size(); i++, val++) {
+            if (i == 5) {
+                val += 10;
+            }
+            BOOST_CHECK_EQUAL(int_mapped.GetValues()[i], val);
+        }
+    }}
+
+    {{
+        // Minus strand, the data should not be reversed
+        CSeq_graph graph;
+        s_InitInterval(graph.SetLoc().SetInt(), 4, 8, 28, eNa_strand_minus);
+        graph.SetNumval(20);
+        CInt_graph& int_graph = graph.SetGraph().SetInt();
+        int_graph.SetMax(100);
+        int_graph.SetMin(0);
+        int_graph.SetAxis(0);
+        for (int i = 0; i < 20; i++) {
+            int_graph.SetValues().push_back(i);
+        }
+        CRef<CSeq_graph> mapped = mapper.Map(graph);
+        BOOST_CHECK(mapped);
+        BOOST_CHECK_EQUAL(mapped->GetLoc().Which(), CSeq_loc::e_Int);
+        CHECK_SEQ_INT(mapped->GetLoc().GetInt(), 5, 110, 119, true,
+            eNa_strand_minus, CInt_fuzz::eLim_lt, CInt_fuzz::eLim_gt);
+        BOOST_CHECK_EQUAL(mapped->GetComp(), 1);
+        BOOST_CHECK_EQUAL(mapped->GetNumval(), 10);
+        BOOST_CHECK_EQUAL(mapped->GetGraph().Which(),
+            CSeq_graph::C_Graph::e_Int);
+        const CInt_graph& int_mapped = mapped->GetGraph().GetInt();
+        BOOST_CHECK_EQUAL(int_mapped.GetMax(), 100);
+        BOOST_CHECK_EQUAL(int_mapped.GetMin(), 0);
+        BOOST_CHECK_EQUAL(int_mapped.GetAxis(), 0);
+        BOOST_CHECK_EQUAL(int_mapped.GetValues().size(), 10);
+        for (int i = 0; i < int_mapped.GetValues().size(); i++) {
+            BOOST_CHECK_EQUAL(int_mapped.GetValues()[i], i + 2);
+        }
+    }}
+}
+
+
+BOOST_AUTO_TEST_CASE(s_TestMapping_Graph_Unsupported)
+{
+    // Basic mapping
+    CSeq_loc src, dst;
+    s_InitInterval(src.SetInt(), 4, 10, 39);
+    s_InitInterval(dst.SetInt(), 6, 110, 119);
+    CSeq_loc_Mapper_Base mapper(src, dst);
+
+    {{
+        // Simple graph, using comp=3 to allow mapping
+        CSeq_graph graph;
+        s_InitInterval(graph.SetLoc().SetInt(), 4, 7, 27);
+        graph.SetNumval(20);
+        graph.SetComp(3); // This allows to map nuc-to-prot
+        CInt_graph& int_graph = graph.SetGraph().SetInt();
+        int_graph.SetMax(100);
+        int_graph.SetMin(0);
+        int_graph.SetAxis(0);
+        for (int i = 0; i < 20; i++) {
+            int_graph.SetValues().push_back(i);
+        }
+        CRef<CSeq_graph> mapped = mapper.Map(graph);
+        BOOST_CHECK(mapped);
+        BOOST_CHECK_EQUAL(mapped->GetLoc().Which(), CSeq_loc::e_Int);
+        CHECK_SEQ_INT(mapped->GetLoc().GetInt(), 6, 110, 115, false,
+            eNa_strand_unknown, CInt_fuzz::eLim_lt, CInt_fuzz::eLim_unk);
+        BOOST_CHECK_EQUAL(mapped->GetComp(), 1);
+        BOOST_CHECK_EQUAL(mapped->GetNumval(), 6);
+        BOOST_CHECK_EQUAL(mapped->GetGraph().Which(),
+            CSeq_graph::C_Graph::e_Int);
+        const CInt_graph& int_mapped = mapped->GetGraph().GetInt();
+        BOOST_CHECK_EQUAL(int_mapped.GetMax(), 100);
+        BOOST_CHECK_EQUAL(int_mapped.GetMin(), 0);
+        BOOST_CHECK_EQUAL(int_mapped.GetAxis(), 0);
+        BOOST_CHECK_EQUAL(int_mapped.GetValues().size(), 6);
+        for (int i = 0; i < int_mapped.GetValues().size(); i++) {
+            BOOST_CHECK_EQUAL(int_mapped.GetValues()[i], i + 1);
+        }
+    }}
+
+    {{
+        // More graph data than fits in the target location
+        CSeq_graph graph;
+        s_InitInterval(graph.SetLoc().SetInt(), 4, 8, 28);
+        graph.SetNumval(20);
+        CInt_graph& int_graph = graph.SetGraph().SetInt();
+        int_graph.SetMax(100);
+        int_graph.SetMin(0);
+        int_graph.SetAxis(0);
+        for (int i = 0; i < 20; i++) {
+            int_graph.SetValues().push_back(i);
+        }
+        BOOST_CHECK_THROW(mapper.Map(graph), CAnnotMapperException);
+    }}
+
+    {{
+        // Width of gi 999 is unknown
+        CSeq_graph graph;
+        {{
+            CRef<CSeq_interval> loc_int(new CSeq_interval);
+            s_InitInterval(*loc_int, 4, 5, 14);
+            graph.SetLoc().SetPacked_int().Set().push_back(loc_int);
+            loc_int.Reset(new CSeq_interval);
+            s_InitInterval(*loc_int, 999, 105, 114);
+            graph.SetLoc().SetPacked_int().Set().push_back(loc_int);
+            loc_int.Reset(new CSeq_interval);
+            s_InitInterval(*loc_int, 4, 15, 24);
+            graph.SetLoc().SetPacked_int().Set().push_back(loc_int);
+        }}
+        graph.SetNumval(30);
+        CInt_graph& int_graph = graph.SetGraph().SetInt();
+        int_graph.SetMax(100);
+        int_graph.SetMin(0);
+        int_graph.SetAxis(0);
+        for (int i = 0; i < 30; i++) {
+            int_graph.SetValues().push_back(i);
+        }
+        BOOST_CHECK_THROW(mapper.Map(graph), CAnnotMapperException);
     }}
 }

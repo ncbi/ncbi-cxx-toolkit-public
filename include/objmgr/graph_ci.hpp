@@ -153,13 +153,28 @@ public:
 
     TSeqPos GetNumval(void) const
         {
-            return GetOriginalGraph().GetNumval();
+            if ( m_MappedGraph ) {
+                return m_MappedGraph->GetNumval();
+            }
+            TSeqPos numval = 0;
+            ITERATE(TGraphRanges, it, GetMappedGraphRanges()) {
+                numval += it->GetLength();
+            }
+            return numval;
         }
 
-    const CSeq_graph::C_Graph& GetGraph(void) const
-        {
-            return GetOriginalGraph().GetGraph();
-        }
+    const CSeq_graph::C_Graph& GetGraph(void) const;
+
+    typedef CGraphRanges::TRange TRange;
+    typedef CGraphRanges::TGraphRanges TGraphRanges;
+
+    /// Get the range of graph data used in the mapped graph. The range is
+    /// provided in the sequence coordinates, to get array index divide
+    /// each value by 'comp'.
+    const TRange& GetMappedGraphTotalRange(void) const;
+    /// Get all mapped graph ranges. The ranges are provided in the sequence
+    /// coordinates, to get array index divide each value by 'comp'.
+    const TGraphRanges& GetMappedGraphRanges(void) const;
 
 private:
     friend class CGraph_CI;
@@ -173,6 +188,7 @@ private:
 
     void MakeMappedGraph(void) const;
     void MakeMappedLoc(void) const;
+    void MakeMappedGraphData(CSeq_graph& dst) const;
 
     mutable CRef<CAnnot_Collector> m_Collector;
     TIterator                      m_GraphRef;

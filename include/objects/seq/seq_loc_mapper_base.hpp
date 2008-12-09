@@ -60,6 +60,7 @@ class CSeq_loc_CI;
 class CSeq_feat;
 class CSeq_align;
 class CSeq_align_Mapper_Base;
+class CSeq_graph;
 
 
 class NCBI_SEQ_EXPORT CMappingRange : public CObject
@@ -173,6 +174,40 @@ private:
 };
 
 
+/// Helper class for mapping graphs
+class NCBI_SEQ_EXPORT CGraphRanges : public CObject
+{
+public:
+    CGraphRanges(void) : m_Offset(0) {}
+
+    typedef CRange<TSeqPos> TRange;
+    typedef vector<TRange>  TGraphRanges;
+
+    TSeqPos GetOffset(void) const { return m_Offset; }
+    void SetOffset(TSeqPos offset) { m_Offset = offset; }
+    void IncOffset(TSeqPos inc) { m_Offset += inc; }
+
+    const TGraphRanges& GetRanges(void) const { return m_Ranges; }
+    void AddRange(const TRange& rg)
+    {
+        if ( rg.Empty() ) {
+            return;
+        }
+        TRange offset_rg = rg.IsWhole() ? rg :
+            TRange(rg.GetFrom() + m_Offset, rg.GetTo() + m_Offset);
+        m_Ranges.push_back(offset_rg);
+        m_TotalRange.CombineWith(offset_rg);
+    }
+
+    const TRange& GetTotalRange(void) const { return m_TotalRange; }
+
+private:
+    TSeqPos      m_Offset; // Offset new ranges
+    TGraphRanges m_Ranges;
+    TRange       m_TotalRange;
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///  CSeq_loc_Mapper_Base --
@@ -266,6 +301,8 @@ public:
     /// Map a single row of the alignment
     CRef<CSeq_align> Map(const CSeq_align& src_align,
                          size_t            row);
+    /// Map seq-graph. This will map both location and data.
+    CRef<CSeq_graph> Map(const CSeq_graph& src_graph);
 
     /// Check if the last mapping resulted in partial location
     bool             LastIsPartial(void);
@@ -446,6 +483,9 @@ private:
     bool                 m_CheckStrand; // Check strands before mapping
 
     mutable TRangesById  m_MappedLocs;
+
+    // Collecting ranges for mapped graph
+    CRef<CGraphRanges>   m_GraphRanges;
 
 protected:
     // Sources may have different widths, e.g. in an alignment

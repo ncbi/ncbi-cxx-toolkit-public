@@ -127,6 +127,7 @@ void CSeq_loc_Conversion::Reset(void)
     m_PartialFlag = 0;
     m_DstFuzz_from.Reset();
     m_DstFuzz_to.Reset();
+    m_GraphRanges.Reset();
 }
 
 
@@ -266,6 +267,9 @@ bool CSeq_loc_Conversion::ConvertPoint(const CSeq_point& src)
             }
         }
     }
+    else if ( m_GraphRanges ) {
+        m_GraphRanges->IncOffset(1);
+    }
     return ret;
 }
 
@@ -304,6 +308,9 @@ bool CSeq_loc_Conversion::ConvertInterval(const CSeq_interval& src)
             m_PartialFlag |= fPartial_to;
         }
     }
+    else if ( m_GraphRanges ) {
+        m_GraphRanges->IncOffset(src.GetLength());
+    }
     return ret;
 }
 
@@ -330,6 +337,10 @@ bool CSeq_loc_Conversion::ConvertPoint(TSeqPos src_pos,
     }
     m_LastType = eMappedObjType_Seq_point;
     m_TotalRange += m_LastRange.SetFrom(dst_pos).SetTo(dst_pos);
+    if ( m_GraphRanges ) {
+        m_GraphRanges->AddRange(TRange(src_pos, src_pos));
+        m_GraphRanges->IncOffset(1);
+    }
     return true;
 }
 
@@ -342,12 +353,16 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to,
     m_DstFuzz_from.Reset();
     m_DstFuzz_to.Reset();
     bool partial_from = false, partial_to = false;
+    TSeqPos len = src_to - src_from + 1;
+    TRange graph_rg(0, len - 1);
     if ( src_from < m_Src_from ) {
         m_Partial = partial_from = true;
+        graph_rg.SetFrom(m_Src_from - src_from);
         src_from = m_Src_from;
     }
     if ( src_to > m_Src_to ) {
         m_Partial = partial_to = true;
+        graph_rg.SetLength(m_Src_to - src_from + 1);
         src_to = m_Src_to;
     }
     if ( src_from > src_to ) {
@@ -373,6 +388,10 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to,
     }
     if ( partial_to ) {
         m_PartialFlag |= fPartial_to;
+    }
+    if ( m_GraphRanges ) {
+        m_GraphRanges->AddRange(graph_rg);
+        m_GraphRanges->IncOffset(len);
     }
     return true;
 }
@@ -511,6 +530,9 @@ void CSeq_loc_Conversion::ConvertPacked_pnt(const CSeq_loc& src,
     _ASSERT(src.Which() == CSeq_loc::e_Packed_pnt);
     const CPacked_seqpnt& src_pack_pnts = src.GetPacked_pnt();
     if ( !GoodSrcId(src_pack_pnts.GetId()) ) {
+        if ( m_GraphRanges ) {
+            m_GraphRanges->IncOffset(src_pack_pnts.GetPoints().size());
+        }
         return;
     }
     const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
@@ -657,6 +679,12 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
                 m_Scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(src_id),
                                          CScope::eGetBioseq_All);
             ConvertInterval(0, bh.GetBioseqLength()-1, eNa_strand_unknown);
+        }
+        else if ( m_GraphRanges ) {
+            CBioseq_Handle bh =
+                m_Scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(src_id),
+                                         CScope::eGetBioseq_All);
+            m_GraphRanges->IncOffset(bh.GetBioseqLength());
         }
         break;
     }
@@ -969,8 +997,10 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
     case CSeq_annot::C_Data::e_Graph:
     {
         CRef<CSeq_loc> mapped_loc;
+        m_GraphRanges.Reset(new CGraphRanges);
         Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc);
         map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
+        map_info.SetGraphRanges(m_GraphRanges.GetPointerOrNull());
         break;
     }
     default:
@@ -1070,8 +1100,10 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref,
     case CSeq_annot::C_Data::e_Graph:
     {
         CRef<CSeq_loc> mapped_loc;
+        m_GraphRanges.Reset(new CGraphRanges);
         Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc);
         map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
+        map_info.SetGraphRanges(m_GraphRanges.GetPointerOrNull());
         break;
     }
     default:
@@ -1372,8 +1404,10 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
     case CSeq_annot::C_Data::e_Graph:
     {
         CRef<CSeq_loc> mapped_loc;
+        m_GraphRanges.Reset(new CGraphRanges);
         Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc, 0);
         map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
+        map_info.SetGraphRanges(m_GraphRanges.GetPointerOrNull());
         break;
     }
     case CSeq_annot::C_Data::e_Align:
@@ -1412,6 +1446,9 @@ bool CSeq_loc_Conversion_Set::ConvertPoint(const CSeq_point& src,
             res = true;
             break;
         }
+    }
+    if ( !res  &&  m_GraphRanges ) {
+        m_GraphRanges->IncOffset(1);
     }
     m_Partial |= !res;
     return res;
@@ -1508,9 +1545,11 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
     }
     CRef<CSeq_interval> last_int;
     TSeqPos last_to = kInvalidSeqPos;
+    TSeqPos graph_offset = m_GraphRanges ? m_GraphRanges->GetOffset() : 0;
     NON_CONST_ITERATE ( TConversions, it, cvts ) {
         CRef<CSeq_loc_Conversion> cvt = *it;
         cvt->Reset();
+        cvt->m_GraphRanges = m_GraphRanges;
         if (cvt->ConvertInterval(src)) {
             CRef<CSeq_interval> mapped = cvt->GetDstInterval();
             if ( revert_order ) {
@@ -1536,6 +1575,14 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
             total_range += cvt->GetTotalRange();
             res = true;
         }
+        if (m_GraphRanges) {
+            // All conversions start with the same offset
+            m_GraphRanges->SetOffset(graph_offset);
+        }
+    }
+    if ( m_GraphRanges ) {
+        // Now it's time to update the offset
+        m_GraphRanges->IncOffset(src.GetLength());
     }
     if (ints.size() > 1) {
         dst->Reset(tmp);
@@ -1607,6 +1654,7 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_pnt(const CSeq_loc& src,
     CSeq_loc_mix::Tdata& locs = tmp->SetMix().Set();
     ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
         bool mapped = false;
+        TSeqPos graph_offset = m_GraphRanges ? m_GraphRanges->GetOffset() : 0;
         TRangeIterator mit = BeginRanges(
             CSeq_id_Handle::GetHandle(src_pack_pnts.GetId()),
             *i, *i,
@@ -1629,6 +1677,12 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_pnt(const CSeq_loc& src,
                 mapped = true;
                 break;
             }
+            if ( m_GraphRanges ) {
+                m_GraphRanges->SetOffset(graph_offset);
+            }
+        }
+        if ( m_GraphRanges ) {
+            m_GraphRanges->IncOffset(1);
         }
         m_Partial |= !mapped;
         res |= mapped;

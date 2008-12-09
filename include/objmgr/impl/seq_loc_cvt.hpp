@@ -39,6 +39,7 @@
 #include <util/rangemap.hpp>
 
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/seq/seq_loc_mapper_base.hpp>
 #include <objmgr/impl/heap_scope.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
@@ -267,6 +268,8 @@ private:
     // Scope for id resolution:
     CHeapScope     m_Scope;
 
+    CRef<CGraphRanges> m_GraphRanges;
+
     friend class CSeq_loc_Conversion_Set;
     friend class CSeq_align_Mapper;
     friend struct CConversionRef_Less;
@@ -341,6 +344,8 @@ private:
     bool         m_Partial;
     TRange       m_TotalRange;
     CHeapScope   m_Scope;
+
+    CRef<CGraphRanges> m_GraphRanges;
 };
 
 

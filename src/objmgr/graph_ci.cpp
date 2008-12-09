@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/impl/annot_object.hpp>
+#include <objects/seqres/seqres__.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -90,11 +91,111 @@ void CMappedGraph::MakeMappedGraph(void) const
         CSeq_graph* tmp;
         m_MappedGraph.Reset(tmp = new CSeq_graph);
         tmp->Assign(GetOriginalGraph());
+        MakeMappedGraphData(*tmp);
         tmp->SetLoc(loc);
     }
     else {
         m_MappedGraph.Reset(&GetOriginalGraph());
     }
+}
+
+
+template<class TData> void CopyGraphData(const TData& src,
+                                         TData&       dst,
+                                         TSeqPos      from,
+                                         TSeqPos      to)
+{
+    _ASSERT(from < src.size()  &&  to <= src.size());
+    dst.insert(dst.end(), src.begin() + from, src.begin() + to);
+}
+
+
+void CMappedGraph::MakeMappedGraphData(CSeq_graph& dst) const
+{
+    const TGraphRanges& ranges = GetMappedGraphRanges();
+    CSeq_graph::TGraph& dst_data = dst.SetGraph();
+    dst_data.Reset();
+    const CSeq_graph& src = GetOriginalGraph();
+    const CSeq_graph::TGraph& src_data = src.GetGraph();
+
+    TSeqPos comp = (src.IsSetComp()  &&  src.GetComp()) ? src.GetComp() : 1;
+    TSeqPos numval = 0;
+
+    switch ( src_data.Which() ) {
+    case CSeq_graph::TGraph::e_Byte:
+        dst_data.SetByte().SetMin(src_data.GetByte().GetMin());
+        dst_data.SetByte().SetMax(src_data.GetByte().GetMax());
+        dst_data.SetByte().SetAxis(src_data.GetByte().GetAxis());
+        dst_data.SetByte().SetValues();
+        ITERATE(TGraphRanges, it, ranges) {
+            TSeqPos from = it->GetFrom()/comp;
+            TSeqPos to = it->GetTo()/comp + 1;
+            CopyGraphData(src_data.GetByte().GetValues(),
+                dst_data.SetByte().SetValues(),
+                from, to);
+            numval += to - from;
+        }
+        break;
+    case CSeq_graph::TGraph::e_Int:
+        dst_data.SetInt().SetMin(src_data.GetInt().GetMin());
+        dst_data.SetInt().SetMax(src_data.GetInt().GetMax());
+        dst_data.SetInt().SetAxis(src_data.GetInt().GetAxis());
+        dst_data.SetInt().SetValues();
+        ITERATE(TGraphRanges, it, ranges) {
+            TSeqPos from = it->GetFrom()/comp;
+            TSeqPos to = it->GetTo()/comp + 1;
+            CopyGraphData(src_data.GetInt().GetValues(),
+                dst_data.SetInt().SetValues(),
+                from, to);
+            numval += to - from;
+        }
+        break;
+    case CSeq_graph::TGraph::e_Real:
+        dst_data.SetReal().SetMin(src_data.GetReal().GetMin());
+        dst_data.SetReal().SetMax(src_data.GetReal().GetMax());
+        dst_data.SetReal().SetAxis(src_data.GetReal().GetAxis());
+        dst_data.SetReal().SetValues();
+        ITERATE(TGraphRanges, it, ranges) {
+            TSeqPos from = it->GetFrom()/comp;
+            TSeqPos to = it->GetTo()/comp + 1;
+            CopyGraphData(src_data.GetReal().GetValues(),
+                dst_data.SetReal().SetValues(),
+                from, to);
+            numval += to - from;
+        }
+        break;
+    default:
+        break;
+    }
+    dst.SetNumval(numval);
+}
+
+
+const CSeq_graph::C_Graph& CMappedGraph::GetGraph(void) const
+{
+    if ( !m_GraphRef->GetMappingInfo().IsPartial() ) {
+        return GetOriginalGraph().GetGraph();
+    }
+    MakeMappedGraph();
+    return m_MappedGraph->GetGraph();
+}
+
+
+const CMappedGraph::TRange&
+CMappedGraph::GetMappedGraphTotalRange(void) const
+{
+    const CGraphRanges* rgs = m_GraphRef->GetMappingInfo().GetGraphRanges();
+    _ASSERT(rgs);
+    return rgs->GetTotalRange();
+}
+
+
+const CMappedGraph::TGraphRanges&
+CMappedGraph::GetMappedGraphRanges(void) const
+{
+    const CGraphRanges* rgs = m_GraphRef->GetMappingInfo().GetGraphRanges();
+    _ASSERT(rgs);
+    return rgs->GetRanges();
 }
 
 

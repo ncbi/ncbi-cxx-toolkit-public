@@ -40,6 +40,7 @@
 #include <objmgr/tse_handle.hpp>
 #include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/seq_loc_cvt.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -128,6 +129,11 @@ public:
     void SetMappedSeq_align(CSeq_align* align);
     void SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts);
 
+    void SetGraphRanges(CGraphRanges* ranges)
+        { m_GraphRanges.Reset(ranges); }
+    const CGraphRanges* GetGraphRanges(void) const
+        { return m_GraphRanges.GetPointerOrNull(); }
+
     bool MappedSeq_locNeedsUpdate(void) const;
     void UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const;
     void UpdateMappedSeq_loc(CRef<CSeq_loc>&      loc,
@@ -148,6 +154,7 @@ private:
     Int1                    m_MappedFlags; // partial, product
     Int1                    m_MappedObjectType;
     Int1                    m_MappedStrand;
+    CRef<CGraphRanges>      m_GraphRanges;
 };
 
 
