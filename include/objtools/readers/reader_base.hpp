@@ -53,6 +53,9 @@ public:
     };
 
 public:
+
+    virtual ~CReaderBase() {}
+
     //
     //  Class interface:
     //

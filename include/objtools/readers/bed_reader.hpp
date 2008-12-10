@@ -34,12 +34,14 @@
 #define OBJTOOLS_READERS___BEDREADER__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objtools/readers/reader_base.hpp>
+
 #include <objects/seq/Seq_annot.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CBedReader
@@ -100,7 +102,7 @@ protected:
     bool m_usescore;
 };
 
-END_objects_SCOPE
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_READERS___BEDREADER__HPP
