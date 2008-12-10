@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 
 // Store global exception handling flags in TLS
-static CSafeStaticRef< CTls<CNCBINode::TExceptionFlags> > s_TlsExceptionFlags;
+static CStaticTls<CNCBINode::TExceptionFlags> s_TlsExceptionFlags;
 
 
 CNCBINode::CNCBINode(void)
@@ -394,7 +394,7 @@ void CNCBINode::CreateSubNodes(void)
 
 void CNCBINode::SetExceptionFlags(TExceptionFlags flags)
 {
-    s_TlsExceptionFlags->SetValue(
+    s_TlsExceptionFlags.SetValue(
         reinterpret_cast<TExceptionFlags*> ((intptr_t) flags));
 }
 
@@ -402,7 +402,7 @@ void CNCBINode::SetExceptionFlags(TExceptionFlags flags)
 CNCBINode::TExceptionFlags CNCBINode::GetExceptionFlags()
 {
     // Some 64 bit compilers refuse to cast from int* to EExceptionFlags
-    return EExceptionFlags((intptr_t) s_TlsExceptionFlags->GetValue());
+    return EExceptionFlags((intptr_t) s_TlsExceptionFlags.GetValue());
 }
 
 

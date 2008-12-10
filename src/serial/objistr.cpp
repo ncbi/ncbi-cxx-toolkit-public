@@ -183,17 +183,17 @@ CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
 // data verification setup
 
 ESerialVerifyData CObjectIStream::ms_VerifyDataDefault = eSerialVerifyData_Default;
-static CSafeStaticRef< CTls<int> > s_VerifyTLS;
+static CStaticTls<int> s_VerifyTLS;
 
 
 void CObjectIStream::SetVerifyDataThread(ESerialVerifyData verify)
 {
     x_GetVerifyDataDefault();
-    ESerialVerifyData tls_verify = ESerialVerifyData(intptr_t(s_VerifyTLS->GetValue()));
+    ESerialVerifyData tls_verify = ESerialVerifyData(intptr_t(s_VerifyTLS.GetValue()));
     if (tls_verify != eSerialVerifyData_Never &&
         tls_verify != eSerialVerifyData_Always &&
         tls_verify != eSerialVerifyData_DefValueAlways) {
-        s_VerifyTLS->SetValue(reinterpret_cast<int*>(verify));
+        s_VerifyTLS.SetValue(reinterpret_cast<int*>(verify));
     }
 }
 
@@ -215,7 +215,7 @@ ESerialVerifyData CObjectIStream::x_GetVerifyDataDefault(void)
         ms_VerifyDataDefault == eSerialVerifyData_DefValueAlways) {
         verify = ms_VerifyDataDefault;
     } else {
-        verify = ESerialVerifyData(intptr_t(s_VerifyTLS->GetValue()));
+        verify = ESerialVerifyData(intptr_t(s_VerifyTLS.GetValue()));
         if (verify == eSerialVerifyData_Default) {
             if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
 
@@ -250,16 +250,16 @@ ESerialVerifyData CObjectIStream::x_GetVerifyDataDefault(void)
 // skip unknown members setup
 
 ESerialSkipUnknown CObjectIStream::ms_SkipUnknownDefault = eSerialSkipUnknown_Default;
-static CSafeStaticRef< CTls<int> > s_SkipTLS;
+static CStaticTls<int> s_SkipTLS;
 
 
 void CObjectIStream::SetSkipUnknownThread(ESerialSkipUnknown skip)
 {
     x_GetSkipUnknownDefault();
-    ESerialSkipUnknown tls_skip = ESerialSkipUnknown(intptr_t(s_SkipTLS->GetValue()));
+    ESerialSkipUnknown tls_skip = ESerialSkipUnknown(intptr_t(s_SkipTLS.GetValue()));
     if (tls_skip != eSerialSkipUnknown_Never &&
         tls_skip != eSerialSkipUnknown_Always) {
-        s_SkipTLS->SetValue(reinterpret_cast<int*>(skip));
+        s_SkipTLS.SetValue(reinterpret_cast<int*>(skip));
     }
 }
 
@@ -279,7 +279,7 @@ ESerialSkipUnknown CObjectIStream::x_GetSkipUnknownDefault(void)
         ms_SkipUnknownDefault == eSerialSkipUnknown_Always) {
         skip = ms_SkipUnknownDefault;
     } else {
-        skip = ESerialSkipUnknown(intptr_t(s_SkipTLS->GetValue()));
+        skip = ESerialSkipUnknown(intptr_t(s_SkipTLS.GetValue()));
         if (skip == eSerialSkipUnknown_Default) {
             if (ms_SkipUnknownDefault == eSerialSkipUnknown_Default) {
 

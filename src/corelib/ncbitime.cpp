@@ -96,9 +96,9 @@ DEFINE_STATIC_FAST_MUTEX(s_TimeAdjustMutex);
 DEFINE_STATIC_FAST_MUTEX(s_FastLocalTimeMutex);
 
 // Store global time/timespan formats in TLS
-static CSafeStaticRef< CTls<CTimeFormat> > s_TlsFormatTime;
-static CSafeStaticRef< CTls<CTimeFormat> > s_TlsFormatSpan;
-static CSafeStaticRef< CTls<CTimeFormat> > s_TlsFormatStopWatch;
+static CStaticTls<CTimeFormat> s_TlsFormatTime;
+static CStaticTls<CTimeFormat> s_TlsFormatSpan;
+static CStaticTls<CTimeFormat> s_TlsFormatStopWatch;
 
 static void s_TlsFormatCleanup(CTimeFormat* fmt, void* /* data */)
 {
@@ -961,14 +961,14 @@ void CTime::SetFormat(const CTimeFormat& format)
     // Here we do not need to delete a previous value stored in the TLS.
     // The TLS will destroy it using s_TlsFormatCleanup().
     CTimeFormat* ptr = new CTimeFormat(format);
-    s_TlsFormatTime->SetValue(ptr, s_TlsFormatCleanup);
+    s_TlsFormatTime.SetValue(ptr, s_TlsFormatCleanup);
 }
 
 
 CTimeFormat CTime::GetFormat(void)
 {
     CTimeFormat format;
-    CTimeFormat* ptr = s_TlsFormatTime->GetValue();
+    CTimeFormat* ptr = s_TlsFormatTime.GetValue();
     if ( !ptr ) {
         format.SetFormat(kDefaultFormatTime);
     } else {
@@ -2031,14 +2031,14 @@ void CTimeSpan::SetFormat(const CTimeFormat& format)
     // Here we do not need to delete a previous value stored in the TLS.
     // The TLS will destroy it using s_TlsFormatCleanup().
     CTimeFormat* ptr = new CTimeFormat(format);
-    s_TlsFormatSpan->SetValue(ptr, s_TlsFormatCleanup);
+    s_TlsFormatSpan.SetValue(ptr, s_TlsFormatCleanup);
 }
 
 
 CTimeFormat CTimeSpan::GetFormat(void)
 {
     CTimeFormat format;
-    CTimeFormat* ptr = s_TlsFormatSpan->GetValue();
+    CTimeFormat* ptr = s_TlsFormatSpan.GetValue();
     if ( !ptr ) {
         format.SetFormat(kDefaultFormatSpan);
     } else {
@@ -2502,14 +2502,14 @@ void CStopWatch::SetFormat(const CTimeFormat& format)
     // Here we do not need to delete a previous value stored in the TLS.
     // The TLS will destroy it using s_TlsFormatCleanup().
     CTimeFormat* ptr = new CTimeFormat(format);
-    s_TlsFormatStopWatch->SetValue(ptr, s_TlsFormatCleanup);
+    s_TlsFormatStopWatch.SetValue(ptr, s_TlsFormatCleanup);
 }
 
 
 CTimeFormat CStopWatch::GetFormat(void)
 {
     CTimeFormat format;
-    CTimeFormat* ptr = s_TlsFormatStopWatch->GetValue();
+    CTimeFormat* ptr = s_TlsFormatStopWatch.GetValue();
     if ( !ptr ) {
         format.SetFormat(kDefaultFormatStopWatch);
     } else {

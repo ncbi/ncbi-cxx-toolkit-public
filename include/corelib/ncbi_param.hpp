@@ -432,10 +432,10 @@ public:
     static void ResetThreadDefault(void);
 
 private:
-    typedef CTls<TValueType> TTls;
+    typedef CStaticTls<TValueType> TTls;
 
     static TValueType& sx_GetDefault(bool force_reset = false);
-    static CRef<TTls>& sx_GetTls    (void);
+    static TTls&       sx_GetTls    (void);
     static EParamState& sx_GetState(void);
 
     static bool sx_IsSetFlag(ENcbiParamFlags flag);

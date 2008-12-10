@@ -130,13 +130,13 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 // data verification setup
 
 ESerialVerifyData CObjectOStream::ms_VerifyDataDefault = eSerialVerifyData_Default;
-static CSafeStaticRef< CTls<int> > s_VerifyTLS;
+static CStaticTls<int> s_VerifyTLS;
 
 
 void CObjectOStream::SetVerifyDataThread(ESerialVerifyData verify)
 {
     x_GetVerifyDataDefault();
-    ESerialVerifyData tls_verify = ESerialVerifyData(intptr_t(s_VerifyTLS->GetValue()));
+    ESerialVerifyData tls_verify = ESerialVerifyData(intptr_t(s_VerifyTLS.GetValue()));
     if (tls_verify != eSerialVerifyData_Never &&
         tls_verify != eSerialVerifyData_Always &&
         tls_verify != eSerialVerifyData_DefValueAlways) {
@@ -145,7 +145,7 @@ void CObjectOStream::SetVerifyDataThread(ESerialVerifyData verify)
             ERR_POST_X_ONCE(2, Warning <<
                 "CObjectOStream::SetVerifyDataThread: data verification disabled");
         }
-        s_VerifyTLS->SetValue(reinterpret_cast<int*>(verify));
+        s_VerifyTLS.SetValue(reinterpret_cast<int*>(verify));
     }
 }
 
@@ -172,7 +172,7 @@ ESerialVerifyData CObjectOStream::x_GetVerifyDataDefault(void)
         ms_VerifyDataDefault == eSerialVerifyData_DefValueAlways) {
         verify = ms_VerifyDataDefault;
     } else {
-        verify = ESerialVerifyData(intptr_t(s_VerifyTLS->GetValue()));
+        verify = ESerialVerifyData(intptr_t(s_VerifyTLS.GetValue()));
         if (verify == eSerialVerifyData_Default) {
             if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
 

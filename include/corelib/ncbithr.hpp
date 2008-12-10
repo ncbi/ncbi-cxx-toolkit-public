@@ -47,6 +47,7 @@
 #include <corelib/ncbithr_conf.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_process.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <memory>
 #include <set>
 #include <list>
@@ -77,12 +78,19 @@ public:
 
 protected:
     /// Constructor.
-    CTlsBase(void);
+    CTlsBase(bool auto_destroy)
+        : m_AutoDestroy(auto_destroy)
+    {}
 
     /// Destructor.
     ///
     /// Cleanup data and delete TLS key.
-    ~CTlsBase(void);
+    ~CTlsBase(void)
+    {
+        if (m_AutoDestroy) {
+            x_Destroy();
+        }
+    }
 
     /// Helper method to get stored thread data.
     void* x_GetValue(void) const;
@@ -96,9 +104,20 @@ protected:
     /// Helper method to discard thread data.
     void x_Discard(void);
 
+protected:
+    /// Initialize thread data
+    void x_Init(void);
+
+    friend class CStaticTlsHelper;
+
+    /// Destroy thread data
+    void x_Destroy(void);
+
 private:
     TTlsKey m_Key;              ///<
     bool    m_Initialized;      ///< Indicates if thread data initialized.
+    bool    m_AutoDestroy;      ///< Indicates if object should be destroyed
+                                ///< in destructor
 
     /// Internal structure to store all three pointers in the same TLS.
     struct STlsData {
@@ -126,6 +145,12 @@ template <class TValue>
 class CTls : public CTlsBase
 {
 public:
+    CTls(void) : CTlsBase(true)
+    {
+        DoDeleteThisObject();
+        x_Init();
+    }
+
     /// Get the pointer previously stored by SetValue().
     ///
     /// Return 0 if no value has been stored, or if Reset() was last called.
@@ -176,6 +201,126 @@ public:
     /// Schedule the TLS to be destroyed as soon as there are no CRef to it
     /// left.
     void Discard(void) { x_Discard(); }
+};
+
+
+/// Helper class to control life time of CStaticTls object
+class CStaticTlsHelper : public CSafeStaticPtr_Base
+{
+private:
+    template <class TValue> friend class CStaticTls;
+
+    CStaticTlsHelper(FUserCleanup user_cleanup,
+                     TLifeSpan    life_span)
+        : CSafeStaticPtr_Base(SelfCleanup, user_cleanup, life_span)
+    {}
+
+    static void SelfCleanup(void** ptr)
+    {
+        CTlsBase* tmp = static_cast<CTlsBase*>(*ptr);
+        if (tmp) {
+            tmp->x_Destroy();
+            *ptr = NULL;
+        }
+    }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CStaticTls --
+///
+/// Define template class for thread local storage in static variable
+/// (as thread local storage objects are meaningful only in static content).
+/// Class can be used only as static variable type.
+
+template <class TValue>
+class CStaticTls : public CTlsBase
+{
+public:
+    /// Life span
+    typedef CSafeStaticLifeSpan TLifeSpan;
+    /// User cleanup function type
+    typedef void (*FUserCleanup)(void*  ptr);
+
+    // Set user-provided cleanup function to be executed on destruction.
+    // Life span allows to control destruction of objects. Objects with
+    // the same life span are destroyed in the order reverse to their
+    // creation order.
+    CStaticTls(FUserCleanup user_cleanup = 0,
+               TLifeSpan life_span = TLifeSpan::GetDefault())
+        : CTlsBase(false),
+          m_SafeHelper(user_cleanup, life_span)
+    {}
+
+    /// Get the pointer previously stored by SetValue().
+    ///
+    /// Return 0 if no value has been stored, or if Reset() was last called.
+    /// @sa
+    ///   SetValue()
+    TValue* GetValue(void)
+    {
+        x_CheckInit();
+        return reinterpret_cast<TValue*> (x_GetValue());
+    }
+
+    /// Define cleanup function type, FCleanup.
+    typedef void (*FCleanup)(TValue* value, void* cleanup_data);
+
+    /// Set value.
+    ///
+    /// Cleanup previously stored value, and set the new value.
+    /// The "cleanup" function and "cleanup_data" will be used to
+    /// destroy the new "value" in the next call to SetValue() or Reset().
+    /// Do not cleanup if the new value is equal to the old one.
+    /// @param value
+    ///   New value to set.
+    /// @param cleanup
+    ///   Cleanup function.
+    ///   Do not cleanup if default of 0 is specified or if new value is the
+    ///   same as old value.
+    /// @param cleanup_data
+    ///   One of the parameters to the cleanup function.
+    /// @sa
+    ///   GetValue()
+    void SetValue(TValue* value, FCleanup cleanup = 0, void* cleanup_data = 0)
+    {
+        x_CheckInit();
+        x_SetValue(value,
+                   reinterpret_cast<FCleanupBase> (cleanup), cleanup_data);
+    }
+
+    /// Reset thread local storage.
+    ///
+    /// Reset thread local storage to its initial value (as it was before the
+    /// first call to SetValue()). Do cleanup if the cleanup function was
+    /// specified in the previous call to SetValue().
+    ///
+    /// Reset() will always be called automatically on the thread termination,
+    /// or when the TLS is destroyed.
+    void Reset(void)
+    {
+        x_CheckInit();
+        x_Reset();
+    }
+
+    /// Discard thread local storage.
+    ///
+    /// Schedule the TLS to be destroyed as soon as there are no CRef to it
+    /// left.
+    void Discard(void)
+    {
+        x_CheckInit();
+        x_Discard();
+    }
+
+private:
+    /// Object derived from CSafeStaticPtr_Base to help manage life time
+    /// of the object
+    CStaticTlsHelper m_SafeHelper;
+
+    /// Ensure that this object is initialized
+    void x_CheckInit(void);
 };
 
 
@@ -328,9 +473,9 @@ private:
     friend TWrapperRes ThreadWrapperCaller(TWrapperArg arg);
 
     /// To store "CThread" object related to the current (running) thread
-    static CTls<CThread>* sm_ThreadsTls;
+    static CStaticTls<CThread>* sm_ThreadsTls;
     /// Safe access to "sm_ThreadsTls"
-    static CTls<CThread>& GetThreadsTls(void)
+    static CStaticTls<CThread>& GetThreadsTls(void)
     {
         if ( !sm_ThreadsTls ) {
             CreateThreadsTls();
@@ -399,6 +544,40 @@ const
 
     // If assigned, extract and return user data
     return tls_data ? tls_data->m_Value : 0;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CThread::
+//
+
+template <class TValue>
+inline
+void CStaticTls<TValue>::x_CheckInit(void)
+{
+    if (!m_SafeHelper.m_Ptr) {
+        bool mutex_locked = false;
+        if ( m_SafeHelper.Init_Lock(&mutex_locked) ) {
+            // Create the object and register for cleanup
+            try {
+                x_Init();
+                m_SafeHelper.m_Ptr = this;
+                CSafeStaticGuard::Register(&m_SafeHelper);
+            }
+            catch (CException& e) {
+                m_SafeHelper.Init_Unlock(mutex_locked);
+                NCBI_RETHROW_SAME(e,
+                                "CStaticTls::x_CheckInit: Register() failed");
+            }
+            catch (...) {
+                m_SafeHelper.Init_Unlock(mutex_locked);
+                NCBI_THROW(CCoreException, eCore,
+                           "CStaticTls::x_CheckInit: Register() failed");
+            }
+        }
+        m_SafeHelper.Init_Unlock(mutex_locked);
+    }
 }
 
 

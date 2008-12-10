@@ -132,17 +132,17 @@ const char* CSerialObject::ms_UnassignedStr = "<*unassigned*>";
 const char  CSerialObject::ms_UnassignedByte = char(0xcd);
 
 ESerialVerifyData CSerialObject::ms_VerifyDataDefault = eSerialVerifyData_Default;
-static CSafeStaticRef< CTls<int> > s_VerifyTLS;
+static CStaticTls<int> s_VerifyTLS;
 
 
 void CSerialObject::SetVerifyDataThread(ESerialVerifyData verify)
 {
     x_GetVerifyData();
-    ESerialVerifyData tls_verify = ESerialVerifyData(intptr_t(s_VerifyTLS->GetValue()));
+    ESerialVerifyData tls_verify = ESerialVerifyData(intptr_t(s_VerifyTLS.GetValue()));
     if (tls_verify != eSerialVerifyData_Never &&
         tls_verify != eSerialVerifyData_Always &&
         tls_verify != eSerialVerifyData_DefValueAlways) {
-        s_VerifyTLS->SetValue(reinterpret_cast<int*>(verify));
+        s_VerifyTLS.SetValue(reinterpret_cast<int*>(verify));
     }
 }
 
@@ -164,7 +164,7 @@ ESerialVerifyData CSerialObject::x_GetVerifyData(void)
         ms_VerifyDataDefault == eSerialVerifyData_DefValueAlways) {
         verify = ms_VerifyDataDefault;
     } else {
-        verify = ESerialVerifyData(intptr_t(s_VerifyTLS->GetValue()));
+        verify = ESerialVerifyData(intptr_t(s_VerifyTLS.GetValue()));
         if (verify == eSerialVerifyData_Default) {
             if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
 

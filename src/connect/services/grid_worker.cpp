@@ -182,7 +182,7 @@ static void s_TlsCleanup(CGridThreadContext* p_value, void* /* data */ )
     delete p_value;
 }
 /// @internal
-static CSafeStaticRef< CTls<CGridThreadContext> > s_tls;
+static CStaticTls<CGridThreadContext> s_tls;
 
 ///@internal
 class CWorkerNodeRequest : public CStdRequest
@@ -214,11 +214,11 @@ CWorkerNodeRequest::~CWorkerNodeRequest(void)
 
 CGridThreadContext& CWorkerNodeRequest::x_GetThreadContext()
 {
-    CGridThreadContext* context = s_tls->GetValue();
+    CGridThreadContext* context = s_tls.GetValue();
     if (!context) {
         context = new CGridThreadContext(m_Context->GetWorkerNode(),
                                          m_Context->GetWorkerNode().GetCheckStatusPeriod());
-        s_tls->SetValue(context, s_TlsCleanup);
+        s_tls.SetValue(context, s_TlsCleanup);
     }
     context->SetJobContext(*m_Context);
     return *context;

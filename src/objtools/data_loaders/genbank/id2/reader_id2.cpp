@@ -89,11 +89,11 @@ BEGIN_SCOPE(objects)
 static int& GetFailCounter(CId2Reader::TConn /*conn*/)
 {
 #ifdef NCBI_THREADS
-    static CSafeStaticRef< CTls<int> > fail_counter;
-    int* ptr = fail_counter->GetValue();
+    static CStaticTls<int> fail_counter;
+    int* ptr = fail_counter.GetValue();
     if ( !ptr ) {
         ptr = new int(0);
-        fail_counter->SetValue(ptr);
+        fail_counter.SetValue(ptr);
     }
     return *ptr;
 #else

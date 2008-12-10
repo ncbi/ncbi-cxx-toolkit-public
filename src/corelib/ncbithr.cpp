@@ -132,10 +132,8 @@ struct S {
 DEFINE_CLASS_STATIC_FAST_MUTEX(S::s_TlsMutex0);
 #define s_TlsMutex S::s_TlsMutex0
 
-CTlsBase::CTlsBase(void)
+void CTlsBase::x_Init(void)
 {
-    DoDeleteThisObject();
-
     // Create platform-dependent TLS key (index)
 #if defined(NCBI_WIN32_THREADS)
     xncbi_Verify((m_Key = TlsAlloc()) != DWORD(-1));
@@ -157,7 +155,7 @@ CTlsBase::CTlsBase(void)
 }
 
 
-CTlsBase::~CTlsBase(void)
+void CTlsBase::x_Destroy(void)
 {
     x_Reset();
     m_Initialized = false;
@@ -379,7 +377,7 @@ unsigned int CThread::sm_ThreadsCount = 0;
 
 
 // Internal storage for thread objects and related variables/functions
-CTls<CThread>* CThread::sm_ThreadsTls;
+CStaticTls<CThread>* CThread::sm_ThreadsTls;
 
 
 void s_CleanupThreadsTls(void* /* ptr */)
@@ -390,10 +388,9 @@ void s_CleanupThreadsTls(void* /* ptr */)
 
 void CThread::CreateThreadsTls(void)
 {
-    static CSafeStaticRef< CTls<CThread> >
-        s_ThreadsTlsRef(s_CleanupThreadsTls);
+    static CStaticTls<CThread> s_ThreadsTls(s_CleanupThreadsTls);
 
-    sm_ThreadsTls = &s_ThreadsTlsRef.Get();
+    sm_ThreadsTls = &s_ThreadsTls;
 }
 
 

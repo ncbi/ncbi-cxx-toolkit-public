@@ -622,16 +622,16 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
         }
     }
 
-    static CSafeStaticRef< CTls<CDiagContextThreadData> >
+    static CStaticTls<CDiagContextThreadData>
         s_ThreadData(s_ThreadDataSafeStaticCleanup,
         CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
-    CDiagContextThreadData* data = s_ThreadData->GetValue();
+    CDiagContextThreadData* data = s_ThreadData.GetValue();
     if ( !data ) {
         // Cleanup data set to null for any thread except the main one.
         // This value is used as a flag to copy threads' properties to global
         // upon TLS cleanup.
         data = new CDiagContextThreadData;
-        s_ThreadData->SetValue(data, ThreadDataTlsCleanup,
+        s_ThreadData.SetValue(data, ThreadDataTlsCleanup,
             CThread::GetSelf() ? 0 : (void*)(1));
     }
 

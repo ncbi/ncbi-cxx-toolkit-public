@@ -45,12 +45,12 @@ BEGIN_NCBI_SCOPE
 
 // Action is defined on per-thread basis -- so we store it in TLS.
 // TLS stores pointers, so just cast EValidateAction to pointer and back.
-static CSafeStaticRef< CTls<int> > s_ValidateTLS;
+static CStaticTls<int> s_ValidateTLS;
 
 
 void xncbi_SetValidateAction(EValidateAction action)
 {
-    s_ValidateTLS->SetValue(reinterpret_cast<int*> (action));
+    s_ValidateTLS.SetValue(reinterpret_cast<int*> (action));
 }
 
 
@@ -58,7 +58,7 @@ EValidateAction xncbi_GetValidateAction(void)
 {
     // some 64 bit compilers refuse to cast from int* to EValidateAction
     EValidateAction action =
-        EValidateAction(intptr_t(s_ValidateTLS->GetValue()));
+        EValidateAction(intptr_t(s_ValidateTLS.GetValue()));
 
     // we can store Default, but we cannot return Default
     if (action == eValidate_Default) {

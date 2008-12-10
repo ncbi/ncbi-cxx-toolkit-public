@@ -312,10 +312,10 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
 
 
 template<class TDescription>
-CRef<typename CParam<TDescription>::TTls>&
+typename CParam<TDescription>::TTls&
 CParam<TDescription>::sx_GetTls(void)
 {
-    static CRef<TTls> s_ValueTls;
+    static TTls s_ValueTls;
     return s_ValueTls;
 }
 
@@ -380,17 +380,13 @@ inline
 typename CParam<TDescription>::TValueType
 CParam<TDescription>::GetThreadDefault(void)
 {
-    CMutexGuard guard(s_GetLock());
     if ( !sx_IsSetFlag(eParam_NoThread) ) {
-        CRef<TTls>& tls = sx_GetTls();
-        if ( tls.NotEmpty() ) {
-            TValueType* v = tls->GetValue();
-            if ( v ) {
-                return *v;
-            }
+        TValueType* v = sx_GetTls().GetValue();
+        if ( v ) {
+            return *v;
         }
     }
-    return sx_GetDefault();
+    return GetDefault();
 }
 
 
@@ -402,12 +398,8 @@ void CParam<TDescription>::SetThreadDefault(const TValueType& val)
         NCBI_THROW(CParamException, eNoThreadValue,
             "The parameter does not allow thread-local values");
     }
-    CMutexGuard guard(s_GetLock());
-    CRef<TTls>& tls = sx_GetTls();
-    if ( !tls ) {
-        tls.Reset(new TTls);
-    }
-    tls->SetValue(new TValueType(val), g_ParamTlsValueCleanup<TValueType>);
+    TTls& tls = sx_GetTls();
+    tls.SetValue(new TValueType(val), g_ParamTlsValueCleanup<TValueType>);
 }
 
 
@@ -418,11 +410,7 @@ void CParam<TDescription>::ResetThreadDefault(void)
     if ( sx_IsSetFlag(eParam_NoThread) ) {
         return; // already using global default value
     }
-    CMutexGuard guard(s_GetLock());
-    CRef<TTls>& tls = sx_GetTls();
-    if ( tls ) {
-        tls->Reset();
-    }
+    sx_GetTls().SetValue(NULL);
 }
 
 

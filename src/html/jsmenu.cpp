@@ -67,7 +67,7 @@ const char* kJSMenuDefaultURL_KurdinSideCSS
 // MT Safe: Have individual copy of global attributes for each thread
 
 // Store menu global attributes in TLS (eKurdinConf menu type only)
-static CSafeStaticRef< CTls<CHTMLPopupMenu::TAttributes> > s_TlsGlobalAttrs;
+static CStaticTls<CHTMLPopupMenu::TAttributes> s_TlsGlobalAttrs;
 
 static void s_TlsGlobalAttrsCleanup(CHTMLPopupMenu::TAttributes* attrs,
                                     void* /* data */)
@@ -78,10 +78,10 @@ static void s_TlsGlobalAttrsCleanup(CHTMLPopupMenu::TAttributes* attrs,
 
 CHTMLPopupMenu::TAttributes* CHTMLPopupMenu::GetGlobalAttributesPtr(void)
 {
-    CHTMLPopupMenu::TAttributes* attrs = s_TlsGlobalAttrs->GetValue();
+    CHTMLPopupMenu::TAttributes* attrs = s_TlsGlobalAttrs.GetValue();
     if ( !attrs ) {
         attrs = new CHTMLPopupMenu::TAttributes; 
-        s_TlsGlobalAttrs->SetValue(attrs, s_TlsGlobalAttrsCleanup);
+        s_TlsGlobalAttrs.SetValue(attrs, s_TlsGlobalAttrsCleanup);
     }
     return attrs;
 }
