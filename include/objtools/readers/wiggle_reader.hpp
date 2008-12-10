@@ -34,6 +34,7 @@
 #define OBJTOOLS_READERS___WIGGLEREADER__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objtools/readers/reader_base.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
 BEGIN_NCBI_SCOPE

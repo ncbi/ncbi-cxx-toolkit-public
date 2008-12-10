@@ -77,7 +77,6 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
-#include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/error_codes.hpp>
 
