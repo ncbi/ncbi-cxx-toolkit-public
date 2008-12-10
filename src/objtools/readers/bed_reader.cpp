@@ -247,6 +247,7 @@ bool CBedReader::x_ParseFeature(
 
     //  assign
     feature.Reset( new CSeq_feat );
+
     try {
         x_SetFeatureLocation( feature, fields );
         x_SetFeatureDisplayData( feature, fields );
@@ -254,6 +255,7 @@ bool CBedReader::x_ParseFeature(
     catch (...) {
         return false;
     }
+
     ftable.push_back( feature );
     return true;
 }
@@ -271,23 +273,35 @@ void CBedReader::x_SetFeatureDisplayData(
     }
     if ( m_columncount >= 5 ) {
         if ( !m_usescore ) {
-            display_data->AddField( "score", NStr::StringToInt(fields[4]) );
+            display_data->AddField( "score",
+                                    NStr::StringToInt(fields[4],
+                                                      NStr::fConvErr_NoThrow) );
         }
         else {
-            display_data->AddField( "greylevel", NStr::StringToInt(fields[4]) );
+            display_data->AddField( "greylevel",
+                                    NStr::StringToInt(fields[4],
+                                                      NStr::fConvErr_NoThrow) );
         }
     }
     if ( m_columncount >= 6 ) {
-        display_data->AddField( "thickStart", NStr::StringToInt(fields[6]) );
+        display_data->AddField( "thickStart",
+                                NStr::StringToInt(fields[6],
+                                                  NStr::fConvErr_NoThrow) );
     }
     if ( m_columncount >= 7 ) {
-        display_data->AddField( "thickEnd", NStr::StringToInt(fields[7]) - 1 );
+        display_data->AddField( "thickEnd",
+                                NStr::StringToInt(fields[7],
+                                                  NStr::fConvErr_NoThrow) - 1 );
     }
     if ( m_columncount >= 8 ) {
-        display_data->AddField( "itemRGB", NStr::StringToInt(fields[8]) );
+        display_data->AddField( "itemRGB",
+                                NStr::StringToInt(fields[8],
+                                                  NStr::fConvErr_NoThrow) );
     }
     if ( m_columncount >= 9 ) {
-        display_data->AddField( "blockCount", NStr::StringToInt(fields[9]) );
+        display_data->AddField( "blockCount",
+                                NStr::StringToInt(fields[9],
+                                                  NStr::fConvErr_NoThrow) );
     }
     if ( m_columncount >= 10 ) {
         display_data->AddField( "blockSizes", fields[10] );
@@ -306,15 +320,21 @@ void CBedReader::x_SetFeatureLocation(
 {
     feature->ResetLocation();
     
-    CRef<CSeq_id> id( new CSeq_id() );
-    id->SetLocal().SetStr( fields[0] );
+    CRef<CSeq_id> id( new CSeq_id(fields[0]) );
 
     CRef<CSeq_loc> location( new CSeq_loc );
     CSeq_interval& interval = location->SetInt();
-    interval.SetFrom( NStr::StringToInt( fields[1] ) );
-    interval.SetTo( NStr::StringToInt( fields[2] ) - 1 );
-    interval.SetStrand( 
-        ( fields[5] == "+" ) ? eNa_strand_plus : eNa_strand_minus );
+    interval.SetFrom( NStr::StringToInt( fields[1] ) - 1);
+    interval.SetTo( NStr::StringToInt( fields[2] ) - 2 );
+
+    size_t strand_field = 5;
+    if (fields.size() == 5  &&  (fields[4] == "-"  ||  fields[4] == "+")) {
+        strand_field = 4;
+    }
+    if (strand_field < fields.size()) {
+        interval.SetStrand(( fields[strand_field] == "+" ) ?
+                           eNa_strand_plus : eNa_strand_minus );
+    }
     location->SetId( *id );
     
     feature->SetLocation( *location );
