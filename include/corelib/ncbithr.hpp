@@ -72,6 +72,7 @@ class NCBI_XNCBI_EXPORT CTlsBase : public CObject
 {
     friend class CRef<CTlsBase>;
     friend class CUsedTlsBases;
+    friend class CStaticTlsHelper;
 
 public:
     typedef void (*FCleanupBase)(void* value, void* cleanup_data);
@@ -107,8 +108,6 @@ protected:
 protected:
     /// Initialize thread data
     void x_Init(void);
-
-    friend class CStaticTlsHelper;
 
     /// Destroy thread data
     void x_Destroy(void);
@@ -336,7 +335,7 @@ public:
     void Deregister(CTlsBase* tls);
 
 private:
-    typedef set< CRef<CTlsBase> > TTlsSet;
+    typedef set<CTlsBase*> TTlsSet;
     TTlsSet m_UsedTls;
 
 private:

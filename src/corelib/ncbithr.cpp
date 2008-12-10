@@ -84,8 +84,11 @@ void CUsedTlsBases::ClearAll(void)
 {
     CMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
     NON_CONST_ITERATE(TTlsSet, it, m_UsedTls) {
-        CRef<CTlsBase> tls = *it;
+        CTlsBase* tls = *it;
         tls->x_DeleteTlsData();
+        if (tls->m_AutoDestroy) {
+            tls->RemoveReference();
+        }
     }
     m_UsedTls.clear();
 }
@@ -94,16 +97,20 @@ void CUsedTlsBases::ClearAll(void)
 void CUsedTlsBases::Register(CTlsBase* tls)
 {
     CMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
-    m_UsedTls.insert(Ref(tls));
+    if (tls->m_AutoDestroy) {
+        tls->AddReference();
+    }
+    m_UsedTls.insert(tls);
 }
 
 
 void CUsedTlsBases::Deregister(CTlsBase* tls)
 {
     CMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
-    CRef<CTlsBase> ref(tls);
-    m_UsedTls.erase(ref);
-    ref.Release();
+    m_UsedTls.erase(tls);
+    if (tls->m_AutoDestroy) {
+        tls->RemoveReference();
+    }
 }
 
 
