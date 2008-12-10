@@ -203,6 +203,8 @@ public:
 };
 
 
+template <class TValue> class CStaticTls;
+
 /// Helper class to control life time of CStaticTls object
 class CStaticTlsHelper : public CSafeStaticPtr_Base
 {
