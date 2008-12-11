@@ -95,8 +95,9 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
 CWiggleReader::CWiggleReader(
-    int flags )
+    int flags ) :
 //  ----------------------------------------------------------------------------
+    m_uCurrentRecordType( TYPE_NONE )
 {
     m_pSet = new CWiggleSet;
 }
@@ -128,15 +129,16 @@ void CWiggleReader::Read(
 {
     string pending;
     unsigned int count = 0;
-
+    CWiggleRecord record;
+    
     CSeq_annot::TData::TGraph& graphset = annot->SetData().SetGraph();
     x_ReadLine( input, pending );
     while ( !input.eof() ) {
-        if ( ! x_ReadTrackData( input, pending ) ) {
+        if ( ! x_ReadTrackData( input, pending, record ) ) {
             return;
         }
-        while ( x_ReadGraphData( input, pending ) ) {
-            x_UpdateWiggleSet();
+        while ( x_ReadGraphData( input, pending, record ) ) {
+            m_pSet->AddRecord( record );
         }
     }
     m_pSet->MakeGraph( graphset );
@@ -151,27 +153,18 @@ void CWiggleReader::Dump(
 }
 
 //  ----------------------------------------------------------------------------
-void CWiggleReader::x_UpdateWiggleSet()
-//  ----------------------------------------------------------------------------
-{
-    CWiggleRecord record( m_graphdata.Chrom(), m_graphdata.Start(),
-        m_graphdata.Span(), m_graphdata.Value() );
-    m_pSet->AddRecord(record);
-}
-
-//  ----------------------------------------------------------------------------
 bool CWiggleReader::x_ReadTrackData(
     CNcbiIstream& input,
-    string& pending )
+    string& pending,
+    CWiggleRecord& record )
 //
 //  Note:   Expecting a line that starts with "track". With comments already
 //          weeded out coming in, everything else triggers an error.
 //  ----------------------------------------------------------------------------
 {
-    m_trackdata.Reset();
     vector<string> parts;
     Tokenize( pending, " \t", parts );
-    if ( ! m_trackdata.ParseData( parts ) ) {
+    if ( ! record.ParseTrackDefinition( parts ) ) {
         return false;
     }
     return x_ReadLine( input, pending );
@@ -181,7 +174,8 @@ bool CWiggleReader::x_ReadTrackData(
 //  ----------------------------------------------------------------------------
 bool CWiggleReader::x_ReadGraphData(
     CNcbiIstream& input,
-    string& pending )
+    string& pending,
+    CWiggleRecord& record )
 //
 //  Note:   Several possibilities here for the pending line:
 //          (1) The line is a "variableStep" declaration. Such a declaration
@@ -207,29 +201,37 @@ bool CWiggleReader::x_ReadGraphData(
             return false;
 
         case TYPE_DECLARATION_VARSTEP:
-            m_graphdata.ParseDeclarationVarstep( parts );
+            m_uCurrentRecordType = TYPE_DATA_VARSTEP;
+            record.ParseDeclarationVarstep( parts );
             x_ReadLine( input, pending );
-            return x_ReadGraphData( input, pending );
+            return x_ReadGraphData( input, pending, record );
 
         case TYPE_DECLARATION_FIXEDSTEP:
-            m_graphdata.ParseDeclarationFixedstep( parts );
+            m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
+            record.ParseDeclarationFixedstep( parts );
             x_ReadLine( input, pending );
-            return x_ReadGraphData( input, pending );
+            return x_ReadGraphData( input, pending, record );
 
         case TYPE_DATA_BED:
-            if ( ! m_graphdata.ParseDataBed( parts ) ) {
+            if ( ! record.ParseDataBed( parts ) ) {
                 return false;
             }
             break;
 
         case TYPE_DATA_VARSTEP:
-            if ( ! m_graphdata.ParseDataVarstep( parts ) ) {
+            if ( m_uCurrentRecordType != TYPE_DATA_VARSTEP ) {
+                return false;
+            }
+            if ( ! record.ParseDataVarstep( parts ) ) {
                 return false;
             }
             break;
 
         case TYPE_DATA_FIXEDSTEP:
-            if ( ! m_graphdata.ParseDataFixedstep( parts ) ) {
+            if ( m_uCurrentRecordType != TYPE_DATA_FIXEDSTEP ) {
+                return false;
+            }
+            if ( ! record.ParseDataFixedstep( parts ) ) {
                 return false;
             }
             break;
@@ -338,188 +340,6 @@ void CWiggleReader::Tokenize(
             }
         }
     }
-}
-
-//  ----------------------------------------------------------------------------
-CWiggleTrackData::CWiggleTrackData()
-//  ----------------------------------------------------------------------------
-{
-    Reset();
-}
-
-//  ----------------------------------------------------------------------------
-CWiggleTrackData::~CWiggleTrackData()
-//  ----------------------------------------------------------------------------
-{
-}
-
-//  ----------------------------------------------------------------------------
-void CWiggleTrackData::Reset()
-//  ----------------------------------------------------------------------------
-{
-    m_type = "";
-    m_name = "";
-    m_description = "";
-}
-
-//  ----------------------------------------------------------------------------
-bool CWiggleTrackData::ParseData(
-    const vector<string>& track_data )
-//  ----------------------------------------------------------------------------
-{
-    if ( track_data.size() < 2 || track_data[0] != "track" ) {
-        return false;
-    }
-    Reset();
-
-    vector< string >::const_iterator it = track_data.begin();    
-    for ( ++it; it != track_data.end(); ++it ) {
-        vector< string > key_value_pair;
-        CWiggleReader::Tokenize( *it, "=", key_value_pair );
-        if ( key_value_pair.size() != 2 ) {
-            return false;
-        }
-        if ( key_value_pair[0] == "type" ) {
-            m_type = key_value_pair[1];
-        }
-        if ( key_value_pair[0] == "name" ) {
-            m_name = key_value_pair[1];
-        }
-        if ( key_value_pair[0] == "description" ) {
-            m_description = key_value_pair[1];
-        }
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-CWiggleGraphData::CWiggleGraphData()
-//  ----------------------------------------------------------------------------
-{
-    Reset();
-}
-
-//  ----------------------------------------------------------------------------
-void CWiggleGraphData::Reset()
-//  ----------------------------------------------------------------------------
-{
-    m_type = TYPE_DATA_BED;
-    m_chrom = "";
-    m_start = 0;
-    m_step = 0;
-    m_span = 0;
-}
-
-//  ----------------------------------------------------------------------------
-bool CWiggleGraphData::ParseDataBed(
-    const vector<string>& data )
-//  ----------------------------------------------------------------------------
-{
-    if ( data.size() != 4 ) {
-        return false;
-    }
-    m_chrom = data[0];
-    m_start = NStr::StringToUInt( data[1] );
-    m_span = NStr::StringToUInt( data[2] ) - m_start;
-    m_value = NStr::StringToDouble( data[3] );
-    m_type = TYPE_DATA_BED;
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CWiggleGraphData::ParseDataVarstep(
-    const vector<string>& data )
-//  ----------------------------------------------------------------------------
-{
-    if ( m_type != TYPE_DATA_VARSTEP || data.size() != 2 ) {
-        return false;
-    }
-    m_start = NStr::StringToUInt( data[0] ) - 1; // varStep is 1- based
-    m_value = NStr::StringToDouble( data[1] );
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CWiggleGraphData::ParseDataFixedstep(
-    const vector<string>& data )
-//  ----------------------------------------------------------------------------
-{
-    if ( m_type != TYPE_DATA_FIXEDSTEP || data.size() != 1 ) {
-        return false;
-    }
-    m_start += m_step;
-    m_value = NStr::StringToDouble( data[0] );
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CWiggleGraphData::ParseDeclarationVarstep(
-    const vector<string>& data )
-//
-//  Note:   Once we make it in here, we know "data" starts with the obligatory
-//          "variableStep" declaration.
-//  ----------------------------------------------------------------------------
-{
-    Reset();
-
-    vector<string>::const_iterator it = data.begin();
-    for ( ++it; it != data.end(); ++it ) {
-        vector<string> key_value_pair;
-        CWiggleReader::Tokenize( *it, "=", key_value_pair );
-
-        if ( key_value_pair.size() != 2 ) {
-            return false;
-        }
-        if ( key_value_pair[0] == "chrom" ) {
-            m_chrom = key_value_pair[1];
-            continue;
-        }
-        if ( key_value_pair[0] == "span" ) {
-            m_span = NStr::StringToUInt( key_value_pair[1] );
-            continue;
-        }
-        return false;
-    }
-    m_type = TYPE_DATA_VARSTEP;
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CWiggleGraphData::ParseDeclarationFixedstep(
-    const vector<string>& data )
-//  ----------------------------------------------------------------------------
-{
-    Reset();
-
-    vector<string>::const_iterator it = data.begin();
-    for ( ++it; it != data.end(); ++it ) {
-        vector<string> key_value_pair;
-        CWiggleReader::Tokenize( *it, "=", key_value_pair );
-
-        if ( key_value_pair.size() != 2 ) {
-            return false;
-        }
-        if ( key_value_pair[0] == "chrom" ) {
-            m_chrom = key_value_pair[1];
-            continue;
-        }
-        if ( key_value_pair[0] == "span" ) {
-            m_span = NStr::StringToUInt( key_value_pair[1] );
-            continue;
-        }
-        if ( key_value_pair[0] == "start" ) {
-            m_start = NStr::StringToUInt( key_value_pair[1] ) - 1;
-            continue;
-        }
-        if ( key_value_pair[0] == "step" ) {
-            m_step = NStr::StringToUInt( key_value_pair[1] );
-            continue;
-        }
-        return false;
-    }
-    m_start -= m_step;
-    m_type = TYPE_DATA_FIXEDSTEP;
-    return true;
 }
 
 END_objects_SCOPE

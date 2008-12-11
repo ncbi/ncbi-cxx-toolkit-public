@@ -44,6 +44,8 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
+#include <objtools/readers/reader_base.hpp>
+#include <objtools/readers/wiggle_reader.hpp>
 #include "wiggle_data.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -60,18 +62,138 @@ CWiggleData::CWiggleData(
 };
 
 //  ===========================================================================
-CWiggleRecord::CWiggleRecord(
-    const string& strChromName,
-    unsigned int uSeqStart,
-    unsigned int uSeqSpan,
-    double dValue ):
+CWiggleRecord::CWiggleRecord()
 //  ===========================================================================
-    m_strChrom( strChromName ),
-    m_uSeqStart( uSeqStart ),
-    m_uSeqSpan( uSeqSpan ),
-    m_dValue( dValue )
 {
+    Reset();
 };
+
+//  ----------------------------------------------------------------------------
+void CWiggleRecord::Reset()
+//  ----------------------------------------------------------------------------
+{
+    m_strChrom = "";
+    m_uSeqStart = 0;
+    m_uSeqStep = 0;
+    m_uSeqSpan = 0;
+    m_dValue = 0;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWiggleRecord::ParseTrackDefinition(
+    const vector<string>& data )
+//  ----------------------------------------------------------------------------
+{
+    Reset();
+    if ( data.size() < 2 || data[0] != "track" ) {
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWiggleRecord::ParseDataBed(
+    const vector<string>& data )
+//  ----------------------------------------------------------------------------
+{
+    if ( data.size() != 4 ) {
+        return false;
+    }
+    m_strChrom = data[0];
+    m_uSeqStart = NStr::StringToUInt( data[1] );
+    m_uSeqSpan = NStr::StringToUInt( data[2] ) - m_uSeqStart;
+    m_dValue = NStr::StringToDouble( data[3] );
+//    m_type = TYPE_DATA_BED;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWiggleRecord::ParseDataVarstep(
+    const vector<string>& data )
+//  ----------------------------------------------------------------------------
+{
+    m_uSeqStart = NStr::StringToUInt( data[0] ) - 1; // varStep is 1- based
+    m_dValue = NStr::StringToDouble( data[1] );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWiggleRecord::ParseDataFixedstep(
+    const vector<string>& data )
+//  ----------------------------------------------------------------------------
+{
+    m_uSeqStart += m_uSeqStep;
+    m_dValue = NStr::StringToDouble( data[0] );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWiggleRecord::ParseDeclarationVarstep(
+    const vector<string>& data )
+//
+//  Note:   Once we make it in here, we know "data" starts with the obligatory
+//          "variableStep" declaration.
+//  ----------------------------------------------------------------------------
+{
+    Reset();
+
+    vector<string>::const_iterator it = data.begin();
+    for ( ++it; it != data.end(); ++it ) {
+        vector<string> key_value_pair;
+        CWiggleReader::Tokenize( *it, "=", key_value_pair );
+
+        if ( key_value_pair.size() != 2 ) {
+            return false;
+        }
+        if ( key_value_pair[0] == "chrom" ) {
+            m_strChrom = key_value_pair[1];
+            continue;
+        }
+        if ( key_value_pair[0] == "span" ) {
+            m_uSeqSpan = NStr::StringToUInt( key_value_pair[1] );
+            continue;
+        }
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWiggleRecord::ParseDeclarationFixedstep(
+    const vector<string>& data )
+//  ----------------------------------------------------------------------------
+{
+    Reset();
+
+    vector<string>::const_iterator it = data.begin();
+    for ( ++it; it != data.end(); ++it ) {
+        vector<string> key_value_pair;
+        CWiggleReader::Tokenize( *it, "=", key_value_pair );
+
+        if ( key_value_pair.size() != 2 ) {
+            return false;
+        }
+        if ( key_value_pair[0] == "chrom" ) {
+            m_strChrom = key_value_pair[1];
+            continue;
+        }
+        if ( key_value_pair[0] == "span" ) {
+            m_uSeqSpan = NStr::StringToUInt( key_value_pair[1] );
+            continue;
+        }
+        if ( key_value_pair[0] == "start" ) {
+            m_uSeqStart = NStr::StringToUInt( key_value_pair[1] ) - 1;
+            continue;
+        }
+        if ( key_value_pair[0] == "step" ) {
+            m_uSeqStep = NStr::StringToUInt( key_value_pair[1] );
+            continue;
+        }
+        return false;
+    }
+    m_uSeqStart -= m_uSeqStep;
+    return true;
+}
 
 //  ===========================================================================
 CWiggleTrack::CWiggleTrack(

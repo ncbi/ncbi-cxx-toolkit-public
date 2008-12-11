@@ -41,6 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CWiggleSet;
+class CWiggleRecord;
 
 //  ----------------------------------------------------------------------------
 enum CWiggleLineType
@@ -56,63 +57,6 @@ enum CWiggleLineType
     TYPE_DATA_FIXEDSTEP
 };
 
-
-//  ----------------------------------------------------------------------------
-class NCBI_XOBJREAD_EXPORT CWiggleGraphData
-//  ----------------------------------------------------------------------------
-{
-public:
-    CWiggleGraphData();
-
-    void Reset();
-
-    bool ParseDeclarationVarstep(
-        const std::vector<std::string>& );
-
-    bool ParseDeclarationFixedstep(
-        const std::vector<std::string>& );
-
-    bool ParseDataBed(
-        const std::vector<std::string>& );
-
-    bool ParseDataVarstep(
-        const std::vector<std::string>& );
-
-    bool ParseDataFixedstep(
-        const std::vector<std::string>& );
-
-    unsigned int Span() const { return m_span; };
-    double Value() const { return m_value; };
-    unsigned int Start() const { return m_start; };
-    const std::string& Chrom() const { return m_chrom; };
-
-protected:
-    unsigned int m_type;
-    std::string m_chrom;
-    unsigned int m_start;
-    unsigned int m_step;
-    unsigned int m_span;
-    double m_value;
-};
-
-//  ----------------------------------------------------------------------------
-class CWiggleTrackData
-//  ----------------------------------------------------------------------------
-{
-public:
-    CWiggleTrackData();
-    ~CWiggleTrackData();
-
-    bool ParseData(
-        const std::vector<std::string>& );
-
-    void Reset();
-
-protected:
-    std::string m_type;
-    std::string m_name;
-    std::string m_description;
-};
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CWiggleReader
@@ -161,11 +105,13 @@ public:
 protected:
     bool x_ReadTrackData(
         CNcbiIstream&,
-        string& );
+        string&,
+        CWiggleRecord& );
 
     bool x_ReadGraphData(
         CNcbiIstream&,
-        string& );
+        string&,
+        CWiggleRecord& );
 
     bool x_IsCommentLine(
         const string& );
@@ -183,8 +129,8 @@ protected:
     //  data:
     //
 protected:
-    CWiggleTrackData m_trackdata;
-    CWiggleGraphData m_graphdata;
+    unsigned int m_uCurrentRecordType;
+    
     CWiggleSet* m_pSet;
 };
 

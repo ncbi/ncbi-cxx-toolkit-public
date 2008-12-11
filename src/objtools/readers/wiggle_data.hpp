@@ -165,12 +165,28 @@ class CWiggleRecord
 //  ===========================================================================
 {
 public:
-    CWiggleRecord(
-        const std::string&,
-        unsigned int,
-        unsigned int,
-        double );
+    CWiggleRecord();
     ~CWiggleRecord() {};
+
+    void Reset();
+
+    bool ParseTrackDefinition(
+        const std::vector<std::string>& );
+    
+    bool ParseDeclarationVarstep(
+        const std::vector<std::string>& );
+
+    bool ParseDeclarationFixedstep(
+        const std::vector<std::string>& );
+
+    bool ParseDataBed(
+        const std::vector<std::string>& );
+
+    bool ParseDataVarstep(
+        const std::vector<std::string>& );
+
+    bool ParseDataFixedstep(
+        const std::vector<std::string>& );
 
     const char* Chrom() const { return m_strChrom.c_str(); };
     unsigned int SeqStart() const { return m_uSeqStart; };
@@ -181,6 +197,7 @@ protected:
     std::string m_strChrom;
     unsigned int m_uSeqStart;
     unsigned int m_uSeqSpan;
+    unsigned int m_uSeqStep;
     double m_dValue;
 };
 
