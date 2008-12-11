@@ -6,7 +6,7 @@
 # Build object manager demo application "objmgr_demo"
 #################################
 
-REQUIRES = objects bdb algo -Cygwin
+REQUIRES = objects bdb algo FreeTDS -Cygwin
 
 APP = objmgr_demo
 SRC = objmgr_demo
