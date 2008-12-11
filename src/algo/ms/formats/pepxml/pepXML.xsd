@@ -636,18 +636,7 @@
     </xs:sequence>
 <!-- mass_types are (monoisotopic | average)  -->
     <xs:attribute name="base_name" type="xs:string" use="required"/>
-    <xs:attribute name="search_engine" use="required">
-	  <xs:simpleType>
-	    <xs:restriction base="xs:string">
-		  <xs:enumeration value="SEQUEST"/>
-		  <xs:enumeration value="MASCOT"/>
-		  <xs:enumeration value="COMET"/>
-		  <xs:enumeration value="PROBID"/>
-		  <xs:enumeration value="OMSSA"/>
-		  <xs:enumeration value="MyriMatch"/>
-	    </xs:restriction>
-	  </xs:simpleType>
-    </xs:attribute>
+    <xs:attribute name="search_engine" type="xs:string" use="required"/>
     <xs:attribute name="precursor_mass_type" type="massType" use="required"/>
     <xs:attribute name="fragment_mass_type" type="massType" use="required"/>
     <xs:attribute name="out_data_type" type="xs:string" use="optional"/>
