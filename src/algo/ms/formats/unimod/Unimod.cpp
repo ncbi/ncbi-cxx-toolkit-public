@@ -138,12 +138,12 @@ CRef<CMod> CUnimod::MatchMod(double dmass, string name, string residues, double 
     double dmass_low, dmass_high;
     
     CRef<CMod> unkMod_low(new CMod);
-    dmass_low = dmass - (dmass * maxError);
+    dmass_low = dmass - (fabs(dmass) * maxError);
     SetModMass(unkMod_low, dmass_low);
     lower = lower_bound(begin, end, unkMod_low, *m_comp);
 
     CRef<CMod> unkMod_high(new CMod);
-    dmass_high = dmass + (dmass * maxError);
+    dmass_high = dmass + (fabs(dmass) * maxError);
     SetModMass(unkMod_high, dmass_high);
     upper = upper_bound(begin, end, unkMod_high, *m_comp);
 
