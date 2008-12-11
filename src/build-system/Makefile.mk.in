@@ -472,6 +472,7 @@ NCBI_SSS_INCLUDE = @NCBI_SSS_INCLUDE@
 NCBI_SSS_LIBPATH = @NCBI_SSS_LIBPATH@
 LIBSSSUTILS      = @LIBSSSUTILS@
 LIBSSSDB         = @LIBSSSDB@
+NCBILS_LIB       = ncbils_cli ncbils_asn ncbils_cmn
 
 # SP:  headers, libraries
 SP_INCLUDE = @SP_INCLUDE@
