@@ -77,12 +77,6 @@ void CMultiApplication::Init(void)
                      CArgDescriptions::eString);
     arg_desc->AddOptionalKey("db", "database", "domain database name",
                      CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("b", "blockfile", 
-                     "filename containing conserved blocks",
-                     CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("f", "freqfile", 
-                     "filename containing residue frequencies",
-                     CArgDescriptions::eString);
     arg_desc->AddOptionalKey("seqalign", "file", 
                      "destination filename for text seqalign",
                      CArgDescriptions::eOutputFile);
