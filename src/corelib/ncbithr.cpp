@@ -116,28 +116,6 @@ void CUsedTlsBases::Deregister(CTlsBase* tls)
 
 static CSafeStaticPtr<CUsedTlsBases> s_MainUsedTls;
 
-// Flag and function to report s_Tls_TlsSet destruction
-static bool s_TlsSetDestroyed = true;
-
-static void s_TlsSetCleanup(void* /* ptr */)
-{
-    s_TlsSetDestroyed = true;
-}
-
-
-// Set of all TLS objects -- to prevent memory leaks due to
-// undestroyed TLS objects, and to avoid premature TLS destruction.
-typedef set< CRef<CTlsBase> > TTls_TlsSet;
-static CSafeStaticPtr<TTls_TlsSet> s_Tls_TlsSet(s_TlsSetCleanup);
-
-
-// Protects "s_Tls_TlsSet"
-struct S {
-    DECLARE_CLASS_STATIC_FAST_MUTEX(s_TlsMutex0);
-};
-
-DEFINE_CLASS_STATIC_FAST_MUTEX(S::s_TlsMutex0);
-#define s_TlsMutex S::s_TlsMutex0
 
 void CTlsBase::x_Init(void)
 {
@@ -154,11 +132,6 @@ void CTlsBase::x_Init(void)
 #endif
 
     m_Initialized = true;
-    // Add to the cleanup set if it still exists
-    if ( !s_TlsSetDestroyed ) {
-        CFastMutexGuard guard(s_TlsMutex);
-        s_Tls_TlsSet->insert(CRef<CTlsBase> (this));
-    }
 }
 
 
@@ -184,24 +157,6 @@ void CTlsBase::x_Destroy(void)
     m_Key = 0;
     return;
 #endif
-}
-
-
-void CTlsBase::x_Discard(void)
-{
-    x_Reset();
-
-    if ( s_TlsSetDestroyed ) {
-        return;  // Nothing to do - the TLS set has been destroyed
-    }
-
-    CFastMutexGuard guard(s_TlsMutex);
-    NON_CONST_ITERATE(TTls_TlsSet, it, *s_Tls_TlsSet) {
-        if (it->GetPointer() == this) {
-            s_Tls_TlsSet->erase(it);
-            break;
-        }
-    }
 }
 
 

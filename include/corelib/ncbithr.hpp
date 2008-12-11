@@ -102,9 +102,6 @@ protected:
     /// Helper method to reset thread data.
     void x_Reset(void);
 
-    /// Helper method to discard thread data.
-    void x_Discard(void);
-
 protected:
     /// Initialize thread data
     void x_Init(void);
@@ -199,7 +196,7 @@ public:
     ///
     /// Schedule the TLS to be destroyed as soon as there are no CRef to it
     /// left.
-    void Discard(void) { x_Discard(); }
+    void Discard(void) { x_Reset(); }
 };
 
 
@@ -261,7 +258,9 @@ public:
     ///   SetValue()
     TValue* GetValue(void)
     {
-        x_CheckInit();
+        if (!m_SafeHelper.m_Ptr) {
+            x_SafeInit();
+        }
         return reinterpret_cast<TValue*> (x_GetValue());
     }
 
@@ -286,7 +285,9 @@ public:
     ///   GetValue()
     void SetValue(TValue* value, FCleanup cleanup = 0, void* cleanup_data = 0)
     {
-        x_CheckInit();
+        if (!m_SafeHelper.m_Ptr) {
+            x_SafeInit();
+        }
         x_SetValue(value,
                    reinterpret_cast<FCleanupBase> (cleanup), cleanup_data);
     }
@@ -301,18 +302,10 @@ public:
     /// or when the TLS is destroyed.
     void Reset(void)
     {
-        x_CheckInit();
+        if (!m_SafeHelper.m_Ptr) {
+            x_SafeInit();
+        }
         x_Reset();
-    }
-
-    /// Discard thread local storage.
-    ///
-    /// Schedule the TLS to be destroyed as soon as there are no CRef to it
-    /// left.
-    void Discard(void)
-    {
-        x_CheckInit();
-        x_Discard();
     }
 
 private:
@@ -320,8 +313,8 @@ private:
     /// of the object
     CStaticTlsHelper m_SafeHelper;
 
-    /// Ensure that this object is initialized
-    void x_CheckInit(void);
+    /// Initialize the object in SafeStaticRef-ish manner
+    void x_SafeInit(void);
 };
 
 
@@ -555,30 +548,28 @@ const
 
 template <class TValue>
 inline
-void CStaticTls<TValue>::x_CheckInit(void)
+void CStaticTls<TValue>::x_SafeInit(void)
 {
-    if (!m_SafeHelper.m_Ptr) {
-        bool mutex_locked = false;
-        if ( m_SafeHelper.Init_Lock(&mutex_locked) ) {
-            // Create the object and register for cleanup
-            try {
-                x_Init();
-                m_SafeHelper.m_Ptr = this;
-                CSafeStaticGuard::Register(&m_SafeHelper);
-            }
-            catch (CException& e) {
-                m_SafeHelper.Init_Unlock(mutex_locked);
-                NCBI_RETHROW_SAME(e,
-                                "CStaticTls::x_CheckInit: Register() failed");
-            }
-            catch (...) {
-                m_SafeHelper.Init_Unlock(mutex_locked);
-                NCBI_THROW(CCoreException, eCore,
-                           "CStaticTls::x_CheckInit: Register() failed");
-            }
+    bool mutex_locked = false;
+    if ( m_SafeHelper.Init_Lock(&mutex_locked) ) {
+        // Init the object and register for cleanup
+        try {
+            x_Init();
+            m_SafeHelper.m_Ptr = this;
+            CSafeStaticGuard::Register(&m_SafeHelper);
         }
-        m_SafeHelper.Init_Unlock(mutex_locked);
+        catch (CException& e) {
+            m_SafeHelper.Init_Unlock(mutex_locked);
+            NCBI_RETHROW_SAME(e,
+                              "CStaticTls::x_CheckInit: Register() failed");
+        }
+        catch (...) {
+            m_SafeHelper.Init_Unlock(mutex_locked);
+            NCBI_THROW(CCoreException, eCore,
+                       "CStaticTls::x_CheckInit: Register() failed");
+        }
     }
+    m_SafeHelper.Init_Unlock(mutex_locked);
 }
 
 
