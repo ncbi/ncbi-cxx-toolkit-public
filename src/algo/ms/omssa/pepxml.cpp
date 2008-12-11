@@ -315,7 +315,7 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
     CRef<CSearch_summary> sSum(new CSearch_summary);
     //sSum->SetAttlist().SetBase_name(baseFile.GetName());
     sSum->SetAttlist().SetBase_name(basename);
-    sSum->SetAttlist().SetSearch_engine(CSearch_summary::C_Attlist::eAttlist_search_engine_OMSSA);
+    sSum->SetAttlist().SetSearch_engine("OMSSA");
     sSum->SetAttlist().SetOut_data_type("n/a");
     sSum->SetAttlist().SetOut_data("n/a");
 
