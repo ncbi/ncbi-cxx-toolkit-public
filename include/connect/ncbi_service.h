@@ -215,6 +215,26 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
  );
 
 
+/* Obtain port number that corresponds to the named (standalone) service
+ * declared on the specified host (per LB configuration information).
+ * @param name
+ *   service name (of type fSERV_Standalone) to look up
+ * @param host
+ *   host address (or SERV_LOCALHOST or 0, same) to look the service up on
+ * @return
+ *   the port number or 0 on error (no suitable service found)
+ * Note that the call returns the first match, and does not check
+ * whether an application is already running on the returned port
+ * (i.e. regradless of whether or not the service is currently up).
+ * @sa
+ *   SERV_Open, LSOCK_CreateEx
+ */
+extern NCBI_XCONNECT_EXPORT unsigned short SERV_ServerPort
+(const char*  name,
+ unsigned int host
+ );
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
