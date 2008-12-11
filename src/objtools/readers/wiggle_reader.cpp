@@ -77,12 +77,15 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqres/Real_graph.hpp>
+
+#include "wiggle_data.hpp"
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
@@ -95,6 +98,7 @@ CWiggleReader::CWiggleReader(
     int flags )
 //  ----------------------------------------------------------------------------
 {
+    m_pSet = new CWiggleSet;
 }
 
 
@@ -102,6 +106,7 @@ CWiggleReader::CWiggleReader(
 CWiggleReader::~CWiggleReader()
 //  ----------------------------------------------------------------------------
 {
+    delete m_pSet;
 }
 
 //  ----------------------------------------------------------------------------
@@ -124,16 +129,34 @@ void CWiggleReader::Read(
     string pending;
     unsigned int count = 0;
 
-    CSeq_annot::TData::TGraph& graph_set = annot->SetData().SetGraph();
+    CSeq_annot::TData::TGraph& graphset = annot->SetData().SetGraph();
     x_ReadLine( input, pending );
     while ( !input.eof() ) {
         if ( ! x_ReadTrackData( input, pending ) ) {
             return;
         }
         while ( x_ReadGraphData( input, pending ) ) {
-            x_AddGraph( graph_set );
+            x_UpdateWiggleSet();
         }
     }
+    m_pSet->MakeGraph( graphset );
+}
+
+//  ----------------------------------------------------------------------------
+void CWiggleReader::Dump(
+    CNcbiOstream& Out )
+//  ----------------------------------------------------------------------------
+{
+    m_pSet->Dump( Out );
+}
+
+//  ----------------------------------------------------------------------------
+void CWiggleReader::x_UpdateWiggleSet()
+//  ----------------------------------------------------------------------------
+{
+    CWiggleRecord record( m_graphdata.Chrom(), m_graphdata.Start(),
+        m_graphdata.Span(), m_graphdata.Value() );
+    m_pSet->AddRecord(record);
 }
 
 //  ----------------------------------------------------------------------------
@@ -154,12 +177,13 @@ bool CWiggleReader::x_ReadTrackData(
     return x_ReadLine( input, pending );
 }
 
+
 //  ----------------------------------------------------------------------------
 bool CWiggleReader::x_ReadGraphData(
     CNcbiIstream& input,
     string& pending )
 //
-//  Note:   Several possibilities here the pending line:
+//  Note:   Several possibilities here for the pending line:
 //          (1) The line is a "variableStep" declaration. Such a declaration
 //              initializes some data but does not represent a complete graph.
 //              The following lines then in turn give the missing pieces and
@@ -172,7 +196,7 @@ bool CWiggleReader::x_ReadGraphData(
 //              last "fixedStep" declaration.
 //  ----------------------------------------------------------------------------
 {
-    if ( input.eof() ) {
+    if ( pending.empty() && input.eof() ) {
         return false;
     }
     vector<string> parts;
@@ -220,6 +244,7 @@ bool CWiggleReader::x_ReadLine(
     string& line )
 //  ----------------------------------------------------------------------------
 {
+    line.clear();
     while ( ! input.eof() ) {
         NcbiGetlineEOL( input, line );
         NStr::TruncateSpacesInPlace( line );
@@ -276,29 +301,6 @@ unsigned int CWiggleReader::x_GetLineType(
         return TYPE_DATA_FIXEDSTEP;
     }
     return TYPE_NONE;
-}
-
-
-//  ----------------------------------------------------------------------------
-void CWiggleReader::x_AddGraph(
-    CSeq_annot::TData::TGraph& graph_set )
-//  ----------------------------------------------------------------------------
-{
-    CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, m_graphdata.Chrom()) );
-    CRef<CSeq_graph> graph( new CSeq_graph() );
-    graph->SetNumval( m_graphdata.Span() );
-    CReal_graph& data = graph->SetGraph().SetReal();
-    CSeq_interval& loc = graph->SetLoc().SetInt();
-    loc.SetFrom( 0 );
-    loc.SetTo( 1000 );
-    loc.SetId( *id );
-
-    vector<double> values( m_graphdata.Span(), m_graphdata.Value() );
-    data.SetMin( m_graphdata.Start() );
-    data.SetMax( m_graphdata.Start()+ m_graphdata.Span() );
-    data.SetAxis( 0 );
-    data.SetValues() = values;
-    graph_set.push_back( graph );
 }
 
 //  ----------------------------------------------------------------------------
@@ -432,7 +434,7 @@ bool CWiggleGraphData::ParseDataVarstep(
     if ( m_type != TYPE_DATA_VARSTEP || data.size() != 2 ) {
         return false;
     }
-    m_start = NStr::StringToUInt( data[0] );
+    m_start = NStr::StringToUInt( data[0] ) - 1; // varStep is 1- based
     m_value = NStr::StringToDouble( data[1] );
     return true;
 }
@@ -445,6 +447,7 @@ bool CWiggleGraphData::ParseDataFixedstep(
     if ( m_type != TYPE_DATA_FIXEDSTEP || data.size() != 1 ) {
         return false;
     }
+    m_start += m_step;
     m_value = NStr::StringToDouble( data[0] );
     return true;
 }
@@ -505,7 +508,7 @@ bool CWiggleGraphData::ParseDeclarationFixedstep(
             continue;
         }
         if ( key_value_pair[0] == "start" ) {
-            m_start = NStr::StringToUInt( key_value_pair[1] );
+            m_start = NStr::StringToUInt( key_value_pair[1] ) - 1;
             continue;
         }
         if ( key_value_pair[0] == "step" ) {
@@ -514,6 +517,7 @@ bool CWiggleGraphData::ParseDeclarationFixedstep(
         }
         return false;
     }
+    m_start -= m_step;
     m_type = TYPE_DATA_FIXEDSTEP;
     return true;
 }

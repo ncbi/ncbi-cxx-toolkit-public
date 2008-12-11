@@ -107,14 +107,14 @@ bool CWiggleTrack::AddRecord(
         return false;
     }
     if ( SeqSpan() != record.SeqSpan() ) {
-        NCBI_THROW2( CObjReaderParseException, eFormat,
-            string( "Data of multiple spans within a single track" ), 0 );
+//        NCBI_THROW2( CObjReaderParseException, eFormat,
+//            string( "Data of multiple spans within a single track" ), 0 );
     }
     unsigned int iResidue = (record.SeqStart() - m_uSeqStart) % SeqSpan();
     if ( 0 != (record.SeqStart() - m_uSeqStart) % SeqSpan() ) {
-        NCBI_THROW2( CObjReaderParseException, eFormat,
-            string( "Data records within track not aligned at span multiples" ), 
-            0 );
+//        NCBI_THROW2( CObjReaderParseException, eFormat,
+//            string( "Data records within track not aligned at span multiples" ), 
+//            0 );
     }
     CWiggleData* pData = new CWiggleData( record.SeqStart(), record.Value() );        
     m_Entries[ record.SeqStart() ] = pData;

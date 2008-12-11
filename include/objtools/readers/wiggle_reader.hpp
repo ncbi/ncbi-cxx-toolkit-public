@@ -34,7 +34,6 @@
 #define OBJTOOLS_READERS___WIGGLEREADER__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objtools/readers/reader_base.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -142,10 +141,8 @@ public:
         CNcbiIstream&, 
         CRef<CSeq_annot>& );
 
-#if 0 // not yet defined
     virtual void Dump(
         CNcbiOstream& );
-#endif
         
     //
     //  class interface:
@@ -179,9 +176,6 @@ protected:
 
     unsigned int x_GetLineType(
         const string& );
-
-    void x_AddGraph(
-         CSeq_annot::TData::TGraph& );
 
     void x_UpdateWiggleSet();
     
