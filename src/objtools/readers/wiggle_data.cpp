@@ -232,8 +232,8 @@ bool CWiggleTrack::FillGraphReal(
     for ( unsigned int u = 0; u < uDataSize; ++u ) {
         values[ u ] = DataValue( SeqStart() + u * SeqSpan() ); 
     }
-    graph.SetMin( SeqStart() );
-    graph.SetMax( SeqStop() );
+    graph.SetMin( m_dMinValue );
+    graph.SetMax( m_dMaxValue );
     graph.SetAxis( 0 );
     graph.SetValues() = values;
     return true;
@@ -255,8 +255,8 @@ bool CWiggleTrack::FillGraphByte(
 //          to 255 (highest). Gap "values" are set to 0.
 //  ===========================================================================
 {
-    graph.SetMin( SeqStart() );
-    graph.SetMax( SeqStop() );
+    graph.SetMin( 0 );         // the interval we are scaling the y-values
+    graph.SetMax( 255 );       //   into...
     graph.SetAxis( 0 );
     
     unsigned int uDataSize = (SeqStop() - SeqStart() + 1) / SeqSpan();
