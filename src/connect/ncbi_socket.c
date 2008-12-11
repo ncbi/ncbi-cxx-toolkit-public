@@ -1682,7 +1682,6 @@ static EIO_Status s_IsConnected(SOCK                  sock,
         assert(poll.event == eIO_Write);
         if (status == eIO_Timeout)
             return status;
-        assert(poll.revent == eIO_Write  ||  status != eIO_Success);
     } else {
         status      = eIO_Success;
         poll.revent = eIO_Write;
