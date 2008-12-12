@@ -44,8 +44,8 @@ int CReadBlastApp::ReadRRNA2(const string& file)
   map <string, TSimpleSeq> tmp_rrna; // with hash
   while(is.good())
     {
-    char line[0x100];
-    is.getline(line, 0xFF); 
+    char line[0x1000];
+    is.getline(line, 0xFFF); 
     if(PrintDetails()) NcbiCerr << "ReadRRNA2(" << file << "): line: " << line << NcbiEndl;
     if(!is.good()) break;
 // <TAB>223771  225324  7EB2BCB7        +       16S     ideal

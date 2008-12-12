@@ -43,8 +43,8 @@ int CReadBlastApp::ReadTRNA(const string& file)
     }
   while(is.good())
     {
-    char line[0x100];
-    is.getline(line, 0xFF); 
+    char line[0x1000];
+    is.getline(line, 0xFFF); 
     if(PrintDetails()) NcbiCerr << "ReadTRNA(" << file << "): line: " << line << NcbiEndl;
     if(!is.good()) break;
     if(line[0] == '#') continue;
@@ -107,8 +107,8 @@ int CReadBlastApp::ReadTRNA2(const string& file)
   map <string, int> last_for_type;
   while(is.good())
     {
-    char line[0x100];
-    is.getline(line, 0xFF); 
+    char line[0x1000];
+    is.getline(line, 0xFFF); 
     if(PrintDetails()) NcbiCerr << "ReadTRNA2(" << file << "): line: " << line << NcbiEndl;
     if(!is.good()) break;
 // gnl|uianeuro|1003       1       19274   19345   Glu     TTC     0       0       0.00
