@@ -258,6 +258,7 @@ public:
 
     // Change descriptions
     void SetDescr(TDescr& v) const;
+    TDescr& SetDescr(void) const;
     void ResetDescr(void) const;
     bool AddSeqdesc(CSeqdesc& v) const;
     CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& v) const;

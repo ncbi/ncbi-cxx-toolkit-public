@@ -291,6 +291,19 @@ void CSeq_entry_EditHandle::SetDescr(TDescr& v) const
     processor.run(new TCommand(*this, v));
 }
 
+
+CSeq_entry_EditHandle::TDescr& CSeq_entry_EditHandle::SetDescr(void) const
+{
+    if (x_GetScopeImpl().IsTransactionActive() 
+        || GetTSE_Handle().x_GetTSE_Info().GetEditSaver() ) {
+        NCBI_THROW(CObjMgrException, eTransaction,
+                       "TDescr& CSeq_entry_EditHandle::SetDescr(): "
+                       "method can not be called if a transaction is required");
+    }
+    return x_GetInfo().SetDescr();
+}
+
+
 void CSeq_entry_EditHandle::AddDescr(TDescr& v) const
 {
     typedef CAddDescr_EditCommand<CSeq_entry_EditHandle> TCommand;

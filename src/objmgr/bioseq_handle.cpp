@@ -803,7 +803,7 @@ CBioseq_EditHandle::TDescr& CBioseq_EditHandle::SetDescr(void) const
         || GetTSE_Handle().x_GetTSE_Info().GetEditSaver() ) {
         NCBI_THROW(CObjMgrException, eTransaction,
                        "TDescr& CBioseq_EditHandle::SetDescr(): "
-                       "method can not be called if a transaction is requered");
+                       "method can not be called if a transaction is required");
     }
     return x_GetInfo().SetDescr();
 }

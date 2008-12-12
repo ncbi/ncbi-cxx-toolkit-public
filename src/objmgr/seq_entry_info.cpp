@@ -453,6 +453,13 @@ void CSeq_entry_Info::SetDescr(TDescr& v)
 }
 
 
+CSeq_entry_Info::TDescr& CSeq_entry_Info::SetDescr(void)
+{
+    x_Update(fNeedUpdate_descr);
+    return m_Contents->SetDescr();
+}
+
+
 void CSeq_entry_Info::ResetDescr(void)
 {
     x_Update(fNeedUpdate_descr);

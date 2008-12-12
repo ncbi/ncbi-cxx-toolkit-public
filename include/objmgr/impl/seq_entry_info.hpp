@@ -127,6 +127,7 @@ public:
     const TDescr& GetDescr(void) const;
     void ResetDescr(void);
     void SetDescr(TDescr& v);
+    TDescr& SetDescr(void);
     bool AddSeqdesc(CSeqdesc& d);
     CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& d);
     //    void AddDescr(CSeq_entry_Info& src);
