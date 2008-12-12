@@ -758,16 +758,18 @@ double SERV_Preference(double pref, double gap, size_t n)
 unsigned short SERV_ServerPort(const char*  name,
                                unsigned int host)
 {
+    SSERV_Info*    info;
     unsigned short port;
+
     if (!host  ||  host == SERV_LOCALHOST)
         host = SOCK_GetLocalHostAddress(eDefault);
-    SSERV_Info* info = s_GetInfo(name, fSERV_Standalone | fSERV_Promiscuous,
-                                 host, 0/*pref. port*/, -1.0/*latch host*/,
-                                 0/*net_info*/, 0/*skip*/, 0/*n_skip*/,
-                                 0/*not external*/, 0/*arg*/, 0/*val*/,
-                                 0/*host_info*/);
-    if (!info)
+    if (!(info = s_GetInfo(name, fSERV_Standalone | fSERV_Promiscuous,
+                           host, 0/*pref. port*/, -1.0/*latch host*/,
+                           0/*net_info*/, 0/*skip*/, 0/*n_skip*/,
+                           0/*not external*/, 0/*arg*/, 0/*val*/,
+                           0/*host_info*/))) {
         return 0;
+    }
     assert(info->host == host);
     port = info->port;
     free((void*) info);
