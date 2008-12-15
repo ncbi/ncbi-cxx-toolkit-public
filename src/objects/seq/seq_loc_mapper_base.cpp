@@ -1601,7 +1601,7 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
 
 void CSeq_loc_Mapper_Base::x_SetLastTruncated(void)
 {
-    if ( m_LastTruncated ) {
+    if ( m_LastTruncated  ||  m_KeepNonmapping ) {
         return;
     }
     m_LastTruncated = true;
