@@ -413,9 +413,8 @@ void CTest::Init(void)
 
 // Print elapsed time and wait a little to avoid race conditions
 #define ELAPSED \
-    e = sw.Elapsed(); \
-    LOG_POST("elapsed: " + NStr::DoubleToString(e, -1, NStr::fDoubleFixed)); \
-    SleepMilliSec(100)
+    e = sw.Restart(); \
+    LOG_POST("elapsed: " + NStr::DoubleToString(e, -1, NStr::fDoubleFixed))
 
 // Start/stop test messages
 #define START(x) \
@@ -589,63 +588,55 @@ int CTest::Run(void)
         {{
             tmp_CRequestRateControl mgr(2, CTimeSpan(3,0), CTimeSpan(1,0),
                                     tmp_CRequestRateControl::eSleep);
+            sw.Restart();
             // sleep 0
             assert( mgr.Approve() );
             ELAPSED;
             assert (e < 0.5);
-            sw.Restart();
             // sleep 1
             assert( mgr.Approve() );
             ELAPSED;
             assert (e > 0.8  &&  e < 1.2);
-            sw.Restart();
             // sleep 2
             assert( mgr.Approve() );
             ELAPSED;
             assert (e > 1.8  &&  e < 2.2);
-            sw.Restart();
             // sleep 1
             // See difference with eDiscrete mode below.
             assert( mgr.Approve() );
             ELAPSED;
             assert (e > 0.8  &&  e < 1.2);
-            sw.Restart();
             // sleep 2
             assert( mgr.Approve() );
             ELAPSED;
             assert (e > 1.8  &&  e < 2.2);
-            sw.Restart();
         }}
         {{
             tmp_CRequestRateControl mgr(2, CTimeSpan(3,0), CTimeSpan(1,0),
                                     tmp_CRequestRateControl::eSleep,
                                     tmp_CRequestRateControl::eDiscrete);
+            sw.Restart();
             // sleep 0
             assert( mgr.Approve() );
             ELAPSED;
             assert (e < 0.5);
-            sw.Restart();
             // sleep 1
             assert( mgr.Approve() );
             ELAPSED;
             assert (e > 0.8  &&  e < 1.2);
-            sw.Restart();
             // sleep 2
             assert( mgr.Approve() );
             ELAPSED;
             assert (e > 1.8  &&  e < 2.2);
-            sw.Restart();
             // sleep 0
             // See difference with eContinuous mode above
             assert( mgr.Approve() );
             ELAPSED;
             assert (e < 0.5);
-            sw.Restart();
             // sleep 1
             assert( mgr.Approve() );
             ELAPSED;
             assert (e > 0.8  &&  e < 1.2);
-            sw.Restart();
         }}
     }}
     DONE;
