@@ -276,11 +276,11 @@ int CTestICClient::Run(void)
     }}
 
     cl->Purge(0, ICache::eDropAll);
-
+/*
     NcbiCout << "Session management test" << endl;
     cl->RegisterSession(10);
     cl->UnRegisterSession(10);
-
+*/
     return 0;
 }
 
