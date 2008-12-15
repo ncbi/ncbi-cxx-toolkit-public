@@ -1443,7 +1443,7 @@ void CCleanup_imp::x_MergeDuplicatePubs(CBioseq_set_Handle bsh)
             bool any_pubs_left = false;            
             list< CRef< CSeqdesc > >::iterator it2 = it1;
             ++it2;
-            while (it2 != bsh.GetDescr().Get().end()) {
+            while (it2 != eh.SetDescr().Set().end()) {
                 if ((*it2)->IsPub()) {
                     if (s_PubdescMatch((*it1)->GetPub(), (*it2)->GetPub())) {
                         x_MergeDuplicatePubs ((*it1)->SetPub(), (*it2)->SetPub());
@@ -1477,7 +1477,7 @@ void CCleanup_imp::x_MergeDuplicatePubs(CBioseq_Handle bsh)
             bool any_pubs_left = false;            
             list< CRef< CSeqdesc > >::iterator it2 = it1;
             ++it2;
-            while (it2 != bsh.GetDescr().Get().end()) {
+            while (it2 != eh.SetDescr().Set().end()) {
                 if ((*it2)->IsPub()) {
                     if (s_PubdescMatch((*it1)->GetPub(), (*it2)->GetPub())) {
                         x_MergeDuplicatePubs ((*it1)->SetPub(), (*it2)->SetPub());
