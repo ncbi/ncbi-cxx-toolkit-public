@@ -106,13 +106,13 @@ CNetCache_MessageHandler::SCommandDef s_CommandMap[] = {
     { "PUT2",     &CNetCache_MessageHandler::ProcessPut2,
         { { "timeout", eNSPT_Int,  eNSPA_Optional },
           { "id",      eNSPT_NCID, eNSPA_Optional },
-          { "wait",    eNSPT_Str,  eNSPA_Optional, "no" },
+          { "wait",    eNSPT_Int,  eNSPA_Optional, "0" },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "PUT3",     &CNetCache_MessageHandler::ProcessPut3,
         { { "timeout", eNSPT_Int,  eNSPA_Optional },
           { "id",      eNSPT_NCID, eNSPA_Optional },
-          { "wait",    eNSPT_Str,  eNSPA_Optional, "no" },
+          { "wait",    eNSPT_Int,  eNSPA_Optional, "0" },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "HASB",     &CNetCache_MessageHandler::ProcessHasBlob,
@@ -265,7 +265,7 @@ CNetCache_MessageHandler::BeginDelayedWrite()
     m_DelayedWrite = true;
 }
 
-int 
+int
 CNetCache_MessageHandler::CheckMessage(BUF*        buffer,
                                        const void* data,
                                        size_t      size)
@@ -342,7 +342,7 @@ CNetCache_MessageHandler::OnOpen(void)
 
     m_Stat.InitSession(m_Server->GetTimer().GetLocalTime(),
                        socket.GetPeerAddress());
-                    
+
     m_ProcessMessage = &CNetCache_MessageHandler::ProcessMsgAuth;
     m_DelayedWrite = false;
 
@@ -624,12 +624,12 @@ CNetCache_MessageHandler::OnRequestEnd()
         ostrstream msg;
         msg << m_Auth
             << " peer="      << m_Stat.peer_address
-            << " request='"  << m_Stat.request << "'"    
+            << " request='"  << m_Stat.request << "'"
             << " blob="      << m_Stat.blob_id
             << " blobsize="  << m_Stat.blob_size
             << " io blocks=" << m_Stat.io_blocks
             << " pending="   << pending_requests
-            << " req time="  << NStr::DoubleToString(m_Stat.elapsed, 5) 
+            << " req time="  << NStr::DoubleToString(m_Stat.elapsed, 5)
             << " comm time=" << NStr::DoubleToString(m_Stat.comm_elapsed, 5)
 //            << " lock wait time=" << stat.lock_elapsed
             << " db time="   << NStr::DoubleToString(m_Stat.db_elapsed, 5)
@@ -915,12 +915,7 @@ CNetCache_MessageHandler::x_AssignParams(const map<string, string>& params)
             break;
         case 'w':
             if (key == "wait") {
-                if (val == "yes") {
-                    m_Policy = 1;
-                }
-                else /*if (val == "no")*/ {
-                    m_Policy = 0;
-                }
+                m_Policy = NStr::StringToUInt(val);
             }
             break;
         default:
@@ -960,7 +955,7 @@ CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
 
         m_Stat.request = request;
         (this->*cmd.command->extra.processor)();
-    } 
+    }
     catch (CNSProtoParserException& ex)
     {
         ReportException(ex, "NC request parser error: ", request);
@@ -981,7 +976,7 @@ CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
     catch (CBDB_ErrnoException& ex)
     {
         if (ex.IsRecovery()) {
-            string msg = "Fatal Berkeley DB error: DB_RUNRECOVERY. " 
+            string msg = "Fatal Berkeley DB error: DB_RUNRECOVERY. "
                          "Emergency shutdown initiated!";
             ERR_POST(msg);
             if (IsMonitoring()) {
@@ -1076,7 +1071,7 @@ CNetCache_MessageHandler::ProcessShutdown(void)
 void
 CNetCache_MessageHandler::ProcessVersion(void)
 {
-    WriteMsg("OK:", NETCACHED_VERSION); 
+    WriteMsg("OK:", NETCACHED_VERSION);
 }
 
 void
@@ -1131,7 +1126,7 @@ CNetCache_MessageHandler::ProcessDropStat(void)
     if (!bdb_cache) {
         return;
     }
-	bdb_cache->InitStatistics();
+    bdb_cache->InitStatistics();
     WriteMsg("OK:", "");
 }
 
@@ -1201,7 +1196,7 @@ CNetCache_MessageHandler::ProcessGet(void)
     if (m_Policy /* m_NoLock */) {
         bool locked = m_Server->GetCache()->IsLocked(m_ReqId, 0, kEmptyStr);
         if (locked) {
-            WriteMsg("ERR:", "BLOB locked by another client"); 
+            WriteMsg("ERR:", "BLOB locked by another client");
             return;
         }
     }
@@ -1389,10 +1384,10 @@ CNetCache_MessageHandler::Process_IC_SetVersionRetention(void)
     ICache::EKeepVersions policy;
     if (NStr::CompareNocase(m_ValueParam, "KA") == 0) {
         policy = ICache::eKeepAll;
-    } else 
+    } else
     if (NStr::CompareNocase(m_ValueParam, "DO") == 0) {
         policy = ICache::eDropOlder;
-    } else 
+    } else
     if (NStr::CompareNocase(m_ValueParam, "DA") == 0) {
         policy = ICache::eDropAll;
     } else {
@@ -1496,7 +1491,7 @@ CNetCache_MessageHandler::Process_IC_Read(void)
         WriteMsg("OK:", "BLOB found. SIZE=0");
         return;
     }
- 
+
     // re-translate reader to the network
 
     m_Reader.reset(ba_descr.reader.release());
@@ -1521,7 +1516,7 @@ CNetCache_MessageHandler::Process_IC_Read(void)
     NStr::UIntToString(sz, ba_descr.blob_size);
     msg += sz;
     WriteMsg("OK:", msg);
-    
+
     // translate BLOB fragment to the network
     CNetCacheServer::WriteBuf(GetSocket(), buf, bytes_read);
 
