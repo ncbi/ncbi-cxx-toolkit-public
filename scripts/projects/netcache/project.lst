@@ -15,5 +15,4 @@ cgi/impl$
 bdb$
 dll
 app$
-app/netcache$
-app/netcache/util$
+app/netcache
