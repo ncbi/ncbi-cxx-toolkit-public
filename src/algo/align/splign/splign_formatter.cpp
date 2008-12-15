@@ -530,8 +530,7 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
     sa->SetDim(2);
   
     // create seq-align-set
-    CRef< CSeq_align::C_Segs > segs (new CSeq_align::C_Segs);
-    CSeq_align_set& sas = segs->SetDisc();
+    CSeq_align_set& sas = sa->SetSegs().SetDisc();
     list<CRef<CSeq_align> >& sas_data = sas.Set();
     
     for(size_t i = 0; i < num_exons; ++i) {
@@ -554,8 +553,7 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
       idty->SetValue().SetReal(CalcIdentity(transcripts[i]));
       scorelist.push_back(idty);
 
-      CRef<CSeq_align::C_Segs> segs (&sa->SetSegs());
-      CDense_seg& ds = segs->SetDenseg();
+      CDense_seg& ds = sa->SetSegs().SetDenseg();
 
       const size_t* box = &(*(boxes.begin() + i*4));
       const size_t query_start = box[0];
