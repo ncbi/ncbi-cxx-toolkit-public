@@ -61,7 +61,6 @@
 #define HAVE_SYS_STAT_H  1
 #define HAVE_SYS_TYPES_H 1
 #define HAVE_VSNPRINTF   1
-#define HAVE_SCHED_YIELD 1
 
 #if _MSC_VER < 1500
 #  define vsnprintf        _vsnprintf
