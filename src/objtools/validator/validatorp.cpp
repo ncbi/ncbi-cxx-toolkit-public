@@ -841,8 +841,9 @@ void CValidError_imp::Validate(const CSeq_submit& ss, CScope* scope)
     const CCit_sub* cs = &ss.GetSub().GetCit();
 
     // Just loop thru CSeq_entrys
-    ITERATE( list< CRef< CSeq_entry > >, se, ss.GetData().GetEntrys() ) {
-        Validate(**se, cs, scope);
+    FOR_EACH_SEQENTRY_ON_SEQSUBMIT (se_itr, ss) {
+        const CSeq_entry& se = **se_itr;
+        Validate (se, cs, scope);
     }
 }
 
@@ -911,7 +912,7 @@ void CValidError_imp::ValidatePubdesc
     ValidatePubHasAuthor(pubdesc, obj);
 
     // need to get uid (pmid or muid) in first pass for ValidatePubArticle
-    ITERATE( CPub_equiv::Tdata, pub_iter, pubdesc.GetPub().Get() ) {
+    FOR_EACH_PUB_ON_PUBDESC (pub_iter, pubdesc) {
         const CPub& pub = **pub_iter;
 
         switch( pub.Which() ) {
@@ -964,7 +965,7 @@ void CValidError_imp::ValidatePubdesc
     }
 
     // second pass for remaining (non-uid) types
-    ITERATE( CPub_equiv::Tdata, pub_iter, pubdesc.GetPub().Get() ) {
+    FOR_EACH_PUB_ON_PUBDESC (pub_iter, pubdesc) {
         const CPub& pub = **pub_iter;
 
         switch( pub.Which() ) {
@@ -1354,30 +1355,31 @@ void CValidError_imp::ValidatePubHasAuthor
     }
     
     bool no_names = true;
-    ITERATE( CPub_equiv::Tdata, pub, pubdesc.GetPub().Get() ) {
+    FOR_EACH_PUB_ON_PUBDESC (pub_iter, pubdesc) {
+        const CPub& pub = **pub_iter;
         const CAuth_list* authors = 0;
-        switch ( (*pub)->Which() ) {
+        switch (pub.Which() ) {
             case CPub::e_Gen:
-                if ( (*pub)->GetGen().IsSetAuthors() ) {
-                    authors = &((*pub)->GetGen().GetAuthors());
+                if ( pub.GetGen().IsSetAuthors() ) {
+                    authors = &(pub.GetGen().GetAuthors());
                 }
                 break;
             case CPub::e_Sub:
-                authors = &((*pub)->GetSub().GetAuthors());
+                authors = &(pub.GetSub().GetAuthors());
                 break;
             case CPub::e_Article:
-                if ( (*pub)->GetArticle().IsSetAuthors() ) {
-                    authors = &((*pub)->GetArticle().GetAuthors());
+                if ( pub.GetArticle().IsSetAuthors() ) {
+                    authors = &(pub.GetArticle().GetAuthors());
                 }
                 break;
             case CPub::e_Book:
-                authors = &((*pub)->GetBook().GetAuthors());
+                authors = &(pub.GetBook().GetAuthors());
                 break;
             case CPub::e_Proc:
-                authors = &((*pub)->GetProc().GetBook().GetAuthors());
+                authors = &(pub.GetProc().GetBook().GetAuthors());
                 break;
             case CPub::e_Man:
-                authors = &((*pub)->GetMan().GetCit().GetAuthors());
+                authors = &(pub.GetMan().GetCit().GetAuthors());
                 break;
             default:
                 break;
@@ -1401,30 +1403,31 @@ void CValidError_imp::ValidateEtAl
 (const CPubdesc& pubdesc,
  const CSerialObject& obj)
 {
-    ITERATE( CPub_equiv::Tdata, pub, pubdesc.GetPub().Get() ) {
+    FOR_EACH_PUB_ON_PUBDESC (pub_iter, pubdesc) {
+        const CPub& pub = **pub_iter;
         const CAuth_list* authors = 0;
-        switch ( (*pub)->Which() ) {
+        switch ( pub.Which() ) {
         case CPub::e_Gen:
-            if ( (*pub)->GetGen().IsSetAuthors() ) {
-                authors = &((*pub)->GetGen().GetAuthors());
+            if ( pub.GetGen().IsSetAuthors() ) {
+                authors = &(pub.GetGen().GetAuthors());
             }
             break;
         case CPub::e_Sub:
-            authors = &((*pub)->GetSub().GetAuthors());
+            authors = &(pub.GetSub().GetAuthors());
             break;
         case CPub::e_Article:
-            if ( (*pub)->GetArticle().IsSetAuthors() ) {
-                authors = &((*pub)->GetArticle().GetAuthors());
+            if ( pub.GetArticle().IsSetAuthors() ) {
+                authors = &(pub.GetArticle().GetAuthors());
             }
             break;
         case CPub::e_Book:
-            authors = &((*pub)->GetBook().GetAuthors());
+            authors = &(pub.GetBook().GetAuthors());
             break;
         case CPub::e_Proc:
-            authors = &((*pub)->GetProc().GetBook().GetAuthors());
+            authors = &(pub.GetProc().GetBook().GetAuthors());
             break;
         case CPub::e_Man:
-            authors = &((*pub)->GetMan().GetCit().GetAuthors());
+            authors = &(pub.GetMan().GetCit().GetAuthors());
             break;
         default:
             break;
@@ -1645,8 +1648,9 @@ void CValidError_imp::ValidateBioSource
     const COrgName& orgname = orgref.GetOrgname();
 
     if ( orgname.IsSetMod() ) {
-        ITERATE ( COrgName::TMod, omit, orgname.GetMod() ) {
-            int subtype = (**omit).GetSubtype();
+        FOR_EACH_ORGMOD_ON_ORGNAME (omd_itr, orgname) {
+            const COrgMod& omd = **omd_itr;
+            int subtype = omd.GetSubtype();
             
             if ( (subtype == 0) || (subtype == 1) ) {
                 PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
@@ -1660,7 +1664,7 @@ void CValidError_imp::ValidateBioSource
                 }
             }
             if ( subtype == COrgMod::eSubtype_other ) {
-                ValidateSourceQualTags( (**omit).GetSubname(), obj);
+                ValidateSourceQualTags( omd.GetSubname(), obj);
             }
         }
     }
@@ -1690,8 +1694,9 @@ void CValidError_imp::ValidateBioSource
 bool CValidError_imp::IsTransgenic(const CBioSource& bsrc)
 {
     if (bsrc.CanGetSubtype()) {
-        ITERATE (CBioSource::TSubtype, sub, bsrc.GetSubtype()) {
-            if ((*sub)->GetSubtype() == CSubSource::eSubtype_transgenic) {
+        FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, bsrc) {
+            const CSubSource& sbs = **sbs_itr;
+            if (sbs.GetSubtype() == CSubSource::eSubtype_transgenic) {
                 return true;
             }
         }
@@ -2363,8 +2368,9 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
 
     // Examine all Seq-ids on Bioseqs
     for (CTypeConstIterator <CBioseq> bi (*m_TSE); bi; ++bi) {
-        ITERATE (CBioseq::TId, id, bi->GetId()) {
-            CSeq_id::E_Choice typ = (**id).Which();
+        FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, *bi) {
+            const CSeq_id& sid = **sid_itr;
+            CSeq_id::E_Choice typ = sid.Which();
             switch (typ) {
                 case CSeq_id::e_not_set:
                     break;
@@ -2393,8 +2399,8 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                 case CSeq_id::e_Other:
                     m_IsRefSeq = true;
                     // and do RefSeq subclasses up front as well
-                    if ((**id).GetOther().IsSetAccession()) {
-                        string acc = (**id).GetOther().GetAccession().substr(0, 3);
+                    if (sid.GetOther().IsSetAccession()) {
+                        string acc =sid.GetOther().GetAccession().substr(0, 3);
                         if (acc == "NC_") {
                             m_IsNC = true;
                         } else if (acc == "NG_") {
@@ -2417,7 +2423,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     }
                     break;
                 case CSeq_id::e_General:
-                    if (!NStr::CompareCase((**id).GetGeneral().GetDb(), "BankIt")) {
+                    if (!NStr::CompareCase(sid.GetGeneral().GetDb(), "BankIt")) {
                         m_IsTPA = true;
                     }
                     break;

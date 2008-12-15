@@ -63,7 +63,7 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr)
     CConstRef<CSeqdesc> last_source,
                         last_title;
 
-    ITERATE ( CSeq_descr::Tdata, dt, descr.Get() ) {
+    FOR_EACH_DESCRIPTOR_ON_DESCR (dt, descr) {
         const CSeqdesc& desc = **dt;
 
         switch ( desc.Which() ) {

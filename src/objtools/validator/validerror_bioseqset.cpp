@@ -188,7 +188,7 @@ void CValidError_bioseqset::ValidateNucProtSet
                  "No proteins in nuc-prot set", seqset);
     }
 
-    ITERATE ( CBioseq_set::TSeq_set, se_list_it, seqset.GetSeq_set() ) {
+    FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
         if ( (*se_list_it)->IsSeq() ) {
             const CBioseq& seq = (*se_list_it)->GetSeq();
             if ( seq.IsNa()  &&  !IsMrnaProductInGPS(seq) ) {
@@ -234,8 +234,8 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
 
     CSeq_inst::EMol     mol = CSeq_inst::eMol_not_set;
     CSeq_inst::EMol     seq_inst_mol;
-    
-    ITERATE ( CBioseq_set::TSeq_set, se_list_it, seqset.GetSeq_set() ) {
+
+    FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
         if ( (*se_list_it)->IsSeq() ) {
             const CSeq_inst& seq_inst = (*se_list_it)->GetSeq().GetInst();
             
@@ -289,7 +289,7 @@ void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
     CSeq_inst::EMol     mol = CSeq_inst::eMol_not_set;
     CSeq_inst::EMol     seq_inst_mol;
 
-    ITERATE ( CBioseq_set::TSeq_set, se_list_it, seqset.GetSeq_set() ) {
+    FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
         if ( (*se_list_it)->IsSeq() ) {
             const CSeq_inst& seq_inst = (*se_list_it)->GetSeq().GetInst();
 
@@ -335,7 +335,7 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
     static const string influenza = "Influenza virus ";
     static const string sp = " sp. ";
 
-    ITERATE ( CBioseq_set::TSeq_set, se_list_it, seqset.GetSeq_set() ) {
+    FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
         if ( (*se_list_it)->IsSet() ) {
             const CBioseq_set& set = (*se_list_it)->GetSet();
             if ( set.GetClass() == CBioseq_set::eClass_genbank ) {

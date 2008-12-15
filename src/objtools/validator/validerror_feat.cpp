@@ -422,7 +422,7 @@ int CValidError_feat::CheckForRaggedEnd
         size_t last_pos = 0;
 
         CSeq_loc::TRange range = CSeq_loc::TRange::GetEmpty();
-        ITERATE( CCdregion::TCode_break, cbr, cdregion.GetCode_break() ) {
+        FOR_EACH_CODEBREAK_ON_CDREGION (cbr, cdregion) {
             SRelLoc rl(loc, (*cbr)->GetLoc(), m_Scope);
             ITERATE (SRelLoc::TRanges, rit, rl.m_Ranges) {
                 if ((*rit)->GetTo() > last_pos) {
@@ -640,7 +640,7 @@ void CValidError_feat::ValidateCdregion (
     
     bool transl_except = false;
 
-    ITERATE (CSeq_feat::TQual, it, feat.GetQual()) {
+    FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
         const CGb_qual& qual = **it;
         if ( qual.CanGetQual() ) {
             const string& key = qual.GetQual();
@@ -743,7 +743,7 @@ void CValidError_feat::x_ValidateCdregionCodebreak
     const CSeq_loc& feat_loc = feat.GetLocation();
     const CCode_break* prev_cbr = 0;
 
-    ITERATE (CCdregion::TCode_break, it, cds.GetCode_break()) {
+    FOR_EACH_CODEBREAK_ON_CDREGION (it, cds) {
         const CCode_break& cbr = **it;
         const CSeq_loc& cbr_loc = cbr.GetLoc();
         ECompare comp = Compare(cbr_loc, feat_loc, m_Scope);
@@ -1084,7 +1084,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     }
 
     if ( rna_type == CRNA_ref::eType_tRNA ) {
-        ITERATE ( CSeq_feat::TQual, gbqual, feat.GetQual () ) {
+        FOR_EACH_GBQUAL_ON_FEATURE (gbqual, feat) {
             if ( NStr::CompareNocase((**gbqual).GetVal (), "anticodon") == 0 ) {
                 PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                     "Unparsed anticodon qualifier in tRNA", feat);
@@ -1390,7 +1390,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
                     "ImpFeat CDS should be pseudo", feat);
             }
 
-            ITERATE( CSeq_feat::TQual, gbqual, feat.GetQual() ) {
+            FOR_EACH_GBQUAL_ON_FEATURE (gbqual, feat) {
                 if ( NStr::CompareNocase( (*gbqual)->GetQual(), "translation") == 0 ) {
                     PostErr(eDiag_Error, eErr_SEQ_FEAT_ImpCDShasTranslation,
                         "ImpFeat CDS with /translation found", feat);
@@ -1440,7 +1440,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
     default:
         ITERATE (CFeatQualAssoc::TGBQualTypeVec, required, CFeatQualAssoc::GetMandatoryGbquals(subtype)) {
             found = false;
-            ITERATE(CSeq_feat::TQual, qual, feat.GetQual()) {
+            FOR_EACH_GBQUAL_ON_FEATURE (qual, feat) {
                 if (CGbqualType::GetType(**qual) == *required) {
                     found = true;
                     break;
@@ -1464,7 +1464,7 @@ void CValidError_feat::ValidateImpGbquals
     CSeqFeatData::ESubtype ftype = feat.GetData().GetSubtype();
     const string& key = imp.GetKey();
 
-    ITERATE( CSeq_feat::TQual, qual, feat.GetQual() ) {
+    FOR_EACH_GBQUAL_ON_FEATURE (qual, feat) {
         const string& qual_str = (*qual)->GetQual();
 
         if ( qual_str == "gsdb_id" ) {
@@ -2339,7 +2339,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     }
 
     // pseudo gene
-    ITERATE (CSeq_feat::TQual, it, feat.GetQual()) {
+    FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
         if ((*it)->IsSetQual()  &&  NStr::EqualNocase((*it)->GetQual(), "pseudo")) {
             return;
         }
@@ -2350,7 +2350,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     // check for unparsed transl_except
     bool transl_except = false;
     if (!cdregion.IsSetCode_break()) {
-        ITERATE (CSeq_feat::TQual, it, feat.GetQual()) {
+        FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
             if ((*it)->IsSetQual()  &&  NStr::Equal((*it)->GetQual(), "transl_except")) {
                 transl_except = true;
             }
@@ -2694,7 +2694,7 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
     TSeqPos len = GetLength(loc, m_Scope);
     bool has_errors = false;
 
-    ITERATE( CCdregion::TCode_break, cbr, cdregion.GetCode_break() ) {
+    FOR_EACH_CODEBREAK_ON_CDREGION (cbr, cdregion) {
         size_t codon_length = GetLength((*cbr)->GetLoc(), m_Scope);
         TSeqPos from = LocationOffset(loc, (*cbr)->GetLoc(), 
             eOffset_FromStart, m_Scope);
@@ -2753,7 +2753,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         if ( gene.CanGetAllele()  && !gene.GetAllele().empty() ) {
             const string& allele = gene.GetAllele();
 
-            ITERATE(CSeq_feat::TQual, qual_iter, feat.GetQual()) {
+            FOR_EACH_GBQUAL_ON_FEATURE (qual_iter, feat) {
                 const CGb_qual& qual = **qual_iter;
                 if ( qual.CanGetQual()  &&
                      NStr::Compare(qual.GetQual(), "allele") == 0 ) {
@@ -2797,7 +2797,7 @@ void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
         return;
     }
 
-    ITERATE(CSeq_feat::TQual, qual_iter, gene.GetQual()) {
+    FOR_EACH_GBQUAL_ON_FEATURE (qual_iter, gene) {
         const CGb_qual& qual = **qual_iter;
         if( qual.CanGetQual()  &&  qual.CanGetVal() ) {
             if ( NStr::Compare(qual.GetQual(), "operon") == 0  &&
@@ -2956,8 +2956,8 @@ void CValidError_feat::ValidateFeatBioSource
             }
         }
     }
-    
-    ITERATE (CSeq_feat::TDbxref, it, feat.GetDbxref()) {
+
+    FOR_EACH_DBXREF_ON_FEATURE (it, feat) {
         if ((*it)->GetType() == CDbtag::eDbtagType_taxon) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_TaxonDbxrefOnFeature,
                 "BioSource feature has taxon xref in common feature db_xref list",
@@ -3017,7 +3017,7 @@ bool CValidError_feat::IsCDDFeat(const CSeq_feat& feat) const
 {
     if ( feat.GetData().IsRegion() ) {
         if ( feat.CanGetDbxref() ) {
-            ITERATE(CSeq_feat::TDbxref, db, feat.GetDbxref()) {
+            FOR_EACH_DBXREF_ON_FEATURE (db, feat) {
                 if ( (*db)->CanGetDb()  &&
                     NStr::Compare((*db)->GetDb(), "CDD") == 0 ) {
                     return true;

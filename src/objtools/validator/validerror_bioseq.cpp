@@ -162,7 +162,7 @@ void CValidError_bioseq::ValidateSeqIds
     // gi, NT, or NC. Check that the same CSeq_id not included more
     // than once.
     bool has_gi = false;
-    ITERATE( CBioseq::TId, i, seq.GetId() ) {
+    FOR_EACH_SEQID_ON_BIOSEQ (i, seq) {
 
         // Check that no two CSeq_ids for same CBioseq are same type
         CBioseq::TId::const_iterator j;
@@ -202,7 +202,7 @@ void CValidError_bioseq::ValidateSeqIds
     bool is_gb_embl_ddbj = false;
     unsigned int gi_count = 0;
     unsigned int accn_count = 0;
-    ITERATE (CBioseq::TId, k, seq.GetId()) {
+    FOR_EACH_SEQID_ON_BIOSEQ (k, seq) {
         const CTextseq_id* tsid = (*k)->GetTextseq_Id();
         switch ((**k).Which()) {
         case CSeq_id::e_Tpg:
@@ -410,7 +410,7 @@ void CValidError_bioseq::ValidateSeqIds
 
     // Protein specific checks
     if ( seq.IsAa() ) {
-        ITERATE( CBioseq::TId, id, seq.GetId() ) {
+        FOR_EACH_SEQID_ON_BIOSEQ (id, seq) {
             switch ( (*id)->Which() ) {
             case CSeq_id::e_Genbank:
             case CSeq_id::e_Embl:
@@ -482,7 +482,7 @@ void CValidError_bioseq::ValidateSecondaryAccConflict
         }
 
         if ( extra_acc ) {
-            ITERATE( list<string>, acc, *extra_acc ) {
+            FOR_EACH_STRING_IN_LIST (acc, *extra_acc) {
                 if ( NStr::CompareNocase(primary_acc, *acc) == 0 ) {
                     // If the same post error
                     PostErr(eDiag_Error,
@@ -777,7 +777,7 @@ void CValidError_bioseq::ValidateHistory(const CBioseq& seq)
     }
     
     int gi = 0;
-    ITERATE( CBioseq::TId, id, seq.GetId() ) {
+    FOR_EACH_SEQID_ON_BIOSEQ (id, seq) {
         if ( (*id)->IsGi() ) {
             gi = (*id)->GetGi();
             break;
@@ -864,7 +864,7 @@ bool CValidError_bioseq::IsDifferentDbxrefs(const TDbtags& list1,
 // Is the id contained in the bioseq?
 bool CValidError_bioseq::IsIdIn(const CSeq_id& id, const CBioseq& seq)
 {
-    ITERATE (CBioseq::TId, it, seq.GetId()) {
+    FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
         if (id.Match(**it)) {
             return true;
         }
@@ -1033,7 +1033,7 @@ bool CValidError_bioseq::LocOnSeg(const CBioseq& seq, const CSeq_loc& loc)
 {
     for ( CSeq_loc_CI sli( loc ); sli;  ++sli ) {
         const CSeq_id& loc_id = sli.GetSeq_id();
-        ITERATE(  CBioseq::TId, seq_id, seq.GetId() ) {
+        FOR_EACH_SEQID_ON_BIOSEQ (seq_id, seq) {
             if ( loc_id.Match(**seq_id) ) {
                 return true;
             }
@@ -2168,7 +2168,7 @@ void CValidError_bioseq::x_ValidateCompletness
     if ( comp == CMolInfo::eCompleteness_complete  &&
          biomol == CMolInfo::eBiomol_genomic ) {
         bool is_gb = false;
-        ITERATE (CBioseq::TId, it, seq.GetId()) {
+        FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
             if ( (*it)->IsGenbank() ) {
                 is_gb = true;
                 break;
@@ -3408,7 +3408,7 @@ void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
     const CDbtag*   general_id = 0,
                 *   db_general_id = 0;
 
-    ITERATE( CBioseq::TId, id, seq.GetId() ) {
+    FOR_EACH_SEQID_ON_BIOSEQ (id, seq) {
         switch ( (*id)->Which() ) {
         case CSeq_id::e_Genbank:
             gb_id = id->GetPointer();
@@ -3905,7 +3905,7 @@ bool CValidError_bioseq::x_IsActiveFin(const CBioseq& seq) const
     if ( gb_desc ) {
         const CGB_block& gb = gb_desc->GetGenbank();
         if ( gb.IsSetKeywords() ) {
-            ITERATE( CGB_block::TKeywords, iter, gb.GetKeywords() ) {
+            FOR_EACH_KEYWORD_ON_GENBANKBLOCK (iter, gb) {
                 if ( NStr::CompareNocase(*iter, "HTGS_ACTIVEFIN") == 0 ) {
                     return true;
                 }
