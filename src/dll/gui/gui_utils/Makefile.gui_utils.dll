@@ -9,7 +9,8 @@ HOSTED_LIBS    = gui_utils  \
                  gui_print \
                  gui_print_fl
 
-DEPENDENCIES   = ncbi_core ncbi_seq ncbi_seqext ncbi_misc ncbi_image ncbi_general
+DEPENDENCIES   = ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_misc \
+                 ncbi_image ncbi_general
 
 CPPFLAGS = -DNCBI_GUIUTILS_EXPORTS
 
