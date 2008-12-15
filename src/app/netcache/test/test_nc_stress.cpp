@@ -128,7 +128,7 @@ void CTestNetCacheStress::StressTestPutGet(size_t           blob_size,
     /*m_Os << "Get BLOBs size=" << blob_size << " count=" << bcount 
              << NcbiEndl << NcbiEndl;*/
 
-    //StressTestGet(*tlog, false /*random*/, bcount);
+    StressTestGet(*tlog, false /*random*/, bcount);
 }
 
 
@@ -236,9 +236,9 @@ void CTestNetCacheStress::StressTestGet(const TTransactionLog& tlog,
                                 << ex.what());
             }
 
-            if (i % 50 == 1) {
+            /*if (i % 50 == 1) {
                 m_Os << "." << flush;
-            }
+            }*/
         } // for
 
     } else {
@@ -262,9 +262,9 @@ void CTestNetCacheStress::StressTestGet(const TTransactionLog& tlog,
                                 << ex.what());
             }
 
-            if (i % 50 == 1) {
+            /*if (i % 50 == 1) {
                 m_Os << "." << flush;
-            }
+            }*/
         } // for
 
     }
@@ -311,9 +311,9 @@ void CTestNetCacheStress::StressTestPut(size_t           blob_size,
             tlog->push_back(ti);
         }
 
-        if (i % 50 == 1) {
+        /*if (i % 50 == 1) {
             m_Os << "." << flush;
-        }
+        }*/
 
     } // for
 
@@ -351,9 +351,9 @@ void CTestNetCacheStress::DeleteRandomBlobs(TTransactionLog* tlog,
                             << ex.what());
         }
 
-        if (i % 50 == 1) {
+        /*if (i % 50 == 1) {
             m_Os << "." << flush;
-        }
+        }*/
     } // for
 }
 
@@ -366,14 +366,14 @@ unsigned char* CTestNetCacheStress::AllocateTestBlob(size_t blob_size) const
 
     unsigned char* buf = new unsigned char[blob_size];
 
-    /*unsigned char init = (unsigned char) (rand() % 10);
+    unsigned char init = (unsigned char) (rand() % 10);
 
     *buf = init;
 
     for (size_t i = 1; i < blob_size; ++i) {
         unsigned char prev = buf[i-1] + init;
         buf[i] = prev;
-    }*/
+    }
 
     return buf;
 }
@@ -386,7 +386,7 @@ void CTestNetCacheStress::CheckBlob(unsigned char* blob,
         throw runtime_error("AllocateTestBlob(): Invalid blob size");
     }
 
-    /*unsigned char init = *blob;
+    unsigned char init = *blob;
 
     for (size_t i = 1; i < blob_size; ++i) {
         unsigned char prev = blob[i-1] + init;
@@ -395,7 +395,7 @@ void CTestNetCacheStress::CheckBlob(unsigned char* blob,
                                 NStr::IntToString(i));
         }
     } // for
-*/
+
 }
 
 void CTestNetCacheStress::AddToAppLog(const TTransactionLog& tlog)
@@ -418,30 +418,31 @@ int CTestNetCacheStress::Run(void)
     client_ip += NStr::IntToString(m_Num);
     CDiagContext::GetRequestContext().SetClientIP(client_ip);
 
-    size_t  bsizes[] = {256, 512, 1024, 
+    /*size_t  bsizes[] = {256, 512, 1024, 
                     1024 * 4, 1024 * 10, 1024 * 100, 1024 * 256,
-                    1024 * 1024, 1024 * 1024 * 2, 1024 * 1024 * 12};
+                    1024 * 1024, 1024 * 1024 * 2, 1024 * 1024 * 12};*/
 
     //size_t bsizes[] = { 10240 };
 
-    unsigned bins = sizeof(bsizes) / sizeof(bsizes[0]);
-    int bin_count = (m_Count / bins) * 2;
+    //unsigned bins = sizeof(bsizes) / sizeof(bsizes[0]);
+    //int bin_count = (m_Count / bins) * 2;
     Int8 total_count = 0;
     for (int count = 0; count < m_Count; ++count) {
         try {
             //m_Os << "Iteration " << count << ", thread " << m_Num << NcbiEndl;
             TTransactionLog tlog;
-            int blob_size = rand() * Int8(50 * 1024 * 1024) / RAND_MAX + 1;
+            int blob_size = rand() * Int8(1 * 1024 * 1024) / RAND_MAX + 1;
             total_count += blob_size;
             CDiagContext::GetRequestContext().SetSessionID(NStr::IntToString(count + 1));
             StressTestPutGet(blob_size, 1, &tlog);
-            //SleepMilliSec(1000);
-            //AddToAppLog(tlog);
-            if (count % 100 == 1) {
-                m_Os << "Progress: " << count << " out of " << m_Count << NcbiEndl;
+            SleepMilliSec(20);
+            AddToAppLog(tlog);
+            if (count % 100 == 0) {
+                m_Os << "Progress: " << count << " out of " << m_Count
+                     << " in thread " << CThread::GetSelf() << NcbiEndl;
 
                 //m_Os << "Random delete...." << NcbiEndl;
-                //DeleteRandomBlobs(&m_Log, m_Log.size()/10);
+                DeleteRandomBlobs(&m_Log, m_Log.size()/10);
             }
         }
         catch (CException e) {
@@ -452,18 +453,19 @@ int CTestNetCacheStress::Run(void)
         }
     }
 
-    m_Os << "Total bytes count = " << total_count;
+    m_Os << "Total bytes count in thread " << CThread::GetSelf()
+         << " = " << total_count << NcbiEndl;
 
 
     //m_Os << "Waiting...." << NcbiEndl;
     //SleepMilliSec(10 * 1000);
 
     //m_Os << "Random delete...." << NcbiEndl;
-    //DeleteRandomBlobs(&m_Log, m_Log.size()/10);
+    DeleteRandomBlobs(&m_Log, m_Log.size()/10);
 
     //m_Os << "Random read test...." << NcbiEndl;
 
-    //StressTestGet(m_Log, true /*random*/, m_Log.size());
+    StressTestGet(m_Log, true /*random*/, m_Log.size());
 
     return 0;
 }
@@ -539,7 +541,7 @@ int CTestNetCacheStressApp::Run(void)
     const CArgs& args = GetArgs();
     string service_name = args["service"].AsString();
 
-    int count = 5000;
+    int count = 500;
     if (args["count"]) {
         count = args["count"].AsInteger();
     }
@@ -578,6 +580,7 @@ int CTestNetCacheStressApp::Run(void)
         CRef<CThread> thread(*it);
         thread->Join();
     }
+    cout << "Test finished successfully" << NcbiEndl;
     return 0;
 }
 
