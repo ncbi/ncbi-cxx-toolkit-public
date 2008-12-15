@@ -42,7 +42,8 @@
  * @{
  */
 
-#if defined(HAVE_SCHED_YIELD) && !defined(NCBI_NO_THREADS)
+#if (defined(HAVE_SCHED_YIELD) || defined(NCBI_OS_MSWIN)) \
+    &&  !defined(NCBI_NO_THREADS)
 #  if defined(__cplusplus)  &&  defined(NCBI_OS_DARWIN)
 /* Mac OS X 10.2 and older failed to protect sched.h properly. :-/ */
 extern "C" {
