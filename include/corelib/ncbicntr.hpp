@@ -136,9 +136,9 @@ CAtomicCounter::TValue CAtomicCounter::Get(void) const THROWS_NONE
 {
 #ifdef NCBI_COUNTER_RESERVED_VALUE
     TValue value = m_Value;
-    NCBI_SCHED_INIT();
+    NCBI_SCHED_SPIN_INIT();
     while (value == NCBI_COUNTER_RESERVED_VALUE) {
-        NCBI_SCHED_YIELD();
+        NCBI_SCHED_SPIN_YIELD();
         value = m_Value;
     }
     return value;
@@ -169,7 +169,7 @@ THROWS_NONE
     TValue result;
     TValue* nv_value_p = const_cast<TValue*>(value_p);
 #  ifdef __sparcv9
-    NCBI_SCHED_INIT();
+    NCBI_SCHED_SPIN_INIT();
     for (;;) {
         TValue old_value = *value_p;
         result = old_value + delta;
@@ -184,12 +184,12 @@ THROWS_NONE
         if (result == old_value) { // We win
             break;
         }
-        NCBI_SCHED_YIELD();
+        NCBI_SCHED_SPIN_YIELD();
     }
     result += delta;
 #  elif defined(__sparc)
     result = NCBI_COUNTER_RESERVED_VALUE;
-    NCBI_SCHED_INIT();
+    NCBI_SCHED_SPIN_INIT();
     for (;;) {
 #    ifdef NCBI_COMPILER_WORKSHOP
         result = NCBICORE_asm_swap(result, nv_value_p);
@@ -200,7 +200,7 @@ THROWS_NONE
         if (result != NCBI_COUNTER_RESERVED_VALUE) {
             break;
         }
-        NCBI_SCHED_YIELD();
+        NCBI_SCHED_SPIN_YIELD();
     }
     result += delta;
     *value_p = result;

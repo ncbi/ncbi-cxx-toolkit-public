@@ -48,14 +48,22 @@
 extern "C" {
 #    include <sched.h>
 }
-#  else
+#  elif !defined(NCBI_OS_MSWIN)
 #    include <sched.h>
 #  endif
-#  define NCBI_SCHED_INIT() int spin_counter = 0
-#  define NCBI_SCHED_YIELD() if ( !(++spin_counter & 3) ) sched_yield()
+#  if defined(NCBI_OS_MSWIN)
+#    define NCBI_SCHED_YIELD()      ::SwitchToThread()
+#    define NCBI_SCHED_SPIN_INIT()  int spin_counter = 0
+#    define NCBI_SCHED_SPIN_YIELD() if ( !(++spin_counter & 3) ) ::SwitchToThread()
+#  else
+#    define NCBI_SCHED_YIELD()      sched_yield()
+#    define NCBI_SCHED_SPIN_INIT()  int spin_counter = 0
+#    define NCBI_SCHED_SPIN_YIELD() if ( !(++spin_counter & 3) ) sched_yield()
+#  endif
 #else
-#  define NCBI_SCHED_INIT()
 #  define NCBI_SCHED_YIELD()
+#  define NCBI_SCHED_SPIN_INIT()
+#  define NCBI_SCHED_SPIN_YIELD()
 #endif
 
 #undef NCBI_COUNTER_UNSIGNED

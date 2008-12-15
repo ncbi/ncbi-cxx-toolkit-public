@@ -77,7 +77,7 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
 #  elif defined(NCBI_SWAP_POINTERS_CONDITIONALLY)
     int   swapped = 0;
     void* old_value;
-    NCBI_SCHED_INIT();
+    NCBI_SCHED_SPIN_INIT();
     while ( !swapped ) {
         old_value = *location;
         if (old_value == new_value) {
@@ -86,7 +86,7 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
         }
         swapped = NCBI_SWAP_POINTERS_CONDITIONALLY(nv_loc, old_value,
                                                    new_value);
-        NCBI_SCHED_YIELD();
+        NCBI_SCHED_SPIN_YIELD();
     }
     return old_value;
 #  else
@@ -98,7 +98,7 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
     return old_value;
 #    elif defined(__sparcv9)
     void* old_value;
-    NCBI_SCHED_INIT();
+    NCBI_SCHED_SPIN_INIT();
     for ( ;; ) {
         /* repeatedly try to swap values */
         old_value = *location;
@@ -113,7 +113,7 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
             /* swap was successful */
             break;
         }
-        NCBI_SCHED_YIELD();
+        NCBI_SCHED_SPIN_YIELD();
     }
     return old_value;
 #    elif defined(__sparc)
@@ -124,7 +124,7 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
 #    elif defined(__ppc__) ||  defined(__ppc64__)
     void* old_value;
     int   swapped;
-    NCBI_SCHED_INIT();
+    NCBI_SCHED_SPIN_INIT();
     while ( !swapped ) {
         swapped = 0;
         asm volatile(
@@ -137,7 +137,7 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
                      : "=m" (*nv_loc), "=&r" (old_value), "=r" (swapped)
                      : "r" (new_value), "r" (nv_loc), "m" (*nv_loc)
                      : "cc");
-        NCBI_SCHED_YIELD();
+        NCBI_SCHED_SPIN_YIELD();
     }
     return old_value;
 #    else
