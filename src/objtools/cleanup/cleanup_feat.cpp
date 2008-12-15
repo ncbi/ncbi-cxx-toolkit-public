@@ -61,6 +61,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Annot_descr.hpp>
+#include <objects/misc/sequence_macros.hpp>
 #include <vector>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -1199,10 +1200,7 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_set_Handle bssh)
         }
     }
 
-    CConstRef<CBioseq_set> b = bssh.GetCompleteBioseq_set();
-    list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-       
-    ITERATE (list< CRef< CSeq_entry > >, it, set) {
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, *(bssh.GetCompleteBioseq_set())) {
         if ((*it)->IsSet()) {
             x_ExtendSingleGeneOnmRNA (m_Scope->GetBioseq_setHandle((*it)->GetSet()));
         } else if ((*it)->IsSeq()) {
@@ -1437,50 +1435,48 @@ bool CCleanup_imp::x_ImpFeatToCdRegion (CSeq_feat& feat)
     
     int frame = -1;
     
-    if (feat.CanGetQual()) {
-        NON_CONST_ITERATE (CSeq_feat::TQual, it, feat.SetQual()) {
-            CGb_qual& gb_qual = **it;
-                
-            if (gb_qual.CanGetQual() && (gb_qual.CanGetVal() || NStr::Equal(gb_qual.GetQual(), "translation"))) {
-                string qual_name = gb_qual.GetQual();
-                if (NStr::Equal(qual_name, "transl_table")) {
-                    unsigned int gc = NStr::StringToUInt(gb_qual.GetVal());
-                    CRef<CGenetic_code::C_E> ce(new CGenetic_code::C_E);
-                    ce->Select(CGenetic_code::C_E::e_Id);
-                    ce->SetId(gc);
-                    feat.SetData().SetCdregion().SetCode().Set().push_back(ce);
-                    it = feat.SetQual().erase(it);
-                } else if (NStr::Equal(qual_name, "translation")) {
-                    it = feat.SetQual().erase(it);
-                } else if (NStr::Equal(qual_name, "transl_except")) {
-                    x_ParseCodeBreak(feat, feat.SetData().SetCdregion(), gb_qual.GetVal());
-                    it = feat.SetQual().erase(it);
-                } else if (NStr::Equal(qual_name, "codon_start")) {
-                    frame = NStr::StringToInt(gb_qual.GetVal());
-                    switch (frame) {
-                        case 1:
-                            feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
-                            break;
-                        case 2:
-                            feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
-                            break;
-                        case 3:
-                            feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
-                            break;
-                        default:
-                            feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_not_set);
-                            break;
-                    }
-                    it = feat.SetQual().erase(it);
-                } else if (NStr::Equal(qual_name, "exception")) {
-                    feat.SetExcept(true);
-                    it = feat.SetQual().erase(it);
-                } else {
-                    ++ it;
-                }            
+    EDIT_EACH_GBQUAL_ON_FEATURE (it, feat) {
+        CGb_qual& gb_qual = **it;
+            
+        if (gb_qual.CanGetQual() && (gb_qual.CanGetVal() || NStr::Equal(gb_qual.GetQual(), "translation"))) {
+            string qual_name = gb_qual.GetQual();
+            if (NStr::Equal(qual_name, "transl_table")) {
+                unsigned int gc = NStr::StringToUInt(gb_qual.GetVal());
+                CRef<CGenetic_code::C_E> ce(new CGenetic_code::C_E);
+                ce->Select(CGenetic_code::C_E::e_Id);
+                ce->SetId(gc);
+                feat.SetData().SetCdregion().SetCode().Set().push_back(ce);
+                it = feat.SetQual().erase(it);
+            } else if (NStr::Equal(qual_name, "translation")) {
+                it = feat.SetQual().erase(it);
+            } else if (NStr::Equal(qual_name, "transl_except")) {
+                x_ParseCodeBreak(feat, feat.SetData().SetCdregion(), gb_qual.GetVal());
+                it = feat.SetQual().erase(it);
+            } else if (NStr::Equal(qual_name, "codon_start")) {
+                frame = NStr::StringToInt(gb_qual.GetVal());
+                switch (frame) {
+                    case 1:
+                        feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+                        break;
+                    case 2:
+                        feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
+                        break;
+                    case 3:
+                        feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+                        break;
+                    default:
+                        feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_not_set);
+                        break;
+                }
+                it = feat.SetQual().erase(it);
+            } else if (NStr::Equal(qual_name, "exception")) {
+                feat.SetExcept(true);
+                it = feat.SetQual().erase(it);
             } else {
-                ++it;
-            }
+                ++ it;
+            }            
+        } else {
+            ++it;
         }
     }
     if (frame == -1) {
@@ -1872,7 +1868,7 @@ static const string sc_ExtendedCleanupGeneQual("EXTENDEDCLEANUPGENEQUAL:");
 void CCleanup_imp::x_MoveGeneQuals(const CSeq_feat& orig_feat)
 {
     bool found_gene_qual = false;
-    ITERATE (CSeq_feat::TQual, it, orig_feat.GetQual()) {
+    FOR_EACH_GBQUAL_ON_FEATURE (it, orig_feat) {
         const CGb_qual& gb_qual = **it;
         if (gb_qual.CanGetQual()
             && NStr::Equal(gb_qual.GetQual(), "gene")) {
@@ -1967,7 +1963,7 @@ void CCleanup_imp::x_MoveGeneQuals(CBioseq_set_Handle bss)
 void CCleanup_imp::x_RemoveMarkedGeneXref(const CSeq_feat& orig_feat)
 {
     bool found_flagged_genexref = false;
-    ITERATE (CSeq_feat::TXref, it, orig_feat.GetXref()) {
+    FOR_EACH_SEQFEATXREF_ON_FEATURE (it, orig_feat) {
         if ((*it)->IsSetData () && (*it)->GetData ().IsGene ()
             && (*it)->GetData().GetGene().IsSetLocus()
             && NStr::StartsWith ((*it)->GetData().GetGene().GetLocus(), sc_ExtendedCleanupGeneQual)) {
@@ -1990,7 +1986,7 @@ void CCleanup_imp::x_RemoveMarkedGeneXref(const CSeq_feat& orig_feat)
         if (gene) {
             x_RemoveGeneXref(feat);
         } else {
-            NON_CONST_ITERATE(CSeq_feat::TXref, it, feat->SetXref ()) {
+            EDIT_EACH_SEQFEATXREF_ON_FEATURE (it, *feat) {
                 if ((*it)->IsSetData () && (*it)->GetData ().IsGene ()
                     && (*it)->GetData().GetGene().IsSetLocus()
                     && NStr::StartsWith ((*it)->GetData().GetGene().GetLocus(), sc_ExtendedCleanupGeneQual)) {
@@ -2100,10 +2096,7 @@ void CCleanup_imp::MoveCodingRegionsToNucProtSets (CBioseq_set_Handle bss)
         bool found_feat_annot = false;
         for(; annot_it && !found_feat_annot; ++annot_it) {
             if (annot_it->IsFtable()) {
-                CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
-                list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-            
-                ITERATE (list< CRef< CSeq_entry > >, it, set) {
+                FOR_EACH_SEQENTRY_ON_SEQSET (it, *(bss.GetCompleteBioseq_set())) {
                     x_MoveCodingRegionsToNucProtSets(m_Scope->GetSeq_entryHandle(**it), annot_it->GetEditHandle());
                 }
                 found_feat_annot = true;
@@ -2113,18 +2106,13 @@ void CCleanup_imp::MoveCodingRegionsToNucProtSets (CBioseq_set_Handle bss)
             CRef<CSeq_annot> annot(new CSeq_annot);
             annot->SetData().SetFtable();
             bsseh.AttachAnnot(*annot);
-            CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
-            list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-            
-            ITERATE (list< CRef< CSeq_entry > >, it, set) {
+            FOR_EACH_SEQENTRY_ON_SEQSET (it, *(bss.GetCompleteBioseq_set())) {
                 x_MoveCodingRegionsToNucProtSets(m_Scope->GetSeq_entryHandle(**it), 
                                                  m_Scope->GetSeq_annotEditHandle(*annot));
             }
         }
     } else {
-        CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
-        list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-        ITERATE (list< CRef< CSeq_entry > >, it, set) {
+        FOR_EACH_SEQENTRY_ON_SEQSET (it, *(bss.GetCompleteBioseq_set())) {
             if ((**it).Which() == CSeq_entry::e_Set) {
                 MoveCodingRegionsToNucProtSets (m_Scope->GetBioseq_setHandle((**it).GetSet()));
             }
@@ -2461,7 +2449,9 @@ void CCleanup_imp::x_ConvertOrgFeatToSource(CSeq_annot_Handle sa)
             CRef<CSeq_feat> feat(new CSeq_feat);
             const CSeq_feat& orig_feat = feat_ci->GetOriginalFeature();
             feat->Assign(orig_feat);
-            feat->SetData().SetBiosrc().SetOrg(feat->SetData().SetOrg());
+            CRef<COrg_ref> org(new COrg_ref);
+            org->Assign (orig_feat.GetData().GetOrg());
+            feat->SetData().SetBiosrc().SetOrg(*org);
             CSeq_feat_Handle ofh = feat_ci->GetSeq_feat_Handle();
             CSeq_feat_EditHandle efh(ofh);
             efh.Replace(*feat);

@@ -259,6 +259,8 @@ private:
     void x_RecurseForSeqAnnots (CBioseq_set_Handle bs, RecurseSeqAnnot pmf);
     void x_ActOnSeqAnnots (CBioseq_set_Handle bss, RecurseSeqAnnot pmf);
     
+    CSeq_descr::Tdata x_GetUpperDescriptors (CSeq_entry_Handle se, CSeqdesc::E_Choice choice);
+
     void x_RemoveEmptyGenbankDesc(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
 
     void x_CleanGenbankBlockStrings (CGB_block& block);
@@ -273,12 +275,7 @@ private:
 
     void x_CleanOrgNameStrings (COrgName& on);
     void x_ExtendedCleanSubSourceList (CBioSource& bs);
-    
-    void x_SetSourceLineage(const CSeq_entry& se, string lineage);
-    void x_SetSourceLineage(CSeq_entry_Handle seh, string lineage);
-    void x_SetSourceLineage(CBioseq_Handle bh, string lineage);
-    void x_SetSourceLineage(CBioseq_set_Handle bh, string lineage);
-    
+        
     void x_MergeAdjacentAnnots (CBioseq_Handle bs);
     void x_MergeAdjacentAnnots (CBioseq_set_Handle bss);
     
@@ -336,7 +333,7 @@ private:
     void x_RemoveEmptyFeatureAnnots (CBioseq_set_Handle bs);
     
     bool x_IsCitSubPub(const CSeqdesc& sd);
-    bool x_CitSubsMatch(CSeqdesc& sd1, CSeqdesc& sd2);
+    bool x_MergeCitSubs(CSeqdesc& sd1, CSeqdesc& sd2);
 
     CRef<CPub> x_MinimizePub (const CPub& pub);
     void x_ChangeCitationQualToCitationPub(CBioseq_Handle bs);
@@ -344,9 +341,10 @@ private:
     void x_ChangeCitSub (CBioseq_Handle bh);
     void x_ChangeCitSub (CBioseq_set_Handle bh);
     void x_ChangeCitSub (CSeq_entry_Handle seh);
-    void x_RemovePubMatch(const CSeq_entry& se, const CPubdesc& pd);
+    void x_RemovePubMatch(const CSeq_entry& se, CPubdesc& pd);
     void x_MergeAndMovePubs(CBioseq_set_Handle bsh);    
     void x_RemoveDuplicatePubsFromBioseqsInSet(CBioseq_set_Handle bsh);
+    bool x_MergeDuplicatePubs (CPubdesc& dst_pub, CPubdesc& rm_pub);
     void x_MergeDuplicatePubs(CBioseq_set_Handle bsh);    
     void x_MergeDuplicatePubs(CBioseq_Handle bsh);    
     
@@ -394,8 +392,7 @@ private:
     void x_MoveDescriptor (CBioseq_set_Handle dst, CBioseq_set_Handle src, CSeqdesc::E_Choice choice);
     bool x_PromoteMergeableSource (CBioseq_set_Handle dst, const CBioSource& biosrc);
     
-    void x_FixSegSetSource (CBioseq_set_Handle segset, CBioseq_set_Handle parts, CBioseq_set_Handle *nuc_prot_parent = NULL);
-    void x_FixSegSetSource (CBioseq_set_Handle bh, CBioseq_set_Handle *nuc_prot_parent = NULL);
+    void x_FixSegSetSource (CBioseq_set_Handle segset);
     void x_FixNucProtSources (CBioseq_set_Handle bh);
     void x_FixSetSource (CBioseq_set_Handle bh);
     
@@ -406,8 +403,8 @@ private:
     void x_ConvertOrgFeatToSource(CBioseq_Handle bh);
 
     void x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh);
-    void x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_set_Handle bss);
-    void x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Handle bh);
+    void x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_set_Handle bss, bool merge);
+    void x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Handle bh, bool merge);
 
     // MolInfo Cleanup Functions
     void x_FuseMolInfos (CBioseq::TDescr& desc_set, CSeq_descr::Tdata& desc_list);
@@ -417,6 +414,8 @@ private:
     void x_AddMissingProteinMolInfo(CSeq_entry_Handle seh);
 
     void x_NormalizeMolInfo(CBioseq_set_Handle bh);
+    bool x_CheckMolInfoConsistency (CBioseq_set_Handle bh, CRef<CMolInfo> mol);
+    bool x_CheckMolInfoConsistency (CBioseq_Handle bh, CRef<CMolInfo> mol);
     void x_SetMolInfoTechForConflictCDS (CBioseq_Handle bh);
     void x_ExtendedCleanupMolInfoDescriptors(CBioseq_Handle bh);
     void x_ExtendedCleanupMolInfoDescriptors(CBioseq_set_Handle bh);
@@ -437,6 +436,7 @@ private:
     void x_ChangeGenBankBlocks(CSeq_entry_Handle seh);
 
     bool x_IsDescrSameForAllInPartsSet (CBioseq_set_Handle bss, CSeqdesc::E_Choice desctype, CSeq_descr::Tdata& desc_list);
+    bool x_AreAllDescriptorsInSetIdentical (CBioseq_set_Handle bss, CSeqdesc::E_Choice desctype, CSeq_descr::Tdata& desc_list);
     void x_RemoveDescrByType(CBioseq_Handle bh, CSeqdesc::E_Choice desctype);
     void x_RemoveDescrByType(CBioseq_set_Handle bh, CSeqdesc::E_Choice desctype, bool recurse = true);
     void x_RemoveDescrByType(const CSeq_entry& se, CSeqdesc::E_Choice desctype, bool recurse = true);

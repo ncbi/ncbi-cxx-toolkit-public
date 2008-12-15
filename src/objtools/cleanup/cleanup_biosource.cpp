@@ -51,6 +51,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objects/misc/sequence_macros.hpp>
 
 #include "cleanupp.hpp"
 
@@ -282,7 +283,7 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
     
     CBioSource::TSubtype& subtypes = bs.SetSubtype();
     
-    NON_CONST_ITERATE (CBioSource::TSubtype, it, subtypes) {
+    EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
         if (*it) {
             BasicCleanup(**it);
         }
@@ -614,69 +615,6 @@ bool CCleanup_imp::x_IsMergeableBioSource(const CSeqdesc& sd)
 // same db value as an item in the BioSource.org.db list from the other BioSource 
 // unless the two Dbtags have identical tag values.
 
-#define MERGEABLE_STRING_VALUE(o1, o2, x) \
-    if ((o1).CanGet##x() && (o2).CanGet##x() \
-        && !NStr::IsBlank ((o1).Get##x()) \
-        && !NStr::IsBlank ((o2).Get##x()) \
-        && !NStr::Equal ((o1).Get##x(), (o2).Get##x())) { \
-        return false; \
-    }    
-
-#define MERGEABLE_STRING_LIST(o1, o2, x) \
-    if ((o1).CanGet##x() && (o2).CanGet##x() \
-        && (o1).Get##x().size() > 0 \
-        && (o2).Get##x().size() > 0) { \
-        list <string>::const_iterator it1 = (o1).Get##x().begin(); \
-        list <string>::const_iterator it2 = (o2).Get##x().begin(); \
-        while (it1 != (o1).Get##x().end() && it2 != (o2).Get##x().end()) { \
-            if (!NStr::Equal ((*it1), (*it2))) { \
-                return false; \
-            } \
-            ++it1; ++it2; \
-        } \
-        if (it1 != (o1).Get##x().end() || it2 != (o2).Get##x().end()) { \
-            return false; \
-        } \
-    } 
-    
-#define MERGEABLE_INT_VALUE(o1, o2, x) \
-    (!(o1).CanGet##x() || !(o2).CanGet##x() \
-     || (o1).Get##x() == 0 \
-     || (o2).Get##x() == 0 \
-     || (o1).Get##x() == (o2).Get##x())
-
-#define MATCH_STRING_VALUE(o1, o2, x) \
-    ((!(o1).CanGet##x() && !(o2).CanGet##x()) \
-     || ((o1).CanGet##x() && (o2).CanGet##x() \
-         && NStr::Equal((o1).Get##x(), (o2).Get##x())))
-
-#define MATCH_STRING_LIST(o1, o2, x) \
-    if (((o1).CanGet##x() && (o1).Get##x().size() > 0 && !(o2).CanGet##x()) \
-        || (!(o1).CanGet##x() && (o2).CanGet##x() && (o2).Get##x().size() > 0)) { \
-        return false; \
-    } else if ((o1).CanGet##x() && (o2).CanGet##x()) { \
-        list <string>::const_iterator it1 = (o1).Get##x().begin(); \
-        list <string>::const_iterator it2 = (o2).Get##x().begin(); \
-        while (it1 != (o1).Get##x().end() && it2 != (o2).Get##x().end()) { \
-            if (!NStr::Equal ((*it1), (*it2))) { \
-                return false; \
-            } \
-            ++it1; ++it2; \
-        } \
-        if (it1 != (o1).Get##x().end() || it2 != (o2).Get##x().end()) { \
-            return false; \
-        } \
-    } 
-    
-#define MATCH_INT_VALUE(o1, o2, x) \
-    ((!(o1).CanGet##x() && !(o2).CanGet##x()) \
-     || ((o1).CanGet##x() && (o2).CanGet##x() \
-         && (o1).Get##x() == (o2).Get##x()) \
-     || ((o1).CanGet##x() && (o1).Get##x() == 0 \
-         && !(o2).CanGet##x()) \
-     || ((o2).CanGet##x() && (o2).Get##x() == 0 \
-         && !(o1).CanGet##x()))         
-
 bool Match (const CBinomialOrgName& n1, const CBinomialOrgName& n2)
 {
   bool bMatch = true;
@@ -886,11 +824,9 @@ bool CCleanup_imp::x_OkToMerge(const CBioSource& src1, const CBioSource& src2)
 
 bool IsTransgenic(const CBioSource& bsrc)
 {
-    if (bsrc.CanGetSubtype()) {
-        ITERATE (CBioSource::TSubtype, sub, bsrc.GetSubtype()) {
-            if ((*sub)->GetSubtype() == CSubSource::eSubtype_transgenic) {
-                return true;
-            }
+    FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sub, bsrc) {
+        if ((*sub)->GetSubtype() == CSubSource::eSubtype_transgenic) {
+            return true;
         }
     }
     return false;
@@ -899,7 +835,7 @@ bool IsTransgenic(const CBioSource& bsrc)
 
 bool CCleanup_imp::x_OkToConvertToDescriptor (CBioseq_Handle bh, const CBioSource& src)
 {
-    ITERATE (CSeq_descr::Tdata, desc_it, bh.GetDescr().Get()) {
+    FOR_EACH_DESCRIPTOR_ON_BIOSEQ (desc_it, bh) {
         if ((*desc_it)->Which() == CSeqdesc::e_Source) {
             if (IsTransgenic ((*desc_it)->GetSource())
                 || !x_OkToMerge((*desc_it)->GetSource(), src)) {
@@ -935,7 +871,7 @@ bool CCleanup_imp::x_Merge (COrgName& on, const COrgName& add_on)
     // mod
     if ((!on.CanGetMod() || on.GetMod().empty())
         && add_on.CanGetMod() && !add_on.GetMod().empty()) {
-        ITERATE (COrgName::TMod, it, add_on.GetMod()) {
+        FOR_EACH_ORGMOD_ON_ORGNAME (it, add_on) {
             on.SetMod().push_back (*it);
         }
         ChangeMade (CCleanupChange::eAddOrgMod);
@@ -1049,7 +985,7 @@ bool CCleanup_imp::x_Merge (CBioSource& src, const CBioSource& add_src)
     // BioSource.subtype
     if ((!src.CanGetSubtype() || src.GetSubtype().empty())
          && add_src.CanGetSubtype() && !add_src.GetSubtype().empty()) {
-        ITERATE (CBioSource::TSubtype, it, add_src.GetSubtype()) {
+         FOR_EACH_SUBSOURCE_ON_BIOSOURCE (it, add_src) {
             src.SetSubtype().push_back(*it);
         }
         ChangeMade (CCleanupChange::eAddSubSource);
@@ -1111,7 +1047,7 @@ void CCleanup_imp::x_CleanOrgNameStrings(COrgName &on)
     CLEAN_STRING_MEMBER_JUNK(on, Lineage);
     CLEAN_STRING_MEMBER_JUNK(on, Div);
     if (on.IsSetMod()) {
-        NON_CONST_ITERATE(COrgName::TMod, modI, on.SetMod()) {
+        EDIT_EACH_ORGMOD_ON_ORGNAME (modI, on) {
             CleanString ((*modI)->SetSubname());
         }
     }
@@ -1124,7 +1060,7 @@ void CCleanup_imp::x_ExtendedCleanSubSourceList (CBioSource &bs)
         CBioSource::TSubtype& subtypes = bs.SetSubtype();
         CBioSource::TSubtype tmp;
         tmp.clear();
-        NON_CONST_ITERATE (CBioSource::TSubtype, it, subtypes) {
+        EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
             if ((*it)->CanGetAttrib()) {
                 CleanString((*it)->SetAttrib());
             }
@@ -1152,66 +1088,13 @@ void CCleanup_imp::x_ExtendedCleanSubSourceList (CBioSource &bs)
 }
 
 
-void CCleanup_imp::x_SetSourceLineage(const CSeq_entry& se, string lineage)
-{
-    if (se.Which() == CSeq_entry::e_Seq) {
-        x_SetSourceLineage(m_Scope->GetBioseqHandle(se.GetSeq()), lineage);
-    } else if (se.Which() == CSeq_entry::e_Set) {
-        x_SetSourceLineage(m_Scope->GetBioseq_setHandle(se.GetSet()), lineage);
-    }
-}
-
-
-void CCleanup_imp::x_SetSourceLineage(CSeq_entry_Handle seh, string lineage)
-{
-    x_SetSourceLineage(*(seh.GetCompleteSeq_entry()), lineage);
-}
-
-
-void CCleanup_imp::x_SetSourceLineage(CBioseq_Handle bh, string lineage)
-{
-    if (!bh.CanGetInst_Repr()
-        || (bh.GetInst_Repr() != CSeq_inst::eRepr_raw
-            && bh.GetInst_Repr() != CSeq_inst::eRepr_const)) {
-        return;
-    }
-    CBioseq_EditHandle eh = bh.GetEditHandle();
-    if (eh.IsSetDescr()) {
-        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
-            if ((*desc_it)->Which() == CSeqdesc::e_Source
-                && (*desc_it)->GetSource().CanGetOrg()) {
-                (*desc_it)->SetOrg().SetOrgname().SetLineage (lineage);
-            }
-        }
-    }
-}
-
-
-void CCleanup_imp::x_SetSourceLineage(CBioseq_set_Handle bh, string lineage)
-{
-    CBioseq_set_EditHandle eh = bh.GetEditHandle();
-    if (eh.IsSetDescr()) {
-        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
-            if ((*desc_it)->Which() == CSeqdesc::e_Source
-                && (*desc_it)->GetSource().CanGetOrg()) {
-                (*desc_it)->SetOrg().SetOrgname().SetLineage (lineage);
-            }
-        }
-    }
-    
-    ITERATE (list< CRef< CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
-        x_SetSourceLineage(m_Scope->GetSeq_entryHandle(**it), lineage);
-    }    
-}
-
-
 void CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh)
 {
     CBioseq_set_EditHandle eh = bh.GetEditHandle();
 
     if (eh.IsSetDescr()) {
         CSeq_descr::Tdata remove_list;
-        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+        EDIT_EACH_DESCRIPTOR_ON_SEQSET (desc_it, eh) {
             if ((*desc_it)->Which() == CSeqdesc::e_Org) {
                 remove_list.push_back(*desc_it);
             }
@@ -1235,7 +1118,7 @@ void CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_Handle bh)
 
     if (eh.IsSetDescr()) {
         CSeq_descr::Tdata remove_list;
-        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+        EDIT_EACH_DESCRIPTOR_ON_BIOSEQ (desc_it, eh) {
             if ((*desc_it)->Which() == CSeqdesc::e_Org) {
                 remove_list.push_back(*desc_it);
             }
@@ -1276,13 +1159,12 @@ void CCleanup_imp::x_FixNucProtSources (CBioseq_set_Handle bh)
     
     // first, if the nucleotide is a segmented set, fix sources on the segmented set
     if ((*(set.begin()))->Which() == CSeq_entry::e_Set) {
-        x_FixSegSetSource (m_Scope->GetBioseq_setHandle((*(set.begin()))->GetSet()),
-                           &bh);
+        x_FixSegSetSource (m_Scope->GetBioseq_setHandle((*(set.begin()))->GetSet()));
     }
     
     // Promote and remove mergeable source descriptors on the nucleotide set/sequence
-    // and protein sequences        
-    ITERATE (list< CRef< CSeq_entry > >, it, set) {
+    // and protein sequences   
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, *b) {
         if ((*it)->Which() == CSeq_entry::e_Set) {
             CBioseq_set_EditHandle eh = (m_Scope->GetBioseq_setHandle((*it)->GetSet())).GetEditHandle();
             if (eh.GetDescr().Get().empty()) continue;
@@ -1290,7 +1172,7 @@ void CCleanup_imp::x_FixNucProtSources (CBioseq_set_Handle bh)
             CSeq_descr::Tdata remove_list;
             remove_list.clear();
             
-            NON_CONST_ITERATE (CSeq_descr::Tdata, itd, eh.SetDescr().Set()) {
+            EDIT_EACH_DESCRIPTOR_ON_SEQSET (itd, eh) {
                 if ((*itd)->Which() == CSeqdesc::e_Source
                     && x_PromoteMergeableSource (bh, (*itd)->GetSource())) { 
                     remove_list.push_back (*itd);                   
@@ -1311,8 +1193,8 @@ void CCleanup_imp::x_FixNucProtSources (CBioseq_set_Handle bh)
 
             CSeq_descr::Tdata remove_list;
             remove_list.clear();
-            
-            NON_CONST_ITERATE (CSeq_descr::Tdata, itd, eh.SetDescr().Set()) {
+
+            EDIT_EACH_DESCRIPTOR_ON_BIOSEQ (itd, eh) {
                 if ((*itd)->Which() == CSeqdesc::e_Source
                     && x_PromoteMergeableSource (bh, (*itd)->GetSource())) { 
                     remove_list.push_back (*itd);                   
@@ -1749,8 +1631,8 @@ void CCleanup_imp::x_MoveDescriptor (CBioseq_set_Handle dst, CBioseq_Handle src,
     
     CSeq_descr::Tdata remove_list;
     remove_list.clear();
-            
-    NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, beh.SetDescr().Set()) {
+        
+    EDIT_EACH_DESCRIPTOR_ON_BIOSEQ (desc_it, beh) {
         if ((*desc_it)->Which() == choice) {
             CRef<CSeqdesc> new_desc(new CSeqdesc);
             new_desc->Assign (**desc_it);
@@ -1780,8 +1662,8 @@ void CCleanup_imp::x_MoveDescriptor (CBioseq_set_Handle dst, CBioseq_set_Handle 
     
     CSeq_descr::Tdata remove_list;
     remove_list.clear();
-            
-    NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, beh.SetDescr().Set()) {
+          
+    EDIT_EACH_DESCRIPTOR_ON_SEQSET (desc_it, beh) {
         if ((*desc_it)->Which() == choice) {
             CRef<CSeqdesc> new_desc(new CSeqdesc);
             new_desc->Assign (**desc_it);
@@ -1811,7 +1693,7 @@ bool CCleanup_imp::x_PromoteMergeableSource (CBioseq_set_Handle dst, const CBioS
     CRef<CBioSource> new_src(new CBioSource);
     if (dst.IsSetDescr()) {
         CBioseq_set_EditHandle beh = dst.GetEditHandle();
-        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, beh.SetDescr().Set()) {
+        EDIT_EACH_DESCRIPTOR_ON_SEQSET (desc_it, beh) {
             if ((*desc_it)->IsSource()) {
                 found_any = true;
                 if (x_OkToMerge ((*desc_it)->GetSource(), biosrc)) {
@@ -1885,14 +1767,33 @@ bool CCleanup_imp::x_PromoteMergeableSource (CBioseq_set_Handle dst, const CBioS
 // If after this process the BioSource on the segmented set is empty (see definition 4) the BioSource
 // on the segmented set will be removed.
 
-void CCleanup_imp::x_FixSegSetSource 
-(CBioseq_set_Handle segset,
- CBioseq_set_Handle parts,
- CBioseq_set_Handle *nuc_prot_parent)
+void CCleanup_imp::x_FixSegSetSource (CBioseq_set_Handle segset)
 {
+    CBioseq_set_Handle nuc_prot_parent, parts;
+
+    if (!segset.IsSetClass() || segset.GetClass() != CBioseq_set::eClass_segset) {
+        return;
+    }
+
+    /* first, determine whether this is in a nuc-prot set */
+    CBioseq_set_Handle parent = segset.GetParentBioseq_set();
+    if (parent && parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
+        nuc_prot_parent = parent;
+    }
+
+    /* now locate the parts set */
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, *(segset.GetCompleteBioseq_set())) {
+        if ((*it)->Which() == CSeq_entry::e_Set
+            && (*it)->GetSet().IsSetClass()
+            && (*it)->GetSet().GetClass() == CBioseq_set::eClass_parts) {
+            parts = m_Scope->GetBioseq_setHandle ((*it)->GetSet());
+        }
+    }
+
+
     // move source descriptors on master sequence and parts set to segset
     if (segset.GetCompleteBioseq_set()->IsSetSeq_set()) {
-        ITERATE (list< CRef< CSeq_entry > >, it, segset.GetCompleteBioseq_set()->GetSeq_set()) {        
+        FOR_EACH_SEQENTRY_ON_SEQSET (it, *(segset.GetCompleteBioseq_set())) {
             if ((*it)->Which() == CSeq_entry::e_Seq
                 && (*it)->GetSeq().IsSetDescr()) {
                 x_MoveDescriptor (segset, 
@@ -1900,6 +1801,11 @@ void CCleanup_imp::x_FixSegSetSource
                                   CSeqdesc::e_Source);
             }
         }
+    }
+
+    // if there is no parts set, we're done.
+    if (!parts) {
+        return;
     }
     x_MoveDescriptor (segset, parts, CSeqdesc::e_Source);
     
@@ -1915,8 +1821,8 @@ void CCleanup_imp::x_FixSegSetSource
     // later.  Do this to avoid creating a descriptor that might be
     // removed later as a duplicate.
     bool segset_has_source = false;
-    if (nuc_prot_parent != NULL) {
-        ITERATE (CSeq_descr::Tdata, desc_it, segset.GetDescr().Get()) {
+    if (nuc_prot_parent) {
+        FOR_EACH_DESCRIPTOR_ON_SEQSET (desc_it, *(segset.GetCompleteBioseq_set())) { 
             if ((*desc_it)->Which() == CSeqdesc::e_Source) {
                 segset_has_source = true;
                 break;
@@ -1924,17 +1830,15 @@ void CCleanup_imp::x_FixSegSetSource
         }
     }
     
-    list< CRef< CSeq_entry > > set = parts.GetCompleteBioseq_set()->GetSeq_set();
-    
     CSeq_descr::Tdata src_list;
     vector<CBioseq_Handle> bh_list;
     bool all_src_same = true;
     bool all_src_found = true;
-    ITERATE (list< CRef< CSeq_entry > >, it, set) {        
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, *(parts.GetCompleteBioseq_set())) {
         if ((*it)->Which() == CSeq_entry::e_Seq
                 && (*it)->GetSeq().IsSetDescr()) {
             bool found = false;
-            ITERATE (CSeq_descr::Tdata, desc_it, (*it)->GetSeq().GetDescr().Get()) {
+            FOR_EACH_DESCRIPTOR_ON_SEQENTRY (desc_it, **it) {
                 if ((*desc_it)->Which() == CSeqdesc::e_Source) {
                     if (src_list.size() > 0) {
                         if (!x_Identical((*desc_it)->GetSource(), (*(src_list.begin()))->GetSource())) {
@@ -1958,8 +1862,8 @@ void CCleanup_imp::x_FixSegSetSource
         // don't have sources on all parts, can't continue
     } else if (all_src_same) {
         // try to merge with nuc-prot set if possible, other
-        if ((nuc_prot_parent != NULL && !segset_has_source
-            && x_PromoteMergeableSource (*nuc_prot_parent, (*(src_list.begin()))->GetSource()))
+        if ((nuc_prot_parent && !segset_has_source
+            && x_PromoteMergeableSource (nuc_prot_parent, (*(src_list.begin()))->GetSource()))
             || x_PromoteMergeableSource (segset, (*(src_list.begin()))->GetSource())) {            
             unsigned int index = 0;
             NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, src_list) {
@@ -1977,7 +1881,7 @@ void CCleanup_imp::x_FixSegSetSource
         bool found = false;
         CRef<CSeqdesc> found_src;
         if (set_eh.IsSetDescr()) {
-            NON_CONST_ITERATE (CSeq_descr::Tdata, segset_src_it, set_eh.SetDescr().Set()) {
+            EDIT_EACH_DESCRIPTOR_ON_SEQSET (segset_src_it, set_eh) {
                 if ((*segset_src_it)->Which() == CSeqdesc::e_Source) {
                     found = true;
                 
@@ -1993,8 +1897,8 @@ void CCleanup_imp::x_FixSegSetSource
             // remove the descriptor if it is empty or if it is mergeable with 
             // the nuc-prot parent source
             if (x_IsBioSourceEmpty(found_src->GetSource())
-                || (nuc_prot_parent != NULL 
-                    && x_PromoteMergeableSource (*nuc_prot_parent, found_src->GetSource()))) {
+                || (nuc_prot_parent
+                    && x_PromoteMergeableSource (nuc_prot_parent, found_src->GetSource()))) {
                 set_eh.RemoveSeqdesc(*found_src);
                 ChangeMade(CCleanupChange::eRemoveDescriptor);
                 if (set_eh.SetDescr().Set().size() == 0) {
@@ -2013,8 +1917,8 @@ void CCleanup_imp::x_FixSegSetSource
                 // if the common source is mergeable with the nuc-prot parent, merge it and skip
                 // creating a descriptor on the segmented set that will just be
                 // removed later, otherwise put the common source on the segmented set
-                if (nuc_prot_parent == NULL 
-                    || !x_PromoteMergeableSource (*nuc_prot_parent, new_src->GetSource())) {
+                if (!nuc_prot_parent 
+                    || !x_PromoteMergeableSource (nuc_prot_parent, new_src->GetSource())) {
                     set_eh.AddSeqdesc(*new_src);
                     ChangeMade(CCleanupChange::eAddDescriptor);
                 }
@@ -2024,36 +1928,11 @@ void CCleanup_imp::x_FixSegSetSource
 }
 
 
-void CCleanup_imp::x_FixSegSetSource (CBioseq_set_Handle bh, CBioseq_set_Handle *nuc_prot_parent)
-{
-    if (!bh.GetCompleteBioseq_set()->IsSetSeq_set()) {
-        return;
-    }
-    
-    CConstRef<CBioseq_set> b = bh.GetCompleteBioseq_set();
-    list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-    
-    if (bh.IsSetClass() && bh.GetClass() == CBioseq_set::eClass_segset) {
-        ITERATE (list< CRef< CSeq_entry > >, it, set) {
-            if ((*it)->Which() == CSeq_entry::e_Set
-                && (*it)->GetSet().IsSetClass()
-                && (*it)->GetSet().GetClass() == CBioseq_set::eClass_parts) {
-                
-                
-                x_FixSegSetSource (bh, m_Scope->GetBioseq_setHandle((*it)->GetSet()), nuc_prot_parent);
-            }
-        }
-    }      
-}
-
-
 bool s_ContainsDescriptor (const CBioseq& bs, CSeqdesc::E_Choice desc_type)
 {
-    if (bs.IsSetDescr()) {
-        ITERATE (CSeq_descr::Tdata, desc_it, bs.GetDescr().Get()) {
-            if ((*desc_it)->Which() == desc_type) {
-                return true;
-            }
+    FOR_EACH_DESCRIPTOR_ON_BIOSEQ (desc_it, bs) {
+        if ((*desc_it)->Which() == desc_type) {
+            return true;
         }
     }
     return false;
@@ -2062,24 +1941,20 @@ bool s_ContainsDescriptor (const CBioseq& bs, CSeqdesc::E_Choice desc_type)
 
 bool s_ContainsDescriptor (const CBioseq_set& bs, CSeqdesc::E_Choice desc_type)
 {
-    if (bs.IsSetDescr()) {
-        ITERATE (CSeq_descr::Tdata, desc_it, bs.GetDescr().Get()) {
-            if ((*desc_it)->Which() == desc_type) {
-                return true;
-            }
+    FOR_EACH_DESCRIPTOR_ON_SEQSET (desc_it, bs) {
+        if ((*desc_it)->Which() == desc_type) {
+            return true;
         }
     }
     
-    if (bs.CanGetSeq_set()) {
-        ITERATE (list < CRef <CSeq_entry > >, it, bs.GetSeq_set()) {
-            if ((*it)->Which() == CSeq_entry::e_Seq
-                && s_ContainsDescriptor ((*it)->GetSeq(), desc_type)) {
-                return true;
-            } else if ((*it)->Which() == CSeq_entry::e_Set
-                && s_ContainsDescriptor((*it)->GetSet(), desc_type)) {
-                return true;
-            }                
-        }
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, bs) {
+        if ((*it)->Which() == CSeq_entry::e_Seq
+            && s_ContainsDescriptor ((*it)->GetSeq(), desc_type)) {
+            return true;
+        } else if ((*it)->Which() == CSeq_entry::e_Set
+            && s_ContainsDescriptor((*it)->GetSet(), desc_type)) {
+            return true;
+        }                
     }
     return false;
 }
@@ -2095,7 +1970,7 @@ void CCleanup_imp::x_FixSetSource (CBioseq_set_Handle bh)
     CSeqdesc_CI desc_ci (bh.GetParentEntry(), CSeqdesc::e_Source, 1);
     if (!desc_ci) return;
     
-    ITERATE (list < CRef < CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, *(bh.GetCompleteBioseq_set())) {
         if ((*it)->Which() == CSeq_entry::e_Seq 
             && ! s_ContainsDescriptor ((*it)->GetSeq(), CSeqdesc::e_Source)) {
             CRef<CSeqdesc> new_desc(new CSeqdesc);
@@ -2137,9 +2012,9 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh)
                                                // should be merged
     bool any_removed = false;
     
-    bh.GetCompleteBioseq()->GetAnnot();
+    SAnnotSelector sel(CSeqFeatData::e_Biosrc);
 
-    CFeat_CI feat_ci(bh);
+    CFeat_CI feat_ci (bh, sel);
     while (feat_ci) {
         if (feat_ci->GetFeatType() == CSeqFeatData::e_Biosrc) {
             const CSeq_feat& cf = feat_ci->GetOriginalFeature();
@@ -2156,7 +2031,7 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh)
                     if (!desc->GetSource().IsSetOrg()) {
                         desc->SetSource().SetOrg();
                     }
-                    ITERATE (CSeq_feat::TDbxref, it, cf.GetDbxref()) {
+                    FOR_EACH_DBXREF_ON_FEATURE (it, cf) {
                         desc->SetSource().SetOrg().SetDb().push_back (*it);
                     }
                 }
@@ -2177,10 +2052,10 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh)
                                               source_feat_list[i].GetLocation(),
                                               m_Scope) == sequence::eSame) {
                         // merge the two features
-                        CRef<CBioSource> new_src;
+                        CRef<CBioSource> new_src(new CBioSource);
                         new_src->Assign (cf.GetData().GetBiosrc());
                         x_Merge (*new_src, source_feat_list[i].GetData().GetBiosrc());
-                        CRef<CSeq_feat> new_feat;
+                        CRef<CSeq_feat> new_feat(new CSeq_feat);
                         new_feat->Assign (*(source_feat_list[i].GetSeq_feat()));
                         CSeq_feat_EditHandle rfh (source_feat_list[i]);
                         rfh.Replace (*new_feat);
@@ -2205,7 +2080,7 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh)
 }
 
 
-void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Handle bh)
+void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Handle bh, bool merge)
 {
     // First, convert Org-ref descriptors to BioSource descriptors
     x_ConvertOrgDescToSourceDescriptor (bh);
@@ -2216,7 +2091,7 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Hand
     // merge BioSource features
     x_ExtendedCleanupBioSourceFeatures (bh);
 
-    if (bh.IsSetDescr()) {
+    if (merge && bh.IsSetDescr()) {
         // Now merge descriptors
         CSeq_descr::Tdata remove_list;    
         CBioseq_EditHandle edith = m_Scope->GetEditHandle(bh);     
@@ -2233,31 +2108,32 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Hand
 }
 
 
-void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_set_Handle bss)
+void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_set_Handle bss, bool merge)
 {
-    // First, clean the members of this set, unless this is a nuc-prot or segset
-    if (bss.GetCompleteBioseq_set()->IsSetSeq_set()
-        && (!bss.CanGetClass() 
-            || (bss.GetClass() != CBioseq_set::eClass_segset 
-                && bss.GetClass() != CBioseq_set::eClass_nuc_prot))) {
-       CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
-       list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-       
-       ITERATE (list< CRef< CSeq_entry > >, it, set) {
-            switch ((**it).Which()) {
-                case CSeq_entry::e_Seq:
-                    x_ExtendedCleanupBioSourceDescriptorsAndFeatures(m_Scope->GetBioseqHandle((**it).GetSeq()));
-                    break;
-                case CSeq_entry::e_Set:
-                {
-                    CBioseq_set_Handle bssh = m_Scope->GetBioseq_setHandle((**it).GetSet());
-                    x_ExtendedCleanupBioSourceDescriptorsAndFeatures(bssh);
-                }
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
+    // First, clean the members of this set
+    if (merge 
+        && bss.GetCompleteBioseq_set()->IsSetSeq_set()
+        && bss.CanGetClass() 
+        && (bss.GetClass() == CBioseq_set::eClass_segset 
+            || bss.GetClass() == CBioseq_set::eClass_nuc_prot)) {
+        // there are special rules for merging descriptors in segsets and nuc-prot sets
+        merge = false;
+    }
+
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, *(bss.GetCompleteBioseq_set())) {
+        switch ((**it).Which()) {
+            case CSeq_entry::e_Seq:
+                x_ExtendedCleanupBioSourceDescriptorsAndFeatures(m_Scope->GetBioseqHandle((**it).GetSeq()), merge);
+                break;
+            case CSeq_entry::e_Set:
+            {
+                CBioseq_set_Handle bssh = m_Scope->GetBioseq_setHandle((**it).GetSet());
+                x_ExtendedCleanupBioSourceDescriptorsAndFeatures(bssh, merge);
             }
+                break;
+            case CSeq_entry::e_not_set:
+            default:
+                break;
         }
     }
     

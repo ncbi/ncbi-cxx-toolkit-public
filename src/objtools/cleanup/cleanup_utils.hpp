@@ -260,6 +260,83 @@ if ((o).IsSet##x()) { \
         } \
     }
 
+#define MERGEABLE_STRING_VALUE(o1, o2, x) \
+    if ((o1).CanGet##x() && (o2).CanGet##x() \
+        && !NStr::IsBlank ((o1).Get##x()) \
+        && !NStr::IsBlank ((o2).Get##x()) \
+        && !NStr::Equal ((o1).Get##x(), (o2).Get##x())) { \
+        return false; \
+    }    
+
+#define MERGEABLE_STRING_LIST(o1, o2, x) \
+    if ((o1).CanGet##x() && (o2).CanGet##x() \
+        && (o1).Get##x().size() > 0 \
+        && (o2).Get##x().size() > 0) { \
+        list <string>::const_iterator it1 = (o1).Get##x().begin(); \
+        list <string>::const_iterator it2 = (o2).Get##x().begin(); \
+        while (it1 != (o1).Get##x().end() && it2 != (o2).Get##x().end()) { \
+            if (!NStr::Equal ((*it1), (*it2))) { \
+                return false; \
+            } \
+            ++it1; ++it2; \
+        } \
+        if (it1 != (o1).Get##x().end() || it2 != (o2).Get##x().end()) { \
+            return false; \
+        } \
+    } 
+    
+#define MERGEABLE_INT_VALUE(o1, o2, x) \
+    (!(o1).CanGet##x() || !(o2).CanGet##x() \
+     || (o1).Get##x() == 0 \
+     || (o2).Get##x() == 0 \
+     || (o1).Get##x() == (o2).Get##x())
+
+#define MATCH_STRING_VALUE(o1, o2, x) \
+    ((!(o1).CanGet##x() && !(o2).CanGet##x()) \
+     || ((o1).CanGet##x() && (o2).CanGet##x() \
+         && NStr::Equal((o1).Get##x(), (o2).Get##x())))
+
+#define MATCH_STRING_LIST(o1, o2, x) \
+    if (((o1).CanGet##x() && (o1).Get##x().size() > 0 && !(o2).CanGet##x()) \
+        || (!(o1).CanGet##x() && (o2).CanGet##x() && (o2).Get##x().size() > 0)) { \
+        return false; \
+    } else if ((o1).CanGet##x() && (o2).CanGet##x()) { \
+        list <string>::const_iterator it1 = (o1).Get##x().begin(); \
+        list <string>::const_iterator it2 = (o2).Get##x().begin(); \
+        while (it1 != (o1).Get##x().end() && it2 != (o2).Get##x().end()) { \
+            if (!NStr::Equal ((*it1), (*it2))) { \
+                return false; \
+            } \
+            ++it1; ++it2; \
+        } \
+        if (it1 != (o1).Get##x().end() || it2 != (o2).Get##x().end()) { \
+            return false; \
+        } \
+    } 
+    
+#define MATCH_INT_VALUE(o1, o2, x) \
+    ((!(o1).CanGet##x() && !(o2).CanGet##x()) \
+     || ((o1).CanGet##x() && (o2).CanGet##x() \
+         && (o1).Get##x() == (o2).Get##x()) \
+     || ((o1).CanGet##x() && (o1).Get##x() == 0 \
+         && !(o2).CanGet##x()) \
+     || ((o2).CanGet##x() && (o2).Get##x() == 0 \
+         && !(o1).CanGet##x()))         
+
+#define MATCH_BOOL_VALUE(o1, o2, x) \
+    if (!(o1).IsSet##x()) { \
+        if ((o2).IsSet##x()) { \
+            return false; \
+        } \
+    } else if (!(o2).IsSet##x()) { \
+        return false; \
+    } else if (((o1).Get##x() && !(o2).Get##x()) \
+               || (!(o2).Get##x() && (o2).Get##x())) { \
+        return false; \
+    }
+
+
+
 class CLexToken 
 {
 public:

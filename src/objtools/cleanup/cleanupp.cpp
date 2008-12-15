@@ -58,6 +58,7 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/general/Date.hpp>
+#include <objects/misc/sequence_macros.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -115,7 +116,7 @@ void CCleanup_imp::Setup(const CSeq_entry& se)
     
     m_Mode = eCleanup_GenBank;
     if (first_bioseq) {
-        ITERATE (CBioseq::TId, it, first_bioseq->GetId()) {
+        FOR_EACH_SEQID_ON_BIOSEQ (it, *first_bioseq) {
             const CSeq_id& id = **it;
             if (id.IsEmbl()  ||  id.IsTpe()) {
                 m_Mode = eCleanup_EMBL;
@@ -166,10 +167,9 @@ void CCleanup_imp::BasicCleanup(CSeq_entry& se)
 void CCleanup_imp::BasicCleanup(CSeq_submit& ss)
 {
     // TODO Cleanup Submit-block.
-    
     switch (ss.GetData().Which()) {
         case CSeq_submit::TData::e_Entrys:
-            NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, ss.SetData().SetEntrys()) {
+            EDIT_EACH_SEQENTRY_ON_SEQSUBMIT (it, ss) {
                 BasicCleanup(**it);
             }
             break;
@@ -188,29 +188,25 @@ void CCleanup_imp::BasicCleanup(CSeq_submit& ss)
 
 void CCleanup_imp::BasicCleanup(CBioseq_set& bss)
 {
-    if (bss.IsSetAnnot()) {
-        NON_CONST_ITERATE (CBioseq_set::TAnnot, it, bss.SetAnnot()) {
-            BasicCleanup(**it);
-        }
+    EDIT_EACH_ANNOT_ON_SEQSET (it, bss) {
+        BasicCleanup(**it);
     }
     if (bss.IsSetDescr()) {
         BasicCleanup(bss.SetDescr());
     }
-    if (bss.IsSetSeq_set()) {
+    EDIT_EACH_SEQENTRY_ON_SEQSET (it, bss) {
         // copies form BasicCleanup(CSeq_entry) to avoid recursing through it.
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            switch (se.Which()) {
-                case CSeq_entry::e_Seq:
-                    BasicCleanup(se.SetSeq());
-                    break;
-                case CSeq_entry::e_Set:
-                    BasicCleanup(se.SetSet());
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
+        CSeq_entry& se = **it;
+        switch (se.Which()) {
+            case CSeq_entry::e_Seq:
+                BasicCleanup(se.SetSeq());
+                break;
+            case CSeq_entry::e_Set:
+                BasicCleanup(se.SetSet());
+                break;
+            case CSeq_entry::e_not_set:
+            default:
+                break;
         }
     }
 }
@@ -218,10 +214,8 @@ void CCleanup_imp::BasicCleanup(CBioseq_set& bss)
 
 void CCleanup_imp::BasicCleanup(CBioseq& bs)
 {    
-    if (bs.IsSetAnnot()) {
-        NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
-            BasicCleanup(**it);
-        }
+    EDIT_EACH_ANNOT_ON_BIOSEQ (it, bs) {
+        BasicCleanup(**it);
     }
     if (bs.IsSetDescr()) {
         BasicCleanup(bs.SetDescr());
@@ -231,17 +225,15 @@ void CCleanup_imp::BasicCleanup(CBioseq& bs)
 
 void CCleanup_imp::BasicCleanup(CSeq_annot& sa)
 {
-    if (sa.IsSetData()  &&  sa.GetData().IsFtable()) {
-        NON_CONST_ITERATE (CSeq_annot::TData::TFtable, it, sa.SetData().SetFtable()) {
-            BasicCleanup(**it);
-        }
+    EDIT_EACH_FEATURE_ON_ANNOT (it, sa) {
+        BasicCleanup(**it);
     }
 }
 
 
 void CCleanup_imp::BasicCleanup(CSeq_descr& sdr)
 {
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+    EDIT_EACH_DESCRIPTOR_ON_DESCR (it, sdr) {
         BasicCleanup(**it);
     }
 }
@@ -449,10 +441,10 @@ void CCleanup_imp::BasicCleanup(CSeq_entry_Handle& seh)
     for (; fi; ++fi) {
         BasicCleanup(fi->GetSeq_feat_Handle());
     }
-    // special GB-block cleanup. Was in Extended Cleanup.
-    x_ChangeGenBankBlocks(seh);
     // do the non-handle stuff
     BasicCleanup(const_cast<CSeq_entry&>(*seh.GetCompleteSeq_entry()));
+    // special GB-block cleanup. Was in Extended Cleanup.
+    x_ChangeGenBankBlocks(seh);
     Finish(seh);
 }
 
@@ -694,7 +686,7 @@ void CCleanup_imp::ExtendedCleanup(const CSeq_submit& ss)
     
     switch (ss.GetData().Which()) {
         case CSeq_submit::TData::e_Entrys:
-            ITERATE(CSeq_submit::TData::TEntrys, it, ss.GetData().GetEntrys()) {
+            FOR_EACH_SEQENTRY_ON_SEQSUBMIT (it, ss) {
                 CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle((**it));
                 ExtendedCleanup(seh);
             }
@@ -759,7 +751,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_ExtendedCleanupMolInfoDescriptors (bss);
 
         // Clean up BioSource features and descriptors last
-        x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bss);
+        x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bss, true);
     } else {
         CBioseq_EditHandle bsh = seh.GetSeq().GetEditHandle();
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
@@ -782,7 +774,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_ExtendedCleanupMolInfoDescriptors (bss);
 
         // Clean up BioSource features and descriptors last
-        x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bsh);
+        x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bsh, true);
     }
 }
 
@@ -828,7 +820,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_ExtendedCleanupMolInfoDescriptors (bsh);
 
     // Clean up BioSource features and descriptors last
-    x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bsh);
+    x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bsh, true);
 }
 
 
@@ -911,13 +903,8 @@ void CCleanup_imp::x_RecurseForSeqAnnots (CBioseq_set_Handle bss, RecurseSeqAnno
     x_ActOnSeqAnnots(bss, pmf);
 
     // now operate on members of set
-    if (bss.GetCompleteBioseq_set()->IsSetSeq_set()) {
-       CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
-       list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-       
-       ITERATE (list< CRef< CSeq_entry > >, it, set) {
-           x_RecurseForSeqAnnots (**it, pmf);
-       }
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, *(bss.GetCompleteBioseq_set())) {
+       x_RecurseForSeqAnnots (**it, pmf);
     }
 }
 
@@ -1035,22 +1022,17 @@ void CCleanup_imp::RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle b
         (*it).Remove();
     }
     
-    if (bs.GetCompleteBioseq_set()->IsSetSeq_set()) {
-       CConstRef<CBioseq_set> b = bs.GetCompleteBioseq_set();
-       list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-       
-       ITERATE (list< CRef< CSeq_entry > >, it, set) {
-            switch ((**it).Which()) {
-                case CSeq_entry::e_Seq:
-                    RemoveEmptyFeaturesDescriptorsAndAnnots(m_Scope->GetBioseqHandle((**it).GetSeq()));
-                    break;
-                case CSeq_entry::e_Set:
-                    RemoveEmptyFeaturesDescriptorsAndAnnots(m_Scope->GetBioseq_setHandle((**it).GetSet()));
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, *(bs.GetCompleteBioseq_set())) {
+        switch ((**it).Which()) {
+            case CSeq_entry::e_Seq:
+                RemoveEmptyFeaturesDescriptorsAndAnnots(m_Scope->GetBioseqHandle((**it).GetSeq()));
+                break;
+            case CSeq_entry::e_Set:
+                RemoveEmptyFeaturesDescriptorsAndAnnots(m_Scope->GetBioseq_setHandle((**it).GetSet()));
+                break;
+            case CSeq_entry::e_not_set:
+            default:
+                break;
         }
     }
 
@@ -1257,22 +1239,17 @@ void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq_set_Handle bs)
     }
 
     // now operate on members of set
-    if (bs.GetCompleteBioseq_set()->IsSetSeq_set()) {
-       CConstRef<CBioseq_set> b = bs.GetCompleteBioseq_set();
-       list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-       
-       ITERATE (list< CRef< CSeq_entry > >, it, set) {
-            switch ((**it).Which()) {
-                case CSeq_entry::e_Seq:
-                    x_MergeAdjacentAnnots(m_Scope->GetBioseqHandle((**it).GetSeq()));
-                    break;
-                case CSeq_entry::e_Set:
-                    x_MergeAdjacentAnnots(m_Scope->GetBioseq_setHandle((**it).GetSet()));
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, *(bs.GetCompleteBioseq_set())) {
+        switch ((**it).Which()) {
+            case CSeq_entry::e_Seq:
+                x_MergeAdjacentAnnots(m_Scope->GetBioseqHandle((**it).GetSeq()));
+                break;
+            case CSeq_entry::e_Set:
+                x_MergeAdjacentAnnots(m_Scope->GetBioseq_setHandle((**it).GetSet()));
+                break;
+            case CSeq_entry::e_not_set:
+            default:
+                break;
         }
     }
    
@@ -1300,10 +1277,31 @@ void CCleanup_imp::x_ConvertFullLenFeatureToDescriptor (CSeq_annot_Handle sa, CS
              
                     if (choice == CSeqFeatData::e_Biosrc) {
                         desc->Select(CSeqdesc::e_Source);
-                        desc->SetSource(const_cast< CBioSource& >(cf.GetData().GetBiosrc()));
+                        CRef<CBioSource> src (new CBioSource);                        
+                        src->Assign (cf.GetData().GetBiosrc());
+                        // add feat dbxrefs to src dbxrefs
+                        if (feat_ci->IsSetDbxref()) {
+                            FOR_EACH_DBXREF_ON_FEATURE (db_it, *feat_ci) {
+                                CRef<CDbtag> x(new CDbtag);
+                                x->Assign(**db_it);
+                                src->SetOrg().SetDb().push_back(x);
+                            }
+                        }
+                        desc->SetSource(*src);
                     } else if (choice == CSeqFeatData::e_Pub) {
                         desc->Select(CSeqdesc::e_Pub);
-                        desc->SetPub(const_cast< CPubdesc& >(cf.GetData().GetPub()));
+                        CRef<CPubdesc> pub(new CPubdesc);
+                        pub->Assign (cf.GetData().GetPub());
+                        // add feat comment to pubdesc comment
+                        if (feat_ci->IsSetComment()) {
+                            if (pub->IsSetComment()) {
+                                string new_comment = pub->GetComment() + "; " + feat_ci->GetComment();
+                                pub->SetComment (new_comment);
+                            } else {
+                                pub->SetComment(feat_ci->GetComment());
+                            }
+                        }
+                        desc->SetPub(*pub);
                     }
             
                     CBioseq_EditHandle eh = bh.GetEditHandle();
@@ -1342,7 +1340,7 @@ void CCleanup_imp::RenormalizeNucProtSets (CBioseq_set_Handle bsh)
             || bclass == CBioseq_set::eClass_wgs_set
             || bclass == CBioseq_set::eClass_gen_prod_set) {
        
-            ITERATE (list< CRef< CSeq_entry > >, it, set) {
+            FOR_EACH_SEQENTRY_ON_SEQSET (it, *b) {
                 if ((**it).Which() == CSeq_entry::e_Set) {
                     RenormalizeNucProtSets (m_Scope->GetBioseq_setHandle((**it).GetSet()));
                 }
@@ -1415,11 +1413,11 @@ void CCleanup_imp::CheckNucProtSet (CBioseq_set_Handle bss)
 
     }
     
-    ITERATE (list< CRef< CSeq_entry > >, it, set) {
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, *b) {
         if ((*it)->Which() == CSeq_entry::e_Set) {
             CheckNucProtSet(m_Scope->GetBioseq_setHandle((**it).GetSet()));
         }
-	}
+	  }
 }
 
 

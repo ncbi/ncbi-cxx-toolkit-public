@@ -52,6 +52,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/misc/sequence_macros.hpp>
 
 #include <objmgr/seqdesc_ci.hpp>
 
@@ -348,14 +349,12 @@ bool OnlyPunctuation (string str)
 
 bool IsOnlinePub(const CPubdesc& pd)
 {
-    if (pd.IsSetPub()) {
-        ITERATE (CPubdesc::TPub::Tdata, it, pd.GetPub().Get()) {
-            if ((*it)->IsGen()) {
-                const CCit_gen& gen = (*it)->GetGen();
-                if (gen.IsSetCit()  &&
-                    NStr::StartsWith(gen.GetCit(), "Online Publication", NStr::eNocase)) {
-                    return true;
-                }
+    FOR_EACH_PUB_ON_PUBDESC (it, pd) {
+        if ((*it)->IsGen()) {
+            const CCit_gen& gen = (*it)->GetGen();
+            if (gen.IsSetCit()  &&
+                NStr::StartsWith(gen.GetCit(), "Online Publication", NStr::eNocase)) {
+                return true;
             }
         }
     }
@@ -949,17 +948,15 @@ bool CitSubsMatch(const CCit_sub& sub1, const CCit_sub& sub2)
     }
     
     // author lists must be set and must match
-    // affiliations must be set and must match
-    if (! sub1.CanGetAuthors() 
-        || ! sub2.CanGetAuthors()
-        || ! sub1.GetAuthors().CanGetNames()
-        || ! sub2.GetAuthors().CanGetNames()
-        || ! sub1.GetAuthors().CanGetAffil()
-        || ! sub2.GetAuthors().CanGetAffil()) {
+    // if both affiliations set, must match
+    if (! sub1.IsSetAuthors() 
+        || ! sub2.IsSetAuthors()
+        || ! sub1.GetAuthors().IsSetNames()
+        || ! sub2.GetAuthors().IsSetNames()
+        || !AuthListsMatch (sub1.GetAuthors().GetNames(), sub2.GetAuthors().GetNames(), true)) {
         return false;
-    } else if (!AuthListsMatch (sub1.GetAuthors().GetNames(), sub2.GetAuthors().GetNames(), true)) {
-        return false;
-    } else if (!sub1.GetAuthors().GetAffil().Equals(sub2.GetAuthors().GetAffil())) {
+    } else if (sub1.GetAuthors().IsSetAffil() && sub2.GetAuthors().IsSetAffil()
+               && !sub1.GetAuthors().GetAffil().Equals(sub2.GetAuthors().GetAffil())) {
         return false;
     } else {
         return true;
@@ -983,15 +980,11 @@ CRef<CSeq_loc> MakeFullLengthLocation(CBioseq_Handle bh, CScope* scope, CRef<CSe
             // this is the master sequence
             is_master_seq = true;
             // add whole loc for each part
-            CConstRef<CBioseq_set> b = bsh.GetCompleteBioseq_set();
-            list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-       
-            ITERATE (list< CRef< CSeq_entry > >, it, set) {
+            FOR_EACH_SEQENTRY_ON_SEQSET (it, *(bsh.GetCompleteBioseq_set())) {
                 if ((*it)->IsSet()) {
-                    const CBioseq_set& bs = (*it)->GetSet();
-                    if (bs.CanGetClass() && bs.GetClass() == CBioseq_set::eClass_parts) {
-                        list< CRef< CSeq_entry > > parts_set = bs.GetSeq_set();
-                        ITERATE (list< CRef< CSeq_entry > >, it2, parts_set) {
+                    const CBioseq_set& parts_set = (*it)->GetSet();
+                    if (parts_set.CanGetClass() && parts_set.GetClass() == CBioseq_set::eClass_parts) {
+                        FOR_EACH_SEQENTRY_ON_SEQSET (it2, parts_set) {
                             if ((*it2)->IsSeq()) {
                                 new_loc = MakeFullLengthLocation (scope->GetBioseqHandle((*it2)->GetSeq()), scope, new_loc, first);
                             }
