@@ -81,6 +81,12 @@ typedef CSeq_inst::TMol TSEQ_MOL;
 typedef CSeq_inst::TTopology TSEQ_TOPOLOGY;
 
 
+/// CAnnotdesc definitions
+
+#define NCBI_ANNOTDESC(Type) CAnnotdesc::e_##Type
+typedef CAnnotdesc::E_Choice TANNOTDESC_CHOICE;
+
+
 /// CSeqdesc definitions
 
 #define NCBI_SEQDESC(Type) CSeqdesc::e_##Type
@@ -668,6 +674,29 @@ NCBI_NC_ITERATE( \
     CSeq_annot::TData::TGraph, \
     Iter, \
     (San).SetData().SetGraph())
+
+
+/// FOR_EACH_DESCRIPTOR_ON_ANNOT
+// Takes const CSeq_annot& as input and makes iterator to const CAnnotdesc&
+// Dereference with const CAnnotdesc& desc = **iter;
+
+#define FOR_EACH_DESCRIPTOR_ON_ANNOT(Iter, San) \
+NCBI_CS_ITERATE( \
+    (San).IsSetDesc(), \
+    CSeq_annot::TDesc, \
+    Iter, \
+    (San).GetDesc())
+
+/// EDIT_EACH_DESCRIPTOR_ON_ANNOT
+// Takes const CSeq_annot& as input and makes iterator to const CAnnotdesc&
+// Dereference with CAnnotdesc& desc = **iter;
+
+#define EDIT_EACH_DESCRIPTOR_ON_ANNOT(Iter, San) \
+NCBI_NC_ITERATE( \
+    (San).IsSetDesc(), \
+    CSeq_annot::TDesc, \
+    Iter, \
+    (San).SetDesc())
 
 
 /// CSeq_descr iterators
