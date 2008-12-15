@@ -79,6 +79,8 @@ public:
     // convenience functions to get descriptor chain from underlying Bioseq or Bioseq-set
     bool IsSetDescr(void) const;
     const CSeq_descr& GetDescr(void) const;
+    void SetDescr(CSeq_descr& value);
+    CSeq_descr& SetDescr(void);
 
     // convenience functions to get annot list from underlying Bioseq or Bioseq-set
     typedef list< CRef< CSeq_annot > > TAnnot;

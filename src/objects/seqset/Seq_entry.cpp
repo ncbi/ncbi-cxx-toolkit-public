@@ -127,6 +127,36 @@ const CSeq_descr& CSeq_entry::GetDescr(void) const
     }
 }
 
+void CSeq_entry::SetDescr(CSeq_descr& value)
+{
+    switch ( Which() ) {
+    case e_Seq:
+        SetSeq().SetDescr(value);
+        break;
+    case e_Set:
+        SetSet().SetDescr(value);
+        break;
+    default:
+      NCBI_THROW(CSerialException, eNotImplemented,
+                 "CSeq_entry::SetDescr: unsupported entry type "
+                 + SelectionName(Which()));
+    }
+}
+
+CSeq_descr& CSeq_entry::SetDescr(void)
+{
+    switch ( Which() ) {
+    case e_Seq:
+        return (SetSeq().SetDescr());
+    case e_Set:
+        return (SetSet().SetDescr());
+    default:
+      NCBI_THROW(CSerialException, eNotImplemented,
+                 "CSeq_entry::SetDescr: unsupported entry type "
+                 + SelectionName(Which()));
+    }
+}
+
 
 bool CSeq_entry::IsSetAnnot(void) const
 {
