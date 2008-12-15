@@ -1766,12 +1766,6 @@ CSeqDB_AtlasRegionHolder::~CSeqDB_AtlasRegionHolder()
 
 void CSeqDBSpinLock::Lock()
 {
-#ifdef NCBI_SCHED_SPIN_INIT
-    NCBI_SCHED_SPIN_INIT();
-#else
-    NCBI_SCHED_INIT();
-#endif
-    
     bool done = false;
     
     while(! done) {
