@@ -5237,7 +5237,11 @@ NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
  AC_LANG_PROGRAM([#include <sqlite.h>],
     [char *errs; sqlite* db = sqlite_open("foo.db", 0, &errs);]))
 
-: ${SQLITE3_PATH=$NCBI/sqlite3}
+case "$with_sqlite3" in
+   yes | '' ) : ${SQLITE3_PATH=$NCBI/sqlite3} ;;
+   *        ) SQLITE3_PATH=$with_sqlite3 ;;
+esac
+
 if test -d "$SQLITE3_PATH"; then
    NCBI_FIX_DIR(SQLITE3_PATH)
 fi
