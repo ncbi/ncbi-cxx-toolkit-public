@@ -284,7 +284,7 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     
     // internal, if present
     string internal_inc = CDirEntry::ConcatPath(tree_inc,"internal");
-    if (CDirEntry(CDirEntry::ConcatPath(m_ProjectDir,internal_inc)).IsDir()) {
+    if (CDirEntry(CDirEntry::NormalizePath(CDirEntry::ConcatPath(m_ProjectDir,internal_inc))).IsDir()) {
         add_include_dirs_list.push_back( CDirEntry::AddTrailingPathSeparator(internal_inc) );
     }
     
