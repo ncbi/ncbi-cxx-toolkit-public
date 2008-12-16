@@ -492,7 +492,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
         DWORD bytes_read  = 0;
 
         // Wait for data from the pipe with timeout.
-        // Using a loop and periodicaly try PeekNamedPipe is inefficient,
+        // Using a loop and periodically try PeekNamedPipe is inefficient,
         // but Windows doesn't have asynchronous mechanism to read
         // from a pipe.
         // NOTE:  WaitForSingleObject() doesn't work with anonymous pipes.
@@ -679,7 +679,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
     DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
 
     // Wait for data from the pipe with timeout.
-    // Using a loop and periodicaly try PeekNamedPipe is inefficient,
+    // Using a loop and periodically try PeekNamedPipe is inefficient,
     // but Windows doesn't have asynchronous mechanism to read
     // from a pipe.
     // NOTE: WaitForSingleObject() doesn't work with anonymous pipes.
@@ -1063,7 +1063,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             x_args[0] = cmd.c_str();
             x_args[cnt + 1] = 0;
 
-            // Change current working wirectory if specified
+            // Change current working directory if specified
             if ( !current_dir.empty() ) {
                 chdir(current_dir.c_str());
             }
@@ -1113,7 +1113,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             // Child could not run -- rip it and exit with error
             errno = (size_t) n >= sizeof(errcode) ? errcode : 0;
             waitpid(m_Pid, 0, 0);
-            string errmsg = "Failed to execute programm";
+            string errmsg = "Failed to execute program";
             if (errno) {
                 errmsg = errmsg + ": " + strerror(errcode);
             }
