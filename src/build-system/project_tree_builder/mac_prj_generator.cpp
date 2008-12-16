@@ -388,16 +388,21 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
     }
     // datatool
     if (!prj.m_DatatoolSources.empty()) {
+#if 0
         ITERATE ( list<string>, f, prj_files.GetSources()) {
             if (prj_files.IsProducedByDatatool(prj,*f)) {
                 string outfile(GetRelativePath( *f));
                 AddString( *outputs, outfile);
             }
         }
+#endif
         string pch_name = GetApp().GetMetaMakefile().GetDefaultPch();
         ITERATE ( list<string>, f, prj_files.GetDataSpecs()) {
-            AddString( *inputs, GetRelativePath(*f));
             CDirEntry entry(*f);
+            string spec_base( CDirEntry(GetRelativePath(*f)).GetDir() + entry.GetBase());
+            AddString( *inputs, GetRelativePath(*f));
+            AddString( *inputs, spec_base + ".def");
+            AddString( *outputs, spec_base + ".files");
             script += "echo Using datatool to create a C++ objects from " + entry.GetName() + "\n";
             script += m_OutputDir + "bin/$CONFIGURATION/datatool -oex \"\" -pch " + pch_name;
             script += " -m " + GetRelativePath( entry.GetPath(), &GetApp().GetProjectTreeInfo().m_Src);
@@ -409,9 +414,9 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
                 script += " -M \"" + imports + "\"";
             }
             script += " -oA -oc " + entry.GetBase();
-            script += " -od " + CDirEntry(GetRelativePath(*f, &m_SolutionDir)).GetDir() + entry.GetBase() + ".def";
+            script += " -od " + spec_base + ".def";
             script += " -odi -ocvs -or " +  GetRelativePath( entry.GetDir(), &GetApp().GetProjectTreeInfo().m_Src);
-            script += " -oR " + GetRelativePath( GetApp().GetProjectTreeInfo().m_Root, &m_SolutionDir) + "\n";
+            script += " -oR " + GetRelativePath( GetApp().GetProjectTreeInfo().m_Root) + "\n";
         }
     }
     if (!script.empty()) {
