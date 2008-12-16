@@ -35,7 +35,7 @@
 /// Portable interprocess named pipe API for:  UNIX, MS-Win
 ///
 /// Defines classes: 
-///     CNamedPipe        -  base (abstract) class for work with named pipes
+///     CNamedPipe        -  base (abstract) class to work with named pipes
 ///     CNamedPipeClient  -  class for client-side named pipes
 ///     CNamedPipeServer  -  class for server-side named pipes
 
@@ -89,7 +89,7 @@ class CNamedPipeHandle;
 /// For UNIXs the pipe name is a generic file name (with or without path).
 ///
 /// If pipe name is specified as base file name, for example "pipe_name",
-/// without path, that CNamedPipe* classes automaticaly convert it to
+/// without path, then CNamedPipe* classes automaticaly convert it to
 /// OS-specific default pipe name:
 //      \\.\pipe\pipe_name,       (MS Windows)
 //      /tmp/pipe_name,           (UNIX)

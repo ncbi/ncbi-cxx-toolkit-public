@@ -193,7 +193,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         // pipe's server process has a pending Listen() operation on the pipe).
 
         // NOTE: We do not use here a WaitNamedPipe() because it works
-        //       incorrect in some cases.
+        //       incorrectly in some cases.
 
         DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
 
@@ -376,8 +376,8 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         DWORD x_timeout   = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD bytes_avail = 0;
 
-        // Wait a data from the pipe with timeout.
-        // NOTE:  The function WaitForSingleObject() do not work with pipe.
+        // Wait for data from the pipe with timeout.
+        // NOTE:  The function WaitForSingleObject() does not work with pipes.
 
         do {
             if ( !PeekNamedPipe(m_Pipe, NULL, 0, NULL, &bytes_avail, NULL) ) {
@@ -406,8 +406,8 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             m_ReadStatus = eIO_Timeout;
             return m_ReadStatus;
         }
-        // We must read only "count" bytes of data regardless of the number
-        // available to read
+        // We must read only "count" bytes of data regardless of the amount
+        // available to read.
         if (bytes_avail > count) {
             bytes_avail = count;
         }
@@ -445,8 +445,8 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         DWORD x_timeout     = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD bytes_written = 0;
 
-        // Wait a data from the pipe with timeout.
-        // NOTE:  The function WaitForSingleObject() do not work with pipe.
+        // Wait for data from the pipe with timeout.
+        // NOTE:  The function WaitForSingleObject() does not work with pipes.
 
         do {
             if (!WriteFile(m_Pipe, (char*)buf, count, &bytes_written, NULL)) {

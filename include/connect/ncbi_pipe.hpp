@@ -423,7 +423,7 @@ public:
     /// @current_dir
     ///   Current directory for the new process.
     ///   The string must be an absolute path. On MS Windows it should
-    ///   also contains drive letter. If this parameter is empty, the new
+    ///   also contain drive letter. If this parameter is empty, the new
     ///   process will have the same current directory as the calling process.
     /// @param env
     ///   Pointer to vector with environment variables which will be used
