@@ -987,8 +987,6 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         if (pipe(status_pipe) < 0) {
             throw string("Failed to create status pipe");
         }
-        fcntl(status_pipe[0], F_SETFL, 
-              fcntl(status_pipe[0], F_GETFL, 0) & ~O_NONBLOCK);
         fcntl(status_pipe[1], F_SETFD, 
               fcntl(status_pipe[1], F_GETFD, 0) | FD_CLOEXEC);
 
