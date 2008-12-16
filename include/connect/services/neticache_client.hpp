@@ -56,7 +56,7 @@ BEGIN_NCBI_SCOPE
 
 /// Client to NetCache server (implements ICache interface)
 ///
-/// @note This implementation is thread safe and syncronized
+/// @note This implementation is thread safe and synchronized
 ///
 class NCBI_NET_CACHE_EXPORT CNetICacheClient : public CNetServiceClient,
                                                public ICache
