@@ -19,8 +19,9 @@ public:
 
     int GetIndexBits() const { return m_indexBits; }
     Uint4 GetIndexMask() const { return m_indexMask; }
+    Uint2 GetPreallocSize() const { return m_preallocSz; }
 
-    CWordHash( int bits = 20 ) : m_indexBits(0), m_indexMask(0) { SetIndexBits( bits ); }
+    CWordHash( int bits = 20 ) : m_preallocSz(1), m_indexBits(0), m_indexMask(0) { SetIndexBits( bits ); }
 
     void SetIndexBits( int bits ) {
         ASSERT( bits >= 0 && bits < 32 );
@@ -35,10 +36,13 @@ public:
         m_sorted = true;
     }
 
+    void SetPreallocSz( Uint2 sz ) { m_preallocSz = sz; }
+
     void Sort() { for( Uint4 x = 0; x < m_table.size(); ++x ) { sort( m_table[x].begin(), m_table[x].end(), value_type::LessSubkey ); } m_sorted = true; }
 
     void AddEntry( Uint8 key, const value_type& item ) { 
         TArray& a( m_table[ Uint4( key & m_indexMask) ] );
+        if( m_preallocSz && a.size() == 0 ) a.reserve( m_preallocSz );
         a.push_back( item ); 
         a.back().SetSubkey( Uint2( key >> m_indexBits ) ); 
         m_sorted = false;
@@ -70,6 +74,7 @@ public:
     }
 
 protected:
+    Uint2 m_preallocSz;
     Uint1 m_indexBits;
     Uint4 m_indexMask;
     TTable m_table;

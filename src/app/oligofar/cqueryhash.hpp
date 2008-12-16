@@ -91,6 +91,7 @@ public:
         ((const CQueryHash*)this)->ForEach2gnl( ncbi2na, cbk );
     }
 
+    Uint2  ComputeHashPreallocSz() const;
     Uint8  ComputeEntryCountPerRead() const; // no ambiguities are allowed
     int    ComputeHasherWindowLength();
     int    ComputeScannerWindowLength();
@@ -363,9 +364,32 @@ inline int CQueryHash::ComputeScannerWindowLength()
     return winlen;
 }
 
+inline Uint2 CQueryHash::ComputeHashPreallocSz() const
+{
+    // VERIFY!!!
+    if( m_maxMism == 0 && !m_allowIndel ) return 1;
+    int k = m_wordSize;
+    int b = (m_hashTable.GetIndexBits() + 1)/2;
+    if( k <= b ) return 1;
+    k -= b;
+    int ret = 1;
+    if( m_maxMism ) ret += 3 * k;
+    if( m_allowIndel ) {
+        int idc = (k - 1)*4 + k - (k - 2); // insertions and deletions may happen at the beginning of the tail!
+        if( m_maxMism > 0 ) ret *= idc;
+        else ret += idc;
+    }
+    if( m_maxMism > 1 ) {
+        ret += 9 * k * (k - 1)/2;
+    }
+    return ret;
+}
+
 inline bool CQueryHash::CheckWordConstraints()
 {
     ComputeHasherWindowLength();
+    m_hashTable.SetPreallocSz( ComputeHashPreallocSz() );
+    cerr << "INFO: Setting prealloc size to " << m_hashTable.GetPreallocSize() << endl;
     return ((const CQueryHash*)this)->CQueryHash::CheckWordConstraints();
 }
 
