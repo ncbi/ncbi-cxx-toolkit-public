@@ -158,7 +158,7 @@ public:
 protected:
     /// Connect to server
     /// Function returns true if connection has been re-established
-    /// flase if connection has been established before and
+    /// false if connection has been established before and
     /// throws an exception if it cannot establish connection
     bool CheckConnect();
 
@@ -184,7 +184,7 @@ private:
 
 protected:
     std::string m_LBServiceName;
-    std::auto_ptr<IRebalanceStrategy> m_RebalanceStrategy;
+    CNetObjectRef<IRebalanceStrategy> m_RebalanceStrategy;
 
     string              m_CacheName;
     size_t              m_BlobSize;

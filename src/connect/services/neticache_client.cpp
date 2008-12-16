@@ -116,7 +116,7 @@ void CNetICacheClient::SetConnectionParams(
     const string& client_name)
 {
     m_LBServiceName = lb_service_name;
-    m_RebalanceStrategy.reset(rebalance_strategy);
+    m_RebalanceStrategy = rebalance_strategy;
     m_CacheName = cache_name;
     m_ClientName = client_name;
 }
