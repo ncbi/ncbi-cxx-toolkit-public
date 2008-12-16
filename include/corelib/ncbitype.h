@@ -58,50 +58,9 @@
 #endif
 
 
-/* Threads configuration
- */
+/* For the sake of backward compatibility only */
+#include <common/ncbiconf_impl.h>
 
-#undef NCBI_NO_THREADS
-#undef NCBI_THREADS
-#undef NCBI_POSIX_THREADS
-#undef NCBI_WIN32_THREADS
-
-#if defined(_MT)  &&  !defined(NCBI_WITHOUT_MT)
-#  if defined(NCBI_OS_MSWIN)
-#    define NCBI_WIN32_THREADS
-#  elif defined(NCBI_OS_UNIX)
-#    define NCBI_POSIX_THREADS
-#  else
-#    define NCBI_NO_THREADS
-#  endif
-#else
-#  define NCBI_NO_THREADS
-#endif
-
-#if !defined(NCBI_NO_THREADS)
-#  define NCBI_THREADS
-#endif
-
-
-/* New/nonstandard keywords
- */
-#if defined(__cplusplus)  &&  defined(NCBI_RESTRICT_CXX)
-#  define NCBI_RESTRICT NCBI_RESTRICT_CXX
-#elif !defined(__cplusplus)  &&  defined(NCBI_RESTRICT_C)
-#  define NCBI_RESTRICT NCBI_RESTRICT_C
-#elif __STDC_VERSION__ >= 199901 /* C99 specifies restrict */
-#  define NCBI_RESTRICT restrict
-#else
-#  define NCBI_RESTRICT
-#endif
-
-#ifndef NCBI_FORCEINLINE
-#  ifdef __cplusplus
-#    define NCBI_FORCEINLINE inline
-#  else
-#    define NCBI_FORCEINLINE
-#  endif
-#endif
 
 /* Char, Uchar, Int[1,2,4], Uint[1,2,4]
  */
