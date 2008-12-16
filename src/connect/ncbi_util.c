@@ -386,7 +386,7 @@ extern char* LOG_ComposeMessage
         datetime[datetime_len++] = ' ';
         datetime[datetime_len]   = '\0';
 #else /*NCBI_OS_MSWIN*/
-        static const char timefmt[] = "%D %T ";
+        static const char timefmt[] = "%m/%d/%y %H:%M:%S ";
         struct tm* tm;
 #  ifdef NCBI_CXX_TOOLKIT
         time_t t = time(0);
