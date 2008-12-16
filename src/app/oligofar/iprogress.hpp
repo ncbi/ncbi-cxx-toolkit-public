@@ -9,6 +9,7 @@ class IProgressIndicator
 {
 public:
     virtual ~IProgressIndicator() {}
+    virtual void SetCurrentValue( double val ) = 0;
     virtual void Increment() = 0;
     virtual void Summary() = 0;
 };

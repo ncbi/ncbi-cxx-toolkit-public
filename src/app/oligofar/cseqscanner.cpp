@@ -210,8 +210,9 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
             }
         }
         loop.Update( *x++ );
-        if( p ) p->Increment();
+        if( p && ( pos % 1000 == 0 ) ) p->SetCurrentValue( pos ); //Increment();
     }
+    p->SetCurrentValue( pos );
 }
     
 template<class NoAmbiq, class Ambiq, class Callback>
