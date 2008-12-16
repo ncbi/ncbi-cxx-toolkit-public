@@ -39,7 +39,7 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_topCnt( 10 ),
     m_topPct( 99 ),
     m_minPctid( 40 ),
-    m_maxSimplicity( 2.0 ),
+    m_maxSimplicity( 3.0 ),
     m_identityScore(  1.0 ),
     m_mismatchScore( -1.0 ),
     m_gapOpeningScore( -3.0 ),
@@ -377,7 +377,7 @@ int COligoFarApp::ParseArg( int opt, const char * arg, int longindex )
         switch( *arg ) {
         case 'f': case 'F': m_alignmentAlgo = eAlignment_fast ; break;
         case 's': case 'S': m_alignmentAlgo = eAlignment_SW ; break;
-        case 'g': case 'Q': THROW( runtime_error, "Quick algorithm is not supported in the current version" ); //m_alignmentAlgo = eAlignment_quick ; break;
+        case 'q': case 'Q': THROW( runtime_error, "Quick algorithm is not supported in the current version" ); //m_alignmentAlgo = eAlignment_quick ; break;
         default: THROW( runtime_error, "Bad alignment algorithm option " << arg );
         }
         break;
