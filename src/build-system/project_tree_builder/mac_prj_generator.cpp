@@ -173,6 +173,12 @@ void CMacProjectGenerator::Generate(const string& solution)
         if (!proj_build.empty()) {
             AddString( *build_phases, proj_build);
         }
+        // project custom script phase
+        string proj_cust_script(
+            CreateProjectCustomScriptPhase(prj, prj_files, *dict_objects));
+        if (!proj_cust_script.empty()) {
+            AddString( *build_phases, proj_cust_script);
+        }
         // project target and dependencies
         CreateProjectTarget( prj, prj_files, *dict_objects, build_phases);
 
@@ -422,6 +428,47 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
     return kEmptyStr;
 }
 
+string CMacProjectGenerator::CreateProjectCustomScriptPhase(
+    const CProjItem& prj, const CProjectFileCollector& prj_files,
+    CDict& dict_objects)
+{
+    SCustomScriptInfo info;
+    prj_files.GetProjectContext().GetMsvcProjectMakefile().GetCustomScriptInfo(info);
+
+    if (!info.m_Script.empty()) {
+        string proj_script(   GetProjId(       prj) + "_cust_script");
+        CRef<CDict> dict_script( AddDict( dict_objects, proj_script));
+        string script_loc( prj.m_SourcesBaseDir);
+
+        CRef<CArray> inputs(  new CArray);
+        CRef<CArray> outputs( new CArray);
+        list<string> in_list;
+        NStr::Split(info.m_Input, LIST_SEPARATOR, in_list);
+        ITERATE( list<string>, i, in_list) {
+            AddString( *inputs,
+                GetRelativePath(CDirEntry::ConcatPath(script_loc,*i)));
+        }
+        list<string> out_list;
+        NStr::Split(info.m_Output, LIST_SEPARATOR, out_list);
+        ITERATE( list<string>, o, out_list) {
+            AddString( *outputs,
+                GetRelativePath(CDirEntry::ConcatPath(script_loc,*o)));
+        }
+        AddArray(  *dict_script, "files");
+        AddArray(  *dict_script, "inputPaths",  inputs);
+        AddArray(  *dict_script, "outputPaths", outputs);
+        AddString( *dict_script, "isa", "PBXShellScriptBuildPhase");
+        if (info.m_Shell.empty()) {
+            info.m_Shell = "/bin/sh";
+        }
+        AddString( *dict_script, "shellPath", info.m_Shell);
+        AddString( *dict_script, "shellScript",
+            GetRelativePath(CDirEntry::ConcatPath(script_loc,info.m_Script)));
+        return proj_script;
+    }
+    return kEmptyStr;
+}
+
 string CMacProjectGenerator::CreateProjectBuildPhase(
     const CProjItem& prj,
     CDict& dict_objects, CRef<CArray>& build_files)
@@ -603,7 +650,7 @@ void CMacProjectGenerator::CreateBuildSettings(CDict& dict_cfg, const SConfigInf
 
     AddLinkerSetting( *settings, cfg, "DEAD_CODE_STRIPPING");
     AddLinkerSetting( *settings, cfg, "PREBINDING");
-    AddLinkerSetting( *settings, cfg, "ZERO_LINK");
+//    AddLinkerSetting( *settings, cfg, "ZERO_LINK");
     if (cfg.m_rtType == SConfigInfo::rtMultiThreadedDebugDLL ||
         cfg.m_rtType == SConfigInfo::rtMultiThreadedDLL) {
         AddString( *settings, "STANDARD_C_PLUS_PLUS_LIBRARY_TYPE", "dynamic");

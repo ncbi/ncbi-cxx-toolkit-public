@@ -240,6 +240,8 @@ public:
     virtual void GetResourceFiles        (const SConfigInfo& config, 
                                           list<string>*      files) const;
 
+    void GetCustomScriptInfo             (SCustomScriptInfo& info) const;
+
 
     string m_ProjectBaseDir;
     bool   m_Compound; // ie, consists of hosted components (DLL)
@@ -335,6 +337,8 @@ public:
 
     virtual void GetResourceFiles        (const SConfigInfo& config, 
                                           list<string>*      files) const;
+
+    void GetCustomScriptInfo             (SCustomScriptInfo& info) const;
 
 private:
     typedef const CMsvcProjectMakefile*    TProjectMakefile;

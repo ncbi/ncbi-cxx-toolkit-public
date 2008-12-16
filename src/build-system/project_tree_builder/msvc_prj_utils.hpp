@@ -147,7 +147,7 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
 
 struct SCustomBuildInfo
 {
-    string m_SourceFile; // absolut path!
+    string m_SourceFile; // absolute path!
     string m_CommandLine;
     string m_Description;
     string m_Outputs;
@@ -167,6 +167,13 @@ struct SCustomBuildInfo
     }
 };
 
+struct SCustomScriptInfo
+{
+    string m_Input;
+    string m_Output;
+    string m_Shell;
+    string m_Script;
+};
 
 /////////////////////////////////////////////////////////////////////////////
 ///

@@ -70,6 +70,9 @@ private:
     string CreateProjectScriptPhase(
         const CProjItem& prj, const CProjectFileCollector& prj_files,
         CDict& dict_objects);
+    string CreateProjectCustomScriptPhase(
+        const CProjItem& prj, const CProjectFileCollector& prj_files,
+        CDict& dict_objects);
     string CreateProjectBuildPhase(
         const CProjItem& prj,
         CDict& dict_objects, CRef<CArray>& build_files);
