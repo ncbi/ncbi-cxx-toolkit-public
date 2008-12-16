@@ -70,7 +70,7 @@ public:
 
     virtual ~CRemoteAppJob() {} 
 
-    int Do(CWorkerNodeJobContext& context) 
+    int Do(CWorkerNodeJobContext& context)
     {
         CFastLocalTime lt;
         if (context.IsLogRequested()) {
@@ -192,9 +192,6 @@ public:
         return ret;
     }
 private:
-
-    static void x_PrepareArgs(const string& cmdline, vector<string>& args);
-
     const char* const* x_GetEnv();
 
     CBlobStorageFactory m_Factory;
