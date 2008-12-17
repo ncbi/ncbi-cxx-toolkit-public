@@ -753,6 +753,17 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     list<string> sources;
     src_resolver.ResolveTo(&sources);
 
+    if (CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
+        k = makefile.m_Contents.find("UNIX_SRC");
+        if (k != makefile.m_Contents.end()) {
+            CProjSRCResolver unix_src_resolver(applib_mfilepath, 
+                                        source_base_dir, k->second);
+            list<string> unix_sources;
+            unix_src_resolver.ResolveTo(&unix_sources);
+            copy(unix_sources.begin(), unix_sources.end(), back_inserter(sources));
+        }
+    }
+    
     //depends
     list<string> depends;
     k = makefile.m_Contents.find("LIB");
@@ -1025,6 +1036,17 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                                   source_base_dir, k->second);
     list<string> sources;
     src_resolver.ResolveTo(&sources);
+
+    if (CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
+        k = m->second.m_Contents.find("UNIX_SRC");
+        if (k != m->second.m_Contents.end()) {
+            CProjSRCResolver unix_src_resolver(applib_mfilepath, 
+                                        source_base_dir, k->second);
+            list<string> unix_sources;
+            unix_src_resolver.ResolveTo(&unix_sources);
+            copy(unix_sources.begin(), unix_sources.end(), back_inserter(sources));
+        }
+    }
 
     // depends - TODO
     list<CProjKey> depends_ids;
@@ -1462,7 +1484,13 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
                       << "  at " << applib_mfilepath);
         return CProjKey();
     }
-    const list<string> src_list = k->second;
+    list<string> src_list = k->second;
+    if (CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
+        k = fc.m_Contents.find("UNIX_SRC");
+        if (k != fc.m_Contents.end()) {
+            copy(k->second.begin(), k->second.end(), back_inserter(src_list));
+        }
+    }
     list<string> sources;
     ITERATE(list<string>, p, src_list) {
         const string& src = *p;
