@@ -97,6 +97,7 @@ BEGIN_SCOPE(validator)
 // =============================================================================
 //                            Validation classes                          
 // =============================================================================
+class CValidError_desc;
 
 // ===========================  Central Validation  ==========================
 
@@ -265,6 +266,10 @@ private:
     bool HasName(const CAuth_list& authors);
     bool HasTitle(const CTitle& title);
     bool HasIsoJTA(const CTitle& title);
+
+    bool ValidateDescriptorInSeqEntry (const CSeq_entry& se, CValidError_desc * descval);
+    bool ValidateDescriptorInSeqEntry (const CSeq_entry& se);
+
 
     CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;

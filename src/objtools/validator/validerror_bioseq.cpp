@@ -682,13 +682,13 @@ void CValidError_bioseq::x_ValidateMultiplePubs(const CBioseq_Handle& bsh)
         int muid = 0;
         int pmid = 0;
         bool otherpub = false;
-        ITERATE (CPubdesc::TPub::Tdata, pub, it->GetPub().GetPub().Get()) {
-            switch ( (*pub)->Which() ) {
+        FOR_EACH_PUB_ON_PUBDESC (pub_it, it->GetPub()) {
+            switch ( (*pub_it)->Which() ) {
             case CPub::e_Muid:
-                muid = (*pub)->GetMuid();
+                muid = (*pub_it)->GetMuid();
                 break;
             case CPub::e_Pmid:
-                pmid = (*pub)->GetPmid();
+                pmid = (*pub_it)->GetPmid();
                 break;
             default:
                 otherpub = true;
@@ -2457,11 +2457,11 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
         if (!prod) {
             continue;
         }
-        ITERATE (CBioseq_Handle::TId, it, prod.GetId()) {
-            if (!it->GetSeqId()->IsGeneral()) {
+        FOR_EACH_SEQID_ON_BIOSEQ (it, *(prod.GetCompleteBioseq())) {
+            if (!(*it)->IsGeneral()) {
                 continue;
             }
-            const CDbtag& dbt = it->GetSeqId()->GetGeneral();
+            const CDbtag& dbt = (*it)->GetGeneral();
             if (!dbt.IsSetDb()) {
                 continue;
             }

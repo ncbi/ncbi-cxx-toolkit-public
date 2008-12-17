@@ -42,6 +42,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/misc/sequence_macros.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -1243,16 +1244,11 @@ bool IsDeltaOrFarSeg(const CSeq_loc& loc, CScope* scope)
 // Check if string is either empty or contains just white spaces
 bool IsBlankString(const string& str)
 {
-    if ( !str.empty() ) {
-        size_t len = str.length();
-        for ( size_t i = 0; i < len; ++i ) {
-            if ( !isspace((unsigned char) str[i]) ) {
-                return false;
-            }
-        }
+    if (NStr::IsBlank (str)) {
+        return true;
+    } else {
+        return false;
     }
-
-    return true;
 }
 
 
@@ -1345,7 +1341,7 @@ static const CBioseq* s_GetSeqFromSet(const CBioseq_set& bsst, CScope& scope)
     switch (bsst.GetClass()) {
         case CBioseq_set::eClass_gen_prod_set:
             // find the genomic bioseq
-            ITERATE (CBioseq_set::TSeq_set, it, bsst.GetSeq_set()) {
+            FOR_EACH_SEQENTRY_ON_SEQSET (it, bsst) {
                 if ((*it)->IsSeq()) {
                     const CSeq_inst& inst = (*it)->GetSeq().GetInst();
                     if (inst.IsSetMol()  &&  inst.GetMol() == CSeq_inst::eMol_dna) {
@@ -1357,7 +1353,7 @@ static const CBioseq* s_GetSeqFromSet(const CBioseq_set& bsst, CScope& scope)
             break;
         case CBioseq_set::eClass_nuc_prot:
             // find the nucleotide bioseq
-            ITERATE (CBioseq_set::TSeq_set, it, bsst.GetSeq_set()) {
+            FOR_EACH_SEQENTRY_ON_SEQSET (it, bsst) {
                 if ((*it)->IsSeq()  &&  (*it)->GetSeq().IsNa()) {
                     retval = &(*it)->GetSeq();
                     break;
@@ -1366,7 +1362,7 @@ static const CBioseq* s_GetSeqFromSet(const CBioseq_set& bsst, CScope& scope)
             break;
         case CBioseq_set::eClass_segset:
             // find the master bioseq
-            ITERATE (CBioseq_set::TSeq_set, it, bsst.GetSeq_set()) {
+            FOR_EACH_SEQENTRY_ON_SEQSET (it, bsst) {
                 if ((*it)->IsSeq()) {
                     retval = &(*it)->GetSeq();
                     break;

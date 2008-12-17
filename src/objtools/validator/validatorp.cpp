@@ -529,6 +529,50 @@ bool CValidError_imp::Validate
     return Validate(seh, cs);
 }
 
+bool CValidError_imp::ValidateDescriptorInSeqEntry (const CSeq_entry& se, CValidError_desc *descval)
+{
+    FOR_EACH_DESCRIPTOR_ON_SEQENTRY (it, se) {
+        try {
+            descval->ValidateSeqDesc(**it, se);
+            if ( m_PrgCallback ) {
+                m_PrgInfo.m_CurrentDone++;
+                m_PrgInfo.m_TotalDone++;
+                if ( m_PrgCallback(&m_PrgInfo) ) {
+                    return false;
+                }
+            }
+        } catch ( const exception& e ) {
+            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
+                string("Exeption while validating descriptor. EXCEPTION: ") +
+                e.what(), se, **it);
+            return true;
+        }
+    }
+    if (se.Which() == CSeq_entry::e_Set) {
+        FOR_EACH_SEQENTRY_ON_SEQSET (it, se.GetSet()) {
+            if (!ValidateDescriptorInSeqEntry (**it, descval)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+       
+
+bool CValidError_imp::ValidateDescriptorInSeqEntry (const CSeq_entry& se)
+{
+    if ( m_PrgCallback ) {
+        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Desc;
+        m_PrgInfo.m_Current = m_NumDesc;
+        m_PrgInfo.m_CurrentDone = 0;
+        m_PrgCallback(&m_PrgInfo);
+    }
+
+    //CRef<CValidError_desc> desc_validator(new CValidError_desc(*this)); 
+    CValidError_desc desc_validator(*this);
+    return ValidateDescriptorInSeqEntry (se, &desc_validator);        
+}
+
 
 bool CValidError_imp::Validate
 (const CSeq_entry_Handle& seh,
@@ -611,30 +655,8 @@ bool CValidError_imp::Validate
 
     // Descriptors:
 
-    if ( m_PrgCallback ) {
-        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Desc;
-        m_PrgInfo.m_Current = m_NumDesc;
-        m_PrgInfo.m_CurrentDone = 0;
-        m_PrgCallback(&m_PrgInfo);
-    }
-    CValidError_desc desc_validator(*this);
-    for (CSeqdesc_CI di(GetTSEH()); di; ++di) {
-        const CSeq_entry& ctx = *di.GetSeq_entry_Handle().GetSeq_entryCore();
-        try {
-            desc_validator.ValidateSeqDesc(*di, ctx);
-            if ( m_PrgCallback ) {
-                m_PrgInfo.m_CurrentDone++;
-                m_PrgInfo.m_TotalDone++;
-                if ( m_PrgCallback(&m_PrgInfo) ) {
-                    return false;
-                }
-            }
-        } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                string("Exeption while validating descriptor. EXCEPTION: ") +
-                e.what(), ctx, *di);
-            return true;
-        }
+    if (!ValidateDescriptorInSeqEntry (*(GetTSEH().GetCompleteSeq_entry()))) {
+        return false;
     }
     
     // Bioseqs:
@@ -1347,7 +1369,7 @@ void CValidError_imp::ValidatePubHasAuthor
     bool only_pmid = pubs.size() == 1  && pubs.front()->IsPmid();
     
     bool no_patent_pub = true;
-    ITERATE( CPub_equiv::Tdata, pub, pubs ) {
+    FOR_EACH_PUB_ON_PUBDESC (pub, pubdesc) {
         if ( (*pub)->IsPatent() ) {
             no_patent_pub = false;
             break;
@@ -1550,76 +1572,74 @@ void CValidError_imp::ValidateBioSource
     bool germline = false;
     bool rearranged = false;
 
-    if ( bsrc.IsSetSubtype() ) {
-        ITERATE( CBioSource::TSubtype, ssit, bsrc.GetSubtype() ) {
-            switch ( (**ssit).GetSubtype() ) {
-                
-            case CSubSource::eSubtype_country:
-                countryname = (**ssit).GetName();
-                if ( !CCountries::IsValid(countryname) ) {
-                    if ( countryname.empty() ) {
-                        countryname = "?";
-                    }
-                    if ( CCountries::WasValid(countryname) ) {
-                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_ReplacedCountryCode,
-                                "Replaced country name " + countryname, obj);
-                    } else {
-                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
-                                "Bad country name " + countryname, obj);
-                    }
+    FOR_EACH_SUBSOURCE_ON_BIOSOURCE (ssit, bsrc) {
+        switch ( (**ssit).GetSubtype() ) {
+            
+        case CSubSource::eSubtype_country:
+            countryname = (**ssit).GetName();
+            if ( !CCountries::IsValid(countryname) ) {
+                if ( countryname.empty() ) {
+                    countryname = "?";
                 }
-                break;
-                
-            case CSubSource::eSubtype_chromosome:
-                ++chrom_count;
-                if ( chromosome != 0 ) {
-                    if ( NStr::CompareNocase((**ssit).GetName(), chromosome->GetName()) != 0) {
-                        chrom_conflict = true;
-                    }          
+                if ( CCountries::WasValid(countryname) ) {
+                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_ReplacedCountryCode,
+                            "Replaced country name " + countryname, obj);
                 } else {
-                    chromosome = ssit->GetPointer();
+                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
+                            "Bad country name " + countryname, obj);
                 }
-                break;
-                
-            case CSubSource::eSubtype_transposon_name:
-            case CSubSource::eSubtype_insertion_seq_name:
-                PostErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceQual,
-                    "Transposon name and insertion sequence name are no "
-                    "longer legal qualifiers.", obj);
-                break;
-                
-            case 0:
-                PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
-                    "Unknown subsource subtype 0.", obj);
-                break;
-                
-            case CSubSource::eSubtype_other:
-                ValidateSourceQualTags((**ssit).GetName(), obj);
-                break;
-
-            case CSubSource::eSubtype_germline:
-                germline = true;
-                break;
-
-            case CSubSource::eSubtype_rearranged:
-                rearranged = true;
-                break;
-
-            default:
-                break;
             }
+            break;
+            
+        case CSubSource::eSubtype_chromosome:
+            ++chrom_count;
+            if ( chromosome != 0 ) {
+                if ( NStr::CompareNocase((**ssit).GetName(), chromosome->GetName()) != 0) {
+                    chrom_conflict = true;
+                }          
+            } else {
+                chromosome = ssit->GetPointer();
+            }
+            break;
+            
+        case CSubSource::eSubtype_transposon_name:
+        case CSubSource::eSubtype_insertion_seq_name:
+            PostErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceQual,
+                "Transposon name and insertion sequence name are no "
+                "longer legal qualifiers.", obj);
+            break;
+            
+        case 0:
+            PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
+                "Unknown subsource subtype 0.", obj);
+            break;
+            
+        case CSubSource::eSubtype_other:
+            ValidateSourceQualTags((**ssit).GetName(), obj);
+            break;
+
+        case CSubSource::eSubtype_germline:
+            germline = true;
+            break;
+
+        case CSubSource::eSubtype_rearranged:
+            rearranged = true;
+            break;
+
+        default:
+            break;
         }
     }
     if ( germline  &&  rearranged ) {
         PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
             "Germline and rearranged should not both be present", obj);
     }
-	if ( chrom_count > 1 ) {
-		string msg = 
-            chrom_conflict ? "Multiple conflicting chromosome qualifiers" :
-                             "Multiple identical chromosome qualifiers";
-		PostErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleChromosomes, msg, obj);
-	}
+	  if ( chrom_count > 1 ) {
+		    string msg = 
+                chrom_conflict ? "Multiple conflicting chromosome qualifiers" :
+                                 "Multiple identical chromosome qualifiers";
+		    PostErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleChromosomes, msg, obj);
+	  }
 
     if ( !orgref.IsSetOrgname()  ||
          !orgref.GetOrgname().IsSetLineage()  ||
@@ -1675,12 +1695,10 @@ void CValidError_imp::ValidateBioSource
 
     if ( IsRequireTaxonID() ) {
         bool found = false;
-        if ( orgref.IsSetDb() ) {
-            ITERATE( COrg_ref::TDb, dbt, orgref.GetDb() ) {
-                if ( NStr::CompareNocase((*dbt)->GetDb(), "taxon") == 0 ) {
-                    found = true;
-                    break;
-                }
+        FOR_EACH_DBXREF_ON_ORGREF (dbt, orgref) {
+            if ( NStr::CompareNocase((*dbt)->GetDb(), "taxon") == 0 ) {
+                found = true;
+                break;
             }
         }
         if ( !found ) {
@@ -1708,9 +1726,9 @@ bool CValidError_imp::IsTransgenic(const CBioSource& bsrc)
 static bool s_IsRefSeqInSep(const CSeq_entry& se, CScope& scope)
 {
     for (CBioseq_CI it(scope, se); it; ++it) {
-        ITERATE (CBioseq_Handle::TId, id, it->GetId()) {
-            if (id->GetSeqId() &&  id->GetSeqId()->IsOther()) {
-                const CTextseq_id* tsip = id->GetSeqId()->GetTextseq_Id();
+        FOR_EACH_SEQID_ON_BIOSEQ (id, *(it->GetCompleteBioseq())) {
+            if ((*id)->IsOther()) {
+                const CTextseq_id* tsip = (*id)->GetTextseq_Id();
                 if (tsip != NULL  &&  tsip->IsSetAccession()) {
                     return true;
                 }
@@ -1721,18 +1739,24 @@ static bool s_IsRefSeqInSep(const CSeq_entry& se, CScope& scope)
 }
 
 
-static bool s_IsHtgInSep(const CSeq_entry& se, CScope& scope)
+static bool s_IsHtgInSep(const CSeq_entry& se)
 {
-    for (CSeqdesc_CI it(scope.GetSeq_entryHandle(se)); it; ++it) {
-        if (!it->IsMolinfo()) {
-            continue;
+    FOR_EACH_DESCRIPTOR_ON_SEQENTRY (it, se) {
+        if ((*it)->Which() == CSeqdesc::e_Molinfo) {
+            CMolInfo::TTech tech = (*it)->GetMolinfo().GetTech();
+            if (tech == CMolInfo::eTech_htgs_0  ||
+                tech == CMolInfo::eTech_htgs_1  ||
+                tech == CMolInfo::eTech_htgs_2  ||
+                tech == CMolInfo::eTech_htgs_3) {
+                return true;
+            }
         }
-        CMolInfo::TTech tech = it->GetMolinfo().GetTech();
-        if (tech == CMolInfo::eTech_htgs_0  ||
-            tech == CMolInfo::eTech_htgs_1  ||
-            tech == CMolInfo::eTech_htgs_2  ||
-            tech == CMolInfo::eTech_htgs_3) {
-            return true;
+    }
+    if (se.IsSet()) {
+        FOR_EACH_SEQENTRY_ON_SEQSET (it, se.GetSet()) {
+            if (s_IsHtgInSep(**it)) {
+                return true;
+            }
         }
     }
     return false;
@@ -1790,7 +1814,7 @@ void CValidError_imp::ValidateCitSub
     }
     if ( !has_affil ) {
         EDiagSev sev = 
-            s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  s_IsHtgInSep(GetTSE(), *m_Scope) ?
+            s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  s_IsHtgInSep(GetTSE()) ?
                 eDiag_Warning : eDiag_Error;
         PostErr(sev, eErr_GENERIC_MissingPubInfo,
             "Submission citation has no affiliation", obj);
@@ -2669,7 +2693,6 @@ void CValidError_imp::ValidateSeqLocIds
         }
     } 
 }
-
 
 
 // =============================================================================

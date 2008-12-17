@@ -796,6 +796,27 @@ NCBI_NC_ITERATE( \
     Iter, \
     (Org).SetOrgname().SetMod())
 
+/// FOR_EACH_DBXREF_ON_ORGREF
+// Takes const COrgRef& as input and makes iterator to const COrgMod&
+// Dereference with const COrgMod& omd = **iter
+
+#define FOR_EACH_DBXREF_ON_ORGREF(Iter, Org) \
+NCBI_CS_ITERATE( \
+    (Org).IsSetDb(), \
+    COrg_ref::TDb, \
+    Iter, \
+    (Org).GetDb())
+
+/// EDIT_EACH_ORGMOD_ON_ORGREF
+// Takes const COrgRef& as input and makes iterator to const COrgMod&
+// Dereference with COrgMod& omd = **iter
+
+#define EDIT_EACH_DBXREF_ON_ORGREF(Iter, Org) \
+NCBI_NC_ITERATE( \
+    (Org).IsSetDb(), \
+    COrg_ref::TDb, \
+    Iter, \
+    (Org).SetDb())
 
 /// COrgName iterators
 

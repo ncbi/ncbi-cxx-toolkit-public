@@ -202,7 +202,7 @@ static bool s_IsLocRefSeqMrna(const CSeq_loc& loc, CScope& scope)
 {
     CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
     if ( bsh ) {
-        ITERATE (CBioseq::TId, it, bsh.GetBioseqCore()->GetId()) {
+        FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetBioseqCore())) {
             if ( (*it)->IdentifyAccession() == CSeq_id::eAcc_refseq_mrna ) {
                 return true;
             }
@@ -217,7 +217,7 @@ static bool s_IsLocGEDL(const CSeq_loc& loc, CScope& scope)
 {
     CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
     if ( bsh ) {
-        ITERATE (CBioseq::TId, it, bsh.GetBioseqCore()->GetId()) {
+        FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetBioseqCore())) {
             CSeq_id::EAccessionInfo acc_info = (*it)->IdentifyAccession();
             if ( acc_info == CSeq_id::eAcc_gb_embl_ddbj  ||
                  acc_info == CSeq_id::eAcc_local ) {
@@ -2298,8 +2298,8 @@ static void s_LocIdType(const CSeq_loc& loc, CScope& scope, const CSeq_entry& ts
     const CSeq_id& id = GetId(loc, &scope);
     CBioseq_Handle bsh = scope.GetBioseqHandleFromTSE(id, tse);
     if (bsh) {
-        ITERATE (CBioseq_Handle::TId, it, bsh.GetId()) {
-            CSeq_id::EAccessionInfo info = it->GetSeqId()->IdentifyAccession();
+        FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetBioseqCore())) {
+            CSeq_id::EAccessionInfo info = (*it)->IdentifyAccession();
             is_nt = (info == CSeq_id::eAcc_refseq_contig);
             is_ng = (info == CSeq_id::eAcc_refseq_genomic);
             is_nc = (info == CSeq_id::eAcc_refseq_chromosome);
