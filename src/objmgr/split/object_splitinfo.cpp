@@ -42,6 +42,8 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Annot_id.hpp>
+#include <objects/seq/Textannot_id.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
 
@@ -106,16 +108,28 @@ CSeq_annot_SplitInfo::CSeq_annot_SplitInfo(const CSeq_annot_SplitInfo& base,
 CAnnotName CSeq_annot_SplitInfo::GetName(const CSeq_annot& annot)
 {
     CAnnotName ret;
-    if ( annot.IsSetDesc() ) {
-        string name;
-        ITERATE ( CSeq_annot::TDesc::Tdata, it, annot.GetDesc().Get() ) {
-            const CAnnotdesc& desc = **it;
-            if ( desc.Which() == CAnnotdesc::e_Name ) {
-                name = desc.GetName();
-                break;
+    if ( annot.IsSetId() ) {
+        const CSeq_annot::TId& ids = annot.GetId();
+        ITERATE ( CSeq_annot::TId, it, ids ) {
+            const CAnnot_id& id = **it;
+            if ( id.IsOther() ) {
+                const CTextannot_id& text_id = id.GetOther();
+                if ( text_id.IsSetAccession() ) {
+                    ret.SetNamed(text_id.GetAccession());
+                    return ret;
+                }
             }
         }
-        ret.SetNamed(name);
+    }
+    if ( annot.IsSetDesc() ) {
+        const CSeq_annot::TDesc::Tdata& descs = annot.GetDesc().Get();
+        ITERATE( CSeq_annot::TDesc::Tdata, it, descs ) {
+            const CAnnotdesc& desc = **it;
+            if ( desc.Which() == CAnnotdesc::e_Name ) {
+                ret.SetNamed(desc.GetName());
+                return ret;
+            }
+        }
     }
     return ret;
 }
