@@ -23,6 +23,10 @@ error()
 
 ########## Main
 
+NCBI_CHECK_SETLIMITS=0
+export NCBI_CHECK_SETLIMITS
+                           
+
 # Get build dir
 build_dir=`dirname $script`
 build_dir=`(cd "$build_dir"; pwd)`
