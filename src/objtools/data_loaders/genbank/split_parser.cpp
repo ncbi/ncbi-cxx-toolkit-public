@@ -251,7 +251,10 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
 {
     CAnnotName name;
     if ( annot.IsSetName() ) {
-        name.SetNamed(annot.GetName());
+        const string& n = annot.GetName();
+        if ( !n.empty() ) {
+            name.SetNamed(annot.GetName());
+        }
     }
     
     TLocationSet loc;
