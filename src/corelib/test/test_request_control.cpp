@@ -291,7 +291,10 @@ CStopWatch sw(CStopWatch::eStart);
 
 
 #if defined(NCBI_OS_MSWIN)
-    Sleep((mc_sec + 500) / 1000);
+    DWORD ms = mc_sec / 1000;
+    if (mc_sec % 1000) ms++;
+//    Sleep((mc_sec + 500) / 1000);
+    Sleep(ms);
 #elif defined(NCBI_OS_UNIX)
 #  if defined(HAVE_NANOSLEEP)
     struct timespec delay, unslept;
@@ -321,7 +324,7 @@ LOG_POST("select interrupted: errno =" + NStr::IntToString(errno));
 #  endif /*HAVE_NANOSLEEP*/
 #endif /*NCBI_OS_...*/
     double e = sw.Elapsed();
-    LOG_POST("SleepMicroSec: elapsed = " + NStr::DoubleToString(e, -1, NStr::fDoubleFixed));
+    LOG_POST("SleepMicroSec: " + NStr::DoubleToString(e, -1, NStr::fDoubleFixed) + " elapsed" );
 }
 
 
@@ -336,8 +339,13 @@ void tmp_CRequestRateControl::Sleep(CTimeSpan sleep_time)
         SleepSec(sec);
     } else {
         unsigned long ms;
+/*
         ms = sec * kMicroSecondsPerSecond +
             (sleep_time.GetNanoSecondsAfterSecond() + 500) / 1000;
+*/
+        ms = sec * kMicroSecondsPerSecond +
+             sleep_time.GetNanoSecondsAfterSecond() / 1000;
+        if (sleep_time.GetNanoSecondsAfterSecond() % 1000) ms++;
         tmp_SleepMicroSec(ms);
     }
 }

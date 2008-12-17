@@ -217,7 +217,8 @@ void CRequestRateControl::Sleep(CTimeSpan sleep_time)
     } else {
         unsigned long ms;
         ms = sec * kMicroSecondsPerSecond +
-            (sleep_time.GetNanoSecondsAfterSecond() + 500) / 1000;
+             sleep_time.GetNanoSecondsAfterSecond() / 1000;
+        if (sleep_time.GetNanoSecondsAfterSecond() % 1000) ms++;
         SleepMicroSec(ms);
     }
 }
