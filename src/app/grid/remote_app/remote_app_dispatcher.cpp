@@ -63,9 +63,9 @@ public:
     virtual int  ProcessRequest(CCgiContext& ctx);
 
 private:
-    static CNetCacheAPI* x_CreateNCClient(const string& service);
-    static CNetScheduleAPI* x_CreateNSClient(const string& service, 
-                                                const string& qname);
+    static CNetCacheAPI x_CreateNCClient(const string& service);
+    static CNetScheduleAPI x_CreateNSClient(const string& service, 
+                                            const string& qname);
 
     static void x_RunNewJob(CGridClient& grid, const string& app_name,
                             CNcbiIstream& is, CNcbiOstream& os);
@@ -148,11 +148,11 @@ int CRemoteAppDispatcher::ProcessRequest(CCgiContext& ctx)
 
         string service = reg.Get(app_name,"ns_service");
         string qname = reg.Get(app_name,"ns_queue");
-        auto_ptr<CNetScheduleAPI> ns_client( x_CreateNSClient(service, qname) );
+        CNetScheduleAPI ns_client = x_CreateNSClient(service, qname);
         service = reg.Get(app_name,"nc_service");
         auto_ptr<IBlobStorage> storage( new CBlobStorage_NetCache(x_CreateNCClient(service)) );
 
-        CGridClient grid(ns_client->GetSubmitter(), *storage, 
+        CGridClient grid(ns_client.GetSubmitter(), *storage, 
                          CGridClient::eManualCleanup,
                          CGridClient::eProgressMsgOff);
         
@@ -230,18 +230,17 @@ void CRemoteAppDispatcher::x_CancelJob(CGridClient& grid, const string& jid, CNc
 }
 
 /* static */
-CNetCacheAPI* CRemoteAppDispatcher::x_CreateNCClient(const string& service)
+CNetCacheAPI CRemoteAppDispatcher::x_CreateNCClient(const string& service)
 {
-    return new CNetCacheAPI("remote_app_dispatcher", service);
+    return CNetCacheAPI("remote_app_dispatcher", service);
 }
 /* static */
-CNetScheduleAPI* CRemoteAppDispatcher::x_CreateNSClient(const string& service, 
-                                                        const string& qname)
+CNetScheduleAPI CRemoteAppDispatcher::x_CreateNSClient(const string& service, 
+                                                       const string& qname)
 {
-    auto_ptr<CNetScheduleAPI> cln;
-    cln.reset(new CNetScheduleAPI(service, "remote_app_dispatcher", qname));
-    cln->SetProgramVersion(PROGRAM_NAME " version " PROGRAM_VERSION);
-    return cln.release();
+    CNetScheduleAPI cln(service, "remote_app_dispatcher", qname);
+    cln.SetProgramVersion(PROGRAM_NAME " version " PROGRAM_VERSION);
+    return cln;
 }
 
 int main(int argc, const char* argv[])

@@ -632,7 +632,7 @@ CNCBINode* CTestRWNCCommand::CreateView(CCgiContext& ctx)
         temp_dir = (*it).second.GetValue();
     
     
-    CBlobStorage_NetCache storage( new CNetCacheAPI("NC_test", "TestDmaxCl"), 
+    CBlobStorage_NetCache storage( CNetCacheAPI("NC_test", "TestDmaxCl"), 
                                    flags,
                                    temp_dir);
 
