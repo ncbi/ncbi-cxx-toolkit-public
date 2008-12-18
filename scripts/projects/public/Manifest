@@ -12,3 +12,5 @@
 
 USE_COMPONENTS
 
+Win32      : plain : msvc710_prj  static  32  ReleaseDLL
+Win64      : plain : msvc800_prj  static  64  ReleaseDLL
