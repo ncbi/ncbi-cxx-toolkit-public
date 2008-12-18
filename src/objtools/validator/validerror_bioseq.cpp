@@ -1690,12 +1690,11 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
     int partial = SeqLocPartialCheck(loc, m_Scope);
     if (partial  &&  seq.IsAa()) {
         bool got_partial = false;
-        CTypeConstIterator<CSeqdesc> sd(ConstBegin(seq.GetDescr()));
-        for (; sd; ++sd) {
-            if (!(*sd).IsModif()) {
+        FOR_EACH_DESCRIPTOR_ON_BIOSEQ (sd, seq) {
+            if (!(*sd)->IsModif()) {
                 continue;
             }
-            ITERATE(list< EGIBB_mod >, md, (*sd).GetModif()) {
+            ITERATE(list< EGIBB_mod >, md, (*sd)->GetModif()) {
                 switch (*md) {
                 case eGIBB_mod_partial:
                     got_partial = true;
