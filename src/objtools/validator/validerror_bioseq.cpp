@@ -1208,86 +1208,79 @@ void CValidError_bioseq::ValidateSeqParts(const CBioseq& seq)
     // Get parent CSeq_entry of seq and then find the next
     // CSeq_entry in the set. This CSeq_entry should be a CBioseq_set
     // of class parts.
-    const CSeq_entry* parent = seq.GetParentEntry();
+    const CSeq_entry* se = seq.GetParentEntry();
+    if (!se) {
+        return;
+    }
+    const CSeq_entry* parent = se->GetParentEntry ();
     if (!parent) {
         return;
     }
-    if ( !parent->IsSet() ) {
+    if ( !parent->IsSet() || !parent->GetSet().IsSetClass() || parent->GetSet().GetClass() != CBioseq_set::eClass_segset) {
         return;
     }
 
-    // Loop through seq_set looking for the bioseq, when found, the next
-    // CSeq_entry should have the parts.
-    CBioseq_set::TSeq_set::const_iterator se_parts = 
-        parent->GetSet().GetSeq_set().end();
-    ITERATE ( CBioseq_set::TSeq_set, it, parent->GetSet().GetSeq_set() ) {
-        if ( parent == &(**it) ) {
-            se_parts = ++it;
-            break;
-        }
-    }
-    if ( se_parts == parent->GetSet().GetSeq_set().end() ) {
-        return;
-    }
+    // Loop through seq_set looking for the parts set.
+    FOR_EACH_SEQENTRY_ON_SEQSET (it, parent->GetSet()) {
+        if ((*it)->Which() == CSeq_entry::e_Set
+            && (*it)->GetSet().IsSetClass()
+            && (*it)->GetSet().GetClass() == CBioseq_set::eClass_parts) {
+            const CBioseq_set::TSeq_set& parts = (*it)->GetSet().GetSeq_set();
+            const CSeg_ext::Tdata& locs = seq.GetInst().GetExt().GetSeg().Get();
 
-    // Check that se_parts is a CBioseq_set of class parts
-    if ( !(*se_parts)->IsSet()  ||  !(*se_parts)->GetSet().IsSetClass()  ||
-         (*se_parts)->GetSet().GetClass() != CBioseq_set::eClass_parts ) {
-        return;
-    }
-
-    const CSeg_ext::Tdata& locs = seq.GetInst().GetExt().GetSeg().Get();
-    const CBioseq_set::TSeq_set& parts = (*se_parts)->GetSet().GetSeq_set();
-
-    // Make sure the number of locations (excluding null locations)
-    // match the number of parts
-    size_t nulls = 0;
-    ITERATE ( CSeg_ext::Tdata, loc, locs ) {
-        if ( (*loc)->IsNull() ) {
-            nulls++;
-        }
-    }
-    if ( locs.size() - nulls < parts.size() ) {
-         PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
-            "Parts set contains too many Bioseqs", seq);
-         return;
-    } else if ( locs.size() - nulls > parts.size() ) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
-            "Parts set does not contain enough Bioseqs", seq);
-        return;
-    }
-
-    // Now, simultaneously loop through the parts of se_parts and CSeq_locs of 
-    // seq's CSseq-ext. If don't compare, post error.
-    size_t size = locs.size();  // == parts.size()
-    CSeg_ext::Tdata::const_iterator loc_it = locs.begin();
-    CBioseq_set::TSeq_set::const_iterator part_it = parts.begin();
-    for ( size_t i = 0; i < size; ++i ) {
-        try {
-            if ( (*loc_it)->IsNull() ) {
-                continue;
+            // Make sure the number of locations (excluding null locations)
+            // match the number of parts
+            size_t nulls = 0;
+            ITERATE ( CSeg_ext::Tdata, loc, locs ) {
+                if ( (*loc)->IsNull() ) {
+                    nulls++;
+                }
             }
-            if ( !(*part_it)->IsSet() ) {
+            if ( locs.size() - nulls < parts.size() ) {
+                 PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
+                    "Parts set contains too many Bioseqs", seq);
+                 return;
+            } else if ( locs.size() - nulls > parts.size() ) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
-                    "Parts set component is not Bioseq", seq);
+                    "Parts set does not contain enough Bioseqs", seq);
                 return;
             }
-            const CSeq_id& loc_id = GetId(**loc_it, m_Scope);
-            if ( !IsIdIn(loc_id, (*part_it)->GetSeq()) ) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
-                    "Segmented bioseq seq_ext does not correspond to parts"
-                    "packaging order", seq);
+
+            // Now, simultaneously loop through the parts of se_parts and CSeq_locs of 
+            // seq's CSseq-ext. If don't compare, post error.
+            size_t size = locs.size();  // == parts.size()
+            CSeg_ext::Tdata::const_iterator loc_it = locs.begin();
+            CBioseq_set::TSeq_set::const_iterator part_it = parts.begin();
+            for ( size_t i = 0; i < size; ++i ) {
+                try {
+                    if ( (*loc_it)->IsNull() ) {
+                        ++loc_it;
+                        continue;
+                    }
+                    if ( !(*part_it)->IsSeq() ) {
+                        PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
+                            "Parts set component is not Bioseq", seq);
+                        return;
+                    }
+                    const CSeq_id& loc_id = GetId(**loc_it, m_Scope);
+                    if ( !IsIdIn(loc_id, (*part_it)->GetSeq()) ) {
+                        PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
+                            "Segmented bioseq seq_ext does not correspond to parts "
+                            "packaging order", seq);
+                        return;
+                    }
+                    
+                    // advance both iterators
+                    ++part_it;
+                    ++loc_it;
+                } catch (const CObjmgrUtilException&) {
+                    ERR_POST_X(4, "Seq-loc not for unique sequence");
+                    return;
+                } catch (...) {
+                    ERR_POST_X(5, "Unknown error");
+                    return;
+                }
             }
-            
-            // advance both iterators
-            ++loc_it;
-            ++part_it;
-        } catch (const CObjmgrUtilException&) {
-            ERR_POST_X(4, "Seq-loc not for unique sequence");
-            return;
-        } catch (...) {
-            ERR_POST_X(5, "Unknown error");
-            return;
         }
     }
 }
