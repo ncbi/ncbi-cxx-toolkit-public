@@ -271,7 +271,7 @@ private:
     bool x_JobStopRequested(const CGridCgiContext&) const;
     bool x_CheckJobStatus(CGridCgiContext& grid_ctx);
 
-    auto_ptr<CNetScheduleAPI> m_NSClient;
+    CNetScheduleAPI m_NSClient;
     auto_ptr<IBlobStorage> m_NSStorage;
     auto_ptr<CGridClient> m_GridClient;
     CCgiResponse* m_Response;

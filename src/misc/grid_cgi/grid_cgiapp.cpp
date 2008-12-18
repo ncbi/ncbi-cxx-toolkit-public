@@ -197,10 +197,10 @@ void CGridCgiApplication::InitGridClient()
     bool use_progress = 
         GetConfig().GetBool("grid_cgi", "use_progress", true, IRegistry::eReturn);
 
-    if (!m_NSClient.get()) {
+    if ( !m_NSClient ) {
         CNetScheduleClientFactory cf(GetConfig());
-        m_NSClient.reset(cf.CreateInstance());
-        m_NSClient->SetProgramVersion(GetProgramVersion());
+        m_NSClient = cf.CreateInstance();
+        m_NSClient.SetProgramVersion(GetProgramVersion());
     }
     if( !m_NSStorage.get()) {
         CBlobStorageFactory cf(GetConfig());
@@ -216,7 +216,7 @@ void CGridCgiApplication::InitGridClient()
             GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0, 
                     CNcbiRegistry::eReturn);
 
-    m_GridClient.reset(new CGridClient(m_NSClient->GetSubmitter(), *m_NSStorage,
+    m_GridClient.reset(new CGridClient(m_NSClient.GetSubmitter(), *m_NSStorage,
                                        automatic_cleanup? 
                                             CGridClient::eAutomaticCleanup  :
                                             CGridClient::eManualCleanup,

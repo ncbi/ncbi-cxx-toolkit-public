@@ -78,17 +78,16 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
                                        const string&       project_name,
                                        const string&       return_url)
 {
-    auto_ptr<CNetScheduleAPI> ns_client;
     auto_ptr<IBlobStorage> ns_storage;
     auto_ptr<CGridClient> grid_client;
 
     CNetScheduleClientFactory cfc(app.GetConfig());
-    ns_client.reset(cfc.CreateInstance());
-    ns_client->SetProgramVersion("Cgi_Tunnel2Grid ver 1.0.0");
+    CNetScheduleAPI ns_client = cfc.CreateInstance();
+    ns_client.SetProgramVersion("Cgi_Tunnel2Grid ver 1.0.0");
 
     CBlobStorageFactory cfs(app.GetConfig());
     ns_storage.reset(cfs.CreateInstance());
-    grid_client.reset(new CGridClient(ns_client->GetSubmitter(), *ns_storage,
+    grid_client.reset(new CGridClient(ns_client.GetSubmitter(), *ns_storage,
                                       CGridClient::eManualCleanup,
                                       CGridClient::eProgressMsgOn)
                       );
