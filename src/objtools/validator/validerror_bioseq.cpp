@@ -918,37 +918,40 @@ bool CValidError_bioseq::SuppressTrailingXMsg(const CBioseq& seq)
     // Use the Cdregion to translate the associated na sequence
     // and check if translation has a '*' at the end. If it does.
     // message about 'X' at the end of this aa product sequence is suppressed
-    const CSeq_feat* sfp = m_Imp.GetCDSGivenProduct(seq);
-    if ( sfp ) {
-    
-        // Get CCdregion 
-        CTypeConstIterator<CCdregion> cdr(ConstBegin(*sfp));
+    try {
+        const CSeq_feat* sfp = m_Imp.GetCDSGivenProduct(seq);
+        if ( sfp ) {
         
-        // Get location on source sequence
-        const CSeq_loc& loc = sfp->GetLocation();
+            // Get CCdregion 
+            CTypeConstIterator<CCdregion> cdr(ConstBegin(*sfp));
+            
+            // Get location on source sequence
+            const CSeq_loc& loc = sfp->GetLocation();
 
-        // Get CBioseq_Handle for source sequence
-        CBioseq_Handle hnd = m_Scope->GetBioseqHandle(loc);
+            // Get CBioseq_Handle for source sequence
+            CBioseq_Handle hnd = m_Scope->GetBioseqHandle(loc);
 
-        // Translate na CSeq_data
-        string prot;        
-        CCdregion_translate::TranslateCdregion(prot, hnd, loc, *cdr);
-        
-        if ( prot[prot.size() - 1] == '*' ) {
-            return true;
+            // Translate na CSeq_data
+            string prot;        
+            CCdregion_translate::TranslateCdregion(prot, hnd, loc, *cdr);
+            
+            if ( prot[prot.size() - 1] == '*' ) {
+                return true;
+            }
+            return false;
         }
-        return false;
-    }
 
-    // Get CMolInfo for seq and determine if completeness is
-    // "eCompleteness_no_right or eCompleteness_no_ends. If so
-    // suppress message about "X" at end of aa sequence is suppressed
-    CTypeConstIterator<CMolInfo> mi = ConstBegin(seq);
-    if (mi  &&  mi->IsSetCompleteness()) {
-        if (mi->GetCompleteness() == CMolInfo::eCompleteness_no_right  ||
-          mi->GetCompleteness() == CMolInfo::eCompleteness_no_ends) {
-            return true;
+        // Get CMolInfo for seq and determine if completeness is
+        // "eCompleteness_no_right or eCompleteness_no_ends. If so
+        // suppress message about "X" at end of aa sequence is suppressed
+        CTypeConstIterator<CMolInfo> mi = ConstBegin(seq);
+        if (mi  &&  mi->IsSetCompleteness()) {
+            if (mi->GetCompleteness() == CMolInfo::eCompleteness_no_right  ||
+              mi->GetCompleteness() == CMolInfo::eCompleteness_no_ends) {
+                return true;
+            }
         }
+    } catch (...) {
     }
     return false;
 }
@@ -1518,31 +1521,19 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                  "] than given length [" + s_len + "]", seq);
     }
 
-    unsigned char termination;
     unsigned int trailingX = 0;
     size_t terminations = 0;
     if (check_alphabet) {
-
-        switch (seqtyp) {
-        case CSeq_data::e_Iupacaa:
-        case CSeq_data::e_Ncbieaa:
-            termination = '*';
-            break;
-        case CSeq_data::e_Ncbistdaa:
-            termination = 25;
-            break;
-        default:
-            termination = '\0';
-        }
-
-        CSeqVector sv = 
-            m_Scope->GetBioseqHandle(seq).GetSeqVector();
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+        CSeqVector sv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        CSeqVector sv_res = bsh.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
 
         size_t bad_cnt = 0;
-        TSeqPos pos = 0;
-        for ( CSeqVector_CI sv_iter(sv); sv_iter; ++sv_iter ) {
+        TSeqPos pos = 1;
+        for ( CSeqVector_CI sv_iter(sv), sv_res_iter(sv_res); (sv_iter) && (sv_res_iter); ++sv_iter, ++sv_res_iter ) {
             CSeqVector::TResidue res = *sv_iter;
-            if ( !IsResidue(res) ) {
+            CSeqVector::TResidue n_res = *sv_res_iter;
+            if ( !IsResidue(n_res) ) {
                 if ( ++bad_cnt > 10 ) {
                     PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
                         "More than 10 invalid residues. Checking stopped",
@@ -1550,17 +1541,13 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                     return;
                 } else {
                     string msg = "Invalid residue [";
-                    if ( seqtyp == CSeq_data::e_Ncbistdaa ) {
-                        msg += NStr::UIntToString(res);
-                    } else {
-                        msg += res;
-                    }
+                    msg += res;
                     msg += "] in position [" + NStr::UIntToString(pos) + "]";
 
                     PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue, 
                         msg, seq);
                 }
-            } else if ( res == termination ) {
+            } else if ( n_res == 0 ) {
                 terminations++;
                 trailingX = 0;
             } else if ( res == 'X' ) {
