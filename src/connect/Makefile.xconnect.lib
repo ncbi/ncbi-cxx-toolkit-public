@@ -9,6 +9,7 @@ include $(srcdir)/Makefile.connect.lib
 include $(srcdir)/Makefile.xxconnect.lib
 
 SRC  = $(SRC_C) $(SRC_CXX)
+UNIX_SRC = $(LOCAL_LBSM)
 
 LIB  = xconnect
 
