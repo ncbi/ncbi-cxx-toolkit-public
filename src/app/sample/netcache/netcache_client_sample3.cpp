@@ -94,18 +94,14 @@ void CSampleNetCacheClient::Init(void)
 
 int CSampleNetCacheClient::Run(void)
 {
-    auto_ptr<CNetCacheAPI> nc_client;
-
     const CArgs& args = GetArgs();
 
     string service_name = args["service"].AsString();
-    nc_client.reset(
-            new CNetCacheAPI(service_name, "nc_client_sample3"));
+    CNetCacheAPI nc_client(service_name, "nc_client_sample3");
 
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
 
-    // storage takes respnsibility of deleting NetCache client
-    CBlobStorage_NetCache storage( nc_client.release() );
+    CBlobStorage_NetCache storage(nc_client);
     
     // Store the BLOB
     string key;
