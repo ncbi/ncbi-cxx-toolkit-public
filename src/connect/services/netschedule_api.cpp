@@ -418,16 +418,16 @@ void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
 const char* kNetScheduleAPIDriverName = "netschedule_api";
 
 /// @internal
-class CNetScheduleAPICF : public IClassFactory<CNetScheduleAPI>
+class CNetScheduleAPICF : public IClassFactory<SNetScheduleAPIImpl>
 {
 public:
 
-    typedef CNetScheduleAPI                 TDriver;
-    typedef CNetScheduleAPI                 IFace;
-    typedef IFace                           TInterface;
-    typedef IClassFactory<CNetScheduleAPI>  TParent;
-    typedef TParent::SDriverInfo             TDriverInfo;
-    typedef TParent::TDriverList             TDriverList;
+    typedef SNetScheduleAPIImpl TDriver;
+    typedef SNetScheduleAPIImpl IFace;
+    typedef IFace TInterface;
+    typedef IClassFactory<SNetScheduleAPIImpl> TParent;
+    typedef TParent::SDriverInfo TDriverInfo;
+    typedef TParent::TDriverList TDriverList;
 
     /// Construction
     ///
@@ -476,14 +476,14 @@ public:
                         conf.GetInt(m_DriverName, "communication_timeout",
                             CConfig::eErr_NoThrow, 12);
 
-                    drv.reset(new CNetScheduleAPI(service,
+                    drv.reset(new SNetScheduleAPIImpl(service,
                         client_name, queue_name));
 
                     STimeout tm = {communication_timeout, 0};
 
-                    drv->SetCommunicationTimeout(tm);
+                    drv->m_Service.SetCommunicationTimeout(tm);
 
-                    drv->GetService().SetRebalanceStrategy(
+                    drv->m_Service.SetRebalanceStrategy(
                         CreateSimpleRebalanceStrategy(conf, m_DriverName));
                 }
             }
@@ -503,8 +503,8 @@ protected:
 
 
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
-     CPluginManager<CNetScheduleAPI>::TDriverInfoList&   info_list,
-     CPluginManager<CNetScheduleAPI>::EEntryPointRequest method)
+     CPluginManager<SNetScheduleAPIImpl>::TDriverInfoList&   info_list,
+     CPluginManager<SNetScheduleAPIImpl>::EEntryPointRequest method)
 {
        CHostEntryPointImpl<CNetScheduleAPICF>::
            NCBI_EntryPointImpl(info_list, method);

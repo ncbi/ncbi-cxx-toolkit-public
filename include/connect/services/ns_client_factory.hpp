@@ -51,7 +51,7 @@ public:
     virtual ~INetScheduleClientFactory() {}
 
     /// Create a NetSchedule client
-    virtual CNetScheduleAPI* CreateInstance(void) = 0;
+    virtual CNetScheduleAPI CreateInstance() = 0;
 };
 
 
@@ -66,10 +66,10 @@ public:
     CNetScheduleClientFactory(const IRegistry& reg);
     virtual ~CNetScheduleClientFactory() {}
 
-    virtual CNetScheduleAPI* CreateInstance(void);
+    virtual CNetScheduleAPI CreateInstance();
 
 private:
-    typedef CPluginManager<CNetScheduleAPI> TPMNetSchedule;
+    typedef CPluginManager<SNetScheduleAPIImpl> TPMNetSchedule;
     TPMNetSchedule   m_PM_NetSchedule;
     const IRegistry& m_Registry;
 };

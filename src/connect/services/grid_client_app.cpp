@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 
-CGridClientApp::CGridClientApp(CNetScheduleAPI* ns_client,
+CGridClientApp::CGridClientApp(CNetScheduleAPI ns_client,
                                IBlobStorage*       storage)
     : m_NSClient(ns_client), m_NSStorage(storage)
 {
@@ -55,10 +55,10 @@ void CGridClientApp::Init(void)
 {
 
     CNcbiApplication::Init();
-    if (!m_NSClient.get()) {
+    if (!m_NSClient) {
         CNetScheduleClientFactory cf(GetConfig());
-        m_NSClient.reset(cf.CreateInstance());
-        m_NSClient->SetProgramVersion(GetProgramVersion());
+        m_NSClient = cf.CreateInstance();
+        m_NSClient.SetProgramVersion(GetProgramVersion());
 
     }
     if( !m_NSStorage.get()) {
@@ -82,7 +82,7 @@ void CGridClientApp::Init(void)
             GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0,
                     CNcbiRegistry::eReturn);
 
-    m_GridClient.reset(new CGridClient(m_NSClient->GetSubmitter(), *m_NSStorage,
+    m_GridClient.reset(new CGridClient(m_NSClient.GetSubmitter(), *m_NSStorage,
                                        cleanup, pmsg, use_embedded_input));
 }
 

@@ -433,7 +433,7 @@ SNetScheduleAdminImpl::TIDsMap SNetScheduleAdminImpl::x_QueueIDs(
 }
 
 void CNetScheduleAdmin::RetrieveKeys(const string& query,
-    CNetScheduleKeys_Base& ids) const
+    CNetScheduleKeys& ids) const
 {
     SNetScheduleAdminImpl::TIDsMap inter_ids = m_Impl->x_QueueIDs(query);
     ids.x_Clear();

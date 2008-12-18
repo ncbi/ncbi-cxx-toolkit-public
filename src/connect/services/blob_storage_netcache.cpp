@@ -47,19 +47,10 @@ BEGIN_NCBI_SCOPE
 //
 
 
-typedef CBlobStorage_NetCache_Impl<CNetCacheAPI> TBSNCPersitent;
-typedef CBlobStorage_NetCache_Impl<CNetCacheClient> TBSNCSimple;
-
-CBlobStorage_NetCache::CBlobStorage_NetCache(CNetCacheAPI* nc_client,
+CBlobStorage_NetCache::CBlobStorage_NetCache(CNetCacheAPI nc_client,
                                        TCacheFlags flags,
                                        const string&  temp_dir)
-    : m_Impl(new TBSNCPersitent(nc_client, (TBSNCPersitent::TCacheFlags)flags, temp_dir) )
-{
-}
-CBlobStorage_NetCache::CBlobStorage_NetCache(CNetCacheClient* nc_client,
-                                       TCacheFlags flags,
-                                       const string&  temp_dir)
-    : m_Impl(new TBSNCSimple(nc_client, (TBSNCSimple::TCacheFlags)flags, temp_dir) )
+    : m_Impl(new CBlobStorage_NetCache_Impl(nc_client, (CBlobStorage_NetCache_Impl::TCacheFlags)flags, temp_dir) )
 {
 }
 
@@ -155,8 +146,8 @@ IBlobStorage* CBlobStorageNetCacheCF::CreateInstance(
             if (temp_dir == kEmptyStr)
                 temp_dir = GetParam(params, "tmp_path", false, ".");
             vector<string> masks;
-            masks.push_back( TBSNCPersitent::sm_InputBlobCachePrefix + "*" );
-            masks.push_back( TBSNCPersitent::sm_OutputBlobCachePrefix + "*" );
+            masks.push_back( CBlobStorage_NetCache_Impl::sm_InputBlobCachePrefix + "*" );
+            masks.push_back( CBlobStorage_NetCache_Impl::sm_OutputBlobCachePrefix + "*" );
             CDir curr_dir(temp_dir);
             CDir::TEntries dir_entries = curr_dir.GetEntries(masks,
                                                              CDir::eIgnoreRecursive);
@@ -172,42 +163,21 @@ IBlobStorage* CBlobStorageNetCacheCF::CreateInstance(
             if (cache_input) flags |= CBlobStorage_NetCache::eCacheInput;
             if (cache_output) flags |= CBlobStorage_NetCache::eCacheOutput;
 
-            string protocol = GetParam(params, "protocol", false, "simple");
-            if (NStr::CompareNocase(protocol, "simple") == 0 ) {
-                typedef CPluginManager<CNetCacheClient> TPMNetCache;
-                TPMNetCache                      PM_NetCache;
-                PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcache);
-                auto_ptr<CNetCacheClient> nc_client (
-                                PM_NetCache.CreateInstance(
-                                                kNetCacheDriverName,
-                                                TPMNetCache::GetDefaultDrvVers(),
-                                                params)
-                            );
-                if (nc_client.get())
-                    return new CBlobStorage_NetCache(nc_client.release(),
-                                                 flags,
-                                                 temp_dir);
-                else return NULL;
-
-            } else if (NStr::CompareNocase(protocol, "persistent") == 0 ) {
-
-                typedef CPluginManager<CNetCacheAPI> TPMNetCache;
-                TPMNetCache                      PM_NetCache;
-                PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcacheapi);
-                auto_ptr<CNetCacheAPI> nc_client (
-                                PM_NetCache.CreateInstance(
-                                                kNetCacheAPIDriverName,
-                                                TPMNetCache::GetDefaultDrvVers(),
-                                                params)
-                            );
-                if (nc_client.get())
-                    return new CBlobStorage_NetCache(nc_client.release(),
-                                                 flags,
-                                                 temp_dir);
-                else return NULL;
-            } else {
-                throw runtime_error("Unsupported protocol");
-            }
+            typedef CPluginManager<SNetCacheAPIImpl> TPMNetCache;
+            TPMNetCache                      PM_NetCache;
+            PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcacheapi);
+            CNetCacheAPI nc_client (
+                            PM_NetCache.CreateInstance(
+                                            kNetCacheAPIDriverName,
+                                            TPMNetCache::GetDefaultDrvVers(),
+                                            params)
+                        );
+            if (nc_client)
+                return new CBlobStorage_NetCache(nc_client,
+                                             flags,
+                                             temp_dir);
+            else
+                return NULL;
         }
     }
     return 0;

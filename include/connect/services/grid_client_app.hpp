@@ -58,7 +58,7 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CGridClientApp : public CNcbiApplication
 {
 public:
-    CGridClientApp(CNetScheduleAPI* ns_client = NULL,
+    CGridClientApp(CNetScheduleAPI ns_client = CNetScheduleAPI(),
                    IBlobStorage*       storage = NULL);
 
     /// If you override this method, do call CGridClientApp::Init()
@@ -87,7 +87,7 @@ protected:
 
 private:
 
-    auto_ptr<CNetScheduleAPI> m_NSClient;
+    CNetScheduleAPI m_NSClient;
     auto_ptr<IBlobStorage>       m_NSStorage;
     auto_ptr<CGridClient>        m_GridClient;
 };

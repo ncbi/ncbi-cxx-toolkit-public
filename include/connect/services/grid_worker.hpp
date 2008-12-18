@@ -554,7 +554,7 @@ public:
     const string& GetServiceName() const;
 
 
-    CNetScheduleAPI& GetNSClient() const;
+    CNetScheduleAPI GetNSClient() const;
     CNetScheduleExecuter GetNSExecuter() const;
 
     bool IsExclusiveMode();
@@ -564,7 +564,7 @@ private:
     IBlobStorageFactory&         m_NSStorageFactory;
     IWorkerNodeJobWatcher*       m_JobWatcher;
 
-    auto_ptr<CNetScheduleAPI>    m_SharedNSClient;
+    CNetScheduleAPI m_SharedNSClient;
 
     auto_ptr<CStdPoolOfThreads>  m_ThreadsPool;
     unsigned int                 m_UdpPort;
@@ -645,9 +645,9 @@ inline const string& CGridWorkerNode::GetServiceName() const
     return GetNSClient().GetService().GetServiceName();
 }
 
-inline CNetScheduleAPI& CGridWorkerNode::GetNSClient() const
+inline CNetScheduleAPI CGridWorkerNode::GetNSClient() const
 {
-    return *m_SharedNSClient;
+    return m_SharedNSClient;
 }
 
 inline CNetScheduleExecuter CGridWorkerNode::GetNSExecuter() const

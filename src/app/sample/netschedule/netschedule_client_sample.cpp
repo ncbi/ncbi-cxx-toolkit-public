@@ -151,11 +151,11 @@ int CSampleNetScheduleClient::Run(void)
     SleepMilliSec(5000);
 
     CNetScheduleAdmin admin = cl.GetAdmin();
-    typedef CNetScheduleKeys<> TNSKeys;
-    TNSKeys keys;
+    CNetScheduleKeys keys;
     admin.RetrieveKeys("status=pending", keys);
 
-    for (TNSKeys::const_iterator it = keys.begin(); it != keys.end(); ++it) {
+    for (CNetScheduleKeys::const_iterator it = keys.begin();
+        it != keys.end(); ++it) {
         cout << string(*it) << endl;
     }
             

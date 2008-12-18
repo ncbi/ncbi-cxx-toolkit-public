@@ -641,11 +641,11 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     void Query(const string& query, const vector<string>& fields, CNcbiOstream& os) const;
     void Select(const string& select_stmt, CNcbiOstream& os) const;
 
-    void RetrieveKeys(const string& query, CNetScheduleKeys_Base& ids) const;
+    void RetrieveKeys(const string& query, CNetScheduleKeys& ids) const;
 };
 
 
-NCBI_DECLARE_INTERFACE_VERSION(CNetScheduleAPI,  "xnetschedule_api", 1,0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(SNetScheduleAPIImpl, "xnetschedule_api", 1,0, 0);
 
 
 /// @internal
@@ -653,8 +653,8 @@ extern NCBI_XCONNECT_EXPORT const char* kNetScheduleAPIDriverName;
 
 
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
-     CPluginManager<CNetScheduleAPI>::TDriverInfoList&   info_list,
-     CPluginManager<CNetScheduleAPI>::EEntryPointRequest method);
+     CPluginManager<SNetScheduleAPIImpl>::TDriverInfoList&   info_list,
+     CPluginManager<SNetScheduleAPIImpl>::EEntryPointRequest method);
 
 
 /* @} */

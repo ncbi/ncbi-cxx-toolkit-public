@@ -422,16 +422,16 @@ CNetCacheAPI::EReadResult SNetCacheAPIImpl::x_ReadBuffer(
 const char* kNetCacheAPIDriverName = "netcache_api";
 
 /// @internal
-class CNetCacheAPICF : public IClassFactory<CNetCacheAPI>
+class CNetCacheAPICF : public IClassFactory<SNetCacheAPIImpl>
 {
 public:
 
-    typedef CNetCacheAPI                 TDriver;
-    typedef CNetCacheAPI                 IFace;
-    typedef IFace                        TInterface;
-    typedef IClassFactory<CNetCacheAPI>  TParent;
-    typedef TParent::SDriverInfo   TDriverInfo;
-    typedef TParent::TDriverList   TDriverList;
+    typedef SNetCacheAPIImpl TDriver;
+    typedef SNetCacheAPIImpl IFace;
+    typedef IFace TInterface;
+    typedef IClassFactory<SNetCacheAPIImpl> TParent;
+    typedef TParent::SDriverInfo TDriverInfo;
+    typedef TParent::TDriverList TDriverList;
 
     /// Construction
     ///
@@ -474,12 +474,12 @@ public:
                 unsigned int communication_timeout = conf.GetInt(m_DriverName,
                                                               "communication_timeout",
                                                               CConfig::eErr_NoThrow, 12);
-                drv = new CNetCacheAPI(service, client_name);
+                drv = new SNetCacheAPIImpl(service, client_name);
 
                 STimeout tm = { communication_timeout, 0 };
-                drv->SetCommunicationTimeout(tm);
+                drv->m_Service.SetCommunicationTimeout(tm);
 
-                drv->GetService().SetRebalanceStrategy(
+                drv->m_Service.SetRebalanceStrategy(
                     CreateSimpleRebalanceStrategy(conf, m_DriverName));
             }
         }
@@ -498,11 +498,10 @@ protected:
 
 
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetcacheapi(
-     CPluginManager<CNetCacheAPI>::TDriverInfoList&   info_list,
-     CPluginManager<CNetCacheAPI>::EEntryPointRequest method)
+     CPluginManager<SNetCacheAPIImpl>::TDriverInfoList&   info_list,
+     CPluginManager<SNetCacheAPIImpl>::EEntryPointRequest method)
 {
-       CHostEntryPointImpl<CNetCacheAPICF>::
-       NCBI_EntryPointImpl(info_list, method);
+    CHostEntryPointImpl<CNetCacheAPICF>::NCBI_EntryPointImpl(info_list, method);
 }
 
 

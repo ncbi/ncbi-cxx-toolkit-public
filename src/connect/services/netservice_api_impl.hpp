@@ -125,6 +125,9 @@ struct SNetServiceImpl : public CNetObject
     STimeout m_Timeout;
     unsigned int m_MaxRetries;
     ESwitch m_PermanentConnection;
+    virtual ~SNetServiceImpl() {
+        printf("In ~SNetServiceImpl()\n");
+    }
 };
 
 inline SNetServerImpl::SNetServerImpl(const TServerAddress& address,

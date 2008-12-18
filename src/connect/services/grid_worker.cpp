@@ -347,8 +347,8 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
       m_UseEmbeddedStorage(false), m_CheckStatusPeriod(2),
       m_JobGetterSemaphore(1,1)
 {
-    m_SharedNSClient.reset(client_factory.CreateInstance());
-    m_SharedNSClient->SetProgramVersion(m_JobFactory.GetJobVersion());
+    m_SharedNSClient = client_factory.CreateInstance();
+    m_SharedNSClient.SetProgramVersion(m_JobFactory.GetJobVersion());
 }
 
 

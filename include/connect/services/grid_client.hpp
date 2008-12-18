@@ -270,7 +270,7 @@ public:
     ///     a job's input data from a storage when the job is
     ///     done or canceled
     ///
-    CGridClient(const CNetScheduleSubmitter& ns_client,
+    CGridClient(const CNetScheduleSubmitter ns_client,
                 IBlobStorage& storage,
                 ECleanUp cleanup,
                 EProgressMsg progress_msg,

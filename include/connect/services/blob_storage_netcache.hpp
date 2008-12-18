@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 ///////////////////////////////////////////////////////////////////////////////
 ///
 /// CBlobStorage_NetCache ---
-/// Implementaion of IBlobStorage interface based on NetCache service
+/// Implementation of IBlobStorage interface based on NetCache service
 ///
 class NCBI_BLOBSTORAGE_NETCACHE_EXPORT CBlobStorage_NetCache : public IBlobStorage
 {
@@ -74,10 +74,7 @@ public:
     ///  before they are accessed for read/write.
     /// @param[in[ temp_dir
     ///  Specifies where on a local fs those blobs will be cached
-    CBlobStorage_NetCache(CNetCacheAPI* nc_client,
-                          TCacheFlags flags = 0x0,
-                          const string& temp_dir = ".");
-    CBlobStorage_NetCache(CNetCacheClient* nc_client,
+    CBlobStorage_NetCache(CNetCacheAPI nc_client,
                           TCacheFlags flags = 0x0,
                           const string& temp_dir = ".");
 

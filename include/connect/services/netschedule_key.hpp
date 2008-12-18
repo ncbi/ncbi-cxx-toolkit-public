@@ -84,18 +84,18 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleKey
 ////
 class CNetScheduleAdmin;
 
-class CNetScheduleKeys_Base
+class CNetScheduleKeys
 {
 public:
     typedef bm::bvector<> TBVector;
     typedef map<pair<string,unsigned int>, TBVector> TKeysMap;
 
-    CNetScheduleKeys_Base() {}
+    CNetScheduleKeys() {}
 
     class const_iterator
     {
     public:
-        typedef CNetScheduleKeys_Base::TKeysMap TKeysMap;
+        typedef CNetScheduleKeys::TKeysMap TKeysMap;
         typedef TBVector::enumerator TBVEnumerator;
 
         const_iterator(const TKeysMap& keys, bool end) : m_Keys(&keys)
@@ -176,13 +176,8 @@ private:
         bm::deserialize(bv, &dst_buf[0]);
     }
 
-    CNetScheduleKeys_Base(const CNetScheduleKeys_Base&);
-    CNetScheduleKeys_Base& operator=(const CNetScheduleKeys_Base&);
-};
-
-template <typename TBVector = bm::bvector<> >
-class CNetScheduleKeys : public CNetScheduleKeys_Base
-{
+    CNetScheduleKeys(const CNetScheduleKeys&);
+    CNetScheduleKeys& operator=(const CNetScheduleKeys&);
 };
 
 /* @} */

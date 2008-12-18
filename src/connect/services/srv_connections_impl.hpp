@@ -105,7 +105,6 @@ inline void SNetServerConnectionImpl::WriteLine(const string& line)
 
 inline CSocket* SNetServerConnectionImpl::GetSocket()
 {
-    _ASSERT(IsConnected());
     return &m_Socket;
 }
 

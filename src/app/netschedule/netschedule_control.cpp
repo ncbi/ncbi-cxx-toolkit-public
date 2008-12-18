@@ -273,11 +273,11 @@ int CNetScheduleControl::Run(void)
     else if( args["show_jobs_id"]) {
         ctl.reset(x_CreateNewClient(true));
         string query = args["show_jobs_id"].AsString();
-        typedef CNetScheduleKeys<> TNSKeys;
-        TNSKeys keys;
+        CNetScheduleKeys keys;
         ctl->GetAdmin().RetrieveKeys(query, keys);
  
-        for (TNSKeys::const_iterator it = keys.begin(); it != keys.end(); ++it) {
+        for (CNetScheduleKeys::const_iterator it = keys.begin();
+            it != keys.end(); ++it) {
             os << string(*it) << endl;
         }
     }

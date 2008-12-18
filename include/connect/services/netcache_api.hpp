@@ -235,15 +235,15 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     }
 };
 
-NCBI_DECLARE_INTERFACE_VERSION(CNetCacheAPI,  "xnetcacheapi", 1, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(SNetCacheAPIImpl,  "xnetcacheapi", 1, 1, 0);
 
 extern NCBI_XCONNECT_EXPORT const char* kNetCacheAPIDriverName;
 
 //extern "C" {
 
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetcacheapi(
-     CPluginManager<CNetCacheAPI>::TDriverInfoList&   info_list,
-     CPluginManager<CNetCacheAPI>::EEntryPointRequest method);
+     CPluginManager<SNetCacheAPIImpl>::TDriverInfoList&   info_list,
+     CPluginManager<SNetCacheAPIImpl>::EEntryPointRequest method);
 
 
 //} // extern C
