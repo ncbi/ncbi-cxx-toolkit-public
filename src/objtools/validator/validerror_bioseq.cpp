@@ -351,11 +351,10 @@ void CValidError_bioseq::ValidateSeqIds
                         m_Imp.IsGI()) {
                         if (!(**k).IsDdbj()  ||
                             repr != CSeq_inst::eRepr_seg) {
-                            CNcbiOstrstream os;
-                            os << "Missing accession for " << (**k).DumpAsFasta();
+                            string msg = "Missing accession for " + (**k).AsFastaString();
                             PostErr(eDiag_Error,
                                 eErr_SEQ_INST_BadSeqIdFormat,
-                                string(os.str()), seq);
+                                msg, seq);
                         }
                     }
                 }
@@ -1570,27 +1569,43 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
 
         if (terminations) {
             // Post error indicating terminations found in protein sequence
+            // if possible, get gene and protein names
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle (seq);
             // First get gene label
-
-            string glbl;
-            seq.GetLabel(&glbl, CBioseq::eContent);
-            if ( IsBlankString(glbl) ) {
-                glbl = "gene?";
+            string gene_label = "";
+            try {
+                const CSeq_feat* cds = GetCDSForProduct(bsh);
+                if (cds) {
+                    CConstRef<CSeq_feat> gene = GetOverlappingGene (cds->GetLocation(), *m_Scope);
+                    if (gene && gene->IsSetData() && gene->GetData().IsGene()) {
+                        gene->GetData().GetGene().GetLabel(&gene_label);
+                    }
+                }
+            } catch (...) {
+            }
+            // get protein label
+            string protein_label = "";
+            try {
+                CFeat_CI feat_ci (bsh, SAnnotSelector (CSeqFeatData::e_Prot));
+                if (feat_ci && feat_ci->GetData().IsProt() && feat_ci->GetData().GetProt().IsSetName()) {
+                    protein_label = feat_ci->GetData().GetProt().GetName().front();
+                }
+            } catch (...) {
             }
 
-            string plbl;
-            const CBioseq* nuc = GetNucleotideParent(seq, m_Scope);
-            if ( nuc ) {
-                nuc->GetLabel(&plbl, CBioseq::eContent);
-            }
-            if ( IsBlankString(plbl) ) {
-                plbl = "prot?";
+            string msg = NStr::IntToString(terminations) + " termination symbols in protein sequence";
+
+            if (!NStr::IsBlank(gene_label)) {
+                if (!NStr::IsBlank (protein_label)) {
+                    msg += " (" + gene_label + " - " + protein_label + ")";
+                } else {
+                    msg += " (" + gene_label + ")";
+                }
+            } else if (!NStr::IsBlank(protein_label)) {
+                msg += " (" + protein_label + ")";
             }
 
-            PostErr(eDiag_Error, eErr_SEQ_INST_StopInProtein,
-                NStr::IntToString(terminations) +
-                " termination symbols in protein sequence (" +
-                glbl + string(" - ") + plbl + ")", seq);
+            PostErr(eDiag_Error, eErr_SEQ_INST_StopInProtein, msg, seq);
             if (!bad_cnt) {
                 return;
             }
@@ -1646,9 +1661,8 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
                 }
                 const CSeq_id& id2 = GetId(**i2, m_Scope);
                 if (IsSameBioseq(id1, id2, m_Scope)) {
-                    CNcbiOstrstream os;
-                    os << id1.DumpAsFasta();
-                    string sid(os.str());
+                    string sid;
+                    seq.GetLabel(&sid, CBioseq::eContent);
                     if ((**i1).IsWhole()  &&  (**i2).IsWhole()) {
                         PostErr(eDiag_Error,
                             eErr_SEQ_INST_DuplicateSegmentReferences,
