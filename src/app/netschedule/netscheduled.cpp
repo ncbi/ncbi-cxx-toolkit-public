@@ -1018,7 +1018,16 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     }
 
     m_JobReq.Init();
-    SParsedCmd cmd = m_ReqParser.ParseCommand(m_Request);
+    SParsedCmd cmd;
+    try {
+        cmd = m_ReqParser.ParseCommand(m_Request);
+    }
+    catch (const CNSProtoParserException& ex) {
+        // Rewrite error in usual terms
+        WriteErr(string("eProtocolSyntaxError:") + ex.GetMsg());
+        return;
+    }
+
     const SCommandExtra& extra = cmd.command->extra;
 
     x_CheckAccess(extra.role);
@@ -1373,9 +1382,9 @@ void CNetScheduleHandler::ProcessMsgBatchJob(BUF buffer)
 
     m_JobReq.SetParamFields(params);
     job.SetInput(m_JobReq.input);
-    if (m_JobReq.param1 == "affp") {
+    if (m_JobReq.param1 == "match") {
+        //job.SetAffinityToken("");
         job.SetAffinityId(kMax_I4);
-        job.SetAffinityToken("");
     } else {
         job.SetAffinityToken(m_JobReq.affinity_token);
     }
@@ -2404,10 +2413,7 @@ void CNetScheduleHandler::ProcessReadFailed()
 
 void CNetScheduleHandler::ProcessGetAffinityList()
 {
-    WriteOK("Affinity preference placeholder");
-    // Revise this if we'd call some other worker node functions, which
-    // update validity time stamps
-    m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
+    WriteOK(m_Queue->GetAffinityList(m_WorkerNodeInfo));
 }
 
 

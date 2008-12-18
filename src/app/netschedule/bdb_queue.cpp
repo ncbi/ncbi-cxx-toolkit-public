@@ -1987,6 +1987,14 @@ void CQueue::FailReadingJobs(unsigned read_id, TNSBitVector& jobs)
 }
 
 
+string CQueue::GetAffinityList(SWorkerNodeInfo& node_info)
+{
+    CRef<SLockedQueue> q(x_GetLQueue());
+    q->RegisterWorkerNodeVisit(node_info);
+    return q->GetAffinityList();
+}
+
+
 void CQueue::InitWorkerNode(const SWorkerNodeInfo& node_info)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
@@ -2076,6 +2084,7 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
 {
     // PutResult parameter check
     _ASSERT(!done_job_id || output);
+    _ASSERT(!new_job || (rec_ctx_f && aff_list));
 
     CRef<SLockedQueue> q(x_GetLQueue());
     bool delete_done;
@@ -2112,12 +2121,12 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
     // TODO: move affinity assignment there as well
     unsigned pending_job_id = 0;
     if (new_job)
-        pending_job_id = q->FindPendingJob(node_info.node_id, curr);
+        pending_job_id = q->FindPendingJob(node_info.node_id, *aff_list, curr);
     bool done_rec_updated = false;
     CJob job;
 
     // When working with the same database file concurrently there is
-    // chance of internal Berkeley DB deadlock. (They say it's legal!)
+    // chance of internal Berkeley DB deadlock. (They say it's legal)
     // In this case Berkeley DB returns an error code(DB_LOCK_DEADLOCK)
     // and recovery is up to the application.
     // If it happens I repeat the transaction several times.
@@ -2188,6 +2197,8 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
                     SleepMilliSec(250);
                     continue;
                 }
+            } else {
+                throw;
             }
             ERR_POST("Too many transaction repeats in CQueue::JobExchange.");
             throw;
@@ -2226,6 +2237,12 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
             msg += node_info.node_id;
         }
         MonitorPost(msg);
+    }
+    // Final touch, if we requested a job with specific affinity, and there was
+    // no such job found, report it as an exception with affinity preference.
+    if (!pending_job_id && aff_list->size()) {
+        NCBI_THROW(CNetScheduleException, eNoJobsWithAffinity,
+                   GetAffinityList(node_info));
     }
 }
 

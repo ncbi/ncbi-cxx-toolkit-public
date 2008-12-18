@@ -83,6 +83,8 @@ public:
     /// Returns 0 if token does not exist
     unsigned GetTokenId(const string& aff_token);
 
+    void GetTokensIds(const list<string>& tokens, TNSBitVector& ids);
+
     /// Get affinity string by id
     string GetAffToken(unsigned aff_id);
 
@@ -140,9 +142,16 @@ public:
     void ClearAffinity(const string& node_id);
 
     /// Create/update affinity association
-    void AddAffinity(const string& node_id,
-                     unsigned      aff_id,
-                     time_t        exp_time);
+    SAffinityInfo* AddAffinity(const string& node_id,
+                               unsigned      aff_id,
+                               time_t        exp_time);
+
+    /// Create affinity association for an affinity group
+    SAffinityInfo* AddAffinity(const string& node_id,
+                               const TNSBitVector& aff_ids);
+
+    /// Create empty affinity association
+    SAffinityInfo* AddAffinity(const string& node_id);
 
     void BlacklistJob(const string& node_id,
                       unsigned      job_id,

@@ -374,7 +374,18 @@ public:
     ///
     /// @return job_id
     unsigned
-    FindPendingJob(const string& node_id, time_t curr);
+    FindPendingJob(const string& node_id,
+                   const list<string>& aff_list,
+                   time_t curr);
+
+    /// Calculate affinity preference string - a list
+    /// of affinities accompained by number of jobs belonging to
+    /// them and list of nodes processing them, e.g.
+    /// "a1 500 n1 n2, a2 600 n2 n3 n4, a3 200 n3"
+    ///
+    /// @return
+    ///     affinity preference string
+    string GetAffinityList();
 
     /// @return is job modified
     bool FailJob(unsigned      job_id,

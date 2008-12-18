@@ -831,7 +831,7 @@ void SLockedQueue::ClearAffinityIdx()
     // get batch of affinity tokens in the index
     {{
         CFastMutexGuard guard(m_AffinityIdxLock);
-        m_AffinityIdx.SetTransaction(0);
+        m_AffinityIdx.SetTransaction(NULL);
         CBDB_FileCursor cur(m_AffinityIdx);
         cur.SetCondition(CBDB_FileCursor::eGE);
         cur.From << curr_aff_id;
@@ -846,7 +846,7 @@ void SLockedQueue::ClearAffinityIdx()
         }
         if (ret != eBDB_Ok) {
             if (ret != eBDB_NotFound)
-                ERR_POST(Error << "Error reading affinity index");
+                ERR_POST(Error << "Error reading affinity index: " << ret);
             if (wrapped) {
                 curr_aff_id = last_aff_id;
             } else {
@@ -887,7 +887,7 @@ void SLockedQueue::ClearAffinityIdx()
             m_AffinityIdx.ReadVector(&bvect, bm::set_OR, NULL);
         if (ret != eBDB_Ok) {
             if (ret != eBDB_NotFound)
-                ERR_POST(Error << "Error reading affinity index");
+                ERR_POST(Error << "Error reading affinity index: " << ret);
             continue;
         }
         unsigned old_count = bvect.count();
@@ -975,6 +975,8 @@ void SLockedQueue::AddJobsToAffinity(CBDB_Transaction& trans,
 {
     CFastMutexGuard guard(m_AffinityIdxLock);
     m_AffinityIdx.SetTransaction(&trans);
+    // TODO: Is not it easier to have map with auto_ptrs?
+    // In this case we don't need this clumsy map freeing.
     typedef map<unsigned, TNSBitVector*> TBVMap;
 
     TBVMap  bv_map;
@@ -1069,28 +1071,61 @@ SLockedQueue::GetJobsWithAffinity(unsigned      aff_id,
 
 
 unsigned
-SLockedQueue::FindPendingJob(const string& node_id, time_t curr)
+SLockedQueue::FindPendingJob(const string& node_id,
+                             const list<string>& aff_list,
+                             time_t curr)
 {
     unsigned job_id = 0;
 
     TNSBitVector blacklisted_jobs;
+    TNSBitVector aff_ids;
+    TNSBitVector* effective_aff_ids;
+
+    // request specified affinity explicitly - client managed affinity
+    bool is_specific_aff = !aff_list.empty();
+    m_AffinityDict.GetTokensIds(aff_list, aff_ids);
+    if (is_specific_aff && !aff_ids.any())
+        // Requested affinities are not known to the server at all
+        return 0;
 
     // affinity: get list of job candidates
-    // previous FindPendingJob() call may have precomputed candidate jobids
+    // previous FindPendingJob() call may have precomputed candidate job ids
     {{
         CFastMutexGuard aff_guard(m_AffinityMapLock);
         CWorkerNodeAffinity::SAffinityInfo* ai =
             m_AffinityMap.GetAffinity(node_id);
 
+        if (is_specific_aff) {
+            if (ai) {
+                // Filter out affinities not in requested list, and if
+                // something was actually filtered drop cached candidate_jobs
+                unsigned old_count = ai->aff_ids.count();
+                ai->aff_ids &= aff_ids;
+                if (old_count != ai->aff_ids.count()) {
+                    ai->candidate_jobs.clear();
+                }
+            } else {
+                // Add empty affinity association, correct affinity
+                // will be added later in CQueue::PutResultGetJob
+                ai = m_AffinityMap.AddAffinity(node_id);
+            }
+        }
+
         if (ai) {  // established affinity association
+
+            // If we have a specific affinity request, use it for job search,
+            // otherwise use what we have for the node
+            if (is_specific_aff) effective_aff_ids = &aff_ids;
+            else effective_aff_ids = &ai->aff_ids;
+
             blacklisted_jobs = ai->GetBlacklistedJobs(curr);
             do {
                 // check for candidates
-                if (!ai->candidate_jobs.any() && ai->aff_ids.any()) {
+                if (!ai->candidate_jobs.any() && effective_aff_ids->any()) {
                     // there is an affinity association
                     // NB: locks m_AffinityIdxLock, thereby creating
                     // m_AffinityMapLock < m_AffinityIdxLock locking order
-                    GetJobsWithAffinity(ai->aff_ids, &ai->candidate_jobs);
+                    GetJobsWithAffinity(*effective_aff_ids, &ai->candidate_jobs);
                     if (!ai->candidate_jobs.any()) // no candidates
                         break;
                     status_tracker.PendingIntersect(&ai->candidate_jobs);
@@ -1105,13 +1140,14 @@ SLockedQueue::FindPendingJob(const string& node_id, time_t curr)
                 bool pending_jobs_avail =
                     status_tracker.GetPendingJobFromSet(
                         &ai->candidate_jobs, &job_id);
-                if (!job_id && !pending_jobs_avail)
-                    return 0;
+                
+                if (!job_id && !pending_jobs_avail) return 0;
             } while (0);
+            if (!job_id && is_specific_aff) return 0;
         }
     }}
 
-    // no affinity association or there are no more jobs with
+    // No affinity association or there are no more jobs with
     // established affinity
 
     // try to find a vacant(not taken by any other worker node) affinity id
@@ -1128,7 +1164,9 @@ SLockedQueue::FindPendingJob(const string& node_id, time_t curr)
             TNSBitVector assigned_candidate_jobs(blacklisted_jobs);
             // GetJobsWithAffinity actually ORs into second argument
             GetJobsWithAffinity(assigned_aff, &assigned_candidate_jobs);
-            // we got list of jobs we do NOT want to schedule
+            // we got list of jobs we do NOT want to schedule, use them as
+            // blacklisted to get a job with possibly with unassigned affinity
+            // (or without affinity at all).
             bool pending_jobs_avail =
                 status_tracker.GetPendingJob(assigned_candidate_jobs,
                                              &job_id);
@@ -1143,6 +1181,81 @@ SLockedQueue::FindPendingJob(const string& node_id, time_t curr)
     	status_tracker.GetPendingJob(blacklisted_jobs, &job_id);
 
     return job_id;
+}
+
+
+struct SAffinityJobs
+{
+    string aff_token;
+    unsigned job_count;
+    list<string> nodes;
+};
+typedef map<unsigned, SAffinityJobs> TAffinities;
+
+string SLockedQueue::GetAffinityList()
+{
+    string aff_list;
+    unsigned aff_id;
+    unsigned bv_cnt;
+    TAffinities affinities;
+    time_t now = time(0);
+    {{
+    CFastMutexGuard guard(m_AffinityIdxLock);
+    m_AffinityIdx.SetTransaction(NULL);
+    CBDB_FileCursor cur(m_AffinityIdx);
+    cur.SetCondition(CBDB_FileCursor::eGE);
+    cur.From << 0;
+
+    EBDB_ErrCode ret;
+    // for every affinity
+    for (; (ret = cur.Fetch()) == eBDB_Ok;) {
+        aff_id = m_AffinityIdx.aff_id;
+        TNSBitVector bvect(bm::BM_GAP);
+        ret = m_AffinityIdx.ReadVector(&bvect, bm::set_OR);
+        status_tracker.PendingIntersect(&bvect);
+        // how many pending tasks with this affinity
+        bv_cnt = bvect.count();
+        if (ret != eBDB_Ok) {
+            if (ret != eBDB_NotFound)
+                ERR_POST(Error << "Error reading affinity index: " << ret);
+            continue;
+        }
+        SAffinityJobs aff_jobs;
+        
+        aff_jobs.aff_token = m_AffinityDict.GetAffToken(aff_id);
+        aff_jobs.job_count = bv_cnt;
+        affinities[aff_id] = aff_jobs;
+        // what are the nodes executing this affinity
+    }
+    }}
+    list<string> nodes;
+    m_WorkerNodeList.GetNodes(now, nodes);
+    {{
+        CFastMutexGuard aff_guard(m_AffinityMapLock);
+        ITERATE(list<string>, node_it, nodes) {
+            CWorkerNodeAffinity::SAffinityInfo* ai =
+                m_AffinityMap.GetAffinity(*node_it);
+            if (ai) {
+                TNSBitVector::enumerator en(ai->aff_ids.first());
+                for (; en.valid(); ++en) {
+                    unsigned aff_id = *en;
+                    affinities[aff_id].nodes.push_back(*node_it);
+                }
+            }
+        }
+    }}
+
+    ITERATE(TAffinities, it, affinities) {
+        if (aff_list.size()) aff_list += ", ";
+        aff_list += it->second.aff_token;
+        aff_list += ' ';
+        aff_list += NStr::UIntToString(it->second.job_count);
+        ITERATE(list<string>, node_it, it->second.nodes) {
+            aff_list += ' ';
+            aff_list += *node_it;
+        } 
+    }
+    return aff_list;
 }
 
 
@@ -1260,7 +1373,7 @@ SLockedQueue::x_ReadAffIdx_NoLock(unsigned      aff_id,
                                   TNSBitVector* jobs)
 {
     m_AffinityIdx.aff_id = aff_id;
-    m_AffinityIdx.ReadVector(jobs, bm::set_OR, NULL);
+    m_AffinityIdx.ReadVector(jobs, bm::set_OR);
 }
 
 
@@ -1279,10 +1392,7 @@ void SLockedQueue::ClearWorkerNode(const string& node_id)
 {
     TJobList jobs;
     m_WorkerNodeList.ClearNode(node_id, jobs);
-    {{
-    	CFastMutexGuard guard(m_AffinityMapLock);
-    	m_AffinityMap.ClearAffinity(node_id);
-    }}
+   	ClearAffinity(node_id);
     x_FailJobsAtNodeClose(jobs);
 }
 
@@ -1354,10 +1464,7 @@ bool SLockedQueue::UnRegisterNotificationListener(const string& node_id)
     if (final) {
     	// Clean affinity association only for old style worker nodes
     	// New style nodes should explicitely call ClearWorkerNode
-    	{{
-    		CFastMutexGuard guard(m_AffinityMapLock);
-    		m_AffinityMap.ClearAffinity(node_id);
-    	}}
+    	ClearAffinity(node_id);
     	x_FailJobsAtNodeClose(jobs);
     }
     return final;

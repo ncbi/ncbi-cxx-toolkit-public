@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Pavel Ivanov
+ * Author:  Pavel Ivanov, Victor Joukov
  *
  * File Description:
  *   Implementation of protocol parser used for NetCache and NetSchedule.
@@ -267,9 +267,8 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
         bool matched = false;
         while (arg_descr->flags != eNSPA_None) {
             if (arg_descr->flags & fNSPA_Match) {
-                matched = key != NULL
-                          &&  strlen(arg_descr->key) == val_size
-                          &&  strncmp(arg_descr->key, val, val_size) == 0;
+                matched = strlen(arg_descr->key) == val_size
+                       && strncmp(arg_descr->key, val, val_size) == 0;
             }
             else {
                 matched = x_ArgumentMatch(key, key_size, val_type, arg_descr);
@@ -297,8 +296,8 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
         }
 
         // accept argument
-        if ((arg_descr->flags & fNSPA_Match) == 0)
-            (*params)[arg_descr->key] = string(val, val_size);
+        (*params)[arg_descr->key] =
+            (arg_descr->flags & fNSPA_Match) ? "match" : string(val, val_size);
         // Process OR by skipping argument descriptions until OR flags is set
         while (arg_descr->flags != eNSPA_None
                &&  arg_descr->flags & fNSPA_Or)

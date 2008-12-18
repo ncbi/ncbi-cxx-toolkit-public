@@ -212,6 +212,8 @@ public:
     void ConfirmJobs(unsigned read_id, TNSBitVector& jobs);
     /// Fail (negative acknoledge) reading of these jobs
     void FailReadingJobs(unsigned read_id, TNSBitVector& jobs);
+    /// Get affinity preference list
+    string GetAffinityList(SWorkerNodeInfo& node_info);
 
     // Make new worker node record with id, host and port
     // Also check that old nodes with same (host, port) are cleared

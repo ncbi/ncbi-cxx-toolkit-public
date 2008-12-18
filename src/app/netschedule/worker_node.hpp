@@ -95,6 +95,9 @@ public:
     time_t ValidityTime() const;
     void UpdateValidityTime();
     string AsString(time_t curr) const;
+    string GetId() const {
+        return m_Id;
+    }
 private:
     friend class CQueueWorkerNodeList;
     string           m_Id;
@@ -156,7 +159,10 @@ public:
     // Returns true and adds entries to notify_list if it decides that it's OK to notify.
     bool GetNotifyList(bool unconditional, time_t curr,
                        int notify_timeout, list<TWorkerNodeHostPort>& notify_list);
-    void GetNodesInfo(time_t curr, list<string>& nodes_info) const;
+    // Get all active nodes
+    void GetNodes(time_t t, list<string>& nodes) const;
+    // Get printable information about all active nodes
+    void GetNodesInfo(time_t t, list<string>& nodes_info) const;
 
     void RegisterNotificationListener(const SWorkerNodeInfo& node_info,
                                       unsigned short         port,

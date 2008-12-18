@@ -279,17 +279,28 @@ CQueueWorkerNodeList::GetNotifyList(bool unconditional, time_t curr,
 }
 
 
-void CQueueWorkerNodeList::GetNodesInfo(time_t curr,
+void CQueueWorkerNodeList::GetNodes(time_t t, list<string>& nodes) const
+{
+    CReadLockGuard guard(m_Lock);
+    ITERATE(TWorkerNodeById, it, m_WorkerNodeById) {
+        const CWorkerNode& node = *it->second;
+        if (node.ValidityTime() > t)
+            nodes.push_back(node.GetId());
+    }
+}
+
+
+void CQueueWorkerNodeList::GetNodesInfo(time_t t,
                                         list<string>& nodes_info) const
 {
     CReadLockGuard guard(m_Lock);
     ITERATE(TWorkerNodeById, it, m_WorkerNodeById) {
         const CWorkerNode& node = *it->second;
-        if (node.ValidityTime() > curr) {
-            nodes_info.push_back(node.AsString(curr));
+        if (node.ValidityTime() > t) {
+            nodes_info.push_back(node.AsString(t));
         } else {
             // DEBUG
-            //nodes_info.push_back(node.AsString(curr)+" invalid");
+            //nodes_info.push_back(node.AsString(t)+" invalid");
         }
     }
 }

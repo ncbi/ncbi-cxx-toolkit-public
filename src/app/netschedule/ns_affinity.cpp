@@ -238,6 +238,23 @@ unsigned CAffinityDict::GetTokenId(const string& aff_token)
     return 0;
 }
 
+
+void CAffinityDict::GetTokensIds(const list<string>& tokens, TNSBitVector& ids)
+{
+    CFastMutexGuard guard(m_DbLock);
+    m_AffDict_TokenIdx->SetTransaction(0);
+
+    ITERATE(list<string>, it, tokens) {
+        m_AffDict_TokenIdx->token = *it;
+        if (m_AffDict_TokenIdx->Fetch() != eBDB_Ok) {
+            continue;
+        }
+        unsigned aff_id = m_AffDict_TokenIdx->aff_id;
+        ids.set(aff_id);
+    }
+}
+
+
 string CAffinityDict::GetAffToken(unsigned aff_id)
 {
     string token;
@@ -361,9 +378,10 @@ void CWorkerNodeAffinity::ClearAffinity(const string& node_id)
     m_AffinityMap.erase(it);
 }
 
-void CWorkerNodeAffinity::AddAffinity(const string& node_id,
-                                      unsigned      aff_id,
-                                      time_t        exp_time)
+CWorkerNodeAffinity::SAffinityInfo*
+CWorkerNodeAffinity::AddAffinity(const string& node_id,
+                                 unsigned      aff_id,
+                                 time_t        exp_time)
 {
     SAffinityInfo* ai = GetAffinity(node_id);
     if (ai == 0) {
@@ -371,7 +389,35 @@ void CWorkerNodeAffinity::AddAffinity(const string& node_id,
         m_AffinityMap[node_id] = ai;
     }
     ai->aff_ids.set(aff_id);
+    return ai;
 }
+
+
+CWorkerNodeAffinity::SAffinityInfo*
+CWorkerNodeAffinity::AddAffinity(const string& node_id,
+                                 const TNSBitVector& aff_ids)
+{
+    SAffinityInfo* ai = GetAffinity(node_id);
+    if (ai == 0) {
+        ai = new SAffinityInfo();
+        m_AffinityMap[node_id] = ai;
+    }
+    ai->aff_ids |= aff_ids;
+    return ai;
+}
+
+
+CWorkerNodeAffinity::SAffinityInfo*
+CWorkerNodeAffinity::AddAffinity(const string& node_id)
+{
+    SAffinityInfo* ai = GetAffinity(node_id);
+    if (ai == 0) {
+        ai = new SAffinityInfo();
+        m_AffinityMap[node_id] = ai;
+    }
+    return ai;
+}
+
 
 void CWorkerNodeAffinity::BlacklistJob(const string& node_id,
                                        unsigned      job_id,
