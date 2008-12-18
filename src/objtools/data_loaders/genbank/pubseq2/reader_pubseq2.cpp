@@ -340,6 +340,7 @@ void CPubseq2Reader::x_InitConnection(CDB_Connection& db_conn, TConn conn)
     // prepare init request
     CID2_Request req;
     req.SetRequest().SetInit();
+    x_SetContextData(req);
     CID2_Request_Packet packet;
     packet.Set().push_back(Ref(&req));
     // that's it for now

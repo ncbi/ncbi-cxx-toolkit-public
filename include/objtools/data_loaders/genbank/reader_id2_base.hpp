@@ -223,6 +223,9 @@ protected:
 
     bool x_LoadSeq_idBlob_idsSet(CReaderRequestResult& result,
                                  const TSeqIds& seq_ids);
+
+    void x_SetContextData(CID2_Request& request);
+
 private:
     CAtomicCounter m_RequestSerialNumber;
 

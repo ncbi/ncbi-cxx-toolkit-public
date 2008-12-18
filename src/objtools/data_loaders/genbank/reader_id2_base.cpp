@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_system.hpp> // for SleepSec
+#include <corelib/request_ctx.hpp>
 
 #include <objtools/data_loaders/genbank/reader_id2_base.hpp>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
@@ -785,10 +786,39 @@ void CId2ReaderBase::x_ProcessRequest(CReaderRequestResult& result,
 }
 
 
+void CId2ReaderBase::x_SetContextData(CID2_Request& request)
+{
+    if ( request.GetRequest().IsInit() ) {
+        CRef<CID2_Param> param(new CID2_Param);
+        param->SetName("log:client_name");
+        param->SetValue().push_back(GetDiagContext().GetAppName());
+        request.SetParams().Set().push_back(param);
+    }
+    CRequestContext& rctx = CDiagContext::GetRequestContext();
+    if ( rctx.IsSetSessionID() ) {
+        CRef<CID2_Param> param(new CID2_Param);
+        param->SetName("session_id");
+        param->SetValue().push_back(rctx.GetSessionID());
+        request.SetParams().Set().push_back(param);
+    }
+    if ( rctx.IsSetHitID() ) {
+        CRef<CID2_Param> param(new CID2_Param);
+        param->SetName("log:phid");
+        param->SetValue().push_back(rctx.GetHitID());
+        request.SetParams().Set().push_back(param);
+    }
+}
+
+
 void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
                                      CID2_Request_Packet& packet,
                                      const SAnnotSelector* sel)
 {
+    // Fill request context information
+    if ( !packet.Get().empty() ) {
+        x_SetContextData(*packet.Set().front());
+    }
+
     // prepare serial nums and result state
     size_t request_count = packet.Get().size();
     int start_serial_num =
