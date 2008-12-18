@@ -491,6 +491,12 @@ CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os,
                                  CCgiCookie::EWriteMethod wmethod) const
 {
     ITERATE (TSet, cookie, m_Cookies) {
+        if (wmethod == CCgiCookie::eHTTPResponse) {
+            // Don't send secure cookies over non-secure connections.
+            if (!m_Secure  &&  (*cookie)->GetSecure()) {
+                continue;
+            }
+        }
         if (wmethod == CCgiCookie::eHTTPRequest && cookie != m_Cookies.begin())
             os << "; ";
         (*cookie)->Write(os, wmethod, EUrlEncode(m_EncodeFlag));

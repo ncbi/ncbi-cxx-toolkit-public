@@ -191,6 +191,7 @@ public:
 
     /// Whether to use the port number when composing the CGI's own URL
     /// @sa GetSelfURL()
+    /// @deprecated The flag is ignored, use GetSelfURL(void).
     enum ESelfUrlPort {
         eSelfUrlPort_Use,     ///< Use port number in self-URL
         eSelfUrlPort_Strip,   ///< Do not use port number in self-URL
@@ -199,8 +200,16 @@ public:
 
     /// Using HTTP environment variables, compose the CGI's own URL as:
     ///   http://SERVER_NAME[:SERVER_PORT]/SCRIPT_NAME
-    const string& GetSelfURL(ESelfUrlPort use_port = eSelfUrlPort_Default)
-        const;
+    /// @deprecated The flag is ignored, use GetSelfURL(void).
+    NCBI_DEPRECATED
+    const string& GetSelfURL(ESelfUrlPort use_port) const
+        { return GetSelfURL(); }
+
+    /// Using HTTP environment variables, compose the CGI's own URL as:
+    ///   http://SERVER_NAME[:SERVER_PORT]/SCRIPT_NAME
+    /// Port is always included if it does not correspond to the scheme's
+    /// default port.
+    const string& GetSelfURL(void) const;
 
     // Which streams are ready?
     enum EStreamStatus {

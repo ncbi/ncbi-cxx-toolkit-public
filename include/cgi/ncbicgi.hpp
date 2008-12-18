@@ -287,6 +287,10 @@ public:
                         CCgiCookie::EWriteMethod wmethod 
                                = CCgiCookie::eHTTPResponse) const;
 
+    /// Set secure connection flag. Affects printing of cookies:
+    /// secure cookies can be sent only trough secure connections.
+    void SetSecure(bool secure) { m_Secure = secure; }
+
 private:
     enum ECheckResult {
         eCheck_Valid,         // Cookie is valid
@@ -299,6 +303,7 @@ private:
 
     NStr::EUrlEncode m_EncodeFlag;
     TSet             m_Cookies;
+    bool             m_Secure;
 
     /// prohibit default initialization and assignment
     CCgiCookies(const CCgiCookies&);
@@ -926,14 +931,16 @@ inline void CCgiCookie::ResetInvalid(TInvalidFlag flag)
 
 inline CCgiCookies::CCgiCookies(void)
     : m_EncodeFlag(NStr::eUrlEnc_SkipMarkChars),
-      m_Cookies()
+      m_Cookies(),
+      m_Secure(false)
 {
     return;
 }
 
 inline CCgiCookies::CCgiCookies(EUrlEncode encode_flag)
     : m_EncodeFlag(NStr::EUrlEncode(encode_flag)),
-      m_Cookies()
+      m_Cookies(),
+      m_Secure(false)
 {
     return;
 }
@@ -942,7 +949,8 @@ inline CCgiCookies::CCgiCookies(const string& str,
                                 EOnBadCookie on_bad_cookie,
                                 EUrlEncode   encode_flag)
     : m_EncodeFlag(NStr::EUrlEncode(encode_flag)),
-      m_Cookies()
+      m_Cookies(),
+      m_Secure(false)
 {
     Add(str, on_bad_cookie);
 }

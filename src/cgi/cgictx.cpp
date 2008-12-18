@@ -165,6 +165,8 @@ void CCgiContext::x_InitSession(CCgiRequest::TFlags flags)
         }
     }
 
+    GetSelfURL();
+    m_Response.Cookies().SetSecure(m_SelfURL.substr(0, 5) == "https");
 }
 
 CCgiContext::~CCgiContext(void)
@@ -263,42 +265,46 @@ void CCgiContext::ReplaceRequestValue(const string&    name,
 }
 
 
-const string& CCgiContext::GetSelfURL(ESelfUrlPort use_port)
-    const
+const string& CCgiContext::GetSelfURL(void) const
 {
     if ( !m_SelfURL.empty() )
         return m_SelfURL;
 
+    // First check forwarded URLs
+    string caf = GetRequest().GetRandomProperty("CAF");
+    int caf_ver = caf.empty() ? 0 : atoi(caf.c_str());
+    if ( 0 /* caf_ver >= 119289 */ ) {
+        string caf_url = GetRequest().GetRandomProperty("CAF_URL");
+        if ( !caf_url.empty() ) {
+            m_SelfURL = caf_url;
+            return m_SelfURL;
+        }
+    }
+
+    // Compose self URL
     string server(GetRequest().GetProperty(eCgi_ServerName));
     if ( server.empty() ) {
         return kEmptyStr;
     }
 
-    // Do not add the port # for front-end URLs by default for NCBI front-ends
-    if (use_port == eSelfUrlPort_Default) {
-        if (NStr::StartsWith(server, "www.ncbi",   NStr::eNocase) ||
-            NStr::StartsWith(server, "web.ncbi",   NStr::eNocase) ||
-            NStr::StartsWith(server, "wwwqa.ncbi", NStr::eNocase) ||
-            NStr::StartsWith(server, "webqa.ncbi", NStr::eNocase)) {
-            use_port = eSelfUrlPort_Strip;
-        }
-    }
-
-    // Compose self URL
     bool secure = AStrEquiv(GetRequest().GetRandomProperty("HTTPS",
         false), "on", PNocase());
     m_SelfURL = secure ? "https://" : "http://";
     m_SelfURL += server;
-    if (use_port != eSelfUrlPort_Strip) {
+    string port = GetRequest().GetProperty(eCgi_ServerPort);
+    // Skip port if it's default for the selected scheme
+    if ((secure  &&  port == "443")  ||  (!secure  &&  port == "80")) {
+        port = kEmptyStr;
+    }
+    if ( !port.empty() ) {
         m_SelfURL += ':';
-        m_SelfURL += GetRequest().GetProperty(eCgi_ServerPort);
+        m_SelfURL += port;
     }
     // (replace adjacent '//' to work around a bug in the "www.ncbi" proxy;
     //  it should not hurt, and may help with similar proxies outside NCBI)
     string script_uri;
-    string caf = GetRequest().GetRandomProperty("CAF");
     bool have_script_uri = false;
-    if (!caf.empty()  &&  atoi(caf.c_str()) >= 119289) {
+    if ( caf_ver >= 119289 ) {
         script_uri = GetRequest().GetRandomProperty("X_FORWARDED_URI");
         have_script_uri = !script_uri.empty();
         size_t arg_pos = script_uri.find('?');
@@ -313,6 +319,7 @@ const string& CCgiContext::GetSelfURL(ESelfUrlPort use_port)
 
     return m_SelfURL;
 }
+
 
 CCgiContext::TStreamStatus
 CCgiContext::GetStreamStatus(STimeout* timeout) const
