@@ -1,4 +1,4 @@
-APP_PROJ = oligofar fadice
+APP_PROJ = oligofar fadice align
 
 REQUIRES = objects bdb -Cygwin
 

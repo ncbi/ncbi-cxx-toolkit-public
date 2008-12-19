@@ -33,14 +33,58 @@ public:
     void Align( int flags );
 protected:
 
+    int GetDiagCnt() const { return m_matrix->size()/2; }
+
+    const TValue& GetMatrix( int q, int s, bool check = true ) const { 
+        int d = GetDiagCnt();
+        int b = s + d - q;
+        ++q; // since value -1 is allowed
+        if( check ) {
+            try {
+                ASSERT( b >= 0 );
+                ASSERT( b < (int)m_matrix->size() );
+                ASSERT( q >= 0 );
+                ASSERT( q < (int)(*m_matrix)[0].size() );
+            } catch(...) {
+                cerr << __FUNCTION__ << "( " << (q-1) << ", " << s << " ) : " << DISPLAY( d ) << DISPLAY( b ) << "\n";
+                throw;
+            }
+        } else if( b < 0 || q < 0 || b >= (int)m_matrix->size() || q >= (int)(*m_matrix)[0].size() ) {
+            static TValue kBad( -10, eNull );
+            return kBad;
+        }
+        return (*m_matrix)[b][q];
+    }
+
+    TValue& SetMatrix( int q, int s ) {
+        int d = GetDiagCnt();
+        int b = s + d - q;
+        ++q; // since value -1 is allowed
+        try {
+            ASSERT( b >= 0 );
+            ASSERT( b < (int)m_matrix->size() );
+            ASSERT( q >= 0 );
+            ASSERT( q < (int)(*m_matrix)[0].size() );
+        } catch(...) {
+            cerr << __FUNCTION__ << "( " << (q-1) << ", " << s << " ) : " << DISPLAY( d ) << DISPLAY( b ) << "\n";
+            throw;
+        }
+        return (*m_matrix)[b][q];
+    }
+
+    TValue& SetMatrix( int q, int s, const TValue& v ) { return SetMatrix( q, s ) = v; }
+    TValue& SetMatrix( int q, int s, double score, ECode code ) { return SetMatrix( q, s ) = TValue( score, code ); }
+
     void x_Reset();
     void x_BuildMatrix();
     void x_ExtendToQueryEnd();
     void x_BackTrace( int flags );
+    void x_PrintMatrix();
 
     static void x_Reverse( string& s ) { reverse( s.begin(), s.end() ); }
             
     TMatrix& SetMatrix() { return *m_matrix; }
+    const TMatrix& GetMatrix() const { return *m_matrix; }
 };
 
 template<class CQuery,class CSubject>
@@ -67,18 +111,31 @@ inline void TAligner_SW<CQuery,CSubject>::x_BuildMatrix()
     int qend = 0;
     int send = 0;
     
-    int xdropOff = SetMatrix().size()/2;
+    int xdropOff = GetMatrix().size()/2;
     double score = 0;
 
     const CScoreTbl& scoreTbl = TSuper::GetScoreTbl();
 
-    for( int i = 0; i < (int) SetMatrix().size(); ++i ) SetMatrix()[i].resize( qsize );
-    
+    for( int i = 0; i < (int) SetMatrix().size(); ++i ) SetMatrix()[i].resize( qsize + 2 );
+    SetMatrix( -1, -1, 0, eMismatch );
+    do { // init penalties for alignment starting at wrong position
+        double f = scoreTbl.GetGapOpeningScore();
+        if( xdropOff > 0 ) {
+            SetMatrix(  0, -1, f, eDeletion );
+            SetMatrix( -1,  0, f, eInsertion );
+        }
+        f += scoreTbl.GetGapExtentionScore();
+        for( int k = 1; k < xdropOff; ++k, (f += scoreTbl.GetGapExtentionScore()) ) {
+            SetMatrix(  k, -1, f, eDeletion );
+            SetMatrix( -1,  k, f, eInsertion );
+        }
+    } while(0);
+
     for( int q = 0; q < qsize; ++q ) {
         
         int b = std::max( xdropOff - q, 0 );
-        int B = std::min( int( SetMatrix().size() ), int( ssize ) - q + xdropOff );
-        
+        int B = std::min( int( GetMatrix().size() ), int( ssize ) - q + xdropOff );
+
         for( ; b < B ; ++b ) {
             
             int s = q + b - xdropOff;
@@ -87,35 +144,34 @@ inline void TAligner_SW<CQuery,CSubject>::x_BuildMatrix()
             double matchScore = Score( query + q, subject + s );
             bool match = matchScore > 0; // or Match( query + s, subject + s ) 
 
-            if( q > 0 ) {
-                matchScore += SetMatrix()[b][q-1].first;
-                if( b < (int)SetMatrix().size() - 1 ) {
-                    const TValue& val = SetMatrix()[b+1][q-1];
-                    insScore = val.first + ( val.second == eInsertion ? scoreTbl.GetGapExtentionScore() : scoreTbl.GetGapOpeningScore() );
-                }
+            matchScore += GetMatrix( q - 1, s - 1).first;
+            if( b < (int)GetMatrix().size() - 1 ) {
+                const TValue& val = GetMatrix( q - 1, s );
+                insScore = val.first + ( val.second == eInsertion ? scoreTbl.GetGapExtentionScore() : scoreTbl.GetGapOpeningScore() );
             }
             
             if( b > 0 ) {
-                const TValue& val = SetMatrix()[b-1][q];
+                const TValue& val = GetMatrix( q, s - 1 );
                 delScore = val.first + ( val.second == eDeletion ? scoreTbl.GetGapExtentionScore() : scoreTbl.GetGapOpeningScore() );
             }
             
             if( matchScore >= delScore ) {
                 if( matchScore >= insScore ) {
-                    SetMatrix()[b][q] = std::make_pair( matchScore, match ? eIdentity : eMismatch );
+                    SetMatrix( q, s,  matchScore, match ? eIdentity : eMismatch );
                     if( match && matchScore > score ) {
                         score = matchScore;
                         qend = q;
                         send = s;
+                        cerr << DISPLAY( qend ) << DISPLAY( send ) << DISPLAY( score ) << endl;
                     }
                 }
-                else SetMatrix()[b][q] = std::make_pair( insScore, eInsertion );
+                else SetMatrix( q, s, insScore, eInsertion );
             } else if ( delScore > insScore ) {
-                SetMatrix()[b][q] = std::make_pair( delScore, eDeletion );
+                SetMatrix( q, s, delScore, eDeletion );
             } else if ( insScore > delScore ) {
-                SetMatrix()[b][q] = std::make_pair( insScore, eInsertion );
+                SetMatrix( q, s, insScore, eInsertion );
             } else { // insScore == delScore > mismScore, choose any of the two best
-                SetMatrix()[b][q] = std::make_pair( insScore, eMismatch );
+                SetMatrix( q, s, insScore, eMismatch );
             }
         }
     }
@@ -124,6 +180,28 @@ inline void TAligner_SW<CQuery,CSubject>::x_BuildMatrix()
     TSuper::m_query = query + qend + 1;
     TSuper::m_subject = subject + send + 1;
     TSuper::SetScore() = score;
+}
+
+template<class CQuery,class CSubject>
+inline void TAligner_SW<CQuery,CSubject>::x_PrintMatrix()
+{
+    cerr << "\x1b[31mNULL\t\x1b[32mIdentity\t\x1b[33mMismatch\t\x1b[34mInsertion\t\x1b[35mDeletion\t\x1b[36mOTHER\x1b[0m\n";
+    cerr << string(78,'=') << endl;
+    for( int q = -1; q < (int)((*m_matrix)[0].size() - 1); ++q ) {
+        for( int s = -1; s < (int)((*m_matrix)[0].size() - 1); ++s ) {
+            if( s >= 0 ) cerr << "\t";
+            switch( GetMatrix( q, s, false ).second ) {
+            case eNull: cerr << "\x1b[31m"; break;
+            case eIdentity: cerr << "\x1b[32m"; break;
+            case eMismatch: cerr << "\x1b[33m"; break;
+            case eInsertion: cerr << "\x1b[34m"; break;
+            case eDeletion: cerr << "\x1b[35m"; break;
+            default: cerr << "\x1b[36m"; break;
+            }
+            cerr << GetMatrix( q, s, false ).first << "\x1b[0m";
+        }
+        cerr << "\n";
+    }
 }
 
 template<class CQuery,class CSubject>
@@ -148,6 +226,7 @@ inline void TAligner_SW<CQuery,CSubject>::x_ExtendToQueryEnd()
 template<class CQuery,class CSubject>
 inline void TAligner_SW<CQuery,CSubject>::x_BackTrace( int flags )
 {
+//    x_PrintMatrix();
     const CQuery query = TSuper::GetQueryBegin();
     const CSubject subject = TSuper::GetSubjectBegin();
     
@@ -157,12 +236,13 @@ inline void TAligner_SW<CQuery,CSubject>::x_BackTrace( int flags )
     TSuper::m_query -= TSuper::SetQueryAligned();
     TSuper::m_subject -= TSuper::SetSubjectAligned();
     
-    int xdropOff = SetMatrix().size()/2;
+    //int xdropOff = SetMatrix().size()/2;
 
     while( q >= 0 && s >= 0 ) {
-        int b = s - q + xdropOff;
-        const TValue& val = SetMatrix()[b][q];
+        //int b = s - q + xdropOff;
+        const TValue& val = GetMatrix( q, s ); //SetMatrix()[b][q+1];
         
+//        cerr << DISPLAY( q ) << DISPLAY( s ) << DISPLAY( val.first ) << DISPLAY( char( val.second ) ) << endl;
 
         switch( val.second ) {
         case eDeletion: 
