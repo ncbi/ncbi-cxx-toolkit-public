@@ -136,7 +136,7 @@ extern NCBI_XCONNECT_EXPORT void HEAP_Free
 
 
 /* Deallocate a block pointed to by "ptr" and having "prev" as its predecessor
- * (NULL if "ptr" is the first on the heap) -- faster variant of HEAP_Free().
+ * (NULL if "ptr" is the first on the heap) -- a faster variant of HEAP_Free().
  * NOTE:  Since the block pointed to by "ptr" may cause free blocks to
  * coalesce, to use this call again while walking the following rule must
  * be utilized:  If "prev" was free, "prev" must not get advanced;
@@ -161,7 +161,7 @@ extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Walk
 
 /* Trim the heap, making garbage collection first.  Returned is
  * the resultant heap, which has its last block (if any) trimmed to the
- * size of heap chunk size as specified at the time of the heap creation.
+ * size of the heap chunk size as specified at the time of the heap creation.
  * No change in size is made if the last block is not free or large
  * enough to allow the trimming.  NULL gets returned on NULL or read-only
  * heaps, or if a resize error has occurred.
