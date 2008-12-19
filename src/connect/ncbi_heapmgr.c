@@ -317,11 +317,14 @@ static SHEAP_HeapBlock* s_HEAP_Collect(HEAP heap, TNCBI_Size* prev)
 }
 
 
-/* Take the block 'b' (maybe split in two, if it's roomy enough)
- * for use of by at most 'size' bytes (aligned, and block header included).
- * Return the block to use.
+/* Book 'size' bytes (aligned, and block header included) within the given
+ * free block 'b' of an adequate size (perhaps causing the block to be split
+ * in two, if it's roomy enough, and the remaining part marked as a new
+ * free block).  Non-zero 'fast' parameter inverses the order of locations of
+ * occupied blocks in successive allocations, but saves cycles by sparing
+ * updates of the free block list.  Return the block to use.
  */
-static SHEAP_Block* s_HEAP_Take(HEAP heap, SHEAP_HeapBlock* b,
+static SHEAP_Block* s_HEAP_Book(HEAP heap, SHEAP_HeapBlock* b,
                                 TNCBI_Size size, int/*bool*/ fast)
 {
     unsigned int last = b->head.flag & HEAP_LAST;
@@ -329,6 +332,7 @@ static SHEAP_Block* s_HEAP_Take(HEAP heap, SHEAP_HeapBlock* b,
     assert(HEAP_ALIGN(size) == size);
     assert(HEAP_ISFREE(b)  &&  b->head.size >= size);
     if (b->head.size >= size + _HEAP_ALIGNMENT) {
+        /* the block to use in part */
         if (fast) {
             b->head.flag &= ~HEAP_LAST;
             b->head.size -= size;
@@ -365,6 +369,7 @@ static SHEAP_Block* s_HEAP_Take(HEAP heap, SHEAP_HeapBlock* b,
             }
         }
     } else {
+        /* the block to use in whole */
         size = HEAP_INDEX(b, heap->base);
         if (b->prevfree != size) {
             assert(b->nextfree != size);
@@ -375,7 +380,7 @@ static SHEAP_Block* s_HEAP_Take(HEAP heap, SHEAP_HeapBlock* b,
             if (heap->free == size)
                 heap->free = b->prevfree;
         } else {
-            /* the only free block taken */;
+            /* the only free block */
             assert(b->prevfree == b->nextfree);
             assert(b->prevfree == heap->free);
             heap->free = heap->size;
@@ -383,6 +388,17 @@ static SHEAP_Block* s_HEAP_Take(HEAP heap, SHEAP_HeapBlock* b,
     }
     b->head.flag = HEAP_USED | last;
     return &b->head;
+}
+
+
+static SHEAP_Block* s_HEAP_Take(HEAP heap, SHEAP_HeapBlock* b,
+                                TNCBI_Size size, TNCBI_Size real,
+                                int/*bool*/ fast)
+{
+    SHEAP_Block* n = s_HEAP_Book(heap, b, size, fast);
+    if (size -= real)
+        memset((char*) n + real, 0, size); /* block padding (if any) zeroed */
+    return n;
 }
 
 
@@ -405,6 +421,7 @@ static const char* s_HEAP_Id(char* buf, HEAP h)
 static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
 {
     SHEAP_HeapBlock* f, *b;
+    TNCBI_Size need;
     TNCBI_Size free;
     char _id[32];
 
@@ -422,7 +439,8 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
     if (size < 1)
         return 0;
 
-    size = (TNCBI_Size) HEAP_ALIGN(sizeof(SHEAP_Block) + size);
+    size += (TNCBI_Size) sizeof(SHEAP_Block);
+    need  = (TNCBI_Size) HEAP_ALIGN(size);
 
     free = 0;
     if (heap->free < heap->size) {
@@ -438,21 +456,21 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
                              b->head.flag, b->head.size));
                 return 0;
             }
-            if (b->head.size >= size)
-                return s_HEAP_Take(heap, b, size, fast);
+            if (b->head.size >= need)
+                return s_HEAP_Take(heap, b, need, size, fast);
             free += b->head.size;
             b = heap->base + b->nextfree;
         } while (b != f);
     }
 
     /* Heap exhausted: no large enough, free block found */
-    if (free >= size)
+    if (free >= need)
         b = s_HEAP_Collect(heap, &free/*dummy*/);
     else if (!heap->resize)
         return 0;
     else {
         TNCBI_Size dsize = heap->size << _HEAP_ALIGNSHIFT;
-        TNCBI_Size hsize = ((dsize + size + heap->chunk - 1)
+        TNCBI_Size hsize = ((dsize + need + heap->chunk - 1)
                             / heap->chunk) * heap->chunk;
         SHEAP_HeapBlock* base = (SHEAP_HeapBlock*)
             heap->resize(heap->base, hsize, heap->arg);
@@ -487,7 +505,7 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
                     assert(HEAP_ISFREE(base + heap->free));
                     b->prevfree = heap->free;
                     b->nextfree = base[heap->free].nextfree;
-                    base[heap->free].nextfree = heap->size;
+                    base[heap->free].nextfree  = heap->size;
                     base[b->nextfree].prevfree = heap->size;
                 } else {
                     b->prevfree = heap->size;
@@ -503,8 +521,8 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
         heap->base = base;
         heap->size = hsize >> _HEAP_ALIGNSHIFT;
     }
-    assert(b  &&  HEAP_ISFREE(b));
-    return s_HEAP_Take(heap, b, size, fast);
+    assert(b  &&  HEAP_ISFREE(b)  &&  b->head.size >= need);
+    return s_HEAP_Take(heap, b, need, size, fast);
 }
 
 
