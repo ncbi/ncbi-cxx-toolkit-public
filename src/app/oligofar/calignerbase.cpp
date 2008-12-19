@@ -3,6 +3,8 @@
 
 USING_OLIGOFAR_SCOPES;
 
+bool CAlignerBase::gsx_printDebug = false;
+
 CScoreTbl CAlignerBase::s_defaultScoreTbl( 1, -1, -3, -1.5 );
 
 CAlignerBase::CAlignerBase( CScoreTbl& scoretbl ) :

@@ -57,8 +57,12 @@ public:
     template <class CQuery, class CSubject>
     friend class TAlignerBase;
 
+    static bool SetPrintDebug( bool on = true ) { return gsx_printDebug = on; }
+    static bool GetPrintDebug() { return gsx_printDebug; }
+
 protected:
     static CScoreTbl s_defaultScoreTbl;
+    static bool gsx_printDebug;
 
     CScoreTbl * m_scoreTbl;
     const char * m_qbegin;

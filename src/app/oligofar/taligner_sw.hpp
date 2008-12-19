@@ -162,7 +162,7 @@ inline void TAligner_SW<CQuery,CSubject>::x_BuildMatrix()
                         score = matchScore;
                         qend = q;
                         send = s;
-                        cerr << DISPLAY( qend ) << DISPLAY( send ) << DISPLAY( score ) << endl;
+//                        cerr << DISPLAY( qend ) << DISPLAY( send ) << DISPLAY( score ) << endl;
                     }
                 }
                 else SetMatrix( q, s, insScore, eInsertion );
@@ -226,7 +226,7 @@ inline void TAligner_SW<CQuery,CSubject>::x_ExtendToQueryEnd()
 template<class CQuery,class CSubject>
 inline void TAligner_SW<CQuery,CSubject>::x_BackTrace( int flags )
 {
-//    x_PrintMatrix();
+    if( CAlignerBase::GetPrintDebug() ) x_PrintMatrix();
     const CQuery query = TSuper::GetQueryBegin();
     const CSubject subject = TSuper::GetSubjectBegin();
     
