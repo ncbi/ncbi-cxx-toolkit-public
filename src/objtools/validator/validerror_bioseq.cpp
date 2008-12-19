@@ -1521,6 +1521,9 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
     if (check_alphabet) {
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
         CSeqVector sv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        if (seqtyp == CSeq_data::e_Ncbieaa || seqtyp == CSeq_data::e_Ncbistdaa) {
+            sv.SetCoding (CSeq_data::e_Ncbieaa);
+        }
         CSeqVector sv_res = bsh.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
 
         size_t bad_cnt = 0;
