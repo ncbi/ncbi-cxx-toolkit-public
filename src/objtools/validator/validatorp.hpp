@@ -448,8 +448,6 @@ public:
 private:
     typedef multimap<string, const CSeq_feat*, PNocase> TStrFeatMap;
     typedef vector<CMappedFeat>                         TMappedFeatVec;
-
-    static const size_t scm_AdjacentNsThreshold; // = 80
     
     void ValidateSeqLen(const CBioseq& seq);
     void ValidateSegRef(const CBioseq& seq);

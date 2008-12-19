@@ -125,9 +125,6 @@ BEGIN_SCOPE(validator)
 USING_SCOPE(sequence);
 USING_SCOPE(feature);
 
-// Maximum number of adjacent Ns in a Seq_lit
-const size_t CValidError_bioseq::scm_AdjacentNsThreshold = 80;
-
 
 // =============================================================================
 //                                     Public
@@ -468,8 +465,7 @@ void CValidError_bioseq::ValidateSecondaryAccConflict
  const CBioseq &seq,
  int choice)
 {
-    CSeq_descr_CI ds(m_Scope->GetBioseqHandle(seq));
-    CSeqdesc_CI sd(ds, static_cast<CSeqdesc::E_Choice>(choice));
+    CSeqdesc_CI sd(m_Scope->GetBioseqHandle(seq), static_cast<CSeqdesc::E_Choice>(choice));
     for (; sd; ++sd) {
         const list< string > *extra_acc = 0;
         if ( choice == CSeqdesc::e_Genbank  &&
@@ -1722,6 +1718,27 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
 }
 
 
+static int s_MaxNsInSeqLitForTech (CMolInfo::TTech tech)
+{
+    int max_ns = -1;
+
+    switch (tech) {
+        case CMolInfo::eTech_htgs_1:
+        case CMolInfo::eTech_htgs_2:
+        case CMolInfo::eTech_composite_wgs_htgs:
+            max_ns = 80;
+            break;
+        case CMolInfo::eTech_wgs:
+            max_ns = 20;
+            break;
+        default:
+            max_ns = 100;
+            break;
+    }
+    return max_ns;
+}
+
+
 // Assumes seq is a delta sequence
 void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 {
@@ -1855,17 +1872,15 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     }
                 }
                             
-                // Count adjacent Ns in Seq-lit for htgs_1 and htgs_2
-                if ( tech == CMolInfo::eTech_htgs_1  ||  
-                    tech == CMolInfo::eTech_htgs_2 ) {
-                    size_t adjacent_ns = x_CountAdjacentNs(lit);
-                    if ( adjacent_ns > scm_AdjacentNsThreshold ) {
-                        PostErr(eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqLit,
+                // Count adjacent Ns in Seq-lit
+                int max_ns = s_MaxNsInSeqLitForTech (tech);
+                int adjacent_ns = x_CountAdjacentNs(lit);
+                if (max_ns > -1 && adjacent_ns > max_ns) {
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqLit,
                             "Run of " + NStr::UIntToString(adjacent_ns) + 
                             " Ns in delta component " + NStr::UIntToString(seg) +
                             " that starts at base " + NStr::UIntToString(start_len),
                             seq);
-                    }
                 }
             } else {
                 if ( first ) {
