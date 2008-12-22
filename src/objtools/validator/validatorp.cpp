@@ -698,6 +698,25 @@ bool CValidError_imp::Validate
             NStr::IntToString(bioseq_validator.GetTpaWithoutHistory()) +
             " without history in this record.", *m_TSE);
     }
+    if ( bioseq_validator.GetTpaWithoutHistory() > 0) {
+        bool has_gi = false;
+        for (CBioseq_CI bi(GetTSEH()); bi && !has_gi; ++bi) {
+            // will only report sequences with TPA Assembly user objects and no Seq-hist if at least one sequence
+            // has a gi.
+            FOR_EACH_SEQID_ON_BIOSEQ (it, *((*bi).GetCompleteBioseq())) {
+                if ((*it)->IsGi()) {
+                    has_gi = true;
+                }
+            }
+        }             
+
+        if (has_gi) {
+            PostErr (eDiag_Warning, eErr_SEQ_INST_TpaAssmeblyProblem,
+                "There are " +
+                NStr::IntToString(bioseq_validator.GetTpaWithoutHistory()) +
+                " TPAs without history in this record, but the record has a gi number assignment.", *m_TSE);
+        }
+    }
 
     // Bioseq sets:
 
