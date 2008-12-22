@@ -23,6 +23,7 @@ SRC = \
         coligofarapp \
         coligofarapp-aligners \
         coligofarapp-tests \
+        aoutputformatter \
         coutputformatter \
         cseqcoding \
         cpermutator8b \

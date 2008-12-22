@@ -1,5 +1,6 @@
 #include <ncbi_pch.hpp>
 #include "coligofarapp.hpp"
+#include "coutputformatter.hpp"
 #include "cprogressindicator.hpp"
 #include "cseqscanner.hpp"
 #include "cguidefile.hpp"
@@ -24,7 +25,7 @@
 USING_OLIGOFAR_SCOPES;
 
 #ifndef OLIGOFAR_VERSION
-#define OLIGOFAR_VERSION "3.32" 
+#define OLIGOFAR_VERSION "3.33" 
 #endif
 
 COligoFarApp::COligoFarApp( int argc, char ** argv ) :
@@ -577,7 +578,7 @@ int COligoFarApp::ProcessData()
     CQueryHash queryHash( 0, 0 ); // TODO: fix this
     CScoreTbl scoreTbl( m_identityScore, m_mismatchScore, m_gapOpeningScore, m_gapExtentionScore );
     CGuideFile guideFile( m_guideFile, filter, seqIds );
-    CBatch batch( m_readsPerRun, m_fastaFile, queryHash, seqVecProcessor, filter, formatter, scoreTbl );
+    CBatch batch( m_readsPerRun, m_fastaFile, queryHash, seqVecProcessor, filter, &formatter, scoreTbl );
 
     CSnpDb snpDb( CSnpDb::eSeqId_integer );
     if( m_snpdbFile.length() ) {
