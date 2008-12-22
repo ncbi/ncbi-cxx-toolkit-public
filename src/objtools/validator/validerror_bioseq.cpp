@@ -1935,9 +1935,9 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             "] than given length [" + NStr::IntToString(inst.GetLength()) +
             "]", seq);
     }
-    if ( non_interspersed_gaps  &&  (!m_Imp.IsGI()) &&  mi  &&
-        (tech != CMolInfo::eTech_htgs_0  ||  tech != CMolInfo::eTech_htgs_1  ||
-         tech != CMolInfo::eTech_htgs_2  ||  tech != CMolInfo::eTech_htgs_3) ) {
+    if ( non_interspersed_gaps  &&  mi  &&
+        (tech == CMolInfo::eTech_htgs_0  ||  tech == CMolInfo::eTech_htgs_1  ||
+         tech == CMolInfo::eTech_htgs_2  ||  tech == CMolInfo::eTech_htgs_3) ) {
         PostErr(eDiag_Error, eErr_SEQ_INST_MissingGaps,
             "HTGS delta seq should have gaps between all sequence runs", seq);
     }
