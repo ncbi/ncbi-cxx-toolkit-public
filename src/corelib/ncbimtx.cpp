@@ -1082,7 +1082,8 @@ void CSemaphore::Wait(void)
     else {
         m_Sem->wait_count++;
         do {
-            if (pthread_cond_wait(&m_Sem->cond, &m_Sem->mutex) != 0) {
+            int status = pthread_cond_wait(&m_Sem->cond, &m_Sem->mutex);
+            if (status != 0  &&  status != EINTR) {
                 xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
                                "CSemaphore::Wait() - "
                                "pthread_cond_wait() and "
