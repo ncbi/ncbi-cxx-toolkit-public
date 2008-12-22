@@ -6,10 +6,10 @@
 #include "cqueryhash.hpp"
 #include "chashparam.hpp"
 #include "cseqvecprocessor.hpp"
-#include "coutputformatter.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
 
+class IOutputFormatter;
 class CProgressIndicator;
 class CBatch
 {
@@ -20,7 +20,7 @@ public:
     // scoring is used to estimate number of mismathes for more iterative hashing
     CBatch( int readCount, const string& fastaFile, 
             CQueryHash& queryHash, CSeqVecProcessor& seqVecProcessor, 
-            CFilter& filter, COutputFormatter& formatter,
+            CFilter& filter, IOutputFormatter* formatter,
             const CScoreTbl& scoring ) ;
     ~CBatch();
 
@@ -67,7 +67,7 @@ protected:
     CFilter          & m_filter;
     CQueryHash       & m_queryHash;
     CSeqVecProcessor & m_seqVecProcessor;
-    COutputFormatter & m_formatter;
+    IOutputFormatter * m_formatter;
     CProgressIndicator * m_readProgressIndicator;
     IAligner * m_aligner[2];
     bool m_ownAligner[2];
@@ -79,7 +79,7 @@ protected:
 
 inline CBatch::CBatch( int readCount, const string& fastaFile, 
         CQueryHash& queryHash, CSeqVecProcessor& seqVecProcessor, CFilter& filter, 
-        COutputFormatter& formatter, const CScoreTbl& scoreTbl ) :
+        IOutputFormatter* formatter, const CScoreTbl& scoreTbl ) :
     m_readsPerRun( readCount ), m_hashedReads( 0 ), m_guidedReads( 0 ), m_ignoredReads( 0 ), m_hashEntries( 0 ),
     m_scoreTbl( scoreTbl ),
     m_mismatchPenalty( scoreTbl.GetIdentityScore() - max( scoreTbl.GetMismatchScore(), scoreTbl.GetGapOpeningScore() ) ),

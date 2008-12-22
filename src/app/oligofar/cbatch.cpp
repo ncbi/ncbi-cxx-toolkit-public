@@ -2,6 +2,7 @@
 #include "cbatch.hpp"
 #include "ialigner.hpp"
 #include "cprogressindicator.hpp"
+#include "ioutputformatter.hpp"
 
 USING_OLIGOFAR_SCOPES;
 
@@ -111,11 +112,11 @@ void CBatch::Purge()
         m_queryHash.Clear();
     }
 
-    if( m_guidedReads && m_formatter.NeedSeqids() ) x_LoadSeqIds();
+    if( m_guidedReads && m_formatter->NeedSeqids() ) x_LoadSeqIds();
 
     CProgressIndicator p( "Purging " + NStr::Int8ToString( CHit::GetCount() ) + " hits for " + NStr::Int8ToString( CQuery::GetCount() ) + " entries" );
     ITERATE( TInputChunk, i, m_inputChunk ) {
-        m_formatter( *i );
+        m_formatter->FormatQueryHits( *i );
         p.Increment();
     }
     p.Summary();

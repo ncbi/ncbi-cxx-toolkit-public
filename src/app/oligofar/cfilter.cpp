@@ -2,7 +2,7 @@
 #include "cfilter.hpp"
 #include "ialigner.hpp"
 #include "cquery.hpp"
-#include "coutputformatter.hpp"
+#include "ioutputformatter.hpp"
 
 USING_OLIGOFAR_SCOPES;
 
@@ -39,6 +39,10 @@ void CFilter::MatchConv( const CHashAtom& m, const char * a, const char * A, int
         int one = reverseStrand ? -1 : 1;
         int off = m.GetOffset() * one;
         const CAlignerBase& abase = m_aligner->GetAlignerBase();
+        /*
+        int qf1 = m.GetOffset(), ql1 = - m.GetOffset() - 1;
+        int sf1 = pos + off, sl1 = reverseStrand ? A - a - pos : -pos;
+        */
         m_aligner->Align( m.GetQuery()->GetCoding(),
                           m.GetQuery()->GetData( m.GetPairmate() ) + m.GetOffset(),
                           - m.GetOffset() - 1,
@@ -46,9 +50,14 @@ void CFilter::MatchConv( const CHashAtom& m, const char * a, const char * A, int
                           a + pos + off,
                           reverseStrand ? A - a - pos : -pos,
                           CAlignerBase::fComputeScore );
-        double score = abase.GetRawScore();
+        
+        double score1 = abase.GetRawScore();
         int from = pos + off - one * (abase.GetSubjectAlignedLength() - 1);
 
+        /*
+        int qf2 = m.GetOffset() + 1, ql2 = m.GetQuery()->GetLength( m.GetPairmate() ) - m.GetOffset() - 1;
+        int sf2 = pos + off + one, sl2 = reverseStrand ? -pos : A - a - pos;
+        */
         m_aligner->Align( m.GetQuery()->GetCoding(),
                           m.GetQuery()->GetData( m.GetPairmate() ) + m.GetOffset() + 1,
                           m.GetQuery()->GetLength( m.GetPairmate() ) - m.GetOffset() - 1,
@@ -56,9 +65,17 @@ void CFilter::MatchConv( const CHashAtom& m, const char * a, const char * A, int
                           a + pos + off + one,
                           reverseStrand ? -pos : A - a - pos,
                           CAlignerBase::fComputeScore );
-        score += abase.GetRawScore();
-        int to = pos + off + one * (abase.GetSubjectAlignedLength());
 
+        double score2 = abase.GetRawScore();
+        int to = pos + off + one * (abase.GetSubjectAlignedLength());
+        //int ql =  m.GetQuery()->GetLength( m.GetPairmate() );
+
+        double score = (score1 + score2);
+        /*
+        cerr << m.GetQuery()->GetId() << DISPLAY( ql ) << DISPLAY( from ) << DISPLAY( to ) << DISPLAY( score ) << DISPLAY( bestScore ) << "\n";
+        cerr << DISPLAY( qf1 ) << DISPLAY( ql1 ) << DISPLAY( sf1 ) << DISPLAY( sl1 ) << DISPLAY( score1 ) << endl;
+        cerr << DISPLAY( qf2 ) << DISPLAY( ql2 ) << DISPLAY( sf2 ) << DISPLAY( sl2 ) << DISPLAY( score2 ) << endl;
+        */
         score *= 100.0/bestScore;
         if( score >= m_scoreCutoff ) { ProcessMatch( score, from, to, reverseStrand,  m.GetQuery(), m.GetPairmate() ); }
     } else {

@@ -9,7 +9,7 @@
 BEGIN_OLIGOFAR_SCOPES
 
 class IAligner;
-class COutputFormatter;
+class IOutputFormatter;
 class CFilter : public CSeqVecProcessor::ICallback
 {
 public:
@@ -50,7 +50,7 @@ public:
 
     void SetSeqIds( CSeqIds* seqIds ) { m_seqIds = seqIds; }
     void SetAligner( IAligner* aligner ) { m_aligner = aligner; }
-    void SetOutputFormatter( COutputFormatter * f ) { m_outputFormatter = f; }
+    void SetOutputFormatter( IOutputFormatter * f ) { m_outputFormatter = f; }
 
     void SetMaxDist( int d ) { m_maxDist = d; }
     void SetMinDist( int d ) { m_minDist = d; }
@@ -96,7 +96,7 @@ protected:
     double m_topPct;
     double m_scoreCutoff;
     TPendingHits m_pendingHits;
-    COutputFormatter * m_outputFormatter;
+    IOutputFormatter * m_outputFormatter;
 };
 
 END_OLIGOFAR_SCOPES
