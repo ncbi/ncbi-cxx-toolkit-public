@@ -367,6 +367,7 @@ inline int CQueryHash::ComputeScannerWindowLength()
 inline Uint2 CQueryHash::ComputeHashPreallocSz() const
 {
     // VERIFY!!!
+    return 1; // TODO: verify and remove!
     if( m_maxMism == 0 && !m_allowIndel ) return 1;
     int k = m_wordSize;
     int b = (m_hashTable.GetIndexBits() + 1)/2;
