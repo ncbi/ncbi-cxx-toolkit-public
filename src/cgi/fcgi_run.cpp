@@ -571,7 +571,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 // set the result to 0, update HTTP status and continue.
                 m_Context->GetResponse().SetStatus(e.GetStatusCode(),
                                                    e.GetStatusMessage());
-                SetHTTPStatus(e.GetStatusCode());
                 x_result = 0;
             }
             GetDiagContext().SetAppState(eDiagAppState_RequestEnd);

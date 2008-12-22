@@ -269,7 +269,6 @@ int CCgiApplication::Run(void)
             // set the result to 0, update HTTP status and continue.
             m_Context->GetResponse().SetStatus(e.GetStatusCode(),
                                                e.GetStatusMessage());
-            SetHTTPStatus(e.GetStatusCode());
             result = 0;
         }
         _TRACE("CCgiApplication::Run: flushing");
@@ -526,7 +525,6 @@ CCgiApplication::CCgiApplication(void)
    m_HostIP(0), 
    m_Iteration(0),
    m_ArgContextSync(false),
-   m_HTTPStatus(200),
    m_IsResultReady(true),
    m_ShouldExit(false),
    m_RequestStartPrinted(false)
@@ -565,8 +563,8 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
     if ( dynamic_cast<CCgiException*> (&e) ) {
         CCgiException& cgi_e = dynamic_cast<CCgiException&>(e);
         if ( cgi_e.GetStatusCode() != CCgiException::eStatusNotSet ) {
-            SetHTTPStatus((unsigned int)cgi_e.GetStatusCode());
-            status_str = NStr::IntToString(m_HTTPStatus) +
+            SetHTTPStatus(cgi_e.GetStatusCode());
+            status_str = NStr::IntToString(cgi_e.GetStatusCode()) +
                 " " + cgi_e.GetStatusMessage();
         }
         else {
@@ -672,7 +670,6 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
     case eException:
         {
             CRequestContext& rctx = GetDiagContext().GetRequestContext();
-            rctx.SetRequestStatus(m_HTTPStatus);
             if ( m_InputStream.get() ) {
                 if ( m_InputStream->eof() ) {
                     m_InputStream->clear();
@@ -1121,6 +1118,12 @@ string CCgiApplication::GetDefaultLogPath(void) const
     // Could not find a valid web-dir entry, use port or 'srv'
     const char* port = ::getenv("SERVER_PORT");
     return port ? log_path + string(port) : log_path + "srv";
+}
+
+
+void CCgiApplication::SetHTTPStatus(int status)
+{
+    GetDiagContext().GetRequestContext().SetRequestStatus(status);
 }
 
 

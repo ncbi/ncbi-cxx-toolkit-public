@@ -32,6 +32,7 @@
 
 
 #include <ncbi_pch.hpp>
+#include <corelib/request_ctx.hpp>
 #include <cgi/ncbicgir.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <cgi/cgi_session.hpp>
@@ -172,6 +173,7 @@ void CCgiResponse::SetStatus(unsigned int code, const string& reason)
                      "CCgiResponse::SetStatus() -- text contains CR or LF");
     }
     SetHeaderValue(sm_HTTPStatusName, NStr::UIntToString(code) + ' ' + reason);
+    GetDiagContext().GetRequestContext().SetRequestStatus(code);
 }
 
 

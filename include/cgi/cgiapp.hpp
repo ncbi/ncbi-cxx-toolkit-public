@@ -264,8 +264,8 @@ protected:
     /// Prepare properties for application stop message
     virtual void AppStop(int exit_code);
 
-    /// Set HTTP status code
-    void SetHTTPStatus(unsigned int status) { m_HTTPStatus = status; }
+    /// Set HTTP status code in the current request context
+    void SetHTTPStatus(int status);
 
 protected:
     /// Set CONN_HTTP_REFERER, print self-URL and referer to log.
@@ -317,9 +317,6 @@ private:
 
     /// Parsed cmd.-line args (cmdline + CGI)
     mutable auto_ptr<CArgs>   m_CgiArgs;
-
-    /// HTTP status
-    unsigned int              m_HTTPStatus;
 
     /// Wrappers for cin and cout
     auto_ptr<CNcbiIstream>    m_InputStream;
