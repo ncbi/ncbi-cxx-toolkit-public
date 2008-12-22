@@ -64,6 +64,10 @@ void CReadBlastApp::Init(void)
          "output file in the ASN.1 format, of the same type (Seq-entry or Seq-submit)",
          CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
 
+    arg_desc->AddFlag
+        ("kfs",
+         "keep frameshifted sequences and make misc_features at the same time. Needs editing after run!");
+
     arg_desc->AddOptionalKey
         ("inblast", "blast_res_proteins",
          "input file which contains the standard BLAST output results (ran with -IT option) "

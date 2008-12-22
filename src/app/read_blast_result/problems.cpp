@@ -841,6 +841,8 @@ int CReadBlastApp::CollectRNAFeatures(TProblem_locs& problem_locs)
 
 int CReadBlastApp::CollectFrameshiftedSeqs(map<string,string>& problem_names)
 {
+  CArgs args = GetArgs();
+  bool keep_frameshifted = args["kfs"].HasValue();
   ITERATE( diagMap, feat, m_diag)
     {
     ITERATE(list<problemStr>, problem, feat->second.problems)
@@ -850,7 +852,11 @@ int CReadBlastApp::CollectFrameshiftedSeqs(map<string,string>& problem_names)
       string::size_type ipos = name.rfind('|'); if(ipos!=string::npos) name.erase(0, ipos+1);
       ipos = name.rfind('_'); if(ipos!=string::npos) ipos= name.rfind('_', ipos-1);
       if(ipos!=string::npos) name.erase(0, ipos+1);
-      if(problem->type == eFrameShift || problem->type == eRemoveOverlap) 
+      if( 
+          (problem->type == eFrameShift && !keep_frameshifted)
+          || 
+          problem->type == eRemoveOverlap
+        ) 
         { problem_names[name]=ProblemType(problem->type); added=true; }
       if(PrintDetails()) 
         NcbiCerr << "CollectFrameshiftedSeqs: " << feat->first
