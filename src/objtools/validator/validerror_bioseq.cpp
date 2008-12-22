@@ -1742,6 +1742,17 @@ static int s_MaxNsInSeqLitForTech (CMolInfo::TTech tech)
 }
 
 
+static bool s_IsSwissProt (const CBioseq& seq)
+{
+    FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
+        if ((*it)->IsSwissprot()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 // Assumes seq is a delta sequence
 void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 {
@@ -1894,8 +1905,13 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     ++num_adjacent_gaps;
                 }
                 if ( !lit.CanGetLength()  ||  lit.GetLength() == 0 ) {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_SeqLitGapLength0,
-                        "Gap of length 0 in delta chain", seq);
+                    if (lit.IsSetFuzz()) {
+                        PostErr(s_IsSwissProt(seq) ? eDiag_Warning : eDiag_Error, eErr_SEQ_INST_SeqLitGapLength0,
+                            "Gap of length 0 with unknown fuzz in delta chain", seq);
+                    } else {
+                        PostErr(s_IsSwissProt(seq) ? eDiag_Warning : eDiag_Error, eErr_SEQ_INST_SeqLitGapLength0,
+                            "Gap of length 0 in delta chain", seq);
+                    }
                 }
                 last_is_gap = true;
                 ++num_gaps;
