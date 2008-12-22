@@ -64,11 +64,6 @@ inline ostream& operator << ( ostream& o, const CNcbipnaPrinter& p )
     return o;
 }
 
-string COutputFormatter::GetSubjectId( int ord ) const 
-{
-    return m_seqIds.GetSeqDef( ord ).GetBestIdString();
-}
-
 void COutputFormatter::FormatCore( const CHit * hit ) const
 {
     m_out 
@@ -98,7 +93,7 @@ void COutputFormatter::FormatCore( const CHit * hit ) const
         << CNcbi8naPrinter( hit->GetTarget(1) ) << "\n";
 }
 
-void COutputFormatter::operator () ( const CQuery * query )
+void COutputFormatter::FormatQueryHits( const CQuery * query )
 {
     if( query == 0 ) return;
     if( CHit * hit = query->GetTopHit() ) {
@@ -169,7 +164,7 @@ void COutputFormatter::operator () ( const CQuery * query )
     delete query;
 }
 
-void COutputFormatter::FormatHit( const CHit * hit ) const
+void COutputFormatter::FormatHit( const CHit * hit ) 
 {
     if( ! hit ) return;
     m_out 
