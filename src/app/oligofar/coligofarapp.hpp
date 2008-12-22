@@ -49,7 +49,7 @@ protected:
     void ParseConfig( const string& cfg );
     void ParseConfig( IRegistry * );
 
-    int GetOutputFlags() const;
+    int GetOutputFlags();
 
     IAligner * CreateAligner( EAlignmentAlgo, CScoreTbl * tbl ) const;
 
@@ -101,6 +101,7 @@ protected:
     bool     m_performTests;
     bool     m_colorSpace;
     bool     m_sodiumBisulfiteCuration;
+    bool     m_outputSam;
     EAlignmentAlgo m_alignmentAlgo;
     TSkipPositions m_skipPositions;
     string m_readFile;

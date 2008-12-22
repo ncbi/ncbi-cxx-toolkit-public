@@ -25,6 +25,7 @@ SRC = \
         coligofarapp-tests \
         aoutputformatter \
         coutputformatter \
+        csamformatter \
         cseqcoding \
         cpermutator8b \
         cprogressindicator

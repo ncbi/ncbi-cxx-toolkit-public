@@ -1,5 +1,6 @@
 #include <ncbi_pch.hpp>
 #include "coligofarapp.hpp"
+#include "csamformatter.hpp"
 #include "coutputformatter.hpp"
 #include "cprogressindicator.hpp"
 #include "cseqscanner.hpp"
@@ -56,6 +57,7 @@ COligoFarApp::COligoFarApp( int argc, char ** argv ) :
     m_performTests( false ),
     m_colorSpace( false ),
     m_sodiumBisulfiteCuration( false ),
+    m_outputSam( false ),
     m_alignmentAlgo( eAlignment_fast ),
 #ifdef _WIN32
     //m_guideFile( "nul:" ),
@@ -180,7 +182,7 @@ void COligoFarApp::Help( const char * arg )
             << "   --quality-channels=cnt    -q 0|1        number of channels in input file quality columns [" << m_qualityChannels << "]\n"
             << "   --quality-base=value      -0 value      base quality number (ASCII value for character representing phrap score 0) [" << m_qualityBase << "]\n"
             << "   --quality-base=+char      -0 +char      base quality char (character representing phrap score 0) [+" << char(m_qualityBase) << "]\n"
-            << "   --output-flags=flags      -O flags      add output flags (-huxmtdae) [" << m_outputFlags << "]\n"
+            << "   --output-flags=flags      -O flags      add output flags (-huxmtdaez) [" << m_outputFlags << "]\n"
             << "   --batch-size=count        -B count      how many short seqs to map at once [" << m_readsPerRun << "]\n"
             << "   --NaHSO3=+|-                            subject sequences sodium bisulfite curation [" << (m_sodiumBisulfiteCuration?"yes":"no") << "]\n"
 //            << "  -C config     --config-file=file         take parameters from config file section `oligofar' and continue parsing commandline\n"
@@ -247,6 +249,7 @@ void COligoFarApp::Help( const char * arg )
             << "     d   report differences between query and subject\n"
             << "     a   report alignment details\n"
             << "     e   print empty line after all hits of the read are reported\n"
+            << "     z   output in SAM 0.1.1 format (other flags are unsupported in this format)\n"
             << "\nNB: although -L flag is optional, it is strongly recommended to use it!\n"
             ;
     }
@@ -465,12 +468,13 @@ int COligoFarApp::Execute()
     return ProcessData();
 }
 
-int COligoFarApp::GetOutputFlags() const
+int COligoFarApp::GetOutputFlags() 
 {
     int oflags = 0;
     for( const char * f = m_outputFlags.c_str(); *f; ++f ) {
         switch( tolower(*f) ) {
         case '-': oflags = 0; break;
+        case 'z': m_outputSam = true; break;
         case 'e': oflags |= COutputFormatter::fReportEmptyLines; break;
         case 'u': oflags |= COutputFormatter::fReportUnmapped; break;
         case 'm': oflags |= COutputFormatter::fReportMany; break;
@@ -574,11 +578,17 @@ int COligoFarApp::ProcessData()
     CFilter filter;
     CSeqVecProcessor seqVecProcessor;
     CSeqScanner seqScanner;
-    COutputFormatter formatter( o, seqIds );
+    auto_ptr<AOutputFormatter> formatter( 0 );
+    int oflags = GetOutputFlags();
+    if( m_outputSam ) formatter.reset( new CSamFormatter( o, seqIds ) );
+    else {
+        formatter.reset( new COutputFormatter( o, seqIds ) );
+        dynamic_cast<COutputFormatter*>(formatter.get())->AssignFlags( oflags );
+    }
     CQueryHash queryHash( 0, 0 ); // TODO: fix this
     CScoreTbl scoreTbl( m_identityScore, m_mismatchScore, m_gapOpeningScore, m_gapExtentionScore );
     CGuideFile guideFile( m_guideFile, filter, seqIds );
-    CBatch batch( m_readsPerRun, m_fastaFile, queryHash, seqVecProcessor, filter, &formatter, scoreTbl );
+    CBatch batch( m_readsPerRun, m_fastaFile, queryHash, seqVecProcessor, filter, formatter.get(), scoreTbl );
 
     CSnpDb snpDb( CSnpDb::eSeqId_integer );
     if( m_snpdbFile.length() ) {
@@ -593,9 +603,8 @@ int COligoFarApp::ProcessData()
     guideFile.SetMismatchPenalty( scoreTbl );
     guideFile.SetMaxMismatch( m_guideFilemaxMismatch );
 
-    formatter.AssignFlags( GetOutputFlags() );
-    formatter.SetGuideFile( guideFile );
-    formatter.SetAligner( batch.GetAligner( CBatch::eAligner_regular ) );
+    formatter->SetGuideFile( guideFile );
+    formatter->SetAligner( batch.GetAligner( CBatch::eAligner_regular ) );
 
     filter.SetGeometry( geometries[m_geometry] );
     filter.SetSeqIds( &seqIds );
@@ -604,7 +613,7 @@ int COligoFarApp::ProcessData()
     filter.SetTopPct( m_topPct );
     filter.SetTopCnt( m_topCnt );
     filter.SetScorePctCutoff( m_minPctid );
-    filter.SetOutputFormatter( &formatter );
+    filter.SetOutputFormatter( formatter.get() );
     filter.SetAligner( batch.GetAligner( CBatch::eAligner_regular ) );
 
     if( m_minPctid > m_topPct ) {
