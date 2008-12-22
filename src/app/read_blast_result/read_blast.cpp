@@ -563,8 +563,8 @@ int CReadBlastApp::ProcessCDD(map<string, blastStr>& blastMap)
                  << numScoversHits << " cover the query and in only "
                  << numQcoversHits << " cases query covers the subject"
                  << NcbiEndl;
-     problemStr problem = { ePartial, "", buffer.str(),"", "", -1, -1, eNa_strand_unknown};
-     m_diag[qname].problems.push_back(problem);
+     problemStr problem1 = { ePartial, "", buffer.str(),"", "", -1, -1, eNa_strand_unknown};
+     m_diag[qname].problems.push_back(problem1);
      }
    }
  DecreaseVerbosity();

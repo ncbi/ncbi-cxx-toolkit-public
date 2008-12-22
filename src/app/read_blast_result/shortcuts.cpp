@@ -177,7 +177,7 @@ string GetRNAname(const CSeq_feat& feat)
 
   if(!feat.GetData().IsRna()) return trna_string;
   if(!feat.GetData().GetRna().CanGetType()) return trna_string;
-  CRNA_ref::EType rna_type = feat.GetData().GetRna().GetType();
+  // CRNA_ref::EType rna_type = feat.GetData().GetRna().GetType();
 //  if(rna_type != CRNA_ref::eType_rRNA) return trna_string;
   if(feat.GetData().GetRna().CanGetExt() &&
      feat.GetData().GetRna().GetExt().IsName())
