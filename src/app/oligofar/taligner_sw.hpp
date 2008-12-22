@@ -50,7 +50,7 @@ protected:
                 throw;
             }
         } else if( b < 0 || q < 0 || b >= (int)m_matrix->size() || q >= (int)(*m_matrix)[0].size() ) {
-            static TValue kBad( -10, eNull );
+            static TValue kBad( -99, eNull );
             return kBad;
         }
         return (*m_matrix)[b][q];

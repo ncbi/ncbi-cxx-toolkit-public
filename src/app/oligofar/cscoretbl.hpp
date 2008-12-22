@@ -39,15 +39,23 @@ public:
     int  GetBasicScoreTables() const { return m_ncbi4naSelector; }
 
     template<class QryRef, class SbjRef>
-    bool MatchRef( const QryRef& q, const SbjRef& s, int qp, int, ETableSelector sel ) const {
+    bool MatchRef( const QryRef& q, const SbjRef& s, int qp, int sp, ETableSelector sel ) const {
         if( q.GetCoding() == CSeqCoding::eCoding_colorsp ) 
             if( s.GetCoding() == CSeqCoding::eCoding_colorsp ) 
                 return CColorTwoBase( char(*q) ).GetColor() == CColorTwoBase( char(*s) ).GetColor();
             else 
-                if( qp != 0 ) 
-                    return CColorTwoBase( char(*q) ).GetColor() == CColorTwoBase( s[-1], s[0] ).GetColor(); 
-                else 
-                    return (char(q.GetBase()) & CNcbi8naBase( s.GetBase() )) != 0;
+                if( CNcbi8naBase q4 = CColorTwoBase( q.GetBase() ).GetBaseCalls() ) { // first base of the query was IUPACna, so we know it, rest are only colors
+                    if( q.IsReverse() ) q4 = q4.Complement();
+                    /*char qb = CIupacnaBase( q4 );
+                    char sb = CIupacnaBase( s.GetBase() );
+                    cerr << DISPLAY( q.IsReverse() ) << DISPLAY( qp ) << DISPLAY( sp ) << DISPLAY( qb ) << DISPLAY( sb ) << endl;*/
+                    return (q4 & CNcbi8naBase( s.GetBase() )) != 0;
+                } else {
+                    if( !q.IsReverse() ) 
+                        return CColorTwoBase( char(*q) ).GetColor() == CColorTwoBase( s[-1], s[0] ).GetColor(); 
+                    else
+                        return CColorTwoBase( char(*q) ).GetColor() == CColorTwoBase( s[0], s[1] ).GetColor(); 
+                }
         else {
             return m_ncbi4naMatchTbl[sel][CNcbi8naBase( q.GetBase() )][CNcbi8naBase( s.GetBase() )];
 //            return ( CNcbi8naBase( q.GetBase() ) & CNcbi8naBase( s.GetBase() ) ) != 0;
@@ -60,8 +68,8 @@ public:
     }
     
     template<class QryRef, class SbjRef>
-    bool MatchRef( const QryRef& q, const SbjRef& s, int qp, int qs ) const {
-        return MatchRef( q, s, qp, qs, ETableSelector(m_ncbi4naSelector) );
+    bool MatchRef( const QryRef& q, const SbjRef& s, int qp, int sp ) const {
+        return MatchRef( q, s, qp, sp, ETableSelector(m_ncbi4naSelector) );
     }
     
     template<class QryRef, class SbjRef>

@@ -1,7 +1,7 @@
 OligoFAR bugs and problems to be solved
 ========================================================================
 
-1. Aligning 
+1. Aligning (Done)
 
 	GAGGAGGAGGAGGTGTGCAAAGGAGAGTTGTAAGGTTGCAGACGTATAACCGACGCCTAA
 
@@ -24,7 +24,7 @@ OligoFAR bugs and problems to be solved
 	1. Penalize score matrix for start from position other then 0
 
 ________________________________________________________________________
-2. Aligning
+2. Aligning (Should use only best part of alignment - with overhangs)
 
 	GAGGAGGAGGAGGTGTGCAAAGGAGAGTTGTAAGGTTGCAGACGTATAACCGACGCCTAA
 
