@@ -40,12 +40,12 @@ void AlignmentCollection::AddAlignment(const AlignmentCollection& ac)
 {
 	if(m_firstCd == 0)
 		m_firstCd = ac.getFirstCD();
-	for (int i = 0; i < ac.m_seqAligns.size(); i++)
+	for (int i = 0; i < (int) ac.m_seqAligns.size(); i++)
 	{
 		m_seqAligns.push_back(ac.m_seqAligns[i]);
 		vector<RowSource> srcs;
 		ac.m_rowSources.findEntries(i, srcs);
-		for (int j = 0; j < srcs.size(); j++)
+		for (unsigned int j = 0; j < srcs.size(); j++)
 			m_rowSources.addEntry(m_seqAligns.size() - 1, srcs[j], ac.isCDInScope(srcs[j].cd));
 	}
 	AddSequence(ac);
@@ -263,7 +263,7 @@ bool AlignmentCollection::wasMaster(int row) const
 void AlignmentCollection::addRowSources(const vector<int>& rows, CCdCore* cd, bool scoped)
 {
 	MultipleAlignment ma (cd);
-	for ( int i = 0; i < rows.size(); i++)
+	for ( unsigned int i = 0; i < rows.size(); i++)
 	{
 		RowSource rs = GetRowSource(rows[i]);
 		rs.cd = cd;
@@ -418,7 +418,7 @@ int AlignmentCollection::mapRow(const AlignmentCollection& ac, int row) const
 {
 	vector<RowSource> src;
 	ac.GetRowSourceTable().findEntries(row, src);
-	for(int i = 0; i < src.size(); i++)
+	for(unsigned int i = 0; i < src.size(); i++)
 	{
 		if (isCDInScope(src[i].cd))
 		{
@@ -557,7 +557,7 @@ int AlignmentCollection::FindSeqInterval (const CSeq_interval& seqLoc) const
 	CRef<CSeq_id> seqIdRef(&seqId);
 	vector<int> rows;
 	GetRowsWithSeqID(seqIdRef, rows);
-	for (int i = 0; i < rows.size(); i++)
+	for (unsigned int i = 0; i < rows.size(); i++)
 	{
 		if (seqLoc.GetFrom() >= GetLowerBound(rows[i]) 
 			&& seqLoc.GetTo() <= GetUpperBound(rows[i]))
@@ -759,7 +759,7 @@ bool MultipleAlignment::setAlignment(const CDFamily& family)
 {
 	vector<CCdCore*> cds;
 	family.getAllCD(cds);
-	for (int i = 0; i < cds.size(); i++)
+	for (unsigned int i = 0; i < cds.size(); i++)
 		AddSequence(cds[i]);
 	CDFamilyIterator cit = family.begin();
 	return setAlignment(family, cit);
@@ -773,7 +773,7 @@ bool MultipleAlignment::setAlignment(const CDFamily& family, CDFamilyIterator& s
 	//add rows from children cds
 	vector<CDFamilyIterator> cdits;
 	family.getChildren(cdits, start);
-	for (int i = 0; i < cdits.size(); i++)
+	for (unsigned int i = 0; i < cdits.size(); i++)
 	{
 		MultipleAlignment tmp;
 		tmp.setAlignment(family, cdits[i]); 
@@ -831,7 +831,7 @@ bool MultipleAlignment::setAlignment(const AlignmentCollection& ac, int row)
 bool MultipleAlignment::isBlockAligned() const
 {
 	const BlockModel masterBM = getBlockModel(0);
-	for (int i = 1; i < m_blockTable.size(); i++)
+	for (unsigned int i = 1; i < m_blockTable.size(); i++)
 	{
 		if (!masterBM.blockMatch(m_blockTable[i]))
 			return false;
@@ -935,7 +935,7 @@ bool MultipleAlignment::locateChildRow(const BlockModel& childRow, int& pRow) co
 	GetRowsWithSeqID(childRow.getSeqId(), seqIdMatches);
 	pRow = -1;
 
-	for ( int i = 0; i < seqIdMatches.size(); i ++)
+	for ( unsigned int i = 0; i < seqIdMatches.size(); i ++)
 	{
 		BlockModel* casted = childRow.completeCastTo(m_blockTable[seqIdMatches[i]]);
 		pRow = seqIdMatches[i];
@@ -950,7 +950,7 @@ bool MultipleAlignment::locateChildRow(const BlockModel& childRow, int& pRow) co
 
 bool MultipleAlignment::findParentalEquivalent(const BlockModel& bar, int& pRow, bool inputAsChild) const
 {
-	for ( int i = 0; i < m_blockTable.size(); i ++)
+	for ( unsigned int i = 0; i < m_blockTable.size(); i ++)
 	{
 		bool found = false;
 		if (inputAsChild)
@@ -959,7 +959,7 @@ bool MultipleAlignment::findParentalEquivalent(const BlockModel& bar, int& pRow,
 			found = m_blockTable[i].contain(bar);
 		if (found)
 		{
-			pRow = i;
+			pRow = (int) i;
 			return true;
 		}
 	}
@@ -968,7 +968,7 @@ bool MultipleAlignment::findParentalEquivalent(const BlockModel& bar, int& pRow,
 
 bool MultipleAlignment::findParentalCastible(const BlockModel& bar, int& pRow) const
 {
-	for ( int i = 0; i < m_blockTable.size(); i ++)
+	for ( unsigned int i = 0; i < m_blockTable.size(); i ++)
 	{
 		bool found = false;
 		BlockModel* bmp = m_blockTable[i].completeCastTo(bar);
@@ -976,7 +976,7 @@ bool MultipleAlignment::findParentalCastible(const BlockModel& bar, int& pRow) c
 			found = bmp->contain(bar);
 		if (found)
 		{
-			pRow = i;
+			pRow = (int) i;
 			return true;
 		}
 	}
@@ -987,7 +987,7 @@ void MultipleAlignment::copyRowSource(int parentRow, const AlignmentCollection& 
 {
 	vector<RowSource> sources;
 	malign.GetRowSourceTable().findEntries(row, sources);
-	for (int i = 0; i < sources.size(); i++)
+	for (unsigned int i = 0; i < sources.size(); i++)
 	{
 		m_rowSources.addEntry(parentRow, *(new RowSource(sources[i])), 
 			malign.GetRowSourceTable().isEntryInScope(sources[i]) );
@@ -998,7 +998,7 @@ void MultipleAlignment::makeBlockTable()
 {
 	int i = 0; //master
 	m_blockTable.push_back( *(new BlockModel(m_seqAligns[i], false)) );
-	for (int i = 1; i < GetNumRows(); i++)
+	for (i = 1; i < GetNumRows(); i++)
 	{
 		m_blockTable.push_back( *(new BlockModel(m_seqAligns[i])) );
 	}
@@ -1056,7 +1056,7 @@ bool MultipleAlignment::transferOnlyMastersToCD(bool onlyKeepStructureWithEviden
 	m_rowSources.getMasterRows(masters);
 	int endRow = cd->GetNumRows();
 	//add masters that are in cd yet
-	for (int i = 0; i < masters.size(); i ++)
+	for (unsigned int i = 0; i < masters.size(); i ++)
 	{
 		if (masters[i] >= endRow)
 		{
@@ -1091,7 +1091,7 @@ int MultipleAlignment::getNonEssentialRows(vector<int>& neRows)
 	m_rowSources.getMasterRows(masters);
 	int endRow = cd->GetNumRows();
 	//add masters that are in cd yet
-	for (int i = 0; i < masters.size(); i ++)
+	for (unsigned int i = 0; i < masters.size(); i ++)
 	{
 		if (masters[i] < endRow)
 			keepRows.insert(masters[i]);
@@ -1099,7 +1099,7 @@ int MultipleAlignment::getNonEssentialRows(vector<int>& neRows)
 	//also keep rows that are not in any child
 	getNormalRowsNotInChild(childless,true);
 	cd->GetStructuralRowsWithEvidence(childless);
-	for (int i = 0; i < childless.size(); i ++)
+	for (unsigned int i = 0; i < childless.size(); i ++)
 	{
 		if (childless[i] < endRow)
 			keepRows.insert(childless[i]);
