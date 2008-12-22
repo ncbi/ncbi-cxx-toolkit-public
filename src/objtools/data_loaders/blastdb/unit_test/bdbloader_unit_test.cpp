@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(RetrievePartsOfLargeChromosome_Remote)
 /* Only execute this in release mode as debug might be too slow */
 void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
 {
-    const time_t kTimeMax = is_remote ? 330 : 15;	// timeout in seconds
+    const time_t kTimeMax = is_remote ? 330 : 30;	// timeout in seconds
     const string kAccession("NC_000001");
 
     const string db("nucl_dbs");
