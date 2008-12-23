@@ -5,8 +5,8 @@
 
 APP = nmer_repeats
 SRC = nmer_repeats
-LIB = xalgoseq xalnmgr tables xregexp $(PCRE_LIB) xobjread creaders xobjutil \
-      taxon1 xconnect $(SOBJMGR_LIBS)
+LIB = xalgoseq xalnmgr xobjread xidmapper creaders xobjutil \
+      taxon1 xconnect tables xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
