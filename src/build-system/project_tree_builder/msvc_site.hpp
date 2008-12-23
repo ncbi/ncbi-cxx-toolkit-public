@@ -138,6 +138,7 @@ public:
         string     m_3PartyLib;
     };
     bool IsLibWithChoice            (const string& lib_id) const;
+    bool Is3PartyLib                (const string& lib_id) const;
     bool Is3PartyLibWithChoice      (const string& lib3party_id) const;
 
     ELibChoice GetChoiceForLib      (const string& lib_id) const;

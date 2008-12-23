@@ -503,6 +503,11 @@ string CMacProjectGenerator::CreateProjectTarget(
             dp = m_Projects_tree.m_Projects.find( *d);
         if ( dp != m_Projects_tree.m_Projects.end() &&
             (dp->first.Id() != prj.m_ID || dp->first.Type() != prj.m_ProjType)) {
+
+            if (dp->first.Type() == CProjKey::eLib &&
+                GetApp().GetSite().Is3PartyLib(dp->first.Id())) {
+                    continue;
+            }
             AddString( *dependencies, GetProjDependency(dp->second));
         }
     }
@@ -738,6 +743,11 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
             if ( dp != m_Projects_tree.m_Projects.end() &&
                 (dp->first.Id() != prj.m_ID || dp->first.Type() != prj.m_ProjType) &&
                 (dp->first.Type() == CProjKey::eLib || dp->first.Type() == CProjKey::eDll)) {
+
+                if (dp->first.Type() == CProjKey::eLib &&
+                    GetApp().GetSite().Is3PartyLib(dp->first.Id())) {
+                        continue;
+                }
                 ldlibs.push_back(dp->second);
             }
         }

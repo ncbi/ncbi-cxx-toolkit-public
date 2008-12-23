@@ -323,6 +323,16 @@ bool CMsvcSite::IsLibWithChoice(const string& lib_id) const
     return false;
 }
 
+bool CMsvcSite::Is3PartyLib(const string& lib_id) const
+{
+    ITERATE(list<SLibChoice>, p, m_LibChoices) {
+        const SLibChoice& choice = *p;
+        if (lib_id == choice.m_LibId) {
+            return choice.m_Choice == e3PartyLib;
+        }
+    }
+    return false;
+}
 
 bool CMsvcSite::Is3PartyLibWithChoice(const string& lib3party_id) const
 {
