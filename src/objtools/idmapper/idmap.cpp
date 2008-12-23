@@ -38,7 +38,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seq/Seq_id_Handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 #include <objtools/idmapper/ucscid.hpp>
 
