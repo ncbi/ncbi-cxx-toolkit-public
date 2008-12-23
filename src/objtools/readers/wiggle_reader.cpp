@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbiexpt.hpp>
@@ -80,6 +81,8 @@
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/error_codes.hpp>
+#include <objtools/idmapper/ucscid.hpp>
+#include <objtools/idmapper/idmapper.hpp>
 
 #include <algorithm>
 #include <objects/seqres/Seq_graph.hpp>
@@ -99,7 +102,62 @@ CWiggleReader::CWiggleReader(
 //  ----------------------------------------------------------------------------
     m_uCurrentRecordType( TYPE_NONE )
 {
-    m_pSet = new CWiggleSet;
+    m_pIdMapper = CIdMapper::GetIdMapper( "multi" );
+    m_pSet = new CWiggleSet( m_pIdMapper );
+}
+
+
+//  ----------------------------------------------------------------------------
+CWiggleReader::CWiggleReader(
+    const CArgs& args ) :
+//  ----------------------------------------------------------------------------
+    m_uCurrentRecordType( TYPE_NONE )
+{
+    //
+    //  Make sure the provided options make sense:
+    //
+    if ( !args["umap"].AsString().empty() && !args["smap"].AsString().empty() ) {
+        NCBI_THROW( CArgException, eInvalidArg,
+            "CReaderBase: Options \"smap\" and \"umap\" are mutually exclusive" );
+    }
+    if ( !args["umap"].AsString().empty() && !args["db"].AsString().empty() ) {
+        NCBI_THROW( CArgException, eInvalidArg,
+            "CReaderBase: Options \"db\" and \"umap\" are mutually exclusive" );
+    }
+    if ( !args["db"].AsString().empty() && !args["smap"].AsString().empty() ) {
+        NCBI_THROW( CArgException, eInvalidArg,
+            "CReaderBase: Options \"smap\" and \"db\" are mutually exclusive" );
+    }
+
+    //
+    //  Ok, set configure the right mapper and initialize object accordingly:
+    //    
+    if ( !args["umap"].AsString().empty() ) {
+        m_pIdMapper = CIdMapper::GetIdMapper( "user" );
+        m_pIdMapper->Setup( args );
+        m_uIdMode = CWiggleRecord::IDMODE_CHROM;
+        m_pSet = new CWiggleSet( m_pIdMapper );
+        return;
+    }
+    if ( !args["smap"].AsString().empty() ) {
+        m_pIdMapper = CIdMapper::GetIdMapper( "site" );
+        m_pIdMapper->Setup( args );
+        m_uIdMode = CWiggleRecord::IDMODE_NAME_CHROM;
+        m_pSet = new CWiggleSet( m_pIdMapper );
+        return;
+    }
+    if ( !args["db"].AsString().empty() ) {
+        m_pIdMapper = CIdMapper::GetIdMapper( "database" );
+        m_uIdMode = CWiggleRecord::IDMODE_NAME_CHROM;
+        m_pSet = new CWiggleSet( m_pIdMapper );
+    }
+        
+    //
+    //  default: builtin mappings:
+    //
+    m_pIdMapper = CIdMapper::GetIdMapper( "builtin" );
+    m_uIdMode = CWiggleRecord::IDMODE_NAME_CHROM;
+    m_pSet = new CWiggleSet( m_pIdMapper );
 }
 
 
@@ -164,7 +222,7 @@ bool CWiggleReader::x_ReadTrackData(
 {
     vector<string> parts;
     Tokenize( pending, " \t", parts );
-    if ( ! record.ParseTrackDefinition( parts ) ) {
+    if ( ! record.ParseTrackDefinition( parts, m_uIdMode ) ) {
         return false;
     }
     return x_ReadLine( input, pending );
@@ -202,18 +260,18 @@ bool CWiggleReader::x_ReadGraphData(
 
         case TYPE_DECLARATION_VARSTEP:
             m_uCurrentRecordType = TYPE_DATA_VARSTEP;
-            record.ParseDeclarationVarstep( parts );
+            record.ParseDeclarationVarstep( parts, m_uIdMode );
             x_ReadLine( input, pending );
             return x_ReadGraphData( input, pending, record );
 
         case TYPE_DECLARATION_FIXEDSTEP:
             m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
-            record.ParseDeclarationFixedstep( parts );
+            record.ParseDeclarationFixedstep( parts, m_uIdMode );
             x_ReadLine( input, pending );
             return x_ReadGraphData( input, pending, record );
 
         case TYPE_DATA_BED:
-            if ( ! record.ParseDataBed( parts ) ) {
+            if ( ! record.ParseDataBed( parts, m_uIdMode ) ) {
                 return false;
             }
             break;
@@ -222,7 +280,7 @@ bool CWiggleReader::x_ReadGraphData(
             if ( m_uCurrentRecordType != TYPE_DATA_VARSTEP ) {
                 return false;
             }
-            if ( ! record.ParseDataVarstep( parts ) ) {
+            if ( ! record.ParseDataVarstep( parts, m_uIdMode ) ) {
                 return false;
             }
             break;
@@ -231,7 +289,7 @@ bool CWiggleReader::x_ReadGraphData(
             if ( m_uCurrentRecordType != TYPE_DATA_FIXEDSTEP ) {
                 return false;
             }
-            if ( ! record.ParseDataFixedstep( parts ) ) {
+            if ( ! record.ParseDataFixedstep( parts, m_uIdMode ) ) {
                 return false;
             }
             break;

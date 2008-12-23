@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiapp.hpp>
 
 // Objects includes
 #include <objects/seqloc/Seq_id.hpp>
@@ -46,6 +47,9 @@
 
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
+#include <objtools/idmapper/ucscid.hpp>
+#include <objtools/idmapper/idmapper.hpp>
+
 #include "wiggle_data.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -81,19 +85,38 @@ void CWiggleRecord::Reset()
 
 //  ----------------------------------------------------------------------------
 bool CWiggleRecord::ParseTrackDefinition(
-    const vector<string>& data )
+    const vector<string>& data,
+    unsigned int uMode )
 //  ----------------------------------------------------------------------------
 {
     Reset();
     if ( data.size() < 2 || data[0] != "track" ) {
         return false;
     }
+    vector<string>::const_iterator it = data.begin();
+    for ( ++it; it != data.end(); ++it ) {
+        string strKey;
+        string strValue;
+        if ( ! NStr::SplitInTwo( *it, "=", strKey, strValue ) ) {
+            return false;
+        }
+        NStr::ReplaceInPlace( strValue, "\"", "" );
+        if ( strKey == "name" ) {
+            if ( uMode == IDMODE_CHROM ) {
+                m_strId = "";
+            }
+            else {
+                m_strId = strValue;
+            }
+        }
+    }
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CWiggleRecord::ParseDataBed(
-    const vector<string>& data )
+    const vector<string>& data,
+    unsigned int )
 //  ----------------------------------------------------------------------------
 {
     if ( data.size() != 4 ) {
@@ -109,7 +132,8 @@ bool CWiggleRecord::ParseDataBed(
 
 //  ----------------------------------------------------------------------------
 bool CWiggleRecord::ParseDataVarstep(
-    const vector<string>& data )
+    const vector<string>& data,
+    unsigned int )
 //  ----------------------------------------------------------------------------
 {
     m_uSeqStart = NStr::StringToUInt( data[0] ) - 1; // varStep is 1- based
@@ -119,7 +143,8 @@ bool CWiggleRecord::ParseDataVarstep(
 
 //  ----------------------------------------------------------------------------
 bool CWiggleRecord::ParseDataFixedstep(
-    const vector<string>& data )
+    const vector<string>& data,
+    unsigned int )
 //  ----------------------------------------------------------------------------
 {
     m_uSeqStart += m_uSeqStep;
@@ -129,7 +154,8 @@ bool CWiggleRecord::ParseDataFixedstep(
 
 //  ----------------------------------------------------------------------------
 bool CWiggleRecord::ParseDeclarationVarstep(
-    const vector<string>& data )
+    const vector<string>& data,
+    unsigned int )
 //
 //  Note:   Once we make it in here, we know "data" starts with the obligatory
 //          "variableStep" declaration.
@@ -160,7 +186,8 @@ bool CWiggleRecord::ParseDeclarationVarstep(
 
 //  ----------------------------------------------------------------------------
 bool CWiggleRecord::ParseDeclarationFixedstep(
-    const vector<string>& data )
+    const vector<string>& data,
+    unsigned int )
 //  ----------------------------------------------------------------------------
 {
     Reset();
@@ -197,18 +224,28 @@ bool CWiggleRecord::ParseDeclarationFixedstep(
 
 //  ===========================================================================
 CWiggleTrack::CWiggleTrack(
-    const CWiggleRecord& record ):
+    const CWiggleRecord& record,
+    CIdMapper* pMapper ):
 //  ===========================================================================
     m_strChrom( record.Chrom() ),
     m_uGraphType( GRAPH_UNKNOWN )
 {
     CWiggleData* pData = new CWiggleData( record.SeqStart(), record.Value() );
     m_Entries[ pData->SeqStart() ] = pData;
-    m_uSeqStart = record.SeqStart();
-    m_uSeqStop = record.SeqStart() + record.SeqSpan();
     m_uSeqSpan = record.SeqSpan();
     m_dMaxValue = (record.Value() > 0) ? record.Value() : 0;
     m_dMinValue = (record.Value() < 0) ? record.Value() : 0;
+
+    pMapper->MapID( UcscID::Label( record.Id(), record.Chrom() ), 
+        m_MappedID, m_uSeqLength );
+    
+    if ( m_uSeqLength == 0 ) {
+        m_uSeqStart = record.SeqStart();
+        m_uSeqStop = record.SeqStart() + record.SeqSpan();
+    }
+    m_dMaxValue = (record.Value() > 0) ? record.Value() : 0;
+    m_dMinValue = (record.Value() < 0) ? record.Value() : 0;
+    
 };
 
 //  ===========================================================================
@@ -241,11 +278,13 @@ bool CWiggleTrack::AddRecord(
     CWiggleData* pData = new CWiggleData( record.SeqStart(), record.Value() );        
     m_Entries[ record.SeqStart() ] = pData;
     
-    if ( m_uSeqStart > record.SeqStart() ) {
-        m_uSeqStart = record.SeqStart();
-    }
-    if ( m_uSeqStop < record.SeqStart() + record.SeqSpan() ) {
-        m_uSeqStop = record.SeqStart() + record.SeqSpan();
+    if ( m_uSeqLength == 0 ) {
+        if ( m_uSeqStart > record.SeqStart() ) {
+            m_uSeqStart = record.SeqStart();
+        }
+        if ( m_uSeqStop < record.SeqStart() + record.SeqSpan() ) {
+            m_uSeqStop = record.SeqStart() + record.SeqSpan();
+        }
     }
     if ( m_dMaxValue < record.Value() ) {
         m_dMaxValue = record.Value();
@@ -254,6 +293,34 @@ bool CWiggleTrack::AddRecord(
         m_dMinValue = record.Value();
     }
     return true;
+};
+
+//  ===========================================================================
+CWiggleSet::CWiggleSet(
+    CIdMapper* pMapper ):
+//  ===========================================================================
+    m_pMapper( pMapper )
+{
+};
+
+//  ===========================================================================
+unsigned int CWiggleTrack::SeqStart() const
+//  ===========================================================================
+{
+    if ( m_uSeqLength == 0 ) { 
+        return m_uSeqStart;
+    }
+    return 0;
+};
+
+//  ===========================================================================
+unsigned int CWiggleTrack::SeqStop() const
+//  ===========================================================================
+{
+    if ( m_uSeqLength == 0 ) { 
+        return m_uSeqStop-1;
+    }
+    return m_uSeqLength-1;
 };
 
 //  ===========================================================================
@@ -266,7 +333,7 @@ bool CWiggleSet::AddRecord(
         pTrack->AddRecord( record );
     }
     else {
-        m_Tracks[ record.Chrom() ] = new CWiggleTrack( record );
+        m_Tracks[ record.Chrom() ] = new CWiggleTrack( record, m_pMapper );
     }
     return true;
 };
@@ -313,13 +380,12 @@ bool CWiggleTrack::MakeGraph(
 //  ===========================================================================
 {
     CRef<CSeq_graph> graph( new CSeq_graph );
-    
-    CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, Chrom() ) );
+
     CSeq_interval& loc = graph->SetLoc().SetInt();
+    loc.SetId( *m_MappedID );
     loc.SetFrom( SeqStart() );
     loc.SetTo( SeqStop() );
-    loc.SetId( *id );
-    
+        
     graph->SetComp( SeqSpan() );
     graph->SetNumval( (SeqStop() - SeqStart() + 1) / SeqSpan() );
     graph->SetA( ScaleLinear() );

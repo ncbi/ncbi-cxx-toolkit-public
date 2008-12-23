@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbiexpt.hpp>
@@ -113,6 +114,28 @@ CReaderBase::GetReader(
 //  ----------------------------------------------------------------------------
 CReaderBase*
 CReaderBase::GetReader(
+    const string& format,
+    const CArgs& args )
+//  ----------------------------------------------------------------------------
+{
+    //
+    //  Ok, select the appropriate reader object:
+    //
+    if ( format == "bed" || format == "bed12" ) {
+        return new CBedReader( args["g"].AsInteger() );
+    }
+    if ( format == "microarray" || format == "bed15" ) {
+        return new CMicroArrayReader( args["g"].AsInteger() );
+    }
+    if ( format == "wiggle" || format == "wig" ) {
+        return new CWiggleReader( args );
+    }
+    return 0;
+}
+
+//  ----------------------------------------------------------------------------
+CReaderBase*
+CReaderBase::GetReader(
     FileFormat format,
     int flags )
 //  ----------------------------------------------------------------------------
@@ -124,6 +147,27 @@ CReaderBase::GetReader(
         return new CBedReader( flags );
     case FMT_MICROARRAY:
         return new CMicroArrayReader( flags );
+    case FMT_WIGGLE:
+        return new CWiggleReader( flags );
+    }
+}
+
+//  ----------------------------------------------------------------------------
+CReaderBase*
+CReaderBase::GetReader(
+    FileFormat format,
+    const CArgs& args )
+//  ----------------------------------------------------------------------------
+{
+    switch ( format ) {
+    default:
+        return 0;
+    case FMT_BED:
+        return new CBedReader( args["g"].AsInteger() );
+    case FMT_MICROARRAY:
+        return new CMicroArrayReader( args["g"].AsInteger() );
+    case FMT_WIGGLE:
+        return new CWiggleReader( args );
     }
 }
 

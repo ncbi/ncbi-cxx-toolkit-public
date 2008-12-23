@@ -42,6 +42,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CWiggleSet;
 class CWiggleRecord;
+class CIdMapper;
 
 //  ----------------------------------------------------------------------------
 enum CWiggleLineType
@@ -70,6 +71,10 @@ public:
 public:
     CWiggleReader( 
         int =fDefaults );
+        
+    CWiggleReader( 
+        const CArgs& );
+        
     virtual ~CWiggleReader();
     
     //
@@ -130,8 +135,10 @@ protected:
     //
 protected:
     unsigned int m_uCurrentRecordType;
-    
+
+    CIdMapper* m_pIdMapper;    
     CWiggleSet* m_pSet;
+    unsigned int m_uIdMode;
 };
 
 END_objects_SCOPE

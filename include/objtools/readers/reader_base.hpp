@@ -49,7 +49,8 @@ public:
     enum FileFormat {
         FMT_UNKNOWN,
         FMT_BED,
-        FMT_MICROARRAY
+        FMT_MICROARRAY,
+        FMT_WIGGLE
     };
 
 public:
@@ -66,6 +67,14 @@ public:
     static CReaderBase* GetReader(
         FileFormat,
         int =0 );
+
+    static CReaderBase* GetReader(
+        const string&,
+        const CArgs& );
+
+    static CReaderBase* GetReader(
+        FileFormat,
+        const CArgs& );
 
     static FileFormat GuessFormat(
         CNcbiIstream& );

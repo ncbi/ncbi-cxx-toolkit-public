@@ -51,6 +51,8 @@ typedef std::map<int,CWiggleData*> DataStore;
 typedef std::map<int,CWiggleData*>::iterator DataIter;
 typedef std::map<int,CWiggleData*>::const_iterator DataCiter;
 
+class CIdMapper;
+
 //  ===========================================================================
 class CWiggleData
 //  ===========================================================================
@@ -77,7 +79,8 @@ class CWiggleSet
 //  ===========================================================================
 {
 public:
-    CWiggleSet() {};
+    CWiggleSet(
+        CIdMapper* );
     ~CWiggleSet() {};
 
     bool AddRecord(
@@ -95,8 +98,9 @@ protected:
     bool FindTrack(
         const std::string&,
         CWiggleTrack*& );
-        
+
     TrackMap m_Tracks;
+    CIdMapper* m_pMapper;
 };
 
 //  ===========================================================================
@@ -112,7 +116,8 @@ class CWiggleTrack
     
 public:
     CWiggleTrack(
-        const CWiggleRecord& );
+        const CWiggleRecord&,
+        CIdMapper* pMapper );
     ~CWiggleTrack();
 
     bool AddRecord(
@@ -126,8 +131,8 @@ public:
         
     const char* Chrom() const { return m_strChrom.c_str(); };
     size_t Count() const { return m_Entries.size(); };
-    unsigned int SeqStart() const { return m_uSeqStart; };
-    unsigned int SeqStop() const { return m_uSeqStop; };
+    unsigned int SeqStart() const;
+    unsigned int SeqStop() const;
     unsigned int SeqSpan() const { return m_uSeqSpan; };
     
 protected:
@@ -149,11 +154,13 @@ protected:
     double ScaleConst() const;
     double ScaleLinear() const;              
     unsigned int GetGraphType();
-                        
+
+    CRef<CSeq_id> m_MappedID;                       
     std::string m_strChrom;
     unsigned int m_uGraphType;
     unsigned int m_uSeqStart;
     unsigned int m_uSeqStop;
+    unsigned int m_uSeqLength;
     unsigned int m_uSeqSpan;
     double m_dMaxValue;
     double m_dMinValue;
@@ -165,35 +172,49 @@ class CWiggleRecord
 //  ===========================================================================
 {
 public:
+    enum IDMODE {
+        IDMODE_NAME_CHROM,
+        IDMODE_CHROM
+    };
+    
+public:
     CWiggleRecord();
     ~CWiggleRecord() {};
 
     void Reset();
 
     bool ParseTrackDefinition(
-        const std::vector<std::string>& );
+        const std::vector<std::string>&,
+        unsigned int );
     
     bool ParseDeclarationVarstep(
-        const std::vector<std::string>& );
+        const std::vector<std::string>&,
+        unsigned int );
 
     bool ParseDeclarationFixedstep(
-        const std::vector<std::string>& );
+        const std::vector<std::string>&,
+        unsigned int );
 
     bool ParseDataBed(
-        const std::vector<std::string>& );
+        const std::vector<std::string>&,
+        unsigned int );
 
     bool ParseDataVarstep(
-        const std::vector<std::string>& );
+        const std::vector<std::string>&,
+        unsigned int );
 
     bool ParseDataFixedstep(
-        const std::vector<std::string>& );
+        const std::vector<std::string>&,
+        unsigned int );
 
     const char* Chrom() const { return m_strChrom.c_str(); };
+    const char* Id() const { return m_strId.c_str(); };
     unsigned int SeqStart() const { return m_uSeqStart; };
     unsigned int SeqSpan() const { return m_uSeqSpan; };
     double Value() const { return m_dValue; };
     
 protected:
+    std::string m_strId;
     std::string m_strChrom;
     unsigned int m_uSeqStart;
     unsigned int m_uSeqSpan;

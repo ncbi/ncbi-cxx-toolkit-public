@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbiexpt.hpp>
@@ -320,7 +321,7 @@ void CBedReader::x_SetFeatureLocation(
 {
     feature->ResetLocation();
     
-    CRef<CSeq_id> id( new CSeq_id(fields[0]) );
+    CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, fields[0] ) );
 
     CRef<CSeq_loc> location( new CSeq_loc );
     CSeq_interval& interval = location->SetInt();

@@ -47,7 +47,6 @@
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp>
 
-
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 //USING_SCOPE(sequence);
@@ -84,15 +83,37 @@ void CMultiReaderApp::Init(void)
     arg_desc->AddDefaultKey
         ("o", "OutputFile",
          "Output File Name",
-         CArgDescriptions::eOutputFile, "-");
+         CArgDescriptions::eOutputFile, "-"); 
 
     arg_desc->AddDefaultKey
         ("f", "Format",
          "Input File Format",
          CArgDescriptions::eString, "guess");
     arg_desc->SetConstraint
-        ("f", &(*new CArgAllow_Strings, "bed", "guess"));
+        ("f", &(*new CArgAllow_Strings, 
+            "bed", 
+            "microarray", "bed15", 
+            "wig", "wiggle",
+            "guess"));
 
+    arg_desc->AddDefaultKey( "umap",
+        "usermap",
+        "Source for user defined mappings",
+        CArgDescriptions::eInputFile,
+        "" );
+        
+    arg_desc->AddDefaultKey( "smap",
+        "sitemap",
+        "Source for site defined mappings",
+        CArgDescriptions::eInputFile,
+        "" );
+        
+    arg_desc->AddDefaultKey( "db",
+        "sitemap",
+        "Source for database provided mappings",
+        CArgDescriptions::eString,
+        "" );
+        
     arg_desc->AddDefaultKey(
         "g", "Flags",
         "Processing Bit Flags",
@@ -112,17 +133,17 @@ CMultiReaderApp::Run(void)
     const CArgs& args = GetArgs();
     CNcbiIstream& ip = args["i"].AsInputFile();
     CNcbiOstream& op = args["o"].AsOutputFile();
-
+    
     //
     //  Create a suitable reader object:
     //
     string format = args["f"].AsString();
     if ( format == "guess" ) {
         m_pReader = CReaderBase::GetReader( 
-            CReaderBase::GuessFormat( ip ), args["g"].AsInteger() );
+            CReaderBase::GuessFormat( ip ), args );
     }
     else {
-        m_pReader = CReaderBase::GetReader( format, args["g"].AsInteger() );
+        m_pReader = CReaderBase::GetReader( format, args );
     }
     if ( !m_pReader ) {
         cerr << "Bad format string: " << args["f"].AsString() << endl;
@@ -145,7 +166,8 @@ CMultiReaderApp::Run(void)
     //  Dump:
     //
     op << MSerial_AsnText << *annot << endl;
-
+//    m_pReader->Dump( op );
+    
     //
     //  Cleanup:
     //
