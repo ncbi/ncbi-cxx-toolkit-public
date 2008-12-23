@@ -589,7 +589,7 @@ BLAST_INPUT_LIBS = blastinput xregexp $(PCRE_LIB) \
 
 # BLAST_FORMATTER_LIBS and BLAST_INPUT_LIBS need $BLAST_LIBS
 BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment xalgodustmask \
-             xalgowinmask seqdb xobjutil xobjread creaders \
+             xalgowinmask seqdb xobjutil xobjread xidmapper creaders \
              xnetblastcli xnetblast blastdb scoremat tables
 # BLAST additionally needs xconnect $(SOBJMGR_LIBS) or $(OBJMGR_LIBS)
 
