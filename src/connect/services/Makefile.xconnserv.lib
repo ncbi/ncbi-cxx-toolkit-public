@@ -1,6 +1,6 @@
 # $Id$
 
-SRC     = netschedule_client netschedule_client_lb \
+SRC     = netschedule_client \
           netcache_client netcache_client_lb \
           netservice_client netbvstore_client \
           grid_worker ns_client_factory  grid_worker_app \
