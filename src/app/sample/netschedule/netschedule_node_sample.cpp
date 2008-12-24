@@ -37,7 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
 
@@ -106,10 +106,8 @@ int CSampleNetScheduleNode::Run(void)
     NcbiCout << "Incoming UDP port:" << udp_port << NcbiEndl;
 
 
-    CNetScheduleClient_LB cl("node_sample", service, queue_name);
+    CNetScheduleAPI cl("node_sample", service, queue_name);
 
-    string    job_key;
-    string    input;
     bool      job_exists;
     int       no_jobs_counter = 0;
     unsigned  jobs_done = 0;
@@ -126,7 +124,7 @@ int CSampleNetScheduleNode::Run(void)
     // There is no payload algorithm here, node just
     // sleeps and reports the processing result back to server
     // as string "DONE ...". Practical application should use
-    // netcache as result storage
+    // NetCache as the result storage.
     //
     // Well behaved node should not constantly poll the queue for
     // jobs (GetJob()).
@@ -137,8 +135,12 @@ int CSampleNetScheduleNode::Run(void)
     // It is strongly suggested that there is just one program using
     // specified UDP port on the machine.
 
-    while (1) {
-        job_exists = cl.WaitJob(&job_key, &input, 560, udp_port);
+    CNetScheduleExecuter executer = cl.GetExecuter();
+
+    CNetScheduleJob job;
+
+    for (;;) {
+        job_exists = executer.WaitJob(job, 560, udp_port);
         if (job_exists) {
             if (first_try) {
                 NcbiCout << "\nProcessing." << NcbiEndl;
@@ -148,23 +150,23 @@ int CSampleNetScheduleNode::Run(void)
                 NcbiCout << "\nProcessing." << NcbiEndl;
                 node_status = 0;
             }
-//            NcbiCout << job_key << NcbiEndl;
+//            NcbiCout << job.job_id << NcbiEndl;
             string expected_input = "Hello " + queue_name;
-            if (expected_input != input) {
-                ERR_POST("Unexpected input: " + input);
+            if (expected_input != job.input) {
+                ERR_POST("Unexpected input: " + job.input);
             }
 
-            if (jobs_processed.find(job_key) != jobs_processed.end()) {
-                LOG_POST(Error << "Job: " << job_key 
+            if (jobs_processed.find(job.job_id) != jobs_processed.end()) {
+                LOG_POST(Error << "Job: " << job.job_id
                                << " has already been processed.");
             } else {
-                jobs_processed.insert(job_key);
+                jobs_processed.insert(job.job_id);
             }
 
             // do no job here, just delay for a little while
             SleepMilliSec(50);
-            string out = "DONE " + queue_name;
-            cl.PutResult(job_key, 0, out);
+            job.output = "DONE " + queue_name;
+            executer.PutResult(job);
 
             no_jobs_counter = 0;
             ++jobs_done;
