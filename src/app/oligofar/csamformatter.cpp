@@ -3,6 +3,7 @@
 #include "cguidefile.hpp"
 #include "ialigner.hpp"
 #include "chit.hpp"
+#include <cmath>
 
 USING_OLIGOFAR_SCOPES;
 
@@ -23,7 +24,7 @@ enum EFlags {
 void CSamFormatter::FormatHeader( const string& version )
 {
     m_out 
-        << "@HD\tVN:1.0\n"; //\tSO:queryname\n" // it is not sort order, it is group order
+        << "@HD\tVN:1.0\n" //\tSO:queryname\n" // it is not sort order, it is group order
         << "@PG\tID:oligoFAR\tVN:" << version << "\n"; 
 }
 
@@ -154,6 +155,6 @@ void CSamFormatter::FormatHit( int rank, int rankSize, const CHit* hit, int pair
         << "*\t*\t";
 
     m_out 
-        << "AS:i:" << int(round( hit->GetScore( pairmate ) ) ) << "\t"
+		<< "AS:i:" << int( 0.5 + hit->GetScore( pairmate ) ) << "\t"
         << "XR:i:" << rank << "\t" << "XN:i:" << rankSize << "\n";
 }
