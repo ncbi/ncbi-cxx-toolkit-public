@@ -53,7 +53,7 @@ BEGIN_NCBI_SCOPE
 
 class CGridClient;
 
-/// Grid Job Submiter
+/// Grid Job Submitter
 ///
 class NCBI_XCONNECT_EXPORT CGridJobSubmitter
 {
@@ -93,7 +93,7 @@ public:
     string Submit(const string& affinity = "");
 
 private:
-    /// Only CGridClient can create an instnce of this class
+    /// Only CGridClient can create an instance of this class
     friend class CGridClient;
     CGridJobSubmitter(CGridClient&, bool use_progress);
 
@@ -108,7 +108,7 @@ private:
     CGridJobSubmitter& operator=(CGridJobSubmitter&);
 };
 
-/// Grid Job Batch  Submiter
+/// Grid Job Batch  Submitter
 ///
 class NCBI_XCONNECT_EXPORT CGridJobBatchSubmitter
 {
@@ -153,7 +153,7 @@ public:
 
     const vector<CNetScheduleJob>& GetBatch() const { return m_Jobs; }
 private:
-    /// Only CGridClient can create an instnce of this class
+    /// Only CGridClient can create an instance of this class
     friend class CGridClient;
     explicit CGridJobBatchSubmitter(CGridClient&);
 
@@ -195,7 +195,7 @@ public:
     //
     int           GetReturnCode();
 
-    /// If something bad has happend this method will return an
+    /// If something bad has happened this method will return an
     /// explanation
     ///
     const string& GetErrorMessage();
@@ -223,7 +223,7 @@ public:
     string GetProgressMessage();
 
 private:
-    /// Only CGridClient can create an instnce of this class
+    /// Only CGridClient can create an instance of this class
     friend class CGridClient;
     CGridJobStatus(CGridClient&, bool auto_cleanup, bool use_progress);
     void x_SetJobKey(const string& job_key);
@@ -270,7 +270,7 @@ public:
     ///     a job's input data from a storage when the job is
     ///     done or canceled
     ///
-    CGridClient(const CNetScheduleSubmitter ns_client,
+    CGridClient(CNetScheduleSubmitter::TPtr ns_client,
                 IBlobStorage& storage,
                 ECleanUp cleanup,
                 EProgressMsg progress_msg,
@@ -280,11 +280,11 @@ public:
     ///
     ~CGridClient();
 
-    /// Get a job submiter
+    /// Get a job submitter
     ///
     CGridJobSubmitter& GetJobSubmitter();
 
-    /// Get a job submiter
+    /// Get a job submitter
     ///
     CGridJobBatchSubmitter& GetJobBatchSubmitter();
 

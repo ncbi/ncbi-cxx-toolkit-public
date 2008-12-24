@@ -234,7 +234,6 @@ void CNetScheduleAdmin::Monitor(CNcbiOstream & out) const
     CNetServerConnection conn = m_Impl->m_API->x_GetConnection();
     conn->WriteLine("MONI QUIT");
     conn.Telnet(&out, NULL);
-    conn->Close();
 }
 
 void CNetScheduleAdmin::Logging(bool on_off) const
@@ -269,8 +268,11 @@ void CNetScheduleAdmin::GetQueueList(TQueueList& qlist) const
 class CStatusProcessor : public CNetServerConnection::IStringProcessor
 {
 public:
-    CStatusProcessor(CNetScheduleAPI api, CNetScheduleAdmin::TStatusMap&  status_map)
-        : m_API(api), m_StatusMap(&status_map) {}
+    CStatusProcessor(CNetScheduleAPI::TPtr api,
+        CNetScheduleAdmin::TStatusMap& status_map) :
+            m_API(api), m_StatusMap(&status_map)
+    {
+    }
 
     virtual bool Process(string& line) {
         // FIXME
@@ -295,10 +297,17 @@ private:
 
 struct SNSTelnetRunner
 {
-    SNSTelnetRunner(const CNetScheduleAPI& api, const string& cmd,
-                    CNetServerConnection::IStringProcessor& processor, CNcbiOstream *os = NULL)
-        : m_API(&api), m_Cmd(cmd), m_Processor(&processor), m_Os(os)
-    {}
+    SNSTelnetRunner(
+        CNetScheduleAPI::TPtr api,
+        const string& cmd,
+        CNetServerConnection::IStringProcessor& processor,
+        CNcbiOstream* os = NULL) :
+            m_API(api),
+            m_Cmd(cmd),
+            m_Processor(&processor),
+            m_Os(os)
+    {
+    }
 
     void operator()(CNetServerConnection conn)
     {
@@ -306,7 +315,7 @@ struct SNSTelnetRunner
         conn.Telnet(m_Os, m_Processor);
     }
 
-    const CNetScheduleAPI* m_API;
+    CNetScheduleAPI m_API;
     string m_Cmd;
     CNetServerConnection::IStringProcessor* m_Processor;
     CNcbiOstream* m_Os;
@@ -328,7 +337,7 @@ void CNetScheduleAdmin::StatusSnapshot(
 
 struct SNSJobCounter : public SNSSendCmd
 {
-    SNSJobCounter(CNetScheduleAPI& api, const string query)
+    SNSJobCounter(CNetScheduleAPI::TPtr api, const string query)
         : SNSSendCmd(api, "", 0), m_Counter(0)
     {
         m_Cmd = "QERY ";
@@ -337,7 +346,7 @@ struct SNSJobCounter : public SNSSendCmd
         m_Cmd.append("\" COUNT");
     }
     virtual void ProcessResponse(const string& resp,
-        CNetServerConnection /* conn */)
+        CNetServerConnection::TPtr /* conn_impl */)
     {
         m_Counter += NStr::StringToULong(resp);
     }
@@ -354,7 +363,8 @@ unsigned long CNetScheduleAdmin::Count(const string& query) const
 class CSimpleStringProcessor : public CNetServerConnection::IStringProcessor
 {
 public:
-    explicit CSimpleStringProcessor(CNetScheduleAPI api) : m_API(api) {}
+    explicit CSimpleStringProcessor(CNetScheduleAPI::TPtr api) :
+        m_API(api) {}
 
     virtual bool Process(string& line) {
         // FIXME
@@ -403,7 +413,7 @@ void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os) cons
 
 struct SNSJobIDsGetter : public SNSSendCmd
 {
-    SNSJobIDsGetter(CNetScheduleAPI api, const string query)
+    SNSJobIDsGetter(CNetScheduleAPI::TPtr api, const string query)
         : SNSSendCmd(api, "", 0), m_Counter(0)
     {
         m_Cmd = "QERY ";
@@ -412,12 +422,12 @@ struct SNSJobIDsGetter : public SNSSendCmd
         m_Cmd.append("\" IDS");
     }
     virtual void ProcessResponse(const string& resp,
-        CNetServerConnection conn)
+        CNetServerConnection::TPtr conn_impl)
     {
         string ip_addr = CSocketAPI::ntoa(
-            CSocketAPI::gethostbyname(conn.GetHost()));
+            CSocketAPI::gethostbyname(conn_impl->m_ConnectionPool->m_Host));
         m_IDsMap[SNetScheduleAdminImpl::TIDsMap::key_type(ip_addr,
-            conn.GetPort())] = resp;
+            conn_impl->m_ConnectionPool->m_Port)] = resp;
     }
     unsigned long m_Counter;
     SNetScheduleAdminImpl::TIDsMap m_IDsMap;

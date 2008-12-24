@@ -103,7 +103,7 @@ SNetCacheAPIImpl::CNetCacheServerListener::CNetCacheServerListener(
 }
 
 void SNetCacheAPIImpl::CNetCacheServerListener::OnConnected(
-    CNetServerConnection conn)
+    const CNetServerConnection& conn)
 {
     conn->WriteLine(m_Auth);
 }
@@ -131,10 +131,6 @@ void SNetCacheAPIImpl::CNetCacheServerListener::OnError(string& err_msg)
         NCBI_THROW(CNetCacheException, eBlobLocked, "Server error:" + err_msg);
 
     NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
-}
-
-void SNetCacheAPIImpl::CNetCacheServerListener::OnDisconnected()
-{
 }
 
 CNetCacheAPI::CNetCacheAPI(const string& client_name) :
@@ -372,7 +368,7 @@ CNetCacheAPI::GetData(const string& key, CSimpleBuffer& buffer)
 
 CNetCacheAdmin CNetCacheAPI::GetAdmin()
 {
-    return CNetCacheAdmin(new SNetCacheAdminImpl(m_Impl));
+    return new SNetCacheAdminImpl(m_Impl);
 }
 
 CNetService CNetCacheAPI::GetService()

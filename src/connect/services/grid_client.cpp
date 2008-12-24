@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////////////////
 //
-CGridClient::CGridClient(const CNetScheduleSubmitter ns_client,
+CGridClient::CGridClient(CNetScheduleSubmitter::TPtr ns_client,
                          IBlobStorage& storage,
                          ECleanUp cleanup,
                          EProgressMsg progress_msg,

@@ -110,7 +110,7 @@ struct SNSSendCmd
     };
     typedef int TFlags;
 
-    SNSSendCmd(CNetScheduleAPI api, const string& cmd, TFlags flags)
+    SNSSendCmd(CNetScheduleAPI::TPtr api, const string& cmd, TFlags flags)
         : m_API(api), m_Cmd(cmd), m_Flags(flags)
     {}
     virtual ~SNSSendCmd() {}
@@ -140,7 +140,7 @@ struct SNSSendCmd
         ProcessResponse(resp, conn);
     }
     virtual void ProcessResponse(const string& /* resp */,
-        CNetServerConnection /* conn */) {}
+        CNetServerConnection::TPtr /* conn_impl */) {}
 
     CNetScheduleAPI m_API;
     string m_Cmd;

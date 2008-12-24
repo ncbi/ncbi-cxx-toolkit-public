@@ -41,12 +41,6 @@
 BEGIN_NCBI_SCOPE
 
 
-CGridClientApp::CGridClientApp(CNetScheduleAPI ns_client,
-                               IBlobStorage*       storage)
-    : m_NSClient(ns_client), m_NSStorage(storage)
-{
-}
-
 CGridClientApp::~CGridClientApp()
 {
 }

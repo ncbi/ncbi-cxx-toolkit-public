@@ -70,7 +70,6 @@ struct SNetServerConnectionImpl : public CNetObject
     void WaitForServer(unsigned int wait_sec = 0);
 
     bool IsConnected();
-    void SetDisconnectedState();
 
     void CheckConnect();
 
@@ -80,11 +79,10 @@ struct SNetServerConnectionImpl : public CNetObject
 
     ~SNetServerConnectionImpl();
 
-    SNetServerConnectionPoolImpl* m_ConnectionPool;
+    CNetServerConnectionPool m_ConnectionPool;
     SNetServerConnectionImpl* m_NextFree;
 
     CSocket m_Socket;
-    bool m_Connected;
 };
 
 inline SNetServerCmdOutputImpl::SNetServerCmdOutputImpl(

@@ -78,7 +78,7 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
-    CNetServerConnection conn)
+    const CNetServerConnection& conn)
 {
     conn->WriteLine(m_Auth);
 }
@@ -95,10 +95,6 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(string& err_msg)
         }
     }
     NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
-}
-
-void SNetScheduleAPIImpl::CNetScheduleServerListener::OnDisconnected()
-{
 }
 
 CNetScheduleExceptionMap SNetScheduleAPIImpl::sm_ExceptionMap;
@@ -211,19 +207,19 @@ CNetScheduleAPI::StringToStatus(const string& status_str)
 CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
 {
     m_Impl->m_Service.DiscoverLowPriorityServers(eOff);
-    return CNetScheduleSubmitter(new SNetScheduleSubmitterImpl(m_Impl));
+    return new SNetScheduleSubmitterImpl(m_Impl);
 }
 
 CNetScheduleExecuter CNetScheduleAPI::GetExecuter()
 {
     m_Impl->m_Service.DiscoverLowPriorityServers(eOn);
-    return CNetScheduleExecuter(new SNetScheduleExecuterImpl(m_Impl));
+    return new SNetScheduleExecuterImpl(m_Impl);
 }
 
 CNetScheduleAdmin CNetScheduleAPI::GetAdmin()
 {
     m_Impl->m_Service.DiscoverLowPriorityServers(eOff);
-    return CNetScheduleAdmin(new SNetScheduleAdminImpl(m_Impl));
+    return new SNetScheduleAdminImpl(m_Impl);
 }
 
 CNetService CNetScheduleAPI::GetService()

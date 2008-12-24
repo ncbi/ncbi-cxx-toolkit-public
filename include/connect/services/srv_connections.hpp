@@ -118,9 +118,8 @@ class NCBI_XCONNECT_EXPORT CNetServerConnectionPool
 class INetServerConnectionListener : public CNetObject
 {
 public:
-    virtual void OnConnected(CNetServerConnection) = 0;
+    virtual void OnConnected(const CNetServerConnection&) = 0;
     virtual void OnError(string& err_msg) = 0;
-    virtual void OnDisconnected() = 0;
 };
 
 

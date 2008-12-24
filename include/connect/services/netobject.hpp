@@ -44,11 +44,12 @@ BEGIN_NCBI_SCOPE
     protected: \
     CNetObjectRef<S##component_name##Impl> m_Impl; \
     public: \
+    typedef S##component_name##Impl* TPtr; \
     C##component_name() {} \
-    explicit C##component_name(S##component_name##Impl* impl) : \
-        m_Impl(impl) {} \
-    operator S##component_name##Impl*() const {return m_Impl.GetPtr();} \
-    S##component_name##Impl* operator ->() const {return m_Impl.GetPtr();}
+    C##component_name(TPtr impl) : m_Impl(impl) {} \
+    C##component_name& operator =(TPtr impl) {m_Impl = impl; return *this;} \
+    operator TPtr() const {return m_Impl.GetPtr();} \
+    TPtr operator ->() const {return m_Impl.GetPtr();}
 
 class NCBI_XCONNECT_EXPORT CNetObject
 {
@@ -67,40 +68,63 @@ private:
     CAtomicCounter m_Refs;
 };
 
-template <class TYPE>
-class CNetObjectRef
+class CNetObjectRef_Base
 {
 public:
-    CNetObjectRef() : m_Impl(NULL) {}
+    CNetObjectRef_Base() : m_Impl(NULL) {}
 
-    CNetObjectRef(TYPE* impl) {
-        if ((m_Impl =
-                reinterpret_cast<CNetObject*>(impl)) != NULL)
+    CNetObjectRef_Base(CNetObject* impl)
+    {
+        if ((m_Impl = impl) != NULL)
             m_Impl->AddRef();
     }
 
-    CNetObjectRef(const CNetObjectRef<TYPE>& src) {
+    CNetObjectRef_Base(const CNetObjectRef_Base& src)
+    {
         if ((m_Impl = src.m_Impl) != NULL)
             m_Impl->AddRef();
     }
 
-    CNetObjectRef<TYPE>& operator =(const CNetObjectRef<TYPE>& src) {
-        if (src.m_Impl != NULL)
-            src.m_Impl->AddRef();
-
-        CNetObject* old_ptr = m_Impl;
-
-        m_Impl = src.m_Impl;
-
-        if (old_ptr != NULL)
-            old_ptr->Release();
+    CNetObjectRef_Base& operator =(const CNetObjectRef_Base& src) {
+        Assign(src.m_Impl);
 
         return *this;
     }
 
-    ~CNetObjectRef() {
+    void Assign(CNetObject* impl) {
+        if (impl != NULL)
+            impl->AddRef();
+
+        CNetObject* old_ptr = m_Impl;
+
+        m_Impl = impl;
+
+        if (old_ptr != NULL)
+            old_ptr->Release();
+    }
+
+    ~CNetObjectRef_Base() {
         if (m_Impl != NULL)
             m_Impl->Release();
+    }
+
+protected:
+    CNetObject* m_Impl;
+};
+
+template <class TYPE>
+class CNetObjectRef : public CNetObjectRef_Base
+{
+public:
+    CNetObjectRef() : CNetObjectRef_Base() {}
+
+    CNetObjectRef(TYPE* impl) :
+        CNetObjectRef_Base(reinterpret_cast<CNetObject*>(impl)) {}
+
+    CNetObjectRef<TYPE>& operator =(TYPE* impl) {
+        Assign(reinterpret_cast<CNetObject*>(impl));
+
+        return *this;
     }
 
     TYPE* GetPtr() const {return reinterpret_cast<TYPE*>(m_Impl);}
@@ -108,9 +132,6 @@ public:
     operator TYPE*() const {return reinterpret_cast<TYPE*>(m_Impl);}
 
     TYPE* operator ->() const {return reinterpret_cast<TYPE*>(m_Impl);}
-
-private:
-    CNetObject* m_Impl;
 };
 
 

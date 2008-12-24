@@ -56,8 +56,7 @@ unsigned short CNetServer::GetPort() const
 
 CNetServerConnection CNetServer::Connect()
 {
-    return m_Impl->m_Service.GetSpecificConnection(
-        GetHost(), GetPort());
+    return m_Impl->m_Service.GetSpecificConnection(GetHost(), GetPort());
 }
 
 int CNetServerGroup::GetCount() const
@@ -69,9 +68,7 @@ CNetServer CNetServerGroup::GetServer(int index)
 {
     _ASSERT(index < (int) m_Impl->m_Servers.size());
 
-    return CNetServer(new SNetServerImpl(
-        m_Impl->m_Servers[index],
-            m_Impl->m_Service));
+    return new SNetServerImpl(m_Impl->m_Servers[index], m_Impl->m_Service);
 }
 
 SNetServiceImpl::SNetServiceImpl(
@@ -256,8 +253,7 @@ CNetServerConnection SNetServiceImpl::GetConnection(const TServerAddress& srv)
     if (it != m_ServerAddressToConnectionPool.end())
         pool = it->second;
     if (!pool) {
-        pool = CNetServerConnectionPool(
-            new SNetServerConnectionPoolImpl(srv.first, srv.second));
+        pool = new SNetServerConnectionPoolImpl(srv.first, srv.second);
         pool.SetEventListener(m_Listener);
         pool.SetCommunicationTimeout(m_Timeout);
         pool.PermanentConnection(m_PermanentConnection);

@@ -45,7 +45,7 @@
 BEGIN_NCBI_SCOPE
 
 CNetCacheReader::CNetCacheReader(
-    CNetServerConnection connection, size_t blob_size)
+    CNetServerConnection::TPtr connection, size_t blob_size)
     : m_Connection(connection), m_BlobBytesToRead(blob_size)
 {
     m_Reader.reset(new CSocketReaderWriter(m_Connection->GetSocket()));
@@ -111,8 +111,8 @@ ERW_Result CNetCacheReader::PendingCount(size_t* count)
 
 
 /////////////////////////////////////////////////
-CNetCacheWriter::CNetCacheWriter(CNetCacheAPI& api,
-    CNetServerConnection connection,
+CNetCacheWriter::CNetCacheWriter(CNetCacheAPI::TPtr api,
+    CNetServerConnection::TPtr connection,
     CTransmissionWriter::ESendEofPacket send_eof) :
         m_API(api),
         m_Connection(connection)

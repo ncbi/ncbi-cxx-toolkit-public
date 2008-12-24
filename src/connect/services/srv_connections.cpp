@@ -86,8 +86,7 @@ bool CNetServerCmdOutput::ReadLine(std::string& output)
 inline SNetServerConnectionImpl::SNetServerConnectionImpl(
     SNetServerConnectionPoolImpl* pool) :
         m_ConnectionPool(pool),
-        m_NextFree(NULL),
-        m_Connected(false)
+        m_NextFree(NULL)
 {
     if (TServConn_UserLinger2::GetDefault()) {
         STimeout zero = {0,0};
@@ -163,29 +162,16 @@ bool SNetServerConnectionImpl::IsConnected()
     return ret;
 }
 
-void SNetServerConnectionImpl::SetDisconnectedState()
-{
-    if (m_Connected && m_ConnectionPool->m_EventListener) {
-        m_ConnectionPool->m_EventListener->OnDisconnected();
-
-        m_Connected = false;
-    }
-}
-
 void SNetServerConnectionImpl::Close()
 {
     if (IsConnected())
         m_Socket.Close();
-
-    SetDisconnectedState();
 }
 
 void SNetServerConnectionImpl::Abort()
 {
     if (IsConnected())
         m_Socket.Abort();
-
-    SetDisconnectedState();
 }
 
 SNetServerConnectionImpl::~SNetServerConnectionImpl()
@@ -282,7 +268,7 @@ CNetServerCmdOutput CNetServerConnection::ExecMultiline(const std::string& cmd)
     m_Impl->WriteLine(cmd);
     m_Impl->WaitForServer();
 
-    return CNetServerCmdOutput(new SNetServerCmdOutputImpl(m_Impl));
+    return new SNetServerCmdOutputImpl(m_Impl);
 }
 
 void SNetServerConnectionImpl::CheckConnect()
@@ -291,15 +277,6 @@ void SNetServerConnectionImpl::CheckConnect()
         return;
 
     SNetServerConnectionPoolImpl* pool = m_ConnectionPool;
-
-    CNetObjectRef<INetServerConnectionListener> listener(pool->m_EventListener);
-
-    if (m_Connected) {
-        if (listener)
-            listener->OnDisconnected();
-
-        m_Connected = false;
-    }
 
     unsigned conn_repeats = 0;
 
@@ -346,10 +323,8 @@ void SNetServerConnectionImpl::CheckConnect()
     the_socket->DisableOSSendDelay();
     the_socket->SetReuseAddress(eOn);
 
-    if (listener)
-        listener->OnConnected(CNetServerConnection(this));
-
-    m_Connected = true;
+    if (pool->m_EventListener)
+        pool->m_EventListener->OnConnected(CNetServerConnection(this));
 }
 
 void CNetServerConnection::Telnet(CNcbiOstream* out,
@@ -409,7 +384,6 @@ inline void SNetServerConnectionPoolImpl::DeleteConnection(
     SNetServerConnectionImpl* impl)
 {
     delete impl;
-    Release();
 }
 
 void SNetServerConnectionPoolImpl::Put(SNetServerConnectionImpl* impl)
@@ -434,6 +408,7 @@ void SNetServerConnectionPoolImpl::Put(SNetServerConnectionImpl* impl)
                     impl->m_NextFree = m_FreeConnectionListHead;
                     m_FreeConnectionListHead = impl;
                     ++m_FreeConnectionListSize;
+                    impl->m_ConnectionPool = NULL;
                     return;
                 }
             }
@@ -507,11 +482,10 @@ CNetServerConnection CNetServerConnectionPool::GetConnection()
         impl = m_Impl->m_FreeConnectionListHead;
         m_Impl->m_FreeConnectionListHead = impl->m_NextFree;
         --m_Impl->m_FreeConnectionListSize;
+        impl->m_ConnectionPool = m_Impl;
     }
 
-    m_Impl->AddRef();
-
-    return CNetServerConnection(impl);
+    return impl;
 }
 
 void CNetServerConnectionPool::SetCommunicationTimeout(const STimeout& to)
