@@ -28,7 +28,6 @@ void CSamFormatter::FormatHeader( const string& version )
         << "@PG\tID:oligoFAR\tVN:" << version << "\n"; 
 }
 
-
 void CSamFormatter::FormatHit( const CHit* ) {} // no any hit formatting is supported
 
 void CSamFormatter::FormatQueryHits( const CQuery* query )
