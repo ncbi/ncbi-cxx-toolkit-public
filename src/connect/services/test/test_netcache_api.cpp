@@ -431,6 +431,8 @@ int CTestNetCacheClient::Run(void)
         size_t bsize;
         auto_ptr<IReader> rdr(nc_client.GetData(key, &bsize));
 
+        assert(rdr.get() != NULL);
+
         cout << bsize << endl;
         assert(bsize == 0);
 
