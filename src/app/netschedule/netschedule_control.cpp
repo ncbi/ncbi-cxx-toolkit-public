@@ -65,7 +65,7 @@ private:
 
     void x_GetConnectionArgs(string& service, string& queue, int& retry,
                              bool queue_requered);
-    CNetScheduleAPI* x_CreateNewClient(bool queue_requered);
+    CNetScheduleAPI x_CreateNewClient(bool queue_requered);
 
     bool CheckPermission();
 };
@@ -101,12 +101,12 @@ void CNetScheduleControl::x_GetConnectionArgs(string& service, string& queue, in
 }
 
 
-CNetScheduleAPI* CNetScheduleControl::x_CreateNewClient(bool queue_requered)
+CNetScheduleAPI CNetScheduleControl::x_CreateNewClient(bool queue_requered)
 {
     string service,queue;
     int retry;
     x_GetConnectionArgs(service, queue, retry, queue_requered);
-    return new CNetScheduleAPI(service, "netschedule_admin", queue);
+    return CNetScheduleAPI(service, "netschedule_admin", queue);
 }
 
 
@@ -238,43 +238,44 @@ int CNetScheduleControl::Run(void)
 
     CNcbiOstream& os = NcbiCout;
 
-    auto_ptr<CNetScheduleAPI> ctl;
+    CNetScheduleAPI ctl;
+
     if (args["shutdown"]) {
-        ctl.reset(x_CreateNewClient(false));
-        ctl->GetAdmin().ShutdownServer();
+        ctl = x_CreateNewClient(false);
+        ctl.GetAdmin().ShutdownServer();
         os << "Shutdown request has been sent to server" << endl;
     }
     else if (args["shutdown_now"]) {
-        ctl.reset(x_CreateNewClient(false));
-        ctl->GetAdmin().ShutdownServer(CNetScheduleAdmin::eShutdownImmediate);
+        ctl = x_CreateNewClient(false);
+        ctl.GetAdmin().ShutdownServer(CNetScheduleAdmin::eShutdownImmediate);
         os << "Shutdown IMMEDIATE request has been sent to server" << endl;
     }
     else if (args["die"]) {
-        ctl.reset(x_CreateNewClient(false));
-        ctl->GetAdmin().ShutdownServer(CNetScheduleAdmin::eDie);
+        ctl = x_CreateNewClient(false);
+        ctl.GetAdmin().ShutdownServer(CNetScheduleAdmin::eDie);
         os << "Die request has been sent to server" << endl;
     }
     else if (args["log"]) {
-        ctl.reset(x_CreateNewClient(false));
+        ctl = x_CreateNewClient(false);
         bool on_off = args["log"].AsBoolean();
-        ctl->GetAdmin().Logging(on_off);
+        ctl.GetAdmin().Logging(on_off);
         os << "Logging turned "
            << (on_off ? "ON" : "OFF") << " on the server" << endl;
     }
     else if (args["monitor"]) {
-        ctl.reset(x_CreateNewClient(true));
-        ctl->GetAdmin().Monitor(os);
+        ctl = x_CreateNewClient(true);
+        ctl.GetAdmin().Monitor(os);
     }
     else if( args["count"]) {
-        ctl.reset(x_CreateNewClient(true));
+        ctl = x_CreateNewClient(true);
         string query = args["count"].AsString();
-        os << ctl->GetAdmin().Count(query) << endl;
+        os << ctl.GetAdmin().Count(query) << endl;
     }
     else if( args["show_jobs_id"]) {
-        ctl.reset(x_CreateNewClient(true));
+        ctl = x_CreateNewClient(true);
         string query = args["show_jobs_id"].AsString();
         CNetScheduleKeys keys;
-        ctl->GetAdmin().RetrieveKeys(query, keys);
+        ctl.GetAdmin().RetrieveKeys(query, keys);
  
         for (CNetScheduleKeys::const_iterator it = keys.begin();
             it != keys.end(); ++it) {
@@ -282,29 +283,29 @@ int CNetScheduleControl::Run(void)
         }
     }
     else if( args["query"]) {
-        ctl.reset(x_CreateNewClient(true));
+        ctl = x_CreateNewClient(true);
         if (!args["fields"] )
             NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -fields");
         string query = args["query"].AsString();
         string sfields = args["fields"].AsString();
         vector<string> fields;
         NStr::Tokenize(sfields, ",", fields);
-        ctl->GetAdmin().Query(query, fields, os);
+        ctl.GetAdmin().Query(query, fields, os);
         os << endl;
     }
     else if( args["select"]) {
-        ctl.reset(x_CreateNewClient(true));
+        ctl = x_CreateNewClient(true);
         string select_stmt = args["select"].AsString();
-        ctl->GetAdmin().Select(select_stmt, os);
+        ctl.GetAdmin().Select(select_stmt, os);
         os << endl;
     }
     else if (args["reconf"]) {
-        ctl.reset(x_CreateNewClient(false));
-        ctl->GetAdmin().ReloadServerConfig();
+        ctl = x_CreateNewClient(false);
+        ctl.GetAdmin().ReloadServerConfig();
         os << "Reconfigured." << endl;
     }
     else if (args["qcreate"]) {
-        ctl.reset(x_CreateNewClient(false));
+        ctl = x_CreateNewClient(false);
         if (!args["qclass"] )
             NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -qclass");
         if (!args["queue"] )
@@ -315,24 +316,24 @@ int CNetScheduleControl::Run(void)
         }
         string new_queue = args["queue"].AsString();
         string qclass = args["qclass"].AsString();
-        ctl->GetAdmin().CreateQueue(new_queue, qclass, comment);
+        ctl.GetAdmin().CreateQueue(new_queue, qclass, comment);
         os << "Queue \"" << new_queue << "\" has been created." << endl;
     }
     else if (args["qdelete"]) {
-        ctl.reset(x_CreateNewClient(true));
-        ctl->GetAdmin().DeleteQueue(ctl->GetQueueName());
-        os << "Queue \"" << ctl->GetQueueName() << "\" has been deleted." << endl;
+        ctl = x_CreateNewClient(true);
+        ctl.GetAdmin().DeleteQueue(ctl.GetQueueName());
+        os << "Queue \"" << ctl.GetQueueName() << "\" has been deleted." << endl;
     }
     else if (args["drop"]) {
-        ctl.reset(x_CreateNewClient(true));
-        ctl->GetAdmin().DropQueue();
-        os << "All jobs from the queue \"" << ctl->GetQueueName()
+        ctl = x_CreateNewClient(true);
+        ctl.GetAdmin().DropQueue();
+        os << "All jobs from the queue \"" << ctl.GetQueueName()
            << "\" has been dropped." << endl;
     }
     else if (args["showparams"]) {
-        ctl.reset(x_CreateNewClient(true));
-        CNetScheduleAPI::SServerParams params = ctl->GetServerParams();
-        os << "Server parameters for the queue \"" << ctl->GetQueueName()
+        ctl = x_CreateNewClient(true);
+        CNetScheduleAPI::SServerParams params = ctl.GetServerParams();
+        os << "Server parameters for the queue \"" << ctl.GetQueueName()
            << "\":" << endl
            << "max_input_size = " << params.max_input_size << endl
            << "max_output_size = " << params.max_output_size << endl
@@ -341,31 +342,31 @@ int CNetScheduleControl::Run(void)
     }
 
     else if (args["dump"]) {
-        ctl.reset(x_CreateNewClient(true));
+        ctl = x_CreateNewClient(true);
         string jid;
         if (args["jid"] ) {
             jid = args["jid"].AsString();
-            ctl->GetAdmin().DumpJob(os,jid);
+            ctl.GetAdmin().DumpJob(os,jid);
         } else {
-            ctl->GetAdmin().DumpQueue(os);
+            ctl.GetAdmin().DumpQueue(os);
         }
     }
     else if (args["reschedule"]) {
-        ctl.reset(x_CreateNewClient(true));
+        ctl = x_CreateNewClient(true);
         string jid = args["reschedule"].AsString();
-        ctl->GetAdmin().ForceReschedule(jid);
+        ctl.GetAdmin().ForceReschedule(jid);
         os << "Job " << jid << " has been resheduled." << endl;
     }
     else if (args["ver"]) {
-        ctl.reset(x_CreateNewClient(false));
-        ctl->GetAdmin().PrintServerVersion(os);
+        ctl = x_CreateNewClient(false);
+        ctl.GetAdmin().PrintServerVersion(os);
     }
     else if (args["qlist"]) {
-        ctl.reset(x_CreateNewClient(false));
+        ctl = x_CreateNewClient(false);
 
         CNetScheduleAdmin::TQueueList queues;
 
-        ctl->GetAdmin().GetQueueList(queues);
+        ctl.GetAdmin().GetQueueList(queues);
 
         for (CNetScheduleAdmin::TQueueList::const_iterator it = queues.begin();
             it != queues.end(); ++it) {
@@ -387,8 +388,8 @@ int CNetScheduleControl::Run(void)
         CNetScheduleAdmin::EStatisticsOptions st = CNetScheduleAdmin::eStatisticsBrief;
         if (NStr::CompareNocase(sstatus, "all") == 0)
             st = CNetScheduleAdmin::eStatisticsAll;
-        ctl.reset(x_CreateNewClient(true));
-        ctl->GetAdmin().PrintServerStatistics(os, st);
+        ctl = x_CreateNewClient(true);
+        ctl.GetAdmin().PrintServerStatistics(os, st);
     }
     else if (args["qprint"]) {
         string sstatus = args["qprint"].AsString();
@@ -398,16 +399,16 @@ int CNetScheduleControl::Run(void)
             ERR_POST("Status string unknown:" << sstatus);
             return 1;
         }
-        ctl.reset(x_CreateNewClient(true));
-        ctl->GetAdmin().PrintQueue(os, status);
+        ctl = x_CreateNewClient(true);
+        ctl.GetAdmin().PrintQueue(os, status);
     }
     else if (args["affstat"]) {
         string affinity = args["affstat"].AsString();
-        ctl.reset(x_CreateNewClient(true));
+        ctl = x_CreateNewClient(true);
 
-        os << "Queue: \"" << ctl->GetQueueName() << "\"" << endl;
+        os << "Queue: \"" << ctl.GetQueueName() << "\"" << endl;
         CNetScheduleAdmin::TStatusMap st_map;
-        ctl->GetAdmin().StatusSnapshot(st_map, affinity);
+        ctl.GetAdmin().StatusSnapshot(st_map, affinity);
         ITERATE(CNetScheduleAdmin::TStatusMap, it, st_map) {
             os << CNetScheduleAPI::StatusToString(it->first) << ": "
                << it->second
