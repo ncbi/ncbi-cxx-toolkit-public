@@ -85,7 +85,7 @@ struct SNetScheduleAPIImpl : public CNetObject
             const std::string& queue_name);
 
     private:
-        virtual void OnConnected(const CNetServerConnection&);
+        virtual void OnConnected(CNetServerConnection::TPtr);
         virtual void OnError(string& err_msg);
 
     private:

@@ -85,8 +85,6 @@ class NCBI_XCONNECT_EXPORT CNetServerConnection
 
 ///////////////////////////////////////////////////////////////////////////
 //
-class INetServerConnectionListener;
-
 struct SNetServerConnectionPoolImpl;
 
 class NCBI_XCONNECT_EXPORT CNetServerConnectionPool
@@ -95,9 +93,6 @@ class NCBI_XCONNECT_EXPORT CNetServerConnectionPool
 
     const string& GetHost() const;
     unsigned short GetPort() const;
-
-    void SetEventListener(INetServerConnectionListener* listener);
-    CNetObjectRef<INetServerConnectionListener> GetEventListener() const;
 
     static void SetDefaultCommunicationTimeout(const STimeout& to);
     void SetCommunicationTimeout(const STimeout& to);
@@ -110,16 +105,6 @@ class NCBI_XCONNECT_EXPORT CNetServerConnectionPool
     void PermanentConnection(ESwitch type);
 
     CNetServerConnection GetConnection();
-};
-
-
-///////////////////////////////////////////////////////////////////////////
-//
-class INetServerConnectionListener : public CNetObject
-{
-public:
-    virtual void OnConnected(const CNetServerConnection&) = 0;
-    virtual void OnError(string& err_msg) = 0;
 };
 
 

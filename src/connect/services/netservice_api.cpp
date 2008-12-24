@@ -253,9 +253,8 @@ CNetServerConnection SNetServiceImpl::GetConnection(const TServerAddress& srv)
     if (it != m_ServerAddressToConnectionPool.end())
         pool = it->second;
     if (!pool) {
-        pool = new SNetServerConnectionPoolImpl(srv.first, srv.second);
-        pool.SetEventListener(m_Listener);
-        pool.SetCommunicationTimeout(m_Timeout);
+        pool = new SNetServerConnectionPoolImpl(
+            srv.first, srv.second, m_Timeout, m_Listener);
         pool.PermanentConnection(m_PermanentConnection);
         m_ServerAddressToConnectionPool[srv] = pool;
     }

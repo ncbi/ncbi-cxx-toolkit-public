@@ -324,7 +324,7 @@ void SNetServerConnectionImpl::CheckConnect()
     the_socket->SetReuseAddress(eOn);
 
     if (pool->m_EventListener)
-        pool->m_EventListener->OnConnected(CNetServerConnection(this));
+        pool->m_EventListener->OnConnected(this);
 }
 
 void CNetServerConnection::Telnet(CNcbiOstream* out,
@@ -369,10 +369,14 @@ unsigned int CNetServerConnection::GetPort() const
 
 /*************************************************************************/
 SNetServerConnectionPoolImpl::SNetServerConnectionPoolImpl(
-    const string& host, unsigned short port) :
+    const string& host,
+    unsigned short port,
+    const STimeout& timeout,
+    INetServerConnectionListener* listener) :
         m_Host(host),
         m_Port(port),
-        m_Timeout(s_GetDefaultCommTimeout()),
+        m_Timeout(timeout),
+        m_EventListener(listener),
         m_MaxRetries(TServConn_ConnMaxRetries::GetDefault()),
         m_FreeConnectionListHead(NULL),
         m_FreeConnectionListSize(0),
@@ -436,18 +440,6 @@ const string& CNetServerConnectionPool::GetHost() const
 unsigned short CNetServerConnectionPool::GetPort() const
 {
     return m_Impl->m_Port;
-}
-
-void CNetServerConnectionPool::SetEventListener(
-    INetServerConnectionListener* listener)
-{
-    m_Impl->m_EventListener = listener;
-}
-
-CNetObjectRef<INetServerConnectionListener>
-    CNetServerConnectionPool::GetEventListener() const
-{
-    return m_Impl->m_EventListener;
 }
 
 const STimeout& CNetServerConnectionPool::GetCommunicationTimeout() const

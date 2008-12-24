@@ -106,9 +106,22 @@ inline CSocket* SNetServerConnectionImpl::GetSocket()
     return &m_Socket;
 }
 
+
+class INetServerConnectionListener : public CNetObject
+{
+public:
+    virtual void OnConnected(CNetServerConnection::TPtr) = 0;
+    virtual void OnError(string& err_msg) = 0;
+};
+
+
 struct SNetServerConnectionPoolImpl : public CNetObject
 {
-    SNetServerConnectionPoolImpl(const string& host, unsigned short port);
+    SNetServerConnectionPoolImpl(
+        const string& host,
+        unsigned short port,
+        const STimeout& timeout,
+        INetServerConnectionListener* listener);
 
     void DeleteConnection(SNetServerConnectionImpl* impl);
     void Put(SNetServerConnectionImpl* impl);
