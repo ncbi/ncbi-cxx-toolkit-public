@@ -234,8 +234,6 @@ void SNetServerConnectionImpl::WriteBuf(const char* buf, size_t len)
 // if wait_sec is set to 0 m_Timeout will be used
 void SNetServerConnectionImpl::WaitForServer(unsigned int wait_sec)
 {
-    _ASSERT(IsConnected());
-
     STimeout to = {wait_sec, 0};
 
     SNetServerConnectionPoolImpl* pool = m_ConnectionPool;
