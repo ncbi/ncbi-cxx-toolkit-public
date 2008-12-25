@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 /// Grid worker global varialbles
 ///
-/// @sa CNetScheduleClient
+/// @sa CNetScheduleAPI
 ///
 
 

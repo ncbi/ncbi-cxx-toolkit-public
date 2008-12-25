@@ -34,7 +34,6 @@
  */
 
 #include <connect/services/grid_client.hpp>
-#include <connect/services/netschedule_client.hpp>
 #include <connect/services/ns_client_factory.hpp>
 
 #include <corelib/ncbimisc.hpp>

@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 /// NetSchedule Client Factory interface
 ///
-/// @sa CNetScheduleClient
+/// @sa CNetScheduleAPI
 ///
 class INetScheduleClientFactory
 {

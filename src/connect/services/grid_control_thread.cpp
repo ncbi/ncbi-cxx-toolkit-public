@@ -268,8 +268,6 @@ CWorkerNodeControlThread::~CWorkerNodeControlThread()
 }
 bool CWorkerNodeControlThread::ShutdownRequested(void)
 {
-    //    return CGridGlobals::GetInstance().
-    //        GetShutdownLevel() != CNetScheduleClient::eNoShutdown;
     return m_ShutdownRequested;
 }
 

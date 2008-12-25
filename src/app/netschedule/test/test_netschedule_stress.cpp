@@ -304,10 +304,8 @@ int CTestNetScheduleStress::Run(void)
     CNetScheduleAPI cl(service, "stress_test", queue);
     cl.SetProgramVersion("test wn 1.0.1");
 
-    {
-        CNetScheduleAdmin admin = cl.GetAdmin();
-        admin.PrintServerVersion(NcbiCout);
-    }
+    cl.GetAdmin().PrintServerVersion(NcbiCout);
+
     //        SleepSec(40);
     //        return 0;
     string input = "Hello " + queue;
