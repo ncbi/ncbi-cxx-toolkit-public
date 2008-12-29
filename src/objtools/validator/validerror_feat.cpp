@@ -826,6 +826,8 @@ void CValidError_feat::ValidateCdConflict
     }
 
     CSeqVector prot_vec = prot.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    prot_vec.SetCoding(CSeq_data::e_Ncbieaa);
+
     string prot_seq;
     prot_vec.GetSeqData(0, prot_vec.size(), prot_seq);
 
@@ -2587,7 +2589,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     // Mismatch on first residue
     string msg;
     if (!mismatches.empty()  &&  mismatches.front() == 0) {
-        if (feat.GetPartial() && (!no_beg) && (!no_end)) {
+        if (feat.IsSetPartial() && feat.GetPartial() && (!no_beg) && (!no_end)) {
             if (report_errors) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem, 
                     "Start of location should probably be partial",
@@ -2924,7 +2926,7 @@ void CValidError_feat::ValidateFeatBioSource
 (const CBioSource& bsrc,
  const CSeq_feat& feat)
 {
-    if ( bsrc.CanGetIs_focus() ) {
+    if ( bsrc.IsSetIs_focus() ) {
         PostErr(eDiag_Error, eErr_SEQ_FEAT_FocusOnBioSourceFeature,
             "Focus must be on BioSource descriptor, not BioSource feature.",
             feat);

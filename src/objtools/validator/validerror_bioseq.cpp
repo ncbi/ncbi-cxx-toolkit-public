@@ -2916,6 +2916,56 @@ bool CValidError_bioseq::IsFlybaseDbxrefs(const TDbtags& dbxrefs)
 }
 
 
+static bool s_IsTPAAssemblyOkForBioseq (const CBioseq& seq)
+{
+    bool is_ok = false, has_local = false, has_genbank = false, has_refseq = false;
+    bool has_gi = false, has_tpa = false, has_bankit = false, has_smart = false;
+
+    FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
+        switch ((*it)->Which()) {
+            case CSeq_id::e_Local:
+                has_local = true;
+                break;
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Embl:
+            case CSeq_id::e_Ddbj:
+                has_genbank = true;
+                break;
+            case CSeq_id::e_Other:
+                has_refseq = true;
+                break;
+            case CSeq_id::e_Gi:
+                has_gi = true;
+                break;
+            case CSeq_id::e_Tpg:
+            case CSeq_id::e_Tpe:
+            case CSeq_id::e_Tpd:
+                has_tpa = true;
+                break;
+            case CSeq_id::e_General:
+                if ((*it)->GetGeneral().IsSetDb()) {
+                    if (NStr::Equal((*it)->GetGeneral().GetDb(), "BankIt", NStr::eNocase)) {
+                        has_bankit = true;
+                    } else if (NStr::Equal((*it)->GetGeneral().GetDb(), "TMSMART", NStr::eNocase)) {
+                        has_smart = true;
+                    }
+                }
+                break;
+        }
+    }
+
+    if (has_genbank) return false;
+    if (has_tpa) return true;
+    if (has_refseq) return false;
+    if (has_bankit) return true;
+    if (has_smart) return true;
+    if (has_gi) return false;
+    if (has_local) return true;
+
+    return false;    
+}
+
+
 // Validate CSeqdesc within the context of a bioseq. 
 // See: CValidError_desc for validation of standalone CSeqdesc,
 // and CValidError_descr for validation of descriptors in the context
@@ -3055,6 +3105,18 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
         case CSeqdesc::e_Mol_type:
             ValidateMolTypeContext(desc.GetMol_type(), seq_na_mol, seq, desc);
+            break;
+
+        case CSeqdesc::e_User:
+            if (desc.GetUser().IsSetType()) {
+                const CObject_id& oi = desc.GetUser().GetType();
+                if (oi.IsStr() && NStr::CompareNocase(oi.GetStr(), "TpaAssembly") == 0 
+                    && !s_IsTPAAssemblyOkForBioseq(seq)) {
+                    PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                        "Non-TPA record should not have TpaAssembly object", seq);
+                }
+            }
+            break;
 
         default:
             break;
@@ -3152,7 +3214,11 @@ void CValidError_bioseq::ValidateMolInfoContext
                 }
             }
         }
+    } else {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+        "Molinfo-biomol unknown used", ctx, desc);
     }
+
 
     if ( !minfo.IsSetTech() ) {
         return;
@@ -3315,9 +3381,9 @@ void CValidError_bioseq::ValidateMolTypeContext
                     "] and [" + 
                     ENUM_METHOD_NAME(EGIBB_mol)()->FindName(gibb_mol, true) +
                     "]", ctx, desc);
-            } else {
-                seq_na_mol = gibb_mol;
             }
+        } else {
+            seq_na_mol = gibb_mol;
         }
         break;
     }

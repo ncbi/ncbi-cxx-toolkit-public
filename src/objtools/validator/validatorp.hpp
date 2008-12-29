@@ -98,6 +98,7 @@ BEGIN_SCOPE(validator)
 //                            Validation classes                          
 // =============================================================================
 class CValidError_desc;
+class CValidError_descr;
 
 // ===========================  Central Validation  ==========================
 
@@ -200,7 +201,6 @@ public:
     inline bool IsGPS(void) const { return m_IsGPS; }
     inline bool IsGED(void) const { return m_IsGED; }
     inline bool IsPDB(void) const { return m_IsPDB; }
-    inline bool IsTPA(void) const { return m_IsTPA; }
     inline bool IsPatent(void) const { return m_IsPatent; }
     inline bool IsRefSeq(void) const { return m_IsRefSeq; }
     inline bool IsNC(void) const { return m_IsNC; }
@@ -270,6 +270,10 @@ private:
     bool ValidateDescriptorInSeqEntry (const CSeq_entry& se, CValidError_desc * descval);
     bool ValidateDescriptorInSeqEntry (const CSeq_entry& se);
 
+    bool ValidateSeqDescrInSeqEntry (const CSeq_entry& se, CValidError_descr *descr_val);
+    bool ValidateSeqDescrInSeqEntry (const CSeq_entry& se);
+
+
 
     CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;
@@ -305,7 +309,6 @@ private:
     bool m_IsGPS;
     bool m_IsGED;
     bool m_IsPDB;
-    bool m_IsTPA;
     bool m_IsPatent;
     bool m_IsRefSeq;
     bool m_IsNC;

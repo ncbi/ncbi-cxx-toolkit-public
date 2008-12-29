@@ -164,12 +164,7 @@ void CValidError_desc::ValidateUser
     if ( !oi.IsStr() ) {
         return;
     }
-    if ( NStr::CompareNocase(oi.GetStr(), "TpaAssembly") == 0 ) {
-        if ( !m_Imp.IsTPA() ) {
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                "Non-TPA record should not have TpaAssembly object", *m_Ctx, desc);
-        }
-    } else if ( NStr::CompareNocase(oi.GetStr(), "RefGeneTracking") == 0 ) {
+    if ( NStr::CompareNocase(oi.GetStr(), "RefGeneTracking") == 0 ) {
         bool has_ref_track_status = false;
         ITERATE(CUser_object::TData, field, usr.GetData()) {
             if ( (*field)->CanGetLabel() ) {

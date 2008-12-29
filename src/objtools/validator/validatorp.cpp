@@ -153,7 +153,6 @@ CValidError_imp::CValidError_imp
       m_IsGPS(false),
       m_IsGED(false),
       m_IsPDB(false),
-      m_IsTPA(false),
       m_IsPatent(false),
       m_IsRefSeq(false),
       m_IsNC(false),
@@ -574,6 +573,38 @@ bool CValidError_imp::ValidateDescriptorInSeqEntry (const CSeq_entry& se)
 }
 
 
+bool CValidError_imp::ValidateSeqDescrInSeqEntry (const CSeq_entry& se, CValidError_descr *descr_val)
+{
+    if (se.IsSetDescr()) {
+        descr_val->ValidateSeqDescr (se.GetDescr());
+    }
+    if (se.Which() == CSeq_entry::e_Set) {
+        FOR_EACH_SEQENTRY_ON_SEQSET (it, se.GetSet()) {
+            if (!ValidateSeqDescrInSeqEntry (**it, descr_val)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+       
+
+bool CValidError_imp::ValidateSeqDescrInSeqEntry (const CSeq_entry& se)
+{
+    if ( m_PrgCallback ) {
+        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Desc;
+        m_PrgInfo.m_Current = m_NumDesc;
+        m_PrgInfo.m_CurrentDone = 0;
+        m_PrgCallback(&m_PrgInfo);
+    }
+
+    //CRef<CValidError_desc> desc_validator(new CValidError_desc(*this)); 
+    CValidError_descr desc_validator(*this);
+    return ValidateSeqDescrInSeqEntry (se, &desc_validator);        
+}
+
+
+
 bool CValidError_imp::Validate
 (const CSeq_entry_Handle& seh,
  const CCit_sub* cs)
@@ -836,33 +867,10 @@ bool CValidError_imp::Validate
     }
 
     // Descriptor lists:
-
-    if ( m_PrgCallback ) {
-        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Descr;
-        m_PrgInfo.m_Current = m_NumDescr;
-        m_PrgInfo.m_CurrentDone = 0;
-        m_PrgCallback(&m_PrgInfo);
+    if (!ValidateSeqDescrInSeqEntry (*(GetTSEH().GetCompleteSeq_entry()))) {
+        return false;
     }
-    CValidError_descr descr_validator(*this);
-    for (CSeq_descr_CI ei(GetTSEH()); ei; ++ei) {
-        const CSeq_descr& sd = *ei;
-        try {
-            descr_validator.ValidateSeqDescr(sd);
-            if ( m_PrgCallback ) {
-                m_PrgInfo.m_CurrentDone++;
-                m_PrgInfo.m_TotalDone++;
-                if ( m_PrgCallback(&m_PrgInfo) ) {
-                    return false;
-                }
-            }
-        } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                string("Exeption while validating annotation. EXCEPTION: ") +
-                e.what(), sd);
-            return true;
-        }
-    }
-
+    
     ReportMissingPubs(*m_TSE, cs);
     ReportMissingBiosource(*m_TSE);
     ReportProtWithoutFullRef();
@@ -930,6 +938,9 @@ void CValidError_imp::Validate(const CSeq_annot_Handle& sah)
                 graph_validator.ValidateSeqGraph(sg);
             }
         }
+        break;
+    default:
+        break;
     }
 }
 
@@ -1681,33 +1692,6 @@ void CValidError_imp::ValidateBioSource
 			}
 		}
 	}
-    if ( !orgref.IsSetOrgname() ) {
-        return;
-    }
-    const COrgName& orgname = orgref.GetOrgname();
-
-    if ( orgname.IsSetMod() ) {
-        FOR_EACH_ORGMOD_ON_ORGNAME (omd_itr, orgname) {
-            const COrgMod& omd = **omd_itr;
-            int subtype = omd.GetSubtype();
-            
-            if ( (subtype == 0) || (subtype == 1) ) {
-                PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
-                    "Unknown orgmod subtype " + subtype, obj);
-            }
-            if ( subtype == COrgMod::eSubtype_variety ) {
-                if ( NStr::CompareNocase( orgname.GetDiv(), "PLN" ) != 0 ) {
-                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
-                        "Orgmod variety should only be in plants or fungi", 
-                        obj);
-                }
-            }
-            if ( subtype == COrgMod::eSubtype_other ) {
-                ValidateSourceQualTags( omd.GetSubname(), obj);
-            }
-        }
-    }
-
     if ( orgref.IsSetDb() ) {
         ValidateDbxref(orgref.GetDb(), obj, true);
     }
@@ -1723,6 +1707,33 @@ void CValidError_imp::ValidateBioSource
         if ( !found ) {
             PostErr(eDiag_Warning, eErr_SEQ_DESCR_NoTaxonID,
                 "BioSource is missing taxon ID", obj);
+        }
+    }
+
+    if ( !orgref.IsSetOrgname() ) {
+        return;
+    }
+    const COrgName& orgname = orgref.GetOrgname();
+
+    if ( orgname.IsSetMod() ) {
+        FOR_EACH_ORGMOD_ON_ORGNAME (omd_itr, orgname) {
+            const COrgMod& omd = **omd_itr;
+            int subtype = omd.GetSubtype();
+            
+            if ( (subtype == 0) || (subtype == 1) ) {
+                PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
+                        "Unknown orgmod subtype " + NStr::IntToString(subtype), obj);
+            }
+            if ( subtype == COrgMod::eSubtype_variety ) {
+                if ( NStr::CompareNocase( orgname.GetDiv(), "PLN" ) != 0 ) {
+                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
+                        "Orgmod variety should only be in plants or fungi", 
+                        obj);
+                }
+            }
+            if ( subtype == COrgMod::eSubtype_other ) {
+                ValidateSourceQualTags( omd.GetSubname(), obj);
+            }
         }
     }
 }
@@ -2466,9 +2477,6 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     }
                     break;
                 case CSeq_id::e_General:
-                    if (!NStr::CompareCase(sid.GetGeneral().GetDb(), "BankIt")) {
-                        m_IsTPA = true;
-                    }
                     break;
                 case CSeq_id::e_Gi:
                     m_IsGI = true;
@@ -2482,13 +2490,10 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     m_IsPDB = true;
                     break;
                 case CSeq_id::e_Tpg:
-                    m_IsTPA = true;
                     break;
                 case CSeq_id::e_Tpe:
-                    m_IsTPA = true;
                     break;
                 case CSeq_id::e_Tpd:
-                    m_IsTPA = true;
                     break;
                 default:
                     break;

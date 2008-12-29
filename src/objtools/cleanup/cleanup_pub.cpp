@@ -393,6 +393,18 @@ static bool s_IsEmpty(const CAuthor& auth)
 }
 
 
+// when we reset author names, we need to put in a place holder - otherwise the ASN.1 becomes invalid
+void s_ResetAuthorNames (CAuth_list::TNames& names) 
+{
+    list< string > auth_list;
+
+    names.Reset();
+    auth_list = names.SetStr();
+    auth_list.clear();
+    auth_list.push_back("?");
+}
+
+
 void CCleanup_imp::BasicCleanup(CAuth_list& al, bool fix_initials)
 {
     if (al.IsSetAffil()) {
@@ -422,7 +434,9 @@ void CCleanup_imp::BasicCleanup(CAuth_list& al, bool fix_initials)
                     }
                 }
                 if (std.empty()) {
-                    names.Reset();
+                    s_ResetAuthorNames (names);
+                    //al.ResetNames();
+                    ChangeMade(CCleanupChange::eChangePublication);
                 }
                 break;
             }}
@@ -439,7 +453,7 @@ void CCleanup_imp::BasicCleanup(CAuth_list& al, bool fix_initials)
                     ChangeMade(CCleanupChange::eChangePublication);
                 }
                 if (names.GetStr().empty()) {
-                    names.Reset();
+                    s_ResetAuthorNames (names);
                     ChangeMade(CCleanupChange::eChangePublication);
                 }
                 break;
