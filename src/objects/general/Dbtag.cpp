@@ -328,7 +328,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_EcoGene, "http://ecogene.org/geneInfo.php?eg_id="),
     TDbtUrl(CDbtag::eDbtagType_FANTOM_DB, "http://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid="),
     TDbtUrl(CDbtag::eDbtagType_FLYBASE, "http://flybase.bio.indiana.edu/.bin/fbidq.html?"),
-    TDbtUrl(CDbtag::eDbtagType_GABI, "http://gabi.rzpd.de/database/cgi-bin/GreenCards.pl.cgi?Mode=ShowSequence&App=ncbi&SequenceId="),
+    TDbtUrl(CDbtag::eDbtagType_GABI, "http://www.gabipd.org/database/cgi-bin/GreenCards.pl.cgi?Mode=ShowSequence&App=ncbi&SequenceId="),
     TDbtUrl(CDbtag::eDbtagType_GDB, "http://www.gdb.org/gdb-bin/genera/genera/hgd/DBObject/GDB:"),
     TDbtUrl(CDbtag::eDbtagType_GO, "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:"),
     TDbtUrl(CDbtag::eDbtagType_GRIN, "http://www.ars-grin.gov/cgi-bin/npgs/acc/display.pl?"),
