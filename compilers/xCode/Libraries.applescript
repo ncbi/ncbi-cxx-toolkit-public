@@ -167,6 +167,7 @@ property lds : {name:"lds", path:"objtools:lds"}
 property xvalidate : {name:"xvalidate", path:"objtools:validator"}
 property xobjmanip : {name:"xobjmanip", path:"objtools:manip"}
 property xobjread : {name:"xobjread", path:"objtools:readers"}
+property xidmapper : {name:"xidmapper", path:"objtools:idmapper"}
 property xobjedit : {name:"xobjedit", path:"objtools:edit"}
 property seqdb : {name:"seqdb", path:"objtools:blast:seqdb_reader"}
 property xformat : {name:"xformat", path:"objtools:format"}
@@ -288,7 +289,7 @@ property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, 
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general", req:true}
 property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqedit, seqtable, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
 property ncbi_mmdb : {name:"ncbi_mmdb", libs:{cdd, cn3d, ncbimime, mmdb1, mmdb2, mmdb3}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq", req:true}
-property ncbi_seqext : {name:"ncbi_seqext", libs:{xalnmgr, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, seqdb, id1, id1cli, id2, id2cli, id2_split, seqsplit, xobjedit, xobjcleanup}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver ncbi_dbapi ncbi_web", fworks:"Carbon", req:true}
+property ncbi_seqext : {name:"ncbi_seqext", libs:{xalnmgr, xobjmgr, xobjread, xobjwrite, xidmapper, xobjutil, xobjmanip, xformat, seqdb, id1, id1cli, id2, id2cli, id2_split, seqsplit, xobjedit, xobjcleanup}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver ncbi_dbapi ncbi_web", fworks:"Carbon", req:true}
 property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate, valerr}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_misc", req:true}
 property ncbi_lds : {name:"ncbi_lds", libs:{lds}, dep:"ncbi_core ncbi_xcache_bdb ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_pub ncbi_misc db", req:true}
 property ncbi_xreader : {name:"ncbi_xreader", libs:{xreader}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_misc", req:true}
@@ -373,7 +374,7 @@ property id1_fetch_simple : {name:"id1_fetch_simple", path:"app:id1_fetch", inc:
 property objmgr_demo : {name:"objmgr_demo", path:"app:objmgr:demo", dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb", req:false}
 property blast_client : {name:"blast_client", path:"app:blast_client", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_algo ncbi_lds ncbi_xloader_genbank", req:false}
 
-property streamtest : {name:"streamtest", path:"app:streamtest", dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_algo ncbi_xloader_genbank", req:false}
+property streamtest : {name:"streamtest", path:"app:streamtest", dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_algo ncbi_xloader_genbank", req:true}
 
 property datatool : {name:"datatool", path:"serial:datatool", dep:"ncbi_core", req:true}
 
