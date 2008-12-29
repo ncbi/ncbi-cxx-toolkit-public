@@ -2378,7 +2378,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             *m_Scope,
             true,   // include stop codons
             false,  // do not remove trailing X/B/Z
-            &alt_start);
+            &alt_start,
+            CCdregion_translate::eTruncate);
     } catch (CException&) {
     }
     if (transl_prot.empty()) {
@@ -2640,7 +2641,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             nuclocstr = MapToNTCoords(feat, product, mismatches[i]);
             prot_res = prot_vec[mismatches[i]];
             transl_res = Residue(transl_prot[mismatches[i]]);
-            msg += farstr + "Residue " + NStr::IntToString(mismatches[i] + 1) +
+            msg = farstr + "Residue " + NStr::IntToString(mismatches[i] + 1) +
                 " in protein [" + prot_res + "]" +
                 " != translation [" + transl_res + "]";
             if (!nuclocstr.empty()) {
