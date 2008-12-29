@@ -137,7 +137,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("WormBase", CDbtag::eDbtagType_WormBase),
     TDbxrefPair("Xenbase", CDbtag::eDbtagType_Xenbase),
     TDbxrefPair("ZFIN", CDbtag::eDbtagType_ZFIN),
-    TDbxrefPair("axeldb", CDbtag::eDbtagType_axeldb),
+    TDbxrefPair("Axeldb", CDbtag::eDbtagType_axeldb),
     TDbxrefPair("cdd", CDbtag::eDbtagType_CDD), // all-caps preferred, though
     TDbxrefPair("dbClone", CDbtag::eDbtagType_dbClone),
     TDbxrefPair("dbCloneLib", CDbtag::eDbtagType_dbCloneLib),
