@@ -13,7 +13,7 @@ test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
 
 test_base="${TMPDIR:-/tmp}/test_tar.$$"
 mkdir $test_base.1  ||  exit 1
-#trap 'rm -rf $test_base* & echo "`date`."' 0 1 2 15
+trap 'rm -rf $test_base* & echo "`date`."' 0 1 2 15
 
 echo "`date` *** Preparing file staging area"
 echo
@@ -140,7 +140,5 @@ cmp -l "$test_base.out.1" "$test_base.out.2"                                    
 
 echo
 echo "`date` *** TEST COMPLETE"
-
-rm -rf $test_base* & echo "`date`."
 
 exit 0
