@@ -212,7 +212,7 @@ void s_StressTest(const string&             service,
                   unsigned                  key_factor // repr. choose factor
                   )
 {
-    cout << "Stress test. BLOB size = " << size
+    cout << "BLOB size = " << size
          << " Repeats = " << repeats
          << ". Please wait... " << endl;
 
@@ -323,6 +323,10 @@ void CTestNetCacheClient::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Net cache client");
 
+    arg_desc->AddDefaultKey("repeat", "times",
+        "Number of stress test repetitions",
+        CArgDescriptions::eInteger, "5");
+
     arg_desc->AddPositional("service",
                             "NetCache service.", CArgDescriptions::eString);
 
@@ -395,6 +399,7 @@ int CTestNetCacheClient::Run(void)
 {
     CArgs args = GetArgs();
     const string& service  = args["service"].AsString();
+    int stress_test_repetitions = args["repeat"].AsInteger();
 
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
     const char test_data2[] = "New data.";
@@ -521,8 +526,11 @@ int CTestNetCacheClient::Run(void)
 
     unsigned repeats = 1000;
 
-    for (int i=0; i < 20; ++i)
+    for (int i=0; i < stress_test_repetitions; ++i)
     {
+        NcbiCout << "STRESS TEST " << (i + 1) << "/" <<
+            stress_test_repetitions << NcbiEndl << NcbiEndl;
+
         s_StressTest(service, 256, repeats, &log, &log_read, &rep_keys, 10);
         NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
         s_ReportStatistics(log);
