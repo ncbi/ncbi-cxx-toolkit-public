@@ -260,8 +260,6 @@ void CGridThreadContext::ReturnJob()
         case CNetScheduleAPI::eRunning:
             m_Reporter.ReturnJob(m_JobContext->GetJobKey());
             break;
-            //            case CNetScheduleClient::eReturned:
-            //            case CNetScheduleClient::ePending:
         default:
             break;
         }
