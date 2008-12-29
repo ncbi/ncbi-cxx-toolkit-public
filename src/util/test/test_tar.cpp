@@ -36,6 +36,10 @@
 #include <corelib/rwstream.hpp>
 #include <util/compress/tar.hpp>
 #include <common/test_assert.h>  // This header must go last
+#ifdef NCBI_OS_MSWIN
+#  include <io.h>     // For setmode()
+#  include <fcntl.h>  // For _O_BINARY
+#endif /*NCBI_OS_MSWIN*/
 
 
 USING_NCBI_SCOPE;
@@ -161,7 +165,6 @@ string CTarTest::x_Pos(const CTarEntryInfo& info)
 
 int CTarTest::Run(void)
 {
-
     TAction action = eNone;
 
     const CArgs& args = GetArgs();
@@ -207,8 +210,14 @@ int CTarTest::Run(void)
             CNcbiIos* io = 0;
             if (action == eList  ||  action == eExtract ||  action == eTest) {
                 io = &cin;
+#ifdef NCBI_OS_MSWIN
+                _setmode(_fileno(stdin), _O_BINARY);
+#endif /*NCBI_OS_MSWIN*/
             } else if (action == eCreate  ||  action == eAppend) {
                 io = &cout;
+#ifdef NCBI_OS_MSWIN
+                _setmode(_fileno(stdout), _O_BINARY);
+#endif /*NCBI_OS_MSWIN*/
             } else {
                 NCBI_THROW(CArgException, eInvalidArg, "Cannot update pipe");
             }
