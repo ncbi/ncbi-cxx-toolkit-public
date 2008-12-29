@@ -2716,7 +2716,9 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
     bool fruit_fly = false;
     CSeqdesc_CI di(bsh, CSeqdesc::e_Source);
     if ( di ) {
-        if ( NStr::EqualNocase(di->GetSource().GetOrg().GetTaxname(),
+        if ( di->GetSource().IsSetOrg() 
+             && di->GetSource().GetOrg().IsSetTaxname()
+             && NStr::EqualNocase(di->GetSource().GetOrg().GetTaxname(),
              "Drosophila melanogaster") == 0 ) {
             fruit_fly = true;
         }
