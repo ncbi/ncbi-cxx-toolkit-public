@@ -111,13 +111,6 @@ bool s_CheckExists(const string&  key,
         if (log) {
             log->push_back(info);
         }
-        /*
-        if (buf_size < bdata.blob_size) {
-            ERR_POST("Blob too big");
-        } else {
-            memcpy(buf, bdata.blob.get(), bdata.blob_size);
-        }
-        */
     }
     catch (CNetCacheException& ex)
     {
@@ -336,11 +329,6 @@ void CTestNetCacheClient::Init(void)
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
-
-//    CONNECT_Init(&GetConfig());
-
-//    SetDiagPostLevel(eDiag_Info);
-//    SetDiagTrace(eDT_Enable);
 }
 
 static
@@ -411,12 +399,6 @@ int CTestNetCacheClient::Run(void)
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
     const char test_data2[] = "New data.";
     string key;
-    /*
-    {{
-        CNetCacheClient nc_client(host, port, "test");
-        CVersionInfo vi(nc_client.ServerVersionInfo());
-    }}
-    */
 
     {{
         CNetCacheAPI nc_client(service, "test");
@@ -532,47 +514,10 @@ int CTestNetCacheClient::Run(void)
 
     s_ReadUpdateCharTest(service);
 
-//    s_TestClientLB("NetCache_shared");
-
-    NcbiCout << "Testing IsAlive()... ";
-//    s_TestAlive(host, port);
-    NcbiCout << "Ok." << NcbiEndl;
-
-/*
-    unsigned delay = 70;
-    cout << "Sleeping for " << delay << " seconds. Please wait...." << flush;
-    SleepSec(delay);
-    cout << "ok." << endl;
-
-    exists = s_CheckExists(host, port, key);
-    assert(!exists);
-*/
-
-
 
     vector<STransactionInfo> log;
     vector<STransactionInfo> log_read;
     vector<string>           rep_keys;
-
-    // Test writing HUGE BLOBs (uncomment and use carefully)
-/*
-    s_StressTest(host, port, 1024 * 1024 * 50, 10, &log, &log_read, &rep_keys, 30);
-    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
-    s_ReportStatistics(log);
-    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
-    s_ReportStatistics(log_read);
-    NcbiCout << NcbiEndl;
-
-    return 0;
-*/
-/*
-    s_StressTest(host, port, 921600, 50, &log, &log_read, &rep_keys, 30);
-    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
-    s_ReportStatistics(log);
-    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
-    s_ReportStatistics(log_read);
-    NcbiCout << NcbiEndl;
-*/
 
     unsigned repeats = 1000;
 
@@ -616,20 +561,8 @@ int CTestNetCacheClient::Run(void)
         NcbiCout << NcbiEndl;
 
         SleepSec(10);
-
     }
 
-
-
-/*
-    cout << "Shutdown server" << endl;
-    // Shutdown server
-
-    {{
-        CNetCacheClient nc_client(host, port);
-        nc_client.ShutdownServer();
-    }}
-*/
     return 0;
 }
 
