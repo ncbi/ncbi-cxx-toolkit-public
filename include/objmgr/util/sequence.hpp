@@ -639,6 +639,12 @@ class NCBI_XOBJUTIL_EXPORT CCdregion_translate
 {
 public:
 
+    enum ETranslationLengthProblemOptions {
+        eThrowException = 0,
+        eTruncate,
+        ePad
+    };
+
     /// translation coding region into ncbieaa protein sequence
     static void TranslateCdregion (string& prot,
                                    const CBioseq_Handle& bsh,
@@ -646,19 +652,22 @@ public:
                                    const CCdregion& cdr,
                                    bool include_stop = true,
                                    bool remove_trailing_X = false,
-                                   bool* alt_start = 0);
+                                   bool* alt_start = 0,
+                                   ETranslationLengthProblemOptions options = eThrowException);
 
     static void TranslateCdregion(string& prot,
                                   const CSeq_feat& cds,
                                   CScope& scope,
                                   bool include_stop = true,
                                   bool remove_trailing_X = false,
-                                  bool* alt_start = 0);
+                                  bool* alt_start = 0,
+                                  ETranslationLengthProblemOptions options = eThrowException);
 
     /// return iupac sequence letters under feature location
     static void ReadSequenceByLocation (string& seq,
                                         const CBioseq_Handle& bsh,
-                                        const CSeq_loc& loc);
+                                        const CSeq_loc& loc,
+                                        ETranslationLengthProblemOptions options = eThrowException);
 
 };
 

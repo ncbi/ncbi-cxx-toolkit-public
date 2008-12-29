@@ -43,6 +43,7 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/synonyms.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -2501,12 +2502,52 @@ void CSeqTranslator::Translate(const CSeq_loc& loc,
 
 void CCdregion_translate::ReadSequenceByLocation (string& seq,
                                                   const CBioseq_Handle& bsh,
-                                                  const CSeq_loc& loc)
+                                                  const CSeq_loc& loc,
+                                                  ETranslationLengthProblemOptions options)
 
 {
     // get vector of sequence under location
-    CSeqVector seqv(loc, bsh.GetScope(), CBioseq_Handle::eCoding_Iupac);
-    seqv.GetSeqData(0, seqv.size(), seq);
+    if (options == eThrowException || loc.GetTotalRange().GetLength() <= bsh.GetBioseqLength()) {
+        CSeqVector seqv(loc, bsh.GetScope(), CBioseq_Handle::eCoding_Iupac);
+        seqv.GetSeqData(0, seqv.size(), seq);
+    } else {
+        // if specified location exceeds bioseq length, create truncated location
+        CRef<CSeq_loc> tmp_loc;
+        bool first = true;
+
+        for (CSeq_loc_CI loc_iter(loc); loc_iter;  ++loc_iter) {
+            ENa_strand strand = loc_iter.GetStrand();
+            CSeq_loc_CI::TRange range = loc_iter.GetRange();
+            if (range.GetFrom() < bsh.GetBioseqLength()) {
+                int from = range.GetFrom();
+                int to = range.GetTo();
+                if (to >= bsh.GetBioseqLength()) {
+                    to = bsh.GetBioseqLength() - 1;
+                }               
+                CRef<CSeq_id> id(new CSeq_id());
+                id->Assign (loc_iter.GetSeq_id());
+                if (first) {
+                    tmp_loc = new CSeq_loc(*id, from, to, strand);
+                    first = false;
+                } else {
+                    CSeq_loc add(*id, from, to, strand);
+                    tmp_loc = sequence::Seq_loc_Add (*tmp_loc, add, CSeq_loc::fSort | CSeq_loc::fMerge_All, &(bsh.GetScope()));
+                }
+            }
+        }
+        CSeqVector seqv(*tmp_loc, bsh.GetScope(), CBioseq_Handle::eCoding_Iupac);
+        seqv.GetSeqData(0, seqv.size(), seq);
+        if (options == ePad) {
+            int num_pad = loc.GetTotalRange().GetLength() - seq.length();
+            string pad = "N";
+            if (bsh.IsProtein ()) {
+                pad = "X";
+            }
+            for (int i = 0; i < num_pad; i++) {
+                seq = seq + pad;
+            }
+        }
+    }
 }
 
 void CCdregion_translate::TranslateCdregion (string& prot,
@@ -2515,7 +2556,8 @@ void CCdregion_translate::TranslateCdregion (string& prot,
                                              const CCdregion& cdr,
                                              bool include_stop,
                                              bool remove_trailing_X,
-                                             bool* alt_start)
+                                             bool* alt_start,
+                                             ETranslationLengthProblemOptions options)
 {
     // clear contents of result string
     prot.erase();
@@ -2525,7 +2567,7 @@ void CCdregion_translate::TranslateCdregion (string& prot,
 
     // copy bases from coding region location
     string bases = "";
-    ReadSequenceByLocation (bases, bsh, loc);
+    ReadSequenceByLocation (bases, bsh, loc, options);
 
     // calculate offset from frame parameter
     int offset = 0;
@@ -2652,7 +2694,8 @@ void CCdregion_translate::TranslateCdregion
  CScope& scope,
  bool include_stop,
  bool remove_trailing_X,
- bool* alt_start)
+ bool* alt_start,
+ ETranslationLengthProblemOptions options)
 {
     _ASSERT(cds.GetData().IsCdregion());
 
@@ -2670,7 +2713,8 @@ void CCdregion_translate::TranslateCdregion
         cds.GetData().GetCdregion(),
         include_stop,
         remove_trailing_X,
-        alt_start);
+        alt_start,
+        options);
 }
 
 
