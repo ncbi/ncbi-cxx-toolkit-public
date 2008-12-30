@@ -7,4 +7,5 @@ LIB = xconnserv xthrserv xconnect xutil xncbi
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 
-CHECK_CMD = test_netcache_api NC_test
+CHECK_CMD = test_netcache_api -repeat 1 NC_test
+CHECK_TIMEOUT = 400
