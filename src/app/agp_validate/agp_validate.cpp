@@ -122,7 +122,7 @@ public:
     "             This can be very time-consuming, and is done separately from most other checks.\n"
     "  -species   Allow components from different subspecies during Taxid checks (implies -alt).\n"
     "  -out FILE  Save the AGP file, adding missing version 1 to the component accessions\n"
-    "             (use with -a or -alt).\n"
+    "             (use with -alt).\n"
     "  The above options require that the components are available in GenBank.\n"
     "  -g         Check that component names look like Nucleotide accessions\n"
     "             (this does not require components to be in GenBank).\n"
