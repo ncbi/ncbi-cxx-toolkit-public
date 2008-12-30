@@ -59,11 +59,14 @@ BEGIN_NCBI_SCOPE
 /// Client API for NetCache server
 ///
 /// After any Put, Get transactions connection socket
-/// is closed (part of NetCache protocol implemenation)
+/// is closed (part of NetCache protocol implementation)
 ///
 /// @sa NetCache_ConfigureWithLB, CNetCacheClient_LB
 ///
-class NCBI_XCONNECT_EXPORT CNetCacheClient : public CNetServiceClient
+/// @deprecated This class is soon to be removed.
+///             Please use the CNetCacheAPI class instead.
+///
+class NCBI_DEPRECATED NCBI_XCONNECT_EXPORT CNetCacheClient : public CNetServiceClient
 {
 public:
     typedef CNetServiceClient TParent;
@@ -265,7 +268,7 @@ protected:
     /// Print server statistics
     void PrintStat(CNcbiOstream& out);
 
-    /// Reinit server side statistics collector
+    /// Reinitialize server-side statistics collector
     void DropStat();
 
     /// Set communication error message
@@ -284,11 +287,11 @@ protected:
 
     /// If client is not already connected to the primary server it
     /// tries to connect to the server specified in the BLOB key
-    /// (all infomation is encoded in there)
+    /// (all information is encoded in there)
     virtual
     void CheckConnect(const string& key);
 
-    /// @return netcache key
+    /// @return NetCache key
     void PutInitiate(string*       key,
                      unsigned      time_to_live,
                      unsigned      put_version = 0);
@@ -337,7 +340,10 @@ protected:
 ///
 /// @sa CNetCacheClient
 ///
-class NCBI_XCONNECT_EXPORT CNetCacheClient_LB : public CNetCacheClient
+/// @deprecated This class is soon to be removed.
+///             Please use the CNetCacheAPI class instead.
+///
+class NCBI_DEPRECATED NCBI_XCONNECT_EXPORT CNetCacheClient_LB : public CNetCacheClient
 {
 public:
     typedef CNetCacheClient  TParent;
