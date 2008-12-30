@@ -408,7 +408,7 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
     profile_hitlist.SortByStartOffset();
 
     //--------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("possible constraints (offsets wrt input profiles):\n");
         for (int i = 0; i < profile_hitlist.Size(); i++) {
             CHit *hit = profile_hitlist.GetHit(i);
@@ -599,7 +599,7 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
         CHit *hit = best_path->hit;
 
         //--------------------------------------
-        if (m_Verbose) {
+        if (m_Options->GetVerbose()) {
             printf("pick query %3d %4d - %4d query %3d %4d - %4d\n",
                         hit->m_SeqIndex1, 
                     hit->m_SeqRange1.GetFrom(), hit->m_SeqRange1.GetTo(),
@@ -691,7 +691,7 @@ void CMultiAligner::x_FindInClusterConstraints(auto_ptr<CHit>& hit_constr,
     hit_constr.reset(new_hit);
     
     //--------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("possible constraints (offsets wrt input profiles):\n");
         printf("query %3d %4d - %4d query %3d %4d - %4d score %d %c\n",
                new_hit->m_SeqIndex1, 
@@ -731,7 +731,7 @@ CMultiAligner::x_AlignProfileProfile(
     int freq2_size = alignment[node_list2[0].query_idx].GetLength();
 
     //---------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("\nalign profile (size %d) with profile (size %d)\n",
                         freq1_size, freq2_size);
     }
@@ -781,7 +781,7 @@ CMultiAligner::x_AlignProfileProfile(
 
 
     //-------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("constraints: ");
         for (int i = 0; i < (int)constraint.size(); i+=4) {
             printf("(seq1 %d seq2 %d)->", (int)constraint[i], 
@@ -796,17 +796,17 @@ CMultiAligner::x_AlignProfileProfile(
     // profiles, reduce or eliminate end gap penalties. Also 
     // scale up the gap penalties to match those of the score matrix
     
-    m_Aligner.SetWg(m_GapOpen * kScale);
-    m_Aligner.SetStartWg(m_EndGapOpen * kScale);
-    m_Aligner.SetEndWg(m_EndGapOpen * kScale);
-    m_Aligner.SetWs(m_GapExtend * kScale);
-    m_Aligner.SetStartWs(m_EndGapExtend * kScale);
-    m_Aligner.SetEndWs(m_EndGapExtend * kScale);
+    m_Aligner.SetWg(m_Options->GetGapOpenPenalty() * kScale);
+    m_Aligner.SetStartWg(m_Options->GetEndGapOpenPenalty() * kScale);
+    m_Aligner.SetEndWg(m_Options->GetEndGapOpenPenalty() * kScale);
+    m_Aligner.SetWs(m_Options->GetGapExtendPenalty() * kScale);
+    m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty() * kScale);
+    m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty() * kScale);
 
     if (freq1_size > 1.2 * freq2_size ||
         freq2_size > 1.2 * freq1_size) {
-       m_Aligner.SetStartWs(m_EndGapExtend * kScale / 2);
-       m_Aligner.SetEndWs(m_EndGapExtend * kScale / 2); 
+        m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty() * kScale / 2);
+        m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty() * kScale / 2); 
     }
     if ((freq1_size > 1.5 * freq2_size ||
          freq2_size > 1.5 * freq1_size) &&
@@ -817,12 +817,12 @@ CMultiAligner::x_AlignProfileProfile(
     // run the aligner, scale the penalties back down
 
     m_Aligner.Run();
-    m_Aligner.SetWg(m_GapOpen);
-    m_Aligner.SetStartWg(m_EndGapOpen);
-    m_Aligner.SetEndWg(m_EndGapOpen);
-    m_Aligner.SetWs(m_GapExtend);
-    m_Aligner.SetStartWs(m_EndGapExtend);
-    m_Aligner.SetEndWs(m_EndGapExtend);
+    m_Aligner.SetWg(m_Options->GetGapOpenPenalty());
+    m_Aligner.SetStartWg(m_Options->GetEndGapOpenPenalty());
+    m_Aligner.SetEndWg(m_Options->GetEndGapOpenPenalty());
+    m_Aligner.SetWs(m_Options->GetGapExtendPenalty());
+    m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty());
+    m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty());
 
     delete [] freq1_data[0];
     delete [] freq1_data;
@@ -843,7 +843,7 @@ CMultiAligner::x_AlignProfileProfile(
     }
 
     //-------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("      ");
         for (int i = 0; i < (int)t.size() / 10; i++)
             printf("%10d", i + 1);
@@ -936,21 +936,21 @@ void CMultiAligner::x_ComputeProfileRangeAlignment(
         // if there is a large length disparity between the two
         // profiles, reduce or eliminate end gap penalties. Also 
         // scale up the gap penalties to match those of the score matrix
-        m_Aligner.SetWg(m_GapOpen * kScale);
-        m_Aligner.SetStartWg(m_EndGapOpen * kScale);
-        m_Aligner.SetEndWg(m_EndGapOpen * kScale);
-        m_Aligner.SetWs(m_GapExtend * kScale);
-        m_Aligner.SetStartWs(m_EndGapExtend * kScale);
-        m_Aligner.SetEndWs(m_EndGapExtend * kScale);
+        m_Aligner.SetWg(m_Options->GetGapOpenPenalty() * kScale);
+        m_Aligner.SetStartWg(m_Options->GetEndGapOpenPenalty() * kScale);
+        m_Aligner.SetEndWg(m_Options->GetEndGapOpenPenalty() * kScale);
+        m_Aligner.SetWs(m_Options->GetGapExtendPenalty() * kScale);
+        m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty() * kScale);
+        m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty() * kScale);
 
         // run the aligner, scale the penalties back down
         m_Aligner.Run();
-        m_Aligner.SetWg(m_GapOpen);
-        m_Aligner.SetStartWg(m_EndGapOpen);
-        m_Aligner.SetEndWg(m_EndGapOpen);
-        m_Aligner.SetWs(m_GapExtend);
-        m_Aligner.SetStartWs(m_EndGapExtend);
-        m_Aligner.SetEndWs(m_EndGapExtend);
+        m_Aligner.SetWg(m_Options->GetGapOpenPenalty());
+        m_Aligner.SetStartWg(m_Options->GetEndGapOpenPenalty());
+        m_Aligner.SetEndWg(m_Options->GetEndGapOpenPenalty());
+        m_Aligner.SetWs(m_Options->GetGapExtendPenalty());
+        m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty());
+        m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty());
 
         delete [] freq1_data[0];
         delete [] freq1_data;
@@ -973,7 +973,7 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
     const int kMinMargin = 0;
     
     //---------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("\nalign profile (size %d) with profile (size %d)\n",
                alignment[node_list1[0].query_idx].GetLength(),
                alignment[node_list2[0].query_idx].GetLength());
@@ -1113,7 +1113,7 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
     _ASSERT(gaps1_it == gaps1.end() && gaps2_it == gaps2.end());
 
     //-------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("constraints: ");
         printf("(seq1 %d seq2 %d)->(seq1 %d seq2 %d)", 
                hit->m_SeqRange1.GetFrom(), hit->m_SeqRange2.GetFrom(),
@@ -1201,7 +1201,7 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
     }
 
     //-------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         CNWAligner::TTranscript& t = transcr;
         printf("      ");
         for (int i = 0; i < (int)t.size() / 10; i++)
@@ -1280,10 +1280,11 @@ CMultiAligner::x_GetScoreOneCol(vector<CSequence>& align, int col)
     double H1 = 0;
     double H2 = 0;
     double H3 = 0;
+    double pseudocount = m_Options->GetPseudocount();
     for (int j = 1; j < kNumClasses; j++) {
         if (count[j] > 0 && kDerivedFreqs[j] > 0) {
-            H1 += freq[j] * log((num_queries - 1)/m_Pseudocount + 
-                                (count[j] - 1)/kDerivedFreqs[j]);
+            H1 += freq[j] * log((num_queries - 1) / pseudocount + 
+                                (count[j] - 1) / kDerivedFreqs[j]);
 
             H2 += freq[j];
             H3 += kDerivedFreqs[j];
@@ -1291,7 +1292,7 @@ CMultiAligner::x_GetScoreOneCol(vector<CSequence>& align, int col)
     }
 
     return H1 - H2 * log((num_queries - 1) * 
-                         (m_Pseudocount+H3)/m_Pseudocount);
+                         (pseudocount + H3) / pseudocount);
 }
 
 
@@ -1343,7 +1344,7 @@ CMultiAligner::x_RealignSequences(
     CTree::ListTreeLeaves(input_cluster, cluster_seq_list, 0.0);
 
     //--------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("cluster: ");
         for (int i = 0; i < (int)cluster_seq_list.size(); i++) {
             printf("%d ", cluster_seq_list[i].query_idx);
@@ -1391,7 +1392,7 @@ CMultiAligner::x_RealignSequences(
     // if the latter has a higher score
 
     double new_score = x_GetScore(tmp_align);
-    if (m_Verbose)
+    if (m_Options->GetVerbose())
         printf("realigned score = %f\n\n", new_score);
 
     if (new_score > score) {
@@ -1525,6 +1526,8 @@ CMultiAligner::x_AddRpsFreqsToCluster(const CClusterer::CSingleCluster& cluster,
     int offset = 0;
     vector<TRange>::const_iterator gap_it(gaps.begin());
 
+    double domain_res_freq_boost = m_Options->GetDomainResFreqBoost();
+
     // For each range with RPS frequencies
     ITERATE(vector<TRange>, it, m_RPSLocs[cluster.GetPrototype()]) {
 
@@ -1563,12 +1566,12 @@ CMultiAligner::x_AddRpsFreqsToCluster(const CClusterer::CSingleCluster& cluster,
 
                     // remove domain frequency boost assigned to prototype
                     matrix(i + offset, prot.GetLetter(i))
-                        -= m_DomainResFreqBoost;
+                        -= domain_res_freq_boost;
             
                     // assign conserved domain frequency boost
                     if (seq.GetLetter(i + offset) != CSequence::kGapChar) {
                         matrix(i + offset, seq.GetLetter(i + offset))
-                            += m_DomainResFreqBoost;
+                            += domain_res_freq_boost;
                     }
                 }
             }
@@ -1603,7 +1606,7 @@ CMultiAligner::x_FindConservedColumns(
     // columns whose score all exceed the cutoff for being conserved.
 
     for (i = 0; i < align_length; i++) {
-        if (hvec[i] >= m_ConservedCutoff) {
+        if (hvec[i] >= m_Options->GetConservedCutoffScore()) {
             if (!chosen_cols.empty() &&
                  chosen_cols.back().GetTo() == i-1) {
                 chosen_cols.back().SetTo(i);
@@ -1624,7 +1627,7 @@ CMultiAligner::x_FindConservedColumns(
     chosen_cols.resize(i);
 
     //-------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         for (i = 0; i < (int)chosen_cols.size(); i++) {
             printf("constraint at position %3d - %3d\n",
                 chosen_cols[i].GetFrom(), chosen_cols[i].GetTo());
@@ -1688,7 +1691,7 @@ CMultiAligner::x_FindConservedColumns(
     }
 
     //------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("Per-column score\n");
         for (i = 0; i < align_length; i++) {
             printf("%6.2f ", hvec[i]);
@@ -1752,7 +1755,7 @@ CMultiAligner::x_BuildAlignmentIterative(
         // compute the previous alignment score
 
         double realign_score = x_GetScore(tmp_aligned);
-        if (m_Verbose)
+        if (m_Options->GetVerbose())
             printf("start score: %f\n", realign_score);
 
         // repeat the complete bipartition process until
@@ -1788,7 +1791,7 @@ CMultiAligner::x_BuildAlignmentIterative(
         realign_score = max(realign_score, new_score);
 
         //-------------------------------------------------
-        if (m_Verbose) {
+        if (m_Options->GetVerbose()) {
             for (int i = 0; i < num_queries; i++) {
                 for (int j = 0; j < (int)tmp_aligned[i].GetLength(); j++) {
                     printf("%c", tmp_aligned[i].GetPrintableLetter(j));
@@ -1803,13 +1806,13 @@ CMultiAligner::x_BuildAlignmentIterative(
 
             // the current iteration has improved the alignment
 
-            if (m_Verbose) {
+            if (m_Options->GetVerbose()) {
                 printf("REPLACE ALIGNMENT\n\n");
             }
             best_score = realign_score;
             m_Results = tmp_aligned;    // will always happen at least once
 
-            if (!m_Iterate)
+            if (!m_Options->GetIterate())
                 break;
 
             m_ProgressMonitor.stage = eIterativeAlignment;
@@ -1934,7 +1937,7 @@ CMultiAligner::x_BuildAlignment()
     }
 
     //---------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         for (i = 0; i < num_edges; i++)
             printf("%f ", edges[i].distance);
         printf("cutoff = %f\n", cluster_cutoff);

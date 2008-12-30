@@ -149,7 +149,7 @@ CMultiAligner::x_FindPatternHits(const vector<const CSequence*>& queries,
     sbp = BlastScoreBlkFree(sbp);
 
     //------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("\n\nPHI Pattern Hits:\n");
         for (int i = 0; i < m_PatternHits.Size(); i++) {
             CHit *hit = m_PatternHits.GetHit(i);

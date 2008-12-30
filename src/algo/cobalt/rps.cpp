@@ -112,12 +112,12 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
 
     /// @todo FIXME the scale factor should be chosen dynamically
     
-    m_Aligner.SetWg(kRpsScaleFactor * m_GapOpen);
-    m_Aligner.SetWs(kRpsScaleFactor * m_GapExtend);
-    m_Aligner.SetStartWg(kRpsScaleFactor / 2 * m_GapOpen);
-    m_Aligner.SetStartWs(kRpsScaleFactor * m_GapExtend);
-    m_Aligner.SetEndWg(kRpsScaleFactor / 2 * m_GapOpen);
-    m_Aligner.SetEndWs(kRpsScaleFactor * m_GapExtend);
+    m_Aligner.SetWg(kRpsScaleFactor * m_Options->GetGapOpenPenalty());
+    m_Aligner.SetWs(kRpsScaleFactor * m_Options->GetGapExtendPenalty());
+    m_Aligner.SetStartWg(kRpsScaleFactor / 2 * m_Options->GetGapOpenPenalty());
+    m_Aligner.SetStartWs(kRpsScaleFactor * m_Options->GetGapExtendPenalty());
+    m_Aligner.SetEndWg(kRpsScaleFactor / 2 * m_Options->GetGapOpenPenalty());
+    m_Aligner.SetEndWs(kRpsScaleFactor * m_Options->GetGapExtendPenalty());
     m_Aligner.SetEndSpaceFree(false, false, false, false);
 
     // for each RPS hit
@@ -240,7 +240,7 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
             // regions is too large (i.e. query sequence has a big gap)
 
             if (s_range.GetLength() > 3 * q_range.GetLength() / 2) {
-                if (m_Verbose) {
+                if (m_Options->GetVerbose()) {
                     printf("ignore aligning query %d %d-%d db %d block %d-%d\n",
                         hit->m_SeqIndex1, q_range.GetFrom(), q_range.GetTo(),
                         db_seq, s_range.GetFrom(), s_range.GetTo());
@@ -383,12 +383,12 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
 
     // restore the original gap penalties
 
-    m_Aligner.SetWg(m_GapOpen);
-    m_Aligner.SetWs(m_GapExtend);
-    m_Aligner.SetStartWg(m_EndGapOpen);
-    m_Aligner.SetStartWs(m_EndGapExtend);
-    m_Aligner.SetEndWg(m_EndGapOpen);
-    m_Aligner.SetEndWs(m_EndGapExtend);
+    m_Aligner.SetWg(m_Options->GetGapOpenPenalty());
+    m_Aligner.SetWs(m_Options->GetGapExtendPenalty());
+    m_Aligner.SetStartWg(m_Options->GetEndGapOpenPenalty());
+    m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty());
+    m_Aligner.SetEndWg(m_Options->GetEndGapOpenPenalty());
+    m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty());
 }
 
 
@@ -407,12 +407,12 @@ CMultiAligner::x_FindRPSHits(TSeqLocVector& queries,
     // account for alignments where the gapped score is
     // very different from the ungapped score
 
-    opts->SetEvalueThreshold(max(m_RPSEvalue, 10.0));
+    opts->SetEvalueThreshold(max(m_Options->GetRpsEvalue(), 10.0));
     opts->SetFilterString("F");
 
     // run RPS blast
 
-    BlastSeqSrc * seq_src(SeqDbBlastSeqSrcInit(m_RPSdb, TRUE));
+    BlastSeqSrc * seq_src(SeqDbBlastSeqSrcInit(m_Options->GetRpsDb(), TRUE));
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(queries));
 
     CLocalBlast blaster(query_factory, opts, seq_src);
@@ -421,7 +421,7 @@ CMultiAligner::x_FindRPSHits(TSeqLocVector& queries,
     // convert the results to the internal format used by
     // the rest of CMultiAligner
 
-    CSeqDB seqdb(m_RPSdb, CSeqDB::eProtein);
+    CSeqDB seqdb(m_Options->GetRpsDb(), CSeqDB::eProtein);
 
     // iterate over queries
 
@@ -449,7 +449,7 @@ CMultiAligner::x_FindRPSHits(TSeqLocVector& queries,
                 }
 
                 // check if the hit is worth saving
-                if (evalue > m_RPSEvalue)
+                if (evalue > m_Options->GetRpsEvalue())
                     continue;
 
                 // locate the ID of the database sequence that
@@ -470,7 +470,7 @@ CMultiAligner::x_FindRPSHits(TSeqLocVector& queries,
 
 
     //-------------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("RPS hits:\n");
         for (int i = 0; i < rps_hits.Size(); i++) {
             CHit *hit = rps_hits.GetHit(i);
@@ -537,6 +537,8 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
         double **ref_freqs = profile_data.GetResFreqs() + 
                              (profile_data.GetSeqOffsets())[hit->m_SeqIndex2];
 
+        double domain_res_freq_boost = m_Options->GetDomainResFreqBoost();
+
         NON_CONST_ITERATE(vector<CHit *>, itr, hit->GetSubHit()) {
             CHit *subhit = *itr;
             vector<TOffsetPair> sub_list(
@@ -557,10 +559,10 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
                 for (int k = 0; k < stop_pair.first - start_pair.first; k++) {
                     for (int m = 0; m < kAlphabetSize; m++) {
                         matrix(q+k, m) = 
-                              (1 - m_DomainResFreqBoost) * ref_freqs[s+k][m];
+                              (1 - domain_res_freq_boost) * ref_freqs[s+k][m];
 
                     }
-                    matrix(q+k, query.GetLetter(q+k)) += m_DomainResFreqBoost; 
+                    matrix(q+k, query.GetLetter(q+k)) += domain_res_freq_boost;
                 }
                 // mark range as RPS-identified conserved domain
                 m_RPSLocs[hit->m_SeqIndex1].push_back(TRange(start_pair.first,
@@ -588,6 +590,7 @@ CMultiAligner::x_AssignDefaultResFreqs()
     BlastScoreBlk *sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
     Blast_ResFreq *std_freqs = Blast_ResFreqNew(sbp);
     Blast_ResFreqStdComp(sbp, std_freqs);
+    double local_res_freq_boost = m_Options->GetLocalResFreqBoost();
 
     for (size_t i = 0; i < m_QueryData.size(); i++) {
         CSequence& query = m_QueryData[i];
@@ -595,10 +598,10 @@ CMultiAligner::x_AssignDefaultResFreqs()
         
         for (int j = 0; j < query.GetLength(); j++) {
             for (int k = 0; k < kAlphabetSize; k++) {
-                matrix(j, k) = (1 - m_LocalResFreqBoost) * 
+                matrix(j, k) = (1 - local_res_freq_boost) *
                                    std_freqs->prob[k];
             }
-            matrix(j, query.GetLetter(j)) += m_LocalResFreqBoost;
+            matrix(j, query.GetLetter(j)) += local_res_freq_boost;
         }
 
         // check for interrupt
@@ -608,18 +611,17 @@ CMultiAligner::x_AssignDefaultResFreqs()
         }
     }
 
-    if (m_UseClusters 
-        && m_ClustAlnMethod == CMultiAlignerOptions::eToPrototype) {
+    if (m_ClustAlnMethod == CMultiAlignerOptions::eToPrototype) {
 
         for (size_t i = 0; i < m_AllQueryData.size(); i++) {
             CSequence& query = m_AllQueryData[i];
             CSequence::TFreqMatrix& matrix = query.GetFreqs();
             for (int j = 0; j < query.GetLength(); j++) {
                 for (int k = 0; k < kAlphabetSize; k++) {
-                    matrix(j, k) = (1 - m_LocalResFreqBoost) * 
+                    matrix(j, k) = (1 - local_res_freq_boost) * 
                         std_freqs->prob[k];
                 }
-                matrix(j, query.GetLetter(j)) += m_LocalResFreqBoost;
+                matrix(j, query.GetLetter(j)) += local_res_freq_boost;
             }
         }
 
@@ -635,8 +637,11 @@ void
 CMultiAligner::x_FindDomainHits(TSeqLocVector& queries,
                                 const vector<int>& indices)
 {
-    if (m_RPSdb.empty() || 
-        m_Blockfile.empty()) {
+    string rps_db = m_Options->GetRpsDb();
+    string blockfile = rps_db + ".blocks";
+    string freqfile = rps_db + ".freq";
+
+    if (rps_db.empty()) {
         return;
     }
 
@@ -658,18 +663,18 @@ CMultiAligner::x_FindDomainHits(TSeqLocVector& queries,
     }
         
     vector<SSegmentLoc> blocklist;
-    x_LoadBlockBoundaries(m_Blockfile, blocklist);
+    x_LoadBlockBoundaries(blockfile, blocklist);
 
     // Load the RPS PSSMs and perform block realignment
 
     CProfileData profile_data;
-    profile_data.Load(CProfileData::eGetPssm, m_RPSdb);
+    profile_data.Load(CProfileData::eGetPssm, rps_db);
     x_RealignBlocks(m_DomainHits, blocklist, profile_data);
     blocklist.clear();
     profile_data.Clear();
 
     //-------------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("\n\nBlock alignments with conflicts resolved:\n");
         for (int i = 0; i < m_DomainHits.Size(); i++) {
             CHit *hit = m_DomainHits.GetHit(i);
@@ -699,16 +704,10 @@ CMultiAligner::x_FindDomainHits(TSeqLocVector& queries,
     // propagate the residue frequencies of the best
     // RPS hits onto the query sequences
 
-    if (!m_Freqfile.empty()) {
-        m_RPSLocs.resize(m_tQueries.size());
-        profile_data.Load(CProfileData::eGetResFreqs, m_RPSdb, m_Freqfile);
-        x_AssignRPSResFreqs(m_DomainHits, profile_data);
-        profile_data.Clear();
-    }
-    else {
-        if (m_Verbose)
-            printf("warning: No RPSBLAST residue frequencies available\n");
-    }
+    m_RPSLocs.resize(m_tQueries.size());
+    profile_data.Load(CProfileData::eGetResFreqs, rps_db, freqfile);
+    x_AssignRPSResFreqs(m_DomainHits, profile_data);
+    profile_data.Clear();
 
     // Connect together RPS hits to the same region of the
     // same database sequence
@@ -728,7 +727,7 @@ CMultiAligner::x_FindDomainHits(TSeqLocVector& queries,
     }
 
     //-------------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("\n\nMatched block alignments:\n");
         for (int i = 0; i < m_CombinedHits.Size(); i++) {
             CHit *hit = m_CombinedHits.GetHit(i);

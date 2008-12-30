@@ -81,39 +81,8 @@ void CMultiAligner::x_InitParams(void)
 {
     _ASSERT(!m_Options.Empty());
 
-    m_UseClusters = m_Options->GetUseQueryClusters();
-    m_ClustAlnMethod = m_UseClusters ? m_Options->GetInClustAlnMethod()
-       : CMultiAlignerOptions::eNone;
-    m_KmerLength = m_Options->GetKmerLength();
-    m_MaxClusterDist = m_Options->GetMaxInClusterDist();
-    m_ClustDistMeasure = m_Options->GetKmerDistMeasure();
-    m_KmerAlphabet = m_Options->GetKmerAlphabet();
-
-    m_MatrixName = m_Options->GetScoreMatrixName().c_str();
-
-    if (!m_Options->GetRpsDb().empty()) {
-        m_RPSdb = m_Options->GetRpsDb();
-        m_Blockfile = m_Options->GetRpsDb() + ".blocks";
-        m_Freqfile = m_Options->GetRpsDb() + ".freq";
-    }
-    m_RPSEvalue = m_Options->GetRpsEvalue();
-    m_DomainResFreqBoost = m_Options->GetDomainResFreqBoost();
-
-    m_BlastpEvalue = m_Options->GetBlastpEvalue();
-    m_LocalResFreqBoost = m_Options->GetLocalResFreqBoost();
-
-    m_Iterate = m_Options->GetIterate();
-    m_ConservedCutoff = m_Options->GetConservedCutoffScore();
-    m_Pseudocount = m_Options->GetPseudocount();
-
-    m_FastMeTree = (m_Options->GetTreeMethod() == CMultiAlignerOptions::eFastME);
-
-    m_GapOpen = m_Options->GetGapOpenPenalty();
-    m_GapExtend = m_Options->GetGapExtendPenalty();
-    m_EndGapOpen = m_Options->GetEndGapOpenPenalty();
-    m_EndGapExtend = m_Options->GetEndGapExtendPenalty();
-
-    m_Verbose = m_Options->GetVerbose();
+    m_ClustAlnMethod = m_Options->GetUseQueryClusters() 
+        ? m_Options->GetInClustAlnMethod() : CMultiAlignerOptions::eNone;
 
     int score = m_Options->GetUserConstraintsScore();
     m_UserHits.PurgeAllHits();
@@ -133,13 +102,13 @@ void CMultiAligner::x_InitParams(void)
 
 void CMultiAligner::x_InitAligner(void)
 {
-    x_SetScoreMatrix(m_MatrixName);
-    m_Aligner.SetWg(m_GapOpen);
-    m_Aligner.SetWs(m_GapExtend);
-    m_Aligner.SetStartWg(m_EndGapOpen);
-    m_Aligner.SetStartWs(m_EndGapExtend);
-    m_Aligner.SetEndWg(m_EndGapOpen);
-    m_Aligner.SetEndWs(m_EndGapExtend);
+    x_SetScoreMatrix(m_Options->GetScoreMatrixName().c_str());
+    m_Aligner.SetWg(m_Options->GetGapOpenPenalty());
+    m_Aligner.SetWs(m_Options->GetGapExtendPenalty());
+    m_Aligner.SetStartWg(m_Options->GetEndGapOpenPenalty());
+    m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty());
+    m_Aligner.SetEndWg(m_Options->GetEndGapOpenPenalty());
+    m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty());
 }
 
 
@@ -309,8 +278,6 @@ CMultiAligner::x_SetScoreMatrix(const char *matrix_name)
     else
         NCBI_THROW(CMultiAlignerException, eInvalidScoreMatrix,
                    "Unsupported score matrix");
-    
-    m_MatrixName = matrix_name;
 }
 
 
@@ -342,8 +309,11 @@ CMultiAligner::x_ComputeTree(void)
     m_ProgressMonitor.stage = eTreeComputation;
 
     Blast_KarlinBlk karlin_blk;
-    if (Blast_KarlinBlkGappedLoadFromTables(&karlin_blk, -m_GapOpen,
-                                -m_GapExtend, m_MatrixName) != 0) {
+    if (Blast_KarlinBlkGappedLoadFromTables(&karlin_blk,
+                             -m_Options->GetGapOpenPenalty(),
+                             -m_Options->GetGapExtendPenalty(),
+                             m_Options->GetScoreMatrixName().c_str()) != 0) {
+
         NCBI_THROW(blast::CBlastException, eInvalidArgument,
                      "Cannot generate Karlin block");
     }
@@ -374,7 +344,7 @@ CMultiAligner::x_ComputeTree(void)
 
 
     //--------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         const CDistMethods::TMatrix& matrix = dmat;
         printf("distance matrix:\n");
         printf("    ");
@@ -395,10 +365,11 @@ CMultiAligner::x_ComputeTree(void)
 
     // build the phylo tree associated with the matrix
 
-    m_Tree.ComputeTree(dmat, m_FastMeTree);
+    m_Tree.ComputeTree(dmat,
+                m_Options->GetTreeMethod() == CMultiAlignerOptions::eFastME);
 
     //--------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         CTree::PrintTree(m_Tree.GetTree());
     }
     //--------------------------------
@@ -557,13 +528,16 @@ CMultiAligner::x_FindQueryClusters()
 
     // Compute k-mer counts and distances between query sequences
     vector<TKmerCounts> kmer_counts;
-    TKMethods::SetParams(m_KmerLength, m_KmerAlphabet);
+    TKMethods::SetParams(m_Options->GetKmerLength(),
+                         m_Options->GetKmerAlphabet());
     TKMethods::ComputeCounts(m_tQueries, *m_Scope, kmer_counts);
+
     auto_ptr<CClusterer::TDistMatrix> dmat
-        = TKMethods::ComputeDistMatrix(kmer_counts, m_ClustDistMeasure);
+        = TKMethods::ComputeDistMatrix(kmer_counts,
+                                       m_Options->GetKmerDistMeasure());
 
     //-------------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("K-mer counts distance matrix:\n");
         printf("    ");
         for (size_t i=dmat->GetCols() - 1;i > 0;i--) {
@@ -583,7 +557,7 @@ CMultiAligner::x_FindQueryClusters()
 
     // Compute query clusters
     m_Clusterer.SetDistMatrix(dmat);
-    m_Clusterer.ComputeClusters(m_MaxClusterDist);
+    m_Clusterer.ComputeClusters(m_Options->GetMaxInClusterDist());
 
     const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
 
@@ -591,7 +565,7 @@ CMultiAligner::x_FindQueryClusters()
     // COBALT will be run without clustering informartion
     if (clusters.size() == m_QueryData.size()) {
         //-----------------------------------------------------------------
-        if (m_Verbose) { // two first lines needed for output analyzer
+        if (m_Options->GetVerbose()) {
             printf("\nNumber of queries in clusters: 0 (0%%)\n");
             printf("Number of domain searches reduced by: 0 (0%%)\n\n");
             printf("Only single-element clusters were found."
@@ -640,7 +614,7 @@ CMultiAligner::x_FindQueryClusters()
     }
 
     //-------------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         const vector<CSequence>& q =
             (m_ClustAlnMethod == CMultiAlignerOptions::eToPrototype)
             ? m_AllQueryData : m_QueryData;
@@ -716,7 +690,7 @@ CMultiAligner::x_FindQueryClusters()
                             continue;
                         }
 
-                        if (d(*elem, *el) < m_MaxClusterDist) {
+                        if (d(*elem, *el) < m_Options->GetMaxInClusterDist()) {
                             printf("%3d, %3d: %f\n", *elem, *el, d(*elem, *el));
                         }
                     }
@@ -744,12 +718,12 @@ void CMultiAligner::x_AlignInClusters(void)
     m_ClusterGapPositions.clear();
     m_ClusterGapPositions.resize(clusters.size());
 
-    m_Aligner.SetWg(m_GapOpen);
-    m_Aligner.SetStartWg(m_EndGapOpen);
-    m_Aligner.SetEndWg(m_EndGapOpen);
-    m_Aligner.SetWs(m_GapExtend);
-    m_Aligner.SetStartWs(m_EndGapExtend);
-    m_Aligner.SetEndWs(m_EndGapExtend);
+    m_Aligner.SetWg(m_Options->GetGapOpenPenalty());
+    m_Aligner.SetStartWg(m_Options->GetEndGapOpenPenalty());
+    m_Aligner.SetEndWg(m_Options->GetEndGapOpenPenalty());
+    m_Aligner.SetWs(m_Options->GetGapExtendPenalty());
+    m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty());
+    m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty());
 
     // For each cluster
     for (size_t cluster_idx=0;cluster_idx < clusters.size();cluster_idx++) {
@@ -786,20 +760,20 @@ void CMultiAligner::x_AlignInClusters(void)
                 int len1 = cluster_seq.GetLength();
                 int len2 = cluster_prot.GetLength();
                 if (len1 > 1.2 * len2 || len2 > 1.2 * len1) {
-                    m_Aligner.SetStartWs(m_EndGapExtend / 2);
-                    m_Aligner.SetEndWs(m_EndGapExtend / 2); 
+                    m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty()/2);
+                    m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty()/2); 
                 }
 
                 // Run aligner
                 m_Aligner.Run();
 
                 // Reset gap penalties
-                m_Aligner.SetWg(m_GapOpen);
-                m_Aligner.SetStartWg(m_EndGapOpen);
-                m_Aligner.SetEndWg(m_EndGapOpen);
-                m_Aligner.SetWs(m_GapExtend);
-                m_Aligner.SetStartWs(m_EndGapExtend);
-                m_Aligner.SetEndWs(m_EndGapExtend);
+                m_Aligner.SetWg(m_Options->GetGapOpenPenalty());
+                m_Aligner.SetStartWg(m_Options->GetEndGapOpenPenalty());
+                m_Aligner.SetEndWg(m_Options->GetEndGapOpenPenalty());
+                m_Aligner.SetWs(m_Options->GetGapExtendPenalty());
+                m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty());
+                m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty());
 
                 CNWAligner::TTranscript t = m_Aligner.GetTranscript(false);
                 cluster_seq.PropagateGaps(t, CNWAligner::eTS_Insert);
@@ -842,7 +816,7 @@ void CMultiAligner::x_AlignInClusters(void)
             }
 
             //------------------------------------------------------------
-            if (m_Verbose) {
+            if (m_Options->GetVerbose()) {
                 printf("Aligning in cluster %d:\n", (int)cluster_idx);
                 ITERATE(CClusterer::TSingleCluster, elem, cluster) {
                     const CSequence& seq = m_AllQueryData[*elem];
@@ -864,7 +838,7 @@ void CMultiAligner::x_AlignInClusters(void)
         }
     }
     //--------------------------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         for (size_t i=0;i < m_ClusterGapPositions.size();i++) {
             if (m_ClusterGapPositions[i].empty()) {
                 continue;
@@ -1060,7 +1034,7 @@ void CMultiAligner::x_MultiAlignClusters(void)
 
 
     //----------------------------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("Cluster prototypes:\n");
         ITERATE(CClusterer::TClusters, it, clusters) {
             const CSequence& seq = results[it->GetPrototype()];
@@ -1323,7 +1297,7 @@ void CMultiAligner::x_ComputeClusterTrees(vector<TPhyTreeNode*>& trees) const
     }
 
     //----------------------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         for (size_t i=0;i < trees.size();i++) {
             if (trees[i]) {
                 printf("Tree for cluster %d:\n", (int)i);
@@ -1532,7 +1506,7 @@ void CMultiAligner::x_BuildFullTree(const vector<TPhyTreeNode*>& cluster_trees)
     s_FindLeafDistances(m_Tree.GetTree(), 0.0, cluster_dists, cluster_leaves,
                       true);
     //------------------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         vector<TPhyTreeNode*> dummy_vect(clusters.size(), NULL);
         vector<double>d(cluster_dists.size());
         s_FindLeafDistances(m_Tree.GetTree(), 0.0, d, dummy_vect, false);
@@ -1569,7 +1543,7 @@ void CMultiAligner::x_BuildFullTree(const vector<TPhyTreeNode*>& cluster_trees)
     x_AttachClusterTrees(cluster_trees, cluster_leaves);
 
     //------------------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         vector<TPhyTreeNode*> dummy_vect(m_QueryData.size(), NULL);
         cluster_dists.resize(m_QueryData.size(), 0.0);
         s_FindLeafDistances(m_Tree.GetTree(), 0.0, cluster_dists, dummy_vect,
@@ -1580,7 +1554,7 @@ void CMultiAligner::x_BuildFullTree(const vector<TPhyTreeNode*>& cluster_trees)
         printf("\n");
     }
 
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("Full tree:\n");
         CTree::PrintTree(m_Tree.GetTree());
         printf("\n");

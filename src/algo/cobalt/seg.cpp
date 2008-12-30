@@ -184,7 +184,7 @@ CMultiAligner::x_FindConsistentHitSubset()
     x_FindAlignmentSubsets();
 
     //--------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("Saved Segments:\n");
         for (int i = 0; i < m_CombinedHits.Size(); i++) {
             CHit *hit = m_CombinedHits.GetHit(i);

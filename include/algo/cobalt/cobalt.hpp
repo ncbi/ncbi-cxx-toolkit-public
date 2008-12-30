@@ -597,7 +597,7 @@ private:
 
 
 
-private:
+protected:
 
     // Input sequences
 
@@ -622,6 +622,7 @@ private:
     CHitList m_CombinedHits;
     CHitList m_PatternHits;
     CHitList m_LocalInClusterHits;
+    CHitList m_UserHits;
 
     vector< vector<Uint4> > m_ClusterGapPositions;
     vector< CRef<objects::CSeq_loc> > m_AllQueries;
@@ -630,8 +631,6 @@ private:
     // Ranges of conserved domains in query sequences identified by RPS Blast
     vector< vector<TRange> > m_RPSLocs;
 
-    // Modified by x_FindQueryClusters() if no clusters found
-    CMultiAlignerOptions::EInClustAlnMethod m_ClustAlnMethod;
 
     // Running and monitoring
 
@@ -640,38 +639,10 @@ private:
 
     vector<string> m_Messages;
 
-    // Alignment Parameters (initilized using m_Options)
+    // Query clustering
 
-    bool m_UseClusters;
-    TKMethods::ECompressedAlphabet m_KmerAlphabet;
-    unsigned int m_KmerLength;
-    double m_MaxClusterDist;
-    TKMethods::EDistMeasures m_ClustDistMeasure;
-
-    string m_RPSdb;
-    string m_Blockfile;
-    string m_Freqfile;
-    double m_RPSEvalue;
-    double m_DomainResFreqBoost;
-
-    double m_BlastpEvalue;
-    double m_LocalResFreqBoost;
-
-    CHitList m_UserHits;
-
-    const char *m_MatrixName;
-
-    double m_ConservedCutoff;
-    double m_Pseudocount;
-    CNWAligner::TScore m_GapOpen;
-    CNWAligner::TScore m_GapExtend;
-    CNWAligner::TScore m_EndGapOpen;
-    CNWAligner::TScore m_EndGapExtend;
-
-    bool m_Iterate;
-    bool m_FastMeTree;
-
-    bool m_Verbose;
+    // Modified by x_FindQueryClusters() if no clusters found
+    CMultiAlignerOptions::EInClustAlnMethod m_ClustAlnMethod;
 
     // Minimum tree node id for root of cluster subtree
     static const int kClusterNodeId = 10000;

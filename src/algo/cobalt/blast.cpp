@@ -147,7 +147,7 @@ CMultiAligner::x_MakeFillerBlocks(const vector<int>& blastp_indices,
         }
     }
 
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("Filler Segments:\n");
         for (int i = 0; i < (int)filler_segs.size(); i++) {
             printf("query %d %4d - %4d\n", 
@@ -181,9 +181,10 @@ CMultiAligner::x_AlignFillerBlocks(const TSeqLocVector& queries,
 
     // Set the blast options
 
+    double blastp_evalue = m_Options->GetBlastpEvalue();
     CBlastProteinOptionsHandle blastp_opts;
     // deliberately set the cutoff e-value too high
-    blastp_opts.SetEvalueThreshold(max(m_BlastpEvalue, 10.0));
+    blastp_opts.SetEvalueThreshold(max(blastp_evalue, 10.0));
     //blastp_opts.SetGappedMode(false);
     blastp_opts.SetSegFiltering(false);
 
@@ -255,7 +256,7 @@ CMultiAligner::x_AlignFillerBlocks(const TSeqLocVector& queries,
                         }
             
                         // check if the hit is worth saving
-                        if (evalue > m_BlastpEvalue)
+                        if (evalue > blastp_evalue)
                             continue;
             
                         m_LocalHits.AddToHitList(new CHit(list1_oid, indices[j],
@@ -287,7 +288,7 @@ CMultiAligner::x_AlignFillerBlocks(const TSeqLocVector& queries,
                             }
                 
                             // check if the hit is worth saving
-                            if (evalue > m_BlastpEvalue)
+                            if (evalue > blastp_evalue)
                                 continue;
                 
                             m_LocalHits.AddToHitList(new CHit(list1_oid,
@@ -333,7 +334,7 @@ CMultiAligner::x_FindLocalHits(const TSeqLocVector& queries,
     x_AlignFillerBlocks(queries, indices, filler_locs, filler_segs);
 
     //-------------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("blastp hits:\n");
         for (int i = 0; i < m_LocalHits.Size(); i++) {
             CHit *hit = m_LocalHits.GetHit(i);
@@ -395,9 +396,10 @@ auto_ptr< vector<int> > CMultiAligner::x_AlignClusterQueries(
     _ASSERT(left != right);
     
     // Align the found pair of sequences - one from each subtree
+    double blastp_evalue = m_Options->GetBlastpEvalue();
     CBlastProteinOptionsHandle blastp_opts;
     // deliberately set the cutoff e-value too high
-    blastp_opts.SetEvalueThreshold(max(m_BlastpEvalue, 10.0));
+    blastp_opts.SetEvalueThreshold(max(blastp_evalue, 10.0));
     blastp_opts.SetSegFiltering(false);
 
     SSeqLoc left_query(*m_tQueries[left], *m_Scope);
@@ -429,7 +431,7 @@ auto_ptr< vector<int> > CMultiAligner::x_AlignClusterQueries(
             }
             
             // check if the hit is worth saving
-            if (evalue > m_BlastpEvalue)
+            if (evalue > blastp_evalue)
                 continue;
             
             m_LocalInClusterHits.AddToHitList(new CHit(left, right, align_score,
@@ -459,7 +461,7 @@ auto_ptr< vector<int> > CMultiAligner::x_AlignClusterQueries(
                 }
                 
                 // check if the hit is worth saving
-                if (evalue > m_BlastpEvalue)
+                if (evalue > blastp_evalue)
                     continue;
                 
                 m_LocalInClusterHits.AddToHitList(new CHit(left, right,
@@ -493,7 +495,7 @@ void CMultiAligner::x_FindLocalInClusterHits(
     }
 
     //-------------------------------------------------------
-    if (m_Verbose) {
+    if (m_Options->GetVerbose()) {
         printf("in-cluster blastp hits:\n");
         for (int i = 0; i < m_LocalInClusterHits.Size(); i++) {
             CHit *hit = m_LocalInClusterHits.GetHit(i);
