@@ -66,6 +66,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("ApiDB_CryptoDB", CDbtag::eDbtagType_ApiDB_CryptoDB),
     TDbxrefPair("ApiDB_PlasmoDB", CDbtag::eDbtagType_ApiDB_PlasmoDB),
     TDbxrefPair("ApiDB_ToxoDB", CDbtag::eDbtagType_ApiDB_ToxoDB),
+    TDbxrefPair("Axeldb", CDbtag::eDbtagType_axeldb),
     TDbxrefPair("BDGP_EST", CDbtag::eDbtagType_BDGP_EST),
     TDbxrefPair("BDGP_INS", CDbtag::eDbtagType_BDGP_INS),
     TDbxrefPair("BoLD", CDbtag::eDbtagType_BoLD),
@@ -137,7 +138,6 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("WormBase", CDbtag::eDbtagType_WormBase),
     TDbxrefPair("Xenbase", CDbtag::eDbtagType_Xenbase),
     TDbxrefPair("ZFIN", CDbtag::eDbtagType_ZFIN),
-    TDbxrefPair("Axeldb", CDbtag::eDbtagType_axeldb),
     TDbxrefPair("cdd", CDbtag::eDbtagType_CDD), // all-caps preferred, though
     TDbxrefPair("dbClone", CDbtag::eDbtagType_dbClone),
     TDbxrefPair("dbCloneLib", CDbtag::eDbtagType_dbCloneLib),
