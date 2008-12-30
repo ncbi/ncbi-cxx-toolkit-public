@@ -916,12 +916,16 @@ string CMacProjectGenerator::AddFile(CDict& dict, const string& name)
     string filetype;
     CDirEntry entry(name);
     string ext = entry.GetExt();
-    if ( ext == ".hpp" || ext == ".cpp" || ext == ".h" || ext == ".c") {
+    if ( ext == ".cpp" || ext == ".c") {
         filetype = string("sourcecode") + ext + ext;
-    } else if (ext == ".asn" || ext == ".dtd" || ext == ".xsd") {
-        filetype = "text";
+    } else if (ext == ".hpp" || ext == ".inl") {
+        filetype = "sourcecode.cpp.h";
+    } else if (ext == ".h") {
+        filetype = "sourcecode.c.h";
+    } else if (ext == ".xsd") {
+        filetype = "text.xml";
     } else {
-        return kEmptyStr;
+        filetype = "text";
     }
     
     string base_name = entry.GetName();
