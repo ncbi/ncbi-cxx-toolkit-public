@@ -83,7 +83,8 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
     conn->WriteLine(m_Auth);
 }
 
-void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(string& err_msg)
+void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(
+    const string& err_msg, SNetServerConnectionPoolImpl* pool)
 {
     string code;
     string msg;

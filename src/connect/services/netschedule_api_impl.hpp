@@ -86,7 +86,8 @@ struct SNetScheduleAPIImpl : public CNetObject
 
     private:
         virtual void OnConnected(CNetServerConnection::TPtr);
-        virtual void OnError(string& err_msg);
+        virtual void OnError(const string& err_msg,
+            SNetServerConnectionPoolImpl* pool);
 
     private:
         std::string m_Auth;

@@ -122,15 +122,21 @@ string SNetCacheAPIImpl::x_MakeCommand(const string& cmd) const
     return command;
 }
 
-void SNetCacheAPIImpl::CNetCacheServerListener::OnError(string& err_msg)
+void SNetCacheAPIImpl::CNetCacheServerListener::OnError(
+    const string& err_msg, SNetServerConnectionPoolImpl* pool)
 {
+    std::string message = pool->GetAddressAsString();
+
+    message += ": ";
+    message += err_msg;
+
     if (NStr::strncmp(err_msg.c_str(), "BLOB not found", 14) == 0)
-        NCBI_THROW(CNetCacheException, eBlobNotFound, err_msg);
+        NCBI_THROW(CNetCacheException, eBlobNotFound, message);
 
     if (NStr::strncmp(err_msg.c_str(), "BLOB locked", 11) == 0)
-        NCBI_THROW(CNetCacheException, eBlobLocked, "Server error:" + err_msg);
+        NCBI_THROW(CNetCacheException, eBlobLocked, message);
 
-    NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
+    NCBI_THROW(CNetServiceException, eCommunicationError, message);
 }
 
 CNetCacheAPI::CNetCacheAPI(const string& client_name) :

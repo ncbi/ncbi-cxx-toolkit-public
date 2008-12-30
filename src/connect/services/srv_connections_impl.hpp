@@ -111,7 +111,8 @@ class INetServerConnectionListener : public CNetObject
 {
 public:
     virtual void OnConnected(CNetServerConnection::TPtr) = 0;
-    virtual void OnError(string& err_msg) = 0;
+    virtual void OnError(const string& err_msg,
+        SNetServerConnectionPoolImpl* pool) = 0;
 };
 
 
@@ -125,6 +126,8 @@ struct SNetServerConnectionPoolImpl : public CNetObject
 
     void DeleteConnection(SNetServerConnectionImpl* impl);
     void Put(SNetServerConnectionImpl* impl);
+
+    std::string GetAddressAsString() const;
 
     ~SNetServerConnectionPoolImpl();
 

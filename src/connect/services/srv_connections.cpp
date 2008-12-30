@@ -44,11 +44,6 @@
 
 BEGIN_NCBI_SCOPE
 
-inline string GetHostDNSName(const string& host)
-{
-    return CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(host));
-}
-
 ///////////////////////////////////////////////////////////////////////////
 SNetServerCmdOutputImpl::~SNetServerCmdOutputImpl()
 {
@@ -105,9 +100,8 @@ std::string SNetServerConnectionImpl::ReadCmdOutputLine()
     if (!ReadLine(result)) {
         Abort();
         NCBI_THROW(CNetServiceException, eCommunicationError,
-                   "Communication error reading from server " +
-                   GetHostDNSName(m_ConnectionPool->m_Host) + ":" +
-                   NStr::UIntToString(m_ConnectionPool->m_Port) + ".");
+                   "Communication error reading from " +
+                   m_ConnectionPool->GetAddressAsString());
     }
     CheckServerOK(result);
     return result;
@@ -120,7 +114,7 @@ void SNetServerConnectionImpl::CheckServerOK(string& response)
     } else if (NStr::StartsWith(response, "ERR:")) {
         response.erase(0, sizeof("ERR:") - 1);
         response = NStr::ParseEscapes(response);
-        m_ConnectionPool->m_EventListener->OnError(response);
+        m_ConnectionPool->m_EventListener->OnError(response, m_ConnectionPool);
     }
 }
 
@@ -195,9 +189,8 @@ bool SNetServerConnectionImpl::ReadLine(string& str)
     case eIO_Timeout:
         Abort();
         NCBI_THROW(CNetSrvConnException, eReadTimeout,
-            "Communication timeout reading from server " +
-            GetHostDNSName(m_ConnectionPool->m_Host) + ":" +
-            NStr::UIntToString(m_ConnectionPool->m_Port) + ".");
+            "Communication timeout reading from " +
+            m_ConnectionPool->GetAddressAsString());
         break;
     default: // invalid socket or request, bailing out
         return false;
@@ -221,10 +214,9 @@ void SNetServerConnectionImpl::WriteBuf(const char* buf, size_t len)
                 (CIO_Exception::EErrCode) io_st, "IO error.");
 
             NCBI_THROW(CNetSrvConnException, eWriteFailure,
-                "Failed to write to server " +
-                GetHostDNSName(m_ConnectionPool->m_Host) + ":" +
-                NStr::UIntToString(m_ConnectionPool->m_Port) +
-                    ". Reason: " + string(io_ex.what()));
+                "Failed to write to " +
+                m_ConnectionPool->GetAddressAsString() +
+                    ": " + string(io_ex.what()));
         }
         len -= n_written;
         buf += n_written;
@@ -247,9 +239,7 @@ void SNetServerConnectionImpl::WaitForServer(unsigned int wait_sec)
         Abort();
 
         NCBI_THROW(CNetSrvConnException, eResponseTimeout,
-            "No response from the server " +
-                GetHostDNSName(pool->m_Host) + ":" +
-                NStr::UIntToString(pool->m_Port) + ".");
+            "No response from " + pool->GetAddressAsString());
     }
 }
 
@@ -297,10 +287,8 @@ void SNetServerConnectionImpl::CheckConnect()
                     CIO_Exception io_ex(DIAG_COMPILE_INFO,
                         0, (CIO_Exception::EErrCode)io_st, "IO error.");
                     NCBI_THROW(CNetSrvConnException, eConnectionFailure,
-                        "Failed to connect to server " +
-                        GetHostDNSName(pool->m_Host) + ":" +
-                        NStr::UIntToString(pool->m_Port) +
-                            ". Reason: " + string(io_ex.what()));
+                        "Failed to connect to " + pool->GetAddressAsString() +
+                            ": " + string(io_ex.what()));
                 }
             }
             // give system a chance to recover
@@ -309,10 +297,8 @@ void SNetServerConnectionImpl::CheckConnect()
         } else {
             CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
             NCBI_THROW(CNetSrvConnException, eConnectionFailure,
-                "Failed to connect to server " +
-                GetHostDNSName(pool->m_Host) + ":" +
-                NStr::UIntToString(pool->m_Port) +
-                ". Reason: " + string(io_ex.what()));
+                "Failed to connect to " + pool->GetAddressAsString() +
+                ": " + string(io_ex.what()));
         }
     }
 
@@ -417,6 +403,17 @@ void SNetServerConnectionPoolImpl::Put(SNetServerConnectionImpl* impl)
         }
 
     DeleteConnection(impl);
+}
+
+std::string SNetServerConnectionPoolImpl::GetAddressAsString() const
+{
+    std::string address =
+        CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(m_Host));
+
+    address += ':';
+    address += NStr::UIntToString(m_Port);
+
+    return address;
 }
 
 SNetServerConnectionPoolImpl::~SNetServerConnectionPoolImpl()
