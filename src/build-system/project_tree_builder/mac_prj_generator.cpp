@@ -306,6 +306,12 @@ string CMacProjectGenerator::CreateProjectFileGroups(
                 if (!hosted_key.Id().empty()) {
                     AddString( *hosted_hpps[ hosted_key.Id() ], src);
                     added = true;
+                } else {
+                    CProjKey hosted_inl = dll_src.GetInlineLib( *f, proj_key);
+                    if (!hosted_inl.Id().empty()) {
+                        AddString( *hosted_hpps[ hosted_inl.Id() ], src);
+                        added = true;
+                    }
                 }
             }
             if (!added) {
