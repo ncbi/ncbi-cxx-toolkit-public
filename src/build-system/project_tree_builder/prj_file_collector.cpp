@@ -179,10 +179,27 @@ void CProjectFileCollector::CollectSources(void)
 void CProjectFileCollector::CollectHeaders(void)
 {
     m_Headers.clear();
-    ITERATE(list<string>, f, m_ProjContext.IncludeDirsAbs()) {
+    list<string> all_headers;
+    copy(m_ProjContext.IncludeDirsAbs().begin(),
+         m_ProjContext.IncludeDirsAbs().end(), 
+         back_inserter(all_headers));
+    copy(m_ProjContext.InlineDirsAbs().begin(),
+         m_ProjContext.InlineDirsAbs().end(), 
+         back_inserter(all_headers));
+
+    ITERATE(list<string>, f, all_headers) {
         string value(*f), pdir, base, ext;
         if (value.empty()) {
             continue;
+        }
+        SIZE_TYPE negation_pos = value.find('!');
+        bool remove = negation_pos != NPOS;
+        if (remove) {
+            value = NStr::Replace(value, "!", kEmptyStr);
+            if (value.empty() ||
+                value[value.length()-1] == CDirEntry::GetPathSeparator()) {
+                continue;
+            }
         }
         CDirEntry::SplitPath(value, &pdir, &base, &ext);
         CDir dir(pdir);
@@ -192,7 +209,11 @@ void CProjectFileCollector::CollectHeaders(void)
         CDir::TEntries contents = dir.GetEntries(base + ext);
         ITERATE(CDir::TEntries, i, contents) {
             if ( (*i)->IsFile() ) {
-                m_Headers.push_back( (*i)->GetPath() );
+                if (remove) {
+                    m_Headers.remove( (*i)->GetPath() );
+                } else {
+                    m_Headers.push_back( (*i)->GetPath() );
+                }
             }
         }
     }
