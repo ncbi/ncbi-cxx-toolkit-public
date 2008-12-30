@@ -1497,9 +1497,24 @@ void CValidError_imp::ValidateEtAl
         ITERATE ( CAuth_list::C_Names::TStd, name, names.GetStd() ) {
             if ( (*name)->GetName().IsName() ) {
                 const CName_std& nstd = (*name)->GetName().GetName();
-                if ( (NStr::CompareNocase(nstd.GetLast(), "et al.") == 0)  ||
-                     (nstd.GetLast() == "et."  &&  nstd.GetInitials() == "al"  &&
-                      nstd.GetFirst().empty()) ) {
+                string last = "";
+                if (nstd.IsSetLast()) {
+                    last = nstd.GetLast();
+                    NStr::ReplaceInPlace (last, ".", " ");
+                    NStr::ReplaceInPlace (last, "  ", " ");
+                    NStr::TruncateSpacesInPlace (last);
+                }
+                string initials = "";
+                if (nstd.IsSetInitials()) {
+                    initials = nstd.GetInitials();
+                    NStr::ReplaceInPlace (initials, ".", " ");
+                    NStr::ReplaceInPlace (initials, "  ", " ");
+                    NStr::TruncateSpacesInPlace (initials);
+                }
+                if ( (NStr::CompareNocase(last, "et al") == 0)  ||
+                     (NStr::CompareNocase(last, "et") == 0  
+                      &&  NStr::CompareNocase(initials, "al") == 0
+                      &&  (!nstd.IsSetFirst() || nstd.GetFirst().empty()))) {
                     CAuth_list::C_Names::TStd::const_iterator temp = name;
                     if ( ++temp == names.GetStd().end() ) {
                         PostErr(eDiag_Warning, eErr_GENERIC_AuthorListHasEtAl,
