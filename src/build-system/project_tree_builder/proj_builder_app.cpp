@@ -1428,18 +1428,27 @@ string CProjBulderApp::GetDatatoolId(void) const
 
 string CProjBulderApp::GetDatatoolPathForApp(void) const
 {
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eXCode) {
+        return GetConfig().GetString("Datatool", "Location.xcode", "datatool");
+    }
     return GetConfig().GetString("Datatool", "Location.App", "datatool.exe");
 }
 
 
 string CProjBulderApp::GetDatatoolPathForLib(void) const
 {
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eXCode) {
+        return GetConfig().GetString("Datatool", "Location.xcode", "datatool");
+    }
     return GetConfig().GetString("Datatool", "Location.Lib", "datatool.exe");
 }
 
 
 string CProjBulderApp::GetDatatoolCommandLine(void) const
 {
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eXCode) {
+        return GetConfig().GetString("Datatool", "CommandLine.xcode", "");
+    }
     return GetConfig().Get("Datatool", "CommandLine");
 }
 
