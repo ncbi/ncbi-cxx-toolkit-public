@@ -401,7 +401,7 @@ int CTestNetCacheClient::Run(void)
     const string& service  = args["service"].AsString();
     int stress_test_repetitions = args["repeat"].AsInteger();
 
-    const char test_data[] = "A quick brown fox, jumps over lazy dog.";
+    const char test_data[] = "The quick brown fox jumps over the lazy dog.";
     const char test_data2[] = "New data.";
     string key;
 
