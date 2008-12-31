@@ -41,15 +41,16 @@
 #include <serial/iterator.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
 
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-//USING_SCOPE(sequence);
 
 //  ============================================================================
 class CMultiReaderApp
@@ -61,6 +62,14 @@ private:
     virtual int  Run(void);
     virtual void Exit(void);
 
+    virtual int ReadSeqAnnot(
+        CNcbiIstream&,
+        CRef<CSeq_annot>& );
+        
+    virtual int ReadSeqEntry(
+        CNcbiIstream&,
+        CRef<CSeq_entry>& );
+    
     CReaderBase* m_pReader;
 
 };
@@ -73,8 +82,11 @@ void CMultiReaderApp::Init(void)
 
     arg_desc->SetUsageContext
         (GetArguments().GetProgramBasename(),
-         "C++ speed test program");
+         "C++ multi format file reader");
 
+    //
+    //  shared flags and parameters:
+    //        
     arg_desc->AddKey
         ("i", "InputFile",
          "Input File Name",
@@ -85,6 +97,11 @@ void CMultiReaderApp::Init(void)
          "Output File Name",
          CArgDescriptions::eOutputFile, "-"); 
 
+    arg_desc->AddDefaultKey(
+        "g", "Flags",
+        "Processing Bit Flags",
+        CArgDescriptions::eInteger, "0" );
+
     arg_desc->AddDefaultKey
         ("f", "Format",
          "Input File Format",
@@ -94,32 +111,95 @@ void CMultiReaderApp::Init(void)
             "bed", 
             "microarray", "bed15", 
             "wig", "wiggle",
+            "gff",
             "guess"));
 
-    arg_desc->AddDefaultKey( "umap",
+    //
+    //  wiggle specific flags and parameters:
+    //
+    arg_desc->AddDefaultKey( "usermap",
         "usermap",
         "Source for user defined mappings",
         CArgDescriptions::eInputFile,
         "" );
         
-    arg_desc->AddDefaultKey( "smap",
+    arg_desc->AddDefaultKey( "sitemap",
         "sitemap",
         "Source for site defined mappings",
         CArgDescriptions::eInputFile,
         "" );
         
-    arg_desc->AddDefaultKey( "db",
-        "sitemap",
+    arg_desc->AddDefaultKey( "dbmap",
+        "dbmap",
         "Source for database provided mappings",
         CArgDescriptions::eString,
         "" );
-        
-    arg_desc->AddDefaultKey(
-        "g", "Flags",
-        "Processing Bit Flags",
-        CArgDescriptions::eInteger, "0" );
+
+    //
+    //  gff specific flags and parameters:
+    //
+    arg_desc->AddFlag(
+        "all-ids-to-local", 
+        "All identifiers are local IDs",
+        true );
+
+    arg_desc->AddFlag(
+        "numeric-ids-to-local", 
+        "Numeric identifiers are local IDs",
+        true );
+    
+    arg_desc->AddFlag(
+        "attribute-to-gbqual", 
+        "Attribute tags are GenBank qualifiers",
+        true );
+    
+    arg_desc->AddFlag(
+        "id-to-product", 
+        "Move protein_id and transcript_id to products for mRNA and CDS",
+        true );
+    
+    arg_desc->AddFlag(
+        "no-gtf", 
+        "Don't honor or recognize GTF conventions",
+        true );
 
     SetupArgDescriptions(arg_desc.release());
+}
+
+//  ============================================================================
+int
+CMultiReaderApp::ReadSeqAnnot(
+    CNcbiIstream& ip,
+    CRef<CSeq_annot>& annot )
+//  ============================================================================
+{
+    try {
+        m_pReader->Read( ip, annot );
+    }
+    catch (...) {
+        const CArgs& args = GetArgs();
+        cerr << "Bad source file: Maybe not be " << args["f"].AsString() << endl;
+        return 1;
+    }
+    return 0;
+}
+    
+//  ============================================================================
+int
+CMultiReaderApp::ReadSeqEntry(
+    CNcbiIstream& ip,
+    CRef<CSeq_entry>& entry )
+//  ============================================================================
+{
+    try {
+        m_pReader->Read( ip, entry );
+    }
+    catch (...) {
+        const CArgs& args = GetArgs();
+        cerr << "Bad source file: Maybe not be " << args["f"].AsString() << endl;
+        return 1;
+    }
+    return 0;
 }
 
 //  ============================================================================
@@ -151,22 +231,28 @@ CMultiReaderApp::Run(void)
     }
 
     //
-    //  Read:
+    //  Read and dump:
     //
-    CRef<CSeq_annot> annot( new CSeq_annot );
-    try {
-        m_pReader->Read( ip, annot );
+    switch ( m_pReader->ObjectType() ) {
+    
+        default: {
+            cerr << "Bad reader type: Cannot produce object of requested type" << endl;
+            return 1;
+        }   
+        case CReaderBase::OT_SEQANNOT: {
+            CRef<CSeq_annot> annot( new CSeq_annot );
+            ReadSeqAnnot( ip, annot );
+            op << MSerial_AsnText << *annot << endl;
+            break;
+        }    
+        case CReaderBase::OT_SEQENTRY: {
+            CObjectOStreamAsn AsnOut( op );
+            CRef<CSeq_entry> entry;
+            ReadSeqEntry( ip, entry );
+            AsnOut << *entry;
+            break;
+        }
     }
-    catch (...) {
-        cerr << "Bad source file: Maybe not " << args["f"].AsString() << endl;
-        return 1;
-    }
-
-    //
-    //  Dump:
-    //
-    op << MSerial_AsnText << *annot << endl;
-//    m_pReader->Dump( op );
     
     //
     //  Cleanup:
