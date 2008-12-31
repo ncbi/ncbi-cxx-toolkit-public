@@ -116,37 +116,37 @@ CWiggleReader::CWiggleReader(
     //
     //  Make sure the provided options make sense:
     //
-    if ( !args["umap"].AsString().empty() && !args["smap"].AsString().empty() ) {
+    if ( !args["usermap"].AsString().empty() && !args["sitemap"].AsString().empty() ) {
         NCBI_THROW( CArgException, eInvalidArg,
-            "CReaderBase: Options \"smap\" and \"umap\" are mutually exclusive" );
+            "CReaderBase: Options \"sitemap\" and \"usermap\" are mutually exclusive" );
     }
-    if ( !args["umap"].AsString().empty() && !args["db"].AsString().empty() ) {
+    if ( !args["usermap"].AsString().empty() && !args["dbmap"].AsString().empty() ) {
         NCBI_THROW( CArgException, eInvalidArg,
-            "CReaderBase: Options \"db\" and \"umap\" are mutually exclusive" );
+            "CReaderBase: Options \"dbmap\" and \"usermap\" are mutually exclusive" );
     }
-    if ( !args["db"].AsString().empty() && !args["smap"].AsString().empty() ) {
+    if ( !args["dbmap"].AsString().empty() && !args["sitemap"].AsString().empty() ) {
         NCBI_THROW( CArgException, eInvalidArg,
-            "CReaderBase: Options \"smap\" and \"db\" are mutually exclusive" );
+            "CReaderBase: Options \"sitemap\" and \"dbmap\" are mutually exclusive" );
     }
 
     //
     //  Ok, set configure the right mapper and initialize object accordingly:
     //    
-    if ( !args["umap"].AsString().empty() ) {
+    if ( !args["usermap"].AsString().empty() ) {
         m_pIdMapper = CIdMapper::GetIdMapper( "user" );
         m_pIdMapper->Setup( args );
         m_uIdMode = CWiggleRecord::IDMODE_CHROM;
         m_pSet = new CWiggleSet( m_pIdMapper );
         return;
     }
-    if ( !args["smap"].AsString().empty() ) {
+    if ( !args["sitemap"].AsString().empty() ) {
         m_pIdMapper = CIdMapper::GetIdMapper( "site" );
         m_pIdMapper->Setup( args );
         m_uIdMode = CWiggleRecord::IDMODE_NAME_CHROM;
         m_pSet = new CWiggleSet( m_pIdMapper );
         return;
     }
-    if ( !args["db"].AsString().empty() ) {
+    if ( !args["dbmap"].AsString().empty() ) {
         m_pIdMapper = CIdMapper::GetIdMapper( "database" );
         m_uIdMode = CWiggleRecord::IDMODE_NAME_CHROM;
         m_pSet = new CWiggleSet( m_pIdMapper );

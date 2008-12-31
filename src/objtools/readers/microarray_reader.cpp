@@ -36,6 +36,7 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/stream_utils.hpp>
 
 #include <util/static_map.hpp>
 
@@ -120,7 +121,7 @@ void CMicroArrayReader::Read(
         if ( NStr::TruncateSpaces( line ).empty() ) {
             continue;
         }
-        if ( x_IsMetaInformation( line ) ) {
+        if ( IsMetaInformation( line ) ) {
             if ( ! x_ProcessMetaInformation( line, annot ) ) {
                 cerr << "Warning: Junk meta info encountered in line "
                      << linecount << endl;
@@ -140,40 +141,52 @@ bool CMicroArrayReader::VerifyFormat(
     CNcbiIstream& is )
 //  ----------------------------------------------------------------------------
 {
-    string line;
-    int linecount = 0;
-    const size_t columncount = 15;
-    bool verify = true;
+    CT_POS_TYPE orig_pos = is.tellg();
 
-    while ( ! is.eof() && linecount < 5 ) {
-        NcbiGetlineEOL( is, line );
-        if ( NStr::TruncateSpaces( line ).empty() ) {
-            continue;
-        }
-        if ( x_IsMetaInformation( line ) ) {
-            continue;
-        }        
-        ++linecount;
+    unsigned char pcBuffer[1024];
 
-        //
-        // For now: exactly 15 columns in every data line.
-        // Todo: Apply more stringent criteria, based on syntactic content of
-        //  columns.
-        //
-        vector<string> columns;
-        NStr::Tokenize( line, " \t", columns, NStr::eMergeDelims );
-        if (columns.size() != columncount) {
-            verify = false;
-            break;
-        }
-    }
+    is.read( (char*)pcBuffer, sizeof( pcBuffer ) );
+    size_t uCount = is.gcount();
     is.clear();  // in case we reached eof
-    is.seekg( 0 );
-    return verify;
+    CStreamUtils::Stepback( is, (CT_CHAR_TYPE*)pcBuffer, (streamsize)uCount);
+
+    return VerifyFormat( (const char*)pcBuffer, uCount );
 }
 
 //  ----------------------------------------------------------------------------
-bool CMicroArrayReader::x_IsMetaInformation(
+bool CMicroArrayReader::VerifyFormat(
+    const char* pcBuffer,
+    size_t uSize )
+//  ----------------------------------------------------------------------------
+{
+    size_t columncount = 15;
+    list<string> lines;
+    if ( ! CReaderBase::SplitLines( pcBuffer, uSize, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    if ( ! lines.empty() ) {
+        //  the last line is probably incomplete. We won't even bother with it.
+        lines.pop_back();
+    }
+    for ( list<string>::iterator it = lines.begin(); it != lines.end(); ++it ) {
+        if ( NStr::TruncateSpaces( *it ).empty() ) {
+            continue;
+        }
+        if ( IsMetaInformation( *it ) ) {
+            continue;
+        }        
+        vector<string> columns;
+        NStr::Tokenize( *it, " \t", columns, NStr::eMergeDelims );
+        if ( columns.size() != columncount ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CMicroArrayReader::IsMetaInformation(
     const string& line )
 //  ----------------------------------------------------------------------------
 {

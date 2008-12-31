@@ -26,7 +26,7 @@
  * Author:  Frank Ludwig
  *
  * File Description:
- *   Basic reader interface.
+ *   GFF file reader
  *
  */
 
@@ -78,10 +78,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
-#include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/bed_reader.hpp>
-#include <objtools/readers/microarray_reader.hpp>
-#include <objtools/readers/wiggle_reader.hpp>
+#include <objtools/readers/gff_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/error_codes.hpp>
 
@@ -95,174 +92,132 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-CReaderBase*
-CReaderBase::GetReader(
-    const string& format,
-    int flags )
+CGff3Reader::CGff3Reader(
+    int iFlags ):
 //  ----------------------------------------------------------------------------
+    m_iReaderFlags( iFlags )
 {
-    if ( format == "bed" || format == "bed12" ) {
-        return new CBedReader( flags );
-    }
-    if ( format == "microarray" || format == "bed15" ) {
-        return new CMicroArrayReader( flags );
-    }
-    if ( format == "wiggle" || format == "wig" ) {
-        return new CWiggleReader( flags );
-    }
-    if ( format == "gff" ) {
-        return new CGff3Reader( flags );
-    }
-    return 0;
 }
 
+
 //  ----------------------------------------------------------------------------
-CReaderBase*
-CReaderBase::GetReader(
-    const string& format,
+CGff3Reader::CGff3Reader(
     const CArgs& args )
 //  ----------------------------------------------------------------------------
 {
-    //
-    //  Ok, select the appropriate reader object:
-    //
-    if ( format == "bed" || format == "bed12" ) {
-        return new CBedReader( args["g"].AsInteger() );
+    m_iReaderFlags = CGFFReader::fDefaults;
+    if ( args[ "numeric-ids-to-local" ] ) {
+        m_iReaderFlags |= CGFFReader::fNumericIdsAsLocal;
     }
-    if ( format == "microarray" || format == "bed15" ) {
-        return new CMicroArrayReader( args["g"].AsInteger() );
+    if ( args[ "all-ids-to-local" ] ) {
+        m_iReaderFlags |= CGFFReader::fAllIdsAsLocal;
     }
-    if ( format == "wiggle" || format == "wig" ) {
-        return new CWiggleReader( args );
+    if ( args[ "attribute-to-gbqual" ] ) {
+        m_iReaderFlags |= CGFFReader::fGBQuals;
     }
-    if ( format == "gff" ) {
-        return new CGff3Reader( args );
+    if ( args[ "id-to-product" ] ) {
+        m_iReaderFlags |= CGFFReader::fSetProducts;
     }
-    return 0;
+    if ( args[ "no-gtf" ] ) {
+        m_iReaderFlags |= CGFFReader::fNoGTF;
+    }
 }
 
+
 //  ----------------------------------------------------------------------------
-CReaderBase*
-CReaderBase::GetReader(
-    FileFormat format,
-    int flags )
+CGff3Reader::~CGff3Reader()
 //  ----------------------------------------------------------------------------
 {
-    switch ( format ) {
-    default:
-        return 0;
-    case FMT_BED:
-        return new CBedReader( flags );
-    case FMT_MICROARRAY:
-        return new CMicroArrayReader( flags );
-    case FMT_WIGGLE:
-        return new CWiggleReader( flags );
-    }
 }
 
-//  ----------------------------------------------------------------------------
-CReaderBase*
-CReaderBase::GetReader(
-    FileFormat format,
-    const CArgs& args )
-//  ----------------------------------------------------------------------------
-{
-    switch ( format ) {
-    default:
-        return 0;
-    case FMT_BED:
-        return new CBedReader( args["g"].AsInteger() );
-    case FMT_MICROARRAY:
-        return new CMicroArrayReader( args["g"].AsInteger() );
-    case FMT_WIGGLE:
-        return new CWiggleReader( args );
-    }
-}
 
 //  ----------------------------------------------------------------------------
-CReaderBase::FileFormat
-CReaderBase::GuessFormat(
+bool CGff3Reader::VerifyFormat(
     CNcbiIstream& is )
 //  ----------------------------------------------------------------------------
 {
-    CT_POS_TYPE orig_pos = is.tellg();
-
-    unsigned char pcBuffer[1024];
-
-    is.read( (char*)pcBuffer, sizeof( pcBuffer ) );
-    size_t uSize = is.gcount();
-    is.clear();  // in case we reached eof
-    CStreamUtils::Stepback( is, (CT_CHAR_TYPE*)pcBuffer, (streamsize)uSize);
-
-    return GuessFormat( (const char*)pcBuffer, uSize );
+    return false;
 }
 
+
 //  ----------------------------------------------------------------------------
-CReaderBase::FileFormat
-CReaderBase::GuessFormat(
+bool CGff3Reader::VerifyFormat(
     const char* pcBuffer,
     size_t uSize )
 //  ----------------------------------------------------------------------------
 {
-    if ( CBedReader::VerifyFormat( pcBuffer, uSize ) ) {
-        return FMT_BED;
+    list<string> lines;
+    if ( ! CReaderBase::SplitLines( pcBuffer, uSize, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
     }
-    if ( CMicroArrayReader::VerifyFormat( pcBuffer, uSize ) ) {
-        return FMT_MICROARRAY;
+    if ( ! lines.empty() ) {
+        //  the last line is probably incomplete. We won't even bother with it.
+        lines.pop_back();
     }
-    if ( CGff3Reader::VerifyFormat( pcBuffer, uSize ) ) {
-        return FMT_GFF;
-    }
-    return FMT_UNKNOWN;
-}
-
-//  ----------------------------------------------------------------------------
-bool CReaderBase::SplitLines( 
-    const char* pcBuffer, 
-    size_t uSize,
-    list<string>& lines )
-//  ----------------------------------------------------------------------------
-{
-    //
-    //  Make sure the given data is ASCII before checking potential line breaks:
-    //
-    const size_t MIN_HIGH_RATIO = 20;
-    size_t high_count = 0;
-    for ( size_t i=0; i < uSize; ++i ) {
-        if ( 0x80 & pcBuffer[i] ) {
-            ++high_count;
-        }
-    }
-    if ( 0 < high_count && uSize / high_count < MIN_HIGH_RATIO ) {
+    if ( lines.empty() ) {
         return false;
     }
 
-    //
-    //  Let's expect at least one line break in the given data:
-    //
-    string data( pcBuffer, uSize );
-    
-    lines.clear();
-    if ( NStr::Split( data, "\r\n", lines ).size() > 1 ) {
-        return true;
-    }
-    lines.clear();
-    if ( NStr::Split( data, "\r", lines ).size() > 1 ) {
-        return true;
-    }
-    lines.clear();
-    if ( NStr::Split( data, "\n", lines ).size() > 1 ) {
-        return true;
+    list<string>::iterator it = lines.begin();
+    for ( ;  it != lines.end();  ++it) {
+        if ( !it->empty()  &&  (*it)[0] != '#') {
+            break;
+        }
     }
     
-    //
-    //  Suspicious for non-binary files. Unfortunately, it can actually happen
-    //  for Newick tree files.
-    //
-    lines.clear();
-    lines.push_back( data );
+    for ( ;  it != lines.end();  ++it) {
+        if ( !VerifyLine( *it ) ) {
+            return false;
+        }
+    }
     return true;
 }
+
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::VerifyLine(
+    const string& line )
+//  ----------------------------------------------------------------------------
+{
+    vector<string> tokens;
+    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
+        return false;
+    }
+    try {
+        NStr::StringToInt( tokens[3] );
+        NStr::StringToInt( tokens[4] );
+        if ( tokens[5] != "." ) {
+            NStr::StringToDouble( tokens[5] );
+        }
+    }
+    catch( ... ) {
+        return false;
+    }
+        
+    if ( tokens[6] != "+" && tokens[6] != "." && tokens[6] != "-" ) {
+        return false;
+    }
+    if ( tokens[6].size() != 1 || NPOS == tokens[6].find_first_of( ".+-" ) ) {
+        return false;
+    }
+    if ( tokens[7].size() != 1 || NPOS == tokens[7].find_first_of( ".0123" ) ) {
+        return false;
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+void CGff3Reader::Read( 
+    CNcbiIstream& input, 
+    CRef<CSeq_entry>& annot )
+//  ----------------------------------------------------------------------------
+{
+    CGFFReader reader;
+    annot.Reset( reader.Read( input, m_iReaderFlags ) );
+}
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

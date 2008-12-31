@@ -50,9 +50,15 @@ public:
         FMT_UNKNOWN,
         FMT_BED,
         FMT_MICROARRAY,
-        FMT_WIGGLE
+        FMT_WIGGLE,
+        FMT_GFF
     };
-
+    enum ObjectType {
+        OT_UNKNOWN,
+        OT_SEQANNOT,
+        OT_SEQENTRY
+    };
+    
 public:
 
     virtual ~CReaderBase() {}
@@ -79,19 +85,45 @@ public:
     static FileFormat GuessFormat(
         CNcbiIstream& );
 
+    static FileFormat GuessFormat(
+        const char*,
+        size_t );
+
     static bool VerifyFormat(               // for reference only, should be
-        CNcbiIstream& ) { return false; };  //  reimplemented in concrete sub-
+        CNcbiIstream& );                    //  reimplemented in concrete sub-
                                             //  classes
+
+    static bool VerifyFormat(               // for reference only, should be
+        const char*,                        //  reimplemented in concrete sub-
+        size_t ) { return false; };         //  classes
+                                            
 
     //
     //  Object interface:
     //
+    virtual unsigned int 
+    ObjectType() const { return OT_SEQANNOT; };
+    
     virtual void Read( 
         CNcbiIstream&, 
         CRef<CSeq_annot>& ) { return; };
         
+    virtual void Read( 
+        CNcbiIstream&, 
+        CRef<CSeq_entry>& ) { return; };
+        
     virtual void Dump(
         CNcbiOstream& ) { return; };
+
+    //
+    //  Class helper functions:
+    //
+protected:
+    static bool SplitLines( 
+        const char* pcBuffer, 
+        size_t uSize,
+        list< string>& lines );
+
 };
 
 END_objects_SCOPE

@@ -1,4 +1,4 @@
-/*  $Id$
+ /*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -30,21 +30,23 @@
  *
  */
 
-#ifndef OBJTOOLS_READERS___BEDREADER__HPP
-#define OBJTOOLS_READERS___BEDREADER__HPP
+#ifndef OBJTOOLS_READERS___GFF3_READER__HPP
+#define OBJTOOLS_READERS___GFF3_READER__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/reader_base.hpp>
 
-#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
+class CGFFReader;
+
 //  ----------------------------------------------------------------------------
-class NCBI_XOBJREAD_EXPORT CBedReader
+class NCBI_XOBJREAD_EXPORT CGff3Reader
 //  ----------------------------------------------------------------------------
     : public CReaderBase
 {
@@ -52,22 +54,24 @@ class NCBI_XOBJREAD_EXPORT CBedReader
     //  object management:
     //
 public:
-    CBedReader( 
-        int =fDefaults );
-    virtual ~CBedReader();
+    CGff3Reader( 
+        int =0 );
+
+    CGff3Reader( 
+        const CArgs& );
+        
+    virtual ~CGff3Reader();
     
     //
     //  object interface:
     //
 public:
-    enum EBedFlags {
-        fDefaults = 0
-    };
-    typedef int TFlags;
-
+    unsigned int 
+    ObjectType() const { return OT_SEQENTRY; };
+    
     virtual void Read( 
         CNcbiIstream&, 
-        CRef<CSeq_annot>& );
+        CRef<CSeq_entry>& );
 
     //
     //  class interface:
@@ -83,30 +87,17 @@ public:
     //  helpers:
     //
 protected:
-    static bool IsMetaInformation(
-        const string& );
-
-    bool x_ProcessMetaInformation(
-        const string& );
-    bool x_ParseFeature(
-        const string&,
-        CRef<CSeq_annot>& );
-    void x_SetFeatureLocation(
-        CRef<CSeq_feat>&,
-        const vector<string>& );
-    void x_SetFeatureDisplayData(
-        CRef<CSeq_feat>&,
-        const vector<string>& );
-
+    static bool VerifyLine(
+        const std::string& );
+    
     //
     //  data:
     //
 protected:
-    vector<string>::size_type m_columncount;
-    bool m_usescore;
+    int m_iReaderFlags;
 };
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif // OBJTOOLS_READERS___BEDREADER__HPP
+#endif // OBJTOOLS_READERS___GFF3_READER__HPP

@@ -74,11 +74,15 @@ public:
     static bool VerifyFormat(
         CNcbiIstream& );
 
+    static bool VerifyFormat(
+        const char*,
+        size_t );
+        
     //
     //  helpers:
     //
 protected:
-    static bool x_IsMetaInformation(
+    static bool IsMetaInformation(
         const string& );
 
     bool x_ProcessMetaInformation(

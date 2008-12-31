@@ -111,47 +111,58 @@ bool CBedReader::VerifyFormat(
     CNcbiIstream& is )
 //  ----------------------------------------------------------------------------
 {
-    string line;
-    int linecount = 0;
-    size_t columncount = 0;
-    bool verify = true;
+    CT_POS_TYPE orig_pos = is.tellg();
 
-    while ( ! is.eof() && linecount < 5 ) {
-        NcbiGetlineEOL( is, line );
-        if ( NStr::TruncateSpaces( line ).empty() ) {
+    unsigned char pcBuffer[1024];
+
+    is.read( (char*)pcBuffer, sizeof( pcBuffer ) );
+    size_t uCount = is.gcount();
+    is.clear();  // in case we reached eof
+    CStreamUtils::Stepback( is, (CT_CHAR_TYPE*)pcBuffer, (streamsize)uCount);
+
+    return VerifyFormat( (const char*)pcBuffer, uCount );
+}    
+
+//  ----------------------------------------------------------------------------
+bool CBedReader::VerifyFormat(
+    const char* pcBuffer,
+    size_t uSize )
+//  ----------------------------------------------------------------------------
+{
+    size_t columncount = 0;
+    list<string> lines;
+    if ( ! CReaderBase::SplitLines( pcBuffer, uSize, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    if ( ! lines.empty() ) {
+        //  the last line is probably incomplete. We won't even bother with it.
+        lines.pop_back();
+    }
+    for ( list<string>::iterator it = lines.begin(); it != lines.end(); ++it ) {
+        if ( NStr::TruncateSpaces( *it ).empty() ) {
             continue;
         }
-        if ( x_IsMetaInformation( line ) ) {
+        if ( IsMetaInformation( *it ) ) {
             continue;
         }        
-        ++linecount;
-
-        //
-        // For now: at least three, at most 12 columns. All lines have same
-        //  number of columns.
-        // Todo: Apply more stringent criteria, based on syntactic content of
-        //  columns.
-        //
         vector<string> columns;
-        NStr::Tokenize( line, " \t", columns, NStr::eMergeDelims );
+        NStr::Tokenize( *it, " \t", columns, NStr::eMergeDelims );
         if (columns.size() < 3 || columns.size() > 12) {
-            verify = false;
-            break;
+            return false;
         }
         if ( columns.size() != columncount ) {
             if ( columncount == 0 ) {
                 columncount = columns.size();
             }
             else {
-                verify = false;
-                break;
+                return false;
             }
         }
     }
-    is.clear();  // in case we reached eof
-    is.seekg( 0 );
-    return verify;
+    return true;
 }
+
 
 //  ----------------------------------------------------------------------------
 void CBedReader::Read( 
@@ -168,7 +179,7 @@ void CBedReader::Read(
         if ( NStr::TruncateSpaces( line ).empty() ) {
             continue;
         }
-        if ( x_IsMetaInformation( line ) ) {
+        if ( IsMetaInformation( line ) ) {
             if ( ! x_ProcessMetaInformation( line ) ) {
                 cerr << "Warning: Junk meta info encountered in line "
                      << linecount << endl;
@@ -184,7 +195,7 @@ void CBedReader::Read(
 }
 
 //  ----------------------------------------------------------------------------
-bool CBedReader::x_IsMetaInformation(
+bool CBedReader::IsMetaInformation(
     const string& line )
 //  ----------------------------------------------------------------------------
 {
