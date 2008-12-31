@@ -68,7 +68,7 @@
 typedef unsigned int mode_t;
 typedef short        uid_t;
 typedef short        gid_t;
-#endif
+#endif // NCBI_OS
 
 
 #define NCBI_USE_ERRCODE_X   Util_Compress
@@ -84,83 +84,85 @@ BEGIN_NCBI_SCOPE
 
 // Convert a number to an octal string padded to the left
 // with [leading] zeros ('0') and having _no_ trailing '\0'.
-static bool s_NumToOctal(unsigned long value, char* ptr, size_t len)
+static bool s_NumToOctal(unsigned long val, char* ptr, size_t len)
 {
     _ASSERT(len > 0);
     do {
-        ptr[--len] = '0' + char(value & 7);
-        value >>= 3;
+        ptr[--len] = '0' + char(val & 7);
+        val >>= 3;
     } while (len);
-    return value ? false : true;
+    return val ? false : true;
 }
 
 
 // Convert an octal number (possibly preceded by spaces) to numeric form.
 // Stop either at the end of the field or at first '\0' (if any).
-static bool s_OctalToNum(unsigned long& value, const char* ptr, size_t size)
+static bool s_OctalToNum(unsigned long& val, const char* ptr, size_t len)
 {
-    _ASSERT(ptr  &&  size > 0);
+    _ASSERT(ptr  &&  len > 0);
     size_t i = *ptr ? 0 : 1;
-    while (i < size  &&  ptr[i]) {
+    while (i < len  &&  ptr[i]) {
         if (!isspace((unsigned char) ptr[i]))
             break;
         i++;
     }
-    value = 0;
-    bool retval = false;
-    while (i < size  &&  ptr[i] >= '0'  &&  ptr[i] <= '7') {
-        retval = true;
-        value <<= 3;
-        value  |= ptr[i++] - '0';
+    val = 0;
+    bool okay = false;
+    while (i < len  &&  ptr[i] >= '0'  &&  ptr[i] <= '7') {
+        okay  = true;
+        val <<= 3;
+        val  |= ptr[i++] - '0';
     }
-    while (i < size  &&  ptr[i]) {
+    while (i < len  &&  ptr[i]) {
         if (!isspace((unsigned char) ptr[i]))
             return false;
         i++;
     }
-    return retval;
+    return okay;
 }
 
 
-static bool s_NumToBase256(Uint8 value, char* ptr, size_t len)
+static bool s_NumToBase256(Uint8 val, char* ptr, size_t len)
 {
     _ASSERT(len > 0);
     do {
-        ptr[--len] = (unsigned char)(value & 0xFF);
-        value >>= 8;
+        ptr[--len] = (unsigned char)(val & 0xFF);
+        val >>= 8;
     } while (len);
     *ptr |= '\x80';  // set base-256 encoding flag
-    return value ? false : true;
+    return val ? false : true;
 }
 
 
 // Return 0 (false) if conversion failed; 1 if the value converted to
 // conventional octal representation (perhaps, with terminating '\0'
 // sacrificed), or -1 if the value converted using base-256.
-static int s_EncodeSize(Uint8 size, char* ptr, size_t len)
+static int s_EncodeUint8(Uint8 val, char* ptr, size_t len)
 {
-    if (s_NumToOctal((unsigned long) size, ptr,   len))  // 8GiB-1  limit
-        return  1/*okay*/;
-    if (s_NumToOctal((unsigned long) size, ptr, ++len))  // 64GiB-1 limit
-        return  1/*okay*/;
-    if (s_NumToBase256(size,               ptr,   len))  // up to 2^94-1
+    if ((unsigned long) val == val) {                       // Max file size:
+        if (s_NumToOctal((unsigned long) val, ptr,   len))  //   8GiB-1
+            return  1/*okay*/;
+        if (s_NumToOctal((unsigned long) val, ptr, ++len))  //   64GiB-1
+            return  1/*okay*/;
+    }
+    if (s_NumToBase256  (val,                 ptr,   len))  //   up to 2^94-1
         return -1/*okay, base-256*/;
     return 0/*failure*/;
 }
 
 
 // Return true if conversion succeeded;  false otherwise.
-static bool s_Base256ToNum(Uint8& value, const char* ptr, size_t len)
+static bool s_Base256ToNum(Uint8& val, const char* ptr, size_t len)
 {
-    const Uint8 limit = kMax_UI8 >> 8;
+    const Uint8 lim = kMax_UI8 >> 8;
     if (*ptr & '\x40')
         return false/*negative base-256*/;
-    value = *ptr++ & '\x3F';
+    val = *ptr++ & '\x3F';
     while (--len) {
-        if (value > limit)
+        if (val > lim)
             return false;
-        value <<= 8;
-        value  |= (unsigned char)(*ptr++);
+        val <<= 8;
+        val  |= (unsigned char)(*ptr++);
     }
     return true;
 }
@@ -169,16 +171,16 @@ static bool s_Base256ToNum(Uint8& value, const char* ptr, size_t len)
 // Return 0 (false) if conversion failed; 1 if the value was read into
 // as a conventional octal string (perhaps, without the terminating '\0');
 // or -1 if base-256 representation used.
-static int s_DecodeSize(Uint8& size, const char* ptr, size_t len)
+static int s_DecodeUint8(Uint8& val, const char* ptr, size_t len)
 {
     if (!(*ptr & '\x80')) {
-        unsigned long value;
-        if (!s_OctalToNum(value, ptr, len))
+        unsigned long temp;
+        if (!s_OctalToNum(temp, ptr, len))
             return 0/*failure*/;
-        size = (Uint8) value;
+        val = (Uint8) temp;
         return 1/*okay*/;
     }
-    return s_Base256ToNum(size, ptr, len) ? -1/*okay*/ : 0/*failure*/;
+    return s_Base256ToNum(val, ptr, len) ? -1/*okay*/ : 0/*failure*/;
 }
 
 
@@ -683,6 +685,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 {
     unsigned long val;
     string dump;
+    Uint8 tmp;
     int ok;
 
     dump += TAR_PRINTABLE(name, true) + '\n';
@@ -694,25 +697,30 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     }
     dump += '\n';
 
-    ok = s_OctalToNum(val, h->uid, sizeof(h->uid));
-    dump += TAR_PRINTABLE(uid, !ok);
-    if (ok  &&  val > 7) {
-        dump += " [" + NStr::UIntToString(val) + ']';
+    ok = s_DecodeUint8(tmp, h->uid, sizeof(h->uid));
+    dump += TAR_PRINTABLE(uid, ok <= 0);
+    if (ok  &&  tmp > 7) {
+        dump += " [" + NStr::UInt8ToString(tmp) + ']';
+        if (ok < 0) {
+            dump += " (base-256)";
+        }
     }
     dump += '\n';
     
-    ok = s_OctalToNum(val, h->gid, sizeof(h->gid));
-    dump += TAR_PRINTABLE(gid, !ok);
-    if (ok  &&  val > 7) {
-        dump += " [" + NStr::UIntToString(val) + ']';
+    ok = s_DecodeUint8(tmp, h->gid, sizeof(h->gid));
+    dump += TAR_PRINTABLE(gid, ok <= 0);
+    if (ok  &&  tmp > 7) {
+        dump += " [" + NStr::UInt8ToString(tmp) + ']';
+        if (ok < 0) {
+            dump += " (base-256)";
+        }
     }
     dump += '\n';
 
-    Uint8 size;
-    ok = s_DecodeSize(size, h->size, sizeof(h->size));
+    ok = s_DecodeUint8(tmp, h->size, sizeof(h->size));
     dump += TAR_PRINTABLE(size, ok <= 0);
-    if (ok < 0  ||  size > 7) {
-        dump += " [" + NStr::UInt8ToString(size) + ']';
+    if (ok < 0  ||  tmp > 7) {
+        dump += " [" + NStr::UInt8ToString(tmp) + ']';
         if (ok < 0) {
             dump += " (base-256)";
         }
@@ -1210,8 +1218,8 @@ auto_ptr<CTar::TEntries> CTar::Extract(void)
 const CTarEntryInfo* CTar::GetNextEntryInfo(void)
 {
     if (m_OpenMode) {
-        size_t skip = (m_Current.GetPosition(CTarEntryInfo::ePos_Data)
-                       + ALIGN_SIZE(m_Current.GetSize()) - m_StreamPos);
+        size_t skip= (size_t)(m_Current.GetPosition(CTarEntryInfo::ePos_Data)
+                              + ALIGN_SIZE(m_Current.GetSize()) - m_StreamPos);
         x_SkipArchive(skip);
     }
 
@@ -1533,9 +1541,9 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                      "Unrecognized format", h, fmt);
     }
 
-    unsigned long value;
+    unsigned long val;
     // Get checksum from header
-    if (!s_OctalToNum(value, h->checksum, sizeof(h->checksum))) {
+    if (!s_OctalToNum(val, h->checksum, sizeof(h->checksum))) {
         // We must allow all zero bytes here in case of pad/zero blocks
         for (size_t i = 0;  i < sizeof(block->buffer);  i++) {
             if (block->buffer[i]) {
@@ -1546,7 +1554,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         m_StreamPos += kBlockSize;  // NB: nread
         return eZeroBlock;
     }
-    int checksum = int(value);
+    int checksum = int(val);
 
     // Compute both signed and unsigned checksums (for compatibility)
     int ssum = 0;
@@ -1572,10 +1580,16 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             if (usum != (unsigned int) ssum) {
                 message += "either ";
             }
+            if (usum) {
+                message += "0";
+            }
             message += NStr::UIntToString(usum, 0, 8);
             if (usum != (unsigned int) ssum) {
-                message += " or " +
-                    NStr::UIntToString((unsigned int) ssum, 0, 8);
+                message += " or ";
+                if (ssum) {
+                    message += "0";
+                }
+                message += NStr::UIntToString((unsigned int) ssum, 0, 8);
             }
         }
         TAR_THROW_EX(this, eChecksum,
@@ -1604,40 +1618,41 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     }
 
     // Mode
-    if (!s_OctalToNum(value, h->mode, sizeof(h->mode))) {
+    if (!s_OctalToNum(val, h->mode, sizeof(h->mode))) {
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad entry mode", h, fmt);
     }
-    m_Current.m_Stat.st_mode = (mode_t) value;
+    m_Current.m_Stat.st_mode = (mode_t) val;
+
+    Uint8 tmp;
 
     // User Id
-    if (!s_OctalToNum(value, h->uid, sizeof(h->uid))) {
+    if (!s_DecodeUint8(tmp, h->uid, sizeof(h->uid))) {
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad user ID", h, fmt);
     }
-    m_Current.m_Stat.st_uid = (uid_t) value;
+    m_Current.m_Stat.st_uid = (uid_t) tmp;
 
     // Group Id
-    if (!s_OctalToNum(value, h->gid, sizeof(h->gid))) {
+    if (!s_DecodeUint8(tmp, h->gid, sizeof(h->gid))) {
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad group ID", h, fmt);
     }
-    m_Current.m_Stat.st_gid = (gid_t) value;
+    m_Current.m_Stat.st_gid = (gid_t) tmp;
 
     // Size
-    Uint8 size;
-    if (!s_DecodeSize(size, h->size, sizeof(h->size))) {
+    if (!s_DecodeUint8(tmp, h->size, sizeof(h->size))) {
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad entry size", h, fmt);
     }
-    m_Current.m_Stat.st_size = size;
+    m_Current.m_Stat.st_size = /*(?)*/ tmp;
 
     // Modification time
-    if (!s_OctalToNum(value, h->mtime, sizeof(h->mtime))) {
+    if (!s_OctalToNum(val, h->mtime, sizeof(h->mtime))) {
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad modification time", h, fmt);
     }
-    m_Current.m_Stat.st_mtime = value;
+    m_Current.m_Stat.st_mtime = val;
 
     if (fmt == eTar_OldGNU  ||  (fmt & eTar_Ustar)) {
         // User name
@@ -1651,20 +1666,20 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     if (fmt == eTar_OldGNU) {
         // Name prefix cannot be used because there are times, and other stuff
         // NB: times are valid for incremental archive only, so checks relaxed
-        if (!s_OctalToNum(value, h->gt.atime, sizeof(h->gt.atime))) {
+        if (!s_OctalToNum(val, h->gt.atime, sizeof(h->gt.atime))) {
             if (memcchr(h->gt.atime, '\0', sizeof(h->gt.atime))) {
                 TAR_THROW_EX(this, eUnsupportedTarFormat,
                              "Bad last access time", h, fmt);
             }
         } else
-            m_Current.m_Stat.st_atime = value;
-        if (!s_OctalToNum(value, h->gt.ctime, sizeof(h->gt.ctime))) {
+            m_Current.m_Stat.st_atime = (time_t) val;
+        if (!s_OctalToNum(val, h->gt.ctime, sizeof(h->gt.ctime))) {
             if (memcchr(h->gt.ctime, '\0', sizeof(h->gt.ctime))) {
                 TAR_THROW_EX(this, eUnsupportedTarFormat,
                              "Bad creation time", h, fmt);
             }
         } else
-            m_Current.m_Stat.st_ctime = value;
+            m_Current.m_Stat.st_ctime = (time_t) val;
     }
 
     // Entry type
@@ -1705,21 +1720,21 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         m_Current.m_Type = (h->typeflag[0] == '3'
                             ? CTarEntryInfo::eCharDev
                             : CTarEntryInfo::eBlockDev);
-        if (!s_OctalToNum(value, h->devminor, sizeof(h->devminor))) {
+        if (!s_OctalToNum(val, h->devminor, sizeof(h->devminor))) {
             TAR_THROW_EX(this, eUnsupportedTarFormat,
                          "Bad device minor number", h, fmt);
         }
-        usum = value; // set aside
-        if (!s_OctalToNum(value, h->devmajor, sizeof(h->devmajor))) {
+        usum = val; // set aside
+        if (!s_OctalToNum(val, h->devmajor, sizeof(h->devmajor))) {
             TAR_THROW_EX(this, eUnsupportedTarFormat,
                          "Bad device major number", h, fmt);            
         }
 #ifdef makedev
-        m_Current.m_Stat.st_rdev = makedev((unsigned int) value, usum);
+        m_Current.m_Stat.st_rdev = makedev((unsigned int) val, usum);
 #else
         if (sizeof(int) >= 4  &&  sizeof(m_Current.m_Stat.st_rdev) >= 4) {
             *((unsigned int*) &m_Current.m_Stat.st_rdev) =
-                (unsigned int)((value << 16) | usum);
+                (unsigned int)((val << 16) | usum);
         }
 #endif // makedev
         m_Current.m_Stat.st_size = 0;
@@ -1854,7 +1869,6 @@ void CTar::x_WriteEntryInfo(const string& name)
 {
     // Prepare block info
     TBlock block;
-    ETar_Format fmt = eTar_Ustar;
     memset(block.buffer, 0, sizeof(block.buffer));
     SHeader* h = &block.header;
 
@@ -1889,28 +1903,44 @@ void CTar::x_WriteEntryInfo(const string& name)
                   "Cannot store file mode");
     }
 
+    // Update format as we go
+    ETar_Format fmt = eTar_Ustar;
+    int ok;
+
     // User ID
-    if (!s_NumToOctal(m_Current.GetUserId(), h->uid, sizeof(h->uid) - 1)) {
+    ok = s_EncodeUint8(m_Current.GetUserId(), h->uid, sizeof(h->uid) - 1);
+    if (!ok) {
         TAR_THROW(this, eMemory,
                   "Cannot store user ID");
     }
+    if (ok < 0) {
+        fmt = eTar_OldGNU;
+    }
 
     // Group ID
-    if (!s_NumToOctal(m_Current.GetGroupId(), h->gid, sizeof(h->gid) - 1)) {
+    ok = s_EncodeUint8(m_Current.GetGroupId(), h->gid, sizeof(h->gid) - 1);
+    if (!ok) {
         TAR_THROW(this, eMemory,
                   "Cannot store group ID");
     }
+    if (ok < 0) {
+        fmt = eTar_OldGNU;
+    }
 
     // Size
-    int enc = s_EncodeSize(type == CTarEntryInfo::eFile
-                           ? m_Current.GetSize() : 0,
-                           h->size, sizeof(h->size) - 1);
-    if (!enc) {
+    ok = s_EncodeUint8(type == CTarEntryInfo::eFile ? m_Current.GetSize() : 0,
+                       h->size, sizeof(h->size) - 1);
+    if (!ok) {
         TAR_THROW(this, eMemory,
                   "Cannot store file size");
     }
-    if (enc < 0  &&  !h->prefix[0]) {
-        fmt = eTar_OldGNU;  // downgrade (if possible) to reflect size encoding
+    if (ok < 0) {
+        fmt = eTar_OldGNU;
+    }
+
+    if (fmt != eTar_Ustar  &&  h->prefix[0]) {
+        // cannot downgrade to reflect encoding
+        fmt  = eTar_Ustar;
     }
 
     // Modification time
@@ -2035,13 +2065,13 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     // See above for comments about header filling
     len++; // write terminating '\0' as it can always be made to fit in
     strcpy(h->name, "././@LongLink");
-    s_NumToOctal(0,        h->mode,  sizeof(h->mode) - 1);
-    s_NumToOctal(0,        h->uid,   sizeof(h->uid)  - 1);
-    s_NumToOctal(0,        h->gid,   sizeof(h->gid)  - 1);
-    if (!s_EncodeSize(len, h->size,  sizeof(h->size) - 1)) {
+    s_NumToOctal(0,         h->mode,  sizeof(h->mode) - 1);
+    s_NumToOctal(0,         h->uid,   sizeof(h->uid)  - 1);
+    s_NumToOctal(0,         h->gid,   sizeof(h->gid)  - 1);
+    if (!s_EncodeUint8(len, h->size,  sizeof(h->size) - 1)) {
         return false;
     }
-    s_NumToOctal(0,        h->mtime, sizeof(h->mtime)- 1);
+    s_NumToOctal(0,         h->mtime, sizeof(h->mtime)- 1);
     h->typeflag[0] = link ? 'K' : 'L';
 
     // NB: Old GNU magic protrudes into adjacent version field
@@ -2397,7 +2427,7 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
         }
     }
 
-    x_SkipArchive(size);
+    x_SkipArchive((size_t) size);
 
     return extract;
 }
@@ -3041,7 +3071,7 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
             count = left;
         }
 
-        size_t off = OFFSET_OF(m_Read);
+        size_t off = (size_t) OFFSET_OF(m_Read);
         if (off) {
             read = kBlockSize - off;
             if (m_Tar->m_BufferPos) {

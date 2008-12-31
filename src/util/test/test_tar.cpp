@@ -37,9 +37,9 @@
 #include <util/compress/tar.hpp>
 #include <common/test_assert.h>  // This header must go last
 #ifdef NCBI_OS_MSWIN
-#  include <io.h>     // For setmode()
+#  include <io.h>     // For _setmode()
 #  include <fcntl.h>  // For _O_BINARY
-#endif /*NCBI_OS_MSWIN*/
+#endif // NCBI_OS_MSWIN
 
 
 USING_NCBI_SCOPE;
@@ -212,12 +212,12 @@ int CTarTest::Run(void)
                 io = &cin;
 #ifdef NCBI_OS_MSWIN
                 _setmode(_fileno(stdin), _O_BINARY);
-#endif /*NCBI_OS_MSWIN*/
+#endif // NCBI_OS_MSWIN
             } else if (action == eCreate  ||  action == eAppend) {
                 io = &cout;
 #ifdef NCBI_OS_MSWIN
                 _setmode(_fileno(stdout), _O_BINARY);
-#endif /*NCBI_OS_MSWIN*/
+#endif // NCBI_OS_MSWIN
             } else {
                 NCBI_THROW(CArgException, eInvalidArg, "Cannot update pipe");
             }
