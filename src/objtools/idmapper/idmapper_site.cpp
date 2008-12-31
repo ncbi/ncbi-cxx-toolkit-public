@@ -57,8 +57,8 @@ void CIdMapperSite::Setup(
     const CArgs& args )
 //  ============================================================================
 {
-    if ( args[ "smap" ] ) {
-        ReadSiteMap( args[ "smap" ].AsInputFile() );
+    if ( args[ "sitemap" ] ) {
+        ReadSiteMap( args[ "sitemap" ].AsInputFile() );
     }
 };
 

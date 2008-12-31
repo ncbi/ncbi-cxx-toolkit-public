@@ -56,8 +56,8 @@ void CIdMapperUser::Setup(
     const CArgs& args )
 //  ============================================================================
 {
-    if ( args[ "umap" ] ) {
-        ReadUserMap( args[ "umap" ].AsInputFile() );
+    if ( args[ "usermap" ] ) {
+        ReadUserMap( args[ "usermap" ].AsInputFile() );
     }
 };
 
