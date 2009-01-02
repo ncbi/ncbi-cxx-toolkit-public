@@ -95,7 +95,8 @@ tds_set_param_type(TDSSOCKET * tds, TDSCOLUMN * curcol, TDS_SERVER_TYPE type)
 		switch (type) {
 		case SYBVARCHAR:
 		case SYBCHAR:
-			type = XSYBCHAR;
+            if (!curcol->column_output)
+			    type = XSYBCHAR;
 			break;
 		default:
 			break;

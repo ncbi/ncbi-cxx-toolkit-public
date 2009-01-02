@@ -1484,7 +1484,10 @@ tds_put_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
      */
 
     tdsdump_log(TDS_DBG_ERROR, "tds_put_data_info putting status \n");
-    tds_put_byte(tds, curcol->column_output);   /* status (input) */
+    if (IS_TDS50(tds))
+        tds_put_int(tds, curcol->column_output);   /* status (input) */
+    else
+        tds_put_byte(tds, curcol->column_output);   /* status (input) */
     if (!IS_TDS7_PLUS(tds))
         tds_put_int(tds, curcol->column_usertype);  /* usertype */
     tds_put_byte(tds, curcol->on_server.column_type);
@@ -1505,7 +1508,7 @@ tds_put_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
         case 0:
             break;
         case 1:
-            tds_put_byte(tds, MAX(MIN(curcol->column_size, 255), 1));
+            tds_put_byte(tds, MAX(MIN(curcol->column_output? 255: curcol->column_size, 255), 1));
             break;
         case 2:
             /* ssikorsk */
@@ -1543,6 +1546,9 @@ static int
 tds_put_data_info_length(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
 {
     int len = 8;
+
+    if (IS_TDS50(tds))
+        len = 11;
 
     CHECK_TDS_EXTRA(tds);
     CHECK_COLUMN_EXTRA(curcol);
@@ -1884,12 +1890,13 @@ tds_put_params(TDSSOCKET * tds, TDSPARAMINFO * info, int flags)
     CHECK_PARAMINFO_EXTRA(info);
 
     /* column descriptions */
-    tds_put_byte(tds, TDS5_PARAMFMT_TOKEN);
+    tds_put_byte(tds, TDS5_PARAMFMT2_TOKEN);
     /* size */
     len = 2;
     for (i = 0; i < info->num_cols; i++)
         len += tds_put_data_info_length(tds, info->columns[i], flags);
-    tds_put_smallint(tds, len);
+    /*tds_put_smallint(tds, len);*/
+    tds_put_int(tds, len);
     /* number of parameters */
     tds_put_smallint(tds, info->num_cols);
     /* column detail for each parameter */

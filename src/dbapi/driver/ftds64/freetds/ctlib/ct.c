@@ -4456,6 +4456,11 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
             pcol->column_namelen = strlen(pcol->column_name);
         }
 
+        if (p->status == CS_RETURN)
+            pcol->column_output = 1;
+        else
+            pcol->column_output = 0;
+
         tds_set_param_type(tds, pcol, temp_type);
 
         if (temp_datalen == CS_NULLTERM && temp_value)
@@ -4473,11 +4478,6 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
         } else {
             pcol->column_cur_size = pcol->column_size;
         }
-
-        if (p->status == CS_RETURN)
-            pcol->column_output = 1;
-        else
-            pcol->column_output = 0;
 
         /* actual data */
         tdsdump_log(TDS_DBG_FUNC, "paraminfoalloc: status = %d, maxlen %d \n", p->status, p->maxlen);
