@@ -1127,6 +1127,14 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
         } else {
             m_OpenMode = EOpenMode(int(action) & eRW);
         }
+#ifdef NCBI_OS_MSWIN
+        if (m_Stream == &cin) {
+            HANDLE handle = (HANDLE) _get_osfhandle(_fileno(stdin));
+            if (GetFileType(handle) != FILE_TYPE_DISK) {
+                m_Flags |= fSlowSkipWithRead;
+            }
+        }
+#endif // NCBI_OS_MSWIN
     } else {
         EOpenMode mode = EOpenMode(int(action) & eRW);
         _ASSERT(mode != eNone);
