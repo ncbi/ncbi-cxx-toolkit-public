@@ -1007,7 +1007,7 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSerialObject& 
     bool empty = true;
     if ( processed != CProt_ref::eProcessed_signal_peptide  &&
          processed != CProt_ref::eProcessed_transit_peptide ) {
-        if ( prot.CanGetName()  &&
+        if ( prot.IsSetName()  &&
             (!prot.GetName().empty()  ||  !prot.GetName().front().empty()) ) {
             empty = false;
         }
@@ -2450,6 +2450,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     bool no_beg = 
         (part_loc & eSeqlocPartial_Start)  ||  (part_prod & eSeqlocPartial_Start);
 
+    bool reported_bad_start_codon = false;
+
     // count internal stops
     size_t internal_stop_count = 0;
     bool got_stop = false;
@@ -2476,12 +2478,11 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                         " internal stops. Probably wrong genetic code [" +
                         gccode + "]", feat);
                 }
-            } else {
-                if (report_errors  ||  unclassified_except) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
-                        NStr::IntToString(internal_stop_count) + 
-                        " internal stops. Genetic code [" + gccode + "]", feat);
-                }
+            } 
+            if (report_errors  ||  unclassified_except) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
+                    NStr::IntToString(internal_stop_count) + 
+                    " internal stops. Genetic code [" + gccode + "]", feat);
             }
             prot_ok = false;
             if (internal_stop_count > 5) {
@@ -2493,6 +2494,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon, 
                     "Illegal start codon used. Wrong genetic code [" +
                     gccode + "] or protein should be partial", feat);
+                reported_bad_start_codon = true;
             }
         }
     }
@@ -2597,7 +2599,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                     feat);
             }
         } else if (transl_prot[mismatches.front()] == '-') {
-            if (report_errors) {
+            if (report_errors && !reported_bad_start_codon) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
                     "Illegal start codon used. Wrong genetic code [" +
                     gccode + "] or protein should be partial", feat);
