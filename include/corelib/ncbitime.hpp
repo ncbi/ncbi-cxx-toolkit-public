@@ -2371,15 +2371,18 @@ void CStopWatch::Stop()
 inline
 double CStopWatch::Restart()
 {
-    double previous = m_Start;
-    m_Start = GetTimeMark();
-    // Workaround for -0 (negative zero) values,
-    // that can occur at subtraction of very close doubles.
-    double diff = m_Start - previous;
-    if (diff < 0.0) {
-        diff = 0.0;
+    double elapsed = 0;
+    if ( m_State == eStart ) {
+        double previous = m_Start;
+        m_Start = GetTimeMark();
+        // Workaround for -0 (negative zero) values,
+        // that can occur at subtraction of very close doubles.
+        double diff = m_Start - previous;
+        if (diff < 0.0) {
+            diff = 0.0;
+        }
+        elapsed = m_Total + diff;
     }
-    double elapsed = m_Total + diff;
     m_Total = 0;
     m_State = eStart;
     return elapsed;

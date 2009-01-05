@@ -2457,6 +2457,7 @@ int CFastLocalTime::GetLocalTimezone(void)
 // deprecated
 CStopWatch::CStopWatch(bool start)
 {
+    m_Start = 0;
     m_Total = 0;
     m_State = eStop;
     if ( start ) {
