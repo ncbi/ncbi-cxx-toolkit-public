@@ -1371,6 +1371,11 @@ static const CBioseq* s_GetSeqFromSet(const CBioseq_set& bsst, CScope& scope)
             break;
 
         default:
+            // find the first bioseq
+            CTypeConstIterator<CBioseq> seqit(ConstBegin(bsst));
+            if (seqit) {
+                retval = &(*seqit);
+            }
             break;
     }
 
@@ -1393,7 +1398,7 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
         if (obj->GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
             const CSeq_feat& feat = dynamic_cast<const CSeq_feat&>(*obj);
             return s_GetSeq_featAcc(feat, scope);
-        } if (obj->GetThisTypeInfo() == CBioseq::GetTypeInfo()) {
+        } else if (obj->GetThisTypeInfo() == CBioseq::GetTypeInfo()) {
             const CBioseq& seq = dynamic_cast<const CBioseq&>(*obj);
             return s_GetBioseqAcc(seq, scope);
         } else if (obj->GetThisTypeInfo() == CBioseq_set::GetTypeInfo()) {
@@ -1405,6 +1410,44 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
         } // TO DO: graph
     }
     return kEmptyStr;
+}
+
+
+CBioseq_set_Handle GetGenProdSetParent (CBioseq_set_Handle set)
+{
+    CBioseq_set_Handle gps;
+
+    CSeq_entry_Handle parent = set.GetParentEntry();
+    if (!parent) {
+        return gps;
+    } else if (!(parent = parent.GetParentEntry())) {
+        return gps;
+    } else if (!parent.IsSet()) {
+        return gps;
+    } else if (parent.GetSet().IsSetClass() && parent.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set) {
+        return parent.GetSet();
+    } else {
+        return GetGenProdSetParent (parent.GetSet());
+    }    
+}
+
+
+CBioseq_set_Handle GetGenProdSetParent (CBioseq_Handle bioseq)
+{
+    CBioseq_set_Handle gps;
+
+    CSeq_entry_Handle parent = bioseq.GetParentEntry();
+    if (!parent) {
+        return gps;
+    } else if (!(parent = parent.GetParentEntry())) {
+        return gps;
+    } else if (!parent.IsSet()) {
+        return gps;
+    } else if (parent.GetSet().IsSetClass() && parent.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set) {
+        return parent.GetSet();
+    } else {
+        return GetGenProdSetParent (parent.GetSet());
+    }
 }
 
 

@@ -211,6 +211,9 @@ inline
 bool IsResidue(unsigned char residue) { return residue <= 250; }
 string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope);
 
+CBioseq_set_Handle GetGenProdSetParent (CBioseq_set_Handle set);
+CBioseq_set_Handle GetGenProdSetParent (CBioseq_Handle set);
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)
