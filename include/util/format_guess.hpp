@@ -111,6 +111,11 @@ public:
         eQuick,
         eThorough
     };
+
+    enum EOnError { 
+        eDefault = 0,      //< Return eUnknown 
+        eThrowOnBadSource, //< Throw an exception if the data source (stream, file) can't be read 
+    }; 
     
     // Guess sequence type. Function calculates sequence alphabet and 
     // identifies if the source belongs to nucleotide or protein sequence
@@ -123,12 +128,16 @@ public:
     //  ------------------------------------------------------------------------
 public:
     /// Guess file format structure.
-    EFormat Format(const string& path);
+    static
+    EFormat Format(const string& path, EOnError onerror = eDefault);
+
     /// Format prediction based on an input stream
-    EFormat Format(CNcbiIstream& input);
+    static
+    EFormat Format(CNcbiIstream& input, EOnError onerror = eDefault);
     
     /// Format prediction based on memory buffer
     /// Recommended that buffer should contain at least 1K of data
+    static
     EFormat Format(const unsigned char* buffer, 
                    size_t               buffer_size);
 
@@ -152,12 +161,12 @@ public:
 
     //  Interface:
 public:
-    EFormat GuessFormat(
-        EMode = eQuick );
+    
+    NCBI_DEPRECATED EFormat GuessFormat(EMode);
+    NCBI_DEPRECATED bool TestFormat(EFormat,EMode);
 
-    bool TestFormat(
-        EFormat,
-        EMode = eQuick );
+    EFormat GuessFormat(EOnError onerror = eDefault);
+    bool TestFormat(EFormat,EOnError onerror = eDefault);
 
     // helpers:
 protected:
@@ -201,6 +210,9 @@ protected:
         EMode );
     bool TestFormatSnpMarkers(
         EMode );
+
+private:
+    static bool x_TestInput( CNcbiIstream& input, EOnError onerror );
 
     // data:
 protected:

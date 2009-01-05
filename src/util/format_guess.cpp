@@ -31,6 +31,7 @@
   
 #include <ncbi_pch.hpp>
 #include <util/format_guess.hpp>
+#include <util/util_exception.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/stream_utils.hpp>
@@ -1007,12 +1008,9 @@ CFormatGuess::SequenceType(const char* str, unsigned length)
 }
 
 
-CFormatGuess::EFormat CFormatGuess::Format(const string& path)
+CFormatGuess::EFormat CFormatGuess::Format(const string& path, EOnError onerror)
 {
     CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
-    if (!input.is_open()) {
-        return eUnknown;
-    }
     return Format(input);
 }
 
@@ -1229,8 +1227,12 @@ CFormatGuess::Format(const unsigned char* buffer,
 }
 
 
-CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
+CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input, EOnError onerror)
 {
+    if (!x_TestInput(input, onerror)) {
+        return eUnknown;
+    }
+
     CT_POS_TYPE orig_pos = input.tellg();
 
     unsigned char buf[1024];
@@ -1284,9 +1286,20 @@ CFormatGuess::~CFormatGuess()
 
 //  ----------------------------------------------------------------------------
 CFormatGuess::EFormat
-CFormatGuess::GuessFormat(
-    EMode mode )
+CFormatGuess::GuessFormat( EMode )
 {
+    return GuessFormat(eDefault);
+}
+
+CFormatGuess::EFormat
+CFormatGuess::GuessFormat(
+    EOnError onerror )
+{
+    if (!x_TestInput(m_Stream, onerror)) {
+        return eUnknown;
+    }
+    EMode mode = eQuick;
+
     if ( TestFormatRepeatMasker( mode ) ) {
         return eRmo;
     }
@@ -1343,10 +1356,21 @@ CFormatGuess::GuessFormat(
 
 //  ----------------------------------------------------------------------------
 bool
+CFormatGuess::TestFormat( EFormat format, EMode )
+{
+    return TestFormat( format, eDefault);
+}
+
+bool
 CFormatGuess::TestFormat(
     EFormat format,
-    EMode mode )
+    EOnError onerror )
 {
+    if (format != eUnknown && !x_TestInput(m_Stream, onerror)) {
+        return false;
+    }
+    EMode mode = eQuick;
+
     switch( format ) {
     
     case eRmo:
@@ -1736,4 +1760,16 @@ CFormatGuess::TestFormatTextAsn(
     return false;
 }
 
- END_NCBI_SCOPE
+bool CFormatGuess::x_TestInput( CNcbiIstream& input, EOnError onerror )
+{
+    if (!input) {
+        if (onerror == eThrowOnBadSource) {
+            NCBI_THROW(CUtilException,eNoInput,"Unreadable input stream");
+        }
+        return false;
+    }
+    return true;
+}
+
+
+END_NCBI_SCOPE
