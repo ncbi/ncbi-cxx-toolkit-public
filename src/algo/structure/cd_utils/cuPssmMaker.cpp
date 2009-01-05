@@ -576,5 +576,77 @@ void PssmMaker::printAlignment(string& fileName)
 	printMsa(fileName.c_str(), m_pssmInput->GetData(), seqIdStr);
 }
 
+void PssmMaker::printAlignmentByColumn(string& fileName)
+{
+    if (fileName.length() == 0) {
+        return;
+    }
+
+    Uint4 i, j;
+    unsigned int nRows, nCols;
+	vector<string> seqIdStr;
+	const vector< CRef< CSeq_id > >& seqIds = m_conMaker->getResidueProfiles().getSeqIdsByRow();
+    const PSIMsa& msa = *m_pssmInput->GetData();
+
+    FILE* fp = fopen(fileName.c_str(), "w");
+
+    nCols = msa.dimensions->query_length;
+    nRows = msa.dimensions->num_seqs;
+
+	if (!IsConsensus(seqIds[0]))
+		seqIdStr.push_back(seqIds[0]->AsFastaString());
+	for (unsigned int k = 1; k < seqIds.size(); k++)
+	{
+		seqIdStr.push_back(seqIds[k]->AsFastaString());
+	}
+    for (i = 0; i < seqIdStr.size(); ++i) {
+        fprintf(fp, "row %d:  %s\n", i,seqIdStr[i].c_str());
+    }
+
+//    int startRow = 0; //msa->dimensions->num_seqs + 1 - seqIds.size();
+	//if startRow == 1, this means row 0 is the consensus and should be ignored
+//	ASSERT(startRow >= 0);
+    static const string dash("-");
+    fprintf(fp, "Query length:  %d;  Number of rows:  %d\n", nCols, nRows);
+    for (j = 0; j < nCols; j++) {
+        fprintf(fp, ">column %d\n", j+1);
+        for (i = 0; i < nRows + 1; i++) {
+            if (msa.data[i][j].is_aligned) {
+				fprintf(fp, "%c", ColumnResidueProfile::getEaaCode(msa.data[i][j].letter));
+            } else {
+                fprintf(fp, "-");
+            }
+        }
+        fprintf(fp, "\n");
+    }
+    fclose(fp);
+}
+
+void PssmMaker::getPssmColumnResidues(map<unsigned int, string>& columnMap)
+{
+    unsigned int i, j, nRows, nCols;
+    string colResidues;
+
+    const PSIMsa& msa = *m_pssmInput->GetData();
+    nCols = msa.dimensions->query_length;
+    nRows = msa.dimensions->num_seqs;
+
+    columnMap.clear();
+
+    for (j = 0; j < nCols; j++) {
+        colResidues.clear();
+        colResidues.assign(nRows + 1, '-');
+        for (i = 0; i < nRows + 1; i++) {
+            if (msa.data[i][j].is_aligned) {
+                colResidues[i] = ColumnResidueProfile::getEaaCode(msa.data[i][j].letter);
+            } else {
+                colResidues[i] = '-';
+            }
+        }
+        columnMap[j] = colResidues;
+    }
+}
+
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE

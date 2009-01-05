@@ -137,6 +137,10 @@ public:
 	short getPseudoCount() {return m_pseudoCount;}
 	ConsensusMaker& getConsensusMaker() {return *m_conMaker;}
 	void printAlignment(string& fileName);
+    void printAlignmentByColumn(string& fileName);
+
+    //  Get the residues corresponding to each column of the PSSM.
+    void getPssmColumnResidues(map<unsigned int, string>& columnMap);
 
 private:
 	ConsensusMaker* m_conMaker;
