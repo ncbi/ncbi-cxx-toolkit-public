@@ -254,7 +254,7 @@ class CKmerCountsException : public CException
 {
 public:
     enum EErrCode {
-        eUnsupportedSeqLoc = 1,
+        eUnsupportedSeqLoc,
         eUnsuportedDistMethod,
         eInvalidOptions,
         eBadSequence
@@ -367,6 +367,11 @@ public:
                               objects::CScope& scope,
                               vector<TKmerCounts>& counts)
     {
+        if (seqs.empty()) {
+            NCBI_THROW(CKmerCountsException, eInvalidOptions,
+                       "Empty list of sequences");
+        }
+
         counts.clear();
 
         TKmerCounts::PreCount();
@@ -388,6 +393,11 @@ public:
                   TDistMatrix& dmat)
         
     {
+        if (counts.empty()) {
+            NCBI_THROW(CKmerCountsException, eBadSequence,
+                       "The list of k-mer counts vectors is empty");
+        }
+
         dmat.Resize(counts.size(), counts.size(), 0.0);
         for (int i=0;i < (int)counts.size() - 1;i++) {
             for (int j=i+1;j < (int)counts.size();j++) {

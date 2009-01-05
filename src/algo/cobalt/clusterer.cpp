@@ -40,8 +40,31 @@ Contents: Implementation of CClusterer class
 USING_NCBI_SCOPE;
 USING_SCOPE(cobalt);
 
+static void s_CheckDistMatrix(const CClusterer::TDistMatrix& dmat)
+{
+    if (dmat.GetRows() != dmat.GetCols()) {
+        NCBI_THROW(CClustererException, eInvalidOptions,
+                   "Distance matrix is not square");
+    }
+}
+
+
+CClusterer::CClusterer(const CClusterer::TDistMatrix& dmat)
+    : m_DistMatrix(new TDistMatrix(dmat))
+{
+    s_CheckDistMatrix(*m_DistMatrix);
+}
+
+CClusterer::CClusterer(auto_ptr<CClusterer::TDistMatrix>& dmat)
+    : m_DistMatrix(dmat)
+{
+    s_CheckDistMatrix(*m_DistMatrix);
+}
+
 void CClusterer::SetDistMatrix(const TDistMatrix& dmat)
 {
+    s_CheckDistMatrix(dmat);
+
     m_DistMatrix.reset(new TDistMatrix());
     m_DistMatrix->Resize(dmat.GetRows(), dmat.GetCols());
     copy(dmat.begin(), dmat.end(), m_DistMatrix->begin());
@@ -49,8 +72,33 @@ void CClusterer::SetDistMatrix(const TDistMatrix& dmat)
 
 void CClusterer::SetDistMatrix(auto_ptr<TDistMatrix>& dmat)
 {
+    s_CheckDistMatrix(*dmat);
+
     m_DistMatrix = dmat;
 }
+
+const CClusterer::TDistMatrix& CClusterer::GetDistMatrix(void) const
+{
+    if (!m_DistMatrix.get()) {
+        NCBI_THROW(CClustererException, eNoDistMatrix,
+                   "Distance matrix not assigned");
+    }
+
+    return *m_DistMatrix;
+}
+
+
+const CClusterer::TSingleCluster&
+CClusterer::GetSingleCluster(size_t index) const
+{
+    if (index >= m_Clusters.size()) {
+        NCBI_THROW(CClustererException, eClusterIndexOutOfRange,
+                   "Cluster index out of range");
+    }
+
+    return m_Clusters[index];
+}
+
 
 // Finds maximum distance between given element and element in given cluster
 static double s_FindMaxDistFromElem(int elem, 
@@ -275,15 +323,23 @@ void CClusterer::SetPrototypes(void) {
 
 void CClusterer::GetClusterDistMatrix(int index, TDistMatrix& mat) const
 {
-    _ASSERT(index < (int)m_Clusters.size());
+    if (index >= (int)m_Clusters.size()) {
+        NCBI_THROW(CClustererException, eClusterIndexOutOfRange,
+                   "Cluster index out of range");
+    }
 
     const CSingleCluster& cluster = m_Clusters[index];
 
     mat.Resize(cluster.size(), cluster.size(), 0.0);
     for (size_t i=0;i < cluster.size() - 1;i++) {
         for (size_t j=i+1;j < cluster.size();j++) {
-            _ASSERT(cluster[i] < (int)m_DistMatrix->GetRows());
-            _ASSERT(cluster[j] < (int)m_DistMatrix->GetRows());
+
+            if (cluster[i] >= (int)m_DistMatrix->GetRows()
+                || cluster[j] >= (int)m_DistMatrix->GetRows()) {
+                NCBI_THROW(CClustererException, eElementOutOfRange,
+                           "Distance matrix size is smaller than number of"
+                           " elements");
+            }
 
             mat(i, j) = mat(j, i) = (*m_DistMatrix)(cluster[i], cluster[j]);
         }
@@ -299,10 +355,24 @@ void CClusterer::Reset(void)
 
 //------------------------------------------------------------
 
+int CClusterer::CSingleCluster::operator[](size_t index) const
+{
+    if (index >= m_Elements.size()) {
+        NCBI_THROW(CClustererException, eElemIndexOutOfRange,
+                   "Cluster element index out of range");
+    }
+
+    return m_Elements[index];
+}
+
+
 int CClusterer::CSingleCluster::FindCenterElement(const TDistMatrix& 
                                                   dmatrix) const
 {
-    _ASSERT(m_Elements.size() > 0);
+    if (m_Elements.empty()) {
+        NCBI_THROW(CClustererException, eInvalidOptions, "Cluster is empty");
+    }
+
 
     if (m_Elements.size() == 1) {
         return m_Elements[0];

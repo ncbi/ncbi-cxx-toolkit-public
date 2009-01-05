@@ -57,74 +57,73 @@ public:
     class CSingleCluster : public CObject
     {
     public:
-    typedef vector<int>::const_iterator const_iterator;
-    typedef vector<int>::iterator iterator;
+        typedef vector<int>::const_iterator const_iterator;
+        typedef vector<int>::iterator iterator;
 
     public:
-    /// Create empty cluster
-    ///
-    CSingleCluster(void) : m_Prototype(-1) {}
+        /// Create empty cluster
+        ///
+        CSingleCluster(void) : m_Prototype(-1) {}
 
-    /// Add element to the cluster
-    /// @param el Index of an element
-    ///
-    void AddElement(int el) {m_Elements.push_back(el);}
+        /// Add element to the cluster
+        /// @param el Index of an element
+        ///
+        void AddElement(int el) {m_Elements.push_back(el);}
 
-    /// Removes all elements from the cluster
-    ///
-    void clear(void) {m_Elements.clear();}
+        /// Removes all elements from the cluster
+        ///
+        void clear(void) {m_Elements.clear();}
 
-    /// Set cluster prototype
-    /// @param el Index of element to be used as cluster prototype
-    ///
-    /// Prototype does not have to belong to the cluster
-    void SetPrototype(int el) {m_Prototype = el;}
+        /// Set cluster prototype
+        /// @param el Index of element to be used as cluster prototype
+        ///
+        /// Prototype does not have to belong to the cluster
+        void SetPrototype(int el) {m_Prototype = el;}
 
-    /// Get cluster prototype
-    /// @return Index of element used as cluster prototype
-    ///
-    int GetPrototype(void) const {return m_Prototype;}
+        /// Get cluster prototype
+        /// @return Index of element used as cluster prototype
+        ///
+        int GetPrototype(void) const {return m_Prototype;}
 
-    /// Set maximum distance in cluster
-    /// @param dist Maximum distance
-    ///
-    void SetMaxDistance(double dist) {m_Diameter = dist;}
+        /// Set maximum distance in cluster
+        /// @param dist Maximum distance
+        ///
+        void SetMaxDistance(double dist) {m_Diameter = dist;}
         
-    /// Get maximum distance in cluster
-    /// @return Maximum distance in cluster
-    ///
-    double GetMaxDistance(void) const {return m_Diameter;}
+        /// Get maximum distance in cluster
+        /// @return Maximum distance in cluster
+        ///
+        double GetMaxDistance(void) const {return m_Diameter;}
 
-    /// Get cluster size
-    /// @return Number of elements in the cluster
-    ///
-    size_t size(void) const {return m_Elements.size();}
+        /// Get cluster size
+        /// @return Number of elements in the cluster
+        ///
+        size_t size(void) const {return m_Elements.size();}
 
-    /// Find element that is closest to the center of the cluster
-    /// @param dmatrix Full distance matrix used to cluster data
-    /// @return Index of element that has smallest distance to all other
-    /// elements
-    ///
-    int FindCenterElement(const TDistMatrix& dmatrix) const;
+        /// Find element that is closest to the center of the cluster
+        /// @param dmatrix Full distance matrix used to cluster data
+        /// @return Index of element that has smallest distance to all other
+        /// elements
+        ///
+        int FindCenterElement(const TDistMatrix& dmatrix) const;
 
-    /// Get element
-    /// @param index Element index
-    /// @return Element
-    ///
-    int operator[](size_t index) const
-    {_ASSERT(index < m_Elements.size()); return m_Elements[index];}
+        /// Get element
+        /// @param index Element index
+        /// @return Element
+        ///
+        int operator[](size_t index) const;
 
-    // Iterators
+        // Iterators
 
-    const_iterator begin(void) const {return m_Elements.begin();}
-    const_iterator end(void) const {return m_Elements.end();}
-    iterator begin(void) {return m_Elements.begin();}
-    iterator end(void) {return m_Elements.end();}
+        const_iterator begin(void) const {return m_Elements.begin();}
+        const_iterator end(void) const {return m_Elements.end();}
+        iterator begin(void) {return m_Elements.begin();}
+        iterator end(void) {return m_Elements.end();}
 
     protected:
-    int m_Prototype;          ///< Index of cluster representative element
-    double m_Diameter;        ///< Max distance between elements
-    vector<int> m_Elements;   ///< List of indeces of cluster elements
+        int m_Prototype;          ///< Index of cluster representative element
+        double m_Diameter;        ///< Max distance between elements
+        vector<int> m_Elements;   ///< List of indeces of cluster elements
     };
 
     typedef CSingleCluster TSingleCluster;
@@ -139,12 +138,12 @@ public:
     /// Create clusterer
     /// @param dmat Distance matrix
     ///
-    CClusterer(const TDistMatrix& dmat) : m_DistMatrix(new TDistMatrix(dmat)) {}
+    CClusterer(const TDistMatrix& dmat);
 
     /// Create clusterer
     /// @param dmat Pointer to distance matrix 
     ///
-    CClusterer(auto_ptr<TDistMatrix>& dmat) : m_DistMatrix(dmat) {}
+    CClusterer(auto_ptr<TDistMatrix>& dmat);
 
     /// Set new distance matrix
     /// @param dmat Distance matrix
@@ -159,8 +158,7 @@ public:
     /// Get distance matrix
     /// @return Distance matrix
     ///
-    const TDistMatrix& GetDistMatrix(void) const 
-    {_ASSERT(m_DistMatrix.get()); return *m_DistMatrix;}
+    const TDistMatrix& GetDistMatrix(void) const;
 
     /// Compute clusters
     /// @param max_dim Maximum distance between two elements in a cluster
@@ -171,8 +169,7 @@ public:
     /// @param index Cluster index
     /// @return list of element indeces that belong to the cluster
     ///
-    const TSingleCluster& GetSingleCluster(size_t index) const
-    {_ASSERT(index < m_Clusters.size()); return m_Clusters[index];}
+    const TSingleCluster& GetSingleCluster(size_t index) const;
 
     /// Get clusters
     /// @return list of clusters
@@ -205,6 +202,25 @@ public:
 protected:
     auto_ptr<TDistMatrix> m_DistMatrix;
     TClusters m_Clusters;
+};
+
+
+/// Exceptions for CClusterer class
+class CClustererException : public CException
+{
+public:
+
+    /// Error codes
+    enum EErrCode {
+        eClusterIndexOutOfRange,  ///< Index of cluster out of range
+        eElemIndexOutOfRange,     ///< Index of cluster element out of range
+        eElementOutOfRange,       ///< Cluster element is larger than distance
+                                  ///< matrix size
+        eNoDistMatrix,            ///< Distance matrix not assigned
+        eInvalidOptions
+    };
+
+    NCBI_EXCEPTION_DEFAULT(CClustererException, CException);
 };
 
 
