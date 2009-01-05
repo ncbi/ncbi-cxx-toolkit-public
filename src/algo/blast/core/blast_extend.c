@@ -134,6 +134,8 @@ Int2 BlastExtendWordNew(Uint4 query_length,
         ewp->hash_table->chain =
             calloc(ewp->hash_table->capacity, sizeof(DiagHashCell));
         ewp->hash_table->occupancy = 1;
+        ewp->hash_table->window = word_params->options->window_size;
+        ewp->hash_table->offset = word_params->options->window_size;
     } else {                    /* container_type == eDiagArray */
 
         Boolean multiple_hits = (word_params->options->window_size > 0);

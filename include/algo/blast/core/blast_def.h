@@ -35,6 +35,7 @@
 
 #include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/blast_export.h>
+#include <algo/blast/core/blast_program.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -257,6 +258,18 @@ typedef struct SPHIQueryInfo {
     double probability; /**< Estimated probability of the pattern */
     char* pattern;   /**< Pattern used, saved here for formatting purposes. */
 } SPHIQueryInfo;
+
+
+/** Information about target translations. */
+typedef struct SBlastTargetTranslation {
+   EBlastProgramType program_number; /**< Program being run. */
+   const Uint1* gen_code_string; /**< Genetic code string for translation. */
+   Uint1** translations; /**< two dimensional array for translations. */
+   Boolean partial; /**< specifies that nucleotide sequence is too long to translated. */
+   Int4 num_frames; /**< how many frames, one dimension of translation_buffer. */
+   Int4* range; /**< start and stop of translated sequences. */
+   BLAST_SequenceBlk* subject_blk; /**< target sequence being translated. */
+} SBlastTargetTranslation;
 
 /************************* Progress monitoring/interruptible API *************/
 

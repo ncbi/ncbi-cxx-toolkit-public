@@ -1236,11 +1236,15 @@ BOOST_AUTO_TEST_CASE( testNewFilteringDefaults )
     
     opts = CBlastOptionsFactory::Create(eTblastn);
     BOOST_REQUIRE(opts.NotEmpty());
-    BOOST_CHECK_EQUAL(string("F"), string(opts->GetFilterString()));/* NCBI_FAKE_WARNING */
+    char* filter_string = opts->GetFilterString();
+    BOOST_CHECK_EQUAL(string("F"), string(filter_string));/* NCBI_FAKE_WARNING */
+    sfree(filter_string);
 
     opts = CBlastOptionsFactory::Create(eBlastp);
     BOOST_REQUIRE(opts.NotEmpty());
-    BOOST_CHECK_EQUAL(string("F"), string(opts->GetFilterString()));/* NCBI_FAKE_WARNING */
+    filter_string = opts->GetFilterString();
+    BOOST_CHECK_EQUAL(string("F"), string(filter_string));/* NCBI_FAKE_WARNING */
+    sfree(filter_string);
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

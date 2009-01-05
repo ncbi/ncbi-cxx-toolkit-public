@@ -455,9 +455,7 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
     BLAST_SequenceBlk* subject_blk = NULL;
     Int2 status = 0;
     int i;
-    Uint1* translation_buffer = NULL;
-    Int4* frame_offsets = NULL;
-    Boolean partial_translation = FALSE;
+    SBlastTargetTranslation* target_t = NULL;
 
     if ( !hsp_list || (program_number != eBlastTypeBlastp && program_number != eBlastTypeTblastn)) 
         return;
@@ -473,15 +471,14 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
 
     if (program_number == eBlastTypeTblastn) {
         subject_blk = seq_arg.seq;
-	Blast_SetUpSubjectTranslation(subject_blk, gen_code_string,
-            &translation_buffer, &frame_offsets, &partial_translation);
+	BlastTargetTranslationNew(subject_blk, gen_code_string, eBlastTypeTblastn,
+            kIsOutOfFrame, &target_t);
     }
     else {
         subject = seq_arg.seq->sequence;
     }
 
     for (i = 0; i < hsp_list->hspcnt; i++) {
-        Int4 start_shift = 0;
         BlastHSP* hsp = hsp_list->hsp_array[i];
 
         /* Initialize the query */
@@ -496,28 +493,15 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
 
         /* Translate subject if needed. */
         if (program_number == eBlastTypeTblastn) {
-            if (partial_translation) {
-            	Int4 subject_length = 0; /* Dummy variable */
-            	Blast_HSPGetPartialSubjectTranslation(subject_blk, hsp, FALSE,
-               		gen_code_string, &translation_buffer, &subject,
-               		&subject_length, &start_shift);
-            } else {
-            	Int4 subject_context = BLAST_FrameToContext(hsp->subject.frame, program_number);
-            	subject = translation_buffer + frame_offsets[subject_context] + 1;
-            }
+            const Uint1* target_sequence = Blast_HSPGetTargetTranslation(target_t, hsp, NULL);
+            status = Blast_HSPGetNumIdentities(query, target_sequence, hsp, scoring_options, 0);
         }
-
-        status = Blast_HSPGetNumIdentities(query, subject, hsp, scoring_options, 0);
-
-        /* If partial translation was done and subject sequence was shifted,
-        shift back offsets in the HSP structure. */
-        if (start_shift != 0)
-             Blast_HSPAdjustSubjectOffset(hsp, start_shift);
+        else
+            status = Blast_HSPGetNumIdentities(query, subject, hsp, scoring_options, 0);
 
         ASSERT(status == 0);
     }
-    sfree(translation_buffer);
-    sfree(frame_offsets);
+    target_t = BlastTargetTranslationFree(target_t);
     BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
     BlastSequenceBlkFree(seq_arg.seq);
 }

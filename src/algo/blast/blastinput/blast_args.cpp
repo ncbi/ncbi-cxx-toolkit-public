@@ -1032,7 +1032,7 @@ CQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("Query filtering options");
     // lowercase masking
     arg_desc.AddFlag(kArgUseLCaseMasking, 
-                     "Use lower case filtering in query sequence(s)?", true);
+         "Use lower case filtering in query and subject sequence(s)?", true);
 
     arg_desc.SetCurrentGroup("Input query options");
     // query location

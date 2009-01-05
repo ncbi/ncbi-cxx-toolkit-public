@@ -89,15 +89,14 @@ CRemoteBlastDbAdapter::GetBioseqNoData(int oid, int /* target_gi = 0 */)
     return retval;
 }
 
-/// Returns false if the sequence requested could not be found or else throws a
-/// CRemoteBlastException built from the errors/warnings returned by
-/// server
+/// Returns false always. Logs an error message with severity warning for all
+/// errors but sequence not found.
 /// @param errors errors reported by server [in]
 /// @param warnings warnings reported by server [in]
 static bool 
 RemoteBlastDbLoader_ErrorHandler(const string& errors, const string& warnings)
 {
-    bool retval = false;
+    const bool retval = false;
     /// FIXME ideally this would come from some error code rather than string
     /// parsing
     if (NStr::Find(errors, "Failed to fetch sequence: [") != NPOS) {
@@ -115,7 +114,8 @@ RemoteBlastDbLoader_ErrorHandler(const string& errors, const string& warnings)
         msg = "Failed to retrieve sequence data via remote BLAST database ";
         msg += "data loader";
     }
-    NCBI_THROW(CRemoteBlastException, eServiceNotAvailable, msg);
+    ERR_POST(Warning << msg);
+    return retval;
 }
 
 void CRemoteBlastDbAdapter::x_FetchData(int oid, int begin, int end)

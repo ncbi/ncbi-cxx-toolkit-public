@@ -57,7 +57,8 @@ CRef< CSeq_entry > CMaskFastaReader::GetNextSequence()
                     "error reading input stream" );
         }
 
-        if( aSeqEntry != 0 && aSeqEntry->IsSeq() )
+        if( aSeqEntry != 0 && aSeqEntry->IsSeq() && 
+            aSeqEntry->GetSeq().IsNa() == is_nucleotide_)
             return aSeqEntry;
         else break;
     }

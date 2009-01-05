@@ -1453,6 +1453,20 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
     return score_info;
 }
 
+vector <CShowBlastDefline::SDeflineInfo*> 
+CShowBlastDefline::GetDeflineInfo(vector< CConstRef<CSeq_id> > &seqIds)
+{
+    vector <CShowBlastDefline::SDeflineInfo*>  sdlVec;
+    for(int i = 0; i < seqIds.size(); i++) {
+        list<int> use_this_gi;
+        CShowBlastDefline::SDeflineInfo* sdl = x_GetDeflineInfo(seqIds[i], use_this_gi, i + 1 );
+        sdlVec.push_back(sdl);        
+    }
+    return sdlVec;
+}
+
+
+
 CShowBlastDefline::SDeflineInfo* 
 CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_gi, int blast_rank)
 {

@@ -137,6 +137,8 @@ name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment%d',\
 static const string k_Checkbox = "<input type=\"checkbox\" \
 name=\"getSeqGi\" value=\"%s\" onClick=\"synchronizeCheck(this.value, \
 'getSeqAlignment%d', 'getSeqGi', this.checked)\">";
+
+static const string k_CheckboxEx = "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%s\">";
 #ifdef USE_ORG_IMPL
 static string k_GetSeqSubmitForm[] = {"<FORM  method=\"post\" \
 action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
@@ -1282,7 +1284,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     }
                     //get sequence checkbox
                     if((m_AlignOption & eMergeAlign) && 
-                       (m_AlignOption & eSequenceRetrieval) && m_CanRetrieveSeq){
+			(m_AlignOption & eSequenceRetrieval) && m_CanRetrieveSeq){
                         char checkboxBuf[512];
                         if (row == 0) {
                             sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(),
@@ -1294,7 +1296,17 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                         }
                         out << checkboxBuf;        
                     }
-                    
+                    else if(m_AlignOption & eShowCheckBox) {                        
+                        const CRef<CSeq_id> seqID = FindBestChoice(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), CSeq_id::WorstRank);
+                        string id_str;
+                        seqID->GetLabel(&id_str, CSeq_id::eContent);
+                        if(seqID->IsLocal()) {
+                            id_str = "lcl|" + id_str;            
+                        }        
+                        char checkboxBuf[512];                        
+                        sprintf(checkboxBuf, k_CheckboxEx.c_str(),id_str.c_str());                                    
+                        out << checkboxBuf;        
+                    }                    
                     if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
                        (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
                         urlLink = x_GetUrl(m_AV->GetBioseqHandle(row).

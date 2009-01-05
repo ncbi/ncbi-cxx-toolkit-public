@@ -41,7 +41,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE */
 
 /** swap (pointers to) a pair of sequences */
-#define SWAP_SEQS(A, B) {Uint1 *tmp = (A); (A) = (B); (B) = tmp; }
+#define SWAP_SEQS(A, B) {const Uint1 *tmp = (A); (A) = (B); (B) = tmp; }
 
 /** swap two integers */
 #define SWAP_INT(A, B) {Int4 tmp = (A); (A) = (B); (B) = tmp; }
@@ -59,8 +59,8 @@ static char const rcsid[] =
  *             (used for score matrix info) [in]
  * @return The score of the best local alignment between A and B
  */
-static Int4 s_SmithWatermanScoreOnly(Uint1 *A, Int4 a_size,
-                            Uint1 *B, Int4 b_size,
+static Int4 s_SmithWatermanScoreOnly(const Uint1 *A, Int4 a_size,
+                            const Uint1 *B, Int4 b_size,
                             Int4 gap_open, Int4 gap_extend,
                             BlastGapAlignStruct *gap_align)
 {
@@ -166,8 +166,8 @@ static Int4 s_SmithWatermanScoreOnly(Uint1 *A, Int4 a_size,
  *             (used for score matrix info) [in]
  * @return The score of the best local alignment between A and B
  */
-static Int4 s_NuclSmithWaterman(Uint1 *B, Int4 b_size,
-                                Uint1 *A, Int4 a_size,
+static Int4 s_NuclSmithWaterman(const Uint1 *B, Int4 b_size,
+                                const Uint1 *A, Int4 a_size,
                                 Int4 gap_open, Int4 gap_extend,
                                 BlastGapAlignStruct *gap_align)
 {
@@ -281,7 +281,7 @@ enum {
  * @param start_shift Bias to be applied to subject offsets [in]
  */
 static void s_GetTraceback(EBlastProgramType program_number, 
-                           Uint1 *trace, Uint1 *A, Uint1 *B, Int4 b_size,
+                           Uint1 *trace, const Uint1 *A, const Uint1 *B, Int4 b_size,
                            Int4 gap_open, Int4 gap_extend,
                            BlastGapAlignStruct *gap_align,
                            Int4 a_end, Int4 b_end, Int4 best_score,
@@ -417,8 +417,8 @@ typedef struct BlastGapSW{
 
 /* See blast_sw.h for details */
 void SmithWatermanScoreWithTraceback(EBlastProgramType program_number,
-                                     Uint1 *A, Int4 a_size,
-                                     Uint1 *B, Int4 b_size,
+                                     const Uint1 *A, Int4 a_size,
+                                     const Uint1 *B, Int4 b_size,
                                      BlastHSP *template_hsp,
                                      BlastHSPList *hsp_list,
                                      const BlastScoringParameters *score_params,

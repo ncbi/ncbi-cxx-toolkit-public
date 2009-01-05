@@ -33,6 +33,8 @@
 ///@guide_tree.hpp
 ///Phylogenetic tree.
 
+#include <corelib/ncbiexpt.hpp>
+
 #include <util/image/image_io.hpp>
 
 #include <gui/opengl/mesa/glcgi_image.hpp>
@@ -70,21 +72,46 @@ public:
 
     /// Output formats
     enum ETreeFormat {
-        eImage, eSerial, eNewick, eNexus
+        eImage, eASN, eNewick, eNexus
     };
 
+    
+    // Feature tags for CioTreeContainer
+
+    /// Sequence label feature tag
     static const string kLabelTag;
+
+    /// Sequence id feature tag
     static const string kSeqIDTag;
+
+    /// Sequence title feature tag
     static const string kSeqTitleTag;
+
+    /// Organizm name feature tag
     static const string kOrganismTag;
+
+    /// Accession number feature tag
     static const string kAccessionNbrTag;
+
+    /// Blast name feature tag
     static const string kBlastNameTag;
+
+    /// Alignment index id feature tag
     static const string kAlignIndexIdTag;
 
+    /// Node color feature tag (used by CPhyloTreeNode)
     static const string kNodeColorTag;
+
+    /// Node label color feature tag (used by CPhyloTreeNode)
     static const string kLabelColorTag;
+
+    /// Node label backrground color tag (used by CPhyloTreeNode)
     static const string kLabelBgColorTag;
+
+    /// Node label tag color tag (used by CPhyloTreeNode)
     static const string kLabelTagColor;
+
+    /// Node subtree collapse tag (used by CPhyloTreeNode)
     static const string kCollapseTag;
 
 
@@ -172,34 +199,22 @@ public:
     ///
     int GetQueryNodeId(void) {return m_QueryNodeId;}
 
-    /// Get net cache kye for tree structure
-    /// @return Net cache key
-    ///
-    string GetTreeKey(void) {return m_TreeKey;}
-
-    /// Get net cache key for image
-    /// @return Net cache key
-    ///
-    string GetImageKey(void) {return m_ImageKey;}
-
     /// Get error message
     /// @return Error messsage
     ///
     string GetErrorMessage(void) {return m_ErrorMessage;}
 
 
-
     // --- Generating output ---
 
-    /// Save tree as: image, serial object, or text format in a file or net 
-    /// cache. Wraper around methods below.
+    /// Save tree as: image, ASN object, or text format in a file.
+    /// Wraper around methods below.
     /// @param format Output format [in]
-    /// @param name Output file name, if empty string, output will be put in
-    /// net cache for image and serial or directed to stdout for Newic and
-    /// Nexus [in]
+    /// @param name Output file name, if empty string, output will be
+    /// directed to stdout for Newic and Nexus [in]
     /// @return True on success, false on failure
     ///
-    bool SaveTreeAs(ETreeFormat format, const string& name = "");
+    bool SaveTreeAs(CNcbiOstream& ostr, ETreeFormat format);
 
 
     /// Write image to stream
@@ -208,9 +223,8 @@ public:
     ///
     bool WriteImage(CNcbiOstream& out);
 
-    /// Write image to file or net cache
-    /// @param filename Output file name, if empty, image will be put in net
-    /// cache [in]
+    /// Write image to file
+    /// @param filename Output file name [in]
     /// @return True on success, false on failure
     ///
     bool WriteImage(const string& filename = "");
@@ -221,9 +235,8 @@ public:
     ///
     bool WriteTree(CNcbiOstream& out);
 
-    /// Write tree structure to file or net cache
-    /// @param filename Output file name [in], ite empty, tree will be put in
-    /// net cache [in]
+    /// Write tree structure to file
+    /// @param filename Output file name [in]
     /// @return True on success, false on failure
     ///
     bool WriteTree(const string& filename = "");
@@ -265,6 +278,10 @@ public:
 
     // --- Tree manipulators ---
     
+    /// Fully expand tree
+    ///
+    void FullyExpand(void);
+
     /// Group nodes according to user-selected scheme and collapse subtrees
     /// composed of nodes that belong to the same group
     /// @param method Name of the method for simplifying the tree [in]
@@ -378,6 +395,132 @@ protected:
     void x_CollapseSubtrees(CPhyloTreeNodeGroupper& groupper);
 
 
+private:
+    
+    // Tree visitor classes used for manipulating the guide tree
+
+    /// Tree visitor, finds tree node by id
+    class CNodeFinder
+    {
+    public:
+
+        /// Constructor
+        /// @param node_id Id of node to be found [in]
+        CNodeFinder(IPhyNode::TID node_id) : m_NodeId(node_id), m_Node(NULL) {}
+
+        /// Get pointer to found node
+        /// @return Pointer to node or NULL if node not found
+        CPhyloTreeNode* GetNode(void) const {return m_Node;}
+
+        /// Check node id. Function invoked on each node by traversal function.
+        /// @param node Tree root [in]
+        /// @param delta Direction of tree traversal [in]
+        /// @return Traverse action
+        ETreeTraverseCode operator()(CPhyloTreeNode& node, int delta)
+        {
+            if (delta == 0 || delta == 1) {
+                if ((*node).GetId() == m_NodeId) {
+                    m_Node = &node;
+                    return eTreeTraverseStop;
+                } 
+            }
+            return eTreeTraverse;
+        }
+
+    protected:
+        IPhyNode::TID m_NodeId;  ///< Id of searched node
+        CPhyloTreeNode* m_Node;  ///< Pointer to node with desired id
+    };
+
+
+    /// Tree visitor class, expands all nodes and corrects node colors
+    class CExpander
+    {
+    public:
+        /// Expand subtree. Function invoked on each node by traversal function.
+        /// @param node Tree root [in]
+        /// @param delta Direction of tree traversal [in]
+        /// @return Traverse action
+        ETreeTraverseCode operator()(CPhyloTreeNode& node, int delta) 
+        {
+            if (delta == 0 || delta == 1) {
+                if (!node.Expanded() && !node.IsLeaf()) {
+                    node.ExpandCollapse(IPhyGraphicsNode::eShowChilds);
+                    (*node).SetFeature(CGuideTree::kNodeColorTag, "");
+                }
+            }
+            return eTreeTraverse;
+        }
+    };
+
+
+    // Tree visitor for examining whether a phylogenetic tree contains sequences
+    // with only one Blast Name
+    class CSingleBlastNameExaminer
+    {
+    public:
+
+        /// Constructor
+        CSingleBlastNameExaminer(void) : m_IsSingleBlastName(true) 
+        {
+            const CBioTreeFeatureDictionary& fdict
+                = CPhyTreeNode::GetDictionary();
+
+            if (!fdict.HasFeature(CGuideTree::kBlastNameTag)) {
+                NCBI_THROW(CException, eInvalid, 
+                           "No Blast Name feature CBioTreeFeatureDictionary");
+            }
+            else {
+                m_BlastNameFeatureId = fdict.GetId(CGuideTree::kBlastNameTag);
+            }
+        }
+
+        /// Check if all sequences in examined tree have the same Blast Name
+        ///
+        /// Meaningless if invoked before tree traversing
+        /// @return True if all sequences have common blast name, false otherwise
+        bool IsSingleBlastName(void) const {return m_IsSingleBlastName;}
+
+        /// Expamine node. Function invoked on each node by traversal function.
+        /// @param node Tree root [in]
+        /// @param delta Direction of tree traversal [in]
+        /// @return Traverse action
+        ETreeTraverseCode operator()(CPhyloTreeNode& node, int delta) 
+        {
+            if (delta == 0 || delta == 1) {
+                if (node.IsLeaf()) {
+
+                    const CBioTreeFeatureList& flist 
+                        = node.GetValue().GetBioTreeFeatureList();
+
+                    if (m_CurrentBlastName.empty()) {
+                        m_CurrentBlastName 
+                            = flist.GetFeatureValue(m_BlastNameFeatureId);
+                    }
+                    else {
+                        if (m_CurrentBlastName 
+                            != flist.GetFeatureValue(m_BlastNameFeatureId)) {
+                            m_IsSingleBlastName = false;
+                            return eTreeTraverseStop;
+                        }
+                    }
+                }
+            }
+            return eTreeTraverse;
+        }
+    
+    protected:
+        /// Is one blast name in the tree
+        bool m_IsSingleBlastName;              
+
+        /// Id of feature that holds blast name
+        TBioTreeFeatureId m_BlastNameFeatureId;
+
+        /// Last identified blast name
+        string m_CurrentBlastName;
+    };
+
+
 protected:
 
     /// Contains tree structure
@@ -407,88 +550,33 @@ protected:
     /// Id of query node
     int m_QueryNodeId;
 
+    /// GL context
     CRef<CGlOsContext> m_Context;
 
+    /// GL pane
     auto_ptr<CGlPane> m_Pane;
+
+    /// Phylogenetic tree renderer
     auto_ptr<IPhyloTreeRenderer> m_Renderer;
-
-    /// Net cache key for tree structure
-    string m_TreeKey;
-
-    /// Net cache image
-    string m_ImageKey;
 
     /// Error message
     string m_ErrorMessage;
-
 };
 
 
-// TODO: Those two classes should be member classes of CGuideTree
-
-///Tree visitor class, expands all nodes and corrects node colors
-class CPhyloTreeExpander
+/// Guide tree exceptions
+class CGuideTreeException : public CException
 {
 public:
-  ETreeTraverseCode operator()(CPhyloTreeNode& node, int delta) 
-  {
-      if (delta == 0 || delta == 1) {
-          if (!node.Expanded() && !node.IsLeaf()) {
-              node.ExpandCollapse(IPhyGraphicsNode::eShowChilds);
-              (*node).SetFeature(CGuideTree::kNodeColorTag, "");
-          }
-      }
-      return eTreeTraverse;
-  }
-};
 
+    /// Error code
+    enum EErrCode {
+        eInvalidOptions,    ///< Invalid parameter values
+        eNodeNotFound,      ///< Node with desired id not found
+        eTraverseProblem    ///< Problem in one of the tree visitor classes
+    };
 
-// Tree visitor for examining whether a phylogenetic tree contains sequences
-// with only one Blast Name
-class CPhyloTreeSingleBlastNameExaminer
-{
-public:
-    CPhyloTreeSingleBlastNameExaminer(void) : m_IsSingleBlastName(true) 
-    {
-        const CBioTreeFeatureDictionary& fdict = CPhyTreeNode::GetDictionary();
-        if (!fdict.HasFeature(CGuideTree::kBlastNameTag)) {
-            NCBI_THROW(CException, eInvalid, 
-                       "No Blast Name feature CBioTreeFeatureDictionary");
-        }
-        else {
-            m_BlastNameFeatureId = fdict.GetId(CGuideTree::kBlastNameTag);
-        }
-    }
-
-    bool IsSingleBlastName(void) const {return m_IsSingleBlastName;}
-    ETreeTraverseCode operator()(CPhyloTreeNode& node, int delta) 
-    {
-        if (delta == 0 || delta == 1) {
-            if (node.IsLeaf()) {
-
-                const CBioTreeFeatureList& flist 
-                    = node.GetValue().GetBioTreeFeatureList();
-
-                if (m_CurrentBlastName.empty()) {
-                    m_CurrentBlastName 
-                        = flist.GetFeatureValue(m_BlastNameFeatureId);
-                }
-                else {
-                    if (m_CurrentBlastName 
-                        != flist.GetFeatureValue(m_BlastNameFeatureId)) {
-                        m_IsSingleBlastName = false;
-                        return eTreeTraverseStop;
-                    }
-                }
-            }
-        }
-        return eTreeTraverse;
-    }
-    
-protected:
-    bool m_IsSingleBlastName;
-    TBioTreeFeatureId m_BlastNameFeatureId;
-    string m_CurrentBlastName;
+    NCBI_EXCEPTION_DEFAULT(CGuideTreeException, CException);
 };
 
 

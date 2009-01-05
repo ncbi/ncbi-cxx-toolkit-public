@@ -2227,29 +2227,40 @@ static Int4 s_MBScanSubject_11_2Mod4(const LookupTableWrap* lookup_wrap,
     Int4 last_offset = *end_offset;
     Int4 scan_step = mb_lt->scan_step;
     Int4 scan_step_byte = scan_step / COMPRESSION_RATIO;
+    Int4 top_shift, bottom_shift;
     
     max_hits -= mb_lt->longest_chain;
     ASSERT(lookup_wrap->lut_type == eMBLookupTable);
     ASSERT(mb_lt->lut_word_length == 11);
     ASSERT(scan_step % COMPRESSION_RATIO == 2);
- 
-    if (s_off % COMPRESSION_RATIO == 2)
-        goto base_2;
+
+    if ( (start_offset % 2) == 0)
+        {
+        top_shift = 2;
+        bottom_shift = 6;
+        }
+    else
+        {
+        top_shift = 0;
+        bottom_shift = 4;
+        }
+
+    if ( (s_off % COMPRESSION_RATIO == 2) || (s_off % COMPRESSION_RATIO == 3) )
+        goto base_23;
 
     while (s_off <= last_offset) {
-
         index = s[0] << 16 | s[1] << 8 | s[2];
-        index = index >> 2;
+        index = (index >> top_shift) & kLutWordMask;
         s += scan_step_byte;
         MB_ACCESS_HITS();
         s_off += scan_step;
 
-base_2:
+base_23:
         if (s_off > last_offset)
             break;
 
         index = s[0] << 24 | s[1] << 16 | s[2] << 8 | s[3];
-        index = (index >> 6) & kLutWordMask;
+        index = (index >> bottom_shift) & kLutWordMask;
         s += scan_step_byte + 1;
         MB_ACCESS_HITS();
         s_off += scan_step;

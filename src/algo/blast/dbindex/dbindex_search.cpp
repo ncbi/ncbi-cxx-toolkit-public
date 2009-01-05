@@ -791,6 +791,7 @@ bool CTrackedSeeds< TWO_HIT >::CheckAndSaveSeed(
         const TTrackedSeed & seed )
 {
     if( (seed.second_hit_ > 0 && 
+                seed.qright_ >= seed.second_hit_ + seed.len_  &&  
                 seed.qright_ <= seed.second_hit_ + seed.len_ + window_ ) ||
         seed.len_ >= contig_len_ ) {
         SaveSeed( seed );

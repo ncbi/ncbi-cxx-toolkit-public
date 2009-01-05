@@ -6,7 +6,9 @@ APP = blast_unit_test
 SRC = test_objmgr blast_test_util blast_unit_test bl2seq_unit_test \
 	gencode_singleton_unit_test blastoptions_unit_test blastfilter_unit_test \
 	uniform_search_unit_test remote_blast_unit_test aascan_unit_test \
-	ntscan_unit_test version_reference_unit_test aalookup_unit_test
+	ntscan_unit_test version_reference_unit_test aalookup_unit_test \
+	subj_ranges_unit_test blastengine_unit_test linkhsp_unit_test \
+	blasthits_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I.. -I$(srcdir)/..
 

@@ -100,6 +100,19 @@ public:
         eShowPercentIdent = (1 << 9)    //show percent identity column
     };
 
+    ///Data Representing each defline
+    struct SDeflineInfo {
+        CConstRef<CSeq_id> id;         //best accession type id
+        int gi;                        //gi 
+        string defline;                //defline
+        list<string> linkout_list;     //linkout urls
+        int linkout;                   //linkout membership
+        string id_url;                 //seqid url
+        string score_url;              //score url (quick jump to alignment)
+        bool is_new;                   //is this sequence new (for psiblast)?
+        bool was_checked;              //was this sequence checked before?
+    };
+
     ///options per DisplayOption
     ///@param option: input option using bit numbers defined in DisplayOption
     ///
@@ -252,22 +265,14 @@ public:
     ///Indicates if 'Related structures' link should show
     ///@return: true if show
     bool HasStructureLinkout(void){return m_StructureLinkout;}
+        
+    ///Get defline info for the set of seqIds
+    ///@param seqIds: vector of CConstRef<CSeq_id>
+    ///@return: vector of SDeflineInfo
+    vector <CShowBlastDefline::SDeflineInfo*> 
+            CShowBlastDefline::GetDeflineInfo(vector< CConstRef<CSeq_id> > &seqIds);
 
 protected:
-  
-    ///Internal data Representing each defline
-    struct SDeflineInfo {
-        CConstRef<CSeq_id> id;         //best accession type id
-        int gi;                        //gi 
-        string defline;                //defline
-        list<string> linkout_list;     //linkout urls
-        int linkout;                   //linkout membership
-        string id_url;                 //seqid url
-        string score_url;              //score url (quick jump to alignment)
-        bool is_new;                   //is this sequence new (for psiblast)?
-        bool was_checked;              //was this sequence checked before?
-    };
-
     /// Internal data with score information for each defline.
     struct SScoreInfo {
         list<int> use_this_gi;         // Limit formatting by these GI's.
@@ -372,7 +377,7 @@ protected:
     ///@param use_this_gi: list of GI's to limit formatting by [in]
     ///@return defline info
     SDeflineInfo* x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_gi, int blast_rank);
-
+   
     ///Internal function to return defline info
     ///@param aln: seqalign we are working on
     ///@return defline info

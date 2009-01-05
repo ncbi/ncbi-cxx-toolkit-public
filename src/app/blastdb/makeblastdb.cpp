@@ -479,6 +479,12 @@ void CMakeBlastDBApp::x_ProcessMaskData()
     }
     
     ITERATE(vector<string>, iter, mask_list) {
+        if ( !CFile(*iter).Exists() ) {
+            ERR_POST(Error << "Ignoring mask file '" << *iter 
+                           << "' as it does not exist.");
+            continue;
+        }
+
         CNcbiIfstream mask_file(iter->c_str(), ios::binary);
         
         CRef<CBlast_db_mask_info> first_obj;
@@ -568,6 +574,11 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
         if (fasta_file == "-") {
             x_AddSequenceData(cin);
         } else {
+            if ( !CFile(fasta_file).Exists() ) {
+                ERR_POST(Error << "Ignoring sequence input file '" 
+                               << fasta_file << "' as it does not exist.");
+                continue;
+            }
             CNcbiIfstream f(fasta_file.c_str(), ios::binary);
             x_AddSequenceData(f);
         }

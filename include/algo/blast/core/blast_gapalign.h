@@ -151,7 +151,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
  * @param fence_hit True is returned here if overrun is detected. [in]
  */
 Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, 
-        Uint1* query, Uint1* subject, 
+        const Uint1* query, const Uint1* subject, 
         BlastGapAlignStruct* gap_align, 
         const BlastScoringParameters* score_params,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length,
@@ -175,7 +175,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program,
  * @param fence_hit True is returned here if overrun is detected. [in]
  */
 Int2 
-BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject, 
+BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject, 
    Int4 query_length, Int4 subject_length, BlastGapAlignStruct* gap_align,
    const BlastScoringParameters* score_params, 
    Int4 q_off, Int4 s_off, Boolean compressed_subject, Boolean do_traceback,
@@ -224,7 +224,7 @@ AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr,
  * @return The offset at which alignment should be started [out]
 */
 Int4 
-BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
+BlastGetStartForGappedAlignment (const Uint1* query, const Uint1* subject,
    const BlastScoreBlk* sbp, Uint4 q_start, Uint4 q_length, 
    Uint4 s_start, Uint4 s_length);
 

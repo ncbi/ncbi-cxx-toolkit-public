@@ -140,7 +140,8 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
                                                //seperate style sheet functions
                                                //for this to work
         eShowSortControls = (1 << 23),
-        eShowGeneInfo = (1 << 24)
+        eShowGeneInfo = (1 << 24),
+        eShowCheckBox = (1 << 25)
     };
     
     ///Middle line style option

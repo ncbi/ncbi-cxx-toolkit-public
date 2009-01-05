@@ -628,10 +628,10 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
     list<AlnInfo*>::iterator prev_iter = m_AlnInfoList.end();
     list<AlnInfo*>::iterator cur_iter = m_AlnInfoList.begin();
     list<AlnInfo*>::iterator temp_iter;
-    int i = 0;
+    int count = 0;
     
     while(cur_iter != m_AlnInfoList.end()){
-        if(i > 0){
+        if(count > 0){
             CRange<TSeqPos> prev_range, cur_range;
             prev_range = (*prev_iter)->range;
             cur_range = (*cur_iter)->range;
@@ -664,7 +664,7 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
         }
         prev_iter = cur_iter;
         cur_iter ++;
-        i ++;
+        count ++;
     }
     
     //add the last possible no match range

@@ -1,0 +1,342 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Greg Boratyn
+ *
+ * File Description:
+ *   Demo application for simple use of CGuideTree and CGuideTreeCalc
+ *   clases.
+ *
+ */
+
+#include <ncbi_pch.hpp>
+#include <corelib/ncbistl.hpp>
+#include <corelib/ncbiapp.hpp>
+
+#include <serial/serialbase.hpp>
+#include <objects/biotree/BioTreeContainer.hpp>
+
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+
+#include <algo/phy_tree/bio_tree.hpp>
+
+#include <guide_tree.hpp>
+#include <guide_tree_calc.hpp>
+
+
+USING_NCBI_SCOPE;
+
+/////////////////////////////////////////////////////////////////////////////
+//  CGuideTreeApplication::
+
+
+class CGuideTreeApplication : public CNcbiApplication
+{
+private:
+    virtual void Init(void);
+    virtual int  Run(void);
+    virtual void Exit(void);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  Init test for all different types of arguments
+
+
+void CGuideTreeApplication::Init(void)
+{
+    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
+
+    // Create command-line argument descriptions class
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    // Specify USAGE context
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "Guide tree demo application");
+
+
+    arg_desc->AddKey("i", "filename", "File with Seq-annot ortree in ASN format",
+                            CArgDescriptions::eInputFile);
+
+    arg_desc->AddKey("o", "filename", "File name",
+		     CArgDescriptions::eOutputFile);
+
+    arg_desc->AddDefaultKey("type", "type", "Type of input data: seq-annot"
+			    " or tree", CArgDescriptions::eString, "annot");
+
+    arg_desc->SetConstraint("type", &(*new CArgAllow_Strings, "annot", "tree"));
+
+    arg_desc->AddOptionalKey("query", "id", "Query sequence id",
+			     CArgDescriptions::eString);
+
+    arg_desc->AddDefaultKey("divergence", "value", "Maximum divergence"
+			    " between sequences",
+			    CArgDescriptions::eDouble, "0.85");
+
+    arg_desc->AddDefaultKey("distance", "method", "Evolutionary correction for"
+			    " sequence divergence - distance",
+			    CArgDescriptions::eString, "grishin");
+
+    arg_desc->SetConstraint("distance", &(*new CArgAllow_Strings,
+					  "jukes_cantor", "poisson", "kimura",
+					  "grishin", "grishin2"));
+    
+    arg_desc->AddDefaultKey("treemethod", "method", "Algorithm for phylogenetic"
+			    " tree computation",
+			    CArgDescriptions::eString, "fastme");
+
+    arg_desc->SetConstraint("treemethod", &(*new CArgAllow_Strings, "fastme",
+					    "nj"));
+
+    arg_desc->AddDefaultKey("labels", "labels", "Sequence labels in the tree",
+			    CArgDescriptions::eString, "seqtitle");
+
+    arg_desc->SetConstraint("labels", &(*new CArgAllow_Strings, "taxname",
+					"seqtitle", "blastname", "seqid",
+					"seqid_and_blastname"));
+
+    arg_desc->AddDefaultKey("render", "method", "Tree rendering method",
+			    CArgDescriptions::eString, "rect");
+
+    arg_desc->SetConstraint("render", &(*new CArgAllow_Strings, "rect",
+                                       "slanted", "radial", "force"));
+
+    arg_desc->AddOptionalKey("simpl", "method", "Tree simplification method",
+                             CArgDescriptions::eString);
+
+    arg_desc->SetConstraint("simpl", &(*new CArgAllow_Strings, "none", 
+                                       "blastname", "full"));
+
+    arg_desc->AddOptionalKey("expcol", "num", "Expand or collapse node",
+                             CArgDescriptions::eInteger);
+
+    arg_desc->AddOptionalKey("reroot", "num", "Re-root tree",
+                             CArgDescriptions::eInteger);
+
+    arg_desc->AddOptionalKey("subtree", "num", "Show sub-tree",
+                             CArgDescriptions::eInteger);
+
+    arg_desc->AddFlag("no_dist", "Edge lengths of the rendered tree will not be"
+                      " proportional to tree edge lengths");
+
+    arg_desc->AddDefaultKey("outfmt", "format", "Format for saving tree",
+			    CArgDescriptions::eString, "image");
+
+    arg_desc->SetConstraint("outfmt", &(*new CArgAllow_Strings, "image", "asn",
+                                     "newick", "nexus"));
+
+    arg_desc->AddDefaultKey("width", "num", "Image width",
+			    CArgDescriptions::eInteger, "800");
+
+    arg_desc->AddDefaultKey("height", "num", "Image height",
+			    CArgDescriptions::eInteger, "600");
+
+
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(arg_desc.release());
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  Run test (printout arguments obtained from command-line)
+
+int CGuideTreeApplication::Run(void)
+{
+    // Get arguments
+    const CArgs& args = GetArgs();
+
+    CBioTreeContainer btc;
+    CBioTreeDynamic dyntree;
+
+    CRef<CSeq_annot> seq_annot(new CSeq_annot());
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*object_manager);
+    CRef<CScope> scope(new CScope(*object_manager));
+    scope->AddDefaults();
+    
+    auto_ptr<CGuideTree> gtree;
+
+    string query_id = "";
+    if (args["query"]) {
+	query_id = args["query"].AsString();
+    }
+
+    // If input is Seq-annot compute guide tree
+    if (args["type"].AsString() == "annot") {
+
+	args["i"].AsInputFile() >> MSerial_AsnText >> *seq_annot;
+
+	CGuideTreeCalc calc(seq_annot, scope, query_id);
+	calc.SetMaxDivergence(args["divergence"].AsDouble());
+
+	CGuideTreeCalc::ELabelType labels;
+	if (args["labels"].AsString() == "taxname") {
+	    labels = CGuideTreeCalc::eTaxName;
+	} else if (args["labels"].AsString() == "seqtitle") {
+	    labels = CGuideTreeCalc::eSeqTitle;
+	} else if (args["labels"].AsString() == "blastname") {
+	    labels = CGuideTreeCalc::eBlastName;
+	} else if (args["labels"].AsString() == "seqid") {
+	    labels = CGuideTreeCalc::eSeqId;
+	} else if (args["labels"].AsString() == "seqid_and_blastname") {
+	    labels = CGuideTreeCalc::eSeqIdAndBlastName;
+	} else {
+	    NcbiCerr << "Error: Unrecognised labels type." << NcbiEndl;
+	    return 1;
+	}
+	calc.SetLabelType(labels);
+
+	CGuideTreeCalc::EDistMethod dist;
+	if (args["distance"].AsString() == "jukes_cantor") {
+	    dist = CGuideTreeCalc::eJukesCantor;
+	} else if (args["distance"].AsString() == "poisson") {
+	    dist = CGuideTreeCalc::ePoisson;
+	} else if (args["distance"].AsString() == "kimura") {
+	    dist = CGuideTreeCalc::eKimura;
+	} else if (args["distance"].AsString() == "grishin") {
+	    dist = CGuideTreeCalc::eGrishin;
+	} else if (args["distance"].AsString() == "grishin2") {
+	    dist = CGuideTreeCalc::eGrishinGeneral;
+	} else {
+	    NcbiCerr << "Error: Unrecognized distance method." << NcbiEndl;
+	    return 1;
+	}
+	calc.SetDistMethod(dist);
+
+	CGuideTreeCalc::ETreeMethod method;
+	if (args["treemethod"].AsString() == "fastme") {
+	    method = CGuideTreeCalc::eFastME;
+	} else if (args["treemethod"].AsString() == "nj") {
+	    method = CGuideTreeCalc::eNJ;
+	} else {
+	    NcbiCerr << "Error: Unrecognized tree computation method."
+		     << NcbiEndl;
+	    return 1;
+	}
+	calc.SetTreeMethod(method);
+
+	calc.CalcBioTree();
+	gtree.reset(new CGuideTree(calc));
+    }
+    else {
+
+	// Otherwise load tree
+	args["i"].AsInputFile() >> MSerial_AsnText >> btc;
+	BioTreeConvertContainer2Dynamic(dyntree, btc);
+	gtree.reset(new CGuideTree(dyntree));
+    }
+
+    // Simplify tree
+    if (args["simpl"]) {
+        if (args["simpl"].AsString() == "blastname") {
+            gtree->SimplifyTree(CGuideTree::eBlastName, false);
+        } else if (args["simpl"].AsString() == "full") {
+            gtree->SimplifyTree(CGuideTree::eFullyExpanded, false);
+        }
+    }
+
+    // Expand or collapse selected subtree
+    if (args["expcol"]) {
+        gtree->ExpandCollapseSubtree(args["expcol"].AsInteger(), false);
+    }
+
+    // Reroot tree
+    if (args["reroot"]) {
+        gtree->RerootTree(args["reroot"].AsInteger(), false);
+    }
+
+    // Show subtree
+    if (args["subtree"]) {
+        gtree->ShowSubtree(args["subtree"].AsInteger(), false);
+    }
+
+    // Select tree rendering
+    if (args["render"].AsString() == "rect") {
+	gtree->SetRenderFormat(CGuideTree::eRect);
+    } else if (args["render"].AsString() == "slanted") {
+	gtree->SetRenderFormat(CGuideTree::eSlanted);
+    } else if (args["render"].AsString() == "radial") {
+	gtree->SetRenderFormat(CGuideTree::eRadial);
+    } else if (args["redenr"].AsString() == "force") {
+	gtree->SetRenderFormat(CGuideTree::eForce);
+    }
+
+    if (args["no_dist"]) {
+        gtree->SetDistanceMode(false);
+    }
+
+    // Redo pre-rendering calculations
+    gtree->Refresh();
+
+    CGuideTree::ETreeFormat tree_format;
+
+    if (args["outfmt"].AsString() == "image") {
+	tree_format = CGuideTree::eImage;
+    } else if (args["outfmt"].AsString() == "asn") {
+	tree_format = CGuideTree::eASN;
+    } else if (args["outfmt"].AsString() == "newick") {
+	tree_format = CGuideTree::eNewick;
+    } else if (args["outfmt"].AsString() == "nexus") {
+	tree_format = CGuideTree::eNexus;
+    } else {
+	NcbiCerr << "Error: Unrecognised tree output format." << NcbiEndl;
+	return 1;
+    }
+
+    if (tree_format == CGuideTree::eImage) {
+        gtree->SetImageWidth(args["width"].AsInteger());
+        gtree->SetImageHeight(args["height"].AsInteger());
+    }
+
+    // Write tree in selected format
+    gtree->SaveTreeAs(args["o"].AsOutputFile(), tree_format);
+
+    return 0;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  Cleanup
+
+
+void CGuideTreeApplication::Exit(void)
+{
+    SetDiagStream(0);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  MAIN
+
+
+int main(int argc, const char* argv[])
+{
+    // Execute main application function
+    return CGuideTreeApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+}

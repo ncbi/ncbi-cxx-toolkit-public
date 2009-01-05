@@ -144,6 +144,7 @@ s_MaskQuerySeq(CAlnVec& alnvec, string& query_seq,
             int mask_stop = min(seg_stop, masks_v[mask_index]->GetTo());
             // Mask the respective part of the sequence
             for ( ; mask_pos <= mask_stop; ++mask_pos) {
+		if(  query_seq[mask_pos] == '-' ) continue; // preserve gap
                 if (mask_char == CDisplaySeqalign::eX) {
                     query_seq[mask_pos] = 'X';
                 } else if (mask_char == CDisplaySeqalign::eN){

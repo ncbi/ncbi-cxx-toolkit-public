@@ -55,18 +55,10 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
-//static const string s_kPhyloTreeQuerySeqIndex = "0";
-
-
+/// Computaion of distance-based phylognetic/guide tree
 class CGuideTreeCalc : public CObject {
     
 public:
-    /// Possible inputs
-    ///
-    enum EInputFormat {
-        eASN1, eAccession, eRID
-    };
-
 
     /// Methods for computing evolutionary distance
     ///
@@ -78,7 +70,8 @@ public:
     /// Algorithms for phylogenetic tree reconstruction
     ///
     enum ETreeMethod {
-        eNeighborJoining, eFastME
+        eNJ,      ///< Neighbor Joining
+        eFastME   ///< Fast Minumum Evolution
     };
 
 
@@ -101,12 +94,9 @@ public:
     /// @param annot Seq-annot [in]
     /// @param scope Scope [in]
     /// @param query_id Seqid of query sequence [in]
-    /// @param format Input format [in]
-    /// @param accession Accession
     ///
-    CGuideTreeCalc(const CRef<CSeq_annot>& annot, const CRef<CScope>& scope,
-                   const string &query_id, EInputFormat format,
-                   const string& accession);
+    CGuideTreeCalc(const CRef<CSeq_annot>& annot, CRef<CScope> scope,
+                   const string &query_id = "");
 
     /// Create CGuideTreeCalc from Seq-align
     /// @param seq_aln Seq-align [in]
@@ -133,6 +123,12 @@ public:
     /// @param method Distance method [in]
     ///
     void SetDistMethod(EDistMethod method) {m_DistMethod = method;}
+
+
+    /// Set algorithm for phylogenetic tree computation
+    /// @param method Tree compuutation method [in]
+    ///
+    void SetTreeMethod(ETreeMethod method) {m_TreeMethod = method;}
 
 
     /// Set type of labels in guide tree
@@ -207,45 +203,10 @@ public:
 
     //--- Tree computation ---
 
-    /// Compute divergence matrix and find sequences to exclude from tree
-    /// reconstruction
-    /// @param pmat Divergence matrix [out]
-    /// @param max_divergence Maximum allowed divergence [in]
-    /// @param removed Set of indices of excluded sequences [out]
-    /// @return True if at least two sequences are left for tree computation,
-    /// false otherwise
+    /// Compute bio tree for the current alignment in a black box manner
+    /// @return True is computation successful, false otherwise
     ///
-    bool CalcDivergenceMatrix(CDistMethods::TMatrix& pmat,
-                              double max_divergence,
-                              hash_set<int>& removed) const;
-
-
-    /// Create alignment only for sequences included in tree computation
-    /// @param removed_inds Indices of excluded sequences [in]
-    /// @param new_align_index Indices of included sequences [out]
-    /// @return New alignment vector
-    ///
-    CRef<CAlnVec> CreateValidAlign(const hash_set<int>& removed_inds,
-                                   vector<int>& new_align_index);
-
-    /// Remove entries coresponding to excluded sequences from divergence
-    /// matrix
-    /// @param pmat Divergence matrix [in|out]
-    /// @param used_inds Indices of sequences included in tree computation [in]
-    ///
-    static void TrimMatrix(CDistMethods::TMatrix& pmat,
-                           const vector<int>& used_inds);
-
-
-    /// Compute phylogenetic tree
-    /// @param alnvec Alignment vector [in]
-    /// @param dmat Distance matrix [in]
-    /// @param method Tree reconstruction method [in]
-    /// @param correct Whether negative tree egde lengths should be set to zero
-    /// [in]
-    ///
-    void ComputeTree(const CAlnVec& alnvec, const CDistMethods::TMatrix& dmat,
-                     ETreeMethod method, bool correct = true);       
+    bool CalcBioTree(void);
 
 
     /// Compute distance matrix -- apply evolutionary correction to divergence
@@ -257,59 +218,140 @@ public:
                                CDistMethods::TMatrix& result,
                                EDistMethod method);
 
-    /// Compute bio tree for the current alignment in a black box manner
-    /// @return True is computation successful, false otherwise
-    ///
-    bool CalcBioTree(void);
-
-
 protected:
 
+    /// Initialize class attributes
     void x_Init(void);
 
-    bool x_InitAlignDS(const CSeq_annot& annot, EInputFormat format,
-                       const string& accession = "");
+    /// Initialize alignment data source
+    /// @param annot Seq-annot [in]
+    /// @return True if success, false otherwise
+    bool x_InitAlignDS(const CSeq_annot& annot);
 
+    /// Initialize alignment data source
+    /// @param seq_aln Seq-align [in]
+    /// @return True if success, false otherwise
     void x_InitAlignDS(const CSeq_align& seq_aln);
-    bool x_CreateMixForASN1(const CSeq_annot& annot, CAlnMix& mix);
-    bool x_CreateMixForAccessNum(const string& accession, CAlnMix& mix);
 
-    CRef<CAlnVec> x_CreateSubsetAlign(const CRef<CAlnVec>& alnvec,
-                                      const vector<int>& align_index,
-                                      bool create_align_set);
-
-
+    /// Initialize tree freatures
+    /// @param alnvec Alignment vector [in]
     void x_InitTreeFeatures(const CAlnVec& alnvec);
 
-
+    /// Add feature descriptor to tree
+    /// @param id Feature id [in]
+    /// @param desc Feature description [in]
+    /// @param btc Tree [in|out]
     static void x_AddFeatureDesc(int id, const string& desc,
                                  CRef<CBioTreeContainer>& btc); 
 
+    /// Add feature to tree node
+    /// @param id Feature id [in]
+    /// @param value Feature value [in]
+    /// @param iter Tree node iterator [in|out]
     static void x_AddFeature(int id, const string& value,
                              CNodeSet::Tdata::iterator iter);    
 
 
+    /// Compute divergence matrix and find sequences to exclude from tree
+    /// reconstruction
+    /// @param pmat Divergence matrix [out]
+    /// @param max_divergence Maximum allowed divergence [in]
+    /// @param removed Set of indices of excluded sequences [out]
+    /// @return True if at least two sequences are left for tree computation,
+    /// false otherwise
+    ///
+    bool x_CalcDivergenceMatrix(CDistMethods::TMatrix& pmat,
+                              double max_divergence,
+                              hash_set<int>& removed) const;
+
+    /// Remove entries coresponding to excluded sequences from divergence
+    /// matrix
+    /// @param pmat Divergence matrix [in|out]
+    /// @param used_inds Indices of sequences included in tree computation [in]
+    ///
+    static void x_TrimMatrix(CDistMethods::TMatrix& pmat,
+                             const vector<int>& used_inds);
+
+
+    /// Create alignment only for sequences included in tree computation
+    /// @param removed_inds Indices of excluded sequences [in]
+    /// @param new_align_index Indices of included sequences [out]
+    /// @return New alignment vector
+    ///
+    CRef<CAlnVec> x_CreateValidAlign(const hash_set<int>& removed_inds,
+                                     vector<int>& new_align_index);
+
+    /// Create alignmnet composed of subset of sequences
+    /// @param alnvec Initial alignment vector [in]
+    /// @param align_index Indices of sequences included in the subset [in]
+    /// @return New alignment vector
+    CRef<CAlnVec> x_CreateSubsetAlign(const CRef<CAlnVec>& alnvec,
+                                      const vector<int>& align_index);
+
+    
+    /// Compute phylogenetic tree
+    /// @param alnvec Alignment vector [in]
+    /// @param dmat Distance matrix [in]
+    /// @param method Tree reconstruction method [in]
+    /// @param correct Whether negative tree egde lengths should be set to zero
+    /// [in]
+    ///
+    void x_ComputeTree(const CAlnVec& alnvec, const CDistMethods::TMatrix& dmat,
+                       ETreeMethod method, bool correct = true);
+
+
+
 protected:
 
+    /// Scope
     CRef<CScope> m_Scope;
 
+    /// Alignment data source
     CRef<CAlignDataSource> m_AlignDataSource;
 
+    /// Seq-id of query sequence
     string m_QuerySeqId;
 
-    double m_MaxDivergence;
-    EDistMethod m_DistMethod;
-    ETreeMethod m_TreeMethod;
-    ELabelType m_LabelType;
-    bool m_MarkQueryNode;
-
-    vector<string> m_RemovedSeqIds;
-
-    CRef<CBioTreeContainer> m_TreeContainer;
-
-    TBlastNameColorMap m_BlastNameColorMap;
+    /// Id of node that represents query sequence
     int m_QueryNodeId;
 
+    /// Maximum allowed divergence between sequences
+    double m_MaxDivergence;
+
+    /// Method of calculating evolutionary distance correction
+    EDistMethod m_DistMethod;
+
+    /// Method of calculating tree
+    ETreeMethod m_TreeMethod;
+
+    /// Information shown in tree leaves labels
+    ELabelType m_LabelType;
+
+    /// Should query node be marked
+    bool m_MarkQueryNode;
+
+    /// Sequences that are not included in the tree
+    vector<string> m_RemovedSeqIds;
+
+    /// Computed tree
+    CRef<CBioTreeContainer> m_TreeContainer;
+
+    /// Blast name to color map
+    TBlastNameColorMap m_BlastNameColorMap;
+};
+
+
+/// Guide tree calc exceptions
+class CGuideTreeCalcException : public CException
+{
+public:
+    enum EErrCode {
+        eInvalidOptions,
+        eTreeComputationProblem,
+        eTaxonomyError
+    };
+
+    NCBI_EXCEPTION_DEFAULT(CGuideTreeCalcException, CException);
 };
 
 

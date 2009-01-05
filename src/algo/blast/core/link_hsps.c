@@ -124,11 +124,11 @@ typedef struct LinkHelpStruct {
 static int
 s_FwdCompareHSPs(const void* v1, const void* v2)
 {
-	LinkHSPStruct** hp1,** hp2;
+    LinkHSPStruct** hp1,** hp2;
     BlastHSP* h1,* h2;
 
-	hp1 = (LinkHSPStruct**) v1;
-	hp2 = (LinkHSPStruct**) v2;
+    hp1 = (LinkHSPStruct**) v1;
+    hp2 = (LinkHSPStruct**) v2;
 
     h1 = (*hp1)->hsp;
     h2 = (*hp2)->hsp;
@@ -1102,6 +1102,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
 /** Simple doubly linked list of HSPs, used for calculating sum statistics. */ 
 typedef struct BlastLinkedHSPSet {
     BlastHSP* hsp;                 /**< HSP for the current link in the chain. */
+    Uint4  queryId;                /**< Used for support of OOF linking */
     struct BlastLinkedHSPSet* next;/**< Next link in the chain. */
     struct BlastLinkedHSPSet* prev;/**< Previous link in the chain. */
     double sum_score;              /**< Sum bit score for the linked set. */
@@ -1125,36 +1126,26 @@ s_SumHSPEvalue(EBlastProgramType program_number,
 {
    double gap_decay_rate, sum_evalue;
    Int2 num;
-   Int4 subject_eff_length, query_eff_length, length_adjustment;
+   Int4 subject_eff_length, query_eff_length, len_adj;
    Int4 context = head_hsp->hsp->context;
    Int4 query_window_size;
    Int4 subject_window_size;
    
+   ASSERT(program_number != eBlastTypeTblastx);
+
+   subject_eff_length = (Blast_SubjectIsTranslated(program_number)) ?
+       subject_length/3 : subject_length;
+
    gap_decay_rate = link_hsp_params->gap_decay_rate;
 
    num = head_hsp->hsp->num + new_hsp->hsp->num;
 
-   length_adjustment = query_info->contexts[context].length_adjustment;
+   len_adj = query_info->contexts[context].length_adjustment;
 
-   subject_eff_length = MAX((subject_length - length_adjustment), 1);
-   if (Blast_QueryIsTranslated(program_number) ||
-       Blast_SubjectIsTranslated(program_number)) {
+   query_eff_length = MAX(query_info->contexts[context].query_length - len_adj, 1);
 
-       /* If either sequence is translated, divide the effective
-	  subject length by 3 -- if the query was translated, then the
-	  roles query and subject were swapped in
-	  s_LinkedHSPSetArraySetUp, which is called by
-	  s_BlastUnevenGapLinkHSPs. Note, tblastx does not use this
-	  routine, so both sequences cannot be translated. */
+   subject_eff_length = MAX(subject_eff_length - len_adj, 1);
 
-       ASSERT(program_number != eBlastTypeTblastx);
-       subject_eff_length /= 3;
-   }
-   subject_eff_length = MAX(subject_eff_length, 1);
-   
-   query_eff_length = 
-      MAX(query_info->contexts[context].query_length - length_adjustment, 1);
-   
    *sum_score = new_hsp->sum_score + head_hsp->sum_score;
 
    query_window_size = 
@@ -1183,19 +1174,18 @@ s_SumHSPEvalue(EBlastProgramType program_number,
 static int
 s_FwdCompareLinkedHSPSets(const void* v1, const void* v2)
 {
-	BlastLinkedHSPSet** hp1,** hp2;
+    BlastLinkedHSPSet** hp1,** hp2;
     BlastHSP* hsp1,* hsp2;
 
-	hp1 = (BlastLinkedHSPSet**) v1;
-	hp2 = (BlastLinkedHSPSet**) v2;
+    hp1 = (BlastLinkedHSPSet**) v1;
+    hp2 = (BlastLinkedHSPSet**) v2;
+
+    /* check to see if hsp are within the same context */
+    if ((*hp1)->queryId != (*hp2)->queryId)
+        return (*hp1)->queryId - (*hp2)->queryId;
 
     hsp1 = (*hp1)->hsp;
     hsp2 = (*hp2)->hsp;
-
-    if (hsp1->context < hsp2->context)
-        return -1;
-    else if (hsp1->context > hsp2->context)
-        return 1;
 
 	if (hsp1->query.offset < hsp2->query.offset) 
 		return -1;
@@ -1242,20 +1232,20 @@ s_SumScoreCompareLinkedHSPSets(const void* v1, const void* v2)
     return ScoreCompareHSPs(&h1->hsp, &h2->hsp);
 }
 
-/** Find an HSP on the same context as the one given, with closest start offset
+/** Find an HSP on the same queryId as the one given, with closest start offset
  * that is greater than a specified value. The list of HSPs to search must 
- * be sorted by query offset and in increasing order of contexts.
+ * be sorted by query offset and in increasing order of queryId.
  * @param hsp_array List of pointers to HSPs, encapsulated within 
  *                  BlastLinkedHSPSet structures [in]
  * @param size Number of elements in the array [in]
- * @param context Context of the target HSP [in]
+ * @param queryId Context of the target HSP [in]
  * @param offset The target offset to search for [in]
  * @return The index in the array of the HSP whose start/end offset 
  *         is closest to but >= the value 'offset'
  */
 static Int4 
 s_HSPOffsetBinarySearch(BlastLinkedHSPSet** hsp_array, Int4 size, 
-                        Int4 context, Int4 offset)
+                        Int4 queryId, Int4 offset)
 {
    Int4 index, begin, end;
    
@@ -1264,9 +1254,9 @@ s_HSPOffsetBinarySearch(BlastLinkedHSPSet** hsp_array, Int4 size,
    while (begin < end) {
       index = (begin + end) / 2;
 
-      if (hsp_array[index]->hsp->context < context)
+      if (hsp_array[index]->queryId < queryId)
           begin = index + 1;
-      else if (hsp_array[index]->hsp->context > context)
+      else if (hsp_array[index]->queryId > queryId)
           end = index;
       else {
           if (hsp_array[index]->hsp->query.offset >= offset) 
@@ -1280,20 +1270,20 @@ s_HSPOffsetBinarySearch(BlastLinkedHSPSet** hsp_array, Int4 size,
 }
 
 /** Find an HSP in an array sorted in increasing order of query offsets and 
- * increasing order of contexts, with the smallest index such that its query end
+ * increasing order of queryId, with the smallest index such that its query end
  * is >= to a given offset.
  * @param hsp_array Array of pointers to HSPs, encapsulated within 
- *                  BlastLinkedHSPSet structures. Must be sorted by context and
+ *                  BlastLinkedHSPSet structures. Must be sorted by queryId and
  *                  query offsets. [in]
  * @param size Number of elements in the array [in]
  * @param qend_index_array Array indexing query ends in the hsp_array [in]
- * @param context Context of the target HSP [in]
+ * @param queryId Context of the target HSP [in]
  * @param offset The target offset to search for [in]
  * @return The found index in the hsp_array.
  */
 static Int4 
 s_HSPOffsetEndBinarySearch(BlastLinkedHSPSet** hsp_array, Int4 size, 
-                           Int4* qend_index_array, Int4 context, Int4 offset)
+                           Int4* qend_index_array, Int4 queryId, Int4 offset)
 {
    Int4 begin, end;
    
@@ -1303,9 +1293,9 @@ s_HSPOffsetEndBinarySearch(BlastLinkedHSPSet** hsp_array, Int4 size,
        Int4 right_index = (begin + end) / 2;
        Int4 left_index = qend_index_array[right_index];
 
-       if (hsp_array[right_index]->hsp->context < context)
+       if (hsp_array[right_index]->queryId < queryId)
            begin = right_index + 1;
-       else if (hsp_array[right_index]->hsp->context > context)
+       else if (hsp_array[right_index]->queryId > queryId)
            end = left_index;
        else {
            if (hsp_array[left_index]->hsp->query.end >= offset) 
@@ -1414,16 +1404,17 @@ s_CombineLinkedHSPSets(BlastLinkedHSPSet* hsp_set1, BlastLinkedHSPSet* hsp_set2,
  * @param hsp_set1 First linked set of HSPs. [in]
  * @param hsp_set2 Second linked set of HSPs. [in]
  * @param link_hsp_params Parameters for linking HSPs. [in]
+ * @param program Type of BLAST program (blastx or tblastn) [in]
  * @return Do the two sets satisfy the admissibility criteria to form a 
  *         combined set? 
  */
 static Boolean
 s_LinkedHSPSetsAdmissible(BlastLinkedHSPSet* hsp_set1, 
                           BlastLinkedHSPSet* hsp_set2, 
-                          const BlastLinkHSPParameters* link_hsp_params)
+                          const BlastLinkHSPParameters* link_hsp_params,
+                          EBlastProgramType program)
 {
-    Int4 longest_intron;
-    Int4 gap_size, overlap_size;
+    Int4 gap_s, gap_q, overlap;
     BlastLinkedHSPSet** merged_hsps;   
     Int4 combined_size = 0;
     Int4 index;
@@ -1443,8 +1434,8 @@ s_LinkedHSPSetsAdmissible(BlastLinkedHSPSet* hsp_set1,
     if (hsp_set1 == hsp_set2)
         return FALSE;
 
-    /* Check if these HSPs are for the same protein sequence (same context) */
-    if (hsp_set1->hsp->context != hsp_set2->hsp->context)
+    /* Check if these HSPs are for the same protein sequence (same queryId) */
+    if (hsp_set1->queryId != hsp_set2->queryId)
         return FALSE;
 
     /* Check if new HSP and hsp_set2 are on the same nucleotide sequence strand.
@@ -1457,11 +1448,18 @@ s_LinkedHSPSetsAdmissible(BlastLinkedHSPSet* hsp_set1,
        offsets. */
     merged_hsps = s_MergeLinkedHSPSets(hsp_set1, hsp_set2, &combined_size);
 
-    longest_intron = link_hsp_params->longest_intron; /* Maximal gap size in
+    gap_s = link_hsp_params->longest_intron; /* Maximal gap size in
                                                          subject */
-    gap_size = link_hsp_params->gap_size; /* Maximal gap size in query */
-    overlap_size = link_hsp_params->overlap_size; /* Maximal overlap size in
+    gap_q = link_hsp_params->gap_size; /* Maximal gap size in query */
+
+    overlap = link_hsp_params->overlap_size; /* Maximal overlap size in
                                                      query or subject */
+
+    /* swap gap_s and gap_q if blastx */
+    if (program == eBlastTypeBlastx) {
+        gap_s = link_hsp_params->gap_size;
+        gap_q = link_hsp_params->longest_intron;
+    }
 
     for (index = 0; index < combined_size - 1; ++index) {
         BlastLinkedHSPSet* left_hsp = merged_hsps[index];
@@ -1470,7 +1468,7 @@ s_LinkedHSPSetsAdmissible(BlastLinkedHSPSet* hsp_set1,
 
         /* If the new HSP is too far to the left from the right_hsp, indicate this by 
            setting the boolean output value to TRUE. */
-        if (left_hsp->hsp->query.end < right_hsp->hsp->query.offset - gap_size)
+        if (left_hsp->hsp->query.end < right_hsp->hsp->query.offset - gap_q)
             break;
         
         /* Check if the left HSP's query offset is to the right of the right HSP's 
@@ -1481,15 +1479,15 @@ s_LinkedHSPSetsAdmissible(BlastLinkedHSPSet* hsp_set1,
         /* Check the remaining condition for query offsets: left HSP cannot end 
            further than the maximal allowed overlap from the right HSP's offset;
            and left HSP must end before the right HSP. */
-        if (left_hsp->hsp->query.end > right_hsp->hsp->query.offset + overlap_size ||
+        if (left_hsp->hsp->query.end > right_hsp->hsp->query.offset + overlap ||
             left_hsp->hsp->query.end >= right_hsp->hsp->query.end)
             break;
         
         /* Check the subject offsets conditions. */
         if (left_hsp->hsp->subject.end > 
-            right_hsp->hsp->subject.offset + overlap_size || 
+            right_hsp->hsp->subject.offset + overlap || 
             left_hsp->hsp->subject.end < 
-            right_hsp->hsp->subject.offset - longest_intron ||
+            right_hsp->hsp->subject.offset - gap_s ||
             left_hsp->hsp->subject.offset >= right_hsp->hsp->subject.offset ||
             left_hsp->hsp->subject.end >= right_hsp->hsp->subject.end)
             break;
@@ -1523,31 +1521,19 @@ s_LinkedHSPSetArraySetUp(BlastHSP** hsp_array, Int4 hspcnt,
     for (index = 0; index < hspcnt; ++index) {
         BlastHSP * hsp = hsp_array[index];
         link_hsp_array[index] =
-            (BlastLinkedHSPSet*) calloc(1, sizeof(BlastLinkedHSPSet));
+            (BlastLinkedHSPSet*) calloc(1,sizeof(BlastLinkedHSPSet));
         
         link_hsp_array[index]->hsp = hsp;
         link_hsp_array[index]->sum_score =
             kbp_array[hsp->context]->Lambda * hsp->score -
             kbp_array[hsp->context]->logK;
+        link_hsp_array[index]->queryId = 
+            (program == eBlastTypeBlastx) ?
+            hsp->context / 3 : hsp->context;
         
         hsp_array[index]->num = 1;
     }
     
-    if (program == eBlastTypeBlastx) {
-        BlastSeg seg;
-        /* Create a temporary hsp_array with query and subject switched.
-         * Also adjust context numbers so they distinguish HSPs from different
-         * queries, but not different frames, since frame distinction is moved
-         * to the subject side.
-         */
-        for (index = 0; index < hspcnt; ++index) {
-            seg = hsp_array[index]->query;
-            hsp_array[index]->query = hsp_array[index]->subject;
-            hsp_array[index]->subject = seg;
-            hsp_array[index]->context = 
-                Blast_GetQueryIndexFromContext(hsp_array[index]->context, program);
-        }
-    }
     return link_hsp_array;
 }
 
@@ -1556,32 +1542,17 @@ s_LinkedHSPSetArraySetUp(BlastHSP** hsp_array, Int4 hspcnt,
  * necessary.
  * @param link_hsp_array Array of wrapper HSP structures, used for linking. [in]
  * @param hspcnt Size of the array. [in]
- * @param program Type of BLAST program (blastx or tblastn) [in]
  * @return NULL.
  */ 
 static BlastLinkedHSPSet**
-s_LinkedHSPSetArrayCleanUp(BlastLinkedHSPSet** link_hsp_array, Int4 hspcnt,
-                           EBlastProgramType program)
+s_LinkedHSPSetArrayCleanUp(BlastLinkedHSPSet** link_hsp_array, Int4 hspcnt)
 {
     Int4 index;
 
-    /* Free the BlastLinkedHSPSet wrapper structures. For blastx, also switch back
-       subject and query and restore the context values in all HSPs. */
-    for (index = 0; index < hspcnt; ++index) {
-        BlastLinkedHSPSet* lhsp = link_hsp_array[index];
-        
-        if (program == eBlastTypeBlastx) {
-            BlastSeg seg;
-            
-            seg = lhsp->hsp->query;
-            lhsp->hsp->query = lhsp->hsp->subject;
-            lhsp->hsp->subject = seg;
-            /* Also restore the correct context number. */
-            lhsp->hsp->context = lhsp->hsp->context * NUM_FRAMES +
-                BLAST_FrameToContext(lhsp->hsp->query.frame, program);
-        }
-        sfree(lhsp);
-    }
+    /* Free the BlastLinkedHSPSet wrapper structures. */
+    for (index = 0; index < hspcnt; ++index) 
+        sfree(link_hsp_array[index]);
+    
     sfree(link_hsp_array);
     return NULL;
 }
@@ -1616,7 +1587,7 @@ s_LinkedHSPSetArrayIndexQueryEnds(BlastLinkedHSPSet** hsp_array, Int4 hspcnt,
 
     for (index = 1; index < hspcnt; ++index) {
         link = hsp_array[index];
-        if (link->hsp->context > hsp_array[current_index]->hsp->context ||
+        if (link->queryId > hsp_array[current_index]->queryId ||
             link->hsp->query.end > current_end) {
             current_index = index;
             current_end = link->hsp->query.end;
@@ -1674,7 +1645,10 @@ s_BlastUnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
        kbp_array = sbp->kbp;
    }
 
-   gap_size = link_hsp_params->gap_size; /* Maximal gap size in query */
+   /* max gap size in query */
+   gap_size = (program == eBlastTypeBlastx) ?
+              link_hsp_params->longest_intron :
+              link_hsp_params->gap_size;
 
    hspcnt = hsp_list->hspcnt;
    hsp_array = hsp_list->hsp_array;
@@ -1732,13 +1706,13 @@ s_BlastUnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
           possibly be added to the set currently being explored. */
        hsp_index_left = 
            s_HSPOffsetEndBinarySearch(offset_hsp_array, hspcnt, qend_index_array,
-                                       head_hsp->hsp->context, left_offset);
+                                       head_hsp->queryId, left_offset);
 
        /* Find the largest index in the offset array, for which an HSP can be
           possibly added to the currently explored set. */
        hsp_index_right = 
            s_HSPOffsetBinarySearch(offset_hsp_array, hspcnt, 
-                                   tail_hsp->hsp->context, 
+                                   tail_hsp->queryId,
                                    tail_hsp->hsp->query.end + gap_size);
        
        for (index1 = hsp_index_left; index1 < hsp_index_right; ++index1) {
@@ -1750,7 +1724,8 @@ s_BlastUnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
            if (lhsp->prev && lhsp->prev->hsp->query.end >= left_offset)
                continue;
 
-           if (s_LinkedHSPSetsAdmissible(head_hsp, lhsp, link_hsp_params)) {
+           if (s_LinkedHSPSetsAdmissible(head_hsp, lhsp,
+                                         link_hsp_params, program)) {
                double evalue, sum_score;
                /* Check if the e-value for the new combined HSP set is better
                   than for the previously obtained set. */
@@ -1781,7 +1756,7 @@ s_BlastUnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
    sfree(qend_index_array);
 
    /* Do the final clean up. */
-   s_LinkedHSPSetArrayCleanUp(link_hsp_array, hspcnt, program);
+   s_LinkedHSPSetArrayCleanUp(link_hsp_array, hspcnt);
 
    return 0;
 }

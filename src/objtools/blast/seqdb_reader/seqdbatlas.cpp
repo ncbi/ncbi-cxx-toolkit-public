@@ -1656,36 +1656,39 @@ CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool             use_mmap,
                                      CSeqDBLockHold * lockedp)
     : m_FlushCB(0)
 {
+    {{
     CFastMutexGuard guard(m_Lock);
     
     if (m_Count == 0) {
         m_Atlas = new CSeqDBAtlas(use_mmap);
     }
-    
-    CSeqDBLockHold locked2(*m_Atlas);
+    m_Count ++;
+    }}
     
     if (lockedp == NULL) {
-        lockedp = & locked2;
-    }
+    CSeqDBLockHold locked2(*m_Atlas);
     
-    if (flush) {
+    if (flush)
+        m_Atlas->AddRegionFlusher(flush, & m_FlushCB, locked2);
+    }
+    else {
+    if (flush)
         m_Atlas->AddRegionFlusher(flush, & m_FlushCB, *lockedp);
     }
-    
-    m_Count ++;
+
 }
 
 CFastMutex CSeqDBAtlasHolder::m_Lock;
 
 CSeqDBAtlasHolder::~CSeqDBAtlasHolder()
 {
-    CFastMutexGuard guard(m_Lock);
-    m_Count --;
-    
     if (m_FlushCB) {
         CSeqDBLockHold locked(*m_Atlas);
         m_Atlas->RemoveRegionFlusher(m_FlushCB, locked);
     }
+    
+    CFastMutexGuard guard(m_Lock);
+    m_Count --;
     
     if (m_Count == 0) {
         delete m_Atlas;

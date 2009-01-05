@@ -347,7 +347,7 @@ enum {
 };
 
 Int4
-ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset, 
+ALIGN_EX(const Uint1* A, const Uint1* B, Int4 M, Int4 N, Int4* a_offset, 
 	Int4* b_offset, GapPrelimEditBlock *edit_block, 
         BlastGapAlignStruct* gap_align, 
         const BlastScoringParameters* score_params, Int4 query_offset, 
@@ -361,7 +361,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
     Int4 i; 
     Int4 a_index;
     Int4 b_index, b_size, first_b_index, last_b_index, b_increment;
-    Uint1* b_ptr;
+    const Uint1* b_ptr;
   
     BlastGapDP* score_array;
 
@@ -708,7 +708,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
 }
 
 Int4 
-Blast_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
+Blast_SemiGappedAlign(const Uint1* A, const Uint1* B, Int4 M, Int4 N,
    Int4* a_offset, Int4* b_offset, Boolean score_only, 
    GapPrelimEditBlock *edit_block, BlastGapAlignStruct* gap_align, 
    const BlastScoringParameters* score_params, 
@@ -718,7 +718,7 @@ Blast_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
     Int4 i;                     /* sequence pointers and indices */
     Int4 a_index;
     Int4 b_index, b_size, first_b_index, last_b_index, b_increment;
-    Uint1* b_ptr;
+    const Uint1* b_ptr;
   
     BlastGapDP* score_array;
 
@@ -963,7 +963,7 @@ Blast_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
  * @return The best alignment score found.
  */
 static Int4 
-s_RestrictedGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
+s_RestrictedGappedAlign(const Uint1* A, const Uint1* B, Int4 M, Int4 N,
    Int4* a_offset, Int4* b_offset,
    BlastGapAlignStruct* gap_align, 
    const BlastScoringParameters* score_params, 
@@ -974,7 +974,7 @@ s_RestrictedGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
     Int4 i;
     Int4 a_index;
     Int4 b_index, b_size, first_b_index, last_b_index, b_increment;
-    Uint1* b_ptr;
+    const Uint1* b_ptr;
     Int4 b_gap;
   
     BlastGapDP* score_array;
@@ -1305,7 +1305,7 @@ enum {
  * @return The best alignment score found.
  */
 static Int4 
-s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
+s_OutOfFrameAlignWithTraceback(const Uint1* A, const Uint1* B, Int4 M, Int4 N,
    Int4* a_offset, Int4* b_offset, GapPrelimEditBlock *edit_block,
    BlastGapAlignStruct* gap_align, const BlastScoringParameters* score_params,
    Int4 query_offset, Boolean reversed)
@@ -1921,7 +1921,7 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
  * @return The best alignment score found.
  */
 static Int4 
-s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
+s_OutOfFrameGappedAlign(const Uint1* A, const Uint1* B, Int4 M, Int4 N,
    Int4* a_offset, Int4* b_offset, Boolean score_only,
    GapPrelimEditBlock *edit_block, BlastGapAlignStruct* gap_align, 
    const BlastScoringParameters* score_params,
@@ -2545,14 +2545,14 @@ s_BlastGreedyGapAlignStructFill(BlastGapAlignStruct* gap_align,
 }
 
 Int2 
-BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject, 
+BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject, 
    Int4 query_length, Int4 subject_length, BlastGapAlignStruct* gap_align,
    const BlastScoringParameters* score_params, 
    Int4 q_off, Int4 s_off, Boolean compressed_subject, Boolean do_traceback,
    Boolean * fence_hit)
 {
-   Uint1* q;
-   Uint1* s;
+   const Uint1* q;
+   const Uint1* s;
    Int4 score;
    Int4 X;
    Int4 q_avail, s_avail;
@@ -2974,12 +2974,12 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
 }
 
 Int4 
-BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
+BlastGetStartForGappedAlignment (const Uint1* query, const Uint1* subject,
    const BlastScoreBlk* sbp, Uint4 q_start, Uint4 q_length, 
    Uint4 s_start, Uint4 s_length)
 {
     Int4 index1, max_offset, score, max_score, hsp_end;
-    Uint1* query_var,* subject_var;
+    const Uint1* query_var,* subject_var;
     Boolean positionBased = (sbp->psi_matrix != NULL);
     
     if (q_length <= HSP_MAX_WINDOW) {
@@ -3332,7 +3332,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
  *                   but not for tblastn [in]
  */
 static Int4 
-s_OutOfFrameSemiGappedAlignWrap(Uint1* query, Uint1* subject, Int4 q_off, 
+s_OutOfFrameSemiGappedAlignWrap(const Uint1* query, const Uint1* subject, Int4 q_off, 
    Int4 s_off, Int4* private_q_start, Int4* private_s_start, 
    Boolean score_only, GapPrelimEditBlock *edit_block, 
    BlastGapAlignStruct* gap_align, 
@@ -3747,8 +3747,8 @@ s_BlastOOFTracebackToGapEditScript(GapPrelimEditBlock *rev_prelim_tback,
     return 0;
 }
 
-Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
-        Uint1* subject, BlastGapAlignStruct* gap_align, 
+Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, 
+        const Uint1* query, const Uint1* subject, BlastGapAlignStruct* gap_align, 
         const BlastScoringParameters* score_params,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length,
         Boolean * fence_hit)

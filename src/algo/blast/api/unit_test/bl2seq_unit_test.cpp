@@ -615,6 +615,9 @@ BOOST_AUTO_TEST_CASE(TBlastn2SeqsRevStrand1)
     BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
     vector < CRef< CSeq_loc > > locs = sar->GetSegs().GetStd().front()->GetLoc();
     BOOST_CHECK_EQUAL(eNa_strand_minus, (int) (locs[1])->GetStrand());
+    int num_ident = 0;
+    sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+    BOOST_CHECK_EQUAL(155, num_ident);
 #if 0
 ofstream o("minus1.asn");
 o << MSerial_AsnText << *sar ;
@@ -637,6 +640,9 @@ BOOST_AUTO_TEST_CASE(TBlastn2SeqsRevStrand2)
     BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
     vector < CRef< CSeq_loc > > locs = sar->GetSegs().GetStd().front()->GetLoc();
     BOOST_CHECK_EQUAL(eNa_strand_minus, (int) (locs[1])->GetStrand());
+    int num_ident = 0;
+    sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+    BOOST_CHECK_EQUAL(11, num_ident);
 #if 0
 ofstream o("minus2.asn");
 o << MSerial_AsnText << *sar ;
@@ -664,14 +670,12 @@ BOOST_AUTO_TEST_CASE(TBlastn2SeqsCompBasedStats)
 
     int num_ident = 0;
     sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+    BOOST_CHECK_EQUAL(229, num_ident);
 #if 0
 ofstream o("2.asn");
 o << MSerial_AsnText << *sar ;
 o.close();
 #endif
-    // N.B.: because we used composition based statistics, this field was not
-    // calculated as it's not implemented
-    BOOST_CHECK_EQUAL(229, num_ident);
 
     // Check the ancillary results
     CSearchResultSet::TAncillaryVector ancillary_data;

@@ -65,7 +65,7 @@ extern "C" {
  * @return The best alignment score found.
 */
 Int4
-ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
+ALIGN_EX(const Uint1* A, const Uint1* B, Int4 M, Int4 N, Int4* a_offset,
         Int4* b_offset, GapPrelimEditBlock *edit_block, 
         BlastGapAlignStruct* gap_align, 
         const BlastScoringParameters* scoringParams, Int4 query_offset,
@@ -94,7 +94,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
  * @return The best alignment score found.
  */
 Int4 
-Blast_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
+Blast_SemiGappedAlign(const Uint1* A, const Uint1* B, Int4 M, Int4 N,
                   Int4* a_offset, Int4* b_offset, Boolean score_only, 
                   GapPrelimEditBlock *edit_block, BlastGapAlignStruct* gap_align, 
                   const BlastScoringParameters* score_params, 

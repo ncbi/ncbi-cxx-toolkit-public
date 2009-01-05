@@ -103,16 +103,7 @@ bool CGuideTree::WriteImage(const string& filename)
 {
     bool success = x_RenderImage();
     if(success) {
-        if(!filename.empty()) {
-            CImageIO::WriteImage(m_Context->GetBuffer(), filename,
-                                 m_ImageFormat);
-        }
-        else {//netcache
-            CNetCacheClient_LB nc_client("blast_guide_tree", "NC_PhyloTree");
-            m_ImageKey = nc_client.PutData(m_Context->GetBuffer().GetData(), 
-                                           m_Width * m_Height * 3);
-        }
-         
+        CImageIO::WriteImage(m_Context->GetBuffer(), filename, m_ImageFormat);
     }
     return success;
 }
@@ -140,31 +131,12 @@ bool CGuideTree::WriteTree(const string& filename)
     m_DataSource->Save(dyntree);
     BioTreeConvert2Container(btc, dyntree);
     
-    if (!filename.empty()) {
-
-        // Writing to file
-        CNcbiOfstream ostr(filename.c_str());
-        if (!ostr) {
-            return false;
-        }
-        ostr << MSerial_AsnText << btc;
+    // Writing to file
+    CNcbiOfstream ostr(filename.c_str());
+    if (!ostr) {
+        return false;
     }
-    else {
-
-        // Saving in net cache
-        CConn_MemoryStream mem_str;
-        //        CObjectOStreamAsnBinary out_bin(mem_str);
-        //        out_bin << btc;
-        mem_str << MSerial_AsnBinary << btc;
-        //        out_bin.Flush();
-
-        CNetCacheClient_LB nc_client("blast_guide_tree", "NC_PhyloTree");
-        size_t size = mem_str.tellp();
-        string data;
-        data.resize(size);
-        mem_str.read(const_cast<char*>(data.data()), size);
-        m_TreeKey = nc_client.PutData(&data[0], data.size());
-    }
+    ostr << MSerial_AsnText << btc;
 
     return true;
 }
@@ -236,23 +208,29 @@ bool CGuideTree::PrintNexusTree(CNcbiOstream& ostr, const string& tree_name,
     return true;
 }
 
-bool CGuideTree::SaveTreeAs(ETreeFormat format, const string& filename)
+bool CGuideTree::SaveTreeAs(CNcbiOstream& ostr, ETreeFormat format)
 {
     switch (format) {
     case eImage :
-        return WriteImage(filename);
+        return WriteImage(ostr);
 
-    case eSerial :
-        return WriteTree(filename);
+    case eASN :
+        return WriteTree(ostr);
 
     case eNewick :
-        return PrintNewickTree(filename);
+        return PrintNewickTree(ostr);
 
     case eNexus :
-        return PrintNexusTree(filename);
+        return PrintNexusTree(ostr);
     }
 
     return false;
+}
+
+
+void CGuideTree::FullyExpand(void)
+{
+    TreeDepthFirstTraverse(*m_DataSource->GetTree(), CExpander());
 }
 
 
@@ -268,14 +246,15 @@ void CGuideTree::SimplifyTree(ETreeSimplifyMode method, bool refresh)
     // Collapse all subtrees with common blast name       
     case eBlastName :
     {
-        TreeDepthFirstTraverse(*m_DataSource->GetTree(), CPhyloTreeExpander());
+        FullyExpand();
         CPhyloTreeNodeGroupper groupper 
             = TreeDepthFirstTraverse(*m_DataSource->GetTree(), 
                CPhyloTreeNodeGroupper(kBlastNameTag,
                                       kNodeColorTag));
 
         if (!groupper.GetError().empty()) {
-            NCBI_THROW(CException, eUnknown, groupper.GetError());
+            NCBI_THROW(CGuideTreeException, eTraverseProblem,
+                       groupper.GetError());
         }
 
         x_CollapseSubtrees(groupper);
@@ -284,12 +263,12 @@ void CGuideTree::SimplifyTree(ETreeSimplifyMode method, bool refresh)
 
     //Fully expand the tree        
     case eFullyExpanded :
-        //m_DataSource::ShowAll() does not correct node colors
-        TreeDepthFirstTraverse(*m_DataSource->GetTree(), CPhyloTreeExpander());
+        FullyExpand();
         break;
 
     default:
-      NCBI_THROW(CException, eUnknown, "Invalid tree simplify mode");
+      NCBI_THROW(CGuideTreeException, eInvalidOptions,
+                 "Invalid tree simplify mode");
     }
 
     if (refresh) {
@@ -314,7 +293,8 @@ void CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
                                kBlastNameTag, kNodeColorTag));
 
         if (!tracker.GetError().empty()) {
-            NCBI_THROW(CException, eUnknown, tracker.GetError());
+            NCBI_THROW(CGuideTreeException, eTraverseProblem,
+                       tracker.GetError());
         }
 
         CPhyloTreeLabelTracker::TLabelColorMap_I it = tracker.Begin();
@@ -403,9 +383,9 @@ void CGuideTree::Refresh(void)
 
 bool CGuideTree::IsSingleBlastName(void)
 {
-    CPhyloTreeSingleBlastNameExaminer examiner 
+    CSingleBlastNameExaminer examiner 
         = TreeDepthFirstTraverse(*m_DataSource->GetTree(), 
-                                 CPhyloTreeSingleBlastNameExaminer());
+                                 CSingleBlastNameExaminer());
     return examiner.IsSingleBlastName();
 }
 
@@ -426,12 +406,10 @@ void CGuideTree::x_Init(void)
 CPhyloTreeNode* CGuideTree::x_GetNode(int id, CPhyloTreeNode* root)
 {
     CPhyloTreeNode* tree = root ? root : m_DataSource->GetTree();
-    CPhyloTreeNodeFinder node_finder = TreeDepthFirstTraverse(*tree,
-    //                                   *m_DataSource->GetTree(), 
-                                   CPhyloTreeNodeFinder(id));
+    CNodeFinder node_finder = TreeDepthFirstTraverse(*tree, CNodeFinder(id));
 
     if (!node_finder.GetNode()) {
-        NCBI_THROW(CException, eUnknown, (string)"Node "
+        NCBI_THROW(CGuideTreeException, eNodeNotFound, (string)"Node "
                    + NStr::IntToString(id) + (string)" not found");
     }
 

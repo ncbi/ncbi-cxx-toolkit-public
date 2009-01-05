@@ -343,7 +343,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
 {
    Int4 index;
    BlastHSP* hsp;
-   Uint1* query,* subject;
+   Uint1* query;
+   const Uint1* subject;
    Int4 query_length;
    BlastHSP** hsp_array;
    Int4 subject_length=0;
@@ -353,7 +354,6 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    Uint1* translation_buffer = NULL;
    Int4 * frame_offsets   = NULL;
    Int4 * frame_offsets_a = NULL;
-   Boolean partial_translation = FALSE;
    const Boolean is_rpsblast = Blast_ProgramIsRpsBlast(program_number);
    const Boolean kIsOutOfFrame = score_options->is_ooframe;
    const Boolean kGreedyTraceback = (ext_options->eTbackExt == eGreedyTbck);
@@ -367,6 +367,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    BlastIntervalTree* tree = NULL;
    BlastHSPList * orig_hsplist = NULL;
    Boolean fence_error = FALSE;
+   SBlastTargetTranslation* target_t = NULL;
    
    if (num_initial_hsps == 0) {
       return 0;
@@ -395,23 +396,15 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
           return -1;
       }
       
-      if (kIsOutOfFrame) {
-         Blast_SetUpSubjectTranslation(subject_blk, gen_code_string,
-                                       NULL, NULL, &partial_translation);
-         /* Length of a mixed-frame sequence, corresponding to each single 
-            strand of the nucleotide sequence, is equal to nucleotide 
-            length. */
-         subject_length = subject_blk->length;
-      } else if (program_number == eBlastTypeRpsTblastn) {
+      if (program_number == eBlastTypeRpsTblastn) {
           translation_buffer = subject_blk->sequence - 1;
           frame_offsets_a = frame_offsets =
               ContextOffsetsToOffsetArray(query_info_in);
-      } else {
-         Blast_SetUpSubjectTranslation(subject_blk, gen_code_string,
-            &translation_buffer, &frame_offsets, &partial_translation);
-         frame_offsets_a = frame_offsets;
-         /* subject and subject_length will be set later, for each HSP. */
-      }
+      } 
+      else
+      	BlastTargetTranslationNew(subject_blk, gen_code_string, program_number, kIsOutOfFrame, &target_t);
+      if (kIsOutOfFrame)
+        subject_length = subject_blk->length;
    } else {
       /* Subject is not translated */
       subject = subject_blk->sequence;
@@ -472,29 +465,22 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
 
          Int4 start_shift = 0;
          Int4 adjusted_s_length;
-         Uint1* adjusted_subject;
+         const Uint1* adjusted_subject;
          Int4 cutoff;
 
          if (kTranslateSubject) {
-            if (!kIsOutOfFrame && !partial_translation) {
-               const Int4 context = BLAST_FrameToContext(hsp->subject.frame, 
-                                                   program_number);
-               subject = translation_buffer + frame_offsets[context] + 1;
-               subject_length = 
-                  frame_offsets[context+1] - frame_offsets[context] - 1;
-            } else { 
-                if (partial_translation) {
-                    Blast_HSPGetPartialSubjectTranslation(subject_blk, hsp, 
-                        kIsOutOfFrame, gen_code_string, &translation_buffer, 
-                        &subject, &subject_length, &start_shift);
-                } else {
-                    /* Out-of-frame with full translation; point subject to the
+            if (program_number == eBlastTypeRpsTblastn) {
+                 const Int4 context = BLAST_FrameToContext(hsp->subject.frame, program_number);
+                 subject = translation_buffer + frame_offsets[context] + 1;
+                 subject_length = frame_offsets[context+1] - frame_offsets[context] - 1;
+            } else if (kIsOutOfFrame) {
+                 /* Out-of-frame with full translation; point subject to the
                        start of the right strand in the mixed-frame sequence. */
-                    subject = subject_blk->oof_sequence + CODON_LENGTH;
-                    if (hsp->subject.frame < 0)
-                        subject += subject_length + 1;
-                }
-            }
+                 subject = subject_blk->oof_sequence + CODON_LENGTH;
+                 if (hsp->subject.frame < 0)
+                      subject += subject_length + 1;
+            } else
+            	subject = Blast_HSPGetTargetTranslation(target_t, hsp, &subject_length);
          }
 
          if (!kIsOutOfFrame && (((hsp->query.gapped_start == 0 && 
@@ -624,6 +610,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          sfree(translation_buffer);
       }
    }
+
+   target_t = BlastTargetTranslationFree(target_t);
    
    if (kSmithWaterman) {
        /* switch over to the result of the traceback */

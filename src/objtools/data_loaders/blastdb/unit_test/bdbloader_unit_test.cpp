@@ -65,6 +65,9 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+/// Auxiliary class to register the BLAST database data loader of choice
+/// (information provided in the constructor) and deactivate it on object
+/// destruction
 class CAutoRegistrar {
 public:
     CAutoRegistrar(const string& dbname, bool is_protein,
@@ -81,12 +84,12 @@ public:
                          CObjectManager::kPriority_NotSet)
                         .GetLoader()->GetName();
         } else {
-        loader_name = CBlastDbDataLoader::RegisterInObjectManager
-                    (*om, dbname, is_protein 
-                     ? CBlastDbDataLoader::eProtein
-                     : CBlastDbDataLoader::eNucleotide,
-                     use_fixed_slice_size,
-                     CObjectManager::eDefault, 
+            loader_name = CBlastDbDataLoader::RegisterInObjectManager
+                        (*om, dbname, is_protein 
+                         ? CBlastDbDataLoader::eProtein
+                         : CBlastDbDataLoader::eNucleotide,
+                         use_fixed_slice_size,
+                         CObjectManager::eDefault, 
                          CObjectManager::kPriority_NotSet)
                         .GetLoader()->GetName();
         }
@@ -251,7 +254,8 @@ void RetrievePartsOfLargeChromosome(bool is_remote)
 {
     const string kAccession("NC_000001");
     CRef<CSeq_id> id(new CSeq_id(kAccession));
-    const TSeqRange kRange(100, 500);
+    // retrieves this range in the sequence
+    const TSeqRange kRange(100, 500); 
     CRef<CSeq_loc> sl(new CSeq_loc(*id, kRange.GetFrom(), kRange.GetTo()));
 
     const string db("nucl_dbs");

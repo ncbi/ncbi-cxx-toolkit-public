@@ -178,7 +178,7 @@ CBlastDbDataLoader::CBlastDbDataLoader(const string        & loader_name,
     }
     if (m_BlastDb.Empty() && !m_DBName.empty()) {
         const CSeqDB::ESeqType dbtype = DbTypeToSeqType(m_DBType);
-            m_BlastDb.Reset(new CLocalBlastDbAdapter(m_DBName, dbtype));
+        m_BlastDb.Reset(new CLocalBlastDbAdapter(m_DBName, dbtype));
     }
     if (m_BlastDb.Empty() && m_DBName.empty()) {
         NCBI_THROW(CSeqDBException, eArgErr, "Empty BLAST database handle");

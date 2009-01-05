@@ -241,8 +241,8 @@ Blast_HSPInit(Int4 query_start, Int4 query_end,
  */
 NCBI_XBLAST_EXPORT
 Boolean 
-Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, Uint1* query_start, 
-   Uint1* subject_start, const BlastHitSavingParameters* hit_params, 
+Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, const Uint1* query_start, 
+   const Uint1* subject_start, const BlastHitSavingParameters* hit_params, 
    const BlastScoringParameters* score_params, BlastScoreBlk* sbp);
 
 /** Reevaluate the HSP's score and percent identity after taking into
@@ -259,7 +259,7 @@ Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, Uint1* query_start,
 NCBI_XBLAST_EXPORT
 Boolean 
 Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, 
-   Uint1* query_start, Uint1* subject_start,
+   const Uint1* query_start, const Uint1* subject_start,
    const BlastInitialWordParameters* word_params, 
    BlastScoreBlk* sbp, Boolean translated);
 
@@ -296,7 +296,7 @@ Blast_HSPGetNumIdentities(const Uint1* query,
  */ 
 Boolean
 Blast_HSPTestIdentityAndLength(EBlastProgramType program_number, 
-                               BlastHSP* hsp, Uint1* query, Uint1* subject, 
+                               BlastHSP* hsp, const Uint1* query, const Uint1* subject, 
                                const BlastScoringOptions* score_options,
                                const BlastHitSavingOptions* hit_options);
 
@@ -364,6 +364,16 @@ Blast_HSPGetPartialSubjectTranslation(BLAST_SequenceBlk* subject_blk,
 NCBI_XBLAST_EXPORT
 void
 Blast_HSPAdjustSubjectOffset(BlastHSP* hsp, Int4 start_shift);
+
+
+/** Returns a buffer with a protein translated from nucleotide.
+ * @target_t SBlastTargetTranslation* with information about translation [in]
+ * @hsp The hit to work on [in]
+ * @translated_length length of the protein sequence [in]
+*/
+NCBI_XBLAST_EXPORT
+const Uint1*
+Blast_HSPGetTargetTranslation(SBlastTargetTranslation* target_t, const BlastHSP* hsp, Int4* translated_length);
 
 /********************************************************************************
           HSPList API

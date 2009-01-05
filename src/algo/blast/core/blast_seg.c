@@ -1864,6 +1864,7 @@ s_LnPerm(const Int4* sv, Int4 window_length)
    double ans;
    Int4 i;
 
+   ASSERT(window_length < sizeof(lnfact)/sizeof(*lnfact));
    ans = lnfact[window_length];
 
    for (i=0; sv[i]!=0; i++) 
@@ -1891,6 +1892,7 @@ s_LnAss(const Int4* sv, Int4 alphasize)
 	int	class, total;
 	int    i;
 
+    ASSERT(alphasize < sizeof(lnfact)/sizeof(*lnfact));
 	ans = lnfact[alphasize];
 	if (sv[0] == 0)
 		return ans;

@@ -129,6 +129,7 @@ CLocalBlastDbAdapter::GetSequence(int oid,
             _ASSERT((end-begin) <= (int)length);
             retval->SetNcbistdaa().Set().assign(buffer + begin, buffer + end);
             m_SeqDB->RetSequence(&buffer);
+            length += 0;    // to avoid compiler warning
         } else {
             TSeqPos length = 
                 m_SeqDB->GetAmbigSeq(oid, &buffer, kNuclCode, begin, end);

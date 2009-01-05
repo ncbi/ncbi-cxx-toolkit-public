@@ -75,15 +75,12 @@ static const string s_kSubtreeDisplayed = "0";
 
 
 CGuideTreeCalc::CGuideTreeCalc(const CRef<CSeq_annot>& annot,
-                               const CRef<CScope>& scope,
-                               const string& query_id,
-                               EInputFormat format,
-                               const string& accession)
+                               CRef<CScope> scope, const string& query_id)
     : m_Scope(scope), 
       m_QuerySeqId(query_id)
 {
     x_Init();
-    x_InitAlignDS(*annot, format, accession);
+    x_InitAlignDS(*annot);
 }
 
 
@@ -114,7 +111,7 @@ static bool s_SeqAlignQueryMatch(CRef<CSeq_align>& seq_align,
 {
     const CSeq_id& seq_id = seq_align->GetSeq_id(0);
     string query_id;
-    seq_id.GetLabel(&query_id);    
+    seq_id.GetLabel(&query_id);
     return (query_seq_id == query_id);
 }
 
@@ -145,9 +142,9 @@ static bool IsIn(const hash_set<int>& set, int val)
 
 
 // Calculate divergence matrix, considering max divergence constraint
-bool CGuideTreeCalc::CalcDivergenceMatrix(CDistMethods::TMatrix& pmat,
-                                          double max_divergence,
-                                          hash_set<int>& removed) const
+bool CGuideTreeCalc::x_CalcDivergenceMatrix(CDistMethods::TMatrix& pmat,
+                                            double max_divergence,
+                                            hash_set<int>& removed) const
 {
     const CAlnVec& alnvec = m_AlignDataSource->GetAlnMgr();
     int num_seqs = alnvec.GetNumRows();
@@ -216,7 +213,7 @@ bool CGuideTreeCalc::CalcDivergenceMatrix(CDistMethods::TMatrix& pmat,
 }
 
 
-CRef<CAlnVec> CGuideTreeCalc::CreateValidAlign(
+CRef<CAlnVec> CGuideTreeCalc::x_CreateValidAlign(
                                          const hash_set<int>& removed_inds,
                                          vector<int>& new_align_index)
 {
@@ -255,7 +252,7 @@ CRef<CAlnVec> CGuideTreeCalc::CreateValidAlign(
         }
         //newindex contains valid for phylo_tree gis
 
-        alnvec = x_CreateSubsetAlign(alnvec, new_align_index, false);
+        alnvec = x_CreateSubsetAlign(alnvec, new_align_index);
 
     }        
     return alnvec;
@@ -263,8 +260,8 @@ CRef<CAlnVec> CGuideTreeCalc::CreateValidAlign(
 }
 
 
-void CGuideTreeCalc::TrimMatrix(CDistMethods::TMatrix& pmat,
-                                const vector<int>& used_inds)
+void CGuideTreeCalc::x_TrimMatrix(CDistMethods::TMatrix& pmat,
+                                  const vector<int>& used_inds)
 {
     _ASSERT(used_inds.size() <= pmat.GetRows());
 
@@ -310,15 +307,16 @@ void CGuideTreeCalc::CalcDistMatrix(const CDistMethods::TMatrix& pmat,
         break;
 
     default:
-        NCBI_THROW(CException, eUnknown, "Invalid distance calculation method");
+        NCBI_THROW(CGuideTreeCalcException, eInvalidOptions,
+                   "Invalid distance calculation method");
     }
 }
 
 // Compute phylogenetic tree
-void CGuideTreeCalc::ComputeTree(const CAlnVec& alnvec,
-                                 const CDistMethods::TMatrix& dmat,
-                                 ETreeMethod method,
-                                 bool correct)
+void CGuideTreeCalc::x_ComputeTree(const CAlnVec& alnvec,
+                                   const CDistMethods::TMatrix& dmat,
+                                   ETreeMethod method,
+                                   bool correct)
 {
     _ASSERT((size_t)alnvec.GetNumRows() == dmat.GetRows());
 
@@ -335,7 +333,7 @@ void CGuideTreeCalc::ComputeTree(const CAlnVec& alnvec,
     cobalt::CTree tree;
 
     switch (method) {
-    case eNeighborJoining :
+    case eNJ :
         tree.ComputeTree(dmat, false);
         break;
 
@@ -344,12 +342,14 @@ void CGuideTreeCalc::ComputeTree(const CAlnVec& alnvec,
         break;
 
     default:
-        NCBI_THROW(CException, eUnknown, "Invalid tree reconstruction method");
+        NCBI_THROW(CGuideTreeCalcException, eInvalidOptions,
+                   "Invalid tree reconstruction method");
     };
 
 
     if (!tree.GetTree()) {
-        NCBI_THROW(CException, eUnknown, "Tree was not created");
+        NCBI_THROW(CGuideTreeCalcException, eTreeComputationProblem,
+                   "Tree was not created");
     }
 
     TPhyTreeNode* ptree = (TPhyTreeNode*)tree.GetTree();
@@ -373,14 +373,14 @@ bool CGuideTreeCalc::CalcBioTree(void)
     vector<int> used_inds;
 
     bool valid;
-    valid = CalcDivergenceMatrix(pmat, m_MaxDivergence, removed_inds);
+    valid = x_CalcDivergenceMatrix(pmat, m_MaxDivergence, removed_inds);
 
     if (valid) {
         CRef<CAlnVec> alnvec;
 
         if (!removed_inds.empty()) {
-            alnvec = CreateValidAlign(removed_inds, used_inds);
-            TrimMatrix(pmat, used_inds);
+            alnvec = x_CreateValidAlign(removed_inds, used_inds);
+            x_TrimMatrix(pmat, used_inds);
         }
         else {
             alnvec.Reset(new CAlnVec(m_AlignDataSource->GetAlnMgr().GetDenseg(),
@@ -388,7 +388,7 @@ bool CGuideTreeCalc::CalcBioTree(void)
         }
 
         CalcDistMatrix(pmat, dmat, m_DistMethod);
-        ComputeTree(*alnvec, dmat, m_TreeMethod);
+        x_ComputeTree(*alnvec, dmat, m_TreeMethod);
 
     }
 
@@ -434,96 +434,44 @@ void CGuideTreeCalc::x_Init(void)
 }
 
 
-bool CGuideTreeCalc::x_CreateMixForASN1(const CSeq_annot& annot, CAlnMix& mix)
+bool CGuideTreeCalc::x_InitAlignDS(const CSeq_annot& annot)
 {
     bool success = false;
 
-    //    bool query_seq_align_found = false;        
-    ITERATE (CSeq_annot::TData::TAlign, iter, 
-             annot.GetData().GetAlign()) {
+    // Query from the first alignment is used as query for the tree,
+    // unless another id is selected
+    if (m_QuerySeqId.empty()) {        
+        const CSeq_id& seq_id 
+            = (*annot.GetData().GetAlign().begin())->GetSeq_id(0);
+
+        seq_id.GetLabel(&m_QuerySeqId);
+    }
+
+    CAlnMix mix;
+    ITERATE (CSeq_annot::TData::TAlign, iter, annot.GetData().GetAlign()) {
 
         CRef<CSeq_align> seq_align = *iter;
         
         if (s_SeqAlignQueryMatch(seq_align, m_QuerySeqId)) {
+
             success = true;
             mix.Add(**iter);
         }
-    }   
-
-    return success;
-}
-
-
-// This function creates CAlnMix for alignments in accession
-// located in m_inputParamVal
-// (m_annot is set from RID)
-bool CGuideTreeCalc::x_CreateMixForAccessNum(const string& accession,
-                                             CAlnMix& mix)
-{
-    bool success = true;
-
-    CSeq_id id(accession);
-    if (id.Which() == CSeq_id::e_not_set) {
-
-        NCBI_THROW(CException, eUnknown, (string)"Accession " + accession
-                   + "not recognized as a valid accession");
-        success = false;
-    }
-    else {
-        
-        // Retrieve our sequence
-        CBioseq_Handle handle = m_Scope->GetBioseqHandle(id);
-        if (handle) {
-            SAnnotSelector sel =
-                CSeqUtils::GetAnnotSelector(CSeq_annot::TData::e_Align);
-            CAlign_CI iter(handle, sel);
-    
-            for (; iter; ++iter) {
-                mix.Add(*iter);
-            }
-        }
-        else {
-            NCBI_THROW(CException, eUnknown,
-                       (string)"Can't find sequence for accession " + accession);
-            success = false;
-        }
-    }
-    return success;
-}
-
-
-// Create m_SeqAlign and initialize m_AlignDataSource
-bool CGuideTreeCalc::x_InitAlignDS(const CSeq_annot& annot, EInputFormat format,
-                                   const string& accession)
-{
-    bool success = false;
-    CAlnMix mix;
-    
-    switch (format) {
-    case eAccession:
-        _ASSERT(!accession.empty());
-        success = x_CreateMixForAccessNum(accession, mix);
-        break;
-
-    case eRID:
-    case eASN1:
-        success = x_CreateMixForASN1(annot, mix);
-        break;
     }
 
-    if (success ) {
-        
+    if (success) {
+
         CAlnMix::TMergeFlags merge_flags;
         merge_flags = CAlnMix::fGapJoin | CAlnMix::fTruncateOverlaps;
         mix.Merge(merge_flags);
+
         x_InitAlignDS(mix.GetSeqAlign());
     }
+
     return success;
 }
 
 
-
-// Initialize m_AlignDataSource with m_SeqAlign 
 void CGuideTreeCalc::x_InitAlignDS(const CSeq_align& seq_aln)
 {
     m_AlignDataSource.Reset(new CAlignDataSource());  
@@ -585,8 +533,7 @@ static void s_GetNonGapSegmentRange(const CAlnVec& avec,
 
 // Create seq_align from a subset of given alnvec
 CRef<CAlnVec> CGuideTreeCalc::x_CreateSubsetAlign(const CRef<CAlnVec>& alnvec,
-                                        const vector<int>& align_index,
-                                        bool create_align_set) 
+                                        const vector<int>& align_index) 
 {
     CAlnVec avec(alnvec->GetDenseg(), alnvec->GetScope());
     avec.SetGapChar('-');  
@@ -757,9 +704,10 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
     CTaxon1 tax;
 
     bool success = tax.Init();
-//    if (!success) {
-//        NCBI_THROW();
-//    }
+    if (!success) {
+        NCBI_THROW(CGuideTreeCalcException, eTaxonomyError,
+                   "Problem initializing taxonomy information");
+    }
     
     // Come up with some labels for the terminal nodes
     int num_rows = alnvec.GetNumRows();

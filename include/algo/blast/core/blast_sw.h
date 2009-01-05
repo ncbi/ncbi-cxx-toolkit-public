@@ -77,8 +77,8 @@ extern "C" {
  * @param cutoff Alignments are saved if their score exceeds this value [in]
  */
 void SmithWatermanScoreWithTraceback(EBlastProgramType program_number,
-                                     Uint1 *A, Int4 a_size,
-                                     Uint1 *B, Int4 b_size,
+                                     const Uint1 *A, Int4 a_size,
+                                     const Uint1 *B, Int4 b_size,
                                      BlastHSP *template_hsp,
                                      BlastHSPList *hsp_list,
                                      const BlastScoringParameters *score_params,

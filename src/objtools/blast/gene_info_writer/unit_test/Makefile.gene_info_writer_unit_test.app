@@ -5,7 +5,7 @@ SRC = gene_info_writer_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
-LOCAL_LDFLAGS = -L. -L.. -L../../../../../lib
+LOCAL_LDFLAGS += -L. -L..
 LDFLAGS = $(LOCAL_LDFLAGS) $(FAST_LDFLAGS)
 
 LIB_ = gene_info_writer gene_info xobjutil seqdb blastdb $(SOBJMGR_LIBS)
