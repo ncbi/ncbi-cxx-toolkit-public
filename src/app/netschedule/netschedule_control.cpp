@@ -80,23 +80,12 @@ void CNetScheduleControl::x_GetConnectionArgs(string& service, string& queue, in
     if (queue_requered && !args["queue"] )
         NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -queue");
 
-
-
-
     queue = "noname";
     if (queue_requered && args["queue"] )
         queue = args["queue"].AsString();
 
     retry = 1;
-    /*
-    if (args["retry"]) {
-        retry = args["retry"].AsInteger();
-        if (retry < 1) {
-            ERR_POST(Error << "Invalid retry count: " << retry);
-            retry = 1;
-        }
-    }
-    */
+
     service = args["service"].AsString();
 }
 
@@ -184,6 +173,11 @@ void CNetScheduleControl::Init(void)
                              "Reschedule a job",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("cancel",
+                             "job_key",
+                             "Cancel a job",
+                             CArgDescriptions::eString);
+
     arg_desc->AddOptionalKey("qprint",
                              "job_status",
                              "Print queue content for the specified job status",
@@ -215,13 +209,6 @@ void CNetScheduleControl::Init(void)
                              CArgDescriptions::eString);
 
     arg_desc->AddFlag("showparams", "Show service paramters");
-
-    /*
-    arg_desc->AddOptionalKey("retry",
-                             "retry",
-                             "Number of re-try attempts if connection failed",
-                             CArgDescriptions::eInteger);
-    */
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -355,7 +342,13 @@ int CNetScheduleControl::Run(void)
         ctl = x_CreateNewClient(true);
         string jid = args["reschedule"].AsString();
         ctl.GetAdmin().ForceReschedule(jid);
-        os << "Job " << jid << " has been resheduled." << endl;
+        os << "Job " << jid << " has been rescheduled." << endl;
+    }
+    else if (args["cancel"]) {
+        ctl = x_CreateNewClient(true);
+        string jid = args["cancel"].AsString();
+        ctl.GetSubmitter().CancelJob(jid);
+        os << "Job " << jid << " has been canceled." << endl;
     }
     else if (args["ver"]) {
         ctl = x_CreateNewClient(false);
