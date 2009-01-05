@@ -635,9 +635,6 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
     switch ( event ) {
     case eStartRequest:
         {
-            // Reset HTTP status code
-            SetHTTPStatus(200);
-
             // Set context properties
             const CCgiRequest& req = m_Context->GetRequest();
 
@@ -646,6 +643,9 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                 GetDiagContext().PrintRequestStart(req.GetCGIEntriesStr());
                 m_RequestStartPrinted = true;
             }
+
+            // Set default HTTP status code (reset above by PrintRequestStart())
+            SetHTTPStatus(200);
 
             const string& phid = CDiagContext::GetRequestContext().GetHitID();
             // Check if ncbi_st cookie is set
