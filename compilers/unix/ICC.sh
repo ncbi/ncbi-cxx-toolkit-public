@@ -17,9 +17,29 @@ case `uname -m` in
 esac
 
 Usage() {
-    echo "USAGE: `basename $0` [[build_dir] [--configure-flags] | -h]"
+    echo "USAGE: `basename $0` [version] [[build_dir] [--configure-flags] | -h]"
     exit $1
 }
+
+case "$1" in
+  8            ) search=/opt/intel/compiler8* ;;
+  8.0          ) search=/opt/intel/compiler80 ;;
+  *.*.*        ) search=/opt/intel/cc*/$1     ;;
+  9* | 1[0-9]* ) search=/opt/intel/cc*/$1.*   ;;
+  *            ) search=                      ;;
+esac
+
+if [ -n "$search" ]; then
+    shift
+    base_CC=$CC
+    base_CXX=$CXX
+    for dir in $search; do
+        if test -x $dir/bin/$base_CC; then
+            CC=$dir/bin/$base_CC
+            CXX=$dir/bin/$base_CXX
+        fi
+    done
+fi
 
 $CXX -V -help >/dev/null 2>&1
 if test "$?" -ne 0 ; then
