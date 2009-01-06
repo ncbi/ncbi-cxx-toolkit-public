@@ -164,13 +164,13 @@ x_FillResidueFrequencies(double **freq_data,
         // add in the residue frequencies
 
         _ASSERT(start + size <= query_data[index].GetLength());
-        for (int j = start; j < size; j++) {
+        for (int j = 0; j < size; j++) {
             if (query_data[index].GetLetter(j) == CSequence::kGapChar) {
                 freq_data[j][0] += weight;
             }
             else {
                 for (int k = 0; k < kAlphabetSize; k++) {
-                    freq_data[j][k] += weight * matrix(j, k);
+                    freq_data[j][k] += weight * matrix(start + j, k);
                 }
             }
         }
@@ -194,6 +194,8 @@ x_NormalizeResidueFrequencies(double **freq_data,
         for (int j = 0; j < kAlphabetSize; j++) {
             sum += freq_data[i][j];
         }
+        // Gaps are not allowed in initial queries
+        _ASSERT(sum > 0.0);
 
         sum = 1.0 / sum;
         for (int j = 0; j < kAlphabetSize; j++) {
