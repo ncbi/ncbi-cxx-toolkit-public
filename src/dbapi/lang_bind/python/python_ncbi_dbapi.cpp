@@ -2321,13 +2321,13 @@ CCursor::callproc(const pythonpp::CTuple& args)
                     m_CallableStmtHelper.SetStr(m_StmtStr, &m_InfoHandler);
                     has_out_params = SetupParameters(dict, m_CallableStmtHelper);
                 } else  {
-                    // Curently, NCBI DBAPI supports pameter binding by name only ...
+                    // Currently, NCBI DBAPI supports parameter binding by name only ...
                     //            pythonpp::CSequence sequence;
                     //            if ( pythonpp::CList::HasSameType(obj) ) {
                     //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
                     //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
                     //            }
-                    throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
+                    throw CNotSupportedError("NCBI DBAPI supports parameter binding by name only");
                 }
             } else {
                 m_CallableStmtHelper.SetStr(m_StmtStr, &m_InfoHandler);
@@ -2336,7 +2336,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
 
         m_InfoMessages.Clear();
         m_CallableStmtHelper.Execute(has_out_params);
-        m_RowsNum = m_StmtHelper.GetRowCount();
+        m_RowsNum = m_CallableStmtHelper.GetRowCount();
 
         if ( args_size > 1 && has_out_params) {
             // If we have input parameters ...
@@ -2377,7 +2377,9 @@ CCursor::callproc(const pythonpp::CTuple& args)
             }
 
             // Get RowResultSet ...
-            m_CallableStmtHelper.MoveToNextRS();
+            if (!m_CallableStmtHelper.MoveToNextRS()) {
+                m_AllDataFetched = m_AllSetsFetched = true;
+            }
 
             return output_args;
         }
@@ -2390,7 +2392,9 @@ CCursor::callproc(const pythonpp::CTuple& args)
 	}
 
     // Get RowResultSet ...
-    m_CallableStmtHelper.MoveToNextRS();
+    if (!m_CallableStmtHelper.MoveToNextRS()) {
+        m_AllDataFetched = m_AllSetsFetched = true;
+    }
 
     return pythonpp::CNone();
 
