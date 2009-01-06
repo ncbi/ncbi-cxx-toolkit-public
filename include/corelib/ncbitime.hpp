@@ -1523,7 +1523,7 @@ public:
 
     /// Return time elapsed since first Start() or last Restart() call
     /// (in seconds).
-    /// Result is undefined if Start() or Restart() wasn't previously called.
+    /// Result is 0.0 if Start() or Restart() wasn't previously called.
     double Elapsed(void) const;
 
     /// Suspend the timer.
@@ -1532,7 +1532,7 @@ public:
 
     /// Return time elapsed since first Start() or last Restart() call
     /// (in seconds). Start new timer after that.
-    /// Result is undefined if Start() or Restart() wasn't previously called.
+    /// Result is 0.0 if Start() or Restart() wasn't previously called.
     double Restart(void);
 
     /// Check state of stopwatch.
@@ -2340,16 +2340,17 @@ void CStopWatch::Start()
 inline
 double CStopWatch::Elapsed() const
 {
+    double total = m_Total;
     if ( m_State == eStop ) {
-        return m_Total;
+        return total;
     }
     // Workaround for -0 (negative zero) values,
     // that can occur at subtraction of very close doubles.
     double mark = GetTimeMark() - m_Start;
-    if (mark < 0.0) {
-        mark = 0.0;
+    if (mark > 0.0) {
+        total += mark;
     }
-    return m_Total + mark;
+    return total;
 }
 
 
@@ -2360,10 +2361,9 @@ void CStopWatch::Stop()
         return;
     }
     double mark = GetTimeMark() - m_Start;
-    if (mark < 0.0) {
-        mark = 0.0;
+    if (mark > 0.0) {
+        m_Total += mark;
     }
-    m_Total += mark;
     m_State = eStop;
 }
 
@@ -2371,21 +2371,20 @@ void CStopWatch::Stop()
 inline
 double CStopWatch::Restart()
 {
-    double elapsed = 0;
+    double total = m_Total;
+    double current = GetTimeMark();
     if ( m_State == eStart ) {
-        double previous = m_Start;
-        m_Start = GetTimeMark();
         // Workaround for -0 (negative zero) values,
         // that can occur at subtraction of very close doubles.
-        double diff = m_Start - previous;
-        if (diff < 0.0) {
-            diff = 0.0;
+        double mark = current - m_Start;
+        if ( mark > 0.0 ) {
+            total += mark;
         }
-        elapsed = m_Total + diff;
     }
     m_Total = 0;
+    m_Start = current;
     m_State = eStart;
-    return elapsed;
+    return total;
 }
 
 inline
