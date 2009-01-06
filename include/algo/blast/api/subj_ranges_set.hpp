@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Set of ranges of subject sequences to fetch during the traceback stage.
-class CSubjectRanges : public CObject {
+class NCBI_XBLAST_EXPORT CSubjectRanges : public CObject {
 public:
     /// Convenience typedef
     typedef CSeqDBExpert::TRangeList TRangeList;
