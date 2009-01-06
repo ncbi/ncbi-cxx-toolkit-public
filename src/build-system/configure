@@ -4195,6 +4195,10 @@ else
           compiler="WorkShop59"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.9" ;;
+        *Sun*C*5\.10* )
+          compiler="WorkShop59" # share some setup for now
+          ncbi_compiler="WORKSHOP"
+          ncbi_compiler_ver="5.10" ;;
       esac ;;
 
     irix* )
@@ -4216,7 +4220,17 @@ else
    esac
 fi
 
-ncbi_compiler_ver="`echo $ncbi_compiler_ver | sed 's%\([0-9]\)\.\([0-9]\)\.\([0-9]\).*%\1\2\3%; s%\([0-9]\)\.\([0-9][0-9]*\).*%\1\2%; s%^\([0-9][0-9]\)$%\10%; s%^\([0-9]\)$%\100%'`"
+#ncbi_compiler_ver="`echo $ncbi_compiler_ver | sed 's%\([0-9]\)\.\([0-9]\)\.\([0-9]\).*%\1\2\3%; s%\([0-9]\)\.\([0-9][0-9]*\).*%\1\2%; s%^\([0-9][0-9]\)$%\10%; s%^\([0-9]\)$%\100%'`"
+case "$compiler:$ncbi_compiler_ver" in
+    WorkShop*:?.?? )   ncbi_compiler_sed='s/\([0-9]\)\.\([0-9][0-9]\)/\1\20/' ;;
+    WorkShop*:[6-9].?) ncbi_compiler_sed='s/\([0-9]\)\.\([0-9\)/\10\20/' ;;
+    ICC:??.? )  ncbi_compiler_sed='s/\([0-9][0-9]\)\.\([0-9]\)/\1\20/' ;;
+    *:?.?.?)    ncbi_compiler_sed='s/\([0-9]\)\.\([0-9]\)\.\([0-9]\)/\1\2\3/' ;;
+    *:?.??*)    ncbi_compiler_sed='s/\([0-9]\)\.\([0-9][0-9]\).*/\1\2/' ;;
+    *:?.?)      ncbi_compiler_sed='s/\([0-9]\).\([0-9]\)/\1\20/' ;;
+    *:?)        ncbi_compiler_sed='s/\([0-9]\)/\100/' ;;
+esac
+ncbi_compiler_ver=`echo $ncbi_compiler_ver | sed "$ncbi_compiler_sed"`
 compiler_version=$ncbi_compiler_ver
 
 # Possible values of NCBI_COMPILER_$ncbi_compiler, since acconfig.h is obsolete
@@ -5036,12 +5050,12 @@ if test -z "$CFLAGS_DLL"  -a  -z "$CXXFLAGS_DLL" ; then
       CFLAGS_DLL="-fno-common"
       CXXFLAGS_DLL="-fno-common"
       ;;
-    *:GCC | linux*:KCC )
+    *:GCC | linux* )
       CFLAGS_DLL="-fPIC"
       CXXFLAGS_DLL="-fPIC"
       ;;
     solaris*:WorkShop* | irix*:MIPSpro73 | \
-    solaris*:KCC | irix*:KCC | linux*:ICC)
+    solaris*:KCC | irix*:KCC )
       CFLAGS_DLL="-KPIC"
       CXXFLAGS_DLL="-KPIC"
       ;;
@@ -5143,6 +5157,14 @@ echo "$as_me: WARNING: Unable to find static libstdc++ requested by --with-bin-r
     # the C++ standard library is actually linked in, and we shouldn't
     # rely on help from wrapper scripts.
     LINK="$LINK -Kc++"
+    ;;
+  ICC:1???:* )
+    APP_LDFLAGS="-i-static $APP_LDFLAGS"
+    DLL_LDFLAGS="-i-static -nodefaultlibs $DLL_LDFLAGS"
+    LINK="$LINK -Kc++"
+    # Defining _GCC_NEXT_LIMITS_H ensures that <limits.h> chaining doesn't
+    # stop short, as can otherwise happen. :-/
+    CPPFLAGS="$CPPFLAGS -D_GCC_NEXT_LIMITS_H"
     ;;
 esac
 
@@ -7217,7 +7239,7 @@ case "$compiler" in
         ;;
       linux* | *gnu* ) # | *bsd*
         case "$compiler:$compiler_version" in
-           ICC:9* )
+           ICC:9* | ICC:1??? )
              ncbi_cv_prog_cc_wl_no_asu=no
              LIBS="$LIBS -lc"
              C_LIBS="$C_LIBS -lc"
@@ -23138,7 +23160,7 @@ echo "$as_me: WARNING: If so, please re-run this script with the flag --without-
             darwin*:GCC) BOOST_TAG=""     ;;
             *:GCC)       BOOST_TAG="-gcc$boost_compiler_version" ;;
             *:KCC)       BOOST_TAG="-kcc" ;;
-            linux*:ICC)  BOOST_TAG="-il"  ;;
+            linux*:ICC)  BOOST_TAG="-il$boost_compiler_version" ;;
             *:WORKSHOP)  BOOST_TAG="-sw"  ;;
             *:MIPSPRO)   BOOST_TAG="-mp"  ;;
             *:VISUALAGE) BOOST_TAG="-xlc" ;;
