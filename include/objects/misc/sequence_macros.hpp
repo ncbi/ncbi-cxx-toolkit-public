@@ -763,9 +763,9 @@ NCBI_NC_ITERATE( \
 
 /// CSeq_annot iterators
 
-/// IF_ANNOT_HAS_FEATURE
+/// IF_ANNOT_IS_FEATURE
 
-#define IF_ANNOT_HAS_FEATURE(San) \
+#define IF_ANNOT_IS_FEATURE(San) \
 if ((San).IsFtable())
 
 /// ANNOT_IS_FEATURE
@@ -796,9 +796,9 @@ NCBI_NC_ITERATE( \
     (San).SetData().SetFtable())
 
 
-/// IF_ANNOT_HAS_ALIGN
+/// IF_ANNOT_IS_ALIGN
 
-#define IF_ANNOT_HAS_ALIGN(San) \
+#define IF_ANNOT_IS_ALIGN(San) \
 if ((San).IsAlign())
 
 /// ANNOT_IS_ALIGN
@@ -829,9 +829,9 @@ NCBI_NC_ITERATE( \
     (San).SetData().SetAlign())
 
 
-/// IF_ANNOT_HAS_GRAPH
+/// IF_ANNOT_IS_GRAPH
 
-#define IF_ANNOT_HAS_GRAPH(San) \
+#define IF_ANNOT_IS_GRAPH(San) \
 if ((San).IsGraph())
 
 /// ANNOT_IS_GRAPHS
