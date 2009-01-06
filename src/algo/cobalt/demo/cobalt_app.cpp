@@ -370,7 +370,23 @@ int CMultiApplication::Run(void)
     _ASSERT(!scope.Empty());
 
     aligner.SetQueries(queries, scope);
-    aligner.Run();
+    CMultiAligner::TStatus status = aligner.Run();
+
+    // If aligner returns with error status then write messages and exit
+    if (status > CMultiAligner::eWarnings) {
+        ITERATE(vector<string>, it, aligner.GetMessages()) {
+            NcbiCerr << "Error: " << *it << NcbiEndl;
+        }
+
+        return 1;
+    }
+
+    // If aligner returns with warning status then write messeges and proceed
+    if (status == CMultiAligner::eWarnings) {
+        ITERATE(vector<string>, it, aligner.GetMessages()) {
+            NcbiCerr << "Warning: " << *it << NcbiEndl;
+        }
+    }
 
     const vector<CSequence>& results(aligner.GetSeqResults());
     for (int i = 0; i < (int)results.size(); i++) {
