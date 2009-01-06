@@ -525,13 +525,19 @@ static bool RemoveSpaceBeforeAndAfterColon (string& str)
 
     pos = NStr::Find (str, ":");
     while (pos != string::npos) {
-        prev_pos = pos - 1;
-        while (prev_pos > 0 && isspace (str[prev_pos])) {
-            prev_pos--;
+        if (pos > 0) {
+            // clean up spaces before
+            prev_pos = pos - 1;
+            while (prev_pos > 0 && isspace (str[prev_pos])) {
+                prev_pos--;
+            }
+            if (!isspace (str[prev_pos])) {
+                prev_pos++;
+            }
+        } else {
+          prev_pos = 0;
         }
-        if (!isspace (str[prev_pos])) {
-            prev_pos++;
-        }
+            
         next_pos = pos + 1;
         while (isspace (str[next_pos]) || str[next_pos] == ':') {
             next_pos++;
