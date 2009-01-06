@@ -1508,7 +1508,14 @@ tds_put_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
         case 0:
             break;
         case 1:
-            tds_put_byte(tds, MAX(MIN(curcol->column_output? 255: curcol->column_size, 255), 1));
+            if (curcol->column_output  &&
+                (curcol->column_type == SYBCHAR  ||  curcol->column_type == SYBVARCHAR))
+            {
+                tds_put_byte(tds, 255);
+            }
+            else {
+                tds_put_byte(tds, MAX(MIN(curcol->column_size, 255), 1));
+            }
             break;
         case 2:
             /* ssikorsk */
