@@ -1337,25 +1337,34 @@ static void s_DemoStopWatch(void)
     LOG_POST("\n---------------------------");
     LOG_POST("Demo StopWatch");
     LOG_POST("---------------------------\n");
-    
-    CStopWatch sw;
-    sw.SetFormat("S.n");
-    assert(!sw.IsRunning());
-    sw.Start();
 
-    CNcbiOstrstream s;
-    for (int i=0; i<10; i++) {
-        s  << sw << endl;
+    for ( int t = 0; t < 2; ++t ) {
+        CStopWatch sw;
+        assert(!sw.IsRunning());
+        assert(sw.Elapsed() == 0);
+        if ( t == 0 ) {
+            sw.Start();
+        }
+        else {
+            assert(sw.Restart() == 0);
+        }
+        assert(sw.IsRunning());
+        sw.SetFormat("S.n");
+
+        CNcbiOstrstream s;
+        for (int i=0; i<10; i++) {
+            s  << sw << endl;
+        }
+        assert(sw.IsRunning());
+        sw.Stop();
+        assert(!sw.IsRunning());
+        SleepMilliSec(500);
+        sw.Start();
+        for (int i=0; i<10; i++) {
+            s << sw << endl;
+        }
+        LOG_POST((string)CNcbiOstrstreamToString(s));
     }
-    assert(sw.IsRunning());
-    sw.Stop();
-    assert(!sw.IsRunning());
-    SleepMilliSec(500);
-    sw.Start();
-    for (int i=0; i<10; i++) {
-        s << sw << endl;
-    }
-    LOG_POST((string)CNcbiOstrstreamToString(s));
 }
 
 
