@@ -106,7 +106,7 @@ void CNSJobInfo::x_Load()
     if (m_Status != CNetScheduleAPI::eLastStatus)
         return;
 
-    CNetScheduleAPI& cln = m_Collector.x_GetAPI();
+    CNetScheduleAPI cln = m_Collector.x_GetAPI();
     m_Status = cln.GetJobDetails(m_Job);
 }
 void CNSJobInfo::x_Load() const
@@ -149,10 +149,10 @@ CRemoteAppResult& CNSJobInfo::x_GetResult() const
 CNSInfoCollector::CNSInfoCollector(const string& queue, 
                                    const string& service_name,
                                    CBlobStorageFactory& factory)
-    : m_Services(new CNetScheduleAPI(service_name, "netschedule_admin", queue)), 
+    : m_Services(service_name, "netschedule_admin", queue),
       m_Factory(factory)
 {
-    m_Services->GetService().DiscoverLowPriorityServers(eOn);
+    m_Services.GetService().DiscoverLowPriorityServers(eOn);
 }
 
 CNSInfoCollector::CNSInfoCollector(CBlobStorageFactory& factory)
@@ -164,7 +164,7 @@ CNSInfoCollector::CNSInfoCollector(CBlobStorageFactory& factory)
 void CNSInfoCollector::TraverseJobs(CNetScheduleAPI::EJobStatus status,
                                     IAction<CNSJobInfo>& action)
 {
-    CNetScheduleAPI& api = x_GetAPI();
+    CNetScheduleAPI api = x_GetAPI();
     CNetServerGroup servers = api.GetService().DiscoverServers();
 
     int i = servers.GetCount();
@@ -237,6 +237,11 @@ void CNSInfoCollector::TraverseNodes(
 void CNSInfoCollector::DropQueue()
 {
     x_GetAPI().GetAdmin().DropQueue();
+}
+
+void CNSInfoCollector::CancelJob(const std::string& jid)
+{
+    x_GetAPI().GetSubmitter().CancelJob(jid);
 }
 
 

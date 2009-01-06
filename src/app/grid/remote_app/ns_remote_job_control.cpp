@@ -68,7 +68,7 @@ protected:
 void CNSRemoveJobControlApp::Init(void)
 {
     // hack!!! It needs to be removed when we know how to deal with unresolved
-    // symbols in plugins.
+    // symbols in plug-ins.
     BlobStorage_RegisterDriver_NetCache();
 
     // Create command-line argument descriptions class
@@ -82,11 +82,11 @@ void CNSRemoveJobControlApp::Init(void)
                              CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("ns", "service",
-                             "NetSchedule service addrress (service_name or host:port)",
+                             "NetSchedule service address (service_name or host:port)",
                              CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("nc", "service",
-                     "NetCache service addrress (service_name or host:port)",
+                     "NetCache service address (service_name or host:port)",
                      CArgDescriptions::eString);
     arg_desc->AddOptionalKey("ncprot", "protocol",
                      "NetCache client protocol",
@@ -136,6 +136,11 @@ void CNSRemoveJobControlApp::Init(void)
     arg_desc->AddOptionalKey("stdout",
                              "job_id",
                              "Dump stdout of the job",
+                             CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("cancel",
+                             "job_id",
+                             "Cancel the specified job",
                              CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("cmd",
@@ -237,8 +242,6 @@ int CNSRemoveJobControlApp::Run(void)
     string queue = ns_conf.GetString(kNetScheduleAPIDriverName, "queue_name", CConfig::eErr_NoThrow, "");
     NStr::TruncateSpacesInPlace(queue);
     if (queue.empty())
-        //        NCBI_THROW(CArgException, eInvalidArg,
-        //                   "\"queue_name\" parameter is not set neither in config file nor in cmd line");
         queue = "noname";
 
     string service = ns_conf.GetString(kNetScheduleAPIDriverName, "service", CConfig::eErr_NoThrow, "");
@@ -328,6 +331,9 @@ int CNSRemoveJobControlApp::Run(void)
         renderer->RenderWNodes(flags);
     } else if (args["qlist"]) {
         renderer->RenderQueueList();
+    } else if (args["cancel"]) {
+        string jid = args["cancel"].AsString();
+        info_collector->CancelJob(jid);
     } else if (args["cmd"]) {
         string cmd = args["cmd"].AsString();
         if (NStr::CompareNocase(cmd, "shutdown_nodes") == 0) {

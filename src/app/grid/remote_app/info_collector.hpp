@@ -103,6 +103,7 @@ public:
     void TraverseJobs(CNetScheduleAPI::EJobStatus, IAction<CNSJobInfo>&);
     void TraverseNodes(IAction<CNetScheduleAdmin::SWorkerNodeInfo>&);
     void DropQueue();
+    void CancelJob(const std::string& jid);
 
     void GetQueues(CNetScheduleAdmin::TQueueList& queues);
 
@@ -114,11 +115,11 @@ private:
 
     friend class CNSJobInfo;
 
-    auto_ptr<CNetScheduleAPI> m_Services;
-    CNetScheduleAPI& x_GetAPI() { 
-        if (!m_Services.get())
+    CNetScheduleAPI m_Services;
+    CNetScheduleAPI x_GetAPI() {
+        if (!m_Services)
             throw runtime_error("NetScheduele service is not set");
-        return *m_Services; 
+        return m_Services; 
     }
 
     CRemoteAppRequest_Executer& x_GetRequest();
