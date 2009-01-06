@@ -270,7 +270,7 @@ public:
     ///@param seqIds: vector of CConstRef<CSeq_id>
     ///@return: vector of SDeflineInfo
     vector <CShowBlastDefline::SDeflineInfo*> 
-            CShowBlastDefline::GetDeflineInfo(vector< CConstRef<CSeq_id> > &seqIds);
+            GetDeflineInfo(vector< CConstRef<CSeq_id> > &seqIds);
 
 protected:
     /// Internal data with score information for each defline.
