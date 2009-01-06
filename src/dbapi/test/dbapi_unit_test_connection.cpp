@@ -591,8 +591,8 @@ BOOST_AUTO_TEST_CASE(Test_ConnFactory)
     enum {num_of_tests = 128};
 
     try {
-        TSvrRef server01(new CDBServer("mssql51.ncbi.nlm.nih.gov"));
-        TSvrRef server02(new CDBServer("mssql51.ncbi.nlm.nih.gov"));
+        TSvrRef server01(new CDBServer("msdev1.ncbi.nlm.nih.gov"));
+        TSvrRef server02(new CDBServer("msdev1.ncbi.nlm.nih.gov"));
         TSvrRef server03(new CDBServer("mssql67.ncbi.nlm.nih.gov"));
 
         // Check CDBUDPriorityMapper ...
@@ -1018,9 +1018,9 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
         {
             auto_ptr<IConnection> conn(GetDS().CreateConnection( eTakeOwnership ));
             conn->Connect(
-                GetArgs().GetConnParams().GetUserName(), 
-                GetArgs().GetConnParams().GetPassword(), 
-                GetArgs().GetConnParams().GetServerName(), 
+                GetArgs().GetConnParams().GetUserName(),
+                GetArgs().GetConnParams().GetPassword(),
+                GetArgs().GetConnParams().GetServerName(),
                 target_db_name);
 
             auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
@@ -1038,9 +1038,9 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
             CTrivialConnValidator validator(target_db_name);
             conn->ConnectValidated(
                 validator,
-                GetArgs().GetConnParams().GetUserName(), 
-                GetArgs().GetConnParams().GetPassword(), 
-                GetArgs().GetConnParams().GetServerName(), 
+                GetArgs().GetConnParams().GetUserName(),
+                GetArgs().GetConnParams().GetPassword(),
+                GetArgs().GetConnParams().GetServerName(),
                 target_db_name);
 
             auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
@@ -1066,9 +1066,9 @@ BOOST_AUTO_TEST_CASE(Test_CloneConnection)
         // Create new connection ...
         auto_ptr<IConnection> conn(GetDS().CreateConnection( CONN_OWNERSHIP ));
         conn->Connect(
-            GetArgs().GetConnParams().GetUserName(), 
-            GetArgs().GetConnParams().GetPassword(), 
-            GetArgs().GetConnParams().GetServerName(), 
+            GetArgs().GetConnParams().GetUserName(),
+            GetArgs().GetConnParams().GetPassword(),
+            GetArgs().GetConnParams().GetServerName(),
             target_db_name);
 
         // Clone connection ...
