@@ -876,6 +876,14 @@ void CFeatQualAssoc::PopulateMandatoryGbquals(void)
 
     // modified_base requires mod_base
     m_MandatoryGbquals[CSeqFeatData::eSubtype_modified_base].push_back(CGbqualType::e_Mod_base);
+
+    // gap requires estimated length
+    m_MandatoryGbquals[CSeqFeatData::eSubtype_gap].push_back(CGbqualType::e_Estimated_length);
+
+    // operon requires operon
+    m_MandatoryGbquals[CSeqFeatData::eSubtype_operon].push_back(CGbqualType::e_Operon);
+
+
 }
 
 
