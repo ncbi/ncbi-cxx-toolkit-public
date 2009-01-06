@@ -1602,6 +1602,7 @@ CStmtHelper::CStmtHelper(CTransaction* trans)
 , m_Executed( false )
 , m_ResultStatus( 0 )
 , m_ResultStatusAvailable( false )
+, m_UserHandler(NULL)
 {
     if ( m_ParentTransaction == NULL ) {
         throw CInternalError("Invalid CTransaction object");
@@ -1615,12 +1616,13 @@ CStmtHelper::CStmtHelper(CTransaction* trans, const CStmtStr& stmt)
 , m_Executed(false)
 , m_ResultStatus( 0 )
 , m_ResultStatusAvailable( false )
+, m_UserHandler(NULL)
 {
     if ( m_ParentTransaction == NULL ) {
         throw CInternalError("Invalid CTransaction object");
     }
 
-    CreateStmt();
+    CreateStmt(NULL);
 }
 
 CStmtHelper::~CStmtHelper(void)
@@ -1664,6 +1666,11 @@ CStmtHelper::ReleaseStmt(void)
 
         _ASSERT( m_StmtStr.GetType() != estNone );
 
+        if (m_UserHandler) {
+            conn->GetCDB_Connection()->PopMsgHandler(m_UserHandler);
+            m_UserHandler = NULL;
+        }
+
         if ( m_StmtStr.GetType() == estSelect ) {
             // Release SELECT Connection ...
             m_ParentTransaction->DestroySelectConnection( conn );
@@ -1678,7 +1685,7 @@ CStmtHelper::ReleaseStmt(void)
 }
 
 void
-CStmtHelper::CreateStmt(void)
+CStmtHelper::CreateStmt(CDB_UserHandler* handler)
 {
     m_Executed = false;
     m_ResultStatus = 0;
@@ -1691,10 +1698,15 @@ CStmtHelper::CreateStmt(void)
         // Get a DML connection ...
         m_Stmt.reset( m_ParentTransaction->CreateDMLConnection()->GetStatement() );
     }
+
+    if (handler) {
+        m_Stmt->GetParentConn()->GetCDB_Connection()->PushMsgHandler(handler);
+        m_UserHandler = handler;
+    }
 }
 
 void
-CStmtHelper::SetStr(const CStmtStr& stmt)
+CStmtHelper::SetStr(const CStmtStr& stmt, CDB_UserHandler* handler)
 {
     EStatementType oldStmtType = m_StmtStr.GetType();
     EStatementType currStmtType = stmt.GetType();
@@ -1708,13 +1720,13 @@ CStmtHelper::SetStr(const CStmtStr& stmt)
         ) {
             DumpResult();
             ReleaseStmt();
-            CreateStmt();
+            CreateStmt(handler);
         } else {
             DumpResult();
             m_Stmt->ClearParamList();
         }
     } else {
-        CreateStmt();
+        CreateStmt(handler);
     }
 
     m_Executed = false;
@@ -1855,6 +1867,7 @@ CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans)
 , m_Executed( false )
 , m_ResultStatus( 0 )
 , m_ResultStatusAvailable( false )
+, m_UserHandler(NULL)
 {
     if ( m_ParentTransaction == NULL ) {
         throw CInternalError("Invalid CTransaction object");
@@ -1867,12 +1880,13 @@ CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans, const CStmtStr& st
 , m_Executed( false )
 , m_ResultStatus( 0 )
 , m_ResultStatusAvailable( false )
+, m_UserHandler(NULL)
 {
     if ( m_ParentTransaction == NULL ) {
         throw CInternalError("Invalid CTransaction object");
     }
 
-    CreateStmt();
+    CreateStmt(NULL);
 }
 
 CCallableStmtHelper::~CCallableStmtHelper(void)
@@ -1914,6 +1928,11 @@ CCallableStmtHelper::ReleaseStmt(void)
 
         _ASSERT( m_StmtStr.GetType() != estNone );
 
+        if (m_UserHandler) {
+            conn->GetCDB_Connection()->PopMsgHandler(m_UserHandler);
+            m_UserHandler = NULL;
+        }
+
         // Release DML Connection ...
         m_ParentTransaction->DestroyDMLConnection( conn );
         m_Executed = false;
@@ -1923,21 +1942,26 @@ CCallableStmtHelper::ReleaseStmt(void)
 }
 
 void
-CCallableStmtHelper::CreateStmt(void)
+CCallableStmtHelper::CreateStmt(CDB_UserHandler* handler)
 {
     _ASSERT( m_StmtStr.GetType() == estFunction );
 
     ReleaseStmt();
     m_Stmt.reset( m_ParentTransaction->CreateDMLConnection()->GetCallableStatement(m_StmtStr.GetStr()) );
+
+    if (handler) {
+        m_Stmt->GetParentConn()->GetCDB_Connection()->PushMsgHandler(handler);
+        m_UserHandler = handler;
+    }
 }
 
 void
-CCallableStmtHelper::SetStr(const CStmtStr& stmt)
+CCallableStmtHelper::SetStr(const CStmtStr& stmt, CDB_UserHandler* handler)
 {
     m_StmtStr = stmt;
 
     DumpResult();
-    CreateStmt();
+    CreateStmt(handler);
 
     m_Executed = false;
     m_ResultStatus = 0;
@@ -2198,11 +2222,24 @@ MakeTupleFromResult(CVariantSet& rs)
     return tuple;
 }
 
+
+bool CInfoHandler_CursorCollect::HandleIt(CDB_Exception* ex)
+{
+    if (ex->GetSybaseSeverity() <= 10) {
+        m_Cursor->AddInfoMessage(ex->GetMsg());
+        return true;
+    }
+
+    return false;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 CCursor::CCursor(CTransaction* trans)
 : m_PythonConnection( &trans->GetParentConnection() )
 , m_PythonTransaction( trans )
 , m_ParentTransaction( trans )
+, m_InfoHandler( this )
 , m_NumOfArgs( 0 )
 , m_RowsNum( -1 )
 , m_ArraySize( 1 )
@@ -2216,6 +2253,9 @@ CCursor::CCursor(CTransaction* trans)
     }
 
     ROAttr( "rowcount", m_RowsNum );
+    ROAttr( "messages", m_InfoMessages );
+
+    IncRefCount(m_InfoMessages);
 
     PrepareForPython(this);
 }
@@ -2239,6 +2279,12 @@ CCursor::CloseInternal(void)
     m_RowsNum = -1;                     // As required by the specification ...
     m_AllDataFetched = false;
     m_AllSetsFetched = false;
+}
+
+void
+CCursor::AddInfoMessage(const string& message)
+{
+    m_InfoMessages.Append(pythonpp::CString(message));
 }
 
 pythonpp::CObject
@@ -2272,7 +2318,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
                 if ( pythonpp::CDict::HasSameType(obj) ) {
                     const pythonpp::CDict dict = obj;
 
-                    m_CallableStmtHelper.SetStr(m_StmtStr);
+                    m_CallableStmtHelper.SetStr(m_StmtStr, &m_InfoHandler);
                     has_out_params = SetupParameters(dict, m_CallableStmtHelper);
                 } else  {
                     // Curently, NCBI DBAPI supports pameter binding by name only ...
@@ -2284,10 +2330,11 @@ CCursor::callproc(const pythonpp::CTuple& args)
                     throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
                 }
             } else {
-                m_CallableStmtHelper.SetStr(m_StmtStr);
+                m_CallableStmtHelper.SetStr(m_StmtStr, &m_InfoHandler);
             }
         }
 
+        m_InfoMessages.Clear();
         m_CallableStmtHelper.Execute(has_out_params);
         m_RowsNum = m_StmtHelper.GetRowCount();
 
@@ -2390,7 +2437,7 @@ CCursor::execute(const pythonpp::CTuple& args)
             }
 
             m_CallableStmtHelper.Close();
-            m_StmtHelper.SetStr(m_StmtStr);
+            m_StmtHelper.SetStr(m_StmtStr, &m_InfoHandler);
 
             // Setup parameters ...
             if ( args_size > 1 ) {
@@ -2410,6 +2457,7 @@ CCursor::execute(const pythonpp::CTuple& args)
             }
         }
 
+        m_InfoMessages.Clear();
         m_StmtHelper.Execute();
         m_RowsNum = m_StmtHelper.GetRowCount();
     }
@@ -2520,8 +2568,9 @@ CCursor::executemany(const pythonpp::CTuple& args)
 
                     //
                     m_CallableStmtHelper.Close();
-                    m_StmtHelper.SetStr( m_StmtStr );
+                    m_StmtHelper.SetStr( m_StmtStr, &m_InfoHandler );
                     m_RowsNum = 0;
+                    m_InfoMessages.Clear();
 
                     for ( citer = params.begin(); citer != cend; ++citer ) {
                         SetupParameters(*citer, m_StmtHelper);

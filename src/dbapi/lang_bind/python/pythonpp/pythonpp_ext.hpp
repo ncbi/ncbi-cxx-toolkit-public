@@ -571,6 +571,10 @@ protected:
     {
         m_AttrList[ name ] = new bind::CString( value );
     }
+    void ROAttr( const string& name, CObject& value )
+    {
+        m_AttrList[ name ] = new bind::CObject<CObject>( value, &CObject::Get );
+    }
 
     void RWAttr( const string& name, long& value )
     {

@@ -824,6 +824,11 @@ public:
         }
     }
 
+    void Clear (void)
+    {
+        Set(PyList_New(0));
+    }
+
 public:
     // Function name is made STL compatible ...
     size_type size(void) const

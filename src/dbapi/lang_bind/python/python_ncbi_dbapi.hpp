@@ -196,7 +196,7 @@ public:
 
 public:
     // void SetStr(const string& stmt, EStatementType default_type = estFunction);
-    void SetStr(const CStmtStr& stmt);
+    void SetStr(const CStmtStr& stmt, CDB_UserHandler* handler);
     void SetParam(const string& name, const CVariant& value);
 
     void Execute(void);
@@ -213,7 +213,7 @@ public:
 private:
     void DumpResult(void);
     void ReleaseStmt(void);
-    void CreateStmt(void);
+    void CreateStmt(CDB_UserHandler* handler);
 
 private:
     CTransaction* const     m_ParentTransaction; //< A transaction to which belongs this cursor object
@@ -223,6 +223,7 @@ private:
     bool                    m_Executed;
     int                     m_ResultStatus;
     bool                    m_ResultStatusAvailable;
+    CDB_UserHandler*        m_UserHandler;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -252,7 +253,7 @@ public:
 
 public:
     // void SetStr(const string& stmt, int num_arg, EStatementType default_type = estFunction);
-    void SetStr(const CStmtStr& stmt);
+    void SetStr(const CStmtStr& stmt, CDB_UserHandler* handler);
     void SetParam(const string& name, const CVariant& value, bool& output_param);
 
     void Execute(bool cache_results = false);
@@ -270,7 +271,7 @@ public:
 private:
     void DumpResult(void);
     void ReleaseStmt(void);
-    void CreateStmt(void);
+    void CreateStmt(CDB_UserHandler* handler);
 
 private:
     CTransaction* const             m_ParentTransaction; //< A transaction to which belongs this cursor object
@@ -280,6 +281,24 @@ private:
     bool                            m_Executed;
     int                             m_ResultStatus;
     bool                            m_ResultStatusAvailable;
+    CDB_UserHandler*                m_UserHandler;
+};
+
+class CCursor;
+
+class CInfoHandler_CursorCollect : public CDB_UserHandler
+{
+public:
+    CInfoHandler_CursorCollect(CCursor* cursor)
+        : m_Cursor(cursor)
+    {}
+
+    virtual ~CInfoHandler_CursorCollect(void) {}
+
+    virtual bool HandleIt(CDB_Exception* ex);
+
+private:
+    CCursor* m_Cursor;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -293,6 +312,8 @@ protected:
 
 public:
     ~CCursor(void);
+
+    void AddInfoMessage(const string& message);
 
 public:
     // Python methods ...
@@ -421,18 +442,20 @@ private:
     }
 
 private:
-    pythonpp::CObject       m_PythonConnection;  //< For reference counting purposes only
-    pythonpp::CObject       m_PythonTransaction; //< For reference counting purposes only
-    CTransaction*           m_ParentTransaction; //< A transaction to which belongs this cursor object
-    int                     m_NumOfArgs;         //< Number of arguments in a callable statement
-    long                    m_RowsNum;
-    IResultSet*             m_RS;
-    size_t                  m_ArraySize;
-    CStmtStr                m_StmtStr;
-    CStmtHelper             m_StmtHelper;
-    CCallableStmtHelper     m_CallableStmtHelper;
-    bool                    m_AllDataFetched;
-    bool                    m_AllSetsFetched;
+    pythonpp::CObject          m_PythonConnection;  //< For reference counting purposes only
+    pythonpp::CObject          m_PythonTransaction; //< For reference counting purposes only
+    CTransaction*              m_ParentTransaction; //< A transaction to which belongs this cursor object
+    int                        m_NumOfArgs;         //< Number of arguments in a callable statement
+    long                       m_RowsNum;
+    pythonpp::CList            m_InfoMessages;
+    CInfoHandler_CursorCollect m_InfoHandler;
+    IResultSet*                m_RS;
+    size_t                     m_ArraySize;
+    CStmtStr                   m_StmtStr;
+    CStmtHelper                m_StmtHelper;
+    CCallableStmtHelper        m_CallableStmtHelper;
+    bool                       m_AllDataFetched;
+    bool                       m_AllSetsFetched;
 };
 
 //////////////////////////////////////////////////////////////////////////////

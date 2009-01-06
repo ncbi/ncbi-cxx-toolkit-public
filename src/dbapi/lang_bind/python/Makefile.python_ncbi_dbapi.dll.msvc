@@ -3,3 +3,6 @@
 OutputFile = $(OutDir)\\python_ncbi_dbapi_d.pyd
 [Linker.release]
 OutputFile = $(OutDir)\\python_ncbi_dbapi.pyd
+
+[AddToProject]
+HeadersInSrc = *.hpp pythonpp/*.hpp
