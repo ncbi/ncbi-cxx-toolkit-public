@@ -70,6 +70,8 @@ CGbqualType::EType CGbqualType::GetType(const string& qual)
         type = static_cast<EType>(GetTypeInfo_enum_EType()->FindValue(qual));
     } catch (runtime_error rt) {
         type = CGbqualType::e_Bad;
+    } catch (CSerialException e) {
+        type = CGbqualType::e_Bad;
     }
 
     return type;
