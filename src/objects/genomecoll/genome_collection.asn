@@ -181,7 +181,11 @@ GC-Scaf-stats ::= SEQUENCE {
   component-span-count INTEGER OPTIONAL, -- How many placements of components
   length SEQUENCE {
     total-length INTEGER,
-    ungapped-length INTEGER
+    ungapped-length INTEGER,
+    min-gapped-scaf-length INTEGER, 
+    max-gapped-scaf-length INTEGER, 
+    min-ungapped-scaf-length INTEGER,
+    max-ungapped-scaf-length INTEGER
   },
   composition SEQUENCE {
     active-finishing-bases INTEGER,
