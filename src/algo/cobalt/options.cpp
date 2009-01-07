@@ -86,11 +86,11 @@ bool CMultiAlignerOptions::Validate(void)
 
     // Check query clustering params
     if (m_UseQueryClusters) {
-        if (m_KmerAlphabet < TKMethods::eRegular
-            || m_KmerAlphabet < TKMethods::eSE_V10) {
+        if ((int)m_KmerAlphabet < (int)TKMethods::eRegular
+            || (int)m_KmerAlphabet > (int)TKMethods::eSE_B15) {
 
             NCBI_THROW(CMultiAlignerException, eInvalidOptions,
-                       "Invalid alphabet for query cludtering");
+                       "Invalid alphabet for query clustering");
         }
 
         if (m_ClustDistMeasure != TKMethods::eFractionCommonKmersGlobal
