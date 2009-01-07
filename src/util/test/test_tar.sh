@@ -125,7 +125,7 @@ echo "+++ Files: $files --- Backups: $bkups"
 test _"$files" = _"$bkups"                                            ||  exit 1
 
 echo
-echo "`date` *** Testing singe entry streaming feature"
+echo "`date` *** Testing single entry streaming feature"
 echo
 
 test_tar -X -v -f $test_base.tar "*test_tar${exe}" | cmp -l - "./test_tar${exe}"  ||  exit 1
