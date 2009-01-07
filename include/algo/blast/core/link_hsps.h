@@ -54,6 +54,7 @@ extern "C" {
  * @param link_hsp_params Parameters for linking of HSPs [in]
  * @param gapped_calculation Is this a gapped search? [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 
 BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list, 
    const BlastQueryInfo* query_info, Int4 subject_length, 

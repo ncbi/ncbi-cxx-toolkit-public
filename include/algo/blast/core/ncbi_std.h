@@ -46,6 +46,7 @@
 
 /* which toolkit are we using? */
 #include "blast_toolkit.h"
+#include <algo/blast/core/blast_export.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -186,6 +187,7 @@ typedef Uint1 Boolean;
  * @return pointer to newly allocated memory. NULL if orig NULL, size is zero,
  *   or allocation fails.
  */
+NCBI_XBLAST_EXPORT
 void* BlastMemDup (const void *orig, size_t size);
 
 
@@ -202,6 +204,7 @@ typedef struct ListNode {
  * @param vnp Pointer to the start of the list, may be NULL [in]
  * @return newly allocated node 
  */
+NCBI_XBLAST_EXPORT
 ListNode* ListNodeNew (ListNode* vnp);
 
 /** Add a node to the list.
@@ -209,6 +212,7 @@ ListNode* ListNodeNew (ListNode* vnp);
  *  be Pointer to new node. [in] [out]
  * @return New node
  */
+NCBI_XBLAST_EXPORT
 ListNode* ListNodeAdd (ListNode** head);
 
 /** Add a node to the list with a given choice and data pointer.
@@ -218,18 +222,21 @@ ListNode* ListNodeAdd (ListNode** head);
  * @param value Data pointer for the new node. [in]
  * @return New node
  */
+NCBI_XBLAST_EXPORT
 ListNode* ListNodeAddPointer (ListNode** head, Uint1 choice, void *value);
 
 /** Free all list's nodes, does not attempt to free data. 
  * @param vnp objects to be freed [in]
  * @return NULL
  */
+NCBI_XBLAST_EXPORT
 ListNode* ListNodeFree (ListNode* vnp);
 
 /** Free nodes as well as data (vnp->ptr) assuming it is one contiguous chunk.
  * @param vnp objects to be freed [in] 
  * @return NULL
  */
+NCBI_XBLAST_EXPORT
 ListNode* ListNodeFreeData (ListNode* vnp);
 
 /** Add a node to the list with a provided choice, and attached data 
@@ -240,6 +247,7 @@ ListNode* ListNodeFreeData (ListNode* vnp);
  * @param str char* buffer to be copied [in]
  * @return newly allocated node 
  */
+NCBI_XBLAST_EXPORT
 ListNode* ListNodeCopyStr (ListNode** head, Uint1 choice, const char* str);
 
 #ifdef __cplusplus

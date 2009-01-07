@@ -89,6 +89,7 @@ typedef struct GapStateArrayStruct {
  *  @param size number of elements to allocate.
  *  @return Pointer to the new edit script
  */
+NCBI_XBLAST_EXPORT
 GapEditScript* 
 GapEditScriptNew (Int4 size); 
 
@@ -96,6 +97,7 @@ GapEditScriptNew (Int4 size);
  *  @param esp Pointer to the edit script [in]
  *  @return NULL
  */
+NCBI_XBLAST_EXPORT
 GapEditScript* 
 GapEditScriptDelete (GapEditScript* esp);
 
@@ -103,6 +105,7 @@ GapEditScriptDelete (GapEditScript* esp);
  *  @param old object to be duplicated [in]
  *  @return Pointer to the new edit script
  */
+NCBI_XBLAST_EXPORT
 GapEditScript* 
 GapEditScriptDup (const GapEditScript* old);
 
@@ -115,6 +118,7 @@ GapEditScriptDup (const GapEditScript* old);
  *  @param stop last element to copy [in]
  *  @return 0 on success
  */
+NCBI_XBLAST_EXPORT 
 Int2
 GapEditScriptPartialCopy(GapEditScript* new_esp, int offset, const GapEditScript* old_esp, int start, int stop);
 
@@ -122,12 +126,14 @@ GapEditScriptPartialCopy(GapEditScript* new_esp, int offset, const GapEditScript
  *  @param edit_block The edit block to free [in]
  *  @return Always NULL
  */
+NCBI_XBLAST_EXPORT
 GapPrelimEditBlock *
 GapPrelimEditBlockFree(GapPrelimEditBlock *edit_block);
 
 /** Allocates a preliminary edit block structure 
  *  @return Pointer to the allocated preliminary edit block
  */
+NCBI_XBLAST_EXPORT
 GapPrelimEditBlock *
 GapPrelimEditBlockNew(void);
 
@@ -138,6 +144,7 @@ GapPrelimEditBlockNew(void);
  *  @param op_type The operation type to add [in]
  *  @param num_ops The number of the specified type of operation to add [in]
  */
+NCBI_XBLAST_EXPORT
 void
 GapPrelimEditBlockAdd(GapPrelimEditBlock *edit_block, 
                  EGapAlignOpType op_type, Int4 num_ops);
@@ -147,6 +154,7 @@ GapPrelimEditBlockAdd(GapPrelimEditBlock *edit_block,
  * @param edit_block2 Second traceback block, to be appended at the end of
  *                    the first.
  */
+NCBI_XBLAST_EXPORT
 void
 GapPrelimEditBlockAppend(GapPrelimEditBlock *edit_block1,
                          GapPrelimEditBlock *edit_block2);
@@ -155,6 +163,7 @@ GapPrelimEditBlockAppend(GapPrelimEditBlock *edit_block1,
 /** Reset a preliminary edit block without freeing it 
  * @param edit_block The preliminary edit block to reset
  */
+NCBI_XBLAST_EXPORT
 void
 GapPrelimEditBlockReset(GapPrelimEditBlock *edit_block);
 
@@ -162,6 +171,7 @@ GapPrelimEditBlockReset(GapPrelimEditBlock *edit_block);
  * @param state_struct The state structure to free
  * @return Always NULL
  */
+NCBI_XBLAST_EXPORT
 GapStateArrayStruct* 
 GapStateFree(GapStateArrayStruct* state_struct);
 

@@ -294,6 +294,7 @@ Blast_HSPGetNumIdentities(const Uint1* query,
  *                    HSP length thresholds.
  * @return FALSE if HSP passes the test, TRUE if it should be deleted.
  */ 
+NCBI_XBLAST_EXPORT
 Boolean
 Blast_HSPTestIdentityAndLength(EBlastProgramType program_number, 
                                BlastHSP* hsp, const Uint1* query, const Uint1* subject, 
@@ -305,7 +306,9 @@ Blast_HSPTestIdentityAndLength(EBlastProgramType program_number,
  * @param options HitSavingoptions object [in]
  * @return number of HSPs to save. 
  */
-Int4 BlastHspNumMax(Boolean gapped_calculation, const BlastHitSavingOptions* options);
+NCBI_XBLAST_EXPORT
+Int4
+BlastHspNumMax(Boolean gapped_calculation, const BlastHitSavingOptions* options);
 
 /** Calculate length of an HSP as length in query plus length of gaps in 
  * query. If gap information is unavailable, return maximum between length in
@@ -401,9 +404,11 @@ Boolean
 Blast_HSPList_IsEmpty(const BlastHSPList* hsp_list);
 
 /** Returns a duplicate (deep copy) of the given hsp list. */
+NCBI_XBLAST_EXPORT
 BlastHSPList* BlastHSPListDup(const BlastHSPList* hsp_list);
 
 /** Swaps the two HSP lists via structure assignment */
+NCBI_XBLAST_EXPORT
 void Blast_HSPListSwap(BlastHSPList* list1, BlastHSPList* list2);
 
 /** Saves HSP information into a BlastHSPList structure
@@ -462,6 +467,7 @@ Int2 Blast_HSPListGetBitScores(BlastHSPList* hsp_list,
  * @param hsp_list List of HSPs [in] [out]
  * @param sbp Scoring block with statistical parameters [in]
  */
+NCBI_XBLAST_EXPORT
 void Blast_HSPListPHIGetBitScores(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
     
 /** Discard the HSPs above the e-value threshold from the HSP list 
@@ -577,6 +583,7 @@ void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset);
  * @param gapped_calculation not an ungapped alignment [in]
  * @param sbp used for round_down Boolean
  */
+NCBI_XBLAST_EXPORT
 void Blast_HSPListAdjustOddBlastnScores(BlastHSPList* hsp_list, 
                                         Boolean gapped_calculation, 
                                         const BlastScoreBlk* sbp);
@@ -774,6 +781,7 @@ struct BlastHSPStream;
  *                      hit list sizes [in]
  * @return The generated collection of HSP results
  */
+NCBI_XBLAST_EXPORT
 BlastHSPResults*
 Blast_HSPResultsFromHSPStream(struct BlastHSPStream* hsp_stream, 
                               size_t num_queries, 
@@ -819,6 +827,7 @@ Blast_HSPResultsFromHSPStreamWithLimit(struct BlastHSPStream* hsp_stream,
  * @return Array of pointers to BlastHSPResults structures, corresponding to 
  *         different pattern occurrences.
  */
+NCBI_XBLAST_EXPORT
 BlastHSPResults** 
 PHIBlast_HSPResultsSplit(const BlastHSPResults* results, 
                          const SPHIQueryInfo* pattern_info);
@@ -828,6 +837,7 @@ PHIBlast_HSPResultsSplit(const BlastHSPResults* results,
  * do not overlap by more than half the pattern match length. 
  * @param query_info Query information structure, containing pattern info. [in]
  */
+NCBI_XBLAST_EXPORT
 Int4
 PhiBlastGetEffectiveNumberOfPatterns(const BlastQueryInfo *query_info);
 

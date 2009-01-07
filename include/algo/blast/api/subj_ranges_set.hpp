@@ -97,7 +97,7 @@ private:
 /// stage. This is applicable only to nucleotide sequences and improves
 /// performance during the traceback stage when dealing with large subject
 /// sequences.
-class CSubjectRangesSet : public CObject {
+class NCBI_XBLAST_EXPORT CSubjectRangesSet : public CObject {
 public:
     /// Default number of letters to expand for each HSP after all merging has
     /// taken place.

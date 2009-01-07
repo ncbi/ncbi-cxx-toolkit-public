@@ -34,7 +34,6 @@
 #define ALGO_BLAST_CORE__BLAST_UTIL__H
 
 #include <algo/blast/core/ncbi_std.h>
-#include <algo/blast/core/blast_export.h>
 #include <algo/blast/core/blast_program.h>
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_query_info.h>
@@ -78,6 +77,7 @@ void BlastSequenceBlkCopy(BLAST_SequenceBlk** copy,
  * @param program string name of program [in]
  * @param number Enumerated value of program [out]
 */
+NCBI_XBLAST_EXPORT
 Int2 BlastProgram2Number(const char *program, EBlastProgramType *number);
 
 /** Return string name for program given a number.  Return is zero on success.
@@ -253,6 +253,7 @@ Int2 BLAST_PackDNA(const Uint1* buffer, Int4 length,
  * 
  * @return The requested length, or 0 if the nucleotide length is 0
  */
+NCBI_XBLAST_EXPORT
 size_t
 BLAST_GetTranslatedProteinLength(size_t nucleotide_length, 
                                  unsigned int context);
@@ -343,6 +344,7 @@ BLAST_GetStandardAaProbabilities(void);
  * @return newly allocated string in upper case or NULL if string is NULL or
  * out of memory
  */
+NCBI_XBLAST_EXPORT
 char*
 BLAST_StrToUpper(const char* string);
 
