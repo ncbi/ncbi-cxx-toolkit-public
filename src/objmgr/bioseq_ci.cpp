@@ -35,6 +35,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/impl/scope_impl.hpp>
+#include <objmgr/impl/bioseq_set_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -55,18 +56,63 @@ bool CBioseq_CI::x_IsValidMolType(const CBioseq_Info& seq) const
 }
 
 
-inline
-void CBioseq_CI::x_SetEntry(const CSeq_entry_Handle& entry)
+void CBioseq_CI::x_PushEntry(const CSeq_entry_Handle& entry)
 {
-    m_CurrentEntry = entry;
-    if ( !m_EntryStack.empty()  &&  m_CurrentEntry.IsSet() ) {
-        m_EntryStack.push(CSeq_entry_CI(m_CurrentEntry));
+    if ( !entry || entry.IsSeq() ) {
+        m_CurrentEntry = entry;
+    }
+    else {
+        if ( entry.x_GetInfo().GetSet().GetClass() ==
+             CBioseq_set::eClass_parts ) {
+            if ( m_Level == eLevel_Mains ) {
+                x_NextEntry();
+                return;
+            }
+            ++m_InParts;
+        }
+        m_EntryStack.push_back(CSeq_entry_CI(entry));
+        _ASSERT(m_EntryStack.back().GetParentBioseq_set()==entry.GetSet());
+        if ( m_EntryStack.back() ) {
+            m_CurrentEntry = *m_EntryStack.back();
+        }
+        else {
+            m_CurrentEntry.Reset();
+        }
+    }
+}
+
+
+void CBioseq_CI::x_NextEntry(void)
+{
+    if ( !m_EntryStack.empty() &&
+         m_EntryStack.back() &&
+         ++m_EntryStack.back() ) {
+        m_CurrentEntry = *m_EntryStack.back();
+    }
+    else {
+        m_CurrentEntry.Reset();
+    }
+}
+
+
+void CBioseq_CI::x_PopEntry(bool next)
+{
+    if ( m_EntryStack.back().GetParentBioseq_set().GetClass() ==
+         CBioseq_set::eClass_parts ) {
+        --m_InParts;
+    }
+    m_EntryStack.pop_back();
+    if ( next ) {
+        x_NextEntry();
+    }
+    else {
+        m_CurrentEntry.Reset();
     }
 }
 
 
 inline
-bool IsNa(CSeq_inst::EMol mol)
+bool sx_IsNa(CSeq_inst::EMol mol)
 {
     return mol == CSeq_inst::eMol_dna  ||
         mol == CSeq_inst::eMol_rna  ||
@@ -74,102 +120,74 @@ bool IsNa(CSeq_inst::EMol mol)
 }
 
 
+inline
+bool sx_IsProt(CSeq_inst::EMol mol)
+{
+    return mol == CSeq_inst::eMol_aa;
+}
+
+
 bool CBioseq_CI::x_SkipClass(CBioseq_set::TClass set_class)
 {
-    CSeq_entry_Handle entry = m_CurrentEntry;
-    int depth = 0;
-    bool in_set = false;
-    while (entry  &&  entry.GetParentEntry()) {
-        if (entry.GetParentBioseq_set().GetClass() ==
-            set_class) {
-            in_set = true;
-            break;
-        }
-        depth++;
-        entry = entry.GetParentEntry();
+    int pos = m_EntryStack.size();
+    while ( --pos >= 0 &&
+            m_EntryStack[pos].GetParentBioseq_set().GetClass() != set_class ) {
+        // level up
     }
-    if ( in_set ) {
-        // Remove bioseq-sets from the stack
-        for (int i = 0; i < depth; i++) {
-            _ASSERT(!m_EntryStack.empty());
-            m_EntryStack.pop();
-        }
-        if (!m_EntryStack.empty()) {
-            ++m_EntryStack.top();
-        }
-        m_CurrentEntry = CSeq_entry_Handle();
+    if ( pos < 0 ) {
+        return false;
     }
-    return in_set;
+    while ( m_EntryStack.size() > size_t(pos+1) ) {
+        x_PopEntry(false);
+    }
+    x_PopEntry();
+    return true;
 }
 
 
 void CBioseq_CI::x_Settle(void)
 {
-    bool found_na = m_CurrentBioseq  &&  IsNa(m_Filter);
+    bool found_na = m_CurrentBioseq  &&  sx_IsNa(m_Filter);
     m_CurrentBioseq.Reset();
     for ( ;; ) {
-        if ( m_CurrentEntry  &&  m_CurrentEntry.IsSeq() ) {
+        if ( !m_CurrentEntry ) {
+            if ( m_EntryStack.empty() ) {
+                // no more entries
+                return;
+            }
+            x_PopEntry();
+        }
+        else if ( m_CurrentEntry.IsSeq() ) {
             // Single bioseq
-            const CBioseq_Info& seq = m_CurrentEntry.x_GetInfo().GetSeq();
-            if (m_Level != eLevel_Parts  ||  m_InParts > 0) {
-                if ( x_IsValidMolType(seq) ) {
+            if ( m_Level != eLevel_Parts  ||  m_InParts > 0 ) {
+                if ( x_IsValidMolType(m_CurrentEntry.x_GetInfo().GetSeq()) ) {
                     m_CurrentBioseq = m_CurrentEntry.GetSeq();
                     return; // valid bioseq found
                 }
-                else if (m_Level != eLevel_IgnoreClass  &&
-                    m_CurrentEntry.GetParentEntry()) {
-                    if (m_CurrentEntry.GetParentBioseq_set().GetClass() ==
-                        CBioseq_set::eClass_nuc_prot  &&
-                        found_na) {
+                else if ( m_Level != eLevel_IgnoreClass  &&
+                          !m_EntryStack.empty() ) {
+                    if ( found_na &&
+                         m_EntryStack.back().GetParentBioseq_set().GetClass()
+                         == CBioseq_set::eClass_nuc_prot ) {
                         // Skip only the same level nuc-prot set
-                        x_SkipClass(CBioseq_set::eClass_nuc_prot);
+                        if ( x_SkipClass(CBioseq_set::eClass_nuc_prot) ) {
+                            continue;
+                        }
                     }
-                    else if ( !IsNa(m_Filter) ) {
+                    else if ( sx_IsProt(m_Filter) ) {
                         // Skip the whole nuc segset when collecting prots
-                        if (!x_SkipClass(CBioseq_set::eClass_segset)) {
-                            // Also skip conset
-                            x_SkipClass(CBioseq_set::eClass_conset);
+                        // Also skip conset
+                        if ( x_SkipClass(CBioseq_set::eClass_segset) ||
+                             x_SkipClass(CBioseq_set::eClass_conset) ) {
+                            continue;
                         }
                     }
                 }
             }
-        }
-        // Bioseq set or next entry in the parent set
-        if ( m_EntryStack.empty() ) {
-            // End
-            m_CurrentEntry = CSeq_entry_Handle();
-            return;
-        }
-        if ( m_EntryStack.top() ) {
-            CSeq_entry_CI& entry_iter = m_EntryStack.top();
-            CSeq_entry_CI parts_iter = m_EntryStack.top();
-            CSeq_entry_Handle sub_entry = *entry_iter;
-            ++entry_iter;
-            if ( sub_entry.IsSet() &&
-                sub_entry.GetSet().GetClass() == CBioseq_set::eClass_parts) {
-                if (m_Level == eLevel_Mains) {
-                    m_CurrentEntry = CSeq_entry_Handle();
-                    continue;
-                }
-                m_InParts++;
-                m_EntryStack.push(parts_iter);
-            }
-            x_SetEntry(sub_entry);
+            x_NextEntry();
         }
         else {
-            m_EntryStack.pop();
-            if ( m_EntryStack.empty() ) {
-                return;
-            }
-            if ( m_EntryStack.top() ) {
-                CSeq_entry_CI entry_iter = m_EntryStack.top();
-                CSeq_entry_Handle sub_entry = *entry_iter;
-                if (sub_entry.IsSet() &&
-                    sub_entry.GetSet().GetClass() == CBioseq_set::eClass_parts) {
-                    m_InParts--;
-                    m_EntryStack.pop();
-                }
-            }
+            x_PushEntry(m_CurrentEntry);
         }
     }
 }
@@ -181,17 +199,14 @@ void CBioseq_CI::x_Initialize(const CSeq_entry_Handle& entry)
         NCBI_THROW(CObjMgrException, eOtherError,
                    "Can not find seq-entry to initialize bioseq iterator");
     }
-    x_SetEntry(entry);
-    if (  m_CurrentEntry.IsSet() ) {
-        m_EntryStack.push(CSeq_entry_CI(m_CurrentEntry));
-    }
+    x_PushEntry(entry);
     x_Settle();
 }
 
 
 CBioseq_CI& CBioseq_CI::operator++ (void)
 {
-    m_CurrentEntry = CSeq_entry_Handle();
+    x_NextEntry();
     x_Settle();
     return *this;
 }
@@ -254,22 +269,14 @@ CBioseq_CI::CBioseq_CI(CScope& scope, const CSeq_entry& entry,
 
 CBioseq_CI& CBioseq_CI::operator= (const CBioseq_CI& bioseq_ci)
 {
-    if (this != &bioseq_ci) {
+    if ( this != &bioseq_ci ) {
         m_Scope = bioseq_ci.m_Scope;
         m_Filter = bioseq_ci.m_Filter;
         m_Level = bioseq_ci.m_Level;
         m_InParts = bioseq_ci.m_InParts;
-        if ( bioseq_ci ) {
-            m_EntryStack = bioseq_ci.m_EntryStack;
-            m_CurrentEntry = bioseq_ci.m_CurrentEntry;
-        }
-        else {
-            m_CurrentEntry.Reset();
-            m_CurrentBioseq.Reset();
-            while ( !m_EntryStack.empty() ) {
-                m_EntryStack.pop();
-            }
-        }
+        m_EntryStack = bioseq_ci.m_EntryStack;
+        m_CurrentEntry = bioseq_ci.m_CurrentEntry;
+        m_CurrentBioseq = bioseq_ci.m_CurrentBioseq;
     }
     return *this;
 }

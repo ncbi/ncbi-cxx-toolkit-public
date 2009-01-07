@@ -89,6 +89,8 @@ public:
     const CSeq_entry_Handle& operator*(void) const;
     const CSeq_entry_Handle* operator->(void) const;
 
+    const CBioseq_set_Handle& GetParentBioseq_set(void) const;
+
 private:
     typedef vector< CRef<CSeq_entry_Info> > TSeq_set;
     typedef TSeq_set::const_iterator  TIterator;
@@ -139,6 +141,8 @@ public:
 
     const CSeq_entry_EditHandle& operator*(void) const;
     const CSeq_entry_EditHandle* operator->(void) const;
+
+    const CBioseq_set_EditHandle& GetParentBioseq_set(void) const;
 
 private:
     typedef vector< CRef<CSeq_entry_Info> > TSeq_set;
@@ -196,6 +200,13 @@ const CSeq_entry_Handle* CSeq_entry_CI::operator->(void) const
 }
 
 
+inline
+const CBioseq_set_Handle& CSeq_entry_CI::GetParentBioseq_set(void) const
+{
+    return m_Parent;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_entry_I inline methods
 /////////////////////////////////////////////////////////////////////////////
@@ -231,6 +242,13 @@ inline
 const CSeq_entry_EditHandle* CSeq_entry_I::operator->(void) const
 {
     return &m_Current;
+}
+
+
+inline
+const CBioseq_set_EditHandle& CSeq_entry_I::GetParentBioseq_set(void) const
+{
+    return m_Parent;
 }
 
 

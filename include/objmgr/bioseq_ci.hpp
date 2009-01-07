@@ -41,7 +41,7 @@
 #include <objmgr/seq_entry_ci.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
-#include <stack>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -121,19 +121,24 @@ public:
 
 private:
     void x_Initialize(const CSeq_entry_Handle& entry);
-    void x_SetEntry(const CSeq_entry_Handle& entry);
+
+    void x_PushEntry(const CSeq_entry_Handle& entry);
+    void x_PopEntry(bool next = true);
+    void x_NextEntry(void);
+
     void x_Settle(void);
+
     bool x_IsValidMolType(const CBioseq_Info& seq) const;
     bool x_SkipClass(CBioseq_set::TClass set_class);
 
-    typedef stack<CSeq_entry_CI> TEntryStack;
+    typedef vector<CSeq_entry_CI> TEntryStack;
 
     CHeapScope          m_Scope;
     CSeq_inst::EMol     m_Filter;
     EBioseqLevelFlag    m_Level;
-    CSeq_entry_Handle   m_CurrentEntry;
-    CBioseq_Handle      m_CurrentBioseq;
-    TEntryStack         m_EntryStack;
+    CSeq_entry_Handle   m_CurrentEntry; // current entry to process (whole)
+    CBioseq_Handle      m_CurrentBioseq; // current found Bioseq
+    TEntryStack         m_EntryStack; // path to the current entry
     int                 m_InParts;
 };
 
