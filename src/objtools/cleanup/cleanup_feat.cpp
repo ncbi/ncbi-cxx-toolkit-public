@@ -234,6 +234,16 @@ static const TRnaTypePair sc_rna_type_map[] = {
 typedef CStaticArrayMap<const string, CRNA_ref::TType> TRnaTypeMap;
 DEFINE_STATIC_ARRAY_MAP(TRnaTypeMap, sc_RnaTypeMap, sc_rna_type_map);
 
+typedef pair<const string, CProt_ref::EProcessed> TProteinProcessedPair;
+static const TProteinProcessedPair sc_protein_processed_map[] = {
+    TProteinProcessedPair("mat_peptide", CProt_ref::eProcessed_mature),
+    TProteinProcessedPair("preprotein", CProt_ref::eProcessed_preprotein),
+    TProteinProcessedPair("proprotein", CProt_ref::eProcessed_preprotein),
+    TProteinProcessedPair("sig_peptide", CProt_ref::eProcessed_signal_peptide),
+    TProteinProcessedPair("transit_peptide", CProt_ref::eProcessed_transit_peptide)
+};
+typedef CStaticArrayMap<const string, CProt_ref::EProcessed> TProteinProcessedMap;
+DEFINE_STATIC_ARRAY_MAP(TProteinProcessedMap, sc_ProteinProcessedMap, sc_protein_processed_map);
 
 // === Seq-feat.data
 
@@ -492,6 +502,40 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
 }
 
 
+static string s_ExtractSatelliteFromComment (string comment)
+{
+    string satellite = "";
+
+    if (NStr::IsBlank(comment)) {
+        return "";
+    }
+
+    if (NStr::StartsWith (comment, "microsatellite")) {
+        satellite = comment;
+        if (NStr::Equal (satellite.substr(14, 1), " ")) {
+            satellite = "microsatellite:" + satellite.substr(15);
+        }
+    } else if (NStr::StartsWith (comment, "minisatellite")) {
+        satellite = comment;
+        if (NStr::Equal (satellite.substr(13, 1), " ")) {
+            satellite = "microsatellite:" + satellite.substr(14);
+        }
+    } else if (NStr::StartsWith (comment, "satellite")) {
+        satellite = comment;
+        if (NStr::Equal (satellite.substr(9, 1), " ")) {
+            satellite = "microsatellite:" + satellite.substr(10);
+        }
+    }
+    size_t pos = NStr::Find (satellite, ";");
+    pos = min (pos, NStr::Find (satellite, ","));
+    pos = min (pos, NStr::Find (satellite, "~"));
+    if (pos != NPOS) {
+        satellite = satellite.substr (0, pos);
+    }
+    return satellite;
+}
+
+
 void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
 {
     CSeq_feat& feat = const_cast<CSeq_feat&> (*sfh.GetSeq_feat());
@@ -501,25 +545,64 @@ void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
     case CSeqFeatData::e_Imp:
         {
             CSeqFeatData::TImp& imp = data.SetImp();
-            
             if (imp.IsSetKey()) {
                 const CImp_feat::TKey& key = imp.GetKey();
                 
-                if (key == "CDS") {
+                if (NStr::Equal(key, "CDS")) {
                     if ( ! (m_Mode == eCleanup_EMBL  ||  m_Mode == eCleanup_DDBJ) ) {
                         data.SetCdregion();
                         ChangeMade(CCleanupChange::eChangeFeatureKey);
                     }
-                } else if (!imp.IsSetLoc()  ||  NStr::IsBlank(imp.GetLoc())) {
+                } else if (NStr::Equal (key, "allele") || NStr::Equal(key, "mutation")) {
+                    imp.SetKey ("variation");
+                    ChangeMade(CCleanupChange::eChangeFeatureKey);
+                } else if (NStr::Equal (key, "Import") || NStr::Equal (key, "virion")) {
+                    imp.SetKey ("misc_feature");
+                    ChangeMade(CCleanupChange::eChangeFeatureKey);
+                } else if (NStr::Equal (key, "repeat_unit")) {
+                    imp.SetKey ("repeat_region");
+                    ChangeMade(CCleanupChange::eChangeFeatureKey);
+                } else if (NStr::Equal (key, "satellite")) {
+                    imp.SetKey ("repeat_region");
+                    ChangeMade(CCleanupChange::eChangeFeatureKey);
+                    CRef<CGb_qual> new_qual(new CGb_qual);
+                    new_qual->SetQual("satellite");
+                    if (feat.IsSetComment()) {
+                        string val = s_ExtractSatelliteFromComment (feat.GetComment());
+                        if (!NStr::IsBlank (val)) {
+                            new_qual->SetVal(val);
+                        }
+                    }
+                    feat.SetQual().push_back(new_qual);
+                    ChangeMade(CCleanupChange::eAddQualifier);
+                } else if (!imp.IsSetLoc()) {
+                   // look for RNA names
                     TRnaTypeMap::const_iterator rna_type_it = sc_RnaTypeMap.find(key);
                     if (rna_type_it != sc_RnaTypeMap.end()) {
                         CSeqFeatData::TRna& rna = data.SetRna();
                         ChangeMade(CCleanupChange::eChangeFeatureKey);
                         rna.SetType(rna_type_it->second);
                     } else {
-                        // !!! need to find protein bioseq with object manager
+                        CBioseq_Handle bsh = m_Scope->GetBioseqHandle (feat.GetLocation());
+                        if (bsh && bsh.IsAa()) {
+                            // only look for proteins on protein sequences
+
+                            if (NStr::Equal(key, "Protein")) {
+                                CSeqFeatData::TProt& prot = data.SetProt();
+                                ChangeMade(CCleanupChange::eChangeFeatureKey);
+                            } else {
+                                CProt_ref::EProcessed processed = CProt_ref::eProcessed_not_set;
+                                TProteinProcessedMap::const_iterator protein_process_it = sc_ProteinProcessedMap.find(key);
+                                if (protein_process_it != sc_ProteinProcessedMap.end()) {
+                                    CSeqFeatData::TProt& prot = data.SetProt();
+                                    prot.SetProcessed(protein_process_it->second);
+                                    ChangeMade(CCleanupChange::eChangeFeatureKey);
+                                } 
+                            }
+                        }
                     }
                 }
+            
             }
         }
         break;

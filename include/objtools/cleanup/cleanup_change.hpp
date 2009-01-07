@@ -121,6 +121,7 @@ public:
         eChangeBioSourceOther,
         eChangeSeqId,
         eRemoveEmptyPub,
+        eAddQualifier,
         // set when any other change is made.
         eChangeOther,
         
