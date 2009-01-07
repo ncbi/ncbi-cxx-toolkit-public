@@ -147,6 +147,8 @@ public:
 void CTest::Init(void)
 {
     SetDiagPostLevel(eDiag_Error);
+    // To see all output, uncomment next line:
+    // SetDiagPostLevel(eDiag_Trace);
 
     // Create command-line argument descriptions
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);

@@ -457,6 +457,11 @@ public:
     virtual bool Close(void);
 
 protected:
+    /// Get error code/description of last stream operation (m_Stream).
+    /// It can be received using GetErrorCode()/GetErrorDescription() methods.
+    void GetStreamError(void);
+
+protected:
     EMode                  m_Mode;     ///< I/O mode (read/write).
     CNcbiFstream*          m_File;     ///< File stream.
     CCompressionIOStream*  m_Stream;   ///< [De]comression stream.

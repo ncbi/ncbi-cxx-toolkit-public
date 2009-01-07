@@ -194,21 +194,23 @@ bool CBZip2Compression::CompressFile(const string& src_file,
                              m_Verbosity, m_WorkFactor, m_SmallDecompress);
     cf.SetFlags(cf.GetFlags() | GetFlags());
 
+    // Open output file
     if ( !cf.Open(dst_file, CCompressionFile::eMode_Write) ) {
+        SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         return false;
     } 
-
-    if ( CCompression::x_CompressFile(src_file, cf, buf_size) ) {
-        return cf.Close();
+    // Make compression
+    if ( !CCompression::x_CompressFile(src_file, cf, buf_size) ) {
+        if ( cf.GetErrorCode() ) {
+            SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+        }
+        cf.Close();
+        return false;
     }
-    // Save error info
-    int    errcode = cf.GetErrorCode();
-    string errmsg  = cf.GetErrorDescription();
-    // Close file
-    cf.Close();
-    // Restore previous error info
-    SetError(errcode, errmsg.c_str());
-    return false;
+    // Close output file and return result
+    bool status = cf.Close();
+    SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+    return status;
 }
 
 
@@ -220,20 +222,23 @@ bool CBZip2Compression::DecompressFile(const string& src_file,
                              m_Verbosity, m_WorkFactor, m_SmallDecompress);
     cf.SetFlags(cf.GetFlags() | GetFlags());
 
+    // Open output file
     if ( !cf.Open(src_file, CCompressionFile::eMode_Read) ) {
+        if ( cf.GetErrorCode() ) {
+            SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+        }
         return false;
     } 
+    // Make decompression
     if ( CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
-        return cf.Close();
+        SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+        cf.Close();
+        return false;
     }
-    // Save error info
-    int    errcode = cf.GetErrorCode();
-    string errmsg  = cf.GetErrorDescription();
-    // Close file
-    cf.Close();
-    // Restore previous error info
-    SetError(errcode, errmsg.c_str());
-    return false;
+    // Close output file and return result
+    bool status = cf.Close();
+    SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+    return status;
 }
 
 

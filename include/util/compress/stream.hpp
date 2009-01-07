@@ -141,9 +141,11 @@ public:
 
 protected:
     /// Get status of last compression/decompression stream operation.
-    CCompressionProcessor::EStatus 
-        x_GetStatus(CCompressionStream::EDirection dir);
-
+    CCompressionProcessor::EStatus x_GetStatus(CCompressionStream::EDirection dir);
+    /// Get error code and description of last compressor/decompressor stream operation.
+    /// Return TRUE if information obtained successfully.
+    bool x_GetError(CCompressionStream::EDirection dir,
+                    int& status, string& description);
     /// Return number of processed bytes.
     unsigned long x_GetProcessedSize(CCompressionStream::EDirection dir);
     /// Return number of output bytes.
@@ -236,6 +238,11 @@ public:
     CCompressionProcessor::EStatus GetStatus(void) {
         return CCompressionStream::x_GetStatus(eRead);
     }
+    /// Get error code and description of last compressor/decompressor stream operation.
+    /// Return TRUE if information obtained successfully.
+    bool GetError(int& status, string& description) {
+        return CCompressionStream::x_GetError(eRead, status, description);
+    }
     /// Return number of processed bytes.
     unsigned long GetProcessedSize(void) {
         return CCompressionStream::x_GetProcessedSize(eRead);
@@ -263,6 +270,11 @@ public:
     /// Get status of last compression/decompression stream operation.
     CCompressionProcessor::EStatus GetStatus(void) {
         return CCompressionStream::x_GetStatus(eWrite);
+    }
+    /// Get error code and description of last compressor/decompressor stream operation.
+    /// Return TRUE if information obtained successfully.
+    bool GetError(int& status, string& description) {
+        return CCompressionStream::x_GetError(eWrite, status, description);
     }
     /// Return number of processed bytes.
     unsigned long GetProcessedSize(void) {
@@ -293,6 +305,12 @@ public:
     CCompressionProcessor::EStatus
     GetStatus(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetStatus(dir);
+    }
+    /// Get error code and description of last compressor/decompressor stream operation.
+    /// Return TRUE if information obtained successfully.
+    bool GetError(CCompressionStream::EDirection dir,
+                  int& status, string& description) {
+        return CCompressionStream::x_GetError(dir, status, description);
     }
     /// Return number of processed bytes.
     unsigned long GetProcessedSize(CCompressionStream::EDirection dir) {

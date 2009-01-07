@@ -163,6 +163,28 @@ CCompressionStream::x_GetStatus(CCompressionStream::EDirection dir)
 }
 
 
+bool CCompressionStream::x_GetError(CCompressionStream::EDirection dir,
+                                    int& status, string& description)
+{
+    CCompressionStreamProcessor* sp = (dir == eRead) ? m_Reader : m_Writer;
+    status = 0;
+    description.clear();
+    if (!sp  ||  !sp->m_Processor) {
+        return false;
+    }
+    // We pass CCompression-CCompressionStreamProcessor derived object
+    // to compression stream as 'stream processor', at least internally,
+    // so try to get error code from CCompression.
+    CCompression* cmp = dynamic_cast<CCompression*>(sp->m_Processor);
+    if (!cmp) {
+        return false;
+    }
+    status = cmp->GetErrorCode();
+    description = cmp->GetErrorDescription();
+    return true;
+}
+
+
 unsigned long CCompressionStream::x_GetProcessedSize(
                                   CCompressionStream::EDirection dir)
 {

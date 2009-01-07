@@ -670,20 +670,21 @@ bool CLZOCompression::CompressFile(const string& src_file,
 
     // Open output file
     if ( !cf.Open(dst_file, CCompressionFile::eMode_Write) ) {
+        SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         return false;
     } 
     // Make compression
-    if ( CCompression::x_CompressFile(src_file, cf, buf_size) ) {
-        return cf.Close();
+    if ( !CCompression::x_CompressFile(src_file, cf, buf_size) ) {
+        if ( cf.GetErrorCode() ) {
+            SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+        }
+        cf.Close();
+        return false;
     }
-    // Save error info
-    int    errcode = cf.GetErrorCode();
-    string errmsg  = cf.GetErrorDescription();
-    // Close file
-    cf.Close();
-    // Set error information
-    SetError(errcode, errmsg.c_str());
-    return false;
+    // Close output file and return result
+    bool status = cf.Close();
+    SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+    return status;
 }
 
 
@@ -694,20 +695,23 @@ bool CLZOCompression::DecompressFile(const string& src_file,
     CLZOCompressionFile cf(GetLevel(), m_BlockSize);
     cf.SetFlags(cf.GetFlags() | GetFlags());
 
+    // Open output file
     if ( !cf.Open(src_file, CCompressionFile::eMode_Read) ) {
+        SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         return false;
     } 
-    if ( CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
-        return cf.Close();
+    // Make decompression
+    if ( !CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
+        if ( cf.GetErrorCode() ) {
+            SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+        }
+        cf.Close();
+        return false;
     }
-    // Restore previous error info
-    int    errcode = cf.GetErrorCode();
-    string errmsg  = cf.GetErrorDescription();
-    // Restore previous error info
-    cf.Close();
-    // Set error information
-    SetError(errcode, errmsg.c_str());
-    return false;
+    // Close output file and return result
+    bool status = cf.Close();
+    SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+    return status;
 }
 
 
@@ -776,6 +780,15 @@ CLZOCompressionFile::~CLZOCompressionFile(void)
 {
     Close();
     return;
+}
+
+
+void CLZOCompressionFile::GetStreamError(void)
+{
+    int     errcode;
+    string  errdesc;
+    m_Stream->GetError(CCompressionStream::eRead, errcode, errdesc);
+    SetError(errcode, errdesc);
 }
 
 
@@ -853,9 +866,7 @@ bool CLZOCompressionFile::Open(const string& file_name, EMode mode,
     }
     if ( !m_Stream->good() ) {
         Close();
-        if ( !GetErrorCode() ) {
-            SetError(-1, "Cannot create compression stream");
-        }
+        SetError(-1, "Cannot create compression stream");
         return false;
     }
     return true;
@@ -877,6 +888,7 @@ long CLZOCompressionFile::Read(void* buf, size_t len)
     // Check decompression processor status
     if ( m_Stream->GetStatus(CCompressionStream::eRead) 
          == CCompressionProcessor::eStatus_Error ) {
+        GetStreamError();
         return -1;
     }
     streamsize nread = m_Stream->gcount();
@@ -886,6 +898,7 @@ long CLZOCompressionFile::Read(void* buf, size_t len)
     if ( m_Stream->eof() ) {
         return 0;
     }
+    GetStreamError();
     return -1;
 }
 
@@ -906,6 +919,7 @@ long CLZOCompressionFile::Write(const void* buf, size_t len)
     if ( m_Stream->good() ) {
         return len;
     }
+    GetStreamError();
     return -1;
 }
 
@@ -915,6 +929,7 @@ bool CLZOCompressionFile::Close(void)
     // Close compression/decompression stream
     if ( m_Stream ) {
         m_Stream->Finalize();
+        GetStreamError();
         delete m_Stream;
         m_Stream = 0;
     }

@@ -89,6 +89,12 @@ void CCompression::SetError(int errcode, const char* description)
     m_ErrorMsg  = description ? description : kEmptyStr;
 }
 
+void CCompression::SetError(int errcode, string& description)
+{
+    m_ErrorCode = errcode;
+    m_ErrorMsg  = description;
+}
+
 
 CCompression::TFlags CCompression::GetFlags(void) const
 {
@@ -121,9 +127,6 @@ bool CCompression::x_CompressFile(const string&     src_file,
         size_t nread = is.gcount();
         size_t nwritten = dst_file.Write(buf.get(), nread); 
         if ( nwritten != nread ) {
-            if ( !GetErrorCode() ) {
-                SetError(-1, "Error writing to output file");
-            }
             return false;
         }
     }
@@ -141,19 +144,20 @@ bool CCompression::x_DecompressFile(CCompressionFile& src_file,
     }
     CNcbiOfstream os(dst_file.c_str(), IOS_BASE::out | IOS_BASE::binary);
     if ( !os.good() ) {
-        SetError(-1, "Cannot open source file");
+        SetError(-1, "Cannot open destination file");
         return false;
     }
     AutoPtr<char, ArrayDeleter<char> > buf(new char[buf_size]);
-    size_t nread;
+    long nread;
     while ( (nread = src_file.Read(buf.get(), buf_size)) > 0 ) {
         os.write(buf.get(), nread);
         if ( !os.good() ) {
-            if ( !GetErrorCode() ) {
-                SetError(-1, "Error writing to ouput file");
-            }
+            SetError(-1, "Error writing to ouput file");
             return false;
         }
+    }
+    if ( nread == -1 ) {
+        return false;
     }
     return true;
 }

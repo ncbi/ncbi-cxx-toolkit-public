@@ -440,10 +440,15 @@ public:
     ///   Open, Read, Write
     virtual bool Close(void);
 
-private:
+protected:
+    /// Get error code/description of last stream operation (m_Stream).
+    /// It can be received using GetErrorCode()/GetErrorDescription() methods.
+    void GetStreamError(void);
+
+protected:
     EMode                  m_Mode;     ///< I/O mode (read/write).
     CNcbiFstream*          m_File;     ///< File stream.
-    CCompressionIOStream*  m_Zip;      ///< [De]comression stream.
+    CCompressionIOStream*  m_Stream;   ///< [De]comression stream.
 };
 
 

@@ -522,21 +522,21 @@ bool CZipCompression::CompressFile(const string& src_file,
     s_CollectFileInfo(src_file, info);
     // Open output file
     if ( !cf.Open(dst_file, CCompressionFile::eMode_Write, &info) ) {
+        SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         return false;
     } 
-
     // Make compression
-    if ( CCompression::x_CompressFile(src_file, cf, buf_size) ) {
-        return cf.Close();
+    if ( !CCompression::x_CompressFile(src_file, cf, buf_size) ) {
+        if ( cf.GetErrorCode() ) {
+            SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+        }
+        cf.Close();
+        return false;
     }
-    // Save error info
-    int    errcode = cf.GetErrorCode();
-    string errmsg  = cf.GetErrorDescription();
-    // Close file
-    cf.Close();
-    // Set error information
-    SetError(errcode, errmsg.c_str());
-    return false;
+    // Close output file and return result
+    bool status = cf.Close();
+    SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+    return status;
 }
 
 
@@ -553,6 +553,7 @@ bool CZipCompression::DecompressFile(const string& src_file,
     // Open compressed file, and define name of the destination file
     if ( F_ISSET(fRestoreFileAttr) ) {
         if ( !cf.Open(src_file, CCompressionFile::eMode_Read, &info) ) {
+            SetError(cf.GetErrorCode(), cf.GetErrorDescription());
             return false;
         } 
         if ( !info.name.empty() ) {
@@ -560,27 +561,26 @@ bool CZipCompression::DecompressFile(const string& src_file,
         }
     } else {
         if ( !cf.Open(src_file, CCompressionFile::eMode_Read, 0) ) {
+            SetError(cf.GetErrorCode(), cf.GetErrorDescription());
             return false;
         } 
     }
     // Decompress file
-    if ( CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
-        if ( !cf.Close() ) {
-            return false;
+    if ( !CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
+        if ( cf.GetErrorCode() ) {
+            SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         }
-        // Restore time stamp if needed
-        if ( need_restore_attr ) {
-            CFile(dst_file).SetTimeT(&info.mtime);
-        }
-        return true;
+        cf.Close();
+        return false;
     }
-    // Restore previous error info
-    int    errcode = cf.GetErrorCode();
-    string errmsg  = cf.GetErrorDescription();
-    cf.Close();
-    // Set error information
-    SetError(errcode, errmsg.c_str());
-    return false;
+    // Close output file and return result
+    bool status = cf.Close();
+    SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+    // Restore time stamp if needed
+    if ( status  &&  need_restore_attr ) {
+        CFile(dst_file).SetTimeT(&info.mtime);
+    }
+    return status;
 }
 
 
@@ -599,6 +599,7 @@ bool CZipCompression::DecompressFileIntoDir(const string& src_file,
     // Open compressed file, and define name of the destination file
     if ( F_ISSET(fRestoreFileAttr) ) {
         if ( !cf.Open(src_file, CCompressionFile::eMode_Read, &info) ) {
+            SetError(cf.GetErrorCode(), cf.GetErrorDescription());
             return false;
         } 
         if ( info.name.empty() ) {
@@ -611,30 +612,28 @@ bool CZipCompression::DecompressFileIntoDir(const string& src_file,
         }
     } else {
         if ( !cf.Open(src_file, CCompressionFile::eMode_Read, 0) ) {
+            SetError(cf.GetErrorCode(), cf.GetErrorDescription());
             return false;
         } 
         CFile::SplitPath(src_file, &dir, &name, &ext);
         dst_file = CFile::MakePath(dst_dir, name);
     }
-
     // Decompress file
-    if ( CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
-        if ( !cf.Close() ) {
-            return false;
+    if ( !CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
+        if ( cf.GetErrorCode() ) {
+            SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         }
-        // Restore time stamp if needed
-        if ( need_restore_attr ) {
-            CFile(dst_file).SetTimeT(&info.mtime);
-        }
-        return true;
+        cf.Close();
+        return false;
     }
-    // Restore previous error info
-    int    errcode = cf.GetErrorCode();
-    string errmsg  = cf.GetErrorDescription();
-    cf.Close();
-    // Set error information
-    SetError(errcode, errmsg.c_str());
-    return false;
+    // Close output file and return result
+    bool status = cf.Close();
+    SetError(cf.GetErrorCode(), cf.GetErrorDescription());
+    // Restore time stamp if needed
+    if ( status  &&  need_restore_attr ) {
+        CFile(dst_file).SetTimeT(&info.mtime);
+    }
+    return status;
 }
 
 
@@ -662,7 +661,7 @@ CZipCompressionFile::CZipCompressionFile(
     const string& file_name, EMode mode,
     ELevel level, int window_bits, int mem_level, int strategy)
     : CZipCompression(level, window_bits, mem_level, strategy),
-      m_Mode(eMode_Read), m_File(0), m_Zip(0)
+      m_Mode(eMode_Read), m_File(0), m_Stream(0)
 {
     // For backward compatibility -- use gzip file format by default
     SetFlags(GetFlags() | fGZip);
@@ -680,7 +679,7 @@ CZipCompressionFile::CZipCompressionFile(
 CZipCompressionFile::CZipCompressionFile(
     ELevel level, int window_bits, int mem_level, int strategy)
     : CZipCompression(level, window_bits, mem_level, strategy),
-      m_Mode(eMode_Read), m_File(0), m_Zip(0)
+      m_Mode(eMode_Read), m_File(0), m_Stream(0)
 {
     // For backward compatibility -- use gzip file format by default
     SetFlags(GetFlags() | fGZip);
@@ -692,6 +691,16 @@ CZipCompressionFile::~CZipCompressionFile(void)
 {
     Close();
     return;
+}
+
+
+void CZipCompressionFile::GetStreamError(void)
+{
+    int     errcode;
+    string  errdesc;
+    if ( m_Stream->GetError(CCompressionStream::eRead, errcode, errdesc) ) {
+        SetError(errcode, errdesc);
+    }
 }
 
 
@@ -743,7 +752,7 @@ bool CZipCompressionFile::Open(const string& file_name, EMode mode,
             new CCompressionStreamProcessor(
                 decompressor, CCompressionStreamProcessor::eDelete,
                 kCompressionDefaultBufSize, kCompressionDefaultBufSize);
-        m_Zip = 
+        m_Stream = 
             new CCompressionIOStream(
                 *m_File, processor, 0, CCompressionStream::fOwnReader);
     } else {
@@ -759,15 +768,13 @@ bool CZipCompressionFile::Open(const string& file_name, EMode mode,
             new CCompressionStreamProcessor(
                 compressor, CCompressionStreamProcessor::eDelete,
                 kCompressionDefaultBufSize, kCompressionDefaultBufSize);
-        m_Zip = 
+        m_Stream = 
             new CCompressionIOStream(
                 *m_File, 0, processor, CCompressionStream::fOwnWriter);
     }
-    if ( !m_Zip->good() ) {
+    if ( !m_Stream->good() ) {
         Close();
-        if ( !GetErrorCode() ) {
-            SetError(-1, "Cannot create compression stream");
-        }
+        SetError(-1, "Cannot create compression stream");
         return false;
     }
     return true;
@@ -778,33 +785,35 @@ long CZipCompressionFile::Read(void* buf, size_t len)
 {
     LIMIT_SIZE_PARAM_U(len);
 
-    if ( !m_Zip  ||  m_Mode != eMode_Read ) {
+    if ( !m_Stream  ||  m_Mode != eMode_Read ) {
         NCBI_THROW(CCompressionException, eCompressionFile, 
             "[CZipCompressionFile::Read]  File must be opened for reading");
     }
-    if ( !m_Zip->good() ) {
+    if ( !m_Stream->good() ) {
         return 0;
     }
-    m_Zip->read((char*)buf, len);
+    m_Stream->read((char*)buf, len);
     // Check decompression processor status
-    if ( m_Zip->GetStatus(CCompressionStream::eRead) 
+    if ( m_Stream->GetStatus(CCompressionStream::eRead) 
          == CCompressionProcessor::eStatus_Error ) {
+        GetStreamError();
         return -1;
     }
-    streamsize nread = m_Zip->gcount();
+    streamsize nread = m_Stream->gcount();
     if ( nread ) {
         return nread;
     }
-    if ( m_Zip->eof() ) {
+    if ( m_Stream->eof() ) {
         return 0;
     }
+    GetStreamError();
     return -1;
 }
 
 
 long CZipCompressionFile::Write(const void* buf, size_t len)
 {
-    if ( !m_Zip  ||  m_Mode != eMode_Write ) {
+    if ( !m_Stream  ||  m_Mode != eMode_Write ) {
         NCBI_THROW(CCompressionException, eCompressionFile, 
             "[CZipCompressionFile::Write]  File must be opened for writing");
     }
@@ -814,10 +823,11 @@ long CZipCompressionFile::Write(const void* buf, size_t len)
     }
     LIMIT_SIZE_PARAM_U(len);
 
-    m_Zip->write((char*)buf, len);
-    if ( m_Zip->good() ) {
+    m_Stream->write((char*)buf, len);
+    if ( m_Stream->good() ) {
         return len;
     }
+    GetStreamError();
     return -1;
 }
 
@@ -825,10 +835,11 @@ long CZipCompressionFile::Write(const void* buf, size_t len)
 bool CZipCompressionFile::Close(void)
 {
     // Close compression/decompression stream
-    if ( m_Zip ) {
-        m_Zip->Finalize();
-        delete m_Zip;
-        m_Zip = 0;
+    if ( m_Stream ) {
+        m_Stream->Finalize();
+        GetStreamError();
+        delete m_Stream;
+        m_Stream = 0;
     }
     // Close file stream
     if ( m_File ) {
@@ -1014,7 +1025,6 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
                 s_WriteGZipFooter(out_buf + *out_avail, STREAM->avail_out,
                                   GetProcessedSize(), m_CRC32);
             if ( !footer_len ) {
-                ERR_COMPRESS(65, "CZipCompressor::Finish: Cannot write gzip footer");
                 return eStatus_Overflow;
             }
             *out_avail += footer_len;
@@ -1251,6 +1261,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
             } else {
                 *in_avail = STREAM->avail_in;
                 IncreaseProcessedSize(x_in_len - *in_avail);
+                x_in_len = *in_avail;
             }
             // In case of concatenated .gz files:
             // Possible, we already skipped some bytes from cache, 
@@ -1259,10 +1270,12 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
             if ( m_SkipInput ) {
                 _ASSERT(m_Cache.size() == 0);
                 size_t n = min(x_in_len, m_SkipInput);
-                x_in_len -= n;
-                m_SkipInput -= n;
-                *in_avail = x_in_len;
-                IncreaseProcessedSize(n);
+                if ( n ) {
+                    x_in_len -= n;
+                    m_SkipInput -= n;
+                    *in_avail = x_in_len;
+                    IncreaseProcessedSize(n);
+                }
             }
             *out_avail = out_size - STREAM->avail_out;
             IncreaseOutputSize(*out_avail);
