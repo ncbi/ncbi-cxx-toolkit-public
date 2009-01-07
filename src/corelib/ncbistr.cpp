@@ -31,6 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <common/ncbi_source_ver.h>
 #include <corelib/ncbistr.hpp>
 #include <corelib/tempstr.hpp>
 #include <corelib/ncbi_limits.hpp>
@@ -58,6 +59,17 @@ inline SIZE_TYPE s_DiffPtr(const char* end, const char* start)
 }
 
 const char *const kEmptyCStr = "";
+
+
+extern const char* const kNcbiDevelopmentVersionString;
+const char* const kNcbiDevelopmentVersionString
+    = "NCBI_DEVELOPMENT_VER_" NCBI_AS_STRING(NCBI_DEVELOPMENT_VER);
+
+#ifdef NCBI_PRODUCTION_VER
+extern const char* const kNcbiProductionVersionString;
+const char* const kNcbiProductionVersionString
+    = "NCBI_PRODUCTION_VER_" NCBI_AS_STRING(NCBI_PRODUCTION_VER);
+#endif
 
 
 #if !defined(NCBI_OS_MSWIN) && !( defined(NCBI_OS_LINUX)  &&  defined(NCBI_COMPILER_GCC) )
