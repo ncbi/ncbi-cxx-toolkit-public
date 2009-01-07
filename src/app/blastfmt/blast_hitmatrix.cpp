@@ -39,7 +39,7 @@
 
 #include <objmgr/util/sequence.hpp>
 
-#include <connect/services/netcache_client.hpp>
+#include <connect/services/netcache_api.hpp>
 #include "blast_hitmatrix.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -196,7 +196,7 @@ bool CBlastHitMatrix::WriteToFile(void)
             CImageIO::WriteImage(m_Context->GetBuffer(), m_File, m_Format);
         }
         else {//netcache
-            CNetCacheClient_LB nc_client("blast_hitmatrix", "NC_HitMatrix");
+            CNetCacheAPI nc_client("NC_HitMatrix", "blast_hitmatrix");
             m_ImageKey = nc_client.PutData(m_Context->GetBuffer().GetData(),  m_Width*m_Height*3);
         }
          
