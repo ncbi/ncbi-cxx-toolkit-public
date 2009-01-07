@@ -691,5 +691,20 @@ bool GetBioseqWithType(CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice choice, C
     return result;
 }
 
+bool AddCommentToBioseq(CBioseq& bioseq, const string& comment)
+{
+    bool result = (bioseq.IsSetDescr() && comment.length() > 0);
+
+    if (result) {
+        CSeq_descr& seqDescr = bioseq.SetDescr();
+        CRef< CSeqdesc> seqdescComment(new CSeqdesc);
+        seqdescComment->SetComment(comment);
+        seqDescr.Set().push_back(seqdescComment);
+    }
+
+    return result;
+}
+
+
 END_SCOPE(cd_utils) // namespace ncbi::objects::
 END_NCBI_SCOPE

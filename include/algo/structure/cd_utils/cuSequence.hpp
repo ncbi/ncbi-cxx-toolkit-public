@@ -145,6 +145,9 @@ bool CopyBioseqWithType(const CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice ch
 NCBI_CDUTILS_EXPORT 
 bool GetBioseqWithType(CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice choice, CRef< CBioseq >& seqEntryBioseq) ;
 
+//  Return 'false' if the comment was not added.  Empty comment strings are not added.
+NCBI_CDUTILS_EXPORT 
+bool AddCommentToBioseq(CBioseq& bioseq, const string& comment);
 
 
 
