@@ -1,7 +1,6 @@
 # $Id$
 
 LIB_PROJ = xblastformat
-EXPENDABLE_SUB_PROJ = unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

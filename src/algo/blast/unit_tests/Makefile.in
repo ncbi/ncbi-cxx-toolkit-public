@@ -1,10 +1,9 @@
 # $Id$
 
-# Meta-makefile("SEQDB" project)
+# Meta-makefile (deferred BLAST unit tests)
 #################################
 
-LIB_PROJ = seqdb
-SUB_PROJ = demo
+SUB_PROJ = blast_format blastdb seqdb_reader
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
