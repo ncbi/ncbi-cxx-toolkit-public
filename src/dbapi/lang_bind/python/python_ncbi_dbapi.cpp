@@ -1611,7 +1611,6 @@ CStmtHelper::CStmtHelper(CTransaction* trans)
 
 CStmtHelper::CStmtHelper(CTransaction* trans, const CStmtStr& stmt)
 : m_ParentTransaction( trans )
-, m_RS(NULL)
 , m_StmtStr( stmt )
 , m_Executed(false)
 , m_ResultStatus( 0 )
@@ -1649,10 +1648,11 @@ CStmtHelper::DumpResult(void)
     if ( m_Stmt.get() && m_Executed ) {
         while ( m_Stmt->HasMoreResults() ) {
             if ( m_Stmt->HasRows() ) {
-                m_RS = m_Stmt->GetResultSet();
+                m_RS.reset(m_Stmt->GetResultSet());
             }
         }
     }
+    m_RS.reset();
 }
 
 void
@@ -1662,6 +1662,7 @@ CStmtHelper::ReleaseStmt(void)
         IConnection* conn = m_Stmt->GetParentConn();
 
         // Release the statement before a connection release because it is a child object for a connection.
+        m_RS.reset();
         m_Stmt.reset();
 
         _ASSERT( m_StmtStr.GetType() != estNone );
@@ -1766,9 +1767,10 @@ CStmtHelper::Execute(void)
     _ASSERT( m_Stmt.get() );
 
     try {
+        m_RS.reset();
         switch ( m_StmtStr.GetType() ) {
         case estSelect :
-            m_RS = m_Stmt->ExecuteQuery ( m_StmtStr.GetStr() );
+            m_Stmt->Execute ( m_StmtStr.GetStr() );
             break;
         default:
             m_Stmt->ExecuteUpdate ( m_StmtStr.GetStr() );
@@ -1801,7 +1803,7 @@ CStmtHelper::GetRowCount(void) const
 IResultSet&
 CStmtHelper::GetRS(void)
 {
-    if ( m_RS == NULL ) {
+    if ( m_RS.get() == NULL ) {
         throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
@@ -1811,7 +1813,7 @@ CStmtHelper::GetRS(void)
 const IResultSet&
 CStmtHelper::GetRS(void) const
 {
-    if ( m_RS == NULL ) {
+    if ( m_RS.get() == NULL ) {
         throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
@@ -1821,7 +1823,7 @@ CStmtHelper::GetRS(void) const
 bool
 CStmtHelper::HasRS(void) const
 {
-    return m_RS != NULL;
+    return m_RS.get() != NULL;
 }
 
 int
@@ -1841,13 +1843,16 @@ CStmtHelper::MoveToNextRS(void)
     try {
         while ( m_Stmt->HasMoreResults() ) {
             if ( m_Stmt->HasRows() ) {
-                m_RS = m_Stmt->GetResultSet();
+                m_RS.reset(m_Stmt->GetResultSet());
                 if ( m_RS->GetResultType() == eDB_StatusResult ) {
+                    m_RS->Next();
                     m_ResultStatus = m_RS->GetVariant(1).GetInt4();
                     m_ResultStatusAvailable = true;
-                    return false;
+                    m_RS.reset();
                 }
-                return true;
+                else {
+                    return true;
+                }
             }
         }
     }
@@ -2464,6 +2469,10 @@ CCursor::execute(const pythonpp::CTuple& args)
         m_InfoMessages.Clear();
         m_StmtHelper.Execute();
         m_RowsNum = m_StmtHelper.GetRowCount();
+
+        if (!m_StmtHelper.MoveToNextRS()) {
+            m_AllDataFetched = m_AllSetsFetched = true;
+        }
     }
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e);

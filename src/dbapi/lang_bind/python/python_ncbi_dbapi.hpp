@@ -218,7 +218,7 @@ private:
 private:
     CTransaction* const     m_ParentTransaction; //< A transaction to which belongs this cursor object
     auto_ptr<IStatement>    m_Stmt;     //< DBAPI SQL statement interface
-    IResultSet*             m_RS;
+    auto_ptr<IResultSet>    m_RS;
     CStmtStr                m_StmtStr;
     bool                    m_Executed;
     int                     m_ResultStatus;
