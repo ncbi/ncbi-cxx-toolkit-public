@@ -82,6 +82,11 @@ CNetServerConnection SNetCacheAPIImpl::x_GetConnection(const string& bid)
         } catch (CNetSrvConnException& e) {
             TServerAddress* backup = s_GetFallbackServer();
 
+            if (backup == NULL) {
+                NCBI_THROW(CNetCacheException, eUnknnownCache,
+                    "Fallback server address is not configured.");
+            }
+
             ERR_POST_X(3, "Could not connect to " <<
                 m_Service.GetServiceName() << ":" << e.what() <<
                 ". Connecting to backup server " <<
