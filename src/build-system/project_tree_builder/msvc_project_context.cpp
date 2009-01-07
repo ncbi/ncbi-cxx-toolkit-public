@@ -151,9 +151,9 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
             CDirEntry::CreateRelativePath(GetApp().GetProjectTreeInfo().m_Src, 
                                           src_abs);
         //add this part to <include> dir
-        string incl_path = 
+        string incl_path = CDirEntry::NormalizePath(
             CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, 
-                                  rel_path);
+                                  rel_path));
         string incl_dir;
         CDirEntry::SplitPath(incl_path, &incl_dir);
         include_dirs.insert(incl_dir);
@@ -165,6 +165,9 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
         impl_dir = CDirEntry::AddTrailingPathSeparator(impl_dir);
         include_dirs.insert(impl_dir);
     }
+    m_IncludeDirsAbs = project.m_Includes;
+    m_InlineDirsAbs  = project.m_Inlines;
+
     SConfigInfo cfg_info; // default is enough
     list<string> headers_in_include;
     list<string> inlines_in_include;
@@ -192,6 +195,11 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
             m_InlineDirsAbs.push_back(CDirEntry::ConcatPath(*hs, *h));
         }
     }
+
+    m_IncludeDirsAbs.sort();
+    m_IncludeDirsAbs.unique();
+    m_InlineDirsAbs.sort();
+    m_InlineDirsAbs.unique();
 
     // Get custom build files and adjust pathes 
     GetMsvcProjectMakefile().GetCustomBuildInfo(&m_CustomBuildInfo);

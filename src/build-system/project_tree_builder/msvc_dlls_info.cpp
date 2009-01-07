@@ -183,6 +183,11 @@ static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
     dll->m_Sources.sort();
     dll->m_Sources.unique();
 
+    copy(lib_context.IncludeDirsAbs().begin(), 
+         lib_context.IncludeDirsAbs().end(), back_inserter(dll->m_Includes));
+    copy(lib_context.InlineDirsAbs().begin(), 
+         lib_context.InlineDirsAbs().end(), back_inserter(dll->m_Inlines));
+
     // Header files - also register them
     ITERATE(list<string>, p, collector.HeaderFiles()) {
         const string& rel_path = *p;

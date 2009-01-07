@@ -167,6 +167,9 @@ public:
 
     list<string> m_CheckInfo;
     set<string> m_CheckConfigs;
+
+    list<string> m_Includes;
+    list<string> m_Inlines;
     
     mutable bool m_IsBundle;
 private:

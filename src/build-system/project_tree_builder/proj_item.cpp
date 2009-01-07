@@ -197,6 +197,9 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_ExportHeaders     = item.m_ExportHeaders;
     m_CheckInfo         = item.m_CheckInfo;
     m_CheckConfigs      = item.m_CheckConfigs;
+
+    m_Includes = item.m_Includes;
+    m_Inlines  = item.m_Inlines;
     
     m_IsBundle = item.m_IsBundle;
 }
