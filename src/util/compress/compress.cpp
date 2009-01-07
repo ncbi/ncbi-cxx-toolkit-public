@@ -89,7 +89,8 @@ void CCompression::SetError(int errcode, const char* description)
     m_ErrorMsg  = description ? description : kEmptyStr;
 }
 
-void CCompression::SetError(int errcode, string& description)
+
+void CCompression::SetError(int errcode, const string& description)
 {
     m_ErrorCode = errcode;
     m_ErrorMsg  = description;

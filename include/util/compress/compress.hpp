@@ -196,7 +196,7 @@ protected:
 
     // Set last action error/status code and description
     void SetError(int status, const char* description = 0);
-    void SetError(int status, string& description);
+    void SetError(int status, const string& description);
 
 protected:
     /// Decompression mode (see fAllowTransparentRead flag).
