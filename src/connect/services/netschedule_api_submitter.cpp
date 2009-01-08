@@ -122,7 +122,7 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
     string aff_prev;
     s_SerializeJob(cmd, job, udp_port, wait_time, aff_prev);
 
-    job.job_id = m_API->x_GetConnection().Exec(cmd);
+    job.job_id = m_API->m_Service.GetBestConnection().Exec(cmd);
 
     if (job.job_id.empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -142,7 +142,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
         s_CheckInputSize(input, max_input_size);
     }
 
-    CNetServerConnection conn = m_Impl->m_API->x_GetConnection();
+    CNetServerConnection conn = m_Impl->m_API->m_Service.GetBestConnection();
 
     // batch command
     conn.Exec("BSUB");

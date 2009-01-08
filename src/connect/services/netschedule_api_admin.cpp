@@ -63,7 +63,7 @@ void CNetScheduleAdmin::ShutdownServer(CNetScheduleAdmin::EShutdownLevel level) 
         break;
     }
 
-    m_Impl->m_API->x_GetConnection().Exec(cmd);
+    m_Impl->m_API->m_Service.GetBestConnection().Exec(cmd);
 }
 
 
@@ -78,7 +78,7 @@ void CNetScheduleAdmin::ReloadServerConfig() const
         NCBI_THROW(CNetScheduleException, eCommandIsNotAllowed,
                    "This command is allowed only for non-loadbalance client.");
     }
-    m_Impl->m_API->x_GetConnection().Exec("RECO");
+    m_Impl->m_API->m_Service.GetBestConnection().Exec("RECO");
 }
 
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
@@ -230,7 +230,7 @@ void CNetScheduleAdmin::Monitor(CNcbiOstream & out) const
                    "This command is allowed only for non-loadbalance client.");
     }
 
-    CNetServerConnection conn = m_Impl->m_API->x_GetConnection();
+    CNetServerConnection conn = m_Impl->m_API->m_Service.GetBestConnection();
     conn->WriteLine("MONI QUIT");
     conn.Telnet(&out, NULL);
 }
@@ -244,7 +244,7 @@ void CNetScheduleAdmin::Logging(bool on_off) const
     string cmd = "LOG ";
     cmd += on_off ? "ON" : "OFF";
 
-    m_Impl->m_API->x_GetConnection().Exec(cmd);
+    m_Impl->m_API->m_Service.GetBestConnection().Exec(cmd);
 }
 
 

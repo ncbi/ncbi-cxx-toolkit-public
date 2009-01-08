@@ -234,7 +234,7 @@ struct SNetScheduleAPIImpl : public CNetObject
 
     const CNetScheduleAPI::SServerParams& GetServerParams();
 
-    CNetServerConnection x_GetConnection(const string& job_key = kEmptyStr);
+    CNetServerConnection x_GetConnection(const string& job_key);
 
     CNetScheduleAPI::EJobStatus x_GetJobStatus(
         const string& job_key,
@@ -270,9 +270,6 @@ inline SNetScheduleAPIImpl::SNetScheduleAPIImpl(
 inline CNetServerConnection
     SNetScheduleAPIImpl::x_GetConnection(const string& job_key)
 {
-    if (job_key.empty())
-        return m_Service.GetBestConnection();
-
     CNetScheduleKey nskey(job_key);
     return m_Service.GetSpecificConnection(nskey.host, nskey.port);
 }
