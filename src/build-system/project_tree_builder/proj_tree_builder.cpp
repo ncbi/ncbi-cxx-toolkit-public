@@ -911,9 +911,16 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
         check_timeout = NStr::Join(k->second, " ");
     }
+    bool check_requires_ok = true;
     string check_requires;
     k = makefile.m_Contents.find("CHECK_REQUIRES");
     if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
+        ITERATE(list<string>, p, k->second) {
+            if ( !GetApp().GetSite().IsProvided(*p) ) {
+                check_requires_ok = false;
+                break;
+            }
+        }
         check_requires = NStr::Join(k->second, " ");
     } else {
         k = makefile.m_Contents.find("REQUIRES");
@@ -928,7 +935,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
         check_authors = NStr::Join(k->second, " ");
     }
     k = makefile.m_Contents.find("CHECK_CMD");
-    if ( k != makefile.m_Contents.end() ) {
+    if ( check_requires_ok && k != makefile.m_Contents.end() ) {
         const list<string> check_cmd_list = k->second;
         string test_name("/CHECK_NAME=");
         ITERATE(list<string>, i, check_cmd_list) {
