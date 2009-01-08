@@ -5,6 +5,7 @@ connect/ext$
 dll
 dbapi$
 dbapi/driver$
+dbapi/driver/impl$
 dbapi/driver/samples$
 dbapi/driver/util$ update-only
 dbapi/driver/odbc/unix_odbc$ update-only
