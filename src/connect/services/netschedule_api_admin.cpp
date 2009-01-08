@@ -107,7 +107,7 @@ void CNetScheduleAdmin::DeleteQueue(const string& qname) const
 void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key) const
 {
     CNetServerCmdOutput output = m_Impl->m_API->x_GetConnection(
-        job_key).ExecMultiline("DUMP " + job_key + "\r\n");
+        job_key).ExecMultiline("DUMP " + job_key);
 
     std::string line;
 
