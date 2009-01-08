@@ -77,8 +77,11 @@ done
 
 test -d "$builddir"  || Usage "$builddir is not a directory"
 test -d "$srcdir"    || Usage "$srcdir is not a directory"
-if test ! -f "$srcdir/$projectlist"; then
-  test -d "$srcdir/$projectlist" || Usage "$srcdir/$projectlist not found"
+case "$projectlist" in
+  /* ) abs_projectlist=$projectlist ;;
+  *  ) abs_projectlist=$srcdir/$projectlist
+if test ! -f "$abs_projectlist"; then
+  test -d "$abs_projectlist" || Usage "$abs_projectlist not found"
 fi
 
 
