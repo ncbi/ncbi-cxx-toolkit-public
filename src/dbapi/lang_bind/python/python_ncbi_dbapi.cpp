@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <common/ncbi_package_ver.h>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/plugin_manager_store.hpp>
 #include <dbapi/error_codes.hpp>
