@@ -74,7 +74,7 @@ static TServerAddress* s_GetFallbackServer()
 }
 
 
-CNetServerConnection SNetCacheAPIImpl::x_GetConnection()
+CNetServerConnection SNetCacheAPIImpl::GetBestConnection()
 {
     try {
         return m_Service.GetBestConnection();
@@ -179,7 +179,7 @@ CNetServerConnection SNetCacheAPIImpl::x_PutInitiate(
     CNetServerConnection conn;
 
     if (key->empty())
-        conn = x_GetConnection();
+        conn = GetBestConnection();
     else {
         conn = x_GetConnection(*key);
 
