@@ -1385,7 +1385,7 @@ NCBI_ER_ITERATE( \
     (Bsrc).SetOrgname().SetMod())
 
 
-/// COrgRef iterators
+/// COrg_ref iterators
 
 /// IF_ORGREF_HAS_ORGMOD
 
@@ -1398,7 +1398,7 @@ if ((Org).IsSetOrgMod())
 ((Org).IsSetOrgMod())
 
 /// FOR_EACH_ORGMOD_ON_ORGREF
-// Takes const COrgRef& as input and makes iterator to const COrgMod&
+// Takes const COrg_ref& as input and makes iterator to const COrgMod&
 // Dereference with const COrgMod& omd = **iter
 
 #define FOR_EACH_ORGMOD_ON_ORGREF(Iter, Org) \
@@ -1409,7 +1409,7 @@ NCBI_CS_ITERATE( \
     (Org).GetOrgname().GetMod())
 
 /// EDIT_EACH_ORGMOD_ON_ORGREF
-// Takes const COrgRef& as input and makes iterator to COrgMod&
+// Takes const COrg_ref& as input and makes iterator to COrgMod&
 // Dereference with COrgMod& omd = **iter
 
 #define EDIT_EACH_ORGMOD_ON_ORGREF(Iter, Org) \
@@ -1420,7 +1420,7 @@ NCBI_NC_ITERATE( \
     (Org).SetOrgname().SetMod())
 
 /// PRUNE_EACH_ORGMOD_ON_ORGREF
-// Takes const COrgRef& as input and makes iterator to COrgMod&
+// Takes const COrg_ref& as input and makes iterator to COrgMod&
 // Dereference with COrgMod& omd = **iter
 
 #define PRUNE_EACH_ORGMOD_ON_ORGREF(Iter, Org) \
@@ -1442,7 +1442,7 @@ if ((Org).IsSetDb())
 ((Org).IsSetDb())
 
 /// FOR_EACH_DBXREF_ON_ORGREF
-// Takes const COrgRef& as input and makes iterator to const COrgMod&
+// Takes const COrg_ref& as input and makes iterator to const COrgMod&
 // Dereference with const COrgMod& omd = **iter
 
 #define FOR_EACH_DBXREF_ON_ORGREF(Iter, Org) \
@@ -1453,7 +1453,7 @@ NCBI_CS_ITERATE( \
     (Org).GetDb())
 
 /// EDIT_EACH_ORGMOD_ON_ORGREF
-// Takes const COrgRef& as input and makes iterator to COrgMod&
+// Takes const COrg_ref& as input and makes iterator to COrgMod&
 // Dereference with COrgMod& omd = **iter
 
 #define EDIT_EACH_DBXREF_ON_ORGREF(Iter, Org) \
@@ -1464,7 +1464,7 @@ NCBI_NC_ITERATE( \
     (Org).SetDb())
 
 /// PRUNE_EACH_ORGMOD_ON_ORGREF
-// Takes const COrgRef& as input and makes iterator to COrgMod&
+// Takes const COrg_ref& as input and makes iterator to COrgMod&
 // Dereference with COrgMod& omd = **iter
 
 #define PRUNE_EACH_DBXREF_ON_ORGREF(Iter, Org) \
@@ -1486,35 +1486,35 @@ if ((Org).IsSetMod())
 ((Org).IsSetMod())
 
 /// FOR_EACH_MOD_ON_ORGREF
-// Takes const COrgRef& as input and makes iterator to const string&
-// Dereference with const string& str = **iter
+// Takes const COrg_ref& as input and makes iterator to const string&
+// Dereference with const string& str = *iter
 
 #define FOR_EACH_MOD_ON_ORGREF(Iter, Org) \
 NCBI_CS_ITERATE( \
     (Org).IsSetMod(), \
-    COrgRef::TMod, \
+    COrg_ref::TMod, \
     Iter, \
     (Org).GetMod())
 
 /// EDIT_EACH_MOD_ON_ORGREF
-// Takes const COrgRef& as input and makes iterator to COstringrgMod&
-// Dereference with string& str = **iter
+// Takes const COrg_ref& as input and makes iterator to COstringrgMod&
+// Dereference with string& str = *iter
 
 #define EDIT_EACH_MOD_ON_ORGREF(Iter, Org) \
 NCBI_NC_ITERATE( \
     (Org).IsSetMod(), \
-    COrgRef::TMod, \
+    COrg_ref::TMod, \
     Iter, \
     (Org).SetMod())
 
 /// PRUNE_EACH_MOD_ON_ORGREF
-// Takes const COrgRef& as input and makes iterator to COstringrgMod&
-// Dereference with string& str = **iter
+// Takes const COrg_ref& as input and makes iterator to COstringrgMod&
+// Dereference with string& str = *iter
 
 #define PRUNE_EACH_MOD_ON_ORGREF(Iter, Org) \
 NCBI_ER_ITERATE( \
     (Org).IsSetMod(), \
-    COrgRef::TMod, \
+    COrg_ref::TMod, \
     Iter, \
     (Org).SetMod())
 
