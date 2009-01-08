@@ -210,6 +210,7 @@ private:
     void x_CleanupRna(CSeq_feat& feat);
     void x_AddReplaceQual(CSeq_feat& feat, const string& str);
     void x_CombineSplitQual(string& val, string& new_val);
+    void x_ConvertToNcRNA (CSeq_feat& feat);
 
     // Gb_qual cleanup.
     void x_ExpandCombinedQuals(CSeq_feat::TQual& quals);

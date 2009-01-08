@@ -536,6 +536,128 @@ static string s_ExtractSatelliteFromComment (string comment)
 }
 
 
+static const string sc_ncRNA_names[] = {"antisense_RNA",
+"autocatalytically_spliced_intron",
+"hammerhead_ribozyme",
+"ribozyme",
+"RNase_P_RNA",
+"RNase_MRP_RNA",
+"telomerase_RNA",
+"guide_RNA",
+"rasiRNA",
+"scRNA",
+"siRNA",
+"miRNA",
+"piRNA",
+"snoRNA",
+"snRNA",
+"SRP_RNA",
+"vault_RNA",
+"Y_RNA",
+"other",
+""} ;
+
+static bool s_HasNcRNAName (string rna_name)
+{
+    for (int i = 0; !NStr::IsBlank (sc_ncRNA_names[i]); i++) {
+        if (NStr::Equal (rna_name, sc_ncRNA_names[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+static string s_GetMiRNAProduct (string product)
+{
+    string mirna_product = "";
+
+    if (NStr::StartsWith (product, "miRNA ")) {
+        mirna_product = product.substr (6);
+    } else if (NStr::StartsWith (product, "microRNA ")) {
+        mirna_product = product.substr(9);
+    } else if (NStr::EndsWith (product, " miRNA") && !NStr::EndsWith(product, "precursor miRNA")) {
+        mirna_product = product.substr (0, product.size() - 6);
+    } else if (NStr::EndsWith (product, " microRNA") && !NStr::EndsWith(product, "precursor microRNA")) {
+        mirna_product = product.substr (0, product.size() - 9);
+    }
+    return mirna_product;
+}
+
+void CCleanup_imp::x_ConvertToNcRNA (CSeq_feat& feat)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsRna() || !feat.GetData().GetRna().IsSetType()) {
+        return;
+    }
+
+    CSeqFeatData::TRna& rna = feat.SetData().SetRna();
+
+    string new_classname = "";
+
+    CRNA_ref::EType rna_type = rna.GetType();
+
+    if (rna_type == CRNA_ref::eType_scRNA) {
+        new_classname = "scRNA";
+    } else if (rna_type == CRNA_ref::eType_snRNA) {
+        new_classname = "snRNA";
+    } else if (rna_type == CRNA_ref::eType_snoRNA) {
+        new_classname = "snoRNA";
+    } 
+    if (!NStr::IsBlank(new_classname)) {
+        feat.AddQualifier ("ncRNA_class", new_classname);
+        if (rna.IsSetExt() && rna.GetExt().IsName()) {
+            feat.AddQualifier("product", rna.GetExt().GetName());
+            ChangeMade (CCleanupChange::eAddQualifier);
+        }
+        rna.SetType(CRNA_ref::eType_other);
+        rna.SetExt().SetName("ncRNA");
+        ChangeMade (CCleanupChange::eChangeFeatureKey);
+    } else if (rna_type == CRNA_ref::eType_other) {
+        if (rna.IsSetExt() && rna.GetExt().IsName()) {
+            string rna_name = rna.GetExt().GetName();
+            string mirna_product = s_GetMiRNAProduct (rna_name);
+            if (s_HasNcRNAName (rna_name)) {
+                feat.AddQualifier ("ncRNA_class", rna_name);
+                ChangeMade (CCleanupChange::eAddQualifier);
+                rna.SetExt().SetName("ncRNA");
+                ChangeMade (CCleanupChange::eChangeFeatureKey);
+            } else if (!NStr::IsBlank (mirna_product)) {
+                feat.AddQualifier ("ncRNA_class", "miRNA");
+                feat.AddQualifier ("product", mirna_product);
+                ChangeMade (CCleanupChange::eAddQualifier);
+                rna.SetExt().SetName ("ncRNA");
+                ChangeMade (CCleanupChange::eChangeFeatureKey);
+            }
+            else if (!NStr::Equal(rna_name, "ncRNA") && !NStr::Equal(rna_name, "tmRNA") && !NStr::Equal(rna_name, "misc_RNA")) {
+                feat.AddQualifier ("product", rna_name);
+                ChangeMade (CCleanupChange::eAddQualifier);
+                rna.SetExt().SetName("misc_RNA");
+                ChangeMade (CCleanupChange::eChangeFeatureKey);
+            }
+        } else {
+            rna.SetExt().SetName("misc_RNA");
+            ChangeMade (CCleanupChange::eChangeFeatureKey);
+        }
+    } 
+
+    if (rna.GetType() == CRNA_ref::eType_other && rna.IsSetExt() && rna.GetExt().IsName()
+        && NStr::Equal(rna.GetExt().GetName(), "misc_RNA")) {
+        // the presence of certain quals forces a type change
+        FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
+            if ((*it)->IsSetQual()) {
+                if (NStr::Equal((*it)->GetQual(), "ncRNA_class")) {
+                    rna.SetExt().SetName("ncRNA");
+                    ChangeMade (CCleanupChange::eChangeFeatureKey);
+                } else if (NStr::Equal((*it)->GetQual(), "tag_peptide")) {
+                    rna.SetExt().SetName ("tmRNA");
+                    ChangeMade (CCleanupChange::eChangeFeatureKey);
+                }
+            }
+        }
+    }
+}
+
+
 void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
 {
     CSeq_feat& feat = const_cast<CSeq_feat&> (*sfh.GetSeq_feat());
@@ -582,6 +704,7 @@ void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
                         CSeqFeatData::TRna& rna = data.SetRna();
                         ChangeMade(CCleanupChange::eChangeFeatureKey);
                         rna.SetType(rna_type_it->second);
+                        x_ConvertToNcRNA (feat);
                     } else {
                         CBioseq_Handle bsh = m_Scope->GetBioseqHandle (feat.GetLocation());
                         if (bsh && bsh.IsAa()) {
@@ -617,6 +740,9 @@ void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
                 ChangeMade(CCleanupChange::eChangeFeatureKey);
             }
         }
+        break;
+    case CSeqFeatData::e_Rna:
+        x_ConvertToNcRNA (feat);
         break;
     default:
         break;
