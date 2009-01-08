@@ -1,0 +1,21 @@
+corelib$
+util$
+connect$
+connect/ext$
+dll
+dbapi$
+dbapi/driver$
+dbapi/driver/samples$
+dbapi/driver/util$ update-only
+dbapi/driver/odbc/unix_odbc$ update-only
+dbapi/driver/ctlib$
+dbapi/driver/ftds64$
+dbapi/driver/ftds64/freetds$
+dbapi/driver/ftds64/freetds/tds$
+dbapi/driver/ftds64/freetds/replacements$
+dbapi/driver/ftds64/freetds/ctlib$
+dbapi/driver/ftds64/ctlib$
+dbapi/lang_bind$
+dbapi/lang_bind/python$
+dbapi/lang_bind/python/pythonpp$
+dbapi/lang_bind/python/tests$

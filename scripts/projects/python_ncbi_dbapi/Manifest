@@ -1,0 +1,25 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Pavel Ivanov
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+LIB: python_ncbi_dbapi.so libpython_ncbi_dbapi.so
+LIB: libdbapi.so libdbapi_driver.so libxconnext.so libxconnect.so libxutil.so libxncbi.so
+LIB: libncbi_xdbapi_ftds.so libct_ftds64.so libtds_ftds64.so
+LIB: libncbi_xdbapi_ctlib.so 
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+Linux32 : 32  : GCC.sh 3.4.2 --without-debug --with-optimization --with-mt --with-dll --with-flat-makefile
+Linux64 : 64  : GCC.sh 4.0.1 --without-debug --with-optimization --with-mt --with-dll --with-flat-makefile
