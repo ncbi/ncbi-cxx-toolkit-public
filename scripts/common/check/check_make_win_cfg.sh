@@ -121,6 +121,13 @@ fi
 # Clean up check directory
 (cd "$x_check_dir"  &&  find "$x_check_dir" -maxdepth 1 -mindepth 1 -type d -print | xargs rm -rf)
 
+# Features detection
+fs=`cat "${x_build_dir}/${x_libdll}/${x_cfg}/features_and_packages.txt" | tr '\r' ' '`
+x_features=" "
+for f in $fs; do
+   x_features="$x_features$f "
+done
+
 
 #//////////////////////////////////////////////////////////////////////////
 
@@ -251,6 +258,7 @@ export DIAG_SILENT_ABORT="Y"
 
 count_ok=0
 count_err=0
+count_timeout=0
 count_absent=0
 configurations="$x_confs"
 
@@ -372,16 +380,19 @@ RunTest() {
    if grep -q NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
       echo "DIS --  \$x_cmd"
       echo "DIS --  \$x_cmd" >> \$res_log
+      count_absent=\`expr \$count_absent + 1\`
       test -n "\$NCBI_AUTOMATED_BUILD" && echo "DIS" >> "\$x_test_rep"
       
    elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
       echo "SKP --  \$x_cmd"
       echo "SKP --  \$x_cmd" >> \$res_log
+      count_absent=\`expr \$count_absent + 1\`
       test -n "\$NCBI_AUTOMATED_BUILD" && echo "SKP" >> "\$x_test_rep"
       
    elif egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
       echo "TO  --  \$x_cmd     (\$exec_time)"
       echo "TO  --  \$x_cmd     (\$exec_time)" >> \$res_log
+      count_timeout=\`expr \$count_timeout + 1\`
       test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
 
    elif test \$result -eq 0; then
@@ -408,11 +419,7 @@ RunTest() {
 saved_path="\$PATH"
 
 # Features detection
-fs=\`cat \${build_dir}/\${build_tree}/\${build_cfg}/features_and_packages.txt\ | tr '\r' ' '\`
-FEATURES=""
-for f in \$fs; do
-   FEATURES="\$FEATURES\$f "
-done
+FEATURES="$x_features"
 export FEATURES
 
 # Add current configuration's build and dll build directories to PATH
@@ -435,9 +442,6 @@ EOF
 # Read list with tests
 x_tests=`cat "$x_list" | sed -e 's/ /%gj_s4%/g'`
 x_test_prev=""
-
-# Features detection
-features="${x_build_dir}/${x_libdll}/${x_cfg}/features_and_packages.txt"
    
 # For all tests
 for x_row in $x_tests; do
@@ -457,8 +461,11 @@ for x_row in $x_tests; do
    x_authors=`echo "$x_row" | sed -e 's/.*~//'`
 
    # Check application requirements
+   # TODO:
+   #    This check can be removed later, when project_tree_builder starts to check requiments
+   #    on check list generation step.
    for x_req in $x_requires; do
-      (grep "^$x_req$" $features > /dev/null)  ||  continue
+      (echo "$x_features" | grep " $x_req " > /dev/null)  ||  continue 2
    done
    
    # Copy specified files into the check tree
@@ -512,15 +519,12 @@ cat >> $x_out <<EOF
 PATH="\$saved_path"
 
 # Write result of the tests execution
-echo
-echo "Succeeded : \$count_ok"
-echo "Failed    : \$count_err"
-echo "Absent    : \$count_absent"
-echo
-
-if test \$count_err -eq 0; then
+if ! \$is_db_load; then
    echo
-   echo "******** ALL TESTS COMPLETED SUCCESSFULLY ********"
+   echo "Succeeded : \$count_ok"
+   echo "Timeout   : \$count_timeout"
+   echo "Failed    : \$count_err"
+   echo "Absent    : \$count_absent"
    echo
 fi
 

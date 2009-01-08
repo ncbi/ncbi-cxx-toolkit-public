@@ -344,6 +344,7 @@ cat >> $x_out <<EOF
 # Run
 count_ok=0
 count_err=0
+count_timeout=0
 count_absent=0
 count_total=0
 
@@ -566,16 +567,19 @@ EOF_launch
                     if grep NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
                         echo "DIS --  \$x_cmd"
                         echo "DIS --  \$x_cmd" >> \$res_log
+                        count_absent=\`expr \$count_absent + 1\`
                         test -n "\$NCBI_AUTOMATED_BUILD" && echo "DIS" >> "\$x_test_rep"
 
                     elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
                         echo "SKP --  \$x_cmd"
                         echo "SKP --  \$x_cmd" >> \$res_log
+                        count_absent=`expr $count_absent + 1`
                         test -n "\$NCBI_AUTOMATED_BUILD" && echo "SKP" >> "\$x_test_rep"
 
                     elif echo "\$exec_time" | egrep 'Maximum execution .* is exceeded' >/dev/null || egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
                         echo "TO  --  \$x_cmd     (\$exec_time)"
                         echo "TO  --  \$x_cmd     (\$exec_time)" >> \$res_log
+                        count_timeout=`expr $count_timeout + 1`
                         test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
 
                     elif test \$result -eq 0; then
@@ -748,10 +752,11 @@ done # for x_row in x_tests
 # Write ending code into the script 
 cat >> $x_out <<EOF
 
-if \$no_report_err; then
+if \$no_report_err  &&  ! \$is_db_load; then
    # Write result of the tests execution
    echo
    echo "Succeeded : \$count_ok"
+   echo "Timeout   : \$count_timeout"
    echo "Failed    : \$count_err"
    echo "Absent    : \$count_absent"
    echo
