@@ -209,7 +209,29 @@ CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str)
 
 bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
 {
-    if (!is  ||  !(os << is.rdbuf()))
+    if (!is.good())
+        return false;
+#ifndef NCBI_COMPILER_GCC
+    os << is.rdbuf();
+#elif   NCBI_COMPILER_VERSION <= 330
+    // GCC stdlib++ version <= 3.3.0 has a bug in implementation of
+    // streamcopy, which wrongly assumes that showmanyc() (which is called
+    // when no read position is available for in_avail()) returns the number
+    // of bytes that are placed at the buffer, so it tries to read right off
+    // gptr() those many bytes, causing bound conditions (ending up with SEGV).
+    do {
+        char buf[4096];
+        is.read(buf, sizeof(buf));
+        streamsize count = is.gcount();
+        if (!count)
+            break;
+        if (!os.write(buf, count))
+            break;
+    } while (is.good());
+#else
+    os << is.rdbuf();
+#endif
+    if (!os.good())
         return false;
     os.flush();
     if (!os.good())
