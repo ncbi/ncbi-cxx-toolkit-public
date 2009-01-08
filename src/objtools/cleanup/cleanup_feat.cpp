@@ -584,10 +584,12 @@ static string s_GetMiRNAProduct (string product)
     return mirna_product;
 }
 
-void CCleanup_imp::x_ConvertToNcRNA (CSeq_feat& feat)
+bool CCleanup_imp::x_ConvertToNcRNA (CSeq_feat& feat)
 {
+    bool rval = false;
+
     if (!feat.IsSetData() || !feat.GetData().IsRna() || !feat.GetData().GetRna().IsSetType()) {
-        return;
+        return false;
     }
 
     CSeqFeatData::TRna& rna = feat.SetData().SetRna();
@@ -612,6 +614,7 @@ void CCleanup_imp::x_ConvertToNcRNA (CSeq_feat& feat)
         rna.SetType(CRNA_ref::eType_other);
         rna.SetExt().SetName("ncRNA");
         ChangeMade (CCleanupChange::eChangeFeatureKey);
+        rval = true;
     } else if (rna_type == CRNA_ref::eType_other) {
         if (rna.IsSetExt() && rna.GetExt().IsName()) {
             string rna_name = rna.GetExt().GetName();
@@ -621,22 +624,26 @@ void CCleanup_imp::x_ConvertToNcRNA (CSeq_feat& feat)
                 ChangeMade (CCleanupChange::eAddQualifier);
                 rna.SetExt().SetName("ncRNA");
                 ChangeMade (CCleanupChange::eChangeFeatureKey);
+                rval = true;
             } else if (!NStr::IsBlank (mirna_product)) {
                 feat.AddQualifier ("ncRNA_class", "miRNA");
                 feat.AddQualifier ("product", mirna_product);
                 ChangeMade (CCleanupChange::eAddQualifier);
                 rna.SetExt().SetName ("ncRNA");
                 ChangeMade (CCleanupChange::eChangeFeatureKey);
+                rval = true;
             }
             else if (!NStr::Equal(rna_name, "ncRNA") && !NStr::Equal(rna_name, "tmRNA") && !NStr::Equal(rna_name, "misc_RNA")) {
                 feat.AddQualifier ("product", rna_name);
                 ChangeMade (CCleanupChange::eAddQualifier);
                 rna.SetExt().SetName("misc_RNA");
                 ChangeMade (CCleanupChange::eChangeFeatureKey);
+                rval = true;
             }
         } else {
             rna.SetExt().SetName("misc_RNA");
             ChangeMade (CCleanupChange::eChangeFeatureKey);
+            rval = true;
         }
     } 
 
@@ -648,13 +655,16 @@ void CCleanup_imp::x_ConvertToNcRNA (CSeq_feat& feat)
                 if (NStr::Equal((*it)->GetQual(), "ncRNA_class")) {
                     rna.SetExt().SetName("ncRNA");
                     ChangeMade (CCleanupChange::eChangeFeatureKey);
+                    rval = true;
                 } else if (NStr::Equal((*it)->GetQual(), "tag_peptide")) {
                     rna.SetExt().SetName ("tmRNA");
                     ChangeMade (CCleanupChange::eChangeFeatureKey);
+                    rval = true;
                 }
             }
         }
     }
+    return rval;
 }
 
 
@@ -672,7 +682,11 @@ void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
                 
                 if (NStr::Equal(key, "CDS")) {
                     if ( ! (m_Mode == eCleanup_EMBL  ||  m_Mode == eCleanup_DDBJ) ) {
-                        data.SetCdregion();
+                        CSeq_feat_EditHandle efh(sfh);
+                        CRef<CSeq_feat> new_feat(new CSeq_feat);            
+                        new_feat->Assign(feat);
+                        new_feat->SetData().SetCdregion();
+                        efh.Replace(*new_feat);
                         ChangeMade(CCleanupChange::eChangeFeatureKey);
                     }
                 } else if (NStr::Equal (key, "allele") || NStr::Equal(key, "mutation")) {
@@ -701,25 +715,35 @@ void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
                    // look for RNA names
                     TRnaTypeMap::const_iterator rna_type_it = sc_RnaTypeMap.find(key);
                     if (rna_type_it != sc_RnaTypeMap.end()) {
-                        CSeqFeatData::TRna& rna = data.SetRna();
+                        CSeq_feat_EditHandle efh(sfh);
+                        CRef<CSeq_feat> new_feat(new CSeq_feat);            
+                        new_feat->Assign(feat);
+                        new_feat->SetData().SetRna().SetType(rna_type_it->second);
                         ChangeMade(CCleanupChange::eChangeFeatureKey);
-                        rna.SetType(rna_type_it->second);
-                        x_ConvertToNcRNA (feat);
+                        x_ConvertToNcRNA (*new_feat);
+                        efh.Replace(*new_feat);
                     } else {
                         CBioseq_Handle bsh = m_Scope->GetBioseqHandle (feat.GetLocation());
                         if (bsh && bsh.IsAa()) {
                             // only look for proteins on protein sequences
 
                             if (NStr::Equal(key, "Protein")) {
-                                CSeqFeatData::TProt& prot = data.SetProt();
+                                CSeq_feat_EditHandle efh(sfh);
+                                CRef<CSeq_feat> new_feat(new CSeq_feat);            
+                                new_feat->Assign(feat);
+                                new_feat->SetData().SetProt();
                                 ChangeMade(CCleanupChange::eChangeFeatureKey);
+                                efh.Replace(*new_feat);
                             } else {
                                 CProt_ref::EProcessed processed = CProt_ref::eProcessed_not_set;
                                 TProteinProcessedMap::const_iterator protein_process_it = sc_ProteinProcessedMap.find(key);
                                 if (protein_process_it != sc_ProteinProcessedMap.end()) {
-                                    CSeqFeatData::TProt& prot = data.SetProt();
-                                    prot.SetProcessed(protein_process_it->second);
+                                    CSeq_feat_EditHandle efh(sfh);
+                                    CRef<CSeq_feat> new_feat(new CSeq_feat);            
+                                    new_feat->Assign(feat);
+                                    new_feat->SetData().SetProt().SetProcessed(protein_process_it->second);
                                     ChangeMade(CCleanupChange::eChangeFeatureKey);
+                                    efh.Replace(*new_feat);
                                 } 
                             }
                         }
@@ -742,7 +766,14 @@ void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
         }
         break;
     case CSeqFeatData::e_Rna:
-        x_ConvertToNcRNA (feat);
+        {
+            CRef<CSeq_feat> new_feat(new CSeq_feat);            
+            new_feat->Assign(feat);
+            if (x_ConvertToNcRNA (*new_feat)) {
+                CSeq_feat_EditHandle efh(sfh);
+                efh.Replace (*new_feat);
+            }
+        }
         break;
     default:
         break;
