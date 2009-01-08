@@ -71,6 +71,12 @@ typedef CSeq_entry::E_Choice TSEQENTRY_CHOICE;
 #define NCBI_SEQID(Type) CSeq_id::e_##Type
 typedef CSeq_id::E_Choice TSEQID_CHOICE;
 
+//   Local       Gibbsq     Gibbmt      Giim
+//   Genbank     Embl       Pir         Swissprot
+//   Patent      Other      General     Gi
+//   Ddbj        Prf        Pdb         Tpg
+//   Tpe         Tpd        Gpipe       Named_annot_track
+
 #define NCBI_ACCN(Type) CSeq_id::eAcc_##Type
 typedef CSeq_id::EAccessionInfo TACCN_CHOICE;
 
@@ -80,11 +86,23 @@ typedef CSeq_id::EAccessionInfo TACCN_CHOICE;
 #define NCBI_SEQREPR(Type) CSeq_inst::eRepr_##Type
 typedef CSeq_inst::TRepr TSEQ_REPR;
 
+//   virtual     raw     seg       const     ref
+//   consen      map     delta     other
+
 #define NCBI_SEQMOL(Type) CSeq_inst::eMol_##Type
 typedef CSeq_inst::TMol TSEQ_MOL;
 
+//   dna     rna     aa     na     other
+
 #define NCBI_SEQTOPOLOGY(Type) CSeq_inst::eTopology_##Type
 typedef CSeq_inst::TTopology TSEQ_TOPOLOGY;
+
+//   linear     circular     tandem     other
+
+#define NCBI_SEQSTRAND(Type) CSeq_inst::eStrand_##Type
+typedef CSeq_inst::TStrand TSEQ_STRAND;
+
+//   ss     ds     mixed     other
 
 
 /// CAnnotdesc definitions
@@ -92,11 +110,22 @@ typedef CSeq_inst::TTopology TSEQ_TOPOLOGY;
 #define NCBI_ANNOTDESC(Type) CAnnotdesc::e_##Type
 typedef CAnnotdesc::E_Choice TANNOTDESC_CHOICE;
 
+//   Name     Title           Comment         Pub
+//   User     Create_date     Update_date
+//   Src      Align           Region
+
 
 /// CSeqdesc definitions
 
 #define NCBI_SEQDESC(Type) CSeqdesc::e_##Type
 typedef CSeqdesc::E_Choice TSEQDESC_CHOICE;
+
+//   Mol_type     Modif           Method          Name
+//   Title        Org             Comment         Num
+//   Maploc       Pir             Genbank         Pub
+//   Region       User            Sp              Dbxref
+//   Embl         Create_date     Update_date     Prf
+//   Pdb          Het             Source          Molinfo
 
 
 /// CMolInfo definitions
@@ -104,11 +133,28 @@ typedef CSeqdesc::E_Choice TSEQDESC_CHOICE;
 #define NCBI_BIOMOL(Type) CMolInfo::eBiomol_##Type
 typedef CMolInfo::TBiomol TMOLINFO_BIOMOL;
 
+//   genomic             pre_RNA          mRNA      rRNA
+//   tRNA                snRNA            scRNA     peptide
+//   other_genetic       genomic_mRNA     cRNA      snoRNA
+//   transcribed_RNA     ncRNA            tmRNA     other
+
 #define NCBI_TECH(Type) CMolInfo::eTech_##Type
 typedef CMolInfo::TTech TMOLINFO_TECH;
 
+//   standard               est                  sts
+//   survey                 genemap              physmap
+//   derived                concept_trans        seq_pept
+//   both                   seq_pept_overlap     seq_pept_homol
+//   concept_trans_a        htgs_1               htgs_2
+//   htgs_3                 fli_cdna             htgs_0
+//   htc                    wgs                  barcode
+//   composite_wgs_htgs     tsa                  other
+
 #define NCBI_COMPLETENESS(Type) CMolInfo::eCompleteness_##Type
 typedef CMolInfo::TCompleteness TMOLINFO_COMPLETENESS;
+
+//   complete     partial      no_left       no_right
+//   no_ends      has_left     has_right     other
 
 
 /// CBioSource definitions
@@ -116,8 +162,28 @@ typedef CMolInfo::TCompleteness TMOLINFO_COMPLETENESS;
 #define NCBI_GENOME(Type) CBioSource::eGenome_##Type
 typedef CBioSource::TGenome TBIOSOURCE_GENOME;
 
+//   genomic              chloroplast       chromoplast
+//   kinetoplast          mitochondrion     plastid
+//   macronuclear         extrachrom        plasmid
+//   transposon           insertion_seq     cyanelle
+//   proviral             virion            nucleomorph
+//   apicoplast           leucoplast        proplastid
+//   endogenous_virus     hydrogenosome     chromosome
+//   chromatophore
+
 #define NCBI_ORIGIN(Type) CBioSource::eOrigin_##Type
 typedef CBioSource::TOrigin TBIOSOURCE_ORIGIN;
+
+//   natural       natmut     mut     artificial
+//   synthetic     other
+
+
+/// COrgName definitions
+
+#define NCBI_ORGNAME(Type) COrgName::e_##Type
+typedef COrgName::C_Name::E_Choice TORGNAME_CHOICE;
+
+//   Binomial     Virus     Hybrid     Namedhybrid     Partial
 
 
 /// CSubSource definitions
@@ -125,11 +191,40 @@ typedef CBioSource::TOrigin TBIOSOURCE_ORIGIN;
 #define NCBI_SUBSRC(Type) CSubSource::eSubtype_##Type
 typedef CSubSource::TSubtype TSUBSRC_SUBTYPE;
 
+//   chromosome                map                 clone
+//   subclone                  haplotype           genotype
+//   sex                       cell_line           cell_type
+//   tissue_type               clone_lib           dev_stage
+//   frequency                 germline            rearranged
+//   lab_host                  pop_variant         tissue_lib
+//   plasmid_name              transposon_name     insertion_seq_name
+//   plastid_name              country             segment
+//   endogenous_virus_name     transgenic          environmental_sample
+//   isolation_source          lat_lon             collection_date
+//   collected_by              identified_by       fwd_primer_seq
+//   rev_primer_seq            fwd_primer_name     rev_primer_name
+//   metagenomic               mating_type         linkage_group
+//   haplogroup                other
+
 
 /// COrgMod definitions
 
 #define NCBI_ORGMOD(Type) COrgMod::eSubtype_##Type
 typedef COrgMod::TSubtype TORGMOD_SUBTYPE;
+
+//   strain                 substrain        type
+//   subtype                variety          serotype
+//   serogroup              serovar          cultivar
+//   pathovar               chemovar         biovar
+//   biotype                group            subgroup
+//   isolate                common           acronym
+//   dosage                 nat_host         sub_species
+//   specimen_voucher       authority        forma
+//   forma_specialis        ecotype          synonym
+//   anamorph               teleomorph       breed
+//   gb_acronym             gb_anamorph      gb_synonym
+//   culture_collection     bio_material     metagenome_source
+//   old_lineage            old_name         other
 
 
 /// CPub definitions
@@ -137,11 +232,21 @@ typedef COrgMod::TSubtype TORGMOD_SUBTYPE;
 #define NCBI_PUB(Type) CPub::e_##Type
 typedef CPub::E_Choice TPUB_CHOICE;
 
+//   Gen         Sub       Medline     Muid       Article
+//   Journal     Book      Proc        Patent     Pat_id
+//   Man         Equiv     Pmid
+
 
 /// CSeq_feat definitions
 
 #define NCBI_SEQFEAT(Type) CSeqFeatData::e_##Type
 typedef CSeqFeatData::E_Choice TSEQFEAT_CHOICE;
+
+//   Gene         Org                 Cdregion     Prot
+//   Rna          Pub                 Seq          Imp
+//   Region       Comment             Bond         Site
+//   Rsite        User                Txinit       Num
+//   Psec_str     Non_std_residue     Het          Biosrc
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1160,6 +1265,23 @@ NCBI_NC_ITERATE( \
 
 
 /// COrgName iterators
+
+/// IF_ORGNAME_CHOICE_IS
+
+#define IF_ORGNAME_CHOICE_IS(Onm, Chs) \
+if ((Onm).IsSetName() && (Onm).GetName().Which() == Chs)
+
+/// ORGNAME_CHOICE_IS
+
+#define ORGNAME_CHOICE_IS(Onm, Chs) \
+((Onm).IsSetName() && (Onm).GetName().Which() == Chs)
+
+/// SWITCH_ON_MOLINFO_COMPLETENESS
+
+#define SWITCH_ON_ORGNAME_CHOICE(Onm) \
+NCBI_SWITCH( \
+    (Onm).IsSetName() && (Onm).GetName().Which() != COrgName::e_not_set, \
+    (Onm).GetName().Which())
 
 /// IF_ORGNAME_HAS_ORGMOD
 
