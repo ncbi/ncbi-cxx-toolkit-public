@@ -1505,7 +1505,7 @@ NCBI_NC_ITERATE( \
     (Org).IsSetMod(), \
     COrgRef::TMod, \
     Iter, \
-    (Org)..SetMod())
+    (Org).SetMod())
 
 /// PRUNE_EACH_MOD_ON_ORGREF
 // Takes const COrgRef& as input and makes iterator to COstringrgMod&
@@ -1516,7 +1516,7 @@ NCBI_ER_ITERATE( \
     (Org).IsSetMod(), \
     COrgRef::TMod, \
     Iter, \
-    (Org)..SetMod())
+    (Org).SetMod())
 
 
 /// COrgName iterators
