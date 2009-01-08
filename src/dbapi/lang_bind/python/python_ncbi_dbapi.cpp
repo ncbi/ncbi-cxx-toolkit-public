@@ -471,6 +471,26 @@ CRowID::~CRowID(void)
 }
 
 //////////////////////////////////////////////////////////////////////////////
+CStringType::CStringType(void)
+{
+    PrepareForPython(this);
+}
+
+CStringType::~CStringType(void)
+{
+}
+
+//////////////////////////////////////////////////////////////////////////////
+CDateTimeType::CDateTimeType(void)
+{
+    PrepareForPython(this);
+}
+
+CDateTimeType::~CDateTimeType(void)
+{
+}
+
+//////////////////////////////////////////////////////////////////////////////
 CParamFmt::CParamFmt(TFormat user_fmt, TFormat drv_fmt)
 : m_UserFmt(user_fmt)
 , m_DrvFmt(drv_fmt)
@@ -1866,6 +1886,63 @@ CStmtHelper::MoveToNextRS(void)
     return false;
 }
 
+static void
+s_FillDescription(pythonpp::CList& descr, const IResultSetMetaData* data)
+{
+    descr.Clear();
+
+    unsigned int cnt = data->GetTotalColumns();
+    for (unsigned int i = 1; i <= cnt; ++i) {
+        pythonpp::CList col_list;
+        IncRefCount(col_list);
+        col_list.Append(pythonpp::CString(data->GetName(i)));
+        switch (data->GetType(i)) {
+        case eDB_Int:
+        case eDB_SmallInt:
+        case eDB_TinyInt:
+        case eDB_BigInt:
+        case eDB_Float:
+        case eDB_Double:
+        case eDB_Bit:
+        case eDB_Numeric:
+            col_list.Append((PyObject*) &python::CNumber::GetType());
+            break;
+        case eDB_VarChar:
+        case eDB_Char:
+        case eDB_LongChar:
+        case eDB_Text:
+            col_list.Append((PyObject*) &python::CStringType::GetType());
+            break;
+        case eDB_VarBinary:
+        case eDB_Binary:
+        case eDB_LongBinary:
+        case eDB_Image:
+            col_list.Append((PyObject*) &python::CBinary::GetType());
+            break;
+        case eDB_DateTime:
+        case eDB_SmallDateTime:
+            col_list.Append((PyObject*) &python::CDateTimeType::GetType());
+            break;
+        default:
+            throw CInternalError("Invalid type of the column: "
+                                 + NStr::IntToString(int(data->GetType(i))));
+        };
+        col_list.Append(pythonpp::CNone());  // display_size
+        col_list.Append(pythonpp::CInt(data->GetMaxSize(i)));  // internal_size
+        col_list.Append(pythonpp::CNone());  // precision
+        col_list.Append(pythonpp::CNone());  // scale
+        col_list.Append(pythonpp::CNone());  // null_ok
+
+        descr.Append(col_list);
+    }
+}
+
+void
+CStmtHelper::FillDescription(pythonpp::CList& descr)
+{
+    s_FillDescription(descr, m_RS->GetMetaData());
+}
+
 //////////////////////////////////////////////////////////////////////////////
 CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans)
 : m_ParentTransaction( trans )
@@ -2112,6 +2189,12 @@ CCallableStmtHelper::MoveToLastRS(void)
     return m_RSProxy->MoveToLastRS();
 }
 
+void
+CCallableStmtHelper::FillDescription(pythonpp::CList& descr)
+{
+    s_FillDescription(descr, &m_RSProxy->GetRS().GetMetaData());
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 pythonpp::CObject
@@ -2244,9 +2327,9 @@ CCursor::CCursor(CTransaction* trans)
 : m_PythonConnection( &trans->GetParentConnection() )
 , m_PythonTransaction( trans )
 , m_ParentTransaction( trans )
-, m_InfoHandler( this )
 , m_NumOfArgs( 0 )
 , m_RowsNum( -1 )
+, m_InfoHandler( this )
 , m_ArraySize( 1 )
 , m_StmtHelper( trans )
 , m_CallableStmtHelper( trans )
@@ -2259,8 +2342,12 @@ CCursor::CCursor(CTransaction* trans)
 
     ROAttr( "rowcount", m_RowsNum );
     ROAttr( "messages", m_InfoMessages );
+    ROAttr( "description", m_Description );
 
     IncRefCount(m_InfoMessages);
+    IncRefCount(m_DescrList);
+
+    m_Description = pythonpp::CNone();
 
     PrepareForPython(this);
 }
@@ -2382,8 +2469,13 @@ CCursor::callproc(const pythonpp::CTuple& args)
             }
 
             // Get RowResultSet ...
-            if (!m_CallableStmtHelper.MoveToNextRS()) {
+            if (m_CallableStmtHelper.MoveToNextRS()) {
+                m_CallableStmtHelper.FillDescription(m_DescrList);
+                m_Description = m_DescrList;
+            }
+            else {
                 m_AllDataFetched = m_AllSetsFetched = true;
+                m_Description = pythonpp::CNone();
             }
 
             return output_args;
@@ -2397,8 +2489,13 @@ CCursor::callproc(const pythonpp::CTuple& args)
 	}
 
     // Get RowResultSet ...
-    if (!m_CallableStmtHelper.MoveToNextRS()) {
+    if (m_CallableStmtHelper.MoveToNextRS()) {
+        m_CallableStmtHelper.FillDescription(m_DescrList);
+        m_Description = m_DescrList;
+    }
+    else {
         m_AllDataFetched = m_AllSetsFetched = true;
+        m_Description = pythonpp::CNone();
     }
 
     return pythonpp::CNone();
@@ -2470,8 +2567,13 @@ CCursor::execute(const pythonpp::CTuple& args)
         m_StmtHelper.Execute();
         m_RowsNum = m_StmtHelper.GetRowCount();
 
-        if (!m_StmtHelper.MoveToNextRS()) {
+        if (m_StmtHelper.MoveToNextRS()) {
+            m_StmtHelper.FillDescription(m_DescrList);
+            m_Description = m_DescrList;
+        }
+        else {
             m_AllDataFetched = m_AllSetsFetched = true;
+            m_Description = pythonpp::CNone();
         }
     }
     catch(const CDB_Exception& e) {
@@ -2589,6 +2691,15 @@ CCursor::executemany(const pythonpp::CTuple& args)
                         SetupParameters(*citer, m_StmtHelper);
                         m_StmtHelper.Execute();
                         m_RowsNum += m_StmtHelper.GetRowCount();
+                    }
+
+                    if (m_StmtHelper.MoveToNextRS()) {
+                        m_StmtHelper.FillDescription(m_DescrList);
+                        m_Description = m_DescrList;
+                    }
+                    else {
+                        m_AllDataFetched = m_AllSetsFetched = true;
+                        m_Description = pythonpp::CNone();
                     }
                 } else {
                     throw CProgrammingError("Sequence of parameters should be provided either as a list or as a tuple data type");
@@ -2788,9 +2899,17 @@ pythonpp::CObject
 CCursor::nextset(const pythonpp::CTuple& args)
 {
     try {
-			if ( NextSetInternal() ) {
-					return pythonpp::CBool(true);
-			}
+		if ( NextSetInternal() ) {
+            if (m_StmtStr.GetType() == estFunction) {
+                m_CallableStmtHelper.FillDescription(m_DescrList);
+            }
+            else {
+                m_StmtHelper.FillDescription(m_DescrList);
+            }
+            m_Description = m_DescrList;
+			return pythonpp::CBool(true);
+		}
+        m_Description = pythonpp::CNone();
     }
     catch (const CDB_Exception& e) {
         throw CDatabaseError(e);
@@ -3969,12 +4088,23 @@ void init_common(const string& module_name)
 
     // Declare CBinary
     python::CBinary::Declare(string(module_name + ".BINARY").c_str());
+    python::CBinary::GetType().SetName("BINARY");
 
     // Declare CNumber
     python::CNumber::Declare(string(module_name + ".NUMBER").c_str());
+    python::CNumber::GetType().SetName("NUMBER");
 
     // Declare CRowID
     python::CRowID::Declare(string(module_name + ".ROWID").c_str());
+    python::CRowID::GetType().SetName("ROWID");
+
+    // Declare CString
+    python::CStringType::Declare(string(module_name + ".STRING").c_str());
+    python::CStringType::GetType().SetName("STRING");
+
+    // Declare CString
+    python::CDateTimeType::Declare(string(module_name + ".DATETIME").c_str());
+    python::CDateTimeType::GetType().SetName("DATETIME");
 
     // Declare CConnection
     python::CConnection::
@@ -4032,6 +4162,22 @@ void init_common(const string& module_name)
         return;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("ROWID"), (PyObject*)&python::CRowID::GetType() ) == -1 ) {
+        return;
+    }
+
+    // Declare STRING
+    if ( PyType_Ready(&python::CStringType::GetType()) == -1 ) {
+        return;
+    }
+    if ( PyModule_AddObject(module, const_cast<char*>("STRING"), (PyObject*)&python::CStringType::GetType() ) == -1 ) {
+        return;
+    }
+
+    // Declare DATETIME
+    if ( PyType_Ready(&python::CDateTimeType::GetType()) == -1 ) {
+        return;
+    }
+    if ( PyModule_AddObject(module, const_cast<char*>("DATETIME"), (PyObject*)&python::CDateTimeType::GetType() ) == -1 ) {
         return;
     }
 

@@ -801,6 +801,10 @@ public:
 public:
     void Append (const CObject& obj)
     {
+        Append(obj.Get());
+    }
+    void Append (PyObject* obj)
+    {
         if(PyList_Append (Get(), obj) == -1) {
             throw CSystemError("");
         }
@@ -827,6 +831,7 @@ public:
     void Clear (void)
     {
         Set(PyList_New(0));
+        IncRefCount(Get());
     }
 
 public:

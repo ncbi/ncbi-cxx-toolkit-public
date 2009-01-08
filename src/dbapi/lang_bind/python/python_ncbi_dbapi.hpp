@@ -84,6 +84,22 @@ public:
     ~CRowID(void);
 };
 
+//////////////////////////////////////////////////////////////////////////////
+class CStringType : public pythonpp::CExtObject<CStringType>
+{
+public:
+    CStringType(void);
+    ~CStringType(void);
+};
+
+//////////////////////////////////////////////////////////////////////////////
+class CDateTimeType : public pythonpp::CExtObject<CDateTimeType>
+{
+public:
+    CDateTimeType(void);
+    ~CDateTimeType(void);
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 enum EStatementType {
     estNone,
@@ -202,6 +218,7 @@ public:
     void Execute(void);
     void Close(void);
     long GetRowCount(void) const;
+    void FillDescription(pythonpp::CList& descr);
 
     bool MoveToNextRS(void);
     IResultSet& GetRS(void);
@@ -259,6 +276,7 @@ public:
     void Execute(bool cache_results = false);
     void Close(void);
     long GetRowCount(void) const;
+    void FillDescription(pythonpp::CList& descr);
 
     bool MoveToNextRS(void);
     bool MoveToLastRS(void);
@@ -450,6 +468,8 @@ private:
     pythonpp::CList            m_InfoMessages;
     CInfoHandler_CursorCollect m_InfoHandler;
     IResultSet*                m_RS;
+    pythonpp::CObject          m_Description;
+    pythonpp::CList            m_DescrList;
     size_t                     m_ArraySize;
     CStmtStr                   m_StmtStr;
     CStmtHelper                m_StmtHelper;
