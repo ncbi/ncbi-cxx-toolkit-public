@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 
 #include "netschedule_api_impl.hpp"
-#include "netschedule_api_details.hpp"
 
 #include <connect/services/netschedule_api.hpp>
 

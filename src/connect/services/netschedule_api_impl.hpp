@@ -36,14 +36,118 @@
 #include "netservice_api_impl.hpp"
 
 #include <connect/services/netschedule_api.hpp>
+#include <connect/services/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_NetSchedule
 
 BEGIN_NCBI_SCOPE
 
 
-/** @addtogroup NetScheduleClient
- *
- * @{
- */
+/////////////////////////////////////////////////////////////////////////////
+//
+///@internal
+
+
+template<typename Pred>
+bool s_WaitNotification(unsigned wait_time,
+                        unsigned short udp_port, Pred pred)
+{
+    _ASSERT(wait_time);
+
+    EIO_Status status;
+
+    STimeout to;
+    to.sec = wait_time;
+    to.usec = 0;
+
+    CDatagramSocket  udp_socket;
+    udp_socket.SetReuseAddress(eOn);
+    STimeout rto;
+    rto.sec = rto.usec = 0;
+    udp_socket.SetTimeout(eIO_Read, &rto);
+
+    status = udp_socket.Bind(udp_port);
+    if (eIO_Success != status) {
+        return false;
+    }
+    time_t curr_time, start_time, end_time;
+
+    start_time = time(0);
+    end_time = start_time + wait_time;
+
+    for (;;) {
+        curr_time = time(0);
+        if (curr_time >= end_time)
+            break;
+        to.sec = (unsigned int) (end_time - curr_time);
+
+        status = udp_socket.Wait(&to);
+        if (eIO_Success != status) {
+            continue;
+        }
+        size_t msg_len;
+        string   buf(1024/sizeof(int),0);
+        status = udp_socket.Recv(&buf[0], buf.size(), &msg_len, NULL);
+        _ASSERT(status != eIO_Timeout); // because we Wait()-ed
+        if (eIO_Success == status) {
+            buf.resize(msg_len);
+            if( pred(buf) )
+                return true;
+        }
+    } // for
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+//
+
+struct SNSSendCmd
+{
+    enum EFlags {
+        eLogExceptions = 1 >> 1,
+        eIgnoreCommunicationError = 1 >> 2,
+        eIgnoreDuplicateNameError = 1 >> 3
+    };
+    typedef int TFlags;
+
+    SNSSendCmd(CNetScheduleAPI::TPtr api, const string& cmd, TFlags flags)
+        : m_API(api), m_Cmd(cmd), m_Flags(flags)
+    {}
+    virtual ~SNSSendCmd() {}
+
+    void operator()(CNetServerConnection conn)
+    {
+        string resp;
+        try {
+            resp = conn.Exec(m_Cmd);
+        } catch (CNetScheduleException& ex) {
+            if (m_Flags & eLogExceptions) {
+                ERR_POST_X(11, conn.GetHost() << ":" << conn.GetPort()
+                    << " returned error: \"" << ex.what() << "\"");
+            }
+            if (!(m_Flags & eIgnoreDuplicateNameError &&
+                ex.GetErrCode() == CNetScheduleException::eDuplicateName))
+                throw;
+        } catch (CNetServiceException& ex) {
+            if (m_Flags & eLogExceptions) {
+                ERR_POST_X(12, conn.GetHost() << ":" << conn.GetPort()
+                    << " returned error: \"" << ex.what() << "\"");
+            }
+            if (!(m_Flags & eIgnoreCommunicationError &&
+                ex.GetErrCode() == CNetServiceException::eCommunicationError))
+                throw;
+        }
+        ProcessResponse(resp, conn);
+    }
+    virtual void ProcessResponse(const string& /* resp */,
+        CNetServerConnection::TPtr /* conn_impl */) {}
+
+    CNetScheduleAPI m_API;
+    string m_Cmd;
+    TFlags m_Flags;
+};
+
 
 #define SERVER_PARAMS_ASK_MAX_COUNT 100
 
@@ -222,8 +326,6 @@ inline SNetScheduleAdminImpl::SNetScheduleAdminImpl(
     m_API(ns_api_impl)
 {
 }
-
-/* @} */
 
 
 END_NCBI_SCOPE
