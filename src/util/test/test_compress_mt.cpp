@@ -35,7 +35,6 @@
 #include <corelib/test_mt.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbifile.hpp>
-#include <util/random_gen.hpp>
 
 #include <util/compress/bzip2.hpp>
 #include <util/compress/zlib.hpp>
@@ -171,7 +170,7 @@ bool CTest::Thread_Run(int idx)
     // Set a random starting point
     unsigned int seed = (unsigned int)time(0) + idx*999;
     LOG_POST("Random seed = " << seed);
-    CRandom gen(seed);
+    srand(seed);
 
     // Preparing a data for compression
     AutoArray<char> src_buf_arr(kBufLen);
