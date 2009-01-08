@@ -11,10 +11,7 @@
 
 ## Path to the compiler
 CC="icc"
-case `uname -m` in
-    x86_64 ) CXX=icpc ;;
-    *      ) CXX="icpc -cxxlib-icc" ;;
-esac
+CXX="icpc"
 
 Usage() {
     echo "USAGE: `basename $0` [version] [[build_dir] [--configure-flags] | -h]"
@@ -65,6 +62,10 @@ HINT:  if you are at NCBI, try to specify the following:
 EOF
     exit 1
 fi
+
+case `$CXX -dumpversion` in
+  [1-8].* ) CXX="$CXX -cxxlib-icc" ;;
+esac
 
 ## Build directory (optional)
 if test -n "$1" ; then
