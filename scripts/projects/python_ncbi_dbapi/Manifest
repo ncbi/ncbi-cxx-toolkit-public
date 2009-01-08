@@ -9,7 +9,9 @@
 #          It is used by release configurator.
 #
 
-LIB: python_ncbi_dbapi.so libpython_ncbi_dbapi.so
+COPY: $libdir/python_ncbi_dbapi.so $installdir/bin
+
+LIB: libpython_ncbi_dbapi.so
 LIB: libdbapi.so libdbapi_driver.so libxconnext.so libxconnect.so libxutil.so libxncbi.so
 LIB: libncbi_xdbapi_ftds.so libct_ftds64.so libtds_ftds64.so
 LIB: libncbi_xdbapi_ctlib.so 
