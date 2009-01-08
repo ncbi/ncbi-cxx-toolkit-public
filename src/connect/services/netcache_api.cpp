@@ -74,31 +74,32 @@ static TServerAddress* s_GetFallbackServer()
 }
 
 
+CNetServerConnection SNetCacheAPIImpl::x_GetConnection()
+{
+    try {
+        return m_Service.GetBestConnection();
+    } catch (CNetSrvConnException& e) {
+        TServerAddress* backup = s_GetFallbackServer();
+
+        if (backup == NULL) {
+            NCBI_THROW(CNetCacheException, eUnknnownCache,
+                "Fallback server address is not configured.");
+        }
+
+        ERR_POST_X(3, "Could not connect to " <<
+            m_Service.GetServiceName() << ":" << e.what() <<
+            ". Connecting to backup server " <<
+            backup->first << ":" << backup->second << ".");
+
+        return m_Service.GetSpecificConnection(
+            backup->first, backup->second);
+    }
+}
+
 CNetServerConnection SNetCacheAPIImpl::x_GetConnection(const string& bid)
 {
-    if (bid.empty()) {
-        try {
-            return m_Service.GetBestConnection();
-        } catch (CNetSrvConnException& e) {
-            TServerAddress* backup = s_GetFallbackServer();
-
-            if (backup == NULL) {
-                NCBI_THROW(CNetCacheException, eUnknnownCache,
-                    "Fallback server address is not configured.");
-            }
-
-            ERR_POST_X(3, "Could not connect to " <<
-                m_Service.GetServiceName() << ":" << e.what() <<
-                ". Connecting to backup server " <<
-                backup->first << ":" << backup->second << ".");
-
-            return m_Service.GetSpecificConnection(
-                backup->first, backup->second);
-        }
-    } else {
-        CNetCacheKey key(bid);
-        return m_Service.GetSpecificConnection(key.GetHost(), key.GetPort());
-    }
+    CNetCacheKey key(bid);
+    return m_Service.GetSpecificConnection(key.GetHost(), key.GetPort());
 }
 
 SNetCacheAPIImpl::CNetCacheServerListener::CNetCacheServerListener(
@@ -174,9 +175,17 @@ CNetServerConnection SNetCacheAPIImpl::x_PutInitiate(
     string request = "PUT3 ";
     request += NStr::IntToString(time_to_live);
     request += " ";
-    request += *key;
 
-    CNetServerConnection conn = x_GetConnection(*key);
+    CNetServerConnection conn;
+
+    if (key->empty())
+        conn = x_GetConnection();
+    else {
+        conn = x_GetConnection(*key);
+
+        request += *key;
+    }
+
     *key = conn.Exec(x_MakeCommand(request));
 
     if (NStr::FindCase(*key, "ID:") != 0) {

@@ -62,8 +62,8 @@ struct SNetCacheAPIImpl : public CNetObject
         size_t* n_read,
         size_t blob_size);
 
-    CNetServerConnection x_GetConnection(
-        const string& bid = kEmptyStr);
+    CNetServerConnection x_GetConnection();
+    CNetServerConnection x_GetConnection(const string& bid);
     CNetServerConnection x_PutInitiate(
         string*  key, unsigned  time_to_live);
 
