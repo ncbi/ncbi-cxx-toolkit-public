@@ -33,6 +33,12 @@
 ###########################################################################
 
 
+
+echo "This script is outdated. Use check_make_win_cfg.sh instead!"
+exit 1
+
+
+
 # Process and check parameters
 
 # Field delimiters in the list (this symbols used directly in the "sed" command)
