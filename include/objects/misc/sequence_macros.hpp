@@ -520,6 +520,8 @@ if (! (Test)) {} else switch(Chs)
 // "PRUNE_EACH_XXX_ON_YYY" does a linear non-const traversal of STL containers
 //   with the possibility that the object can be deleted
 
+// "ERASE_XXX_ON_YYY" deletes a specified object within an iterator
+
 // "SWITCH_ON_XXX_CHOICE" switches on the item subtype
 
 
@@ -557,6 +559,11 @@ NCBI_ER_ITERATE( \
     CSeq_submit::TData::TEntrys, \
     Iter, \
     (Ss).SetData().SetEntrys())
+
+/// ERASE_SEQENTRY_ON_SEQSUBMIT
+
+#define ERASE_SEQENTRY_ON_SEQSUBMIT(Iter, Ss) \
+(Ss).SetData().SetEntrys().erase(Iter)
 
 
 /// CSeq_entry iterators
@@ -642,6 +649,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Seq).SetDescr().Set())
 
+/// ERASE_DESCRIPTOR_ON_SEQENTRY
+
+#define ERASE_DESCRIPTOR_ON_SEQENTRY(Iter, Seq) \
+(Seq).SetDescr().Set().erase(Iter)
+
 
 /// IF_SEQENTRY_HAS_ANNOT
 
@@ -685,6 +697,11 @@ NCBI_ER_ITERATE( \
     CSeq_entry::TAnnot, \
     Iter, \
     (Seq).SetAnnot())
+
+/// ERASE_ANNOT_ON_SEQENTRY
+
+#define ERASE_ANNOT_ON_SEQENTRY(Iter, Seq) \
+(Seq).SetAnnot().erase(Iter)
 
 
 /// CBioseq iterators
@@ -732,6 +749,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Bsq).SetDescr().Set())
 
+/// ERASE_DESCRIPTOR_ON_BIOSEQ
+
+#define ERASE_DESCRIPTOR_ON_BIOSEQ(Iter, Bsq) \
+(Bsq).SetDescr().Set().erase(Iter)
+
 
 /// IF_BIOSEQ_HAS_ANNOT
 
@@ -776,6 +798,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Bsq).SetAnnot())
 
+/// ERASE_ANNOT_ON_BIOSEQ
+
+#define ERASE_ANNOT_ON_BIOSEQ(Iter, Bsq) \
+(Bsq).SetAnnot().erase(Iter)
+
 
 /// IF_BIOSEQ_HAS_SEQID
 
@@ -819,6 +846,11 @@ NCBI_ER_ITERATE( \
     CBioseq::TId, \
     Iter, \
     (Bsq).SetId())
+
+/// ERASE_SEQID_ON_BIOSEQ
+
+#define ERASE_SEQID_ON_BIOSEQ(Iter, Bsq) \
+(Bsq).SetId().erase(Iter)
 
 
 /// CSeq_id iterators
@@ -886,6 +918,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Bss).SetDescr().Set())
 
+/// ERASE_DESCRIPTOR_ON_SEQSET
+
+#define ERASE_DESCRIPTOR_ON_SEQSET(Iter, Bss) \
+(Bss).SetDescr().Set().erase(Iter)
+
 
 /// IF_SEQSET_HAS_ANNOT
 
@@ -930,6 +967,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Bss).SetAnnot())
 
+/// ERASE_ANNOT_ON_SEQSET
+
+#define ERASE_ANNOT_ON_SEQSET(Iter, Bss) \
+(Bss).SetAnnot().erase(Iter)
+
 
 /// IF_SEQSET_HAS_SEQENTRY
 
@@ -973,6 +1015,11 @@ NCBI_ER_ITERATE( \
     CBioseq_set::TSeq_set, \
     Iter, \
     (Bss).SetSeq_set())
+
+/// ERASE_SEQENTRY_ON_SEQSET
+
+#define ERASE_SEQENTRY_ON_SEQSET(Iter, Bss) \
+(Bss).SetSeq_set().erase(Iter)
 
 
 /// CSeq_annot iterators
@@ -1020,6 +1067,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (San).SetData().SetFtable())
 
+/// ERASE_FEATURE_ON_ANNOT
+
+#define ERASE_FEATURE_ON_ANNOT(Iter, San) \
+(San).SetData().SetFtable().erase(Iter)
+
 
 /// IF_ANNOT_IS_ALIGN
 
@@ -1063,6 +1115,11 @@ NCBI_ER_ITERATE( \
     CSeq_annot::TData::TAlign, \
     Iter, \
     (San).SetData().SetAlign())
+
+/// ERASE_ALIGN_ON_ANNOT
+
+#define ERASE_ALIGN_ON_ANNOT(Iter, San) \
+(San).SetData().SetAlign().erase(Iter)
 
 
 /// IF_ANNOT_IS_GRAPH
@@ -1108,6 +1165,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (San).SetData().SetGraph())
 
+/// ERASE_GRAPH_ON_ANNOT
+
+#define ERASE_GRAPH_ON_ANNOT(Iter, San) \
+(San).SetData().SetGraph().erase(Iter)
+
 
 /// IF_ANNOT_HAS_ANNOTDESC
 
@@ -1151,6 +1213,11 @@ NCBI_ER_ITERATE( \
     CSeq_annot::TDesc, \
     Iter, \
     (San).SetDesc())
+
+/// ERASE_ANNOTDESC_ON_ANNOT
+
+#define ERASE_ANNOTDESC_ON_ANNOT(Iter, San) \
+(San).SetDesc().erase(Iter)
 
 
 /// CAnnotdesc iterators
@@ -1217,6 +1284,11 @@ NCBI_ER_ITERATE( \
     CSeq_descr::Tdata, \
     Iter, \
     (Descr).Set())
+
+/// ERASE_DESCRIPTOR_ON_DESCR
+
+#define ERASE_DESCRIPTOR_ON_DESCR(Iter, Descr) \
+(Descr).Set().erase(Iter)
 
 
 /// CSeqdesc iterators
@@ -1340,6 +1412,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Bsrc).SetSubtype())
 
+/// ERASE_SUBSOURCE_ON_BIOSOURCE
+
+#define ERASE_SUBSOURCE_ON_BIOSOURCE(Iter, Bsrc) \
+(Bsrc).SetSubtype().erase(Iter)
+
 
 /// IF_BIOSOURCE_HAS_ORGMOD
 
@@ -1383,6 +1460,11 @@ NCBI_ER_ITERATE( \
     COrgName::TMod, \
     Iter, \
     (Bsrc).SetOrgname().SetMod())
+
+/// ERASE_ORGMOD_ON_BIOSOURCE
+
+#define ERASE_ORGMOD_ON_BIOSOURCE(Iter, Bsrc) \
+(Bsrc).SetOrgname().SetMod().erase(Iter)
 
 
 /// COrg_ref iterators
@@ -1430,6 +1512,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Org).SetOrgname().SetMod())
 
+/// ERASE_ORGMOD_ON_ORGREF
+
+#define ERASE_ORGMOD_ON_ORGREF(Iter, Org) \
+(Org).SetOrgname().SetMod().erase(Iter)
+
 
 /// IF_ORGREF_HAS_DBXREF
 
@@ -1474,6 +1561,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Org).SetDb())
 
+/// ERASE_DBXREF_ON_ORGREF
+
+#define ERASE_DBXREF_ON_ORGREF(Iter, Org) \
+(Org).SetDb().erase(Iter)
+
 
 /// IF_ORGREF_HAS_MOD
 
@@ -1517,6 +1609,11 @@ NCBI_ER_ITERATE( \
     COrg_ref::TMod, \
     Iter, \
     (Org).SetMod())
+
+/// ERASE_MOD_ON_ORGREF
+
+#define ERASE_MOD_ON_ORGREF(Iter, Org) \
+(Org).SetMod().erase(Iter)
 
 
 /// COrgName iterators
@@ -1581,6 +1678,11 @@ NCBI_ER_ITERATE( \
     COrgName::TMod, \
     Iter, \
     (Onm).SetMod())
+
+/// ERASE_ORGMOD_ON_ORGNAME
+
+#define ERASE_ORGMOD_ON_ORGNAME(Iter, Onm) \
+(Onm).SetMod().erase(Iter)
 
 
 /// CSubSource iterators
@@ -1671,6 +1773,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Pbd).SetPub().Set())
 
+/// ERASE_PUB_ON_PUBDESC
+
+#define ERASE_PUB_ON_PUBDESC(Iter, Pbd) \
+(Pbd).SetPub().Set().erase(Iter)
+
 
 /// CPub iterators
 
@@ -1727,6 +1834,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Pub).SetAuthors().SetNames().SetStd())
 
+/// ERASE_AUTHOR_ON_PUB
+
+#define ERASE_AUTHOR_ON_PUB(Iter, Pub) \
+(Pub).SetAuthors().SetNames().SetStd().erase(Iter)
+
 
 /// CGB_block iterators
 
@@ -1773,6 +1885,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Gbk).SetExtra_accessions())
 
+/// ERASE_EXTRAACCN_ON_GENBANKBLOCK
+
+#define ERASE_EXTRAACCN_ON_GENBANKBLOCK(Iter, Gbk) \
+(Gbk).SetExtra_accessions().erase(Iter)
+
 
 /// IF_GENBANKBLOCK_HAS_KEYWORD
 
@@ -1816,6 +1933,11 @@ NCBI_ER_ITERATE( \
     CGB_block::TKeywords, \
     Iter, \
     (Gbk).SetKeywords())
+
+/// ERASE_KEYWORD_ON_GENBANKBLOCK
+
+#define ERASE_KEYWORD_ON_GENBANKBLOCK(Iter, Gbk) \
+(Gbk).SetKeywords().erase(Iter)
 
 
 /// CEMBL_block iterators
@@ -1863,6 +1985,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Ebk).SetExtra_acc())
 
+/// ERASE_EXTRAACCN_ON_EMBLBLOCK
+
+#define ERASE_EXTRAACCN_ON_EMBLBLOCK(Iter, Ebk) \
+(Ebk).SetExtra_acc().erase(Iter)
+
 
 /// IF_EMBLBLOCK_HAS_KEYWORD
 
@@ -1906,6 +2033,11 @@ NCBI_ER_ITERATE( \
     CEMBL_block::TKeywords, \
     Iter, \
     (Ebk).SetKeywords())
+
+/// ERASE_KEYWORD_ON_EMBLBLOCK
+
+#define ERASE_KEYWORD_ON_EMBLBLOCK(Iter, Ebk) \
+(Ebk).SetKeywords().erase(Iter)
 
 
 /// CPDB_block iterators
@@ -1953,6 +2085,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Pbk).SetCompound())
 
+/// ERASE_COMPOUND_ON_PDBBLOCK
+
+#define ERASE_COMPOUND_ON_PDBBLOCK(Iter, Pbk) \
+(Pbk).SetCompound().erase(Iter)
+
 
 /// IF_PDBBLOCK_HAS_SOURCE
 
@@ -1996,6 +2133,11 @@ NCBI_ER_ITERATE( \
     CPDB_block::TSource, \
     Iter, \
     (Pbk).SetSource())
+
+/// ERASE_SOURCE_ON_PDBBLOCK
+
+#define ERASE_SOURCE_ON_PDBBLOCK(Iter, Pbk) \
+(Pbk).SetSource().erase(Iter)
 
 
 /// CSeq_feat iterators
@@ -2061,6 +2203,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Sft).SetQual())
 
+/// ERASE_GBQUAL_ON_FEATURE
+
+#define ERASE_GBQUAL_ON_FEATURE(Iter, Sft) \
+(Sft).SetQual().erase(Iter)
+
 
 /// IF_FEATURE_HAS_SEQFEATXREF
 
@@ -2105,6 +2252,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Sft).SetXref())
 
+/// ERASE_SEQFEATXREF_ON_FEATURE
+
+#define ERASE_SEQFEATXREF_ON_FEATURE(Iter, Sft) \
+(Sft).SetXref().erase(Iter)
+
 
 /// IF_FEATURE_HAS_DBXREF
 
@@ -2148,6 +2300,11 @@ NCBI_ER_ITERATE( \
     CSeq_feat::TDbxref, \
     Iter, \
     (Sft).SetDbxref())
+
+/// ERASE_DBXREF_ON_FEATURE
+
+#define ERASE_DBXREF_ON_FEATURE(Iter, Sft) \
+(Sft).SetDbxref().erase(Iter)
 
 
 /// CGene_ref iterators
@@ -2195,6 +2352,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Grf).SetSyn())
 
+/// ERASE_SYNONYM_ON_GENE
+
+#define ERASE_SYNONYM_ON_GENE(Iter, Grf) \
+(Grf).SetSyn().erase(Iter)
+
 
 /// IF_GENE_HAS_DBXREF
 
@@ -2238,6 +2400,11 @@ NCBI_ER_ITERATE( \
     CGene_ref::TDb, \
     Iter, \
     (Grf).SetDb())
+
+/// ERASE_DBXREF_ON_GENE
+
+#define ERASE_DBXREF_ON_GENE(Iter, Grf) \
+(Grf).SetDb().erase(Iter)
 
 
 /// CCdregion iterators
@@ -2285,6 +2452,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Cdr).SetCode_break())
 
+/// ERASE_CODEBREAK_ON_CDREGION
+
+#define ERASE_CODEBREAK_ON_CDREGION(Iter, Cdr) \
+(Cdr).SetCode_break().erase(Iter)
+
 
 /// CProt_ref iterators
 
@@ -2331,6 +2503,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Prf).SetName())
 
+/// ERASE_NAME_ON_PROT
+
+#define ERASE_NAME_ON_PROT(Iter, Prf) \
+(Prf).SetName().erase(Iter)
+
 
 /// IF_PROT_HAS_ECNUMBER
 
@@ -2374,6 +2551,11 @@ NCBI_ER_ITERATE( \
     CProt_ref::TEc, \
     Iter, \
     (Prf).SetEc())
+
+/// ERASE_ECNUMBER_ON_PROT
+
+#define ERASE_ECNUMBER_ON_PROT(Iter, Prf) \
+(Prf).SetEc().erase(Iter)
 
 
 /// IF_PROT_HAS_ACTIVITY
@@ -2419,6 +2601,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Prf).SetActivity())
 
+/// ERASE_ACTIVITY_ON_PROT
+
+#define ERASE_ACTIVITY_ON_PROT(Iter, Prf) \
+(Prf).SetActivity().erase(Iter)
+
 
 /// IF_PROT_HAS_DBXREF
 
@@ -2462,6 +2649,11 @@ NCBI_ER_ITERATE( \
     CProt_ref::TDb, \
     Iter, \
     (Prf).SetDb())
+
+/// ERASE_DBXREF_ON_PROT
+
+#define ERASE_DBXREF_ON_PROT(Iter, Prf) \
+(Prf).SetDb().erase(Iter)
 
 
 /// list <string> iterators
@@ -2509,6 +2701,11 @@ NCBI_ER_ITERATE( \
     Iter, \
     (Lst))
 
+/// ERASE_STRING_IN_LIST
+
+#define ERASE_STRING_IN_LIST(Iter, Lst) \
+(Lst).erase(Iter)
+
 
 /// <string> iterators
 
@@ -2554,6 +2751,11 @@ NCBI_ER_ITERATE( \
     string, \
     Iter, \
     (Str))
+
+/// ERASE_CHAR_IN_STRING
+
+#define ERASE_CHAR_IN_STRING(Iter, Str) \
+(Str).erase(Iter)
 
 
 
