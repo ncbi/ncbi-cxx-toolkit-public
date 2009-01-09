@@ -1037,8 +1037,7 @@ fi
 case "$host_os:$compiler" in
    *:GCC | *:KCC | *:ICC )
       compiler_pfx="${compiler}-"
-      compiler_vpfx=`echo "${compiler}${compiler_ver}00-" | \
-         sed -e 's/\.//g; s/[\([0-9][0-9][0-9]\)[0-9]*]/\1/'`
+      compiler_vpfx="${compiler}${compiler_version}-"
       ;;
 esac
 
