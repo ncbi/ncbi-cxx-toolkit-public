@@ -9,9 +9,10 @@ if [[ -z "$INSTALL_DIR" || -z "$VERSION" ]]; then
     exit 1
 fi
 
-PYTHON_DIR="$(which python)"
-PYTHON_DIR="${PYTHON_DIR%/*}"
-PYTHON_DIR="${PYTHON_DIR%/*}"
+#PYTHON_DIR="$(which python)"
+#PYTHON_DIR="${PYTHON_DIR%/*}"
+#PYTHON_DIR="${PYTHON_DIR%/*}"
+PYTHON_DIR=/opt/python-2.5.1
 
 if [ -z "$PYTHON_DIR" ]; then
     echo "Cannot find python directory"
@@ -28,8 +29,6 @@ cp -R "$PYTHON_DIR/lib/$PYTHON_SUBDIR"/* "$TARBALL_DIR/$PYTHON_SUBDIR/" || exit 
 cp "$INSTALL_DIR/lib"/* "$TARBALL_DIR/$PYTHON_SUBDIR/$VERSION" || exit 5
 ln -s "python_ncbi_dbapi/$VERSION/libpython_ncbi_dbapi.so" "$TARBALL_DIR/$PYTHON_SUBDIR/../python_ncbi_dbapi.so" || exit 6
 
-pushd "$TARBALL_DIR"
-tar -zcf "$INSTALL_DIR/installation_${VERSION}.tar.gz" python2.5 || exit 7
-popd
+tar -zcf "$INSTALL_DIR/installation.tar.gz" -C "$TARBALL_DIR" python2.5 || exit 7
 
 rm -rf "$TARBALL_DIR"
