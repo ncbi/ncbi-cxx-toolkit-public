@@ -1669,7 +1669,8 @@ void CSeq_id::WriteAsFasta(ostream& out)
         GetTpd().AsFastaString(out);
         break;
     case e_Gpipe:
-        GetGpipe().AsFastaString(out, false); // suppress version
+        // don't suppress version after all
+        GetGpipe().AsFastaString(out /*, false */);
         break;
     case e_Named_annot_track:
         GetNamed_annot_track().AsFastaString(out);
