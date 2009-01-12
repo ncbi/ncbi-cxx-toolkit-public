@@ -296,6 +296,29 @@ int CMultiApplication::Run(void)
     // RPS Blast parameters
     if (args["db"]) {
         opts->SetRpsDb(args["db"].AsString());
+
+        // Check whether RPS database and auxialry files exist
+        const string dbname = args["db"].AsString();
+        CFile rps(dbname + ".rps");
+        if (!rps.Exists()) {
+            NcbiCerr << "Error: RPS database file: " << dbname + ".rps"
+                     << " is missing" << NcbiEndl;
+            return 1;
+        }
+
+        CFile blocks(dbname + ".blocks");
+        if (!blocks.Exists()) {
+            NcbiCerr << "Error: RPS block file: " << dbname + ".blocks"
+                     <<  " is missing" << NcbiEndl;
+            return 1;
+        }
+
+        CFile freq(dbname + ".freq");
+        if (!freq.Exists()) {
+            NcbiCerr << "Error: RPS frequencies file: " << dbname + ".freq"
+                     << " is missing" << NcbiEndl;
+            return 1;
+        }
     }
     opts->SetRpsEvalue(args["evalue"].AsDouble());
     opts->SetDomainResFreqBoost(args["dfb"].AsDouble());
@@ -345,7 +368,7 @@ int CMultiApplication::Run(void)
         } else if (args["comp_alph"].AsString() == "se-b15") {
             alph = CMultiAligner::TKMethods::eSE_B15;
         }
-	opts->SetKmerAlphabet(alph);
+        opts->SetKmerAlphabet(alph);
     }
 
     CMultiAlignerOptions::EInClustAlnMethod in_clust_aln;
