@@ -413,20 +413,27 @@ protected:
 
 /// Convert stream position to 64-bit int
 ///
-/// On some systems stream position is a structure, this function
-/// converts it to plain numeric value.
+/// On most systems stream position is a structure,
+/// this function converts it to plain numeric value.
 ///
 /// @sa NcbiInt8ToStreampos
 ///
-NCBI_XNCBI_EXPORT extern
-Int8 NcbiStreamposToInt8(CT_POS_TYPE stream_pos);
+inline
+Int8 NcbiStreamposToInt8(CT_POS_TYPE stream_pos)
+{
+    return (CT_OFF_TYPE)(stream_pos - (CT_POS_TYPE)((CT_OFF_TYPE)0));
+}
 
-/// Convert plain numeric stream postion into stream position in terms 
-/// of streams library.
+
+/// Convert plain numeric stream position (offset) into
+/// stream position usable with STL stream library.
 ///
 /// @sa NcbiStreamposToInt8
-NCBI_XNCBI_EXPORT
-CT_POS_TYPE NcbiInt8ToStreampos(Int8 pos);
+inline
+CT_POS_TYPE NcbiInt8ToStreampos(Int8 pos)
+{
+    return (CT_POS_TYPE)((CT_OFF_TYPE)0) + (CT_OFF_TYPE)(pos);
+}
 
 
 // CNcbiOstrstreamToString class helps to convert CNcbiOstream buffer to string
@@ -439,7 +446,8 @@ string GetString(void)
     return CNcbiOstrstreamToString(buffer);
 }
 */
-// Note: there is no requirements to put '\0' char at the end of buffer
+// Note: there is no requirement to put '\0' char at the end of buffer;
+//       there is no need to explicitly "unfreeze" the "out" stream.
 
 class NCBI_XNCBI_EXPORT CNcbiOstrstreamToString
 {
