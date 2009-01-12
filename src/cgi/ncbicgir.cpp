@@ -340,7 +340,7 @@ void CCgiResponse::BeginPart(const string& name, const string& type_in,
 
     if ( !name.empty() ) {
         os << sm_ContentDispoName << ": " << sm_FilenamePrefix
-           << NStr::PrintableString(name) << '"' << HTTP_EOL;
+           << Printable(name) << '"' << HTTP_EOL;
     } else if (m_IsMultipart != eMultipart_replace) {
         ERR_POST_X(2, Warning << "multipart content contains anonymous part");
     }
