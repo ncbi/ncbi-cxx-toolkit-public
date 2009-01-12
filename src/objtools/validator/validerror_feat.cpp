@@ -1298,11 +1298,15 @@ static const char* kAANames[] = {
 
 const char* GetAAName(unsigned char aa, bool is_ascii)
 {
-    if (is_ascii) {
-        aa = CSeqportUtil::GetMapToIndex
-            (CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa);
+    try {
+        if (is_ascii) {
+            aa = CSeqportUtil::GetMapToIndex
+                (CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa);
+        }
+        return (aa < sizeof(kAANames)/sizeof(*kAANames)) ? kAANames[aa] : "OTHER";
+    } catch (...) {
+        return "OTHER";
     }
-    return (aa < sizeof(kAANames)/sizeof(*kAANames)) ? kAANames[aa] : "OTHER";
 }
 
 
@@ -1361,6 +1365,7 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
     if ( !found ) {
         PostErr(eDiag_Error, eErr_SEQ_FEAT_BadTrnaAA, 
             "Invalid tRNA amino acid (" + NStr::IntToString(aa) + ")", feat);
+        aa = ' ';
     }
 
     // Retrive the Genetic code id for the tRNA
@@ -1380,8 +1385,13 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
     }
 
     string codename = GetGeneticCodeName (gcode);
-    string aaname = GetAAName (seqData[0], true);
-    
+    char buf[2];
+    buf[0] = aa;
+    buf[1] = 0;
+    string aaname = buf;
+    aaname += "/";
+    aaname += GetAAName (aa, true);
+        
     EDiagSev sev = (aa == 'U') ? eDiag_Warning : eDiag_Error;
 
     bool modified_codon_recognition = false;
@@ -1412,7 +1422,7 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
 
                     PostErr(sev, eErr_SEQ_FEAT_TrnaCodonWrong,
                       "tRNA codon (" + codon + ") does not match amino acid (" 
-                       + seqData[0] + "/" + aaname + ") specified by genetic code ("
+                       + aaname + ") specified by genetic code ("
                        + NStr::IntToString (gcode) + "/" + codename + ")", feat);
                 }
             }
