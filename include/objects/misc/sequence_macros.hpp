@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-/// @NAME Convenience macros for NCBI object iterators
+/// @NAME Convenience macros for NCBI objects
 /// @{
 
 
@@ -526,7 +526,7 @@ if (! (Test)) {} else switch(Chs)
 // "XXX_CHOICE_IS"
 
 
-/// CSeq_submit iterators
+/// CSeq_submit macros
 
 /// FOR_EACH_SEQENTRY_ON_SEQSUBMIT
 // Takes const CSeq_submit& as input and makes iterator to const CSeq_entry&
@@ -556,7 +556,7 @@ NCBI_ER_ITERATE( \
 (Ss).SetData().SetEntrys().erase(Iter)
 
 
-/// CSeq_entry iterators
+/// CSeq_entry macros
 
 /// IF_SEQENTRY_IS_SEQ
 
@@ -672,7 +672,7 @@ NCBI_ER_ITERATE( \
 (Seq).SetAnnot().erase(Iter)
 
 
-/// CBioseq iterators
+/// CBioseq macros
 
 /// IF_BIOSEQ_HAS_DESCRIPTOR
 
@@ -788,7 +788,7 @@ NCBI_ER_ITERATE( \
 (Bsq).SetId().erase(Iter)
 
 
-/// CSeq_id iterators
+/// CSeq_id macros
 
 /// IF_SEQID_CHOICE_IS
 
@@ -808,7 +808,7 @@ NCBI_SWITCH( \
     (Sid).Which())
 
 
-/// CBioseq_set iterators
+/// CBioseq_set macros
 
 /// IF_SEQSET_HAS_DESCRIPTOR
 
@@ -924,7 +924,7 @@ NCBI_ER_ITERATE( \
 (Bss).SetSeq_set().erase(Iter)
 
 
-/// CSeq_annot iterators
+/// CSeq_annot macros
 
 /// IF_ANNOT_IS_FEATURE
 
@@ -1078,7 +1078,7 @@ NCBI_ER_ITERATE( \
 (San).SetDesc().erase(Iter)
 
 
-/// CAnnotdesc iterators
+/// CAnnotdesc macros
 
 /// IF_ANNOTDESC_CHOICE_IS
 
@@ -1098,7 +1098,7 @@ NCBI_SWITCH( \
     (Ads).Which())
 
 
-/// CSeq_descr iterators
+/// CSeq_descr macros
 
 /// IF_DESCR_HAS_DESCRIPTOR
 
@@ -1138,7 +1138,7 @@ NCBI_ER_ITERATE( \
 (Descr).Set().erase(Iter)
 
 
-/// CSeqdesc iterators
+/// CSeqdesc macros
 
 /// IF_DESCRIPTOR_CHOICE_IS
 
@@ -1158,7 +1158,7 @@ NCBI_SWITCH( \
     (Dsc).Which())
 
 
-/// CMolInfo iterators
+/// CMolInfo macros
 
 /// IF_MOLINFO_BIOMOL_IS
 
@@ -1214,7 +1214,7 @@ NCBI_SWITCH( \
     (Mif).GetCompleteness())
 
 
-/// CBioSource iterators
+/// CBioSource macros
 
 /// IF_BIOSOURCE_HAS_SUBSOURCE
 
@@ -1292,7 +1292,7 @@ NCBI_ER_ITERATE( \
 (Bsrc).SetOrgname().SetMod().erase(Iter)
 
 
-/// COrg_ref iterators
+/// COrg_ref macros
 
 /// IF_ORGREF_HAS_ORGMOD
 
@@ -1408,7 +1408,7 @@ NCBI_ER_ITERATE( \
 (Org).SetMod().erase(Iter)
 
 
-/// COrgName iterators
+/// COrgName macros
 
 /// IF_ORGNAME_CHOICE_IS
 
@@ -1466,7 +1466,7 @@ NCBI_ER_ITERATE( \
 (Onm).SetMod().erase(Iter)
 
 
-/// CSubSource iterators
+/// CSubSource macros
 
 /// IF_SUBSOURCE_CHOICE_IS
 
@@ -1486,7 +1486,7 @@ NCBI_SWITCH( \
     (Sbs).GetSubtype())
 
 
-/// COrgMod iterators
+/// COrgMod macros
 
 /// IF_ORGMOD_CHOICE_IS
 
@@ -1506,7 +1506,7 @@ NCBI_SWITCH( \
     (Omd).GetSubtype())
 
 
-/// CPubdesc iterators
+/// CPubdesc macros
 
 /// IF_PUBDESC_HAS_PUB
 
@@ -1548,7 +1548,7 @@ NCBI_ER_ITERATE( \
 (Pbd).SetPub().Set().erase(Iter)
 
 
-/// CPub iterators
+/// CPub macros
 
 /// IF_PUB_HAS_AUTHOR
 
@@ -1596,7 +1596,7 @@ NCBI_ER_ITERATE( \
 (Pub).SetAuthors().SetNames().SetStd().erase(Iter)
 
 
-/// CGB_block iterators
+/// CGB_block macros
 
 /// IF_GENBANKBLOCK_HAS_EXTRAACCN
 
@@ -1674,7 +1674,7 @@ NCBI_ER_ITERATE( \
 (Gbk).SetKeywords().erase(Iter)
 
 
-/// CEMBL_block iterators
+/// CEMBL_block macros
 
 /// IF_EMBLBLOCK_HAS_EXTRAACCN
 
@@ -1752,7 +1752,7 @@ NCBI_ER_ITERATE( \
 (Ebk).SetKeywords().erase(Iter)
 
 
-/// CPDB_block iterators
+/// CPDB_block macros
 
 /// IF_PDBBLOCK_HAS_COMPOUND
 
@@ -1830,7 +1830,7 @@ NCBI_ER_ITERATE( \
 (Pbk).SetSource().erase(Iter)
 
 
-/// CSeq_feat iterators
+/// CSeq_feat macros
 
 /// IF_FEATURE_CHOICE_IS
 
@@ -1964,7 +1964,47 @@ NCBI_ER_ITERATE( \
 (Sft).SetDbxref().erase(Iter)
 
 
-/// CGene_ref iterators
+/// CSeqFeatData macros
+
+/// IF_SEQFEATDATA_CHOICE_IS
+
+#define IF_SEQFEATDATA_CHOICE_IS(Sfd, Chs) \
+if ((Sfd).Which() == Chs)
+
+/// SEQFEATDATA_CHOICE_IS
+
+#define SEQFEATDATA_CHOICE_IS(Sfd, Chs) \
+((Sfd).Which() == Chs)
+
+/// SWITCH_ON_SEQFEATDATA_CHOICE
+
+#define SWITCH_ON_SEQFEATDATA_CHOICE(Sfd) \
+NCBI_SWITCH( \
+    (Sfd).Which() != CSeqFeatData::e_not_set, \
+    (Sfd).Which())
+
+
+/// CSeqFeatXref macros
+
+/// IF_SEQFEATXREF_CHOICE_IS
+
+#define IF_SEQFEATXREF_CHOICE_IS(Sfx, Chs) \
+if ((Sfx).IsSetData() && (Sfx).GetData().Which() == Chs)
+
+/// SEQFEATXREF_CHOICE_IS
+
+#define SEQFEATXREF_CHOICE_IS(Sfx, Chs) \
+((Sfx).IsSetData() && (Sfx).GetData().Which() == Chs)
+
+/// SWITCH_ON_SEQFEATXREF_CHOICE
+
+#define SWITCH_ON_SEQFEATXREF_CHOICE(Sfx) \
+NCBI_SWITCH( \
+    (Sfx).IsSetData(), \
+    (Sfx).GetData().Which())
+
+
+/// CGene_ref macros
 
 /// IF_GENE_HAS_SYNONYM
 
@@ -2042,7 +2082,7 @@ NCBI_CS_ITERATE( \
 (Grf).SetDb().erase(Iter)
 
 
-/// CCdregion iterators
+/// CCdregion macros
 
 /// IF_CDREGION_HAS_CODEBREAK
 
@@ -2082,7 +2122,7 @@ NCBI_ER_ITERATE( \
 (Cdr).SetCode_break().erase(Iter)
 
 
-/// CProt_ref iterators
+/// CProt_ref macros
 
 /// IF_PROT_HAS_NAME
 
@@ -2236,7 +2276,7 @@ NCBI_ER_ITERATE( \
 (Prf).SetDb().erase(Iter)
 
 
-/// list <string> iterators
+/// list <string> macros
 
 /// IF_LIST_HAS_STRING
 
@@ -2276,7 +2316,7 @@ NCBI_ER_ITERATE( \
 (Lst).erase(Iter)
 
 
-/// <string> iterators
+/// <string> macros
 
 /// IF_STRING_HAS_CHAR
 
