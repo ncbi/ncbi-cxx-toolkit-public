@@ -38,6 +38,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <sys/time.h>
 #include <map>
 
@@ -743,7 +744,7 @@ int CThreadedApp::Run(void)
                     "===== Releasing threads run after a pause ====="
                  << NcbiEndl;
     }}
-    sleep(1);
+    SleepSec(1);
     rw.Unlock();
 
     {{
