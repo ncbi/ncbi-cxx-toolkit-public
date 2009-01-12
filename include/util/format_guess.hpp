@@ -98,7 +98,16 @@ public:
         eFlatFileSequence,
 
         //< SNP Marker flat file
-        eSnpMarkers
+        eSnpMarkers,
+        
+        //< UCSC WIGGLE file format
+        eWiggle,
+        
+        //< UCSC BED file format
+        eBed,
+        
+        //< UCSC BED15 or microarray format
+        eBed15
     };
 
     enum ESequenceType {
@@ -209,6 +218,12 @@ protected:
     bool TestFormatTextAsn(
         EMode );
     bool TestFormatSnpMarkers(
+        EMode );
+    bool TestFormatBed(
+        EMode );
+    bool TestFormatBed15(
+        EMode );
+    bool TestFormatWiggle(
         EMode );
 
 private:

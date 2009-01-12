@@ -974,6 +974,110 @@ static bool s_IsSnpMarkers(const char* byte_buf, size_t byte_count)
     return (numMatched == 3);
 }
 
+static bool x_IsInputWiggle(const char* byte_buf, size_t byte_count)
+{
+    return ( NPOS != NStr::Find( byte_buf, "wiggle_" ) );
+}
+
+static bool x_IsInputBed(const char* byte_buf, size_t byte_count)
+{
+    size_t columncount = 0;
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    if ( lines.size() > 1 ) {
+        //  the last line is probably incomplete. We won't even bother with it.
+        lines.pop_back();
+    }
+    else {
+        //
+        //  not enough data to make a positive identification...
+        //
+        return false;
+    }
+    for ( list<string>::iterator it = lines.begin(); it != lines.end(); ++it ) {
+        if ( NStr::TruncateSpaces( *it ).empty() ) {
+            continue;
+        }
+        
+        //  
+        //  while occurrence of the following decorations _is_ a good sign, they could
+        //  also be indicator for a variety of other UCSC data formats
+        //
+        if ( NStr::StartsWith( *it, "track" ) ) {
+            continue;
+        }
+        if ( NStr::StartsWith( *it, "browser" ) ) {
+            continue;
+        }
+        if ( NStr::StartsWith( *it, "#" ) ) {
+            continue;
+        }
+        
+        vector<string> columns;
+        NStr::Tokenize( *it, " \t", columns, NStr::eMergeDelims );
+        if (columns.size() < 3 || columns.size() > 12) {
+            return false;
+        }
+        if ( columns.size() != columncount ) {
+            if ( columncount == 0 ) {
+                columncount = columns.size();
+            }
+            else {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+static bool x_IsInputBed15(const char* byte_buf, size_t byte_count)
+{
+    size_t columncount = 15;
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    if ( lines.size() > 1 ) {
+        //  the last line is probably incomplete. We won't even bother with it.
+        lines.pop_back();
+    }
+    else {
+        //
+        //  not enough data to make a positive identification...
+        //
+        return false;
+    }
+    for ( list<string>::iterator it = lines.begin(); it != lines.end(); ++it ) {
+        if ( NStr::TruncateSpaces( *it ).empty() ) {
+            continue;
+        }
+        //  
+        //  while occurrence of the following decorations _is_ a good sign, they could
+        //  also be indicator for a variety of other UCSC data formats
+        //
+        if ( NStr::StartsWith( *it, "track" ) ) {
+            continue;
+        }
+        if ( NStr::StartsWith( *it, "browser" ) ) {
+            continue;
+        }
+        if ( NStr::StartsWith( *it, "#" ) ) {
+            continue;
+        }
+        
+        vector<string> columns;
+        NStr::Tokenize( *it, " \t", columns, NStr::eMergeDelims );
+        if ( columns.size() != columncount ) {
+            return false;
+        }
+    }
+    return true;
+}
+
 CFormatGuess::ESequenceType 
 CFormatGuess::SequenceType(const char* str, unsigned length)
 {
@@ -1039,6 +1143,15 @@ CFormatGuess::Format(const unsigned char* buffer,
     }
     if ( x_IsInputGtf(chbuf, buffer_size) ) {
         return eGtf;
+    }
+    if ( x_IsInputWiggle(chbuf, buffer_size) ) {
+        return eWiggle;
+    }
+    if ( x_IsInputBed(chbuf, buffer_size) ) {
+        return eBed;
+    }
+    if ( x_IsInputBed15(chbuf, buffer_size) ) {
+        return eBed15;
     }
     if ( x_IsInputGlimmer3(chbuf, buffer_size) ) {
         return eGlimmer3;
@@ -1309,6 +1422,15 @@ CFormatGuess::GuessFormat(
     if ( TestFormatGtf( mode ) ) {
         return eGtf;
     }
+    if ( TestFormatWiggle( mode ) ) {
+        return eWiggle;
+    }
+    if ( TestFormatBed( mode ) ) {
+        return eBed;
+    }
+    if ( TestFormatBed15( mode ) ) {
+        return eBed15;
+    }
     if ( TestFormatGlimmer3( mode ) ) {
         return eGlimmer3;
     }
@@ -1405,6 +1527,12 @@ CFormatGuess::TestFormat(
         return TestFormatFasta( mode );
     case eTextASN:
         return TestFormatTextAsn( mode );
+    case eWiggle:
+        return TestFormatWiggle( mode );
+    case eBed:
+        return TestFormatBed( mode );
+    case eBed15:
+        return TestFormatBed15( mode );
 
     default:
         NCBI_THROW( CCoreException, eInvalidArg, 
@@ -1700,7 +1828,10 @@ CFormatGuess::TestFormatFasta(
         return false;
     }
     if ( m_iStatsCountData == 0 ) {
-        return false;
+        if (0.75 > double(m_iStatsCountAlNumChars)/double(m_iTestDataSize) ) {
+            return false;
+        }
+        return ( NStr::Find( m_pTestBuffer, "|" ) <= 10 );
     }
 
     // remaining decision based on text stats:
@@ -1709,7 +1840,7 @@ CFormatGuess::TestFormatFasta(
     double dAaFraction = (double)m_iStatsCountAaChars / m_iStatsCountData;
 
     // want at least 80% text-ish overall:
-    if ( dAlNumFraction < 0.80 ) {
+    if ( dAlNumFraction < 0.8 ) {
         return false;
     }
 
@@ -1771,5 +1902,37 @@ bool CFormatGuess::x_TestInput( CNcbiIstream& input, EOnError onerror )
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatBed(
+    EMode /* not used */ )
+{
+    if ( ! EnsureStats() ) {
+        return false;
+    }
+    return x_IsInputBed( m_pTestBuffer, m_iTestDataSize );
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatBed15(
+    EMode /* not used */ )
+{
+    if ( ! EnsureStats() ) {
+        return false;
+    }
+    return x_IsInputBed15( m_pTestBuffer, m_iTestDataSize );
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatWiggle(
+    EMode /* not used */ )
+{
+    if ( ! EnsureStats() ) {
+        return false;
+    }
+    return x_IsInputWiggle( m_pTestBuffer, m_iTestDataSize );
+}
 
 END_NCBI_SCOPE
