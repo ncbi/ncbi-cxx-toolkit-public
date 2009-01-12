@@ -102,7 +102,7 @@ protected:
     CT_POS_TYPE    x_GetGPos(void)
     { return x_GPos - (CT_OFF_TYPE)(gptr() ? egptr() - gptr() : 0); }
     CT_POS_TYPE    x_GetPPos(void)
-    { return x_GPos - (CT_OFF_TYPE)(gptr() ? egptr() - gptr() : 0); }
+    { return x_PPos + (CT_OFF_TYPE)(pptr() ? pbase() - pptr() : 0); }
 
 protected:
     TFlags         m_Flags;
