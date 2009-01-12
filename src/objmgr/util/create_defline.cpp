@@ -143,8 +143,7 @@ void CDeflineGenerator::x_SetFlags (
     // process Seq-ids
     FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bioseq) {
         const CSeq_id& sid = **sid_itr;
-        TSEQID_CHOICE chs = sid.Which();
-         switch (chs) {
+        SWITCH_ON_SEQID_CHOICE (sid) {
             case NCBI_SEQID(Other):
             case NCBI_SEQID(Genbank):
             case NCBI_SEQID(Embl):
@@ -220,6 +219,7 @@ void CDeflineGenerator::x_SetFlags (
         const CMolInfo& molinf = (*mi_ref).GetMolinfo();
         m_MIBiomol = molinf.GetBiomol();
         m_MITech = molinf.GetTech();
+        m_MICompleteness = molinf.GetCompleteness();
         switch (m_MITech) {
             case NCBI_TECH(htgs_0):
             case NCBI_TECH(htgs_1):
@@ -328,55 +328,47 @@ void CDeflineGenerator::x_SetBioSrc (
         // process SubSource
         FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, source) {
             const CSubSource& sbs = **sbs_itr;
-            if (sbs.IsSetSubtype()) {
-                TSUBSRC_SUBTYPE sst = sbs.GetSubtype();
-                if (sbs.IsSetName()) {
-                    const string& str = sbs.GetName();
-                    switch (sst) {
-                        case NCBI_SUBSRC(chromosome):
-                            m_Chromosome = str;
-                            break;
-                        case NCBI_SUBSRC(clone):
-                            m_Clone = str;
-                            break;
-                        case NCBI_SUBSRC(map):
-                            m_Map = str;
-                            break;
-                        case NCBI_SUBSRC(plasmid_name):
-                            m_Plasmid = str;
-                            break;
-                        case NCBI_SUBSRC(segment):
-                            m_Segment = str;
-                            break;
-                        default:
-                            break;
-                    }
-                }
+            if (! sbs.IsSetName()) continue;
+            const string& str = sbs.GetName();
+            SWITCH_ON_SUBSOURCE_CHOICE (sbs) {
+                case NCBI_SUBSRC(chromosome):
+                    m_Chromosome = str;
+                    break;
+                case NCBI_SUBSRC(clone):
+                    m_Clone = str;
+                    break;
+                case NCBI_SUBSRC(map):
+                    m_Map = str;
+                    break;
+                case NCBI_SUBSRC(plasmid_name):
+                    m_Plasmid = str;
+                    break;
+                case NCBI_SUBSRC(segment):
+                    m_Segment = str;
+                    break;
+                default:
+                    break;
             }
         }
 
         // process OrgMod
         FOR_EACH_ORGMOD_ON_BIOSOURCE (omd_itr, source) {
             const COrgMod& omd = **omd_itr;
-            if (omd.IsSetSubtype()) {
-                TORGMOD_SUBTYPE omt = omd.GetSubtype();
-                if (omd.IsSetSubname()) {
-                    const string& str = omd.GetSubname();
-                    switch (omt) {
-                        case NCBI_ORGMOD(strain):
-                            if (m_Strain.empty()) {
-                                m_Strain = str;
-                            }
-                            break;
-                        case NCBI_ORGMOD(isolate):
-                            if (m_Isolate.empty()) {
-                                m_Isolate = str;
-                            }
-                            break;
-                        default:
-                            break;
+            if (! omd.IsSetSubname()) continue;
+            const string& str = omd.GetSubname();
+            SWITCH_ON_ORGMOD_CHOICE (omd) {
+                case NCBI_ORGMOD(strain):
+                    if (m_Strain.empty()) {
+                        m_Strain = str;
                     }
-                }
+                    break;
+                case NCBI_ORGMOD(isolate):
+                    if (m_Isolate.empty()) {
+                        m_Isolate = str;
+                    }
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -710,7 +702,8 @@ string CDeflineGenerator::x_TitleFromNM (
     CBioseq_Handle hnd = scope.GetBioseqHandle (bioseq);
 
     for (CFeat_CI it(hnd); it; ++it) {
-        switch (it->GetData().Which()) {
+        const CSeq_feat& sft = it->GetOriginalFeature();
+        SWITCH_ON_FEATURE_CHOICE (sft) {
             case CSeqFeatData::e_Gene:
                 ++genes;
                 gene.Reset(&it->GetMappedFeature());
@@ -760,7 +753,8 @@ string CDeflineGenerator::x_TitleFromNR (
 
     for (CTypeConstIterator<CSeq_feat> it(
           *hnd.GetTopLevelEntry().GetCompleteSeq_entry()); it; ++it) {
-        if (it->GetData().IsGene()) {
+        const CSeq_feat& sft = *it;
+        IF_FEATURE_CHOICE_IS (sft, NCBI_SEQFEAT(Gene)) {
             result = m_Taxname + " ";
             feature::GetLabel(*it, &result, feature::eContent);
             result += ", ";
@@ -866,9 +860,14 @@ CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (
             const CSeq_annot& annot = **sa_itr;
             FOR_EACH_FEATURE_ON_ANNOT (sf_itr, annot) {
                 const CSeq_feat& feat = **sf_itr;
+                if (! FEATURE_CHOICE_IS (feat, NCBI_SEQFEAT(Prot))) continue;
+                /*
                 if (! feat.IsSetData ()) continue;
+                */
                 const CSeqFeatData& sfdata = feat.GetData ();
+                /*
                 if (! sfdata.IsProt ()) continue;
+                */
                 const CProt_ref& prp = sfdata.GetProt();
                 processed = CProt_ref::eProcessed_not_set;
                 if (prp.IsSetProcessed()) {
