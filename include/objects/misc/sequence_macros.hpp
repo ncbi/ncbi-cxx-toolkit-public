@@ -1216,6 +1216,42 @@ NCBI_SWITCH( \
 
 /// CBioSource macros
 
+/// IF_BIOSOURCE_GENOME_IS
+
+#define IF_BIOSOURCE_GENOME_IS(Bsrc, Chs) \
+if ((Bsrc).IsSetGenome() && (Bsrc).GetGenome() == Chs)
+
+/// BIOSOURCE_GENOME_IS
+
+#define BIOSOURCE_GENOME_IS(Bsrc, Chs) \
+((Bsrc).IsSetGenome() && (Bsrc).GetGenome() == Chs)
+
+/// SWITCH_ON_BIOSOURCE_GENOME
+
+#define SWITCH_ON_BIOSOURCE_GENOME(Bsrc) \
+NCBI_SWITCH( \
+    (Bsrc).IsSetGenome(), \
+    (Bsrc).GetGenome())
+
+
+/// IF_BIOSOURCE_ORIGIN_IS
+
+#define IF_BIOSOURCE_ORIGIN_IS(Bsrc, Chs) \
+if ((Bsrc).IsSetOrigin() && (Bsrc).GetOrigin() == Chs)
+
+/// BIOSOURCE_ORIGIN_IS
+
+#define BIOSOURCE_ORIGIN_IS(Bsrc, Chs) \
+((Bsrc).IsSetOrigin() && (Bsrc).GetOrigin() == Chs)
+
+/// SWITCH_ON_BIOSOURCE_ORIGIN
+
+#define SWITCH_ON_BIOSOURCE_ORIGIN(Bsrc) \
+NCBI_SWITCH( \
+    (Bsrc).IsSetOrigin(), \
+    (Bsrc).GetOrigin())
+
+
 /// IF_BIOSOURCE_HAS_SUBSOURCE
 
 #define IF_BIOSOURCE_HAS_SUBSOURCE(Bsrc) \
