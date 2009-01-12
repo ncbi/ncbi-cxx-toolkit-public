@@ -634,12 +634,12 @@ CMultiAligner::x_FindQueryClusters()
             }
         }
      
-        int gain = m_AllQueryData.size() - clusters.size();
+        int gain = m_QueryData.size() - clusters.size();
         printf("\nNumber of queries in clusters: %d (%.0f%%)\n", 
                num_in_clusters,
-               (double)num_in_clusters / m_AllQueryData.size() * 100.0);
+               (double)num_in_clusters / m_QueryData.size() * 100.0);
         printf("Number of domain searches reduced by: %d (%.0f%%)\n\n", gain, 
-               (double) gain / m_AllQueryData.size() * 100.0);
+               (double) gain / m_QueryData.size() * 100.0);
 
         const CClusterer::TDistMatrix& d = m_Clusterer.GetDistMatrix();
         printf("Distances in clusters:\n");
