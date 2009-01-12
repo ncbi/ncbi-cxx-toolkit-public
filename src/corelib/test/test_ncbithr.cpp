@@ -39,7 +39,6 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <sys/time.h>
 #include <map>
 
 #include <common/test_assert.h>  /* This header must go last */
