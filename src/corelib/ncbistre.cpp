@@ -43,31 +43,6 @@
 BEGIN_NCBI_SCOPE
 
 
-Int8 NcbiStreamposToInt8(CT_POS_TYPE stream_pos)
-{
-#ifdef NCBI_OS_MSWIN
-    fpos_t fp(stream_pos.seekpos());
-    return (Int8) fp;
-#else
-    return (CT_OFF_TYPE)(stream_pos - CT_POS_TYPE(0));
-#endif
-}
-
-
-CT_POS_TYPE NcbiInt8ToStreampos(Int8 pos)
-{
-#ifdef NCBI_OS_MSWIN
-    fpos_t fp(pos);
-    mbstate_t mbs;
-    memset (&mbs, '\0', sizeof (mbs));
-    CT_POS_TYPE p(mbs, fp);
-    return p;
-#else
-    return CT_POS_TYPE(0) + CT_OFF_TYPE(pos);
-#endif
-}
-
-
 CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
 {
     CT_INT_TYPE ch;
@@ -214,11 +189,11 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
 #ifndef NCBI_COMPILER_GCC
     os << is.rdbuf();
 #elif   NCBI_COMPILER_VERSION <= 330
-    // GCC stdlib++ version <= 3.3.0 has a bug in implementation of
-    // streamcopy, which wrongly assumes that showmanyc() (which is called
-    // when no read position is available for in_avail()) returns the number
-    // of bytes that are placed at the buffer, so it tries to read right off
-    // gptr() those many bytes, causing bound conditions (ending up with SEGV).
+    // GCC stdlib++ version <= 3.3.0 has a bug in implementation of streamcopy,
+    // which wrongly assumes that showmanyc() (which is called when no read
+    // position is available for in_avail()) returns the number of bytes that
+    // have been placed in the buffer, so it tries to read right off gptr()
+    // that many bytes, causing bound conditions (ending up with SEGV).
     do {
         char buf[4096];
         is.read(buf, sizeof(buf));
@@ -334,33 +309,68 @@ string Printable(char c)
 }
 
 
-inline
-void WritePrintable(CNcbiOstream& out, char c)
+static inline
+bool s_IsQuoted(char c)
+{
+    return (c == '\t'  ||   c == '\v'  ||  c == '\b'  ||
+            c == '\r'  ||   c == '\f'  ||  c == '\a'  ||
+            c == '\n'  ||   c == '\\'  ||  c == '\''  ||
+            c == '"'   ||  !isprint((unsigned char) c) ? true : false);
+}
+
+
+static inline
+void s_WritePrintable(CNcbiOstream& out, char c, char n)
 {
     switch ( c ) {
-    case '\0':  out.write("\\0",  2);  break;
-    case '\\':  out.write("\\\\", 2);  break;
-    case '\n':  out.write("\\n",  2);  break;
-    case '\t':  out.write("\\t",  2);  break;
-    case '\r':  out.write("\\r",  2);  break;
-    case '\v':  out.write("\\v",  2);  break;
+    case '\t':  out.write("\\t",  2);  return;
+    case '\v':  out.write("\\v",  2);  return;
+    case '\b':  out.write("\\b",  2);  return;
+    case '\r':  out.write("\\r",  2);  return;
+    case '\f':  out.write("\\f",  2);  return;
+    case '\a':  out.write("\\a",  2);  return;
+    case '\n':  out.write("\\n",  2);  return;
+    case '\\':  out.write("\\\\", 2);  return;
+    case '\'':  out.write("\\'",  2);  return;
+    case '"':   out.write("\\\"", 2);  return;
     default:
         if ( isprint((unsigned char) c) ) {
             out.put(c);
-        } else {
-            out.write("\\x", 2);
-            out.put(s_Hex[(unsigned char) c / 16]);
-            out.put(s_Hex[(unsigned char) c % 16]);
+            return;
         }
         break;
     }
+
+    bool full = !s_IsQuoted(n)  &&  n >= '0'  &&  n <= '7' ? true : false;
+    unsigned char v;
+    char octal[4];
+    int k = 1;
+
+    *octal = '\\';
+    v =  (unsigned char) c >> 6;
+    if (v  ||  full) {
+        octal[k++] = '0' + v;
+        full = true;
+    }
+    v = ((unsigned char) c >> 3) & 7;
+    if (v  ||  full) {
+        octal[k++] = '0' + v;
+    }
+    v =  (unsigned char) c       & 7;
+    octal    [k++] = '0' + v;
+    out.write(octal, k);
 }
 
 
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s)
 {
-    ITERATE ( string, c, s.m_String ) {
-        WritePrintable(out, *c);
+    size_t size = s.m_String.size();
+    if (size) {
+        const char* data = s.m_String.data();
+        for (size_t i = 0;  i < size - 1;  ++i) {
+            s_WritePrintable(out, data[i], data[i + 1]);
+        }
+        s_WritePrintable(out, data[size - 1], '\0');
     }
     return out;
 }
@@ -368,8 +378,12 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s)
 
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s)
 {
-    for ( const char* c = s.m_String; *c; ++c ) {
-        WritePrintable(out, *c);
+    const char* p = s.m_String;
+    char        c = *p;
+    while (c) {
+        char n = *++p;
+        s_WritePrintable(out, c, n);
+        c = n;
     }
     return out;
 }
