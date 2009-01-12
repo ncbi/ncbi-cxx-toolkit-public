@@ -1017,7 +1017,7 @@ static char* s_PrintUint8(char*                   pos,
                 Uint4 chunk = Uint4(value);
                 value /= PRINT_INT8_CHUNK;
                 chunk -= PRINT_INT8_CHUNK*Uint4(value);
-                char* end = pos - PRINT_INT8_CHUNK_SIZE;
+                char* end = pos - PRINT_INT8_CHUNK_SIZE - 2; // 9-digit chunk should have 2 commas
                 do {
                     if (++cnt == 3) {
                         *--pos = ',';

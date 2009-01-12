@@ -44,8 +44,6 @@
 // and to use NCBI C++ entities without the "ncbi::" prefix
 USING_NCBI_SCOPE;
 
-
-#define OK  NcbiCout << " completed successfully!" << NcbiEndl
 static const int kBad = 555;
 
 
@@ -200,6 +198,21 @@ static const SStringNumericValues s_Str2NumTests[] = {
     { "12,34",    NStr::fAllowCommas, -1,    kBad,    kBad,    kBad,    kBad, kBad },
     { ",123",     NStr::fAllowCommas, -1,    kBad,    kBad,    kBad,    kBad, kBad },
     { ",123",     NStr::fAllowCommas | NStr::fAllowLeadingSymbols, -1, 123, 123, 123, 123, 123 },
+#if (SIZEOF_INT > 4)
+    {  "4,294,967,294", NStr::fAllowCommas, -1, NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), kBad },
+    {  "4,294,967,295", NStr::fAllowCommas, -1, NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), kBad },
+    {  "4,294,967,296", NStr::fAllowCommas, -1, NCBI_CONST_UINT8(4294967296), NCBI_CONST_UINT8(4294967296), NCBI_CONST_UINT8(4294967296), NCBI_CONST_UINT8(4294967296), kBad },
+    { "-4,294,967,294", NStr::fAllowCommas, -1, NCBI_CONST_INT8(-4294967294), kBad,                         NCBI_CONST_INT8(-4294967294), kBad,                         kBad },
+    { "-4,294,967,295", NStr::fAllowCommas, -1, NCBI_CONST_INT8(-4294967295), kBad,                         NCBI_CONST_INT8(-4294967295), kBad,                         kBad },
+    { "-4,294,967,296", NStr::fAllowCommas, -1, NCBI_CONST_INT8(-4294967296), kBad,                         NCBI_CONST_INT8(-4294967296), kBad,                         kBad },
+#else
+    {  "4,294,967,294", NStr::fAllowCommas, -1, kBad,                         NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), NCBI_CONST_UINT8(4294967294), kBad },
+    {  "4,294,967,295", NStr::fAllowCommas, -1, kBad,                         NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), NCBI_CONST_UINT8(4294967295), kBad },
+    {  "4,294,967,296", NStr::fAllowCommas, -1, kBad,                         kBad,                         NCBI_CONST_UINT8(4294967296), NCBI_CONST_UINT8(4294967296), kBad },
+    { "-4,294,967,294", NStr::fAllowCommas, -1, kBad,                         kBad,                         NCBI_CONST_INT8(-4294967294), kBad,                         kBad },
+    { "-4,294,967,295", NStr::fAllowCommas, -1, kBad,                         kBad,                         NCBI_CONST_INT8(-4294967295), kBad,                         kBad },
+    { "-4,294,967,296", NStr::fAllowCommas, -1, kBad,                         kBad,                         NCBI_CONST_INT8(-4294967296), kBad,                         kBad },
+#endif
 
     { "+123",     0, 123, 123, 123, 123, 123, 123 },
     { "123",      NStr::fMandatorySign, 123, kBad, kBad, kBad, kBad, kBad },
@@ -247,8 +260,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             if (allow_same_test)
                 BOOST_CHECK(test->Same(NStr::IntToString(value, str_flags)));
         }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        catch (CException&) {
             if ( test->IsGoodInt() ) {
                 ERR_POST("Cannot convert '" << str << "' to int");
             }
@@ -266,8 +278,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             if (allow_same_test)
                 BOOST_CHECK(test->Same(NStr::UIntToString(value, str_flags)));
         }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        catch (CException&) {
             if ( test->IsGoodUInt() ) {
                 ERR_POST("Cannot convert '" << str << "' to unsigned int");
             }
@@ -294,8 +305,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                     BOOST_CHECK(test->Same(NStr::Int8ToString(value, str_flags)));
             #endif
         }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        catch (CException&) {
             #if (SIZEOF_LONG == SIZEOF_INT)
                 if ( test->IsGoodInt() ) {
                     ERR_POST("Cannot convert '" << str <<
@@ -331,8 +341,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                     BOOST_CHECK(test->Same(NStr::UInt8ToString(value, str_flags)));
             #endif
         }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        catch (CException&) {
             #if (SIZEOF_LONG == SIZEOF_INT)
                 if ( test->IsGoodUInt() ) {
                     ERR_POST("Cannot convert '" << str <<
@@ -359,8 +368,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             if (allow_same_test)
                 BOOST_CHECK(test->Same(NStr::Int8ToString(value, str_flags)));
         }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        catch (CException&) {
             if ( test->IsGoodInt8() ) {
                 ERR_POST("Cannot convert '" << str << "' to Int8");
             }
@@ -378,8 +386,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             if (allow_same_test)
                 BOOST_CHECK(test->Same(NStr::UInt8ToString(value, str_flags)));
         }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        catch (CException&) {
             if ( test->IsGoodUInt8() ) {
                 ERR_POST("Cannot convert '" << str << "' to Uint8");
             }
@@ -395,15 +402,13 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             BOOST_CHECK(test->IsGoodDouble());
             BOOST_CHECK_EQUAL(value, test->d);
         }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        catch (CException&) {
             if ( test->IsGoodDouble() ) {
                 ERR_POST("Cannot convert '" << str << "' to double");
             }
             BOOST_CHECK(!test->IsGoodDouble());
         }
     }
-    OK;
 }
 
 
@@ -503,8 +508,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
                 BOOST_CHECK(test->Same(str));
             }
         }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        catch (CException&) {
             BOOST_CHECK_EQUAL(test->value, (Uint8)kBad);
         }
 
@@ -525,8 +529,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
                 BOOST_CHECK(test->Same(str));
             }
         }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        catch (CException&) {
             BOOST_CHECK_EQUAL(test->value, (Uint8)kBad);
         }
 
@@ -545,8 +548,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
                 BOOST_CHECK(test->Same(str));
             }
         }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        catch (CException&) {
             BOOST_CHECK_EQUAL(test->value, (Uint8)kBad);
         }
 
@@ -563,8 +565,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
             BOOST_CHECK_EQUAL(val, test->value);
             BOOST_CHECK(test->Same(str));
         }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        catch (CException&) {
             BOOST_CHECK_EQUAL(test->value, (Uint8)kBad);
         }
     } 
@@ -603,8 +604,6 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
 
     NStr::UInt8ToString(str, NCBI_CONST_UINT8(12345678901234567), 0, 16);
     BOOST_CHECK(str == "2BDC545D6B4B87");
-
-    OK;
 }
 
 
@@ -677,8 +676,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNumDataSize)
             BOOST_CHECK(test->IsGood());
             BOOST_CHECK_EQUAL(value, test->expected);
         }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        catch (CException&) {
             if ( test->IsGood() ) {
                 ERR_POST("Cannot convert '" << str << "' to data size");
             } else {
@@ -687,7 +685,6 @@ BOOST_AUTO_TEST_CASE(s_StringToNumDataSize)
             BOOST_CHECK(!test->IsGood());
         }
     }
-    OK;
 }
 
 
@@ -753,8 +750,6 @@ BOOST_AUTO_TEST_CASE(s_Replace)
     replace = "c";
     NStr::ReplaceInPlace(src, search, replace);
     BOOST_CHECK_EQUAL(src, string("WWcccbWccczzcccXX"));
-
-    OK;
 }
 
 
@@ -816,7 +811,6 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
     //         << s2 << NcbiEndl;
     BOOST_CHECK(s2.compare(CNcbiOstrstreamToString(os2)) == 0);
 
-    OK;
 }
 
 
@@ -926,8 +920,6 @@ BOOST_AUTO_TEST_CASE(s_Compare)
     BOOST_CHECK(NStr::Compare("0123", 1, 2, "12") == 0);
     BOOST_CHECK(NStr::Compare("0123", 2, 2, "12") >  0);
     BOOST_CHECK(NStr::Compare("0123", 3, 2,  "3") == 0);
-
-    OK;
 }
 
 BOOST_AUTO_TEST_CASE(s_XCompare)
@@ -962,8 +954,6 @@ BOOST_AUTO_TEST_CASE(s_XCompare)
     BOOST_CHECK(XStr::Compare("0123", 1, 2, "12") == 0);
     BOOST_CHECK(XStr::Compare("0123", 2, 2, "12") >  0);
     BOOST_CHECK(XStr::Compare("0123", 3, 2,  "3") == 0);
-
-    OK;
 }
 
 
@@ -1009,7 +999,6 @@ BOOST_AUTO_TEST_CASE(s_Split)
         BOOST_CHECK(j < sizeof(split_result) / sizeof(split_result[0]));
         BOOST_CHECK(NStr::Compare(*it, split_result[j++]) == 0);
     }
-    OK;
 }
 
 
@@ -1063,8 +1052,6 @@ BOOST_AUTO_TEST_CASE(s_Tokenize)
             BOOST_CHECK_EQUAL(NStr::Compare(*it, split_result[i++]), 0);
         }
     }}
-
-    OK;
 }
 
 
@@ -1108,7 +1095,6 @@ BOOST_AUTO_TEST_CASE(s_SplitInTwo)
         BOOST_CHECK_EQUAL(s_SplitInTwoTest[i].expected_str1, string1);
         BOOST_CHECK_EQUAL(s_SplitInTwoTest[i].expected_str2, string2);
     }
-    OK;
 }
 
 
@@ -1154,7 +1140,6 @@ BOOST_AUTO_TEST_CASE(s_TokenizePattern)
             BOOST_CHECK_EQUAL(NStr::Compare(*it, tok_pattern_result_nm[i++]), 0);
         }
     }}
-    OK;
 }
 
 
@@ -1227,7 +1212,6 @@ BOOST_AUTO_TEST_CASE(s_Case)
             BOOST_CHECK_EQUAL(NStr::Compare(x_lower, NStr::ToLower(x_str)), 0);
         }}
     }
-    OK;
 }
 
 
@@ -1251,8 +1235,6 @@ BOOST_AUTO_TEST_CASE(s_strcasecmp)
     BOOST_CHECK(NStr::strcasecmp("a",   "") != 0);
     BOOST_CHECK(NStr::strcasecmp("",   "a") != 0);
     BOOST_CHECK_EQUAL(NStr::strcasecmp("",    ""), 0);
-
-    OK;
 }
 
 
@@ -1275,7 +1257,6 @@ BOOST_AUTO_TEST_CASE(s_Equal)
     BOOST_CHECK_EQUAL( AStrEquiv(as1, as2, PCase()),   true );
     BOOST_CHECK_EQUAL( AStrEquiv(as1, as3, PCase()),   false );
     BOOST_CHECK_EQUAL( AStrEquiv(as2, as4, PCase()),   false );
-    OK;
 
     NcbiCout << NcbiEndl << "Equal{Case,Nocase} tests...";
 
@@ -1285,7 +1266,6 @@ BOOST_AUTO_TEST_CASE(s_Equal)
     BOOST_CHECK_EQUAL( NStr::EqualCase(as1, as2),   true );
     BOOST_CHECK_EQUAL( NStr::EqualCase(as1, as3),   false );
     BOOST_CHECK_EQUAL( NStr::EqualCase(as2, as4),   false );
-    OK;
 }
 
 
@@ -1361,7 +1341,6 @@ BOOST_AUTO_TEST_CASE(s_ReferenceCounting)
             }
         }
     }
-    OK;
 }
 
 
@@ -1375,8 +1354,6 @@ BOOST_AUTO_TEST_CASE(s_FindNoCase)
     BOOST_CHECK_EQUAL(NStr::FindNoCase(" abcd", " xyz"), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindNoCase(" abcd", " xyz", 0, NPOS, NStr::eLast), NPOS);
     BOOST_CHECK(NStr::FindNoCase(" abcd", " aBc", 0, NPOS, NStr::eLast) == 0);
-
-    OK;
 }
 
 
@@ -1400,7 +1377,6 @@ BOOST_AUTO_TEST_CASE(s_VersionInfo)
 
         BOOST_CHECK_THROW( ver.FromStr("12.35a"), exception);
     }}
-    OK;
 
     NcbiCout << NcbiEndl << "ParseVersionString tests...";
 
@@ -1434,8 +1410,6 @@ BOOST_AUTO_TEST_CASE(s_VersionInfo)
     ParseVersionString("MyProgram ", &name, &ver);
     BOOST_CHECK_EQUAL(name, string("MyProgram"));
     BOOST_CHECK(ver.IsAny());
-
-    OK;
 }
 
 BOOST_AUTO_TEST_CASE(s_StringUTF8)
@@ -1492,7 +1466,6 @@ BOOST_AUTO_TEST_CASE(s_StringUTF8)
     str = sample;
     BOOST_CHECK_EQUAL(strcmp(str.c_str(),"micro=µ Agrave=À atilde=ã ccedil=ç"), 0);
     BOOST_CHECK_EQUAL( str.AsLatin1(), sample);
-    OK;
 }
 
 BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
