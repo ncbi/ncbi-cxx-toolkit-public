@@ -56,6 +56,9 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 
+#include <objtools/readers/fasta.hpp>
+#include <objtools/data_loaders/blastdb/bdbloader.hpp>
+
 #include <objtools/alnmgr/alnmix.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objtools/alnmgr/aln_asn_reader.hpp>
@@ -69,11 +72,14 @@ class CAlnMrgApp : public CNcbiApplication
 {
     virtual void     Init          (void);
     virtual int      Run           (void);
-    CScope&          GetScope      (void)             const;
+    CScope&          GetScope      (void) const;
     void             SetOptions    (void);
     void             LoadInputAlns (void);
     void             PrintMergedAln(void);
     void             ViewMergedAln (void);
+    void             LoadSeqEntry  (CNcbiIstream& is);
+    void             LoadFasta     (CNcbiIstream& is);
+    void             LoadBlastDb   (const string& db);
     bool             AddAlnToMix   (const CSeq_align* aln) {
         m_Mix->Add(*aln, m_AddFlags);
         return true;
@@ -208,6 +214,21 @@ void CAlnMrgApp::Init(void)
         // Also used to calc scores and determine the type of molecule
          "Skip ObjMgr in identifying sequences, calculating scores, etc.",
          CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddOptionalKey
+        ("se_in", "SeqEntryInputFile",
+         "An optional Seq-entry file to load a local top level seq entry from.",
+         CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
+
+    arg_desc->AddOptionalKey
+        ("fasta_in", "FastaFile",
+         "An optional FASTA file to load into ObjMgr's scope.",
+         CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
+
+    arg_desc->AddOptionalKey
+        ("blastdb", "BlastDb",
+         "Add an optional BLAST dataloader to ObjMgr's scope.",
+         CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey
         ("queryseqmergeonly", "bool",
@@ -356,8 +377,71 @@ void CAlnMrgApp::SetOptions(void)
 
     if ( !(args["noobjmgr"]  &&  args["noobjmgr"].AsBoolean()) ) {
         GetScope(); // first call creates the scope
+        if (args["se_in"]) {
+            LoadSeqEntry(args["se_in"].AsInputFile());
+        }
+        if (args["fasta_in"]) {
+            LoadFasta(args["fasta_in"].AsInputFile());
+        }
+        if (args["blastdb"]) {
+            LoadBlastDb(args["blastdb"].AsString());
+        }
     }
 }
+
+
+void CAlnMrgApp::LoadSeqEntry(CNcbiIstream& is)
+{
+    string se_asn_type;
+    {{
+         auto_ptr<CObjectIStream> obj_is
+             (CObjectIStream::Open(eSerial_AsnText, is));
+         
+         se_asn_type = obj_is->ReadFileHeader();
+         obj_is->Close();
+         is.seekg(0);
+    }}
+        
+    auto_ptr<CObjectIStream> obj_is
+        (CObjectIStream::Open(eSerial_AsnText, is));
+    
+    if (se_asn_type == "Seq-entry") {
+        CRef<CSeq_entry> se (new CSeq_entry);
+        *obj_is >> *se;
+        GetScope().AddTopLevelSeqEntry(*se);
+    } else {
+        NCBI_THROW(CAlnException, eInvalidRequest,
+                   "se_in only accepts a Seq-entry should be supplied in a text asn.1 file.");
+    }
+}
+
+
+void CAlnMrgApp::LoadFasta(CNcbiIstream& is)
+{
+    CFastaReader fasta_reader(is,
+                              CFastaReader::fRequireID);
+    GetScope().AddTopLevelSeqEntry(*fasta_reader.ReadSet());
+}
+
+
+void CAlnMrgApp::LoadBlastDb(const string& dbname)
+{
+    // Create GenBank data loader and register it with the OM.
+    // * The last argument "eDefault" informs the OM that the loader must
+    // * be included in scopes during the CScope::AddDefaults() call.
+
+    GetScope(); /* make sure m_ObjMgr and m_Scope are created */
+    CDataLoader* blast_loader =
+        CBlastDbDataLoader::RegisterInObjectManager
+        (*m_ObjMgr,
+         dbname,
+         CBlastDbDataLoader::eNucleotide,
+         CObjectManager::eDefault).GetLoader();
+    
+    _ASSERT(blast_loader);
+    GetScope().AddDataLoader(blast_loader->GetName());
+}
+
 
 void CAlnMrgApp::PrintMergedAln(void)
 {
