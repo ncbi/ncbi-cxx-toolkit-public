@@ -788,6 +788,18 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
            ("A\\1\\r2\\17\\0205B\\x00CD\\x000F").compare
            ("A\x01\r2\x0F\x10""5B\xCD\x0F") == 0);
 
+    // NStr::PrintableString() vs. Printable()
+    size_t size = (size_t)(rand() & 0xFFFF);
+    string data;
+    for (size_t i = 0;  i < size;  i++) {
+        data += char(rand() & 0xFF);
+    }
+    BOOST_CHECK(data.size() == size);
+    CNcbiOstrstream os;
+    os << Printable(data);
+    BOOST_CHECK(NStr::PrintableString(data).compare
+                (CNcbiOstrstreamToString(os)) == 0);
+
     OK;
 }
 
