@@ -38,6 +38,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <sys/time.h>
 #include <map>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -244,6 +245,91 @@ bool Test_CThreadExit(void)
     return false;   // this line should never be executed
 }
 
+template<int N>
+struct SValue
+{
+    int value;
+};
+
+#define USE_STATIC_TLS
+#ifdef USE_STATIC_TLS
+# define TTls CStaticTls
+#else
+# define TTls CTls
+#endif
+
+template<class Value>
+static TTls<Value>& s_GetTls()
+{
+#ifdef USE_STATIC_TLS
+    static CStaticTls<Value> s_tls;
+    return s_tls;
+#else
+    static CSafeStaticRef< TTls<Value> > s_tls;
+    return s_tls.Get();
+#endif
+}
+
+static void wait_threads(CAtomicCounter& counter)
+{
+    CAtomicCounter::TValue add = 1;
+    int wait_count = 0;
+    while ( counter.Add(add) < CAtomicCounter::TValue(sNumThreads) ) {
+        add = 0;
+        if ( (++wait_count & 0xff) == 0 ) { NCBI_SCHED_YIELD(); }
+    }
+}
+
+template<int N>
+void test_static_tls(int idx, bool init = true)
+{
+    static CAtomicCounter thread_counter;
+    if ( idx >= 0 && init ) {
+        wait_threads(thread_counter);
+    }
+    idx += N*1000;
+    typedef SValue<N> Value;
+    TTls<Value>& tls = s_GetTls<Value>();
+    if ( init ) {
+        Value* v = new Value;
+        v->value = idx;
+        tls.SetValue(v);
+    }
+    assert(tls.GetValue()->value == idx);
+}
+
+template<int N, int CNT>
+struct STestStaticTlss
+{
+    void do_test(int idx, bool init) const {
+        STestStaticTlss<N, CNT/2> t1;
+        t1.do_test(idx, init);
+        STestStaticTlss<N+CNT/2, CNT-CNT/2> t2;
+        t2.do_test(idx, init);
+    }
+};
+
+template<int N>
+struct STestStaticTlss<N, 1>
+{
+    void do_test(int idx, bool init) const {
+        test_static_tls<N>(idx, init);
+    }
+};
+
+template<int N>
+struct STestStaticTlss<N, 0>
+{
+    void do_test(int, bool) const {
+    }
+};
+
+template<int N, int CNT>
+void test_static_tlss(int idx, bool init = true)
+{
+    STestStaticTlss<N, CNT> t;
+    t.do_test(idx, init);
+}
 
 void* CTestThread::Main(void)
 {
@@ -299,6 +385,14 @@ void* CTestThread::Main(void)
         m_Tls->SetValue(stored_value,
                         TestTlsCleanup, &m_CheckValue);
         assert(*stored_value == m_CheckValue+1);
+    }
+
+    // ======= CStaticTls test =======
+    {
+        m_RW->ReadLock();
+        test_static_tlss<1, 10>(m_Index);
+        test_static_tlss<1, 10>(m_Index, false);
+        m_RW->Unlock();
     }
 
     // ======= CRWLock test =======
@@ -581,6 +675,13 @@ int CThreadedApp::Run(void)
         }
     }
 
+    // Prepare stop with RWLock
+    rw.WriteLock();
+    if ( 0 ) { // pre-initialize static tlss
+        test_static_tlss<1, 10>(-1);
+        test_static_tlss<1, 10>(-1, false);
+    }
+    
     // Create and run threads
     for (int i=0; i<sSpawnBy; i++) {
         int idx;
@@ -634,6 +735,16 @@ int CThreadedApp::Run(void)
             }
         }
     }
+
+    // pause and release RWLock
+    {{
+        CFastMutexGuard guard(s_GlobalLock);
+        NcbiCout << NcbiEndl << NcbiEndl <<
+                    "===== Releasing threads run after a pause ====="
+                 << NcbiEndl;
+    }}
+    sleep(1);
+    rw.Unlock();
 
     {{
         CFastMutexGuard guard(s_GlobalLock);

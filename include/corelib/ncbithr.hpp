@@ -200,6 +200,37 @@ public:
 };
 
 
+#define NCBI_STATIC_TLS_VIA_SAFE_STATIC_REF 1
+
+#if NCBI_STATIC_TLS_VIA_SAFE_STATIC_REF
+template<class TValue>
+class CStaticTls : CSafeStaticRef< CTls<TValue> >
+{
+private:
+    typedef CSafeStaticRef< CTls<TValue> > TParent;
+
+public:
+    typedef CSafeStaticLifeSpan TLifeSpan;
+    /// User cleanup function type
+    typedef void (*FUserCleanup)(void*  ptr);
+    /// Define cleanup function type, FCleanup.
+    typedef void (*FCleanup)(TValue* value, void* cleanup_data);
+
+    CStaticTls(FUserCleanup user_cleanup = 0,
+               TLifeSpan life_span = TLifeSpan::GetDefault())
+        : TParent(user_cleanup, life_span)
+    {
+    }
+
+    TValue* GetValue(void) {
+        return TParent::Get().GetValue();
+    }
+    void SetValue(TValue* value, FCleanup cleanup = 0, void* cleanup_data = 0){
+        TParent::Get().SetValue(value, cleanup, cleanup_data);
+    }
+};
+
+#else // !NCBI_STATIC_TLS_VIA_SAFE_STATIC_REF
 template <class TValue> class CStaticTls;
 
 /// Helper class to control life time of CStaticTls object
@@ -316,7 +347,7 @@ private:
     /// Initialize the object in SafeStaticRef-ish manner
     void x_SafeInit(void);
 };
-
+#endif // NCBI_STATIC_TLS_VIA_SAFE_STATIC_REF
 
 class NCBI_XNCBI_EXPORT CUsedTlsBases
 {
@@ -546,6 +577,7 @@ const
 //  CThread::
 //
 
+#if !NCBI_STATIC_TLS_VIA_SAFE_STATIC_REF
 template <class TValue>
 inline
 void CStaticTls<TValue>::x_SafeInit(void)
@@ -571,7 +603,7 @@ void CStaticTls<TValue>::x_SafeInit(void)
     }
     m_SafeHelper.Init_Unlock(mutex_locked);
 }
-
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
