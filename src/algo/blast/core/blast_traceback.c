@@ -344,7 +344,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    Int4 index;
    BlastHSP* hsp;
    Uint1* query;
-   const Uint1* subject;
+   const Uint1* subject = NULL;
    Int4 query_length;
    BlastHSP** hsp_array;
    Int4 subject_length=0;

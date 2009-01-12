@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetApplyRanges)
     TSeqPos len = db.GetAmbigSeq(kSubjectId, &buf, kSeqDBNuclBlastNA8);
     BOOST_REQUIRE_EQUAL(kSeqLength, len);
     // the ranges must have expanded to the beginning and end of the sequence
-    const char kSentinel = FENCE_SENTRY;
+    const char kSentinel = (char)FENCE_SENTRY;
     BOOST_REQUIRE(buf[0] != kSentinel);
     BOOST_REQUIRE(buf[len-1] != kSentinel);
     // verify that the 'fence' sentinels are placed in the right locations
