@@ -61,6 +61,9 @@ CAlnMix::CAlnMix(CScope& scope,
     : m_Scope(&scope),
       x_CalculateScore(calc_score)
 {
+    if ( !x_CalculateScore ) {
+        x_CalculateScore = &CAlnVec::CalculateScore;
+    }
     x_Init();
 }
 

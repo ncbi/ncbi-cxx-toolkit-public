@@ -177,7 +177,7 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
 
 
                         //Determine the score
-                        if (x_CalculateScore) {
+                        if (flags & fCalcScore  &&  x_CalculateScore) {
                             // calc the score by seq comp
                             string s1, s2;
                             aln_seq1->GetSeqString(s1,
