@@ -95,7 +95,7 @@ static void s_ComputeSums(CNcbiIstream& is,
 
 static bool s_VerifySum(const string& s, const string& md5hex)
 {
-    cerr << "Input: \"" << NStr::PrintableString(s) << '\"' << endl;
+    cerr << "Input: \"" << Printable(s) << '\"' << endl;
     bool ok = true;
     CNcbiIstrstream is(s.data(), s.size());
     CChecksum       new_crc32(CChecksum::eCRC32);

@@ -218,7 +218,7 @@ bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
             // when the value contains control characters other than
             // CR (\r) or LF (\n).
             os << *entry << " = \""
-               << NStr::PrintableString(Get(*section, *entry, flags)) << "\""
+               << Printable(Get(*section, *entry, flags)) << "\""
                << Endl();
             if ( !os ) {
                 return false;

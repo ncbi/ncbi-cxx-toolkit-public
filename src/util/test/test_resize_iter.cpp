@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
                     ++it;
                 }
             }
-            cout << ' ' << NStr::PrintableString(s2) << ' ' << it.AtEnd()
+            cout << ' ' << Printable(s2) << ' ' << it.AtEnd()
                  << ' ' << it2.AtEnd() << endl;
         }
     }
