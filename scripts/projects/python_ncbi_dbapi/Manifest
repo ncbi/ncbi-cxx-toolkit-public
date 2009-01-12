@@ -17,7 +17,7 @@ LIB: libdbapi.so libdbapi_driver.so libxconnext.so libxconnect.so libxutil.so li
 LIB: libncbi_xdbapi_ftds.so libct_ftds64.so libtds_ftds64.so
 LIB: libncbi_xdbapi_ctlib.so 
 
-POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/build_tarball.sh $installdir $version
+POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/build_tarball.sh $installdir
 
 
 # Each line describes a single configuration

@@ -2,7 +2,7 @@
 
 
 INSTALL_DIR=$1
-VERSION=$2
+VERSION="${NCBI_PACKAGE_VERSION}"
 
 if [[ -z "$INSTALL_DIR" || -z "$VERSION" ]]; then
     echo "Installation directory or version are empty"
