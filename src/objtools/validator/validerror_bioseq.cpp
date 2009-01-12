@@ -1961,7 +1961,8 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             tech != CMolInfo::eTech_htgs_0    &&
             tech != CMolInfo::eTech_htgs_1    &&
             tech != CMolInfo::eTech_htgs_2    &&
-            tech != CMolInfo::eTech_htgs_3      ) {
+            tech != CMolInfo::eTech_htgs_3    &&
+            tech != CMolInfo::eTech_tsa         ) {
             const CEnumeratedTypeValues* tv =
                 CMolInfo::GetTypeInfo_enum_ETech();
             const string& stech = tv->FindName(mi->GetTech(), true);
@@ -2703,6 +2704,54 @@ static bool s_IsSameStrand(const CSeq_loc& l1, const CSeq_loc& l2, CScope& scope
 }
 
 
+static bool s_AreGBQualsIdentical(CSeq_feat_Handle feat1, CSeq_feat_Handle feat2)
+{
+    bool rval = true;
+
+    if (!feat1.IsSetQual()) {
+        if (!feat2.IsSetQual()) {
+            return true;
+        } else {
+            return false;
+        }
+    } else if (!feat2.IsSetQual()) {
+        return false;
+    } else {
+        CSeq_feat::TQual::const_iterator gb1 = feat1.GetQual().begin();
+        CSeq_feat::TQual::const_iterator gb1_end = feat1.GetQual().end();
+        CSeq_feat::TQual::const_iterator gb2 = feat2.GetQual().begin();
+        CSeq_feat::TQual::const_iterator gb2_end = feat2.GetQual().end();
+
+        while ((gb1 != gb1_end) && (gb2 != gb2_end) && rval) {
+            if (!(*gb1)->IsSetQual()) {
+                if ((*gb2)->IsSetQual()) {
+                    rval = false;
+                }
+            } else if (!(*gb2)->IsSetQual()) {
+                rval = false;
+            } else if (!NStr::Equal ((*gb1)->GetQual(), (*gb2)->GetQual())) {
+                rval = false;
+            }
+            if (!(*gb1)->IsSetVal()) {
+                if ((*gb2)->IsSetVal()) {
+                    rval = false;
+                }
+            } else if (!(*gb2)->IsSetVal()) {
+                rval = false;
+            } else if (!NStr::Equal ((*gb1)->GetVal(), (*gb2)->GetVal())) {
+                rval = false;
+            }
+            ++gb1;
+            ++gb2;
+        }
+        if (gb1 != gb1_end || gb2 != gb2_end) {
+            rval = false;
+        }
+    }
+    return rval;
+}
+
+
 void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
 {
     CCdregion::EFrame       curr_frame, prev_frame;
@@ -2729,6 +2778,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
     for (CFeat_CI it(bsh); it; ++it) {
         curr = it->GetSeq_feat_Handle();
         if (!curr  ||  !prev) {
+            prev = curr;
             continue;
         }
 
@@ -2768,6 +2818,8 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                         &prev_label, feature::eContent, m_Scope);
                     if (!NStr::EqualNocase(curr_comment, prev_comment) ||
                         !NStr::EqualNocase(curr_label, prev_label) ) {
+                        same_label = false;
+                    } else if (!s_AreGBQualsIdentical(curr, prev)) {
                         same_label = false;
                     }
 
