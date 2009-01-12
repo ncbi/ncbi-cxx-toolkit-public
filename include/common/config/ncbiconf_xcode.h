@@ -9,6 +9,106 @@
  */
 
 
+/* This is the NCBI C++ Toolkit. */
+#define NCBI_CXX_TOOLKIT 1
+
+/* Operating system name */
+#define NCBI_OS "Mac OS X"
+
+/* Define to 1 on AIX. */
+/* #undef NCBI_OS_AIX */
+
+/* Define to 1 on *BSD. */
+/* #undef NCBI_OS_BSD */
+
+/* Define to 1 on Cygwin. */
+/* #undef NCBI_OS_CYGWIN */
+
+/* Define to 1 on Mac OS X. */
+#define NCBI_OS_DARWIN 1
+
+/* Define to 1 on IRIX. */
+/* #undef NCBI_OS_IRIX */
+
+/* Define to 1 on Linux. */
+/* #undef NCBI_OS_LINUX */
+
+/* Define to 1 on MacOS. */
+/* #undef NCBI_OS_MAC */
+
+/* Define to 1 on Windows. */
+/* #undef NCBI_OS_MSWIN */
+
+/* Define to 1 on Tru64 Unix. */
+/* #undef NCBI_OS_OSF1 */
+
+/* Define to 1 on Solaris. */
+/* #undef NCBI_OS_SOLARIS */
+
+/* Define to 1 on Unix. */
+#define NCBI_OS_UNIX 1
+
+/* Compiler name */
+#define NCBI_COMPILER "GCC"
+
+/* Compiler name */
+/* #undef NCBI_COMPILER_COMPAQ */
+
+/* Compiler name */
+#define NCBI_COMPILER_GCC 1
+
+/* Compiler name */
+/* #undef NCBI_COMPILER_ICC */
+
+/* Compiler name */
+/* #undef NCBI_COMPILER_KCC */
+
+/* Compiler name */
+/* #undef NCBI_COMPILER_MIPSPRO */
+
+/* Compiler name */
+/* #undef NCBI_COMPILER_MSVC */
+
+/* Compiler name */
+/* #undef NCBI_COMPILER_UNKNOWN */
+
+/* Compiler version as three-digit integer */
+#define NCBI_COMPILER_VERSION (__GNUC__ * 100 + \
+                               __GNUC_MINOR__ * 10 + \
+                               __GNUC_PATCHLEVEL__)
+
+/* Compiler name */
+/* #undef NCBI_COMPILER_VISUALAGE */
+
+/* Compiler name */
+/* #undef NCBI_COMPILER_WORKSHOP */
+
+/* Full GNU-style system type */
+#define HOST "powerpc-apple-darwin7.9.0"
+
+/* CPU type only */
+#define HOST_CPU "powerpc"
+
+/* System OS only */
+#define HOST_OS "darwin7.9.0"
+
+/* System vendor only */
+#define HOST_VENDOR "apple"
+
+
+/* Define to 1 if the plugin manager should load DLLs by default. */
+#define NCBI_PLUGIN_AUTO_LOAD 1
+
+/* Define to 1 if building dynamic libraries by default. */
+#define NCBI_DLL_BUILD 1
+
+/* Define to 1 if building dynamic libraries at all (albeit not necessarily by
+   default). */
+#ifdef NCBI_DLL_BUILD
+#  define NCBI_DLL_SUPPORT 1
+#endif
+
+
 /* Define to 1 if C++ streams delete their buffers. */
 /* #undef AUTOMATIC_STREAMBUF_DESTRUCTION */
 
@@ -33,16 +133,6 @@
 /* Define to 1 if you have the `basename' function. */
 #define HAVE_BASENAME 1
 
-/* Define to 1 if NCBI C++ API for BerkeleyDB is available. */
-#define HAVE_BDB 1
-
-/* Define to 1 if NCBI C++ API for BerkeleyDB based data cache is available.
-   */
-#define HAVE_BDB_CACHE 1
-
-/* Define to 1 if Berkeley DB libraries are available. */
-#define HAVE_BERKELEY_DB 1
-
 /* Define to 1 if the Berkeley `db_cxx' library is available. */
 /* #undef HAVE_BERKELEY_DB_CXX */
 
@@ -52,14 +142,8 @@
 /* Define to 1 if the `Boost.Spirit' headers are available. */
 /* #undef HAVE_BOOST_SPIRIT */
 
-/* Define to 1 if the `Boost.Test' libraries are available. */
-/* #undef HAVE_BOOST_TEST */
-
 /* Define to 1 if the `Boost.Threads' library is available. */
 /* #undef HAVE_BOOST_THREAD */
-
-/* Define to 1 if CPPUNIT libraries are available. */
-/* #undef HAVE_CPPUNIT */
 
 /* Define to 1 if the preprocessor supports GNU-style variadic macros. */
 #define HAVE_CPP_GNU_VARARGS 1
@@ -81,12 +165,6 @@
 
 /* Define to 1 if you have the `euidaccess' function. */
 /* #undef HAVE_EUIDACCESS */
-
-/* Define to 1 if you have the `FCGX_Accept_r' function. */
-/* #undef HAVE_FCGX_ACCEPT_R */
-
-/* Define to 1 if FLTK is available. */
-#define HAVE_FLTK 1
 
 /* Define to 1 if you have the `freehostent' function. */
 #define HAVE_FREEHOSTENT 1
@@ -157,9 +235,6 @@
 /* Define to 1 if you have the `getuid' function. */
 #define HAVE_GETUID 1
 
-/* Define to 1 if ICU libraries are available. */
-/* #undef HAVE_ICU */
-
 /* Define to 1 if you have the <ieeefp.h> header file. */
 /* #undef HAVE_IEEEFP_H */
 
@@ -193,9 +268,6 @@
 /* Define to 1 if libbz2 is available. */
 #define HAVE_LIBBZ2 1
 
-/* Define to 1 if non-public CONNECT extensions are available. */
-/* #undef HAVE_LIBCONNEXT */
-
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */
 #define HAVE_LIBCRYPT 1
@@ -211,14 +283,8 @@
 /* Define to 1 if libexpat is available. */
 /* #undef HAVE_LIBEXPAT */
 
-/* Define to 1 if FastCGI libraries are available. */
-/* #undef HAVE_LIBFASTCGI */
-
 /* Define to 1 if FreeTDS libraries are available. */
 /* #undef HAVE_LIBFTDS */
-
-/* Define to 1 if libgif is available. */
-//#define HAVE_LIBGIF 1
 
 /* Define to 1 if you have libglut. */
 /* #undef HAVE_LIBGLUT */
@@ -230,15 +296,9 @@
    the standard libraries. */
 #define HAVE_LIBICONV 1
 
-/* Define to 1 if libjpeg is available. */
-#define HAVE_LIBJPEG 1
-
 /* Define to 1 if KSTAT is available, either in its own library or as part of
    the standard libraries. */
 /* #undef HAVE_LIBKSTAT */
-
-/* Define to 1 if liblzo is available. */
-/* #undef HAVE_LIBLZO */
 
 /* Define to 1 if liblzo2 is available. */
 /* #undef HAVE_LIBLZO2 */
@@ -246,17 +306,11 @@
 /* Define to 1 if liboechem is available. */
 /* #undef HAVE_LIBOECHEM */
 
-/* Define to 1 if libssl is available. */
-/* #undef HAVE_LIBOPENSSL */
-
 /* Define to 1 if you have libOSMesa. */
 /* #undef HAVE_LIBOSMESA */
 
 /* Define to 1 if libpcre is available. */
 /* #undef HAVE_LIBPCRE */
-
-/* Define to 1 if libpng is available. */
-#define HAVE_LIBPNG 1
 
 /* Define to 1 if RPCSVC is available, either in its own library or as part of
    the standard libraries. */
@@ -275,35 +329,20 @@
 /* Define to 1 if libsqlite is available. */
 //#define HAVE_LIBSQLITE 1
 
-/* Define to 1 if libsqlite3 is available. */
-/* #undef HAVE_LIBSQLITE3 */
-
 /* Define to 1 if the NCBI SSS DB library is available. */
 /* #undef HAVE_LIBSSSDB */
 
 /* Define to 1 if the NCBI SSS UTILS library is available. */
 /* #undef HAVE_LIBSSSUTILS */
 
-/* Define to 1 if SYBASE libraries are available. */
-/* #undef HAVE_LIBSYBASE */
-
 /* Define to 1 if SYBASE DBLib is available. */
 /* #undef HAVE_LIBSYBDB */
-
-/* Define to 1 if libtiff is available. */
-#define HAVE_LIBTIFF 1
 
 /* Define to 1 if libungif is available. */
 /* #undef HAVE_LIBUNGIF */
 
-/* Define to 1 if libxml2 is available. */
-/* #undef HAVE_LIBXML */
-
 /* Define to 1 if libXpm is available. */
 /* #undef HAVE_LIBXPM */
-
-/* Define to 1 if libxslt is available. */
-/* #undef HAVE_LIBXSLT */
 
 /* Define to 1 if libz is available. */
 #define HAVE_LIBZ 1
@@ -325,9 +364,6 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
-
-/* Define to 1 if MySQL is available. */
-/* #undef HAVE_MYSQL */
 
 /* Define to 1 if you have the `nanosleep' function. */
 #define HAVE_NANOSLEEP 1
@@ -359,15 +395,6 @@
 /* Define to 1 if `min'/`max' templates are not implemented. */
 /* #undef HAVE_NO_MINMAX_TEMPLATE */
 
-/* Define to 1 if ODBC libraries are available. */
-/* #undef HAVE_ODBC */
-
-/* Define to 1 if you have the <odbcss.h> header file. */
-/* #undef HAVE_ODBCSS_H */
-
-/* Define to 1 if you have OpenGL (-lGL). */
-#define HAVE_OPENGL 1
-
 /* Define to 1 if the ORBacus CORBA package is available. */
 /* #undef HAVE_ORBACUS */
 
@@ -385,12 +412,6 @@
 
 /* Define to 1 if you have the `pthread_setconcurrency' function. */
 #define HAVE_PTHREAD_SETCONCURRENCY 1
-
-/* Define to 1 if the PUBSEQ service is available. */
-/* #undef HAVE_PUBSEQ_OS */
-
-/* Define to 1 if Python libraries are available. */
-/* #undef HAVE_PYTHON */
 
 /* Define to 1 if Python 2.3 libraries are available. */
 /* #undef HAVE_PYTHON23 */
@@ -567,24 +588,6 @@
 /* Define to 1 if wxWindows is available. */
 /* #undef HAVE_WXWINDOWS */
 
-/* Define to 1 if Xalan-C++ is available. */
-/* #undef HAVE_XALAN */
-
-/* Define to 1 if Xerces-C++ is available. */
-/* #undef HAVE_XERCES */
-
-/* Full GNU-style system type */
-#define HOST "powerpc-apple-darwin7.9.0"
-
-/* CPU type only */
-#define HOST_CPU "powerpc"
-
-/* System OS only */
-#define HOST_OS "darwin7.9.0"
-
-/* System vendor only */
-#define HOST_VENDOR "apple"
-
 /* Define as const if the declaration of iconv() needs const. */
 #define ICONV_CONST const
 
@@ -594,54 +597,10 @@
 /* Define to 1 when building binaries for public release. */
 /* #undef NCBI_BIN_RELEASE */
 
-/* Compiler name */
-#define NCBI_COMPILER "GCC"
-
-/* Compiler name */
-/* #undef NCBI_COMPILER_COMPAQ */
-
-/* Compiler name */
-#define NCBI_COMPILER_GCC 1
-
-/* Compiler name */
-/* #undef NCBI_COMPILER_ICC */
-
-/* Compiler name */
-/* #undef NCBI_COMPILER_KCC */
-
-/* Compiler name */
-/* #undef NCBI_COMPILER_MIPSPRO */
-
-/* Compiler name */
-/* #undef NCBI_COMPILER_MSVC */
-
-/* Compiler name */
-/* #undef NCBI_COMPILER_UNKNOWN */
-
-/* Compiler version as three-digit integer */
-#define NCBI_COMPILER_VERSION (__GNUC__ * 100 + \
-                               __GNUC_MINOR__ * 10 + \
-                               __GNUC_PATCHLEVEL__)
-
-/* Compiler name */
-/* #undef NCBI_COMPILER_VISUALAGE */
-
-/* Compiler name */
-/* #undef NCBI_COMPILER_WORKSHOP */
-
-/* This is the NCBI C++ Toolkit. */
-#define NCBI_CXX_TOOLKIT 1
-
 /* Define to whatever syntax, if any, your compiler supports for marking
    functions as deprecated. */
 #define NCBI_DEPRECATED __attribute__((__deprecated__))
 
-/* Define to 1 if building dynamic libraries by default. */
-#define NCBI_DLL_BUILD 1
-
-/* Define to 1 if building dynamic libraries at all (albeit not necessarily by
-   default). */
-#define NCBI_DLL_SUPPORT 1
 
 /* Define to whatever syntax your compiler supports for marking functions as
    to be inlined even if they might not otherwise be. */
@@ -660,45 +619,6 @@
 
 /* Define to 1 if `string::compare()' is non-standard. */
 /* #undef NCBI_OBSOLETE_STR_COMPARE */
-
-/* Operating system name */
-#define NCBI_OS "Mac OS X"
-
-/* Define to 1 on AIX. */
-/* #undef NCBI_OS_AIX */
-
-/* Define to 1 on *BSD. */
-/* #undef NCBI_OS_BSD */
-
-/* Define to 1 on Cygwin. */
-/* #undef NCBI_OS_CYGWIN */
-
-/* Define to 1 on Mac OS X. */
-#define NCBI_OS_DARWIN 1
-
-/* Define to 1 on IRIX. */
-/* #undef NCBI_OS_IRIX */
-
-/* Define to 1 on Linux. */
-/* #undef NCBI_OS_LINUX */
-
-/* Define to 1 on MacOS. */
-/* #undef NCBI_OS_MAC */
-
-/* Define to 1 on Windows. */
-/* #undef NCBI_OS_MSWIN */
-
-/* Define to 1 on Tru64 Unix. */
-/* #undef NCBI_OS_OSF1 */
-
-/* Define to 1 on Solaris. */
-/* #undef NCBI_OS_SOLARIS */
-
-/* Define to 1 on Unix. */
-#define NCBI_OS_UNIX 1
-
-/* Define to 1 if the plugin manager should load DLLs by default. */
-#define NCBI_PLUGIN_AUTO_LOAD 1
 
 /* Define to whatever syntax, if any, your C compiler supports for marking
    pointers as restricted in the C99 sense. */
@@ -760,3 +680,8 @@
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */
+
+/*
+ *  Site localization
+ */
+#include <common/config/ncbiconf_xcode_site.h>
