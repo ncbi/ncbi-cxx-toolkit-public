@@ -699,8 +699,9 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_bioseq bioseq_validator(*this);
-    for (CBioseq_CI bi(GetTSEH()); bi; ++bi) {
+    for (CBioseq_CI bi(GetTSEH(), CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_All); bi; ++bi) {
         const CBioseq& bs = *bi->GetCompleteBioseq();
+
         try {
             bioseq_validator.ValidateSeqIds(bs);
             bioseq_validator.ValidateInst(bs);
@@ -805,36 +806,21 @@ bool CValidError_imp::Validate
     }
 
     // Graphs:
-    if ( m_PrgCallback ) {
-        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Graph;
-        m_PrgInfo.m_Current = m_NumGraph;
-        m_PrgInfo.m_CurrentDone = 0;
-        m_PrgCallback(&m_PrgInfo);
-    }
+
     CValidError_graph graph_validator(*this);
-    for (CGraph_CI gi(GetTSEH()); gi; ++gi) {
-        const CSeq_graph& sg = gi->GetOriginalGraph();
-        try {
-            graph_validator.ValidateSeqGraph(sg);
-            if ( m_PrgCallback ) {
-                m_PrgInfo.m_CurrentDone++;
-                m_PrgInfo.m_TotalDone++;
-                if ( m_PrgCallback(&m_PrgInfo) ) {
-                    return false;
-                }
-            }
-        } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                string("Exeption while validating graph. EXCEPTION: ") +
-                e.what(), sg);
-            return true;
-        }
+    try {
+        graph_validator.ValidateSeqGraph (GetTSEH());
+    } catch ( const exception& e ) {
+        PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
+            string("Exeption while validating graph. EXCEPTION: ") +
+            e.what(), *(GetTSEH().GetCompleteSeq_entry()));
+        return true;
     }
     SIZE_TYPE misplaced = graph_validator.GetNumMisplacedGraphs();
     if ( misplaced > 0 ) {
         string num = NStr::IntToString(misplaced);
         PostErr(eDiag_Critical, eErr_SEQ_PKG_GraphPackagingProblem,
-            string("There ") + ((misplaced > 1) ? "are" : "is") + num + 
+            string("There ") + ((misplaced > 1) ? "are " : "is ") + num + 
             " mispackaged graph" + ((misplaced > 1) ? "s" : "") + " in this record.",
             *m_TSE);
     }
@@ -873,7 +859,6 @@ bool CValidError_imp::Validate
     
     ReportMissingPubs(*m_TSE, cs);
     ReportMissingBiosource(*m_TSE);
-    ReportProtWithoutFullRef();
     ReportBioseqsWithNoMolinfo();
     return true;
 }
@@ -2118,8 +2103,12 @@ void CValidError_imp::AddBioseqWithNoMolinfo(const CBioseq& seq)
 void CValidError_imp::AddProtWithoutFullRef(const CBioseq_Handle& seq)
 {
     const CSeq_feat* cds = GetCDSForProduct(seq);
-    if ( cds != 0 ) {
-        m_ProtWithNoFullRef.push_back(CConstRef<CSeq_feat>(cds));
+    if ( cds == 0 ) {
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
+                 "No full length Prot-ref feature applied to this Bioseq", *(seq.GetCompleteBioseq()));
+    } else {
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
+                 "No full length Prot-ref feature applied to this Bioseq", *cds);
     }
 }
 
@@ -2190,32 +2179,6 @@ void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
         }
     }
 }
-
-
-void CValidError_imp::ReportProtWithoutFullRef(void)
-{
-    size_t num = m_ProtWithNoFullRef.size();
-    
-    if ( num == 1 ) {
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
-            "No full length Prot-ref feature applied to this Bioseq",
-            *(m_ProtWithNoFullRef[0]));
-    } else if ( num > 10 ) {
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
-            NStr::IntToString(num) + " Bioseqs with no full length " 
-            "Prot-ref feature applied to them (first reported)",
-            *(m_ProtWithNoFullRef[0]));
-    } else {
-        string msg;
-        for ( size_t i = 0; i < num; ++i ) {
-            msg = NStr::IntToString(i + 1) + " of " + 
-                NStr::IntToString(num) + 
-                " Bioseqs without full length Prot-ref feature applied to";
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, msg, 
-                *(m_ProtWithNoFullRef[i]));
-        }
-    }
-}   
 
 
 void CValidError_imp::ReportBioseqsWithNoMolinfo(void)

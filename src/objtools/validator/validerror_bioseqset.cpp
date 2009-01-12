@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include "validatorp.hpp"
+#include "utilities.hpp"
 
 #include <objmgr/util/sequence.hpp>
 
@@ -52,6 +53,7 @@
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/bioseq_handle.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -82,6 +84,18 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
     int segcnt  = 0;
     
     // Validate Set Contents
+    FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
+        if ( (*se_list_it)->IsSet() 
+             && (*se_list_it)->GetSet().IsSetClass() 
+             && (*se_list_it)->GetSet().GetClass() == CBioseq_set::eClass_genbank ) {
+
+            PostErr(eDiag_Error, eErr_SEQ_PKG_InternalGenBankSet,
+                     "Bioseq-set contains internal GenBank Bioseq-set",
+                     seqset);
+        }
+    }
+    
+
     CTypeConstIterator<CBioseq> seqit(ConstBegin(seqset));
     for (; seqit; ++seqit) {
         
@@ -94,11 +108,13 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
         if (seqit->GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
             segcnt++;
         }
+
+
     }
     
     switch ( seqset.GetClass() ) {
     case CBioseq_set::eClass_nuc_prot:
-        ValidateNucProtSet(seqset, nuccnt, protcnt);
+        ValidateNucProtSet(seqset, nuccnt, protcnt, segcnt);
         break;
         
     case CBioseq_set::eClass_segset:
@@ -177,11 +193,15 @@ bool CValidError_bioseqset::IsCDSProductInGPS(const CBioseq& seq)
 void CValidError_bioseqset::ValidateNucProtSet
 (const CBioseq_set& seqset,
  int nuccnt, 
- int protcnt)
+ int protcnt,
+ int segcnt)
 {
     if ( nuccnt == 0 ) {
         PostErr(eDiag_Error, eErr_SEQ_PKG_NucProtProblem,
                  "No nucleotides in nuc-prot set", seqset);
+    } else if ( nuccnt > 1 && segcnt != 1) {
+        PostErr(eDiag_Error, eErr_SEQ_PKG_NucProtProblem,
+                 "Multiple unsegmented nucleotides in nuc-prot set", seqset);
     }
     if ( protcnt == 0 ) {
         PostErr(eDiag_Error, eErr_SEQ_PKG_NucProtProblem,
@@ -191,18 +211,21 @@ void CValidError_bioseqset::ValidateNucProtSet
     FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
         if ( (*se_list_it)->IsSeq() ) {
             const CBioseq& seq = (*se_list_it)->GetSeq();
-            if ( seq.IsNa()  &&  !IsMrnaProductInGPS(seq) ) {
-                PostErr(eDiag_Warning,
-                    eErr_SEQ_PKG_GenomicProductPackagingProblem,
-                    "Nucleotide bioseq should be product of mRNA "
-                    "feature on contig, but is not",
-                    seq);
-            } else if ( seq.IsAa()  &&  !IsCDSProductInGPS(seq) ) {
-                PostErr(eDiag_Warning,
-                    eErr_SEQ_PKG_GenomicProductPackagingProblem,
-                    "Protein bioseq should be product of CDS "
-                    "feature on contig, but is not",
-                    seq);
+            CBioseq_set_Handle gps = GetGenProdSetParent(m_Scope->GetBioseqHandle(seq));
+            if (gps) {               
+                if ( seq.IsNa()  &&  !IsMrnaProductInGPS(seq) ) {
+                    PostErr(eDiag_Warning,
+                        eErr_SEQ_PKG_GenomicProductPackagingProblem,
+                        "Nucleotide bioseq should be product of mRNA "
+                        "feature on contig, but is not",
+                        seq);
+                } else if ( seq.IsAa()  &&  !IsCDSProductInGPS(seq) ) {
+                    PostErr(eDiag_Warning,
+                        eErr_SEQ_PKG_GenomicProductPackagingProblem,
+                        "Protein bioseq should be product of CDS "
+                        "feature on contig, but is not",
+                        seq);
+                }
             }
         }
 
@@ -246,7 +269,7 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
                 if ( seq_inst.IsNa() != CSeq_inst::IsNa(mol) ) {
                     PostErr(eDiag_Critical, eErr_SEQ_PKG_SegSetMixedBioseqs,
                         "Segmented set contains mixture of nucleotides"
-                        "and proteins", seqset);
+                        " and proteins", seqset);
                     break;
                 }
             }
@@ -303,7 +326,6 @@ void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
                         PostErr(eDiag_Critical, eErr_SEQ_PKG_PartsSetMixedBioseqs,
                                  "Parts set contains mixture of nucleotides "
                                  "and proteins", seqset);
-                        break;
                     }
                 }
             }
@@ -317,7 +339,6 @@ void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
             PostErr(eDiag_Error, eErr_SEQ_PKG_PartsSetHasSets,
                     "Parts set contains unwanted Bioseq-set, "
                     "its class is \"" + set_class_str + "\".", set);
-            break;
         } // else if
     } // for
 }
@@ -335,19 +356,6 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
     static const string influenza = "Influenza virus ";
     static const string sp = " sp. ";
 
-    FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
-        if ( (*se_list_it)->IsSet() ) {
-            const CBioseq_set& set = (*se_list_it)->GetSet();
-            if ( set.GetClass() == CBioseq_set::eClass_genbank ) {
-
-                PostErr(eDiag_Error, eErr_SEQ_PKG_InternalGenBankSet,
-                         "Bioseq-set contains internal GenBank Bioseq-set",
-                         set);
-                break;
-            }
-        }
-    }
-    
     CTypeConstIterator<CBioseq> seqit(ConstBegin(seqset));
     for (; seqit; ++seqit) {
         
@@ -412,6 +420,13 @@ void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
     bool                id_no_good = false;
     CSeq_id::E_Choice   id_type = CSeq_id::e_not_set;
     
+    // genprodset should not have annotations directly on set
+    if (seqset.IsSetAnnot()) {
+        PostErr(eDiag_Error,
+            eErr_SEQ_PKG_GenomicProductPackagingProblem,
+            "Seq-annot packaged directly on genomic product set", seqset);
+    }
+
     CBioseq_set::TSeq_set::const_iterator se_list_it =
         seqset.GetSeq_set().begin();
     

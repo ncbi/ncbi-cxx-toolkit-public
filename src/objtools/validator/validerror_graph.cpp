@@ -55,44 +55,58 @@ CValidError_graph::~CValidError_graph(void)
 }
 
 
-void CValidError_graph::ValidateSeqGraph(const CSeq_graph& graph)
+void CValidError_graph::ValidateSeqGraph(CSeq_entry_Handle seh)
 {
-    if ( x_IsMisplaced(graph) ) {
-        ++m_NumMisplaced;
+    if (seh.IsSeq()) {
+        ValidateSeqGraph (seh.GetCompleteSeq_entry()->GetSeq());
+    } else if (seh.IsSet()) {
+        ValidateSeqGraph (seh.GetCompleteSeq_entry()->GetSet());
     }
 }
 
 
-bool s_FindGraph(const CSeq_graph& graph, CBioseq_Handle& bsh)
+void CValidError_graph::ValidateSeqGraph(const CBioseq& seq)
 {
-    if ( !bsh ) {
-        return false;
-    }
-
-    for ( CGraph_CI it(bsh); it; ++it ) {
-        if ( &graph == &(it->GetOriginalGraph()) ) {
-            return true;
+    FOR_EACH_ANNOT_ON_BIOSEQ (it, seq) {
+        if ((*it)->IsGraph()) {
+            FOR_EACH_GRAPH_ON_ANNOT (graph, **it) {
+                if (!(*graph)->IsSetLoc()) {
+                    ++m_NumMisplaced;
+                } else {
+                    CBioseq_Handle bsh = m_Scope->GetBioseqHandle((*graph)->GetLoc());
+                    if (m_Scope->GetBioseqHandle(seq) != bsh) {
+                        ++m_NumMisplaced;
+                    }
+                }
+                ValidateSeqGraph (**graph);
+            }
         }
     }
-
-    return false;
 }
 
 
-bool CValidError_graph::x_IsMisplaced(const CSeq_graph& graph)
+void CValidError_graph::ValidateSeqGraph (const CBioseq_set& set)
 {
-    if ( !graph.CanGetLoc() ) {
-        return false;
+    FOR_EACH_ANNOT_ON_SEQSET (it, set) {
+        if ((*it)->IsGraph()) {
+            FOR_EACH_GRAPH_ON_ANNOT (graph, **it) {
+                ++m_NumMisplaced;
+                ValidateSeqGraph (**graph);
+            }
+        }
     }
-
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(graph.GetLoc());
-    if ( s_FindGraph(graph, bsh) ) {
-        return false;
+    FOR_EACH_SEQENTRY_ON_SEQSET (seq_it, set) {
+        if ((*seq_it)->IsSeq()) {
+            ValidateSeqGraph ((*seq_it)->GetSeq());
+        } else if ((*seq_it)->IsSet()) {
+            ValidateSeqGraph ((*seq_it)->GetSet());
+        }
     }
+}
 
-    // need to test on the master bioseq for segmented?
 
-    return true;
+void CValidError_graph::ValidateSeqGraph(const CSeq_graph& graph)
+{
 }
 
 

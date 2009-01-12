@@ -227,7 +227,6 @@ public:
     void AddProtWithoutFullRef(const CBioseq_Handle& seq);
     void ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs);
     void ReportMissingBiosource(const CSeq_entry& se);
-    void ReportProtWithoutFullRef(void);
     void ReportBioseqsWithNoMolinfo(void);
 
     bool IsNucAcc(const string& acc);
@@ -326,8 +325,6 @@ private:
     // seq ids contained within the orignal seq entry. 
     // (used to check for far location)
     vector< CConstRef<CSeq_id> >    m_InitialSeqIds;
-    // prot bioseqs without a full reference (reporting cds feature)
-    vector< CConstRef<CSeq_feat> >  m_ProtWithNoFullRef;
     // Bioseqs without pubs (should be considered only if m_NoPubs is false)
     vector< CConstRef<CBioseq> >    m_BioseqWithNoPubs;
     // Bioseqs without source (should be considered only if m_NoSource is false)
@@ -418,7 +415,7 @@ public:
 
 private:
 
-    void ValidateNucProtSet(const CBioseq_set& seqset, int nuccnt, int protcnt);
+    void ValidateNucProtSet(const CBioseq_set& seqset, int nuccnt, int protcnt, int segcnt);
     void ValidateSegSet(const CBioseq_set& seqset, int segcnt);
     void ValidatePartsSet(const CBioseq_set& seqset);
     void ValidateGenbankSet(const CBioseq_set& seqset);
@@ -706,11 +703,14 @@ public:
     virtual ~CValidError_graph(void);
 
     void ValidateSeqGraph(const CSeq_graph& graph);
+    void ValidateSeqGraph(CSeq_entry_Handle seh);
+    void ValidateSeqGraph(const CBioseq& seq);
+    void ValidateSeqGraph (const CBioseq_set& set);
+
 
     SIZE_TYPE GetNumMisplacedGraphs(void) const { return m_NumMisplaced; }
 
 private:
-    bool x_IsMisplaced(const CSeq_graph& graph);
 
     SIZE_TYPE   m_NumMisplaced;
 };
