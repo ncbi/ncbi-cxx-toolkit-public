@@ -795,10 +795,26 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
         data += char(rand() & 0xFF);
     }
     BOOST_CHECK(data.size() == size);
-    CNcbiOstrstream os;
-    os << Printable(data);
-    BOOST_CHECK(NStr::PrintableString(data).compare
-                (CNcbiOstrstreamToString(os)) == 0);
+
+    // NB: checks embedded '\0's as well
+    CNcbiOstrstream os1;
+    os1 << Printable(data);
+    const string& s1 = NStr::PrintableString(data);
+    //NcbiCout << NStr::UInt8ToString(Uint8(s1.size())) << NcbiEndl
+    //         << s1 << NcbiEndl;
+    BOOST_CHECK(s1.compare(CNcbiOstrstreamToString(os1)) == 0);
+
+    // Just to make sure it still parses okay
+    BOOST_CHECK(NStr::ParseEscapes(s1).compare(data) == 0);
+
+    // NB: checks C string (no '\0's)
+    const char* str = data.c_str();
+    CNcbiOstrstream os2;
+    os2 << Printable(str);
+    const string& s2 = NStr::PrintableString(str);
+    //NcbiCout << NStr::UInt8ToString(Uint8(s2.size())) << NcbiEndl
+    //         << s2 << NcbiEndl;
+    BOOST_CHECK(s2.compare(CNcbiOstrstreamToString(os2)) == 0);
 
     OK;
 }
