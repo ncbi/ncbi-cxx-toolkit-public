@@ -131,7 +131,7 @@ extern int TEST_StreamPushback(iostream&    ios,
             i = kBufferSize + 1 - buflen;
         ERR_POST(Info << "Reading " << i << " byte" << (i == 1 ? "" : "s"));
         // Force at least minimal blocking, since Readsome might not
-        // block at all and accepting 0-byte reads could lead to spinning.
+        // block at all, and accepting 0-byte reads could lead to spinning.
         ios.peek();
         j = CStreamUtils::Readsome(ios, buf2 + buflen, i);
         if (!ios.good()) {
@@ -295,8 +295,29 @@ extern int TEST_StreamPushback(iostream&    ios,
     if (buflen > kBufferSize) {
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
         return 1;
-    } else
-        ERR_POST(Info << "Test passed");
+    }
+
+    CT_POS_TYPE posp = ios.tellp();
+    CT_OFF_TYPE offp = (CT_OFF_TYPE)(posp
+                                     - (CT_POS_TYPE)((CT_OFF_TYPE)(0)));
+    _ASSERT(Int8(offp) == NcbiStreamposToInt8(posp));
+    _ASSERT(NcbiInt8ToStreampos(Int8(offp)) == posp);
+
+    CT_POS_TYPE posg = ios.tellg();
+    CT_OFF_TYPE offg = (CT_OFF_TYPE)(posg
+                                     - (CT_POS_TYPE)((CT_OFF_TYPE)(0)));
+    _ASSERT(Int8(offg) == NcbiStreamposToInt8(posg));
+    _ASSERT(NcbiInt8ToStreampos(Int8(offg)) == posg);
+
+    if (offp != offg) {
+        ERR_POST("Off PUT("
+                 << NStr::Int8ToString(Int8(offp)) << ") != "
+                 "Off GET("
+                 << NStr::Int8ToString(Int8(offg)) << ')');
+        return 1;
+    }
+
+    ERR_POST(Info << "Test passed");
 
     delete[] buf1;
     delete[] buf2;
@@ -306,5 +327,6 @@ extern int TEST_StreamPushback(iostream&    ios,
 
     return 0/*okay*/;
 }
+
 
 END_NCBI_SCOPE
