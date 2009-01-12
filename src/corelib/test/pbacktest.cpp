@@ -309,7 +309,7 @@ extern int TEST_StreamPushback(iostream&    ios,
     _ASSERT(Int8(offg) == NcbiStreamposToInt8(posg));
     _ASSERT(NcbiInt8ToStreampos(Int8(offg)) == posg);
 
-    if (offp != offg) {
+    if (posp != posg  ||  offp != offg) {
         ERR_POST("Off PUT("
                  << NStr::Int8ToString(Int8(offp)) << ") != "
                  "Off GET("
