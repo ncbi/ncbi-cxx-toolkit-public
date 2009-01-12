@@ -1426,6 +1426,9 @@ case "$compiler:$compiler_version:$with_bin_release" in
   ICC:1???:* )
     APP_LDFLAGS="-i-static $APP_LDFLAGS"
     DLL_LDFLAGS="-i-static -nodefaultlibs $DLL_LDFLAGS"
+    # Redundant for apps, but necessary for plugins to be adequately
+    # self-contained, at least on 32-bit Linux.
+    LIBS="$LIBS -lstdc++"
     LINK="$LINK -Kc++"
     # Defining _GCC_NEXT_LIMITS_H ensures that <limits.h> chaining doesn't
     # stop short, as can otherwise happen. :-/
