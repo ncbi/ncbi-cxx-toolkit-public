@@ -667,7 +667,8 @@ public:
     static void ReadSequenceByLocation (string& seq,
                                         const CBioseq_Handle& bsh,
                                         const CSeq_loc& loc,
-                                        ETranslationLengthProblemOptions options = eThrowException);
+                                        ETranslationLengthProblemOptions options = eThrowException,
+                                        CBioseq_Handle::EVectorCoding coding = CBioseq_Handle::eCoding_Iupac);
 
 };
 

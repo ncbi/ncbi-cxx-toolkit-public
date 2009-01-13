@@ -1005,18 +1005,19 @@ CSeqVectorTypes::sx_GetGapChar(TCoding coding, ECaseConversion case_cvt)
     switch (coding) {
     case CSeq_data::e_Iupacna: // DNA - N
         return case_cvt == eCaseConversion_lower? 'n': 'N';
-    
+
     case CSeq_data::e_Ncbi8na: // DNA - bit representation
     case CSeq_data::e_Ncbi4na:
-        return 0x0f;  // all bits set == any base
+        return 0;              // all bits set == any base
 
     case CSeq_data::e_Ncbieaa: // Proteins - X
+    case CSeq_data::e_Ncbi8aa: // Protein - numeric representation
+        return '-';
     case CSeq_data::e_Iupacaa:
         return case_cvt == eCaseConversion_lower? 'x': 'X';
     
-    case CSeq_data::e_Ncbi8aa: // Protein - numeric representation
     case CSeq_data::e_Ncbistdaa:
-        return 21;
+        return 0;
 
     case CSeq_data::e_not_set:
         return 0;     // It's not good to throw an exception here

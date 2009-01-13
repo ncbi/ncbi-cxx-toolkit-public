@@ -2503,12 +2503,13 @@ void CSeqTranslator::Translate(const CSeq_loc& loc,
 void CCdregion_translate::ReadSequenceByLocation (string& seq,
                                                   const CBioseq_Handle& bsh,
                                                   const CSeq_loc& loc,
-                                                  ETranslationLengthProblemOptions options)
+                                                  ETranslationLengthProblemOptions options,
+                                                  CBioseq_Handle::EVectorCoding coding)
 
 {
     // get vector of sequence under location
     if (options == eThrowException || loc.GetTotalRange().GetLength() <= bsh.GetBioseqLength()) {
-        CSeqVector seqv(loc, bsh.GetScope(), CBioseq_Handle::eCoding_Iupac);
+        CSeqVector seqv(loc, bsh.GetScope(), coding);
         seqv.GetSeqData(0, seqv.size(), seq);
     } else {
         // if specified location exceeds bioseq length, create truncated location
@@ -2535,13 +2536,13 @@ void CCdregion_translate::ReadSequenceByLocation (string& seq,
                 }
             }
         }
-        CSeqVector seqv(*tmp_loc, bsh.GetScope(), CBioseq_Handle::eCoding_Iupac);
+        CSeqVector seqv(*tmp_loc, bsh.GetScope(), coding);
         seqv.GetSeqData(0, seqv.size(), seq);
         if (options == ePad) {
             int num_pad = loc.GetTotalRange().GetLength() - seq.length();
-            string pad = "N";
+            string pad = (coding == CBioseq_Handle::eCoding_Iupac) ? "N" : "\15";
             if (bsh.IsProtein ()) {
-                pad = "X";
+                pad = (coding == CBioseq_Handle::eCoding_Iupac) ? "X" : "\21";
             }
             for (int i = 0; i < num_pad; i++) {
                 seq = seq + pad;
