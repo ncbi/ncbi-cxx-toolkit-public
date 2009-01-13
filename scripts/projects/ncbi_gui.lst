@@ -24,7 +24,7 @@ util
 -[^g].*/app
 -[^g].*/samples
 -[^g].*/mssamples
--[^g].*/unit_test
+-[^g].*/unit_test.*
 -[^g].*/demo
 -[^g].*/test
 -.*/netcache
