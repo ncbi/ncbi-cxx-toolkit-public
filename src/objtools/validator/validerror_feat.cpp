@@ -132,6 +132,8 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
     ValidateExcept(feat);
     
     ValidateSeqFeatData(feat.GetData(), feat);
+  
+    ValidateBothStrands (feat);
     
     if (feat.CanGetDbxref ()) {
         m_Imp.ValidateDbxref (feat.GetDbxref (), feat);
@@ -772,7 +774,6 @@ void CValidError_feat::ValidateCdregion (
         }
     }
 
-    ValidateBothStrands(feat);
     ValidateBadGeneOverlap(feat);
     ValidateBadMRNAOverlap(feat);
     ValidateCommonCDSProduct(feat);
@@ -1095,7 +1096,6 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             ValidateMrnaTrans(feat);      /* transcription check */
             ValidateSplice(feat, false);
         }
-        ValidateBothStrands(feat);
         ValidateBadGeneOverlap(feat);
         ValidateCommonMRNAProduct(feat);
     }
@@ -1979,12 +1979,40 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
 void CValidError_feat::ValidateBothStrands(const CSeq_feat& feat)
 {
     const CSeq_loc& location = feat.GetLocation ();
+    bool bothstrands = false, bothreverse = false;
+
     for ( CSeq_loc_CI citer (location); citer; ++citer ) {
-        if ( citer.GetStrand () == eNa_strand_both ) {
-            PostErr (eDiag_Error, eErr_SEQ_FEAT_BothStrands, 
-                "mRNA or CDS may not be on both strands", feat);  
-            break;
+        ENa_strand strand = citer.GetStrand();
+        if ( strand == eNa_strand_both ) {
+            bothstrands = true;
+        } else if (strand == eNa_strand_both_rev) {
+            bothreverse = true;
         }
+    }
+    if (bothstrands || bothreverse) {
+        EDiagSev sev = eDiag_Warning;
+        string prefix = "Feature";
+        if (feat.IsSetData()) {
+            if (feat.GetData().IsCdregion()) {
+                prefix = "CDS";
+                sev = eDiag_Error;
+            } else if (feat.GetData().IsRna() && feat.GetData().GetRna().IsSetType()
+                       && feat.GetData().GetRna().GetType() == CRNA_ref::eType_mRNA) {
+                prefix = "mRNA";
+                sev = eDiag_Error;
+            }
+        }
+        string suffix = "";
+        if (bothstrands && bothreverse) {
+            suffix = "(forward and reverse)";
+        } else if (bothstrands) {
+            suffix = "(forward)";
+        } else if (bothreverse) {
+            suffix = "(reverse)";
+        }
+
+        PostErr (sev, eErr_SEQ_FEAT_BothStrands, 
+                prefix + " may not be on both " + suffix + " strands", feat);  
     }
 }
 
