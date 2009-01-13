@@ -671,6 +671,8 @@ bool CCleanup_imp::x_ConvertToNcRNA (CSeq_feat& feat)
 void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
 {
     CSeq_feat& feat = const_cast<CSeq_feat&> (*sfh.GetSeq_feat());
+
+    BasicCleanup (feat.SetLocation());
     
     CSeqFeatData& data = feat.SetData();
     switch (data.Which()) {
