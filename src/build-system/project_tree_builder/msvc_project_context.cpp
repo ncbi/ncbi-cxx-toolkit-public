@@ -476,7 +476,7 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
         } catch (CFileException&) {
             lib_dir = m_StaticLibRoot;
         }
-        lib_dir = CDirEntry::ConcatPath(lib_dir, "$(ConfigurationName)");
+        lib_dir = CDirEntry::ConcatPath(lib_dir, CMsvc7RegSettings::GetConfigNameKeyword());
         dir_list.push_back(lib_dir);
         if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
             try {
@@ -484,7 +484,7 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
             } catch (CFileException&) {
                 lib_dir = m_DynamicLibRoot;
             }
-            lib_dir = CDirEntry::ConcatPath(lib_dir, "$(ConfigurationName)");
+            lib_dir = CDirEntry::ConcatPath(lib_dir, CMsvc7RegSettings::GetConfigNameKeyword());
             dir_list.push_back(lib_dir);
         }
     }
@@ -739,7 +739,7 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
     }
 
     output_dir_abs = 
-        CDirEntry::ConcatPath(output_dir_abs, "$(ConfigurationName)");
+        CDirEntry::ConcatPath(output_dir_abs, CMsvc7RegSettings::GetConfigNameKeyword());
     m_OutputDirectory = 
         CDirEntry::CreateRelativePath(prj_context.ProjectDir(), 
                                       output_dir_abs);

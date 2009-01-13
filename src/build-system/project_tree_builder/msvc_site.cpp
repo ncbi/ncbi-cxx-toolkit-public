@@ -167,6 +167,11 @@ bool CMsvcSite::IsProvided(const string& thing, bool deep) const
     return res;
 }
 
+bool CMsvcSite::IsBanned(const string& thing) const
+{
+    return !thing.empty() &&
+        m_NotProvidedThing.find(thing) != m_NotProvidedThing.end();
+}
 
 bool CMsvcSite::IsDescribed(const string& section) const
 {

@@ -132,8 +132,7 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
     InitializeFrom(site);
     site.ProcessMacros(configs);
 
-//TODO: XCODE
-    if (CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
         return;
     }
     
@@ -144,6 +143,9 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
         }
     }
 
+    if (CMsvc7RegSettings::GetMsvcPlatform() > CMsvc7RegSettings::eUnix) {
+        return;
+    }
     _TRACE("*** Creating Makefile.third_party.mk files ***");
     // Write makefile uses to install 3-rd party dlls
     list<string> third_party_to_install;
@@ -196,6 +198,12 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
     site.GetComponents(define, &components);
     ITERATE(list<string>, p, components) {
         const string& component = *p;
+        if (site.IsBanned(component)) {
+            PTB_WARNING_EX("", ePTB_ConfigurationError,
+                            component << "|" << config.GetConfigFullName()
+                            << ": " << define << " not provided, disabled");
+            return false;
+        }
         SLibInfo lib_info;
         site.GetLibInfo(component, config, &lib_info);
         if ( !site.IsLibOk(lib_info) ) {
@@ -214,7 +222,7 @@ void CMsvcConfigure::AnalyzeDefines(
     CMsvcSite& site, const string& root_dir,
     const SConfigInfo& config, const CBuildType&  build_type)
 {
-    string cfg_root_inc = NStr::Replace(root_dir,"$(ConfigurationName)",config.m_Name);
+    string cfg_root_inc = NStr::Replace(root_dir,CMsvc7RegSettings::GetConfigNameKeyword(),config.m_Name);
     string filename =
         CDirEntry::ConcatPath(cfg_root_inc, m_ConfigureDefinesPath);
     string dir;
@@ -235,13 +243,25 @@ void CMsvcConfigure::AnalyzeDefines(
             m_ConfigSite[define] = '0';
         }
     }
-    string signature("MSVC_");
+    string signature;
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+        signature = "MSVC";
+    } else if (CMsvc7RegSettings::GetMsvcPlatform() > CMsvc7RegSettings::eUnix) {
+        signature = "XCODE";
+    } else {
+        signature = CMsvc7RegSettings::GetMsvcPlatformName();
+    }
+    signature += "_";
     signature += CMsvc7RegSettings::GetMsvcVersionName();
     signature += "-" + config.m_Name;
     signature += "--";
     signature += HOST;
     signature += "-";
-    signature += GetApp().GetEnvironment().Get("COMPUTERNAME");
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+        signature += GetApp().GetEnvironment().Get("COMPUTERNAME");
+    } else {
+        signature += GetApp().GetEnvironment().Get("HOSTNAME");
+    }
 
     string candidate_path = filename + ".candidate";
     CDirEntry::SplitPath(filename, &dir);
@@ -297,7 +317,7 @@ void CMsvcConfigure::WriteNcbiconfMsvcSite(
     ofs <<"*   ......." << endl;
     ofs <<"*" << endl;
     ofs <<"* ATTENTION:" << endl;
-    ofs <<"*   Do not edit or commit this file into CVS as this file will" << endl;
+    ofs <<"*   Do not edit or commit this file into SVN as this file will" << endl;
     ofs <<"*   be overwritten (by PROJECT_TREE_BUILDER) without warning!" << endl;
     ofs <<"*/" << endl;
     ofs << endl;

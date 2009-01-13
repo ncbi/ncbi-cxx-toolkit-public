@@ -95,6 +95,8 @@ public:
 
     // Is REQUIRES provided?
     bool IsProvided(const string& thing, bool deep=true) const;
+    
+    bool IsBanned(const string& thing) const;
 
     /// Get components from site
     void GetComponents(const string& entry, list<string>* components) const;

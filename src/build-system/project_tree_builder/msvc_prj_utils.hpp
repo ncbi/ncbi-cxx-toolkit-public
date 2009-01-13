@@ -233,6 +233,8 @@ public:
 
     static string    GetProjectFileFormatVersion(void);
     static string    GetSolutionFileFormatVersion(void);
+    
+    static string    GetConfigNameKeyword(void);
 private:
     static EMsvcVersion   sm_MsvcVersion;
     static EMsvcPlatform  sm_MsvcPlatform;

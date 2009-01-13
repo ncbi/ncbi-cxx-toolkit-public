@@ -1176,12 +1176,7 @@ void CProjBulderApp::VerifyArguments(void)
     m_IncDir = CDirEntry::ConcatPath(m_IncDir,GetRegSettings().m_CompilersSubdir);
     m_IncDir = CDirEntry::ConcatPath(m_IncDir, GetBuildType().GetTypeStr());
     m_IncDir = CDirEntry::ConcatPath(m_IncDir, "inc");
-#if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
-//    m_IncDir = CDirEntry::ConcatPath(m_IncDir, "$(CONFIGURATION)");
-    m_IncDir = "";
-#else
-    m_IncDir = CDirEntry::ConcatPath(m_IncDir, "$(ConfigurationName)");
-#endif
+    m_IncDir = CDirEntry::ConcatPath(m_IncDir, CMsvc7RegSettings::GetConfigNameKeyword());
 }
 
 

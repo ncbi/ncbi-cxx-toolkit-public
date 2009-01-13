@@ -783,9 +783,11 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
     list<string> prj_inc_dirs;
     if (prj_files.GetIncludeDirs(prj_inc_dirs, cfg)) {
         ITERATE ( list<string>, f, prj_inc_dirs) {
+/*
             if (CSymResolver::HasDefine(*f)) {
                 continue;
             }
+*/
             AddString( *inc_dirs, GetRelativePath( *f));
         }
     }

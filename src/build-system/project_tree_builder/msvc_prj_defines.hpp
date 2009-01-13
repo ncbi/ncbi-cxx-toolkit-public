@@ -58,4 +58,7 @@
 #define MSVC_SOLUTION_HEADER_LINE   \
                 "Microsoft Visual Studio Solution File, Format Version "
 
+#define MSVC_CONFIGNAME    "$(ConfigurationName)"
+#define XCODE_CONFIGNAME   "$(CONFIGURATION)"
+
 #endif //PROJECT_TREE_BUILDER__MSVC_PRJ_DEFINES__HPP

@@ -553,6 +553,16 @@ string CMsvc7RegSettings::GetSolutionFileFormatVersion(void)
     return "";
 }
 
+string CMsvc7RegSettings::GetConfigNameKeyword(void)
+{
+    if (GetMsvcPlatform() < eUnix) {
+        return MSVC_CONFIGNAME;
+    } else if (GetMsvcPlatform() == eXCode) {
+        return XCODE_CONFIGNAME;
+    }
+    return "";
+}
+
 
 bool IsSubdir(const string& abs_parent_dir, const string& abs_dir)
 {
