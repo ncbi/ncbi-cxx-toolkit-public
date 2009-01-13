@@ -259,9 +259,14 @@ void CMsvcConfigure::AnalyzeDefines(
     signature += "-";
     if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         signature += GetApp().GetEnvironment().Get("COMPUTERNAME");
-    } else {
-        signature += GetApp().GetEnvironment().Get("HOSTNAME");
     }
+#ifdef NCBI_XCODE_BUILD
+    {
+        char hostname[255];
+        if (0 == gethostname(hostname, 255))
+            signature += hostname;
+    }
+#endif
 
     string candidate_path = filename + ".candidate";
     CDirEntry::SplitPath(filename, &dir);
