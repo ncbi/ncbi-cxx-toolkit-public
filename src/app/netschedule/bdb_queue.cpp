@@ -2240,7 +2240,7 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
     }
     // Final touch, if we requested a job with specific affinity, and there was
     // no such job found, report it as an exception with affinity preference.
-    if (!pending_job_id && aff_list->size()) {
+    if (!pending_job_id && aff_list && aff_list->size()) {
         NCBI_THROW(CNetScheduleException, eNoJobsWithAffinity,
                    GetAffinityList(node_info));
     }
