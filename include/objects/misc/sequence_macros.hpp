@@ -1379,8 +1379,8 @@ if ((Org).IsSetDb())
 ((Org).IsSetDb())
 
 /// FOR_EACH_DBXREF_ON_ORGREF
-// Takes const COrg_ref& as input and makes iterator to const COrgMod&
-// Dereference with const COrgMod& omd = **iter
+// Takes const COrg_ref& as input and makes iterator to const CDbtag&
+// Dereference with const CDbtag& dbt = **iter
 
 #define FOR_EACH_DBXREF_ON_ORGREF(Iter, Org) \
 NCBI_CS_ITERATE( \
@@ -1389,9 +1389,9 @@ NCBI_CS_ITERATE( \
     Iter, \
     (Org).GetDb())
 
-/// EDIT_EACH_ORGMOD_ON_ORGREF
-// Takes const COrg_ref& as input and makes iterator to COrgMod&
-// Dereference with COrgMod& omd = **iter
+/// EDIT_EACH_DBXREF_ON_ORGREF
+// Takes const COrg_ref& as input and makes iterator to CDbtag&
+// Dereference with CDbtag& dbt = **iter
 
 #define EDIT_EACH_DBXREF_ON_ORGREF(Iter, Org) \
 NCBI_ER_ITERATE( \
