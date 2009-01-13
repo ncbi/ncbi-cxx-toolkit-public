@@ -55,8 +55,13 @@ enum EConfidence {
 };
 
 
+//  ============================================================================
+//  Helper routine--- file scope only:
+//  ============================================================================
+
 static unsigned char symbol_type_table[256];
 
+//  ----------------------------------------------------------------------------
 static void init_symbol_type_table(void)
 {
     if ( symbol_type_table[0] == 0 ) {
@@ -89,6 +94,7 @@ static void init_symbol_type_table(void)
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_SplitLines( const char* byte_buf, size_t byte_count,
                           list< string>& lines )
 //
@@ -143,6 +149,7 @@ static bool x_SplitLines( const char* byte_buf, size_t byte_count,
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsLineRmo( const string& line ) 
 {
     const size_t MIN_VALUES_PER_RECORD = 15;
@@ -208,6 +215,7 @@ static bool x_IsLineRmo( const string& line )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputRepeatMaskerWithHeader( list< string >& lines  )
 {
     //
@@ -273,6 +281,7 @@ static bool x_IsInputRepeatMaskerWithHeader( list< string >& lines  )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputRepeatMaskerWithoutHeader( list< string>& lines  )
 {
     //
@@ -309,6 +318,7 @@ static bool x_IsInputRepeatMaskerWithoutHeader( list< string>& lines  )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputRepeatMasker( const char* byte_buf, size_t byte_count ) 
 {
     list<string> lines;
@@ -323,6 +333,7 @@ static bool x_IsInputRepeatMasker( const char* byte_buf, size_t byte_count )
 
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsLinePhrapId( const string& line ) 
 {
     vector<string> values;
@@ -349,6 +360,7 @@ static bool x_IsLinePhrapId( const string& line )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputPhrapAce( const char* byte_buf, size_t byte_count )
 {
     list<string> lines;
@@ -366,6 +378,7 @@ static bool x_IsInputPhrapAce( const char* byte_buf, size_t byte_count )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsLineGlimmer3(const string& line)
 {
     list<string> toks;
@@ -410,6 +423,7 @@ static bool x_IsLineGlimmer3(const string& line)
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputGlimmer3( const char* byte_buf, size_t byte_count )
 {
     list<string> lines;
@@ -435,6 +449,7 @@ static bool x_IsInputGlimmer3( const char* byte_buf, size_t byte_count )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsLineGtf( const string& line )
 {
     vector<string> tokens;
@@ -465,6 +480,7 @@ static bool x_IsLineGtf( const string& line )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsLineAgp( const string& line ) 
 {
     vector<string> tokens;
@@ -502,6 +518,7 @@ static bool x_IsLineAgp( const string& line )
 }
     
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputGtf( const char* byte_buf, size_t byte_count )
 {
     list<string> lines;
@@ -533,6 +550,7 @@ static bool x_IsInputGtf( const char* byte_buf, size_t byte_count )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputAgp( const char* byte_buf, size_t byte_count )
 {
     list<string> lines;
@@ -557,6 +575,7 @@ static bool x_IsInputAgp( const char* byte_buf, size_t byte_count )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsLabelNewick( const string& label )
 {
     //  Starts with a string of anything other than "[]:", optionally followed by
@@ -581,6 +600,7 @@ static bool x_IsLabelNewick( const string& label )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsLineNewick( const string& cline )
 {
     //
@@ -630,6 +650,7 @@ static bool x_IsLineNewick( const string& cline )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputNewick( const char* byte_buf, size_t byte_count )
 {
     // Maybe we get home early ...
@@ -658,6 +679,7 @@ static bool x_IsInputNewick( const char* byte_buf, size_t byte_count )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputAlignment( const char* byte_buf, size_t byte_count )
 {
     // Alignment files come in all different shapes and broken formats,
@@ -691,6 +713,7 @@ static bool x_IsInputAlignment( const char* byte_buf, size_t byte_count )
 }
         
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputXml( const char* byte_buf, size_t byte_count )
 {
     string input( byte_buf, byte_count );
@@ -726,6 +749,7 @@ static bool x_IsInputXml( const char* byte_buf, size_t byte_count )
 }
 
 
+//  ----------------------------------------------------------------------------
 static EConfidence x_IsInputBinaryAsn( const char* byte_buf, size_t byte_count )
 {
     //
@@ -747,6 +771,7 @@ static EConfidence x_IsInputBinaryAsn( const char* byte_buf, size_t byte_count )
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputDistanceMatrix(const char* byte_buf, size_t byte_count)
 {
     // first split into a set of lines
@@ -801,12 +826,14 @@ static bool x_IsInputDistanceMatrix(const char* byte_buf, size_t byte_count)
     return true;
 }
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputTaxplot(const char* /*byte_buf*/, size_t /*byte_count*/)
 {
     return false;
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsLineFlatFileSequence(const string& line)
 {
     // blocks of ten residues (or permitted punctuation characters)
@@ -833,6 +860,7 @@ static bool x_IsLineFlatFileSequence(const string& line)
     return true;
 }
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputFlatFileSequence(const char* byte_buf, size_t byte_count)
 {
     list<string> lines;
@@ -856,6 +884,7 @@ static bool x_IsInputFlatFileSequence(const char* byte_buf, size_t byte_count)
     return true;
 }
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputFiveColFeatureTable(const char* byte_buf,
                                          size_t byte_count)
 {
@@ -892,17 +921,18 @@ static bool x_IsInputFiveColFeatureTable(const char* byte_buf,
 }
 
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputTable(const char* byte_buf, size_t byte_count)
 {
-    //  ------------------------------------------------------------------------
+    //
     //  NOTE 1:
     //  There is a bunch of file formats that are a special type of table and
     //  that we want to identify (like Repeat Masker output). So not to shade
     //  out those more special formats, this test should be performed only after
     //  all the more specialized table formats have been tested.
-    //  ------------------------------------------------------------------------
+    //
 
-    //  ------------------------------------------------------------------------
+    //
     //  NOTE 2:
     //  The original criterion for this test was "the same number of observed
     //  columns in every line".
@@ -910,7 +940,7 @@ static bool x_IsInputTable(const char* byte_buf, size_t byte_count)
     //  conditions have been imposed:
     //  - there are at least two observed columns
     //  - the sample contains at least two non-comment lines.
-    //  ------------------------------------------------------------------------
+    //
 
     // first split into a set of lines
     list<string> lines;
@@ -967,6 +997,7 @@ static bool x_IsInputTable(const char* byte_buf, size_t byte_count)
     return ( nlines >= 2 );
 }
 
+//  ----------------------------------------------------------------------------
 static bool s_IsSnpMarkers(const char* byte_buf, size_t byte_count)
 {
     int rsid, chr, pos, numMatched;
@@ -974,11 +1005,13 @@ static bool s_IsSnpMarkers(const char* byte_buf, size_t byte_count)
     return (numMatched == 3);
 }
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputWiggle(const char* byte_buf, size_t byte_count)
 {
     return ( NPOS != NStr::Find( byte_buf, "wiggle_" ) );
 }
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputBed(const char* byte_buf, size_t byte_count)
 {
     size_t columncount = 0;
@@ -1033,6 +1066,7 @@ static bool x_IsInputBed(const char* byte_buf, size_t byte_count)
     return true;
 }
 
+//  ----------------------------------------------------------------------------
 static bool x_IsInputBed15(const char* byte_buf, size_t byte_count)
 {
     size_t columncount = 15;
@@ -1078,6 +1112,11 @@ static bool x_IsInputBed15(const char* byte_buf, size_t byte_count)
     return true;
 }
 
+//  ============================================================================
+//  Old style class interface:
+//  ============================================================================
+
+//  ----------------------------------------------------------------------------
 CFormatGuess::ESequenceType 
 CFormatGuess::SequenceType(const char* str, unsigned length)
 {
@@ -1112,254 +1151,23 @@ CFormatGuess::SequenceType(const char* str, unsigned length)
 }
 
 
+//  ----------------------------------------------------------------------------
 CFormatGuess::EFormat CFormatGuess::Format(const string& path, EOnError onerror)
 {
     CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     return Format(input);
 }
 
-
-CFormatGuess::EFormat 
-CFormatGuess::Format(const unsigned char* buffer, 
-                     size_t               buffer_size)
-{
-    if ( !buffer_size ) {
-        return eUnknown;
-    }
-    EFormat format = eUnknown;
-    EConfidence eBinAsn;
-
-    const char* chbuf = (const char*)buffer;
-
-    ///
-    /// the order here is important!
-    ///
-
-    if ( x_IsInputRepeatMasker(chbuf, buffer_size) ) {
-        return eRmo;
-    }
-    if ( x_IsInputPhrapAce(chbuf, buffer_size) ) {
-        return ePhrapAce;
-    }
-    if ( x_IsInputGtf(chbuf, buffer_size) ) {
-        return eGtf;
-    }
-    if ( x_IsInputWiggle(chbuf, buffer_size) ) {
-        return eWiggle;
-    }
-    if ( x_IsInputBed(chbuf, buffer_size) ) {
-        return eBed;
-    }
-    if ( x_IsInputBed15(chbuf, buffer_size) ) {
-        return eBed15;
-    }
-    if ( x_IsInputGlimmer3(chbuf, buffer_size) ) {
-        return eGlimmer3;
-    }
-    if ( x_IsInputAgp(chbuf, buffer_size) ) {
-        return eAgp;
-    }
-    if ( x_IsInputNewick(chbuf, buffer_size) ) {
-        return eNewick;
-    }
-    if ( x_IsInputXml(chbuf, buffer_size) ) {
-        return eXml;
-    }
-    if ( x_IsInputAlignment(chbuf, buffer_size) ) {
-        return eAlignment;
-    }
-    eBinAsn = x_IsInputBinaryAsn(chbuf, buffer_size);
-    if ( eBinAsn == eYes ) {
-        return eBinaryASN;
-    }
-    if ( x_IsInputDistanceMatrix(chbuf, buffer_size) ) {
-        return eDistanceMatrix;
-    }
-    if ( x_IsInputTaxplot(chbuf, buffer_size) ) {
-        return eTaxplot;
-    }
-    if ( x_IsInputFlatFileSequence(chbuf, buffer_size) ) {
-        return eFlatFileSequence;
-    }
-    if ( x_IsInputFiveColFeatureTable(chbuf, buffer_size) ) {
-        return eFiveColFeatureTable;
-    }
-    if ( x_IsInputTable(chbuf, buffer_size) ) {
-        return eTable;
-    }
-
-    init_symbol_type_table();
-    //
-    //  The following is actually three tests rolled into one, based on symbol
-    //  frequencies in the input sample. I am leaving them "as is".
-    //
-    unsigned ATGC_content = 0;
-    unsigned amino_acid_content = 0;
-    size_t seq_length = buffer_size;
-    size_t txt_length = 0;
-    unsigned alpha_content = 0;
-    size_t i;
-
-    if (buffer[0] == '>') { // FASTA ?
-        for (i = 0; i < buffer_size; ++i) {
-            // skip the first line (presumed this is free-text information)
-            unsigned char type = symbol_type_table[buffer[i]];
-            if ( type & fLineEnd ) {
-                break;
-            }
-            if ( type & (fAlpha | fDigit | fSpace) ) {
-                ++alpha_content;
-            }
-        }
-        seq_length = buffer_size - i;
-        if (seq_length == 0) {
-            return eUnknown;   // No way to tell what format is this...
-        }
-    }
-
-    for (i = 0; i < buffer_size; ++i) {
-        unsigned char type = symbol_type_table[buffer[i]];
-
-        if ( type & (fAlpha | fDigit | fSpace) ) {
-            ++alpha_content;
-        }
-        if ( type & fDNA_Alphabet ) {
-            ++ATGC_content;
-        }
-        if ( type & fProtein_Alphabet ) {
-            ++amino_acid_content;
-        }
-        if ( type & fLineEnd ) {
-            ++alpha_content;
-            --seq_length;
-        }
-    }
-
-    double dna_content = (double)ATGC_content / (double)seq_length;
-    double prot_content = (double)amino_acid_content / (double)seq_length;
-    double a_content = (double)alpha_content / (double)buffer_size;
-    if (buffer[0] == '>') {
-        if (dna_content > 0.7 && a_content > 0.91) {
-            return eFasta;  // DNA fasta file
-        }
-        if (prot_content > 0.7 && a_content > 0.91) {
-            return eFasta;  // Protein fasta file
-        }
-
-        if (a_content > 0.8) {
-            // Second FASTA hypothesis: short sequences - long descriptions
-            // in this case buffer holds several small FASTA entries
-            unsigned ATGC_content_txt = 0;
-            unsigned amino_acid_content_txt = 0;
-
-            ATGC_content = 0;
-            amino_acid_content = 0;
-            seq_length = txt_length = 0;
-
-            CNcbiIstrstream istr(chbuf, buffer_size);
-            string line;
-            while (!istr.fail()) {
-                NcbiGetline(istr, line, "\n\r");
-                if (line[0] == '>') {  // header line
-                    txt_length += line.length();
-                    for (i = 0; i < line.length(); ++i) {
-                        unsigned char c = line[i];
-                        unsigned char type = symbol_type_table[c];
-
-                        if ( type & fDNA_Alphabet ) {
-                            ++ATGC_content_txt;
-                        }
-                        if ( type & fProtein_Alphabet ) {
-                            ++amino_acid_content_txt;
-                        }
-                    } // for
-                } else { // sequence line
-                    seq_length += line.length();
-                    for (i = 0; i < line.length(); ++i) {
-                        unsigned char c = line[i];
-                        unsigned char type = symbol_type_table[c];
-
-                        if ( type & fDNA_Alphabet ) {
-                            ++ATGC_content;
-                        }
-                        if ( type & fProtein_Alphabet ) {
-                            ++amino_acid_content;
-                        }
-                    } // for
-                }
-            } // while
-            dna_content = (double)ATGC_content / (double)seq_length;
-            prot_content = (double)amino_acid_content / (double)seq_length;
-            double dna_content_txt = 
-                (double)ATGC_content_txt / (double)txt_length;
-            double prot_content_txt = 
-                (double)amino_acid_content_txt / (double)txt_length;
-            // check for high seq content in seq.lines and low in txt lines
-            if (dna_content > 0.91 && dna_content_txt < 0.5) {
-                return eFasta;  // DNA fasta file
-            }
-            if (prot_content > 0.91 && prot_content_txt < 0.5) {
-                return eFasta;  // Protein fasta file
-            }
-        }
-    }
-
-    if (a_content > 0.80) {  // Text ASN ?
-        // Check for "::=" as second field of first non-blank
-        // line, treating comment-only lines ("--" first non-whitespace)
-        // as blank.
-        // Note: legal ASN.1 text files can fail this because
-        // 1. The "::=" need not be separated from its neigbors
-        //    by whitespace
-        // 2. It need not be on the first non-blank, non-comment line
-        CNcbiIstrstream istr(chbuf, buffer_size);
-        string line;
-        vector<string> fields;
-        while (!istr.fail()) {
-            NcbiGetline(istr, line, "\n\r");
-            fields.clear();
-            NStr::Tokenize(line, " \t", fields, NStr::eMergeDelims);
-            if (fields.size() > 0) {
-                if (fields[0][0] == '-' && fields[0][1] == '-') {
-                    continue;  // treat comment lines like blank lines
-                }
-                if (fields.size() >= 2) {
-                    if (fields[1] == "::=") {
-                        return eTextASN;
-                    }
-                }
-                break;  // only interested in first such line
-            }
-        }
-    }
-    if ( eBinAsn == eMaybe ) {
-        return eBinaryASN;
-    }
-    return format;
-
-}
-
-
+//  ----------------------------------------------------------------------------
 CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input, EOnError onerror)
 {
-    if (!x_TestInput(input, onerror)) {
-        return eUnknown;
-    }
-
-    CT_POS_TYPE orig_pos = input.tellg();
-
-    unsigned char buf[1024];
-
-    input.read((char*)buf, sizeof(buf));
-    size_t count = input.gcount();
-    input.clear();  // in case we reached eof
-    CStreamUtils::Stepback(input, (CT_CHAR_TYPE*)buf, (streamsize)count);
-
-    return Format(buf, count);
+    CFormatGuess FG( input );
+    return FG.GuessFormat( onerror );
 }
 
+
 //  ============================================================================
-//  New Style Interface:
+//  New style object interface:
 //  ============================================================================
 
 //  ----------------------------------------------------------------------------
@@ -1381,7 +1189,7 @@ CFormatGuess::CFormatGuess(
 
 //  ----------------------------------------------------------------------------
 CFormatGuess::CFormatGuess(
-    CNcbiIfstream& Stream )
+    CNcbiIstream& Stream )
     : m_Stream( Stream )
     , m_bOwnsStream( false )
 {
@@ -1560,7 +1368,7 @@ CFormatGuess::EnsureTestBuffer()
     if ( m_pTestBuffer ) {
         return true;
     }
-    if ( ! m_Stream.is_open()  ||  ! m_Stream.good() ) {
+    if ( ! m_Stream.good() ) {
         return false;
     }
     m_pTestBuffer = new char[ s_iTestBufferSize ];

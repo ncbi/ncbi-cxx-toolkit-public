@@ -144,12 +144,6 @@ public:
     static
     EFormat Format(CNcbiIstream& input, EOnError onerror = eDefault);
     
-    /// Format prediction based on memory buffer
-    /// Recommended that buffer should contain at least 1K of data
-    static
-    EFormat Format(const unsigned char* buffer, 
-                   size_t               buffer_size);
-
     //  ------------------------------------------------------------------------
     //  "Object" interface:
     //  Use when interested only in a limited number of formats, in excluding 
@@ -164,7 +158,7 @@ public:
         const string& /* file name */ );
 
     CFormatGuess(
-        CNcbiIfstream& );
+        CNcbiIstream& );
 
     ~CFormatGuess();
 
@@ -233,7 +227,7 @@ private:
 protected:
     static const streamsize s_iTestBufferSize = 1024;
 
-    CNcbiIfstream& m_Stream;
+    CNcbiIstream& m_Stream;
     bool m_bOwnsStream;
     char* m_pTestBuffer;
     streamsize m_iTestDataSize;
