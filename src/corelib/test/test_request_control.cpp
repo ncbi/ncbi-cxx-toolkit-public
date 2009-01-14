@@ -59,15 +59,15 @@ void CTest::Init(void)
 }
 
 
-// Sleep little more than 'x' milliseconds to avoid race conditions,
-// because SleepSec can sleep on some platforms a some microseconds
-// less than needed.
+// Sleep little more than 'x' milliseconds to compensate for inaccuracy
+// of Sleep*() methods on some platforms.
 #define SLEEP(x) SleepMilliSec(x+100)
 
-// Print elapsed time and wait a little to avoid race conditions
+// Print elapsed time and restart timer
 #define ELAPSED \
     e = sw.Restart(); \
-    LOG_POST("elapsed: " + NStr::DoubleToString(e, -1, NStr::fDoubleFixed))
+    LOG_POST("elapsed: " + NStr::DoubleToString(e, -1, NStr::fDoubleFixed)); \
+    SleepMilliSec(100)
 
 // Start/stop test messages
 #define START(x) \
@@ -239,6 +239,7 @@ int CTest::Run(void)
         // The behaviour is different for both modes.
         CStopWatch sw(CStopWatch::eStart);
         {{
+            LOG_POST("eContinuous");
             CRequestRateControl mgr(2, CTimeSpan(3,0), CTimeSpan(1,0),
                                     CRequestRateControl::eSleep);
             sw.Restart();
@@ -265,6 +266,7 @@ int CTest::Run(void)
             assert (e > 1.8  &&  e < 2.2);
         }}
         {{
+            LOG_POST("eDiscrete");
             CRequestRateControl mgr(2, CTimeSpan(3,0), CTimeSpan(1,0),
                                     CRequestRateControl::eSleep,
                                     CRequestRateControl::eDiscrete);
