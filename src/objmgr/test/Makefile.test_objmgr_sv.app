@@ -12,4 +12,4 @@ LIB = $(SOBJMGR_LIBS)
 
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = test_objmgr_sv -seed 1 -checksum f6dfc69d24d9bd793df456af53241b7f /CHECK_NAME=test_objmgr_sv
+CHECK_CMD = test_objmgr_sv -seed 1 -checksum c78cb2fb4d1b2926fede0945d9ae88b9 /CHECK_NAME=test_objmgr_sv
