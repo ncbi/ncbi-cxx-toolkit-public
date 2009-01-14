@@ -591,7 +591,7 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
 #if defined(NCBI_OS_MSWIN)
 
     if (mc_sec < 500){
-        ms_sec = 500;
+        mc_sec = 500;
     }
     Sleep((mc_sec + 500) / 1000);
 #elif defined(NCBI_OS_UNIX)
