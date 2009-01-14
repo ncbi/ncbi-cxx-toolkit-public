@@ -34,6 +34,9 @@ REM (open a solution and build or rebuild CONFIGURE project)
 REM
 REM ===========================================================================
 
+
+call "%BUILD_TREE_ROOT%\msvcvars.bat"
+
 if "%PREBUILT_PTB_EXE%"=="" (
   if "%PTB_PLATFORM%"=="x64" (
     set PREBUILT_PTB_EXE=\\snowman\win-coremake\App\Ncbi\cppcore\ptb\msvc9.64\project_tree_builder.exe
