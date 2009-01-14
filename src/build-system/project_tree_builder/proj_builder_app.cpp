@@ -366,7 +366,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,6,5) );
+    SetVersion( CVersionInfo(1,7,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -842,7 +842,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             ofs << " \\" <<endl << "    " << CreateProjectName(p->first);
         }
         ofs << endl << endl;
-        ofs << "ptb_all : ptb_all.real" << endl
+        ofs << "ptb_all :" << endl
 	    << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) ptb_all.real MTARGET=$(MTARGET)";
         ofs << endl << endl;
         ofs << "ptb_all.real :" << " $(all_projects)";
@@ -861,7 +861,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             }
         }
         ofs << endl << endl;
-        ofs << "all_libs : all_libs.real" << endl
+        ofs << "all_libs :" << endl
 	    << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) all_libs.real MTARGET=$(MTARGET)";
         ofs << endl << endl;
         ofs << "all_libs.real :" << " $(all_libraries)";
@@ -931,7 +931,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             rel_path = NStr::Replace(rel_path,"\\","/");
 #endif //NCBI_COMPILER_MSVC
 
-            ofs << target << " : " << target << ".real" << endl
+            ofs << target << " :" << endl
 	        << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) " << target << ".real MTARGET=$(MTARGET)";
             ofs << endl << endl;
             ofs << target << ".real :";
@@ -953,7 +953,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         map< string, list< string > >::const_iterator pt;
         for ( pt = path_to_target.begin(); pt != path_to_target.end(); ++pt) {
 	    string target(pt->first);
-            ofs << target << " : " << target << ".real" << endl
+            ofs << target << " :" << endl
 	        << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) " << target << ".real MTARGET=$(MTARGET)";
             ofs << endl << endl;
             ofs << target << ".real :";
