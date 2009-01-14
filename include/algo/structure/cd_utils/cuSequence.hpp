@@ -128,6 +128,12 @@ bool ExtractPdbMolChain(const CRef<CBioseq>& bioseq, string& pdbMol, string& pdb
 NCBI_CDUTILS_EXPORT 
 bool CopyPdbSeqId(const CRef<CBioseq>& bioseq, CRef<CSeq_id>& pdbSeqId, unsigned int nth = 1);
 
+//  Returns true iff there is at least one ids of the requested type found.
+NCBI_CDUTILS_EXPORT 
+bool HasSeqIdOfType(const CBioseq& bioseq, CSeq_id::E_Choice choice);
+NCBI_CDUTILS_EXPORT 
+bool HasSeqIdOfType(const CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice choice);
+
 //  Returns number of ids of the requested type found.
 //  Returned CSeq_id objects are copies of those found in the bioseq/seqEntry.
 NCBI_CDUTILS_EXPORT 

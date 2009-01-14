@@ -585,6 +585,41 @@ bool ExtractPdbMolChain(const CRef<CBioseq>& bioseq, string& pdbMol, string& pdb
     return result;
 }
 
+bool HasSeqIdOfType(const CBioseq& bioseq, CSeq_id::E_Choice choice)
+{
+    bool result = false;
+    CBioseq::TId::const_iterator idCit = bioseq.GetId().begin(), idEnd = bioseq.GetId().end();
+
+    for (; idCit != idEnd && !result; ++idCit) {
+        if ((*idCit)->Which() == choice) {
+            result = true;
+        }
+    }
+    return result;
+}
+
+bool HasSeqIdOfType(const CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice choice)
+{
+    bool result = false;
+    CBioseq_set::TSeq_set::const_iterator bssCit, bssEnd;
+
+    if (seqEntry.NotEmpty()) {
+        if (seqEntry->IsSet()) {
+            bssCit = seqEntry->GetSet().GetSeq_set().begin();
+            bssEnd = seqEntry->GetSet().GetSeq_set().end();
+            for (; bssCit != bssEnd && !result; ++bssCit) {
+                if ((*bssCit)->IsSeq()) {
+                    result = HasSeqIdOfType((*bssCit)->GetSeq(), choice);
+                } else if ((*bssCit)->IsSet()) {
+                    result = HasSeqIdOfType(*bssCit, choice);  // recursive
+                }
+            }
+        } else if (seqEntry->IsSeq()) {
+            result = HasSeqIdOfType(seqEntry->GetSeq(), choice);
+        }
+    }
+    return result;
+}
 
 unsigned int CopySeqIdsOfType(const CBioseq& bioseq, CSeq_id::E_Choice choice, list< CRef< CSeq_id > >& idsOfType)
 {
@@ -612,9 +647,13 @@ unsigned int CopySeqIdsOfType(const CRef< CSeq_entry >& seqEntry, CSeq_id::E_Cho
             bssCit = seqEntry->GetSet().GetSeq_set().begin();
             bssEnd = seqEntry->GetSet().GetSeq_set().end();
             for (; bssCit != bssEnd; ++bssCit) {
+                tmpList.clear();
                 if ((*bssCit)->IsSeq()) {
-                    tmpList.clear();
                     if (CopySeqIdsOfType((*bssCit)->GetSeq(), choice, tmpList) > 0) {
+                        idsOfType.insert(idsOfType.end(), tmpList.begin(), tmpList.end());
+                    }
+                } else if ((*bssCit)->IsSet()) {  //recursive
+                    if (CopySeqIdsOfType(*bssCit, choice, tmpList) > 0) {
                         idsOfType.insert(idsOfType.end(), tmpList.begin(), tmpList.end());
                     }
                 }
