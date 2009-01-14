@@ -107,6 +107,14 @@ typedef CSeq_inst::TStrand TSEQ_STRAND;
 //   ss     ds     mixed     other
 
 
+/// CSeq_annot definitions
+
+#define NCBI_SEQANNOT(Type) CSeq_annot::TData::e_##Type
+typedef CSeq_annot::TData::E_Choice TSEQANNOT_CHOICE;
+
+//   Ftable     Align     Graph     Ids     Locs     Seq_table
+
+
 /// CAnnotdesc definitions
 
 #define NCBI_ANNOTDESC(Type) CAnnotdesc::e_##Type
@@ -1040,6 +1048,17 @@ NCBI_ER_ITERATE( \
 (San).SetData().SetGraph().erase(Iter)
 
 
+/// IF_ANNOT_IS_SEQTABLE
+
+#define IF_ANNOT_IS_SEQTABLE(San) \
+if ((San).IsSeq_table())
+
+/// ANNOT_IS_SEQTABLE
+
+#define ANNOT_IS_SEQTABLE(San) \
+((San).IsSeq_table())
+
+
 /// IF_ANNOT_HAS_ANNOTDESC
 
 #define IF_ANNOT_HAS_ANNOTDESC(San) \
@@ -1218,114 +1237,136 @@ NCBI_SWITCH( \
 
 /// IF_BIOSOURCE_GENOME_IS
 
-#define IF_BIOSOURCE_GENOME_IS(Bsrc, Chs) \
-if ((Bsrc).IsSetGenome() && (Bsrc).GetGenome() == Chs)
+#define IF_BIOSOURCE_GENOME_IS(Bsc, Chs) \
+if ((Bsc).IsSetGenome() && (Bsc).GetGenome() == Chs)
 
 /// BIOSOURCE_GENOME_IS
 
-#define BIOSOURCE_GENOME_IS(Bsrc, Chs) \
-((Bsrc).IsSetGenome() && (Bsrc).GetGenome() == Chs)
+#define BIOSOURCE_GENOME_IS(Bsc, Chs) \
+((Bsc).IsSetGenome() && (Bsc).GetGenome() == Chs)
 
 /// SWITCH_ON_BIOSOURCE_GENOME
 
-#define SWITCH_ON_BIOSOURCE_GENOME(Bsrc) \
+#define SWITCH_ON_BIOSOURCE_GENOME(Bsc) \
 NCBI_SWITCH( \
-    (Bsrc).IsSetGenome(), \
-    (Bsrc).GetGenome())
+    (Bsc).IsSetGenome(), \
+    (Bsc).GetGenome())
 
 
 /// IF_BIOSOURCE_ORIGIN_IS
 
-#define IF_BIOSOURCE_ORIGIN_IS(Bsrc, Chs) \
-if ((Bsrc).IsSetOrigin() && (Bsrc).GetOrigin() == Chs)
+#define IF_BIOSOURCE_ORIGIN_IS(Bsc, Chs) \
+if ((Bsc).IsSetOrigin() && (Bsc).GetOrigin() == Chs)
 
 /// BIOSOURCE_ORIGIN_IS
 
-#define BIOSOURCE_ORIGIN_IS(Bsrc, Chs) \
-((Bsrc).IsSetOrigin() && (Bsrc).GetOrigin() == Chs)
+#define BIOSOURCE_ORIGIN_IS(Bsc, Chs) \
+((Bsc).IsSetOrigin() && (Bsc).GetOrigin() == Chs)
 
 /// SWITCH_ON_BIOSOURCE_ORIGIN
 
-#define SWITCH_ON_BIOSOURCE_ORIGIN(Bsrc) \
+#define SWITCH_ON_BIOSOURCE_ORIGIN(Bsc) \
 NCBI_SWITCH( \
-    (Bsrc).IsSetOrigin(), \
-    (Bsrc).GetOrigin())
+    (Bsc).IsSetOrigin(), \
+    (Bsc).GetOrigin())
+
+
+/// IF_BIOSOURCE_HAS_ORGREF
+
+#define IF_BIOSOURCE_HAS_ORGREF(Bsc) \
+if ((Bsc).IsSetOrg())
+
+/// BIOSOURCE_HAS_ORGREF
+
+#define BIOSOURCE_HAS_ORGREF(Bsc) \
+((Bsc).IsSetOrg())
+
+
+/// IF_BIOSOURCE_HAS_ORGNAME
+
+#define IF_BIOSOURCE_HAS_ORGNAME(Bsc) \
+if ((Bsc).IsSetOrgname())
+
+/// BIOSOURCE_HAS_ORGNAME
+
+#define BIOSOURCE_HAS_ORGNAME(Bsc) \
+((Bsc).IsSetOrgname())
 
 
 /// IF_BIOSOURCE_HAS_SUBSOURCE
 
-#define IF_BIOSOURCE_HAS_SUBSOURCE(Bsrc) \
-if ((Bsrc).IsSetSubtype())
+#define IF_BIOSOURCE_HAS_SUBSOURCE(Bsc) \
+if ((Bsc).IsSetSubtype())
 
 /// BIOSOURCE_HAS_SUBSOURCE
 
-#define BIOSOURCE_HAS_SUBSOURCE(Bsrc) \
-((Bsrc).IsSetSubtype())
+#define BIOSOURCE_HAS_SUBSOURCE(Bsc) \
+((Bsc).IsSetSubtype())
 
 /// FOR_EACH_SUBSOURCE_ON_BIOSOURCE
 // Takes const CBioSource& as input and makes iterator to const CSubSource&
 // Dereference with const CSubSource& sbs = **iter
 
-#define FOR_EACH_SUBSOURCE_ON_BIOSOURCE(Iter, Bsrc) \
+#define FOR_EACH_SUBSOURCE_ON_BIOSOURCE(Iter, Bsc) \
 NCBI_CS_ITERATE( \
-    (Bsrc).IsSetSubtype(), \
+    (Bsc).IsSetSubtype(), \
     CBioSource::TSubtype, \
     Iter, \
-    (Bsrc).GetSubtype())
+    (Bsc).GetSubtype())
 
 /// EDIT_EACH_SUBSOURCE_ON_BIOSOURCE
 // Takes const CBioSource& as input and makes iterator to CSubSource&
 // Dereference with CSubSource& sbs = **iter
 
-#define EDIT_EACH_SUBSOURCE_ON_BIOSOURCE(Iter, Bsrc) \
+#define EDIT_EACH_SUBSOURCE_ON_BIOSOURCE(Iter, Bsc) \
 NCBI_ER_ITERATE( \
-    (Bsrc).IsSetSubtype(), \
+    (Bsc).IsSetSubtype(), \
     CBioSource::TSubtype, \
     Iter, \
-    (Bsrc).SetSubtype())
+    (Bsc).SetSubtype())
 
 /// ERASE_SUBSOURCE_ON_BIOSOURCE
 
-#define ERASE_SUBSOURCE_ON_BIOSOURCE(Iter, Bsrc) \
-(Bsrc).SetSubtype().erase(Iter)
+#define ERASE_SUBSOURCE_ON_BIOSOURCE(Iter, Bsc) \
+(Bsc).SetSubtype().erase(Iter)
 
 
 /// IF_BIOSOURCE_HAS_ORGMOD
 
-#define IF_BIOSOURCE_HAS_ORGMOD(Bsrc) \
-if ((Bsrc).IsSetOrgMod())
+#define IF_BIOSOURCE_HAS_ORGMOD(Bsc) \
+if ((Bsc).IsSetOrgMod())
 
 /// BIOSOURCE_HAS_ORGMOD
 
-#define BIOSOURCE_HAS_ORGMOD(Bsrc) \
-((Bsrc).IsSetOrgMod())
+#define BIOSOURCE_HAS_ORGMOD(Bsc) \
+((Bsc).IsSetOrgMod())
 
 /// FOR_EACH_ORGMOD_ON_BIOSOURCE
 // Takes const CBioSource& as input and makes iterator to const COrgMod&
 // Dereference with const COrgMod& omd = **iter
 
-#define FOR_EACH_ORGMOD_ON_BIOSOURCE(Iter, Bsrc) \
+#define FOR_EACH_ORGMOD_ON_BIOSOURCE(Iter, Bsc) \
 NCBI_CS_ITERATE( \
-    (Bsrc).IsSetOrgMod(), \
+    (Bsc).IsSetOrgMod(), \
     COrgName::TMod, \
     Iter, \
-    (Bsrc).GetOrgname().GetMod())
+    (Bsc).GetOrgname().GetMod())
 
 /// EDIT_EACH_ORGMOD_ON_BIOSOURCE
 // Takes const CBioSource& as input and makes iterator to COrgMod&
 // Dereference with COrgMod& omd = **iter
 
-#define EDIT_EACH_ORGMOD_ON_BIOSOURCE(Iter, Bsrc) \
+#define EDIT_EACH_ORGMOD_ON_BIOSOURCE(Iter, Bsc) \
 NCBI_ER_ITERATE( \
-    (Bsrc).IsSetOrgMod(), \
+    (Bsc).IsSetOrgMod(), \
     COrgName::TMod, \
     Iter, \
-    (Bsrc).SetOrgname().SetMod())
+    (Bsc).SetOrgname().SetMod())
 
 /// ERASE_ORGMOD_ON_BIOSOURCE
 
-#define ERASE_ORGMOD_ON_BIOSOURCE(Iter, Bsrc) \
-(Bsrc).SetOrgname().SetMod().erase(Iter)
+#define ERASE_ORGMOD_ON_BIOSOURCE(Iter, Bsc) \
+(Bsc).SetOrgname().SetMod().erase(Iter)
 
 
 /// COrg_ref macros
@@ -1428,7 +1469,7 @@ NCBI_CS_ITERATE( \
     (Org).GetMod())
 
 /// EDIT_EACH_MOD_ON_ORGREF
-// Takes const COrg_ref& as input and makes iterator to COstringrgMod&
+// Takes const COrg_ref& as input and makes iterator to string&
 // Dereference with string& str = *iter
 
 #define EDIT_EACH_MOD_ON_ORGREF(Iter, Org) \
