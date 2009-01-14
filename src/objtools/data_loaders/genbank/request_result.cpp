@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/processors.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/annot_selector.hpp>
@@ -344,11 +345,18 @@ CBlob_Info::~CBlob_Info(void)
 }
 
 
-bool CBlob_Info::Matches(TContentsMask mask, const SAnnotSelector* sel) const
+bool CBlob_Info::Matches(const CBlob_id& blob_id,
+                         TContentsMask mask,
+                         const SAnnotSelector* sel) const
 {
     TContentsMask common_mask = GetContentsMask() & mask;
     if ( common_mask == 0 ) {
         return false;
+    }
+
+    if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
+        // not named accession, but external annots
+        return true;
     }
 
     if ( (common_mask & ~(fBlobHasExtAnnot|fBlobHasNamedAnnot)) != 0 ) {
@@ -365,12 +373,17 @@ bool CBlob_Info::Matches(TContentsMask mask, const SAnnotSelector* sel) const
     }
 
     if ( sel->IsIncludedNamedAnnotAccession("NA*") ) {
+        // all accessions are included
         return true;
     }
     
     // annot filtering by name
     ITERATE ( TNamedAnnotNames, it, GetNamedAnnotNames() ) {
         const string& name = *it;
+        if ( !NStr::StartsWith(name, "NA") ) {
+            // not named accession
+            return true;
+        }
         if ( sel->IsIncludedNamedAnnotAccession(name) ) {
             // matches
             return true;
@@ -378,7 +391,7 @@ bool CBlob_Info::Matches(TContentsMask mask, const SAnnotSelector* sel) const
     }
     // no match by name found
     return false;
-}            
+}
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -1150,7 +1150,7 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
 
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
-        if ( info.Matches(mask, sel) ) {
+        if ( info.Matches(*it->first, mask, sel) ) {
             CLoadLockBlob blob(result, *it->first);
             _ASSERT(blob.IsLoaded());
             if ((blob.GetBlobState() & CBioseq_Handle::fState_no_data) != 0) {
@@ -1235,7 +1235,7 @@ void CGBDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
         CLoadLockBlob_ids blob_ids_lock(result, id, 0);
         ITERATE (CLoadInfoBlob_ids, it, *blob_ids_lock) {
             const CBlob_Info& info = it->second;
-            if ( info.Matches(mask, 0) ) {
+            if ( info.Matches(*it->first, mask, 0) ) {
                 CLoadLockBlob blob(result, *it->first);
                 _ASSERT(blob.IsLoaded());
                 /*

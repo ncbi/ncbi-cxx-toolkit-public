@@ -188,7 +188,9 @@ public:
             m_NamedAnnotNames.insert(name);
         }
 
-    bool Matches(TContentsMask mask, const SAnnotSelector* sel) const;
+    bool Matches(const CBlob_id& blob_id,
+                 TContentsMask mask,
+                 const SAnnotSelector* sel) const;
 
 private:
     TContentsMask   m_Contents;

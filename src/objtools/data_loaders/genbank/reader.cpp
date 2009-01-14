@@ -420,7 +420,7 @@ bool CReader::LoadBlobs(CReaderRequestResult& result,
     int loaded_count = 0;
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
-        if ( info.Matches(mask, sel) ) {
+        if ( info.Matches(*it->first, mask, sel) ) {
             CLoadLockBlob blob(result, *it->first);
             if ( blob.IsLoaded() ) {
                 continue;

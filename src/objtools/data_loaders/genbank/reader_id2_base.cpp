@@ -456,7 +456,7 @@ bool CId2ReaderBase::LoadBlobs(CReaderRequestResult& result,
     vector<CLoadLockBlob> blob_locks;
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
-        if ( !info.Matches(mask, sel) ) {
+        if ( !info.Matches(*it->first, mask, sel) ) {
             continue; // skip this blob
         }
         CConstRef<CBlob_id> blob_id = it->first;
@@ -915,7 +915,13 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
                 for ( CTypeConstIterator<CID2_Reply_Data> it(Begin(reply));
                       it; ++it ) {
                     if ( it->IsSetData() ) {
-                        CProcessor_ID2::DumpDataAsText(*it, NcbiCout);
+                        try {
+                            CProcessor_ID2::DumpDataAsText(*it, NcbiCout);
+                        }
+                        catch ( CException& exc ) {
+                            ERR_POST_X(1, "Exception while dumping data: "
+                                       <<exc);
+                        }
                     }
                 }
             }
