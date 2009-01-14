@@ -589,9 +589,11 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
 void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
 {
 #if defined(NCBI_OS_MSWIN)
-    DWORD ms = mc_sec / 1000;
-    if (mc_sec % 1000) ms++;
-    Sleep(ms);
+
+    if (mc_sec < 500){
+        ms_sec = 500;
+    }
+    Sleep((mc_sec + 500) / 1000);
 #elif defined(NCBI_OS_UNIX)
 #  if defined(HAVE_NANOSLEEP)
     struct timespec delay, unslept;
