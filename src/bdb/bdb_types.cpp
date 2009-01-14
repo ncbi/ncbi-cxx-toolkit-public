@@ -1071,7 +1071,10 @@ size_t CBDB_FieldLString::GetDataLength(const void* buf) const
     str = GetLString(str, check_legacy, &str_len);
     if (str != (const unsigned char*) buf)
         str_len += 4;
-    return str_len + 1;
+    // We should NOT add 1 to the length here because it messes with
+    // buffer packing/unpacking algorithm for the record containing
+    // this field.
+    return str_len;
 }
 
 CBDB_FieldLString& CBDB_FieldLString::operator= (const char* str)
