@@ -290,10 +290,12 @@ public:
         eAcc_prf = e_Prf | eAcc_other | fAcc_prot,
         eAcc_pdb = e_Pdb | eAcc_other, // not necessarily protein!
 
-        eAcc_gb_tpa_nuc     = e_Tpg | eAcc_other | fAcc_nuc,  // BK
-        eAcc_gb_tpa_prot    = e_Tpg | eAcc_other | fAcc_prot, // DAA
-        eAcc_gb_tpa_con     = e_Tpg | eAcc_con | fAcc_nuc,    // GJ
-        eAcc_gb_tpa_wgs_nuc = e_Tpg | eAcc_wgs | fAcc_nuc,    // DAAA
+        eAcc_gb_tpa_nuc        = e_Tpg | eAcc_other      | fAcc_nuc,  // BK
+        eAcc_gb_tpa_prot       = e_Tpg | eAcc_other      | fAcc_prot, // DAA
+        eAcc_gb_tpa_con        = e_Tpg | eAcc_con        | fAcc_nuc,  // GJ
+        eAcc_gb_tpa_wgs_nuc    = e_Tpg | eAcc_wgs        | fAcc_nuc,  // DAAA
+        eAcc_gb_tpa_wgs_prot   = e_Tpg | eAcc_wgs        | fAcc_prot, // HAA
+        eAcc_gb_tpa_chromosome = e_Tpg | eAcc_chromosome | fAcc_nuc,  // GK
 
         eAcc_embl_tpa_nuc  = e_Tpe | eAcc_other | fAcc_nuc,  // BN
         eAcc_embl_tpa_prot = e_Tpe | eAcc_other | fAcc_prot, // CAD29848

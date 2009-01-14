@@ -11,6 +11,8 @@ version  1 # of file format
 3+5  E??  gb_wgs_prot
 3+5  F??  ddbj_tpa_prot
 3+5  G??  ddbj_wgs_prot
+3+5  H??  gb_tpa_prot # fallback definition for older clients
+3+5  H??  gb_tpa_wgs_prot
 3+5  ???  unreserved_prot
 
 # whole genome shotgun accessions
@@ -278,6 +280,8 @@ version  1 # of file format
 2+6  GI  unreserved_nuc # deliberately skipped
 2+6  GJ  gb_tpa_nuc # fallback
 2+6  GJ  gb_tpa_con
+2+6  GK  gb_tpa_nuc # fallback
+2+6  GK  gb_tpa_chromosome
 2+6  GM  embl_patent
 2+6  GN  embl_patent
 2+6  ??  unreserved_nuc
