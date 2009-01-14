@@ -592,10 +592,11 @@ int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
         m_line_skipped=false;
         if(m_error_code==0) {
             if( !ProcessThisRow() ) return m_error_code;
-            if( m_error_code < 0 ) break; // A simulated EOF midstream (very rare)
+            if( m_error_code < 0 ) break; // A simulated EOF midstream
         }
         else if(m_error_code==-1) {
             OnComment();
+            if( m_error_code < -1 ) break; // A simulated EOF midstream
         }
         else {
             m_line_skipped=true;
