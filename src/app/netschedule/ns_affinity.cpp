@@ -318,7 +318,7 @@ void CAffinityDict::RemoveToken(unsigned          aff_id,
 const TNSBitVector& 
 CWorkerNodeAffinity::SAffinityInfo::GetBlacklistedJobs(time_t t)
 {
-    if (t >= min_expire_time  &&  ! blacklisted_expirations.empty()) {
+    if (! blacklisted_expirations.empty()  &&  t >= min_expire_time) {
         TExpirationVector new_blacklisted_expirations;
         bool expired = false;
         bool inited = false;
