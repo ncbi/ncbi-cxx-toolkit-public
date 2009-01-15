@@ -39,7 +39,6 @@
 
 #include <algo/structure/cd_utils/cuCD.hpp>
 #include <algo/structure/cd_utils/cuCdReadWriteASN.hpp>
-#include <algo/structure/cd_utils/cuReadFastaWrapper.hpp>
 #include <algo/structure/cd_utils/cuSeqAnnotFromFasta.hpp>
 #include <algo/structure/cd_utils/cuCdFromFasta.hpp>
 

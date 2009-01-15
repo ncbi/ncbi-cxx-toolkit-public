@@ -42,8 +42,6 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
-#include <objtools/readers/fasta.hpp>
-
 #include <objects/cdd/Global_id.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -53,7 +51,6 @@
 #include <objects/general/Object_id.hpp>
 
 #include <algo/structure/cd_utils/cuReadFastaWrapper.hpp>
-//#include "ReadFastaWrapper.hpp"
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE

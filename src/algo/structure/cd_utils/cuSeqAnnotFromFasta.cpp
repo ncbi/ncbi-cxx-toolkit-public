@@ -76,7 +76,6 @@
 #include <algo/structure/cd_utils/cuCdReadWriteASN.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>
 
-#include <algo/structure/cd_utils/cuReadFastaWrapper.hpp>
 #include <algo/structure/cd_utils/cuSeqAnnotFromFasta.hpp>
 
 #include <algorithm>
@@ -560,6 +559,7 @@ unsigned int CSeqAnnotFromFasta::DetermineMasterIndex(CCdCore& dummyCD, Masterin
             }
             m_masterIndex = masterIndex;
         } 
+        cout << "    ->  master sequence index (zero-based) determined to be " << m_masterIndex << endl;
 
         break;
     case eFirstSequence:
@@ -573,7 +573,6 @@ unsigned int CSeqAnnotFromFasta::DetermineMasterIndex(CCdCore& dummyCD, Masterin
         break;
     };
 
-    //cout << "Master sequence index determined to be " << m_masterIndex << endl;
     _TRACE("Master sequence index (zero-based) determined to be " << m_masterIndex << "\n");
         
     return m_masterIndex;

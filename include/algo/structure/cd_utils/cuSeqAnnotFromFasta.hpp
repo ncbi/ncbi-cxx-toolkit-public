@@ -44,6 +44,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
+#include <algo/structure/cd_utils/cuReadFastaWrapper.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
