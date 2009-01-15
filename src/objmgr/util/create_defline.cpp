@@ -203,7 +203,7 @@ void CDeflineGenerator::x_SetFlags (
                 if (pat_id.IsSetCit()) {
                     const CId_pat& cit = pat_id.GetCit();
                     m_PatentCountry = cit.GetCountry();
-                    m_PatentNumber = cit.GetId().GetNumber();
+                    m_PatentNumber = cit.GetSomeNumber();
                 }
                 break;
             }

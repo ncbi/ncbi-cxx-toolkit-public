@@ -384,7 +384,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     if (title.empty()  &&  pat_id.NotEmpty()) {
         title = "Sequence " + NStr::IntToString(pat_id->GetSeqid())
             + " from Patent " + pat_id->GetCit().GetCountry()
-            + ' ' + pat_id->GetCit().GetId().GetNumber();
+            + ' ' + pat_id->GetCit().GetSomeNumber();
     }
 
     if (title.empty()  &&  hnd.GetBioseqMolType() == CSeq_inst::eMol_aa) {
@@ -703,7 +703,7 @@ bool GetTitle(const CBioseq& seq, string* title_ptr, TGetTitleFlags flags)
     if (title.empty()  &&  pat_id.NotEmpty()) {
         title = "Sequence " + NStr::IntToString(pat_id->GetSeqid())
             + " from Patent " + pat_id->GetCit().GetCountry()
-            + ' ' + pat_id->GetCit().GetId().GetNumber();
+            + ' ' + pat_id->GetCit().GetSomeNumber();
     }
 
     if (title.empty()  &&  seq.IsAa()) {
