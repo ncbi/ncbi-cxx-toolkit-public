@@ -83,11 +83,18 @@ bool CId_pat::Match(const CId_pat& idp2) const
 void CId_pat::GetLabel(string* label) const
 {
     GetLabelContent(label, false, 0, 0, 0, 0, 0,
-        &GetCountry(),
-        GetId().IsNumber() ? &GetId().GetNumber() :
-            (GetId().IsApp_number() ? &GetId().GetApp_number() : 0));
+                    &GetCountry(), &GetSomeNumber());
 }
 
+
+const string& CId_pat::GetSomeNumber(void) const
+{
+    switch (GetId().Which()) {
+    case C_Id::e_Number:      return GetId().GetNumber();
+    case C_Id::e_App_number:  return GetId().GetApp_number();
+    default:                  return kEmptyStr;
+    }
+}
 	
 END_objects_SCOPE // namespace ncbi::objects::
 

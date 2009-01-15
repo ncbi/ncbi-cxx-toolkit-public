@@ -63,6 +63,9 @@ public:
     // Appends a label onto "label" based on content
     void GetLabel(string* label) const;
 
+    // may return either actual number or application number
+    const string& GetSomeNumber(void) const;
+
 private:
     // Prohibit copy constructor & assignment operator
     CId_pat(const CId_pat&);
