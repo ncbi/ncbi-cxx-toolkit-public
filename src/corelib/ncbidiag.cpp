@@ -842,17 +842,20 @@ CDiagContext::CDiagContext(void)
           GetLogRate_Limit(eLogRate_App),
           CTimeSpan((long)GetLogRate_Period(eLogRate_App)),
           CTimeSpan((long)0),
-          CRequestRateControl::eErrCode)),
+          CRequestRateControl::eErrCode,
+		  CRequestRateControl::eDiscrete)),
       m_ErrLogRC(new CRequestRateControl(
           GetLogRate_Limit(eLogRate_Err),
           CTimeSpan((long)GetLogRate_Period(eLogRate_Err)),
           CTimeSpan((long)0),
-          CRequestRateControl::eErrCode)),
+          CRequestRateControl::eErrCode,
+		  CRequestRateControl::eDiscrete)),
       m_TraceLogRC(new CRequestRateControl(
           GetLogRate_Limit(eLogRate_Trace),
           CTimeSpan((long)GetLogRate_Period(eLogRate_Trace)),
           CTimeSpan((long)0),
-          CRequestRateControl::eErrCode)),
+          CRequestRateControl::eErrCode,
+		  CRequestRateControl::eDiscrete)),
       m_AppLogSuspended(false),
       m_ErrLogSuspended(false),
       m_TraceLogSuspended(false)
@@ -872,15 +875,18 @@ void CDiagContext::ResetLogRates(void)
     m_AppLogRC->Reset(GetLogRate_Limit(eLogRate_App),
         CTimeSpan((long)GetLogRate_Period(eLogRate_App)),
         CTimeSpan((long)0),
-        CRequestRateControl::eErrCode);
+        CRequestRateControl::eErrCode,
+		CRequestRateControl::eDiscrete);
     m_ErrLogRC->Reset(GetLogRate_Limit(eLogRate_Err),
         CTimeSpan((long)GetLogRate_Period(eLogRate_Err)),
         CTimeSpan((long)0),
-        CRequestRateControl::eErrCode);
+        CRequestRateControl::eErrCode,
+		CRequestRateControl::eDiscrete);
     m_TraceLogRC->Reset(GetLogRate_Limit(eLogRate_Trace),
         CTimeSpan((long)GetLogRate_Period(eLogRate_Trace)),
         CTimeSpan((long)0),
-        CRequestRateControl::eErrCode);
+        CRequestRateControl::eErrCode,
+		CRequestRateControl::eDiscrete);
     m_AppLogSuspended = false;
     m_ErrLogSuspended = false;
     m_TraceLogSuspended = false;
@@ -909,7 +915,8 @@ void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
             m_AppLogRC->Reset(limit,
                 CTimeSpan((long)GetLogRate_Period(type)),
                 CTimeSpan((long)0),
-                CRequestRateControl::eErrCode);
+                CRequestRateControl::eErrCode,
+				CRequestRateControl::eDiscrete);
         }
         m_AppLogSuspended = false;
         break;
@@ -919,7 +926,8 @@ void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
             m_ErrLogRC->Reset(limit,
                 CTimeSpan((long)GetLogRate_Period(type)),
                 CTimeSpan((long)0),
-                CRequestRateControl::eErrCode);
+                CRequestRateControl::eErrCode,
+				CRequestRateControl::eDiscrete);
         }
         m_ErrLogSuspended = false;
         break;
@@ -930,7 +938,8 @@ void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
             m_TraceLogRC->Reset(limit,
                 CTimeSpan((long)GetLogRate_Period(type)),
                 CTimeSpan((long)0),
-                CRequestRateControl::eErrCode);
+                CRequestRateControl::eErrCode,
+				CRequestRateControl::eDiscrete);
         }
         m_TraceLogSuspended = false;
         break;
@@ -959,7 +968,8 @@ void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
             m_AppLogRC->Reset(GetLogRate_Limit(type),
                 CTimeSpan((long)period),
                 CTimeSpan((long)0),
-                CRequestRateControl::eErrCode);
+                CRequestRateControl::eErrCode,
+				CRequestRateControl::eDiscrete);
         }
         m_AppLogSuspended = false;
         break;
@@ -969,7 +979,8 @@ void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
             m_ErrLogRC->Reset(GetLogRate_Limit(type),
                 CTimeSpan((long)period),
                 CTimeSpan((long)0),
-                CRequestRateControl::eErrCode);
+                CRequestRateControl::eErrCode,
+				CRequestRateControl::eDiscrete);
         }
         m_ErrLogSuspended = false;
         break;
@@ -980,7 +991,8 @@ void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
             m_TraceLogRC->Reset(GetLogRate_Limit(type),
                 CTimeSpan((long)period),
                 CTimeSpan((long)0),
-                CRequestRateControl::eErrCode);
+                CRequestRateControl::eErrCode,
+				CRequestRateControl::eDiscrete);
         }
         m_TraceLogSuspended = false;
         break;
