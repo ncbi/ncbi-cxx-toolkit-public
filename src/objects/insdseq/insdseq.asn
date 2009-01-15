@@ -3,7 +3,7 @@
 --
 -- ASN.1 and XML for the components of a GenBank/EMBL/DDBJ sequence record
 -- The International Nucleotide Sequence Database (INSD) collaboration
--- Version 1.4, 19 September 2005
+-- Version 1.5, 15 January 2009
 --
 --************************************************************************
 
@@ -88,43 +88,47 @@ BEGIN
 --
 --********
 
+INSDSet ::= SEQUENCE OF INSDSeq
+
 INSDSeq ::= SEQUENCE {
-	locus VisibleString ,
-	length INTEGER ,
-	strandedness VisibleString OPTIONAL ,
-	moltype VisibleString ,
-	topology VisibleString OPTIONAL ,
-	division VisibleString ,
-	update-date VisibleString ,
-	create-date VisibleString OPTIONAL ,
-	update-release VisibleString OPTIONAL ,
-	create-release VisibleString OPTIONAL ,
-	definition VisibleString ,
-	primary-accession VisibleString OPTIONAL ,
-	entry-version VisibleString OPTIONAL ,
-	accession-version VisibleString OPTIONAL ,
-	other-seqids SEQUENCE OF INSDSeqid OPTIONAL ,
-	secondary-accessions SEQUENCE OF INSDSecondary-accn OPTIONAL,
-	project VisibleString OPTIONAL ,
-	keywords SEQUENCE OF INSDKeyword OPTIONAL ,
-	segment VisibleString OPTIONAL ,
-	source VisibleString OPTIONAL ,
-	organism VisibleString OPTIONAL ,
-	taxonomy VisibleString OPTIONAL ,
-	references SEQUENCE OF INSDReference OPTIONAL ,
-	comment VisibleString OPTIONAL ,
-	primary VisibleString OPTIONAL ,
-	source-db VisibleString OPTIONAL ,
-	database-reference VisibleString OPTIONAL ,
-	feature-table SEQUENCE OF INSDFeature OPTIONAL ,
-	sequence VisibleString OPTIONAL ,  -- Optional for other dump forms
-	contig VisibleString OPTIONAL }
+    locus VisibleString ,
+    length INTEGER ,
+    strandedness VisibleString OPTIONAL ,
+    moltype VisibleString ,
+    topology VisibleString OPTIONAL ,
+    division VisibleString ,
+    update-date VisibleString ,
+    create-date VisibleString OPTIONAL ,
+    update-release VisibleString OPTIONAL ,
+    create-release VisibleString OPTIONAL ,
+    definition VisibleString ,
+    primary-accession VisibleString OPTIONAL ,
+    entry-version VisibleString OPTIONAL ,
+    accession-version VisibleString OPTIONAL ,
+    other-seqids SEQUENCE OF INSDSeqid OPTIONAL ,
+    secondary-accessions SEQUENCE OF INSDSecondary-accn OPTIONAL,
+    project VisibleString OPTIONAL ,
+    keywords SEQUENCE OF INSDKeyword OPTIONAL ,
+    segment VisibleString OPTIONAL ,
+    source VisibleString OPTIONAL ,
+    organism VisibleString OPTIONAL ,
+    taxonomy VisibleString OPTIONAL ,
+    references SEQUENCE OF INSDReference OPTIONAL ,
+    comment VisibleString OPTIONAL ,
+    tagset INSDTagset OPTIONAL ,
+    primary VisibleString OPTIONAL ,
+    source-db VisibleString OPTIONAL ,
+    database-reference VisibleString OPTIONAL ,
+    feature-table SEQUENCE OF INSDFeature OPTIONAL ,
+    sequence VisibleString OPTIONAL ,  -- Optional for other dump forms
+    contig VisibleString OPTIONAL
+}
 
-	INSDSeqid ::= VisibleString
+INSDSeqid ::= VisibleString
 
-	INSDSecondary-accn ::= VisibleString
+INSDSecondary-accn ::= VisibleString
 
-	INSDKeyword ::= VisibleString
+INSDKeyword ::= VisibleString
 
 -- INSDReference_position contains a string value indicating the
 -- basepair span(s) to which a reference applies. The allowable
@@ -147,18 +151,19 @@ INSDSeq ::= SEQUENCE {
 --   References that lack an INSDReference_position element apply
 --   to the entire sequence.
 
-	INSDReference ::= SEQUENCE {
-		reference VisibleString ,
-		position VisibleString OPTIONAL ,
-		authors SEQUENCE OF INSDAuthor OPTIONAL ,
-		consortium VisibleString OPTIONAL ,
-		title VisibleString OPTIONAL ,
-		journal VisibleString ,
-		xref SET OF INSDXref OPTIONAL ,
-		pubmed INTEGER OPTIONAL ,
-		remark VisibleString OPTIONAL }
+INSDAuthor ::= VisibleString
 
-	INSDAuthor ::= VisibleString
+INSDReference ::= SEQUENCE {
+    reference VisibleString ,
+    position VisibleString OPTIONAL ,
+    authors SEQUENCE OF INSDAuthor OPTIONAL ,
+    consortium VisibleString OPTIONAL ,
+    title VisibleString OPTIONAL ,
+    journal VisibleString ,
+    xref SET OF INSDXref OPTIONAL ,
+    pubmed INTEGER OPTIONAL ,
+    remark VisibleString OPTIONAL
+}
 
 -- INSDXref provides a method for referring to records in
 -- other databases. INSDXref_dbname is a string value that
@@ -166,9 +171,28 @@ INSDSeq ::= SEQUENCE {
 -- is a string value that provides the record's identifier
 -- in that database.
 
-    INSDXref ::= SEQUENCE {
-		dbname VisibleString ,
-		id VisibleString }
+INSDXref ::= SEQUENCE {
+    dbname VisibleString ,
+    id VisibleString
+}
+
+-- INSDTagset is used for community-specific data elements
+-- in a tag/value format.
+
+INSDTagset ::= SEQUENCE {
+    authority VisibleString OPTIONAL ,
+    version VisibleString OPTIONAL ,
+    url VisibleString OPTIONAL ,
+    tags INSDTags OPTIONAL
+}
+
+INSDTags ::= SEQUENCE OF INSDTag
+
+INSDTag ::= SEQUENCE {
+    name VisibleString OPTIONAL ,
+    value VisibleString OPTIONAL ,
+    unit VisibleString OPTIONAL
+}
 
 -- INSDFeature_operator contains a string value describing
 -- the relationship among a set of INSDInterval within
@@ -185,14 +209,15 @@ INSDSeq ::= SEQUENCE {
 --   Either 'join' or 'order' is required if INSDFeature_intervals
 --   is comprised of more than one INSDInterval .
 
-	INSDFeature ::= SEQUENCE {
-		key VisibleString ,
-		location VisibleString ,
-		intervals SEQUENCE OF INSDInterval OPTIONAL ,
-		operator VisibleString OPTIONAL ,
-		partial5 BOOLEAN OPTIONAL ,
-		partial3 BOOLEAN OPTIONAL ,
-		quals SEQUENCE OF INSDQualifier OPTIONAL }
+INSDFeature ::= SEQUENCE {
+    key VisibleString ,
+    location VisibleString ,
+    intervals SEQUENCE OF INSDInterval OPTIONAL ,
+    operator VisibleString OPTIONAL ,
+    partial5 BOOLEAN OPTIONAL ,
+    partial3 BOOLEAN OPTIONAL ,
+    quals SEQUENCE OF INSDQualifier OPTIONAL
+}
 
 -- INSDInterval_iscomp is a boolean indicating whether
 -- an INSDInterval_from / INSDInterval_to location
@@ -208,19 +233,39 @@ INSDSeq ::= SEQUENCE {
 -- is TRUE, the 'from' and 'to' values must differ by
 -- exactly one base.
 
-	INSDInterval ::= SEQUENCE {
-		from INTEGER OPTIONAL ,
-		to INTEGER OPTIONAL ,
-		point INTEGER OPTIONAL ,
-		iscomp BOOLEAN OPTIONAL ,
-		interbp BOOLEAN OPTIONAL ,
-		accession VisibleString }
+INSDInterval ::= SEQUENCE {
+    from INTEGER OPTIONAL ,
+    to INTEGER OPTIONAL ,
+    point INTEGER OPTIONAL ,
+    iscomp BOOLEAN OPTIONAL ,
+    interbp BOOLEAN OPTIONAL ,
+    accession VisibleString
+}
 
-	INSDQualifier ::= SEQUENCE {
-		name VisibleString ,
-		value VisibleString OPTIONAL }
+INSDQualifier ::= SEQUENCE {
+    name VisibleString ,
+    value VisibleString OPTIONAL
+}
 
-	INSDSet ::= SEQUENCE OF INSDSeq
-		
+-- INSDTagsetRules defines mandatory, optional, and unique tags
+-- for a given community's INSDTagset. If the tagset is extensible,
+-- then additional tags which are not included in the list of
+-- mandatory or optional tags may be present. The uniquetags
+-- element provides a list of the tags that may occur only once
+-- in a given tagset.
+
+INSDTagsetRules ::= SEQUENCE {
+    authority VisibleString OPTIONAL ,
+    version VisibleString OPTIONAL ,
+    mandatorytags INSDTagNames OPTIONAL ,
+    optionaltags INSDTagNames OPTIONAL ,
+    uniquetags INSDTagNames OPTIONAL ,
+    extensible BOOLEAN OPTIONAL
+}
+
+INSDTagNames ::= SEQUENCE OF VisibleString
+
+INSDTagsetRuleSet ::= SEQUENCE OF INSDTagsetRules
+
 END
 
