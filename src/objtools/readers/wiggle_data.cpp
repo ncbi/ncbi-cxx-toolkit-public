@@ -47,8 +47,8 @@
 
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
-#include <objtools/readers/ucscid.hpp>
-#include <objtools/readers/idmapper.hpp>
+#include <objtools/idmapper/ucscid.hpp>
+#include <objtools/idmapper/idmapper.hpp>
 
 #include "wiggle_data.hpp"
 
