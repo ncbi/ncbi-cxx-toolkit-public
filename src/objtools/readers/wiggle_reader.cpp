@@ -132,7 +132,7 @@ CWiggleReader::CWiggleReader(
     //
     //  Ok, set configure the right mapper and initialize object accordingly:
     //    
-    if ( !args["usermap"].AsString().empty() ) {
+    if ( !args["usermap"].AsString().empty() || !args["map"].AsString().empty() ) {
         m_pIdMapper = CIdMapper::GetIdMapper( "user" );
         m_pIdMapper->Setup( args );
         m_uIdMode = CWiggleRecord::IDMODE_CHROM;
@@ -150,6 +150,7 @@ CWiggleReader::CWiggleReader(
         m_pIdMapper = CIdMapper::GetIdMapper( "database" );
         m_uIdMode = CWiggleRecord::IDMODE_NAME_CHROM;
         m_pSet = new CWiggleSet( m_pIdMapper );
+        return;
     }
         
     //

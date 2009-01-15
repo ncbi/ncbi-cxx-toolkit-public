@@ -35,7 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
-
+#include <util/format_guess.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -46,13 +46,13 @@ class NCBI_XOBJREAD_EXPORT CReaderBase
 //  ----------------------------------------------------------------------------
 {
 public:
-    enum FileFormat {
-        FMT_UNKNOWN,
-        FMT_BED,
-        FMT_MICROARRAY,
-        FMT_WIGGLE,
-        FMT_GFF
-    };
+//    enum FileFormat {
+//        FMT_UNKNOWN,
+//        FMT_BED,
+//        FMT_MICROARRAY,
+//        FMT_WIGGLE,
+//        FMT_GFF
+//    };
     enum ObjectType {
         OT_UNKNOWN,
         OT_SEQANNOT,
@@ -71,7 +71,7 @@ public:
         int =0 );
 
     static CReaderBase* GetReader(
-        FileFormat,
+        CFormatGuess::EFormat,
         int =0 );
 
     static CReaderBase* GetReader(
@@ -79,15 +79,8 @@ public:
         const CArgs& );
 
     static CReaderBase* GetReader(
-        FileFormat,
+        CFormatGuess::EFormat,
         const CArgs& );
-
-    static FileFormat GuessFormat(
-        CNcbiIstream& );
-
-    static FileFormat GuessFormat(
-        const char*,
-        size_t );
 
     static bool VerifyFormat(               // for reference only, should be
         CNcbiIstream& );                    //  reimplemented in concrete sub-

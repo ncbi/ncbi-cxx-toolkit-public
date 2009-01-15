@@ -144,76 +144,41 @@ CReaderBase::GetReader(
 //  ----------------------------------------------------------------------------
 CReaderBase*
 CReaderBase::GetReader(
-    FileFormat format,
+    CFormatGuess::EFormat format,
     int flags )
 //  ----------------------------------------------------------------------------
 {
     switch ( format ) {
     default:
         return 0;
-    case FMT_BED:
+    case CFormatGuess::eBed:
         return new CBedReader( flags );
-    case FMT_MICROARRAY:
+    case CFormatGuess::eBed15:
         return new CMicroArrayReader( flags );
-    case FMT_WIGGLE:
+    case CFormatGuess::eWiggle:
         return new CWiggleReader( flags );
+    case CFormatGuess::eGtf:
+        return new CGff3Reader( flags );
     }
 }
 
 //  ----------------------------------------------------------------------------
 CReaderBase*
 CReaderBase::GetReader(
-    FileFormat format,
+    CFormatGuess::EFormat format,
     const CArgs& args )
 //  ----------------------------------------------------------------------------
 {
     switch ( format ) {
     default:
         return 0;
-    case FMT_BED:
+    case CFormatGuess::eBed:
         return new CBedReader( args["g"].AsInteger() );
-    case FMT_MICROARRAY:
+    case CFormatGuess::eBed15:
         return new CMicroArrayReader( args["g"].AsInteger() );
-    case FMT_WIGGLE:
+    case CFormatGuess::eWiggle:
         return new CWiggleReader( args );
     }
-}
-
-//  ----------------------------------------------------------------------------
-CReaderBase::FileFormat
-CReaderBase::GuessFormat(
-    CNcbiIstream& is )
-//  ----------------------------------------------------------------------------
-{
-    CT_POS_TYPE orig_pos = is.tellg();
-
-    unsigned char pcBuffer[1024];
-
-    is.read( (char*)pcBuffer, sizeof( pcBuffer ) );
-    size_t uSize = is.gcount();
-    is.clear();  // in case we reached eof
-    CStreamUtils::Stepback( is, (CT_CHAR_TYPE*)pcBuffer, (streamsize)uSize);
-
-    return GuessFormat( (const char*)pcBuffer, uSize );
-}
-
-//  ----------------------------------------------------------------------------
-CReaderBase::FileFormat
-CReaderBase::GuessFormat(
-    const char* pcBuffer,
-    size_t uSize )
-//  ----------------------------------------------------------------------------
-{
-    if ( CBedReader::VerifyFormat( pcBuffer, uSize ) ) {
-        return FMT_BED;
-    }
-    if ( CMicroArrayReader::VerifyFormat( pcBuffer, uSize ) ) {
-        return FMT_MICROARRAY;
-    }
-    if ( CGff3Reader::VerifyFormat( pcBuffer, uSize ) ) {
-        return FMT_GFF;
-    }
-    return FMT_UNKNOWN;
 }
 
 //  ----------------------------------------------------------------------------
