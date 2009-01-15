@@ -127,14 +127,9 @@ int CIdMapperApp::Run()
     
     for ( unsigned int u = 1; u <= args.GetNExtra(); ++u ) {
         string strKey = UcscID::Label( "", args[ u ].AsString() );
-        CRef<CSeq_id> value;
         unsigned int uLength;
-        if ( pIdMapper->MapID( strKey, value, uLength ) ) {
-            cout << strKey << " ===> " << value->AsFastaString() << endl;
-        }
-        else {
-            cout << strKey << ": no mapping found." << endl;
-        }
+        CSeq_id_Handle idh = pIdMapper->MapID( strKey, uLength );
+        cout << strKey << " ===> " << idh.GetSeqId()->AsFastaString() << endl;
     }
     delete pIdMapper;
         
