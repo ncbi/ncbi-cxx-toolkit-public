@@ -37,6 +37,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbitime.hpp>
+#include <util/format_guess.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/objistr.hpp>
@@ -117,6 +118,12 @@ void CMultiReaderApp::Init(void)
     //
     //  wiggle specific flags and parameters:
     //
+    arg_desc->AddDefaultKey( "map",
+        "map",
+        "User defined mappings, format: \"src1:target1;...;srcN:targetN\" ",
+        CArgDescriptions::eString,
+        "" );
+        
     arg_desc->AddDefaultKey( "usermap",
         "usermap",
         "Source for user defined mappings",
@@ -218,9 +225,21 @@ CMultiReaderApp::Run(void)
     //  Create a suitable reader object:
     //
     string format = args["f"].AsString();
+    if ( NStr::StartsWith( GetProgramDisplayName(), "wig" ) ) {
+        format = "wig";
+    }
+    if ( NStr::StartsWith( GetProgramDisplayName(), "gff" ) ) {
+        format = "gff";
+    }
+    if ( NStr::StartsWith( GetProgramDisplayName(), "bed" ) ) {
+        format = "bed";
+    }
+    if ( NStr::StartsWith( GetProgramDisplayName(), "b15" ) ) {
+        format = "bed15";
+    }
     if ( format == "guess" ) {
         m_pReader = CReaderBase::GetReader( 
-            CReaderBase::GuessFormat( ip ), args );
+            CFormatGuess::Format( ip ), args );
     }
     else {
         m_pReader = CReaderBase::GetReader( format, args );
