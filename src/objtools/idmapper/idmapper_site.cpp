@@ -76,17 +76,17 @@ void CIdMapperSite::Setup(
 };
     
 //  ============================================================================
-bool
+CSeq_id_Handle
 CIdMapperSite::MapID(
     const string& strKey,
-    CRef<CSeq_id>& value,
     unsigned int& uLength )
 //  ============================================================================
 {
-    if ( ! m_Map.GetMapping( strKey, value, uLength ) ) {
-        return CIdMapper::MapID( strKey, value, uLength );
+    CSeq_id_Handle idh = m_Map.GetMapping( strKey, uLength );
+    if ( idh ) {
+        return idh;
     }
-    return true;
+    return CIdMapper::MapID( strKey, uLength );
 };
 
 //  ============================================================================

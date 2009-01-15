@@ -45,9 +45,8 @@ class CIdMapperDatabase:
 public:
     virtual ~CIdMapperDatabase() {};
     
-    virtual bool MapID(
+    virtual CSeq_id_Handle MapID(
         const std::string&,
-        CRef<CSeq_id>&,
         unsigned int& );
 
     virtual void

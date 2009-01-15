@@ -51,9 +51,8 @@ public:
     virtual void Setup(
         const std::string& );               // filename for user mappings
                     
-    virtual bool MapID(
+    virtual CSeq_id_Handle MapID(
         const std::string&,
-        CRef<CSeq_id>&,
         unsigned int& );
 
     virtual void Dump(

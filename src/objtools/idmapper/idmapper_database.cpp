@@ -60,18 +60,14 @@ CIdMapperDatabase::Setup(
 };
 
 //  ============================================================================
-bool
+CSeq_id_Handle
 CIdMapperDatabase::MapID(
     const string& key,
-    CRef<CSeq_id>& value,
     unsigned int& uLength )
 //  ============================================================================
 {
-    if ( m_Map.GetMapping( key, value, uLength ) ) {
-        return true;
-    }
     /* to be done */
-    return CIdMapper::MapID( key, value, uLength );
+    return CIdMapper::MapID( key, uLength );
 };
 
 //  ============================================================================

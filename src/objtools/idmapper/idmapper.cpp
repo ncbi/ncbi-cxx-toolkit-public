@@ -88,16 +88,15 @@ void CIdMapper::Setup(
 };
 
 //  ============================================================================
-bool
+CSeq_id_Handle
 CIdMapper::MapID(
     const string& strKey,
-    CRef<CSeq_id>& value,
     unsigned int& uLength )
 //  ============================================================================
 {
-    value.Reset( new CSeq_id( CSeq_id::e_Local, strKey ) );
     uLength = 0;    
-    return false;
+    CSeq_id id( CSeq_id::e_Local, strKey );
+    return CSeq_id_Handle::GetHandle( id );
 };
 
 //  ============================================================================

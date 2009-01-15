@@ -40,14 +40,14 @@ class CIdMapValue
 {
 public:
     CIdMapValue(
-        CRef<CSeq_id> id,
+        const CSeq_id_Handle& id,
         unsigned int uLength = 0): m_Id( id ), m_uLength( uLength ) {};
 
     CIdMapValue()
     { m_Id.Reset(); m_uLength = 0; };
             
 public:
-    CRef<CSeq_id> m_Id;
+    CSeq_id_Handle m_Id;
     unsigned int m_uLength;    
 };
 
@@ -55,12 +55,9 @@ public:
 class CIdMap
 //  ============================================================================
 {
-//    typedef std::map< std::string, CRef<CSeq_id> > IdMap;
-//    typedef std::map< std::string, CRef<CSeq_id> >::iterator IdIter;
-//    typedef std::map< std::string, CRef<CSeq_id> >::const_iterator IdCiter;
-    typedef std::map< std::string, CIdMapValue > IdMap;
-    typedef std::map< std::string, CIdMapValue >::iterator IdIter;
-    typedef std::map< std::string, CIdMapValue >::const_iterator IdCiter;
+    typedef std::map< std::string, CIdMapValue > TIdMap;
+    typedef TIdMap::iterator IdIter;
+    typedef TIdMap::const_iterator IdCiter;
     
 public:
     CIdMap();
@@ -71,9 +68,8 @@ public:
         CRef<CSeq_id>,
         unsigned int = 0 );
         
-    bool GetMapping(
+    CSeq_id_Handle GetMapping(
         const std::string&,
-        CRef<CSeq_id>&,
         unsigned int& );
 
     void ClearAll();
@@ -87,7 +83,7 @@ protected:
         const CSeq_id& );
                 
 protected:
-    IdMap m_IdMap;
+    TIdMap m_IdMap;
 };
 
 END_objects_SCOPE

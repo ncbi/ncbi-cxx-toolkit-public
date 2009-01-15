@@ -49,11 +49,11 @@ public:
         const CArgs& );
 
     virtual void Setup(
-        const std::string& );               // filename for user mappings
+        const std::string&,                 // filename for user mappings
+        const std::string& );               // string encoded user mappings
                     
-    virtual bool MapID(
+    virtual CSeq_id_Handle MapID(
         const std::string&,
-        CRef<CSeq_id>&,
         unsigned int& );
 
     virtual void Dump(
@@ -65,6 +65,9 @@ protected:
 
     void ReadUserMap(
         CNcbiIstream& );
+        
+    void ReadCommandMap(
+        const std::string& );
         
     static bool MakeSourceId(
         const std::string&,

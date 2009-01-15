@@ -59,11 +59,15 @@ void CIdMapperUser::Setup(
     if ( args[ "usermap" ] ) {
         ReadUserMap( args[ "usermap" ].AsInputFile() );
     }
+    if ( args[ "map" ] ) {
+        ReadCommandMap( args[ "map" ].AsString() );
+    }
 };
 
 //  ============================================================================
 void CIdMapperUser::Setup(
-    const string& strUserMap )
+    const string& strUserMap,
+    const string& strCmdMap )
 //  ============================================================================
 {
     CNcbiIfstream in( strUserMap.c_str() );
@@ -72,20 +76,21 @@ void CIdMapperUser::Setup(
         return;
     }
     ReadUserMap( in );
+    ReadCommandMap( strCmdMap );
 };
     
 //  ============================================================================
-bool
+CSeq_id_Handle
 CIdMapperUser::MapID(
     const string& strKey,
-    CRef<CSeq_id>& value,
     unsigned int& uLength )
 //  ============================================================================
 {
-    if ( ! m_Map.GetMapping( strKey, value, uLength ) ) {
-        return CIdMapper::MapID( strKey, value, uLength );
+    CSeq_id_Handle idh = m_Map.GetMapping( strKey, uLength );
+    if ( idh ) {
+        return idh;
     }
-    return true;
+    return CIdMapper::MapID( strKey, uLength );
 };
 
 //  ============================================================================
@@ -95,7 +100,7 @@ CIdMapperUser::Dump(
     const string& strPrefix )
 //  ============================================================================
 {
-    out << strPrefix << "[CIdMapperSite:" << endl;
+    out << strPrefix << "[CIdMapperUser:" << endl;
     m_Map.Dump( out, strPrefix + "\t" );
     out << strPrefix << "]" << endl;
 };
@@ -122,6 +127,26 @@ void CIdMapperUser::ReadUserMap(
             CRef<CSeq_id> target;
             MakeTargetId( parts[1], target );
             m_Map.AddMapping( strSource, target );
+        }
+    }
+};
+
+//  ============================================================================
+void CIdMapperUser::ReadCommandMap(
+    const string& strCmd )
+//  ============================================================================
+{
+    vector<string> pairs;
+    NStr::Tokenize( strCmd, ";", pairs, NStr::eMergeDelims );
+    for ( vector<string>::iterator it = pairs.begin(); it != pairs.end(); ++it ) {
+        string strSource;
+        string strTarget;
+        if ( NStr::SplitInTwo( *it, ":", strSource, strTarget ) ) {
+            string idSource;
+            MakeSourceId( strSource, idSource );
+            CRef<CSeq_id> idTarget;
+            MakeTargetId( strTarget, idTarget );
+            m_Map.AddMapping( idSource, idTarget );
         }
     }
 };

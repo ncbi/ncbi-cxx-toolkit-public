@@ -38,7 +38,6 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seq/seq_id_handle.hpp>
 
 #include <objtools/idmapper/ucscid.hpp>
 
@@ -67,25 +66,24 @@ CIdMap::AddMapping(
     unsigned int uLength )
 //  ============================================================================
 {
-    m_IdMap[ strkey ] = CIdMapValue( value, uLength );
+    m_IdMap[ strkey ] = CIdMapValue( 
+        CSeq_id_Handle::GetHandle( *value ), uLength );
     return true;
 };
 
 //  ============================================================================
-bool
+CSeq_id_Handle
 CIdMap::GetMapping(
     const string& strkey,
-    CRef<CSeq_id>& value,
     unsigned int& uLength )
 //  ============================================================================
 {
     IdCiter it = m_IdMap.find( strkey );
     if ( it == m_IdMap.end() ) {
-        return false;
+        return CSeq_id_Handle();
     }
-    value = it->second.m_Id;
     uLength = it->second.m_uLength;
-    return true;
+    return it->second.m_Id;
 };
 
 //  ============================================================================
@@ -106,7 +104,7 @@ CIdMap::Dump(
     out << strPrefix << "[CIdMap:" << endl;
     for ( IdCiter it = m_IdMap.begin(); it != m_IdMap.end(); ++it ) {
         out << strPrefix << strPrefix << it->first 
-            << " ===> " << it->second.m_Id->AsFastaString() << endl;
+            << " ===> " << it->second.m_Id.GetSeqId()->AsFastaString() << endl;
     }
     out << strPrefix << "]" << endl;
 };
