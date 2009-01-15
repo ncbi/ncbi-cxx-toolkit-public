@@ -206,12 +206,6 @@
 #  define NCBI_THREADER_EXPORTS
 #endif
 
-/* Definitions for NCBI_BLASTINPUT.DLL
- */
-#ifdef NCBI_XALGO_BLASTINPUT_EXPORTS
-#  define NCBI_BLASTINPUT_EXPORT
-#endif
-
 /* ------------------------------------------------- */
 
 /* Individual Library Definitions
