@@ -155,7 +155,7 @@ protected:
     double ScaleLinear() const;              
     unsigned int GetGraphType();
 
-    CRef<CSeq_id> m_MappedID;                       
+    CSeq_id_Handle m_MappedID;                       
     std::string m_strChrom;
     unsigned int m_uGraphType;
     unsigned int m_uSeqStart;

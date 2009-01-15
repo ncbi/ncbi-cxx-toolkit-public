@@ -47,8 +47,8 @@
 
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
-#include <objtools/idmapper/ucscid.hpp>
-#include <objtools/idmapper/idmapper.hpp>
+#include <objtools/readers/ucscid.hpp>
+#include <objtools/readers/idmapper.hpp>
 
 #include "wiggle_data.hpp"
 
@@ -236,8 +236,8 @@ CWiggleTrack::CWiggleTrack(
     m_dMaxValue = (record.Value() > 0) ? record.Value() : 0;
     m_dMinValue = (record.Value() < 0) ? record.Value() : 0;
 
-    pMapper->MapID( UcscID::Label( record.Id(), record.Chrom() ), 
-        m_MappedID, m_uSeqLength );
+    m_MappedID = pMapper->MapID( UcscID::Label( record.Id(), record.Chrom() ), 
+        m_uSeqLength );
     
     if ( m_uSeqLength == 0 ) {
         m_uSeqStart = record.SeqStart();
@@ -382,7 +382,7 @@ bool CWiggleTrack::MakeGraph(
     CRef<CSeq_graph> graph( new CSeq_graph );
 
     CSeq_interval& loc = graph->SetLoc().SetInt();
-    loc.SetId( *m_MappedID );
+    loc.SetId().Assign( *m_MappedID.GetSeqId() );
     loc.SetFrom( SeqStart() );
     loc.SetTo( SeqStop() );
         
