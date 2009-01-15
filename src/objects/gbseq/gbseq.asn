@@ -3,7 +3,7 @@
 --
 -- ASN.1 and XML for the components of a GenBank format sequence
 -- J.Ostell 2002
--- Updated 14 December 2005
+-- Updated 15 January 2009
 --
 --*********************************************************
 
@@ -84,83 +84,118 @@ BEGIN
 --
 --********
 
+GBSet ::= SEQUENCE OF GBSeq
+        
 GBSeq ::= SEQUENCE {
-	locus VisibleString ,
-	length INTEGER ,
-	strandedness VisibleString OPTIONAL ,
-	moltype VisibleString ,
-	topology VisibleString OPTIONAL ,
-	division VisibleString ,
-	update-date VisibleString ,
-	create-date VisibleString OPTIONAL ,
-	update-release VisibleString OPTIONAL ,
-	create-release VisibleString OPTIONAL ,
-	definition VisibleString ,
-	primary-accession VisibleString OPTIONAL ,
-	entry-version VisibleString OPTIONAL ,
-	accession-version VisibleString OPTIONAL ,
-	other-seqids SEQUENCE OF GBSeqid OPTIONAL ,
-	secondary-accessions SEQUENCE OF GBSecondary-accn OPTIONAL,
-	project VisibleString OPTIONAL ,
-	keywords SEQUENCE OF GBKeyword OPTIONAL ,
-	segment VisibleString OPTIONAL ,
-	source VisibleString OPTIONAL ,
-	organism VisibleString OPTIONAL ,
-	taxonomy VisibleString OPTIONAL ,
-	references SEQUENCE OF GBReference OPTIONAL ,
-	comment VisibleString OPTIONAL ,
-	primary VisibleString OPTIONAL ,
-	source-db VisibleString OPTIONAL ,
-	database-reference VisibleString OPTIONAL ,
-	feature-table SEQUENCE OF GBFeature OPTIONAL ,
-	sequence VisibleString OPTIONAL ,  -- Optional for other dump forms
-	contig VisibleString OPTIONAL }
+    locus VisibleString ,
+    length INTEGER ,
+    strandedness VisibleString OPTIONAL ,
+    moltype VisibleString ,
+    topology VisibleString OPTIONAL ,
+    division VisibleString ,
+    update-date VisibleString ,
+    create-date VisibleString OPTIONAL ,
+    update-release VisibleString OPTIONAL ,
+    create-release VisibleString OPTIONAL ,
+    definition VisibleString ,
+    primary-accession VisibleString OPTIONAL ,
+    entry-version VisibleString OPTIONAL ,
+    accession-version VisibleString OPTIONAL ,
+    other-seqids SEQUENCE OF GBSeqid OPTIONAL ,
+    secondary-accessions SEQUENCE OF GBSecondary-accn OPTIONAL,
+    project VisibleString OPTIONAL ,
+    keywords SEQUENCE OF GBKeyword OPTIONAL ,
+    segment VisibleString OPTIONAL ,
+    source VisibleString OPTIONAL ,
+    organism VisibleString OPTIONAL ,
+    taxonomy VisibleString OPTIONAL ,
+    references SEQUENCE OF GBReference OPTIONAL ,
+    comment VisibleString OPTIONAL ,
+    tagset GBTagset OPTIONAL ,
+    primary VisibleString OPTIONAL ,
+    source-db VisibleString OPTIONAL ,
+    database-reference VisibleString OPTIONAL ,
+    feature-table SEQUENCE OF GBFeature OPTIONAL ,
+    sequence VisibleString OPTIONAL ,  -- Optional for other dump forms
+    contig VisibleString OPTIONAL
+}
 
-	GBSecondary-accn ::= VisibleString
+GBSecondary-accn ::= VisibleString
 
-	GBSeqid ::= VisibleString
+GBSeqid ::= VisibleString
 
-	GBKeyword ::= VisibleString
+GBKeyword ::= VisibleString
 
-	GBReference ::= SEQUENCE {
-		reference VisibleString ,
-		position VisibleString OPTIONAL ,
-		authors SEQUENCE OF GBAuthor OPTIONAL ,
-		consortium VisibleString OPTIONAL ,
-		title VisibleString OPTIONAL ,
-		journal VisibleString ,
-		xref SET OF GBXref OPTIONAL ,
-		pubmed INTEGER OPTIONAL ,
-		remark VisibleString OPTIONAL }
+GBAuthor ::= VisibleString
 
-	GBAuthor ::= VisibleString
+GBReference ::= SEQUENCE {
+    reference VisibleString ,
+    position VisibleString OPTIONAL ,
+    authors SEQUENCE OF GBAuthor OPTIONAL ,
+    consortium VisibleString OPTIONAL ,
+    title VisibleString OPTIONAL ,
+    journal VisibleString ,
+    xref SET OF GBXref OPTIONAL ,
+    pubmed INTEGER OPTIONAL ,
+    remark VisibleString OPTIONAL
+}
 
-    GBXref ::= SEQUENCE {
-		dbname VisibleString ,
-		id VisibleString }
+GBXref ::= SEQUENCE {
+    dbname VisibleString ,
+    id VisibleString
+}
 
-	GBFeature ::= SEQUENCE {
-		key VisibleString ,
-		location VisibleString ,
-		intervals SEQUENCE OF GBInterval OPTIONAL ,
-		operator VisibleString OPTIONAL ,
-		partial5 BOOLEAN OPTIONAL ,
-		partial3 BOOLEAN OPTIONAL ,
-		quals SEQUENCE OF GBQualifier OPTIONAL }
+GBTagset ::= SEQUENCE {
+    authority VisibleString OPTIONAL ,
+    version VisibleString OPTIONAL ,
+    url VisibleString OPTIONAL ,
+    tags GBTags OPTIONAL
+}
 
-	GBInterval ::= SEQUENCE {
-		from INTEGER OPTIONAL ,
-		to INTEGER OPTIONAL ,
-		point INTEGER OPTIONAL ,
-		iscomp BOOLEAN OPTIONAL ,
-		interbp BOOLEAN OPTIONAL ,
-		accession VisibleString }
+GBTags ::= SEQUENCE OF GBTag
 
-	GBQualifier ::= SEQUENCE {
-		name VisibleString ,
-		value VisibleString OPTIONAL }
+GBTag ::= SEQUENCE {
+    name VisibleString OPTIONAL ,
+    value VisibleString OPTIONAL ,
+    unit VisibleString OPTIONAL
+}
 
-	GBSet ::= SEQUENCE OF GBSeq
-		
+GBFeature ::= SEQUENCE {
+    key VisibleString ,
+    location VisibleString ,
+    intervals SEQUENCE OF GBInterval OPTIONAL ,
+    operator VisibleString OPTIONAL ,
+    partial5 BOOLEAN OPTIONAL ,
+    partial3 BOOLEAN OPTIONAL ,
+    quals SEQUENCE OF GBQualifier OPTIONAL
+}
+
+GBInterval ::= SEQUENCE {
+    from INTEGER OPTIONAL ,
+    to INTEGER OPTIONAL ,
+    point INTEGER OPTIONAL ,
+    iscomp BOOLEAN OPTIONAL ,
+    interbp BOOLEAN OPTIONAL ,
+    accession VisibleString
+}
+
+GBQualifier ::= SEQUENCE {
+    name VisibleString ,
+    value VisibleString OPTIONAL
+}
+
+GBTagsetRules ::= SEQUENCE {
+    authority VisibleString OPTIONAL ,
+    version VisibleString OPTIONAL ,
+    mandatorytags GBTagNames OPTIONAL ,
+    optionaltags GBTagNames OPTIONAL ,
+    uniquetags GBTagNames OPTIONAL ,
+    extensible BOOLEAN OPTIONAL
+}
+
+GBTagNames ::= SEQUENCE OF VisibleString
+
+GBTagsetRuleSet ::= SEQUENCE OF GBTagsetRules
+
 END
 
