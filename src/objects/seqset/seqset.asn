@@ -45,6 +45,8 @@ Bioseq-set ::= SEQUENCE {      -- just a collection
         wgs-set (18) ,              -- whole genome shotgun project
         named-annot (19) ,          -- named annotation set
         named-annot-prod (20) ,     -- with instantiated mRNA+protein
+        read-set (21) ,             -- set from a single read
+        mate-pairs (22) ,           -- paired sequences within a read-set
         other (255) } DEFAULT not-set ,
     release VisibleString OPTIONAL ,
     date Date OPTIONAL ,
