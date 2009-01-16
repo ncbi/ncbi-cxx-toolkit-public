@@ -51,6 +51,10 @@ BEGIN_NCBI_SCOPE
 
 #if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
 
+// 
+// 1 - use human-friendly names (still works with XCode, but generates lots of warnings)
+// 0 - use XCode-friendly hexadecimal ids
+#define USE_VERBOSE_NAMES 0
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -112,14 +116,22 @@ void CMacProjectGenerator::Generate(const string& solution)
     CRef<CArray> app_dependencies( new CArray);
     CRef<CArray> lib_dependencies( new CArray);
     
+    // set GUIDs
+    ITERATE(CProjectItemsTree::TProjects, p, m_Projects_tree.m_Projects) {
+        const CProjItem& prj(p->second);
+        prj.m_GUID = GetUUID();
+    }
+
     // for each project
     ITERATE(CProjectItemsTree::TProjects, p, m_Projects_tree.m_Projects) {
 
         const CProjItem& prj(p->second);
 
-        string proj_target(   GetProjTarget(   prj));
-        string proj_product(  GetProjProduct(  prj));
+#if USE_VERBOSE_NAMES
         string proj_dependency(GetProjDependency(prj));
+#else
+        string proj_dependency(prj.m_GUID);
+#endif
         string explicit_type( GetExplicitType( prj));
 
         CProjectFileCollector prj_files( prj, m_Configs, m_SolutionDir+m_OutputDir);
@@ -144,7 +156,6 @@ void CMacProjectGenerator::Generate(const string& solution)
             }
             AddString( *all_dependencies, proj_dependency);
         }
-        AddString( *targets, proj_target);
 
         if (prj.m_ProjType == CProjKey::eApp) {
             string app_type = prj_files.GetProjectContext().GetMsvcProjectMakefile().GetLinkerOpt("APP_TYPE",SConfigInfo());
@@ -180,7 +191,17 @@ void CMacProjectGenerator::Generate(const string& solution)
             AddString( *build_phases, proj_cust_script);
         }
         // project target and dependencies
-        CreateProjectTarget( prj, prj_files, *dict_objects, build_phases);
+#if USE_VERBOSE_NAMES
+        string proj_product(  GetProjProduct(  prj));
+#else
+        string proj_product(  GetUUID());
+#endif
+        string proj_target(
+            CreateProjectTarget( prj, prj_files, *dict_objects, build_phases,
+                                 proj_product));
+        if (!proj_target.empty()) {
+            AddString( *targets, proj_target);
+        }
 
         // project dependency key
         {
@@ -207,11 +228,19 @@ void CMacProjectGenerator::Generate(const string& solution)
     }
 
 // collect file groups
+#if USE_VERBOSE_NAMES
+    string source_files("Source_Files");
+    string root_group("Main_Group");
+#else
+    string source_files(GetUUID());
+    string root_group( GetUUID());    
+#endif
+
     file_groups->Set().sort(s_String_less);
-    AddGroupDict( *dict_objects, "Source_Files", file_groups, "Sources");
+    AddGroupDict( *dict_objects, source_files, file_groups, "Sources");
     CRef<CArray> main_groups( new CArray);
-    AddString( *main_groups, "Source_Files");
-    AddGroupDict( *dict_objects, "Main_Group", main_groups, "NCBI C++ Toolkit");
+    AddString( *main_groups, source_files);
+    AddGroupDict( *dict_objects, root_group, main_groups, "NCBI C++ Toolkit");
 
     targets->Set().sort(s_String_less);
     lib_dependencies->Set().sort(s_String_less);
@@ -229,7 +258,7 @@ void CMacProjectGenerator::Generate(const string& solution)
 
 // root object
     AddString( dict_root, "rootObject",
-        CreateRootObject(configs_root, *dict_objects, targets));
+        CreateRootObject(configs_root, *dict_objects, targets, root_group));
 
 // save project
     Save(solution_name, *xproj);
@@ -260,10 +289,17 @@ string CMacProjectGenerator::CreateProjectFileGroups(
     CProjKey proj_key(prj.m_ProjType, prj.m_ID);
 
     string proj_id(        GetProjId( prj) );
+#if USE_VERBOSE_NAMES
     string proj_src(       proj_id + "_src");
     string proj_include(   proj_id + "_include");
     string proj_specs(     proj_id + "_specs");
     string src_group_name( proj_id + "_sources");
+#else
+    string proj_src(       GetUUID());
+    string proj_include(   GetUUID());
+    string proj_specs(     GetUUID());
+    string src_group_name( GetUUID());
+#endif
 
     CRef<CArray> proj_cpps(  new CArray);
     CRef<CArray> proj_hpps(  new CArray);
@@ -335,9 +371,15 @@ string CMacProjectGenerator::CreateProjectFileGroups(
         CRef<CArray>& cpps = hosted_cpps[ *hosted_lib];
         CRef<CArray>& hpps = hosted_hpps[ *hosted_lib];
         CRef<CArray>& srcs = hosted_srcs[ *hosted_lib];
+#if USE_VERBOSE_NAMES
         string hosted_src(   *hosted_lib + "_hosted_src");
         string hosted_inc(   *hosted_lib + "_hosted_include");
         string hosted_group( *hosted_lib + "_hosted_sources");
+#else
+        string hosted_src(   GetUUID());
+        string hosted_inc(   GetUUID());
+        string hosted_group( GetUUID());
+#endif
         if (!cpps->Get().empty()) {
             cpps->Set().sort(s_String_less);
             AddString( *srcs, hosted_src);
@@ -427,7 +469,11 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
         }
     }
     if (!script.empty()) {
+#if USE_VERBOSE_NAMES
         string proj_script(   GetProjId(       prj) + "_script");
+#else
+        string proj_script(   GetUUID());
+#endif
         CRef<CDict> dict_script( AddDict( dict_objects, proj_script));
         AddArray(  *dict_script, "files");
         AddArray(  *dict_script, "inputPaths",  inputs);
@@ -448,7 +494,11 @@ string CMacProjectGenerator::CreateProjectCustomScriptPhase(
     prj_files.GetProjectContext().GetMsvcProjectMakefile().GetCustomScriptInfo(info);
 
     if (!info.m_Script.empty()) {
+#if USE_VERBOSE_NAMES
         string proj_script(   GetProjId(       prj) + "_cust_script");
+#else
+        string proj_script(   GetUUID());
+#endif
         CRef<CDict> dict_script( AddDict( dict_objects, proj_script));
         string script_loc( prj.m_SourcesBaseDir);
 
@@ -485,7 +535,11 @@ string CMacProjectGenerator::CreateProjectBuildPhase(
     const CProjItem& prj,
     CDict& dict_objects, CRef<CArray>& build_files)
 {
+#if USE_VERBOSE_NAMES
     string proj_build(    GetProjBuild( prj));
+#else
+    string proj_build(    GetUUID());
+#endif
     CRef<CDict> dict_build( AddDict( dict_objects, proj_build));
     AddArray( *dict_build, "files", build_files);
     AddString( *dict_build, "isa", "PBXSourcesBuildPhase");
@@ -494,9 +548,14 @@ string CMacProjectGenerator::CreateProjectBuildPhase(
 
 string CMacProjectGenerator::CreateProjectTarget(
     const CProjItem& prj, const CProjectFileCollector& prj_files,
-    CDict& dict_objects, CRef<CArray>& build_phases)
+    CDict& dict_objects, CRef<CArray>& build_phases,
+    const string& product_id)
 {
+#if USE_VERBOSE_NAMES
     string proj_target(   GetProjTarget(   prj));
+#else
+    string proj_target(   GetUUID());
+#endif
     string target_name(   GetTargetName(   prj));
     string product_type(  GetProductType(  prj));
     CRef<CArray> dependencies( new CArray);
@@ -515,14 +574,18 @@ string CMacProjectGenerator::CreateProjectTarget(
                 GetApp().GetSite().Is3PartyLib(dp->first.Id())) {
                     continue;
             }
+#if USE_VERBOSE_NAMES
             AddString( *dependencies, GetProjDependency(dp->second));
+#else
+            AddString( *dependencies, dp->second.m_GUID);
+#endif
         }
     }
     AddArray(  *dict_target, "dependencies", dependencies);
     AddString( *dict_target, "isa", "PBXNativeTarget");
     AddString( *dict_target, "name", target_name);
     AddString( *dict_target, "productName", target_name);
-    AddString( *dict_target, "productReference", GetProjProduct(prj));
+    AddString( *dict_target, "productReference", product_id);
     AddString( *dict_target, "productType", product_type);
     return proj_target;
 }
@@ -530,8 +593,12 @@ string CMacProjectGenerator::CreateProjectTarget(
 string CMacProjectGenerator::CreateBuildConfigurations(CDict& dict_objects)
 {
     CRef<CArray> build_settings( new CArray);
+#if USE_VERBOSE_NAMES
     string bld_cfg(      "Build_Configuration_");
     string bld_cfg_list( "Build_Configurations");
+#else
+    string bld_cfg_list( GetUUID());
+#endif
 
     ITERATE(list<SConfigInfo>, cfg, m_Configs) {
         if (cfg->m_rtType == SConfigInfo::rtSingleThreaded ||
@@ -539,7 +606,11 @@ string CMacProjectGenerator::CreateBuildConfigurations(CDict& dict_objects)
             cfg->m_rtType == SConfigInfo::rtUnknown) {
             continue;
         }
+#if USE_VERBOSE_NAMES
         string bld_cfg_name(bld_cfg + cfg->m_Name);
+#else
+        string bld_cfg_name( GetUUID());
+#endif
         CreateBuildSettings( *AddDict( dict_objects, bld_cfg_name), *cfg);
         AddString( *build_settings, bld_cfg_name);
     }
@@ -558,8 +629,12 @@ string CMacProjectGenerator::CreateProjectBuildConfigurations(
 {
     CRef<CArray> build_settings( new CArray);
     string proj_id(      GetProjId( prj) );
+#if USE_VERBOSE_NAMES
     string bld_cfg(      proj_id + "_Build_Configuration_");
     string bld_cfg_list( proj_id + "_Build_Configurations");
+#else
+    string bld_cfg_list( GetUUID());
+#endif
 
     ITERATE(list<SConfigInfo>, cfg, prj_files.GetEnabledConfigs()) {
         if (cfg->m_rtType == SConfigInfo::rtSingleThreaded ||
@@ -567,7 +642,11 @@ string CMacProjectGenerator::CreateProjectBuildConfigurations(
             cfg->m_rtType == SConfigInfo::rtUnknown) {
             continue;
         }
+#if USE_VERBOSE_NAMES
         string bld_cfg_name(bld_cfg + cfg->m_Name);
+#else
+        string bld_cfg_name( GetUUID());
+#endif
         CreateProjectBuildSettings( prj, prj_files,
             *AddDict( dict_objects, bld_cfg_name), *cfg);
         AddString( *build_settings, bld_cfg_name);
@@ -586,8 +665,12 @@ string CMacProjectGenerator::CreateAggregateBuildConfigurations(
 {
     CRef<CArray> build_settings( new CArray);
     string proj_id(      target_name );
+#if USE_VERBOSE_NAMES
     string bld_cfg(      target_name + "_Build_Configuration_");
     string bld_cfg_list( target_name + "_Build_Configurations");
+#else
+    string bld_cfg_list( GetUUID());
+#endif
 
     ITERATE(list<SConfigInfo>, cfg, m_Configs) {
         if (cfg->m_rtType == SConfigInfo::rtSingleThreaded ||
@@ -595,7 +678,11 @@ string CMacProjectGenerator::CreateAggregateBuildConfigurations(
             cfg->m_rtType == SConfigInfo::rtUnknown) {
             continue;
         }
+#if USE_VERBOSE_NAMES
         string bld_cfg_name(bld_cfg + cfg->m_Name);
+#else
+        string bld_cfg_name( GetUUID());
+#endif
         CreateAggregateBuildSettings( target_name,
             *AddDict( dict_objects, bld_cfg_name), *cfg);
         AddString( *build_settings, bld_cfg_name);
@@ -856,7 +943,11 @@ void CMacProjectGenerator::CreateAggregateBuildSettings(
 string CMacProjectGenerator::AddAggregateTarget(
     const string& target_name, CDict& dict_objects, CRef<CArray>& dependencies)
 {
+#if USE_VERBOSE_NAMES
     string proj_target( target_name + "_target");
+#else
+    string proj_target( GetUUID());
+#endif
     string configs_prj(
         CreateAggregateBuildConfigurations( target_name, dict_objects));
     CRef<CDict> dict_target( AddDict( dict_objects, proj_target));
@@ -874,8 +965,13 @@ string CMacProjectGenerator::AddConfigureTarget(
     const string& solution_name, CDict& dict_objects)
 {
     string target_name("CONFIGURE");
+#if USE_VERBOSE_NAMES
     string proj_target( target_name + "_target");
     string proj_script( target_name + "_script");
+#else
+    string proj_target( GetUUID());
+    string proj_script( GetUUID());
+#endif
 
     string configs_prj(
         CreateAggregateBuildConfigurations( target_name, dict_objects));
@@ -903,24 +999,36 @@ string CMacProjectGenerator::AddConfigureTarget(
 }
 
 string CMacProjectGenerator::CreateRootObject(
-    const string& configs_root, CDict& dict_objects, CRef<CArray>& targets)
+    const string& configs_root, CDict& dict_objects, CRef<CArray>& targets,
+    const string& root_group)
 {
+#if USE_VERBOSE_NAMES
     string root_name("ROOT_OBJECT");
+#else
+    string root_name( GetUUID());
+#endif
     CRef<CDict> root_obj( AddDict( dict_objects, root_name));
     AddString( *root_obj, "buildConfigurationList", configs_root);
     AddString( *root_obj, "compatibilityVersion", "Xcode 3.0");
     AddString( *root_obj, "hasScannedForEncodings", "1");
     AddString( *root_obj, "isa", "PBXProject");
-    AddString( *root_obj, "mainGroup", "Main_Group");
+    AddString( *root_obj, "mainGroup", root_group);
     AddString( *root_obj, "projectDirPath", "");
     AddString( *root_obj, "projectRoot", "");
     AddArray(  *root_obj, "targets", targets);
     return root_name;
 }
 
+string CMacProjectGenerator::GetUUID(void)
+{
+    static Uint4 uuid = 1;
+    char buffer[64];
+    ::sprintf(buffer, "ABCDABCDABCDABCD%08X", uuid++);
+    return buffer;
+}
+
 string CMacProjectGenerator::AddFile(CDict& dict, const string& name)
 {
-    static size_t counter = 0;
     string filetype;
     CDirEntry entry(name);
     string ext = entry.GetExt();
@@ -937,8 +1045,12 @@ string CMacProjectGenerator::AddFile(CDict& dict, const string& name)
     }
     
     string base_name = entry.GetName();
-
+#if USE_VERBOSE_NAMES
+    static size_t counter = 0;
     string name_id = "FILE" + NStr::UIntToString(counter++);
+#else
+    string name_id( GetUUID());
+#endif
     CRef<CDict> file( AddDict( dict, name_id));
     AddString( *file, "isa", "PBXFileReference");
     if (!filetype.empty()) {
@@ -952,7 +1064,11 @@ string CMacProjectGenerator::AddFile(CDict& dict, const string& name)
 
 string CMacProjectGenerator::AddFileSource(CDict& dict, const string& name)
 {
+#if USE_VERBOSE_NAMES
     string name_ref = "SRC_" + name;
+#else
+    string name_ref( GetUUID());
+#endif
     CRef<CDict> file( AddDict( dict, name_ref));
     AddString( *file, "fileRef", name);
     AddString( *file, "isa", "PBXBuildFile");

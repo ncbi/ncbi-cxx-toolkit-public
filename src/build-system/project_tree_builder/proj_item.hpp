@@ -157,7 +157,7 @@ public:
     EMakeFileType m_MakeType;
     
     /// project GUID
-    string m_GUID;
+    mutable string m_GUID;
 
     string  m_DllHost;
     list<string> m_HostedLibs;

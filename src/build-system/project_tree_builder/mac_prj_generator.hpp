@@ -78,7 +78,7 @@ private:
         CDict& dict_objects, CRef<CArray>& build_files);
     string CreateProjectTarget(
         const CProjItem& prj, const CProjectFileCollector& prj_files,
-        CDict& dict_objects, CRef<CArray>& build_phases);
+        CDict& dict_objects, CRef<CArray>& build_phases, const string& product_id);
 
     string CreateBuildConfigurations(CDict& dict_objects);
     string CreateProjectBuildConfigurations(
@@ -99,8 +99,9 @@ private:
     string AddConfigureTarget(const string& solution_name,
         CDict& dict_objects);
     string CreateRootObject(const string& configs_root,
-        CDict& dict_objects, CRef<CArray>& targets);
+        CDict& dict_objects, CRef<CArray>& targets, const string& root_group);
     
+    string GetUUID(void);
     string AddFile(CDict& dict, const string& name);
     string AddFileSource(CDict& dict, const string& name);
     void   AddGroupDict( CDict& dict, const string& key,
