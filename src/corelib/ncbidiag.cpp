@@ -843,19 +843,19 @@ CDiagContext::CDiagContext(void)
           CTimeSpan((long)GetLogRate_Period(eLogRate_App)),
           CTimeSpan((long)0),
           CRequestRateControl::eErrCode,
-		  CRequestRateControl::eDiscrete)),
+          CRequestRateControl::eDiscrete)),
       m_ErrLogRC(new CRequestRateControl(
           GetLogRate_Limit(eLogRate_Err),
           CTimeSpan((long)GetLogRate_Period(eLogRate_Err)),
           CTimeSpan((long)0),
           CRequestRateControl::eErrCode,
-		  CRequestRateControl::eDiscrete)),
+          CRequestRateControl::eDiscrete)),
       m_TraceLogRC(new CRequestRateControl(
           GetLogRate_Limit(eLogRate_Trace),
           CTimeSpan((long)GetLogRate_Period(eLogRate_Trace)),
           CTimeSpan((long)0),
           CRequestRateControl::eErrCode,
-		  CRequestRateControl::eDiscrete)),
+          CRequestRateControl::eDiscrete)),
       m_AppLogSuspended(false),
       m_ErrLogSuspended(false),
       m_TraceLogSuspended(false)
@@ -876,17 +876,17 @@ void CDiagContext::ResetLogRates(void)
         CTimeSpan((long)GetLogRate_Period(eLogRate_App)),
         CTimeSpan((long)0),
         CRequestRateControl::eErrCode,
-		CRequestRateControl::eDiscrete);
+        CRequestRateControl::eDiscrete);
     m_ErrLogRC->Reset(GetLogRate_Limit(eLogRate_Err),
         CTimeSpan((long)GetLogRate_Period(eLogRate_Err)),
         CTimeSpan((long)0),
         CRequestRateControl::eErrCode,
-		CRequestRateControl::eDiscrete);
+        CRequestRateControl::eDiscrete);
     m_TraceLogRC->Reset(GetLogRate_Limit(eLogRate_Trace),
         CTimeSpan((long)GetLogRate_Period(eLogRate_Trace)),
         CTimeSpan((long)0),
         CRequestRateControl::eErrCode,
-		CRequestRateControl::eDiscrete);
+        CRequestRateControl::eDiscrete);
     m_AppLogSuspended = false;
     m_ErrLogSuspended = false;
     m_TraceLogSuspended = false;
@@ -916,7 +916,7 @@ void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
                 CTimeSpan((long)GetLogRate_Period(type)),
                 CTimeSpan((long)0),
                 CRequestRateControl::eErrCode,
-				CRequestRateControl::eDiscrete);
+                CRequestRateControl::eDiscrete);
         }
         m_AppLogSuspended = false;
         break;
@@ -927,7 +927,7 @@ void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
                 CTimeSpan((long)GetLogRate_Period(type)),
                 CTimeSpan((long)0),
                 CRequestRateControl::eErrCode,
-				CRequestRateControl::eDiscrete);
+                CRequestRateControl::eDiscrete);
         }
         m_ErrLogSuspended = false;
         break;
@@ -939,7 +939,7 @@ void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
                 CTimeSpan((long)GetLogRate_Period(type)),
                 CTimeSpan((long)0),
                 CRequestRateControl::eErrCode,
-				CRequestRateControl::eDiscrete);
+                CRequestRateControl::eDiscrete);
         }
         m_TraceLogSuspended = false;
         break;
@@ -969,7 +969,7 @@ void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
                 CTimeSpan((long)period),
                 CTimeSpan((long)0),
                 CRequestRateControl::eErrCode,
-				CRequestRateControl::eDiscrete);
+                CRequestRateControl::eDiscrete);
         }
         m_AppLogSuspended = false;
         break;
@@ -980,7 +980,7 @@ void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
                 CTimeSpan((long)period),
                 CTimeSpan((long)0),
                 CRequestRateControl::eErrCode,
-				CRequestRateControl::eDiscrete);
+                CRequestRateControl::eDiscrete);
         }
         m_ErrLogSuspended = false;
         break;
@@ -992,7 +992,7 @@ void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
                 CTimeSpan((long)period),
                 CTimeSpan((long)0),
                 CRequestRateControl::eErrCode,
-				CRequestRateControl::eDiscrete);
+                CRequestRateControl::eDiscrete);
         }
         m_TraceLogSuspended = false;
         break;
@@ -2038,12 +2038,13 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                              CNcbiRegistry*       config,
                              EDiagCollectMessages collect)
 {
+    CDiagContext& ctx = GetDiagContext();
     // Initialize message collecting
     if (collect == eDCM_Init) {
-        GetDiagContext().InitMessages();
+        ctx.InitMessages();
     }
     else if (collect == eDCM_InitNoLimit) {
-        GetDiagContext().InitMessages(size_t(-1));
+        ctx.InitMessages(size_t(-1));
     }
 
     bool log_switched = false;
@@ -2087,7 +2088,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             break;
         case eDS_ToMemory:
             if (old_log_name != kLogName_Memory) {
-                GetDiagContext().InitMessages(size_t(-1));
+                ctx.InitMessages(size_t(-1));
                 SetDiagStream(0, false, 0, 0, kLogName_Memory);
                 log_switched = true;
             }
@@ -2206,7 +2207,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     }
 
     if ( to_applog ) {
-        GetDiagContext().SetOldPostFormat(false);
+        ctx.SetOldPostFormat(false);
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
         s_MergeLinesSetBySetupDiag = true;
@@ -2215,28 +2216,32 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     else if ( s_MergeLinesSetBySetupDiag ) {
         UnsetDiagPostFlag(eDPF_PreMergeLines);
         UnsetDiagPostFlag(eDPF_MergeLines);
+        // Disable throttling
+        ctx.SetLogRate_Limit(eLogRate_App, CRequestRateControl::kNoLimit);
+        ctx.SetLogRate_Limit(eLogRate_Err, CRequestRateControl::kNoLimit);
+        ctx.SetLogRate_Limit(eLogRate_Trace, CRequestRateControl::kNoLimit);
     }
     log_switched &= name_changed;
     CDiagHandler* handler = GetDiagHandler();
     if (collect == eDCM_Flush) {
         // Flush and discard
         if ( log_switched  &&  handler ) {
-            GetDiagContext().FlushMessages(*handler);
+            ctx.FlushMessages(*handler);
         }
         collect = eDCM_Discard;
     }
     else if (collect == eDCM_NoChange) {
         // Flush but don't discard
         if ( log_switched  &&  handler ) {
-            GetDiagContext().FlushMessages(*handler);
+            ctx.FlushMessages(*handler);
         }
     }
     if (collect == eDCM_Discard) {
-        GetDiagContext().DiscardMessages();
+        ctx.DiscardMessages();
     }
 
     // Refresh rate controls
-    GetDiagContext().ResetLogRates();
+    ctx.ResetLogRates();
 }
 
 
