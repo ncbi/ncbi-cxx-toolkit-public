@@ -1266,19 +1266,6 @@
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
-      <key>FILE56</key>
-      <dict>
-        <key>isa</key>
-        <string>PBXFileReference</string>
-        <key>lastKnownFileType</key>
-        <string>sourcecode.hpp.hpp</string>
-        <key>name</key>
-        <string>ncbi_os_mac.hpp</string>
-        <key>path</key>
-        <string>../../../../include/corelib/ncbi_os_mac.hpp</string>
-        <key>sourceTree</key>
-        <string>SOURCE_ROOT</string>
-      </dict>
       <key>FILE57</key>
       <dict>
         <key>isa</key>
@@ -3042,19 +3029,6 @@
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
-      <key>FILE170</key>
-      <dict>
-        <key>isa</key>
-        <string>PBXFileReference</string>
-        <key>lastKnownFileType</key>
-        <string>sourcecode.hpp.hpp</string>
-        <key>name</key>
-        <string>ncbi_os_mac.hpp</string>
-        <key>path</key>
-        <string>../../../../include/corelib/ncbi_os_mac.hpp</string>
-        <key>sourceTree</key>
-        <string>SOURCE_ROOT</string>
-      </dict>
       <key>FILE171</key>
       <dict>
         <key>isa</key>
@@ -3736,7 +3710,6 @@
           <string>FILE167</string>
           <string>FILE168</string>
           <string>FILE169</string>
-          <string>FILE170</string>
           <string>FILE171</string>
           <string>FILE172</string>
           <string>FILE173</string>
