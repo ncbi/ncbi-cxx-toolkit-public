@@ -58,6 +58,13 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 
+bool s_ProjId_less(const CProjItem* x, const CProjItem* y)
+{
+    return NStr::CompareNocase(
+        CMacProjectGenerator::GetProjId(*x),
+        CMacProjectGenerator::GetProjId(*y)) < 0;
+}
+
 bool s_ProjItem_less(const CProjItem& x, const CProjItem& y)
 {
     ITERATE( list<CProjKey>, i, x.m_Depends) {
@@ -117,15 +124,15 @@ void CMacProjectGenerator::Generate(const string& solution)
     CRef<CArray> lib_dependencies( new CArray);
     
     // set GUIDs
+    list<const CProjItem*> all_projects;
     ITERATE(CProjectItemsTree::TProjects, p, m_Projects_tree.m_Projects) {
         const CProjItem& prj(p->second);
         prj.m_GUID = GetUUID();
+        all_projects.push_back(&prj);
     }
-
-    // for each project
-    ITERATE(CProjectItemsTree::TProjects, p, m_Projects_tree.m_Projects) {
-
-        const CProjItem& prj(p->second);
+    all_projects.sort(s_ProjId_less);
+    ITERATE(list<const CProjItem*>, p, all_projects) {
+        const CProjItem& prj(**p);
 
 #if USE_VERBOSE_NAMES
         string proj_dependency(GetProjDependency(prj));

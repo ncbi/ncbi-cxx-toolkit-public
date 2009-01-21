@@ -55,6 +55,7 @@ public:
     ~CMacProjectGenerator(void);
     
     void Generate(const string& solution);
+    static string GetProjId(       const CProjItem& prj);
 
 private:
     list<SConfigInfo> m_Configs;
@@ -122,7 +123,6 @@ private:
     string GetRelativePath(const string& name, const string* from=0) const;
 
     // get names for generation
-    static string GetProjId(       const CProjItem& prj);
     static string GetProjTarget(   const CProjItem& prj);
     static string GetProjBuild(    const CProjItem& prj);
     static string GetProjProduct(  const CProjItem& prj);
