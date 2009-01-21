@@ -210,7 +210,7 @@ public:
                     if (min_len < max_len) {
                         bool nuc_prot_diag = (min_len == max_len / 3  ||
                                               min_len - 1 == max_len / 3 ?
-                                              false : true);
+                                              true : false);
                         for (size_t i=0;  i< seg_lens.size();  ++i) {
                             id_vec[i]->SetBaseWidth(nuc_prot_diag ? 
                                                     (seg_lens[i] == min_len ? 3 : 1) :
