@@ -62,7 +62,7 @@ BEGIN_SCOPE(objects)
 
 /// CSeq_entry definitions
 
-#define NCBI_SEQENTRY(TYPE) CSeq_entry::e_##Type
+#define NCBI_SEQENTRY(Type) CSeq_entry::e_##Type
 typedef CSeq_entry::E_Choice TSEQENTRY_CHOICE;
 
 //   Seq     Set
