@@ -1383,7 +1383,10 @@ void CNetScheduleHandler::ProcessMsgBatchJob(BUF buffer)
     m_JobReq.SetParamFields(params);
     job.SetInput(m_JobReq.input);
     if (m_JobReq.param1 == "match") {
-        //job.SetAffinityToken("");
+        // We reuse jobs from m_BatchJobs, so we always should reset this
+        // field. We should call SetAffinityToken before SetAffinityId, because
+        // it clears out id field of the job.
+        job.SetAffinityToken("");
         job.SetAffinityId(kMax_I4);
     } else {
         job.SetAffinityToken(m_JobReq.affinity_token);
