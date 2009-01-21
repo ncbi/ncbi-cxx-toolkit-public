@@ -36,8 +36,6 @@
 
 #ifdef _MSC_VER
 #  include <common/config/ncbiconf_msvc.h>
-#elif defined(__MWERKS__)
-#  include <common/config/ncbiconf_mwerks.h>
 #elif defined(NCBI_XCODE_BUILD)
 #  include <common/config/ncbiconf_xcode.h>
 #else
