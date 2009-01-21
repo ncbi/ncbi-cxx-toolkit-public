@@ -47,4 +47,4 @@ if _%3_ == _64_ set arch=x64
 
 rem Next command should be executed last! No other code after it, please.
 
-%DEVENV% %1 /%2 "%4|%arch%" /project "%5" /out "%6"
+%DEVENV% %1 /%2 "%4|%arch%" /project "%5" /out "%6" /UseEnv
