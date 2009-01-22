@@ -280,4 +280,56 @@ bool CMutex::TryLock(void)
     return m_Mutex.TryLock();
 }
 
+
+inline
+CYieldingRWLock* CRWLockHolder::GetRWLock(void)
+{
+    return m_Lock;
+}
+
+inline
+ERWLockType CRWLockHolder::GetLockType(void) const
+{
+    return m_Type;
+}
+
+inline
+bool CRWLockHolder::IsLockAcquired(void) const
+{
+    return m_LockAcquired;
+}
+
+inline
+void CRWLockHolder::ReleaseLock(void)
+{
+    m_Lock->x_ReleaseLock(this);
+}
+
+inline
+void CYieldingRWLock::SetLockHolderFactory(IRWLockHolder_Factory* hld_factory)
+{
+    _ASSERT(hld_factory);
+    m_HldFactory = hld_factory;
+}
+
+inline
+TRWLockHolderRef CYieldingRWLock::AcquireReadLock(void)
+{
+    return AcquireLock(eReadLock);
+}
+
+inline
+TRWLockHolderRef CYieldingRWLock::AcquireWriteLock(void)
+{
+    return AcquireLock(eWriteLock);
+}
+
+inline
+bool CYieldingRWLock::IsLocked(void)
+{
+    CFastMutexGuard guard(m_ObjMutex);
+
+    return m_Locks[eReadLock] + m_Locks[eWriteLock] != 0;
+}
+
 #endif

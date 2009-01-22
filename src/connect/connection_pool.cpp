@@ -145,6 +145,11 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn, EConnType type)
     if (it == data.end()) {
         _TRACE("SetConnType called on unknown connection.");
     } else {
+        if (it->second.type == ePreDeferredSocket
+            &&  type == eInactiveSocket)
+        {
+            type = eDeferredSocket;
+        }
         it->second.type = type;
         it->second.UpdateExpiration(conn);
     }
@@ -166,9 +171,10 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn, EConnType type)
 }
 
 
-void CServer_ConnectionPool::Clean(void)
+void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conns)
 {
     CTime now(CTime::eCurrent, CTime::eGmt);
+    revived_conns.clear();
     CMutexGuard guard(m_Mutex);
     TData& data = const_cast<TData&>(m_Data);
     if (data.empty())
@@ -178,7 +184,7 @@ void CServer_ConnectionPool::Clean(void)
     NON_CONST_ITERATE(TData, it, data) {
         SPerConnInfo& info = it->second;
         if (info.type != eListener) ++n_connections;
-        if (info.type != eInactiveSocket) {
+        if (info.type == eActiveSocket  ||  info.type == eListener) {
             continue;
         }
         CServer_Connection* conn = dynamic_cast<CServer_Connection*>(it->first);
@@ -191,6 +197,12 @@ void CServer_ConnectionPool::Clean(void)
                 _TRACE("Closed " << dynamic_cast<TConnBase *>(it->first));
             }
             to_delete.push_back(it->first);
+        }
+        else if (info.type == eDeferredSocket
+                 &&  it->first->IsReadyToProcess())
+        {
+            info.type = eInactiveSocket;
+            revived_conns.push_back(it->first);
         }
     }
     int n_cleaned = 0;
@@ -228,7 +240,10 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
         // server.cpp: CServer_Connection::CreateRequest() and
         // CServerConnectionRequest::Process()
 //        _TRACE("Considering " << dynamic_cast<TConnBase *>(it->first));
-        if (it->second.type != eActiveSocket && it->first->IsOpen()) {
+        if ((it->second.type == eInactiveSocket
+                                    ||  it->second.type == eListener)
+            &&  it->first->IsOpen())
+        {
             CPollable* pollable = dynamic_cast<CPollable*>(it->first);
             _ASSERT(pollable);
 //            _TRACE("ConnBase " << dynamic_cast<TConnBase *>(it->first) << " inserted");

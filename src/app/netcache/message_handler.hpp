@@ -39,6 +39,11 @@
 
 BEGIN_NCBI_SCOPE
 
+enum {
+    kNetworkBufferSize = 64 * 1024
+};
+
+
 // All of IServer_MessageHandler functionality is copied with read timing
 // added. Unfortunately, CServer standard abstract class, implementing
 // message handling functionality does not expose socket Read
@@ -48,9 +53,10 @@ class CNetCache_MessageHandler : public IServer_ConnectionHandler
 {
 public:
     CNetCache_MessageHandler(CNetCacheServer* server);
-    virtual ~CNetCache_MessageHandler(void) { BUF_Destroy(m_Buffer); }
+    virtual ~CNetCache_MessageHandler(void);
     // MessageHandler protocol
     virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const;
+    virtual bool IsReadyToProcess(void) const;
     virtual void OnOpen(void);
     virtual void OnRead(void);
     virtual void OnWrite(void);
@@ -73,10 +79,10 @@ public:
     virtual void BeginDelayedWrite();
 
 protected:
-    void WriteMsg(const string& prefix, const string& msg)
+    void DeferProcessing(void)
     {
-        CSocket& socket = GetSocket();
-        CNetCacheServer::WriteMsg(socket, prefix, msg);
+        m_Server->DeferConnectionProcessing(&GetSocket());
+        m_DeferredCmd = true;
     }
     bool IsMonitoring()
     {
@@ -150,8 +156,22 @@ private:
     void (CNetCache_MessageHandler::*m_ProcessMessage)(BUF buffer);
 
     void x_AssignParams(const map<string, string>& params);
+    void x_CreateBlobWriter(void);
+    bool x_CreateBlobReader(void);
+    void x_EnsureWriteBufSize(size_t size);
+    void x_ZeroSocketTimeout(void);
+    void x_ResetSocketTimeout(void);
+    void x_WriteBuf(const char* buf, size_t bytes);
+    void x_PrepareMsg(const string& prefix, const string& msg);
+    void x_WriteMsg(const string& prefix, const string& msg);
+    void x_ProcessCommand(void);
     bool x_ProcessWriteAndReport(unsigned int  blob_size,
                                  const string* req_id = 0);
+    bool x_GetBlobId(const string&    key,
+                     int              version,
+                     const string&    subkey,
+                     bool             need_create,
+                     unsigned int*    blob_id);
     void x_ProcessSM(bool reg);
 
     /// Init diagnostics Client IP and Session ID for proper logging
@@ -162,6 +182,13 @@ private:
 
 private:
     CNetCacheServer* m_Server;
+
+    char   m_ReadBuff[kNetworkBufferSize];
+    size_t m_ReadBufSize;
+    size_t m_ReadBufPos;
+    char*  m_WriteBuff;
+    size_t m_WriteBufSize;
+    size_t m_WriteDataSize;
 
     bool                  m_InRequest;
     // Statistics
@@ -186,12 +213,17 @@ private:
     bool m_InTransmission;
     /// Delayed write flag
     bool m_DelayedWrite;
+    bool m_OverflowWrite;
+    TRWLockHolderRef m_LockHolder;
+    bool m_DeferredCmd;
+    TProcessor m_CmdProcessor;
 
     CRef<CRequestContext> m_Context;
     bool                  m_StartPrinted;
 
     string m_Host;
     unsigned int m_Port;
+    unsigned int m_BlobId;
     string m_ReqId;
     string m_ValueParam;
     ICache* m_ICache;

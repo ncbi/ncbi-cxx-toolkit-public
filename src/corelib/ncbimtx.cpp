@@ -53,7 +53,11 @@
 
 #endif
 
+#include <corelib/error_codes.hpp>
+
 #define STACK_THRESHOLD (1024)
+
+#define NCBI_USE_ERRCODE_X  Corelib_Mutex
 
 
 BEGIN_NCBI_SCOPE
@@ -1273,6 +1277,145 @@ void CSemaphore::Post(unsigned int count)
     m_Sem->count += count;
 #endif
 }
+
+
+
+class CRWLockHolder_BaseFactory : public IRWLockHolder_Factory
+{
+public:
+    virtual CRWLockHolder* CreateLockHolder(CYieldingRWLock* lock,
+                                            ERWLockType      typ)
+    {
+        return new CRWLockHolder(lock, typ);
+    }
+};
+
+
+CYieldingRWLock::CYieldingRWLock(IRWLockHolder_Factory* hld_factory/*= NULL*/)
+    : m_HldFactory(hld_factory)
+{
+    if (!m_HldFactory) {
+        static CRWLockHolder_BaseFactory factory;
+        m_HldFactory = &factory;
+    }
+
+    m_Locks[eReadLock] = m_Locks[eWriteLock] = 0;
+}
+
+CYieldingRWLock::~CYieldingRWLock(void)
+{
+#ifdef _DEBUG
+# define RWLockFatal Fatal
+#else
+# define RWLockFatal Critical
+#endif
+
+    CFastMutexGuard guard(m_ObjMutex);
+
+    if (m_Locks[eReadLock] + m_Locks[eWriteLock] != 0) {
+        ERR_POST_X(1, RWLockFatal
+                      << "Destroying YieldingRWLock with unreleased locks");
+    }
+    if (!m_LockWaits.empty()) {
+        ERR_POST_X(2, RWLockFatal
+                      << "Destroying YieldingRWLock with "
+                         "some locks waiting to acquire");
+    }
+
+#undef RWLockFatal
+}
+
+TRWLockHolderRef CYieldingRWLock::AcquireLock(ERWLockType lock_type)
+{
+    int other_type = 1 - lock_type;
+    TRWLockHolderRef holder(m_HldFactory->CreateLockHolder(this, lock_type));
+
+    {{
+        CFastMutexGuard guard(m_ObjMutex);
+
+        if (m_Locks[other_type] != 0  ||  !m_LockWaits.empty()
+            ||  lock_type == eWriteLock  &&  m_Locks[lock_type] != 0)
+        {
+            m_LockWaits.push_back(holder);
+            return holder;
+        }
+
+        ++m_Locks[lock_type];
+        holder->m_LockAcquired = true;
+    }}
+
+    holder->OnLockAcquired();
+    return holder;
+}
+
+void CYieldingRWLock::x_ReleaseLock(CRWLockHolder* holder)
+{
+    THoldersList next_holders;
+    bool save_acquired;
+
+    {{
+        CFastMutexGuard guard(m_ObjMutex);
+
+        save_acquired = holder->m_LockAcquired;
+        if (save_acquired) {
+            --m_Locks[holder->m_Type];
+            holder->m_LockAcquired = false;
+
+            if (m_Locks[eReadLock] + m_Locks[eWriteLock] == 0
+                &&  !m_LockWaits.empty())
+            {
+                ERWLockType next_type = m_LockWaits.front()->m_Type;
+                do {
+                    TRWLockHolderRef next_hldr = m_LockWaits.front();
+                    if (next_hldr->m_Type != next_type)
+                        break;
+
+                    next_hldr->m_LockAcquired = true;
+                    ++m_Locks[next_type];
+                    next_holders.push_back(next_hldr);
+                    m_LockWaits.pop_front();
+                }
+                while (!m_LockWaits.empty()  &&  next_type == eReadLock);
+            }
+        }
+        else {
+            THoldersList::iterator it
+                       = find(m_LockWaits.begin(), m_LockWaits.end(), holder);
+            if (it != m_LockWaits.end()) {
+                m_LockWaits.erase(it);
+            }
+        }
+    }}
+
+    if (save_acquired) {
+        holder->OnLockReleased();
+    }
+    NON_CONST_ITERATE(THoldersList, it, next_holders) {
+        (*it)->OnLockAcquired();
+    }
+}
+
+
+CRWLockHolder::CRWLockHolder(CYieldingRWLock* lock, ERWLockType typ)
+    : m_Lock(lock),
+      m_Type(typ),
+      m_LockAcquired(false)
+{
+    _ASSERT(lock);
+}
+
+CRWLockHolder::~CRWLockHolder(void)
+{
+    if (m_LockAcquired) {
+        ReleaseLock();
+    }
+}
+
+void CRWLockHolder::OnLockAcquired(void)
+{}
+
+void CRWLockHolder::OnLockReleased(void)
+{}
 
 
 END_NCBI_SCOPE

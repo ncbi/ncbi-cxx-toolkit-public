@@ -96,6 +96,141 @@ private:
 };
 
 
+
+///
+class CBlobIdLockHolder : public CRWLockHolder
+{
+public:
+    CBlobIdLockHolder(CBlobIdLocker*   locker,
+                      CYieldingRWLock* lock,
+                      ERWLockType      typ);
+    virtual ~CBlobIdLockHolder(void);
+
+protected:
+    virtual void OnLockReleased(void);
+
+private:
+    CBlobIdLocker* m_Locker;
+};
+
+///
+class CBlobIdRWLock : public CYieldingRWLock
+{
+public:
+    CBlobIdRWLock(IRWLockHolder_Factory* factory);
+
+    unsigned int GetId(void);
+    void SetId(unsigned int id);
+
+private:
+    unsigned int m_Id;
+};
+
+
+inline
+CBlobIdLockHolder::CBlobIdLockHolder(CBlobIdLocker*   locker,
+                                     CYieldingRWLock* lock,
+                                     ERWLockType      typ)
+    : CRWLockHolder(lock, typ),
+      m_Locker(locker)
+{}
+
+CBlobIdLockHolder::~CBlobIdLockHolder(void)
+{}
+
+void
+CBlobIdLockHolder::OnLockReleased(void)
+{
+    m_Locker->OnLockReleased(GetRWLock());
+}
+
+
+inline
+CBlobIdLockHolder_Factory::CBlobIdLockHolder_Factory(CBlobIdLocker* locker)
+    : m_Locker(locker)
+{}
+
+CRWLockHolder*
+CBlobIdLockHolder_Factory::CreateLockHolder(CYieldingRWLock* lock,
+                                            ERWLockType      typ)
+{
+    return new CBlobIdLockHolder(m_Locker, lock, typ);
+}
+
+
+inline
+CBlobIdRWLock::CBlobIdRWLock(IRWLockHolder_Factory* factory)
+    : CYieldingRWLock(factory),
+      m_Id(0)
+{}
+
+inline unsigned int
+CBlobIdRWLock::GetId(void)
+{
+    return m_Id;
+}
+
+inline void
+CBlobIdRWLock::SetId(unsigned int id)
+{
+    m_Id = id;
+}
+
+
+CBlobIdLocker::CBlobIdLocker(void)
+    : m_HldrFactory(this)
+{}
+
+CBlobIdLocker::~CBlobIdLocker(void)
+{
+    ITERATE(TId2LocksMap, it, m_IdLocks) {
+        delete it->second;
+    }
+    ITERATE(TLocksList, it, m_FreeLocks) {
+        delete *it;
+    }
+}
+
+TRWLockHolderRef
+CBlobIdLocker::AcquireLock(unsigned int id,
+                           ERWLockType  lock_type)
+{
+    CFastMutexGuard guard(m_ObjMutex);
+    CBlobIdRWLock* rwlock = NULL;
+
+    TId2LocksMap::iterator it = m_IdLocks.find(id);
+    if (it == m_IdLocks.end()) {
+        if (m_FreeLocks.empty()) {
+            rwlock = new CBlobIdRWLock(&m_HldrFactory);
+        }
+        else {
+            rwlock = static_cast<CBlobIdRWLock*>(m_FreeLocks.back());
+            m_FreeLocks.pop_back();
+        }
+        m_IdLocks[id] = rwlock;
+        rwlock->SetId(id);
+    }
+    else {
+        rwlock = static_cast<CBlobIdRWLock*>(it->second);
+    }
+
+    return rwlock->AcquireLock(lock_type);
+}
+
+void
+CBlobIdLocker::OnLockReleased(CYieldingRWLock* lock)
+{
+    if (lock->IsLocked())
+        return;
+
+    CFastMutexGuard guard(m_ObjMutex);
+
+    m_IdLocks.erase(static_cast<CBlobIdRWLock*>(lock)->GetId());
+    m_FreeLocks.push_back(lock);
+}
+
+
+
 static CNetCacheServer* s_netcache_server = 0;
 
 
@@ -107,7 +242,6 @@ CNetCacheServer::CNetCacheServer(unsigned int     port,
                                  bool             is_log,
                                  const IRegistry& reg) 
 :   m_Port(port),
-    m_MaxId(0),
     m_Cache(cache),
     m_Shutdown(false),
     m_Signal(0),
@@ -292,20 +426,6 @@ unsigned CNetCacheServer::GetTimeout()
 }
 
 
-void CNetCacheServer::WriteMsg(CSocket&       sock, 
-                               const string&  prefix, 
-                               const string&  msg)
-{
-    string err_msg(prefix);
-    err_msg.append(msg);
-    err_msg.append("\r\n");
-    size_t n_written;
-    /* EIO_Status io_st = */
-        sock.Write(err_msg.data(), err_msg.size(), &n_written);
-    _TRACE("WriteMsg " << prefix << msg);
-}
-
-
 const IRegistry& CNetCacheServer::GetRegistry()
 {
     return m_Reg;
@@ -339,72 +459,6 @@ unsigned CNetCacheServer::GetInactivityTimeout(void)
 CFastLocalTime& CNetCacheServer::GetTimer()
 {
     return m_LocalTimer;
-}
-
-
-void CNetCacheServer::WriteBuf(CSocket& sock,
-                                char*    buf,
-                                size_t   bytes)
-{
-    do {
-        size_t n_written;
-        EIO_Status io_st;
-        io_st = sock.Write(buf, bytes, &n_written);
-        switch (io_st) {
-        case eIO_Success:
-            break;
-        case eIO_Timeout:
-            {
-            string msg = "Communication timeout error (cannot send)";
-            msg.append(" IO block size=");
-            msg.append(NStr::UIntToString(bytes));
-            
-            NCBI_THROW(CNetServiceException, eTimeout, msg);
-            }
-            break;
-        case eIO_Closed:
-            {
-            string msg = 
-                "Communication error: peer closed connection (cannot send)";
-            msg.append(" IO block size=");
-            msg.append(NStr::UIntToString(bytes));
-            
-            NCBI_THROW(CNetServiceException, eCommunicationError, msg);
-            }
-            break;
-        case eIO_Interrupt:
-            {
-            string msg = 
-                "Communication error: interrupt signal (cannot send)";
-            msg.append(" IO block size=");
-            msg.append(NStr::UIntToString(bytes));
-            
-            NCBI_THROW(CNetServiceException, eCommunicationError, msg);
-            }
-            break;
-        case eIO_InvalidArg:
-            {
-            string msg = 
-                "Communication error: invalid argument (cannot send)";
-            msg.append(" IO block size=");
-            msg.append(NStr::UIntToString(bytes));
-            
-            NCBI_THROW(CNetServiceException, eCommunicationError, msg);
-            }
-            break;
-        default:
-            {
-            string msg = "Communication error (cannot send)";
-            msg.append(" IO block size=");
-            msg.append(NStr::UIntToString(bytes));
-            
-            NCBI_THROW(CNetServiceException, eCommunicationError, msg);
-            }
-            break;
-        } // switch
-        bytes -= n_written;
-        buf += n_written;
-    } while (bytes > 0);
 }
 
 

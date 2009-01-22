@@ -57,6 +57,7 @@ public:
                                        const STimeout* timeout,
                                        int request_id) = 0;
     virtual bool IsOpen(void) { return true; }
+    virtual bool IsReadyToProcess(void) { return true; }
     virtual void OnTimeout(void) { }
     virtual void OnTimer(void) { }
     virtual void OnOverflow(void) { }
@@ -79,6 +80,7 @@ public:
                                        int request_id);
     virtual void OnTimeout(void) { m_Handler->OnTimeout(); }
     virtual void OnOverflow(void) { m_Handler->OnOverflow(); }
+    virtual bool IsReadyToProcess(void) { return m_Handler->IsReadyToProcess(); }
     virtual bool IsOpen(void);
     // connection-specific methods
     void OnSocketEvent(EServIO_Event event);

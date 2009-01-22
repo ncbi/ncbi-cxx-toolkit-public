@@ -59,7 +59,9 @@
 #include <corelib/ncbithr_conf.hpp>
 #include <corelib/ncbicntr.hpp>
 #include <corelib/guard.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <memory>
+#include <deque>
 
 
 /** @addtogroup Threads
@@ -939,6 +941,135 @@ private:
 
     /// Private assignment operator to disallow assignment.
     CRWLock& operator= (const CRWLock&);
+};
+
+
+
+class CYieldingRWLock;
+
+/// Type of locking provided by RWLock
+enum ERWLockType
+{
+    eReadLock  = 0,
+    eWriteLock = 1
+};
+
+/// Holder of the lock inside CYieldingRWLock.
+/// This class should be used for 2 different reasons:
+/// - while IsLockAcquired() is not true the requested lock is not provided
+///   to you, so this object will be as a signal for you to continue operation
+/// - the lock is held while this object is alive, though it's always better
+///   to explicitly call ReleaseLock().
+class NCBI_XNCBI_EXPORT CRWLockHolder : public CObject
+{
+    friend class CYieldingRWLock;
+
+public:
+    /// Constructor is for use only inside IRWLockHolder_Factory
+    ///
+    /// @param lock
+    ///   The lock object that is locked by this holder
+    /// @param typ
+    ///   Type of lock held
+    CRWLockHolder(CYieldingRWLock* lock, ERWLockType typ);
+    virtual ~CRWLockHolder(void);
+
+    /// Get lock object that is locked by this holder
+    CYieldingRWLock* GetRWLock(void);
+
+    /// Get type of lock held
+    ERWLockType GetLockType(void) const;
+
+    /// Check if lock requested is already granted or not
+    bool IsLockAcquired(void) const;
+
+    /// Release the lock held or cancel request for the lock
+    void ReleaseLock(void);
+
+protected:
+    /// Callback called at the moment when lock is granted
+    virtual void OnLockAcquired(void);
+    /// Callback called at the moment when lock is released. Method is not
+    /// called if request for lock was canceled before it was actually
+    /// granted.
+    virtual void OnLockReleased(void);
+
+private:
+    CYieldingRWLock* m_Lock;
+    ERWLockType      m_Type;
+    bool             m_LockAcquired;
+};
+
+/// Type that should be always used to store pointers to CRWLockHolder
+typedef CRef<CRWLockHolder> TRWLockHolderRef;
+
+
+/// Interface for factory creating lock holders for CYieldingRWLock.
+class NCBI_XNCBI_EXPORT IRWLockHolder_Factory
+{
+public:
+    /// Method to be called only inside CYieldingRWLock
+    virtual CRWLockHolder* CreateLockHolder(CYieldingRWLock* lock,
+                                            ERWLockType      typ) = 0;
+};
+
+
+/// Read/write lock without blocking calls.
+///
+/// Neither R-lock nor W-lock is bound to thread acquired it and can be
+/// released in any other thread. Any lock is bound to CRWLockHolder object
+/// only.
+/// Allows to exist several readers at a time or one writer. Always respects
+/// the time of lock request. I.e. no new readers are granted access if there
+/// is some writer waiting for access and no new writers are granted access if
+/// there is some readers waiting for access (while another writer is
+/// working).
+/// Can be customizable by instance of IRWLockHolder_Factory to create objects
+/// that will perform there own actions when lock is acquired or released.
+class NCBI_XNCBI_EXPORT CYieldingRWLock
+{
+    friend class CRWLockHolder;
+
+public:
+    /// By default (if hld_factory == NULL) instances of CRWLockHolder will be
+    /// created to hold the lock.
+    CYieldingRWLock(IRWLockHolder_Factory* hld_factory = NULL);
+    ~CYieldingRWLock(void);
+
+    /// Set factory to create lock holders
+    void SetLockHolderFactory(IRWLockHolder_Factory* hld_factory);
+
+    /// Read lock.
+    /// Method returns immediately no matter if lock is granted or not. If
+    /// lock is not granted then request for lock is remembered and will be
+    /// granted later unless CRWLockHolder::ReleaseLock() is called (or object
+    /// is deleted).
+    TRWLockHolderRef AcquireReadLock(void);
+
+    /// Write lock.
+    /// Method returns immediately no matter if lock is granted or not. If
+    /// lock is not granted then request for lock is remembered and will be
+    /// granted later unless CRWLockHolder::ReleaseLock() is called (or object
+    /// is deleted).
+    TRWLockHolderRef AcquireWriteLock(void);
+
+    /// General method to request read or write lock.
+    TRWLockHolderRef AcquireLock(ERWLockType lock_type);
+
+    /// Check if any type of lock on this object is held
+    bool IsLocked(void);
+
+private:
+    typedef deque<TRWLockHolderRef>  THoldersList;
+
+    void x_ReleaseLock(CRWLockHolder* holder);
+
+    IRWLockHolder_Factory* m_HldFactory;
+    CFastMutex             m_ObjMutex;
+    /// Number of locks granted on this object by type
+    int                    m_Locks[2];
+    /// Queue for waiting lock requests
+    THoldersList           m_LockWaits;
 };
 
 

@@ -112,6 +112,11 @@ public:
     /// Enter the main loop
     void Run(void);
 
+    /// Mark connection as deferred for processing, i.e. do not poll on it
+    /// and wait when IsReadyToProcess() will return true.
+    void DeferConnectionProcessing(IServer_ConnectionBase* conn);
+    void DeferConnectionProcessing(CSocket* sock);
+
 protected:
     /// Initialize the server
     ///
@@ -179,6 +184,12 @@ public:
     /// emerging due to the fact that the socket can linger for a while.
     virtual bool IsOpen(void)
         { return true; }
+    /// Returns the handler's readiness to process input data or to write
+    /// some output data. OnRead() and OnWrite() are not called unless this
+    /// method return true.
+    virtual bool IsReadyToProcess(void) const
+        { return true; }
+
 
     /// Runs in response to an external event [asynchronous].
     /// You can get socket by calling GetSocket(), if you close the socket

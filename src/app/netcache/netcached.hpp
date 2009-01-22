@@ -32,6 +32,8 @@
  *
  */
 
+#include <corelib/ncbimtx.hpp>
+
 #include <connect/server.hpp>
 #include <connect/server_monitor.hpp>
 #include <connect/services/netcache_client.hpp>
@@ -186,6 +188,40 @@ private:
 
 
 class CBDB_Cache;
+class CBlobIdLocker;
+
+///
+class CBlobIdLockHolder_Factory : public IRWLockHolder_Factory
+{
+public:
+    CBlobIdLockHolder_Factory(CBlobIdLocker* locker);
+
+    virtual CRWLockHolder* CreateLockHolder(CYieldingRWLock* lock,
+                                            ERWLockType      typ);
+
+private:
+    CBlobIdLocker* m_Locker;
+};
+
+/// Pool of CYieldingRWLocks to lock blob ids for reading/writing
+class CBlobIdLocker
+{
+public:
+    CBlobIdLocker(void);
+    ~CBlobIdLocker(void);
+
+    TRWLockHolderRef AcquireLock(unsigned int id, ERWLockType lock_type);
+    void OnLockReleased(CYieldingRWLock* lock);
+
+private:
+    typedef map<unsigned int, CYieldingRWLock*>  TId2LocksMap;
+    typedef deque<CYieldingRWLock*>              TLocksList;
+
+    CBlobIdLockHolder_Factory m_HldrFactory;
+    CFastMutex                m_ObjMutex;
+    TId2LocksMap              m_IdLocks;
+    TLocksList                m_FreeLocks;
+};
 
 /// Netcache threaded server 
 ///
@@ -243,15 +279,16 @@ public:
     ///////////////////////////////////////////////////////////////////
     // Service for handlers
     ///
-    static
-    void WriteBuf(CSocket& sock,
-                  char*    buf,
-                  size_t   bytes);
-    /// Reply to the client
 
-    static
-    void WriteMsg(CSocket& sock, 
-                  const string& prefix, const string& msg);
+    TRWLockHolderRef AcquireReadIdLock(unsigned int id)
+    {
+        return m_IdLocker.AcquireLock(id, eReadLock);
+    }
+
+    TRWLockHolderRef AcquireWriteIdLock(unsigned int id)
+    {
+        return m_IdLocker.AcquireLock(id, eWriteLock);
+    }
 
     ICache* GetLocalCache(const string& cache_name);
     unsigned GetTimeout();
@@ -304,10 +341,7 @@ private:
     string           m_Host;
     unsigned         m_Port;
 
-    /// ID counter
-    unsigned         m_MaxId;
-    /// Set of ids in use (PUT)
-    bm::bvector<>    m_UsedIds;
+    CBlobIdLocker    m_IdLocker;
     CBDB_Cache*      m_Cache;
     /// Flags that server received a shutdown request
     volatile bool    m_Shutdown; 

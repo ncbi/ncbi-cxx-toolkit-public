@@ -44,9 +44,6 @@
 BEGIN_NCBI_SCOPE
 
 
-const size_t kNetworkBufferSize = 64 * 1024;
-
-
 CNetCache_MessageHandler::SCommandDef s_CommandMap[] = {
     { "A?",       &CNetCache_MessageHandler::ProcessAlive },
     { "OK",       &CNetCache_MessageHandler::ProcessOK },
@@ -237,17 +234,32 @@ CNetCache_MessageHandler::SCommandDef s_CommandMap[] = {
 // CNetCache_MessageHandler implementation
 CNetCache_MessageHandler::CNetCache_MessageHandler(CNetCacheServer* server)
     : m_Server(server),
+      m_ReadBufSize(0),
+      m_ReadBufPos(0),
+      m_WriteBuff(NULL),
+      m_WriteBufSize(0),
+      m_WriteDataSize(0),
       m_InRequest(false),
       m_Buffer(0),
       m_SeenCR(false),
       m_InTransmission(false),
       m_DelayedWrite(false),
+      m_OverflowWrite(false),
+      m_DeferredCmd(false),
       m_StartPrinted(false),
       m_Parser(s_CommandMap),
       m_PutOK(false),
       m_PutID(false),
       m_SizeKnown(false)
 {
+    m_WriteBuff = static_cast<char*>(malloc(kNetworkBufferSize));
+    m_WriteBufSize = kNetworkBufferSize;
+}
+
+CNetCache_MessageHandler::~CNetCache_MessageHandler(void)
+{
+    BUF_Destroy(m_Buffer);
+    free(m_WriteBuff);
 }
 
 void
@@ -328,8 +340,30 @@ CNetCache_MessageHandler::CheckMessage(BUF*        buffer,
 EIO_Event
 CNetCache_MessageHandler::GetEventsToPollFor(const CTime**) const
 {
-    if (m_DelayedWrite) return eIO_Write;
+    if (m_DelayedWrite  ||  m_OverflowWrite) {
+        return eIO_Write;
+    }
     return eIO_Read;
+}
+
+bool
+CNetCache_MessageHandler::IsReadyToProcess(void) const
+{
+    return m_LockHolder.IsNull()  ||  m_LockHolder->IsLockAcquired();
+}
+
+inline void
+CNetCache_MessageHandler::x_ZeroSocketTimeout(void)
+{
+    STimeout to = {0, 0};
+    GetSocket().SetTimeout(eIO_ReadWrite, &to);
+}
+
+inline void
+CNetCache_MessageHandler::x_ResetSocketTimeout(void)
+{
+    STimeout to = {m_Server->GetInactivityTimeout(), 0};
+    GetSocket().SetTimeout(eIO_ReadWrite, &to);
 }
 
 void
@@ -337,8 +371,7 @@ CNetCache_MessageHandler::OnOpen(void)
 {
     CSocket& socket = GetSocket();
     socket.DisableOSSendDelay();
-    STimeout to = {m_Server->GetInactivityTimeout(), 0};
-    socket.SetTimeout(eIO_ReadWrite, &to);
+    x_ResetSocketTimeout();
 
     m_Stat.InitSession(m_Server->GetTimer().GetLocalTime(),
                        socket.GetPeerAddress());
@@ -381,48 +414,77 @@ CNetCache_MessageHandler::OnRead(void)
 
     CCounterGuard pending_req_guard(m_Server->GetRequestCounter());
     CSocket &socket = GetSocket();
-    char read_buf[kNetworkBufferSize];
-    size_t n_read;
 
-    if (!m_InRequest) {
-        m_Context.Reset(new CRequestContext());
-        m_Context->SetRequestID();
-        x_InitDiagnostics();
-        m_Stat.InitRequest();
-        m_InRequest = true;
-    }
-    EIO_Status status;
-    {{
-        CTimeGuard time_guard(m_Stat.comm_elapsed);
-        status = socket.Read(read_buf, sizeof(read_buf), &n_read);
-        ++m_Stat.io_blocks;
-    }}
-    switch (status) {
-    case eIO_Success:
-        break;
-    case eIO_Timeout:
-        this->OnTimeout();
-        m_InRequest = false;
-        return;
-    case eIO_Closed:
-        this->OnCloseExt(eClientClose);
-        m_InRequest = false;
-        return;
-    default:
-        // TODO: ??? OnError
-        return;
-    }
-    int message_tail = 0;
-    char *buf_ptr = read_buf;
-    for ( ;n_read > 0 && message_tail >= 0; ) {
-        message_tail = this->CheckMessage(&m_Buffer, buf_ptr, n_read);
-        // TODO: what should we do if message_tail > n_read?
-        if (message_tail >= 0) {
-            this->OnMessage(m_Buffer);
+    if (m_DeferredCmd) {
+        if (!IsReadyToProcess()) {
+            x_DeinitDiagnostics();
+            return;
+        }
 
-            int consumed = n_read - message_tail;
-            buf_ptr += consumed;
-            n_read -= consumed;
+        m_DeferredCmd = false;
+        x_ProcessCommand();
+    }
+    else {
+        if (!m_InRequest) {
+            m_Context.Reset(new CRequestContext());
+            m_Context->SetRequestID();
+            x_InitDiagnostics();
+            m_Stat.InitRequest();
+            m_InRequest = true;
+        }
+        if (m_ReadBufPos == m_ReadBufSize) {
+            EIO_Status status;
+            {{
+                CTimeGuard time_guard(m_Stat.comm_elapsed);
+                x_ZeroSocketTimeout();
+                status = socket.Read(m_ReadBuff, sizeof(m_ReadBuff),
+                                     &m_ReadBufSize, eIO_ReadPlain);
+                x_ResetSocketTimeout();
+                ++m_Stat.io_blocks;
+            }}
+            m_ReadBufPos = 0;
+            bool need_return = false;
+            switch (status) {
+            case eIO_Success:
+                //break;
+            case eIO_Timeout:
+                /*this->OnTimeout();
+                need_return = true;*/
+                break;
+            case eIO_Closed:
+                this->OnCloseExt(eClientClose);
+                need_return = true;
+                break;
+            default:
+                // TODO: ??? OnError
+                need_return = true;
+                break;
+            }
+            if (need_return) {
+                m_ReadBufSize = 0;
+                m_InRequest = false;
+                x_DeinitDiagnostics();
+                return;
+            }
+        }
+        int message_tail = 0;
+        char *buf_ptr = m_ReadBuff;
+        size_t buf_size = m_ReadBufSize - m_ReadBufPos;
+        while (buf_size != 0  &&  message_tail >= 0  &&  IsReadyToProcess())
+        {
+            message_tail = this->CheckMessage(&m_Buffer, buf_ptr, buf_size);
+            if (message_tail >= 0) {
+                this->OnMessage(m_Buffer);
+
+                int consumed = buf_size - message_tail;
+                buf_ptr += consumed;
+                m_ReadBufPos += consumed;
+                buf_size -= consumed;
+            }
+            else {
+                m_ReadBufPos = m_ReadBufSize;
+                buf_size = 0;
+            }
         }
     }
 
@@ -439,12 +501,26 @@ CNetCache_MessageHandler::OnWrite(void)
     x_InitDiagnostics();
 
     CCounterGuard pending_req_guard(m_Server->GetRequestCounter());
-    if (!m_DelayedWrite) {
+    if (!m_DelayedWrite  ||  !IsReadyToProcess()) {
+        x_DeinitDiagnostics();
         return;
     }
-    bool res = x_ProcessWriteAndReport(0);
+    bool res = true;
+    if (m_OverflowWrite) {
+        x_WriteBuf(NULL, 0);
+    }
+    else if (m_Reader.get()) {
+        res = x_ProcessWriteAndReport(0);
+    }
+    else {
+        res = x_CreateBlobReader();
+    }
     m_DelayedWrite = m_DelayedWrite && res;
     if (!m_DelayedWrite) {
+        if (m_LockHolder.NotNull()) {
+            m_LockHolder->ReleaseLock();
+            m_LockHolder.Reset();
+        }
         OnRequestEnd();
     }
 
@@ -452,35 +528,93 @@ CNetCache_MessageHandler::OnWrite(void)
 }
 
 bool
+CNetCache_MessageHandler::x_CreateBlobReader(void)
+{
+    ICache::SBlobAccessDescr ba_descr;
+    ba_descr.buf = 0;
+    ba_descr.buf_size = 0;
+
+    CBDB_Cache* bdb_cache = m_Server->GetCache();
+    for (int repeats = 0; repeats < 1000; ++repeats) {
+        CTimeGuard time_guard(m_Stat.db_elapsed, &m_Stat);
+        bdb_cache->GetBlobAccess(m_ReqId, 0, kEmptyStr, &ba_descr);
+
+        if (!ba_descr.blob_found) {
+            // check if id is locked maybe blob record not
+            // yet committed
+            /*{{
+                if (bdb_cache->IsLocked(m_BlobId)) {
+                    if (repeats < 999) {
+                        SleepMilliSec(repeats);
+                        continue;
+                    }
+                } else {
+                    bdb_cache->GetBlobAccess(m_ReqId, 0, kEmptyStr, &ba_descr);
+                    if (ba_descr.blob_found) {
+                        break;
+                    }
+
+                }
+            }}*/
+            x_WriteMsg("ERR:", string("BLOB not found. ") + m_ReqId);
+            return false;
+        } else {
+            break;
+        }
+    }
+
+    if (ba_descr.blob_size == 0) {
+        x_WriteMsg("OK:", "BLOB found. SIZE=0");
+        return false;
+    }
+
+    m_Stat.blob_size = ba_descr.blob_size;
+
+    // re-translate reader to the network
+    m_Reader.reset(ba_descr.reader.release());
+    if (!m_Reader.get()) {
+        x_WriteMsg("ERR:", string("BLOB not found. ") + m_ReqId);
+        return false;
+    }
+
+    // Write first chunk right here
+    return x_ProcessWriteAndReport(ba_descr.blob_size, &m_ReqId);
+}
+
+bool
 CNetCache_MessageHandler::x_ProcessWriteAndReport(unsigned      blob_size,
                                                   const string* req_id)
 {
-    char buf[kNetworkBufferSize];
-    size_t bytes_read;
-    ERW_Result res;
-    {{
-        CTimeGuard time_guard(m_Stat.db_elapsed, &m_Stat);
-        res = m_Reader->Read(buf, sizeof(buf), &bytes_read);
-    }}
-    if (res != eRW_Success || !bytes_read) {
-        if (blob_size) {
-            string msg("BLOB not found. ");
-            if (req_id) msg += *req_id;
-            WriteMsg("ERR:", msg);
-        }
-        m_Reader.reset(0);
-        return false;
-    }
     if (blob_size) {
         string msg("BLOB found. SIZE=");
         string sz;
         NStr::UIntToString(sz, blob_size);
         msg += sz;
-        WriteMsg("OK:", msg);
+        x_PrepareMsg("OK:", msg);
     }
+
+    size_t bytes_read = 0;
+    ERW_Result res;
+    {{
+        CTimeGuard time_guard(m_Stat.db_elapsed, &m_Stat);
+        res = m_Reader->Read(m_WriteBuff + m_WriteDataSize,
+                             m_WriteBufSize - m_WriteDataSize,
+                             &bytes_read);
+    }}
+    if (res != eRW_Success || !bytes_read) {
+        m_Reader.reset(0);
+        if (blob_size) {
+            m_WriteDataSize = 0;
+            string msg("BLOB not found. ");
+            if (req_id) msg += *req_id;
+            x_WriteMsg("ERR:", msg);
+        }
+        return false;
+    }
+    m_WriteDataSize += bytes_read;
     {{
         CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
-        CNetCacheServer::WriteBuf(GetSocket(), buf, bytes_read);
+        x_WriteBuf(NULL, 0);
     }}
     ++m_Stat.io_blocks;
 
@@ -491,6 +625,96 @@ CNetCache_MessageHandler::x_ProcessWriteAndReport(unsigned      blob_size,
     //        return false;
 
     return true;
+}
+
+void
+CNetCache_MessageHandler::x_PrepareMsg(const string&  prefix, 
+                                       const string&  msg)
+{
+    string err_msg(prefix);
+    err_msg.append(msg);
+    err_msg.append("\r\n");
+    _TRACE("x_PrepareMsg " << prefix << msg);
+    x_EnsureWriteBufSize(m_WriteDataSize + err_msg.size());
+    memcpy(m_WriteBuff + m_WriteDataSize, err_msg.data(), err_msg.size());
+    m_WriteDataSize += err_msg.size();
+}
+
+void
+CNetCache_MessageHandler::x_WriteMsg(const string&  prefix, 
+                                     const string&  msg)
+{
+    x_PrepareMsg(prefix, msg);
+    x_WriteBuf(NULL, 0);
+}
+
+inline void
+CNetCache_MessageHandler::x_EnsureWriteBufSize(size_t size)
+{
+    if (size > m_WriteBufSize) {
+        size_t new_size = max(size, m_WriteBufSize + kNetworkBufferSize);
+        m_WriteBuff = static_cast<char*>(realloc(m_WriteBuff, new_size));
+        m_WriteBufSize = new_size;
+    }
+}
+
+void
+CNetCache_MessageHandler::x_WriteBuf(const char* buf, size_t bytes)
+{
+    if (m_WriteDataSize != 0) {
+        if (bytes != 0) {
+            x_EnsureWriteBufSize(m_WriteDataSize + bytes);
+            memcpy(m_WriteBuff + m_WriteDataSize, buf, bytes);
+        }
+        buf = m_WriteBuff;
+        bytes += m_WriteDataSize;
+    }
+
+    size_t n_written;
+    string msg;
+    bool is_error = false;
+
+    x_ZeroSocketTimeout();
+    EIO_Status io_st = GetSocket().Write(buf, bytes, &n_written, eIO_WritePlain);
+    x_ResetSocketTimeout();
+
+    switch (io_st) {
+    case eIO_Success:
+    case eIO_Timeout:
+    case eIO_Interrupt:
+        break;
+    case eIO_Closed:
+        msg = "Communication error: peer closed connection (cannot send)";
+        is_error = true;
+        break;
+    case eIO_InvalidArg:
+        msg = "Communication error: invalid argument (cannot send)";
+        is_error = true;
+        break;
+    default:
+        msg = "Communication error (cannot send)";
+        is_error = true;
+        break;
+    } // switch
+
+    if (is_error) {
+        msg.append(" IO block size=");
+        msg.append(NStr::UIntToString(bytes));
+
+        NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+    }
+
+    if (n_written == bytes) {
+        m_WriteDataSize = 0;
+        m_OverflowWrite = false;
+    }
+    else {
+        _ASSERT(bytes > n_written);
+        m_WriteDataSize = bytes - n_written;
+        x_EnsureWriteBufSize(m_WriteDataSize);
+        memmove(m_WriteBuff, buf + n_written, m_WriteDataSize);
+        m_OverflowWrite = true;
+    }
 }
 
 void
@@ -520,6 +744,10 @@ CNetCache_MessageHandler::OnCloseExt(EClosePeer peer)
             break;
         }
     }
+    if (m_LockHolder.NotNull()) {
+        m_LockHolder->ReleaseLock();
+        m_LockHolder.Reset();
+    }
     x_DeinitDiagnostics();
 }
 
@@ -542,8 +770,8 @@ void
 CNetCache_MessageHandler::OnMessage(BUF buffer)
 {
     if (m_Server->ShutdownRequested()) {
-        WriteMsg("ERR:",
-            "NetCache server is shutting down. Session aborted.");
+        x_WriteMsg("ERR:",
+                   "NetCache server is shutting down. Session aborted.");
         return;
     }
 
@@ -739,8 +967,24 @@ CNetCache_MessageHandler::ReportException(const CException& ex,
 }
 
 void
+CNetCache_MessageHandler::x_CreateBlobWriter(void)
+{
+    // create the reader up front to guarantee correct BLOB locking
+    // the possible problem (?) here is that we have to do double buffering
+    // of the input stream
+    CTimeGuard time_guard(m_Stat.db_elapsed, &m_Stat);
+    m_Writer.reset(m_Server->GetCache()->GetWriteStream(
+                            m_BlobId, m_ReqId, 0, kEmptyStr,/* do_id_lock,*/
+                            m_Timeout, m_Auth));
+}
+
+void
 CNetCache_MessageHandler::ProcessMsgTransmission(BUF buffer)
 {
+    if (!m_Writer.get()) {
+        x_CreateBlobWriter();
+    }
+
     string data;
     s_ReadBufToString(buffer, data);
 
@@ -749,7 +993,7 @@ CNetCache_MessageHandler::ProcessMsgTransmission(BUF buffer)
     size_t bytes_written;
     if (m_SizeKnown && (buf_size > m_BlobSize)) {
         m_BlobSize = 0;
-        WriteMsg("ERR:", "Blob overflow");
+        x_WriteMsg("ERR:", "Blob overflow");
         m_InTransmission = false;
     }
     else {
@@ -760,7 +1004,7 @@ CNetCache_MessageHandler::ProcessMsgTransmission(BUF buffer)
 
             if (res != eRW_Success) {
                 _TRACE("Transmission failed, socket " << &GetSocket());
-                WriteMsg("ERR:", "Server I/O error");
+                x_WriteMsg("ERR:", "Server I/O error");
                 m_Writer->Flush();
                 m_Writer.reset(0);
                 m_Server->RegisterInternalErr(
@@ -782,17 +1026,17 @@ CNetCache_MessageHandler::ProcessMsgTransmission(BUF buffer)
                 }}
 
                 if (m_SizeKnown && (m_BlobSize != 0)) {
-                    WriteMsg("ERR:", "eCommunicationError:Unexpected EOF");
+                    x_WriteMsg("ERR:", "eCommunicationError:Unexpected EOF");
                 }
                 if (m_PutOK) {
                     _TRACE("OK, socket " << &GetSocket());
                     CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
-                    WriteMsg("OK:", "");
+                    x_WriteMsg("OK:", "");
                     m_PutOK = false;
                 }
                 if (m_PutID) {
                     CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
-                    WriteMsg("ID:", m_ReqId);
+                    x_WriteMsg("ID:", m_ReqId);
                     m_PutID = false;
                 }
             }
@@ -800,7 +1044,7 @@ CNetCache_MessageHandler::ProcessMsgTransmission(BUF buffer)
                 // We should successfully restore after exception
                 ERR_POST(ex);
                 if (m_PutOK  ||  m_SizeKnown  ||  m_PutID) {
-                    WriteMsg("ERR:", "Error writing blob: " + NStr::Replace(ex.what(), "\n", "; "));
+                    x_WriteMsg("ERR:", "Error writing blob: " + NStr::Replace(ex.what(), "\n", "; "));
                     m_PutOK = m_PutID = false;
                 }
             }
@@ -809,6 +1053,8 @@ CNetCache_MessageHandler::ProcessMsgTransmission(BUF buffer)
             // to send us EOT
             m_InTransmission = false;
             m_SizeKnown = false;
+            m_LockHolder->ReleaseLock();
+            m_LockHolder.Reset();
         }
     }
 
@@ -932,6 +1178,50 @@ CNetCache_MessageHandler::x_AssignParams(const map<string, string>& params)
 }
 
 void
+CNetCache_MessageHandler::x_ProcessCommand(void)
+{
+    try {
+        (this->*m_CmdProcessor)();
+    }
+    catch (CNetCacheException &ex)
+    {
+        ReportException(ex, "NC Server error: ", m_Stat.request);
+        m_Server->RegisterException(m_Stat.op_code, m_Auth, ex);
+    }
+    catch (CNetServiceException& ex)
+    {
+        ReportException(ex, "NC Service exception: ", m_Stat.request);
+        m_Server->RegisterException(m_Stat.op_code, m_Auth, ex);
+    }
+    catch (CBDB_ErrnoException& ex)
+    {
+        if (ex.IsRecovery()) {
+            string msg = "Fatal Berkeley DB error: DB_RUNRECOVERY. "
+                         "Emergency shutdown initiated!";
+            ERR_POST(msg);
+            if (IsMonitoring()) {
+                MonitorPost(msg);
+            }
+            m_Server->SetShutdownFlag();
+        } else {
+            ReportException(ex, "NC BerkeleyDB error: ", m_Stat.request);
+            m_Server->RegisterInternalErr(m_Stat.op_code, m_Auth);
+        }
+        throw;
+    }
+    catch (CException& ex)
+    {
+        ReportException(ex, "NC CException: ", m_Stat.request);
+        m_Server->RegisterInternalErr(m_Stat.op_code, m_Auth);
+    }
+    catch (exception& ex)
+    {
+        ReportException(ex, "NC std::exception: ", m_Stat.request);
+        m_Server->RegisterInternalErr(m_Stat.op_code, m_Auth);
+    }
+}
+
+void
 CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
 {
     string request;
@@ -954,57 +1244,22 @@ CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
         }
 
         m_Stat.request = request;
-        (this->*cmd.command->extra.processor)();
+        m_CmdProcessor = cmd.command->extra.processor;
+        x_ProcessCommand();
     }
     catch (CNSProtoParserException& ex)
     {
         ReportException(ex, "NC request parser error: ", request);
-        WriteMsg("ERR:", ex.GetMsg());
+        x_WriteMsg("ERR:", ex.GetMsg());
         m_Server->RegisterProtocolErr(
                             SBDB_CacheUnitStatistics::eErr_Unknown, m_Auth);
-    }
-    catch (CNetCacheException &ex)
-    {
-        ReportException(ex, "NC Server error: ", request);
-        m_Server->RegisterException(m_Stat.op_code, m_Auth, ex);
-    }
-    catch (CNetServiceException& ex)
-    {
-        ReportException(ex, "NC Service exception: ", request);
-        m_Server->RegisterException(m_Stat.op_code, m_Auth, ex);
-    }
-    catch (CBDB_ErrnoException& ex)
-    {
-        if (ex.IsRecovery()) {
-            string msg = "Fatal Berkeley DB error: DB_RUNRECOVERY. "
-                         "Emergency shutdown initiated!";
-            ERR_POST(msg);
-            if (IsMonitoring()) {
-                MonitorPost(msg);
-            }
-            m_Server->SetShutdownFlag();
-        } else {
-            ReportException(ex, "NC BerkeleyDB error: ", request);
-            m_Server->RegisterInternalErr(m_Stat.op_code, m_Auth);
-        }
-        throw;
-    }
-    catch (CException& ex)
-    {
-        ReportException(ex, "NC CException: ", request);
-        m_Server->RegisterInternalErr(m_Stat.op_code, m_Auth);
-    }
-    catch (exception& ex)
-    {
-        ReportException(ex, "NC std::exception: ", request);
-        m_Server->RegisterInternalErr(m_Stat.op_code, m_Auth);
     }
 }
 
 void
 CNetCache_MessageHandler::ProcessAlive(void)
 {
-    WriteMsg("OK:", "");
+    x_WriteMsg("OK:", "");
 }
 
 void
@@ -1016,7 +1271,7 @@ void
 CNetCache_MessageHandler::ProcessMoni(void)
 {
     GetSocket().DisableOSSendDelay(false);
-    WriteMsg("OK:", "Monitor for " NETCACHED_VERSION "\n");
+    x_WriteMsg("OK:", "Monitor for " NETCACHED_VERSION "\n");
     m_Server->SetMonitorSocket(GetSocket());
 }
 
@@ -1030,7 +1285,7 @@ CNetCache_MessageHandler::x_ProcessSM(bool reg)
     m_Stat.type = "Session";
 
     if (!m_Server->IsManagingSessions()) {
-        WriteMsg("ERR:", "Server does not support sessions ");
+        x_WriteMsg("ERR:", "Server does not support sessions ");
     }
     else {
         if (!m_Port || m_Host.empty()) {
@@ -1043,7 +1298,7 @@ CNetCache_MessageHandler::x_ProcessSM(bool reg)
         } else {
             m_Server->UnRegisterSession(m_Host, m_Port);
         }
-        WriteMsg("OK:", "");
+        x_WriteMsg("OK:", "");
     };
 
     GetSocket().Close();
@@ -1065,13 +1320,13 @@ void
 CNetCache_MessageHandler::ProcessShutdown(void)
 {
     m_Server->SetShutdownFlag();
-    WriteMsg("OK:", "");
+    x_WriteMsg("OK:", "");
 }
 
 void
 CNetCache_MessageHandler::ProcessVersion(void)
 {
-    WriteMsg("OK:", NETCACHED_VERSION);
+    x_WriteMsg("OK:", NETCACHED_VERSION);
 }
 
 void
@@ -1127,20 +1382,35 @@ CNetCache_MessageHandler::ProcessDropStat(void)
         return;
     }
     bdb_cache->InitStatistics();
-    WriteMsg("OK:", "");
+    x_WriteMsg("OK:", "");
 }
 
 void
 CNetCache_MessageHandler::ProcessRemove(void)
 {
-    m_Server->GetCache()->Remove(m_ReqId);
+    if (m_LockHolder.IsNull()) {
+        m_BlobId = CNetCacheKey::GetBlobId(m_ReqId);
+        m_LockHolder = m_Server->AcquireWriteIdLock(m_BlobId);
+    }
+
+    if (m_LockHolder->IsLockAcquired()) {
+        m_Server->GetCache()->Remove(m_ReqId);
+
+        m_LockHolder->ReleaseLock();
+        m_LockHolder.Reset();
+    }
+    else {
+        DeferProcessing();
+    }
 }
 
 void
 CNetCache_MessageHandler::ProcessRemove2(void)
 {
     ProcessRemove();
-    WriteMsg("OK:", "");
+    if (!m_DeferredCmd) {
+        x_WriteMsg("OK:", "");
+    }
 }
 
 void
@@ -1164,7 +1434,7 @@ CNetCache_MessageHandler::ProcessLog(void)
         }
     }
     m_Server->SetLogLevel(level);
-    WriteMsg("OK:", "");
+    x_WriteMsg("OK:", "");
 }
 
 void
@@ -1184,134 +1454,96 @@ CNetCache_MessageHandler::ProcessStat(void)
                    "NetCache Stat command: invalid parameter");
     }
 
-    WriteMsg("OK:", "");
+    x_WriteMsg("OK:", "");
 }
 
 void
 CNetCache_MessageHandler::ProcessGet(void)
 {
-    m_Stat.op_code = SBDB_CacheUnitStatistics::eErr_Get;
-    m_Stat.blob_id = m_ReqId;
+    if (m_LockHolder.IsNull()) {
+        m_Stat.op_code = SBDB_CacheUnitStatistics::eErr_Get;
+        m_Stat.blob_id = m_ReqId;
 
-    if (m_Policy /* m_NoLock */) {
-        bool locked = m_Server->GetCache()->IsLocked(m_ReqId, 0, kEmptyStr);
-        if (locked) {
-            WriteMsg("ERR:", "BLOB locked by another client");
-            return;
+        m_BlobId = CNetCacheKey::GetBlobId(m_ReqId);
+
+        m_LockHolder = m_Server->AcquireReadIdLock(m_BlobId);
+    }
+
+    if (m_LockHolder->IsLockAcquired()) {
+        if (x_CreateBlobReader()) {
+            BeginDelayedWrite();
         }
     }
+    else {
+        if (m_Policy /* m_NoLock */) {
+            m_LockHolder->ReleaseLock();
+            m_LockHolder.Reset();
 
-    ICache::SBlobAccessDescr ba_descr;
-    ba_descr.buf = 0;
-    ba_descr.buf_size = 0;
-
-    unsigned blob_id = CNetCacheKey::GetBlobId(m_ReqId);
-
-    CBDB_Cache* bdb_cache = m_Server->GetCache();
-    for (int repeats = 0; repeats < 1000; ++repeats) {
-        CTimeGuard time_guard(m_Stat.db_elapsed, &m_Stat);
-        bdb_cache->GetBlobAccess(m_ReqId, 0, kEmptyStr, &ba_descr);
-
-        if (!ba_descr.blob_found) {
-            // check if id is locked maybe blob record not
-            // yet committed
-            {{
-                if (bdb_cache->IsLocked(blob_id)) {
-                    if (repeats < 999) {
-                        SleepMilliSec(repeats);
-                        continue;
-                    }
-                } else {
-                    bdb_cache->GetBlobAccess(m_ReqId, 0, kEmptyStr, &ba_descr);
-                    if (ba_descr.blob_found) {
-                        break;
-                    }
-
-                }
-            }}
-            WriteMsg("ERR:", string("BLOB not found. ") + m_ReqId);
+            x_WriteMsg("ERR:", "BLOB locked by another client");
             return;
-        } else {
-            break;
         }
+
+        DeferProcessing();
     }
-
-    if (ba_descr.blob_size == 0) {
-        WriteMsg("OK:", "BLOB found. SIZE=0");
-        return;
-    }
-
-    m_Stat.blob_size = ba_descr.blob_size;
-
-    // re-translate reader to the network
-    m_Reader.reset(ba_descr.reader.release());
-    if (!m_Reader.get()) {
-        WriteMsg("ERR:", string("BLOB not found. ") + m_ReqId);
-        return;
-    }
-
-    // Write first chunk right here
-    if (!x_ProcessWriteAndReport(ba_descr.blob_size, &m_ReqId))
-        return;
-
-    BeginDelayedWrite();
 }
 
 void
 CNetCache_MessageHandler::ProcessPut(void)
 {
-    WriteMsg("ERR:", "Obsolete");
+    x_WriteMsg("ERR:", "Obsolete");
 }
 
 void
 CNetCache_MessageHandler::ProcessPut2(void)
 {
-    m_Stat.op_code = SBDB_CacheUnitStatistics::eErr_Put;
+    if (m_LockHolder.IsNull()) {
+        m_Stat.op_code = SBDB_CacheUnitStatistics::eErr_Put;
 
-    bool do_id_lock = true;
-    CBDB_Cache* bdb_cache = m_Server->GetCache();
-    unsigned int id = 0;
-    _TRACE("Getting an id, socket " << &GetSocket());
-    if (m_ReqId.empty()) {
-        CTimeGuard time_guard(m_Stat.db_elapsed, &m_Stat);
-        id = bdb_cache->GetNextBlobId(do_id_lock);
-        time_guard.Stop();
-        CNetCacheKey::GenerateBlobKey(&m_ReqId, id,
-                                    m_Server->GetHost(), m_Server->GetPort());
-        do_id_lock = false;
+        //bool do_id_lock = true;
+        _TRACE("Getting an id, socket " << &GetSocket());
+        if (m_ReqId.empty()) {
+            CTimeGuard time_guard(m_Stat.db_elapsed, &m_Stat);
+            m_BlobId = m_Server->GetCache()->GetNextBlobId(/*do_id_lock*/);
+            time_guard.Stop();
+            CNetCacheKey::GenerateBlobKey(&m_ReqId, m_BlobId,
+                                        m_Server->GetHost(), m_Server->GetPort());
+            //do_id_lock = false;
+        }
+        else {
+            m_BlobId = CNetCacheKey::GetBlobId(m_ReqId);
+        }
+        m_Stat.blob_id = m_ReqId;
+        _TRACE("Got id " << m_BlobId);
+
+        // BLOB already locked, it is safe to return BLOB id
+        if (!m_Policy /* !m_WaitForWriting *//*  &&  !do_id_lock*/) {
+            CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
+            x_WriteMsg("ID:", m_ReqId);
+        }
+        else {
+            m_PutID = true;
+        }
+
+        m_LockHolder = m_Server->AcquireWriteIdLock(m_BlobId);
+    }
+
+    if (m_LockHolder->IsLockAcquired()) {
+        x_CreateBlobWriter();
+
+        /*if (!m_Policy / * !m_WaitForWriting * /  &&  do_id_lock) {
+            CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
+            x_WriteMsg("ID:", m_ReqId);
+        }
+        else if (m_Policy / * m_WaitForWriting * /) {
+            m_PutID = true;
+        }*/
+
+        _TRACE("Begin read transmission");
+        BeginReadTransmission();
     }
     else {
-        id = CNetCacheKey::GetBlobId(m_ReqId);
+        DeferProcessing();
     }
-    m_Stat.blob_id = m_ReqId;
-    _TRACE("Got id " << id);
-
-    // BLOB already locked, it is safe to return BLOB id
-    if (!m_Policy /* !m_WaitForWriting */  &&  !do_id_lock) {
-        CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
-        WriteMsg("ID:", m_ReqId);
-    }
-
-    // create the reader up front to guarantee correct BLOB locking
-    // the possible problem (?) here is that we have to do double buffering
-    // of the input stream
-    {{
-        CTimeGuard time_guard(m_Stat.db_elapsed, &m_Stat);
-        m_Writer.reset(
-            bdb_cache->GetWriteStream(id, m_ReqId, 0, kEmptyStr, do_id_lock,
-                                      m_Timeout, m_Auth));
-    }}
-
-    if (!m_Policy /* !m_WaitForWriting */  &&  do_id_lock) {
-        CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
-        WriteMsg("ID:", m_ReqId);
-    }
-    else if (m_Policy /* m_WaitForWriting */) {
-        m_PutID = true;
-    }
-
-    _TRACE("Begin read transmission");
-    BeginReadTransmission();
 }
 
 void
@@ -1327,7 +1559,7 @@ CNetCache_MessageHandler::ProcessHasBlob(void)
     bool hb = m_Server->GetCache()->HasBlobs(m_ReqId, kEmptyStr);
     string str;
     NStr::UIntToString(str, (int)hb);
-    WriteMsg("OK:", str);
+    x_WriteMsg("OK:", str);
 }
 
 void
@@ -1336,28 +1568,42 @@ CNetCache_MessageHandler::ProcessGetBlobOwner(void)
     string owner;
     m_Server->GetCache()->GetBlobOwner(m_ReqId, 0, kEmptyStr, &owner);
 
-    WriteMsg("OK:", owner);
+    x_WriteMsg("OK:", owner);
 }
 
 void
 CNetCache_MessageHandler::ProcessIsLock(void)
 {
-    if (m_Server->GetCache()->IsLocked(CNetCacheKey::GetBlobId(m_ReqId))) {
-        WriteMsg("OK:", "1");
+    TRWLockHolderRef holder = m_Server->AcquireReadIdLock(
+                                            CNetCacheKey::GetBlobId(m_ReqId));
+
+    if (holder->IsLockAcquired()) {
+        x_WriteMsg("OK:", "1");
     } else {
-        WriteMsg("OK:", "0");
+        x_WriteMsg("OK:", "0");
     }
 
+    holder->ReleaseLock();
 }
 
 void
 CNetCache_MessageHandler::ProcessGetSize(void)
 {
-    size_t size;
-    if (!m_Server->GetCache()->GetSizeEx(m_ReqId, 0, kEmptyStr, &size)) {
-        WriteMsg("ERR:", "BLOB not found. " + m_ReqId);
-    } else {
-        WriteMsg("OK:", NStr::UIntToString(size));
+    if (m_LockHolder.IsNull()) {
+        m_BlobId = CNetCacheKey::GetBlobId(m_ReqId);
+        m_LockHolder = m_Server->AcquireReadIdLock(m_BlobId);
+    }
+
+    if (m_LockHolder->IsLockAcquired()) {
+        size_t size;
+        if (!m_Server->GetCache()->GetSizeEx(m_ReqId, 0, kEmptyStr, &size)) {
+            x_WriteMsg("ERR:", "BLOB not found. " + m_ReqId);
+        } else {
+            x_WriteMsg("OK:", NStr::UIntToString(size));
+        }
+    }
+    else {
+        DeferProcessing();
     }
 }
 
@@ -1365,7 +1611,7 @@ void
 CNetCache_MessageHandler::Process_IC_SetTimeStampPolicy(void)
 {
     m_ICache->SetTimeStampPolicy(m_Policy, m_Timeout, m_MaxTimeout);
-    WriteMsg("OK:", "");
+    x_WriteMsg("OK:", "");
 }
 
 
@@ -1375,7 +1621,7 @@ CNetCache_MessageHandler::Process_IC_GetTimeStampPolicy(void)
     ICache::TTimeStampFlags flags = m_ICache->GetTimeStampPolicy();
     string str;
     NStr::UIntToString(str, flags);
-    WriteMsg("OK:", str);
+    x_WriteMsg("OK:", str);
 }
 
 void
@@ -1391,11 +1637,11 @@ CNetCache_MessageHandler::Process_IC_SetVersionRetention(void)
     if (NStr::CompareNocase(m_ValueParam, "DA") == 0) {
         policy = ICache::eDropAll;
     } else {
-        WriteMsg("ERR:", "Invalid version retention code");
+        x_WriteMsg("ERR:", "Invalid version retention code");
         return;
     }
     m_ICache->SetVersionRetention(policy);
-    WriteMsg("OK:", "");
+    x_WriteMsg("OK:", "");
 }
 
 void
@@ -1404,7 +1650,7 @@ CNetCache_MessageHandler::Process_IC_GetVersionRetention(void)
     int p = m_ICache->GetVersionRetention();
     string str;
     NStr::IntToString(str, p);
-    WriteMsg("OK:", str);
+    x_WriteMsg("OK:", str);
 }
 
 void
@@ -1413,7 +1659,7 @@ CNetCache_MessageHandler::Process_IC_GetTimeout(void)
     int to = m_ICache->GetTimeout();
     string str;
     NStr::UIntToString(str, to);
-    WriteMsg("OK:", str);
+    x_WriteMsg("OK:", str);
 }
 
 void
@@ -1422,47 +1668,107 @@ CNetCache_MessageHandler::Process_IC_IsOpen(void)
     bool io = m_ICache->IsOpen();
     string str;
     NStr::UIntToString(str, (int)io);
-    WriteMsg("OK:", str);
+    x_WriteMsg("OK:", str);
 }
 
+bool
+CNetCache_MessageHandler::x_GetBlobId(const string&    key,
+                                      int              version,
+                                      const string&    subkey,
+                                      bool             need_create,
+                                      unsigned int*    blob_id)
+{
+    unsigned int volume_id;
+    unsigned int split_id;
+    unsigned int overflow;
+    *blob_id = 0;
+    CBDB_Cache::EBlobCheckinRes res
+        = dynamic_cast<CBDB_Cache*>(m_ICache)
+                  ->BlobCheckIn(*blob_id,
+                                key,
+                                version,
+                                subkey,
+                                need_create? CBDB_Cache::eBlobCheckIn_Create:
+                                             CBDB_Cache::eBlobCheckIn,
+                                &volume_id,
+                                &split_id,
+                                &overflow);
+    return res != CBDB_Cache::EBlobCheckIn_NotFound;
+}
 
 void
 CNetCache_MessageHandler::Process_IC_Store(void)
 {
-    WriteMsg("OK:", "");
+    if (m_LockHolder.IsNull()) {
+        x_WriteMsg("OK:", "");
 
-    m_Writer.reset(m_ICache->GetWriteStream(m_Key, m_Version, m_SubKey,
-                                            m_Timeout, m_Auth));
+        x_GetBlobId(m_Key, m_Version, m_SubKey, true, &m_BlobId);
+        m_LockHolder = m_Server->AcquireWriteIdLock(m_BlobId);
+    }
 
-    BeginReadTransmission();
+    if (m_LockHolder->IsLockAcquired()) {
+        m_Writer.reset(m_ICache->GetWriteStream(m_Key, m_Version, m_SubKey,
+                                                m_Timeout, m_Auth));
+
+        BeginReadTransmission();
+    }
+    else {
+        DeferProcessing();
+    }
 }
 
 void
 CNetCache_MessageHandler::Process_IC_StoreBlob(void)
 {
-    WriteMsg("OK:", "");
+    if (m_LockHolder.IsNull()) {
+        x_WriteMsg("OK:", "");
 
-    if (m_BlobSize == 0) {
-        m_ICache->Store(m_Key, m_Version, m_SubKey, 0, 0, m_Timeout, m_Auth);
-        return;
+        x_GetBlobId(m_Key, m_Version, m_SubKey, true, &m_BlobId);
+        m_LockHolder = m_Server->AcquireWriteIdLock(m_BlobId);
     }
 
-    m_SizeKnown = true;
+    if (m_LockHolder->IsLockAcquired()) {
+        if (m_BlobSize == 0) {
+            m_ICache->Store(m_Key, m_Version, m_SubKey, 0, 0, m_Timeout, m_Auth);
+            return;
+        }
 
-    m_Writer.reset(m_ICache->GetWriteStream(m_Key, m_Version, m_SubKey,
-                                            m_Timeout, m_Auth));
+        m_SizeKnown = true;
 
-    BeginReadTransmission();
+        m_Writer.reset(m_ICache->GetWriteStream(m_Key, m_Version, m_SubKey,
+                                                m_Timeout, m_Auth));
+
+        BeginReadTransmission();
+    }
+    else {
+        DeferProcessing();
+    }
 }
 
 
 void
 CNetCache_MessageHandler::Process_IC_GetSize(void)
 {
-    size_t sz = m_ICache->GetSize(m_Key, m_Version, m_SubKey);
+    if (m_LockHolder.IsNull()
+        &&  x_GetBlobId(m_Key, m_Version, m_SubKey, false, &m_BlobId))
+    {
+        m_LockHolder = m_Server->AcquireReadIdLock(m_BlobId);
+    }
+
+    if (m_LockHolder.NotNull() && !m_LockHolder->IsLockAcquired()) {
+        DeferProcessing();
+        return;
+    }
+
+    size_t sz = 0;
+    if (m_LockHolder.NotNull()) {
+        sz = m_ICache->GetSize(m_Key, m_Version, m_SubKey);
+        m_LockHolder->ReleaseLock();
+        m_LockHolder.Reset();
+    }
     string str;
     NStr::UIntToString(str, sz);
-    WriteMsg("OK:", str);
+    x_WriteMsg("OK:", str);
 }
 
 void
@@ -1470,73 +1776,109 @@ CNetCache_MessageHandler::Process_IC_GetBlobOwner(void)
 {
     string owner;
     m_ICache->GetBlobOwner(m_Key, m_Version, m_SubKey, &owner);
-    WriteMsg("OK:", owner);
+    x_WriteMsg("OK:", owner);
 }
 
 void
 CNetCache_MessageHandler::Process_IC_Read(void)
 {
-    ICache::SBlobAccessDescr ba_descr;
-    ba_descr.buf = 0;
-    ba_descr.buf_size = 0;
-    m_ICache->GetBlobAccess(m_Key, m_Version, m_SubKey, &ba_descr);
+    bool blob_found = true;
+    if (m_LockHolder.IsNull()) {
+        blob_found = x_GetBlobId(m_Key, m_Version, m_SubKey, false, &m_BlobId);
+        if (blob_found) {
+            m_LockHolder = m_Server->AcquireReadIdLock(m_BlobId);
+        }
+    }
 
-    if (!ba_descr.blob_found) {
+    if (!blob_found) {
         string msg = "BLOB not found. ";
         //msg += req_id;
-        WriteMsg("ERR:", msg);
-        return;
-    }
-    if (ba_descr.blob_size == 0) {
-        WriteMsg("OK:", "BLOB found. SIZE=0");
+        x_WriteMsg("ERR:", msg);
         return;
     }
 
-    // re-translate reader to the network
+    if (m_LockHolder->IsLockAcquired()) {
+        ICache::SBlobAccessDescr ba_descr;
+        ba_descr.buf = 0;
+        ba_descr.buf_size = 0;
+        m_ICache->GetBlobAccess(m_Key, m_Version, m_SubKey, &ba_descr);
 
-    m_Reader.reset(ba_descr.reader.release());
-    if (!m_Reader.get()) {
-        string msg = "BLOB not found. ";
-        //msg += req_id;
-        WriteMsg("ERR:", msg);
-        return;
+        if (ba_descr.blob_size == 0) {
+            x_WriteMsg("OK:", "BLOB found. SIZE=0");
+            m_LockHolder->ReleaseLock();
+            m_LockHolder.Reset();
+            return;
+        }
+
+        // re-translate reader to the network
+
+        m_Reader.reset(ba_descr.reader.release());
+        if (!m_Reader.get()) {
+            string msg = "BLOB not found. ";
+            //msg += req_id;
+            x_WriteMsg("ERR:", msg);
+            m_LockHolder->ReleaseLock();
+            m_LockHolder.Reset();
+            return;
+        }
+        // Write first chunk right here
+        char buf[4096];
+        size_t bytes_read;
+        ERW_Result io_res = m_Reader->Read(buf, sizeof(buf), &bytes_read);
+        if (io_res != eRW_Success || !bytes_read) { // TODO: should we check here for bytes_read?
+            string msg = "BLOB not found. ";
+            x_WriteMsg("ERR:", msg);
+            m_Reader.reset(0);
+            m_LockHolder->ReleaseLock();
+            m_LockHolder.Reset();
+            return;
+        }
+        string msg("BLOB found. SIZE=");
+        string sz;
+        NStr::UIntToString(sz, ba_descr.blob_size);
+        msg += sz;
+        x_WriteMsg("OK:", msg);
+
+        // translate BLOB fragment to the network
+        x_WriteBuf(buf, bytes_read);
+
+        // TODO: Can we check here that bytes_read is less than sizeof(buf)
+        // and optimize out delayed write?
+        BeginDelayedWrite();
     }
-    // Write first chunk right here
-    char buf[4096];
-    size_t bytes_read;
-    ERW_Result io_res = m_Reader->Read(buf, sizeof(buf), &bytes_read);
-    if (io_res != eRW_Success || !bytes_read) { // TODO: should we check here for bytes_read?
-        string msg = "BLOB not found. ";
-        WriteMsg("ERR:", msg);
-        m_Reader.reset(0);
-        return;
+    else {
+        DeferProcessing();
     }
-    string msg("BLOB found. SIZE=");
-    string sz;
-    NStr::UIntToString(sz, ba_descr.blob_size);
-    msg += sz;
-    WriteMsg("OK:", msg);
-
-    // translate BLOB fragment to the network
-    CNetCacheServer::WriteBuf(GetSocket(), buf, bytes_read);
-
-    // TODO: Can we check here that bytes_read is less than sizeof(buf)
-    // and optimize out delayed write?
-    BeginDelayedWrite();
 }
 
 void
 CNetCache_MessageHandler::Process_IC_Remove(void)
 {
-    m_ICache->Remove(m_Key, m_Version, m_SubKey);
-    WriteMsg("OK:", "");
+    if (m_LockHolder.IsNull()
+        &&  x_GetBlobId(m_Key, m_Version, m_SubKey, false, &m_BlobId))
+    {
+        m_LockHolder = m_Server->AcquireWriteIdLock(m_BlobId);
+    }
+
+    if (m_LockHolder.NotNull()  &&  !m_LockHolder->IsLockAcquired()) {
+        DeferProcessing();
+    }
+    else {
+        if (m_LockHolder.NotNull()) {
+            m_ICache->Remove(m_Key, m_Version, m_SubKey);
+            m_LockHolder->ReleaseLock();
+            m_LockHolder.Reset();
+        }
+        x_WriteMsg("OK:", "");
+    }
 }
 
 void
 CNetCache_MessageHandler::Process_IC_RemoveKey(void)
 {
+    // TODO: Very bad idea to delete everything without any locks
     m_ICache->Remove(m_Key);
-    WriteMsg("OK:", "");
+    x_WriteMsg("OK:", "");
 }
 
 void
@@ -1545,7 +1887,7 @@ CNetCache_MessageHandler::Process_IC_GetAccessTime(void)
     time_t t = m_ICache->GetAccessTime(m_Key, m_Version, m_SubKey);
     string str;
     NStr::UIntToString(str, static_cast<unsigned long>(t));
-    WriteMsg("OK:", str);
+    x_WriteMsg("OK:", str);
 }
 
 void
@@ -1554,15 +1896,16 @@ CNetCache_MessageHandler::Process_IC_HasBlobs(void)
     bool hb = m_ICache->HasBlobs(m_Key, m_SubKey);
     string str;
     NStr::UIntToString(str, (int)hb);
-    WriteMsg("OK:", str);
+    x_WriteMsg("OK:", str);
 }
 
 void
 CNetCache_MessageHandler::Process_IC_Purge1(void)
 {
     ICache::EKeepVersions keep_versions = (ICache::EKeepVersions)m_Policy;
+    // TODO: Very bad idea to delete everything without any locks
     m_ICache->Purge(m_Timeout, keep_versions);
-    WriteMsg("OK:", "");
+    x_WriteMsg("OK:", "");
 }
 
 

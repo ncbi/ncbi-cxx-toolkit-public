@@ -363,6 +363,18 @@ void CServer::StartListening(void)
 }
 
 
+void CServer::DeferConnectionProcessing(IServer_ConnectionBase* conn)
+{
+    m_ConnectionPool->SetConnType(conn, CServer_ConnectionPool::ePreDeferredSocket);
+}
+
+
+void CServer::DeferConnectionProcessing(CSocket* sock)
+{
+    DeferConnectionProcessing(dynamic_cast<IServer_ConnectionBase*>(sock));
+}
+
+
 static inline bool operator <(const STimeout& to1, const STimeout& to2)
 {
     return to1.sec != to2.sec ? to1.sec < to2.sec : to1.usec < to2.usec;
@@ -383,14 +395,23 @@ void CServer::Run(void)
 
         vector<CSocketAPI::SPoll>       polls;
         size_t                          count;
-        vector<IServer_ConnectionBase*> timer_requests;
+        typedef vector<IServer_ConnectionBase*> TConnsList;
+        TConnsList                      timer_requests;
+        TConnsList                      revived_conns;
         STimeout                        timer_timeout;
         const STimeout*                 timeout;
         int                             request_id = 0;
 
         while (!ShutdownRequested()) {
 //            _TRACE("Cleaning connection pool");
-            m_ConnectionPool->Clean();
+            m_ConnectionPool->Clean(revived_conns);
+
+            ITERATE(TConnsList, it, revived_conns) {
+                ++request_id;
+                CreateRequest(threadPool, *it,
+                              IOEventToServIOEvent((*it)->GetEventsToPollFor(NULL)),
+                              m_Parameters->idle_timeout, request_id);
+            }
 
             timeout = m_Parameters->accept_timeout;
 

@@ -70,7 +70,9 @@ public:
     enum EConnType {
         eInactiveSocket,
         eActiveSocket,
-        eListener
+        eListener,
+        ePreDeferredSocket,
+        eDeferredSocket
     };
 
     void SetMaxConnections(unsigned max_connections) {
@@ -86,7 +88,7 @@ public:
 
     /// Clean up inactive connections which are no longer open or
     /// which have been idle for too long.
-    void Clean(void);
+    void Clean(vector<IServer_ConnectionBase*>& revived_conns);
 
     /// Erase all connections
     void Erase(void);
