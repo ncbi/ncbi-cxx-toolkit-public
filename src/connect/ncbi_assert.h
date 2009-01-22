@@ -45,12 +45,6 @@
 #if defined(NDEBUG)
 #  define verify(expr)  (void)(expr)
 #else
-#  ifdef NCBI_COMPILER_METROWERKS
-     /* The following 2 headers are only required for Codewarrior
-      * on Mac to prototype printf() and abort() respectively */
-#    include <stdio.h>
-#    include <stdlib.h>
-#  endif
 #  define verify(expr)  assert(expr)
 #endif
 

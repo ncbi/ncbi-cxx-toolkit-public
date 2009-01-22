@@ -70,10 +70,6 @@
 #    define MAP_FAILED ((void *) -1)
 #  endif
 
-#  if defined(NCBI_COMPILER_MW_MSL)
-#    include <ncbi_mslextras.h>
-#  endif
-
 #else
 #  error "File API defined for MS Windows and UNIX platforms only"
 

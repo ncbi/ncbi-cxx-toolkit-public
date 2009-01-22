@@ -29,7 +29,6 @@
  *   Plain portable TCP/IP socket API for:  UNIX, MS-Win, MacOS
  *     [UNIX ]   -DNCBI_OS_UNIX     -lresolv -lsocket -lnsl
  *     [MSWIN]   -DNCBI_OS_MSWIN    ws2_32.lib
- *     [MacOS]   -DNCBI_OS_MAC      NCSASOCK -- BSD-style socket emulation lib
  *
  */
 
@@ -87,44 +86,20 @@
 
 #if   defined(NCBI_OS_UNIX)
 #  include <unistd.h>
-#  ifdef NCBI_COMPILER_MW_MSL
-#    include <ncbi_mslextras.h>
-#  else
-#    include <netdb.h>
-#  endif /*NCBI_COMPILER_MW_MSL*/
+#  include <netdb.h>
 #  include <fcntl.h>
 #  include <netinet/in.h>
-#  ifndef NCBI_COMPILER_METROWERKS
-#    include <netinet/tcp.h>
-#    ifdef NCBI_OS_LINUX
-#      ifndef   IP_MTU
-#        define IP_MTU 14
-#      endif /*!IP_MTU*/
-#    endif /*NCBI_OS_LINUX*/
-#  endif /*NCBI_COMPILER_METROWERKS*/
-#  if !defined(NCBI_OS_BEOS)  &&  !defined(NCBI_COMPILER_MW_MSL)
+#  include <netinet/tcp.h>
+#  ifdef NCBI_OS_LINUX
+#    ifndef   IP_MTU
+#      define IP_MTU 14
+#    endif /*!IP_MTU*/
+#  endif /*NCBI_OS_LINUX*/
+#  if !defined(NCBI_OS_BEOS)
 #    include <arpa/inet.h>
-#  endif /*NCBI_OS_BEOS && !NCBI_COMPILER_MW_MSL*/
+#  endif /*NCBI_OS_BEOS*/
 #  include <signal.h>
 #  include <sys/un.h>
-
-#elif defined(NCBI_OS_MAC)
-#  include <unistd.h>
-#  include <sock_ext.h>
-#  ifdef __MWERKS__
-#    if TARGET_API_MAC_CARBON
-#      include <carbon_netdb.h>
-#    else
-#      include <netdb.h>
-#    endif
-#  else
-#    include <netdb.h>
-#  endif
-#  include <s_types.h>
-#  include <s_socket.h>
-#  include <neti_in.h>
-#  include <a_inet.h>
-#  include <neterrno.h> /* missing error numbers on Mac */
 
 #endif /*NCBI_OS*/
 
@@ -173,34 +148,6 @@
 #  define SOCK_STRERROR(err)  s_StrError(0, err)
 /* NCBI_OS_UNIX */
 
-#elif defined(NCBI_OS_MAC)
-
-#  if TARGET_API_MAC_CARBON
-#    define O_NONBLOCK kO_NONBLOCK
-#  endif /*TARGET_API_MAC_CARBON*/
-
-#  define SOCK_INVALID        (-1)
-#  ifndef SOCK_ERRNO
-#    define SOCK_ERRNO        errno
-#  endif /*SOCK_ERRNO*/
-#  define SOCK_NFDS(s)        (s + 1)
-#  define SOCK_CLOSE(s)       close(s)
-#  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
-#  define SOCK_STRERROR(err)  s_StrError(0, err)
-#  ifdef   NETDB_INTERNAL
-#    undef NETDB_INTERNAL
-#  endif /*NETDB_INTERNAL*/
-#  ifndef   INADDR_LOOPBACK
-#    define	INADDR_LOOPBACK	  0x7F000001
-#  endif /*INADDR_LOOPBACK*/
-/*NCBI_OS_MAC*/
-
-/* Cannot write more than SOCK_SEND_SLICE at once on Mac;  so we have to
- * split big output buffers into smaller(<=SOCK_SEND_SLICE) slices before
- * writing them to the socket.
- */
-/*#  define SOCK_SEND_SLICE     2048 */
- 
 #endif /*NCBI_OS*/
 
 #ifdef   sun
@@ -924,7 +871,7 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
 #if defined(NCBI_OS_MSWIN)
     unsigned long argp = nonblock ? 1 : 0;
     return ioctlsocket(sock, FIONBIO, &argp) == 0;
-#elif defined(NCBI_OS_UNIX)  ||  defined(NCBI_OS_MAC)
+#elif defined(NCBI_OS_UNIX)
     return fcntl(sock, F_SETFL,
                  nonblock ?
                  fcntl(sock, F_GETFL, 0) | O_NONBLOCK :
@@ -1002,7 +949,6 @@ static EIO_Status s_Status(SOCK sock, EIO_Event direction)
 /*ARGSUSED*/
 static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
 {
-#  ifndef NCBI_OS_MAC
     int fd = fcntl(sock->sock, F_DUPFD, STDERR_FILENO + 1);
     if (fd >= 0) {
         if (fd < FD_SETSIZE) {
@@ -1019,7 +965,6 @@ static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
         }
         close(fd);
     }
-#  endif /*!NCBI_OS_MAC*/
     return 0/*failure*/;
 }
 #endif /*!NCBI_MSWIN && FD_SETSIZE*/
@@ -5831,11 +5776,7 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
 
         CORE_LOCK_WRITE;
         he = gethostbyname(hostname);
-#    ifdef NCBI_OS_MAC
-        x_error = SOCK_ERRNO;
-#    else
         x_error = h_errno + DNS_BASE;
-#    endif /*NCBI_OS_MAC*/
 #  endif /*HAVE_GETHOSTBYNAME_R*/
 
         if (he && he->h_addrtype == AF_INET && he->h_length == sizeof(host)) {
@@ -5949,11 +5890,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 
         CORE_LOCK_WRITE;
         he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
-#    ifdef NCBI_OS_MAC
-        x_error = SOCK_ERRNO;
-#    else
         x_error = h_errno + DNS_BASE;
-#    endif /*NCBI_OS_MAC*/
 #  endif /*HAVE_GETHOSTBYADDR_R*/
 
         if (!he  ||  strlen(he->h_name) >= namelen) {

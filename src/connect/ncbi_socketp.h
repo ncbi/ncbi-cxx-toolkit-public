@@ -36,8 +36,8 @@
 #include "ncbi_config.h"
 /* OS must be specified in the command-line ("-D....") or in the conf. header
  */
-#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_MAC)
-#  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN, NCBI_OS_MAC!"
+#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN)
+#  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN!"
 #endif /*supported platforms*/
 
 #include <connect/ncbi_socket.h>
@@ -47,15 +47,11 @@
 /* Pull in a minial set of platform-specific system headers here.
  */
 
-#if   defined(NCBI_OS_MSWIN)
-#  ifndef NCBI_COMPILER_METROWERKS
-#    include <winsock2.h>
-#  endif
+#if defined(NCBI_OS_MSWIN)
+#  include <winsock2.h>
 #elif defined(NCBI_OS_UNIX)
 #  include <sys/socket.h>
 #  include <sys/time.h>
-#elif defined(NCBI_OS_MAC)
-#  include <neterrno.h> /* missing error numbers on Mac */
 #endif
 
 /* Portable error codes.
@@ -80,13 +76,6 @@ typedef HANDLE TRIGGER_Handle;
 #  define SOCK_ECONNREFUSED     WSAECONNREFUSED
 #  define SOCK_ENETRESET        WSAENETRESET
 #  define SOCK_ETIMEDOUT        WSAETIMEDOUT
-
-#  ifdef NCBI_COMPILER_METROWERKS
-#    define SD_RECEIVE          0x00
-#    define SD_SEND             0x01
-#    define SD_BOTH             0x02
-#  endif /*NCBI_COMPILER_METROWERKS*/
-
 #  define SOCK_SHUTDOWN_RD      SD_RECEIVE
 #  define SOCK_SHUTDOWN_WR      SD_SEND
 #  define SOCK_SHUTDOWN_RDWR    SD_BOTH
@@ -110,24 +99,18 @@ typedef int TRIGGER_Handle;
 #  define SOCK_ENETRESET        ENETRESET
 #  define SOCK_ETIMEDOUT        ETIMEDOUT
 
-#  ifdef NCBI_OS_MAC
-#    define SOCK_SHUTDOWN_RD    0
-#    define SOCK_SHUTDOWN_WR    1
-#    define SOCK_SHUTDOWN_RDWR  2
-#  else
-#    ifndef SHUT_RD
-#      define SHUT_RD           0
-#    endif /*SHUT_RD*/
-#    define SOCK_SHUTDOWN_RD    SHUT_RD
-#    ifndef SHUT_WR
-#      define SHUT_WR           1
-#    endif /*SHUT_WR*/
-#    define SOCK_SHUTDOWN_WR    SHUT_WR
-#    ifndef SHUT_RDWR
-#      define SHUT_RDWR         2
-#    endif /*SHUT_RDWR*/
-#    define SOCK_SHUTDOWN_RDWR  SHUT_RDWR
-#  endif /*NCBI_OS_MAC*/
+#  ifndef SHUT_RD
+#    define SHUT_RD           0
+#  endif /*SHUT_RD*/
+#  define SOCK_SHUTDOWN_RD    SHUT_RD
+#  ifndef SHUT_WR
+#    define SHUT_WR           1
+#  endif /*SHUT_WR*/
+#  define SOCK_SHUTDOWN_WR    SHUT_WR
+#  ifndef SHUT_RDWR
+#    define SHUT_RDWR         2
+#  endif /*SHUT_RDWR*/
+#  define SOCK_SHUTDOWN_RDWR  SHUT_RDWR
 
 #endif
 

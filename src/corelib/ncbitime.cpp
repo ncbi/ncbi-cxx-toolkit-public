@@ -44,34 +44,7 @@
 #  include <sys/time.h>
 #endif
 
-#if defined(NCBI_OS_MAC) || defined(NCBI_COMPILER_MW_MSL)
-#  include <OSUtils.h>
-
-typedef struct MyTZDLS {
-    long timezone;
-    bool daylight;
-} MyTZDLS;
-
-static MyTZDLS MyReadLocation()
-{
-    MachineLocation loc;
-    ReadLocation(&loc);
-    long tz = loc.u.gmtDelta & 0x00ffffff;
-    // Propogate sign bit from bit 23 to bit 31 if West of UTC.
-    // (Sign-extend the GMT correction)
-    if ((tz & 0x00800000) != 0) {
-        tz |= 0xFF000000;
-    }
-    bool dls = (loc.u.dlsDelta != 0);
-    MyTZDLS tzdls = {tz, dls};
-    return tzdls;
-}
-
-static MyTZDLS sTZDLS = MyReadLocation();
-
-#  define TimeZone()  sTZDLS.timezone
-#  define Daylight()  sTZDLS.daylight
-#elif defined(__CYGWIN__)
+#if defined(__CYGWIN__)
 #  define TimeZone() _timezone
 #  define Daylight() _daylight
 #else
@@ -1084,24 +1057,6 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
 }
 
 
-#if defined (NCBI_OS_MAC)
-// Mac OS 9 does not correctly support daylight savings flag.
-time_t CTime::GetTimeT(void) const
-{
-    if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
-    }
-    struct tm t;
-    t.tm_sec   = Second() + (int)(IsGmtTime() ? +TimeZone() : 0);
-    t.tm_min   = Minute();
-    t.tm_hour  = Hour();
-    t.tm_mday  = Day();
-    t.tm_mon   = Month()-1;
-    t.tm_year  = Year()-1900;
-    t.tm_isdst = -1;
-    return mktime(&t);
-}
-#else
 time_t CTime::GetTimeT(void) const
 {
     if ( IsEmptyDate() ) {
@@ -1113,7 +1068,7 @@ time_t CTime::GetTimeT(void) const
     struct tm t;
 
     // Convert time to time_t value at base local time
-#if defined(HAVE_TIMEGM)  ||  (defined(NCBI_OS_DARWIN)  &&  ! defined(NCBI_COMPILER_MW_MSL))
+#if defined(HAVE_TIMEGM)  ||  defined(NCBI_OS_DARWIN)
     t.tm_sec   = Second();
 #else
     t.tm_sec   = Second() + (int)(IsGmtTime() ? -TimeZone() : 0);
@@ -1124,7 +1079,7 @@ time_t CTime::GetTimeT(void) const
     t.tm_mon   = Month()-1;
     t.tm_year  = Year()-1900;
     t.tm_isdst = -1;
-#if defined(NCBI_OS_DARWIN) && ! defined(NCBI_COMPILER_MW_MSL)
+#if defined(NCBI_OS_DARWIN)
     time_t tt = mktime(&t);
     if ( tt == -1 ) {
         return -1;
@@ -1174,7 +1129,6 @@ time_t CTime::GetTimeT(void) const
     return timer;
 #endif
 }
-#endif
 
 TDBTimeU CTime::GetTimeDBU(void) const
 {

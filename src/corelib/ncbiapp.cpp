@@ -50,10 +50,6 @@
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #endif
-#if defined(NCBI_OS_DARWIN)  &&  defined(NCBI_COMPILER_METROWERKS)
-#  define __NOEXTENSIONS__
-#  include <Carbon/Carbon.h>
-#endif
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_App
@@ -852,25 +848,7 @@ string CNcbiApplication::FindProgramExecutablePath
  string*                       real_path)
 {
     string ret_val;
-#if defined (NCBI_OS_DARWIN)  &&  defined (NCBI_COMPILER_METROWERKS)
-    // We don't want to impose a dependency on Carbon when building
-    // with GCC, since linking the framework *at all* makes remote
-    // execution impossible. :-/
-    OSErr               err;
-    ProcessSerialNumber psn;
-    FSRef               fsRef;
-    char                filePath[1024];
-
-    err = GetCurrentProcess(&psn);
-    if (err == noErr) {
-        err = GetProcessBundleLocation(&psn, &fsRef);
-        if (err == noErr) {
-            err = FSRefMakePath(&fsRef, (UInt8*) filePath, sizeof(filePath));
-        }
-    }
-    ret_val = filePath;
-
-#elif defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
 
 #  ifdef NCBI_OS_MSWIN
     // MS Windows: Try more accurate method of detection

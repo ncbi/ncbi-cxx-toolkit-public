@@ -150,9 +150,7 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 // Platform-specific EndOfLine
 const char* Endl(void)
 {
-#if   defined(NCBI_OS_MAC)
-    static const char s_Endl[] = "\r";
-#elif defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
     static const char s_Endl[] = "\r\n";
 #else /* assume UNIX-like EOLs */
     static const char s_Endl[] = "\n";
@@ -164,9 +162,7 @@ const char* Endl(void)
 // Get the next line taking into account platform specifics of End-of-Line
 CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str)
 {
-#if   defined(NCBI_OS_MAC)
-    NcbiGetline(is, str, '\r');
-#elif defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
     NcbiGetline(is, str, '\n');
     if (!str.empty()  &&  str[str.length()-1] == '\r')
         str.resize(str.length() - 1);

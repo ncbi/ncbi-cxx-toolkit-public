@@ -324,7 +324,7 @@ const string& CCgiContext::GetSelfURL(void) const
 CCgiContext::TStreamStatus
 CCgiContext::GetStreamStatus(STimeout* timeout) const
 {
-#if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_COMPILER_MW_MSL)
+#if defined(NCBI_OS_UNIX)
     int ifd  = m_Request->GetInputFD();
     int ofd  = m_Response.GetOutputFD();
     int nfds = max(ifd, ofd) + 1;

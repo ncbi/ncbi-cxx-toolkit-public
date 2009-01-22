@@ -153,11 +153,6 @@ DestinationFile::~DestinationFile(void)
 #  define ALL_SEPARATOR_CHARS ":/\\"
 #endif
 
-#ifdef NCBI_OS_MAC
-#  define DIR_SEPARATOR_CHAR ':'
-#  undef PARENT_DIR
-#endif
-
 #ifndef DIR_SEPARATOR_CHAR
 #  define DIR_SEPARATOR_CHAR '/'
 #endif
@@ -206,14 +201,9 @@ bool IsLocalPath(const string& path)
     if ( path.empty() )
         return false;
 
-#ifdef NCBI_OS_MAC
-    if (path.find(DIR_SEPARATOR_CHAR) != NPOS  &&
-        path[0] != DIR_SEPARATOR_CHAR)
-        return false;
-#else
     if ( IsDirSeparator(path[0]) )
         return false;
-#endif
+
     SIZE_TYPE pos;
 #ifdef PARENT_DIR
     SIZE_TYPE parentDirLength = strlen(PARENT_DIR);
@@ -295,15 +285,6 @@ string DirName(const string& path)
 string GetStdPath(const string& path)
 {
     string stdpath = path;
-#ifdef NCBI_OS_MAC
-    // Exlude leading ':' on Mac
-    if ( IsDirSeparator(stdpath[0]) ) {
-        stdpath = path.substr(1);
-    }
-    else {
-        // FIXME:  How do we translate an absolute pathname?
-    }
-#endif
     // Replace each native separator character with the 'standard' one.
     SIZE_TYPE ibeg = NStr::StartsWith(path, "http://", NStr::eNocase) ? 7 : 0;
     for (SIZE_TYPE i=ibeg ; i < stdpath.size(); i++) {

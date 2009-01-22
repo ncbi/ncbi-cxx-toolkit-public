@@ -1112,7 +1112,7 @@ static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz,
     const long kCount=100000L;
 #elif defined  NCBI_OS_UNIX
     const long kCount=10000L;
-#else       // NCBI_OS_MAC
+#else
     const long kCount=100000L;
 #endif
 

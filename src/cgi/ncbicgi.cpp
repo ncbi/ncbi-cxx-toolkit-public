@@ -55,10 +55,6 @@
 #include <time.h>
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>
-#  ifdef NCBI_OS_MAC
-// Mac OS has unistd.h, but STDIN_FILENO is not defined
-#    define STDIN_FILENO 0
-#  endif
 #else
 #  define STDIN_FILENO 0
 #endif

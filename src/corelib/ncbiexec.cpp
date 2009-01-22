@@ -43,8 +43,6 @@
 #  include <sys/types.h>
 #  include <sys/wait.h>
 #  include <fcntl.h>
-#elif defined(NCBI_OS_MAC)
-#  error "Class CExec defined only for MS Windows and UNIX platforms"
 #endif
 
 

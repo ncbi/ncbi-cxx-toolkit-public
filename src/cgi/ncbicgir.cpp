@@ -39,11 +39,6 @@
 #include <cgi/error_codes.hpp>
 #include <time.h>
 
-// Mac OS has unistd.h, but STDOUT_FILENO is not defined
-#ifdef NCBI_OS_MAC 
-#  define STDOUT_FILENO 1
-#endif
-
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>
 #else

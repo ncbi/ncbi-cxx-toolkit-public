@@ -240,7 +240,7 @@ public:
         TNumchunk size(void) const { return m_StartSegs.size(); };
 
     private:
-#if defined(NCBI_COMPILER_MSVC) ||  defined(NCBI_COMPILER_METROWERKS) // kludge
+#if defined(NCBI_COMPILER_MSVC) // kludge
         friend class CAlnMap;
 #elif defined(NCBI_COMPILER_WORKSHOP)  &&  NCBI_COMPILER_VERSION >= 550
         friend class CAlnMap;        

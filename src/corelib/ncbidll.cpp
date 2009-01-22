@@ -396,7 +396,6 @@ void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
 
     // Add hardcoded runpath
 
-#if !defined(NCBI_COMPILER_METROWERKS)
     if ((which & fToolkitDllPath) != 0) {
         const char* runpath = NCBI_GetRunpath();
         if (runpath  &&  *runpath) {
@@ -409,7 +408,6 @@ void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
 #  endif
         }
     }
-#endif
 
     return;
 }

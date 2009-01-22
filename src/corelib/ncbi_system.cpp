@@ -38,11 +38,6 @@
 
 #define NCBI_USE_ERRCODE_X   Corelib_System
 
-
-#if defined(NCBI_OS_MAC)
-#  include <OpenTransport.h>
-#endif
-
 #if defined(NCBI_OS_UNIX)
 #  if defined(NCBI_OS_SOLARIS)
 #    include <corelib/ncbifile.hpp>
@@ -65,9 +60,6 @@
 
 #if defined(NCBI_OS_DARWIN)
 extern "C" {
-#  if defined(NCBI_COMPILER_MW_MSL)
-#    include <ncbi_mslextras.h>
-#  endif
 #  include <mach/mach.h>
 #  include <mach/mach_host.h>
 #  include <mach/host_info.h>
@@ -620,8 +612,6 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
     }
 #  endif /*HAVE_NANOSLEEP*/
 
-#elif defined(NCBI_OS_MAC)
-    OTDelay((mc_sec + 500) / 1000);
 #endif /*NCBI_OS_...*/
 }
 
@@ -632,8 +622,6 @@ void SleepMilliSec(unsigned long ml_sec, EInterruptOnSignal onsignal)
     Sleep(ml_sec);
 #elif defined(NCBI_OS_UNIX)
     SleepMicroSec(ml_sec * 1000, onsignal);
-#elif defined(NCBI_OS_MAC)
-    OTDelay(ml_sec);
 #endif
 }
 

@@ -671,9 +671,6 @@
 /* Define to 1 on Linux. */
 #undef NCBI_OS_LINUX
 
-/* Define to 1 on MacOS. */
-#undef NCBI_OS_MAC
-
 /* Define to 1 on Windows. */
 #undef NCBI_OS_MSWIN
 

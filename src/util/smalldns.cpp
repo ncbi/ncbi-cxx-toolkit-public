@@ -40,13 +40,6 @@
 #  include <winsock2.h>
 #elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
-#  ifdef NCBI_COMPILER_MW_MSL
-#    include <ncbi_mslextras.h>
-#  else
-#    include <netdb.h>
-#  endif
-#elif defined(NCBI_OS_MAC)
-#  include <unistd.h>
 #  include <netdb.h>
 #else
 #  error "Unsupported platform"

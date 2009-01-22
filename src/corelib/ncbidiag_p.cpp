@@ -90,12 +90,6 @@ CDiagStrPathMatcher::CDiagStrPathMatcher(const string& pattern)
     while ( (pos = m_Pattern.find('\\'))  !=  string::npos )
         m_Pattern[pos] = '/';
 #   endif
-#   ifdef NCBI_OS_MACOS
-    size_t pos;
-    // replace : in mac path to /
-    while ( (pos = m_Pattern.find(':'))  !=  string::npos )
-        m_Pattern[pos] = '/';
-#   endif
 }
 
 
@@ -108,11 +102,6 @@ bool CDiagStrPathMatcher::Match(const char* str) const
 #   ifdef NCBI_OS_MSWIN
     // replace \ in windows path to /
     while ( (pos = lstr.find('\\'))  !=  string::npos )
-        lstr[pos] = '/';
-#   endif
-#   ifdef NCBI_OS_MACOS
-    // replace : in mac path to /
-    while ( (pos = lstr.find(':'))  !=  string::npos )
         lstr[pos] = '/';
 #   endif
 

@@ -59,7 +59,7 @@ template <class T>
 struct p_equal_to : public binary_function
 <const T*, const T*, bool>
 {
-#if defined(NCBI_COMPILER_MIPSPRO) || defined(NCBI_COMPILER_METROWERKS) || defined(NCBI_COMPILER_VISUALAGE)
+#if defined(NCBI_COMPILER_MIPSPRO) || defined(NCBI_COMPILER_VISUALAGE)
     // fails to define these
     typedef const T* first_argument_type;
     typedef const T* second_argument_type;
@@ -75,7 +75,7 @@ struct p_equal_to : public binary_function
 template <class T>
 struct PPtrLess : public binary_function<T, T, bool>
 {
-#if defined(NCBI_COMPILER_MIPSPRO) || defined(NCBI_COMPILER_METROWERKS) || defined(NCBI_COMPILER_VISUALAGE)
+#if defined(NCBI_COMPILER_MIPSPRO) || defined(NCBI_COMPILER_VISUALAGE)
     // fails to define these
     typedef T first_argument_type;
     typedef T second_argument_type;

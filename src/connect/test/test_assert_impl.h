@@ -38,12 +38,7 @@
 #  error "Must not use this header alone, but from a proper wrapper."
 #endif /*TEST_ASSERT__H*/
 
-#if defined(NCBI_OS_MAC) || \
-   (defined(NCBI_OS_DARWIN) && defined(NCBI_COMPILER_METROWERKS))
-#  include <stdio.h>
-#  include <stdlib.h>
-
-#elif defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
 #  ifdef   _ASSERT
 #    undef _ASSERT
 #  endif

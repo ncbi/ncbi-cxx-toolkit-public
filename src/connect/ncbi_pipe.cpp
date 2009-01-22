@@ -49,9 +49,6 @@
 #  include <sys/wait.h>
 #  include <signal.h>
 #  include <fcntl.h>
-#  ifdef NCBI_COMPILER_MW_MSL
-#    include <ncbi_mslextras.h>
-#  endif
 #else
 #  error "Class CPipe is supported only on Windows and Unix"
 #endif

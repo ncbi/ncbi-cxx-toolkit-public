@@ -222,14 +222,6 @@ extern "C" {
 #    define NCBI_SWAP_POINTERS_CONDITIONALLY(loc, ov, nv) \
       CompareAndSwap((UInt32)(ov), (UInt32)(nv), (UInt32*)(loc))
 #  endif
-#elif defined(NCBI_OS_MAC)
-#  include <OpenTransport.h> /* Is this right? */
-#  ifndef NCBI_COUNTER_ADD
-     typedef SInt32 TNCBIAtomicValue;
-#    define NCBI_COUNTER_ADD(p, d) OTAtomicAdd32(d, p)
-#  endif
-#  define NCBI_SWAP_POINTERS_CONDITIONALLY(loc, ov, nv) \
-    (OTCompareAndSwapPtr(ov, nv, loc) != FALSE)
 #elif defined(NCBI_OS_MSWIN)
 #  include <corelib/impl/ncbi_os_mswin.h>
 #  if !defined(NCBI_COUNTER_ADD)  &&  !defined(NCBI_COUNTER_USE_ASM)

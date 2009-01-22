@@ -35,8 +35,8 @@
 
 /* OS must be specified in the command-line ("-D....") or in the conf. header
  */
-#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_MAC)
-#  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN, NCBI_OS_MAC!"
+#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN)
+#  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN!"
 #endif
 
 #include <connect/ncbi_socket.h>
@@ -100,16 +100,7 @@ static void TEST__client_1(SOCK sock)
     /* Send a short string */
     SOCK_SetDataLoggingAPI(eOn);
     {{
-#if defined(NCBI_OS_MAC)
-        /* Special treatment for MAC clients -- server not to
-         * shutdown the socket on writing. MAC library
-         * mistakingly assumes that if server is shutdown on writing then
-         * it is shutdown on reading, too (?!). 
-         */
-        const char* x_C1 = s_M1;
-#else
         const char* x_C1 = s_C1;
-#endif
         n_io = strlen(x_C1) + 1;
         status = SOCK_Write(sock, x_C1, n_io, &n_io_done, eIO_WritePersist);
     }}
@@ -178,14 +169,12 @@ static void TEST__client_1(SOCK sock)
     }}
 
     /* Try to read more data (must hit EOF as the peer is shut down) */
-#if !defined(NCBI_OS_MAC)
     assert(SOCK_Read(sock, buf, 1, &n_io_done, eIO_ReadPeek)
            == eIO_Closed);
     assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
     assert(SOCK_Read(sock, buf, 1, &n_io_done, eIO_ReadPlain)
            == eIO_Closed);
     assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
-#endif
 
     /* Shutdown on read */
     assert(SOCK_Shutdown(sock, eIO_Read)  == eIO_Success);

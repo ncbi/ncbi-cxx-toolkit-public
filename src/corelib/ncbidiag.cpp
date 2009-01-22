@@ -59,10 +59,6 @@
 #  include <io.h>
 #endif
 
-#if defined(NCBI_OS_MAC)
-#  include <corelib/ncbi_os_mac.hpp>
-#endif
-
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #  include <sys/utsname.h>
@@ -2589,11 +2585,6 @@ void CDiagBuffer::Flush(void)
 
     if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace  &&  !sm_IgnoreToDie) {
         m_Diag = 0;
-#if defined(NCBI_OS_MAC)
-        if ( g_Mac_SpecialEnvironment ) {
-            throw runtime_error("Application aborted.");
-        }
-#endif
         Abort();
     }
 }
