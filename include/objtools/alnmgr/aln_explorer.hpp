@@ -59,11 +59,11 @@ public:
     };
 
     enum ESearchDirection {
-        eNone,
-        eBackwards,
-        eForward,
-        eLeft,
-        eRight
+        eNone,      ///< No search
+        eBackwards, ///< Towards lower seq coord (to the left if plus strand, right if minus)
+        eForward,   ///< Towards higher seq coord (to the right if plus strand, left if minus)
+        eLeft,      ///< Towards lower aln coord (always to the left)
+        eRight      ///< Towards higher aln coord (always to the right)
     };
 
     enum ESortState {
