@@ -465,6 +465,68 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
         + (plus ? delta : m_Lens[raw_seg] - 1 - delta);
 }
 
+TSignedSeqPos CAlnMap::x_FindClosestSeqPos(TNumrow row,
+                                           TNumseg seg,
+                                           ESearchDirection dir,
+                                           bool try_reverse_dir) const
+{
+    _ASSERT(x_GetRawStart(row, seg) == -1);
+    TNumseg orig_seg = seg;
+    TSignedSeqPos pos = -1;
+    bool reverse_pass = false;
+
+    while (true) {
+        if (IsPositiveStrand(row)) {
+            if (dir == eBackwards  ||  dir == eLeft) {
+                while (--seg >=0  &&  pos == -1) {
+                    pos = x_GetRawStop(row, seg);
+                }
+            } else {
+                while (++seg < m_NumSegs  &&  pos == -1) {
+                    pos = x_GetRawStart(row, seg);
+                }
+            }
+        } else {
+            if (dir == eForward  ||  dir == eLeft) {
+                while (--seg >=0  &&  pos == -1) {
+                    pos = x_GetRawStart(row, seg);
+                }
+            } else {
+                while (++seg < m_NumSegs  &&  pos == -1) {
+                    pos = x_GetRawStop(row, seg);
+                } 
+            }
+        }
+        if (!try_reverse_dir) {
+            break;
+        }
+        if (pos >= 0) {
+            break; // found
+        } else if (reverse_pass) {
+            string msg = "Invalid Dense-seg: Row " +
+                NStr::IntToString(row) +
+                " contains gaps only.";
+            NCBI_THROW(CAlnException, eInvalidDenseg, msg);
+        }
+        // not found, try reverse direction
+        reverse_pass = true;
+        seg = orig_seg;
+        switch (dir) {
+        case eLeft:
+            dir = eRight; break;
+        case eRight:
+            dir = eLeft; break;
+        case eForward:
+            dir = eBackwards; break;
+        case eBackwards:
+            dir = eForward; break;
+        default:
+            break;
+        }
+    }
+    return pos;
+}
+
 TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
                                            TSeqPos aln_pos,
                                            ESearchDirection dir,
@@ -483,86 +545,38 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
             pos += x_GetLen(for_row, x_GetRawSegFromSeg(seg)) - 1 - delta;
         }
     } else if (dir != eNone) {
-        // it is a gap, search in the neighbouring segments
+        // found a gap, search in the neighbouring segments
         // according to search direction (dir) and strand
-        bool reverse_pass = false;
-        TNumseg orig_seg = seg = x_GetRawSegFromSeg(seg);
-            
-        while (true) {
-            if (IsPositiveStrand(for_row)) {
-                if (dir == eBackwards  ||  dir == eLeft) {
-                    while (--seg >=0  &&  pos == -1) {
-                        pos = x_GetRawStop(for_row, seg);
-                    }
-                } else {
-                    while (++seg < m_NumSegs  &&  pos == -1) {
-                        pos = x_GetRawStart(for_row, seg);
-                    }
-                }
-            } else {
-                if (dir == eForward  ||  dir == eLeft) {
-                    while (--seg >=0  &&  pos == -1) {
-                        pos = x_GetRawStart(for_row, seg);
-                    }
-                } else {
-                    while (++seg < m_NumSegs  &&  pos == -1) {
-                        pos = x_GetRawStop(for_row, seg);
-                    } 
-                }
-            }
-            if (!try_reverse_dir) {
-                break;
-            }
-            if (pos >= 0) {
-                break; // found
-            } else if (reverse_pass) {
-                string msg = "CAlnVec::GetSeqPosFromAlnPos(): "
-                    "Invalid Dense-seg: Row " +
-                    NStr::IntToString(for_row) +
-                    " contains gaps only.";
-                NCBI_THROW(CAlnException, eInvalidDenseg, msg);
-            }
-            // not found, try reverse direction
-            reverse_pass = true;
-            seg = orig_seg;
-            switch (dir) {
-            case eLeft:
-                dir = eRight; break;
-            case eRight:
-                dir = eLeft; break;
-            case eForward:
-                dir = eBackwards; break;
-            case eBackwards:
-                dir = eForward; break;
-            default:
-                break;
-            }
-        }
+        pos = x_FindClosestSeqPos(for_row, x_GetRawSegFromSeg(seg), dir, try_reverse_dir);
     }
     return pos;
 }
 
 TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
-                                           TNumrow row, TSeqPos seq_pos) const
+                                           TNumrow row, TSeqPos seq_pos,
+                                           ESearchDirection dir,
+                                           bool try_reverse_dir)  const
 {
     TNumseg raw_seg = GetRawSeg(row, seq_pos);
     if (raw_seg < 0) {
         return -1;
     }
     unsigned offset = raw_seg * m_NumRows;
-    TSignedSeqPos start = m_Starts[offset + for_row];
-    if (start >= 0) {
-        TSeqPos delta
-            = seq_pos - m_Starts[offset + row];
+    TSignedSeqPos pos = m_Starts[offset + for_row];
+    if (pos >= 0) {
+        TSeqPos delta = seq_pos - m_Starts[offset + row];
         if (GetWidth(for_row) != GetWidth(row)) {
             delta = delta / GetWidth(row) * GetWidth(for_row);
         }
-        return start
-            + (StrandSign(row) == StrandSign(for_row) ? delta
-               : x_GetLen(for_row, raw_seg) - 1 - delta);
+        if (StrandSign(row) == StrandSign(for_row)) {
+            pos += delta;
+        } else {
+            pos += x_GetLen(for_row, raw_seg) - 1 - delta;
+        }
     } else {
-        return -1;
+        pos = x_FindClosestSeqPos(for_row, raw_seg, dir, try_reverse_dir);
     }
+    return pos;
 }
 
 
