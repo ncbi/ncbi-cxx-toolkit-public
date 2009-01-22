@@ -436,6 +436,7 @@ void CAlnMrgApp::LoadBlastDb(const string& dbname)
         (*m_ObjMgr,
          dbname,
          CBlastDbDataLoader::eNucleotide,
+         true,
          CObjectManager::eDefault).GetLoader();
     
     _ASSERT(blast_loader);
