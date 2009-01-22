@@ -35,12 +35,13 @@
 
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objtools/alnmgr/alnexception.hpp>
+#include <objtools/alnmgr/aln_explorer.hpp>
 #include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class NCBI_XALNMGR_EXPORT CAlnMap : public CObject
+class NCBI_XALNMGR_EXPORT CAlnMap : public CObject, public IAlnExplorer
 {
     typedef CObject TParent;
 
@@ -109,14 +110,6 @@ public:
     typedef int TGetChunkFlags; // binary OR of EGetChunkFlags
 
     typedef TNumseg TNumchunk;
-
-    enum ESearchDirection {
-        eNone,
-        eBackwards,
-        eForward,
-        eLeft,
-        eRight
-    };
 
     // constructors
     CAlnMap(const CDense_seg& ds);
@@ -194,8 +187,11 @@ public:
     TSignedSeqPos GetAlnPosFromSeqPos    (TNumrow row, TSeqPos seq_pos,
                                           ESearchDirection dir = eNone,
                                           bool try_reverse_dir = true)  const;
+    // if target seq pos is a gap, will use dir/try_reverse_dir
     TSignedSeqPos GetSeqPosFromSeqPos    (TNumrow for_row,
-                                          TNumrow row, TSeqPos seq_pos) const;
+                                          TNumrow row, TSeqPos seq_pos,
+                                          ESearchDirection dir = eNone,
+                                          bool try_reverse_dir = true)  const;
     // if seq pos is a gap, will use dir/try_reverse_dir
     TSignedSeqPos GetSeqPosFromAlnPos    (TNumrow for_row,
                                           TSeqPos aln_pos,
@@ -336,6 +332,11 @@ protected:
     TSeqPos           x_GetLen          (TNumrow row, TNumseg seg) const;
     const TNumseg&    x_GetSeqLeftSeg   (TNumrow row)              const;
     const TNumseg&    x_GetSeqRightSeg  (TNumrow row)              const;
+
+    TSignedSeqPos     x_FindClosestSeqPos(TNumrow row,
+                                          TNumseg seg,
+                                          ESearchDirection dir,
+                                          bool try_reverse_dir) const;
 
     bool x_SkipType               (TSegTypeFlags type,
                                    TGetChunkFlags flags) const;
