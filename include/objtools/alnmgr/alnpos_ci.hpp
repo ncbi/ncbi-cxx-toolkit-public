@@ -119,8 +119,8 @@ CAlnPos_CI& CAlnPos_CI::operator--()
             // time to move to the next segment
             if (m_Anchor == m_AlnMap.GetAnchor()) {
                 m_AlnSeg--;
-                m_LDelta = 0;
-                m_RDelta = m_AlnMap.GetLen(m_AlnSeg) - 1;
+                m_RDelta = 0;
+                m_LDelta = m_AlnMap.GetLen(m_AlnSeg) - 1;
                 NON_CONST_ITERATE(TSeqStartsCache, it, m_SeqStartsCache) {
                     *it = -2;
                 }
