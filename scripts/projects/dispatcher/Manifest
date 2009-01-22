@@ -13,6 +13,13 @@ APP: launcherd fwdaemon dispd.cgi
 #APP: lbsmd lbsm_feedback test_mghbn lbsmc testipub
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
 
+
+COPY: $srcdir/src/connect/daemons/mod/*mod*  $installdir/src/
+COPY: $srcdir/include/connect/*.h            $installdir/include/connect/
+COPY: $srcdir/include/connect/ext/*.h        $installdir/include/connect/ext/
+COPY: $srcdir/include/connect/daemons/*.h    $installdir/include/connect/daemons/
+COPY: $srcdir/include/internal/webenv2/id.h  $installdir/include/internal/webenv2/
+
 # Each line describes a single configuration
 # The format is as follows:
 # <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
