@@ -55,6 +55,7 @@ BEGIN_SCOPE(objects)
 /// @{
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 /// Macros and typedefs for object subtypes
 /////////////////////////////////////////////////////////////////////////////
@@ -198,8 +199,8 @@ typedef COrgName::C_Name::E_Choice TORGNAME_CHOICE;
 
 /// CSubSource definitions
 
-#define NCBI_SUBSRC(Type) CSubSource::eSubtype_##Type
-typedef CSubSource::TSubtype TSUBSRC_SUBTYPE;
+#define NCBI_SUBSOURCE(Type) CSubSource::eSubtype_##Type
+typedef CSubSource::TSubtype TSUBSOURCE_SUBTYPE;
 
 //   chromosome                map                 clone
 //   subclone                  haplotype           genotype
@@ -259,58 +260,54 @@ typedef CSeqFeatData::E_Choice TSEQFEAT_CHOICE;
 //   Psec_str     Non_std_residue     Het          Biosrc
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 /// Macros for obtaining closest specific CSeqdesc applying to a CBioseq
 /////////////////////////////////////////////////////////////////////////////
 
 
 /// IF_EXISTS_CLOSEST_MOLINFO
-// Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
-// Dereference with const CMolInfo& molinf = (*cref).GetMolinfo();
+// CBioseq& as input, dereference with [const] CMolInfo& molinf = (*cref).GetMolinfo();
 // If Lvl is not NULL, it must be a pointer to an int
 
 #define IF_EXISTS_CLOSEST_MOLINFO(Cref, Bsq, Lvl) \
 if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Molinfo, Lvl))
 
 /// IF_EXISTS_CLOSEST_BIOSOURCE
-// Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
-// Dereference with const CBioSource& source = (*cref).GetSource();
+// CBioseq& as input, dereference with [const] CBioSource& source = (*cref).GetSource();
 // If Lvl is not NULL, it must be a pointer to an int
 
 #define IF_EXISTS_CLOSEST_BIOSOURCE(Cref, Bsq, Lvl) \
 if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Source, Lvl))
 
 /// IF_EXISTS_CLOSEST_TITLE
-// Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
-// Dereference with const string& title = (*cref).GetTitle();
+// CBioseq& as input, dereference with [const] string& title = (*cref).GetTitle();
 // If Lvl is not NULL, it must be a pointer to an int
 
 #define IF_EXISTS_CLOSEST_TITLE(Cref, Bsq, Lvl) \
 if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Title, Lvl))
 
 /// IF_EXISTS_CLOSEST_GENBANKBLOCK
-// Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
-// Dereference with const CGB_block& gbk = (*cref).GetGenbank();
+// CBioseq& as input, dereference with [const] CGB_block& gbk = (*cref).GetGenbank();
 // If Lvl is not NULL, it must be a pointer to an int
 
 #define IF_EXISTS_CLOSEST_GENBANKBLOCK(Cref, Bsq, Lvl) \
 if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Genbank, Lvl))
 
 /// IF_EXISTS_CLOSEST_EMBLBLOCK
-// Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
-// Dereference with const CEMBL_block& ebk = (*cref).GetEmbl();
+// CBioseq& as input, dereference with [const] CEMBL_block& ebk = (*cref).GetEmbl();
 // If Lvl is not NULL, it must be a pointer to an int
 
 #define IF_EXISTS_CLOSEST_EMBLBLOCK(Cref, Bsq, Lvl) \
 if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Embl, Lvl))
 
 /// IF_EXISTS_CLOSEST_PDBBLOCK
-// Takes const CBioseq& as input and makes reference to CConstRef<CSeqdesc>
-// Dereference with const CPDB_block& pbk = (*cref).GetPdb();
+// CBioseq& as input, dereference with [const] CPDB_block& pbk = (*cref).GetPdb();
 // If Lvl is not NULL, it must be a pointer to an int
 
 #define IF_EXISTS_CLOSEST_PDBBLOCK(Cref, Bsq, Lvl) \
 if (CConstRef<CSeqdesc> Cref = (Bsq).GetClosestDescriptor (CSeqdesc::e_Pdb, Lvl))
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -331,166 +328,150 @@ if (! (Test)) {} else for (CTypeConstIterator<Type> Var (Cont); Var; ++Var)
 /// CSeq_entry explorers
 
 /// VISIT_ALL_SEQENTRYS_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeq_entry&
-// Dereference with const CSeq_entry& seqentry = *iter;
+// CSeq_entry& as input, dereference with const CSeq_entry& seqentry = *itr;
 
-#define VISIT_ALL_SEQENTRYS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_SEQENTRYS_WITHIN_SEQENTRY(Itr, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CSeq_entry, \
-    Iter, \
+    Itr, \
     (Seq))
 
 /// VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CBioseq&
-// Dereference with const CBioseq& bioseq = *iter;
+// CSeq_entry& as input, dereference with const CBioseq& bioseq = *itr;
 
-#define VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY(Itr, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CBioseq, \
-    Iter, \
+    Itr, \
     (Seq))
 
 /// VISIT_ALL_SEQSETS_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CBioseq_set&
-// Dereference with const CBioseq_set& bss = *iter;
+// CSeq_entry& as input, dereference with const CBioseq_set& bss = *itr;
 
-#define VISIT_ALL_SEQSETS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_SEQSETS_WITHIN_SEQENTRY(Itr, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CBioseq_set, \
-    Iter, \
+    Itr, \
     (Seq))
 
 /// VISIT_ALL_DESCRIPTORS_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeqdesc&
-// Dereference with const CSeqdesc& desc = *iter;
+// CSeq_entry& as input, dereference with const CSeqdesc& desc = *itr;
 
-#define VISIT_ALL_DESCRIPTORS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_DESCRIPTORS_WITHIN_SEQENTRY(Itr, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CSeqdesc, \
-    Iter, \
+    Itr, \
     (Seq))
 
 /// VISIT_ALL_ANNOTS_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeq_annot&
-// Dereference with const CSeq_annot& annot = *iter;
+// CSeq_entry& as input, dereference with const CSeq_annot& annot = *itr;
 
-#define VISIT_ALL_ANNOTS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_ANNOTS_WITHIN_SEQENTRY(Itr, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CSeq_annot, \
-    Iter, \
+    Itr, \
     (Seq))
 
 /// VISIT_ALL_FEATURES_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeq_feat&
-// Dereference with const CSeq_feat& feat = *iter;
+// CSeq_entry& as input, dereference with const CSeq_feat& feat = *itr;
 
-#define VISIT_ALL_FEATURES_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_FEATURES_WITHIN_SEQENTRY(Itr, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CSeq_feat, \
-    Iter, \
+    Itr, \
     (Seq))
 
 /// VISIT_ALL_ALIGNS_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeq_feat&
-// Dereference with const CSeq_align& align = *iter;
+// CSeq_entry& as input, dereference with const CSeq_align& align = *itr;
 
-#define VISIT_ALL_ALIGNS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_ALIGNS_WITHIN_SEQENTRY(Itr, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CSeq_align, \
-    Iter, \
+    Itr, \
     (Seq))
 
 /// VISIT_ALL_GRAPHS_WITHIN_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeq_feat&
-// Dereference with const CSeq_graph& graph = *iter;
+// CSeq_entry& as input, dereference with const CSeq_graph& graph = *itr;
 
-#define VISIT_ALL_GRAPHS_WITHIN_SEQENTRY(Iter, Seq) \
+#define VISIT_ALL_GRAPHS_WITHIN_SEQENTRY(Itr, Seq) \
 NCBI_SERIAL_TEST_EXPLORE((Seq).Which() != CSeq_entry::e_not_set, \
     CSeq_graph, \
-    Iter, \
+    Itr, \
     (Seq))
 
 
 /// CBioseq_set explorers
 
 /// VISIT_ALL_SEQENTRYS_WITHIN_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to const CSeq_entry&
-// Dereference with const CSeq_entry& seqentry = *iter;
+// CBioseq_set& as input, dereference with const CSeq_entry& seqentry = *itr;
 
-#define VISIT_ALL_SEQENTRYS_WITHIN_SEQSET(Iter, Bss) \
+#define VISIT_ALL_SEQENTRYS_WITHIN_SEQSET(Itr, Bss) \
 NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
     CSeq_entry, \
-    Iter, \
+    Itr, \
     (Bss))
 
 /// VISIT_ALL_BIOSEQS_WITHIN_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to const CBioseq&
-// Dereference with const CBioseq& bioseq = *iter;
+// CBioseq_set& as input, dereference with const CBioseq& bioseq = *itr;
 
-#define VISIT_ALL_BIOSEQS_WITHIN_SEQSET(Iter, Bss) \
+#define VISIT_ALL_BIOSEQS_WITHIN_SEQSET(Itr, Bss) \
 NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
     CBioseq, \
-    Iter, \
+    Itr, \
     (Bss))
 
 /// VISIT_ALL_SEQSETS_WITHIN_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to const CBioseq_set&
-// Dereference with const CBioseq_set& bss = *iter;
+// CBioseq_set& as input, dereference with const CBioseq_set& bss = *itr;
 
-#define VISIT_ALL_SEQSETS_WITHIN_SEQSET(Iter, Bss) \
+#define VISIT_ALL_SEQSETS_WITHIN_SEQSET(Itr, Bss) \
 NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
     CBioseq_set, \
-    Iter, \
+    Itr, \
     (Bss))
 
 /// VISIT_ALL_DESCRIPTORS_WITHIN_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to const CSeqdesc&
-// Dereference with const CSeqdesc& desc = *iter;
+// CBioseq_set& as input, dereference with const CSeqdesc& desc = *itr;
 
-#define VISIT_ALL_DESCRIPTORS_WITHIN_SEQSET(Iter, Bss) \
+#define VISIT_ALL_DESCRIPTORS_WITHIN_SEQSET(Itr, Bss) \
 NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
     CSeqdesc, \
-    Iter, \
+    Itr, \
     (Bss))
 
 /// VISIT_ALL_ANNOTS_WITHIN_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to const CSeq_annot&
-// Dereference with const CSeq_annot& annot = *iter;
+// CBioseq_set& as input, dereference with const CSeq_annot& annot = *itr;
 
-#define VISIT_ALL_ANNOTS_WITHIN_SEQSET(Iter, Bss) \
+#define VISIT_ALL_ANNOTS_WITHIN_SEQSET(Itr, Bss) \
 NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
     CSeq_annot, \
-    Iter, \
+    Itr, \
     (Bss))
 
 /// VISIT_ALL_FEATURES_WITHIN_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to const CSeq_feat&
-// Dereference with const CSeq_feat& feat = *iter;
+// CBioseq_set& as input, dereference with const CSeq_feat& feat = *itr;
 
-#define VISIT_ALL_FEATURES_WITHIN_SEQSET(Iter, Bss) \
+#define VISIT_ALL_FEATURES_WITHIN_SEQSET(Itr, Bss) \
 NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
     CSeq_feat, \
-    Iter, \
+    Itr, \
     (Bss))
 
 /// VISIT_ALL_ALIGNS_WITHIN_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to const CSeq_feat&
-// Dereference with const CSeq_align& align = *iter;
+// CBioseq_set& as input, dereference with const CSeq_align& align = *itr;
 
-#define VISIT_ALL_ALIGNS_WITHIN_SEQSET(Iter, Bss) \
+#define VISIT_ALL_ALIGNS_WITHIN_SEQSET(Itr, Bss) \
 NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
     CSeq_align, \
-    Iter, \
+    Itr, \
     (Bss))
 
 /// VISIT_ALL_GRAPHS_WITHIN_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to const CSeq_feat&
-// Dereference with const CSeq_graph& graph = *iter;
+// CBioseq_set& as input, dereference with const CSeq_graph& graph = *itr;
 
-#define VISIT_ALL_GRAPHS_WITHIN_SEQSET(Iter, Bss) \
+#define VISIT_ALL_GRAPHS_WITHIN_SEQSET(Itr, Bss) \
 NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
     CSeq_graph, \
-    Iter, \
+    Itr, \
     (Bss))
 
 
@@ -506,11 +487,11 @@ NCBI_SERIAL_TEST_EXPLORE((Bss).IsSetSeq_set(), \
 #define NCBI_CS_ITERATE(Test, Type, Var, Cont) \
 if (! (Test)) {} else ITERATE(Type, Var, Cont)
 
-/// NCBI_ER_ITERATE base macro tests to see if loop should be entered
-// If okay, calls ERASE_ITERATE for linear STL iteration
+/// NCBI_NC_ITERATE base macro tests to see if loop should be entered
+// If okay, calls NON_CONST_ITERATE for linear STL iteration
 
-#define NCBI_ER_ITERATE(Test, Type, Var, Cont) \
-if (! (Test)) {} else ERASE_ITERATE(Type, Var, Cont)
+#define NCBI_NC_ITERATE(Test, Type, Var, Cont) \
+if (! (Test)) {} else NON_CONST_ITERATE(Type, Var, Cont)
 
 /// NCBI_SWITCH base macro tests to see if switch should be performed
 // If okay, calls switch statement
@@ -519,9 +500,24 @@ if (! (Test)) {} else ERASE_ITERATE(Type, Var, Cont)
 if (! (Test)) {} else switch(Chs)
 
 
+/// FOR_EACH base macro calls NCBI_CS_ITERATE with generated components
+
+#define FOR_EACH(Base, Itr, Var) \
+NCBI_CS_ITERATE(Base##_Test(Var), Base##_Type, Itr, Base##_Get(Var))
+
+/// EDIT_EACH base macro calls NCBI_NC_ITERATE with generated components
+
+#define EDIT_EACH(Base, Itr, Var) \
+NCBI_NC_ITERATE(Base##_Test(Var), Base##_Type, Itr, Base##_Set(Var))
+
+/// SWITCH_ON base macro calls NCBI_SWITCH with generated components
+
+#define SWITCH_ON(Base, Var) \
+NCBI_SWITCH(Base##_Test(Var), Base##_Chs(Var))
+
+
 // "FOR_EACH_XXX_ON_YYY" does a linear const traversal of STL containers
 // "EDIT_EACH_XXX_ON_YYY" does a linear non-const traversal of STL containers
-//   with the possibility that the object can be deleted
 
 // "SWITCH_ON_XXX_CHOICE" switches on the item subtype
 
@@ -537,31 +533,25 @@ if (! (Test)) {} else switch(Chs)
 /// CSeq_submit macros
 
 /// FOR_EACH_SEQENTRY_ON_SEQSUBMIT
-// Takes const CSeq_submit& as input and makes iterator to const CSeq_entry&
-// Dereference with const CSeq_entry& se = **iter;
-
-#define FOR_EACH_SEQENTRY_ON_SEQSUBMIT(Iter, Ss) \
-NCBI_CS_ITERATE( \
-    (Ss).IsEntrys(), \
-    CSeq_submit::TData::TEntrys, \
-    Iter, \
-    (Ss).GetData().GetEntrys())
-
 /// EDIT_EACH_SEQENTRY_ON_SEQSUBMIT
-// Takes const CSeq_submit& as input and makes iterator to CSeq_entry&
-// Dereference with CSeq_entry& se = **iter;
+// CSeq_submit& as input, dereference with [const] CSeq_entry& se = **itr;
 
-#define EDIT_EACH_SEQENTRY_ON_SEQSUBMIT(Iter, Ss) \
-NCBI_ER_ITERATE( \
-    (Ss).IsEntrys(), \
-    CSeq_submit::TData::TEntrys, \
-    Iter, \
-    (Ss).SetData().SetEntrys())
+#define SEQENTRY_ON_SEQSUBMIT_Type      CSeq_submit::TData::TEntrys
+#define SEQENTRY_ON_SEQSUBMIT_Test(Var) (Var).IsEntrys()
+#define SEQENTRY_ON_SEQSUBMIT_Get(Var)  (Var).GetData().GetEntrys()
+#define SEQENTRY_ON_SEQSUBMIT_Set(Var)  (Var).SetData().SetEntrys()
+
+#define FOR_EACH_SEQENTRY_ON_SEQSUBMIT(Itr, Var) \
+FOR_EACH (SEQENTRY_ON_SEQSUBMIT, Itr, Var)
+
+#define EDIT_EACH_SEQENTRY_ON_SEQSUBMIT(Itr, Var) \
+EDIT_EACH (SEQENTRY_ON_SEQSUBMIT, Itr, Var)
+
 
 /// ERASE_SEQENTRY_ON_SEQSUBMIT
 
-#define ERASE_SEQENTRY_ON_SEQSUBMIT(Iter, Ss) \
-(Ss).SetData().SetEntrys().erase(Iter)
+#define ERASE_SEQENTRY_ON_SEQSUBMIT(Itr, Ss) \
+(Ss).SetData().SetEntrys().erase(Itr)
 
 
 /// CSeq_entry macros
@@ -598,10 +588,11 @@ if ((Seq).Which() == Chs)
 
 /// SWITCH_ON_SEQENTRY_CHOICE
 
-#define SWITCH_ON_SEQENTRY_CHOICE(Seq) \
-NCBI_SWITCH( \
-    (Seq).Which() != CSeq_entry::e_not_set, \
-    (Seq).Which())
+#define SEQENTRY_CHOICE_Test(Var) (Var).Which() != CSeq_entry::e_not_set
+#define SEQENTRY_CHOICE_Chs(Var)  (Var).Which()
+
+#define SWITCH_ON_SEQENTRY_CHOICE(Var) \
+SWITCH_ON (SEQENTRY_CHOICE, Var)
 
 
 /// IF_SEQENTRY_HAS_DESCRIPTOR
@@ -614,32 +605,31 @@ if ((Seq).IsSetDescr())
 #define SEQENTRY_HAS_DESCRIPTOR(Seq) \
 ((Seq).IsSetDescr())
 
-/// FOR_EACH_DESCRIPTOR_ON_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeqdesc&
-// Dereference with const CSeqdesc& desc = **iter
 
-#define FOR_EACH_DESCRIPTOR_ON_SEQENTRY(Iter, Seq) \
-NCBI_CS_ITERATE( \
-    (Seq).IsSetDescr(), \
-    CSeq_descr::Tdata, \
-    Iter, \
-    (Seq).GetDescr().Get())
+/// FOR_EACH_SEQDESC_ON_SEQENTRY
+/// EDIT_EACH_SEQDESC_ON_SEQENTRY
+// CSeq_entry& as input, dereference with [const] CSeqdesc& desc = **itr
 
-/// EDIT_EACH_DESCRIPTOR_ON_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to CSeqdesc&
-// Dereference with CSeqdesc& desc = **iter
+#define SEQDESC_ON_SEQENTRY_Type      CSeq_descr::Tdata
+#define SEQDESC_ON_SEQENTRY_Test(Var) (Var).IsSetDescr()
+#define SEQDESC_ON_SEQENTRY_Get(Var)  (Var).GetDescr().Get()
+#define SEQDESC_ON_SEQENTRY_Set(Var)  (Var).SetDescr().Set()
 
-#define EDIT_EACH_DESCRIPTOR_ON_SEQENTRY(Iter, Seq) \
-NCBI_ER_ITERATE( \
-    (Seq).IsSetDescr(), \
-    CSeq_descr::Tdata, \
-    Iter, \
-    (Seq).SetDescr().Set())
+#define FOR_EACH_SEQDESC_ON_SEQENTRY(Itr, Var) \
+FOR_EACH (SEQDESC_ON_SEQENTRY, Itr, Var)
+
+#define FOR_EACH_DESCRIPTOR_ON_SEQENTRY FOR_EACH_SEQDESC_ON_SEQENTRY
+
+#define EDIT_EACH_SEQDESC_ON_SEQENTRY(Itr, Var) \
+EDIT_EACH (SEQDESC_ON_SEQENTRY, Itr, Var)
+
+#define EDIT_EACH_DESCRIPTOR_ON_SEQENTRY EDIT_EACH_SEQDESC_ON_SEQENTRY
+
 
 /// ERASE_DESCRIPTOR_ON_SEQENTRY
 
-#define ERASE_DESCRIPTOR_ON_SEQENTRY(Iter, Seq) \
-(Seq).SetDescr().Set().erase(Iter)
+#define ERASE_DESCRIPTOR_ON_SEQENTRY(Itr, Seq) \
+(Seq).SetDescr().Set().erase(Itr)
 
 
 /// IF_SEQENTRY_HAS_ANNOT
@@ -652,32 +642,31 @@ if ((Seq).IsSetAnnot())
 #define SEQENTRY_HAS_ANNOT(Seq) \
 ((Seq).IsSetAnnot())
 
-/// FOR_EACH_ANNOT_ON_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to const CSeq_annot&
-// Dereference with const CSeq_annot& annot = **iter;
 
-#define FOR_EACH_ANNOT_ON_SEQENTRY(Iter, Seq) \
-NCBI_CS_ITERATE( \
-    (Seq).IsSetAnnot(), \
-    CSeq_entry::TAnnot, \
-    Iter, \
-    (Seq).GetAnnot())
+/// FOR_EACH_SEQANNOT_ON_SEQENTRY
+/// EDIT_EACH_SEQANNOT_ON_SEQENTRY
+// CSeq_entry& as input, dereference with [const] CSeq_annot& annot = **itr;
 
-/// EDIT_EACH_ANNOT_ON_SEQENTRY
-// Takes const CSeq_entry& as input and makes iterator to CSeq_annot&
-// Dereference with CSeq_annot& annot = **iter;
+#define SEQANNOT_ON_SEQENTRY_Type      CSeq_entry::TAnnot
+#define SEQANNOT_ON_SEQENTRY_Test(Var) (Var).IsSetAnnot()
+#define SEQANNOT_ON_SEQENTRY_Get(Var)  (Var).GetAnnot()
+#define SEQANNOT_ON_SEQENTRY_Set(Var)  (Var).(Seq).SetAnnot()
 
-#define EDIT_EACH_ANNOT_ON_SEQENTRY(Iter, Seq) \
-NCBI_ER_ITERATE( \
-    (Seq).IsSetAnnot(), \
-    CSeq_entry::TAnnot, \
-    Iter, \
-    (Seq).SetAnnot())
+#define FOR_EACH_SEQANNOT_ON_SEQENTRY(Itr, Var) \
+FOR_EACH (SEQANNOT_ON_SEQENTRY, Itr, Var)
+
+#define FOR_EACH_ANNOT_ON_SEQENTRY FOR_EACH_SEQANNOT_ON_SEQENTRY
+
+#define EDIT_EACH_SEQANNOT_ON_SEQENTRY(Itr, Var) \
+EDIT_EACH (SEQANNOT_ON_SEQENTRY, Itr, Var)
+
+#define EDIT_EACH_ANNOT_ON_SEQENTRY EDIT_EACH_SEQANNOT_ON_SEQENTRY
+
 
 /// ERASE_ANNOT_ON_SEQENTRY
 
-#define ERASE_ANNOT_ON_SEQENTRY(Iter, Seq) \
-(Seq).SetAnnot().erase(Iter)
+#define ERASE_ANNOT_ON_SEQENTRY(Itr, Seq) \
+(Seq).SetAnnot().erase(Itr)
 
 
 /// CBioseq macros
@@ -692,32 +681,30 @@ if ((Bsq).IsSetDescr())
 #define BIOSEQ_HAS_DESCRIPTOR(Bsq) \
 ((Bsq).IsSetDescr())
 
-/// FOR_EACH_DESCRIPTOR_ON_BIOSEQ
-// Takes const CBioseq& as input and makes iterator to const CSeqdesc&
-// Dereference with const CSeqdesc& desc = **iter
+/// FOR_EACH_SEQDESC_ON_BIOSEQ
+/// EDIT_EACH_SEQDESC_ON_BIOSEQ
+// CBioseq& as input, dereference with [const] CSeqdesc& desc = **itr
 
-#define FOR_EACH_DESCRIPTOR_ON_BIOSEQ(Iter, Bsq) \
-NCBI_CS_ITERATE( \
-    (Bsq).IsSetDescr(), \
-    CBioseq::TDescr::Tdata, \
-    Iter, \
-    (Bsq).GetDescr().Get())
+#define SEQDESC_ON_BIOSEQ_Type      CBioseq::TDescr::Tdata
+#define SEQDESC_ON_BIOSEQ_Test(Var) (Var).IsSetDescr()
+#define SEQDESC_ON_BIOSEQ_Get(Var)  (Var).GetDescr().Get()
+#define SEQDESC_ON_BIOSEQ_Set(Var)  (Var).SetDescr().Set()
 
-/// EDIT_EACH_DESCRIPTOR_ON_BIOSEQ
-// Takes const CBioseq& as input and makes iterator to CSeqdesc&
-// Dereference with CSeqdesc& desc = **iter
+#define FOR_EACH_SEQDESC_ON_BIOSEQ(Itr, Var) \
+FOR_EACH (SEQDESC_ON_BIOSEQ, Itr, Var)
 
-#define EDIT_EACH_DESCRIPTOR_ON_BIOSEQ(Iter, Bsq) \
-NCBI_ER_ITERATE( \
-    (Bsq).IsSetDescr(), \
-    CBioseq::TDescr::Tdata, \
-    Iter, \
-    (Bsq).SetDescr().Set())
+#define FOR_EACH_DESCRIPTOR_ON_BIOSEQ FOR_EACH_SEQDESC_ON_BIOSEQ
+
+#define EDIT_EACH_SEQDESC_ON_BIOSEQ(Itr, Var) \
+EDIT_EACH (SEQDESC_ON_BIOSEQ, Itr, Var)
+
+#define EDIT_EACH_DESCRIPTOR_ON_BIOSEQ EDIT_EACH_SEQDESC_ON_BIOSEQ
+
 
 /// ERASE_DESCRIPTOR_ON_BIOSEQ
 
-#define ERASE_DESCRIPTOR_ON_BIOSEQ(Iter, Bsq) \
-(Bsq).SetDescr().Set().erase(Iter)
+#define ERASE_DESCRIPTOR_ON_BIOSEQ(Itr, Bsq) \
+(Bsq).SetDescr().Set().erase(Itr)
 
 
 /// IF_BIOSEQ_HAS_ANNOT
@@ -730,32 +717,31 @@ if ((Bsq).IsSetAnnot())
 #define BIOSEQ_HAS_ANNOT(Bsq) \
 ((Bsq).IsSetAnnot())
 
-/// FOR_EACH_ANNOT_ON_BIOSEQ
-// Takes const CBioseq& as input and makes iterator to const CSeq_annot&
-// Dereference with const CSeq_annot& annot = **iter;
 
-#define FOR_EACH_ANNOT_ON_BIOSEQ(Iter, Bsq) \
-NCBI_CS_ITERATE( \
-    (Bsq).IsSetAnnot(), \
-    CBioseq::TAnnot, \
-    Iter, \
-    (Bsq).GetAnnot())
+/// FOR_EACH_SEQANNOT_ON_BIOSEQ
+/// EDIT_EACH_SEQANNOT_ON_BIOSEQ
+// CBioseq& as input, dereference with [const] CSeq_annot& annot = **itr;
 
-/// EDIT_EACH_ANNOT_ON_BIOSEQ
-// Takes const CBioseq& as input and makes iterator to CSeq_annot&
-// Dereference with CSeq_annot& annot = **iter;
+#define SEQANNOT_ON_BIOSEQ_Type      CBioseq::TAnnot
+#define SEQANNOT_ON_BIOSEQ_Test(Var) (Var).IsSetAnnot()
+#define SEQANNOT_ON_BIOSEQ_Get(Var)  (Var).GetAnnot()
+#define SEQANNOT_ON_BIOSEQ_Set(Var)  (Var).SetAnnot()
 
-#define EDIT_EACH_ANNOT_ON_BIOSEQ(Iter, Bsq) \
-NCBI_ER_ITERATE( \
-    (Bsq).IsSetAnnot(), \
-    CBioseq::TAnnot, \
-    Iter, \
-    (Bsq).SetAnnot())
+#define FOR_EACH_SEQANNOT_ON_BIOSEQ(Itr, Var) \
+FOR_EACH (SEQANNOT_ON_BIOSEQ, Itr, Var)
+
+#define FOR_EACH_ANNOT_ON_BIOSEQ FOR_EACH_SEQANNOT_ON_BIOSEQ
+
+#define EDIT_EACH_SEQANNOT_ON_BIOSEQ(Itr, Var) \
+EDIT_EACH (SEQANNOT_ON_BIOSEQ, Itr, Var)
+
+#define EDIT_EACH_ANNOT_ON_BIOSEQ EDIT_EACH_SEQANNOT_ON_BIOSEQ
+
 
 /// ERASE_ANNOT_ON_BIOSEQ
 
-#define ERASE_ANNOT_ON_BIOSEQ(Iter, Bsq) \
-(Bsq).SetAnnot().erase(Iter)
+#define ERASE_ANNOT_ON_BIOSEQ(Itr, Bsq) \
+(Bsq).SetAnnot().erase(Itr)
 
 
 /// IF_BIOSEQ_HAS_SEQID
@@ -768,32 +754,27 @@ if ((Bsq).IsSetId())
 #define BIOSEQ_HAS_SEQID(Bsq) \
 ((Bsq).IsSetId())
 
+
 /// FOR_EACH_SEQID_ON_BIOSEQ
-// Takes const CBioseq& as input and makes iterator to const CSeq_id&
-// Dereference with const CSeq_id& sid = **iter;
-
-#define FOR_EACH_SEQID_ON_BIOSEQ(Iter, Bsq) \
-NCBI_CS_ITERATE( \
-    (Bsq).IsSetId(), \
-    CBioseq::TId, \
-    Iter, \
-    (Bsq).GetId())
-
 /// EDIT_EACH_SEQID_ON_BIOSEQ
-// Takes const CBioseq& as input and makes iterator to CSeq_id&
-// Dereference with CSeq_id& sid = **iter;
+// CBioseq& as input, dereference with [const] CSeq_id& sid = **itr;
 
-#define EDIT_EACH_SEQID_ON_BIOSEQ(Iter, Bsq) \
-NCBI_ER_ITERATE( \
-    (Bsq).IsSetId(), \
-    CBioseq::TId, \
-    Iter, \
-    (Bsq).SetId())
+#define SEQID_ON_BIOSEQ_Type      CBioseq::TId
+#define SEQID_ON_BIOSEQ_Test(Var) (Var).IsSetId()
+#define SEQID_ON_BIOSEQ_Get(Var)  (Var).GetId()
+#define SEQID_ON_BIOSEQ_Set(Var)  (Var).SetId()
+
+#define FOR_EACH_SEQID_ON_BIOSEQ(Itr, Var) \
+FOR_EACH (SEQID_ON_BIOSEQ, Itr, Var)
+
+#define EDIT_EACH_SEQID_ON_BIOSEQ(Itr, Var) \
+EDIT_EACH (SEQID_ON_BIOSEQ, Itr, Var)
+
 
 /// ERASE_SEQID_ON_BIOSEQ
 
-#define ERASE_SEQID_ON_BIOSEQ(Iter, Bsq) \
-(Bsq).SetId().erase(Iter)
+#define ERASE_SEQID_ON_BIOSEQ(Itr, Bsq) \
+(Bsq).SetId().erase(Itr)
 
 
 /// CSeq_id macros
@@ -810,10 +791,11 @@ if ((Sid).Which() == Chs)
 
 /// SWITCH_ON_SEQID_CHOICE
 
-#define SWITCH_ON_SEQID_CHOICE(Sid) \
-NCBI_SWITCH( \
-    (Sid).Which() != CSeq_id::e_not_set, \
-    (Sid).Which())
+#define SEQID_CHOICE_Test(Var) (Var).Which() != CSeq_id::e_not_set
+#define SEQID_CHOICE_Chs(Var)  (Var).Which()
+
+#define SWITCH_ON_SEQID_CHOICE(Var) \
+SWITCH_ON (SEQID_CHOICE, Var)
 
 
 /// CBioseq_set macros
@@ -828,32 +810,31 @@ if ((Bss).IsSetDescr())
 #define SEQSET_HAS_DESCRIPTOR(Bss) \
 ((Bss).IsSetDescr())
 
-/// FOR_EACH_DESCRIPTOR_ON_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to const CSeqdesc&
-// Dereference with const CSeqdesc& desc = **iter;
 
-#define FOR_EACH_DESCRIPTOR_ON_SEQSET(Iter, Bss) \
-NCBI_CS_ITERATE( \
-    (Bss).IsSetDescr(), \
-    CBioseq_set::TDescr::Tdata, \
-    Iter, \
-    (Bss).GetDescr().Get())
+/// FOR_EACH_SEQDESC_ON_SEQSET
+/// EDIT_EACH_SEQDESC_ON_SEQSET
+// CBioseq_set& as input, dereference with [const] CSeqdesc& desc = **itr;
 
-/// EDIT_EACH_DESCRIPTOR_ON_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to CSeqdesc&
-// Dereference with CSeqdesc& desc = **iter;
+#define SEQDESC_ON_SEQSET_Type      CBioseq_set::TDescr::Tdata
+#define SEQDESC_ON_SEQSET_Test(Var) (Var).IsSetDescr()
+#define SEQDESC_ON_SEQSET_Get(Var)  (Var).GetDescr().Get()
+#define SEQDESC_ON_SEQSET_Set(Var)  (Var).SetDescr().Set()
 
-#define EDIT_EACH_DESCRIPTOR_ON_SEQSET(Iter, Bss) \
-NCBI_ER_ITERATE( \
-    (Bss).IsSetDescr(), \
-    CBioseq_set::TDescr::Tdata, \
-    Iter, \
-    (Bss).SetDescr().Set())
+#define FOR_EACH_SEQDESC_ON_SEQSET(Itr, Var) \
+FOR_EACH (SEQDESC_ON_SEQSET, Itr, Var)
+
+#define FOR_EACH_DESCRIPTOR_ON_SEQSET FOR_EACH_SEQDESC_ON_SEQSET
+
+#define EDIT_EACH_SEQDESC_ON_SEQSET(Itr, Var) \
+EDIT_EACH (SEQDESC_ON_SEQSET, Itr, Var)
+
+#define EDIT_EACH_DESCRIPTOR_ON_SEQSET EDIT_EACH_SEQDESC_ON_SEQSET
+
 
 /// ERASE_DESCRIPTOR_ON_SEQSET
 
-#define ERASE_DESCRIPTOR_ON_SEQSET(Iter, Bss) \
-(Bss).SetDescr().Set().erase(Iter)
+#define ERASE_DESCRIPTOR_ON_SEQSET(Itr, Bss) \
+(Bss).SetDescr().Set().erase(Itr)
 
 
 /// IF_SEQSET_HAS_ANNOT
@@ -866,32 +847,31 @@ if ((Bss).IsSetAnnot())
 #define SEQSET_HAS_ANNOT(Bss) \
 ((Bss).IsSetAnnot())
 
-/// FOR_EACH_ANNOT_ON_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to const CSeq_annot&
-// Dereference with const CSeq_annot& annot = **iter;
 
-#define FOR_EACH_ANNOT_ON_SEQSET(Iter, Bss) \
-NCBI_CS_ITERATE( \
-    (Bss).IsSetAnnot(), \
-    CBioseq_set::TAnnot, \
-    Iter, \
-    (Bss).GetAnnot())
+/// FOR_EACH_SEQANNOT_ON_SEQSET
+/// EDIT_EACH_SEQANNOT_ON_SEQSET
+// CBioseq_set& as input, dereference with [const] CSeq_annot& annot = **itr;
 
-/// EDIT_EACH_ANNOT_ON_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to CSeq_annot&
-// Dereference with CSeq_annot& annot = **iter;
+#define SEQANNOT_ON_SEQSET_Type      CBioseq_set::TAnnot
+#define SEQANNOT_ON_SEQSET_Test(Var) (Var).IsSetAnnot()
+#define SEQANNOT_ON_SEQSET_Get(Var)  (Var).GetAnnot()
+#define SEQANNOT_ON_SEQSET_Set(Var)  (Var).SetAnnot()
 
-#define EDIT_EACH_ANNOT_ON_SEQSET(Iter, Bss) \
-NCBI_ER_ITERATE( \
-    (Bss).IsSetAnnot(), \
-    CBioseq_set::TAnnot, \
-    Iter, \
-    (Bss).SetAnnot())
+#define FOR_EACH_SEQANNOT_ON_SEQSET(Itr, Var) \
+FOR_EACH (SEQANNOT_ON_SEQSET, Itr, Var)
+
+#define FOR_EACH_ANNOT_ON_SEQSET FOR_EACH_SEQANNOT_ON_SEQSET
+
+#define EDIT_EACH_SEQANNOT_ON_SEQSET(Itr, Var) \
+EDIT_EACH (SEQANNOT_ON_SEQSET, Itr, Var)
+
+#define EDIT_EACH_ANNOT_ON_SEQSET EDIT_EACH_SEQANNOT_ON_SEQSET
+
 
 /// ERASE_ANNOT_ON_SEQSET
 
-#define ERASE_ANNOT_ON_SEQSET(Iter, Bss) \
-(Bss).SetAnnot().erase(Iter)
+#define ERASE_ANNOT_ON_SEQSET(Itr, Bss) \
+(Bss).SetAnnot().erase(Itr)
 
 
 /// IF_SEQSET_HAS_SEQENTRY
@@ -904,32 +884,27 @@ if ((Bss).IsSetSeq_set())
 #define SEQSET_HAS_SEQENTRY(Bss) \
 ((Bss).IsSetSeq_set())
 
+
 /// FOR_EACH_SEQENTRY_ON_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to const CSeq_entry&
-// Dereference with const CSeq_entry& se = **iter;
-
-#define FOR_EACH_SEQENTRY_ON_SEQSET(Iter, Bss) \
-NCBI_CS_ITERATE( \
-    (Bss).IsSetSeq_set(), \
-    CBioseq_set::TSeq_set, \
-    Iter, \
-    (Bss).GetSeq_set())
-
 /// EDIT_EACH_SEQENTRY_ON_SEQSET
-// Takes const CBioseq_set& as input and makes iterator to CSeq_entry&
-// Dereference with CSeq_entry& se = **iter;
+// CBioseq_set& as input, dereference with [const] CSeq_entry& se = **itr;
 
-#define EDIT_EACH_SEQENTRY_ON_SEQSET(Iter, Bss) \
-NCBI_ER_ITERATE( \
-    (Bss).IsSetSeq_set(), \
-    CBioseq_set::TSeq_set, \
-    Iter, \
-    (Bss).SetSeq_set())
+#define SEQENTRY_ON_SEQSET_Type      CBioseq_set::TSeq_set
+#define SEQENTRY_ON_SEQSET_Test(Var) (Var).IsSetSeq_set()
+#define SEQENTRY_ON_SEQSET_Get(Var)  (Var).GetSeq_set()
+#define SEQENTRY_ON_SEQSET_Set(Var)  (Var).SetSeq_set()
+
+#define FOR_EACH_SEQENTRY_ON_SEQSET(Itr, Var) \
+FOR_EACH (SEQENTRY_ON_SEQSET, Itr, Var)
+
+#define EDIT_EACH_SEQENTRY_ON_SEQSET(Itr, Var) \
+EDIT_EACH (SEQENTRY_ON_SEQSET, Itr, Var)
+
 
 /// ERASE_SEQENTRY_ON_SEQSET
 
-#define ERASE_SEQENTRY_ON_SEQSET(Iter, Bss) \
-(Bss).SetSeq_set().erase(Iter)
+#define ERASE_SEQENTRY_ON_SEQSET(Itr, Bss) \
+(Bss).SetSeq_set().erase(Itr)
 
 
 /// CSeq_annot macros
@@ -944,32 +919,31 @@ if ((San).IsFtable())
 #define ANNOT_IS_FEATURE(San) \
 if ((San).IsFtable())
 
-/// FOR_EACH_FEATURE_ON_ANNOT
-// Takes const CSeq_annot& as input and makes iterator to const CSeq_feat&
-// Dereference with const CSeq_feat& feat = **iter;
 
-#define FOR_EACH_FEATURE_ON_ANNOT(Iter, San) \
-NCBI_CS_ITERATE( \
-    (San).IsFtable(), \
-    CSeq_annot::TData::TFtable, \
-    Iter, \
-    (San).GetData().GetFtable())
+/// FOR_EACH_SEQFEAT_ON_SEQANNOT
+/// EDIT_EACH_SEQFEAT_ON_SEQANNOT
+// CSeq_annot& as input, dereference with [const] CSeq_feat& feat = **itr;
 
-/// EDIT_EACH_FEATURE_ON_ANNOT
-// Takes const CSeq_annot& as input and makes iterator to CSeq_feat&
-// Dereference with CSeq_feat& feat = **iter;
+#define SEQFEAT_ON_SEQANNOT_Type      CSeq_annot::TData::TFtable
+#define SEQFEAT_ON_SEQANNOT_Test(Var) (Var).IsFtable()
+#define SEQFEAT_ON_SEQANNOT_Get(Var)  (Var).GetData().GetFtable()
+#define SEQFEAT_ON_SEQANNOT_Set(Var)  (Var).SetData().SetFtable()
 
-#define EDIT_EACH_FEATURE_ON_ANNOT(Iter, San) \
-NCBI_ER_ITERATE( \
-    (San).IsFtable(), \
-    CSeq_annot::TData::TFtable, \
-    Iter, \
-    (San).SetData().SetFtable())
+#define FOR_EACH_SEQFEAT_ON_SEQANNOT(Itr, Var) \
+FOR_EACH (SEQFEAT_ON_SEQANNOT, Itr, Var)
+
+#define FOR_EACH_FEATURE_ON_ANNOT FOR_EACH_SEQFEAT_ON_SEQANNOT
+
+#define EDIT_EACH_SEQFEAT_ON_SEQANNOT(Itr, Var) \
+EDIT_EACH (SEQFEAT_ON_SEQANNOT, Itr, Var)
+
+#define EDIT_EACH_FEATURE_ON_ANNOT EDIT_EACH_SEQFEAT_ON_SEQANNOT
+
 
 /// ERASE_FEATURE_ON_ANNOT
 
-#define ERASE_FEATURE_ON_ANNOT(Iter, San) \
-(San).SetData().SetFtable().erase(Iter)
+#define ERASE_FEATURE_ON_ANNOT(Itr, San) \
+(San).SetData().SetFtable().erase(Itr)
 
 
 /// IF_ANNOT_IS_ALIGN
@@ -982,32 +956,31 @@ if ((San).IsAlign())
 #define ANNOT_IS_ALIGN(San) \
 if ((San).IsAlign())
 
-/// FOR_EACH_ALIGN_ON_ANNOT
-// Takes const CSeq_annot& as input and makes iterator to const CSeq_align&
-// Dereference with const CSeq_align& align = **iter;
 
-#define FOR_EACH_ALIGN_ON_ANNOT(Iter, San) \
-NCBI_CS_ITERATE( \
-    (San).IsAlign(), \
-    CSeq_annot::TData::TAlign, \
-    Iter, \
-    (San).GetData().GetAlign())
+/// FOR_EACH_SEQALIGN_ON_SEQANNOT
+/// EDIT_EACH_SEQALIGN_ON_SEQANNOT
+// CSeq_annot& as input, dereference with [const] CSeq_align& align = **itr;
 
-/// EDIT_EACH_ALIGN_ON_ANNOT
-// Takes const CSeq_annot& as input and makes iterator to CSeq_align&
-// Dereference with CSeq_align& align = **iter;
+#define SEQALIGN_ON_SEQANNOT_Type      CSeq_annot::TData::TAlign
+#define SEQALIGN_ON_SEQANNOT_Test(Var) (Var).IsAlign()
+#define SEQALIGN_ON_SEQANNOT_Get(Var)  (Var).GetData().GetAlign()
+#define SEQALIGN_ON_SEQANNOT_Set(Var)  (Var).SetData().SetAlign()
 
-#define EDIT_EACH_ALIGN_ON_ANNOT(Iter, San) \
-NCBI_ER_ITERATE( \
-    (San).IsAlign(), \
-    CSeq_annot::TData::TAlign, \
-    Iter, \
-    (San).SetData().SetAlign())
+#define FOR_EACH_SEQALIGN_ON_SEQANNOT(Itr, Var) \
+FOR_EACH (SEQALIGN_ON_SEQANNOT, Itr, Var)
+
+#define FOR_EACH_ALIGN_ON_ANNOT FOR_EACH_SEQALIGN_ON_SEQANNOT
+
+#define EDIT_EACH_SEQALIGN_ON_SEQANNOT(Itr, Var) \
+EDIT_EACH (SEQALIGN_ON_SEQANNOT, Itr, Var)
+
+#define EDIT_EACH_ALIGN_ON_ANNOT EDIT_EACH_SEQALIGN_ON_SEQANNOT
+
 
 /// ERASE_ALIGN_ON_ANNOT
 
-#define ERASE_ALIGN_ON_ANNOT(Iter, San) \
-(San).SetData().SetAlign().erase(Iter)
+#define ERASE_ALIGN_ON_ANNOT(Itr, San) \
+(San).SetData().SetAlign().erase(Itr)
 
 
 /// IF_ANNOT_IS_GRAPH
@@ -1020,32 +993,31 @@ if ((San).IsGraph())
 #define ANNOT_IS_GRAPH(San) \
 if ((San).IsGraph())
 
-/// FOR_EACH_GRAPH_ON_ANNOT
-// Takes const CSeq_annot& as input and makes iterator to const CSeq_graph&
-// Dereference with const CSeq_graph& graph = **iter;
 
-#define FOR_EACH_GRAPH_ON_ANNOT(Iter, San) \
-NCBI_CS_ITERATE( \
-    (San).IsGraph(), \
-    CSeq_annot::TData::TGraph, \
-    Iter, \
-    (San).GetData().GetGraph())
+/// FOR_EACH_SEQGRAPH_ON_SEQANNOT
+/// EDIT_EACH_SEQGRAPH_ON_SEQANNOT
+// CSeq_annot& as input, dereference with [const] CSeq_graph& graph = **itr;
 
-/// EDIT_EACH_GRAPH_ON_ANNOT
-// Takes const CSeq_annot& as input and makes iterator to CSeq_graph&
-// Dereference with CSeq_graph& graph = **iter;
+#define SEQGRAPH_ON_SEQANNOT_Type      CSeq_annot::TData::TGraph
+#define SEQGRAPH_ON_SEQANNOT_Test(Var) (Var).IsGraph()
+#define SEQGRAPH_ON_SEQANNOT_Get(Var)  (Var).GetData().GetGraph()
+#define SEQGRAPH_ON_SEQANNOT_Set(Var)  SetData().SetGraph()
 
-#define EDIT_EACH_GRAPH_ON_ANNOT(Iter, San) \
-NCBI_ER_ITERATE( \
-    (San).IsGraph(), \
-    CSeq_annot::TData::TGraph, \
-    Iter, \
-    (San).SetData().SetGraph())
+#define FOR_EACH_SEQGRAPH_ON_SEQANNOT(Itr, Var) \
+FOR_EACH (SEQGRAPH_ON_SEQANNOT, Itr, Var)
+
+#define FOR_EACH_GRAPH_ON_ANNOT FOR_EACH_SEQGRAPH_ON_SEQANNOT
+
+#define EDIT_EACH_SEQGRAPH_ON_SEQANNOT(Itr, Var) \
+EDIT_EACH (SEQGRAPH_ON_SEQANNOT, Itr, Var)
+
+#define EDIT_EACH_GRAPH_ON_ANNOT EDIT_EACH_SEQGRAPH_ON_SEQANNOT
+
 
 /// ERASE_GRAPH_ON_ANNOT
 
-#define ERASE_GRAPH_ON_ANNOT(Iter, San) \
-(San).SetData().SetGraph().erase(Iter)
+#define ERASE_GRAPH_ON_ANNOT(Itr, San) \
+(San).SetData().SetGraph().erase(Itr)
 
 
 /// IF_ANNOT_IS_SEQTABLE
@@ -1069,32 +1041,31 @@ if ((San).IsSetDesc() && (San).GetDesc().IsSet())
 #define ANNOT_HAS_ANNOTDESC(San) \
 ((San).IsSetDesc() && (San).GetDesc().IsSet())
 
-/// FOR_EACH_ANNOTDESC_ON_ANNOT
-// Takes const CSeq_annot& as input and makes iterator to const CAnnotdesc&
-// Dereference with const CAnnotdesc& desc = **iter;
 
-#define FOR_EACH_ANNOTDESC_ON_ANNOT(Iter, San) \
-NCBI_CS_ITERATE( \
-    (San).IsSetDesc() && (San).GetDesc().IsSet(), \
-    CSeq_annot::TDesc::Tdata, \
-    Iter, \
-    (San).GetDesc().Get())
+/// FOR_EACH_ANNOTDESC_ON_SEQANNOT
+/// EDIT_EACH_ANNOTDESC_ON_SEQANNOT
+// CSeq_annot& as input, dereference with [const] CAnnotdesc& desc = **itr;
 
-/// EDIT_EACH_ANNOTDESC_ON_ANNOT
-// Takes const CSeq_annot& as input and makes iterator to CAnnotdesc&
-// Dereference with CAnnotdesc& desc = **iter;
+#define ANNOTDESC_ON_SEQANNOT_Type      CSeq_annot::TDesc::Tdata
+#define ANNOTDESC_ON_SEQANNOT_Test(Var) (Var).IsSetDesc() && (Var).GetDesc().IsSet()
+#define ANNOTDESC_ON_SEQANNOT_Get(Var)  (Var).GetDesc().Get()
+#define ANNOTDESC_ON_SEQANNOT_Set(Var)  (Var).SetDesc()
 
-#define EDIT_EACH_ANNOTDESC_ON_ANNOT(Iter, San) \
-NCBI_ER_ITERATE( \
-    (San).IsSetDesc(), \
-    CSeq_annot::TDesc, \
-    Iter, \
-    (San).SetDesc())
+#define FOR_EACH_ANNOTDESC_ON_SEQANNOT(Itr, Var) \
+FOR_EACH (ANNOTDESC_ON_SEQANNOT, Itr, Var)
+
+#define FOR_EACH_ANNOTDESC_ON_ANNOT FOR_EACH_ANNOTDESC_ON_SEQANNOT
+
+#define EDIT_EACH_ANNOTDESC_ON_SEQANNOT(Itr, Var) \
+EDIT_EACH (ANNOTDESC_ON_SEQANNOT, Itr, Var)
+
+#define EDIT_EACH_ANNOTDESC_ON_ANNOT EDIT_EACH_ANNOTDESC_ON_SEQANNOT
+
 
 /// ERASE_ANNOTDESC_ON_ANNOT
 
-#define ERASE_ANNOTDESC_ON_ANNOT(Iter, San) \
-(San).SetDesc().erase(Iter)
+#define ERASE_ANNOTDESC_ON_ANNOT(Itr, San) \
+(San).SetDesc().erase(Itr)
 
 
 /// CAnnotdesc macros
@@ -1111,11 +1082,11 @@ if ((Ads).Which() == Chs)
 
 /// SWITCH_ON_ANNOTDESC_CHOICE
 
-#define SWITCH_ON_ANNOTDESC_CHOICE(Ads) \
-NCBI_SWITCH( \
-    (Ads).Which() != CAnnotdesc::e_not_set, \
-    (Ads).Which())
+#define ANNOTDESC_CHOICE_Test(Var) (Var).Which() != CAnnotdesc::e_not_set
+#define ANNOTDESC_CHOICE_Chs(Var)  (Var).Which()
 
+#define SWITCH_ON_ANNOTDESC_CHOICE(Var) \
+SWITCH_ON (ANNOTDESC_CHOICE, Var)
 
 /// CSeq_descr macros
 
@@ -1129,32 +1100,31 @@ if ((Descr).IsSet())
 #define DESCR_HAS_DESCRIPTOR(Descr) \
 ((Descr).IsSet())
 
-/// FOR_EACH_DESCRIPTOR_ON_DESCR
-// Takes const CSeq_descr& as input and makes iterator to const CSeqdesc&
-// Dereference with const CSeqdesc& desc = **iter;
 
-#define FOR_EACH_DESCRIPTOR_ON_DESCR(Iter, Descr) \
-NCBI_CS_ITERATE( \
-    (Descr).IsSet(), \
-    CSeq_descr::Tdata, \
-    Iter, \
-    (Descr).Get())
+/// FOR_EACH_SEQDESC_ON_SEQDESCR
+/// EDIT_EACH_SEQDESC_ON_SEQDESCR
+// CSeq_descr& as input, dereference with [const] CSeqdesc& desc = **itr;
 
-/// EDIT_EACH_DESCRIPTOR_ON_DESCR
-// Takes const CSeq_descr& as input and makes iterator to CSeqdesc&
-// Dereference with CSeqdesc& desc = **iter;
+#define SEQDESC_ON_SEQDESCR_Type      CSeq_descr::Tdata
+#define SEQDESC_ON_SEQDESCR_Test(Var) (Var).IsSet()
+#define SEQDESC_ON_SEQDESCR_Get(Var)  (Var).Get()
+#define SEQDESC_ON_SEQDESCR_Set(Var)  (Var).Set()
 
-#define EDIT_EACH_DESCRIPTOR_ON_DESCR(Iter, Descr) \
-NCBI_ER_ITERATE( \
-    (Descr).IsSet(), \
-    CSeq_descr::Tdata, \
-    Iter, \
-    (Descr).Set())
+#define FOR_EACH_SEQDESC_ON_SEQDESCR(Itr, Var) \
+FOR_EACH (SEQDESC_ON_SEQDESCR, Itr, Var)
+
+#define FOR_EACH_DESCRIPTOR_ON_DESCR FOR_EACH_SEQDESC_ON_SEQDESCR
+
+#define EDIT_EACH_SEQDESC_ON_SEQDESCR(Itr, Var) \
+EDIT_EACH (SEQDESC_ON_SEQDESCR, Itr, Var)
+
+#define EDIT_EACH_DESCRIPTOR_ON_DESCR EDIT_EACH_SEQDESC_ON_SEQDESCR
+
 
 /// ERASE_DESCRIPTOR_ON_DESCR
 
-#define ERASE_DESCRIPTOR_ON_DESCR(Iter, Descr) \
-(Descr).Set().erase(Iter)
+#define ERASE_DESCRIPTOR_ON_DESCR(Itr, Descr) \
+(Descr).Set().erase(Itr)
 
 
 /// CSeqdesc macros
@@ -1169,12 +1139,15 @@ if ((Dsc).Which() == Chs)
 #define DESCRIPTOR_CHOICE_IS(Dsc, Chs) \
 ((Dsc).Which() == Chs)
 
-/// SWITCH_ON_DESCRIPTOR_CHOICE
+/// SWITCH_ON_SEQDESC_CHOICE
 
-#define SWITCH_ON_DESCRIPTOR_CHOICE(Dsc) \
-NCBI_SWITCH( \
-    (Dsc).Which() != CSeqdesc::e_not_set, \
-    (Dsc).Which())
+#define SEQDESC_CHOICE_Test(Var) (Var).Which() != CSeqdesc::e_not_set
+#define SEQDESC_CHOICE_Chs(Var)  (Var).Which()
+
+#define SWITCH_ON_SEQDESC_CHOICE(Var) \
+SWITCH_ON (SEQDESC_CHOICE, Var)
+
+#define SWITCH_ON_DESCRIPTOR_CHOICE SWITCH_ON_SEQDESC_CHOICE
 
 
 /// CMolInfo macros
@@ -1189,13 +1162,14 @@ if ((Mif).IsSetBiomol() && (Mif).GetBiomol() == Chs)
 #define MOLINFO_BIOMOL_IS(Mif, Chs) \
 ((Mif).IsSetBiomol() && (Mif).GetBiomol() == Chs)
 
+
 /// SWITCH_ON_MOLINFO_BIOMOL
 
-#define SWITCH_ON_MOLINFO_BIOMOL(Mif) \
-NCBI_SWITCH( \
-    (Mif).IsSetBiomol(), \
-    (Mif).GetBiomol())
+#define MOLINFO_BIOMOL_Test(Var) (Var).IsSetBiomol()
+#define MOLINFO_BIOMOL_Chs(Var)  (Var).GetBiomol()
 
+#define SWITCH_ON_MOLINFO_BIOMOL(Var) \
+SWITCH_ON (MOLINFO_BIOMOL, Var)
 
 /// IF_MOLINFO_TECH_IS
 
@@ -1209,10 +1183,11 @@ if ((Mif).IsSetTech() && (Mif).GetTech() == Chs)
 
 /// SWITCH_ON_MOLINFO_TECH
 
-#define SWITCH_ON_MOLINFO_TECH(Mif) \
-NCBI_SWITCH( \
-    (Mif).IsSetTech(), \
-    (Mif).GetTech())
+#define MOLINFO_TECH_Test(Var) (Var).IsSetTech()
+#define MOLINFO_TECH_Chs(Var)  (Var).GetTech()
+
+#define SWITCH_ON_MOLINFO_TECH(Var) \
+SWITCH_ON (MOLINFO_TECH, Var)
 
 
 /// IF_MOLINFO_COMPLETENESS_IS
@@ -1227,10 +1202,11 @@ if ((Mif).IsSetCompleteness() && (Mif).GetCompleteness() == Chs)
 
 /// SWITCH_ON_MOLINFO_COMPLETENESS
 
-#define SWITCH_ON_MOLINFO_COMPLETENESS(Mif) \
-NCBI_SWITCH( \
-    (Mif).IsSetCompleteness(), \
-    (Mif).GetCompleteness())
+#define MOLINFO_COMPLETENESS_Test(Var) (Var).IsSetCompleteness()
+#define MOLINFO_COMPLETENESS_Chs(Var)  (Var).GetCompleteness()
+
+#define SWITCH_ON_MOLINFO_COMPLETENESS(Var) \
+SWITCH_ON (MOLINFO_COMPLETENESS, Var)
 
 
 /// CBioSource macros
@@ -1247,10 +1223,11 @@ if ((Bsc).IsSetGenome() && (Bsc).GetGenome() == Chs)
 
 /// SWITCH_ON_BIOSOURCE_GENOME
 
-#define SWITCH_ON_BIOSOURCE_GENOME(Bsc) \
-NCBI_SWITCH( \
-    (Bsc).IsSetGenome(), \
-    (Bsc).GetGenome())
+#define BIOSOURCE_GENOME_Test(Var) (Var).IsSetGenome()
+#define BIOSOURCE_GENOME_Chs(Var)  (Var).GetGenome()
+
+#define SWITCH_ON_BIOSOURCE_GENOME(Var) \
+SWITCH_ON (BIOSOURCE_GENOME, Var)
 
 
 /// IF_BIOSOURCE_ORIGIN_IS
@@ -1265,10 +1242,11 @@ if ((Bsc).IsSetOrigin() && (Bsc).GetOrigin() == Chs)
 
 /// SWITCH_ON_BIOSOURCE_ORIGIN
 
-#define SWITCH_ON_BIOSOURCE_ORIGIN(Bsc) \
-NCBI_SWITCH( \
-    (Bsc).IsSetOrigin(), \
-    (Bsc).GetOrigin())
+#define BIOSOURCE_ORIGIN_Test(Var) (Var).IsSetOrigin()
+#define BIOSOURCE_ORIGIN_Chs(Var)  (Var).GetOrigin()
+
+#define SWITCH_ON_BIOSOURCE_ORIGIN(Var) \
+SWITCH_ON (BIOSOURCE_ORIGIN, Var)
 
 
 /// IF_BIOSOURCE_HAS_ORGREF
@@ -1303,32 +1281,27 @@ if ((Bsc).IsSetSubtype())
 #define BIOSOURCE_HAS_SUBSOURCE(Bsc) \
 ((Bsc).IsSetSubtype())
 
+
 /// FOR_EACH_SUBSOURCE_ON_BIOSOURCE
-// Takes const CBioSource& as input and makes iterator to const CSubSource&
-// Dereference with const CSubSource& sbs = **iter
-
-#define FOR_EACH_SUBSOURCE_ON_BIOSOURCE(Iter, Bsc) \
-NCBI_CS_ITERATE( \
-    (Bsc).IsSetSubtype(), \
-    CBioSource::TSubtype, \
-    Iter, \
-    (Bsc).GetSubtype())
-
 /// EDIT_EACH_SUBSOURCE_ON_BIOSOURCE
-// Takes const CBioSource& as input and makes iterator to CSubSource&
-// Dereference with CSubSource& sbs = **iter
+// CBioSource& as input, dereference with [const] CSubSource& sbs = **itr
 
-#define EDIT_EACH_SUBSOURCE_ON_BIOSOURCE(Iter, Bsc) \
-NCBI_ER_ITERATE( \
-    (Bsc).IsSetSubtype(), \
-    CBioSource::TSubtype, \
-    Iter, \
-    (Bsc).SetSubtype())
+#define SUBSOURCE_ON_BIOSOURCE_Type      CBioSource::TSubtype
+#define SUBSOURCE_ON_BIOSOURCE_Test(Var) (Var).IsSetSubtype()
+#define SUBSOURCE_ON_BIOSOURCE_Get(Var)  (Var).GetSubtype()
+#define SUBSOURCE_ON_BIOSOURCE_Set(Var)  (Var).SetSubtype()
+
+#define FOR_EACH_SUBSOURCE_ON_BIOSOURCE(Itr, Var) \
+FOR_EACH (SUBSOURCE_ON_BIOSOURCE, Itr, Var)
+
+#define EDIT_EACH_SUBSOURCE_ON_BIOSOURCE(Itr, Var) \
+EDIT_EACH (SUBSOURCE_ON_BIOSOURCE, Itr, Var)
+
 
 /// ERASE_SUBSOURCE_ON_BIOSOURCE
 
-#define ERASE_SUBSOURCE_ON_BIOSOURCE(Iter, Bsc) \
-(Bsc).SetSubtype().erase(Iter)
+#define ERASE_SUBSOURCE_ON_BIOSOURCE(Itr, Bsc) \
+(Bsc).SetSubtype().erase(Itr)
 
 
 /// IF_BIOSOURCE_HAS_ORGMOD
@@ -1341,32 +1314,27 @@ if ((Bsc).IsSetOrgMod())
 #define BIOSOURCE_HAS_ORGMOD(Bsc) \
 ((Bsc).IsSetOrgMod())
 
+
 /// FOR_EACH_ORGMOD_ON_BIOSOURCE
-// Takes const CBioSource& as input and makes iterator to const COrgMod&
-// Dereference with const COrgMod& omd = **iter
-
-#define FOR_EACH_ORGMOD_ON_BIOSOURCE(Iter, Bsc) \
-NCBI_CS_ITERATE( \
-    (Bsc).IsSetOrgMod(), \
-    COrgName::TMod, \
-    Iter, \
-    (Bsc).GetOrgname().GetMod())
-
 /// EDIT_EACH_ORGMOD_ON_BIOSOURCE
-// Takes const CBioSource& as input and makes iterator to COrgMod&
-// Dereference with COrgMod& omd = **iter
+// CBioSource& as input, dereference with [const] COrgMod& omd = **itr
 
-#define EDIT_EACH_ORGMOD_ON_BIOSOURCE(Iter, Bsc) \
-NCBI_ER_ITERATE( \
-    (Bsc).IsSetOrgMod(), \
-    COrgName::TMod, \
-    Iter, \
-    (Bsc).SetOrgname().SetMod())
+#define ORGMOD_ON_BIOSOURCE_Type      COrgName::TMod
+#define ORGMOD_ON_BIOSOURCE_Test(Var) (Var).IsSetOrgMod()
+#define ORGMOD_ON_BIOSOURCE_Get(Var)  (Var).GetOrgname().GetMod()
+#define ORGMOD_ON_BIOSOURCE_Set(Var)  (Var).SetOrgname().SetMod()
+
+#define FOR_EACH_ORGMOD_ON_BIOSOURCE(Itr, Var) \
+FOR_EACH (ORGMOD_ON_BIOSOURCE, Itr, Var)
+
+#define EDIT_EACH_ORGMOD_ON_BIOSOURCE(Itr, Var) \
+EDIT_EACH (ORGMOD_ON_BIOSOURCE, Itr, Var)
+
 
 /// ERASE_ORGMOD_ON_BIOSOURCE
 
-#define ERASE_ORGMOD_ON_BIOSOURCE(Iter, Bsc) \
-(Bsc).SetOrgname().SetMod().erase(Iter)
+#define ERASE_ORGMOD_ON_BIOSOURCE(Itr, Bsc) \
+(Bsc).SetOrgname().SetMod().erase(Itr)
 
 
 /// COrg_ref macros
@@ -1381,32 +1349,27 @@ if ((Org).IsSetOrgMod())
 #define ORGREF_HAS_ORGMOD(Org) \
 ((Org).IsSetOrgMod())
 
+
 /// FOR_EACH_ORGMOD_ON_ORGREF
-// Takes const COrg_ref& as input and makes iterator to const COrgMod&
-// Dereference with const COrgMod& omd = **iter
-
-#define FOR_EACH_ORGMOD_ON_ORGREF(Iter, Org) \
-NCBI_CS_ITERATE( \
-    (Org).IsSetOrgMod(), \
-    COrgName::TMod, \
-    Iter, \
-    (Org).GetOrgname().GetMod())
-
 /// EDIT_EACH_ORGMOD_ON_ORGREF
-// Takes const COrg_ref& as input and makes iterator to COrgMod&
-// Dereference with COrgMod& omd = **iter
+// COrg_ref& as input, dereference with [const] COrgMod& omd = **itr
 
-#define EDIT_EACH_ORGMOD_ON_ORGREF(Iter, Org) \
-NCBI_ER_ITERATE( \
-    (Org).IsSetOrgMod(), \
-    COrgName::TMod, \
-    Iter, \
-    (Org).SetOrgname().SetMod())
+#define ORGMOD_ON_ORGREF_Type      COrgName::TMod
+#define ORGMOD_ON_ORGREF_Test(Var) (Var).IsSetOrgMod()
+#define ORGMOD_ON_ORGREF_Get(Var)  (Var).GetOrgname().GetMod()
+#define ORGMOD_ON_ORGREF_Set(Var)  (Var).SetOrgname().SetMod()
+
+#define FOR_EACH_ORGMOD_ON_ORGREF(Itr, Var) \
+FOR_EACH (ORGMOD_ON_ORGREF, Itr, Var)
+
+#define EDIT_EACH_ORGMOD_ON_ORGREF(Itr, Var) \
+EDIT_EACH (ORGMOD_ON_ORGREF, Itr, Var)
+
 
 /// ERASE_ORGMOD_ON_ORGREF
 
-#define ERASE_ORGMOD_ON_ORGREF(Iter, Org) \
-(Org).SetOrgname().SetMod().erase(Iter)
+#define ERASE_ORGMOD_ON_ORGREF(Itr, Org) \
+(Org).SetOrgname().SetMod().erase(Itr)
 
 
 /// IF_ORGREF_HAS_DBXREF
@@ -1419,32 +1382,27 @@ if ((Org).IsSetDb())
 #define ORGREF_HAS_DBXREF(Org) \
 ((Org).IsSetDb())
 
+
 /// FOR_EACH_DBXREF_ON_ORGREF
-// Takes const COrg_ref& as input and makes iterator to const CDbtag&
-// Dereference with const CDbtag& dbt = **iter
-
-#define FOR_EACH_DBXREF_ON_ORGREF(Iter, Org) \
-NCBI_CS_ITERATE( \
-    (Org).IsSetDb(), \
-    COrg_ref::TDb, \
-    Iter, \
-    (Org).GetDb())
-
 /// EDIT_EACH_DBXREF_ON_ORGREF
-// Takes const COrg_ref& as input and makes iterator to CDbtag&
-// Dereference with CDbtag& dbt = **iter
+// COrg_ref& as input, dereference with [const] CDbtag& dbt = **itr
 
-#define EDIT_EACH_DBXREF_ON_ORGREF(Iter, Org) \
-NCBI_ER_ITERATE( \
-    (Org).IsSetDb(), \
-    COrg_ref::TDb, \
-    Iter, \
-    (Org).SetDb())
+#define DBXREF_ON_ORGREF_Type      COrg_ref::TDb
+#define DBXREF_ON_ORGREF_Test(Var) (Var).IsSetDb()
+#define DBXREF_ON_ORGREF_Get(Var)  (Var).GetDb()
+#define DBXREF_ON_ORGREF_Set(Var)  (Var).SetDb()
+
+#define FOR_EACH_DBXREF_ON_ORGREF(Itr, Var) \
+FOR_EACH (DBXREF_ON_ORGREF, Itr, Var)
+
+#define EDIT_EACH_DBXREF_ON_ORGREF(Itr, Var) \
+EDIT_EACH (DBXREF_ON_ORGREF, Itr, Var)
+
 
 /// ERASE_DBXREF_ON_ORGREF
 
-#define ERASE_DBXREF_ON_ORGREF(Iter, Org) \
-(Org).SetDb().erase(Iter)
+#define ERASE_DBXREF_ON_ORGREF(Itr, Org) \
+(Org).SetDb().erase(Itr)
 
 
 /// IF_ORGREF_HAS_MOD
@@ -1457,32 +1415,27 @@ if ((Org).IsSetMod())
 #define ORGREF_HAS_MOD(Org) \
 ((Org).IsSetMod())
 
+
 /// FOR_EACH_MOD_ON_ORGREF
-// Takes const COrg_ref& as input and makes iterator to const string&
-// Dereference with const string& str = *iter
-
-#define FOR_EACH_MOD_ON_ORGREF(Iter, Org) \
-NCBI_CS_ITERATE( \
-    (Org).IsSetMod(), \
-    COrg_ref::TMod, \
-    Iter, \
-    (Org).GetMod())
-
 /// EDIT_EACH_MOD_ON_ORGREF
-// Takes const COrg_ref& as input and makes iterator to string&
-// Dereference with string& str = *iter
+// COrg_ref& as input, dereference with [const] string& str = *itr
 
-#define EDIT_EACH_MOD_ON_ORGREF(Iter, Org) \
-NCBI_ER_ITERATE( \
-    (Org).IsSetMod(), \
-    COrg_ref::TMod, \
-    Iter, \
-    (Org).SetMod())
+#define MOD_ON_ORGREF_Type      COrg_ref::TMod
+#define MOD_ON_ORGREF_Test(Var) (Var).IsSetMod()
+#define MOD_ON_ORGREF_Get(Var)  (Var).GetMod()
+#define MOD_ON_ORGREF_Set(Var)  (Var).SetMod()
+
+#define FOR_EACH_MOD_ON_ORGREF(Itr, Var) \
+FOR_EACH (MOD_ON_ORGREF, Itr, Var)
+
+#define EDIT_EACH_MOD_ON_ORGREF(Itr, Var) \
+EDIT_EACH (MOD_ON_ORGREF, Itr, Var)
+
 
 /// ERASE_MOD_ON_ORGREF
 
-#define ERASE_MOD_ON_ORGREF(Iter, Org) \
-(Org).SetMod().erase(Iter)
+#define ERASE_MOD_ON_ORGREF(Itr, Org) \
+(Org).SetMod().erase(Itr)
 
 
 /// COrgName macros
@@ -1497,12 +1450,14 @@ if ((Onm).IsSetName() && (Onm).GetName().Which() == Chs)
 #define ORGNAME_CHOICE_IS(Onm, Chs) \
 ((Onm).IsSetName() && (Onm).GetName().Which() == Chs)
 
-/// SWITCH_ON_MOLINFO_COMPLETENESS
+/// SWITCH_ON_ORGNAME_CHOICE
 
-#define SWITCH_ON_ORGNAME_CHOICE(Onm) \
-NCBI_SWITCH( \
-    (Onm).IsSetName() && (Onm).GetName().Which() != COrgName::e_not_set, \
-    (Onm).GetName().Which())
+#define ORGNAME_CHOICE_Test(Var) (Var).IsSetName() && \
+                                     (Var).GetName().Which() != COrgName::e_not_set
+#define ORGNAME_CHOICE_Chs(Var)  (Var).GetName().Which()
+
+#define SWITCH_ON_ORGNAME_CHOICE(Var) \
+SWITCH_ON (ORGNAME_CHOICE, Var)
 
 
 /// IF_ORGNAME_HAS_ORGMOD
@@ -1515,32 +1470,27 @@ if ((Onm).IsSetMod())
 #define ORGNAME_HAS_ORGMOD(Onm) \
 ((Onm).IsSetMod())
 
+
 /// FOR_EACH_ORGMOD_ON_ORGNAME
-// Takes const COrgName& as input and makes iterator to const COrgMod&
-// Dereference with const COrgMod& omd = **iter
-
-#define FOR_EACH_ORGMOD_ON_ORGNAME(Iter, Onm) \
-NCBI_CS_ITERATE( \
-    (Onm).IsSetMod(), \
-    COrgName::TMod, \
-    Iter, \
-    (Onm).GetMod())
-
 /// EDIT_EACH_ORGMOD_ON_ORGNAME
-// Takes const COrgName& as input and makes iterator to COrgMod&
-// Dereference with COrgMod& omd = **iter
+// COrgName& as input, dereference with [const] COrgMod& omd = **itr
 
-#define EDIT_EACH_ORGMOD_ON_ORGNAME(Iter, Onm) \
-NCBI_ER_ITERATE( \
-    (Onm).IsSetMod(), \
-    COrgName::TMod, \
-    Iter, \
-    (Onm).SetMod())
+#define ORGMOD_ON_ORGNAME_Type      COrgName::TMod
+#define ORGMOD_ON_ORGNAME_Test(Var) (Var).IsSetMod()
+#define ORGMOD_ON_ORGNAME_Get(Var)  (Var).GetMod()
+#define ORGMOD_ON_ORGNAME_Set(Var)  (Var).SetMod()
+
+#define FOR_EACH_ORGMOD_ON_ORGNAME(Itr, Var) \
+FOR_EACH (ORGMOD_ON_ORGNAME, Itr, Var)
+
+#define EDIT_EACH_ORGMOD_ON_ORGNAME(Itr, Var) \
+EDIT_EACH (ORGMOD_ON_ORGNAME, Itr, Var)
+
 
 /// ERASE_ORGMOD_ON_ORGNAME
 
-#define ERASE_ORGMOD_ON_ORGNAME(Iter, Onm) \
-(Onm).SetMod().erase(Iter)
+#define ERASE_ORGMOD_ON_ORGNAME(Itr, Onm) \
+(Onm).SetMod().erase(Itr)
 
 
 /// CSubSource macros
@@ -1557,10 +1507,11 @@ if ((Sbs).IsSetSubtype() && (Sbs).GetSubtype() == Chs)
 
 /// SWITCH_ON_SUBSOURCE_CHOICE
 
-#define SWITCH_ON_SUBSOURCE_CHOICE(Sbs) \
-NCBI_SWITCH( \
-    (Sbs).IsSetSubtype(), \
-    (Sbs).GetSubtype())
+#define SUBSOURCE_CHOICE_Test(Var) (Var).IsSetSubtype()
+#define SUBSOURCE_CHOICE_Chs(Var)  (Var).GetSubtype()
+
+#define SWITCH_ON_SUBSOURCE_CHOICE(Var) \
+SWITCH_ON (SUBSOURCE_CHOICE, Var)
 
 
 /// COrgMod macros
@@ -1577,10 +1528,11 @@ if ((Omd).IsSetSubtype() && (Omd).GetSubtype() == Chs)
 
 /// SWITCH_ON_ORGMOD_CHOICE
 
-#define SWITCH_ON_ORGMOD_CHOICE(Omd) \
-NCBI_SWITCH( \
-    (Omd).IsSetSubtype(), \
-    (Omd).GetSubtype())
+#define ORGMOD_CHOICE_Test(Var) (Var).IsSetSubtype()
+#define ORGMOD_CHOICE_Chs(Var)  (Var).GetSubtype()
+
+#define SWITCH_ON_ORGMOD_CHOICE(Var) \
+SWITCH_ON (ORGMOD_CHOICE, Var)
 
 
 /// CPubdesc macros
@@ -1595,34 +1547,27 @@ if ((Pbd).IsSetPub())
 #define PUBDESC_HAS_PUB(Pbd) \
 ((Pbd).IsSetPub())
 
+
 /// FOR_EACH_PUB_ON_PUBDESC
-// Takes const CPubdesc& as input and makes iterator to const CPub&
-// Dereference with const CPub& pub = **iter;
-
-#define FOR_EACH_PUB_ON_PUBDESC(Iter, Pbd) \
-NCBI_CS_ITERATE( \
-    (Pbd).IsSetPub() && \
-        (Pbd).GetPub().IsSet(), \
-    CPub_equiv::Tdata, \
-    Iter, \
-    (Pbd).GetPub().Get())
-
 /// EDIT_EACH_PUB_ON_PUBDESC
-// Takes const CPubdesc& as input and makes iterator to CPub&
-// Dereference with CPub& pub = **iter;
+// CPubdesc& as input, dereference with [const] CPub& pub = **itr;
 
-#define EDIT_EACH_PUB_ON_PUBDESC(Iter, Pbd) \
-NCBI_ER_ITERATE( \
-    (Pbd).IsSetPub() && \
-        (Pbd).GetPub().IsSet(), \
-    CPub_equiv::Tdata, \
-    Iter, \
-    (Pbd).SetPub().Set())
+#define PUB_ON_PUBDESC_Type      CPub_equiv::Tdata
+#define PUB_ON_PUBDESC_Test(Var) (Var).IsSetPub() && (Var).GetPub().IsSet()
+#define PUB_ON_PUBDESC_Get(Var)  (Var).GetPub().Get()
+#define PUB_ON_PUBDESC_Set(Var)  (Var).SetPub().Set()
+
+#define FOR_EACH_PUB_ON_PUBDESC(Itr, Var) \
+FOR_EACH (PUB_ON_PUBDESC, Itr, Var)
+
+#define EDIT_EACH_PUB_ON_PUBDESC(Itr, Var) \
+EDIT_EACH (PUB_ON_PUBDESC, Itr, Var)
+
 
 /// ERASE_PUB_ON_PUBDESC
 
-#define ERASE_PUB_ON_PUBDESC(Iter, Pbd) \
-(Pbd).SetPub().Set().erase(Iter)
+#define ERASE_PUB_ON_PUBDESC(Itr, Pbd) \
+(Pbd).SetPub().Set().erase(Itr)
 
 
 /// CPub macros
@@ -1641,36 +1586,29 @@ if ((Pub).IsSetAuthors() && \
     (Pub).GetAuthors().IsSetNames() && \
     (Pub).GetAuthors().GetNames().IsStd())
 
+
 /// FOR_EACH_AUTHOR_ON_PUB
-// Takes const CPub& as input and makes iterator to const CAuthor&
-// Dereference with const CAuthor& auth = **iter;
-
-#define FOR_EACH_AUTHOR_ON_PUB(Iter, Pub) \
-NCBI_CS_ITERATE( \
-    (Pub).IsSetAuthors() && \
-        (Pub).GetAuthors().IsSetNames() && \
-        (Pub).GetAuthors().GetNames().IsStd() , \
-    CAuth_list::C_Names::TStd, \
-    Iter, \
-    (Pub).GetAuthors().GetNames().GetStd())
-
 /// EDIT_EACH_AUTHOR_ON_PUB
-// Takes const CPub& as input and makes iterator to CAuthor&
-// Dereference with CAuthor& auth = **iter;
+// CPub& as input, dereference with [const] CAuthor& auth = **itr;
 
-#define EDIT_EACH_AUTHOR_ON_PUB(Iter, Pub) \
-NCBI_ER_ITERATE( \
-    (Pub).IsSetAuthors() && \
-        (Pub).GetAuthors().IsSetNames() && \
-        (Pub).GetAuthors().GetNames().IsStd() , \
-    CAuth_list::C_Names::TStd, \
-    Iter, \
-    (Pub).SetAuthors().SetNames().SetStd())
+#define AUTHOR_ON_PUB_Type      CAuth_list::C_Names::TStd
+#define AUTHOR_ON_PUB_Test(Var) (Var).IsSetAuthors() && \
+                                    (Var).GetAuthors().IsSetNames() && \
+                                    (Var).GetAuthors().GetNames().IsStd()
+#define AUTHOR_ON_PUB_Get(Var)  (Var).GetAuthors().GetNames().GetStd()
+#define AUTHOR_ON_PUB_Set(Var)  (Var).SetAuthors().SetNames().SetStd()
+
+#define FOR_EACH_AUTHOR_ON_PUB(Itr, Var) \
+FOR_EACH (AUTHOR_ON_PUB, Itr, Var)
+
+#define EDIT_EACH_AUTHOR_ON_PUB(Itr, Var) \
+EDIT_EACH (AUTHOR_ON_PUB, Itr, Var)
+
 
 /// ERASE_AUTHOR_ON_PUB
 
-#define ERASE_AUTHOR_ON_PUB(Iter, Pub) \
-(Pub).SetAuthors().SetNames().SetStd().erase(Iter)
+#define ERASE_AUTHOR_ON_PUB(Itr, Pub) \
+(Pub).SetAuthors().SetNames().SetStd().erase(Itr)
 
 
 /// CGB_block macros
@@ -1685,32 +1623,27 @@ if ((Gbk).IsSetExtra_accessions())
 #define GENBANKBLOCK_HAS_EXTRAACCN(Gbk) \
 ((Gbk).IsSetExtra_accessions())
 
+
 /// FOR_EACH_EXTRAACCN_ON_GENBANKBLOCK
-// Takes const CGB_block& as input and makes iterator to const string&
-// Dereference with const string& str = *iter;
-
-#define FOR_EACH_EXTRAACCN_ON_GENBANKBLOCK(Iter, Gbk) \
-NCBI_CS_ITERATE( \
-    (Gbk).IsSetExtra_accessions(), \
-    CGB_block::TExtra_accessions, \
-    Iter, \
-    (Gbk).GetExtra_accessions())
-
 /// EDIT_EACH_EXTRAACCN_ON_GENBANKBLOCK
-// Takes const CGB_block& as input and makes iterator to string&
-// Dereference with string& str = *iter;
+// CGB_block& as input, dereference with [const] string& str = *itr;
 
-#define EDIT_EACH_EXTRAACCN_ON_GENBANKBLOCK(Iter, Gbk) \
-NCBI_ER_ITERATE( \
-    (Gbk).IsSetExtra_accessions(), \
-    CGB_block::TExtra_accessions, \
-    Iter, \
-    (Gbk).SetExtra_accessions())
+#define EXTRAACCN_ON_GENBANKBLOCK_Type      CGB_block::TExtra_accessions
+#define EXTRAACCN_ON_GENBANKBLOCK_Test(Var) (Var).IsSetExtra_accessions()
+#define EXTRAACCN_ON_GENBANKBLOCK_Get(Var)  (Var).GetExtra_accessions()
+#define EXTRAACCN_ON_GENBANKBLOCK_Set(Var)  (Var).SetExtra_accessions()
+
+#define FOR_EACH_EXTRAACCN_ON_GENBANKBLOCK(Itr, Var) \
+FOR_EACH (EXTRAACCN_ON_GENBANKBLOCK, Itr, Var)
+
+#define EDIT_EACH_EXTRAACCN_ON_GENBANKBLOCK(Itr, Var) \
+EDIT_EACH (EXTRAACCN_ON_GENBANKBLOCK, Itr, Var)
+
 
 /// ERASE_EXTRAACCN_ON_GENBANKBLOCK
 
-#define ERASE_EXTRAACCN_ON_GENBANKBLOCK(Iter, Gbk) \
-(Gbk).SetExtra_accessions().erase(Iter)
+#define ERASE_EXTRAACCN_ON_GENBANKBLOCK(Itr, Gbk) \
+(Gbk).SetExtra_accessions().erase(Itr)
 
 
 /// IF_GENBANKBLOCK_HAS_KEYWORD
@@ -1723,32 +1656,27 @@ if ((Gbk).IsSetKeywords())
 #define GENBANKBLOCK_HAS_KEYWORD(Gbk) \
 (Gbk).IsSetKeywords()
 
+
 /// FOR_EACH_KEYWORD_ON_GENBANKBLOCK
-// Takes const CGB_block& as input and makes iterator to const string&
-// Dereference with const string& str = *iter;
-
-#define FOR_EACH_KEYWORD_ON_GENBANKBLOCK(Iter, Gbk) \
-NCBI_CS_ITERATE( \
-    (Gbk).IsSetKeywords(), \
-    CGB_block::TKeywords, \
-    Iter, \
-    (Gbk).GetKeywords())
-
 /// EDIT_EACH_KEYWORD_ON_GENBANKBLOCK
-// Takes const CGB_block& as input and makes iterator to string&
-// Dereference with string& str = *iter;
+// CGB_block& as input, dereference with [const] string& str = *itr;
 
-#define EDIT_EACH_KEYWORD_ON_GENBANKBLOCK(Iter, Gbk) \
-NCBI_ER_ITERATE( \
-    (Gbk).IsSetKeywords(), \
-    CGB_block::TKeywords, \
-    Iter, \
-    (Gbk).SetKeywords())
+#define KEYWORD_ON_GENBANKBLOCK_Type      CGB_block::TKeywords
+#define KEYWORD_ON_GENBANKBLOCK_Test(Var) (Var).IsSetKeywords()
+#define KEYWORD_ON_GENBANKBLOCK_Get(Var)  (Var).GetKeywords()
+#define KEYWORD_ON_GENBANKBLOCK_Set(Var)  (Var).SetKeywords()
+
+#define FOR_EACH_KEYWORD_ON_GENBANKBLOCK(Itr, Var) \
+FOR_EACH (KEYWORD_ON_GENBANKBLOCK, Itr, Var)
+
+#define EDIT_EACH_KEYWORD_ON_GENBANKBLOCK(Itr, Var) \
+EDIT_EACH (KEYWORD_ON_GENBANKBLOCK, Itr, Var)
+
 
 /// ERASE_KEYWORD_ON_GENBANKBLOCK
 
-#define ERASE_KEYWORD_ON_GENBANKBLOCK(Iter, Gbk) \
-(Gbk).SetKeywords().erase(Iter)
+#define ERASE_KEYWORD_ON_GENBANKBLOCK(Itr, Gbk) \
+(Gbk).SetKeywords().erase(Itr)
 
 
 /// CEMBL_block macros
@@ -1763,32 +1691,27 @@ if ((Ebk).IsSetExtra_acc())
 #define EMBLBLOCK_HAS_EXTRAACCN(Ebk) \
 ((Ebk).IsSetExtra_acc())
 
+
 /// FOR_EACH_EXTRAACCN_ON_EMBLBLOCK
-// Takes const CEMBL_block& as input and makes iterator to const string&
-// Dereference with const string& str = *iter;
-
-#define FOR_EACH_EXTRAACCN_ON_EMBLBLOCK(Iter, Ebk) \
-NCBI_CS_ITERATE( \
-    (Ebk).IsSetExtra_acc(), \
-    CEMBL_block::TExtra_acc, \
-    Iter, \
-    (Ebk).GetExtra_acc())
-
 /// EDIT_EACH_EXTRAACCN_ON_EMBLBLOCK
-// Takes const CEMBL_block& as input and makes iterator to string&
-// Dereference with string& str = *iter;
+// CEMBL_block& as input, dereference with [const] string& str = *itr;
 
-#define EDIT_EACH_EXTRAACCN_ON_EMBLBLOCK(Iter, Ebk) \
-NCBI_ER_ITERATE( \
-    (Ebk).IsSetExtra_acc(), \
-    CEMBL_block::TExtra_acc, \
-    Iter, \
-    (Ebk).SetExtra_acc())
+#define EXTRAACCN_ON_EMBLBLOCK_Type      CEMBL_block::TExtra_acc
+#define EXTRAACCN_ON_EMBLBLOCK_Test(Var) (Var).IsSetExtra_acc()
+#define EXTRAACCN_ON_EMBLBLOCK_Get(Var)  (Var).GetExtra_acc()
+#define EXTRAACCN_ON_EMBLBLOCK_Set(Var)  (Var).SetExtra_acc()
+
+#define FOR_EACH_EXTRAACCN_ON_EMBLBLOCK(Itr, Var) \
+FOR_EACH (EXTRAACCN_ON_EMBLBLOCK, Itr, Var)
+
+#define EDIT_EACH_EXTRAACCN_ON_EMBLBLOCK(Itr, Var) \
+EDIT_EACH (EXTRAACCN_ON_EMBLBLOCK, Itr, Var)
+
 
 /// ERASE_EXTRAACCN_ON_EMBLBLOCK
 
-#define ERASE_EXTRAACCN_ON_EMBLBLOCK(Iter, Ebk) \
-(Ebk).SetExtra_acc().erase(Iter)
+#define ERASE_EXTRAACCN_ON_EMBLBLOCK(Itr, Ebk) \
+(Ebk).SetExtra_acc().erase(Itr)
 
 
 /// IF_EMBLBLOCK_HAS_KEYWORD
@@ -1801,32 +1724,27 @@ if ((Ebk).IsSetKeywords())
 #define EMBLBLOCK_HAS_KEYWORD(Ebk) \
 ((Ebk).IsSetKeywords())
 
+
 /// FOR_EACH_KEYWORD_ON_EMBLBLOCK
-// Takes const CEMBL_block& as input and makes iterator to const string&
-// Dereference with const string& str = *iter;
-
-#define FOR_EACH_KEYWORD_ON_EMBLBLOCK(Iter, Ebk) \
-NCBI_CS_ITERATE( \
-    (Ebk).IsSetKeywords(), \
-    CEMBL_block::TKeywords, \
-    Iter, \
-    (Ebk).GetKeywords())
-
 /// EDIT_EACH_KEYWORD_ON_EMBLBLOCK
-// Takes const CEMBL_block& as input and makes iterator to string&
-// Dereference with string& str = *iter;
+// CEMBL_block& as input, dereference with [const] string& str = *itr;
 
-#define EDIT_EACH_KEYWORD_ON_EMBLBLOCK(Iter, Ebk) \
-NCBI_ER_ITERATE( \
-    (Ebk).IsSetKeywords(), \
-    CEMBL_block::TKeywords, \
-    Iter, \
-    (Ebk).SetKeywords())
+#define KEYWORD_ON_EMBLBLOCK_Type      CEMBL_block::TKeywords
+#define KEYWORD_ON_EMBLBLOCK_Test(Var) (Var).IsSetKeywords()
+#define KEYWORD_ON_EMBLBLOCK_Get(Var)  (Var).GetKeywords()
+#define KEYWORD_ON_EMBLBLOCK_Set(Var)  (Var).SetKeywords()
+
+#define FOR_EACH_KEYWORD_ON_EMBLBLOCK(Itr, Var) \
+FOR_EACH (KEYWORD_ON_EMBLBLOCK, Itr, Var)
+
+#define EDIT_EACH_KEYWORD_ON_EMBLBLOCK(Itr, Var) \
+EDIT_EACH (KEYWORD_ON_EMBLBLOCK, Itr, Var)
+
 
 /// ERASE_KEYWORD_ON_EMBLBLOCK
 
-#define ERASE_KEYWORD_ON_EMBLBLOCK(Iter, Ebk) \
-(Ebk).SetKeywords().erase(Iter)
+#define ERASE_KEYWORD_ON_EMBLBLOCK(Itr, Ebk) \
+(Ebk).SetKeywords().erase(Itr)
 
 
 /// CPDB_block macros
@@ -1841,32 +1759,27 @@ if ((Pbk).IsSetCompound())
 #define PDBBLOCK_HAS_COMPOUND(Pbk) \
 ((Pbk).IsSetCompound())
 
+
 /// FOR_EACH_COMPOUND_ON_PDBBLOCK
-// Takes const CPDB_block& as input and makes iterator to const string&
-// Dereference with const string& str = *iter;
-
-#define FOR_EACH_COMPOUND_ON_PDBBLOCK(Iter, Pbk) \
-NCBI_CS_ITERATE( \
-    (Pbk).IsSetCompound(), \
-    CPDB_block::TCompound, \
-    Iter, \
-    (Pbk).GetCompound())
-
 /// EDIT_EACH_COMPOUND_ON_PDBBLOCK
-// Takes const CPDB_block& as input and makes iterator to string&
-// Dereference with string& str = *iter;
+// CPDB_block& as input, dereference with [const] string& str = *itr;
 
-#define EDIT_EACH_COMPOUND_ON_PDBBLOCK(Iter, Pbk) \
-NCBI_ER_ITERATE( \
-    (Pbk).IsSetCompound(), \
-    CPDB_block::TCompound, \
-    Iter, \
-    (Pbk).SetCompound())
+#define COMPOUND_ON_PDBBLOCK_Type      CPDB_block::TCompound
+#define COMPOUND_ON_PDBBLOCK_Test(Var) (Var).IsSetCompound()
+#define COMPOUND_ON_PDBBLOCK_Get(Var)  (Var).GetCompound()
+#define COMPOUND_ON_PDBBLOCK_Set(Var)  (Var).SetCompound()
+
+#define FOR_EACH_COMPOUND_ON_PDBBLOCK(Itr, Var) \
+FOR_EACH (COMPOUND_ON_PDBBLOCK, Itr, Var)
+
+#define EDIT_EACH_COMPOUND_ON_PDBBLOCK(Itr, Var) \
+EDIT_EACH (COMPOUND_ON_PDBBLOCK, Itr, Var)
+
 
 /// ERASE_COMPOUND_ON_PDBBLOCK
 
-#define ERASE_COMPOUND_ON_PDBBLOCK(Iter, Pbk) \
-(Pbk).SetCompound().erase(Iter)
+#define ERASE_COMPOUND_ON_PDBBLOCK(Itr, Pbk) \
+(Pbk).SetCompound().erase(Itr)
 
 
 /// IF_PDBBLOCK_HAS_SOURCE
@@ -1879,32 +1792,27 @@ if ((Pbk).IsSetSource())
 #define PDBBLOCK_HAS_SOURCE(Pbk) \
 ((Pbk).IsSetSource())
 
+
 /// FOR_EACH_SOURCE_ON_PDBBLOCK
-// Takes const CPDB_block& as input and makes iterator to const string&
-// Dereference with const string& str = *iter;
-
-#define FOR_EACH_SOURCE_ON_PDBBLOCK(Iter, Pbk) \
-NCBI_CS_ITERATE( \
-    (Pbk).IsSetSource(), \
-    CPDB_block::TSource, \
-    Iter, \
-    (Pbk).GetSource())
-
 /// EDIT_EACH_SOURCE_ON_PDBBLOCK
-// Takes const CPDB_block& as input and makes iterator to string&
-// Dereference with string& str = *iter;
+// CPDB_block& as input, dereference with [const] string& str = *itr;
 
-#define EDIT_EACH_SOURCE_ON_PDBBLOCK(Iter, Pbk) \
-NCBI_ER_ITERATE( \
-    (Pbk).IsSetSource(), \
-    CPDB_block::TSource, \
-    Iter, \
-    (Pbk).SetSource())
+#define SOURCE_ON_PDBBLOCK_Type      CPDB_block::TSource
+#define SOURCE_ON_PDBBLOCK_Test(Var) (Var).IsSetSource()
+#define SOURCE_ON_PDBBLOCK_Get(Var)  (Var).GetSource()
+#define SOURCE_ON_PDBBLOCK_Set(Var)  (Var).SetSource()
+
+#define FOR_EACH_SOURCE_ON_PDBBLOCK(Itr, Var) \
+FOR_EACH (SOURCE_ON_PDBBLOCK, Itr, Var)
+
+#define EDIT_EACH_SOURCE_ON_PDBBLOCK(Itr, Var) \
+EDIT_EACH (SOURCE_ON_PDBBLOCK, Itr, Var)
+
 
 /// ERASE_SOURCE_ON_PDBBLOCK
 
-#define ERASE_SOURCE_ON_PDBBLOCK(Iter, Pbk) \
-(Pbk).SetSource().erase(Iter)
+#define ERASE_SOURCE_ON_PDBBLOCK(Itr, Pbk) \
+(Pbk).SetSource().erase(Itr)
 
 
 /// CSeq_feat macros
@@ -1919,12 +1827,15 @@ if ((Sft).IsSetData() && (Sft).GetData().Which() == Chs)
 #define FEATURE_CHOICE_IS(Sft, Chs) \
 ((Sft).IsSetData() && (Sft).GetData().Which() == Chs)
 
-/// SWITCH_ON_FEATURE_CHOICE
+/// SWITCH_ON_SEQFEAT_CHOICE
 
-#define SWITCH_ON_FEATURE_CHOICE(Sft) \
-NCBI_SWITCH( \
-    (Sft).IsSetData(), \
-    (Sft).GetData().Which())
+#define SEQFEAT_CHOICE_Test(Var) (Var).IsSetData()
+#define SEQFEAT_CHOICE_Chs(Var)  (Var).GetData().Which()
+
+#define SWITCH_ON_SEQFEAT_CHOICE(Var) \
+SWITCH_ON (SEQFEAT_CHOICE, Var)
+
+#define SWITCH_ON_FEATURE_CHOICE SWITCH_ON_SEQFEAT_CHOICE
 
 
 /// IF_FEATURE_HAS_GBQUAL
@@ -1937,32 +1848,31 @@ if ((Sft).IsSetQual())
 #define FEATURE_HAS_GBQUAL(Sft) \
 ((Sft).IsSetQual())
 
-/// FOR_EACH_GBQUAL_ON_FEATURE
-// Takes const CSeq_feat& as input and makes iterator to const CGb_qual&
-// Dereference with const CGb_qual& gbq = **iter;
 
-#define FOR_EACH_GBQUAL_ON_FEATURE(Iter, Sft) \
-NCBI_CS_ITERATE( \
-    (Sft).IsSetQual(), \
-    CSeq_feat::TQual, \
-    Iter, \
-    (Sft).GetQual())
+/// FOR_EACH_GBQUAL_ON_SEQFEAT
+/// EDIT_EACH_GBQUAL_ON_SEQFEAT
+// CSeq_feat& as input, dereference with [const] CGb_qual& gbq = **itr;
 
-/// EDIT_EACH_GBQUAL_ON_FEATURE
-// Takes const CSeq_feat& as input and makes iterator to CGb_qual&
-// Dereference with CGb_qual& gbq = **iter;
+#define GBQUAL_ON_SEQFEAT_Type      CSeq_feat::TQual
+#define GBQUAL_ON_SEQFEAT_Test(Var) (Var).IsSetQual()
+#define GBQUAL_ON_SEQFEAT_Get(Var)  (Var).GetQual()
+#define GBQUAL_ON_SEQFEAT_Set(Var)  (Var).SetQual()
 
-#define EDIT_EACH_GBQUAL_ON_FEATURE(Iter, Sft) \
-NCBI_ER_ITERATE( \
-    (Sft).IsSetQual(), \
-    CSeq_feat::TQual, \
-    Iter, \
-    (Sft).SetQual())
+#define FOR_EACH_GBQUAL_ON_SEQFEAT(Itr, Var) \
+FOR_EACH (GBQUAL_ON_SEQFEAT, Itr, Var)
+
+#define FOR_EACH_GBQUAL_ON_FEATURE FOR_EACH_GBQUAL_ON_SEQFEAT
+
+#define EDIT_EACH_GBQUAL_ON_SEQFEAT(Itr, Var) \
+EDIT_EACH (GBQUAL_ON_SEQFEAT, Itr, Var)
+
+#define EDIT_EACH_GBQUAL_ON_FEATURE EDIT_EACH_GBQUAL_ON_SEQFEAT
+
 
 /// ERASE_GBQUAL_ON_FEATURE
 
-#define ERASE_GBQUAL_ON_FEATURE(Iter, Sft) \
-(Sft).SetQual().erase(Iter)
+#define ERASE_GBQUAL_ON_FEATURE(Itr, Sft) \
+(Sft).SetQual().erase(Itr)
 
 
 /// IF_FEATURE_HAS_SEQFEATXREF
@@ -1975,32 +1885,31 @@ if ((Sft).IsSetXref())
 #define FEATURE_HAS_SEQFEATXREF(Sft) \
 ((Sft).IsSetXref())
 
-/// FOR_EACH_SEQFEATXREF_ON_FEATURE
-// Takes const CSeq_feat& as input and makes iterator to const CSeqFeatXref&
-// Dereference with const CSeqFeatXref& sfx = **iter;
 
-#define FOR_EACH_SEQFEATXREF_ON_FEATURE(Iter, Sft) \
-NCBI_CS_ITERATE( \
-    (Sft).IsSetXref(), \
-    CSeq_feat::TXref, \
-    Iter, \
-    (Sft).GetXref())
+/// FOR_EACH_SEQFEATXREF_ON_SEQFEAT
+/// EDIT_EACH_SEQFEATXREF_ON_SEQFEAT
+// CSeq_feat& as input, dereference with [const] CSeqFeatXref& sfx = **itr;
 
-/// EDIT_EACH_SEQFEATXREF_ON_FEATURE
-// Takes const CSeq_feat& as input and makes iterator to CSeqFeatXref&
-// Dereference with CSeqFeatXref& sfx = **iter;
+#define SEQFEATXREF_ON_SEQFEAT_Type      CSeq_feat::TXref
+#define SEQFEATXREF_ON_SEQFEAT_Test(Var) (Var).IsSetXref()
+#define SEQFEATXREF_ON_SEQFEAT_Get(Var)  (Var).GetXref()
+#define SEQFEATXREF_ON_SEQFEAT_Set(Var)  (Var).SetXref()
 
-#define EDIT_EACH_SEQFEATXREF_ON_FEATURE(Iter, Sft) \
-NCBI_ER_ITERATE( \
-    (Sft).IsSetXref(), \
-    CSeq_feat::TXref, \
-    Iter, \
-    (Sft).SetXref())
+#define FOR_EACH_SEQFEATXREF_ON_SEQFEAT(Itr, Var) \
+FOR_EACH (SEQFEATXREF_ON_SEQFEAT, Itr, Var)
+
+#define FOR_EACH_SEQFEATXREF_ON_FEATURE FOR_EACH_SEQFEATXREF_ON_SEQFEAT
+
+#define EDIT_EACH_SEQFEATXREF_ON_SEQFEAT(Itr, Var) \
+EDIT_EACH (SEQFEATXREF_ON_SEQFEAT, Itr, Var)
+
+#define EDIT_EACH_SEQFEATXREF_ON_FEATURE EDIT_EACH_SEQFEATXREF_ON_SEQFEAT
+
 
 /// ERASE_SEQFEATXREF_ON_FEATURE
 
-#define ERASE_SEQFEATXREF_ON_FEATURE(Iter, Sft) \
-(Sft).SetXref().erase(Iter)
+#define ERASE_SEQFEATXREF_ON_FEATURE(Itr, Sft) \
+(Sft).SetXref().erase(Itr)
 
 
 /// IF_FEATURE_HAS_DBXREF
@@ -2013,32 +1922,31 @@ if ((Sft).IsSetDbxref())
 #define FEATURE_HAS_DBXREF(Sft) \
 ((Sft).IsSetDbxref())
 
-/// FOR_EACH_DBXREF_ON_FEATURE
-// Takes const CSeq_feat& as input and makes iterator to const CDbtag&
-// Dereference with const CDbtag& dbt = **iter;
 
-#define FOR_EACH_DBXREF_ON_FEATURE(Iter, Sft) \
-NCBI_CS_ITERATE( \
-    (Sft).IsSetDbxref(), \
-    CSeq_feat::TDbxref, \
-    Iter, \
-    (Sft).GetDbxref())
+/// FOR_EACH_DBXREF_ON_SEQFEAT
+/// EDIT_EACH_DBXREF_ON_SEQFEAT
+// CSeq_feat& as input, dereference with [const] CDbtag& dbt = **itr;
 
-/// EDIT_EACH_DBXREF_ON_FEATURE
-// Takes const CSeq_feat& as input and makes iterator to CDbtag&
-// Dereference with CDbtag& dbt = **iter;
+#define DBXREF_ON_SEQFEAT_Type      CSeq_feat::TDbxref
+#define DBXREF_ON_SEQFEAT_Test(Var) (Var).IsSetDbxref()
+#define DBXREF_ON_SEQFEAT_Get(Var)  (Var).GetDbxref()
+#define DBXREF_ON_SEQFEAT_Set(Var)  (Var).SetDbxref()
 
-#define EDIT_EACH_DBXREF_ON_FEATURE(Iter, Sft) \
-NCBI_ER_ITERATE( \
-    (Sft).IsSetDbxref(), \
-    CSeq_feat::TDbxref, \
-    Iter, \
-    (Sft).SetDbxref())
+#define FOR_EACH_DBXREF_ON_SEQFEAT(Itr, Var) \
+FOR_EACH (DBXREF_ON_SEQFEAT, Itr, Var)
+
+#define FOR_EACH_DBXREF_ON_FEATURE FOR_EACH_DBXREF_ON_SEQFEAT
+
+#define EDIT_EACH_DBXREF_ON_SEQFEAT(Itr, Var) \
+EDIT_EACH (DBXREF_ON_SEQFEAT, Itr, Var)
+
+#define EDIT_EACH_DBXREF_ON_FEATURE EDIT_EACH_DBXREF_ON_SEQFEAT
+
 
 /// ERASE_DBXREF_ON_FEATURE
 
-#define ERASE_DBXREF_ON_FEATURE(Iter, Sft) \
-(Sft).SetDbxref().erase(Iter)
+#define ERASE_DBXREF_ON_FEATURE(Itr, Sft) \
+(Sft).SetDbxref().erase(Itr)
 
 
 /// CSeqFeatData macros
@@ -2055,10 +1963,11 @@ if ((Sfd).Which() == Chs)
 
 /// SWITCH_ON_SEQFEATDATA_CHOICE
 
-#define SWITCH_ON_SEQFEATDATA_CHOICE(Sfd) \
-NCBI_SWITCH( \
-    (Sfd).Which() != CSeqFeatData::e_not_set, \
-    (Sfd).Which())
+#define SEQFEATDATA_CHOICE_Test(Var) (Var).Which() != CSeqFeatData::e_not_set
+#define SEQFEATDATA_CHOICE_Chs(Var)  (Var).Which()
+
+#define SWITCH_ON_SEQFEATDATA_CHOICE(Var) \
+SWITCH_ON (SEQFEATDATA_CHOICE, Var)
 
 
 /// CSeqFeatXref macros
@@ -2075,10 +1984,11 @@ if ((Sfx).IsSetData() && (Sfx).GetData().Which() == Chs)
 
 /// SWITCH_ON_SEQFEATXREF_CHOICE
 
-#define SWITCH_ON_SEQFEATXREF_CHOICE(Sfx) \
-NCBI_SWITCH( \
-    (Sfx).IsSetData(), \
-    (Sfx).GetData().Which())
+#define SEQFEATXREF_CHOICE_Test(Var) (Var).IsSetData()
+#define SEQFEATXREF_CHOICE_Chs(Var)  (Var).GetData().Which()
+
+#define SWITCH_ON_SEQFEATXREF_CHOICE(Var) \
+SWITCH_ON (SEQFEATXREF_CHOICE, Var)
 
 
 /// CGene_ref macros
@@ -2093,32 +2003,31 @@ if ((Grf).IsSetSyn())
 #define GENE_HAS_SYNONYM(Grf) \
 ((Grf).IsSetSyn())
 
-/// FOR_EACH_SYNONYM_ON_GENE
-// Takes const CGene_ref& as input and makes iterator to const string&
-// Dereference with const string& str = *iter;
 
-#define FOR_EACH_SYNONYM_ON_GENE(Iter, Grf) \
-NCBI_CS_ITERATE( \
-    (Grf).IsSetSyn(), \
-    CGene_ref::TSyn, \
-    Iter, \
-    (Grf).GetSyn())
+/// FOR_EACH_SYNONYM_ON_GENEREF
+/// EDIT_EACH_SYNONYM_ON_GENEREF
+// CGene_ref& as input, dereference with [const] string& str = *itr;
 
-/// EDIT_EACH_SYNONYM_ON_GENE
-// Takes const CGene_ref& as input and makes iterator to string&
-// Dereference with string& str = *iter;
+#define SYNONYM_ON_GENEREF_Type      CGene_ref::TSyn
+#define SYNONYM_ON_GENEREF_Test(Var) (Var).IsSetSyn()
+#define SYNONYM_ON_GENEREF_Get(Var)  (Var).GetSyn()
+#define SYNONYM_ON_GENEREF_Set(Var)  (Var).SetSyn()
 
-#define EDIT_EACH_SYNONYM_ON_GENE(Iter, Grf) \
-NCBI_ER_ITERATE( \
-    (Grf).IsSetSyn(), \
-    CGene_ref::TSyn, \
-    Iter, \
-    (Grf).SetSyn())
+#define FOR_EACH_SYNONYM_ON_GENEREF(Itr, Var) \
+FOR_EACH (SYNONYM_ON_GENEREF, Itr, Var)
+
+#define FOR_EACH_SYNONYM_ON_GENE FOR_EACH_SYNONYM_ON_GENEREF
+
+#define EDIT_EACH_SYNONYM_ON_GENEREF(Itr, Var) \
+EDIT_EACH (SYNONYM_ON_GENEREF, Itr, Var)
+
+#define EDIT_EACH_SYNONYM_ON_GENE EDIT_EACH_SYNONYM_ON_GENEREF
+
 
 /// ERASE_SYNONYM_ON_GENE
 
-#define ERASE_SYNONYM_ON_GENE(Iter, Grf) \
-(Grf).SetSyn().erase(Iter)
+#define ERASE_SYNONYM_ON_GENE(Itr, Grf) \
+(Grf).SetSyn().erase(Itr)
 
 
 /// IF_GENE_HAS_DBXREF
@@ -2131,32 +2040,31 @@ if ((Grf).IsSetDb())
 #define GENE_HAS_DBXREF(Grf) \
 ((Grf).IsSetDb())
 
-/// FOR_EACH_DBXREF_ON_GENE
-// Takes const CGene_ref& as input and makes iterator to const CDbtag&
-// Dereference with const CDbtag& dbt = *iter;
 
-#define FOR_EACH_DBXREF_ON_GENE(Iter, Grf) \
-NCBI_CS_ITERATE( \
-    (Grf).IsSetDb(), \
-    CGene_ref::TDb, \
-    Iter, \
-    (Grf).GetDb())
+/// FOR_EACH_DBXREF_ON_GENEREF
+/// EDIT_EACH_DBXREF_ON_GENEREF
+// CGene_ref& as input, dereference with [const] CDbtag& dbt = *itr;
 
-/// EDIT_EACH_DBXREF_ON_GENE
-// Takes const CGene_ref& as input and makes iterator to CDbtag&
-// Dereference with CDbtag& dbt = *iter;
+#define DBXREF_ON_GENEREF_Type      CGene_ref::TDb
+#define DBXREF_ON_GENEREF_Test(Var) (Var).IsSetDb()
+#define DBXREF_ON_GENEREF_Get(Var)  (Var).GetDb()
+#define DBXREF_ON_GENEREF_Set(Var)  (Var).SetDb()
 
-#define EDIT_EACH_DBXREF_ON_GENE(Iter, Grf) \
-NCBI_CS_ITERATE( \
-    (Grf).IsSetDb(), \
-    CGene_ref::TDb, \
-    Iter, \
-    (Grf).SetDb())
+#define FOR_EACH_DBXREF_ON_GENEREF(Itr, Var) \
+FOR_EACH (DBXREF_ON_GENEREF, Itr, Var)
+
+#define FOR_EACH_DBXREF_ON_GENE FOR_EACH_DBXREF_ON_GENEREF
+
+#define EDIT_EACH_DBXREF_ON_GENEREF(Itr, Var) \
+EDIT_EACH (DBXREF_ON_GENEREF, Itr, Var)
+
+#define EDIT_EACH_DBXREF_ON_GENE EDIT_EACH_DBXREF_ON_GENEREF
+
 
 /// ERASE_DBXREF_ON_GENE
 
-#define ERASE_DBXREF_ON_GENE(Iter, Grf) \
-(Grf).SetDb().erase(Iter)
+#define ERASE_DBXREF_ON_GENE(Itr, Grf) \
+(Grf).SetDb().erase(Itr)
 
 
 /// CCdregion macros
@@ -2171,32 +2079,27 @@ if ((Cdr).IsSetCode_break())
 #define CDREGION_HAS_CODEBREAK(Cdr) \
 ((Cdr).IsSetCode_break())
 
+
 /// FOR_EACH_CODEBREAK_ON_CDREGION
-// Takes const CCdregion& as input and makes iterator to const CCode_break&
-// Dereference with const CCode_break& cbk = **iter;
-
-#define FOR_EACH_CODEBREAK_ON_CDREGION(Iter, Cdr) \
-NCBI_CS_ITERATE( \
-    (Cdr).IsSetCode_break(), \
-    CCdregion::TCode_break, \
-    Iter, \
-    (Cdr).GetCode_break())
-
 /// EDIT_EACH_CODEBREAK_ON_CDREGION
-// Takes const CCdregion& as input and makes iterator to CCode_break&
-// Dereference with CCode_break& cbk = **iter;
+// CCdregion& as input, dereference with [const] CCode_break& cbk = **itr;
 
-#define EDIT_EACH_CODEBREAK_ON_CDREGION(Iter, Cdr) \
-NCBI_ER_ITERATE( \
-    (Cdr).IsSetCode_break(), \
-    CCdregion::TCode_break, \
-    Iter, \
-    (Cdr).SetCode_break())
+#define CODEBREAK_ON_CDREGION_Type      CCdregion::TCode_break
+#define CODEBREAK_ON_CDREGION_Test(Var) (Var).IsSetCode_break()
+#define CODEBREAK_ON_CDREGION_Get(Var)  (Var).GetCode_break()
+#define CODEBREAK_ON_CDREGION_Set(Var)  (Var).SetCode_break()
+
+#define FOR_EACH_CODEBREAK_ON_CDREGION(Itr, Var) \
+FOR_EACH (CODEBREAK_ON_CDREGION, Itr, Var)
+
+#define EDIT_EACH_CODEBREAK_ON_CDREGION(Itr, Var) \
+EDIT_EACH (CODEBREAK_ON_CDREGION, Itr, Var)
+
 
 /// ERASE_CODEBREAK_ON_CDREGION
 
-#define ERASE_CODEBREAK_ON_CDREGION(Iter, Cdr) \
-(Cdr).SetCode_break().erase(Iter)
+#define ERASE_CODEBREAK_ON_CDREGION(Itr, Cdr) \
+(Cdr).SetCode_break().erase(Itr)
 
 
 /// CProt_ref macros
@@ -2211,32 +2114,31 @@ if ((Prf).IsSetName())
 #define PROT_HAS_NAME(Prf) \
 ((Prf).IsSetName())
 
-/// FOR_EACH_NAME_ON_PROT
-// Takes const CProt_ref& as input and makes iterator to const string&
-// Dereference with const string& str = *iter;
 
-#define FOR_EACH_NAME_ON_PROT(Iter, Prf) \
-NCBI_CS_ITERATE( \
-    (Prf).IsSetName(), \
-    CProt_ref::TName, \
-    Iter, \
-    (Prf).GetName())
+/// FOR_EACH_NAME_ON_PROTREF
+/// EDIT_EACH_NAME_ON_PROTREF
+// CProt_ref& as input, dereference with [const] string& str = *itr;
 
-/// EDIT_EACH_NAME_ON_PROT
-// Takes const CProt_ref& as input and makes iterator to string&
-// Dereference with string& str = *iter;
+#define NAME_ON_PROTREF_Type      CProt_ref::TName
+#define NAME_ON_PROTREF_Test(Var) (Var).IsSetName()
+#define NAME_ON_PROTREF_Get(Var)  (Var).GetName()
+#define NAME_ON_PROTREF_Set(Var)  (Var).SetName()
 
-#define EDIT_EACH_NAME_ON_PROT(Iter, Prf) \
-NCBI_ER_ITERATE( \
-    (Prf).IsSetName(), \
-    CProt_ref::TName, \
-    Iter, \
-    (Prf).SetName())
+#define FOR_EACH_NAME_ON_PROTREF(Itr, Var) \
+FOR_EACH (NAME_ON_PROTREF, Itr, Var)
+
+#define FOR_EACH_NAME_ON_PROT FOR_EACH_NAME_ON_PROTREF
+
+#define EDIT_EACH_NAME_ON_PROTREF(Itr, Var) \
+EDIT_EACH (NAME_ON_PROTREF, Itr, Var)
+
+#define EDIT_EACH_NAME_ON_PROT EDIT_EACH_NAME_ON_PROTREF
+
 
 /// ERASE_NAME_ON_PROT
 
-#define ERASE_NAME_ON_PROT(Iter, Prf) \
-(Prf).SetName().erase(Iter)
+#define ERASE_NAME_ON_PROT(Itr, Prf) \
+(Prf).SetName().erase(Itr)
 
 
 /// IF_PROT_HAS_ECNUMBER
@@ -2249,32 +2151,31 @@ if ((Prf).IsSetEc())
 #define PROT_HAS_ECNUMBER(Prf) \
 ((Prf).IsSetEc())
 
-/// FOR_EACH_ECNUMBER_ON_PROT
-// Takes const CProt_ref& as input and makes iterator to const string&
-// Dereference with const string& str = *iter;
 
-#define FOR_EACH_ECNUMBER_ON_PROT(Iter, Prf) \
-NCBI_CS_ITERATE( \
-    (Prf).IsSetEc(), \
-    CProt_ref::TEc, \
-    Iter, \
-    (Prf).GetEc())
+/// FOR_EACH_ECNUMBER_ON_PROTREF
+/// EDIT_EACH_ECNUMBER_ON_PROTREF
+// CProt_ref& as input, dereference with [const] string& str = *itr;
 
-/// EDIT_EACH_ECNUMBER_ON_PROT
-// Takes const CProt_ref& as input and makes iterator to string&
-// Dereference with string& str = *iter;
+#define ECNUMBER_ON_PROTREF_Type      CProt_ref::TEc
+#define ECNUMBER_ON_PROTREF_Test(Var) (Var).IsSetEc()
+#define ECNUMBER_ON_PROTREF_Get(Var)  (Var).GetEc()
+#define ECNUMBER_ON_PROTREF_Set(Var)  (Var).SetEc()
 
-#define EDIT_EACH_ECNUMBER_ON_PROT(Iter, Prf) \
-NCBI_ER_ITERATE( \
-    (Prf).IsSetEc(), \
-    CProt_ref::TEc, \
-    Iter, \
-    (Prf).SetEc())
+#define FOR_EACH_ECNUMBER_ON_PROTREF(Itr, Var) \
+FOR_EACH (ECNUMBER_ON_PROTREF, Itr, Var)
+
+#define FOR_EACH_ECNUMBER_ON_PROT FOR_EACH_ECNUMBER_ON_PROTREF
+
+#define EDIT_EACH_ECNUMBER_ON_PROTREF(Itr, Var) \
+EDIT_EACH (ECNUMBER_ON_PROTREF, Itr, Var)
+
+#define EDIT_EACH_ECNUMBER_ON_PROT EDIT_EACH_ECNUMBER_ON_PROTREF
+
 
 /// ERASE_ECNUMBER_ON_PROT
 
-#define ERASE_ECNUMBER_ON_PROT(Iter, Prf) \
-(Prf).SetEc().erase(Iter)
+#define ERASE_ECNUMBER_ON_PROT(Itr, Prf) \
+(Prf).SetEc().erase(Itr)
 
 
 /// IF_PROT_HAS_ACTIVITY
@@ -2287,32 +2188,31 @@ if ((Prf).IsSetActivity())
 #define PROT_HAS_ACTIVITY(Prf) \
 ((Prf).IsSetActivity())
 
-/// FOR_EACH_ACTIVITY_ON_PROT
-// Takes const CProt_ref& as input and makes iterator to const string&
-// Dereference with const string& str = *iter;
 
-#define FOR_EACH_ACTIVITY_ON_PROT(Iter, Prf) \
-NCBI_CS_ITERATE( \
-    (Prf).IsSetActivity(), \
-    CProt_ref::TActivity, \
-    Iter, \
-    (Prf).GetActivity())
+/// FOR_EACH_ACTIVITY_ON_PROTREF
+/// EDIT_EACH_ACTIVITY_ON_PROTREF
+// CProt_ref& as input, dereference with [const] string& str = *itr;
 
-/// EDIT_EACH_ACTIVITY_ON_PROT
-// Takes const CProt_ref& as input and makes iterator to string&
-// Dereference with string& str = *iter;
+#define ACTIVITY_ON_PROTREF_Type      CProt_ref::TActivity
+#define ACTIVITY_ON_PROTREF_Test(Var) (Var).IsSetActivity()
+#define ACTIVITY_ON_PROTREF_Get(Var)  (Var).GetActivity()
+#define ACTIVITY_ON_PROTREF_Set(Var)  (Var).SetActivity()
 
-#define EDIT_EACH_ACTIVITY_ON_PROT(Iter, Prf) \
-NCBI_ER_ITERATE( \
-    (Prf).IsSetActivity(), \
-    CProt_ref::TActivity, \
-    Iter, \
-    (Prf).SetActivity())
+#define FOR_EACH_ACTIVITY_ON_PROTREF(Itr, Var) \
+FOR_EACH (ACTIVITY_ON_PROTREF, Itr, Var)
+
+#define FOR_EACH_ACTIVITY_ON_PROT FOR_EACH_ACTIVITY_ON_PROTREF
+
+#define EDIT_EACH_ACTIVITY_ON_PROTREF(Itr, Var) \
+EDIT_EACH (ACTIVITY_ON_PROTREF, Itr, Var)
+
+#define EDIT_EACH_ACTIVITY_ON_PROT EDIT_EACH_ACTIVITY_ON_PROTREF
+
 
 /// ERASE_ACTIVITY_ON_PROT
 
-#define ERASE_ACTIVITY_ON_PROT(Iter, Prf) \
-(Prf).SetActivity().erase(Iter)
+#define ERASE_ACTIVITY_ON_PROT(Itr, Prf) \
+(Prf).SetActivity().erase(Itr)
 
 
 /// IF_PROT_HAS_DBXREF
@@ -2325,32 +2225,31 @@ if ((Prf).IsSetDb())
 #define PROT_HAS_DBXREF(Prf) \
 ((Prf).IsSetDb())
 
-/// FOR_EACH_DBXREF_ON_PROT
-// Takes const CProt_ref& as input and makes iterator to const CDbtag&
-// Dereference with const CDbtag& dbt = *iter;
 
-#define FOR_EACH_DBXREF_ON_PROT(Iter, Prf) \
-NCBI_CS_ITERATE( \
-    (Prf).IsSetDb(), \
-    CProt_ref::TDb, \
-    Iter, \
-    (Prf).GetDb())
+/// FOR_EACH_DBXREF_ON_PROTREF
+/// EDIT_EACH_DBXREF_ON_PROTREF
+// CProt_ref& as input, dereference with [const] CDbtag& dbt = *itr;
 
-/// EDIT_EACH_DBXREF_ON_PROT
-// Takes const CProt_ref& as input and makes iterator to CDbtag&
-// Dereference with CDbtag& dbt = *iter;
+#define DBXREF_ON_PROTREF_Type      CProt_ref::TDb
+#define DBXREF_ON_PROTREF_Test(Var) (Var).IsSetDb()
+#define DBXREF_ON_PROTREF_Get(Var)  (Var).GetDb()
+#define DBXREF_ON_PROTREF_Set(Var)  (Var).SetDb()
 
-#define EDIT_EACH_DBXREF_ON_PROT(Iter, Prf) \
-NCBI_ER_ITERATE( \
-    (Prf).IsSetDb(), \
-    CProt_ref::TDb, \
-    Iter, \
-    (Prf).SetDb())
+#define FOR_EACH_DBXREF_ON_PROTREF(Itr, Var) \
+FOR_EACH (DBXREF_ON_PROTREF, Itr, Var)
+
+#define FOR_EACH_DBXREF_ON_PROT FOR_EACH_DBXREF_ON_PROTREF
+
+#define EDIT_EACH_DBXREF_ON_PROTREF(Itr, Var) \
+EDIT_EACH (DBXREF_ON_PROTREF, Itr, Var)
+
+#define EDIT_EACH_DBXREF_ON_PROT EDIT_EACH_DBXREF_ON_PROTREF
+
 
 /// ERASE_DBXREF_ON_PROT
 
-#define ERASE_DBXREF_ON_PROT(Iter, Prf) \
-(Prf).SetDb().erase(Iter)
+#define ERASE_DBXREF_ON_PROT(Itr, Prf) \
+(Prf).SetDb().erase(Itr)
 
 
 /// list <string> macros
@@ -2365,32 +2264,27 @@ if (! (Lst).empty())
 #define LIST_HAS_STRING(Lst) \
 (! (Lst).empty())
 
+
 /// FOR_EACH_STRING_IN_LIST
-// Takes const list <string>& as input and makes iterator to const string&
-// Dereference with const string& str = *iter;
-
-#define FOR_EACH_STRING_IN_LIST(Iter, Lst) \
-NCBI_CS_ITERATE( \
-    (! (Lst).empty()), \
-    list <string>, \
-    Iter, \
-    (Lst))
-
 /// EDIT_EACH_STRING_IN_LIST
-// Takes const list <string>& as input and makes iterator to string&
-// Dereference with string& str = *iter;
+// list <string>& as input, dereference with [const] string& str = *itr;
 
-#define EDIT_EACH_STRING_IN_LIST(Iter, Lst) \
-NCBI_ER_ITERATE( \
-    (! (Lst).empty()), \
-    list <string>, \
-    Iter, \
-    (Lst))
+#define STRING_IN_LIST_Type      list <string>
+#define STRING_IN_LIST_Test(Var) (! (Var).empty())
+#define STRING_IN_LIST_Get(Var)  (Var)
+#define STRING_IN_LIST_Set(Var)  (Var)
+
+#define FOR_EACH_STRING_IN_LIST(Itr, Var) \
+FOR_EACH (STRING_IN_LIST, Itr, Var)
+
+#define EDIT_EACH_STRING_IN_LIST(Itr, Var) \
+EDIT_EACH (STRING_IN_LIST, Itr, Var)
+
 
 /// ERASE_STRING_IN_LIST
 
-#define ERASE_STRING_IN_LIST(Iter, Lst) \
-(Lst).erase(Iter)
+#define ERASE_STRING_IN_LIST(Itr, Lst) \
+(Lst).erase(Itr)
 
 
 /// <string> macros
@@ -2405,32 +2299,27 @@ if (! (Str).empty())
 #define STRING_HAS_CHAR(Str) \
 (! (Str).empty())
 
+
 /// FOR_EACH_CHAR_IN_STRING
-// Takes const string& as input and makes iterator to const char&
-// Dereference with const char& ch = *iter;
-
-#define FOR_EACH_CHAR_IN_STRING(Iter, Str) \
-NCBI_CS_ITERATE( \
-    (! (Str).empty()), \
-    string, \
-    Iter, \
-    (Str))
-
 /// EDIT_EACH_CHAR_IN_STRING
-// Takes const string& as input and makes iterator to char&
-// Dereference with char& ch = *iter;
+// string& as input, dereference with [const] char& ch = *itr;
 
-#define EDIT_EACH_CHAR_IN_STRING(Iter, Str) \
-NCBI_CS_ITERATE( \
-    (! (Str).empty()), \
-    string, \
-    Iter, \
-    (Str))
+#define CHAR_IN_STRING_Type      string
+#define CHAR_IN_STRING_Test(Var) (! (Var).empty())
+#define CHAR_IN_STRING_Get(Var)  (Var)
+#define CHAR_IN_STRING_Set(Var)  (Var)
+
+#define FOR_EACH_CHAR_IN_STRING(Itr, Var) \
+FOR_EACH (CHAR_IN_STRING, Itr, Var)
+
+#define EDIT_EACH_CHAR_IN_STRING(Itr, Var) \
+EDIT_EACH (CHAR_IN_STRING, Itr, Var)
+
 
 /// ERASE_CHAR_IN_STRING
 
-#define ERASE_CHAR_IN_STRING(Iter, Str) \
-(Str).erase(Iter)
+#define ERASE_CHAR_IN_STRING(Itr, Str) \
+(Str).erase(Itr)
 
 
 

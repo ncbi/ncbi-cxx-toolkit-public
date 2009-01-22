@@ -331,19 +331,19 @@ void CDeflineGenerator::x_SetBioSrc (
             if (! sbs.IsSetName()) continue;
             const string& str = sbs.GetName();
             SWITCH_ON_SUBSOURCE_CHOICE (sbs) {
-                case NCBI_SUBSRC(chromosome):
+                case NCBI_SUBSOURCE(chromosome):
                     m_Chromosome = str;
                     break;
-                case NCBI_SUBSRC(clone):
+                case NCBI_SUBSOURCE(clone):
                     m_Clone = str;
                     break;
-                case NCBI_SUBSRC(map):
+                case NCBI_SUBSOURCE(map):
                     m_Map = str;
                     break;
-                case NCBI_SUBSRC(plasmid_name):
+                case NCBI_SUBSOURCE(plasmid_name):
                     m_Plasmid = str;
                     break;
-                case NCBI_SUBSRC(segment):
+                case NCBI_SUBSOURCE(segment):
                     m_Segment = str;
                     break;
                 default:
