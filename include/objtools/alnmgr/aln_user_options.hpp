@@ -84,7 +84,10 @@ public:
                                       ///  rows
 
         fAllowMixedStrand   = 1 << 1, ///< Allow mixed strand on the
-                                      ///  same row
+                                      ///  same row.  An experimental
+                                      ///  feature for advance users.
+                                      ///  Not supported for all
+                                      ///  alignment types.
 
         fAllowTranslocation = 1 << 2, ///< Allow translocations on the
                                       ///  same row
