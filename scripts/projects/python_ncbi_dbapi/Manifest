@@ -9,15 +9,14 @@
 #          It is used by release configurator.
 #
 
-COPY: $libdir/python_ncbi_dbapi.so $bindir
-COPY: $srcdir/src/dbapi/lang_bind/python/tests/python_dbapi_test.py $bindir
+COPY: $srcdir/src/dbapi/lang_bind/python/tests/python_dbapi_test.py $installdir/bin
 
 LIB: libpython_ncbi_dbapi.so
 LIB: libdbapi.so libdbapi_driver.so libxconnext.so libxconnect.so libxutil.so libxncbi.so
 LIB: libncbi_xdbapi_ftds.so libct_ftds64.so libtds_ftds64.so
 LIB: libncbi_xdbapi_ctlib.so 
 
-POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/build_tarball.sh $installdir
+POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/build_tarball.sh $installdir $version
 
 
 # Each line describes a single configuration
