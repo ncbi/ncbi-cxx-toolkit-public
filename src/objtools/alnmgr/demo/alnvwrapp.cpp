@@ -85,7 +85,7 @@ class CAlnVwrApp : public CNcbiApplication
     void             View7();
     void             View8(int aln_pos);
     void             View9(int row0, int row1);
-    void             View10(int row0, int row1);
+    void             View10();
     void             GetSeqPosFromAlnPosDemo();
     void             GetAlnPosFromSeqPosDemo();
     bool             AddAlnToMix   (const CSeq_align* aln) {
@@ -158,9 +158,8 @@ void CAlnVwrApp::Init(void)
          "   (Use numeric param n to choose alignment position)\n"
          "9. Print relative residue index mapping for two rows.\n"
          "   (Use row0 and row1 params to choose the rows)\n"
-         "10. Iterate through alignment positions and show corresponding\n"
-         "    native sequence positions for two chosen rows\n"
-         "    (Use row0 and row1 params to choose the rows)\n"
+         "10. Iterate forward and backwards through alignment positions\n"
+         "    and show corresponding native sequence positions for each row.\n"
          "11. Clustal style\n",
          CArgDescriptions::eInteger);
 
@@ -330,15 +329,40 @@ void CAlnVwrApp::View9(int row0, int row1)
 }
 
 
-void CAlnVwrApp::View10(int row0, int row1)
+void CAlnVwrApp::View10()
 {
-    CAlnPos_CI it(*m_AV);
-    do {
-        NcbiCout << it.GetAlnPos() << "\t"
-                 << it.GetSeqPos(row0) << "\t"
-                 << it.GetSeqPos(row1) << NcbiEndl;
-    } while (++it);
-    NcbiCout << NcbiEndl;
+    CAlnMap::TNumrow dim = m_AV->GetNumRows();
+    vector<TSignedSeqPos> last_seq_pos(dim, -1);
+
+    for (int reverse = 0; reverse < 2; ++reverse) {
+        CAlnPos_CI it(*m_AV, reverse ? m_AV->GetAlnStop() : m_AV->GetAlnStart());
+        IAlnExplorer::ESearchDirection search_dir = reverse ? IAlnExplorer::eRight : IAlnExplorer::eLeft;
+        do {
+            NcbiCout << it.GetAlnPos() << "\t";
+            for (CAlnMap::TNumrow row = 0; row < dim; ++row) {
+                NcbiCout << it.GetSeqPos(row) << "\t";
+#ifdef _DEBUG
+                if (it.GetSeqPos(row) >= 0) {
+                    _ASSERT((TSignedSeqPos)it.GetAlnPos() == m_AV->GetAlnPosFromSeqPos(row, it.GetSeqPos(row)));
+                    _ASSERT(m_AV->GetSeqPosFromAlnPos(row, it.GetAlnPos()) == it.GetSeqPos(row));
+                    last_seq_pos[row] = it.GetSeqPos(row);
+                } else if (last_seq_pos[row] >= 0) {
+                    _ASSERT(m_AV->GetSeqPosFromAlnPos(row, it.GetAlnPos(), search_dir) == last_seq_pos[row]);
+                }
+                for (CAlnMap::TNumrow row2 = 0; row2 <= row; ++row2) {
+                    if (it.GetSeqPos(row) >= 0  &&  last_seq_pos[row2] >= 0) {
+                        _ASSERT(m_AV->GetSeqPosFromSeqPos(row2, row, it.GetSeqPos(row), search_dir) == last_seq_pos[row2]);
+                    }
+                    if (it.GetSeqPos(row2) >= 0  &&  last_seq_pos[row] >= 0) {
+                        _ASSERT(m_AV->GetSeqPosFromSeqPos(row, row2, it.GetSeqPos(row2), search_dir) == last_seq_pos[row]);
+                    }
+                }
+#endif
+            }
+            NcbiCout << NcbiEndl;
+        } while (reverse ? --it : ++it);
+        NcbiCout << NcbiEndl;
+    }
 }
 
 
@@ -423,7 +447,7 @@ int CAlnVwrApp::Run(void)
             View9(row0, row1);
             break;
         case 10:
-            View10(row0, row1);
+            View10();
             break;
         case 11:
             printer.ClustalStyle(screen_width,
