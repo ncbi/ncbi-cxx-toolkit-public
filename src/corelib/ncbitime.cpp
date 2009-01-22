@@ -2537,19 +2537,6 @@ string CStopWatch::AsString(const CTimeFormat& format) const
 //============================================================================
 
 
-CTime operator+ (int days, const CTime& t)
-{
-    CTime tmp = s_Number2Date(s_Date2Number(t) + days, t);
-    tmp.x_AdjustTime(t);
-    return tmp;
-}
-
-int operator- (const CTime& t1, const CTime& t2)
-{
-    return (int)(s_Date2Number(t1) - s_Date2Number(t2));
-}
-
-
 CTime GetFastLocalTime(void)
 {
     return s_FastLocalTime->GetLocalTime();

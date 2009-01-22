@@ -146,7 +146,6 @@ public:
         eDefault           = fDefault
     };
     typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
-    typedef EFlags EType;         ///< deprecated: used for backward compatibility.
 
     /// Predefined formats.
     ///
@@ -213,13 +212,6 @@ public:
     ///   A flags specifying how to match a time string against format string.
     /// @sa SetFormat, GetString
     TFlags GetFlags(void) const;
-
-    /// Get type of the format string.
-    ///
-    /// @return
-    ///   A type of the time format string.
-    /// @sa SetFormat, GetString
-    NCBI_DEPRECATED EType GetType(void) const;
 
     /// Check that format string is empty.
     bool IsEmpty(void) const;
@@ -925,42 +917,6 @@ public:
     CTime& Truncate(ERoundPrecision precision = eRound_Day);
 
     //
-    // Add/subtract days
-    //
-
-    /// Operator to add days.
-    /// @deprecated Use AddDay() instead.
-    NCBI_DEPRECATED CTime& operator+= (int days);
-
-    /// Operator to subtract days.
-    /// @deprecated Use AddDay() instead.
-    NCBI_DEPRECATED CTime& operator-= (int days);
-
-    /// Operator to increment days.
-    /// @deprecated Use AddDay(1) instead.
-    NCBI_DEPRECATED CTime& operator++ (void);
-
-    /// Operator to decrement days.
-    /// @deprecated Use AddDay(-1) instead.
-    NCBI_DEPRECATED CTime& operator-- (void);
-
-    /// Operator to increment days.
-    /// @deprecated Use AddDay(1) instead.
-    NCBI_DEPRECATED CTime  operator++ (int);
-
-    /// Operator to decrement days.
-    /// @deprecated Use AddDay(-1) instead.
-    NCBI_DEPRECATED CTime  operator-- (int);
-
-    /// Operator to increment days.
-    /// @deprecated Use AddDay() instead.
-    NCBI_DEPRECATED CTime operator+ (int days) const;
-
-    /// Operator to decrement days.
-    /// @deprecated Use AddDay() instead.
-    NCBI_DEPRECATED CTime operator- (int days) const;
-
-    //
     // Add/subtract time span
     //
 
@@ -1150,14 +1106,6 @@ private:
         Int4          nanosec;
     } TData;
     TData m_Data;  ///< Packed members
-
-    // Friend left-hand operators
-    /// @deprecated Use AddDay() instead.
-    NCBI_XNCBI_EXPORT
-    friend CTime operator+ (int days, const CTime& t);
-    /// @deprecated Use AddDay() instead.
-    NCBI_XNCBI_EXPORT
-    friend CTime operator+ (const CTimeSpan& ts, const CTime& t);
 
     // Friend class
     friend class CFastLocalTime;
@@ -1650,17 +1598,6 @@ public:
 //
 //=============================================================================
 
-
-/// Add/subtract days (see CTime::operator +/-)
-/// @deprecated Use CTime::AddDay() instead.
-NCBI_XNCBI_EXPORT NCBI_DEPRECATED
-extern CTime operator + (int days, const CTime& t);
-
-/// This operator is deprecated.
-/// #deprecated Use CTime::DiffWholeDays() instead.
-NCBI_XNCBI_EXPORT NCBI_DEPRECATED
-extern int   operator- (const CTime& t1, const CTime& t2);
-
 /// Quick and dirty getter of local time.
 /// Use global object of CFastLocalTime class to obtain time.
 /// See CFastLocalTime for details.
@@ -1811,15 +1748,6 @@ CTimeFormat::TFlags CTimeFormat::GetFlags(void) const
 }
 
 inline
-CTimeFormat::EType CTimeFormat::GetType(void) const
-{
-    if (m_Flags & fFormat_Simple) {
-        return eNcbiSimple;
-    }
-    return eNcbi;
-}
-
-inline
 bool CTimeFormat::IsEmpty(void) const
 {
     return m_Str.empty();
@@ -1876,18 +1804,6 @@ inline
 CTime& CTime::SetCurrent(void) { return x_SetTimeMTSafe(); }
 
 inline
-CTime& CTime::operator+= (int days) { return AddDay(days); }
-
-inline
-CTime& CTime::operator-= (int days) { return AddDay(-days); }
-
-inline
-CTime& CTime::operator++ (void) { return AddDay( 1); }
-
-inline
-CTime& CTime::operator-- (void) { return AddDay(-1); }
-
-inline
 CTime& CTime::operator+= (const CTimeSpan& ts) { return AddTimeSpan(ts); }
 
 inline
@@ -1918,37 +1834,6 @@ CTimeSpan CTime::operator- (const CTime& t)
 inline
 CTime::operator string(void) const { return AsString(); }
 
-inline
-CTime CTime::operator++ (int)
-{
-    CTime t = *this;
-    AddDay(1);
-    return t;
-}
-
-inline
-CTime CTime::operator-- (int)
-{
-    CTime t = *this;
-    AddDay(-1);
-    return t;
-}
-
-inline
-CTime CTime::operator+ (int days) const
-{
-    CTime t = *this;
-    t.AddDay(days);
-    return t;
-}
-
-inline
-CTime CTime::operator- (int days) const
-{
-    CTime t = *this;
-    t.AddDay(-days);
-    return t;
-}
 
 inline
 CTime& CTime::operator= (const string& str)
