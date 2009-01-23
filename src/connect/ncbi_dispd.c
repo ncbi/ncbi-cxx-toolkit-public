@@ -60,7 +60,7 @@ extern "C" {
     static void        s_Close      (SERV_ITER);
 
     static const SSERV_VTable s_op = {
-        s_Reset, s_GetNextInfo, s_Update, 0/*Penalize*/, s_Close, "DISPD"
+        s_Reset, s_GetNextInfo, s_Update, 0/*Feedback*/, s_Close, "DISPD"
     };
 #ifdef __cplusplus
 } /* extern "C" */

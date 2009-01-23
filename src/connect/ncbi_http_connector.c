@@ -417,7 +417,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     }
 
     /* HTTP status must come on the first line of the response */
-    if (sscanf(header, "HTTP/%*d.%*d %d ", &http_status) != 1  ||  !http_status)
+    if (sscanf(header, "HTTP/%*d.%*d %d ", &http_status) != 1 || !http_status)
         http_status = -1;
     if (http_status < 200  ||  299 < http_status) {
         server_error = http_status;

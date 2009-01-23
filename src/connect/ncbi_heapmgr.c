@@ -282,7 +282,7 @@ HEAP HEAP_Attach(const void* base, int serial)
 static SHEAP_HeapBlock* s_HEAP_Collect(HEAP heap, TNCBI_Size* prev)
 {
     SHEAP_HeapBlock* b = heap->base;
-    SHEAP_HeapBlock *f = 0;
+    SHEAP_HeapBlock* f = 0;
     TNCBI_Size free = 0;
 
     *prev = 0;
