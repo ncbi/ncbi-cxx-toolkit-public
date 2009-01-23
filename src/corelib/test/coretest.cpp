@@ -1006,7 +1006,7 @@ void TestEraseIterateFor(const C&)
                     nc.push_back(*it);
                 }
             }
-            pc.erase(pc.begin()+p);
+            pc.erase(remove(pc.begin(), pc.end(), v), pc.end());
             assert(pc == nc);
             nc.clear();
             ITERATE ( typename Cont, it, c ) {
@@ -1043,7 +1043,7 @@ void TestEraseIterateForVec(const C&)
                     nc.push_back(*it);
                 }
             }
-            pc.erase(pc.begin()+p);
+            pc.erase(remove(pc.begin(), pc.end(), v), pc.end());
             assert(pc == nc);
             nc.clear();
             ITERATE ( typename Cont, it, c ) {
