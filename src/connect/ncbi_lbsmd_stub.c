@@ -65,6 +65,14 @@ extern HEAP LBSMD_GetHeapCopy(TNCBI_Time time/*ignored*/)
 
 
 /*ARGSUSED*/
+extern const char* LBSMD_GetHostParameter(unsigned int host,
+                                          const char*  name)
+{
+    return 0;
+}
+
+
+/*ARGSUSED*/
 int LBSM_HINFO_CpuCount(const HOST_INFO hinfo)
 {
     return -1;

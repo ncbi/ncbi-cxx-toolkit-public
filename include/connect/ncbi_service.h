@@ -199,6 +199,15 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_Penalize
  );
 
 
+/* Rerate the server returned last from SERV_GetNextInfo[Ex]().
+ * Return 0 if failed, 1 if successful.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_Rerate
+(SERV_ITER            iter,          /* handle obtained via 'SERV_Open*' call*/
+ double               rate           /* new rate, 0 to off, <0 to set default*/
+ );
+
+
 /* Reset the iterator to the state as if it has just been opened.
  * CAUTION:  All pointers to server descriptors (SSERV_Info*), if any
  * previously obtained via this iterator, are rendered invalid by this call.

@@ -77,6 +77,18 @@ extern NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
 extern NCBI_XCONNECT_EXPORT HEAP LBSMD_GetHeapCopy(TNCBI_Time time);
 
 
+/* Get a value of a host parameter from the LBSMD host environment.
+ * Return 0 if none found;  return heap-allocated string otherwise
+ * (the caller is responsible for calling free() when no longer needing it).
+ * Argument "host" can be either an IP address of the host to inquire about,
+ * or SERV_LOCALHOST(or 0) to get the information as defined for the current
+ * (local) host.
+ */
+extern NCBI_XCONNECT_EXPORT const char* LBSMD_GetHostParameter
+(unsigned int addr,
+ const char*  name);
+
+
 extern NCBI_XCONNECT_EXPORT ESwitch LBSMD_FastHeapAccess(ESwitch onoff);
 
 

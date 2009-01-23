@@ -483,9 +483,17 @@ const char* SERV_CurrentName(SERV_ITER iter)
 
 int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 {
-    if (!iter  ||  !iter->op  ||  !iter->op->Penalize  ||  !iter->last)
+    if (!iter  ||  !iter->op  ||  !iter->op->Feedback  ||  !iter->last)
         return 0/*false*/;
-    return (*iter->op->Penalize)(iter, fine);
+    return (*iter->op->Feedback)(iter, fine, 1/*i.e.fine*/);
+}
+
+
+int/*bool*/ SERV_Rerate(SERV_ITER iter, double rate)
+{
+    if (!iter  ||  !iter->op  ||  !iter->op->Feedback  ||  !iter->last)
+        return 0/*false*/;
+    return (*iter->op->Feedback)(iter, rate, 0/*i.e.rate*/);
 }
 
 
