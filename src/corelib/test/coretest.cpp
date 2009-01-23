@@ -981,6 +981,90 @@ static void TestBASE64Encoding(void)
     }
 }
 
+template<class C>
+void TestEraseIterateFor(const C&)
+{
+    typedef C Cont;
+    for ( int t = 0; t < 100; ++t ) {
+        Cont c;
+        for ( int i = 0; i < 100; ++i ) {
+            c.insert(c.end(), rand());
+        }
+        while ( !c.empty() ) {
+            vector<int> pc;
+            ITERATE ( typename Cont, it, c ) {
+                pc.push_back(*it);
+            }
+            size_t p = rand()%pc.size();
+            int v = pc[p];
+            vector<int> nc;
+            ERASE_ITERATE ( typename Cont, it, c ) {
+                if ( *it == v ) {
+                    c.erase(it);
+                }
+                else {
+                    nc.push_back(*it);
+                }
+            }
+            pc.erase(pc.begin()+p);
+            assert(pc == nc);
+            nc.clear();
+            ITERATE ( typename Cont, it, c ) {
+                nc.push_back(*it);
+            }
+            assert(pc == nc);
+        }
+    }
+}
+
+
+template<class C>
+void TestEraseIterateForVec(const C&)
+{
+    typedef C Cont;
+    for ( int t = 0; t < 100; ++t ) {
+        Cont c;
+        for ( int i = 0; i < 100; ++i ) {
+            c.insert(c.end(), rand());
+        }
+        while ( !c.empty() ) {
+            vector<int> pc;
+            ITERATE ( typename Cont, it, c ) {
+                pc.push_back(*it);
+            }
+            size_t p = rand()%pc.size();
+            int v = pc[p];
+            vector<int> nc;
+            ERASE_ITERATE ( typename Cont, it, c ) {
+                if ( *it == v ) {
+                    VECTOR_ERASE(it, c);
+                }
+                else {
+                    nc.push_back(*it);
+                }
+            }
+            pc.erase(pc.begin()+p);
+            assert(pc == nc);
+            nc.clear();
+            ITERATE ( typename Cont, it, c ) {
+                nc.push_back(*it);
+            }
+            assert(pc == nc);
+        }
+    }
+}
+
+
+static void TestEraseIterate(void)
+{
+    set<int> ts;
+    list<int> tl;
+    vector<int> tv;
+    TestEraseIterateFor(ts);
+    TestEraseIterateFor(tl);
+    TestEraseIterateForVec(tv);
+}
+
 
 /////////////////////////////////
 // Test application
@@ -1007,6 +1091,7 @@ int CTestApplication::Run(void)
     TestHeapStack();
     TestObjectSizes();
     TestBASE64Encoding();
+    TestEraseIterate();
 
     NcbiCout << NcbiEndl << "CORETEST execution completed successfully!"
              << NcbiEndl << NcbiEndl << NcbiEndl;

@@ -878,12 +878,15 @@ BEGIN_NCBI_SCOPE
 /// Non constant version with ability to erase current element, if container permits.
 /// Use only on containers, for which erase do not ruin other iterators into the container
 /// e.g., map, list, but NOT vector.
+/// See also VECTOR_ERASE
 #define ERASE_ITERATE(Type, Var, Cont) \
-    for ( Type::iterator NCBI_NAME2(Var,_next) = (Cont).begin(), \
-          Var = NCBI_NAME2(Var,_next) != (Cont).end() ? NCBI_NAME2(Var,_next)++ : (Cont).end(); \
-          NCBI_NAME2(Var,_next) != (Cont).end(); \
-          Var = NCBI_NAME2(Var,_next) != (Cont).end() ? NCBI_NAME2(Var,_next)++ : (Cont).end())
-
+    for ( Type::iterator Var, NCBI_NAME2(Var,_next) = (Cont).begin();   \
+          (Var = NCBI_NAME2(Var,_next)) != (Cont).end() &&              \
+              (++NCBI_NAME2(Var,_next), true); )
+/// Use this macro inside body of ERASE_ITERATE cycle to erase from
+/// vector-like container. Plain erase() call would invalidate Var_next
+/// iterator and would make the cycle controlling code to fail.
+#define VECTOR_ERASE(Var, Cont) (NCBI_NAME2(Var,_next) = (Cont).erase(Var))
 
 /// ITERATE macro to reverse sequence through container elements.
 #define REVERSE_ITERATE(Type, Var, Cont) \
