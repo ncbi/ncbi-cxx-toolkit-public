@@ -1280,6 +1280,10 @@ void CSemaphore::Post(unsigned int count)
 
 
 
+IRWLockHolder_Factory::~IRWLockHolder_Factory(void)
+{}
+
+
 class CRWLockHolder_BaseFactory : public IRWLockHolder_Factory
 {
 public:

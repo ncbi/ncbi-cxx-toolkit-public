@@ -1008,6 +1008,8 @@ typedef CRef<CRWLockHolder> TRWLockHolderRef;
 class NCBI_XNCBI_EXPORT IRWLockHolder_Factory
 {
 public:
+    virtual ~IRWLockHolder_Factory(void);
+
     /// Method to be called only inside CYieldingRWLock
     virtual CRWLockHolder* CreateLockHolder(CYieldingRWLock* lock,
                                             ERWLockType      typ) = 0;
