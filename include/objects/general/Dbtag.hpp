@@ -102,6 +102,7 @@ public:
         eDbtagType_InterimID,
         eDbtagType_Interpro,
         eDbtagType_JCM,
+        eDbtagType_JGIDB,
         eDbtagType_LocusID,
         eDbtagType_MGD,
         eDbtagType_MGI,
