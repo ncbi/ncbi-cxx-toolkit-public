@@ -1865,9 +1865,14 @@ tds5_process_result(TDSSOCKET * tds)
         /* column name */
         colnamelen = tds_get_byte(tds);
         if (colnamelen != 0) {
-            tds_get_string(tds, colnamelen, curcol->column_name, sizeof(curcol->column_name) - 1);
-            curcol->column_name[colnamelen] = '\0';
-            curcol->column_namelen = colnamelen;
+            if (curcol->column_namelen == 0) {
+                tds_get_string(tds, colnamelen, curcol->column_name, sizeof(curcol->column_name) - 1);
+                curcol->column_name[colnamelen] = '\0';
+                curcol->column_namelen = colnamelen;
+            }
+            else {
+                tds_get_n(tds, NULL, colnamelen);
+            }
         }
         /*
         if (curcol->table_column_name)
