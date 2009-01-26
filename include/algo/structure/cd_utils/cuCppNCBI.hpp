@@ -35,8 +35,10 @@
 #ifndef CU_CPPNCBI_HPP
 #define CU_CPPNCBI_HPP
 
-#pragma warning (disable : 4786 )
-#pragma warning (disable : 4018 )
+#ifdef _MSC_VER
+#pragma warning (disable : 4786 )  // disable warning about debug info truncation
+#pragma warning (disable : 4018 )  // disable signed/unsigned mismatch in MSVC
+#endif
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiargs.hpp>
