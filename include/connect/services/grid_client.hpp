@@ -350,8 +350,6 @@ public:
 
     NCBI_EXCEPTION_DEFAULT(CGridClientException, CException);
 };
-// Correct spelling
-#define CGridJobSubmiter CGridJobSubmitter
 
 /////////////////////////////////////////////////////////////////////////////
 
