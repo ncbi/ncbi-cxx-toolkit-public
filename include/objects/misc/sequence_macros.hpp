@@ -1145,7 +1145,7 @@ ITEM_HAS (SEQTABLE_ON_SEQANNOT, Var)
 #define ANNOTDESC_ON_SEQANNOT_Type      CSeq_annot::TDesc::Tdata
 #define ANNOTDESC_ON_SEQANNOT_Test(Var) (Var).IsSetDesc() && (Var).GetDesc().IsSet()
 #define ANNOTDESC_ON_SEQANNOT_Get(Var)  (Var).GetDesc().Get()
-#define ANNOTDESC_ON_SEQANNOT_Set(Var)  (Var).SetDesc()
+#define ANNOTDESC_ON_SEQANNOT_Set(Var)  (Var).SetDesc().Set()
 
 /// IF_SEQANNOT_HAS_ANNOTDESC
 
