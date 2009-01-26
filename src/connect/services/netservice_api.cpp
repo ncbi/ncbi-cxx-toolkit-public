@@ -74,7 +74,7 @@ CNetServer CNetServerGroup::GetServer(int index)
 SNetServiceImpl::SNetServiceImpl(
     const std::string& service_name,
     const std::string& client_name) :
-    m_ServiceName(service_name),
+    m_ServiceDiscovery(new CNetServiceDiscovery(service_name)),
     m_IsLoadBalanced(false),
     m_DiscoverLowPriorityServers(eOff),
     m_Timeout(s_GetDefaultCommTimeout()),
@@ -107,7 +107,7 @@ const string& CNetService::GetClientName() const
 
 const string& CNetService::GetServiceName() const
 {
-    return m_Impl->m_ServiceName;
+    return m_Impl->m_ServiceDiscovery->GetServiceName();
 }
 
 bool CNetService::IsLoadBalanced() const
@@ -189,8 +189,8 @@ CNetServerConnection SNetServiceImpl::GetBestConnection()
     }
 
     NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
-        "Couldn't find any availbale servers for " +
-        m_ServiceName + " service.");
+        "Couldn't find any availbale servers for the " +
+            m_ServiceDiscovery->GetServiceName() + " service.");
 }
 
 CNetServerConnection CNetService::GetBestConnection()
@@ -273,7 +273,7 @@ void SNetServiceImpl::DiscoverServers(TDiscoveredServers& servers)
         int try_count = 0;
         for (;;) {
             try {
-                QueryLoadBalancer(m_ServiceName, m_Servers,
+                m_ServiceDiscovery->QueryLoadBalancer(m_Servers,
                     m_DiscoverLowPriorityServers == eOn);
                 break;
             } catch (CNetSrvConnException& ex) {

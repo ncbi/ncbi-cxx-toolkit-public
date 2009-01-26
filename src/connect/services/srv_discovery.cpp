@@ -33,35 +33,57 @@
 
 #include <ncbi_pch.hpp>
 
+#include "../ncbi_lbsmd.h"
+#include "../ncbi_servicep.h"
+
 #include <connect/services/srv_discovery.hpp>
 #include <connect/services/srv_connections_expt.hpp>
-
-#include <connect/ncbi_connutil.h>
-#include <connect/ncbi_service.h>
-#include <connect/ncbi_socket.hpp>
 
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
 
-void QueryLoadBalancer(
-    const std::string& service,
-    TDiscoveredServers& servers,
+CNetServiceDiscovery::~CNetServiceDiscovery()
+{
+    if (m_LBSMAffinityValue != NULL)
+        free((void*) m_LBSMAffinityValue);
+}
+
+void CNetServiceDiscovery::Init(CConfig& conf, const string& driver_name)
+{
+    try {
+        m_LBSMAffinityName = conf.GetString(driver_name,
+            "use_lbsm_affinity", CConfig::eErr_Throw);
+
+        // Get affinity value from the local LBSM configuration file.
+        m_LBSMAffinityValue = LBSMD_GetHostParameter(SERV_LOCALHOST,
+            m_LBSMAffinityName.c_str());
+    }
+    catch (CConfigException& e) {
+        if (e.GetErrCode() != CConfigException::eParameterMissing)
+            throw;
+    }
+}
+
+void CNetServiceDiscovery::QueryLoadBalancer(TDiscoveredServers& servers,
     bool include_suppressed)
 {
     SConnNetInfo* net_info =
-        ConnNetInfo_Create(service.c_str());
+        ConnNetInfo_Create(m_ServiceName.c_str());
 
-    SERV_ITER srv_it = SERV_Open(service.c_str(),
-        include_suppressed ? fSERV_Any | fSERV_IncludeSuppressed : fSERV_Any,
-            0, net_info);
+    SERV_ITER srv_it = SERV_OpenP(m_ServiceName.c_str(),
+        include_suppressed ?
+            fSERV_Standalone | fSERV_IncludeSuppressed :
+            fSERV_Standalone,
+        SERV_LOCALHOST, 0, 0.0, net_info, NULL, 0, 0 /*false*/,
+        m_LBSMAffinityName.c_str(), m_LBSMAffinityValue);
 
     ConnNetInfo_Destroy(net_info);
 
     if (srv_it == 0) {
         NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
-            "Load balancer cannot find service name " + service + ".");
+            "Load balancer cannot find service name " + m_ServiceName + ".");
     }
 
     const SSERV_Info* sinfo;

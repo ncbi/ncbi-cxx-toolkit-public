@@ -42,10 +42,41 @@ BEGIN_NCBI_SCOPE
 typedef std::pair<std::string, unsigned short> TServerAddress;
 typedef std::vector<TServerAddress> TDiscoveredServers;
 
-NCBI_XCONNECT_EXPORT void QueryLoadBalancer(
-    const std::string& service,
-    TDiscoveredServers& servers,
-    bool include_suppressed);
+class CConfig;
+
+// LBSMD-based service discovery.
+class CNetServiceDiscovery : public CNetObject
+{
+public:
+    CNetServiceDiscovery(const std::string& service_name);
+
+    virtual ~CNetServiceDiscovery();
+
+    void Init(CConfig& conf, const string& driver_name);
+
+    void QueryLoadBalancer(TDiscoveredServers& servers,
+        bool include_suppressed);
+
+    const string& GetServiceName() const;
+
+private:
+    std::string m_ServiceName;
+    std::string m_LBSMAffinityName;
+    const char* m_LBSMAffinityValue;
+};
+
+inline CNetServiceDiscovery::CNetServiceDiscovery(
+        const std::string& service_name) :
+    m_ServiceName(service_name),
+    m_LBSMAffinityValue(NULL)
+{
+}
+
+inline const string& CNetServiceDiscovery::GetServiceName() const
+{
+    return m_ServiceName;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -56,8 +87,6 @@ public:
     virtual void OnResourceRequested() = 0;
     virtual void Reset() = 0;
 };
-
-class CConfig;
 
 NCBI_XCONNECT_EXPORT CNetObjectRef<IRebalanceStrategy>
     CreateSimpleRebalanceStrategy(CConfig& conf, const string& driver_name);

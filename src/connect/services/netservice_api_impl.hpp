@@ -108,7 +108,7 @@ struct SNetServiceImpl : public CNetObject
         return func;
     }
 
-    string m_ServiceName;
+    CNetObjectRef<CNetServiceDiscovery> m_ServiceDiscovery;
     string m_ClientName;
 
     CNetObjectRef<INetServerConnectionListener> m_Listener;

@@ -476,6 +476,9 @@ public:
                     drv.reset(new SNetScheduleAPIImpl(service,
                         client_name, queue_name));
 
+                    drv->m_Service->m_ServiceDiscovery->
+                        Init(conf, m_DriverName);
+
                     STimeout tm = {communication_timeout, 0};
 
                     drv->m_Service.SetCommunicationTimeout(tm);

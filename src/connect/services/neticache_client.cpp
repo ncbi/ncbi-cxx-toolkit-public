@@ -90,8 +90,8 @@ CNetICacheClient::CNetICacheClient(
     const string& cache_name,
     const string& client_name) :
         CNetServiceClient(client_name),
-        m_LBServiceName(lb_service_name),
         m_RebalanceStrategy(CreateDefaultRebalanceStrategy()),
+        m_ServiceDiscovery(new CNetServiceDiscovery(lb_service_name)),
         m_CacheName(cache_name),
         m_Throttler(5000, CTimeSpan(60,0))
 {
@@ -104,18 +104,18 @@ void CNetICacheClient::SetConnectionParams(const string&  host,
 {
     m_Host = host;
     m_Port = port;
-    m_LBServiceName.erase();
+    m_ServiceDiscovery = NULL;
     m_CacheName = cache_name;
     m_ClientName = client_name;
 }
 
 void CNetICacheClient::SetConnectionParams(
-    const string& lb_service_name,
+    CNetServiceDiscovery* service_discovery,
     IRebalanceStrategy* rebalance_strategy,
     const string& cache_name,
     const string& client_name)
 {
-    m_LBServiceName = lb_service_name;
+    m_ServiceDiscovery = service_discovery;
     m_RebalanceStrategy = rebalance_strategy;
     m_CacheName = cache_name;
     m_ClientName = client_name;
@@ -163,7 +163,7 @@ bool CNetICacheClient::CheckConnect()
         // check if netcache session is in OK state
         // we have to do that, because if client program failed to
         // read the whole BLOB (deserialization error?) the network protocol
-        // stucks in an incorrect state (needs to be closed)
+        // gets stuck in an incorrect state (needs to be closed)
         try {
             WriteStr("A?", 3);
             WaitForServer();
@@ -183,11 +183,11 @@ bool CNetICacheClient::CheckConnect()
 
         return false; // we are connected, nothing to do
     }
-    if (!m_LBServiceName.empty()) {
+    if (m_ServiceDiscovery) {
         m_RebalanceStrategy->OnResourceRequested();
         if (m_RebalanceStrategy->NeedRebalance() || m_Host.empty()) {
             TDiscoveredServers servers;
-            QueryLoadBalancer(m_LBServiceName, servers, false);
+            m_ServiceDiscovery->QueryLoadBalancer(servers, false);
             if (servers.empty())
                 m_Host.erase();
             else {
@@ -1042,7 +1042,12 @@ ICache* CNetICacheCF::CreateInstance(
     if (!service_name.empty()) {
         CConfig conf(params);
 
-        drv->SetConnectionParams(service_name,
+        CNetObjectRef<CNetServiceDiscovery> service_discovery(
+            new CNetServiceDiscovery(service_name));
+
+        service_discovery->Init(conf, driver);
+
+        drv->SetConnectionParams(service_discovery,
             CreateSimpleRebalanceStrategy(conf, driver),
                 cache_name, client_name);
     } else {

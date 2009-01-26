@@ -492,6 +492,8 @@ public:
                                                               CConfig::eErr_NoThrow, 12);
                 drv = new SNetCacheAPIImpl(service, client_name);
 
+                drv->m_Service->m_ServiceDiscovery->Init(conf, m_DriverName);
+
                 STimeout tm = { communication_timeout, 0 };
                 drv->m_Service.SetCommunicationTimeout(tm);
 

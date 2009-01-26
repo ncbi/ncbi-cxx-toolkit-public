@@ -80,7 +80,7 @@ public:
                              const string&  cache_name,
                              const string&  client_name);
 
-    void SetConnectionParams(const string& lb_service_name,
+    void SetConnectionParams(CNetServiceDiscovery* service_discovery,
                              IRebalanceStrategy* rebalance_strategy,
                              const string& cache_name,
                              const string& client_name);
@@ -183,8 +183,8 @@ private:
     CNetICacheClient& operator=(const CNetICacheClient&);
 
 protected:
-    std::string m_LBServiceName;
     CNetObjectRef<IRebalanceStrategy> m_RebalanceStrategy;
+    CNetObjectRef<CNetServiceDiscovery> m_ServiceDiscovery;
 
     string              m_CacheName;
     size_t              m_BlobSize;
