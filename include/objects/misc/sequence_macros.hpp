@@ -464,16 +464,6 @@ VISIT_WITHIN_SEQSET (CSeq_graph, Itr, Var)
 /////////////////////////////////////////////////////////////////////////////
 
 
-/// NCBI_LIST_ERASE_ITERATE iterates lists allowing deletion of any object
-
-#define NCBI_LIST_ERASE_ITERATE(Type, Var, Cont) \
-for ( Type::iterator NCBI_NAME2(Var,_next) = (Cont).begin(), \
-      Var = NCBI_NAME2(Var,_next) != (Cont).end() ? \
-      NCBI_NAME2(Var,_next)++ : (Cont).end(); \
-      Var != (Cont).end(); \
-      Var = NCBI_NAME2(Var,_next) != (Cont).end() ? \
-      NCBI_NAME2(Var,_next)++ : (Cont).end())
-
 /// NCBI_CS_ITERATE base macro tests to see if loop should be entered
 // If okay, calls ITERATE for linear STL iteration
 
@@ -481,10 +471,10 @@ for ( Type::iterator NCBI_NAME2(Var,_next) = (Cont).begin(), \
 if (! (Test)) {} else ITERATE (Type, Var, Cont)
 
 /// NCBI_NC_ITERATE base macro tests to see if loop should be entered
-// If okay, calls NCBI_LIST_ERASE_ITERATE for linear STL iteration
+// If okay, calls ERASE_ITERATE for linear STL iteration
 
 #define NCBI_NC_ITERATE(Test, Type, Var, Cont) \
-if (! (Test)) {} else NCBI_LIST_ERASE_ITERATE (Type, Var, Cont)
+if (! (Test)) {} else ERASE_ITERATE (Type, Var, Cont)
 
 /// NCBI_SWITCH base macro tests to see if switch should be performed
 // If okay, calls switch statement
@@ -508,6 +498,10 @@ NCBI_NC_ITERATE (Base##_Test(Var), Base##_Type, Itr, Base##_Set(Var))
 #define ERASE_ITEM(Base, Itr, Var) \
 (Base##_Set(Var).erase(Itr))
 
+/// VECTOR_ERASE_ITEM base macro
+
+#define VECTOR_ERASE_ITEM(Base, Itr, Var) \
+(VECTOR_ERASE (Itr, Base##_Set(Var)))
 
 /// IF_HAS base macro
 
@@ -1556,7 +1550,7 @@ EDIT_EACH (DBXREF_ON_ORGREF, Itr, Var)
 /// ERASE_DBXREF_ON_ORGREF
 
 #define ERASE_DBXREF_ON_ORGREF(Itr, Var) \
-ERASE_ITEM (DBXREF_ON_ORGREF, Itr, Var)
+VECTOR_ERASE_ITEM (DBXREF_ON_ORGREF, Itr, Var)
 
 
 /// MOD_ON_ORGREF macros
@@ -2040,7 +2034,7 @@ EDIT_EACH (GBQUAL_ON_SEQFEAT, Itr, Var)
 /// ERASE_GBQUAL_ON_SEQFEAT
 
 #define ERASE_GBQUAL_ON_SEQFEAT(Itr, Var) \
-ERASE_ITEM (GBQUAL_ON_SEQFEAT, Itr, Var)
+VECTOR_ERASE_ITEM (GBQUAL_ON_SEQFEAT, Itr, Var)
 
 /// IF_FEATURE_HAS_GBQUAL
 /// FEATURE_HAS_GBQUAL
@@ -2085,7 +2079,7 @@ EDIT_EACH (SEQFEATXREF_ON_SEQFEAT, Itr, Var)
 /// ERASE_SEQFEATXREF_ON_SEQFEAT
 
 #define ERASE_SEQFEATXREF_ON_SEQFEAT(Itr, Var) \
-ERASE_ITEM (SEQFEATXREF_ON_SEQFEAT, Itr, Var)
+VECTOR_ERASE_ITEM (SEQFEATXREF_ON_SEQFEAT, Itr, Var)
 
 /// IF_FEATURE_HAS_SEQFEATXREF
 /// FEATURE_HAS_SEQFEATXREF
@@ -2130,7 +2124,7 @@ EDIT_EACH (DBXREF_ON_SEQFEAT, Itr, Var)
 /// ERASE_DBXREF_ON_SEQFEAT
 
 #define ERASE_DBXREF_ON_SEQFEAT(Itr, Var) \
-ERASE_ITEM (DBXREF_ON_SEQFEAT, Itr, Var)
+VECTOR_ERASE_ITEM (DBXREF_ON_SEQFEAT, Itr, Var)
 
 /// IF_FEATURE_HAS_DBXREF
 /// FEATURE_HAS_DBXREF
@@ -2268,7 +2262,7 @@ EDIT_EACH (DBXREF_ON_GENEREF, Itr, Var)
 /// ERASE_DBXREF_ON_GENEREF
 
 #define ERASE_DBXREF_ON_GENEREF(Itr, Var) \
-ERASE_ITEM (DBXREF_ON_GENEREF, Itr, Var)
+VECTOR_ERASE_ITEM (DBXREF_ON_GENEREF, Itr, Var)
 
 /// IF_GENE_HAS_DBXREF
 /// GENE_HAS_DBXREF
@@ -2485,7 +2479,7 @@ EDIT_EACH (DBXREF_ON_PROTREF, Itr, Var)
 /// ERASE_DBXREF_ON_PROTREF
 
 #define ERASE_DBXREF_ON_PROTREF(Itr, Var) \
-ERASE_ITEM (DBXREF_ON_PROTREF, Itr, Var)
+VECTOR_ERASE_ITEM (DBXREF_ON_PROTREF, Itr, Var)
 
 /// IF_PROT_HAS_DBXREF
 /// PROT_HAS_DBXREF
