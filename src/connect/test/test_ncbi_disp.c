@@ -45,9 +45,11 @@
  */
 int main(int argc, const char* argv[])
 {
+    static const char kParameter[] = "test_parameter";
     const char* service = argc > 1 ? argv[1] : "bounce";
     SConnNetInfo* net_info;
     const SSERV_Info* info;
+    const char* value;
     int n_found = 0;
     SERV_ITER iter;
 
@@ -75,6 +77,14 @@ int main(int argc, const char* argv[])
             strcasecmp(argv[2],"all")  != 0)
             CORE_LOGF(eLOG_Fatal, ("Unknown option `%s'", argv[2]));
     }
+
+    value = LBSMD_GetHostParameter(SERV_LOCALHOST, kParameter);
+    CORE_LOGF(eLOG_Note, ("Querying host parameter `%s': %s%s%s", kParameter,
+                          "`" + !value,
+                          value ? value : "Not found",
+                          "'" + !value));
+    if (value)
+        free((void*) value);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
