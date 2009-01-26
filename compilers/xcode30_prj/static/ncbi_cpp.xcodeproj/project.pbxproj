@@ -301,7 +301,7 @@
         <key>shellPath</key>
         <string>/bin/sh</string>
         <key>shellScript</key>
-        <string>UtilityProjects/configure_ncbi_cpp.sh</string>
+        <string>export PTB_PATH=../static/bin/ReleaseDLL&#xa;export SLN_PATH=ncbi_cpp&#xa;export TREE_ROOT=../../../&#xa;export BUILD_TREE_ROOT=../&#xa;UtilityProjects/configure_ncbi_cpp.sh</string>
       </dict>
       <key>CONFIGURE_target</key>
       <dict>
