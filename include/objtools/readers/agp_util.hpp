@@ -380,6 +380,182 @@ protected:
 };
 
 
+/// Print errors and related AGP lines;
+/// supress higly repetitive messages, the ones that user requested to suppress, etc.
+class NCBI_XOBJREAD_EXPORT CAgpErrEx : public CAgpErr
+{
+public:
+    // When adding entries to this enum, also update msg_ex[]
+    enum {
+        G_InvalidCompId=41,
+        G_NotInGenbank,
+        G_NeedVersion,
+        G_CompEndGtLength,
+        G_DataError,
+
+        G_TaxError, // G_NoTaxid, G_NoOrgRef, G_AboveSpeciesLevel - all very rare
+
+        G_Last,
+        G_First = G_InvalidCompId,
+
+
+        CODE_First=1, CODE_Last=G_Last
+    };
+
+    // Not needed if you use CAgpReader: it already dioes not report a 2-line error after a bad line.
+    enum EAppliesToEx{
+        fAtSkipAfterBad=2 // Suppress this error if the previous line was invalid
+    };
+
+    static const char* GetMsgEx(int code);
+    static string GetPrintableCode(int code); // Returns a string like e01 w12
+    static void PrintAllMessages(CNcbiOstream& out);
+
+
+    // The max number of times to print a given error message.
+    int m_MaxRepeat;
+    // If this turns true, we can inform user about -limit 0 option
+    bool m_MaxRepeatTopped;
+
+    // Warnings + errors skipped,
+    // either because of m_MaxRepeat or MustSkip().
+    int m_msg_skipped;
+    int m_lines_skipped;
+
+
+    // Print the source line along with filename and line number.
+    static void PrintLine   (CNcbiOstream& ostr,
+        const string& filename, int linenum, const string& content);
+
+    // Print the message by code, prepended by \tERROR: or \tWARNING:
+    // details: append at the end of the message
+    // substX : substitute it instead of the word "X" in msg[code]
+    static void PrintMessage(CNcbiOstream& ostr, int code,
+        const string& details=NcbiEmptyString);
+
+    // Construct a readable message on total error & warning counts
+    static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count=0);
+
+    CAgpErrEx();
+
+    // Can skip unwanted messages, record a message for printing (CAgpErr::fAtThisLine),
+    // print it immediately if it applies to the previous line (CAgpErr::fAtPrevLine),
+    // print the previous line and record the message
+    // if it applies to the 2 last lines (CAgpErr::fAtPrevLine|CAgpErr::fAtThisLine).
+    //
+    // The resulting output format works well when:
+    // 1)there are multiple errors in one line:
+    //   file:linenum:agp content
+    //        MSG1
+    //        MSG2
+    // 2)there is an error that involves 2 lines:
+    //   file1:linenum1:agp content1
+    //   file2:linenum2:agp content2
+    //        MSG
+    // The format is still acceptable if both 1 and 2 are true.
+    //
+    // When the message applies to 2 non-consequitive lines
+    // (e.g. intersecting component spans), we do not print the first line involved.
+
+    // we override Msg() that comes from CAgpErr
+    virtual void Msg(int code, const string& details, int appliesTo=fAtThisLine);
+    virtual void Msg(int code, int appliesTo=fAtThisLine)
+    {
+        Msg(code, NcbiEmptyString, appliesTo);
+    }
+
+    // Print any accumulated messages.
+    // invalid_line=true: for the next line, suppress
+    //   CAgpErrEx::CAgpErr::fAtThisLine|CAgpErrEx::CAgpErr::fAtPrevLine messages
+    void LineDone(const string& s, int line_num, bool invalid_line=false);
+
+    // No need to call this function when reading from STDIN,
+    // or when reading only one file. For multiple files,
+    // invoke with the next filename prior to reading it.
+    void StartFile(const string& s);
+
+    // 'fgrep' errors out, or keep only the given errors (skip_other=true)
+    // Can include/exclude by code (see GetPrintableCode()), or by substring.
+    // Return values:
+    //   ""                          no matches found for str
+    //   string beginning with "  "  one or more messages that matched
+    //   else                        printable [error] message
+    // Note: call SkipMsg("all") before SkipMsg(smth, true)
+    string SkipMsg(const string& str, bool skip_other=false);
+    void SkipMsg(int code, bool skip_other=false)
+    {
+        if(code>=E_First && code<CODE_Last) m_MustSkip[code] = !skip_other;
+    }
+
+    bool MustSkip(int code);
+
+    // 1 argument:
+    //   E_Last: count errors
+    //   W_Last: count warnings
+    //   G_Last: count GenBank errors
+    //   other: errors/warnings of one given type
+    // 2 arguments: range of int-s
+    int CountTotals(int from, int to=E_First);
+
+    // Print individual error counts (important if we skipped some errors)
+    void PrintMessageCounts(CNcbiOstream& ostr, int from, int to=E_First);
+
+private:
+    typedef const char* TStr;
+    static const TStr msg_ex[];
+
+    // Count errors of each type, including skipped ones.
+    int m_MsgCount[CODE_Last];
+    bool m_MustSkip[CODE_Last];
+
+    //string m_filename_prev;
+    int m_filenum_prev;
+    // Not m_line_num-1 when the previous line:
+    // - was in the different file;
+    // - was a skipped comment line.
+    string m_line_prev;
+    int  m_line_num_prev;
+    bool m_prev_printed;    // true: previous line was already printed
+                                                    // (probably had another error);
+                                                    // no need to-reprint "fname:linenum:content"
+    bool m_two_lines_involved; // true: do not print "\n" after the previous line
+    bool m_invalid_prev;       // true: suppress errors concerning the previous line
+
+    // a stream to Accumulate messages for the current line.
+    // (We immediately print messages that apply only to the previous line.)
+    string m_filename;
+    int m_line_num;
+
+    // For reporting filenames of the lines we passed a long time ago
+    // (intersecting component spans, duplicate objects, etc)
+    vector<string> m_InputFiles;
+
+public:
+    // m_messages is public because:
+    // Genbank validator may stow away the syntax errors for the current line
+    // while it processes a batch of preceding lines without syntax errors;
+    // afterwards, it can put the stowed m_messages back, and print them in the
+    // correct place, following any Genbank validation errors for the batch.
+    //   CNcbiOstrstream* tmp = agpErr.m_messages;
+    //   agpErr.m_messages =  new CNcbiOstrstream();
+    //   << process a batch of preceding lines >>
+    //   agpErr.m_messages = tmp;
+    //   agpErr.LineDone(line_orig, line_num, true);
+    CNcbiOstrstream* m_messages;
+
+    // 0: reading from STDIN or from a single file
+    int GetFileNum()
+    {
+        return m_InputFiles.size();
+    }
+
+    const string& GetFile(int num)
+    {
+        return m_InputFiles[num-1];
+    }
+};
+
+
 class CPatternStats; // internal for CAccPatternCounter
 /// Accession naming patterns; find ranges for consequtive digits.
 /// Sample input : AC123.1 AC456.1 AC789.1 NC8967.4 NC8967.5
