@@ -282,6 +282,7 @@ version  1 # of file format
 2+6  GJ  gb_tpa_con
 2+6  GK  gb_tpa_nuc # fallback
 2+6  GK  gb_tpa_chromosome
+2+6  GL  gb_con
 2+6  GM  embl_patent
 2+6  GN  embl_patent
 2+6  ??  unreserved_nuc
