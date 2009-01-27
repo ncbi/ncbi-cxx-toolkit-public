@@ -46,13 +46,6 @@
 BEGIN_NCBI_SCOPE
 
 
-///////////////////////////////////////////////////////////////////////////////
-///  CSparseAln - an alignment based on CSparse_seg and
-///  CAlingRangeCollection classes rather than on CDense_seg.
-/// Assumptions:
-///     master is always specified in CSparse-seg and has a Seq-id
-///     we display it always anchored
-///     chaning anchor is not supported
 class NCBI_XALNMGR_EXPORT CSparseAln : public CObject, public IAlnExplorer
 {
 public:
