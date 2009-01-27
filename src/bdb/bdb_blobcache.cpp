@@ -3525,6 +3525,8 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
         // extract batch of blob ids out of the bit-vector
         //
         blob_id_vect.resize(0);
+        blob_batch_vect.resize(0);
+        blob_exp_vect.resize(0);
         for (unsigned i = 0; en.valid() && i < batch_size; ++i) {
             unsigned blob_id = *en;
             blob_id_vect.push_back(blob_id);
@@ -3533,7 +3535,6 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
 
         // Translate IDs to keys
         //
-        blob_batch_vect.resize(0);
         if (blob_id_vect.size()) {
             CStopWatch  sw(CStopWatch::eStart);
             vector<unsigned>::const_iterator it = blob_id_vect.begin();
@@ -3587,7 +3588,6 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
         //
         if (blob_batch_vect.size()) {
             time_t curr = time(0); // initial timepoint
-            blob_exp_vect.resize(0);
             CStopWatch  sw(CStopWatch::eStart);
 
             {{
@@ -4643,6 +4643,7 @@ bool CBDB_Cache::DropBlobWithExpCheck(const string&      key,
             blob_id   = m_CacheAttrDB_RO2->blob_id;
         } else {
             blob_expired = false;
+            blob_id   = m_CacheAttrDB_RO2->blob_id;
         }
 
     }} // m_CARO2_Lock
