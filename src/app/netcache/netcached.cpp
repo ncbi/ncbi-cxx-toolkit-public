@@ -74,7 +74,7 @@ const unsigned int kObjectTimeout = 60 * 60; ///< Default timeout in seconds
 /// General purpose NetCache Mutex
 //DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex);
 
-/// Mutex to guard vector of busy IDs 
+/// Mutex to guard vector of busy IDs
 //DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex_ID);
 
 
@@ -183,6 +183,8 @@ CBlobIdLocker::CBlobIdLocker(void)
 
 CBlobIdLocker::~CBlobIdLocker(void)
 {
+    CFastMutexGuard guard(m_ObjMutex);
+
     ITERATE(TId2LocksMap, it, m_IdLocks) {
         delete it->second;
     }
@@ -220,10 +222,10 @@ CBlobIdLocker::AcquireLock(unsigned int id,
 void
 CBlobIdLocker::OnLockReleased(CYieldingRWLock* lock)
 {
+    CFastMutexGuard guard(m_ObjMutex);
+
     if (lock->IsLocked())
         return;
-
-    CFastMutexGuard guard(m_ObjMutex);
 
     m_IdLocks.erase(static_cast<CBlobIdRWLock*>(lock)->GetId());
     m_FreeLocks.push_back(lock);
@@ -240,7 +242,7 @@ CNetCacheServer::CNetCacheServer(unsigned int     port,
                                  CBDB_Cache*      cache,
                                  unsigned         network_timeout,
                                  bool             is_log,
-                                 const IRegistry& reg) 
+                                 const IRegistry& reg)
 :   m_Port(port),
     m_Cache(cache),
     m_Shutdown(false),
@@ -295,7 +297,7 @@ void CNetCacheServer::SetShutdownFlag(int sig) {
 void CNetCacheServer::StartSessionManagement(
                                 unsigned session_shutdown_timeout)
 {
-    LOG_POST(Info << "Starting session management thread. timeout=" 
+    LOG_POST(Info << "Starting session management thread. timeout="
                   << session_shutdown_timeout);
     m_SessionMngThread.Reset(
         new CSessionManagementThread(*this,
@@ -374,10 +376,10 @@ void CNetCacheServer::MountICache(CConfig&                conf,
         string section_name("icache_");
         section_name.append(cache_name);
 
-        const TPluginManagerParamTree* bdb_tree = 
+        const TPluginManagerParamTree* bdb_tree =
             param_tree->FindSubNode(section_name);
         if (!bdb_tree) {
-            ERR_POST("Configuration error. Cannot find registry section " 
+            ERR_POST("Configuration error. Cannot find registry section "
                      << section_name);
             continue;
         }
@@ -396,10 +398,10 @@ void CNetCacheServer::MountICache(CConfig&                conf,
                 bdb_cache->SetMonitor(&m_Monitor);
             }
 
-        } 
+        }
         catch (exception& ex)
         {
-            ERR_POST("Error mounting local cache:" << cache_name << 
+            ERR_POST("Error mounting local cache:" << cache_name <<
                      ": " << ex.what()
                     );
             throw;
@@ -587,10 +589,10 @@ void CNetCacheServer::x_GetICacheNames(TLocalCacheMap* cache_map)
 ///////////////////////////////////////////////////////////////////////
 
 /// @internal
-extern "C" 
+extern "C"
 void Threaded_Server_SignalHandler(int sig)
 {
-    if (s_netcache_server && 
+    if (s_netcache_server &&
         (!s_netcache_server->ShutdownRequested()) ) {
         s_netcache_server->SetShutdownFlag(sig);
     }
@@ -625,7 +627,7 @@ void CNetCacheDApp::Init(void)
     SetDiagPostFlag(eDPF_DateTime);
 
     // Setup command line arguments and parameters
-        
+
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -656,7 +658,7 @@ int CNetCacheDApp::Run(void)
         const CNcbiRegistry& reg = GetConfig();
 
         CConfig conf(reg);
-        
+
 #if defined(NCBI_OS_UNIX)
         bool is_daemon =
             reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
@@ -667,12 +669,12 @@ int CNetCacheDApp::Run(void)
                 return 0;
             }
         }
-        
+
         // attempt to get server gracefully shutdown on signal
         signal(SIGINT, Threaded_Server_SignalHandler);
         signal(SIGTERM, Threaded_Server_SignalHandler);
 #endif
-        int port = 
+        int port =
             reg.GetInt("server", "port", 9000, 0, CNcbiRegistry::eReturn);
         bool is_port_free = true;
 
@@ -693,7 +695,7 @@ int CNetCacheDApp::Run(void)
         // Mount BDB Cache
 
         const CConfig::TParamTree* param_tree = conf.GetTree();
-        const TPluginManagerParamTree* bdb_tree = 
+        const TPluginManagerParamTree* bdb_tree =
             param_tree->FindSubNode(kBDBCacheDriverName);
 
 
@@ -705,8 +707,8 @@ int CNetCacheDApp::Run(void)
         if (bdb_tree) {
 
             CConfig bdb_conf((CConfig::TParamTree*)bdb_tree, eNoOwnership);
-            const string& db_path = 
-                bdb_conf.GetString("netcached", "path", 
+            const string& db_path =
+                bdb_conf.GetString("netcached", "path",
                                     CConfig::eErr_Throw, kEmptyStr);
             bool reinit =
             reg.GetBool("server", "reinit", false, 0, CNcbiRegistry::eReturn);
@@ -716,21 +718,21 @@ int CNetCacheDApp::Run(void)
                 CDir dir(db_path);
                 dir.Remove();
             }
-            
+
 
             LOG_POST("Initializing BDB cache");
             ICache* ic;
 
             try {
-                ic = 
+                ic =
                     pm_cache.CreateInstance(
                         kBDBCacheDriverName,
                         CNetCacheServer::TCachePM::GetDefaultDrvVers(),
                         bdb_tree);
-            } 
+            }
             catch (CBDB_Exception& ex)
             {
-                bool drop_db = reg.GetBool("server", "drop_db", 
+                bool drop_db = reg.GetBool("server", "drop_db",
                                            true, 0, CNcbiRegistry::eReturn);
                 if (drop_db) {
                     ERR_POST("Error initializing BDB ICache interface: "
@@ -740,7 +742,7 @@ int CNetCacheDApp::Run(void)
                     CDir dir(db_path);
                     dir.Remove();
 
-                    ic = 
+                    ic =
                       pm_cache.CreateInstance(
                         kBDBCacheDriverName,
                         CNetCacheServer::TCachePM::GetDefaultDrvVers(),
@@ -773,7 +775,7 @@ int CNetCacheDApp::Run(void)
         unsigned network_timeout =
             reg.GetInt("server", "network_timeout", 10, 0, CNcbiRegistry::eReturn);
         if (network_timeout == 0) {
-            ERR_POST(Warning << 
+            ERR_POST(Warning <<
                 "INI file sets 0 sec. network timeout. Assume 10 seconds.");
             network_timeout =  10;
         } else {
@@ -828,12 +830,12 @@ int CNetCacheDApp::Run(void)
         // Start session management
 
         {{
-            bool session_mng = 
-                reg.GetBool("server", "session_mng", 
+            bool session_mng =
+                reg.GetBool("server", "session_mng",
                             false, 0, IRegistry::eReturn);
             if (session_mng) {
                 unsigned session_shutdown_timeout =
-                    reg.GetInt("server", "session_shutdown_timeout", 
+                    reg.GetInt("server", "session_shutdown_timeout",
                                60, 0, IRegistry::eReturn);
 
                 server->StartSessionManagement(session_shutdown_timeout);
