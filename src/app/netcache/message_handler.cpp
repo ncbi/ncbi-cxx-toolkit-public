@@ -250,7 +250,8 @@ CNetCache_MessageHandler::CNetCache_MessageHandler(CNetCacheServer* server)
       m_Parser(s_CommandMap),
       m_PutOK(false),
       m_PutID(false),
-      m_SizeKnown(false)
+      m_SizeKnown(false),
+      m_BlobSize(0)
 {
     m_WriteBuff = static_cast<char*>(malloc(kNetworkBufferSize));
     m_WriteBufSize = kNetworkBufferSize;
@@ -628,7 +629,7 @@ CNetCache_MessageHandler::x_ProcessWriteAndReport(unsigned      blob_size,
 }
 
 void
-CNetCache_MessageHandler::x_PrepareMsg(const string&  prefix, 
+CNetCache_MessageHandler::x_PrepareMsg(const string&  prefix,
                                        const string&  msg)
 {
     string err_msg(prefix);
@@ -641,7 +642,7 @@ CNetCache_MessageHandler::x_PrepareMsg(const string&  prefix,
 }
 
 void
-CNetCache_MessageHandler::x_WriteMsg(const string&  prefix, 
+CNetCache_MessageHandler::x_WriteMsg(const string&  prefix,
                                      const string&  msg)
 {
     x_PrepareMsg(prefix, msg);
