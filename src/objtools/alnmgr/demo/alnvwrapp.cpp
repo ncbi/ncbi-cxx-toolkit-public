@@ -86,8 +86,6 @@ class CAlnVwrApp : public CNcbiApplication
     void             View8(int aln_pos);
     void             View9(int row0, int row1);
     void             View10();
-    void             GetSeqPosFromAlnPosDemo();
-    void             GetAlnPosFromSeqPosDemo();
     bool             AddAlnToMix   (const CSeq_align* aln) {
         if (aln->GetSegs().IsDenseg()) {
             aln->GetSegs().GetDenseg().Validate(true);
@@ -363,30 +361,6 @@ void CAlnVwrApp::View10()
         } while (reverse ? --it : ++it);
         NcbiCout << NcbiEndl;
     }
-}
-
-
-//////
-// GetSeqPosFromAlnPos
-void CAlnVwrApp::GetSeqPosFromAlnPosDemo()
-{
-    NcbiCout << "["
-        << m_AV->GetSeqPosFromAlnPos(0, 707, CAlnMap::eForward, false)
-        << "-" 
-        << m_AV->GetSeqPosFromAlnPos(0, 708, (CAlnMap::ESearchDirection)7, false)
-        << "]"
-        << NcbiEndl;
-}
-
-
-void CAlnVwrApp::GetAlnPosFromSeqPosDemo()
-{
-    NcbiCout << "["
-        << m_AV->GetAlnPosFromSeqPos(0, 707, CAlnMap::eLeft, false)
-        << "-" 
-        << m_AV->GetAlnPosFromSeqPos(0, 708, CAlnMap::eRight, false)
-        << "]"
-        << NcbiEndl;
 }
 
 
