@@ -184,7 +184,9 @@ void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conn
     NON_CONST_ITERATE(TData, it, data) {
         SPerConnInfo& info = it->second;
         if (info.type != eListener) ++n_connections;
-        if (info.type == eActiveSocket  ||  info.type == eListener) {
+        if (info.type == eActiveSocket  ||  info.type == eListener
+            ||  info.type == ePreDeferredSocket)
+        {
             continue;
         }
         CServer_Connection* conn = dynamic_cast<CServer_Connection*>(it->first);
