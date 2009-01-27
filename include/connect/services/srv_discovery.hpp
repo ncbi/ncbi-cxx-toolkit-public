@@ -45,7 +45,7 @@ typedef std::vector<TServerAddress> TDiscoveredServers;
 class CConfig;
 
 // LBSMD-based service discovery.
-class CNetServiceDiscovery : public CNetObject
+class NCBI_XCONNECT_EXPORT CNetServiceDiscovery : public CNetObject
 {
 public:
     CNetServiceDiscovery(const std::string& service_name);
