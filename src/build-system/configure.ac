@@ -4758,6 +4758,9 @@ if test "$with_sss" != "no" ; then
       if test -f "$local_sss/../ncbi_ls/asn/login.asn"; then
          NCBI_PACKAGE(LocalNCBILS)
       fi
+      if test -f "$local_sss/../msgmail2/asn/msgmail.asn"; then
+         NCBI_PACKAGE(LocalMSGMAIL2)
+      fi
    else
       with_included_sss=no
    fi
