@@ -67,6 +67,15 @@ public:
     NCBI_EXCEPTION_DEFAULT(CSeqalignException, CException);
 };
 
+#define _SEQALIGN_ASSERT(expr) \
+    do {                                                               \
+        if ( !(expr) ) {                                               \
+            _ASSERT(expr);                                             \
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,          \
+                       string("Assertion failed: ") + #expr);          \
+        }                                                              \
+    } while ( 0 )
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
