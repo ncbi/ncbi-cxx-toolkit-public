@@ -44,6 +44,8 @@
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Packed_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Sparse_seg.hpp>
+#include <objects/seqalign/Sparse_align.hpp>
 #include <objects/seqalign/seqalign_exception.hpp>
 
 #include <objects/seqloc/Seq_point.hpp>
@@ -234,19 +236,20 @@ public:
             break;
         case TSegs::e_Sparse:
             {
-//                 const CSparse_seg::TRows& rows = segs.GetSparse().GetRows();
-//                 for (size_t row = 0;  row < rows.size();  ++row) {
-//                     const CSparse_align& sa = rows[row];
-//                     if (row == 0) {
-//                         id_vec.resize(segs.GetSparce().GetRows().size() + 1);
-//                         id_vec[0].Reset(sa.GetFirst_id());
-//                     } else if (*id_vec[0] != sa.GetFirst_id()) {
-//                         string err("Inconsistent Seq-ids found in row ");
-//                         err += NStr::IntToString(row) + ".";
-//                         NCBI_THROW(CAlnException, eInvalidSeqId, err);
-//                     }
-//                     id_vec[row + 1].Reset(sa.GetSecond_id());
-//                 }
+                const CSparse_seg::TRows& rows = segs.GetSparse().GetRows();
+                for (size_t row = 0;  row < rows.size();  ++row) {
+                    const CSparse_align& sa = *rows[row];
+                    TAlnSeqIdIRef first_id(new TAlnSeqId(sa.GetFirst_id()));
+                    if (row == 0) {
+                        id_vec.resize(segs.GetSparse().GetRows().size() + 1);
+                        id_vec[0].Reset(first_id);
+                    } else if (*id_vec[0] != *first_id) {
+                        string err("Inconsistent Seq-ids found in row ");
+                        err += NStr::IntToString(row) + ".";
+                        NCBI_THROW(CAlnException, eInvalidSeqId, err);
+                    }
+                    id_vec[row + 1].Reset(new TAlnSeqId(sa.GetSecond_id()));
+                }
             }
             break;
         case TSegs::e_Spliced:

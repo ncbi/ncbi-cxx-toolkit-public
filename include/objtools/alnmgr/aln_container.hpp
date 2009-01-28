@@ -98,6 +98,7 @@ public:
         case TSegs::e_Std:
         case TSegs::e_Packed:
         case TSegs::e_Spliced:
+        case TSegs::e_Sparse:
             ret_it =
                 m_AlnSet.insert(CConstRef<CSeq_align>(&seq_align)).first;
             break;

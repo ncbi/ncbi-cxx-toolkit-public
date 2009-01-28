@@ -49,8 +49,9 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <objtools/alnmgr/aln_converters.hpp>
-#include <objtools/error_codes.hpp>
+#include <objtools/alnmgr/aln_rng_coll_oper.hpp>
 
+#include <objtools/error_codes.hpp>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Aln_Conv
 
@@ -98,6 +99,8 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                                     row_1, row_2, direction);
         break;
     case CSeq_align::TSegs::e_Sparse:
+        ConvertSparseToPairwiseAln(pairwise_aln, segs.GetSparse(),
+                                   row_1, row_2, direction);
         break;
     case CSeq_align::TSegs::e_not_set:
         NCBI_THROW(CAlnException, eInvalidRequest,
@@ -329,30 +332,65 @@ void
 ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,    ///< output
                            const CSparse_seg& sparse_seg, ///< input Sparse-seg
                            CSeq_align::TDim row_1,        ///< which pair of rows 
-                           CDense_seg::TDim row_2,
+                           CSeq_align::TDim row_2,
                            CAlnUserOptions::EDirection direction) ///< which direction
 {
-    _ASSERT(row_1 == 0);
-    _ASSERT(row_2 > 0  &&  (size_t)row_2 < sparse_seg.GetRows().size() + 1);
+    typedef CPairwiseAln::TAlnRngColl TAlnRngColl;
 
-//     const CSparse_align& sa = sparse_seg.GetRows()[row_2 - 1];
+    _ALNMGR_ASSERT(row_1 == 0); /// TODO: Hanlde case when the anchor is not sparse_aln's anchor.
+    if (row_1 == 0) {
+        if (row_2 == 0) { /// Anchor aligned to itself
+            bool first_row = true;
+            ITERATE(CSparse_seg::TRows, aln_it, sparse_seg.GetRows()) {
+                TAlnRngColl curr_row;
+                const CSparse_align& sa = **aln_it;
+                const CSparse_align::TFirst_starts& starts_1 = sa.GetFirst_starts();
+                const CSparse_align::TLens& lens = sa.GetLens();
+                for (CSparse_align::TNumseg seg = 0;
+                     seg < sa.GetNumseg();  seg++) {
+                    CPairwiseAln::TAlnRng aln_rng(starts_1[seg],
+                                                  starts_1[seg],
+                                                  lens[seg],
+                                                  true);
+                    if (first_row) {
+                        pairwise_aln.insert(aln_rng);
+                    } else {
+                        curr_row.insert(aln_rng);
+                    }
+                }
+                if (first_row) {
+                    first_row = false;
+                } else {
+                    TAlnRngColl diff;
+                    SubtractAlnRngCollections(curr_row, pairwise_aln, diff);
+                    ITERATE(TAlnRngColl, aln_rng_it, diff) {
+                        pairwise_aln.insert(*aln_rng_it);
+                    }
+                }                    
+            }
+        } else { /// Regular row
+            _ALNMGR_ASSERT(row_2 > 0  &&  row_2 <= sparse_seg.CheckNumRows());
 
-//     const CSparse_align::TFirst_starts& starts_1 = sa.GetFirst_starts();
-//     const CSparse_align::TSecond_starts& starts_2 = sa.GetSecond_starts();
-//     const CSparse_align::TLens& lens = sa.GetLens();
-//     const CSparse_align::TSecond_strands* strands =
-//         sa.IsSetSecond_strands() ? &sa.GetSecond_strands() : 0;
-
-//     CSparse_align::TNumseg seg;
-//     for (seg = 0;  seg < sa.GetNumseg();  seg++) {
-//         pairwise_aln.insert
-//             (CPairwiseAln::TAlnRng(starts_1[seg],
-//                                    starts_2[seg],
-//                                    lens[seg],
-//                                    strands ?
-//                                    (*strands)[seg] != eNa_strand_minus :
-//                                    true));
-//     }
+            const CSparse_align& sa = *sparse_seg.GetRows()[row_2 - 1];
+            
+            const CSparse_align::TFirst_starts& starts_1 = sa.GetFirst_starts();
+            const CSparse_align::TSecond_starts& starts_2 = sa.GetSecond_starts();
+            const CSparse_align::TLens& lens = sa.GetLens();
+            const CSparse_align::TSecond_strands* strands =
+                sa.IsSetSecond_strands() ? &sa.GetSecond_strands() : 0;
+            
+            CSparse_align::TNumseg seg;
+            for (seg = 0;  seg < sa.GetNumseg();  seg++) {
+                pairwise_aln.insert
+                    (CPairwiseAln::TAlnRng(starts_1[seg],
+                                           starts_2[seg],
+                                           lens[seg],
+                                           strands ?
+                                           (*strands)[seg] != eNa_strand_minus :
+                                           true));
+            }
+        }
+    }
 }
 
 
