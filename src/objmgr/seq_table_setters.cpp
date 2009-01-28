@@ -277,8 +277,9 @@ CSeqTableSetAnyObjField::CSeqTableSetAnyObjField(CObjectTypeInfo type,
     for ( ;; ) {
         switch ( type.GetTypeFamily() ) {
         default:
-            ERR_POST("Incompatible field: "<<
-                     type.GetTypeInfo()->GetName()<<" "<<field);
+            NCBI_THROW_FMT(CAnnotException, eOtherError,
+                           "Incompatible field: "<<
+                           type.GetTypeInfo()->GetName()<<" "<<field);
             return;
         case eTypeFamilyPointer:
             next.Reset(new CSeqTableNextObjectPointer());
@@ -296,8 +297,9 @@ CSeqTableSetAnyObjField::CSeqTableSetAnyObjField(CObjectTypeInfo type,
             break;
         case eTypeFamilyPrimitive:
             if ( !field.empty() ) {
-                ERR_POST("Incompatible field: "<<
-                         type.GetTypeInfo()->GetName()<<" "<<field);
+                NCBI_THROW_FMT(CAnnotException, eOtherError,
+                               "Incompatible field: "<<
+                               type.GetTypeInfo()->GetName()<<"."<<field);
                 return;
             }
             m_SetFinalObject = true;
@@ -319,12 +321,26 @@ CSeqTableSetAnyObjField::CSeqTableSetAnyObjField(CObjectTypeInfo type,
                 field = next_field;
                 if ( type.GetTypeFamily() == eTypeFamilyClass ) {
                     TMemberIndex index = type.FindMemberIndex(field_name);
+                    if ( index == kInvalidMember ) {
+                        NCBI_THROW_FMT(CAnnotException, eOtherError,
+                                       "Unknown field: "<<
+                                       type.GetTypeInfo()->GetName()<<"."<<
+                                       field_name);
+                        return;
+                    }
                     next.Reset(new CSeqTableNextObjectClassMember(index));
                     type = type.GetClassTypeInfo()->GetMemberInfo(index)
                         ->GetTypeInfo();
                 }
                 else {
                     TMemberIndex index = type.FindVariantIndex(field_name);
+                    if ( index == kInvalidMember ) {
+                        NCBI_THROW_FMT(CAnnotException, eOtherError,
+                                       "Unknown variant: "<<
+                                       type.GetTypeInfo()->GetName()<<"."<<
+                                       field_name);
+                        return;
+                    }
                     next.Reset(new CSeqTableNextObjectChoiceVariant(index));
                     type = type.GetChoiceTypeInfo()->GetVariantInfo(index)
                         ->GetTypeInfo();

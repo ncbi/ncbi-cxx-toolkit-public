@@ -404,6 +404,17 @@ void CSeq_annot_Info::x_InitLocsList(TLocs& objs)
 
 void CSeq_annot_Info::x_InitFeatTable(TSeq_table& table)
 {
+    if ( !table.IsSetFeat_type() ||
+         table.GetFeat_type() < CSeqFeatData::e_not_set ||
+         table.GetFeat_type() >= CSeqFeatData::e_MaxChoice ) {
+        return; // not a feature table
+    }
+    if ( table.IsSetFeat_subtype() &&
+         (table.GetFeat_subtype() < CSeqFeatData::eSubtype_bad ||
+          table.GetFeat_subtype() > CSeqFeatData::eSubtype_any) ) {
+        return; // bad subtype
+    }
+
     _ASSERT(m_ObjectIndex.GetInfos().empty());
     TAnnotIndex rows = table.GetNum_rows();
     SAnnotTypeSelector type
@@ -874,6 +885,17 @@ bool CSeq_annot_Info::IsTableFeatPartial(const CAnnotObject_Info& info) const
 void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
 {
     const CSeq_table& feat_table = m_Object->GetData().GetSeq_table();
+    if ( !feat_table.IsSetFeat_type() ||
+         feat_table.GetFeat_type() < CSeqFeatData::e_not_set ||
+         feat_table.GetFeat_type() >= CSeqFeatData::e_MaxChoice ) {
+        return; // not a feature table
+    }
+    if ( feat_table.IsSetFeat_subtype() &&
+         (feat_table.GetFeat_subtype() < CSeqFeatData::eSubtype_bad ||
+          feat_table.GetFeat_subtype() > CSeqFeatData::eSubtype_any) ) {
+        return; // bad subtype
+    }
+
     size_t object_count = m_ObjectIndex.GetInfos().size();
     _ASSERT(object_count == size_t(feat_table.GetNum_rows()));
     m_ObjectIndex.ReserveMapSize(object_count);
