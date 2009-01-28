@@ -37,10 +37,9 @@
 // standard includes
 #include <ncbi_pch.hpp>
 
-// generated includes
 #include <objects/seqalign/Sparse_align.hpp>
+#include <objects/seqalign/seqalign_exception.hpp>
 
-// generated classes
 
 BEGIN_NCBI_SCOPE
 

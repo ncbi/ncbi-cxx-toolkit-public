@@ -45,10 +45,9 @@
 #define OBJECTS_SEQALIGN_SPARSE_SEG_HPP
 
 
-// generated includes
 #include <objects/seqalign/Sparse_seg_.hpp>
+#include <objects/seqalign/seqalign_exception.hpp>
 
-// generated classes
 
 BEGIN_NCBI_SCOPE
 
