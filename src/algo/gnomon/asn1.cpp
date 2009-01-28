@@ -705,6 +705,7 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
                 CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
                 chunk->SetMatch(indel.Loc()-last_chunk);
                 se->SetParts().push_back(chunk);
+                last_chunk = indel.Loc();
             }
 
             if (indel.IsInsertion()) {
@@ -722,7 +723,7 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
         }
         if (e->GetFrom() < last_chunk && last_chunk < e->GetTo()) {
             CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-            chunk->SetMatch(e->GetTo()-last_chunk);
+            chunk->SetMatch(e->GetTo()-last_chunk+1);
             se->SetParts().push_back(chunk);
         }
 
@@ -750,6 +751,14 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
 		if (!se.CanGetDonor_after_exon() || !se.GetDonor_after_exon().IsSetBases())
 			accumulated_product_len += HOLE_SIZE;
     }
+
+#ifdef _DEBUG
+    try {
+        seq_align->Validate(true);
+    } catch (...) {
+        _ASSERT(false);
+    }
+#endif
 
     return seq_align;
 }
