@@ -380,8 +380,9 @@ protected:
 };
 
 
-/// Print errors and related AGP lines;
-/// supress higly repetitive messages, the ones that user requested to suppress, etc.
+/// Correctly print multiple errors and warnings on consequitive lines;
+/// suppress undesired or higly repetitive messages;
+/// calculate total counts for each type of error.
 class NCBI_XOBJREAD_EXPORT CAgpErrEx : public CAgpErr
 {
 public:
@@ -399,7 +400,9 @@ public:
         G_First = G_InvalidCompId,
 
 
-        CODE_First=1, CODE_Last=G_Last
+        CODE_First=1,
+        CODE_Extended=51, // reserve space for some user errors (to count, or to skip)
+        CODE_Last=CODE_Extended+20
     };
 
     // Not needed if you use CAgpReader: it already dioes not report a 2-line error after a bad line.
@@ -427,16 +430,17 @@ public:
     static void PrintLine   (CNcbiOstream& ostr,
         const string& filename, int linenum, const string& content);
 
-    // Print the message by code, prepended by \tERROR: or \tWARNING:
-    // details: append at the end of the message
-    // substX : substitute it instead of the word "X" in msg[code]
-    static void PrintMessage(CNcbiOstream& ostr, int code,
+    /// Print the message by code, preceded by "ERROR" or "WARNING".
+    /// See also: CAgpErr::FormatMessage().
+    /// Override this you define user errors or warnings -
+    /// you cannot override GetMsgEx().
+    virtual void PrintMessage(CNcbiOstream& ostr, int code,
         const string& details=NcbiEmptyString);
 
     // Construct a readable message on total error & warning counts
     static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count=0);
 
-    CAgpErrEx();
+    CAgpErrEx(CNcbiOstrstream* out=&cerr);
 
     // Can skip unwanted messages, record a message for printing (CAgpErr::fAtThisLine),
     // print it immediately if it applies to the previous line (CAgpErr::fAtPrevLine),
@@ -542,6 +546,7 @@ public:
     //   agpErr.m_messages = tmp;
     //   agpErr.LineDone(line_orig, line_num, true);
     CNcbiOstrstream* m_messages;
+    CNcbiOstrstream* m_out;
 
     // 0: reading from STDIN or from a single file
     int GetFileNum()

@@ -776,7 +776,8 @@ string CAgpErrEx::GetPrintableCode(int code)
 {
     string res =
         (code<E_Last) ? "e" :
-        (code<W_Last) ? "w" : "g";
+        (code<W_Last) ? "w" :
+        (code<G_Last) ? "g" : "x";
     if(code<10) res += "0";
     res += NStr::IntToString(code);
     return res;
@@ -810,7 +811,7 @@ void CAgpErrEx::PrintMessage(CNcbiOstream& ostr, int code,
 
 
 //// class CAgpErrEx - constructor
-CAgpErrEx::CAgpErrEx()
+CAgpErrEx::CAgpErrEx(CNcbiOstrstream* out) : m_out(out)
 {
     m_messages = new CNcbiOstrstream();
     m_MaxRepeat = 0; // no limit
@@ -875,8 +876,8 @@ void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
     if(appliesTo & CAgpErr::fAtPrevLine) {
         // Print the previous line if it was not printed
         if( !m_prev_printed && m_line_prev.size() ) {
-            if( !m_two_lines_involved ) cerr << "\n";
-            PrintLine(cerr,
+            if( !m_two_lines_involved ) *m_out << "\n";
+            PrintLine(*m_out,
                 //m_filename_prev,
                 m_filenum_prev>=0 ? m_InputFiles[m_filenum_prev] : NcbiEmptyString,
                 m_line_num_prev, m_line_prev);
@@ -889,7 +890,7 @@ void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
     }
     else {
         // Print it now (useful for appliesTo==CAgpErr::fAtPrevLine)
-        PrintMessage(cerr, code, details);
+        PrintMessage(*m_out, code, details);
     }
 
     if( (appliesTo&CAgpErr::fAtPrevLine) && (appliesTo&CAgpErr::fAtThisLine) ) m_two_lines_involved=true;
@@ -898,10 +899,10 @@ void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
 void CAgpErrEx::LineDone(const string& s, int line_num, bool invalid_line)
 {
     if( m_messages->pcount() ) {
-        if( !m_two_lines_involved ) cerr << "\n";
+        if( !m_two_lines_involved ) *m_out << "\n";
 
-        PrintLine(cerr, m_filename, line_num, s);
-        cerr << (string)CNcbiOstrstreamToString(*m_messages);
+        PrintLine(*m_out, m_filename, line_num, s);
+        *m_out << (string)CNcbiOstrstreamToString(*m_messages);
         delete m_messages;
         m_messages = new CNcbiOstrstream;
 
