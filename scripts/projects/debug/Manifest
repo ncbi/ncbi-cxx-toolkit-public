@@ -14,10 +14,10 @@
 
 APP: datatool
 
-COPY: $srcdir/include/corelib/hash_impl/*    $installdir/include/corelib/hash_impl/
-COPY: $srcdir/include/util/bitset/*.h        $installdir/include/util/bitset/
-COPY: $srcdir/src/util/checksum.cpp          $installdir/src/util/
-COPY: $srcdir/src/util/checksum.cpp          $installdir/src/util/my_checksum.cpp
+#COPY: $srcdir/include/corelib/hash_impl/*    $installdir/include/corelib/hash_impl/
+#COPY: $srcdir/include/util/bitset/*.h        $installdir/include/util/bitset/
+#COPY: $srcdir/src/util/checksum.cpp          $installdir/src/util/
+#COPY: $srcdir/src/util/checksum.cpp          $installdir/src/util/my_checksum.cpp
 
 
 # APP: test_ncbi_disp -- not now
@@ -55,5 +55,6 @@ PowerMAC   : plain      : GCC.sh           --with-universal --without-debug --wi
 # work similar to the configurations where it is mentioned explicitly
 IntelMAC   : GCC        : GCC.sh           --with-universal --without-debug --without-mt --with-static --without-runpath
 
-Win32      : plain : msvc800_prj  static  32  ReleaseDLL
-Win64      : plain : msvc800_prj  static  64  ReleaseDLL
+Win32      : plain : msvc900_prj  static  32  ReleaseDLL
+Win64      : plain : msvc900_prj  static  64  ReleaseDLL
+
