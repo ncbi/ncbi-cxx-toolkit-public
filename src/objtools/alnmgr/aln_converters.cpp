@@ -113,8 +113,8 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
 void
 ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                            const CDense_seg& ds,        ///< input Dense-seg
-                           CDense_seg::TDim row_1,      ///< which pair of rows
-                           CDense_seg::TDim row_2,
+                           CSeq_align::TDim row_1,      ///< which pair of rows
+                           CSeq_align::TDim row_2,
                            CAlnUserOptions::EDirection direction) ///< which direction
 {
     _ASSERT(row_1 >=0  &&  row_1 < ds.GetDim());
@@ -180,7 +180,7 @@ void
 ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,          ///< output
                            const CSeq_align::TSegs::TStd& stds, ///< input Stds
                            CSeq_align::TDim row_1,              ///< which pair of rows 
-                           CDense_seg::TDim row_2,
+                           CSeq_align::TDim row_2,
                            CAlnUserOptions::EDirection direction) ///< which direction
 {
     _ASSERT(row_1 >=0  &&  row_2 >= 0);
@@ -277,7 +277,7 @@ void
 ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                  ///< output
                             const CSeq_align::TSegs::TDendiag& dendiags, ///< input Dendiags
                             CSeq_align::TDim row_1,                      ///< which pair of rows 
-                            CDense_seg::TDim row_2,
+                            CSeq_align::TDim row_2,
                             CAlnUserOptions::EDirection direction) ///< which direction
 {
     _ASSERT(row_1 >=0  &&  row_2 >= 0);
@@ -398,7 +398,7 @@ void
 ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,      ///< output
                             const CSpliced_seg& spliced_seg, ///< input Spliced-seg
                             CSeq_align::TDim row_1,          ///< which pair of rows 
-                            CDense_seg::TDim row_2,
+                            CSeq_align::TDim row_2,
                             CAlnUserOptions::EDirection direction) ///< which direction
 {
     _ASSERT(row_1 == 0  ||  row_1 == 1  &&  row_2 == 0  ||  row_2 == 1);
