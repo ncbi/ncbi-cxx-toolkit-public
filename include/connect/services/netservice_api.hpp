@@ -74,7 +74,13 @@ class NCBI_XCONNECT_EXPORT CNetService
         const string& host,
         unsigned int port);
 
-    CNetServerGroup DiscoverServers();
+    enum EServerSortMode {
+        eSortByLoad,
+        eRandomize,
+        eSortByAddress
+    };
+
+    CNetServerGroup DiscoverServers(EServerSortMode sort_mode = eSortByLoad);
 
     bool IsLoadBalanced() const;
 

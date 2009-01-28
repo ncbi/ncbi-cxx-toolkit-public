@@ -36,6 +36,7 @@
 
 #include <connect/services/remote_job.hpp>
 #include <connect/services/blob_storage_netcache.hpp>
+#include <connect/services/util.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistre.hpp>
@@ -67,7 +68,7 @@ protected:
 
 void CNSRemoveJobControlApp::Init(void)
 {
-    // hack!!! It needs to be removed when we know how to deal with unresolved
+    // FIXME It needs to be removed when we know how to deal with unresolved
     // symbols in plug-ins.
     BlobStorage_RegisterDriver_NetCache();
 
@@ -88,13 +89,6 @@ void CNSRemoveJobControlApp::Init(void)
     arg_desc->AddOptionalKey("nc", "service",
                      "NetCache service address (service_name or host:port)",
                      CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("ncprot", "protocol",
-                     "NetCache client protocol",
-                     CArgDescriptions::eString);
-    arg_desc->SetConstraint("ncprot",
-                            &(*new CArgAllow_Strings(NStr::eNocase),
-                              "simple", "persistent")
-                            );
 
     arg_desc->AddOptionalKey("jlist",
                              "status",
@@ -134,9 +128,13 @@ void CNSRemoveJobControlApp::Init(void)
                             );
 
     arg_desc->AddOptionalKey("stdout",
-                             "job_id",
-                             "Dump stdout of the job",
+                             "job_ids",
+                             "Dump concatenated stdout of the jobs",
                              CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("stderr", "job_ids",
+        "Dump concatenated stderr of the jobs",
+        CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("cancel",
                              "job_id",
@@ -197,6 +195,22 @@ private:
     CNetScheduleAdmin::EShutdownLevel m_Level;
 };
 
+static void DumpStdStreams(const CArgValue& arg,
+    CNSInfoCollector* info_collector, CNcbiOstream* out, bool use_stderr)
+{
+    CCmdLineArgList job_list(
+        CCmdLineArgList::CreateFrom(arg.AsString()));
+
+    std::string job_id;
+
+    while (job_list.GetNextArg(job_id)) {
+        CNSJobInfo job_info(job_id, *info_collector);
+        if (!use_stderr)
+            *out << job_info.GetStdOut().rdbuf();
+        else
+            *out << job_info.GetStdErr().rdbuf();
+    }
+}
 
 int CNSRemoveJobControlApp::Run(void)
 {
@@ -219,8 +233,6 @@ int CNSRemoveJobControlApp::Run(void)
     if ( args["nc"]) {
         reg.Set(kNetCacheAPIDriverName, "client_name", "ns_remote_job_control");
         reg.Set(kNetCacheAPIDriverName, "service", args["nc"].AsString());
-    if ( args["ncprot"] )
-        reg.Set(kNetCacheAPIDriverName, "protocol", args["ncprot"].AsString());
     }
 
 
@@ -254,8 +266,14 @@ int CNSRemoveJobControlApp::Run(void)
     info_collector.reset(new CNSInfoCollector(queue, service, factory));
 
     if (args["stdout"]) {
-        CNSJobInfo job_info(args["stdout"].AsString(), *info_collector);
-        *out << job_info.GetStdOut().rdbuf();
+        DumpStdStreams(args["stdout"], info_collector.get(), out, false);
+
+        return 0;
+    }
+
+    if (args["stderr"]) {
+        DumpStdStreams(args["stderr"], info_collector.get(), out, true);
+
         return 0;
     }
 

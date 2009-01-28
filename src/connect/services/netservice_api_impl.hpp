@@ -65,6 +65,12 @@ struct SNetServerGroupImpl : public CNetObject
     CNetService m_Service;
 };
 
+class INetServerFinder : public CNetObject
+{
+public:
+    virtual bool Consider(CNetServer server) = 0;
+};
+
 enum ECmdOutputType {
     eSingleLineOutput,
     eMultilineOutput,
@@ -88,7 +94,11 @@ struct SNetServiceImpl : public CNetObject
     CNetServerConnection GetBestConnection();
     CNetServerConnection GetConnection(const TServerAddress& srv);
 
-    void DiscoverServers(TDiscoveredServers& servers);
+    void DiscoverServers(TDiscoveredServers& servers,
+        CNetService::EServerSortMode sort_mode = CNetService::eSortByLoad);
+
+    bool FindServer(const CNetObjectRef<INetServerFinder>& finder,
+        CNetService::EServerSortMode sort_mode = CNetService::eRandomize);
 
     void PrintCmdOutput(
         const string& cmd,

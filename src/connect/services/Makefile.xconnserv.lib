@@ -12,7 +12,7 @@ SRC     = netcache_client netcache_client_lb \
           netschedule_api netschedule_api_submitter netschedule_api_executer \
           netschedule_api_admin netschedule_key netschedule_api_expt \
           netcache_key netcache_rw netcache_api netcache_api_admin \
-          netservice_protocol_parser
+          netservice_protocol_parser util
 
 LIB     = xconnserv
 LIBS    = $(NETWORK_LIBS)

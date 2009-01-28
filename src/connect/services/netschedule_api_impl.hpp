@@ -281,6 +281,11 @@ struct SNetScheduleSubmitterImpl : public CNetObject
     string SubmitJobImpl(CNetScheduleJob& job,
         unsigned short udp_port, unsigned wait_time) const;
 
+    void DoConfirmRollbackRead(const char* cmd_start,
+        const std::string& batch_id,
+        const std::vector<std::string>& job_ids,
+        const std::string& error_message);
+
     CNetScheduleAPI m_API;
 };
 

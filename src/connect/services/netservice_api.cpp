@@ -37,6 +37,8 @@
 #include <connect/services/netservice_api_expt.hpp>
 #include <connect/services/netservice_params.hpp>
 
+#include <connect/ncbi_conn_exception.hpp>
+
 #include <corelib/ncbi_system.hpp>
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Connection
@@ -264,7 +266,8 @@ CNetServerConnection SNetServiceImpl::GetConnection(const TServerAddress& srv)
     return pool.GetConnection();
 }
 
-void SNetServiceImpl::DiscoverServers(TDiscoveredServers& servers)
+void SNetServiceImpl::DiscoverServers(TDiscoveredServers& servers,
+    CNetService::EServerSortMode sort_mode)
 {
     if (m_IsLoadBalanced &&
         (!m_RebalanceStrategy || m_RebalanceStrategy->NeedRebalance())) {
@@ -289,14 +292,77 @@ void SNetServiceImpl::DiscoverServers(TDiscoveredServers& servers)
 
     servers.clear();
     CReadLockGuard g(m_ServersLock);
-    servers.insert(servers.begin(), m_Servers.begin(), m_Servers.end());
+
+    switch (sort_mode) {
+    case CNetService::eSortByLoad:
+        servers.insert(servers.begin(), m_Servers.begin(), m_Servers.end());
+        break;
+
+    case CNetService::eRandomize:
+        if (!m_Servers.empty()) {
+            size_t servers_size = m_Servers.size();
+
+            // Pick a random pivot element, so we do not always
+            // fetch jobs using the same lookup order.
+            unsigned current = rand() % servers_size;
+            unsigned last = current + servers_size;
+
+            for (; current < last; ++current)
+                servers.push_back(m_Servers[current % servers_size]);
+        }
+        break;
+
+    case CNetService::eSortByAddress:
+        servers.insert(servers.begin(), m_Servers.begin(), m_Servers.end());
+        std::sort(servers.begin(), servers.end());
+    }
 }
 
-CNetServerGroup CNetService::DiscoverServers()
+bool SNetServiceImpl::FindServer(
+    const CNetObjectRef<INetServerFinder>& finder,
+    CNetService::EServerSortMode sort_mode)
+{
+    TDiscoveredServers servers;
+
+    DiscoverServers(servers, sort_mode);
+
+    bool had_comm_err = false;
+
+    ITERATE(TDiscoveredServers, server, servers) {
+        try {
+            if (finder->Consider(new SNetServerImpl(*server, this)))
+                return true;
+        }
+        catch (CNetServiceException& ex) {
+            ERR_POST_X(5, server->first << ":" << server->second
+                << " returned error: \"" << ex.what() << "\"");
+
+            if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
+                throw;
+
+            had_comm_err = true;
+        }
+        catch (CIO_Exception& ex) {
+            ERR_POST_X(6, server->first << ":" << server->second
+                << " returned error: \"" << ex.what() << "\"");
+
+            had_comm_err = true;
+        }
+    }
+
+    if (had_comm_err)
+        NCBI_THROW(CNetServiceException,
+        eCommunicationError, "Communication error");
+
+    return false;
+}
+
+CNetServerGroup CNetService::DiscoverServers(
+    CNetService::EServerSortMode sort_mode)
 {
     CNetServerGroup server_group(new SNetServerGroupImpl(*this));
 
-    m_Impl->DiscoverServers(server_group->m_Servers);
+    m_Impl->DiscoverServers(server_group->m_Servers, sort_mode);
 
     return server_group;
 }

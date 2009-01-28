@@ -35,6 +35,7 @@
 #include "netschedule_api_impl.hpp"
 
 #include <connect/services/netschedule_api.hpp>
+#include <connect/services/util.hpp>
 
 #include <stdio.h>
 
@@ -240,6 +241,123 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
     } // for
 
     conn.Exec("ENDS");
+}
+
+class CReadCmdExecutor : public INetServerFinder
+{
+public:
+    CReadCmdExecutor(const string& cmd, std::string& batch_id,
+            std::vector<std::string>& job_ids) :
+        m_Cmd(cmd), m_BatchId(batch_id), m_JobIds(job_ids)
+    {
+    }
+
+    virtual bool Consider(CNetServer server);
+
+private:
+    std::string m_Cmd;
+    std::string& m_BatchId;
+    std::vector<std::string>& m_JobIds;
+};
+
+bool CReadCmdExecutor::Consider(CNetServer server)
+{
+    std::string response = server.Connect().Exec(m_Cmd);
+
+    if (response == "0")
+        return false;
+
+    std::string encoded_bitvector;
+
+    NStr::SplitInTwo(response, ",", m_BatchId, encoded_bitvector);
+
+    CBitVectorDecoder bvdec(encoded_bitvector);
+
+    std::string host = server.GetHost();
+    unsigned port = server.GetPort();
+
+    unsigned from, to;
+
+    while (bvdec.GetNextRange(from, to))
+        while (from <= to)
+            m_JobIds.push_back(CNetScheduleKey(from++, host, port));
+
+    return true;
+}
+
+bool CNetScheduleSubmitter::Read(std::string& batch_id,
+    std::vector<std::string>& job_ids,
+    unsigned max_jobs, unsigned timeout)
+{
+    std::string cmd("READ ");
+
+    cmd.append(NStr::UIntToString(max_jobs));
+
+    if (timeout > 0) {
+        cmd += ' ';
+        cmd += NStr::UIntToString(timeout);
+    }
+
+    return m_Impl->m_API->m_Service->FindServer(
+        new CReadCmdExecutor(cmd, batch_id, job_ids));
+}
+
+void SNetScheduleSubmitterImpl::DoConfirmRollbackRead(const char* cmd_start,
+    const std::string& batch_id,
+    const std::vector<std::string>& job_ids,
+    const std::string& error_message)
+{
+    if (job_ids.empty()) {
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+            "Read(Confirm|Fail): no job keys specified");
+    }
+
+    CBitVectorEncoder bvenc;
+
+    std::vector<std::string>::const_iterator job_id = job_ids.begin();
+
+    CNetScheduleKey first_key(*job_id);
+
+    bvenc.AppendInteger(first_key.id);
+
+    while (++job_id != job_ids.end()) {
+        CNetScheduleKey key(*job_id);
+
+        if (key.host != first_key.host || key.port != first_key.port) {
+            NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                "Read(Confirm|Fail): all jobs must belong to a single NS");
+        }
+
+        bvenc.AppendInteger(key.id);
+    }
+
+    std::string cmd = cmd_start + batch_id;
+
+    cmd += " \"";
+    cmd += bvenc.Encode();
+    cmd += '"';
+
+    if (!error_message.empty()) {
+        cmd += " \"";
+        cmd += NStr::PrintableString(error_message);
+        cmd += '"';
+    }
+
+    m_API->m_Service.GetSpecificConnection(first_key.host,
+        first_key.port).Exec(cmd);
+}
+
+void CNetScheduleSubmitter::ReadConfirm(const std::string& batch_id,
+    const std::vector<std::string>& job_ids)
+{
+    m_Impl->DoConfirmRollbackRead("CFRM ", batch_id, job_ids, kEmptyStr);
+}
+
+void CNetScheduleSubmitter::ReadRollback(const std::string& batch_id,
+    const std::vector<std::string>& job_ids,
+    const std::string& error_message)
+{
+    m_Impl->DoConfirmRollbackRead("FRED ", batch_id, job_ids, error_message);
 }
 
 struct SWaitJobPred {

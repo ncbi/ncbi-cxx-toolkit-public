@@ -276,6 +276,56 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     ///
     void SubmitJobBatch(vector<CNetScheduleJob>& jobs) const;
 
+    /// Initiate bulk retrieval of job results.
+    /// The command retrieves ids of jobs marked as done.
+    ///
+    /// @param batch_id
+    ///    A string reference to store the identifier of the batch,
+    ///    to be passed to ReadConfirm() or ReadRollback().
+    /// @param job_ids
+    ///    Array for storing job ids.
+    /// @param max_jobs
+    ///    Maximum number of jobs returned.
+    /// @param timeout
+    ///    Number of seconds to wait before the status of jobs
+    ///    is automatically reverted to 'done'.  If zero,
+    ///    status will not be reverted automatically.
+    /// @return
+    ///    True if a batch was successfully retrieved from a NetSchedule
+    ///    server.  False if no servers reported jobs marked as done.
+    bool Read(std::string& batch_id,
+        std::vector<std::string>& job_ids,
+        unsigned max_jobs,
+        unsigned timeout = 0);
+
+    /// Mark the specified jobs as successfully processed.
+    /// The jobs will change their status to 'confirmed' after
+    /// this operation.
+    ///
+    /// @param batch_id
+    ///    Batch number returned by Read().
+    /// @param job_ids
+    ///    Array of job ids, which results were successfully
+    ///    retrieved and processed.
+    void ReadConfirm(const std::string& batch_id,
+        const std::vector<std::string>& job_ids);
+
+    /// Refuse from processing the results of the specified jobs.
+    /// The jobs will change their status back to 'done' after
+    /// this operation.
+    ///
+    /// @param batch_id
+    ///    Batch number returned by Read().
+    /// @param job_ids
+    ///    Array of job ids, for which status needs to be reverted
+    ///    back to 'done'.
+    /// @param error_message
+    ///    This message can be used to describe the cause why the
+    ///    job results are returned.
+    void ReadRollback(const std::string& batch_id,
+        const std::vector<std::string>& job_ids,
+        const std::string& error_message = kEmptyStr);
+
     /// Submit job to server and wait for the result.
     /// This function should be used if we expect that job execution
     /// infrastructure is capable of finishing job in the specified

@@ -40,6 +40,7 @@
 #include <corelib/ncbiexpt.hpp>
 
 #include <connect/services/netschedule_api.hpp>
+#include <connect/services/util.hpp>
 
 #include <common/ncbi_package_ver.h>
 
@@ -146,7 +147,7 @@ void CNetScheduleControl::Init(void)
                              CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("comment",
-                             "commeet",
+                             "comment",
                              "Optional parameter for qcreate command",
                              CArgDescriptions::eString);
 
@@ -187,7 +188,7 @@ void CNetScheduleControl::Init(void)
                              "query",
                              "Count all jobs with tags set by query string",
                              CArgDescriptions::eString);
-    
+
     arg_desc->AddOptionalKey("show_jobs_id",
                              "query",
                              "Show all jobs id by query string",
@@ -208,7 +209,19 @@ void CNetScheduleControl::Init(void)
                              "Perform a select query on the queue jobs",
                              CArgDescriptions::eString);
 
-    arg_desc->AddFlag("showparams", "Show service paramters");
+    arg_desc->AddFlag("showparams", "Show service parameters");
+
+    arg_desc->AddOptionalKey("read", "3_to_4_args",
+        "Retrieve completed job ids and change their state to 'Reading'",
+        CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("read_confirm", "batch_id_and_job_list",
+        "Mark jobs as successfully retrieved",
+        CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("read_rollback", "batch_id_and_job_list",
+        "Undo '-read' operation for the specified jobs",
+        CArgDescriptions::eString);
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -263,7 +276,7 @@ int CNetScheduleControl::Run(void)
         string query = args["show_jobs_id"].AsString();
         CNetScheduleKeys keys;
         ctl.GetAdmin().RetrieveKeys(query, keys);
- 
+
         for (CNetScheduleKeys::const_iterator it = keys.begin();
             it != keys.end(); ++it) {
             os << string(*it) << endl;
@@ -408,6 +421,77 @@ int CNetScheduleControl::Run(void)
                << endl;
         }
         os << endl;
+    } else if (args["read"]) {
+        std::list<std::string> read_args;
+
+        NStr::Split(args["read"].AsString(),
+            CCmdLineArgList::GetDelimiterString(), read_args);
+
+        size_t read_args_num = read_args.size();
+
+        if (read_args_num < 3 || read_args_num > 4) {
+            NCBI_THROW(CArgException, eConvert,
+                "Wrong number of arguments in '-read'");
+        }
+
+        std::string batch_id_output_file_name = read_args.front();
+        read_args.pop_front();
+
+        std::string job_list_output_file_name = read_args.front();
+        read_args.pop_front();
+
+        unsigned read_limit = NStr::StringToUInt(read_args.front());
+        read_args.pop_front();
+
+        unsigned read_timeout = 0;
+
+        if (read_args_num > 3)
+            read_timeout = NStr::StringToUInt(read_args.front());
+
+        CCmdLineArgList batch_id_output(
+            CCmdLineArgList::OpenForOutput(batch_id_output_file_name));
+
+        CCmdLineArgList job_list_output(
+            batch_id_output_file_name != job_list_output_file_name ?
+                CCmdLineArgList::OpenForOutput(job_list_output_file_name) :
+                batch_id_output);
+
+        std::string batch_id;
+        std::vector<std::string> job_ids;
+
+        if (!ctl.GetSubmitter().Read(batch_id,
+            job_ids, read_limit, read_timeout))
+            return 1;
+
+        batch_id_output.WriteLine(batch_id);
+
+        ITERATE(std::vector<std::string>, job_id, job_ids) {
+            job_list_output.WriteLine(*job_id);
+        }
+    } else if (args["read_confirm"] || args["read_rollback"]) {
+        bool confirm = args["read_confirm"];
+
+        std::string arg = confirm ?
+            args["read_confirm"].AsString() : args["read_rollback"].AsString();
+
+        std::string batch_id, file_or_job_ids;
+
+        NStr::SplitInTwo(arg, CCmdLineArgList::GetDelimiterString(),
+            batch_id, file_or_job_ids);
+
+        CCmdLineArgList job_id_source(
+            CCmdLineArgList::CreateFrom(file_or_job_ids));
+
+        std::vector<std::string> job_ids;
+        std::string job_id;
+
+        while (job_id_source.GetNextArg(job_id))
+            job_ids.push_back(job_id);
+
+        if (confirm)
+            ctl.GetSubmitter().ReadConfirm(batch_id, job_ids);
+        else
+            ctl.GetSubmitter().ReadRollback(batch_id, job_ids);
     } else {
         NCBI_THROW(CArgException, eNoArg,
                    "Unknown command or command is not specified.");

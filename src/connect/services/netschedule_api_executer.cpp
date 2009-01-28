@@ -34,8 +34,6 @@
 
 #include "netschedule_api_impl.hpp"
 
-#include <connect/ncbi_conn_exception.hpp>
-
 #define NCBI_USE_ERRCODE_X   ConnServ_NetSchedule
 
 BEGIN_NCBI_SCOPE
@@ -314,61 +312,40 @@ void CNetScheduleExecuter::ReturnJob(const string& job_key) const
     m_Impl->m_API->x_SendJobCmdWaitResponse("RETURN" , job_key);
 }
 
+class CGetJobCmdExecutor : public INetServerFinder
+{
+public:
+    CGetJobCmdExecutor(const string& cmd, CNetScheduleJob& job) :
+        m_Cmd(cmd), m_Job(job)
+    {
+    }
+
+    virtual bool Consider(CNetServer server);
+
+private:
+    const string& m_Cmd;
+    CNetScheduleJob& m_Job;
+};
+
+bool CGetJobCmdExecutor::Consider(CNetServer server)
+{
+    string resp = server.Connect().Exec(m_Cmd);
+
+    if (resp.empty())
+        return false;
+
+    m_Job.mask = CNetScheduleAPI::eEmptyMask;
+    string tmp;
+    s_ParseGetJobResponse(&m_Job.job_id,
+        &m_Job.input, &tmp, &tmp, &m_Job.mask, resp);
+
+    return true;
+}
+
 bool SNetScheduleExecuterImpl::GetJobImpl(
     const string& cmd, CNetScheduleJob& job) const
 {
-    CNetServerGroup servers = m_API->m_Service.DiscoverServers();
-
-    size_t servers_size = servers.GetCount();
-
-    if (servers_size == 0)
-        return false;
-
-    // pick a random pivot element, so we do not always
-    // fetch jobs using the same lookup order and some servers do
-    // not get equally "milked"
-    // also get random list lookup direction
-    unsigned current = rand() % servers_size;
-    unsigned last = current + servers_size;
-
-    bool had_comm_err = false;
-
-    for (; current < last; ++current) {
-        CNetServer srv = servers.GetServer(current % servers_size);
-
-        try {
-            string resp = srv.Connect().Exec(cmd);
-
-            if (!resp.empty()) {
-                job.mask = CNetScheduleAPI::eEmptyMask;
-                string tmp;
-                s_ParseGetJobResponse(&job.job_id,
-                    &job.input, &tmp, &tmp, &job.mask, resp);
-                return true;
-            }
-        }
-        catch (CNetServiceException& ex) {
-            ERR_POST_X(9, srv.GetHost() << ":" << srv.GetPort()
-                << " returned error: \"" << ex.what() << "\"");
-
-            if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
-                throw;
-
-            had_comm_err = true;
-        }
-        catch (CIO_Exception& ex) {
-            ERR_POST_X(10, srv.GetHost() << ":" << srv.GetPort()
-                << " returned error: \"" << ex.what() << "\"");
-
-            had_comm_err = true;
-        }
-    }
-
-    if (had_comm_err)
-        NCBI_THROW(CNetServiceException,
-            eCommunicationError, "Communication error");
-
-    return false;
+    return m_API->m_Service->FindServer(new CGetJobCmdExecutor(cmd, job));
 }
 
 
