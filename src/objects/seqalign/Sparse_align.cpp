@@ -60,7 +60,7 @@ void CSparse_align::Validate(bool full_test) const
 
 
 CSparse_align::TNumseg CSparse_align::CheckNumSegs(void) const {
-    const TNumseg& numseg = GetNumseg();
+    size_t numseg = GetNumseg();
     _SEQALIGN_ASSERT(GetFirst_starts().size() == numseg);
     _SEQALIGN_ASSERT(GetSecond_starts().size() == numseg);
     _SEQALIGN_ASSERT(GetLens().size() == numseg);

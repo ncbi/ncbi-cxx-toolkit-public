@@ -70,7 +70,9 @@ public:
     /// Validators
     void Validate    (bool full_test = false) const;
     TDim CheckNumRows(void)                   const {
-        return GetRows().size();
+        size_t dim = GetRows().size();
+        _SEQALIGN_ASSERT(IsSetRow_scores() ? GetRow_scores().size() == dim : true);
+        return dim;
     }
 
 
