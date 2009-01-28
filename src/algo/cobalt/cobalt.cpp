@@ -1230,11 +1230,14 @@ static TPhyTreeNode* s_MakeTwoLeafTree(const CClusterer::CSingleCluster& ids,
 
     TPhyTreeNode* node = new TPhyTreeNode();
     node->GetValue().SetId(ids[0]);
+    // Label is set so that serialized tree can be used in external programs
+    node->GetValue().SetLabel(NStr::IntToString(ids[0]));
     node->GetValue().SetDist(node_dist);
     root->AddNode(node);
 
     node = new TPhyTreeNode();
     node->GetValue().SetId(ids[1]);
+    node->GetValue().SetLabel(NStr::IntToString(ids[1]));
     node->GetValue().SetDist(node_dist);
     root->AddNode(node);
 
@@ -1251,7 +1254,13 @@ static void s_SetLeafIds(TPhyTreeNode* node,
 {
     if (node->IsLeaf()) {
         _ASSERT(node->GetValue().GetId() < (int)ids.size());
-        node->GetValue().SetId(ids[node->GetValue().GetId()]);
+
+        int id = ids[node->GetValue().GetId()];
+        node->GetValue().SetId(id);
+        
+        // Labels are used to identify sequence in serialized tree.
+        // They are set so that the tree can be used by external programs
+        node->GetValue().SetLabel(NStr::IntToString(id));
 
         return;
     }
@@ -1290,7 +1299,7 @@ void CMultiAligner::x_ComputeClusterTrees(vector<TPhyTreeNode*>& trees) const
         CTree single_tree(mat);
         TPhyTreeNode* root = single_tree.ReleaseTree();
 
-        // Set node id's that correspoding to cluster sequences
+        // Set node id's that correspod to cluster sequences
         s_SetLeafIds(root, cluster);
 
         trees[clust_idx] = root;
