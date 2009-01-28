@@ -80,6 +80,16 @@ public:
 };
 
 
+#define _ALNMGR_ASSERT(expr) \
+    do {                                                               \
+        if ( !(expr) ) {                                               \
+            _ASSERT(expr);                                             \
+            NCBI_THROW(CAlnException, eInternalFailure,                \
+                       string("Assertion failed: ") + #expr);          \
+        }                                                              \
+    } while ( 0 )
+
+
 END_objects_SCOPE
 END_NCBI_SCOPE
 
