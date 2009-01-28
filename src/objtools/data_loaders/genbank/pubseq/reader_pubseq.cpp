@@ -70,6 +70,7 @@
 #define DEFAULT_DB_DRIVER   "ftds;ctlib"
 #define MAX_MT_CONN         5
 #define DEFAULT_NUM_CONN    2
+#define DEFAULT_RETRY_COUNT 3
 #define DEFAULT_ALLOW_GZIP  true
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Pubseq
@@ -189,6 +190,12 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
         CConfig::eErr_NoThrow,
         DEFAULT_NUM_CONN);
     SetMaximumConnections(max_connections);
+    int retry_count = conf.GetInt(
+        driver_name,
+        NCBI_GBLOADER_READER_PUBSEQ_PARAM_RETRY_COUNT,
+        CConfig::eErr_NoThrow,
+        DEFAULT_RETRY_COUNT);
+    SetMaximumRetryCount(retry_count);
     bool open_initial_connection = conf.GetBool(
         driver_name,
         NCBI_GBLOADER_READER_PUBSEQ_PARAM_PREOPEN,

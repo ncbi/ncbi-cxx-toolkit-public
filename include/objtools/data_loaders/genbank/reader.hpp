@@ -199,6 +199,7 @@ public:
     // -1 - never
     virtual int GetConst(const string& const_name) const;
 
+    void SetMaximumRetryCount(int retry_count);
     virtual int GetRetryCount(void) const;
     virtual bool MayBeSkippedOnErrors(void) const;
 

@@ -77,6 +77,7 @@ BEGIN_SCOPE(objects)
 
 #define DEFAULT_SERVICE  "ID2"
 #define DEFAULT_NUM_CONN 3
+#define DEFAULT_RETRY_COUNT 3
 #define DEFAULT_TIMEOUT  20
 #define MAX_MT_CONN      5
 
@@ -172,6 +173,12 @@ CId2Reader::CId2Reader(const TPluginManagerParamTree* params,
         CConfig::eErr_NoThrow,
         DEFAULT_NUM_CONN);
     SetMaximumConnections(max_connections);
+    int retry_count = conf.GetInt(
+        driver_name,
+        NCBI_GBLOADER_READER_ID2_PARAM_RETRY_COUNT,
+        CConfig::eErr_NoThrow,
+        DEFAULT_RETRY_COUNT);
+    SetMaximumRetryCount(retry_count);
     bool open_initial_connection = conf.GetBool(
         driver_name,
         NCBI_GBLOADER_READER_ID2_PARAM_PREOPEN,

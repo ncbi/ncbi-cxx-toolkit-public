@@ -53,7 +53,7 @@ CReader::CReader(void)
       m_PreopenConnection(true),
       m_NextNewConnection(0),
       m_NumFreeConnections(0, 1000),
-      m_MaximumRetryCount(10),
+      m_MaximumRetryCount(3),
       m_CurrentFailCount(0),
       m_InitialConnectWaitSeconds(1),
       m_MaximumConnectWaitSeconds(60)
@@ -306,9 +306,15 @@ int CReader::GetConst(const string& ) const
 }
 
 
+void CReader::SetMaximumRetryCount(int retry_count)
+{
+    m_MaximumRetryCount = retry_count;
+}
+
+
 int CReader::GetRetryCount(void) const
 {
-    return 3;
+    return m_MaximumRetryCount;
 }
 
 

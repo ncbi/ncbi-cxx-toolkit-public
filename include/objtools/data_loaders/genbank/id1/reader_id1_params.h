@@ -45,5 +45,7 @@
 #define NCBI_GBLOADER_READER_ID1_PARAM_SERVICE_NAME "service"
 /* Timeout of network connections in seconds */
 #define NCBI_GBLOADER_READER_ID1_PARAM_TIMEOUT "timeout"
+/* Number of retries on errors */
+#define NCBI_GBLOADER_READER_ID1_PARAM_RETRY_COUNT "retry"
 
 #endif

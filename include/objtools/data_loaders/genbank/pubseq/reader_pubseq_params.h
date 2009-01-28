@@ -51,5 +51,7 @@
 #define NCBI_GBLOADER_READER_PUBSEQ_PARAM_DRIVER   "driver"
 /* allow gzip compression */
 #define NCBI_GBLOADER_READER_PUBSEQ_PARAM_GZIP     "gzip"
+/* Number of retries on errors */
+#define NCBI_GBLOADER_READER_PUBSEQ_PARAM_RETRY_COUNT "retry"
 
 #endif
