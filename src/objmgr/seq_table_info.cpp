@@ -865,7 +865,12 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
                 continue;
             }
             if ( !setter ) {
-                setter = new CSeqTableSetAnyFeatField(field);
+                try {
+                    setter = new CSeqTableSetAnyFeatField(field);
+                }
+                catch ( CAnnotException& exc ) {
+                    // ignore invalid column names
+                }
             }
         }
         m_ExtraColumns.push_back(TColumnInfo(col, setter));
