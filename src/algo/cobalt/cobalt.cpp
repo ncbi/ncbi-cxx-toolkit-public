@@ -1474,12 +1474,14 @@ void CMultiAligner::x_AttachClusterTrees(
             int seq_id = cluster[0];
 
             node->GetValue().SetId(seq_id);
+            node->GetValue().SetLabel(NStr::IntToString(seq_id));
 
             continue;
         }
 
-        // id > kClusterNodeId denotes root of cluster subtree
+        // id >= kClusterNodeId denotes root of cluster subtree
         node->GetValue().SetId(kClusterNodeId + cluster_id);
+        node->GetValue().SetLabel("");
 
         // Detach subtree children and attach them to the leaf node.
         // This prevents problems in recursion
