@@ -41,6 +41,7 @@
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Sparse_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
@@ -479,6 +480,9 @@ void CSeq_align::Validate(bool full_test) const
         break;
     case C_Segs::e_Spliced:
         GetSegs().GetSpliced().Validate(full_test);
+        break;
+    case C_Segs::e_Sparse:
+        GetSegs().GetSparse().Validate(full_test);
         break;
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
