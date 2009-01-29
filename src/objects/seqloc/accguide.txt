@@ -262,7 +262,7 @@ version  1 # of file format
 2+6  FP  embl_other_nuc
 2+6  FQ  embl_other_nuc
 2+6  FR  embl_other_nuc
-2+6  FS  ddbj_other_nuc
+2+6  FS  ddbj_est
 2+6  FT  ddbj_other_nuc
 2+6  FU  ddbj_other_nuc
 2+6  FV  ddbj_other_nuc
@@ -286,6 +286,18 @@ version  1 # of file format
 2+6  GL  gb_con
 2+6  GM  embl_patent
 2+6  GN  embl_patent
+2+6  GO  gb_other_nuc
+2+6  GP  gb_other_nuc
+2+6  GQ  gb_other_nuc
+2+6  GR  gb_other_nuc
+2+6  GS  gb_other_nuc
+2+6  GT  gb_other_nuc
+2+6  GU  gb_other_nuc
+2+6  GV  gb_other_nuc
+2+6  GW  gb_other_nuc
+2+6  GX  gb_other_nuc
+2+6  GY  gb_other_nuc
+2+6  GZ  gb_other_nuc
 2+6  ??  unreserved_nuc
 
 # SPECIAL CASES
