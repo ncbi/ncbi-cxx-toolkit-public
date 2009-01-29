@@ -271,8 +271,6 @@ void CBioseqContext::x_SetId(void)
             tsip->GetAccession() : kEmptyStr;
 
         CSeq_id::EAccessionInfo acc_info = id.IdentifyAccession();
-        unsigned int acc_type = acc_info & CSeq_id::eAcc_type_mask;
-        unsigned int acc_div =  acc_info & CSeq_id::eAcc_division_mask;
 
         switch ( id.Which() ) {
         // Genbank, Embl or Ddbj
@@ -284,10 +282,14 @@ void CBioseqContext::x_SetId(void)
             break;
         case CSeq_id::e_Genbank:
             m_IsGenbank = true;
-            m_IsGbGenomeProject = m_IsGbGenomeProject  ||
-                ((acc_type & CSeq_id::eAcc_gb_genome) != 0);
-            m_IsNcbiCONDiv = m_IsNcbiCONDiv  ||
-                ((acc_type & CSeq_id::eAcc_gb_con) != 0);
+            switch (acc_info) {
+            case CSeq_id::eAcc_gb_genome:
+                m_IsGbGenomeProject = true;
+                break;
+            case CSeq_id::eAcc_gb_con:  case CSeq_id::eAcc_gb_segset:
+                m_IsNcbiCONDiv = true;
+                break;
+            }
             break;
         // Patent
         case CSeq_id::e_Patent:
