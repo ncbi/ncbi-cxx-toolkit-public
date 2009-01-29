@@ -1688,7 +1688,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
                     while (rs->Fetch()) {
                         Uint4 value = Convert(*rs);
-                        BOOST_CHECK_EQUAL(value, 2843113322);
+                        BOOST_CHECK_EQUAL(value, 2843113322u);
                     }
                 }
             }
