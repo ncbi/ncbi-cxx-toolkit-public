@@ -811,7 +811,7 @@ void CAgpErrEx::PrintMessage(CNcbiOstream& ostr, int code,
 
 
 //// class CAgpErrEx - constructor
-CAgpErrEx::CAgpErrEx(CNcbiOstrstream* out) : m_out(out)
+CAgpErrEx::CAgpErrEx(CNcbiOstream* out) : m_out(out)
 {
     m_messages = new CNcbiOstrstream();
     m_MaxRepeat = 0; // no limit

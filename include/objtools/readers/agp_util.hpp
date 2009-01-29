@@ -440,7 +440,7 @@ public:
     // Construct a readable message on total error & warning counts
     static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count=0);
 
-    CAgpErrEx(CNcbiOstrstream* out=&cerr);
+    CAgpErrEx(CNcbiOstream* out=&cerr);
 
     // Can skip unwanted messages, record a message for printing (CAgpErr::fAtThisLine),
     // print it immediately if it applies to the previous line (CAgpErr::fAtPrevLine),
@@ -546,7 +546,7 @@ public:
     //   agpErr.m_messages = tmp;
     //   agpErr.LineDone(line_orig, line_num, true);
     CNcbiOstrstream* m_messages;
-    CNcbiOstrstream* m_out;
+    CNcbiOstream* m_out;
 
     // 0: reading from STDIN or from a single file
     int GetFileNum()
