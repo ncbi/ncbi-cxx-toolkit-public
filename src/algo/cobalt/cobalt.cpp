@@ -38,6 +38,7 @@ Contents: Implementation of CMultiAligner class
 
 #include <ncbi_pch.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
 #include <algo/cobalt/cobalt.hpp>
@@ -192,8 +193,14 @@ CMultiAligner::SetQueries(const vector< CRef<objects::CBioseq> >& queries)
     ITERATE(vector<objects::CBioseq_Handle>, it, bioseq_handles) {
         CRef<objects::CSeq_loc> 
             seq_loc(new objects::CSeq_loc(objects::CSeq_loc::e_Whole));
-
-        seq_loc->SetId(*it->GetSeqId());
+                
+        try {
+            seq_loc->SetId(*it->GetSeqId());
+        }
+        catch (objects::CObjMgrException e) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                       (string)"Missing seq-id in bioseq. " + e.GetMsg());
+        }
         m_tQueries.push_back(seq_loc);
     }
 
