@@ -433,7 +433,12 @@ bool CTestOM::Thread_Run(int idx)
                     }
                 }
                 
-                if ( !m_load_only ) {
+                if ( m_load_only ) {
+                    if ( m_verbose ) {
+                        NcbiCout << NcbiEndl;
+                    }
+                }
+                else {
                     // check CSeqMap_CI
                     if ( !m_no_seq_map ) {
                         SSeqMapSelector sel(CSeqMap::fFindRef, kMax_UInt);
