@@ -15,9 +15,9 @@ test "$PTB_PROJECT" = "" && PTB_PROJECT=${PTB_PROJECT_REQ}
 
 echo "======================================================================"
 echo Building project_tree_builder.
-echo xcodebuild -project UtilityProjects/PTB.xcodeproj -target project_tree_builder -configuration ReleaseDLL
+echo xcodebuild -project $BUILD_TREE_ROOT/static/UtilityProjects/PTB.xcodeproj -target project_tree_builder -configuration ReleaseDLL
 echo "======================================================================"
-xcodebuild -project UtilityProjects/PTB.xcodeproj -target project_tree_builder -configuration ReleaseDLL
+xcodebuild -project $BUILD_TREE_ROOT/static/UtilityProjects/PTB.xcodeproj -target project_tree_builder -configuration ReleaseDLL
 
 if ! test -x $PTB_EXE; then
   echo ERROR: application not found: $PTB_EXE
