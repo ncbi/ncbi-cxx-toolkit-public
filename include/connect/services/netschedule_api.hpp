@@ -674,6 +674,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     void PrintQueue(CNcbiOstream& output_stream,
         CNetScheduleAPI::EJobStatus status) const;
 
+    unsigned CountActiveJobs();
+
     void Monitor(CNcbiOstream& out) const;
 
     struct SServerQueueList {

@@ -65,24 +65,24 @@ public:
 private:
 
     void x_GetConnectionArgs(string& service, string& queue, int& retry,
-                             bool queue_requered);
-    CNetScheduleAPI x_CreateNewClient(bool queue_requered);
+                             bool queue_required);
+    CNetScheduleAPI x_CreateNewClient(bool queue_required);
 
     bool CheckPermission();
 };
 
 
 void CNetScheduleControl::x_GetConnectionArgs(string& service, string& queue, int& retry,
-                                              bool queue_requered)
+                                              bool queue_required)
 {
     const CArgs& args = GetArgs();
     if (!args["service"])
-        NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -service");
-    if (queue_requered && !args["queue"] )
-        NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -queue");
+        NCBI_THROW(CArgException, eNoArg, "Missing required agrument: -service");
+    if (queue_required && !args["queue"] )
+        NCBI_THROW(CArgException, eNoArg, "Missing required agrument: -queue");
 
     queue = "noname";
-    if (queue_requered && args["queue"] )
+    if (queue_required && args["queue"] )
         queue = args["queue"].AsString();
 
     retry = 1;
@@ -91,11 +91,11 @@ void CNetScheduleControl::x_GetConnectionArgs(string& service, string& queue, in
 }
 
 
-CNetScheduleAPI CNetScheduleControl::x_CreateNewClient(bool queue_requered)
+CNetScheduleAPI CNetScheduleControl::x_CreateNewClient(bool queue_required)
 {
     string service,queue;
     int retry;
-    x_GetConnectionArgs(service, queue, retry, queue_requered);
+    x_GetConnectionArgs(service, queue, retry, queue_required);
     return CNetScheduleAPI(service, "netschedule_admin", queue);
 }
 
@@ -168,7 +168,7 @@ void CNetScheduleControl::Init(void)
                              CArgDescriptions::eString);
 
     arg_desc->AddFlag("dump", "Print queue dump or job dump if -jid parameter is specified");
-    
+
     arg_desc->AddOptionalKey("reschedule",
                              "job_key",
                              "Reschedule a job",
@@ -188,6 +188,8 @@ void CNetScheduleControl::Init(void)
                              "query",
                              "Count all jobs with tags set by query string",
                              CArgDescriptions::eString);
+
+    arg_desc->AddFlag("count_active", "Count active jobs in all queues");
 
     arg_desc->AddOptionalKey("show_jobs_id",
                              "query",
@@ -271,6 +273,9 @@ int CNetScheduleControl::Run(void)
         string query = args["count"].AsString();
         os << ctl.GetAdmin().Count(query) << endl;
     }
+    else if (args["count_active"]) {
+        os << x_CreateNewClient(false).GetAdmin().CountActiveJobs() << endl;
+    }
     else if( args["show_jobs_id"]) {
         ctl = x_CreateNewClient(true);
         string query = args["show_jobs_id"].AsString();
@@ -285,7 +290,7 @@ int CNetScheduleControl::Run(void)
     else if( args["query"]) {
         ctl = x_CreateNewClient(true);
         if (!args["fields"] )
-            NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -fields");
+            NCBI_THROW(CArgException, eNoArg, "Missing required agrument: -fields");
         string query = args["query"].AsString();
         string sfields = args["fields"].AsString();
         vector<string> fields;
@@ -307,9 +312,9 @@ int CNetScheduleControl::Run(void)
     else if (args["qcreate"]) {
         ctl = x_CreateNewClient(false);
         if (!args["qclass"] )
-            NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -qclass");
+            NCBI_THROW(CArgException, eNoArg, "Missing required agrument: -qclass");
         if (!args["queue"] )
-            NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -queue");
+            NCBI_THROW(CArgException, eNoArg, "Missing required agrument: -queue");
         string comment;
         if (args["comment"]) {
             comment = args["comment"].AsString();

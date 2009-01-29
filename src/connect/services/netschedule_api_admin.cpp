@@ -143,6 +143,17 @@ void CNetScheduleAdmin::PrintQueue(CNcbiOstream& output_stream,
         output_stream, eMultilineOutput);
 }
 
+unsigned CNetScheduleAdmin::CountActiveJobs()
+{
+    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
+        NCBI_THROW(CNetScheduleException, eCommandIsNotAllowed,
+            "CountActiveJobs() cannot be used with load balanced services.");
+    }
+
+    return NStr::StringToUInt(m_Impl->m_API->m_Service->
+        GetBestConnection().Exec("ACNT"));
+}
+
 void CNetScheduleAdmin::GetWorkerNodes(
     std::list<SWorkerNodeInfo>& worker_nodes) const
 {
