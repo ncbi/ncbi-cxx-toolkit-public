@@ -954,13 +954,14 @@ extern int main(int argc, char** argv)
         /*** CLIENT ***/
         const char* host;
         int         port;
-        STimeout*   timeout = 0;
+        STimeout*   tmo;
 
 #if defined(DO_CLIENT)
         host = DEF_HOST;
         port = DEF_PORT;
+        tmo  = 0/*infinite*/;
 #else
-        STimeout    x_timeout;
+        STimeout    x_tmo;
         /* host */
         host = argv[1];
 
@@ -970,16 +971,17 @@ extern int main(int argc, char** argv)
 
         /* timeout */
         if (argc == 4) {
-            double tm_out = atof(argv[3]);
-            if (tm_out < 0)
+            double val = atof(argv[3]);
+            if (val < 0)
                 break;
-            x_timeout.sec  = (unsigned int)  tm_out;
-            x_timeout.usec = (unsigned int)((tm_out - x_timeout.sec) *1000000);
-            timeout = &x_timeout;
-        }
+            x_tmo.sec  = (unsigned int)  val;
+            x_tmo.usec = (unsigned int)((val - x_tmo.sec) * 1000000);
+            tmo = &x_tmo;
+        } else
+            tmo = 0/*infinite*/;
 #endif /* DO_CLIENT */
 
-        TEST__client(host, (unsigned short) port, timeout);
+        TEST__client(host, (unsigned short) port, tmo);
         assert(SOCK_ShutdownAPI() == eIO_Success);
         CORE_SetLOG(0);
         return 0;
@@ -989,7 +991,7 @@ extern int main(int argc, char** argv)
     /* USAGE */
     fprintf(stderr,
             "\nClient/Server USAGE:\n"
-            "Client: %s <srv_host> <port> [timeout]\n"
+            "Client: %s <host> <port> [timeout]\n"
             "Server: %s <port>\n"
             "where <port> is greater than %d, and [timeout] is a double\n\n",
             argv[0], argv[0], MIN_PORT);
