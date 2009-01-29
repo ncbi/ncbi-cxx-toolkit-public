@@ -366,6 +366,8 @@ public:
     /// The CConnMemoryStream::To* methods allow to obtain unread portion of
     /// the stream in a single container (a string, a vector, or a character
     /// array) so that all data is kept in sequential memory locations.
+    /// Note that the operation is considered an extraction, so it empties
+    /// the stream.
 
     void    ToString(string*); ///< fill in the data, NULL is not accepted
     void    ToVector(vector<char>*);///< fill in the data, NULL is not accepted
