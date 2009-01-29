@@ -94,14 +94,14 @@ void CSampleNetCacheClient::Init(void)
 
 int CSampleNetCacheClient::Run(void)
 {
-    auto_ptr<CNetCacheAPI> nc_client;
+    CNetCacheAPI nc_client;
 
     const CArgs& args = GetArgs();
 
     if (args["service"]) {
         // create load balanced client
         string service_name = args["service"].AsString();
-        nc_client.reset(new CNetCacheAPI(service_name, "nc_client_sample1"));
+        nc_client = CNetCacheAPI(service_name, "nc_client_sample1");
     }
     else {
         ERR_POST("Invalid network address. Use -service option.");
@@ -118,14 +118,14 @@ int CSampleNetCacheClient::Run(void)
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
 
     // Store the BLOB
-    string key = nc_client->PutData(test_data, strlen(test_data)+1);
+    string key = nc_client.PutData(test_data, strlen(test_data)+1);
     NcbiCout << key << NcbiEndl;
     
     int i;
     for(i = 0; i < 5; ++i)
     {
         string key;
-        writers.push_back(nc_client->PutData(&key));
+        writers.push_back(nc_client.PutData(&key));
         keys.push_back(key);
     }
     i = 0;
@@ -143,7 +143,7 @@ int CSampleNetCacheClient::Run(void)
 
     // retrieve BLOB
     CSimpleBuffer bdata;
-    CNetCacheAPI::EReadResult rres = nc_client->GetData(key, bdata);
+    CNetCacheAPI::EReadResult rres = nc_client.GetData(key, bdata);
     if (rres == CNetCacheAPI::eNotFound) {
         ERR_POST("Blob not found");
         return 1;
@@ -152,7 +152,7 @@ int CSampleNetCacheClient::Run(void)
     NcbiCout << bdata.data() << NcbiEndl;
 
     for(vector<string>::const_iterator its = keys.begin(); its != keys.end(); ++its) {
-        readers.push_back(nc_client->GetData(*its));
+        readers.push_back(nc_client.GetData(*its));
     }
     for(TReaders::iterator it = readers.begin(); it != readers.end(); ++it) {
         {
