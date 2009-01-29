@@ -75,8 +75,10 @@ CNetServer CNetServerGroup::GetServer(int index)
 
 SNetServiceImpl::SNetServiceImpl(
     const std::string& service_name,
-    const std::string& client_name) :
-    m_ServiceDiscovery(new CNetServiceDiscovery(service_name)),
+    const std::string& client_name,
+    const std::string& lbsm_affinity_name) :
+    m_ServiceDiscovery(new CNetServiceDiscovery(service_name,
+        lbsm_affinity_name)),
     m_IsLoadBalanced(false),
     m_DiscoverLowPriorityServers(eOff),
     m_Timeout(s_GetDefaultCommTimeout()),

@@ -146,13 +146,15 @@ void SNetCacheAPIImpl::CNetCacheServerListener::OnError(
 }
 
 CNetCacheAPI::CNetCacheAPI(const string& client_name) :
-    m_Impl(new SNetCacheAPIImpl(kEmptyStr, client_name))
+    m_Impl(new SNetCacheAPIImpl(kEmptyStr, client_name, kEmptyStr))
 {
 }
 
 
-CNetCacheAPI::CNetCacheAPI(const string& service, const string& client_name) :
-    m_Impl(new SNetCacheAPIImpl(service, client_name))
+CNetCacheAPI::CNetCacheAPI(const std::string& service_name,
+    const std::string& client_name,
+    const std::string& lbsm_affinity_name) :
+    m_Impl(new SNetCacheAPIImpl(service_name, client_name, lbsm_affinity_name))
 {
 }
 
@@ -490,7 +492,7 @@ public:
                 unsigned int communication_timeout = conf.GetInt(m_DriverName,
                                                               "communication_timeout",
                                                               CConfig::eErr_NoThrow, 12);
-                drv = new SNetCacheAPIImpl(service, client_name);
+                drv = new SNetCacheAPIImpl(service, client_name, kEmptyStr);
 
                 drv->m_Service->m_ServiceDiscovery->Init(conf, m_DriverName);
 

@@ -172,9 +172,10 @@ template<> struct ToStr<int> {
 
 struct SNetScheduleAPIImpl : public CNetObject
 {
-    SNetScheduleAPIImpl(const string& service_name,
-        const string& client_name,
-        const string& queue_name);
+    SNetScheduleAPIImpl(const std::string& service_name,
+        const std::string& client_name,
+        const std::string& queue_name,
+        const std::string& lbsm_affinity_name);
 
     class CNetScheduleServerListener : public INetServerConnectionListener
     {
@@ -254,10 +255,13 @@ struct SNetScheduleAPIImpl : public CNetObject
 };
 
 inline SNetScheduleAPIImpl::SNetScheduleAPIImpl(
-    const string& service_name,
-    const string& client_name,
-    const string& queue_name) :
-        m_Service(new SNetServiceImpl(service_name, client_name)),
+    const std::string& service_name,
+    const std::string& client_name,
+    const std::string& queue_name,
+    const std::string& lbsm_affinity_name) :
+        m_Service(new SNetServiceImpl(service_name,
+            client_name,
+            lbsm_affinity_name)),
         m_Queue(queue_name),
         m_ServerParamsAskCount(SERVER_PARAMS_ASK_MAX_COUNT)
 {

@@ -49,6 +49,8 @@ class NCBI_XCONNECT_EXPORT CNetServiceDiscovery : public CNetObject
 {
 public:
     CNetServiceDiscovery(const std::string& service_name);
+    CNetServiceDiscovery(const std::string& service_name,
+        const std::string& lbsm_affinity_name);
 
     virtual ~CNetServiceDiscovery();
 
@@ -68,6 +70,15 @@ private:
 inline CNetServiceDiscovery::CNetServiceDiscovery(
         const std::string& service_name) :
     m_ServiceName(service_name),
+    m_LBSMAffinityValue(NULL)
+{
+}
+
+inline CNetServiceDiscovery::CNetServiceDiscovery(
+        const std::string& service_name,
+        const std::string& lbsm_affinity_name) :
+    m_ServiceName(service_name),
+    m_LBSMAffinityName(lbsm_affinity_name),
     m_LBSMAffinityValue(NULL)
 {
 }

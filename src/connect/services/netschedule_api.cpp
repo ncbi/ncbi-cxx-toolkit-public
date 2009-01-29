@@ -101,10 +101,14 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(
 CNetScheduleExceptionMap SNetScheduleAPIImpl::sm_ExceptionMap;
 
 CNetScheduleAPI::CNetScheduleAPI(
-    const string& service_name,
-    const string& client_name,
-    const string& queue_name) :
-    m_Impl(new SNetScheduleAPIImpl(service_name, client_name, queue_name))
+    const std::string& service_name,
+    const std::string& client_name,
+    const std::string& queue_name,
+    const std::string& lbsm_affinity_name) :
+    m_Impl(new SNetScheduleAPIImpl(service_name,
+        client_name,
+        queue_name,
+        lbsm_affinity_name))
 {
 }
 
@@ -474,7 +478,7 @@ public:
                             CConfig::eErr_NoThrow, 12);
 
                     drv.reset(new SNetScheduleAPIImpl(service,
-                        client_name, queue_name));
+                        client_name, queue_name, kEmptyStr));
 
                     drv->m_Service->m_ServiceDiscovery->
                         Init(conf, m_DriverName);

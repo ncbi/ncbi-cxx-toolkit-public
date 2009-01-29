@@ -85,9 +85,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     /// @param queue_name
     ///    Name of the job queue
     ///
-    CNetScheduleAPI(const string& service_name,
-                    const string& client_name,
-                    const string& queue_name);
+    CNetScheduleAPI(const std::string& service_name,
+                    const std::string& client_name,
+                    const std::string& queue_name,
+                    const std::string& lbsm_affinity_name = kEmptyStr);
 
     /// Set program version (like: MyProgram v. 1.2.3)
     ///

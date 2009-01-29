@@ -63,18 +63,19 @@ struct SNetCacheAPIImpl;
 /// Client API for NetCache server
 ///
 /// After any Put, Get transactions connection socket
-/// is closed (part of NetCache protocol implemenation)
+/// is closed (a part of the NetCache protocol implementation).
 ///
 ///
 class NCBI_XCONNECT_EXPORT CNetCacheAPI
 {
     NET_COMPONENT(NetCacheAPI);
 
-    explicit CNetCacheAPI(const string&  client_name);
+    explicit CNetCacheAPI(const std::string& client_name);
 
     /// Construct client, working with the specified service
-    CNetCacheAPI(const string& service,
-                 const string&  client_name);
+    CNetCacheAPI(const std::string& service_name,
+        const std::string& client_name,
+        const std::string& lbsm_affinity_name = kEmptyStr);
 
     /// Put BLOB to server
     ///

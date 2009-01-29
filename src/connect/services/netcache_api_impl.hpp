@@ -39,7 +39,9 @@ BEGIN_NCBI_SCOPE
 
 struct SNetCacheAPIImpl : public CNetObject
 {
-    SNetCacheAPIImpl(const string& service, const string& client_name);
+    SNetCacheAPIImpl(const string& service,
+        const string& client_name,
+        const std::string& lbsm_affinity_name);
 
     class CNetCacheServerListener : public INetServerConnectionListener
     {
@@ -76,9 +78,10 @@ struct SNetCacheAPIImpl : public CNetObject
     bool m_NoHasBlob;
 };
 
-inline SNetCacheAPIImpl::SNetCacheAPIImpl(
-    const string& service, const string& client_name) :
-    m_Service(new SNetServiceImpl(service, client_name)),
+inline SNetCacheAPIImpl::SNetCacheAPIImpl(const std::string& service,
+    const std::string& client_name,
+    const std::string& lbsm_affinity_name) :
+    m_Service(new SNetServiceImpl(service, client_name, lbsm_affinity_name)),
     m_NoHasBlob(false)
 {
     m_Listener = new CNetCacheServerListener(m_Service.GetClientName());

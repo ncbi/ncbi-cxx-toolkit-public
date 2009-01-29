@@ -84,7 +84,8 @@ struct SNetServiceImpl : public CNetObject
     // the CNetService::Create() method).
     SNetServiceImpl(
         const std::string& service_name,
-        const std::string& client_name);
+        const std::string& client_name,
+        const std::string& lbsm_affinity_name);
 
     // Set up connection event listening. In fact, this
     // listener implements the authentication part of both
