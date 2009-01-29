@@ -88,6 +88,10 @@ void CId1FetchApp::Init(void)
         ("req", "Request",
          "ID1 request in ASN.1 text format",
          CArgDescriptions::eString);
+    arg_desc->AddOptionalKey
+        ("in", "RequestFile",
+         "File to read request(s) from",
+         CArgDescriptions::eInputFile);
 
     // Output format
     arg_desc->AddDefaultKey
@@ -95,7 +99,7 @@ void CId1FetchApp::Init(void)
          "Format to dump the resulting data in",
          CArgDescriptions::eString, "asn");
     arg_desc->SetConstraint("fmt", &(*new CArgAllow_Strings,
-                                     "asn", "asnb", "xml", "raw"));
+                                     "asn", "asnb", "xml", "raw", "none"));
 
     // Output datafile
     arg_desc->AddDefaultKey
@@ -147,74 +151,85 @@ int CId1FetchApp::Run(void)
     CONNECT_Init(&GetConfig());
     
     // Compose request to ID1 server
-    CID1server_request id1_request;
+    typedef vector<CRef<CID1server_request> > TReqs;
+    TReqs reqs;
     if ( args["gi"] ) {
         int gi = args["gi"].AsInteger();
         //    id1_request.SetGetsefromgi().SetGi() = gi;
-        id1_request.SetGetseqidsfromgi() = gi;
+        CRef<CID1server_request> req(new CID1server_request);
+        req->SetGetseqidsfromgi(gi);
+        reqs.push_back(req);
     }
     else if ( args["req"] ) {
         string text = args["req"].AsString();
         if ( text.find("::=") == NPOS ) {
             text = "ID1server-request ::= " + text;
         }
+        CRef<CID1server_request> req(new CID1server_request);
         CNcbiIstrstream in(text.data(), text.size());
-        in >> MSerial_AsnText >> id1_request;
+        in >> MSerial_AsnText >> *req;
+        reqs.push_back(req);
+    }
+    else if ( args["in"] ) {
+        auto_ptr<CObjectIStream> req_input
+            (CObjectIStream::Open(eSerial_AsnText, args["in"].AsInputFile()));
+        while ( !req_input->EndOfData() ) {
+            CRef<CID1server_request> req(new CID1server_request);
+            *req_input >> *req;
+            reqs.push_back(req);
+        }
     }
 
     // Open connection to ID1 server
     string server_name = args["server"].AsString();
     STimeout tmout;  tmout.sec = 9;  tmout.usec = 0;  
     CConn_ServiceStream id1_server(server_name, fSERV_Any, 0, 0, &tmout);
-    {{
-        CObjectOStreamAsnBinary id1_server_output(id1_server);
+    CObjectOStreamAsnBinary id1_server_output(id1_server);
+    CObjectIStreamAsnBinary id1_server_input(id1_server, false);
 
-        // Send request to the server
-        id1_server_output << id1_request;
-        id1_server_output.Flush();
-    }}
-
-    // Get response (Seq-Entry) from the server, dump it to the
-    // output data file in the requested format
-    CNcbiOstream& datafile = args["out"].AsOutputFile();
-    const string& fmt = args["fmt"].AsString();
-
-    // Dump the raw data coming from server "as is", if so specified
-    if (fmt == "raw") {
-        datafile << id1_server.rdbuf();
-        return 0;  // Done
-    }
-
-    CID1server_back id1_response;
-    {{
-        // Read server response in ASN.1 binary format
-        CObjectIStreamAsnBinary id1_server_input(id1_server, false);
-        id1_server_input >> id1_response;
-    }}
-
-    // Dump server response in the specified format
-    ESerialDataFormat format;
-    if        (fmt == "asn") {
-        format = eSerial_AsnText;
-    } else if (fmt == "asnb") {
-        format = eSerial_AsnBinary;
-    } else if (fmt == "xml") {
-        format = eSerial_Xml;
-    }
-    else {
-        _TROUBLE;
-        return 1;
-    }
-
-    {{
-        auto_ptr<CObjectOStream> id1_client_output
-            (CObjectOStream::Open(format, datafile));
-
-        *id1_client_output << id1_response;
-        if (fmt == "asn"  ||  fmt == "xml") {
-            datafile << NcbiEndl;
+    CNcbiOstream* datafile =
+        args["fmt"].AsString() == "none"? 0: &args["out"].AsOutputFile();
+    ESerialDataFormat format = eSerial_None;
+    auto_ptr<CObjectOStream> id1_client_output;
+    if ( datafile ) {
+        string fmt = args["fmt"].AsString();
+        if        (fmt == "asn") {
+            format = eSerial_AsnText;
+        } else if (fmt == "asnb") {
+            format = eSerial_AsnBinary;
+        } else if (fmt == "xml") {
+            format = eSerial_Xml;
         }
-    }}
+        if ( format != eSerial_None ) {
+            id1_client_output.reset(CObjectOStream::Open(format, *datafile));
+        }
+    }
+
+    ITERATE ( TReqs, it, reqs ) {
+        // Send request to the server
+        id1_server_output << **it;
+        id1_server_output.Flush();
+        
+        // Get response (Seq-Entry) from the server, dump it to the
+        // output data file in the requested format
+        // Dump the raw data coming from server "as is", if so specified
+        if ( !id1_client_output.get() && datafile ) {
+            *datafile << id1_server.rdbuf();
+            return 0;  // Done
+        }
+        CID1server_back id1_response;
+        // Read server response in ASN.1 binary format
+        id1_server_input.UseMemoryPool();
+        id1_server_input >> id1_response;
+        if ( id1_client_output.get() ) {
+        // Dump server response in the specified format
+            *id1_client_output << id1_response;
+            if ( format != eSerial_AsnBinary ) {
+                id1_client_output->FlushBuffer();
+                *datafile << '\n';
+            }
+        }
+    }
 
     return 0;  // Done
 }
