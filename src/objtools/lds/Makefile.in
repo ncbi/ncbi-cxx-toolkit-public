@@ -6,7 +6,5 @@
 LIB_PROJ = lds
 REQUIRES = bdb
 
-EXPENDABLE_SUB_PROJ = test
-
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

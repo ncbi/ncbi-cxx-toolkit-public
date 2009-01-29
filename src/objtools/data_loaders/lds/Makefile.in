@@ -4,7 +4,7 @@
 ##################################
 
 LIB_PROJ = ncbi_xloader_lds
-SUB_PROJ = 
+SUB_PROJ = test
 REQUIRES = bdb
 
 srcdir = @srcdir@
