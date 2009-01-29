@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -895,8 +895,7 @@ static void TEST_SOCK_isip(void)
  */
 extern int main(int argc, char** argv)
 {
-    /* Setup log stream
-     */
+    /* Setup log stream */
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
@@ -908,8 +907,7 @@ extern int main(int argc, char** argv)
     argc = 3;
 #endif
 
-    /* Printout local hostname
-     */
+    /* Printout local hostname */
     {{
         char local_host[64];
         assert(SOCK_gethostname(local_host, sizeof(local_host)) == 0);
@@ -920,6 +918,21 @@ extern int main(int argc, char** argv)
     /* Parse cmd.-line args and decide whether it's a client or a server
      */
     switch ( argc ) {
+    case 1:
+        /*** Try to set various fake MT safety locks ***/
+        CORE_SetLOCK( MT_LOCK_Create(0,
+                                     TEST_LockHandler, TEST_LockCleanup) );
+        CORE_SetLOCK(0);
+        CORE_SetLOCK(0);
+        CORE_SetLOCK( MT_LOCK_Create(&TEST_LockUserData,
+                                     TEST_LockHandler, TEST_LockCleanup) );
+        TEST_gethostby();
+
+        TEST_SOCK_isip();
+
+        CORE_SetLOCK(0);
+        break;
+
     case 2: {
         /*** SERVER ***/
         int port;
@@ -939,21 +952,20 @@ extern int main(int argc, char** argv)
 
     case 3: case 4: {
         /*** CLIENT ***/
-        const char* server_host;
-        int         server_port;
+        const char* host;
+        int         port;
         STimeout*   timeout = 0;
 
 #if defined(DO_CLIENT)
-        server_host = DEF_HOST;
-        server_port = DEF_PORT;
+        host = DEF_HOST;
+        port = DEF_PORT;
 #else
         STimeout    x_timeout;
         /* host */
-        server_host = argv[1];
+        host = argv[1];
 
         /* port */
-        if (sscanf(argv[2], "%d", &server_port) != 1  ||
-            server_port < MIN_PORT)
+        if (sscanf(argv[2], "%d", &port) != 1  ||  port < MIN_PORT)
             break;
 
         /* timeout */
@@ -961,38 +973,26 @@ extern int main(int argc, char** argv)
             double tm_out = atof(argv[3]);
             if (tm_out < 0)
                 break;
-            x_timeout.sec  = (unsigned int)tm_out;
+            x_timeout.sec  = (unsigned int)  tm_out;
             x_timeout.usec = (unsigned int)((tm_out - x_timeout.sec) *1000000);
             timeout = &x_timeout;
-        };
+        }
 #endif /* DO_CLIENT */
 
-        TEST__client(server_host, (unsigned short) server_port, timeout);
+        TEST__client(host, (unsigned short) port, timeout);
         assert(SOCK_ShutdownAPI() == eIO_Success);
         CORE_SetLOG(0);
         return 0;
     }
     } /* switch */
 
-    /* Try to set various fake MT safety locks
-     */
-    CORE_SetLOCK( MT_LOCK_Create(0, TEST_LockHandler, TEST_LockCleanup) );
-    CORE_SetLOCK(0);
-    CORE_SetLOCK(0);
-    CORE_SetLOCK( MT_LOCK_Create(&TEST_LockUserData,
-                                 TEST_LockHandler, TEST_LockCleanup) );
-
-    TEST_gethostby();
-
-    TEST_SOCK_isip();
-
+    /* USAGE */
     fprintf(stderr,
             "\nClient/Server USAGE:\n"
             "Client: %s <srv_host> <port> [timeout]\n"
             "Server: %s <port>\n"
             "where <port> is greater than %d, and [timeout] is a double\n\n",
             argv[0], argv[0], MIN_PORT);
-    CORE_SetLOCK(0);
     CORE_SetLOG(0);
-    return 0;
+    return argc == 1 ? 0 : 1;
 }
