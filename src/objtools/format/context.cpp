@@ -271,6 +271,7 @@ void CBioseqContext::x_SetId(void)
             tsip->GetAccession() : kEmptyStr;
 
         CSeq_id::EAccessionInfo acc_info = id.IdentifyAccession();
+        unsigned int acc_div =  acc_info & CSeq_id::eAcc_division_mask;
 
         switch ( id.Which() ) {
         // Genbank, Embl or Ddbj
@@ -288,6 +289,8 @@ void CBioseqContext::x_SetId(void)
                 break;
             case CSeq_id::eAcc_gb_con:  case CSeq_id::eAcc_gb_segset:
                 m_IsNcbiCONDiv = true;
+                break;
+            default:
                 break;
             }
             break;
