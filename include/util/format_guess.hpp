@@ -255,6 +255,7 @@ protected:
     streamsize m_iTestDataSize;
 
     bool m_bStatsAreValid;
+    bool m_bSplitDone;
     unsigned int m_iStatsCountData;
     unsigned int m_iStatsCountAlNumChars;
     unsigned int m_iStatsCountDnaChars;

@@ -340,6 +340,7 @@ CFormatGuess::Initialize()
     m_pTestBuffer = 0;
 
     m_bStatsAreValid = false;
+    m_bSplitDone = false;
     m_iStatsCountData = 0;
     m_iStatsCountAlNumChars = 0;
     m_iStatsCountDnaChars = 0;
@@ -1455,11 +1456,10 @@ bool
 CFormatGuess::EnsureSplitLines()
 //  ----------------------------------------------------------------------------
 {
-    static bool bSplitDone( false );
-    if ( bSplitDone ) {
-        return true;
+    if ( m_bSplitDone ) {
+        return !m_TestLines.empty();
     }
-    bSplitDone = true;
+    m_bSplitDone = true;
     
     //
     //  Make sure the given data is ASCII before checking potential line breaks:
@@ -1499,7 +1499,7 @@ CFormatGuess::EnsureSplitLines()
     if ( m_iTestDataSize == s_iTestBufferSize ) {
         m_TestLines.pop_back();
     }    
-    return true;
+    return !m_TestLines.empty();
 }
 
 END_NCBI_SCOPE
