@@ -1053,6 +1053,9 @@ bool CFormatGuess::IsInputRepeatMaskerWithHeader()
             break;
         }
     }
+    if ( it == m_TestLines.end() ) {
+        return false;
+    }
     
     //
     //  Verify first line of labels:
