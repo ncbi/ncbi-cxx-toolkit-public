@@ -37,6 +37,7 @@
 #include <util/util_exception.hpp>
 #include <corelib/rwstream.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/stream_utils.hpp>
 
 #include <string.h>
 
@@ -52,9 +53,18 @@ CRef<ILineReader> ILineReader::New(const string& filename)
 
 
 CStreamLineReader::CStreamLineReader(CNcbiIstream& is,
+                                     EEOLStyle eol_style,
                                      EOwnership ownership)
-    : m_Stream(&is, ownership),
-      m_UngetLine(false)
+    : m_Stream(&is, ownership), m_UngetLine(false),
+      m_AutoEOL(eol_style == eEOL_unknown), m_EOLStyle(eol_style)
+{
+}
+
+
+CStreamLineReader::CStreamLineReader(CNcbiIstream& is,
+                                     EOwnership ownership)
+    : m_Stream(&is, ownership), m_UngetLine(false),
+      m_AutoEOL(true), m_EOLStyle(eEOL_unknown)
 {
 }
 
@@ -90,9 +100,13 @@ CStreamLineReader& CStreamLineReader::operator++(void)
         m_UngetLine = false;
         return *this;
     }
-    NcbiGetlineEOL(*m_Stream, m_Line);
-    if ( !m_Line.empty() && m_Line[m_Line.size()-1] == '\r' ) {
-        m_Line.erase(m_Line.size()-1);
+
+    switch (m_EOLStyle) {
+    case eEOL_unknown: x_AdvanceEOLUnknown();                   break;
+    case eEOL_cr:      x_AdvanceEOLSimple('\r', '\n');          break;
+    case eEOL_lf:      x_AdvanceEOLSimple('\n', '\r');          break;
+    case eEOL_crlf:    x_AdvanceEOLCRLF();                      break;
+    case eEOL_mixed:   NcbiGetline(*m_Stream, m_Line, "\r\n");  break;
     }
     return *this;
 }
@@ -108,6 +122,82 @@ CTempString CStreamLineReader::operator*(void) const
 CT_POS_TYPE CStreamLineReader::GetPosition(void) const
 {
     return m_Stream->tellg();
+}
+
+
+CStreamLineReader::EEOLStyle CStreamLineReader::x_AdvanceEOLUnknown(void)
+{
+    _ASSERT(m_AutoEOL);
+    NcbiGetline(*m_Stream, m_Line, "\r\n");
+    m_Stream->unget();
+    CT_INT_TYPE eol = m_Stream->get();
+    if (CT_EQ_INT_TYPE(eol, CT_TO_INT_TYPE('\r'))) {
+        m_EOLStyle = eEOL_cr;
+    } else if (CT_EQ_INT_TYPE(eol, CT_TO_INT_TYPE('\n'))) {
+        // NcbiGetline doesn't yield enough information to determine
+        // whether eEOL_lf or eEOL_crlf is more appropriate, and not
+        // all streams allow tellg() (which could otherwise resolve
+        // matters), so defer further analysis to x_AdvanceEOLCRLF,
+        // which will be responsible for reading the next line and
+        // supports switching to eEOL_lf as appropriate.
+        //
+        // An alternative approach would have been to pass \r\n rather
+        // than \n\r, and then check for an immediately following \n
+        // if eol turned out to be \r, but that would miscount an
+        // actual(!) \r\n sequence as a single line break.
+        m_EOLStyle = eEOL_crlf;
+    }
+    return m_EOLStyle;
+}
+
+
+CStreamLineReader::EEOLStyle CStreamLineReader::x_AdvanceEOLSimple(char eol,
+                                                                   char alt_eol)
+{
+    SIZE_TYPE pos;
+    NcbiGetline(*m_Stream, m_Line, eol);
+    if (m_AutoEOL  &&  (pos = m_Line.find(alt_eol)) != NPOS) {
+        ++pos;
+        if (eol != '\n'  ||  pos != m_Line.size()) {
+            // an *immediately* preceding CR is quite all right
+            CStreamUtils::Pushback(*m_Stream, m_Line.data() + pos,
+                                   m_Line.size() - pos);
+            m_EOLStyle = eEOL_mixed;
+        }
+        m_Line.resize(pos - 1);
+        return (m_EOLStyle == eEOL_mixed) ? m_EOLStyle : eEOL_crlf;
+    } else if (m_AutoEOL  &&  eol == '\r'  &&
+               CT_EQ_INT_TYPE(m_Stream->peek(), CT_TO_INT_TYPE(alt_eol))) {
+        m_Stream->get();
+        return eEOL_crlf;
+    }
+    return (eol == '\r') ? eEOL_cr : eEOL_lf;
+}
+
+
+CStreamLineReader::EEOLStyle CStreamLineReader::x_AdvanceEOLCRLF(void)
+{
+    if (m_AutoEOL) {
+        EEOLStyle style = x_AdvanceEOLSimple('\n', '\r');
+        if (style == eEOL_mixed) {
+            // found an embedded CR
+            m_EOLStyle = eEOL_cr;
+        } else if (style != eEOL_crlf) {
+            m_EOLStyle = eEOL_lf;
+        }
+    } else {
+        string extra;
+        NcbiGetline(*m_Stream, m_Line, '\n');
+        while ( !AtEOF()  &&  !NStr::EndsWith(m_Line, "\r") ) {
+            m_Line += '\n';
+            NcbiGetline(*m_Stream, extra, '\n');
+            m_Line += extra;
+        }
+        if (NStr::EndsWith(m_Line, "\r")) {
+            m_Line.resize(m_Line.size() - 1);
+        }
+    }
+    return m_EOLStyle;
 }
 
 

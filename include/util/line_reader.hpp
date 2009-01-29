@@ -87,8 +87,25 @@ public:
 class NCBI_XUTIL_EXPORT CStreamLineReader : public ILineReader
 {
 public:
-    CStreamLineReader(CNcbiIstream& is,
-                      EOwnership ownership = eNoOwnership);
+    enum EEOLStyle {
+        eEOL_unknown = 0, ///< to be detected
+        eEOL_cr      = 1, ///< bare CR (classic Mac)
+        eEOL_lf      = 2, ///< bare LF (Unix et al.)
+        eEOL_crlf    = 3, ///< DOS/Windows
+#ifdef NCBI_OS_UNIX
+        eEOL_native  = eEOL_lf,
+#elif defined(NCBI_OS_MSWIN)
+        eEOL_native  = eEOL_crlf,
+#else
+        eEOL_native  = eEOL_unknown,
+#endif
+        eEOL_mixed   = 4 ///< contains both bare CRs and bare LFs
+    };
+
+    explicit CStreamLineReader(CNcbiIstream& is,
+                               EEOLStyle eol_style = eEOL_unknown,
+                               EOwnership ownership = eNoOwnership);
+    CStreamLineReader(CNcbiIstream& is, EOwnership ownership);
     ~CStreamLineReader();
 
     bool               AtEOF(void) const;
@@ -99,9 +116,15 @@ public:
     CT_POS_TYPE        GetPosition(void) const;
 
 private:
+    EEOLStyle x_AdvanceEOLUnknown(void);
+    EEOLStyle x_AdvanceEOLSimple(char eol, char alt_eol);
+    EEOLStyle x_AdvanceEOLCRLF(void);
+
     AutoPtr<CNcbiIstream> m_Stream;
-    string             m_Line;
-    bool               m_UngetLine;
+    string                m_Line;
+    bool                  m_UngetLine;
+    bool                  m_AutoEOL;
+    EEOLStyle             m_EOLStyle;
 };
 
 
