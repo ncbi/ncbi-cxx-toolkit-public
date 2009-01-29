@@ -176,8 +176,8 @@ protected:
     void Initialize();
 
     bool EnsureTestBuffer();
-
     bool EnsureStats();
+    bool EnsureSplitLines();
 
     bool TestFormatRepeatMasker(
         EMode );
@@ -220,6 +220,28 @@ protected:
     bool TestFormatWiggle(
         EMode );
 
+    bool IsInputRepeatMaskerWithoutHeader();
+    bool IsInputRepeatMaskerWithHeader();
+    
+    static bool IsLineFlatFileSequence(
+        const std::string& );
+    static bool IsLineNewick(
+        const std::string& );
+    static bool IsLabelNewick(
+        const std::string& );
+    static bool IsLineAgp(
+        const std::string& );
+    static bool IsLineGlimmer3(
+        const std::string& );
+    static bool IsLineGtf(
+        const std::string& );
+    static bool IsLinePhrapId(
+        const std::string& );
+    static bool IsLineRmo(
+        const std::string& );
+    static bool IsAsnComment(
+        const vector<string>& );
+        
 private:
     static bool x_TestInput( CNcbiIstream& input, EOnError onerror );
 
@@ -237,6 +259,7 @@ protected:
     unsigned int m_iStatsCountAlNumChars;
     unsigned int m_iStatsCountDnaChars;
     unsigned int m_iStatsCountAaChars;
+    std::list<std::string> m_TestLines;
 };
 
 END_NCBI_SCOPE
