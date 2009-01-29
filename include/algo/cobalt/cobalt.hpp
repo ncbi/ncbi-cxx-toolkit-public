@@ -144,7 +144,7 @@ public:
     /// of the last alignment.
     /// @param queries List of query sequences [in]
     ///
-    void SetQueries(const vector<objects::CBioseq>& queries);
+    void SetQueries(const vector< CRef<objects::CBioseq> >& queries);
 
     /// Set query sequences.
     /// This automatically clears out the intermediate state
@@ -341,6 +341,11 @@ protected:
     void x_FindPatternHits(const vector<const CSequence*>& queries,
                            const vector<int>& indices);
 
+    /// Find consistent subset of pair-wise hits that can be used as
+    /// alignment constraints
+    ///
+    void x_FindConsistentHitSubset(void);
+
     /// Given the current list of domain and local hits, generate a 
     /// phylogenetic tree that clusters the current input sequences.
     /// Intended for applications that want fine-grained control of the 
@@ -410,7 +415,7 @@ protected:
     /// correct order. It is sufficient for 'black box' applications that
     /// only want a final answer without tweaking internal state.
     ///
-    void x_Run(void);
+    virtual void x_Run(void);
 
 protected:
 
@@ -529,7 +534,6 @@ private:
                              vector< CRef<objects::CSeq_loc> >& filler_locs, 
                              vector<SSegmentLoc>& filler_segs);
 
-    void x_FindConsistentHitSubset();
     void x_FindAlignmentSubsets();
     SGraphNode * x_FindBestPath(vector<SGraphNode>& nodes);
 

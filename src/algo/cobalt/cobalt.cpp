@@ -170,7 +170,7 @@ CMultiAligner::SetQueries(const vector< CRef<objects::CSeq_loc> >& queries,
 
 
 void 
-CMultiAligner::SetQueries(const vector<objects::CBioseq>& queries)
+CMultiAligner::SetQueries(const vector< CRef<objects::CBioseq> >& queries)
 {
     if (queries.size() < 2) {
         NCBI_THROW(CMultiAlignerException, eInvalidInput,
@@ -184,8 +184,8 @@ CMultiAligner::SetQueries(const vector<objects::CBioseq>& queries)
     m_Scope->AddDefaults();
 
     vector<objects::CBioseq_Handle> bioseq_handles;
-    ITERATE(vector<objects::CBioseq>, it, queries) {
-        bioseq_handles.push_back(m_Scope->AddBioseq(*it));
+    ITERATE(vector< CRef<objects::CBioseq> >, it, queries) {
+        bioseq_handles.push_back(m_Scope->AddBioseq(**it));
     }
 
     m_tQueries.clear();
