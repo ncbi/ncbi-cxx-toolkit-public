@@ -286,6 +286,7 @@ struct SNetScheduleSubmitterImpl : public CNetObject
         unsigned short udp_port, unsigned wait_time) const;
 
     void DoConfirmRollbackRead(const char* cmd_start,
+        const char* cmd_name,
         const std::string& batch_id,
         const std::vector<std::string>& job_ids,
         const std::string& error_message);

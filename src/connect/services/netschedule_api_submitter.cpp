@@ -264,12 +264,12 @@ bool CReadCmdExecutor::Consider(CNetServer server)
 {
     std::string response = server.Connect().Exec(m_Cmd);
 
-    if (response == "0")
+    if (response.empty() || response == "0 " || response == "0")
         return false;
 
     std::string encoded_bitvector;
 
-    NStr::SplitInTwo(response, ",", m_BatchId, encoded_bitvector);
+    NStr::SplitInTwo(response, " ", m_BatchId, encoded_bitvector);
 
     CBitVectorDecoder bvdec(encoded_bitvector);
 
@@ -303,13 +303,14 @@ bool CNetScheduleSubmitter::Read(std::string& batch_id,
 }
 
 void SNetScheduleSubmitterImpl::DoConfirmRollbackRead(const char* cmd_start,
+    const char* cmd_name,
     const std::string& batch_id,
     const std::vector<std::string>& job_ids,
     const std::string& error_message)
 {
     if (job_ids.empty()) {
-        NCBI_THROW(CNetScheduleException, eInvalidParameter,
-            "Read(Confirm|Fail): no job keys specified");
+        NCBI_THROW_FMT(CNetScheduleException, eInvalidParameter,
+            cmd_name << ": no job keys specified");
     }
 
     CBitVectorEncoder bvenc;
@@ -324,8 +325,8 @@ void SNetScheduleSubmitterImpl::DoConfirmRollbackRead(const char* cmd_start,
         CNetScheduleKey key(*job_id);
 
         if (key.host != first_key.host || key.port != first_key.port) {
-            NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                "Read(Confirm|Fail): all jobs must belong to a single NS");
+            NCBI_THROW_FMT(CNetScheduleException, eInvalidParameter,
+                cmd_name << ": all jobs must belong to a single NS");
         }
 
         bvenc.AppendInteger(key.id);
@@ -350,14 +351,16 @@ void SNetScheduleSubmitterImpl::DoConfirmRollbackRead(const char* cmd_start,
 void CNetScheduleSubmitter::ReadConfirm(const std::string& batch_id,
     const std::vector<std::string>& job_ids)
 {
-    m_Impl->DoConfirmRollbackRead("CFRM ", batch_id, job_ids, kEmptyStr);
+    m_Impl->DoConfirmRollbackRead("CFRM ", "ReadConfirm",
+        batch_id, job_ids, kEmptyStr);
 }
 
 void CNetScheduleSubmitter::ReadRollback(const std::string& batch_id,
     const std::vector<std::string>& job_ids,
     const std::string& error_message)
 {
-    m_Impl->DoConfirmRollbackRead("FRED ", batch_id, job_ids, error_message);
+    m_Impl->DoConfirmRollbackRead("FRED ", "ReadRollback",
+        batch_id, job_ids, error_message);
 }
 
 struct SWaitJobPred {

@@ -459,9 +459,13 @@ int CNetScheduleControl::Run(void)
         std::string batch_id;
         std::vector<std::string> job_ids;
 
+        ctl = x_CreateNewClient(true);
+
         if (!ctl.GetSubmitter().Read(batch_id,
-            job_ids, read_limit, read_timeout))
+            job_ids, read_limit, read_timeout)) {
+            fputs("No jobs are ready to be read.\n", stderr);
             return 1;
+        }
 
         batch_id_output.WriteLine(batch_id);
 
@@ -474,19 +478,32 @@ int CNetScheduleControl::Run(void)
         std::string arg = confirm ?
             args["read_confirm"].AsString() : args["read_rollback"].AsString();
 
-        std::string batch_id, file_or_job_ids;
+        std::string file_or_batch_id, file_or_job_ids;
 
         NStr::SplitInTwo(arg, CCmdLineArgList::GetDelimiterString(),
-            batch_id, file_or_job_ids);
+            file_or_batch_id, file_or_job_ids);
+
+        CCmdLineArgList batch_id_source(
+            CCmdLineArgList::CreateFrom(file_or_batch_id));
+
+        std::string batch_id;
+
+        if (!batch_id_source.GetNextArg(batch_id)) {
+            NCBI_THROW(CArgException, eNoValue, "Could not read batch_id");
+        }
 
         CCmdLineArgList job_id_source(
-            CCmdLineArgList::CreateFrom(file_or_job_ids));
+            file_or_batch_id != file_or_job_ids ?
+                CCmdLineArgList::CreateFrom(file_or_job_ids) :
+                    batch_id_source);
 
         std::vector<std::string> job_ids;
         std::string job_id;
 
         while (job_id_source.GetNextArg(job_id))
             job_ids.push_back(job_id);
+
+        ctl = x_CreateNewClient(true);
 
         if (confirm)
             ctl.GetSubmitter().ReadConfirm(batch_id, job_ids);
