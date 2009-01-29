@@ -478,10 +478,9 @@ public:
                             CConfig::eErr_NoThrow, 12);
 
                     drv.reset(new SNetScheduleAPIImpl(service,
-                        client_name, queue_name, kEmptyStr));
-
-                    drv->m_Service->m_ServiceDiscovery->
-                        Init(conf, m_DriverName);
+                        client_name, queue_name,
+                            conf.GetString(m_DriverName, "use_lbsm_affinity",
+                                CConfig::eErr_NoThrow, kEmptyStr)));
 
                     STimeout tm = {communication_timeout, 0};
 

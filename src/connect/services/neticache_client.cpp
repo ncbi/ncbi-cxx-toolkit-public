@@ -86,12 +86,14 @@ CNetICacheClient::CNetICacheClient(const string&  host,
 }
 
 CNetICacheClient::CNetICacheClient(
-    const string& lb_service_name,
-    const string& cache_name,
-    const string& client_name) :
+    const std::string& lb_service_name,
+    const std::string& cache_name,
+    const std::string& client_name,
+    const std::string& lbsm_affinity_name) :
         CNetServiceClient(client_name),
         m_RebalanceStrategy(CreateDefaultRebalanceStrategy()),
-        m_ServiceDiscovery(new CNetServiceDiscovery(lb_service_name)),
+        m_ServiceDiscovery(
+            new CNetServiceDiscovery(lb_service_name, lbsm_affinity_name)),
         m_CacheName(cache_name),
         m_Throttler(5000, CTimeSpan(60,0))
 {
@@ -1043,9 +1045,9 @@ ICache* CNetICacheCF::CreateInstance(
         CConfig conf(params);
 
         CNetObjectRef<CNetServiceDiscovery> service_discovery(
-            new CNetServiceDiscovery(service_name));
-
-        service_discovery->Init(conf, driver);
+            new CNetServiceDiscovery(service_name,
+                conf.GetString(driver, "use_lbsm_affinity",
+                    CConfig::eErr_NoThrow, kEmptyStr)));
 
         drv->SetConnectionParams(service_discovery,
             CreateSimpleRebalanceStrategy(conf, driver),

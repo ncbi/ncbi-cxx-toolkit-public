@@ -492,9 +492,10 @@ public:
                 unsigned int communication_timeout = conf.GetInt(m_DriverName,
                                                               "communication_timeout",
                                                               CConfig::eErr_NoThrow, 12);
-                drv = new SNetCacheAPIImpl(service, client_name, kEmptyStr);
 
-                drv->m_Service->m_ServiceDiscovery->Init(conf, m_DriverName);
+                drv = new SNetCacheAPIImpl(service, client_name,
+                    conf.GetString(m_DriverName, "use_lbsm_affinity",
+                        CConfig::eErr_NoThrow, kEmptyStr));
 
                 STimeout tm = { communication_timeout, 0 };
                 drv->m_Service.SetCommunicationTimeout(tm);

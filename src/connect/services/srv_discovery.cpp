@@ -50,20 +50,15 @@ CNetServiceDiscovery::~CNetServiceDiscovery()
         free((void*) m_LBSMAffinityValue);
 }
 
-void CNetServiceDiscovery::Init(CConfig& conf, const string& driver_name)
+CNetServiceDiscovery::CNetServiceDiscovery(
+        const std::string& service_name,
+        const std::string& lbsm_affinity_name) :
+    m_ServiceName(service_name),
+    m_LBSMAffinityName(lbsm_affinity_name)
 {
-    try {
-        m_LBSMAffinityName = conf.GetString(driver_name,
-            "use_lbsm_affinity", CConfig::eErr_Throw);
-
-        // Get affinity value from the local LBSM configuration file.
-        m_LBSMAffinityValue = LBSMD_GetHostParameter(SERV_LOCALHOST,
-            m_LBSMAffinityName.c_str());
-    }
-    catch (CConfigException& e) {
-        if (e.GetErrCode() != CConfigException::eParameterMissing)
-            throw;
-    }
+    // Get affinity value from the local LBSM configuration file.
+    m_LBSMAffinityValue = lbsm_affinity_name.empty() ? NULL :
+        LBSMD_GetHostParameter(SERV_LOCALHOST, m_LBSMAffinityName.c_str());
 }
 
 void CNetServiceDiscovery::QueryLoadBalancer(TDiscoveredServers& servers,
