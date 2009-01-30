@@ -27,7 +27,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didneko, Anatoliy Kuznetsov
+ * Authors:  Maxim Didneko, Anatoliy Kuznetsov, Dmitry Kazimirov
  *
  * File Description:
  *   NetSchedule Worker Node Framework Interfaces.
@@ -75,7 +75,7 @@ class NCBI_XCONNECT_EXPORT IWorkerNodeInitContext
 public:
     virtual ~IWorkerNodeInitContext() {}
 
-    /// Get a config file regestry
+    /// Get a config file registry
     ///
     virtual const IRegistry&        GetConfig() const;
 
@@ -105,16 +105,16 @@ public:
     virtual ~IWorkerNodeJob() {}
     /// Execute the job.
     ///
-    /// Job is considered successfull if method calls
+    /// Job is considered successfully done if the Do method calls
     /// CommitJob (see CWorkerNodeJobContext).
     /// If method does not call CommitJob job is considered unresolved
     /// and returned back to the queue.
     /// Method can throw an exception (derived from std::exception),
     /// in this case job is considered failed (error message will be
-    /// redirected to the netschedule queue)
+    /// redirected to the NetSchedule queue)
     ///
     /// @param context
-    ///   Context where a job can get all requered information
+    ///   Context where a job can get all required information
     ///   like input/output steams, the job key etc.
     ///
     /// @return
@@ -129,7 +129,7 @@ class CWorkerNodeRequest;
 
 /// Worker Node job context
 ///
-/// Context in which a job is runnig, gives access to input and output
+/// Context in which a job is running, gives access to input and output
 /// storage and some job control parameters.
 ///
 /// @sa IWorkerNodeJob
@@ -139,6 +139,9 @@ class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext
 public:
 
     ~CWorkerNodeJobContext();
+
+    /// Get the associated job structure to access all of its fields.
+    const CNetScheduleJob& GetJob() const {return m_Job;}
 
     /// Get a job key
     const string& GetJobKey() const        { return m_Job.job_id; }
@@ -197,7 +200,7 @@ public:
     ///
     void CommitJob() { m_JobCommitted = eDone; }
 
-    /// Confirm that a job is finished, but an error has happend during its
+    /// Confirm that a job is finished, but an error has happened during its
     /// execution.
     ///
     /// This method should be called at the end of IWorkerNodeJob::Do
@@ -233,7 +236,7 @@ public:
     ///
     /// When node picks up the job for execution it may evaluate what time it
     /// takes for computation and report it to the queue. If job does not
-    /// finish in the specified timeframe (because of a failure)
+    /// finish in the specified time frame (because of a failure)
     /// it is going to be rescheduled
     ///
     /// Default value for the run timeout specified in the queue settings on
@@ -246,7 +249,7 @@ public:
 
     /// Increment job execution timeout
     ///
-    /// When node picks up the job for execution it may peridically
+    /// When node picks up the job for execution it may periodically
     /// communicate to the server that job is still alive and
     /// prolong job execution timeout, so job server does not try to
     /// reschedule.
@@ -263,10 +266,10 @@ public:
     ///
     bool IsLogRequested(void) const { return m_LogRequested; }
 
-    /// Instruct the system that this job requires all system's resoures
+    /// Instruct the system that this job requires all system's resources
     /// If this method is call, the node will not accept any other jobs
     /// until this one is done. In the event if the mode has already been
-    /// requested by another job this job will be returnd back to the queue.
+    /// requested by another job this job will be returned back to the queue.
     void RequestExclusiveMode();
 
     const string& GetJobOutput() const { return m_Job.output; }
@@ -348,7 +351,7 @@ private:
     CWorkerNodeIdleTaskContext& operator=(const CWorkerNodeIdleTaskContext&);
 };
 
-/// Worker Node Idle Task Interaface
+/// Worker Node Idle Task Interface
 ///
 ///  @sa IWorkerNodeJobFactory, CWorkerNodeIdleTaskContext
 ///
@@ -357,7 +360,7 @@ class IWorkerNodeIdleTask
 public:
     virtual ~IWorkerNodeIdleTask() {};
 
-    /// Do an Idle Taks here.
+    /// Do the Idle task here.
     /// It should not take a lot time, because while it is running
     /// no real jobs will be processed.
     virtual void Run(CWorkerNodeIdleTaskContext&) = 0;
@@ -383,7 +386,7 @@ public:
     ///
     virtual string GetJobVersion(void) const = 0;
 
-    /// Get an Idle task
+    /// Get the Idle task
     ///
     virtual IWorkerNodeIdleTask* GetIdleTask() { return NULL; }
 };
@@ -426,10 +429,10 @@ public:
             m_IdleTask.reset(new TWorkerNodeIdleTask(*m_WorkerNodeInitContext));
         } catch (exception& ex) {
             LOG_POST_XX(ConnServ_WorkerNode, 16,
-                        "Idle tast is not created: " << ex.what());
+                        "Idle task is not created: " << ex.what());
         } catch (...) {
             LOG_POST_XX(ConnServ_WorkerNode, 17,
-                        "Idle tast is not created: Unknown error");
+                        "Idle task is not created: Unknown error");
         }
     }
     virtual IWorkerNodeJob* CreateInstance(void)

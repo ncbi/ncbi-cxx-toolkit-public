@@ -244,6 +244,10 @@ struct CNetScheduleJob
     string    input;
 
     string    affinity;
+
+    std::string client_ip;
+    std::string session_id;
+
     CNetScheduleAPI::TJobMask  mask;
     CNetScheduleAPI::TJobTags  tags;
 

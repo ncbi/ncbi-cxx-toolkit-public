@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *
@@ -67,10 +67,9 @@ void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
             m_ActiveJobs[&job] = SJobActivity();
             ++m_JobsStarted;
             if (m_MaxJobsAllowed > 0 && m_JobsStarted > m_MaxJobsAllowed - 1) {
-                LOG_POST_X(1, CTime(CTime::eCurrent).AsString()
-                              << " The maximum number of allowed jobs ("
-                              << m_MaxJobsAllowed << ") has been reached.\n"
-                              << "Sending the shutdown request." );
+                LOG_POST_X(1, "The maximum number of allowed jobs (" <<
+                              m_MaxJobsAllowed << ") has been reached. "
+                              "Sending the shutdown request." );
                 CGridGlobals::GetInstance().
                     RequestShutdown(CNetScheduleAdmin::eNormalShutdown);
             }
@@ -85,10 +84,9 @@ void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
     case eJobFailed :
         ++m_JobsFailed;
         if (m_MaxFailuresAllowed > 0 && m_JobsFailed > m_MaxFailuresAllowed - 1) {
-                LOG_POST_X(2, CTime(CTime::eCurrent).AsString()
-                              << " The maximum number of failed jobs ("
-                              << m_MaxFailuresAllowed << ") has been reached.\n"
-                              << "Sending the shutdown request." );
+                LOG_POST_X(2, "The maximum number of failed jobs (" <<
+                              m_MaxFailuresAllowed << ") has been reached. "
+                              "Sending the shutdown request." );
                 CGridGlobals::GetInstance().
                     RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
             }
@@ -125,7 +123,7 @@ void CWNJobsWatcher::Print(CNcbiOstream& os) const
            << " -- running for " << (int)it->second.elasped_time.Elapsed()
            << " seconds.";
         if (it->second.flag)
-            os << "!!! INFINIT LOOP !!!";
+            os << "!!! INFINITE LOOP !!!";
         os << endl;
     }
 }
@@ -138,8 +136,7 @@ void CWNJobsWatcher::CheckInfinitLoop()
         NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
             if (!it->second.flag) {
                 if ( it->second.elasped_time.Elapsed() > m_InfinitLoopTime) {
-                    ERR_POST_X(3, CTime(CTime::eCurrent).AsString()
-                                  << " An infinit loop is detected in job "
+                    ERR_POST_X(3, "An infinite loop is detected in job "
                                   << it->first->GetJobKey());
                     it->second.flag = true;
                     CGridGlobals::GetInstance().
@@ -149,9 +146,8 @@ void CWNJobsWatcher::CheckInfinitLoop()
                 ++count;
         }
         if( count > 0 && count == m_ActiveJobs.size()) {
-            ERR_POST_X(4, CTime(CTime::eCurrent).AsString()
-                          << " All jobs are in the infinit loops."
-                          << " SERVER IS COMMITTING SUICIDE!!");
+            ERR_POST_X(4, "All jobs are in infinite loops. "
+                          "Server is shutting down.");
             CGridGlobals::GetInstance().KillNode();
         }
     }

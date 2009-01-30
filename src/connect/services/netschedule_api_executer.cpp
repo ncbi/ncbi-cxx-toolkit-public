@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anatoliy Kuznetsov, Maxim Didenko
+ * Author:  Anatoliy Kuznetsov, Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *   Implementation of NetSchedule API.
@@ -39,106 +39,107 @@
 BEGIN_NCBI_SCOPE
 
 static
-void s_ParseGetJobResponse(string*        job_key,
-                           string*        input,
-                           string*        jout,
-                           string*        jerr,
-                           CNetScheduleAPI::TJobMask*      job_mask,
-                           const string&  response)
+void s_ParseGetJobResponse(CNetScheduleJob& job, const std::string& response)
 {
     // Server message format:
-    //    JOB_KEY "input" ["out" ["err"]] [mask]
+    //    JOB_KEY "input" ["affinity" ["client_ip session_id"]] [mask]
 
     _ASSERT(!response.empty());
-    _ASSERT(input);
-    _ASSERT(jout);
-    _ASSERT(jerr);
-    _ASSERT(job_mask);
 
-    input->erase();
-    job_key->erase();
-    jout->erase();
-    jerr->erase();
+    job.input.erase();
+    job.job_id.erase();
+    job.affinity.erase();
+    job.client_ip.erase();
+    job.session_id.erase();
 
     const char* str = response.c_str();
-    while (*str && isspace((unsigned char)(*str)))
+
+    while (*str && isspace((unsigned char) (*str)))
         ++str;
     if (*str == 0) {
-    throw_err:
+throw_err:
         NCBI_THROW(CNetScheduleException, eProtocolSyntaxError,
-                   "Internal error. Cannot parse server output. " +  *job_key + "\n"
-                   + response);
+            "Internal error. Cannot parse server output. " +
+                job.job_id + "\n" + response);
     }
 
-    for(;*str && !isspace((unsigned char)(*str)); ++str) {
-        job_key->push_back(*str);
-    }
-    if (*str == 0) {
+    for (; *str && !isspace((unsigned char) (*str)); ++str)
+        job.job_id += *str;
+
+    if (*str == 0)
         goto throw_err;
-    }
 
-    while (*str && isspace((unsigned char)(*str)))
+    while (*str && isspace((unsigned char) (*str)))
         ++str;
 
     if (*str && *str == '"') {
         ++str;
-        for( ;*str && *str; ++str) {
-            if (*str == '"' && *(str-1) != '\\') { ++str; break; }
-            input->push_back(*str);
+        for (; *str && *str; ++str) {
+            if (*str == '"' && str[-1] != '\\') {
+                ++str;
+                break;
+            }
+            job.input += *str;
         }
     } else {
         goto throw_err;
     }
-    /*
-    ofstream o1("/tmp/ex_job_out_before_pe.txt", ios_base::binary);
-    o1.write(&input->operator[](0),input->size());
-    */
-    *input = NStr::ParseEscapes(*input);
-    /*
-    ofstream o2("/tmp/ex_job_out_after_pe.txt", ios_base::binary);
-    o2.write(&input->operator[](0),input->size());
-    */
-    // parse "out"
-    while (*str && isspace((unsigned char)(*str)))
+
+    job.input = NStr::ParseEscapes(job.input);
+
+    // parse "affinity"
+    while (*str && isspace((unsigned char) (*str)))
         ++str;
+
     if (*str == 0)
         return;
 
     if (*str == '"') {
         ++str;
-        for( ;*str && *str; ++str) {
-            if (*str == '"' && *(str-1) != '\\') { ++str; break; }
-            jout->push_back(*str);
+        for (; *str && *str; ++str) {
+            if (*str == '"' && str[-1] != '\\') {
+                ++str;
+                break;
+            }
+            job.affinity += *str;
         }
     } else {
         goto throw_err;
     }
-    *jout = NStr::ParseEscapes(*jout);
+    job.affinity = NStr::ParseEscapes(job.affinity);
 
-    while (*str && isspace((unsigned char)(*str)))
+    // parse "client_ip session_id"
+    while (*str && isspace((unsigned char) (*str)))
         ++str;
 
-    if (*str == 0) {
+    if (*str == 0)
         return;
-    }
+
+    std::string client_ip_and_session_id;
+
     if (*str == '"') {
         ++str;
         for( ;*str && *str; ++str) {
-            if (*str == '"' && *(str-1) != '\\') { ++str; break; }
-            jerr->push_back(*str);
+            if (*str == '"' && str[-1] != '\\') {
+                ++str;
+                break;
+            }
+            client_ip_and_session_id += *str;
         }
     } else {
         goto throw_err;
     }
-    *jerr = NStr::ParseEscapes(*jerr);
+
+    NStr::SplitInTwo(NStr::ParseEscapes(client_ip_and_session_id),
+        " ", job.client_ip, job.session_id);
 
     // parse mask
-    while (*str && isspace((unsigned char)(*str)))
+    while (*str && isspace((unsigned char) (*str)))
         ++str;
     if (*str == 0)
         return;
 
-    *job_mask = atoi(str);
+    job.mask = atoi(str);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -177,9 +178,9 @@ bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
 {
     string cmd = "WGET ";
 
-    cmd += NStr::IntToString(udp_port);
+    cmd += NStr::UIntToString(udp_port);
     cmd += ' ';
-    cmd += NStr::IntToString(wait_time);
+    cmd += NStr::UIntToString(wait_time);
 
     if (m_Impl->GetJobImpl(cmd, job))
         return true;
@@ -263,9 +264,7 @@ bool CNetScheduleExecuter::PutResultGetJob(const CNetScheduleJob& done_job,
 
     if (!resp.empty()) {
         new_job.mask = CNetScheduleAPI::eEmptyMask;
-        string tmp;
-        s_ParseGetJobResponse(&new_job.job_id, &new_job.input,
-            &tmp, &tmp, &new_job.mask, resp);
+        s_ParseGetJobResponse(new_job, resp);
         _ASSERT(!new_job.job_id.empty());
         return true;
     }
@@ -335,9 +334,7 @@ bool CGetJobCmdExecutor::Consider(CNetServer server)
         return false;
 
     m_Job.mask = CNetScheduleAPI::eEmptyMask;
-    string tmp;
-    s_ParseGetJobResponse(&m_Job.job_id,
-        &m_Job.input, &tmp, &tmp, &m_Job.mask, resp);
+    s_ParseGetJobResponse(m_Job, resp);
 
     return true;
 }

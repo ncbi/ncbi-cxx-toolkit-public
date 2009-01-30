@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:  NetSchedule worker node sample
  *
@@ -118,8 +118,8 @@ public:
 
         vector<string> args;
         TokenizeCmdLine(request->GetCmdLine(), args);
-        
-          
+
+
         int ret = -1;
         bool finished_ok = false;
         try {
@@ -127,10 +127,22 @@ public:
 
             vector<const char*> env(m_Env);
 
-            string job_key("NCBI_NS_JID=");
-            job_key += context.GetJobKey();
+            const CNetScheduleJob& job = context.GetJob();
 
+            string job_key("NCBI_NS_JID=" + job.job_id);
             env.insert(env.begin(), job_key.c_str());
+
+            std::string client_ip(kEmptyStr);
+            if (!job.client_ip.empty()) {
+                client_ip = "NCBI_LOG_CLIENT_IP=" + job.client_ip;
+                env.insert(env.begin(), client_ip.c_str());
+            }
+
+            std::string session_id(kEmptyStr);
+            if (!job.session_id.empty()) {
+                session_id = "NCBI_LOG_SESSION_ID=" + job.session_id;
+                env.insert(env.begin(), session_id.c_str());
+            }
 
             finished_ok = ExecRemoteApp(m_Params.GetAppPath(), 
                                         args, 

@@ -27,7 +27,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko, Anatoliy Kuznetsov
+ * Authors:  Maxim Didenko, Anatoliy Kuznetsov, Dmitry Kazimirov
  *
  * File Description:
  *   NetSchedule Worker Node Framework Application.
@@ -102,8 +102,8 @@ class CGridWorkerNodeApp_Listener : public IGridWorkerNodeApp_Listener
 /// Main Worker Node application
 ///
 /// @note
-/// Worker node application is parameterised using INI file settings.
-/// Please read the sample ini file for more information.
+/// Worker node application is parameterized using INI file settings.
+/// Please read the sample ".ini" file for more information.
 ///
 class NCBI_XCONNECT_EXPORT CGridWorkerApp : public CNcbiApplication
 {
@@ -115,14 +115,12 @@ public:
     };
 
     CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
-                   IBlobStorageFactory*   storage_factory = NULL,
+                   IBlobStorageFactory* storage_factory = NULL,
                    INetScheduleClientFactory* client_factory = NULL,
                    ESignalHandling signal_handling = eStandardSignalHandling);
 
     CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
                    const CVersionInfo& version_info);
-
-    virtual ~CGridWorkerApp();
 
     /// Register a listener of events of this class.
     ///
@@ -153,7 +151,9 @@ protected:
     const IWorkerNodeInitContext& GetInitContext();
 
 private:
-    void Construct(CGridWorkerApp_Impl* impl,
+    void Construct(IWorkerNodeJobFactory* job_factory,
+        IBlobStorageFactory* storage_factory = NULL,
+        INetScheduleClientFactory* client_factory = NULL,
         ESignalHandling signal_handling = eStandardSignalHandling);
 
     auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;

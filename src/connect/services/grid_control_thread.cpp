@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *    NetSchedule Worker Node implementation
@@ -84,8 +84,7 @@ public:
             return true;
         }
         os << "ERR:Shutdown access denied.";
-        LOG_POST_X(10, Warning << CTime(CTime::eCurrent).AsString()
-                   << " Shutdown access denied: " << m_Host);
+        LOG_POST_X(10, Warning << "Shutdown access denied for host " << m_Host);
         return false;
     }
 
@@ -94,10 +93,9 @@ public:
                          CGridWorkerNode& )
     {
         if (request.find("SUICIDE") != NPOS) {
-            LOG_POST_X(11, Warning << CTime(CTime::eCurrent).AsString()
-                       << " DIE request has been received from host: " << m_Host);
-            LOG_POST_X(12, Warning << CTime(CTime::eCurrent).AsString()
-                       << " SERVER IS COMMITTING SUICIDE!!");
+            LOG_POST_X(11, Warning <<
+                "Shutdown request has been received from host: " << m_Host);
+            LOG_POST_X(12, Warning << "Server is shutting down");
             CGridGlobals::GetInstance().KillNode();
         } else {
             CNetScheduleAdmin::EShutdownLevel level =
@@ -107,8 +105,8 @@ public:
             os << "OK:";
             CGridGlobals::GetInstance().
                 RequestShutdown(level);
-            LOG_POST_X(13, CTime(CTime::eCurrent).AsString()
-                       << " Shutdown request has been received from host: " << m_Host);
+            LOG_POST_X(13, "Shutdown request has been received from host " <<
+                m_Host);
         }
     }
 private:
@@ -264,7 +262,7 @@ CWorkerNodeControlThread::CWorkerNodeControlThread(unsigned int start_port, unsi
 
 CWorkerNodeControlThread::~CWorkerNodeControlThread()
 {
-    LOG_POST_X(14, CTime(CTime::eCurrent).AsString() << " Control server stopped.");
+    LOG_POST_X(14, "Control server stopped.");
 }
 bool CWorkerNodeControlThread::ShutdownRequested(void)
 {
@@ -304,8 +302,7 @@ void CWNCTConnectionHandler::OnOpen(void)
 
 static void s_HandleError(CSocket& socket, const string& msg)
 {
-    ERR_POST_X(15, CTime(CTime::eCurrent).AsString()
-               << " Exception in the control server : " << msg);
+    ERR_POST_X(15, "Exception in the control server: " << msg);
     string err = "ERR:" + NStr::PrintableString(msg);
     socket.Write(&err[0], err.size());
     socket.Close();

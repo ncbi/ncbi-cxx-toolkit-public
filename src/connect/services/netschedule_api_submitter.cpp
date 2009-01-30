@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anatoliy Kuznetsov, Maxim Didenko
+ * Author:  Anatoliy Kuznetsov, Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *   Implementation of NetSchedule API.
@@ -36,6 +36,8 @@
 
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/util.hpp>
+
+#include <corelib/request_ctx.hpp>
 
 #include <stdio.h>
 
@@ -98,6 +100,23 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job,
 
 }
 
+static void s_AppendClientIPAndSessionID(std::string& cmd)
+{
+    CRequestContext& req = CDiagContext::GetRequestContext();
+
+    if (req.IsSetCleintIP()) {
+        cmd += " ip=\"";
+        cmd += req.GetClientIP();
+        cmd += '"';
+    }
+
+    if (req.IsSetSessionID()) {
+        cmd += " sid=\"";
+        cmd += NStr::PrintableString(req.GetSessionID());
+        cmd += '"';
+    }
+}
+
 inline
 void static s_CheckInputSize(const string& input, size_t max_input_size)
 {
@@ -123,6 +142,8 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
     string aff_prev;
     s_SerializeJob(cmd, job, udp_port, wait_time, aff_prev);
 
+    s_AppendClientIPAndSessionID(cmd);
+
     job.job_id = m_API->m_Service.GetBestConnection().Exec(cmd);
 
     if (job.job_id.empty()) {
@@ -145,10 +166,13 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
 
     CNetServerConnection conn = m_Impl->m_API->m_Service.GetBestConnection();
 
-    // batch command
-    conn.Exec("BSUB");
+    // Batch submit command.
+    std::string cmd = "BSUB";
 
-    string cmd;
+    s_AppendClientIPAndSessionID(cmd);
+
+    conn.Exec(cmd);
+
     cmd.reserve(max_input_size * 6);
     string host;
     unsigned short port = 0;

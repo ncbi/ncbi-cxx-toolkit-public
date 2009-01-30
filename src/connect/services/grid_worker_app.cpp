@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko, Anatoliy Kuznetsov
+ * Authors:  Maxim Didenko, Anatoliy Kuznetsov, Dmitry Kazimirov
  *
  * File Description:
  *
@@ -56,10 +56,14 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 //
 
-void CGridWorkerApp::Construct(CGridWorkerApp_Impl* impl,
+void CGridWorkerApp::Construct(
+    IWorkerNodeJobFactory* job_factory,
+    IBlobStorageFactory* storage_factory,
+    INetScheduleClientFactory* client_factory,
     ESignalHandling signal_handling)
 {
-    m_AppImpl.reset(impl);
+    m_AppImpl.reset(new CGridWorkerApp_Impl(*this,
+        job_factory, storage_factory, client_factory));
 
 #if defined(NCBI_OS_UNIX)
     if (signal_handling == eStandardSignalHandling) {
@@ -71,24 +75,19 @@ void CGridWorkerApp::Construct(CGridWorkerApp_Impl* impl,
 }
 
 CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
-                               IBlobStorageFactory*   storage_factory,
+                               IBlobStorageFactory* storage_factory,
                                INetScheduleClientFactory* client_factory,
                                ESignalHandling signal_handling)
 {
-    Construct(new CGridWorkerApp_Impl(*this, job_factory,
-        storage_factory, client_factory), signal_handling);
+    Construct(job_factory, storage_factory, client_factory, signal_handling);
 }
 
 CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
                                const CVersionInfo& version_info)
 {
-    Construct(new CGridWorkerApp_Impl(*this, job_factory, NULL, NULL));
+    Construct(job_factory);
 
     SetVersion(version_info);
-}
-
-CGridWorkerApp::~CGridWorkerApp()
-{
 }
 
 void CGridWorkerApp::Init(void)

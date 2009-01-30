@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko, Anatoliy Kuznetsov
+ * Authors:  Maxim Didenko, Anatoliy Kuznetsov, Dmitry Kazimirov
  *
  * File Description:
  *
@@ -112,7 +112,7 @@ protected:
     {
         CThread::OnExit();
         CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
-        LOG_POST_X(46, CTime(CTime::eCurrent).AsString() << " Control Thread has been stopped.");
+        LOG_POST_X(46, "Control Thread has been stopped.");
     }
 
 private:
@@ -216,8 +216,7 @@ void* CWorkerNodeIdleThread::Main()
 {
     while (!m_ShutdownFlag) {
         if ( x_IsAutoShutdownTime() ) {
-            LOG_POST_X(47, CTime(CTime::eCurrent).AsString()
-                       << " There are no more jobs to be done. Exiting.");
+            LOG_POST_X(47, "There are no more jobs to be done. Exiting.");
             CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
             break;
         }
@@ -234,16 +233,18 @@ void* CWorkerNodeIdleThread::Main()
             try {
                 do {
                     if ( x_IsAutoShutdownTime() ) {
-                        LOG_POST_X(48, CTime(CTime::eCurrent).AsString()
-                                   << " There are no more jobs to be done. Exiting.");
-                        CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
+                        LOG_POST_X(48,
+                            "There are no more jobs to be done. Exiting.");
+                        CGridGlobals::GetInstance().RequestShutdown(
+                            CNetScheduleAdmin::eShutdownImmediate);
                         m_ShutdownFlag = true;
                         break;
                     }
                     GetContext().Reset();
                     m_Task->Run(GetContext());
                 } while( GetContext().NeedRunAgain() && !m_ShutdownFlag);
-            } NCBI_CATCH_ALL_X(58, "CWorkerNodeIdleThread::Main: Idle Task failed");
+            } NCBI_CATCH_ALL_X(58,
+                "CWorkerNodeIdleThread::Main: Idle Task failed");
         }
     }
     return 0;
@@ -251,7 +252,7 @@ void* CWorkerNodeIdleThread::Main()
 
 void CWorkerNodeIdleThread::OnExit(void)
 {
-    LOG_POST_X(49, CTime(CTime::eCurrent).AsString() << " Idle Thread has been stopped.");
+    LOG_POST_X(49, "Idle Thread has been stopped.");
 }
 
 CWorkerNodeIdleTaskContext& CWorkerNodeIdleThread::GetContext()
@@ -554,7 +555,7 @@ int CGridWorkerApp_Impl::Run()
 
         m_Listener->OnGridWorkerStop();
 
-        LOG_POST_X(55, CTime(CTime::eCurrent).AsString() << " Stopping Control thread...");
+        LOG_POST_X(55, "Stopping Control thread...");
         control_thread->Stop();
         CNcbiOstrstream os;
         CGridGlobals::GetInstance().GetJobsWatcher().Print(os);
@@ -564,7 +565,7 @@ int CGridWorkerApp_Impl::Run()
 
     if (m_IdleThread) {
         if (!m_IdleThread->IsShutdownRequested()) {
-            LOG_POST_X(57, CTime(CTime::eCurrent).AsString() << " Stopping Idle thread...");
+            LOG_POST_X(57, "Stopping Idle thread...");
             m_IdleThread->RequestShutdown();
         }
         m_IdleThread->Join();
