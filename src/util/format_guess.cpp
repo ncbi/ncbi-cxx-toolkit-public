@@ -917,13 +917,18 @@ bool
 CFormatGuess::TestFormatSnpMarkers(
     EMode /* not used */ )
 {
-    if ( ! EnsureTestBuffer() ) {
+    if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
         return false;
     }
-    int rsid, chr, pos, numMatched;
-    numMatched = sscanf(m_pTestBuffer, "rs%d\t%d\t%d", &rsid, &chr, &pos);
-
-    return (numMatched == 3);
+    ITERATE( list<string>, it, m_TestLines ) {
+        string str = *it;
+        int rsid, chr, pos, numMatched;
+        numMatched = sscanf( it->c_str(), "rs%d\t%d\t%d", &rsid, &chr, &pos);
+        if ( numMatched == 3) {
+            return true;
+        }
+    }
+    return false;  
 }
 
 
@@ -935,7 +940,8 @@ CFormatGuess::TestFormatBed(
     if ( ! EnsureStats() || ! EnsureSplitLines() ) {
         return false;
     }
-    
+
+    bool bTrackLineFound( false );    
     size_t columncount = 0;
     ITERATE( list<string>, it, m_TestLines ) {
         string str = NStr::TruncateSpaces( *it );
@@ -948,6 +954,7 @@ CFormatGuess::TestFormatBed(
         //  also be indicator for a variety of other UCSC data formats
         //
         if ( NStr::StartsWith( str, "track" ) ) {
+            bTrackLineFound = true;
             continue;
         }
         if ( NStr::StartsWith( str, "browser" ) ) {
@@ -971,7 +978,7 @@ CFormatGuess::TestFormatBed(
             }
         }
     }
-    return true;
+    return bTrackLineFound;
 }
 
 //  ----------------------------------------------------------------------------
