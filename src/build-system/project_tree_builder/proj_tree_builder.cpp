@@ -1109,10 +1109,9 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         isbundle = true;
     }
     string dll_host;
-//TODO: XCODE
-    if (!lib_or_dll.empty() ||
-        CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
-        if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
+//    if (!lib_or_dll.empty() ||
+//        CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
+//        if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
             list<string> dll_depends;
             k = m->second.m_Contents.find("DLL_LIB");
             if (GetApp().GetSite().IsProvided("DLL_BUILD")) {
@@ -1143,11 +1142,12 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                     dll_host =  proj_name;
                 }
 #else
-		dll_host = proj_id;
+		        dll_host = proj_id;
 #endif
             }
-        }
-    }
+//        }
+//    }
+
     CProjKey proj_key(CProjKey::eLib, proj_id);
     tree->m_Projects[proj_key] = CProjItem(CProjKey::eLib,
                                            proj_name, 
@@ -1171,7 +1171,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         (tree->m_Projects[proj_key]).m_ExportHeadersDest = k->second.front();
     }
 
-    if (!dll_host.empty()) {
+    if (!dll_host.empty() && GetApp().GetBuildType().GetType() == CBuildType::eDll) {
         tree->m_Projects[proj_key].m_DllHost = dll_host;
         CProjKey proj_dll(CProjKey::eDll, dll_host);
         CProjItem item_dll = tree->m_Projects[proj_dll];
