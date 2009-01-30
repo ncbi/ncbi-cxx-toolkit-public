@@ -55,6 +55,7 @@ PowerMAC   : plain      : GCC.sh           --with-universal --without-debug --wi
 # work similar to the configurations where it is mentioned explicitly
 IntelMAC   : GCC        : GCC.sh           --with-universal --without-debug --without-mt --with-static --without-runpath
 
-Win32      : plain : msvc900_prj  static  32  ReleaseDLL
+Win32      : 900   : msvc900_prj  static  32  ReleaseDLL
+Win32      : 900d  : msvc900_prj  static  32  DebugDLL
 Win64      : plain : msvc900_prj  static  64  ReleaseDLL
 
