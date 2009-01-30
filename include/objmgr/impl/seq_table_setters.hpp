@@ -196,6 +196,21 @@ private:
 };
 
 
+class CSeqTableNextObjectUserField : public CSeqTableNextObject
+{
+public:
+    CSeqTableNextObjectUserField(const string& field_name)
+        : m_FieldName(field_name)
+        {
+        }
+
+    virtual CObjectInfo GetNextObject(const CObjectInfo& obj) const;
+
+private:
+    string m_FieldName;
+};
+
+
 class CSeqTableSetAnyObjField
 {
 public:
@@ -212,6 +227,7 @@ private:
     typedef vector< CConstRef<CSeqTableNextObject> > TNexters;
     TNexters m_Nexters;
     bool m_SetFinalObject;
+    string m_SetUserField;
 };
 
 

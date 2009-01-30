@@ -930,7 +930,9 @@ void CSeqTableInfo::UpdateSeq_feat(size_t row,
         }
     }
     ITERATE ( TExtraColumns, it, m_ExtraColumns ) {
-        it->first.UpdateSeq_feat(feat, row, *it->second);
+        if ( it->second ) {
+            it->first.UpdateSeq_feat(feat, row, *it->second);
+        }
     }
 }
 

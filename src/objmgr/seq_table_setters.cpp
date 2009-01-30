@@ -269,6 +269,15 @@ CSeqTableNextObjectChoiceVariant::GetNextObject(const CObjectInfo& obj) const
 }
 
 
+CObjectInfo
+CSeqTableNextObjectUserField::GetNextObject(const CObjectInfo& obj) const
+{
+    CUser_field& field = *CType<CUser_field>::Get(obj);
+    field.SetLabel().SetStr(m_FieldName);
+    return obj;
+}
+
+
 CSeqTableSetAnyObjField::CSeqTableSetAnyObjField(CObjectTypeInfo type,
                                                  CTempString field)
     : m_SetFinalObject(false)
@@ -321,16 +330,22 @@ CSeqTableSetAnyObjField::CSeqTableSetAnyObjField(CObjectTypeInfo type,
                 field = next_field;
                 if ( type.GetTypeFamily() == eTypeFamilyClass ) {
                     TMemberIndex index = type.FindMemberIndex(field_name);
-                    if ( index == kInvalidMember ) {
+                    if ( index != kInvalidMember ) {
+                        next = new CSeqTableNextObjectClassMember(index);
+                        type = type.GetClassTypeInfo()->GetMemberInfo(index)
+                            ->GetTypeInfo();
+                    }
+                    else if ( type == CType<CUser_field>() ) {
+                        m_SetUserField = field_name;
+                        return;
+                    }
+                    else {
                         NCBI_THROW_FMT(CAnnotException, eOtherError,
                                        "Unknown field: "<<
                                        type.GetTypeInfo()->GetName()<<"."<<
                                        field_name);
                         return;
                     }
-                    next.Reset(new CSeqTableNextObjectClassMember(index));
-                    type = type.GetClassTypeInfo()->GetMemberInfo(index)
-                        ->GetTypeInfo();
                 }
                 else {
                     TMemberIndex index = type.FindVariantIndex(field_name);
@@ -359,7 +374,12 @@ void CSeqTableSetAnyObjField::SetObjectField(CObjectInfo obj,
     ITERATE ( TNexters, it, m_Nexters ) {
         obj = (*it)->GetNextObject(obj);
     }
-    if ( m_SetFinalObject ) {
+    if ( !m_SetUserField.empty() ) {
+        CUser_field* field = CType<CUser_field>::Get(obj);
+        field->SetLabel().SetStr(m_SetUserField);
+        field->SetData().SetInt(value);
+    }
+    else if ( m_SetFinalObject ) {
         obj.GetPrimitiveTypeInfo()->SetValueInt(obj.GetObjectPtr(), value);
     }
 }
@@ -371,7 +391,14 @@ void CSeqTableSetAnyObjField::SetObjectField(CObjectInfo obj,
     ITERATE ( TNexters, it, m_Nexters ) {
         obj = (*it)->GetNextObject(obj);
     }
-    obj.GetPrimitiveTypeInfo()->SetValueDouble(obj.GetObjectPtr(), value);
+    if ( !m_SetUserField.empty() ) {
+        CUser_field* field = CType<CUser_field>::Get(obj);
+        field->SetLabel().SetStr(m_SetUserField);
+        field->SetData().SetReal(value);
+    }
+    else {
+        obj.GetPrimitiveTypeInfo()->SetValueDouble(obj.GetObjectPtr(), value);
+    }
 }
 
 
@@ -381,7 +408,14 @@ void CSeqTableSetAnyObjField::SetObjectField(CObjectInfo obj,
     ITERATE ( TNexters, it, m_Nexters ) {
         obj = (*it)->GetNextObject(obj);
     }
-    obj.GetPrimitiveTypeInfo()->SetValueString(obj.GetObjectPtr(), value);
+    if ( !m_SetUserField.empty() ) {
+        CUser_field* field = CType<CUser_field>::Get(obj);
+        field->SetLabel().SetStr(m_SetUserField);
+        field->SetData().SetStr(value);
+    }
+    else {
+        obj.GetPrimitiveTypeInfo()->SetValueString(obj.GetObjectPtr(), value);
+    }
 }
 
 
@@ -391,7 +425,14 @@ void CSeqTableSetAnyObjField::SetObjectField(CObjectInfo obj,
     ITERATE ( TNexters, it, m_Nexters ) {
         obj = (*it)->GetNextObject(obj);
     }
-    obj.GetPrimitiveTypeInfo()->SetValueOctetString(obj.GetObjectPtr(), value);
+    if ( !m_SetUserField.empty() ) {
+        CUser_field* field = CType<CUser_field>::Get(obj);
+        field->SetLabel().SetStr(m_SetUserField);
+        field->SetData().SetOs() = value;
+    }
+    else {
+        obj.GetPrimitiveTypeInfo()->SetValueOctetString(obj.GetObjectPtr(), value);
+    }
 }
 
 
