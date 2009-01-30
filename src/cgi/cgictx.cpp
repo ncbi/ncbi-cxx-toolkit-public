@@ -273,7 +273,7 @@ const string& CCgiContext::GetSelfURL(void) const
     // First check forwarded URLs
     string caf = GetRequest().GetRandomProperty("CAF");
     int caf_ver = caf.empty() ? 0 : atoi(caf.c_str());
-    if ( 0 /* caf_ver >= 119289 */ ) {
+    if ( caf_ver >= 150994 ) {
         string caf_url = GetRequest().GetRandomProperty("CAF_URL");
         if ( !caf_url.empty() ) {
             m_SelfURL = caf_url;
