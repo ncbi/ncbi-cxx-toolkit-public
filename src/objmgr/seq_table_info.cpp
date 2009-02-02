@@ -868,7 +868,7 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
                 try {
                     setter = new CSeqTableSetAnyFeatField(field);
                 }
-                catch ( CAnnotException& exc ) {
+                catch ( CAnnotException& /*exc*/ ) {
                     // ignore invalid column names
                 }
             }

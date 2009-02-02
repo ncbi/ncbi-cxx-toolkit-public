@@ -30,9 +30,10 @@
 *
 */
 
+#include <ncbi_pch.hpp>
+
 #define ANNOT_EDIT_COPY 1
 
-#include <ncbi_pch.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/bioseq_base_info.hpp>
@@ -210,7 +211,14 @@ void CSeq_annot_Info::x_UpdateName(void)
             if ( id.IsOther() ) {
                 const CTextannot_id& text_id = id.GetOther();
                 if ( text_id.IsSetAccession() ) {
-                    m_Name.SetNamed(text_id.GetAccession());
+                    const string& acc = text_id.GetAccession();
+                    if ( text_id.IsSetVersion() ) {
+                        int ver = text_id.GetVersion();
+                        m_Name.SetNamed(acc+'.'+NStr::IntToString(ver));
+                    }
+                    else {
+                        m_Name.SetNamed(acc);
+                    }
                     return;
                 }
             }
