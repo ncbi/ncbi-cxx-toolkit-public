@@ -392,8 +392,41 @@ SAnnotSelector::IncludeNamedAnnotAccession(const string& acc)
 
 bool SAnnotSelector::IsIncludedNamedAnnotAccession(const string& acc) const
 {
-    return IsIncludedAnyNamedAnnotAccession() &&
-        m_NamedAnnotAccessions->find(acc) != m_NamedAnnotAccessions->end();
+    // The argument acc may contain version like "accession.123".
+    // In this case we also check if plain accession ("accession"),
+    // or all accesions ("accession.*") are included.
+    if ( !IsIncludedAnyNamedAnnotAccession() ) {
+        // no accessions are included at all
+        return false;
+    }
+    TNamedAnnotAccessions::const_iterator it =
+        m_NamedAnnotAccessions->lower_bound(acc);
+    if ( it != m_NamedAnnotAccessions->end() && *it == acc ) {
+        // direct match
+        return true;
+    }
+    SIZE_TYPE acc_size = acc.find('.');
+    if ( acc_size == NPOS ) {
+        // no version -> stop looking
+        return false;
+    }
+    CTempString acc_name(acc.data(), acc_size);
+    // find "accession" or "accession.*" which should be before iterator it
+    while ( it != m_NamedAnnotAccessions->begin() &&
+            NStr::StartsWith(*--it, acc_name) ) {
+        if ( it->size() == acc_size ) {
+            // plain accession ("accession")
+            return true;
+        }
+        if ( it->size() == acc_size+2 &&
+             (*it)[acc_size] == '.' &&
+             (*it)[acc_size+1] == '*' ) {
+            // all accessions ("accession.*")
+            return true;
+        }
+    }
+    // no more matching accessions
+    return false;
 }
 
 
