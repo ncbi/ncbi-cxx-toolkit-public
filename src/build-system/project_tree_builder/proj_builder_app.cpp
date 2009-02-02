@@ -953,6 +953,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         map< string, list< string > >::const_iterator pt;
         for ( pt = path_to_target.begin(); pt != path_to_target.end(); ++pt) {
 	    string target(pt->first);
+            ofs << ".PHONY : " << target << endl << endl;
             ofs << target << " :" << endl
 	        << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) " << target << ".real MTARGET=$(MTARGET)";
             ofs << endl << endl;
