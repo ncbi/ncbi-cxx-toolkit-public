@@ -1321,6 +1321,33 @@ void SplitExon(CSpliced_seg::TExons& exons, TAliChunkIterator chunk_iter, bool g
 
 }
 
+void prosplign::SetScores(objects::CSeq_align& seq_align, objects::CScope& scope, const string& matrix_name) {
+    CProSplignText pro_text(scope, seq_align, matrix_name);
+    const string& prot = pro_text.GetProtein();
+    const string& match = pro_text.GetMatch();
+    int pos = 0, ident = 0, len = 0;
+    for(string::size_type i=0;i<match.size(); ++i) {
+        if(prot[i] != '.') {
+            ++len;
+            bool triple = isupper(prot[i]);
+            switch(match[i]) {
+            case '|':
+                if(triple) ident +=3;
+                else ++ident;
+            case '+':
+                if(triple) pos +=3;
+                else ++pos;
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    seq_align.SetNamedScore("N of matches", ident);
+    seq_align.SetNamedScore("N of positives", pos);
+    seq_align.SetNamedScore("alignment length", len);
+}
+
 void prosplign::RefineAlignment(CScope& scope, CSeq_align& seq_align, const list<CNPiece>& good_parts)
 {
     CSpliced_seg& sps = seq_align.SetSegs().SetSpliced();

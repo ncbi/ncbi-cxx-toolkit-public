@@ -75,6 +75,7 @@ list<CNPiece> FindGoodParts(const CNPiece pc, const string& match_all_pos, const
 
 void RefineAlignment(objects::CScope& scope, objects::CSeq_align& seq_align, const list<CNPiece>& good_parts);
 void SeekStartStop(objects::CSeq_align& seq_align, objects::CScope& scope);
+void SetScores(objects::CSeq_align& seq_align, objects::CScope& scope, const string& matrix_name = "BLOSUM62");
 
 // class CAli;
 // class CSubstMatrix;

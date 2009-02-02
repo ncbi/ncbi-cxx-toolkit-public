@@ -950,6 +950,7 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
     }
 
     prosplign::SeekStartStop(*refined_align, scope);
+    prosplign::SetScores(*refined_align, scope, output_options.GetScoreMatrix());
 
     return refined_align;
 }
