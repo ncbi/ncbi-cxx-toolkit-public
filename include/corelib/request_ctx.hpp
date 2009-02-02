@@ -81,7 +81,7 @@ public:
     /// Client IP/hostname
     const string& GetClientIP(void) const;
     void          SetClientIP(const string& client);
-    bool          IsSetCleintIP(void) const;
+    bool          IsSetClientIP(void) const;
     void          UnsetClientIP(void);
 
     /// Session ID
@@ -243,7 +243,7 @@ const string& CRequestContext::GetClientIP(void) const
 }
 
 inline
-bool CRequestContext::IsSetCleintIP(void) const
+bool CRequestContext::IsSetClientIP(void) const
 {
     return x_IsSetProp(eProp_ClientIP);
 }

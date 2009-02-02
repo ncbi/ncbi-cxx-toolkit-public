@@ -104,7 +104,7 @@ static void s_AppendClientIPAndSessionID(std::string& cmd)
 {
     CRequestContext& req = CDiagContext::GetRequestContext();
 
-    if (req.IsSetCleintIP()) {
+    if (req.IsSetClientIP()) {
         cmd += " ip=\"";
         cmd += req.GetClientIP();
         cmd += '"';
