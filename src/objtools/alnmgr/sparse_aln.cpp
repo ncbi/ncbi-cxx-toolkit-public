@@ -412,7 +412,6 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
                 if (translate) {
                     off /= 3;
                 }
-                off = max(prev_to_open, off);
             } else {
                 _ASSERT(base_width == 3);
                 IAlnSegment::TSignedRange prot_r = r;
@@ -425,18 +424,22 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
                     seq_vector.GetSeqData(vec_size - prot_r.GetToOpen(),
                                           vec_size - prot_r.GetFrom(), s);
                 }
-                off = max((TSignedSeqPos) prev_to_open,
-                          (aln_r.GetFrom() - aln_range.GetFrom()) / 3);
+                off = (aln_r.GetFrom() - aln_range.GetFrom()) / 3;
             }
             /*if(it->IsReversed())    {
                 std::reverse(s.begin(), s.end());
             }*/
-            size_t len = min(buffer.size() - off, s.size());
 
-            if(prev_to_open != string::npos) {   // this is not the first segement
+            if(prev_to_open == string::npos) {
+                // we have a gap at the start position
+                buffer.replace(0, off, off, m_GapChar);
+            } else {   // this is not the first segement
+                off = max(prev_to_open, off);
                 int gap_size = off - prev_to_open;
                 buffer.replace(prev_to_open, gap_size, gap_size, m_GapChar);
             }
+
+            size_t len = min(buffer.size() - off, s.size());
 
             _ASSERT(off + len <= buffer.size());
 
