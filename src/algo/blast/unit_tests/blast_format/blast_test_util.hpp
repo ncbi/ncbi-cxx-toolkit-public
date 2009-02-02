@@ -77,7 +77,7 @@ template <int lowest_value = 0, int highest_value = INT_MAX>
 template <int lowest_value = 0, int highest_value = ncbi::CRandom::GetMax()>
 #endif
 struct CRandomIntGen {
-    CRandomIntGen() : m_Gen(std::time(0)) {}
+    CRandomIntGen() : m_Gen(::time(0)) {}
     int operator()() {
         return m_Gen.GetRand(lowest_value, highest_value);
     }

@@ -34,6 +34,7 @@
 #include "pbacktest.hpp"
 #include <corelib/ncbidiag.hpp>
 #include <stdio.h>                 // remove()
+#include <stdlib.h>                // atoi()
 
 #include <common/test_assert.h>  /* This header must go last */
 
