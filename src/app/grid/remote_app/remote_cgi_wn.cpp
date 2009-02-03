@@ -112,7 +112,7 @@ public:
     ~CCgiEnvHolder() {}
 
     const char* const* GetEnv() const { return &m_Env[0]; }
-    
+
 private:
     list<string> m_EnvValues;
     vector<const char*> m_Env;
@@ -123,14 +123,14 @@ CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppParams& params, const CNcbiEnvironm
     list<string> cln_names;
     client_env.Enumerate(cln_names);
     list<string> names(cln_names.begin(), cln_names.end());
-    names.erase(remove_if(names.begin(),names.end(), 
+    names.erase(remove_if(names.begin(),names.end(),
                           not1(IsStandard())),
                 names.end());
-    names.erase(remove_if(names.begin(),names.end(), 
+    names.erase(remove_if(names.begin(),names.end(),
                           HasValue<list<string> >(params.GetExcludedEnv())),
                 names.end());
     list<string> inc_names(cln_names.begin(), cln_names.end());
-    inc_names.erase(remove_if(inc_names.begin(),inc_names.end(), 
+    inc_names.erase(remove_if(inc_names.begin(),inc_names.end(),
                               not1(HasValue<list<string> >(params.GetIncludedEnv()))),
                     inc_names.end());
     names.insert(names.begin(),inc_names.begin(), inc_names.end());
@@ -144,7 +144,7 @@ CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppParams& params, const CNcbiEnvironm
         if (added_env.find(*it) == added_env.end())
             m_EnvValues.push_back(*it + "=" + client_env.Get(*it));
     }
-    
+
     list<string> local_names;
     const CNcbiEnvironment& local_env = params.GetLocalEnv();
     local_env.Enumerate(local_names);
@@ -161,7 +161,7 @@ CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppParams& params, const CNcbiEnvironm
     m_Env.push_back(NULL);
 }
 
-    
+
 ///////////////////////////////////////////////////////////////////////
 
 /// NetSchedule sample job
@@ -171,9 +171,9 @@ class CRemoteCgiJob : public IWorkerNodeJob
 public:
     CRemoteCgiJob(const IWorkerNodeInitContext& context);
 
-    virtual ~CRemoteCgiJob() {} 
+    virtual ~CRemoteCgiJob() {}
 
-    int Do(CWorkerNodeJobContext& context) 
+    int Do(CWorkerNodeJobContext& context)
     {
         if (context.IsLogRequested()) {
             LOG_POST("Job " << context.GetJobKey() + " input: " +
@@ -183,31 +183,30 @@ public:
         string tmp_path = m_Params.GetTempDir();
         if (!tmp_path.empty()) {
             CFastLocalTime lt;
-            tmp_path += CDirEntry::GetPathSeparator() + 
+            tmp_path += CDirEntry::GetPathSeparator() +
                 context.GetQueueName() + "_"  + context.GetJobKey() + "_" +
                 NStr::UIntToString((unsigned int)lt.GetLocalTime().GetTimeT());
         }
 
         string job_wdir = tmp_path.empty() ? CDir::GetCwd() : tmp_path;
 
-        CCgiRequest request;
-        request.Deserialize(context.GetIStream(), CCgiRequest::fIgnoreQueryString |
-                                                  CCgiRequest::fDoNotParseContent);
+        CCgiRequest request(context.GetIStream(),
+            CCgiRequest::fIgnoreQueryString | CCgiRequest::fDoNotParseContent);
 
-        CCgiEnvHolder env(m_Params, request.GetEnvironment());       
+        CCgiEnvHolder env(m_Params, request.GetEnvironment());
         vector<string> args;
-        
+
         CNcbiStrstream err;
         CNcbiStrstream str_in;
         CNcbiIstream* in = request.GetInputStream();
         if ( !in )
             in = &str_in;
-        
+
         int ret = -1;
-        bool finished_ok = ExecRemoteApp(m_Params.GetAppPath(), 
-                                         args, 
-                                         *in, 
-                                         context.GetOStream(), 
+        bool finished_ok = ExecRemoteApp(m_Params.GetAppPath(),
+                                         args,
+                                         *in,
+                                         context.GetOStream(),
                                          err,
                                          m_Params.CacheStdOutErr(),
                                          ret,
@@ -226,18 +225,18 @@ public:
 
         string stat;
         if( !finished_ok ) {
-            if (context.GetShutdownLevel() == 
-                CNetScheduleAdmin::eShutdownImmediate) 
+            if (context.GetShutdownLevel() ==
+                CNetScheduleAdmin::eShutdownImmediate)
                 stat = " is canceled.";
         } else {
-            if (ret != 0 && m_Params.GetNonZeroExitAction() != 
+            if (ret != 0 && m_Params.GetNonZeroExitAction() !=
                            CRemoteAppParams::eDoneOnNonZeroExit) {
                 if (m_Params.GetNonZeroExitAction() == CRemoteAppParams::eFailOnNonZeroExit) {
-                    context.CommitJobWithFailure("Exited with " 
+                    context.CommitJobWithFailure("Exited with "
                                                  + NStr::IntToString(ret) +
                                                  " return code.");
                     stat = " is failed.";
-                } else if (m_Params.GetNonZeroExitAction() == 
+                } else if (m_Params.GetNonZeroExitAction() ==
                            CRemoteAppParams::eReturnOnNonZeroExit)
                     stat = " is returned.";
             } else {
@@ -265,18 +264,18 @@ CRemoteCgiJob::CRemoteCgiJob(const IWorkerNodeInitContext& context)
 
     CFile file(m_Params.GetAppPath());
     if (!file.Exists())
-        NCBI_THROW(CException, eInvalid, 
+        NCBI_THROW(CException, eInvalid,
                    "File : " + m_Params.GetAppPath() + " doesn't exists.");
     if (!CanExecRemoteApp(file))
-        NCBI_THROW(CException, eInvalid, 
+        NCBI_THROW(CException, eInvalid,
                    "Could not execute " + m_Params.GetAppPath() + " file.");
-    
+
 }
 
 class CRemoteAppIdleTask : public IWorkerNodeIdleTask
 {
 public:
-    CRemoteAppIdleTask(const IWorkerNodeInitContext& context) 
+    CRemoteAppIdleTask(const IWorkerNodeInitContext& context)
     {
         const IRegistry& reg = context.GetConfig();
         m_AppCmd = reg.GetString("remote_cgi", "idle_app_cmd", "" );
