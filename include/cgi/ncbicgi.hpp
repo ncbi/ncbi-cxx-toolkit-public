@@ -666,6 +666,9 @@ public:
                 TFlags             flags = 0,
                 int                ifd   = -1,
                 size_t             errbuf_size = 256);
+    CCgiRequest(CNcbiIstream& is,
+                TFlags        flags = 0,
+                size_t        errbuf_size = 256);
 
     /// Destructor
     ~CCgiRequest(void);
@@ -839,6 +842,9 @@ private:
 
     /// Set client-ip property for logging
     void x_SetClientIpProperty(TFlags flags) const;
+
+    /// Set the HitID property of CRequestContext.
+    void x_SetPageHitId(TFlags flags);
 
     /// prohibit default initialization and assignment
     CCgiRequest(const CCgiRequest&);

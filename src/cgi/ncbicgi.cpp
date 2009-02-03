@@ -866,6 +866,32 @@ CCgiRequest::CCgiRequest
 }
 
 
+CCgiRequest::CCgiRequest
+(CNcbiIstream&      is,
+ TFlags             flags,
+ size_t             errbuf_size)
+    : m_Env(0),
+      m_Entries(PNocase_Conditional((flags & fCaseInsensitiveArgs) ? 
+                                    NStr::eNocase : NStr::eCase)),
+      m_Input(0),
+      m_InputFD(0),
+      m_OwnInput(false),
+      m_ErrBufSize(errbuf_size),
+      m_QueryStringParsed(false),
+      m_TrackingEnvHolder(NULL), 
+      m_Session(NULL),
+      m_EntryReaderContext(NULL)
+{
+    Deserialize(is, flags);
+
+    // XXX Should "standard" properties be cached as in x_Init?
+
+    x_SetClientIpProperty(flags);
+
+    x_SetPageHitId(flags);
+}
+
+
 void CCgiRequest::x_Init
 (const CNcbiArguments*   args,
  const CNcbiEnvironment* env,
@@ -911,18 +937,7 @@ void CCgiRequest::x_Init
 
     x_ProcessInputStream(flags, istr, ifd);
 
-    CRequestContext& rctx = CDiagContext::GetRequestContext();
-    if ((flags & fIgnorePageHitId) == 0) {
-        // Check if pageviewid is present. If not, generate one.
-        TCgiEntries::iterator phid_it = m_Entries.find(
-            g_GetNcbiString(eNcbiStrings_PHID));
-        if ( phid_it == m_Entries.end() ) {
-            rctx.SetHitID();
-        }
-        else {
-            rctx.SetHitID(phid_it->second);
-        }
-    }
+    x_SetPageHitId(flags);
 
     // Check for an IMAGEMAP input entry like: "Command.x=5&Command.y=3" and
     // put them with empty string key for better access
@@ -974,6 +989,23 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
     }
     else {
         CDiagContext::GetRequestContext().UnsetClientIP();
+    }
+}
+
+
+void CCgiRequest::x_SetPageHitId(TFlags flags)
+{
+    CRequestContext& rctx = CDiagContext::GetRequestContext();
+
+    if ((flags & fIgnorePageHitId) == 0) {
+        // Check if pageviewid is present. If not, generate one.
+        TCgiEntries::iterator phid_it = m_Entries.find(
+            g_GetNcbiString(eNcbiStrings_PHID));
+
+        if (phid_it == m_Entries.end())
+            rctx.SetHitID();
+        else
+            rctx.SetHitID(phid_it->second);
     }
 }
 
