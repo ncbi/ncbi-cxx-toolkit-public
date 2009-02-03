@@ -45,6 +45,7 @@ class CSeq_entry;
 class CSeq_feat;
 class CSeq_annot;
 class CSeq_annot_Info;
+class CSeq_annot_Handle;
 class CTable_annot_Info;
 class CFeat_CI;
 
@@ -64,16 +65,25 @@ public:
     }
 
     bool IsSet(const CFeat_CI& feat_ci) const;
+    bool IsSet(const CSeq_annot_Handle& annot, size_t row) const;
 
     void Get(const CFeat_CI& feat_ci, int& v) const;
     void Get(const CFeat_CI& feat_ci, double& v) const;
     void Get(const CFeat_CI& feat_ci, string& v) const;
     void Get(const CFeat_CI& feat_ci, vector<char>& v) const;
+    void Get(const CSeq_annot_Handle& annot, size_t row, int& v) const;
+    void Get(const CSeq_annot_Handle& annot, size_t row, double& v) const;
+    void Get(const CSeq_annot_Handle& annot, size_t row, string& v) const;
+    void Get(const CSeq_annot_Handle& annot, size_t row, vector<char>& v) const;
 
     bool TryGet(const CFeat_CI& feat_ci, int& v) const;
     bool TryGet(const CFeat_CI& feat_ci, double& v) const;
     bool TryGet(const CFeat_CI& feat_ci, string& v) const;
     bool TryGet(const CFeat_CI& feat_ci, vector<char>& v) const;
+    bool TryGet(const CSeq_annot_Handle& annot, size_t row, int& v) const;
+    bool TryGet(const CSeq_annot_Handle& annot, size_t row, double& v) const;
+    bool TryGet(const CSeq_annot_Handle& annot, size_t row, string& v) const;
+    bool TryGet(const CSeq_annot_Handle& annot, size_t row, vector<char>& v) const;
 
     const string* GetPtr(const CFeat_CI& feat_ci,
                          const string* dummy,
@@ -81,11 +91,22 @@ public:
     const vector<char>* GetPtr(const CFeat_CI& feat_ci,
                                const vector<char>* dummy,
                                bool force = false) const;
+    const string* GetPtr(const CSeq_annot_Handle& annot,
+                         size_t row,
+                         const string* dummy,
+                         bool force = false) const;
+    const vector<char>* GetPtr(const CSeq_annot_Handle& annot,
+                               size_t row,
+                               const vector<char>* dummy,
+                               bool force = false) const;
     
 protected:
     bool x_ThrowUnsetValue(void) const;
     const CSeqTable_column& x_GetColumn(const CFeat_CI& feat_ci) const;
-    int x_GetAnnotIndex(const CFeat_CI& feat_ci) const;
+    const CSeqTable_column& x_GetColumn(const CSeq_annot_Info& annot) const;
+    const CSeqTable_column& x_GetColumn(const CSeq_annot_Handle& annot) const;
+
+    size_t x_GetRow(const CFeat_CI& feat_ci) const;
 
     int m_FieldId;
     string m_FieldName;
@@ -122,6 +143,7 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 // CTable_annot_Info
 /////////////////////////////////////////////////////////////////////////////
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

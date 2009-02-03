@@ -83,13 +83,6 @@ private:
 
     static void x_InitIndexTables(void);
 
-    enum EAnnotTypeIndex
-    {
-        eAlignIndex = 0,
-        eGraphIndex = 1,
-        eFtableIndex = 2
-    };
-
     // Initialization flag
     static bool sm_TablesInitialized;
     // Table: annot type -> index

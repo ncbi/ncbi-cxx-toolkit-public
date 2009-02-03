@@ -596,7 +596,7 @@ protected:
     void x_InitializeAnnotTypesSet(bool default_value);
     void x_ClearAnnotTypesSet(void);
 
-    typedef bitset<CSeqFeatData::eSubtype_max+2> TAnnotTypesBitset;
+    typedef bitset<CSeqFeatData::eSubtype_max+3> TAnnotTypesBitset;
     typedef vector<CTSE_Handle> TTSE_Limits;
 
     bool                  m_FeatProduct;  // "true" for searching products

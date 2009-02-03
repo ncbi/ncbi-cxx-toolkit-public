@@ -164,6 +164,9 @@ public:
     bool IsGraph(void) const;
     bool IsIds(void) const;
     bool IsLocs(void) const;
+    bool IsSeq_table(void) const;
+
+    size_t GetSeq_tableNumRows(void) const;
 
     bool Seq_annot_IsSetId(void) const;
     bool Seq_annot_CanGetId(void) const;

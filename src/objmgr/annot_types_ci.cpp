@@ -95,7 +95,8 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
         SAnnotSelector sel(type);
         m_DataCollector->x_Initialize(sel, bioseq, range, strand);
     }
-    else if ( !params->CheckAnnotType(type) ) {
+    else if ( type != CSeq_annot::C_Data::e_not_set &&
+              !params->CheckAnnotType(type) ) {
         SAnnotSelector sel(*params);
         sel.ForceAnnotType(type);
         m_DataCollector->x_Initialize(sel, bioseq, range, strand);
@@ -150,7 +151,8 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
     if ( !params ) {
         x_Init(scope, loc, SAnnotSelector(type));
     }
-    else if ( !params->CheckAnnotType(type) ) {
+    else if ( type != CSeq_annot::C_Data::e_not_set &&
+              !params->CheckAnnotType(type) ) {
         SAnnotSelector sel(*params);
         sel.ForceAnnotType(type);
         x_Init(scope, loc, sel);

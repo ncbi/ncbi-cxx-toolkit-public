@@ -41,7 +41,7 @@
 #include <objmgr/impl/seq_annot_info.hpp>
 
 #include <objmgr/impl/seq_annot_edit_commands.hpp>
-
+#include <objects/seqtable/Seq_table.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -155,6 +155,18 @@ bool CSeq_annot_Handle::IsIds(void) const
 bool CSeq_annot_Handle::IsLocs(void) const
 {
     return x_GetSeq_annotCore().GetData().IsLocs();
+}
+
+
+bool CSeq_annot_Handle::IsSeq_table(void) const
+{
+    return x_GetSeq_annotCore().GetData().IsSeq_table();
+}
+
+
+size_t CSeq_annot_Handle::GetSeq_tableNumRows(void) const
+{
+    return x_GetSeq_annotCore().GetData().GetSeq_table().GetNum_rows();
 }
 
 

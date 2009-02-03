@@ -49,6 +49,10 @@ BEGIN_SCOPE(objects)
 const size_t kAnnotTypeMax = CSeq_annot::C_Data::e_MaxChoice - 1;
 const size_t kFeatTypeMax = CSeqFeatData::e_MaxChoice - 1;
 const size_t kFeatSubtypeMax = CSeqFeatData::eSubtype_max;
+const size_t kAlignIndex = 0;
+const size_t kGraphIndex = 1;
+const size_t kTableIndex = 2;
+const size_t kFtableIndex = 3;
 
 CAnnotType_Index::TIndexRangeTable CAnnotType_Index::sm_AnnotTypeIndexRange;
 
@@ -72,11 +76,13 @@ void CAnnotType_Index::x_InitIndexTables(void)
     sm_AnnotTypeIndexRange.resize(kAnnotTypeMax + 1);
     sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_not_set].first = 0;
     sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Align] =
-        TIndexRange(eAlignIndex, eAlignIndex+1);
+        TIndexRange(kAlignIndex, kAlignIndex+1);
     sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Graph] =
-        TIndexRange(eGraphIndex, eGraphIndex+1);
+        TIndexRange(kGraphIndex, kGraphIndex+1);
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Seq_table] =
+        TIndexRange(kTableIndex, kTableIndex+1);
     sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable].first =
-        eFtableIndex;
+        kFtableIndex;
 
     vector< vector<size_t> > type_subtypes(kFeatTypeMax+1);
     for ( size_t subtype = 0; subtype <= kFeatSubtypeMax; ++subtype ) {
@@ -91,7 +97,7 @@ void CAnnotType_Index::x_InitIndexTables(void)
     sm_FeatTypeIndexRange.resize(kFeatTypeMax + 1);
     sm_FeatSubtypeIndex.resize(kFeatSubtypeMax + 1);
 
-    size_t cur_idx = eFtableIndex;
+    size_t cur_idx = kFtableIndex;
     sm_IndexSubtype.assign(cur_idx, CSeqFeatData::eSubtype_bad);
     for ( size_t type = 0; type <= kFeatTypeMax; ++type ) {
         sm_FeatTypeIndexRange[type].first = cur_idx;

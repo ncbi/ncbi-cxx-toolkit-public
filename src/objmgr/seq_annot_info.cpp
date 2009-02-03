@@ -410,31 +410,45 @@ void CSeq_annot_Info::x_InitLocsList(TLocs& objs)
 }
 
 
-void CSeq_annot_Info::x_InitFeatTable(TSeq_table& table)
+static bool s_GoodFeatureType(const CSeq_table& table)
 {
     if ( !table.IsSetFeat_type() ||
-         table.GetFeat_type() < CSeqFeatData::e_not_set ||
+         table.GetFeat_type() <= CSeqFeatData::e_not_set ||
          table.GetFeat_type() >= CSeqFeatData::e_MaxChoice ) {
-        return; // not a feature table
+        return false; // not a feature table
     }
     if ( table.IsSetFeat_subtype() &&
-         (table.GetFeat_subtype() < CSeqFeatData::eSubtype_bad ||
-          table.GetFeat_subtype() > CSeqFeatData::eSubtype_any) ) {
-        return; // bad subtype
+         (table.GetFeat_subtype() <= CSeqFeatData::eSubtype_bad ||
+          table.GetFeat_subtype() >= CSeqFeatData::eSubtype_max) ) {
+        return false; // bad subtype
     }
+    return true;
+}
 
+
+void CSeq_annot_Info::x_InitFeatTable(TSeq_table& table)
+{
     _ASSERT(m_ObjectIndex.GetInfos().empty());
-    TAnnotIndex rows = table.GetNum_rows();
-    SAnnotTypeSelector type
-        (SAnnotTypeSelector::TFeatType(table.GetFeat_type()));
-    if ( table.IsSetFeat_subtype() ) {
-        type.SetFeatSubtype
-            (SAnnotTypeSelector::TFeatSubtype(table.GetFeat_subtype()));
+    if ( !s_GoodFeatureType(table) ) {
+        // index whole Seq-table
+        SAnnotTypeSelector type(CSeq_annot::C_Data::e_Seq_table);
+        m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, 0, type));
+        _ASSERT(m_ObjectIndex.GetInfos().size() == 1u);
     }
-    for ( TAnnotIndex index = 0; index < rows; ++index ) {
-        m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, index, type));
+    else {
+        // index each row separately
+        TAnnotIndex rows = table.GetNum_rows();
+        SAnnotTypeSelector type
+            (SAnnotTypeSelector::TFeatType(table.GetFeat_type()));
+        if ( table.IsSetFeat_subtype() ) {
+            type.SetFeatSubtype
+                (SAnnotTypeSelector::TFeatSubtype(table.GetFeat_subtype()));
+        }
+        for ( TAnnotIndex index = 0; index < rows; ++index ) {
+            m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, index, type));
+        }
+        _ASSERT(size_t(rows) == m_ObjectIndex.GetInfos().size());
     }
-    _ASSERT(size_t(rows) == m_ObjectIndex.GetInfos().size());
 }
 
 
@@ -893,22 +907,68 @@ bool CSeq_annot_Info::IsTableFeatPartial(const CAnnotObject_Info& info) const
 void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
 {
     const CSeq_table& feat_table = m_Object->GetData().GetSeq_table();
-    if ( !feat_table.IsSetFeat_type() ||
-         feat_table.GetFeat_type() < CSeqFeatData::e_not_set ||
-         feat_table.GetFeat_type() >= CSeqFeatData::e_MaxChoice ) {
-        return; // not a feature table
-    }
-    if ( feat_table.IsSetFeat_subtype() &&
-         (feat_table.GetFeat_subtype() < CSeqFeatData::eSubtype_bad ||
-          feat_table.GetFeat_subtype() > CSeqFeatData::eSubtype_any) ) {
-        return; // bad subtype
+    m_Table_Info = new CSeqTableInfo(feat_table);
+    
+    if ( !s_GoodFeatureType(feat_table) ) {
+        // index whole Seq-table
+        m_ObjectIndex.ReserveMapSize(1);
+        SAnnotObject_Key key;
+        SAnnotObject_Index index;
+        CHandleRangeMap hrmap;
+        CTSEAnnotObjectMapper mapper(tse, GetName());
+        CAnnotObject_Info& info = m_ObjectIndex.GetInfos().front();
+        if ( info.IsRemoved() ) {
+            return;
+        }
+        size_t keys_begin = m_ObjectIndex.GetKeys().size();
+        index.m_AnnotObject_Info = &info;
+        index.m_AnnotLocationIndex = 0;
+        CConstRef<CSeq_loc> loc;
+        try {
+            loc = m_Table_Info->GetColumn("Seq-table location").GetSeq_loc(0);
+        }
+        catch ( CException& /*ignored*/ ) {
+        }
+        if ( !loc ) {
+            return;
+        }
+        hrmap.AddLocation(*loc);
+        bool multi_id = hrmap.GetMap().size() > 1;
+        ITERATE ( CHandleRangeMap, hrit, hrmap ) {
+            const CHandleRange& hr = hrit->second;
+            key.m_Range = hr.GetOverlappingRange();
+            if ( key.m_Range.Empty() ) {
+                CNcbiOstrstream s;
+                s << MSerial_AsnText << *info.GetFeatFast();
+                ERR_POST_X(7, "Empty region in "<<s.rdbuf());
+                continue;
+            }
+            key.m_Handle = hrit->first;
+            index.m_Flags = hr.GetStrandsFlag();
+            if ( multi_id ) {
+                index.SetMultiIdFlag();
+            }
+            if ( hr.HasGaps() ) {
+                index.m_HandleRange = new CObjectFor<CHandleRange>;
+                index.m_HandleRange->GetData() = hr;
+                if ( hr.IsCircular() ) {
+                    key.m_Range = hr.GetCircularRangeStart();
+                    x_Map(mapper, key, index);
+                    key.m_Range = hr.GetCircularRangeEnd();
+                }
+            }
+            else {
+                index.m_HandleRange.Reset();
+            }
+            x_Map(mapper, key, index);
+        }
+        x_UpdateObjectKeys(info, keys_begin);
+        return;
     }
 
     size_t object_count = m_ObjectIndex.GetInfos().size();
     _ASSERT(object_count == size_t(feat_table.GetNum_rows()));
     m_ObjectIndex.ReserveMapSize(object_count);
-
-    m_Table_Info = new CSeqTableInfo(feat_table);
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
