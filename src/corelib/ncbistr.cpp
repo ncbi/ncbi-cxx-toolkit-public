@@ -2694,7 +2694,8 @@ bool NStr::NeedsURLEncoding(const string& str, EUrlEncode flag)
 
 bool NStr::IsIPAddress(const string& ip)
 {
-    const char* c = ip.c_str();
+    const char* start = ip.c_str();
+    const char* c = start;
     unsigned long val;
     int dots = 0;
 
@@ -2716,6 +2717,11 @@ bool NStr::IsIPAddress(const string& ip)
         c++;
     }
 
+    // Make sure the whole string was checked (it is possible to have \0 chars
+    // in the middle of the string).
+    if (c - start != ip.size()) {
+        return false;
+    }
     return !*c  &&  dots == 3  &&  val < 256;
 }
 
