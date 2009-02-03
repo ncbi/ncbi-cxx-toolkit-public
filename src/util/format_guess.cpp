@@ -1331,20 +1331,19 @@ bool CFormatGuess::IsLineGtf(
     if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
         return false;
     }
-    try {
-        NStr::StringToInt( tokens[3] );
-        NStr::StringToInt( tokens[4] );
-        if ( tokens[5] != "." ) {
-            NStr::StringToDouble( tokens[5] );
-        }
-    }
-    catch( ... ) {
+    if ( -1 == NStr::StringToNumeric( tokens[3] ) ) {
         return false;
     }
-        
-    if ( tokens[6] != "+" && tokens[6] != "." && tokens[6] != "-" ) {
+    if ( -1 == NStr::StringToNumeric( tokens[4] ) ) {
         return false;
     }
+    NStr::ReplaceInPlace( tokens[5], ".", "1", 0, 1 );
+    if ( tokens[5].size() > 1 && tokens[5][0] == '-' ) {
+        tokens[5][0] = '1';
+    }
+    if ( -1 == NStr::StringToNumeric( tokens[5] ) ) {
+        return false;
+    }        
     if ( tokens[6].size() != 1 || NPOS == tokens[6].find_first_of( ".+-" ) ) {
         return false;
     }
