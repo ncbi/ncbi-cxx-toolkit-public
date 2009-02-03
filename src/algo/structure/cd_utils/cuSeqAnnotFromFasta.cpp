@@ -611,8 +611,7 @@ unsigned int CSeqAnnotFromFasta::GetBlocksFromCounts(unsigned int threshold, con
 				inBlock = false;
                 starts.push_back(start);
                 lengths.push_back(i - start);
-//				blocks.push_back(Block(start, i - start, blockId));
-                _TRACE("    Made block " << blockId + 1 << " with length " << i - start << " at start pos. " << start);
+//                _TRACE("    Made block " << blockId + 1 << " with length " << i - start << " at start pos. " << start);
 				blockId++;
 			} else if (forcedNewBlock) {
                 starts.push_back(start);
@@ -622,10 +621,9 @@ unsigned int CSeqAnnotFromFasta::GetBlocksFromCounts(unsigned int threshold, con
 		}
 	}
 	if (inBlock) {//block goes to the end of the sequence
-//		blocks.push_back(Block(start, i - start, blockId));
         starts.push_back(start);
         lengths.push_back(i - start);
-        _TRACE("    Made block " << blockId + 1 << " with length " << i - start << " at start pos. " << start);
+//        _TRACE("    Made block " << blockId + 1 << " with length " << i - start << " at start pos. " << start);
     }
 
     return starts.size();
@@ -658,7 +656,7 @@ bool CSeqAnnotFromFasta::PurgeNonAlphaFromSequence(CBioseq& bioseq) {
 
 //                originalSequence.erase(remove_if(originalSequence.begin(), originalSequence.end(), isNotAlpha), originalSequence.end());
             
-            _TRACE("after remove non-alpha:  \n" << originalSequence);
+//            _TRACE("after remove non-alpha:  \n" << originalSequence);
                 
             seqData.Select(CSeq_data::e_Ncbieaa);
             seqData.SetNcbieaa().Set(originalSequence);
@@ -753,8 +751,6 @@ bool  CSeqAnnotFromFasta::BuildMasterSlaveSeqAlign(const CRef<CSeq_id>& masterSe
 
         ddl.push_back(dd);
     }
-
-    _TRACE("Exit BuildMasterSlaveSeqAlign\n");
 
     return true;
 }
