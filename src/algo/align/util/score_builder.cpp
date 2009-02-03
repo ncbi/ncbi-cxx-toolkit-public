@@ -39,6 +39,9 @@
 
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -318,6 +321,26 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
         _ASSERT(false);
         break;
 
+    case CSeq_align::TSegs::e_Spliced:
+        {{
+            ITERATE (CSpliced_seg::TExons, iter, align.GetSegs().GetSpliced().GetExons()) {
+                const CSpliced_exon& exon = **iter;
+                if (exon.IsSetParts()) {
+                    ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
+                        const CSpliced_exon_chunk& chunk = **it;
+                        if (chunk.IsMatch()) {
+                            *identities += chunk.GetMatch();
+                        } else if (chunk.IsMismatch()) {
+                            *mismatches += chunk.GetMismatch();
+                        }
+                    }
+                } else {
+                    *identities += exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
+                }
+            }
+        }}
+        break;
+
     default:
         _ASSERT(false);
         break;
@@ -363,13 +386,6 @@ int CScoreBuilder::GetMismatchCount(CScope& scope, const CSeq_align& align)
     int mismatches = 0;
     s_GetCountIdentityMismatch(scope, align, &identities,&mismatches);
     return mismatches;
-}
-
-
-void CScoreBuilder::GetMismatchCount(CScope& scope, const CSeq_align& align,
-                                     int& identities, int& mismatches)
-{
-    s_GetCountIdentityMismatch(scope, align, &identities, &mismatches);
 }
 
 
