@@ -47,8 +47,8 @@ static char const rcsid[] =
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
+#include <objtools/blast_format/blast_format.hpp>
 #include "blast_app_util.hpp"
-#include "blast_format.hpp"
 #include <algo/blast/api/psiblast.hpp>
 #include <algo/blast/api/psiblast_iteration.hpp>
 
