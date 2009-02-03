@@ -192,13 +192,13 @@ static SERV_ITER s_Open(const char*          service,
     if (types & fSERV_Stateless)
         iter->stateless     = 1;
     iter->external          = external;
-    if (arg) {
+    if (arg  &&  *arg) {
         iter->arg           = arg;
         iter->arglen        = strlen(arg);
-    }
-    if (iter->arglen  &&  val) {
-        iter->val           = val;
-        iter->vallen        = strlen(val);
+        if (val) {
+            iter->val       = val;
+            iter->vallen    = strlen(val);
+        }
     }
     iter->time              = (TNCBI_Time) time(0);
 
