@@ -366,7 +366,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,7,0) );
+    SetVersion( CVersionInfo(1,7,1) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -915,16 +915,21 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             string rel_path = CDirEntry::CreateRelativePath(GetProjectTreeInfo().m_Src,
                                                             p->second.m_SourcesBaseDir);
 
-            path_to_target[rel_path].push_back(target);
-            string stop_path(CDirEntry::AddTrailingPathSeparator("."));
-            string parent_path, prev_parent(rel_path);
-            for (;;) {
-                parent_path = ParentDir(prev_parent);
-                path_to_target[parent_path].push_back(prev_parent);
-                if (parent_path == stop_path) {
-                    break;
+            if (p->second.m_MakeType != eMakeType_Excluded &&
+                p->second.m_MakeType != eMakeType_ExcludedByReq &&
+		p->first.Type() != CProjKey::eMsvc) {
+
+                path_to_target[rel_path].push_back(target);
+                string stop_path(CDirEntry::AddTrailingPathSeparator("."));
+                string parent_path, prev_parent(rel_path);
+                for (;;) {
+                    parent_path = ParentDir(prev_parent);
+                    path_to_target[parent_path].push_back(prev_parent);
+                    if (parent_path == stop_path) {
+                        break;
+                    }
+                    prev_parent = parent_path;
                 }
-                prev_parent = parent_path;
             }
                                                             
 #if NCBI_COMPILER_MSVC
