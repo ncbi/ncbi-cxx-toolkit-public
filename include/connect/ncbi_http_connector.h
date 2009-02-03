@@ -167,7 +167,7 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
 typedef int/*bool*/ (*FHttpParseHTTPHeader)
 (const char* http_header,           /* HTTP header to parse, '\0'-terminated */
  void*       adjust_data,           /* supplemental user data                */
- int/*bool*/ server_error           /* true if HTTP server reported an error */
+ int         server_error           /* != 0 if HTTP error                    */
  );
 
 typedef int/*bool*/ (*FHttpAdjustNetInfo)

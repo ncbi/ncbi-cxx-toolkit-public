@@ -123,7 +123,7 @@ extern "C" {
 
 static int/*bool*/ s_ParseHeader(const char* header,
                                  void*       data,
-                                 int/*bool*/ server_error)
+                                 int         server_error)
 {
     static const char   kStateless[] = "TRY_STATELESS";
     static const size_t klen = sizeof(kStateless) - 1;

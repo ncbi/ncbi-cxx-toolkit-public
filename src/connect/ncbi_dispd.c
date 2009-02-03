@@ -68,11 +68,13 @@ extern "C" {
 
 
 struct SDISPD_Data {
-    int/*bool*/    disp_fail;
+    short/*bool*/  eof;  /* no more resolves */
+    short/*bool*/  fail; /* no more connects */
     SConnNetInfo*  net_info;
     SLB_Candidate* cand;
     size_t         n_cand;
     size_t         a_cand;
+    size_t         n_skip;
 };
 
 
@@ -117,7 +119,18 @@ static int/*bool*/ s_ParseHeader(const char* header,
                                  void*       iter,
                                  int         server_error)
 {
-    SERV_Update((SERV_ITER) iter, header, server_error);
+    struct SDISPD_Data* data = (struct SDISPD_Data*)((SERV_ITER) iter)->data;
+    int code = 0/*success code if any*/;
+    if (server_error) {
+        if (server_error == 400)
+            data->fail = 1/*true*/;
+    } else if (sscanf(header, "%*s %d", &code) < 1) {
+        data->eof = 1/*true*/;
+        return 0/*header parse error*/;
+    }
+    /* check for empty document */
+    if (!SERV_Update((SERV_ITER) iter, header, server_error)  ||  code == 204)
+        data->eof = 1/*true*/;
     return 1/*header parsed okay*/;
 }
 
@@ -129,13 +142,12 @@ extern "C" {
 #endif /*__cplusplus*/
 
 /*ARGSUSED*/
-/* This callback is only for services called via direct HTTP */
 static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
                             void*         iter,
                             unsigned int  n)
 {
     struct SDISPD_Data* data = (struct SDISPD_Data*)((SERV_ITER) iter)->data;
-    return data->disp_fail ? 0/*failed*/ : 1/*try again*/;
+    return data->fail ? 0/*no more tries*/ : 1/*may try again*/;
 }
 
 
@@ -147,6 +159,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     char* s;
     CONN c;
 
+    assert(!data->eof);
     assert(!!net_info->stateless == !!iter->stateless);
     /* Obtain additional header information */
     if ((!(s = SERV_Print(iter, 0, 0))
@@ -167,7 +180,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
                                        ? "Client-Mode: STATEFUL_CAPABLE\r\n"
                                        : "Client-Mode: STATELESS_ONLY\r\n")) {
         /* all the rest in the net_info structure should be already fine */
-        data->disp_fail = 0;
+        data->eof = data->fail = 0/*false*/;
         conn = HTTP_CreateConnectorEx(net_info, fHCC_SureFlush, s_ParseHeader,
                                       s_Adjust, iter/*data*/, 0/*cleanup*/);
     }
@@ -184,8 +197,10 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     /* This will also send all the HTTP data, and trigger header callback */
     CONN_Flush(c);
     CONN_Close(c);
-    return data->n_cand != 0  ||
-        (!data->disp_fail  &&  net_info->stateless  &&  net_info->firewall);
+    /* FIXME for return code evaluation and doulbe n_cand checks!! */
+    return data->n_cand != 0  ||  (!(data->eof | data->fail)
+                                   &&  net_info->stateless
+                                   &&  net_info->firewall)   ? 1 : 0;
 }
 
 
@@ -195,8 +210,6 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
     int/*bool*/ failure;
 
-    if (code == 400)
-        data->disp_fail = 1;
     if (strncasecmp(text, server_info, sizeof(server_info) - 1) == 0
         &&  isdigit((unsigned char) text[sizeof(server_info) - 1])) {
         const char* name;
@@ -250,14 +263,17 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
             text += sizeof(HTTP_DISP_FAILURES) - 1;
             while (*text  &&  isspace((unsigned char)(*text)))
                 text++;
-            CORE_LOGF_X(2, eLOG_Warning,
+            CORE_LOGF_X(2, failure ? eLOG_Warning : eLOG_Note,
                         ("[DISPATCHER %s]  %s",
                          failure ? "FAILURE" : "MESSAGE", text));
         }
 #endif /*_DEBUG && !NDEBUG*/
-        if (failure)
-            data->disp_fail = 1;
-        return 1/*updated*/;
+        if (failure) {
+            if (code)
+                data->fail = 1;
+            return 1/*updated*/;
+        }
+        /* NB: a mere message does not constitute an update */
     }
 
     return 0/*not updated*/;
@@ -305,7 +321,11 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     size_t n;
 
     assert(data);
-    if (s_IsUpdateNeeded(iter->time, data)
+    if (!data->fail  &&  iter->n_skip < data->n_skip)
+        data->eof = 0/*false*/;
+    data->n_skip = iter->n_skip;
+
+    if (s_IsUpdateNeeded(iter->time, data)  &&  !(data->eof | data->fail)
         &&  (!s_Resolve(iter)  ||  !data->n_cand)) {
         return 0;
     }
@@ -322,6 +342,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     if (host_info)
         *host_info = 0;
+    data->n_skip++;
 
     return info;
 }
@@ -330,12 +351,16 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 static void s_Reset(SERV_ITER iter)
 {
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
-    if (data  &&  data->cand) {
-        size_t i;
-        assert(data->a_cand);
-        for (i = 0; i < data->n_cand; i++)
-            free((void*) data->cand[i].info);
-        data->n_cand = 0;
+    if (data) {
+        data->eof = data->fail = 0/*false*/;
+        if (data->cand) {
+            size_t i;
+            assert(data->a_cand);
+            for (i = 0; i < data->n_cand; i++)
+                free((void*) data->cand[i].info);
+            data->n_cand = 0;
+        }
+        data->n_skip = iter->n_skip;
     }
 }
 
@@ -392,8 +417,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
                                  " (C Toolkit)"
 #endif /*NCBI_CXX_TOOLKIT*/
                                  "\r\n");
-    iter->data = data;
-    iter->op = &s_op; /* SERV_Update() - from HTTP callback - expects this */
+    data->n_skip = iter->n_skip;
+    iter->data   = data;
+    iter->op     = &s_op; /* SERV_Update() [from HTTP callback] expects this */
 
     if (g_NCBI_ConnectRandomSeed == 0) {
         g_NCBI_ConnectRandomSeed = iter->time ^ NCBI_CONNECT_SRAND_ADDEND;
