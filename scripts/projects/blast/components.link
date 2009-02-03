@@ -7,7 +7,7 @@ objects         3.0.0
 objtools        3.0.0
 algo            3.0.0
 misc            3.0.0
-#blast           3.0.1
+blast           3.0.2
 
 [repository: https://svn.ncbi.nlm.nih.gov/repos/toolkit]
 src/dll                     trunk/c++/src/dll                     -r140909
@@ -97,8 +97,8 @@ include/internal/myncbi                                 trunk/internal/c++/inclu
 src/internal/mapview/objects                            trunk/internal/c++/src/internal/mapview/objects                           -r140909
 include/internal/mapview/objects                        trunk/internal/c++/include/internal/mapview/objects                       -r140909
 
-#src/internal/blast                                      trunk/internal/c++/src/internal/blast                                     -r142457
-#include/internal/blast                                  trunk/internal/c++/include/internal/blast                                 -r142457
+src/internal/blast                                      trunk/internal/c++/src/internal/blast                                     -r142457
+include/internal/blast                                  trunk/internal/c++/include/internal/blast                                 -r142457
 
 src/internal/qall                                       trunk/internal/c++/src/internal/qall                                      -r140909
 
