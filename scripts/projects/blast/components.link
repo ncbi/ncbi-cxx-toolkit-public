@@ -1,6 +1,6 @@
 [components]
 infrastructure  3.0.0
-core            3.0.0
+core            3.0.1
 dbase           3.0.0
 web             3.0.0
 objects         3.0.0
