@@ -245,26 +245,7 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Print filtering algorithms supported
-    vector<int> algorithms;
-    m_BlastDb->GetAvailableMaskAlgorithms(algorithms);
-    if ( !algorithms.empty() ) {
-        out << endl
-            << "Available filtering algorithms applied to database sequences:"
-            << endl << endl;
-        
-        out << setw(14) << left << "Algorithm ID" 
-            << setw(20) << left << "Algorithm name"
-            << setw(40) << left << "Algorithm options" << endl;
-        ITERATE(vector<int>, algo_id, algorithms) {
-            objects::EBlast_filter_program algo;
-            string algo_opts, algo_name;
-            m_BlastDb->GetMaskAlgorithmDetails(*algo_id, algo, algo_name,
-                                               algo_opts);
-            out << "    " << setw(10) << left << (*algo_id) 
-                << setw(20) << left << algo_name
-                << setw(40) << left << algo_opts << endl;
-        }
-    }
+    out << m_BlastDb->GetAvailableMaskAlgorithmDescriptions();
 #endif
 
     // Print volume names
@@ -421,6 +402,11 @@ void CBlastDBCmdApp::Init()
             "\t\t%L means common taxonomic name\n"
             "\t\t%S means scientific name\n"
             "\t\t%P means PIG\n"
+    "\t\t%mX means sequence masking data, where X is an optional comma-\n"
+    "\t\tseparted list of integers to specify the algorithm ID(s) to\n"
+    "\t\tdiaplay (or all masks if absent or invalid specification).\n"
+    "\t\tMasking data will be displayed as a series of 'N-M' values\n"
+    "\t\tseparated by ';' or the word 'none' if none are available.\n"
             "\tFor every format except '%f', each line of output will "
             "correspond to\n\ta sequence.\n",
             CArgDescriptions::eString, "%f");
@@ -439,9 +425,9 @@ void CBlastDBCmdApp::Init()
                             "target_only");
 
     arg_desc->SetCurrentGroup("Output configuration options for FASTA format");
-    arg_desc->AddDefaultKey("line_length", "number",
-                            "Line length for output",
-                            CArgDescriptions::eInteger, "80");
+    arg_desc->AddDefaultKey("line_length", "number", "Line length for output",
+                        CArgDescriptions::eInteger, 
+                        NStr::IntToString(CSeqFormatterConfig().m_LineWidth));
     arg_desc->SetConstraint("line_length", 
                             new CArgAllowValuesGreaterThanOrEqual(1));
 

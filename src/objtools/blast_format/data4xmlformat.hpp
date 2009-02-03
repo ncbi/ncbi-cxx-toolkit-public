@@ -66,6 +66,7 @@ public:
                const string& dbname, bool db_is_aa,
                int qgencode = BLAST_GENETIC_CODE,
                int dbgencode = BLAST_GENETIC_CODE,
+               bool is_remote = false,
                const vector<int>& dbfilt_algorithms = vector<int>());
 
     /// Destructor

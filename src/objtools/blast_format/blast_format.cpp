@@ -38,14 +38,14 @@ Author: Jason Papadopoulos
 */
 
 #include <ncbi_pch.hpp>
+#include <objtools/blast_format/blast_format.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <algo/blast/core/blast_stat.h>
-#include <objtools/blast_format/blastxml_format.hpp>
 #include <corelib/ncbiutil.hpp>                 // for FindBestChoice
-#include "blast_app_util.hpp"
-#include "blast_format.hpp"
+
+#include <objtools/blast_format/blastxml_format.hpp>
 #include "data4xmlformat.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -53,8 +53,6 @@ USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 #endif
-
-const string CBlastFormat::kNoHitsFound("No hits found");
 
 CBlastFormat::CBlastFormat(const blast::CBlastOptions& options, 
                            blast::CLocalDbAdapter& db_adapter,
@@ -97,8 +95,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     if (m_IsBl2Seq) {
         m_SeqInfoSrc.Reset(db_adapter.MakeSeqInfoSrc());
     } else {
-        BlastFormat_GetBlastDbInfo(m_DbInfo, m_DbName, m_DbIsAA,
-                                   dbfilt_algorithms);
+        CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, m_DbIsAA,
+                                   dbfilt_algorithms, is_remote_search);
     }
     if (m_FormatType == CFormattingArgs::eXml) {
         m_AccumulatedQueries.Reset(new CBlastQueryVector());
@@ -595,8 +593,8 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     // quit early if there are no hits
     if ( !results.HasAlignments() ) {
         m_Outfile << "\n\n" 
-                  << "***** " << kNoHitsFound << " *****" << "\n" 
-                  << "\n\n";
+              << "***** " << CBlastFormatUtil::kNoHitsFound << " *****" << "\n" 
+              << "\n\n";
         x_PrintOneQueryFooter(*results.GetAncillaryData());
         return;
     }
@@ -737,8 +735,8 @@ CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
     // quit early if there are no hits
     if ( !first_results.HasAlignments() ) {
         m_Outfile << "\n\n" 
-                  << "***** " << kNoHitsFound << " *****" << "\n" 
-                  << "\n\n";
+              << "***** " << CBlastFormatUtil::kNoHitsFound << " *****" << "\n" 
+              << "\n\n";
         x_PrintOneQueryFooter(*first_results.GetAncillaryData());
         return;
     }
@@ -839,7 +837,8 @@ CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
         CCmdLineBlastXMLReportData report_data(m_AccumulatedQueries, 
                                                m_AccumulatedResults,
                                                options, m_DbName, m_DbIsAA,
-                                               m_QueryGenCode, m_DbGenCode);
+                                               m_QueryGenCode, m_DbGenCode,
+                                               m_IsRemoteSearch);
         objects::CBlastOutput xml_output;
         BlastXML_FormatReport(xml_output, &report_data);
         m_Outfile << MSerial_Xml << xml_output;

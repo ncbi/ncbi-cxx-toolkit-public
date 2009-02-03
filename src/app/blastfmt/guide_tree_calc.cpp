@@ -381,6 +381,10 @@ bool CGuideTreeCalc::CalcBioTree(void)
         if (!removed_inds.empty()) {
             alnvec = x_CreateValidAlign(removed_inds, used_inds);
             x_TrimMatrix(pmat, used_inds);
+
+            m_Messages.push_back(NStr::IntToString(removed_inds.size())
+                                 + " sequences were discarded due to"
+                                 " divergence that exceeds maximum allowed.");
         }
         else {
             alnvec.Reset(new CAlnVec(m_AlignDataSource->GetAlnMgr().GetDenseg(),
@@ -390,6 +394,10 @@ bool CGuideTreeCalc::CalcBioTree(void)
         CalcDistMatrix(pmat, dmat, m_DistMethod);
         x_ComputeTree(*alnvec, dmat, m_TreeMethod);
 
+    }
+    else {
+        m_Messages.push_back("Sequence dissimilarity exceeds maximum"
+                             " divergence.");
     }
 
     return valid;
@@ -466,6 +474,10 @@ bool CGuideTreeCalc::x_InitAlignDS(const CSeq_annot& annot)
         mix.Merge(merge_flags);
 
         x_InitAlignDS(mix.GetSeqAlign());
+    }
+    else {
+        NCBI_THROW(CGuideTreeCalcException, eInvalidOptions,
+                   "Query sequence not found in Seq_annot");
     }
 
     return success;
@@ -705,8 +717,7 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
 
     bool success = tax.Init();
     if (!success) {
-        NCBI_THROW(CGuideTreeCalcException, eTaxonomyError,
-                   "Problem initializing taxonomy information");
+        m_Messages.push_back("Problem initializing taxonomy information.");
     }
     
     // Come up with some labels for the terminal nodes
@@ -727,7 +738,12 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
             const COrg_ref& org_ref = sequence::GetOrg_ref(bio_seq_handles[i]);                                
             organisms[i] = org_ref.GetTaxname();
             tax_id = org_ref.GetTaxId();
-            tax.GetBlastName(tax_id, blast_names[i]);
+            if (success) {
+                tax.GetBlastName(tax_id, blast_names[i]);
+            }
+            else {
+                blast_names[i] = s_kUnknown;
+            }
         }
         catch(CException& e) {            
             organisms[i] = s_kUnknown;

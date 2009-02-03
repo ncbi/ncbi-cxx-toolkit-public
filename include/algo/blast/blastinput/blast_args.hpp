@@ -214,7 +214,7 @@ public:
 
 /** Argument class for general search BLAST algorithm options: evalue, gap
  * penalties, query filter string, ungapped x-drop, initial and final gapped 
- * x-drop, word size, percent identity, and effective search space
+ * x-drop, word size, percent identity, and effective search space.
  */
 class NCBI_BLASTINPUT_EXPORT CGenericSearchArgs : public IBlastCmdLineArgs
 {
@@ -666,7 +666,9 @@ private:
 };
 
 /// Argument class to collect formatting options, use this to create a 
-/// CBlastFormat object
+/// CBlastFormat object.
+/// @note This object is also needed to set the maximum number of target
+/// sequences to save (hitlist size)
 class NCBI_BLASTINPUT_EXPORT CFormattingArgs : public IBlastCmdLineArgs
 {
 public:

@@ -89,8 +89,10 @@ CLocalDbAdapter::CLocalDbAdapter(CRef<IQueryFactory> subject_sequences,
     }
 
     CObjMgr_QueryFactory* objmgr_qf = NULL;
-    if ( (objmgr_qf = dynamic_cast<CObjMgr_QueryFactory*>(&*m_SubjectFactory)) ) {
+    if ( (objmgr_qf = dynamic_cast<CObjMgr_QueryFactory*>(&*m_SubjectFactory)) )
+    {
         m_Subjects = objmgr_qf->GetTSeqLocVector();
+        _ASSERT(!m_Subjects.empty());
     }
 }
 
@@ -142,7 +144,8 @@ CLocalDbAdapter::MakeSeqSrc()
             if ( !m_Subjects.empty() ) {
                 m_SeqSrc = QueryFactoryBlastSeqSrcInit(m_Subjects, program);
             } else {
-                m_SeqSrc = QueryFactoryBlastSeqSrcInit(m_SubjectFactory, program);
+                m_SeqSrc = QueryFactoryBlastSeqSrcInit(m_SubjectFactory,
+                                                       program);
             }
             _ASSERT(m_SeqSrc);
         } else {

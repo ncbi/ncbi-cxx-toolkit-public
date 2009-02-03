@@ -47,6 +47,8 @@ static char const rcsid[] = "$Id$";
 #include <stdio.h>
 #include <sstream>
 
+#define SHORT_ISAM_FORMAT
+
 BEGIN_NCBI_SCOPE
 
 /// Import C++ std namespace.
@@ -635,6 +637,10 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
         case CSeq_id::e_General:
             if (! m_Sparse) {
                 x_AddStdString(oid, seqid.AsFastaString());
+                const CDbtag & dbt = seqid.GetGeneral();
+                if (dbt.CanGetTag() && dbt.GetTag().IsStr()) {
+                    x_AddStdString(oid, dbt.GetTag().GetStr());
+                }
             }
             break;
             

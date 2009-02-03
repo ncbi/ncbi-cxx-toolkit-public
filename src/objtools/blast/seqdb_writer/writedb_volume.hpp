@@ -139,6 +139,16 @@ public:
     {
         return m_VolName;
     }
+
+    /// Get the current OID of the volume.
+    ///
+    /// The current OID is needed for generating BL_ORD_ID.  
+    ///
+    /// @return the OID
+    const int & GetOID() const
+    {
+        return m_OID; 
+    }
     
     /// List all files associated with this volume.
     /// @param files The filenames will be appended to this vector.

@@ -289,7 +289,6 @@ int CDustMaskApplication::Run (void)
     auto_ptr< CNcbiIstream > input_stream_ptr;
     auto_ptr< CNcbiOstream > output_stream_ptr;
     CNcbiIstream * input_stream = NULL;
-    CNcbiOstream * output_stream = NULL;
     
     if( GetArgs()[kInput].AsString().empty() )
         input_stream = &cin;
@@ -300,14 +299,7 @@ int CDustMaskApplication::Run (void)
         input_stream = input_stream_ptr.get();
     }
 
-    if( GetArgs()[kOutput].AsString().empty() )
-        output_stream = &cout;
-    else
-    {
-        output_stream_ptr.reset(
-            new CNcbiOfstream( GetArgs()[kOutput].AsString().c_str() ) );
-        output_stream = output_stream_ptr.get();
-    }
+    CNcbiOstream& output_stream = GetArgs()[kOutput].AsOutputFile();
 
     // Set up the object manager.
     CRef<CObjectManager> om(CObjectManager::GetInstance());
@@ -352,7 +344,7 @@ int CDustMaskApplication::Run (void)
         }
     }
 
-    *output_stream << flush;
+    output_stream << flush;
     NcbiCerr << endl;
     return 0;
 }

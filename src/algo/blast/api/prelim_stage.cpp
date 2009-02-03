@@ -94,6 +94,33 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
 }
 
 void
+CBlastPrelimSearch::SetNumberOfThreads(size_t nthreads)
+{
+    const bool was_multithreaded = IsMultiThreaded();
+
+    CThreadable::SetNumberOfThreads(nthreads);
+    if (was_multithreaded != IsMultiThreaded()) {
+        BlastDiagnostics* diags = IsMultiThreaded()
+            ? CSetupFactory::CreateDiagnosticsStructureMT()
+            : CSetupFactory::CreateDiagnosticsStructure();
+        m_InternalData->m_Diagnostics.Reset
+            (new TBlastDiagnostics(diags, Blast_DiagnosticsFree));
+
+        CRef<ILocalQueryData> query_data
+            (m_QueryFactory->MakeLocalQueryData(&*m_Options));
+        auto_ptr<const CBlastOptionsMemento> opts_memento
+            (m_Options->CreateSnapshot());
+        BlastHSPStream* hsp_stream = IsMultiThreaded()
+            ? CSetupFactory::CreateHspStreamMT(opts_memento.get(),
+                                               query_data->GetNumQueries())
+            : CSetupFactory::CreateHspStream(opts_memento.get(),
+                                             query_data->GetNumQueries());
+        m_InternalData->m_HspStream.Reset
+            (new TBlastHSPStream(hsp_stream, BlastHSPStreamFree));
+    }
+}
+
+void
 CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
                            CRef<CBlastOptions> options,
                            CConstRef<objects::CPssmWithParameters> pssm,

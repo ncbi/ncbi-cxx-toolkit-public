@@ -486,15 +486,6 @@ private:
         eWrongFile       =  -12  /// The file was not found, or was the wrong length.
     };
     
-    /// The key-value pair type for numerical indices
-    struct SNumericKeyData4 {
-        /// The key, a GI or PIG identifier.
-        Uint4 key;
-        
-        /// The value, an OID.
-        Uint4 data;
-    };
-    
     /// Numeric identifier lookup
     /// 
     /// Given a numeric identifier, this routine finds the OID.
@@ -1075,7 +1066,7 @@ private:
     void x_MapDataPage(int                 sample_index,
                        int               & start,
                        int               & num_elements,
-                       SNumericKeyData4 ** data_page_begin,
+                       const void       ** data_page_begin,
                        CSeqDBLockHold    & locked);
     
     /// Get a particular data element from a data page.
@@ -1083,7 +1074,7 @@ private:
     /// @param index The index of the element to fetch. [in]
     /// @param key   The returned key.   [out]
     /// @param data  The returned value. [out]
-    void x_GetDataElement(SNumericKeyData4 * dpage,
+    void x_GetDataElement(const void      * dpage,
                           int               index,
                           Int8            & key,
                           int             & data);
@@ -1213,6 +1204,26 @@ private:
     
     /// Last volume key
     SIsamKey m_LastKey;
+
+    /// Use Uint8 for the key
+    bool m_LongId;
+
+    /// size of the numeric key-data
+    int m_Keysize;
+
+    Uint8 x_GetNumericKey(const void *p) {
+        if (m_LongId)
+            return((Uint8) SeqDB_GetStdOrd((Uint8 *)p));
+        else
+            return((Uint4) SeqDB_GetStdOrd((Uint4 *)p));
+    }
+
+    int x_GetNumericData(const void *p) {
+        if (m_LongId)
+            return((int) SeqDB_GetStdOrd(((Uint4 *)p)+2));
+        else
+            return((int) SeqDB_GetStdOrd(((Uint4 *)p)+1));
+    }
 };
 
 inline int
@@ -1222,16 +1233,14 @@ CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
                                 Int8           & key_out,
                                 int            & data_out)
 {
-    // Only implements 4 byte keys.
     
-    SNumericKeyData4 * keydatap = 0;
+    const void * keydatap = 0;
+
+    TIndx offset_begin = m_KeySampleOffset + (m_Keysize * index);
     
-    int obj_size = (int) sizeof(SNumericKeyData4);
-    TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
-    
-    keydatap = (SNumericKeyData4*) index_lease.GetPtr(offset_begin);
-    key_out = (int) SeqDB_GetStdOrd(& (keydatap->key));
-    
+    keydatap = index_lease.GetPtr(offset_begin);
+    key_out = x_GetNumericKey(keydatap);
+         
     int rv = 0;
     
     if (key_in < key_out) {
@@ -1240,7 +1249,7 @@ CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
         rv = 1;
     } else {
         rv = 0;
-        data_out = (int) SeqDB_GetStdOrd(& (keydatap->data));
+        data_out = x_GetNumericData(keydatap);
     }
     
     return rv;
@@ -1254,14 +1263,13 @@ CSeqDBIsam::x_GetNumericSample(CSeqDBMemLease & index_lease,
 {
     // Only implements 4 byte keys.
     
-    SNumericKeyData4 * keydatap = 0;
+    const void * keydatap = 0;
     
-    int obj_size = (int) sizeof(SNumericKeyData4);
-    TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
+    TIndx offset_begin = m_KeySampleOffset + (m_Keysize * index);
     
-    keydatap = (SNumericKeyData4*) index_lease.GetPtr(offset_begin);
-    key_out = (int) SeqDB_GetStdOrd(& (keydatap->key));
-    data_out = (int) SeqDB_GetStdOrd(& (keydatap->data));
+    keydatap = index_lease.GetPtr(offset_begin);
+    key_out = x_GetNumericKey(keydatap);
+    data_out = x_GetNumericData(keydatap);
 }
 
 inline bool
@@ -1417,15 +1425,14 @@ inline void
 CSeqDBIsam::x_MapDataPage(int                sample_index,
                           int              & start,
                           int              & num_elements,
-                          SNumericKeyData4 ** data_page_begin,
+                          const void      ** data_page_begin,
                           CSeqDBLockHold   & locked)
 {
     num_elements =
         x_GetPageNumElements(sample_index, & start);
     
-    TIndx offset_begin = start * sizeof(SNumericKeyData4);
-    TIndx offset_end =
-        offset_begin + sizeof(SNumericKeyData4) * num_elements;
+    TIndx offset_begin = start * m_Keysize;
+    TIndx offset_end = offset_begin + m_Keysize * num_elements;
     
     m_Atlas.Lock(locked);
     
@@ -1436,19 +1443,17 @@ CSeqDBIsam::x_MapDataPage(int                sample_index,
                           offset_end);
     }
     
-    *data_page_begin = (SNumericKeyData4*) m_DataLease.GetPtr(offset_begin);
+    *data_page_begin =  m_DataLease.GetPtr(offset_begin);
 }
 
 inline void
-CSeqDBIsam::x_GetDataElement(SNumericKeyData4 * dpage,
+CSeqDBIsam::x_GetDataElement(const void       * dpage,
                              int                index,
                              Int8             & key,
                              int              & data)
 {
-    // Only implements 4 byte keys.
-    
-    key = (int) SeqDB_GetStdOrd((Int4*)  & dpage[index].key);
-    data = (int) SeqDB_GetStdOrd((Int4*) & dpage[index].data);
+    key  = x_GetNumericKey ((char *)dpage + index * m_Keysize);
+    data = x_GetNumericData((char *)dpage + index * m_Keysize);
 }
 
 END_NCBI_SCOPE

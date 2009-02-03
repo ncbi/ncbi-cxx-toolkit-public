@@ -286,6 +286,11 @@ s_QueryFactoryGetSequence(void* multiseq_handle, BlastSeqSrcGetSeqArg* args)
         args->seq->sequence = args->seq->sequence_start;
     }
 
+    // these are not applicable to encode subject masks, instead seq_ranges
+    // should be utilized
+    _ASSERT(args->seq->lcase_mask == NULL);
+    _ASSERT(args->seq->lcase_mask_allocated == FALSE);
+
     args->seq->oid = args->oid;
     return BLAST_SEQSRC_SUCCESS;
 }
@@ -484,7 +489,7 @@ s_QueryFactoryBlastSeqSrcInit(CRef<IQueryFactory> query_factory,
     BlastSeqSrc* seq_src = NULL;
     BlastSeqSrcNewInfo bssn_info;
 
-    if (query_factory.Empty() && subj_seqs.empty() ) {
+    if (query_factory.Empty() && subj_seqs.empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Must provide either a query factory or subject sequences");
     }

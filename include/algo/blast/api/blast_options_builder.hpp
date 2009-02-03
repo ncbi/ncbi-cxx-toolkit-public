@@ -132,6 +132,10 @@ public:
     /// (returns TSeqRange::GetEmpty() if not applicable)
     TSeqRange GetRestrictedQueryRange() { return m_QueryRange; }
 
+    /// Set the 'ignore unsupported options' flag.
+    /// @param ignore True if the unsupported options should be ignored [in]
+    void SetIgnoreUnsupportedOptions(bool ignore);
+
     /// Compute the EProgram value to use for this search.
     ///
     /// The blast4 protocol uses a notion of program and service to
@@ -286,6 +290,9 @@ private:
 
     /// API Locality of resulting options.
     CBlastOptions::EAPILocality m_Locality;
+
+    /// Should this class quietly ignore unsupported options
+    bool m_IgnoreUnsupportedOptions;
 };
 
 END_SCOPE(blast)

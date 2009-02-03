@@ -1404,13 +1404,16 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     TSeqPos hitlist_size = 0;
     if (args[kArgMaxTargetSequences]) {
         hitlist_size = args[kArgMaxTargetSequences].AsInteger();
-        if (hitlist_size > 0) {
+        if (hitlist_size > 0 && m_OutputFormat == ePairwise) {
             /* Only non-default values will be overriden */
-            CalculateFormattingParams(hitlist_size,
-                      m_NumDescriptions == kDfltArgNumDescriptions 
+            string warnings = CalculateFormattingParams(hitlist_size,
+                      m_NumDescriptions != kDfltArgNumDescriptions 
                       ? &m_NumDescriptions : 0,
-                      m_NumAlignments == kDfltArgNumAlignments 
+                      m_NumAlignments != kDfltArgNumAlignments 
                       ? &m_NumAlignments : 0);
+            if ( !warnings.empty() ) {
+                ERR_POST(Warning << warnings);
+            }
         }
     }
 

@@ -32,7 +32,9 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistl.hpp>
 #include <algo/blast/core/blast_def.h>
+#include <vector>
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
@@ -48,7 +50,7 @@
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
-//USING_NCBI_SCOPE;
+USING_NCBI_SCOPE;
 //USING_SCOPE(blast);
 //USING_SCOPE(objects);
 
@@ -97,6 +99,56 @@ BOOST_AUTO_TEST_CASE(SSeqRangeIntersect)
     a = SSeqRangeNew(10, 40);
     b = SSeqRangeNew(80, 142);
     BOOST_REQUIRE(SSeqRangeIntersectsWith(&a, &b) == FALSE);
+}
+
+BOOST_AUTO_TEST_CASE(SSeqRange_TestLowerBound)
+{
+    vector<SSeqRange> ranges;
+    ranges.push_back(SSeqRangeNew(30, 46));
+    ranges.push_back(SSeqRangeNew(50, 77));
+    ranges.push_back(SSeqRangeNew(80, 100));
+    ranges.push_back(SSeqRangeNew(102, 300));
+
+    Int4 idx;
+    idx = SSeqRangeArrayLessThanOrEqual(&ranges[0], ranges.size(), 0);
+    BOOST_REQUIRE(idx == 0);
+
+    idx = SSeqRangeArrayLessThanOrEqual(&ranges[0], ranges.size(), 41);
+    BOOST_REQUIRE(idx == 0);
+
+    idx = SSeqRangeArrayLessThanOrEqual(&ranges[0], ranges.size(), 50);
+    BOOST_REQUIRE(idx == 1);
+
+    idx = SSeqRangeArrayLessThanOrEqual(&ranges[0], ranges.size(), 78);
+    BOOST_REQUIRE(idx == 2);
+
+    idx = SSeqRangeArrayLessThanOrEqual(&ranges[0], ranges.size(), 100);
+    BOOST_REQUIRE(idx == 2);
+}
+
+BOOST_AUTO_TEST_CASE(SSeqRange_RangeSelection)
+{
+    vector<SSeqRange> ranges;
+    ranges.push_back(SSeqRangeNew(30, 46));
+    ranges.push_back(SSeqRangeNew(50, 77));
+    ranges.push_back(SSeqRangeNew(80, 100));
+    ranges.push_back(SSeqRangeNew(105, 110));
+    ranges.push_back(SSeqRangeNew(120, 134));
+    ranges.push_back(SSeqRangeNew(140, 148));
+
+    SSeqRange target = SSeqRangeNew(20, 100);
+
+    Int4 starting_idx = SSeqRangeArrayLessThanOrEqual(&ranges[0], ranges.size(),
+                                            target.left);
+    BOOST_REQUIRE(starting_idx == 0);
+
+    Int4 ending_idx = SSeqRangeArrayLessThanOrEqual(&ranges[0], ranges.size(),
+                                          target.right);
+    BOOST_REQUIRE(ending_idx == 2);
+
+    for (Int4 i = starting_idx; i <= ending_idx; i++) {
+        BOOST_REQUIRE(SSeqRangeIntersectsWith(&ranges[i], &target));
+    }
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

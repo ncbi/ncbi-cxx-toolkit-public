@@ -52,6 +52,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <util/sequtil/sequtil.hpp>
 #include <util/range.hpp>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 
@@ -1076,6 +1077,14 @@ public:
     ///
     /// @param algorithms List of algorithm ids. [out]
     void GetAvailableMaskAlgorithms(vector<int> & algorithms);
+
+    /// Returns a formatted string with the list of available masking
+    /// algorithms in this database for display purposes (i.e.: help)
+    string GetAvailableMaskAlgorithmDescriptions();
+    
+    /// Validates the algorithm IDs passed to this function, returning a vector
+    /// of those algorithm IDs not present in this object
+    vector<int> ValidateMaskAlgorithms(const vector<int>& algorithm_ids);
     
     /// Get information about one type of masking available here.
     ///
@@ -1098,6 +1107,12 @@ public:
     
     /// List of sequence offset ranges.
     typedef vector< pair<TSeqPos, TSeqPos> > TSequenceRanges;
+
+    /// Invert the sequence ranges so that they represent the offset ranges to
+    /// SEARCH (as opposed to those to exclude from the search).
+    /// @param ranges sequence ranges to invert [in|out]
+    /// @param seq_length sequence length [in]
+    static void InvertSequenceRanges(TSequenceRanges& ranges, int seq_length);
     
     /// Get masked ranges of a sequence.
     ///
@@ -1120,6 +1135,51 @@ public:
     /// Invoke the garbage collector to free up memory
     void GarbageCollect(void);
     
+    /***********************************************************************/
+    /* BEGIN: support for partial sequence fetching                        */
+    
+    /// List of sequence offset ranges.
+    typedef set< pair<int, int> > TRangeList;
+    
+    /// Apply a range of offsets to a database sequence.
+    ///
+    /// The GetAmbigSeq() method requires an amount of work (and I/O)
+    /// which is proportional to the size of the sequence data (more
+    /// if ambiguities are present).  In some cases, only certain
+    /// subranges of this data will be utilized.  This method allows
+    /// the user to specify which parts of a sequence are actually
+    /// needed by the user.  (Care should be taken if one SeqDB object
+    /// is shared by several program components.)  (Note that offsets
+    /// above the length of the sequence will not generate an error,
+    /// and are replaced by the sequence length.)
+    ///
+    /// If ranges are specified for a sequence, data areas in
+    /// specified sequences will be accurate, but data outside the
+    /// specified ranges should not be accessed, and no guarantees are
+    /// made about what data they will contain.  If the append_ranges
+    /// flag is true, the range will be added to existing ranges.  If
+    /// false, existing ranges will be flushed and replaced by new
+    /// ranges.  To remove ranges, call this method with an empty list
+    /// of ranges (and append_ranges == false); future calls will then
+    /// return the complete sequence.
+    ///
+    /// If the cache_data flag is set, data for this sequence will be
+    /// kept for the duration of SeqDB's lifetime.  To disable caching
+    /// (and flush cached data) for this sequence, call the method
+    /// again, but specify cache_data to be false.
+    ///
+    /// @param oid           OID of the sequence.
+    /// @param offset_ranges Ranges of sequence data to return.
+    /// @param append_ranges Append new ranges to existing list.
+    /// @param cache_data    Keep sequence data for future callers.
+    void SetOffsetRanges(int                oid,
+                         const TRangeList & offset_ranges,
+                         bool               append_ranges,
+                         bool               cache_data);
+    
+    /* END: support for partial sequence fetching                          */
+    /***********************************************************************/
+
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;

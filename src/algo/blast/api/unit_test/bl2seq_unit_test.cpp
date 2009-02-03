@@ -1340,6 +1340,37 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryBothStrands) {
     testRawCutoffs(blaster, eBlastx, eBlastx_555_129295);
 }
 
+BOOST_AUTO_TEST_CASE(NucleotideSelfHitWithSubjectMask) {
+    CRef<CSeq_id> query_id(new CSeq_id(CSeq_id::e_Gi, 148727250));
+    CRef<CSeq_id> subj_id(new CSeq_id(CSeq_id::e_Gi, 89059606));
+    CRef<CSeq_loc> qsl(new CSeq_loc(*query_id, 0, 1000));
+    CRef<CSeq_loc> ssl(new CSeq_loc(*subj_id, 0, 1000));
+    CPacked_seqint::TRanges mask_vector;
+    mask_vector.push_back(TSeqRange(44, 68));
+    mask_vector.push_back(TSeqRange(582, 609));
+    mask_vector.push_back(TSeqRange(834, 853));
+    CRef<CPacked_seqint> masks(new CPacked_seqint(*subj_id,
+                                                  mask_vector));
+    CRef<CSeq_loc> subj_mask(new CSeq_loc());
+    subj_mask->SetPacked_int(*masks);
+    CRef<CScope> scope(CSimpleOM::NewScope());
+    SSeqLoc query(qsl, scope);
+    auto_ptr<SSeqLoc> subject(new SSeqLoc(ssl, scope, subj_mask));
+    {
+        CBl2Seq bl2seq(query, *subject, eBlastn);
+        TSeqAlignVector sav(bl2seq.Run());
+        BOOST_REQUIRE_EQUAL((size_t)1, sav.front()->Get().size());
+    }
+
+    // Now compare the same sequences, without the subject masks
+    subject.reset(new SSeqLoc(ssl, scope));
+    {
+        CBl2Seq bl2seq(query, *subject, eBlastn);
+        TSeqAlignVector sav(bl2seq.Run());
+        BOOST_REQUIRE_EQUAL((size_t)4, sav.front()->Get().size());
+    }
+}
+
 BOOST_AUTO_TEST_CASE(NucleotideBlastSelfHit) {
     CSeq_id id("gi|555");
     auto_ptr<SSeqLoc> sl(

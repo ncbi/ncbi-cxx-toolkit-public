@@ -1227,6 +1227,8 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                   ((m_AlignType & eProt) != 0 ? true : false));
         }
     }
+    vector<int> prev_stop;
+    prev_stop.reserve(rowNum);
     //output rows
     for(int j=0; j<=(int)aln_stop; j+=(int)m_LineLen){
         //output according to aln coordinates
@@ -1362,8 +1364,14 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 CBlastFormatUtil::AddSpace(out, 
                                            maxIdLen-seqidArray[row].size()+
                                            k_IdStartMargin);
-                out << start;
-                startLen=NStr::IntToString(start).size();
+                //not to display start and stop number for empty row in the middle
+                if (j > 0 && end == prev_stop[row]) {
+                    startLen = 0;
+                } else {
+                    out << start;
+                    startLen=NStr::IntToString(start).size();
+                }
+
                 CBlastFormatUtil::AddSpace(out, maxStartLen-startLen+
                                            k_StartSequenceMargin);
                 x_OutputSeq(sequence[row], m_AV->GetSeqId(row), j, 
@@ -1371,7 +1379,12 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                             (row > 0 && colorMismatch)?true:false,  
                             masked_regions[row], out);
                 CBlastFormatUtil::AddSpace(out, k_SeqStopMargin);
-                out << end;
+
+                 //not to display stop number for empty row in the middle
+                if (!(j > 0 && end == prev_stop[row])) {
+                    out << end;
+                }
+                
                 out<<"\n";
                 if(m_AlignOption & eMasterAnchored){//inserts for anchored view
                     bool insertAlready = false;
@@ -1429,6 +1442,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                 row, false, masked_regions[row], out);
                     out<<"\n";
                 }
+                prev_stop[row] = end; 
             }
             if(!seqStarts[row].empty()){ //shouldn't need this check
                 seqStarts[row].pop_front();

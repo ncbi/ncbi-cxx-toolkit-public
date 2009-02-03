@@ -124,6 +124,7 @@ public:
         /// Add an index from sequence hash to OID.
         eAddHash = 0x100
     };
+    typedef int TIndexType; ///< Bitwise OR of "EIndexType"
     
     //
     // Setup
@@ -221,6 +222,12 @@ public:
     /// 
     /// @param pig PIG identifier as an integer. [in]
     void SetPig(int pig);
+
+    /// Do not parse seqid from FASTA file deflines
+    /// 
+    /// This method will cause BL_ORD_ID type of ID generated based
+    /// on volume OIDs
+    void SetNoParseID();
     
     /// Set the deflines to be used for the sequence.
     /// 

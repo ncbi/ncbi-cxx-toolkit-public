@@ -511,21 +511,32 @@ CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp)
     _ASSERT(slp->IsInt() || slp->IsPacked_int() || slp->IsMix());
 
     CBlastSeqLoc retval;
+    BlastSeqLoc* tail = NULL;    /* Pointer to the tail of the complement_mask
+                                    linked list */
 
     if (slp->IsInt()) {
         BlastSeqLocNew(&retval, slp->GetInt().GetFrom(), slp->GetInt().GetTo());
     } else if (slp->IsPacked_int()) {
         ITERATE(CPacked_seqint::Tdata, itr, slp->GetPacked_int().Get()) {
-            BlastSeqLocNew(&retval, (*itr)->GetFrom(), (*itr)->GetTo());
+            /* Cache the tail of the list to avoid the overhead of traversing
+             * the list when appending to it */
+            tail = BlastSeqLocNew(tail ? &tail : &retval, 
+                                  (*itr)->GetFrom(), (*itr)->GetTo());
         }
     } else if (slp->IsMix()) {
         ITERATE(CSeq_loc_mix::Tdata, itr, slp->GetMix().Get()) {
             if ((*itr)->IsInt()) {
-                BlastSeqLocNew(&retval, (*itr)->GetInt().GetFrom(), 
-                                        (*itr)->GetInt().GetTo());
+                /* Cache the tail of the list to avoid the overhead of
+                 * traversing the list when appending to it */
+                tail = BlastSeqLocNew(tail ? &tail : &retval, 
+                                      (*itr)->GetInt().GetFrom(), 
+                                      (*itr)->GetInt().GetTo());
             } else if ((*itr)->IsPnt()) {
-                BlastSeqLocNew(&retval, (*itr)->GetPnt().GetPoint(), 
-                                        (*itr)->GetPnt().GetPoint());
+                /* Cache the tail of the list to avoid the overhead of
+                 * traversing the list when appending to it */
+                tail = BlastSeqLocNew(tail ? &tail : &retval, 
+                                      (*itr)->GetPnt().GetPoint(), 
+                                      (*itr)->GetPnt().GetPoint());
             }
         }
     } else {

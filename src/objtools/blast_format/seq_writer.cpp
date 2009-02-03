@@ -40,18 +40,23 @@ static char const rcsid[] =
 #include <objtools/blast_format/seq_writer.hpp>
 #include <objtools/blast_format/blastdb_dataextract.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
+#include "masking_fmt_spec.hpp"
 #include <numeric>      // for std::accumulate
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 
+const char CMaskingFmtSpecHelper::kDelim(',');
+const string CMaskingFmtSpecHelper::kDelimStr(1, CMaskingFmtSpecHelper::kDelim);
+
 CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
                  CNcbiOstream& out, 
                  CSeqFormatterConfig config /* = CSeqFormatterConfig() */)
     : m_Out(out), m_FmtSpec(format_spec), m_BlastDb(blastdb),
-      m_FastaRequestedAtEOL(false)
+      m_MaskingAlgoHelper(0), m_FastaRequestedAtEOL(false)
 {
+    m_MaskingAlgoHelper = new CMaskingFmtSpecHelper(m_FmtSpec, m_BlastDb);
     vector<char> repl_types;    // replacement types
 
     // Record where the offsets where the replacements must occur
@@ -125,6 +130,15 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
             m_DataExtractors.push_back(new CScientificNameExtractor());
             break;
 
+        case 'm':
+            {
+                vector<int> filt_algo_ids = 
+                    m_MaskingAlgoHelper->GetFilteringAlgorithms();
+                m_DataExtractors.push_back
+                    (new CMaskingDataExtractor(filt_algo_ids));
+                break;
+            }
+
         default:
             CNcbiOstrstream os;
             os << "Unrecognized format specification: '%" << *fmt << "'";
@@ -141,6 +155,7 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
 
 CSeqFormatter::~CSeqFormatter()
 {
+    delete m_MaskingAlgoHelper;
     NON_CONST_ITERATE(vector<IBlastDBExtract*>, itr, m_DataExtractors) {
         delete *itr;
     };
@@ -180,6 +195,8 @@ struct StrLenAdd : public binary_function<SIZE_TYPE, const string&, SIZE_TYPE>
 string
 CSeqFormatter::x_Replacer(const vector<string>& data2write) const
 {
+    const string& kFiltAlgoSpec =
+        m_MaskingAlgoHelper->GetFiltAlgorithmSpecifiers();
     SIZE_TYPE data2write_size = accumulate(data2write.begin(), data2write.end(),
                                            0, StrLenAdd());
 
@@ -192,6 +209,9 @@ CSeqFormatter::x_Replacer(const vector<string>& data2write) const
         retval.append(&m_FmtSpec[fmt_idx], &m_FmtSpec[m_ReplOffsets[i]]);
         retval.append(data2write[i]);
         fmt_idx = m_ReplOffsets[i] + 2;
+        if (m_FmtSpec[m_ReplOffsets[i]+1] == 'm') {
+            fmt_idx += kFiltAlgoSpec.size();
+        }
     }
     if (fmt_idx <= m_FmtSpec.size()) {
         retval.append(&m_FmtSpec[fmt_idx], &m_FmtSpec[m_FmtSpec.size()]);

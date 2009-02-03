@@ -62,7 +62,7 @@ public:
                           CRef<TBlastHSPStream>   hsps,
                           CConstRef<objects::CPssmWithParameters> pssm = null);
     
-    /// Create a BlastSeqSrc using a new constructed CSeqDB.
+    /// Create a BlastSeqSrc using a newly constructed CSeqDB.
     CBlastTracebackSearch(CRef<IQueryFactory>     qf,
                           CRef<CBlastOptions>     opts,
                           const CSearchDatabase & dbinfo,
@@ -106,9 +106,13 @@ private:
     
     /// Prohibit copy constructor
     CBlastTracebackSearch(CBlastTracebackSearch &);
-    /// Prohibi assignment operator
+    /// Prohibit assignment operator
     CBlastTracebackSearch & operator =(CBlastTracebackSearch &);
     
+    /// Sets up the underlying BLAST database object handle to retrieve subject
+    /// sequences partially during the traceback processing
+    void x_SetSubjectRangesForPartialFetching();
+
     // C++ data
     
     /// The query to search for.
@@ -121,7 +125,7 @@ private:
     CRef<SInternalData>             m_InternalData;
     
     /// Options from the preliminary search.
-    const CBlastOptionsMemento*     m_OptsMemento; // the options memento...
+    const CBlastOptionsMemento*     m_OptsMemento;
     
     /// Warnings and Errors
     TSearchMessages m_Messages;

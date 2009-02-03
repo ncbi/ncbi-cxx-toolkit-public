@@ -307,6 +307,11 @@ s_MultiSeqGetSequence(void* multiseq_handle, BlastSeqSrcGetSeqArg* args)
         args->seq->sequence = args->seq->sequence_start;
     }
 
+    // these are not applicable to encode subject masks, instead seq_ranges
+    // should be utilized
+    _ASSERT(args->seq->lcase_mask == NULL);
+    _ASSERT(args->seq->lcase_mask_allocated == FALSE);
+
     args->seq->oid = index;
     return BLAST_SEQSRC_SUCCESS;
 }

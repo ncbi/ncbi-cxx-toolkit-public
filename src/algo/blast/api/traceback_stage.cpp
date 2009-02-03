@@ -40,6 +40,7 @@ static char const rcsid[] =
 #include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>  // for CSeqDbSeqInfoSrc
 #include <objtools/blast/seqdb_reader/seqdb.hpp>     // for CSeqDb
+#include <algo/blast/api/subj_ranges_set.hpp>
 
 #include "blast_memento_priv.hpp"
 #include "blast_seqalign.hpp"
@@ -240,11 +241,120 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
         (new TBlastHSPStream(hsp_stream, BlastHSPStreamFree));
 }
 
+void
+CBlastTracebackSearch::x_SetSubjectRangesForPartialFetching()
+{
+    if ( !Blast_SubjectIsNucleotide(m_Options->GetProgramType()) ) {
+        // don't bother doing this for proteins, as the sequences are never
+        // long enough to cause performance degradation
+        return;
+    }
+
+    CSeqDbSeqInfoSrc* seqdb_infosrc = 
+        dynamic_cast<CSeqDbSeqInfoSrc*>(m_SeqInfoSrc);
+    if (seqdb_infosrc == NULL) {
+        // Nothing to do as this is probably a bl2seq search...
+        // FIXME: what if the data loader still uses CSeqDB... how to hint
+        // which sequences to partially fetch?
+        return;
+    }
+    CSeqDB& seqdb_handle = *seqdb_infosrc->m_iSeqDb;
+
+    CRef<CSubjectRangesSet> hsp_ranges(new CSubjectRangesSet);
+
+    const bool kTranslateSubjects =
+        Blast_SubjectIsTranslated(m_Options->GetProgramType()) ? true : false;
+    BlastHSPStream* new_hsp_stream =
+        CSetupFactory::CreateHspStream(m_OptsMemento, 
+                                   m_InternalData->m_QueryInfo->num_queries);
+    set<int> query_indices;
+    BlastHSPStream* hsp_stream = m_InternalData->m_HspStream->GetPointer();
+    BlastHSPList* hsp_list = NULL;
+    while (BlastHSPStreamRead(hsp_stream, &hsp_list) != kBlastHSPStream_Eof) {
+        if ( !hsp_list )
+            continue;
+        const int kQueryIdx = hsp_list->query_index;
+        query_indices.insert(kQueryIdx);
+        const int kSubjOid = hsp_list->oid;
+        const int kApproxLength = seqdb_handle.GetSeqLengthApprox(kSubjOid);
+
+        // iterate over HSPs, recording the offsets needed
+        for (int i = 0; i < hsp_list->hspcnt; i++) {
+            const BlastHSP* hsp = hsp_list->hsp_array[i];
+
+            // Note: This code tries to get at least as much data as is
+            // needed; it may end up getting a few extra bases on each
+            // side.  It should not be used as a guide for doing precise
+            // codon coordinate translation.
+            
+            int start_off = hsp->subject.offset;
+            int end_off   = hsp->subject.end;
+            
+            if (kTranslateSubjects) {
+                if (hsp->subject.frame > 0) {
+                    start_off = start_off * CODON_LENGTH + hsp->subject.frame;
+                    end_off   = end_off * CODON_LENGTH + hsp->subject.frame;
+                } else {
+                    int start2 = kApproxLength - end_off   * CODON_LENGTH;
+                    int end2   = kApproxLength - start_off * CODON_LENGTH;
+                    
+                    start_off = start2;
+                    end_off = end2;
+                }
+                
+                // Approximate length can be off by 4, plus 3 for the
+                // maximum frame adjustment.
+                
+                start_off -= (CODON_LENGTH + 4);
+                end_off += (CODON_LENGTH + 4);
+                
+                if (start_off < 0) {
+                    start_off = 0;
+                }
+                
+                // The approximate length might underestimate here.
+                
+                if (end_off > (kApproxLength + 4)) {
+                    end_off = (kApproxLength + 4);
+                }
+            }
+            
+            hsp_ranges->AddRange(kQueryIdx, kSubjOid, start_off, end_off);
+        }
+        BlastHSPStreamWrite(new_hsp_stream, &hsp_list);
+    }
+    BlastHSPStreamClose(new_hsp_stream);
+    m_InternalData->m_HspStream.Reset
+        (new TBlastHSPStream(new_hsp_stream, BlastHSPStreamFree));
+
+    // Remove any queries if they were added to the hsp_ranges object, as we'll
+    // fetch those entirely
+    ITERATE(set<int>, query_idx, query_indices) {
+        try {
+            CRef<CSeq_id> query_id =
+                m_SeqInfoSrc->GetId((Uint4)*query_idx).front();
+            vector<int> oids;
+            seqdb_handle.SeqidToOids(*query_id, oids);
+            ITERATE(vector<int>, oid, oids) {
+                hsp_ranges->RemoveSubject(*oid);
+            }
+        } catch (const CSeqDBException&) {
+            continue;
+        }
+    }
+
+    // Hint CSeqDB about ranges to fetch
+    hsp_ranges->ApplyRanges(seqdb_handle);
+}
+
+
 CRef<CSearchResultSet>
 CBlastTracebackSearch::Run()
 {
     _ASSERT(m_OptsMemento);
     SPHIPatternSearchBlk* phi_lookup_table(0);
+
+    x_SetSubjectRangesForPartialFetching();
 
     // For PHI BLAST we need to pass the pattern search items structure to the
     // traceback code

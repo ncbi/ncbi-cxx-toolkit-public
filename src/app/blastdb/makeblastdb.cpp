@@ -41,6 +41,10 @@ static char const rcsid[] =
 #include <algo/blast/api/version.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <corelib/ncbiapp.hpp>
+
+#include <serial/iterator.hpp>
+#include <objmgr/util/create_defline.hpp>
+
 #include <objects/blastdb/Blast_db_mask_info.hpp>
 #include <objects/blastdb/Blast_mask_list.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
@@ -223,6 +227,9 @@ void CMakeBlastDBApp::Init()
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
                             "Maximum file size for BLAST database files",
                             CArgDescriptions::eString, "1GB");
+#if _DEBUG
+    arg_desc->AddFlag("verbose", "Produce verbose output", true);
+#endif /* _DEBUG */
 
     arg_desc->SetCurrentGroup("Taxonomy options");
     arg_desc->AddOptionalKey("taxid", "TaxID", 
@@ -275,42 +282,56 @@ public:
     typedef CFormatGuess::EFormat TFormat;
     
     CSeqEntrySource(CNcbiIstream & is, TFormat fmt)
-        : m_Input(is), m_Format(fmt), m_Done(false)
+        :m_objmgr(CObjectManager::GetInstance()),
+         m_scope(new CScope(*m_objmgr)),
+         m_entry(new CSeq_entry)   
     {
+        char ch=is.peek();
+
+        // Get rid of white spaces 
+        while(!is.eof() && (ch==' ' || ch=='\t' || ch=='\n' || ch=='\r')) {
+            is.read(&ch, 1);
+            ch=is.peek();
+        }
+
+        // If input is a Bioseq_set
+        if(ch == 'B' || ch == '0') {
+            CRef<CBioseq_set> obj(new CBioseq_set);
+            s_ReadObject(is, fmt, obj, "bioseq");
+            m_entry->SetSet(*obj);
+        } else {
+            s_ReadObject(is, fmt, m_entry, "bioseq");
+        }
+
+        m_bio = Begin(*m_entry);
+        m_scope->AddTopLevelSeqEntry(*m_entry);
     }
     
     virtual CConstRef<CBioseq> GetNext()
     {
-        CRef<CSeq_entry> obj(new CSeq_entry);
         CConstRef<CBioseq> rv;
         
-        if (m_Done)
-            return rv;
-        
-        try {
-            s_ReadObject(m_Input, m_Format, obj, "bioseq");
-        }
-        catch(const CEofException &) {
-            obj.Reset();
-        }
-        
-        if (obj.Empty()) {
-            m_Done = true;
-        } else {
-            if (! obj->IsSeq()) {
-                throw runtime_error("Seq-entry does not contain CBioseq");
+       if (m_bio ) {
+            if (! m_bio ->CanGetDescr()) {
+                 sequence::CDeflineGenerator gen;
+                 const string & title = gen.GenerateDefline(*m_bio , *m_scope);
+                 CRef<CSeqdesc> des(new CSeqdesc);
+                 des->SetTitle(title);
+                 CSeq_descr& desr(m_bio ->SetDescr());
+                 desr.Set().push_back(des);
             }
-            
-            rv.Reset(& obj->GetSeq());
+            rv.Reset(&(*m_bio ));
+            ++m_bio ;
         }
-        
+      
         return rv;
     }
     
 private:
-    CNcbiIstream & m_Input;
-    TFormat        m_Format;
-    bool           m_Done;
+    CRef<CObjectManager>    m_objmgr;
+    CRef<CScope>            m_scope;
+    CRef<CSeq_entry>        m_entry;
+    CTypeIterator <CBioseq> m_bio;
 };
 
 void CMakeBlastDBApp::x_AddSeqEntries(CNcbiIstream & data, TFormat fmt)
@@ -574,9 +595,15 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
         if (fasta_file == "-") {
             x_AddSequenceData(cin);
         } else {
-            if ( !CFile(fasta_file).Exists() ) {
+            CFile input_file(fasta_file);
+            if ( !input_file.Exists() ) {
                 ERR_POST(Error << "Ignoring sequence input file '" 
                                << fasta_file << "' as it does not exist.");
+                continue;
+            }
+            if (input_file.GetLength() == 0) {
+                ERR_POST(Error << "Ignoring sequence input file '" 
+                               << fasta_file << "' as it is empty.");
                 continue;
             }
             CNcbiIfstream f(fasta_file.c_str(), ios::binary);
@@ -622,20 +649,24 @@ void CMakeBlastDBApp::x_BuildDatabase()
                    ? args["logfile"].AsOutputFile()
                    : cout);
     
-    // Do we need this option?
-    // 1. if so, implement it.
-    // 2. if not, get rid of it.
-    //bool parse_seqids = args["parse_seqids"];
+    bool parse_seqids = args["parse_seqids"];
     bool hash_index = args["hash_index"];
     
-    CWriteDB::EIndexType indexing = (CWriteDB::EIndexType)
-        (CWriteDB::eDefault | (hash_index ? CWriteDB::eAddHash : 0));
+    CWriteDB::TIndexType indexing = CWriteDB::eNoIndex;
+    indexing |= (hash_index ? CWriteDB::eAddHash : 0);
+    indexing |= (parse_seqids ? CWriteDB::eFullIndex : 0);
 
     m_DB.Reset(new CBuildDatabase(dbname,
                                   title,
                                   is_protein,
                                   indexing,
                                   m_LogFile));
+
+#if _DEBUG
+    if (args["verbose"]) {
+        m_DB->SetVerbosity(true);
+    }
+#endif /* _DEBUG */
     
     // Should we keep the linkout and membership bits?  Sure.
     

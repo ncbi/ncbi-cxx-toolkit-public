@@ -252,6 +252,9 @@ class NCBI_XBLASTFORMAT_EXPORT CBlastFormatUtil
 {
 public:
    
+    /// The string containing the message that no hits were found
+    static const string kNoHitsFound;
+
     ///Error info structure
     struct SBlastError {
         EDiagSev level;   
@@ -340,6 +343,17 @@ public:
     ///
     static void PrintTildeSepLines(string str, size_t line_len, 
                                    CNcbiOstream& out);
+
+    /// Retrieve BLAST database information for presentation in BLAST report
+    /// @param dbname space-separated list of BLAST database names [in]
+    /// @param is_protein are these databases protein? [in]
+    /// @param dbfilt_algorithms BLAST database filtering algorithm IDs (if
+    /// applicable) [in]
+    /// @param is_remote is this a remote BLAST search? [in]
+    static void GetBlastDbInfo(vector<SDbInfo>& retval,
+                               const string& blastdb_names, bool is_protein,
+                               const vector<int>& dbfilt_algorithms,
+                               bool is_remote = false);
 
     ///Print out blast database information
     ///@param dbinfo_list: database info list

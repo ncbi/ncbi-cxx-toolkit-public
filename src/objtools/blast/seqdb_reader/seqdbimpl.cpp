@@ -1737,14 +1737,16 @@ void CSeqDB_IdRemapper::AddMapping(int vol_id, int id, const string & desc)
     m_RealIdToVolumeId[vol_id][real_id] = id;
 }
 
-void CSeqDB_IdRemapper::GetDesc(int algorithm_id, string & desc)
+bool CSeqDB_IdRemapper::GetDesc(int algorithm_id, string & desc)
 {
+    typedef map<int,string> TIdMap;
+
     if (! s_Contains(m_IdToDesc, algorithm_id)) {
-        NCBI_THROW(CSeqDBException, eArgErr,
-                   "Error in stored mask algorithm description data.");
+       return false;
     }
     
     desc = m_IdToDesc[algorithm_id];
+    return true;
 }
 
 const vector<int> &
@@ -1797,6 +1799,56 @@ void CSeqDBImpl::GetAvailableMaskAlgorithms(vector<int> & algorithms)
     m_AlgorithmIds.GetIdList(algorithms);
 }
 
+
+string CSeqDBImpl::GetAvailableMaskAlgorithmDescriptions()
+{
+    vector<int> algorithms;
+    GetAvailableMaskAlgorithms(algorithms);
+    if (algorithms.empty()) {
+        return kEmptyStr;
+    }
+
+    CNcbiOstrstream retval;
+    retval << endl
+           << "Available filtering algorithms applied to database sequences:"
+           << endl << endl;
+    
+    retval << setw(14) << left << "Algorithm ID" 
+           << setw(20) << left << "Algorithm name"
+           << setw(40) << left << "Algorithm options" << endl;
+    ITERATE(vector<int>, algo_id, algorithms) {
+        objects::EBlast_filter_program algo;
+        string algo_opts, algo_name;
+        GetMaskAlgorithmDetails(*algo_id, algo, algo_name, algo_opts);
+        retval << "    " << setw(10) << left << (*algo_id) 
+               << setw(20) << left << algo_name
+               << setw(40) << left << algo_opts << endl;
+    }
+    return CNcbiOstrstreamToString(retval);
+}
+
+static
+void s_GetDetails(int algorithm_id, const string & desc, 
+      EBlast_filter_program & program, string & program_name, string & algo_opts)
+{
+    static const CEnumeratedTypeValues* enum_type_vals = NULL;
+    if (enum_type_vals == NULL) {
+        enum_type_vals = GetTypeInfo_enum_EBlast_filter_program();
+    }
+    _ASSERT(enum_type_vals);
+    
+    size_t p = desc.find(':');
+    
+    if (p == string::npos) {
+        NCBI_THROW(CSeqDBException, eArgErr,
+                   "Error in stored mask algorithm description data.");
+    }
+    
+    program = (EBlast_filter_program) NStr::StringToInt(string(desc, 0, p));
+    program_name.assign(enum_type_vals->FindName(program, false));
+    algo_opts.assign(desc, p + 1, desc.size() - (p + 1));
+}
+
 void CSeqDBImpl::GetMaskAlgorithmDetails(int                 algorithm_id,
                          EBlast_filter_program & program,
                          string            & program_name,
@@ -1809,26 +1861,19 @@ void CSeqDBImpl::GetMaskAlgorithmDetails(int                 algorithm_id,
     if (m_AlgorithmIds.Empty()) {
         x_BuildMaskAlgorithmList(locked);
     }
-    
+
     string s;
-    m_AlgorithmIds.GetDesc(algorithm_id, s);
-    static const CEnumeratedTypeValues* enum_type_vals = NULL;
-    if (enum_type_vals == NULL) {
-        enum_type_vals = GetTypeInfo_enum_EBlast_filter_program();
+    bool found = m_AlgorithmIds.GetDesc(algorithm_id, s);
+
+    if (found == false) {
+        CNcbiOstrstream oss;
+        oss << "Filtering algorithm ID " << algorithm_id 
+            << " is not supported." << endl; 
+        oss << GetAvailableMaskAlgorithmDescriptions();
+        NCBI_THROW(CSeqDBException, eArgErr, CNcbiOstrstreamToString(oss));
     }
-    _ASSERT(enum_type_vals);
-    
-    size_t p = s.find(':');
-    
-    if (p == string::npos) {
-        NCBI_THROW(CSeqDBException, eArgErr,
-                   "Error in stored mask algorithm description data.");
-    }
-    
-    program = 
-        (EBlast_filter_program) NStr::StringToInt(string(s, 0, p));
-    program_name.assign(enum_type_vals->FindName(program, false));
-    algo_opts.assign(s, p + 1, s.size() - (p + 1));
+
+    s_GetDetails(algorithm_id, s, program, program_name, algo_opts);
 }
 
 void CSeqDBImpl::x_BuildMaskAlgorithmList(CSeqDBLockHold & locked)
@@ -1987,64 +2032,6 @@ static void s_CombineConnectedRanges(CSeqDBImpl::TSequenceRanges & ranges)
     }
 }
 
-static void s_InvertRanges(CSeqDBImpl::TSequenceRanges & ranges, int seq_length)
-{
-    if (ranges.size() == 0) {
-        pair<TSeqPos,TSeqPos> rng(0, seq_length);
-        ranges.push_back(rng);
-    } else {
-        // The inverse of a range list is a range from 0 to the
-        // first offset of the first range (the 'pre'), then from
-        // the last offset of each range to the first offset of
-        // the next, then from the last offset of the last range
-        // to the end (the 'post').
-        
-        int last_off = ranges[ranges.size()-1].second;
-        
-        if (last_off > seq_length) {
-            NCBI_THROW(CSeqDBException,
-                       eFileErr,
-                       "Mask data range exceeds sequence length.");
-        }
-        
-        if (ranges[0].first == 0) {
-            // If the first range starts at zero, the 'pre' range
-            // would be empty.  We avoid creating it, and iterate
-            // in an ascending direction.
-            
-            int LAST = ranges.size()-1;
-            
-            for(int q = 0; q < LAST; q++) {
-                ranges[q].first = ranges[q].second;
-                ranges[q].second = ranges[q+1].first;
-            }
-            
-            if (last_off == seq_length) {
-                ranges.pop_back();
-            } else {
-                ranges[LAST].first = ranges[LAST].second;
-                ranges[LAST].second = seq_length;
-            }
-        } else {
-            // To insert the `pre' range without an extra vector
-            // copy, iterate over the elements backwards.
-            
-            if (last_off != seq_length) {
-                pair<TSeqPos, TSeqPos> post(seq_length, 0);
-                ranges.push_back(post);
-            }
-            
-            for(int q = ranges.size()-1; q > 0; q--) {
-                ranges[q].second = ranges[q].first;
-                ranges[q].first = ranges[q-1].second;
-            }
-            
-            ranges[0].second = ranges[0].first;
-            ranges[0].first = 0;
-        }
-    }
-}
-
 void CSeqDBImpl::GetMaskData(int                 oid,
                              const vector<int> & algo_ids,
                              bool                invert,
@@ -2121,7 +2108,7 @@ void CSeqDBImpl::GetMaskData(int                 oid,
     s_CombineConnectedRanges(ranges);
     
     if (invert) {
-        s_InvertRanges(ranges, seq_length);
+        CSeqDB::InvertSequenceRanges(ranges, seq_length);
     }
 }
 #endif

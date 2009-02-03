@@ -292,12 +292,13 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     if ( !filtering_algorithms.empty() ) {
+        static const Boolean kCopySequenceRanges = false;
         CSeqDB::TSequenceRanges & ranges = datap->seq_ranges;
         seqdb.GetMaskData(oid, filtering_algorithms, true, ranges);
         _ASSERT( !ranges.empty() );
         if (BlastSeqBlkSetSeqRanges(args->seq, 
                                     (SSeqRange*)& ranges[0],
-                                    ranges.size(), false) != 0) {
+                                    ranges.size(), kCopySequenceRanges) != 0) {
             return BLAST_SEQSRC_ERROR;
         }
     }

@@ -81,6 +81,11 @@ void CWriteDB::AddSequence(const CBioseq & bs, CSeqVector & sv)
     m_Impl->AddSequence(bs, sv);
 }
 
+void CWriteDB::SetNoParseID()
+{
+    m_Impl->SetNoParseID();
+}
+
 void CWriteDB::SetDeflines(const CBlast_def_line_set & deflines)
 {
     m_Impl->SetDeflines(deflines);

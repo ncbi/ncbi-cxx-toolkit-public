@@ -83,44 +83,45 @@ void CGuideTreeApplication::Init(void)
                             CArgDescriptions::eInputFile);
 
     arg_desc->AddKey("o", "filename", "File name",
-		     CArgDescriptions::eOutputFile);
+                     CArgDescriptions::eOutputFile);
 
     arg_desc->AddDefaultKey("type", "type", "Type of input data: seq-annot"
-			    " or tree", CArgDescriptions::eString, "annot");
+                            " or tree", CArgDescriptions::eString, "seqannot");
 
-    arg_desc->SetConstraint("type", &(*new CArgAllow_Strings, "annot", "tree"));
+    arg_desc->SetConstraint("type", &(*new CArgAllow_Strings, "seqannot",
+                                      "seqalign", "tree"));
 
     arg_desc->AddOptionalKey("query", "id", "Query sequence id",
-			     CArgDescriptions::eString);
+                             CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey("divergence", "value", "Maximum divergence"
-			    " between sequences",
-			    CArgDescriptions::eDouble, "0.85");
+                            " between sequences",
+                            CArgDescriptions::eDouble, "0.85");
 
     arg_desc->AddDefaultKey("distance", "method", "Evolutionary correction for"
-			    " sequence divergence - distance",
-			    CArgDescriptions::eString, "grishin");
+                            " sequence divergence - distance",
+                            CArgDescriptions::eString, "grishin");
 
     arg_desc->SetConstraint("distance", &(*new CArgAllow_Strings,
-					  "jukes_cantor", "poisson", "kimura",
-					  "grishin", "grishin2"));
+                                          "jukes_cantor", "poisson", "kimura",
+                                          "grishin", "grishin2"));
     
     arg_desc->AddDefaultKey("treemethod", "method", "Algorithm for phylogenetic"
-			    " tree computation",
-			    CArgDescriptions::eString, "fastme");
+                            " tree computation",
+                            CArgDescriptions::eString, "fastme");
 
     arg_desc->SetConstraint("treemethod", &(*new CArgAllow_Strings, "fastme",
-					    "nj"));
+                                            "nj"));
 
     arg_desc->AddDefaultKey("labels", "labels", "Sequence labels in the tree",
-			    CArgDescriptions::eString, "seqtitle");
+                            CArgDescriptions::eString, "seqtitle");
 
     arg_desc->SetConstraint("labels", &(*new CArgAllow_Strings, "taxname",
-					"seqtitle", "blastname", "seqid",
-					"seqid_and_blastname"));
+                                        "seqtitle", "blastname", "seqid",
+                                        "seqid_and_blastname"));
 
     arg_desc->AddDefaultKey("render", "method", "Tree rendering method",
-			    CArgDescriptions::eString, "rect");
+                            CArgDescriptions::eString, "rect");
 
     arg_desc->SetConstraint("render", &(*new CArgAllow_Strings, "rect",
                                        "slanted", "radial", "force"));
@@ -144,16 +145,16 @@ void CGuideTreeApplication::Init(void)
                       " proportional to tree edge lengths");
 
     arg_desc->AddDefaultKey("outfmt", "format", "Format for saving tree",
-			    CArgDescriptions::eString, "image");
+                            CArgDescriptions::eString, "image");
 
     arg_desc->SetConstraint("outfmt", &(*new CArgAllow_Strings, "image", "asn",
                                      "newick", "nexus"));
 
     arg_desc->AddDefaultKey("width", "num", "Image width",
-			    CArgDescriptions::eInteger, "800");
+                            CArgDescriptions::eInteger, "800");
 
     arg_desc->AddDefaultKey("height", "num", "Image height",
-			    CArgDescriptions::eInteger, "600");
+                            CArgDescriptions::eInteger, "600");
 
 
     // Setup arg.descriptions for this application
@@ -165,6 +166,10 @@ void CGuideTreeApplication::Init(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Run test (printout arguments obtained from command-line)
 
+enum EInput {
+    eSeqAnnot, eSeqAlign, eTree
+};
+
 int CGuideTreeApplication::Run(void)
 {
     // Get arguments
@@ -172,8 +177,6 @@ int CGuideTreeApplication::Run(void)
 
     CBioTreeContainer btc;
     CBioTreeDynamic dyntree;
-
-    CRef<CSeq_annot> seq_annot(new CSeq_annot());
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*object_manager);
@@ -184,72 +187,109 @@ int CGuideTreeApplication::Run(void)
 
     string query_id = "";
     if (args["query"]) {
-	query_id = args["query"].AsString();
+        query_id = args["query"].AsString();
+    }
+
+    EInput input;
+    if (args["type"].AsString() == "seqannot") {
+        input = eSeqAnnot;
+    } 
+    else if (args["type"].AsString() == "seqalign") {
+        input = eSeqAlign;
+    } 
+    else {
+        input = eTree;
     }
 
     // If input is Seq-annot compute guide tree
-    if (args["type"].AsString() == "annot") {
+    if (input == eSeqAnnot || input == eSeqAlign) {
 
-	args["i"].AsInputFile() >> MSerial_AsnText >> *seq_annot;
+        CRef<CGuideTreeCalc> calc;
+        
+        if (input == eSeqAnnot) {
+            CRef<CSeq_annot> seq_annot(new CSeq_annot());
+            args["i"].AsInputFile() >> MSerial_AsnText >> *seq_annot;
+            calc.Reset(new CGuideTreeCalc(seq_annot, scope, query_id));
+        }
+        else {
+            CSeq_align seq_align;
+            args["i"].AsInputFile() >> MSerial_AsnText >> seq_align;
+            calc.Reset(new CGuideTreeCalc(seq_align, scope, query_id));
+        }
 
-	CGuideTreeCalc calc(seq_annot, scope, query_id);
-	calc.SetMaxDivergence(args["divergence"].AsDouble());
+        calc->SetMaxDivergence(args["divergence"].AsDouble());
 
-	CGuideTreeCalc::ELabelType labels;
-	if (args["labels"].AsString() == "taxname") {
-	    labels = CGuideTreeCalc::eTaxName;
-	} else if (args["labels"].AsString() == "seqtitle") {
-	    labels = CGuideTreeCalc::eSeqTitle;
-	} else if (args["labels"].AsString() == "blastname") {
-	    labels = CGuideTreeCalc::eBlastName;
-	} else if (args["labels"].AsString() == "seqid") {
-	    labels = CGuideTreeCalc::eSeqId;
-	} else if (args["labels"].AsString() == "seqid_and_blastname") {
-	    labels = CGuideTreeCalc::eSeqIdAndBlastName;
-	} else {
-	    NcbiCerr << "Error: Unrecognised labels type." << NcbiEndl;
-	    return 1;
-	}
-	calc.SetLabelType(labels);
+        CGuideTreeCalc::ELabelType labels;
+        if (args["labels"].AsString() == "taxname") {
+            labels = CGuideTreeCalc::eTaxName;
+        } else if (args["labels"].AsString() == "seqtitle") {
+            labels = CGuideTreeCalc::eSeqTitle;
+        } else if (args["labels"].AsString() == "blastname") {
+            labels = CGuideTreeCalc::eBlastName;
+        } else if (args["labels"].AsString() == "seqid") {
+            labels = CGuideTreeCalc::eSeqId;
+        } else if (args["labels"].AsString() == "seqid_and_blastname") {
+            labels = CGuideTreeCalc::eSeqIdAndBlastName;
+        } else {
+            NcbiCerr << "Error: Unrecognised labels type." << NcbiEndl;
+            return 1;
+        }
+        calc->SetLabelType(labels);
 
-	CGuideTreeCalc::EDistMethod dist;
-	if (args["distance"].AsString() == "jukes_cantor") {
-	    dist = CGuideTreeCalc::eJukesCantor;
-	} else if (args["distance"].AsString() == "poisson") {
-	    dist = CGuideTreeCalc::ePoisson;
-	} else if (args["distance"].AsString() == "kimura") {
-	    dist = CGuideTreeCalc::eKimura;
-	} else if (args["distance"].AsString() == "grishin") {
-	    dist = CGuideTreeCalc::eGrishin;
-	} else if (args["distance"].AsString() == "grishin2") {
-	    dist = CGuideTreeCalc::eGrishinGeneral;
-	} else {
-	    NcbiCerr << "Error: Unrecognized distance method." << NcbiEndl;
-	    return 1;
-	}
-	calc.SetDistMethod(dist);
+        CGuideTreeCalc::EDistMethod dist;
+        if (args["distance"].AsString() == "jukes_cantor") {
+            dist = CGuideTreeCalc::eJukesCantor;
+        } else if (args["distance"].AsString() == "poisson") {
+            dist = CGuideTreeCalc::ePoisson;
+        } else if (args["distance"].AsString() == "kimura") {
+            dist = CGuideTreeCalc::eKimura;
+        } else if (args["distance"].AsString() == "grishin") {
+            dist = CGuideTreeCalc::eGrishin;
+        } else if (args["distance"].AsString() == "grishin2") {
+            dist = CGuideTreeCalc::eGrishinGeneral;
+        } else {
+            NcbiCerr << "Error: Unrecognized distance method." << NcbiEndl;
+            return 1;
+        }
+        calc->SetDistMethod(dist);
 
-	CGuideTreeCalc::ETreeMethod method;
-	if (args["treemethod"].AsString() == "fastme") {
-	    method = CGuideTreeCalc::eFastME;
-	} else if (args["treemethod"].AsString() == "nj") {
-	    method = CGuideTreeCalc::eNJ;
-	} else {
-	    NcbiCerr << "Error: Unrecognized tree computation method."
-		     << NcbiEndl;
-	    return 1;
-	}
-	calc.SetTreeMethod(method);
+        CGuideTreeCalc::ETreeMethod method;
+        if (args["treemethod"].AsString() == "fastme") {
+            method = CGuideTreeCalc::eFastME;
+        } else if (args["treemethod"].AsString() == "nj") {
+            method = CGuideTreeCalc::eNJ;
+        } else {
+            NcbiCerr << "Error: Unrecognized tree computation method."
+                     << NcbiEndl;
+            return 1;
+        }
+        calc->SetTreeMethod(method);
 
-	calc.CalcBioTree();
-	gtree.reset(new CGuideTree(calc));
+        if (calc->CalcBioTree()) {
+            gtree.reset(new CGuideTree(*calc));
+        }
+        else {
+            ITERATE(vector<string>, it, calc->GetMessages()) {
+                NcbiCerr << "Error: " << *it << NcbiEndl;
+            }
+            NcbiCerr << NcbiEndl;
+            return 1;
+        }
+
+        // Write any warning messages
+        if (calc->IsMessage()) {
+            ITERATE(vector<string>, it, calc->GetMessages()) {
+                NcbiCerr << "Warning: " << *it << NcbiEndl;
+            }
+            NcbiCerr << NcbiEndl;
+        }
     }
     else {
 
-	// Otherwise load tree
-	args["i"].AsInputFile() >> MSerial_AsnText >> btc;
-	BioTreeConvertContainer2Dynamic(dyntree, btc);
-	gtree.reset(new CGuideTree(dyntree));
+        // Otherwise load tree
+        args["i"].AsInputFile() >> MSerial_AsnText >> btc;
+        BioTreeConvertContainer2Dynamic(dyntree, btc);
+        gtree.reset(new CGuideTree(dyntree));
     }
 
     // Simplify tree
@@ -278,13 +318,13 @@ int CGuideTreeApplication::Run(void)
 
     // Select tree rendering
     if (args["render"].AsString() == "rect") {
-	gtree->SetRenderFormat(CGuideTree::eRect);
+        gtree->SetRenderFormat(CGuideTree::eRect);
     } else if (args["render"].AsString() == "slanted") {
-	gtree->SetRenderFormat(CGuideTree::eSlanted);
+        gtree->SetRenderFormat(CGuideTree::eSlanted);
     } else if (args["render"].AsString() == "radial") {
-	gtree->SetRenderFormat(CGuideTree::eRadial);
+        gtree->SetRenderFormat(CGuideTree::eRadial);
     } else if (args["redenr"].AsString() == "force") {
-	gtree->SetRenderFormat(CGuideTree::eForce);
+        gtree->SetRenderFormat(CGuideTree::eForce);
     }
 
     if (args["no_dist"]) {
@@ -297,16 +337,16 @@ int CGuideTreeApplication::Run(void)
     CGuideTree::ETreeFormat tree_format;
 
     if (args["outfmt"].AsString() == "image") {
-	tree_format = CGuideTree::eImage;
+        tree_format = CGuideTree::eImage;
     } else if (args["outfmt"].AsString() == "asn") {
-	tree_format = CGuideTree::eASN;
+        tree_format = CGuideTree::eASN;
     } else if (args["outfmt"].AsString() == "newick") {
-	tree_format = CGuideTree::eNewick;
+        tree_format = CGuideTree::eNewick;
     } else if (args["outfmt"].AsString() == "nexus") {
-	tree_format = CGuideTree::eNexus;
+        tree_format = CGuideTree::eNexus;
     } else {
-	NcbiCerr << "Error: Unrecognised tree output format." << NcbiEndl;
-	return 1;
+        NcbiCerr << "Error: Unrecognised tree output format." << NcbiEndl;
+        return 1;
     }
 
     if (tree_format == CGuideTree::eImage) {

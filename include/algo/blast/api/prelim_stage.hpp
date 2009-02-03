@@ -79,6 +79,9 @@ public:
     /// Borrow the internal data and results results. 
     CRef<SInternalData> Run();
 
+    /** @inheritDoc */
+    virtual void SetNumberOfThreads(size_t nthreads);
+
     /// Return HSPs in a structure other than the HSPStream? Provide
     /// conversion? How to combine this with CBlastTracebackStage?
     BlastHSPResults* ComputeBlastHSPResults(BlastHSPStream* stream,

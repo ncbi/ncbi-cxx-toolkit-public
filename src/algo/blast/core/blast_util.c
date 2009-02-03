@@ -57,16 +57,34 @@ SSeqRange SSeqRangeNew(Int4 start, Int4 stop)
     return retval;
 }
 
-Boolean SSeqRangeIntersectsWith(const SSeqRange* a, const SSeqRange* b)
+Int4
+SSeqRangeArrayLessThanOrEqual(const SSeqRange* ranges, Int4 num_ranges, Int4
+                              target)
 {
-    if ( !a || !b ) {
-        return FALSE;
+    Int4 retval = -1;       /* assume failure */
+    Int4 m = 0, b = 0, e = 0;
+
+    if (ranges == NULL || num_ranges <= 0) {
+        return retval;
     }
 
-    if ( (b->right < a->left) || (b->left > a->right) )
-        return FALSE;
-
-    return TRUE;
+    b = 0;
+    e = num_ranges;
+    while (b < e - 1) {
+        m = (b + e) / 2;
+        if (ranges[m].left > target) {
+            e = m;
+        } else {
+            b = m;
+        }
+    }
+    /* if the target isn't in the range at index b and there is still more
+     * data, return the next element */
+    if (target > ranges[b].right && b < num_ranges) {
+        return b + 1;
+    } else {
+        return b;
+    }
 }
 
 /** Auxiliary function to free the BLAST_SequenceBlk::seq_ranges field if
@@ -94,6 +112,10 @@ static Int2
 s_BlastSeqBlkSetLookupTableRangesToIndex(BLAST_SequenceBlk* seq_blk)
 {
     static const Uint4 kDfltSize = 1;
+    if (seq_blk->seq_ranges != NULL) {
+        return 0;
+    }
+
     s_BlastSequenceBlkFreeSeqRanges(seq_blk);
     seq_blk->seq_ranges = (SSeqRange*) calloc(kDfltSize, 
                                               sizeof(*seq_blk->seq_ranges));

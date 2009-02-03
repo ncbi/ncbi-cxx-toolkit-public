@@ -78,7 +78,7 @@ CSegMasker::operator()(const objects::CSeqVector & data)
     sequence.erase();
     if (status != 0) {
         seq_locs = BlastSeqLocFree(seq_locs);
-        throw runtime_error("SEG internal error " + NStr::IntToString(status));
+        throw runtime_error("SEG internal error (check that input is protein) " + NStr::IntToString(status));
     }
 
     auto_ptr<TMaskList> retval(new TMaskList);

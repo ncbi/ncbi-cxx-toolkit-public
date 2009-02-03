@@ -171,7 +171,7 @@ public:
     virtual ~CThreadable(void) {}
     /// Mutator for the number of threads
     /// @param nthreads number of threads to use
-    void SetNumberOfThreads(size_t nthreads);
+    virtual void SetNumberOfThreads(size_t nthreads);
     /// Accessor for the number of threads to use
     size_t GetNumberOfThreads(void) const;
     /// Returns true if more than 1 thread is specified

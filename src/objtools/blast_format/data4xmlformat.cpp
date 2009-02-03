@@ -38,8 +38,6 @@ static char const rcsid[] = "$Id$";
 #include <ncbi_pch.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <util/tables/raw_scoremat.h>
-#include "blast_format.hpp"
-#include "blast_app_util.hpp"
 #include "data4xmlformat.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -54,6 +52,7 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
      const blast::CBlastOptions& opts,
      const string& dbname, bool db_is_aa,
      int qgencode, int dbgencode,
+     bool is_remote,
      const vector<int>& dbfilt_algorithms /* = vector<int>() */)
 : m_Queries(queries), m_Options(opts), 
   m_DbName(dbname),
@@ -69,13 +68,14 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
         NCBI_THROW(CBlastException, eNotSupported,
                    "XML formatting is only supported for a database search");
     }
-    BlastFormat_GetBlastDbInfo(m_DbInfo, m_DbName, db_is_aa,
-                               dbfilt_algorithms);
+    CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, db_is_aa,
+                               dbfilt_algorithms, 
+                               is_remote);
 
     if (results.size() == 0) {
         m_NoHitsFound = true;
         m_Errors.insert(m_Errors.end(), m_Queries->Size(),
-                        CBlastFormat::kNoHitsFound);
+                        CBlastFormatUtil::kNoHitsFound);
     } else {
 
         if (opts.GetProgram() == ePSIBlast && m_Queries->Size() == 1) {
@@ -107,7 +107,7 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
                     m_Errors.push_back(errors);
                 }
             } else {
-                m_Errors.push_back(CBlastFormat::kNoHitsFound);
+                m_Errors.push_back(CBlastFormatUtil::kNoHitsFound);
             }
         }
     }

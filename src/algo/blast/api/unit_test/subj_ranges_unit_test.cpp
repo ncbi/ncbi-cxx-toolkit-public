@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(TestRangeMergingMultipleQueries)
 
 BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetApplyRanges)
 {
-    CSeqDBExpert db("9606_genomic", CSeqDB::eNucleotide);
+    CSeqDB db("9606_genomic", CSeqDB::eNucleotide);
     CSubjectRangesSet srs;
     const int kQueryId(0);
     const int kSubjectId(1);
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetApplyRanges)
 
 BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetRemoveSubject)
 {
-    CSeqDBExpert db("9606_genomic", CSeqDB::eNucleotide);
+    CSeqDB db("9606_genomic", CSeqDB::eNucleotide);
     CSubjectRangesSet srs;
     const int kQueryId(0);
     const int kSubjectId(0);
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetRemoveSubject)
 
 BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetRemoveSubject_NoAdditions)
 {
-    CSeqDBExpert db("9606_genomic", CSeqDB::eNucleotide);
+    CSeqDB db("9606_genomic", CSeqDB::eNucleotide);
     CSubjectRangesSet srs;
     srs.RemoveSubject(0);
     srs.RemoveSubject(7);

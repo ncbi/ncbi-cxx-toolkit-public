@@ -151,16 +151,6 @@ SaveSearchStrategy(const CArgs& args,
                    CRef<objects::CPssmWithParameters> pssm 
                      = CRef<objects::CPssmWithParameters>());
 
-/// Retrieve BLAST database information for presentation in BLAST report
-/// @param dbname space-separated list of BLAST database names [in]
-/// @param is_protein are these databases protein? [in]
-/// @param dbfilt_algorithms BLAST database filtering algorithm IDs (if
-/// applicable) [in]
-void
-BlastFormat_GetBlastDbInfo(vector<CBlastFormatUtil::SDbInfo>& retval,
-                           const string& dbname, bool is_protein,
-                           const vector<int>& dbfilt_algorithms);
-
 END_NCBI_SCOPE
 
 #endif /* APP__BLAST_APP_UTIL__HPP */

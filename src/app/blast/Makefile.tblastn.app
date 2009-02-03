@@ -1,5 +1,5 @@
 APP = tblastn
-SRC = tblastn_app blast_format data4xmlformat blast_app_util
+SRC = tblastn_app blast_app_util
 LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 

@@ -206,6 +206,19 @@ public:
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
 };
 
+/// Extracts the masking data for a given sequence id
+/// (CSeqFormatter associates this with %m)
+class NCBI_XBLASTFORMAT_EXPORT CMaskingDataExtractor : public IBlastDBExtract {
+public:
+    CMaskingDataExtractor(const vector<int> masking_algorithm_ids)
+        : m_AlgoIds(masking_algorithm_ids) {}
+    /** @inheritDoc */
+    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
+private:
+    /// The masking algorithm IDs
+    vector<int> m_AlgoIds;
+};
+
 END_NCBI_SCOPE
 
 /* @} */

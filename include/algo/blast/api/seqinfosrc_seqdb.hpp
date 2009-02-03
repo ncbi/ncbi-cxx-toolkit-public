@@ -99,10 +99,15 @@ public:
 
     /// Invoke CSeqDB's garbage collector
     virtual void GarbageCollect();
+
 private:
     mutable CRef<CSeqDB> m_iSeqDb; ///< BLAST database object
     /// Algorithm IDs for filtering algorithms used with these subjects
     vector<int> m_FilteringAlgoIds;
+
+    /// Friend declaration so that this class can access the CSeqDB object to
+    /// enable partial subject sequence fetching
+    friend class CBlastTracebackSearch;
 };
 
 END_SCOPE(blast)

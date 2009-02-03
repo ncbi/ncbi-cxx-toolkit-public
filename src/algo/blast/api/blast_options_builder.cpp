@@ -398,6 +398,9 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
     }
     
     if (! found) {
+        if (m_IgnoreUnsupportedOptions)
+            return;
+
         string msg = "Internal: Error processing option [";
         msg += nm;
         msg += "] type [";
@@ -585,6 +588,11 @@ CBlastOptionsBuilder::TMaskList
     CBlastOptionsBuilder::GetQueryMasks()
 {
     return m_QueryMasks.Get();
+}
+
+void CBlastOptionsBuilder::SetIgnoreUnsupportedOptions(bool ignore)
+{
+    m_IgnoreUnsupportedOptions = ignore;
 }
 
 END_SCOPE(blast)

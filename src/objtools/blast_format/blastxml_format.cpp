@@ -362,7 +362,8 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
                 if (kIsBlastn)
                     middle_seq[i] = '|';
             } else if (matrix &&
-                       (*matrix)(query_seq[i], subject_seq[i]) > 0) {
+                       (*matrix)(query_seq[i], subject_seq[i]) > 0 &&
+                       !kIsBlastn) {
                 ++num_positives;
                 middle_seq[i] = kIsBlastn ? ' ' : '+';
             } else {

@@ -47,6 +47,7 @@ static char const rcsid[] = "$Id$";
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objtools/readers/reader_exception.hpp> // for CObjReaderParseException
 
 // Other utilities
 
@@ -682,7 +683,20 @@ CConstRef<CBioseq> CFastaBioseqSource::GetNext()
     CConstRef<CBioseq> rv;
     
     if (m_LineReader.NotEmpty() && ! m_LineReader->AtEOF()) {
-        CRef<CSeq_entry> entry = m_FastaReader->ReadOneSeq();
+        CRef<CSeq_entry> entry;
+        try { entry = m_FastaReader->ReadOneSeq(); }
+        catch (const CObjReaderParseException& e) { 
+            static const string kKeyword("m_Pos = ");
+            SIZE_TYPE start = NStr::Find(e.what(), kKeyword);
+            SIZE_TYPE end = NStr::Find(e.what(), ")", start);
+            string pos("unknown");
+            if (start != NPOS && end != NPOS) {
+                start += kKeyword.size();
+                pos = string(e.what()).substr(start, end-start);
+            }
+            ERR_POST(Error << "Error while reading input at position " << pos);
+            ERR_POST(Error << "Aborting processing prematurely.");
+        }
         
         if (entry.NotEmpty()) {
             _ASSERT(entry->IsSeq());
@@ -711,28 +725,23 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src)
     CConstRef<CBioseq> bs = src.GetNext();
     
     while(bs.NotEmpty()) {
-        if (m_Verbose)
-            m_LogFile << "Adding bioseq from fasta; first id is: ";
-        
-        bool printed = false;
-        
-        if (m_Verbose) {
+        string bioseq_id("Unknown");
+
+        if (bs->GetLength() == 0) {
             if (bs->CanGetId()) {
                 const list< CRef<CSeq_id> > & ids = bs->GetId();
-                
                 if (! ids.empty() && ids.front().NotEmpty()) {
-                    if (m_Verbose) {
-                        m_LogFile << ids.front()->AsFastaString() << endl;
-                    }
-                    
-                    printed = true;
+                    bioseq_id.assign(ids.front()->AsFastaString());
                 }
             }
+            m_LogFile << "Ignoring sequence '" << bioseq_id
+                      << "' as it has no sequence data" << endl;
+            bs = src.GetNext();
+            continue;
         }
-        
-        if (! printed) {
-            if (m_Verbose)
-                m_LogFile << "< not found >" << endl;
+        if (m_Verbose) {
+            m_LogFile << "Adding bioseq from fasta; first id is: '" << bioseq_id
+                << "'" << endl;
         }
         
         // No linkouts or memberships here (yet).
@@ -883,7 +892,7 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
 CBuildDatabase::CBuildDatabase(const string         & dbname,
                                const string         & title,
                                bool                   is_protein,
-                               CWriteDB::EIndexType   indexing,
+                               CWriteDB::TIndexType   indexing,
                                ostream              * logfile)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
@@ -893,7 +902,7 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
       m_DeflineCount (0),
       m_OIDCount     (0),
       m_Verbose      (false),
-      m_ParseIDs     (true)
+      m_ParseIDs     (((indexing & CWriteDB::eFullIndex) != 0 ? true : false))
 {
     m_LogFile << "\n\nBuilding a new DB, current time: "
               << CTime(CTime::eCurrent).AsString() << endl;
@@ -914,13 +923,15 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
     // Standard 1 GB limit
     
     m_OutputDb->SetMaxFileSize(1000*1000*1000);
+
+    if (!m_ParseIDs) m_OutputDb->SetNoParseID();
 }
 
 CBuildDatabase::CBuildDatabase(const string & dbname,
                                const string & title,
                                bool           is_protein,
                                bool           sparse,
-                               bool           /*parse_seqids*/,
+                               bool           parse_seqids,
                                ostream      * logfile)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
@@ -930,7 +941,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
       m_DeflineCount (0),
       m_OIDCount     (0),
       m_Verbose      (false),
-      m_ParseIDs     (true)
+      m_ParseIDs     (parse_seqids)
 {
     m_LogFile << "\n\nBuilding a new DB, current time: "
               << CTime(CTime::eCurrent).AsString() << endl;
@@ -951,10 +962,12 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                   seqtype,
                                   title,
                                   ix));
-    
+
     // Standard 1 GB limit
     
     m_OutputDb->SetMaxFileSize(1000*1000*1000);
+
+    if (!m_ParseIDs) m_OutputDb->SetNoParseID();
 }
 
 void CBuildDatabase::SetTaxids(CTaxIdSet & taxids)

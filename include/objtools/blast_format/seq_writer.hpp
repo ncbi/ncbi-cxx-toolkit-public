@@ -104,6 +104,8 @@ private:
     vector<SIZE_TYPE> m_ReplOffsets;
     /// Vector of convertor objects
     vector<IBlastDBExtract*> m_DataExtractors;
+    /// Auxiliary class to help parse the masking algorithms specifier
+    class CMaskingFmtSpecHelper* m_MaskingAlgoHelper;
     /// Was FASTA requested at the end of format specifier string?
     bool m_FastaRequestedAtEOL;
 

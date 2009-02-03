@@ -67,6 +67,7 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
       m_Indices          (indices),
       m_Closed           (false),
       m_MaskDataColumn   (-1),
+      m_NoParseID        (false),
       m_Pig              (0),
       m_Hash             (0),
       m_SeqLength        (0),
@@ -440,11 +441,12 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                  string                         & bin_hdr,
                                  const vector< vector<int> >    & membbits,
                                  const vector< vector<int> >    & linkouts,
-                                 int                              pig)
+                                 int                              pig,
+                                 int                              OID)
 {
     bool use_bin = (deflines.Empty() && pig == 0);
     
-    if (! bin_hdr.empty()) {
+    if (! bin_hdr.empty() && OID<0) {
         return;
     }
     
@@ -518,8 +520,19 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
             bin_hdr.erase();
         }
     }
+
+    if (OID>=0) {
+        // Re-inject the BL_ORD_ID
+        CRef<CSeq_id> gnl_id(new CSeq_id);
+        gnl_id->SetGeneral().SetDb("BL_ORD_ID");
+        gnl_id->SetGeneral().SetTag().SetId(OID);
+        CRef<CBlast_def_line_set> bdls = s_EditDeflineSet(deflines);
+        bdls->Set().front()->SetSeqid().front() = gnl_id;
+            
+        deflines.Reset(&* bdls);
+    }
     
-    if (bin_hdr.empty()) {
+    if (bin_hdr.empty() || OID>=0) {
         // Compress the deflines to binary.
         
         ostringstream oss;
@@ -536,12 +549,17 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
 
 void CWriteDB_Impl::x_CookHeader()
 {
+    int OID = -1;
+    if (m_NoParseID) {
+        OID = (m_Volume ) ? m_Volume->GetOID() : 0;
+    }
     x_ExtractDeflines(m_Bioseq,
                       m_Deflines,
                       m_BinHdr,
                       m_Memberships,
                       m_Linkouts,
-                      m_Pig);
+                      m_Pig,
+                      OID);
 }
 
 void CWriteDB_Impl::x_CookIds()
@@ -750,7 +768,7 @@ void CWriteDB_Impl::x_Publish()
     }
     
     x_CookData();
-    
+
     bool done = false;
     
     if (! m_Volume.Empty()) {
@@ -794,6 +812,10 @@ void CWriteDB_Impl::x_Publish()
             }
 #endif
         }
+
+        // need to reset OID,  hense recalculate the header and id
+        x_CookHeader();
+        x_CookIds();
         
         done = m_Volume->WriteSequence(m_Sequence,
                                        m_Ambig,
@@ -809,6 +831,11 @@ void CWriteDB_Impl::x_Publish()
                        "Cannot write sequence to volume.");
         }
     }
+}
+
+void CWriteDB_Impl::SetNoParseID()
+{
+    m_NoParseID = true;
 }
 
 void CWriteDB_Impl::SetDeflines(const CBlast_def_line_set & deflines)
@@ -1357,44 +1384,19 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
     CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
     CRef<CBlast_def_line> defline;
     
-    int skip = 1;
-    
-    while(fasta.size()) {
-        size_t id_start = skip;
-        size_t pos_title = fasta.find(" ", skip);
-        size_t pos_next = fasta.find("\001", skip);
-        skip = 1;
-        
-        if (pos_next == fasta.npos) {
-            if (accept_gt) {
-                pos_next = fasta.find(" >");
-                skip = 2;
-            }
-        } else {
-            // If there is a ^A, turn off GT checking.
-            accept_gt = false;
-        }
-        
-        if (pos_next == fasta.npos) {
-            pos_next = fasta.size();
-            skip = 0;
-        }
-        
-        string ids(fasta, id_start, pos_title - id_start);
-        string title(fasta, pos_title + 1, pos_next-pos_title - 1);
-        string remaining(fasta, pos_next, fasta.size() - pos_next);
-        fasta.swap(remaining);
-        
-        // Parse '|' seperated ids.
-        list< CRef<CSeq_id> > seqids;
-        CSeq_id::ParseFastaIds(seqids, ids);
-        
-        // Build the actual defline.
-        
+    if (bioseq.CanGetId() && bioseq.GetId().front()->IsLocal()) {
+        // Generate an local id
+        // int local_id = bioseq.GetId().front()->GetLocal().GetId();
+
+        CRef<CSeq_id> gnl_id(new CSeq_id);
+        gnl_id->SetGeneral().SetDb("BL_ORD_ID");
+        gnl_id->SetGeneral().SetTag().SetId(0); // will be reset later...
+     
+        // Build the local defline.
         defline.Reset(new CBlast_def_line);
-        defline->SetSeqid().swap(seqids);
-        defline->SetTitle(title);
-        
+        defline->SetSeqid().push_back(gnl_id);
+        defline->SetTitle(string(fasta, 1, fasta.size()));
+
         if (mship_i < membits.size()) {
             const vector<int> & V = membits[mship_i++];
             defline->SetMemberships().assign(V.begin(), V.end());
@@ -1409,10 +1411,66 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
             defline->SetOther_info().push_back(pig);
             used_pig = true;
         }
-        
+
         bdls->Set().push_back(defline);
+        
+    } else {
+
+        int skip = 1;
+        while(fasta.size()) {
+            size_t id_start = skip;
+            size_t pos_title = fasta.find(" ", skip);
+            size_t pos_next = fasta.find("\001", skip);
+            skip = 1;
+        
+            if (pos_next == fasta.npos) {
+                if (accept_gt) {
+                    pos_next = fasta.find(" >");
+                    skip = 2;
+                }
+            } else {
+                // If there is a ^A, turn off GT checking.
+                accept_gt = false;
+            }
+        
+            if (pos_next == fasta.npos) {
+                pos_next = fasta.size();
+                skip = 0;
+            }
+        
+            string ids(fasta, id_start, pos_title - id_start);
+            string title(fasta, pos_title + 1, pos_next-pos_title - 1);
+            string remaining(fasta, pos_next, fasta.size() - pos_next);
+            fasta.swap(remaining);
+        
+            // Parse '|' seperated ids.
+            list< CRef<CSeq_id> > seqids;
+            CSeq_id::ParseFastaIds(seqids, ids);
+        
+            // Build the actual defline.
+        
+            defline.Reset(new CBlast_def_line);
+            defline->SetSeqid().swap(seqids);
+            defline->SetTitle(title);
+        
+            if (mship_i < membits.size()) {
+                const vector<int> & V = membits[mship_i++];
+                defline->SetMemberships().assign(V.begin(), V.end());
+            }
+        
+            if (links_i < linkout.size()) {
+                const vector<int> & V = linkout[mship_i++];
+                defline->SetLinks().assign(V.begin(), V.end());
+            }
+        
+            if ((! used_pig) && pig) {
+                defline->SetOther_info().push_back(pig);
+                used_pig = true;
+            }
+        
+            bdls->Set().push_back(defline);
+        }
     }
-    
     s_CheckEmptyLists(bdls, true);
     deflines = bdls;
 }

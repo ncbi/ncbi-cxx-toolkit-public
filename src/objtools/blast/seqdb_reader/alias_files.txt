@@ -144,7 +144,7 @@ Usage: common
 Type:  filter
 
   This key specifies the name of a file which should contain a binary
-  or text list of GI (genomic identifier) values.  For information on
+  or text list of GI values.  For information on
   how these files are encoded, see that documentation for "ID list".
 
 Key:   LAST_OID

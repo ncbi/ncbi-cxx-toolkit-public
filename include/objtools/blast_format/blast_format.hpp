@@ -30,7 +30,7 @@ Author: Jason Papadopoulos
 ******************************************************************************/
 
 /** @file blast_format.hpp
- * Produce formatted blast output
+ * Produce formatted blast output for command line applications
 */
 
 #ifndef APP___BLAST_FORMAT__HPP
@@ -55,14 +55,12 @@ Author: Jason Papadopoulos
 
 BEGIN_NCBI_SCOPE
 
-// Wrapper class for formatting BLAST results
+/// This class formats the BLAST results for command line applications
 class CBlastFormat
 {
 public:
     /// The line length of pairwise blast output
     static const int kFormatLineLength = 68;
-    /// The string containing the message that no hits were found
-    static const string kNoHitsFound;
 
     /// Constructor
     /// @param opts BLAST options used in the search [in]

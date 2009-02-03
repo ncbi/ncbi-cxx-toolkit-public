@@ -163,8 +163,34 @@ SSeqRange SSeqRangeNew(Int4 start, Int4 stop);
  * @param b second range to compare [in]
  * @return TRUE if they intersect, otherwise FALSE 
  */
+static NCBI_INLINE
+Boolean SSeqRangeIntersectsWith(const SSeqRange* a, const SSeqRange* b)
+{
+    if ( !a || !b ) {
+        return FALSE;
+    }
+
+    if ( (b->right < a->left) || (b->left > a->right) )
+        return FALSE;
+
+    return TRUE;
+}
+
+/** Returns the index of the range, such that this element is the
+ * first range that either contains the target or if no such range exists, the
+ * index of the first range, such that the target is less than this range.
+ * @pre ranges array is sorted on the starting coordinates (i.e.:
+ * SSeqRange::left)
+ * @param ranges array of SSeqRange structures to search [in]
+ * @param num_ranges number of elements in the ranges array [in]
+ * @param target element to look for [in]
+ * @return the index of interest in the ranges array or -1 if the function was
+ * called with invalid parameters
+ */
 NCBI_XBLAST_EXPORT
-Boolean SSeqRangeIntersectsWith(const SSeqRange* a, const SSeqRange* b);
+Int4
+SSeqRangeArrayLessThanOrEqual(const SSeqRange* ranges, Int4 num_ranges,
+                              Int4 target);
 
 /** Used to hold a set of positions, mostly used for filtering. 
  * oid holds the index of the query sequence.

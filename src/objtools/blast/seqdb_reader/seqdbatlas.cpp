@@ -1678,7 +1678,7 @@ CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool             use_mmap,
 
 }
 
-CFastMutex CSeqDBAtlasHolder::m_Lock;
+DEFINE_CLASS_STATIC_FAST_MUTEX(CSeqDBAtlasHolder::m_Lock);
 
 CSeqDBAtlasHolder::~CSeqDBAtlasHolder()
 {
@@ -1767,31 +1767,4 @@ CSeqDB_AtlasRegionHolder::~CSeqDB_AtlasRegionHolder()
     }
 }
 
-void CSeqDBSpinLock::Lock()
-{
-    bool done = false;
-    
-    while(! done) {
-        while(m_L)
-            ;
-        
-        void * NewL = (void *) 1;
-        void * OldL = SwapPointers(& m_L, NewL);
-        
-        if (OldL == (void*) 0) {
-            done = true;
-        } else {
-            NCBI_SCHED_YIELD();
-        }
-    }
-}
-
-void CSeqDBSpinLock::Unlock()
-{
-    // If we hold the lock, atomicity shouldn't be an issue here.
-    m_L = (void*)0;
-}
-
-
 END_NCBI_SCOPE
-

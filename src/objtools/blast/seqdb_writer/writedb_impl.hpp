@@ -149,8 +149,11 @@ public:
     /// @param sv CSeqVector for sequence data.
     void AddSequence(const CBioseq & bs, CSeqVector & sv);
     
-    /// Add or replace header data.
+    /// Do not parse ID, use BL_ORD_ID instead
     /// 
+    /// This method will cause BL_ORD_ID generated
+    void SetNoParseID();
+
     /// This method replaces any stored header data for the current
     /// sequence with the provided CBlast_def_line_set.  Header data
     /// can be constructed directly by the caller, or extracted from
@@ -341,6 +344,7 @@ private:
     string        m_MaskByte;         ///< Byte that replaced masked letters.
     vector<char>  m_MaskLookup;       ///< Is (blast-aa) byte masked?
     int           m_MaskDataColumn;   ///< Column ID for masking data column.
+    bool          m_NoParseID;        ///< Do not parse seqids in FASTA
     
     /// Column titles.
     vector<string> m_ColumnTitles;
@@ -474,12 +478,14 @@ private:
     /// @param membbits Membership bits for each defline. [in]
     /// @param linkouts Linkout bits for each defline. [in]
     /// @param pig PIG to attach to a protein sequence. [in]
+    /// @param OID the current OID for local id. [in]
     static void x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                   CConstRef<CBlast_def_line_set> & deflines,
                                   string                         & bin_hdr,
                                   const vector< vector<int> >    & membbits,
                                   const vector< vector<int> >    & linkouts,
-                                  int                              pig);
+                                  int                              pig,
+                                  int                              OID=-1);
     
     /// Compute the hash of a (raw) sequence.
     ///

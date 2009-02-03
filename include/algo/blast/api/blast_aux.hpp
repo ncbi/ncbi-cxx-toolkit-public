@@ -150,6 +150,10 @@ public:
         retval.SetToOpen(m_Interval->GetTo());
         return retval;
     }
+    operator pair<TSeqPos, TSeqPos>() const {
+        return make_pair<TSeqPos, TSeqPos>(m_Interval->GetFrom(), 
+                                           m_Interval->GetTo());
+    }
     friend ostream& operator<<(ostream& out, const CSeqLocInfo& rhs) {
         out << "CSeqLocInfo = { " << MSerial_AsnText << *rhs.m_Interval 
             << "ETranslationFrame = " << rhs.m_Frame << "\n}";

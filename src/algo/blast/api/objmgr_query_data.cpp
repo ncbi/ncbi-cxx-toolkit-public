@@ -367,6 +367,8 @@ CObjMgr_QueryFactory::GetTSeqLocVector()
     if ( !m_SSeqLocVector.empty() ) {
         retval = m_SSeqLocVector;
     } else if (m_QueryVector.NotEmpty()) {
+        // FIXME: this is inefficient as it might be copying the masks too many
+        // times
         for (CBlastQueryVector::size_type i = 0; 
              i < m_QueryVector->Size(); i++) {
             TMaskedQueryRegions mqr = m_QueryVector->GetMaskedRegions(i);

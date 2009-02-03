@@ -38,6 +38,8 @@ static char const rcsid[] = "$Id$";
 #include <objtools/seqmasks_io/mask_writer_blastdb_maskinfo.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
@@ -152,8 +154,8 @@ void CMaskWriterBlastDbMaskInfo::Print( const objects::CSeq_id& id,
             (CPacked_seqint::TRanges::value_type(itr->first, itr->second));
     }
 
-    CRef<CSeq_loc> seqloc
-        (new CSeq_loc(const_cast<CSeq_id&>(id), masked_ranges));
+    CRef<CSeq_loc> seqloc(new CSeq_loc(const_cast<CSeq_id&>(id),
+                                       masked_ranges));
 
     CRef<CBlast_mask_list> mask_list(new CBlast_mask_list);
     mask_list->SetMasks().push_back(seqloc);

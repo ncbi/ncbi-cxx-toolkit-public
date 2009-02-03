@@ -197,8 +197,9 @@ ReadSequencesToBlast(CNcbiIstream& in,
 /// @param num_alignments the number of alignments to show [out]
 /// @param num_overview the number of sequences to show in the overview image
 /// displayed in the BLAST report on the web [out]
+/// @return string containing warnings (if any)
 NCBI_BLASTINPUT_EXPORT
-void
+string
 CalculateFormattingParams(TSeqPos max_target_seqs, 
                           TSeqPos* num_descriptions, 
                           TSeqPos* num_alignments, 

@@ -199,6 +199,15 @@ public:
     const TBlastNameColorMap& GetBlastNameColorMap(void) const
     {return m_BlastNameColorMap;}
 
+    /// Get error/warning messages
+    /// @return List of messages
+    ///
+    const vector<string>& GetMessages(void) const {return m_Messages;}
+
+    /// Check whether there are any messages
+    /// @return True if there are messages, false otherwise
+    ///
+    bool IsMessage(void) const {return m_Messages.size() > 0;}
 
 
     //--- Tree computation ---
@@ -338,6 +347,9 @@ protected:
 
     /// Blast name to color map
     TBlastNameColorMap m_BlastNameColorMap;
+
+    /// Error/warning messages
+    vector<string> m_Messages;
 };
 
 

@@ -35,7 +35,7 @@
 /// data for targetted retrieval during the traceback stage.
 
 #include <algo/blast/api/seqsrc_seqdb.hpp>
-#include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -44,7 +44,7 @@ BEGIN_SCOPE(blast)
 class NCBI_XBLAST_EXPORT CSubjectRanges : public CObject {
 public:
     /// Convenience typedef
-    typedef CSeqDBExpert::TRangeList TRangeList;
+    typedef CSeqDB::TRangeList TRangeList;
 
     /// Constructor
     CSubjectRanges() {}
@@ -148,11 +148,13 @@ public:
     
     /// Apply existing ranges to a database.
     /// @param seqdb SeqDB object to modify.
-    void ApplyRanges(CSeqDBExpert & db) const;
+    void ApplyRanges(CSeqDB& db) const;
     
 private:
-    /// Prevent copy.
+    /// Prevent copy constructor.
     CSubjectRangesSet(const CSubjectRangesSet & other);
+    /// Prevent assignment operator.
+    CSubjectRangesSet& operator=(const CSubjectRangesSet & rhs);
     
     /// Add, expand, and merge new range.
     void x_ExpandHspRange(int & begin, int & end);

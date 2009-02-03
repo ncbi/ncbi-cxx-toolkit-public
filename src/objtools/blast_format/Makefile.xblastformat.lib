@@ -4,7 +4,8 @@ ASN_DEP = seq blastdb blastxml scoremat
 
 LIB = xblastformat
 SRC = blastfmtutil showdefline showalign tabular vectorscreen blastxml_format \
-	seqalignfilter seq_writer blastdb_dataextract
+	seqalignfilter seq_writer blastdb_dataextract blast_format \
+	data4xmlformat
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
 

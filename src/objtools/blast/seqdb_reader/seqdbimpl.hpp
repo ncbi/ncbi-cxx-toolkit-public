@@ -124,7 +124,7 @@ public:
     }
     
     /// Is this object populated?
-    void GetDesc(int algorithm_id, string & desc);
+    bool GetDesc(int algorithm_id, string & desc);
     
     /// Is this object populated?
     void SetNotEmpty()
@@ -939,6 +939,10 @@ public:
     ///
     /// @param algorithms List of algorithm ids. [out]
     void GetAvailableMaskAlgorithms(vector<int> & algorithms);
+
+    /// Returns a formatted string with the list of available masking
+    /// algorithms in this database for display purposes (i.e.: help)
+    string GetAvailableMaskAlgorithmDescriptions();
     
     /// Get information about one type of masking available here.
     ///

@@ -250,6 +250,27 @@ CScientificNameExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
     return tax_info.scientific_name;
 }
 
+string
+CMaskingDataExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
+{
+    static const string kNoMasksFound("none");
+    static const bool kInverted = false;
+    const int kOid = COidExtractor().ExtractOID(id, blastdb);
+    if (m_AlgoIds.empty()) {
+        return kNoMasksFound;
+    }
+    CSeqDB::TSequenceRanges masked_ranges;
+    blastdb.GetMaskData(kOid, m_AlgoIds, kInverted, masked_ranges);
+    if (masked_ranges.empty()) {
+        return kNoMasksFound;
+    }
+    CNcbiOstrstream out;
+    ITERATE(CSeqDB::TSequenceRanges, range, masked_ranges) {
+        out << range->first << "-" << range->second << ";";
+    }
+    return CNcbiOstrstreamToString(out);
+}
+
 CFastaExtractor::CFastaExtractor(TSeqPos line_width, 
              TSeqRange range /* = TSeqRange() */,
              objects::ENa_strand strand /* = objects::eNa_strand_other */,

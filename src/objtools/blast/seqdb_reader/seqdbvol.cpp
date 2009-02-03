@@ -2586,8 +2586,7 @@ void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
         break;
         
     case CSeqDBIsam::eTiId:
-        // Uncomment when 8 byte version is written.
-        //needs_four = false;
+        needs_four = false;
         
         // Converted to GI type.
         if (! m_IsamTi.Empty()) {

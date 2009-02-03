@@ -53,8 +53,9 @@ NCBI_XBLAST_EXPORT BlastSeqSrc*
 QueryFactoryBlastSeqSrcInit(CRef<IQueryFactory> query_factory, 
                             EBlastProgramType program);
 
-/** Initialize the sequence source structure from a query factory.
- * @param query_factory Factory from which the queries will be manufactured [in]
+/** Initialize the sequence source structure from a TSeqLocVector.
+ * @param subj_seqs TSeqLocVector object from which the queries will be
+ * manufactured [in]
  * @param program Type of BLAST to be performed [in]
  */
 NCBI_XBLAST_EXPORT BlastSeqSrc* 

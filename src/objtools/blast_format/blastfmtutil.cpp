@@ -69,6 +69,9 @@ static char const rcsid[] = "$Id$";
 
 #include <objtools/blast_format/blastfmtutil.hpp>
 
+#include <algo/blast/api/remote_services.hpp>   // for CRemoteServices
+#include <objtools/blast/seqdb_reader/seqdb.hpp>   // for CSeqDB
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>   // for CSeqDBException
 #include <algo/blast/api/pssm_engine.hpp>   // for CScorematPssmConverter
 #include <objects/scoremat/Pssm.hpp>
 #include <objects/scoremat/PssmParameters.hpp>
@@ -87,6 +90,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE (ncbi);
 USING_SCOPE(objects);
 
+const string CBlastFormatUtil::kNoHitsFound("No hits found");
 
 bool kTranslation;
 CRef<CScope> kScope;
@@ -250,6 +254,132 @@ void  CBlastFormatUtil::PrintTildeSepLines(string str, size_t line_len,
     NStr::Split(str, "~", split_line);
     ITERATE(list<string>, iter, split_line) {
         WrapOutputLine(*iter,  line_len, out);
+    }
+}
+
+/// Initialize database statistics with data from BLAST servers
+/// @param dbname name of a single BLAST database [in]
+/// @param info structure to fill [in|out]
+/// @return true if successfully filled, false otherwise (and a warning is
+/// printed out)
+static bool s_FillDbInfoRemotely(const string& dbname, 
+                                 CBlastFormatUtil::SDbInfo& info)
+{
+    static blast::CRemoteServices rmt_blast_services;
+    CRef<CBlast4_database> blastdb(new CBlast4_database);
+    blastdb->SetName(dbname);
+    blastdb->SetType() = info.is_protein
+        ? eBlast4_residue_type_protein : eBlast4_residue_type_nucleotide;
+    CRef<CBlast4_database_info> dbinfo = 
+        rmt_blast_services.GetDatabaseInfo(blastdb);
+
+    info.name = dbname;
+    if ( !dbinfo ) {
+        return false;
+    }
+    info.definition = dbinfo->GetDescription();
+    if (info.definition.empty())
+        info.definition = info.name;
+    CTimeFormat tf("b d, Y H:m P", CTimeFormat::fFormat_Simple);
+    info.date = CTime(dbinfo->GetLast_updated()).AsString(tf);
+    info.total_length = dbinfo->GetTotal_length();
+    info.number_seqs = static_cast<int>(dbinfo->GetNum_sequences());
+    return true;
+}
+
+/// Initialize database statistics with data obtained from local BLAST
+/// databases
+/// @param dbname name of a single BLAST database [in]
+/// @param info structure to fill [in|out]
+/// @param dbfilt_algorithms filtering algorithm IDs used for this search
+/// [in]
+/// @return true if successfully filled, false otherwise (and a warning is
+/// printed out)
+static bool
+s_FillDbInfoLocally(const string& dbname,
+                    CBlastFormatUtil::SDbInfo& info, 
+                    const vector<int>& dbfilt_algorithms)
+{
+    CRef<CSeqDB> seqdb(new CSeqDB(dbname, info.is_protein 
+                          ? CSeqDB::eProtein : CSeqDB::eNucleotide));
+    if ( !seqdb ) {
+        return false;
+    }
+    info.name = seqdb->GetDBNameList();
+    info.definition = seqdb->GetTitle();
+    if (info.definition.empty())
+        info.definition = info.name;
+    info.date = seqdb->GetDate();
+    info.total_length = seqdb->GetTotalLength();
+    info.number_seqs = seqdb->GetNumSeqs();
+
+    // Process the filtering algorithm IDs
+    info.algorithm_names.clear();
+    info.detailed_masking_info.clear();
+    if (dbfilt_algorithms.empty()) {
+        return true;
+    }
+
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    EBlast_filter_program filtering_algorithm;
+    string opts, filt_algo_name;
+    seqdb->GetMaskAlgorithmDetails(dbfilt_algorithms.front(), 
+                                   filtering_algorithm, filt_algo_name, opts);
+    info.algorithm_names += filt_algo_name;
+    size_t index = 1;
+    info.detailed_masking_info += 
+        NStr::IntToString(index) + ". " + filt_algo_name + ". Options: '" 
+        + opts + "'\n";
+    for (; index < dbfilt_algorithms.size(); index++) {
+        seqdb->GetMaskAlgorithmDetails(dbfilt_algorithms[index],
+                                       filtering_algorithm, filt_algo_name,
+                                       opts);
+        info.algorithm_names += ", " + filt_algo_name;
+        info.detailed_masking_info += "     " +
+            NStr::IntToString(index+1) + ". " + filt_algo_name + 
+            ". Options: '" + opts + "\n";
+    }
+#endif
+    return true;
+}
+
+void
+CBlastFormatUtil::GetBlastDbInfo(vector<CBlastFormatUtil::SDbInfo>& retval,
+                           const string& blastdb_names, bool is_protein,
+                           const vector<int>& dbfilt_algorithms,
+                           bool is_remote /* = false */)
+{
+    retval.clear();
+
+    vector<string> dbs;
+    NStr::Tokenize(blastdb_names, " \n\t", dbs);
+    retval.reserve(dbs.size());
+
+    ITERATE(vector<string>, i, dbs) {
+        CBlastFormatUtil::SDbInfo info;
+        info.is_protein = is_protein;
+        bool success = false;
+        const string kDbName = NStr::TruncateSpaces(*i);
+        if (kDbName.empty())
+            continue;
+
+        if (is_remote)
+            success = s_FillDbInfoRemotely(kDbName, info);
+        else
+            success = s_FillDbInfoLocally(kDbName, info, dbfilt_algorithms);
+
+        if (success) {
+            retval.push_back(info);
+        } else {
+            string msg("'");
+            msg += kDbName;
+            if (is_remote)
+                msg += string("' not found on NCBI servers.\n");
+            else
+                msg += string("' not found.\n");
+            NCBI_THROW(CSeqDBException, eFileErr, msg);
+        }
     }
 }
 

@@ -35,7 +35,6 @@
 /// 
 /// Defines classes:
 ///     CSeqDBFlushCB
-///     CSeqDBSpinLock
 ///     CSeqDBLockHold
 ///     CSeqDBMemReg
 ///     CRegionMap
@@ -189,56 +188,6 @@ public:
     virtual ~CSeqDBFlushCB() {}
 };
 
-
-/// CSeqDBSpinLock
-/// 
-/// This locking class is similar to a mutex, but uses a faster and
-/// simpler "spin lock" mechanism instead of the normal mutex
-/// algorithms.  The downside of this technique is that code which is
-/// waiting for a lock will not give up the processor to tasks which
-/// are doing work.  Because of this, it should only be used for locks
-/// which are acquired many times and held for a short duration.
-/// In the special purpose environment of SeqDB, with local or NFS
-/// mapped databases, it was a noticeable win relative to the two
-/// standard locks.  This was true in both multithreaded and single
-/// threaded blast run tests.
-
-class CSeqDBSpinLock {
-public:
-    /// Constructor.
-    /// 
-    /// Spin locks are initialized to an unlocked state.
-    CSeqDBSpinLock()
-      : m_L(0)
-    {
-    }
-    
-    /// Destructor
-    ///
-    /// On destruction, this class does not unlock or validate the
-    /// object in any way.
-    ~CSeqDBSpinLock()
-    {
-    }
-    
-    /// Lock
-    ///
-    /// Runs in a loop, trying to acquired the lock.  Does not return
-    /// until it succeeds.
-    void Lock();
-    
-    /// Unlock
-    ///
-    /// Sets the lock to an unlock state.
-    void Unlock();
-    
-private:
-    /// The underlying data - if this is a 1, cast to a void pointer,
-    /// the lock is held (by someone).  If it is NULL, it's available.
-    void * volatile m_L;
-};
-
-
 /// Forward declaration for CRegionMap.
 class CRegionMap;
 
@@ -288,6 +237,7 @@ private:
     
     /// Private method to prevent copy construction.
     CSeqDBLockHold(CSeqDBLockHold & oth);
+    CSeqDBLockHold& operator=(CSeqDBLockHold & oth);
     
     /// Only the atlas code is permitted to modify this object - it
     /// does so simply by editing the m_Locked member as needed.
@@ -1545,8 +1495,7 @@ public:
     
     /// Lock the atlas.
     /// 
-    /// The internal mutual exclusion lock is currently implemented
-    /// via the SpinLock class.  If the lock hold object passed to
+    /// If the lock hold object passed to
     /// this method is already in a "locked" state, this call is a
     /// noop.  Otherwise, the lock hold object is put in a locked
     /// state and the lock is acquired.
@@ -1563,8 +1512,7 @@ public:
     
     /// Unlock the atlas.
     /// 
-    /// The internal mutual exclusion lock is currently implemented
-    /// via the SpinLock class.  If the lock hold object passed to
+    /// If the lock hold object passed to
     /// this method is already in an "unlocked" state, this call is a
     /// noop.  Otherwise, the lock hold object is put in an unlocked
     /// state and the lock is released.
@@ -1966,7 +1914,7 @@ private:
     // Data
     
     /// Protects most of the critical regions of the SeqDB library.
-    CSeqDBSpinLock m_Lock;
+    CMutex m_Lock;
     
     /// Set to true if memory mapping is enabled.
     bool m_UseMmap;
@@ -2156,7 +2104,7 @@ private:
     CSeqDBFlushCB * m_FlushCB;
     
     /// Lock protecting this object's fields
-    static CFastMutex m_Lock;
+    DECLARE_CLASS_STATIC_FAST_MUTEX(m_Lock);
     
     /// Count of users of the CSeqDBAtlas object.
     static int m_Count;

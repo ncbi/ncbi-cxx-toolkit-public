@@ -90,6 +90,12 @@ CSeqDBIsam::x_InitSearch(CSeqDBLockHold & locked)
     
     Int4 IsamType = SeqDB_GetStdOrd(& FileInfo[1]);
     
+    if (IsamType == eNumericLongId && m_Type == eNumeric) {
+        m_LongId = true;
+        m_Keysize = 12;
+        IsamType = eNumeric;
+    }
+    
     if (IsamType != m_Type)
         return eBadType;
     
@@ -169,13 +175,11 @@ CSeqDBIsam::x_SearchIndexNumeric(Int8             Number,
     Int4 Start     (0);
     Int4 Stop      (m_NumSamples - 1);
     
-    int obj_size = (int) sizeof(SNumericKeyData4);
-    
     while(Stop >= Start) {
         SampleNum = ((Uint4)(Stop + Start)) >> 1;
 	
-        TIndx offset_begin = m_KeySampleOffset + (obj_size * SampleNum);
-        TIndx offset_end   = offset_begin + obj_size;
+        TIndx offset_begin = m_KeySampleOffset + (m_Keysize * SampleNum);
+        TIndx offset_end   = offset_begin + m_Keysize;
 	
         m_Atlas.Lock(locked);
         
@@ -186,18 +190,18 @@ CSeqDBIsam::x_SearchIndexNumeric(Int8             Number,
                               offset_end);
         }
         
-        SNumericKeyData4* keydatap(0);
+        const void* keydatap(0);
         
         Int8 Key(0);
         
-        keydatap = (SNumericKeyData4*) m_IndexLease.GetPtr(offset_begin);
-        Key = SeqDB_GetStdOrd(& (keydatap->key));
+        keydatap = m_IndexLease.GetPtr(offset_begin);
+        Key = x_GetNumericKey (keydatap);
         
         // If this is an exact match, return the master term number.
         
         if (Key == Number) {
             if (Data != NULL) {
-                *Data = SeqDB_GetStdOrd(& keydatap->data);
+                *Data = x_GetNumericData(keydatap);
             }
             
             if (Index != NULL)
@@ -209,7 +213,7 @@ CSeqDBIsam::x_SearchIndexNumeric(Int8             Number,
         
         // Otherwise, search for the next sample.
         
-        if ( Number < (int) Key )
+        if ( Number < Key )
             Stop = --SampleNum;
         else
             Start = SampleNum +1;
@@ -451,7 +455,7 @@ CSeqDBIsam::x_SearchNegativeMulti(int                  vol_start,
     int gilist_index = 0;
     
     int sample_index(0);
-    SNumericKeyData4 * data_page (0);
+    const void * data_page (0);
     
     while(sample_index < m_NumSamples) {
         int start = 0, num_elements = 0;
@@ -522,11 +526,11 @@ CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
     Int4 first = Start;
     Int4 last  = Start + NumElements - 1;
     
-    SNumericKeyData4 * KeyDataPage      = NULL;
-    SNumericKeyData4 * KeyDataPageStart = NULL;
+    const void * KeyDataPage      = NULL;
+    const void * KeyDataPageStart = NULL;
     
-    TIndx offset_begin = Start * sizeof(SNumericKeyData4);
-    TIndx offset_end = offset_begin + sizeof(SNumericKeyData4) * NumElements;
+    TIndx offset_begin = Start * m_Keysize;
+    TIndx offset_end = offset_begin + m_Keysize * NumElements;
     
     m_Atlas.Lock(locked);
     
@@ -537,9 +541,9 @@ CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
                           offset_end);
     }
     
-    KeyDataPageStart = (SNumericKeyData4*) m_DataLease.GetPtr(offset_begin);
+    KeyDataPageStart = m_DataLease.GetPtr(offset_begin);
     
-    KeyDataPage = KeyDataPageStart - Start;
+    KeyDataPage = (char *)KeyDataPageStart - Start * m_Keysize;
     
     bool found   (false);
     Int4 current (0);
@@ -548,7 +552,7 @@ CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
     while (first <= last) {
         current = (first+last)/2;
         
-        Int8 Key = SeqDB_GetStdOrd(& KeyDataPage[current].key);
+        Int8 Key = x_GetNumericKey((char *)KeyDataPage + current * m_Keysize);
         
         if (Key > Number) {
             last = --current;
@@ -571,7 +575,7 @@ CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
     }
     
     if (Data != NULL) {
-        *Data = SeqDB_GetStdOrd(& KeyDataPage[current].data);
+        *Data = x_GetNumericData((char *)KeyDataPage + current * m_Keysize);
     }
     
     if(Index != NULL)
@@ -602,7 +606,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
     
     _ASSERT(m_Type != eNumericNoData);
     
-    SNumericKeyData4 * data_page (0);
+    const void * data_page (0);
     
     int start(0);
     int num_elements(0);
@@ -618,7 +622,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
     
     // 3. Find the last value in array.
     
-    Int8 last_key = SeqDB_GetStdOrd(& data_page[num_elements-1].key);
+    Int8 last_key = x_GetNumericKey((char *)data_page + (num_elements-1) * m_Keysize);
     
     // 4. Loop till out of target gis or out of data elements:
     
@@ -692,7 +696,6 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
                                  elem_index + jump,
                                  next_gi,
                                  next_oid);
-                
                 if (next_gi > target_gi) {
                     break;
                 }
@@ -1423,7 +1426,9 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
       m_TestNonUnique  (true),
       m_FileStart      (0),
       m_FirstOffset    (0),
-      m_LastOffset     (0)
+      m_LastOffset     (0),
+      m_LongId         (false),
+      m_Keysize        (8)
 {
     // These are the types that readdb.c seems to use.
     
@@ -2047,7 +2052,7 @@ void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
         
         int num_elements(0);
         int start(0);
-        SNumericKeyData4 * data_page(0);
+        const void * data_page(0);
         
         x_MapDataPage(Start,
                       start,

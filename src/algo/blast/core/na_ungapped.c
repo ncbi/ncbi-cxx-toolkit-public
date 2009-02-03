@@ -1339,25 +1339,24 @@ static NCBI_INLINE Boolean
 s_DetermineNaScanningOffsets(const BLAST_SequenceBlk* subject,
                            Int4  word_length,
                            Int4* s_first,
-                           Int4* s_last)
+                           Int4* s_last,
+                           Uint4 *seq_range_index)
 {
-    Uint4 index;
-
     ASSERT(subject->num_seq_ranges >= 1);
 
-    for (index = 0; index < subject->num_seq_ranges; index++) {
+    for (; *seq_range_index < subject->num_seq_ranges; (*seq_range_index)++) {
         /* if offset is after the end of the segment, go to the next
          * segment. */
-        if (*s_first > subject->seq_ranges[index].right) {
+        if (*s_first > subject->seq_ranges[*seq_range_index].right) {
             continue;
         }
 
         /* if offset is before the beginning of the segment, advance it. */
-        if (*s_first < subject->seq_ranges[index].left) {
-            *s_first = subject->seq_ranges[index].left;
+        if (*s_first < subject->seq_ranges[*seq_range_index].left) {
+            *s_first = subject->seq_ranges[*seq_range_index].left;
         }
 
-        *s_last  = subject->seq_ranges[index].right - word_length;
+        *s_last  = subject->seq_ranges[*seq_range_index].right - word_length;
 
         /* if we fell off the end of the last segment, try the next one. */
         if (*s_first > *s_last) {
@@ -1371,13 +1370,13 @@ s_DetermineNaScanningOffsets(const BLAST_SequenceBlk* subject,
     } /* end for */
     /* if we didn't find any more valid ranges to scan, set the
        expected exit conditions and return. */
-    if (index == subject->num_seq_ranges) {
+    if (*seq_range_index == subject->num_seq_ranges) {
         *s_first = subject->length - word_length + 1;
         return FALSE;
     }
 
-    ASSERT(index < subject->num_seq_ranges);
-    ASSERT(subject->seq_ranges[index].left <= subject->seq_ranges[index].right);
+    ASSERT(*seq_range_index < subject->num_seq_ranges);
+    ASSERT(subject->seq_ranges[*seq_range_index].left <= subject->seq_ranges[*seq_range_index].right);
     ASSERT(*s_first <= *s_last);
     return TRUE;
 }
@@ -1403,6 +1402,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
     TNaExtendFunction extend = NULL;
     Int4 last_start;
     Int4 word_length;
+    Uint4 seq_range_index = 0;
 
     if (lookup_wrap->lut_type == eSmallNaLookupTable) {
         BlastSmallNaLookupTable *lookup = 
@@ -1439,7 +1439,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
 
     start_offset = 0;
 
-    while(s_DetermineNaScanningOffsets(subject,word_length,&start_offset, &last_start)) {
+    while(s_DetermineNaScanningOffsets(subject,word_length,&start_offset, &last_start,&seq_range_index)) {
         Int4 next_start;
 
         /* Pass the last word ending offset */

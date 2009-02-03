@@ -81,8 +81,8 @@ static char const rcsid[] =
 
 NCBI_XBLAST_EXPORT const int   kBlastMajorVersion = 2;
 NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 2;
-NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 19;
-NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "Nov-02-2008";
+NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 20;
+NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "Feb-08-2009";
 
 /** Structure to be passed to s_BlastSearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */
@@ -204,14 +204,13 @@ s_RPSOffsetArrayToContextOffsets(BlastQueryInfo    * info,
 /** 
  * @brief Adjust the data that is relevant to processing  the subject chunks
  * 
- * @param chunk_num number of chunk being processed [in]
  * @param total_subject_length total 'unchunked' length of subject [in]
  * @param is_nucleotide whether the sequence is nucleotide or not [in]
  * @param offset offset at which the subject is being examined [in|out]
  * @param subject subject sequence block to be modified [in|out]
  * @param seq_ranges_backup Backup of BLAST_SequenceBlk::seq_ranges
- * (initialized on first call) as this data can be modified if multiple chunks
- * are present [in|out]
+ * (initialized on first call for each subject sequence) as this data can be
+ * modified if multiple chunks are present [in|out]
  * @param num_seq_ranges_backup number of elements in the seq_ranges_backup
  * array [in|out]
  */
@@ -243,6 +242,7 @@ s_AdjustSubjectChunks(Int4 total_subject_length,
     /* Save a copy of the BLAST_SequenceBlk::seq_ranges */
     if (*seq_ranges_backup == NULL) {
         size_t num_bytes = sizeof(*subject->seq_ranges)*subject->num_seq_ranges;
+        ASSERT(subject->num_seq_ranges);
         *num_seq_ranges_backup = subject->num_seq_ranges;
         *seq_ranges_backup = (SSeqRange*)malloc(num_bytes);
         ASSERT(*seq_ranges_backup);
@@ -257,25 +257,29 @@ s_AdjustSubjectChunks(Int4 total_subject_length,
             subject->chunk * DBSEQ_CHUNK_OVERLAP;
         const Int4 stop = start + subject->length;
         /* This is the chunk_range in the context of the full subject sequence*/
-        const SSeqRange chunk_range = SSeqRangeNew(start, stop);
-        Int4 i = 0;
+        const SSeqRange chunk_range = { start, stop };
+        Int4 i = 0, starting_idx = 0, ending_idx = 0;
 
         ASSERT(start < stop);
         ASSERT(*num_seq_ranges_backup >= 1);
 
-        subject->num_seq_ranges = 0;
+        starting_idx = SSeqRangeArrayLessThanOrEqual(*seq_ranges_backup,
+                                           *num_seq_ranges_backup, start);
+        ending_idx = SSeqRangeArrayLessThanOrEqual(*seq_ranges_backup,
+                                         *num_seq_ranges_backup, stop);
+
+        ASSERT(starting_idx >= 0);
+        ASSERT(ending_idx >= 0);
+        
+        subject->num_seq_ranges = ending_idx - starting_idx;
 
         /* copy the relevant ranges ... */
-        for (i = 0; i < *num_seq_ranges_backup; i++) {
-            if (SSeqRangeIntersectsWith(&(*seq_ranges_backup)[i], 
-                                        &chunk_range)) {
-                subject->seq_ranges[subject->num_seq_ranges++] = 
-                    (*seq_ranges_backup)[i];
-            }
-        }
-
         if (subject->num_seq_ranges == 0) {
             subject->seq_ranges[subject->num_seq_ranges++] = chunk_range;
+        } else {
+            memcpy((void*)subject->seq_ranges,
+                   (void*)&(*seq_ranges_backup)[starting_idx], 
+                   sizeof(*subject->seq_ranges)*subject->num_seq_ranges);
         }
 
         /* ... and adjust so that they are in chunk's coordinates */
@@ -364,7 +368,11 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
       BlastUngappedStats* ungapped_stats = NULL;
       BlastGappedStats* gapped_stats = NULL;
       Int4 **matrix;
+      /* Back up of BLAST_SequenceBlk::seq_ranges, as this data needs to be
+       * modified if the subject sequence is long enough that it is split into
+       * chunks */
       SSeqRange* seq_ranges_backup = NULL;
+      /* Number of elements in the seq_ranges_backup array */
       Int4 num_seq_ranges_backup = 0;
       const Boolean kTranslatedSubject = 
         (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);

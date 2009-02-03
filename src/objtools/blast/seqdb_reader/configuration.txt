@@ -49,11 +49,6 @@ Details:
    void SeqDB_SplitQuoted(const string        & dbname,
                           vector<CTempString> & dbs);
 
-   [ Note: as of 05/05/2008, these exist only in the "masked subjects"
-     SVN branch, but will be merged into the "current" branch and then
-     the "trunk" in the near future. ]
-
-
  * Sequence Type
 
    The sequence type of each database is either Protein, Nucleotide.

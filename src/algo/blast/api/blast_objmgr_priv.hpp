@@ -243,9 +243,6 @@ SetupQueries(TSeqLocVector& queries,
 /** Sets up internal subject data structure for the BLAST search.
  *
  * This uses the TSeqLocVector to create subject data structures.
- * Note that the TSeqLocVector may contain masking information, but the
- * current versions of the blast code do not use this information for
- * subject sequences.
  *
  * @param subjects Vector of subject locations [in]
  * @param program BLAST program [in]

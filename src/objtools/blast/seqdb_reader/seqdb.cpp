@@ -1041,6 +1041,32 @@ void CSeqDB::GetAvailableMaskAlgorithms(vector<int> & algorithms)
     m_Impl->GetAvailableMaskAlgorithms(algorithms);
 }
 
+string CSeqDB::GetAvailableMaskAlgorithmDescriptions()
+{
+    return m_Impl->GetAvailableMaskAlgorithmDescriptions();
+}
+
+vector<int> CSeqDB::ValidateMaskAlgorithms(const vector<int>& algorithm_ids)
+{
+    vector<int> invalid_algo_ids, available_algo_ids;
+    GetAvailableMaskAlgorithms(available_algo_ids);
+    invalid_algo_ids.reserve(algorithm_ids.size());
+    if (available_algo_ids.empty()) {
+        copy(algorithm_ids.begin(), algorithm_ids.end(),
+             back_inserter(invalid_algo_ids));
+        return invalid_algo_ids;
+    }
+
+    ITERATE(vector<int>, itr, algorithm_ids) {
+        vector<int>::const_iterator pos = find(available_algo_ids.begin(),
+                                               available_algo_ids.end(), *itr);
+        if (pos == available_algo_ids.end()) {
+            invalid_algo_ids.push_back(*itr);
+        }
+    }
+    return invalid_algo_ids;
+}
+
 void CSeqDB::GetMaskAlgorithmDetails(int                 algorithm_id,
                                      objects::EBlast_filter_program & program,
                                      string            & program_name,
@@ -1057,11 +1083,86 @@ void CSeqDB::GetMaskData(int                 oid,
 {
     m_Impl->GetMaskData(oid, algo_ids, invert, ranges);
 }
+
+void 
+CSeqDB::InvertSequenceRanges(CSeqDB::TSequenceRanges& ranges, int seq_length)
+{
+    if (ranges.size() == 0) {
+        pair<TSeqPos,TSeqPos> rng(0, seq_length);
+        ranges.push_back(rng);
+    } else {
+        // The inverse of a range list is a range from 0 to the
+        // first offset of the first range (the 'pre'), then from
+        // the last offset of each range to the first offset of
+        // the next, then from the last offset of the last range
+        // to the end (the 'post').
+        
+        int last_off = ranges[ranges.size()-1].second;
+        
+        if (last_off > seq_length) {
+            NCBI_THROW(CSeqDBException,
+                       eFileErr,
+                       "Mask data range exceeds sequence length.");
+        }
+        
+        if (ranges[0].first == 0) {
+            // If the first range starts at zero, the 'pre' range
+            // would be empty.  We avoid creating it, and iterate
+            // in an ascending direction.
+            
+            int LAST = ranges.size()-1;
+            
+            for(int q = 0; q < LAST; q++) {
+                ranges[q].first = ranges[q].second;
+                ranges[q].second = ranges[q+1].first;
+            }
+            
+            if (last_off == seq_length) {
+                ranges.pop_back();
+            } else {
+                ranges[LAST].first = ranges[LAST].second;
+                ranges[LAST].second = seq_length;
+            }
+        } else {
+            // To insert the `pre' range without an extra vector
+            // copy, iterate over the elements backwards.
+            
+            if (last_off != seq_length) {
+                pair<TSeqPos, TSeqPos> post(seq_length, 0);
+                ranges.push_back(post);
+            }
+            
+            for(int q = ranges.size()-1; q > 0; q--) {
+                ranges[q].second = ranges[q].first;
+                ranges[q].first = ranges[q-1].second;
+            }
+            
+            ranges[0].second = ranges[0].first;
+            ranges[0].first = 0;
+        }
+    }
+}
+
 #endif
 
 void CSeqDB::GarbageCollect(void)
 {
     m_Impl->GarbageCollect();
+}
+
+void CSeqDB::SetOffsetRanges(int                        oid,
+                             const CSeqDB::TRangeList & offset_ranges,
+                             bool                       append_ranges,
+                             bool                       cache_data)
+{
+    m_Impl->Verify();
+    
+    m_Impl->SetOffsetRanges(oid,
+                            offset_ranges,
+                            append_ranges,
+                            cache_data);
+    
+    m_Impl->Verify();
 }
 
 END_NCBI_SCOPE

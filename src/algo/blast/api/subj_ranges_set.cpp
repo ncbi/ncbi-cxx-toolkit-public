@@ -153,7 +153,7 @@ void CSubjectRangesSet::x_ExpandHspRange(int & begin, int & end)
     end += m_ExpandHSP;
 }
 
-void CSubjectRangesSet::ApplyRanges(CSeqDBExpert & seqdb) const
+void CSubjectRangesSet::ApplyRanges(CSeqDB& seqdb) const
 {
     static const bool kKeepExistingRanges = true;
     ITERATE(TSubjOid2RangesMap, subj, m_SubjRanges) {

@@ -164,36 +164,56 @@ ReadSequencesToBlast(CNcbiIstream& in,
     return scope;
 }
 
-void
+string
 CalculateFormattingParams(TSeqPos max_target_seqs, 
                           TSeqPos* num_descriptions, 
                           TSeqPos* num_alignments, 
                           TSeqPos* num_overview /* = NULL */)
 {
+    string warnings;
     const TSeqPos kResetSeqNumMax = 1000; 
     const TSeqPos kResetSeqNum250 = 250;  
     _ASSERT(max_target_seqs > 0);
     if (num_descriptions) {
         *num_descriptions = max_target_seqs;
+        warnings += "Number of descriptions overridden to ";
+        warnings += NStr::IntToString(*num_descriptions);
     }
     if (num_overview) {
         *num_overview = min(max_target_seqs, kDfltArgMaxTargetSequences);
+        warnings += (warnings.empty() ? "Number " : ", number ");
+        warnings += "of overview alignments overridden to ";
+        warnings += NStr::IntToString(*num_overview);
     }
     if (num_alignments) {
+        bool overridden = false;
         TSeqPos halfHits = max_target_seqs/2;    
         if(max_target_seqs <= kDfltArgMaxTargetSequences) { 
             *num_alignments = max_target_seqs;
+            overridden = true;
         }
         else if(halfHits < kResetSeqNum250) { 
             *num_alignments = kDfltArgMaxTargetSequences;
+            overridden = true;
         }    
         else if(halfHits <= kResetSeqNumMax) { 
             *num_alignments = halfHits;
+            overridden = true;
         }
         else {
             *num_alignments = kResetSeqNumMax;
+            overridden = true;
+        }
+        if (overridden) {
+            warnings += (warnings.empty() ? "Number " : ", number ");
+            warnings += "of alignments overridden to ";
+            warnings += NStr::IntToString(*num_alignments);
         }
     }
+    if ( !warnings.empty() ) {
+        warnings += ".";
+    }
+    return warnings;
 }
 
 bool

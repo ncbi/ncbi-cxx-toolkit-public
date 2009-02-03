@@ -15,7 +15,7 @@ Style:    ISAM indices
   Letter  Name       Format  Key
   ------  ----       ------  ---
   "h"     "hash"     string  Sequence hash, in decimal.
-  "n"     "numeric"  Int4    Genomic Id
+  "n"     "numeric"  Int4    GI
   "p"     "PIG"      Int4    PIG (Protein Identifier Group)
   "s"     "string"   string  Accession, locus, partial or full Seq-id.
   "t"     "trace"    Int4/8  Trace-ID (e.g. gnl|ti|...)
@@ -84,7 +84,7 @@ Style:    ISAM indices
   numeric
 
     This is probably the most heavily used ISAM file, at least at
-    NCBI; the key used by this file is the NCBI Genomic IDs, or GI.
+    NCBI; the key used by this file is the NCBI GI.
 
     Some NCBI services represent sets of sequences as a "GI List", and
     so one of the common applications of GI lookup is bulk translation

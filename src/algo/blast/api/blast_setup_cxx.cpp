@@ -43,6 +43,9 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/gencode_singleton.h>
 
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
+#include <objects/seqloc/Seq_point.hpp> // needed in s_SeqLoc2MaskedSubjRanges
+
 #include "blast_setup.hpp"
 
 /** @addtogroup AlgoBlast
@@ -283,86 +286,9 @@ s_ComputeStartEndContexts(ENa_strand   strand,
 }
 
 /** 
- * @brief Adds core_seqloc to mask. 
- * 
- * @param prog BLAST program
- * @param mask data structure to add the mask to [in|out]
- * @param query_index index of the query for which to add the mask [in]
- * @param core_seqloc mask to add [in]
- * @param strand strand on which the mask is being added [in]
- * @param query_length length of the query [in]
- */
-static void
-s_AddMask(EBlastProgramType prog,
-          BlastMaskLoc* mask,
-          int query_index,
-          BlastSeqLoc* core_seqloc,
-          ENa_strand strand,
-          TSeqPos query_length)
-{
-    _ASSERT(query_index < mask->total_size);
-    unsigned num_contexts = GetNumberOfContexts(prog);
-    
-    if (Blast_QueryIsTranslated(prog)) {
-        int starting_context(0), ending_context(0);
-        
-        s_ComputeStartEndContexts(strand,
-                                  num_contexts,
-                                  starting_context,
-                                  ending_context);
-        
-        const TSeqPos dna_length = query_length;
-        BlastSeqLoc** frames_seqloc = 
-            &(mask->seqloc_array[query_index*num_contexts]);
-        for (int i = starting_context; i < ending_context; i++) {
-            BlastSeqLoc* prot_seqloc(0);
-            for (BlastSeqLoc* itr = core_seqloc; itr; itr = itr->next) {
-                short frame = BLAST_ContextToFrame(eBlastTypeBlastx, i);
-                TSeqPos to, from;
-                if (frame < 0) {
-                    from = (dna_length + frame - itr->ssr->right)/CODON_LENGTH;
-                    to = (dna_length + frame - itr->ssr->left)/CODON_LENGTH;
-                } else {
-                    from = (itr->ssr->left - frame + 1)/CODON_LENGTH;
-                    to = (itr->ssr->right - frame + 1)/CODON_LENGTH;
-                }
-                BlastSeqLocNew(&prot_seqloc, from, to);
-            }
-            frames_seqloc[i] = prot_seqloc;
-        }
-
-        BlastSeqLocFree(core_seqloc);
-
-    } else if (Blast_QueryIsNucleotide(prog) && 
-               !Blast_ProgramIsPhiBlast(prog)) {
-        
-        switch (strand) {
-        case eNa_strand_plus:
-            mask->seqloc_array[query_index*num_contexts] = core_seqloc;
-            break;
-
-        case eNa_strand_minus:
-            mask->seqloc_array[query_index*num_contexts+1] = core_seqloc;
-            break;
-
-        case eNa_strand_both:
-            mask->seqloc_array[query_index*num_contexts] = core_seqloc;
-            mask->seqloc_array[query_index*num_contexts+1] =
-                BlastSeqLocListDup(core_seqloc);
-            break;
-
-        default:
-            abort();
-        }
-    } else  {
-        mask->seqloc_array[query_index] = core_seqloc;
-    }
-}
-
-/** 
  * @brief Adds seqloc_frames to mask. 
  * 
- * @param prog BLAST program
+ * @param prog BLAST program [in]
  * @param mask data structure to add the mask to [in|out]
  * @param query_index index of the query for which to add the mask [in]
  * @param seqloc_frames mask to add [in]
@@ -704,6 +630,55 @@ SetupQueries_OMF(IBlastQuerySource& queries,
     (*seqblk)->lcase_mask_allocated = TRUE;
 }
 
+//static void
+//s_MaskedQueryRegions2MaskedSubjRanges(const TMaskedQueryRegions& subj_masks,
+//                                      CSeqDB::TSequenceRanges& output)
+//{
+//    output.clear();
+//    output.reserve(subj_masks.size());
+//    ITERATE(TMaskedQueryRegions, itr, subj_masks) {
+//        output.push_back(**itr);
+//    }
+//}
+
+static void
+s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp, CSeqDB::TSequenceRanges& output)
+{
+    output.clear();
+    if (!slp || 
+        slp->Which() == CSeq_loc::e_not_set || 
+        slp->IsEmpty() || 
+        slp->IsNull() ) {
+        return;
+    }
+
+    _ASSERT(slp->IsInt() || slp->IsPacked_int() || slp->IsMix());
+
+    if (slp->IsInt()) {
+        output.reserve(1);
+        output.push_back(make_pair(slp->GetInt().GetFrom(), 
+                                   slp->GetInt().GetTo()));
+    } else if (slp->IsPacked_int()) {
+        output.reserve(slp->GetPacked_int().Get().size());
+        ITERATE(CPacked_seqint::Tdata, itr, slp->GetPacked_int().Get()) {
+            output.push_back(make_pair((*itr)->GetFrom(), (*itr)->GetTo()));
+        }
+    } else if (slp->IsMix()) {
+        output.reserve(slp->GetMix().Get().size());
+        ITERATE(CSeq_loc_mix::Tdata, itr, slp->GetMix().Get()) {
+            if ((*itr)->IsInt()) {
+                output.push_back(make_pair((*itr)->GetInt().GetFrom(),
+                                           (*itr)->GetInt().GetTo()));
+            } else if ((*itr)->IsPnt()) {
+                output.push_back(make_pair((*itr)->GetPnt().GetPoint(),
+                                           (*itr)->GetPnt().GetPoint()));
+            }
+        }
+    } else {
+        NCBI_THROW(CBlastException, eNotSupported, "Unsupported CSeq_loc type");
+    }
+}
+
 void
 SetupSubjects_OMF(IBlastQuerySource& subjects,
                   EBlastProgramType prog,
@@ -758,27 +733,22 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
 
         /* Set the lower case mask, if it exists */
         if (subjects.GetMask(i).NotEmpty()) {
-            // N.B.: only one BlastMaskLoc structure is needed per subject
-            CBlastMaskLoc mask(BlastMaskLocNew(GetNumberOfContexts(prog)));
-            const int kSubjectMaskIndex(0);
-            const ENa_strand kSubjectStrands2Search(eNa_strand_both);
-            
-            // Note: this could, and probably will, be modified to use
-            // the types introduced with CBlastQueryVector, as done in
-            // SetupQueries; it would allow removal of the older
-            // version of s_AddMask(), but would not affect output
-            // unless CBl2Seq is modified to use the CBlastQueryVector
-            // code.
-            
-            s_AddMask(prog, mask,
-                      kSubjectMaskIndex,
-                      CSeqLoc2BlastSeqLoc(subjects.GetMask(i)),
-                      kSubjectStrands2Search,
-                      subjects.GetLength(i));
-            
-            subj->lcase_mask = mask.Release();
-            subj->lcase_mask_allocated = TRUE;
+            const CSeq_loc* masks = subjects.GetMask(i);
+            CSeqDB::TSequenceRanges masked_ranges;
+            _ASSERT(masks);
+            s_SeqLoc2MaskedSubjRanges(masks, masked_ranges);
+            _ASSERT( !masked_ranges.empty() );
+            CSeqDB::InvertSequenceRanges(masked_ranges, subjects.GetLength(i));
+            /// @todo: FIXME: this is inefficient, ideally, the masks shouldn't
+            /// be copied for performance reasons...
+            if (BlastSeqBlkSetSeqRanges(subj, (SSeqRange*)& masked_ranges[0],
+                                    masked_ranges.size(), true) != 0) {
+            }
+            _ASSERT(subj->seq_ranges != NULL);
+            _ASSERT(subj->num_seq_ranges > 1);
         }
+        subj->lcase_mask = NULL;                // unused for subjects
+        subj->lcase_mask_allocated = FALSE;     // unused for subjects
 
         if (subj_is_na) {
             BlastSeqBlkSetSequence(subj, sequence.data.release(), 

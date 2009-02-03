@@ -147,11 +147,11 @@ public:
     /// @param is_protein Use true for protein, false for nucleotide. [in]
     /// @param sparse Specify true to use sparse Seq-id indexing. [in]
     /// @param Logging will be done to this stream. [in]
-    /// @param indexing index fields to add to database. [in]
+    /// @param logfile file to write the log to [in]
     CBuildDatabase(const string         & dbname,
                    const string         & title,
                    bool                   is_protein,
-                   CWriteDB::EIndexType   indexing,
+                   CWriteDB::TIndexType   indexing,
                    ostream              * logfile);
     
     // Note -- should deprecate (or just remove) the following one:
@@ -170,7 +170,7 @@ public:
     /// @param title Title to use for newly created database. [in]
     /// @param is_protein Use true for protein, false for nucleotide. [in]
     /// @param sparse Specify true to use sparse Seq-id indexing. [in]
-    /// @param Logging will be done to this stream. [in]
+    /// @param parse_seqids specify true to parse the sequence IDs [in]
     /// @param indexing index fields to add to database. [in]
     CBuildDatabase(const string         & dbname,
                    const string         & title,
