@@ -47,8 +47,8 @@
 #include <gui/widgets/phylo_tree/phylo_tree_ds.hpp>
 #include <gui/widgets/phylo_tree/phylo_tree_render.hpp>
 
-#include <guide_tree_calc.hpp>
-#include <guide_tree_simplify.hpp>
+#include "guide_tree_calc.hpp"
+#include "guide_tree_simplify.hpp"
 
 
 USING_NCBI_SCOPE;

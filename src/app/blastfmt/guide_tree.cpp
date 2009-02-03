@@ -46,8 +46,8 @@
 
 #include <serial/objostrasnb.hpp>
 
-#include <guide_tree_calc.hpp>
-#include <guide_tree.hpp>
+#include "guide_tree_calc.hpp"
+#include "guide_tree.hpp"
 
 USING_NCBI_SCOPE;
 

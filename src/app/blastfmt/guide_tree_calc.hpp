@@ -48,7 +48,7 @@
 
 #include <gui/widgets/aln_data/align_ds.hpp>
 
-#include <hash_set.h>
+#include <corelib/hash_set.hpp>
 
 
 USING_NCBI_SCOPE;

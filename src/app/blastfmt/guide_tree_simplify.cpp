@@ -30,7 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <guide_tree_simplify.hpp>
+#include "guide_tree_simplify.hpp"
 
 BEGIN_NCBI_SCOPE
 

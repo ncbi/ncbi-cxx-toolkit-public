@@ -44,8 +44,8 @@
 
 #include <algo/phy_tree/bio_tree.hpp>
 
-#include <guide_tree.hpp>
-#include <guide_tree_calc.hpp>
+#include "guide_tree.hpp"
+#include "guide_tree_calc.hpp"
 
 
 USING_NCBI_SCOPE;
