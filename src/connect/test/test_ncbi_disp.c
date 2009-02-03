@@ -36,6 +36,7 @@
 #include "../ncbi_servicep.h"
 #include <connect/ncbi_heapmgr.h>
 #include <stdlib.h>
+#include <time.h>
 /* This header must go last */
 #include "test_assert.h"
 
@@ -104,18 +105,45 @@ int main(int argc, const char* argv[])
             CORE_LOGF(eLOG_Note, ("Server #%d `%s' = %s", ++n_found,
                                   SERV_CurrentName(iter), info_str));
             if (hinfo) {
+                static const char kTimeFormat[] = "%m/%d/%y %H:%M:%S";
+                time_t t;
+                char buf[80];
                 double array[5];
+                SHINFO_Params params;
                 const char* e = HINFO_Environment(hinfo);
                 const char* a = HINFO_AffinityArgument(hinfo);
                 const char* v = HINFO_AffinityArgvalue(hinfo);
                 CORE_LOG(eLOG_Note, "  Host info available:");
-                CORE_LOGF(eLOG_Note, ("    Number of CPUs: %d",
+                CORE_LOGF(eLOG_Note, ("    Number of CPUs:      %d",
                                       HINFO_CpuCount(hinfo)));
                 CORE_LOGF(eLOG_Note, ("    Number of CPU units: %d @ %.0fMHz",
                                       HINFO_CpuUnits(hinfo),
                                       HINFO_CpuClock(hinfo)));
-                CORE_LOGF(eLOG_Note, ("    Number of tasks: %d",
+                CORE_LOGF(eLOG_Note, ("    Number of tasks:     %d",
                                       HINFO_TaskCount(hinfo)));
+                if (HINFO_MachineParams(hinfo, &params)) {
+                    CORE_LOGF(eLOG_Note, ("    Arch:       %d",
+                                          params.arch));
+                    CORE_LOGF(eLOG_Note, ("    OSType:     %d",
+                                          params.ostype));
+                    t = (time_t) params.bootup;
+                    strftime(buf, sizeof(buf), kTimeFormat, localtime(&t));
+                    CORE_LOGF(eLOG_Note, ("    Kernel:     %hu.%hu.%hu @ %s",
+                                          params.kernel.major,
+                                          params.kernel.minor,
+                                          params.kernel.patch, buf));
+                    CORE_LOGF(eLOG_Note, ("    Bits:       %hu",
+                                          params.bits));
+                    CORE_LOGF(eLOG_Note, ("    Page size:  %lu",
+                                          (unsigned long) params.pgsize));
+                    t = (time_t) params.start;
+                    strftime(buf, sizeof(buf), kTimeFormat, localtime(&t));
+                    CORE_LOGF(eLOG_Note, ("    LBSMD:      %hu.%hu.%hu @ %s",
+                                          params.daemon.major,
+                                          params.daemon.minor,
+                                          params.daemon.patch, buf));
+                } else
+                    CORE_LOG (eLOG_Note,  "    Machine params: unavailable");
                 if (HINFO_Memusage(hinfo, array)) {
                     CORE_LOGF(eLOG_Note, ("    Total RAM:  %.2fMB", array[0]));
                     CORE_LOGF(eLOG_Note, ("    Cache RAM:  %.2fMB", array[1]));
@@ -128,7 +156,7 @@ int main(int argc, const char* argv[])
                     CORE_LOGF(eLOG_Note, ("    Load averages: %f, %f (BLAST)",
                                           array[0], array[1]));
                 } else
-                    CORE_LOG (eLOG_Note,  "    Load average: unavailable");
+                    CORE_LOG (eLOG_Note,  "    Load averages: unavailable");
                 if (a) {
                     assert(*a);
                     CORE_LOGF(eLOG_Note, ("    Affinity argument: %s", a));

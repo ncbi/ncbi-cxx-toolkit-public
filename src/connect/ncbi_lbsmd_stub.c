@@ -108,6 +108,13 @@ int LBSM_HINFO_Memusage(const HOST_INFO hinfo, double memusage[5])
 
 
 /*ARGSUSED*/
+int LBSM_HINFO_MachineParams(const HOST_INFO hinfo, SHINFO_Params* p)
+{
+    return 0/*failure*/;
+}
+
+
+/*ARGSUSED*/
 int/*bool*/ LBSM_HINFO_LoadAverage(const HOST_INFO hinfo, double lavg[2])
 {
     return 0/*failure*/;

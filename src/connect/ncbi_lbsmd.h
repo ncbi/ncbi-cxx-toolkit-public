@@ -107,6 +107,9 @@ int LBSM_HINFO_TaskCount(const HOST_INFO hinfo);
 int/*bool*/ LBSM_HINFO_Memusage(const HOST_INFO hinfo, double memusage[5]);
 
 
+int/*bool*/ LBSM_HINFO_MachineParams(const HOST_INFO hinfo, SHINFO_Params* p);
+
+
 int/*bool*/ LBSM_HINFO_LoadAverage(const HOST_INFO hinfo, double lavg[2]);
 
 

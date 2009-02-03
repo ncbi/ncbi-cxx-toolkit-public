@@ -40,6 +40,7 @@
  */
 
 #include <connect/connect_export.h>
+#include <connect/ncbi_types.h>
 
 
 /** @addtogroup ServiceSupport
@@ -83,7 +84,7 @@ int HINFO_TaskCount(const HOST_INFO host_info);
 
 
 /* Return non-zero on success and store memory usage (in MB
- * in the provided array "memusage" at the following layout:
+ * at the provided array "memusage" in the following layout:
  * index 0 = total RAM, MB;
  * index 1 = discardable RAM (cached), MB;
  * index 2 = free RAM, MB;
@@ -93,6 +94,30 @@ int HINFO_TaskCount(const HOST_INFO host_info);
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/ HINFO_Memusage(const HOST_INFO host_info, double memusage[5]);
+
+
+typedef struct {
+    int                arch;    /* architecture ID, 0=unknown */
+    int                ostype;  /* OS type ID,      0=unknown */
+    struct {
+        unsigned short major;
+        unsigned short minor;
+        unsigned short patch;
+    } kernel;                   /* kernel/OS version #, if available         */
+    unsigned short     bits;    /* platform bitness, 32/64/0=unknown         */
+    size_t             pgsize;  /* hardware page size in bytes, if available */
+    TNCBI_Time         bootup;  /* boot time, time_t-compatible              */
+    TNCBI_Time         start;   /* LB start time, time_t-compatible          */
+    struct {
+        short          major;
+        short          minor;
+        short          patch;
+    } daemon;                   /* LBSMD version */
+    unsigned short     pad;     /* MBZ */
+} SHINFO_Params;
+
+extern NCBI_XCONNECT_EXPORT
+int/*bool*/ HINFO_MachineParams(const HOST_INFO host_info, SHINFO_Params* p);
 
 
 /* Return non-zero on success and store load averages in the
