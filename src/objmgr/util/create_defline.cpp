@@ -754,7 +754,7 @@ string CDeflineGenerator::x_TitleFromNR (
     for (CTypeConstIterator<CSeq_feat> it(
           *hnd.GetTopLevelEntry().GetCompleteSeq_entry()); it; ++it) {
         const CSeq_feat& sft = *it;
-        IF_FEATURE_CHOICE_IS (sft, NCBI_SEQFEAT(Gene)) {
+        if (FEATURE_CHOICE_IS (sft, NCBI_SEQFEAT(Gene))) {
             result = m_Taxname + " ";
             feature::GetLabel(*it, &result, feature::eContent);
             result += ", ";
