@@ -862,7 +862,7 @@ static char* s_VT_Descr
         sprintf(&buf[len], "%s%s%s%s%s", uuu->net_info->http_proxy_adjusted
                 ? "<" : *uuu->net_info->path != '/'
                 ? "/" : "", uuu->net_info->path,
-                &"&"[!*uuu->net_info->args], uuu->net_info->args,
+                &"?"[!*uuu->net_info->args], uuu->net_info->args,
                 ">" + !uuu->net_info->http_proxy_adjusted);
     }
     return buf;
