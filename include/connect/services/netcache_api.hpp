@@ -33,7 +33,7 @@
  *
  */
 
-/// @file netcache_client.hpp
+/// @file netcache_api.hpp
 /// NetCache client specs.
 ///
 
