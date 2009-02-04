@@ -62,6 +62,36 @@ enum EConfidence {
 static unsigned char symbol_type_table[256];
 
 //  ----------------------------------------------------------------------------
+static bool s_IsTokenPosInt(
+    const string& strToken )
+{
+    return ( -1 != NStr::StringToNumeric( strToken ) );
+}
+
+//  ----------------------------------------------------------------------------
+static bool s_IsTokenInteger(
+    const string& strToken )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! strToken.empty() && strToken[0] == '-' ) {
+        return s_IsTokenPosInt( strToken.substr( 1 ) );
+    }
+    return s_IsTokenPosInt( strToken );
+}
+
+//  ----------------------------------------------------------------------------
+static bool s_IsTokenDouble(
+    const string& strToken )
+{
+    string token( strToken );
+    NStr::ReplaceInPlace( token, ".", "1", 0, 1 );
+    if ( token.size() > 1 && token[0] == '-' ) {
+        token[0] = '1';
+    }
+    return s_IsTokenPosInt( token );
+}
+
+//  ----------------------------------------------------------------------------
 static void init_symbol_type_table(void)
 {
     if ( symbol_type_table[0] == 0 ) {
@@ -194,6 +224,7 @@ CFormatGuess::GuessFormat( EMode )
     return GuessFormat(eDefault);
 }
 
+//  ----------------------------------------------------------------------------
 CFormatGuess::EFormat
 CFormatGuess::GuessFormat(
     EOnError onerror )
@@ -631,10 +662,7 @@ CFormatGuess::TestFormatDistanceMatrix(
 
         list<string>::const_iterator it = toks.begin();
         for (++it;  it != toks.end();  ++it) {
-            try {
-                NStr::StringToDouble(*it);
-            }
-            catch (CException&) {
+            if ( ! s_IsTokenDouble( *it ) ) {
                 return false;
             }
         }
@@ -1240,37 +1268,70 @@ bool CFormatGuess::IsLabelNewick(
 
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::IsLineAgp( 
-    const string& line ) 
+    const string& strLine ) 
 {
+    //
+    //  Note: The reader allows for line and endline comments starting with a '#'.
+    //  So we accept them here, too.
+    //
+    string line( strLine );
+    size_t uCommentStart = NStr::Find( line, "#" );
+    
+    if ( NPOS != uCommentStart ) {
+        line = line.substr( 0, uCommentStart );
+    }
+    NStr::TruncateSpacesInPlace( line );
+    if ( line.empty() ) {
+        return true;
+    }
+    
     vector<string> tokens;
     if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
         return false;
     }
-    try {
-        NStr::StringToInt( tokens[1] );
-        NStr::StringToInt( tokens[2] );
-        NStr::StringToInt( tokens[3] );
-        
-        if ( tokens[4].size() != 1 || NPOS == tokens[4].find_first_of( "ADFGPNOW" ) ) {
+
+    if ( tokens[1].size() > 1 && tokens[1][0] == '-' ) {
+        tokens[1][0] = '1';
+    }
+    if ( -1 == NStr::StringToNumeric( tokens[1] ) ) {
+        return false;
+    }
+    
+    if ( tokens[2].size() > 1 && tokens[2][0] == '-' ) {
+        tokens[2][0] = '1';
+    }
+    if ( -1 == NStr::StringToNumeric( tokens[2] ) ) {
+        return false;
+    }
+    
+    if ( tokens[3].size() > 1 && tokens[3][0] == '-' ) {
+        tokens[3][0] = '1';
+    }
+    if ( -1 == NStr::StringToNumeric( tokens[3] ) ) {
+        return false;
+    }
+    
+    if ( tokens[4].size() != 1 || NPOS == tokens[4].find_first_of( "ADFGPNOW" ) ) {
+        return false;
+    }
+    if ( tokens[4] == "N" ) {
+        if ( -1 == NStr::StringToNumeric( tokens[5] ) ) {
             return false;
         }
-        if ( tokens[4] == "N" ) {
-            NStr::StringToInt( tokens[5] ); // gap length
-        }
-        else {
-            NStr::StringToInt( tokens[6] ); // component start
-            NStr::StringToInt( tokens[7] ); // component end
-            
-            if ( tokens.size() != 9 ) {
-                return false;
-            }
-            if ( tokens[8].size() != 1 || NPOS == tokens[8].find_first_of( "+-" ) ) {
-                return false;
-            }
-        }
     }
-    catch( ... ) {
-        return false;
+    else {
+        if ( -1 == NStr::StringToNumeric( tokens[6] ) ) {
+            return false;
+        }
+        if ( -1 == NStr::StringToNumeric( tokens[7] ) ) {
+            return false;
+        }            
+        if ( tokens.size() != 9 ) {
+            return false;
+        }
+        if ( tokens[8].size() != 1 || NPOS == tokens[8].find_first_of( "+-" ) ) {
+            return false;
+        }
     }
     
     return true;
@@ -1293,30 +1354,25 @@ bool CFormatGuess::IsLineGlimmer3(
     ++i;
 
     /// second, third columns: both ints
-    try {
-        NStr::StringToInt(*i++);
-        NStr::StringToInt(*i++);
+    if ( ! s_IsTokenInteger( *i++ ) ) {
+        return false;
     }
-    catch (...) {
+    if ( ! s_IsTokenInteger( *i++ ) ) {
         return false;
     }
 
     /// fourth column: int in the range of -3...3
-    try {
-        int frame = NStr::StringToInt(*i++);
-        if (frame < -3  ||  frame > 3) {
-            return false;
-        }
+    if ( ! s_IsTokenInteger( *i ) ) {
+        return false;
     }
-    catch (...) {
+    int frame = NStr::StringToInt( *i++ );
+    if (frame < -3  ||  frame > 3) {
         return false;
     }
 
     /// fifth column: score; double
-    try {
-        NStr::StringToDouble(*i);
-    }
-    catch (...) {
+    if ( ! s_IsTokenDouble( *i ) ) {
+        return false;
     }
 
     return true;
@@ -1331,19 +1387,15 @@ bool CFormatGuess::IsLineGtf(
     if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
         return false;
     }
-    if ( -1 == NStr::StringToNumeric( tokens[3] ) ) {
+    if ( ! s_IsTokenPosInt( tokens[3] ) ) {
         return false;
     }
-    if ( -1 == NStr::StringToNumeric( tokens[4] ) ) {
+    if ( ! s_IsTokenPosInt( tokens[4] ) ) {
         return false;
     }
-    NStr::ReplaceInPlace( tokens[5], ".", "1", 0, 1 );
-    if ( tokens[5].size() > 1 && tokens[5][0] == '-' ) {
-        tokens[5][0] = '1';
-    }
-    if ( -1 == NStr::StringToNumeric( tokens[5] ) ) {
+    if ( ! s_IsTokenDouble( tokens[5] ) ) {
         return false;
-    }        
+    }
     if ( tokens[6].size() != 1 || NPOS == tokens[6].find_first_of( ".+-" ) ) {
         return false;
     }
@@ -1400,50 +1452,56 @@ bool CFormatGuess::IsLineRmo(
     //  Look at specific values and make sure they are of the correct type:
     //
     
-    try {
-        //  1: positive integer:
-        list<string>::iterator it = values.begin();
-        NStr::StringToUInt( *it );
-    
-        //  2: float:
-        ++it;
-        NStr::StringToDouble( *it );
-    
-        //  3: float:
-        ++it;
-        NStr::StringToDouble( *it );
-    
-        //  4: float:
-        ++it;
-        NStr::StringToDouble( *it );
-        
-        //  5: string, not checked
-        ++it;
-        
-        //  6: positive integer:
-        ++it;
-        NStr::StringToUInt( *it );
-        
-        //  7: positive integer:
-        ++it;
-        NStr::StringToUInt( *it );
-        
-        //  8: positive integer, likely in paretheses, not checked:
-        ++it;
-        
-        //  9: '+' or 'C':
-        ++it;
-        if ( *it != "+" && *it != "C" ) {
-            return false;
-        }
-        
-        //  and that's enough for now. But there are at least two more fields 
-        //  with values that look testable.
-        
-    }
-    catch ( ... ) {
+    //  1: positive integer:
+    list<string>::iterator it = values.begin();
+    if ( ! s_IsTokenPosInt( *it ) ) {
         return false;
     }
+
+    //  2: float:
+    ++it;
+    if ( ! s_IsTokenDouble( *it ) ) {
+        return false;
+    }
+
+    //  3: float:
+    ++it;
+    if ( ! s_IsTokenDouble( *it ) ) {
+        return false;
+    }
+
+    //  4: float:
+    ++it;
+    if ( ! s_IsTokenDouble( *it ) ) {
+        return false;
+    }
+    
+    //  5: string, not checked
+    ++it;
+    
+    //  6: positive integer:
+    ++it;
+    if ( ! s_IsTokenPosInt( *it ) ) {
+        return false;
+    }
+    
+    //  7: positive integer:
+    ++it;
+    if ( ! s_IsTokenPosInt( *it ) ) {
+        return false;
+    }
+    
+    //  8: positive integer, likely in paretheses, not checked:
+    ++it;
+    
+    //  9: '+' or 'C':
+    ++it;
+    if ( *it != "+" && *it != "C" ) {
+        return false;
+    }
+    
+    //  and that's enough for now. But there are at least two more fields 
+    //  with values that look testable.
         
     return true;
 }
