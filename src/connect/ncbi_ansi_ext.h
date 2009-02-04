@@ -48,10 +48,10 @@ extern "C" {
 
 #ifndef HAVE_STRDUP
 
-#  ifdef strdup
+#  ifdef   strdup
 #    undef strdup
 #  endif
-#  define strdup      NCBI_strdup
+#  define  strdup      NCBI_strdup
 
 /* Create a copy of string "str".
  * Return an identical malloc'ed string, which must be explicitly freed 
@@ -64,10 +64,10 @@ extern NCBI_XCONNECT_EXPORT char* strdup(const char* str);
 
 #ifndef HAVE_STRNDUP
 
-#  ifdef strndup
+#  ifdef   strndup
 #    undef strndup
 #  endif
-#  define strndup     NCBI_strndup
+#  define  strndup     NCBI_strndup
 
 /* Create a copy of up to "n" first characters of string "str".
  * Return a malloc'ed and '\0'-terminated string, which must be
@@ -80,12 +80,12 @@ extern NCBI_XCONNECT_EXPORT char* strndup(const char* str, size_t n);
 
 #ifndef HAVE_STRCASECMP
 
-#  ifdef strcasecmp
+#  ifdef   strcasecmp
 #    undef strcasecmp
 #    undef strncasecmp
 #  endif
-#  define strcasecmp  NCBI_strcasecmp
-#  define strncasecmp NCBI_strncasecmp
+#  define  strcasecmp  NCBI_strcasecmp
+#  define  strncasecmp NCBI_strncasecmp
 
 /* Compare "s1" and "s2", ignoring case.
  * Return less than, equal to or greater than zero if
@@ -102,12 +102,12 @@ extern NCBI_XCONNECT_EXPORT int strncasecmp(const char* s1, const char* s2, size
 #endif/*HAVE_STRCASECMP*/
 
 
-#ifdef strupr
+#ifdef   strupr
 #  undef strupr
 #  undef strlwr
 #endif
-#define strupr        NCBI_strupr
-#define strlwr        NCBI_strlwr
+#define  strupr        NCBI_strupr
+#define  strlwr        NCBI_strlwr
 
 /* Convert a string to uppercase, then return pointer to
  * the altered string. Because the conversion is made in place, the
