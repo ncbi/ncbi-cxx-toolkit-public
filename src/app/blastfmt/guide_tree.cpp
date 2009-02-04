@@ -41,9 +41,6 @@
 
 #include <connect/ncbi_conn_stream.hpp>
 
-#include <connect/ncbi_conn_stream.hpp>
-#include <connect/services/netcache_client.hpp>
-
 #include <serial/objostrasnb.hpp>
 
 #include "guide_tree_calc.hpp"
