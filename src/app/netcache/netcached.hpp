@@ -32,7 +32,9 @@
  *
  */
 
-#include <corelib/ncbimtx.hpp>
+#include "smng_thread.hpp"
+
+#include <connect/services/netcache_api_expt.hpp>
 
 #include <connect/server.hpp>
 #include <connect/server_monitor.hpp>
@@ -40,9 +42,7 @@
 #include <util/cache/icache_clean_thread.hpp>
 #include <bdb/bdb_blobcache.hpp>
 
-#include "smng_thread.hpp"
-
-#include <connect/server.hpp>
+#include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
 
