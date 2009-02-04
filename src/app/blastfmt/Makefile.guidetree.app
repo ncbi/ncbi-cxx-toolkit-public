@@ -6,7 +6,7 @@ LIB = cobalt w_phylo_tree w_aln_data xalgoalignnw xalgophytree fastme biotree \
       xalgoalignutil gui_utils_fl gui_utils valerr entrez2 w_fltk ximage \
       xalnmgr xconnserv taxon1 xcgi xhtml $(BLAST_LIBS) $(OBJMGR_LIBS)
 
-LIBS = $(IMAGE_LIBS) $(FLTK_LIBS) $(OSMESA_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(OSMESA_LIBS) $(IMAGE_LIBS) $(FLTK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
