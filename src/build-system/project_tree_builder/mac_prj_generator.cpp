@@ -581,6 +581,11 @@ string CMacProjectGenerator::CreateProjectTarget(
                 GetApp().GetSite().Is3PartyLib(dp->first.Id())) {
                     continue;
             }
+            if (prj.m_ProjType == CProjKey::eLib && dp->first.Type() == CProjKey::eLib) {
+                if (dp->second.m_DatatoolSources.empty()) {
+                    continue;
+                }
+            }
 #if USE_VERBOSE_NAMES
             AddString( *dependencies, GetProjDependency(dp->second));
 #else

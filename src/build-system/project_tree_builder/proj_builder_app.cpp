@@ -910,6 +910,11 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                         continue;
                     }
                 }
+                if (p->first.Type() == CProjKey::eLib && id.Type() == CProjKey::eLib) {
+                    if (n->second.m_DatatoolSources.empty()) {
+                        continue;
+                    }
+                }
                 dependencies.push_back(CreateProjectName(n->first));
             }
             string rel_path = CDirEntry::CreateRelativePath(GetProjectTreeInfo().m_Src,

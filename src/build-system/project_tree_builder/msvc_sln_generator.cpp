@@ -377,6 +377,12 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
             }
         }
         const CPrjContext& prj_i = n->second;
+        if (project.m_Project.m_ProjType == CProjKey::eLib  &&
+            id.Type() == CProjKey::eLib) {
+            if (prj_i.m_Project.m_DatatoolSources.empty()) {
+                continue;
+            }
+        }
         proj_guid.push_back(prj_i.m_GUID);
     }
     if (!proj_guid.empty()) {
