@@ -33,81 +33,47 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <bitset>
 
 BEGIN_NCBI_SCOPE
 
+class CFormatGuessHints;
+
+
 //////////////////////////////////////////////////////////////////
-//
-// Class implements different ad-hoc unreliable file format 
-// identifications.
-//
+///
+/// Class implements different ad-hoc unreliable file format
+/// identifications.
+///
 
 class NCBI_XUTIL_EXPORT CFormatGuess
 {
 public:
+    /// The formats are checked in the same order as declared here.
     enum EFormat {
-        //< unknown format
-        eUnknown = 0,
-
-        //< binary ASN.1
-        eBinaryASN,
-
-        //< text ASN.1
-        eTextASN,
-
-        // FASTA format sequence record
-        eFasta,
-
-        //< XML
-        eXml,
-
-        //< RepeatMasker Output
-        eRmo,
-
-        //< Glimmer3 predictions
-        eGlimmer3,
-
-        //< Phrap ACE assembly file
-        ePhrapAce,
-
-        //< GFF/GTF style annotations
-        eGtf,
-
-        //< AGP format assembly
-        eAgp,
-
-        //< Newick file
-        eNewick,
-
-        //< Distance matrix file
-        eDistanceMatrix,
-
-        //< Five-column feature table
-        eFiveColFeatureTable,
-
-        //< Taxplot file
-        eTaxplot,
-
-        //< Generic table
-        eTable,
-
-        //< Text alignment
-        eAlignment,
-
-        //< GenBank/GenPept/DDBJ/EMBL flat-file sequence portion
-        eFlatFileSequence,
-
-        //< SNP Marker flat file
-        eSnpMarkers,
-        
-        //< UCSC WIGGLE file format
-        eWiggle,
-        
-        //< UCSC BED file format
-        eBed,
-        
-        //< UCSC BED15 or microarray format
-        eBed15
+        eUnknown = 0,           ///< unknown format
+        eBinaryASN,             ///< binary ASN.1
+        eRmo,                   ///< RepeatMasker Output
+        eGtf,                   ///< GFF/GTF style annotations
+        eGlimmer3,              ///< Glimmer3 predictions
+        eAgp,                   ///< AGP format assembly
+        eXml,                   ///< XML
+        eWiggle,                ///< UCSC WIGGLE file format
+        eBed,                   ///< UCSC BED file format
+        eBed15,                 ///< UCSC BED15 or microarray format
+        eNewick,                ///< Newick file
+        eAlignment,             ///< Text alignment
+        eDistanceMatrix,        ///< Distance matrix file
+        eFlatFileSequence,      ///< GenBank/GenPept/DDBJ/EMBL flat-file
+                                ///< sequence portion
+        eFiveColFeatureTable,   ///< Five-column feature table
+        eSnpMarkers,            ///< SNP Marker flat file
+        eFasta,                 ///< FASTA format sequence record
+        eTextASN,               ///< text ASN.1
+        eTaxplot,               ///< Taxplot file
+        ePhrapAce,              ///< Phrap ACE assembly file
+        eTable,                 ///< Generic table
+        eFormat_max             ///< Max value of EFormat
     };
 
     enum ESequenceType {
@@ -121,13 +87,48 @@ public:
         eThorough
     };
 
-    enum EOnError { 
-        eDefault = 0,      //< Return eUnknown 
-        eThrowOnBadSource, //< Throw an exception if the data source (stream, file) can't be read 
-    }; 
-    
-    // Guess sequence type. Function calculates sequence alphabet and 
-    // identifies if the source belongs to nucleotide or protein sequence
+    enum EOnError {
+        eDefault = 0,      ///< Return eUnknown
+        eThrowOnBadSource, ///< Throw an exception if the data source (stream, file) can't be read
+    };
+
+    /// Hints for guessing formats. Two hint types can be used: preferred and
+    /// disabled. Preferred are checked before any other formats. Disabled
+    /// formats are not checked at all.
+    class CFormatHints
+    {
+    public:
+        typedef CFormatGuess::EFormat TFormat;
+
+        CFormatHints(void) {}
+
+        /// Mark the format as preferred.
+        CFormatHints& AddPreferredFormat(TFormat fmt);
+        /// Mark the format as disabled.
+        CFormatHints& AddDisabledFormat(TFormat fmt);
+        /// Disable all formats not marked as preferred
+        CFormatHints& DisableAllNonpreferred(void);
+        /// Remove format hint.
+        void RemoveFormat(TFormat fmt);
+        /// Remove all hints
+        CFormatHints& Reset(void);
+
+        /// Check if there are any hints are set at all.
+        bool IsEmpty(void) const;
+        /// Check if the format is listed as preferred.
+        bool IsPreferred(TFormat fmt) const;
+        /// Check if the format is listed as disabled.
+        bool IsDisabled(TFormat fmt) const;
+
+    private:
+        typedef bitset<CFormatGuess::eFormat_max> THints;
+
+        THints m_Preferred;
+        THints m_Disabled;
+    };
+
+    /// Guess sequence type. Function calculates sequence alphabet and
+    /// identifies if the source belongs to nucleotide or protein sequence
     static ESequenceType SequenceType(const char* str, unsigned length);
 
     //  ------------------------------------------------------------------------
@@ -143,10 +144,10 @@ public:
     /// Format prediction based on an input stream
     static
     EFormat Format(CNcbiIstream& input, EOnError onerror = eDefault);
-    
+
     //  ------------------------------------------------------------------------
     //  "Object" interface:
-    //  Use when interested only in a limited number of formats, in excluding 
+    //  Use when interested only in a limited number of formats, in excluding
     //  certain tests, a specific order in which formats are tested, ...
     //  ------------------------------------------------------------------------
 
@@ -164,12 +165,15 @@ public:
 
     //  Interface:
 public:
-    
+
     NCBI_DEPRECATED EFormat GuessFormat(EMode);
     NCBI_DEPRECATED bool TestFormat(EFormat,EMode);
 
     EFormat GuessFormat(EOnError onerror = eDefault);
     bool TestFormat(EFormat,EOnError onerror = eDefault);
+
+    /// Get format hints
+    CFormatHints& GetFormatHints(void) { return m_Hints; }
 
     // helpers:
 protected:
@@ -222,7 +226,7 @@ protected:
 
     bool IsInputRepeatMaskerWithoutHeader();
     bool IsInputRepeatMaskerWithHeader();
-    
+
     static bool IsLineFlatFileSequence(
         const std::string& );
     static bool IsLineNewick(
@@ -241,9 +245,11 @@ protected:
         const std::string& );
     static bool IsAsnComment(
         const vector<string>& );
-        
+
 private:
     static bool x_TestInput( CNcbiIstream& input, EOnError onerror );
+
+    bool x_TestFormat(EFormat format, EMode mode);
 
     // data:
 protected:
@@ -261,7 +267,62 @@ protected:
     unsigned int m_iStatsCountDnaChars;
     unsigned int m_iStatsCountAaChars;
     std::list<std::string> m_TestLines;
+    CFormatHints m_Hints;
 };
+
+
+inline CFormatGuess::CFormatHints&
+CFormatGuess::CFormatHints::AddPreferredFormat(TFormat fmt)
+{
+    m_Disabled.reset(fmt);
+    m_Preferred.set(fmt);
+    return *this;
+}
+
+
+inline CFormatGuess::CFormatHints&
+CFormatGuess::CFormatHints::AddDisabledFormat(TFormat fmt)
+{
+    m_Preferred.reset(fmt);
+    m_Disabled.set(fmt);
+    return *this;
+}
+
+inline CFormatGuess::CFormatHints&
+CFormatGuess::CFormatHints::DisableAllNonpreferred(void)
+{
+    m_Disabled = ~m_Preferred;
+    return *this;
+}
+
+inline void CFormatGuess::CFormatHints::RemoveFormat(TFormat fmt)
+{
+    m_Disabled.reset(fmt);
+    m_Preferred.reset(fmt);
+}
+
+inline CFormatGuess::CFormatHints&
+CFormatGuess::CFormatHints::Reset(void)
+{
+    m_Preferred.reset();
+    m_Disabled.reset();
+    return *this;
+}
+
+inline bool CFormatGuess::CFormatHints::IsEmpty(void) const
+{
+    return m_Preferred.count() == 0  &&  m_Disabled.count() == 0;
+}
+
+inline bool CFormatGuess::CFormatHints::IsPreferred(TFormat fmt) const
+{
+    return m_Preferred.test(fmt);
+}
+
+inline bool CFormatGuess::CFormatHints::IsDisabled(TFormat fmt) const
+{
+    return m_Disabled.test(fmt);
+}
 
 END_NCBI_SCOPE
 

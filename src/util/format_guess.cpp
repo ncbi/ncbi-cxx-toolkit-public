@@ -26,9 +26,9 @@
  * Author: Anatoliy Kuznetsov
  *
  * File Description:  Implemented methods to identify file formats.
- * 
+ *
  */
-  
+
 #include <ncbi_pch.hpp>
 #include <util/format_guess.hpp>
 #include <util/util_exception.hpp>
@@ -129,7 +129,7 @@ static void init_symbol_type_table(void)
 //  ============================================================================
 
 //  ----------------------------------------------------------------------------
-CFormatGuess::ESequenceType 
+CFormatGuess::ESequenceType
 CFormatGuess::SequenceType(const char* str, unsigned length)
 {
     if (length == 0)
@@ -234,67 +234,21 @@ CFormatGuess::GuessFormat(
     }
     EMode mode = eQuick;
 
-    if ( TestFormatBinaryAsn( mode ) ) {
-        return eBinaryASN;
+    // First, try to use hints
+    if ( !m_Hints.IsEmpty() ) {
+        for (int f = 1 /* skip eUnknown */; f < eFormat_max; ++f) {
+            EFormat fmt = EFormat(f);
+            if (m_Hints.IsPreferred(fmt)  &&  x_TestFormat(fmt, mode)) {
+                return fmt;
+            }
+        }
     }
-    if ( TestFormatRepeatMasker( mode ) ) {
-        return eRmo;
-    }
-    if ( TestFormatGtf( mode ) ) {
-        return eGtf;
-    }
-    if ( TestFormatGlimmer3( mode ) ) {
-        return eGlimmer3;
-    }
-    if ( TestFormatAgp( mode ) ) {
-        return eAgp;
-    }
-    if ( TestFormatXml( mode ) ) {
-        return eXml;
-    }
-    if ( TestFormatWiggle( mode ) ) {
-        return eWiggle;
-    }
-    if ( TestFormatBed( mode ) ) {
-        return eBed;
-    }
-    if ( TestFormatBed15( mode ) ) {
-        return eBed15;
-    }
-    if ( TestFormatNewick( mode ) ) {
-        return eNewick;
-    }
-    if ( TestFormatAlignment( eQuick /* !!! */ ) ) {
-        return eAlignment;
-    }
-    if ( TestFormatDistanceMatrix( mode ) ) {
-        return eDistanceMatrix;
-    }
-    if ( TestFormatFlatFileSequence( mode ) ) {
-        return eFlatFileSequence;
-    }
-    if ( TestFormatFiveColFeatureTable( mode ) ) {
-        return eFiveColFeatureTable;
-    }
-    if ( TestFormatSnpMarkers( mode ) ) {
-        return eSnpMarkers;
-    }
-    if ( TestFormatFasta( mode ) ) {
-        return eFasta;
-    }
-    if ( TestFormatTextAsn( mode ) ) {
-        return eTextASN;
-    }
-    if ( TestFormatTaxplot( mode ) ) {
-        return eTaxplot;
-    }
-    
-    
-    if ( TestFormatPhrapAce( mode ) ) {
-        return ePhrapAce;
-    }
-    if ( TestFormatTable( mode ) ) {
-        return eTable;
+
+    // Check other formats
+    for (int f = 1 /* skip eUnknown */; f < eFormat_max; ++f) {
+        if ( x_TestFormat(EFormat(f), mode) ) {
+            return EFormat(f);
+        }
     }
     return eUnknown;
 }
@@ -316,51 +270,63 @@ CFormatGuess::TestFormat(
         return false;
     }
     EMode mode = eQuick;
+    return x_TestFormat(format, mode);
+}
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
+{
+    // First check if the format is disabled
+    if ( m_Hints.IsDisabled(format) ) {
+        return false;
+    }
 
     switch( format ) {
-    
+
+    case eBinaryASN:
+        return TestFormatBinaryAsn( mode );
     case eRmo:
         return TestFormatRepeatMasker( mode );
-    case ePhrapAce:
-        return TestFormatPhrapAce( mode );
     case eGtf:
         return TestFormatGtf( mode );
     case eGlimmer3:
         return TestFormatGlimmer3( mode );
     case eAgp:
         return TestFormatAgp( mode );
-    case eNewick:
-        return TestFormatNewick( mode );
     case eXml:
         return TestFormatXml( mode );
-    case eAlignment:
-        return TestFormatAlignment( mode );
-    case eBinaryASN:
-        return TestFormatBinaryAsn( mode );
-    case eDistanceMatrix:
-        return TestFormatDistanceMatrix( mode );
-    case eTaxplot:
-        return TestFormatTaxplot( mode );
-    case eFlatFileSequence:
-        return TestFormatFlatFileSequence( mode );
-    case eFiveColFeatureTable:
-        return TestFormatFiveColFeatureTable( mode );
-    case eTable:
-        return TestFormatTable( mode );
-    case eFasta:
-        return TestFormatFasta( mode );
-    case eTextASN:
-        return TestFormatTextAsn( mode );
     case eWiggle:
         return TestFormatWiggle( mode );
     case eBed:
         return TestFormatBed( mode );
     case eBed15:
         return TestFormatBed15( mode );
+    case eNewick:
+        return TestFormatNewick( mode );
+    case eAlignment:
+        return TestFormatAlignment( mode );
+    case eDistanceMatrix:
+        return TestFormatDistanceMatrix( mode );
+    case eFlatFileSequence:
+        return TestFormatFlatFileSequence( mode );
+    case eFiveColFeatureTable:
+        return TestFormatFiveColFeatureTable( mode );
+    case eSnpMarkers:
+        return TestFormatSnpMarkers( mode );
+    case eFasta:
+        return TestFormatFasta( mode );
+    case eTextASN:
+        return TestFormatTextAsn( mode );
+    case eTaxplot:
+        return TestFormatTaxplot( mode );
+    case ePhrapAce:
+        return TestFormatPhrapAce( mode );
+    case eTable:
+        return TestFormatTable( mode );
 
     default:
-        NCBI_THROW( CCoreException, eInvalidArg, 
-            "CFormatGuess::TestFormat(): Unsupported format ID." );
+        NCBI_THROW( CCoreException, eInvalidArg,
+            "CFormatGuess::x_TestFormat(): Unsupported format ID." );
     }
 }
 
@@ -379,7 +345,7 @@ CFormatGuess::Initialize()
 }
 
 //  ----------------------------------------------------------------------------
-bool 
+bool
 CFormatGuess::EnsureTestBuffer()
 {
     if ( m_pTestBuffer ) {
@@ -411,13 +377,13 @@ CFormatGuess::EnsureStats()
         return true;
     }
 
-    CNcbiIstrstream TestBuffer( 
+    CNcbiIstrstream TestBuffer(
         reinterpret_cast<const char*>( m_pTestBuffer ), m_iTestDataSize );
     string strLine;
 
     init_symbol_type_table();
     // Things we keep track of:
-    //   m_iStatsCountAlNumChars: number of characters that are letters or 
+    //   m_iStatsCountAlNumChars: number of characters that are letters or
     //     digits
     //   m_iStatsCountData: number of characters not part of a line starting
     //     with '>'
@@ -482,7 +448,7 @@ CFormatGuess::TestFormatRepeatMasker(
     if ( ! EnsureStats() || ! EnsureSplitLines() ) {
         return false;
     }
-    return IsInputRepeatMaskerWithHeader() || 
+    return IsInputRepeatMaskerWithHeader() ||
         IsInputRepeatMaskerWithoutHeader();
 }
 
@@ -494,7 +460,7 @@ CFormatGuess::TestFormatPhrapAce(
     if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
         return false;
     }
-    
+
     ITERATE( list<string>, it, m_TestLines ) {
         if ( IsLinePhrapId( *it ) ) {
             return true;
@@ -511,14 +477,14 @@ CFormatGuess::TestFormatGtf(
     if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
         return false;
     }
-    
+
     list<string>::iterator it = m_TestLines.begin();
     for ( ;  it != m_TestLines.end();  ++it) {
         if ( !it->empty()  &&  (*it)[0] != '#') {
             break;
         }
     }
-    
+
     for ( ;  it != m_TestLines.end();  ++it) {
         if ( ! IsLineGtf( *it ) ) {
             return false;
@@ -526,7 +492,7 @@ CFormatGuess::TestFormatGtf(
     }
     return true;
 }
-    
+
 //  -----------------------------------------------------------------------------
 bool
 CFormatGuess::TestFormatGlimmer3(
@@ -551,7 +517,7 @@ CFormatGuess::TestFormatGlimmer3(
 
     return false;
 }
-    
+
 //  -----------------------------------------------------------------------------
 bool
 CFormatGuess::TestFormatAgp(
@@ -567,7 +533,7 @@ CFormatGuess::TestFormatAgp(
     }
     return true;
 }
-    
+
 //  -----------------------------------------------------------------------------
 bool
 CFormatGuess::TestFormatNewick(
@@ -575,26 +541,26 @@ CFormatGuess::TestFormatNewick(
 {
     if ( ! EnsureTestBuffer() ) {
         return false;
-    }   
+    }
     // Maybe we get home early ...
     if ( m_iTestDataSize > 0 && m_pTestBuffer[0] != '(' ) {
         return false;
-    }   
+    }
     if ( ! EnsureSplitLines() ) {
         return false;
     }
-    
-    string one_line;    
+
+    string one_line;
     ITERATE( list<string>, it, m_TestLines ) {
         one_line += *it;
     }
-    
+
     if ( ! IsLineNewick( one_line ) ) {
         return false;
     }
     return true;
 }
-    
+
 //  -----------------------------------------------------------------------------
 bool
 CFormatGuess::TestFormatBinaryAsn(
@@ -603,14 +569,14 @@ CFormatGuess::TestFormatBinaryAsn(
     if ( ! EnsureTestBuffer() ) {
         return false;
     }
-    
+
     //
     //  Criterion: Presence of any non-printing characters
     //
     EConfidence conf = eNo;
     for (int i = 0;  i < m_iTestDataSize;  ++i) {
-        if ( !isgraph((unsigned char) m_pTestBuffer[i])  &&  
-             !isspace((unsigned char) m_pTestBuffer[i]) ) 
+        if ( !isgraph((unsigned char) m_pTestBuffer[i])  &&
+             !isspace((unsigned char) m_pTestBuffer[i]) )
         {
             if (m_pTestBuffer[i] == '\1') {
                 conf = eMaybe;
@@ -741,8 +707,8 @@ CFormatGuess::TestFormatXml(
     //  Test 2: In the absence of XML specific declarations, check whether the
     //  input starts with the opening tag of a well known set of doc types:
     //
-    static const char* known_types[] = { 
-        "<Blast4-request>" 
+    static const char* known_types[] = {
+        "<Blast4-request>"
     };
     const int num_types = sizeof( known_types ) / sizeof( const char* );
 
@@ -750,11 +716,11 @@ CFormatGuess::TestFormatXml(
         if ( NStr::StartsWith( input, known_types[i], NStr::eCase ) ) {
             return true;
         }
-    } 
-    
+    }
+
     return false;
 }
-    
+
 //  -----------------------------------------------------------------------------
 bool
 CFormatGuess::TestFormatAlignment(
@@ -767,13 +733,13 @@ CFormatGuess::TestFormatAlignment(
     // Alignment files come in all different shapes and broken formats,
     // and some of them are hard to recognize as such, in particular
     // if they have been hacked up in a text editor.
-    
+
     // This functions only concerns itself with the ones that are
     // easy to recognize.
-    
+
     // Note: We can live with false negatives. Avoid false positives
     // at all cost.
-    
+
     ITERATE( list<string>, it, m_TestLines ) {
         if ( NPOS != it->find( "#NEXUS" ) ) {
             return true;
@@ -793,7 +759,7 @@ CFormatGuess::TestFormatTable(
     if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
         return false;
     }
-    
+
     //
     //  NOTE 1:
     //  There is a bunch of file formats that are a special type of table and
@@ -915,8 +881,8 @@ CFormatGuess::TestFormatTextAsn(
     if ( dAlNumFraction < 0.80 ) {
         return false;
     }
-    
-    CNcbiIstrstream TestBuffer( 
+
+    CNcbiIstrstream TestBuffer(
         reinterpret_cast<const char*>( m_pTestBuffer ), m_iTestDataSize );
     string strLine;
 
@@ -926,7 +892,7 @@ CFormatGuess::TestFormatTextAsn(
         NStr::Tokenize( strLine, " \t", Fields, NStr::eMergeDelims );
         if ( IsAsnComment( Fields  ) ) {
             continue;
-        }      
+        }
         return ( Fields.size() >= 2 && Fields[1] == "::=" );
     }
     return false;
@@ -976,8 +942,8 @@ CFormatGuess::TestFormatBed(
         if ( str.empty() ) {
             continue;
         }
-        
-        //  
+
+        //
         //  while occurrence of the following decorations _is_ a good sign, they could
         //  also be indicator for a variety of other UCSC data formats
         //
@@ -991,7 +957,7 @@ CFormatGuess::TestFormatBed(
         if ( NStr::StartsWith( str, "#" ) ) {
             continue;
         }
-        
+
         vector<string> columns;
         NStr::Tokenize( str, " \t", columns, NStr::eMergeDelims );
         if (columns.size() < 3 || columns.size() > 12) {
@@ -1017,13 +983,13 @@ CFormatGuess::TestFormatBed15(
     if ( ! EnsureStats() || ! EnsureSplitLines() ) {
         return false;
     }
-    
+
     size_t columncount = 15;
     ITERATE( list<string>, it, m_TestLines ) {
         if ( NStr::TruncateSpaces( *it ).empty() ) {
             continue;
         }
-        //  
+        //
         //  while occurrence of the following decorations _is_ a good sign, they could
         //  also be indicator for a variety of other UCSC data formats
         //
@@ -1036,7 +1002,7 @@ CFormatGuess::TestFormatBed15(
         if ( NStr::StartsWith( *it, "#" ) ) {
             continue;
         }
-        
+
         vector<string> columns;
         NStr::Tokenize( *it, " \t", columns, NStr::eMergeDelims );
         if ( columns.size() != columncount ) {
@@ -1077,7 +1043,7 @@ bool CFormatGuess::IsInputRepeatMaskerWithHeader()
     //
     string labels_1st_line[] = { "SW", "perc", "query", "position", "matching", "" };
     string labels_2nd_line[] = { "score", "div.", "del.", "ins.", "sequence", "" };
-    
+
     //
     //  Purge junk lines:
     //
@@ -1088,10 +1054,11 @@ bool CFormatGuess::IsInputRepeatMaskerWithHeader()
             break;
         }
     }
+
     if ( it == m_TestLines.end() ) {
         return false;
     }
-    
+
     //
     //  Verify first line of labels:
     //
@@ -1102,7 +1069,7 @@ bool CFormatGuess::IsInputRepeatMaskerWithHeader()
             return false;
         }
     }
-    
+
     //
     //  Verify second line of labels:
     //
@@ -1117,7 +1084,7 @@ bool CFormatGuess::IsInputRepeatMaskerWithHeader()
             return false;
         }
     }
-    
+
     //
     //  Should have at least one extra line:
     //
@@ -1125,7 +1092,7 @@ bool CFormatGuess::IsInputRepeatMaskerWithHeader()
     if ( it == m_TestLines.end() ) {
         return false;
     }
-            
+
     return true;
 }
 
@@ -1140,9 +1107,9 @@ bool CFormatGuess::IsInputRepeatMaskerWithoutHeader()
     //  This function assumes the column labels have been stripped and attempts
     //  to identify RMO by checking the data itself.
     //
-    
+
     //
-    //  We declare the data as RMO if we are able to parse every record in the 
+    //  We declare the data as RMO if we are able to parse every record in the
     //  sample we got:
     //
     ITERATE( list<string>, it, m_TestLines ) {
@@ -1154,30 +1121,30 @@ bool CFormatGuess::IsInputRepeatMaskerWithoutHeader()
             return false;
         }
     }
-    
+
     return true;
 }
 
 
 //  ----------------------------------------------------------------------------
-bool 
-CFormatGuess::IsLineNewick( 
+bool
+CFormatGuess::IsLineNewick(
     const string& cline )
 {
     //
     //  Note:
     //  Newick lines are a little tricky. They contain tree structure of the form
     //  (a,b), where each a or be can either be a another tree structure, or a
-    //  label of the form 'ABCD'. The trickiness comes from the fact that these 
+    //  label of the form 'ABCD'. The trickiness comes from the fact that these
     //  beasts are highly recursive, to the point that our 1k read buffer may not
     //  even cover a single line in the file. Which means, we might only have a
     //  partial line to work with.
     //
     //  The test:
     //  Throw away all the labels, i.e. everything between an odd-numbered ' and
-    //  an even numbered tick. After that, there should only remain '(', ')', ';', 
+    //  an even numbered tick. After that, there should only remain '(', ')', ';',
     //  ''', ',', or whitespace.
-    //  Moreover, if there is a semicolon, it must be at the end of the line. 
+    //  Moreover, if there is a semicolon, it must be at the end of the line.
     //
     string line = NStr::TruncateSpaces( cline );
     if ( line.empty() ) {
@@ -1185,7 +1152,7 @@ CFormatGuess::IsLineNewick(
     }
     string delimiters = " ,();";
     for ( size_t i=0; line[i] != 0; ++i ) {
-    
+
         if ( NPOS != delimiters.find( line[i] ) ) {
             if ( line[i] == ';' && i != line.size() - 1 ) {
                 return false;
@@ -1206,7 +1173,7 @@ CFormatGuess::IsLineNewick(
             return true;
         }
         i = label_end;
-    }    
+    }
     return true;
 }
 
@@ -1241,7 +1208,7 @@ bool CFormatGuess::IsLineFlatFileSequence(
 
 
 //  ----------------------------------------------------------------------------
-bool CFormatGuess::IsLabelNewick( 
+bool CFormatGuess::IsLabelNewick(
     const string& label )
 {
     //  Starts with a string of anything other than "[]:", optionally followed by
@@ -1268,7 +1235,7 @@ bool CFormatGuess::IsLabelNewick(
 
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::IsLineAgp( 
-    const string& strLine ) 
+    const string& strLine )
 {
     //
     //  Note: The reader allows for line and endline comments starting with a '#'.
@@ -1276,7 +1243,7 @@ bool CFormatGuess::IsLineAgp(
     //
     string line( strLine );
     size_t uCommentStart = NStr::Find( line, "#" );
-    
+
     if ( NPOS != uCommentStart ) {
         line = line.substr( 0, uCommentStart );
     }
@@ -1284,7 +1251,7 @@ bool CFormatGuess::IsLineAgp(
     if ( line.empty() ) {
         return true;
     }
-    
+
     vector<string> tokens;
     if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
         return false;
@@ -1296,21 +1263,21 @@ bool CFormatGuess::IsLineAgp(
     if ( -1 == NStr::StringToNumeric( tokens[1] ) ) {
         return false;
     }
-    
+
     if ( tokens[2].size() > 1 && tokens[2][0] == '-' ) {
         tokens[2][0] = '1';
     }
     if ( -1 == NStr::StringToNumeric( tokens[2] ) ) {
         return false;
     }
-    
+
     if ( tokens[3].size() > 1 && tokens[3][0] == '-' ) {
         tokens[3][0] = '1';
     }
     if ( -1 == NStr::StringToNumeric( tokens[3] ) ) {
         return false;
     }
-    
+
     if ( tokens[4].size() != 1 || NPOS == tokens[4].find_first_of( "ADFGPNOW" ) ) {
         return false;
     }
@@ -1333,10 +1300,10 @@ bool CFormatGuess::IsLineAgp(
             return false;
         }
     }
-    
+
     return true;
 }
-    
+
 
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::IsLineGlimmer3(
@@ -1380,7 +1347,7 @@ bool CFormatGuess::IsLineGlimmer3(
 
 
 //  ----------------------------------------------------------------------------
-bool CFormatGuess::IsLineGtf( 
+bool CFormatGuess::IsLineGtf(
     const string& line )
 {
     vector<string> tokens;
@@ -1407,39 +1374,39 @@ bool CFormatGuess::IsLineGtf(
 
 
 //  ----------------------------------------------------------------------------
-bool CFormatGuess::IsLinePhrapId( 
-    const string& line ) 
+bool CFormatGuess::IsLinePhrapId(
+    const string& line )
 {
     vector<string> values;
     if ( NStr::Tokenize( line, " \t", values, NStr::eMergeDelims ).empty() ) {
         return false;
     }
-    
+
     //
     //  Old style: "^DNA \\w+ "
     //
     if ( values[0] == "DNA" ) {
         return true;
     }
-    
+
     //
     //  New style: "^AS [0-9]+ [0-9]+"
     //
     if ( values[0] == "AS" ) {
-        return ( 0 <= NStr::StringToNumeric( values[1] ) && 
+        return ( 0 <= NStr::StringToNumeric( values[1] ) &&
           0 <= NStr::StringToNumeric( values[2] ) );
     }
-    
+
     return false;
 }
 
 
 //  ----------------------------------------------------------------------------
-bool CFormatGuess::IsLineRmo( 
-    const string& line ) 
+bool CFormatGuess::IsLineRmo(
+    const string& line )
 {
     const size_t MIN_VALUES_PER_RECORD = 15;
-    
+
     //
     //  Make sure there is enough stuff on that line:
     //
@@ -1447,11 +1414,11 @@ bool CFormatGuess::IsLineRmo(
     if ( NStr::Split( line, " \t", values ).size() < MIN_VALUES_PER_RECORD ) {
         return false;
     }
-    
+
     //
     //  Look at specific values and make sure they are of the correct type:
     //
-    
+
     //  1: positive integer:
     list<string>::iterator it = values.begin();
     if ( ! s_IsTokenPosInt( *it ) ) {
@@ -1475,34 +1442,34 @@ bool CFormatGuess::IsLineRmo(
     if ( ! s_IsTokenDouble( *it ) ) {
         return false;
     }
-    
+
     //  5: string, not checked
     ++it;
-    
+
     //  6: positive integer:
     ++it;
     if ( ! s_IsTokenPosInt( *it ) ) {
         return false;
     }
-    
+
     //  7: positive integer:
     ++it;
     if ( ! s_IsTokenPosInt( *it ) ) {
         return false;
     }
-    
+
     //  8: positive integer, likely in paretheses, not checked:
     ++it;
-    
+
     //  9: '+' or 'C':
     ++it;
     if ( *it != "+" && *it != "C" ) {
         return false;
     }
-    
+
     //  and that's enough for now. But there are at least two more fields 
     //  with values that look testable.
-        
+
     return true;
 }
 
@@ -1527,7 +1494,7 @@ CFormatGuess::EnsureSplitLines()
         return !m_TestLines.empty();
     }
     m_bSplitDone = true;
-    
+
     //
     //  Make sure the given data is ASCII before checking potential line breaks:
     //
@@ -1546,7 +1513,7 @@ CFormatGuess::EnsureSplitLines()
     //  Let's expect at least one line break in the given data:
     //
     string data( m_pTestBuffer, m_iTestDataSize );
-    
+
     m_TestLines.clear();
     if ( NStr::Split( data, "\r\n", m_TestLines ).size() <= 1 ) {
         m_TestLines.clear();
@@ -1562,10 +1529,10 @@ CFormatGuess::EnsureSplitLines()
         m_TestLines.clear();
         return false;
     }
-    
+
     if ( m_iTestDataSize == s_iTestBufferSize ) {
         m_TestLines.pop_back();
-    }    
+    }
     return !m_TestLines.empty();
 }
 
