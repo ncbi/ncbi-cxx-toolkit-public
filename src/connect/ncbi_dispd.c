@@ -122,7 +122,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
     struct SDISPD_Data* data = (struct SDISPD_Data*)((SERV_ITER) iter)->data;
     int code = 0/*success code if any*/;
     if (server_error) {
-        if (server_error == 400)
+        if (server_error == 400  ||  server_error == 403)
             data->fail = 1/*true*/;
     } else if (sscanf(header, "%*s %d", &code) < 1) {
         data->eof = 1/*true*/;
@@ -151,7 +151,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
 }
 
 
-static int/*bool*/ s_Resolve(SERV_ITER iter)
+static void s_Resolve(SERV_ITER iter)
 {
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
     SConnNetInfo* net_info = data->net_info;
@@ -159,7 +159,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     char* s;
     CONN c;
 
-    assert(!data->eof);
+    assert(!(data->eof | data->fail));
     assert(!!net_info->stateless == !!iter->stateless);
     /* Obtain additional header information */
     if ((!(s = SERV_Print(iter, 0, 0))
@@ -179,8 +179,6 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
                                        : !net_info->stateless
                                        ? "Client-Mode: STATEFUL_CAPABLE\r\n"
                                        : "Client-Mode: STATELESS_ONLY\r\n")) {
-        /* all the rest in the net_info structure should be already fine */
-        data->eof = data->fail = 0/*false*/;
         conn = HTTP_CreateConnectorEx(net_info, fHCC_SureFlush, s_ParseHeader,
                                       s_Adjust, iter/*data*/, 0/*cleanup*/);
     }
@@ -188,19 +186,15 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         ConnNetInfo_DeleteUserHeader(net_info, s);
         free(s);
     }
-    if (!conn  ||  CONN_Create(conn, &c) != eIO_Success) {
+    if (conn  &&  CONN_Create(conn, &c) == eIO_Success) {
+        /* Send all the HTTP data, and trigger header callback */
+        CONN_Flush(c);
+        CONN_Close(c);
+    } else {
         CORE_LOGF_X(1, eLOG_Error, ("[DISPATCHER]  Unable to create aux. %s",
                                     conn ? "connection" : "connector"));
         assert(0);
-        return 0/*failed*/;
     }
-    /* This will also send all the HTTP data, and trigger header callback */
-    CONN_Flush(c);
-    CONN_Close(c);
-    /* FIXME for return code evaluation and doulbe n_cand checks!! */
-    return data->n_cand != 0  ||  (!(data->eof | data->fail)
-                                   &&  net_info->stateless
-                                   &&  net_info->firewall)   ? 1 : 0;
 }
 
 
@@ -325,9 +319,11 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         data->eof = 0/*false*/;
     data->n_skip = iter->n_skip;
 
-    if (s_IsUpdateNeeded(iter->time, data)  &&  !(data->eof | data->fail)
-        &&  (!s_Resolve(iter)  ||  !data->n_cand)) {
-        return 0;
+    if (s_IsUpdateNeeded(iter->time, data)) {
+        if (!(data->eof | data->fail))
+            s_Resolve(iter);
+        if (!data->n_cand)
+            return 0;
     }
 
     for (n = 0; n < data->n_cand; n++)
@@ -419,14 +415,17 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
                                  "\r\n");
     data->n_skip = iter->n_skip;
     iter->data   = data;
-    iter->op     = &s_op; /* SERV_Update() [from HTTP callback] expects this */
+    iter->op     = &s_op; /* NB: SERV_Update() [from HTTP callback] expects */
 
     if (g_NCBI_ConnectRandomSeed == 0) {
         g_NCBI_ConnectRandomSeed = iter->time ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
     }
 
-    if (!s_Resolve(iter)) {
+    s_Resolve(iter);
+    if (!data->n_cand  &&  (data->fail
+                            ||  !(data->net_info->stateless  &&
+                                  data->net_info->firewall))) {
         iter->op = 0;
         s_Reset(iter);
         s_Close(iter);
