@@ -287,7 +287,8 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         flags &= ~fGetTitle_Organism;
     }
 
-    if (title.empty()  &&  is_nc  &&  source.NotEmpty()) {
+    if (title.empty()  &&  is_nc  &&  source.NotEmpty()
+        &&  mol_info.NotEmpty()) {
         switch (mol_info->GetBiomol()) {
         case CMolInfo::eBiomol_genomic:
         case CMolInfo::eBiomol_other_genetic:
@@ -336,7 +337,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             title += "), mRNA";
         }
     } else if (title.empty()  &&  is_nr  &&  source.NotEmpty()
-               &&  source->GetOrg().IsSetTaxname()) {
+               &&  source->GetOrg().IsSetTaxname()  &&  mol_info.NotEmpty()) {
         for (CTypeConstIterator<CSeq_feat> it(
                  *hnd.GetTopLevelEntry().GetCompleteSeq_entry());
              it;  ++it) {
@@ -674,7 +675,8 @@ bool GetTitle(const CBioseq& seq, string* title_ptr, TGetTitleFlags flags)
         flags &= ~fGetTitle_Organism;
     }
 
-    if (title.empty()  &&  is_nc  &&  source.NotEmpty()) {
+    if (title.empty()  &&  is_nc  &&  source.NotEmpty()
+        &&  mol_info.NotEmpty()) {
         switch (mol_info->GetBiomol()) {
         case CMolInfo::eBiomol_genomic:
         case CMolInfo::eBiomol_other_genetic:
