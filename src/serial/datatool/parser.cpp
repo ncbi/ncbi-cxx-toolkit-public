@@ -85,7 +85,10 @@ AutoPtr<CDataTypeModule> ASNParser::Module(void)
     CopyComments(module->Comments());
 
     Consume(K_DEFINITIONS, "DEFINITIONS");
-    Consume(T_DEFINE, "::=");
+    while (NextToken().GetText() != "::=") {
+        Consume();
+    }
+    Consume();
     Consume(K_BEGIN, "BEGIN");
 
     Next();

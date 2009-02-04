@@ -102,7 +102,7 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
     m_Comments.PrintASN(out, 0, CComments::eMultiline);
 
     out <<
-        ToAsnName(GetName()) << " DEFINITIONS ::=\n"
+        ToAsnName(GetName()) << " DEFINITIONS AUTOMATIC TAGS ::=\n"
         "BEGIN\n"
         "\n";
 
