@@ -35,7 +35,9 @@
  *
  */
 
-#include <common/ncbi_package_ver.h>
+#ifdef   NCBI_CXX_TOOLKIT
+#  include <common/ncbi_package_ver.h>
+#endif /*NCBI_CXX_TOOLKIT*/
 
 #ifdef NCBI_PACKAGE
 
