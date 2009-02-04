@@ -1307,6 +1307,8 @@ CDataValue* DTDParser::x_AttribValue(const DTDAttribute& att,
     case DTDAttribute::eEntities:
     case DTDAttribute::eNotation:
     case DTDAttribute::eString:
+        value = new CStringDataValue(defvalue);
+        break;
     case DTDAttribute::eEnum:
         value = new CIdDataValue(defvalue);
         break;
