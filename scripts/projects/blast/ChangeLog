@@ -1,3 +1,17 @@
+February 3, 2009 (SVN revision: 151309)
+* First 2.2.20 release
+* Added support for smaller lookup tables for small queries.
+* Added support for partial sequence fetching during traceback.
+* Fixed the 2-hit algorithm so that no overlap between two hits is allowed.
+* Implemented a new method to compute effective observations and new
+entropy-based method to compute column-specific pseudocounts in PSI-BLAST.
+* Remote BLAST database data loader is used as a fallback if local BLAST 
+databases cannot be found.
+* Bug fixes, improved error messages, and support for ASN.1 input in 
+makeblastdb.
+* Bug fixes and performance improvements to subject masking feature.
+* Added the update_blastdb.pl script
+
 November 3, 2008 (SVN revision: 144798)
 * First 2.2.19 release
 * Made sequence ID/title display uniform in sequence filtering applications.
