@@ -155,6 +155,7 @@ static void s_Resolve(SERV_ITER iter)
 {
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
     SConnNetInfo* net_info = data->net_info;
+    EIO_Status status = eIO_Success;
     CONNECTOR conn = 0;
     char* s;
     CONN c;
@@ -186,13 +187,15 @@ static void s_Resolve(SERV_ITER iter)
         ConnNetInfo_DeleteUserHeader(net_info, s);
         free(s);
     }
-    if (conn  &&  CONN_Create(conn, &c) == eIO_Success) {
-        /* Send all the HTTP data, and trigger header callback */
+    if (conn  &&  (status = CONN_Create(conn, &c)) == eIO_Success) {
+        /* Send all the HTTP data, then trigger header callback */
         CONN_Flush(c);
         CONN_Close(c);
     } else {
-        CORE_LOGF_X(1, eLOG_Error, ("[DISPATCHER]  Unable to create aux. %s",
-                                    conn ? "connection" : "connector"));
+        CORE_LOGF_X(1, eLOG_Error,
+                    ("[%s]  Unable to create auxiliary HTTP %s: %s",
+                     iter->name, conn ? "connection" : "connector",
+                     IO_StatusStr(conn ? status : eIO_Unknown)));
         assert(0);
     }
 }
@@ -258,8 +261,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
             while (*text  &&  isspace((unsigned char)(*text)))
                 text++;
             CORE_LOGF_X(2, failure ? eLOG_Warning : eLOG_Note,
-                        ("[DISPATCHER %s]  %s",
-                         failure ? "FAILURE" : "MESSAGE", text));
+                        ("[%s]  %s", data->net_info->service, text));
         }
 #endif /*_DEBUG && !NDEBUG*/
         if (failure) {
@@ -364,7 +366,7 @@ static void s_Reset(SERV_ITER iter)
 static void s_Close(SERV_ITER iter)
 {
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
-    assert(!data->n_cand); /* s_Reset() had to be called before */
+    assert(!data->n_cand); /*s_Reset() had to be called before*/
     if (data->cand)
         free(data->cand);
     ConnNetInfo_Destroy(data->net_info);
@@ -389,15 +391,20 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 
     if (!(data = (struct SDISPD_Data*) calloc(1, sizeof(*data))))
         return 0;
+    iter->data = data;
 
     assert(net_info); /*must be called with non-NULL*/
-    if ((data->net_info = ConnNetInfo_Clone(net_info)) != 0)
-        data->net_info->service = iter->name; /* SetupStandardArgs() expects */
-    if (!ConnNetInfo_SetupStandardArgs(data->net_info)) {
-        ConnNetInfo_Destroy(data->net_info);
-        free(data);
+    data->net_info = ConnNetInfo_Clone(net_info);
+    if (!ConnNetInfo_SetupStandardArgs(data->net_info, iter->name)) {
+        s_Close(iter);
         return 0;
     }
+
+    if (g_NCBI_ConnectRandomSeed == 0) {
+        g_NCBI_ConnectRandomSeed = iter->time ^ NCBI_CONNECT_SRAND_ADDEND;
+        srand(g_NCBI_ConnectRandomSeed);
+    }
+
     /* Reset request method to be GET ('cause no HTTP body is ever used) */
     data->net_info->req_method = eReqMethod_Get;
     if (iter->stateless)
@@ -414,19 +421,14 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 #endif /*NCBI_CXX_TOOLKIT*/
                                  "\r\n");
     data->n_skip = iter->n_skip;
-    iter->data   = data;
-    iter->op     = &s_op; /* NB: SERV_Update() [from HTTP callback] expects */
 
-    if (g_NCBI_ConnectRandomSeed == 0) {
-        g_NCBI_ConnectRandomSeed = iter->time ^ NCBI_CONNECT_SRAND_ADDEND;
-        srand(g_NCBI_ConnectRandomSeed);
-    }
-
+    iter->op = &s_op; /*SERV_Update() [from HTTP callback] expects*/
     s_Resolve(iter);
+    iter->op = 0;
+
     if (!data->n_cand  &&  (data->fail
                             ||  !(data->net_info->stateless  &&
                                   data->net_info->firewall))) {
-        iter->op = 0;
         s_Reset(iter);
         s_Close(iter);
         return 0;

@@ -402,11 +402,12 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ParseURL
  );
 
 
-/* Setup standard arguments:  service, address, and platform.
+/* Setup standard arguments:  service(as passed), address, and platform.
  * Return non-zero on success; zero on error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetupStandardArgs
-(SConnNetInfo* info
+(SConnNetInfo* info,
+ const char*   service
  );
 
 

@@ -246,9 +246,8 @@ static SERV_ITER s_Open(const char*          service,
          !(do_dispd= !s_IsMapperConfigured(service, REG_CONN_DISPD_DISABLE)) ||
          !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
         if (!do_lbsmd  &&  !do_dispd) {
-            CORE_LOGF_X(1, eLOG_Warning,
-                        ("[SERV]  No service mappers available for `%s'",
-                         service));
+            CORE_LOGF_X(1, eLOG_Error,
+                        ("[%s]  No service mappers available", service));
         }
         SERV_Close(iter);
         return 0;
@@ -504,7 +503,7 @@ void SERV_Reset(SERV_ITER iter)
     iter->last  = 0;
     iter->time  = 0;
     s_SkipSkip(iter);
-    if (iter->op && iter->op->Reset)
+    if (iter->op  &&  iter->op->Reset)
         (*iter->op->Reset)(iter);
 }
 
@@ -518,8 +517,11 @@ void SERV_Close(SERV_ITER iter)
     for (i = 0; i < iter->n_skip; i++)
         free(iter->skip[i]);
     iter->n_skip = 0;
-    if (iter->op && iter->op->Close)
-        (*iter->op->Close)(iter);
+    if (iter->op) {
+        if (iter->op->Close)
+            (*iter->op->Close)(iter);
+        iter->op = 0;
+    }
     if (iter->skip)
         free(iter->skip);
     if (iter->name)
@@ -533,7 +535,7 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
     static const char used_server_info[] = "Used-Server-Info-";
     int retval = 0/*not updated yet*/;
 
-    if (iter && iter->op && text) {
+    if (iter  &&  iter->op  &&  text) {
         const char *c, *b;
         iter->time = (TNCBI_Time) time(0);
         for (b = text; (c = strchr(b, '\n')) != 0; b = c + 1) {

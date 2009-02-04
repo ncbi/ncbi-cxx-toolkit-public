@@ -810,42 +810,43 @@ static const char* s_ClientAddress(const char* client_host,
 }
 
 
-extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info)
+extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
+                                                 const char*   service)
 {
-    static const char service[]  = "service";
-    static const char address[]  = "address";
-    static const char platform[] = "platform";
+    static const char kService[]  = "service";
+    static const char kAddress[]  = "address";
+    static const char kPlatform[] = "platform";
     int/*bool*/ local_host;
     const char* arch;
     const char* addr;
 
     if (!info)
         return 0/*failed*/;
-    if (!info->service  ||  !*info->service) {
+    if (!service  ||  !*service) {
         assert(0);
         return 0/*failed*/;
     }
     /* Dispatcher CGI args (may sacrifice some if they don't fit altogether) */
     if (!(arch = CORE_GetPlatform())  ||  !*arch)
-        ConnNetInfo_DeleteArg(info, platform);
+        ConnNetInfo_DeleteArg(info, kPlatform);
     else
-        ConnNetInfo_PreOverrideArg(info, platform, arch);
+        ConnNetInfo_PreOverrideArg(info, kPlatform, arch);
     local_host = !info->client_host[0];
     if (local_host  &&
         !SOCK_gethostbyaddr(0, info->client_host, sizeof(info->client_host))) {
         SOCK_gethostname(info->client_host, sizeof(info->client_host));
     }
     if (!(addr = s_ClientAddress(info->client_host, local_host))  ||  !*addr)
-        ConnNetInfo_DeleteArg(info, address);
+        ConnNetInfo_DeleteArg(info, kAddress);
     else
-        ConnNetInfo_PreOverrideArg(info, address, addr);
+        ConnNetInfo_PreOverrideArg(info, kAddress, addr);
     if (addr != info->client_host)
         free((void*) addr);
-    if (!ConnNetInfo_PreOverrideArg(info, service, info->service)) {
-        ConnNetInfo_DeleteArg(info, platform);
-        if (!ConnNetInfo_PreOverrideArg(info, service, info->service)) {
-            ConnNetInfo_DeleteArg(info, address);
-            if (!ConnNetInfo_PreOverrideArg(info, service, info->service))
+    if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
+        ConnNetInfo_DeleteArg(info, kPlatform);
+        if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
+            ConnNetInfo_DeleteArg(info, kAddress);
+            if (!ConnNetInfo_PreOverrideArg(info, kService, service))
                 return 0/*failed*/;
         }
     }
