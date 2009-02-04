@@ -31,7 +31,6 @@
  */
 
 #include <connect/services/netcache_api.hpp>
-#include <connect/services/netcache_client.hpp>
 #include <connect/services/error_codes.hpp>
 
 #include <corelib/ncbireg.hpp>

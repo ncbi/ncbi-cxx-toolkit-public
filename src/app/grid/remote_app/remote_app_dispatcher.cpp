@@ -36,7 +36,6 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/netschedule_api.hpp>
-#include <connect/services/netcache_client.hpp>
 #include <connect/services/blob_storage_netcache.hpp>
 #include <connect/services/ra_dispatcher_client.hpp>
 #include <connect/services/remote_app.hpp>

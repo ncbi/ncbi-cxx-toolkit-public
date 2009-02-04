@@ -31,7 +31,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include <connect/services/netcache_client.hpp>
 #include <connect/services/grid_worker_app.hpp>
 #include <connect/services/grid_debug_context.hpp>
 #include <connect/services/grid_control_thread.hpp>

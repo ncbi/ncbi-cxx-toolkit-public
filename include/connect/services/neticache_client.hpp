@@ -37,7 +37,7 @@
 /// NetCache ICache client specs.
 ///
 
-#include <connect/services/netcache_client.hpp>
+#include <connect/services/netservice_client.hpp>
 #include <connect/services/srv_discovery.hpp>
 
 #include <util/cache/icache.hpp>

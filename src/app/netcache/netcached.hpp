@@ -36,7 +36,6 @@
 
 #include <connect/server.hpp>
 #include <connect/server_monitor.hpp>
-#include <connect/services/netcache_client.hpp>
 
 #include <util/cache/icache_clean_thread.hpp>
 #include <bdb/bdb_blobcache.hpp>
