@@ -248,7 +248,7 @@ void CCleanup_imp::x_SubtypeCleanup (
 
 {
     _ASSERT (BIOSOURCE_HAS_SUBSOURCE (bs));
-    
+ 
     EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
         CSubSource& sbs = **it;
         BasicCleanup (sbs);
@@ -317,38 +317,20 @@ void CCleanup_imp::x_SubtypeCleanup (
     // sort and remove duplicates.
     // Do not sort before merging primer_seq's above.
 
-/*
-#define IS_SORTED(Base, Var, Func) \
-(! (Base##_Test(Var)) || \
-    is_sorted (Base##_Set(Var).begin(), \
-               Base##_Set(Var).end(), \
-               Func()))
-
-
-#define SUBSOURCE_ON_BIOSOURCE_Type      CBioSource::TSubtype
-#define SUBSOURCE_ON_BIOSOURCE_Test(Var) (Var).IsSetSubtype()
-#define SUBSOURCE_ON_BIOSOURCE_Get(Var)  (Var).GetSubtype()
-#define SUBSOURCE_ON_BIOSOURCE_Set(Var)  (Var).SetSubtype()
-
-    if ((! SUBSOURCE_ON_BIOSOURCE_Test(bs)) || seq_mac_is_sorted (SUBSOURCE_ON_BIOSOURCE_Set(bs).begin(), SUBSOURCE_ON_BIOSOURCE_Set(bs).end(), s_SubsourceCompare)) {
-    }
-
-#define TEST_IS_SORTED(Base, Var, Func) \
-(Base##_Test(Var) && \
-seq_mac_is_sorted (Base##_Set(Var).begin(), \
-                   Base##_Set(Var).end(), \
-                   Func))
-
-    if (TEST_IS_SORTED (SUBSOURCE_ON_BIOSOURCE, bs, s_SubsourceCompare)) {
-    }
-
     if (! SUBSOURCE_ON_BIOSOURCE_IS_SORTED (bs, s_SubsourceCompare)) {
+        SORT_SUBSOURCE_ON_BIOSOURCE (bs, s_SubsourceCompare);
+        ChangeMade(CCleanupChange::eCleanSubsource);
     }
-*/
+    
+    if (! SUBSOURCE_ON_BIOSOURCE_IS_UNIQUE (bs, s_SubsourceEqual)) {
+        UNIQUE_SUBSOURCE_ON_BIOSOURCE (bs, s_SubsourceEqual);
+        ChangeMade(CCleanupChange::eCleanSubsource);
+    }
 
+    /*
     CBioSource::TSubtype& subtypes = bs.SetSubtype();
     
-    if (! seq_mac_is_sorted(subtypes.begin(), subtypes.end(), s_SubsourceCompare)) {
+    if (! seq_mac_is_sorted (subtypes.begin(), subtypes.end(), s_SubsourceCompare)) {
         ChangeMade(CCleanupChange::eCleanSubsource);
         subtypes.sort(s_SubsourceCompare);        
     }
@@ -357,8 +339,36 @@ seq_mac_is_sorted (Base##_Set(Var).begin(), \
     if (subtypes_cnt != subtypes.size()) {
         ChangeMade(CCleanupChange::eCleanSubsource);
     }
+    */
 }
 
+/*
+static bool s_MySDbtagCompare (
+    const CRef<CDbtag>& db1,
+    const CRef<CDbtag>& db2
+)
+
+{
+    const CDbtag& dbt1 = *(db1);
+    const CDbtag& dbt2 = *(db1);
+
+    // is dbt1 < dbt2
+    return dbt1.Compare(dbt2) < 0;
+}
+
+static bool s_MySDbtagEqual (
+    const CRef<CDbtag>& db1,
+    const CRef<CDbtag>& db2
+)
+
+{
+    const CDbtag& dbt1 = *(db1);
+    const CDbtag& dbt2 = *(db1);
+
+    // is dbt1 == dbt2
+    return dbt1.Compare(dbt2) == 0;
+}
+*/
 
 void CCleanup_imp::BasicCleanup(
     COrg_ref& oref
@@ -398,8 +408,7 @@ void CCleanup_imp::BasicCleanup(
     COrg_ref::TDb& dbxref = oref.SetDb();
     COrg_ref::TDb::iterator it = dbxref.begin();
 
-    if ( ! objects::is_sorted(dbxref.begin(), dbxref.end(),
-                              SDbtagCompare())) {
+    if ( ! seq_mac_is_sorted(dbxref.begin(), dbxref.end(), s_MySDbtagCompare)) {
         ChangeMade(CCleanupChange::eCleanDbxrefs);
         stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());            
     }
@@ -411,27 +420,13 @@ void CCleanup_imp::BasicCleanup(
     }
 
     /*
-    if (DBXREF_ON_ORGREF_Test(oref)) {
-        if (objects::is_sorted (DBXREF_ON_ORGREF_Set(oref).begin(), DBXREF_ON_ORGREF_Set(oref).end(), SDbtagCompare())) {
-            ChangeMade (CCleanupChange::eCleanDbxrefs);
-        }
-    }
-
-    if (DBXREF_ON_ORGREF_Test(oref) && objects::is_sorted (DBXREF_ON_ORGREF_Set(oref).begin(), DBXREF_ON_ORGREF_Set(oref).end(), SDbtagCompare())) {
+    if (! DBXREF_ON_ORGREF_IS_SORTED (oref, s_MySDbtagCompare)) {
+        SORT_DBXREF_ON_ORGREF (oref, s_MySDbtagCompare);
         ChangeMade (CCleanupChange::eCleanDbxrefs);
     }
 
-     if (IS_SORTED (DBXREF_ON_ORGREF, oref, SDbtagCompare())) {
-        ChangeMade (CCleanupChange::eCleanDbxrefs);
-    }
-
-    if (! DBXREF_ON_ORGREF_IS_SORTED (oref, SDbtagCompare)) {
-        SORT_DBXREF_ON_ORGREF (oref, SDbtagCompare);
-        ChangeMade (CCleanupChange::eCleanDbxrefs);
-    }
-
-    if (! DBXREF_ON_ORGREF_IS_UNIQUE(oref, SDbtagEqual)) {
-        UNIQUE_DBXREF_ON_ORGREF (oref, SDbtagEqual);
+    if (! DBXREF_ON_ORGREF_IS_UNIQUE(oref, s_MySDbtagEqual)) {
+        UNIQUE_DBXREF_ON_ORGREF (oref, s_MySDbtagEqual);
         ChangeMade (CCleanupChange::eCleanDbxrefs);
     }
     */
