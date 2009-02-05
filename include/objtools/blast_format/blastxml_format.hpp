@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
  */
 
 /// Interface for filling the top layer of the XML report
-class IBlastXMLReportData
+class NCBI_XBLASTFORMAT_EXPORT IBlastXMLReportData
 {
 public:
     /// Our virtual destructor

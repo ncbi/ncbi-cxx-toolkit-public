@@ -56,7 +56,7 @@ Author: Jason Papadopoulos
 BEGIN_NCBI_SCOPE
 
 /// This class formats the BLAST results for command line applications
-class CBlastFormat
+class NCBI_XBLASTFORMAT_EXPORT CBlastFormat
 {
 public:
     /// The line length of pairwise blast output

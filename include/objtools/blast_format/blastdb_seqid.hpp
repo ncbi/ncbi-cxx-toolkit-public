@@ -44,7 +44,7 @@
 BEGIN_NCBI_SCOPE
 
 /// Encapsulates identifier to retrieve data from a BLAST database
-class CBlastDBSeqId : public CObject
+class NCBI_XBLASTFORMAT_EXPORT CBlastDBSeqId : public CObject
 {
 public:
     /// Default value for an invalid entry
