@@ -248,7 +248,8 @@ bool CTableFieldHandle_Base::TryGet(const CSeq_annot_Handle& annot,
                                     size_t row,
                                     string& v) const
 {
-    const string* ptr = GetPtr(annot, row, ptr, false);
+    const string* ptr = 0;
+    ptr = GetPtr(annot, row, ptr, false);
     if ( ptr ) {
         v = *ptr;
         return true;
@@ -323,7 +324,8 @@ bool CTableFieldHandle_Base::TryGet(const CSeq_annot_Handle& annot,
                                     size_t row,
                                     vector<char>& v) const
 {
-    const vector<char>* ptr = GetPtr(annot, row, ptr, false);
+    const vector<char>* ptr = 0;
+    ptr = GetPtr(annot, row, ptr, false);
     if ( ptr ) {
         v = *ptr;
         return true;
