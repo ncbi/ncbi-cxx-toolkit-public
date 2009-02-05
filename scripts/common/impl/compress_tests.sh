@@ -15,6 +15,7 @@ for dir in "$@"; do
         esac
     fi
     for f in $dir/*; do
+        [ -f "$f" ]  ||  continue
         case "`basename $f`" in
             plugin_test | speedtest | streamtest \
                 | testipub | test_checksum | test_mghbn \
