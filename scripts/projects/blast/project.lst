@@ -28,6 +28,7 @@ util/cache$
 objtools$
 objtools/alnmgr$
 objtools/readers$
+objtools/idmapper$
 objtools/seqmasks_io$
 objtools/blast$
 objtools/blast/seqdb_reader$

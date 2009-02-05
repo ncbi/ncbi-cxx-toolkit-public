@@ -30,15 +30,15 @@ def extract_installer():
 def main():
     """ Creates NSIS installer for BLAST command line binaries """
     global VERBOSE #IGNORE:W0603
-    parser = OptionParser("%prog <installation directory>")
+    parser = OptionParser("%prog <blast_version> <installation directory>")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output", dest="VERBOSE")
     options, args = parser.parse_args()
-    if len(args) != 1:
+    if len(args) != 2:
         parser.error("Incorrect number of arguments")
         return 1
     
-    installdir = args[0]
+    blast_version, installdir = args
     VERBOSE = options.VERBOSE
     
     apps = [ "blastn.exe", 
@@ -65,7 +65,7 @@ def main():
         copy(app, cwd)
     
     
-    update_blast_version(NSIS_CONFIG)
+    update_blast_version(NSIS_CONFIG, blast_version)
     # Copy necessary files to the current working directory
     copy(NSIS_CONFIG, cwd)
     license_file = os.path.join(SCRIPT_DIR, "..", "..", "LICENSE")

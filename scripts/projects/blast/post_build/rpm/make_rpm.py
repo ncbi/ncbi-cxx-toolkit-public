@@ -18,9 +18,9 @@ VERBOSE = False
 
 # Name of the temporary rpmbuild directory
 RPMBUILD_HOME = "rpmbuild"
-PACKAGE_NAME = "ncbi-blast-" + BLAST_VERSION + "+"
+PACKAGE_NAME = ""
 # Name of the source TARBALL to create
-TARBALL = PACKAGE_NAME + ".tgz"
+TARBALL = ""
 # Local RPM configuration file
 RPMMACROS = os.path.join(os.path.expanduser("~"), ".rpmmacros")
 
@@ -90,14 +90,14 @@ def cleanup_svn_co():
             shutil.rmtree(name)
             
 
-def svn_checkout():
+def svn_checkout(blast_version):
     """Checkout BLAST sources for this release from SVN"""
     # NCBI SVN repository
     svn_ncbi = "https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit"
 
     # Check out the sources
     cmd = "svn -q co --username svnread --password allowed " + svn_ncbi
-    cmd += "/release/blast/" + BLAST_VERSION + " " + PACKAGE_NAME
+    cmd += "/release/blast/" + blast_version + " " + PACKAGE_NAME
     if os.path.exists(PACKAGE_NAME):
         shutil.rmtree(PACKAGE_NAME)
     safe_exec(cmd)
@@ -118,7 +118,7 @@ def cleanup():
     if os.path.exists(PACKAGE_NAME):
         shutil.rmtree(PACKAGE_NAME)
 
-def run_rpm():
+def run_rpm(blast_version):
     """Run the rpmbuild command"""
     shutil.rmtree(PACKAGE_NAME)
     shutil.move(TARBALL, os.path.join(RPMBUILD_HOME, "SOURCES"))
@@ -126,7 +126,7 @@ def run_rpm():
     src = os.path.join(SCRIPT_DIR, rpm_spec)
     dest = os.path.join(RPMBUILD_HOME, "SPECS", rpm_spec)
     shutil.copyfile(src, dest)
-    update_blast_version(dest)
+    update_blast_version(dest, blast_version)
     cmd = "/usr/bin/rpmbuild -ba " + dest
     safe_exec(cmd)
 
@@ -146,25 +146,28 @@ def move_rpms_to_installdir(installdir):
 
 def main():
     """ Creates RPMs for linux. """
-    parser = OptionParser("%prog <installation directory>")
+    parser = OptionParser("%prog <blast_version> <installation directory>")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output", dest="VERBOSE")
     options, args = parser.parse_args()
-    if len(args) != 1:
+    if len(args) != 2:
         parser.error("Incorrect number of arguments")
         return 1
     
-    installdir = args[0]
-    global VERBOSE #IGNORE:W0603
+    blast_version, installdir = args
+    global VERBOSE, PACKAGE_NAME, TARBALL #IGNORE:W0603
     VERBOSE = options.VERBOSE
     if VERBOSE: 
         print "Installing RPM to", installdir
+        
+    PACKAGE_NAME = "ncbi-blast-" + blast_version + "+"
+    TARBALL = PACKAGE_NAME + ".tgz"
     
     setup_rpmbuild()
     cleanup()
-    svn_checkout()
+    svn_checkout(blast_version)
     compress_sources()
-    run_rpm()
+    run_rpm(blast_version)
     move_rpms_to_installdir(installdir)
     cleanup_rpm()
     cleanup()

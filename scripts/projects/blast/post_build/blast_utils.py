@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 """ Various utilities/tools for BLAST """
 
-__all__ = [ "safe_exec", "BLAST_VERSION", "update_blast_version", "MANUAL_URL" ]
+__all__ = [ "safe_exec", "update_blast_version", "MANUAL_URL" ]
 
 import os
 from subprocess import call
 from shutil import move
-
-BLAST_VERSION = "2.2.20" 
         
 # URL from the test Bookshelf server to download the User Manual
 MANUAL_URL = "http://web.ncbi.nlm.nih.gov/bookshelf/picrender.fcgi?"
@@ -30,11 +28,11 @@ def safe_exec(cmd):
         msg += "Execution failed: " + err
         raise RuntimeError(msg)
 
-def update_blast_version(config_file):
+def update_blast_version(config_file, blast_version):
     """Updates the BLAST version in the specified file.
     
     Assumes the specified file contains the string BLAST_VERSION, which will
-    be replaced by the contents of the variable of the same name in this module.
+    be replaced by the contents of the variable passed to this function.
     """
     import re
     temp_fname = os.tmpnam()
@@ -43,7 +41,7 @@ def update_blast_version(config_file):
         out = open(config_file, "w")
         infile = open(temp_fname, "r")
         for line in infile:
-            print >> out, re.sub("BLAST_VERSION", BLAST_VERSION, line),
+            print >> out, re.sub("BLAST_VERSION", blast_version, line),
     finally:
         out.close()
         infile.close()

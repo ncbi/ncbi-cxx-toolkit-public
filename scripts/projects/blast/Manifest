@@ -20,7 +20,7 @@ APP: makeblastdb blastdbcmd blastdb_aliastool convert2blastmask
 APP: $srcdir/src/app/blast/legacy_blast.pl
 APP: $srcdir/src/app/blast/update_blastdb.pl
 
-POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $platform $installdir
+POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir
 
 
 # Each line describes a single configuration
