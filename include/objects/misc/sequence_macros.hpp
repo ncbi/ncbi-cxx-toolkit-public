@@ -525,7 +525,7 @@ NCBI_NC_ITERATE (Base##_Test(Var), Base##_Type, Itr, Base##_Set(Var))
 NCBI_SWITCH (Base##_Test(Var), Base##_Chs(Var))
 
 
-// is_sorted templates
+// is_sorted template
 
 template <class Iter, class Comp>
 bool seq_mac_is_sorted(Iter first, Iter last, Comp comp)
@@ -542,23 +542,8 @@ bool seq_mac_is_sorted(Iter first, Iter last, Comp comp)
     return true;
 }
 
-template <class Iter>
-bool seq_mac_is_sorted(Iter first, Iter last)
-{
-    if (first == last)
-        return true;
-    
-    Iter next = first;
-    for (++next; next != last; first = next, ++next) {
-        if (*next < *first)
-            return false;
-    }
-    
-    return true;
-}
 
-
-// is_unique templates assume that the container is already sorted
+// is_unique template assumes that the container is already sorted
 
 template <class Iterator, class Predicate>
 bool seq_mac_is_unique(Iterator iter1, Iterator iter2, Predicate pred)
@@ -575,21 +560,6 @@ bool seq_mac_is_unique(Iterator iter1, Iterator iter2, Predicate pred)
     return true;
 }
 
-template <class Iterator>
-bool seq_mac_is_unique(Iterator iter1, Iterator iter2)
-{
-    Iterator prev = iter1;
-    if (iter1 == iter2) {
-        return true;
-    }
-    for (++iter1;  iter1 != iter2;  ++iter1, ++prev) {
-        if (*iter1 == *prev) {
-            return false;
-        }
-    }
-    return true;
-}
-
 
 /// IS_SORTED base macro
 
@@ -597,14 +567,19 @@ bool seq_mac_is_unique(Iterator iter1, Iterator iter2)
 ((! Base##_Test(Var)) || \
 seq_mac_is_sorted (Base##_Set(Var).begin(), \
                    Base##_Set(Var).end(), \
-                   Func()))
+                   Func))
 
-/// DO_SORT base macro
+/// DO_LIST_SORT base macro
 
-#define DO_SORT(Base, Var, Func) \
+#define DO_LIST_SORT(Base, Var, Func) \
+(Base##_Set(Var).sort (Func))
+
+/// DO_VECTOR_SORT base macro
+
+#define DO_VECTOR_SORT(Base, Var, Func) \
 (stable_sort (Base##_Set(Var).begin(), \
               Base##_Set(Var).end(), \
-              Func()))
+              Func))
 
 /// IS_UNIQUE base macro
 
@@ -612,7 +587,7 @@ seq_mac_is_sorted (Base##_Set(Var).begin(), \
 ((! Base##_Test(Var)) || \
 seq_mac_is_unique (Base##_Set(Var).begin(), \
                    Base##_Set(Var).end(), \
-                   Func()))
+                   Func))
 
 /// DO_UNIQUE base macro
 
@@ -620,7 +595,7 @@ seq_mac_is_unique (Base##_Set(Var).begin(), \
 { \
     Base##_Type::iterator it = unique (Base##_Set(Var).begin(), \
                                        Base##_Set(Var).end(), \
-                                       Func()); \
+                                       Func); \
     it = Base##_Set(Var).erase(it, Base##_Set(Var).end()); \
 }
 
@@ -916,7 +891,7 @@ IS_SORTED (SEQID_ON_BIOSEQ, Var, Func)
 /// SORT_SEQID_ON_BIOSEQ
 
 #define SORT_SEQID_ON_BIOSEQ(Var, Func) \
-DO_SORT (SEQID_ON_BIOSEQ, Var, Func)
+DO_LIST_SORT (SEQID_ON_BIOSEQ, Var, Func)
 
 /// SEQID_ON_BIOSEQ_IS_UNIQUE
 
@@ -1504,7 +1479,7 @@ IS_SORTED (SUBSOURCE_ON_BIOSOURCE, Var, Func)
 /// SORT_SUBSOURCE_ON_BIOSOURCE
 
 #define SORT_SUBSOURCE_ON_BIOSOURCE(Var, Func) \
-DO_SORT (SUBSOURCE_ON_BIOSOURCE, Var, Func)
+DO_LIST_SORT (SUBSOURCE_ON_BIOSOURCE, Var, Func)
 
 /// SUBSOURCE_ON_BIOSOURCE_IS_UNIQUE
 
@@ -1557,7 +1532,7 @@ IS_SORTED (ORGMOD_ON_BIOSOURCE, Var, Func)
 /// SORT_ORGMOD_ON_BIOSOURCE
 
 #define SORT_ORGMOD_ON_BIOSOURCE(Var, Func) \
-DO_SORT (ORGMOD_ON_BIOSOURCE, Var, Func)
+DO_LIST_SORT (ORGMOD_ON_BIOSOURCE, Var, Func)
 
 /// ORGMOD_ON_BIOSOURCE_IS_UNIQUE
 
@@ -1612,7 +1587,7 @@ IS_SORTED (ORGMOD_ON_ORGREF, Var, Func)
 /// SORT_ORGMOD_ON_ORGREF
 
 #define SORT_ORGMOD_ON_ORGREF(Var, Func) \
-DO_SORT (ORGMOD_ON_ORGREF, Var, Func)
+DO_LIST_SORT (ORGMOD_ON_ORGREF, Var, Func)
 
 /// ORGMOD_ON_ORGREF_IS_UNIQUE
 
@@ -1665,7 +1640,7 @@ IS_SORTED (DBXREF_ON_ORGREF, Var, Func)
 /// SORT_DBXREF_ON_ORGREF
 
 #define SORT_DBXREF_ON_ORGREF(Var, Func) \
-DO_SORT (DBXREF_ON_ORGREF, Var, Func)
+DO_VECTOR_SORT (DBXREF_ON_ORGREF, Var, Func)
 
 /// DBXREF_ON_ORGREF_IS_UNIQUE
 
@@ -1765,7 +1740,7 @@ IS_SORTED (ORGMOD_ON_ORGNAME, Var, Func)
 /// SORT_ORGMOD_ON_ORGNAME
 
 #define SORT_ORGMOD_ON_ORGNAME(Var, Func) \
-DO_SORT (ORGMOD_ON_ORGNAME, Var, Func)
+DO_LIST_SORT (ORGMOD_ON_ORGNAME, Var, Func)
 
 /// ORGMOD_ON_ORGNAME_IS_UNIQUE
 
@@ -1933,7 +1908,7 @@ IS_SORTED (EXTRAACCN_ON_GENBANKBLOCK, Var, Func)
 /// SORT_EXTRAACCN_ON_GENBANKBLOC
 
 #define SORT_EXTRAACCN_ON_GENBANKBLOCK(Var, Func) \
-DO_SORT (EXTRAACCN_ON_GENBANKBLOCK, Var, Func)
+DO_LIST_SORT (EXTRAACCN_ON_GENBANKBLOCK, Var, Func)
 
 /// EXTRAACCN_ON_GENBANKBLOCK_IS_UNIQUE
 
@@ -1986,7 +1961,7 @@ IS_SORTED (KEYWORD_ON_GENBANKBLOCK, Var, Func)
 /// SORT_KEYWORD_ON_GENBANKBLOCK
 
 #define SORT_KEYWORD_ON_GENBANKBLOCK(Var, Func) \
-DO_SORT (KEYWORD_ON_GENBANKBLOCK, Var, Func)
+DO_LIST_SORT (KEYWORD_ON_GENBANKBLOCK, Var, Func)
 
 /// KEYWORD_ON_GENBANKBLOCK_IS_UNIQUE
 
@@ -2041,7 +2016,7 @@ IS_SORTED (EXTRAACCN_ON_EMBLBLOCK, Var, Func)
 /// SORT_EXTRAACCN_ON_EMBLBLOCK
 
 #define SORT_EXTRAACCN_ON_EMBLBLOCK(Var, Func) \
-DO_SORT (EXTRAACCN_ON_EMBLBLOCK, Var, Func)
+DO_LIST_SORT (EXTRAACCN_ON_EMBLBLOCK, Var, Func)
 
 /// EXTRAACCN_ON_EMBLBLOCK_IS_UNIQUE
 
@@ -2094,7 +2069,7 @@ IS_SORTED (KEYWORD_ON_EMBLBLOCK, Var, Func)
 /// SORT_KEYWORD_ON_EMBLBLOCK
 
 #define SORT_KEYWORD_ON_EMBLBLOCK(Var, Func) \
-DO_SORT (KEYWORD_ON_EMBLBLOCK, Var, Func)
+DO_LIST_SORT (KEYWORD_ON_EMBLBLOCK, Var, Func)
 
 /// KEYWORD_ON_EMBLBLOCK_IS_UNIQUE
 
@@ -2239,7 +2214,7 @@ IS_SORTED (GBQUAL_ON_SEQFEAT, Var, Func)
 /// SORT_GBQUAL_ON_SEQFEAT
 
 #define SORT_GBQUAL_ON_SEQFEAT(Var, Func) \
-DO_SORT (GBQUAL_ON_SEQFEAT, Var, Func)
+DO_VECTOR_SORT (GBQUAL_ON_SEQFEAT, Var, Func)
 
 /// GBQUAL_ON_SEQFEAT_IS_UNIQUE
 
@@ -2312,7 +2287,7 @@ IS_SORTED (SEQFEATXREF_ON_SEQFEAT, Var, Func)
 /// SORT_SEQFEATXREF_ON_SEQFEAT
 
 #define SORT_SEQFEATXREF_ON_SEQFEAT(Var, Func) \
-DO_SORT (SEQFEATXREF_ON_SEQFEAT, Var, Func)
+DO_VECTOR_SORT (SEQFEATXREF_ON_SEQFEAT, Var, Func)
 
 /// SEQFEATXREF_ON_SEQFEAT_IS_UNIQUE
 
@@ -2385,7 +2360,7 @@ IS_SORTED (DBXREF_ON_SEQFEAT, Var, Func)
 /// SORT_DBXREF_ON_SEQFEAT
 
 #define SORT_DBXREF_ON_SEQFEAT(Var, Func) \
-DO_SORT (DBXREF_ON_SEQFEAT, Var, Func)
+DO_VECTOR_SORT (DBXREF_ON_SEQFEAT, Var, Func)
 
 /// DBXREF_ON_SEQFEAT_IS_UNIQUE
 
@@ -2496,7 +2471,7 @@ IS_SORTED (SYNONYM_ON_GENEREF, Var, Func)
 /// SORT_SYNONYM_ON_GENEREF
 
 #define SORT_SYNONYM_ON_GENEREF(Var, Func) \
-DO_SORT (SYNONYM_ON_GENEREF, Var, Func)
+DO_LIST_SORT (SYNONYM_ON_GENEREF, Var, Func)
 
 /// SYNONYM_ON_GENEREF_IS_UNIQUE
 
@@ -2569,7 +2544,7 @@ IS_SORTED (DBXREF_ON_GENEREF, Var, Func)
 /// SORT_DBXREF_ON_GENEREF
 
 #define SORT_DBXREF_ON_GENEREF(Var, Func) \
-DO_SORT (DBXREF_ON_GENEREF, Var, Func)
+DO_VECTOR_SORT (DBXREF_ON_GENEREF, Var, Func)
 
 /// DBXREF_ON_GENEREF_IS_UNIQUE
 
@@ -2644,7 +2619,7 @@ IS_SORTED (CODEBREAK_ON_CDREGION, Var, Func)
 /// SORT_CODEBREAK_ON_CDREGION
 
 #define SORT_CODEBREAK_ON_CDREGION(Var, Func) \
-DO_SORT (CODEBREAK_ON_CDREGION, Var, Func)
+DO_LIST_SORT (CODEBREAK_ON_CDREGION, Var, Func)
 
 /// CODEBREAK_ON_CDREGION_IS_UNIQUE
 
@@ -2699,7 +2674,7 @@ IS_SORTED (NAME_ON_PROTREF, Var, Func)
 /// SORT_NAME_ON_PROTREF
 
 #define SORT_NAME_ON_PROTREF(Var, Func) \
-DO_SORT (NAME_ON_PROTREF, Var, Func)
+DO_LIST_SORT (NAME_ON_PROTREF, Var, Func)
 
 /// NAME_ON_PROTREF_IS_UNIQUE
 
@@ -2772,7 +2747,7 @@ IS_SORTED (ECNUMBER_ON_PROTREF, Var, Func)
 /// SORT_ECNUMBER_ON_PROTREF
 
 #define SORT_ECNUMBER_ON_PROTREF(Var, Func) \
-DO_SORT (ECNUMBER_ON_PROTREF, Var, Func)
+DO_LIST_SORT (ECNUMBER_ON_PROTREF, Var, Func)
 
 /// ECNUMBER_ON_PROTREF_IS_UNIQUE
 
@@ -2845,7 +2820,7 @@ IS_SORTED (ACTIVITY_ON_PROTREF, Var, Func)
 /// SORT_ACTIVITY_ON_PROTREF
 
 #define SORT_ACTIVITY_ON_PROTREF(Var, Func) \
-DO_SORT (ACTIVITY_ON_PROTREF, Var, Func)
+DO_LIST_SORT (ACTIVITY_ON_PROTREF, Var, Func)
 
 /// ACTIVITY_ON_PROTREF_IS_UNIQUE
 
@@ -2918,7 +2893,7 @@ IS_SORTED (DBXREF_ON_PROTREF, Var, Func)
 /// SORT_DBXREF_ON_PROTREF
 
 #define SORT_DBXREF_ON_PROTREF(Var, Func) \
-DO_SORT (DBXREF_ON_PROTREF, Var, Func)
+DO_VECTOR_SORT (DBXREF_ON_PROTREF, Var, Func)
 
 /// DBXREF_ON_PROTREF_IS_UNIQUE
 
@@ -2993,7 +2968,7 @@ IS_SORTED (STRING_IN_LIST, Var, Func)
 /// SORT_STRING_IN_LIST
 
 #define SORT_STRING_IN_LIST(Var, Func) \
-DO_SORT (STRING_IN_LIST, Var, Func)
+DO_LIST_SORT (STRING_IN_LIST, Var, Func)
 
 /// STRING_IN_LIST_IS_UNIQUE
 
@@ -3048,7 +3023,7 @@ IS_SORTED (CHAR_IN_STRING, Var, Func)
 /// SORT_CHAR_IN_STRING
 
 #define SORT_CHAR_IN_STRING(Var, Func) \
-DO_SORT (CHAR_IN_STRING, Var, Func)
+DO_LIST_SORT (CHAR_IN_STRING, Var, Func)
 
 /// CHAR_IN_STRING_IS_UNIQUE
 
