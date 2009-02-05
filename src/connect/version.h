@@ -41,33 +41,46 @@
 
 #ifdef NCBI_PACKAGE
 
-#  define NETDAEMONS_MAJOR        NCBI_PACKAGE_VERSION_MAJOR
-#  define NETDAEMONS_MINOR        NCBI_PACKAGE_VERSION_MINOR
-#  define NETDAEMONS_PATCH        NCBI_PACKAGE_VERSION_PATCH
+#  define   NETDAEMONS_MAJOR        NCBI_PACKAGE_VERSION_MAJOR
+#  define   NETDAEMONS_MINOR        NCBI_PACKAGE_VERSION_MINOR
+#  define   NETDAEMONS_PATCH        NCBI_PACKAGE_VERSION_PATCH
 
-#  define NETDAEMONS_VERSION_STR  NCBI_PACKAGE_VERSION
+#  define   NETDAEMONS_VERSION_STR  NCBI_PACKAGE_VERSION
 
 #else
 
-#  define NETDAEMONS_MAJOR        2
-#  define NETDAEMONS_MINOR        0
-#  define NETDAEMONS_PATCH        1
+#  define   NETDAEMONS_MAJOR        2
+#  define   NETDAEMONS_MINOR        0
+#  define   NETDAEMONS_PATCH        1
 
-#  define NETDAEMONS_VERSION_STR  NCBI_PACKAGE_VERSION_COMPOSE_STR  \
-                                  (NETDAEMONS_MAJOR,                \
-                                   NETDAEMONS_MINOR,                \
-                                   NETDAEMONS_PATCH)
-#endif
+#  ifdef NCBI_CXX_TOOLKIT
+#    define NETDAEMONS_VERSION_STR  NCBI_PACKAGE_VERSION_COMPOSE_STR    \
+                                   (NETDAEMONS_MAJOR,                   \
+                                    NETDAEMONS_MINOR,                   \
+                                    NETDAEMONS_PATCH)
+#  else
+#    define _NETDAEMONS_STRINGIFY(x)           #x
+#    define _NETDAEMONS_CATENATE_STR(a, b, c)  _NETDAEMONS_STRINGIFY(a) "." \
+                                               _NETDAEMONS_STRINGIFY(b) "." \
+                                               _NETDAEMONS_STRINGIFY(c)
+#    define NETDAEMONS_VERSION_STR _NETDAEMONS_CATENATE_STR             \
+                                   (NETDAEMONS_MAJOR,                   \
+                                    NETDAEMONS_MINOR,                   \
+                                    NETDAEMONS_PATCH)
+#  endif /*NCBI_CXX_TOOLKIT*/
 
-#define NETDAEMONS_VERSION_OF(ma, mi, pa)  ((unsigned int)               \
-                                            ((ma)*100000 + (mi)*1000 + (pa)))
+#endif /*NCBI_PACKAGE*/
 
-#define NETDAEMONS_MAJOR_OF(ver)           ( (ver) / 100000)
-#define NETDAEMONS_MINOR_OF(ver)           (((ver) / 1000) % 100)
-#define NETDAEMONS_PATCH_OF(ver)           ( (ver) % 1000)
+#define   NETDAEMONS_VERSION_OF(ma, mi, pa)  ((unsigned int)              \
+                                              ((ma)*100000 + (mi)*1000 + (pa)))
 
-#define NETDAEMONS_VERSION_INT  NETDAEMONS_VERSION_OF(NETDAEMONS_MAJOR, \
-                                                      NETDAEMONS_MINOR, \
-                                                      NETDAEMONS_PATCH)
+#define   NETDAEMONS_MAJOR_OF(ver)  ( (ver) / 100000)
+#define   NETDAEMONS_MINOR_OF(ver)  (((ver) / 1000) % 100)
+#define   NETDAEMONS_PATCH_OF(ver)  ( (ver) % 1000)
+
+#define   NETDAEMONS_VERSION_INT    NETDAEMONS_VERSION_OF               \
+                                   (NETDAEMONS_MAJOR,                   \
+                                    NETDAEMONS_MINOR,                   \
+                                    NETDAEMONS_PATCH)
 
 #endif /*CONNECT_DAEMONS___VERSION__H*/
