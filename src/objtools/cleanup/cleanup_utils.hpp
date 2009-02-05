@@ -431,6 +431,20 @@ struct SDbtagEqual
 };
 
 
+static bool s_DbtagCompare (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2)
+{
+    // is dbt1 < dbt2
+    return dbt1->Compare(*dbt2) < 0;
+}
+
+
+static bool s_DbtagEqual (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2)
+{
+    // is dbt1 < dbt2
+    return dbt1->Compare(*dbt2) == 0;
+}
+
+
 // Is this range sorted according to the given comparison?
 // needed to see if sorts in cleanup do anything.
 // Maybe should be at a higher level of the source tree?

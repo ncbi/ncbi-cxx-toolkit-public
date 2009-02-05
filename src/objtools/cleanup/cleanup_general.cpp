@@ -94,14 +94,17 @@ void CCleanup_imp::x_TagCleanup(CDbtag::TTag& tag)
 *  GeneW            => HGNC
 *  MGD              => MGI
 *  IFO              => NBRC
+*  BHB              => BioHealthBase
 **/
 void CCleanup_imp::x_DbCleanup(string& db)
 {
-    if (NStr::EqualNocase(db, "Swiss-Prot")) {
+    if (NStr::EqualNocase(db, "Swiss-Prot")
+        || NStr::EqualNocase (db, "SWISSPROT")) {
         db = "UniProtKB/Swiss-Prot";
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::EqualNocase(db, "SPTREMBL")  ||
-               NStr::EqualNocase(db, "TrEMBL")) {
+               NStr::EqualNocase(db, "TrEMBL")
+               || NStr::EqualNocase(db, "UniProt/Swiss-prot")) {
         db = "UniProtKB/TrEMBL";
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::EqualNocase(db, "SUBTILIS")) {
@@ -122,6 +125,12 @@ void CCleanup_imp::x_DbCleanup(string& db)
     } else if (NStr::EqualNocase(db, "IFO")) {
         db = "NBRC";
         ChangeMade(CCleanupChange::eChangeDbxrefs);
+    } else if (NStr::EqualNocase(db, "BHB")) {
+        db = "BioHealthBase";
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
+    } else if (NStr::EqualNocase(db, "GeneDB")) {
+        db = "BioHealthBase";
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
     }
 }
 
@@ -137,20 +146,33 @@ void CCleanup_imp::BasicCleanup(CDbtag& dbtag)
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     }
     
-    if (dbtag.IsSetTag()) {
-        if (dbtag.GetTag().IsStr()) {
-            if (CleanString(dbtag.SetTag().SetStr())) {
-                ChangeMade(CCleanupChange::eTrimSpaces);
-            }
-        }
-    } else {
+    if (!dbtag.IsSetTag()) {
         dbtag.SetTag();  // make sure mandatory field is set.
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     }
-    _ASSERT(dbtag.IsSetDb()  &&  dbtag.IsSetTag());  // mandatory fields
-    
+
+    // need to do x_DbCleanup and x_TagCleanup so that
+    // the steps afterward will be looking at the corrected db value
+    // and the corrected tag value
     x_DbCleanup(dbtag.SetDb());
     x_TagCleanup(dbtag.SetTag());
+
+    if (dbtag.GetTag().IsStr()) {
+        if (CleanString(dbtag.SetTag().SetStr())) {
+            ChangeMade(CCleanupChange::eTrimSpaces);
+        }
+    }
+    if (NStr::EqualNocase(dbtag.GetDb(), "HPRD") && NStr::StartsWith (dbtag.GetTag().GetStr(), "HPRD_")) {
+        dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (5));
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
+    } else if (NStr::EqualNocase (dbtag.GetDb(), "MGI") 
+               && (NStr::StartsWith (dbtag.GetTag().GetStr(), "MGI:")
+                   || NStr::StartsWith (dbtag.GetTag().GetStr(), "MGD:"))) {
+        dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (4));
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
+    }
+
+    _ASSERT(dbtag.IsSetDb()  &&  dbtag.IsSetTag());  // mandatory fields
     
     dbtag.InvalidateType();
 }

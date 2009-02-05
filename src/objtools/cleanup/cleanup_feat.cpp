@@ -222,14 +222,14 @@ void CCleanup_imp::x_AddReplaceQual(CSeq_feat& feat, const string& str)
 
 typedef pair<const string, CRNA_ref::TType> TRnaTypePair;
 static const TRnaTypePair sc_rna_type_map[] = {
-    TRnaTypePair("mRNA", CRNA_ref::eType_premsg),
+    TRnaTypePair("mRNA", CRNA_ref::eType_mRNA),
     TRnaTypePair("misc_RNA", CRNA_ref::eType_other),
     TRnaTypePair("precursor_RNA", CRNA_ref::eType_premsg),
-    TRnaTypePair("rRNA", CRNA_ref::eType_tRNA),
+    TRnaTypePair("rRNA", CRNA_ref::eType_rRNA),
     TRnaTypePair("scRNA", CRNA_ref::eType_scRNA),
     TRnaTypePair("snRNA", CRNA_ref::eType_snRNA),
     TRnaTypePair("snoRNA", CRNA_ref::eType_snoRNA),
-    TRnaTypePair("tRNA", CRNA_ref::eType_mRNA)
+    TRnaTypePair("tRNA", CRNA_ref::eType_tRNA)
 };
 typedef CStaticArrayMap<const string, CRNA_ref::TType> TRnaTypeMap;
 DEFINE_STATIC_ARRAY_MAP(TRnaTypeMap, sc_RnaTypeMap, sc_rna_type_map);
@@ -502,7 +502,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
 }
 
 
-static string s_ExtractSatelliteFromComment (string comment)
+static string s_ExtractSatelliteFromComment (string& comment)
 {
     string satellite = "";
 
@@ -518,19 +518,22 @@ static string s_ExtractSatelliteFromComment (string comment)
     } else if (NStr::StartsWith (comment, "minisatellite")) {
         satellite = comment;
         if (NStr::Equal (satellite.substr(13, 1), " ")) {
-            satellite = "microsatellite:" + satellite.substr(14);
+            satellite = "minisatellite:" + satellite.substr(14);
         }
     } else if (NStr::StartsWith (comment, "satellite")) {
         satellite = comment;
         if (NStr::Equal (satellite.substr(9, 1), " ")) {
-            satellite = "microsatellite:" + satellite.substr(10);
+            satellite = "satellite:" + satellite.substr(10);
         }
     }
     size_t pos = NStr::Find (satellite, ";");
     pos = min (pos, NStr::Find (satellite, ","));
     pos = min (pos, NStr::Find (satellite, "~"));
-    if (pos != NPOS) {
-        satellite = satellite.substr (0, pos);
+    if (pos == NPOS) {
+        comment = "";
+    } else {
+       comment = satellite.substr (pos + 1);
+       satellite = satellite.substr (0, pos);
     }
     return satellite;
 }
@@ -706,9 +709,17 @@ void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
                     CRef<CGb_qual> new_qual(new CGb_qual);
                     new_qual->SetQual("satellite");
                     if (feat.IsSetComment()) {
-                        string val = s_ExtractSatelliteFromComment (feat.GetComment());
+                        string comment = feat.GetComment();
+                        string val = s_ExtractSatelliteFromComment (comment);
                         if (!NStr::IsBlank (val)) {
                             new_qual->SetVal(val);
+                            if (!NStr::Equal (comment, feat.GetComment())) {
+                                if (NStr::IsBlank (comment)) {
+                                    feat.ResetComment();
+                                } else {
+                                    feat.SetComment(comment);
+                                }
+                            }
                         }
                     }
                     feat.SetQual().push_back(new_qual);
@@ -788,22 +799,18 @@ void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
 
 
 
-struct SGb_QualCompare
+static bool s_Gb_QualCompare (const CRef<CGb_qual>& q1, const CRef<CGb_qual>& q2)
 {
     // is q1 < q2
-    bool operator()(const CRef<CGb_qual>& q1, const CRef<CGb_qual>& q2) {
-        return (q1->Compare(*q2) < 0);
-    }
-};
+    return (q1->Compare(*q2) < 0);
+}
 
 
-struct SGb_QualEqual
+static bool s_Gb_QualEqual (const CRef<CGb_qual>& q1, const CRef<CGb_qual>& q2)
 {
     // is q1 == q2
-    bool operator()(const CRef<CGb_qual>& q1, const CRef<CGb_qual>& q2) {
-        return (q1->Compare(*q2) == 0);
-    }
-};
+    return (q1->Compare(*q2) == 0);
+}
 
 
 typedef pair<string, CRef<CPub> >   TCit;
@@ -832,11 +839,54 @@ bool cmpSortedvsOld(const TCit& e1, const CRef<CPub>& e2) {
 }
 
 
+static bool s_IsEmpty (const CDbtag& dbt)
+{
+    if ((!dbt.IsSetDb() || NStr::IsBlank (dbt.GetDb()))
+      && (!dbt.IsSetTag() 
+          || dbt.GetTag().Which() == CObject_id ::e_not_set
+          || ((dbt.GetTag().IsId() && dbt.GetTag().GetId() == 0) 
+              || (dbt.GetTag().IsStr() && NStr::IsBlank (dbt.GetTag().GetStr()))))) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 // BasicCleanup
 void CCleanup_imp::BasicCleanup(CSeq_feat& f)
 {
     if (!f.IsSetData()) {
         return;
+    }
+
+    // note - need to clean up GBQuals before dbxrefs, because they may be converted to populate other fields
+    EDIT_EACH_GBQUAL_ON_SEQFEAT (it, f) {
+        // clean up this qual
+        BasicCleanup (**it);
+        // cleanup the feature given this qual - if function returns true, should remove
+        if (BasicCleanup(f, **it)) {
+            ERASE_GBQUAL_ON_SEQFEAT (it, f);
+            ChangeMade(CCleanupChange::eCleanQualifiers);
+        }
+    }
+    // expand out all combined quals.
+    if (f.IsSetQual()) {
+        x_ExpandCombinedQuals(f.SetQual());
+    }
+
+    // sort/uniquequalsdb_xrefs
+    if (!GBQUAL_ON_SEQFEAT_IS_SORTED (f, s_Gb_QualCompare)) {
+        SORT_GBQUAL_ON_SEQFEAT (f, s_Gb_QualCompare);
+        ChangeMade(CCleanupChange::eCleanQualifiers);
+    }
+    if (!GBQUAL_ON_SEQFEAT_IS_UNIQUE(f, s_Gb_QualEqual)) {
+        UNIQUE_GBQUAL_ON_SEQFEAT (f, s_Gb_QualEqual);
+        ChangeMade(CCleanupChange::eRemoveQualifier);
+    }
+    if (f.IsSetQual() && f.GetQual().empty()) {
+        f.ResetQual();
+        ChangeMade(CCleanupChange::eRemoveQualifier);
     }
 
     CLEAN_STRING_MEMBER(f, Comment);
@@ -856,69 +906,73 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
     BasicCleanup(f.SetData());
     BasicCleanup(f, f.SetData());
 
-    if (f.IsSetDbxref()) {
-        CSeq_feat::TDbxref& dbxref = f.SetDbxref();
-        
-        // dbxrefs cleanup
-        CSeq_feat::TDbxref::iterator it = dbxref.begin();
-        while (it != dbxref.end()) {
-            if (it->Empty()) {
-                it = dbxref.erase(it);
+    CSeq_feat::TDbxref new_xrefs;
+    new_xrefs.clear();
+
+    EDIT_EACH_DBXREF_ON_FEATURE (it, f) {
+        BasicCleanup(**it);
+        string::size_type pos;
+        if (s_IsEmpty ((**it))) {
+            ERASE_DBXREF_ON_SEQFEAT (it, f);
+            ChangeMade(CCleanupChange::eCleanDbxrefs);
+        } else if ((*it)->IsSetDb() 
+                   && (NStr::EqualNocase ((*it)->GetDb(), "PID")
+                       || NStr::EqualNocase ((*it)->GetDb(), "PIDg")
+                       || NStr::EqualNocase ((*it)->GetDb(), "NID"))) {
+            // remove obsolete dbxrefs
+            ERASE_DBXREF_ON_SEQFEAT (it, f);
+            ChangeMade(CCleanupChange::eCleanDbxrefs);
+        } else if ((*it)->IsSetTag() && (*it)->GetTag().IsStr()
+          && (pos = NStr::Find ((*it)->GetTag().GetStr(), ":")) != NCBI_NS_STD::string::npos) {
+            // expand dbtags with colons
+            string other_tags = (*it)->GetTag().GetStr().substr(pos + 1);
+            (*it)->SetTag().SetStr ((*it)->GetTag().GetStr().substr(0, pos));
+
+            while ((pos = NStr::Find (other_tags, ":")) != NCBI_NS_STD::string::npos) {
+                string new_str = other_tags.substr (0, pos);
+                if (!NStr::IsBlank(new_str)) {
+                    CRef<CDbtag> new_tag(new CDbtag());
+                    if ((*it)->IsSetDb()) {
+                        new_tag->SetDb((*it)->GetDb());
+                    }
+                    new_tag->SetTag().SetStr(new_str);
+                    BasicCleanup (*new_tag);
+                    new_xrefs.push_back (new_tag);
+                    ChangeMade(CCleanupChange::eCleanDbxrefs);
+                }
+                other_tags = other_tags.substr (pos + 1);
+            }
+            if (!NStr::IsBlank (other_tags)) {
+                CRef<CDbtag> new_tag(new CDbtag());
+                if ((*it)->IsSetDb()) {
+                    new_tag->SetDb((*it)->GetDb());
+                }
+                new_tag->SetTag().SetStr(other_tags);
+                BasicCleanup (*new_tag);
+                new_xrefs.push_back(new_tag);
                 ChangeMade(CCleanupChange::eCleanDbxrefs);
-                continue;
-            }
-            BasicCleanup(**it);
-            
-            ++it;
-        }
-        
-        // sort/unique db_xrefs
-        if ( ! objects::is_sorted(dbxref.begin(), dbxref.end(),
-                                  SDbtagCompare()) ) {
-            ChangeMade(CCleanupChange::eCleanDbxrefs);
-            stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());
-        }
-        size_t n_dbxref = dbxref.size();
-        it = unique(dbxref.begin(), dbxref.end(), SDbtagEqual());
-        dbxref.erase(it, dbxref.end());
-        if (dbxref.size() != n_dbxref) {
-            ChangeMade(CCleanupChange::eCleanDbxrefs);
-        }
-    }
-    if (f.IsSetQual()) {
-        
-        CSeq_feat::TQual::iterator it = f.SetQual().begin();
-        CSeq_feat::TQual::iterator it_end = f.SetQual().end();
-        while (it != it_end) {
-            CGb_qual& gb_qual = **it;
-            // clean up this qual.
-            BasicCleanup(gb_qual);
-            // cleanup the feature given this qual.
-            if (BasicCleanup(f, gb_qual)) {
-                it = f.SetQual().erase(it);
-                it_end = f.SetQual().end();
-                ChangeMade(CCleanupChange::eCleanQualifiers);
-            } else {
-                ++it;
             }
         }
-        // expand out all combined quals.
-        x_ExpandCombinedQuals(f.SetQual());
-        
-        // sort/uniquequalsdb_xrefs
-        CSeq_feat::TQual& quals = f.SetQual();
-        if ( ! objects::is_sorted(quals.begin(), quals.end(),
-                                  SGb_QualCompare()) ) {
-            ChangeMade(CCleanupChange::eCleanDbxrefs);
-            stable_sort(quals.begin(), quals.end(), SGb_QualCompare());
-        }
-        size_t n_quals = quals.size();
-        CSeq_feat::TQual::iterator erase_it = unique(quals.begin(), quals.end(), SGb_QualEqual());
-        quals.erase(erase_it, quals.end());
-        if (n_quals != quals.size()) {
-            ChangeMade(CCleanupChange::eCleanQualifiers);
-        }
     }
+    NON_CONST_ITERATE (CSeq_feat::TDbxref, it, new_xrefs) {
+        f.SetDbxref().push_back(*it);
+    }
+
+    if (!DBXREF_ON_SEQFEAT_IS_SORTED(f, s_DbtagCompare)) {
+        SORT_DBXREF_ON_SEQFEAT (f, s_DbtagCompare);
+        ChangeMade(CCleanupChange::eCleanDbxrefs);
+    }
+
+    if (!DBXREF_ON_SEQFEAT_IS_UNIQUE (f, s_DbtagEqual)) {
+        UNIQUE_DBXREF_ON_SEQFEAT (f, s_DbtagEqual);
+        ChangeMade(CCleanupChange::eCleanDbxrefs);
+    }
+
+    if (f.IsSetDbxref() && f.GetDbxref().empty()) {
+        f.ResetDbxref();   
+        ChangeMade(CCleanupChange::eCleanDbxrefs);
+    }
+
     if (f.IsSetCit()) {
         CPub_set& ps = f.SetCit();
 
@@ -1013,7 +1067,7 @@ void CCleanup_imp::BasicCleanup(CRNA_ref& rr)
             case CRNA_ref::TExt::e_Name:
                 {
                     static const string rRNA = " rRNA";
-                    static const string kRibosomalrRna = " ribosomal rRNA";
+                    static const string kRibosomalrRna = " ribosomal RNA";
                     
                     _ASSERT(rr.IsSetExt()  &&  rr.GetExt().IsName());
                     

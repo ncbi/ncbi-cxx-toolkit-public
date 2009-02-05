@@ -36,6 +36,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -52,6 +53,8 @@
 #include <vector>
 
 #include <objmgr/util/seq_loc_util.hpp>
+
+#include <objmgr/feat_ci.hpp>
 
 #include "cleanupp.hpp"
 
@@ -227,11 +230,233 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual&
             }
         }
     }
+#if 0
+    // look for qualifiers that should be applied to protein feature
+    // note - this should be moved to the "indexed" portion of basic cleanup,
+    // because it might create a new feature, and also because it needs to
+    // locate another sequence and feature
+    if ((NStr::Equal(qual, "product") || NStr::Equal (qual, "function") || NStr::Equal (qual, "EC_number")
+        || NStr::Equal(qual, "activity"))
+        && feat.IsSetProduct()) {
 
+        // get protein sequence for product
+        CBioseq_Handle prot = m_Scope->GetBioseqHandle(feat.GetProduct());
+        if (prot) {
+            // find main protein feature
+            SAnnotSelector sel(CSeqFeatData::eSubtype_prot);
+
+            CFeat_CI feat_ci (prot, sel);
+            if (feat_ci) {
+                CRef<
+                return BasicCleanup(feat_ci->GetOriginalFeature(), feat_ci->GetData().GetProt(), gb_qual);
+            }
+            // add feature if it doesn't exist (?)
+        }
+    }
+#endif
     /*if (NStr::EqualNocase(qual, "translation")) {
         return TRUE;
     }*/
     return false;
+}
+
+
+typedef pair <const char *, const int> TTrnaKey;
+
+static const TTrnaKey trna_key_to_subtype [] = {
+    TTrnaKey ( "Ala",            'A' ),
+    TTrnaKey ( "Alanine",        'A' ),
+    TTrnaKey ( "Arg",            'R' ),
+    TTrnaKey ( "Arginine",       'R' ),
+    TTrnaKey ( "Asn",            'N' ),
+    TTrnaKey ( "Asp",            'D' ),
+    TTrnaKey ( "Asp or Asn",     'B' ),
+    TTrnaKey ( "Asparagine",     'N' ),
+    TTrnaKey ( "Aspartate",      'D' ),
+    TTrnaKey ( "Aspartic Acid",  'D' ),
+    TTrnaKey ( "Asx",            'B' ),
+    TTrnaKey ( "Cys",            'C' ),
+    TTrnaKey ( "Cysteine",       'C' ),
+    TTrnaKey ( "fMet",           'M' ),
+    TTrnaKey ( "Gln",            'Q' ),
+    TTrnaKey ( "Glu",            'E' ),
+    TTrnaKey ( "Glu or Gln",     'Z' ),
+    TTrnaKey ( "Glutamate",      'E' ),
+    TTrnaKey ( "Glutamic Acid",  'E' ),
+    TTrnaKey ( "Glutamine",      'Q' ),
+    TTrnaKey ( "Glx",            'Z' ),
+    TTrnaKey ( "Gly",            'G' ),
+    TTrnaKey ( "Glycine",        'G' ),
+    TTrnaKey ( "His",            'H' ),
+    TTrnaKey ( "Histidine",      'H' ),
+    TTrnaKey ( "Ile",            'I' ),
+    TTrnaKey ( "Isoleucine",     'I' ),
+    TTrnaKey ( "Leu",            'L' ),
+    TTrnaKey ( "Leu or Ile",     'J' ),
+    TTrnaKey ( "Leucine",        'L' ),
+    TTrnaKey ( "Lys",            'K' ),
+    TTrnaKey ( "Lysine",         'K' ),
+    TTrnaKey ( "Met",            'M' ),
+    TTrnaKey ( "Methionine",     'M' ),
+    TTrnaKey ( "OTHER",          'X' ),
+    TTrnaKey ( "Phe",            'F' ),
+    TTrnaKey ( "Phenylalanine",  'F' ),
+    TTrnaKey ( "Pro",            'P' ),
+    TTrnaKey ( "Proline",        'P' ),
+    TTrnaKey ( "Pyl",            'O' ),
+    TTrnaKey ( "Pyrrolysine",    'O' ),
+    TTrnaKey ( "Sec",            'U' ),
+    TTrnaKey ( "Selenocysteine", 'U' ),
+    TTrnaKey ( "Ser",            'S' ),
+    TTrnaKey ( "Serine",         'S' ),
+    TTrnaKey ( "Ter",            '*' ),
+    TTrnaKey ( "TERM",           '*' ),
+    TTrnaKey ( "Termination",    '*' ),
+    TTrnaKey ( "Thr",            'T' ),
+    TTrnaKey ( "Threonine",      'T' ),
+    TTrnaKey ( "Trp",            'W' ),
+    TTrnaKey ( "Tryptophan",     'W' ),
+    TTrnaKey ( "Tyr",            'Y' ),
+    TTrnaKey ( "Tyrosine",       'Y' ),
+    TTrnaKey ( "Val",            'V' ),
+    TTrnaKey ( "Valine",         'V' ),
+    TTrnaKey ( "Xle",            'J' ),
+    TTrnaKey ( "Xxx",            'X' )
+};
+
+typedef CStaticArrayMap <const char*, const int, PNocase_CStr> TTrnaMap;
+DEFINE_STATIC_ARRAY_MAP(TTrnaMap, sm_TrnaKeys, trna_key_to_subtype);
+
+
+static CRef<CTrna_ext> s_ParseTRnaFromAnticodonString (string str, CSeq_feat& feat, CScope *scope)
+{
+    CRef<CTrna_ext> trna (new CTrna_ext());
+    
+    if (NStr::IsBlank (str)) return trna;
+
+    if (NStr::StartsWith (str, "(pos:")) {
+        string::size_type pos_end = NStr::Find (str, ")");
+        if (pos_end != string::npos) {
+            string pos_str = str.substr (5, pos_end - 5);
+            string::size_type aa_start = NStr::FindNoCase (pos_str, "aa:");
+            if (aa_start != string::npos) {
+                string abbrev = pos_str.substr (aa_start + 3);
+                TTrnaMap::const_iterator t_iter = sm_TrnaKeys.find (abbrev.c_str ());
+                if (t_iter == sm_TrnaKeys.end ()) {
+                    // unable to parse
+                    return trna;
+                }
+                CRef<CTrna_ext::TAa> aa(new CTrna_ext::TAa);
+                aa->SetIupacaa (t_iter->second);
+                trna->SetAa(*aa);
+                pos_str = pos_str.substr (0, aa_start);
+                NStr::TruncateSpacesInPlace (pos_str);
+                if (NStr::EndsWith (pos_str, ",")) {
+                    pos_str = pos_str.substr (0, pos_str.length() - 1);
+                }
+            }
+            CRef<CSeq_loc> anticodon = ReadLocFromText (pos_str, feat.GetLocation().GetId(), scope);
+            if (anticodon == NULL) {
+                trna->ResetAa();
+            } else {
+                trna->SetAnticodon(*anticodon);
+            }
+        }
+    }
+    return trna;        
+}
+
+
+static CRef<CTrna_ext> s_ParseTRnaString (string &str)
+{
+    CRef<CTrna_ext> trna (new CTrna_ext());
+    
+    if (NStr::IsBlank (str)) return trna;
+
+    /* try the whole string for product */
+    TTrnaMap::const_iterator t_iter = sm_TrnaKeys.find (str.c_str ());
+    if (t_iter != sm_TrnaKeys.end ()) {
+        CRef<CTrna_ext::TAa> aa(new CTrna_ext::TAa);
+        aa->SetIupacaa (t_iter->second);
+        trna->SetAa(*aa);
+        str = "";
+        return trna;
+    }
+    
+    if (!NStr::StartsWith (str, "tRNA-")) {
+        return trna;
+    } else {
+        str = str.substr (5);
+        string::size_type aa_end = NStr::Find(str, "(");
+        
+
+        string abbrev = "";
+        if (aa_end == string::npos) {
+            abbrev = str;
+        } else {
+            abbrev = str.substr (0, aa_end);
+        }
+        NStr::TruncateSpacesInPlace (abbrev);
+        TTrnaMap::const_iterator t_iter = sm_TrnaKeys.find (abbrev.c_str ());
+        if (t_iter == sm_TrnaKeys.end ()) {
+            // couldn't find abbreviation in list
+            return trna;
+        }
+        CRef<CTrna_ext::TAa> aa(new CTrna_ext::TAa);
+        aa->SetIupacaa (t_iter->second);
+
+        trna->SetAa( *aa);
+        if (aa_end == string::npos) {
+            // abbreviation was all there was to find
+            str = "";
+            return trna;
+        }
+        // continue parsing
+        str = str.substr(aa_end + 1);
+        
+        string::size_type codons_end = NStr::Find (str, ")");
+        if (codons_end != string::npos) {
+            string codon_list = str.substr (0, codons_end);
+            vector<string> codons;
+            vector<int> codon_vals;
+            NStr::Tokenize(codon_list, ",", codons);
+            bool codons_ok = true;
+            for (unsigned int i = 0; i < codons.size() && codons_ok; i++) {
+                NStr::TruncateSpacesInPlace (codons[i]);
+                if (codons[i].length() != 3) {
+                    codons_ok = false;
+                } else {
+                    NStr::ToUpper (codons[i]);
+                    NStr::ReplaceInPlace (codons[i], "T", "U");
+                    for (int j = 0; j < 3; j++) {
+                        string letter = codons[i].substr(j, 1);
+                        if (!NStr::Equal (letter, "A")
+                            && !NStr::Equal (letter, "U")
+                            && !NStr::Equal (letter, "G")
+                            && !NStr::Equal (letter, "C")) {
+                            codons_ok = false;
+                        }
+                    }
+                    if (codons_ok) {
+                        int residue = CGen_code_table::CodonToIndex (codons[i]);
+                        if (residue < 0) {
+                            codons_ok = false;
+                        } else {
+                            codon_vals.push_back (residue);
+                        }
+                    }
+                }
+            }
+            if (codons_ok) {
+                CTrna_ext::TCodon& real_codons = trna->SetCodon ();
+                for (unsigned int i = 0; i < codon_vals.size(); i++) {
+                    real_codons.push_back (codon_vals[i]);
+                }
+                str = str.substr (codons_end + 1);
+            }
+        }
+    }
+    return trna;
 }
 
 
@@ -241,6 +466,9 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, const CGb_qual& 
 
     bool is_std_name = NStr::EqualNocase(qual, "standard_name");
     if (NStr::EqualNocase(qual, "product")  ||  (is_std_name  &&  ! (m_Mode == eCleanup_EMBL  ||  m_Mode == eCleanup_DDBJ) )) {
+        if (!gb_qual.IsSetVal()) {
+            return false;
+        }
         if (rna.IsSetType()) {
             if (rna.GetType() == CRNA_ref::eType_unknown) {
                 rna.SetType(CRNA_ref::eType_other);
@@ -258,9 +486,72 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, const CGb_qual& 
             return false;
         }
 
-        if (type == CRNA_ref::eType_tRNA  &&  rna.IsSetExt()  &&  rna.GetExt().IsName()) {
-            //!!! const string& name = rna.GetExt().GetName();
+        if (type == CRNA_ref::eType_tRNA) {
+            if (rna.IsSetExt()) {
+                if (rna.GetExt().IsName()) { 
+                    string comment = rna.GetExt().GetName();
+                    CRef<CTrna_ext> trna_from_name = s_ParseTRnaString (comment);
+                    if (trna_from_name->IsSetAa() && NStr::IsBlank (comment)) {
+                        rna.SetExt().SetTRNA (*trna_from_name);
+                        ChangeMade (CCleanupChange::eChange_tRna);
+                        if (trna_from_name->GetAa().GetIupacaa() == 77 
+                            && NStr::Find (rna.GetExt().GetName(), "fMet") != string::npos) {
+                            if (!feat.IsSetComment()) {
+                                feat.SetComment ("fMet");
+                            } else if (NStr::Find (feat.GetComment(), "fMet") == string::npos) {
+                                feat.SetComment (feat.GetComment() + "; fMet");
+                            }
+                            ChangeMade (CCleanupChange::eChangeComment);
+                        }
+                    }
+                }
+            } else {                
+                string comment = gb_qual.GetVal();
+                CRef<CTrna_ext> trna_from_name = s_ParseTRnaString (comment);
+                if (trna_from_name->IsSetAa() && NStr::IsBlank (comment)) {
+                    rna.SetExt().SetTRNA (*trna_from_name);
+                    ChangeMade (CCleanupChange::eChange_tRna);
+                    if (trna_from_name->GetAa().GetIupacaa() == 77 
+                        && NStr::Find (gb_qual.GetVal(), "fMet") != string::npos) {
+                        if (!feat.IsSetComment()) {
+                            feat.SetComment ("fMet");
+                        } else if (NStr::Find (feat.GetComment(), "fMet") == string::npos) {
+                            feat.SetComment (feat.GetComment() + "; fMet");
+                        }
+                        ChangeMade (CCleanupChange::eChangeComment);
+                    }
+                    return true;
+                }
+            }
+        } else if (rna.IsSetExt() && !rna.GetExt().IsName()) {
+            return false;
+        } else {
+            string rna_name = "";
+            string val = gb_qual.GetVal();
+            if (rna.IsSetExt() && rna.GetExt().IsName()) {
+                rna_name = rna.GetExt().GetName();
+            }
+            if (NStr::IsBlank (rna_name)) {
+                rna.SetExt().SetName(val);
+                ChangeMade (CCleanupChange::eChange_rRna);
+                return true;
+            } else {
+                if (NStr::EqualNocase(rna_name, val)) {
+                    return true;
+                } else if (type == CRNA_ref::eType_miscRNA) {
+                    return false;
+                } else {
+                    if (!feat.IsSetComment() || NStr::IsBlank (feat.GetComment())) {
+                        feat.SetComment(val);
+                    } else {
+                        feat.SetComment (feat.GetComment() + "; " + val);
+                    }
+                    ChangeMade (CCleanupChange::eChangeComment);
+                    return true;
+                }
+            }
         }
+
     }
     if (NStr::EqualNocase(qual, "anticodon")) {
         if (!rna.IsSetType()) {
@@ -275,14 +566,53 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, const CGb_qual& 
         } else if (type != CRNA_ref::eType_tRNA) {
             return false;
         }
-        if ( rna.CanGetExt()  &&
+        if (!rna.IsSetExt()) {
+            rna.SetExt().SetTRNA();
+        }
+        if ( rna.IsSetExt()  &&
              rna.GetExt().Which() == CRNA_ref::C_Ext::e_TRNA ) {
             
-            CRef<CSeq_loc> anticodon = ReadLocFromText (gb_qual.GetVal(), feat.GetLocation().GetId(), m_Scope);
-            if (anticodon != NULL) {
-                rna.SetExt().SetTRNA().SetAnticodon(*anticodon);
-                ChangeMade(CCleanupChange::eChangeAnticodon);
-                return true;
+            CRef<CTrna_ext> trna = s_ParseTRnaFromAnticodonString (gb_qual.GetVal(), feat, m_Scope);
+            if (trna->IsSetAa() || trna->IsSetAnticodon()) {
+                /* don't apply at all if there are conflicts */
+                bool apply_aa = false;
+                bool apply_anticodon = false;
+                bool ok_to_apply = true;
+                
+                /* look for conflict with aa */
+                if (trna->IsSetAa()) {
+                    if (rna.GetExt().GetTRNA().IsSetAa()) {
+                        if (trna->GetAa().GetIupacaa() != rna.GetExt().GetTRNA().GetAa().GetIupacaa()) {
+                            ok_to_apply = false;
+                        }
+                    } else {
+                        apply_aa = true;
+                    }
+                }
+                /* look for conflict with anticodon */
+                if (trna->IsSetAnticodon()) {
+                    if (rna.GetExt().GetTRNA().IsSetAnticodon()) {
+                        if (sequence::Compare(rna.GetExt().GetTRNA().GetAnticodon(), trna->GetAnticodon(), m_Scope) != sequence::eSame) {
+                            ok_to_apply = false;
+                        }
+                    } else {
+                        apply_anticodon = true;
+                    }
+                }
+
+                if (ok_to_apply) {
+                    if (apply_aa) {
+                        rna.SetExt().SetTRNA().SetAa().SetIupacaa(trna->GetAa().GetIupacaa());
+                        ChangeMade (CCleanupChange::eChange_tRna);
+                    }
+                    if (apply_anticodon) {
+                        CRef<CSeq_loc> anticodon(new CSeq_loc());
+                        anticodon->Add (trna->GetAnticodon());
+                        rna.SetExt().SetTRNA().SetAnticodon(*anticodon);
+                        ChangeMade (CCleanupChange::eChangeAnticodon);
+                    }
+                    return true;
+                }
             }
         }
     }
@@ -584,7 +914,7 @@ void CCleanup_imp::x_ChangeInsertionSeqToMobileElement(CGb_qual& gbq)
 {
     if (NStr::EqualNocase(gbq.GetQual(), "insertion_seq")) {
         gbq.SetQual("mobile_element");
-        gbq.SetVal( string("insertion_seq: ") + gbq.GetVal() );
+        gbq.SetVal( string("insertion sequence: ") + gbq.GetVal() );
         ChangeMade(CCleanupChange::eChangeQualifiers);
     }
 }
