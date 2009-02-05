@@ -2719,7 +2719,7 @@ bool NStr::IsIPAddress(const string& ip)
 
     // Make sure the whole string was checked (it is possible to have \0 chars
     // in the middle of the string).
-    if (c - start != ip.size()) {
+    if ((size_t)(c - start) != ip.size()) {
         return false;
     }
     return !*c  &&  dots == 3  &&  val < 256;
