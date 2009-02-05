@@ -41,6 +41,7 @@
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objtools/readers/getfeature.hpp>
+#include <objmgr/object_manager.hpp>
 #include <cgi/cgictx.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <objtools/blast/gene_info_reader/gene_info_reader.hpp>
