@@ -210,8 +210,8 @@ static bool s_SubsourceEqual (
     TSUBSOURCE_SUBTYPE chs2 = sbs2.GetSubtype();
 
     if (chs1 != chs2) return false;
-
     if (s_NoNameSubtype (chs2)) return true;
+
     if (sbs1.IsSetName() && sbs2.IsSetName()) {
         if (NStr::CompareNocase (sbs1.GetName(), sbs2.GetName()) == 0) return true;
     }
@@ -435,37 +435,17 @@ void CCleanup_imp::x_ModToOrgMod (
 )
 
 {
-    _ASSERT(oref.IsSetMod() && oref.IsSetOrgname());
+    _ASSERT (ORGREF_HAS_MOD (oref) && oref.IsSetOrgname());
     
-    COrg_ref::TOrgname& orgname = oref.SetOrgname();
+    COrgName& orgname = oref.SetOrgname();
     EDIT_EACH_MOD_ON_ORGREF (it, oref) {
         string& str = *it;
         CRef<COrgMod> orgmod (s_StringToOrgMod (str));
         if (! orgmod) continue;
-        /*
-        orgname.SetMod().push_back(orgmod);
-        */
         ADD_ORGMOD_TO_ORGNAME (orgname, orgmod);
         ERASE_MOD_ON_ORGREF (it, oref);
         ChangeMade (CCleanupChange::eChangeOrgmod);
     }
-
-    /*
-    COrg_ref::TMod& mod_list = oref.SetMod();
-    COrg_ref::TOrgname& orgname = oref.SetOrgname();
-    
-    COrg_ref::TMod::iterator it = mod_list.begin();
-    while (it != mod_list.end()) {
-        CRef<COrgMod> orgmod(s_StringToOrgMod(*it));
-        if (orgmod) {
-            orgname.SetMod().push_back(orgmod);
-            it = mod_list.erase(it);
-            ChangeMade (CCleanupChange::eChangeOrgmod);
-        } else {
-            ++it;
-        }
-    }
-    */  
 }
 
 
@@ -485,7 +465,6 @@ static bool s_OrgModCompareNameFirst (
     const string& str2 = omd2.GetSubname();
 
     if (NStr::CompareNocase (str1, str2) < 0) return true;
-
     if (NStr::CompareNocase (str1, str2) != 0) return false;
 
     TORGMOD_SUBTYPE chs1 = omd1.GetSubtype();
@@ -564,37 +543,33 @@ void CCleanup_imp::BasicCleanup (
     EDIT_EACH_ORGMOD_ON_ORGNAME (it, on) {
         COrgMod& omd = **it;
         BasicCleanup (omd);
-        if (omd.IsSetSubname()) continue;
+        if (! omd.IsSetSubname()) {
+            ERASE_ORGMOD_ON_ORGNAME (it, on);
+            continue;
+        }
         const string& str = omd.GetSubname();
         if (str.empty()) {
             ERASE_ORGMOD_ON_ORGNAME (it, on);
         }
     }
 
-    if (on.IsSetMod()) {
-        COrgName::TMod& mods = on.SetMod();
-        size_t mods_cnt = mods.size();
-        COrgName::TMod::iterator it = mods.begin();
-        while (it != mods.end() ) {
-            BasicCleanup(**it);
-            if ((! (*it)->IsSetSubname()) || (*it)->GetSubname().empty()) {
-                it = mods.erase(it);
-            } else {
-                ++it;
-            }
-        }
-        
-        // if type of COrgName::TMod is changed from 'list' 
-        // these will need to be changed.
-        if ( ! seq_mac_is_sorted(mods.begin(), mods.end(), s_OrgModCompareSubtypeFirst)) {
-            ChangeMade (CCleanupChange::eCleanOrgmod);
-        }
-        mods.sort(s_OrgModCompareNameFirst);
-        mods.unique(s_OrgModEqual);
-        mods.sort(s_OrgModCompareSubtypeFirst);
-        if (mods.size() != mods_cnt) {
-            ChangeMade (CCleanupChange::eCleanOrgmod);
-        }
+    if (! ORGNAME_HAS_ORGMOD (on)) return;
+
+    if (! ORGMOD_ON_ORGNAME_IS_SORTED (on, s_OrgModCompareSubtypeFirst)) {
+        ChangeMade (CCleanupChange::eCleanOrgmod);
+    }
+
+    if (! ORGMOD_ON_ORGNAME_IS_SORTED (on, s_OrgModCompareNameFirst)) {
+        SORT_ORGMOD_ON_ORGNAME (on, s_OrgModCompareNameFirst);
+    }
+
+    if (! ORGMOD_ON_ORGNAME_IS_UNIQUE (on, s_OrgModEqual)) {
+        UNIQUE_ORGMOD_ON_ORGNAME (on, s_OrgModEqual);
+        ChangeMade (CCleanupChange::eCleanOrgmod);
+    }
+
+    if (! ORGMOD_ON_ORGNAME_IS_SORTED (on, s_OrgModCompareSubtypeFirst)) {
+        SORT_ORGMOD_ON_ORGNAME (on, s_OrgModCompareSubtypeFirst);
     }
 }
 
@@ -967,7 +942,7 @@ bool IsTransgenic (
 {
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sub, bsrc) {
         const CSubSource& sbs = **sub;
-        if (sbs.GetSubtype() == NCBI_SUBSOURCE(transgenic)) return true;
+        if (SUBSOURCE_CHOICE_IS (sbs, NCBI_SUBSOURCE(transgenic))) return true;
     }
 
     return false;
@@ -1237,11 +1212,7 @@ void CCleanup_imp::x_ExtendedCleanSubSourceList (
                 CleanString((*it)->SetAttrib());
             }
             int subtype = (*it)->GetSubtype();
-            if (subtype != CSubSource::eSubtype_germline
-                && subtype != CSubSource::eSubtype_rearranged
-                && subtype != CSubSource::eSubtype_transgenic
-                && subtype != CSubSource::eSubtype_environmental_sample
-                && subtype != CSubSource::eSubtype_metagenomic) {
+            if (! s_NoNameSubtype (subtype)) {
                 CleanString((*it)->SetName());
                 if (!NStr::IsBlank((*it)->GetName())) {
                     tmp.push_back(*it);
