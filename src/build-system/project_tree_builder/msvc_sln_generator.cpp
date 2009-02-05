@@ -331,6 +331,10 @@ void CMsvcSolutionGenerator::CollectLibToLibDependencies(
         set<string>& dep, set<string>& visited,
         const CPrjContext& lib, const CPrjContext& lib_dep)
 {
+    if (GetApp().m_AllDllBuild) {
+        dep.insert(lib_dep.m_GUID);
+        return;
+    }
     if (visited.find(lib_dep.m_GUID) != visited.end() ||
         lib_dep.m_GUID == lib.m_GUID) {
         return;

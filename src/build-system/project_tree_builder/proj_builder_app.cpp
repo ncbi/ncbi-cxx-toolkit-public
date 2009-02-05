@@ -375,6 +375,7 @@ CProjBulderApp::CProjBulderApp(void)
     m_TweakVTuneD = false;
     m_CurrentBuildTree = 0;
     m_ConfirmCfg = false;
+    m_AllDllBuild = false;
     m_ExitCode = 0;
 }
 
@@ -527,6 +528,7 @@ int CProjBulderApp::Run(void)
     configure.Configure(const_cast<CMsvcSite&>(GetSite()), 
                         GetRegSettings().m_ConfigInfo, 
                         m_IncDir);
+    m_AllDllBuild = GetSite().IsProvided("DLL_BUILD");
 
     // Build projects tree
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
@@ -823,6 +825,10 @@ void CProjBulderApp::CollectLibToLibDependencies(
 {
     string lib_name(CreateProjectName(lib->first));
     string lib_dep_name(CreateProjectName(lib_dep->first));
+    if (GetApp().m_AllDllBuild) {
+        dep.insert(lib_dep_name);
+        return;
+    }
     if (visited.find(lib_dep_name) != visited.end() ||
         lib_dep_name == lib_name) {
         return;

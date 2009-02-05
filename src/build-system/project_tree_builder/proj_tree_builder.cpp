@@ -1114,7 +1114,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
 //        if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
             list<string> dll_depends;
             k = m->second.m_Contents.find("DLL_LIB");
-            if (GetApp().GetSite().IsProvided("DLL_BUILD")) {
+            if (GetApp().m_AllDllBuild) {
                 CSimpleMakeFileContents::TContents::const_iterator tmp_k =
                     m->second.m_Contents.find("DLL_DLIB");
                 if (tmp_k != m->second.m_Contents.end()) {

@@ -564,6 +564,10 @@ void CMacProjectGenerator::CollectLibToLibDependencies(
     string lib_name(lib.m_GUID);
     string lib_dep_name(lib_dep.m_GUID);
 #endif
+    if (GetApp().m_AllDllBuild) {
+        dep.insert(lib_dep_name);
+        return;
+    }
 
     if (visited.find(lib_dep_name) != visited.end() ||
         lib_dep_name == lib_name) {

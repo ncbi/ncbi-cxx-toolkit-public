@@ -123,6 +123,7 @@ public:
     string m_ExtSrcRoot;
     string m_ProjTags;
     bool m_ConfirmCfg;
+    bool m_AllDllBuild;
 
 public:
 
