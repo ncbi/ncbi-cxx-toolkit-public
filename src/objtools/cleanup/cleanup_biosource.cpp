@@ -408,7 +408,7 @@ void CCleanup_imp::BasicCleanup(
     COrg_ref::TDb& dbxref = oref.SetDb();
     COrg_ref::TDb::iterator it = dbxref.begin();
 
-    if ( ! seq_mac_is_sorted(dbxref.begin(), dbxref.end(), s_MySDbtagCompare)) {
+    if ( ! seq_mac_is_sorted(dbxref.begin(), dbxref.end(), SDbtagCompare())) {
         ChangeMade(CCleanupChange::eCleanDbxrefs);
         stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());            
     }
