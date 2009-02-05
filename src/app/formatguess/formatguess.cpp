@@ -113,9 +113,9 @@ CFormatGuessApp::Run(void)
     FormatStrings[ CFormatGuess::eFlatFileSequence ] = 
         "Flat file sequence portion";
     FormatStrings[ CFormatGuess::eSnpMarkers ] = "SNP marker flat file";
-//    FormatStrings[ CFormatGuess::eWiggle ] = "UCSC Wiggle file";
-//    FormatStrings[ CFormatGuess::eBed ] = "UCSC BED file";
-//    FormatStrings[ CFormatGuess::eBed15 ] = "UCSC microarray file";
+    FormatStrings[ CFormatGuess::eWiggle ] = "UCSC Wiggle file";
+    FormatStrings[ CFormatGuess::eBed ] = "UCSC BED file";
+    FormatStrings[ CFormatGuess::eBed15 ] = "UCSC microarray file";
                 
     CFormatGuess Guesser( strFileName );
     CFormatGuess::EFormat uFormat = Guesser.GuessFormat();
