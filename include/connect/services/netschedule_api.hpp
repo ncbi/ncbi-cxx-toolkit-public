@@ -61,11 +61,14 @@ struct CNetScheduleJob;
 
 struct SNetScheduleAPIImpl;
 
-/// Client API for NCBI NetSchedule server
+/// Client API for NCBI NetSchedule server.
 ///
 /// This API is logically divided into two sections:
 /// Job Submitter API and Worker Node API.
 ///
+/// As objects of this class are only smart pointers to the real
+/// implementation, it is advisable that these objects are
+/// allocated on the stack rather than the heap.
 ///
 /// @sa CNetServiceException, CNetScheduleException
 ///
@@ -79,9 +82,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     /// job key
     ///
     /// @param service_name
-    ///    Name of the servcie to connect to (format: LB service name or host:port)
+    ///    Name of the service to connect to (format:
+    ///    LB service name or host:port)
     /// @param client_name
-    ///    Name of the client program(project)
+    ///    Name of the client program (project)
     /// @param queue_name
     ///    Name of the job queue
     ///
@@ -265,6 +269,12 @@ struct CNetScheduleJob
 
 struct SNetScheduleSubmitterImpl;
 
+/// Smart pointer to the job submission part of the NetSchedule API.
+/// Objects of this class are returned by
+/// CNetScheduleAPI::GetSubmitter().  It is possible to have several
+/// submitters per one CNetScheduleAPI object.
+///
+/// @sa CNetScheduleAPI, CNetScheduleExecuter
 class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
 {
     NET_COMPONENT(NetScheduleSubmitter);
@@ -388,6 +398,12 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
 ////
 struct SNetScheduleExecuterImpl;
 
+/// Smart pointer to a part of the NetSchedule API that does job
+/// retrieval and processing on the worker node side.
+/// Objects of this class are returned by
+/// CNetScheduleAPI::GetExecuter().
+///
+/// @sa CNetScheduleAPI, CNetScheduleSubmitter
 class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
 {
     NET_COMPONENT(NetScheduleExecuter);
@@ -421,7 +437,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     /// Notification wait mode
     enum EWaitMode {
         eWaitNotification,   ///< Wait for notification
-        eNoWaitNotification  ///< Register for notofication but do not wait
+        eNoWaitNotification  ///< Register for notification but do not wait
     };
 
     /// Wait for a job to come.
@@ -442,9 +458,11 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///     NetSchedule job description structure
     /// @param wait_time
     ///    Time in seconds function waits for new jobs to come.
-    ///    If there are no jobs in the period of time, function retuns FALSE
-    ///    Do not choose too long waiting time because it increases chances of
-    ///    UDP notification loss. (60-320 seconds should be a reasonable value)
+    ///    If there are no jobs in the period of time,
+    ///    the function returns FALSE.
+    ///    Do not specify too long waiting time because it
+    ///    increases chances of UDP notification loss
+    ///    (60-320 seconds is a reasonable value).
     /// @param udp_port
     ///    UDP port to listen for queue notifications. Try to avoid many
     ///    client programs (or threads) listening on the same port. Message
@@ -477,7 +495,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     /// (done_job.job_id is empty) this is equivalent to GetJob
     ///
     /// @sa PutResult, GetJob
-    bool PutResultGetJob(const CNetScheduleJob& done_job, CNetScheduleJob& new_job) const;
+    bool PutResultGetJob(const CNetScheduleJob& done_job,
+        CNetScheduleJob& new_job) const;
 
     /// Put job interim (progress) message
     ///
@@ -527,7 +546,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// When node picks up the job for execution it may evaluate what time it
     /// takes for computation and report it to the queue. If job does not
-    /// finish in the specified timeframe (because of a failure)
+    /// finish in the specified time frame (because of a failure)
     /// it is going to be rescheduled
     ///
     /// Default value for the run timeout specified in the queue settings on
@@ -540,7 +559,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
 
     /// Increment job execution timeout
     ///
-    /// When node picks up the job for execution it may peridically
+    /// When node picks up the job for execution it may periodically
     /// communicate to the server that job is still alive and
     /// prolong job execution timeout, so job server does not try to
     /// reschedule.
@@ -559,9 +578,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     const CNetScheduleAPI::SServerParams& GetServerParams() const;
 
 
-    /// Unregister client-listener. After this call
-    /// server will not try to send any notification messages or maintain
-    /// job affinity for the client.
+    /// Unregister client-listener. After this call, the
+    /// server will not try to send any notification messages or
+    /// maintain job affinity for the client.
     void UnRegisterClient(unsigned short udp_port) const;
 
     static bool WaitNotification(const string&  queue_name,
@@ -627,7 +646,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         eNoShutdown = 0,    ///< No Shutdown was requested
         eNormalShutdown,    ///< Normal shutdown was requested
         eShutdownImmediate, ///< Urgent shutdown was requested
-        eDie                ///< Something wrong has happened, so server should kill itself
+        eDie                ///< A serious error occurred, the server shuts down
     };
 
     /// Shutdown the server daemon.

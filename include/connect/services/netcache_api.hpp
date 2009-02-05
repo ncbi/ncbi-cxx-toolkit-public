@@ -60,7 +60,11 @@ BEGIN_NCBI_SCOPE
 
 struct SNetCacheAPIImpl;
 
-/// Client API for NetCache server
+/// Client API for NetCache server.
+///
+/// It is undesirable to create objects of this class on the heap
+/// because they are essentially smart pointers to the implementation
+/// objects allocated internally on the heap.
 ///
 /// After any Put, Get transactions connection socket
 /// is closed (a part of the NetCache protocol implementation).

@@ -109,7 +109,7 @@ SNetCacheAPIImpl::CNetCacheServerListener::CNetCacheServerListener(
 }
 
 void SNetCacheAPIImpl::CNetCacheServerListener::OnConnected(
-    CNetServerConnection::TPtr conn)
+    CNetServerConnection::TInstance conn)
 {
     conn->WriteLine(m_Auth);
 }

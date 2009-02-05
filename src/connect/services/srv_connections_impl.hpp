@@ -110,7 +110,7 @@ inline CSocket* SNetServerConnectionImpl::GetSocket()
 class INetServerConnectionListener : public CNetObject
 {
 public:
-    virtual void OnConnected(CNetServerConnection::TPtr) = 0;
+    virtual void OnConnected(CNetServerConnection::TInstance) = 0;
     virtual void OnError(const string& err_msg,
         SNetServerConnectionPoolImpl* pool) = 0;
 };

@@ -58,7 +58,7 @@ class CSocket;
 class NCBI_XCONNECT_EXPORT CNetCacheReader : public IReader
 {
 public:
-    CNetCacheReader(CNetServerConnection::TPtr connection,
+    CNetCacheReader(CNetServerConnection::TInstance connection,
                     size_t blob_size);
     virtual ~CNetCacheReader();
 
@@ -85,8 +85,8 @@ private:
 class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IWriter
 {
 public:
-    CNetCacheWriter(CNetCacheAPI::TPtr api,
-        CNetServerConnection::TPtr connection,
+    CNetCacheWriter(CNetCacheAPI::TInstance api,
+        CNetServerConnection::TInstance connection,
         CTransmissionWriter::ESendEofPacket send_eof =
             CTransmissionWriter::eDontSendEofPacket);
 

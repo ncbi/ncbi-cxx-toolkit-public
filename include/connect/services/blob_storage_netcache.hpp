@@ -68,14 +68,13 @@ public:
 
     /// Create Blob Storage
     /// @param[in] nc_client
-    ///  NetCache client. Session Storage will delete it when
-    ///  it goes out of scope.
+    ///  NetCache client - an instance of CNetCacheAPI.
     /// @param[in] flags
     ///  Specifies if blobs should be cached on a local fs
     ///  before they are accessed for read/write.
     /// @param[in[ temp_dir
     ///  Specifies where on a local fs those blobs will be cached
-    CBlobStorage_NetCache(CNetCacheAPI::TPtr nc_client,
+    CBlobStorage_NetCache(CNetCacheAPI::TInstance nc_client,
                           TCacheFlags flags = 0x0,
                           const string& temp_dir = ".");
 

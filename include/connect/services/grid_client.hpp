@@ -262,7 +262,7 @@ public:
     /// Constructor
     ///
     /// @param ns_client
-    ///     NetSchedule client
+    ///     NetSchedule client - an instance of CNetScheduleSubmitter.
     /// @param storage
     ///     NetSchedule storage
     /// @param auto_cleanup
@@ -270,7 +270,7 @@ public:
     ///     a job's input data from a storage when the job is
     ///     done or canceled
     ///
-    CGridClient(CNetScheduleSubmitter::TPtr ns_client,
+    CGridClient(CNetScheduleSubmitter::TInstance ns_client,
                 IBlobStorage& storage,
                 ECleanUp cleanup,
                 EProgressMsg progress_msg,

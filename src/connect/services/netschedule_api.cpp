@@ -78,7 +78,7 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
-    CNetServerConnection::TPtr conn)
+    CNetServerConnection::TInstance conn)
 {
     conn->WriteLine(m_Auth);
 }

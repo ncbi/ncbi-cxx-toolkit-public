@@ -53,7 +53,7 @@ const string CBlobStorage_NetCache::sm_OutputBlobCachePrefix =
 
 
 CBlobStorage_NetCache::CBlobStorage_NetCache(
-    CNetCacheAPI::TPtr nc_client,
+    CNetCacheAPI::TInstance nc_client,
     TCacheFlags flags,
     const string&  temp_dir) :
         m_NCClient(nc_client),

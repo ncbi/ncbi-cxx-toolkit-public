@@ -44,12 +44,13 @@ BEGIN_NCBI_SCOPE
     protected: \
     CNetObjectRef<S##component_name##Impl> m_Impl; \
     public: \
-    typedef S##component_name##Impl* TPtr; \
+    typedef S##component_name##Impl* TInstance; \
     C##component_name() {} \
-    C##component_name(TPtr impl) : m_Impl(impl) {} \
-    C##component_name& operator =(TPtr impl) {m_Impl = impl; return *this;} \
-    operator TPtr() const {return m_Impl.GetPtr();} \
-    TPtr operator ->() const {return m_Impl.GetPtr();}
+    C##component_name(TInstance impl) : m_Impl(impl) {} \
+    C##component_name& operator =(TInstance impl) \
+        {m_Impl = impl; return *this;} \
+    operator TInstance() const {return m_Impl.GetPtr();} \
+    TInstance operator ->() const {return m_Impl.GetPtr();}
 
 class NCBI_XCONNECT_EXPORT CNetObject
 {

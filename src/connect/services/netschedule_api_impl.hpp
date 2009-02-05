@@ -111,7 +111,7 @@ struct SNSSendCmd
     };
     typedef int TFlags;
 
-    SNSSendCmd(CNetScheduleAPI::TPtr api, const string& cmd, TFlags flags)
+    SNSSendCmd(CNetScheduleAPI::TInstance api, const string& cmd, TFlags flags)
         : m_API(api), m_Cmd(cmd), m_Flags(flags)
     {}
     virtual ~SNSSendCmd() {}
@@ -141,7 +141,7 @@ struct SNSSendCmd
         ProcessResponse(resp, conn);
     }
     virtual void ProcessResponse(const string& /* resp */,
-        CNetServerConnection::TPtr /* conn_impl */) {}
+        CNetServerConnection::TInstance /* conn_impl */) {}
 
     CNetScheduleAPI m_API;
     string m_Cmd;
@@ -190,7 +190,7 @@ struct SNetScheduleAPIImpl : public CNetObject
             const std::string& queue_name);
 
     private:
-        virtual void OnConnected(CNetServerConnection::TPtr);
+        virtual void OnConnected(CNetServerConnection::TInstance);
         virtual void OnError(const string& err_msg,
             SNetServerConnectionPoolImpl* pool);
 
@@ -280,7 +280,7 @@ inline CNetServerConnection
 
 struct SNetScheduleSubmitterImpl : public CNetObject
 {
-    SNetScheduleSubmitterImpl(CNetScheduleAPI::TPtr ns_api_impl);
+    SNetScheduleSubmitterImpl(CNetScheduleAPI::TInstance ns_api_impl);
 
     string SubmitJobImpl(CNetScheduleJob& job,
         unsigned short udp_port, unsigned wait_time) const;
@@ -295,14 +295,14 @@ struct SNetScheduleSubmitterImpl : public CNetObject
 };
 
 inline SNetScheduleSubmitterImpl::SNetScheduleSubmitterImpl(
-    CNetScheduleAPI::TPtr ns_api_impl) :
+    CNetScheduleAPI::TInstance ns_api_impl) :
     m_API(ns_api_impl)
 {
 }
 
 struct SNetScheduleExecuterImpl : public CNetObject
 {
-    SNetScheduleExecuterImpl(CNetScheduleAPI::TPtr ns_api_impl);
+    SNetScheduleExecuterImpl(CNetScheduleAPI::TInstance ns_api_impl);
 
     bool GetJobImpl(const string& cmd, CNetScheduleJob& job) const;
 
@@ -312,14 +312,14 @@ struct SNetScheduleExecuterImpl : public CNetObject
 };
 
 inline SNetScheduleExecuterImpl::SNetScheduleExecuterImpl(
-    CNetScheduleAPI::TPtr ns_api_impl) :
+    CNetScheduleAPI::TInstance ns_api_impl) :
     m_API(ns_api_impl)
 {
 }
 
 struct SNetScheduleAdminImpl : public CNetObject
 {
-    SNetScheduleAdminImpl(CNetScheduleAPI::TPtr ns_api_impl);
+    SNetScheduleAdminImpl(CNetScheduleAPI::TInstance ns_api_impl);
 
     typedef map<pair<string,unsigned int>, string> TIDsMap;
 
@@ -329,7 +329,7 @@ struct SNetScheduleAdminImpl : public CNetObject
 };
 
 inline SNetScheduleAdminImpl::SNetScheduleAdminImpl(
-    CNetScheduleAPI::TPtr ns_api_impl) :
+    CNetScheduleAPI::TInstance ns_api_impl) :
     m_API(ns_api_impl)
 {
 }
