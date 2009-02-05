@@ -327,6 +327,29 @@ CMsvcSolutionGenerator::CPrjContext::SetFrom
 }
 
 
+void CMsvcSolutionGenerator::CollectLibToLibDependencies(
+        set<string>& dep, set<string>& visited,
+        const CPrjContext& lib, const CPrjContext& lib_dep)
+{
+    if (visited.find(lib_dep.m_GUID) != visited.end() ||
+        lib_dep.m_GUID == lib.m_GUID) {
+        return;
+    }
+    visited.insert(lib_dep.m_GUID);
+    if (!lib_dep.m_Project.m_DatatoolSources.empty() ||
+        !lib_dep.m_Project.m_ExportHeaders.empty()) {
+        dep.insert(lib_dep.m_GUID);
+    }
+    ITERATE(list<CProjKey>, p, lib_dep.m_Project.m_Depends) {
+        if (p->Type() == CProjKey::eLib) {
+            TProjects::const_iterator n = m_Projects.find(*p);
+            if (n != m_Projects.end()) {
+                CollectLibToLibDependencies(dep, visited, lib, n->second);
+            }
+        }
+    }
+}
+
 void 
 CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs, 
                                                const CPrjContext& project)
@@ -345,6 +368,7 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
         << endl;
 
     list<string> proj_guid;
+    set<string> lib_guid, visited;
 
     ITERATE(list<CProjKey>, p, project.m_Project.m_Depends) {
 
@@ -379,15 +403,16 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
         const CPrjContext& prj_i = n->second;
         if (project.m_Project.m_ProjType == CProjKey::eLib  &&
             id.Type() == CProjKey::eLib) {
-            if (prj_i.m_Project.m_DatatoolSources.empty()) {
-                continue;
-            }
+            CollectLibToLibDependencies(lib_guid, visited, project, prj_i);
+            continue;
         }
         proj_guid.push_back(prj_i.m_GUID);
     }
+    copy(lib_guid.begin(), lib_guid.end(), back_inserter(proj_guid));
     if (!proj_guid.empty()) {
-        ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
         proj_guid.sort();
+        proj_guid.unique();
+        ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
         ITERATE(list<string>, p, proj_guid) {
             ofs << '\t' << '\t' << *p << " = " << *p << endl;
         }

@@ -77,6 +77,9 @@ private:
     string CreateProjectBuildPhase(
         const CProjItem& prj,
         CDict& dict_objects, CRef<CArray>& build_files);
+    void CollectLibToLibDependencies(
+        set<string>& dep, set<string>& visited,
+        const CProjItem& lib, const CProjItem& lib_dep);
     string CreateProjectTarget(
         const CProjItem& prj, const CProjectFileCollector& prj_files,
         CDict& dict_objects, CRef<CArray>& build_phases, const string& product_id);

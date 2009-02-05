@@ -107,6 +107,10 @@ private:
     TProjects m_Projects;
 
     // Writers:
+    void CollectLibToLibDependencies(
+        set<string>& dep, set<string>& visited,
+        const CPrjContext& lib, const CPrjContext& lib_dep);
+
     void WriteProjectAndSection(CNcbiOfstream&     ofs, 
                                 const CPrjContext& project);
     

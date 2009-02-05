@@ -366,7 +366,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,7,1) );
+    SetVersion( CVersionInfo(1,7,2) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -815,6 +815,33 @@ void CProjBulderApp::GenerateMacProjects(CProjectItemsTree& projects_tree)
     prj_gen.Generate(m_Solution);
 #endif
 }
+void CProjBulderApp::CollectLibToLibDependencies(
+    CProjectItemsTree& projects_tree,
+    set<string>& dep, set<string>& visited,
+    CProjectItemsTree::TProjects::const_iterator& lib,
+    CProjectItemsTree::TProjects::const_iterator& lib_dep)
+{
+    string lib_name(CreateProjectName(lib->first));
+    string lib_dep_name(CreateProjectName(lib_dep->first));
+    if (visited.find(lib_dep_name) != visited.end() ||
+        lib_dep_name == lib_name) {
+        return;
+    }
+    visited.insert(lib_dep_name);
+    if (!lib_dep->second.m_DatatoolSources.empty() ||
+        !lib_dep->second.m_ExportHeaders.empty()) {
+        dep.insert(lib_dep_name);
+    }
+    ITERATE(list<CProjKey>, p, lib_dep->second.m_Depends) {
+        if (p->Type() == CProjKey::eLib) {
+            CProjectItemsTree::TProjects::const_iterator n =
+                projects_tree.m_Projects.find(*p);
+            if (n != projects_tree.m_Projects.end()) {
+                CollectLibToLibDependencies(projects_tree, dep, visited, lib, n);
+            }
+        }
+    }
+}
 
 void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 {
@@ -886,6 +913,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                 continue;
             }
 
+            set<string> lib_guid, visited;
             ITERATE(list<CProjKey>, i, p->second.m_Depends) {
 
                 const CProjKey& id = *i;
@@ -911,18 +939,20 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                     }
                 }
                 if (p->first.Type() == CProjKey::eLib && id.Type() == CProjKey::eLib) {
-                    if (n->second.m_DatatoolSources.empty()) {
-                        continue;
-                    }
+                    CollectLibToLibDependencies(projects_tree, lib_guid, visited, p, n);
+                    continue;
                 }
                 dependencies.push_back(CreateProjectName(n->first));
             }
+            copy(lib_guid.begin(), lib_guid.end(), back_inserter(dependencies));
+            dependencies.sort();
+            dependencies.unique();
             string rel_path = CDirEntry::CreateRelativePath(GetProjectTreeInfo().m_Src,
                                                             p->second.m_SourcesBaseDir);
 
             if (p->second.m_MakeType != eMakeType_Excluded &&
                 p->second.m_MakeType != eMakeType_ExcludedByReq &&
-		p->first.Type() != CProjKey::eMsvc) {
+                p->first.Type() != CProjKey::eMsvc) {
 
                 path_to_target[rel_path].push_back(target);
                 string stop_path(CDirEntry::AddTrailingPathSeparator("."));

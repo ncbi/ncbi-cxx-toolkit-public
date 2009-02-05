@@ -553,6 +553,38 @@ string CMacProjectGenerator::CreateProjectBuildPhase(
     return proj_build;
 }
 
+void CMacProjectGenerator::CollectLibToLibDependencies(
+    set<string>& dep, set<string>& visited,
+    const CProjItem& lib, const CProjItem& lib_dep)
+{
+#if USE_VERBOSE_NAMES
+    string lib_name(GetProjDependency(lib));
+    string lib_dep_name(GetProjDependency(lib_dep));
+#else
+    string lib_name(lib.m_GUID);
+    string lib_dep_name(lib_dep.m_GUID);
+#endif
+
+    if (visited.find(lib_dep_name) != visited.end() ||
+        lib_dep_name == lib_name) {
+        return;
+    }
+    visited.insert(lib_dep_name);
+    if (!lib_dep.m_DatatoolSources.empty() ||
+        !lib_dep.m_ExportHeaders.empty()) {
+        dep.insert(lib_dep_name);
+    }
+    ITERATE(list<CProjKey>, p, lib_dep.m_Depends) {
+        if (p->Type() == CProjKey::eLib) {
+            CProjectItemsTree::TProjects::const_iterator n =
+                m_Projects_tree.m_Projects.find(*p);
+            if (n != m_Projects_tree.m_Projects.end()) {
+                CollectLibToLibDependencies(dep, visited, lib, n->second);
+            }
+        }
+    }
+}
+
 string CMacProjectGenerator::CreateProjectTarget(
     const CProjItem& prj, const CProjectFileCollector& prj_files,
     CDict& dict_objects, CRef<CArray>& build_phases,
@@ -571,6 +603,9 @@ string CMacProjectGenerator::CreateProjectTarget(
     CRef<CDict> dict_target( AddDict( dict_objects, proj_target));
     AddString( *dict_target, "buildConfigurationList",configs_prj);
     AddArray( *dict_target, "buildPhases", build_phases);
+
+    list<string> proj_guid;
+    set<string> lib_guid, visited;
     ITERATE( list<CProjKey>, d, prj.m_Depends) {
         CProjectItemsTree::TProjects::const_iterator
             dp = m_Projects_tree.m_Projects.find( *d);
@@ -582,15 +617,22 @@ string CMacProjectGenerator::CreateProjectTarget(
                     continue;
             }
             if (prj.m_ProjType == CProjKey::eLib && dp->first.Type() == CProjKey::eLib) {
-                if (dp->second.m_DatatoolSources.empty()) {
-                    continue;
-                }
+                CollectLibToLibDependencies(lib_guid, visited, prj, dp->second);
+                continue;
             }
 #if USE_VERBOSE_NAMES
-            AddString( *dependencies, GetProjDependency(dp->second));
+            proj_guid.push_back( GetProjDependency(dp->second));
 #else
-            AddString( *dependencies, dp->second.m_GUID);
+            proj_guid.push_back( dp->second.m_GUID);
 #endif
+        }
+    }
+    copy(lib_guid.begin(), lib_guid.end(), back_inserter(proj_guid));
+    if (!proj_guid.empty()) {
+        proj_guid.sort();
+        proj_guid.unique();
+        ITERATE(list<string>, p, proj_guid) {
+            AddString( *dependencies, *p);
         }
     }
     AddArray(  *dict_target, "dependencies", dependencies);

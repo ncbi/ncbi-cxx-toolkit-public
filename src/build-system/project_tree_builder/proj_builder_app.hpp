@@ -173,6 +173,10 @@ private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
     void    GenerateMsvcProjects(CProjectItemsTree& projects_tree);
     void    GenerateMacProjects(CProjectItemsTree& projects_tree);
+    void    CollectLibToLibDependencies(CProjectItemsTree& projects_tree,
+                set<string>& dep, set<string>& visited,
+                CProjectItemsTree::TProjects::const_iterator& lib,
+                CProjectItemsTree::TProjects::const_iterator& lib_dep);
     void    GenerateUnixProjects(CProjectItemsTree& projects_tree);
     void    CreateFeaturesAndPackagesFiles(const list<SConfigInfo>* configs,
                 list<string>& enabled, list<string>& disabled);
