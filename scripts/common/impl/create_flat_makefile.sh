@@ -14,7 +14,7 @@ logfile="Flat.configuration_log"
 # default path to project_tree_builder
 extptb="$NCBI/c++.metastable/Release/bin/project_tree_builder"
 # required version of PTB
-ptbreqver=170
+ptbreqver=172
 ptbname="project_tree_builder"
 # dependencies
 ptbdep="corelib util util/regexp util/xregexp build-system/project_tree_builder"
