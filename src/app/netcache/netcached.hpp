@@ -79,8 +79,9 @@ struct STraceEvent
 ///
 struct SNetCache_RequestStat
 {
-    CTime        conn_time;    ///< connection incoming time in seconds
-    CTime        req_time;     ///< request incoming time in seconds
+    CTime        conn_time;    ///< connection incoming time
+    CTime        req_time;     ///< request incoming time
+    CTime        max_exec_time;///< maximum allowed time for request execution
     unsigned     req_code;     ///< 'P' put, 'G' get
     SBDB_CacheUnitStatistics::EErrGetPut op_code; /// error opcode for BDB
     CStopWatch   elapsed_watch; /// watch for request elapsed time
@@ -119,6 +120,7 @@ struct SNetCache_RequestStat
     void InitRequest() {
         elapsed_watch.Restart();
         req_time.SetCurrent();
+        max_exec_time = req_time;
 #ifdef _DEBUG
         events.clear();
 #endif
@@ -319,6 +321,15 @@ public:
 
     unsigned GetInactivityTimeout(void);
 
+    unsigned GetRequestTimeout(void)
+    {
+        return m_RequestTimeout;
+    }
+    void SetRequestTimeout(unsigned timeout)
+    {
+        m_RequestTimeout = timeout;
+    }
+
     CFastLocalTime& GetTimer();
 
     enum ELogLevel {
@@ -348,6 +359,8 @@ private:
     int              m_Signal;
     /// Time to wait for the client (seconds)
     unsigned         m_InactivityTimeout;
+    /// Maximum time each request can work
+    unsigned         m_RequestTimeout;
     /// Logging level
     int              m_EffectiveLogLevel;
     int              m_ConfigLogLevel;

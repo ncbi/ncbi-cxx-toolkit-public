@@ -339,8 +339,11 @@ CNetCache_MessageHandler::CheckMessage(BUF*        buffer,
 }
 
 EIO_Event
-CNetCache_MessageHandler::GetEventsToPollFor(const CTime**) const
+CNetCache_MessageHandler::GetEventsToPollFor(const CTime** alarm_time) const
 {
+    if (m_InRequest) {
+        *alarm_time = &m_Stat.max_exec_time;
+    }
     if (m_DelayedWrite  ||  m_OverflowWrite) {
         return eIO_Write;
     }
@@ -431,6 +434,7 @@ CNetCache_MessageHandler::OnRead(void)
             m_Context->SetRequestID();
             x_InitDiagnostics();
             m_Stat.InitRequest();
+            m_Stat.max_exec_time.AddSecond(m_Server->GetRequestTimeout());
             m_InRequest = true;
         }
         if (m_ReadBufPos == m_ReadBufSize) {
@@ -453,7 +457,8 @@ CNetCache_MessageHandler::OnRead(void)
                 need_return = true;*/
                 break;
             case eIO_Closed:
-                this->OnCloseExt(eClientClose);
+                OnCloseExt(eClientClose);
+                x_InitDiagnostics();
                 need_return = true;
                 break;
             default:
@@ -757,6 +762,21 @@ CNetCache_MessageHandler::OnTimeout(void)
 {
     x_InitDiagnostics();
     LOG_POST(Info << "Timeout, closing connection");
+    x_DeinitDiagnostics();
+}
+
+void
+CNetCache_MessageHandler::OnTimer(void)
+{
+    x_InitDiagnostics();
+
+    if (!m_InRequest)
+        return;
+
+    LOG_POST("Request execution timed out. Closing connection.");
+    GetSocket().Close();
+    OnCloseExt(eOurClose);
+
     x_DeinitDiagnostics();
 }
 

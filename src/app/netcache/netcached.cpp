@@ -781,6 +781,8 @@ int CNetCacheDApp::Run(void)
         } else {
             LOG_POST("Network IO timeout " << network_timeout);
         }
+        unsigned request_timeout =
+            reg.GetInt("server", "request_timeout", 600, 0, CNcbiRegistry::eReturn);
         bool use_hostname =
             reg.GetBool("server", "use_hostname", false, 0, CNcbiRegistry::eReturn);
         bool is_log =
@@ -822,6 +824,8 @@ int CNetCacheDApp::Run(void)
         if (bdb_cache) {
             bdb_cache->SetMonitor(&server->GetMonitor());
         }
+
+        server->SetRequestTimeout(request_timeout);
 
         // create ICache instances
 
