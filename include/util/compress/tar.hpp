@@ -550,7 +550,7 @@ protected:
     virtual void x_Close(void);
 
     // Flush the archive (writing an appropriate EOT if necessary).
-    void x_Flush(void);
+    void x_Flush(bool nothrow = false);
 
     // Backspace the archive.
     void x_Backspace(EAction action, size_t blocks);
@@ -616,6 +616,7 @@ protected:
     CMask*         m_Mask;         ///< Masks for list/test/extract.
     EOwnership     m_MaskOwned;    ///< Flag of m_Mask's ownership.
     bool           m_Modified;     ///< True after at least one write.
+    bool           m_Bad;          ///< True a fatal output error occurred.
     TFlags         m_Flags;        ///< Bitwise OR of flags.
     string         m_BaseDir;      ///< Base directory for relative paths.
     CTarEntryInfo  m_Current;      ///< Current entry being processed.

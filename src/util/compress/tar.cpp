@@ -42,8 +42,6 @@
  *
  */
 
-#define NCBI_MODULE NCBITAR
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbimisc.hpp>
@@ -71,7 +69,8 @@ typedef short        gid_t;
 #endif // NCBI_OS
 
 
-#define NCBI_USE_ERRCODE_X   Util_Compress
+#define NCBI_USE_ERRCODE_X  Util_Compress
+#define NCBI_MODULE         NCBITAR
 
 
 BEGIN_NCBI_SCOPE
@@ -983,6 +982,7 @@ CTar::CTar(const string& filename, size_t blocking_factor)
       m_Mask(0),
       m_MaskOwned(eNoOwnership),
       m_Modified(false),
+      m_Bad(false),
       m_Flags(fDefault)
 {
     x_Init();
@@ -1002,6 +1002,7 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
       m_Mask(0),
       m_MaskOwned(eNoOwnership),
       m_Modified(false),
+      m_Bad(false),
       m_Flags(fDefault)
 {
     x_Init();
@@ -1011,7 +1012,8 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
 CTar::~CTar()
 {
     // Close stream(s)
-    Close();
+    x_Flush(true/*nothrow*/);
+    x_Close();
     delete m_FileStream;
 
     // Delete owned file name masks
@@ -1056,7 +1058,7 @@ void CTar::x_Init(void)
 }
 
 
-void CTar::x_Flush(void)
+void CTar::x_Flush(bool nothrow)
 {
     m_Current.m_Name.erase();
     if (!m_Stream  ||  !m_OpenMode  ||  !m_Modified) {
@@ -1067,22 +1069,28 @@ void CTar::x_Flush(void)
     size_t pad = m_BufferSize - m_BufferPos;
     // Assure proper blocking factor and pad the archive as necessary
     memset(m_Buffer + m_BufferPos, 0, pad);
-    x_WriteArchive(pad);
-    _ASSERT(m_BufferPos == 0);
-    if (pad < kBlockSize  ||  pad - OFFSET_OF(pad) < (kBlockSize << 1)) {
+    x_WriteArchive(pad, nothrow ? (const char*)(-1L) : 0);
+    _ASSERT(!(m_BufferPos % m_BufferSize)); // m_BufferSize if write error
+    _ASSERT(!m_Bad == !m_BufferPos);
+    if (!m_Bad
+        &&  (pad < kBlockSize || pad - OFFSET_OF(pad) < (kBlockSize << 1))) {
         // Write EOT (two zero blocks), if have not already done so by padding
         memset(m_Buffer, 0, m_BufferSize - pad);
-        x_WriteArchive(m_BufferSize);
-        _ASSERT(m_BufferPos == 0);
-        if (m_BufferSize == kBlockSize) {
-            x_WriteArchive(kBlockSize);
-            _ASSERT(m_BufferPos == 0);
+        x_WriteArchive(m_BufferSize, nothrow ? (const char*)(-1L) : 0);
+        _ASSERT(!(m_BufferPos % m_BufferSize)  &&  !m_Bad == !m_BufferPos);
+        if (!m_Bad  &&  m_BufferSize == kBlockSize) {
+            x_WriteArchive(kBlockSize, nothrow ? (const char*)(-1L) : 0);
+            _ASSERT(!(m_BufferPos % m_BufferSize)  &&  !m_Bad == !m_BufferPos);
         }
     }
-    if (m_Stream->rdbuf()->PUBSYNC() != 0) {
-        int x_errno = errno; 
-        TAR_THROW(this, eWrite,
-                  "Archive flush failed" + s_OSReason(x_errno));
+    if (!m_Bad  &&  m_Stream->rdbuf()->PUBSYNC() != 0) {
+        int x_errno = errno;
+        if (!nothrow) {
+            TAR_THROW(this, eWrite,
+                      "Archive flush failed" + s_OSReason(x_errno));
+        }
+        TAR_POST(83, Error,
+                 "Archive flush failed" + s_OSReason(x_errno));
     }
     m_Modified = false;
 }
@@ -1095,6 +1103,7 @@ void CTar::x_Close(void)
     if (m_FileStream  &&  m_FileStream->is_open()) {
         m_FileStream->close();
         m_Stream = 0;
+        m_Bad = false;
     }
     m_OpenMode  = eNone;
     m_BufferPos = 0;
@@ -1120,7 +1129,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
             m_StreamPos = 0;
         }
         m_Current.m_Name.erase();
-        if (!m_Stream  ||  !m_Stream->good()  ||  !m_Stream->rdbuf()) {
+        if (m_Bad || !m_Stream || !m_Stream->good() || !m_Stream->rdbuf()) {
             m_OpenMode = eNone;
             TAR_THROW(this, eOpen,
                       "Bad IO stream provided for archive");
@@ -1175,6 +1184,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
                           + s_OSReason(x_errno));
             }
             m_Stream = m_FileStream;
+            m_Bad = false;
         }
 
         if (m_OpenMode) {
@@ -1330,9 +1340,10 @@ const char* CTar::x_ReadArchive(size_t& n)
 // All partial internal (i.e. in-buffer) block writes are _not_ block-aligned.
 void CTar::x_WriteArchive(size_t nwrite, const char* src)
 {
-    if (!nwrite) {
+    if (!nwrite  ||  m_Bad) {
         return;
     }
+    m_Modified = true;
     do {
         size_t avail = m_BufferSize - m_BufferPos;
         _ASSERT(avail != 0);
@@ -1340,11 +1351,12 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
             avail = nwrite;
         }
         size_t advance = avail;
-        if (src) {
+        if (src  &&  src != (const char*)(-1L)) {
             memcpy(m_Buffer + m_BufferPos, src, avail);
             size_t pad = ALIGN_SIZE(avail) - avail;
             memset(m_Buffer + m_BufferPos + avail, 0, pad);
             advance += pad;
+            src += avail;
         }
         m_BufferPos += advance;
         if (m_BufferPos == m_BufferSize) {
@@ -1355,8 +1367,14 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
                             (streamsize)(m_BufferSize - nwritten));
                 if (xwritten <= 0) {
                     int x_errno = errno;
-                    TAR_THROW(this, eWrite,
-                              "Archive write failed" + s_OSReason(x_errno));
+                    m_Bad = true;
+                    if (src != (const char*)(-1L)) {
+                        TAR_THROW(this, eWrite,
+                                  "Archive write failed" +s_OSReason(x_errno));
+                    }
+                    TAR_POST(84, Error,
+                             "Archive write failed" + s_OSReason(x_errno));
+                    return;
                 }
                 nwritten += xwritten;
             } while (nwritten < m_BufferSize);
@@ -1365,7 +1383,6 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
         m_StreamPos += advance;
         nwrite -= avail;
     } while (nwrite);
-    m_Modified = true;
 }
 
 
