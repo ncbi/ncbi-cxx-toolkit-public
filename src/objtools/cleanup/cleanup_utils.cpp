@@ -965,6 +965,20 @@ bool CitSubsMatch(const CCit_sub& sub1, const CCit_sub& sub2)
 }
 
 
+bool s_DbtagCompare (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2)
+{
+    // is dbt1 < dbt2
+    return dbt1->Compare(*dbt2) < 0;
+}
+
+
+bool s_DbtagEqual (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2)
+{
+    // is dbt1 == dbt2
+    return dbt1->Compare(*dbt2) == 0;
+}
+
+
 CRef<CSeq_loc> MakeFullLengthLocation(CBioseq_Handle bh, CScope* scope, CRef<CSeq_loc> new_loc, bool &first)
 {
     bool is_master_seq = false;

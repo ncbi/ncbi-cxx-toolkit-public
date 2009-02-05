@@ -413,37 +413,9 @@ char ValidAminoAcid (string abbrev);
 // for matching equivalent cit-sub publications
 bool CitSubsMatch(const CCit_sub& sub1, const CCit_sub& sub2);
 
-struct SDbtagCompare
-{
-    // is dbt1 < dbt2
-    bool operator()(const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2) {
-        return dbt1->Compare(*dbt2) < 0;
-    }
-};
-
-
-struct SDbtagEqual
-{
-    // is dbt1 < dbt2
-    bool operator()(const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2) {
-        return dbt1->Compare(*dbt2) == 0;
-    }
-};
-
-
-static bool s_DbtagCompare (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2)
-{
-    // is dbt1 < dbt2
-    return dbt1->Compare(*dbt2) < 0;
-}
-
-
-static bool s_DbtagEqual (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2)
-{
-    // is dbt1 < dbt2
-    return dbt1->Compare(*dbt2) == 0;
-}
-
+// for sorting and uniquing dbtags
+bool s_DbtagCompare (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2);
+bool s_DbtagEqual (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2);
 
 // Is this range sorted according to the given comparison?
 // needed to see if sorts in cleanup do anything.

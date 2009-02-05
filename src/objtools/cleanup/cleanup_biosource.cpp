@@ -160,7 +160,7 @@ void CCleanup_imp::x_OrgModToSubtype (
         string& str = *it;
         CRef<CSubSource> subsrc (s_StringToSubSource (str));
         if (! subsrc) continue;
-        bs.SetSubtype().push_back(subsrc);
+        ADD_SUBSOURCE_TO_BIOSOURCE (bs, subsrc);
         ERASE_MOD_ON_ORGREF (it, org);
         ChangeMade (CCleanupChange::eChangeSubsource);
     }
@@ -319,56 +319,28 @@ void CCleanup_imp::x_SubtypeCleanup (
 
     if (! SUBSOURCE_ON_BIOSOURCE_IS_SORTED (bs, s_SubsourceCompare)) {
         SORT_SUBSOURCE_ON_BIOSOURCE (bs, s_SubsourceCompare);
-        ChangeMade(CCleanupChange::eCleanSubsource);
+        ChangeMade (CCleanupChange::eCleanSubsource);
     }
     
     if (! SUBSOURCE_ON_BIOSOURCE_IS_UNIQUE (bs, s_SubsourceEqual)) {
         UNIQUE_SUBSOURCE_ON_BIOSOURCE (bs, s_SubsourceEqual);
-        ChangeMade(CCleanupChange::eCleanSubsource);
+        ChangeMade (CCleanupChange::eCleanSubsource);
     }
 
     /*
     CBioSource::TSubtype& subtypes = bs.SetSubtype();
     
     if (! seq_mac_is_sorted (subtypes.begin(), subtypes.end(), s_SubsourceCompare)) {
-        ChangeMade(CCleanupChange::eCleanSubsource);
+        ChangeMade (CCleanupChange::eCleanSubsource);
         subtypes.sort(s_SubsourceCompare);        
     }
     size_t subtypes_cnt = subtypes.size();
     subtypes.unique(s_SubsourceEqual);
     if (subtypes_cnt != subtypes.size()) {
-        ChangeMade(CCleanupChange::eCleanSubsource);
+        ChangeMade (CCleanupChange::eCleanSubsource);
     }
     */
 }
-
-/*
-static bool s_MySDbtagCompare (
-    const CRef<CDbtag>& db1,
-    const CRef<CDbtag>& db2
-)
-
-{
-    const CDbtag& dbt1 = *(db1);
-    const CDbtag& dbt2 = *(db1);
-
-    // is dbt1 < dbt2
-    return dbt1.Compare(dbt2) < 0;
-}
-
-static bool s_MySDbtagEqual (
-    const CRef<CDbtag>& db1,
-    const CRef<CDbtag>& db2
-)
-
-{
-    const CDbtag& dbt1 = *(db1);
-    const CDbtag& dbt2 = *(db1);
-
-    // is dbt1 == dbt2
-    return dbt1.Compare(dbt2) == 0;
-}
-*/
 
 void CCleanup_imp::BasicCleanup(
     COrg_ref& oref
@@ -405,31 +377,15 @@ void CCleanup_imp::BasicCleanup(
 
     // sort/unique db_xrefs
 
-    COrg_ref::TDb& dbxref = oref.SetDb();
-    COrg_ref::TDb::iterator it = dbxref.begin();
-
-    if ( ! seq_mac_is_sorted(dbxref.begin(), dbxref.end(), SDbtagCompare())) {
-        ChangeMade(CCleanupChange::eCleanDbxrefs);
-        stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());            
-    }
-    size_t dbxref_cnt = dbxref.size();
-    it = unique(dbxref.begin(), dbxref.end(), SDbtagEqual());
-    dbxref.erase(it, dbxref.end());
-    if (dbxref_cnt != dbxref.size()) {
-        ChangeMade(CCleanupChange::eCleanDbxrefs);
-    }
-
-    /*
-    if (! DBXREF_ON_ORGREF_IS_SORTED (oref, s_MySDbtagCompare)) {
-        SORT_DBXREF_ON_ORGREF (oref, s_MySDbtagCompare);
+    if (! DBXREF_ON_ORGREF_IS_SORTED (oref, s_DbtagCompare)) {
+        SORT_DBXREF_ON_ORGREF (oref, s_DbtagCompare);
         ChangeMade (CCleanupChange::eCleanDbxrefs);
     }
 
-    if (! DBXREF_ON_ORGREF_IS_UNIQUE(oref, s_MySDbtagEqual)) {
-        UNIQUE_DBXREF_ON_ORGREF (oref, s_MySDbtagEqual);
+    if (! DBXREF_ON_ORGREF_IS_UNIQUE(oref, s_DbtagEqual)) {
+        UNIQUE_DBXREF_ON_ORGREF (oref, s_DbtagEqual);
         ChangeMade (CCleanupChange::eCleanDbxrefs);
     }
-    */
 }
 
 
@@ -504,7 +460,7 @@ void CCleanup_imp::x_ModToOrgMod (
         if (orgmod) {
             orgname.SetMod().push_back(orgmod);
             it = mod_list.erase(it);
-            ChangeMade(CCleanupChange::eChangeOrgmod);
+            ChangeMade (CCleanupChange::eChangeOrgmod);
         } else {
             ++it;
         }
@@ -631,13 +587,13 @@ void CCleanup_imp::BasicCleanup (
         // if type of COrgName::TMod is changed from 'list' 
         // these will need to be changed.
         if ( ! seq_mac_is_sorted(mods.begin(), mods.end(), s_OrgModCompareSubtypeFirst)) {
-            ChangeMade(CCleanupChange::eCleanOrgmod);
+            ChangeMade (CCleanupChange::eCleanOrgmod);
         }
         mods.sort(s_OrgModCompareNameFirst);
         mods.unique(s_OrgModEqual);
         mods.sort(s_OrgModCompareSubtypeFirst);
         if (mods.size() != mods_cnt) {
-            ChangeMade(CCleanupChange::eCleanOrgmod);
+            ChangeMade (CCleanupChange::eCleanOrgmod);
         }
     }
 }
@@ -1323,9 +1279,9 @@ void CCleanup_imp::x_ConvertOrgDescToSourceDescriptor (
             CRef<CSeqdesc> desc(new CSeqdesc);
             desc->SetSource().SetOrg((*it1)->SetOrg());
             eh.AddSeqdesc(*desc);
-            ChangeMade(CCleanupChange::eAddDescriptor);
+            ChangeMade (CCleanupChange::eAddDescriptor);
             eh.RemoveSeqdesc(**it1);
-            ChangeMade(CCleanupChange::eRemoveDescriptor);
+            ChangeMade (CCleanupChange::eRemoveDescriptor);
         }        
     }
 }
@@ -1350,9 +1306,9 @@ void CCleanup_imp::x_ConvertOrgDescToSourceDescriptor (
             CRef<CSeqdesc> desc(new CSeqdesc);
             desc->SetSource().SetOrg((*it1)->SetOrg());
             eh.AddSeqdesc(*desc);
-            ChangeMade(CCleanupChange::eAddDescriptor);
+            ChangeMade (CCleanupChange::eAddDescriptor);
             eh.RemoveSeqdesc(**it1);
-            ChangeMade(CCleanupChange::eRemoveDescriptor);
+            ChangeMade (CCleanupChange::eRemoveDescriptor);
         }        
     }
 }
@@ -1406,7 +1362,7 @@ void CCleanup_imp::x_FixNucProtSources (
             for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
                 it1 != remove_list.end(); ++it1) { 
                 eh.RemoveSeqdesc(**it1);
-                ChangeMade(CCleanupChange::eRemoveDescriptor);
+                ChangeMade (CCleanupChange::eRemoveDescriptor);
             }        
 
             if (eh.SetDescr().Set().size() == 0) {
@@ -1428,7 +1384,7 @@ void CCleanup_imp::x_FixNucProtSources (
             for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
                 it1 != remove_list.end(); ++it1) { 
                 eh.RemoveSeqdesc(**it1);
-                ChangeMade(CCleanupChange::eRemoveDescriptor);
+                ChangeMade (CCleanupChange::eRemoveDescriptor);
             }        
 
             if (eh.SetDescr().Set().size() == 0) {
@@ -1920,7 +1876,7 @@ void CCleanup_imp::x_MoveDescriptor (
     for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
         it1 != remove_list.end(); ++it1) { 
         beh.RemoveSeqdesc(**it1);
-        ChangeMade(CCleanupChange::eRemoveDescriptor);
+        ChangeMade (CCleanupChange::eRemoveDescriptor);
     }        
 
     if (beh.SetDescr().Set().size() == 0) {
@@ -1956,7 +1912,7 @@ void CCleanup_imp::x_MoveDescriptor (
     for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
         it1 != remove_list.end(); ++it1) { 
         beh.RemoveSeqdesc(**it1);
-        ChangeMade(CCleanupChange::eRemoveDescriptor);
+        ChangeMade (CCleanupChange::eRemoveDescriptor);
     }        
 
     if (beh.SetDescr().Set().size() == 0) {
@@ -2188,7 +2144,7 @@ void CCleanup_imp::x_FixSegSetSource (
                 || (nuc_prot_parent
                     && x_PromoteMergeableSource (nuc_prot_parent, found_src->GetSource()))) {
                 set_eh.RemoveSeqdesc(*found_src);
-                ChangeMade(CCleanupChange::eRemoveDescriptor);
+                ChangeMade (CCleanupChange::eRemoveDescriptor);
                 if (set_eh.SetDescr().Set().size() == 0) {
                     set_eh.ResetDescr();
                 }
@@ -2208,7 +2164,7 @@ void CCleanup_imp::x_FixSegSetSource (
                 if (!nuc_prot_parent 
                     || !x_PromoteMergeableSource (nuc_prot_parent, new_src->GetSource())) {
                     set_eh.AddSeqdesc(*new_src);
-                    ChangeMade(CCleanupChange::eAddDescriptor);
+                    ChangeMade (CCleanupChange::eAddDescriptor);
                 }
             }            
         }
@@ -2409,7 +2365,7 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures (
         for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
             it1 != remove_list.end(); ++it1) { 
             edith.RemoveSeqdesc(**it1);
-            ChangeMade(CCleanupChange::eRemoveDescriptor);
+            ChangeMade (CCleanupChange::eRemoveDescriptor);
         }        
     }
 }
@@ -2465,7 +2421,7 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures (
         for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
             it1 != remove_list.end(); ++it1) { 
             edith.RemoveSeqdesc(**it1);
-            ChangeMade(CCleanupChange::eRemoveDescriptor);
+            ChangeMade (CCleanupChange::eRemoveDescriptor);
         }        
     }
 
