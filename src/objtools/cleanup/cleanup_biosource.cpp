@@ -1,34 +1,35 @@
 /* $Id$
- * ===========================================================================
- *
- *                            PUBLIC DOMAIN NOTICE
- *               National Center for Biotechnology Information
- *
- *  This software/database is a "United States Government Work" under the
- *  terms of the United States Copyright Act.  It was written as part of
- *  the author's official duties as a United States Government employee and
- *  thus cannot be copyrighted.  This software/database is freely available
- *  to the public for use. The National Library of Medicine and the U.S.
- *  Government have not placed any restriction on its use or reproduction.
- *
- *  Although all reasonable efforts have been taken to ensure the accuracy
- *  and reliability of the software and data, the NLM and the U.S.
- *  Government do not and cannot warrant the performance or results that
- *  may be obtained by using this software or data. The NLM and the U.S.
- *  Government disclaim all warranties, express or implied, including
- *  warranties of performance, merchantability or fitness for any particular
- *  purpose.
- *
- *  Please cite the author in any work or product based on this material.
- *
- * ===========================================================================
- *
- * Author:  Robert G. Smith
- *
- * File Description:
- *   implementation of BasicCleanup for CBioSource and sub-objects.
- *
- */
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Author:  Robert G. Smith
+*
+* File Description:
+*   implementation of BasicCleanup for CBioSource and sub-objects.
+*
+* ===========================================================================
+*/
 
 #include <ncbi_pch.hpp>
 #include "cleanup_utils.hpp"
@@ -64,38 +65,49 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 /****  BioSource cleanup ****/
 
-void CCleanup_imp::BasicCleanup(CBioSource& bs)
+void CCleanup_imp::BasicCleanup (
+    CBioSource& bs
+)
+
 {
-    if (bs.IsSetOrg()) {
-        BasicCleanup(bs.SetOrg());
+    if (BIOSOURCE_HAS_ORGREF (bs)) {
+        BasicCleanup (bs.SetOrg());
         // convert COrg_reg.TMod string to SubSource objects
-        x_OrgModToSubtype(bs);
+        x_OrgModToSubtype (bs);
     }
-    if (bs.IsSetSubtype()) {
-        x_SubtypeCleanup(bs);
+
+    if (BIOSOURCE_HAS_SUBSOURCE (bs)) {
+        x_SubtypeCleanup  (bs);
     }
 }
 
 
-static bool s_NoNameSubtype(CSubSource::TSubtype val)
+static bool s_NoNameSubtype (
+    TSUBSOURCE_SUBTYPE val
+)
+
 {
-    if (val == CSubSource::eSubtype_germline    ||
-        val == CSubSource::eSubtype_rearranged  ||
-        val == CSubSource::eSubtype_transgenic  ||
-        val == CSubSource::eSubtype_environmental_sample  ||
-        val == CSubSource::eSubtype_metagenomic) {
+    if (val == NCBI_SUBSOURCE(germline)    ||
+        val == NCBI_SUBSOURCE(rearranged)  ||
+        val == NCBI_SUBSOURCE(transgenic)  ||
+        val == NCBI_SUBSOURCE(environmental_sample)  ||
+        val == NCBI_SUBSOURCE(metagenomic)) {
         return true;
     }
     return false;
 }
 
-static CSubSource* s_StringToSubSource(const string& str)
+static CSubSource* s_StringToSubSource (
+    const string& str
+)
+
 {
     size_t pos = str.find('=');
     if (pos == NPOS) {
         pos = str.find(' ');
     }
     string subtype = str.substr(0, pos);
+
     try {
         CSubSource::TSubtype val = CSubSource::GetSubtypeValue(subtype);
         
@@ -117,10 +129,11 @@ static CSubSource* s_StringToSubSource(const string& str)
         
         size_t num_spaces = 0;
         bool has_comma = false;
-        ITERATE (string, it, name) {
-            if (isspace((unsigned char)(*it))) {
+        FOR_EACH_CHAR_IN_STRING (it, name) {
+            const char& ch = *it;
+            if (isspace((unsigned char) ch)) {
                 ++num_spaces;
-            } else if (*it == ',') {
+            } else if (ch == ',') {
                 has_comma = true;
                 break;
             }
@@ -131,55 +144,51 @@ static CSubSource* s_StringToSubSource(const string& str)
         }
         return new CSubSource(val, name);
     } catch (CSerialException&) {}
+
     return NULL;
 }
 
+void CCleanup_imp::x_OrgModToSubtype (
+    CBioSource& bs
+)
 
-void CCleanup_imp::x_OrgModToSubtype(CBioSource& bs)
 {
-    _ASSERT(bs.IsSetOrg());
-    
-    if (!bs.SetOrg().IsSetMod()) {
-        return;
-    }
-    CBioSource::TOrg::TMod& mod_list = bs.SetOrg().SetMod();
-    
-    CBioSource::TOrg::TMod::iterator it = mod_list.begin();
-    while (it != mod_list.end()) {
-        CRef<CSubSource> subsrc(s_StringToSubSource(*it));
-        if (subsrc) {
-            bs.SetSubtype().push_back(subsrc);
-            it = mod_list.erase(it);
-            ChangeMade(CCleanupChange::eChangeSubsource);
-        } else {
-            ++it;
-        }
-    }
-}
+    _ASSERT (BIOSOURCE_HAS_ORGREF (bs));
 
-
-// remove those with no name unless it has a subtype that doesn't need a name.
-static bool s_SubSourceRemove(const CRef<CSubSource>& s1)
-{
-    return  ! s1->IsSetName()  &&  ! s_NoNameSubtype(s1->GetSubtype());
+    COrg_ref& org = bs.SetOrg();
+    EDIT_EACH_MOD_ON_ORGREF (it, org) {
+        string& str = *it;
+        CRef<CSubSource> subsrc (s_StringToSubSource (str));
+        if (! subsrc) continue;
+        bs.SetSubtype().push_back(subsrc);
+        ERASE_MOD_ON_ORGREF (it, org);
+        ChangeMade (CCleanupChange::eChangeSubsource);
+    }
 }
 
 
 // is st1 < st2
-static bool s_SubsourceCompare(const CRef<CSubSource>& st1,
-                               const CRef<CSubSource>& st2)
+
+static bool s_SubsourceCompare (
+    const CRef<CSubSource>& st1,
+    const CRef<CSubSource>& st2
+)
+
 {
-    if (st1->GetSubtype() < st2->GetSubtype()) {
-        return true;
-    } else if (st1->GetSubtype() == st2->GetSubtype()) {
-        if ( st1->IsSetName()  &&  st2->IsSetName()) {
-            if (NStr::CompareNocase(st1->GetName(), st2->GetName()) < 0) {
-                return true;
-            }
-        } else if ( ! st1->IsSetName()  &&  st2->IsSetName()) {
-            return true;
-        }
+    const CSubSource& sbs1 = *(st1);
+    const CSubSource& sbs2 = *(st2);
+
+    TSUBSOURCE_SUBTYPE chs1 = sbs1.GetSubtype();
+    TSUBSOURCE_SUBTYPE chs2 = sbs2.GetSubtype();
+
+    if (chs1 < chs2) return true;
+    if (chs1 > chs2) return false;
+
+    if (sbs2.IsSetName()) {
+        if (! sbs1.IsSetName()) return true;
+        if (NStr::CompareNocase (sbs1.GetName(), sbs2.GetName()) < 0) return true;
     }
+
     return false;
 }
 
@@ -187,25 +196,37 @@ static bool s_SubsourceCompare(const CRef<CSubSource>& st1,
 // Two SubSource's are equal and duplicates if:
 // they have the same subtype
 // and the same name (or don't require a name).
-static bool s_SubsourceEqual(const CRef<CSubSource>& st1,
-                             const CRef<CSubSource>& st2)
+
+static bool s_SubsourceEqual (
+    const CRef<CSubSource>& st1,
+    const CRef<CSubSource>& st2
+)
+
 {
-    if ( st1->GetSubtype() == st2->GetSubtype() ) {
-        if ( s_NoNameSubtype(st2->GetSubtype())  ||  
-             ( ! st1->IsSetName()  &&  ! st2->IsSetName() ) ||
-             ( st1->IsSetName()  &&  st2->IsSetName()  &&
-               NStr::CompareNocase(st1->GetName(), st2->GetName()) == 0) ) {
-            return true;
-        }            
+    const CSubSource& sbs1 = *(st1);
+    const CSubSource& sbs2 = *(st2);
+
+    TSUBSOURCE_SUBTYPE chs1 = sbs1.GetSubtype();
+    TSUBSOURCE_SUBTYPE chs2 = sbs2.GetSubtype();
+
+    if (chs1 != chs2) return false;
+
+    if (s_NoNameSubtype (chs2)) return true;
+    if (sbs1.IsSetName() && sbs2.IsSetName()) {
+        if (NStr::CompareNocase (sbs1.GetName(), sbs2.GetName()) == 0) return true;
     }
+    if (! sbs1.IsSetName() && ! sbs2.IsSetName()) return true;
+
     return false;
 }
 
-/*
-    Strip all parentheses and commas from the
-    beginning and end of the string.
-*/
-void x_TrimParensAndCommas(string& str)
+
+// Strip all parentheses and commas from the beginning and end of the string.
+
+void x_TrimParensAndCommas (
+    string& str
+)
+
 {
     SIZE_TYPE st = str.find_first_not_of("(),");
     if (st == NPOS){
@@ -221,113 +242,117 @@ void x_TrimParensAndCommas(string& str)
 }
 
 
-bool s_RemoveRedundantPlastidNameSubSourceQualifier (CBioSource& bs)
+void CCleanup_imp::x_SubtypeCleanup (
+    CBioSource& bs
+)
+
 {
-    bool rval = false;
-
-    if (!bs.IsSetGenome()) {
-        return false;
-    }
-    CBioSource::TGenome genome = bs.GetGenome();
-    string plastid_name = "";
-    switch (genome) {
-        case CBioSource::eGenome_apicoplast:
-            plastid_name = "apicoplast";
-            break;
-        case CBioSource::eGenome_chloroplast:
-            plastid_name = "chloroplast";
-            break;
-        case CBioSource::eGenome_chromoplast:
-            plastid_name = "chromoplast";
-            break;
-        case CBioSource::eGenome_kinetoplast:
-            plastid_name = "kinetoplast";
-            break;
-        case CBioSource::eGenome_leucoplast:
-            plastid_name = "leucoplast";
-            break;
-        case CBioSource::eGenome_plastid:
-            plastid_name = "plastid";
-            break;
-        case CBioSource::eGenome_proplastid:
-            plastid_name = "proplastid";
-            break;
-        default:
-            return false;
-            break;
-    }
-
-    CBioSource::TSubtype& subtypes = bs.SetSubtype();
-    CBioSource::TSubtype::iterator it = subtypes.begin();
-    while (it != subtypes.end()) {
-        if (*it) {
-            CSubSource& ss = **it;
-            if ( ss.GetSubtype() == CSubSource::eSubtype_plastid_name
-                 && NStr::Equal (ss.GetName(), plastid_name)) {
-                it = subtypes.erase(it);
-                rval = true;
-            } else {
-                ++it;
-            }
-        } else {
-            ++it;
-        }
-    }
-    return rval;
-}
-
-
-void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
-{
-    _ASSERT(bs.IsSetSubtype());
-    
-    CBioSource::TSubtype& subtypes = bs.SetSubtype();
+    _ASSERT (BIOSOURCE_HAS_SUBSOURCE (bs));
     
     EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
-        if (*it) {
-            BasicCleanup(**it);
-        }
+        CSubSource& sbs = **it;
+        BasicCleanup (sbs);
     }
     
     // remove those with no name unless it has a subtype that doesn't need a name.
-    size_t subtypes_cnt = subtypes.size();
-    subtypes.remove_if(s_SubSourceRemove);
-    if (subtypes_cnt != subtypes.size()) {
-        ChangeMade(CCleanupChange::eCleanSubsource);
+    EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
+        CSubSource& sbs = **it;
+        if (sbs.IsSetName()) continue;
+        TSUBSOURCE_SUBTYPE chs = sbs.GetSubtype();
+        if (s_NoNameSubtype (chs)) continue;
+        ERASE_SUBSOURCE_ON_BIOSOURCE (it, bs);
+        ChangeMade (CCleanupChange::eCleanSubsource);
+    }
+    
+    // remove plastid-name qual if the value is the same as the biosource location
+    string plastid_name = "";
+    SWITCH_ON_BIOSOURCE_GENOME (bs) {
+        case NCBI_GENOME(apicoplast):
+            plastid_name = "apicoplast";
+            break;
+        case NCBI_GENOME(chloroplast):
+            plastid_name = "chloroplast";
+            break;
+        case NCBI_GENOME(chromoplast):
+            plastid_name = "chromoplast";
+            break;
+        case NCBI_GENOME(kinetoplast):
+            plastid_name = "kinetoplast";
+            break;
+        case NCBI_GENOME(leucoplast):
+            plastid_name = "leucoplast";
+            break;
+        case NCBI_GENOME(plastid):
+            plastid_name = "plastid";
+            break;
+        case NCBI_GENOME(proplastid):
+            plastid_name = "proplastid";
+            break;
+        default:
+            break;
+    }
+    EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
+      CSubSource& ss = **it;
+      if (SUBSOURCE_CHOICE_IS (ss, NCBI_SUBSOURCE(plastid_name))) {
+          if (NStr::Equal (ss.GetName(), plastid_name)) {
+              ERASE_SUBSOURCE_ON_BIOSOURCE (it, bs);
+              ChangeMade (CCleanupChange::eCleanSubsource);
+          }
+      }
     }
 
-    // remove plastid-name qual if the value is the same as the biosource location
-    if (s_RemoveRedundantPlastidNameSubSourceQualifier (bs)) {
-        ChangeMade(CCleanupChange::eCleanSubsource);
-    }
-    
-    
     // remove spaces and convert to lowercase in fwd_primer_seq and rev_primer_seq.
-    CBioSource::TSubtype::iterator it = subtypes.begin();
-    while (it != subtypes.end()) {
-        if (*it) {
-            CSubSource& ss = **it;
-            if ( ss.GetSubtype() == CSubSource::eSubtype_fwd_primer_seq  || 
-                 ss.GetSubtype() == CSubSource::eSubtype_rev_primer_seq ) {
-                string before = ss.GetName();
-                NStr::ToLower(ss.SetName());
-                ss.SetName(NStr::Replace(ss.GetName(), " ", kEmptyStr));
-				if (!NStr::Equal (before, ss.GetName())) {
-                    ChangeMade(CCleanupChange::eCleanSubsource);
-				}
-            }
-        }
-        ++it;
+    EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
+      CSubSource& ss = **it;
+      if (SUBSOURCE_CHOICE_IS (ss, NCBI_SUBSOURCE(fwd_primer_seq)) ||
+          SUBSOURCE_CHOICE_IS (ss, NCBI_SUBSOURCE(rev_primer_seq))) {
+          string before = ss.GetName();
+          NStr::ToLower (ss.SetName());
+          ss.SetName (NStr::Replace (ss.GetName(), " ", kEmptyStr));
+          if (NStr::Equal (before, ss.GetName())) continue;
+          ChangeMade (CCleanupChange::eCleanSubsource);
+      }
     }
-    
+
     // sort and remove duplicates.
     // Do not sort before merging primer_seq's above.
-    if (! objects::is_sorted(subtypes.begin(), subtypes.end(),
-                             s_SubsourceCompare)) {
+
+/*
+#define IS_SORTED(Base, Var, Func) \
+(! (Base##_Test(Var)) || \
+    is_sorted (Base##_Set(Var).begin(), \
+               Base##_Set(Var).end(), \
+               Func()))
+
+
+#define SUBSOURCE_ON_BIOSOURCE_Type      CBioSource::TSubtype
+#define SUBSOURCE_ON_BIOSOURCE_Test(Var) (Var).IsSetSubtype()
+#define SUBSOURCE_ON_BIOSOURCE_Get(Var)  (Var).GetSubtype()
+#define SUBSOURCE_ON_BIOSOURCE_Set(Var)  (Var).SetSubtype()
+
+    if ((! SUBSOURCE_ON_BIOSOURCE_Test(bs)) || seq_mac_is_sorted (SUBSOURCE_ON_BIOSOURCE_Set(bs).begin(), SUBSOURCE_ON_BIOSOURCE_Set(bs).end(), s_SubsourceCompare)) {
+    }
+
+#define TEST_IS_SORTED(Base, Var, Func) \
+(Base##_Test(Var) && \
+seq_mac_is_sorted (Base##_Set(Var).begin(), \
+                   Base##_Set(Var).end(), \
+                   Func))
+
+    if (TEST_IS_SORTED (SUBSOURCE_ON_BIOSOURCE, bs, s_SubsourceCompare)) {
+    }
+
+    if (! SUBSOURCE_ON_BIOSOURCE_IS_SORTED (bs, s_SubsourceCompare)) {
+    }
+*/
+
+    CBioSource::TSubtype& subtypes = bs.SetSubtype();
+    
+    if (! seq_mac_is_sorted(subtypes.begin(), subtypes.end(), s_SubsourceCompare)) {
         ChangeMade(CCleanupChange::eCleanSubsource);
         subtypes.sort(s_SubsourceCompare);        
     }
-    subtypes_cnt = subtypes.size();
+    size_t subtypes_cnt = subtypes.size();
     subtypes.unique(s_SubsourceEqual);
     if (subtypes_cnt != subtypes.size()) {
         ChangeMade(CCleanupChange::eCleanSubsource);
@@ -335,53 +360,88 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
 }
 
 
-void CCleanup_imp::BasicCleanup(COrg_ref& oref)
+void CCleanup_imp::BasicCleanup(
+    COrg_ref& oref
+)
+
 {
-    CLEAN_STRING_MEMBER(oref, Taxname);
-    CLEAN_STRING_MEMBER(oref, Common);
+    CLEAN_STRING_MEMBER (oref, Taxname);
+    CLEAN_STRING_MEMBER (oref, Common);
     CLEAN_STRING_LIST(oref, Mod);
     CLEAN_STRING_LIST(oref, Syn);
     
     if (oref.IsSetOrgname()) {
         if (oref.IsSetMod()) {
-            x_ModToOrgMod(oref);
+            x_ModToOrgMod (oref);
         }
-        BasicCleanup(oref.SetOrgname());
+        BasicCleanup (oref.SetOrgname());
     }
-    
-    if (oref.IsSetDb()) {
-        COrg_ref::TDb& dbxref = oref.SetDb();
-        
-        // dbxrefs cleanup
-        size_t dbxref_cnt = dbxref.size();
-        COrg_ref::TDb::iterator it = dbxref.begin();
-        while (it != dbxref.end()) {
-            if (it->Empty()) {
-                it = dbxref.erase(it);
-                continue;
-            }
-            BasicCleanup(**it);
-            
-            ++it;
-        }
-        
-        // sort/unique db_xrefs
-        if ( ! objects::is_sorted(dbxref.begin(), dbxref.end(),
-                                  SDbtagCompare())) {
-            ChangeMade(CCleanupChange::eCleanDbxrefs);
-            stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());            
-        }
-        it = unique(dbxref.begin(), dbxref.end(), SDbtagEqual());
-        dbxref.erase(it, dbxref.end());
-        if (dbxref_cnt != dbxref.size()) {
-            ChangeMade(CCleanupChange::eCleanDbxrefs);
+
+    if (! oref.IsSetDb()) return;
+
+    EDIT_EACH_DBXREF_ON_ORGREF (it, oref) {
+        CDbtag& dbt = (**it);
+        BasicCleanup (dbt);
+        if ((!dbt.IsSetDb() || NStr::IsBlank (dbt.GetDb()))
+            && (!dbt.IsSetTag() 
+                || dbt.GetTag().Which() == CObject_id ::e_not_set
+                || ((dbt.GetTag().IsId() && dbt.GetTag().GetId() == 0) 
+                    || (dbt.GetTag().IsStr() && NStr::IsBlank (dbt.GetTag().GetStr()))))) {
+            ERASE_DBXREF_ON_ORGREF (it, oref);
+            ChangeMade (CCleanupChange::eCleanDbxrefs);
+            continue;
         }
     }
-    
+
+    // sort/unique db_xrefs
+
+    COrg_ref::TDb& dbxref = oref.SetDb();
+    COrg_ref::TDb::iterator it = dbxref.begin();
+
+    if ( ! objects::is_sorted(dbxref.begin(), dbxref.end(),
+                              SDbtagCompare())) {
+        ChangeMade(CCleanupChange::eCleanDbxrefs);
+        stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());            
+    }
+    size_t dbxref_cnt = dbxref.size();
+    it = unique(dbxref.begin(), dbxref.end(), SDbtagEqual());
+    dbxref.erase(it, dbxref.end());
+    if (dbxref_cnt != dbxref.size()) {
+        ChangeMade(CCleanupChange::eCleanDbxrefs);
+    }
+
+    /*
+    if (DBXREF_ON_ORGREF_Test(oref)) {
+        if (objects::is_sorted (DBXREF_ON_ORGREF_Set(oref).begin(), DBXREF_ON_ORGREF_Set(oref).end(), SDbtagCompare())) {
+            ChangeMade (CCleanupChange::eCleanDbxrefs);
+        }
+    }
+
+    if (DBXREF_ON_ORGREF_Test(oref) && objects::is_sorted (DBXREF_ON_ORGREF_Set(oref).begin(), DBXREF_ON_ORGREF_Set(oref).end(), SDbtagCompare())) {
+        ChangeMade (CCleanupChange::eCleanDbxrefs);
+    }
+
+     if (IS_SORTED (DBXREF_ON_ORGREF, oref, SDbtagCompare())) {
+        ChangeMade (CCleanupChange::eCleanDbxrefs);
+    }
+
+    if (! DBXREF_ON_ORGREF_IS_SORTED (oref, SDbtagCompare)) {
+        SORT_DBXREF_ON_ORGREF (oref, SDbtagCompare);
+        ChangeMade (CCleanupChange::eCleanDbxrefs);
+    }
+
+    if (! DBXREF_ON_ORGREF_IS_UNIQUE(oref, SDbtagEqual)) {
+        UNIQUE_DBXREF_ON_ORGREF (oref, SDbtagEqual);
+        ChangeMade (CCleanupChange::eCleanDbxrefs);
+    }
+    */
 }
 
 
-static COrgMod* s_StringToOrgMod(const string& str)
+static COrgMod* s_StringToOrgMod (
+    const string& str
+)
+
 {
     try {
         size_t pos = str.find('=');
@@ -399,10 +459,11 @@ static COrgMod* s_StringToOrgMod(const string& str)
         
         size_t num_spaces = 0;
         bool has_comma = false;
-        ITERATE (string, it, subname) {
-            if (isspace((unsigned char)(*it))) {
+        FOR_EACH_CHAR_IN_STRING (it, subname) {
+            const char& ch = *it;
+            if (isspace((unsigned char) ch)) {
                 ++num_spaces;
-            } else if (*it == ',') {
+            } else if (ch == ',') {
                 has_comma = true;
                 break;
             }
@@ -413,14 +474,32 @@ static COrgMod* s_StringToOrgMod(const string& str)
         
         return new COrgMod(subtype, subname);
     } catch (CSerialException&) {}
+
     return NULL;
 }
 
 
-void CCleanup_imp::x_ModToOrgMod(COrg_ref& oref)
+void CCleanup_imp::x_ModToOrgMod (
+    COrg_ref& oref
+)
+
 {
-    _ASSERT(oref.IsSetMod()  &&  oref.IsSetOrgname());
+    _ASSERT(oref.IsSetMod() && oref.IsSetOrgname());
     
+    COrg_ref::TOrgname& orgname = oref.SetOrgname();
+    EDIT_EACH_MOD_ON_ORGREF (it, oref) {
+        string& str = *it;
+        CRef<COrgMod> orgmod (s_StringToOrgMod (str));
+        if (! orgmod) continue;
+        /*
+        orgname.SetMod().push_back(orgmod);
+        */
+        ADD_ORGMOD_TO_ORGNAME (orgname, orgmod);
+        ERASE_MOD_ON_ORGREF (it, oref);
+        ChangeMade (CCleanupChange::eChangeOrgmod);
+    }
+
+    /*
     COrg_ref::TMod& mod_list = oref.SetMod();
     COrg_ref::TOrgname& orgname = oref.SetOrgname();
     
@@ -434,22 +513,35 @@ void CCleanup_imp::x_ModToOrgMod(COrg_ref& oref)
         } else {
             ++it;
         }
-    }   
+    }
+    */  
 }
 
 
 // is om1 < om2
 // sort by subname first because of how we check equality below.
-static bool s_OrgModCompareNameFirst(const CRef<COrgMod>& om1,
-                                     const CRef<COrgMod>& om2)
+
+static bool s_OrgModCompareNameFirst (
+    const CRef<COrgMod>& om1,
+    const CRef<COrgMod>& om2
+)
+
 {
-    if (NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) < 0) {
-        return true;
-    }
-    if (NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) == 0  &&
-        om1->GetSubtype() < om2->GetSubtype() ) {
-        return true;
-    }
+    const COrgMod& omd1 = *(om1);
+    const COrgMod& omd2 = *(om2);
+
+    const string& str1 = omd1.GetSubname();
+    const string& str2 = omd2.GetSubname();
+
+    if (NStr::CompareNocase (str1, str2) < 0) return true;
+
+    if (NStr::CompareNocase (str1, str2) != 0) return false;
+
+    TORGMOD_SUBTYPE chs1 = omd1.GetSubtype();
+    TORGMOD_SUBTYPE chs2 = omd2.GetSubtype();
+
+    if (chs1 < chs2) return true;
+
     return false;
 }
 
@@ -457,38 +549,77 @@ static bool s_OrgModCompareNameFirst(const CRef<COrgMod>& om1,
 // Two OrgMod's are equal and duplicates if:
 // they have the same subname and same subtype
 // or one has subtype 'other'.
-static bool s_OrgModEqual(const CRef<COrgMod>& om1, const CRef<COrgMod>& om2)
+
+static bool s_OrgModEqual (
+    const CRef<COrgMod>& om1,
+    const CRef<COrgMod>& om2
+)
+
 {
-    if (NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) == 0  &&
-        (om1->GetSubtype() == om2->GetSubtype() ||
-         om2->GetSubtype() == COrgMod::eSubtype_other)) {
-        return true;
-    }
+    const COrgMod& omd1 = *(om1);
+    const COrgMod& omd2 = *(om2);
+
+    const string& str1 = omd1.GetSubname();
+    const string& str2 = omd2.GetSubname();
+
+    if (NStr::CompareNocase (str1, str2) != 0) return false;
+
+    TORGMOD_SUBTYPE chs1 = omd1.GetSubtype();
+    TORGMOD_SUBTYPE chs2 = omd2.GetSubtype();
+
+    if (chs1 == chs2) return true;
+    if (chs2 == NCBI_ORGMOD(other)) return true;
+
     return false;
 }
-
 
 
 // is om1 < om2
 // to sort subtypes together.
-static bool s_OrgModCompareSubtypeFirst(const CRef<COrgMod>& om1,
-                                        const CRef<COrgMod>& om2)
+
+static bool s_OrgModCompareSubtypeFirst (
+    const CRef<COrgMod>& om1,
+    const CRef<COrgMod>& om2
+)
+
 {
-    if (om1->GetSubtype() < om2->GetSubtype()) {
-        return true;
-    }
-    if (om1->GetSubtype() == om2->GetSubtype()  &&
-        NStr::CompareNocase(om1->GetSubname(), om2->GetSubname()) < 0 ) {
-        return true;
-    }
+    const COrgMod& omd1 = *(om1);
+    const COrgMod& omd2 = *(om2);
+
+    TORGMOD_SUBTYPE chs1 = omd1.GetSubtype();
+    TORGMOD_SUBTYPE chs2 = omd2.GetSubtype();
+
+    if (chs1 < chs2) return true;
+    if (chs1 > chs2) return false;
+
+    const string& str1 = omd1.GetSubname();
+    const string& str2 = omd2.GetSubname();
+
+    if (NStr::CompareNocase (str1, str2) < 0) return true;
+
     return false;
 }
 
-void CCleanup_imp::BasicCleanup(COrgName& on)
+
+void CCleanup_imp::BasicCleanup (
+    COrgName& on
+)
+
 {
-    CLEAN_STRING_MEMBER(on, Attrib);
-    CLEAN_STRING_MEMBER_JUNK(on, Lineage);
-    CLEAN_STRING_MEMBER_JUNK(on, Div);
+    CLEAN_STRING_MEMBER (on, Attrib);
+    CLEAN_STRING_MEMBER_JUNK (on, Lineage);
+    CLEAN_STRING_MEMBER_JUNK (on, Div);
+
+    EDIT_EACH_ORGMOD_ON_ORGNAME (it, on) {
+        COrgMod& omd = **it;
+        BasicCleanup (omd);
+        if (omd.IsSetSubname()) continue;
+        const string& str = omd.GetSubname();
+        if (str.empty()) {
+            ERASE_ORGMOD_ON_ORGNAME (it, on);
+        }
+    }
+
     if (on.IsSetMod()) {
         COrgName::TMod& mods = on.SetMod();
         size_t mods_cnt = mods.size();
@@ -504,8 +635,7 @@ void CCleanup_imp::BasicCleanup(COrgName& on)
         
         // if type of COrgName::TMod is changed from 'list' 
         // these will need to be changed.
-        if ( ! objects::is_sorted(mods.begin(), mods.end(),
-                                  s_OrgModCompareSubtypeFirst)) {
+        if ( ! seq_mac_is_sorted(mods.begin(), mods.end(), s_OrgModCompareSubtypeFirst)) {
             ChangeMade(CCleanupChange::eCleanOrgmod);
         }
         mods.sort(s_OrgModCompareNameFirst);
@@ -518,7 +648,10 @@ void CCleanup_imp::BasicCleanup(COrgName& on)
 }
 
 
-static bool RemoveSpaceBeforeAndAfterColon (string& str)
+static bool RemoveSpaceBeforeAndAfterColon (
+    string& str
+)
+
 {
     size_t pos, prev_pos, next_pos;
     bool changed = false;
@@ -554,46 +687,59 @@ static bool RemoveSpaceBeforeAndAfterColon (string& str)
         }
         pos = NStr::Find (str, ":", prev_pos + 1);
     }
+
     return changed;
 }
 
 
-void CCleanup_imp::BasicCleanup(COrgMod& om)
-{
-    CLEAN_STRING_MEMBER(om, Subname);
-    CLEAN_STRING_MEMBER(om, Attrib);
-    COrgMod::TSubtype subtype = om.GetSubtype();
+void CCleanup_imp::BasicCleanup (
+    COrgMod& om
+)
 
-    if ((subtype == COrgMod::eSubtype_specimen_voucher
-         || subtype == COrgMod::eSubtype_culture_collection
-         || subtype == COrgMod::eSubtype_bio_material) 
-        && om.IsSetSubname()) {
-        if (RemoveSpaceBeforeAndAfterColon (om.SetSubname())) {
-            ChangeMade(CCleanupChange::eTrimSpaces);
+{
+    CLEAN_STRING_MEMBER (om, Subname);
+    CLEAN_STRING_MEMBER (om, Attrib);
+
+    TORGMOD_SUBTYPE subtype = om.GetSubtype();
+
+    if (subtype == NCBI_ORGMOD(specimen_voucher) ||
+        subtype == NCBI_ORGMOD(culture_collection) ||
+        subtype == NCBI_ORGMOD(bio_material)) {
+        if (om.IsSetSubname()) {
+            if (RemoveSpaceBeforeAndAfterColon (om.SetSubname())) {
+                ChangeMade (CCleanupChange::eTrimSpaces);
+            }
         }
-    }  
+    }
 }
 
 
-void CCleanup_imp::BasicCleanup(CSubSource& ss)
+void CCleanup_imp::BasicCleanup (
+    CSubSource& ss
+)
+
 {
-    CLEAN_STRING_MEMBER(ss, Name);
-    CLEAN_STRING_MEMBER(ss, Attrib);
+    CLEAN_STRING_MEMBER (ss, Name);
+    CLEAN_STRING_MEMBER (ss, Attrib);
 }
 
 
 // ExtendedCleanup methods
 
-bool CCleanup_imp::x_IsMergeableBioSource(const CSeqdesc& sd)
+bool CCleanup_imp::x_IsMergeableBioSource (
+    const CSeqdesc& sd
+)
+
 {
-    if (sd.Which() == CSeqdesc::e_Source 
-        && sd.GetSource().CanGetOrg()
-        && sd.GetSource().GetOrg().CanGetTaxname()
-        && !NStr::IsBlank(sd.GetSource().GetOrg().GetTaxname())) {
-        return true;
-    } else {
-        return false;
+    if (DESCRIPTOR_CHOICE_IS (sd, NCBI_SEQDESC(Source))) {
+        const CBioSource& src = sd.GetSource();
+        if (src.IsSetTaxname()) {
+            const string& str = src.GetTaxname();
+            if (! NStr::IsBlank (str)) return true;
+        }
     }
+
+    return false;
 }
 
 
@@ -621,22 +767,32 @@ bool CCleanup_imp::x_IsMergeableBioSource(const CSeqdesc& sd)
 // same db value as an item in the BioSource.org.db list from the other BioSource 
 // unless the two Dbtags have identical tag values.
 
-bool Match (const CBinomialOrgName& n1, const CBinomialOrgName& n2)
+bool Match (
+    const CBinomialOrgName& n1,
+    const CBinomialOrgName& n2
+)
+
 {
-  bool bMatch = true;
+    bool bMatch = true;
   
-  bMatch &= MATCH_STRING_VALUE(n1, n2, Genus);
-  bMatch &= MATCH_STRING_VALUE(n1, n2, Species);
-  bMatch &= MATCH_STRING_VALUE(n1, n2, Subspecies);
-  return bMatch;
+    bMatch &= MATCH_STRING_VALUE(n1, n2, Genus);
+    bMatch &= MATCH_STRING_VALUE(n1, n2, Species);
+    bMatch &= MATCH_STRING_VALUE(n1, n2, Subspecies);
+
+    return bMatch;
 }
 
 bool Match (const COrgName& org1, const COrgName& org2);
 bool Match (const COrgName::TName& n1, const COrgName::TName&n2);
 
-bool Match (const CMultiOrgName& n1, const CMultiOrgName& n2)
+bool Match (
+    const CMultiOrgName& n1,
+    const CMultiOrgName& n2
+)
+
 {
     bool match = true;
+
     CMultiOrgName::Tdata::const_iterator it1 = n1.Get().begin();
     CMultiOrgName::Tdata::const_iterator it2 = n2.Get().begin();
     
@@ -652,13 +808,15 @@ bool Match (const CMultiOrgName& n1, const CMultiOrgName& n2)
     return match;
 }
 
-bool Match (const COrgName::TMod& mod_list1,
-            const COrgName::TMod& mod_list2);
+bool Match (const COrgName::TMod& mod_list1, const COrgName::TMod& mod_list2);
             
-bool Match (const CBioSource::TSubtype& mod_list1,
-            const CBioSource::TSubtype& mod_list2);
+bool Match (const CBioSource::TSubtype& mod_list1, const CBioSource::TSubtype& mod_list2);
 
-bool Match (const COrgName& org1, const COrgName& org2)
+bool Match (
+    const COrgName& org1,
+    const COrgName& org2
+)
+
 {
     bool match = true;
     // check name
@@ -691,7 +849,11 @@ bool Match (const COrgName& org1, const COrgName& org2)
 }
 
 
-bool Match (const COrgName::TName& n1, const COrgName::TName&n2)
+bool Match (
+    const COrgName::TName& n1,
+    const COrgName::TName &n2
+)
+
 {
     bool match = true;
     if (n1.Which() != n2.Which()) {
@@ -716,10 +878,15 @@ bool Match (const COrgName::TName& n1, const COrgName::TName&n2)
         case COrgName::TName::e_Partial:
             break;        
     }
+
     return match;
 }
 
-bool CCleanup_imp::x_OkToMerge (const COrgName& on1, const COrgName& on2)
+bool CCleanup_imp::x_OkToMerge (
+    const COrgName& on1,
+    const COrgName& on2
+)
+
 {
     // test name
     if (on1.CanGetName() && on2.CanGetName()
@@ -747,7 +914,11 @@ bool CCleanup_imp::x_OkToMerge (const COrgName& on1, const COrgName& on2)
 }
 
 
-bool CCleanup_imp::x_OkToMerge (const COrg_ref::TDb& db1, const COrg_ref::TDb& db2)
+bool CCleanup_imp::x_OkToMerge (
+    const COrg_ref::TDb& db1,
+    const COrg_ref::TDb& db2
+)
+
 {
     if (db1.size() == 0 || db2.size() == 0) return true;
     
@@ -763,11 +934,16 @@ bool CCleanup_imp::x_OkToMerge (const COrg_ref::TDb& db1, const COrg_ref::TDb& d
             }
         }
     }
+
     return true;           
 }
 
         
-bool CCleanup_imp::x_OkToMerge(const COrg_ref& org1, const COrg_ref& org2)
+bool CCleanup_imp::x_OkToMerge (
+    const COrg_ref& org1,
+    const COrg_ref& org2
+)
+
 {
     // test taxnames
     MERGEABLE_STRING_VALUE (org1, org2, Taxname);
@@ -795,7 +971,11 @@ bool CCleanup_imp::x_OkToMerge(const COrg_ref& org1, const COrg_ref& org2)
 }
 
 
-bool CCleanup_imp::x_OkToMerge(const CBioSource& src1, const CBioSource& src2)
+bool CCleanup_imp::x_OkToMerge (
+    const CBioSource& src1,
+    const CBioSource& src2
+)
+
 {
     // check genome
     if (!MERGEABLE_INT_VALUE(src1, src2, Genome)) return false;
@@ -824,31 +1004,40 @@ bool CCleanup_imp::x_OkToMerge(const CBioSource& src1, const CBioSource& src2)
             || (!src1.IsSetIs_focus() && src2.IsSetIs_focus()))) {
         return false;
     }
+
     return true;
 }
 
 
-bool IsTransgenic(const CBioSource& bsrc)
+bool IsTransgenic (
+    const CBioSource& bsrc
+)
+
 {
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sub, bsrc) {
-        if ((*sub)->GetSubtype() == CSubSource::eSubtype_transgenic) {
-            return true;
-        }
+        const CSubSource& sbs = **sub;
+        if (sbs.GetSubtype() == NCBI_SUBSOURCE(transgenic)) return true;
     }
+
     return false;
 }
 
 
-bool CCleanup_imp::x_OkToConvertToDescriptor (CBioseq_Handle bh, const CBioSource& src)
+bool CCleanup_imp::x_OkToConvertToDescriptor (
+    CBioseq_Handle bh,
+    const CBioSource& src
+)
+
 {
     FOR_EACH_DESCRIPTOR_ON_BIOSEQ (desc_it, bh) {
-        if ((*desc_it)->Which() == CSeqdesc::e_Source) {
-            if (IsTransgenic ((*desc_it)->GetSource())
-                || !x_OkToMerge((*desc_it)->GetSource(), src)) {
-                return false;
-            }
+        const CSeqdesc& dsc = **desc_it;
+        if (DESCRIPTOR_CHOICE_IS (dsc, NCBI_SEQDESC(Source))) {
+            const CBioSource& bsc = dsc.GetSource();
+            if (IsTransgenic (bsc)) return false;
+            if (! x_OkToMerge (bsc, src)) return false;
         }
     }
+
     return true;
 }
 
@@ -871,7 +1060,11 @@ bool CCleanup_imp::x_OkToConvertToDescriptor (CBioseq_Handle bh, const CBioSourc
 
 
 
-bool CCleanup_imp::x_Merge (COrgName& on, const COrgName& add_on)
+bool CCleanup_imp::x_Merge (
+    COrgName& on,
+    const COrgName& add_on
+)
+
 {
     bool changed = false;
     // mod
@@ -896,7 +1089,11 @@ bool CCleanup_imp::x_Merge (COrgName& on, const COrgName& add_on)
 }
 
 
-bool CCleanup_imp::x_Merge (COrg_ref::TDb& db1, const COrg_ref::TDb& db2)
+bool CCleanup_imp::x_Merge (
+    COrg_ref::TDb& db1,
+    const COrg_ref::TDb& db2
+)
+
 {
     bool changed = false;
     
@@ -917,7 +1114,11 @@ bool CCleanup_imp::x_Merge (COrg_ref::TDb& db1, const COrg_ref::TDb& db2)
 }
 
 
-bool CCleanup_imp::x_Merge (COrg_ref& org, const COrg_ref& add_org)
+bool CCleanup_imp::x_Merge (
+    COrg_ref& org,
+    const COrg_ref& add_org
+)
+
 {
     bool changed = false;
     
@@ -983,8 +1184,12 @@ bool CCleanup_imp::x_Merge (COrg_ref& org, const COrg_ref& add_org)
 // BioSource.org.orgname.gcode
 // BioSource.org.orgname.mgcode
 // BioSource.org.orgname.div
-//
-bool CCleanup_imp::x_Merge (CBioSource& src, const CBioSource& add_src)
+
+bool CCleanup_imp::x_Merge (
+    CBioSource& src,
+    const CBioSource& add_src
+)
+
 {
     bool changed = false;
     
@@ -1033,7 +1238,11 @@ bool CCleanup_imp::x_Merge (CBioSource& src, const CBioSource& add_src)
 }
 
 
-bool CCleanup_imp::x_MergeDuplicateBioSources(CSeqdesc& sd1, CSeqdesc& sd2)
+bool CCleanup_imp::x_MergeDuplicateBioSources (
+    CSeqdesc& sd1,
+    CSeqdesc& sd2
+)
+
 {
     if (x_IsMergeableBioSource(sd1) && x_IsMergeableBioSource(sd2)
         && x_OkToMerge(sd1.GetSource(),
@@ -1041,17 +1250,20 @@ bool CCleanup_imp::x_MergeDuplicateBioSources(CSeqdesc& sd1, CSeqdesc& sd2)
         // add information from sd1 to sd2     
         x_Merge (sd1.SetSource(), sd2.GetSource());    
         return true;
-    } else {
-        return false;
-    }                               
+    }
+
+    return false;
 }
 
 
-void CCleanup_imp::x_CleanOrgNameStrings(COrgName &on)
+void CCleanup_imp::x_CleanOrgNameStrings (
+    COrgName &on
+)
+
 {
-    CLEAN_STRING_MEMBER(on, Attrib);
-    CLEAN_STRING_MEMBER_JUNK(on, Lineage);
-    CLEAN_STRING_MEMBER_JUNK(on, Div);
+    CLEAN_STRING_MEMBER (on, Attrib);
+    CLEAN_STRING_MEMBER_JUNK (on, Lineage);
+    CLEAN_STRING_MEMBER_JUNK (on, Div);
     if (on.IsSetMod()) {
         EDIT_EACH_ORGMOD_ON_ORGNAME (modI, on) {
             CleanString ((*modI)->SetSubname());
@@ -1060,9 +1272,12 @@ void CCleanup_imp::x_CleanOrgNameStrings(COrgName &on)
 }
 
 
-void CCleanup_imp::x_ExtendedCleanSubSourceList (CBioSource &bs)
+void CCleanup_imp::x_ExtendedCleanSubSourceList (
+    CBioSource &bs
+)
+
 {
-    if (bs.IsSetSubtype()) {
+    if (BIOSOURCE_HAS_SUBSOURCE (bs)) {
         CBioSource::TSubtype& subtypes = bs.SetSubtype();
         CBioSource::TSubtype tmp;
         tmp.clear();
@@ -1094,7 +1309,10 @@ void CCleanup_imp::x_ExtendedCleanSubSourceList (CBioSource &bs)
 }
 
 
-void CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh)
+void CCleanup_imp::x_ConvertOrgDescToSourceDescriptor (
+    CBioseq_set_Handle bh
+)
+
 {
     CBioseq_set_EditHandle eh = bh.GetEditHandle();
 
@@ -1118,7 +1336,10 @@ void CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh)
 }
 
 
-void CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_Handle bh)
+void CCleanup_imp::x_ConvertOrgDescToSourceDescriptor (
+    CBioseq_Handle bh
+)
+
 {
     CBioseq_EditHandle eh = bh.GetEditHandle();
 
@@ -1152,7 +1373,10 @@ void CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_Handle bh)
 // with the BioSource descriptor on the nuc-prot set will be merged with the BioSource descriptor
 // on the nuc-prot set and removed.  
 
-void CCleanup_imp::x_FixNucProtSources (CBioseq_set_Handle bh)
+void CCleanup_imp::x_FixNucProtSources (
+    CBioseq_set_Handle bh
+)
+
 {
     if (!bh.CanGetClass()
         || bh.GetClass() != CBioseq_set::eClass_nuc_prot
@@ -1220,8 +1444,11 @@ void CCleanup_imp::x_FixNucProtSources (CBioseq_set_Handle bh)
 }
 
 
-bool Match (const CBioSource::TSubtype& mod_list1,
-            const CBioSource::TSubtype& mod_list2)
+bool Match (
+    const CBioSource::TSubtype& mod_list1,
+    const CBioSource::TSubtype& mod_list2
+)
+
 {                                              
     CBioSource::TSubtype::const_iterator it1 = mod_list1.begin();
     CBioSource::TSubtype::const_iterator it2 = mod_list2.begin();
@@ -1242,8 +1469,11 @@ bool Match (const CBioSource::TSubtype& mod_list1,
 }
 
 
-bool Match (const COrgName::TMod& mod_list1,
-            const COrgName::TMod& mod_list2)
+bool Match (
+    const COrgName::TMod& mod_list1,
+    const COrgName::TMod& mod_list2
+)
+
 {                                              
     COrgName::TMod::const_iterator it1 = mod_list1.begin();
     COrgName::TMod::const_iterator it2 = mod_list2.begin();
@@ -1283,9 +1513,12 @@ bool Match (const COrgName::TMod& mod_list1,
 // BioSource.org.orgname.mod
 // BioSource.org.mod
 // BioSource.org.db
-//
 
-bool CCleanup_imp::x_Identical (const COrg_ref::TDb& db1, const COrg_ref::TDb& db2)
+bool CCleanup_imp::x_Identical (
+    const COrg_ref::TDb& db1,
+    const COrg_ref::TDb& db2
+)
+
 {
     if (db1.size() != db2.size()) return false;
     
@@ -1306,7 +1539,11 @@ bool CCleanup_imp::x_Identical (const COrg_ref::TDb& db1, const COrg_ref::TDb& d
 }
 
         
-bool CCleanup_imp::x_Identical(const COrg_ref& org1, const COrg_ref& org2)
+bool CCleanup_imp::x_Identical (
+    const COrg_ref& org1,
+    const COrg_ref& org2
+)
+
 {
     if (!(MATCH_STRING_VALUE(org1, org2, Common))) {
         return false;
@@ -1331,7 +1568,11 @@ bool CCleanup_imp::x_Identical(const COrg_ref& org1, const COrg_ref& org2)
 }
 
 
-bool CCleanup_imp::x_Identical(const CBioSource& src1, const CBioSource& src2)
+bool CCleanup_imp::x_Identical (
+    const CBioSource& src1,
+    const CBioSource& src2
+)
+
 {
     if (!src1.CanGetOrg()
         || !src2.CanGetOrg()
@@ -1372,19 +1613,24 @@ bool CCleanup_imp::x_Identical(const CBioSource& src1, const CBioSource& src2)
 }
 
 
-bool CCleanup_imp::x_IsBioSourceEmpty (const CBioSource& src)
+bool CCleanup_imp::x_IsBioSourceEmpty (
+    const CBioSource& src
+)
+
 {
     if (!src.IsSetOrg() || (!src.GetOrg().IsSetTaxname() && !src.GetOrg().IsSetCommon() && !src.GetOrg().IsSetDb())) {
         return true;
-    } else {       
-        return false;
     }
+    return false;
 }
 
 
-void CCleanup_imp::x_Common (list< CRef< CSubSource > >& mod_list1,
-                             const list< CRef< CSubSource > >& mod_list2,
-                             bool flag_changes)
+void CCleanup_imp::x_Common (
+    list< CRef< CSubSource > >& mod_list1,
+    const list< CRef< CSubSource > >& mod_list2,
+    bool flag_changes
+)
+
 {                                     
     CBioSource::TSubtype::iterator it1 = mod_list1.begin();
     while (it1 != mod_list1.end()) {
@@ -1411,9 +1657,12 @@ void CCleanup_imp::x_Common (list< CRef< CSubSource > >& mod_list1,
 }
 
 
-void CCleanup_imp::x_Common (list< CRef< COrgMod > >& mod_list1,
-                             const list< CRef< COrgMod > >& mod_list2,
-                             bool flag_changes)
+void CCleanup_imp::x_Common (
+    list< CRef< COrgMod > >& mod_list1,
+    const list< CRef< COrgMod > >& mod_list2,
+    bool flag_changes
+)
+
 {                                              
     COrgName::TMod::iterator it1 = mod_list1.begin();
     while (it1 != mod_list1.end()) {
@@ -1484,7 +1733,12 @@ void CCleanup_imp::x_Common (list< CRef< COrgMod > >& mod_list1,
         } \
     } 
 
-void CCleanup_imp::x_Common (COrgName& host, const COrgName& guest, bool flag_changes)
+void CCleanup_imp::x_Common (
+    COrgName& host,
+    const COrgName& guest,
+    bool flag_changes
+)
+
 {
     // BioSource.org.orgname.name
     if (host.IsSetName()
@@ -1509,7 +1763,12 @@ void CCleanup_imp::x_Common (COrgName& host, const COrgName& guest, bool flag_ch
 }
   
     
-void CCleanup_imp::x_Common (COrg_ref::TDb& db1, const COrg_ref::TDb& db2, bool flag_changes)
+void CCleanup_imp::x_Common (
+    COrg_ref::TDb& db1,
+    const COrg_ref::TDb& db2,
+    bool flag_changes
+)
+
 {
     COrg_ref::TDb::iterator it1 = db1.begin();
     while (it1 != db1.end()) {
@@ -1532,7 +1791,12 @@ void CCleanup_imp::x_Common (COrg_ref::TDb& db1, const COrg_ref::TDb& db2, bool 
 }
 
         
-void CCleanup_imp::x_Common (COrg_ref& host, const COrg_ref& guest, bool flag_changes)
+void CCleanup_imp::x_Common (
+    COrg_ref& host,
+    const COrg_ref& guest,
+    bool flag_changes
+)
+
 {
     COMMON_STRING_VALUE (host, guest, Taxname, CCleanupChange::eChangeBioSourceOther, flag_changes);
     COMMON_STRING_VALUE (host, guest, Common, CCleanupChange::eChangeBioSourceOther, flag_changes);
@@ -1595,7 +1859,13 @@ void CCleanup_imp::x_Common (COrg_ref& host, const COrg_ref& guest, bool flag_ch
 // from the BioSource on the segmented set.
 // 7. Any item in the BioSource.org.orgname.mod list that is not common (subtype and subname match)
 // to all of the parts will be removed from the BioSource on the segmented set.
-void CCleanup_imp::x_Common(CBioSource& host, const CBioSource& guest, bool flag_changes)
+
+void CCleanup_imp::x_Common (
+    CBioSource& host,
+    const CBioSource& guest,
+    bool flag_changes
+)
+
 {
     COMMON_INT_VALUE (host, guest, Genome, CCleanupChange::eChangeBioSourceGenome, flag_changes);
     COMMON_INT_VALUE (host, guest, Origin, CCleanupChange::eChangeBioSourceGenome, flag_changes);
@@ -1628,7 +1898,12 @@ void CCleanup_imp::x_Common(CBioSource& host, const CBioSource& guest, bool flag
 }
 
 
-void CCleanup_imp::x_MoveDescriptor (CBioseq_set_Handle dst, CBioseq_Handle src, CSeqdesc::E_Choice choice)
+void CCleanup_imp::x_MoveDescriptor (
+    CBioseq_set_Handle dst,
+    CBioseq_Handle src,
+    CSeqdesc::E_Choice choice
+)
+
 {
     if (!src.IsSetDescr()) return;
     
@@ -1659,7 +1934,12 @@ void CCleanup_imp::x_MoveDescriptor (CBioseq_set_Handle dst, CBioseq_Handle src,
 }
 
 
-void CCleanup_imp::x_MoveDescriptor (CBioseq_set_Handle dst, CBioseq_set_Handle src, CSeqdesc::E_Choice choice)
+void CCleanup_imp::x_MoveDescriptor (
+    CBioseq_set_Handle dst,
+    CBioseq_set_Handle src,
+    CSeqdesc::E_Choice choice
+)
+
 {
     if (!src.IsSetDescr()) return;
     
@@ -1690,7 +1970,11 @@ void CCleanup_imp::x_MoveDescriptor (CBioseq_set_Handle dst, CBioseq_set_Handle 
 }
 
 
-bool CCleanup_imp::x_PromoteMergeableSource (CBioseq_set_Handle dst, const CBioSource& biosrc)
+bool CCleanup_imp::x_PromoteMergeableSource (
+    CBioseq_set_Handle dst,
+    const CBioSource& biosrc
+)
+
 {
     bool ok_to_promote = false;
     bool found_any = false;
@@ -1773,7 +2057,10 @@ bool CCleanup_imp::x_PromoteMergeableSource (CBioseq_set_Handle dst, const CBioS
 // If after this process the BioSource on the segmented set is empty (see definition 4) the BioSource
 // on the segmented set will be removed.
 
-void CCleanup_imp::x_FixSegSetSource (CBioseq_set_Handle segset)
+void CCleanup_imp::x_FixSegSetSource (
+    CBioseq_set_Handle segset
+)
+
 {
     CBioseq_set_Handle nuc_prot_parent, parts;
 
@@ -1934,7 +2221,11 @@ void CCleanup_imp::x_FixSegSetSource (CBioseq_set_Handle segset)
 }
 
 
-bool s_ContainsDescriptor (const CBioseq& bs, CSeqdesc::E_Choice desc_type)
+bool s_ContainsDescriptor (
+    const CBioseq& bs,
+    CSeqdesc::E_Choice desc_type
+)
+
 {
     FOR_EACH_DESCRIPTOR_ON_BIOSEQ (desc_it, bs) {
         if ((*desc_it)->Which() == desc_type) {
@@ -1945,7 +2236,11 @@ bool s_ContainsDescriptor (const CBioseq& bs, CSeqdesc::E_Choice desc_type)
 }
 
 
-bool s_ContainsDescriptor (const CBioseq_set& bs, CSeqdesc::E_Choice desc_type)
+bool s_ContainsDescriptor (
+    const CBioseq_set& bs,
+    CSeqdesc::E_Choice desc_type
+)
+
 {
     FOR_EACH_DESCRIPTOR_ON_SEQSET (desc_it, bs) {
         if ((*desc_it)->Which() == desc_type) {
@@ -1970,7 +2265,11 @@ bool s_ContainsDescriptor (const CBioseq_set& bs, CSeqdesc::E_Choice desc_type)
 // place a copy of the  BioSource descriptor on each member of the set 
 // that does not already have a BioSource descriptor anywhere on or in 
 // the set member and remove the BioSource descriptor from the parent set.
-void CCleanup_imp::x_FixSetSource (CBioseq_set_Handle bh)
+
+void CCleanup_imp::x_FixSetSource (
+    CBioseq_set_Handle bh
+)
+
 {
     if (bh.IsEmptySeq_set()) return;
     CSeqdesc_CI desc_ci (bh.GetParentEntry(), CSeqdesc::e_Source, 1);
@@ -2010,7 +2309,10 @@ void CCleanup_imp::x_FixSetSource (CBioseq_set_Handle bh)
 // 7) Fix nuc-prot sets (which could contain segmented sets).
 // 8) Propagate BioSource descriptors on WGS, Mut, Pop, Phy, and Eco Sets
 
-void CCleanup_imp::x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh)
+void CCleanup_imp::x_ExtendedCleanupBioSourceFeatures (
+    CBioseq_Handle bh
+)
+
 {    
     vector<CSeq_feat_Handle> source_feat_list; // list of source features on this Bioseq
                                                // that were not converted to descriptors
@@ -2086,7 +2388,11 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh)
 }
 
 
-void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Handle bh, bool merge)
+void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures (
+    CBioseq_Handle bh,
+    bool merge
+)
+
 {
     // First, convert Org-ref descriptors to BioSource descriptors
     x_ConvertOrgDescToSourceDescriptor (bh);
@@ -2114,7 +2420,11 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Hand
 }
 
 
-void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_set_Handle bss, bool merge)
+void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures (
+    CBioseq_set_Handle bss,
+    bool merge
+)
+
 {
     // First, clean the members of this set
     if (merge 
