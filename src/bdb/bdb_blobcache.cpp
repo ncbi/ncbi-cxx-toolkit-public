@@ -3489,7 +3489,6 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
         batch_size = 10;
     }
 
-    TBitVector::enumerator en(delete_candidates.first());
     unsigned candidates = delete_candidates.count();
 
     delete_candidates -= m_GC_Deleted;
@@ -3520,7 +3519,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
     vector<SCacheDescr> blob_batch_vect(batch_size);
     vector<SCacheDescr> blob_exp_vect(batch_size);
 
-    for (;en.valid();) {
+    for (TBitVector::enumerator en = delete_candidates.first(); en.valid();) {
 
         // extract batch of blob ids out of the bit-vector
         //
