@@ -332,6 +332,11 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
     PrepareBlastUngappedSeqalign(const CSeq_align_set & alnset);
     
 private:
+
+    /// Prohibit copy constructor
+    CDisplaySeqalign(const CDisplaySeqalign& other);
+    /// Prohibit assignment operator
+    CDisplaySeqalign& operator=(const CDisplaySeqalign& rhs);
  
     ///internal insert information
     ///aln_start. insert right after this position

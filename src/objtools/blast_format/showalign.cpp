@@ -59,7 +59,6 @@ static char const rcsid[] = "$Id$";
 #include <connect/ncbi_conn_stream.hpp>
 
 
-#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
