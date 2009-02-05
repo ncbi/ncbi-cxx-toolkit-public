@@ -7707,19 +7707,6 @@
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
-      <key>FILE402</key>
-      <dict>
-        <key>isa</key>
-        <string>PBXFileReference</string>
-        <key>lastKnownFileType</key>
-        <string>sourcecode.hpp.hpp</string>
-        <key>name</key>
-        <string>rwstream.hpp</string>
-        <key>path</key>
-        <string>../../../../include/util/rwstream.hpp</string>
-        <key>sourceTree</key>
-        <string>SOURCE_ROOT</string>
-      </dict>
       <key>FILE403</key>
       <dict>
         <key>isa</key>
@@ -8091,7 +8078,6 @@
           <string>FILE399</string>
           <string>FILE400</string>
           <string>FILE401</string>
-          <string>FILE402</string>
           <string>FILE403</string>
           <string>FILE404</string>
           <string>FILE405</string>
