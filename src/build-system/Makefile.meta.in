@@ -173,6 +173,7 @@ fi
 
 all:       all.needs-reqs
 clean:     clean.needs-reqs
+libs:      libs.needs-reqs
 purge:     purge.needs-reqs
 check:     check.needs-reqs
 check_add: check_add.needs-reqs
@@ -225,7 +226,7 @@ sources:
 	@$(ASNP_BRA) all   $(ASNP_KET)
 	@$(DTDP_BRA) all   $(DTDP_KET)
 	@$(XSDP_BRA) all   $(XSDP_KET)
-libs:
+libs.real:
 	@$(LIBP_BRA) all   $(LIBP_KET)
 check.real:
 	@$(CHECK_BRA) check_add $(CHECK_KET)
