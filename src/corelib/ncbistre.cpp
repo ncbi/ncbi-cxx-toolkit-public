@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -79,8 +79,8 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
             // a single delimiter (necessary for correct handling of
             // DOS-style CRLF endings).
             CT_INT_TYPE next = is.rdbuf()->sgetc();
-            if ( !CT_EQ_INT_TYPE(next, CT_EOF)
-                &&  delims.find(CT_TO_CHAR_TYPE(next), delim_pos + 1) != NPOS) {
+            if (!CT_EQ_INT_TYPE(next, CT_EOF)
+                &&  delims.find(CT_TO_CHAR_TYPE(next), delim_pos + 1) != NPOS){
                 is.rdbuf()->sbumpc();
             }
             break;
@@ -139,7 +139,7 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
         is.get(buf, sizeof(buf), delim);
         str.append(buf, is.gcount());
     }
-    if ( str.empty()  &&  is.eof() ) {
+    if (str.empty()  &&  is.eof()) {
         is.setstate(NcbiFailbit);
     }
     return is;
