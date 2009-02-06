@@ -195,11 +195,12 @@ extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
         size = strlen(data);
     retval = size;
     for (c = (const unsigned char*) data;  size;  size--, c++) {
-        if (s_IsQuoted(*c)) {
-            retval++;
-        } else if (!isprint(*c)) {
+        if (*c == '\n')
             retval += 3;
-        }
+        else if (s_IsQuoted(*c))
+            retval++;
+        else if (!isprint(*c))
+            retval += 3;
     }
     return retval;
 }
@@ -244,6 +245,9 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
             *d++ = 'a';
             continue;
         case '\n':
+            *d++ = '\\';
+            *d++ = 'n';
+            /*FALLTHRU*/
         case '\\':
         case '\'':
         case '"':

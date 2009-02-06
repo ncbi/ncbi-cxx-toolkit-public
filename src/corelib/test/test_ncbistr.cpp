@@ -759,29 +759,38 @@ BOOST_AUTO_TEST_CASE(s_Replace)
 
 BOOST_AUTO_TEST_CASE(s_PrintableString)
 {
-    NcbiCout << NcbiEndl << "NStr::PrintableString() tests...";
+    NcbiCout << NcbiEndl << "NStr::{PrintableString|ParseEscapes}() tests...";
 
     // NStr::PrintableString()
     BOOST_CHECK(NStr::PrintableString(kEmptyStr).empty());
     BOOST_CHECK(NStr::PrintableString
-           ("AB\\CD\nAB\rCD\vAB?\tCD\'AB\"").compare
-           ("AB\\\\CD\\nAB\\rCD\\vAB\?\\tCD\\\'AB\\\"") == 0);
+                ("AB\\CD\nAB\rCD\vAB?\tCD\'AB\"").compare
+                ("AB\\\\CD\\nAB\\rCD\\vAB\?\\tCD\\\'AB\\\"") == 0);
     BOOST_CHECK(NStr::PrintableString
-           ("A\x01\r\202\x000F\0205B" + string(1,'\0') + "CD").compare
-           ("A\\1\\r\\202\\17\\0205B\\0CD") == 0);
+                ("A\x01\r\202\x000F\0205B" + string(1,'\0') + "CD").compare
+                ("A\\1\\r\\202\\17\\0205B\\0CD") == 0);
     BOOST_CHECK(NStr::PrintableString
-           ("A\x01\r\202\x000F\0205B" + string(1,'\0') + "CD",
-            NStr::fPrintable_Full).compare
-           ("A\\001\\r\\202\\017\\0205B\\000CD") == 0);
+                ("A\x01\r\202\x000F\0205B" + string(1,'\0') + "CD",
+                 NStr::fPrintable_Full).compare
+                ("A\\001\\r\\202\\017\\0205B\\000CD") == 0);
+    BOOST_CHECK(NStr::PrintableString
+                ("A\nB\\\nC").compare
+                ("A\\nB\\\\\\nC") == 0);
+    BOOST_CHECK(NStr::PrintableString
+                ("A\nB\\\nC", NStr::fNewLine_Passthru).compare
+                ("A\\n\\\nB\\\\\\n\\\nC") == 0);
 
     // NStr::ParseEscapes
     BOOST_CHECK(NStr::ParseEscapes(kEmptyStr).empty());
     BOOST_CHECK(NStr::ParseEscapes
-           ("AB\\\\CD\\nAB\\rCD\\vAB\?\\tCD\\\'AB\\\"").compare
-           ("AB\\CD\nAB\rCD\vAB?\tCD\'AB\"") == 0);
+                ("AB\\\\CD\\nAB\\rCD\\vAB\?\\tCD\\\'AB\\\"").compare
+                ("AB\\CD\nAB\rCD\vAB?\tCD\'AB\"") == 0);
     BOOST_CHECK(NStr::ParseEscapes
-           ("A\\1\\r2\\17\\0205B\\x00CD\\x000F").compare
-           ("A\x01\r2\x0F\x10""5B\xCD\x0F") == 0);
+                ("A\\1\\r2\\17\\0205B\\x00CD\\x000F").compare
+                ("A\x01\r2\x0F\x10""5B\xCD\x0F") == 0);
+    BOOST_CHECK(NStr::ParseEscapes
+                ("A\\\nB\\nC\\\\\\n\\\nD").compare
+                ("AB\nC\\\nD") == 0);
 
     // NStr::PrintableString() vs. Printable()
     size_t size = (size_t)(rand() & 0xFFFF);
@@ -791,7 +800,7 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
     }
     BOOST_CHECK(data.size() == size);
 
-    // NB: checks embedded '\0's as well
+    // NB: embedded '\0's are also being checked
     CNcbiOstrstream os1;
     os1 << Printable(data);
     const string& s1 = NStr::PrintableString(data);

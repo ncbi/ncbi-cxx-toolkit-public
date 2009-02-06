@@ -1881,7 +1881,9 @@ static string s_PrintableString(const string&        str,
             out->write(str.data() + j, i - j);
         }
         out->put('\\');
-        if (!isprint((unsigned char) c)  &&  c != '\n') {
+        if (c == '\n') {
+            out->write("n\\\n", 3);
+        } else if (!isprint((unsigned char) c)) {
             bool reduce;
             if (!(mode & NStr::fPrintable_Full)) {
                 reduce = (i == str.size() - 1  ||  s_IsQuoted(str[i + 1], lang)
@@ -2064,6 +2066,9 @@ string NStr::ParseEscapes(const string& str)
                 out += c;
             }}
             continue;
+        case '\n':
+            /*quoted EOL means no EOL*/
+            break;
         default:
             out += str[pos2];
             break;
