@@ -238,15 +238,19 @@ public:
 
         istr >> i >> j;
         m_RecS.Resize(i, j);
-        for (i = 0; i < m_RecS.GetRows(); ++i)
-            for (j = 0; j < m_RecS.GetCols(); ++j)
+        for (i = 0; i < m_RecS.GetRows(); ++i) {
+            for (j = 0; j < m_RecS.GetCols(); ++j) {
                 istr >> m_RecS(i, j);
+            }
+        }
 
         istr >> i >> j;
         m_VolS.Resize(i, j);
-        for (i = 0; i < m_VolS.GetRows(); ++i)
-            for (j = 0; j < m_VolS.GetCols(); ++j)
+        for (i = 0; i < m_VolS.GetRows(); ++i) {
+            for (j = 0; j < m_VolS.GetCols(); ++j) {
                 istr >> m_VolS(i, j);
+            }
+        }
     }
 
 private:

@@ -1767,6 +1767,9 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
             return label;
         }
         break;
+
+    default:
+        break;
     }
 
     // catch-all for unusual events

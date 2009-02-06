@@ -110,7 +110,7 @@ struct SLoadTokens
         }
 
         /// funkyness: "'" counts as an alphanumeric
-        sc_Tokens['\''] |= eAlpha;
+        sc_Tokens[(int)'\''] |= eAlpha;
     }
 };
 static SLoadTokens s_ForceTokenLoad;
@@ -124,10 +124,10 @@ static bool s_IsAlphaNumeric(unsigned char c)
     return (sc_Tokens[c] & (eAlpha|eNumeric));
 }
 
-static bool s_IsAlpha(unsigned char c)
+/*static bool s_IsAlpha(unsigned char c)
 {
     return (sc_Tokens[c] & (eAlpha));
-}
+}*/
 
 static bool s_IsNumeric(unsigned char c)
 {
@@ -146,10 +146,10 @@ static bool s_IsNumeric(const string& s)
     return !is_alpha;
 }
 
-static bool s_IsPrintable(unsigned char c)
+/*static bool s_IsPrintable(unsigned char c)
 {
     return (sc_Tokens[c] & (ePrintable));
-}
+}*/
 
 static char s_ToLower(unsigned char c)
 {

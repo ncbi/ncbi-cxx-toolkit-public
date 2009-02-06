@@ -674,14 +674,14 @@ void CAutoDefFeatureClause_Base::RemoveDeletedSubclauses()
 void CAutoDefFeatureClause_Base::ShowSubclauses()
 {
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
-        bool marked = m_ClauseList[k]->IsMarkedForDeletion();                      
-        bool partial = m_ClauseList[k]->IsPartial();
-        string desc1 = m_ClauseList[k]->GetDescription();
+        //bool marked = m_ClauseList[k]->IsMarkedForDeletion();                      
+        //bool partial = m_ClauseList[k]->IsPartial();
+        //string desc1 = m_ClauseList[k]->GetDescription();
         
-        unsigned int stop = m_ClauseList[k]->GetLocation()->GetStop(eExtreme_Positional);
-        unsigned int start = m_ClauseList[k]->GetLocation()->GetStart(eExtreme_Positional);
+        //unsigned int stop = m_ClauseList[k]->GetLocation()->GetStop(eExtreme_Positional);
+        //unsigned int start = m_ClauseList[k]->GetLocation()->GetStart(eExtreme_Positional);
             
-        CSeqFeatData::ESubtype st1 = m_ClauseList[k]->GetMainFeatureSubtype();
+        //CSeqFeatData::ESubtype st1 = m_ClauseList[k]->GetMainFeatureSubtype();
         m_ClauseList[k]->ShowSubclauses();
     }
 }
