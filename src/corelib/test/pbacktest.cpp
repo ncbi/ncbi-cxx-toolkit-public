@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -96,111 +96,199 @@ extern int TEST_StreamPushback(iostream&    ios,
     srand(seed);
 
     ERR_POST(Info << "Generating array of random data");
-    char *buf1 = new char[kBufferSize + 1];
-    char *buf2 = new char[kBufferSize + 2];
+    char* orig = new char[kBufferSize + 1];
+    char* data = new char[kBufferSize + 2];
     for (j = 0; j < kBufferSize/1024; j++) {
         for (i = 0; i < 1024 - 1; i++)
-            buf1[j*1024 + i] = "0123456789"[rand() % 10];
-        buf1[j*1024 + 1024 - 1] = '\n';
+            orig[j*1024 + i] = "0123456789"[rand() % 10];
+        orig[j*1024 + 1024 - 1] = '\n';
     }
-    buf1[kBufferSize] = '\0';
+    orig[kBufferSize    ] = '\0';
+    memset(data, '\xFF', kBufferSize + 1);
+    data[kBufferSize + 1] = '\0';
 
     ERR_POST(Info << "Sending data down the stream");
-    if (!(ios << buf1)) {
-        ERR_POST("Could not send data");
+    if (!(ios << orig)) {
+        ERR_POST("Cannot send data");
         return 1;
     }
     if (rewind)
         ios.seekg(0);
 
     ERR_POST(Info << "Doing random reads and {push|step}backs of the reply");
-    int d = 0;
-    char c = 0;
-    size_t busy = 0;
-    size_t buflen = 0;
-#ifdef NCBI_COMPILER_MSVC
-    bool first_pushback_done = false;
-#endif
-    for (k = 0;  buflen < kBufferSize;  k++) {
-        size_t m = kBufferSize + 1 - buflen;
-        if (m >= 10)
-            m /= 10;
-        i = rand() % m + 1;
 
-        if (buflen + i > kBufferSize + 1)
-            i = kBufferSize + 1 - buflen;
-        ERR_POST(Info << "Reading " << i << " byte" << (i == 1 ? "" : "s"));
+    int d = 0;
+    size_t nbusy = 0;
+    size_t nread = 0;
+    size_t npback = 0;
+    char   pbackch = '\0';
+#ifdef NCBI_COMPILER_MSVC
+    bool   first_pushback_done = false;
+#endif
+    for (k = 0;  nread < kBufferSize;  k++) {
+        size_t navail = kBufferSize + 1 - nread;
+        if (navail >= 10)
+            navail /= 10;
+        i = rand() % navail + 1;
+
+        if (nread + i > kBufferSize + 1)
+            i = kBufferSize + 1 - nread;
+        else if (!((j = npback ? rand() & 7 : 3) & ~1)) {
+            i %= npback;
+            i++;
+        }
+        _ASSERT(i > 0);
+
+        bool   putback = false;
+        string eol(1, (char)(rand() & 0x3F) + ' ');
+        char*  end = (char*)(j & ~1 ? 0 : memchr(orig + nread, eol[0], i));
+        ERR_POST(Info << "Reading " << i << " byte" << (i == 1 ? "" : "s") <<
+                 (j & ~1 ? "" : string(" with ") +
+                  (j ? "get('" +NStr::PrintableString(eol)+ "')" +
+                   (end ? ", expecting " + NStr::UInt8ToString
+                    ((Uint8)(end - (orig + nread))) : "")
+                   : "read()")));
+
         // Force at least minimal blocking, since Readsome might not
-        // block at all, and accepting 0-byte reads could lead to spinning.
+        // block at all, and accepting 0-sized reads could lead to spinning.
         ios.peek();
-        j = CStreamUtils::Readsome(ios, buf2 + buflen, i);
-        if (!ios.good()) {
-            ERR_POST("Error receiving data");
+        switch (j) {
+        case 0:
+            ios.read(data + nread, i);
+            j = ios.gcount();
+            break;
+        case 1:
+            ios.get(data + nread, i + 1/*EOL*/, eol[0]);
+            j = ios.gcount();
+            _ASSERT(!data[nread + j]);
+            data[nread + j] = orig[nread + j]; // undo '\0' side effect mess
+            if (!j) {
+                _ASSERT(ios.rdstate() & IOS_BASE::failbit);
+                ios.clear();
+                _ASSERT(ios.get() == eol[0]);
+                j++;
+            } else {
+                if (j < i)
+                    _ASSERT(orig[nread + j] == eol[0]);
+                if (!ios.good()) {
+                    _ASSERT(ios.rdstate() == IOS_BASE::eofbit);
+                    _ASSERT(nread + j == kBufferSize);
+                    ios.clear();
+                }
+            }
+            putback = true;
+            break;
+        default:
+            j = CStreamUtils::Readsome(ios, data + nread, i);
+            break;
+        }
+
+        if (!ios.good()  ||  !j) {
+            if (ios.good())
+                ERR_POST("Nothing received");
+            else
+                ERR_POST("Cannot receive data");
             return 2;
         }
-        if (j != i)
-            ERR_POST(Info << "Received " << j << " byte" << &"s"[j == 1]);
-        assert(j > 0);
-        if (c  &&  c != buf2[buflen]) {
-            ERR_POST("Mismatch, putback: " << c << ", read: " << buf2[buflen]);
+
+        if (j < i)
+            ERR_POST(Info << "Got " << j << " byte" << &"s"[j == 1]);
+        else
+            _ASSERT(j == i);
+        if (npback <= j)
+            npback  = 0;
+        else
+            npback -= j;
+
+        if (pbackch  &&  pbackch != data[nread]) {
+            ERR_POST("Mismatch: putback '"                         <<
+                     NStr::PrintableString(string(1, pbackch))     <<
+                     "' vs '"                                      <<
+                     NStr::PrintableString(string(1, data[nread])) <<
+                     "' read");
             return 2;
         } else
-            c = 0;
-        buflen += j;
-        ERR_POST(Info << "Obtained so far " << buflen
-                 << " out of " << kBufferSize);
+            pbackch = '\0';
 
-        bool pback = false;
-        if (rewind  &&  rand() % 7 == 0  &&  buflen < kBufferSize) {
-            if (rand() & 1) {
-                ERR_POST(Info << "Testing pre-seekg(" << buflen << ", "
-                         << STR(IOS_BASE) "::beg)");
-                ios.seekg(buflen, IOS_BASE::beg);
-            } else {
-                ERR_POST(Info << "Testing pre-seekg(" << buflen << ')');
-                ios.seekg(buflen);
-            }
-            if (!ios.good()) {
-                ERR_POST("Error in stream re-positioning");
+        for (i = 0;  i < j;  i++) {
+            if (orig[nread + i] != data[nread + i]) {
+                ERR_POST("Mismatch: sent '"                                <<
+                         NStr::PrintableString(string(1, orig[nread + i])) <<
+                         "' vs '"                                          <<
+                         NStr::PrintableString(string(1, data[nread + i])) <<
+                         "' received @ " << i);
                 return 2;
             }
-        } else if (ios.good()  &&  rand() % 5 == 0  &&  j > 1) {
+        }
+        nread += j;
+ 
+        ERR_POST(Info << "Obtained so far " <<
+                 nread << " out of " << kBufferSize << ", " <<
+                 npback << " pending");
+        bool update = false;
+
+        if (rewind  &&  rand() % 7 == 0  &&  nread < kBufferSize) {
+            if (rand() & 1) {
+                ERR_POST(Info << "Testing pre-seekg(" << nread <<
+                         ", " << STR(IOS_BASE) "::beg)");
+                ios.seekg(nread, IOS_BASE::beg);
+            } else {
+                ERR_POST(Info << "Testing pre-seekg(" << nread << ')');
+                ios.seekg(nread);
+            }
+            if (!ios.good()) {
+                ERR_POST("Cannot position stream");
+                return 2;
+            }
+        } else if (ios.good()  &&  rand() % 5 == 0  &&  j > 1  &&  !putback) {
 #ifdef NCBI_COMPILER_MSVC
             if (!rewind  ||  first_pushback_done) {
 #endif
-                c = buf2[--buflen];
+                j--;
+                npback++;
+                putback = true;
+                pbackch = data[--nread];
+                string action;
                 if (rand() & 1) {
-                    ERR_POST(Info << "Putback ('" << c << "')");
-                    ios.putback(c);
+                    action = "Putback";
+                    ios.putback(pbackch);
                 } else {
-                    ERR_POST(Info << "Unget ('" << c << "')");
+                    action = "Unget";
                     ios.unget();
                 }
+                ERR_POST(Info << action << "('"                    <<
+                         NStr::PrintableString(string(1, pbackch)) << "')");
                 if (!ios.good()) {
-                    ERR_POST("Error putting a byte back");
+                    ERR_POST("Cannot put a byte back");
                     return 2;
                 }
-                j--;
-                pback = true;
+                update = true;
 #ifdef NCBI_COMPILER_MSVC
             }
 #endif
         }
 
-        if (!(rand() % 101)  &&  d++ < 5)
-            i = rand() % buflen + 1;
-        else
-            i = rand() % j      + 1;
+        if (update) {
+            ERR_POST(Info << "Obtained so far " <<
+                     nread << " out of " << kBufferSize << ", " <<
+                     npback << " pending");
+            update = false;
+        }
 
-        if ((i != buflen  &&  i != j)  ||  --i) {
-            buflen -= i;
+        if (!(rand() % 101)  &&  d++ < 5)
+            i = rand() % nread + 1;
+        else
+            i = rand() % j     + 1;
+
+        if ((i != nread  &&  i != j)  ||  --i) {
             int how = rand() & 0x0F;
             int pushback = how & 0x01;
             int longform = how & 0x02;
             int original = how & 0x04;
-            int passthru = how & 0x08;  // meaningful only if !original
-            CT_CHAR_TYPE* p = buf2 + buflen;
+            int passthru = 0;
             size_t slack = 0;
+            CT_CHAR_TYPE* p;
+            nread -= i;
             if (!original) {
                 slack = rand() & 0x7FF;  // slack space filled with garbage
                 p = new CT_CHAR_TYPE[i + (slack << 1)];
@@ -208,20 +296,22 @@ extern int TEST_StreamPushback(iostream&    ios,
                     p[            ii] = rand() % 26 + 'A';
                     p[slack + i + ii] = rand() % 26 + 'a';
                 }
-                memcpy(p + slack, buf2 + buflen, i);
+                memcpy(p + slack, data + nread, i);
+                passthru = how & 0x08;
             } else
-                passthru = 0;
-            ERR_POST(Info << (pushback ? "Pushing" : "Stepping") << " back "
-                     << i << " byte" << &"s"[i == 1]
-                     << (!longform
-                         ? (original
-                            ? ""
-                            : " (copy)")
-                         : (original
-                            ? " (original)"
-                            : (passthru
-                               ? " (passthru copy)"
-                               : " (retained copy)"))));
+                p = data + nread;
+            npback += i;
+            ERR_POST(Info << (pushback ? "Pushing" : "Stepping") <<
+                     " back " << i << " byte" << &"s"[i == 1]    <<
+                     (!longform
+                      ? (original
+                         ? ""
+                         : " [copy]")
+                      : (original
+                         ? " [original]"
+                         : (passthru
+                            ? " [passthru copy]"
+                            : " [retained copy]"))));
             switch (how &= 3) {
             case 0:
                 CStreamUtils::Stepback(ios, p + slack, i);
@@ -238,62 +328,78 @@ extern int TEST_StreamPushback(iostream&    ios,
                     v.push_back(p);
                 break;
             }
-            c = buf2[buflen];
+            pbackch = data[nread];
+            putback = true;
             if (how ^ 3) {
+                // clobber unused data
                 if (!original  &&  (!longform  ||  !passthru)) {
                     for (size_t ii = slack;  ii < slack + i;  ii++)
                         p[ii] = "%*-+="[rand() % 5];
                     delete[] p;
                 }
-                for (size_t ii = max(busy, buflen);  ii < buflen + i;  ii++)
-                    buf2[ii] = "!@#$&"[rand() % 5];
-            } else if (original  &&  busy < buflen + i)
-                busy = buflen + i;
+                for (size_t ii = max(nbusy, nread);  ii < nread + i;  ii++)
+                    data[ii] = "!@#$&"[rand() % 5];
+            } else if (original  &&  nbusy < nread + i)
+                nbusy = nread + i;
 #ifdef NCBI_COMPILER_MSVC
             first_pushback_done = true;
 #endif
-            pback = true;
+            ERR_POST(Info << "Obtained so far " <<
+                     nread << " out of " << kBufferSize << ", " <<
+                     npback << " pending");
+            update = false;
         }
 
-        if (rewind  &&  rand() % 9 == 0  &&  buflen < kBufferSize) {
-            if (pback) {
-                buf2[buflen++] = c;
-                c = 0;
+        if (rewind  &&  rand() % 9 == 0  &&  nread < kBufferSize) {
+            if (putback  &&  pbackch) {
+                data[nread++] = pbackch;
+                pbackch = '\0';
+                update = true;
+                npback--;
             }
             if (rand() & 1) {
-                ERR_POST(Info << "Tesing post-seekg(" << buflen << ')');
-                ios.seekg(buflen);
+                ERR_POST(Info << "Testing post-seekg(" << nread << ')');
+                ios.seekg(nread);
             } else {
-                ERR_POST(Info << "Tesing post-seekg(" << buflen << ", "
-                         << STR(IOS_BASE) << "::beg)");
-                ios.seekg(buflen, IOS_BASE::beg);
+                ERR_POST(Info << "Testing post-seekg(" << nread <<
+                         ", " << STR(IOS_BASE) << "::beg)");
+                ios.seekg(nread, IOS_BASE::beg);
             }
             if (!ios.good()) {
-                ERR_POST("Error in stream re-positioning");
+                ERR_POST("Cannot re-position stream");
                 return 2;
             }
         }
 
-        //ERR_POST(Info << "Obtained " << buflen << " of " << kBufferSize);
+        if (update) {
+            ERR_POST(Info << "Obtained so far " <<
+                     nread << " out of " << kBufferSize << ", " <<
+                     npback << " pending");
+        }
     }
-
-    ERR_POST(Info << buflen << " bytes obtained in " << k << " iteration(s)" <<
+    
+    ERR_POST(Info << nread << " byte" << &"s"[nread==1]           <<
+             " obtained in " << k << " iteration" << &"s"[k == 1] <<
              (ios.eof() ? " (EOF)" : ""));
-    buf2[buflen] = '\0';
+    data[nread] = '\0';
+    _ASSERT(!npback);
 
     for (i = 0;  i < kBufferSize;  i++) {
-        if (!buf2[i]) {
-            ERR_POST("Zero byte encountered at position " << i + 1);
+        if (!data[i]) {
+            ERR_POST("Zero byte encountered @ " << i);
             return 1;
         }
-        if (buf2[i] != buf1[i]) {
-            ERR_POST("In: '" << buf1[i] << "', Out: '" << buf2[i] << '\''
-                     << " at position " << i + 1);
+        if (orig[i] != data[i]) {
+            ERR_POST("Mismatch: in '"                          <<
+                     NStr::PrintableString(string(1, orig[i])) <<
+                     "' vs '"                                  <<
+                     NStr::PrintableString(string(1, data[i])) <<
+                     "' out @ " << i);
             return 1;
         }
     }
-    if (buflen > kBufferSize) {
-        ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
+    if (nread > kBufferSize) {
+        ERR_POST("Sent: " << kBufferSize << ", bounced: " << nread);
         return 1;
     }
 
@@ -319,8 +425,8 @@ extern int TEST_StreamPushback(iostream&    ios,
 
     ERR_POST(Info << "Test passed");
 
-    delete[] buf1;
-    delete[] buf2;
+    delete[] orig;
+    delete[] data;
 
     for (i = 0;  i < v.size();  i++)
         delete[] v[i];

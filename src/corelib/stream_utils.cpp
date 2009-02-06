@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -109,11 +109,11 @@ private:
     static void         x_Callback(IOS_BASE::event, IOS_BASE&, int);
 #endif //HAVE_GOOD_IOS_CALLBACKS
 
-    static const streamsize k_MinBufSize;
+    static const streamsize kMinBufSize;
 };
 
 
-const streamsize CPushback_Streambuf::k_MinBufSize = 4096;
+const streamsize CPushback_Streambuf::kMinBufSize = 4096;
 
 
 #ifdef HAVE_GOOD_IOS_CALLBACKS
@@ -310,8 +310,8 @@ void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
         CT_CHAR_TYPE* bp = 0;
         streamsize buf_size = m_DelPtr
             ? (streamsize)(m_Buf - (CT_CHAR_TYPE*) m_DelPtr) + m_BufSize : 0;
-        if (buf_size < k_MinBufSize) {
-            buf_size = k_MinBufSize;
+        if (buf_size < kMinBufSize) {
+            buf_size = kMinBufSize;
             bp = new CT_CHAR_TYPE[buf_size];
         }
         streamsize n = m_Sb->sgetn(bp ? bp : (CT_CHAR_TYPE*) m_DelPtr,
@@ -332,7 +332,7 @@ void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
 }
 
 
-void CPushback_Streambuf::x_DropBuffer()
+void CPushback_Streambuf::x_DropBuffer(void)
 {
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
     if (sb) {
@@ -357,53 +357,50 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
     _ASSERT(del_ptr <= buf);
 
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (is.rdbuf());
-    if ( sb ) {
+
+    if (sb  &&  buf_size) {
         // We may not need to create another streambuf,
         //    just recycle the existing one here...
-        _ASSERT(del_ptr <= (sb->m_DelPtr ? sb->m_DelPtr : sb->m_Buf)  ||
-                sb->m_Buf + sb->m_BufSize <= del_ptr);
+        _ASSERT(del_ptr <= (sb->m_DelPtr ? sb->m_DelPtr : sb->m_Buf)
+                ||  sb->m_Buf + sb->m_BufSize <= del_ptr);
+
         // 1/ points to the adjacent part of the internal buffer we just read?
-        if (how == ePushback_NoCopy  &&
-            sb->m_Buf <= buf  &&  buf + buf_size == sb->gptr()) {
+        if (how == ePushback_NoCopy
+            &&  sb->m_Buf <= buf  &&  buf + buf_size == sb->gptr()) {
             _ASSERT(!del_ptr  ||  del_ptr == sb->m_DelPtr);
-            sb->setg(buf, buf, sb->m_Buf + sb->m_BufSize);
+            sb->setg(buf, buf, sb->egptr());
             return;
         }
 
-        CT_CHAR_TYPE* bp = 0;
-        // 2/ equal to the (reasonably-sized) adjacent part
+        // 2/ [make] equal to the (reasonably-sized) adjacent part
         //    of the internal buffer with the data that have just been read?
-        if (how == ePushback_Stepback/*fast track: no checks, dangerous!*/) {
-            streamsize available = (streamsize)(sb->gptr() - sb->m_Buf);
-            if (buf_size <= available) {
-                bp = sb->gptr() - buf_size;
-                buf_size = 0;
-            } else {
-                bp = sb->m_Buf;
-                buf_size -= available;
+        if (how != ePushback_NoCopy
+            &&  buf_size <= (del_ptr
+                             ? CPushback_Streambuf::kMinBufSize
+                             : CPushback_Streambuf::kMinBufSize >> 4)) {
+            CT_CHAR_TYPE* bp = sb->gptr();
+            streamsize avail = (streamsize)(bp - sb->m_Buf);
+            streamsize take  = avail < buf_size ? avail : buf_size;
+            if (take) {
+                bp -= take;
+                buf_size -= take;
+                if (how != ePushback_Stepback  &&  bp != buf + buf_size)
+                    memmove(bp, buf + buf_size, take);
+                sb->setg(bp, bp, sb->egptr());
             }
-        } else if (buf_size <= (del_ptr
-                                ? CPushback_Streambuf::k_MinBufSize
-                                : CPushback_Streambuf::k_MinBufSize >> 4)  &&
-                   buf_size <= (streamsize)(sb->gptr() - sb->m_Buf)) {
-            bp = sb->gptr() - buf_size;
-            if (memcmp(bp, buf, buf_size) == 0)
-                buf_size = 0;
-            else
-                bp = 0;
         }
-        if (bp)
-            sb->setg(bp, bp, sb->egptr());
     }
 
     if (!buf_size) {
         delete[] (CT_CHAR_TYPE*) del_ptr;
         return;
     }
+
     if (!del_ptr  &&  how != ePushback_NoCopy) {
         del_ptr = new CT_CHAR_TYPE[buf_size];
         buf = (CT_CHAR_TYPE*) memcpy(del_ptr, buf, buf_size);
     }
+
     (void) new CPushback_Streambuf(is, buf, buf_size, del_ptr);
 }
 

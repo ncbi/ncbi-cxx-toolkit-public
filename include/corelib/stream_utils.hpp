@@ -59,11 +59,11 @@ struct NCBI_XNCBI_EXPORT CStreamUtils
 // If "del_ptr" is not NULL, then `delete[] (CT_CHAR_TYPE*) del_ptr' is called
 // some time between the moment you call this function (perhaps, prior to when
 // it returns) and when the passed block is no longer needed (i.e. its content
-// is stored elsewhere, its all read out from the stream, or if the stream is
-// destructed).  Since this function may, at its own discretion, use the passed
-// "buf" directly in the input stream as long as it needs to, for the sake of
-// data consistency the block should not be modified from the outside until
-// all of the passed data is read out from the stream.
+// is stored elsewhere, or its all read out from the stream, or if the stream
+// is destructed).  Since this function may, at its own discretion, use the
+// passed "buf" directly in the input stream as long as it needs to, for the
+// sake of data integrity and consistency the block should not be modified
+// from the outside until all of the passed data is read out from the stream.
 // NOTE 1:  It's okay to pushback arbitrary data (i.e. not necessarily
 //          just what has been last read from the stream).
 // NOTE 2:  Data does not go to the original streambuf of "is".
