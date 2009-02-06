@@ -126,7 +126,7 @@ FindGeneticCode(int genetic_code);
 ///structure for seqloc info
 class NCBI_XBLAST_EXPORT CSeqLocInfo : public CObject {
 public:
-    typedef enum ETranslationFrame {
+    enum ETranslationFrame {
         eFramePlus1  =  1,
         eFramePlus2  =  2,
         eFramePlus3  =  3,
