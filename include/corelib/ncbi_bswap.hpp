@@ -77,6 +77,17 @@ public:
     static void PutFloat(unsigned char* ptr, float value);
     static double GetDouble(const unsigned char* ptr);
     static void PutDouble(unsigned char* ptr, double value);
+
+private:
+    union UFloatInt4 {
+        float f;
+        Int4  i;
+    };
+
+    union UDoubleInt8 {
+        double d;
+        Int8   i;
+    };
 };
 
 
@@ -195,28 +206,34 @@ void CByteSwap::PutInt8(unsigned char* ptr, Int8 value)
 inline
 float CByteSwap::GetFloat(const unsigned char* ptr)
 {
-    Int4 ret = CByteSwap::GetInt4(ptr);
-    return *(float*)(&ret);
+    UFloatInt4 u;
+    u.i = CByteSwap::GetInt4(ptr);
+    return u.f;
 }
 
 inline
 void CByteSwap::PutFloat(unsigned char* ptr, float value)
 {
-    CByteSwap::PutInt4(ptr, *(Int4*)(&value));
+    UFloatInt4 u;
+    u.f = value;
+    CByteSwap::PutInt4(ptr, u.i);
 }
 
 
 inline
 double CByteSwap::GetDouble(const unsigned char* ptr)
 {
-    Int8 ret = CByteSwap::GetInt8(ptr);
-    return *(double*)(&ret);
+    UDoubleInt8 u;
+    u.i = CByteSwap::GetInt8(ptr);
+    return u.d;
 }
 
 inline
 void CByteSwap::PutDouble(unsigned char* ptr, double value)
 {
-    CByteSwap::PutInt8(ptr, *(Int8*)(&value));
+    UDoubleInt8 u;
+    u.d = value;
+    CByteSwap::PutInt8(ptr, u.i);
 }
 
 
