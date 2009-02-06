@@ -17,8 +17,9 @@
 APP: blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn 
 APP: makembindex segmasker dustmasker windowmasker
 APP: makeblastdb blastdbcmd blastdb_aliastool convert2blastmask
-APP: $srcdir/src/app/blast/legacy_blast.pl
-APP: $srcdir/src/app/blast/update_blastdb.pl
+
+COPY: $srcdir/src/app/blast/legacy_blast.pl $installdir/bin
+COPY: $srcdir/src/app/blast/update_blastdb.pl $installdir/bin
 
 POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir
 
