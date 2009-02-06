@@ -371,8 +371,8 @@ bool CSeq_feat_Handle::GetExcept(void) const
 inline
 bool CSeq_feat_Handle::IsSetComment(void) const
 {
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetComment() ||
-        IsTableSNP() && IsSetSNPComment();
+    return (IsPlainFeat() && x_GetPlainSeq_feat().IsSetComment()) ||
+        (IsTableSNP() && IsSetSNPComment());
 }
 
 
@@ -407,7 +407,7 @@ const CSeq_loc& CSeq_feat_Handle::GetLocation(void) const
 inline
 bool CSeq_feat_Handle::IsSetQual(void) const
 {
-    return IsTableSNP() || IsPlainFeat() && x_GetPlainSeq_feat().IsSetQual();
+    return IsTableSNP() || (IsPlainFeat() && x_GetPlainSeq_feat().IsSetQual());
 }
 
 
@@ -435,7 +435,7 @@ const string& CSeq_feat_Handle::GetTitle(void) const
 inline
 bool CSeq_feat_Handle::IsSetExt(void) const
 {
-    return IsTableSNP() || IsPlainFeat() && x_GetPlainSeq_feat().IsSetExt();
+    return IsTableSNP() || (IsPlainFeat() && x_GetPlainSeq_feat().IsSetExt());
 }
 
 
@@ -491,7 +491,8 @@ const CSeq_feat::TXref& CSeq_feat_Handle::GetXref(void) const
 inline
 bool CSeq_feat_Handle::IsSetDbxref(void) const
 {
-    return IsTableSNP() || IsPlainFeat() && x_GetPlainSeq_feat().IsSetDbxref();
+    return IsTableSNP()
+        || (IsPlainFeat() && x_GetPlainSeq_feat().IsSetDbxref());
 }
 
 

@@ -74,7 +74,7 @@ public:
         bool operator<(const SNode& n) const
             {
                 return m_Length < n.m_Length ||
-                    m_Length == n.m_Length && x_Compare(n.m_Chars) < 0;
+                    (m_Length == n.m_Length && x_Compare(n.m_Chars) < 0);
             }
         bool operator==(const SNode& n) const
             {

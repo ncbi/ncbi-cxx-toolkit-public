@@ -172,7 +172,7 @@ public:
     bool operator<  (const CSeq_id_Handle& handle) const
         {
             return m_Gi > handle.m_Gi || // gi != 0 first
-                m_Gi == handle.m_Gi && m_Info < handle.m_Info;
+                (m_Gi == handle.m_Gi && m_Info < handle.m_Info);
         }
     bool NCBI_SEQ_EXPORT operator== (const CSeq_id& id) const;
 

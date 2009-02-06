@@ -156,22 +156,22 @@ public:
     bool operator<(const TThisType& r) const
         {
             return GetFrom() < r.GetFrom() ||
-                GetFrom() == r.GetFrom() && GetToOpen() < r.GetToOpen();
+                (GetFrom() == r.GetFrom() && GetToOpen() < r.GetToOpen());
         }
     bool operator<=(const TThisType& r) const
         {
             return GetFrom() < r.GetFrom() ||
-                GetFrom() == r.GetFrom() && GetToOpen() <= r.GetToOpen();
+                (GetFrom() == r.GetFrom() && GetToOpen() <= r.GetToOpen());
         }
     bool operator>(const TThisType& r) const
         {
             return GetFrom() > r.GetFrom() ||
-                GetFrom() == r.GetFrom() && GetToOpen() > r.GetToOpen();
+                (GetFrom() == r.GetFrom() && GetToOpen() > r.GetToOpen());
         }
     bool operator>=(const TThisType& r) const
         {
             return GetFrom() > r.GetFrom() ||
-                GetFrom() == r.GetFrom() && GetToOpen() >= r.GetToOpen();
+                (GetFrom() == r.GetFrom() && GetToOpen() >= r.GetToOpen());
         }
 
 

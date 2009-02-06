@@ -603,9 +603,10 @@ bool CSeqMap_CI::operator<(const CSeqMap_CI& seg) const
 {
     return
         GetPosition() < seg.GetPosition() ||
-        GetPosition() == seg.GetPosition() && 
-        (m_Stack.size() < seg.m_Stack.size() ||
-         m_Stack.size() == seg.m_Stack.size() && x_GetIndex() < seg.x_GetIndex());
+        (GetPosition() == seg.GetPosition() && 
+         (m_Stack.size() < seg.m_Stack.size() ||
+          (m_Stack.size() == seg.m_Stack.size() &&
+           x_GetIndex() < seg.x_GetIndex())));
 }
 
 
@@ -614,9 +615,10 @@ bool CSeqMap_CI::operator>(const CSeqMap_CI& seg) const
 {
     return
         GetPosition() > seg.GetPosition() ||
-        GetPosition() == seg.GetPosition() && 
-        (m_Stack.size() > seg.m_Stack.size() ||
-         m_Stack.size() == seg.m_Stack.size() && x_GetIndex() > seg.x_GetIndex());
+        (GetPosition() == seg.GetPosition() && 
+         (m_Stack.size() > seg.m_Stack.size() ||
+          (m_Stack.size() == seg.m_Stack.size() &&
+           x_GetIndex() > seg.x_GetIndex())));
 }
 
 
