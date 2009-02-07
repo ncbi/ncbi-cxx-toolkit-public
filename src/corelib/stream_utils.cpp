@@ -465,7 +465,7 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
     _ASSERT(buf  &&  buf_size);
 #ifdef NCBI_NO_READSOME
     if ( !is.good() ) {
-        is.setstate(is.rdstate() | IOS_BASE::failbit);
+        is.setstate(is.rdstate() | NcbiFailbit);
         return 0; // simulate construction of sentry in real readsome()
     }
     // Special case: GCC had no readsome() prior to ver 3.0;
@@ -478,10 +478,10 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
     // Protect read() from throwing any exceptions
     IOS_BASE::iostate save = is.exceptions();
     if (save)
-        is.exceptions(IOS_BASE::goodbit);
+        is.exceptions(NcbiGoodbit);
     is.read(buf, avail);
     // readsome is not supposed to set a failbit on a stream initially good
-    is.clear(is.rdstate() & ~IOS_BASE::failbit);
+    is.clear(is.rdstate() & ~NcbiFailbit);
     if (save)
         is.exceptions(save);
     streamsize count = is.gcount();
@@ -497,10 +497,10 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
     // No buffered data found, try to read from the real source [still good]
     IOS_BASE::iostate save = is.exceptions();
     if (save)
-        is.exceptions(IOS_BASE::goodbit);
+        is.exceptions(NcbiGoodbit);
     is.read(buf, 1);
     // readsome is not supposed to set a failbit on a stream initially good
-    is.clear(is.rdstate() & ~IOS_BASE::failbit);
+    is.clear(is.rdstate() & ~NcbiFailbit);
     if (save)
         is.exceptions(save);
     if ( !is.good() )

@@ -97,7 +97,7 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
         }
     }
     str.append(buf, pos);
-    if (ch == EOF) 
+    if (CT_EQ_INT_TYPE(ch, EOF)) 
         is.clear(NcbiEofbit | is.rdstate());      
     if ( !i )
         is.clear(NcbiFailbit | is.rdstate());      
@@ -208,7 +208,7 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
     if (!os.good())
         return false;
     if (!CT_EQ_INT_TYPE(is.peek(), CT_EOF)) {
-        os.clear(IOS_BASE::failbit);
+        os.clear(NcbiFailbit);
         return false;
     }
     return true;
