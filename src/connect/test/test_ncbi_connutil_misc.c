@@ -247,8 +247,29 @@ static void TEST_ConnNetInfo(void)
     CORE_LOG(eLOG_Note, "ConnNetInfo test started");
 
     net_info = ConnNetInfo_Create(0);
-
     assert(net_info);
+
+    assert(ConnNetInfo_ParseURL(net_info,
+                                "ftp://user:pass@host:8888/ro.t/p@th"
+                                "?arg/arg:arg@arg:arg/arg"));
+    assert(net_info->scheme                           == eURL_Ftp);
+    assert(strcmp(net_info->user, "user")                    == 0);
+    assert(strcmp(net_info->pass, "pass")                    == 0);
+    assert(strcmp(net_info->host, "host")                    == 0);
+    assert(       net_info->port                             == 8888);
+    assert(strcmp(net_info->path, "/ro.t/p@th")              == 0);
+    assert(strcmp(net_info->args, "arg/arg:arg@arg:arg/arg") == 0);
+
+    assert(ConnNetInfo_ParseURL(net_info, "http://www/path"
+                                "?arg:arg@arg"));
+    assert(       net_info->scheme       == eURL_Http);
+    assert(      *net_info->user                 == 0);
+    assert(      *net_info->pass                 == 0);
+    assert(strcmp(net_info->host, "www")         == 0);
+    assert(       net_info->port                 == 0);
+    assert(strcmp(net_info->path, "/path")       == 0);
+    assert(strcmp(net_info->args, "arg:arg@arg") == 0);
+
     printf("HTTP User Header:\n\"%s\"\n",
            net_info->http_user_header ? net_info->http_user_header : "<NONE>");
     ConnNetInfo_AppendUserHeader(net_info,
@@ -307,6 +328,8 @@ static void TEST_ConnNetInfo(void)
 
     ConnNetInfo_DeleteAllArgs(net_info, "a=b&p=q&f=d");
     printf("HTTP Arg after delete-all: \"%s\"\n", net_info->args);
+
+    ConnNetInfo_Log(net_info, CORE_GetLOG());
 
     ConnNetInfo_Destroy(net_info);
 

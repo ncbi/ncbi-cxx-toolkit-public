@@ -349,53 +349,55 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         if ((info->scheme = s_ParseScheme(url, len)) == eURL_Unspec)
             return 0/*failure*/;
 
+        /* find end of host spec */
+        if (!(s = strchr(h, '/')))
+            s = h + strlen(h);
+        len = (size_t)(s - h);
+
         /* username:password */
-        if (!(a = strchr(h, '@'))) {
+        if (!(a = memchr(h, '@', len))) {
             info->user[0] = '\0';
             info->pass[0] = '\0';
         } else {
-            len = (size_t)(a - h);
-            s = (const char*) memchr(h, ':', len);
-            if (s)
-                len = (size_t)(s - h);
-            if (len < sizeof(info->user)) {
-                memcpy(info->user, h, len);
-                info->user[len] = '\0';
+            size_t   ulen = (size_t)(a - h);
+            const char* t = (const char*) memchr(h, ':', ulen);
+            if (t)
+                ulen = (size_t)(t - h);
+            if (ulen < sizeof(info->user)) {
+                memcpy(info->user, h, ulen);
+                info->user[ulen] = '\0';
             } else {
                 memcpy(info->user, h, sizeof(info->user) - 1);
                 info->user[sizeof(info->user) - 1] = '\0';
             }
-            if (s  &&  len) { /* take pass only if user non-empty */
-                len = (size_t)(a - ++s);
+            if (t  &&  ulen) { /* take pass only if user non-empty */
+                len = (size_t)(a - ++t);
                 if (len < sizeof(info->pass)) {
-                    memcpy(info->pass, s, len);
+                    memcpy(info->pass, t, len);
                     info->pass[len] = '\0';
                 } else {
-                    memcpy(info->pass, s, sizeof(info->pass) - 1);
+                    memcpy(info->pass, t, sizeof(info->pass) - 1);
                     info->pass[sizeof(info->pass) - 1] = '\0';
                 }
             } else
                 info->pass[0] = '\0';
             h = ++a;
+            len = (size_t)(s - h);
         }
 
-        if (!(s = strchr(h, '/')))
-            s = h + strlen(h);
-
         /* host ends at "s" here */
-        len = (size_t)(s - h);
         if (!(a = (const char*) memchr(h, ':', len))) {
-            a = s;
             info->port = 0/*default*/;
+            a = s;
         } else {
             unsigned short port;
             int n;
             if (sscanf(a, ":%hu%n", &port, &n) < 1  ||  a + n != s  ||  !port)
                 return 0/*failure*/;
             info->port = port;
+            len = (size_t)(a - h);
         }
         /* host ends at "a" here */
-        len = (size_t)(a - h);
         if (len < sizeof(info->host)) {
             memcpy(info->host, h, len);
             info->host[len] = '\0';
