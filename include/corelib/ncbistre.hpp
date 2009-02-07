@@ -695,8 +695,8 @@ EEncodingForm GetTextEncodingForm(CNcbiIstream& input,
 /// BASE64-encode up to "src_size" symbols(bytes) from buffer "src_buf".
 /// Write the encoded data to buffer "dst_buf", but no more than "dst_size"
 /// bytes.
-/// Assign "*src_read" to the # of bytes successfully encoded from "src_buf".
-/// Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
+/// Assign "*src_read" with the # of bytes successfully encoded from "src_buf".
+/// Assign "*dst_written" with the # of bytes written to buffer "dst_buf".
 /// Resulting lines will not exceed "*line_len" (or the standard default
 /// if "line_len" is NULL) bytes;  *line_len == 0 disables line breaks.
 /// To estimate required destination buffer size, you can take into account
@@ -716,10 +716,10 @@ extern "C" NCBI_XNCBI_EXPORT void BASE64_Encode
 /// BASE64-decode up to "src_size" symbols(bytes) from buffer "src_buf".
 /// Write the decoded data to buffer "dst_buf", but no more than "dst_size"
 /// bytes.
-/// Assign "*src_read" to the # of bytes successfully decoded from "src_buf".
-/// Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
-/// Return FALSE (0) only if cannot decode anything.
-/// Destination buffer size, as a worst case, equal to the source size
+/// Assign "*src_read" with the # of bytes successfully decoded from "src_buf".
+/// Assign "*dst_written" with the # of bytes written to buffer "dst_buf".
+/// Return FALSE (0) only if this call cannot decode anything.
+/// Destination buffer size, as a worst case equal to the source size,
 /// will accomodate the entire input.  As a rule, each 4 bytes of source
 /// (line breaks skipped) are converted into 3 bytes on output.
 extern "C" NCBI_XNCBI_EXPORT int/*bool*/ BASE64_Decode
