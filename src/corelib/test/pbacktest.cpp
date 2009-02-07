@@ -140,7 +140,7 @@ extern int TEST_StreamPushback(iostream&    ios,
         _ASSERT(i > 0);
 
         bool   putback = false;
-        string eol(1, (char)(rand() & 0x3F) + ' ');
+        string eol(1, (char)(rand() & 0x1F) + ' ');
         char*  end = (char*)(j & ~1 ? 0 : memchr(orig + nread, eol[0], i));
         ERR_POST(Info << "Reading " << i << " byte" << (i == 1 ? "" : "s") <<
                  (j & ~1 ? "" : string(" with ") +
@@ -163,7 +163,7 @@ extern int TEST_StreamPushback(iostream&    ios,
             _ASSERT(!data[nread + j]);
             data[nread + j] = orig[nread + j]; // undo '\0' side effect mess
             if (!j) {
-                _ASSERT(ios.rdstate() & IOS_BASE::failbit);
+                _ASSERT(ios.rdstate() & NcbiFailbit);
                 ios.clear();
                 _ASSERT(ios.get() == eol[0]);
                 j++;
@@ -171,12 +171,12 @@ extern int TEST_StreamPushback(iostream&    ios,
                 if (j < i)
                     _ASSERT(orig[nread + j] == eol[0]);
                 if (!ios.good()) {
-                    _ASSERT(ios.rdstate() == IOS_BASE::eofbit);
+                    _ASSERT(ios.rdstate() == NcbiEofbit);
                     _ASSERT(nread + j == kBufferSize);
                     ios.clear();
                 }
+                putback = true;
             }
-            putback = true;
             break;
         default:
             j = CStreamUtils::Readsome(ios, data + nread, i);
@@ -347,7 +347,6 @@ extern int TEST_StreamPushback(iostream&    ios,
             ERR_POST(Info << "Obtained so far " <<
                      nread << " out of " << kBufferSize << ", " <<
                      npback << " pending");
-            update = false;
         }
 
         if (rewind  &&  rand() % 9 == 0  &&  nread < kBufferSize) {
