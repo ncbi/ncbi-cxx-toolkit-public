@@ -44,6 +44,10 @@
 #  define CRWStreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
 #else
 #  define CRWStreambufBase CNcbiStreambuf
+#  ifdef NCBI_COMPILER_MSVC
+#    pragma warning(push)
+#    pragma warning(disable:4996)
+#  endif //NCBI_COMPILER_MSVC
 #endif //NCBI_COMPILER_MIPSPRO
 
 
@@ -126,5 +130,10 @@ protected:
 
 
 END_NCBI_SCOPE
+
+
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(pop)
+#endif //NCBI_COMPILER_MSVC
 
 #endif /* CORELIB___RWSTREAMBUF__HPP */
