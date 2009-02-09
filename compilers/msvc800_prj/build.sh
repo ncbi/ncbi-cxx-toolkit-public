@@ -54,12 +54,6 @@ generate_msvc8_error_check_file() {
 build_dir=`dirname $script`
 build_dir=`(cd "$build_dir"; pwd)`
 
-# Get directory for build logfiles
-log_dir="$build_dir/../../logs"
-mkdir $log_dir >/dev/null 2>&1
-log_dir=`(cd "$log_dir"; pwd)`
-rm $log_dir/* >/dev/null 2>&1
-
 if [ ! -d $build_dir ] ; then
     error "Build directory $build_dir not found"
     exit 1
@@ -76,6 +70,13 @@ done
 # Configuration to build configure
 cfg_configure='ReleaseDLL'
 out=".build.$$"
+
+# Get directory for build logfiles
+log_dir="$build_dir/../../logs"
+mkdir $log_dir >/dev/null 2>&1
+log_dir=`(cd "$log_dir"; pwd)`
+rm $log_dir/* >/dev/null 2>&1
+
 
 chmod +x $build_dir/build_exec.bat
 rm -f $build_dir/cfgs.log
