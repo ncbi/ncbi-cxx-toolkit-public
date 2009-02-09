@@ -54,6 +54,12 @@ generate_msvc8_error_check_file() {
 build_dir=`dirname $script`
 build_dir=`(cd "$build_dir"; pwd)`
 
+# Get directory for build logfiles
+log_dir="$build_dir/../../logs"
+mkdir $log_dir >/dev/null 2>&1
+log_dir=`(cd "$log_dir"; pwd)`
+rm $log_dir/* >/dev/null 2>&1
+
 if [ ! -d $build_dir ] ; then
     error "Build directory $build_dir not found"
     exit 1
@@ -90,8 +96,7 @@ for tree in $build_trees ; do
         echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out
         $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out
         status=$?
-        # don't need to 'cat' here, because msdev2005 double output to console also
-        # cat $out
+        cat $out >> ${log_dir}/${tree}_${cfg_configure}.log
         rm -f $out >/dev/null 2>&1
         if [ $status -ne 0 ] ; then
             exit 3
@@ -124,8 +129,7 @@ for tree in $build_trees ; do
             echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
             $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
             status=$?
-            # don't need to 'cat' here, because msdev2005 double output to console also
-            # cat $out
+            cat $out >> ${log_dir}/${tree}_${cfg}.log
             echo "Build time: $start - `eval $timer`"
             if [ $status -ne 0 ] ; then
                 # Check on errors (skip expendable projects)
@@ -141,6 +145,5 @@ for tree in $build_trees ; do
         done
     done
 done
-
 
 exit 0

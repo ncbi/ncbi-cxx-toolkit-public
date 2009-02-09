@@ -46,6 +46,7 @@ srcdir="$target"/src
 libdir="$target"/lib
 bindir="$target"/bin
 cldir="$target"/compilers
+logdir="$target"/logs
 tmpdir="$target"/tmp
 
 
@@ -161,9 +162,11 @@ cp -p "$builddir"/compilers/$compiler/*        "$cldir"/$compiler
 cp -p "$builddir"/compilers/$compiler/static/* "$cldir"/$compiler/static
 cp -p "$builddir"/compilers/$compiler/dll/*    "$cldir"/$compiler/dll
 
+# Build logs
+echo "[`basename $script`] Installing build logs..."
+install "$builddir/logs" "$logdir"
 
 # Copy info files
 cp -p "$builddir"/*_info "$target"
-
 
 exit 0
