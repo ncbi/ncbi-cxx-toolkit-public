@@ -81,8 +81,8 @@
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/error_codes.hpp>
-#include <objtools/idmapper/ucscid.hpp>
-#include <objtools/idmapper/idmapper.hpp>
+#include <objtools/readers/ucscid.hpp>
+#include <objtools/readers/idmapper.hpp>
 
 #include <algorithm>
 #include <objects/seqres/Seq_graph.hpp>

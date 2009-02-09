@@ -26,6 +26,7 @@
  * Author:  Frank Ludwig
  *
  * File Description:
+ *   WIGGLE transient data structures
  *
  */
 
@@ -36,79 +37,86 @@
 // Objects includes
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
-#include <objtools/idmapper/ucscid.hpp>
-#include <objtools/idmapper/idmapper.hpp>
+#include <objtools/readers/ucscid.hpp>
+
 #include "idmap.hpp"
-#include "idmapper_builtin.hpp"
-#include "idmapper_user.hpp"
-#include "idmapper_site.hpp"
-#include "idmapper_database.hpp"
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ============================================================================
-CIdMapper*
-CIdMapper::GetIdMapper(
-    const string& strType )
+CIdMap::CIdMap()
 //  ============================================================================
 {
-    if ( strType == "builtin" ) {
-        return new CIdMapperBuiltin;
-    }
-    if ( strType == "user" ) {
-        return new CIdMapperUser;
-    }
-    if ( strType == "site" ) {
-        return new CIdMapperSite;
-    }
-    if ( strType == "database" ) {
-        return new CIdMapperDatabase;
-    }
-    return new CIdMapper;
-}
-
-//  ============================================================================
-CIdMapper*
-CIdMapper::GetIdMapper(
-    const CArgs& args )
-//  ============================================================================
-{
-    CIdMapper* pIdMapper = GetIdMapper( args[ "t" ].AsString() );
-    pIdMapper->Setup( args );
-    return pIdMapper;
 };
 
 //  ============================================================================
-void CIdMapper::Setup(
-    const CArgs& args )
+CIdMap::~CIdMap()
 //  ============================================================================
 {
+};
+
+//  ============================================================================
+bool
+CIdMap::AddMapping(
+    const string& strkey,
+    CRef<CSeq_id> value,
+    unsigned int uLength )
+//  ============================================================================
+{
+    m_IdMap[ strkey ] = CIdMapValue( 
+        CSeq_id_Handle::GetHandle( *value ), uLength );
+    return true;
 };
 
 //  ============================================================================
 CSeq_id_Handle
-CIdMapper::MapID(
-    const string& strKey,
+CIdMap::GetMapping(
+    const string& strkey,
     unsigned int& uLength )
 //  ============================================================================
 {
-    uLength = 0;    
-    CSeq_id id( CSeq_id::e_Local, strKey );
-    return CSeq_id_Handle::GetHandle( id );
+    IdCiter it = m_IdMap.find( strkey );
+    if ( it == m_IdMap.end() ) {
+        return CSeq_id_Handle();
+    }
+    uLength = it->second.m_uLength;
+    return it->second.m_Id;
 };
 
 //  ============================================================================
 void
-CIdMapper::Dump(
+CIdMap::ClearAll()
+//  ============================================================================
+{
+    m_IdMap.clear();
+};
+
+//  ============================================================================
+void
+CIdMap::Dump(
     CNcbiOstream& out,
     const string& strPrefix )
 //  ============================================================================
 {
-    out << strPrefix << "[CIdMapper:" << endl;
+    out << strPrefix << "[CIdMap:" << endl;
+    for ( IdCiter it = m_IdMap.begin(); it != m_IdMap.end(); ++it ) {
+        out << strPrefix << strPrefix << it->first 
+            << " ===> " << it->second.m_Id.GetSeqId()->AsFastaString() << endl;
+    }
     out << strPrefix << "]" << endl;
 };
 
+//  ============================================================================
+CSeq_id_Handle
+CIdMap::Handle(
+    const CSeq_id& key )
+//  ============================================================================
+{
+    return CSeq_id_Handle::GetHandle( key );
+};
+    
+END_objects_SCOPE
 END_NCBI_SCOPE
-

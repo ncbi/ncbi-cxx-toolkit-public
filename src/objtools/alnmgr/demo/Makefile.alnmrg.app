@@ -3,7 +3,7 @@
 
 APP = alnmrg
 SRC = alnmrg
-LIB = xalnmgr submit xobjread xidmapper ncbi_xloader_blastdb seqdb blastdb \
+LIB = xalnmgr submit xobjread ncbi_xloader_blastdb seqdb blastdb \
       tables $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)

@@ -26,7 +26,6 @@
  * Author:  Frank Ludwig
  *
  * File Description:
- *   WIGGLE transient data structures
  *
  */
 
@@ -37,44 +36,79 @@
 // Objects includes
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqres/Seq_graph.hpp>
-#include <objects/seqres/Real_graph.hpp>
-#include <objects/seqres/Int_graph.hpp>
-#include <objects/seqres/Byte_graph.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objtools/readers/reader_exception.hpp>
 
-#include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/wiggle_reader.hpp>
-#include <objtools/idmapper/ucscid.hpp>
-#include <objtools/idmapper/idmapper.hpp>
-
-#include <objtools/idmapper/ucscid.hpp>
+#include <objtools/readers/ucscid.hpp>
+#include <objtools/readers/idmapper.hpp>
+#include "idmap.hpp"
+#include "idmapper_builtin.hpp"
+#include "idmapper_user.hpp"
+#include "idmapper_site.hpp"
+#include "idmapper_database.hpp"
 
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+USING_SCOPE(objects);
 
 //  ============================================================================
-UcscID::UcscID(
-    const string& strLabel ):
-//  ============================================================================
-    CSeq_id( CSeq_id::e_Local, strLabel )
-{
-};
-
-//  ============================================================================
-string
-UcscID::Label(
-    const string& strBuild,
-    const string& strChrom )
+CIdMapper*
+CIdMapper::GetIdMapper(
+    const string& strType )
 //  ============================================================================
 {
-    if ( ! strBuild.empty() ) {
-        return string( "ucsc:" ) + strBuild + string( "." ) + strChrom;
+    if ( strType == "builtin" ) {
+        return new CIdMapperBuiltin;
     }
-    return string( "ucsc:" ) + strChrom;
+    if ( strType == "user" ) {
+        return new CIdMapperUser;
+    }
+    if ( strType == "site" ) {
+        return new CIdMapperSite;
+    }
+    if ( strType == "database" ) {
+        return new CIdMapperDatabase;
+    }
+    return new CIdMapper;
+}
+
+//  ============================================================================
+CIdMapper*
+CIdMapper::GetIdMapper(
+    const CArgs& args )
+//  ============================================================================
+{
+    CIdMapper* pIdMapper = GetIdMapper( args[ "t" ].AsString() );
+    pIdMapper->Setup( args );
+    return pIdMapper;
 };
 
-END_objects_SCOPE
+//  ============================================================================
+void CIdMapper::Setup(
+    const CArgs& args )
+//  ============================================================================
+{
+};
+
+//  ============================================================================
+CSeq_id_Handle
+CIdMapper::MapID(
+    const string& strKey,
+    unsigned int& uLength )
+//  ============================================================================
+{
+    uLength = 0;    
+    CSeq_id id( CSeq_id::e_Local, strKey );
+    return CSeq_id_Handle::GetHandle( id );
+};
+
+//  ============================================================================
+void
+CIdMapper::Dump(
+    CNcbiOstream& out,
+    const string& strPrefix )
+//  ============================================================================
+{
+    out << strPrefix << "[CIdMapper:" << endl;
+    out << strPrefix << "]" << endl;
+};
+
 END_NCBI_SCOPE
+

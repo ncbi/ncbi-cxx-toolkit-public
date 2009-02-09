@@ -37,26 +37,23 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
-#include <objtools/idmapper/ucscid.hpp>
-#include <objtools/idmapper/idmapper.hpp>
+#include <objtools/readers/ucscid.hpp>
+#include <objtools/readers/idmapper.hpp>
 #include "idmap.hpp"
-#include "idmapper_builtin.hpp"
+#include "idmapper_database.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //  ============================================================================
-CIdMapperBuiltin::CIdMapperBuiltin()
+CIdMapperDatabase::CIdMapperDatabase()
 //  ============================================================================
 {
-    UcscID key( UcscID::Label( "hg18", "chr1" ) );
-    CRef<CSeq_id> value( new CSeq_id( "gi|89161185" ) );
-    m_Map.AddMapping( UcscID::Label( "hg18", "chr1" ), value );
 };
 
 //  ============================================================================
 void
-CIdMapperBuiltin::Setup(
+CIdMapperDatabase::Setup(
     const CArgs& args )
 //  ============================================================================
 {
@@ -64,26 +61,23 @@ CIdMapperBuiltin::Setup(
 
 //  ============================================================================
 CSeq_id_Handle
-CIdMapperBuiltin::MapID(
+CIdMapperDatabase::MapID(
     const string& key,
     unsigned int& uLength )
 //  ============================================================================
 {
-    CSeq_id_Handle idh = m_Map.GetMapping( key, uLength );
-    if ( idh ) {
-        return idh;
-    }
+    /* to be done */
     return CIdMapper::MapID( key, uLength );
 };
 
 //  ============================================================================
 void
-CIdMapperBuiltin::Dump(
+CIdMapperDatabase::Dump(
     CNcbiOstream& out,
     const string& strPrefix )
 //  ============================================================================
 {
-    out << strPrefix << "[CIdMapperBuiltIn:" << endl;
+    out << strPrefix << "[CIdMapperDatabase:" << endl;
     m_Map.Dump( out, strPrefix + "\t" );
     out << strPrefix << "]" << endl;
 };

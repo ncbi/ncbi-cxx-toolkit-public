@@ -1,3 +1,0 @@
-LIB_PROJ = idmapper
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

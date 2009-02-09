@@ -38,85 +38,43 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqres/Seq_graph.hpp>
+#include <objects/seqres/Real_graph.hpp>
+#include <objects/seqres/Int_graph.hpp>
+#include <objects/seqres/Byte_graph.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objtools/readers/reader_exception.hpp>
 
-#include <objtools/idmapper/ucscid.hpp>
+#include <objtools/readers/reader_base.hpp>
+#include <objtools/readers/wiggle_reader.hpp>
+#include <objtools/readers/ucscid.hpp>
+#include <objtools/readers/idmapper.hpp>
 
-#include "idmap.hpp"
+#include <objtools/readers/ucscid.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ============================================================================
-CIdMap::CIdMap()
+UcscID::UcscID(
+    const string& strLabel ):
 //  ============================================================================
+    CSeq_id( CSeq_id::e_Local, strLabel )
 {
 };
 
 //  ============================================================================
-CIdMap::~CIdMap()
+string
+UcscID::Label(
+    const string& strBuild,
+    const string& strChrom )
 //  ============================================================================
 {
-};
-
-//  ============================================================================
-bool
-CIdMap::AddMapping(
-    const string& strkey,
-    CRef<CSeq_id> value,
-    unsigned int uLength )
-//  ============================================================================
-{
-    m_IdMap[ strkey ] = CIdMapValue( 
-        CSeq_id_Handle::GetHandle( *value ), uLength );
-    return true;
-};
-
-//  ============================================================================
-CSeq_id_Handle
-CIdMap::GetMapping(
-    const string& strkey,
-    unsigned int& uLength )
-//  ============================================================================
-{
-    IdCiter it = m_IdMap.find( strkey );
-    if ( it == m_IdMap.end() ) {
-        return CSeq_id_Handle();
+    if ( ! strBuild.empty() ) {
+        return string( "ucsc:" ) + strBuild + string( "." ) + strChrom;
     }
-    uLength = it->second.m_uLength;
-    return it->second.m_Id;
+    return string( "ucsc:" ) + strChrom;
 };
 
-//  ============================================================================
-void
-CIdMap::ClearAll()
-//  ============================================================================
-{
-    m_IdMap.clear();
-};
-
-//  ============================================================================
-void
-CIdMap::Dump(
-    CNcbiOstream& out,
-    const string& strPrefix )
-//  ============================================================================
-{
-    out << strPrefix << "[CIdMap:" << endl;
-    for ( IdCiter it = m_IdMap.begin(); it != m_IdMap.end(); ++it ) {
-        out << strPrefix << strPrefix << it->first 
-            << " ===> " << it->second.m_Id.GetSeqId()->AsFastaString() << endl;
-    }
-    out << strPrefix << "]" << endl;
-};
-
-//  ============================================================================
-CSeq_id_Handle
-CIdMap::Handle(
-    const CSeq_id& key )
-//  ============================================================================
-{
-    return CSeq_id_Handle::GetHandle( key );
-};
-    
 END_objects_SCOPE
 END_NCBI_SCOPE

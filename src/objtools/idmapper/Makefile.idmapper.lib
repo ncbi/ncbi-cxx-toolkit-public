@@ -1,9 +1,0 @@
-# Build library "xidmapper"
-###############################
-
-ASN_DEP = seq
-SRC = ucscid idmap idmapper idmapper_builtin idmapper_user idmapper_site \
-	idmapper_database
-      
-LIB = xidmapper
-
