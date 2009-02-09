@@ -765,7 +765,7 @@ void CSeqTableLocColumns::SetTableKeyAndIndex(size_t row,
 // CSeqTableInfo
 /////////////////////////////////////////////////////////////////////////////
 
-CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
+CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table, bool is_feat)
     : m_Location("loc", CSeqTable_column_info::eField_id_location),
       m_Product("product", CSeqTable_column_info::eField_id_product)
 {
@@ -791,6 +791,11 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
         }
         if ( !field_name.empty() ) {
             m_ColumnsByName.insert(TColumnsByName::value_type(field_name, col));
+        }
+
+        if ( !is_feat ) {
+            m_ExtraColumns.push_back(TColumnInfo(col, null));
+            continue;
         }
 
         if ( m_Location.AddColumn(col) || m_Product.AddColumn(col) ) {
@@ -876,8 +881,10 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
         m_ExtraColumns.push_back(TColumnInfo(col, setter));
     }
 
-    m_Location.ParseDefaults();
-    m_Product.ParseDefaults();
+    if ( is_feat ) {
+        m_Location.ParseDefaults();
+        m_Product.ParseDefaults();
+    }
 }
 
 

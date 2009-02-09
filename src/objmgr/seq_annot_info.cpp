@@ -907,9 +907,10 @@ bool CSeq_annot_Info::IsTableFeatPartial(const CAnnotObject_Info& info) const
 void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
 {
     const CSeq_table& feat_table = m_Object->GetData().GetSeq_table();
-    m_Table_Info = new CSeqTableInfo(feat_table);
+    bool is_feat = s_GoodFeatureType(feat_table);
+    m_Table_Info = new CSeqTableInfo(feat_table, is_feat);
     
-    if ( !s_GoodFeatureType(feat_table) ) {
+    if ( !is_feat ) {
         // index whole Seq-table
         m_ObjectIndex.ReserveMapSize(1);
         SAnnotObject_Key key;

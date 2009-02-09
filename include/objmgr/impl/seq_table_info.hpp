@@ -224,7 +224,7 @@ private:
 class CSeqTableInfo : public CObject
 {
 public:
-    explicit CSeqTableInfo(const CSeq_table& feat_table);
+    explicit CSeqTableInfo(const CSeq_table& feat_table, bool is_feat);
     ~CSeqTableInfo();
 
     void UpdateSeq_feat(size_t row,
