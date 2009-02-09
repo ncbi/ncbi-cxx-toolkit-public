@@ -30424,6 +30424,9 @@ done
 ncbicfg="$builddir/corelib/ncbicfg.c"
 test -f "$ncbicfg" -a ! -f "$ncbicfg.last" && cp -p "$ncbicfg" "$ncbicfg.last"
 
+test -d "$status_dir"  ||  mkdir -p "$status_dir"
+CONFIG_STATUS=$status_dir/config.status
+
 ## Configure the compiler/flag-dependent header
           ac_config_headers="$ac_config_headers ${ncbiconf}:src/build-system/config.h.in"
 
@@ -32041,9 +32044,9 @@ find "$build_root/." -name '*.sh' -print | while read x_file ; do
    chmod a+x "$x_file"
 done
 
-if test -f config.status -a -f config.cache -a -f config.log ; then
+if test -f config.cache -a -f config.log ; then
    test -d  "$status_dir"  ||  mkdir -p "$status_dir"
-   mv config.status config.cache config.log "$status_dir"/
+   mv config.cache config.log "$status_dir"/
 fi
 
 rm -f "$status_dir"/*.enabled

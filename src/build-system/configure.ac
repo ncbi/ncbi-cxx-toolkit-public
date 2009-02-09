@@ -6061,6 +6061,9 @@ done
 ncbicfg="$builddir/corelib/ncbicfg.c"
 test -f "$ncbicfg" -a ! -f "$ncbicfg.last" && cp -p "$ncbicfg" "$ncbicfg.last"
 
+test -d "$status_dir"  ||  mkdir -p "$status_dir"
+CONFIG_STATUS=$status_dir/config.status
+
 ## Configure the compiler/flag-dependent header
 AC_CONFIG_HEADER(${ncbiconf}:src/build-system/config.h.in)
 
@@ -6075,10 +6078,12 @@ find "$build_root/." -name '*.sh' -print | while read x_file ; do
    chmod a+x "$x_file"
 done
 
-dnl save status, cache, and log files to the build tree dir "status/"
-if test -f config.status -a -f config.cache -a -f config.log ; then
+dnl save cache and log files to the build tree dir "status/"
+dnl (config.status handled separately above so that it doesn't try to
+dnl move itself, which can run into trouble in some environments.)
+if test -f config.cache -a -f config.log ; then
    test -d  "$status_dir"  ||  mkdir -p "$status_dir"
-   mv config.status config.cache config.log "$status_dir"/
+   mv config.cache config.log "$status_dir"/
 fi
 
 dnl Update list of enabled packages
