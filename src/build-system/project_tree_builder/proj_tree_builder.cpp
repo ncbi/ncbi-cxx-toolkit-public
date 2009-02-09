@@ -726,7 +726,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
             PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
                         "Application " << proj_id << " already defined at "
                         << tree->m_Projects[proj_key].m_SourcesBaseDir);
-            if (GetApp().IsScanningWholeTree()) {
+            if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
                 return CProjKey();
             } else {
                 GetApp().RegisterSuspiciousProject(proj_key);
@@ -1017,7 +1017,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
             PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
                         "Library " << proj_id << " already defined at "
                         << tree->m_Projects[proj_key].m_SourcesBaseDir);
-            if (GetApp().IsScanningWholeTree()) {
+            if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
                 return CProjKey();
             } else {
                 GetApp().RegisterSuspiciousProject(proj_key);
@@ -1227,7 +1227,7 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
                 PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
                             "DLL " << proj_id << " already defined at "
                             << tree->m_Projects[proj_key].m_SourcesBaseDir);
-                if (GetApp().IsScanningWholeTree()) {
+                if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
                     return CProjKey();
                 } else {
                     GetApp().RegisterSuspiciousProject(proj_key);
@@ -1593,7 +1593,7 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
             PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
                         "MSVC project " << proj_id << " already defined at "
                         << tree->m_Projects[proj_key].m_SourcesBaseDir);
-            if (GetApp().IsScanningWholeTree()) {
+            if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
                 return CProjKey();
             } else {
                 GetApp().RegisterSuspiciousProject(proj_key);
