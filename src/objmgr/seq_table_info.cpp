@@ -772,27 +772,26 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table, bool is_feat)
     ITERATE ( CSeq_table::TColumns, it, feat_table.GetColumns() ) {
         const CSeqTable_column& col = **it;
         const CSeqTable_column_info& type = col.GetHeader();
-        int field_id;
-        string field_name;
         if ( type.IsSetField_id() ) {
-            field_id = type.GetField_id();
-            field_name = type.GetNameForId(field_id);
-            if ( field_name.empty() ) {
-                field_name = type.GetField_name();
-                field_id = type.GetIdForName(field_name);
+            int id = type.GetField_id();
+            m_ColumnsById.insert(TColumnsById::value_type(id, col));
+            if ( is_feat && !type.IsSetField_name() ) {
+                string name = type.GetNameForId(id);
+                if ( !name.empty() ) {
+                    m_ColumnsByName.insert(TColumnsByName::value_type(name, col));
+                }
             }
         }
-        else {
-            field_name = type.GetField_name();
-            field_id = type.GetIdForName(field_name);
+        if ( type.IsSetField_name() ) {
+            string name = type.GetField_name();
+            m_ColumnsByName.insert(TColumnsByName::value_type(name, col));
+            if ( is_feat && !type.IsSetField_id() ) {
+                int id = type.GetIdForName(name);
+                if ( id >= 0 ) {
+                    m_ColumnsById.insert(TColumnsById::value_type(id, col));
+                }
+            }
         }
-        if ( field_id >= 0 ) {
-            m_ColumnsById.insert(TColumnsById::value_type(field_id, col));
-        }
-        if ( !field_name.empty() ) {
-            m_ColumnsByName.insert(TColumnsByName::value_type(field_name, col));
-        }
-
         if ( !is_feat ) {
             m_ExtraColumns.push_back(TColumnInfo(col, null));
             continue;
@@ -803,8 +802,8 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table, bool is_feat)
         }
         CConstRef<CSeqTableSetFeatField> setter;
         if ( type.IsSetField_id() ) {
-            int field = type.GetField_id();
-            switch ( field ) {
+            int id = type.GetField_id();
+            switch ( id ) {
             case CSeqTable_column_info::eField_id_partial:
                 if ( m_Partial ) {
                     NCBI_THROW_FMT(CAnnotException, eOtherError,
@@ -835,7 +834,7 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table, bool is_feat)
                 break;
             default:
                 if ( !type.IsSetField_name() ) {
-                    ERR_POST_X(8, "SeqTable-column-info.field-id = "<<field);
+                    ERR_POST_X(8, "SeqTable-column-info.field-id = "<<id);
                     continue;
                 }
                 break;
@@ -846,22 +845,22 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table, bool is_feat)
                        "neither field-id nor field-name is set");
             continue;
         }
-        if ( !setter ) {
-            CTempString field(type.GetField_name());
-            if ( field.empty() ) {
+        if ( !setter && type.IsSetField_name() ) {
+            CTempString name(type.GetField_name());
+            if ( name.empty() ) {
                 ERR_POST_X(10, "SeqTable-column-info.field-name is empty");
                 continue;
             }
-            else if ( field[0] == 'E' ) {
-                setter = new CSeqTableSetExt(field);
+            else if ( name[0] == 'E' ) {
+                setter = new CSeqTableSetExt(name);
             }
-            else if ( field[0] == 'D' ) {
-                setter = new CSeqTableSetDbxref(field);
+            else if ( name[0] == 'D' ) {
+                setter = new CSeqTableSetDbxref(name);
             }
-            else if ( field[0] == 'Q' ) {
-                setter = new CSeqTableSetQual(field);
+            else if ( name[0] == 'Q' ) {
+                setter = new CSeqTableSetQual(name);
             }
-            else if ( field == "partial" ) {
+            else if ( name == "partial" ) {
                 if ( m_Partial ) {
                     NCBI_THROW_FMT(CAnnotException, eOtherError,
                                    "Duplicate partial column");
@@ -871,7 +870,7 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table, bool is_feat)
             }
             if ( !setter ) {
                 try {
-                    setter = new CSeqTableSetAnyFeatField(field);
+                    setter = new CSeqTableSetAnyFeatField(name);
                 }
                 catch ( CAnnotException& /*exc*/ ) {
                     // ignore invalid column names
