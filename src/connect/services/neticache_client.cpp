@@ -35,10 +35,13 @@
 #include <connect/services/neticache_client.hpp>
 #include <connect/services/netservice_params.hpp>
 #include <connect/services/error_codes.hpp>
+#include <connect/services/netcache_api_expt.hpp>
 
 #include <connect/ncbi_conn_exception.hpp>
+#include <connect/ncbi_conn_reader_writer.hpp>
 
 #include <util/cache/icache_cf.hpp>
+#include <util/transmissionrw.hpp>
 
 #include <corelib/ncbitime.hpp>
 #include <corelib/request_ctx.hpp>
@@ -51,6 +54,279 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+/// IReader/IWriter implementation
+///
+/// @internal
+///
+class CNetCacheSock_RW : public CSocketReaderWriter
+{
+public:
+    typedef CSocketReaderWriter TParent;
+
+    explicit CNetCacheSock_RW(CSocket* sock);
+    explicit CNetCacheSock_RW(CSocket* sock, size_t blob_size);
+
+    virtual ~CNetCacheSock_RW();
+
+    /// Take socket ownership
+    void OwnSocket();
+
+    /// Set pointer on parent object responsible for socket pooling
+    /// If parent set RW will return socket to its parent for reuse.
+    /// If parent not set, socket is closed.
+    void SetSocketParent(CNetServiceClient* parent);
+
+    /// Access to CSocketReaderWriter::m_Sock
+    CSocket& GetSocket() { _ASSERT(m_Sock); return *m_Sock; }
+
+    virtual ERW_Result Read(void*   buf,
+        size_t  count,
+        size_t* bytes_read = 0);
+
+    virtual ERW_Result PendingCount(size_t* count);
+
+    void FinishTransmission();
+
+    /// Set BLOB diagnostic comments
+    void SetBlobComment(const string& comment)
+    {
+        m_BlobComment = comment;
+    }
+
+protected:
+    CNetServiceClient*  m_Parent;
+    /// Flag that EOF is controlled not on the socket level (sock close)
+    /// but based on the BLOB size
+    bool m_BlobSizeControl;
+    /// Remaining BLOB size to be read
+    size_t m_BlobBytesToRead;
+    /// diagnostic comments (logging)
+    string m_BlobComment;
+};
+
+
+CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock) :
+    CSocketReaderWriter(sock),
+    m_Parent(0),
+    m_BlobSizeControl(false),
+    m_BlobBytesToRead(0)
+{
+}
+
+CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock, size_t blob_size) :
+    CSocketReaderWriter(sock),
+    m_Parent(0),
+    m_BlobSizeControl(true),
+    m_BlobBytesToRead(blob_size)
+{
+}
+
+CNetCacheSock_RW::~CNetCacheSock_RW()
+{
+    try {
+        if (m_BlobBytesToRead > 0) {
+            m_BlobComment += ": remained bytes=";
+            m_BlobComment += NStr::IntToString(m_BlobBytesToRead);
+        }
+
+        FinishTransmission();
+    } catch(exception& ex) {
+        ERR_POST_X(1, "Exception in CNetCacheSock_RW::~CNetCacheSock_RW():" << ex.what());
+    } catch(...) {
+        ERR_POST_X(2, "Unknown Exception in CNetCacheSock_RW::~CNetCacheSock_RW()");
+    }
+}
+
+void CNetCacheSock_RW::FinishTransmission()
+{
+    if (m_Sock) {
+        if (m_Parent) {
+            m_Parent->ReturnSocket(m_Sock, m_BlobComment);
+            m_Sock = 0;
+        } else {
+            if (m_Sock->GetStatus(eIO_Open) == eIO_Success)
+                m_Sock->Close();
+        }
+    }
+}
+
+void CNetCacheSock_RW::OwnSocket()
+{
+    m_IsOwned = eTakeOwnership;
+}
+
+void CNetCacheSock_RW::SetSocketParent(CNetServiceClient* parent)
+{
+    m_Parent = parent;
+}
+
+ERW_Result CNetCacheSock_RW::PendingCount(size_t* count)
+{
+    if (m_BlobSizeControl && m_BlobBytesToRead == 0) {
+        *count = 0;
+        return eRW_Success;
+    }
+
+    return TParent::PendingCount(count);
+}
+
+ERW_Result CNetCacheSock_RW::Read(void* buf, size_t count, size_t* bytes_read)
+{
+    _ASSERT(m_BlobSizeControl);
+
+    if (!m_BlobSizeControl)
+        return TParent::Read(buf, count, bytes_read);
+
+    ERW_Result res = eRW_Eof;
+
+    if (m_BlobBytesToRead == 0) {
+        if (bytes_read)
+            *bytes_read = 0;
+
+        return res;
+    }
+
+    if (m_BlobBytesToRead < count)
+        count = m_BlobBytesToRead;
+
+    size_t nn_read = 0;
+
+    if (count)
+        res = TParent::Read(buf, count, &nn_read);
+
+    if (bytes_read)
+        *bytes_read = nn_read;
+
+    m_BlobBytesToRead -= nn_read;
+
+    if (m_BlobBytesToRead == 0)
+        FinishTransmission();
+
+    return res;
+}
+
+
+/// IWriter with error checking
+///
+/// @internal
+class CNetCache_WriterErrCheck : public CTransmissionWriter
+{
+public:
+    typedef CTransmissionWriter TParent;
+
+    CNetCache_WriterErrCheck(CNetCacheSock_RW* wrt,
+        EOwnership own_writer,
+        CTransmissionWriter::ESendEofPacket send_eof =
+            CTransmissionWriter::eDontSendEofPacket);
+
+    virtual ~CNetCache_WriterErrCheck();
+
+    virtual ERW_Result Write(const void* buf,
+        size_t count,
+        size_t* bytes_written = 0);
+
+    virtual ERW_Result Flush(void);
+
+protected:
+    void CheckInputMessage();
+
+protected:
+    CNetCacheSock_RW*  m_RW;
+};
+
+CNetCache_WriterErrCheck::CNetCache_WriterErrCheck(
+        CNetCacheSock_RW* wrt,
+        EOwnership own_writer,
+        CTransmissionWriter::ESendEofPacket send_eof) :
+    CTransmissionWriter(wrt, own_writer, send_eof),
+    m_RW(wrt)
+{
+    _ASSERT(wrt);
+}
+
+CNetCache_WriterErrCheck::~CNetCache_WriterErrCheck()
+{
+}
+
+ERW_Result CNetCache_WriterErrCheck::Write(
+    const void* buf,
+    size_t count,
+    size_t* bytes_written)
+{
+    if (!m_RW) {  // error detected! block transmission
+        if (bytes_written)
+            *bytes_written = 0;
+
+        return eRW_Error;
+    }
+
+    ERW_Result res = TParent::Write(buf, count, bytes_written);
+
+    if (res == eRW_Success)
+        CheckInputMessage();
+
+    return res;
+}
+
+
+ERW_Result CNetCache_WriterErrCheck::Flush(void)
+{
+    if (!m_RW)
+        return eRW_Error;
+
+    ERW_Result res = TParent::Flush();
+
+    if (res == eRW_Success)
+        CheckInputMessage();
+
+    return res;
+}
+
+void CNetCache_WriterErrCheck::CheckInputMessage()
+{
+    _ASSERT(m_RW);
+
+    CSocket& sock = m_RW->GetSocket();
+
+    string msg;
+
+    STimeout to = {0, 0};
+    EIO_Status io_st = sock.Wait(eIO_Read, &to);
+    switch (io_st) {
+    case eIO_Success:
+        {
+            io_st = sock.ReadLine(msg);
+            if (io_st == eIO_Closed)
+                goto closed_err;
+
+            if (!msg.empty()) {
+                if (msg.find("ERR:") == 0) {
+                    msg.erase(0, 4);
+                    msg = NStr::ParseEscapes(msg);
+                }
+                goto throw_err_msg;
+            }
+        }
+        break;
+
+    case eIO_Closed:
+        goto closed_err;
+
+    default:
+        break;
+    }
+    return;
+
+closed_err:
+    msg = "Server closed communication channel (timeout?)";
+
+throw_err_msg:
+    m_RW = 0;
+
+    NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+}
 
 
 void s_MakeCommand(string* cmd)
@@ -542,7 +818,7 @@ void CNetICacheClient::Store(const string&  key,
     DetachSocket();
     guard.Release();
     auto_ptr<CNetCache_WriterErrCheck> writer(
-       new CNetCache_WriterErrCheck(wrt.release(), eTakeOwnership, 0));
+       new CNetCache_WriterErrCheck(wrt.release(), eTakeOwnership));
 
     size_t     bytes_written;
     const char* ptr = (const char*) data;
@@ -728,7 +1004,8 @@ IWriter* CNetICacheClient::GetWriteStream(const string&    key,
     sg.Release();
     writer->SetSocketParent(this);
     CNetCache_WriterErrCheck* err_writer =
-        new CNetCache_WriterErrCheck(writer, eTakeOwnership, 0, CTransmissionWriter::eSendEofPacket);
+        new CNetCache_WriterErrCheck(writer, eTakeOwnership,
+            CTransmissionWriter::eSendEofPacket);
 
     // Add BLOB stream comments (diagnostics):
     //      key-version-subkey[writer]
@@ -886,7 +1163,7 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
                    "Communication error");
     }
 
-    bool blob_found = CNetCacheClient::CheckErrTrim(answer);
+    bool blob_found = x_CheckErrTrim(answer);
     if (!blob_found) {
         sg.Release();
         return NULL;
@@ -922,6 +1199,32 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
     rw->SetBlobComment(m_Tmp);
 
     return rw.release();
+}
+
+
+bool CNetICacheClient::x_CheckErrTrim(string& answer)
+{
+    if (NStr::strncmp(answer.c_str(), "OK:", 3) == 0)
+        answer.erase(0, 3);
+    else {
+        string msg = "Server error:";
+
+        if (NStr::strncmp(answer.c_str(), "ERR:", 4) == 0)
+            answer.erase(0, 4);
+
+        if (NStr::strncmp(answer.c_str(), "BLOB not found", 14) == 0)
+            return false;
+
+        msg += answer;
+
+        if (NStr::strncmp(answer.c_str(), "BLOB locked", 11) == 0) {
+            NCBI_THROW(CNetCacheException, eBlobLocked, msg);
+        }
+
+        NCBI_THROW(CNetCacheException, eServerError, msg);
+    }
+
+    return true;
 }
 
 

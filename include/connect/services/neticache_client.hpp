@@ -37,7 +37,7 @@
 /// NetCache ICache client specs.
 ///
 
-#include <connect/services/netcache_client.hpp>
+#include <connect/services/netservice_client.hpp>
 #include <connect/services/srv_discovery.hpp>
 
 #include <util/cache/icache.hpp>
@@ -180,6 +180,12 @@ protected:
                                   const string&  subkey);
 
 private:
+    /// Check if server output starts with "ERR:", throws an exception
+    /// "OK:", "ERR:" prefixes are getting trimmed
+    ///
+    /// @return false if Blob not found error detected
+    static bool x_CheckErrTrim(string& answer);
+
     CNetICacheClient(const CNetICacheClient&);
     CNetICacheClient& operator=(const CNetICacheClient&);
 
