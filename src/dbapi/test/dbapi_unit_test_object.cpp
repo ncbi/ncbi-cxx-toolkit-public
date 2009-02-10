@@ -2568,8 +2568,6 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
     string sql;
     const string table_name = "#test_varchar_max_table";
     // const string table_name = "DBAPI_Sample..test_varchar_max_table";
-    // const string msg(32000, 'Z');
-    const string msg(8001, 'Z');
 
     try {
         auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
@@ -2593,6 +2591,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
 
                 auto_stmt->ExecuteUpdate( sql );
             }
+
+            const string msg(8001, 'Z');
 
             // Insert data into the table ...
             {
@@ -2622,7 +2622,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
         }
 
         // Parameters ...
-        if (false) {
+        {
+            const string msg(4000, 'Z');
             const CVariant vc_max_value(msg);
 
             // Clean table ...
