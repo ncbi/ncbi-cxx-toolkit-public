@@ -99,19 +99,23 @@ EOF
 
 ### Action
 
+trap "chmod +x $builddir/*.sh" 0 1 2 15
+
 case "$method" in
   update )
     cd ${top_srcdir}  && \
     ${status_dir}/config.status
+    status=$?
     ;;
 
   reconf )
     cd ${top_srcdir}  && \
     rm -f config.status config.cache config.log  && \
-    cp -p ${status_dir}/config.status ${status_dir}/config.cache .  && \
-    ./config.status --recheck  && \
-    mv config.status config.cache config.log ${status_dir}  && \
+    cp -p ${status_dir}/config.cache .  && \
+    ${status_dir}/config.status --recheck  && \
+    mv config.cache config.log ${status_dir}  && \
     ${status_dir}/config.status
+    status=$?
 
     # cd ${top_srcdir}  &&  rm -f config.status config.cache config.log
     ;;
@@ -126,10 +130,10 @@ case "$method" in
 
     cd ${top_srcdir}  && \
     rm -f config.status config.cache config.log  && \
-    cp -p ${status_dir}/config.status .  && \
-    ./config.status --recheck  && \
-    mv config.status config.cache config.log ${status_dir}  && \
+    ${status_dir}/config.status --recheck  && \
+    mv config.cache config.log ${status_dir}  && \
     ${status_dir}/config.status
+    status=$?
 
     # cd ${top_srcdir}  &&  rm -f config.status config.cache config.log
     ;;
@@ -143,3 +147,5 @@ EOF
     exit 1
     ;;
 esac
+
+exit $status
