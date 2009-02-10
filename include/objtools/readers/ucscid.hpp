@@ -37,7 +37,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ============================================================================
-class UcscID:
+class NCBI_XOBJREAD_EXPORT UcscID:
 //  ============================================================================
     public CSeq_id
 {
