@@ -6,3 +6,7 @@ version 1.7.0
 Added support for Xcode build system version 3 (Mac OS X).
 Enhanced generation of flat makefile on Unix.
 Added protection against targets with the same name.
+
+February 10, 2009
+version 1.7.2
+Enhanced analysis of library-to-library dependencies
