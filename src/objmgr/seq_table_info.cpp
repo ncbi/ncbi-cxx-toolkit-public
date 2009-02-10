@@ -793,7 +793,6 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table, bool is_feat)
             }
         }
         if ( !is_feat ) {
-            m_ExtraColumns.push_back(TColumnInfo(col, null));
             continue;
         }
 
@@ -877,7 +876,9 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table, bool is_feat)
                 }
             }
         }
-        m_ExtraColumns.push_back(TColumnInfo(col, setter));
+        if ( setter ) {
+            m_ExtraColumns.push_back(TColumnInfo(col, setter));
+        }
     }
 
     if ( is_feat ) {
@@ -936,9 +937,7 @@ void CSeqTableInfo::UpdateSeq_feat(size_t row,
         }
     }
     ITERATE ( TExtraColumns, it, m_ExtraColumns ) {
-        if ( it->second ) {
-            it->first.UpdateSeq_feat(feat, row, *it->second);
-        }
+        it->first.UpdateSeq_feat(feat, row, *it->second);
     }
 }
 
