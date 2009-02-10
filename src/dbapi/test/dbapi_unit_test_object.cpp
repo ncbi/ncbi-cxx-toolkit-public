@@ -2624,7 +2624,7 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
         // Parameters ...
         {
             const string msg(4000, 'Z');
-            const CVariant vc_max_value(msg);
+            const CVariant vc_max_value = CVariant::LongChar(msg.data());
 
             // Clean table ...
             {
