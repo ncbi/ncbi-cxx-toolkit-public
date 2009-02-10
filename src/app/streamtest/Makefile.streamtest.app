@@ -13,4 +13,4 @@ LIB = xobjutil xcleanup prosplign submit xalgoalignutil xalnmgr tables \
 
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects
+REQUIRES = objects algo
