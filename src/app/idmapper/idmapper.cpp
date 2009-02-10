@@ -64,10 +64,11 @@
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 
+#include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/ucscid.hpp>
 #include <objtools/readers/idmapper.hpp>
 
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 USING_SCOPE(objects);          
 
 //  ============================================================================
@@ -120,8 +121,8 @@ int CIdMapperApp::Run()
 //  ============================================================================
 {
     const CArgs& args = GetArgs();
-    
-/*    CIdMapper* pIdMapper = CIdMapper::GetIdMapper( args );
+
+    CIdMapper* pIdMapper = CIdMapper::GetIdMapper( args );
     pIdMapper->Dump( cout );
     cout << endl;    
     
@@ -132,14 +133,9 @@ int CIdMapperApp::Run()
         cout << strKey << " ===> " << idh.GetSeqId()->AsFastaString() << endl;
     }
     delete pIdMapper;
-*/        
+        
     return 0;
 }
-
-END_NCBI_SCOPE
-
-USING_NCBI_SCOPE;
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
