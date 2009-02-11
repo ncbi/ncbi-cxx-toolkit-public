@@ -53,8 +53,12 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
+
 #include <objects/seq/MolInfo.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 #include <util/compress/stream.hpp>
 #include <util/compress/zlib.hpp>
 
@@ -375,16 +379,20 @@ string GetProductLabel(const CSeq_feat& feat, CScope& scope)
 {
     string s = "";
     if(feat.CanGetProduct()) { 
-        CRef<CSeq_loc> loc(new CSeq_loc);
-        loc->Assign(feat.GetProduct());
-        CRef<CSeq_id> id(new CSeq_id);
-        id->Assign(*sequence::GetId(
-                sequence::GetId(*loc, &scope), 
-                scope, 
-                sequence::eGetId_ForceAcc).GetSeqId());
-        
-        loc->SetId(*id);
-        loc->GetLabel(&s);
+        if(sequence::GetId(feat.GetProduct(), &scope).IsGi()) {
+            CRef<CSeq_loc> loc(new CSeq_loc);
+            loc->Assign(feat.GetProduct());
+            CRef<CSeq_id> id(new CSeq_id);
+            id->Assign(*sequence::GetId(
+                    sequence::GetId(*loc, &scope), 
+                    scope, 
+                    sequence::eGetId_ForceAcc).GetSeqId());
+            
+            loc->SetId(*id);
+            loc->GetLabel(&s);
+        } else {
+            feat.GetProduct().GetLabel(&s);
+        }
     }
     return s;
 }
@@ -608,7 +616,7 @@ TLoadScopeMethod LoadScope(string arg_path, CScope& scope, ESerialDataFormat ser
             _TRACE("Trying LDS");
             CLDS_Database* ldsdb (new CLDS_Database(arg_path, ""));
              
-            ldsdb->Open();
+            ldsdb->Open(CLDS_Database::eReadOnly);
             CLDS_DataLoader::RegisterInObjectManager(*CObjectManager::GetInstance(), 
                                                      *ldsdb,
                                                      CObjectManager::eNonDefault);
@@ -1485,22 +1493,41 @@ void CXcompareAnnotsApplication::x_ProcessComparison(
             
             if(m_args["add_dbxref"]) { 
                 ITERATE(CArgValue::TStringArray, it2, m_args["add_dbxref"].GetStringList()) {
-                    string tmpstr = "";
-                    if (!cf->GetFeatQ().IsNull()) {
-                        CConstRef<CDbtag> db_tag = cf->GetFeatQ()->GetNamedDbxref(*it2);
-                        if(!db_tag.IsNull()) {
-                            db_tag->GetLabel(&tmpstr);
+                    string str_tag = *it2;
+                    for(int j = 0; j < 2; j++) {
+                        CConstRef<CSeq_feat> feat = j == 0 ? cf->GetFeatQ() : cf->GetFeatT();
+                        //CScope& current_scope     = j == 0 ? *m_scope_q : *m_scope_t;
+                        string tmpstr = "";
+                        if (!feat.IsNull()) {
+                            //special values prefixed with @ are special cases to represent
+                            //not dbxrefs per se but some other requested attributes of the feature, e.g.
+                            //feat_id or feat_id of the gene xref
+                            if(str_tag == "@feat_id" && feat->CanGetId() && feat->GetId().IsLocal()) {
+                                tmpstr = NStr::IntToString(feat->GetId().GetLocal().GetId());
+                            } else if(str_tag == "@gene_feat_id") {
+                                //if feature is a gene - get it from feat-id; otherwise from feat-id of gene xref
+                                if(feat->GetData().IsGene() && feat->CanGetId() && feat->GetId().IsLocal()) {
+                                    tmpstr = NStr::IntToString(feat->GetId().GetLocal().GetId());
+                                } else {
+                                    ITERATE(CSeq_feat::TXref, it, feat->GetXref()) {
+                                        const CSeqFeatXref& ref = **it;
+                                        if (ref.IsSetData() && ref.GetData().IsGene() && ref.CanGetId() && ref.GetId().IsLocal()) {
+                                            tmpstr = NStr::IntToString(ref.GetId().GetLocal().GetId());
+                                            break;
+                                        }
+                                    }
+                                }
+                            } else {
+                                CConstRef<CDbtag> db_tag = feat->GetNamedDbxref(str_tag);
+                                if(!db_tag.IsNull()) {
+                                    db_tag->GetLabel(&tmpstr);
+                                }
+                            }
+
+
                         }
-                    }
-                    NcbiCout << "\t" << tmpstr;
-                    tmpstr = "";
-                    if (!cf->GetFeatT().IsNull()) {
-                        CConstRef<CDbtag> db_tag = cf->GetFeatT()->GetNamedDbxref(*it2);
-                        if(!db_tag.IsNull()) {
-                            db_tag->GetLabel(&tmpstr);
-                        }    
+                        NcbiCout << "\t" << tmpstr;
                     } 
-                    NcbiCout << "\t" << tmpstr;
                 }  
             }
 
