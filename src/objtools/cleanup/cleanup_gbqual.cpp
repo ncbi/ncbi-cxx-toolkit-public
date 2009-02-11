@@ -55,6 +55,7 @@
 #include <objmgr/util/seq_loc_util.hpp>
 
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/annot_ci.hpp>
 
 #include "cleanupp.hpp"
 
@@ -230,30 +231,52 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual&
             }
         }
     }
-#if 0
+
     // look for qualifiers that should be applied to protein feature
     // note - this should be moved to the "indexed" portion of basic cleanup,
-    // because it might create a new feature, and also because it needs to
-    // locate another sequence and feature
+    // because it needs to locate another sequence and feature
     if ((NStr::Equal(qual, "product") || NStr::Equal (qual, "function") || NStr::Equal (qual, "EC_number")
-        || NStr::Equal(qual, "activity"))
+      || NStr::Equal(qual, "activity") || NStr::Equal (qual, "prot_note"))
         && feat.IsSetProduct()) {
 
         // get protein sequence for product
         CBioseq_Handle prot = m_Scope->GetBioseqHandle(feat.GetProduct());
         if (prot) {
+            // replacement prot feature
+            CRef<CSeq_feat> prot_feat(new CSeq_feat());
+
             // find main protein feature
             SAnnotSelector sel(CSeqFeatData::eSubtype_prot);
 
             CFeat_CI feat_ci (prot, sel);
-            if (feat_ci) {
-                CRef<
-                return BasicCleanup(feat_ci->GetOriginalFeature(), feat_ci->GetData().GetProt(), gb_qual);
+
+            if (feat_ci) {            
+                prot_feat->Assign(feat_ci->GetOriginalFeature());
+
+                bool change_made = false;
+
+
+                if (NStr::Equal(qual, "prot_note")) {
+                    if (!prot_feat->IsSetComment() || NStr::IsBlank (prot_feat->GetComment())) {
+                        prot_feat->SetComment (val);
+                    } else {
+                        prot_feat->SetComment (prot_feat->GetComment() + "; " + val);
+                    }
+                    ChangeMade (CCleanupChange::eChangeComment);
+                    change_made = true;
+                } else {
+                    change_made = BasicCleanup (prot_feat->SetData().SetProt(), gb_qual);
+                }
+
+                if (change_made) {
+                    CSeq_feat_EditHandle efh(feat_ci->GetSeq_feat_Handle());
+                    efh.Replace(*prot_feat);
+                    return true;
+                }
             }
-            // add feature if it doesn't exist (?)
         }
     }
-#endif
+
     /*if (NStr::EqualNocase(qual, "translation")) {
         return TRUE;
     }*/
