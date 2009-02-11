@@ -234,6 +234,12 @@ void CId1FetchApp::Init(void)
          "Repeat fetch number of times",
          CArgDescriptions::eInteger, "1");
 
+    // timeout
+    arg_desc->AddOptionalKey
+        ("timeout", "Timeout",
+         "Network connection timeout in seconds",
+         CArgDescriptions::eInteger);
+
     // Pass argument descriptions to the application
     //
 
@@ -262,6 +268,14 @@ int CId1FetchApp::Run(void)
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
 #endif
+
+    if ( args["timeout"] ) {
+        int timeout = args["timeout"].AsInteger();
+        STimeout tmo;
+        tmo.sec = timeout;
+        tmo.usec = 0;
+        m_ID1Client.SetTimeout(&tmo);
+    }
 
     // Make sure the combination of arguments is valid
     {{
@@ -446,7 +460,31 @@ bool CId1FetchApp::LookUpGI(int gi)
             *m_OutputFile << title;
         }
     } else if (lt == "entry") {
-        use_objmgr = true;
+        if ( args["maxplex"].AsString() == "entry" ) {
+            use_objmgr = true;
+        }
+        else {
+            CRef<CID1server_back> id1_reply(new CID1server_back);
+            CRef<CID1server_maxcomplex> maxcomplex(new CID1server_maxcomplex);
+            string maxplex = args["maxplex"].AsString();
+            if ( maxplex == "bioseq" ) {
+                maxcomplex->SetMaxplex(eEntry_complexities_bioseq);
+            }
+            else if ( maxplex == "bioseq-set" ) {
+                maxcomplex->SetMaxplex(eEntry_complexities_bioseq_set);
+            }
+            else if ( maxplex == "nuc-prot" ) {
+                maxcomplex->SetMaxplex(eEntry_complexities_nuc_prot);
+            }
+            else if ( maxplex == "pub-set" ) {
+                maxcomplex->SetMaxplex(eEntry_complexities_pub_set);
+            }
+            else {
+                maxcomplex->SetMaxplex(eEntry_complexities_entry);
+            }
+            maxcomplex->SetGi(gi);
+            reply_object = m_ID1Client.AskGetsefromgi(*maxcomplex, id1_reply);
+        }
     } else if (lt == "state") {
         CRef<CID1server_back> id1_reply(new CID1server_back);
         int state = m_ID1Client.AskGetgistate(gi, id1_reply);
