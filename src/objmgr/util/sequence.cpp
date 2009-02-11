@@ -212,28 +212,14 @@ CBioseq_Handle GetBioseqFromSeqLoc
 }
 
 
-class CSeqIdFromHandleException : EXCEPTION_VIRTUAL_BASE public CException
+const char* CSeqIdFromHandleException::GetErrCodeString(void) const
 {
-public:
-    // Enumerated list of document management errors
-    enum EErrCode {
-        eNoSynonyms,
-        eRequestedIdNotFound
-    };
-
-    // Translate the specific error code into a string representations of
-    // that error code.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eNoSynonyms:           return "eNoSynonyms";
-        case eRequestedIdNotFound:  return "eRequestedIdNotFound";
-        default:                    return CException::GetErrCodeString();
-        }
+    switch (GetErrCode()) {
+    case eNoSynonyms:           return "eNoSynonyms";
+    case eRequestedIdNotFound:  return "eRequestedIdNotFound";
+    default:                    return CException::GetErrCodeString();
     }
-
-    NCBI_EXCEPTION_DEFAULT(CSeqIdFromHandleException, CException);
-};
+}
 
 
 int ScoreSeqIdHandle(const CSeq_id_Handle& idh)
@@ -251,7 +237,7 @@ CSeq_id_Handle x_GetId(const CScope::TIds& ids, EGetIdType type)
         return CSeq_id_Handle();
     }
 
-    switch (type) {
+    switch ( (type & eGetId_TypeMask) ) {
     case eGetId_ForceGi:
         {{
             ITERATE (CScope::TIds, iter, ids) {
@@ -260,8 +246,10 @@ CSeq_id_Handle x_GetId(const CScope::TIds& ids, EGetIdType type)
                 }
             }
         }}
-        NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
-                "sequence::GetId(): gi seq-id not found in the list");
+        if ((type & eGetId_ThrowOnError) != 0) {
+            NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
+                    "sequence::GetId(): gi seq-id not found in the list");
+        }
         break;
 
     case eGetId_ForceAcc:
@@ -273,8 +261,10 @@ CSeq_id_Handle x_GetId(const CScope::TIds& ids, EGetIdType type)
                 return best;
             }
         }}
-        NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
-                "sequence::GetId(): text seq-id not found in the list");
+        if ((type & eGetId_ThrowOnError) != 0) {
+            NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
+                    "sequence::GetId(): text seq-id not found in the list");
+        }
         break;
 
     case eGetId_Best:
@@ -299,22 +289,35 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
                      EGetIdType type)
 {
     CSeq_id_Handle ret;
-    if ( type == eGetId_ForceGi ) {
-        if ( idh.IsGi() ) {
-            return idh;
+    try {
+        if ( (type & eGetId_TypeMask) == eGetId_ForceGi ) {
+            if ( idh.IsGi()  &&  (type & eGetId_VerifyId) == 0 ) {
+                return idh;
+            }
+            int gi = scope.GetGi(idh);
+            if ( gi ) {
+                ret = CSeq_id_Handle::GetGiHandle(gi);
+            }
         }
-        int gi = scope.GetGi(idh);
-        if ( gi ) {
-            ret = CSeq_id_Handle::GetGiHandle(gi);
+        else if ( (type & eGetId_TypeMask) == eGetId_ForceAcc ) {
+            ret = scope.GetAccVer(idh);
+        }
+        else {
+            ret = x_GetId(scope.GetIds(idh), type);
         }
     }
-    else if ( type == eGetId_ForceAcc ) {
-        ret = scope.GetAccVer(idh);
+    catch (CException) {
+        if ( (type & eGetId_ThrowOnError) != 0 ) {
+            throw;
+        }
+        ret.Reset();
+        return ret;
     }
-    else {
-        ret = x_GetId(scope.GetIds(idh), type);
+    if ( !ret  &&  (type & eGetId_ThrowOnError) != 0 ) {
+        NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
+                "sequence::GetId(): seq-id not found in the scope");
     }
-    return ret ? ret : idh;
+    return ret;
 }
 
 
@@ -326,7 +329,7 @@ CSeq_id_Handle GetId(const CBioseq_Handle& handle,
     const CScope::TIds& ids = handle.GetId();
     CSeq_id_Handle idh = x_GetId(ids, type);
 
-    if ( !idh ) {
+    if ( !idh  &&  (type & eGetId_ThrowOnError) != 0 ) {
         NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
                    "Unable to get Seq-id from handle");
     }
@@ -335,63 +338,81 @@ CSeq_id_Handle GetId(const CBioseq_Handle& handle,
 }
 
 
-int GetGiForAccession(const string& acc, CScope& scope)
+int GetGiForAccession(const string& acc, CScope& scope, EGetIdType flags)
 {
-    try {
-        CSeq_id acc_id(acc);
-        return GetId(acc_id, scope, eGetId_ForceGi).GetGi();
-    } catch (CException& e) {
-         ERR_POST_X(2, Warning << e.what());
+    // Clear throw-on-error flag
+    EGetIdType get_id_flags = (flags & eGetId_VerifyId) | eGetId_ForceGi;
+    CSeq_id acc_id(acc);
+    // Get gi only if acc a real accession.
+    if ( acc_id.GetTextseq_Id() ) {
+        CSeq_id_Handle idh = GetId(acc_id, scope, get_id_flags);
+        if ( idh.IsGi() ) {
+            return idh.GetGi();
+        }
     }
-
+    if ( (flags & eGetId_ThrowOnError) != 0 ) {
+        NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
+            "sequence::GetGiForAccession(): invalid seq-id type");
+    }
     return 0;
 }
 
 
-int GetGiForId(const objects::CSeq_id& id, CScope& scope)
+int GetGiForId(const objects::CSeq_id& id, CScope& scope, EGetIdType flags)
 {
-    try {
-        return GetId(id, scope, eGetId_ForceGi).GetGi();
-    } catch (CException& e) {
-         ERR_POST_X(3, Warning << e.what());
+    // Clear throw-on-error flag
+    EGetIdType get_id_flags = (flags & eGetId_VerifyId) | eGetId_ForceGi;
+    CSeq_id_Handle idh = GetId(id, scope, get_id_flags);
+    if ( idh.IsGi() ) {
+        return idh.GetGi();
     }
-
+    if ( (flags & eGetId_ThrowOnError) != 0 ) {
+        NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
+            "sequence::GetGiForId(): seq-id not found in the scope");
+    }
     return 0;
 }
 
 
-string GetAccessionForGi
-(int           gi,
- CScope&       scope,
- EAccessionVersion use_version)
+string GetAccessionForGi(int           gi,
+                         CScope&       scope,
+                         EAccessionVersion use_version,
+                         EGetIdType flags)
 {
+    // Clear throw-on-error flag
+    EGetIdType get_id_flags = (flags & eGetId_VerifyId) | eGetId_ForceAcc;
     bool with_version = (use_version == eWithAccessionVersion);
 
-    try {
-        CSeq_id gi_id(CSeq_id::e_Gi, gi);
-        return GetId(gi_id, scope, eGetId_ForceAcc).GetSeqId()->
-            GetSeqIdString(with_version);
-    } catch (CException& e) {
-        ERR_POST_X(4, Warning << e.what());
+    CSeq_id gi_id(CSeq_id::e_Gi, gi);
+    CSeq_id_Handle idh = GetId(gi_id, scope, get_id_flags);
+    if ( idh ) {
+        return idh.GetSeqId()->GetSeqIdString(with_version);
     }
-
+    if ( (flags & eGetId_ThrowOnError) != 0 ) {
+        NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
+            "sequence::GetAccessionForGi(): seq-id not found in the scope");
+    }
     return kEmptyStr;
 }
 
 
 string GetAccessionForId(const objects::CSeq_id& id,
                          CScope&       scope,
-                         EAccessionVersion use_version)
+                         EAccessionVersion use_version,
+                         EGetIdType flags)
 {
+    // Clear throw-on-error flag
+    EGetIdType get_id_flags = (flags & eGetId_VerifyId) | eGetId_ForceAcc;
     bool with_version = (use_version == eWithAccessionVersion);
 
-    try {
-        return GetId(id, scope, eGetId_ForceAcc).GetSeqId()->
-            GetSeqIdString(with_version);
-    } catch (CException& e) {
-        ERR_POST_X(5, Warning << e.what());
+    CSeq_id_Handle idh = GetId(id, scope, get_id_flags);
+    if ( idh ) {
+        return idh.GetSeqId()->GetSeqIdString(with_version);
     }
-
+    if ( (flags & eGetId_ThrowOnError) != 0 ) {
+        NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
+            "sequence::GetAccessionForId(): seq-id not found in the scope");
+    }
     return kEmptyStr;
 }
 

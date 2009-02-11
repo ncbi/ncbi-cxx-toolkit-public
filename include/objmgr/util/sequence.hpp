@@ -85,44 +85,71 @@ enum EAccessionVersion {
     eWithoutAccessionVersion  ///< accession only, even if version is available
 };
 
-/// Given an accession string retrieve the GI id.
-/// if no GI was found returns 0.
-NCBI_XOBJUTIL_EXPORT
-int GetGiForAccession(const string& acc, CScope& scope);
-
-/// Retrieve the accession for a given GI.
-/// if no accession was found returns an empty string.
-NCBI_XOBJUTIL_EXPORT
-string GetAccessionForGi(int           gi,
-                         CScope&       scope,
-                         EAccessionVersion use_version = eWithAccessionVersion);
-
-/// Given a Seq-id retrieve the corresponding GI.
-/// if no GI was found returns 0.
-NCBI_XOBJUTIL_EXPORT
-int GetGiForId(const objects::CSeq_id& id, CScope& scope);
-
-/// Retrieve the accession string for a Seq-id.
-/// if no accession was found returns an empty string.
-NCBI_XOBJUTIL_EXPORT
-string GetAccessionForId(const objects::CSeq_id& id,
-                         CScope&       scope,
-                         EAccessionVersion use_version = eWithAccessionVersion);
-
 
 /// Retrieve a particular seq-id from a given bioseq handle.  This uses
 /// CSynonymsSet internally to decide which seq-id should be used.
-enum EGetIdType {
-    eGetId_ForceGi,         ///< return only a gi-based seq-id
-    eGetId_ForceAcc,        ///< return only an accession based seq-id
-    eGetId_Best,            ///< return the "best" gi (uses FindBestScore(),
-                            ///< with CSeq_id::CalculateScore() as the score
-                            ///< function
-    eGetId_HandleDefault,   ///< returns the ID associated with a bioseq-handle
+enum EGetIdFlags {
+    eGetId_ForceGi  = 0x0000,  ///< return only a gi-based seq-id
+    eGetId_ForceAcc = 0x0001,  ///< return only an accession based seq-id
+    eGetId_Best     = 0x0002,  ///< return the "best" gi (uses FindBestScore(),
+                               ///< with CSeq_id::CalculateScore() as the score
+                               ///< function
+    eGetId_HandleDefault = 0x0003, ///< returns the ID associated with a bioseq-handle
 
-    eGetId_Default = eGetId_Best
+    eGetId_TypeMask = 0x00FF,  ///< Mask for requested id type
+
+    /// Check if the seq-id is present in the scope
+    eGetId_VerifyId = 0x0100,
+
+    /// Throw exception on errors. If not set, an empty value is returned.
+    eGetId_ThrowOnError = 0x0200,
+
+    eGetId_Default = eGetId_Best | eGetId_ThrowOnError,
 };
+typedef int EGetIdType;
 
+
+/// Given an accession string retrieve the GI id.
+/// If no GI was found returns 0 or throws CSeqIdFromHandleException
+/// depending on the flags.
+/// Id type in the flags is ignored, only VerifyId and ThrowOnError
+/// flags are checked.
+NCBI_XOBJUTIL_EXPORT
+int GetGiForAccession(const string& acc,
+                      CScope& scope,
+                      EGetIdType flags = 0);
+
+/// Retrieve the accession for a given GI.
+/// If no accession was found returns an empty string or throws
+/// CSeqIdFromHandleException depending on the flags.
+/// Id type in the flags is ignored, only VerifyId and ThrowOnError
+/// flags are checked.
+NCBI_XOBJUTIL_EXPORT
+string GetAccessionForGi(int           gi,
+                         CScope&       scope,
+                         EAccessionVersion use_version = eWithAccessionVersion,
+                         EGetIdType flags = 0);
+
+/// Given a Seq-id retrieve the corresponding GI.
+/// If no GI was found returns 0 or throws CSeqIdFromHandleException
+/// depending on the flags.
+/// Id type in the flags is ignored, only VerifyId and ThrowOnError
+/// flags are checked.
+NCBI_XOBJUTIL_EXPORT
+int GetGiForId(const objects::CSeq_id& id,
+               CScope& scope,
+               EGetIdType flags = 0);
+
+/// Retrieve the accession string for a Seq-id.
+/// If no accession was found returns an empty string or throws
+/// CSeqIdFromHandleException depending on the flags.
+/// Id type in the flags is ignored, only VerifyId and ThrowOnError
+/// flags are checked.
+NCBI_XOBJUTIL_EXPORT
+string GetAccessionForId(const objects::CSeq_id& id,
+                         CScope&       scope,
+                         EAccessionVersion use_version = eWithAccessionVersion,
+                         EGetIdType flags = 0);
 
 /// Return a selected ID type for a given bioseq handle.  This function
 /// will try to use the most efficient method possible to determine which
@@ -132,13 +159,15 @@ enum EGetIdType {
 /// @param id Source id to evaluate
 /// @param scope Scope for seq-id resolution.
 /// @param type Type of ID to return
-/// @return A requested seq-id.  This function will throw an exception of type
-///  CSeqIdFromHandleException if the request cannot be satisfied.
+/// @return A requested seq-id.
+/// Depending on the flags set in 'type' this function can verify
+/// if the requested ID exists in the scope and throw
+/// CSeqIdFromHandleException if the request cannot be satisfied.
 NCBI_XOBJUTIL_EXPORT
 CSeq_id_Handle GetId(const CBioseq_Handle& handle,
                      EGetIdType type = eGetId_Default);
 
-/// Return a selected ID type for a given bioseq handle.  This function
+/// Return a selected ID type for a seq-id.  This function
 /// will try to use the most efficient method possible to determine which
 /// ID fulfills the requested parameter.  The following logic is used:
 ///
@@ -148,23 +177,29 @@ CSeq_id_Handle GetId(const CBioseq_Handle& handle,
 ///
 /// - For seq-id type eGetId_ForceAcc, the returned set of seq-ids will first
 ///   be evaluated for a "best" id (which, given seq-id scoring, will be
-///   a textseq-id if one exists).  If the returned best ID is a textseq-id,
-///   this id will be returned.  Otherwise, an exception is thrown.
+///   a textseq-id if one exists). If the returned best ID is a textseq-id,
+///   this id will be returned.  Otherwise, an exception is thrown or an
+///   empty handle returned.
 ///
 /// - For seq-id type eGetId_ForceGi, the returned set of IDs is scanned for
-///   an ID of type gi.  If this is found, it is returned; otherwise, an
-///   exception is thrown.  If the supplied ID is already a gi, no work is
-///   done.
+///   an ID of type gi. If this is found, it is returned; otherwise, an
+///   exception is thrown or an empty handle returned. If the supplied ID is
+///   already a gi and eGetId_VerifyId flag is not set, no work is done.
 ///
 /// @param id Source id to evaluate
 /// @param scope Scope for seq-id resolution.
 /// @param type Type of ID to return
-/// @return A requested seq-id.  This function will throw an exception of type
-///  CSeqIdFromHandleException if the request cannot be satisfied.
+/// @return A requested seq-id.
+/// Depending on the flags set in 'type' this function can verify
+/// if the requested ID exists in the scope and throw
+/// CSeqIdFromHandleException if the request cannot be satisfied.
 NCBI_XOBJUTIL_EXPORT
 CSeq_id_Handle GetId(const CSeq_id& id, CScope& scope,
                      EGetIdType type = eGetId_Default);
 
+/// Return a selected ID type for a seq-id handle.
+/// Arguments (except 'id') and behavior is the same as of
+/// GetId(const CSeq_id& id, ...).
 NCBI_XOBJUTIL_EXPORT
 CSeq_id_Handle GetId(const CSeq_id_Handle& id, CScope& scope,
                      EGetIdType type = eGetId_Default);
@@ -542,6 +577,24 @@ CRef<CBioseq> CreateBioseqFromBioseq(const CBioseq_Handle& bsh,
 
 
 /* @} */
+
+
+class NCBI_XOBJUTIL_EXPORT
+CSeqIdFromHandleException : EXCEPTION_VIRTUAL_BASE public CException
+{
+public:
+    // Enumerated list of document management errors
+    enum EErrCode {
+        eNoSynonyms,
+        eRequestedIdNotFound
+    };
+
+    // Translate the specific error code into a string representations of
+    // that error code.
+    virtual const char* GetErrCodeString(void) const;
+
+    NCBI_EXCEPTION_DEFAULT(CSeqIdFromHandleException, CException);
+};
 
 
 END_SCOPE(sequence)
