@@ -87,7 +87,7 @@ void CMultiAligner::x_InitParams(void)
 
     int score = m_Options->GetUserConstraintsScore();
     m_UserHits.PurgeAllHits();
-    ITERATE(vector<CMultiAlignerOptions::SConstraint>, it,
+    ITERATE(CMultiAlignerOptions::TConstraints, it,
             m_Options->GetUserConstraints()) {
 
         m_UserHits.AddToHitList(new CHit(it->seq1_index, it->seq2_index,
@@ -166,6 +166,7 @@ CMultiAligner::SetQueries(const vector< CRef<objects::CSeq_loc> >& queries,
         m_QueryData.push_back(CSequence(**itr, *m_Scope));
     }
 
+    x_ValidateUserHits();
     Reset();
 }
 
@@ -209,6 +210,7 @@ CMultiAligner::SetQueries(const vector< CRef<objects::CBioseq> >& queries)
         m_QueryData.push_back(CSequence(**itr, *m_Scope));
     }
 
+    x_ValidateUserHits();
     Reset();
 }
 
@@ -241,6 +243,7 @@ void CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
         m_QueryData.push_back(CSequence(**itr, *m_Scope));
     }
 
+    x_ValidateUserHits();
     Reset();
 }
 
@@ -516,6 +519,10 @@ CMultiAligner::TStatus CMultiAligner::Run()
         status = eInternalError;
         m_Messages.push_back(e.GetMsg());
     }
+    catch (std::exception e) {
+        status = eInternalError;
+        m_Messages.push_back((string)e.what());
+    }
     catch (...) {
         status = eInternalError;
     }
@@ -542,6 +549,28 @@ CMultiAligner::x_FindQueryClusters()
     auto_ptr<CClusterer::TDistMatrix> dmat
         = TKMethods::ComputeDistMatrix(kmer_counts,
                                        m_Options->GetKmerDistMeasure());
+
+    // Set distances between queries that appear in user constraints and all
+    // other queries to maximum, so that they form one-element clusters
+    const double kMaxDistance = 1.5;
+
+    // get all user constraint queries
+    set<int> constr_q;
+    for (int i=0;i < m_UserHits.Size();i++) {
+        CHit* hit = m_UserHits.GetHit(i);
+        constr_q.insert(hit->m_SeqIndex1);
+        constr_q.insert(hit->m_SeqIndex2);
+    }
+
+    // set distances to maximum
+    ITERATE(set<int>, it, constr_q) {
+        for (int i=0;i < (int)dmat->GetRows();i++) {
+            if (i != *it) {
+                (*dmat)(i, *it) = kMaxDistance;
+                (*dmat)(*it, i) = kMaxDistance;
+            }
+        }
+    }
 
     //-------------------------------------------------------
     if (m_Options->GetVerbose()) {
@@ -582,7 +611,17 @@ CMultiAligner::x_FindQueryClusters()
 
         m_Clusterer.Reset();
         m_ClustAlnMethod = CMultiAlignerOptions::eNone;
+
+        m_Messages.push_back("No query clusters were found. Try increasing" 
+                             " maximum in-cluster distance.");
         return false;
+    }
+
+    if (clusters.size() == 1) {
+        m_Messages.push_back("All queries form only one cluster. No domain"
+                             " information will be used for constraints."
+                             " Try decreasing maximum in-cluster distance or"
+                             " turn off query clustering option");
     }
 
     // Select cluster prototypes

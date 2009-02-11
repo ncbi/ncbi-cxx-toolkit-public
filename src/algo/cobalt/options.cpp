@@ -157,7 +157,7 @@ bool CMultiAlignerOptions::Validate(void)
     }
 
     // Check user constraints
-    ITERATE(vector<SConstraint>, it, m_UserHits) {
+    ITERATE(TConstraints, it, m_UserHits) {
 
         int range1 = it->seq1_stop - it->seq1_start;
         int range2 = it->seq2_stop - it->seq2_start;

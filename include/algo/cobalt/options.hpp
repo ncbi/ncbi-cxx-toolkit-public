@@ -180,6 +180,8 @@ public:
 
     } SConstraint;
 
+    typedef vector<SConstraint> TConstraints;
+
     /// Mode of multi aligner setings. Values can be combined.
     enum EMode {
 
@@ -341,14 +343,14 @@ public:
     /// The constraits are used in progressive alignment.
     /// @return Reference to the list of user constraints
     ///
-    vector<SConstraint>& SetUserConstraints(void)
+    TConstraints& SetUserConstraints(void)
     {m_Mode = fNonStandard; return m_UserHits;}
 
 
     /// Get user constraints
     /// @return User constraits
     ///
-    const vector<SConstraint>& GetUserConstraints(void) const
+    const TConstraints& GetUserConstraints(void) const
     {return m_UserHits;}
 
 
@@ -678,7 +680,7 @@ private:
     double m_Pseudocount;
 
     // User constraints
-    vector<SConstraint> m_UserHits;
+    TConstraints m_UserHits;
     int m_UserHitsScore;
 
     // Progressive alignment
