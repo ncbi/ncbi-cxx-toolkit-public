@@ -35,6 +35,8 @@
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
+
 
 #include <algo/sequence/loc_mapper.hpp>
 #include <algo/sequence/compare_feats.hpp>
@@ -973,6 +975,19 @@ public:
             return false;
         }
 
+        //compare by feat-ids, if have them
+        CConstRef<CObject_id> obj_id1(f1->CanGetId() && f1->GetId().IsLocal() ? &f1->GetId().GetLocal() : NULL);
+        CConstRef<CObject_id> obj_id2(f2->CanGetId() && f2->GetId().IsLocal() ? &f2->GetId().GetLocal() : NULL);
+        if(obj_id1.IsNull() && !obj_id2.IsNull()) {
+            return true;
+        } else if(!obj_id1.IsNull() && obj_id2.IsNull()) {
+            return false;
+        } else if(!obj_id1.IsNull() && !obj_id2.IsNull()) {
+            return *obj_id1 < *obj_id2;
+        }
+
+
+        //compare by locations
         try {
             int res = f1->Compare(*f2);
             
