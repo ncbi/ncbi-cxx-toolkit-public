@@ -90,6 +90,10 @@ install "$builddir/include" "$incdir"
 echo "[`basename $script`] Installing source files..."
 install "$builddir/src" "$srcdir"
 
+# Build logs
+echo "[`basename $script`] Installing build logs..."
+install "$builddir/logs" "$logdir"
+
 rm -rf "$tmpdir"
 
 
@@ -161,10 +165,6 @@ makedir "$cldir"/$compiler/dll -p
 cp -p "$builddir"/compilers/$compiler/*        "$cldir"/$compiler
 cp -p "$builddir"/compilers/$compiler/static/* "$cldir"/$compiler/static
 cp -p "$builddir"/compilers/$compiler/dll/*    "$cldir"/$compiler/dll
-
-# Build logs
-echo "[`basename $script`] Installing build logs..."
-install "$builddir/logs" "$logdir"
 
 # Copy info files
 cp -p "$builddir"/*_info "$target"
