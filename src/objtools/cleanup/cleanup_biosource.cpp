@@ -113,7 +113,7 @@ static CSubSource* s_StringToSubSource (
         
         string name;
         if (pos != NPOS) {
-            string name = str.substr(pos + 1);
+            name = str.substr(pos + 1);
         }
         NStr::TruncateSpacesInPlace(name);
         
@@ -156,6 +156,7 @@ void CCleanup_imp::x_OrgModToSubtype (
     _ASSERT (BIOSOURCE_HAS_ORGREF (bs));
 
     COrg_ref& org = bs.SetOrg();
+        
     EDIT_EACH_MOD_ON_ORGREF (it, org) {
         string& str = *it;
         CRef<CSubSource> subsrc (s_StringToSubSource (str));
@@ -435,16 +436,20 @@ void CCleanup_imp::x_ModToOrgMod (
 )
 
 {
-    _ASSERT (ORGREF_HAS_MOD (oref) && oref.IsSetOrgname());
-    
-    COrgName& orgname = oref.SetOrgname();
+
+
+
     EDIT_EACH_MOD_ON_ORGREF (it, oref) {
         string& str = *it;
         CRef<COrgMod> orgmod (s_StringToOrgMod (str));
         if (! orgmod) continue;
-        ADD_ORGMOD_TO_ORGNAME (orgname, orgmod);
+        ADD_ORGMOD_TO_ORGREF (oref, orgmod);
         ERASE_MOD_ON_ORGREF (it, oref);
         ChangeMade (CCleanupChange::eChangeOrgmod);
+    }
+    if (MOD_ON_ORGREF_Set(oref).empty()) {
+        oref.ResetMod();
+        ChangeMade (CCleanupChange::eChangeOther);
     }
 }
 
@@ -543,19 +548,13 @@ void CCleanup_imp::BasicCleanup (
     EDIT_EACH_ORGMOD_ON_ORGNAME (it, on) {
         COrgMod& omd = **it;
         BasicCleanup (omd);
-        if (! omd.IsSetSubname()) {
-            ERASE_ORGMOD_ON_ORGNAME (it, on);
-            continue;
-        }
-        const string& str = omd.GetSubname();
-        if (str.empty()) {
+        if (!omd.IsSetSubname() || NStr::IsBlank (omd.GetSubname())) {
             ERASE_ORGMOD_ON_ORGNAME (it, on);
         }
     }
 
-    if (! ORGNAME_HAS_ORGMOD (on)) return;
-
-    if (! ORGMOD_ON_ORGNAME_IS_SORTED (on, s_OrgModCompareSubtypeFirst)) {
+    if (!ORGMOD_ON_ORGNAME_IS_SORTED(on, s_OrgModCompareSubtypeFirst)) {
+        SORT_ORGMOD_ON_ORGNAME (on, s_OrgModCompareSubtypeFirst);
         ChangeMade (CCleanupChange::eCleanOrgmod);
     }
 
@@ -647,6 +646,10 @@ void CCleanup_imp::BasicCleanup (
 {
     CLEAN_STRING_MEMBER (ss, Name);
     CLEAN_STRING_MEMBER (ss, Attrib);
+    if (!ss.IsSetName()) {
+        // name is required - set it to a blank
+        ss.SetName(" ");
+    }
 }
 
 
