@@ -388,16 +388,16 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         /* host ends at "s" here */
         if (!(a = (const char*) memchr(h, ':', len))) {
             info->port = 0/*default*/;
-            a = s;
-        } else {
+            /*len remains unchanged*/
+        } else if (isdigit(a[1])) {
             unsigned short port;
             int n;
             if (sscanf(a, ":%hu%n", &port, &n) < 1  ||  a + n != s  ||  !port)
                 return 0/*failure*/;
             info->port = port;
             len = (size_t)(a - h);
-        }
-        /* host ends at "a" here */
+        } else
+            return 0/*failure*/;
         if (len < sizeof(info->host)) {
             memcpy(info->host, h, len);
             info->host[len] = '\0';
