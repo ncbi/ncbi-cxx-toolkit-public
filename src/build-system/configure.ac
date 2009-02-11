@@ -6079,11 +6079,15 @@ find "$build_root/." -name '*.sh' -print | while read x_file ; do
 done
 
 dnl save cache and log files to the build tree dir "status/"
-dnl (config.status handled separately above so that it doesn't try to
-dnl move itself, which can run into trouble in some environments.)
+dnl (alongside config.status, which is now directly created there to
+dnl avoid possible trouble; for that matter, it can be at least as
+dnl important to avoid having config.log still open for writing during
+dnl the move).
 if test -f config.cache -a -f config.log ; then
    test -d  "$status_dir"  ||  mkdir -p "$status_dir"
+   exec AS_MESSAGE_LOG_FD>/dev/null
    mv config.cache config.log "$status_dir"/
+   exec AS_MESSAGE_LOG_FD>"$status_dir/config.log"
 fi
 
 dnl Update list of enabled packages
