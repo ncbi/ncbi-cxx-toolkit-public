@@ -16,10 +16,14 @@ while [ $i -lt $j ]; do
   $CHECK_EXEC test_conn_stream_pushback >$log 2>&1
   exit_code=$?
   if [ "$exit_code" != "0" ]; then
-      head -20 $log
+    if [ "`wc -l $log`" -gt "40" ]; then
+      cat -n $log | head -20
       echo '......'
-      tail -20 $log
-      break
+      cat -n $log | tail -20
+    else
+      cat $log
+    fi
+    break
   fi
   i="`expr $i + 1`"
 done
