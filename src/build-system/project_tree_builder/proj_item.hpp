@@ -133,6 +133,7 @@ public:
     
     /// What projects this project is depend upon (IDs).
     list<CProjKey> m_Depends;
+    set< CProjKey> m_UnconditionalDepends;
 
     /// What this project requires to have (in user site).
     list<string> m_Requires;

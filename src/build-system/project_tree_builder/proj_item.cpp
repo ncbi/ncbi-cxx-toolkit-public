@@ -182,6 +182,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_SourcesBaseDir = item.m_SourcesBaseDir;
     m_Sources        = item.m_Sources;
     m_Depends        = item.m_Depends;
+    m_UnconditionalDepends = item.m_UnconditionalDepends;
     m_Requires       = item.m_Requires;
     m_Libs3Party     = item.m_Libs3Party;
     m_IncludeDirs    = item.m_IncludeDirs;

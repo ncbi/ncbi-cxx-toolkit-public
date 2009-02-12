@@ -366,7 +366,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,7,2) );
+    SetVersion( CVersionInfo(1,7,3) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -835,7 +835,9 @@ void CProjBulderApp::CollectLibToLibDependencies(
     }
     visited.insert(lib_dep_name);
     if (!lib_dep->second.m_DatatoolSources.empty() ||
-        !lib_dep->second.m_ExportHeaders.empty()) {
+        !lib_dep->second.m_ExportHeaders.empty() ||
+        lib->second.m_UnconditionalDepends.find(lib_dep->first) !=
+            lib->second.m_UnconditionalDepends.end()) {
         dep.insert(lib_dep_name);
     }
     ITERATE(list<CProjKey>, p, lib_dep->second.m_Depends) {

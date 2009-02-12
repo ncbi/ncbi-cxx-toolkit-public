@@ -575,7 +575,10 @@ void CMacProjectGenerator::CollectLibToLibDependencies(
     }
     visited.insert(lib_dep_name);
     if (!lib_dep.m_DatatoolSources.empty() ||
-        !lib_dep.m_ExportHeaders.empty()) {
+        !lib_dep.m_ExportHeaders.empty() ||
+        lib.m_UnconditionalDepends.find(
+            CProjKey(lib_dep.m_ProjType, lib_dep.m_ID)) !=
+            lib.m_UnconditionalDepends.end()) {
         dep.insert(lib_dep_name);
     }
     ITERATE(list<CProjKey>, p, lib_dep.m_Depends) {

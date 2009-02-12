@@ -341,7 +341,10 @@ void CMsvcSolutionGenerator::CollectLibToLibDependencies(
     }
     visited.insert(lib_dep.m_GUID);
     if (!lib_dep.m_Project.m_DatatoolSources.empty() ||
-        !lib_dep.m_Project.m_ExportHeaders.empty()) {
+        !lib_dep.m_Project.m_ExportHeaders.empty() ||
+        lib.m_Project.m_UnconditionalDepends.find(
+            CProjKey(lib_dep.m_Project.m_ProjType, lib_dep.m_Project.m_ID)) !=
+            lib.m_Project.m_UnconditionalDepends.end()) {
         dep.insert(lib_dep.m_GUID);
     }
     ITERATE(list<CProjKey>, p, lib_dep.m_Project.m_Depends) {

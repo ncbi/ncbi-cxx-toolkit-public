@@ -1062,6 +1062,14 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         const list<string> depends = k->second;
         SMakeProjectT::ConvertLibDepends(depends, &depends_ids);
     }
+    list<CProjKey> unconditional_depends_ids;
+    k = m->second.m_Contents.find("USR_DEP");
+    if (k != m->second.m_Contents.end()) {
+        const list<string> depends = k->second;
+        SMakeProjectT::ConvertLibDepends(depends, &unconditional_depends_ids);
+        copy(unconditional_depends_ids.begin(),
+             unconditional_depends_ids.end(), back_inserter(depends_ids));
+    }
 
     //requires
     list<string> requires;
@@ -1189,6 +1197,9 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         item_dll.m_GUID  = IdentifySlnGUID(source_base_dir, proj_dll);
         item_dll.m_IsBundle = isbundle;
         tree->m_Projects[proj_dll] = item_dll;
+    }
+    ITERATE(list<CProjKey>, u,  unconditional_depends_ids) {
+        (tree->m_Projects[proj_key]).m_UnconditionalDepends.insert( *u);
     }
     return proj_key;
 }
