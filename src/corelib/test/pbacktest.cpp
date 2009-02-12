@@ -156,6 +156,11 @@ extern int TEST_StreamPushback(iostream&    ios,
         case 0:
             ios.read(data + nread, i);
             j = ios.gcount();
+            if (!ios.good()) {
+                _ASSERT(ios.rdstate() & NcbiEofbit);
+                _ASSERT(nread + j == kBufferSize);
+                ios.clear();
+            }
             break;
         case 1:
             ios.get(data + nread, i + 1/*EOL*/, eol[0]);
