@@ -222,6 +222,8 @@ public:
     EDiagSev GetSeverity() const { return m_DiagSev; }
     void SetSeverity(EDiagSev sev) { m_DiagSev = sev; }
 
+    bool IsErrCodeMatcher(void) const {return m_ErrCode.get() != 0;}
+
 private:
     AutoPtr<CDiagStrMatcher> m_ErrCode;
     AutoPtr<CDiagStrMatcher> m_File;

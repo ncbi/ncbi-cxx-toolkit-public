@@ -552,8 +552,13 @@ void CExceptionReporter::ReportDefaultEx(int err_code, int err_subcode,
                               *cex,
                               flags);
     } else {
-        CNcbiDiag(info, cex->GetSeverity(), flags)
-            << ErrCode(err_code, err_subcode) << title << *cex;
+        CNcbiDiag d(info, cex->GetSeverity(), flags);
+        d << ErrCode(err_code, err_subcode);
+        if ((err_code==0 && err_subcode==0) || d.CheckFilters()) {
+            d << title << *cex;
+        } else {
+            Reset(d);
+        }
     }
 }
 

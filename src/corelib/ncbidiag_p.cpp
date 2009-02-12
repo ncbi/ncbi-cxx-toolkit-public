@@ -361,6 +361,17 @@ EDiagFilterAction CDiagFilter::Check(const CException& ex,
     if(m_Matchers.empty())
         return eDiagFilter_Accept;
 
+    bool found = false;
+    ITERATE(TMatchers, i, m_Matchers) {
+        if (!(*i)->IsErrCodeMatcher()) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        return eDiagFilter_Accept;
+    }
+
     const CException* pex;
     for (pex = &ex;  pex;  pex = pex->GetPredecessor()) {
         EDiagFilterAction action = CheckFile(pex->GetFile().c_str());
