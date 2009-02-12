@@ -80,6 +80,7 @@
 
 #include <memory>
 #include <algorithm>
+#include <list>
 
 
 BEGIN_NCBI_SCOPE
@@ -183,14 +184,21 @@ void CId1FetchApp::Init(void)
          CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
          
     // Maximum complexity
-    arg_desc->AddDefaultKey
+    arg_desc->AddOptionalKey
         ("maxplex", "MaxComplexity", // was "-c" in `idfetch'
          "Maximum complexity to return",
-         CArgDescriptions::eString, "entry");
+         CArgDescriptions::eString);
     arg_desc->SetConstraint
         ("maxplex", &(*new CArgAllow_Strings,
                       "entry", "bioseq", "bioseq-set", "nuc-prot",
                       "pub-set"));
+    
+    // External features
+    arg_desc->AddOptionalKey
+        ("extfeat", "ExtFeat", // was "-F" in `idfetch'
+         "Add features, delimited by ',': "
+         "SNP, SNP_graph, CDD, MGC, HPRD, STS, tRNA, Exon",
+         CArgDescriptions::eString);
     
     // Flattened SeqID
     arg_desc->AddOptionalKey
@@ -460,30 +468,66 @@ bool CId1FetchApp::LookUpGI(int gi)
             *m_OutputFile << title;
         }
     } else if (lt == "entry") {
-        if ( args["maxplex"].AsString() == "entry" ) {
-            use_objmgr = true;
-        }
-        else {
+        if ( args["maxplex"] || args["extfeat"] ) {
             CRef<CID1server_back> id1_reply(new CID1server_back);
             CRef<CID1server_maxcomplex> maxcomplex(new CID1server_maxcomplex);
-            string maxplex = args["maxplex"].AsString();
-            if ( maxplex == "bioseq" ) {
-                maxcomplex->SetMaxplex(eEntry_complexities_bioseq);
+            int mp = eEntry_complexities_entry;
+            if ( args["maxplex"] ) {
+                string maxplex = args["maxplex"].AsString();
+                if ( maxplex == "bioseq" ) {
+                    mp = eEntry_complexities_bioseq;
+                }
+                else if ( maxplex == "bioseq-set" ) {
+                    mp = eEntry_complexities_bioseq_set;
+                }
+                else if ( maxplex == "nuc-prot" ) {
+                    mp = eEntry_complexities_nuc_prot;
+                }
+                else if ( maxplex == "pub-set" ) {
+                    mp = eEntry_complexities_pub_set;
+                }
             }
-            else if ( maxplex == "bioseq-set" ) {
-                maxcomplex->SetMaxplex(eEntry_complexities_bioseq_set);
+            if ( args["extfeat"] ) {
+                int ff = 0;
+                list<string> extfeat;
+                NStr::Split(args["extfeat"].AsString(), ",", extfeat);
+                ITERATE ( list<string>, it, extfeat ) {
+                    if ( *it == "SNP" ) {
+                        ff |= 1 << 0;
+                    }
+                    else if ( *it == "SNP_graph" ) {
+                        ff |= 1 << 2;
+                    }
+                    else if ( *it == "CDD" ) {
+                        ff |= 1 << 3;
+                    }
+                    else if ( *it == "MGC" ) {
+                        ff |= 1 << 4;
+                    }
+                    else if ( *it == "HPRD" ) {
+                        ff |= 1 << 5;
+                    }
+                    else if ( *it == "STS" ) {
+                        ff |= 1 << 6;
+                    }
+                    else if ( *it == "tRNA" ) {
+                        ff |= 1 << 7;
+                    }
+                    else if ( *it == "Exon" ) {
+                        ff |= 1 << 9;
+                    }
+                    else {
+                        ERR_POST("Unknown extfeat type: "<<*it);
+                    }
+                }
+                mp |= ~ff << 4;
             }
-            else if ( maxplex == "nuc-prot" ) {
-                maxcomplex->SetMaxplex(eEntry_complexities_nuc_prot);
-            }
-            else if ( maxplex == "pub-set" ) {
-                maxcomplex->SetMaxplex(eEntry_complexities_pub_set);
-            }
-            else {
-                maxcomplex->SetMaxplex(eEntry_complexities_entry);
-            }
+            maxcomplex->SetMaxplex(mp);
             maxcomplex->SetGi(gi);
             reply_object = m_ID1Client.AskGetsefromgi(*maxcomplex, id1_reply);
+        }
+        else {
+            use_objmgr = true;
         }
     } else if (lt == "state") {
         CRef<CID1server_back> id1_reply(new CID1server_back);
@@ -590,7 +634,7 @@ bool CId1FetchApp::LookUpGI(int gi)
 
     if (reply_object.NotEmpty()  &&  format != eSerial_None) {
         auto_ptr<CObjectOStream> asn_output
-           (CObjectOStream::Open(format, *m_OutputFile));
+            (CObjectOStream::Open(format, *m_OutputFile));
         // *asn_output << *reply_object;
         asn_output->Write(reply_object, reply_object->GetThisTypeInfo());
     }
