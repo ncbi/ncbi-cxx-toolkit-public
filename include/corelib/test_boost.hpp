@@ -60,6 +60,7 @@
 #endif
 
 #include <boost/test/auto_unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 #include <boost/preprocessor/tuple/rem.hpp>
 #include <boost/preprocessor/repeat.hpp>
