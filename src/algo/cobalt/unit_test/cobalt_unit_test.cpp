@@ -46,7 +46,7 @@
 #include <objects/biotree/NodeSet.hpp>
 
 #include <algo/cobalt/cobalt.hpp>
-#include <cobalt_unit_test.hpp>
+#include "cobalt_unit_test.hpp"
 
 #include <hash_set.h>
 

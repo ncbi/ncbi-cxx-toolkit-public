@@ -39,7 +39,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <algo/cobalt/kmercounts.hpp>
-#include <cobalt_unit_test.hpp>
+#include "cobalt_unit_test.hpp"
 
 // This macro should be defined before inclusion of test_boost.hpp in all
 // "*.cpp" files inside executable except one. It is like function main() for
