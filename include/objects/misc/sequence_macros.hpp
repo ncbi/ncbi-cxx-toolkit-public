@@ -1014,6 +1014,39 @@ LIST_ERASE_ITEM (SEQANNOT_ON_SEQSET, Itr, Var)
 #define ERASE_ANNOT_ON_SEQSET ERASE_SEQANNOT_ON_SEQSET
 
 
+/// SEQANNOT_ON_SEQSUBMIT macros
+
+#define SEQANNOT_ON_SEQSUBMIT_Type      CSeq_submit::TData::TAnnots
+#define SEQANNOT_ON_SEQSUBMIT_Test(Var) ((Var).IsSetData() && (Var).GetData().IsAnnots())
+#define SEQANNOT_ON_SEQSUBMIT_Get(Var)  (Var).GetData().GetAnnots()
+#define SEQANNOT_ON_SEQSUBMIT_Set(Var)  (Var).SetData().SetAnnots()
+
+/// SEQSUBMIT_HAS_SEQANNOT
+
+#define SEQSUBMIT_HAS_SEQANNOT(Var) \
+ITEM_HAS (SEQANNOT_ON_SEQSUBMIT, Var)
+
+/// FOR_EACH_SEQANNOT_ON_SEQSUBMIT
+/// EDIT_EACH_SEQANNOT_ON_SEQSUBMIT
+// CBioseq_set& as input, dereference with [const] CSeq_annot& annot = **itr;
+
+#define FOR_EACH_SEQANNOT_ON_SEQSUBMIT(Itr, Var) \
+FOR_EACH (SEQANNOT_ON_SEQSUBMIT, Itr, Var)
+
+#define EDIT_EACH_SEQANNOT_ON_SEQSUBMIT(Itr, Var) \
+EDIT_EACH (SEQANNOT_ON_SEQSUBMIT, Itr, Var)
+
+/// ADD_SEQANNOT_TO_SEQSUBMIT
+
+#define ADD_SEQANNOT_TO_SEQSUBMIT(Var, Ref) \
+ADD_ITEM (SEQANNOT_ON_SEQSUBMIT, Var, Ref)
+
+/// ERASE_SEQANNOT_ON_SEQSUBMIT
+
+#define ERASE_SEQANNOT_ON_SEQSUBMIT(Itr, Var) \
+LIST_ERASE_ITEM (SEQANNOT_ON_SEQSUBMIT, Itr, Var)
+
+
 /// SEQENTRY_ON_SEQSET macros
 
 #define SEQENTRY_ON_SEQSET_Type      CBioseq_set::TSeq_set
@@ -1679,6 +1712,34 @@ EDIT_EACH (MOD_ON_ORGREF, Itr, Var)
 
 #define ERASE_MOD_ON_ORGREF(Itr, Var) \
 LIST_ERASE_ITEM (MOD_ON_ORGREF, Itr, Var)
+
+
+/// SYN_ON_ORGREF macros
+
+#define SYN_ON_ORGREF_Type      COrg_ref::TSyn
+#define SYN_ON_ORGREF_Test(Var) (Var).IsSetSyn()
+#define SYN_ON_ORGREF_Get(Var)  (Var).GetSyn()
+#define SYN_ON_ORGREF_Set(Var)  (Var).SetSyn()
+
+/// ORGREF_HAS_SYN
+
+#define ORGREF_HAS_SYN(Var) \
+ITEM_HAS (SYN_ON_ORGREF, Var)
+
+/// FOR_EACH_SYN_ON_ORGREF
+/// EDIT_EACH_SYN_ON_ORGREF
+// COrg_ref& as input, dereference with [const] string& str = *itr
+
+#define FOR_EACH_SYN_ON_ORGREF(Itr, Var) \
+FOR_EACH (SYN_ON_ORGREF, Itr, Var)
+
+#define EDIT_EACH_SYN_ON_ORGREF(Itr, Var) \
+EDIT_EACH (SYN_ON_ORGREF, Itr, Var)
+
+/// ERASE_SYN_ON_ORGREF
+
+#define ERASE_SYN_ON_ORGREF(Itr, Var) \
+LIST_ERASE_ITEM (SYN_ON_ORGREF, Itr, Var)
 
 
 /// COrgName macros
