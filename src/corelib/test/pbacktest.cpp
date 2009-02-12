@@ -133,7 +133,7 @@ extern int TEST_StreamPushback(iostream&    ios,
 
         if (nread + i > kBufferSize + 1)
             i = kBufferSize + 1 - nread;
-        else if (!((j = npback ? rand() & 7 : 3) & ~1)) {
+        else if (!((j = npback ? rand() & 7 : 3) & ~1)  &&  (++d % 10) < 5) {
             i %= npback;
             i++;
         }
@@ -275,7 +275,7 @@ extern int TEST_StreamPushback(iostream&    ios,
             update = false;
         }
 
-        if (!(rand() % 101)  &&  d++ < 5)
+        if (!(rand() % 101)  &&  (++d % 10) < 5)
             i = rand() % nread + 1;
         else
             i = rand() % j     + 1;
