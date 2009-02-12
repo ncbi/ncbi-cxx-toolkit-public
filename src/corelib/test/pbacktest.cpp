@@ -168,13 +168,12 @@ extern int TEST_StreamPushback(iostream&    ios,
                 _ASSERT(ios.get() == eol[0]);
                 j++;
             } else {
-                if (j < i)
-                    _ASSERT(orig[nread + j] == eol[0]);
                 if (!ios.good()) {
                     _ASSERT(ios.rdstate() == NcbiEofbit);
                     _ASSERT(nread + j == kBufferSize);
                     ios.clear();
-                }
+                } else if (j < i)
+                    _ASSERT(orig[nread + j] == eol[0]);
                 putback = true;
             }
             break;
