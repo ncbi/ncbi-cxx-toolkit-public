@@ -5,7 +5,7 @@
 
 
 LIB_PROJ = cobalt
-SUB_PROJ = demo
+SUB_PROJ = demo unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
