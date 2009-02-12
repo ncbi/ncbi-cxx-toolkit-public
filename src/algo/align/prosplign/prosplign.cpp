@@ -842,12 +842,14 @@ CRef<CSeq_align> CProSplign::FindGlobalAlignment(CScope& scope, const CSeq_id& p
 {
     CSeq_loc genomic;
     genomic.Assign(genomic_orig);
-    const CSeq_id& nucid = *genomic.GetId();
+    const CSeq_id* nucid = genomic.GetId();
+    if (nucid == NULL)
+        NCBI_THROW(CProSplignException, eGenericError, "genomic seq-loc has multiple ids or no id at all");
 
     if (genomic.IsWhole()) {
         // change to Interval, because Whole doesn't allow strand change - it's always unknown.
         genomic.SetInt().SetFrom(0);
-        genomic.SetInt().SetTo(sequence::GetLength(nucid, &scope)-1);
+        genomic.SetInt().SetTo(sequence::GetLength(*nucid, &scope)-1);
     }
 
     CRef<CSeq_align> result;
@@ -884,7 +886,7 @@ CRef<CSeq_align> CProSplign::FindGlobalAlignment(CScope& scope, const CSeq_id& p
     //remove genomic bounds if set
     if (result->CanGetBounds()) {
         NON_CONST_ITERATE(CSeq_align::TBounds, b, result->SetBounds()) {
-            if ((*b)->GetId() != NULL && (*b)->GetId()->Match(nucid)) {
+            if ((*b)->GetId() != NULL && (*b)->GetId()->Match(*nucid)) {
                 result->SetBounds().erase(b);
                 break;
             }
