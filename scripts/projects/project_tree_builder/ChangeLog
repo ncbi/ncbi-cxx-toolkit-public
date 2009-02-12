@@ -10,3 +10,8 @@ Added protection against targets with the same name.
 February 10, 2009
 version 1.7.2
 Enhanced analysis of library-to-library dependencies
+
+February 12, 2009
+version 1.7.3
+Added possibility to specify USR_DEP macro in the toolkit makefiles
+to enforce static library build order.
