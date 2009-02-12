@@ -48,7 +48,7 @@
 #include <algo/cobalt/cobalt.hpp>
 #include "cobalt_unit_test.hpp"
 
-#include <hash_set.h>
+#include <corelib/hash_set.hpp>
 
 // This macro should be defined before inclusion of test_boost.hpp in all
 // "*.cpp" files inside executable except one. It is like function main() for
