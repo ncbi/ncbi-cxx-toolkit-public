@@ -6087,7 +6087,7 @@ if test -f config.cache -a -f config.log ; then
    test -d  "$status_dir"  ||  mkdir -p "$status_dir"
    exec AS_MESSAGE_LOG_FD>/dev/null
    mv config.cache config.log "$status_dir"/
-   exec AS_MESSAGE_LOG_FD>"$status_dir/config.log"
+   exec AS_MESSAGE_LOG_FD>>"$status_dir/config.log"
 fi
 
 dnl Update list of enabled packages

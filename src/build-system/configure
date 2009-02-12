@@ -32048,7 +32048,7 @@ if test -f config.cache -a -f config.log ; then
    test -d  "$status_dir"  ||  mkdir -p "$status_dir"
    exec 5>/dev/null
    mv config.cache config.log "$status_dir"/
-   exec 5>"$status_dir/config.log"
+   exec 5>>"$status_dir/config.log"
 fi
 
 rm -f "$status_dir"/*.enabled
