@@ -42,7 +42,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
-class CMultiAlignerException : public CException
+class NCBI_COBALT_EXPORT CMultiAlignerException : public CException
 {
 public:
     enum EErrCode {

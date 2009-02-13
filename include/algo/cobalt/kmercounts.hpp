@@ -63,7 +63,7 @@ static const string kAlphabet15("ST IJV LM KR EQZ A G BD P N F Y H C W");
 /// Kmer counts for alignment free sequence similarity computation
 /// implemented as a sparse vector
 ///
-class CSparseKmerCounts
+class NCBI_COBALT_EXPORT CSparseKmerCounts
 {
 public:
     typedef Uint1 TCount;

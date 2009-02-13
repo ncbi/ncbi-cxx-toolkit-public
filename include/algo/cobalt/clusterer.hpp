@@ -47,14 +47,14 @@ BEGIN_SCOPE(cobalt)
 
 /// Interface for CClusterer class used for clustering any type of data based
 /// on distance matrix. The class operates on ideces in the distance matrix.
-class CClusterer
+class NCBI_COBALT_EXPORT CClusterer
 {
 public:
 
     typedef CNcbiMatrix<double> TDistMatrix;
 
     /// Single cluster
-    class CSingleCluster : public CObject
+    class NCBI_COBALT_EXPORT CSingleCluster : public CObject
     {
     public:
         typedef vector<int>::const_iterator const_iterator;
