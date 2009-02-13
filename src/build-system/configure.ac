@@ -5146,8 +5146,10 @@ if test "$with_xerces" != no; then
    vpath="$XERCES_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
    if test -d "$vpath/lib"; then
       XERCES_PATH=$vpath
+      NCBI_FIX_DIR(XERCES_PATH)
    elif test -d "$vpath"; then
       : ${XERCES_LIBPATH=$vpath}
+      NCBI_FIX_DIR(XERCES_LIBPATH)
    else
       vpath="$XERCES_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
       if test -d "$vpath/lib"; then
@@ -5206,8 +5208,10 @@ if test "$with_xalan" != no; then
    vpath="$XALAN_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
    if test -d "$vpath/lib"; then
       XALAN_PATH=$vpath
+      NCBI_FIX_DIR(XALAN_PATH)
    elif test -d "$vpath"; then
       : ${XALAN_LIBPATH=$vpath}
+      NCBI_FIX_DIR(XALAN_LIBPATH)
    else
       vpath="$XALAN_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
       if test -d "$vpath/lib"; then
