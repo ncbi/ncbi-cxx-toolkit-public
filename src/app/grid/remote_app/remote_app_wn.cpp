@@ -144,6 +144,13 @@ public:
                 env.insert(env.begin(), session_id.c_str());
             }
 
+            int max_app_run_time = m_Params.GetMaxAppRunningTime();
+            int app_run_timeout = request->GetAppRunTimeout();
+
+            if (app_run_timeout > 0 &&
+                (max_app_run_time == 0 || max_app_run_time > app_run_timeout))
+                max_app_run_time = app_run_timeout;
+
             finished_ok = ExecRemoteApp(m_Params.GetAppPath(), 
                                         args, 
                                         request->GetStdIn(), 
@@ -152,8 +159,7 @@ public:
                                         m_Params.CacheStdOutErr(),
                                         ret,
                                         context,
-                                        m_Params.GetMaxAppRunningTime(),
-                                        request->GetAppRunTimeout(),
+                                        max_app_run_time,
                                         m_Params.GetKeepAlivePeriod(),
                                         tmp_path,
                                         m_Params.RemoveTempDir(),
@@ -173,27 +179,25 @@ public:
         result->Send(context.GetOStream());
 
         string stat;
-        if( !finished_ok ) {
-            if (context.GetShutdownLevel() == 
-                CNetScheduleAdmin::eShutdownImmediate) 
-                stat = " is canceled.";
-        } else {
-            if (ret != 0 && m_Params.GetNonZeroExitAction() != 
-                           CRemoteAppParams::eDoneOnNonZeroExit) {
-                if (m_Params.GetNonZeroExitAction() ==
-                    CRemoteAppParams::eFailOnNonZeroExit) {
-                    context.CommitJobWithFailure("Exited with " 
-                                                 + NStr::IntToString(ret) +
-                                                 " return code.");
-                    stat = " is failed.";
-                } else if (m_Params.GetNonZeroExitAction() == 
-                           CRemoteAppParams::eReturnOnNonZeroExit)
-                    stat = " is returned.";
-            } else {
+
+        if (!finished_ok) {
+            context.CommitJobWithFailure("Job has been canceled");
+            stat = " was canceled.";
+        } else
+            if (ret == 0 || m_Params.GetNonZeroExitAction() ==
+                    CRemoteAppParams::eDoneOnNonZeroExit) {
                 context.CommitJob();
                 stat = " is done.";
-            }
-        }
+            } else
+                if (m_Params.GetNonZeroExitAction() ==
+                        CRemoteAppParams::eReturnOnNonZeroExit)
+                    stat = " has been returned.";
+                else {
+                    context.CommitJobWithFailure(
+                        "Exited with return code " + NStr::IntToString(ret));
+                    stat = " failed.";
+                }
+
         if (context.IsLogRequested()) {
             LOG_POST("Job " << context.GetJobKey() <<
                 stat << " ExitCode: " << ret);

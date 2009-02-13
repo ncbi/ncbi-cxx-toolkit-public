@@ -213,39 +213,30 @@ struct STmpDirGuard
 class CPipeProcessWatcher_Base : public CPipe::IProcessWatcher
 {
 public:
-    CPipeProcessWatcher_Base(int max_app_running_time, int app_running_time)
-        : m_MaxAppRunningTime(max_app_running_time),
-          m_AppRunningTime(app_running_time)
+    CPipeProcessWatcher_Base(int max_app_running_time)
+        : m_MaxAppRunningTime(max_app_running_time)
     {
-        if (m_MaxAppRunningTime > 0 || m_AppRunningTime > 0)
+        if (max_app_running_time > 0)
             m_RunningTime.reset(new CStopWatch(CStopWatch::eStart));
     }
     
     virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle /*pid*/) 
     {
-        if (m_RunningTime.get()) {
-            double elapsed = m_RunningTime->Elapsed();
-            if (m_AppRunningTime > 0 &&  elapsed > (double)m_AppRunningTime) {
-                ERR_POST( "The application's runtime has exceeded a time("
-                        << m_AppRunningTime
-                        << " sec) set by the client");
-                return CPipe::IProcessWatcher::eStop;
-            }
-            if ( m_MaxAppRunningTime > 0 && elapsed > (double)m_MaxAppRunningTime) {
-                ERR_POST("The application's runtime has exceeded a time("
-                         << m_MaxAppRunningTime
-                         <<" sec) set in the config file");
-                return CPipe::IProcessWatcher::eStop;
-            }
+        if (m_MaxAppRunningTime > 0 && m_RunningTime->Elapsed() >
+                (double) m_MaxAppRunningTime) {
+            ERR_POST("Job run time exceeded "
+                     << m_MaxAppRunningTime
+                     <<" seconds, stopping the child");
+            return CPipe::IProcessWatcher::eStop;
         }
+
         return CPipe::IProcessWatcher::eContinue;
     }
 private:
-    int m_MaxAppRunningTime;
-    int m_AppRunningTime;
     auto_ptr<CStopWatch> m_RunningTime;
-
+    int m_MaxAppRunningTime;
 };
+
 //////////////////////////////////////////////////////////////////////////////
 ///
 class CRAMonitor
@@ -261,7 +252,7 @@ public:
 
     int Run(vector<string>& args, CNcbiOstream& out, CNcbiOstream& err)
     {
-        CPipeProcessWatcher_Base callback(m_MaxAppRunningTime, 0);
+        CPipeProcessWatcher_Base callback(m_MaxAppRunningTime);
         CNcbiStrstream in;
         int exit_value;
         CPipe::EFinish ret = CPipe::eCanceled;
@@ -293,10 +284,9 @@ class CPipeProcessWatcher : public CPipeProcessWatcher_Base
 public:
     CPipeProcessWatcher( CWorkerNodeJobContext& context,
                    int max_app_running_time,
-                   int app_running_time,
                    int keep_alive_period,
                    const string& job_wdir)
-        : CPipeProcessWatcher_Base(max_app_running_time, app_running_time),
+        : CPipeProcessWatcher_Base(max_app_running_time),
           m_Context(context), m_KeepAlivePeriod(keep_alive_period),
           m_Monitor(NULL), m_JobWDir(job_wdir)
     {
@@ -304,8 +294,6 @@ public:
             m_KeepAlive.reset(new CStopWatch(CStopWatch::eStart));
 
     }
-    
-    virtual ~CPipeProcessWatcher() {}
 
     void SetMonitor(CRAMonitor& monitor, int monitor_perod)
     {
@@ -422,26 +410,31 @@ private:
 class CTmpStreamGuard
 {
 public:
-    CTmpStreamGuard(const string& tmp_dir, const string& name, CNcbiOstream& orig_stream,
-                    bool cache_std_out_err)       
-        : m_OrigStream(orig_stream), m_Stream(NULL)
+    CTmpStreamGuard(const string& tmp_dir,
+        const string& name,
+        CNcbiOstream& orig_stream,
+        bool cache_std_out_err) : m_OrigStream(orig_stream), m_Stream(NULL)
     {
         if (!tmp_dir.empty() && cache_std_out_err) {
-            m_Name = tmp_dir + CDirEntry::GetPathSeparator() + name;
+            m_Name = tmp_dir + CDirEntry::GetPathSeparator();
+            m_Name += name;
         }
-        if ( !m_Name.empty() ) {
+        if (!m_Name.empty()) {
             try {
-               m_ReaderWriter.reset(new CFileReaderWriter(m_Name, CFileIO_Base::eCreate));
+               m_ReaderWriter.reset(new CFileReaderWriter(m_Name,
+                   CFileIO_Base::eCreate));
             } catch (CFileException& ex) {
-                ERR_POST("Could not create a temporary file " << m_Name << " :" << ex.what()
-                        << " the data will be written directly to the orgional stream");
+                ERR_POST("Could not create a temporary file " <<
+                    m_Name << " :" << ex.what() << " the data will be "
+                    "written directly to the original stream");
                 m_Name.erase();
                 m_Stream = &m_OrigStream;
                 return;
             }
 #if defined(NCBI_OS_UNIX)
-            // if the file is created on NFS we need to set CLOEXEC flag
-            // overwise deleting of temp direcory will not succeed 
+            // If the file is created on an NFS file system, the CLOEXEC
+            // flag needs to be set, otherwise deleting the temporary
+            // directory will not succeed.
             TFileHandle fd = m_ReaderWriter->GetFileIO().GetFileHandle();
             fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
 #endif            
@@ -456,9 +449,11 @@ public:
         try {
             Close();
         } catch(exception& ex) {
-            ERR_POST( "CTmpStreamGuard::~CTmpStreamGuard(): " << m_Name << " --> " << ex.what());
+            ERR_POST( "CTmpStreamGuard::~CTmpStreamGuard(): " <<
+                m_Name << " --> " << ex.what());
         } catch(...) {
-            ERR_POST( "CTmpStreamGuard::~CTmpStreamGuard(): " << m_Name << " --> Unknown error.");
+            ERR_POST( "CTmpStreamGuard::~CTmpStreamGuard(): " <<
+                m_Name << " --> Unknown error.");
         }
     }
 
@@ -499,7 +494,6 @@ bool ExecRemoteApp(const string& cmd,
                    int& exit_value,
                    CWorkerNodeJobContext& context,
                    int max_app_running_time,
-                   int app_running_time,
                    int keep_alive_period,
                    const string& tmp_path,
                    bool remove_tmp_path,
@@ -517,7 +511,6 @@ bool ExecRemoteApp(const string& cmd,
 
         CPipeProcessWatcher callback(context,
                                      max_app_running_time,
-                                     app_running_time,
                                      keep_alive_period,
                                      job_wdir);
 
@@ -527,9 +520,9 @@ bool ExecRemoteApp(const string& cmd,
                 max_monitor_running_time));
             callback.SetMonitor(*ra_monitor, monitor_period);
         }
-        STimeout kill_tm = { kill_timeout, 0 };
-       
-        
+
+        STimeout kill_tm = {kill_timeout, 0};
+
         return CPipe::ExecWait(cmd, args, in, 
                                std_out_guard.GetOStream(),
                                std_err_guard.GetOStream(),
