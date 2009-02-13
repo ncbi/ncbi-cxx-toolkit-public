@@ -182,7 +182,6 @@ CProcess::CProcess(TProcessHandle process, EProcessType type)
 {
     return;
 }
-
 #endif
 
 
@@ -425,15 +424,12 @@ bool CProcess::IsAlive(void) const
 
 bool CProcess::Kill(unsigned long timeout) const
 {
-    // Safe process termination
-    bool safe = (timeout > 0);
-
 #if defined(NCBI_OS_UNIX)
 
     TPid pid = (TPid)m_Process;
 
     // Try to kill the process with SIGTERM first
-    if (kill(pid, SIGTERM) == -1  &&  errno == EPERM) {
+    if (kill(pid, SIGTERM) < 0  &&  errno == EPERM) {
         return false;
     }
 
@@ -451,22 +447,25 @@ bool CProcess::Kill(unsigned long timeout) const
              break;
         }
         SleepMilliSec(x_sleep);
-        timeout -= x_sleep;
+        timeout    -= x_sleep;
     }
 
     // Try harder to kill the stubborn process -- SIGKILL may not be caught!
     int res = kill(pid, SIGKILL);
-    if ( !safe ) {
-        return res == 0;
+    if ( !timeout ) {
+        return res <= 0;
     }
     SleepMilliSec(kWaitPrecision);
     // Reap the zombie (if child) up from the system
     waitpid(pid, 0, WNOHANG);
     // Check whether the process cannot be killed (most likely due
     // to a kernel problem)
-    return kill(pid, 0) != 0;
+    return kill(pid, 0) < 0;
 
 #elif defined(NCBI_OS_MSWIN)
+
+    // Safe process termination
+    bool safe = (timeout > 0);
 
     // Try to kill current process?
     if ( m_Type == ePid  &&  (TPid)m_Process == GetCurrentPid() ) {
@@ -629,11 +628,12 @@ bool CProcess::Kill(unsigned long timeout) const
         CloseHandle(hProcess);
     }
     return terminated;
+
 #endif
 }
 
 
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
 
 // MS Windows:
 // A helper function for terminating all processes
@@ -703,13 +703,14 @@ static bool s_KillGroup(DWORD pid,
 bool CProcess::KillGroup(unsigned long timeout) const
 {
 #if defined(NCBI_OS_UNIX)
+
     TPid pgid = getpgid((TPid)m_Process);
     if (pgid == -1) {
         // TRUE if PID does not match any process
         return errno == ESRCH;
     }
     return KillGroupById(pgid, timeout);
-    
+
 #elif defined(NCBI_OS_MSWIN)
 
     // Convert the process handle to process ID if needed
@@ -749,6 +750,7 @@ bool CProcess::KillGroup(unsigned long timeout) const
     // Kill process tree
     bool result = s_KillGroup(pid, (timeout > 0) ? &timer : 0, x_timeout);
     return result;
+
 #endif
 }
 
@@ -758,11 +760,10 @@ bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
 #if defined(NCBI_OS_UNIX)
 
     // Try to kill the process group with SIGTERM first
-    if (kill(-pgid, SIGTERM) == -1  &&  errno == EPERM) {
+    if (kill(-pgid, SIGTERM) < 0  &&  errno == EPERM) {
         return false;
     }
     // Check process termination within the timeout 
-    bool safe = (timeout > 0);
     for (;;) {
         // Rip the zombie (if group leader is a child) up from the system
         waitpid(pgid, 0, WNOHANG);
@@ -777,24 +778,26 @@ bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
              break;
         }
         SleepMilliSec(x_sleep);
-        timeout -= x_sleep;
+        timeout    -= x_sleep;
     }
     // Try harder to kill the stubborn processes -- SIGKILL may not be caught!
     int res = kill(-pgid, SIGKILL);
-    if ( !safe ) {
-        return res == 0;
+    if ( !timeout ) {
+        return res <= 0;
     }
     SleepMilliSec(kWaitPrecision);
     // Rip the zombie (if group leader is a child) up from the system
     waitpid(pgid, 0, WNOHANG);
     // Check whether the process cannot be killed
     // (most likely due to a kernel problem)
-    return kill(-pgid, 0) != 0;
+    return kill(-pgid, 0) < 0;
 
 #elif defined(NCBI_OS_MSWIN)
+
     // Cannot be implemented, use non-static version of KillGroup()
     // for specified process.
     return false;
+
 #endif
 }
 
@@ -808,6 +811,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
     }
 
 #if defined(NCBI_OS_UNIX)
+
     TPid pid     = (TPid)m_Process;
     int  options = (timeout == kInfiniteTimeoutMs) ? 0 : WNOHANG;
     int  status;
@@ -837,7 +841,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
                 break;
             }
             SleepMilliSec(x_sleep);
-            timeout -= x_sleep;
+            timeout    -= x_sleep;
         } else if (errno != EINTR ) {
             // Some error
             break;
@@ -846,6 +850,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
     return -1;
 
 #elif defined(NCBI_OS_MSWIN)
+
     HANDLE hProcess;
     bool   enable_sync = true;
     // Get process handle
@@ -918,6 +923,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
         CloseHandle(hProcess);
     }
     return status;
+
 #endif
 }
 
