@@ -188,6 +188,10 @@ void CDemoApp::Init(void)
                             &(*new CArgAllow_Strings,
                               "protein", "p", "nucleotide", "n"));
 
+    arg_desc->AddFlag("get_ids", "Get sequence ids");
+    arg_desc->AddFlag("get_gi", "Get sequence gi");
+    arg_desc->AddFlag("get_acc", "Get sequence accession");
+
     arg_desc->AddFlag("seq_map", "scan SeqMap on full depth");
     arg_desc->AddFlag("seg_labels", "get labels of all segments in Delta");
     arg_desc->AddFlag("whole_sequence", "load whole sequence");
@@ -232,6 +236,8 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("get_mapped_location", "get mapped location");
     arg_desc->AddFlag("get_original_feature", "get original location");
     arg_desc->AddFlag("get_mapped_feature", "get mapped feature");
+    arg_desc->AddFlag("check_cds", "check correctness cds");
+    arg_desc->AddFlag("check_seq_data", "check availability of seq_data");
     arg_desc->AddFlag("skip_alignments", "do not search for alignments");
     arg_desc->AddFlag("print_alignments", "print all found Seq-aligns");
     arg_desc->AddFlag("get_mapped_alignments", "get mapped alignments");
@@ -403,6 +409,8 @@ int CDemoApp::Run(void)
     bool get_original_feature = args["get_original_feature"];
     bool get_mapped_feature = args["get_mapped_feature"];
     bool print_alignments = args["print_alignments"];
+    bool check_cds = args["check_cds"];
+    bool check_seq_data = args["check_seq_data"];
     bool skip_alignments = args["skip_alignments"];
     bool get_mapped_alignments = args["get_mapped_alignments"];
     SAnnotSelector::ESortOrder order =
@@ -426,7 +434,7 @@ int CDemoApp::Run(void)
     bool whole_sequence = args["whole_sequence"];
     bool used_memory_check = args["used_memory_check"];
     bool get_synonyms = false;
-    bool get_ids = 1;
+    bool get_ids = args["get_ids"];
     bool get_blob_id = true;
     list<string> include_named;
     if ( args["named"] ) {
@@ -512,16 +520,6 @@ int CDemoApp::Run(void)
         other_loaders = true;
     }
 
-    if ( args["gi"] ) {
-        int gi = args["gi"].AsInteger();
-        CScope  scope(*CObjectManager::GetInstance());
-        scope.AddDefaults();
-        NcbiCout << " gi "<<gi<<" -> acc "<<
-            sequence::GetAccessionForGi(gi,scope,
-                                        sequence::eWithoutAccessionVersion)
-                 << NcbiEndl;
-    }
-
     // Create a new scope.
     CScope scope(*pOm);
     // Add default loaders (GB loader in this demo) to the scope.
@@ -555,9 +553,22 @@ int CDemoApp::Run(void)
 
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
     if ( get_ids ) {
+        if ( args["get_gi"] ) {
+            NcbiCout << "Gi: "
+                     << sequence::GetId(idh, scope, sequence::eGetId_ForceGi)
+                     << NcbiEndl;
+        }
+        if ( args["get_acc"] ) {
+            if ( args["gi"] ) {
+                int gi = args["gi"].AsInteger();
+                NcbiCout << "Acc: "
+                         << sequence::GetAccessionForGi(gi, scope, sequence::eWithoutAccessionVersion)
+                         << NcbiEndl;
+            }
+        }
         NcbiCout << "Best id: "
-                 << sequence::GetId(idh, scope, sequence::eGetId_Best).AsString()
-                 << NcbiEndl;;
+                 << sequence::GetId(idh, scope, sequence::eGetId_Best)
+                 << NcbiEndl;
         NcbiCout << "Ids:" << NcbiEndl;
         //scope.GetBioseqHandle(idh);
         vector<CSeq_id_Handle> ids = scope.GetIds(idh);
@@ -652,6 +663,7 @@ int CDemoApp::Run(void)
         overlap = SAnnotSelector::eOverlap_TotalRange;
     if ( args["overlap"].AsString() == "intervals" )
         overlap = SAnnotSelector::eOverlap_Intervals;
+
     string table_field_name;
     if ( args["table_field_name"] )
         table_field_name = args["table_field_name"].AsString();
@@ -721,32 +733,34 @@ int CDemoApp::Run(void)
             //handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
             // -- use the vector: print length and the first 10 symbols
             NcbiCout << "Sequence: length=" << seq_vect.size();
-            if (seq_vect.CanGetRange(0, seq_vect.size() - 1)) {
-                NcbiCout << " data=";
-                sout.erase();
-                for (TSeqPos i = 0; (i < seq_vect.size()) && (i < 10); i++) {
-                    // Convert sequence symbols to printable form
-                    sout += seq_vect[i];
-                }
-                NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
-
-                if ( whole_sequence ) {
+            if ( check_seq_data ) {
+                if (seq_vect.CanGetRange(0, seq_vect.size() - 1)) {
+                    NcbiCout << " data=";
                     sout.erase();
-                    size_t size = seq_vect.size();
-                    seq_vect.GetSeqData(0, size, sout);
-                    NcbiCout << " data["<<size<<"] = ";
-                    size_t start = min(size, size_t(10));
-                    size_t end = min(size-start, size_t(10));
-                    NcbiCout << NStr::PrintableString(sout.substr(0, start));
-                    if ( start + end != size )
-                        NcbiCout << "..";
-                    NcbiCout << NStr::PrintableString(sout.substr(size-end,
-                                                                  end));
-                    NcbiCout << NcbiEndl;
+                    for (TSeqPos i = 0; (i < seq_vect.size()) && (i < 10); i++) {
+                        // Convert sequence symbols to printable form
+                        sout += seq_vect[i];
+                    }
+                    NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
+
+                    if ( whole_sequence ) {
+                        sout.erase();
+                        size_t size = seq_vect.size();
+                        seq_vect.GetSeqData(0, size, sout);
+                        NcbiCout << " data["<<size<<"] = ";
+                        size_t start = min(size, size_t(10));
+                        size_t end = min(size-start, size_t(10));
+                        NcbiCout << NStr::PrintableString(sout.substr(0, start));
+                        if ( start + end != size )
+                            NcbiCout << "..";
+                        NcbiCout << NStr::PrintableString(sout.substr(size-end,
+                                                                      end));
+                        NcbiCout << NcbiEndl;
+                    }
                 }
-            }
-            else {
-                NcbiCout << " data unavailable" << NcbiEndl;
+                else {
+                    NcbiCout << " data unavailable" << NcbiEndl;
+                }
             }
             // CSeq_descr iterator: iterates all descriptors starting
             // from the bioseq and going the seq-entries tree up to the
@@ -864,6 +878,15 @@ int CDemoApp::Run(void)
         }
         base_sel.SetByProduct(by_product);
 
+        typedef int TTableField;
+        auto_ptr< CTableFieldHandle<TTableField> > table_field;
+        if ( table_field_id >= 0 ) {
+            table_field.reset(new CTableFieldHandle<TTableField>(CSeqTable_column_info::EField_id(table_field_id)));
+        }
+        else if ( !table_field_name.empty() ) {
+            table_field.reset(new CTableFieldHandle<TTableField>(table_field_name));
+        }
+
         if ( get_types || get_names ) {
             if ( get_types ) {
                 CFeat_CI it(scope, *range_loc, base_sel.SetCollectTypes());
@@ -909,15 +932,6 @@ int CDemoApp::Run(void)
                 }}
             }
             continue;
-        }
-
-        typedef int TTableField;
-        auto_ptr< CTableFieldHandle<TTableField> > table_field;
-        if ( table_field_id >= 0 ) {
-            table_field.reset(new CTableFieldHandle<TTableField>(CSeqTable_column_info::EField_id(table_field_id)));
-        }
-        else if ( !table_field_name.empty() ) {
-            table_field.reset(new CTableFieldHandle<TTableField>(table_field_name));
         }
 
         {{
@@ -999,8 +1013,13 @@ int CDemoApp::Run(void)
                     if ( it->IsSetPartial() ) {
                         NcbiCout << " partial = " << it->GetPartial();
                     }
-                    NcbiCout << "\n" <<
-                        MSerial_AsnText << it->GetMappedFeature();
+                    try {
+                        NcbiCout << "\n" <<
+                            MSerial_AsnText << it->GetMappedFeature();
+                    }
+                    catch ( CException& exc ) {
+                        ERR_POST("Exception: "<<exc);
+                    }
                     if ( 1 ) {
                         NcbiCout << "Original location:";
                         if ( it->GetOriginalFeature().IsSetPartial() ) {
@@ -1128,7 +1147,7 @@ int CDemoApp::Run(void)
             }
         }}
 
-        if ( !only_features ) {
+        if ( !only_features && check_cds ) {
             count = 0;
             // The same region, but restricted feature type:
             // searching for e_Cdregion features only. If the sequence is
@@ -1252,6 +1271,32 @@ int CDemoApp::Run(void)
                     }
                 }
                 NcbiCout << "Align count (loc range):\t" <<count<<NcbiEndl;
+            }
+
+            if ( true ) {
+                count = 0;
+                // Create CAlign_CI using the current scope and location.
+                SAnnotSelector sel = base_sel;
+                sel.SetAnnotType(CSeq_annot::C_Data::e_Seq_table);
+                for (CAnnot_CI it(scope, *range_loc, sel); it;  ++it) {
+                    count++;
+                    if ( true ) {
+                        CSeq_annot_Handle annot = *it;
+                        size_t rows = annot.GetSeq_tableNumRows();
+                        NcbiCout << "Seq-table with " << rows << " rows."
+                                 << NcbiEndl;
+                        if ( table_field.get() ) {
+                            for ( size_t row = 0; row < rows; ++row ) {
+                                TTableField value;
+                                if ( table_field->TryGet(annot, row, value) ) {
+                                    NcbiCout << "table field["<<row<<"]: "
+                                             << value << NcbiEndl;
+                                }
+                            }
+                        }
+                    }
+                }
+                NcbiCout << "Table count (loc range):\t" <<count<<NcbiEndl;
             }
         }
 
