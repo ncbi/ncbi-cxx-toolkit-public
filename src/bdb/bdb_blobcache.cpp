@@ -1763,15 +1763,16 @@ void CBDB_Cache::DropBlob(const string&  key,
             coord[1] = m_CacheAttrDB->split_id;
 
             if (!for_update) {   // permanent BLOB removal
-                m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
+                string owner_name;
+                m_CacheAttrDB->owner_name.ToString(owner_name);
 
                 // FIXME:
                 if (IsSaveStatistics()) {
-                    m_Statistics.AddExplDelete(m_TmpOwnerName);
+                    m_Statistics.AddExplDelete(owner_name);
                     if (0 == m_CacheAttrDB->read_count) {
-                        m_Statistics.AddNeverRead(m_TmpOwnerName);
+                        m_Statistics.AddNeverRead(owner_name);
                     }
-                    x_UpdateOwnerStatOnDelete(m_TmpOwnerName, 
+                    x_UpdateOwnerStatOnDelete(owner_name, 
                                               true);//explicit del
                 }
 
@@ -2440,10 +2441,11 @@ bool CBDB_Cache::Read(const string& key,
     trans.Commit();
 
     //  FIXME: locks, etc
-    m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
+    string owner_name;
+    m_CacheAttrDB->owner_name.ToString(owner_name);
     if (IsSaveStatistics()) {
         CFastMutexGuard guard(m_DB_Lock);
-        m_Statistics.AddRead(m_TmpOwnerName, curr - tz_delta);
+        m_Statistics.AddRead(owner_name, curr - tz_delta);
     }
 
     // read the data
@@ -2682,10 +2684,11 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     trans.Commit();
 
     //  FIXME: locks, statistics, etc
-    m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
+    string owner_name;
+    m_CacheAttrDB->owner_name.ToString(owner_name);
     if (IsSaveStatistics()) {
         CFastMutexGuard guard(m_DB_Lock);
-        m_Statistics.AddRead(m_TmpOwnerName, curr - tz_delta);
+        m_Statistics.AddRead(owner_name, curr - tz_delta);
     }
 
     if (overflow) {
@@ -2892,10 +2895,11 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     trans.Commit();
 
     //  FIXME: locks, statistics, etc
-    m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
+    string owner_name;
+    m_CacheAttrDB->owner_name.ToString(owner_name);
     if (IsSaveStatistics()) {
         CFastMutexGuard guard(m_DB_Lock);
-        m_Statistics.AddRead(m_TmpOwnerName, curr - tz_delta);
+        m_Statistics.AddRead(owner_name, curr - tz_delta);
     }
 
 
@@ -3225,12 +3229,13 @@ void CBDB_Cache::Remove(const string& key)
 
             if (IsSaveStatistics()) {
                 unsigned read_count = m_CacheAttrDB->read_count;
-                m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
+                string owner_name;
+                m_CacheAttrDB->owner_name.ToString(owner_name);
                 if (0 == read_count) {
-                    m_Statistics.AddNeverRead(m_TmpOwnerName);
+                    m_Statistics.AddNeverRead(owner_name);
                 }
-                m_Statistics.AddExplDelete(m_TmpOwnerName);
-                x_UpdateOwnerStatOnDelete(m_TmpOwnerName, true/*expl-delete*/);
+                m_Statistics.AddExplDelete(owner_name);
+                x_UpdateOwnerStatOnDelete(owner_name, true/*expl-delete*/);
             }
         }
     }} // m_DB_Lock
@@ -3297,12 +3302,13 @@ void CBDB_Cache::Remove(const string&    key,
 
         if (IsSaveStatistics()) {
             unsigned read_count = m_CacheAttrDB->read_count;
-            m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
+            string owner_name;
+            m_CacheAttrDB->owner_name.ToString(owner_name);
             if (0 == read_count) {
-                m_Statistics.AddNeverRead(m_TmpOwnerName);
+                m_Statistics.AddNeverRead(owner_name);
             }
-            m_Statistics.AddExplDelete(m_TmpOwnerName);
-            x_UpdateOwnerStatOnDelete(m_TmpOwnerName, true/*expl-delete*/);
+            m_Statistics.AddExplDelete(owner_name);
+            x_UpdateOwnerStatOnDelete(owner_name, true/*expl-delete*/);
         }
     }
 
@@ -3937,16 +3943,17 @@ purge_start:
                 time_t exp_time;
                 if (x_CheckTimeStampExpired(*m_CacheAttrDB_RO2, curr, &exp_time)) {
 
-                    m_CacheAttrDB_RO2->owner_name.ToString(m_TmpOwnerName);
+                    string owner_name;
+                    m_CacheAttrDB_RO2->owner_name.ToString(owner_name);
                     
                     // FIXME: statistics, locking, etc
                     if (IsSaveStatistics()) {
                         CFastMutexGuard guard(m_DB_Lock);
                         if (0 == m_CacheAttrDB_RO2->read_count) {
-                            m_Statistics.AddNeverRead(m_TmpOwnerName);
+                            m_Statistics.AddNeverRead(owner_name);
                         }
-                        m_Statistics.AddPurgeDelete(m_TmpOwnerName);
-                        x_UpdateOwnerStatOnDelete(m_TmpOwnerName, 
+                        m_Statistics.AddPurgeDelete(owner_name);
+                        x_UpdateOwnerStatOnDelete(owner_name, 
                                                   false//non-expl-delete
                                                   );
                     }
@@ -4233,12 +4240,13 @@ void CBDB_Cache::Purge(const string&    key,
 
             if (IsSaveStatistics()) {
                 unsigned read_count = m_CacheAttrDB->read_count;
-                m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
+                string owner_name;
+                m_CacheAttrDB->owner_name.ToString(owner_name);
                 if (0 == read_count) {
-                    m_Statistics.AddNeverRead(m_TmpOwnerName);
+                    m_Statistics.AddNeverRead(owner_name);
                 }
-                m_Statistics.AddPurgeDelete(m_TmpOwnerName);
-                x_UpdateOwnerStatOnDelete(m_TmpOwnerName, 
+                m_Statistics.AddPurgeDelete(owner_name);
+                x_UpdateOwnerStatOnDelete(owner_name, 
                                           false/*non-expl-delete*/);
             }
             

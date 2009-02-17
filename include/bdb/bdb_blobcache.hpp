@@ -956,8 +956,6 @@ private:
     SBDB_CacheStatistics       m_Statistics;
     /// If it's necessary to store work statistics or not
     bool                       m_SaveStatistics;
-    /// used by x_UpdateOwnerStatOnDelete
-    string                     m_TmpOwnerName;
     /// Fast local timer
     CFastLocalTime             m_LocalTimer;
     /// Atomic counter for BLOB ids
