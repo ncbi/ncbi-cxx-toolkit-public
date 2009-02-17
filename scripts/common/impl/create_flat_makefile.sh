@@ -10,12 +10,19 @@
 # defaults
 solution="Makefile.flat"
 logfile="Flat.configuration_log"
+ptbname="project_tree_builder"
 
 # default path to project_tree_builder
-extptb="$NCBI/c++.metastable/Release/bin/project_tree_builder"
+defptbpath="$NCBI/c++.metastable/Release/bin/"
 # required version of PTB
+# NOTE: relptbver, when defined, overrides this setting !
 ptbreqver=173
-ptbname="project_tree_builder"
+
+# release path to project_tree_builder
+relptbpath="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb/"
+# NOTE: redefine relptbver in stable components release, eg "1.7.3" !
+relptbver=""
+
 # dependencies
 ptbdep="corelib util util/regexp util/xregexp build-system/project_tree_builder"
 #-----------------------------------------------------------------------------
@@ -45,6 +52,62 @@ EOF
     exit 1
 }
 
+DetectPlatform()
+{
+    osname="`uname`"
+    if [ "$osname" = "Linux" ]; then
+        case "`arch`" in
+            *86 )
+                PLATFORM="Linux32"
+                ;;
+            *86_64 )
+                PLATFORM="Linux64"
+                ;;
+        esac
+    elif [ "$osname" = "SunOS" ]; then
+        case "`arch`" in
+            sun* )
+                PLATFORM="SunOSSparc"
+                ;;
+            i86pc )
+                PLATFORM="SunOSx86"
+                ;;
+        esac
+    elif [ "$osname" = "IRIX64" ]; then
+        PLATFORM="IRIX64"
+    elif [ "$osname" = "Darwin" ]; then
+        case "`arch`" in
+            ppc )
+                PLATFORM="PowerMAC"
+                ;;
+	    i386 )
+                PLATFORM="IntelMAC"
+                ;;
+        esac
+    elif [ "$osname" = "FreeBSD" ]; then
+        case "`uname -m`" in
+            i386 )
+                PLATFORM="FreeBSD32"
+                ;;
+        esac
+    elif `echo "$osname" | grep -q -s CYGWIN_NT` ; then
+        case "`uname -m`" in
+            *86 )
+                PLATFORM="Win32"
+                ;;
+                # Unverified!
+            *64 )
+                PLATFORM="Win64"
+                ;;
+        esac
+    fi
+
+    if [ -z "$PLATFORM" ]; then
+        echo "Platform not defined for $osname -- please fix me"
+        uname -a
+        exit 1
+    fi
+}
 
 #-----------------------------------------------------------------------------
 # analyze script arguments
@@ -88,29 +151,36 @@ fi
 
 #-----------------------------------------------------------------------------
 # more checks
+extptb="$defptbpath$ptbname"
 ptb="$PREBUILT_PTB_EXE"
 if test -x "$ptb"; then
   echo "Using prebuilt project tree builder at $ptb"
 else
-ptb="$extptb"
-if test $buildptb = "no"; then
-  if test -x "$ptb"; then
-    echo "Testing $ptb"
-    $ptb -version 2>&1
-    ptbver=`$ptb -version 2>&1 | grep $ptbname | sed -e 's/[a-zA-Z._: ]//g'`
-    if test $ptbver -lt $ptbreqver; then
-      echo "Prebuilt $ptbname at"
-      echo $extptb
-      echo "is too old. Will build PTB locally"
-      buildptb="yes"
+  ptb="$extptb"
+  if test $buildptb = "no"; then
+    if test -n "$relptbver"; then
+      DetectPlatform
+      ptb="$relptbpath$PLATFORM/$relptbver/$ptbname"
+      test -x "$ptb" && echo "Using prebuilt project tree builder at $ptb"
+    else
+      if test -x "$ptb"; then
+        echo "Testing $ptb"
+        $ptb -version 2>&1
+        ptbver=`$ptb -version 2>&1 | grep $ptbname | sed -e 's/[a-zA-Z._: ]//g'`
+        if test $ptbver -lt $ptbreqver; then
+          echo "Prebuilt $ptbname at"
+          echo $extptb
+          echo "is too old. Will build PTB locally"
+          buildptb="yes"
+        fi
+      else
+        echo "Prebuilt $ptbname is not found at"
+        echo $extptb
+        echo "Will build PTB locally"
+        buildptb="yes"
+      fi
     fi
-  else
-    echo "Prebuilt $ptbname is not found at"
-    echo $extptb
-    echo "Will build PTB locally"
-    buildptb="yes"
   fi
-fi
 fi
 
 COMMON_Exec cd $builddir
