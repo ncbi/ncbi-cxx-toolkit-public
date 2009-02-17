@@ -351,5 +351,17 @@ string GetLabel(const vector<CRef<CSeq_id> >& ids)
 }
 
 
+CNcbiOstream& operator<<(CNcbiOstream& out, const CSeq_id_Handle& idh)
+{
+    if ( idh.IsGi() ) {
+        out << "gi|"<<idh.GetGi();
+    }
+    else {
+        idh.GetSeqId()->WriteAsFasta(out);
+    }
+    return out;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

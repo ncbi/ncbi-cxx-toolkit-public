@@ -171,8 +171,10 @@ public:
         }
     bool operator<  (const CSeq_id_Handle& handle) const
         {
-            return m_Gi > handle.m_Gi || // gi != 0 first
-                (m_Gi == handle.m_Gi && m_Info < handle.m_Info);
+            // gi != 0 first
+            unsigned g1 = unsigned(m_Gi-1), g2 = unsigned(handle.m_Gi-1);
+            return unsigned(g1) < unsigned(g2) ||
+                (g1 == g2 && m_Info < handle.m_Info);
         }
     bool NCBI_SEQ_EXPORT operator== (const CSeq_id& id) const;
 
@@ -276,6 +278,10 @@ NCBI_SEQ_EXPORT string GetLabel(const CSeq_id& id);
 NCBI_SEQ_EXPORT string GetLabel(const CSeq_id_Handle& id);
 NCBI_SEQ_EXPORT string GetLabel(const vector<CSeq_id_Handle>& ids);
 NCBI_SEQ_EXPORT string GetLabel(const vector<CRef<CSeq_id> >& ids);
+
+
+NCBI_SEQ_EXPORT
+CNcbiOstream& operator<<(CNcbiOstream& out, const CSeq_id_Handle& idh);
 
 
 END_SCOPE(objects)
