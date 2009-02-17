@@ -227,8 +227,9 @@ CBlobIdLocker::OnLockReleased(CYieldingRWLock* lock)
     if (lock->IsLocked())
         return;
 
-    m_IdLocks.erase(static_cast<CBlobIdRWLock*>(lock)->GetId());
-    m_FreeLocks.push_back(lock);
+    if (m_IdLocks.erase(static_cast<CBlobIdRWLock*>(lock)->GetId()) > 0) {
+        m_FreeLocks.push_back(lock);
+    }
 }
 
 
