@@ -270,7 +270,10 @@ static TTls<Value>& s_GetTls()
 #endif
 }
 
-static void wait_threads(CAtomicCounter& counter)
+#if !defined(NCBI_COMPILER_WORKSHOP)  ||  NCBI_COMPILER_VERSION >= 590
+static
+#endif
+void wait_threads(CAtomicCounter& counter)
 {
     CAtomicCounter::TValue add = 1;
     int wait_count = 0;
