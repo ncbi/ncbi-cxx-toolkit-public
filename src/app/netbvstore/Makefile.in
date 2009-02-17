@@ -1,6 +1,0 @@
-APP_PROJ = netbvstore
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
-
-SUB_PROJ = 
-
