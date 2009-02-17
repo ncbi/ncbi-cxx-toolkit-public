@@ -280,6 +280,10 @@ int CTestNetScheduleNode::Run(void)
 
     CNetScheduleAPI ns_api(service, program_name, queue_name);
 
+    STimeout comm_timeout;
+    comm_timeout.sec  = 1200;
+    comm_timeout.usec = 0;
+    ns_api.GetService().SetCommunicationTimeout(comm_timeout);
     CNetScheduleExecuter ns_exec = ns_api.GetExecuter();
 
     string job_key;
@@ -329,7 +333,7 @@ int CTestNetScheduleNode::Run(void)
                     output_size = MAX_OUTPUT_SIZE;
 
                 job.output.assign(output_buffer, output_size);
-                job.output[output_size - 1] = '\n';
+                // job.output[output_size - 1] = '\n';
             } else
                 job.output.erase();
 

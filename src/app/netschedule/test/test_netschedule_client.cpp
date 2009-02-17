@@ -34,14 +34,50 @@
 #include "test_netschedule_data.hpp"
 
 #include <connect/services/netschedule_api.hpp>
-
 #include <connect/ncbi_core_cxx.hpp>
+#include <util/random_gen.hpp>
 
 
 USING_NCBI_SCOPE;
 
 
 ///////////////////////////////////////////////////////////////////////
+
+static CRandom s_Random;
+
+/// Service functions
+
+static const int s_NumTokens      = 7777;
+static const int s_AvgTokenLength = 10;
+static const int s_DTokenLength   = 2;
+static char **s_Tokens;
+static char s_TokenLetters[] = "0123456789"
+                               "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                               "abcdefghijklmnopqrstuvwxyz"
+                               "~!@#$%^&*()_+:;<,>.?/";
+
+static void s_SeedTokens()
+{
+    s_Tokens = new char* [s_NumTokens];
+    for (int n = 0; n < s_NumTokens; ++n) {
+        int len = s_Random.GetRand(s_AvgTokenLength - s_DTokenLength,
+                                   s_AvgTokenLength + s_DTokenLength);
+        s_Tokens[n] = new char[len+1];
+        for (int k = 0; k < len; ++k) {
+            s_Tokens[n][k] =
+                s_TokenLetters[s_Random.GetRand(0, sizeof(s_TokenLetters) - 1)];
+        }
+        s_Tokens[n][len] = 0;
+    }
+}
+
+
+static const char *s_GetRandomToken()
+{
+    if (!s_Tokens) s_SeedTokens();
+    int n = s_Random.GetRand(0, s_NumTokens - 1);
+    return s_Tokens[n];
+}
 
 
 /// Test application
@@ -113,6 +149,11 @@ int CTestNetScheduleClient::Run(void)
     CNetScheduleAPI::EJobStatus status;
     CNetScheduleAPI cl(service, "client_test", queue_name);
 
+    STimeout comm_timeout;
+    comm_timeout.sec  = 1200;
+    comm_timeout.usec = 0;
+    cl.GetService().SetCommunicationTimeout(comm_timeout);
+
     CNetScheduleSubmitter submitter = cl.GetSubmitter();
     CNetScheduleAdmin admin = cl.GetAdmin();
 
@@ -158,6 +199,7 @@ int CTestNetScheduleClient::Run(void)
         for (unsigned j = 0; j < batch_size; ++j) {
             CNetScheduleJob job(input);
             job.tags.push_back(CNetScheduleAPI::TJobTag("test", ""));
+            job.affinity = s_GetRandomToken();
             jobs.push_back(job);
         }
         submitter.SubmitJobBatch(jobs);
