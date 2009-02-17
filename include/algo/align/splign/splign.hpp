@@ -214,10 +214,11 @@ public:
 
     typedef list<CRef<objects::CScore_set> > TScoreSets;
 
-    /// Generate statistics based on splign-generated ASN
+    /// Generate statistics based on splign-generated seq-align-set,
+    /// with each seq-align corresponding to an aligned compartment.
     ///
     /// @param sas
-    ///   [IN] Seq-align-set describing the input alignment.
+    ///   [IN] Seq-align-set describing input alignments.
     /// @param output_stats
     ///   [OUT] A pointer to the object to be be filled in with computed stats.
     /// @param cds
@@ -229,9 +230,29 @@ public:
     ///   The number of elements written in output_stats.
     static size_t s_ComputeStats(
         CRef<objects::CSeq_align_set> sas,
-        TScoreSets * output_stats,
-        TOrf cds = TOrf(0, 0),
-        EStatFlags flags = eSF_BasicNonCds);
+        TScoreSets *                  output_stats,
+        TOrf                          cds = TOrf(0, 0),
+        EStatFlags                    flags = eSF_BasicNonCds);
+
+    /// Generate statistics based on splign-generated seq-align corresponding
+    /// to a single aligned compartment.
+    ///
+    /// @param sa
+    ///   [IN] Seq-align describing one aligned compartment.
+    /// @param embed_scoreset
+    ///   [IN] Decorate the input seq-align with the scores.
+    /// @param cds
+    ///   [IN] Coding region start and stop to use when computing cds-related stats.
+    ///   If both are null then no cds-related stats will be computed.
+    /// @param flags
+    ///   [IN] Bitwise OR of the eSF_* flags specifying types of statistics to include.
+    /// @return
+    ///   A reference to a score-set object with the computed statistics.
+    static CRef<objects::CScore_set> s_ComputeStats(
+        CRef<objects::CSeq_align> sa,
+        bool                      embed_scoreset = true,
+        TOrf                      cds = TOrf(0, 0),
+        EStatFlags                flags = eSF_BasicNonCds);
 
 protected:
 
