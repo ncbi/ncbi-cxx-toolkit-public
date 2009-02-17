@@ -56,7 +56,12 @@ BEGIN_NCBI_SCOPE
 /// Define a basic atomic counter.
 ///
 /// Provide basic counter operations for an atomic counter represented
-/// internally by TNCBIAtomicValue. 
+/// internally by TNCBIAtomicValue.
+/// @note
+///   CAtomicCounter has no constructor and is initialized only when
+///   created as static object. In all other cases Set(0) must be called
+///   to initialize the counter. CAtomicCounter_WithAutoInit can be used
+///   instead of CAtomicCounter if the initialization is required.
 /// @note
 ///   TNCBIAtomicValue does not imply any assumptions about the size and
 ///   the signedness of the value. It is at least as big as int datatype
@@ -90,6 +95,26 @@ private:
     // CObject's constructor needs to read m_Value directly when checking
     // for the magic number left by operator new.
     friend class CObject;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CAtomicCounter_WithAutoInit --
+///
+/// Define an atomic counter with guaranteed initialization.
+///
+/// CAtomicCounter does not initialize its value if it's not
+/// a static object. CAtomicCounter_WithAutoInit automatically
+/// calls Set() in its constructor to set the initial value.
+
+class CAtomicCounter_WithAutoInit : public CAtomicCounter
+{
+public:
+    CAtomicCounter_WithAutoInit(TValue initial_value = 0)
+    {
+        Set(initial_value);
+    }
 };
 
 
