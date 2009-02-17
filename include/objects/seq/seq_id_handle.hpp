@@ -109,7 +109,7 @@ private:
 
     NCBI_SEQ_EXPORT void x_RemoveLastLock(void) const;
 
-    mutable CAtomicCounter       m_LockCounter;
+    mutable CAtomicCounter_WithAutoInit m_LockCounter;
     CSeq_id::E_Choice            m_Seq_id_Type;
     CConstRef<CSeq_id>           m_Seq_id;
     mutable CRef<CSeq_id_Mapper> m_Mapper;

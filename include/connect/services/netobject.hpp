@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CNetObject
 {
 public:
-    CNetObject() {m_Refs.Set(0);}
+    CNetObject() { }
 
     void AddRef() {m_Refs.Add(1);}
     void Release() {if (m_Refs.Add(-1) == 0) Delete();}
@@ -66,7 +66,7 @@ protected:
     virtual void Delete();
 
 private:
-    CAtomicCounter m_Refs;
+    CAtomicCounter_WithAutoInit m_Refs;
 };
 
 class CNetObjectRef_Base

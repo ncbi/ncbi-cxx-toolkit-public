@@ -545,7 +545,7 @@ private:
     mutable TTSE_Cache::iterator   m_CachePosition;
 
     // lock counter for garbage collector
-    mutable CAtomicCounter m_LockCounter;
+    mutable CAtomicCounter_WithAutoInit m_LockCounter;
 
     class CLoadMutex : public CObject, public CMutex
     {

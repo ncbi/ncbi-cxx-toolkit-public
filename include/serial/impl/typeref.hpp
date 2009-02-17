@@ -55,7 +55,7 @@ public:
     virtual TTypeInfo GetTypeInfo(void) = 0;
 
 protected:
-    CAtomicCounter m_RefCount;
+    CAtomicCounter_WithAutoInit m_RefCount;
     friend class CTypeRef;
 
 private:

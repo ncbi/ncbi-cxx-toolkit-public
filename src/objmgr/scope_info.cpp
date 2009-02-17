@@ -662,7 +662,6 @@ CTSE_ScopeInfo::CTSE_ScopeInfo(CDataSource_ScopeInfo& ds_info,
       m_LoadIndex(load_index),
       m_UsedByTSE(0)
 {
-    m_TSE_LockCounter.Set(0);
     _ASSERT(lock);
     if ( can_be_unloaded ) {
         _ASSERT(lock->GetBlobId());

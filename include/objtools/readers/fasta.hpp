@@ -231,8 +231,10 @@ public:
     typedef CAtomicCounter::TValue TInt;
     CSeqIdGenerator(TInt counter = 1, const string& prefix = kEmptyStr,
                     const string& suffix = kEmptyStr)
-        : m_Prefix(prefix), m_Suffix(suffix)
-        { m_Counter.Set(counter); }
+        : m_Prefix(prefix),
+          m_Suffix(suffix),
+          m_Counter(counter)
+        { }
 
     CRef<CSeq_id> GenerateID(bool advance);
     /// Equivalent to GenerateID(false)
@@ -248,7 +250,7 @@ public:
 
 private:
     string         m_Prefix, m_Suffix;
-    CAtomicCounter m_Counter;
+    CAtomicCounter_WithAutoInit m_Counter;
 };
 
 

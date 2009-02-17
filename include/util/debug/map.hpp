@@ -59,14 +59,8 @@ protected:
     typedef pair<iterator, bool> iterator_bool;
 
     container_type m_Container;
-    mutable CAtomicCounter m_WCounter;
-    mutable CAtomicCounter m_RCounter;
-
-    void Init()
-        {
-            m_WCounter.Set(0);
-            m_RCounter.Set(0);
-        }
+    mutable CAtomicCounter_WithAutoInit m_WCounter;
+    mutable CAtomicCounter_WithAutoInit m_RCounter;
 
 public:
 
@@ -103,7 +97,6 @@ public:
 
     map_checker()
         {
-            Init();
         }
     ~map_checker()
         {
@@ -111,7 +104,6 @@ public:
         }
     map_checker(const this_type& m)
         {
-            Init();
             *this = m;
         }
     this_type& operator=(const this_type& m)
@@ -205,14 +197,8 @@ protected:
     typedef pair<iterator, bool> iterator_bool;
 
     container_type m_Container;
-    mutable CAtomicCounter m_WCounter;
-    mutable CAtomicCounter m_RCounter;
-
-    void Init()
-        {
-            m_WCounter.Set(0);
-            m_RCounter.Set(0);
-        }
+    mutable CAtomicCounter_WithAutoInit m_WCounter;
+    mutable CAtomicCounter_WithAutoInit m_RCounter;
 
 public:
 
@@ -251,7 +237,6 @@ public:
 
     multimap_checker()
         {
-            Init();
         }
     ~multimap_checker()
         {
@@ -259,7 +244,6 @@ public:
         }
     multimap_checker(const this_type& m)
         {
-            Init();
             *this = m;
         }
     this_type& operator=(const this_type& m)

@@ -434,13 +434,13 @@ private:
     mutable CSemaphore m_TrigNotEmpty;
 
     /// Number of threads waiting for the queue to become non-empty
-    mutable CAtomicCounter m_CntWaitNotEmpty;
+    mutable CAtomicCounter_WithAutoInit m_CntWaitNotEmpty;
 
     /// Semaphore to signal that the queue has become not full
     mutable CSemaphore m_TrigNotFull;
 
     /// Number of threads waiting for the queue to become non-full
-    mutable CAtomicCounter m_CntWaitNotFull;
+    mutable CAtomicCounter_WithAutoInit m_CntWaitNotFull;
 
     /// ID of the thread in which the queue has been locked by a guardian
     mutable CThread::TID m_CurGuardTID;
@@ -1076,9 +1076,6 @@ CSyncQueue<Type, Container>::CSyncQueue(TSize max_size)
         NCBI_THROW(CSyncQueueException, eWrongMaxSize,
                    "Maximum size of the queue must be greater than zero");
     }
-
-    m_CntWaitNotEmpty.Set(0);
-    m_CntWaitNotFull.Set(0);
 }
 
 

@@ -181,7 +181,6 @@ CGridGlobals::CGridGlobals()
       m_StartTime(CTime(CTime::eCurrent)),
       m_Worker(NULL)
 {
-    m_JobsStarted.Set(0);
 }
 
 CGridGlobals::~CGridGlobals()

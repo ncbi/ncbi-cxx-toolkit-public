@@ -45,7 +45,6 @@ BEGIN_NCBI_SCOPE
 
 CHookDataBase::CHookDataBase(void)
 {
-    m_HookCount.Set(0);
 }
 
 

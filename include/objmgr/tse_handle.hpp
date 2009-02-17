@@ -447,7 +447,7 @@ protected:
 private: // data members
 
     CTSE_ScopeInfo*         m_TSE_ScopeInfo; // null if object is removed.
-    CAtomicCounter          m_LockCounter; // counts all referencing handles.
+    CAtomicCounter_WithAutoInit m_LockCounter; // counts all referencing handles.
     // The following members are not null when handle is locked (counter > 0)
     // and not removed.
     CTSE_Handle             m_TSE_Handle; // locks TSE from releasing.

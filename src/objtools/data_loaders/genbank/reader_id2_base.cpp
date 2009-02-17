@@ -161,9 +161,9 @@ struct SId2LoadedSet
 
 
 CId2ReaderBase::CId2ReaderBase(void)
-    : m_AvoidRequest(0)
+    : m_RequestSerialNumber(1),
+      m_AvoidRequest(0)
 {
-    m_RequestSerialNumber.Set(1);
 }
 
 

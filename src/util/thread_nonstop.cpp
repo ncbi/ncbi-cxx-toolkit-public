@@ -42,7 +42,6 @@ CThreadNonStop::CThreadNonStop(unsigned run_delay,
 : m_RunInterval(run_delay),
   m_StopSignal(0, 10000000)
 {
-    m_StopFlag.Set(0);
 }
 
 bool CThreadNonStop::IsStopRequested() const

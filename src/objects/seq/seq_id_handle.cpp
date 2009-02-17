@@ -59,7 +59,6 @@ CSeq_id_Info::CSeq_id_Info(CSeq_id::E_Choice type,
       m_Mapper(mapper)
 {
     _ASSERT(mapper);
-    m_LockCounter.Set(0);
 }
 
 
@@ -70,7 +69,6 @@ CSeq_id_Info::CSeq_id_Info(const CConstRef<CSeq_id>& seq_id,
       m_Mapper(mapper)
 {
     _ASSERT(mapper);
-    m_LockCounter.Set(0);
 }
 
 

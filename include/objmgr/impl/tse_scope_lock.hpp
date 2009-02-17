@@ -47,7 +47,7 @@ class CTSE_ScopeUserLocker;
 class CTSE_ScopeInfo_Base : public CObject
 {
 protected:
-    mutable CAtomicCounter m_TSE_LockCounter;
+    mutable CAtomicCounter_WithAutoInit m_TSE_LockCounter;
 
     void x_LockTSE(void);
     void x_InternalUnlockTSE(void);

@@ -178,8 +178,8 @@ TTypeInfo CTypeRef::sx_GetResolve(const CTypeRef& typeRef)
 }
 
 CTypeInfoSource::CTypeInfoSource(void)
+    : m_RefCount(1)
 {
-    m_RefCount.Set(1);
 }
 
 CTypeInfoSource::~CTypeInfoSource(void)

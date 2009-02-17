@@ -51,11 +51,6 @@ class set : std::set<Key, Compare>
                  typename parent_type::iterator> iterator_pair;
     typedef pair<typename parent_type::iterator, bool> iterator_bool;
 
-    void Init()
-        {
-            m_WCounter.Set(0);
-            m_RCounter.Set(0);
-        }
     void RLock() const
         {
             if ( m_RCounter.Add(1) <= 0 || m_WCounter.Get() != 0 )
@@ -86,7 +81,6 @@ public:
 
     checked_set()
         {
-            Init();
         }
     ~checked_set()
         {
@@ -94,7 +88,6 @@ public:
         }
     checked_set(const this_type& m)
         {
-            Init();
             *this = m;
         }
     this_type& operator=(const this_type& m)
@@ -160,8 +153,8 @@ public:
     W_WRAP_VOID(clear(), clear());
 
 private:
-    mutable CAtomicCounter m_WCounter;
-    mutable CAtomicCounter m_RCounter;
+    mutable CAtomicCounter_WithAutoInit m_WCounter;
+    mutable CAtomicCounter_WithAutoInit m_RCounter;
 };
 
 
@@ -176,11 +169,6 @@ class multiset : std::multiset<Key, Compare>
                  typename parent_type::iterator> iterator_pair;
     typedef pair<typename parent_type::iterator, bool> iterator_bool;
 
-    void Init()
-        {
-            m_WCounter.Set(0);
-            m_RCounter.Set(0);
-        }
     void RLock() const
         {
             if ( m_RCounter.Add(1) <= 0 || m_WCounter.Get() != 0 )
@@ -211,7 +199,6 @@ public:
 
     checked_multiset()
         {
-            Init();
         }
     ~checked_multiset()
         {
@@ -219,7 +206,6 @@ public:
         }
     checked_multiset(const this_type& m)
         {
-            Init();
             *this = m;
         }
     this_type& operator=(const this_type& m)
@@ -318,8 +304,8 @@ public:
     W_WRAP_VOID(clear(), clear());
 
 private:
-    mutable CAtomicCounter m_WCounter;
-    mutable CAtomicCounter m_RCounter;
+    mutable CAtomicCounter_WithAutoInit m_WCounter;
+    mutable CAtomicCounter_WithAutoInit m_RCounter;
 };
 
 #undef R_WRAP

@@ -181,7 +181,7 @@ private:
     void x_RequestToCancel(void);
 
     /// Flag indicating that the task is already added to some pool
-    CAtomicCounter     m_IsBusy;
+    CAtomicCounter_WithAutoInit m_IsBusy;
     /// Pool owning this task
     CThreadPool_Impl*  m_Pool;
     /// Priority of the task

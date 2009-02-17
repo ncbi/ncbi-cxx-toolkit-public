@@ -227,7 +227,7 @@ protected:
     void x_SetContextData(CID2_Request& request);
 
 private:
-    CAtomicCounter m_RequestSerialNumber;
+    CAtomicCounter_WithAutoInit m_RequestSerialNumber;
 
     enum {
         fAvoidRequest_nested_get_blob_info = 1,

@@ -79,7 +79,7 @@ protected:
 private:
     unsigned int            m_RunInterval;
     mutable CSemaphore      m_StopSignal; 
-    mutable CAtomicCounter  m_StopFlag;
+    mutable CAtomicCounter_WithAutoInit m_StopFlag;
 };
 
 

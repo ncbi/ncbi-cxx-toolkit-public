@@ -351,7 +351,6 @@ A7. Reattaching in new place.
 CScopeInfo_Base::CScopeInfo_Base(void)
     : m_TSE_ScopeInfo(0)
 {
-    m_LockCounter.Set(0);
     _ASSERT(x_Check(fForceZero | fForbidInfo));
 }
 
@@ -362,7 +361,6 @@ CScopeInfo_Base::CScopeInfo_Base(const CTSE_ScopeUserLock& tse,
       m_TSE_Handle(tse),
       m_ObjectInfo(&reinterpret_cast<const CObject&>(info))
 {
-    m_LockCounter.Set(0);
     _ASSERT(x_Check(fForceZero | fForceInfo));
 }
 
@@ -373,7 +371,6 @@ CScopeInfo_Base::CScopeInfo_Base(const CTSE_Handle& tse,
       m_TSE_Handle(tse),
       m_ObjectInfo(&reinterpret_cast<const CObject&>(info))
 {
-    m_LockCounter.Set(0);
     _ASSERT(x_Check(fForceZero | fForceInfo));
 }
 

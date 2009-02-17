@@ -136,7 +136,7 @@ private:
     CGridGlobals();
     static auto_ptr<CGridGlobals> sm_Instance;
 
-    CAtomicCounter m_JobsStarted;
+    CAtomicCounter_WithAutoInit m_JobsStarted;
     bool m_ReuseJobObject;
 
     volatile CNetScheduleAdmin::EShutdownLevel m_ShutdownLevel;

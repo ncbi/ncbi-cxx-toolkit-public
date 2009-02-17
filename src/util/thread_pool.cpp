@@ -928,7 +928,6 @@ CThreadPool_Task::x_Init(unsigned int priority)
     m_Priority = priority;
     m_Status = eIdle;
     m_CancelRequested = false;
-    m_IsBusy.Set(0);
 }
 
 CThreadPool_Task::~CThreadPool_Task(void)

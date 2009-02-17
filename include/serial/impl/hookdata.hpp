@@ -100,7 +100,7 @@ private:
 
     CRef<THook>    m_GlobalHook;
     CPathHook      m_PathHooks;
-    CAtomicCounter m_HookCount; // including global hook
+    CAtomicCounter_WithAutoInit m_HookCount; // including global hook
 };
 
 
