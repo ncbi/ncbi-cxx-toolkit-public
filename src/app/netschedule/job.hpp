@@ -47,6 +47,7 @@ typedef list<TNSTag> TNSTagList;
 
 // Forward for CJob/CJobRun friendship
 struct SLockedQueue;
+class CAffinityDictGuard;
 
 // Instantiation of a Job on a Worker Node
 class CJob;
@@ -209,10 +210,9 @@ public:
 
     // preparatory
     // Lookup affinity token and fill out affinity id
-    void CheckAffinityToken(SLockedQueue*     queue,
-        CBDB_Transaction* trans);
+    void CheckAffinityToken(CAffinityDictGuard& aff_dict_guard);
     // Using affinity id fill out affinity token
-    void FetchAffinityToken(SLockedQueue*     queue);
+    void FetchAffinityToken(SLockedQueue* queue);
 
     // Mark job for deletion
     void Delete();

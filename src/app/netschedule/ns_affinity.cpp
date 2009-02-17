@@ -120,12 +120,14 @@ void CAffinityDict::Attach(SAffinityDictDB* aff_dict_db,
     m_CurAffDB         = new CBDB_FileCursor(*m_AffDictDB);
     m_CurTokenIdx      = new CBDB_FileCursor(*m_AffDict_TokenIdx);
     {{
+        CBDB_CursorGuard cg(*m_CurAffDB);
         m_CurAffDB->SetCondition(CBDB_FileCursor::eLast);
         if (m_CurAffDB->Fetch() == eBDB_Ok) {
             unsigned aff_id = m_AffDictDB->aff_id;
             m_IdCounter.Set(aff_id);
         }
     }}
+    m_CurTokenIdx->Close();
 }
 
 
@@ -138,16 +140,14 @@ void CAffinityDict::Detach()
 }
 
 
-unsigned CAffinityDict::CheckToken(const char*       aff_token,
-                                   CBDB_Transaction& trans)
+unsigned CAffinityDict::x_CheckToken(const string&     aff_token,
+                                     CBDB_Transaction& trans)
 {
     unsigned aff_id;
 
     unsigned dead_locks = 0; // dead lock counter
     while (1) {
         try {
-            CFastMutexGuard guard(m_DbLock);
-
             // check if affinity token string already registered
             {{
                 CBDB_CursorGuard cg1(*m_CurTokenIdx);
@@ -270,14 +270,12 @@ string CAffinityDict::GetAffToken(unsigned aff_id)
 }
 
 
-void CAffinityDict::RemoveToken(unsigned          aff_id,
-                                CBDB_Transaction& trans)
+void CAffinityDict::x_RemoveToken(unsigned          aff_id,
+                                  CBDB_Transaction& trans)
 {
     unsigned dead_locks = 0; // dead lock counter
     while (1) {
         try {
-            CFastMutexGuard guard(m_DbLock);
-
             {{
             CBDB_CursorGuard cg1(*m_CurAffDB);
             m_CurAffDB->ReOpen(&trans);

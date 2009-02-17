@@ -1709,9 +1709,11 @@ unsigned CQueue::Submit(CJob& job)
     }
 
     CNS_Transaction trans(q);
-    job.CheckAffinityToken(q, &trans);
-    unsigned affinity_id = job.GetAffinityId();
+    unsigned affinity_id;
     {{
+        CAffinityDictGuard aff_dict_guard(q->GetAffinityDict(), trans);
+        job.CheckAffinityToken(aff_dict_guard);
+        affinity_id = job.GetAffinityId();
         CQueueGuard guard(q, &trans);
 
         job.Flush(q);
@@ -1776,6 +1778,7 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
     // process affinity ids
     {{
         CNS_Transaction trans(q);
+        CAffinityDictGuard aff_dict_guard(q->GetAffinityDict(), trans);
         for (unsigned i = 0; i < batch.size(); ++i) {
             CJob& job = batch[i];
             if (job.GetAffinityId() == (unsigned)kMax_I4) { // take prev. token
@@ -1795,7 +1798,7 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
                 job.SetAffinityId(prev_aff_id);
             } else {
                 if (job.HasAffinityToken()) {
-                    job.CheckAffinityToken(q, &trans);
+                    job.CheckAffinityToken(aff_dict_guard);
                     batch_has_aff = true;
                     batch_aff_id = (i == 0 )? job.GetAffinityId() : 0;
                 } else {

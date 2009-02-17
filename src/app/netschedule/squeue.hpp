@@ -344,6 +344,7 @@ public:
     void OptimizeMem();
 
     // Affinity methods
+    CAffinityDict& GetAffinityDict() { return m_AffinityDict; }
     /// Read queue affinity index, retrieve all jobs, with
     /// given set of affinity ids, append it to 'jobs'
     ///

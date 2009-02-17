@@ -55,6 +55,7 @@ BEGIN_NCBI_SCOPE
 
 struct SAffinityDictDB;
 struct SAffinityDictTokenIdx;
+class CAffinityDictGuard;
 
 /// Affinity dictionary database class
 ///
@@ -74,11 +75,6 @@ public:
                 SAffinityDictTokenIdx* aff_dict_token_idx);
     void Detach();
 
-    /// Add a new token or return token's id if this affinity
-    /// index is already in the database
-    unsigned CheckToken(const char*       aff_token,
-                        CBDB_Transaction& trans);
-
     /// Get affinity token id
     /// Returns 0 if token does not exist
     unsigned GetTokenId(const string& aff_token);
@@ -88,20 +84,52 @@ public:
     /// Get affinity string by id
     string GetAffToken(unsigned aff_id);
 
-    /// Remove affinity token
-    void RemoveToken(unsigned          aff_id,
-                     CBDB_Transaction& trans);
-
 private:
     CAffinityDict(const CAffinityDict& );
     CAffinityDict& operator=(const CAffinityDict& );
 private:
+    friend class CAffinityDictGuard;
+
+    /// Add a new token or return token's id if this affinity
+    /// index is already in the database
+    unsigned x_CheckToken(const string&     aff_token,
+                          CBDB_Transaction& trans);
+    /// Remove affinity token
+    void x_RemoveToken(unsigned          aff_id,
+                       CBDB_Transaction& trans);
+
     CAtomicCounter           m_IdCounter;
     CFastMutex               m_DbLock;
     SAffinityDictDB*         m_AffDictDB;
     CBDB_FileCursor*         m_CurAffDB;
     SAffinityDictTokenIdx*   m_AffDict_TokenIdx;
     CBDB_FileCursor*         m_CurTokenIdx;
+};
+
+
+class CAffinityDictGuard
+{
+public:
+    CAffinityDictGuard(CAffinityDict& aff_dict, CBDB_Transaction& trans)
+      : m_AffDict(aff_dict), m_DbGuard(aff_dict.m_DbLock), m_Trans(trans)
+    {
+    }
+
+    /// Add a new token or return token's id if this affinity
+    /// index is already in the database
+    unsigned CheckToken(const string& aff_token)
+    {
+        return m_AffDict.x_CheckToken(aff_token, m_Trans);
+    }
+    /// Remove affinity token
+    void RemoveToken(unsigned aff_id)
+    {
+        m_AffDict.x_RemoveToken(aff_id, m_Trans);
+    }
+private:
+    CAffinityDict&    m_AffDict;
+    CFastMutexGuard   m_DbGuard;
+    CBDB_Transaction& m_Trans;
 };
 
 

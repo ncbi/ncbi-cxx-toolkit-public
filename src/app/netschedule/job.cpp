@@ -459,12 +459,11 @@ CJobRun* CJob::GetLastRun()
 }
 
 
-void CJob::CheckAffinityToken(SLockedQueue*     queue,
-                              CBDB_Transaction* trans)
+void CJob::CheckAffinityToken(CAffinityDictGuard& aff_dict_guard)
 {
     if (m_AffinityToken.size()) {
         m_AffinityId =
-            queue->m_AffinityDict.CheckToken(m_AffinityToken.c_str(), *trans);
+            aff_dict_guard.CheckToken(m_AffinityToken);
     }
 }
 
