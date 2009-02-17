@@ -992,6 +992,15 @@ public:
                              string & output,
                              TSeqRange range = TSeqRange()) const;
     
+    /// List of sequence offset ranges.
+    typedef vector< pair<TSeqPos, TSeqPos> > TSequenceRanges;
+
+    /// Invert the sequence ranges so that they represent the offset ranges to
+    /// SEARCH (as opposed to those to exclude from the search).
+    /// @param ranges sequence ranges to invert [in|out]
+    /// @param seq_length sequence length [in]
+    static void InvertSequenceRanges(TSequenceRanges& ranges, int seq_length);
+    
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// List columns titles found in this database.
@@ -1104,15 +1113,6 @@ public:
                                  objects::EBlast_filter_program & program,
                                  string            & program_name,
                                  string            & algo_opts);
-    
-    /// List of sequence offset ranges.
-    typedef vector< pair<TSeqPos, TSeqPos> > TSequenceRanges;
-
-    /// Invert the sequence ranges so that they represent the offset ranges to
-    /// SEARCH (as opposed to those to exclude from the search).
-    /// @param ranges sequence ranges to invert [in|out]
-    /// @param seq_length sequence length [in]
-    static void InvertSequenceRanges(TSequenceRanges& ranges, int seq_length);
     
     /// Get masked ranges of a sequence.
     ///

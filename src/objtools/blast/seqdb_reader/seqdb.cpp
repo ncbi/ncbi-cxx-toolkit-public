@@ -1084,6 +1084,8 @@ void CSeqDB::GetMaskData(int                 oid,
     m_Impl->GetMaskData(oid, algo_ids, invert, ranges);
 }
 
+#endif
+
 void 
 CSeqDB::InvertSequenceRanges(CSeqDB::TSequenceRanges& ranges, int seq_length)
 {
@@ -1142,8 +1144,6 @@ CSeqDB::InvertSequenceRanges(CSeqDB::TSequenceRanges& ranges, int seq_length)
         }
     }
 }
-
-#endif
 
 void CSeqDB::GarbageCollect(void)
 {
