@@ -34,11 +34,15 @@ REM (open a solution and build or rebuild CONFIGURE project)
 REM
 REM ===========================================================================
 
+REM ===  Redefine DEFPTB_VERSION in stable components release, eg 1.7.3
+set DEFPTB_VERSION=.
+set DEFPTB_LOCATION=\\snowman\win-coremake\App\Ncbi\cppcore\ptb
+
 if "%PREBUILT_PTB_EXE%"=="" (
   if "%PTB_PLATFORM%"=="x64" (
-    set PREBUILT_PTB_EXE=\\snowman\win-coremake\App\Ncbi\cppcore\ptb\msvc8.64\project_tree_builder.exe
+    set PREBUILT_PTB_EXE=%DEFPTB_LOCATION%\msvc8.64\%DEFPTB_VERSION%\project_tree_builder.exe
   ) else (
-    set PREBUILT_PTB_EXE=\\snowman\win-coremake\App\Ncbi\cppcore\ptb\msvc8\project_tree_builder.exe
+    set PREBUILT_PTB_EXE=%DEFPTB_LOCATION%\msvc8\%DEFPTB_VERSION%\project_tree_builder.exe
   )
 ) else (
   if not exist "%PREBUILT_PTB_EXE%" (
