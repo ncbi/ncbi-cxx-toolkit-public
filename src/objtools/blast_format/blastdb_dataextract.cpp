@@ -254,6 +254,10 @@ string
 CMaskingDataExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
     static const string kNoMasksFound("none");
+#if ((defined(NCBI_COMPILER_WORKSHOP) && (NCBI_COMPILER_VERSION <= 550))  ||  \
+     defined(NCBI_COMPILER_MIPSPRO))
+    return kNoMasksFound;
+#else
     static const bool kInverted = false;
     const int kOid = COidExtractor().ExtractOID(id, blastdb);
     if (m_AlgoIds.empty()) {
@@ -269,6 +273,7 @@ CMaskingDataExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
         out << range->first << "-" << range->second << ";";
     }
     return CNcbiOstrstreamToString(out);
+#endif
 }
 
 CFastaExtractor::CFastaExtractor(TSeqPos line_width, 

@@ -91,9 +91,12 @@ private:
     void x_ConvertFilteringAlgorithmSpec(CSeqDB& seqdb)
     {
         if (m_FilteringAlgoSpec.empty()) {
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION > 550))  &&  \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
             vector<int> available_filt_algo;
             seqdb.GetAvailableMaskAlgorithms(available_filt_algo);
             m_FiltAlgorithms.swap(available_filt_algo);
+#endif
         } else {
             vector<string> tokens;
             NStr::Tokenize(m_FilteringAlgoSpec, kDelimStr, tokens);
@@ -111,6 +114,8 @@ private:
     /// @post no invalid algorithm IDs are present in m_FiltAlgorithms
     void x_ValidateFilteringAlgorithms(CSeqDB& seqdb) 
     {
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION > 550))  &&  \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
         vector<int> invalid_algo_ids = 
             seqdb.ValidateMaskAlgorithms(m_FiltAlgorithms);
         if ( !invalid_algo_ids.empty() ) {
@@ -128,6 +133,7 @@ private:
                                                m_FiltAlgorithms.end(), *itr);
             m_FiltAlgorithms.erase(pos, m_FiltAlgorithms.end());
         }
+#endif
     }
 };
 
