@@ -642,70 +642,49 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
 #undef QCOMP_CREATE_GENOMIC_IDX
             }
         }
-        else {
+        else {  // cDNA mode
+
+            if(bases >= m_MinQueryLength) {
             
-            // head
-            Uint8 fivebytes (0);
-            for(const char * p (pcb), 
+                // head
+                Uint8 fivebytes (0);
+                for(const char * p (pcb), 
                     *pche ( (reinterpret_cast<const char*>(pui8)) + 5 );
-                p < pche; ++p)
-            {
-                const Uint8 c8 (*p & kUI8_LoByte);
-                const Uint8 ui8curbyte (c8);
-                if(pcb + 5 > p) {
-                    fivebytes = (fivebytes >> 8) | (ui8curbyte << 32);
-                }
-                else {
-
-                    for(Uint4 k(0); k < 4; ++k) {
-                        
-                        const Uint4 mer (fivebytes & kUI8_LoWord);
-                        if(m_Mers.get_at(strand? (mer >> 4): (mer & kUI4_Lo28))) {
-                            const Uint8 ui8   (mer);
-                            const Uint4 coord (current_offset + 4*(p - pcb - 5) + k);
-                            MersAndCoords[mcidx++] = (ui8 << 32) | coord;
-                        }
-
-                        fivebytes &= kUI8_LoFive;
-                        fivebytes <<= 2;
-                        const Uint8 ui8m ((fivebytes & kUI8_SeqDb) >> 16);
-                        fivebytes &= ~kUI8_SeqDb;
-                        fivebytes |= ui8m;
-                    }                   
-                    fivebytes |= ui8curbyte << 32;
-                }
-            }
-            
-            // body
-            Uint8 ui8 (0);
-            Uint4 gccur (current_offset + gcbase);
-            for(; gccur + 32 < current_offset + bases; ++pui8)
-            {
-                ui8 = *pui8;
-
-                for(Uint4 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
-
-                    const Uint8 loword = ui8 & kUI8_LoWord;
-                    if(m_Mers.get_at(strand? (loword >> 4): (loword & kUI4_Lo28)))
-                    {
-                        MersAndCoords[mcidx++] = (loword << 32) | gccur;
+                    p < pche; ++p)
+                {
+                    const Uint8 c8 (*p & kUI8_LoByte);
+                    const Uint8 ui8curbyte (c8);
+                    if(pcb + 5 > p) {
+                        fivebytes = (fivebytes >> 8) | (ui8curbyte << 32);
                     }
-                    
-                    const Uint8 ui8hi2 ((ui8 >> 62) << 48);
-                    ui8 <<= 2;
-                    const Uint8 ui8m ((ui8 & kUI8_SeqDb) >> 16);
-                    ui8 &= ~kUI8_SeqDb;
-                    ui8 |= (ui8m | ui8hi2);
+                    else {
+
+                        for(Uint4 k(0); k < 4; ++k) {
+                        
+                            const Uint4 mer (fivebytes & kUI8_LoWord);
+                            if(m_Mers.get_at(strand? (mer >> 4): (mer & kUI4_Lo28))) {
+                                const Uint8 ui8   (mer);
+                                const Uint4 coord (current_offset + 
+                                                   4*(p - pcb - 5) + k);
+                                MersAndCoords[mcidx++] = (ui8 << 32) | coord;
+                            }
+
+                            fivebytes &= kUI8_LoFive;
+                            fivebytes <<= 2;
+                            const Uint8 ui8m ((fivebytes & kUI8_SeqDb) >> 16);
+                            fivebytes &= ~kUI8_SeqDb;
+                            fivebytes |= ui8m;
+                        }                   
+                        fivebytes |= ui8curbyte << 32;
+                    }
                 }
-
-                if(gccur + 32 < current_offset + bases) {
-
-                    // pre-read next 16 residues
-                    const Uint8 n (reinterpret_cast<Uint8>(pui8 + 1));
-                    const Uint4 * pui4 (reinterpret_cast<const Uint4*>(n));
-                    Uint4 ui4 (*pui4);
-                    Uint8 ui8_4 (ui4);
-                    ui8 |= (ui8_4 << 32);
+            
+                // body
+                Uint8 ui8 (0);
+                Uint4 gccur (current_offset + gcbase);
+                for(; gccur + 32 < current_offset + bases; ++pui8)
+                {
+                    ui8 = *pui8;
 
                     for(Uint4 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
 
@@ -715,54 +694,82 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
                         {
                             MersAndCoords[mcidx++] = (loword << 32) | gccur;
                         }
-                        
+                    
                         const Uint8 ui8hi2 ((ui8 >> 62) << 48);
                         ui8 <<= 2;
                         const Uint8 ui8m ((ui8 & kUI8_SeqDb) >> 16);
                         ui8 &= ~kUI8_SeqDb;
                         ui8 |= (ui8m | ui8hi2);
                     }
+
+                    if(gccur + 32 < current_offset + bases) {
+
+                        // pre-read next 16 residues
+                        const Uint8 n (reinterpret_cast<Uint8>(pui8 + 1));
+                        const Uint4 * pui4 (reinterpret_cast<const Uint4*>(n));
+                        Uint4 ui4 (*pui4);
+                        Uint8 ui8_4 (ui4);
+                        ui8 |= (ui8_4 << 32);
+
+                        for(Uint4 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
+
+                            const Uint8 loword = ui8 & kUI8_LoWord;
+                            if(m_Mers.get_at(strand? (loword >> 4):
+                                             (loword & kUI4_Lo28)))
+                            {
+                                MersAndCoords[mcidx++] = (loword << 32) | gccur;
+                            }
+                        
+                            const Uint8 ui8hi2 ((ui8 >> 62) << 48);
+                            ui8 <<= 2;
+                            const Uint8 ui8m ((ui8 & kUI8_SeqDb) >> 16);
+                            ui8 &= ~kUI8_SeqDb;
+                            ui8 |= (ui8m | ui8hi2);
+                        }
+                    }
                 }
-            }
+                
+                // tail
+                if(gccur + 16 <= current_offset + bases) {
 
-            // tail
-            if(gccur + 16 <= current_offset + bases) {
+                    fivebytes = (gccur == current_offset + gcbase)? fivebytes:
+                        (ui8 & kUI8_LoWord);
+                    const char * p (reinterpret_cast<const char*>(pui8_start) + 4 
+                                    + (gccur - current_offset - gcbase) / 4);
+                    size_t k (0);
+                    do {
+                        const Uint8 loword = fivebytes & kUI8_LoWord;
 
-                fivebytes = (gccur == current_offset + gcbase)? fivebytes:
-                    (ui8 & kUI8_LoWord);
-                const char * p (reinterpret_cast<const char*>(pui8_start) + 4 
-                                + (gccur - current_offset - gcbase) / 4);
-                size_t k (0);
-                do {
-                    const Uint8 loword = fivebytes & kUI8_LoWord;
-
-                    if(m_Mers.get_at(strand? (loword >> 4):
-                                       (loword & kUI4_Lo28)))
-                    {
-                        MersAndCoords[mcidx++] = (loword << 32) | gccur;
-                    }
-
-                    if(k % 4 == 0) {
-                        if(p < pce) {
-                            const Uint8 ui8 (*p++ & kUI8_LoByte);
-                            fivebytes |= (ui8 << 32);
+                        if(m_Mers.get_at(strand? (loword >> 4):
+                                         (loword & kUI4_Lo28)))
+                        {
+                            MersAndCoords[mcidx++] = (loword << 32) | gccur;
                         }
-                        else {
-                            break;
+
+                        if(k % 4 == 0) {
+                            if(p < pce) {
+                                const Uint8 ui8 (*p++ & kUI8_LoByte);
+                                fivebytes |= (ui8 << 32);
+                            }
+                            else {
+                                break;
+                            }
                         }
-                    }
+                        
+                        fivebytes &= kUI8_LoFive;
+                        fivebytes <<= 2;
+                        const Uint8 ui8m ((fivebytes & kUI8_SeqDb) >> 16);
+                        fivebytes &= ~kUI8_SeqDb;
+                        fivebytes |= ui8m;
 
-                    fivebytes &= kUI8_LoFive;
-                    fivebytes <<= 2;
-                    const Uint8 ui8m ((fivebytes & kUI8_SeqDb) >> 16);
-                    fivebytes &= ~kUI8_SeqDb;
-                    fivebytes |= ui8m;
+                        ++k;
+                        ++gccur;
+                    } while (true);
+                }
 
-                    ++k;
-                    ++gccur;
-                } while (true);
-            }
-        } // genomic or query
+            } // min cDNA length check
+
+        } // genomic or cDNA
 
         blastdb->RetSequence(&pcb);
 
@@ -1675,6 +1682,8 @@ void CElementaryMatching::x_InitBasic(void)
     m_MinSingletonIdty = m_MinCompartmentIdty = .75;
     m_HitsOnly = false;
     m_MaxVolSize = 512 * 1024 * 1024;
+
+    m_MinQueryLength = 50;
 }
 
 

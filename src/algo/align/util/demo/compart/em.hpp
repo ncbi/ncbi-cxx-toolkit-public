@@ -70,6 +70,8 @@ public:
     void   SetHitsOnly(bool ho) { m_HitsOnly = ho; }
 
     void   SetMaxVolSize(size_t max_vol_size) { m_MaxVolSize = max_vol_size; }
+
+    void   SetMinQueryLength(size_t min_qlen) { m_MinQueryLength = min_qlen; }
     
     void Run(void);
     
@@ -242,6 +244,7 @@ private:
     bool                      m_CurGenomicStrand;
 
     size_t                    m_MaxVolSize;
+    size_t                    m_MinQueryLength;
 
     string                    m_qdb, m_sdb;
 

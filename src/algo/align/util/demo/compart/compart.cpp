@@ -83,6 +83,10 @@ void CCompartApp::Init()
     argdescr->AddFlag("noxf", "Suppress overlap x-filtering: print all "
                               "compartment hits intact");
     
+    argdescr->AddDefaultKey("min_query_len", "min_query_len", 
+                            "Minimum length for individual cDNA sequences.",
+                            CArgDescriptions::eInteger, "50");
+
     argdescr->AddDefaultKey("N", "N", 
                             "Max number of compartments per query (0 = All).",
                             CArgDescriptions::eInteger, "0");
@@ -179,6 +183,7 @@ int CCompartApp::Run()
     m_min_idty                 = args["min_idty"].AsDouble();
     m_min_singleton_idty       = args["min_singleton_idty"].AsDouble();
     m_min_singleton_idty_bps   = args["min_singleton_idty_bps"].AsInteger();
+    m_min_query_len            = args["min_query_len"].AsInteger();
 
     int rv (0);
     if(!is_qdb) {
@@ -199,6 +204,8 @@ int CCompartApp::Run()
         CRef<CElementaryMatching> matcher (
                      new CElementaryMatching(args["qdb"].AsString(),
                                              args["sdb"].AsString()));
+
+        matcher->SetMinQueryLength(m_min_query_len);
 
         matcher->SetPenalty(args["penalty"].AsDouble());
         matcher->SetMinIdty(args["min_idty"].AsDouble());
@@ -316,6 +323,10 @@ int CCompartApp::x_ProcessPair(const string& query0, THitRefs& hitrefs)
         cerr << "Cannot retrieve sequence lengths for: " 
              << query0 << endl;
         return 1;
+    }
+
+    if(qlen < m_min_query_len) {
+        return 0;
     }
 
     typedef CCompartmentAccessor<THit> TAccessor;
