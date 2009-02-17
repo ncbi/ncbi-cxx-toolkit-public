@@ -6,11 +6,13 @@
 # Build serialization test/demo application "asn2asn"
 #################################
 
+REQUIRES = objects dbapi FreeTDS
+
 APP = asn2asn
 SRC = asn2asn
-LIB = seqset $(SEQ_LIBS) pub medline biblio general xser xutil xncbi
-
-REQUIRES = objects
+LIB = ncbi_xdbapi_ftds $(FTDS64_CTLIB_LIB) dbapi_driver$(STATIC) xcompress \
+    seqset $(SEQ_LIBS) pub medline biblio general xser xutil xncbi
+LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = asn2asn.sh
 CHECK_CMD = asn2asn.sh /am/ncbiapdata/test_data/objects
