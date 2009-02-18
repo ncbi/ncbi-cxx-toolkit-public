@@ -46,6 +46,8 @@
 #include <corelib/test_boost.hpp>
 #include <boost/test/parameterized_test.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
