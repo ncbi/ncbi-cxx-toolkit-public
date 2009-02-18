@@ -1519,15 +1519,11 @@ bool CCleanup_imp::x_RemoveEmptyPubs (CPubdesc& pubdesc)
 {
     bool changes_made = false;
     
-    CPub_equiv::Tdata& data = pubdesc.SetPub().Set();
-    CPub_equiv::Tdata::iterator pub_it = data.begin();
-    while(pub_it != data.end()) {
+    EDIT_EACH_PUB_ON_PUBDESC (pub_it, pubdesc) {
         if (s_IsEmpty (**pub_it)) {
-            pub_it = data.erase(pub_it);
+            ERASE_PUB_ON_PUBDESC (pub_it, pubdesc);
             ChangeMade(CCleanupChange::eChangePublication);
             changes_made = true;
-        } else {
-            ++pub_it;
         }
     }
            
