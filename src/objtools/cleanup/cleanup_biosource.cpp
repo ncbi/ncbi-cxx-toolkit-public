@@ -711,7 +711,33 @@ bool Match (
     return bMatch;
 }
 
+
 bool Match (const COrgName& org1, const COrgName& org2);
+
+bool s_OrgNameMatch (const CRef<COrgName>& org1, const CRef<COrgName>& org2)
+{
+    return Match (*org1, *org2);
+}
+
+
+template <class Iterator, class Predicate>
+bool lists_match(Iterator iter1, Iterator iter1_stop, Iterator iter2, Iterator iter2_stop, Predicate pred)
+{
+    while (iter1 != iter1_stop && iter2 != iter2_stop) {
+        if (!pred(*iter1, *iter2)) {
+            return false;
+        }
+        ++iter1;
+        ++iter2;
+    }
+    if (iter1 != iter1_stop || iter2 != iter2_stop) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
 bool Match (const COrgName::TName& n1, const COrgName::TName&n2);
 
 bool Match (
@@ -720,21 +746,7 @@ bool Match (
 )
 
 {
-    bool match = true;
-
-    CMultiOrgName::Tdata::const_iterator it1 = n1.Get().begin();
-    CMultiOrgName::Tdata::const_iterator it2 = n2.Get().begin();
-    
-    while (it1 != n1.Get().end() && it2 != n2.Get().end() && match) {
-        match = Match (**it1, **it2);
-        ++it1;
-        ++it2;
-    }
-    if (it1 != n1.Get().end() || it2 != n2.Get().end() && match) {
-        match = false;
-    }
-    
-    return match;
+    return lists_match (n1.Get().begin(), n1.Get().end(), n2.Get().begin(), n2.Get().end(), s_OrgNameMatch);
 }
 
 bool Match (const COrgName::TMod& mod_list1, const COrgName::TMod& mod_list2);
@@ -1052,9 +1064,8 @@ bool CCleanup_imp::x_Merge (
     bool changed = false;
     
     // syn
-    if ((!org.CanGetSyn() || org.GetSyn().empty())
-        && add_org.CanGetSyn() && !add_org.GetSyn().empty()) {
-        ITERATE (COrg_ref::TSyn, it, add_org.GetSyn()) {
+    if ((!org.CanGetSyn() || org.GetSyn().empty())) {
+        FOR_EACH_SYN_ON_ORGREF (it, add_org) {
             org.SetSyn().push_back(*it);
             ChangeMade (CCleanupChange::eChangeBioSourceOther);
             changed = true;
@@ -1062,9 +1073,8 @@ bool CCleanup_imp::x_Merge (
     }
     
     // mod
-    if ((!org.CanGetMod() || org.GetMod().empty())
-        && add_org.CanGetMod() && !add_org.GetMod().empty()) {
-        ITERATE (COrg_ref::TMod, it, add_org.GetMod()) {
+    if (!org.CanGetMod() || org.GetMod().empty()) {
+        FOR_EACH_MOD_ON_ORGREF (it, add_org) {
             org.SetMod().push_back(*it);
             ChangeMade (CCleanupChange::eChangeBioSourceOther);
             changed = true;
@@ -1198,39 +1208,6 @@ void CCleanup_imp::x_CleanOrgNameStrings (
             CleanString ((*modI)->SetSubname());
         }
     }
-}
-
-
-void CCleanup_imp::x_ExtendedCleanSubSourceList (
-    CBioSource &bs
-)
-
-{
-    if (BIOSOURCE_HAS_SUBSOURCE (bs)) {
-        CBioSource::TSubtype& subtypes = bs.SetSubtype();
-        CBioSource::TSubtype tmp;
-        tmp.clear();
-        EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
-            if ((*it)->CanGetAttrib()) {
-                CleanString((*it)->SetAttrib());
-            }
-            int subtype = (*it)->GetSubtype();
-            if (! s_NoNameSubtype (subtype)) {
-                CleanString((*it)->SetName());
-                if (!NStr::IsBlank((*it)->GetName())) {
-                    tmp.push_back(*it);
-                }
-            } else {
-                tmp.push_back(*it);
-            }            
-        }
-        if (subtypes.size() > tmp.size()) {
-            subtypes.clear();
-            NON_CONST_ITERATE (CBioSource::TSubtype, it, tmp) {
-                subtypes.push_back(*it);
-            }            
-        }
-    }    
 }
 
 
@@ -1374,23 +1351,8 @@ bool Match (
     const CBioSource::TSubtype& mod_list2
 )
 
-{                                              
-    CBioSource::TSubtype::const_iterator it1 = mod_list1.begin();
-    CBioSource::TSubtype::const_iterator it2 = mod_list2.begin();
-    while (it1 != mod_list1.end() && it2 != mod_list2.end()) {
-        if ((*it1)->GetSubtype() != (*it2)->GetSubtype()) {
-            return false;
-        } else if (!NStr::Equal((*it1)->GetName(), (*it2)->GetName())) {
-            return false;
-        }
-        ++it1;
-        ++it2;
-    }
-    if (it1 != mod_list1.end() || it2 != mod_list2.end()) {
-        return false;
-    } else {
-        return true;
-    }
+{                     
+    return lists_match (mod_list1.begin(), mod_list1.end(), mod_list2.begin(), mod_list2.end(), s_SubsourceEqual);
 }
 
 
@@ -1399,23 +1361,8 @@ bool Match (
     const COrgName::TMod& mod_list2
 )
 
-{                                              
-    COrgName::TMod::const_iterator it1 = mod_list1.begin();
-    COrgName::TMod::const_iterator it2 = mod_list2.begin();
-    while (it1 != mod_list1.end() && it2 != mod_list2.end()) {
-        if ((*it1)->GetSubtype() != (*it2)->GetSubtype()) {
-            return false;
-        } else if (!NStr::Equal((*it1)->GetSubname(), (*it2)->GetSubname())) {
-            return false;
-        }
-        ++it1;
-        ++it2;
-    }
-    if (it1 != mod_list1.end() || it2 != mod_list2.end()) {
-        return false;
-    } else {
-        return true;
-    }
+{          
+    return lists_match (mod_list1.begin(), mod_list1.end(), mod_list2.begin(), mod_list2.end(), s_OrgModEqual);
 }
 
 
@@ -1445,22 +1392,7 @@ bool CCleanup_imp::x_Identical (
 )
 
 {
-    if (db1.size() != db2.size()) return false;
-    
-    COrg_ref::TDb::const_iterator it1 = db1.begin();
-    COrg_ref::TDb::const_iterator it2 = db2.begin();
-    
-    while (it1 != db1.end() && it2 != db2.end()) {
-        if (!(*it1)->Match (**it2)) {
-            return false;
-        }
-        ++it1;
-        ++it2;
-    }
-    if (it1 != db1.end() || it2 != db2.end()) {
-        return false;
-    }
-    return true;           
+    return lists_match (db1.begin(), db1.end(), db2.begin(), db2.end(), s_DbtagEqual);
 }
 
         

@@ -201,7 +201,7 @@ private:
     void BasicCleanup(CSeq_feat& feat, CSeqFeatData& data);
     bool BasicCleanup(CSeq_feat& feat, CGb_qual& qual);
     bool BasicCleanup(CGene_ref& gene, const CGb_qual& gb_qual);
-    bool BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, const CGb_qual& gb_qual);
+    bool BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& gb_qual);
     bool BasicCleanup(CProt_ref& rna, const CGb_qual& gb_qual);
     bool BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual& gb_qual);
 
@@ -275,7 +275,6 @@ private:
     void x_MergeMultipleDates (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
 
     void x_CleanOrgNameStrings (COrgName& on);
-    void x_ExtendedCleanSubSourceList (CBioSource& bs);
         
     void x_MergeAdjacentAnnots (CBioseq_Handle bs);
     void x_MergeAdjacentAnnots (CBioseq_set_Handle bss);
@@ -317,9 +316,6 @@ private:
     
     void x_MoveCodingRegionsToNucProtSets (CSeq_entry_Handle seh, CSeq_annot_EditHandle parent_sah);
 
-    void x_RemoveFeaturesBySubtype (const CSeq_entry& se, CSeqFeatData::ESubtype subtype);
-    void x_RemoveFeaturesBySubtype (CBioseq_Handle bs, CSeqFeatData::ESubtype subtype);
-    void x_RemoveFeaturesBySubtype (CBioseq_set_Handle bs, CSeqFeatData::ESubtype subtype);
     void x_RemoveImpSourceFeatures (CSeq_annot_Handle sa);    
     void x_RemoveSiteRefImpFeats(CSeq_annot_Handle sa);
     void x_StripProtXrefs(CSeq_annot_Handle sa);

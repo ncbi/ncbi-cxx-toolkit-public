@@ -150,6 +150,24 @@ CSeq_descr::Tdata CCleanup_imp::x_GetUpperDescriptors (CSeq_entry_Handle se, CSe
 
 void CCleanup_imp::x_RecurseDescriptorsForMerge(CSeq_descr& desc, IsMergeCandidate is_can, Merge do_merge, CSeq_descr::Tdata& remove_list)
 {
+#if 1
+    EDIT_EACH_SEQDESC_ON_SEQDESCR (it1, desc) {
+        if ((this->*is_can)(**it1)) {
+            CSeq_descr::Tdata::iterator it2 = it1;
+            ++it2;
+            bool found_match = false;
+            while (it2 != desc.Set().end() && !found_match) {
+                if ((this->*is_can)(**it2) && (this->*do_merge)(**it2, **it1)) {
+                    found_match = true;
+                }
+                ++it2;
+            }
+            if (found_match) {
+                remove_list.push_front(*it1);
+            }
+        }
+    }
+#else
     for (CSeq_descr::Tdata::iterator it1 = desc.Set().begin();
         it1 != desc.Set().end(); ++it1) { 
         CRef< CSeqdesc > sd = *it1;
@@ -170,6 +188,7 @@ void CCleanup_imp::x_RecurseDescriptorsForMerge(CSeq_descr& desc, IsMergeCandida
             }
         }
     }
+#endif
 }
 
 

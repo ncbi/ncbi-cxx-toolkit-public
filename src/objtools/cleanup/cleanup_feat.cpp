@@ -1055,6 +1055,58 @@ void CCleanup_imp::BasicCleanup(CProt_ref& prot_ref)
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
     }
+
+    // rubisco cleanup
+    EDIT_EACH_NAME_ON_PROTREF (it, prot_ref) {
+        if (NStr::EqualNocase (*it, "RbcL") || NStr::EqualNocase(*it, "rubisco large subunit")) {
+            *it = "ribulose-1,5-bisphosphate carboxylase/oxygenase large subunit";
+            ChangeMade (CCleanupChange::eChangeQualifiers);
+            if (prot_ref.IsSetDesc() && NStr::EqualNocase(prot_ref.GetDesc(), "RbcL")) {
+                prot_ref.ResetDesc();
+            }
+        } else if (NStr::EqualNocase (*it, "RbcS") || NStr::EqualNocase(*it, "rubisco small subunit")) {
+            *it = "ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit";
+            ChangeMade (CCleanupChange::eChangeQualifiers);
+            if (prot_ref.IsSetDesc() && NStr::EqualNocase(prot_ref.GetDesc(), "RbcS")) {
+                prot_ref.ResetDesc();
+            }
+        } else if (prot_ref.IsSetDesc() && NStr::EqualCase (*it, prot_ref.GetDesc())) {
+            prot_ref.ResetDesc();
+        }
+
+        if (NStr::Find (*it, "ribulose") != string::npos
+            && NStr::Find (*it, "bisphosphate") != string::npos
+            && NStr::Find (*it, "methyltransferase") == string::npos
+            && !NStr::EqualNocase (*it, "ribulose-1,5-bisphosphate carboxylase/oxygenase large subunit")
+            && !NStr::EqualNocase (*it, "ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit")
+            && (NStr::EqualNocase (*it, "ribulose 1,5-bisphosphate carboxylase/oxygenase large subunit")
+                || NStr::EqualNocase (*it, "ribulose 1,5-bisphosphate carboxylase large subunit")
+                || NStr::EqualNocase (*it, "ribulose bisphosphate carboxylase large subunit")
+                || NStr::EqualNocase (*it, "ribulose-bisphosphate carboxylase large subunit")
+                || NStr::EqualNocase (*it, "ribulose-1,5-bisphosphate carboxylase large subunit")
+                || NStr::EqualNocase (*it, "ribulose-1,5-bisphosphate carboxylase, large subunit")
+                || NStr::EqualNocase (*it, "large subunit of ribulose-1,5-bisphosphate carboxylase/oxygenase")
+                || NStr::EqualNocase (*it, "ribulose-1,5-bisphosphate carboxylase oxygenase large subunit")
+                || NStr::EqualNocase (*it, "ribulose bisphosphate carboxylase large chain")
+                || NStr::EqualNocase (*it, "ribulose 1,5-bisphosphate carboxylase-oxygenase large subunit")
+                || NStr::EqualNocase (*it, "ribulose bisphosphate carboxylase oxygenase large subunit")
+                || NStr::EqualNocase (*it, "ribulose 1,5 bisphosphate carboxylase large subunit")
+                || NStr::EqualNocase (*it, "ribulose-1,5-bisphosphate carboxylase/oxygenase, large subunit")
+                || NStr::EqualNocase (*it, "large subunit of ribulose-1,5-bisphosphate carboxylase/oxgenase")
+                || NStr::EqualNocase (*it, "ribulose bisphosphate carboxylase/oxygenase large subunit")
+                || NStr::EqualNocase (*it, "ribulose-1,5-bisphosphate carboxylase oxygenase, large subunit")
+                || NStr::EqualNocase (*it, "ribulose 5-bisphosphate carboxylase, large subunit")
+                || NStr::EqualNocase (*it, "ribulosebisphosphate carboxylase large subunit")
+                || NStr::EqualNocase (*it, "ribulose bisphosphate large subunit")
+                || NStr::EqualNocase (*it, "ribulose 1,5 bisphosphate carboxylase/oxygenase large subunit")
+                || NStr::EqualNocase (*it, "ribulose 1,5-bisphosphate carboxylase/oxygenase large chain")
+                || NStr::EqualNocase (*it, "large subunit ribulose-1,5-bisphosphate carboxylase/oxygenase")
+                || NStr::EqualNocase (*it, "ribulose-bisphosphate carboxylase, large subunit")
+                || NStr::EqualNocase (*it, "ribulose-1, 5-bisphosphate carboxylase/oxygenase large-subunit")) ) {
+            *it = "ribulose-1,5-bisphosphate carboxylase/oxygenase large subunit";
+            ChangeMade (CCleanupChange::eChangeQualifiers);
+        }
+    }
 }
 
 
@@ -1099,21 +1151,8 @@ void CCleanup_imp::BasicCleanup(CRNA_ref& rr)
                             }}
                             case CRNA_ref::eType_other:
                             {{
-                                if (NStr::EqualNocase(name, "its1")) {
-                                    name = "internal transcribed spacer 1";
-                                    ChangeMade(CCleanupChange::eChangeQualifiers);
-                                } else if (NStr::EqualNocase(name, "its2")) {
-                                    name = "internal transcribed spacer 2";
-                                    ChangeMade(CCleanupChange::eChangeQualifiers);
-                                } else if (NStr::EqualNocase(name, "its3")) {
-                                    name = "internal transcribed spacer 3";
-                                    ChangeMade(CCleanupChange::eChangeQualifiers);
-                                } else if (NStr::EqualNocase(name, "its")) {
-                                    name = "internal transcribed spacer";
-                                    ChangeMade(CCleanupChange::eChangeQualifiers);
-                                    break;
-                                }
                             }}
+                                break;
                             default:
                                 break;
                         }
@@ -1268,10 +1307,10 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat_Handle ofh)
         return false;
     }
 
-    if (crp.CanGetCode_break()) {
+    if (crp.IsSetCode_break()) {
         TSeqPos feat_len = sequence::GetLength (feat->GetLocation(), m_Scope);
         // if code break is length 0 or 1 and ends at end of feature, allow partial end codon
-        ITERATE (list< CRef< CCode_break > >, it, crp.GetCode_break()) {
+        FOR_EACH_CODEBREAK_ON_CDREGION (it, crp) {
             TSeqPos codon_length = sequence::GetLength((*it)->GetLoc(), m_Scope);
             if (codon_length == 1 || codon_length == 2) {
                 /* code break has correct length */
@@ -1716,7 +1755,7 @@ bool CCleanup_imp::x_ImpFeatToCdRegion (CSeq_feat& feat)
 
     try {
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
-        ITERATE (list< CRef< CSeq_id > >, it, bsh.GetCompleteBioseq()->GetId()) {
+        FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetCompleteBioseq())) {
             if ((*it)->Which() == CSeq_id::e_Ddbj 
                 || (*it)->Which() == CSeq_id::e_Embl) {
                 return false;
@@ -2413,54 +2452,6 @@ void CCleanup_imp::MoveCodingRegionsToNucProtSets (CBioseq_set_Handle bss)
                 MoveCodingRegionsToNucProtSets (m_Scope->GetBioseq_setHandle((**it).GetSet()));
             }
         }
-    }
-}
-
-
-void CCleanup_imp::x_RemoveFeaturesBySubtype (const CSeq_entry& se, CSeqFeatData::ESubtype subtype)
-{
-    switch (se.Which()) {
-        case CSeq_entry::e_Seq:
-            x_RemoveFeaturesBySubtype(m_Scope->GetBioseqHandle(se.GetSeq()), subtype);
-            break;
-        case CSeq_entry::e_Set:
-            x_RemoveFeaturesBySubtype(m_Scope->GetBioseq_setHandle(se.GetSet()), subtype);
-            break;
-        case CSeq_entry::e_not_set:
-        default:
-            break;
-    }
-}
-
-
-void CCleanup_imp::x_RemoveFeaturesBySubtype (CBioseq_Handle bs, CSeqFeatData::ESubtype subtype)
-{
-    vector<CSeq_feat_EditHandle> feat_list;
-    SAnnotSelector sel(subtype);
-    CFeat_CI feat_ci(bs, subtype);
-    while (feat_ci) {
-        feat_list.push_back (CSeq_feat_EditHandle (feat_ci->GetSeq_feat_Handle()));
-        ++feat_ci;
-    }
-    ITERATE (vector<CSeq_feat_EditHandle>, it, feat_list) {
-        (*it).Remove();
-        ChangeMade(CCleanupChange::eRemoveFeat);
-    }
-}
-
-
-void CCleanup_imp::x_RemoveFeaturesBySubtype (CBioseq_set_Handle bss, CSeqFeatData::ESubtype subtype)
-{
-    vector<CSeq_feat_EditHandle> feat_list;
-    SAnnotSelector sel(subtype);
-    CFeat_CI feat_ci(bss.GetParentEntry(), subtype);
-    while (feat_ci) {
-        feat_list.push_back (CSeq_feat_EditHandle (feat_ci->GetSeq_feat_Handle()));
-        ++feat_ci;
-    }
-    ITERATE (vector<CSeq_feat_EditHandle>, it, feat_list) {
-        (*it).Remove();
-        ChangeMade(CCleanupChange::eRemoveFeat);
     }
 }
 

@@ -50,6 +50,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/seq/seqport_util.hpp>
+#include <objects/misc/sequence_macros.hpp>
 #include <vector>
 
 #include <objmgr/util/seq_loc_util.hpp>
@@ -483,7 +484,7 @@ static CRef<CTrna_ext> s_ParseTRnaString (string &str)
 }
 
 
-bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, const CGb_qual& gb_qual)
+bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& gb_qual)
 {
     const string& qual = gb_qual.GetQual();
 
@@ -508,6 +509,34 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, const CGb_qual& 
         if (type == CRNA_ref::eType_other  &&  is_std_name) {
             return false;
         }
+
+        if (type == CRNA_ref::eType_other && rna.IsSetExt() && rna.GetExt().IsName()
+            && NStr::Equal (rna.GetExt().GetName(), "misc_RNA")
+            && NStr::Equal(qual, "product")) {
+            if (NStr::EqualNocase(gb_qual.GetVal(), "its1")
+                || NStr::EqualNocase(gb_qual.GetVal(), "its 1")
+                || NStr::EqualNocase(gb_qual.GetVal(), "Ribosomal DNA internal transcribed spacer 1")
+                || NStr::EqualNocase(gb_qual.GetVal(), "internal transcribed spacer 1 (ITS1)")) {
+                gb_qual.SetVal("internal transcribed spacer 1");
+                ChangeMade(CCleanupChange::eChangeQualifiers);
+                return false;
+            } else if (NStr::EqualNocase(gb_qual.GetVal(), "its2")
+                || NStr::EqualNocase(gb_qual.GetVal(), "its 2")
+                || NStr::EqualNocase(gb_qual.GetVal(), "Ribosomal DNA internal transcribed spacer 2")
+                || NStr::EqualNocase(gb_qual.GetVal(), "internal transcribed spacer 2 (ITS2)")) {
+                gb_qual.SetVal("internal transcribed spacer 2");
+                ChangeMade(CCleanupChange::eChangeQualifiers);
+                return false;
+            } else if (NStr::EqualNocase(gb_qual.GetVal(), "its3")
+                || NStr::EqualNocase(gb_qual.GetVal(), "its 3")
+                || NStr::EqualNocase(gb_qual.GetVal(), "Ribosomal DNA internal transcribed spacer 3")
+                || NStr::EqualNocase(gb_qual.GetVal(), "internal transcribed spacer 3 (ITS3)")) {
+                gb_qual.SetVal("internal transcribed spacer 3");
+                ChangeMade(CCleanupChange::eChangeQualifiers);
+                return false;
+            }
+        }
+
 
         if (type == CRNA_ref::eType_tRNA) {
             if (rna.IsSetExt()) {
@@ -654,7 +683,7 @@ bool CCleanup_imp::BasicCleanup(CProt_ref& prot, const CGb_qual& gb_qual)
             ChangeMade(CCleanupChange::eChangeQualifiers);
             if (prot.IsSetDesc()) {
                 const CProt_ref::TDesc& desc = prot.GetDesc();
-                ITERATE (CProt_ref::TName, it, prot.GetName()) {
+                FOR_EACH_NAME_ON_PROTREF (it, prot) {
                     if (NStr::EqualNocase(desc, *it)) {
                         prot.ResetDesc();
                         ChangeMade(CCleanupChange::eChangeQualifiers);

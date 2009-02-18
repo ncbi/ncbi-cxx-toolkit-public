@@ -174,7 +174,7 @@ void CCleanup_imp::BasicCleanup(CSeq_submit& ss)
             }
             break;
         case CSeq_submit::TData::e_Annots:
-            NON_CONST_ITERATE(CSeq_submit::TData::TAnnots, it, ss.SetData().SetAnnots()) {
+            EDIT_EACH_SEQANNOT_ON_SEQSUBMIT (it, ss) {
                 BasicCleanup(**it);
             }
             break;
@@ -413,13 +413,12 @@ void CCleanup_imp::Setup(const CSeq_entry_Handle& seh)
     
     m_Mode = eCleanup_GenBank;
     if (first_bioseq  &&  first_bioseq.CanGetId()) {
-        ITERATE (CBioseq_Handle::TId, it, first_bioseq.GetId()) {
-            const CSeq_id& id = *(it->GetSeqId());
-            if (id.IsEmbl()  ||  id.IsTpe()) {
+        FOR_EACH_SEQID_ON_BIOSEQ (it, *(first_bioseq.GetCompleteBioseq())) {
+            if ((*it)->IsEmbl()  ||  (*it)->IsTpe()) {
                 m_Mode = eCleanup_EMBL;
-            } else if (id.IsDdbj()  ||  id.IsTpd()) {
+            } else if ((*it)->IsDdbj()  ||  (*it)->IsTpd()) {
                 m_Mode = eCleanup_DDBJ;
-            } else if (id.IsSwissprot()) {
+            } else if ((*it)->IsSwissprot()) {
                 m_Mode = eCleanup_SwissProt;
             }
         }        
@@ -692,7 +691,7 @@ void CCleanup_imp::ExtendedCleanup(const CSeq_submit& ss)
             }
             break;
         case CSeq_submit::TData::e_Annots:
-            ITERATE(CSeq_submit::TData::TAnnots, it, ss.GetData().GetAnnots()) {
+            FOR_EACH_SEQANNOT_ON_SEQSUBMIT (it, ss) {
                 ExtendedCleanup(m_Scope->GetSeq_annotHandle(**it));
             }
             break;
