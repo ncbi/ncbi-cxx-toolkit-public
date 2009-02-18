@@ -114,12 +114,16 @@ public:
     CStopWatch&       GetRequestTimer(void) { return m_ReqTimer; }
 
     /// Bytes read
-    Int8 GetBytesRd(void) const { return m_BytesRd; }
-    void SetBytesRd(Int8 bytes) { m_BytesRd = bytes; }
+    Int8 GetBytesRd(void) const;
+    void SetBytesRd(Int8 bytes);
+    bool IsSetBytesRd(void) const;
+    void UnsetBytesRd(void);
 
     /// Bytes written
-    Int8 GetBytesWr(void) const { return m_BytesWr; }
-    void SetBytesWr(Int8 bytes) { m_BytesWr = bytes; }
+    Int8 GetBytesWr(void) const;
+    void SetBytesWr(Int8 bytes);
+    bool IsSetBytesWr(void) const;
+    void UnsetBytesWr(void);
 
     /// Reset all properties to the initial state
     void Reset(void);
@@ -176,7 +180,9 @@ private:
         eProp_ClientIP   = 1 << 1,
         eProp_SessionID  = 1 << 2,
         eProp_HitID      = 1 << 3,
-        eProp_ReqStatus  = 1 << 4
+        eProp_ReqStatus  = 1 << 4,
+        eProp_BytesRd    = 1 << 5,
+        eProp_BytesWr    = 1 << 6
     };
     typedef int TPropSet;
 
@@ -342,6 +348,60 @@ void CRequestContext::UnsetRequestStatus(void)
 {
     x_UnsetProp(eProp_ReqStatus);
     m_ReqStatus = 0;
+}
+
+
+inline
+Int8 CRequestContext::GetBytesRd(void) const
+{
+    return x_IsSetProp(eProp_BytesRd) ? m_BytesRd : 0;
+}
+
+inline
+void CRequestContext::SetBytesRd(Int8 bytes)
+{
+    x_SetProp(eProp_BytesRd);
+    m_BytesRd = bytes;
+}
+
+inline
+bool CRequestContext::IsSetBytesRd(void) const
+{
+    return x_IsSetProp(eProp_BytesRd);
+}
+
+inline
+void CRequestContext::UnsetBytesRd(void)
+{
+    x_UnsetProp(eProp_BytesRd);
+    m_BytesRd = 0;
+}
+
+
+inline
+Int8 CRequestContext::GetBytesWr(void) const
+{
+    return x_IsSetProp(eProp_BytesWr) ? m_BytesWr : 0;
+}
+
+inline
+void CRequestContext::SetBytesWr(Int8 bytes)
+{
+    x_SetProp(eProp_BytesWr);
+    m_BytesWr = bytes;
+}
+
+inline
+bool CRequestContext::IsSetBytesWr(void) const
+{
+    return x_IsSetProp(eProp_BytesWr);
+}
+
+inline
+void CRequestContext::UnsetBytesWr(void)
+{
+    x_UnsetProp(eProp_BytesWr);
+    m_BytesWr = 0;
 }
 
 
