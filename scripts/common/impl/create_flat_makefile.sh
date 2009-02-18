@@ -161,7 +161,14 @@ else
     if test -n "$relptbver"; then
       DetectPlatform
       ptb="$relptbpath$PLATFORM/$relptbver/$ptbname"
-      test -x "$ptb" && echo "Using prebuilt project tree builder at $ptb"
+      if test -x "$ptb"; then
+        echo "Using prebuilt project tree builder at $ptb"
+      else
+        echo "Prebuilt $ptbname is not found at"
+        echo $ptb
+        echo "Will build PTB locally"
+        buildptb="yes"
+      fi
     else
       if test -x "$ptb"; then
         echo "Testing $ptb"
@@ -183,6 +190,9 @@ else
   fi
 fi
 
+echo $ptb
+echo $buildptb
+exit 1
 COMMON_Exec cd $builddir
 dll=""
 test -f "../status/DLL.enabled" && dll="-dll"
