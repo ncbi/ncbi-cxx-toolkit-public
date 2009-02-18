@@ -752,7 +752,7 @@ done # for x_row in x_tests
 # Write ending code into the script 
 cat >> $x_out <<EOF
 
-if \$no_report_err  &&  ! \$is_db_load; then
+if \$no_report_err  &&  \$no_db_load; then
    # Write result of the tests execution
    echo
    echo "Succeeded : \$count_ok"
