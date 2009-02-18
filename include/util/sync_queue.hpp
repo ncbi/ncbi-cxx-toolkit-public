@@ -217,6 +217,25 @@ public:
     ///   If the timeout is exceeded, then throw CSyncQueueException.
     void Push(const TValue& elem, const CTimeSpan* timeout = NULL);
 
+    /// Add new element to the end of queue.
+    /// @note  This call will block if the queue is full or if there are
+    ///        competing operations by other threads
+    ///
+    /// @param elem
+    ///   Element to push
+    /// @param full_tmo
+    ///   Maximum time period to wait on this call (including waiting for
+    ///   other threads to unlock the queue and waiting until there is space
+    ///   in the queue to add element to); NULL to wait infinitely.
+    ///   If the timeout is exceeded, then throw CSyncQueueException.
+    /// @param service_tmo
+    ///   Maximum time period to wait for other threads to unlock the queue;
+    ///   NULL to wait infinitely.
+    ///   If the timeout is exceeded, then throw CSyncQueueException.
+    void Push(const TValue&    elem,
+              const CTimeSpan* full_tmo,
+              const CTimeSpan* service_tmo);
+
     /// Retrieve an element from the queue.
     /// @note  This call will block if the queue is empty or if there are
     ///        competing operations by other threads
@@ -225,6 +244,22 @@ public:
     ///   Maximum time period to wait on this call; NULL to wait infinitely.
     ///   If the timeout is exceeded, then throw CSyncQueueException.
     TValue Pop(const CTimeSpan* timeout = NULL);
+
+    /// Retrieve an element from the queue.
+    /// @note  This call will block if the queue is empty or if there are
+    ///        competing operations by other threads
+    ///
+    /// @param full_tmo
+    ///   Maximum time period to wait on this call (including waiting for
+    ///   other threads to unlock the queue and waiting until there is any
+    ///   element in the queue to retrieve); NULL to wait infinitely.
+    ///   If the timeout is exceeded, then throw CSyncQueueException.
+    /// @param service_tmo
+    ///   Maximum time period to wait for other threads to unlock the queue;
+    ///   NULL to wait infinitely.
+    ///   If the timeout is exceeded, then throw CSyncQueueException.
+    TValue Pop(const CTimeSpan* full_tmo,
+               const CTimeSpan* service_tmo);
 
     /// Check if the queue is empty.
     /// @note  This call always returns immediately, without any blocking
@@ -327,9 +362,15 @@ private:
     /// Lock the queue and wait until the condition function returns FALSE.
     /// @param lock
     ///   Auto-lock object to acquire the lock on the queue
-    /// @param timeout
-    ///   Maximum time period to wait on this call; NULL to wait infinitely.
+    /// @param full_tmo
+    ///   Maximum time period to wait on this call (including waiting for
+    ///   other threads to unlock the queue and waiting for condition to
+    ///   return FALSE); NULL to wait infinitely.
     ///   If the timeout is exceeded, then return (with or without locking).
+    /// @param service_tmo
+    ///   Maximum time period to wait for other threads to unlock the queue;
+    ///   NULL to wait infinitely.
+    ///   If the timeout is exceeded, then return (without locking).
     /// @param func_to_check
     ///   Function to check condition
     /// @param trigger
@@ -339,7 +380,8 @@ private:
     /// @param throw_error
     ///   Function to throw exception when timeout is exceeded
     void x_LockAndWait(TAutoLock*       lock,
-                       const CTimeSpan* timeout,
+                       const CTimeSpan* full_tmo,
+                       const CTimeSpan* service_tmo,
                        TCheckFunc       func_to_check,
                        CSemaphore*      trigger,
                        CAtomicCounter*  counter,
@@ -349,20 +391,35 @@ private:
     /// Lock the queue and wait until it has room for more elements
     /// @param lock
     ///   Auto-lock object  to acquire the lock on the queue
-    /// @param timeout
-    ///   Maximum time period to wait on this call; NULL to wait infinitely.
+    /// @param full_tmo
+    ///   Maximum time period to wait on this call (including waiting for
+    ///   other threads to unlock the queue and waiting until there is space
+    ///   in the queue to add element to); NULL to wait infinitely.
     ///   If the timeout is exceeded, then return (with or without locking).
+    /// @param service_tmo
+    ///   Maximum time period to wait for other threads to unlock the queue;
+    ///   NULL to wait infinitely.
+    ///   If the timeout is exceeded, then return (without locking).
     void x_LockAndWaitWhileFull(TAutoLock*       lock,
-                                const CTimeSpan* timeout)
+                                const CTimeSpan* full_tmo,
+                                const CTimeSpan* service_tmo)
         const;
 
     /// Lock the queue and wait until it has at least one element
     /// @param lock
     ///   Auto-lock object  to acquire the lock on the queue
-    /// @param timeout
-    ///   Maximum time period to wait on this call; NULL to wait infinitely.
+    /// @param full_tmo
+    ///   Maximum time period to wait on this call (including waiting for
+    ///   other threads to unlock the queue and waiting until there is any
+    ///   element in the queue to retrieve); NULL to wait infinitely.
     ///   If the timeout is exceeded, then return (with or without locking).
-    void x_LockAndWaitWhileEmpty(TAutoLock* lock, const CTimeSpan* timeout)
+    /// @param service_tmo
+    ///   Maximum time period to wait for other threads to unlock the queue;
+    ///   NULL to wait infinitely.
+    ///   If the timeout is exceeded, then return (without locking).
+    void x_LockAndWaitWhileEmpty(TAutoLock*       lock,
+                                 const CTimeSpan* full_tmo,
+                                 const CTimeSpan* service_tmo)
         const;
 
     /// Lock the queue by an access guard
@@ -1133,7 +1190,8 @@ template <class Type, class Container>
 inline
 void CSyncQueue<Type, Container>::x_DoubleLock(TAutoLock*       my_lock,
                                                TAutoLock*       other_lock,
-                                               const TThisType& other_obj) const
+                                               const TThisType& other_obj)
+    const
 {
     // The order of locking is significant
     bool is_success = false;
@@ -1153,7 +1211,8 @@ void CSyncQueue<Type, Container>::x_DoubleLock(TAutoLock*       my_lock,
 template <class Type, class Container>
 inline
 void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
-                                                const CTimeSpan* timeout,
+                                                const CTimeSpan* full_tmo,
+                                                const CTimeSpan* service_tmo,
                                                 TCheckFunc       func_to_check,
                                                 CSemaphore*      trigger,
                                                 CAtomicCounter*  counter,
@@ -1168,14 +1227,14 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
     if (CThread::GetThreadsCount() == 0) {
         real_timeout.reset(new CTimeSpan(0.0));
     }
-    else if (timeout) {
-        real_timeout.reset(new CTimeSpan(*timeout));
+    else if (full_tmo) {
+        real_timeout.reset(new CTimeSpan(*full_tmo));
     }
 
     if (real_timeout.get()) {
         // finite timeout
         CStopWatch timer(CStopWatch::eStart);
-        if (!lock->Lock(this, real_timeout.get())) {
+        if (!lock->Lock(this, service_tmo)) {
             throw_error();
         }
 
@@ -1213,7 +1272,7 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
     else {
         // infinite timeout
         // There is no timeout, so it can not be any throw_error
-        lock->Lock(this);
+        lock->Lock(this, service_tmo);
         while ( (this->*func_to_check)() ) {
             // Counter is checked only in locked queue. So we have to
             // increase it before unlocking.
@@ -1232,9 +1291,12 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
 template <class Type, class Container>
 inline
 void CSyncQueue<Type, Container>
-    ::x_LockAndWaitWhileFull(TAutoLock* lock, const CTimeSpan* timeout) const
+    ::x_LockAndWaitWhileFull(TAutoLock*       lock, 
+                             const CTimeSpan* full_tmo,
+                             const CTimeSpan* service_tmo)
+    const
 {
-    x_LockAndWait(lock, timeout, &TThisType::IsFull,
+    x_LockAndWait(lock, full_tmo, service_tmo, &TThisType::IsFull,
                   &m_TrigNotFull, &m_CntWaitNotFull, &ThrowSyncQueueNoRoom);
 }
 
@@ -1242,9 +1304,12 @@ void CSyncQueue<Type, Container>
 template <class Type, class Container>
 inline
 void CSyncQueue<Type, Container>
-    ::x_LockAndWaitWhileEmpty(TAutoLock* lock, const CTimeSpan* timeout) const
+    ::x_LockAndWaitWhileEmpty(TAutoLock* lock, 
+                             const CTimeSpan* full_tmo,
+                             const CTimeSpan* service_tmo)
+    const
 {
-    x_LockAndWait(lock, timeout, &TThisType::IsEmpty,
+    x_LockAndWait(lock, full_tmo, service_tmo, &TThisType::IsEmpty,
                   &m_TrigNotEmpty, &m_CntWaitNotEmpty, &ThrowSyncQueueEmpty);
 }
 
@@ -1352,12 +1417,13 @@ void CSyncQueue<Type, Container>::x_Clear_NonBlocking(void)
 template <class Type, class Container>
 inline
 void CSyncQueue<Type, Container>::Push(const TValue&    elem,
-                                       const CTimeSpan* timeout)
+                                       const CTimeSpan* full_tmo,
+                                       const CTimeSpan* service_tmo)
 {
     TAutoLock lock;
 
     if ( !x_IsGuarded() ) {
-        x_LockAndWaitWhileFull(&lock, timeout);
+        x_LockAndWaitWhileFull(&lock, full_tmo, service_tmo);
     }
 
     x_Push_NonBlocking(elem);
@@ -1366,16 +1432,35 @@ void CSyncQueue<Type, Container>::Push(const TValue&    elem,
 
 template <class Type, class Container>
 inline
+void CSyncQueue<Type, Container>::Push(const TValue&    elem,
+                                       const CTimeSpan* timeout)
+{
+    Push(elem, timeout, timeout);
+}
+
+
+template <class Type, class Container>
+inline
 typename CSyncQueue<Type, Container>::TValue
-    CSyncQueue<Type, Container>::Pop(const CTimeSpan* timeout)
+    CSyncQueue<Type, Container>::Pop(const CTimeSpan* full_tmo,
+                                     const CTimeSpan* service_tmo)
 {
     TAutoLock lock;
 
     if ( !x_IsGuarded() ) {
-        x_LockAndWaitWhileEmpty(&lock, timeout);
+        x_LockAndWaitWhileEmpty(&lock, full_tmo, service_tmo);
     }
 
     return x_Pop_NonBlocking();
+}
+
+
+template <class Type, class Container>
+inline
+typename CSyncQueue<Type, Container>::TValue
+CSyncQueue<Type, Container>::Pop(const CTimeSpan* timeout)
+{
+    return Pop(timeout, timeout);
 }
 
 
