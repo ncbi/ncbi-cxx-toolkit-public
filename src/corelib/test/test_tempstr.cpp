@@ -39,6 +39,10 @@
 #include <boost/version.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/unit_test_log.hpp>
+
+#include <common/test_assert.h>  /* This header must go last */
+
+
 using boost::unit_test_framework::test_suite;
 
 USING_NCBI_SCOPE;

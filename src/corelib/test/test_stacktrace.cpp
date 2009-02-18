@@ -34,8 +34,9 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
-
 #include <corelib/ncbi_stack.hpp>
+
+#include <common/test_assert.h>  /* This header must go last */
 
 
 USING_NCBI_SCOPE;
