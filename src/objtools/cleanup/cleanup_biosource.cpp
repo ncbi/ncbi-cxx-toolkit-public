@@ -1321,7 +1321,7 @@ void CCleanup_imp::x_FixNucProtSources (
             }
         } else if ((*it)->Which() == CSeq_entry::e_Seq) {
             CBioseq_EditHandle eh = (m_Scope->GetBioseqHandle((*it)->GetSeq())).GetEditHandle();
-            if (eh.GetDescr().Get().empty()) continue;
+            if (!eh.IsSetDescr() || eh.GetDescr().Get().empty()) continue;
 
             CSeq_descr::Tdata remove_list;
             remove_list.clear();
