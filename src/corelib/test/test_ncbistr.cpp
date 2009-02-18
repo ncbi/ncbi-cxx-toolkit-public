@@ -39,6 +39,8 @@
 #define BOOST_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
 // and to use NCBI C++ entities without the "ncbi::" prefix
