@@ -348,9 +348,6 @@ int CTest::Run(void)
         assert(!process.IsAlive());
     }}
 
-    args.clear();
-    args.push_back("4");
-
     assert(pipe.Open(app.c_str(), args,
                      CPipe::fKillOnClose | CPipe::fNewGroup) == eIO_Success);
     handle = pipe.GetProcessHandle();
@@ -363,6 +360,7 @@ int CTest::Run(void)
     }}
 
     assert(pipe.Open(app.c_str(), args, CPipe::fKeepOnClose) == eIO_Success);
+
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
     assert(pipe.Close(&exitcode) == eIO_Timeout);
