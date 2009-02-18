@@ -41,6 +41,8 @@
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Sparse_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Score.hpp>
@@ -1131,6 +1133,28 @@ s_GetGapCount(const CSeq_align& align, bool get_total_count)
             ITERATE(CSeq_align::TSegs::TDisc::Tdata, iter, 
                     align.GetSegs().GetDisc().Get()) {
                 retval += s_GetGapCount(**iter, get_total_count);
+            }
+        }}
+        break;
+
+    case CSeq_align::TSegs::e_Spliced:
+        {{
+            ITERATE (CSpliced_seg::TExons, iter, align.GetSegs().GetSpliced().GetExons()) {
+                const CSpliced_exon& exon = **iter;
+                if (exon.IsSetParts()) {
+                    ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
+                        const CSpliced_exon_chunk& chunk = **it;
+                        switch (chunk.Which()) {
+                        case CSpliced_exon_chunk::e_Product_ins:
+                        case CSpliced_exon_chunk::e_Genomic_ins:
+                            ++retval;
+                            break;
+
+                        default:
+                            break;
+                        }
+                    }
+                }
             }
         }}
         break;
