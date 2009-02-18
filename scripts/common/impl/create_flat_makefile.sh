@@ -190,9 +190,6 @@ else
   fi
 fi
 
-echo $ptb
-echo $buildptb
-exit 1
 COMMON_Exec cd $builddir
 dll=""
 test -f "../status/DLL.enabled" && dll="-dll"
