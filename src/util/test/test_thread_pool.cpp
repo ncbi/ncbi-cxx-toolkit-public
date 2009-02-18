@@ -41,6 +41,9 @@
 #include <corelib/ncbitime.hpp>
 #include <util/random_gen.hpp>
 
+#include <common/test_assert.h>  // This header must go last
+
+
 USING_NCBI_SCOPE;
 
 #define MY_LOG_POST(message)                              \

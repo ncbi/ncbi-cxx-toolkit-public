@@ -39,6 +39,9 @@
 #include <corelib/ncbiapp.hpp>
 #include <util/random_gen.hpp>
 
+#include <common/test_assert.h>  // This header must go last
+
+
 USING_NCBI_SCOPE;
 
 CRandom s_RNG;

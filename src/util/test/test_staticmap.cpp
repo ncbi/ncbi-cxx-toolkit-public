@@ -40,13 +40,14 @@
 #include <set>
 #include <map>
 
-#include <common/test_assert.h>  /* This header must go last */
-
 #ifndef _DEBUG
 # define _DEBUG 1
 #endif
 #include <util/static_map.hpp>
 #include <util/static_set.hpp>
+
+#include <common/test_assert.h>  /* This header must go last */
+
 
 BEGIN_NCBI_SCOPE
 

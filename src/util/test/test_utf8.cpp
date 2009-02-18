@@ -37,6 +37,9 @@
 #define BOOST_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 
+#include <common/test_assert.h>  // This header must go last
+
+
 USING_NCBI_SCOPE;
 
 BOOST_AUTO_TEST_CASE(TestUtf8)

@@ -35,11 +35,12 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/rwstream.hpp>
 #include <util/compress/tar.hpp>
-#include <common/test_assert.h>  // This header must go last
 #ifdef NCBI_OS_MSWIN
 #  include <io.h>     // For _setmode()
 #  include <fcntl.h>  // For _O_BINARY
 #endif // NCBI_OS_MSWIN
+
+#include <common/test_assert.h>  // This header must go last
 
 
 USING_NCBI_SCOPE;

@@ -32,8 +32,9 @@
 
 #include <ncbi_pch.hpp>
 #include <util/scheduler.hpp>
-
 #include <corelib/test_boost.hpp>
+
+#include <common/test_assert.h>  /* This header must go last */
 
 
 USING_NCBI_SCOPE;
