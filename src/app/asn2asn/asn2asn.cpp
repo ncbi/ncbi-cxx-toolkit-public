@@ -772,8 +772,10 @@ void MergeExternal(CObjectIStream& in, CObjectOStream& out, int gi,
     }
 
     // Request the external annotations blob.
-    AutoPtr<CDB_RPCCmd> cmd(conn->RPC("id_get_asn", 3));
-    CDB_SmallInt satIn(26); // external annotations sat is 26 (all except CDD).
+    AutoPtr<CDB_RPCCmd> cmd(conn->RPC("id_get_asn"));
+    // external annotations sat is 26 (all except CDD).
+    int sat = add_ext_feat == 8? 10: 26;
+    CDB_SmallInt satIn(sat); 
     CDB_Int satKeyIn(gi); // sat_key is equal to GI.
     CDB_Int ext_feat(add_ext_feat); // ext_feat mask.
 
@@ -819,6 +821,14 @@ void MergeExternal(CObjectIStream& in, CObjectOStream& out, int gi,
     }
 
     // Here the error check should be done if there is no result...
+    if ( !result.get() ) {
+        ERR_POST("No external annot found.");
+        // Main object copier.
+        CObjectStreamCopier copier(in, out);
+        // Do the copy.
+        copier.Copy(CType<CSeq_entry>());
+        return;
+    }
 
     // Setup CByteSourceReader for reading data from CDB_Result.
     PubSeqOS::CDB_Result_Reader reader(result.get());
@@ -884,6 +894,12 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
     bool skip = args["S"];
     bool convert = args["C"];
     bool merge = args["Mgi"] && (args["Min"] || args["Mext"]);
+    if ( args["Mext"] ) {
+        int ext = args["Mext"].AsInteger();
+        if ( ext == 0 || (ext & (ext-1)) != 0 ) {
+            ERR_POST(Fatal<<"Only single external annotation bit is allowed.");
+        }
+    }
     bool readHook = args["ih"];
     bool writeHook = args["oh"];
     bool usePool = args["P"];
