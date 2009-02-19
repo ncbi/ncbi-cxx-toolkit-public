@@ -98,6 +98,9 @@ private:
     bool m_Notag;
 };
 
+#define ThrowError(flag, mess) \
+    ThrowError1(DIAG_COMPILE_INFO,flag,mess)
+
 class NCBI_XSERIAL_EXPORT CObjectStack
 {
 public:

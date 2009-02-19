@@ -717,8 +717,6 @@ public:
                      TFailFlags fail, const char* message);
     void ThrowError1(const CDiagCompileInfo& diag_info,
                      TFailFlags fail, const string& message);
-    void ThrowError(TFailFlags flag, const string& mess)
-    {ThrowError1(DIAG_COMPILE_INFO,flag,mess);}
     // report unended block
     void Unended(const string& msg);
     // report unended object stack frame

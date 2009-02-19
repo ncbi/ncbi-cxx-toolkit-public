@@ -476,8 +476,6 @@ public:
     void ThrowError1(const CDiagCompileInfo& diag_info,
                      TFailFlags fail, const string& message,
                      CException* exc = 0);
-    void ThrowError(TFailFlags flag, const string& mess)
-    { ThrowError1(DIAG_COMPILE_INFO,flag,mess);}
 #define RethrowError(flag,mess,exc) \
     ThrowError1(DIAG_COMPILE_INFO,flag,mess,&exc)
 
