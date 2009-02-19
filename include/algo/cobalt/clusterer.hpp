@@ -40,6 +40,7 @@ Contents: Interface for CClusterer class
 #include <corelib/ncbidbg.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <util/math/matrix.hpp>
+#include <algo/phy_tree/phy_node.hpp>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -145,6 +146,10 @@ public:
     ///
     CClusterer(auto_ptr<TDistMatrix>& dmat);
 
+    /// Destructor
+    ///
+    ~CClusterer();
+
     /// Set new distance matrix
     /// @param dmat Distance matrix
     ///
@@ -161,9 +166,15 @@ public:
     const TDistMatrix& GetDistMatrix(void) const;
 
     /// Compute clusters
-    /// @param max_dim Maximum distance between two elements in a cluster
     ///
-    void ComputeClusters(double max_diam);
+    /// Computes complete linkage distance-based clustering with constrainted 
+    /// maxium pairwise distance between cluster elements. Cluster dendrogram
+    /// can be computed for each such cluster indepenently.
+    /// @param max_dim Maximum distance between two elements in a cluster [in]
+    /// @param do_trees If true, cluster dendrogram will be computed for each
+    /// cluster [in]
+    ///
+    void ComputeClusters(double max_diam, bool do_trees = true);
 
     /// Get list of elements of a specified cluster
     /// @param index Cluster index
@@ -180,6 +191,32 @@ public:
     /// @return Clusters
     ///
     TClusters& SetClusters(void) {return m_Clusters;}
+
+    /// Get list of trees for clusters
+    /// @param List of trees [out]
+    ///
+    void GetTrees(vector<TPhyTreeNode*>& trees) const;
+
+    /// Get list of trees for clusters and release ownership to caller
+    /// @param List of trees [out]
+    ///
+    void ReleaseTrees(vector<TPhyTreeNode*>& trees);
+
+    /// Get list of trees for clusters
+    /// @return List of trees
+    vector<TPhyTreeNode*>& GetTrees(void) {return m_Trees;}
+
+    /// Get tree for specific cluster
+    /// @param index Cluster index [in]
+    /// @return Cluster tree
+    ///
+    const TPhyTreeNode* GetTree(int index = 0) const;
+
+    /// Get cluster tree and release ownership to caller
+    /// @param index Cluster index [in]
+    /// @return Cluster Tree
+    ///
+    TPhyTreeNode* ReleaseTree(int index = 0);
 
     /// Set prototypes for all clusters as center elements
     ///
@@ -200,8 +237,13 @@ public:
     void Reset(void);
 
 protected:
+    CClusterer(const CClusterer&);
+    CClusterer& operator=(const CClusterer&);
+
+protected:
     auto_ptr<TDistMatrix> m_DistMatrix;
     TClusters m_Clusters;
+    vector<TPhyTreeNode*> m_Trees;
 };
 
 

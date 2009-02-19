@@ -134,10 +134,11 @@ void CMultiApplication::Init(void)
     arg_desc->AddDefaultKey("pseudo", "pseudocount", 
                      "Pseudocount constant",
                      CArgDescriptions::eDouble, "2.0");
-    arg_desc->AddDefaultKey("fastme", "fastme", 
-                     "Use FastME tree generation algorithm instead of "
-                     "neighbor joining",
-                     CArgDescriptions::eBoolean, "F");
+    arg_desc->AddDefaultKey("treemethod", "method", 
+                     "Method for generating progressive alignment guide tree",
+                      CArgDescriptions::eString, "clust");
+    arg_desc->SetConstraint("treemethod", &(*new CArgAllow_Strings,
+                                      "clust", "nj", "fastme"));
 
     arg_desc->AddDefaultKey("clusters", "clusters", 
                      "Use query clustering to minimize number of"
@@ -338,9 +339,21 @@ int CMultiApplication::Run(void)
     }
 
     // Progressive alignmenet params
-    if (args["fastme"].AsBoolean()) {
-        opts->SetTreeMethod(CMultiAlignerOptions::eFastME);
+    CMultiAlignerOptions::ETreeMethod tree_method;
+    if (args["treemethod"].AsString() == "clust") {
+        tree_method = CMultiAlignerOptions::eClusters;
     }
+    else if (args["treemethod"].AsString() == "nj") {
+        tree_method = CMultiAlignerOptions::eNJ;
+    }
+    else if (args["treemethod"].AsString() == "fastme") {
+        tree_method = CMultiAlignerOptions::eFastME;
+    }
+    else {
+        NcbiCerr << "Error: Bad tree method";
+        return 1;
+    }
+    opts->SetTreeMethod(tree_method);
 
     // Iterative alignment params
     opts->SetIterate(args["iter"].AsBoolean());

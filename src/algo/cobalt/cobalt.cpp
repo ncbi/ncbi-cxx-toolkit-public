@@ -373,10 +373,19 @@ CMultiAligner::x_ComputeTree(void)
     }
     //--------------------------------
 
-    // build the phylo tree associated with the matrix
+    // build the guide tree associated with the matrix
+    if (m_Options->GetTreeMethod() == CMultiAlignerOptions::eClusters) {
 
-    m_Tree.ComputeTree(dmat,
-                m_Options->GetTreeMethod() == CMultiAlignerOptions::eFastME);
+        CClusterer clusterer(dmat);
+        // max in-cluster distance ensures one cluster hence one tree
+        clusterer.ComputeClusters(DBL_MAX, true);
+        _ASSERT(clusterer.GetClusters().size() == 1);
+        m_Tree.SetTree(clusterer.ReleaseTree());
+    }
+    else {
+        m_Tree.ComputeTree(dmat,
+               m_Options->GetTreeMethod() == CMultiAlignerOptions::eFastME);
+    }
 
     //--------------------------------
     if (m_Options->GetVerbose()) {
@@ -593,7 +602,8 @@ CMultiAligner::x_FindQueryClusters()
 
     // Compute query clusters
     m_Clusterer.SetDistMatrix(dmat);
-    m_Clusterer.ComputeClusters(m_Options->GetMaxInClusterDist());
+    m_Clusterer.ComputeClusters(m_Options->GetMaxInClusterDist(),
+                m_Options->GetTreeMethod() == CMultiAlignerOptions::eClusters);
 
     const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
 
@@ -1319,36 +1329,55 @@ static void s_SetLeafIds(TPhyTreeNode* node,
     }
 }
 
-void CMultiAligner::x_ComputeClusterTrees(vector<TPhyTreeNode*>& trees) const
+void CMultiAligner::x_ComputeClusterTrees(vector<TPhyTreeNode*>& trees)
 {
     const CClusterer::TClusters& clusters = m_Clusterer.GetClusters();
-    trees.resize(clusters.size());
 
-    for (int clust_idx=0;clust_idx < (int)clusters.size();clust_idx++) {
-        const CClusterer::CSingleCluster& cluster = clusters[clust_idx];
-
+    if (m_Options->GetTreeMethod() == CMultiAlignerOptions::eClusters) {
+        m_Clusterer.ReleaseTrees(trees);
+        _ASSERT(trees.size() == clusters.size());
+        
+        // Trees for one-element clusters are not needed
         // Tree root == NULL indicates one-elemet cluster
-        if (cluster.size() == 1) {
-            trees[clust_idx] = NULL;
-            continue;
-        }
+        for (size_t i=0;i < trees.size();i++) {
+            _ASSERT(trees[i]);
 
-        if (cluster.size() == 2) {
-            trees[clust_idx] = s_MakeTwoLeafTree(cluster,
+            if (clusters[i].size() == 1) {
+                delete trees[i];
+                trees[i] = NULL;
+            }
+        }        
+    }
+    else {
+
+        trees.resize(clusters.size());
+        for (int clust_idx=0;clust_idx < (int)clusters.size();clust_idx++) {
+            const CClusterer::CSingleCluster& cluster = clusters[clust_idx];
+
+            // Tree root == NULL indicates one-elemet cluster
+            if (cluster.size() == 1) {
+                trees[clust_idx] = NULL;
+                continue;
+            }
+
+            if (cluster.size() == 2) {
+                trees[clust_idx] = s_MakeTwoLeafTree(cluster,
                        (m_Clusterer.GetDistMatrix())(cluster[0], cluster[1]));
+                
+                continue;
+            }
 
-            continue;
+            CClusterer::TDistMatrix mat;
+            m_Clusterer.GetClusterDistMatrix(clust_idx, mat);
+            CTree single_tree(mat,
+                 m_Options->GetTreeMethod() == CMultiAlignerOptions::eFastME);
+            TPhyTreeNode* root = single_tree.ReleaseTree();
+
+            // Set node id's that correspod to cluster sequences
+            s_SetLeafIds(root, cluster);
+
+            trees[clust_idx] = root;
         }
-
-        CClusterer::TDistMatrix mat;
-        m_Clusterer.GetClusterDistMatrix(clust_idx, mat);
-        CTree single_tree(mat);
-        TPhyTreeNode* root = single_tree.ReleaseTree();
-
-        // Set node id's that correspod to cluster sequences
-        s_SetLeafIds(root, cluster);
-
-        trees[clust_idx] = root;
     }
 
     //----------------------------------------------------------------
@@ -1438,6 +1467,7 @@ static double s_FindNodeDistance(const TPhyTreeNode* node, int id,
         dist = 0.0;
     }
     else {
+        _ASSERT(node->GetValue().IsSetDist());
         dist = node->GetValue().GetDist();
     }
 
@@ -1542,6 +1572,7 @@ void CMultiAligner::x_AttachClusterTrees(
             node->AddNode(*it);
         }
         delete subtree;
+        subtree = NULL;
 
         // node replaces root of the subtree
         node->GetValue().SetDist(0.0);

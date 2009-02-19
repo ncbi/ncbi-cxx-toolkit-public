@@ -385,7 +385,7 @@ protected:
     /// @param Array of tree roots. Each array element corresponds to
     /// the cluster. One element clusters yield NULL tree. [out]
     ///
-    void x_ComputeClusterTrees(vector<TPhyTreeNode*>& trees) const;
+    void x_ComputeClusterTrees(vector<TPhyTreeNode*>& trees);
 
     /// Replace leaves in the alignment guide tree of clusters with cluster
     /// trees.

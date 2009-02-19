@@ -151,7 +151,9 @@ bool CMultiAlignerOptions::Validate(void)
     }
 
     // Check tree computation method
-    if (m_TreeMethod != eNJ && m_TreeMethod != eFastME) {
+    if (m_TreeMethod != eNJ && m_TreeMethod != eFastME
+        && m_TreeMethod != eClusters) {
+
         NCBI_THROW(CMultiAlignerException, eInvalidOptions,
                    "Invalid tree computation method for progressive alignment");
     }
@@ -212,7 +214,7 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
     m_ConservedCutoff = 0.67;
     m_Pseudocount = 2.0;
 
-    m_TreeMethod = eNJ;
+    m_TreeMethod = eClusters;
     m_LocalResFreqBoost = 1.0;
 
     m_UserHitsScore = kDefaultUserConstraintsScore;

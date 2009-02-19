@@ -212,7 +212,8 @@ public:
     /// Method for construction of guide tree for progressive alignment
     enum ETreeMethod {
         eNJ = 0,  ///< Neighbot Joining
-        eFastME   ///< Fast Minimum Evolution
+        eFastME,  ///< Fast Minimum Evolution
+        eClusters ///< Clustering dendrogram
     };
 
     enum EInClustAlnMethod {

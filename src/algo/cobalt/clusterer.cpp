@@ -61,6 +61,20 @@ CClusterer::CClusterer(auto_ptr<CClusterer::TDistMatrix>& dmat)
     s_CheckDistMatrix(*m_DistMatrix);
 }
 
+static void s_PurgeTrees(vector<TPhyTreeNode*>& trees)
+{
+    NON_CONST_ITERATE(vector<TPhyTreeNode*>, it, trees) {
+        delete *it;
+        *it = NULL;
+    }
+    trees.clear();
+}
+
+CClusterer::~CClusterer()
+{
+    s_PurgeTrees(m_Trees);
+}
+
 void CClusterer::SetDistMatrix(const TDistMatrix& dmat)
 {
     s_CheckDistMatrix(dmat);
@@ -142,8 +156,59 @@ static double s_FindClusterDist(const CClusterer::TSingleCluster& cluster1,
     return result;
 }
 
-// Complete Linkage clustering
-void CClusterer::ComputeClusters(double max_diam)
+/// Find sum of distances between given element and cluster elements
+static double s_FindSumDistFromElem(int elem, 
+                                    const CClusterer::TSingleCluster& cluster, 
+                                    const CClusterer::TDistMatrix& dmat) {
+
+    _ASSERT(cluster.size() > 0);
+    _ASSERT(elem < (int)dmat.GetRows());
+
+    double result = 0.0;
+    ITERATE(CClusterer::TSingleCluster, elem_it, cluster) {
+            _ASSERT(*elem_it < (int)dmat.GetRows());
+
+            result += dmat(elem, *elem_it);
+    }
+
+    return result;
+}
+
+/// Find mean distance between cluster elements
+static double s_FindMeanDist(const CClusterer::TSingleCluster& cluster1,
+                             const CClusterer::TSingleCluster& cluster2,
+                             const CClusterer::TDistMatrix& dmat)
+{
+    _ASSERT(cluster1.size() > 0 && cluster2.size() > 0);
+
+    double result = 0.0;
+    ITERATE(CClusterer::TSingleCluster, elem, cluster1) {
+
+        _ASSERT(*elem < (int)dmat.GetRows());
+
+        result += s_FindSumDistFromElem(*elem, cluster2, dmat);
+    }
+    result /= (double)(cluster1.size() * cluster2.size());
+
+    return result;    
+}
+
+
+/// Find mean
+static double s_FindMean(const vector<double>& vals)
+{
+    double result = 0.0;
+    if (!vals.empty()) {
+        ITERATE(vector<double>, it, vals) {
+            result += *it;
+        }
+        result /= (double)vals.size();
+    }
+    return result;
+}
+
+// Complete Linkage clustering with dendrograms
+void CClusterer::ComputeClusters(double max_diam, bool do_trees)
 {
     m_Clusters.clear();
 
@@ -176,26 +241,30 @@ void CClusterer::ComputeClusters(double max_diam)
     // If there are at least 3 elements to cluster
 
     // Checking whether the data is in one cluster
-    double max_dist = 0.0;
-    for (size_t i=0;i < num_elements - 1;i++) {
-        for (size_t j=i+1;j < num_elements;j++) {
-            if ((*m_DistMatrix)(i, j) > max_dist) {
-                max_dist = (*m_DistMatrix)(i, j);
+    // skip if tree is requested
+    if (!do_trees) {
+        double max_dist = 0.0;
+        for (size_t i=0;i < num_elements - 1;i++) {
+            for (size_t j=i+1;j < num_elements;j++) {
+                if ((*m_DistMatrix)(i, j) > max_dist) {
+                    max_dist = (*m_DistMatrix)(i, j);
+                }
             }
         }
-    }
-    // If yes, create the cluster and return
-    if (max_dist <= max_diam) {
-        m_Clusters.resize(1);
-        for (int i=0;i < (int)num_elements;i++) {
-            m_Clusters[0].AddElement(i);
+        // If yes, create the cluster and return
+        if (max_dist <= max_diam) {
+            m_Clusters.resize(1);
+            for (int i=0;i < (int)num_elements;i++) {
+                m_Clusters[0].AddElement(i);
+            }
+            return;
         }
-        return;
     }
 
 
     // Getting to this point means that there are at least two clusters
     // and max distance is larger than max_diam
+    // or tree was requested
 
     // Creating working copy of dist matrix
     TDistMatrix dmat(*m_DistMatrix);
@@ -208,10 +277,25 @@ void CClusterer::ComputeClusters(double max_diam)
         clusters[i].AddElement((int)i);
     }
 
+    // Create leaf nodes for dendrogram
+    vector<TPhyTreeNode*> nodes(num_elements);
+    if (do_trees) {
+        for (size_t i=0;i < nodes.size();i++) {
+            nodes[i] = new TPhyTreeNode();
+            nodes[i]->GetValue().SetId(i);
+
+            // This is needed so that serialized tree can be interpreted
+            // by external applications
+            nodes[i]->GetValue().SetLabel(NStr::IntToString(i));
+        }
+    }
+    vector< vector<double> > dists_to_root(num_elements);
+
     // Computing clusters
     // Exits the loop once minimum distance is larger than max_diam
     // It was checked above that such distance exists
-    while (true) {
+    int num_clusters = num_elements;
+    while (num_clusters > 1) {
 
         // Find first used dist matrix entries
         size_t min_i = 0;
@@ -233,7 +317,7 @@ void CClusterer::ComputeClusters(double max_diam)
 
         // A distance larger than max_diam exists in the dist matrix,
         // then there always should be at least two used entires in dist matrix
-        _ASSERT(min_i < num_elements && min_j < num_elements);
+        _ASSERT(do_trees || (min_i < num_elements && min_j < num_elements));
 
         // Find smallest distance entry
         for (size_t i=0;i < num_elements - 1;i++) {
@@ -260,10 +344,75 @@ void CClusterer::ComputeClusters(double max_diam)
         _ASSERT(clusters[min_i].size() > 0 && clusters[min_j].size() > 0);
         _ASSERT(min_i < num_elements && min_j < num_elements);
 
+        // Joining tree nodes
+        // must be done before joining clusters
+        if (do_trees) {
+            TPhyTreeNode* new_root = new TPhyTreeNode();
+            
+            _ASSERT(nodes[min_i]);
+            _ASSERT(nodes[min_j]);
+
+            // left and right are meaningless, only to make code readble
+            const int left = min_i;
+            const int right = min_j;
+
+            new_root->AddNode(nodes[left]);
+            new_root->AddNode(nodes[right]);
+
+            // set sub node distances
+            double dist = s_FindMeanDist(clusters[left], clusters[right],
+                                         *m_DistMatrix);
+
+            // find average distances too root in left and right subtrees 
+            double mean_dist_to_root_left = s_FindMean(dists_to_root[left]);
+            double mean_dist_to_root_right = s_FindMean(dists_to_root[right]);
+            
+            // set edge length between new root and subtrees
+            double left_edge_length = dist - mean_dist_to_root_left;
+            double right_edge_length = dist - mean_dist_to_root_right;
+            left_edge_length = left_edge_length > 0.0 ? left_edge_length : 0.0;
+            right_edge_length 
+                = right_edge_length > 0.0 ? right_edge_length : 0.0;
+
+            nodes[left]->GetValue().SetDist(left_edge_length);
+            nodes[right]->GetValue().SetDist(right_edge_length);
+            
+            // compute distances from leaves to new root
+            if (dists_to_root[left].empty()) {
+                dists_to_root[left].push_back(dist);
+            }
+            else {
+                NON_CONST_ITERATE(vector<double>, it, dists_to_root[left]) {
+                    *it += left_edge_length;
+                }
+            }
+
+            if (dists_to_root[right].empty()) {
+                dists_to_root[right].push_back(dist);
+            }
+            else {
+                NON_CONST_ITERATE(vector<double>, it, dists_to_root[right]) {
+                    *it += right_edge_length;
+                }
+            }
+
+            // merge cluster related information
+            // Note: the extended and included cluster must correspond to
+            // Joining clusters procedure below
+            nodes[min_i] = new_root;
+            nodes[min_j] = NULL;
+            ITERATE(vector<double>, it, dists_to_root[min_j]) {
+                dists_to_root[min_i].push_back(*it);
+            }
+            dists_to_root[min_j].clear();
+        }
+
         // Joining clusters
         TSingleCluster& extended_cluster = clusters[min_i];
         TSingleCluster& included_cluster = clusters[min_j];
         used_entry[min_j] = false;
+        num_clusters--;
+        _ASSERT(!do_trees || !nodes[min_j]);
 
         ITERATE(TSingleCluster, elem, included_cluster) {
             extended_cluster.AddElement(*elem);
@@ -294,7 +443,7 @@ void CClusterer::ComputeClusters(double max_diam)
             }
 
         }
-        clusters[min_j].clear(); //needed only for debuging
+        clusters[min_j].clear();
     }
 
     // Putting result in class attribute
@@ -309,9 +458,69 @@ void CClusterer::ComputeClusters(double max_diam)
             ITERATE(TSingleCluster, elem, clusters[i]) {
                 it->AddElement(*elem);
             }
+
+            if (do_trees) {
+                _ASSERT(nodes[i]);
+
+                m_Trees.push_back((TPhyTreeNode*)nodes[i]);
+            }
+        }
+        else {
+
+            _ASSERT(clusters[i].size() == 0);
+
+            if (do_trees) {
+                _ASSERT(!nodes[i]);
+                _ASSERT(dists_to_root[i].empty());
+            }
         }
     }
 }
+
+
+void CClusterer::GetTrees(vector<TPhyTreeNode*>& trees) const
+{
+    trees.clear();
+    ITERATE(vector<TPhyTreeNode*>, it, m_Trees) {
+        trees.push_back(*it);
+    }
+}
+
+
+void CClusterer::ReleaseTrees(vector<TPhyTreeNode*>& trees)
+{
+    trees.clear();
+    ITERATE(vector<TPhyTreeNode*>, it, m_Trees) {
+        trees.push_back(*it);
+    }
+    m_Trees.clear();
+}
+
+
+const TPhyTreeNode* CClusterer::GetTree(int index) const
+{
+    if (index < 0 || index >= (int)m_Trees.size()) {
+        NCBI_THROW(CClustererException, eClusterIndexOutOfRange,
+                   "Tree index out of range");
+    }
+
+    return m_Trees[index];
+}
+
+
+TPhyTreeNode* CClusterer::ReleaseTree(int index)
+{
+    if (index < 0 || index >= (int)m_Trees.size()) {
+        NCBI_THROW(CClustererException, eClusterIndexOutOfRange,
+                   "Tree index out of range");
+    }
+
+    TPhyTreeNode* result = m_Trees[index];
+    m_Trees[index] = NULL;
+
+    return result;
+}
+
 
 void CClusterer::SetPrototypes(void) {
 
@@ -348,6 +557,7 @@ void CClusterer::GetClusterDistMatrix(int index, TDistMatrix& mat) const
 
 void CClusterer::Reset(void)
 {
+    s_PurgeTrees(m_Trees);
     m_Clusters.clear();
     PurgeDistMatrix();
 }
