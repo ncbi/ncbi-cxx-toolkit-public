@@ -94,6 +94,10 @@ for tree in $build_trees ; do
         start=`eval $timer`
         echo Start time: $start
         echo "INFO: Configure \"$tree\\$alias\""
+        if test ! -f "$tree/build/$sol" ; then
+            echo "INFO: Solution not found, skipped."
+            continue
+        fi
         echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out
         $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out
         status=$?
@@ -127,6 +131,10 @@ for tree in $build_trees ; do
             echo Start time: $start
             echo "$tree,$sol,$cfg" >> $build_dir/cfgs.log
             echo "INFO: Building \"$tree\\$cfg\\$alias\""
+            if test ! -f "$tree/build/$sol" ; then
+                echo "INFO: Solution not found, skipped."
+                continue
+            fi
             echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
             $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
             status=$?
