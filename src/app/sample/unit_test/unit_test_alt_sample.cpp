@@ -49,7 +49,7 @@
 // Usually if your unit tests contain only one *.cpp file you should not
 // care about this macro at all.
 //
-//#undef NCBI_BOOST_NO_AUTO_TEST_MAIN
+//#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 
 
 // This header must be included before all Boost.Test headers if there are any
