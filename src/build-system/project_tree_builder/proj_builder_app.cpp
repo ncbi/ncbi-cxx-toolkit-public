@@ -791,7 +791,7 @@ void CProjBulderApp::GenerateMacProjects(CProjectItemsTree& projects_tree)
     bool dll = (GetBuildType().GetType() == CBuildType::eDll);
     list<SConfigInfo> dll_configs;
     const list<SConfigInfo>* configurations = 0;
-    bool skip_config = !GetEnvironment().Get(s_ptb_skipconfig).empty();
+//    bool skip_config = !GetEnvironment().Get(s_ptb_skipconfig).empty();
     string str_config;
 
     if (dll) {
