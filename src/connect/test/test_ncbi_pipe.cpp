@@ -368,7 +368,7 @@ int CTest::Run(void)
     {{
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
-        assert(process.Wait(4000) == kTestResult);
+        assert(process.Wait(6000) == kTestResult);
         assert(!process.IsAlive());
     }}
 
