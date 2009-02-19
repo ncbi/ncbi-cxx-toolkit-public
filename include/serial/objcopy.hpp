@@ -138,7 +138,8 @@ public:
                      TFailFlags fail, const char* message);
     void ThrowError1(const CDiagCompileInfo& diag_info,
                      TFailFlags fail, const string& message);
-#define ThrowError(flag, mess) ThrowError1(DIAG_COMPILE_INFO,flag,mess)
+    void ThrowError(TFailFlags flag, const string& mess)
+    {ThrowError1(DIAG_COMPILE_INFO,flag,mess);}
     void ExpectedMember(const CMemberInfo* memberInfo);
     void DuplicatedMember(const CMemberInfo* memberInfo);
 
