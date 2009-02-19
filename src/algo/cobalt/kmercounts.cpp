@@ -56,6 +56,7 @@ unsigned int CSparseKmerCounts::sm_AlphabetSize = kAlphabetSize;
 vector<Uint1> CSparseKmerCounts::sm_TransTable;
 bool CSparseKmerCounts::sm_UseCompressed = false;
 CSparseKmerCounts::TCount* CSparseKmerCounts::sm_Buffer = NULL;
+bool CSparseKmerCounts::sm_ForceSmallerMem = false;
 
 static const Uint1 kXaa = 21;
 
@@ -112,6 +113,42 @@ static void MarkUsed(Uint4 pos, vector<Uint4>& entries, int chunk)
 }
 
 
+CSparseKmerCounts::TCount* CSparseKmerCounts::ReserveCountsMem(
+                                                       unsigned int num_bits)
+{
+    Uint4 num_elements;
+    TCount* counts = NULL;
+
+    // Reserve memory for storing counts
+    // there are two methods for indexing counts (see the Reset() method)
+    // if memory cannot be allocated try to allocate for the second method
+    // that requires less memory
+    if (!sm_ForceSmallerMem && sm_KmerLength * num_bits 
+                                  < kLengthBitsThreshold) {
+
+        num_elements = 1 << (num_bits * sm_KmerLength);
+        try {
+            counts = new TCount[num_elements];
+        }
+        catch (std::bad_alloc) {
+            sm_ForceSmallerMem = true;
+            num_elements = (Uint4)pow((double)sm_AlphabetSize,
+                                      (double)sm_KmerLength);
+
+            try {
+                counts = new TCount[num_elements];
+            }
+            catch (std::bad_alloc) {
+                NCBI_THROW(CKmerCountsException, eMemoryAllocation,
+                           "Memory cannot be allocated for k-mer counting."
+                           " Try using compressed alphabet or smaller k.");
+            }
+                
+        }
+    }
+    return counts;
+}
+
 void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
                               objects::CScope& scope)
 {
@@ -135,7 +172,6 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
 
     unsigned int num_elements;
     unsigned int seq_len = sv.size();
-    TCount* counts = NULL;
 
     m_SeqLength = sv.size();
     m_Counts.clear();
@@ -155,15 +191,16 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
     }
     const int kNumBits = num;
 
+    TCount* counts = sm_Buffer ? sm_Buffer : ReserveCountsMem(kNumBits); 
+
     // Vecotr of counts is first computed using regular vector that is later
     // converted to the sparse vector (list of position-value pairs).
     // Positions are calculated as binary representations of k-mers, if they
-    // fit in 32 bits.
-    if (kmer_len * kNumBits < 32) {
+    // fit in 32 bits. Otherwise as numbers in system with base alphabet size.
+    if (!sm_ForceSmallerMem && kmer_len * kNumBits < kLengthBitsThreshold) {
 
         num_elements = 1 << (kNumBits * kmer_len);
         const Uint4 kMask = num_elements - (1 << kNumBits);
-        counts = sm_Buffer ? sm_Buffer : (new TCount[num_elements]);
 
         _ASSERT(counts);
         memset(counts, 0, num_elements * sizeof(TCount));
@@ -254,8 +291,6 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
         }
    
         num_elements = (Uint4)pow((double)alphabet_size, (double)kmer_len);
-
-        counts = sm_Buffer ? sm_Buffer : new TCount[num_elements];
 
         _ASSERT(counts);
         memset(counts, 0, num_elements * sizeof(TCount));
@@ -414,7 +449,8 @@ unsigned int CSparseKmerCounts::CountCommonKmers(
 
 void CSparseKmerCounts::PreCount(void)
 {
-    // Compute number of bits needed to represent all letters
+    // Reserve memory for storing counts of all possible k-mers
+    // compute number of bits needed to represent all letters
     unsigned int mask = 1;
     int num_bits = 0;
     while (sm_AlphabetSize > mask) {
@@ -422,15 +458,7 @@ void CSparseKmerCounts::PreCount(void)
         num_bits++;
     }
 
-    int num_elements;
-    if (sm_KmerLength * num_bits < 32) {
-        num_elements = 1 << (num_bits * sm_KmerLength);
-    }
-    else {
-        num_elements = (int)pow((double)sm_AlphabetSize, (double)sm_KmerLength);
-    }
-
-    sm_Buffer = new TCount[num_elements];
+    sm_Buffer = ReserveCountsMem(num_bits);
 }
 
 void CSparseKmerCounts::PostCount(void)
@@ -439,6 +467,7 @@ void CSparseKmerCounts::PostCount(void)
         delete [] sm_Buffer;
     }
     sm_Buffer = NULL;
+    sm_ForceSmallerMem = false;
 }
 
 

@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(TestSparseKmerCounts)
 BOOST_AUTO_TEST_CASE(TestKmerMethods)
 {
     typedef TKmerMethods<CSparseKmerCounts> TKMethods;
-    const int kKmerLen = 6;
+    const int kKmerLen = 4;
     const int kAlphabetSize = 28;
 
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();

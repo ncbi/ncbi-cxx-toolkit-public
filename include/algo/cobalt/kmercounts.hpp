@@ -145,12 +145,14 @@ public:
     /// Set default k-mer length
     /// @param len Default k-mer length [in]
     ///
-    static void SetKmerLength(unsigned len) {sm_KmerLength = len;}
+    static void SetKmerLength(unsigned len)
+    {sm_KmerLength = len; sm_ForceSmallerMem = false;}
 
     /// Set Default alphabet size
     /// @param size Default alphabet size [in]
     ///
-    static void SetAlphabetSize(unsigned size) {sm_AlphabetSize = size;}
+    static void SetAlphabetSize(unsigned size)
+    {sm_AlphabetSize = size; sm_ForceSmallerMem = false;}
 
     /// Set default compressed alphabet letter translation table
     /// @return Reference to translation table [in|out]
@@ -214,6 +216,8 @@ public:
 
 
 private:
+    static TCount* ReserveCountsMem(unsigned int num_bits);
+
     static Uint4 GetAALetter(Uint1 letter)
     {
         _ASSERT(!sm_UseCompressed || letter < sm_TransTable.size());
@@ -234,7 +238,7 @@ private:
     static bool InitPosBits(const objects::CSeqVector& sv, Uint4& pos,
                             unsigned int& index,  Uint4 num_bits,
                             Uint4 kmer_len);
-
+    
 
 protected:
     vector<SVectorElement> m_Counts;
@@ -245,6 +249,8 @@ protected:
     static vector<Uint1> sm_TransTable;
     static bool sm_UseCompressed;
     static TCount* sm_Buffer;
+    static bool sm_ForceSmallerMem;
+    static const unsigned int kLengthBitsThreshold = 32;
 };
 
 
@@ -257,7 +263,8 @@ public:
         eUnsupportedSeqLoc,
         eUnsuportedDistMethod,
         eInvalidOptions,
-        eBadSequence
+        eBadSequence,
+        eMemoryAllocation
     };
 
     NCBI_EXCEPTION_DEFAULT(CKmerCountsException, CException);
