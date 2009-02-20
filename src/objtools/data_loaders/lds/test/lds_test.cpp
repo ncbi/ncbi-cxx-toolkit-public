@@ -44,8 +44,6 @@
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
-#include <common/test_assert.h>  /* This header must go last */
-
 
 USING_NCBI_SCOPE;
 
