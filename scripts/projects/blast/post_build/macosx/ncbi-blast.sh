@@ -37,7 +37,7 @@ done
 
 echo building package
 mkdir $PRODUCT
-/Developer/usr/bin/packagemaker --doc ncbi-blast.pmdoc --out $PRODUCT/$PRODUCT.pkg
+/Developer/usr/bin/packagemaker --id gov.nih.nlm.ncbi.blast --doc ncbi-blast.pmdoc --out $PRODUCT/$PRODUCT.pkg
 
 echo copying uninstaller
 cp -p uninstall_ncbi_blast.zip $PRODUCT
