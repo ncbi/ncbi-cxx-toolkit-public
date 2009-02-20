@@ -1650,10 +1650,11 @@ case "$host_os" in
      ;;
 esac
 
+
 # When using ccache and distcc together, ccache needs to be primary,
 # so look for distcc(.sh) first.
 
-if test "$with_distcc" = "yes"; then
+if test "$with_distcc" != "no"; then
    if test -z "$DISTCC" -a -x $NCBI/bin/distcc.sh ; then
       echo 'int f() { return 0; }' > conftest.c
       if $NCBI/bin/distcc.sh $CC -c conftest.c; then
@@ -1664,9 +1665,18 @@ if test "$with_distcc" = "yes"; then
    if test -n "$DISTCC" ; then
       CC_WRAPPER="$DISTCC $CC_WRAPPER"
       CXX_WRAPPER="$DISTCC $CXX_WRAPPER"
-   else
+   elif test "$with_distcc" = "yes" ; then
       AC_MSG_WARN([distcc explicitly requested, but not found in PATH.])
    fi
+fi
+
+if test -z "$with_ccache"  -a  -n "$DISTCC"  -a  -z "$CCACHE_DIR" ; then
+   # Using CCACHE together with DISTCC causes problems when the involved DISTCC
+   # servers share the same home dir, as in that case the caches from
+   # different servers can mix up rather badly, corrupting each other.
+   # On the other hand, most NCBI accounts have $CCACHE_DIR automatically set
+   # to a non-shared, per-machine location (such as "/tmp/.ccache-username").
+   with_ccache="no"
 fi
 
 if test "$with_ccache" != "no"; then
